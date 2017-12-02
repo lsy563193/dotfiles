@@ -1209,14 +1209,15 @@ bool path_get_home_point_target(const Cell_t &curr, PPTargetType &path) {
 			g_home_gen_rosmap = false;
 			auto map_bound = cost_map.generateBound();
 			ROS_INFO("\033[1;46;37m" "%s,%d:ros_cost_map.convert" "\033[0m", __FUNCTION__, __LINE__);
-			ros_map.reset(MAP);
+			// TODO: do not use slam_cost_map to go home directly, Austin should fix this after creating PathAlgorithm class.
+//			slam_cost_map.reset(MAP);
 //			map.print(MAP, 0, 0);
-			ros_map.ros_convert(MAP, false, true, false);
+//			slam_cost_map.ros_convert(MAP, false, true, false);
 //			map.print(MAP, 0, 0);
 			ROS_INFO("\033[1;46;37m" "%s,%d:ros_map" "\033[0m", __FUNCTION__, __LINE__);
 //			map.print(ROSMAP, 0, 0);
 			for (const auto &cell : map_bound){
-				auto rm_status = ros_map.getCell(MAP, cell.X, cell.Y);
+				auto rm_status = slam_cost_map.getCell(MAP, cell.X, cell.Y);
 				auto m_status = cost_map.getCell(MAP, cell.X, cell.Y);
 //				ROS_INFO("\033[1;46;37m" "%s,%d:cell_it(%d,%d), rms(%d),ms(%d)" "\033[0m", __FUNCTION__, __LINE__,cell.X, cell.Y, rm_status, m_status);
 				if ((m_status == BLOCKED_BUMPER || m_status == BLOCKED_LIDAR) && rm_status == CLEANED){

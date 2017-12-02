@@ -20,8 +20,11 @@
 typedef std::deque<Cell_t> PPTargetType;
 
 typedef enum {
+	// The sequence of MAP value must be UNCLEAN < CLEANED < MAP_BLOCKED < SLAM_MAP_BLOCKED
   UNCLEAN  = 0,
+  SLAM_MAP_UNKNOWN = 0,
   CLEANED = 1,
+  SLAM_MAP_CLEANABLE = 1,
   BLOCKED = 2,
   BLOCKED_OBS = 2,
   BLOCKED_BUMPER = 3,
@@ -30,7 +33,7 @@ typedef enum {
   BLOCKED_LIDAR = 6,
   BLOCKED_TILT = 7,
   BLOCKED_SLIP = 8,
-  BLOCKED_ROS_MAP = 9,
+  SLAM_MAP_BLOCKED = 9,
   BLOCKED_BOUNDARY = 10,
   TARGET_CLEAN = 13,
   TARGET = 14,
@@ -108,26 +111,28 @@ public:
 	void copy(uint8_t id, uint8_t **new_map);
 
 /*
- * @author Alvin Xie
- * @brief Convert the ros map to grid map for the pathplanning algorithm.
- * @param is_mark_cleaned to decide if mark the free space to CLENAED
+ * @author Alvin Xie/ Li Shao Yan
+ * @brief Convert the ros map to grid map for the path algorithm.
  * @return None
  */
-	void ros_convert(int16_t id, bool is_mark_cleaned, bool is_clear_block, bool is_freshen_map,int limit=20, SlamMap* slam_map_=&slam_map);
+	void convertFromSlamMap(float threshold);
 
-	void mapToWorld(double origin_x_, double origin_y_, float resolution_, unsigned int mx, unsigned int my, double &wx,
-					double &wy);
+	void merge(CostMap source_map, bool add_slam_map_blocks_to_uncleaned = false, bool add_slam_map_blocks_to_cleaned = false,
+						bool add_slam_map_cleanable_area = false, bool clear_map_blocks = false, bool clear_slam_map_blocks = false);
 
-	bool worldToMap(double origin_x_, double origin_y_, float resolution_, int size_x_, int size_y_, double wx,
-									double wy, unsigned int &mx, unsigned int &my);
+	void slamMapToWorld(double origin_x_, double origin_y_, float resolution_, int16_t slam_map_x,
+						int16_t slam_map_y, double &world_x, double &world_y);
 
-	unsigned int getIndex(int size_x_, unsigned int mx, unsigned int my);
+	bool worldToSlamMap(double origin_x_, double origin_y_, float resolution_, uint32_t slam_map_width,
+								 uint32_t slam_map_height, double world_x, double world_y, uint32_t &data_map_x, uint32_t &data_map_y);
+
+	uint32_t getIndexOfSlamMapData(uint32_t slam_map_width, uint32_t data_map_x, uint32_t data_map_y);
 
 	void indexToCells(int size_x_, unsigned int index, unsigned int &mx, unsigned int &my);
 
 	bool worldToCount(double &wx, double &wy, int32_t &cx, int32_t &cy);
 
-	bool countToWorld(double &wx, double &wy, int32_t &cx, int32_t &cy);
+	void cellToWorld(double &worldX, double &worldY, int16_t &cellX, int16_t &cellY);
 
 	bool markRobot(uint8_t id);
 
@@ -309,9 +314,8 @@ private:
 extern CostMap cost_map;
 /*wf_map is to record the wall follow path to caculate the isolate islands*/
 extern CostMap fw_map;
-extern CostMap ros_map;
+extern CostMap exploration_map;
+extern CostMap slam_cost_map;
 extern CostMap decrease_map;
-
-extern boost::mutex slam_map_mutex;
 
 #endif /* __MAP_H */

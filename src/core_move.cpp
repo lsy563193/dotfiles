@@ -197,7 +197,7 @@ void cm_apply_cs(int next) {
 			cost_map.updatePosition();
 			//wf_mark_home_point();
 			cost_map.reset(MAP);
-			cost_map.ros_convert(MAP, true, false, false);
+			cost_map.merge(slam_cost_map, false, false, true, false, false);
 			cost_map.markRobot(MAP);//note: To clear the obstacles before go home, please don't remove it!
 		}
 		// Play wavs.

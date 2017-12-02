@@ -392,7 +392,7 @@ void robot::setCleanMapMarkers(int8_t x, int8_t y, CellState type)
 		color_.g = 0.5;
 		color_.b = 0.5;
 	}
-	else if (type == BLOCKED_ROS_MAP)
+	else if (type == SLAM_MAP_BLOCKED)
 	{
 		color_.r = 0.75;
 		color_.g = 0.33;

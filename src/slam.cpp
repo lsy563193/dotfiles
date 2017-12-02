@@ -63,28 +63,19 @@ bool Slam::openTimeOut(void)
 
 void Slam::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
 {
-	slam_map_mutex.lock();
 	slam_map.setWidth(map->info.width);
 	slam_map.setHeight(map->info.height);
 	slam_map.setResolution(map->info.resolution);
 	slam_map.setOriginX(map->info.origin.position.x);
 	slam_map.setOriginY(map->info.origin.position.y);
 	slam_map.setData(map->data);
-	slam_map_mutex.unlock();
 
+	slam_cost_map.convertFromSlamMap(0.2);
+	//slam_cost_map.print(MAP, 0, 0);
 
-	/*for exploration update map*/
-	if (cm_is_exploration()) {
-		cost_map.ros_convert(MAP, false, false, true);
-	}
-	else if(cm_is_navigation())
-	{
-		decrease_map.ros_convert(MAP, false, false, true);
-	}
 	isMapReady(true);
 
 	ROS_INFO("%s %d:finished map callback,cost_map.size(\033[33m%d,%d\033[0m),resolution(\033[33m%f\033[0m),cost_map.origin(\033[33m%f,%f\033[0m)",
 			 __FUNCTION__, __LINE__, slam_map.getWidth(), slam_map.getHeight(), slam_map.getResolution(), slam_map.getOriginX(), slam_map.getOriginY());
-
 }
 

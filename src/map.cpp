@@ -22,7 +22,8 @@
 #define DEBUG_MSG_SIZE	1 // 20
 CostMap cost_map;
 CostMap fw_map;
-CostMap ros_map;
+CostMap exploration_map;
+CostMap slam_cost_map;
 CostMap decrease_map;
 
 boost::mutex slam_map_mutex;
@@ -365,126 +366,152 @@ void CostMap::reset(uint8_t id)
 #endif
 }
 
-void CostMap::ros_convert(int16_t id, bool is_mark_cleaned,bool is_clear_false_block, bool is_freshen_map,int limit, SlamMap* slam_map_)
+void CostMap::convertFromSlamMap(float threshold)
 {
-	std::vector<int> data_index;
-	std::vector<int8_t> p_map_data;
-	unsigned int map_x,map_y,map_x_min,map_x_max,map_y_min,map_y_max;
-	double world_x, world_y;
-	int32_t count_x, count_y;
-	int16_t cell_x, cell_y;
-	int size;
-	/*---values for counting sum of difference rosmap cells---*/
-	uint32_t occupied_counter = 0, free_counter = 0, unknown_counter = 0;
+	// Clear the cost map itself.
+	reset(MAP);
 
-	slam_map_mutex.lock();
-	auto width = slam_map_->getWidth();
-	auto height = slam_map_->getHeight();
-	auto resolution = slam_map_->getResolution();
-	auto origin_x = slam_map_->getOriginX();
-	auto origin_y = slam_map_->getOriginY();
-	p_map_data = slam_map_->getData();
+	// Get the data from slam_map.
+	std::vector<int8_t> slam_map_data;
+	auto width = slam_map.getWidth();
+	auto height = slam_map.getHeight();
+	auto resolution = slam_map.getResolution();
+	auto origin_x = slam_map.getOriginX();
+	auto origin_y = slam_map.getOriginY();
+	slam_map_data = slam_map.getData();
 
-	/*---side length multi between cell and rosmap cell---*/
-	auto multi = CELL_SIZE / (uint32_t)(resolution * 1000.0);
-	/*----limit count for checking blocked---*/
-	auto limit_count = (multi * multi) * limit / 100;
-	/*---work out the boundary---*/
-	auto cell_x_min = (int16_t)(origin_x * 1000.0 / CELL_SIZE);
-	auto cell_x_max = cell_x_min + (int16_t)(width / multi);
-	auto cell_y_min = (int16_t)(origin_y * 1000.0 / CELL_SIZE);
-	auto cell_y_max = cell_y_min + (int16_t)(height / multi);
+	// Set resolution multi between cost map and slam map.
+	auto multi = CELL_SIZE / (resolution * 1000.0);
+	ROS_INFO("%s %d: resolution: %f, multi: %f.", __FUNCTION__, __LINE__, resolution, multi);
+	// Limit count for checking block.*/
+	auto limit_count = static_cast<uint16_t>((multi * multi) * threshold);
+	ROS_INFO("%s %d: limit_count: %d.", __FUNCTION__, __LINE__, limit_count);
+	// Set boundary for this cost map.
+	auto map_x_min = static_cast<int16_t>(origin_x * 1000.0 / CELL_SIZE);
+	if (map_x_min < -MAP_SIZE)
+		map_x_min = -MAP_SIZE;
+	auto map_x_max = map_x_min + static_cast<int16_t>(width / multi);
+	if (map_x_max > MAP_SIZE)
+		map_x_max = MAP_SIZE;
+	auto map_y_min = static_cast<int16_t>(origin_y * 1000.0 / CELL_SIZE);
+	if (map_y_min < -MAP_SIZE)
+		map_y_min = -MAP_SIZE;
+	auto map_y_max = map_y_min + static_cast<int16_t>(height / multi);
+	if (map_y_max > MAP_SIZE)
+		map_y_max = MAP_SIZE;
 
-	//ROS_INFO("%s,%d: cell_x_min: %d, cell_x_max: %d, cell_y_min: %d, cell_y_max: %d", __FUNCTION__, __LINE__, cell_x_min, cell_x_max, cell_y_min, cell_y_max);
-	for (auto cell_x = cell_x_min; cell_x <= cell_x_max; ++cell_x)
+	//ROS_INFO("%s,%d: map_x_min: %d, map_x_max: %d, map_y_min: %d, map_y_max: %d",
+	// 		   __FUNCTION__, __LINE__, map_x_min, map_x_max, map_y_min, map_y_max);
+	for (auto cell_x = map_x_min; cell_x <= map_x_max; ++cell_x)
 	{
-		for (auto cell_y = cell_y_min; cell_y <= cell_y_max; ++cell_y)
+		for (auto cell_y = map_y_min; cell_y <= map_y_max; ++cell_y)
 		{
-			auto status = getCell(id, cell_x, cell_y);
-			count_x = cellToCount(cell_x);
-			count_y = cellToCount(cell_y);
-			countToWorld(world_x, world_y, count_x, count_y);
-			worldToMap(origin_x, origin_y, resolution, width, height, world_x, world_y, map_x, map_y);
-
-			map_x_min = (map_x > multi/2) ? (map_x - multi/2) : 0;
-			map_x_max = ((map_x + multi/2) < width) ? (map_x + multi/2) : width;
-			map_y_min = (map_y > multi/2) ? (map_y - multi/2) : 0;
-			map_y_max = ((map_y + multi/2) < height) ? (map_y + multi/2) : height;
-
-			for (int i=map_x_min; i<=map_x_max; i++)
-				for(int j=map_y_min; j<=map_y_max; j++)
-					data_index.push_back(getIndex(width, i, j));
-
-			size = data_index.size();
-			for(int index=0; index<size; index++)
+			// Get the range of this cell in the grid map of slam map data.
+			double world_x, world_y;
+			cellToWorld(world_x, world_y, cell_x, cell_y);
+			uint32_t data_map_x, data_map_y;
+			if (worldToSlamMap(origin_x, origin_y, resolution, width, height, world_x, world_y, data_map_x, data_map_y))
 			{
-				if(p_map_data[data_index[index]] == 100)		occupied_counter++;
-				else if(p_map_data[data_index[index]] == -1)	unknown_counter++;
-				else if(p_map_data[data_index[index]] == 0)	free_counter++;
-			}
+				auto data_map_x_min = (data_map_x > multi/2) ? (data_map_x - multi/2) : 0;
+				auto data_map_x_max = ((data_map_x + multi/2) < width) ? (data_map_x + multi/2) : width;
+				auto data_map_y_min = (data_map_y > multi/2) ? (data_map_y - multi/2) : 0;
+				auto data_map_y_max = ((data_map_y + multi/2) < height) ? (data_map_y + multi/2) : height;
+				//ROS_INFO("%s %d: data map: x_min(%d), x_max(%d), y_min(%d), y_max(%d)",
+				//		 __FUNCTION__, __LINE__, data_map_x_min, data_map_x_max, data_map_y_min, data_map_y_max);
 
-			if(unknown_counter == size)/*---unknown cell---*/
-			{
-			//	ROS_INFO("---unknown cell---");
+				// Get the slam map data index of this range.
+				std::vector<int32_t> slam_map_data_index;
+				for (uint32_t i=data_map_x_min; i<=data_map_x_max; i++)
+					for(uint32_t j=data_map_y_min; j<=data_map_y_max; j++)
+						slam_map_data_index.push_back(getIndexOfSlamMapData(width, i, j));
+
+				// Values for counting sum of difference slam map data.
+				uint32_t block_counter = 0, cleanable_counter = 0, unknown_counter = 0;
+				bool block_set = false;
+				auto size = slam_map_data_index.size();
+				//ROS_INFO("%s %d: data_index_size:%d.", __FUNCTION__, __LINE__, size);
+				for(int index = 0; index < size; index++)
+				{
+					//ROS_INFO("slam_map_data index:%d, data:%d", slam_map_data_index[index], slam_map_data[slam_map_data_index[index]]);
+					if(slam_map_data[slam_map_data_index[index]] == 100)		block_counter++;
+					else if(slam_map_data[slam_map_data_index[index]] == -1)	unknown_counter++;
+					else if(slam_map_data[slam_map_data_index[index]] == 0)		cleanable_counter++;
+
+					if(block_counter > limit_count)/*---occupied cell---*/
+					{
+						setCell(MAP, cellToCount(cell_x), cellToCount(cell_y), SLAM_MAP_BLOCKED);
+						block_set = true;
+						break;
+					}
+				}
+
+				if(!block_set && unknown_counter == size)/*---unknown cell---*/
+				{
+					setCell(MAP, cellToCount(cell_x), cellToCount(cell_y), SLAM_MAP_UNKNOWN);
+					block_set = true;
+				}
+				if(!block_set)/*---unknown cell---*/
+					setCell(MAP, cellToCount(cell_x), cellToCount(cell_y), SLAM_MAP_CLEANABLE);
+
+				//ROS_INFO("unknown counter: %d, block_counter: %d, cleanable_counter: %d", unknown_counter, block_counter, cleanable_counter);
 			}
-			else if(occupied_counter > limit_count)/*---occupied cell---*/
-			{
-			//	ROS_INFO("---occupied cell---");
-				if (is_freshen_map)
-					if((status < BLOCKED || status > BLOCKED_BOUNDARY) && (status != BLOCKED_ROS_MAP))
-						setCell(id, count_x, count_y, BLOCKED_ROS_MAP);
-				else
-						setCell(id, count_x, count_y, BLOCKED_ROS_MAP);
-			}
-			else/*---free cell---*/
-			{
-			//	ROS_INFO("---free cell---");
-				if(is_mark_cleaned && status <= 1)
-					setCell(id, count_x, count_y, CLEANED);
-				if(is_clear_false_block && (status < BLOCKED || status > BLOCKED_BOUNDARY))
-					setCell(id, count_x, count_y, CLEANED);
-				/*freshen the map*/
-				if (is_freshen_map && (status == BLOCKED_ROS_MAP))
-					setCell(id, count_x, count_y, CLEANED);
-			}
-			/*---clear data_index and counter for next loop---*/
-			data_index.clear();
-			occupied_counter = 0;
-			free_counter = 0;
-			unknown_counter = 0;
 		}
 	}
-	slam_map_mutex.unlock();
 }
 
-void CostMap::mapToWorld(double origin_x_, double origin_y_, float resolution_, unsigned int mx, unsigned int my,
-						 double &wx,
-						 double &wy)
+void CostMap::merge(CostMap source_map, bool add_slam_map_blocks_to_uncleaned, bool add_slam_map_blocks_to_cleaned,
+					bool add_slam_map_cleanable_area, bool clear_map_blocks, bool clear_slam_map_blocks)
 {
-	wx = origin_x_ + (mx + 0.5) * resolution_;
-	wy = origin_y_ + (my + 0.5) * resolution_;
+	int16_t map_x_min, map_y_min, map_x_max, map_y_max;
+	source_map.getMapRange(MAP, &map_x_min, &map_x_max, &map_y_min, &map_y_max);
+	for (int16_t x = map_x_min; x <= map_x_max; x++)
+	{
+		for (int16_t y = map_x_min; y <= map_x_max; y++)
+		{
+			CellState map_cell_state, source_map_cell_state;
+			map_cell_state = getCell(MAP, x, y);
+			source_map_cell_state = source_map.getCell(MAP, x, y);
+
+			if (clear_map_blocks && map_cell_state >= BLOCKED && map_cell_state < SLAM_MAP_BLOCKED && source_map_cell_state == SLAM_MAP_CLEANABLE)
+				setCell(MAP, cellToCount(x), cellToCount(y), CLEANED);
+			if (clear_slam_map_blocks && map_cell_state == SLAM_MAP_BLOCKED && source_map_cell_state == SLAM_MAP_CLEANABLE)
+				setCell(MAP, cellToCount(x), cellToCount(y), CLEANED);
+			if (add_slam_map_blocks_to_uncleaned && map_cell_state == UNCLEAN && source_map_cell_state == SLAM_MAP_BLOCKED)
+				setCell(MAP, cellToCount(x), cellToCount(y), SLAM_MAP_BLOCKED);
+			if (add_slam_map_blocks_to_cleaned && map_cell_state == CLEANED && source_map_cell_state == SLAM_MAP_BLOCKED)
+				setCell(MAP, cellToCount(x), cellToCount(y), SLAM_MAP_BLOCKED);
+			if (add_slam_map_cleanable_area && map_cell_state == UNCLEAN && source_map_cell_state == SLAM_MAP_CLEANABLE)
+				setCell(MAP, cellToCount(x), cellToCount(y), CLEANED);
+		}
+	}
+
+}
+
+void CostMap::slamMapToWorld(double origin_x_, double origin_y_, float resolution_, int16_t slam_map_x,
+							 int16_t slam_map_y, double &world_x, double &world_y)
+{
+	world_x = origin_x_ + (slam_map_x + 0.5) * resolution_;
+	world_y = origin_y_ + (slam_map_y + 0.5) * resolution_;
 //wx = origin_x_ + (mx) * resolution_;
 //wy = origin_y_ + (my) * resolution_;
 }
 
-bool CostMap::worldToMap(double origin_x_, double origin_y_, float resolution_, int size_x_, int size_y_, double wx,
-										double wy, unsigned int &mx, unsigned int &my)
+bool CostMap::worldToSlamMap(double origin_x_, double origin_y_, float resolution_, uint32_t slam_map_width,
+							 uint32_t slam_map_height, double world_x, double world_y, uint32_t &data_map_x, uint32_t &data_map_y)
 {
-	if (wx < origin_x_ || wy < origin_y_)
+	if (world_x < origin_x_ || world_y < origin_y_
+		|| world_x > origin_x_ + slam_map_width * resolution_ || world_y > origin_y_ + slam_map_height * resolution_)
 		return false;
 
-	mx = (int)((wx - origin_x_) / resolution_);
-	my = (int)((wy - origin_y_) / resolution_);
+	data_map_x = static_cast<uint32_t>((world_x - origin_x_) / resolution_);
+	data_map_y = static_cast<uint32_t>((world_y - origin_y_) / resolution_);
 
-	if (mx < size_x_ && my < size_y_)
-		return true;
-
-	return false;
+	return true;
 }
 
-unsigned int CostMap::getIndex(int size_x_, unsigned int mx, unsigned int my)
+uint32_t CostMap::getIndexOfSlamMapData(uint32_t slam_map_width, uint32_t data_map_x, uint32_t data_map_y)
 {
-	return my * size_x_ + mx;
+	return data_map_y * slam_map_width + data_map_x;
 }
 
 void CostMap::indexToCells(int size_x_, unsigned int index, unsigned int &mx, unsigned int &my)
@@ -504,11 +531,10 @@ bool CostMap::worldToCount(double &wx, double &wy, int32_t &cx, int32_t &cy)
 	return true;
 }
 
-bool CostMap::countToWorld(double &wx, double &wy, int32_t &cx, int32_t &cy)
+void CostMap::cellToWorld(double &worldX, double &worldY, int16_t &cellX, int16_t &cellY)
 {
-	wx = (double)cx * CELL_SIZE / CELL_COUNT_MUL / 1000.0;
-	wy = (double)cy * CELL_SIZE / CELL_COUNT_MUL / 1000.0;
-	return true;
+	worldX = (double)cellX * CELL_SIZE / 1000.0;
+	worldY = (double)cellY * CELL_SIZE / 1000.0;
 }
 
 uint8_t CostMap::setLidar()
@@ -1374,7 +1400,7 @@ void CostMap::print(uint8_t id, int16_t endx, int16_t endy)
 	CellState	cs;
 	Cell_t temp_cell;
 
-		temp_cell = cost_map.getCurrCell();
+	temp_cell = getCurrCell();
 
 	getMapRange(id, &x_min, &x_max, &y_min, &y_max);
 
@@ -1416,7 +1442,7 @@ void CostMap::print(uint8_t id, int16_t endx, int16_t endy)
 		outString[index++] = '\t';
 
 		for (j = y_min; j <= y_max; j++) {
-			cs = cost_map.getCell(id, i, j);
+			cs = getCell(id, i, j);
 			if (i == temp_cell.X && j == temp_cell.Y) {
 				outString[index++] = 'x';
 			} else if (i == endx && j == endy) {
@@ -1438,12 +1464,12 @@ void CostMap::colorPrint(char *outString, int16_t y_min, int16_t y_max)
 {
 	int16_t j = 0;
 	char cs;
-	bool ready_print_map = 0;
+	bool ready_print_map = false;
 	std::string y_col("");
 	for(j =y_min; j<=y_max; j++){
 		cs = *(outString+j);
 		if(cs =='\t' && !ready_print_map){
-			ready_print_map = 1;
+			ready_print_map = true;
 			y_col+="\t";
 			continue;
 		}
@@ -1457,36 +1483,33 @@ void CostMap::colorPrint(char *outString, int16_t y_min, int16_t y_max)
 			}
 			else if(cs == '1'){//clean
 				if(std::abs(j%2) == 0)
-					y_col+="\033[1;46;37m1\033[0m";
+					y_col+="\033[1;46;37m1\033[0m";// cyan
 				else
-					y_col+="\033[1;42;37m1\033[0m";
+					y_col+="\033[1;42;37m1\033[0m";// green
 			}
 			else if(cs == '2'){//obs
-				y_col+="\033[1;44;37m2\033[0m";
+				y_col+="\033[1;44;37m2\033[0m";// blue
 			}
 			else if(cs == '3'){//bumper
-				y_col+="\033[1;41;37m3\033[0m";
+				y_col+="\033[1;41;37m3\033[0m";// red
 			}
 			else if(cs == '4'){//cliff
-				y_col+="\033[1;45;37m4\033[0m";
+				y_col+="\033[1;45;37m4\033[0m";// magenta
 			}
 			else if(cs == '5'){//rcon
-				y_col+="\033[1;46;37m5\033[0m";
+				y_col+="\033[1;47;37m5\033[0m";// white
 			}
 			else if(cs == '6'){//lidar maker
-				y_col+="\033[1;44;37m6\033[0m";
+				y_col+="\033[1;44;37m6\033[0m";// blue
 			}
 			else if(cs == '7'){//tilt
-				y_col+="\033[1;47;30m7\033[0m";
+				y_col+="\033[1;47;30m7\033[0m";// white
 			}
 			else if(cs == '8'){//slip
-				y_col+="\033[1;43;37m8\033[0m";
+				y_col+="\033[1;43;37m8\033[0m";// yellow
 			}
-			else if(cs == '9'){
-				if(std::abs(j%2) == 0)
-					y_col+="\033[1;46;37m9\033[0m";
-				else
-					y_col+="\033[1;42;37m9\033[0m";
+			else if(cs == '9'){//slam_map_block
+				y_col+="\033[0;41;37m9\033[0m";// red
 			}
 			else if(cs == 'a'){//bundary
 				y_col+="\033[1;43;37ma\033[0m";
@@ -1517,7 +1540,7 @@ bool CostMap::isFrontBlocked(void)
 	for(auto& d_cell : d_cells)
 	{
 		robotToCell(getCurrPoint(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
-		if(getCell(MAP, x, y) == BLOCKED_ROS_MAP)
+		if(getCell(MAP, x, y) == SLAM_MAP_BLOCKED)
 		{
 			retval = true;
 			break;

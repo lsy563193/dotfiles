@@ -85,7 +85,6 @@ private:
 };
 
 extern SlamMap slam_map;
-extern boost::mutex slam_map_mutex;
 
 
 #endif //PP_SLAM_MAP_H
