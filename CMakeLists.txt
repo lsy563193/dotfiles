@@ -45,6 +45,7 @@ FILE(GLOB PP_SRC
 				src/clean_mode/spot_clean.cpp
 				src/clean_mode/wall_follow_clean.cpp
 
+	src/path_alogorithm/path_alogorithm.cpp
 	src/error.cpp
 	src/event_manager.cpp
 	src/idle.cpp
