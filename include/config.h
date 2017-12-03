@@ -475,3 +475,5 @@
 
 #define MOVE_BACK_FROM_STUB_DIST (500) // in millimeter
 #define SIGMENT_LEN (100)  //in millimeter
+
+#define NEW_FRAMEWORK						(0)

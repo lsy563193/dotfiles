@@ -9,6 +9,7 @@
 #include <battery.h>
 #include <remote.hpp>
 #include <charger.h>
+#include <clean_mode_new/clean_mode_navigation_new.hpp>
 #include "charge.hpp"
 #include "core_move.h"
 #include "gyro.h"
@@ -50,6 +51,17 @@ void *core_move_thread(void *)
 	else if (battery.isReadyToClean())
 		speaker.play(SPEAKER_PLEASE_START_CLEANING);
 
+#if NEW_FRAMEWORK
+	CleanModeNew* curr_mode = new NavigationModeNew();
+	while(ros::ok())
+	{
+		CleanModeNew* next_mode = curr_mode->run();
+		ROS_INFO("%s %d:", __FUNCTION__, __LINE__);
+		delete curr_mode;
+		curr_mode = next_mode;
+	}
+
+#else
 	while(ros::ok()){
 		usleep(20000);
 		switch(cm_get()){
@@ -134,7 +146,8 @@ void *core_move_thread(void *)
 
 		}
 	}
-	
+#endif
+
 	return NULL;
 	//pthread_exit(NULL);	
 }

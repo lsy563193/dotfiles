@@ -3,6 +3,11 @@ project(pp)
 set(CMAKE_CXX_FLAGS "-std=c++11 -fpermissive ${CMAKE_CXX_FLAGS} -Wfatal-errors\ ")
 FILE(GLOB PP_SRC
         include/*
+		include/clean_mode_new/clean_mode_new.hpp
+		include/clean_mode_new/clean_mode_navigation_new.hpp
+		include/action_new/action_new.hpp
+		include/action_new/action_open_gyro_new.hpp
+		include/path_algorithm/path_algorithm.h
 	src/charge.cpp
 #	src/clean_mode.cpp
 	src/clean_state.cpp
@@ -27,25 +32,32 @@ FILE(GLOB PP_SRC
 	src/dev/speaker.cpp
 	src/dev/lidar.cpp
 
-				src/action/action.cpp
-				src/action/action_open_gyro.cpp
-				src/action/action_back_from_charger.cpp
+	#For new framework
+	src/action_new/action_new.cpp
+	src/action_new/action_open_gyro_new.cpp
+	src/clean_mode_new/clean_mode_new.cpp
+	src/clean_mode_new/clean_mode_navigation_new.cpp
+	src/path_algorithm/path_algorithm.cpp
+	#end
 
-				src/action/movement/movement.cpp
-				src/action/movement/movement_back.cpp
-				src/action/movement/movement_fall_wall.cpp
-				src/action/movement/movement_forward.cpp
-				src/action/movement/movement_go_charger.cpp
-				src/action/movement/movement_self_check.cpp
-				src/action/movement/movement_turn.cpp
+	src/action/action.cpp
+	src/action/action_open_gyro.cpp
+	src/action/action_back_from_charger.cpp
 
-				src/clean_mode/clean_mode.cpp
-				src/clean_mode/exploration.cpp
-				src/clean_mode/navigation_clean.cpp
-				src/clean_mode/spot_clean.cpp
-				src/clean_mode/wall_follow_clean.cpp
+	src/action/movement/movement.cpp
+	src/action/movement/movement_back.cpp
+	src/action/movement/movement_fall_wall.cpp
+	src/action/movement/movement_forward.cpp
+	src/action/movement/movement_go_charger.cpp
+	src/action/movement/movement_self_check.cpp
+	src/action/movement/movement_turn.cpp
 
-		src/path_algorithm/path_algorithm.cpp
+	src/clean_mode/clean_mode.cpp
+	src/clean_mode/exploration.cpp
+	src/clean_mode/navigation_clean.cpp
+	src/clean_mode/spot_clean.cpp
+	src/clean_mode/wall_follow_clean.cpp
+
 	src/error.cpp
 	src/event_manager.cpp
 	src/idle.cpp
