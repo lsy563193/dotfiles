@@ -269,7 +269,7 @@ public:
 
 	bool isFrontBlockBoundary(int dx);
 
-	void generateSPMAP(const Cell_t &curr, std::deque<PPTargetType> &g_paths);
+	void generateSPMAP(const Cell_t &curr, PPTargetType &target_list);
 /*
  * Function to find the X/Y range of the Map or wfMap, if the range is to small,
  * use the offset of those value to 3.

@@ -1284,7 +1284,7 @@ uint8_t CostMap::isBlockBlockedXAxis(int16_t curr_x, int16_t curr_y)
 	return retval;
 }
 
-void CostMap::generateSPMAP(const Cell_t &curr, std::deque<PPTargetType> &g_paths)
+void CostMap::generateSPMAP(const Cell_t &curr, PPTargetType &target_list)
 {
 	bool		all_set;
 	int16_t		x, y, offset, passValue, nextPassValue, passSet, x_min, x_max, y_min, y_max;
@@ -1351,8 +1351,8 @@ void CostMap::generateSPMAP(const Cell_t &curr, std::deque<PPTargetType> &g_path
 		}
 
 		all_set = true;
-		for (auto it = g_paths.begin(); it != g_paths.end(); ++it) {
-			if (getCell(SPMAP, it->front().X, it->front().Y) == COST_NO) {
+		for (auto it = target_list.begin(); it != target_list.end(); ++it) {
+			if (getCell(SPMAP, it->X, it->Y) == COST_NO) {
 				all_set = false;
 			}
 		}
