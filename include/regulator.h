@@ -251,6 +251,7 @@ public:
 	bool shouldMoveBack();
 	void adjustSpeed(int32_t&, int32_t&);
 	void setTarget();
+	void setBaseSpeed();
 	std::string getName()
 	{
 		std::string name = "ForwardMovement";

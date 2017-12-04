@@ -216,8 +216,7 @@ bool NavigationClean::isSwitch()
 	{
 		if (mt.is_linear()) // Escape path is a closure or escape path is isolate, need to go straight to another wall.
 		{
-			if (isTurn())
-			{
+			if (isTurn()) {
 				if (turn_reg_->isReach())
 					p_reg_ = mt_reg_;
 				else if (turn_reg_->shouldMoveBack())
@@ -341,6 +340,8 @@ bool NavigationClean::isSwitch()
 
 	if (old_p_reg_ != p_reg_)
 	{
+		if(p_reg_ == mt_reg_ && mt_reg_ == line_reg_)
+			line_reg_->setBaseSpeed();
 		ROS_INFO("%s %d: Switch from %s to %s.", __FUNCTION__, __LINE__, (old_p_reg_->getName()).c_str(), (p_reg_->getName()).c_str());
 		setTarget();
 		return true;

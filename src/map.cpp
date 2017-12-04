@@ -173,8 +173,8 @@ CellState CostMap::getCell(int id, int16_t x, int16_t y) {
 /*
  * CostMap::set_cell description
  * @param id		Map id
- * @param x		 Count x
- * @param y		 Count y
+ * @param x		 For MAP it is count x, for SPMAP it is cell x.
+ * @param y		 For MAP it is count y, for SPMAP it is cell y.
  * @param value CellState
  */
 void CostMap::setCell(uint8_t id, int32_t x, int32_t y, CellState value) {
@@ -1184,15 +1184,15 @@ uint8_t CostMap::isBlockedByBumper(int16_t x, int16_t y)
 	return retval;
 }
 
-uint8_t CostMap::isBlockAccessible(int16_t x, int16_t y)
+bool CostMap::isCellAccessible(int16_t x, int16_t y)
 {
-	uint8_t retval = 1;
+	bool retval = true;
 	int16_t i, j;
 
 	for (i = ROBOT_RIGHT_OFFSET; retval == 1 && i <= ROBOT_LEFT_OFFSET; i++) {
 		for (j = ROBOT_RIGHT_OFFSET; retval == 1 && j <= ROBOT_LEFT_OFFSET; j++) {
 			if (isABlock(x + i, y + j) == 1) {
-				retval = 0;
+				retval = false;
 			}
 		}
 	}
@@ -1284,7 +1284,7 @@ uint8_t CostMap::isBlockBlockedXAxis(int16_t curr_x, int16_t curr_y)
 	return retval;
 }
 
-void CostMap::generateSPMAP(const Cell_t &curr, std::deque<PPTargetType> &g_paths)
+void CostMap::generateSPMAP(const Cell_t &curr, PPTargetType &target_list)
 {
 	bool		all_set;
 	int16_t		x, y, offset, passValue, nextPassValue, passSet, x_min, x_max, y_min, y_max;
@@ -1351,8 +1351,8 @@ void CostMap::generateSPMAP(const Cell_t &curr, std::deque<PPTargetType> &g_path
 		}
 
 		all_set = true;
-		for (auto it = g_paths.begin(); it != g_paths.end(); ++it) {
-			if (getCell(SPMAP, it->front().X, it->front().Y) == COST_NO) {
+		for (auto it = target_list.begin(); it != target_list.end(); ++it) {
+			if (getCell(SPMAP, it->X, it->Y) == COST_NO) {
 				all_set = false;
 			}
 		}

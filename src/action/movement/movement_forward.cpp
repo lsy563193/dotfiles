@@ -169,6 +169,11 @@ void ForwardMovement::setTarget()
 //	path_ = g_plan_path;
 }
 
+void ForwardMovement::setBaseSpeed()
+{
+	base_speed_ = LINEAR_MIN_SPEED;
+}
+
 void ForwardMovement::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 {
 //	ROS_WARN("%s,%d: g_path_size(%d)",__FUNCTION__, __LINE__,g_plan_path.size());
