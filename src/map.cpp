@@ -1184,15 +1184,15 @@ uint8_t CostMap::isBlockedByBumper(int16_t x, int16_t y)
 	return retval;
 }
 
-uint8_t CostMap::isBlockAccessible(int16_t x, int16_t y)
+bool CostMap::isCellAccessible(int16_t x, int16_t y)
 {
-	uint8_t retval = 1;
+	bool retval = true;
 	int16_t i, j;
 
 	for (i = ROBOT_RIGHT_OFFSET; retval == 1 && i <= ROBOT_LEFT_OFFSET; i++) {
 		for (j = ROBOT_RIGHT_OFFSET; retval == 1 && j <= ROBOT_LEFT_OFFSET; j++) {
 			if (isABlock(x + i, y + j) == 1) {
-				retval = 0;
+				retval = false;
 			}
 		}
 	}

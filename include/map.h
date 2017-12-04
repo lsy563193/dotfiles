@@ -192,7 +192,8 @@ public:
  * @return	0 if the block is not blocked by bumper, obs or cliff
  *		1 if the block is blocked
  */
-	uint8_t isBlockAccessible(int16_t x, int16_t y);
+	bool isCellAccessible(int16_t x, int16_t y);
+
 	uint8_t isBlockBlocked(int16_t x, int16_t y);
 
 	uint8_t isBlockBlockedXAxis(int16_t x, int16_t y);

@@ -338,9 +338,243 @@ void PathAlgorithm::optimizePath(CostMap &map, PathType& path)
 
 }
 
-PathType NavCleanPathAlgorithm::generatePath(CostMap &map, Cell_t &curr_cell)
+bool PathAlgorithm::sortPathsWithTargetYAscend(const PathType a, const PathType b)
 {
-	//Step 1: Find all targets at the edge of cleaned area.
-	BoundingBox2 b_map;
+	return a.back().Y < b.back().Y;
+}
 
+PathType NavCleanPathAlgorithm::generatePath(CostMap &map, const Cell_t &curr_cell, const MapDirection &last_dir)
+{
+	PathType path;
+	path.clear();
+
+	// Copy map to a BoundingBox2 type b_map.
+	BoundingBox2 b_map;
+	auto b_map_temp = map.generateBound();
+
+	for (const auto &cell : b_map_temp) {
+		if (map.getCell(MAP, cell.X, cell.Y) != UNCLEAN)
+			b_map.Add(cell);
+	}
+
+	//Step 1: Find all possible targets at the edge of cleaned area and filter targets in same lane.
+	TargetList filtered_targets = filterAllPossibleTarget(map, curr_cell, b_map);
+
+	//Step 2: Generate the SPMAP for map and filter targets that are unreachable.
+	TargetList reachable_targets = getReachableTargets(map, curr_cell, filtered_targets);
+	ROS_INFO("%s %d: After generating SPMAP, Get %lu reachable targets.", __FUNCTION__, __LINE__, reachable_targets.size());
+	if (reachable_targets.size() != 0)
+		displayTargets(reachable_targets);
+	else
+		// Now path is empty.
+		return path;
+
+	//Step 3: Trace back the path of these targets in SPMAP.
+	PathList paths_for_reachable_targets = tracePathsToTargets(map, reachable_targets, curr_cell);
+
+	//Step 4: Filter paths to get the best target.
+	Cell_t best_target;
+	if (!filterPathsToSelectTarget(map, paths_for_reachable_targets, curr_cell, best_target))
+		// Now path is empty.
+		return path;
+
+	//Step 5: Find shortest path for this best target.
+	PathType shortest_path = findShortestPath(map, curr_cell, best_target, last_dir);
+	if (shortest_path.empty())
+		// Now path is empty.
+		return path;
+
+	//Step 6: Optimize path.
+	optimizePath(map, shortest_path);
+
+	// Congratulation!! path is generated successfully!!
+	path = shortest_path;
+
+	return path;
+}
+
+TargetList NavCleanPathAlgorithm::filterAllPossibleTarget(CostMap &map, const Cell_t &curr_cell, BoundingBox2 &b_map)
+{
+	TargetList possible_target_list{};
+
+	auto b_map_copy = b_map;
+	b_map_copy.pos_ = b_map.min;
+
+	// Check all boundarys between cleaned cells and unclean cells.
+	for (const auto &cell : b_map_copy) {
+		if (map.getCell(MAP, cell.X, cell.Y) != CLEANED /*|| std::abs(cell.Y % 2) == 1*/)
+			continue;
+
+		Cell_t neighbor;
+		for (auto i = 0; i < 4; i++) {
+			neighbor = cell + cell_index[i];
+			if (map.getCell(MAP, neighbor.X, neighbor.Y) == UNCLEAN && map.isCellAccessible(neighbor.X, neighbor.Y))
+				possible_target_list.push_back(neighbor);
+		}
+	}
+
+	std::sort(possible_target_list.begin(),possible_target_list.end(),[](Cell_t l,Cell_t r){
+			return (l.Y < r.Y || (l.Y == r.Y && l.X < r.X));
+	});
+
+	displayTargets(possible_target_list);
+
+	ROS_INFO("%s %d: Filter targets in the same line.", __FUNCTION__, __LINE__);
+	TargetList filtered_targets{};
+	/* Filter the targets. */
+	for(;!possible_target_list.empty();) {
+		auto y = possible_target_list.front().Y;
+		TargetList tmp_list{};
+		std::remove_if(possible_target_list.begin(), possible_target_list.end(), [&y, &tmp_list](Cell_t &it) {
+			if (it.Y == y && (tmp_list.empty() || (it.X - tmp_list.back().X == 1))) {
+				tmp_list.push_back(it);
+				return true;
+			}
+			return false;
+		});
+		possible_target_list.resize(possible_target_list.size() - tmp_list.size());
+		if (tmp_list.size() > 2) {
+			tmp_list.erase(std::remove_if(tmp_list.begin() + 1, tmp_list.end() - 1, [&curr_cell](Cell_t &it) {
+					return it.X != curr_cell.X;
+			}), tmp_list.end() - 1);
+		}
+		for(const auto& it:tmp_list){
+			filtered_targets.push_back(it);
+		};
+	}
+
+	displayTargets(filtered_targets);
+
+	return filtered_targets;
+}
+
+TargetList NavCleanPathAlgorithm::getReachableTargets(CostMap &map, const Cell_t &curr_cell, TargetList &possible_targets)
+{
+	map.generateSPMAP(curr_cell, possible_targets);
+	TargetList reachable_targets{};
+	for (auto it = possible_targets.begin(); it != possible_targets.end();)
+	{
+		CellState it_cost = map.getCell(SPMAP, it->X, it->Y);
+		if (it_cost == COST_NO || it_cost == COST_HIGH)
+			continue;
+		else
+		{
+			reachable_targets.push_back(*it);
+			it++;
+		}
+	}
+	return reachable_targets;
+}
+
+PathList NavCleanPathAlgorithm::tracePathsToTargets(CostMap &map, const TargetList &target_list, const Cell_t& curr_cell)
+{
+	PathList paths{};
+	int16_t trace_cost, x_min, x_max, y_min, y_max;
+	map.getMapRange(SPMAP, &x_min, &x_max, &y_min, &y_max);
+	for (auto& it : target_list) {
+		auto trace = it;
+		PathType path{};
+		//Trace the path for this target 'it'.
+		while (trace != curr_cell) {
+			trace_cost = map.getCell(SPMAP, trace.X, trace.Y) - 1;
+
+			if (trace_cost == 0) {
+				trace_cost = COST_5;
+			}
+
+			path.push_front(trace);
+
+			if ((trace.X - 1 >= x_min) && (map.getCell(SPMAP, trace.X - 1, trace.Y) == trace_cost)) {
+				trace.X--;
+				continue;
+			}
+
+			if ((trace.X + 1 <= x_max) && (map.getCell(SPMAP, trace.X + 1, trace.Y) == trace_cost)) {
+				trace.X++;
+				continue;
+			}
+
+			if ((trace.Y - 1 >= y_min) && (map.getCell(SPMAP, trace.X, trace.Y - 1) == trace_cost)) {
+				trace.Y--;
+				continue;
+			}
+
+			if ((trace.Y + 1 <= y_max) && (map.getCell(SPMAP, trace.X, trace.Y + 1) == trace_cost)) {
+				trace.Y++;
+				continue;
+			}
+		}
+		path.push_front(trace);
+
+		paths.push_back(path);
+	}
+
+	return paths;
+}
+
+bool NavCleanPathAlgorithm::filterPathsToSelectTarget(CostMap &map, const PathList &paths, const Cell_t &curr_cell, Cell_t &best_target)
+{
+	bool match_target_found = false, is_found = false, within_range=false;
+	PathList filtered_paths{};
+	uint16_t final_cost = 1000;
+	ROS_INFO("%s %d: case 1, towards Y+ only", __FUNCTION__, __LINE__);
+	for (auto it = paths.begin(); it != paths.end(); ++it) {
+		if (map.getCell(MAP, it->back().X, it->back().Y - 1) != CLEANED) {
+			// If the Y- cell of the target of this path is not cleaned, don't handle in this case.
+			continue;
+		}
+		if (it->back().Y > curr_cell.Y + 1)
+		{
+			// Filter path with target in Y+ direction of current cell.
+			filtered_paths.push_front(*it);
+		}
+	}
+	// Sort paths with target Y ascend order.
+	std::sort(filtered_paths.begin(), filtered_paths.end(), sortPathsWithTargetYAscend);
+
+	int16_t y_max;
+	for (auto it = filtered_paths.begin(); it != filtered_paths.end(); ++it)
+	{
+		if (match_target_found && best_target.Y < it->back().Y) // No need to find for further targets.
+			break;
+
+		if (it->size() > final_cost)
+			continue;
+
+		y_max = it->back().Y;
+		within_range = true;
+		for (auto i = it->begin(); within_range && i != it->end(); ++i) {
+			if (i->Y < curr_cell.Y)
+				// All turning cells should be in Y+ area, so quit it.
+				within_range = false;
+			if (i->Y > y_max)
+				// Not allow path towards Y- direction.
+				within_range = false;
+			else
+				y_max = i->Y;
+		}
+		if (within_range) {
+			best_target = it->back();
+			final_cost = static_cast<uint16_t>(it->size());
+			match_target_found = true;
+		}
+	}
+
+	if (!match_target_found) {
+		ROS_INFO("%s %d: case 6, fallback to A-start the nearest target, cost: %d(%d)", __FUNCTION__, __LINE__, final_cost, match_target_found);
+		for (auto it = paths.begin(); it != paths.end(); ++it) {
+			if (it->size() < final_cost) {
+				best_target = it->back();
+				final_cost = static_cast<uint16_t>(it->size());
+				match_target_found = true;
+			}
+		}
+	}
+
+	if (match_target_found)
+		ROS_INFO("%s %d: Found best target(%d, %d)", __FUNCTION__, __LINE__, best_target.X, best_target.Y);
+	else
+		ROS_INFO("%s %d: No target selected.", __FUNCTION__, __LINE__);
+
+	return match_target_found;
 }
