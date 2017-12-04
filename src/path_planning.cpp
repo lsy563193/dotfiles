@@ -266,7 +266,7 @@ bool is_axis_access(const Cell_t &start, int i, Cell_t &target)
 			nextPassValue = 1;
 	}
 
-#if DEBUG_SM_MAP
+#if DEBUG_SP_MAP
 //	map.print(SPMAP, 0, 0);
 #endif
 
