@@ -72,15 +72,7 @@ public:
 	void scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr &msg);
 	void scanCompensateCb(const sensor_msgs::LaserScan::ConstPtr &msg);
 	void lidarPointCb(const visualization_msgs::Marker &point_marker);
-	bool isNewScan1()
-	{
-		bool ret = false;
-		if(lidarScanData_linear_.header.seq != seq){
-			seq = lidarScanData_linear_.header.seq;
-			ret = true;
-		}
-		return ret;
-	}
+	bool isNewseq_ScanLinear();
 private:
 	int angle_n_;
 	uint8_t is_scanLinear_ready_;
@@ -112,7 +104,6 @@ private:
 	time_t start_align_time_stamp_;
 	bool align_finish_;
 	float align_angle_;
-	int seq;
 };
 
 bool lidar_is_stuck();

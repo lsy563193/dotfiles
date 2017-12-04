@@ -285,7 +285,7 @@ bool Lidar::findLines(std::vector<LineABC> *lines,bool combine)
 
 	sensor_msgs::LaserScan scan_data;
 	//scanLinear_mutex_.lock();
-	if(isNewScan1()){
+	if(lidarCheckFresh(0.210,1){
 		scan_data = lidarScanData_linear_;
 	}
 	else
@@ -1546,6 +1546,17 @@ uint8_t lidar_is_robot_slip()
 	if(lidar.isScanOriginalReady() && lidar.isRobotSlip()){
 		ROS_INFO("\033[35m""%s,%d,robot slip!!""\033[0m",__FUNCTION__,__LINE__);
 		ret = 1;
+	}
+	return ret;
+}
+
+boo isNew_ScanLinear()
+{
+	bool ret = false;
+	static int req=0;
+	if(lidarScanData_linear_.header.seq != seq){
+		seq = lidarScanData_linear_.header.seq;
+		ret = true;
 	}
 	return ret;
 }
