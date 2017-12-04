@@ -634,7 +634,7 @@ bool Lidar::splitLine(const std::vector<Double_Point> &points, double consec_lim
 			new_line.push_back(points[i]);
 		}
 	}
-	for (std::vector<std::vector<Double_Point> >::iterator iter = Lidar_Group.begin(); iter != Lidar_Group.end();++iter) {
+	for (std::vector<std::vector<Double_Point> >::iterator iter = Lidar_Group.begin(); iter != Lidar_Group.end();){
 		if (iter->size() < points_count_lim) {
 			iter = Lidar_Group.erase(iter);
 		} else {
