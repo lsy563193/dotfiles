@@ -88,9 +88,9 @@ void Lidar::scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr &scan)
 }
 
 void Lidar::scanCompensateCb(const sensor_msgs::LaserScan::ConstPtr &scan){
-	scanLinear_mutex_.lock();
+	scanCompensate_mutex_.lock();
 	lidarScanData_compensate_ = *scan;
-	scanLinear_mutex_.unlock();
+	scanCompensate_mutex_.unlock();
 	setScanCompensateReady(1);
 }
 
@@ -635,7 +635,7 @@ bool Lidar::splitLine(const std::vector<Double_Point> &points, double consec_lim
 			new_line.push_back(points[i]);
 		}
 	}
-	for (std::vector<std::vector<Double_Point> >::iterator iter = Lidar_Group.begin(); iter != Lidar_Group.end();) {
+	for (std::vector<std::vector<Double_Point> >::iterator iter = Lidar_Group.begin(); iter != Lidar_Group.end()) {
 		if (iter->size() < points_count_lim) {
 			iter = Lidar_Group.erase(iter);
 		} else {
@@ -1060,9 +1060,9 @@ uint8_t Lidar::lidarMarker(double X_MAX)
 	const	double Y_MAX = 0.20;//0.279
 	int	count_array[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-	for(std::vector<geometry_msgs::Point>::const_iterator ite = lidarXY_points.begin(); ite != lidarXY_points.end(); ite++){
-		x = ite->x;
-		y = ite->y;
+	for(auto point:lidarXY_points){
+		x = point.x;
+		y = point.y;
 		//front
 		if (x > ROBOT_RADIUS && x < X_MAX) {
 			//middle
@@ -1442,9 +1442,9 @@ double Lidar::getObstacleDistance(uint8_t dir, double range)
 		return 0;
 	}
 
-	for(std::vector<geometry_msgs::Point>::const_iterator ite = lidarXY_points.begin(); ite != lidarXY_points.end(); ite++){
-		x = ite->x;
-		y = ite->y;
+	for(auto point:lidarXY_points){
+		x = point.x;
+		y = point.y;
 		x_to_robot = fabs(x) - ROBOT_RADIUS * sin(acos(fabs(y) / ROBOT_RADIUS));
 		y_to_robot = fabs(y) - ROBOT_RADIUS * sin(acos(fabs(x) / ROBOT_RADIUS));
 		//ROS_INFO("x = %lf, y = %lf", x, y);
