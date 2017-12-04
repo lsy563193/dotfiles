@@ -1224,7 +1224,7 @@ int16_t path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t e
 	if (cost_map.getCell(SPMAP, end_x, end_y) == COST_NO || cost_map.getCell(SPMAP, end_x, end_y) == COST_HIGH) {
 		ROS_WARN("%s, %d: target point (%d, %d) is not reachable(%d), return -2.", __FUNCTION__, __LINE__, end_x, end_y,
 				 cost_map.getCell(SPMAP, end_x, end_y));
-#if	DEBUG_SM_MAP
+#if	DEBUG_SP_MAP
 		cost_map.print(SPMAP, end_x, end_y);
 #endif
 		return -2;
@@ -1410,7 +1410,7 @@ int16_t wf_path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16
 		ROS_INFO("shortest path(%d): endx: %d\tendy: %d\tx: %d - %d\ty: %d - %d\t return: %d\n", __LINE__, endx, endy, x_min, x_max, y_min, y_max, val);
 	}
 
-#if	DEBUG_SM_MAP
+#if	DEBUG_SP_MAP
 	cost_map.print(SPMAP, endx, endy);
 #endif
 	return val;
@@ -1790,7 +1790,7 @@ int16_t wf_path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_
 	if (fw_map.getCell(SPMAP, end_x, end_y) == COST_NO || fw_map.getCell(SPMAP, end_x, end_y) == COST_HIGH) {
 		ROS_WARN("%s, %d: target point (%d, %d) is not reachable(%d), return -2.", __FUNCTION__, __LINE__, end_x, end_y,
 				 fw_map.getCell(SPMAP, end_x, end_y));
-#if	DEBUG_SM_MAP
+#if	DEBUG_SP_MAP
 		cost_map.print(SPMAP, end_x, end_y);
 #endif
 		return -2;

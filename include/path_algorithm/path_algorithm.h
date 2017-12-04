@@ -15,12 +15,49 @@ class PathAlgorithm{
 public:
 	virtual PathType generatePath(CostMap &map, Cell_t &curr_cell) = 0;
 
-	// The target of this function MUST be reachable.
-	PathType findShortestPath(CostMap &map, Cell_t &start, Cell_t &target, MapDirection &last_dir);
+	/*
+	 * @author Patrick Chow
+	 * @last modify by Austin Liu
+	 *
+	 * This function is for checking the shortest and most reasonable path from start cell to target cell.
+	 * The target of this function MUST be reachable. But we will use reverse algorithm to find the path,
+	 * because it will have a better trace back process, the path will be more reasonable than positive
+	 * algorithm.
+	 *
+	 * @param: CostMap map, it will use it's MAP data.(SPMAP data will be rewritten.)
+	 * @param: Cell_t start, the start cell.
+	 * @param: Cell_t target, the target cell.
+	 * @param: MapDirection last_dir, the direction of robot last moving.
+	 *
+	 * @return: PathType path, the shortest path from start cell to target cell.
+	 */
+	PathType findShortestPath(CostMap &map, const Cell_t &start,
+							  const Cell_t &target, const MapDirection &last_dir);
+	/*
+	 * @last modify by Austin Liu
+	 *
+	 * Print the path.
+	 *
+	 * @param: PathType path, the path from start cell to target cell.
+	 */
+	void displayPath(const PathType &path);
 
-	void displayPath(const PathType& path);
+	/*
+	 * @author Patrick Chow
+	 * @last modify by Austin Liu
+	 *
+	 * @param: CostMap map, it will use it's MAP data.
+	 * @param: PathType path, the path from start cell to target cell.
+	 *
+	 * @return: PathType path, an equivalent path of input path which is most far away from the obstacles.
+	 */
+	void optimizePath(CostMap &map, PathType &path);
 
-	// Finding the equivalent path which is most far away from the obstacles.
-	PathType optimizePath(CostMap &map, PathType& path);
+};
+
+class NavCleanPathAlgorithm: public PathAlgorithm{
+public:
+
+	PathType generatePath(CostMap &map, Cell_t &curr_cell);
 };
 #endif //PP_PATH_ALGORITHM_H
