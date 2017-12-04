@@ -72,7 +72,6 @@ public:
 	void scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr &msg);
 	void scanCompensateCb(const sensor_msgs::LaserScan::ConstPtr &msg);
 	void lidarPointCb(const visualization_msgs::Marker &point_marker);
-	bool isNewseq_ScanLinear();
 private:
 	int angle_n_;
 	uint8_t is_scanLinear_ready_;

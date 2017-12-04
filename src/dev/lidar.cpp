@@ -634,7 +634,7 @@ bool Lidar::splitLine(const std::vector<Double_Point> &points, double consec_lim
 			new_line.push_back(points[i]);
 		}
 	}
-	for (std::vector<std::vector<Double_Point> >::iterator iter = Lidar_Group.begin(); iter != Lidar_Group.end()) {
+	for (std::vector<std::vector<Double_Point> >::iterator iter = Lidar_Group.begin(); iter != Lidar_Group.end();++iter) {
 		if (iter->size() < points_count_lim) {
 			iter = Lidar_Group.erase(iter);
 		} else {
@@ -1545,17 +1545,6 @@ uint8_t lidar_is_robot_slip()
 	if(lidar.isScanOriginalReady() && lidar.isRobotSlip()){
 		ROS_INFO("\033[35m""%s,%d,robot slip!!""\033[0m",__FUNCTION__,__LINE__);
 		ret = 1;
-	}
-	return ret;
-}
-
-boo isNew_ScanLinear()
-{
-	bool ret = false;
-	static int seq=0;
-	if(lidarScanData_linear_.header.seq != seq){
-		seq = lidarScanData_linear_.header.seq;
-		ret = true;
 	}
 	return ret;
 }
