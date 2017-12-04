@@ -39,3 +39,11 @@ IAction* CleanModeNav::getNextActionOpenGyro() {
 		return new ActionOpenLidar;
 	}
 }
+
+IAction *CleanModeNav::getNextActionOpenSlam() {
+	sp_state_.reset(new StateCleanNavigation());
+//	sp_state_.reset();
+	return nullptr;
+//	return
+//	return Mode::getNextActionClean();
+}

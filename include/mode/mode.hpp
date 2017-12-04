@@ -33,7 +33,7 @@ public:
 
 protected:
 	boost::shared_ptr<PathAlgorithm> sp_path_algorithm_;
-	static boost::shared_ptr<State> sp_state_;
+	static boost::shared_ptr<StateCleanNavigation> sp_state_;
 };
 
 class CleanModeNav:public ACleanMode{
@@ -42,6 +42,7 @@ public:
 	CleanModeNav();
 	bool updateAction();
 	IAction* getNextActionOpenGyro();
+	IAction* getNextActionOpenSlam();
 };
 
 #endif //PP_MODE_H_H

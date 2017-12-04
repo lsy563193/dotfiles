@@ -7,7 +7,7 @@
 
 boost::shared_ptr<IAction> Mode::sp_action_ = nullptr;
 
-boost::shared_ptr<State> ACleanMode::sp_state_ = nullptr;
+boost::shared_ptr<StateCleanNavigation> ACleanMode::sp_state_ = nullptr;
 
 Mode *Mode::run() {
 	ROS_INFO("%s %d:this(%d)", __FUNCTION__, __LINE__,this);
@@ -79,8 +79,8 @@ IAction *Mode::getNextActionAlign() {
 
 IAction *Mode::getNextActionOpenSlam() {
 	ROS_INFO("%s,%d",__FUNCTION__, __LINE__);
-	IAction::setNext(IAction::ac_align);
-	return new ActionAlign;;
+	IAction::setNext(IAction::ac_null);
+	return nullptr ;
 }
 
 //IAction *Mode::get() {

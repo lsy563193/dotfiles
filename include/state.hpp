@@ -8,4 +8,10 @@ class State {
 
 };
 
+class StateClean {
+
+};
+class StateCleanNavigation {
+
+};
 #endif //PP_STATE_HPP
