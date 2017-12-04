@@ -419,7 +419,7 @@ void CostMap::convertFromSlamMap(float threshold)
 				//ROS_INFO("%s %d: data map: x_min(%d), x_max(%d), y_min(%d), y_max(%d)",
 				//		 __FUNCTION__, __LINE__, data_map_x_min, data_map_x_max, data_map_y_min, data_map_y_max);
 
-				// Get the slam map data index of this range.
+				// Get the slam map data s_index_ of this range.
 				std::vector<int32_t> slam_map_data_index;
 				for (uint32_t i=data_map_x_min; i<=data_map_x_max; i++)
 					for(uint32_t j=data_map_y_min; j<=data_map_y_max; j++)
@@ -432,7 +432,7 @@ void CostMap::convertFromSlamMap(float threshold)
 				//ROS_INFO("%s %d: data_index_size:%d.", __FUNCTION__, __LINE__, size);
 				for(int index = 0; index < size; index++)
 				{
-					//ROS_INFO("slam_map_data index:%d, data:%d", slam_map_data_index[index], slam_map_data[slam_map_data_index[index]]);
+					//ROS_INFO("slam_map_data s_index_:%d, data:%d", slam_map_data_index[s_index_], slam_map_data[slam_map_data_index[s_index_]]);
 					if(slam_map_data[slam_map_data_index[index]] == 100)		block_counter++;
 					else if(slam_map_data[slam_map_data_index[index]] == -1)	unknown_counter++;
 					else if(slam_map_data[slam_map_data_index[index]] == 0)		cleanable_counter++;

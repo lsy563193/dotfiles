@@ -13,7 +13,7 @@
 #include <robot.hpp>
 #include <rcon.h>
 #include <wheel.hpp>
-#include <event_action.h>
+//#include <event_action.h>
 #define WALL_DISTANCE_WHITE_MIN 550
 #define WALL_DISTANCE_WHITE_MAX 625
 #define WALL_DISTANCE_BLACK_MIN 120
@@ -69,7 +69,7 @@ public:
 	virtual void adjustSpeed(int32_t&, int32_t&)=0;
 };
 
-class Movement: public Regulator,EventAction{
+class Movement: public Regulator{
 public:
 	bool isStop();
 	bool isExit();

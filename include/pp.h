@@ -11,7 +11,6 @@
 #include <limits.h>
 
 #include "main.h"
-#include "event_action.h"
 #include "robotbase.h"
 #include "dev.h"
 #include "robot.hpp"
@@ -23,6 +22,8 @@
 #include "shortest_path.h"
 #include "spot.h"
 
+#include "action.hpp"
+#include "mode/mode.hpp"
 #include "movement.h"
 #include <ros/ros.h>
 #include <vector>

@@ -10,6 +10,7 @@
 #include <remote.hpp>
 #include <charger.h>
 #include <clean_mode_new/clean_mode_navigation_new.hpp>
+#include <mode/mode.hpp>
 #include "charge.hpp"
 #include "core_move.h"
 #include "gyro.h"
@@ -52,13 +53,13 @@ void *core_move_thread(void *)
 		speaker.play(SPEAKER_PLEASE_START_CLEANING);
 
 #if NEW_FRAMEWORK
-	CleanModeNew* curr_mode = new NavigationModeNew();
+	Mode* p_mode = new CleanModeNav();
 	while(ros::ok())
 	{
-		CleanModeNew* next_mode = curr_mode->run();
+		auto p_next_mode = p_mode->run();
 		ROS_INFO("%s %d:", __FUNCTION__, __LINE__);
-		delete curr_mode;
-		curr_mode = next_mode;
+		delete p_mode;
+		p_mode = p_next_mode;
 	}
 
 #else

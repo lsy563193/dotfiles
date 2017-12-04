@@ -321,8 +321,8 @@ static uint8_t g_direct_go = 0;
 ///*
 // * Update the levels of the current line segments so far
 // *
-// * @param line_idx	the index of the target line segment in the line list
-// * @param cur_idx	the index of the line segment that the robot currently in
+// * @param line_idx	the s_index_ of the target line segment in the line list
+// * @param cur_idx	the s_index_ of the line segment that the robot currently in
 // *
 // * @return
 // */
@@ -937,8 +937,8 @@ static uint8_t g_direct_go = 0;
 //						 * 		R	| (line segment 2)
 //						 * 			|
 //						 *
-//						 *  As in above, the robot (R) wants to go through Y, in the line segment list, if the index
-//						 *  of segment 1 is I, index of segment 2 is (I + 1), the shortest way to go through Y is
+//						 *  As in above, the robot (R) wants to go through Y, in the line segment list, if the s_index_
+//						 *  of segment 1 is I, s_index_ of segment 2 is (I + 1), the shortest way to go through Y is
 //						 *  segment 2, but not segment 1.
 //						 *
 //						 */
@@ -967,9 +967,9 @@ static uint8_t g_direct_go = 0;
 //							}
 //						}
 //
-//						/* If a better way is found, update the next target index and continue to loop. */
+//						/* If a better way is found, update the next target s_index_ and continue to loop. */
 //						if (found == 1) {
-//							printf("%s %d: found antoher suitable line, index: %d(%d)\n", __FUNCTION__, __LINE__, j, i);
+//							printf("%s %d: found antoher suitable line, s_index_: %d(%d)\n", __FUNCTION__, __LINE__, j, i);
 //							*x_next = x_tmp;
 //							*y_next = pos_line[j].y;
 //							level_next--;

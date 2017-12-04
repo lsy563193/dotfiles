@@ -188,7 +188,7 @@
 /*
  * If defined DISABLE_WALL_ALIGN, robot will disable wall
  * alignment when it starts, otherwise, it when it starts,
- * it will move for a short distance and align the Gyro angle
+ * it will move for a short distance and ac_align the Gyro angle
  * with the wall.
  */
 #define DISABLE_WALL_ALIGN		(1)
@@ -204,7 +204,7 @@
 //#define FIND_WALL_ANGLE_METHOD_1		(1)
 #define FIND_WALL_ANGLE_METHOD_2		(1)
 
-/* 5 meters for finding wall, align the starting angle for Gyro */
+/* 5 meters for finding wall, ac_align the starting angle for Gyro */
 #define MAP_FIND_WALL_DISTANCE		(67 * 4)
 
 /* Escape time set to 9 minutes 540s*/
@@ -476,4 +476,4 @@
 #define MOVE_BACK_FROM_STUB_DIST (500) // in millimeter
 #define SIGMENT_LEN (100)  //in millimeter
 
-#define NEW_FRAMEWORK						(0)
+#define NEW_FRAMEWORK						(1)

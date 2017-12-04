@@ -112,7 +112,7 @@ bool MotionManage::get_align_angle(float &line_angle)
 	}
 	if (line_align_ != start)
 	{
-		ROS_WARN("%s %d: Obstacle detector launch timeout,align fail.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Obstacle detector launch timeout,ac_align fail.", __FUNCTION__, __LINE__);
 		line_angle = 0;
 		return true;
 	}

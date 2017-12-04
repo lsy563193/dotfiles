@@ -429,10 +429,10 @@ bool Lidar::alignFinish()
 
 /*
  * @auther mengshige1988@qq.com
- * @breif get align angle
+ * @breif get ac_align angle
  * @param1 liens vector
- * @param2 align angle
- * @retrun true if found align angle ,alse return false
+ * @param2 ac_align angle
+ * @retrun true if found ac_align angle ,alse return false
  * */
 bool Lidar::getAlignAngle(const std::vector<LineABC> *lines ,float *align_angle)
 {
@@ -703,7 +703,7 @@ bool Lidar::splitLine2nd(std::vector<std::vector<Double_Point> > *groups, double
 				//ROS_INFO("t_tmax > t_lim,end_iterate_flag = %d", end_iterate_flag);
 				int index = std::distance((*groups).begin(), iter);
 				groups_erased_index.push_back(index);
-				//ROS_INFO("push_back erased index = %d",index);
+				//ROS_INFO("push_back erased s_index_ = %d",s_index_);
 				//ROS_INFO("points_size = %d", points_size);
 				for (int j = 0; j < points_size; j++) {
 					new_line.push_back(*(iter->begin() + j));
@@ -750,7 +750,7 @@ bool Lidar::splitLine2nd(std::vector<std::vector<Double_Point> > *groups, double
 	erased_size = groups_erased_index.size();
 	if (!groups_erased_index.empty()) {
 		for (int i = 0; i < erased_size; i++) {
-			ROS_DEBUG("erase the unsplit line! index = %d", i);
+			ROS_DEBUG("erase the unsplit line! s_index_ = %d", i);
 			std::vector<std::vector<Double_Point> >::iterator iter = (*groups).begin() + (groups_erased_index[i] + i);
 			(*groups).erase(iter);
 			ROS_DEBUG("2Lidar_Group.size = %lu", (*groups).size());
@@ -851,7 +851,7 @@ bool Lidar::mergeLine(std::vector<std::vector<Double_Point> > *groups, double t_
 					int index = std::distance((*groups).begin(), iter);
 					merge_index.push_back(index);
 					ROS_DEBUG("5Lidar_Group.size = %lu", (*groups).size());
-					ROS_DEBUG("merge! index = %d and %d", index, (index + 1));
+					ROS_DEBUG("merge! s_index_ = %d and %d", index, (index + 1));
 				}
 			}
 		}

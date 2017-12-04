@@ -3,11 +3,8 @@ project(pp)
 set(CMAKE_CXX_FLAGS "-std=c++11 -fpermissive ${CMAKE_CXX_FLAGS} -Wfatal-errors\ ")
 FILE(GLOB PP_SRC
         include/*
-		include/clean_mode_new/clean_mode_new.hpp
-		include/clean_mode_new/clean_mode_navigation_new.hpp
-		include/action_new/action_new.hpp
-		include/action_new/action_open_gyro_new.hpp
 		include/path_algorithm/path_algorithm.h
+		include/action.hpp
 	src/charge.cpp
 #	src/clean_mode.cpp
 	src/clean_state.cpp
@@ -33,16 +30,20 @@ FILE(GLOB PP_SRC
 	src/dev/lidar.cpp
 
 	#For new framework
-	src/action_new/action_new.cpp
-	src/action_new/action_open_gyro_new.cpp
-	src/clean_mode_new/clean_mode_new.cpp
-	src/clean_mode_new/clean_mode_navigation_new.cpp
+#				src/action/action_new.cpp
+#				src/action/action_open_gyro_new.cpp
+	src/mode/mode.cpp
+	src/mode/clean_mode.cpp
+	src/mode/clean_mode_navigation.cpp
 	src/path_algorithm/path_algorithm.cpp
 	#end
 
 	src/action/action.cpp
 	src/action/action_open_gyro.cpp
 	src/action/action_back_from_charger.cpp
+	src/action/action_open_lidar.cpp
+	src/action/action_align.cpp
+	src/action/action_open_slam.cpp
 
 	src/action/movement/movement.cpp
 	src/action/movement/movement_back.cpp
