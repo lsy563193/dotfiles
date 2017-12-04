@@ -173,8 +173,8 @@ CellState CostMap::getCell(int id, int16_t x, int16_t y) {
 /*
  * CostMap::set_cell description
  * @param id		Map id
- * @param x		 Count x
- * @param y		 Count y
+ * @param x		 For MAP it is count x, for SPMAP it is cell x.
+ * @param y		 For MAP it is count y, for SPMAP it is cell y.
  * @param value CellState
  */
 void CostMap::setCell(uint8_t id, int32_t x, int32_t y, CellState value) {
