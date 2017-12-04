@@ -37,7 +37,6 @@ Lidar::Lidar():angle_n_(0)
 //	scanOriginal_update_time = ros::Time::now().toSec();
 	//last_ranges_ = new float[360];
 	//memset(last_ranges_,0.0,360*sizeof(float));
-	seq = 0;
 }
 
 Lidar::~Lidar()
@@ -285,7 +284,7 @@ bool Lidar::findLines(std::vector<LineABC> *lines,bool combine)
 
 	sensor_msgs::LaserScan scan_data;
 	//scanLinear_mutex_.lock();
-	if(lidarCheckFresh(0.210,1){
+	if(lidarCheckFresh(0.210,1)){
 		scan_data = lidarScanData_linear_;
 	}
 	else
@@ -1553,7 +1552,7 @@ uint8_t lidar_is_robot_slip()
 boo isNew_ScanLinear()
 {
 	bool ret = false;
-	static int req=0;
+	static int seq=0;
 	if(lidarScanData_linear_.header.seq != seq){
 		seq = lidarScanData_linear_.header.seq;
 		ret = true;
