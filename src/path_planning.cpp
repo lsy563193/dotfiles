@@ -472,7 +472,12 @@ bool get_reachable_targets(const Cell_t& curr, BoundingBox2& map)
 {
 	ROS_INFO("%s %d: Start getting reachable targets.", __FUNCTION__, __LINE__);
 	path_find_all_targets(curr, map);
-	cost_map.generateSPMAP(curr, g_paths);
+
+	PPTargetType target_list{};
+	for (auto it = g_paths.begin(); it != g_paths.end(); ++it)
+		target_list.push_back({it->front().X, it->front().Y});
+
+	cost_map.generateSPMAP(curr, target_list);
 	PPTargetType reachable_targets{};
 	for (auto it = g_paths.begin(); it != g_paths.end();) {
 		if (cost_map.getCell(SPMAP, it->back().X, it->back().Y) == COST_NO ||
