@@ -430,7 +430,7 @@ void robot::setCleanMapMarkers(int8_t x, int8_t y, CellState type)
 	clean_map_markers_.colors.push_back(color_);
 }
 
-void robot::pubCleanMapMarkers(CostMap& map, const std::deque<Cell_t>& path, Cell_t* cell_p)
+void robot::pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path, Cell_t* cell_p)
 {
 	// temp_target is valid if only path is not empty.
 	if (path.empty())

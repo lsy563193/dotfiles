@@ -59,10 +59,10 @@ typedef enum {
   MAP_NONE = 0,
 } MapDirection;
 
-class CostMap {
+class GridMap {
 public:
 
-	CostMap();
+	GridMap();
 
 	static bool isPositiveDirection(MapDirection dir);
 
@@ -117,7 +117,7 @@ public:
  */
 	void convertFromSlamMap(float threshold);
 
-	void merge(CostMap source_map, bool add_slam_map_blocks_to_uncleaned = false, bool add_slam_map_blocks_to_cleaned = false,
+	void merge(GridMap source_map, bool add_slam_map_blocks_to_uncleaned = false, bool add_slam_map_blocks_to_cleaned = false,
 						bool add_slam_map_cleanable_area = false, bool clear_map_blocks = false, bool clear_slam_map_blocks = false);
 
 	void slamMapToWorld(double origin_x_, double origin_y_, float resolution_, int16_t slam_map_x,
@@ -314,11 +314,11 @@ private:
 
 };
 
-extern CostMap cost_map;
+extern GridMap cost_map;
 /*wf_map is to record the wall follow path to caculate the isolate islands*/
-extern CostMap fw_map;
-extern CostMap exploration_map;
-extern CostMap slam_cost_map;
-extern CostMap decrease_map;
+extern GridMap fw_map;
+extern GridMap exploration_map;
+extern GridMap slam_cost_map;
+extern GridMap decrease_map;
 
 #endif /* __MAP_H */

@@ -5,7 +5,7 @@
 #include "ros/ros.h"
 #include "path_algorithm/path_algorithm.h"
 
-Path_t PathAlgorithm::findShortestPath(CostMap &map, const Cell_t &start,
+Path_t PathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start,
 										 const Cell_t &target, const MapDirection &last_dir)
 {
 	Path_t path_;
@@ -239,7 +239,7 @@ void PathAlgorithm::displayPath(const Path_t& path)
 	ROS_INFO("%s",msg.c_str());
 }
 
-void PathAlgorithm::optimizePath(CostMap &map, Path_t& path)
+void PathAlgorithm::optimizePath(GridMap &map, Path_t& path)
 {
 	// Optimize only if the path have more than 3 cells.
 	if (path.size() > 3) {
@@ -355,7 +355,7 @@ void PathAlgorithm::fillPathWithDirection(Path_t &path)
 			 path.back().X, path.back().Y, path.back().TH, path.front().X, path.front().Y, path.front().TH);
 }
 
-bool PathAlgorithm::findTargetUsingDijkstra(CostMap &map, const Cell_t& curr_cell, Cell_t& target, int& cleaned_count)
+bool PathAlgorithm::findTargetUsingDijkstra(GridMap &map, const Cell_t& curr_cell, Cell_t& target, int& cleaned_count)
 {
 	typedef std::multimap<double, Cell_t> Queue;
 	typedef std::pair<double, Cell_t> Entry;
@@ -417,7 +417,7 @@ bool PathAlgorithm::findTargetUsingDijkstra(CostMap &map, const Cell_t& curr_cel
 	return is_found;
 }
 
-bool PathAlgorithm::checkTrapped(CostMap &map, const Cell_t &curr_cell)
+bool PathAlgorithm::checkTrapped(GridMap &map, const Cell_t &curr_cell)
 {
 	int dijkstra_cleaned_count = 0;
 	PPTargetType path{{0,0,0}};
@@ -440,7 +440,7 @@ bool PathAlgorithm::sortPathsWithTargetYAscend(const Path_t a, const Path_t b)
 	return a.back().Y < b.back().Y;
 }
 
-Path_t NavCleanPathAlgorithm::generatePath(CostMap &map, const Cell_t &curr_cell, const MapDirection &last_dir)
+Path_t NavCleanPathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir)
 {
 	Path_t path;
 	path.clear();
@@ -503,7 +503,7 @@ Path_t NavCleanPathAlgorithm::generatePath(CostMap &map, const Cell_t &curr_cell
 	return path;
 }
 
-Path_t NavCleanPathAlgorithm::findTargetInSameLane(CostMap &map, const Cell_t &curr_cell)
+Path_t NavCleanPathAlgorithm::findTargetInSameLane(GridMap &map, const Cell_t &curr_cell)
 {
 	int8_t is_found = 0;
 	Cell_t it[2]; // it[0] means the furthest cell of X positive direction, it[1] means the furthest cell of X negative direction.
@@ -564,7 +564,7 @@ Path_t NavCleanPathAlgorithm::findTargetInSameLane(CostMap &map, const Cell_t &c
 	return path;
 }
 
-TargetList NavCleanPathAlgorithm::filterAllPossibleTargets(CostMap &map, const Cell_t &curr_cell, BoundingBox2 &b_map)
+TargetList NavCleanPathAlgorithm::filterAllPossibleTargets(GridMap &map, const Cell_t &curr_cell, BoundingBox2 &b_map)
 {
 	TargetList possible_target_list{};
 
@@ -619,7 +619,7 @@ TargetList NavCleanPathAlgorithm::filterAllPossibleTargets(CostMap &map, const C
 	return filtered_targets;
 }
 
-TargetList NavCleanPathAlgorithm::getReachableTargets(CostMap &map, const Cell_t &curr_cell, TargetList &possible_targets)
+TargetList NavCleanPathAlgorithm::getReachableTargets(GridMap &map, const Cell_t &curr_cell, TargetList &possible_targets)
 {
 	map.generateSPMAP(curr_cell, possible_targets);
 	TargetList reachable_targets{};
@@ -637,7 +637,7 @@ TargetList NavCleanPathAlgorithm::getReachableTargets(CostMap &map, const Cell_t
 	return reachable_targets;
 }
 
-PathList NavCleanPathAlgorithm::tracePathsToTargets(CostMap &map, const TargetList &target_list, const Cell_t& start)
+PathList NavCleanPathAlgorithm::tracePathsToTargets(GridMap &map, const TargetList &target_list, const Cell_t& start)
 {
 	PathList paths{};
 	int16_t trace_cost, x_min, x_max, y_min, y_max;
@@ -683,7 +683,7 @@ PathList NavCleanPathAlgorithm::tracePathsToTargets(CostMap &map, const TargetLi
 	return paths;
 }
 
-bool NavCleanPathAlgorithm::filterPathsToSelectTarget(CostMap &map, const PathList &paths, const Cell_t &curr_cell, Cell_t &best_target)
+bool NavCleanPathAlgorithm::filterPathsToSelectTarget(GridMap &map, const PathList &paths, const Cell_t &curr_cell, Cell_t &best_target)
 {
 	bool match_target_found = false, is_found = false, within_range=false;
 	PathList filtered_paths{};

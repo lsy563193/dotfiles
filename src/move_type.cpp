@@ -63,7 +63,7 @@ void MoveType::update(const Cell_t& curr, PPTargetType& path) {
 		if (should_follow_wall(g_old_dir, curr, path))
 		{
 			auto delta_y = path.back().Y - curr.Y;
-			int move_type_tmp = ((CostMap::isPositiveDirection(g_old_dir) && CostMap::isXDirection(g_old_dir)) ^ delta_y > 0) ? MT_FOLLOW_LEFT_WALL : MT_FOLLOW_RIGHT_WALL;
+			int move_type_tmp = ((GridMap::isPositiveDirection(g_old_dir) && GridMap::isXDirection(g_old_dir)) ^ delta_y > 0) ? MT_FOLLOW_LEFT_WALL : MT_FOLLOW_RIGHT_WALL;
 			set(move_type_tmp);
 			ROS_INFO("\033[31m""%s,%d: target:, 1_left_2_right(%d)""\033[0m", __FUNCTION__, __LINE__, get());
 		}
@@ -77,7 +77,7 @@ bool MoveType::should_follow_wall(const MapDirection dir, const Cell_t& curr, PP
 	ROS_INFO("%s,%d: path size(%u), dir(%d), g_check_path_in_advance(%d), bumper(%d), cliff(%d), lidar(%d), delta_y(%d)",
 			 __FUNCTION__, __LINE__, path.size(), dir, g_check_path_in_advance, ev.bumper_triggered, ev.cliff_triggered, ev.lidar_triggered, delta_y);
 
-	if (!CostMap::isXDirection(dir) // If last movement is not x axis linear movement, should not follow wall.
+	if (!GridMap::isXDirection(dir) // If last movement is not x axis linear movement, should not follow wall.
 		|| path.size() > 2 || (!g_check_path_in_advance && !ev.bumper_triggered && !ev.cliff_triggered && !ev.lidar_triggered)
 		|| delta_y == 0 || std::abs(delta_y) > 2)
 		ret = false;
