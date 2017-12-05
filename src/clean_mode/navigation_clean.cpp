@@ -5,8 +5,8 @@
 //NavigationClean
 NavigationClean::NavigationClean(const Cell_t& curr, const Cell_t& target_cell, const PPTargetType& path) {
 	g_plan_path.clear();
-	s_curr_p = {cost_map.getXCount(), cost_map.getYCount()};
-	auto target = cost_map.cellToPoint(target_cell);
+	s_curr_p = {nav_map.getXCount(), nav_map.getYCount()};
+	auto target = nav_map.cellToPoint(target_cell);
 
 	back_reg_ = new BackMovement();
 	fw_reg_ = new FollowWallMovement(s_curr_p, target);
@@ -353,7 +353,7 @@ bool NavigationClean::isSwitch()
 bool NavigationClean::csm_next(Cell_t &curr)
 {
 	ROS_INFO("%s %d: cs:%d, current(%d %d), g_check_path_in_advance:%d", __FUNCTION__, __LINE__, cs.get(),
-			 cost_map.getXCell(), cost_map.getYCell(), g_check_path_in_advance);
+			 nav_map.getXCell(), nav_map.getYCell(), g_check_path_in_advance);
 //	if (cs.is_clean() && g_check_path_in_advance)
 //	{
 //		printf("\n\033[42m========================Generate path in advance==============================\033[0m\n");
@@ -424,25 +424,25 @@ bool NavigationClean::csm_next(Cell_t &curr)
 void NavigationClean::mark()
 {
 	ROS_INFO("%s, %d: NavigationClean::mark", __FUNCTION__, __LINE__);
-	cost_map.saveBlocks();
+	nav_map.saveBlocks();
 
 //	uint8_t block_count = 0;
-	cost_map.setObs();
-	cost_map.setBumper();
-	cost_map.setCliff();
-	cost_map.setTilt();
-	cost_map.setSlip();
-	cost_map.setLidar();
+	nav_map.setObs();
+	nav_map.setBumper();
+	nav_map.setCliff();
+	nav_map.setTilt();
+	nav_map.setSlip();
+	nav_map.setLidar();
 
 	if(mt.is_follow_wall())
-		cost_map.setFollowWall();
+		nav_map.setFollowWall();
 	if(cs.is_trapped())
 		fw_map.setFollowWall();
 
-	cost_map.setCleaned(g_passed_path);
-	cost_map.markRobot(MAP);
-	cost_map.setRcon();
-//	cost_map.print(MAP,0,0);
+	nav_map.setCleaned(g_passed_path);
+	nav_map.markRobot(CLEAN_MAP);
+	nav_map.setRcon();
+//	nav_map.print(CLEAN_MAP,0,0);
 }
 
 Cell_t NavigationClean::updatePosition(const Point32_t &curr_point)

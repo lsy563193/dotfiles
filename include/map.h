@@ -9,8 +9,8 @@
 #include <boost/thread/mutex.hpp>
 #include "slam_map.hpp"
 
-#define MAP 0
-#define SPMAP 1
+#define CLEAN_MAP 0
+#define COST_MAP 1
 
 #define BLOCK_LEFT				((uint8_t) 0x01)
 #define BLOCK_RIGHT			((uint8_t) 0x02)
@@ -20,7 +20,7 @@
 typedef std::deque<Cell_t> PPTargetType;
 
 typedef enum {
-	// The sequence of MAP value must be UNCLEAN < CLEANED < MAP_BLOCKED < SLAM_MAP_BLOCKED
+	// The sequence of CLEAN_MAP value must be UNCLEAN < CLEANED < MAP_BLOCKED < SLAM_MAP_BLOCKED
   UNCLEAN  = 0,
   SLAM_MAP_UNKNOWN = 0,
   CLEANED = 1,
@@ -304,8 +304,8 @@ public:
 	void print(uint8_t id, int16_t endx, int16_t endy);
 
 private:
-	uint8_t costmap[MAP_SIZE][(MAP_SIZE + 1) / 2];
-	uint8_t spmap[MAP_SIZE][(MAP_SIZE + 1) / 2];
+	uint8_t clean_map[MAP_SIZE][(MAP_SIZE + 1) / 2];
+	uint8_t cost_map[MAP_SIZE][(MAP_SIZE + 1) / 2];
 
 	int16_t g_x_min, g_x_max, g_y_min, g_y_max;
 	int16_t xRangeMin, xRangeMax, yRangeMin, yRangeMax;
@@ -314,7 +314,7 @@ private:
 
 };
 
-extern GridMap cost_map;
+extern GridMap nav_map;
 /*wf_map is to record the wall follow path to caculate the isolate islands*/
 extern GridMap fw_map;
 extern GridMap exploration_map;

@@ -99,7 +99,7 @@ bool TurnMovement::shouldMoveBack()
 
 void TurnMovement::setTarget()
 {
-	if(cs.is_going_home() && cost_map.pointToCell(s_curr_p) == g_zero_home)
+	if(cs.is_going_home() && nav_map.pointToCell(s_curr_p) == g_zero_home)
 	{
 		s_target_angle = g_home_point.TH;
 	}
