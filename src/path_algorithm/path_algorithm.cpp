@@ -355,6 +355,86 @@ void PathAlgorithm::fillPathWithDirection(PathType &path)
 			 path.back().X, path.back().Y, path.back().TH, path.front().X, path.front().Y, path.front().TH);
 }
 
+bool PathAlgorithm::findTargetUsingDijkstra(CostMap &map, const Cell_t& curr_cell, Cell_t& target, int& cleaned_count)
+{
+	typedef std::multimap<double, Cell_t> Queue;
+	typedef std::pair<double, Cell_t> Entry;
+
+	map.reset(SPMAP);
+	map.setCell(SPMAP, curr_cell.X, curr_cell.Y, COST_1);
+
+	Queue queue;
+	Entry startPoint(0.0, curr_cell);
+	cleaned_count = 1;
+	queue.insert(startPoint);
+	bool is_found = false;
+//	map.print(MAP,curr.X, curr.Y);
+	ROS_INFO("Do full search with weightless Dijkstra-Algorithm\n");
+	while (!queue.empty())
+	{
+//		 Get the nearest next from the queue
+		auto start = queue.begin();
+		auto next = start->second;
+		queue.erase(start);
+
+//		ROS_WARN("adjacent cell(%d,%d)", next.X, next.Y);
+		if (map.getCell(MAP, next.X, next.Y) == UNCLEAN && map.isBlockAccessible(next.X, next.Y))
+		{
+			ROS_WARN("We find the Unclean next(%d,%d)", next.X, next.Y);
+			is_found = true;
+			target = next;
+			break;
+		} else
+		{
+			for (auto it1 = 0; it1 < 4; it1++)
+			{
+				auto neighbor = next + cell_direction_index[it1];
+//				ROS_INFO("g_index[%d],next(%d,%d)", it1, neighbor.X,neighbor.Y);
+				if (map.getCell(SPMAP, neighbor.X, neighbor.Y) != COST_1) {
+//					ROS_INFO("(%d,%d),", neighbor.X, neighbor.Y);
+
+					for (auto it2 = 0; it2 < 9; it2++) {
+						auto neighbor_ = neighbor + cell_direction_index[it2];
+						if (map.getCell(MAP, neighbor_.X, neighbor_.Y) == CLEANED &&
+							map.getCell(SPMAP, neighbor_.X, neighbor_.Y) == COST_NO)
+						{
+							cleaned_count++;
+							map.setCell(SPMAP, neighbor_.X, neighbor_.Y, COST_2);
+//							ROS_INFO("(%d,%d, cleaned_count(%d)),", neighbor_.X, neighbor_.Y, cleaned_count);
+						}
+					}
+
+					if (map.isBlockAccessible(neighbor.X, neighbor.Y)) {
+//						ROS_WARN("add to Queue:(%d,%d)", neighbor.X, neighbor.Y);
+						queue.insert(Entry(0, neighbor));
+						map.setCell(SPMAP, neighbor.X, neighbor.Y, COST_1);
+					}
+				}
+			}
+		}
+	}
+//	cleaned_count = roscost_map.get_cleaned_area(curr);
+	return is_found;
+}
+
+bool PathAlgorithm::checkTrapped(CostMap &map, const Cell_t &curr_cell)
+{
+	int dijkstra_cleaned_count = 0;
+	PPTargetType path{{0,0,0}};
+	Cell_t target;
+	// Check if there is any reachable target.
+	bool is_found = findTargetUsingDijkstra(map, curr_cell, target, dijkstra_cleaned_count);
+	if(is_found)
+		return false;
+
+	// Use clean area proportion to judge if it is trapped.
+	auto map_cleand_count = map.getCleanedArea();
+	double clean_proportion = static_cast<double>(dijkstra_cleaned_count) / static_cast<double>(map_cleand_count);
+	ROS_WARN("%s %d: dijkstra_cleaned_count(%d), map_cleand_count(%d), clean_proportion(%f) ,when prop < 0,8 is trapped",
+			 __FUNCTION__, __LINE__, dijkstra_cleaned_count, map_cleand_count, clean_proportion);
+	return (clean_proportion < 0.8);
+}
+
 bool PathAlgorithm::sortPathsWithTargetYAscend(const PathType a, const PathType b)
 {
 	return a.back().Y < b.back().Y;
@@ -385,7 +465,7 @@ PathType NavCleanPathAlgorithm::generatePath(CostMap &map, const Cell_t &curr_ce
 			b_map.Add(cell);
 	}
 
-	TargetList filtered_targets = filterAllPossibleTarget(map, curr_cell, b_map);
+	TargetList filtered_targets = filterAllPossibleTargets(map, curr_cell, b_map);
 
 	//Step 3: Generate the SPMAP for map and filter targets that are unreachable.
 	TargetList reachable_targets = getReachableTargets(map, curr_cell, filtered_targets);
@@ -484,7 +564,7 @@ PathType NavCleanPathAlgorithm::findTargetInSameLane(CostMap &map, const Cell_t 
 	return path;
 }
 
-TargetList NavCleanPathAlgorithm::filterAllPossibleTarget(CostMap &map, const Cell_t &curr_cell, BoundingBox2 &b_map)
+TargetList NavCleanPathAlgorithm::filterAllPossibleTargets(CostMap &map, const Cell_t &curr_cell, BoundingBox2 &b_map)
 {
 	TargetList possible_target_list{};
 
@@ -499,7 +579,7 @@ TargetList NavCleanPathAlgorithm::filterAllPossibleTarget(CostMap &map, const Ce
 		Cell_t neighbor;
 		for (auto i = 0; i < 4; i++) {
 			neighbor = cell + cell_direction_index[i];
-			if (map.getCell(MAP, neighbor.X, neighbor.Y) == UNCLEAN && map.isCellAccessible(neighbor.X, neighbor.Y))
+			if (map.getCell(MAP, neighbor.X, neighbor.Y) == UNCLEAN && map.isBlockAccessible(neighbor.X, neighbor.Y))
 				possible_target_list.push_back(neighbor);
 		}
 	}
@@ -557,7 +637,7 @@ TargetList NavCleanPathAlgorithm::getReachableTargets(CostMap &map, const Cell_t
 	return reachable_targets;
 }
 
-PathList NavCleanPathAlgorithm::tracePathsToTargets(CostMap &map, const TargetList &target_list, const Cell_t& curr_cell)
+PathList NavCleanPathAlgorithm::tracePathsToTargets(CostMap &map, const TargetList &target_list, const Cell_t& start)
 {
 	PathList paths{};
 	int16_t trace_cost, x_min, x_max, y_min, y_max;
@@ -566,7 +646,7 @@ PathList NavCleanPathAlgorithm::tracePathsToTargets(CostMap &map, const TargetLi
 		auto trace = it;
 		PathType path{};
 		//Trace the path for this target 'it'.
-		while (trace != curr_cell) {
+		while (trace != start) {
 			trace_cost = map.getCell(SPMAP, trace.X, trace.Y) - 1;
 
 			if (trace_cost == 0) {
@@ -669,3 +749,4 @@ bool NavCleanPathAlgorithm::filterPathsToSelectTarget(CostMap &map, const PathLi
 
 	return match_target_found;
 }
+

@@ -135,7 +135,7 @@ bool FollowWallMovement::shouldTurn()
 
 bool FollowWallMovement::isBlockCleared()
 {
-	if (!cost_map.isCellAccessible(cost_map.getXCell(), cost_map.getYCell())) // Robot has step on blocks.
+	if (!cost_map.isBlockAccessible(cost_map.getXCell(), cost_map.getYCell())) // Robot has step on blocks.
 	{
 		ROS_WARN("%s %d: Lidar triggered, g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
 		return true;
@@ -158,7 +158,7 @@ bool FollowWallMovement::isOverOriginLine()
 					 __FUNCTION__, __LINE__, s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y, robot::instance()->getPoseAngle(), target_angle);
 			return true;
 		}
-		else if (cost_map.isBlockCleanedUnblock(curr.X, curr.Y)) // If robot covers a big block, stop.
+		else if (cost_map.isBlockCleaned(curr.X, curr.Y)) // If robot covers a big block, stop.
 		{
 			ROS_WARN("%s %d: Back to cleaned place, current(%d, %d), s_curr_p(%d, %d), s_target_p(%d, %d).",
 					 __FUNCTION__, __LINE__, curr.X, curr.Y, s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y);

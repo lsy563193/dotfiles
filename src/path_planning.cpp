@@ -192,7 +192,7 @@ bool is_axis_access(const Cell_t &start, int i, Cell_t &target)
 	for (auto tmp = start; std::abs(tmp.X) < MAP_SIZE && std::abs(tmp.Y) < MAP_SIZE && std::abs(tmp.Y- start.Y)  <=1; tmp += g_index[i]) {
 //		ROS_INFO("%s, %d:tmp(%d,%d)", __FUNCTION__, __LINE__, tmp.X, tmp.Y);
 		if(cost_map.isBlockCleanable(tmp.X, tmp.Y) ) {
-			if ((i == 0 || i == 1) || cost_map.isCellAccessible(tmp.X, tmp.Y)) {
+			if ((i == 0 || i == 1) || cost_map.isBlockAccessible(tmp.X, tmp.Y)) {
 				is_found = true;
 				target = tmp;
 				if (i == 2 || i == 3)
@@ -416,7 +416,7 @@ void path_find_all_targets(const Cell_t& curr, BoundingBox2& map) {
 		for (auto i = 0; i < 4; i++) {
 			neighbor = cell + g_index[i];
 			if (cost_map.getCell(MAP, neighbor.X, neighbor.Y) == UNCLEAN) {
-				if (cost_map.isCellAccessible(neighbor.X, neighbor.Y)/* &&
+				if (cost_map.isBlockAccessible(neighbor.X, neighbor.Y)/* &&
 						cost_map.getCell(SPMAP, neighbor.X, neighbor.Y) == UNCLEAN*/) {
 //					cost_map.setCell(SPMAP, neighbor.X, neighbor.Y, CLEANED);
 					cells.push_back(neighbor);
@@ -835,7 +835,7 @@ bool wf_is_isolate() {
 			val = wf_path_find_shortest_path(curr.X, curr.Y, out_cell.X, out_cell.Y, 0);
 			val = (val < 0 || val == SCHAR_MAX) ? 0 : 1;
 	} else {
-		if (!cost_map.isCellAccessible(0, 0)) {
+		if (!cost_map.isBlockAccessible(0, 0)) {
 			val = wf_path_find_shortest_path(curr.X, curr.Y, 0, 0, 0);
 			if (val < 0 || val == SCHAR_MAX) {
 				/* Robot start position is blocked. */
@@ -1299,7 +1299,7 @@ bool path_get_continue_target(const Cell_t& curr, PPTargetType& path)
 		return true;
 	}
 
-	if (!cost_map.isCellAccessible(g_continue_cell.X, g_continue_cell.Y)) {
+	if (!cost_map.isBlockAccessible(g_continue_cell.X, g_continue_cell.Y)) {
 		ROS_WARN("%s %d: target(%d, %d) is blocked, unblock the target.\n", __FUNCTION__, __LINE__, g_continue_cell.X, g_continue_cell.Y);
 		cost_map.setCells(ROBOT_SIZE, g_continue_cell.X, g_continue_cell.Y, CLEANED);
 	}
@@ -1402,7 +1402,7 @@ bool path_dijkstra(const Cell_t& curr, Cell_t& target,int& cleaned_count)
 		queue.erase(start);
 
 //		ROS_WARN("adjacent cell(%d,%d)", next.X, next.Y);
-		if (cost_map.getCell(MAP, next.X, next.Y) == UNCLEAN && !cost_map.isBlockCleanedUnblock(next.X, next.Y))
+		if (cost_map.getCell(MAP, next.X, next.Y) == UNCLEAN && !cost_map.isBlockCleaned(next.X, next.Y))
 		{
 			ROS_WARN("We find the Unclean next(%d,%d)", next.X, next.Y);
 			is_found = true;
@@ -1427,7 +1427,7 @@ bool path_dijkstra(const Cell_t& curr, Cell_t& target,int& cleaned_count)
 						}
 					}
 
-					if (cost_map.isCellAccessible(neighbor.X, neighbor.Y)) {
+					if (cost_map.isBlockAccessible(neighbor.X, neighbor.Y)) {
 //					ROS_WARN("add to Queue:(%d,%d)", neighbor.X, neighbor.Y);
 						queue.insert(Entry(0, neighbor));
 						cost_map.setCell(SPMAP, neighbor.X, neighbor.Y, COST_1);

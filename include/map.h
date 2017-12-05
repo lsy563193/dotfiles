@@ -192,7 +192,7 @@ public:
  * @return	0 if the block is not blocked by bumper, obs or cliff
  *		1 if the block is blocked
  */
-	bool isCellAccessible(int16_t x, int16_t y);
+	bool isBlockAccessible(int16_t x, int16_t y);
 
 	uint8_t isBlocksAtY(int16_t x, int16_t y);
 
@@ -232,7 +232,7 @@ public:
  * @return	0 if the block is not cleaned
  *		1 if the block is cleaned
  */
-	int8_t isBlockCleanedUnblock(int16_t x, int16_t y);
+	int8_t isBlockCleaned(int16_t x, int16_t y);
 
 /*
  * Check a block is cleanable or not, a block is defined as have the same size of brush.

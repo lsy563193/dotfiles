@@ -1138,10 +1138,10 @@ Cell_t CostMap::updatePosition()
 uint32_t CostMap::getCleanedArea(void)
 {
 	uint32_t cleaned_count = 0;
-//	ROS_INFO("g_x_min= %d, g_x_max = %d",g_x_min,g_x_max);
-//	ROS_INFO("g_y_min= %d, g_y_max = %d",g_y_min,g_y_max);
-	for (int i = g_x_min; i <= g_x_max; ++i) {
-		for (int j = g_y_min; j <= g_y_max; ++j) {
+	int16_t map_x_min, map_y_min, map_x_max, map_y_max;
+	getMapRange(MAP, &map_x_min, &map_x_max, &map_y_min, &map_y_max);
+	for (int16_t i = map_x_min; i <= map_x_max; ++i) {
+		for (int16_t j = map_y_min; j <= map_y_max; ++j) {
 			if (getCell(MAP, i, j) == CLEANED) {
 				cleaned_count++;
 			}
@@ -1184,7 +1184,7 @@ uint8_t CostMap::isBlockedByBumper(int16_t x, int16_t y)
 	return retval;
 }
 
-bool CostMap::isCellAccessible(int16_t x, int16_t y)
+bool CostMap::isBlockAccessible(int16_t x, int16_t y)
 {
 	bool retval = true;
 	int16_t i, j;
@@ -1207,7 +1207,7 @@ bool CostMap::isBlockCleanable(int16_t x, int16_t y)
 	return retval;
 }
 
-int8_t CostMap::isBlockCleanedUnblock(int16_t x, int16_t y)
+int8_t CostMap::isBlockCleaned(int16_t x, int16_t y)
 {
 	uint8_t cleaned = 0;
 	int16_t i, j;
@@ -1217,14 +1217,12 @@ int8_t CostMap::isBlockCleanedUnblock(int16_t x, int16_t y)
 			auto state = getCell(MAP, x + i, y + j);
 			if (state == CLEANED) {
 				cleaned ++;
-			} else if(isBlocksAtY(x, y))
+			} else if(isABlock(x, y))
 				return false;
 		}
 	}
 
-	if (cleaned >= 7)
-		return true;
-	return false;
+	return cleaned >= 7;
 }
 
 uint8_t CostMap::isUncleanAtY(int16_t x, int16_t y)
