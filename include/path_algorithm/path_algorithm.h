@@ -221,7 +221,7 @@ typedef enum {
 class NavGoHomePathAlgorithm: public PathAlgorithm
 {
 public:
-		/*
+	/*
 	 * @author Lin Shao Yue / Austin Liu
 	 * @last modify by Austin Liu
 	 *
