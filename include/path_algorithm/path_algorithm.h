@@ -9,14 +9,14 @@
 #include <deque>
 #include <map.h>
 
-typedef std::deque<Cell_t> PathType;
+typedef std::deque<Cell_t> Path_t;
 typedef std::deque<Cell_t> TargetList;
-typedef std::deque<PathType> PathList;
+typedef std::deque<Path_t> PathList;
 
 
 class PathAlgorithm{
 public:
-	virtual PathType generatePath(CostMap &map, const Cell_t &curr_cell, const MapDirection &last_dir) = 0;
+	virtual Path_t generatePath(CostMap &map, const Cell_t &curr_cell, const MapDirection &last_dir) = 0;
 
 	/*
 	 * @author Patrick Chow
@@ -32,18 +32,18 @@ public:
 	 * @param: Cell_t target, the target cell.
 	 * @param: MapDirection last_dir, the direction of robot last moving.
 	 *
-	 * @return: PathType path, the shortest path from start cell to target cell.
+	 * @return: Path_t path, the shortest path from start cell to target cell.
 	 */
-	PathType findShortestPath(CostMap &map, const Cell_t &start,
+	Path_t findShortestPath(CostMap &map, const Cell_t &start,
 							  const Cell_t &target, const MapDirection &last_dir);
 	/*
 	 * @last modify by Austin Liu
 	 *
 	 * Print the path.
 	 *
-	 * @param: PathType path, the path from start cell to target cell.
+	 * @param: Path_t path, the path from start cell to target cell.
 	 */
-	void displayPath(const PathType &path);
+	void displayPath(const Path_t &path);
 
 	/*
 	 * @last modify by Austin Liu
@@ -62,11 +62,11 @@ public:
 	 * still the same.
 	 *
 	 * @param: CostMap map, it will use it's MAP data.
-	 * @param: PathType path, the path from start cell to target cell.
+	 * @param: Path_t path, the path from start cell to target cell.
 	 *
-	 * @return: PathType path, an equivalent path of input path which is most far away from the obstacles.
+	 * @return: Path_t path, an equivalent path of input path which is most far away from the obstacles.
 	 */
-	void optimizePath(CostMap &map, PathType &path);
+	void optimizePath(CostMap &map, Path_t &path);
 
 	/*
 	 * @author Lin Shao Yue
@@ -75,11 +75,11 @@ public:
 	 * This function is for filling the path' cells with the direction towards next cell, the last one's
 	 * direction is the same as its previous one.
 	 *
-	 * @param: PathType path, the path from start cell to target cell.
+	 * @param: Path_t path, the path from start cell to target cell.
 	 *
-	 * @return: PathType path, the path from start cell to target cell with direction.
+	 * @return: Path_t path, the path from start cell to target cell with direction.
 	 */
-	void fillPathWithDirection(PathType &path);
+	void fillPathWithDirection(Path_t &path);
 
 	/*
 	 * @author Lin Shao Yue
@@ -115,7 +115,7 @@ public:
 	/*
 	 * Sorting function, for sorting paths with their targets by Y+ ascending sequence.
 	 */
-	static bool sortPathsWithTargetYAscend(const PathType a, const PathType b);
+	static bool sortPathsWithTargetYAscend(const Path_t a, const Path_t b);
 
 protected:
 	Cell_t cell_direction_index[9]={{1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1},{0,0}};
@@ -124,7 +124,7 @@ protected:
 class NavCleanPathAlgorithm: public PathAlgorithm{
 public:
 
-	PathType generatePath(CostMap &map, const Cell_t &curr_cell, const MapDirection &last_dir);
+	Path_t generatePath(CostMap &map, const Cell_t &curr_cell, const MapDirection &last_dir);
 
 private:
 	/*
@@ -136,9 +136,9 @@ private:
 	 * @param: CostMap map, it will use it's MAP data.
 	 * @param: Cell_t curr_cell, the current cell of robot.
 	 *
-	 * @return: PathType path, the path to unclean area in the same lane.
+	 * @return: Path_t path, the path to unclean area in the same lane.
 	 */
-	PathType findTargetInSameLane(CostMap &map, const Cell_t &curr_cell);
+	Path_t findTargetInSameLane(CostMap &map, const Cell_t &curr_cell);
 
 	/*
 	 * @author Lin Shao Yue

@@ -5,10 +5,10 @@
 #include "ros/ros.h"
 #include "path_algorithm/path_algorithm.h"
 
-PathType PathAlgorithm::findShortestPath(CostMap &map, const Cell_t &start,
+Path_t PathAlgorithm::findShortestPath(CostMap &map, const Cell_t &start,
 										 const Cell_t &target, const MapDirection &last_dir)
 {
-	PathType path_;
+	Path_t path_;
 	path_.clear();
 
 	// Get the map range.
@@ -227,7 +227,7 @@ PathType PathAlgorithm::findShortestPath(CostMap &map, const Cell_t &start,
 	return path_;
 }
 
-void PathAlgorithm::displayPath(const PathType& path)
+void PathAlgorithm::displayPath(const Path_t& path)
 {
 	std::string     msg = __FUNCTION__;
 
@@ -239,7 +239,7 @@ void PathAlgorithm::displayPath(const PathType& path)
 	ROS_INFO("%s",msg.c_str());
 }
 
-void PathAlgorithm::optimizePath(CostMap &map, PathType& path)
+void PathAlgorithm::optimizePath(CostMap &map, Path_t& path)
 {
 	// Optimize only if the path have more than 3 cells.
 	if (path.size() > 3) {
@@ -339,7 +339,7 @@ void PathAlgorithm::optimizePath(CostMap &map, PathType& path)
 
 }
 
-void PathAlgorithm::fillPathWithDirection(PathType &path)
+void PathAlgorithm::fillPathWithDirection(Path_t &path)
 {
 	for(auto it = path.begin(); it < path.end(); ++it) {
 		auto it_next = it+1;
@@ -435,14 +435,14 @@ bool PathAlgorithm::checkTrapped(CostMap &map, const Cell_t &curr_cell)
 	return (clean_proportion < 0.8);
 }
 
-bool PathAlgorithm::sortPathsWithTargetYAscend(const PathType a, const PathType b)
+bool PathAlgorithm::sortPathsWithTargetYAscend(const Path_t a, const Path_t b)
 {
 	return a.back().Y < b.back().Y;
 }
 
-PathType NavCleanPathAlgorithm::generatePath(CostMap &map, const Cell_t &curr_cell, const MapDirection &last_dir)
+Path_t NavCleanPathAlgorithm::generatePath(CostMap &map, const Cell_t &curr_cell, const MapDirection &last_dir)
 {
-	PathType path;
+	Path_t path;
 	path.clear();
 
 	//Step 1: Find possible targets in same lane.
@@ -486,7 +486,7 @@ PathType NavCleanPathAlgorithm::generatePath(CostMap &map, const Cell_t &curr_ce
 		return path;
 
 	//Step 6: Find shortest path for this best target.
-	PathType shortest_path = findShortestPath(map, curr_cell, best_target, last_dir);
+	Path_t shortest_path = findShortestPath(map, curr_cell, best_target, last_dir);
 	if (shortest_path.empty())
 		// Now path is empty.
 		return path;
@@ -503,7 +503,7 @@ PathType NavCleanPathAlgorithm::generatePath(CostMap &map, const Cell_t &curr_ce
 	return path;
 }
 
-PathType NavCleanPathAlgorithm::findTargetInSameLane(CostMap &map, const Cell_t &curr_cell)
+Path_t NavCleanPathAlgorithm::findTargetInSameLane(CostMap &map, const Cell_t &curr_cell)
 {
 	int8_t is_found = 0;
 	Cell_t it[2]; // it[0] means the furthest cell of X positive direction, it[1] means the furthest cell of X negative direction.
@@ -551,7 +551,7 @@ PathType NavCleanPathAlgorithm::findTargetInSameLane(CostMap &map, const Cell_t 
 //		}
 	}
 
-	PathType path{};
+	Path_t path{};
 	if (is_found)
 	{
 		path.push_front(target);
@@ -644,7 +644,7 @@ PathList NavCleanPathAlgorithm::tracePathsToTargets(CostMap &map, const TargetLi
 	map.getMapRange(SPMAP, &x_min, &x_max, &y_min, &y_max);
 	for (auto& it : target_list) {
 		auto trace = it;
-		PathType path{};
+		Path_t path{};
 		//Trace the path for this target 'it'.
 		while (trace != start) {
 			trace_cost = map.getCell(SPMAP, trace.X, trace.Y) - 1;
