@@ -56,7 +56,7 @@ void CleanMode::run()
 			continue;
 		}
 
-		auto curr = updatePosition({cost_map.getXCount(), cost_map.getYCount()});
+		auto curr = updatePosition({nav_map.getXCount(), nav_map.getYCount()});
 
 		if (isReach() || isStop())
 		{
@@ -69,7 +69,7 @@ void CleanMode::run()
 		}
 
 		if (isSwitch()) {
-			cost_map.saveBlocks();
+			nav_map.saveBlocks();
 		}
 
 		int32_t left_speed = 0, right_speed = 0;
@@ -92,10 +92,10 @@ bool CleanMode::isExit(){
 
 void CleanMode::setMt()
 {
-	s_origin_p = {cost_map.getXCount(), cost_map.getYCount()};
+	s_origin_p = {nav_map.getXCount(), nav_map.getYCount()};
 	if(mt.is_follow_wall())
 	{
-		s_target_p = cost_map.cellToPoint(g_plan_path.back());
+		s_target_p = nav_map.cellToPoint(g_plan_path.back());
 		mt_reg_ = fw_reg_;
 		if(cm_is_follow_wall()) {
 			ROS_INFO("%s %d: obs(\033[32m%d\033[0m), rcon(\033[32m%d\033[0m), bum(\033[32m%d\033[0m), cliff(\033[32m%d\033[0m), tilt(\033[32m%d\033[0m),slip(\033[32m%d\033[0m)",
@@ -128,7 +128,7 @@ void CleanMode::setMt()
 	}else if(mt.is_linear())
 	{
 		ROS_INFO("%s,%d: mt.is_linear",__FUNCTION__, __LINE__);
-		s_target_p = cost_map.cellToPoint(g_plan_path.front());
+		s_target_p = nav_map.cellToPoint(g_plan_path.front());
 		mt_reg_ = line_reg_;
 		g_turn_angle = ranged_angle(
 					course_to_dest(s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y) - robot::instance()->getPoseAngle());
@@ -163,9 +163,9 @@ bool is_equal_with_angle(const Cell_t &l, const Cell_t &r)
 
 Cell_t CleanMode::updatePosition(const Point32_t &curr_point)
 {
-	cost_map.updatePosition();
+	nav_map.updatePosition();
 		s_curr_p = curr_point;
-		return cost_map.getCurrCell();
+		return nav_map.getCurrCell();
 }
 
 Cell_t CleanMode::updatePath(const Cell_t& curr)
@@ -183,7 +183,7 @@ Cell_t CleanMode::updatePath(const Cell_t& curr)
 			g_passed_path.clear();
 			g_wf_reach_count++;
 		}
-		cost_map.saveBlocks();
+		nav_map.saveBlocks();
 	}
 //	else
 //		is_time_up = !cs.is_trapped();
@@ -193,7 +193,7 @@ Cell_t CleanMode::updatePath(const Cell_t& curr)
 void CleanMode::display()
 {
 	path_display_path_points(g_plan_path);
-	robot::instance()->pubCleanMapMarkers(cost_map, g_plan_path);
+	robot::instance()->pubCleanMapMarkers(nav_map, g_plan_path);
 }
 
 void CleanMode::adjustSpeed(int32_t &left_speed, int32_t &right_speed)

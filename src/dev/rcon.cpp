@@ -236,8 +236,8 @@ uint32_t Rcon::getStatus()
 	const int CHARGE_SIGNAL_RANGES = 20;//IN CELL SIZE
 	uint32_t rcon_value = 0;
 	if(found_charger_){
-		int16_t dist = (int16_t)two_points_distance(charger_pos_.X,charger_pos_.Y, cost_map.getXCell(),
-													cost_map.getYCell());
+		int16_t dist = (int16_t)two_points_distance(charger_pos_.X,charger_pos_.Y, nav_map.getXCell(),
+													nav_map.getYCell());
 		if(dist <= CHARGE_SIGNAL_RANGES){
 			in_rcon_signal_range_ = true;
 		}

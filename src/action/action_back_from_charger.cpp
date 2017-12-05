@@ -7,7 +7,7 @@
 
 ActionBackFromCharger::ActionBackFromCharger()
 {
-	path_set_home(cost_map.getCurrCell());
+	path_set_home(nav_map.getCurrCell());
 
 	vacuum.setMode(Vac_Normal, false);
 	brush.setSidePwm(30, 30);

@@ -15,10 +15,10 @@ Path_t PathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start,
 	int16_t x_min, x_max, y_min, y_max;
 	map.getMapRange(CLEAN_MAP, &x_min, &x_max, &y_min, &y_max);
 
-	// Reset the SPMAP.
-	map.reset(SPMAP);
+	// Reset the COST_MAP.
+	map.reset(COST_MAP);
 
-	// Mark obstacles in SPMAP
+	// Mark obstacles in COST_MAP
 	for (int16_t i = x_min - 1; i <= x_max + 1; ++i) {
 		for (int16_t j = y_min - 1; j <= y_max + 1; ++j) {
 			CellState cs = map.getCell(CLEAN_MAP, i, j);
@@ -26,43 +26,43 @@ Path_t PathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start,
 				//for (m = ROBOT_RIGHT_OFFSET + 1; m <= ROBOT_LEFT_OFFSET - 1; m++)
 				for (int16_t m = ROBOT_RIGHT_OFFSET; m <= ROBOT_LEFT_OFFSET; m++) {
 					for (int16_t n = ROBOT_RIGHT_OFFSET; n <= ROBOT_LEFT_OFFSET; n++) {
-						map.setCell(SPMAP, (i + m), (j + n), COST_HIGH);
+						map.setCell(COST_MAP, (i + m), (j + n), COST_HIGH);
 					}
 				}
 			}
 			else if(cs == UNCLEAN)
-				map.setCell(SPMAP, i, j, COST_HIGH);
+				map.setCell(COST_MAP, i, j, COST_HIGH);
 		}
 	}
 
 	// Set for target cell. For reverse algorithm, we will generate a-star map from target cell.
-	map.setCell(SPMAP, target.X, target.Y, COST_1);
+	map.setCell(COST_MAP, target.X, target.Y, COST_1);
 
 	// For protection, the start cell must be reachable.
 	if (map.getCell(CLEAN_MAP, start.X, start.Y) == COST_HIGH)
 	{
 		ROS_ERROR("%s %d: Start cell has high cost(%d)! It may cause bug, please check.",
 				  __FUNCTION__, __LINE__, map.getCell(CLEAN_MAP, start.X, start.Y));
-		map.print(SPMAP, target.X, target.Y);
-		map.setCell(SPMAP, start.X, start.Y, COST_NO);
+		map.print(COST_MAP, target.X, target.Y);
+		map.setCell(COST_MAP, start.X, start.Y, COST_NO);
 	}
 
 	/*
 	 * Find the path to target from the start cell. Set the cell values
-	 * in SPMAP to 1, 2, 3, 4 or 5. This is a method like A-Star, starting
+	 * in COST_MAP to 1, 2, 3, 4 or 5. This is a method like A-Star, starting
 	 * from a start point, update the cells one level away, until we reach the target.
 	 */
 	int16_t offset = 0;
 	bool cost_updated = true;
 	int16_t cost_value = 1;
 	int16_t next_cost_value = 2;
-	while (map.getCell(SPMAP, start.X, start.Y) == COST_NO && cost_updated) {
+	while (map.getCell(COST_MAP, start.X, start.Y) == COST_NO && cost_updated) {
 		offset++;
 		cost_updated = false;
 
 		/*
 		 * The following 2 for loops is for optimise the computational time.
-		 * Since there is not need to go through the whole SPMAP for searching the
+		 * Since there is not need to go through the whole COST_MAP for searching the
 		 * cell that have the next pass value.
 		 *
 		 * It can use the offset to limit the range of searching, since in each loop
@@ -78,28 +78,28 @@ Path_t PathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start,
 					continue;
 
 				/* Found a cell that has a pass value equal to the current pass value. */
-				if(map.getCell(SPMAP, i, j) == cost_value) {
+				if(map.getCell(COST_MAP, i, j) == cost_value) {
 					/* Set the lower cell of the cell which has the pass value equal to current pass value. */
-					if (map.getCell(SPMAP, i - 1, j) == COST_NO) {
-						map.setCell(SPMAP, (int32_t) (i - 1), (int32_t) j, (CellState) next_cost_value);
+					if (map.getCell(COST_MAP, i - 1, j) == COST_NO) {
+						map.setCell(COST_MAP, (int32_t) (i - 1), (int32_t) j, (CellState) next_cost_value);
 						cost_updated = true;
 					}
 
 					/* Set the upper cell of the cell which has the pass value equal to current pass value. */
-					if (map.getCell(SPMAP, i + 1, j) == COST_NO) {
-						map.setCell(SPMAP, (int32_t) (i + 1), (int32_t) j, (CellState) next_cost_value);
+					if (map.getCell(COST_MAP, i + 1, j) == COST_NO) {
+						map.setCell(COST_MAP, (int32_t) (i + 1), (int32_t) j, (CellState) next_cost_value);
 						cost_updated = true;
 					}
 
 					/* Set the cell on the right hand side of the cell which has the pass value equal to current pass value. */
-					if (map.getCell(SPMAP, i, j - 1) == COST_NO) {
-						map.setCell(SPMAP, (int32_t) i, (int32_t) (j - 1), (CellState) next_cost_value);
+					if (map.getCell(COST_MAP, i, j - 1) == COST_NO) {
+						map.setCell(COST_MAP, (int32_t) i, (int32_t) (j - 1), (CellState) next_cost_value);
 						cost_updated = true;
 					}
 
 					/* Set the cell on the left hand side of the cell which has the pass value equal to current pass value. */
-					if (map.getCell(SPMAP, i, j + 1) == COST_NO) {
-						map.setCell(SPMAP, (int32_t) i, (int32_t) (j + 1), (CellState) next_cost_value);
+					if (map.getCell(COST_MAP, i, j + 1) == COST_NO) {
+						map.setCell(COST_MAP, (int32_t) i, (int32_t) (j + 1), (CellState) next_cost_value);
 						cost_updated = true;
 					}
 				}
@@ -116,12 +116,12 @@ Path_t PathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start,
 	}
 
 	// If the start cell still have a cost of 0, it means target is not reachable.
-	CellState start_cell_state = map.getCell(SPMAP, start.X, start.Y);
+	CellState start_cell_state = map.getCell(COST_MAP, start.X, start.Y);
 	if (start_cell_state == COST_NO || start_cell_state == COST_HIGH) {
 		ROS_WARN("%s, %d: Target (%d, %d) is not reachable for start cell(%d, %d)(%d), return empty path.",
 				 __FUNCTION__, __LINE__, target.X, target.Y, start.X, start.Y, start_cell_state);
-#if	DEBUG_SP_MAP
-		map.print(SPMAP, target.X, target.Y);
+#if	DEBUG_COST_MAP
+		map.print(COST_MAP, target.X, target.Y);
 #endif
 		// Now the path_ is empty.
 		return path_;
@@ -145,18 +145,18 @@ Path_t PathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start,
 	auto trace_dir = (last_dir == MAP_POS_Y || last_dir == MAP_NEG_Y) ? 1: 0;
 	//ROS_INFO("%s %d: trace dir: %d", __FUNCTION__, __LINE__, trace_dir);
 	while (trace_x != target.X || trace_y != target.Y) {
-		CellState cost_at_cell = map.getCell(SPMAP, trace_x, trace_y);
+		CellState cost_at_cell = map.getCell(COST_MAP, trace_x, trace_y);
 		auto target_cost = static_cast<CellState>(cost_at_cell - 1);
 
-		/* Reset target cost to 5, since cost only set from 1 to 5 in the SPMAP. */
+		/* Reset target cost to 5, since cost only set from 1 to 5 in the COST_MAP. */
 		if (target_cost == 0)
 			target_cost = COST_5;
 
 		/* Set the cell value to 6 if the cells is on the path. */
-		map.setCell(SPMAP, (int32_t) trace_x, (int32_t) trace_y, COST_PATH);
+		map.setCell(COST_MAP, (int32_t) trace_x, (int32_t) trace_y, COST_PATH);
 
 #define COST_SOUTH	{											\
-				if (next == 0 && (map.getCell(SPMAP, trace_x - 1, trace_y) == target_cost)) {	\
+				if (next == 0 && (map.getCell(COST_MAP, trace_x - 1, trace_y) == target_cost)) {	\
 					trace_x--;								\
 					next = 1;								\
 					trace_dir = 1;								\
@@ -164,7 +164,7 @@ Path_t PathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start,
 			}
 
 #define COST_WEST	{											\
-				if (next == 0 && (map.getCell(SPMAP, trace_x, trace_y - 1) == target_cost)) {	\
+				if (next == 0 && (map.getCell(COST_MAP, trace_x, trace_y - 1) == target_cost)) {	\
 					trace_y--;								\
 					next = 1;								\
 					trace_dir = 0;								\
@@ -172,7 +172,7 @@ Path_t PathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start,
 			}
 
 #define COST_EAST	{											\
-				if (next == 0 && (map.getCell(SPMAP, trace_x, trace_y + 1) == target_cost)) {	\
+				if (next == 0 && (map.getCell(COST_MAP, trace_x, trace_y + 1) == target_cost)) {	\
 					trace_y++;								\
 					next = 1;								\
 					trace_dir = 0;								\
@@ -180,7 +180,7 @@ Path_t PathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start,
 			}
 
 #define COST_NORTH	{											\
-				if (next == 0 && map.getCell(SPMAP, trace_x + 1, trace_y) == target_cost) {	\
+				if (next == 0 && map.getCell(COST_MAP, trace_x + 1, trace_y) == target_cost) {	\
 					trace_x++;								\
 					next = 1;								\
 					trace_dir = 1;								\
@@ -216,7 +216,7 @@ Path_t PathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start,
 		trace_y_last = trace_y;
 	}
 
-	map.setCell(SPMAP, (int32_t) target.X, (int32_t) target.Y, COST_PATH);
+	map.setCell(COST_MAP, (int32_t) target.X, (int32_t) target.Y, COST_PATH);
 
 	trace_cell.X = target.X;
 	trace_cell.Y = target.Y;
@@ -274,11 +274,11 @@ void PathAlgorithm::optimizePath(GridMap &map, Path_t& path)
 				while (!blocked_min || !blocked_max) {
 					for (int16_t j = si; j <= ei && (!blocked_min || !blocked_max); j++) {
 						if (!blocked_min && (x_min - 1 < sj ||
-								map.getCell(SPMAP, x_min - 1, j) == COST_HIGH)) {
+								map.getCell(COST_MAP, x_min - 1, j) == COST_HIGH)) {
 							blocked_min = true;
 						}
 						if (!blocked_max && (x_max + 1 > ej ||
-								map.getCell(SPMAP, x_max + 1, j) == COST_HIGH)) {
+								map.getCell(COST_MAP, x_max + 1, j) == COST_HIGH)) {
 							blocked_max = true;
 						}
 					}
@@ -309,11 +309,11 @@ void PathAlgorithm::optimizePath(GridMap &map, Path_t& path)
 				while (!blocked_min || !blocked_max) {
 					for (int16_t j = si; j <= ei && (!blocked_min || !blocked_max); j++) {
 						if (!blocked_min && (y_min - 1 < sj ||
-								map.getCell(SPMAP, j, y_min - 1) == COST_HIGH)) {
+								map.getCell(COST_MAP, j, y_min - 1) == COST_HIGH)) {
 							blocked_min = true;
 						}
 						if (!blocked_max && (y_max + 1 > ej ||
-								map.getCell(SPMAP, j, y_max + 1) == COST_HIGH)) {
+								map.getCell(COST_MAP, j, y_max + 1) == COST_HIGH)) {
 							blocked_max = true;
 						}
 					}
@@ -360,8 +360,8 @@ bool PathAlgorithm::findTargetUsingDijkstra(GridMap &map, const Cell_t& curr_cel
 	typedef std::multimap<double, Cell_t> Queue;
 	typedef std::pair<double, Cell_t> Entry;
 
-	map.reset(SPMAP);
-	map.setCell(SPMAP, curr_cell.X, curr_cell.Y, COST_1);
+	map.reset(COST_MAP);
+	map.setCell(COST_MAP, curr_cell.X, curr_cell.Y, COST_1);
 
 	Queue queue;
 	Entry startPoint(0.0, curr_cell);
@@ -390,16 +390,16 @@ bool PathAlgorithm::findTargetUsingDijkstra(GridMap &map, const Cell_t& curr_cel
 			{
 				auto neighbor = next + cell_direction_index[it1];
 //				ROS_INFO("g_index[%d],next(%d,%d)", it1, neighbor.X,neighbor.Y);
-				if (map.getCell(SPMAP, neighbor.X, neighbor.Y) != COST_1) {
+				if (map.getCell(COST_MAP, neighbor.X, neighbor.Y) != COST_1) {
 //					ROS_INFO("(%d,%d),", neighbor.X, neighbor.Y);
 
 					for (auto it2 = 0; it2 < 9; it2++) {
 						auto neighbor_ = neighbor + cell_direction_index[it2];
 						if (map.getCell(CLEAN_MAP, neighbor_.X, neighbor_.Y) == CLEANED &&
-							map.getCell(SPMAP, neighbor_.X, neighbor_.Y) == COST_NO)
+							map.getCell(COST_MAP, neighbor_.X, neighbor_.Y) == COST_NO)
 						{
 							cleaned_count++;
-							map.setCell(SPMAP, neighbor_.X, neighbor_.Y, COST_2);
+							map.setCell(COST_MAP, neighbor_.X, neighbor_.Y, COST_2);
 //							ROS_INFO("(%d,%d, cleaned_count(%d)),", neighbor_.X, neighbor_.Y, cleaned_count);
 						}
 					}
@@ -407,7 +407,7 @@ bool PathAlgorithm::findTargetUsingDijkstra(GridMap &map, const Cell_t& curr_cel
 					if (map.isBlockAccessible(neighbor.X, neighbor.Y)) {
 //						ROS_WARN("add to Queue:(%d,%d)", neighbor.X, neighbor.Y);
 						queue.insert(Entry(0, neighbor));
-						map.setCell(SPMAP, neighbor.X, neighbor.Y, COST_1);
+						map.setCell(COST_MAP, neighbor.X, neighbor.Y, COST_1);
 					}
 				}
 			}
@@ -467,16 +467,16 @@ Path_t NavCleanPathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell
 
 	TargetList filtered_targets = filterAllPossibleTargets(map, curr_cell, b_map);
 
-	//Step 3: Generate the SPMAP for map and filter targets that are unreachable.
+	//Step 3: Generate the COST_MAP for map and filter targets that are unreachable.
 	TargetList reachable_targets = getReachableTargets(map, curr_cell, filtered_targets);
-	ROS_INFO("%s %d: After generating SPMAP, Get %lu reachable targets.", __FUNCTION__, __LINE__, reachable_targets.size());
+	ROS_INFO("%s %d: After generating COST_MAP, Get %lu reachable targets.", __FUNCTION__, __LINE__, reachable_targets.size());
 	if (reachable_targets.size() != 0)
 		displayTargets(reachable_targets);
 	else
 		// Now path is empty.
 		return path;
 
-	//Step 4: Trace back the path of these targets in SPMAP.
+	//Step 4: Trace back the path of these targets in COST_MAP.
 	PathList paths_for_reachable_targets = tracePathsToTargets(map, reachable_targets, curr_cell);
 
 	//Step 5: Filter paths to get the best target.
@@ -625,7 +625,7 @@ TargetList NavCleanPathAlgorithm::getReachableTargets(GridMap &map, const Cell_t
 	TargetList reachable_targets{};
 	for (auto it = possible_targets.begin(); it != possible_targets.end();)
 	{
-		CellState it_cost = map.getCell(SPMAP, it->X, it->Y);
+		CellState it_cost = map.getCell(COST_MAP, it->X, it->Y);
 		if (it_cost == COST_NO || it_cost == COST_HIGH)
 			continue;
 		else
@@ -641,13 +641,13 @@ PathList NavCleanPathAlgorithm::tracePathsToTargets(GridMap &map, const TargetLi
 {
 	PathList paths{};
 	int16_t trace_cost, x_min, x_max, y_min, y_max;
-	map.getMapRange(SPMAP, &x_min, &x_max, &y_min, &y_max);
+	map.getMapRange(COST_MAP, &x_min, &x_max, &y_min, &y_max);
 	for (auto& it : target_list) {
 		auto trace = it;
 		Path_t path{};
 		//Trace the path for this target 'it'.
 		while (trace != start) {
-			trace_cost = map.getCell(SPMAP, trace.X, trace.Y) - 1;
+			trace_cost = map.getCell(COST_MAP, trace.X, trace.Y) - 1;
 
 			if (trace_cost == 0) {
 				trace_cost = COST_5;
@@ -655,22 +655,22 @@ PathList NavCleanPathAlgorithm::tracePathsToTargets(GridMap &map, const TargetLi
 
 			path.push_front(trace);
 
-			if ((trace.X - 1 >= x_min) && (map.getCell(SPMAP, trace.X - 1, trace.Y) == trace_cost)) {
+			if ((trace.X - 1 >= x_min) && (map.getCell(COST_MAP, trace.X - 1, trace.Y) == trace_cost)) {
 				trace.X--;
 				continue;
 			}
 
-			if ((trace.X + 1 <= x_max) && (map.getCell(SPMAP, trace.X + 1, trace.Y) == trace_cost)) {
+			if ((trace.X + 1 <= x_max) && (map.getCell(COST_MAP, trace.X + 1, trace.Y) == trace_cost)) {
 				trace.X++;
 				continue;
 			}
 
-			if ((trace.Y - 1 >= y_min) && (map.getCell(SPMAP, trace.X, trace.Y - 1) == trace_cost)) {
+			if ((trace.Y - 1 >= y_min) && (map.getCell(COST_MAP, trace.X, trace.Y - 1) == trace_cost)) {
 				trace.Y--;
 				continue;
 			}
 
-			if ((trace.Y + 1 <= y_max) && (map.getCell(SPMAP, trace.X, trace.Y + 1) == trace_cost)) {
+			if ((trace.Y + 1 <= y_max) && (map.getCell(COST_MAP, trace.X, trace.Y + 1) == trace_cost)) {
 				trace.Y++;
 				continue;
 			}

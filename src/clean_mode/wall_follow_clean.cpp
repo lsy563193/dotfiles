@@ -7,8 +7,8 @@
 //WallFollowClean
 WallFollowClean::WallFollowClean(const Cell_t& curr, const Cell_t& target_cell, const PPTargetType& path) {
 	g_plan_path.clear();
-	s_curr_p = {cost_map.getXCount(), cost_map.getYCount()};
-	auto target = cost_map.cellToPoint(target_cell);
+	s_curr_p = {nav_map.getXCount(), nav_map.getYCount()};
+	auto target = nav_map.cellToPoint(target_cell);
 
 	back_reg_ = new BackMovement();
 	fw_reg_ = new FollowWallMovement(s_curr_p, target);
@@ -199,8 +199,8 @@ void WallFollowClean::mark() {
 		fw_map.setRcon();
 	}
 
-//	cost_map.set_cleaned(g_passed_path);
-//	cost_map.mark_robot(CLEAN_MAP);
+//	nav_map.set_cleaned(g_passed_path);
+//	nav_map.mark_robot(CLEAN_MAP);
 }
 
 bool WallFollowClean::csm_next(Cell_t &curr)

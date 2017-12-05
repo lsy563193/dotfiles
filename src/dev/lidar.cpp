@@ -1032,11 +1032,11 @@ static uint8_t setLidarMarkerAcr2Dir(double X_MIN,double X_MAX,int angle_from,in
 	}
 	if (count > 10) {
 		int32_t x_tmp,y_tmp;
-		cost_map.robotToPoint(cost_map.getCurrPoint(), CELL_SIZE * dy, CELL_SIZE * dx, &x_tmp, &y_tmp);
-		if (cost_map.getCell(CLEAN_MAP, cost_map.countToCell(x_tmp), cost_map.countToCell(y_tmp)) != BLOCKED_BUMPER)
+		nav_map.robotToPoint(nav_map.getCurrPoint(), CELL_SIZE * dy, CELL_SIZE * dx, &x_tmp, &y_tmp);
+		if (nav_map.getCell(CLEAN_MAP, nav_map.countToCell(x_tmp), nav_map.countToCell(y_tmp)) != BLOCKED_BUMPER)
 		{
-			ROS_INFO("\033[36mlidar marker : (%d,%d)\033[0m", cost_map.countToCell(x_tmp), cost_map.countToCell(y_tmp));
-			cost_map.setCell(CLEAN_MAP, x_tmp, y_tmp, BLOCKED_LIDAR);
+			ROS_INFO("\033[36mlidar marker : (%d,%d)\033[0m", nav_map.countToCell(x_tmp), nav_map.countToCell(y_tmp));
+			nav_map.setCell(CLEAN_MAP, x_tmp, y_tmp, BLOCKED_LIDAR);
 		}
 		ret = 1;
 		*lidar_status |= obs_status;
@@ -1212,14 +1212,14 @@ uint8_t Lidar::lidarMarker(double X_MAX)
 				}
 			}
 
-			cost_map.robotToCell(cost_map.getCurrPoint(), CELL_SIZE * dy, CELL_SIZE * dx, x_tmp, y_tmp);
-			auto cell_status = cost_map.getCell(CLEAN_MAP, x_tmp, y_tmp);
+			nav_map.robotToCell(nav_map.getCurrPoint(), CELL_SIZE * dy, CELL_SIZE * dx, x_tmp, y_tmp);
+			auto cell_status = nav_map.getCell(CLEAN_MAP, x_tmp, y_tmp);
 			if (cell_status != BLOCKED_BUMPER && cell_status != BLOCKED_OBS)
 			{
 				//ROS_INFO("    \033[36mlidar marker : (%d,%d), i = %d, dx = %d, dy = %d.\033[0m",count_to_cell(x_tmp),count_to_cell(y_tmp), i, dx, dy);
-				msg += direction_msg + "(" + std::to_string(cost_map.countToCell(x_tmp)) + ", " + std::to_string(
-						cost_map.countToCell(y_tmp)) + ")";
-				cost_map.setCell(CLEAN_MAP, cost_map.cellToCount(x_tmp), cost_map.cellToCount(y_tmp), BLOCKED_LIDAR); //BLOCKED_OBS);
+				msg += direction_msg + "(" + std::to_string(nav_map.countToCell(x_tmp)) + ", " + std::to_string(
+						nav_map.countToCell(y_tmp)) + ")";
+				nav_map.setCell(CLEAN_MAP, nav_map.cellToCount(x_tmp), nav_map.cellToCount(y_tmp), BLOCKED_LIDAR); //BLOCKED_OBS);
 			}
 		}
 	}

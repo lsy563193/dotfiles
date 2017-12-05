@@ -30,7 +30,7 @@
 /*
  * Enable debugging the grid map.
  */
-#define DEBUG_MAP			(1)
+#define DEBUG_CLEAN_MAP			(1)
 
 /*
  * Enable debugging the grid map.
@@ -41,7 +41,7 @@
  * Enable debugging the shortest path map when finding the
  * shortest path is using the A* like method.
  */
-#define DEBUG_SP_MAP			(1)
+#define DEBUG_COST_MAP			(1)
 
 /*
  * Enable target debug.

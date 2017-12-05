@@ -20,7 +20,7 @@
 #include "clean_mode.h"
 
 #define DEBUG_MSG_SIZE	1 // 20
-GridMap cost_map;
+GridMap nav_map;
 GridMap fw_map;
 GridMap exploration_map;
 GridMap slam_cost_map;
@@ -131,7 +131,7 @@ void GridMap::setPosition(double x, double y) {
 CellState GridMap::getCell(int id, int16_t x, int16_t y) {
 	CellState val;
 	int16_t x_min, x_max, y_min, y_max;
-	if (id == CLEAN_MAP || id == SPMAP) {
+	if (id == CLEAN_MAP || id == COST_MAP) {
 		x_min = xRangeMin;
 		x_max = xRangeMax;
 	   	y_min = yRangeMin;
@@ -144,11 +144,11 @@ CellState GridMap::getCell(int id, int16_t x, int16_t y) {
 		y %= MAP_SIZE;
 
 #ifndef SHORTEST_PATH_V2
-		//val = (CellState)((id == CLEAN_MAP) ? (clean_map[x][y / 2]) : (spmap[x][y / 2]));
+		//val = (CellState)((id == CLEAN_MAP) ? (clean_map[x][y / 2]) : (cost_map[x][y / 2]));
 		if(id == CLEAN_MAP)
 			val = (CellState)(clean_map[x][y / 2]);
-		else if(id == SPMAP)
-			val = (CellState)(spmap[x][y / 2]);
+		else if(id == COST_MAP)
+			val = (CellState)(cost_map[x][y / 2]);
 #else
 		//val = (CellState)(clean_map[x][y / 2]);
 		if (id == CLEAN_MAP) {
@@ -173,8 +173,8 @@ CellState GridMap::getCell(int id, int16_t x, int16_t y) {
 /*
  * GridMap::set_cell description
  * @param id		Map id
- * @param x		 For CLEAN_MAP it is count x, for SPMAP it is cell x.
- * @param y		 For CLEAN_MAP it is count y, for SPMAP it is cell y.
+ * @param x		 For CLEAN_MAP it is count x, for COST_MAP it is cell x.
+ * @param y		 For CLEAN_MAP it is count y, for COST_MAP it is cell y.
  * @param value CellState
  */
 void GridMap::setCell(uint8_t id, int32_t x, int32_t y, CellState value) {
@@ -226,17 +226,17 @@ void GridMap::setCell(uint8_t id, int32_t x, int32_t y, CellState value) {
 				clean_map[ROW][COLUMN / 2] = ((COLUMN % 2) == 0 ? (((value << 4) & 0xF0) | (val & 0x0F)) : ((val & 0xF0) | (value & 0x0F)));
 			}
 		}
-	}  else if (id == SPMAP){
+	}  else if (id == COST_MAP){
 		if(x >= xRangeMin && x <= xRangeMax && y >= yRangeMin && y <= yRangeMax) {
 			x += MAP_SIZE + MAP_SIZE / 2;
 			x %= MAP_SIZE;
 			y += MAP_SIZE + MAP_SIZE / 2;
 			y %= MAP_SIZE;
 
-			val = (CellState) spmap[x][y / 2];
+			val = (CellState) cost_map[x][y / 2];
 
 			/* Upper 4 bits and last 4 bits. */
-			spmap[x][y / 2] = (((y % 2) == 0) ? (((value << 4) & 0xF0) | (val & 0x0F)) : ((val & 0xF0) | (value & 0x0F)));
+			cost_map[x][y / 2] = (((y % 2) == 0) ? (((value << 4) & 0xF0) | (val & 0x0F)) : ((val & 0xF0) | (value & 0x0F)));
 		}
 	}
 }
@@ -354,9 +354,9 @@ void GridMap::reset(uint8_t id)
 {
 #ifndef SHORTEST_PATH_V2
 	uint16_t idx;
-	if (id == SPMAP) {
+	if (id == COST_MAP) {
 		for (idx = 0; idx < MAP_SIZE; idx++) {
-			memset((spmap[idx]), 0, ((MAP_SIZE + 1) / 2) * sizeof(uint8_t));
+			memset((cost_map[idx]), 0, ((MAP_SIZE + 1) / 2) * sizeof(uint8_t));
 		}
 	} else if (id == CLEAN_MAP) {
 		for (idx = 0; idx < MAP_SIZE; idx++) {
@@ -880,11 +880,11 @@ uint8_t GridMap::saveRcon()
 	uint8_t block_count;
 	if(c_rcon.should_mark_charger_ ){
 		c_rcon.should_mark_charger_ = false;
-		block_count += cost_map.saveChargerArea(c_rcon.getRconPos());
+		block_count += nav_map.saveChargerArea(c_rcon.getRconPos());
 	}
 	else if(c_rcon.should_mark_temp_charger_ ){
 		c_rcon.should_mark_temp_charger_ = false;
-		block_count += cost_map.saveChargerArea(c_rcon.getRconPos());
+		block_count += nav_map.saveChargerArea(c_rcon.getRconPos());
 	}
 	return block_count;
 
@@ -1287,16 +1287,16 @@ void GridMap::generateSPMAP(const Cell_t &curr, PPTargetType &target_list)
 	bool		all_set;
 	int16_t		x, y, offset, passValue, nextPassValue, passSet, x_min, x_max, y_min, y_max;
 	CellState	cs;
-	reset(SPMAP);
+	reset(COST_MAP);
 
-	getMapRange(SPMAP, &x_min, &x_max, &y_min, &y_max);
+	getMapRange(COST_MAP, &x_min, &x_max, &y_min, &y_max);
 	for (auto i = x_min; i <= x_max; ++i) {
 		for (auto j = y_min; j <= y_max; ++j) {
 			cs = getCell(CLEAN_MAP, i, j);
 			if (cs >= BLOCKED && cs <= BLOCKED_BOUNDARY) {
 				for (x = ROBOT_RIGHT_OFFSET; x <= ROBOT_LEFT_OFFSET; x++) {
 					for (y = ROBOT_RIGHT_OFFSET; y <= ROBOT_LEFT_OFFSET; y++) {
-						setCell(SPMAP, i + x, j + y, COST_HIGH);
+						setCell(COST_MAP, i + x, j + y, COST_HIGH);
 					}
 				}
 			}
@@ -1307,7 +1307,7 @@ void GridMap::generateSPMAP(const Cell_t &curr, PPTargetType &target_list)
 	y = curr.Y;
 
 	/* Set the current robot position has the cost value of 1. */
-	setCell(SPMAP, (int32_t) x, (int32_t) y, COST_1);
+	setCell(COST_MAP, (int32_t) x, (int32_t) y, COST_1);
 
 	offset = 0;
 	passSet = 1;
@@ -1324,24 +1324,24 @@ void GridMap::generateSPMAP(const Cell_t &curr, PPTargetType &target_list)
 				if (j < y_min || j > y_max)
 					continue;
 
-				if(getCell(SPMAP, i, j) == passValue) {
-					if (i - 1 >= x_min && getCell(SPMAP, i - 1, j) == COST_NO) {
-						setCell(SPMAP, (i - 1), (j), (CellState) nextPassValue);
+				if(getCell(COST_MAP, i, j) == passValue) {
+					if (i - 1 >= x_min && getCell(COST_MAP, i - 1, j) == COST_NO) {
+						setCell(COST_MAP, (i - 1), (j), (CellState) nextPassValue);
 						passSet = 1;
 					}
 
-					if ((i + 1) <= x_max && getCell(SPMAP, i + 1, j) == COST_NO) {
-						setCell(SPMAP, (i + 1), (j), (CellState) nextPassValue);
+					if ((i + 1) <= x_max && getCell(COST_MAP, i + 1, j) == COST_NO) {
+						setCell(COST_MAP, (i + 1), (j), (CellState) nextPassValue);
 						passSet = 1;
 					}
 
-					if (j - 1  >= y_min && getCell(SPMAP, i, j - 1) == COST_NO) {
-						setCell(SPMAP, (i), (j - 1), (CellState) nextPassValue);
+					if (j - 1  >= y_min && getCell(COST_MAP, i, j - 1) == COST_NO) {
+						setCell(COST_MAP, (i), (j - 1), (CellState) nextPassValue);
 						passSet = 1;
 					}
 
-					if ((j + 1) <= y_max && getCell(SPMAP, i, j + 1) == COST_NO) {
-						setCell(SPMAP, (i), (j + 1), (CellState) nextPassValue);
+					if ((j + 1) <= y_max && getCell(COST_MAP, i, j + 1) == COST_NO) {
+						setCell(COST_MAP, (i), (j + 1), (CellState) nextPassValue);
 						passSet = 1;
 					}
 				}
@@ -1350,7 +1350,7 @@ void GridMap::generateSPMAP(const Cell_t &curr, PPTargetType &target_list)
 
 		all_set = true;
 		for (auto it = target_list.begin(); it != target_list.end(); ++it) {
-			if (getCell(SPMAP, it->X, it->Y) == COST_NO) {
+			if (getCell(COST_MAP, it->X, it->Y) == COST_NO) {
 				all_set = false;
 			}
 		}
@@ -1364,7 +1364,7 @@ void GridMap::generateSPMAP(const Cell_t &curr, PPTargetType &target_list)
 		if(nextPassValue == COST_PATH)
 			nextPassValue = 1;
 	}
-//	print(SPMAP, 0,0);
+//	print(COST_MAP, 0,0);
 }
 
 bool GridMap::isFrontBlockBoundary(int dx)
@@ -1381,7 +1381,7 @@ bool GridMap::isFrontBlockBoundary(int dx)
 void GridMap::getMapRange(uint8_t id, int16_t *x_range_min, int16_t *x_range_max, int16_t *y_range_min,
 						  int16_t *y_range_max)
 {
-	if (id == CLEAN_MAP || id == SPMAP) {
+	if (id == CLEAN_MAP || id == COST_MAP) {
 		*x_range_min = g_x_min - (abs(g_x_min - g_x_max) <= 3 ? 3 : 1);
 		*x_range_max = g_x_max + (abs(g_x_min - g_x_max) <= 3 ? 3 : 1);
 		*y_range_min = g_y_min - (abs(g_y_min - g_y_max) <= 3? 3 : 1);
@@ -1410,8 +1410,8 @@ void GridMap::print(uint8_t id, int16_t endx, int16_t endy)
 
 	if (id == CLEAN_MAP) {
 		ROS_INFO("Map: %s", "CLEAN_MAP");
-	} else if (id == SPMAP) {
-		ROS_INFO("Map: %s", "SPMAP");
+	} else if (id == COST_MAP) {
+		ROS_INFO("Map: %s", "COST_MAP");
 	}
 	index = 0;
 	outString[index++] = '\t';

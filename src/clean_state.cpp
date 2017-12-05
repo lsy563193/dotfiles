@@ -102,12 +102,12 @@ int CleanStateBase::get(void)
 
 bool CleanStateBase::isTrapped() {
 	int escape_cleaned_count = 0;
-	auto curr = cost_map.getCurrCell();
+	auto curr = nav_map.getCurrCell();
 	PPTargetType path{{0,0,0}};
 	bool is_found = path_dijkstra(curr, path.back(), escape_cleaned_count);
 	if(is_found)
 		return false;
-	auto map_cleand_count = cost_map.getCleanedArea();
+	auto map_cleand_count = nav_map.getCleanedArea();
 	double clean_proportion = 0.0;
 	clean_proportion = (double) escape_cleaned_count / (double) map_cleand_count;
 	ROS_WARN("%s %d: escape escape_cleaned_count(%d)!!", __FUNCTION__, __LINE__, escape_cleaned_count);
@@ -168,7 +168,7 @@ bool TmpSpotCS::cs_next(const Cell_t& start, PPTargetType& path)
 void TmpSpotCS::setting() {
 	if (SpotMovement::instance()->getSpotType() == NO_SPOT) {
 		ROS_INFO("%s %d: Entering temp spot during navigation.", __FUNCTION__, __LINE__);
-		Cell_t curr_cell = cost_map.getCurrCell();
+		Cell_t curr_cell = nav_map.getCurrCell();
 		ROS_WARN("%s %d: current cell(%d, %d).", __FUNCTION__, __LINE__, curr_cell.X, curr_cell.Y);
 		SpotMovement::instance()->setSpotType(CLEAN_SPOT);
 		wheel.stop();
@@ -210,11 +210,11 @@ void GoHomePointCS::setting(void)
 		// Special handling for wall follow mode_.
 		if (cm_is_follow_wall()) {
 			robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle); //For wall follow mode_.
-			cost_map.updatePosition();
+			nav_map.updatePosition();
 			//wf_mark_home_point();
-			cost_map.reset(CLEAN_MAP);
-			cost_map.merge(slam_cost_map, false, false, true, false, false);
-			cost_map.markRobot(CLEAN_MAP);//note: To clear the obstacles before go home, please don't remove it!
+			nav_map.reset(CLEAN_MAP);
+			nav_map.merge(slam_cost_map, false, false, true, false, false);
+			nav_map.markRobot(CLEAN_MAP);//note: To clear the obstacles before go home, please don't remove it!
 		}
 		// Play wavs.
 		if (ev.battrey_home)

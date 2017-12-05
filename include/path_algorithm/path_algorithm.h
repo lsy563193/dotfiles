@@ -27,7 +27,7 @@ public:
 	 * because it will have a better trace back process, the path will be more reasonable than positive
 	 * algorithm.
 	 *
-	 * @param: GridMap map, it will use it's CLEAN_MAP data.(SPMAP data will be rewritten.)
+	 * @param: GridMap map, it will use it's CLEAN_MAP data.(COST_MAP data will be rewritten.)
 	 * @param: Cell_t start, the start cell.
 	 * @param: Cell_t target, the target cell.
 	 * @param: MapDirection last_dir, the direction of robot last moving.
@@ -159,7 +159,7 @@ private:
 	 * @author Patrick Chow
 	 * @last modify by Austin Liu
 	 *
-	 * This function is for filtering targets with their cost in the SPMAP.
+	 * This function is for filtering targets with their cost in the COST_MAP.
 	 *
 	 * @param: GridMap map, it will use it's CLEAN_MAP data.
 	 * @param: Cell_t curr_cell, the current cell of robot.
