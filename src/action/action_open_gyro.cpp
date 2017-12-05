@@ -3,6 +3,7 @@
 //
 
 #include "pp.h"
+#include "mode/mode.hpp"
 
 //IAction::IAction(Mode* p_mode) {
 //	sp_mode_ = p_mode;

@@ -6,16 +6,7 @@
 #define PP_ACTION_H
 
 #include "mode/mode.hpp"
-//class IAction{
-//public:
-//	virtual void run()=0;
-//
-//	virtual bool isFinish()=0;
-//	virtual bool setNextAction()=0;
-//
-//protected:
-//
-//};
+
 class Mode;
 class IAction{
 public:

@@ -4,7 +4,7 @@
 
 #include <event_manager.h>
 #include <pp.h>
-#include <mode/mode.hpp>
+#include <clean_mode.hpp>
 #include "ros/ros.h"
 
 CleanModeNav::CleanModeNav()
@@ -41,7 +41,7 @@ IAction* CleanModeNav::getNextActionOpenGyro() {
 }
 
 IAction *CleanModeNav::getNextActionOpenSlam() {
-	sp_state_.reset(new StateCleanNavigation());
+	sp_state_.reset(new StateClean());
 //	sp_state_.reset();
 	return nullptr;
 //	return

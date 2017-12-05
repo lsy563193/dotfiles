@@ -32,6 +32,19 @@ FILE(GLOB PP_SRC
 	#For new framework
 #				src/action/action_new.cpp
 #				src/action/action_open_gyro_new.cpp
+				src/mode/state/state.cpp
+				src/mode/state/state_clean.cpp
+				src/mode/state/state_go_home_point.cpp
+				src/mode/state/state_go_charger.cpp
+				src/mode/state/state_trapped.cpp
+				src/mode/state/state_self_check.cpp
+				src/mode/state/state_tmp_spot.cpp
+				src/mode/state/state_exploration.cpp
+
+				src/mode/state/move_type/move_type.cpp
+				src/mode/state/move_type/move_type_linear.cpp
+				src/mode/state/move_type/move_type_follow_wall.cpp
+				src/mode/state/move_type/move_type_go_charger.cpp
 	src/mode/mode.cpp
 	src/mode/clean_mode.cpp
 	src/mode/clean_mode_navigation.cpp

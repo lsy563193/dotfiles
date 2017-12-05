@@ -3,6 +3,7 @@
 //
 
 #include "pp.h"
+#include "action.hpp"
 
 ActionOpenSlam::ActionOpenSlam() {
 	if (!(g_is_manual_pause || g_resume_cleaning)) {

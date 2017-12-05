@@ -5,8 +5,7 @@
 #ifndef PP_MODE_H_H
 #define PP_MODE_H_H
 
-#include <state.hpp>
-//#include "action.hpp"
+#include "action.hpp"
 #include "event_manager.h"
 #include "path_algorithm/path_algorithm.h"
 
@@ -25,24 +24,6 @@ public:
 protected:
 	static boost::shared_ptr<IAction> sp_action_;
 	Mode* p_next_clean_mode_;
-};
-
-class ACleanMode:public Mode{
-public:
-	virtual bool updateAction()=0;
-
-protected:
-	boost::shared_ptr<PathAlgorithm> sp_path_algorithm_;
-	static boost::shared_ptr<StateCleanNavigation> sp_state_;
-};
-
-class CleanModeNav:public ACleanMode{
-public:
-
-	CleanModeNav();
-	bool updateAction();
-	IAction* getNextActionOpenGyro();
-	IAction* getNextActionOpenSlam();
 };
 
 #endif //PP_MODE_H_H

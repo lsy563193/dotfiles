@@ -3,3 +3,6 @@
 //
 
 #include "pp.h"
+#include "clean_mode.hpp"
+
+boost::shared_ptr<State> ACleanMode::sp_state_ = nullptr;

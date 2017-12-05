@@ -3,11 +3,10 @@
 //
 
 #include <pp.h>
+#include "action.hpp"
 #include <mode/mode.hpp>
 
 boost::shared_ptr<IAction> Mode::sp_action_ = nullptr;
-
-boost::shared_ptr<StateCleanNavigation> ACleanMode::sp_state_ = nullptr;
 
 Mode *Mode::run() {
 	ROS_INFO("%s %d:this(%d)", __FUNCTION__, __LINE__,this);

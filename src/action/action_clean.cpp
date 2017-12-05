@@ -3,6 +3,7 @@
 //
 
 #include "pp.h"
+#include "action.hpp"
 
 bool ActionClean::isReach() {
 

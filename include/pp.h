@@ -22,8 +22,6 @@
 #include "shortest_path.h"
 #include "spot.h"
 
-#include "action.hpp"
-#include "mode/mode.hpp"
 #include "movement.h"
 #include <ros/ros.h>
 #include <vector>
