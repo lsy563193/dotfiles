@@ -23,6 +23,7 @@ Serial::Serial()
 	crport_fd_ = -1;
 	serial_init_done_ = false;
 	made_table_ = 0;
+	sleep_status_ = false;
 }
 
 void Serial::init(const char* port,int baudrate)
@@ -108,6 +109,21 @@ int Serial::close()
 		serial_init_done_ = false;
 	}
 	return retval;
+}
+
+void Serial::sleep(void)
+{
+	sleep_status_ = true;
+}
+
+void Serial::wakeUp(void)
+{
+	sleep_status_ = false;
+}
+
+bool Serial::isSleep()
+{
+	return sleep_status_;
 }
 
 int Serial::write(uint8_t len, uint8_t *buf)

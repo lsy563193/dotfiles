@@ -507,7 +507,7 @@ void *serial_send_routine(void*)
 	int sl = SEND_LEN-3;
 	while(send_stream_thread){
 		r.sleep();
-		if(get_sleep_mode_flag()){
+		if(serial.isSleep()){
 			continue;
 		}
 		/*-------------------Process for beeper.play and led -----------------------*/
