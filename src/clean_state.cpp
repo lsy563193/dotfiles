@@ -213,7 +213,7 @@ void GoHomePointCS::setting(void)
 			nav_map.updatePosition();
 			//wf_mark_home_point();
 			nav_map.reset(CLEAN_MAP);
-			nav_map.merge(slam_cost_map, false, false, true, false, false);
+			nav_map.mergeFromSlamGridMap(slam_grid_map, false, false, true, false, false);
 			nav_map.markRobot(CLEAN_MAP);//note: To clear the obstacles before go home, please don't remove it!
 		}
 		// Play wavs.

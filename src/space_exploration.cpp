@@ -75,7 +75,7 @@ void turn_into_exploration(bool is_reset_map)
 	if (is_reset_map)
 		nav_map.reset(CLEAN_MAP);
 	fw_map.reset(CLEAN_MAP);
-	slam_cost_map.reset(CLEAN_MAP);
+	slam_grid_map.reset(CLEAN_MAP);
 	path_planning_initialize();
 	cs_work_motor();
 	cm_reset_go_home();
@@ -98,6 +98,6 @@ void turn_into_exploration(bool is_reset_map)
 
 
 	cm_set(Clean_Mode_Exploration);
-	exploration_map.merge(slam_cost_map);
+	exploration_map.mergeFromSlamGridMap(slam_grid_map);
 	explore_update_map();
 }

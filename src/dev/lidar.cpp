@@ -845,18 +845,18 @@ bool Lidar::mergeLine(std::vector<std::vector<Double_Point> > *groups, double t_
 						//ROS_INFO("t >= t_max,points_index_max = %d", points_index_max);
 					}
 				}
-				//ROS_INFO("merge: t_max = %lf", t_max);
+				//ROS_INFO("mergeFromSlamGridMap: t_max = %lf", t_max);
 				if (t_max < t_lim) {
 					int index = std::distance((*groups).begin(), iter);
 					merge_index.push_back(index);
 					ROS_DEBUG("5Lidar_Group.size = %lu", (*groups).size());
-					ROS_DEBUG("merge! s_index_ = %d and %d", index, (index + 1));
+					ROS_DEBUG("mergeFromSlamGridMap! s_index_ = %d and %d", index, (index + 1));
 				}
 			}
 		}
 	}
 
-	/*do merge*/
+	/*do mergeFromSlamGridMap*/
 	if (!merge_index.empty()) {
 		int loop_count = 0;
 		for (std::vector<int>::iterator m_iter = merge_index.begin(); m_iter != merge_index.end(); ++m_iter) {
@@ -870,13 +870,13 @@ bool Lidar::mergeLine(std::vector<std::vector<Double_Point> > *groups, double t_
 				new_line.push_back(*((iter + 1)->begin() + j));
 			}
 			(*groups).erase(iter - loop_count);
-			ROS_DEBUG("merge : erase front");
+			ROS_DEBUG("mergeFromSlamGridMap : erase front");
 			ROS_DEBUG("Lidar_Group.size = %lu", (*groups).size());
 			(*groups).erase(iter + 1 - loop_count);
-			ROS_DEBUG("merge : erase rear");
+			ROS_DEBUG("mergeFromSlamGridMap : erase rear");
 			ROS_DEBUG("5Lidar_Group.size = %lu", (*groups).size());
 			(*groups).insert((*groups).begin() + (*m_iter) - loop_count, new_line);
-			ROS_DEBUG("merge : insert");
+			ROS_DEBUG("mergeFromSlamGridMap : insert");
 			ROS_DEBUG("5Lidar_Group.size = %lu", (*groups).size());
 			loop_count++;
 		}

@@ -435,7 +435,7 @@ void init_before_gyro()
 		nav_map.reset(CLEAN_MAP);
 
 	fw_map.reset(CLEAN_MAP);
-	slam_cost_map.reset(CLEAN_MAP);
+	slam_grid_map.reset(CLEAN_MAP);
 	decrease_map.reset(CLEAN_MAP);
 	switch (cm_get())
 	{
@@ -614,7 +614,7 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 		robot_timer.resumeWorkTimer();
 
 	fw_map.reset(CLEAN_MAP);
-	slam_cost_map.reset(CLEAN_MAP);
+	slam_grid_map.reset(CLEAN_MAP);
 	decrease_map.reset(CLEAN_MAP);
 
 	cs.setNext(CS_OPEN_GYRO);

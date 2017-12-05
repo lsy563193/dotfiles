@@ -123,7 +123,18 @@ protected:
 
 class NavCleanPathAlgorithm: public PathAlgorithm{
 public:
-
+	/*
+	 * @author Patrick Chow / Lin Shao Yue
+	 * @last modify by Austin Liu
+	 *
+	 * This function is for finding path to unclean area.
+	 *
+	 * @param: GridMap map, it will use it's CLEAN_MAP data.
+	 * @param: Cell_t curr_cell, the current cell of robot.
+	 * @param: MapDirection last_dir, the direction of last movement.
+	 *
+	 * @return: Path_t path, the path to unclean area.
+	 */
 	Path_t generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir);
 
 private:
@@ -198,5 +209,53 @@ private:
 	 *          Cell_t best_target, the selected best target.
 	 */
 	bool filterPathsToSelectTarget(GridMap &map, const PathList &paths, const Cell_t &curr_cell, Cell_t &best_target);
+};
+
+typedef enum {
+	THROUGH_UNKNOWN_AREA,
+	THROUGH_SLAM_MAP_REACHABLE_AREA,
+	THROUGH_CLEANED_AREA,
+	GO_HOME_WAY_NUM
+}GoHomeWay_t;
+
+class NavGoHomePathAlgorithm: public PathAlgorithm
+{
+public:
+		/*
+	 * @author Lin Shao Yue / Austin Liu
+	 * @last modify by Austin Liu
+	 *
+	 * The constructor requires current clean map and stored home cells.
+	 *
+	 * @param: GridMap map, it will be copied to go_home_map_.
+	 * @param: TargetList home_cells, stored home_cells, size should be limited in 4, including
+	 * home cell(0, 0).
+	 *
+	 * @return: Path_t path, the path to selected home cell.
+	 */
+	NavGoHomePathAlgorithm(GridMap &map, TargetList home_cells);
+	~NavGoHomePathAlgorithm() = default;
+
+	/*
+	 * @author Lin Shao Yue / Austin Liu
+	 * @last modify by Austin Liu
+	 *
+	 * This function is for selecting the home cell and finding path to this home cell.
+	 *
+	 * @param: GridMap map, it will use it's CLEAN_MAP data.
+	 * @param: Cell_t curr_cell, the current cell of robot.
+	 *
+	 * @return: Path_t path, the path to selected home cell.
+	 */
+	Path_t generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir);
+
+	TargetList getRestHomeCells();
+private:
+
+	GridMap go_home_map_;
+	TargetList home_cells_;
+	Cell_t current_home_target_;
+	std::vector<int> go_home_way_list_;
+	std::vector<int>::iterator go_home_way_list_it_;
 };
 #endif //PP_PATH_ALGORITHM_H

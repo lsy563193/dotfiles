@@ -23,7 +23,7 @@
 GridMap nav_map;
 GridMap fw_map;
 GridMap exploration_map;
-GridMap slam_cost_map;
+GridMap slam_grid_map;
 GridMap decrease_map;
 
 boost::mutex slam_map_mutex;
@@ -54,13 +54,14 @@ GridMap::GridMap() {
 		for(auto c = 0; c < MAP_SIZE; ++c) {
 			for(auto d = 0; d < (MAP_SIZE + 1) / 2; ++d) {
 				clean_map[c][d] = 0;
+				cost_map[c][d] = 0;
 			}
 		}
 		g_x_min = g_x_max = g_y_min = g_y_max = 0;
-		xRangeMin = g_x_min - (MAP_SIZE - (g_x_max - g_x_min + 1));
-		xRangeMax = g_x_max + (MAP_SIZE - (g_x_max - g_x_min + 1));
-		yRangeMin = g_y_min - (MAP_SIZE - (g_y_max - g_y_min + 1));
-		yRangeMax = g_y_max + (MAP_SIZE - (g_y_max - g_y_min + 1));
+		xRangeMin = static_cast<int16_t>(g_x_min - (MAP_SIZE - (g_x_max - g_x_min + 1)));
+		xRangeMax = static_cast<int16_t>(g_x_max + (MAP_SIZE - (g_x_max - g_x_min + 1)));
+		yRangeMin = static_cast<int16_t>(g_y_min - (MAP_SIZE - (g_y_max - g_y_min + 1)));
+		yRangeMax = static_cast<int16_t>(g_y_max + (MAP_SIZE - (g_y_max - g_y_min + 1)));
 
 //		xCount = 0;
 //		yCount = 0;
@@ -366,6 +367,20 @@ void GridMap::reset(uint8_t id)
 #endif
 }
 
+void GridMap::copy(GridMap &source_map)
+{
+	int16_t map_x_min, map_y_min, map_x_max, map_y_max;
+	source_map.getMapRange(CLEAN_MAP, &map_x_min, &map_x_max, &map_y_min, &map_y_max);
+
+	for (int16_t x = map_x_min; x <= map_x_max; x++)
+	{
+		for (int16_t y = map_x_min; y <= map_x_max; y++)
+		{
+			setCell(CLEAN_MAP, cellToCount(x), cellToCount(y), source_map.getCell(CLEAN_MAP, x, y));
+		}
+	}
+}
+
 void GridMap::convertFromSlamMap(float threshold)
 {
 	// Clear the cost map itself.
@@ -459,8 +474,10 @@ void GridMap::convertFromSlamMap(float threshold)
 	}
 }
 
-void GridMap::merge(GridMap source_map, bool add_slam_map_blocks_to_uncleaned, bool add_slam_map_blocks_to_cleaned,
-					bool add_slam_map_cleanable_area, bool clear_map_blocks, bool clear_slam_map_blocks)
+void GridMap::mergeFromSlamGridMap(GridMap source_map, bool add_slam_map_blocks_to_uncleaned,
+								   bool add_slam_map_blocks_to_cleaned,
+								   bool add_slam_map_cleanable_area, bool clear_map_blocks, bool clear_slam_map_blocks,
+								   bool clear_bumper_and_lidar_blocks)
 {
 	int16_t map_x_min, map_y_min, map_x_max, map_y_max;
 	source_map.getMapRange(CLEAN_MAP, &map_x_min, &map_x_max, &map_y_min, &map_y_max);
@@ -472,14 +489,23 @@ void GridMap::merge(GridMap source_map, bool add_slam_map_blocks_to_uncleaned, b
 			map_cell_state = getCell(CLEAN_MAP, x, y);
 			source_map_cell_state = source_map.getCell(CLEAN_MAP, x, y);
 
+			if (clear_bumper_and_lidar_blocks &&
+				(map_cell_state == BLOCKED_BUMPER || map_cell_state == BLOCKED_LIDAR) &&
+				source_map_cell_state == SLAM_MAP_CLEANABLE)
+				setCell(CLEAN_MAP, cellToCount(x), cellToCount(y), CLEANED);
+
 			if (clear_map_blocks && map_cell_state >= BLOCKED && map_cell_state < SLAM_MAP_BLOCKED && source_map_cell_state == SLAM_MAP_CLEANABLE)
 				setCell(CLEAN_MAP, cellToCount(x), cellToCount(y), CLEANED);
+
 			if (clear_slam_map_blocks && map_cell_state == SLAM_MAP_BLOCKED && source_map_cell_state == SLAM_MAP_CLEANABLE)
 				setCell(CLEAN_MAP, cellToCount(x), cellToCount(y), CLEANED);
+
 			if (add_slam_map_blocks_to_uncleaned && map_cell_state == UNCLEAN && source_map_cell_state == SLAM_MAP_BLOCKED)
 				setCell(CLEAN_MAP, cellToCount(x), cellToCount(y), SLAM_MAP_BLOCKED);
+
 			if (add_slam_map_blocks_to_cleaned && map_cell_state == CLEANED && source_map_cell_state == SLAM_MAP_BLOCKED)
 				setCell(CLEAN_MAP, cellToCount(x), cellToCount(y), SLAM_MAP_BLOCKED);
+
 			if (add_slam_map_cleanable_area && map_cell_state == UNCLEAN && source_map_cell_state == SLAM_MAP_CLEANABLE)
 				setCell(CLEAN_MAP, cellToCount(x), cellToCount(y), CLEANED);
 		}

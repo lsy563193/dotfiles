@@ -16,7 +16,7 @@ MovementFollowWall::MovementFollowWall(Point32_t start_point, Point32_t target) 
 	if (!g_keep_on_wf) {
 		s_origin_p = start_point;
 		s_target_p = target;
-		fw_map.reset(MAP);
+		fw_map.reset(CLEAN_MAP);
 		ROS_INFO("%s, %d: ", __FUNCTION__, __LINE__);
 	} else {
 		g_keep_on_wf = false;
@@ -26,7 +26,7 @@ MovementFollowWall::MovementFollowWall(Point32_t start_point, Point32_t target) 
 
 bool MovementFollowWall::isNewLineReach()
 {
-	auto s_curr_p = cost_map.getCurrPoint();
+	auto s_curr_p = nav_map.getCurrPoint();
 	auto ret = false;
 	auto is_pos_dir = s_target_p.Y - s_origin_p.Y > 0;
 	// The limit is CELL_COUNT_MUL / 8 * 3 further than target line center.
@@ -34,8 +34,8 @@ bool MovementFollowWall::isNewLineReach()
 	if (is_pos_dir ^ s_curr_p.Y < target_limit) // Robot has reached the target line limit.
 	{
 		ROS_WARN("%s %d: Reach the target limit, s_origin_p.Y(%d), target.Y(%d),curr_y(%d)",
-				 __FUNCTION__, __LINE__, cost_map.countToCell(s_origin_p.Y), cost_map.countToCell(s_target_p.Y),
-				 cost_map.countToCell(s_curr_p.Y));
+				 __FUNCTION__, __LINE__, nav_map.countToCell(s_origin_p.Y), nav_map.countToCell(s_target_p.Y),
+				 nav_map.countToCell(s_curr_p.Y));
 		ret = true;
 	}
 	else if (is_pos_dir ^ s_curr_p.Y < s_target_p.Y)
@@ -43,10 +43,10 @@ bool MovementFollowWall::isNewLineReach()
 		// Robot has reached the target line center but still not reach target line limit.
 		// Check if the wall side has blocks on the costmap.
 		auto dx = (is_pos_dir ^ mt.is_left()) ? +2 : -2;
-		if (cost_map.isBlocksAtY(cost_map.countToCell(s_curr_p.X) + dx, cost_map.countToCell(s_curr_p.Y))) {
+		if (nav_map.isBlocksAtY(nav_map.countToCell(s_curr_p.X) + dx, nav_map.countToCell(s_curr_p.Y))) {
 			ROS_WARN("%s %d: Already has block at the wall side, s_origin_p.Y(%d), target.Y(%d),curr_y(%d)",
-					 __FUNCTION__, __LINE__, cost_map.countToCell(s_origin_p.Y), cost_map.countToCell(s_target_p.Y),
-					 cost_map.countToCell(s_curr_p.Y));
+					 __FUNCTION__, __LINE__, nav_map.countToCell(s_origin_p.Y), nav_map.countToCell(s_target_p.Y),
+					 nav_map.countToCell(s_curr_p.Y));
 			ret = true;
 		}
 	}
@@ -141,7 +141,7 @@ bool MovementFollowWall::shouldTurn()
 
 bool MovementFollowWall::isBlockCleared()
 {
-	if (!cost_map.isBlockAccessible(cost_map.getXCell(), cost_map.getYCell())) // Robot has step on blocks.
+	if (!nav_map.isBlockAccessible(nav_map.getXCell(), nav_map.getYCell())) // Robot has step on blocks.
 	{
 		ROS_WARN("%s %d: Lidar triggered, g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
 		return true;
@@ -152,8 +152,8 @@ bool MovementFollowWall::isBlockCleared()
 
 bool MovementFollowWall::isOverOriginLine()
 {
-	auto s_curr_p = cost_map.getCurrPoint();
-	auto curr = cost_map.pointToCell(s_curr_p);
+	auto s_curr_p = nav_map.getCurrPoint();
+	auto curr = nav_map.pointToCell(s_curr_p);
 	if ((s_target_p.Y > s_origin_p.Y && (s_origin_p.Y - s_curr_p.Y) > 120)
 		|| (s_target_p.Y < s_origin_p.Y && (s_curr_p.Y - s_origin_p.Y) > 120))
 	{
@@ -165,7 +165,7 @@ bool MovementFollowWall::isOverOriginLine()
 					 __FUNCTION__, __LINE__, s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y, robot::instance()->getPoseAngle(), target_angle);
 			return true;
 		}
-		else if (cost_map.isBlockCleaned(curr.X, curr.Y)) // If robot covers a big block, stop.
+		else if (nav_map.isBlockCleaned(curr.X, curr.Y)) // If robot covers a big block, stop.
 		{
 			ROS_WARN("%s %d: Back to cleaned place, current(%d, %d), s_curr_p(%d, %d), s_target_p(%d, %d).",
 					 __FUNCTION__, __LINE__, curr.X, curr.Y, s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y);
@@ -208,7 +208,7 @@ void MovementFollowWall::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	if(rcon_status)
 	{
 //		ev.rcon_triggered = c_rcon.get_trig();
-//		cost_map.set_rcon();
+//		nav_map.set_rcon();
 		int32_t linear_speed = 24;
 		/* angular speed notes						*
 		 * larger than 0 means move away from wall	*
@@ -382,7 +382,7 @@ void MovementFollowWall::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 				time_right_angle = ros::Time::now().toSec();
 				ROS_WARN("%s,%d: delay_sec(0.44) to walk straight", __FUNCTION__, __LINE__);
 			}
-			if(obs.frontTriggered() || cost_map.isFrontBlockBoundary(3) ) {
+			if(obs.frontTriggered() || nav_map.isFrontBlockBoundary(3) ) {
 				if(ros::Time::now().toSec() - time_right_angle < 0.4) {
 					same_speed = 2 * 300 * (wall_follow_detect_distance - 0.167) + (20 - 15) / 2;
 					diff_speed = 2 * 300 * (wall_follow_detect_distance - 0.167) - (20 - 15) / 2;
@@ -411,7 +411,7 @@ void MovementFollowWall::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		if (diff_speed > 35)diff_speed = 35;
 		if (diff_speed < 5)diff_speed = 5;
 
-		if (obs.frontTriggered() || cost_map.isFrontBlockBoundary(3)) {
+		if (obs.frontTriggered() || nav_map.isFrontBlockBoundary(3)) {
 //			ROS_WARN("decelarate");
 			old_same_speed = same_speed;
 			old_diff_speed = diff_speed;

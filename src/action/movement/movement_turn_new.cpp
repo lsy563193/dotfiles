@@ -100,8 +100,8 @@ bool MovementTurn::shouldMoveBack()
 
 void MovementTurn::setTarget()
 {
-	auto s_curr_p = cost_map.getCurrPoint();
-	if(cs.is_going_home() && cost_map.pointToCell(s_curr_p) == g_zero_home)
+	auto s_curr_p = nav_map.getCurrPoint();
+	if(cs.is_going_home() && nav_map.pointToCell(s_curr_p) == g_zero_home)
 	{
 		s_target_p.TH = g_home_point.TH;
 	}

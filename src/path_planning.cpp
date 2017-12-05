@@ -41,7 +41,7 @@ std::vector<Cell_t> g_homes;
 std::vector<int> g_home_way_list;
 std::vector<int>::iterator g_home_way_it;
 Cell_t g_home_point;
-//int8_t g_home_cnt = 0;// g_homes.size()*HOMEWAY_NUM-1 3/9, 2/4, 1/2
+//int8_t g_home_cnt = 0;// g_homes.size()*HOME_WAY_NUM-1 3/9, 2/4, 1/2
 bool g_home_gen_rosmap = true;
 
 /*
@@ -72,7 +72,7 @@ static std::vector<int>::iterator _gen_home_ways(int size, std::vector<int> &go_
 	ROS_INFO("%s,%d: go_home_way_list 2: 5,      4,     3,     2,1,0", __FUNCTION__, __LINE__);
 	ROS_INFO("%s,%d: go_home_way_list 3: 8,5,    7,4,   6,3,   2,1,0", __FUNCTION__, __LINE__);
 	ROS_INFO("%s,%d: go_home_way_list 4: 11,8,5, 10,7,4,9,6,3, 2,1,0",__FUNCTION__, __LINE__);
-	go_home_way_list.resize(size * HOMEWAY_NUM,0);
+	go_home_way_list.resize(size * HOME_WAY_NUM,0);
 	if(size == 4) 			go_home_way_list = {11,8,5, 10,7,4,9,6,3, 2,1,0};
 	else if(size == 3)	go_home_way_list = {8,5,    7,4,   6,3,   2,1,0};
 	else if(size == 2)	go_home_way_list = {5,      4,     3,     2,1,0};
@@ -1214,15 +1214,15 @@ bool path_get_home_point_target(const Cell_t &curr, PPTargetType &path) {
 			g_home_gen_rosmap = false;
 			auto map_bound = nav_map.generateBound();
 			ROS_INFO("\033[1;46;37m" "%s,%d:ros_cost_map.convert" "\033[0m", __FUNCTION__, __LINE__);
-			// TODO: do not use slam_cost_map to go home directly, Austin should fix this after creating PathAlgorithm class.
-//			slam_cost_map.reset(CLEAN_MAP);
+			// TODO: do not use slam_grid_map to go home directly, Austin should fix this after creating PathAlgorithm class.
+//			slam_grid_map.reset(CLEAN_MAP);
 //			map.print(CLEAN_MAP, 0, 0);
-//			slam_cost_map.ros_convert(CLEAN_MAP, false, true, false);
+//			slam_grid_map.ros_convert(CLEAN_MAP, false, true, false);
 //			map.print(CLEAN_MAP, 0, 0);
 			ROS_INFO("\033[1;46;37m" "%s,%d:ros_map" "\033[0m", __FUNCTION__, __LINE__);
 //			map.print(ROSMAP, 0, 0);
 			for (const auto &cell : map_bound){
-				auto rm_status = slam_cost_map.getCell(CLEAN_MAP, cell.X, cell.Y);
+				auto rm_status = slam_grid_map.getCell(CLEAN_MAP, cell.X, cell.Y);
 				auto m_status = nav_map.getCell(CLEAN_MAP, cell.X, cell.Y);
 //				ROS_INFO("\033[1;46;37m" "%s,%d:cell_it(%d,%d), rms(%d),ms(%d)" "\033[0m", __FUNCTION__, __LINE__,cell.X, cell.Y, rm_status, m_status);
 				if ((m_status == BLOCKED_BUMPER || m_status == BLOCKED_LIDAR) && rm_status == CLEANED){
