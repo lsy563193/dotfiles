@@ -11,17 +11,16 @@ public:
 //	IAction IAction(Mode* p_mode);
 	virtual bool isFinish()=0;
 	static IAction *getNextAction();
-	static void setNext(int index){
+	static void setActionIndex(int index){
 		s_index_ = index;
 	};
 	virtual void run()=0;
 //	static void setMode(Mode* p_mode);
 
+	enum {ac_null,ac_open_gyro,ac_back_form_charger,ac_open_lidar,ac_align,ac_open_slam};
 protected:
 	static Mode* sp_mode_;
 	static int s_index_;
-public:
-	enum {ac_null,ac_open_gyro,ac_back_form_charger,ac_open_lidar,ac_align,ac_open_slam};
 };
 
 class ActionOpenGyro :public IAction
@@ -30,7 +29,7 @@ public:
 	ActionOpenGyro(Mode* p_mode);
 	bool isFinish();
 	void run();
-//	virtual void setNext()=0;
+//	virtual void setActionIndex()=0;
 //friend Mode;
 
 

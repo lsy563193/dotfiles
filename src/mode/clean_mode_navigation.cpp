@@ -11,7 +11,7 @@ CleanModeNav::CleanModeNav()
 {
 	event_manager_register_handler(this);
 //	IAction::setMode(this);
-	IAction::setNext(IAction::ac_open_gyro);
+	IAction::setActionIndex(IAction::ac_open_gyro);
 	sp_action_.reset(new ActionOpenGyro(this));
 //	ROS_INFO("%s %d:", __FUNCTION__, __LINE__);
 	ROS_INFO("%s %d:this(%d)", __FUNCTION__, __LINE__,this);
@@ -31,11 +31,11 @@ IAction* CleanModeNav::getNextActionOpenGyro() {
 
 	ROS_INFO("%s,%d", __FUNCTION__, __LINE__);
 	if (charger.isOnStub()) {
-		IAction::setNext(IAction::ac_back_form_charger);
+		IAction::setActionIndex(IAction::ac_back_form_charger);
 		return new ActionBackFromCharger;
 	}
 	else {
-		IAction::setNext(IAction::ac_open_lidar);
+		IAction::setActionIndex(IAction::ac_open_lidar);
 		return new ActionOpenLidar;
 	}
 }

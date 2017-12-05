@@ -53,31 +53,31 @@ bool Mode::updateAction() {
 IAction* Mode::getNextActionOpenGyro()
 {
 	ROS_INFO("%s,%d",__FUNCTION__, __LINE__);
-	IAction::setNext(IAction::ac_null);
+	IAction::setActionIndex(IAction::ac_null);
 	return nullptr;
 }
 
 IAction *Mode::getNextActionBackFromCharger() {
 	ROS_INFO("%s,%d",__FUNCTION__, __LINE__);
-	IAction::setNext(IAction::ac_open_lidar);
+	IAction::setActionIndex(IAction::ac_open_lidar);
 	return new ActionOpenLidar;
 }
 
 IAction *Mode::getNextActionOpenLidar() {
 	ROS_INFO("%s,%d",__FUNCTION__, __LINE__);
-	IAction::setNext(IAction::ac_align);
+	IAction::setActionIndex(IAction::ac_align);
 	return new ActionAlign;
 }
 
 IAction *Mode::getNextActionAlign() {
 	ROS_INFO("%s,%d",__FUNCTION__, __LINE__);
-	IAction::setNext(IAction::ac_open_slam);
+	IAction::setActionIndex(IAction::ac_open_slam);
 	return new ActionOpenSlam;
 }
 
 IAction *Mode::getNextActionOpenSlam() {
 	ROS_INFO("%s,%d",__FUNCTION__, __LINE__);
-	IAction::setNext(IAction::ac_null);
+	IAction::setActionIndex(IAction::ac_null);
 	return nullptr ;
 }
 

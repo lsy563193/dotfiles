@@ -40,14 +40,14 @@ bool StateGoHomePoint::isFinish() {
 State *StateGoHomePoint::setNextState() {
 	if(gh_state_ == gh_succuss) {
 		if (g_home_point != g_zero_home || cm_turn_and_check_charger_signal()) {
-//			setNext(CS_GO_CHANGER);
+//			setActionIndex(CS_GO_CHANGER);
 			return new StateGoCharger;
 		}
 	}
 	else if(gh_state_ == gh_faile)
 	{
 		return new StateExploration;
-//		setNext(CS_EXPLORATION);
+//		setActionIndex(CS_EXPLORATION);
 	}
 }
 
