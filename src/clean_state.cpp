@@ -212,9 +212,9 @@ void GoHomePointCS::setting(void)
 			robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle); //For wall follow mode_.
 			cost_map.updatePosition();
 			//wf_mark_home_point();
-			cost_map.reset(MAP);
+			cost_map.reset(CLEAN_MAP);
 			cost_map.merge(slam_cost_map, false, false, true, false, false);
-			cost_map.markRobot(MAP);//note: To clear the obstacles before go home, please don't remove it!
+			cost_map.markRobot(CLEAN_MAP);//note: To clear the obstacles before go home, please don't remove it!
 		}
 		// Play wavs.
 		if (ev.battrey_home)

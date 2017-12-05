@@ -24,7 +24,7 @@ bool	g_from_charger = false;
 // This flag is indicating robot is resuming from low battery go home.
 bool g_resume_cleaning = false;
 
-// This flag is for checking whether costmap boundary is created.
+// This flag is for checking whether clean_map boundary is created.
 
 bool g_have_seen_charger = false;
 bool g_start_point_seen_charger = false;
@@ -196,9 +196,9 @@ void cm_apply_cs(int next) {
 			robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle); //For wall follow mode_.
 			cost_map.updatePosition();
 			//wf_mark_home_point();
-			cost_map.reset(MAP);
+			cost_map.reset(CLEAN_MAP);
 			cost_map.merge(slam_cost_map, false, false, true, false, false);
-			cost_map.markRobot(MAP);//note: To clear the obstacles before go home, please don't remove it!
+			cost_map.markRobot(CLEAN_MAP);//note: To clear the obstacles before go home, please don't remove it!
 		}
 		// Play wavs.
 		if (ev.battrey_home)

@@ -71,7 +71,7 @@ void Slam::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
 	slam_map.setData(map->data);
 
 	slam_cost_map.convertFromSlamMap(0.2);
-	//slam_cost_map.print(MAP, 0, 0);
+	//slam_cost_map.print(CLEAN_MAP, 0, 0);
 
 	isMapReady(true);
 

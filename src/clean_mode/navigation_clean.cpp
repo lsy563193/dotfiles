@@ -440,9 +440,9 @@ void NavigationClean::mark()
 		fw_map.setFollowWall();
 
 	cost_map.setCleaned(g_passed_path);
-	cost_map.markRobot(MAP);
+	cost_map.markRobot(CLEAN_MAP);
 	cost_map.setRcon();
-//	cost_map.print(MAP,0,0);
+//	cost_map.print(CLEAN_MAP,0,0);
 }
 
 Cell_t NavigationClean::updatePosition(const Point32_t &curr_point)

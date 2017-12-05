@@ -1128,7 +1128,7 @@ int16_t path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t e
 	/* Marked the obstcals to the shorest path costmap. */
 	for (i = x_min - 1; i <= x_max + 1; ++i) {
 		for (j = y_min - 1; j <= y_max + 1; ++j) {
-			cs = cost_map.getCell(MAP, i, j);
+			cs = cost_map.getCell(CLEAN_MAP, i, j);
 			if (cs >= BLOCKED && cs <= BLOCKED_BOUNDARY) {
 				//for (m = ROBOT_RIGHT_OFFSET + 1; m <= ROBOT_LEFT_OFFSET - 1; m++)
 				for (m = ROBOT_RIGHT_OFFSET; m <= ROBOT_LEFT_OFFSET; m++) {
@@ -1362,7 +1362,7 @@ int16_t path_find_shortest_path(int16_t curr_x, int16_t curr_y, int16_t end_x, i
 		ROS_INFO("%s %d: curr\033[32m(%d,%d)\033[0m,end\033[32m(%d,%d)\033[0m,x: %d - %d,y: %d - %d, return: %d", __FUNCTION__, __LINE__, curr_x, curr_y, end_x, end_y, x_min, x_max, y_min, y_max, val);
 	} else {
 		/* If bound is not set, set the search range to the whole costmap. */
-		cost_map.getMapRange(MAP, &x_min, &x_max, &y_min, &y_max);
+		cost_map.getMapRange(CLEAN_MAP, &x_min, &x_max, &y_min, &y_max);
 		val = path_find_shortest_path_ranged(curr_x, curr_y, end_x, end_y, bound, x_min, x_max, y_min, y_max);
 		ROS_INFO("%s %d: curr\033[32m(%d,%d)\033[0m,end\033[32m(%d,%d)\033[0m,x: %d - %d,y: %d - %d, return: %d", __FUNCTION__, __LINE__, curr_x, curr_y, end_x, end_y, x_min, x_max, y_min, y_max, val);
 	}
@@ -1400,7 +1400,7 @@ int16_t wf_path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16
 		val =  wf_path_find_shortest_path_ranged(xID, yID, endx, endy, bound, x_min, x_max, y_min, y_max);
 	} else {
 		/* If bound is not set, set the search range to the whole costmap. */
-		fw_map.getMapRange(MAP, &x_min, &x_max, &y_min, &y_max);
+		fw_map.getMapRange(CLEAN_MAP, &x_min, &x_max, &y_min, &y_max);
 		x_min = x_min - 8;
 		x_max = x_max + 8;
 		y_min = y_min - 8;
@@ -1694,7 +1694,7 @@ int16_t wf_path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_
 	/* Marked the obstcals to the shorest path costmap. */
 	for (i = x_min - 1; i <= x_max + 1; ++i) {
 		for (j = y_min - 1; j <= y_max + 1; ++j) {
-			cs = fw_map.getCell(MAP, i, j);
+			cs = fw_map.getCell(CLEAN_MAP, i, j);
 			if (cs >= BLOCKED && cs <= BLOCKED_BOUNDARY) {
 				//for (m = ROBOT_RIGHT_OFFSET + 1; m <= ROBOT_LEFT_OFFSET - 1; m++) {
 				for (m = ROBOT_RIGHT_OFFSET; m <= ROBOT_LEFT_OFFSET; m++) {

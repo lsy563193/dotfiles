@@ -27,7 +27,7 @@ public:
 	 * because it will have a better trace back process, the path will be more reasonable than positive
 	 * algorithm.
 	 *
-	 * @param: GridMap map, it will use it's MAP data.(SPMAP data will be rewritten.)
+	 * @param: GridMap map, it will use it's CLEAN_MAP data.(SPMAP data will be rewritten.)
 	 * @param: Cell_t start, the start cell.
 	 * @param: Cell_t target, the target cell.
 	 * @param: MapDirection last_dir, the direction of robot last moving.
@@ -61,7 +61,7 @@ public:
 	 * This function is for adjusting the path away from obstacles while the cost and turning count is
 	 * still the same.
 	 *
-	 * @param: GridMap map, it will use it's MAP data.
+	 * @param: GridMap map, it will use it's CLEAN_MAP data.
 	 * @param: Path_t path, the path from start cell to target cell.
 	 *
 	 * @return: Path_t path, an equivalent path of input path which is most far away from the obstacles.
@@ -87,7 +87,7 @@ public:
 	 *
 	 * This function is for finding targets using Dijkstra algorithm.
 	 *
-	 * @param: GridMap map, it will use it's MAP data.
+	 * @param: GridMap map, it will use it's CLEAN_MAP data.
 	 * @param: Cell_t curr_cell, the current cell of robot.
 	 *
 	 * @return: true, there is reachable targets.
@@ -104,7 +104,7 @@ public:
 	 * This function is for checking if robot is trapped using Dijkstra algorithm and comparing the clean
 	 * area proportion.
 	 *
-	 * @param: GridMap map, it will use it's MAP data.
+	 * @param: GridMap map, it will use it's CLEAN_MAP data.
 	 * @param: Cell_t curr_cell, the current cell of robot.
 	 *
 	 * @return: true, robot is trapped.
@@ -133,7 +133,7 @@ private:
 	 *
 	 * This function is for finding path to unclean area in the same lane.
 	 *
-	 * @param: GridMap map, it will use it's MAP data.
+	 * @param: GridMap map, it will use it's CLEAN_MAP data.
 	 * @param: Cell_t curr_cell, the current cell of robot.
 	 *
 	 * @return: Path_t path, the path to unclean area in the same lane.
@@ -147,7 +147,7 @@ private:
 	 * This function is for finding all possiable targets in the map, judging by the boundary between
 	 * cleaned and reachable unclean area.
 	 *
-	 * @param: GridMap map, it will use it's MAP data.
+	 * @param: GridMap map, it will use it's CLEAN_MAP data.
 	 * @param: Cell_t curr_cell, the current cell of robot.
 	 * @param: BoundingBox2 b_map, generate by map, for simplifying code.
 	 *
@@ -161,7 +161,7 @@ private:
 	 *
 	 * This function is for filtering targets with their cost in the SPMAP.
 	 *
-	 * @param: GridMap map, it will use it's MAP data.
+	 * @param: GridMap map, it will use it's CLEAN_MAP data.
 	 * @param: Cell_t curr_cell, the current cell of robot.
 	 * @param: TargetList possible_targets, input target list.
 	 *
@@ -175,7 +175,7 @@ private:
 	 *
 	 * This function is for tracing the path from start cell to targets.
 	 *
-	 * @param: GridMap map, it will use it's MAP data.
+	 * @param: GridMap map, it will use it's CLEAN_MAP data.
 	 * @param: TargetList target_list, input target list.
 	 * @param: Cell_t start, the start cell.
 	 *
@@ -189,7 +189,7 @@ private:
 	 *
 	 * This function is for selecting the best target in the input paths according to their path track.
 	 *
-	 * @param: GridMap map, it will use it's MAP data.
+	 * @param: GridMap map, it will use it's CLEAN_MAP data.
 	 * @param: PathLIst paths, the input paths.
 	 * @param: Cell_t curr_cell, the current cell of robot.
 	 *

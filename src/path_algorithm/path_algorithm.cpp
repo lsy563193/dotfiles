@@ -13,7 +13,7 @@ Path_t PathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start,
 
 	// Get the map range.
 	int16_t x_min, x_max, y_min, y_max;
-	map.getMapRange(MAP, &x_min, &x_max, &y_min, &y_max);
+	map.getMapRange(CLEAN_MAP, &x_min, &x_max, &y_min, &y_max);
 
 	// Reset the SPMAP.
 	map.reset(SPMAP);
@@ -21,7 +21,7 @@ Path_t PathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start,
 	// Mark obstacles in SPMAP
 	for (int16_t i = x_min - 1; i <= x_max + 1; ++i) {
 		for (int16_t j = y_min - 1; j <= y_max + 1; ++j) {
-			CellState cs = map.getCell(MAP, i, j);
+			CellState cs = map.getCell(CLEAN_MAP, i, j);
 			if (cs >= BLOCKED && cs <= BLOCKED_BOUNDARY) {
 				//for (m = ROBOT_RIGHT_OFFSET + 1; m <= ROBOT_LEFT_OFFSET - 1; m++)
 				for (int16_t m = ROBOT_RIGHT_OFFSET; m <= ROBOT_LEFT_OFFSET; m++) {
@@ -39,10 +39,10 @@ Path_t PathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start,
 	map.setCell(SPMAP, target.X, target.Y, COST_1);
 
 	// For protection, the start cell must be reachable.
-	if (map.getCell(MAP, start.X, start.Y) == COST_HIGH)
+	if (map.getCell(CLEAN_MAP, start.X, start.Y) == COST_HIGH)
 	{
 		ROS_ERROR("%s %d: Start cell has high cost(%d)! It may cause bug, please check.",
-				  __FUNCTION__, __LINE__, map.getCell(MAP, start.X, start.Y));
+				  __FUNCTION__, __LINE__, map.getCell(CLEAN_MAP, start.X, start.Y));
 		map.print(SPMAP, target.X, target.Y);
 		map.setCell(SPMAP, start.X, start.Y, COST_NO);
 	}
@@ -368,7 +368,7 @@ bool PathAlgorithm::findTargetUsingDijkstra(GridMap &map, const Cell_t& curr_cel
 	cleaned_count = 1;
 	queue.insert(startPoint);
 	bool is_found = false;
-//	map.print(MAP,curr.X, curr.Y);
+//	map.print(CLEAN_MAP,curr.X, curr.Y);
 	ROS_INFO("Do full search with weightless Dijkstra-Algorithm\n");
 	while (!queue.empty())
 	{
@@ -378,7 +378,7 @@ bool PathAlgorithm::findTargetUsingDijkstra(GridMap &map, const Cell_t& curr_cel
 		queue.erase(start);
 
 //		ROS_WARN("adjacent cell(%d,%d)", next.X, next.Y);
-		if (map.getCell(MAP, next.X, next.Y) == UNCLEAN && map.isBlockAccessible(next.X, next.Y))
+		if (map.getCell(CLEAN_MAP, next.X, next.Y) == UNCLEAN && map.isBlockAccessible(next.X, next.Y))
 		{
 			ROS_WARN("We find the Unclean next(%d,%d)", next.X, next.Y);
 			is_found = true;
@@ -395,7 +395,7 @@ bool PathAlgorithm::findTargetUsingDijkstra(GridMap &map, const Cell_t& curr_cel
 
 					for (auto it2 = 0; it2 < 9; it2++) {
 						auto neighbor_ = neighbor + cell_direction_index[it2];
-						if (map.getCell(MAP, neighbor_.X, neighbor_.Y) == CLEANED &&
+						if (map.getCell(CLEAN_MAP, neighbor_.X, neighbor_.Y) == CLEANED &&
 							map.getCell(SPMAP, neighbor_.X, neighbor_.Y) == COST_NO)
 						{
 							cleaned_count++;
@@ -461,7 +461,7 @@ Path_t NavCleanPathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell
 	auto b_map_temp = map.generateBound();
 
 	for (const auto &cell : b_map_temp) {
-		if (map.getCell(MAP, cell.X, cell.Y) != UNCLEAN)
+		if (map.getCell(CLEAN_MAP, cell.X, cell.Y) != UNCLEAN)
 			b_map.Add(cell);
 	}
 
@@ -508,7 +508,7 @@ Path_t NavCleanPathAlgorithm::findTargetInSameLane(GridMap &map, const Cell_t &c
 	int8_t is_found = 0;
 	Cell_t it[2]; // it[0] means the furthest cell of X positive direction, it[1] means the furthest cell of X negative direction.
 
-//	map.print(MAP, 0, 0);
+//	map.print(CLEAN_MAP, 0, 0);
 	for (auto i = 0; i < 2; i++) {
 		it[i] = curr_cell;
 		auto unclean_cells = 0;
@@ -556,7 +556,7 @@ Path_t NavCleanPathAlgorithm::findTargetInSameLane(GridMap &map, const Cell_t &c
 	{
 		path.push_front(target);
 		ROS_INFO("%s %d: X pos:(%d,%d), X neg:(%d,%d), target:(%d,%d)", __FUNCTION__, __LINE__, it[0].X, it[0].Y, it[1].X, it[1].Y, target.X, target.Y);
-		map.print(MAP, target.X, target.Y);
+		map.print(CLEAN_MAP, target.X, target.Y);
 	}
 	else
 		ROS_INFO("%s %d: X pos:(%d,%d), X neg:(%d,%d), target not found.", __FUNCTION__, __LINE__, it[0].X, it[0].Y, it[1].X, it[1].Y);
@@ -573,13 +573,13 @@ TargetList NavCleanPathAlgorithm::filterAllPossibleTargets(GridMap &map, const C
 
 	// Check all boundarys between cleaned cells and unclean cells.
 	for (const auto &cell : b_map_copy) {
-		if (map.getCell(MAP, cell.X, cell.Y) != CLEANED /*|| std::abs(cell.Y % 2) == 1*/)
+		if (map.getCell(CLEAN_MAP, cell.X, cell.Y) != CLEANED /*|| std::abs(cell.Y % 2) == 1*/)
 			continue;
 
 		Cell_t neighbor;
 		for (auto i = 0; i < 4; i++) {
 			neighbor = cell + cell_direction_index[i];
-			if (map.getCell(MAP, neighbor.X, neighbor.Y) == UNCLEAN && map.isBlockAccessible(neighbor.X, neighbor.Y))
+			if (map.getCell(CLEAN_MAP, neighbor.X, neighbor.Y) == UNCLEAN && map.isBlockAccessible(neighbor.X, neighbor.Y))
 				possible_target_list.push_back(neighbor);
 		}
 	}
@@ -690,7 +690,7 @@ bool NavCleanPathAlgorithm::filterPathsToSelectTarget(GridMap &map, const PathLi
 	uint16_t final_cost = 1000;
 	ROS_INFO("%s %d: case 1, towards Y+ only", __FUNCTION__, __LINE__);
 	for (auto it = paths.begin(); it != paths.end(); ++it) {
-		if (map.getCell(MAP, it->back().X, it->back().Y - 1) != CLEANED) {
+		if (map.getCell(CLEAN_MAP, it->back().X, it->back().Y - 1) != CLEANED) {
 			// If the Y- cell of the target of this path is not cleaned, don't handle in this case.
 			continue;
 		}

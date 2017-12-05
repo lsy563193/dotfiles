@@ -440,7 +440,7 @@ void robot::pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path, Cel
 	CellState cell_state;
 	Cell_t next = path.front();
 	Cell_t target = path.back();
-	map.getMapRange(MAP, &x_min, &x_max, &y_min, &y_max);
+	map.getMapRange(CLEAN_MAP, &x_min, &x_max, &y_min, &y_max);
 
 	if (next.X == SHRT_MIN )
 		next.X = x_min;
@@ -459,7 +459,7 @@ void robot::pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path, Cel
 				robot::instance()->setCleanMapMarkers(x, y, TARGET_CLEAN);
 			else
 			{
-				cell_state = cost_map.getCell(MAP, x, y);
+				cell_state = cost_map.getCell(CLEAN_MAP, x, y);
 				if (cell_state > UNCLEAN && cell_state < BLOCKED_BOUNDARY )
 					robot::instance()->setCleanMapMarkers(x, y, cell_state);
 			}

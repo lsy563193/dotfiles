@@ -200,7 +200,7 @@ void WallFollowClean::mark() {
 	}
 
 //	cost_map.set_cleaned(g_passed_path);
-//	cost_map.mark_robot(MAP);
+//	cost_map.mark_robot(CLEAN_MAP);
 }
 
 bool WallFollowClean::csm_next(Cell_t &curr)

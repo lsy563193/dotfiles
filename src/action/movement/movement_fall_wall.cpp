@@ -11,7 +11,7 @@ FollowWallMovement::FollowWallMovement(Point32_t start_point, Point32_t target) 
 	if (!g_keep_on_wf) {
 		s_origin_p = start_point;
 		s_target_p = target;
-		fw_map.reset(MAP);
+		fw_map.reset(CLEAN_MAP);
 		ROS_INFO("%s, %d: ", __FUNCTION__, __LINE__);
 	} else {
 		g_keep_on_wf = false;
@@ -35,7 +35,7 @@ bool FollowWallMovement::isNewLineReach()
 	else if (is_pos_dir ^ s_curr_p.Y < s_target_p.Y)
 	{
 		// Robot has reached the target line center but still not reach target line limit.
-		// Check if the wall side has blocks on the costmap.
+		// Check if the wall side has blocks on the clean_map.
 		auto dx = (is_pos_dir ^ mt.is_left()) ? +2 : -2;
 		if (cost_map.isBlocksAtY(cost_map.countToCell(s_curr_p.X) + dx, cost_map.countToCell(s_curr_p.Y))) {
 			ROS_WARN("%s %d: Already has block at the wall side, s_origin_p.Y(%d), target.Y(%d),curr_y(%d)",

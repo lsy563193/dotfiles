@@ -432,11 +432,11 @@ void init_before_gyro()
 
 	robot_timer.initWorkTimer();
 	if (!cs_is_paused() && !g_is_low_bat_pause && !g_resume_cleaning )
-		cost_map.reset(MAP);
+		cost_map.reset(CLEAN_MAP);
 
-	fw_map.reset(MAP);
-	slam_cost_map.reset(MAP);
-	decrease_map.reset(MAP);
+	fw_map.reset(CLEAN_MAP);
+	slam_cost_map.reset(CLEAN_MAP);
+	decrease_map.reset(CLEAN_MAP);
 	switch (cm_get())
 	{
 		case Clean_Mode_Navigation:
@@ -598,9 +598,9 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 		robot_timer.initWorkTimer();
 		// Push the start point into the home point list
 		ROS_INFO("map_init-----------------------------");
-		cost_map.reset(MAP);
+		cost_map.reset(CLEAN_MAP);
 		robot::instance()->initOdomPosition();
-		cost_map.markRobot(MAP);
+		cost_map.markRobot(CLEAN_MAP);
 
 		g_have_seen_charger = false;
 		g_start_point_seen_charger = false;
@@ -613,9 +613,9 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 	else
 		robot_timer.resumeWorkTimer();
 
-	fw_map.reset(MAP);
-	slam_cost_map.reset(MAP);
-	decrease_map.reset(MAP);
+	fw_map.reset(CLEAN_MAP);
+	slam_cost_map.reset(CLEAN_MAP);
+	decrease_map.reset(CLEAN_MAP);
 
 	cs.setNext(CS_OPEN_GYRO);
 	while (ros::ok())
@@ -803,7 +803,7 @@ MotionManage::~MotionManage()
 {
 	if (cm_get() != Clean_Mode_Go_Charger)
 	{
-		cost_map.print(MAP, cost_map.getXCell(), cost_map.getYCell());
+		cost_map.print(CLEAN_MAP, cost_map.getXCell(), cost_map.getYCell());
 		//if (cm_is_follow_wall())
 		g_wf_reach_count = 0;
 		if (SpotMovement::instance()->getSpotType() != NO_SPOT)
