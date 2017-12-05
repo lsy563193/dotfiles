@@ -66,6 +66,16 @@ public:
 	void optimizePath(CostMap &map, PathType &path);
 
 	/*
+	 * @author Lin Shao Yue
+	 * @last modify by Austin Liu
+	 *
+	 * @param: PathType path, the path from start cell to target cell.
+	 *
+	 * @return: PathType path, each cell in this path has the direction towards next cell, the last one's
+	 *          direction is the same as its previous one.
+	 */
+	void fillPathWithDirection(PathType &path);
+	/*
 	 * Sorting function, for sorting paths with their targets by Y+ ascending sequence.
 	 */
 	static bool sortPathsWithTargetYAscend(const PathType a, const PathType b);

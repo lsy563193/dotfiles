@@ -339,6 +339,22 @@ void PathAlgorithm::optimizePath(CostMap &map, PathType& path)
 
 }
 
+void PathAlgorithm::fillPathWithDirection(PathType &path)
+{
+	for(auto it = path.begin(); it < path.end(); ++it) {
+		auto it_next = it+1;
+		if (it->X == it_next->X)
+			it->TH = it->Y > it_next->Y ? MAP_NEG_Y : MAP_POS_Y;
+		else
+			it->TH = it->X > it_next->X ? MAP_NEG_X : MAP_POS_X;
+	}
+//		ROS_INFO("path.back(%d,%d,%d)",path.back().X, path.back().Y, path.back().TH);
+
+	path.back().TH = (path.end()-2)->TH;
+	ROS_INFO("%s %d: path.back(%d,%d,%d), path.front(%d,%d,%d)", __FUNCTION__, __LINE__,
+			 path.back().X, path.back().Y, path.back().TH, path.front().X, path.front().Y, path.front().TH);
+}
+
 bool PathAlgorithm::sortPathsWithTargetYAscend(const PathType a, const PathType b)
 {
 	return a.back().Y < b.back().Y;
@@ -352,8 +368,11 @@ PathType NavCleanPathAlgorithm::generatePath(CostMap &map, const Cell_t &curr_ce
 	//Step 1: Find possible targets in same lane.
 	path = findTargetInSameLane(map, curr_cell);
 	if (!path.empty())
+	{
+		fillPathWithDirection(path);
 		// Congratulation!! path is generated successfully!!
 		return path;
+	}
 
 	//Step 2: Find all possible targets at the edge of cleaned area and filter targets in same lane.
 
@@ -394,6 +413,9 @@ PathType NavCleanPathAlgorithm::generatePath(CostMap &map, const Cell_t &curr_ce
 
 	//Step 7: Optimize path for adjusting it away from obstacles..
 	optimizePath(map, shortest_path);
+
+	//Step 8: Fill path with direction.
+	fillPathWithDirection(path);
 
 	// Congratulation!! path is generated successfully!!
 	path = shortest_path;
