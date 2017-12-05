@@ -5,8 +5,6 @@
 #ifndef PP_ACTION_H
 #define PP_ACTION_H
 
-#include "mode/mode.hpp"
-
 class Mode;
 class IAction{
 public:

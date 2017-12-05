@@ -5,8 +5,8 @@
 #ifndef PP_CLEAN_MODE_HPP
 #define PP_CLEAN_MODE_HPP
 
-#include <mode/mode.hpp>
-#include <state.hpp>
+#include "mode/mode.hpp"
+#include "state.hpp"
 
 class ACleanMode:public Mode{
 public:

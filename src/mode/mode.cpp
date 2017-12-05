@@ -3,7 +3,6 @@
 //
 
 #include <pp.h>
-#include "action.hpp"
 #include <mode/mode.hpp>
 
 boost::shared_ptr<IAction> Mode::sp_action_ = nullptr;

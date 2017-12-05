@@ -1,12 +1,17 @@
 //
+// Created by lsy563193 on 12/5/17.
+//
+
+//
 // Created by lsy563193 on 11/29/17.
 //
 
 #include "pp.h"
+#include "movement.hpp"
 
-//double robot_to_wall_distance = 0.8;
+double robot_to_wall_distance = 0.8;
 
-FollowWallMovement::FollowWallMovement(Point32_t start_point, Point32_t target) : previous_(0), seen_charger_counter(0)
+MovementFollowWall::MovementFollowWall(Point32_t start_point, Point32_t target) : previous_(0), seen_charger_counter(0)
 {
 	if (!g_keep_on_wf) {
 		s_origin_p = start_point;
@@ -19,8 +24,9 @@ FollowWallMovement::FollowWallMovement(Point32_t start_point, Point32_t target) 
 	}
 }
 
-bool FollowWallMovement::isNewLineReach()
+bool MovementFollowWall::isNewLineReach()
 {
+	auto s_curr_p = cost_map.getCurrPoint();
 	auto ret = false;
 	auto is_pos_dir = s_target_p.Y - s_origin_p.Y > 0;
 	// The limit is CELL_COUNT_MUL / 8 * 3 further than target line center.
@@ -48,7 +54,7 @@ bool FollowWallMovement::isNewLineReach()
 	return ret;
 }
 
-bool FollowWallMovement::isClosure(uint8_t closure_cnt)
+bool MovementFollowWall::isClosure(uint8_t closure_cnt)
 {
 	if (g_wf_reach_count >= closure_cnt) {
 		ROS_WARN("%s %d: Trapped wall follow is loop closed. reach_count(%d) ", __FUNCTION__, __LINE__, g_wf_reach_count);
@@ -57,12 +63,12 @@ bool FollowWallMovement::isClosure(uint8_t closure_cnt)
 	return false;
 }
 
-bool FollowWallMovement::isIsolate()
+bool MovementFollowWall::isIsolate()
 {
 	return false;
 }
 
-bool FollowWallMovement::isTimeUp()
+bool MovementFollowWall::isTimeUp()
 {
 	if (fw_is_time_up()) {
 		ROS_WARN("%s %d: curr(%d),start(%d),diff(%d)",__FUNCTION__, __LINE__, time(NULL), g_wf_start_timer, g_wf_diff_timer);
@@ -75,7 +81,7 @@ bool FollowWallMovement::isTimeUp()
 	return false;
 }
 
-bool FollowWallMovement::shouldMoveBack()
+bool MovementFollowWall::shouldMoveBack()
 {
 	ev.bumper_triggered = bumper.get_status();
 	if (ev.bumper_triggered) {
@@ -108,7 +114,7 @@ bool FollowWallMovement::shouldMoveBack()
 	return false;
 }
 
-bool FollowWallMovement::shouldTurn()
+bool MovementFollowWall::shouldTurn()
 {
 	ev.lidar_triggered = lidar_get_status();
 	if (ev.lidar_triggered)
@@ -133,7 +139,7 @@ bool FollowWallMovement::shouldTurn()
 	return false;
 }
 
-bool FollowWallMovement::isBlockCleared()
+bool MovementFollowWall::isBlockCleared()
 {
 	if (!cost_map.isBlockAccessible(cost_map.getXCell(), cost_map.getYCell())) // Robot has step on blocks.
 	{
@@ -144,8 +150,9 @@ bool FollowWallMovement::isBlockCleared()
 	return false;
 }
 
-bool FollowWallMovement::isOverOriginLine()
+bool MovementFollowWall::isOverOriginLine()
 {
+	auto s_curr_p = cost_map.getCurrPoint();
 	auto curr = cost_map.pointToCell(s_curr_p);
 	if ((s_target_p.Y > s_origin_p.Y && (s_origin_p.Y - s_curr_p.Y) > 120)
 		|| (s_target_p.Y < s_origin_p.Y && (s_curr_p.Y - s_origin_p.Y) > 120))
@@ -174,14 +181,14 @@ bool FollowWallMovement::isOverOriginLine()
 	return false;
 }
 
-void FollowWallMovement::setTarget()
+void MovementFollowWall::setTarget()
 {
 	// No need to set target here, it is set in path_next().
 }
 
-void FollowWallMovement::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
+void MovementFollowWall::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
-	ROS_DEBUG("%s %d: FollowWallMovement.", __FUNCTION__, __LINE__);
+	ROS_DEBUG("%s %d: MovementFollowWall.", __FUNCTION__, __LINE__);
 	wheel.setDirectionForward();
 //	uint32_t same_dist = (wheel.get_right_step() / 100) * 11 ;
 	uint32_t rcon_status = 0;

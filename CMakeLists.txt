@@ -59,12 +59,19 @@ FILE(GLOB PP_SRC
 	src/action/action_open_slam.cpp
 
 	src/action/movement/movement.cpp
+	src/action/movement/movement_new.cpp
 	src/action/movement/movement_back.cpp
+				src/action/movement/movement_back_new.cpp
 	src/action/movement/movement_fall_wall.cpp
+				src/action/movement/movement_fall_wall_new.cpp
 	src/action/movement/movement_forward.cpp
+				src/action/movement/movement_forward_new.cpp
 	src/action/movement/movement_go_charger.cpp
+				src/action/movement/movement_go_charger_new.cpp
 	src/action/movement/movement_self_check.cpp
+				src/action/movement/movement_self_check_new.cpp
 	src/action/movement/movement_turn.cpp
+				src/action/movement/movement_turn_new.cpp
 
 	src/clean_mode/clean_mode.cpp
 	src/clean_mode/exploration.cpp

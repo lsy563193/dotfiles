@@ -1,22 +1,24 @@
 //
-// Created by lsy563193 on 11/29/17.
+// Created by lsy563193 on 12/5/17.
 //
+
 #include "pp.h"
+#include "movement.hpp"
 
 
-//float g_back_distance = 0.01;
+float g_back_distance = 0.01;
 
 // Back distance for go to charger regulator
-//bool g_go_to_charger_back_30cm = false;
-//bool g_go_to_charger_back_10cm = false;
-//bool g_go_to_charger_back_0cm = false;
+bool g_go_to_charger_back_30cm = false;
+bool g_go_to_charger_back_10cm = false;
+bool g_go_to_charger_back_0cm = false;
 
-BackMovement::BackMovement() : counter_(0), speed_(BACK_MAX_SPEED), distance(0)
+MovementBack::MovementBack() : counter_(0), speed_(BACK_MAX_SPEED), distance(0)
 {
 //	ROS_INFO("%s, %d: ", __FUNCTION__, __LINE__);
 }
 
-void BackMovement::setTarget()
+void MovementBack::setTarget()
 {
 	s_pos_x = odom.getX();
 	s_pos_y = odom.getY();
@@ -40,10 +42,10 @@ void BackMovement::setTarget()
 	ROS_INFO("%s %d: Set back distance: %f.", __FUNCTION__, __LINE__, g_back_distance);
 }
 
-bool BackMovement::isReach()
+bool MovementBack::isReach()
 {
 	distance = sqrtf(powf(s_pos_x - odom.getX(), 2) + powf(s_pos_y - odom.getY(), 2));
-	ROS_DEBUG("%s, %d: BackMovement distance %f", __FUNCTION__, __LINE__, distance);
+	ROS_DEBUG("%s, %d: MovementBack distance %f", __FUNCTION__, __LINE__, distance);
 	/*---------slip detect------*/
 	if(g_robot_slip && g_slip_cnt >= 2){
 		g_robot_slip = false;
@@ -73,7 +75,7 @@ bool BackMovement::isReach()
 				g_go_to_charger_back_10cm = false;
 				g_go_to_charger_back_0cm = false;
 			}
-			ROS_INFO("%s, %d: BackMovement reach target.", __FUNCTION__, __LINE__);
+			ROS_INFO("%s, %d: MovementBack reach target.", __FUNCTION__, __LINE__);
 			return true;
 		}
 		if (g_cliff_cnt >= 2)
@@ -101,7 +103,7 @@ bool BackMovement::isReach()
 	return false;
 }
 
-bool BackMovement::isLidarStop()
+bool MovementBack::isLidarStop()
 {
 	auto obstacle_distance = lidar.getObstacleDistance(1, ROBOT_RADIUS);
 	if (g_back_distance >= 0.05 && obstacle_distance < 0.03)
@@ -113,9 +115,9 @@ bool BackMovement::isLidarStop()
 	return false;
 }
 
-void BackMovement::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
+void MovementBack::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
-//	ROS_INFO("BackMovement::adjustSpeed");
+//	ROS_INFO("MovementBack::adjustSpeed");
 	wheel.setDirBackward();
 	if (!cm_is_follow_wall())
 	{

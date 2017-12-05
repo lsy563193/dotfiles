@@ -9,8 +9,6 @@
 #include <battery.h>
 #include <remote.hpp>
 #include <charger.h>
-#include <clean_mode_new/clean_mode_navigation_new.hpp>
-#include <mode/mode.hpp>
 #include <clean_mode.hpp>
 #include "charge.hpp"
 #include "core_move.h"

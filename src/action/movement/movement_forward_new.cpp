@@ -1,9 +1,11 @@
 //
-// Created by lsy563193 on 11/29/17.
+// Created by lsy563193 on 12/5/17.
 //
-#include "pp.h"
 
-ForwardMovement::ForwardMovement(Point32_t target, const PPTargetType& path):
+#include "pp.h"
+#include "movement.hpp"
+
+MovementForward::MovementForward(Point32_t target, const PPTargetType& path):
 				integrated_(0),base_speed_(LINEAR_MIN_SPEED),integration_cycle_(0),tick_(0),turn_speed_(4),odom_y_start(0.0),odom_x_start(0.0)
 {
 //	g_is_should_follow_wall = false;
@@ -12,171 +14,10 @@ ForwardMovement::ForwardMovement(Point32_t target, const PPTargetType& path):
 	//ROS_INFO("%s %d: current cell(%d,%d), target cell(%d,%d) ", __FUNCTION__, __LINE__, cost_map.get_x_cell(),cost_map.get_y_cell(), count_to_cell(s_target.X), count_to_cell(s_target.Y));
 }
 
-bool ForwardMovement::isCellReach()
-{
-	// Checking if robot has reached target cell.
-	auto curr = (GridMap::isXDirection(g_new_dir)) ? s_curr_p.X : s_curr_p.Y;
-	auto target_p = cost_map.cellToPoint(g_plan_path.back());
-	auto target = (GridMap::isXDirection(g_new_dir)) ? target_p.X : target_p.Y;
-	if (std::abs(s_curr_p.X - target_p.X) < CELL_COUNT_MUL_1_2 &&
-		std::abs(s_curr_p.Y - target_p.Y) < CELL_COUNT_MUL_1_2)
-	{
-		ROS_INFO("\033[1m""%s, %d: ForwardMovement, reach the target cell (%d,%d)!!""\033[0m", __FUNCTION__, __LINE__,
-						 g_plan_path.back().X, g_plan_path.back().Y);
-		g_turn_angle = ranged_angle(g_new_dir - robot::instance()->getPoseAngle());
-		return true;
-	}
-
-	return false;
-}
-
-bool ForwardMovement::isPoseReach()
-{
-	// Checking if robot has reached target cell and target angle.
-	auto target_angle = g_plan_path.back().TH;
-	if (isCellReach() && std::abs(ranged_angle(robot::instance()->getPoseAngle() - target_angle)) < 200)
-	{
-		ROS_INFO("\033[1m""%s, %d: ForwardMovement, reach the target cell and pose(%d,%d,%d)!!""\033[0m", __FUNCTION__, __LINE__,
-				 g_plan_path.back().X, g_plan_path.back().Y, g_plan_path.back().TH);
-		return true;
-	}
-	return false;
-}
-
-bool ForwardMovement::isNearTarget()
-{
-	auto curr = (GridMap::isXDirection(g_new_dir)) ? s_curr_p.X : s_curr_p.Y;
-	auto target_p = cost_map.cellToPoint(g_plan_path.front());
-	auto &target = (GridMap::isXDirection(g_new_dir)) ? target_p.X : target_p.Y;
-	//ROS_INFO("%s %d: s_curr_p(%d, %d), target_p(%d, %d), dir(%d)",
-	//		 __FUNCTION__, __LINE__, s_curr_p.X, s_curr_p.Y, target_p.X, target_p.Y, g_new_dir);
-	if ((GridMap::isPositiveDirection(g_new_dir) && (curr > target - 1.5 * CELL_COUNT_MUL)) ||
-		(!GridMap::isPositiveDirection(g_new_dir) && (curr < target + 1.5 * CELL_COUNT_MUL))) {
-		if(g_plan_path.size() > 1)
-		{
-			// Switch to next target for smoothly turning.
-			g_new_dir = static_cast<MapDirection>(g_plan_path.front().TH);
-			g_plan_path.pop_front();
-			ROS_INFO("%s %d: Curr(%d, %d), switch next cell(%d, %d), new dir(%d).", __FUNCTION__, __LINE__,
-					 cost_map.getXCell(),
-					 cost_map.getYCell(), g_plan_path.front().X, g_plan_path.front().Y, g_new_dir);
-		}
-		else if(g_plan_path.front() != g_zero_home && g_allow_check_path_in_advance)
-		{
-			g_check_path_in_advance = true;
-			ROS_INFO("%s %d: Curr(%d, %d), target(%d, %d), dir(%d), g_check_path_in_advance(%d)", __FUNCTION__, __LINE__,
-					 cost_map.getXCell(),
-					 cost_map.getYCell(), g_plan_path.front().X, g_plan_path.front().Y, g_new_dir, g_check_path_in_advance);
-			return true;
-		}
-	}
-	return false;
-}
-
-bool ForwardMovement::shouldMoveBack()
-{
-	// Robot should move back for these cases.
-	ev.bumper_triggered = bumper.get_status();
-	ev.cliff_triggered = cliff.get_status();
-	ev.tilt_triggered = gyro.getTiltCheckingStatus();
-
-	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip)
-	{
-		ROS_WARN("%s, %d,ev.bumper_triggered(%d) ev.cliff_triggered(%d) ev.tilt_triggered(%d) g_robot_slip(%d)."
-				, __FUNCTION__, __LINE__,ev.bumper_triggered,ev.cliff_triggered,ev.tilt_triggered,g_robot_slip);
-		return true;
-	}
-
-	return false;
-}
-
-bool ForwardMovement::isRconStop()
-{
-	ev.rcon_triggered = c_rcon.getTrig();
-	if(ev.rcon_triggered)
-	{
-		g_turn_angle = rcon_turn_angle();
-		ROS_INFO("%s, %d: ev.rcon_triggered(%d), turn for (%d).", __FUNCTION__, __LINE__, ev.rcon_triggered, g_turn_angle);
-		return true;
-	}
-
-	return false;
-}
-
-bool ForwardMovement::isOBSStop()
-{
-	// Now OBS sensor is just for slowing down.
-	return false;
-/*
-	ev.obs_triggered = obs.get_status(200, 1700, 200);
-	if(ev.obs_triggered)
-	{
-		g_turn_angle = obs_turn_angle();
-		ROS_INFO("%s, %d: ev.obs_triggered(%d), turn for (%d).", __FUNCTION__, __LINE__, ev.obs_triggered, g_turn_angle);
-		return true;
-	}
-
-	return false;*/
-}
-
-bool ForwardMovement::isLidarStop()
-{
-	ev.lidar_triggered = lidar_get_status();
-	if (ev.lidar_triggered)
-	{
-		// Temporary use OBS to get angle.
-		ev.obs_triggered = ev.lidar_triggered;
-		g_turn_angle = obs_turn_angle();
-		ROS_WARN("%s, %d: ev.lidar_triggered(%d), turn for (%d).", __FUNCTION__, __LINE__, ev.lidar_triggered, g_turn_angle);
-		return true;
-	}
-
-	return false;
-}
-
-bool ForwardMovement::isBoundaryStop()
-{
-	if (cost_map.isFrontBlockBoundary(2))
-	{
-		ROS_INFO("%s, %d: ForwardMovement, Blocked boundary.", __FUNCTION__, __LINE__);
-		return true;
-	}
-
-	return false;
-}
-
-bool ForwardMovement::isPassTargetStop()
-{
-	// Checking if robot has reached target cell.
-	auto curr = (GridMap::isXDirection(g_new_dir)) ? s_curr_p.X : s_curr_p.Y;
-	auto target_p = cost_map.cellToPoint(g_plan_path.back());
-	auto target = (GridMap::isXDirection(g_new_dir)) ? target_p.X : target_p.Y;
-	if ((GridMap::isPositiveDirection(g_new_dir) && (curr > target + CELL_COUNT_MUL / 4)) ||
-		(!GridMap::isPositiveDirection(g_new_dir) && (curr < target - CELL_COUNT_MUL / 4)))
-	{
-		ROS_INFO("%s, %d: ForwardMovement, pass target: g_new_dir(\033[32m%d\033[0m),is_x_axis(\033[32m%d\033[0m),is_pos(\033[32m%d\033[0m),curr(\033[32m%d\033[0m),target(\033[32m%d\033[0m)",
-				 __FUNCTION__, __LINE__, g_new_dir, GridMap::isXDirection(g_new_dir), GridMap::isPositiveDirection(g_new_dir), curr, target);
-		return true;
-	}
-	return false;
-}
-
-void ForwardMovement::setTarget()
-{
-//	g_turn_angle = ranged_angle(
-//						course_to_dest(s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y) - robot::instance()->getPoseAngle());
-	s_target_p = cost_map.cellToPoint(g_plan_path.back());
-//	path_ = g_plan_path;
-}
-
-void ForwardMovement::setBaseSpeed()
-{
-	base_speed_ = LINEAR_MIN_SPEED;
-}
-
-void ForwardMovement::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
+void MovementForward::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 {
 //	ROS_WARN("%s,%d: g_path_size(%d)",__FUNCTION__, __LINE__,g_plan_path.size());
+	auto s_curr_p = cost_map.getCurrPoint();
 	wheel.setDirectionForward();
 	auto curr = (GridMap::isXDirection(g_new_dir)) ? s_curr_p.X : s_curr_p.Y;
 	auto target_p = cost_map.cellToPoint(g_plan_path.front());
@@ -246,4 +87,173 @@ void ForwardMovement::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 	check_limit(right_speed, LINEAR_MIN_SPEED, LINEAR_MAX_SPEED);
 #endif
 	base_speed_ = (left_speed + right_speed) / 2;
+}
+
+bool MovementForward::isFinish() {
+	return false;
+}
+
+bool MovementForward::isCellReach()
+{
+	// Checking if robot has reached target cell.
+	auto s_curr_p = cost_map.getCurrPoint();
+	auto curr = (GridMap::isXDirection(g_new_dir)) ? s_curr_p.X : s_curr_p.Y;
+	auto target_p = cost_map.cellToPoint(g_plan_path.back());
+	auto target = (GridMap::isXDirection(g_new_dir)) ? target_p.X : target_p.Y;
+	if (std::abs(s_curr_p.X - target_p.X) < CELL_COUNT_MUL_1_2 &&
+		std::abs(s_curr_p.Y - target_p.Y) < CELL_COUNT_MUL_1_2)
+	{
+		ROS_INFO("\033[1m""%s, %d: MovementForward, reach the target cell (%d,%d)!!""\033[0m", __FUNCTION__, __LINE__,
+						 g_plan_path.back().X, g_plan_path.back().Y);
+		g_turn_angle = ranged_angle(g_new_dir - robot::instance()->getPoseAngle());
+		return true;
+	}
+
+	return false;
+}
+
+bool MovementForward::isPoseReach()
+{
+	// Checking if robot has reached target cell and target angle.
+	auto target_angle = g_plan_path.back().TH;
+	if (isCellReach() && std::abs(ranged_angle(robot::instance()->getPoseAngle() - target_angle)) < 200)
+	{
+		ROS_INFO("\033[1m""%s, %d: MovementForward, reach the target cell and pose(%d,%d,%d)!!""\033[0m", __FUNCTION__, __LINE__,
+				 g_plan_path.back().X, g_plan_path.back().Y, g_plan_path.back().TH);
+		return true;
+	}
+	return false;
+}
+
+bool MovementForward::isNearTarget()
+{
+	auto s_curr_p = cost_map.getCurrPoint();
+	auto curr = (GridMap::isXDirection(g_new_dir)) ? s_curr_p.X : s_curr_p.Y;
+	auto target_p = cost_map.cellToPoint(g_plan_path.front());
+	auto &target = (GridMap::isXDirection(g_new_dir)) ? target_p.X : target_p.Y;
+	//ROS_INFO("%s %d: s_curr_p(%d, %d), target_p(%d, %d), dir(%d)",
+	//		 __FUNCTION__, __LINE__, s_curr_p.X, s_curr_p.Y, target_p.X, target_p.Y, g_new_dir);
+	if ((GridMap::isPositiveDirection(g_new_dir) && (curr > target - 1.5 * CELL_COUNT_MUL)) ||
+		(!GridMap::isPositiveDirection(g_new_dir) && (curr < target + 1.5 * CELL_COUNT_MUL))) {
+		if(g_plan_path.size() > 1)
+		{
+			// Switch to next target for smoothly turning.
+			g_new_dir = static_cast<MapDirection>(g_plan_path.front().TH);
+			g_plan_path.pop_front();
+			ROS_INFO("%s %d: Curr(%d, %d), switch next cell(%d, %d), new dir(%d).", __FUNCTION__, __LINE__,
+					 cost_map.getXCell(),
+					 cost_map.getYCell(), g_plan_path.front().X, g_plan_path.front().Y, g_new_dir);
+		}
+		else if(g_plan_path.front() != g_zero_home && g_allow_check_path_in_advance)
+		{
+			g_check_path_in_advance = true;
+			ROS_INFO("%s %d: Curr(%d, %d), target(%d, %d), dir(%d), g_check_path_in_advance(%d)", __FUNCTION__, __LINE__,
+					 cost_map.getXCell(),
+					 cost_map.getYCell(), g_plan_path.front().X, g_plan_path.front().Y, g_new_dir, g_check_path_in_advance);
+			return true;
+		}
+	}
+	return false;
+}
+
+bool MovementForward::shouldMoveBack()
+{
+	// Robot should move back for these cases.
+	ev.bumper_triggered = bumper.get_status();
+	ev.cliff_triggered = cliff.get_status();
+	ev.tilt_triggered = gyro.getTiltCheckingStatus();
+
+	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip)
+	{
+		ROS_WARN("%s, %d,ev.bumper_triggered(%d) ev.cliff_triggered(%d) ev.tilt_triggered(%d) g_robot_slip(%d)."
+				, __FUNCTION__, __LINE__,ev.bumper_triggered,ev.cliff_triggered,ev.tilt_triggered,g_robot_slip);
+		return true;
+	}
+
+	return false;
+}
+
+bool MovementForward::isRconStop()
+{
+	ev.rcon_triggered = c_rcon.getTrig();
+	if(ev.rcon_triggered)
+	{
+		g_turn_angle = rcon_turn_angle();
+		ROS_INFO("%s, %d: ev.rcon_triggered(%d), turn for (%d).", __FUNCTION__, __LINE__, ev.rcon_triggered, g_turn_angle);
+		return true;
+	}
+
+	return false;
+}
+
+bool MovementForward::isOBSStop()
+{
+	// Now OBS sensor is just for slowing down.
+	return false;
+/*
+	ev.obs_triggered = obs.get_status(200, 1700, 200);
+	if(ev.obs_triggered)
+	{
+		g_turn_angle = obs_turn_angle();
+		ROS_INFO("%s, %d: ev.obs_triggered(%d), turn for (%d).", __FUNCTION__, __LINE__, ev.obs_triggered, g_turn_angle);
+		return true;
+	}
+
+	return false;*/
+}
+
+bool MovementForward::isLidarStop()
+{
+	ev.lidar_triggered = lidar_get_status();
+	if (ev.lidar_triggered)
+	{
+		// Temporary use OBS to get angle.
+		ev.obs_triggered = ev.lidar_triggered;
+		g_turn_angle = obs_turn_angle();
+		ROS_WARN("%s, %d: ev.lidar_triggered(%d), turn for (%d).", __FUNCTION__, __LINE__, ev.lidar_triggered, g_turn_angle);
+		return true;
+	}
+
+	return false;
+}
+
+bool MovementForward::isBoundaryStop()
+{
+	if (cost_map.isFrontBlockBoundary(2))
+	{
+		ROS_INFO("%s, %d: MovementForward, Blocked boundary.", __FUNCTION__, __LINE__);
+		return true;
+	}
+
+	return false;
+}
+
+bool MovementForward::isPassTargetStop()
+{
+	// Checking if robot has reached target cell.
+	auto s_curr_p = cost_map.getCurrPoint();
+	auto curr = (GridMap::isXDirection(g_new_dir)) ? s_curr_p.X : s_curr_p.Y;
+	auto target_p = cost_map.cellToPoint(g_plan_path.back());
+	auto target = (GridMap::isXDirection(g_new_dir)) ? target_p.X : target_p.Y;
+	if ((GridMap::isPositiveDirection(g_new_dir) && (curr > target + CELL_COUNT_MUL / 4)) ||
+		(!GridMap::isPositiveDirection(g_new_dir) && (curr < target - CELL_COUNT_MUL / 4)))
+	{
+		ROS_INFO("%s, %d: MovementForward, pass target: g_new_dir(\033[32m%d\033[0m),is_x_axis(\033[32m%d\033[0m),is_pos(\033[32m%d\033[0m),curr(\033[32m%d\033[0m),target(\033[32m%d\033[0m)",
+				 __FUNCTION__, __LINE__, g_new_dir, GridMap::isXDirection(g_new_dir), GridMap::isPositiveDirection(g_new_dir), curr, target);
+		return true;
+	}
+	return false;
+}
+
+void MovementForward::setTarget()
+{
+//	g_turn_angle = ranged_angle(
+//						course_to_dest(s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y) - robot::instance()->getPoseAngle());
+	s_target_p = cost_map.cellToPoint(g_plan_path.back());
+//	path_ = g_plan_path;
+}
+
+void MovementForward::setBaseSpeed()
+{
+	base_speed_ = LINEAR_MIN_SPEED;
 }

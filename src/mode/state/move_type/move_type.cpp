@@ -5,4 +5,4 @@
 #include "pp.h"
 #include "move_type.hpp"
 
-//boost::shared_ptr<IMovement> IMoveType::sp_movement_ = nullptr;
+boost::shared_ptr<IMovement> IMoveType::sp_movement_ = nullptr;

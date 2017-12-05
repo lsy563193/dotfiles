@@ -264,3 +264,4 @@ double Movement::getMoveDistance()
 //														Movement::s_curr_p.X, Movement::s_curr_p.Y);
 	return dis*CELL_SIZE/CELL_COUNT_MUL/1000;
 }
+

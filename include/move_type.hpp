@@ -5,14 +5,14 @@
 #ifndef PP_MOVE_TYPE_HPP
 #define PP_MOVE_TYPE_HPP
 
-//#include "movement.hpp"
+#include "movement.hpp"
 
 class IMoveType
 {
 public:
 
 protected:
-//	static boost::shared_ptr<IMovement> sp_movement_;
+	static boost::shared_ptr<IMovement> sp_movement_;
 };
 
 class MoveTypeLinear
