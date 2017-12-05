@@ -20,11 +20,11 @@
 #include "clean_mode.h"
 
 #define DEBUG_MSG_SIZE	1 // 20
-CostMap cost_map;
-CostMap fw_map;
-CostMap exploration_map;
-CostMap slam_cost_map;
-CostMap decrease_map;
+GridMap cost_map;
+GridMap fw_map;
+GridMap exploration_map;
+GridMap slam_cost_map;
+GridMap decrease_map;
 
 boost::mutex slam_map_mutex;
 
@@ -47,10 +47,10 @@ uint16_t relative_theta = 3600;
 
 Cell_t g_stub_cell(0,0);
 
-double CostMap::xCount = 0;
-double CostMap::yCount = 0;
+double GridMap::xCount = 0;
+double GridMap::yCount = 0;
 
-CostMap::CostMap() {
+GridMap::GridMap() {
 		for(auto c = 0; c < MAP_SIZE; ++c) {
 			for(auto d = 0; d < (MAP_SIZE + 1) / 2; ++d) {
 				costmap[c][d] = 0;
@@ -66,7 +66,7 @@ CostMap::CostMap() {
 //		yCount = 0;
 }
 
-bool CostMap::isPositiveDirection(MapDirection dir)
+bool GridMap::isPositiveDirection(MapDirection dir)
 {
 	if (dir == MAP_POS_X || dir == MAP_POS_Y || dir == MAP_NONE)
 		return true;
@@ -74,7 +74,7 @@ bool CostMap::isPositiveDirection(MapDirection dir)
 	return false;
 }
 
-bool CostMap::isXDirection(MapDirection dir)
+bool GridMap::isXDirection(MapDirection dir)
 {
 	if (dir == MAP_POS_X || dir == MAP_NEG_X || dir == MAP_NONE)
 		return true;
@@ -82,7 +82,7 @@ bool CostMap::isXDirection(MapDirection dir)
 	return false;
 }
 
-bool CostMap::isYDirection(MapDirection dir)
+bool GridMap::isYDirection(MapDirection dir)
 {
 	if (dir == MAP_POS_Y || dir == MAP_NEG_Y || dir == MAP_NONE)
 		return true;
@@ -90,45 +90,45 @@ bool CostMap::isYDirection(MapDirection dir)
 	return false;
 }
 
-int32_t CostMap::getXCount(void) {
+int32_t GridMap::getXCount(void) {
 	return (int32_t)round(xCount);
 }
 
-int32_t CostMap::getYCount(void) {
+int32_t GridMap::getYCount(void) {
 	return (int32_t)round(yCount);
 }
 
-Point32_t CostMap::getCurrPoint(void)
+Point32_t GridMap::getCurrPoint(void)
 {
 	return {getXCount(), getYCount(),robot::instance()->getPoseAngle()};
 }
 
-int16_t CostMap::getXCell(void) {
+int16_t GridMap::getXCell(void) {
 	return countToCell(xCount);
 }
 
-int16_t CostMap::getYCell(void) {
+int16_t GridMap::getYCell(void) {
 	return countToCell(yCount);
 }
 
-Cell_t CostMap::getCurrCell()
+Cell_t GridMap::getCurrCell()
 {
-	return Cell_t{getXCell(), CostMap::getYCell(),robot::instance()->getPoseAngle()};
+	return Cell_t{getXCell(), GridMap::getYCell(),robot::instance()->getPoseAngle()};
 }
 
-void CostMap::setPosition(double x, double y) {
+void GridMap::setPosition(double x, double y) {
 	xCount = x;
 	yCount = y;
 }
 
 /*
- * CostMap::get_cell description
+ * GridMap::get_cell description
  * @param id	Map id
  * @param x	Cell x
  * @param y	Cell y
  * @return	CellState
  */
-CellState CostMap::getCell(int id, int16_t x, int16_t y) {
+CellState GridMap::getCell(int id, int16_t x, int16_t y) {
 	CellState val;
 	int16_t x_min, x_max, y_min, y_max;
 	if (id == MAP || id == SPMAP) {
@@ -171,13 +171,13 @@ CellState CostMap::getCell(int id, int16_t x, int16_t y) {
 }
 
 /*
- * CostMap::set_cell description
+ * GridMap::set_cell description
  * @param id		Map id
  * @param x		 For MAP it is count x, for SPMAP it is cell x.
  * @param y		 For MAP it is count y, for SPMAP it is cell y.
  * @param value CellState
  */
-void CostMap::setCell(uint8_t id, int32_t x, int32_t y, CellState value) {
+void GridMap::setCell(uint8_t id, int32_t x, int32_t y, CellState value) {
 	CellState val;
 	int16_t ROW, COLUMN;
 
@@ -241,7 +241,7 @@ void CostMap::setCell(uint8_t id, int32_t x, int32_t y, CellState value) {
 	}
 }
 
-void CostMap::clearBlocks(void) {
+void GridMap::clearBlocks(void) {
 	int16_t c, d;
 
 	for(c = g_x_min; c < g_x_max; ++c) {
@@ -263,7 +263,7 @@ void CostMap::clearBlocks(void) {
 	setCell(MAP, cellToCount(getXCell()), cellToCount(getYCell() - 1), CLEANED);
 }
 
-Point32_t CostMap::getRelative(Point32_t point, int16_t dy, int16_t dx, bool using_point_pos) {
+Point32_t GridMap::getRelative(Point32_t point, int16_t dy, int16_t dx, bool using_point_pos) {
 	double relative_sin, relative_cos;
 	if(point.TH != relative_theta) {
 		if(point.TH == 0) {
@@ -297,25 +297,25 @@ Point32_t CostMap::getRelative(Point32_t point, int16_t dy, int16_t dx, bool usi
 	return point;
 }
 
-void CostMap::robotToPoint(Point32_t point, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y)
+void GridMap::robotToPoint(Point32_t point, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y)
 {
 	auto relative_point = getRelative(point, offset_lat, offset_long, true);
 	*x = cellToCount(countToCell(relative_point.X));
 	*y = cellToCount(countToCell(relative_point.Y));
 }
 
-void CostMap::robotToCell(Point32_t point, int16_t offset_lat, int16_t offset_long, int16_t &x, int16_t &y)
+void GridMap::robotToCell(Point32_t point, int16_t offset_lat, int16_t offset_long, int16_t &x, int16_t &y)
 {
 	auto relative_point = getRelative(point, offset_lat, offset_long, false);
 	x = countToCell(relative_point.X);
 	y = countToCell(relative_point.Y);
 }
 
-int32_t CostMap::cellToCount(int16_t i) {
+int32_t GridMap::cellToCount(int16_t i) {
 	return i * CELL_COUNT_MUL;
 }
 
-int16_t CostMap::countToCell(int32_t count) {
+int16_t GridMap::countToCell(int32_t count) {
 	if(count < -CELL_COUNT_MUL_1_2) {
 		return (count + CELL_COUNT_MUL_1_2) / CELL_COUNT_MUL - 1;
 	} else {
@@ -323,7 +323,7 @@ int16_t CostMap::countToCell(int32_t count) {
 	}
 }
 
-Point32_t CostMap::cellToPoint(const Cell_t &cell) {
+Point32_t GridMap::cellToPoint(const Cell_t &cell) {
 	Point32_t pnt;
 	pnt.X = cellToCount(cell.X);
 	pnt.Y = cellToCount(cell.Y);
@@ -331,7 +331,7 @@ Point32_t CostMap::cellToPoint(const Cell_t &cell) {
 	return pnt;
 }
 
-Cell_t CostMap::pointToCell(Point32_t pnt) {
+Cell_t GridMap::pointToCell(Point32_t pnt) {
 	Cell_t cell;
 	cell.X = countToCell(pnt.X);
 	cell.Y = countToCell(pnt.Y);
@@ -339,7 +339,7 @@ Cell_t CostMap::pointToCell(Point32_t pnt) {
 	return cell;
 }
 
-void CostMap::setCells(int8_t count, int16_t cell_x, int16_t cell_y, CellState state)
+void GridMap::setCells(int8_t count, int16_t cell_x, int16_t cell_y, CellState state)
 {
 	int8_t i, j;
 
@@ -350,7 +350,7 @@ void CostMap::setCells(int8_t count, int16_t cell_x, int16_t cell_y, CellState s
 	}
 }
 
-void CostMap::reset(uint8_t id)
+void GridMap::reset(uint8_t id)
 {
 #ifndef SHORTEST_PATH_V2
 	uint16_t idx;
@@ -366,7 +366,7 @@ void CostMap::reset(uint8_t id)
 #endif
 }
 
-void CostMap::convertFromSlamMap(float threshold)
+void GridMap::convertFromSlamMap(float threshold)
 {
 	// Clear the cost map itself.
 	reset(MAP);
@@ -382,10 +382,10 @@ void CostMap::convertFromSlamMap(float threshold)
 
 	// Set resolution multi between cost map and slam map.
 	auto multi = CELL_SIZE / (resolution * 1000.0);
-	ROS_INFO("%s %d: resolution: %f, multi: %f.", __FUNCTION__, __LINE__, resolution, multi);
+	//ROS_INFO("%s %d: resolution: %f, multi: %f.", __FUNCTION__, __LINE__, resolution, multi);
 	// Limit count for checking block.*/
 	auto limit_count = static_cast<uint16_t>((multi * multi) * threshold);
-	ROS_INFO("%s %d: limit_count: %d.", __FUNCTION__, __LINE__, limit_count);
+	//ROS_INFO("%s %d: limit_count: %d.", __FUNCTION__, __LINE__, limit_count);
 	// Set boundary for this cost map.
 	auto map_x_min = static_cast<int16_t>(origin_x * 1000.0 / CELL_SIZE);
 	if (map_x_min < -MAP_SIZE)
@@ -459,7 +459,7 @@ void CostMap::convertFromSlamMap(float threshold)
 	}
 }
 
-void CostMap::merge(CostMap source_map, bool add_slam_map_blocks_to_uncleaned, bool add_slam_map_blocks_to_cleaned,
+void GridMap::merge(GridMap source_map, bool add_slam_map_blocks_to_uncleaned, bool add_slam_map_blocks_to_cleaned,
 					bool add_slam_map_cleanable_area, bool clear_map_blocks, bool clear_slam_map_blocks)
 {
 	int16_t map_x_min, map_y_min, map_x_max, map_y_max;
@@ -487,7 +487,7 @@ void CostMap::merge(CostMap source_map, bool add_slam_map_blocks_to_uncleaned, b
 
 }
 
-void CostMap::slamMapToWorld(double origin_x_, double origin_y_, float resolution_, int16_t slam_map_x,
+void GridMap::slamMapToWorld(double origin_x_, double origin_y_, float resolution_, int16_t slam_map_x,
 							 int16_t slam_map_y, double &world_x, double &world_y)
 {
 	world_x = origin_x_ + (slam_map_x + 0.5) * resolution_;
@@ -496,7 +496,7 @@ void CostMap::slamMapToWorld(double origin_x_, double origin_y_, float resolutio
 //wy = origin_y_ + (my) * resolution_;
 }
 
-bool CostMap::worldToSlamMap(double origin_x_, double origin_y_, float resolution_, uint32_t slam_map_width,
+bool GridMap::worldToSlamMap(double origin_x_, double origin_y_, float resolution_, uint32_t slam_map_width,
 							 uint32_t slam_map_height, double world_x, double world_y, uint32_t &data_map_x, uint32_t &data_map_y)
 {
 	if (world_x < origin_x_ || world_y < origin_y_
@@ -509,18 +509,18 @@ bool CostMap::worldToSlamMap(double origin_x_, double origin_y_, float resolutio
 	return true;
 }
 
-uint32_t CostMap::getIndexOfSlamMapData(uint32_t slam_map_width, uint32_t data_map_x, uint32_t data_map_y)
+uint32_t GridMap::getIndexOfSlamMapData(uint32_t slam_map_width, uint32_t data_map_x, uint32_t data_map_y)
 {
 	return data_map_y * slam_map_width + data_map_x;
 }
 
-void CostMap::indexToCells(int size_x_, unsigned int index, unsigned int &mx, unsigned int &my)
+void GridMap::indexToCells(int size_x_, unsigned int index, unsigned int &mx, unsigned int &my)
 {
 	my = index / size_x_;
 	mx = index - (my * size_x_);
 }
 
-bool CostMap::worldToCount(double &wx, double &wy, int32_t &cx, int32_t &cy)
+bool GridMap::worldToCount(double &wx, double &wy, int32_t &cx, int32_t &cy)
 {
 	auto count_x = wx * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	auto count_y = wy * 1000 * CELL_COUNT_MUL / CELL_SIZE;
@@ -531,20 +531,20 @@ bool CostMap::worldToCount(double &wx, double &wy, int32_t &cx, int32_t &cy)
 	return true;
 }
 
-void CostMap::cellToWorld(double &worldX, double &worldY, int16_t &cellX, int16_t &cellY)
+void GridMap::cellToWorld(double &worldX, double &worldY, int16_t &cellX, int16_t &cellY)
 {
 	worldX = (double)cellX * CELL_SIZE / 1000.0;
 	worldY = (double)cellY * CELL_SIZE / 1000.0;
 }
 
-uint8_t CostMap::setLidar()
+uint8_t GridMap::setLidar()
 {
 #if LIDAR_MARKER
 	//MotionManage::s_lidar->lidarMarker(true);
 #endif
 }
 
-uint8_t CostMap::setObs()
+uint8_t GridMap::setObs()
 {
 	if (temp_obs_cells.empty())
 		return 0;
@@ -561,7 +561,7 @@ uint8_t CostMap::setObs()
 	return block_count;
 }
 
-uint8_t CostMap::setBumper()
+uint8_t GridMap::setBumper()
 {
 	if (temp_bumper_cells.empty())
 		return 0;
@@ -578,7 +578,7 @@ uint8_t CostMap::setBumper()
 	return block_count;
 }
 
-uint8_t CostMap::setTilt()
+uint8_t GridMap::setTilt()
 {
 	if (temp_tilt_cells.empty())
 		return 0;
@@ -595,7 +595,7 @@ uint8_t CostMap::setTilt()
 	return block_count;
 }
 
-uint8_t CostMap::setSlip()
+uint8_t GridMap::setSlip()
 {
 	if (temp_slip_cells.empty())
 		return 0;
@@ -612,7 +612,7 @@ uint8_t CostMap::setSlip()
 	return block_count;
 }
 
-uint8_t CostMap::setCliff()
+uint8_t GridMap::setCliff()
 {
 	if (temp_cliff_cells.empty())
 		return 0;
@@ -629,7 +629,7 @@ uint8_t CostMap::setCliff()
 	return block_count;
 }
 
-uint8_t CostMap::setRcon()
+uint8_t GridMap::setRcon()
 {
 	if (temp_rcon_cells.empty())
 		return 0;
@@ -646,7 +646,7 @@ uint8_t CostMap::setRcon()
 	return block_count;
 }
 
-uint8_t CostMap::saveChargerArea(const Cell_t home_point)
+uint8_t GridMap::saveChargerArea(const Cell_t home_point)
 {
 	//before set BLOCKED_RCON, clean BLOCKED_RCON in first.
 	temp_rcon_cells.clear();
@@ -678,7 +678,7 @@ uint8_t CostMap::saveChargerArea(const Cell_t home_point)
 	return block_count;
 }
 
-uint8_t CostMap::setFollowWall()
+uint8_t GridMap::setFollowWall()
 {
 
 	uint8_t block_count = 0;
@@ -699,7 +699,7 @@ uint8_t CostMap::setFollowWall()
 	}
 }
 
-uint8_t CostMap::saveSlip()
+uint8_t GridMap::saveSlip()
 {
 	if (!g_robot_slip)
 		return 0;
@@ -723,7 +723,7 @@ uint8_t CostMap::saveSlip()
 	return static_cast<uint8_t >(d_cells.size());
 }
 
-uint8_t CostMap::saveTilt()
+uint8_t GridMap::saveTilt()
 {
 	auto tilt_trig = ev.tilt_triggered;
 //	ROS_INFO("%s,%d: Current(%d, %d), trig(%d)",__FUNCTION__, __LINE__,get_curr_cell().X,get_curr_cell().Y, tilt_trig);
@@ -755,7 +755,7 @@ uint8_t CostMap::saveTilt()
 	return static_cast<uint8_t >(d_cells.size());
 }
 
-uint8_t CostMap::saveObs()
+uint8_t GridMap::saveObs()
 {
 	// Now obs is just for slowing down.
 	return 0;
@@ -794,7 +794,7 @@ uint8_t CostMap::saveObs()
 	return static_cast<uint8_t >(d_cells.size());*/
 }
 
-uint8_t CostMap::saveCliff()
+uint8_t GridMap::saveCliff()
 {
 	auto cliff_trig = ev.cliff_triggered/*cliff.get_status()*/;
 	if (! cliff_trig)
@@ -832,7 +832,7 @@ uint8_t CostMap::saveCliff()
 	return static_cast<uint8_t >(d_cells.size());
 }
 
-uint8_t CostMap::saveBumper()
+uint8_t GridMap::saveBumper()
 {
 	auto bumper_trig = ev.bumper_triggered/*bumper.get_status()*/;
 //	ROS_INFO("%s,%d: Current(%d, %d), jam(%d), cnt(%d), trig(%d)",__FUNCTION__, __LINE__,get_curr_cell().X,get_curr_cell().Y, ev.bumper_jam, g_bumper_cnt, bumper_trig);
@@ -875,7 +875,7 @@ uint8_t CostMap::saveBumper()
 	return static_cast<uint8_t >(d_cells.size());
 }
 
-uint8_t CostMap::saveRcon()
+uint8_t GridMap::saveRcon()
 {
 	uint8_t block_count;
 	if(c_rcon.should_mark_charger_ ){
@@ -986,7 +986,7 @@ uint8_t CostMap::saveRcon()
 #endif
 }
 
-uint8_t CostMap::saveFollowWall()
+uint8_t GridMap::saveFollowWall()
 {
 	auto dy = mt.is_left() ? 2 : -2;
 	int16_t x, y;
@@ -1006,7 +1006,7 @@ uint8_t CostMap::saveFollowWall()
 	return 1;
 }
 
-uint8_t CostMap::saveBlocks()
+uint8_t GridMap::saveBlocks()
 {
 	uint8_t block_count = 0;
 	block_count += saveBumper();
@@ -1019,7 +1019,7 @@ uint8_t CostMap::saveBlocks()
 	return block_count;
 }
 
-//uint8_t CostMap::set_blocks()
+//uint8_t GridMap::set_blocks()
 //{
 //	if(cm_is_follow_wall() || cm_is_go_charger())
 //		return 0;
@@ -1037,7 +1037,7 @@ uint8_t CostMap::saveBlocks()
 //}
 
 
-void CostMap::setCleaned(std::deque<Cell_t> &cells)
+void GridMap::setCleaned(std::deque<Cell_t> &cells)
 {
 	if(cells.empty())
 		return;
@@ -1103,7 +1103,7 @@ void CostMap::setCleaned(std::deque<Cell_t> &cells)
 	ROS_INFO("%s,%d:""\033[32m %s\033[0m",__FUNCTION__, __LINE__, msg.c_str());
 }
 
-bool CostMap::markRobot(uint8_t id)
+bool GridMap::markRobot(uint8_t id)
 {
 	if(!cs.is_trapped())
 		return false;
@@ -1126,7 +1126,7 @@ bool CostMap::markRobot(uint8_t id)
 	return ret;
 }
 
-Cell_t CostMap::updatePosition()
+Cell_t GridMap::updatePosition()
 {
 	auto pos_x = robot::instance()->getPoseX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	auto pos_y = robot::instance()->getPoseY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
@@ -1135,13 +1135,13 @@ Cell_t CostMap::updatePosition()
 	return getCurrCell();
 }
 
-uint32_t CostMap::getCleanedArea(void)
+uint32_t GridMap::getCleanedArea(void)
 {
 	uint32_t cleaned_count = 0;
-//	ROS_INFO("g_x_min= %d, g_x_max = %d",g_x_min,g_x_max);
-//	ROS_INFO("g_y_min= %d, g_y_max = %d",g_y_min,g_y_max);
-	for (int i = g_x_min; i <= g_x_max; ++i) {
-		for (int j = g_y_min; j <= g_y_max; ++j) {
+	int16_t map_x_min, map_y_min, map_x_max, map_y_max;
+	getMapRange(MAP, &map_x_min, &map_x_max, &map_y_min, &map_y_max);
+	for (int16_t i = map_x_min; i <= map_x_max; ++i) {
+		for (int16_t j = map_y_min; j <= map_y_max; ++j) {
 			if (getCell(MAP, i, j) == CLEANED) {
 				cleaned_count++;
 			}
@@ -1151,7 +1151,7 @@ uint32_t CostMap::getCleanedArea(void)
 	return cleaned_count;
 }
 
-uint8_t CostMap::isABlock(int16_t x, int16_t y)
+uint8_t GridMap::isABlock(int16_t x, int16_t y)
 {
 	uint8_t retval = 0;
 	CellState cs;
@@ -1164,7 +1164,7 @@ uint8_t CostMap::isABlock(int16_t x, int16_t y)
 	return retval;
 }
 
-uint8_t CostMap::isBlockedByBumper(int16_t x, int16_t y)
+uint8_t GridMap::isBlockedByBumper(int16_t x, int16_t y)
 {
 	uint8_t retval = 0;
 	int16_t i, j;
@@ -1184,7 +1184,7 @@ uint8_t CostMap::isBlockedByBumper(int16_t x, int16_t y)
 	return retval;
 }
 
-bool CostMap::isCellAccessible(int16_t x, int16_t y)
+bool GridMap::isBlockAccessible(int16_t x, int16_t y)
 {
 	bool retval = true;
 	int16_t i, j;
@@ -1200,14 +1200,14 @@ bool CostMap::isCellAccessible(int16_t x, int16_t y)
 	return retval;
 }
 
-bool CostMap::isBlockCleanable(int16_t x, int16_t y)
+bool GridMap::isBlockCleanable(int16_t x, int16_t y)
 {
 	auto retval = isUncleanAtY(x, y) && !isBlocksAtY(x, y);
 //	ROS_INFO("%s, %d:retval(%d)", __FUNCTION__, __LINE__, retval);
 	return retval;
 }
 
-int8_t CostMap::isBlockCleanedUnblock(int16_t x, int16_t y)
+int8_t GridMap::isBlockCleaned(int16_t x, int16_t y)
 {
 	uint8_t cleaned = 0;
 	int16_t i, j;
@@ -1217,17 +1217,15 @@ int8_t CostMap::isBlockCleanedUnblock(int16_t x, int16_t y)
 			auto state = getCell(MAP, x + i, y + j);
 			if (state == CLEANED) {
 				cleaned ++;
-			} else if(isBlocksAtY(x, y))
+			} else if(isABlock(x, y))
 				return false;
 		}
 	}
 
-	if (cleaned >= 7)
-		return true;
-	return false;
+	return cleaned >= 7;
 }
 
-uint8_t CostMap::isUncleanAtY(int16_t x, int16_t y)
+uint8_t GridMap::isUncleanAtY(int16_t x, int16_t y)
 {
 	uint8_t unclean_cnt = 0;
 	for (int8_t i = (y + ROBOT_RIGHT_OFFSET); i <= (y + ROBOT_LEFT_OFFSET); i++) {
@@ -1239,7 +1237,7 @@ uint8_t CostMap::isUncleanAtY(int16_t x, int16_t y)
 	return unclean_cnt;
 }
 
-uint8_t CostMap::isBlockBoundary(int16_t x, int16_t y)
+uint8_t GridMap::isBlockBoundary(int16_t x, int16_t y)
 {
 	uint8_t retval = 0;
 	int16_t i;
@@ -1253,7 +1251,7 @@ uint8_t CostMap::isBlockBoundary(int16_t x, int16_t y)
 	return retval;
 }
 
-uint8_t CostMap::isBlocksAtY(int16_t x, int16_t y)
+uint8_t GridMap::isBlocksAtY(int16_t x, int16_t y)
 {
 	uint8_t retval = 0;
 	int16_t i;
@@ -1268,7 +1266,7 @@ uint8_t CostMap::isBlocksAtY(int16_t x, int16_t y)
 	return retval;
 }
 
-uint8_t CostMap::isBlockBlockedXAxis(int16_t curr_x, int16_t curr_y)
+uint8_t GridMap::isBlockBlockedXAxis(int16_t curr_x, int16_t curr_y)
 {
 	uint8_t retval = 0;
 	int16_t x,y;
@@ -1284,7 +1282,7 @@ uint8_t CostMap::isBlockBlockedXAxis(int16_t curr_x, int16_t curr_y)
 	return retval;
 }
 
-void CostMap::generateSPMAP(const Cell_t &curr, PPTargetType &target_list)
+void GridMap::generateSPMAP(const Cell_t &curr, PPTargetType &target_list)
 {
 	bool		all_set;
 	int16_t		x, y, offset, passValue, nextPassValue, passSet, x_min, x_max, y_min, y_max;
@@ -1369,7 +1367,7 @@ void CostMap::generateSPMAP(const Cell_t &curr, PPTargetType &target_list)
 //	print(SPMAP, 0,0);
 }
 
-bool CostMap::isFrontBlockBoundary(int dx)
+bool GridMap::isFrontBlockBoundary(int dx)
 {
 	int32_t x, y;
 	for (auto dy = -1; dy <= 1; dy++)
@@ -1380,7 +1378,7 @@ bool CostMap::isFrontBlockBoundary(int dx)
 	}
 	return false;
 }
-void CostMap::getMapRange(uint8_t id, int16_t *x_range_min, int16_t *x_range_max, int16_t *y_range_min,
+void GridMap::getMapRange(uint8_t id, int16_t *x_range_min, int16_t *x_range_max, int16_t *y_range_min,
 						  int16_t *y_range_max)
 {
 	if (id == MAP || id == SPMAP) {
@@ -1393,12 +1391,12 @@ void CostMap::getMapRange(uint8_t id, int16_t *x_range_min, int16_t *x_range_max
 //		g_x_min, g_x_max, g_y_min, g_y_max, *x_range_min, *x_range_max, *y_range_min, *y_range_max);
 }
 
-bool CostMap::cellIsOutOfRange(Cell_t cell)
+bool GridMap::cellIsOutOfRange(Cell_t cell)
 {
 	return std::abs(cell.X) > MAP_SIZE || std::abs(cell.Y) > MAP_SIZE;
 }
 
-void CostMap::print(uint8_t id, int16_t endx, int16_t endy)
+void GridMap::print(uint8_t id, int16_t endx, int16_t endy)
 {
 	char outString[256];
 	#if ENABLE_DEBUG
@@ -1467,7 +1465,7 @@ void CostMap::print(uint8_t id, int16_t endx, int16_t endy)
 	#endif
 }
 
-void CostMap::colorPrint(char *outString, int16_t y_min, int16_t y_max)
+void GridMap::colorPrint(char *outString, int16_t y_min, int16_t y_max)
 {
 	int16_t j = 0;
 	char cs;
@@ -1538,7 +1536,7 @@ void CostMap::colorPrint(char *outString, int16_t y_min, int16_t y_max)
 	printf("%s\033[0m\n",y_col.c_str());
 }
 
-bool CostMap::isFrontBlocked(void)
+bool GridMap::isFrontBlocked(void)
 {
 	bool retval = false;
 	int16_t x,y;
