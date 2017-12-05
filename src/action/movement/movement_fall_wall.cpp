@@ -37,7 +37,7 @@ bool FollowWallMovement::isNewLineReach()
 		// Robot has reached the target line center but still not reach target line limit.
 		// Check if the wall side has blocks on the costmap.
 		auto dx = (is_pos_dir ^ mt.is_left()) ? +2 : -2;
-		if (cost_map.isBlockBlocked(cost_map.countToCell(s_curr_p.X) + dx, cost_map.countToCell(s_curr_p.Y))) {
+		if (cost_map.isBlocksAtY(cost_map.countToCell(s_curr_p.X) + dx, cost_map.countToCell(s_curr_p.Y))) {
 			ROS_WARN("%s %d: Already has block at the wall side, s_origin_p.Y(%d), target.Y(%d),curr_y(%d)",
 					 __FUNCTION__, __LINE__, cost_map.countToCell(s_origin_p.Y), cost_map.countToCell(s_target_p.Y),
 					 cost_map.countToCell(s_curr_p.Y));

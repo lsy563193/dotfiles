@@ -71,7 +71,7 @@ public:
 	static bool sortPathsWithTargetYAscend(const PathType a, const PathType b);
 
 protected:
-	Cell_t cell_index[9]={{1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1},{0,0}};
+	Cell_t cell_direction_index[9]={{1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1},{0,0}};
 };
 
 class NavCleanPathAlgorithm: public PathAlgorithm{
@@ -80,6 +80,7 @@ public:
 	PathType generatePath(CostMap &map, const Cell_t &curr_cell, const MapDirection &last_dir);
 
 private:
+	PathType findTargetInSameLane(CostMap &map, const Cell_t &curr_cell);
 	TargetList filterAllPossibleTarget(CostMap &map, const Cell_t &curr_cell, BoundingBox2 &b_map);
 	TargetList getReachableTargets(CostMap &map, const Cell_t &curr_cell, TargetList &possible_targets);
 	PathList tracePathsToTargets(CostMap &map, const TargetList &target_list, const Cell_t& curr_cell);

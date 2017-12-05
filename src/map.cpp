@@ -1202,7 +1202,7 @@ bool CostMap::isCellAccessible(int16_t x, int16_t y)
 
 bool CostMap::isBlockCleanable(int16_t x, int16_t y)
 {
-	auto retval = isBlockUnclean(x, y) && !isBlockBlocked(x, y);
+	auto retval = isUncleanAtY(x, y) && !isBlocksAtY(x, y);
 //	ROS_INFO("%s, %d:retval(%d)", __FUNCTION__, __LINE__, retval);
 	return retval;
 }
@@ -1217,7 +1217,7 @@ int8_t CostMap::isBlockCleanedUnblock(int16_t x, int16_t y)
 			auto state = getCell(MAP, x + i, y + j);
 			if (state == CLEANED) {
 				cleaned ++;
-			} else if(isBlockBlocked(x, y))
+			} else if(isBlocksAtY(x, y))
 				return false;
 		}
 	}
@@ -1227,7 +1227,7 @@ int8_t CostMap::isBlockCleanedUnblock(int16_t x, int16_t y)
 	return false;
 }
 
-uint8_t CostMap::isBlockUnclean(int16_t x, int16_t y)
+uint8_t CostMap::isUncleanAtY(int16_t x, int16_t y)
 {
 	uint8_t unclean_cnt = 0;
 	for (int8_t i = (y + ROBOT_RIGHT_OFFSET); i <= (y + ROBOT_LEFT_OFFSET); i++) {
@@ -1253,7 +1253,7 @@ uint8_t CostMap::isBlockBoundary(int16_t x, int16_t y)
 	return retval;
 }
 
-uint8_t CostMap::isBlockBlocked(int16_t x, int16_t y)
+uint8_t CostMap::isBlocksAtY(int16_t x, int16_t y)
 {
 	uint8_t retval = 0;
 	int16_t i;
@@ -1392,6 +1392,12 @@ void CostMap::getMapRange(uint8_t id, int16_t *x_range_min, int16_t *x_range_max
 //	ROS_INFO("Get Range:\tx: %d - %d\ty: %d - %d\tx range: %d - %d\ty range: %d - %d",
 //		g_x_min, g_x_max, g_y_min, g_y_max, *x_range_min, *x_range_max, *y_range_min, *y_range_max);
 }
+
+bool CostMap::cellIsOutOfRange(Cell_t cell)
+{
+	return std::abs(cell.X) > MAP_SIZE || std::abs(cell.Y) > MAP_SIZE;
+}
+
 void CostMap::print(uint8_t id, int16_t endx, int16_t endy)
 {
 	char outString[256];
@@ -1460,6 +1466,7 @@ void CostMap::print(uint8_t id, int16_t endx, int16_t endy)
 	printf("\n");
 	#endif
 }
+
 void CostMap::colorPrint(char *outString, int16_t y_min, int16_t y_max)
 {
 	int16_t j = 0;
@@ -1530,6 +1537,7 @@ void CostMap::colorPrint(char *outString, int16_t y_min, int16_t y_max)
 	}
 	printf("%s\033[0m\n",y_col.c_str());
 }
+
 bool CostMap::isFrontBlocked(void)
 {
 	bool retval = false;

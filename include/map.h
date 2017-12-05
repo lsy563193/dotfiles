@@ -194,7 +194,7 @@ public:
  */
 	bool isCellAccessible(int16_t x, int16_t y);
 
-	uint8_t isBlockBlocked(int16_t x, int16_t y);
+	uint8_t isBlocksAtY(int16_t x, int16_t y);
 
 	uint8_t isBlockBlockedXAxis(int16_t x, int16_t y);
 
@@ -220,7 +220,7 @@ public:
  * @return	0 if the block is cleaned
  *		1 if the block is uncleaned
  */
-	uint8_t isBlockUnclean(int16_t x, int16_t y);
+	uint8_t isUncleanAtY(int16_t x, int16_t y);
 
 /*
  * Check a block is cleaned or not, a block is defined as have the same size of brush.
@@ -297,6 +297,8 @@ public:
 		return bound;
 	}
 	void getMapRange(uint8_t id, int16_t *x_range_min, int16_t *x_range_max, int16_t *y_range_min, int16_t *y_range_max);
+
+	bool cellIsOutOfRange(Cell_t cell);
 
 	void colorPrint(char *outString, int16_t y_min, int16_t y_max);
 	void print(uint8_t id, int16_t endx, int16_t endy);

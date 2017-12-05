@@ -140,9 +140,9 @@ bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 	for (auto i = 0; i < 2; i++) {
 		it[i] = curr;
 		auto uc = 0;
-		for (Cell_t neighbor = it[i] + g_index[i]; !cell_is_out_of_range(neighbor + g_index[i]) && !cost_map.isBlockBlocked(
+		for (Cell_t neighbor = it[i] + g_index[i]; !cell_is_out_of_range(neighbor + g_index[i]) && !cost_map.isBlocksAtY(
 				neighbor.X, neighbor.Y); neighbor += g_index[i]) {
-			uc += cost_map.isBlockUnclean(neighbor.X, neighbor.Y);
+			uc += cost_map.isUncleanAtY(neighbor.X, neighbor.Y);
 			if (uc >= 3) {
 				it[i] = neighbor;
 				uc = 0;
