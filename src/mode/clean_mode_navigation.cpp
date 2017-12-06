@@ -8,7 +8,7 @@
 
 CleanModeNav::CleanModeNav()
 {
-	event_manager_register_handler(this);
+	register_events();
 //	setMode(this);
 	ROS_INFO("%s %d:this(%d)", __FUNCTION__, __LINE__,this);
 	sp_action_.reset(new ActionOpenGyro());
@@ -59,5 +59,11 @@ IAction *CleanModeNav::getNextAction() {
 State *CleanModeNav::getNextState() {
 	state_i_ = ac_null;
 	return nullptr;
+}
+
+void CleanModeNav::register_events(void)
+{
+	event_manager_register_handler(this);
+	event_manager_set_enable(true);
 }
 

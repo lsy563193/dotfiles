@@ -85,8 +85,8 @@ public:
 	CleanModeNav();
 	State* getNextState();
 	IAction* getNextAction();
-
-
+private:
+	void register_events(void);
 };
 
 #endif //PP_MODE_H_H
