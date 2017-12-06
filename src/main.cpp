@@ -54,7 +54,8 @@ void *core_move_thread(void *)
 		speaker.play(SPEAKER_PLEASE_START_CLEANING);
 
 #if NEW_FRAMEWORK
-	Mode* p_mode = new ModeSleep();
+//	Mode* p_mode = new ModeSleep();
+	Mode* p_mode = new CleanModeNav();
 	while(ros::ok())
 	{
 		p_mode->run();

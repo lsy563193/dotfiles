@@ -13,15 +13,9 @@ public:
 
 	bool isFinish();
 
-//	void registerMode(ACleanMode* sp_mode){
-//		sp_mode_ = sp_mode;
-//	};
-
-//	static ACleanMode* sp_mode_;
-
 protected:
 	static boost::shared_ptr<IMoveType> sp_move_type_;
-	static int s_index_;
+	int move_type_i_{mt_null};
 
 private:
 	enum {

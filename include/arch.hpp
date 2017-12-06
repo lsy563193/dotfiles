@@ -6,6 +6,7 @@
 #define PP_ARCH_HPP
 
 #include <stdint.h>
+#include <ros/ros.h>
 
 #include "action.hpp"
 #include "movement.hpp"

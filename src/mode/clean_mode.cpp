@@ -8,17 +8,18 @@
 boost::shared_ptr<State> ACleanMode::sp_state_ = nullptr;
 
 bool ACleanMode::isFinish() {
+	ROS_INFO("%s,%d",__FUNCTION__, __LINE__);
 	if(sp_state_ == nullptr)
-	{
-//		sp_state_->registerMode(this);
-//		sp_state_.reset(new StateClean());
-	}
+		sp_state_.reset(getNextState());
 
 	if(sp_state_->isFinish())
 	{
+		ROS_INFO("%s,%d",__FUNCTION__, __LINE__);
 		sp_state_.reset(getNextState());
+		ROS_INFO("%s,%d",__FUNCTION__, __LINE__);
 		if(sp_state_ == nullptr)
 			return true;
 	}
+	ROS_INFO("%s,%d",__FUNCTION__, __LINE__);
 	return false;
 }

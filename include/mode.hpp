@@ -69,7 +69,7 @@ protected:
 	int state_i_{st_null};
 		enum {
 		st_null,
-		st_state_clean,
+		st_clean,
 		st_go_home_point,
 		st_go_charger,
 		st_trapped,
@@ -80,12 +80,102 @@ protected:
 private:
 };
 
-class CleanModeNav:public ACleanMode{
+class CleanModeNav:public ACleanMode,public PathAlgorithm{
 public:
 	CleanModeNav();
 	State* getNextState();
 	IAction* getNextAction();
 
+protected:
+	Path_t plan_path_{};
+public:
+	/*
+	 * @author Patrick Chow / Lin Shao Yue
+	 * @last modify by Austin Liu
+	 *
+	 * This function is for finding path to unclean area.
+	 *
+	 * @param: GridMap map, it will use it's CLEAN_MAP data.
+	 * @param: Cell_t curr_cell, the current cell of robot.
+	 * @param: MapDirection last_dir, the direction of last movement.
+	 *
+	 * @return: Path_t path, the path to unclean area.
+	 */
+	Path_t generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir);
+
+private:
+	/*
+	 * @author Patrick Chow
+	 * @last modify by Austin Liu
+	 *
+	 * This function is for finding path to unclean area in the same lane.
+	 *
+	 * @param: GridMap map, it will use it's CLEAN_MAP data.
+	 * @param: Cell_t curr_cell, the current cell of robot.
+	 *
+	 * @return: Path_t path, the path to unclean area in the same lane.
+	 */
+	Path_t findTargetInSameLane(GridMap &map, const Cell_t &curr_cell);
+
+	/*
+	 * @author Lin Shao Yue
+	 * @last modify by Austin Liu
+	 *
+	 * This function is for finding all possiable targets in the map, judging by the boundary between
+	 * cleaned and reachable unclean area.
+	 *
+	 * @param: GridMap map, it will use it's CLEAN_MAP data.
+	 * @param: Cell_t curr_cell, the current cell of robot.
+	 * @param: BoundingBox2 b_map, generate by map, for simplifying code.
+	 *
+	 * @return: TargetList, a deque of possible targets.
+	 */
+	TargetList filterAllPossibleTargets(GridMap &map, const Cell_t &curr_cell, BoundingBox2 &b_map);
+
+	/*
+	 * @author Patrick Chow
+	 * @last modify by Austin Liu
+	 *
+	 * This function is for filtering targets with their cost in the COST_MAP.
+	 *
+	 * @param: GridMap map, it will use it's CLEAN_MAP data.
+	 * @param: Cell_t curr_cell, the current cell of robot.
+	 * @param: TargetList possible_targets, input target list.
+	 *
+	 * @return: TargetList, a deque of reachable targets.
+	 */
+	TargetList getReachableTargets(GridMap &map, const Cell_t &curr_cell, TargetList &possible_targets);
+
+	/*
+	 * @author Patrick Chow
+	 * @last modify by Austin Liu
+	 *
+	 * This function is for tracing the path from start cell to targets.
+	 *
+	 * @param: GridMap map, it will use it's CLEAN_MAP data.
+	 * @param: TargetList target_list, input target list.
+	 * @param: Cell_t start, the start cell.
+	 *
+	 * @return: PathList, a deque of paths from start cell to the input targets.
+	 */
+	PathList tracePathsToTargets(GridMap &map, const TargetList &target_list, const Cell_t& start);
+
+	/*
+	 * @author Patrick Chow
+	 * @last modify by Austin Liu
+	 *
+	 * This function is for selecting the best target in the input paths according to their path track.
+	 *
+	 * @param: GridMap map, it will use it's CLEAN_MAP data.
+	 * @param: PathLIst paths, the input paths.
+	 * @param: Cell_t curr_cell, the current cell of robot.
+	 *
+	 * @return: true if best target is selected.
+	 *          false if there is no target that match the condictions.
+	 *          Cell_t best_target, the selected best target.
+	 */
+	bool filterPathsToSelectTarget(GridMap &map, const PathList &paths, const Cell_t &curr_cell, Cell_t &best_target);
+private:
 
 };
 
