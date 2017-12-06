@@ -8,8 +8,8 @@ StateExploration::StateExploration() {
 
 }
 
-State *StateExploration::getNextState() {
-//	return State::setNextState();
-	return this;
+
+IMoveType *StateExploration::getNextMoveType() {
+	return nullptr;
 }
 

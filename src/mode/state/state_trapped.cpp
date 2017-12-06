@@ -8,11 +8,11 @@ StateTrapped::StateTrapped() {
 //		path.push_back(g_virtual_target);
 }
 
+IMoveType *StateTrapped::getNextMoveType() {
+	return nullptr;
+}
+
 //bool StateTrapped::isFinish() {
 //	return false;
 //}
 
-State *StateTrapped::getNextState() {
-//	return State::setNextState();
-	return this;
-}

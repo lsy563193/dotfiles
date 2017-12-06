@@ -7,3 +7,8 @@
 //bool MoveTypeFollowWall::isFinish() {
 //	return false;
 //}
+
+IAction *MoveTypeFollowWall::getNextAction() {
+	return nullptr;
+}
+

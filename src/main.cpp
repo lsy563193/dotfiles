@@ -57,10 +57,11 @@ void *core_move_thread(void *)
 	Mode* p_mode = new CleanModeNav();
 	while(ros::ok())
 	{
-		auto p_next_mode = p_mode->run();
+		p_mode->run();
+//		getNextMode();
 		ROS_INFO("%s %d:", __FUNCTION__, __LINE__);
-		delete p_mode;
-		p_mode = p_next_mode;
+//		delete p_mode;
+//		p_mode = p_next_mode;
 	}
 
 #else

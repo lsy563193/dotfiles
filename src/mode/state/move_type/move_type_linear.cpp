@@ -4,7 +4,6 @@
 #include "pp.h"
 #include "arch.hpp"
 
-IMoveType *MoveTypeLinear::getNextMoveType() {
-	return this;
+IAction *MoveTypeLinear::getNextAction() {
+	return nullptr;
 }
-

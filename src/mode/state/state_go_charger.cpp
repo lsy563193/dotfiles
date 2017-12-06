@@ -9,7 +9,7 @@ StateGoCharger::StateGoCharger() {
 	led.set_mode(LED_STEADY, LED_ORANGE);
 }
 
-State *StateGoCharger::getNextState() {
-//	return State::setNextState();
-	return this;
+IMoveType *StateGoCharger::getNextMoveType() {
+	return nullptr;
 }
+

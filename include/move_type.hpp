@@ -8,13 +8,11 @@
 //#include "arch.hpp"
 #include "boost/shared_ptr.hpp"
 
-class Mode;
 class IMoveType
 {
 public:
-	virtual IMoveType* getNextMoveType()=0;
 	bool isFinish();
-
+	virtual IAction* getNextAction()=0;
 //	void registerMode(ACleanMode* sp_mode)
 //	{
 //		sp_mode_ = sp_mode;
@@ -23,34 +21,40 @@ public:
 //	static ACleanMode* sp_mode_;
 protected:
 	static boost::shared_ptr<IAction> sp_movement_;
-	IMoveType* p_next_mt_;
-public:
+/*private:
 	enum {
-		mt_null,
-		mt_linear,
-		mt_follow_wall,
-		mt_go_charger,
-	};
+		ac_null,
+		ac_open_gyro,
+		ac_back_form_charger,
+		ac_open_lidar,
+		ac_align,
+		ac_open_slam,
+		ac_movement_forward,
+		ac_movement_back,
+		ac_movement_turn,
+		ac_movement_follow_wall,
+		ac_movement_go_charger,
+	};*/
 };
 
 class MoveTypeLinear:public IMoveType
 {
 public:
-	IMoveType* getNextMoveType();
+	IAction* getNextAction();
 protected:
 };
 
 class MoveTypeFollowWall:public IMoveType
 {
 public:
-	IMoveType* getNextMoveType();
+	IAction* getNextAction();
 protected:
 };
 
 class MoveTypeGoCharger:public IMoveType
 {
 public:
-	IMoveType* getNextMoveType();
+	IAction* getNextAction();
 protected:
 };
 

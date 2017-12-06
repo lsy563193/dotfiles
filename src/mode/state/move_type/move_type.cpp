@@ -15,9 +15,10 @@ bool IMoveType::isFinish() {
 	}
 	if(sp_movement_->isFinish())
 	{
-		sp_movement_.reset(sp_movement_->getNextAction());
+		sp_movement_.reset(getNextAction());
 		if(sp_movement_ == nullptr)
 			return true;
 	}
 	return false;
 }
+

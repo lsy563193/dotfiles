@@ -7,3 +7,7 @@
 //bool MoveTypeGoCharger::isFinish() {
 //	return false;
 //}
+
+IAction *MoveTypeGoCharger::getNextAction() {
+	return nullptr;
+}

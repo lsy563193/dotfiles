@@ -7,7 +7,7 @@
 
 boost::shared_ptr<IAction> Mode::sp_action_ = nullptr;
 
-Mode *Mode::run() {
+void Mode::run() {
 	ROS_INFO("%s %d:this(%d)", __FUNCTION__, __LINE__,this);
 	bool eh_status_now = false, eh_status_last = false;
 
@@ -23,11 +23,11 @@ Mode *Mode::run() {
 		if (isExit())
 		{
 			ROS_INFO("%s %d:", __FUNCTION__, __LINE__);
-			return p_next_clean_mode_;
+			return;
 		}
 		ROS_INFO("%s %d:", __FUNCTION__, __LINE__);
 		if (Mode::isFinish())
-			return p_next_clean_mode_;
+			return;
 
 		ROS_INFO("%s %d:", __FUNCTION__, __LINE__);
 		sp_action_->run();
@@ -44,62 +44,11 @@ bool Mode::isExit()
 bool Mode::isFinish() {
 	if (sp_action_->isFinish()) {
 		ROS_INFO("%s,%d",__FUNCTION__, __LINE__);
-		sp_action_.reset(sp_action_->getNextAction());
+		sp_action_.reset(getNextAction());
 		if(sp_action_ == nullptr)
 			return true;
 	}
 	return false;
-}
-
-IAction* Mode::getNextActionOpenGyro()
-{
-	ROS_INFO("%s,%d",__FUNCTION__, __LINE__);
-	IAction::setActionIndex(IAction::ac_null);
-	return nullptr;
-}
-
-IAction *Mode::getNextActionBackFromCharger() {
-	ROS_INFO("%s,%d",__FUNCTION__, __LINE__);
-	IAction::setActionIndex(IAction::ac_open_lidar);
-	return new ActionOpenLidar;
-}
-
-IAction *Mode::getNextActionOpenLidar() {
-	ROS_INFO("%s,%d",__FUNCTION__, __LINE__);
-	IAction::setActionIndex(IAction::ac_align);
-	return new ActionAlign;
-}
-
-IAction *Mode::getNextActionAlign() {
-	ROS_INFO("%s,%d",__FUNCTION__, __LINE__);
-	IAction::setActionIndex(IAction::ac_open_slam);
-	return new ActionOpenSlam;
-}
-
-IAction *Mode::getNextActionOpenSlam() {
-	ROS_INFO("%s,%d",__FUNCTION__, __LINE__);
-	IAction::setActionIndex(IAction::ac_null);
-	return nullptr ;
-}
-
-IAction *Mode::getNextActionMoveForward() {
-	return nullptr;
-}
-
-IAction *Mode::getNextActionMoveTurn() {
-	return nullptr;
-}
-
-IAction *Mode::getNextActionMoveBack() {
-	return nullptr;
-}
-
-IAction *Mode::getNextActionMoveFollowWall() {
-	return nullptr;
-}
-
-IAction *Mode::getNextActionGoCharger() {
-	return nullptr;
 }
 
 //IAction *Mode::get() {

@@ -5,7 +5,7 @@
 #ifndef PP_RCON_H
 #define PP_RCON_H
 
-#include "move_type_new.h"
+#include "move_type.h"
 //#include "clean_mode.h"
 #include "clean_state.h"
 

@@ -8,7 +8,7 @@ StateSelfCheck::StateSelfCheck() {
 
 }
 
-State *StateSelfCheck::getNextState() {
-//	return State::setNextState();
-	return this;
+IMoveType *StateSelfCheck::getNextMoveType() {
+	return nullptr;
 }
+

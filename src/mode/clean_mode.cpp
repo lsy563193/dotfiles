@@ -16,7 +16,7 @@ bool ACleanMode::isFinish() {
 
 	if(sp_state_->isFinish())
 	{
-		sp_state_.reset(sp_state_->getNextState());
+		sp_state_.reset(getNextState());
 		if(sp_state_ == nullptr)
 			return true;
 	}

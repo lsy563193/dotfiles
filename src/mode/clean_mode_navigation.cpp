@@ -9,33 +9,55 @@
 CleanModeNav::CleanModeNav()
 {
 	event_manager_register_handler(this);
-//	IAction::setMode(this);
-	ROS_INFO("%s %d:this(%d)", __FUNCTION__, __LINE__,this);
-	IAction::setActionIndex(IAction::ac_open_gyro);
+//	setMode(this);
 	ROS_INFO("%s %d:this(%d)", __FUNCTION__, __LINE__,this);
 	sp_action_.reset(new ActionOpenGyro());
 	ROS_INFO("%s %d:", __FUNCTION__, __LINE__);
-	sp_action_->registerMode(this);
+	action_i_ = ac_open_gyro;
 	ROS_INFO("%s %d:this(%d)", __FUNCTION__, __LINE__,this);
+//	sp_action_->registerMode(this);
+//	ROS_INFO("%s %d:this(%d)", __FUNCTION__, __LINE__,this);
 }
 
-IAction* CleanModeNav::getNextActionOpenGyro() {
-
-	ROS_INFO("%s,%d", __FUNCTION__, __LINE__);
-	if (charger.isOnStub()) {
-		IAction::setActionIndex(IAction::ac_back_form_charger);
-		return new ActionBackFromCharger;
+IAction *CleanModeNav::getNextAction() {
+	if(action_i_ == ac_open_gyro) {
+		ROS_INFO("%s,%d", __FUNCTION__, __LINE__);
+		if (charger.isOnStub()) {
+			action_i_ = ac_back_form_charger;
+			return new ActionBackFromCharger;
+		}
+		else {
+			action_i_ = ac_open_lidar;
+			return new ActionOpenLidar;
+		}
 	}
-	else {
-		IAction::setActionIndex(IAction::ac_open_lidar);
+	else if(action_i_ == ac_back_form_charger) {
+		ROS_INFO("%s,%d", __FUNCTION__, __LINE__);
+		action_i_ = ac_open_lidar;
 		return new ActionOpenLidar;
 	}
+	else if(action_i_ == ac_open_lidar) {
+		ROS_INFO("%s,%d", __FUNCTION__, __LINE__);
+		action_i_ = ac_align;
+		return new ActionAlign;
+	}
+	else if(action_i_ == ac_align)
+	{
+		ROS_INFO("%s,%d",__FUNCTION__, __LINE__);
+		action_i_ = ac_open_slam;
+		return new ActionOpenSlam;
+	}
+	else if(action_i_ == ac_open_slam) {
+		if (isFinish())
+			return nullptr;
+
+		return sp_action_.get();
+	}
+	return nullptr;
 }
 
-IAction *CleanModeNav::getNextActionOpenSlam() {
-
-	if(isFinish())
-		return nullptr;
-
-	return sp_action_.get();
+State *CleanModeNav::getNextState() {
+	state_i_ = ac_null;
+	return nullptr;
 }
+

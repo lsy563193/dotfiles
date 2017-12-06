@@ -11,7 +11,7 @@ StateTmpSpot::StateTmpSpot() {
 
 }
 
-State *StateTmpSpot::getNextState() {
-//	return State::setNextState();
-	return this;
+IMoveType *StateTmpSpot::getNextMoveType() {
+	return nullptr;
 }
+

@@ -9,7 +9,7 @@
 
 class State {
 public:
-	virtual State* getNextState()=0;
+	virtual IMoveType* getNextMoveType()=0;
 
 	bool isFinish();
 
@@ -22,23 +22,20 @@ public:
 protected:
 	static boost::shared_ptr<IMoveType> sp_move_type_;
 	static int s_index_;
-public:
+
+private:
 	enum {
-		st_null,
-		st_state_clean,
-		st_go_home_point,
-		st_go_charger,
-		st_trapped,
-		st_tmp_spot,
-		st_self_check,
-		st_exploration,
+		mt_null,
+		mt_linear,
+		mt_follow_wall,
+		mt_go_charger,
 	};
 };
 
 class StateClean: public State {
 public:
 	StateClean();
-	State* setNextState();
+	IMoveType* getNextMoveType();
 
 public:
 };
@@ -46,7 +43,7 @@ public:
 class StateGoHomePoint: public State {
 public:
 	StateGoHomePoint();
-	State* getNextState();
+	IMoveType* getNextMoveType();
 
 protected:
 	int gh_state_{};
@@ -58,32 +55,32 @@ private:
 class StateGoCharger: public State {
 public:
 	StateGoCharger();
-	State* getNextState();
+	IMoveType* getNextMoveType();
 
 };
 
 class StateTrapped: public State {
 public:
 	StateTrapped();
-	State* getNextState();
+	IMoveType* getNextMoveType();
 };
 
 class StateTmpSpot: public State {
 public:
 	StateTmpSpot();
-	State* getNextState();
+	IMoveType* getNextMoveType();
 };
 
 class StateSelfCheck: public State {
 public:
 	StateSelfCheck();
-	State* getNextState();
+	IMoveType* getNextMoveType();
 };
 
 class StateExploration: public State {
 public:
 	StateExploration();
-	State* getNextState();
+	IMoveType* getNextMoveType();
 };
 
 //Movement *StateClean::generateMovement(PathType path, const Cell_t &curr) {

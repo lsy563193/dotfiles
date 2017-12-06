@@ -8,7 +8,7 @@
 #include <gyro.h>
 #include <movement.h>
 #include <event_manager.h>
-#include <move_type_new.h>
+#include <move_type.h>
 #include <regulator.h>
 #include <mathematics.h>
 #include <space_exploration.h>

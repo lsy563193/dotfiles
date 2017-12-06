@@ -2,7 +2,7 @@
 // Created by lsy563193 on 12/4/17.
 //
 #include <arch.hpp>
-//int State::index_= st_null;
+//int State::action_i_= st_null;
 boost::shared_ptr<IMoveType> State::sp_move_type_ = nullptr;
 
 bool State::isFinish() {
@@ -14,7 +14,7 @@ bool State::isFinish() {
 
 	if(sp_move_type_->isFinish())
 	{
-		sp_move_type_.reset(sp_move_type_->getNextMoveType());
+		sp_move_type_.reset(getNextMoveType());
 		if(sp_move_type_ == nullptr)
 			return true;
 	}

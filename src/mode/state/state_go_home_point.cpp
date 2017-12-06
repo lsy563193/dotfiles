@@ -22,20 +22,24 @@ StateGoHomePoint::StateGoHomePoint():gh_state_(gh_ing) {
 	ev.battrey_home = false;
 }
 
-State *StateGoHomePoint::getNextState() {
-	if(gh_state_ == gh_succuss) {
-		if (g_home_point != g_zero_home || cm_turn_and_check_charger_signal()) {
-//			setActionIndex(CS_GO_CHANGER);
-			return new StateGoCharger;
-		}
-	}
-	else if(gh_state_ == gh_faile)
-	{
-		return new StateExploration;
-//		setActionIndex(CS_EXPLORATION);
-	}
-	return this;
+IMoveType *StateGoHomePoint::getNextMoveType() {
+	return nullptr;
 }
+//
+//State *StateGoHomePoint::getNextState() {
+//	if(gh_state_ == gh_succuss) {
+//		if (g_home_point != g_zero_home || cm_turn_and_check_charger_signal()) {
+////			curr(CS_GO_CHANGER);
+//			return new StateGoCharger;
+//		}
+//	}
+//	else if(gh_state_ == gh_faile)
+//	{
+//		return new StateExploration;
+////		curr(CS_EXPLORATION);
+//	}
+//	return this;
+//}
 
 //bool StateGoHomePoint::isStop() {
 //	return false;

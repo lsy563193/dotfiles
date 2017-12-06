@@ -41,7 +41,7 @@ FILE(GLOB PP_SRC
 				src/mode/state/state_tmp_spot.cpp
 				src/mode/state/state_exploration.cpp
 
-				src/mode/state/move_type/move_type_new.cpp
+				src/mode/state/move_type/move_type.cpp
 				src/mode/state/move_type/move_type_linear.cpp
 				src/mode/state/move_type/move_type_follow_wall.cpp
 				src/mode/state/move_type/move_type_go_charger.cpp
