@@ -30,6 +30,8 @@
 #include "go_home.hpp"
 #include "speaker.h"
 #include "clean_mode.h"
+#include "arch.hpp"
+
 
 #if VERIFY_CPU_ID || VERIFY_KEY
 #include "verify.h"

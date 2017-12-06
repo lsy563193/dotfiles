@@ -5,10 +5,12 @@
 #ifndef PP_MOVEMENT_HPP
 #define PP_MOVEMENT_HPP
 
-#include <stdint.h>
-#include "mode/mode.hpp"
 #include "governor.hpp"
-#include "wheel.hpp"
+#include "event_manager.h"
+#include "path_algorithm/path_algorithm.h"
+#include "boost/shared_ptr.hpp"
+
+
 
 class IMovement: public IAction,public IGovernor{
 public:
@@ -122,16 +124,7 @@ public:
 		turn_count++;
 	}
 
-	bool sp_turn_over(const Cell_t &curr) {
-		ROS_INFO("  %s %d:?? curr(%d,%d,%d)", __FUNCTION__, __LINE__, curr.X, curr.Y, curr.TH);
-		/*check if spot turn*/
-		if (get_sp_turn_count() > 400) {
-			reset_sp_turn_count();
-			ROS_WARN("  yes! sp_turn over 400");
-			return true;
-		}
-		return false;
-	}
+	bool sp_turn_over(const Cell_t &curr);
 
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
 
@@ -175,6 +168,51 @@ private:
 
 	int32_t same_speed_;
 	int32_t diff_speed_;
+};
+
+class MovementGoToCharger: public IMovement{
+public:
+	MovementGoToCharger();
+	~MovementGoToCharger(){ };
+	bool _isStop();
+	bool isSwitch();
+	void adjustSpeed(int32_t&, int32_t&);
+	void setTarget();
+	bool isChargerReach();
+	void resetGoToChargerVariables();
+
+	std::string getName()
+	{
+		std::string name = "MovementGoToCharger";
+		return name;
+	}
+
+protected:
+	bool isReach();
+
+private:
+	int8_t go_home_state_now;
+	uint16_t no_signal_cnt;
+	uint8_t move_away_from_charger_cnt;
+	uint32_t receive_code;
+	// This variables is for robot turning.
+	float current_angle;
+	float last_angle;
+	float angle_offset;
+	float gyro_step;
+	uint8_t around_charger_stub_dir;
+	uint8_t go_home_bumper_cnt;
+	uint8_t check_position_dir;
+	int8_t around_move_cnt;
+	bool position_far;
+	uint8_t near_counter;
+	uint8_t side_counter;
+	int8_t by_path_move_cnt;
+	uint8_t turn_connect_cnt;
+	uint8_t turn_connect_dir;
+
+	int32_t left_speed_;
+	int32_t right_speed_;
 };
 
 #endif //PP_MOVEMENT_HPP

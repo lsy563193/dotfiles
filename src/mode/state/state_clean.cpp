@@ -3,27 +3,29 @@
 //
 
 #include "pp.h"
-#include "state.hpp"
+#include "arch.hpp"
 
 StateClean::StateClean() {
 	led.set_mode(LED_STEADY, LED_GREEN);
-//	p_mt_.reset(new IMoveType);
+//	sp_move_type_.reset(new IMoveType);
 }
 
-bool StateClean::isFinish() {
-//	return path_next_nav(start, path);
-}
+//bool StateClean::isFinish() {
+//	return path_next_nav(sp_action_->, path);
+//}
 
 State *StateClean::setNextState() {
-//	ROS_INFO("%s%d:", __FUNCTION__, __LINE__);
-//	if (isTrapped()) {
-//		return new StateTrapped;
-////		path.push_back(g_virtual_target);
+//	auto path = sp_mode_->generatePath(nav_map,nav_map.getCurrCell(),g_old_dir);
+//	if(path.empty()) {
+//		ROS_INFO("%s%d:", __FUNCTION__, __LINE__);
+//		if (sp_mode_->checkTrapped(nav_map, nav_map.getCurrCell())) {
+//			return new StateTrapped;
+//		}
+//		else {
+//			return new StateGoHomePoint;
+//		}
 //	}
-//	else {
-//		return new StateGoHomePoint;
-////		setNext(CS_GO_HOME_POINT);
-////		return true;
-//	}
+	return this;
+
 }
 

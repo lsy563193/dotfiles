@@ -3,7 +3,7 @@
 //
 
 #include "pp.h"
-#include "mode/mode.hpp"
+#include "arch.hpp"
 
 int IAction::s_index_ = ac_null;
 Mode* IAction::sp_mode_ = nullptr;
@@ -19,6 +19,16 @@ IAction *IAction::getNextAction() {
 		sp_mode_->getNextActionAlign();
 	else if(s_index_ == ac_open_slam)
 		sp_mode_->getNextActionOpenSlam();
+	else if(s_index_ == ac_movement_forward)
+		sp_mode_->getNextActionMoveForward();
+	else if(s_index_ == ac_movement_follow_wall)
+		sp_mode_->getNextActionMoveFollowWall();
+	else if(s_index_ == ac_movement_back)
+		sp_mode_->getNextActionMoveBack();
+	else if(s_index_ == ac_movement_go_charger)
+		sp_mode_->getNextActionGoCharger();
+	else if(s_index_ == ac_movement_turn)
+		sp_mode_->getNextActionMoveTurn();
 	else {
 		s_index_ = ac_null;
 		return nullptr;

@@ -7,7 +7,7 @@
 
 #include <lidar.hpp>
 #include <ros/ros.h>
-#include <move_type.h>
+#include <move_type_new.h>
 #include <path_planning.h>
 #include <movement.h>
 #include <robot.hpp>

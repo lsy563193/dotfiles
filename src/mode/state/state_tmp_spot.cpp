@@ -4,17 +4,14 @@
 
 
 #include "pp.h"
-#include "state.hpp"
+#include "arch.hpp"
 
 
 StateTmpSpot::StateTmpSpot() {
 
 }
 
-bool StateTmpSpot::isFinish() {
-	return false;
-}
-
-State *StateTmpSpot::setNextState() {
-	return State::setNextState();
+State *StateTmpSpot::getNextState() {
+//	return State::setNextState();
+	return this;
 }

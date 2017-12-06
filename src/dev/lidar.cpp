@@ -11,7 +11,7 @@
 #include <ros/ros.h>
 #include <std_srvs/SetBool.h>
 #include <pp/SetLidar.h>
-#include <move_type.h>
+#include <move_type_new.h>
 #include <wheel.hpp>
 #include <error.h>
 
