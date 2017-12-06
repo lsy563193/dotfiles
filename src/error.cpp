@@ -77,13 +77,6 @@ bool Error::clear(uint8_t code)
 	bool cleared = true;
 	switch (code)
 	{
-		case ERROR_CODE_LEFTWHEEL:
-		case ERROR_CODE_RIGHTWHEEL:
-		case ERROR_CODE_LEFTBRUSH:
-		case ERROR_CODE_RIGHTBRUSH:
-		case ERROR_CODE_MAINBRUSH:
-		case ERROR_CODE_FAN_H:
-			break;
 		case ERROR_CODE_CLIFF:
 		{
 			if (cliff.get_status())
@@ -105,6 +98,9 @@ bool Error::clear(uint8_t code)
 		default:
 			break;
 	}
+
+	if (cleared)
+		set(ERROR_CODE_NONE);
 
 	return cleared;
 }

@@ -9,9 +9,11 @@
 
 class Battery {
 public:
-	uint8_t isFull(void);
+	bool isFull(void);
 
-	uint8_t isReadyToClean(void);
+	bool isReadyToClean(void);
+
+	bool isLow(void);
 
 	uint16_t getVoltage()
 	{

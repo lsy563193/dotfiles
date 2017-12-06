@@ -59,6 +59,14 @@ public:
 	void run();
 };
 
+class ActionSleep :public IAction
+{
+public:
+	ActionSleep();
+	bool isFinish();
+	void run();
 
+private:
+};
 
 #endif //PP_ACTION_H

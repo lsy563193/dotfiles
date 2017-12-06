@@ -29,7 +29,6 @@ FILE(GLOB PP_SRC
 	src/dev/speaker.cpp
 	src/dev/lidar.cpp
 
-	#For new framework
 #				src/action/action_new.cpp
 #				src/action/action_open_gyro_new.cpp
 				src/mode/state/state.cpp
@@ -46,10 +45,10 @@ FILE(GLOB PP_SRC
 				src/mode/state/move_type/move_type_follow_wall.cpp
 				src/mode/state/move_type/move_type_go_charger.cpp
 	src/mode/mode.cpp
+	src/mode/mode_sleep.cpp
 	src/mode/clean_mode.cpp
 	src/mode/clean_mode_navigation.cpp
 	src/path_algorithm/path_algorithm.cpp
-	#end
 
 	src/action/action.cpp
 	src/action/action_open_gyro.cpp
@@ -57,6 +56,7 @@ FILE(GLOB PP_SRC
 	src/action/action_open_lidar.cpp
 	src/action/action_align.cpp
 	src/action/action_open_slam.cpp
+	src/action/action_sleep.cpp
 
 	src/action/movement/movement.cpp
 	src/action/movement/movement_new.cpp
