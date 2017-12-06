@@ -5,42 +5,48 @@
 #ifndef PP_STATE_HPP
 #define PP_STATE_HPP
 
-#include <boost/shared_ptr.hpp>
-#include "move_type.hpp"
+//#include <boost/shared_ptr.hpp>
 
 class State {
 public:
-	virtual bool isFinish() = 0;
-	virtual State* setNextState();
+	virtual State* getNextState()=0;
 
-protected:
-	static boost::shared_ptr<IMoveType> p_mt_;
-//	enum{
-//		st_null,
-//		st_clean,
-//		st_go_home,
-//		st_go_charger,
-//		st_trapped,
-//		st_tmp_spot,
-//		st_self_check,
+	bool isFinish();
+
+//	void registerMode(ACleanMode* sp_mode){
+//		sp_mode_ = sp_mode;
 //	};
 
-//	static int index_;
+//	static ACleanMode* sp_mode_;
+
+protected:
+	static boost::shared_ptr<IMoveType> sp_move_type_;
+	static int s_index_;
+public:
+	enum {
+		st_null,
+		st_state_clean,
+		st_go_home_point,
+		st_go_charger,
+		st_trapped,
+		st_tmp_spot,
+		st_self_check,
+		st_exploration,
+	};
 };
 
 class StateClean: public State {
 public:
 	StateClean();
-	bool isFinish();
 	State* setNextState();
+
 public:
 };
 
 class StateGoHomePoint: public State {
 public:
 	StateGoHomePoint();
-	bool isFinish();
-	State* setNextState();
+	State* getNextState();
 
 protected:
 	int gh_state_{};
@@ -52,38 +58,32 @@ private:
 class StateGoCharger: public State {
 public:
 	StateGoCharger();
-	bool isFinish();
-	State* setNextState();
+	State* getNextState();
 
 };
 
 class StateTrapped: public State {
 public:
 	StateTrapped();
-	bool isFinish();
-	State* setNextState();
+	State* getNextState();
 };
 
 class StateTmpSpot: public State {
 public:
 	StateTmpSpot();
-	bool isFinish();
-	State* setNextState();
+	State* getNextState();
 };
 
 class StateSelfCheck: public State {
 public:
 	StateSelfCheck();
-	bool isFinish();
-	State* setNextState();
+	State* getNextState();
 };
 
 class StateExploration: public State {
 public:
 	StateExploration();
-	bool isFinish();
-	State* setNextState();
-
+	State* getNextState();
 };
 
 //Movement *StateClean::generateMovement(PathType path, const Cell_t &curr) {

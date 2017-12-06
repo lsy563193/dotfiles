@@ -3,7 +3,7 @@
 //
 
 #include "pp.h"
-#include <state.hpp>
+#include <arch.hpp>
 
 StateGoHomePoint::StateGoHomePoint():gh_state_(gh_ing) {
 	vacuum.setMode(Vac_Normal, false);
@@ -22,22 +22,7 @@ StateGoHomePoint::StateGoHomePoint():gh_state_(gh_ing) {
 	ev.battrey_home = false;
 }
 
-bool StateGoHomePoint::isFinish() {
-//	if (start == g_home_point) {
-//		gh_state_ = gh_succuss;
-//		return true;
-//	}
-//	else if (path_get_home_point_target(start, path))
-//	{
-//		gh_state_ = gh_faile;
-////		setNext(CS_EXPLORATION);
-//		return true;
-//	}
-
-	return false;
-}
-
-State *StateGoHomePoint::setNextState() {
+State *StateGoHomePoint::getNextState() {
 	if(gh_state_ == gh_succuss) {
 		if (g_home_point != g_zero_home || cm_turn_and_check_charger_signal()) {
 //			setActionIndex(CS_GO_CHANGER);
@@ -49,6 +34,7 @@ State *StateGoHomePoint::setNextState() {
 		return new StateExploration;
 //		setActionIndex(CS_EXPLORATION);
 	}
+	return this;
 }
 
 //bool StateGoHomePoint::isStop() {

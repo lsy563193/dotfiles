@@ -3,6 +3,22 @@
 //
 
 #include "pp.h"
-#include "clean_mode.hpp"
+#include "arch.hpp"
 
 boost::shared_ptr<State> ACleanMode::sp_state_ = nullptr;
+
+bool ACleanMode::isFinish() {
+	if(sp_state_ == nullptr)
+	{
+//		sp_state_->registerMode(this);
+//		sp_state_.reset(new StateClean());
+	}
+
+	if(sp_state_->isFinish())
+	{
+		sp_state_.reset(sp_state_->getNextState());
+		if(sp_state_ == nullptr)
+			return true;
+	}
+	return false;
+}

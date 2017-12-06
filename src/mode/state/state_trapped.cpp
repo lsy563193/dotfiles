@@ -2,16 +2,17 @@
 // Created by lsy563193 on 12/4/17.
 //
 #include "pp.h"
-#include "state.hpp"
+#include "arch.hpp"
 
 StateTrapped::StateTrapped() {
-
+//		path.push_back(g_virtual_target);
 }
 
-bool StateTrapped::isFinish() {
-	return false;
-}
+//bool StateTrapped::isFinish() {
+//	return false;
+//}
 
-State *StateTrapped::setNextState() {
-	return State::setNextState();
+State *StateTrapped::getNextState() {
+//	return State::setNextState();
+	return this;
 }

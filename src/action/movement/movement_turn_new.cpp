@@ -2,8 +2,7 @@
 // Created by lsy563193 on 11/29/17.
 //
 #include "pp.h"
-#include "movement.hpp"
-#include "pp.h"
+#include "arch.hpp"
 
 #define TURN_REGULATOR_WAITING_FOR_LIDAR 1
 #define TURN_REGULATOR_TURNING 2

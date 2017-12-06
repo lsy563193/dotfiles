@@ -5,37 +5,52 @@
 #ifndef PP_MOVE_TYPE_HPP
 #define PP_MOVE_TYPE_HPP
 
-#include "movement.hpp"
+//#include "arch.hpp"
+#include "boost/shared_ptr.hpp"
 
+class Mode;
 class IMoveType
 {
 public:
+	virtual IMoveType* getNextMoveType()=0;
+	bool isFinish();
 
+//	void registerMode(ACleanMode* sp_mode)
+//	{
+//		sp_mode_ = sp_mode;
+//	}
+
+//	static ACleanMode* sp_mode_;
 protected:
-	static boost::shared_ptr<IMovement> sp_movement_;
+	static boost::shared_ptr<IAction> sp_movement_;
+	IMoveType* p_next_mt_;
+public:
+	enum {
+		mt_null,
+		mt_linear,
+		mt_follow_wall,
+		mt_go_charger,
+	};
 };
 
-class MoveTypeLinear
+class MoveTypeLinear:public IMoveType
 {
 public:
-	bool isFinish();
-//	IMovement* setNetMovement();
+	IMoveType* getNextMoveType();
 protected:
 };
 
-class MoveTypeFollowWall
+class MoveTypeFollowWall:public IMoveType
 {
 public:
-	bool isFinish();
-//	IMovement* setNetMovement();
+	IMoveType* getNextMoveType();
 protected:
 };
 
-class MoveTypeGoCharge
+class MoveTypeGoCharger:public IMoveType
 {
 public:
-	bool isFinish();
-//	IMovement* setNetMovement();
+	IMoveType* getNextMoveType();
 protected:
 };
 

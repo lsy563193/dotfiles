@@ -4,27 +4,19 @@
 
 #include <event_manager.h>
 #include <pp.h>
-#include <clean_mode.hpp>
-#include "ros/ros.h"
+#include "arch.hpp"
 
 CleanModeNav::CleanModeNav()
 {
 	event_manager_register_handler(this);
 //	IAction::setMode(this);
-	IAction::setActionIndex(IAction::ac_open_gyro);
-	sp_action_.reset(new ActionOpenGyro(this));
-//	ROS_INFO("%s %d:", __FUNCTION__, __LINE__);
 	ROS_INFO("%s %d:this(%d)", __FUNCTION__, __LINE__,this);
-}
-
-bool CleanModeNav::updateAction() {
-	if(sp_state_ != nullptr)
-	{
-
-	}
-	else{
-		Mode::updateAction();
-	}
+	IAction::setActionIndex(IAction::ac_open_gyro);
+	ROS_INFO("%s %d:this(%d)", __FUNCTION__, __LINE__,this);
+	sp_action_.reset(new ActionOpenGyro());
+	ROS_INFO("%s %d:", __FUNCTION__, __LINE__);
+	sp_action_->registerMode(this);
+	ROS_INFO("%s %d:this(%d)", __FUNCTION__, __LINE__,this);
 }
 
 IAction* CleanModeNav::getNextActionOpenGyro() {
@@ -41,9 +33,9 @@ IAction* CleanModeNav::getNextActionOpenGyro() {
 }
 
 IAction *CleanModeNav::getNextActionOpenSlam() {
-	sp_state_.reset(new StateClean());
-//	sp_state_.reset();
-	return nullptr;
-//	return
-//	return Mode::getNextActionClean();
+
+	if(isFinish())
+		return nullptr;
+
+	return sp_action_.get();
 }

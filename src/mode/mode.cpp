@@ -3,7 +3,7 @@
 //
 
 #include <pp.h>
-#include <mode/mode.hpp>
+#include <arch.hpp>
 
 boost::shared_ptr<IAction> Mode::sp_action_ = nullptr;
 
@@ -26,7 +26,7 @@ Mode *Mode::run() {
 			return p_next_clean_mode_;
 		}
 		ROS_INFO("%s %d:", __FUNCTION__, __LINE__);
-		if (! updateAction())
+		if (Mode::isFinish())
 			return p_next_clean_mode_;
 
 		ROS_INFO("%s %d:", __FUNCTION__, __LINE__);
@@ -41,13 +41,14 @@ bool Mode::isExit()
 	return false;
 }
 
-bool Mode::updateAction() {
+bool Mode::isFinish() {
 	if (sp_action_->isFinish()) {
 		ROS_INFO("%s,%d",__FUNCTION__, __LINE__);
 		sp_action_.reset(sp_action_->getNextAction());
-		return sp_action_ != nullptr;
+		if(sp_action_ == nullptr)
+			return true;
 	}
-	return true;
+	return false;
 }
 
 IAction* Mode::getNextActionOpenGyro()
@@ -79,6 +80,26 @@ IAction *Mode::getNextActionOpenSlam() {
 	ROS_INFO("%s,%d",__FUNCTION__, __LINE__);
 	IAction::setActionIndex(IAction::ac_null);
 	return nullptr ;
+}
+
+IAction *Mode::getNextActionMoveForward() {
+	return nullptr;
+}
+
+IAction *Mode::getNextActionMoveTurn() {
+	return nullptr;
+}
+
+IAction *Mode::getNextActionMoveBack() {
+	return nullptr;
+}
+
+IAction *Mode::getNextActionMoveFollowWall() {
+	return nullptr;
+}
+
+IAction *Mode::getNextActionGoCharger() {
+	return nullptr;
 }
 
 //IAction *Mode::get() {

@@ -9,7 +9,7 @@
 #include <path_planning.h>
 #include <clean_state.h>
 #include <pp.h>
-#include "move_type.h"
+#include "move_type_new.h"
 #include "spot.h"
 #include "clean_mode.h"
 

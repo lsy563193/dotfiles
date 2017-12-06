@@ -13,7 +13,7 @@
 #include "lidar.hpp"
 #include "slam.h"
 #include "error.h"
-#include "move_type.h"
+#include "move_type_new.h"
 #include <clean_state.h>
 #include <vacuum.h>
 #include <brush.h>
@@ -27,7 +27,7 @@
 #include "core_move.h"
 #include "event_manager.h"
 #include "spot.h"
-#include "move_type.h"
+#include "move_type_new.h"
 #include "robotbase.h"
 #include "map.h"
 #include "regulator.h"

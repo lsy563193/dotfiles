@@ -7,7 +7,7 @@
 //
 
 #include "pp.h"
-#include "movement.hpp"
+#include "arch.hpp"
 
 double robot_to_wall_distance = 0.8;
 
@@ -451,3 +451,13 @@ void MovementFollowWall::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	}
 }
 
+bool MovementFollowWall::sp_turn_over(const Cell_t &curr) {
+		ROS_INFO("  %s %d:?? curr(%d,%d,%d)", __FUNCTION__, __LINE__, curr.X, curr.Y, curr.TH);
+		/*check if spot turn*/
+		if (get_sp_turn_count() > 400) {
+			reset_sp_turn_count();
+			ROS_WARN("  yes! sp_turn over 400");
+			return true;
+		}
+		return false;
+	}

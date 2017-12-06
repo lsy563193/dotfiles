@@ -10,7 +10,7 @@
 #include <core_move.h>
 #include <gyro.h>
 #include <robot.hpp>
-#include <move_type.h>
+#include <move_type_new.h>
 
 //#include "a_star.h"
 #include "map.h"

@@ -3,14 +3,13 @@
 //
 
 #include "pp.h"
-#include "mode/mode.hpp"
+#include "arch.hpp"
 
 //IAction::IAction(Mode* p_mode) {
 //	sp_mode_ = p_mode;
 //}
 
-ActionOpenGyro::ActionOpenGyro(Mode* p_mode){
-	IAction::sp_mode_ = p_mode;
+ActionOpenGyro::ActionOpenGyro(){
 	// Set for LEDs.
 		if (ev.remote_home || g_go_home_by_remote)
 			led.set_mode(LED_FLASH, LED_ORANGE, 1000);
