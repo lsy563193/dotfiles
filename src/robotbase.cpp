@@ -312,7 +312,10 @@ void *robotbase_routine(void*)
 
 		sensor.ir_ctrl = serial.receive_stream[REC_REMOTE_IR];
 		if (sensor.ir_ctrl > 0)
+		{
+			ROS_DEBUG("%s %d: Remote received:%d", __FUNCTION__, __LINE__, sensor.ir_ctrl);
 			remote.set(sensor.ir_ctrl);
+		}
 
 		sensor.c_stub = (serial.receive_stream[REC_CHARGE_STUB_4] << 24 ) | (serial.receive_stream[REC_CHARGE_STUB_3] << 16)
 			| (serial.receive_stream[REC_CHARGE_STUB_2] << 8) | serial.receive_stream[REC_CHARGE_STUB_1];

@@ -30,6 +30,7 @@
 #include "go_home.hpp"
 #include "speaker.h"
 #include "clean_mode.h"
+#include "mode/mode_sleep.hpp"
 
 #if VERIFY_CPU_ID || VERIFY_KEY
 #include "verify.h"
@@ -52,7 +53,7 @@ void *core_move_thread(void *)
 		speaker.play(SPEAKER_PLEASE_START_CLEANING);
 
 #if NEW_FRAMEWORK
-	Mode* p_mode = new CleanModeNav();
+	Mode* p_mode = new ModeSleep();
 	while(ros::ok())
 	{
 		auto p_next_mode = p_mode->run();

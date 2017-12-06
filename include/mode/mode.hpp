@@ -12,10 +12,12 @@
 class IAction;
 class Mode:public EventHandle{
 public:
+	virtual ~Mode(){};
+
 	Mode* run();
 	virtual bool isExit();
 	virtual bool updateAction();
-	virtual IAction* getNextActionOpenGyro()=0;
+	virtual IAction* getNextActionOpenGyro();
 	virtual IAction* getNextActionBackFromCharger();
 	virtual IAction* getNextActionOpenLidar();
 	virtual IAction* getNextActionAlign();

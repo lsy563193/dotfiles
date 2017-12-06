@@ -5,6 +5,8 @@
 #ifndef PP_ACTION_H
 #define PP_ACTION_H
 
+#include "stdint.h"
+
 class Mode;
 class IAction{
 public:
@@ -17,7 +19,7 @@ public:
 	virtual void run()=0;
 //	static void setMode(Mode* p_mode);
 
-	enum {ac_null,ac_open_gyro,ac_back_form_charger,ac_open_lidar,ac_align,ac_open_slam};
+	enum {ac_null,ac_open_gyro,ac_back_form_charger,ac_open_lidar,ac_align,ac_open_slam, ac_sleep};
 protected:
 	static Mode* sp_mode_;
 	static int s_index_;
@@ -67,6 +69,14 @@ public:
 	void run();
 };
 
+class ActionSleep :public IAction
+{
+public:
+	ActionSleep();
+	bool isFinish();
+	void run();
 
+private:
+};
 
 #endif //PP_ACTION_H
