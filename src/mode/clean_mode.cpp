@@ -6,20 +6,22 @@
 #include "arch.hpp"
 
 boost::shared_ptr<State> ACleanMode::sp_state_ = nullptr;
+boost::shared_ptr<IMoveType> ACleanMode::sp_move_type_ = nullptr;
+//boost::shared_ptr<IMovement> ACleanMode::sp_movement_ = nullptr;
 
 bool ACleanMode::isFinish() {
-	ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__);
+	PP_INFO();
 	if(sp_state_ == nullptr)
 		sp_state_.reset(getNextState());
 
-	if(sp_state_->isFinish(this))
+	if(sp_state_->isFinish(this,sp_move_type_.get(),sp_action_.get() ,action_i_))
 	{
-		ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__);
+		PP_INFO();
 		sp_state_.reset(getNextState());
-		ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__);
+		PP_INFO();
 		if(sp_state_ == nullptr)
 			return true;
 	}
-	ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__);
+	PP_INFO();
 	return false;
 }

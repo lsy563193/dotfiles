@@ -12,10 +12,9 @@ class State {
 public:
 //	virtual IMoveType* getNextMoveType()=0;
 
-	bool isFinish(ACleanMode* p_mode);
+	bool isFinish(ACleanMode* p_mode, IMoveType* p_move_type,IAction* p_action, int& action_i);
 
 protected:
-	static boost::shared_ptr<IMoveType> sp_move_type_;
 
 };
 

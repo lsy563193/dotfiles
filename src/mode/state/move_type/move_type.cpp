@@ -5,21 +5,24 @@
 //#include "pp.h"
 #include "arch.hpp"
 
-boost::shared_ptr<IAction> IMoveType::sp_movement_ = nullptr;
+//boost::shared_ptr<IAction> IMoveType::sp_movement_ = nullptr;
 
-bool IMoveType::isFinish(ACleanMode* p_mode_) {
-	ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__);
-	if(sp_movement_ == nullptr)
-		sp_movement_.reset(p_mode_->getNextMovement());
+bool IMoveType::isFinish(ACleanMode* p_mode_,IAction* p_action,  int& action_i) {
+	PP_INFO();
+	if (action_i != Mode::ac_movement_turn &&
+			action_i != Mode::ac_movement_back &&
+			action_i != Mode::ac_movement_forward &&
+			action_i != Mode::ac_movement_follow_wall
+					)
+		action_i = p_mode_->getNextMovement();
 
-	if(sp_movement_->isFinish())
-	{
-		ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__);
-		sp_movement_.reset(p_mode_->getNextMovement());
-		if(sp_movement_ == nullptr)
+	if (p_action->isFinish()) {
+		PP_INFO();
+		action_i = p_mode_->getNextMovement();
+		if (action_i == Mode::ac_null)
 			return true;
 	}
-	ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__);
+	PP_INFO();
 	return false;
 }
 

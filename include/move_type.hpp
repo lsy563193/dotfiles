@@ -12,7 +12,7 @@ class ACleanMode;
 class IMoveType
 {
 public:
-	bool isFinish(ACleanMode* p_mode_);
+	bool isFinish(ACleanMode* p_mode_,IAction* p_action,  int& action_i);
 //	virtual IAction* getNextMovement()=0;
 //	void registerMode(ACleanMode* sp_mode)
 //	{
@@ -21,7 +21,6 @@ public:
 
 //	static ACleanMode* sp_mode_;
 protected:
-	static boost::shared_ptr<IAction> sp_movement_;
 
 };
 

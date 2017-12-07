@@ -70,11 +70,11 @@ public:
 
 	static bool isYDirection(MapDirection dir);
 
-	int32_t getXCount(void);
+	static int32_t getXCount(void);
 
-	int32_t getYCount(void);
+	static int32_t getYCount(void);
 
-	Point32_t getCurrPoint(void);
+	static Point32_t getCurrPoint(void);
 
 	int16_t getXCell(void);
 
@@ -102,7 +102,7 @@ public:
 
 	static Point32_t cellToPoint(const Cell_t &cell);
 
-	Cell_t pointToCell(Point32_t pnt);
+	static Cell_t pointToCell(Point32_t pnt);
 
 	void setCells(int8_t count, int16_t cell_x, int16_t cell_y, CellState state);
 

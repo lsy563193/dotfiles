@@ -5,19 +5,18 @@
 
 extern MapDirection g_old_dir;
 //int State::action_i_= st_null;
-boost::shared_ptr<IMoveType> State::sp_move_type_ = nullptr;
 
-bool State::isFinish(ACleanMode* p_mode) {
-	ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__);
-	if(sp_move_type_ == nullptr)
-		sp_move_type_.reset(p_mode->getNextMoveType(nav_map.getCurrCell(),g_old_dir));
-	if(sp_move_type_->isFinish(p_mode))
+bool State::isFinish(ACleanMode* p_mode, IMoveType* p_move_type,IAction* p_action, int& action_i) {
+	PP_INFO();
+	if(p_move_type == nullptr)
+		p_move_type = p_mode->getNextMoveType(nav_map.getCurrCell(),g_old_dir);
+	if(p_move_type->isFinish(p_mode, p_action, action_i))
 	{
-		ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__);
-		sp_move_type_.reset(p_mode->getNextMoveType(nav_map.getCurrCell(),g_old_dir));
-		if(sp_move_type_ == nullptr)
+		PP_INFO();
+		p_move_type = p_mode->getNextMoveType(nav_map.getCurrCell(),g_old_dir);
+		if(p_move_type == nullptr)
 			return true;
 	}
-	ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__);
+	PP_INFO();
 	return false;
 }
