@@ -27,7 +27,7 @@ void Mode::run() {
 			return;
 		}
 //		PP_INFO();
-		if (Mode::isFinish())
+		if (isFinish())
 			return;
 
 //		PP_INFO();
@@ -43,19 +43,7 @@ bool Mode::isExit()
 }
 
 bool Mode::isFinish() {
-	if (sp_action_->isFinish()) {
-		PP_INFO();
-		sp_action_.reset(getNextAction());
-		PP_INFO();
-		if(sp_action_ == nullptr)
-		{
-			PP_INFO();
-			return true;
-		}
-		PP_INFO();
-	}
-//	PP_INFO();
-	return false;
+	return sp_action_->isFinish();
 }
 
 //IAction *Mode::get() {

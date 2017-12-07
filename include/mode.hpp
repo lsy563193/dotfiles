@@ -18,8 +18,6 @@ public:
 
 	virtual bool isFinish();
 
-	virtual IAction* getNextAction()=0;
-
 	friend IMoveType;
 protected:
 	static boost::shared_ptr<IAction> sp_action_;
@@ -27,18 +25,18 @@ protected:
 	enum {
 		ac_null,
 		ac_open_gyro,
-		ac_back_form_charger,
+		ac_back_form_charger,//2
 		ac_open_lidar,
-		ac_align,
+		ac_align,//4
 		ac_open_slam,
-		ac_movement_forward,
+		ac_movement_forward,//6
 		ac_movement_back,
-		ac_movement_turn,
+		ac_movement_turn,//8
 		ac_movement_follow_wall,
 //		ac_movement_follow_wall_left,
 //		ac_movement_follow_wall_right,
 		ac_movement_go_charger,
-		ac_sleep,
+		ac_sleep,//10
 	};
 private:
 
@@ -111,7 +109,7 @@ public:
 	State* getNextState();
 	IMoveType* getNextMoveType(const Cell_t& start, MapDirection dir);
 	int getNextMovement();
-	IAction* getNextAction();
+	bool isFinish();
 
 private:
 	void register_events(void);

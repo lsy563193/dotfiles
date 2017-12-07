@@ -19,65 +19,50 @@ CleanModeNav::CleanModeNav()
 //	ROS_INFO("%s %d:this(%d)", __FUNCTION__, __LINE__,this);
 }
 
-IAction *CleanModeNav::getNextAction() {
-	if(action_i_ == ac_open_gyro) {
-		PP_INFO();
+bool CleanModeNav::isFinish() {
+
+	if (!Mode::isFinish())
+		return false;
+
+	if (action_i_ == ac_open_gyro) {
 		if (charger.isOnStub()) {
 			action_i_ = ac_back_form_charger;
-			return new ActionBackFromCharger;
+			sp_action_.reset(new ActionBackFromCharger);
 		}
 		else {
 			action_i_ = ac_open_lidar;
-			return new ActionOpenLidar;
+			sp_action_.reset(new ActionOpenLidar);
 		}
 	}
-	else if(action_i_ == ac_back_form_charger) {
-		PP_INFO();
+	else if (action_i_ == ac_back_form_charger) {
 		action_i_ = ac_open_lidar;
-		return new ActionOpenLidar;
+		sp_action_.reset(new ActionOpenLidar);
 	}
-	else if(action_i_ == ac_open_lidar) {
-		PP_INFO();
+	else if (action_i_ == ac_open_lidar) {
 		action_i_ = ac_align;
-		return new ActionAlign;
+		sp_action_.reset(new ActionAlign);
 	}
-	else if(action_i_ == ac_align)
-	{
-		PP_INFO();
+	else if (action_i_ == ac_align) {
 		action_i_ = ac_open_slam;
-		return new ActionOpenSlam;
+		sp_action_.reset(new ActionOpenSlam);
 	}
-	else if(action_i_ == ac_open_slam) {
-		PP_INFO();
-		if (isFinish())
-		{
-			PP_INFO();
-			return nullptr;
+	else if (action_i_ == ac_open_slam || action_i_ == ac_movement_forward || action_i_ == ac_movement_turn ||
+					 action_i_ == ac_movement_follow_wall || action_i_ == ac_movement_back) {
+		if (!ACleanMode::isFinish()) {
+			if (action_i_ == ac_movement_forward)
+				sp_action_.reset(new MovementForward(GridMap::cellToPoint(plan_path_.back()), plan_path_));
+			else if (action_i_ == ac_movement_follow_wall)
+				sp_action_.reset(new MovementFollowWall(GridMap::getCurrPoint(), GridMap::cellToPoint(plan_path_.back())));
+			else if (action_i_ == ac_movement_back)
+				sp_action_.reset(new MovementBack());
+			else if (action_i_ == ac_movement_turn)
+				sp_action_.reset(new MovementTurn(plan_path_.back().TH));
 		}
-		PP_INFO();
-		if(action_i_ == ac_movement_forward)
-		{
-			PP_INFO();
-			return new MovementForward(GridMap::cellToPoint(plan_path_.back()), plan_path_);
-		}
-		else if(action_i_ == ac_movement_follow_wall)
-		{
-			PP_INFO();
-			return new MovementFollowWall(GridMap::getCurrPoint(), GridMap::cellToPoint(plan_path_.back()));
-		}
-		else if(action_i_ == ac_movement_back)
-		{
-			PP_INFO();
-			return new MovementBack();
-		}
-		else if(action_i_ == ac_movement_turn)
-		{
-			PP_INFO();
-			return new MovementTurn(plan_path_.back().TH);
-		}
+		sp_action_ == nullptr;
 	}
 	PP_INFO();
-	return nullptr;
+	ROS_INFO("action = %d", action_i_);
+	return true;
 }
 
 State *CleanModeNav::getNextState() {
@@ -116,21 +101,23 @@ int CleanModeNav::getNextMovement() {
 	else if(movement_i_ == mv_forward)
 	{
 		PP_INFO();
-		movement_i_ = mv_turn2;
-		return ac_movement_turn;
+
+		if( ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered )
+			movement_i_ = mv_back;
+		return ac_movement_back;
 	}
-	else if(movement_i_ == mv_turn2)
-	{
-		PP_INFO();
-		return ac_null;
-	}
+//	else if(movement_i_ == mv_turn2)
+//	{
+//		PP_INFO();
+//		return ac_null;
+//	}
 	PP_INFO();
 	return ac_null;
 }
 
 IMoveType *CleanModeNav::getNextMoveType(const Cell_t& start, MapDirection dir) {
 
-	if(move_type_i_ == mt_null) {
+//	if(move_type_i_ == mt_null) {
 		PP_INFO();
 		if (state_i_ == st_clean) {
 			auto delta_y = plan_path_.back().Y - start.Y;
@@ -144,6 +131,7 @@ IMoveType *CleanModeNav::getNextMoveType(const Cell_t& start, MapDirection dir) 
 					|| delta_y == 0 || std::abs(delta_y) > 2) {
 				move_type_i_ = mt_linear;
 				PP_INFO();
+				action_i_ = ac_movement_turn;
 				return new MoveTypeLinear;
 			}
 			delta_y = plan_path_.back().Y - start.Y;
@@ -153,7 +141,7 @@ IMoveType *CleanModeNav::getNextMoveType(const Cell_t& start, MapDirection dir) 
 			PP_INFO();
 			return new MoveTypeFollowWall(is_left);
 		}
-	}
+//	}
 
 	PP_INFO();
 	return nullptr;

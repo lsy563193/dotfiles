@@ -23,6 +23,7 @@ protected:
 	static Point32_t s_origin_p;
 	static float s_pos_x;
 	static float s_pos_y;
+	static Path_t path_;
 };
 
 class MovementForward: public IMovement{

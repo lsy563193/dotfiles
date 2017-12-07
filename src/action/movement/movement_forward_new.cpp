@@ -8,6 +8,8 @@
 MovementForward::MovementForward(Point32_t target, const PPTargetType& path):
 				integrated_(0),base_speed_(LINEAR_MIN_SPEED),integration_cycle_(0),tick_(0),turn_speed_(4),odom_y_start(0.0),odom_x_start(0.0)
 {
+	path_ = path;
+	s_target_p = GridMap::cellToPoint(path_.back());
 //	g_is_should_follow_wall = false;
 //	s_target = target;
 //	path_ = path;
@@ -16,11 +18,12 @@ MovementForward::MovementForward(Point32_t target, const PPTargetType& path):
 
 void MovementForward::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 {
-//	ROS_WARN("%s,%d: g_path_size(%d)",__FUNCTION__, __LINE__,g_plan_path.size());
+//	PP_INFO();
+//	ROS_WARN("%s,%d: g_path_size(%d)",__FUNCTION__, __LINE__,path_.size());
 	auto s_curr_p = nav_map.getCurrPoint();
 	wheel.setDirectionForward();
 	auto curr = (GridMap::isXDirection(g_new_dir)) ? s_curr_p.X : s_curr_p.Y;
-	auto target_p = nav_map.cellToPoint(g_plan_path.front());
+	auto target_p = nav_map.cellToPoint(path_.front());
 	auto &target = (GridMap::isXDirection(g_new_dir)) ? target_p.X : target_p.Y;
 
 
@@ -39,7 +42,7 @@ void MovementForward::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 
 	if (integration_cycle_++ > 10) {
 		auto t = nav_map.pointToCell(target_p);
-		robot::instance()->pubCleanMapMarkers(nav_map, g_plan_path, &t);
+		robot::instance()->pubCleanMapMarkers(nav_map, path_, &t);
 		integration_cycle_ = 0;
 		integrated_ += angle_diff;
 		check_limit(integrated_, -150, 150);
@@ -90,7 +93,8 @@ void MovementForward::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 }
 
 bool MovementForward::isFinish() {
-	return false;
+	return isPoseReach() || shouldMoveBack() || isBoundaryStop() || isLidarStop() || isOBSStop() || isRconStop() || isPassTargetStop() ||
+				 is_robotbase_stop();
 }
 
 bool MovementForward::isCellReach()
@@ -98,13 +102,13 @@ bool MovementForward::isCellReach()
 	// Checking if robot has reached target cell.
 	auto s_curr_p = nav_map.getCurrPoint();
 	auto curr = (GridMap::isXDirection(g_new_dir)) ? s_curr_p.X : s_curr_p.Y;
-	auto target_p = nav_map.cellToPoint(g_plan_path.back());
+	auto target_p = nav_map.cellToPoint(path_.back());
 	auto target = (GridMap::isXDirection(g_new_dir)) ? target_p.X : target_p.Y;
 	if (std::abs(s_curr_p.X - target_p.X) < CELL_COUNT_MUL_1_2 &&
 		std::abs(s_curr_p.Y - target_p.Y) < CELL_COUNT_MUL_1_2)
 	{
 		ROS_INFO("\033[1m""%s, %d: MovementForward, reach the target cell (%d,%d)!!""\033[0m", __FUNCTION__, __LINE__,
-						 g_plan_path.back().X, g_plan_path.back().Y);
+						 path_.back().X, path_.back().Y);
 		g_turn_angle = ranged_angle(g_new_dir - robot::instance()->getPoseAngle());
 		return true;
 	}
@@ -115,11 +119,12 @@ bool MovementForward::isCellReach()
 bool MovementForward::isPoseReach()
 {
 	// Checking if robot has reached target cell and target angle.
-	auto target_angle = g_plan_path.back().TH;
+//	PP_INFO();
+	auto target_angle = s_target_p.TH;
 	if (isCellReach() && std::abs(ranged_angle(robot::instance()->getPoseAngle() - target_angle)) < 200)
 	{
 		ROS_INFO("\033[1m""%s, %d: MovementForward, reach the target cell and pose(%d,%d,%d)!!""\033[0m", __FUNCTION__, __LINE__,
-				 g_plan_path.back().X, g_plan_path.back().Y, g_plan_path.back().TH);
+				 path_.back().X, path_.back().Y, path_.back().TH);
 		return true;
 	}
 	return false;
@@ -129,27 +134,27 @@ bool MovementForward::isNearTarget()
 {
 	auto s_curr_p = nav_map.getCurrPoint();
 	auto curr = (GridMap::isXDirection(g_new_dir)) ? s_curr_p.X : s_curr_p.Y;
-	auto target_p = nav_map.cellToPoint(g_plan_path.front());
+	auto target_p = nav_map.cellToPoint(path_.front());
 	auto &target = (GridMap::isXDirection(g_new_dir)) ? target_p.X : target_p.Y;
 	//ROS_INFO("%s %d: s_curr_p(%d, %d), target_p(%d, %d), dir(%d)",
 	//		 __FUNCTION__, __LINE__, s_curr_p.X, s_curr_p.Y, target_p.X, target_p.Y, g_new_dir);
 	if ((GridMap::isPositiveDirection(g_new_dir) && (curr > target - 1.5 * CELL_COUNT_MUL)) ||
 		(!GridMap::isPositiveDirection(g_new_dir) && (curr < target + 1.5 * CELL_COUNT_MUL))) {
-		if(g_plan_path.size() > 1)
+		if(path_.size() > 1)
 		{
 			// Switch to next target for smoothly turning.
-			g_new_dir = static_cast<MapDirection>(g_plan_path.front().TH);
-			g_plan_path.pop_front();
+			g_new_dir = static_cast<MapDirection>(path_.front().TH);
+			path_.pop_front();
 			ROS_INFO("%s %d: Curr(%d, %d), switch next cell(%d, %d), new dir(%d).", __FUNCTION__, __LINE__,
 					 nav_map.getXCell(),
-					 nav_map.getYCell(), g_plan_path.front().X, g_plan_path.front().Y, g_new_dir);
+					 nav_map.getYCell(), path_.front().X, path_.front().Y, g_new_dir);
 		}
-		else if(g_plan_path.front() != g_zero_home && g_allow_check_path_in_advance)
+		else if(path_.front() != g_zero_home && g_allow_check_path_in_advance)
 		{
 			g_check_path_in_advance = true;
 			ROS_INFO("%s %d: Curr(%d, %d), target(%d, %d), dir(%d), g_check_path_in_advance(%d)", __FUNCTION__, __LINE__,
 					 nav_map.getXCell(),
-					 nav_map.getYCell(), g_plan_path.front().X, g_plan_path.front().Y, g_new_dir, g_check_path_in_advance);
+					 nav_map.getYCell(), path_.front().X, path_.front().Y, g_new_dir, g_check_path_in_advance);
 			return true;
 		}
 	}
@@ -175,6 +180,7 @@ bool MovementForward::shouldMoveBack()
 
 bool MovementForward::isRconStop()
 {
+//	PP_INFO();
 	ev.rcon_triggered = c_rcon.getTrig();
 	if(ev.rcon_triggered)
 	{
@@ -189,6 +195,7 @@ bool MovementForward::isRconStop()
 bool MovementForward::isOBSStop()
 {
 	// Now OBS sensor is just for slowing down.
+//	PP_INFO();
 	return false;
 /*
 	ev.obs_triggered = obs.get_status(200, 1700, 200);
@@ -204,6 +211,7 @@ bool MovementForward::isOBSStop()
 
 bool MovementForward::isLidarStop()
 {
+//	PP_INFO();
 	ev.lidar_triggered = lidar_get_status();
 	if (ev.lidar_triggered)
 	{
@@ -219,6 +227,7 @@ bool MovementForward::isLidarStop()
 
 bool MovementForward::isBoundaryStop()
 {
+//	PP_INFO();
 	if (nav_map.isFrontBlockBoundary(2))
 	{
 		ROS_INFO("%s, %d: MovementForward, Blocked boundary.", __FUNCTION__, __LINE__);
@@ -230,10 +239,11 @@ bool MovementForward::isBoundaryStop()
 
 bool MovementForward::isPassTargetStop()
 {
+//	PP_INFO();
 	// Checking if robot has reached target cell.
 	auto s_curr_p = nav_map.getCurrPoint();
 	auto curr = (GridMap::isXDirection(g_new_dir)) ? s_curr_p.X : s_curr_p.Y;
-	auto target_p = nav_map.cellToPoint(g_plan_path.back());
+	auto target_p = nav_map.cellToPoint(path_.back());
 	auto target = (GridMap::isXDirection(g_new_dir)) ? target_p.X : target_p.Y;
 	if ((GridMap::isPositiveDirection(g_new_dir) && (curr > target + CELL_COUNT_MUL / 4)) ||
 		(!GridMap::isPositiveDirection(g_new_dir) && (curr < target - CELL_COUNT_MUL / 4)))
@@ -249,8 +259,8 @@ void MovementForward::setTarget()
 {
 //	g_turn_angle = ranged_angle(
 //						course_to_dest(s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y) - robot::instance()->getPoseAngle());
-	s_target_p = nav_map.cellToPoint(g_plan_path.back());
-//	path_ = g_plan_path;
+	s_target_p = nav_map.cellToPoint(path_.back());
+//	path_ = path_;
 }
 
 void MovementForward::setBaseSpeed()
