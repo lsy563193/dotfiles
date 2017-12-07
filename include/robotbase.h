@@ -32,4 +32,5 @@ void process_beep();
 void process_led();
 void robotbase_reset_odom_pose(void);
 void robotbase_restore_slam_correction(void);
+void *speaker_play_routine(void*);
 #endif

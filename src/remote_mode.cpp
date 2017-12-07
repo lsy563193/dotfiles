@@ -64,7 +64,7 @@ void remote_mode(void)
 		usleep(30000);
 		// Set gyro on before wav.play can save the time for opening the gyro.
 		gyro.setOn();
-		speaker.play(SPEAKER_SYSTEM_INITIALIZING);
+		speaker.play(SPEAKER_SYSTEM_INITIALIZING, false);
 		if (!gyro.waitForOn())
 		{
 			cm_set(Clean_Mode_Idle);

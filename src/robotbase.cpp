@@ -55,6 +55,7 @@ int robotbase_init(void)
 	int	serr_ret;
 	int base_ret;
 	int sers_ret;
+	int speaker_ret;
 	uint8_t buf[SEND_LEN];
 
 	robotbase_thread_stop = false;
@@ -75,13 +76,15 @@ int robotbase_init(void)
 	serr_ret = pthread_create(&receiPortThread_id, NULL, serial_receive_routine, NULL);
 	base_ret = pthread_create(&robotbaseThread_id, NULL, robotbase_routine, NULL);
 	sers_ret = pthread_create(&sendPortThread_id,NULL,serial_send_routine,NULL);
-	if (base_ret < 0 || serr_ret < 0 || sers_ret < 0) {
+	speaker_ret = pthread_create(&sendPortThread_id,NULL,speaker_play_routine,NULL);
+	if (base_ret < 0 || serr_ret < 0 || sers_ret < 0 || speaker_ret < 0) {
 		is_robotbase_init = false;
 		robotbase_thread_stop = true;
 		send_stream_thread = false;
 		if (base_ret < 0) {ROS_INFO("%s,%d, fail to create robotbase thread!! %s ", __FUNCTION__,__LINE__,strerror(base_ret));}
 		if (serr_ret < 0) {ROS_INFO("%s,%d, fail to create serial receive thread!! %s ",__FUNCTION__,__LINE__, strerror(serr_ret));}
-		if (sers_ret < 0){ROS_INFO("%s,%d, fail to create serial send therad!! %s ",__FUNCTION__,__LINE__,strerror(sers_ret));}
+		if (sers_ret < 0){ROS_INFO("%s,%d, fail to create serial send thread!! %s ",__FUNCTION__,__LINE__,strerror(sers_ret));}
+		if (speaker_ret < 0){ROS_INFO("%s,%d, fail to create speaker paly thread!! %s ",__FUNCTION__,__LINE__,strerror(speaker_ret));}
 		return -1;
 	}
 	is_robotbase_init = true;
@@ -646,3 +649,8 @@ void robotbase_restore_slam_correction()
 	robot::instance()->offsetAngle(robot::instance()->offsetAngle() + robot::instance()->getRobotCorrectionYaw());
 	ROS_INFO("%s %d: Restore slam correction as x: %f, y: %f, angle: %f.", __FUNCTION__, __LINE__, robot::instance()->getRobotCorrectionX(), robot::instance()->getRobotCorrectionY(), robot::instance()->getRobotCorrectionYaw());
 }*/
+void *speaker_play_routine(void*)
+{
+	speaker.play_routine();
+}
+

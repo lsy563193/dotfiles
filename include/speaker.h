@@ -71,9 +71,19 @@ typedef struct
 	unsigned int	dataSize;
 } SpeakerHeaderType;
 
+typedef struct
+{
+	SpeakerType speakerType;
+	bool canBeInterrupted;
+}SpeakerStatus;
+
 class Speaker {
 public:
-	void play(SpeakerType action);
+	Speaker(void);
+
+	void play(SpeakerType action, bool can_be_interrputed = true);
+
+	void play_routine(void);
 
 private:
 	bool openPcmDriver(void);
@@ -83,6 +93,8 @@ private:
 	void launchMixer(void);
 
 	void adjustVolume(long volume);
+
+	void finishPlaying(void);
 
 	snd_pcm_t *handle_;
 
@@ -95,6 +107,10 @@ private:
 	char *buffer_;
 
 	SpeakerHeaderType speaker_header_; 
+
+	std::list<SpeakerStatus> speaker_list_;
+
+	bool can_pp_run_;
 };
 
 extern Speaker speaker;
