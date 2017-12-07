@@ -109,6 +109,9 @@ public:
 	IAction* getNextMovement();
 	IAction* getNextAction();
 
+private:
+	void register_events(void);
+
 protected:
 	Path_t plan_path_{};
 public:
