@@ -54,8 +54,12 @@ void *core_move_thread(void *)
 		speaker.play(SPEAKER_PLEASE_START_CLEANING);
 
 #if NEW_FRAMEWORK
-//	Mode* p_mode = new ModeSleep();
-	Mode* p_mode = new CleanModeNav();
+	Mode* p_mode = nullptr;
+	if (charger.isOnStub() || charger.isDirected())
+		p_mode = new ModeCharge();
+	else
+		p_mode = new CleanModeNav();
+
 	while(ros::ok())
 	{
 		p_mode->run();
@@ -66,6 +70,11 @@ void *core_move_thread(void *)
 	}
 
 #else
+	if (charger.isDirected() || charger.isOnStub())
+		cm_set(Clean_Mode_Charging);
+	else if (battery.isReadyToClean())
+		speaker.play(SPEAKER_PLEASE_START_CLEANING);
+
 	while(ros::ok()){
 		usleep(20000);
 		switch(cm_get()){
