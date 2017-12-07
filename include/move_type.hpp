@@ -12,7 +12,7 @@ class ACleanMode;
 class IMoveType
 {
 public:
-	bool isFinish(ACleanMode* p_mode_,IAction* p_action,  int& action_i);
+//	bool isFinish(int& action_i);
 //	virtual IAction* getNextMovement()=0;
 //	void registerMode(ACleanMode* sp_mode)
 //	{

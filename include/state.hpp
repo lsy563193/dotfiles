@@ -12,7 +12,7 @@ class State {
 public:
 //	virtual IMoveType* getNextMoveType()=0;
 
-	bool isFinish(ACleanMode* p_mode, IMoveType* p_move_type,IAction* p_action, int& action_i);
+//	bool isFinish(ACleanMode* p_mode, IMoveType* p_move_type,IAction* p_action, int& action_i);
 
 protected:
 

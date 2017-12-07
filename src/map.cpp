@@ -1045,22 +1045,19 @@ uint8_t GridMap::saveBlocks()
 	return block_count;
 }
 
-//uint8_t GridMap::set_blocks()
-//{
-//	if(cm_is_follow_wall() || cm_is_go_charger())
-//		return 0;
-//
-//	uint8_t block_count = 0;
-//	block_count += set_obs();
-//	block_count += set_bumper();
-//	block_count += set_rcon();
-//	block_count += set_cliff();
-//	block_count += set_tilt();
-//	block_count += set_slip();
-//	block_count += set_lidar();
-//
-//	return block_count;
-//}
+uint8_t GridMap::setBlocks()
+{
+	uint8_t block_count = 0;
+	block_count += setObs();
+	block_count += setBumper();
+	block_count += setRcon();
+	block_count += setCliff();
+	block_count += setTilt();
+	block_count += setSlip();
+	block_count += setLidar();
+
+	return block_count;
+}
 
 
 void GridMap::setCleaned(std::deque<Cell_t> &cells)
@@ -1069,31 +1066,12 @@ void GridMap::setCleaned(std::deque<Cell_t> &cells)
 		return;
 	int8_t x_offset;
 
-	if (!mt.is_linear())
-	{
 		x_offset = (cells.front().X < cells.back().X) ? 1 : -1;//X_POS
 		Cell_t cell_front = {int16_t(cells.front().X - x_offset),cells.front().Y};
 		Cell_t cell_back = {int16_t(cells.back().X + x_offset),cells.back().Y};
 		cells.push_front(cell_front);
 		cells.push_back(cell_back);
 //		auto is_follow_y_min = x_offset == 1 ^ mt.is_left();
-	}
-	else
-	{
-		/*auto dir = g_plan_path.front().TH;
-		if (dir == POS_X)
-			x_offset = 1;
-		else if (dir == NEG_X)
-			x_offset = -1;
-		else // POS_Y/NEG_Y
-			x_offset = 0;
-
-		if (x_offset)
-		{
-			Cell_t cell = {int16_t(cells.back().X + x_offset),cells.back().Y};
-			cells.push_back(cell);
-		}*/
-	}
 
 	std::string msg = "Cell:\n";
 	for (const auto& cell :  cells)

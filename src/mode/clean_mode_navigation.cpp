@@ -48,7 +48,40 @@ bool CleanModeNav::isFinish() {
 	}
 	else if (action_i_ == ac_open_slam || action_i_ == ac_movement_forward || action_i_ == ac_movement_turn ||
 					 action_i_ == ac_movement_follow_wall || action_i_ == ac_movement_back) {
-		if (!ACleanMode::isFinish()) {
+		nav_map.saveBlocks();
+		nav_map.setBlocks();
+		if(move_type_i_ == mt_follow_wall_left || move_type_i_ == mt_follow_wall_right)
+			nav_map.setFollowWall();
+	if(state_i_ == st_trapped)
+		fw_map.setFollowWall();
+
+	if(move_type_i_ == mt_linear)
+		nav_map.setCleaned(passed_path_);
+
+	nav_map.markRobot(CLEAN_MAP);
+
+		displayPath(passed_path_);
+		if(state_i_ == st_null)
+		{
+			action_i_ = ac_null;
+			move_type_i_ = mt_null;
+		}
+		else
+			action_i_ = getNextMovement();
+		if(action_i_ == ac_null)
+		{
+			PP_INFO(); ROS_INFO("st(%d),mt(%d),ac(%d) = %d", state_i_, move_type_i_, action_i_);
+			state_i_ = getNextState();
+			PP_INFO(); ROS_INFO("st(%d),mt(%d),ac(%d) = %d", state_i_, move_type_i_, action_i_);
+			move_type_i_ = getNextMoveType();
+			PP_INFO(); ROS_INFO("st(%d),mt(%d),ac(%d) = %d", state_i_, move_type_i_, action_i_);
+			if(move_type_i_ != mt_null)
+				action_i_ = ac_movement_turn;
+			PP_INFO(); ROS_INFO("st(%d),mt(%d),ac(%d) = %d", state_i_, move_type_i_, action_i_);
+		}
+		PP_INFO(); ROS_INFO("st(%d),mt(%d),ac(%d) = %d", state_i_, move_type_i_, action_i_);
+		if (action_i_ != ac_null) {
+			PP_INFO(); ROS_INFO("st(%d),mt(%d),ac(%d) = %d", state_i_, move_type_i_, action_i_);
 			if (action_i_ == ac_movement_forward)
 				sp_action_.reset(new MovementForward(GridMap::cellToPoint(plan_path_.back()), plan_path_));
 			else if (action_i_ == ac_movement_follow_wall)
@@ -56,26 +89,28 @@ bool CleanModeNav::isFinish() {
 			else if (action_i_ == ac_movement_back)
 				sp_action_.reset(new MovementBack());
 			else if (action_i_ == ac_movement_turn)
+			{
 				sp_action_.reset(new MovementTurn(plan_path_.back().TH));
+			}
 		}
-		sp_action_ == nullptr;
+		else
+			sp_action_ == nullptr;
 	}
-	PP_INFO();
-	ROS_INFO("action = %d", action_i_);
+	PP_INFO(); ROS_INFO("st(%d),mt(%d),ac(%d) = %d", state_i_, move_type_i_, action_i_);
 	return true;
 }
 
-State *CleanModeNav::getNextState() {
-	if(state_i_ == st_null)
+int CleanModeNav::getNextState() {
+	auto st = st_null;
+	if(st == st_null || st == st_clean)
 	{
 		PP_INFO();
 		plan_path_ = generatePath(nav_map, nav_map.getCurrCell(),g_old_dir);
-		state_i_ = st_clean;
+		st = st_clean;
 		displayPath(plan_path_);
-		return new StateClean;
+		sp_state_.reset(new StateClean);
 	}
-	state_i_ = ac_null;
-	return nullptr;
+	return st;
 }
 
 void CleanModeNav::register_events(void)
@@ -85,26 +120,26 @@ void CleanModeNav::register_events(void)
 }
 
 int CleanModeNav::getNextMovement() {
+	auto ac = ac_null;
 	if(movement_i_ == mv_null)
 	{
 		PP_INFO();
 		movement_i_ = mv_turn;
-		return ac_movement_turn;
+		ac = ac_movement_turn;
 	}
 	else if(movement_i_ == mv_turn)
 	{
 		PP_INFO();
 		movement_i_ = mv_forward;
-		return ac_movement_forward;
+		ac = ac_movement_forward;
 	}
 
 	else if(movement_i_ == mv_forward)
 	{
 		PP_INFO();
-
 		if( ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered )
 			movement_i_ = mv_back;
-		return ac_movement_back;
+		ac = ac_movement_back;
 	}
 //	else if(movement_i_ == mv_turn2)
 //	{
@@ -112,12 +147,14 @@ int CleanModeNav::getNextMovement() {
 //		return ac_null;
 //	}
 	PP_INFO();
-	return ac_null;
+	return ac;
 }
 
-IMoveType *CleanModeNav::getNextMoveType(const Cell_t& start, MapDirection dir) {
-
-//	if(move_type_i_ == mt_null) {
+int CleanModeNav::getNextMoveType() {
+	auto mt = mt_null;
+	auto start = nav_map.getCurrCell();
+	auto dir = g_old_dir;
+//	if(mt == mt_null) {
 		PP_INFO();
 		if (state_i_ == st_clean) {
 			auto delta_y = plan_path_.back().Y - start.Y;
@@ -129,22 +166,18 @@ IMoveType *CleanModeNav::getNextMoveType(const Cell_t& start, MapDirection dir) 
 					|| plan_path_.size() > 2 ||
 					(!g_check_path_in_advance && !ev.bumper_triggered && !ev.cliff_triggered && !ev.lidar_triggered)
 					|| delta_y == 0 || std::abs(delta_y) > 2) {
-				move_type_i_ = mt_linear;
-				PP_INFO();
-				action_i_ = ac_movement_turn;
-				return new MoveTypeLinear;
-			}
-			delta_y = plan_path_.back().Y - start.Y;
-			bool is_left = ((GridMap::isPositiveDirection(g_old_dir) && GridMap::isXDirection(g_old_dir)) ^ delta_y > 0);
+				mt = mt_linear;
+			}else {
+				delta_y = plan_path_.back().Y - start.Y;
+				bool is_left = ((GridMap::isPositiveDirection(g_old_dir) && GridMap::isXDirection(g_old_dir)) ^ delta_y > 0);
 //		ROS_INFO("\033[31m""%s,%d: target:, 1_left_2_right(%d)""\033[0m", __FUNCTION__, __LINE__, get());
-			move_type_i_ = mt_follow_wall;
-			PP_INFO();
-			return new MoveTypeFollowWall(is_left);
+				mt = is_left ? mt_follow_wall_left : mt_follow_wall_right;
+			}
 		}
 //	}
-
 	PP_INFO();
-	return nullptr;
+	ROS_INFO("mt = %d",mt);
+	return mt;
 }
 
 

@@ -425,6 +425,7 @@ void NavigationClean::mark()
 {
 	ROS_INFO("%s, %d: NavigationClean::mark", __FUNCTION__, __LINE__);
 	nav_map.saveBlocks();
+	nav_map.setBlocks();
 
 //	uint8_t block_count = 0;
 	nav_map.setObs();

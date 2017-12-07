@@ -21,6 +21,7 @@ public:
 	friend IMoveType;
 protected:
 	static boost::shared_ptr<IAction> sp_action_;
+	int mode_i_{ac_null};
 	int action_i_{ac_null};
 	enum {
 		ac_null,
@@ -38,6 +39,7 @@ protected:
 		ac_movement_go_charger,
 		ac_sleep,//10
 	};
+
 private:
 
 };
@@ -63,13 +65,18 @@ private:
 
 class ACleanMode:public Mode,public PathAlgorithm{
 public:
-	virtual State* getNextState()=0;
-	virtual IMoveType* getNextMoveType(const Cell_t& start, MapDirection dir) = 0;
+	virtual int getNextState()=0;
+	virtual int getNextMoveType() = 0;
 	virtual int getNextMovement()=0;
-	bool isFinish();
+//	bool isFinish();
 
+friend IMoveType;
+static Cell_t updatePath(const Cell_t& curr);
 
 protected:
+
+	static Path_t passed_path_;
+	static Cell_t last_;
 	static boost::shared_ptr<State> sp_state_;
 	static boost::shared_ptr<IMoveType> sp_move_type_;
 	int state_i_{st_null};
@@ -87,7 +94,8 @@ protected:
 	enum {
 		mt_null,
 		mt_linear,
-		mt_follow_wall,
+		mt_follow_wall_left,
+		mt_follow_wall_right,
 		mt_go_charger,
 	};
 	int movement_i_ {mv_null};
@@ -106,8 +114,8 @@ private:
 class CleanModeNav:public ACleanMode{
 public:
 	CleanModeNav();
-	State* getNextState();
-	IMoveType* getNextMoveType(const Cell_t& start, MapDirection dir);
+	int getNextState();
+	int getNextMoveType();
 	int getNextMovement();
 	bool isFinish();
 

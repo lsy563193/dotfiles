@@ -244,7 +244,7 @@ bool CleanMode::find_target(Cell_t& curr)
 //
 //	if (!(previous_cs == CS_TRAPPED && cs.is_trapped())) {
 //		setMt();
-//		g_passed_path.clear();
+//		passed_path_.clear();
 //	}
 //	g_allow_check_path_in_advance = true;
 //

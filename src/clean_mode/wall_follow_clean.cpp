@@ -199,7 +199,7 @@ void WallFollowClean::mark() {
 		fw_map.setRcon();
 	}
 
-//	nav_map.set_cleaned(g_passed_path);
+//	nav_map.set_cleaned(passed_path_);
 //	nav_map.mark_robot(CLEAN_MAP);
 }
 

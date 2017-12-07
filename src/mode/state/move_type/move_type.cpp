@@ -7,12 +7,12 @@
 
 //boost::shared_ptr<IAction> IMoveType::sp_movement_ = nullptr;
 
-bool IMoveType::isFinish(ACleanMode* p_mode_,IAction* p_action,  int& action_i) {
-	PP_INFO();
-	action_i = p_mode_->getNextMovement();
-	if (action_i == Mode::ac_null)
-		return true;
-	PP_INFO();
-	return false;
-}
+//bool IMoveType::isFinish(int& action_i) {
+//	PP_INFO();
+//	action_i = getNextMovement();
+//	if (action_i == Mode::ac_null)
+//		return true;
+//	PP_INFO();
+//	return false;
+//}
 
