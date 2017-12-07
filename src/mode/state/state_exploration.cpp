@@ -9,7 +9,3 @@ StateExploration::StateExploration() {
 }
 
 
-IMoveType *StateExploration::getNextMoveType() {
-	return nullptr;
-}
-

@@ -21,7 +21,7 @@ CleanModeNav::CleanModeNav()
 
 IAction *CleanModeNav::getNextAction() {
 	if(action_i_ == ac_open_gyro) {
-		ROS_INFO("%s,%d", __FUNCTION__, __LINE__);
+		ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__);
 		if (charger.isOnStub()) {
 			action_i_ = ac_back_form_charger;
 			return new ActionBackFromCharger;
@@ -32,44 +32,111 @@ IAction *CleanModeNav::getNextAction() {
 		}
 	}
 	else if(action_i_ == ac_back_form_charger) {
-		ROS_INFO("%s,%d", __FUNCTION__, __LINE__);
+		ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__);
 		action_i_ = ac_open_lidar;
 		return new ActionOpenLidar;
 	}
 	else if(action_i_ == ac_open_lidar) {
-		ROS_INFO("%s,%d", __FUNCTION__, __LINE__);
+		ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__);
 		action_i_ = ac_align;
 		return new ActionAlign;
 	}
 	else if(action_i_ == ac_align)
 	{
-		ROS_INFO("%s,%d",__FUNCTION__, __LINE__);
+		ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__);
 		action_i_ = ac_open_slam;
 		return new ActionOpenSlam;
 	}
 	else if(action_i_ == ac_open_slam) {
-		ROS_INFO("%s,%d",__FUNCTION__, __LINE__);
+		ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__);
 		if (isFinish())
 		{
-			ROS_INFO("%s,%d",__FUNCTION__, __LINE__);
+			ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__);
 			return nullptr;
 		}
 
+		ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__);
 		return sp_action_.get();
 	}
+	ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__);
 	return nullptr;
 }
 
 State *CleanModeNav::getNextState() {
 	if(state_i_ == st_null)
 	{
-		ROS_INFO("%s,%d", __FUNCTION__, __LINE__);
+		ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__);
 		plan_path_ = generatePath(nav_map, nav_map.getCurrCell(),g_old_dir);
 		state_i_ = st_clean;
 		displayPath(plan_path_);
 		return new StateClean;
 	}
 	state_i_ = ac_null;
+	return nullptr;
+}
+
+IAction *CleanModeNav::getNextMovement() {
+	if(movement_i_ == mv_null)
+	{
+		ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__);
+		movement_i_ = mv_turn;
+		auto angle = 900;
+		return new MovementTurn(angle);
+	}
+	else if(movement_i_ == mv_turn)
+	{
+		ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__);
+		movement_i_ = mv_forward;
+		Path_t  path{};
+		path.push_back({10,0,0});
+		auto target  = GridMap::cellToPoint(path.back());
+		return new MovementForward(target, path);
+	}
+
+	else if(movement_i_ == mv_forward)
+	{
+		ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__);
+		movement_i_ = mv_turn2;
+		auto angle = 900;
+		return new MovementTurn(angle);
+	}
+	else if(movement_i_ == mv_turn2)
+	{
+		ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__);
+		return nullptr;
+	}
+	ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__);
+	return nullptr;
+}
+
+IMoveType *CleanModeNav::getNextMoveType(const Cell_t& start, MapDirection dir) {
+
+	if(move_type_i_ == mt_null) {
+		ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__);
+		if (state_i_ == st_clean) {
+			auto delta_y = plan_path_.back().Y - start.Y;
+//		ROS_INFO( "%s,%d: path size(%u), dir(%d), g_check_path_in_advance(%d), bumper(%d), cliff(%d), lidar(%d), delta_y(%d)",
+//						__FUNCTION__, __LINE__, path.size(), dir, g_check_path_in_advance, ev.bumper_triggered, ev.cliff_triggered,
+//						ev.lidar_triggered, delta_y);
+
+			if (!GridMap::isXDirection(dir) // If last movement is not x axis linear movement, should not follow wall.
+					|| plan_path_.size() > 2 ||
+					(!g_check_path_in_advance && !ev.bumper_triggered && !ev.cliff_triggered && !ev.lidar_triggered)
+					|| delta_y == 0 || std::abs(delta_y) > 2) {
+				move_type_i_ = mt_linear;
+				ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__);
+				return new MoveTypeLinear;
+			}
+			delta_y = plan_path_.back().Y - start.Y;
+			bool is_left = ((GridMap::isPositiveDirection(g_old_dir) && GridMap::isXDirection(g_old_dir)) ^ delta_y > 0);
+//		ROS_INFO("\033[31m""%s,%d: target:, 1_left_2_right(%d)""\033[0m", __FUNCTION__, __LINE__, get());
+			move_type_i_ = mt_follow_wall;
+			ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__);
+			return new MoveTypeFollowWall(is_left);
+		}
+	}
+
+	ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__);
 	return nullptr;
 }
 

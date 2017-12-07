@@ -3,7 +3,7 @@ project(pp)
 set(CMAKE_CXX_FLAGS "-std=c++11 -fpermissive ${CMAKE_CXX_FLAGS} -Wfatal-errors\ ")
 FILE(GLOB PP_SRC
         include/*
-		include/path_algorithm/path_algorithm.h
+				include/path_algorithm.h
 		include/action.hpp
 	src/charge.cpp
 #	src/clean_mode.cpp
@@ -49,6 +49,7 @@ FILE(GLOB PP_SRC
 	src/mode/clean_mode.cpp
 	src/mode/clean_mode_navigation.cpp
 	src/path_algorithm/path_algorithm.cpp
+	src/path_algorithm/move_type_plan.cpp
 
 	src/action/action.cpp
 	src/action/action_open_gyro.cpp

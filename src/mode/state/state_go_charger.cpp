@@ -8,8 +8,3 @@ StateGoCharger::StateGoCharger() {
 	gyro.TiltCheckingEnable(false); //disable tilt detect
 	led.set_mode(LED_STEADY, LED_ORANGE);
 }
-
-IMoveType *StateGoCharger::getNextMoveType() {
-	return nullptr;
-}
-

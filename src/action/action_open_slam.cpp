@@ -24,7 +24,7 @@ void ActionOpenSlam::run() {
 //	wheel.setPidTargetSpeed(0, 0);
 }
 
-//IAction* ActionOpenSlam::getNextAction() {
+//IAction* ActionOpenSlam::getNextMovement() {
 //	return new ActionOpenGyroNav;
 //}
 

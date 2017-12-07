@@ -26,6 +26,7 @@ MovementTurn::MovementTurn(int16_t angle) : speed_(ROTATE_LOW_SPEED), stage_(TUR
 	}
 	ROS_INFO("%s %d: Init, \033[32ms_target_p.TH: %d\033[0m", __FUNCTION__, __LINE__, s_target_p.TH);
 }
+
 bool MovementTurn::isReach()
 {
 	if (stage_ == TURN_REGULATOR_WAITING_FOR_LIDAR)
@@ -176,6 +177,10 @@ void MovementTurn::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 
 	l_speed = r_speed = speed_;
 
+}
+
+bool MovementTurn::isFinish() {
+	return isReach();
 }
 
 bool TurnSpeedRegulator::adjustSpeed(int16_t diff, uint8_t& speed)

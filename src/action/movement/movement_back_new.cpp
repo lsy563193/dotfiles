@@ -134,3 +134,7 @@ void MovementBack::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	else*/
 		l_speed = r_speed = speed_;
 }
+
+bool MovementBack::isFinish() {
+	return isReach();
+}

@@ -7,7 +7,7 @@
 
 #include "governor.hpp"
 #include "event_manager.h"
-#include "path_algorithm/path_algorithm.h"
+#include "path_algorithm.h"
 #include "boost/shared_ptr.hpp"
 
 
@@ -67,11 +67,7 @@ public:
 	bool isLidarStop();
 	void setTarget();
 	bool isReach();
-	std::string getName()
-	{
-		std::string name = "MovementBack";
-		return name;
-	}
+	bool isFinish();
 
 private:
 	int counter_;
@@ -88,11 +84,7 @@ public:
 	void setTarget();
 	bool isReach();
 	bool shouldMoveBack();
-	std::string getName()
-	{
-		std::string name = "MovementTurn";
-		return name;
-	}
+	bool isFinish();
 
 private:
 	uint16_t accurate_;
@@ -112,6 +104,7 @@ public:
 
 	~MovementFollowWall() { /*set_wheel.speed(0,0);*/ };
 
+	bool isFinish();
 	void reset_sp_turn_count() {
 		turn_count = 0;
 	}
@@ -146,12 +139,6 @@ public:
 
 	void setTarget();
 
-	std::string getName() {
-		std::string name = "MovementFollowWall";
-		return name;
-	}
-
-
 private:
 //Variable for checking spot turn in wall follow mode_
 	volatile int32_t turn_count;
@@ -180,12 +167,7 @@ public:
 	void setTarget();
 	bool isChargerReach();
 	void resetGoToChargerVariables();
-
-	std::string getName()
-	{
-		std::string name = "MovementGoToCharger";
-		return name;
-	}
+	bool isFinish();
 
 protected:
 	bool isReach();

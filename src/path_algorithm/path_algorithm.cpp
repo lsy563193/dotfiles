@@ -3,7 +3,7 @@
 //
 
 #include "ros/ros.h"
-#include "path_algorithm/path_algorithm.h"
+#include "path_algorithm.h"
 
 Path_t PathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start,
 										 const Cell_t &target, const MapDirection &last_dir)

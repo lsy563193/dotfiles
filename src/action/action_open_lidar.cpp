@@ -26,7 +26,7 @@ void ActionOpenLidar::run() {
 	wheel.setPidTargetSpeed(0, 0);
 }
 
-//IAction* ActionOpenLidar::getNextAction() {
+//IAction* ActionOpenLidar::getNextMovement() {
 //	if ((g_is_manual_pause || g_is_low_bat_pause) && slam.isMapReady()) {
 //		 return new ActionOpenGyroNav;
 //	}

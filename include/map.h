@@ -96,11 +96,11 @@ public:
 
 	void clearBlocks(void);
 
-	int32_t cellToCount(int16_t distance);
+	static int32_t cellToCount(int16_t distance);
 
-	int16_t countToCell(int32_t count);
+	static int16_t countToCell(int32_t count);
 
-	Point32_t cellToPoint(const Cell_t &cell);
+	static Point32_t cellToPoint(const Cell_t &cell);
 
 	Cell_t pointToCell(Point32_t pnt);
 

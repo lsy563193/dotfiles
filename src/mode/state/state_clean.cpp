@@ -10,15 +10,6 @@ StateClean::StateClean() {
 //	sp_move_type_.reset(new IMoveType);
 }
 
-IMoveType *StateClean::getNextMoveType() {
-	if(move_type_i_ == mt_null)
-	{
-		ROS_INFO("%s,%d", __FUNCTION__, __LINE__);
-		return new generateMt(plan_path,g_old_dir);
-	}
-	return nullptr;
-}
-
 //bool StateClean::isFinish() {
 //	return path_next_nav(sp_action_->, path);
 //}

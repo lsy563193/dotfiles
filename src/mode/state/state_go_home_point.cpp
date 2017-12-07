@@ -22,9 +22,6 @@ StateGoHomePoint::StateGoHomePoint():gh_state_(gh_ing) {
 	ev.battrey_home = false;
 }
 
-IMoveType *StateGoHomePoint::getNextMoveType() {
-	return nullptr;
-}
 //
 //State *StateGoHomePoint::getNextState() {
 //	if(gh_state_ == gh_succuss) {

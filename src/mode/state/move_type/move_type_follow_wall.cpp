@@ -8,7 +8,9 @@
 //	return false;
 //}
 
-IAction *MoveTypeFollowWall::getNextAction() {
-	return nullptr;
-}
+bool MoveTypeFollowWall::is_left_ = true;
+
+//IAction *MoveTypeFollowWall::getNextMovement() {
+//	return nullptr;
+//}
 

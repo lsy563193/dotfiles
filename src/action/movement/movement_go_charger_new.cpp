@@ -1917,3 +1917,7 @@ void MovementGoToCharger::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	left_speed_ = l_speed;
 	right_speed_ = r_speed;
 }
+
+bool MovementGoToCharger::isFinish() {
+	return isReach();
+}

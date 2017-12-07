@@ -461,3 +461,7 @@ bool MovementFollowWall::sp_turn_over(const Cell_t &curr) {
 		}
 		return false;
 	}
+
+bool MovementFollowWall::isFinish() {
+	return isNewLineReach();
+}

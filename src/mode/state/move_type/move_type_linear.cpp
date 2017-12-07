@@ -4,6 +4,3 @@
 #include "pp.h"
 #include "arch.hpp"
 
-IAction *MoveTypeLinear::getNextAction() {
-	return nullptr;
-}

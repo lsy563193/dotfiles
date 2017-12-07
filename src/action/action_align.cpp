@@ -49,6 +49,6 @@ void ActionAlign::run() {
 	}
 }
 
-//IAction* ActionAlign::getNextAction() {
+//IAction* ActionAlign::getNextMovement() {
 //	return new ActionOpenSlam;
 //}

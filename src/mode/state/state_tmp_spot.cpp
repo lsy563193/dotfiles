@@ -11,7 +11,3 @@ StateTmpSpot::StateTmpSpot() {
 
 }
 
-IMoveType *StateTmpSpot::getNextMoveType() {
-	return nullptr;
-}
-
