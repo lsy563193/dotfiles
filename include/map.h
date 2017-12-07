@@ -9,8 +9,8 @@
 #include <boost/thread/mutex.hpp>
 #include "slam_map.hpp"
 
-#define MAP 0
-#define SPMAP 1
+#define CLEAN_MAP 0
+#define COST_MAP 1
 
 #define BLOCK_LEFT				((uint8_t) 0x01)
 #define BLOCK_RIGHT			((uint8_t) 0x02)
@@ -20,7 +20,7 @@
 typedef std::deque<Cell_t> PPTargetType;
 
 typedef enum {
-	// The sequence of MAP value must be UNCLEAN < CLEANED < MAP_BLOCKED < SLAM_MAP_BLOCKED
+	// The sequence of CLEAN_MAP value must be UNCLEAN < CLEANED < MAP_BLOCKED < SLAM_MAP_BLOCKED
   UNCLEAN  = 0,
   SLAM_MAP_UNKNOWN = 0,
   CLEANED = 1,
@@ -59,10 +59,10 @@ typedef enum {
   MAP_NONE = 0,
 } MapDirection;
 
-class CostMap {
+class GridMap {
 public:
 
-	CostMap();
+	GridMap();
 
 	static bool isPositiveDirection(MapDirection dir);
 
@@ -96,11 +96,11 @@ public:
 
 	void clearBlocks(void);
 
-	int32_t cellToCount(int16_t distance);
+	static int32_t cellToCount(int16_t distance);
 
-	int16_t countToCell(int32_t count);
+	static int16_t countToCell(int32_t count);
 
-	Point32_t cellToPoint(const Cell_t &cell);
+	static Point32_t cellToPoint(const Cell_t &cell);
 
 	Cell_t pointToCell(Point32_t pnt);
 
@@ -108,7 +108,7 @@ public:
 
 	void reset(uint8_t id);
 
-	void copy(uint8_t id, uint8_t **new_map);
+	void copy(GridMap &source_map);
 
 /*
  * @author Alvin Xie/ Li Shao Yan
@@ -117,8 +117,11 @@ public:
  */
 	void convertFromSlamMap(float threshold);
 
-	void merge(CostMap source_map, bool add_slam_map_blocks_to_uncleaned = false, bool add_slam_map_blocks_to_cleaned = false,
-						bool add_slam_map_cleanable_area = false, bool clear_map_blocks = false, bool clear_slam_map_blocks = false);
+	void mergeFromSlamGridMap(GridMap source_map, bool add_slam_map_blocks_to_uncleaned = false,
+							  bool add_slam_map_blocks_to_cleaned = false,
+							  bool add_slam_map_cleanable_area = false, bool clear_map_blocks = false,
+							  bool clear_slam_map_blocks = false,
+							  bool clear_bumper_and_lidar_blocks = false);
 
 	void slamMapToWorld(double origin_x_, double origin_y_, float resolution_, int16_t slam_map_x,
 						int16_t slam_map_y, double &world_x, double &world_y);
@@ -192,8 +195,9 @@ public:
  * @return	0 if the block is not blocked by bumper, obs or cliff
  *		1 if the block is blocked
  */
-	uint8_t isBlockAccessible(int16_t x, int16_t y);
-	uint8_t isBlockBlocked(int16_t x, int16_t y);
+	bool isBlockAccessible(int16_t x, int16_t y);
+
+	uint8_t isBlocksAtY(int16_t x, int16_t y);
 
 	uint8_t isBlockBlockedXAxis(int16_t x, int16_t y);
 
@@ -219,7 +223,7 @@ public:
  * @return	0 if the block is cleaned
  *		1 if the block is uncleaned
  */
-	uint8_t isBlockUnclean(int16_t x, int16_t y);
+	uint8_t isUncleanAtY(int16_t x, int16_t y);
 
 /*
  * Check a block is cleaned or not, a block is defined as have the same size of brush.
@@ -231,7 +235,7 @@ public:
  * @return	0 if the block is not cleaned
  *		1 if the block is cleaned
  */
-	int8_t isBlockCleanedUnblock(int16_t x, int16_t y);
+	int8_t isBlockCleaned(int16_t x, int16_t y);
 
 /*
  * Check a block is cleanable or not, a block is defined as have the same size of brush.
@@ -269,7 +273,7 @@ public:
 
 	bool isFrontBlockBoundary(int dx);
 
-	void generateSPMAP(const Cell_t &curr, std::deque<PPTargetType> &g_paths);
+	void generateSPMAP(const Cell_t &curr, PPTargetType &target_list);
 /*
  * Function to find the X/Y range of the Map or wfMap, if the range is to small,
  * use the offset of those value to 3.
@@ -297,12 +301,14 @@ public:
 	}
 	void getMapRange(uint8_t id, int16_t *x_range_min, int16_t *x_range_max, int16_t *y_range_min, int16_t *y_range_max);
 
+	bool cellIsOutOfRange(Cell_t cell);
+
 	void colorPrint(char *outString, int16_t y_min, int16_t y_max);
 	void print(uint8_t id, int16_t endx, int16_t endy);
 
 private:
-	uint8_t costmap[MAP_SIZE][(MAP_SIZE + 1) / 2];
-	uint8_t spmap[MAP_SIZE][(MAP_SIZE + 1) / 2];
+	uint8_t clean_map[MAP_SIZE][(MAP_SIZE + 1) / 2];
+	uint8_t cost_map[MAP_SIZE][(MAP_SIZE + 1) / 2];
 
 	int16_t g_x_min, g_x_max, g_y_min, g_y_max;
 	int16_t xRangeMin, xRangeMax, yRangeMin, yRangeMax;
@@ -311,11 +317,11 @@ private:
 
 };
 
-extern CostMap cost_map;
+extern GridMap nav_map;
 /*wf_map is to record the wall follow path to caculate the isolate islands*/
-extern CostMap fw_map;
-extern CostMap exploration_map;
-extern CostMap slam_cost_map;
-extern CostMap decrease_map;
+extern GridMap fw_map;
+extern GridMap exploration_map;
+extern GridMap slam_grid_map;
+extern GridMap decrease_map;
 
 #endif /* __MAP_H */

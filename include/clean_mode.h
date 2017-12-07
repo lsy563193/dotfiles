@@ -19,7 +19,16 @@ Clean_Mode_Spot,
 Clean_Mode_Navigation,
 Clean_Mode_Exploration
 };
-
+enum{
+		rm_null,
+		rm_sleep,
+		rm_idle,
+		rm_clean_nav,
+		rm_clean_spot,
+		rm_clean_follow_wall,
+		rm_charger,
+		rm_test
+};
 bool cm_is_follow_wall();
 bool cm_is_navigation();
 bool cm_is_exploration();

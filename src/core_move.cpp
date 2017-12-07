@@ -24,7 +24,7 @@ bool	g_from_charger = false;
 // This flag is indicating robot is resuming from low battery go home.
 bool g_resume_cleaning = false;
 
-// This flag is for checking whether costmap boundary is created.
+// This flag is for checking whether clean_map boundary is created.
 
 bool g_have_seen_charger = false;
 bool g_start_point_seen_charger = false;
@@ -58,7 +58,7 @@ void cm_self_check_with_handle(void)
 }
 
 void cm_cleaning() {
-//	Cell_t curr = cost_map.update_position();
+//	Cell_t curr = nav_map.update_position();
 	Cell_t curr = {0, 0, 0};
 
 	CleanMode* p_cm;
@@ -98,7 +98,7 @@ void cm_cleaning() {
 			continue;
 		}
 
-		curr = p_cm->updatePosition({cost_map.get_x_count(), cost_map.get_y_count()});
+		curr = p_cm->updatePosition({nav_map.get_x_count(), nav_map.get_y_count()});
 
 		if (p_cm->isReach() || p_cm->isStop())
 		{
@@ -156,7 +156,7 @@ void cm_apply_cs(int next) {
 	}
 	else if (next == CS_BACK_FROM_CHARGER)
 	{
-		path_set_home(cost_map.getCurrCell());
+		path_set_home(nav_map.getCurrCell());
 		cs_work_motor();
 		wheel.setDirBackward();
 	}
@@ -194,11 +194,11 @@ void cm_apply_cs(int next) {
 		// Special handling for wall follow mode_.
 		if (cm_is_follow_wall()) {
 			robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle); //For wall follow mode_.
-			cost_map.updatePosition();
+			nav_map.updatePosition();
 			//wf_mark_home_point();
-			cost_map.reset(MAP);
-			cost_map.merge(slam_cost_map, false, false, true, false, false);
-			cost_map.markRobot(MAP);//note: To clear the obstacles before go home, please don't remove it!
+			nav_map.reset(CLEAN_MAP);
+			nav_map.mergeFromSlamGridMap(slam_grid_map, false, false, true, false, false);
+			nav_map.markRobot(CLEAN_MAP);//note: To clear the obstacles before go home, please don't remove it!
 		}
 		// Play wavs.
 		if (ev.battrey_home)
@@ -216,7 +216,7 @@ void cm_apply_cs(int next) {
 	{
 		if( SpotMovement::instance() -> getSpotType() == NO_SPOT){
 			ROS_INFO("%s %d: Entering temp spot during navigation.", __FUNCTION__, __LINE__);
-			Cell_t curr_cell = cost_map.getCurrCell();
+			Cell_t curr_cell = nav_map.getCurrCell();
 			ROS_WARN("%s %d: current cell(%d, %d).", __FUNCTION__, __LINE__, curr_cell.X, curr_cell.Y);
 			SpotMovement::instance() ->setSpotType(CLEAN_SPOT);
 			wheel.stop();
@@ -796,7 +796,7 @@ void CM_EventHandle::rcon(bool state_now, bool state_last)
 
 	ev.rcon_triggered = c_rcon.get_trig_();
 	if(ev.rcon_triggered != 0){
-		cost_map.set_rcon();
+		nav_map.set_rcon();
 	}
 	c_rcon.resetStatus();*/
 }
@@ -1047,7 +1047,7 @@ void CM_EventHandle::remote_direction(bool state_now,bool state_last)
 	ROS_WARN("%s,%d: is called.",__FUNCTION__,__LINE__);
 	// For Debug
 	// ev.battrey_home = true;
-	// path_set_continue_cell(cost_map.get_curr_cell());
+	// path_set_continue_cell(nav_map.get_curr_cell());
 	// robot::instance()->setLowBatPause();
 	beeper.play_for_command(INVALID);
 	remote.reset();
@@ -1078,7 +1078,7 @@ void CM_EventHandle::battery_home(bool state_now, bool state_last)
 		}
 #if CONTINUE_CLEANING_AFTER_CHARGE
 		if (SpotMovement::instance()->getSpotType() != NORMAL_SPOT ){
-			path_set_continue_cell(cost_map.getCurrCell());
+			path_set_continue_cell(nav_map.getCurrCell());
 			g_is_low_bat_pause = true;
 		}
 #endif

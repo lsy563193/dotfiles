@@ -1,5 +1,5 @@
 //
-// Created by root on 11/29/17.
+// Created by lsy563193 on 11/29/17.
 //
 
 #include "pp.h"
@@ -99,7 +99,7 @@ bool TurnMovement::shouldMoveBack()
 
 void TurnMovement::setTarget()
 {
-	if(cs.is_going_home() && cost_map.pointToCell(s_curr_p) == g_zero_home)
+	if(cs.is_going_home() && nav_map.pointToCell(s_curr_p) == g_zero_home)
 	{
 		s_target_angle = g_home_point.TH;
 	}
@@ -175,27 +175,4 @@ void TurnMovement::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 
 	l_speed = r_speed = speed_;
 
-}
-
-bool TurnSpeedRegulator::adjustSpeed(int16_t diff, uint8_t& speed)
-{
-	if ((diff >= 0) && (diff <= 1800))
-		wheel.setDirectionLeft();
-	else if ((diff <= 0) && (diff >= (-1800)))
-		wheel.setDirectionRight();
-
-	tick_++;
-	if (tick_ > 2)
-	{
-		tick_ = 0;
-		if (std::abs(diff) > 350){
-			speed_ = std::min(++speed_, speed_max_);
-		}
-		else{
-			--speed_;
-			speed_ = std::max(--speed_, speed_min_);
-		}
-	}
-	speed = speed_;
-	return true;
 }

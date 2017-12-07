@@ -29,7 +29,7 @@
 #endif
 
 
-/* Exit charge mode_ when this counter equals to 0 */
+/* isExit charge mode_ when this counter equals to 0 */
 uint8_t g_stop_charge_counter = 0;
 
 uint8_t charge_plan_status = 0;
@@ -117,19 +117,19 @@ void charge_function(void)
 				{
 					if (battery.getVoltage() < LOW_BATTERY_STOP_VOLTAGE)
 					{
-						ROS_INFO("%s %d: Exit charger mode_ and but battery too low to continue cleaning.", __FUNCTION__, __LINE__);
+						ROS_INFO("%s %d: isExit charger mode_ and but battery too low to continue cleaning.", __FUNCTION__, __LINE__);
 						cm_set(Clean_Mode_Idle);
 						g_resume_cleaning = false;
 					}
 					else
 					{
-						ROS_INFO("%s %d: Exit charger mode_ and continue cleaning.", __FUNCTION__, __LINE__);
+						ROS_INFO("%s %d: isExit charger mode_ and continue cleaning.", __FUNCTION__, __LINE__);
 						cm_set(Clean_Mode_Navigation);
 					}
 					break;
 				}
 
-				ROS_INFO("%s %d: Exit charger mode_ and go to userinterface mode_.", __FUNCTION__, __LINE__);
+				ROS_INFO("%s %d: isExit charger mode_ and go to userinterface mode_.", __FUNCTION__, __LINE__);
 				cm_set(Clean_Mode_Idle);
 				break;
 			}
@@ -332,7 +332,7 @@ void Charge_EventHandle::key_clean(bool state_now, bool state_last)
 	}
 	else if (charger.isOnStub())
 	{
-		ROS_WARN("%s %d: Exit charger mode_ and go to navigation mode_.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: isExit charger mode_ and go to navigation mode_.", __FUNCTION__, __LINE__);
 		beeper.play_for_command(VALID);
 		cm_set(Clean_Mode_Navigation);
 	}
@@ -382,7 +382,7 @@ void Charge_EventHandle::remote_clean(bool stat_now, bool state_last)
 		}
 		else if (charger.isOnStub())
 		{
-			ROS_WARN("%s %d: Exit charger mode_ and go to navigation mode_.", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: isExit charger mode_ and go to navigation mode_.", __FUNCTION__, __LINE__);
 			beeper.play_for_command(VALID);
 			cm_set(Clean_Mode_Navigation);
 		}

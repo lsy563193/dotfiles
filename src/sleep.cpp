@@ -19,21 +19,6 @@ uint8_t sleep_plan_reject_reason = 0; // 1 for error exist, 2 for robot lifted u
 bool sleep_rcon_triggered = false;
 static Sleep_EventHandle eh;
 
-uint8_t g_sleep_mode_flag = 0;
-uint8_t get_sleep_mode_flag()
-{
-	return g_sleep_mode_flag;
-}
-
-void set_sleep_mode_flag()
-{
-	g_sleep_mode_flag = 1;
-}
-
-void reset_sleep_mode_flag()
-{
-	g_sleep_mode_flag = 0;
-}
 
 /*----------------------------------------------------------------Sleep mode_---------------------------*/
 void sleep_mode(void)
@@ -108,14 +93,14 @@ void sleep_mode(void)
 		if (time(NULL) - check_battery_time > 30)
 		{
 			// Check the battery for every 30s. If battery below 12.5v, power of core board will be cut off.
-			reset_sleep_mode_flag();
+			serial.wakeUp();
 			ROS_WARN("Wake up robotbase to check if battery too low(<12.5v).");
 			// Wait for 40ms to make sure base board has finish checking.
 			usleep(40000);
 			check_battery_time = time(NULL);
 		}
-		else if(!get_sleep_mode_flag())
-			set_sleep_mode_flag();
+		else if(!serial.isSleep())
+			serial.sleep();
 	}
 
 	sleep_unregister_events();
@@ -156,7 +141,7 @@ void Sleep_EventHandle::rcon(bool state_now, bool state_last)
 		serial.setCleanMode(Clean_Mode_Go_Charger);
 		sleep_rcon_triggered = true;
 	}
-	reset_sleep_mode_flag();
+	serial.wakeUp();
 }
 
 void Sleep_EventHandle::remote_clean(bool state_now, bool state_last)
@@ -164,7 +149,7 @@ void Sleep_EventHandle::remote_clean(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Waked up by remote key clean.", __FUNCTION__, __LINE__);
 	serial.setCleanMode(Clean_Mode_Idle);
 	ev.key_clean_pressed = true;
-	reset_sleep_mode_flag();
+	serial.wakeUp();
 }
 
 void Sleep_EventHandle::remote_plan(bool state_now, bool state_last)
@@ -188,7 +173,7 @@ void Sleep_EventHandle::remote_plan(bool state_now, bool state_last)
 			g_plan_activated = true;
 		}
 	}
-	reset_sleep_mode_flag();
+	serial.wakeUp();
 	robot_timer.resetPlanStatus();
 }
 
@@ -197,7 +182,7 @@ void Sleep_EventHandle::key_clean(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Waked up by key clean.", __FUNCTION__, __LINE__);
 	ev.key_clean_pressed = true;
 	serial.setCleanMode(Clean_Mode_Idle);
-	reset_sleep_mode_flag();
+	serial.wakeUp();
 	usleep(20000);
 
 	beeper.play_for_command(VALID);
@@ -214,5 +199,5 @@ void Sleep_EventHandle::charge_detect(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Detect charge!", __FUNCTION__, __LINE__);
 	serial.setCleanMode(Clean_Mode_Charging);
 	ev.charge_detect = true;
-	reset_sleep_mode_flag();
+	serial.wakeUp();
 }

@@ -1,15 +1,15 @@
 //
-// Created by root on 11/29/17.
+// Created by lsy563193 on 11/29/17.
 //
 #include "pp.h"
 
 
-float g_back_distance = 0.01;
+//float g_back_distance = 0.01;
 
 // Back distance for go to charger regulator
-bool g_go_to_charger_back_30cm = false;
-bool g_go_to_charger_back_10cm = false;
-bool g_go_to_charger_back_0cm = false;
+//bool g_go_to_charger_back_30cm = false;
+//bool g_go_to_charger_back_10cm = false;
+//bool g_go_to_charger_back_0cm = false;
 
 BackMovement::BackMovement() : counter_(0), speed_(BACK_MAX_SPEED), distance(0)
 {

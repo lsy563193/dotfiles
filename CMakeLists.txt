@@ -3,11 +3,8 @@ project(pp)
 set(CMAKE_CXX_FLAGS "-std=c++11 -fpermissive ${CMAKE_CXX_FLAGS} -Wfatal-errors\ ")
 FILE(GLOB PP_SRC
         include/*
-		include/clean_mode_new/clean_mode_new.hpp
-		include/clean_mode_new/clean_mode_navigation_new.hpp
-		include/action_new/action_new.hpp
-		include/action_new/action_open_gyro_new.hpp
-		include/path_algorithm/path_algorithm.h
+				include/path_algorithm.h
+		include/action.hpp
 	src/charge.cpp
 #	src/clean_mode.cpp
 	src/clean_state.cpp
@@ -32,25 +29,50 @@ FILE(GLOB PP_SRC
 	src/dev/speaker.cpp
 	src/dev/lidar.cpp
 
-	#For new framework
-	src/action_new/action_new.cpp
-	src/action_new/action_open_gyro_new.cpp
-	src/clean_mode_new/clean_mode_new.cpp
-	src/clean_mode_new/clean_mode_navigation_new.cpp
+#				src/action/action_new.cpp
+#				src/action/action_open_gyro_new.cpp
+				src/mode/state/state.cpp
+				src/mode/state/state_clean.cpp
+				src/mode/state/state_go_home_point.cpp
+				src/mode/state/state_go_charger.cpp
+				src/mode/state/state_trapped.cpp
+				src/mode/state/state_self_check.cpp
+				src/mode/state/state_tmp_spot.cpp
+				src/mode/state/state_exploration.cpp
+
+				src/mode/state/move_type/move_type.cpp
+				src/mode/state/move_type/move_type_linear.cpp
+				src/mode/state/move_type/move_type_follow_wall.cpp
+				src/mode/state/move_type/move_type_go_charger.cpp
+	src/mode/mode.cpp
+	src/mode/mode_sleep.cpp
+	src/mode/clean_mode.cpp
+	src/mode/clean_mode_navigation.cpp
 	src/path_algorithm/path_algorithm.cpp
-	#end
+	src/path_algorithm/move_type_plan.cpp
 
 	src/action/action.cpp
 	src/action/action_open_gyro.cpp
 	src/action/action_back_from_charger.cpp
+	src/action/action_open_lidar.cpp
+	src/action/action_align.cpp
+	src/action/action_open_slam.cpp
+	src/action/action_sleep.cpp
 
 	src/action/movement/movement.cpp
+	src/action/movement/movement_new.cpp
 	src/action/movement/movement_back.cpp
+				src/action/movement/movement_back_new.cpp
 	src/action/movement/movement_fall_wall.cpp
+				src/action/movement/movement_fall_wall_new.cpp
 	src/action/movement/movement_forward.cpp
+				src/action/movement/movement_forward_new.cpp
 	src/action/movement/movement_go_charger.cpp
+				src/action/movement/movement_go_charger_new.cpp
 	src/action/movement/movement_self_check.cpp
+				src/action/movement/movement_self_check_new.cpp
 	src/action/movement/movement_turn.cpp
+				src/action/movement/movement_turn_new.cpp
 
 	src/clean_mode/clean_mode.cpp
 	src/clean_mode/exploration.cpp

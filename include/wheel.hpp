@@ -13,6 +13,7 @@
 #define REG_TYPE_BACK			4
 #define REG_TYPE_CURVE			5
 
+#include "ros/ros.h"
 struct pid_struct
 {
 	float delta;
@@ -27,7 +28,7 @@ struct pid_struct
 
 struct pid_argu_struct
 {
-	uint8_t reg_type; // Regulator type
+	uint8_t reg_type; // IGovernor type
 	float Kp;
 	float Ki;
 	float Kd;

@@ -112,7 +112,7 @@ bool MotionManage::get_align_angle(float &line_angle)
 	}
 	if (line_align_ != start)
 	{
-		ROS_WARN("%s %d: Obstacle detector launch timeout,align fail.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Obstacle detector launch timeout,ac_align fail.", __FUNCTION__, __LINE__);
 		line_angle = 0;
 		return true;
 	}
@@ -380,7 +380,7 @@ void init_go_home_after_gyro()
 bool wait_for_back_from_charge()
 {
 	ROS_INFO("%s %d: calling moving back", __FUNCTION__, __LINE__);
-		auto curr = cost_map.getCurrCell();
+		auto curr = nav_map.getCurrCell();
 		path_set_home(curr);
 		extern bool g_from_charger;
 		g_from_charger = true;
@@ -432,11 +432,11 @@ void init_before_gyro()
 
 	robot_timer.initWorkTimer();
 	if (!cs_is_paused() && !g_is_low_bat_pause && !g_resume_cleaning )
-		cost_map.reset(MAP);
+		nav_map.reset(CLEAN_MAP);
 
-	fw_map.reset(MAP);
-	slam_cost_map.reset(MAP);
-	decrease_map.reset(MAP);
+	fw_map.reset(CLEAN_MAP);
+	slam_grid_map.reset(CLEAN_MAP);
+	decrease_map.reset(CLEAN_MAP);
 	switch (cm_get())
 	{
 		case Clean_Mode_Navigation:
@@ -598,9 +598,9 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 		robot_timer.initWorkTimer();
 		// Push the start point into the home point list
 		ROS_INFO("map_init-----------------------------");
-		cost_map.reset(MAP);
+		nav_map.reset(CLEAN_MAP);
 		robot::instance()->initOdomPosition();
-		cost_map.markRobot(MAP);
+		nav_map.markRobot(CLEAN_MAP);
 
 		g_have_seen_charger = false;
 		g_start_point_seen_charger = false;
@@ -613,9 +613,9 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 	else
 		robot_timer.resumeWorkTimer();
 
-	fw_map.reset(MAP);
-	slam_cost_map.reset(MAP);
-	decrease_map.reset(MAP);
+	fw_map.reset(CLEAN_MAP);
+	slam_grid_map.reset(CLEAN_MAP);
+	decrease_map.reset(CLEAN_MAP);
 
 	cs.setNext(CS_OPEN_GYRO);
 	while (ros::ok())
@@ -784,7 +784,7 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 		robot::instance()->offsetAngle(180);
 		ROS_INFO("%s,%d,\033[32m charge stub postion estiamate on(%d,%d)\033[0m",__FUNCTION__,__LINE__,(-1)*(int)MOVE_BACK_FROM_STUB_DIST/CELL_SIZE,0);
 		Cell_t home_point((-1)*(int)MOVE_BACK_FROM_STUB_DIST/CELL_SIZE,0);
-		cost_map.set_charge_position(home_point);
+		nav_map.set_charge_position(home_point);
 		g_homes[0].TH = 180;
 	}
 
@@ -803,7 +803,7 @@ MotionManage::~MotionManage()
 {
 	if (cm_get() != Clean_Mode_Go_Charger)
 	{
-		cost_map.print(MAP, cost_map.getXCell(), cost_map.getYCell());
+		nav_map.print(CLEAN_MAP, nav_map.getXCell(), nav_map.getYCell());
 		//if (cm_is_follow_wall())
 		g_wf_reach_count = 0;
 		if (SpotMovement::instance()->getSpotType() != NO_SPOT)
@@ -942,7 +942,7 @@ MotionManage::~MotionManage()
 
 	if (cm_get() != Clean_Mode_Go_Charger)
 	{
-		auto cleaned_count = cost_map.getCleanedArea();
+		auto cleaned_count = nav_map.getCleanedArea();
 		auto map_area = cleaned_count * (CELL_SIZE * 0.001) * (CELL_SIZE * 0.001);
 		ROS_INFO("%s %d: Cleaned area = \033[32m%.2fm2\033[0m, cleaning time: \033[32m%d(s) %.2f(min)\033[0m, cleaning speed: \033[32m%.2f(m2/min)\033[0m.",
 				 __FUNCTION__, __LINE__, map_area, robot_timer.getWorkTime(),

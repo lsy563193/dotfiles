@@ -22,7 +22,3 @@ void sleep_register_events(void);
 void sleep_unregister_events(void);
 
 
-void set_sleep_mode_flag();
-uint8_t get_sleep_mode_flag();
-void reset_sleep_mode_flag();
-

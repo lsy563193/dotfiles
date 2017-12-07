@@ -37,7 +37,6 @@ Lidar::Lidar():angle_n_(0)
 //	scanOriginal_update_time = ros::Time::now().toSec();
 	//last_ranges_ = new float[360];
 	//memset(last_ranges_,0.0,360*sizeof(float));
-	seq = 0;
 }
 
 Lidar::~Lidar()
@@ -88,9 +87,9 @@ void Lidar::scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr &scan)
 }
 
 void Lidar::scanCompensateCb(const sensor_msgs::LaserScan::ConstPtr &scan){
-	scanLinear_mutex_.lock();
+	scanCompensate_mutex_.lock();
 	lidarScanData_compensate_ = *scan;
-	scanLinear_mutex_.unlock();
+	scanCompensate_mutex_.unlock();
 	setScanCompensateReady(1);
 }
 
@@ -285,7 +284,7 @@ bool Lidar::findLines(std::vector<LineABC> *lines,bool combine)
 
 	sensor_msgs::LaserScan scan_data;
 	//scanLinear_mutex_.lock();
-	if(isNewScan1()){
+	if(lidarCheckFresh(0.210,1)){
 		scan_data = lidarScanData_linear_;
 	}
 	else
@@ -429,10 +428,10 @@ bool Lidar::alignFinish()
 
 /*
  * @auther mengshige1988@qq.com
- * @breif get align angle
+ * @breif get ac_align angle
  * @param1 liens vector
- * @param2 align angle
- * @retrun true if found align angle ,alse return false
+ * @param2 ac_align angle
+ * @retrun true if found ac_align angle ,alse return false
  * */
 bool Lidar::getAlignAngle(const std::vector<LineABC> *lines ,float *align_angle)
 {
@@ -635,7 +634,7 @@ bool Lidar::splitLine(const std::vector<Double_Point> &points, double consec_lim
 			new_line.push_back(points[i]);
 		}
 	}
-	for (std::vector<std::vector<Double_Point> >::iterator iter = Lidar_Group.begin(); iter != Lidar_Group.end();) {
+	for (std::vector<std::vector<Double_Point> >::iterator iter = Lidar_Group.begin(); iter != Lidar_Group.end();){
 		if (iter->size() < points_count_lim) {
 			iter = Lidar_Group.erase(iter);
 		} else {
@@ -703,7 +702,7 @@ bool Lidar::splitLine2nd(std::vector<std::vector<Double_Point> > *groups, double
 				//ROS_INFO("t_tmax > t_lim,end_iterate_flag = %d", end_iterate_flag);
 				int index = std::distance((*groups).begin(), iter);
 				groups_erased_index.push_back(index);
-				//ROS_INFO("push_back erased index = %d",index);
+				//ROS_INFO("push_back erased s_index_ = %d",s_index_);
 				//ROS_INFO("points_size = %d", points_size);
 				for (int j = 0; j < points_size; j++) {
 					new_line.push_back(*(iter->begin() + j));
@@ -750,7 +749,7 @@ bool Lidar::splitLine2nd(std::vector<std::vector<Double_Point> > *groups, double
 	erased_size = groups_erased_index.size();
 	if (!groups_erased_index.empty()) {
 		for (int i = 0; i < erased_size; i++) {
-			ROS_DEBUG("erase the unsplit line! index = %d", i);
+			ROS_DEBUG("erase the unsplit line! s_index_ = %d", i);
 			std::vector<std::vector<Double_Point> >::iterator iter = (*groups).begin() + (groups_erased_index[i] + i);
 			(*groups).erase(iter);
 			ROS_DEBUG("2Lidar_Group.size = %lu", (*groups).size());
@@ -846,18 +845,18 @@ bool Lidar::mergeLine(std::vector<std::vector<Double_Point> > *groups, double t_
 						//ROS_INFO("t >= t_max,points_index_max = %d", points_index_max);
 					}
 				}
-				//ROS_INFO("merge: t_max = %lf", t_max);
+				//ROS_INFO("mergeFromSlamGridMap: t_max = %lf", t_max);
 				if (t_max < t_lim) {
 					int index = std::distance((*groups).begin(), iter);
 					merge_index.push_back(index);
 					ROS_DEBUG("5Lidar_Group.size = %lu", (*groups).size());
-					ROS_DEBUG("merge! index = %d and %d", index, (index + 1));
+					ROS_DEBUG("mergeFromSlamGridMap! s_index_ = %d and %d", index, (index + 1));
 				}
 			}
 		}
 	}
 
-	/*do merge*/
+	/*do mergeFromSlamGridMap*/
 	if (!merge_index.empty()) {
 		int loop_count = 0;
 		for (std::vector<int>::iterator m_iter = merge_index.begin(); m_iter != merge_index.end(); ++m_iter) {
@@ -871,13 +870,13 @@ bool Lidar::mergeLine(std::vector<std::vector<Double_Point> > *groups, double t_
 				new_line.push_back(*((iter + 1)->begin() + j));
 			}
 			(*groups).erase(iter - loop_count);
-			ROS_DEBUG("merge : erase front");
+			ROS_DEBUG("mergeFromSlamGridMap : erase front");
 			ROS_DEBUG("Lidar_Group.size = %lu", (*groups).size());
 			(*groups).erase(iter + 1 - loop_count);
-			ROS_DEBUG("merge : erase rear");
+			ROS_DEBUG("mergeFromSlamGridMap : erase rear");
 			ROS_DEBUG("5Lidar_Group.size = %lu", (*groups).size());
 			(*groups).insert((*groups).begin() + (*m_iter) - loop_count, new_line);
-			ROS_DEBUG("merge : insert");
+			ROS_DEBUG("mergeFromSlamGridMap : insert");
 			ROS_DEBUG("5Lidar_Group.size = %lu", (*groups).size());
 			loop_count++;
 		}
@@ -1033,11 +1032,11 @@ static uint8_t setLidarMarkerAcr2Dir(double X_MIN,double X_MAX,int angle_from,in
 	}
 	if (count > 10) {
 		int32_t x_tmp,y_tmp;
-		cost_map.robotToPoint(cost_map.getCurrPoint(), CELL_SIZE * dy, CELL_SIZE * dx, &x_tmp, &y_tmp);
-		if (cost_map.getCell(MAP, cost_map.countToCell(x_tmp), cost_map.countToCell(y_tmp)) != BLOCKED_BUMPER)
+		nav_map.robotToPoint(nav_map.getCurrPoint(), CELL_SIZE * dy, CELL_SIZE * dx, &x_tmp, &y_tmp);
+		if (nav_map.getCell(CLEAN_MAP, nav_map.countToCell(x_tmp), nav_map.countToCell(y_tmp)) != BLOCKED_BUMPER)
 		{
-			ROS_INFO("\033[36mlidar marker : (%d,%d)\033[0m", cost_map.countToCell(x_tmp), cost_map.countToCell(y_tmp));
-			cost_map.setCell(MAP, x_tmp, y_tmp, BLOCKED_LIDAR);
+			ROS_INFO("\033[36mlidar marker : (%d,%d)\033[0m", nav_map.countToCell(x_tmp), nav_map.countToCell(y_tmp));
+			nav_map.setCell(CLEAN_MAP, x_tmp, y_tmp, BLOCKED_LIDAR);
 		}
 		ret = 1;
 		*lidar_status |= obs_status;
@@ -1060,9 +1059,9 @@ uint8_t Lidar::lidarMarker(double X_MAX)
 	const	double Y_MAX = 0.20;//0.279
 	int	count_array[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-	for(std::vector<geometry_msgs::Point>::const_iterator ite = lidarXY_points.begin(); ite != lidarXY_points.end(); ite++){
-		x = ite->x;
-		y = ite->y;
+	for(auto point:lidarXY_points){
+		x = point.x;
+		y = point.y;
 		//front
 		if (x > ROBOT_RADIUS && x < X_MAX) {
 			//middle
@@ -1213,14 +1212,14 @@ uint8_t Lidar::lidarMarker(double X_MAX)
 				}
 			}
 
-			cost_map.robotToCell(cost_map.getCurrPoint(), CELL_SIZE * dy, CELL_SIZE * dx, x_tmp, y_tmp);
-			auto cell_status = cost_map.getCell(MAP, x_tmp, y_tmp);
+			nav_map.robotToCell(nav_map.getCurrPoint(), CELL_SIZE * dy, CELL_SIZE * dx, x_tmp, y_tmp);
+			auto cell_status = nav_map.getCell(CLEAN_MAP, x_tmp, y_tmp);
 			if (cell_status != BLOCKED_BUMPER && cell_status != BLOCKED_OBS)
 			{
 				//ROS_INFO("    \033[36mlidar marker : (%d,%d), i = %d, dx = %d, dy = %d.\033[0m",count_to_cell(x_tmp),count_to_cell(y_tmp), i, dx, dy);
-				msg += direction_msg + "(" + std::to_string(cost_map.countToCell(x_tmp)) + ", " + std::to_string(
-						cost_map.countToCell(y_tmp)) + ")";
-				cost_map.setCell(MAP, cost_map.cellToCount(x_tmp), cost_map.cellToCount(y_tmp), BLOCKED_LIDAR); //BLOCKED_OBS);
+				msg += direction_msg + "(" + std::to_string(nav_map.countToCell(x_tmp)) + ", " + std::to_string(
+						nav_map.countToCell(y_tmp)) + ")";
+				nav_map.setCell(CLEAN_MAP, nav_map.cellToCount(x_tmp), nav_map.cellToCount(y_tmp), BLOCKED_LIDAR); //BLOCKED_OBS);
 			}
 		}
 	}
@@ -1442,9 +1441,9 @@ double Lidar::getObstacleDistance(uint8_t dir, double range)
 		return 0;
 	}
 
-	for(std::vector<geometry_msgs::Point>::const_iterator ite = lidarXY_points.begin(); ite != lidarXY_points.end(); ite++){
-		x = ite->x;
-		y = ite->y;
+	for(auto point:lidarXY_points){
+		x = point.x;
+		y = point.y;
 		x_to_robot = fabs(x) - ROBOT_RADIUS * sin(acos(fabs(y) / ROBOT_RADIUS));
 		y_to_robot = fabs(y) - ROBOT_RADIUS * sin(acos(fabs(x) / ROBOT_RADIUS));
 		//ROS_INFO("x = %lf, y = %lf", x, y);

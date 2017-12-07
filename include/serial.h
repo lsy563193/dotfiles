@@ -156,6 +156,12 @@ public:
 
 	int flush();
 
+	void sleep(void);
+
+	void wakeUp(void);
+
+	bool isSleep(void);
+
 	bool is_ready();
 
 	int write(uint8_t len, uint8_t *buf);
@@ -200,6 +206,8 @@ public:
 #endif
 
 private:
+
+	bool sleep_status_;
 
 	int	crport_fd_;
 	bool serial_init_done_;
