@@ -107,16 +107,4 @@ private:
 	time_t show_battery_info_time_stamp_;
 };
 
-class ActionTurnForCharger :public IAction
-{
-public:
-	ActionTurnForCharger();
-	~ActionTurnForCharger() override ;
-
-	bool isFinish() override;
-	void run() override;
-
-private:
-	time_t start_turning_time_stamp_;
-};
 #endif //PP_ACTION_H

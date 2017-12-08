@@ -70,7 +70,7 @@ IAction* ModeCharge::getNextAction()
 		else
 		{
 			action_i_ = ac_turn_for_charger;
-			return new ActionTurnForCharger;
+			return new MovementTurnForCharger;
 		}
 	}
 	else if (action_i_ == ac_turn_for_charger)
