@@ -43,11 +43,6 @@ bool ModeIdle::isExit()
 	return false;
 }
 
-IAction* ModeIdle::getNextAction()
-{
-	return nullptr;
-}
-
 void ModeIdle::register_events()
 {
 	event_manager_register_handler(this);

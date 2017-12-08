@@ -45,7 +45,7 @@ Cell_t ACleanMode::updatePath()
 {
 //	PP_INFO()
 	auto curr = nav_map.updatePosition();
-//	auto point = nav_map.getCurrPoint();
+	auto point = nav_map.getCurrPoint();
 //	ROS_INFO("point(%d,%d,%d)",point.X, point.Y, curr.TH);
 //	ROS_INFO("curr(%d,%d,%d)",curr.X, curr.Y, curr.TH);
 //	ROS_INFO("last(%d,%d,%d)",last_.X, last_.Y, last_.TH);
@@ -75,12 +75,16 @@ Cell_t ACleanMode::updatePath()
 void ACleanMode::genMoveAction() {
 	if (action_i_ == ac_forward)
 		sp_action_.reset(new MovementForward(GridMap::cellToPoint(plan_path_.back()), plan_path_));
-	else if (action_i_ == ac_movement_follow_wall)
-		sp_action_.reset(new MovementFollowWall(GridMap::getCurrPoint(), GridMap::cellToPoint(plan_path_.back())));
+	else if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
+		sp_action_.reset(new MovementFollowWall(GridMap::getCurrPoint(), GridMap::cellToPoint(plan_path_.back()),action_i_ == ac_follow_wall_left));
 	else if (action_i_ == ac_back)
 		sp_action_.reset(new MovementBack());
 	else if (action_i_ == ac_turn) {
 		sp_action_.reset(new MovementTurn(plan_path_.back().TH));
 	}
 }
+
+//bool ACleanMode::isFinish() {
+//	return false;
+//}
 

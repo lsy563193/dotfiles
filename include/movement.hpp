@@ -101,7 +101,7 @@ private:
 class MovementFollowWall:public IMovement {
 
 public:
-	MovementFollowWall(Point32_t start_point, Point32_t target);
+	MovementFollowWall(Point32_t start_point, Point32_t target,bool is_left);
 
 	~MovementFollowWall() { /*set_wheel.speed(0,0);*/ };
 
@@ -156,6 +156,8 @@ private:
 
 	int32_t same_speed_;
 	int32_t diff_speed_;
+private:
+	bool is_left_{true};
 };
 
 class MovementGoToCharger: public IMovement{

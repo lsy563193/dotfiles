@@ -53,7 +53,8 @@ protected:
 		ac_open_slam,
 		ac_turn,//6
 		ac_forward,
-		ac_movement_follow_wall,//8
+		ac_follow_wall_left,//8
+		ac_follow_wall_right,//9
 		ac_back,
 //		ac_movement_follow_wall_left,
 //		ac_movement_follow_wall_right,
@@ -72,7 +73,6 @@ public:
 	ModeIdle();
 	~ModeIdle();
 	bool isExit();
-	IAction* getNextAction();
 	void remote_cleaning(bool state_now, bool state_last);
 	void charge_detect(bool state_now, bool state_last) override ;
 	void remote_direction_left(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
@@ -144,9 +144,9 @@ public:
 	virtual int getNextMoveType() = 0;
 	virtual int getNextMovement()=0;
 	void genMoveAction();
+//	bool isFinish();
 
-friend IMoveType;
-static Cell_t updatePath();
+Cell_t updatePath();
 
 protected:
 
@@ -174,9 +174,9 @@ protected:
 		mt_follow_wall_right,
 		mt_go_charger,
 	};
-	int movement_i_ {mv_null};
+//	int movement_i_ {mv_null};
 	enum {
-		mv_null,
+//		mv_null,
 		mv_back,
 		mv_turn,
 		mv_forward,
@@ -193,7 +193,7 @@ public:
 	CleanModeNav();
 	~CleanModeNav() override ;
 	int getNextState();
-	IMoveType* getNextMoveType(const Cell_t& start, MapDirection dir);
+//	IMoveType* getNextMoveType(const Cell_t& start, MapDirection dir);
 	bool mark();
 //	int getNextState();
 	int getNextMoveType();

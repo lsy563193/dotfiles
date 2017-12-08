@@ -137,8 +137,8 @@ Path_t PathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start,
 	 */
 	Cell_t trace_cell;
 	int16_t trace_x, trace_y, trace_x_last, trace_y_last, total_cost = 0;
-	trace_cell.X = trace_x = trace_x_last = target.X;
-	trace_cell.Y = trace_y = trace_y_last = target.Y;
+	trace_cell.X = trace_x = trace_x_last = start.X;
+	trace_cell.Y = trace_y = trace_y_last = start.Y;
 	path_.push_back(trace_cell);
 
 	uint16_t next = 0;
@@ -341,6 +341,7 @@ void PathAlgorithm::optimizePath(GridMap &map, Path_t& path)
 
 void PathAlgorithm::fillPathWithDirection(Path_t &path)
 {
+	displayPath(path);
 	for(auto it = path.begin(); it < path.end(); ++it) {
 		auto it_next = it+1;
 		if (it->X == it_next->X)

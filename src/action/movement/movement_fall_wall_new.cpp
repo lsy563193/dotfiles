@@ -11,7 +11,7 @@
 
 double robot_to_wall_distance = 0.8;
 
-MovementFollowWall::MovementFollowWall(Point32_t start_point, Point32_t target) : previous_(0), seen_charger_counter(0)
+MovementFollowWall::MovementFollowWall(Point32_t start_point, Point32_t target, bool is_left) : previous_(0), seen_charger_counter(0), is_left_(is_left)
 {
 	if (!g_keep_on_wf) {
 		s_origin_p = start_point;
@@ -31,6 +31,9 @@ bool MovementFollowWall::isNewLineReach()
 	auto is_pos_dir = s_target_p.Y - s_origin_p.Y > 0;
 	// The limit is CELL_COUNT_MUL / 8 * 3 further than target line center.
 	auto target_limit = s_target_p.Y + CELL_COUNT_MUL / 8 * 3 * is_pos_dir;
+//	ROS_WARN("~~~~~~~~~~~~~~~~~%s %d: Reach the target limit, s_origin_p.Y(%d), target.Y(%d),curr_y(%d)",
+//					 __FUNCTION__, __LINE__, nav_map.countToCell(s_origin_p.Y), nav_map.countToCell(s_target_p.Y),
+//					 nav_map.countToCell(s_curr_p.Y));
 	if (is_pos_dir ^ s_curr_p.Y < target_limit) // Robot has reached the target line limit.
 	{
 		ROS_WARN("%s %d: Reach the target limit, s_origin_p.Y(%d), target.Y(%d),curr_y(%d)",
@@ -42,7 +45,7 @@ bool MovementFollowWall::isNewLineReach()
 	{
 		// Robot has reached the target line center but still not reach target line limit.
 		// Check if the wall side has blocks on the costmap.
-		auto dx = (is_pos_dir ^ mt.is_left()) ? +2 : -2;
+		auto dx = (is_pos_dir ^ is_left_) ? +2 : -2;
 		if (nav_map.isBlocksAtY(nav_map.countToCell(s_curr_p.X) + dx, nav_map.countToCell(s_curr_p.Y))) {
 			ROS_WARN("%s %d: Already has block at the wall side, s_origin_p.Y(%d), target.Y(%d),curr_y(%d)",
 					 __FUNCTION__, __LINE__, nav_map.countToCell(s_origin_p.Y), nav_map.countToCell(s_target_p.Y),
@@ -194,13 +197,13 @@ void MovementFollowWall::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	uint32_t rcon_status = 0;
 	auto _l_step = wheel.getLeftStep();
 	auto _r_step = wheel.getRightStep();
-	auto &same_dist = (mt.is_left()) ? _l_step : _r_step;
-	auto &diff_dist = (mt.is_left()) ? _r_step : _l_step;
-	auto &same_speed = (mt.is_left()) ? l_speed : r_speed;
-	auto &diff_speed = (mt.is_left()) ? r_speed : l_speed;
+	auto &same_dist = (is_left_) ? _l_step : _r_step;
+	auto &diff_dist = (is_left_) ? _r_step : _l_step;
+	auto &same_speed = (is_left_) ? l_speed : r_speed;
+	auto &diff_speed = (is_left_) ? r_speed : l_speed;
 	wall_buffer[2]=wall_buffer[1];
 	wall_buffer[1]=wall_buffer[0];
-	wall_buffer[0]=(mt.is_left()) ? wall.getLeft() : wall.getRight();
+	wall_buffer[0]=(is_left_) ? wall.getLeft() : wall.getRight();
 
 	rcon_status = c_rcon.getStatus();
 	/*---only use a part of the Rcon signal---*/
@@ -222,16 +225,16 @@ void MovementFollowWall::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		}
 		else if(rcon_status & RconFR2_HomeT)
 		{
-			if(mt.is_left())
+			if(is_left_)
 				angular_speed = 15;
-			else if(mt.is_right())
+			else
 				angular_speed = 10;
 		}
 		else if(rcon_status & RconFL2_HomeT)
 		{
-			if(mt.is_left())
+			if(is_left_)
 				angular_speed = 10;
-			else if(mt.is_right())
+			else
 				angular_speed = 15;
 		}
 		c_rcon.resetStatus();
@@ -284,7 +287,7 @@ void MovementFollowWall::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		auto wheel_speed_base = 17 + diff_dist / 150;
 		if (wheel_speed_base > 28)wheel_speed_base = 28;
 
-		auto adc_value = (mt.is_left()) ? wall.getLeft() : wall.getRight();
+		auto adc_value = (is_left_) ? wall.getLeft() : wall.getRight();
 
 		auto proportion = (adc_value - g_wall_distance) * 100 / g_wall_distance;
 
@@ -463,5 +466,7 @@ bool MovementFollowWall::sp_turn_over(const Cell_t &curr) {
 	}
 
 bool MovementFollowWall::isFinish() {
-	return isNewLineReach();
+	return isNewLineReach() || isClosure(1) || shouldMoveBack() || shouldTurn()
+					|| isBlockCleared() || isOverOriginLine();
 }
+

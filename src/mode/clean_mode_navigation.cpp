@@ -58,11 +58,9 @@ CleanModeNav::~CleanModeNav()
 }
 
 bool CleanModeNav::isFinish() {
-
-	if (!Mode::isFinish())
-		return false;
-
 	if (action_i_ == ac_open_gyro) {
+		if (!Mode::isFinish())
+			return false;
 		if (charger.isOnStub()) {
 			action_i_ = ac_back_form_charger;
 			sp_action_.reset(new ActionBackFromCharger);
@@ -73,26 +71,42 @@ bool CleanModeNav::isFinish() {
 		}
 	}
 	else if (action_i_ == ac_back_form_charger) {
+		if (!Mode::isFinish())
+			return false;
 		action_i_ = ac_open_lidar;
 		sp_action_.reset(new ActionOpenLidar);
 	}
 	else if (action_i_ == ac_open_lidar) {
+		if (!Mode::isFinish())
+			return false;
 		action_i_ = ac_align;
 		sp_action_.reset(new ActionAlign);
 	}
 	else if (action_i_ == ac_align) {
+		if (!Mode::isFinish())
+			return false;
 		action_i_ = ac_open_slam;
 		sp_action_.reset(new ActionOpenSlam);
 	}
 	else if (action_i_ == ac_open_slam || action_i_ == ac_forward || action_i_ == ac_turn ||
-					 action_i_ == ac_movement_follow_wall || action_i_ == ac_back) {
+					 action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right || action_i_ == ac_back) {
+
+		PP_INFO();
+		NAV_INFO();
+
+		updatePath();
+
+		if (!Mode::isFinish())
+			return false;
+
 		if (state_i_ == st_null) {
 			action_i_ = ac_null;
 			move_type_i_ = mt_null;
 		}
 		else
 		{
-			nav_map.saveBlocks();
+			if(action_i_ == ac_forward)
+				nav_map.saveBlocks();
 			action_i_ = getNextMovement();
 		}
 
@@ -118,6 +132,7 @@ int CleanModeNav::getNextState() {
 	auto st = st_null;
 	if(st == st_null || st == st_clean)
 	{
+		g_old_dir = g_new_dir;
 		plan_path_ = generatePath(nav_map, nav_map.getCurrCell(),g_old_dir);
 		g_new_dir = (MapDirection)plan_path_.front().TH;
 		plan_path_.pop_front();;
@@ -140,7 +155,7 @@ int CleanModeNav::getNextState() {
 	return st;
 }
 
-void CleanModeNav::register_events(void)
+void CleanModeNav::register_events()
 {
 	event_manager_register_handler(this);
 	event_manager_reset_status();
@@ -148,34 +163,74 @@ void CleanModeNav::register_events(void)
 }
 
 int CleanModeNav::getNextMovement() {
-	if(action_i_ == ac_null)
-	{
-//		PP_INFO()
-//		NAV_INFO();
-//		movement_i_ = mv_turn;
-		action_i_ = ac_turn;
-	}
-	else if(action_i_ == ac_turn)
-	{
-//		PP_INFO()
-//		NAV_INFO();
-		action_i_ = ac_forward;
-	}
+	if(move_type_i_ == mt_linear) {
+		if (action_i_ == ac_null)
+			action_i_ = ac_turn;
 
-	else if(action_i_ == ac_forward)
-	{
-//		PP_INFO()
-//		NAV_INFO();
-		if( ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered )
-		action_i_ = ac_back;
+		else if (action_i_ == ac_turn) {
+				action_i_ = ac_forward;
+		}
+
+		else if (action_i_ == ac_forward) {
+			if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered)
+				action_i_ = ac_back;
+			else
+				action_i_ = ac_null;
+		}
+		else if (action_i_ == ac_back) {
+			action_i_ = ac_null;
+		}
 	}
-	else if(action_i_ == ac_back)
-	{
-//		NAV_INFO();
-		return action_i_ = ac_null;
+	if(move_type_i_ == ac_follow_wall_left) {
+		if (action_i_ == ac_null)
+			action_i_ = ac_turn;
+
+		else if (action_i_ == ac_turn) {
+				action_i_ = ac_follow_wall_left;
+		}
+		else if (action_i_ == ac_forward) {
+			if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered)
+				action_i_ = ac_back;
+			else
+				action_i_ = ac_null;
+		}
+		else if (action_i_ == ac_follow_wall_left) {
+			if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip)
+				action_i_ = ac_back;
+			else if (ev.lidar_triggered || ev.obs_triggered)
+				action_i_ = ac_null;
+		}
+		else if (action_i_ == ac_back) {
+			action_i_ = ac_turn;
+		}
 	}
+		if(move_type_i_ == ac_follow_wall_right) {
+		if (action_i_ == ac_null)
+			action_i_ = ac_turn;
+
+		else if (action_i_ == ac_turn) {
+				action_i_ = ac_follow_wall_right;
+		}
+		else if (action_i_ == ac_forward) {
+			if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered)
+				action_i_ = ac_back;
+			else
+				action_i_ = ac_null;
+		}
+		else if (action_i_ == ac_follow_wall_right) {
+			if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip)
+				action_i_ = ac_back;
+			else if (ev.lidar_triggered || ev.obs_triggered)
+				action_i_ = ac_null;
+		}
+		else if (action_i_ == ac_back) {
+			action_i_ = ac_turn;
+		}
+
+	}
+	if (ev.fatal_quit)
+		action_i_ = ac_null;
 	PP_INFO()
-//	NAV_INFO();
 	return action_i_;
 }
 
@@ -207,6 +262,48 @@ int CleanModeNav::getNextMoveType() {
 	ROS_INFO("mt = %d",mt);
 	return mt;
 }
+
+bool CleanModeNav::mark() {
+	displayPath(passed_path_);
+	if (move_type_i_ == mt_linear) {
+		PP_INFO()
+		nav_map.setCleaned(passed_path_);
+	}
+
+	if (state_i_ == st_trapped)
+		nav_map.markRobot(CLEAN_MAP);
+
+	nav_map.setBlocks();
+	if (move_type_i_ == mt_follow_wall_left || move_type_i_ == mt_follow_wall_right)
+		nav_map.setFollowWall();
+	if (state_i_ == st_trapped)
+		fw_map.setFollowWall();
+
+	PP_INFO()
+	nav_map.print(CLEAN_MAP, nav_map.getXCell(), nav_map.getYCell());
+
+	passed_path_.clear();
+	return false;
+}
+bool CleanModeNav::isExit()
+{
+	if (ev.key_clean_pressed || ev.cliff_all_triggered)
+	{
+		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+		setNextMode(md_idle);
+		return true;
+	}
+
+	if (ev.charge_detect)
+	{
+		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+		setNextMode(md_charge);
+		return true;
+	}
+
+	return false;
+}
+
 
 
 Path_t CleanModeNav::generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir)
@@ -519,48 +616,6 @@ bool CleanModeNav::filterPathsToSelectTarget(GridMap &map, const PathList &paths
 
 	return match_target_found;
 }
-
-bool CleanModeNav::mark() {
-	displayPath(passed_path_);
-	if (move_type_i_ == mt_linear) {
-		PP_INFO()
-		nav_map.setCleaned(passed_path_);
-	}
-
-	if (state_i_ == st_trapped)
-		nav_map.markRobot(CLEAN_MAP);
-
-	nav_map.setBlocks();
-	if (move_type_i_ == mt_follow_wall_left || move_type_i_ == mt_follow_wall_right)
-		nav_map.setFollowWall();
-	if (state_i_ == st_trapped)
-		fw_map.setFollowWall();
-
-	PP_INFO()
-	nav_map.print(CLEAN_MAP, nav_map.getXCell(), nav_map.getYCell());
-
-	passed_path_.clear();
-	return false;
-}
-bool CleanModeNav::isExit()
-{
-	if (ev.key_clean_pressed || ev.cliff_all_triggered)
-	{
-		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
-		setNextMode(md_idle);
-		return true;
-	}
-
-	if (ev.charge_detect)
-	{
-		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
-		setNextMode(md_charge);
-		return true;
-	}
-
-	return false;
-}
-
 
 void CleanModeNav::key_clean(bool state_now, bool state_last)
 {

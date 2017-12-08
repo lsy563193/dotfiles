@@ -17,9 +17,15 @@ public:
 
 	virtual void run()=0;
 
-	enum {ac_null,ac_open_gyro,ac_back_form_charger,ac_open_lidar,ac_align,ac_open_slam, ac_sleep, ac_charge};
+//	bool isTimeUp()
+//	{
+//		if(g_wf_diff_timer == 0 )
+//			return false;
+//		return ((uint32_t)difftime(time(NULL), g_wf_start_timer)) > g_wf_diff_timer;
+//	}
 protected:
-
+//	uint32_t g_wf_start_timer{};
+//	uint32_t g_wf_diff_timer{};
 };
 
 class ActionOpenGyro :public IAction
