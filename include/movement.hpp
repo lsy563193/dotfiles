@@ -213,4 +213,29 @@ private:
 	double start_turning_time_stamp_;
 	bool turn_right_finish_;
 };
+
+class MovementStay :public IMovement
+{
+public:
+	MovementStay();
+	~MovementStay();
+
+	void adjustSpeed(int32_t &left_speed, int32_t &right_speed) override;
+	bool isFinish() override;
+
+private:
+};
+
+class MovementDirectGo :public IMovement
+{
+public:
+	MovementDirectGo();
+	~MovementDirectGo();
+
+	void adjustSpeed(int32_t &left_speed, int32_t &right_speed) override;
+	bool isFinish() override;
+
+private:
+	double direct_go_time_stamp_;
+};
 #endif //PP_MOVEMENT_HPP

@@ -6,8 +6,8 @@
 ModeIdle::ModeIdle()
 {
 	ROS_INFO("%s %d: Switch to idle mode.", __FUNCTION__, __LINE__);
-	sp_action_.reset(new ActionIdle);
 	register_events();
+	sp_action_.reset(new ActionIdle);
 
 	key.resetTriggerStatus();
 	c_rcon.resetStatus();
@@ -45,6 +45,13 @@ bool ModeIdle::isExit()
 	{
 		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
 		setNextMode(md_charge);
+		return true;
+	}
+
+	if (ev.remote_direction_forward || ev.remote_direction_left || ev.remote_direction_right)
+	{
+		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+		setNextMode(md_remote);
 		return true;
 	}
 
@@ -123,7 +130,6 @@ void ModeIdle::remote_cleaning(bool state_now, bool state_last)
 			case REMOTE_CLEAN:
 			{
 				ev.key_clean_pressed = true;
-				key.resetTriggerStatus();
 				break;
 			}
 			case REMOTE_SPOT:
@@ -210,8 +216,6 @@ void ModeIdle::key_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: key clean.", __FUNCTION__, __LINE__);
 
-	// Wake up serial so it can beep.
-	serial.wakeUp();
 	beeper.play_for_command(VALID);
 
 	// Wait for key released.

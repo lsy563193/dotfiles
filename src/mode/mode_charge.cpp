@@ -84,6 +84,7 @@ IAction* ModeCharge::getNextAction()
 			return nullptr;
 	}
 }
+
 void ModeCharge::remote_clean(bool state_now, bool state_last)
 {
 	ev.key_clean_pressed = true;
