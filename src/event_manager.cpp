@@ -7,6 +7,7 @@
 #include <remote.hpp>
 #include <charger.h>
 #include <beep.h>
+#include <event_manager.h>
 
 #include "config.h"
 #include "serial.h"
@@ -611,7 +612,10 @@ void event_manager_reset_status(void)
 	ev.remote_home = false;
 	ev.remote_spot = false;
 	ev.remote_wallfollow = false;
-	ev.remote_direction_keys = false;
+	ev.remote_direction_forward = false;
+	ev.remote_direction_back = false;
+	ev.remote_direction_left = false;
+	ev.remote_direction_right = false;
 	/* Battery */
 	ev.battery_home = false;
 	ev.battery_low = false;

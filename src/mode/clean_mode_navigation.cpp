@@ -75,7 +75,7 @@ bool CleanModeNav::isFinish() {
 	}
 	PP_INFO()
 	NAV_INFO();
-	return true;
+	return false;
 }
 
 int CleanModeNav::getNextState() {
@@ -137,7 +137,7 @@ int CleanModeNav::getNextMovement() {
 	}
 	PP_INFO()
 //	NAV_INFO();
-	return ac;
+	return action_i_;
 }
 
 int CleanModeNav::getNextMoveType() {

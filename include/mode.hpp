@@ -18,10 +18,31 @@ public:
 
 	virtual bool isFinish();
 
+	void setNextMode(int next_mode);
+
+	int getNextMode();
+
 	friend IMoveType;
+
+	enum {
+		md_idle,
+		md_charge,
+		md_sleep,
+		md_go_to_charger,
+		md_remote,
+
+		cm_navigation,
+		cm_wall_follow,
+		cm_spot,
+		cm_exploration
+	};
+
+	int next_mode_i_;
+
 protected:
 	static boost::shared_ptr<IAction> sp_action_;
 	int mode_i_{ac_null};
+
 	int action_i_{ac_null};
 	enum {
 		ac_null,
@@ -37,7 +58,9 @@ protected:
 //		ac_movement_follow_wall_left,
 //		ac_movement_follow_wall_right,
 		ac_movement_go_charger,
-		ac_sleep,//10
+		ac_sleep,
+		ac_charge,
+		ac_turn_for_charger,
 	};
 
 private:
@@ -48,11 +71,14 @@ class ModeSleep: public Mode
 {
 public:
 	ModeSleep();
-	~ModeSleep();
+	~ModeSleep() override ;
 
-	bool isExit();
+	bool isExit() override ;
+	bool isFinish() override ;
 
-	// For event handling.
+	IAction* getNextAction();
+
+	// For exit event handling.
 	void remote_clean(bool state_now, bool state_last);
 	void key_clean(bool state_now, bool state_last);
 	void charge_detect(bool state_now, bool state_last);
@@ -61,6 +87,27 @@ public:
 
 private:
 	bool plan_activated_status_;
+};
+
+class ModeCharge: public Mode
+{
+public:
+	ModeCharge();
+	~ModeCharge() override ;
+
+	bool isExit() override ;
+	bool isFinish() override ;
+
+	IAction* getNextAction();
+
+	// For exit event handling.
+	void remote_clean(bool state_now, bool state_last) override ;
+	void key_clean(bool state_now, bool state_last) override ;
+	void remote_plan(bool state_now, bool state_last) override ;
+
+private:
+	bool plan_activated_status_;
+	bool directly_charge_;
 };
 
 class ACleanMode:public Mode,public PathAlgorithm{
@@ -216,6 +263,32 @@ private:
 	bool filterPathsToSelectTarget(GridMap &map, const PathList &paths, const Cell_t &curr_cell, Cell_t &best_target);
 private:
 
+};
+
+class ModeIdle:public Mode {
+public:
+	ModeIdle();
+	~ModeIdle();
+	bool isExit();
+	IAction* getNextAction();
+	void remote_cleaning(bool state_now, bool state_last);
+	void charge_detect(bool state_now, bool state_last) override ;
+	void remote_direction_left(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
+	void remote_direction_right(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
+	void remote_direction_forward(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
+	void remote_home(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
+	void remote_spot(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
+	void remote_wall_follow(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
+	void remote_clean(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
+	void key_clean(bool state_now, bool state_last) override;
+
+protected:
+
+private:
+	void register_events(void);
+	time_t charger_signal_start_time{};
+	uint8_t reject_reason = 0;
+	uint8_t temp_mode{};
 };
 
 #endif //PP_MODE_H_H

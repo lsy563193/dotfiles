@@ -63,7 +63,10 @@ typedef struct {
 		bool oc_suction;
 		bool key_clean_pressed;
 		bool remote_wallfollow;
-		bool remote_direction_keys;
+		bool remote_direction_left;
+		bool remote_direction_right;
+		bool remote_direction_forward;
+		bool remote_direction_back;
 		bool slam_error;
 		bool tilt_triggered;
 		uint8_t charge_detect;

@@ -46,6 +46,12 @@ bool Mode::isFinish() {
 	return sp_action_->isFinish();
 }
 
-//IAction *Mode::get() {
-//	return new ActionOpenLidar;
-//}
+void Mode::setNextMode(int next_mode)
+{
+	next_mode_i_ = next_mode;
+}
+
+int Mode::getNextMode()
+{
+	return next_mode_i_;
+}

@@ -9,6 +9,11 @@
 
 ModeSleep::ModeSleep()
 {
+	ROS_INFO("%s %d: Switch to sleep mode.", __FUNCTION__, __LINE__);
+	event_manager_register_handler(this);
+	event_manager_reset_status();
+	event_manager_set_enable(true);
+
 	sp_action_.reset(new ActionSleep);
 	action_i_ = ac_sleep;
 	serial.setCleanMode(Clean_Mode_Sleep);
@@ -20,9 +25,6 @@ ModeSleep::ModeSleep()
 	c_rcon.resetStatus();
 	remote.reset();
 	robot_timer.resetPlanStatus();
-	event_manager_register_handler(this);
-	event_manager_reset_status();
-	event_manager_set_enable(true);
 
 	plan_activated_status_ = false;
 }
@@ -30,55 +32,49 @@ ModeSleep::ModeSleep()
 ModeSleep::~ModeSleep()
 {
 	event_manager_set_enable(false);
-
-	ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
-	beeper.play(4, 80, 0, 1);
-	usleep(100000);
-	beeper.play(3, 80, 0, 1);
-	usleep(100000);
-	beeper.play(2, 80, 0, 1);
-	usleep(100000);
-	beeper.play(1, 80, 4, 1);
-
+	sp_action_.reset();
 	// Wait 1.5s to avoid gyro can't open if switch to navigation mode_ too soon after waking up.
 	usleep(1500000);
-
+	ROS_INFO("%s %d: Exit sleep mode.", __FUNCTION__, __LINE__);
 }
+
 bool ModeSleep::isExit()
 {
 	if (ev.charge_detect)
 	{
 		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
-		//serial.wakeUp();
-		//p_next_clean_mode_ = new ModeCharge();
-		//return true;
+		serial.wakeUp();
+		setNextMode(md_charge);
+		return true;
 	}
 
-	if (ev.key_clean_pressed)
+	if (ev.key_clean_pressed || plan_activated_status_)
 	{
 		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
-		//serial.wakeUp();
-		//p_next_clean_mode_ = new CleanModeNav();
-		//return true;
+		serial.wakeUp();
+		setNextMode(cm_navigation);
+		return true;
 	}
 
 	if (ev.rcon_triggered)
 	{
 		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
-		//serial.wakeUp();
-		//p_next_clean_mode_ = new ModeGoToCharger();
-		//return true;
-	}
-
-	if (plan_activated_status_)
-	{
-		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
-		//serial.wakeUp();
-		//p_next_clean_mode_ = new CleanModeNav();
-		//return true;
+		serial.wakeUp();
+		setNextMode(md_go_to_charger);
+		return true;
 	}
 
 	return false;
+}
+
+bool ModeSleep::isFinish()
+{
+	return false;
+}
+
+IAction* ModeSleep::getNextAction()
+{
+	return nullptr;
 }
 
 void ModeSleep::remote_clean(bool state_now, bool state_last)
@@ -90,7 +86,6 @@ void ModeSleep::remote_clean(bool state_now, bool state_last)
 void ModeSleep::key_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Waked up by key clean.", __FUNCTION__, __LINE__);
-	ev.key_clean_pressed = true;
 
 	// Wake up serial so it can beep.
 	serial.wakeUp();
@@ -99,6 +94,7 @@ void ModeSleep::key_clean(bool state_now, bool state_last)
 	// Wait for key released.
 	while (key.getPressStatus())
 		usleep(20000);
+	ev.key_clean_pressed = true;
 	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
 
 	key.resetTriggerStatus();

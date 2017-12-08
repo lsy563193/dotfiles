@@ -46,6 +46,8 @@ FILE(GLOB PP_SRC
 				src/mode/state/move_type/move_type_go_charger.cpp
 	src/mode/mode.cpp
 	src/mode/mode_sleep.cpp
+	src/mode/mode_charge.cpp
+	src/mode/mode_idle.cpp
 	src/mode/clean_mode.cpp
 	src/mode/clean_mode_navigation.cpp
 	src/path_algorithm/path_algorithm.cpp
@@ -58,6 +60,9 @@ FILE(GLOB PP_SRC
 	src/action/action_align.cpp
 	src/action/action_open_slam.cpp
 	src/action/action_sleep.cpp
+	src/action/action_idle.cpp
+	src/action/action_charge.cpp
+	src/action/action_turn_for_charger.cpp
 
 	src/action/movement/movement.cpp
 	src/action/movement/movement_new.cpp
@@ -82,7 +87,7 @@ FILE(GLOB PP_SRC
 
 	src/error.cpp
 	src/event_manager.cpp
-	src/idle.cpp
+        src/idle.cpp
 	src/main.cpp
 	src/map.cpp
 	src/mathematics.cpp
