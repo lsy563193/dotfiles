@@ -187,7 +187,8 @@ protected:
 private:
 };
 
-class CleanModeNav:public ACleanMode{
+class CleanModeNav:public ACleanMode
+{
 public:
 	CleanModeNav();
 	~CleanModeNav() override ;
@@ -202,6 +203,7 @@ public:
 	bool isExit();
 
 	void key_clean(bool state_now, bool state_last) override ;
+	void cliff_all(bool state_now, bool state_last) override ;
 
 private:
 	void register_events(void);

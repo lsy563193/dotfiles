@@ -76,40 +76,40 @@ typedef struct {
 }Ev_t;
 class EventHandle{
 public:
-void bumper_all(bool state_now, bool state_last);
+virtual void bumper_all(bool state_now, bool state_last);
 
-void bumper_left(bool state_now, bool state_last);
+virtual void bumper_left(bool state_now, bool state_last);
 
-void bumper_right(bool state_now, bool state_last);
+virtual void bumper_right(bool state_now, bool state_last);
 
 /* OBS */
-void obs_front(bool state_now, bool state_last);
+virtual void obs_front(bool state_now, bool state_last);
 
-void obs_left(bool state_now, bool state_last);
+virtual void obs_left(bool state_now, bool state_last);
 
-void obs_right(bool state_now, bool state_last);
+virtual void obs_right(bool state_now, bool state_last);
 
-void obs_wall_left(bool state_now, bool state_last);
+virtual void obs_wall_left(bool state_now, bool state_last);
 
-void obs_wall_right(bool state_now, bool state_last);
+virtual void obs_wall_right(bool state_now, bool state_last);
 
 /* Cliff */
-void cliff_all(bool state_now, bool state_last);
+virtual void cliff_all(bool state_now, bool state_last);
 
-void cliff_front_left(bool state_now, bool state_last);
+virtual void cliff_front_left(bool state_now, bool state_last);
 
-void cliff_front_right(bool state_now, bool state_last);
+virtual void cliff_front_right(bool state_now, bool state_last);
 
-void cliff_left_right(bool state_now, bool state_last);
+virtual void cliff_left_right(bool state_now, bool state_last);
 
-void cliff_front(bool state_now, bool state_last);
+virtual void cliff_front(bool state_now, bool state_last);
 
-void cliff_left(bool state_now, bool state_last);
+virtual void cliff_left(bool state_now, bool state_last);
 
-void cliff_right(bool state_now, bool state_last);
+virtual void cliff_right(bool state_now, bool state_last);
 
 /* RCON */
-void rcon(bool state_now, bool state_last);
+virtual void rcon(bool state_now, bool state_last);
 /*
 void rcon_front_left(bool state_now, bool state_last)
 {
