@@ -198,4 +198,17 @@ private:
 	int32_t right_speed_;
 };
 
+class MovementTurnForCharger :public IMovement
+{
+public:
+	MovementTurnForCharger();
+	~MovementTurnForCharger() override ;
+
+	void adjustSpeed(int32_t &left_speed, int32_t &right_speed) override;
+	bool isFinish() override;
+
+private:
+	double start_turning_time_stamp_;
+	bool turn_right_finish_;
+};
 #endif //PP_MOVEMENT_HPP

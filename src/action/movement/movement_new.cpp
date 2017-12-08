@@ -17,5 +17,4 @@ void IMovement::run() {
 	int32_t l_speed,r_speed;
 	adjustSpeed(l_speed,r_speed);
 	wheel.setPidTargetSpeed(l_speed, r_speed);
-	ACleanMode::updatePath();
 }

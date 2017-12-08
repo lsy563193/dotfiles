@@ -103,6 +103,7 @@ bool CleanModeNav::isFinish() {
 			move_type_i_ = getNextMoveType();
 			action_i_ = getNextMovement();
 		}
+
 		if (action_i_ != ac_null) {
 			genMoveAction();
 		}
