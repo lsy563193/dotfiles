@@ -30,10 +30,10 @@ protected:
 		ac_open_lidar,
 		ac_align,//4
 		ac_open_slam,
-		ac_movement_forward,//6
-		ac_movement_back,
-		ac_movement_turn,//8
-		ac_movement_follow_wall,
+		ac_turn,//6
+		ac_forward,
+		ac_movement_follow_wall,//8
+		ac_back,
 //		ac_movement_follow_wall_left,
 //		ac_movement_follow_wall_right,
 		ac_movement_go_charger,
@@ -65,17 +65,19 @@ private:
 
 class ACleanMode:public Mode,public PathAlgorithm{
 public:
+	ACleanMode();
 	virtual int getNextState()=0;
 	virtual int getNextMoveType() = 0;
 	virtual int getNextMovement()=0;
-//	bool isFinish();
+	void genMoveAction();
 
 friend IMoveType;
-static Cell_t updatePath(const Cell_t& curr);
+static Cell_t updatePath();
 
 protected:
 
 	static Path_t passed_path_;
+	static Path_t plan_path_;
 	static Cell_t last_;
 	static boost::shared_ptr<State> sp_state_;
 	static boost::shared_ptr<IMoveType> sp_move_type_;
@@ -114,6 +116,7 @@ private:
 class CleanModeNav:public ACleanMode{
 public:
 	CleanModeNav();
+	bool mark();
 	int getNextState();
 	int getNextMoveType();
 	int getNextMovement();
@@ -123,7 +126,7 @@ private:
 	void register_events(void);
 
 protected:
-	Path_t plan_path_{};
+//	Path_t home_point_{};
 public:
 	/*
 	 * @author Patrick Chow / Lin Shao Yue

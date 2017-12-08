@@ -1109,8 +1109,6 @@ void GridMap::setCleaned(std::deque<Cell_t> &cells)
 
 bool GridMap::markRobot(uint8_t id)
 {
-	if(!cs.is_trapped())
-		return false;
 	int32_t x, y;
 	bool ret = false;
 	for (auto dy = -ROBOT_SIZE_1_2; dy <= ROBOT_SIZE_1_2; ++dy)

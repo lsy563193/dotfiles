@@ -6,6 +6,8 @@
 #include <pp.h>
 #include "arch.hpp"
 
+#define NAV_INFO() ROS_INFO("st(%d),mt(%d),ac(%d)", state_i_, move_type_i_, action_i_)
+
 CleanModeNav::CleanModeNav()
 {
 	register_events();
@@ -46,57 +48,33 @@ bool CleanModeNav::isFinish() {
 		action_i_ = ac_open_slam;
 		sp_action_.reset(new ActionOpenSlam);
 	}
-	else if (action_i_ == ac_open_slam || action_i_ == ac_movement_forward || action_i_ == ac_movement_turn ||
-					 action_i_ == ac_movement_follow_wall || action_i_ == ac_movement_back) {
-		nav_map.saveBlocks();
-		nav_map.setBlocks();
-		if(move_type_i_ == mt_follow_wall_left || move_type_i_ == mt_follow_wall_right)
-			nav_map.setFollowWall();
-	if(state_i_ == st_trapped)
-		fw_map.setFollowWall();
-
-	if(move_type_i_ == mt_linear)
-		nav_map.setCleaned(passed_path_);
-
-	nav_map.markRobot(CLEAN_MAP);
-
-		displayPath(passed_path_);
-		if(state_i_ == st_null)
-		{
+	else if (action_i_ == ac_open_slam || action_i_ == ac_forward || action_i_ == ac_turn ||
+					 action_i_ == ac_movement_follow_wall || action_i_ == ac_back) {
+		if (state_i_ == st_null) {
 			action_i_ = ac_null;
 			move_type_i_ = mt_null;
 		}
 		else
-			action_i_ = getNextMovement();
-		if(action_i_ == ac_null)
 		{
-			PP_INFO(); ROS_INFO("st(%d),mt(%d),ac(%d) = %d", state_i_, move_type_i_, action_i_);
-			state_i_ = getNextState();
-			PP_INFO(); ROS_INFO("st(%d),mt(%d),ac(%d) = %d", state_i_, move_type_i_, action_i_);
-			move_type_i_ = getNextMoveType();
-			PP_INFO(); ROS_INFO("st(%d),mt(%d),ac(%d) = %d", state_i_, move_type_i_, action_i_);
-			if(move_type_i_ != mt_null)
-				action_i_ = ac_movement_turn;
-			PP_INFO(); ROS_INFO("st(%d),mt(%d),ac(%d) = %d", state_i_, move_type_i_, action_i_);
+			nav_map.saveBlocks();
+			action_i_ = getNextMovement();
 		}
-		PP_INFO(); ROS_INFO("st(%d),mt(%d),ac(%d) = %d", state_i_, move_type_i_, action_i_);
+
+		if (action_i_ == ac_null) {
+			if(state_i_ != st_null)
+				mark();
+			state_i_ = getNextState();
+			move_type_i_ = getNextMoveType();
+			action_i_ = getNextMovement();
+		}
 		if (action_i_ != ac_null) {
-			PP_INFO(); ROS_INFO("st(%d),mt(%d),ac(%d) = %d", state_i_, move_type_i_, action_i_);
-			if (action_i_ == ac_movement_forward)
-				sp_action_.reset(new MovementForward(GridMap::cellToPoint(plan_path_.back()), plan_path_));
-			else if (action_i_ == ac_movement_follow_wall)
-				sp_action_.reset(new MovementFollowWall(GridMap::getCurrPoint(), GridMap::cellToPoint(plan_path_.back())));
-			else if (action_i_ == ac_movement_back)
-				sp_action_.reset(new MovementBack());
-			else if (action_i_ == ac_movement_turn)
-			{
-				sp_action_.reset(new MovementTurn(plan_path_.back().TH));
-			}
+			genMoveAction();
 		}
 		else
 			sp_action_ == nullptr;
 	}
-	PP_INFO(); ROS_INFO("st(%d),mt(%d),ac(%d) = %d", state_i_, move_type_i_, action_i_);
+	PP_INFO()
+	NAV_INFO();
 	return true;
 }
 
@@ -104,8 +82,18 @@ int CleanModeNav::getNextState() {
 	auto st = st_null;
 	if(st == st_null || st == st_clean)
 	{
-		PP_INFO();
 		plan_path_ = generatePath(nav_map, nav_map.getCurrCell(),g_old_dir);
+
+		if(state_i_ == st_null)
+		{
+			g_homes[0].TH = 0;
+			auto target = plan_path_.back();
+			plan_path_.pop_back();
+			target.TH = g_homes[0].TH;
+			plan_path_.push_back(target);
+			ROS_INFO("g_homes[0](%d,%d,%d)",g_homes[0].X,g_homes[0].Y,g_homes[0].TH);
+		}
+
 		st = st_clean;
 		displayPath(plan_path_);
 		sp_state_.reset(new StateClean);
@@ -121,32 +109,34 @@ void CleanModeNav::register_events(void)
 
 int CleanModeNav::getNextMovement() {
 	auto ac = ac_null;
-	if(movement_i_ == mv_null)
+	if(action_i_ == ac_null)
 	{
-		PP_INFO();
-		movement_i_ = mv_turn;
-		ac = ac_movement_turn;
+//		PP_INFO()
+//		NAV_INFO();
+//		movement_i_ = mv_turn;
+		action_i_ = ac_turn;
 	}
-	else if(movement_i_ == mv_turn)
+	else if(action_i_ == ac_turn)
 	{
-		PP_INFO();
-		movement_i_ = mv_forward;
-		ac = ac_movement_forward;
+//		PP_INFO()
+//		NAV_INFO();
+		action_i_ = ac_forward;
 	}
 
-	else if(movement_i_ == mv_forward)
+	else if(action_i_ == ac_forward)
 	{
-		PP_INFO();
+//		PP_INFO()
+//		NAV_INFO();
 		if( ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered )
-			movement_i_ = mv_back;
-		ac = ac_movement_back;
+		action_i_ = ac_back;
 	}
-//	else if(movement_i_ == mv_turn2)
-//	{
-//		PP_INFO();
-//		return ac_null;
-//	}
-	PP_INFO();
+	else if(action_i_ == ac_back)
+	{
+//		NAV_INFO();
+		return action_i_ = ac_null;
+	}
+	PP_INFO()
+//	NAV_INFO();
 	return ac;
 }
 
@@ -155,7 +145,6 @@ int CleanModeNav::getNextMoveType() {
 	auto start = nav_map.getCurrCell();
 	auto dir = g_old_dir;
 //	if(mt == mt_null) {
-		PP_INFO();
 		if (state_i_ == st_clean) {
 			auto delta_y = plan_path_.back().Y - start.Y;
 //		ROS_INFO( "%s,%d: path size(%u), dir(%d), g_check_path_in_advance(%d), bumper(%d), cliff(%d), lidar(%d), delta_y(%d)",
@@ -175,7 +164,7 @@ int CleanModeNav::getNextMoveType() {
 			}
 		}
 //	}
-	PP_INFO();
+	PP_INFO()
 	ROS_INFO("mt = %d",mt);
 	return mt;
 }
@@ -297,7 +286,7 @@ Path_t CleanModeNav::findTargetInSameLane(GridMap &map, const Cell_t &curr_cell)
 	{
 		path.push_front(target);
 		ROS_INFO("%s %d: X pos:(%d,%d), X neg:(%d,%d), target:(%d,%d)", __FUNCTION__, __LINE__, it[0].X, it[0].Y, it[1].X, it[1].Y, target.X, target.Y);
-		map.print(CLEAN_MAP, target.X, target.Y);
+//		map.print(CLEAN_MAP, target.X, target.Y);
 	}
 	else
 		ROS_INFO("%s %d: X pos:(%d,%d), X neg:(%d,%d), target not found.", __FUNCTION__, __LINE__, it[0].X, it[0].Y, it[1].X, it[1].Y);
@@ -491,3 +480,25 @@ bool CleanModeNav::filterPathsToSelectTarget(GridMap &map, const PathList &paths
 	return match_target_found;
 }
 
+bool CleanModeNav::mark() {
+	displayPath(passed_path_);
+	if (move_type_i_ == mt_linear) {
+		PP_INFO()
+		nav_map.setCleaned(passed_path_);
+	}
+
+	if (state_i_ == st_trapped)
+		nav_map.markRobot(CLEAN_MAP);
+
+	nav_map.setBlocks();
+	if (move_type_i_ == mt_follow_wall_left || move_type_i_ == mt_follow_wall_right)
+		nav_map.setFollowWall();
+	if (state_i_ == st_trapped)
+		fw_map.setFollowWall();
+
+	PP_INFO()
+	nav_map.print(CLEAN_MAP, nav_map.getXCell(), nav_map.getYCell());
+
+	passed_path_.clear();
+	return false;
+}

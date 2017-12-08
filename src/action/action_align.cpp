@@ -22,18 +22,18 @@ bool ActionAlign::isFinish() {
 		return true;
 	}
 	if (lidar.alignFinish()) {
-		ROS_INFO("%s,%d",__FUNCTION__, __LINE__);
+		PP_INFO();
 		float align_angle = lidar.alignAngle();
-		ROS_INFO("%s,%d",__FUNCTION__, __LINE__);
+		PP_INFO();
 		align_angle += (float) (LIDAR_THETA / 10);
-		ROS_INFO("%s,%d",__FUNCTION__, __LINE__);
+		PP_INFO();
 		robot::instance()->offsetAngle(align_angle);
-		ROS_INFO("%s,%d",__FUNCTION__, __LINE__);
+		PP_INFO();
 		g_homes[0].TH = -(int16_t) (align_angle);
-		ROS_INFO("%s,%d",__FUNCTION__, __LINE__);
+		PP_INFO();
 		ROS_INFO("%s %d: align_angle angle (%f), g_homes[0].TH (%d).", __FUNCTION__, __LINE__, align_angle, g_homes[0].TH);
 		usleep(230000);
-		ROS_INFO("%s,%d",__FUNCTION__, __LINE__);
+		PP_INFO();
 		return true;
 	}
 	return false;
