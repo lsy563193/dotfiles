@@ -4,14 +4,11 @@
 
 #include <arch.hpp>
 #include <error.h>
-#include <pp.h>
 #include "dev.h"
 
 ModeCharge::ModeCharge()
 {
-	sp_action_.reset(new ActionCharge(true));
-	action_i_ = ac_charge;
-	serial.setCleanMode(Clean_Mode_Charging);
+	ROS_INFO("%s %d: Switch to charge mode.", __FUNCTION__, __LINE__);
 
 	key.resetTriggerStatus();
 	c_rcon.resetStatus();
@@ -20,41 +17,30 @@ ModeCharge::ModeCharge()
 	event_manager_register_handler(this);
 	event_manager_reset_status();
 	event_manager_set_enable(true);
+	sp_action_.reset(new ActionCharge(true));
+	PP_INFO();
+	action_i_ = ac_charge;
+	serial.setCleanMode(Clean_Mode_Charging);
 
 	plan_activated_status_ = false;
 	directly_charge_ = (charger.getChargeStatus() == 4);
+	PP_INFO();
 }
 
 ModeCharge::~ModeCharge()
 {
 	event_manager_set_enable(false);
+	sp_action_.reset();
+	ROS_INFO("%s %d: Exit charge mode.", __FUNCTION__, __LINE__);
 }
 
 bool ModeCharge::isExit()
 {
-
-	if (ev.key_clean_pressed)
+	if (ev.key_clean_pressed || plan_activated_status_)
 	{
 		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
-		//serial.wakeUp();
-		//p_next_clean_mode_ = new CleanModeNav();
-		//return true;
-	}
-
-	if (ev.rcon_triggered)
-	{
-		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
-		//serial.wakeUp();
-		//p_next_clean_mode_ = new ModeGoToCharger();
-		//return true;
-	}
-
-	if (plan_activated_status_)
-	{
-		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
-		//serial.wakeUp();
-		//p_next_clean_mode_ = new CleanModeNav();
-		//return true;
+		setNextMode(cm_navigation);
+		return true;
 	}
 
 	return false;
@@ -66,7 +52,10 @@ bool ModeCharge::isFinish()
 	{
 		sp_action_.reset(getNextAction());
 		if (sp_action_ == nullptr)
+		{
+			setNextMode(md_idle);
 			return true;
+		}
 	}
 
 	return false;

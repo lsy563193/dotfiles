@@ -10,6 +10,9 @@
 
 class IAction{
 public:
+
+	virtual ~IAction(){};
+
 	virtual bool isFinish()=0;
 
 	virtual void run()=0;
@@ -67,7 +70,8 @@ class ActionSleep :public IAction
 {
 public:
 	ActionSleep();
-	bool isFinish();
+	~ActionSleep() override ;
+	bool isFinish() override ;
 	void run();
 private:
 };
@@ -87,7 +91,8 @@ private:
 class ActionCharge :public IAction
 {
 public:
-	ActionCharge(bool play_start_wav);
+	explicit ActionCharge(bool play_start_wav);
+	~ActionCharge() override;
 	bool isFinish() override;
 	void run() override;
 
@@ -100,10 +105,12 @@ class ActionTurnForCharger :public IAction
 {
 public:
 	ActionTurnForCharger();
+	~ActionTurnForCharger() override ;
 
 	bool isFinish() override;
 	void run() override;
 
 private:
+	time_t start_turning_time_stamp_;
 };
 #endif //PP_ACTION_H

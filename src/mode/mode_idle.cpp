@@ -3,8 +3,9 @@
 #include "arch.hpp"
 #include "error.h"
 
-IdleMode::IdleMode()
+ModeIdle::ModeIdle()
 {
+	ROS_INFO("%s %d: Switch to idle mode.", __FUNCTION__, __LINE__);
 	sp_action_.reset(new ActionIdle);
 	register_events();
 
@@ -16,34 +17,44 @@ IdleMode::IdleMode()
 
 }
 
-IdleMode::~IdleMode()
+ModeIdle::~ModeIdle()
 {
 	event_manager_set_enable(false);
+	sp_action_.reset();
+	ROS_INFO("%s %d: Exit idle mode.", __FUNCTION__, __LINE__);
 }
-bool IdleMode::isExit() {
-	if(ev.key_clean_pressed)
-		cm_set(Clean_Mode_Navigation);
-	else if(ev.remote_direction_left || ev.remote_direction_forward || ev.remote_direction_right)
-		cm_set(Clean_Mode_Remote);
-	else if(ev.remote_spot)
-		cm_set(Clean_Mode_Spot);
-	else if(ev.remote_home)
-		cm_set(Clean_Mode_Go_Charger);
-	else if(ev.remote_wallfollow)
-		cm_set(Clean_Mode_WallFollow);
-	else
-		return false;
 
-	return true;
+bool ModeIdle::isExit()
+{
+	if(ev.key_clean_pressed)
+	{
+		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+		setNextMode(cm_navigation);
+		return true;
+	}
+
+	if (ev.charge_detect)
+	{
+		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+		setNextMode(md_charge);
+		return true;
+	}
+
+	return false;
 }
-IAction* IdleMode::getNextAction() {
+
+IAction* ModeIdle::getNextAction()
+{
 	return nullptr;
 }
-void IdleMode::register_events() {
+
+void ModeIdle::register_events()
+{
 	event_manager_register_handler(this);
 	event_manager_set_enable(true);
 }
-void IdleMode::remote_cleaning(bool state_now, bool state_last)
+
+void ModeIdle::remote_cleaning(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote key %x has been pressed.", __FUNCTION__, __LINE__, remote.get());
 	//g_robot_stuck = false;
@@ -149,4 +160,27 @@ void IdleMode::remote_cleaning(bool state_now, bool state_last)
 		}
 	}
 	remote.reset();
+}
+
+void ModeIdle::charge_detect(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: Detect charge!", __FUNCTION__, __LINE__);
+	ev.charge_detect = charger.getChargeStatus();
+}
+
+void ModeIdle::key_clean(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: key clean.", __FUNCTION__, __LINE__);
+
+	// Wake up serial so it can beep.
+	serial.wakeUp();
+	beeper.play_for_command(VALID);
+
+	// Wait for key released.
+	while (key.getPressStatus())
+		usleep(20000);
+	ev.key_clean_pressed = true;
+	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
+
+	key.resetTriggerStatus();
 }

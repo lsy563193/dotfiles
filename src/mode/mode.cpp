@@ -28,7 +28,10 @@ void Mode::run() {
 		}
 //		PP_INFO();
 		if (Mode::isFinish())
+		{
+//			PP_INFO();
 			return;
+		}
 
 //		PP_INFO();
 		sp_action_->run();
@@ -61,3 +64,13 @@ bool Mode::isFinish() {
 //IAction *Mode::get() {
 //	return new ActionOpenLidar;
 //}
+
+void Mode::setNextMode(int next_mode)
+{
+	next_mode_i_ = next_mode;
+}
+
+int Mode::getNextMode()
+{
+	return next_mode_i_;
+}

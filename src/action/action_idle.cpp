@@ -2,20 +2,27 @@
 // Created by lsy563193 on 11/30/17.
 //
 
-#include "pp.h"
-#include "action.hpp"
-#include "error.h"
-ActionIdle::ActionIdle() {
 
+#include <arch.hpp>
+#include "dev.h"
+
+ActionIdle::ActionIdle()
+{
+	PP_INFO();
+	led.set_mode(LED_BREATH, LED_GREEN);
 }
-ActionIdle::~ActionIdle() {
+ActionIdle::~ActionIdle()
+{
 
+	PP_INFO();
 }
 
-bool ActionIdle::isFinish(){
+bool ActionIdle::isFinish()
+{
 	return false;
 }
 
-void ActionIdle::run() {
-
+void ActionIdle::run()
+{
+	// Just wait...
 }

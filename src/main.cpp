@@ -37,6 +37,31 @@
 #include "verify.h"
 #endif
 
+Mode* getNextMode(int next_mode_i_)
+{
+	switch (next_mode_i_)
+	{
+		case Mode::md_charge:
+			return new ModeCharge();
+		case Mode::md_sleep:
+			return new ModeSleep();
+//		case Mode::md_go_to_charger:
+//			return new ModeGoToCharger();
+//		case Mode::md_remote:
+//			return new ModeRemote();
+
+		case Mode::cm_navigation:
+			return new CleanModeNav();
+//		case Mode::cm_wall_follow:
+//			return new CleanModeWallFollow();
+//		case Mode::cm_spot:
+//			return new CleanModeSpot();
+//		case Mode::cm_exploration:
+//			return new CleanModeExploration();
+		default:
+			return new ModeIdle();
+	}
+}
 void *core_move_thread(void *)
 {
 	pthread_detach(pthread_self());
@@ -51,22 +76,24 @@ void *core_move_thread(void *)
 	if (charger.isDirected() || charger.isOnStub())
 		cm_set(Clean_Mode_Charging);
 	else if (battery.isReadyToClean())
-		speaker.play(SPEAKER_PLEASE_START_CLEANING);
+		speaker.play(SPEAKER_PLEASE_START_CLEANING, false);
 
 #if NEW_FRAMEWORK
-	Mode* p_mode = nullptr;
+	boost::shared_ptr<Mode> p_mode = nullptr;
 	if (charger.isOnStub() || charger.isDirected())
-		p_mode = new ModeCharge();
+		p_mode.reset(new ModeCharge());
 	else
-		p_mode = new CleanModeNav();
+		p_mode.reset(new ModeIdle());
 
 	while(ros::ok())
 	{
+		ROS_INFO("%s %d: %d", __FUNCTION__, __LINE__, p_mode);
 		p_mode->run();
-//		getNextMode();
-		ROS_INFO("%s %d:", __FUNCTION__, __LINE__);
-//		delete p_mode;
-//		p_mode = p_next_mode;
+		auto next_mode = p_mode->getNextMode();
+		p_mode.reset();
+		ROS_INFO("%s %d: %d", __FUNCTION__, __LINE__, p_mode);
+		p_mode.reset(getNextMode(next_mode));
+		ROS_INFO("%s %d: %d", __FUNCTION__, __LINE__, p_mode);
 	}
 
 #else

@@ -47,7 +47,7 @@ FILE(GLOB PP_SRC
 	src/mode/mode.cpp
 	src/mode/mode_sleep.cpp
 	src/mode/mode_charge.cpp
-	src/mode/mode_ilde.cpp
+	src/mode/mode_idle.cpp
 	src/mode/clean_mode.cpp
 	src/mode/clean_mode_navigation.cpp
 	src/path_algorithm/path_algorithm.cpp
