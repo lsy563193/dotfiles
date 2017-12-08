@@ -62,13 +62,16 @@ protected:
 		ac_sleep,
 		ac_charge,
 		ac_turn_for_charger,
+		ac_movement_stay,
+		ac_movement_direct_go,
 	};
 
 private:
 
 };
 
-class ModeIdle:public Mode {
+class ModeIdle:public Mode
+{
 public:
 	ModeIdle();
 	~ModeIdle();
@@ -135,6 +138,30 @@ public:
 private:
 	bool plan_activated_status_;
 	bool directly_charge_;
+};
+
+class ModeRemote: public Mode
+{
+public:
+	ModeRemote();
+	~ModeRemote() override ;
+
+	bool isExit() override ;
+	bool isFinish() override ;
+
+	IAction* getNextAction();
+
+	// For exit event handling.
+	void remote_clean(bool state_now, bool state_last) override ;
+	void remote_direction_left(bool state_now, bool state_last) override ;
+	void remote_direction_right(bool state_now, bool state_last) override ;
+	void remote_direction_forward(bool state_now, bool state_last) override ;
+	void key_clean(bool state_now, bool state_last) override ;
+
+private:
+	double remote_mode_time_stamp_;
+	bool time_out_;
+
 };
 
 class ACleanMode:public Mode,public PathAlgorithm

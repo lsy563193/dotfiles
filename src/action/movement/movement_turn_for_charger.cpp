@@ -10,13 +10,13 @@ MovementTurnForCharger::MovementTurnForCharger()
 	led.set_mode(LED_STEADY, LED_ORANGE);
 	start_turning_time_stamp_ = ros::Time::now().toSec();
 	turn_right_finish_ = false;
-	ROS_INFO("%s %d: Start turn for charger action.", __FUNCTION__, __LINE__);
+	ROS_INFO("%s %d: Start movement turn for charger.", __FUNCTION__, __LINE__);
 }
 
 MovementTurnForCharger::~MovementTurnForCharger()
 {
 	wheel.stop();
-	ROS_INFO("%s %d: End turn for charger action.", __FUNCTION__, __LINE__);
+	ROS_INFO("%s %d: End movement turn for charger.", __FUNCTION__, __LINE__);
 }
 
 bool MovementTurnForCharger::isFinish()

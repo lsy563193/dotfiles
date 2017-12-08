@@ -12,12 +12,43 @@ CleanModeNav::CleanModeNav()
 {
 	register_events();
 //	setMode(this);
+	// Set for LEDs.
+	if (ev.remote_home || g_go_home_by_remote)
+		led.set_mode(LED_FLASH, LED_ORANGE, 1000);
+	else
+		led.set_mode(LED_FLASH, LED_GREEN, 1000);
+
 	ROS_INFO("%s %d:this(%d)", __FUNCTION__, __LINE__,this);
 	sp_action_.reset(new ActionOpenGyro());
 	ROS_INFO("%s %d:", __FUNCTION__, __LINE__);
 	action_i_ = ac_open_gyro;
 	ROS_INFO("%s %d:this(%d)", __FUNCTION__, __LINE__,this);
 	robot_timer.initWorkTimer();
+
+	// Reset for keys.
+	key.resetPressStatus();
+
+	// Playing speakers.
+	// Can't register until the status has been checked. because if register too early, the handler may affect the pause status, so it will play the wrong speaker.
+	if (g_resume_cleaning)
+	{
+		speaker.play(SPEAKER_CLEANING_CONTINUE);
+	}
+	else if (cs_is_paused())
+	{
+		speaker.play(SPEAKER_CLEANING_CONTINUE);
+//		if (cs.is_going_home())
+//		{
+//			speaker.play(SPEAKER_BACK_TO_CHARGER);
+//		}
+	}
+	else if(g_plan_activated)
+	{
+		g_plan_activated = false;
+	}
+	else{
+		speaker.play(SPEAKER_CLEANING_START);
+	}
 //	sp_action_->registerMode(this);
 //	ROS_INFO("%s %d:this(%d)", __FUNCTION__, __LINE__,this);
 }

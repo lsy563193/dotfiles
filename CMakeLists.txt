@@ -48,6 +48,7 @@ FILE(GLOB PP_SRC
 	src/mode/mode_sleep.cpp
 	src/mode/mode_charge.cpp
 	src/mode/mode_idle.cpp
+	src/mode/mode_remote.cpp
 	src/mode/clean_mode.cpp
 	src/mode/clean_mode_navigation.cpp
 	src/path_algorithm/path_algorithm.cpp
@@ -62,22 +63,24 @@ FILE(GLOB PP_SRC
 	src/action/action_sleep.cpp
 	src/action/action_idle.cpp
 	src/action/action_charge.cpp
-		src/action/movement/movement_turn_for_charger.cpp
 
 	src/action/movement/movement.cpp
 	src/action/movement/movement_new.cpp
 	src/action/movement/movement_back.cpp
-				src/action/movement/movement_back_new.cpp
+	src/action/movement/movement_back_new.cpp
 	src/action/movement/movement_fall_wall.cpp
-				src/action/movement/movement_fall_wall_new.cpp
+	src/action/movement/movement_fall_wall_new.cpp
 	src/action/movement/movement_forward.cpp
-				src/action/movement/movement_forward_new.cpp
+	src/action/movement/movement_forward_new.cpp
 	src/action/movement/movement_go_charger.cpp
-				src/action/movement/movement_go_charger_new.cpp
+	src/action/movement/movement_go_charger_new.cpp
 	src/action/movement/movement_self_check.cpp
-				src/action/movement/movement_self_check_new.cpp
+	src/action/movement/movement_self_check_new.cpp
 	src/action/movement/movement_turn.cpp
-				src/action/movement/movement_turn_new.cpp
+	src/action/movement/movement_turn_new.cpp
+	src/action/movement/movement_turn_for_charger.cpp
+	src/action/movement/movement_stay.cpp
+	src/action/movement/movement_direct_go.cpp
 
 	src/clean_mode/clean_mode.cpp
 	src/clean_mode/exploration.cpp

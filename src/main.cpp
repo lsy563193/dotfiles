@@ -47,8 +47,8 @@ Mode* getNextMode(int next_mode_i_)
 			return new ModeSleep();
 //		case Mode::md_go_to_charger:
 //			return new ModeGoToCharger();
-//		case Mode::md_remote:
-//			return new ModeRemote();
+		case Mode::md_remote:
+			return new ModeRemote();
 
 		case Mode::cm_navigation:
 			return new CleanModeNav();
