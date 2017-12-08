@@ -81,7 +81,7 @@ class Speaker {
 public:
 	Speaker(void);
 
-	void play(SpeakerType action, bool can_be_interrputed = true);
+	void play(SpeakerType wav, bool can_be_interrputed = true);
 
 	void play_routine(void);
 

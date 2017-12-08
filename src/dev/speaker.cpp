@@ -201,11 +201,12 @@ void Speaker::play_routine(void)
 	return;
 }
 
-void Speaker::play(SpeakerType action, bool can_be_interrupted)
+void Speaker::play(SpeakerType wav, bool can_be_interrupted)
 {
+	ROS_INFO("%s %d: Ask play_routine to play wav:%d.", __FUNCTION__, __LINE__, wav);
 	SpeakerStatus temp_status;
 
-	temp_status.speakerType = action;
+	temp_status.speakerType = wav;
 	temp_status.canBeInterrupted = can_be_interrupted;
 	speaker_list_mutex.lock();
 	speaker_list_.push_back(temp_status);
