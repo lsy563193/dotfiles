@@ -67,6 +67,32 @@ private:
 
 };
 
+class ModeIdle:public Mode {
+public:
+	ModeIdle();
+	~ModeIdle();
+	bool isExit();
+	IAction* getNextAction();
+	void remote_cleaning(bool state_now, bool state_last);
+	void charge_detect(bool state_now, bool state_last) override ;
+	void remote_direction_left(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
+	void remote_direction_right(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
+	void remote_direction_forward(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
+	void remote_home(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
+	void remote_spot(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
+	void remote_wall_follow(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
+	void remote_clean(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
+	void key_clean(bool state_now, bool state_last) override;
+
+protected:
+
+private:
+	void register_events(void);
+	time_t charger_signal_start_time{};
+	uint8_t reject_reason = 0;
+	uint8_t temp_mode{};
+};
+
 class ModeSleep: public Mode
 {
 public:
@@ -110,7 +136,8 @@ private:
 	bool directly_charge_;
 };
 
-class ACleanMode:public Mode,public PathAlgorithm{
+class ACleanMode:public Mode,public PathAlgorithm
+{
 public:
 	ACleanMode();
 	virtual int getNextState()=0;
@@ -163,14 +190,24 @@ private:
 class CleanModeNav:public ACleanMode{
 public:
 	CleanModeNav();
-	bool mark();
+	~CleanModeNav() override ;
 	int getNextState();
+	IMoveType* getNextMoveType(const Cell_t& start, MapDirection dir);
+	bool mark();
+//	int getNextState();
 	int getNextMoveType();
 	int getNextMovement();
 	bool isFinish();
 
+	bool isExit();
+
+	void key_clean(bool state_now, bool state_last) override ;
+
 private:
 	void register_events(void);
+
+
+// For path planning.
 
 protected:
 //	Path_t home_point_{};
@@ -261,34 +298,7 @@ private:
 	 *          Cell_t best_target, the selected best target.
 	 */
 	bool filterPathsToSelectTarget(GridMap &map, const PathList &paths, const Cell_t &curr_cell, Cell_t &best_target);
-private:
 
-};
-
-class ModeIdle:public Mode {
-public:
-	ModeIdle();
-	~ModeIdle();
-	bool isExit();
-	IAction* getNextAction();
-	void remote_cleaning(bool state_now, bool state_last);
-	void charge_detect(bool state_now, bool state_last) override ;
-	void remote_direction_left(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
-	void remote_direction_right(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
-	void remote_direction_forward(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
-	void remote_home(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
-	void remote_spot(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
-	void remote_wall_follow(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
-	void remote_clean(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
-	void key_clean(bool state_now, bool state_last) override;
-
-protected:
-
-private:
-	void register_events(void);
-	time_t charger_signal_start_time{};
-	uint8_t reject_reason = 0;
-	uint8_t temp_mode{};
 };
 
 #endif //PP_MODE_H_H

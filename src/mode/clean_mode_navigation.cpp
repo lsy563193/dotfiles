@@ -17,8 +17,33 @@ CleanModeNav::CleanModeNav()
 	ROS_INFO("%s %d:", __FUNCTION__, __LINE__);
 	action_i_ = ac_open_gyro;
 	ROS_INFO("%s %d:this(%d)", __FUNCTION__, __LINE__,this);
+	robot_timer.initWorkTimer();
 //	sp_action_->registerMode(this);
 //	ROS_INFO("%s %d:this(%d)", __FUNCTION__, __LINE__,this);
+}
+
+CleanModeNav::~CleanModeNav()
+{
+	wheel.stop();
+	brush.stop();
+	vacuum.stop();
+	lidar.motorCtrl(OFF);
+	lidar.setScanOriginalReady(0);
+
+	robot::instance()->setBaselinkFrameType(Odom_Position_Odom_Angle);
+
+	speaker.play(SPEAKER_CLEANING_FINISHED);
+
+	if (ev.key_clean_pressed)
+		ROS_WARN("%s %d: Key clean pressed. Finish cleaning.", __FUNCTION__, __LINE__);
+	else
+		ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
+
+	auto cleaned_count = nav_map.getCleanedArea();
+	auto map_area = cleaned_count * (CELL_SIZE * 0.001) * (CELL_SIZE * 0.001);
+	ROS_INFO("%s %d: Cleaned area = \033[32m%.2fm2\033[0m, cleaning time: \033[32m%d(s) %.2f(min)\033[0m, cleaning speed: \033[32m%.2f(m2/min)\033[0m.",
+			 __FUNCTION__, __LINE__, map_area, robot_timer.getWorkTime(),
+			 static_cast<float>(robot_timer.getWorkTime()) / 60, map_area / (static_cast<float>(robot_timer.getWorkTime()) / 60));
 }
 
 bool CleanModeNav::isFinish() {
@@ -104,6 +129,7 @@ int CleanModeNav::getNextState() {
 void CleanModeNav::register_events(void)
 {
 	event_manager_register_handler(this);
+	event_manager_reset_status();
 	event_manager_set_enable(true);
 }
 
@@ -501,4 +527,38 @@ bool CleanModeNav::mark() {
 
 	passed_path_.clear();
 	return false;
+}
+bool CleanModeNav::isExit()
+{
+	if (ev.key_clean_pressed)
+	{
+		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+		setNextMode(md_idle);
+		return true;
+	}
+
+	if (ev.charge_detect)
+	{
+		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+		setNextMode(md_charge);
+		return true;
+	}
+
+	return false;
+}
+
+
+void CleanModeNav::key_clean(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: key clean.", __FUNCTION__, __LINE__);
+
+	beeper.play_for_command(VALID);
+
+	// Wait for key released.
+	while (key.getPressStatus())
+		usleep(20000);
+	ev.key_clean_pressed = true;
+	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
+
+	key.resetTriggerStatus();
 }
