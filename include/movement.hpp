@@ -153,7 +153,6 @@ private:
 	int16_t wall_buffer[3] = {0};
 	bool is_right_angle = false;
 	double time_right_angle = 0;
-
 	int32_t same_speed_;
 	int32_t diff_speed_;
 private:

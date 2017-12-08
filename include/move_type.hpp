@@ -13,7 +13,7 @@ class IMoveType
 {
 public:
 //	bool isFinish(int& action_i);
-//	virtual IAction* getNextMovement()=0;
+//	virtual IAction* setNextAction()=0;
 //	void registerMode(ACleanMode* sp_mode)
 //	{
 //		sp_mode_ = sp_mode;
@@ -27,7 +27,7 @@ protected:
 class MoveTypeLinear:public IMoveType
 {
 public:
-//	IAction* getNextMovement();
+//	IAction* setNextAction();
 protected:
 };
 
@@ -38,7 +38,7 @@ public:
 	{
 		is_left_ = is_left;
 	}
-//	IAction* getNextMovement();
+//	IAction* setNextAction();
 protected:
 	static bool is_left_;
 };
@@ -46,7 +46,7 @@ protected:
 class MoveTypeGoCharger:public IMoveType
 {
 public:
-//	IAction* getNextMovement();
+//	IAction* setNextAction();
 protected:
 };
 

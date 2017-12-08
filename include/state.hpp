@@ -10,7 +10,7 @@ class ACleanMode;
 #include "move_type_plan.hpp"
 class State {
 public:
-//	virtual IMoveType* getNextMoveType()=0;
+//	virtual IMoveType* setNextMoveType()=0;
 
 //	bool isFinish(ACleanMode* p_mode, IMoveType* p_move_type,IAction* p_action, int& action_i);
 
@@ -21,7 +21,7 @@ protected:
 class StateClean: public State {
 public:
 	StateClean();
-//	IMoveType* getNextMoveType();
+//	IMoveType* setNextMoveType();
 
 public:
 };
@@ -29,7 +29,7 @@ public:
 class StateGoHomePoint: public State {
 public:
 	StateGoHomePoint();
-//	IMoveType* getNextMoveType();
+//	IMoveType* setNextMoveType();
 
 protected:
 	int gh_state_{};
@@ -41,32 +41,32 @@ private:
 class StateGoCharger: public State {
 public:
 	StateGoCharger();
-//	IMoveType* getNextMoveType();
+//	IMoveType* setNextMoveType();
 
 };
 
 class StateTrapped: public State {
 public:
 	StateTrapped();
-//	IMoveType* getNextMoveType();
+//	IMoveType* setNextMoveType();
 };
 
 class StateTmpSpot: public State {
 public:
 	StateTmpSpot();
-//	IMoveType* getNextMoveType();
+//	IMoveType* setNextMoveType();
 };
 
 class StateSelfCheck: public State {
 public:
 	StateSelfCheck();
-//	IMoveType* getNextMoveType();
+//	IMoveType* setNextMoveType();
 };
 
 class StateExploration: public State {
 public:
 	StateExploration();
-//	IMoveType* getNextMoveType();
+//	IMoveType* setNextMoveType();
 };
 
 //Movement *StateClean::generateMovement(PathType path, const Cell_t &curr) {

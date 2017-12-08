@@ -21,14 +21,14 @@ ACleanMode::ACleanMode() {
 //	PP_INFO();
 //	if(sp_state_ == nullptr)
 //	{
-//		getNextState();
-//		getNextMoveType(nav_map.getCurrCell(),g_old_dir);
+//		setNextState();
+//		setNextMoveType(nav_map.getCurrCell(),g_old_dir);
 //	}
 //
 //	if(sp_state_->isFinish(this,sp_move_type_.get(),sp_action_.get() ,action_i_))
 //	{
 //		PP_INFO();
-//		getNextState();
+//		setNextState();
 //		PP_INFO();
 //		if(sp_state_ == nullptr)
 //			return true;
@@ -73,15 +73,27 @@ Cell_t ACleanMode::updatePath()
 }
 
 void ACleanMode::genMoveAction() {
-	if (action_i_ == ac_forward)
+
+	if(action_i_ == ac_open_gyro)
+		sp_action_.reset(new ActionOpenGyro);
+	else if(action_i_ == ac_back_form_charger)
+		sp_action_.reset(new ActionBackFromCharger);
+	else if(action_i_ == ac_open_lidar)
+		sp_action_.reset(new ActionOpenLidar);
+	else if(action_i_ == ac_align)
+		sp_action_.reset(new ActionAlign);
+	else if(action_i_ == ac_open_slam)
+		sp_action_.reset(new ActionOpenSlam);
+	else if (action_i_ == ac_forward)
 		sp_action_.reset(new MovementForward(GridMap::cellToPoint(plan_path_.back()), plan_path_));
 	else if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
-			sp_action_.reset(new MovementFollowWall(GridMap::getCurrPoint(), GridMap::cellToPoint(plan_path_.back()),action_i_ == ac_follow_wall_left));
+		sp_action_.reset(new MovementFollowWall(GridMap::getCurrPoint(), GridMap::cellToPoint(plan_path_.back()),action_i_ == ac_follow_wall_left));
 	else if (action_i_ == ac_back)
 		sp_action_.reset(new MovementBack());
-	else if (action_i_ == ac_turn) {
-		sp_action_.reset(new MovementTurn(plan_path_.back().TH));
-	}
+	else if (action_i_ == ac_turn)
+		sp_action_.reset(new MovementTurn(turn_target_angle_));
+	else if(action_i_ == ac_null)
+		sp_action_ == nullptr;
 }
 
 void ACleanMode::resetTriggeredValue(void)
@@ -160,28 +172,26 @@ void ACleanMode::st_init(int next) {
 }
 
 void ACleanMode::mt_init(int) {
-	auto s_curr_p = GridMap::getCurrPoint();
-	auto s_target_p = nav_map.cellToPoint(plan_path_.back());
-	if (move_type_i_ == mt_follow_wall_left || move_type_i_ == mt_follow_wall_right) {
-//			ROS_INFO("%s,%d: mt.is_fw",__FUNCTION__, __LINE__);
+	auto cur = GridMap::getCurrPoint();
+	auto tar = nav_map.cellToPoint(plan_path_.back());
+	if (mt_is_follow_wall()) {
+//			ROS_INFO("%s,%d: mt_is_fw",__FUNCTION__, __LINE__);
 			if (LIDAR_FOLLOW_WALL)
 				if (!lidar_turn_angle(g_turn_angle))
-					g_turn_angle = ranged_angle(course_to_dest(s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y) -
+					g_turn_angle = ranged_angle(course_to_dest(cur.X, cur.Y, tar.X, tar.Y) -
 																			robot::instance()->getPoseAngle());
-		ROS_INFO("%s,%d: mt.is_follow_wall, s_target_p(%d, %d).", __FUNCTION__, __LINE__, s_target_p.X, s_target_p.Y);
-
+		turn_target_angle_ = ranged_angle(robot::instance()->getPoseAngle() + g_turn_angle);
+		ROS_INFO("g_turn_angle(%d)cur(%d,%d,%d),tar(%d,%d,%d)",g_turn_angle,cur.X,cur.Y,cur.TH, tar.X,tar.Y,tar.TH);
 	}
-	else if (move_type_i_ == mt_linear) {
-		ROS_INFO("%s,%d: mt.is_linear", __FUNCTION__, __LINE__);
-		s_target_p = nav_map.cellToPoint(g_plan_path.front());
-		g_turn_angle = ranged_angle(
-						course_to_dest(s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y) - robot::instance()->getPoseAngle());
+	else if (mt_is_linear()) {
+		turn_target_angle_ = plan_path_.front().TH;
+		ROS_INFO("%s,%d: mt_is_linear,turn(%d)", __FUNCTION__, __LINE__,turn_target_angle_);
 	}
-	else if (move_type_i_ == mt_go_charger) {
-		g_turn_angle = 0;
+	else if (mt_is_go_charger()) {
+		ROS_INFO("%s,%d: mt_is_go_charger", __FUNCTION__, __LINE__);
+		turn_target_angle_ = ranged_angle(robot::instance()->getPoseAngle());
 	}
-//	s_target_angle = g_turn_angle;
-	s_target_angle = ranged_angle(robot::instance()->getPoseAngle() + g_turn_angle);
+//	turn_target_angle_ = g_turn_angle;
 	resetTriggeredValue();
 	g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
 	bumper_turn_factor = 0.85;
@@ -190,6 +200,51 @@ void ACleanMode::mt_init(int) {
 	g_slip_backward = false;
 	c_rcon.resetStatus();
 	robot::instance()->obsAdjustCount(20);
+}
+
+bool ACleanMode::st_is_null() {
+	return state_i_ == st_null;
+}
+
+bool ACleanMode::mt_is_turn() {
+	return move_type_i_ == mt_linear;
+}
+bool ACleanMode::mt_is_linear() {
+	return move_type_i_ == mt_linear;
+}
+bool ACleanMode::mt_is_follow_wall(){
+	return move_type_i_ == mt_follow_wall_left || move_type_i_ == mt_follow_wall_right;
+}
+bool ACleanMode::mt_is_null()
+{
+	return move_type_i_ == mt_null;
+}
+bool ACleanMode::mt_is_go_charger() {
+	return move_type_i_ == mt_go_charger;
+}
+
+bool ACleanMode::ac_is_forward() {
+	return action_i_ = ac_forward;
+}
+
+bool ACleanMode::ac_is_follow_wall() {
+	return action_i_ == ac_follow_wall_left || ac_follow_wall_right;
+}
+
+bool ACleanMode::ac_is_turn() {
+	return action_i_ == ac_turn;
+}
+
+bool ACleanMode::ac_is_back() {
+	return action_i_ == ac_back;
+}
+
+bool ACleanMode::ac_is_movement() {
+	return action_i_ == ac_forward ||
+				 action_i_ == ac_follow_wall_left ||
+				 action_i_ == ac_follow_wall_right ||
+				 action_i_ == ac_turn ||
+				 action_i_ == ac_back;
 }
 
 //bool ACleanMode::isFinish() {

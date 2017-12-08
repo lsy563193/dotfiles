@@ -139,7 +139,7 @@ void CleanMode::setMt()
 		g_turn_angle = 0;
 	}
 	p_reg_ = turn_reg_;
-//	s_target_angle = g_turn_angle;
+//	turn_target_angle_ = g_turn_angle;
 	s_target_angle = ranged_angle(robot::instance()->getPoseAngle() + g_turn_angle);
 	ROS_INFO("%s,%d,curr(%d), g_turn_angle(%d), set_target_angle(%d)",__FUNCTION__, __LINE__, robot::instance()->getPoseAngle(), g_turn_angle, s_target_angle);
 	resetTriggeredValue();

@@ -57,79 +57,48 @@ CleanModeNav::~CleanModeNav()
 			 static_cast<float>(robot_timer.getWorkTime()) / 60, map_area / (static_cast<float>(robot_timer.getWorkTime()) / 60));
 }
 
+bool CleanModeNav::isInitState() {
+	return action_i_ == ac_open_gyro || action_i_ == ac_back_form_charger || action_i_ == ac_open_lidar ||
+				action_i_ == ac_align;
+}
+
 bool CleanModeNav::isFinish() {
-	if (action_i_ == ac_open_gyro) {
-		if (!Mode::isFinish())
+	if (isInitState()) {
+		if (!sp_action_->isFinish())
 			return false;
-		if (charger.isOnStub()) {
-			action_i_ = ac_back_form_charger;
-			sp_action_.reset(new ActionBackFromCharger);
-		}
-		else {
-			action_i_ = ac_open_lidar;
-			sp_action_.reset(new ActionOpenLidar);
-		}
+		setNextAction();
 	}
-	else if (action_i_ == ac_back_form_charger) {
-		if (!Mode::isFinish())
-			return false;
-		action_i_ = ac_open_lidar;
-		sp_action_.reset(new ActionOpenLidar);
-	}
-	else if (action_i_ == ac_open_lidar) {
-		if (!Mode::isFinish())
-			return false;
-		action_i_ = ac_align;
-		sp_action_.reset(new ActionAlign);
-	}
-	else if (action_i_ == ac_align) {
-		if (!Mode::isFinish())
-			return false;
-		action_i_ = ac_open_slam;
-		sp_action_.reset(new ActionOpenSlam);
-	}
-	else if (action_i_ == ac_open_slam || action_i_ == ac_forward || action_i_ == ac_turn ||
-					 action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right || action_i_ == ac_back) {
-
+	else {
 		updatePath();
-
-		if (!Mode::isFinish())
+		if (!sp_action_->isFinish())
 			return false;
 
-		if (state_i_ == st_null) {
-			action_i_ = ac_null;
-			move_type_i_ = mt_null;
-		}
-		else
+		if(!mt_is_null())
 		{
-			if(action_i_ == ac_forward)
+			if(!ac_is_turn() && !ac_is_back())
 				nav_map.saveBlocks();
-			action_i_ = getNextMovement();
+			setNextAction();
 		}
 
-		if (action_i_ == ac_null) {
-			if (state_i_ != st_null)
-				mark();
-			state_i_ = getNextState();
-			move_type_i_ = getNextMoveType();
-			action_i_ = getNextMovement();
-			resetTriggeredValue();
-		}
+		if (!ac_is_movement()) {
+			mark();
+			do{
+				setNextState();
+				if(st_is_null())
+					return true;
+				setNextMoveType();
+			}while(mt_is_null());
 
-		if (action_i_ != ac_null) {
-			genMoveAction();
+			setNextAction();
 		}
-		else
-			sp_action_ == nullptr;
-		PP_INFO()
 		NAV_INFO();
 	}
+	resetTriggeredValue();
 	return false;
 }
 
-int CleanModeNav::getNextState() {
-	auto st = st_null;
-	if(st == st_null || st == st_clean)
+int CleanModeNav::setNextState() {
+	if(state_i_ == st_null || state_i_ == st_clean)
 	{
 		g_old_dir = g_new_dir;
 		plan_path_ = generatePath(nav_map, nav_map.getCurrCell(),g_old_dir);
@@ -147,119 +116,106 @@ int CleanModeNav::getNextState() {
 			ROS_INFO("g_homes[0](%d,%d,%d)",g_homes[0].X,g_homes[0].Y,g_homes[0].TH);
 		}
 
-		st = st_clean;
+		state_i_ = st_clean;
 		displayPath(plan_path_);
 		st_init(st_clean);
 	}
-	return st;
+	return state_i_;
 }
 
-int CleanModeNav::getNextMoveType() {
-	auto mt = mt_null;
+void CleanModeNav::setNextMoveType() {
+	move_type_i_ = mt_linear;
 	auto start = nav_map.getCurrCell();
 	auto dir = g_old_dir;
-//	if(mt == mt_null) {
-		if (state_i_ == st_clean) {
-			auto delta_y = plan_path_.back().Y - start.Y;
+	if (state_i_ == st_clean) {
+		auto delta_y = plan_path_.back().Y - start.Y;
 //		ROS_INFO( "%s,%d: path size(%u), dir(%d), g_check_path_in_advance(%d), bumper(%d), cliff(%d), lidar(%d), delta_y(%d)",
 //						__FUNCTION__, __LINE__, path.size(), dir, g_check_path_in_advance, ev.bumper_triggered, ev.cliff_triggered,
 //						ev.lidar_triggered, delta_y);
 
-			if (!GridMap::isXDirection(dir) // If last movement is not x axis linear movement, should not follow wall.
-					|| plan_path_.size() > 2 ||
-					(!g_check_path_in_advance && !ev.bumper_triggered && !ev.cliff_triggered && !ev.lidar_triggered)
-					|| delta_y == 0 || std::abs(delta_y) > 2) {
-				mt = mt_linear;
-			}else {
-				delta_y = plan_path_.back().Y - start.Y;
-				bool is_left = ((GridMap::isPositiveDirection(g_old_dir) && GridMap::isXDirection(g_old_dir)) ^ delta_y > 0);
-//		ROS_INFO("\033[31m""%s,%d: target:, 1_left_2_right(%d)""\033[0m", __FUNCTION__, __LINE__, get());
-				mt = is_left ? mt_follow_wall_left : mt_follow_wall_right;
-			}
-			mt_init(mt);
+		if (!GridMap::isXDirection(dir) // If last movement is not x axis linear movement, should not follow wall.
+				|| plan_path_.size() > 2 ||
+				(!g_check_path_in_advance && !ev.bumper_triggered && !ev.cliff_triggered && !ev.lidar_triggered)
+				|| delta_y == 0 || std::abs(delta_y) > 2) {
+			move_type_i_ = mt_linear;
 		}
-//	}
+		else {
+			delta_y = plan_path_.back().Y - start.Y;
+			bool is_left = ((GridMap::isPositiveDirection(g_old_dir) && GridMap::isXDirection(g_old_dir)) ^ delta_y > 0);
+//		ROS_INFO("\033[31m""%s,%d: target:, 1_left_2_right(%d)""\033[0m", __FUNCTION__, __LINE__, get());
+			move_type_i_ = is_left ? mt_follow_wall_left : mt_follow_wall_right;
+		}
+	}
+	mt_init(move_type_i_);
 	PP_INFO()
-	ROS_INFO("mt = %d",mt);
-	return mt;
+	ROS_INFO("move_type_i_ = %d", move_type_i_);
 }
 
-int CleanModeNav::getNextMovement() {
-	if(move_type_i_ == mt_linear) {
-		if (action_i_ == ac_null)
-			action_i_ = ac_turn;
+void CleanModeNav::setNextAction() {
+	if(action_i_ == ac_open_gyro)
+	{
+		if (charger.isOnStub())
+			action_i_ = ac_back_form_charger;
+		else
+			action_i_ = ac_open_lidar;
+	}else if(action_i_ == ac_back_form_charger)
+		action_i_ = ac_open_lidar;
+	else if(action_i_ == ac_open_lidar)
+		action_i_ = ac_align;
+	else if(action_i_ == ac_align)
+		action_i_ = ac_open_slam;
+	else {
+		if (move_type_i_ == mt_linear) {
+			if (!ac_is_movement())
+			{
+				action_i_ = ac_turn;
+			}
 
-		else if (action_i_ == ac_turn) {
+			else if (action_i_ == ac_turn) {
 				action_i_ = ac_forward;
+			}
+
+			else if (action_i_ == ac_forward) {
+				if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered)
+					action_i_ = ac_back;
+				else
+					action_i_ = ac_null;
+			}
+			else if (action_i_ == ac_back) {
+				action_i_ = ac_null;
+			}
+		}
+		else if (mt_is_follow_wall()) {
+			if (action_i_ == ac_null)
+				action_i_ = ac_turn;
+
+			else if (action_i_ == ac_turn) {
+				action_i_ = (move_type_i_ == mt_follow_wall_left) ? ac_follow_wall_left : ac_follow_wall_right;
+			}
+			else if (action_i_ == ac_forward) {
+				if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered)
+					action_i_ = ac_back;
+				else
+					action_i_ = ac_null;
+			}
+			else if (ac_is_follow_wall()) {
+				if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip)
+					action_i_ = ac_back;
+				else if (ev.lidar_triggered || ev.obs_triggered)
+					action_i_ = ac_turn;
+				else{
+					action_i_ = ac_null;//reach
+				}
+			}
+			else if (action_i_ == ac_back) {
+				action_i_ = ac_turn;
+			}
 		}
 
-		else if (action_i_ == ac_forward) {
-			if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered)
-				action_i_ = ac_back;
-			else
-				action_i_ = ac_null;
-		}
-		else if (action_i_ == ac_back) {
+		if (ev.fatal_quit)
 			action_i_ = ac_null;
-		}
-		PP_INFO()
-		NAV_INFO();
 	}
-	else if(move_type_i_ == mt_follow_wall_left) {
-		if (action_i_ == ac_null)
-			action_i_ = ac_turn;
-
-		else if (action_i_ == ac_turn) {
-				action_i_ = ac_follow_wall_left;
-		}
-		else if (action_i_ == ac_forward) {
-			if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered)
-				action_i_ = ac_back;
-			else
-				action_i_ = ac_null;
-		}
-		else if (action_i_ == mt_follow_wall_right) {
-			if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip)
-				action_i_ = ac_back;
-			else if (ev.lidar_triggered || ev.obs_triggered)
-				action_i_ = ac_turn;
-		}
-		else if (action_i_ == ac_back) {
-			action_i_ = ac_turn;
-		}
-		PP_INFO()
-		NAV_INFO();
-	}
-	else if(move_type_i_ == mt_follow_wall_right) {
-		if (action_i_ == ac_null)
-			action_i_ = ac_turn;
-
-		else if (action_i_ == ac_turn) {
-				action_i_ = ac_follow_wall_right;
-		}
-		else if (action_i_ == ac_forward) {
-			if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered)
-				action_i_ = ac_back;
-			else
-				action_i_ = ac_null;
-		}
-		else if (action_i_ == ac_follow_wall_right) {
-			if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip)
-				action_i_ = ac_back;
-			else if (ev.lidar_triggered || ev.obs_triggered)
-				action_i_ = ac_turn;
-		}
-		else if (action_i_ == ac_back) {
-			action_i_ = ac_turn;
-		}
-		PP_INFO()
-		NAV_INFO();
-	}
-	if (ev.fatal_quit)
-		action_i_ = ac_null;
-	PP_INFO()
-	NAV_INFO();
-	return action_i_;
+	genMoveAction();
 }
 
 void CleanModeNav::register_events()

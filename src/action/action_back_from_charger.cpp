@@ -25,6 +25,6 @@ void ActionBackFromCharger::run() {
 	wheel.setPidTargetSpeed(20, 20);
 }
 
-//IAction* ActionBackFromCharger::getNextMovement() {
+//IAction* ActionBackFromCharger::setNextAction() {
 //	return new ActionOpenLidar;
 //}

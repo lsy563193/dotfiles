@@ -23,7 +23,7 @@ StateGoHomePoint::StateGoHomePoint():gh_state_(gh_ing) {
 }
 
 //
-//State *StateGoHomePoint::getNextState() {
+//State *StateGoHomePoint::setNextState() {
 //	if(gh_state_ == gh_succuss) {
 //		if (g_home_point != g_zero_home || cm_turn_and_check_charger_signal()) {
 ////			curr(CS_GO_CHANGER);

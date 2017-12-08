@@ -54,8 +54,8 @@ protected:
 		ac_turn,//6
 		ac_forward,
 		ac_follow_wall_left,//8
-		ac_follow_wall_right,//9
-		ac_back,
+		ac_follow_wall_right,
+		ac_back,//10
 //		ac_movement_follow_wall_left,
 //		ac_movement_follow_wall_right,
 		ac_movement_go_charger,
@@ -141,9 +141,9 @@ class ACleanMode:public Mode,public PathAlgorithm
 {
 public:
 	ACleanMode();
-	virtual int getNextState()=0;
-	virtual int getNextMoveType() = 0;
-	virtual int getNextMovement()=0;
+	virtual int setNextState()=0;
+	virtual void setNextMoveType() = 0;
+	virtual void setNextAction()=0;
 	void genMoveAction();
 	void resetTriggeredValue();
 //	bool isFinish();
@@ -152,6 +152,17 @@ Cell_t updatePath();
 
 protected:
 
+	bool st_is_null();
+	bool mt_is_turn();
+	bool mt_is_linear();
+	bool mt_is_follow_wall();
+	bool mt_is_go_charger();
+	bool mt_is_null();
+	bool ac_is_movement();
+	bool ac_is_forward();
+	bool ac_is_follow_wall();
+	bool ac_is_turn();
+	bool ac_is_back();
 	void st_init(int);
 	void mt_init(int);
 //	void ac_init(int);
@@ -161,7 +172,7 @@ protected:
 	static Cell_t last_;
 //	static boost::shared_ptr<State> sp_state_;
 //	static boost::shared_ptr<IMoveType> sp_move_type_;
-  int16_t s_target_angle{};
+  int16_t turn_target_angle_{};
 	int state_i_{st_null};
 	enum {
 		st_null,
@@ -199,12 +210,10 @@ class CleanModeNav:public ACleanMode
 public:
 	CleanModeNav();
 	~CleanModeNav() override ;
-	int getNextState();
-//	IMoveType* getNextMoveType(const Cell_t& start, MapDirection dir);
 	bool mark();
-//	int getNextState();
-	int getNextMoveType();
-	int getNextMovement();
+	int setNextState();
+	void setNextMoveType();
+	void setNextAction();
 	bool isFinish();
 	bool isExit();
 
@@ -212,6 +221,7 @@ public:
 	void cliff_all(bool state_now, bool state_last) override ;
 
 private:
+	bool isInitState();
 	void register_events(void);
 
 

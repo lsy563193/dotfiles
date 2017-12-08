@@ -10,7 +10,7 @@
 
 bool MoveTypeFollowWall::is_left_ = true;
 
-//IAction *MoveTypeFollowWall::getNextMovement() {
+//IAction *MoveTypeFollowWall::setNextAction() {
 //	return nullptr;
 //}
 

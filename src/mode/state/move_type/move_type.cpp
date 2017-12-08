@@ -9,7 +9,7 @@
 
 //bool IMoveType::isFinish(int& action_i) {
 //	PP_INFO();
-//	action_i = getNextMovement();
+//	action_i = setNextAction();
 //	if (action_i == Mode::ac_null)
 //		return true;
 //	PP_INFO();

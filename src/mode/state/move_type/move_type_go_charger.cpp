@@ -8,6 +8,6 @@
 //	return false;
 //}
 
-//IAction *MoveTypeGoCharger::getNextMovement() {
+//IAction *MoveTypeGoCharger::setNextAction() {
 //	return nullptr;
 //}
