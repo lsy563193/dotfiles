@@ -193,7 +193,7 @@ public:
 
 	bool shouldMoveBack();
 
-	bool shouldTurn();
+	virtual bool shouldTurn();
 
 	bool isBlockCleared();
 

@@ -145,6 +145,7 @@ public:
 	virtual int getNextMoveType() = 0;
 	virtual int getNextMovement()=0;
 	void genMoveAction();
+	void resetTriggeredValue();
 //	bool isFinish();
 
 Cell_t updatePath();
@@ -154,8 +155,8 @@ protected:
 	static Path_t passed_path_;
 	static Path_t plan_path_;
 	static Cell_t last_;
-	static boost::shared_ptr<State> sp_state_;
-	static boost::shared_ptr<IMoveType> sp_move_type_;
+//	static boost::shared_ptr<State> sp_state_;
+//	static boost::shared_ptr<IMoveType> sp_move_type_;
 	int state_i_{st_null};
 	enum {
 		st_null,
@@ -200,7 +201,6 @@ public:
 	int getNextMoveType();
 	int getNextMovement();
 	bool isFinish();
-
 	bool isExit();
 
 	void key_clean(bool state_now, bool state_last) override ;

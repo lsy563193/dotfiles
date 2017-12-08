@@ -91,9 +91,6 @@ bool CleanModeNav::isFinish() {
 	else if (action_i_ == ac_open_slam || action_i_ == ac_forward || action_i_ == ac_turn ||
 					 action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right || action_i_ == ac_back) {
 
-		PP_INFO();
-		NAV_INFO();
-
 		updatePath();
 
 		if (!Mode::isFinish())
@@ -111,11 +108,12 @@ bool CleanModeNav::isFinish() {
 		}
 
 		if (action_i_ == ac_null) {
-			if(state_i_ != st_null)
+			if (state_i_ != st_null)
 				mark();
 			state_i_ = getNextState();
 			move_type_i_ = getNextMoveType();
 			action_i_ = getNextMovement();
+			resetTriggeredValue();
 		}
 
 		if (action_i_ != ac_null) {
@@ -123,9 +121,9 @@ bool CleanModeNav::isFinish() {
 		}
 		else
 			sp_action_ == nullptr;
+		PP_INFO()
+		NAV_INFO();
 	}
-	PP_INFO()
-	NAV_INFO();
 	return false;
 }
 
@@ -151,7 +149,7 @@ int CleanModeNav::getNextState() {
 
 		st = st_clean;
 		displayPath(plan_path_);
-		sp_state_.reset(new StateClean);
+//		sp_state_.reset(new StateClean);
 	}
 	return st;
 }
@@ -181,8 +179,10 @@ int CleanModeNav::getNextMovement() {
 		else if (action_i_ == ac_back) {
 			action_i_ = ac_null;
 		}
+		PP_INFO()
+		NAV_INFO();
 	}
-	if(move_type_i_ == ac_follow_wall_left) {
+	else if(move_type_i_ == mt_follow_wall_left) {
 		if (action_i_ == ac_null)
 			action_i_ = ac_turn;
 
@@ -195,17 +195,19 @@ int CleanModeNav::getNextMovement() {
 			else
 				action_i_ = ac_null;
 		}
-		else if (action_i_ == ac_follow_wall_left) {
+		else if (action_i_ == mt_follow_wall_right) {
 			if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip)
 				action_i_ = ac_back;
 			else if (ev.lidar_triggered || ev.obs_triggered)
-				action_i_ = ac_null;
+				action_i_ = ac_turn;
 		}
 		else if (action_i_ == ac_back) {
 			action_i_ = ac_turn;
 		}
+		PP_INFO()
+		NAV_INFO();
 	}
-		if(move_type_i_ == ac_follow_wall_right) {
+	else if(move_type_i_ == mt_follow_wall_right) {
 		if (action_i_ == ac_null)
 			action_i_ = ac_turn;
 
@@ -222,16 +224,18 @@ int CleanModeNav::getNextMovement() {
 			if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip)
 				action_i_ = ac_back;
 			else if (ev.lidar_triggered || ev.obs_triggered)
-				action_i_ = ac_null;
+				action_i_ = ac_turn;
 		}
 		else if (action_i_ == ac_back) {
 			action_i_ = ac_turn;
 		}
-
+		PP_INFO()
+		NAV_INFO();
 	}
 	if (ev.fatal_quit)
 		action_i_ = ac_null;
 	PP_INFO()
+	NAV_INFO();
 	return action_i_;
 }
 

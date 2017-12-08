@@ -5,8 +5,8 @@
 #include "pp.h"
 #include "arch.hpp"
 
-boost::shared_ptr<State> ACleanMode::sp_state_ = nullptr;
-boost::shared_ptr<IMoveType> ACleanMode::sp_move_type_ = nullptr;
+//boost::shared_ptr<State> ACleanMode::sp_state_ = nullptr;
+//boost::shared_ptr<IMoveType> ACleanMode::sp_move_type_ = nullptr;
 
 Path_t ACleanMode::passed_path_ = {};
 Path_t ACleanMode::plan_path_ = {};
@@ -76,12 +76,22 @@ void ACleanMode::genMoveAction() {
 	if (action_i_ == ac_forward)
 		sp_action_.reset(new MovementForward(GridMap::cellToPoint(plan_path_.back()), plan_path_));
 	else if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
-		sp_action_.reset(new MovementFollowWall(GridMap::getCurrPoint(), GridMap::cellToPoint(plan_path_.back()),action_i_ == ac_follow_wall_left));
+			sp_action_.reset(new MovementFollowWall(GridMap::getCurrPoint(), GridMap::cellToPoint(plan_path_.back()),action_i_ == ac_follow_wall_left));
 	else if (action_i_ == ac_back)
 		sp_action_.reset(new MovementBack());
 	else if (action_i_ == ac_turn) {
 		sp_action_.reset(new MovementTurn(plan_path_.back().TH));
 	}
+}
+
+void ACleanMode::resetTriggeredValue(void)
+{
+	ev.lidar_triggered = 0;
+	ev.rcon_triggered = 0;
+	ev.bumper_triggered = 0;
+	ev.obs_triggered = 0;
+	ev.cliff_triggered = 0;
+	ev.tilt_triggered = 0;
 }
 
 //bool ACleanMode::isFinish() {
