@@ -149,16 +149,39 @@ int CleanModeNav::getNextState() {
 
 		st = st_clean;
 		displayPath(plan_path_);
-//		sp_state_.reset(new StateClean);
+		st_init(st_clean);
 	}
 	return st;
 }
 
-void CleanModeNav::register_events()
-{
-	event_manager_register_handler(this);
-	event_manager_reset_status();
-	event_manager_set_enable(true);
+int CleanModeNav::getNextMoveType() {
+	auto mt = mt_null;
+	auto start = nav_map.getCurrCell();
+	auto dir = g_old_dir;
+//	if(mt == mt_null) {
+		if (state_i_ == st_clean) {
+			auto delta_y = plan_path_.back().Y - start.Y;
+//		ROS_INFO( "%s,%d: path size(%u), dir(%d), g_check_path_in_advance(%d), bumper(%d), cliff(%d), lidar(%d), delta_y(%d)",
+//						__FUNCTION__, __LINE__, path.size(), dir, g_check_path_in_advance, ev.bumper_triggered, ev.cliff_triggered,
+//						ev.lidar_triggered, delta_y);
+
+			if (!GridMap::isXDirection(dir) // If last movement is not x axis linear movement, should not follow wall.
+					|| plan_path_.size() > 2 ||
+					(!g_check_path_in_advance && !ev.bumper_triggered && !ev.cliff_triggered && !ev.lidar_triggered)
+					|| delta_y == 0 || std::abs(delta_y) > 2) {
+				mt = mt_linear;
+			}else {
+				delta_y = plan_path_.back().Y - start.Y;
+				bool is_left = ((GridMap::isPositiveDirection(g_old_dir) && GridMap::isXDirection(g_old_dir)) ^ delta_y > 0);
+//		ROS_INFO("\033[31m""%s,%d: target:, 1_left_2_right(%d)""\033[0m", __FUNCTION__, __LINE__, get());
+				mt = is_left ? mt_follow_wall_left : mt_follow_wall_right;
+			}
+			mt_init(mt);
+		}
+//	}
+	PP_INFO()
+	ROS_INFO("mt = %d",mt);
+	return mt;
 }
 
 int CleanModeNav::getNextMovement() {
@@ -239,33 +262,11 @@ int CleanModeNav::getNextMovement() {
 	return action_i_;
 }
 
-int CleanModeNav::getNextMoveType() {
-	auto mt = mt_null;
-	auto start = nav_map.getCurrCell();
-	auto dir = g_old_dir;
-//	if(mt == mt_null) {
-		if (state_i_ == st_clean) {
-			auto delta_y = plan_path_.back().Y - start.Y;
-//		ROS_INFO( "%s,%d: path size(%u), dir(%d), g_check_path_in_advance(%d), bumper(%d), cliff(%d), lidar(%d), delta_y(%d)",
-//						__FUNCTION__, __LINE__, path.size(), dir, g_check_path_in_advance, ev.bumper_triggered, ev.cliff_triggered,
-//						ev.lidar_triggered, delta_y);
-
-			if (!GridMap::isXDirection(dir) // If last movement is not x axis linear movement, should not follow wall.
-					|| plan_path_.size() > 2 ||
-					(!g_check_path_in_advance && !ev.bumper_triggered && !ev.cliff_triggered && !ev.lidar_triggered)
-					|| delta_y == 0 || std::abs(delta_y) > 2) {
-				mt = mt_linear;
-			}else {
-				delta_y = plan_path_.back().Y - start.Y;
-				bool is_left = ((GridMap::isPositiveDirection(g_old_dir) && GridMap::isXDirection(g_old_dir)) ^ delta_y > 0);
-//		ROS_INFO("\033[31m""%s,%d: target:, 1_left_2_right(%d)""\033[0m", __FUNCTION__, __LINE__, get());
-				mt = is_left ? mt_follow_wall_left : mt_follow_wall_right;
-			}
-		}
-//	}
-	PP_INFO()
-	ROS_INFO("mt = %d",mt);
-	return mt;
+void CleanModeNav::register_events()
+{
+	event_manager_register_handler(this);
+	event_manager_reset_status();
+	event_manager_set_enable(true);
 }
 
 bool CleanModeNav::mark() {

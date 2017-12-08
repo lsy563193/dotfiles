@@ -152,11 +152,16 @@ Cell_t updatePath();
 
 protected:
 
+	void st_init(int);
+	void mt_init(int);
+//	void ac_init(int);
+//	static Pointmt_target;
 	static Path_t passed_path_;
 	static Path_t plan_path_;
 	static Cell_t last_;
 //	static boost::shared_ptr<State> sp_state_;
 //	static boost::shared_ptr<IMoveType> sp_move_type_;
+  int16_t s_target_angle{};
 	int state_i_{st_null};
 	enum {
 		st_null,

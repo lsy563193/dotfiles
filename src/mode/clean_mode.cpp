@@ -94,6 +94,104 @@ void ACleanMode::resetTriggeredValue(void)
 	ev.tilt_triggered = 0;
 }
 
+void ACleanMode::st_init(int next) {
+	if (next == st_clean) {
+		g_wf_reach_count = 0;
+		led.set_mode(LED_STEADY, LED_GREEN);
+	}
+	if (next == st_go_home_point) {
+		cs_work_motor();
+		wheel.setPidTargetSpeed(0, 0, REG_TYPE_LINEAR);
+		if (ev.remote_home || cm_is_go_charger())
+			led.set_mode(LED_STEADY, LED_ORANGE);
+
+		// Special handling for wall follow mode_.
+		if (cm_is_follow_wall()) {
+			robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle); //For wall follow mode_.
+			nav_map.updatePosition();
+			//wf_mark_home_point();
+			nav_map.reset(CLEAN_MAP);
+			nav_map.mergeFromSlamGridMap(slam_grid_map, false, false, true, false, false);
+			nav_map.markRobot(CLEAN_MAP);//note: To clear the obstacles before go home, please don't remove it!
+		}
+		// Play wavs.
+		if (ev.battrey_home)
+			speaker.play(SPEAKER_BATTERY_LOW);
+		if (!cm_is_go_charger())
+			speaker.play(SPEAKER_BACK_TO_CHARGER);
+
+		if (ev.remote_home)
+			g_go_home_by_remote = true;
+		ev.remote_home = false;
+		ev.battrey_home = false;
+	}
+	if (next == st_tmp_spot) {
+		if (SpotMovement::instance()->getSpotType() == NO_SPOT) {
+			ROS_INFO("%s %d: Entering temp spot during navigation.", __FUNCTION__, __LINE__);
+			Cell_t curr_cell = nav_map.getCurrCell();
+			ROS_WARN("%s %d: current cell(%d, %d).", __FUNCTION__, __LINE__, curr_cell.X, curr_cell.Y);
+			SpotMovement::instance()->setSpotType(CLEAN_SPOT);
+			wheel.stop();
+		}
+		else if (SpotMovement::instance()->getSpotType() == CLEAN_SPOT) {
+			ROS_INFO("%s %d: Exiting temp spot.", __FUNCTION__, __LINE__);
+			SpotMovement::instance()->spotDeinit();
+			wheel.stop();
+			speaker.play(SPEAKER_CLEANING_CONTINUE);
+		}
+		ev.remote_spot = false;
+	}
+	if (next == st_trapped) {
+		g_wf_start_timer = time(NULL);
+		g_wf_diff_timer = ESCAPE_TRAPPED_TIME;
+		led.set_mode(LED_FLASH, LED_GREEN, 300);
+	}
+	if (next == st_exploration) {
+		g_wf_reach_count = 0;
+		led.set_mode(LED_STEADY, LED_ORANGE);
+	}
+	if (next == st_go_charger) {
+		gyro.TiltCheckingEnable(false); //disable tilt detect
+		led.set_mode(LED_STEADY, LED_ORANGE);
+	}
+	if (next == st_self_check) {
+		led.set_mode(LED_STEADY, LED_GREEN);
+	}
+}
+
+void ACleanMode::mt_init(int) {
+	auto s_curr_p = GridMap::getCurrPoint();
+	auto s_target_p = nav_map.cellToPoint(plan_path_.back());
+	if (move_type_i_ == mt_follow_wall_left || move_type_i_ == mt_follow_wall_right) {
+//			ROS_INFO("%s,%d: mt.is_fw",__FUNCTION__, __LINE__);
+			if (LIDAR_FOLLOW_WALL)
+				if (!lidar_turn_angle(g_turn_angle))
+					g_turn_angle = ranged_angle(course_to_dest(s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y) -
+																			robot::instance()->getPoseAngle());
+		ROS_INFO("%s,%d: mt.is_follow_wall, s_target_p(%d, %d).", __FUNCTION__, __LINE__, s_target_p.X, s_target_p.Y);
+
+	}
+	else if (move_type_i_ == mt_linear) {
+		ROS_INFO("%s,%d: mt.is_linear", __FUNCTION__, __LINE__);
+		s_target_p = nav_map.cellToPoint(g_plan_path.front());
+		g_turn_angle = ranged_angle(
+						course_to_dest(s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y) - robot::instance()->getPoseAngle());
+	}
+	else if (move_type_i_ == mt_go_charger) {
+		g_turn_angle = 0;
+	}
+//	s_target_angle = g_turn_angle;
+	s_target_angle = ranged_angle(robot::instance()->getPoseAngle() + g_turn_angle);
+	resetTriggeredValue();
+	g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
+	bumper_turn_factor = 0.85;
+	g_bumper_cnt = g_cliff_cnt = 0;
+	g_slip_cnt = 0;
+	g_slip_backward = false;
+	c_rcon.resetStatus();
+	robot::instance()->obsAdjustCount(20);
+}
+
 //bool ACleanMode::isFinish() {
 //	return false;
 //}
