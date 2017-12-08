@@ -62,6 +62,7 @@ typedef struct {
 		bool oc_wheel_right;
 		bool oc_suction;
 		bool key_clean_pressed;
+		bool key_long_pressed;
 		bool remote_wallfollow;
 		bool remote_direction_left;
 		bool remote_direction_right;

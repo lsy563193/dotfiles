@@ -52,16 +52,16 @@ bool ModeSleep::isExit()
 	{
 		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
 		serial.wakeUp();
-		setNextMode(cm_navigation);
+		setNextMode(md_idle);
 		return true;
 	}
 
 	if (ev.rcon_triggered)
 	{
-		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
-		serial.wakeUp();
-		setNextMode(md_go_to_charger);
-		return true;
+//		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+//		serial.wakeUp();
+//		setNextMode(md_go_to_charger);
+//		return true;
 	}
 
 	return false;
@@ -108,10 +108,10 @@ void ModeSleep::charge_detect(bool state_now, bool state_last)
 
 void ModeSleep::rcon(bool state_now, bool state_last)
 {
-	ROS_WARN("%s %d: Waked up by rcon signal.", __FUNCTION__, __LINE__);
-	ev.rcon_triggered = c_rcon.getStatus();
-	c_rcon.resetStatus();
-	serial.wakeUp();
+//	ROS_WARN("%s %d: Waked up by rcon signal.", __FUNCTION__, __LINE__);
+//	ev.rcon_triggered = c_rcon.getStatus();
+//	c_rcon.resetStatus();
+//	serial.wakeUp();
 }
 
 void ModeSleep::remote_plan(bool state_now, bool state_last)

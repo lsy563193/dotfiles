@@ -9,6 +9,7 @@
 class Key {
 public:
 	Key() {
+		triggered_start_time_stamp_ = time(NULL);
 		trigger_status_ = false;
 		press_status_ = 0;
 	}
@@ -40,7 +41,10 @@ public:
 
 	void eliminate_jitter(uint8_t key_triggered);
 
+	double getPressTime();
+
 private:
+	double triggered_start_time_stamp_;
 	bool trigger_status_;
 	bool press_status_;
 

@@ -74,7 +74,6 @@ public:
 	bool isExit();
 	IAction* getNextAction();
 	void remote_cleaning(bool state_now, bool state_last);
-	void charge_detect(bool state_now, bool state_last) override ;
 	void remote_direction_left(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
 	void remote_direction_right(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
 	void remote_direction_forward(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
@@ -82,15 +81,17 @@ public:
 	void remote_spot(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
 	void remote_wall_follow(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
 	void remote_clean(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
+	void remote_max(bool state_now, bool state_last) override ;
+	void remote_plan(bool state_now, bool state_last) override ;
 	void key_clean(bool state_now, bool state_last) override;
+	void charge_detect(bool state_now, bool state_last) override ;
 
 protected:
 
 private:
 	void register_events(void);
-	time_t charger_signal_start_time{};
-	uint8_t reject_reason = 0;
-	uint8_t temp_mode{};
+
+	bool plan_activated_status_;
 };
 
 class ModeSleep: public Mode

@@ -15,6 +15,7 @@ void Key::eliminate_jitter(uint8_t key_triggered)
 				press_count_ = 0;
 				// When key 'clean' is triggered, it will set touch status.
 				key.setTriggerStatus();
+				triggered_start_time_stamp_ = ros::Time::now().toSec();
 			}
 		}
 		else if (!key_triggered && key.getPressStatus()) {
@@ -28,4 +29,9 @@ void Key::eliminate_jitter(uint8_t key_triggered)
 			press_count_ = 0;
 			release_count_ = 0;
 		}
+}
+
+double Key::getPressTime()
+{
+	return (ros::Time::now().toSec() - triggered_start_time_stamp_);
 }

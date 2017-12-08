@@ -608,6 +608,7 @@ void event_manager_reset_status(void)
 	g_oc_suction_cnt = 0;
 	/* Key */
 	ev.key_clean_pressed = false;
+	ev.key_long_pressed = false;
 	/* Remote */
 	ev.remote_home = false;
 	ev.remote_spot = false;

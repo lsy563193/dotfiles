@@ -22,7 +22,6 @@ bool ActionOpenLidar::isFinish(){
 }
 
 void ActionOpenLidar::run() {
-	printf("\n Lidar.waitForOpen()\n");
 	wheel.setPidTargetSpeed(0, 0);
 }
 

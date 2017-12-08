@@ -15,6 +15,7 @@ ModeIdle::ModeIdle()
 	robot_timer.resetPlanStatus();
 	event_manager_reset_status();
 
+	plan_activated_status_ = false;
 }
 
 ModeIdle::~ModeIdle()
@@ -26,10 +27,17 @@ ModeIdle::~ModeIdle()
 
 bool ModeIdle::isExit()
 {
-	if(ev.key_clean_pressed)
+	if(ev.key_clean_pressed || plan_activated_status_)
 	{
 		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
 		setNextMode(cm_navigation);
+		return true;
+	}
+
+	if (ev.key_long_pressed)
+	{
+		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+		setNextMode(md_sleep);
 		return true;
 	}
 
@@ -59,9 +67,6 @@ void ModeIdle::remote_cleaning(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Remote key %x has been pressed.", __FUNCTION__, __LINE__, remote.get());
 	//g_robot_stuck = false;
 
-	/* reset charger_signal_start_time when get remote cleaning */
-	charger_signal_start_time = time(NULL);
-
 	if (error.get())
 	{
 		if (remote.isKeyTrigger(REMOTE_CLEAN))
@@ -72,23 +77,18 @@ void ModeIdle::remote_cleaning(bool state_now, bool state_last)
 				beeper.play_for_command(VALID);
 				led.set_mode(LED_BREATH, LED_GREEN);
 				speaker.play(SPEAKER_CLEAR_ERROR);
-				error.set(ERROR_CODE_NONE);
-				reject_reason = 4;
 			}
 			else
 			{
 				beeper.play_for_command(INVALID);
 				error.alarm();
-				reject_reason = 1;
 			}
-			key.resetTriggerStatus();
 		}
 		else
 		{
 			ROS_WARN("%s %d: Remote key %x not valid because of error %d.", __FUNCTION__, __LINE__, remote.get(), error.get());
 			error.alarm();
 			beeper.play_for_command(INVALID);
-			reject_reason = 1;
 		}
 	}
 	else if (cliff.get_status() == BLOCK_ALL)
@@ -96,7 +96,6 @@ void ModeIdle::remote_cleaning(bool state_now, bool state_last)
 		ROS_WARN("%s %d: Remote key %x not valid because of robot lifted up.", __FUNCTION__, __LINE__, remote.get());
 		beeper.play_for_command(INVALID);
 		speaker.play(SPEAKER_ERROR_LIFT_UP);
-		reject_reason = 2;
 	}
 	else if ((!remote.isKeyTrigger(REMOTE_FORWARD) && !remote.isKeyTrigger(REMOTE_LEFT)
 			  && !remote.isKeyTrigger(REMOTE_RIGHT) && !remote.isKeyTrigger(REMOTE_HOME))
@@ -105,10 +104,8 @@ void ModeIdle::remote_cleaning(bool state_now, bool state_last)
 		ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, battery.getVoltage(), (int)BATTERY_READY_TO_CLEAN_VOLTAGE);
 		beeper.play_for_command(INVALID);
 		speaker.play(SPEAKER_BATTERY_LOW);
-		reject_reason = 3;
 	}
-
-	if (!reject_reason)
+	else
 	{
 		beeper.play_for_command(VALID);
 		switch (remote.get())
@@ -157,11 +154,57 @@ void ModeIdle::remote_cleaning(bool state_now, bool state_last)
 				ev.remote_wallfollow = true;
 				break;
 			}
+			default: // REMOTE_PLAN/REMOTE_MAX is not handled here.
+				break;
 		}
 	}
 	remote.reset();
 }
 
+void ModeIdle::remote_max(bool state_now, bool state_last)
+{
+	beeper.play_for_command(INVALID);
+	remote.reset();
+}
+
+void ModeIdle::remote_plan(bool state_now, bool state_last)
+{
+	if (robot_timer.getPlanStatus() == 3)
+	{
+		ROS_WARN("%s %d: Plan activated.", __FUNCTION__, __LINE__);
+		if (error.get() != ERROR_CODE_NONE)
+		{
+			ROS_INFO("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
+			error.alarm();
+			speaker.play(SPEAKER_CANCEL_APPOINTMENT);
+		}
+		else if(cliff.get_status() & (BLOCK_LEFT|BLOCK_FRONT|BLOCK_RIGHT))
+		{
+			ROS_WARN("%s %d: Plan not activated not valid because of robot lifted up.", __FUNCTION__, __LINE__);
+			speaker.play(SPEAKER_ERROR_LIFT_UP);
+			speaker.play(SPEAKER_CANCEL_APPOINTMENT);
+		}
+		else if (!battery.isReadyToClean())
+		{
+			ROS_WARN("%s %d: Plan not activated not valid because of battery not ready to clean.", __FUNCTION__, __LINE__);
+			speaker.play(SPEAKER_BATTERY_LOW);
+			speaker.play(SPEAKER_CANCEL_APPOINTMENT);
+		}
+		else if (charger.getChargeStatus() == 4)
+		{
+			ROS_WARN("%s %d: Plan not activated not valid because of charging with adapter.", __FUNCTION__, __LINE__);
+			//speaker.play(???);
+			speaker.play(SPEAKER_CANCEL_APPOINTMENT);
+		}
+		else
+		{
+			// Sleep for 50ms cause the status 3 will be sent for 3 times.
+			usleep(50000);
+			plan_activated_status_ = true;
+		}
+		robot_timer.resetPlanStatus();
+	}
+}
 void ModeIdle::charge_detect(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Detect charge!", __FUNCTION__, __LINE__);
@@ -177,9 +220,22 @@ void ModeIdle::key_clean(bool state_now, bool state_last)
 	beeper.play_for_command(VALID);
 
 	// Wait for key released.
+	bool long_press = false;
 	while (key.getPressStatus())
+	{
+		if (!long_press && key.getPressTime() > 3)
+		{
+			ROS_WARN("%s %d: key clean.", __FUNCTION__, __LINE__);
+			beeper.play_for_command(VALID);
+			long_press = true;
+		}
 		usleep(20000);
-	ev.key_clean_pressed = true;
+	}
+
+	if (long_press)
+		ev.key_long_pressed = true;
+	else
+		ev.key_clean_pressed = true;
 	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
 
 	key.resetTriggerStatus();
