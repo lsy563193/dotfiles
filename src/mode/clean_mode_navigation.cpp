@@ -30,12 +30,23 @@ CleanModeNav::~CleanModeNav()
 
 	robot::instance()->setBaselinkFrameType(Odom_Position_Odom_Angle);
 
-	speaker.play(SPEAKER_CLEANING_FINISHED);
 
 	if (ev.key_clean_pressed)
+	{
+		speaker.play(SPEAKER_CLEANING_FINISHED);
 		ROS_WARN("%s %d: Key clean pressed. Finish cleaning.", __FUNCTION__, __LINE__);
+	}
+	else if (ev.cliff_all_triggered)
+	{
+		speaker.play(SPEAKER_ERROR_LIFT_UP, false);
+		speaker.play(SPEAKER_CLEANING_STOP);
+		ROS_WARN("%s %d: Cliff all triggered. Finish cleaning.", __FUNCTION__, __LINE__);
+	}
 	else
+	{
+		speaker.play(SPEAKER_CLEANING_FINISHED);
 		ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
+	}
 
 	auto cleaned_count = nav_map.getCleanedArea();
 	auto map_area = cleaned_count * (CELL_SIZE * 0.001) * (CELL_SIZE * 0.001);
@@ -498,7 +509,7 @@ bool CleanModeNav::filterPathsToSelectTarget(GridMap &map, const PathList &paths
 
 bool CleanModeNav::isExit()
 {
-	if (ev.key_clean_pressed)
+	if (ev.key_clean_pressed || ev.cliff_all_triggered)
 	{
 		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
 		setNextMode(md_idle);
@@ -531,3 +542,9 @@ void CleanModeNav::key_clean(bool state_now, bool state_last)
 	key.resetTriggerStatus();
 }
 
+void CleanModeNav::cliff_all(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: Cliff all.", __FUNCTION__, __LINE__);
+
+	ev.cliff_all_triggered = true;
+}
