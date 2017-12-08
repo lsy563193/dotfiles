@@ -119,6 +119,9 @@ int CleanModeNav::getNextState() {
 	if(st == st_null || st == st_clean)
 	{
 		plan_path_ = generatePath(nav_map, nav_map.getCurrCell(),g_old_dir);
+		g_new_dir = (MapDirection)plan_path_.front().TH;
+		plan_path_.pop_front();;
+
 
 		if(state_i_ == st_null)
 		{
@@ -145,7 +148,6 @@ void CleanModeNav::register_events(void)
 }
 
 int CleanModeNav::getNextMovement() {
-	auto ac = ac_null;
 	if(action_i_ == ac_null)
 	{
 //		PP_INFO()
@@ -262,7 +264,7 @@ Path_t CleanModeNav::generatePath(GridMap &map, const Cell_t &curr_cell, const M
 	optimizePath(map, shortest_path);
 
 	//Step 8: Fill path with direction.
-	fillPathWithDirection(path);
+	fillPathWithDirection(shortest_path);
 
 	// Congratulation!! path is generated successfully!!
 	path = shortest_path;
@@ -322,6 +324,7 @@ Path_t CleanModeNav::findTargetInSameLane(GridMap &map, const Cell_t &curr_cell)
 	if (is_found)
 	{
 		path.push_front(target);
+		path.push_front(nav_map.getCurrCell());
 		ROS_INFO("%s %d: X pos:(%d,%d), X neg:(%d,%d), target:(%d,%d)", __FUNCTION__, __LINE__, it[0].X, it[0].Y, it[1].X, it[1].Y, target.X, target.Y);
 //		map.print(CLEAN_MAP, target.X, target.Y);
 	}
