@@ -55,7 +55,8 @@ void *core_move_thread(void *)
 
 #if NEW_FRAMEWORK
 //	Mode* p_mode = new ModeSleep();
-	Mode* p_mode = new CleanModeNav();
+//	Mode* p_mode = new CleanModeNav();
+	Mode* p_mode = new IdleMode();
 	while(ros::ok())
 	{
 		p_mode->run();

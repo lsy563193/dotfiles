@@ -65,8 +65,19 @@ public:
 	ActionSleep();
 	bool isFinish();
 	void run();
-
 private:
 };
+
+
+class ActionIdle :public IAction {
+public:
+	ActionIdle();
+	~ActionIdle();
+	bool isFinish();
+	void run();
+private:
+
+};
+
 
 #endif //PP_ACTION_H
