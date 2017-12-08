@@ -39,6 +39,8 @@ protected:
 //		ac_movement_follow_wall_right,
 		ac_movement_go_charger,
 		ac_sleep,
+		ac_charge,
+		ac_turn_for_charger,
 	};
 private:
 
@@ -48,11 +50,11 @@ class ModeSleep: public Mode
 {
 public:
 	ModeSleep();
-	~ModeSleep();
+	~ModeSleep() override ;
 
 	bool isExit();
 
-	// For event handling.
+	// For exit event handling.
 	void remote_clean(bool state_now, bool state_last);
 	void key_clean(bool state_now, bool state_last);
 	void charge_detect(bool state_now, bool state_last);
@@ -63,47 +65,67 @@ private:
 	bool plan_activated_status_;
 };
 
-	class ACleanMode:public Mode,public PathAlgorithm{
-	public:
-		virtual State* getNextState()=0;
-		virtual IMoveType* getNextMoveType(const Cell_t& start, MapDirection dir) = 0;
-		virtual int getNextMovement()=0;
-		bool isFinish();
+class ModeCharge: public Mode
+{
+public:
+	ModeCharge();
+	~ModeCharge() override ;
 
+	bool isExit() override ;
+	bool isFinish() override ;
 
-	protected:
-		static boost::shared_ptr<State> sp_state_;
-		static boost::shared_ptr<IMoveType> sp_move_type_;
-		int state_i_{st_null};
-		enum {
-			st_null,
-			st_clean,
-			st_go_home_point,
-			st_go_charger,
-			st_trapped,
-			st_tmp_spot,
-			st_self_check,
-			st_exploration,
-		};
-		int move_type_i_{mt_null};
-		enum {
-			mt_null,
-			mt_linear,
-			mt_follow_wall,
-			mt_go_charger,
-		};
-		int movement_i_ {mv_null};
-		enum {
-			mv_null,
-			mv_back,
-			mv_turn,
-			mv_forward,
-			mv_turn2,
-			mv_follow_wall,
-			mv_go_charger,
-		};
-	private:
+	IAction* getNextAction();
+
+	// For exit event handling.
+	void remote_clean(bool state_now, bool state_last) override ;
+	void key_clean(bool state_now, bool state_last) override ;
+	void remote_plan(bool state_now, bool state_last) override ;
+
+private:
+	bool plan_activated_status_;
+	bool directly_charge_;
+};
+
+class ACleanMode:public Mode,public PathAlgorithm{
+public:
+	virtual State* getNextState()=0;
+	virtual IMoveType* getNextMoveType(const Cell_t& start, MapDirection dir) = 0;
+	virtual int getNextMovement()=0;
+	bool isFinish();
+
+protected:
+	static boost::shared_ptr<State> sp_state_;
+	static boost::shared_ptr<IMoveType> sp_move_type_;
+	int state_i_{st_null};
+	enum {
+		st_null,
+		st_clean,
+		st_go_home_point,
+		st_go_charger,
+		st_trapped,
+		st_tmp_spot,
+		st_self_check,
+		st_exploration,
 	};
+	int move_type_i_{mt_null};
+	enum {
+		mt_null,
+		mt_linear,
+		mt_follow_wall,
+		mt_go_charger,
+	};
+	int movement_i_ {mv_null};
+	enum {
+		mv_null,
+		mv_back,
+		mv_turn,
+		mv_forward,
+		mv_turn2,
+		mv_follow_wall,
+		mv_go_charger,
+	};
+private:
+};
 
 class CleanModeNav:public ACleanMode{
 public:

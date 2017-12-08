@@ -49,7 +49,7 @@ IAction *CleanModeNav::getNextAction() {
 	}
 	else if(action_i_ == ac_open_slam) {
 		PP_INFO();
-		if (isFinish())
+		if (ACleanMode::isFinish())
 		{
 			PP_INFO();
 			return nullptr;
