@@ -168,12 +168,14 @@ class ACleanMode:public Mode,public PathAlgorithm
 {
 public:
 	ACleanMode();
-	virtual bool setNextState()=0;
-	virtual bool setNextMoveType() = 0;
-	virtual bool setNextAction()=0;
+	bool isFinish();
+	virtual bool setNextState();
+	virtual bool setNextMoveType();
+	virtual bool setNextAction();
 	void genMoveAction();
 	void resetTriggeredValue();
-//	bool isFinish();
+
+	virtual bool map_mark() = 0;
 
 Cell_t updatePath();
 
@@ -198,7 +200,10 @@ protected:
 	static Path_t passed_path_;
 	static Path_t plan_path_;
 	static Cell_t last_;
+	uint32_t start_timer_;
+	uint32_t diff_timer_;
 
+	const int ISOLATE_COUNT_LIMIT = 4;
 	MapDirection old_dir_{MAP_POS_X};
 	MapDirection new_dir_{MAP_POS_X};
 //	static boost::shared_ptr<State> sp_state_;
@@ -234,6 +239,9 @@ protected:
 		mv_go_charger,
 	};
 private:
+		bool isInitState();
+	void register_events(void);
+
 };
 
 class CleanModeNav:public ACleanMode
@@ -241,19 +249,15 @@ class CleanModeNav:public ACleanMode
 public:
 	CleanModeNav();
 	~CleanModeNav() override ;
-	bool map_mark();
-	bool setNextState();
 	bool setNextMoveType();
-	bool setNextAction();
-	bool isFinish();
+	bool map_mark();
+//	bool isFinish();
 	bool isExit();
 
 	void key_clean(bool state_now, bool state_last) override ;
 	void cliff_all(bool state_now, bool state_last) override ;
 
 private:
-	bool isInitState();
-	void register_events(void);
 
 
 // For path planning.
@@ -273,7 +277,7 @@ public:
 	 *
 	 * @return: Path_t path, the path to unclean area.
 	 */
-	Path_t generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir);
+	Path_t generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir) override;
 
 private:
 	/*
@@ -347,6 +351,27 @@ private:
 	 *          Cell_t best_target, the selected best target.
 	 */
 	bool filterPathsToSelectTarget(GridMap &map, const PathList &paths, const Cell_t &curr_cell, Cell_t &best_target);
+
+};
+
+class CleanModeFollowWall:public ACleanMode
+{
+public:
+	CleanModeFollowWall();
+	~CleanModeFollowWall() override ;
+
+	bool setNextMoveType() override ;
+	bool map_mark();
+
+	Path_t generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir);
+
+	int16_t wf_path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound);
+	int16_t wf_path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t end_x, int16_t end_y, uint8_t bound, int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max);
+	bool wf_is_isolate();
+private:
+protected:
+//	Path_t home_point_{};
+private:
 
 };
 

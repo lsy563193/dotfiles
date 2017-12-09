@@ -55,3 +55,4 @@ int Mode::getNextMode()
 {
 	return next_mode_i_;
 }
+

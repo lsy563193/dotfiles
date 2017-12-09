@@ -5,6 +5,7 @@
 #include "pp.h"
 #include "arch.hpp"
 
+#define NAV_INFO() ROS_INFO("st(%d),mt(%d),ac(%d)", state_i_, move_type_i_, action_i_)
 //boost::shared_ptr<State> ACleanMode::sp_state_ = nullptr;
 //boost::shared_ptr<IMoveType> ACleanMode::sp_move_type_ = nullptr;
 
@@ -13,29 +14,171 @@ Path_t ACleanMode::plan_path_ = {};
 Cell_t ACleanMode::last_ = {};
 //boost::shared_ptr<IMovement> ACleanMode::sp_movement_ = nullptr;
 
-ACleanMode::ACleanMode() {
+ACleanMode::ACleanMode():start_timer_(time(NULL)) {
+
+	cm_register_events();
+	led.set_mode(LED_FLASH, LED_GREEN, 1000);
+	ev.key_clean_pressed = false;
+	sp_action_.reset(new ActionOpenGyro());
+	action_i_ = ac_open_gyro;
+	robot_timer.initWorkTimer();
+	key.resetPressStatus();
+
+	c_rcon.resetStatus();
+	gyro.setOff();
+	usleep(30000);
+	gyro.setOn();
+
 	g_homes.resize(1,g_zero_home);
 }
 
-//bool ACleanMode::isFinish() {
-//	PP_INFO();
-//	if(sp_state_ == nullptr)
-//	{
-//		setNextState();
-//		setNextMoveType(nav_map.getCurrCell(),old_dir_);
-//	}
-//
-//	if(sp_state_->isFinish(this,sp_move_type_.get(),sp_action_.get() ,action_i_))
-//	{
-//		PP_INFO();
-//		setNextState();
-//		PP_INFO();
-//		if(sp_state_ == nullptr)
-//			return true;
-//	}
-//	PP_INFO();
-//	return false;
-//}
+bool ACleanMode::isInitState() {
+	return action_i_ == ac_open_gyro || action_i_ == ac_back_form_charger || action_i_ == ac_open_lidar ||
+				action_i_ == ac_align;
+}
+
+bool ACleanMode::setNextAction() {
+	if(action_i_ == ac_open_gyro)
+	{
+		if (charger.isOnStub())
+			action_i_ = ac_back_form_charger;
+		else
+			action_i_ = ac_open_lidar;
+	}else if(action_i_ == ac_back_form_charger)
+		action_i_ = ac_open_lidar;
+	else if(action_i_ == ac_open_lidar)
+		action_i_ = ac_align;
+	else if(action_i_ == ac_align)
+		action_i_ = ac_open_slam;
+	else {
+		if(move_type_i_ == mt_null)
+		{
+			action_i_ = ac_null;
+		}
+		else if (move_type_i_ == mt_linear) {
+			if (action_i_ == ac_null)
+			{
+				action_i_ = ac_turn;
+			}
+
+			else if (action_i_ == ac_turn) {
+				action_i_ = ac_forward;
+			}
+
+			else if (action_i_ == ac_forward) {
+				if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered)
+					action_i_ = ac_back;
+				else
+					action_i_ = ac_null;
+			}
+			else if (action_i_ == ac_back) {
+				action_i_ = ac_null;
+			}
+		}
+		else if (mt_is_follow_wall()) {
+
+			if (action_i_ == ac_null)
+				action_i_ = ac_turn;
+
+			else if (action_i_ == ac_turn) {
+				action_i_ = (move_type_i_ == mt_follow_wall_left) ? ac_follow_wall_left : ac_follow_wall_right;
+			}
+			else if (action_i_ == ac_forward) {
+				if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered)
+					action_i_ = ac_back;
+				else
+					action_i_ = ac_null;
+			}
+			else if (ac_is_follow_wall()) {
+
+				if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip)
+					action_i_ = ac_back;
+				else if (ev.lidar_triggered || ev.obs_triggered)
+					action_i_ = ac_turn;
+				else{
+
+					action_i_ = ac_null;//reach
+				}
+			}
+			else if (action_i_ == ac_back) {
+				action_i_ = ac_turn;
+			}
+		}
+
+		if (ev.fatal_quit)
+		{
+			PP_INFO(); ROS_ERROR("ev.fatal_quit");
+			action_i_ = ac_null;
+		}
+	}
+	genMoveAction();
+	NAV_INFO();
+	return action_i_ != ac_null;
+}
+
+bool ACleanMode::isFinish() {
+	if (isInitState()) {
+		if (!sp_action_->isFinish())
+			return false;
+		setNextAction();
+	}
+	else {
+		updatePath();
+		if (!sp_action_->isFinish())
+			return false;
+
+		if(!ac_is_back())
+			nav_map.saveBlocks();
+
+		while (!setNextAction()) {
+			map_mark();//not action ,switch mt
+			do{
+				if(!setNextState())
+					return true;
+			}while(!setNextMoveType());
+		}
+		if(!(ac_is_back() && mt_is_linear()))
+			resetTriggeredValue();
+	}
+	return false;
+}
+
+bool ACleanMode::setNextState() {
+	PP_INFO();
+	if(state_i_ == st_null || state_i_ == st_clean)
+	{
+		PP_INFO();
+		old_dir_ = new_dir_;
+		plan_path_ = generatePath(nav_map, nav_map.getCurrCell(),old_dir_);
+		new_dir_ = (MapDirection)plan_path_.front().TH;
+		plan_path_.pop_front();;
+
+
+		if(state_i_ == st_null)
+		{
+			g_homes[0].TH = 0;
+			auto target = plan_path_.back();
+			plan_path_.pop_back();
+			target.TH = g_homes[0].TH;
+			plan_path_.push_back(target);
+			ROS_INFO("g_homes[0](%d,%d,%d)",g_homes[0].X,g_homes[0].Y,g_homes[0].TH);
+		}
+		state_i_ = st_clean;
+		displayPath(plan_path_);
+		st_init(st_clean);
+	}
+	return state_i_ != st_null;
+}
+
+bool ACleanMode::setNextMoveType() {
+
+	PP_INFO()
+	ROS_INFO("move_type_i_ = %d", move_type_i_);
+	mt_init(move_type_i_);
+
+	return move_type_i_ != mt_null;
+}
+
 bool is_equal_with_angle_(const Cell_t &l, const Cell_t &r)
 {
 	return  l == r && std::abs(ranged_angle(l.TH - r.TH)) < 200;
@@ -183,7 +326,7 @@ void ACleanMode::mt_init(int) {
 		turn_target_angle_ = ranged_angle(robot::instance()->getPoseAngle() + g_turn_angle);
 		ROS_INFO("g_turn_angle(%d)cur(%d,%d,%d),tar(%d,%d,%d)",g_turn_angle,cur.X,cur.Y,cur.TH, tar.X,tar.Y,tar.TH);
 	}
-	else if (mt_is_linear()) {
+	else if (move_type_i_ == mt_linear) {
 		turn_target_angle_ = plan_path_.front().TH;
 		ROS_INFO("%s,%d: mt_is_linear,turn(%d)", __FUNCTION__, __LINE__,turn_target_angle_);
 	}

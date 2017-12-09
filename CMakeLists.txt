@@ -51,6 +51,7 @@ FILE(GLOB PP_SRC
 	src/mode/mode_remote.cpp
 	src/mode/clean_mode.cpp
 	src/mode/clean_mode_navigation.cpp
+	src/mode/clean_mode_follow_wall.cpp
 	src/path_algorithm/path_algorithm.cpp
 	src/path_algorithm/move_type_plan.cpp
 
