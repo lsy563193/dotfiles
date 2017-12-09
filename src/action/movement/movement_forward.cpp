@@ -49,7 +49,7 @@ bool ForwardMovement::isNearTarget()
 	auto target_p = nav_map.cellToPoint(g_plan_path.front());
 	auto &target = (GridMap::isXDirection(g_new_dir)) ? target_p.X : target_p.Y;
 	//ROS_INFO("%s %d: s_curr_p(%d, %d), target_p(%d, %d), dir(%d)",
-	//		 __FUNCTION__, __LINE__, s_curr_p.X, s_curr_p.Y, target_p.X, target_p.Y, g_new_dir);
+	//		 __FUNCTION__, __LINE__, s_curr_p.X, s_curr_p.Y, target_p.X, target_p.Y, new_dir_);
 	if ((GridMap::isPositiveDirection(g_new_dir) && (curr > target - 1.5 * CELL_COUNT_MUL)) ||
 		(!GridMap::isPositiveDirection(g_new_dir) && (curr < target + 1.5 * CELL_COUNT_MUL))) {
 		if(g_plan_path.size() > 1)
@@ -154,7 +154,7 @@ bool ForwardMovement::isPassTargetStop()
 	if ((GridMap::isPositiveDirection(g_new_dir) && (curr > target + CELL_COUNT_MUL / 4)) ||
 		(!GridMap::isPositiveDirection(g_new_dir) && (curr < target - CELL_COUNT_MUL / 4)))
 	{
-		ROS_INFO("%s, %d: ForwardMovement, pass target: g_new_dir(\033[32m%d\033[0m),is_x_axis(\033[32m%d\033[0m),is_pos(\033[32m%d\033[0m),curr(\033[32m%d\033[0m),target(\033[32m%d\033[0m)",
+		ROS_INFO("%s, %d: ForwardMovement, pass target: new_dir_(\033[32m%d\033[0m),is_x_axis(\033[32m%d\033[0m),is_pos(\033[32m%d\033[0m),curr(\033[32m%d\033[0m),target(\033[32m%d\033[0m)",
 				 __FUNCTION__, __LINE__, g_new_dir, GridMap::isXDirection(g_new_dir), GridMap::isPositiveDirection(g_new_dir), curr, target);
 		return true;
 	}
@@ -192,9 +192,9 @@ void ForwardMovement::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 	angle_diff = ranged_angle(
 					course_to_dest(s_curr_p.X, s_curr_p.Y, target_p.X, target_p.Y) - robot::instance()->getPoseAngle());
 
-//	ROS_WARN("curr(%d),x?(%d),pos(%d),dis(%d), target_p(%d,%d)", curr, GridMap::isXDirection(g_new_dir), GridMap::isPositiveDirection(g_new_dir), dis, target_p.X, target_p.Y);
-//	auto dis_diff = GridMap::isXDirection(g_new_dir) ? s_curr_p.Y - s_target_p.Y : s_curr_p.X - s_target_p.X;
-//	dis_diff = GridMap::isPositiveDirection(g_new_dir) ^ GridMap::isXDirection(g_new_dir) ? dis_diff :  -dis_diff;
+//	ROS_WARN("curr(%d),x?(%d),pos(%d),dis(%d), target_p(%d,%d)", curr, GridMap::isXDirection(new_dir_), GridMap::isPositiveDirection(new_dir_), dis, target_p.X, target_p.Y);
+//	auto dis_diff = GridMap::isXDirection(new_dir_) ? s_curr_p.Y - s_target_p.Y : s_curr_p.X - s_target_p.X;
+//	dis_diff = GridMap::isPositiveDirection(new_dir_) ^ GridMap::isXDirection(new_dir_) ? dis_diff :  -dis_diff;
 
 	if (integration_cycle_++ > 10) {
 		auto t = nav_map.pointToCell(target_p);

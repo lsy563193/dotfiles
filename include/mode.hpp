@@ -90,7 +90,7 @@ public:
 	void charge_detect(bool state_now, bool state_last) override ;
 
 protected:
-
+	std::vector<Cell_t> temp_fw_cells;
 private:
 	void register_events(void);
 
@@ -168,9 +168,9 @@ class ACleanMode:public Mode,public PathAlgorithm
 {
 public:
 	ACleanMode();
-	virtual int setNextState()=0;
-	virtual void setNextMoveType() = 0;
-	virtual void setNextAction()=0;
+	virtual bool setNextState()=0;
+	virtual bool setNextMoveType() = 0;
+	virtual bool setNextAction()=0;
 	void genMoveAction();
 	void resetTriggeredValue();
 //	bool isFinish();
@@ -179,24 +179,28 @@ Cell_t updatePath();
 
 protected:
 
-	bool st_is_null();
+	uint8_t saveFollowWall(bool is_left);
+
+	bool st_is_finish();
 	bool mt_is_turn();
 	bool mt_is_linear();
 	bool mt_is_follow_wall();
 	bool mt_is_go_charger();
 	bool mt_is_null();
-	bool ac_is_movement();
+	bool action_is_movement();
 	bool ac_is_forward();
 	bool ac_is_follow_wall();
 	bool ac_is_turn();
 	bool ac_is_back();
 	void st_init(int);
 	void mt_init(int);
-//	void ac_init(int);
-//	static Pointmt_target;
+	std::vector<Cell_t> temp_fw_cells;
 	static Path_t passed_path_;
 	static Path_t plan_path_;
 	static Cell_t last_;
+
+	MapDirection old_dir_{MAP_POS_X};
+	MapDirection new_dir_{MAP_POS_X};
 //	static boost::shared_ptr<State> sp_state_;
 //	static boost::shared_ptr<IMoveType> sp_move_type_;
   int16_t turn_target_angle_{};
@@ -237,10 +241,10 @@ class CleanModeNav:public ACleanMode
 public:
 	CleanModeNav();
 	~CleanModeNav() override ;
-	bool mark();
-	int setNextState();
-	void setNextMoveType();
-	void setNextAction();
+	bool map_mark();
+	bool setNextState();
+	bool setNextMoveType();
+	bool setNextAction();
 	bool isFinish();
 	bool isExit();
 

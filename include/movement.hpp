@@ -29,7 +29,7 @@ protected:
 class MovementForward: public IMovement{
 public:
 //	MovementForward(Point32_t);
-	MovementForward(Point32_t target, const PPTargetType& path);
+	MovementForward(Point32_t target, const PPTargetType& path, MapDirection dir);
 //	~MovementForward(){ };
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
 	bool isFinish();
@@ -48,6 +48,8 @@ public:
 	bool isPoseReach();
 
 private:
+
+	MapDirection dir_{MAP_POS_X};
 	int32_t integrated_;
 	int32_t base_speed_;
 	uint8_t integration_cycle_;

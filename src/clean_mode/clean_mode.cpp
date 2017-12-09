@@ -234,9 +234,9 @@ void CleanMode::resetTriggeredValue(void)
 bool CleanMode::find_target(Cell_t& curr)
 {
 //	printf("\n\033[42m======================================Generate path and update move type===========================================\033[0m\n");
-//	mark();
+//	map_mark();
 //	auto previous_cs = cs.get();
-//	g_old_dir = g_new_dir; // Save current direction.
+//	old_dir_ = new_dir_; // Save current direction.
 //	g_plan_path.clear();
 //	cs_path_next(curr, g_plan_path);
 //

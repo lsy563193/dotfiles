@@ -357,8 +357,8 @@ bool NavigationClean::csm_next(Cell_t &curr)
 //	if (cs.is_clean() && g_check_path_in_advance)
 //	{
 //		printf("\n\033[42m========================Generate path in advance==============================\033[0m\n");
-//		mark();
-//		int16_t current_dir = g_new_dir;
+//		map_mark();
+//		int16_t current_dir = new_dir_;
 //		int16_t temp_new_dir;
 //
 //		auto start_cell = g_plan_path.back();
@@ -385,7 +385,7 @@ bool NavigationClean::csm_next(Cell_t &curr)
 //				g_plan_path.clear();
 //				for (auto cell : path_in_advance)
 //					g_plan_path.push_back(cell);
-//				g_new_dir = temp_new_dir;
+//				new_dir_ = temp_new_dir;
 //				ROS_INFO("%s %d: Switch to new path.", __FUNCTION__, __LINE__);
 //			}
 //		}
@@ -423,7 +423,7 @@ bool NavigationClean::csm_next(Cell_t &curr)
 }
 void NavigationClean::mark()
 {
-	ROS_INFO("%s, %d: NavigationClean::mark", __FUNCTION__, __LINE__);
+	ROS_INFO("%s, %d: NavigationClean::map_mark", __FUNCTION__, __LINE__);
 	nav_map.saveBlocks();
 	nav_map.setBlocks();
 

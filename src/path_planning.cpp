@@ -323,7 +323,7 @@ bool path_full(const Cell_t& curr, PPTargetType& path)
 			ROS_ERROR("%s %d:follow_wall dir(%d),step(%d),tmp(%d,%d),his1(%d,%d)", __FUNCTION__, __LINE__, dir, step, tmp.X,
 								tmp.Y, g_cell_history[1].X, g_cell_history[1].Y);
 		}
-		if (mt.is_linear() && IS_X_AXIS(g_new_dir)) {
+		if (mt.is_linear() && IS_X_AXIS(new_dir_)) {
 			auto dir = path.target.Y - g_cell_history[1].Y;//+2,-2
 			tmp.Y = g_cell_history[1].Y;
 			ROS_ERROR("%s %d:mt.is_linear tmp(%d,%d),his1(%d,%d),curr(%d,%d)", __FUNCTION__, __LINE__, tmp.X, tmp.Y,

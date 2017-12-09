@@ -104,36 +104,29 @@ bool CleanModeNav::isFinish() {
 		if (!sp_action_->isFinish())
 			return false;
 
-		if(!mt_is_null())
-		{
-			if(!ac_is_turn() && !ac_is_back())
-				nav_map.saveBlocks();
-			setNextAction();
-		}
+		if(!ac_is_back())
+			nav_map.saveBlocks();
 
-		if (!ac_is_movement()) {
-			mark();
+		while (!setNextAction()) {
+			map_mark();//not action ,switch mt
 			do{
-				setNextState();
-				if(st_is_null())
+				if(!setNextState())
 					return true;
-				setNextMoveType();
-			}while(mt_is_null());
-
-			setNextAction();
+			}while(!setNextMoveType());
 		}
+		if(!(ac_is_back() && mt_is_linear()))
+			resetTriggeredValue();
 		NAV_INFO();
 	}
-	resetTriggeredValue();
 	return false;
 }
 
-int CleanModeNav::setNextState() {
+bool CleanModeNav::setNextState() {
 	if(state_i_ == st_null || state_i_ == st_clean)
 	{
-		g_old_dir = g_new_dir;
-		plan_path_ = generatePath(nav_map, nav_map.getCurrCell(),g_old_dir);
-		g_new_dir = (MapDirection)plan_path_.front().TH;
+		old_dir_ = new_dir_;
+		plan_path_ = generatePath(nav_map, nav_map.getCurrCell(),old_dir_);
+		new_dir_ = (MapDirection)plan_path_.front().TH;
 		plan_path_.pop_front();;
 
 
@@ -151,13 +144,13 @@ int CleanModeNav::setNextState() {
 		displayPath(plan_path_);
 		st_init(st_clean);
 	}
-	return state_i_;
+	return state_i_ != st_null;
 }
 
-void CleanModeNav::setNextMoveType() {
+bool CleanModeNav::setNextMoveType() {
 	move_type_i_ = mt_linear;
 	auto start = nav_map.getCurrCell();
-	auto dir = g_old_dir;
+	auto dir = old_dir_;
 	if (state_i_ == st_clean) {
 		auto delta_y = plan_path_.back().Y - start.Y;
 //		ROS_INFO( "%s,%d: path size(%u), dir(%d), g_check_path_in_advance(%d), bumper(%d), cliff(%d), lidar(%d), delta_y(%d)",
@@ -172,7 +165,7 @@ void CleanModeNav::setNextMoveType() {
 		}
 		else {
 			delta_y = plan_path_.back().Y - start.Y;
-			bool is_left = ((GridMap::isPositiveDirection(g_old_dir) && GridMap::isXDirection(g_old_dir)) ^ delta_y > 0);
+			bool is_left = ((GridMap::isPositiveDirection(old_dir_) && GridMap::isXDirection(old_dir_)) ^ delta_y > 0);
 //		ROS_INFO("\033[31m""%s,%d: target:, 1_left_2_right(%d)""\033[0m", __FUNCTION__, __LINE__, get());
 			move_type_i_ = is_left ? mt_follow_wall_left : mt_follow_wall_right;
 		}
@@ -180,9 +173,10 @@ void CleanModeNav::setNextMoveType() {
 	mt_init(move_type_i_);
 	PP_INFO()
 	ROS_INFO("move_type_i_ = %d", move_type_i_);
+	return move_type_i_ != mt_null;
 }
 
-void CleanModeNav::setNextAction() {
+bool CleanModeNav::setNextAction() {
 	if(action_i_ == ac_open_gyro)
 	{
 		if (charger.isOnStub())
@@ -196,8 +190,12 @@ void CleanModeNav::setNextAction() {
 	else if(action_i_ == ac_align)
 		action_i_ = ac_open_slam;
 	else {
-		if (move_type_i_ == mt_linear) {
-			if (!ac_is_movement())
+		if(move_type_i_ == mt_null)
+		{
+			action_i_ = ac_null;
+		}
+		else if (move_type_i_ == mt_linear) {
+			if (action_i_ == ac_null)
 			{
 				action_i_ = ac_turn;
 			}
@@ -217,6 +215,9 @@ void CleanModeNav::setNextAction() {
 			}
 		}
 		else if (mt_is_follow_wall()) {
+
+			PP_INFO();
+			NAV_INFO();
 			if (action_i_ == ac_null)
 				action_i_ = ac_turn;
 
@@ -230,23 +231,38 @@ void CleanModeNav::setNextAction() {
 					action_i_ = ac_null;
 			}
 			else if (ac_is_follow_wall()) {
+
+				PP_INFO();
+				NAV_INFO();
 				if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip)
 					action_i_ = ac_back;
 				else if (ev.lidar_triggered || ev.obs_triggered)
 					action_i_ = ac_turn;
 				else{
+
+					PP_INFO();
+					NAV_INFO();
 					action_i_ = ac_null;//reach
 				}
 			}
 			else if (action_i_ == ac_back) {
+
+				PP_INFO();
+				NAV_INFO();
 				action_i_ = ac_turn;
 			}
 		}
 
 		if (ev.fatal_quit)
+		{
+			PP_INFO(); ROS_ERROR("ev.fatal_quit");
 			action_i_ = ac_null;
+		}
 	}
 	genMoveAction();
+	PP_INFO();
+	NAV_INFO();
+	return action_i_ != ac_null;
 }
 
 void CleanModeNav::register_events()
@@ -256,7 +272,7 @@ void CleanModeNav::register_events()
 	event_manager_set_enable(true);
 }
 
-bool CleanModeNav::mark() {
+bool CleanModeNav::map_mark() {
 	displayPath(passed_path_);
 	if (move_type_i_ == mt_linear) {
 		PP_INFO()
@@ -330,7 +346,8 @@ Path_t CleanModeNav::generatePath(GridMap &map, const Cell_t &curr_cell, const M
 	TargetList reachable_targets = getReachableTargets(map, curr_cell, filtered_targets);
 	ROS_INFO("%s %d: After generating COST_MAP, Get %lu reachable targets.", __FUNCTION__, __LINE__, reachable_targets.size());
 	if (reachable_targets.size() != 0)
-		displayTargets(reachable_targets);
+//		displayTargets(reachable_targets);
+		displayPath(reachable_targets);
 	else
 		// Now path is empty.
 		return path;

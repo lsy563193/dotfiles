@@ -88,11 +88,11 @@ public:
 
 	void setPosition(double x, double y);
 
-	Point32_t getRelative(Point32_t point, int16_t dy, int16_t dx, bool using_point_pos);
+	static Point32_t getRelative(Point32_t point, int16_t dy, int16_t dx, bool using_point_pos);
 
 	void robotToPoint(Point32_t point, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
 
-	void robotToCell(Point32_t point, int16_t offset_lat, int16_t offset_long, int16_t &x, int16_t &y);
+	static void robotToCell(Point32_t point, int16_t offset_lat, int16_t offset_long, int16_t &x, int16_t &y);
 
 	void clearBlocks(void);
 

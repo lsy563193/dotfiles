@@ -583,7 +583,7 @@ uint8_t GridMap::setObs()
 		block_count++;
 	}
 	temp_obs_cells.clear();
-	ROS_INFO("%s,%d: Current(%d, %d), mark \033[32m%s\033[0m",__FUNCTION__, __LINE__, getXCell(), getYCell(), msg.c_str());
+	ROS_INFO("%s,%d: Current(%d, %d), map_mark \033[32m%s\033[0m",__FUNCTION__, __LINE__, getXCell(), getYCell(), msg.c_str());
 	return block_count;
 }
 
@@ -600,7 +600,7 @@ uint8_t GridMap::setBumper()
 		block_count++;
 	}
 	temp_bumper_cells.clear();
-	ROS_INFO("%s,%d: Current(%d, %d), mark \033[32m%s\033[0m",__FUNCTION__, __LINE__, getXCell(), getYCell(), msg.c_str());
+	ROS_INFO("%s,%d: Current(%d, %d), map_mark \033[32m%s\033[0m",__FUNCTION__, __LINE__, getXCell(), getYCell(), msg.c_str());
 	return block_count;
 }
 
@@ -617,7 +617,7 @@ uint8_t GridMap::setTilt()
 		block_count++;
 	}
 	temp_tilt_cells.clear();
-	ROS_INFO("%s,%d: Current(%d, %d), \033[32m mark %s\033[0m",__FUNCTION__, __LINE__, getXCell(), getYCell(), msg.c_str());
+	ROS_INFO("%s,%d: Current(%d, %d), \033[32m map_mark %s\033[0m",__FUNCTION__, __LINE__, getXCell(), getYCell(), msg.c_str());
 	return block_count;
 }
 
@@ -634,7 +634,7 @@ uint8_t GridMap::setSlip()
 		block_count++;
 	}
 	temp_slip_cells.clear();
-	ROS_INFO("%s,%d: Current(%d, %d), \033[32m mark %s\033[0m",__FUNCTION__, __LINE__, getXCell(), getYCell(), msg.c_str());
+	ROS_INFO("%s,%d: Current(%d, %d), \033[32m map_mark %s\033[0m",__FUNCTION__, __LINE__, getXCell(), getYCell(), msg.c_str());
 	return block_count;
 }
 
@@ -651,7 +651,7 @@ uint8_t GridMap::setCliff()
 		block_count++;
 	}
 	temp_cliff_cells.clear();
-	ROS_INFO("%s,%d: Current(%d, %d), \033[32m mark %s\033[0m",__FUNCTION__, __LINE__, getXCell(), getYCell(), msg.c_str());
+	ROS_INFO("%s,%d: Current(%d, %d), \033[32m map_mark %s\033[0m",__FUNCTION__, __LINE__, getXCell(), getYCell(), msg.c_str());
 	return block_count;
 }
 
@@ -668,7 +668,7 @@ uint8_t GridMap::setRcon()
 		block_count++;
 	}
 	temp_rcon_cells.clear();
-	ROS_INFO("%s,%d: Current(%d, %d), \033[32m mark %s\033[0m",__FUNCTION__, __LINE__, getXCell(), getYCell(), msg.c_str());
+	ROS_INFO("%s,%d: Current(%d, %d), \033[32m map_mark %s\033[0m",__FUNCTION__, __LINE__, getXCell(), getYCell(), msg.c_str());
 	return block_count;
 }
 
@@ -721,7 +721,7 @@ uint8_t GridMap::setFollowWall()
 				block_count++;
 			}
 		}
-		ROS_INFO("%s,%d: Current(%d, %d), \033[32m mark CLEAN_MAP %s\033[0m",__FUNCTION__, __LINE__, getXCell(), getYCell(), msg.c_str());
+		ROS_INFO("%s,%d: Current(%d, %d), \033[32m map_mark CLEAN_MAP %s\033[0m",__FUNCTION__, __LINE__, getXCell(), getYCell(), msg.c_str());
 	}
 }
 
@@ -918,7 +918,7 @@ uint8_t GridMap::saveRcon()
 	auto rcon_trig = ev.rcon_triggered/*rcon_get_trig()*/;
 	if(! rcon_trig)
 		return 0;
-	if( g_from_charger && g_in_charge_signal_range && cs.is_going_home())//while in cs.is_going_home() mode_ or from_station dont mark rcon signal
+	if( g_from_charger && g_in_charge_signal_range && cs.is_going_home())//while in cs.is_going_home() mode_ or from_station dont map_mark rcon signal
 	{
 		ev.rcon_triggered = 0;
 		return 0;
@@ -999,7 +999,7 @@ uint8_t GridMap::saveRcon()
 	for(auto& d_cell : d_cells)
 	{
 		auto point = get_curr_point();
-		point.TH = g_new_dir;
+		point.TH = new_dir_;
 		robot_to_cell(point, d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
 		//robot_to_point(robot::instance()->getPoseAngle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x2, &y2);
 		//ROS_WARN("%s %d: d_cell(%d, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
@@ -1012,25 +1012,6 @@ uint8_t GridMap::saveRcon()
 #endif
 }
 
-uint8_t GridMap::saveFollowWall()
-{
-	auto dy = mt.is_left() ? 2 : -2;
-	int16_t x, y;
-	//int32_t	x2, y2;
-	std::string msg = "cell:";
-	robotToCell(getCurrPoint(), dy * CELL_SIZE, 0, x, y);
-	//robot_to_point(robot::instance()->getPoseAngle(), dy * CELL_SIZE, 0, &x2, &y2);
-	//ROS_WARN("%s %d: d_cell(0, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
-	//			, __FUNCTION__, __LINE__, dy, robot::instance()->getPoseAngle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
-	bool should_save_for_MAP = !(cm_is_navigation() && mt.is_follow_wall() && Movement::getMoveDistance() < 0.1);
-	if (should_save_for_MAP)
-		temp_fw_cells.push_back({x, y});
-	temp_WFMAP_follow_wall_cells.push_back({x, y});
-	msg += "[0," + std::to_string(dy) + "](" + std::to_string(x) + "," + std::to_string(y) + ")";
-	//ROS_INFO("%s,%d: Current(%d, %d), save \033[32m%s\033[0m",__FUNCTION__, __LINE__, get_x_cell(), get_y_cell(), msg.c_str());
-
-	return 1;
-}
 
 uint8_t GridMap::saveBlocks()
 {

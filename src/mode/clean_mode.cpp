@@ -22,7 +22,7 @@ ACleanMode::ACleanMode() {
 //	if(sp_state_ == nullptr)
 //	{
 //		setNextState();
-//		setNextMoveType(nav_map.getCurrCell(),g_old_dir);
+//		setNextMoveType(nav_map.getCurrCell(),old_dir_);
 //	}
 //
 //	if(sp_state_->isFinish(this,sp_move_type_.get(),sp_action_.get() ,action_i_))
@@ -85,7 +85,7 @@ void ACleanMode::genMoveAction() {
 	else if(action_i_ == ac_open_slam)
 		sp_action_.reset(new ActionOpenSlam);
 	else if (action_i_ == ac_forward)
-		sp_action_.reset(new MovementForward(GridMap::cellToPoint(plan_path_.back()), plan_path_));
+		sp_action_.reset(new MovementForward(GridMap::cellToPoint(plan_path_.back()), plan_path_,new_dir_));
 	else if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
 		sp_action_.reset(new MovementFollowWall(GridMap::getCurrPoint(), GridMap::cellToPoint(plan_path_.back()),action_i_ == ac_follow_wall_left));
 	else if (action_i_ == ac_back)
@@ -202,7 +202,7 @@ void ACleanMode::mt_init(int) {
 	robot::instance()->obsAdjustCount(20);
 }
 
-bool ACleanMode::st_is_null() {
+bool ACleanMode::st_is_finish() {
 	return state_i_ == st_null;
 }
 
@@ -239,12 +239,31 @@ bool ACleanMode::ac_is_back() {
 	return action_i_ == ac_back;
 }
 
-bool ACleanMode::ac_is_movement() {
-	return action_i_ == ac_forward ||
+bool ACleanMode::action_is_movement() {
+
+	return (action_i_ == ac_forward ||
 				 action_i_ == ac_follow_wall_left ||
 				 action_i_ == ac_follow_wall_right ||
 				 action_i_ == ac_turn ||
-				 action_i_ == ac_back;
+				 action_i_ == ac_back);
+}
+
+uint8_t ACleanMode::saveFollowWall(bool is_left)
+{
+	auto dy = is_left ? 2 : -2;
+	int16_t x, y;
+	//int32_t	x2, y2;
+	std::string msg = "cell:";
+	GridMap::robotToCell(GridMap::getCurrPoint(), dy * CELL_SIZE, 0, x, y);
+	//robot_to_point(robot::instance()->getPoseAngle(), dy * CELL_SIZE, 0, &x2, &y2);
+	//ROS_WARN("%s %d: d_cell(0, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
+	//			, __FUNCTION__, __LINE__, dy, robot::instance()->getPoseAngle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
+//	bool should_save_for_MAP = !(cm_is_navigation() && mt.is_follow_wall() && Movement::getMoveDistance() < 0.1);
+	temp_fw_cells.push_back({x, y});
+	msg += "[0," + std::to_string(dy) + "](" + std::to_string(x) + "," + std::to_string(y) + ")";
+	//ROS_INFO("%s,%d: Current(%d, %d), save \033[32m%s\033[0m",__FUNCTION__, __LINE__, get_x_cell(), get_y_cell(), msg.c_str());
+
+	return 1;
 }
 
 //bool ACleanMode::isFinish() {
