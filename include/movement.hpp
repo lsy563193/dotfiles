@@ -12,11 +12,13 @@
 
 
 
+class ACleanMode;
 class IMovement: public IAction,public IGovernor{
 public:
 	virtual void adjustSpeed(int32_t&, int32_t&)=0;
 	virtual void run();
 	virtual bool isFinish()=0;
+	static ACleanMode* sp_cm_;
 
 protected:
 	static Point32_t s_target_p;

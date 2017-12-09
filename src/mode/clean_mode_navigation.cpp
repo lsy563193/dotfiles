@@ -10,6 +10,7 @@
 
 CleanModeNav::CleanModeNav()
 {
+	IMovement::sp_cm_ = this;
 	if (g_resume_cleaning || cs_is_paused())
 	{
 		speaker.play(SPEAKER_CLEANING_CONTINUE);

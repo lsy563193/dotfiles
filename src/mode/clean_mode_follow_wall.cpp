@@ -10,6 +10,7 @@ extern std::deque <Cell_t> path_points;
 
 CleanModeFollowWall::CleanModeFollowWall()
 {
+	IMovement::sp_cm_ = this;
 	diff_timer_ = WALL_FOLLOW_TIME;
 	speaker.play(SPEAKER_CLEANING_WALL_FOLLOW);
 }

@@ -177,6 +177,7 @@ public:
 
 	virtual bool map_mark() = 0;
 
+	virtual bool MovementFollowWallisFinish();
 Cell_t updatePath();
 
 protected:

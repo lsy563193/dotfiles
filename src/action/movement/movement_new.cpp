@@ -5,7 +5,7 @@
 //#include "pp.h"
 #include <arch.hpp>
 #include "wheel.hpp"
-
+ACleanMode *IMovement::sp_cm_ = nullptr;
 Point32_t IMovement::s_target_p = {0,0};
 Point32_t IMovement::s_origin_p = {0,0};
 float IMovement::s_pos_x = 0;

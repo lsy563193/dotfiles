@@ -409,6 +409,10 @@ uint8_t ACleanMode::saveFollowWall(bool is_left)
 	return 1;
 }
 
+bool ACleanMode::MovementFollowWallisFinish() {
+	return false;
+}
+
 //bool ACleanMode::isFinish() {
 //	return false;
 //}
