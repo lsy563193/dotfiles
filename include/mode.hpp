@@ -178,7 +178,7 @@ public:
 	virtual bool map_mark() = 0;
 
 	virtual bool MovementFollowWallisFinish();
-Cell_t updatePath();
+	Cell_t updatePath();
 
 protected:
 
@@ -200,6 +200,7 @@ protected:
 	std::vector<Cell_t> temp_fw_cells;
 	static Path_t passed_path_;
 	static Path_t plan_path_;
+	Point32_t s_origin_p;
 	static Cell_t last_;
 	uint32_t start_timer_;
 	uint32_t diff_timer_;
@@ -250,8 +251,8 @@ class CleanModeNav:public ACleanMode
 public:
 	CleanModeNav();
 	~CleanModeNav() override ;
-	bool setNextMoveType();
-	bool map_mark();
+	bool setNextMoveType() override ;
+	bool map_mark() override ;
 //	bool isFinish();
 	bool isExit();
 
@@ -259,7 +260,9 @@ public:
 	void cliff_all(bool state_now, bool state_last) override ;
 
 private:
-
+	bool MovementFollowWallisFinish() override ;
+	bool isNewLineReach();
+	bool isOverOriginLine();
 
 // For path planning.
 

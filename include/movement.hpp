@@ -105,7 +105,7 @@ private:
 class MovementFollowWall:public IMovement {
 
 public:
-	MovementFollowWall(Point32_t start_point, Point32_t target,bool is_left);
+	MovementFollowWall(bool is_left);
 
 	~MovementFollowWall() { /*set_wheel.speed(0,0);*/ };
 

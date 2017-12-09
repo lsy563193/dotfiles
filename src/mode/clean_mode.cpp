@@ -230,7 +230,7 @@ void ACleanMode::genMoveAction() {
 	else if (action_i_ == ac_forward)
 		sp_action_.reset(new MovementForward(GridMap::cellToPoint(plan_path_.back()), plan_path_,new_dir_));
 	else if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
-		sp_action_.reset(new MovementFollowWall(GridMap::getCurrPoint(), GridMap::cellToPoint(plan_path_.back()),action_i_ == ac_follow_wall_left));
+		sp_action_.reset(new MovementFollowWall(action_i_ == ac_follow_wall_left));
 	else if (action_i_ == ac_back)
 		sp_action_.reset(new MovementBack());
 	else if (action_i_ == ac_turn)
@@ -324,13 +324,14 @@ void ACleanMode::mt_init(int) {
 					g_turn_angle = ranged_angle(course_to_dest(cur.X, cur.Y, tar.X, tar.Y) -
 																			robot::instance()->getPoseAngle());
 		turn_target_angle_ = ranged_angle(robot::instance()->getPoseAngle() + g_turn_angle);
+		s_origin_p = GridMap::getCurrPoint();
 		ROS_INFO("g_turn_angle(%d)cur(%d,%d,%d),tar(%d,%d,%d)",g_turn_angle,cur.X,cur.Y,cur.TH, tar.X,tar.Y,tar.TH);
 	}
 	else if (move_type_i_ == mt_linear) {
 		turn_target_angle_ = plan_path_.front().TH;
 		ROS_INFO("%s,%d: mt_is_linear,turn(%d)", __FUNCTION__, __LINE__,turn_target_angle_);
 	}
-	else if (mt_is_go_charger()) {
+	else if (move_type_i_ == mt_go_charger) {
 		ROS_INFO("%s,%d: mt_is_go_charger", __FUNCTION__, __LINE__);
 		turn_target_angle_ = ranged_angle(robot::instance()->getPoseAngle());
 	}

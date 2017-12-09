@@ -461,3 +461,71 @@ bool CleanModeNav::setNextMoveType() {
 	}
 	return ACleanMode::setNextMoveType();
 }
+
+bool CleanModeNav::MovementFollowWallisFinish() {
+	return isNewLineReach();
+}
+
+bool CleanModeNav::isOverOriginLine()
+{
+	auto s_curr_p = nav_map.getCurrPoint();
+	auto curr = nav_map.pointToCell(s_curr_p);
+	if ((plan_path_.back().Y > s_origin_p.Y && (s_origin_p.Y - s_curr_p.Y) > 120)
+		|| (plan_path_.back().Y < s_origin_p.Y && (s_curr_p.Y - s_origin_p.Y) > 120))
+	{
+		auto target_angle = (plan_path_.back().Y > s_origin_p.Y) ? -900 : 900;
+		//ROS_INFO("%s %d: target_angel(%d),curr(%d)diff(%d)", __FUNCTION__, __LINE__, target_angel, robot::instance()->getPoseAngle(), target_angel - robot::instance()->getPoseAngle());
+		if (std::abs(ranged_angle(robot::instance()->getPoseAngle() - target_angle)) < 50) // If robot is directly heading to the opposite side of target line, stop.
+		{
+			ROS_WARN("%s %d: Opposite to target angle. s_curr_p(%d, %d), plan_path_.back()(%d, %d), gyro(%d), target_angle(%d)",
+					 __FUNCTION__, __LINE__, s_curr_p.X, s_curr_p.Y, plan_path_.back().X, plan_path_.back().Y, robot::instance()->getPoseAngle(), target_angle);
+			return true;
+		}
+		else if (nav_map.isBlockCleaned(curr.X, curr.Y)) // If robot covers a big block, stop.
+		{
+			ROS_WARN("%s %d: Back to cleaned place, current(%d, %d), s_curr_p(%d, %d), plan_path_.back()(%d, %d).",
+					 __FUNCTION__, __LINE__, curr.X, curr.Y, s_curr_p.X, s_curr_p.Y, plan_path_.back().X, plan_path_.back().Y);
+			return true;
+		}
+		else{
+			// Dynamic adjust the origin line and target line, so it can smoothly follow the wall to clean.
+			plan_path_.back().Y += s_curr_p.Y - s_origin_p.Y;
+			s_origin_p.Y = s_curr_p.Y;
+		}
+	}
+
+	return false;
+}
+
+bool CleanModeNav::isNewLineReach()
+{
+	auto s_curr_p = nav_map.getCurrPoint();
+	auto ret = false;
+	auto is_pos_dir = plan_path_.back().Y - s_origin_p.Y > 0;
+	// The limit is CELL_COUNT_MUL / 8 * 3 further than target line center.
+	auto target_limit = plan_path_.back().Y + CELL_COUNT_MUL / 8 * 3 * is_pos_dir;
+//	ROS_WARN("~~~~~~~~~~~~~~~~~%s %d: Reach the target limit, s_origin_p.Y(%d), target.Y(%d),curr_y(%d)",
+//					 __FUNCTION__, __LINE__, nav_map.countToCell(s_origin_p.Y), nav_map.countToCell(plan_path_.back().Y),
+//					 nav_map.countToCell(s_curr_p.Y));
+	if (is_pos_dir ^ s_curr_p.Y < target_limit) // Robot has reached the target line limit.
+	{
+		ROS_WARN("%s %d: Reach the target limit, s_origin_p.Y(%d), target.Y(%d),curr_y(%d)",
+				 __FUNCTION__, __LINE__, nav_map.countToCell(s_origin_p.Y), nav_map.countToCell(plan_path_.back().Y),
+				 nav_map.countToCell(s_curr_p.Y));
+		ret = true;
+	}
+	else if (is_pos_dir ^ s_curr_p.Y < plan_path_.back().Y)
+	{
+		// Robot has reached the target line center but still not reach target line limit.
+		// Check if the wall side has blocks on the costmap.
+		auto dx = (is_pos_dir ^ move_type_i_ == mt_follow_wall_left) ? +2 : -2;
+		if (nav_map.isBlocksAtY(nav_map.countToCell(s_curr_p.X) + dx, nav_map.countToCell(s_curr_p.Y))) {
+			ROS_WARN("%s %d: Already has block at the wall side, s_origin_p.Y(%d), target.Y(%d),curr_y(%d)",
+					 __FUNCTION__, __LINE__, nav_map.countToCell(s_origin_p.Y), nav_map.countToCell(plan_path_.back().Y),
+					 nav_map.countToCell(s_curr_p.Y));
+			ret = true;
+		}
+	}
+
+	return ret;
+}
