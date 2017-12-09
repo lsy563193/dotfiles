@@ -216,8 +216,6 @@ bool CleanModeNav::setNextAction() {
 		}
 		else if (mt_is_follow_wall()) {
 
-			PP_INFO();
-			NAV_INFO();
 			if (action_i_ == ac_null)
 				action_i_ = ac_turn;
 
@@ -232,23 +230,17 @@ bool CleanModeNav::setNextAction() {
 			}
 			else if (ac_is_follow_wall()) {
 
-				PP_INFO();
-				NAV_INFO();
 				if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip)
 					action_i_ = ac_back;
 				else if (ev.lidar_triggered || ev.obs_triggered)
 					action_i_ = ac_turn;
 				else{
 
-					PP_INFO();
-					NAV_INFO();
 					action_i_ = ac_null;//reach
 				}
 			}
 			else if (action_i_ == ac_back) {
 
-				PP_INFO();
-				NAV_INFO();
 				action_i_ = ac_turn;
 			}
 		}
@@ -260,7 +252,6 @@ bool CleanModeNav::setNextAction() {
 		}
 	}
 	genMoveAction();
-	PP_INFO();
 	NAV_INFO();
 	return action_i_ != ac_null;
 }

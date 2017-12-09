@@ -228,7 +228,7 @@ bool ACleanMode::ac_is_forward() {
 }
 
 bool ACleanMode::ac_is_follow_wall() {
-	return action_i_ == ac_follow_wall_left || ac_follow_wall_right;
+	return action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right;
 }
 
 bool ACleanMode::ac_is_turn() {
