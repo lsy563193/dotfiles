@@ -365,7 +365,7 @@ public:
 	~CleanModeFollowWall() override ;
 
 	bool setNextMoveType() override ;
-	bool map_mark();
+	bool map_mark() override;
 
 	Path_t generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir);
 
@@ -379,4 +379,20 @@ private:
 
 };
 
+class CleanModeSpot:public ACleanMode
+{
+public:
+	CleanModeSpot();
+	~CleanModeSpot() override ;
+
+	bool setNextMoveType() override ;
+	bool map_mark() override;
+	Path_t generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir) override;
+
+private:
+protected:
+//	Path_t home_point_{};
+private:
+
+};
 #endif //PP_MODE_H_H

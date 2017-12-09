@@ -41,6 +41,19 @@ bool ModeIdle::isExit()
 		return true;
 	}
 
+	if(ev.remote_spot)
+	{
+		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+		setNextMode(cm_spot);
+		return true;
+	}
+
+	if(ev.remote_home)
+	{
+		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+		setNextMode(cm_exploration);
+		return true;
+	}
 	if (ev.key_long_pressed)
 	{
 		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);

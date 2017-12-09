@@ -3,7 +3,7 @@
 //
 #include <arch.hpp>
 
-extern MapDirection g_old_dir;
+//extern MapDirection g_old_dir;
 //int State::action_i_= st_null;
 
 //bool State::isFinish(ACleanMode* p_mode, IMoveType* p_move_type,IAction* p_action, int& action_i) {

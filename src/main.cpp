@@ -54,8 +54,8 @@ Mode* getNextMode(int next_mode_i_)
 			return new CleanModeNav();
 		case Mode::cm_wall_follow:
 			return new CleanModeFollowWall();
-//		case Mode::cm_spot:
-//			return new CleanModeSpot();
+		case Mode::cm_spot:
+			return new CleanModeSpot();
 //		case Mode::cm_exploration:
 //			return new CleanModeExploration();
 		default:
