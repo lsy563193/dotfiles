@@ -44,70 +44,71 @@ bool ACleanMode::setNextAction() {
 			action_i_ = ac_back_form_charger;
 		else
 			action_i_ = ac_open_lidar;
-	}else if(action_i_ == ac_back_form_charger)
+	}
+	else if(action_i_ == ac_back_form_charger)
 		action_i_ = ac_open_lidar;
 	else if(action_i_ == ac_open_lidar)
 		action_i_ = ac_align;
 	else if(action_i_ == ac_align)
 		action_i_ = ac_open_slam;
-	else {
+	else
+	{
 		if(move_type_i_ == mt_null)
-		{
 			action_i_ = ac_null;
-		}
-		else if (move_type_i_ == mt_linear) {
+		else if (mt_is_linear())
+		{
+			/*
+			 * For linear move type, it starts for turning, then linear movement, and back if necessary.
+			 * It should apply to all the linear move type.
+			 */
 			if (action_i_ == ac_null)
-			{
 				action_i_ = ac_turn;
-			}
-
-			else if (action_i_ == ac_turn) {
+			else if (ac_is_turn())
 				action_i_ = ac_forward;
-			}
-
-			else if (action_i_ == ac_forward) {
+			else if (ac_is_forward())
+			{
 				if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered)
 					action_i_ = ac_back;
 				else
 					action_i_ = ac_null;
 			}
-			else if (action_i_ == ac_back) {
+			else if (ac_is_back())
 				action_i_ = ac_null;
-			}
 		}
-		else if (mt_is_follow_wall()) {
-
+		else if (mt_is_follow_wall())
+		{
+			/*
+			 * For follow wall move type, it starts for turning, then follow wall movement, and back if necessary.
+			 * It should apply to all the follow wall move type.
+			 */
 			if (action_i_ == ac_null)
 				action_i_ = ac_turn;
-
-			else if (action_i_ == ac_turn) {
+			else if (ac_is_turn())
 				action_i_ = (move_type_i_ == mt_follow_wall_left) ? ac_follow_wall_left : ac_follow_wall_right;
-			}
-			else if (action_i_ == ac_forward) {
+			else if (ac_is_forward())
+			{
 				if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered)
 					action_i_ = ac_back;
 				else
-					action_i_ = ac_null;
+					action_i_ = (move_type_i_ == mt_follow_wall_left) ? ac_follow_wall_left : ac_follow_wall_right;
 			}
-			else if (ac_is_follow_wall()) {
-
+			else if (ac_is_follow_wall())
+			{
 				if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip)
 					action_i_ = ac_back;
 				else if (ev.lidar_triggered || ev.obs_triggered)
 					action_i_ = ac_turn;
-				else{
-
+				else
 					action_i_ = ac_null;//reach
-				}
 			}
-			else if (action_i_ == ac_back) {
+			else if (action_i_ == ac_back)
 				action_i_ = ac_turn;
-			}
 		}
 
 		if (ev.fatal_quit)
 		{
-			PP_INFO(); ROS_ERROR("ev.fatal_quit");
+			PP_INFO();
+			ROS_ERROR("ev.fatal_quit");
 			action_i_ = ac_null;
 		}
 	}
@@ -151,8 +152,7 @@ bool ACleanMode::setNextState() {
 		old_dir_ = new_dir_;
 		plan_path_ = generatePath(nav_map, nav_map.getCurrCell(),old_dir_);
 		new_dir_ = (MapDirection)plan_path_.front().TH;
-		plan_path_.pop_front();;
-
+		plan_path_.pop_front();
 
 		if(state_i_ == st_null)
 		{
@@ -162,11 +162,11 @@ bool ACleanMode::setNextState() {
 			target.TH = g_homes[0].TH;
 			plan_path_.push_back(target);
 			ROS_INFO("g_homes[0](%d,%d,%d)",g_homes[0].X,g_homes[0].Y,g_homes[0].TH);
+			state_i_ = st_clean;
 		}
-		state_i_ = st_clean;
 		displayPath(plan_path_);
-		st_init(st_clean);
 	}
+	st_init(state_i_);
 	return state_i_ != st_null;
 }
 
@@ -368,7 +368,7 @@ bool ACleanMode::mt_is_go_charger() {
 }
 
 bool ACleanMode::ac_is_forward() {
-	return action_i_ = ac_forward;
+	return action_i_ == ac_forward;
 }
 
 bool ACleanMode::ac_is_follow_wall() {

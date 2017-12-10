@@ -88,13 +88,13 @@ void *core_move_thread(void *)
 
 	while(ros::ok())
 	{
-		ROS_INFO("%s %d: %d", __FUNCTION__, __LINE__, p_mode);
+		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
 		p_mode->run();
 		auto next_mode = p_mode->getNextMode();
 		p_mode.reset();
-		ROS_INFO("%s %d: %d", __FUNCTION__, __LINE__, p_mode);
+		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
 		p_mode.reset(getNextMode(next_mode));
-		ROS_INFO("%s %d: %d", __FUNCTION__, __LINE__, p_mode);
+		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
 	}
 
 #else
