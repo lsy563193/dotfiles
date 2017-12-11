@@ -16,7 +16,7 @@ public:
 
 	virtual bool isFinish()=0;
 
-	virtual bool isExit(){};
+	virtual bool isExit(){return false;};
 
 	virtual void run()=0;
 

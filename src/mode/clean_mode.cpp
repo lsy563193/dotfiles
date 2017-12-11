@@ -136,7 +136,6 @@ bool ACleanMode::isFinish() {
 		if (!sp_action_->isFinish())
 			return false;
 
-		PP_INFO();NAV_INFO();
 		if(!ac_is_back())
 			nav_map.saveBlocks();
 

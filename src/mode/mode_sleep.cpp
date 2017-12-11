@@ -58,7 +58,7 @@ bool ModeSleep::isExit()
 
 	if (ev.rcon_triggered)
 	{
-//		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
 //		serial.wakeUp();
 //		setNextMode(md_go_to_charger);
 //		return true;
