@@ -119,7 +119,7 @@ void MovementFollowWall::setTarget()
 
 void MovementFollowWall::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
-	ROS_DEBUG("%s %d: MovementFollowWall.", __FUNCTION__, __LINE__);
+//	ROS_INFO("%s %d: MovementFollowWall.", __FUNCTION__, __LINE__);
 	wheel.setDirectionForward();
 //	uint32_t same_dist = (wheel.get_right_step() / 100) * 11 ;
 	uint32_t rcon_status = 0;
@@ -129,6 +129,7 @@ void MovementFollowWall::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	auto &diff_dist = (is_left_) ? _r_step : _l_step;
 	auto &same_speed = (is_left_) ? l_speed : r_speed;
 	auto &diff_speed = (is_left_) ? r_speed : l_speed;
+
 	wall_buffer[2]=wall_buffer[1];
 	wall_buffer[1]=wall_buffer[0];
 	wall_buffer[0]=(is_left_) ? wall.getLeft() : wall.getRight();
@@ -263,7 +264,7 @@ void MovementFollowWall::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		{
 			same_speed = wheel_speed_base + proportion / 11 + delta/2;//16
 			diff_speed = wheel_speed_base - proportion / 11 - delta/2; //11
-//			ROS_INFO("Wf_4.1, same_speed = %d, diff_speed = %d, g_robot_to_wall_distance = %d", same_speed, diff_speed, g_robot_to_wall_distance);
+			ROS_INFO("Wf_4.1, same_speed = %d, diff_speed = %d, /*g_robot_to_wall_distance = %d*/", same_speed, diff_speed/*, g_robot_to_wall_distance*/);
 			if (wheel_speed_base < 26)
 			{
 				reset_sp_turn_count();
@@ -380,6 +381,7 @@ void MovementFollowWall::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 			same_speed = 0.210 * diff_speed;
 		}
 	}
+//	ROS_INFO("%s,%d, speed(%d,%d)", __FUNCTION__, __LINE__, diff_speed,same_speed);
 }
 
 bool MovementFollowWall::sp_turn_over(const Cell_t &curr) {
@@ -394,8 +396,7 @@ bool MovementFollowWall::sp_turn_over(const Cell_t &curr) {
 	}
 
 bool MovementFollowWall::isFinish() {
-	return sp_cm_->MovementFollowWallisFinish();
+	return sp_cm_->MovementFollowWallisFinish() || shouldMoveBack() || shouldTurn();
 //	return isNewLineReach() || /*isClosure(1) ||*/ shouldMoveBack() || shouldTurn()
 //					|| isBlockCleared() || isOverOriginLine();
 }
-

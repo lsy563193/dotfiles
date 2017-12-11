@@ -2,6 +2,7 @@
 // Created by lsy563193 on 17-12-3.
 //
 
+#include <mathematics.h>
 #include "pp.h"
 #include "arch.hpp"
 
@@ -97,12 +98,19 @@ bool ACleanMode::setNextAction() {
 				if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip)
 					action_i_ = ac_back;
 				else if (ev.lidar_triggered || ev.obs_triggered)
+				{
+					turn_target_angle_ = GridMap::getCurrPoint().TH + g_turn_angle;
 					action_i_ = ac_turn;
+				}
 				else
 					action_i_ = ac_null;//reach
 			}
 			else if (action_i_ == ac_back)
+			{
+				turn_target_angle_ = GridMap::getCurrPoint().TH + g_turn_angle;
+				PP_INFO();
 				action_i_ = ac_turn;
+			}
 		}
 
 		if (ev.fatal_quit)
@@ -128,6 +136,7 @@ bool ACleanMode::isFinish() {
 		if (!sp_action_->isFinish())
 			return false;
 
+		PP_INFO();NAV_INFO();
 		if(!ac_is_back())
 			nav_map.saveBlocks();
 

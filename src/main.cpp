@@ -84,7 +84,7 @@ void *core_move_thread(void *)
 	if (charger.isOnStub() || charger.isDirected())
 		p_mode.reset(new ModeCharge());
 	else
-		p_mode.reset(new ModeIdle());
+		p_mode.reset(new CleanModeFollowWall());
 
 	while(ros::ok())
 	{

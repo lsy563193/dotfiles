@@ -81,6 +81,7 @@ bool CleanModeNav::map_mark() {
 	passed_path_.clear();
 	return false;
 }
+
 bool CleanModeNav::isExit()
 {
 	if (ev.key_clean_pressed || ev.cliff_all_triggered)
