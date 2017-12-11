@@ -59,6 +59,7 @@ protected:
 //		ac_movement_follow_wall_left,
 //		ac_movement_follow_wall_right,
 		ac_movement_go_charger,
+		ac_idle,
 		ac_sleep,
 		ac_charge,
 		ac_turn_for_charger,
@@ -184,6 +185,7 @@ public:
 protected:
 
 	uint8_t saveFollowWall(bool is_left);
+	bool isInitState();
 
 	bool st_is_finish();
 	bool mt_is_turn();
@@ -243,7 +245,6 @@ protected:
 		mv_go_charger,
 	};
 private:
-		bool isInitState();
 	void register_events(void);
 
 };
@@ -257,9 +258,10 @@ public:
 	uint8_t setFollowWall();
 	bool setNextMoveType() override ;
 	bool map_mark() override ;
-//	bool isFinish();
+	bool isFinish() override ;
 	bool isExit();
 
+	bool setNextAction();
 	void key_clean(bool state_now, bool state_last) override ;
 	void cliff_all(bool state_now, bool state_last) override ;
 
@@ -267,6 +269,11 @@ private:
 	bool MovementFollowWallisFinish() override ;
 	bool isNewLineReach();
 	bool isOverOriginLine();
+
+	bool paused_;
+	bool has_aligned_and_open_slam;
+	float paused_odom_angle_;
+	bool moved_during_pause_;
 
 // For path planning.
 

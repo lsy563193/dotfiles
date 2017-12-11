@@ -11,6 +11,7 @@
 
 ActionOpenGyro::ActionOpenGyro(){
 
+	PP_INFO();
 	// Operate on gyro.
 	gyro.setOff();
 	usleep(30000);
@@ -19,12 +20,10 @@ ActionOpenGyro::ActionOpenGyro(){
 }
 
 bool ActionOpenGyro::isFinish(){
-	ROS_INFO("%s,%d", __FUNCTION__, __LINE__);
 	return (gyro.isOn());
 }
 
 void ActionOpenGyro::run() {
-	ROS_INFO("%s,%d", __FUNCTION__, __LINE__);
 	wheel.setPidTargetSpeed(0, 0);
 	gyro.waitForOn();
 }

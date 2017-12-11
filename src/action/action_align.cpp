@@ -11,8 +11,7 @@ ActionAlign::ActionAlign() {
 	brush.setSidePwm(50, 50);
 	brush.setMainPwm(30);
 
-	lidar.motorCtrl(ON);
-	lidar.setScanOriginalReady(0);
+	lidar.startAlign();
 //	ROS_INFO("%s,%d:add ActionOpenLidar,sp_action_(%d)",__FUNCTION__, __LINE__,sp_action_);
 
 }
@@ -22,18 +21,12 @@ bool ActionAlign::isFinish() {
 		return true;
 	}
 	if (lidar.alignFinish()) {
-		PP_INFO();
 		float align_angle = lidar.alignAngle();
-		PP_INFO();
 		align_angle += (float) (LIDAR_THETA / 10);
-		PP_INFO();
 		robot::instance()->offsetAngle(align_angle);
-		PP_INFO();
 		g_homes[0].TH = -(int16_t) (align_angle);
-		PP_INFO();
 		ROS_INFO("%s %d: align_angle angle (%f), g_homes[0].TH (%d).", __FUNCTION__, __LINE__, align_angle, g_homes[0].TH);
 		usleep(230000);
-		PP_INFO();
 		return true;
 	}
 	return false;

@@ -21,6 +21,8 @@ public:
 	float getZ();
 	void setAngle(float angle);
 	float getAngle();
+	void setAngleOffset(float angle);
+	float getAngleOffset();
 
 	void setMovingSpeed(float speed);
 	float getMovingSpeed(void);
@@ -30,6 +32,9 @@ public:
 private:
 
 	Pose pose;
+
+	// For handling navigation pause case.
+	float angle_offset_;
 
 	// In meters.
 	float moving_speed_;

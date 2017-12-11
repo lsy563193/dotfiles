@@ -16,8 +16,6 @@
 
 #define RAD2DEG(rad) ((rad)*57.29578)
 
-using namespace obstacle_detector;
-
 static	robot *robot_obj = NULL;
 
 bool	g_is_low_bat_pause=false;
@@ -168,7 +166,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 		//ROS_INFO("SLAM = 0");
 		odom_pose_x_ = odom.getX();
 		odom_pose_y_ = odom.getY();
-		odom_pose_yaw_ = tf::getYaw(msg->pose.pose.orientation);
+		odom_pose_yaw_ = odom.getAngle();
 	}
 	else if (getBaselinkFrameType() == Map_Position_Odom_Angle)
 	{//Wall_Follow_Mode

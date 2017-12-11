@@ -247,6 +247,8 @@ void ACleanMode::genMoveAction() {
 		sp_action_.reset(new MovementBack());
 	else if (action_i_ == ac_turn)
 		sp_action_.reset(new MovementTurn(turn_target_angle_));
+	else if (action_i_ == ac_pause)
+		sp_action_.reset(new ActionPause);
 	else if(action_i_ == ac_null)
 		sp_action_ == nullptr;
 }

@@ -22,6 +22,11 @@ CleanModeNav::CleanModeNav()
 	else{
 		speaker.play(SPEAKER_CLEANING_START);
 	}
+
+	paused_ = false;
+	has_aligned_and_open_slam = false;
+	paused_odom_angle_ = 0;
+	moved_during_pause_ = false;
 }
 
 CleanModeNav::~CleanModeNav()
@@ -33,18 +38,18 @@ CleanModeNav::~CleanModeNav()
 	lidar.setScanOriginalReady(0);
 
 	robot::instance()->setBaselinkFrameType(Odom_Position_Odom_Angle);
+	odom.setAngleOffset(0);
 
-
-	if (ev.key_clean_pressed)
+	if (moved_during_pause_)
 	{
-		speaker.play(SPEAKER_CLEANING_FINISHED);
-		ROS_WARN("%s %d: Key clean pressed. Finish cleaning.", __FUNCTION__, __LINE__);
+		speaker.play(SPEAKER_CLEANING_STOP);
+		ROS_WARN("%s %d: Moved during pause. Stop cleaning.", __FUNCTION__, __LINE__);
 	}
 	else if (ev.cliff_all_triggered)
 	{
 		speaker.play(SPEAKER_ERROR_LIFT_UP, false);
 		speaker.play(SPEAKER_CLEANING_STOP);
-		ROS_WARN("%s %d: Cliff all triggered. Finish cleaning.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Cliff all triggered. Stop cleaning.", __FUNCTION__, __LINE__);
 	}
 	else
 	{
@@ -102,8 +107,63 @@ bool CleanModeNav::map_mark() {
 	return false;
 }
 
+
+bool CleanModeNav::isFinish()
+{
+	if (action_i_ == ac_pause)
+	{
+		// For pausing case, only key or remote clean will wake it up.
+		if (ev.key_clean_pressed)
+		{
+			ev.key_clean_pressed = false;
+			speaker.play(SPEAKER_CLEANING_CONTINUE);
+			ROS_INFO("%s %d: Resume cleaning.", __FUNCTION__, __LINE__);
+			action_i_ = ac_open_gyro;
+			genMoveAction();
+			return false;
+		}
+		else
+			return false;
+	}
+	// else if (action_i_ == ac_self_check)
+	// {}
+	else
+	{
+		if (ev.key_clean_pressed)
+		{
+			ev.key_clean_pressed = false;
+			speaker.play(SPEAKER_CLEANING_PAUSE);
+			ROS_INFO("%s %d: Key clean pressed, pause cleaning.", __FUNCTION__, __LINE__);
+			paused_ = true;
+			paused_odom_angle_ = odom.getAngle();
+			action_i_ = ac_pause;
+			genMoveAction();
+			return false;
+		}
+		else
+			return ACleanMode::isFinish();
+	}
+
+	return false;
+}
+
 bool CleanModeNav::isExit()
 {
+	if (action_i_ == ac_pause && sp_action_->isTimeUp())
+	{
+		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+		setNextMode(md_sleep);
+		return true;
+	}
+
+	if (action_i_ == ac_pause && sp_action_->isExit())
+	{
+		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+		moved_during_pause_ = true;
+		setNextMode(md_idle);
+		return true;
+	}
+
 	if (ev.key_long_pressed || ev.cliff_all_triggered || sp_action_->isExit())
 	{
 		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
@@ -111,9 +171,9 @@ bool CleanModeNav::isExit()
 		return true;
 	}
 
-	if (ev.charge_detect)
+	if (ev.charge_detect >= 3)
 	{
-		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Exit for directly charge.", __FUNCTION__, __LINE__);
 		setNextMode(md_charge);
 		return true;
 	}
@@ -121,7 +181,51 @@ bool CleanModeNav::isExit()
 	return false;
 }
 
-
+bool CleanModeNav::setNextAction() {
+	if (isInitState() || action_i_ == ac_open_slam) {
+		PP_INFO();
+		if (action_i_ == ac_open_gyro) {
+			PP_INFO();
+			if (paused_)
+				odom.setAngleOffset(paused_odom_angle_);
+			if (charger.isOnStub())
+				action_i_ = ac_back_form_charger;
+			else
+				action_i_ = ac_open_lidar;
+		}
+		else if (action_i_ == ac_back_form_charger)
+			action_i_ = ac_open_lidar;
+		else if (action_i_ == ac_open_lidar) {
+			if (!has_aligned_and_open_slam) {
+				action_i_ = ac_align;
+			}
+			else if (paused_) {
+				move_type_i_ = mt_null;
+				action_i_ = ac_null;
+				// Clear the pause status.
+				paused_ = false;
+			}
+			else
+				action_i_ = ac_null;
+		}
+		else if (action_i_ == ac_align)
+			action_i_ = ac_open_slam;
+		else if (action_i_ == ac_open_slam) {
+			has_aligned_and_open_slam = true;
+			move_type_i_ = mt_null;
+			action_i_ = ac_null;
+			if (paused_)
+				// If paused before align and open slam, reset pause status here.
+				paused_ = false;
+		}
+		genMoveAction();
+	}
+	else {
+		ACleanMode::setNextAction();
+	}
+	NAV_INFO();
+	return action_i_ != ac_null;
+}
 
 Path_t CleanModeNav::generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir)
 {
