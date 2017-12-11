@@ -596,11 +596,11 @@ bool CleanModeNav::MovementFollowWallisFinish() {
 bool CleanModeNav::isOverOriginLine()
 {
 	auto s_curr_p = nav_map.getCurrPoint();
-	ROS_INFO("origin(%d,%d) curr_p(%d, %d), target_p_(%d, %d)",cm_origin_p_.X, cm_origin_p_.Y,  s_curr_p.X, s_curr_p.Y, cm_target_p_.X, cm_target_p_.Y);
+//	ROS_INFO("origin(%d,%d) curr_p(%d, %d), target_p_(%d, %d)",cm_origin_p_.X, cm_origin_p_.Y,  s_curr_p.X, s_curr_p.Y, cm_target_p_.X, cm_target_p_.Y);
 	if ((cm_target_p_.Y > cm_origin_p_.Y && (cm_origin_p_.Y - s_curr_p.Y) > 120)
 		|| (cm_target_p_.Y < cm_origin_p_.Y && (s_curr_p.Y - cm_origin_p_.Y) > 120))
 	{
-		ROS_WARN("origin(%d,%d) curr_p(%d, %d), target_p_(%d, %d)",cm_origin_p_.X, cm_origin_p_.Y,  s_curr_p.X, s_curr_p.Y, cm_target_p_.X, cm_target_p_.Y);
+//		ROS_WARN("origin(%d,%d) curr_p(%d, %d), target_p_(%d, %d)",cm_origin_p_.X, cm_origin_p_.Y,  s_curr_p.X, s_curr_p.Y, cm_target_p_.X, cm_target_p_.Y);
 		auto curr = nav_map.pointToCell(s_curr_p);
 		auto target_angle = (cm_target_p_.Y > cm_origin_p_.Y) ? -900 : 900;
 		if (std::abs(ranged_angle(robot::instance()->getPoseAngle() - target_angle)) < 50) // If robot is directly heading to the opposite side of target line, stop.
