@@ -83,7 +83,7 @@ bool CleanModeNav::map_mark() {
 }
 bool CleanModeNav::isExit()
 {
-	if (ev.key_clean_pressed || ev.cliff_all_triggered)
+	if (ev.key_long_pressed || ev.cliff_all_triggered || sp_action_->isExit())
 	{
 		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
 		setNextMode(md_idle);
