@@ -27,7 +27,7 @@ bool FollowWallMovement::isNewLineReach()
 	auto target_limit = s_target_p.Y + CELL_COUNT_MUL / 8 * 3 * is_pos_dir;
 	if (is_pos_dir ^ s_curr_p.Y < target_limit) // Robot has reached the target line limit.
 	{
-		ROS_WARN("%s %d: Reach the target limit, s_origin_p.Y(%d), target.Y(%d),curr_y(%d)",
+		ROS_WARN("%s %d: Reach the target limit, cm_origin_p_.Y(%d), target.Y(%d),curr_y(%d)",
 				 __FUNCTION__, __LINE__, nav_map.countToCell(s_origin_p.Y), nav_map.countToCell(s_target_p.Y),
 				 nav_map.countToCell(s_curr_p.Y));
 		ret = true;
@@ -38,7 +38,7 @@ bool FollowWallMovement::isNewLineReach()
 		// Check if the wall side has blocks on the clean_map.
 		auto dx = (is_pos_dir ^ mt.is_left()) ? +2 : -2;
 		if (nav_map.isBlocksAtY(nav_map.countToCell(s_curr_p.X) + dx, nav_map.countToCell(s_curr_p.Y))) {
-			ROS_WARN("%s %d: Already has block at the wall side, s_origin_p.Y(%d), target.Y(%d),curr_y(%d)",
+			ROS_WARN("%s %d: Already has block at the wall side, cm_origin_p_.Y(%d), target.Y(%d),curr_y(%d)",
 					 __FUNCTION__, __LINE__, nav_map.countToCell(s_origin_p.Y), nav_map.countToCell(s_target_p.Y),
 					 nav_map.countToCell(s_curr_p.Y));
 			ret = true;
@@ -154,13 +154,13 @@ bool FollowWallMovement::isOverOriginLine()
 		//ROS_INFO("%s %d: target_angel(%d),curr(%d)diff(%d)", __FUNCTION__, __LINE__, target_angel, robot::instance()->getPoseAngle(), target_angel - robot::instance()->getPoseAngle());
 		if (std::abs(ranged_angle(robot::instance()->getPoseAngle() - target_angle)) < 50) // If robot is directly heading to the opposite side of target line, stop.
 		{
-			ROS_WARN("%s %d: Opposite to target angle. s_curr_p(%d, %d), s_target_p(%d, %d), gyro(%d), target_angle(%d)",
+			ROS_WARN("%s %d: Opposite to target angle. s_curr_p(%d, %d), cm_target_p_(%d, %d), gyro(%d), target_angle(%d)",
 					 __FUNCTION__, __LINE__, s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y, robot::instance()->getPoseAngle(), target_angle);
 			return true;
 		}
 		else if (nav_map.isBlockCleaned(curr.X, curr.Y)) // If robot covers a big block, stop.
 		{
-			ROS_WARN("%s %d: Back to cleaned place, current(%d, %d), s_curr_p(%d, %d), s_target_p(%d, %d).",
+			ROS_WARN("%s %d: Back to cleaned place, current(%d, %d), s_curr_p(%d, %d), cm_target_p_(%d, %d).",
 					 __FUNCTION__, __LINE__, curr.X, curr.Y, s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y);
 			return true;
 		}

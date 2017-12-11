@@ -62,6 +62,7 @@ Mode* getNextMode(int next_mode_i_)
 			return new ModeIdle();
 	}
 }
+
 void *core_move_thread(void *)
 {
 	pthread_detach(pthread_self());
@@ -84,7 +85,7 @@ void *core_move_thread(void *)
 	if (charger.isOnStub() || charger.isDirected())
 		p_mode.reset(new ModeCharge());
 	else
-		p_mode.reset(new ModeIdle());
+		p_mode.reset(new CleanModeNav());
 
 	while(ros::ok())
 	{

@@ -85,7 +85,11 @@ bool ACleanMode::setNextAction() {
 			if (action_i_ == ac_null)
 				action_i_ = ac_turn;
 			else if (ac_is_turn())
+			{
+				cm_target_p_ = GridMap::cellToPoint(plan_path_.back());
+				cm_origin_p_ = GridMap::getCurrPoint();
 				action_i_ = (move_type_i_ == mt_follow_wall_left) ? ac_follow_wall_left : ac_follow_wall_right;
+			}
 			else if (ac_is_forward())
 			{
 				if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered)
@@ -332,7 +336,6 @@ void ACleanMode::mt_init(int) {
 					g_turn_angle = ranged_angle(course_to_dest(cur.X, cur.Y, tar.X, tar.Y) -
 																			robot::instance()->getPoseAngle());
 		turn_target_angle_ = ranged_angle(robot::instance()->getPoseAngle() + g_turn_angle);
-		s_origin_p = GridMap::getCurrPoint();
 		ROS_INFO("g_turn_angle(%d)cur(%d,%d,%d),tar(%d,%d,%d)",g_turn_angle,cur.X,cur.Y,cur.TH, tar.X,tar.Y,tar.TH);
 	}
 	else if (move_type_i_ == mt_linear) {

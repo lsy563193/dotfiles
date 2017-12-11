@@ -166,10 +166,10 @@ bool path_lane_is_cleaned(const Cell_t& curr, PPTargetType& path)
 	{
 		target = it[0];
 		//todo
-//		ROS_WARN("%s %d: nag dir(%d)", __FUNCTION__, __LINE__, (Movement::s_target_p.Y<Movement::s_origin_p.Y));
+//		ROS_WARN("%s %d: nag dir(%d)", __FUNCTION__, __LINE__, (Movement::cm_target_p_.Y<Movement::cm_origin_p_.Y));
 //		if(mt.is_follow_wall() && cm_is_reach())
 //		{
-//			if(mt.is_left() ^ (Movement::s_target_p.Y<Movement::s_origin_p.Y))
+//			if(mt.is_left() ^ (Movement::cm_target_p_.Y<Movement::cm_origin_p_.Y))
 //				target = it[1];
 //		}
 	}

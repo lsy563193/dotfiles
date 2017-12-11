@@ -264,7 +264,7 @@ void MovementFollowWall::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		{
 			same_speed = wheel_speed_base + proportion / 11 + delta/2;//16
 			diff_speed = wheel_speed_base - proportion / 11 - delta/2; //11
-			ROS_INFO("Wf_4.1, same_speed = %d, diff_speed = %d, /*g_robot_to_wall_distance = %d*/", same_speed, diff_speed/*, g_robot_to_wall_distance*/);
+//			ROS_INFO("Wf_4.1, same_speed = %d, diff_speed = %d, /*g_robot_to_wall_distance = %d*/", same_speed, diff_speed/*, g_robot_to_wall_distance*/);
 			if (wheel_speed_base < 26)
 			{
 				reset_sp_turn_count();

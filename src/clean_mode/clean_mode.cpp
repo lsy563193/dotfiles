@@ -123,7 +123,7 @@ void CleanMode::setMt()
 				if(!lidar_turn_angle(g_turn_angle))
 					g_turn_angle = ranged_angle( course_to_dest(s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y) - robot::instance()->getPoseAngle());
 		}
-		ROS_INFO("%s,%d: mt.is_follow_wall, s_target_p(%d, %d).",__FUNCTION__, __LINE__, s_target_p.X, s_target_p.Y);
+		ROS_INFO("%s,%d: mt.is_follow_wall, cm_target_p_(%d, %d).",__FUNCTION__, __LINE__, s_target_p.X, s_target_p.Y);
 
 	}else if(mt.is_linear())
 	{

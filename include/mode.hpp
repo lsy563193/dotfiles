@@ -201,7 +201,8 @@ protected:
 	std::vector<Cell_t> temp_fw_cells;
 	static Path_t passed_path_;
 	static Path_t plan_path_;
-	Point32_t s_origin_p;
+	Point32_t cm_target_p_;
+	Point32_t cm_origin_p_;
 	static Cell_t last_;
 	uint32_t start_timer_;
 	uint32_t diff_timer_;
@@ -252,6 +253,8 @@ class CleanModeNav:public ACleanMode
 public:
 	CleanModeNav();
 	~CleanModeNav() override ;
+
+	uint8_t setFollowWall();
 	bool setNextMoveType() override ;
 	bool map_mark() override ;
 //	bool isFinish();

@@ -164,7 +164,7 @@ bool ForwardMovement::isPassTargetStop()
 void ForwardMovement::setTarget()
 {
 //	g_turn_angle = ranged_angle(
-//						course_to_dest(s_curr_p.X, s_curr_p.Y, s_target_p.X, s_target_p.Y) - robot::instance()->getPoseAngle());
+//						course_to_dest(s_curr_p.X, s_curr_p.Y, cm_target_p_.X, cm_target_p_.Y) - robot::instance()->getPoseAngle());
 	s_target_p = nav_map.cellToPoint(g_plan_path.back());
 //	path_ = g_plan_path;
 }
@@ -193,7 +193,7 @@ void ForwardMovement::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 					course_to_dest(s_curr_p.X, s_curr_p.Y, target_p.X, target_p.Y) - robot::instance()->getPoseAngle());
 
 //	ROS_WARN("curr(%d),x?(%d),pos(%d),dis(%d), target_p(%d,%d)", curr, GridMap::isXDirection(new_dir_), GridMap::isPositiveDirection(new_dir_), dis, target_p.X, target_p.Y);
-//	auto dis_diff = GridMap::isXDirection(new_dir_) ? s_curr_p.Y - s_target_p.Y : s_curr_p.X - s_target_p.X;
+//	auto dis_diff = GridMap::isXDirection(new_dir_) ? s_curr_p.Y - cm_target_p_.Y : s_curr_p.X - cm_target_p_.X;
 //	dis_diff = GridMap::isPositiveDirection(new_dir_) ^ GridMap::isXDirection(new_dir_) ? dis_diff :  -dis_diff;
 
 	if (integration_cycle_++ > 10) {

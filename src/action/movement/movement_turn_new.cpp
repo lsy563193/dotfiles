@@ -154,8 +154,8 @@ void MovementTurn::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	}
 
 	auto diff = ranged_angle(s_target_p.TH - robot::instance()->getPoseAngle());
-//	ROS_INFO("MovementTurn::adjustSpeed diff(%d),(%d,%d)", diff,s_target_p.TH, robot::instance()->getPoseAngle());
-	ROS_DEBUG("%s %d: MovementTurn diff: %d, s_target_p.TH: %d, current angle: %d.", __FUNCTION__, __LINE__, diff, s_target_p.TH, robot::instance()->getPoseAngle());
+//	ROS_INFO("MovementTurn::adjustSpeed diff(%d),(%d,%d)", diff,cm_target_p_.TH, robot::instance()->getPoseAngle());
+	ROS_DEBUG("%s %d: MovementTurn diff: %d, cm_target_p_.TH: %d, current angle: %d.", __FUNCTION__, __LINE__, diff, s_target_p.TH, robot::instance()->getPoseAngle());
 	(diff >= 0) ? wheel.setDirectionLeft() : wheel.setDirectionRight();
 
 //	ROS_INFO("MovementTurn::adjustSpeed");
