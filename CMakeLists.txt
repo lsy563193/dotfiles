@@ -65,6 +65,7 @@ FILE(GLOB PP_SRC
 	src/action/action_sleep.cpp
 	src/action/action_idle.cpp
 	src/action/action_charge.cpp
+	src/action/action_pause.cpp
 
 	src/action/movement/movement.cpp
 	src/action/movement/movement_new.cpp

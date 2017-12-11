@@ -64,6 +64,7 @@ protected:
 		ac_turn_for_charger,
 		ac_movement_stay,
 		ac_movement_direct_go,
+		ac_pause,
 	};
 
 private:

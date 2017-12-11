@@ -7,6 +7,7 @@
 
 #include <cstdint>
 #include <time.h>
+#include "odom.h"
 
 class IAction{
 public:
@@ -14,6 +15,8 @@ public:
 	virtual ~IAction(){};
 
 	virtual bool isFinish()=0;
+
+	virtual bool isExit(){};
 
 	virtual void run()=0;
 
@@ -93,7 +96,6 @@ private:
 
 };
 
-
 class ActionCharge :public IAction
 {
 public:
@@ -107,4 +109,17 @@ private:
 	time_t show_battery_info_time_stamp_;
 };
 
+class ActionPause :public IAction
+{
+public:
+	ActionPause();
+	~ActionPause();
+	bool isFinish() override;
+	bool isExit() override;
+	void run() override;
+
+private:
+	double pause_start_time_;
+	Pose pause_pose_;
+};
 #endif //PP_ACTION_H
