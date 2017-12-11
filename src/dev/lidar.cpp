@@ -162,6 +162,7 @@ void Lidar::setScanCompensateReady(uint8_t val)
 
 void Lidar::motorCtrl(bool switch_)
 {
+	ROS_INFO("%s %d: Operate on lidar.", __FUNCTION__, __LINE__);
 	if(switch_){
 		scanLinear_update_time = ros::Time::now().toSec();
 		scanOriginal_update_time = ros::Time::now().toSec();

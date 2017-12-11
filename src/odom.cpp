@@ -6,7 +6,7 @@
 
 Odom odom;
 
-Odom::Odom():moving_speed_(0), angle_speed_(0)
+Odom::Odom():moving_speed_(0), angle_speed_(0), angle_offset_(0)
 {
 }
 
@@ -46,12 +46,22 @@ float Odom::getZ(void)
 
 void Odom::setAngle(float angle)
 {
-	pose.setAngle(angle);
+	pose.setAngle(angle + getAngleOffset());
 }
 
 float Odom::getAngle(void)
 {
 	return pose.getAngle();
+}
+
+void Odom::setAngleOffset(float angle)
+{
+	angle_offset_ = angle;
+}
+
+float Odom::getAngleOffset(void)
+{
+	return angle_offset_;
 }
 
 void Odom::setMovingSpeed(float speed)

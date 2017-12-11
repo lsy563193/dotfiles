@@ -1049,7 +1049,7 @@ void EventHandle::lidar_stuck(bool state_new,bool state_last)
 {}
 void df_lidar_stuck(bool state_new,bool state_last)
 {
-	beeper.play_for_command(true);
+	//beeper.play_for_command(true);
 	//ROS_WARN("\033[32m%s %d: Lidar stuck.\033[0m", __FUNCTION__, __LINE__);
 	//ev.lidar_stuck = true;
 }

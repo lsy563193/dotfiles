@@ -472,7 +472,7 @@ void *robotbase_routine(void*)
 		odom.setAngleSpeed(sensor.angle_v);
 		cur_time = ros::Time::now();
 		double angle_rad, dt;
-		angle_rad = deg_to_rad(sensor.angle);
+		angle_rad = deg_to_rad(odom.getAngle());
 		dt = (cur_time - last_time).toSec();
 		last_time = cur_time;
 		odom.setX(static_cast<float>(odom.getX() + (odom.getMovingSpeed() * cos(angle_rad)) * dt));

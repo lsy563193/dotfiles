@@ -5,6 +5,7 @@
 #include "arch.hpp"
 
 ActionOpenLidar::ActionOpenLidar() {
+	PP_INFO();
 	wheel.stop();
 
 	vacuum.setMode(Vac_Save);

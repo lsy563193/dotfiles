@@ -35,90 +35,93 @@ ACleanMode::ACleanMode():start_timer_(time(NULL)) {
 
 bool ACleanMode::isInitState() {
 	return action_i_ == ac_open_gyro || action_i_ == ac_back_form_charger || action_i_ == ac_open_lidar ||
-				action_i_ == ac_align;
+				action_i_ == ac_align || action_i_ == ac_open_slam;
 }
 
-bool ACleanMode::setNextAction() {
+bool ACleanMode::setNextInitAction()
+{
+	PP_INFO();
 	if(action_i_ == ac_open_gyro)
-	{
-		if (charger.isOnStub())
-			action_i_ = ac_back_form_charger;
-		else
-			action_i_ = ac_open_lidar;
-	}
-	else if(action_i_ == ac_back_form_charger)
 		action_i_ = ac_open_lidar;
 	else if(action_i_ == ac_open_lidar)
-		action_i_ = ac_align;
-	else if(action_i_ == ac_align)
 		action_i_ = ac_open_slam;
-	else
+	else if (action_i_ == ac_open_slam)
 	{
-		if(move_type_i_ == mt_null)
-			action_i_ = ac_null;
-		else if (mt_is_linear())
+		move_type_i_ = mt_null;
+		action_i_ = ac_null;
+	}
+
+	genMoveAction();
+	NAV_INFO();
+	return action_i_ != ac_null;
+}
+bool ACleanMode::setNextAction()
+{
+	if(move_type_i_ == mt_null)
+		action_i_ = ac_null;
+	else if (mt_is_linear())
+	{
+		/*
+		 * For linear move type, it starts for turning, then linear movement, and back if necessary.
+		 * It should apply to all the linear move type.
+		 */
+		if (action_i_ == ac_null)
+			action_i_ = ac_turn;
+		else if (ac_is_turn())
+			action_i_ = ac_forward;
+		else if (ac_is_forward())
 		{
-			/*
-			 * For linear move type, it starts for turning, then linear movement, and back if necessary.
-			 * It should apply to all the linear move type.
-			 */
-			if (action_i_ == ac_null)
-				action_i_ = ac_turn;
-			else if (ac_is_turn())
-				action_i_ = ac_forward;
-			else if (ac_is_forward())
-			{
-				if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered)
-					action_i_ = ac_back;
-				else
-					action_i_ = ac_null;
-			}
-			else if (ac_is_back())
+			if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered)
+				action_i_ = ac_back;
+			else
 				action_i_ = ac_null;
 		}
-		else if (mt_is_follow_wall())
+		else if (ac_is_back())
+			action_i_ = ac_null;
+	}
+	else if (mt_is_follow_wall())
+	{
+		/*
+		 * For follow wall move type, it starts for turning, then follow wall movement, and back if necessary.
+		 * It should apply to all the follow wall move type.
+		 */
+		if (action_i_ == ac_null)
+			action_i_ = ac_turn;
+		else if (ac_is_turn())
+			action_i_ = (move_type_i_ == mt_follow_wall_left) ? ac_follow_wall_left : ac_follow_wall_right;
+		else if (ac_is_forward())
 		{
-			/*
-			 * For follow wall move type, it starts for turning, then follow wall movement, and back if necessary.
-			 * It should apply to all the follow wall move type.
-			 */
-			if (action_i_ == ac_null)
-				action_i_ = ac_turn;
-			else if (ac_is_turn())
+			if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered)
+				action_i_ = ac_back;
+			else
 				action_i_ = (move_type_i_ == mt_follow_wall_left) ? ac_follow_wall_left : ac_follow_wall_right;
-			else if (ac_is_forward())
-			{
-				if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered)
-					action_i_ = ac_back;
-				else
-					action_i_ = (move_type_i_ == mt_follow_wall_left) ? ac_follow_wall_left : ac_follow_wall_right;
-			}
-			else if (ac_is_follow_wall())
-			{
-				if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip)
-					action_i_ = ac_back;
-				else if (ev.lidar_triggered || ev.obs_triggered)
-				{
-					turn_target_angle_ = GridMap::getCurrPoint().TH + g_turn_angle;
-					action_i_ = ac_turn;
-				}
-				else
-					action_i_ = ac_null;//reach
-			}
-			else if (action_i_ == ac_back)
+
+		}
+		else if (ac_is_follow_wall())
+		{
+			if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip)
+				action_i_ = ac_back;
+			else if (ev.lidar_triggered || ev.obs_triggered)
 			{
 				turn_target_angle_ = GridMap::getCurrPoint().TH + g_turn_angle;
-				PP_INFO();
 				action_i_ = ac_turn;
 			}
+			else
+				action_i_ = ac_null;//reach
 		}
-
-		if (ev.fatal_quit)
+		else if (ac_is_back())
 		{
+			turn_target_angle_ = GridMap::getCurrPoint().TH + g_turn_angle;
 			PP_INFO();
-			ROS_ERROR("ev.fatal_quit");
-			action_i_ = ac_null;
+			action_i_ = ac_turn;
 		}
+	}
+
+	if (ev.fatal_quit)
+	{
+		PP_INFO();
+		ROS_ERROR("ev.fatal_quit");
+		action_i_ = ac_null;
 	}
 	genMoveAction();
 	NAV_INFO();
@@ -129,9 +132,12 @@ bool ACleanMode::isFinish() {
 	if (isInitState()) {
 		if (!sp_action_->isFinish())
 			return false;
-		setNextAction();
+		PP_INFO();
+		setNextInitAction();
 	}
-	else {
+
+	if (!isInitState())
+	{
 		updatePath();
 		if (!sp_action_->isFinish())
 			return false;
@@ -243,6 +249,8 @@ void ACleanMode::genMoveAction() {
 		sp_action_.reset(new MovementBack());
 	else if (action_i_ == ac_turn)
 		sp_action_.reset(new MovementTurn(turn_target_angle_));
+	else if (action_i_ == ac_pause)
+		sp_action_.reset(new ActionPause);
 	else if(action_i_ == ac_null)
 		sp_action_ == nullptr;
 }

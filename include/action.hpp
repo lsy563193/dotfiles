@@ -18,17 +18,11 @@ public:
 
 	virtual bool isExit(){return false;};
 
+	virtual bool isTimeUp(){};
+
 	virtual void run()=0;
 
-//	bool isTimeUp()
-//	{
-//		if(g_wf_diff_timer == 0 )
-//			return false;
-//		return ((uint32_t)difftime(time(NULL), g_wf_start_timer)) > g_wf_diff_timer;
-//	}
 protected:
-//	uint32_t g_wf_start_timer{};
-//	uint32_t g_wf_diff_timer{};
 };
 
 class ActionOpenGyro :public IAction
@@ -116,6 +110,7 @@ public:
 	~ActionPause();
 	bool isFinish() override;
 	bool isExit() override;
+	bool isTimeUp() override ;
 	void run() override;
 
 private:

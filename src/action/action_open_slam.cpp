@@ -6,13 +6,10 @@
 #include "arch.hpp"
 
 ActionOpenSlam::ActionOpenSlam() {
-	if (!(g_is_manual_pause || g_resume_cleaning)) {
-		robot::instance()->setTfReady(false);
-		robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
-		slam.start();
-	}
-	else
-		robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
+	PP_INFO();
+	robot::instance()->setTfReady(false);
+	robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
+	slam.start();
 }
 
 bool ActionOpenSlam::isFinish(){

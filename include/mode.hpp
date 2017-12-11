@@ -59,6 +59,7 @@ protected:
 //		ac_movement_follow_wall_left,
 //		ac_movement_follow_wall_right,
 		ac_movement_go_charger,
+		ac_idle,
 		ac_sleep,
 		ac_charge,
 		ac_turn_for_charger,
@@ -242,7 +243,9 @@ protected:
 		mv_go_charger,
 	};
 private:
-		bool isInitState();
+	virtual bool isInitState();
+	virtual bool setNextInitAction();
+
 	void register_events(void);
 
 };
@@ -252,9 +255,10 @@ class CleanModeNav:public ACleanMode
 public:
 	CleanModeNav();
 	~CleanModeNav() override ;
+	bool setNextInitAction() override ;
 	bool setNextMoveType() override ;
 	bool map_mark() override ;
-//	bool isFinish();
+	bool isFinish() override ;
 	bool isExit();
 
 	void key_clean(bool state_now, bool state_last) override ;
@@ -264,6 +268,11 @@ private:
 	bool MovementFollowWallisFinish() override ;
 	bool isNewLineReach();
 	bool isOverOriginLine();
+
+	bool paused_;
+	bool has_aligned_and_open_slam;
+	float paused_odom_angle_;
+	bool moved_during_pause_;
 
 // For path planning.
 
