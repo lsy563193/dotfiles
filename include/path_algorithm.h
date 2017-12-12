@@ -13,12 +13,52 @@ typedef std::deque<Cell_t> Path_t;
 typedef std::deque<Cell_t> TargetList;
 typedef std::deque<Path_t> PathList;
 
-
-class PathAlgorithm{
-
+class IPathAlgorithm
+{
 public:
 	virtual Path_t generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir) = 0;
+};
 
+class PathAlgorithmBase
+{
+public:
+	/*
+	 * @last modify by Austin Liu
+	 *
+	 * Print the path.
+	 *
+	 * @param: Path_t path, the path from start cell to target cell.
+	 */
+	static void displayPath(const Path_t &path);
+
+	/*
+	 * @last modify by Austin Liu
+	 *
+	 * Print the targets.
+	 *
+	 * @param: TargetList target list.
+	 */
+	static void displayTargets(const TargetList &target_list);
+
+	/*
+	 * @author Patrick Chow
+	 * @last modify by Austin Liu
+	 *
+	 * This function is for adjusting the path away from obstacles while the cost and turning count is
+	 * still the same.
+	 *
+	 * @param: GridMap map, it will use it's CLEAN_MAP data.
+	 * @param: Path_t path, the path from start cell to target cell.
+	 *
+	 * @return: Path_t path, an equivalent path of input path which is most far away from the obstacles.
+	 */
+	static void optimizePath(GridMap &map, Path_t &path);
+
+};
+
+class ShortestPathAlgorithm: public PathAlgorithmBase
+{
+public:
 	/*
 	 * @author Patrick Chow
 	 * @last modify by Austin Liu
@@ -36,38 +76,7 @@ public:
 	 * @return: Path_t path, the shortest path from start cell to target cell.
 	 */
 	Path_t findShortestPath(GridMap &map, const Cell_t &start,
-							  const Cell_t &target, const MapDirection &last_dir,bool use_unknown);
-	/*
-	 * @last modify by Austin Liu
-	 *
-	 * Print the path.
-	 *
-	 * @param: Path_t path, the path from start cell to target cell.
-	 */
-	void displayPath(const Path_t &path);
-
-	/*
-	 * @last modify by Austin Liu
-	 *
-	 * Print the targets.
-	 *
-	 * @param: TargetList target list.
-	 */
-	void displayTargets(const TargetList &target_list);
-
-	/*
-	 * @author Patrick Chow
-	 * @last modify by Austin Liu
-	 *
-	 * This function is for adjusting the path away from obstacles while the cost and turning count is
-	 * still the same.
-	 *
-	 * @param: GridMap map, it will use it's CLEAN_MAP data.
-	 * @param: Path_t path, the path from start cell to target cell.
-	 *
-	 * @return: Path_t path, an equivalent path of input path which is most far away from the obstacles.
-	 */
-	void optimizePath(GridMap &map, Path_t &path);
+							  const Cell_t &target, const MapDirection &last_dir, bool use_unknown);
 
 	/*
 	 * @author Lin Shao Yue
@@ -113,14 +122,8 @@ public:
 	 */
 	bool checkTrapped(GridMap &map, const Cell_t &curr_cell);
 
-	/*
-	 * Sorting function, for sorting paths with their targets by Y+ ascending sequence.
-	 */
-	static bool sortPathsWithTargetYAscend(const Path_t a, const Path_t b);
-
 protected:
-
-	Cell_t cell_direction_index[9]={{1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1},{0,0}};
+	Cell_t cell_direction_index_[9]={{1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1},{0,0}};
 };
 
 typedef enum {
@@ -130,7 +133,115 @@ typedef enum {
 	GO_HOME_WAY_NUM
 }GoHomeWay_t;
 
-class NavGoHomePathAlgorithm: public PathAlgorithm
+class NavCleanPathAlgorithm: public IPathAlgorithm, public ShortestPathAlgorithm
+{
+	/*
+	 * @author Patrick Chow / Lin Shao Yue
+	 * @last modify by Austin Liu
+	 *
+	 * This function is for finding path to unclean area.
+	 *
+	 * @param: GridMap map, it will use it's CLEAN_MAP data.
+	 * @param: Cell_t curr_cell, the current cell of robot.
+	 * @param: MapDirection last_dir, the direction of last movement.
+	 *
+	 * @return: Path_t path, the path to unclean area.
+	 */
+	Path_t generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir) override;
+
+private:
+	/*
+	 * @author Patrick Chow
+	 * @last modify by Austin Liu
+	 *
+	 * This function is for finding path to unclean area in the same lane.
+	 *
+	 * @param: GridMap map, it will use it's CLEAN_MAP data.
+	 * @param: Cell_t curr_cell, the current cell of robot.
+	 *
+	 * @return: Path_t path, the path to unclean area in the same lane.
+	 */
+	Path_t findTargetInSameLane(GridMap &map, const Cell_t &curr_cell);
+
+	/*
+	 * @author Lin Shao Yue
+	 * @last modify by Austin Liu
+	 *
+	 * This function is for finding all possiable targets in the map, judging by the boundary between
+	 * cleaned and reachable unclean area.
+	 *
+	 * @param: GridMap map, it will use it's CLEAN_MAP data.
+	 * @param: Cell_t curr_cell, the current cell of robot.
+	 * @param: BoundingBox2 b_map, generate by map, for simplifying code.
+	 *
+	 * @return: TargetList, a deque of possible targets.
+	 */
+	TargetList filterAllPossibleTargets(GridMap &map, const Cell_t &curr_cell, BoundingBox2 &b_map);
+
+	/*
+	 * @author Patrick Chow
+	 * @last modify by Austin Liu
+	 *
+	 * This function is for filtering targets with their cost in the COST_MAP.
+	 *
+	 * @param: GridMap map, it will use it's CLEAN_MAP data.
+	 * @param: Cell_t curr_cell, the current cell of robot.
+	 * @param: TargetList possible_targets, input target list.
+	 *
+	 * @return: TargetList, a deque of reachable targets.
+	 */
+	TargetList getReachableTargets(GridMap &map, const Cell_t &curr_cell, TargetList &possible_targets);
+
+	/*
+	 * @author Patrick Chow
+	 * @last modify by Austin Liu
+	 *
+	 * This function is for tracing the path from start cell to targets.
+	 *
+	 * @param: GridMap map, it will use it's CLEAN_MAP data.
+	 * @param: TargetList target_list, input target list.
+	 * @param: Cell_t start, the start cell.
+	 *
+	 * @return: PathList, a deque of paths from start cell to the input targets.
+	 */
+	PathList tracePathsToTargets(GridMap &map, const TargetList &target_list, const Cell_t& start);
+
+	/*
+	 * @author Patrick Chow
+	 * @last modify by Austin Liu
+	 *
+	 * This function is for selecting the best target in the input paths according to their path track.
+	 *
+	 * @param: GridMap map, it will use it's CLEAN_MAP data.
+	 * @param: PathLIst paths, the input paths.
+	 * @param: Cell_t curr_cell, the current cell of robot.
+	 *
+	 * @return: true if best target is selected.
+	 *          false if there is no target that match the condictions.
+	 *          Cell_t best_target, the selected best target.
+	 */
+	bool filterPathsToSelectTarget(GridMap &map, const PathList &paths, const Cell_t &curr_cell, Cell_t &best_target);
+
+	/*
+	 * Sorting function, for sorting paths with their targets by Y+ ascending sequence.
+	 */
+	static bool sortPathsWithTargetYAscend(const Path_t a, const Path_t b);
+
+};
+
+class WFCleanPathAlgorithm: public IPathAlgorithm, public ShortestPathAlgorithm
+{
+public:
+	Path_t generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir);
+};
+
+class SpotCleanPathAlgorithm: public IPathAlgorithm, public ShortestPathAlgorithm
+{
+public:
+	Path_t generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir);
+};
+
+class GoHomePathAlgorithm: public ShortestPathAlgorithm
 {
 public:
 	/*
@@ -145,8 +256,8 @@ public:
 	 *
 	 * @return: Path_t path, the path to selected home cell.
 	 */
-	NavGoHomePathAlgorithm(GridMap &map, TargetList home_cells);
-	~NavGoHomePathAlgorithm() = default;
+	GoHomePathAlgorithm(GridMap &map, TargetList home_cells);
+	~GoHomePathAlgorithm() = default;
 
 	/*
 	 * @author Lin Shao Yue / Austin Liu

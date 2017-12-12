@@ -166,7 +166,7 @@ private:
 
 };
 
-class ACleanMode:public Mode,public PathAlgorithm
+class ACleanMode:public Mode
 {
 public:
 	ACleanMode();
@@ -184,6 +184,8 @@ public:
 
 protected:
 
+	IPathAlgorithm* clean_path_algorithm_;
+	IPathAlgorithm* go_home_path_algorithm_;
 	uint8_t saveFollowWall(bool is_left);
 	bool isInitState();
 
@@ -201,6 +203,7 @@ protected:
 	void st_init(int);
 	void mt_init(int);
 	std::vector<Cell_t> temp_fw_cells;
+	TargetList home_cells_;
 	static Path_t passed_path_;
 	static Path_t plan_path_;
 	Point32_t cm_target_p_;
@@ -280,92 +283,6 @@ private:
 protected:
 //	Path_t home_point_{};
 public:
-	/*
-	 * @author Patrick Chow / Lin Shao Yue
-	 * @last modify by Austin Liu
-	 *
-	 * This function is for finding path to unclean area.
-	 *
-	 * @param: GridMap map, it will use it's CLEAN_MAP data.
-	 * @param: Cell_t curr_cell, the current cell of robot.
-	 * @param: MapDirection last_dir, the direction of last movement.
-	 *
-	 * @return: Path_t path, the path to unclean area.
-	 */
-	Path_t generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir) override;
-
-private:
-	/*
-	 * @author Patrick Chow
-	 * @last modify by Austin Liu
-	 *
-	 * This function is for finding path to unclean area in the same lane.
-	 *
-	 * @param: GridMap map, it will use it's CLEAN_MAP data.
-	 * @param: Cell_t curr_cell, the current cell of robot.
-	 *
-	 * @return: Path_t path, the path to unclean area in the same lane.
-	 */
-	Path_t findTargetInSameLane(GridMap &map, const Cell_t &curr_cell);
-
-	/*
-	 * @author Lin Shao Yue
-	 * @last modify by Austin Liu
-	 *
-	 * This function is for finding all possiable targets in the map, judging by the boundary between
-	 * cleaned and reachable unclean area.
-	 *
-	 * @param: GridMap map, it will use it's CLEAN_MAP data.
-	 * @param: Cell_t curr_cell, the current cell of robot.
-	 * @param: BoundingBox2 b_map, generate by map, for simplifying code.
-	 *
-	 * @return: TargetList, a deque of possible targets.
-	 */
-	TargetList filterAllPossibleTargets(GridMap &map, const Cell_t &curr_cell, BoundingBox2 &b_map);
-
-	/*
-	 * @author Patrick Chow
-	 * @last modify by Austin Liu
-	 *
-	 * This function is for filtering targets with their cost in the COST_MAP.
-	 *
-	 * @param: GridMap map, it will use it's CLEAN_MAP data.
-	 * @param: Cell_t curr_cell, the current cell of robot.
-	 * @param: TargetList possible_targets, input target list.
-	 *
-	 * @return: TargetList, a deque of reachable targets.
-	 */
-	TargetList getReachableTargets(GridMap &map, const Cell_t &curr_cell, TargetList &possible_targets);
-
-	/*
-	 * @author Patrick Chow
-	 * @last modify by Austin Liu
-	 *
-	 * This function is for tracing the path from start cell to targets.
-	 *
-	 * @param: GridMap map, it will use it's CLEAN_MAP data.
-	 * @param: TargetList target_list, input target list.
-	 * @param: Cell_t start, the start cell.
-	 *
-	 * @return: PathList, a deque of paths from start cell to the input targets.
-	 */
-	PathList tracePathsToTargets(GridMap &map, const TargetList &target_list, const Cell_t& start);
-
-	/*
-	 * @author Patrick Chow
-	 * @last modify by Austin Liu
-	 *
-	 * This function is for selecting the best target in the input paths according to their path track.
-	 *
-	 * @param: GridMap map, it will use it's CLEAN_MAP data.
-	 * @param: PathLIst paths, the input paths.
-	 * @param: Cell_t curr_cell, the current cell of robot.
-	 *
-	 * @return: true if best target is selected.
-	 *          false if there is no target that match the condictions.
-	 *          Cell_t best_target, the selected best target.
-	 */
-	bool filterPathsToSelectTarget(GridMap &map, const PathList &paths, const Cell_t &curr_cell, Cell_t &best_target);
 
 };
 
@@ -378,7 +295,6 @@ public:
 	bool setNextMoveType() override ;
 	bool map_mark() override;
 
-	Path_t generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir);
 
 	int16_t wf_path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound);
 	int16_t wf_path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t end_x, int16_t end_y, uint8_t bound, int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max);
@@ -398,7 +314,6 @@ public:
 
 	bool setNextMoveType() override ;
 	bool map_mark() override;
-	Path_t generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir) override;
 
 private:
 protected:

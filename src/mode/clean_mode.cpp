@@ -166,7 +166,7 @@ bool ACleanMode::setNextState() {
 	{
 		PP_INFO();
 		old_dir_ = new_dir_;
-		plan_path_ = generatePath(nav_map, nav_map.getCurrCell(),old_dir_);
+		plan_path_ = clean_path_algorithm_->generatePath(nav_map, nav_map.getCurrCell(),old_dir_);
 		new_dir_ = (MapDirection)plan_path_.front().TH;
 		plan_path_.pop_front();
 
@@ -180,7 +180,7 @@ bool ACleanMode::setNextState() {
 			ROS_INFO("g_homes[0](%d,%d,%d)",g_homes[0].X,g_homes[0].Y,g_homes[0].TH);
 			state_i_ = st_clean;
 		}
-		displayPath(plan_path_);
+		PathAlgorithmBase::displayPath(plan_path_);
 	}
 	st_init(state_i_);
 	return state_i_ != st_null;
