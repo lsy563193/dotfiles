@@ -115,7 +115,6 @@ bool ACleanMode::setNextAction() {
 			else if (action_i_ == ac_back)
 			{
 				turn_target_angle_ = GridMap::getCurrPoint().TH + g_turn_angle;
-				PP_INFO();
 				action_i_ = ac_turn;
 				PP_INFO();NAV_INFO();
 			}
@@ -129,7 +128,7 @@ bool ACleanMode::setNextAction() {
 		}
 	}
 	genMoveAction();
-	NAV_INFO();
+	PP_INFO(); NAV_INFO();
 	return action_i_ != ac_null;
 }
 
@@ -154,6 +153,7 @@ bool ACleanMode::isFinish() {
 					return true;
 			}while(!setNextMoveType());
 		}
+		ROS_INFO("%s,%d: bumper(%d)",__FUNCTION__,__LINE__, ev.bumper_triggered);
 		if(!(ac_is_back() && mt_is_linear()))
 			resetTriggeredValue();
 	}

@@ -39,10 +39,10 @@ Path_t PathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start,
 	map.setCell(COST_MAP, target.X, target.Y, COST_1);
 
 	// For protection, the start cell must be reachable.
-	if (map.getCell(CLEAN_MAP, start.X, start.Y) == COST_HIGH)
+	if (map.getCell(COST_MAP, start.X, start.Y) == COST_HIGH)
 	{
 		ROS_ERROR("%s %d: Start cell has high cost(%d)! It may cause bug, please check.",
-				  __FUNCTION__, __LINE__, map.getCell(CLEAN_MAP, start.X, start.Y));
+				  __FUNCTION__, __LINE__, map.getCell(COST_MAP, start.X, start.Y));
 		map.print(COST_MAP, target.X, target.Y);
 		map.setCell(COST_MAP, start.X, start.Y, COST_NO);
 	}
