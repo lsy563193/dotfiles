@@ -413,8 +413,10 @@ TargetList CleanModeNav::getReachableTargets(GridMap &map, const Cell_t &curr_ce
 {
 	map.generateSPMAP(curr_cell, possible_targets);
 	TargetList reachable_targets{};
+	ROS_WARN("~%s %d", __FUNCTION__, __LINE__);
 	for (auto it = possible_targets.begin(); it != possible_targets.end();)
 	{
+		ROS_WARN("~%s %d", __FUNCTION__, __LINE__);
 		CellState it_cost = map.getCell(COST_MAP, it->X, it->Y);
 		if (it_cost == COST_NO || it_cost == COST_HIGH)
 			continue;
@@ -424,6 +426,7 @@ TargetList CleanModeNav::getReachableTargets(GridMap &map, const Cell_t &curr_ce
 			it++;
 		}
 	}
+	ROS_WARN("~%s %d", __FUNCTION__, __LINE__);
 	return reachable_targets;
 }
 
