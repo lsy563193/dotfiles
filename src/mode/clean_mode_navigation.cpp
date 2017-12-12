@@ -183,7 +183,7 @@ bool CleanModeNav::isExit()
 
 bool CleanModeNav::setNextAction() {
 	if (isInitState() || action_i_ == ac_open_slam) {
-		PP_INFO();
+		PP_INFO();NAV_INFO();
 		if (action_i_ == ac_open_gyro) {
 			PP_INFO();
 			if (paused_)
@@ -274,7 +274,7 @@ Path_t CleanModeNav::generatePath(GridMap &map, const Cell_t &curr_cell, const M
 		return path;
 
 	//Step 6: Find shortest path for this best target.
-	Path_t shortest_path = findShortestPath(map, curr_cell, best_target, last_dir);
+	Path_t shortest_path = findShortestPath(map, curr_cell, best_target, last_dir, true);
 	if (shortest_path.empty())
 		// Now path is empty.
 		return path;
@@ -401,6 +401,7 @@ TargetList CleanModeNav::filterAllPossibleTargets(GridMap &map, const Cell_t &cu
 		for(const auto& it:tmp_list){
 			filtered_targets.push_back(it);
 		};
+		ROS_WARN("~%s %d: Filter targets in the same line.", __FUNCTION__, __LINE__);
 	}
 
 	displayTargets(filtered_targets);
@@ -581,8 +582,8 @@ bool CleanModeNav::setNextMoveType() {
 		}
 		else {
 			delta_y = plan_path_.back().Y - start.Y;
-			bool is_left = ((GridMap::isPositiveDirection(old_dir_) && GridMap::isXDirection(old_dir_)) ^ delta_y > 0);
-//		ROS_INFO("\033[31m""%s,%d: target:, 1_left_2_right(%d)""\033[0m", __FUNCTION__, __LINE__, get());
+			bool is_left = GridMap::isPositiveDirection(old_dir_) ^ delta_y > 0;
+			ROS_INFO("\033[31m""%s,%d: target:, 0_left_1_right(%d=%d ^ %d)""\033[0m", __FUNCTION__, __LINE__, is_left, GridMap::isPositiveDirection(old_dir_), delta_y);
 			move_type_i_ = is_left ? mt_follow_wall_left : mt_follow_wall_right;
 		}
 	}
@@ -600,7 +601,7 @@ bool CleanModeNav::isOverOriginLine()
 	if ((cm_target_p_.Y > cm_origin_p_.Y && (cm_origin_p_.Y - s_curr_p.Y) > 120)
 		|| (cm_target_p_.Y < cm_origin_p_.Y && (s_curr_p.Y - cm_origin_p_.Y) > 120))
 	{
-//		ROS_WARN("origin(%d,%d) curr_p(%d, %d), target_p_(%d, %d)",cm_origin_p_.X, cm_origin_p_.Y,  s_curr_p.X, s_curr_p.Y, cm_target_p_.X, cm_target_p_.Y);
+		ROS_WARN("origin(%d,%d) curr_p(%d, %d), target_p_(%d, %d)",cm_origin_p_.X, cm_origin_p_.Y,  s_curr_p.X, s_curr_p.Y, cm_target_p_.X, cm_target_p_.Y);
 		auto curr = nav_map.pointToCell(s_curr_p);
 		auto target_angle = (cm_target_p_.Y > cm_origin_p_.Y) ? -900 : 900;
 		if (std::abs(ranged_angle(robot::instance()->getPoseAngle() - target_angle)) < 50) // If robot is directly heading to the opposite side of target line, stop.

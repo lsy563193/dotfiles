@@ -36,7 +36,7 @@ public:
 	 * @return: Path_t path, the shortest path from start cell to target cell.
 	 */
 	Path_t findShortestPath(GridMap &map, const Cell_t &start,
-							  const Cell_t &target, const MapDirection &last_dir);
+							  const Cell_t &target, const MapDirection &last_dir,bool use_unknown);
 	/*
 	 * @last modify by Austin Liu
 	 *
@@ -53,7 +53,7 @@ public:
 	 *
 	 * @param: TargetList target list.
 	 */
-	void displayTargets(const TargetList &target_list){};
+	void displayTargets(const TargetList &target_list);
 
 	/*
 	 * @author Patrick Chow

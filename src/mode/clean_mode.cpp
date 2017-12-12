@@ -89,6 +89,7 @@ bool ACleanMode::setNextAction() {
 				cm_target_p_ = GridMap::cellToPoint(plan_path_.back());
 				cm_origin_p_ = GridMap::getCurrPoint();
 				action_i_ = (move_type_i_ == mt_follow_wall_left) ? ac_follow_wall_left : ac_follow_wall_right;
+				PP_INFO();NAV_INFO();
 			}
 			else if (ac_is_forward())
 			{
@@ -96,6 +97,7 @@ bool ACleanMode::setNextAction() {
 					action_i_ = ac_back;
 				else
 					action_i_ = (move_type_i_ == mt_follow_wall_left) ? ac_follow_wall_left : ac_follow_wall_right;
+				PP_INFO();NAV_INFO();
 			}
 			else if (ac_is_follow_wall())
 			{
@@ -108,12 +110,14 @@ bool ACleanMode::setNextAction() {
 				}
 				else
 					action_i_ = ac_null;//reach
+				PP_INFO();NAV_INFO();
 			}
 			else if (action_i_ == ac_back)
 			{
 				turn_target_angle_ = GridMap::getCurrPoint().TH + g_turn_angle;
 				PP_INFO();
 				action_i_ = ac_turn;
+				PP_INFO();NAV_INFO();
 			}
 		}
 

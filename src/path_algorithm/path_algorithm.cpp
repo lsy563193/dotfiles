@@ -6,7 +6,7 @@
 #include "path_algorithm.h"
 
 Path_t PathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start,
-										 const Cell_t &target, const MapDirection &last_dir)
+										 const Cell_t &target, const MapDirection &last_dir,bool use_unknown)
 {
 	Path_t path_;
 	path_.clear();
@@ -30,7 +30,7 @@ Path_t PathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start,
 					}
 				}
 			}
-			else if(cs == UNCLEAN)
+			else if(cs == UNCLEAN && !use_unknown)
 				map.setCell(COST_MAP, i, j, COST_HIGH);
 		}
 	}
@@ -239,6 +239,17 @@ void PathAlgorithm::displayPath(const Path_t& path)
 	ROS_INFO("%s",msg.c_str());
 }
 
+void PathAlgorithm::displayTargets(const Path_t& path)
+{
+	std::string     msg = __FUNCTION__;
+
+	msg += " " + std::to_string(__LINE__) + ": Path size(" + std::to_string(path.size()) + "):";
+	for (auto it = path.begin(); it != path.end(); ++it) {
+		msg += "(" + std::to_string(it->X) + ", " + std::to_string(it->Y) + ", " + std::to_string(it->TH) + "), ";
+	}
+	//msg += "\n";
+	ROS_INFO("%s",msg.c_str());
+}
 void PathAlgorithm::optimizePath(GridMap &map, Path_t& path)
 {
 	// Optimize only if the path have more than 3 cells.
@@ -522,7 +533,9 @@ Path_t NavGoHomePathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cel
 			go_home_map_.mergeFromSlamGridMap(slam_grid_map, false, false, false, false, false, true);
 		}
 
-		go_home_path = findShortestPath(go_home_map_, curr_cell, current_home_target_, last_dir);
+		//todo
+		auto use_unknown = true;//is_fobbit_hight
+		go_home_path = findShortestPath(go_home_map_, curr_cell, current_home_target_, last_dir,use_unknown);
 
 		if (!go_home_path.empty())
 			break;

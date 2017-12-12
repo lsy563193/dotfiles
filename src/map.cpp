@@ -69,10 +69,7 @@ GridMap::GridMap() {
 
 bool GridMap::isPositiveDirection(MapDirection dir)
 {
-	if (dir == MAP_POS_X || dir == MAP_POS_Y || dir == MAP_NONE)
-		return true;
-
-	return false;
+	return (dir == MAP_POS_X || dir == MAP_POS_Y || dir == MAP_NONE);
 }
 
 bool GridMap::isXDirection(MapDirection dir)
