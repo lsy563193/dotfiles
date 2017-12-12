@@ -31,3 +31,8 @@ void ActionOpenGyro::run() {
 //ActionOpenGyroNav::ActionOpenGyroNav() {
 
 //}
+bool IAction::isTimeUp() {
+	if (interval_ == 0)
+		return false;
+	return (ros::Time::now().toSec() - start_timer_ > interval_);
+}

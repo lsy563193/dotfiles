@@ -73,7 +73,6 @@ bool MovementTurn::isReach()
 		else
 			ROS_INFO("%s, %d: MovementTurn target angle: \033[32m%d\033[0m, current angle: \033[32m%d\033[0m, line is not found."
 					, __FUNCTION__, __LINE__, s_target_p.TH, robot::instance()->getPoseAngle());
-		time_start_straight = ros::Time::now().toSec();
 		return true;
 	}
 		/**********************************************END**********************************************************/

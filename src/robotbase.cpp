@@ -309,6 +309,7 @@ void *robotbase_routine(void*)
 		sensor.rbumper = static_cast<uint8_t>(_right_bumper_status);
 		bumper.setLeft(_left_bumper_status);
 		bumper.setRight(_right_bumper_status);
+//		printf("bl(%d),br(%d)\n",bumper.getLeft(), bumper.getRight());
 
 		bumper.setLidarBumperStatus();
 		sensor.rbumper = static_cast<uint8_t>(bumper.getLidarBumperStatus());

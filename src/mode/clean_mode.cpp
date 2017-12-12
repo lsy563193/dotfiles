@@ -246,7 +246,10 @@ void ACleanMode::genMoveAction() {
 	else if (action_i_ == ac_forward)
 		sp_action_.reset(new MovementForward(GridMap::cellToPoint(plan_path_.back()), plan_path_,new_dir_));
 	else if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
+	{
+
 		sp_action_.reset(new MovementFollowWall(action_i_ == ac_follow_wall_left));
+	}
 	else if (action_i_ == ac_back)
 		sp_action_.reset(new MovementBack());
 	else if (action_i_ == ac_turn)
@@ -337,12 +340,23 @@ void ACleanMode::mt_init(int) {
 	auto tar = nav_map.cellToPoint(plan_path_.back());
 	if (mt_is_follow_wall()) {
 //			ROS_INFO("%s,%d: mt_is_fw",__FUNCTION__, __LINE__);
-			if (LIDAR_FOLLOW_WALL)
-				if (!lidar_turn_angle(g_turn_angle))
-					g_turn_angle = ranged_angle(course_to_dest(cur.X, cur.Y, tar.X, tar.Y) -
-																			robot::instance()->getPoseAngle());
+		if (LIDAR_FOLLOW_WALL)
+			if (!lidar_turn_angle(g_turn_angle))
+				g_turn_angle = ranged_angle(course_to_dest(cur.X, cur.Y, tar.X, tar.Y) -
+																		robot::instance()->getPoseAngle());
 		turn_target_angle_ = ranged_angle(robot::instance()->getPoseAngle() + g_turn_angle);
-		ROS_INFO("g_turn_angle(%d)cur(%d,%d,%d),tar(%d,%d,%d)",g_turn_angle,cur.X,cur.Y,cur.TH, tar.X,tar.Y,tar.TH);
+		ROS_INFO("g_turn_angle(%d)cur(%d,%d,%d),tar(%d,%d,%d)", g_turn_angle, cur.X, cur.Y, cur.TH, tar.X, tar.Y, tar.TH);
+
+		if (action_i_ == ac_back) {
+			PP_INFO();
+			g_time_straight = 0.2;
+			g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
+		}
+		else if (action_i_ == ac_turn) {
+			PP_INFO();
+			g_time_straight = 0;
+			g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
+		}
 	}
 	else if (move_type_i_ == mt_linear) {
 		turn_target_angle_ = plan_path_.front().TH;

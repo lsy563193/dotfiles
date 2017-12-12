@@ -223,6 +223,7 @@ bool CleanModeNav::setNextAction() {
 	else {
 		ACleanMode::setNextAction();
 	}
+	PP_INFO();
 	NAV_INFO();
 	return action_i_ != ac_null;
 }

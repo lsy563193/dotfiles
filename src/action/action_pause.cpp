@@ -18,7 +18,8 @@ ActionPause::ActionPause()
 		lidar.setScanOriginalReady(0);
 	}
 
-	pause_start_time_ = ros::Time::now().toSec();
+	start_timer_ = ros::Time::now().toSec();
+	interval_ = 600;
 	pause_pose_.setX(odom.getX());
 	pause_pose_.setY(odom.getY());
 }
@@ -45,14 +46,7 @@ bool ActionPause::isExit()
 	return false;
 }
 
-bool ActionPause::isTimeUp()
-{
-	if (ros::Time::now().toSec() - pause_start_time_ > 600)
-		// Robot pause for too long, directly change to sleep mode.
-		return true;
 
-	return false;
-}
 void ActionPause::run()
 {
 	// Just do nothing...

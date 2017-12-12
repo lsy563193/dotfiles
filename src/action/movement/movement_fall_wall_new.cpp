@@ -13,7 +13,9 @@ double robot_to_wall_distance = 0.8;
 
 MovementFollowWall::MovementFollowWall(bool is_left) : previous_(0), seen_charger_counter(0), is_left_(is_left)
 {
-		fw_map.reset(CLEAN_MAP);
+	start_timer_ = ros::Time::now().toSec();
+	ROS_ERROR("start_timer_(%f)",start_timer_);
+	fw_map.reset(CLEAN_MAP);
 }
 
 bool MovementFollowWall::isClosure(uint8_t closure_cnt)
@@ -177,6 +179,7 @@ void MovementFollowWall::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 			return ;
 		}
 	}
+	ROS_INFO("%s,%d, speed(%d,%d)", __FUNCTION__, __LINE__, diff_speed,same_speed);
 	if(seen_charger_counter)
 	{
 		seen_charger_counter--;
@@ -185,16 +188,16 @@ void MovementFollowWall::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		return ;
 	}
 
-	if (ros::Time::now().toSec() - time_start_straight < g_time_straight)
+	if (ros::Time::now().toSec() - start_timer_ < g_time_straight)
 	{
-		auto tmp = ros::Time::now().toSec() - time_start_straight;
-		if(tmp < (g_time_straight / 3)) {
+		auto time_past = ros::Time::now().toSec() - start_timer_;
+		if(time_past < (g_time_straight / 3)) {
 			if(same_speed < 8 )
 				same_speed = diff_speed += 1;
 			else
 				same_speed = diff_speed = 8;
 		}
-		else if(tmp < (2 * g_time_straight / 3)) {
+		else if(time_past < (2 * g_time_straight / 3)) {
 			if(same_speed < 8)
 				same_speed = diff_speed = 8;
 			if(same_speed < 13)
@@ -381,7 +384,7 @@ void MovementFollowWall::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 			same_speed = 0.210 * diff_speed;
 		}
 	}
-//	ROS_INFO("%s,%d, speed(%d,%d)", __FUNCTION__, __LINE__, diff_speed,same_speed);
+	ROS_INFO("%s,%d, speed(%d,%d)", __FUNCTION__, __LINE__, diff_speed,same_speed);
 }
 
 bool MovementFollowWall::sp_turn_over(const Cell_t &curr) {

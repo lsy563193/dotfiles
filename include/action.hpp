@@ -18,11 +18,13 @@ public:
 
 	virtual bool isExit(){return false;};
 
-	virtual bool isTimeUp(){};
+	bool isTimeUp();
 
 	virtual void run()=0;
 
 protected:
+	double start_timer_{};
+	double interval_{};
 };
 
 class ActionOpenGyro :public IAction
@@ -110,7 +112,6 @@ public:
 	~ActionPause();
 	bool isFinish() override;
 	bool isExit() override;
-	bool isTimeUp() override ;
 	void run() override;
 
 private:

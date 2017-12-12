@@ -14,7 +14,7 @@ Path_t IMovement::path_ = {};
 
 void IMovement::run() {
 //	PP_INFO();
-	int32_t l_speed,r_speed;
+	int32_t l_speed{},r_speed{};
 	adjustSpeed(l_speed,r_speed);
 	wheel.setPidTargetSpeed(l_speed, r_speed);
 }
