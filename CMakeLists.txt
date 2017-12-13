@@ -54,6 +54,11 @@ FILE(GLOB PP_SRC
 	src/mode/clean_mode_follow_wall.cpp
 				src/mode/clean_mode_spot.cpp
 	src/path_algorithm/path_algorithm.cpp
+				src/path_algorithm/path_algorithm_navigation_clean.cpp
+				src/path_algorithm/path_algorithm_follow_wall.cpp
+				src/path_algorithm/path_algorithm_spot.cpp
+				src/path_algorithm/path_algorithm_go_home.cpp
+				src/path_algorithm/shortest_path_algorithm.cpp
 	src/path_algorithm/move_type_plan.cpp
 
 	src/action/action.cpp
