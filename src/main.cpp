@@ -37,6 +37,8 @@
 #include "verify.h"
 #endif
 
+robot* robot_instance;
+
 Mode* getNextMode(int next_mode_i_)
 {
 	ROS_INFO("%s %d: next mode:%d", __FUNCTION__, __LINE__, next_mode_i_);
@@ -203,62 +205,24 @@ int main(int argc, char **argv)
 {
 	int		baudrate, ret1, core_move_thread_state;
 	bool	verify_ok = true;
-	pthread_t	core_move_thread_id, event_manager_thread_id, event_handler_thread_id;
-	std::string	serial_port;
-	std::string lidar_bumper_dev;
 
 	ros::init(argc, argv, "pp");
 	ros::NodeHandle	nh_private("~");
 
-	robot	robot_obj;
+	std::string	serial_port;
+	nh_private.param<std::string>("serial_port", serial_port, "/dev/ttyS2");
+	nh_private.param<int>("baudrate", baudrate, 115200);
+
+	std::string lidar_bumper_dev;
+	nh_private.param<std::string>("lidar_bumper_file", lidar_bumper_dev, "/dev/input/event0");
+
+	robot_instance = new robot(serial_port, baudrate, lidar_bumper_dev);
 
 	SpotMovement spot_obj(1.0);
 
-	event_manager_init();
 
-	nh_private.param<std::string>("serial_port", serial_port, "/dev/ttyS3");
-	nh_private.param<int>("baudrate", baudrate, 57600);
-	nh_private.param<std::string>("lidar_bumper_file", lidar_bumper_dev, "/dev/input/event0");
-	
-	serial.init(serial_port.c_str(), baudrate);
-	if(bumper.lidarBumperInit(lidar_bumper_dev.c_str()) == -1){
-		ROS_ERROR(" lidar bumper open fail!");
-	}
-#if VERIFY_CPU_ID
-	if (verify_cpu_id() < 0) {
-		verify_ok = false;
-	}
-#endif
-
-#if VERIFY_KEY
-	if (verify_ok == true && verify_key() == 0) {
-		verify_ok = false;
-	}
-#endif
-
-	robotbase_reset_send_stream();
-	robotbase_init();
-
-	if (verify_ok == true) {
-#if 1
-		ret1 = pthread_create(&event_manager_thread_id, 0, event_manager_thread, NULL);
-		if (ret1 != 0) {
-			ROS_ERROR("%s %d: event_manager_thread fails to run!", __FUNCTION__, __LINE__);
-		} else {
-			ROS_INFO("%s %d: \033[32mevent_manager_thread\033[0m is up!", __FUNCTION__, __LINE__);
-		}
-#endif
-
-
-#if 1
-		ret1 = pthread_create(&event_handler_thread_id, 0, event_handler_thread, NULL);
-		if (ret1 != 0) {
-			ROS_ERROR("%s %d: event_handler_thread fails to run!", __FUNCTION__, __LINE__);
-		} else {
-			ROS_INFO("%s %d: \033[32mevent_handler_thread\033[0m is up!", __FUNCTION__, __LINE__);
-		}
-#endif
-
+//	if (verify_ok == true) {
+		pthread_t core_move_thread_id;
 		ret1 = pthread_create(&core_move_thread_id, 0, core_move_thread, NULL);
 		if (ret1 != 0) {
 			core_move_thread_state = 0;
@@ -267,12 +231,11 @@ int main(int argc, char **argv)
 			core_move_thread_state = 1;
 		}
 		ros::spin();
-	} else {
-		printf("turn on led\n");
-		led.set_mode(LED_STEADY, LED_ORANGE);
-		sleep(10);
-	}
-	bumper.lidarBumperDeinit();
-	robotbase_deinit();
+		delete robot_instance;
+//	} else {
+//		printf("turn on led\n");
+//		led.set_mode(LED_STEADY, LED_ORANGE);
+//		sleep(10);
+//	}
 	return 0;
 }
