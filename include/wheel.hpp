@@ -28,7 +28,7 @@ struct pid_struct
 
 struct pid_argu_struct
 {
-	uint8_t reg_type; // IGovernor type
+	uint8_t reg_type; // ISpeedGovernor type
 	float Kp;
 	float Ki;
 	float Kd;

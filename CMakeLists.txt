@@ -61,6 +61,8 @@ FILE(GLOB PP_SRC
 				src/path_algorithm/shortest_path_algorithm.cpp
 	src/path_algorithm/move_type_plan.cpp
 
+	src/speed_governor/*
+
 	src/action/action.cpp
 	src/action/action_open_gyro.cpp
 	src/action/action_back_from_charger.cpp

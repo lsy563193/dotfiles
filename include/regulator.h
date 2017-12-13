@@ -13,7 +13,7 @@
 #include <robot.hpp>
 #include <rcon.h>
 #include <wheel.hpp>
-#include <governor.hpp>
+#include <speed_governor.hpp>
 //#include <event_action.h>
 #define WALL_DISTANCE_WHITE_MIN 550
 #define WALL_DISTANCE_WHITE_MAX 625
@@ -66,7 +66,7 @@ bool lidar_turn_angle(int16_t& turn_angle);
 //
 //};
 
-class Movement: public IGovernor{
+class Movement: public ISpeedGovernor{
 public:
 	bool isStop();
 	bool isExit();

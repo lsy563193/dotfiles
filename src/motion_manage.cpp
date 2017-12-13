@@ -222,8 +222,8 @@ void init_nav_gyro_charge()
 {
 	if (cs_is_paused() || g_resume_cleaning )
 	{
-		robot::instance()->offsetAngle(robot::instance()->savedOffsetAngle());
-		ROS_WARN("%s %d: Restore the gyro angle(%f).", __FUNCTION__, __LINE__, -robot::instance()->savedOffsetAngle());
+//		robot::instance()->offsetAngle(robot::instance()->savedOffsetAngle());
+//		ROS_WARN("%s %d: Restore the gyro angle(%f).", __FUNCTION__, __LINE__, -robot::instance()->savedOffsetAngle());
 		if (!cs.is_going_home())
 			if(ev.remote_home || ev.battery_home)
 				cs.setNext(CS_GO_HOME_POINT);
@@ -505,7 +505,7 @@ void MotionManage::get_aligment_angle()
 			}
 
 			align_angle += (float)(LIDAR_THETA / 10);
-			robot::instance()->offsetAngle(align_angle);
+//			robot::instance()->offsetAngle(align_angle);
 			ROS_INFO("%s %d: align_angle angle (%f).", __FUNCTION__, __LINE__,align_angle);
 			g_homes[0].TH = -(int16_t)(align_angle);
 			ROS_INFO("%s %d: g_homes[0].TH (%d).", __FUNCTION__, __LINE__, g_homes[0].TH);
@@ -695,7 +695,7 @@ MotionManage::MotionManage(CleanMode* p_cm):nh_("~"),is_align_active_(false)
 			{
 				float align_angle = lidar.alignAngle();
 				align_angle += (float)(LIDAR_THETA / 10);
-				robot::instance()->offsetAngle(align_angle);
+//				robot::instance()->offsetAngle(align_angle);
 				g_homes[0].TH = -(int16_t)(align_angle);
 				ROS_INFO("%s %d: align_angle angle (%f), g_homes[0].TH (%d).", __FUNCTION__, __LINE__, align_angle, g_homes[0].TH);
 				usleep(230000);
@@ -838,8 +838,8 @@ MotionManage::~MotionManage()
 				path_set_home(g_home_point);
 			}
 			cm_set(Clean_Mode_Idle);
-			robot::instance()->savedOffsetAngle(robot::instance()->getPoseAngle());
-			robot::instance()->offsetAngle(0);
+//			robot::instance()->savedOffsetAngle(robot::instance()->getPoseAngle());
+//			robot::instance()->offsetAngle(0);
 			ROS_INFO("%s %d: Save the gyro angle(\033[32m%f\033[0m) before pause.", __FUNCTION__, __LINE__, robot::instance()->getPoseAngle());
 			if (cs.is_going_home())
 #if MANUAL_PAUSE_CLEANING
@@ -874,8 +874,8 @@ MotionManage::~MotionManage()
 			g_resume_cleaning = true;
 			g_is_low_bat_pause = false;
 			cm_set(Clean_Mode_Charging);
-			robot::instance()->savedOffsetAngle(robot::instance()->getPoseAngle());
-			robot::instance()->offsetAngle(0);
+//			robot::instance()->savedOffsetAngle(robot::instance()->getPoseAngle());
+//			robot::instance()->offsetAngle(0);
 			ROS_WARN("%s %d: Save the gyro angle(%f) before pause.", __FUNCTION__, __LINE__, robot::instance()->getPoseAngle());
 			ROS_WARN("%s %d: Pause cleaning for low battery, will continue cleaning when charge finished.", __FUNCTION__, __LINE__);
 			ROS_INFO("%s %d: Cleaning time: \033[32m%d(s)\033[0m", __FUNCTION__, __LINE__, robot_timer.getWorkTime());
@@ -918,8 +918,8 @@ MotionManage::~MotionManage()
 */
 	slam.stop();
 
-	robot::instance()->savedOffsetAngle(0);
-	robot::instance()->offsetAngle(0);
+//	robot::instance()->savedOffsetAngle(0);
+//	robot::instance()->offsetAngle(0);
 
 	if (ev.fatal_quit)
 		if (ev.cliff_all_triggered)

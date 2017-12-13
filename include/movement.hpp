@@ -5,7 +5,7 @@
 #ifndef PP_MOVEMENT_HPP
 #define PP_MOVEMENT_HPP
 
-#include "governor.hpp"
+#include "speed_governor.hpp"
 #include "event_manager.h"
 #include "path_algorithm.h"
 #include "boost/shared_ptr.hpp"
@@ -13,7 +13,7 @@
 
 
 class ACleanMode;
-class IMovement: public IAction,public IGovernor{
+class IMovement: public IAction,public ISpeedGovernor{
 public:
 	virtual void adjustSpeed(int32_t&, int32_t&)=0;
 	virtual void run();

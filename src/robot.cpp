@@ -31,7 +31,7 @@ int OBS_adjust_count = 50;
 
 
 //extern pp::x900sensor sensor;
-robot::robot():offset_angle_(0),saved_offset_angle_(0)
+robot::robot()/*:offset_angle_(0),saved_offset_angle_(0)*/
 {
 	init();
 	// Subscribers.
