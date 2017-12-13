@@ -5,9 +5,9 @@
 #include "ros/ros.h"
 #include "path_algorithm.h"
 
-Path_t WFCleanPathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir)
+bool WFCleanPathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir, Path_t &plan_path)
 {
-	Path_t path{};
+//	Path_t path{};
 //	if (move_type_i_ == mt_linear) {
 //		ROS_INFO("%s,%d: path_next_fw", __FUNCTION__, __LINE__);
 //		path.push_back(curr_cell);
@@ -31,5 +31,5 @@ Path_t WFCleanPathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell,
 //			path.push_back(cell);
 //		}
 //	}
-	return path;
+	return false;
 }

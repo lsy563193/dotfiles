@@ -5,8 +5,8 @@
 #include "ros/ros.h"
 #include "path_algorithm.h"
 
-Path_t SpotCleanPathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir)
+bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir, Path_t &plan_path)
 {
 	ROS_ERROR("TODO Full here");
-	return Path_t();
+	return false;
 }

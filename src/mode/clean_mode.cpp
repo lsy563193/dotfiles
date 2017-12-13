@@ -3,6 +3,7 @@
 //
 
 #include <mathematics.h>
+#include <pp.h>
 #include "pp.h"
 #include "arch.hpp"
 
@@ -172,7 +173,8 @@ bool ACleanMode::setNextState() {
 		home_cells_.back().TH = robot::instance()->getPoseAngle();
 		PP_INFO();
 		old_dir_ = new_dir_;
-		plan_path_ = clean_path_algorithm_->generatePath(nav_map, nav_map.getCurrCell(),old_dir_);
+		plan_path_.clear();
+		clean_path_algorithm_->generatePath(nav_map, nav_map.getCurrCell(),old_dir_, plan_path_);
 		new_dir_ = (MapDirection)plan_path_.front().TH;
 		plan_path_.pop_front();
 
@@ -185,9 +187,14 @@ bool ACleanMode::setNextState() {
 	{
 		PP_INFO();
 		old_dir_ = new_dir_;
-		plan_path_ = clean_path_algorithm_->generatePath(nav_map, nav_map.getCurrCell(),old_dir_);
-
-		if (plan_path_.empty())
+		plan_path_.clear();
+		if (clean_path_algorithm_->generatePath(nav_map, nav_map.getCurrCell(), old_dir_, plan_path_))
+		{
+			new_dir_ = (MapDirection)plan_path_.front().TH;
+			plan_path_.pop_front();
+			clean_path_algorithm_->displayPath(plan_path_);
+		}
+		else
 		{
 			if (clean_path_algorithm_->checkTrapped(nav_map, nav_map.getCurrCell()))
 				state_i_ = st_trapped;
@@ -195,33 +202,42 @@ bool ACleanMode::setNextState() {
 				state_i_ = st_go_home_point;
 			st_init(state_i_);
 			move_type_i_ = mt_null;
-		} else
-		{
-			new_dir_ = (MapDirection)plan_path_.front().TH;
-			plan_path_.pop_front();
-			clean_path_algorithm_->displayPath(plan_path_);
 		}
 	}
 	else if (state_i_ == st_go_home_point)
 	{
 		PP_INFO();
 		old_dir_ = new_dir_;
-		plan_path_ = go_home_path_algorithm_->generatePath(nav_map, nav_map.getCurrCell(),old_dir_);
-		if (plan_path_.empty())
+		plan_path_.clear();
+		if (go_home_path_algorithm_->generatePath(nav_map, nav_map.getCurrCell(),old_dir_, plan_path_))
 		{
-			state_i_ = st_null;
-			move_type_i_ = mt_null;
+			if (plan_path_.empty())
+			{
+				PP_INFO();
+				state_i_ = st_null;
+				move_type_i_ = mt_null;
+			}
+			else
+			{
+				new_dir_ = (MapDirection)plan_path_.front().TH;
+				plan_path_.pop_front();
+				clean_path_algorithm_->displayPath(plan_path_);
+			}
 		}
 		else
 		{
-			new_dir_ = (MapDirection)plan_path_.front().TH;
-			plan_path_.pop_front();
-			clean_path_algorithm_->displayPath(plan_path_);
+			PP_INFO();
+			state_i_ = st_null;
+			move_type_i_ = mt_null;
 		}
 	}
 	else if (state_i_ == st_go_to_charger)
 	{
 		PP_INFO();
+		if (ev.charge_detect)
+		{
+			state_i_ = st_null;
+		}
 	}
 
 	return state_i_ != st_null;

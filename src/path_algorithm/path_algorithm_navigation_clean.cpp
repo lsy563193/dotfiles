@@ -5,18 +5,16 @@
 #include "ros/ros.h"
 #include "path_algorithm.h"
 
-Path_t NavCleanPathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir)
+bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir, Path_t &plan_path)
 {
-	Path_t path;
-	path.clear();
 
 	//Step 1: Find possible targets in same lane.
-	path = findTargetInSameLane(map, curr_cell);
-	if (!path.empty())
+	plan_path = findTargetInSameLane(map, curr_cell);
+	if (!plan_path.empty())
 	{
-		fillPathWithDirection(path);
-		// Congratulation!! path is generated successfully!!
-		return path;
+		fillPathWithDirection(plan_path);
+		// Congratulation!! plan_path is generated successfully!!
+		return true;
 	}
 
 	//Step 2: Find all possible targets at the edge of cleaned area and filter targets in same lane.
@@ -39,8 +37,8 @@ Path_t NavCleanPathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell
 		displayTargets(reachable_targets);
 //		displayPath(reachable_targets);
 	else
-		// Now path is empty.
-		return path;
+		// Now plan_path is empty.
+		return false;
 
 	//Step 4: Trace back the path of these targets in COST_MAP.
 	PathList paths_for_reachable_targets = tracePathsToTargets(map, reachable_targets, curr_cell);
@@ -48,14 +46,14 @@ Path_t NavCleanPathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell
 	//Step 5: Filter paths to get the best target.
 	Cell_t best_target;
 	if (!filterPathsToSelectTarget(map, paths_for_reachable_targets, curr_cell, best_target))
-		// Now path is empty.
-		return path;
+		// Now plan_path is empty.
+		return false;
 
 	//Step 6: Find shortest path for this best target.
 	Path_t shortest_path = findShortestPath(map, curr_cell, best_target, last_dir, true);
 	if (shortest_path.empty())
-		// Now path is empty.
-		return path;
+		// Now plan_path is empty.
+		return false;
 
 	//Step 7: Optimize path for adjusting it away from obstacles..
 	optimizePath(map, shortest_path);
@@ -63,10 +61,10 @@ Path_t NavCleanPathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell
 	//Step 8: Fill path with direction.
 	fillPathWithDirection(shortest_path);
 
-	// Congratulation!! path is generated successfully!!
-	path = shortest_path;
+	// Congratulation!! plan_path is generated successfully!!
+	plan_path = shortest_path;
 
-	return path;
+	return true;
 }
 
 Path_t NavCleanPathAlgorithm::findTargetInSameLane(GridMap &map, const Cell_t &curr_cell)

@@ -77,16 +77,15 @@ GoHomePathAlgorithm::GoHomePathAlgorithm(GridMap &map, TargetList home_cells)
 	go_home_map_.copy(map);
 }
 
-Path_t GoHomePathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir)
+bool GoHomePathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir, Path_t &plan_path)
 {
-	Path_t go_home_path{};
 	ROS_INFO("%s %d: current_cell(%d, %d, %d), Reach home cell(%d, %d, %d)", __FUNCTION__ ,__LINE__,
 			 curr_cell.X, curr_cell.Y, curr_cell.TH, current_home_target_.X, current_home_target_.Y, current_home_target_.TH);
 	if (curr_cell == current_home_target_/* && abs(curr_cell.TH -  current_home_target_.TH) < 50*/)
 	{
 		ROS_INFO("%s %d: Reach home cell(%d, %d)", __FUNCTION__ ,__LINE__, current_home_target_.X, current_home_target_.Y);
 		// Congratulations! You have reached home.
-		return go_home_path;
+		return true;
 	}
 
 	// Search path to home cells.
@@ -103,20 +102,23 @@ Path_t GoHomePathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell, 
 			go_home_map_.mergeFromSlamGridMap(slam_grid_map, false, false, false, false, false, true);
 		}
 
-		go_home_path = findShortestPath(go_home_map_, curr_cell, current_home_target_, last_dir, true);
+		plan_path = findShortestPath(go_home_map_, curr_cell, current_home_target_, last_dir, true);
 
-		if (!go_home_path.empty())
+		if (!plan_path.empty())
 		{
 			ROS_INFO("%s %d", __FUNCTION__, __LINE__);
-			fillPathWithDirection(go_home_path);
+			fillPathWithDirection(plan_path);
 			break;
 		}
 	}
 
-	if (go_home_path.empty())
+	if (plan_path.empty())
+	{
 		ROS_INFO("%s %d: No more way to go home.", __FUNCTION__, __LINE__);
+		return false;
+	}
 
-	return go_home_path;
+	return true;
 }
 
 TargetList GoHomePathAlgorithm::getRestHomeCells()

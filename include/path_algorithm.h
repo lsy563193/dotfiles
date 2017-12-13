@@ -16,7 +16,7 @@ typedef std::deque<Path_t> PathList;
 class APathAlgorithm
 {
 public:
-	virtual Path_t generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir) = 0;
+	virtual bool generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir, Path_t &plan_path){};
 
 	virtual bool checkTrapped(GridMap &map, const Cell_t &curr_cell) = 0;
 
@@ -141,7 +141,7 @@ class NavCleanPathAlgorithm: public APathAlgorithm
 	 *
 	 * @return: Path_t path, the path to unclean area.
 	 */
-	Path_t generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir) override;
+	bool generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir, Path_t &plan_path) override;
 
 private:
 	/*
@@ -227,14 +227,14 @@ private:
 class WFCleanPathAlgorithm: public APathAlgorithm
 {
 public:
-	Path_t generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir);
+	bool generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir, Path_t &plan_path) override;
 	bool checkTrapped(GridMap &map, const Cell_t &curr_cell){};
 };
 
 class SpotCleanPathAlgorithm: public APathAlgorithm
 {
 public:
-	Path_t generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir);
+	bool generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir, Path_t &plan_path) override;
 	bool checkTrapped(GridMap &map, const Cell_t &curr_cell){};
 };
 
@@ -267,7 +267,7 @@ public:
 	 *
 	 * @return: Path_t path, the path to selected home cell.
 	 */
-	Path_t generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir);
+	bool generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir, Path_t &plan_path) override;
 
 	bool checkTrapped(GridMap &map, const Cell_t &curr_cell){};
 	TargetList getRestHomeCells();
