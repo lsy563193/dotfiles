@@ -39,6 +39,7 @@
 
 Mode* getNextMode(int next_mode_i_)
 {
+	ROS_INFO("%s %d: next mode:%d", __FUNCTION__, __LINE__, next_mode_i_);
 	switch (next_mode_i_)
 	{
 		case Mode::md_charge:
@@ -59,7 +60,10 @@ Mode* getNextMode(int next_mode_i_)
 //		case Mode::cm_exploration:
 //			return new CleanModeExploration();
 		default:
+		{
+			ROS_INFO("%s %d: next mode:%d", __FUNCTION__, __LINE__, next_mode_i_);
 			return new ModeIdle();
+		}
 	}
 }
 

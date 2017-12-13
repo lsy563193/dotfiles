@@ -117,6 +117,13 @@ bool ACleanMode::setNextAction() {
 				PP_INFO();NAV_INFO();
 			}
 		}
+		else if (mt_is_go_to_charger())
+		{
+			if (ac_is_go_to_charger())
+				action_i_ = ac_null;
+			else
+				action_i_ = ac_go_to_charger;
+		}
 
 		if (ev.fatal_quit)
 		{
@@ -150,9 +157,18 @@ bool ACleanMode::isFinish() {
 			do{
 				if(!setNextState())
 				{
-					ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
-					setNextMode(md_idle);
-					return true;
+					if (ev.charge_detect && charger.isOnStub())
+					{
+						ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+						setNextMode(md_charge);
+						return true;
+					}
+					else
+					{
+						ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+						setNextMode(md_idle);
+						return true;
+					}
 				}
 			}while(!setNextMoveType());
 		}
@@ -211,21 +227,34 @@ bool ACleanMode::setNextState() {
 		plan_path_.clear();
 		if (go_home_path_algorithm_->generatePath(nav_map, nav_map.getCurrCell(),old_dir_, plan_path_))
 		{
+			// Reach home cell or new path to home cell is generated.
 			if (plan_path_.empty())
 			{
+				// Reach home cell.
 				PP_INFO();
-				state_i_ = st_null;
-				move_type_i_ = mt_null;
+				if (nav_map.getCurrCell() == g_zero_home)
+				{
+					PP_INFO();
+					state_i_ = st_null;
+					move_type_i_ = mt_null;
+				}
+				else
+				{
+					PP_INFO();
+					state_i_ = st_go_to_charger;
+					move_type_i_ = mt_null;
+				}
 			}
 			else
 			{
 				new_dir_ = (MapDirection)plan_path_.front().TH;
 				plan_path_.pop_front();
-				clean_path_algorithm_->displayPath(plan_path_);
+				go_home_path_algorithm_->displayPath(plan_path_);
 			}
 		}
 		else
 		{
+			// No more paths to home cells.
 			PP_INFO();
 			state_i_ = st_null;
 			move_type_i_ = mt_null;
@@ -234,9 +263,15 @@ bool ACleanMode::setNextState() {
 	else if (state_i_ == st_go_to_charger)
 	{
 		PP_INFO();
-		if (ev.charge_detect)
+		if (ev.charge_detect && charger.isOnStub())
 		{
 			state_i_ = st_null;
+			move_type_i_ = mt_null;
+		}
+		else
+		{
+			state_i_ = st_go_home_point;
+			move_type_i_ = mt_null;
 		}
 	}
 
@@ -303,16 +338,15 @@ void ACleanMode::genMoveAction() {
 	else if (action_i_ == ac_forward)
 		sp_action_.reset(new MovementForward(GridMap::cellToPoint(plan_path_.back()), plan_path_,new_dir_));
 	else if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
-	{
-
 		sp_action_.reset(new MovementFollowWall(action_i_ == ac_follow_wall_left));
-	}
 	else if (action_i_ == ac_back)
 		sp_action_.reset(new MovementBack());
 	else if (action_i_ == ac_turn)
 		sp_action_.reset(new MovementTurn(turn_target_angle_));
 	else if (action_i_ == ac_pause)
 		sp_action_.reset(new ActionPause);
+	else if (action_i_ == ac_go_to_charger)
+		sp_action_.reset(new MovementGoToCharger);
 	else if(action_i_ == ac_null)
 		sp_action_ == nullptr;
 }
@@ -418,7 +452,7 @@ void ACleanMode::mt_init(int) {
 		ROS_INFO("%s,%d: mt_is_linear,turn(%d)", __FUNCTION__, __LINE__,turn_target_angle_);
 	}
 	else if (move_type_i_ == mt_go_to_charger) {
-		ROS_INFO("%s,%d: mt_is_go_charger", __FUNCTION__, __LINE__);
+		ROS_INFO("%s,%d: mt_is_go_to_charger", __FUNCTION__, __LINE__);
 		turn_target_angle_ = ranged_angle(robot::instance()->getPoseAngle());
 	}
 //	turn_target_angle_ = g_turn_angle;
@@ -449,7 +483,7 @@ bool ACleanMode::mt_is_null()
 {
 	return move_type_i_ == mt_null;
 }
-bool ACleanMode::mt_is_go_charger() {
+bool ACleanMode::mt_is_go_to_charger() {
 	return move_type_i_ == mt_go_to_charger;
 }
 
@@ -467,6 +501,10 @@ bool ACleanMode::ac_is_turn() {
 
 bool ACleanMode::ac_is_back() {
 	return action_i_ == ac_back;
+}
+
+bool ACleanMode::ac_is_go_to_charger(){
+	return action_i_ == ac_go_to_charger;
 }
 
 bool ACleanMode::action_is_movement() {

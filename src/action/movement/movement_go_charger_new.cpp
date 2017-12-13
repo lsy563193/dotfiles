@@ -857,6 +857,9 @@ void MovementGoToCharger::setTarget()
 
 void MovementGoToCharger::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
+	l_speed = r_speed = 0;
+	return;
+
 	/*---check if near charger station---*/
 	if (go_home_state_now == CHECK_NEAR_CHARGER_STATION)
 	{

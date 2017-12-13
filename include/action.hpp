@@ -16,7 +16,7 @@ public:
 
 	virtual bool isFinish()=0;
 
-	virtual bool isExit(){return false;};
+	virtual bool isExit();
 
 	bool isTimeUp();
 

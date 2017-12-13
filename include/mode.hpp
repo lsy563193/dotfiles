@@ -58,7 +58,7 @@ protected:
 		ac_back,//10
 //		ac_movement_follow_wall_left,
 //		ac_movement_follow_wall_right,
-		ac_movement_go_charger,
+		ac_go_to_charger,
 		ac_idle,
 		ac_sleep,
 		ac_charge,
@@ -193,13 +193,14 @@ protected:
 	bool mt_is_turn();
 	bool mt_is_linear();
 	bool mt_is_follow_wall();
-	bool mt_is_go_charger();
+	bool mt_is_go_to_charger();
 	bool mt_is_null();
 	bool action_is_movement();
 	bool ac_is_forward();
 	bool ac_is_follow_wall();
 	bool ac_is_turn();
 	bool ac_is_back();
+	bool ac_is_go_to_charger();
 	void st_init(int);
 	void mt_init(int);
 	std::vector<Cell_t> temp_fw_cells;
@@ -217,7 +218,7 @@ protected:
 	MapDirection new_dir_{MAP_POS_X};
 //	static boost::shared_ptr<State> sp_state_;
 //	static boost::shared_ptr<IMoveType> sp_move_type_;
-  int16_t turn_target_angle_{};
+	int16_t turn_target_angle_{};
 	int state_i_{st_null};
 	enum {
 		st_null,

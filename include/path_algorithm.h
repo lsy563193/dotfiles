@@ -16,7 +16,7 @@ typedef std::deque<Path_t> PathList;
 class APathAlgorithm
 {
 public:
-	virtual bool generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir, Path_t &plan_path){};
+	virtual bool generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir, Path_t &plan_path) = 0;
 
 	virtual bool checkTrapped(GridMap &map, const Cell_t &curr_cell) = 0;
 
