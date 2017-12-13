@@ -5,7 +5,6 @@
 #include <nav_msgs/MapMetaData.h>
 #include <nav_msgs/Odometry.h>
 #include <nav_msgs/OccupancyGrid.h>
-#include <obstacle_detector/Obstacles.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/Point.h>
 #include <tf/transform_listener.h>
@@ -81,6 +80,7 @@ public:
 	{
 		return is_tf_ready_;
 	}
+/*
 
 	void offsetAngle(float angle)
 	{
@@ -105,6 +105,7 @@ public:
 	{
 		return saved_offset_angle_;
 	};
+*/
 
 	int16_t getPoseAngle()
 	{
@@ -188,11 +189,13 @@ private:
 	bool	is_tf_ready_;
 
 	bool temp_spot_set_;
-
+/*
+	// TODO: Delete these offset variables.
 	boost::mutex offset_angle_metux_;
 	float offset_angle_;
 	float start_angle_;
 	float saved_offset_angle_;
+*/
 
 	bool	is_align_active_;
 

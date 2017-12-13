@@ -46,7 +46,7 @@ float Odom::getZ(void)
 
 void Odom::setAngle(float angle)
 {
-	pose.setAngle(angle + getAngleOffset());
+	pose.setAngle(angle - getAngleOffset());
 }
 
 float Odom::getAngle(void)

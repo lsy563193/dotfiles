@@ -241,7 +241,7 @@ void cs_paused_setting(void)
 		ROS_WARN("Reset manual/stuck pause status.");
 		speaker.play(SPEAKER_CLEANING_STOP);
 		g_is_manual_pause = false;
-		robot::instance()->savedOffsetAngle(0);
+//		robot::instance()->savedOffsetAngle(0);
 		if (slam.isMapReady())
 			slam.stop();
 		cm_reset_go_home();
