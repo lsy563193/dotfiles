@@ -266,6 +266,8 @@ public:
 
 	bool setNextAction();
 	void key_clean(bool state_now, bool state_last) override ;
+	void remote_clean(bool state_now, bool state_last) override ;
+	void remote_home(bool state_now, bool state_last) override ;
 	void cliff_all(bool state_now, bool state_last) override ;
 
 private:

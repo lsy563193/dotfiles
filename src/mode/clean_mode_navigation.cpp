@@ -10,7 +10,10 @@
 
 CleanModeNav::CleanModeNav()
 {
+	event_manager_register_handler(this);
+	event_manager_set_enable(true);
 	IMovement::sp_cm_ = this;
+	// TODO: Remove these old checking.
 	if (g_resume_cleaning || cs_is_paused())
 	{
 		speaker.play(SPEAKER_CLEANING_CONTINUE);
@@ -123,7 +126,25 @@ bool CleanModeNav::isFinish()
 			ROS_INFO("%s %d: Resume cleaning.", __FUNCTION__, __LINE__);
 			action_i_ = ac_open_gyro;
 			genMoveAction();
-			return false;
+			return ACleanMode::isFinish();
+		}
+		else if (ev.remote_home)
+		{
+			state_i_ = st_go_home_point;
+			st_init(state_i_);
+
+			map_mark();
+			if(!setNextState())
+			{
+				ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+				setNextMode(md_idle);
+				return true;
+			}
+			move_type_i_ = mt_null;
+			setNextMoveType();
+			action_i_ = ac_null;
+			setNextAction();
+			return ACleanMode::isFinish();
 		}
 		else
 			return false;
@@ -141,7 +162,25 @@ bool CleanModeNav::isFinish()
 			paused_odom_angle_ = odom.getAngle();
 			action_i_ = ac_pause;
 			genMoveAction();
-			return false;
+			return ACleanMode::isFinish();
+		}
+		else if (ev.remote_home)
+		{
+			state_i_ = st_go_home_point;
+			st_init(state_i_);
+
+			map_mark();
+			if(!setNextState())
+			{
+				ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+				setNextMode(md_idle);
+				return true;
+			}
+			move_type_i_ = mt_null;
+			setNextMoveType();
+			action_i_ = ac_null;
+			setNextAction();
+			return ACleanMode::isFinish();
 		}
 		else
 			return ACleanMode::isFinish();
@@ -245,6 +284,24 @@ void CleanModeNav::key_clean(bool state_now, bool state_last)
 	key.resetTriggerStatus();
 }
 
+void CleanModeNav::remote_clean(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: remote clean.", __FUNCTION__, __LINE__);
+
+	beeper.play_for_command(VALID);
+	ev.key_clean_pressed = true;
+	remote.reset();
+}
+
+void CleanModeNav::remote_home(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: remote home.", __FUNCTION__, __LINE__);
+
+	beeper.play_for_command(VALID);
+	ev.remote_home = true;
+	remote.reset();
+}
+
 void CleanModeNav::cliff_all(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Cliff all.", __FUNCTION__, __LINE__);
@@ -253,10 +310,9 @@ void CleanModeNav::cliff_all(bool state_now, bool state_last)
 }
 
 bool CleanModeNav::setNextMoveType() {
-	move_type_i_ = mt_linear;
-	auto start = nav_map.getCurrCell();
-	auto dir = old_dir_;
 	if (state_i_ == st_clean) {
+		auto start = nav_map.getCurrCell();
+		auto dir = old_dir_;
 		auto delta_y = plan_path_.back().Y - start.Y;
 		ROS_INFO( "%s,%d: path size(%u), dir(%d), g_check_path_in_advance(%d), bumper(%d), cliff(%d), lidar(%d), delta_y(%d)",
 						__FUNCTION__, __LINE__, plan_path_.size(), dir, g_check_path_in_advance, ev.bumper_triggered, ev.cliff_triggered,
@@ -275,6 +331,8 @@ bool CleanModeNav::setNextMoveType() {
 			move_type_i_ = is_left ? mt_follow_wall_left : mt_follow_wall_right;
 		}
 	}
+	else if (state_i_ == st_go_home_point)
+		move_type_i_ = mt_linear;
 	return ACleanMode::setNextMoveType();
 }
 

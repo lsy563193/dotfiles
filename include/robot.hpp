@@ -108,7 +108,8 @@ public:
 
 	int16_t getPoseAngle()
 	{
-		return pose.getAngle();
+		// It is 10x degrees.
+		return static_cast<int16_t>(pose.getAngle());
 	}
 
 	float getPoseX()

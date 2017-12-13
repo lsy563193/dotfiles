@@ -17,6 +17,8 @@ class IPathAlgorithm
 {
 public:
 	virtual Path_t generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir) = 0;
+
+	virtual bool checkTrapped(GridMap &map, const Cell_t &curr_cell) = 0;
 };
 
 class PathAlgorithmBase
@@ -107,6 +109,8 @@ public:
 	 */
 	bool findTargetUsingDijkstra(GridMap &map, const Cell_t& curr_cell, Cell_t& target, int& cleaned_count);
 
+protected:
+
 	/*
 	 * @author Lin Shao Yue
 	 * @last modify by Austin Liu
@@ -120,9 +124,8 @@ public:
 	 * @return: true, robot is trapped.
 	 *          false, robot is not trapped.
 	 */
-	bool checkTrapped(GridMap &map, const Cell_t &curr_cell);
+	bool checkTrappedUsingDijkstra(GridMap &map, const Cell_t &curr_cell);
 
-protected:
 	Cell_t cell_direction_index_[9]={{1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1},{0,0}};
 };
 
@@ -227,21 +230,24 @@ private:
 	 */
 	static bool sortPathsWithTargetYAscend(const Path_t a, const Path_t b);
 
+	bool checkTrapped(GridMap &map, const Cell_t &curr_cell) override ;
 };
 
 class WFCleanPathAlgorithm: public IPathAlgorithm, public ShortestPathAlgorithm
 {
 public:
 	Path_t generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir);
+	bool checkTrapped(GridMap &map, const Cell_t &curr_cell){};
 };
 
 class SpotCleanPathAlgorithm: public IPathAlgorithm, public ShortestPathAlgorithm
 {
 public:
 	Path_t generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir);
+	bool checkTrapped(GridMap &map, const Cell_t &curr_cell){};
 };
 
-class GoHomePathAlgorithm: public ShortestPathAlgorithm
+class GoHomePathAlgorithm: public IPathAlgorithm, public ShortestPathAlgorithm
 {
 public:
 	/*
@@ -272,6 +278,7 @@ public:
 	 */
 	Path_t generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir);
 
+	bool checkTrapped(GridMap &map, const Cell_t &curr_cell){};
 	TargetList getRestHomeCells();
 private:
 

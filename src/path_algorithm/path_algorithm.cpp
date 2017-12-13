@@ -429,7 +429,7 @@ bool ShortestPathAlgorithm::findTargetUsingDijkstra(GridMap &map, const Cell_t& 
 	return is_found;
 }
 
-bool ShortestPathAlgorithm::checkTrapped(GridMap &map, const Cell_t &curr_cell)
+bool ShortestPathAlgorithm::checkTrappedUsingDijkstra(GridMap &map, const Cell_t &curr_cell)
 {
 	int dijkstra_cleaned_count = 0;
 	PPTargetType path{{0,0,0}};
@@ -768,6 +768,11 @@ bool NavCleanPathAlgorithm::sortPathsWithTargetYAscend(const Path_t a, const Pat
 	return a.back().Y < b.back().Y;
 }
 
+bool NavCleanPathAlgorithm::checkTrapped(GridMap &map, const Cell_t &curr_cell)
+{
+	return checkTrappedUsingDijkstra(map, curr_cell);
+}
+
 Path_t WFCleanPathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir)
 {
 	Path_t path{};
@@ -816,30 +821,35 @@ GoHomePathAlgorithm::GoHomePathAlgorithm(GridMap &map, TargetList home_cells)
 			home_cells_ = {{0, 0}};
 			go_home_way_list_ = {                                       2,1,0};
 			ROS_INFO("%s,%d: go_home_way_list_ 1:                       2,1,0", __FUNCTION__, __LINE__);
+			break;
 		}
 		case 1:
 		{
 			home_cells_ = home_cells;
 			go_home_way_list_ = {                                       2,1,0};
 			ROS_INFO("%s,%d: go_home_way_list_ 1:                       2,1,0", __FUNCTION__, __LINE__);
+			break;
 		}
 		case 2:
 		{
 			home_cells_ = home_cells;
 			go_home_way_list_ = {                 5,      4,     3,     2,1,0};
 			ROS_INFO("%s,%d: go_home_way_list_ 2: 5,      4,     3,     2,1,0", __FUNCTION__, __LINE__);
+			break;
 		}
 		case 3:
 		{
 			home_cells_ = home_cells;
 			go_home_way_list_ = {                 5,8,    4,7,   3,6,   2,1,0};
 			ROS_INFO("%s,%d: go_home_way_list_ 3: 5,8,    4,7,   3,6,   2,1,0", __FUNCTION__, __LINE__);
+			break;
 		}
 		case 4:
 		{
 			home_cells_ = home_cells;
 			go_home_way_list_ = {                 5,8,11, 4,7,10,3,6,9, 2,1,0};
 			ROS_INFO("%s,%d: go_home_way_list_ 4: 5,8,11, 4,7,10,3,6,9, 2,1,0", __FUNCTION__, __LINE__);
+			break;
 		}
 		default:
 		{
@@ -854,6 +864,7 @@ GoHomePathAlgorithm::GoHomePathAlgorithm(GridMap &map, TargetList home_cells)
 			home_cells_.push_back({0, 0});
 			go_home_way_list_ = {                 5,8,11, 4,7,10,3,6,9, 2,1,0};
 			ROS_INFO("%s,%d: go_home_way_list_ 4: 5,8,11, 4,7,10,3,6,9, 2,1,0", __FUNCTION__, __LINE__);
+			break;
 		}
 	}
 	go_home_way_list_it_ = go_home_way_list_.begin();
@@ -872,6 +883,16 @@ GoHomePathAlgorithm::GoHomePathAlgorithm(GridMap &map, TargetList home_cells)
 Path_t GoHomePathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir)
 {
 	Path_t go_home_path{};
+	ROS_INFO("%s %d: current_cell(%d, %d, %d), Reach home cell(%d, %d, %d)", __FUNCTION__ ,__LINE__,
+			 curr_cell.X, curr_cell.Y, curr_cell.TH, current_home_target_.X, current_home_target_.Y, current_home_target_.TH);
+	if (curr_cell == current_home_target_/* && abs(curr_cell.TH -  current_home_target_.TH) < 50*/)
+	{
+		ROS_INFO("%s %d: Reach home cell(%d, %d)", __FUNCTION__ ,__LINE__, current_home_target_.X, current_home_target_.Y);
+		// Congratulations! You have reached home.
+		return go_home_path;
+	}
+
+	// Search path to home cells.
 	for (; go_home_way_list_it_ != go_home_way_list_.end(); ++go_home_way_list_it_) {
 		auto way = *go_home_way_list_it_ % GO_HOME_WAY_NUM;
 		auto cnt = *go_home_way_list_it_ / GO_HOME_WAY_NUM;
@@ -888,7 +909,11 @@ Path_t GoHomePathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell, 
 		go_home_path = findShortestPath(go_home_map_, curr_cell, current_home_target_, last_dir, true);
 
 		if (!go_home_path.empty())
+		{
+			ROS_INFO("%s %d", __FUNCTION__, __LINE__);
+			fillPathWithDirection(go_home_path);
 			break;
+		}
 	}
 
 	if (go_home_path.empty())
