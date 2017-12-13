@@ -177,10 +177,11 @@ bool ACleanMode::setNextState() {
 		plan_path_.pop_front();
 
 		state_i_ = st_clean;
+		move_type_i_ = mt_null;
 		st_init(state_i_);
 		PathAlgorithmBase::displayPath(plan_path_);
 	}
-	if(state_i_ == st_clean)
+	else if(state_i_ == st_clean)
 	{
 		PP_INFO();
 		old_dir_ = new_dir_;
@@ -193,6 +194,7 @@ bool ACleanMode::setNextState() {
 			else
 				state_i_ = st_go_home_point;
 			st_init(state_i_);
+			move_type_i_ = mt_null;
 		} else
 		{
 			new_dir_ = (MapDirection)plan_path_.front().TH;
@@ -200,21 +202,28 @@ bool ACleanMode::setNextState() {
 			PathAlgorithmBase::displayPath(plan_path_);
 		}
 	}
-	if (state_i_ == st_go_home_point)
+	else if (state_i_ == st_go_home_point)
 	{
 		PP_INFO();
 		old_dir_ = new_dir_;
 		plan_path_ = go_home_path_algorithm_->generatePath(nav_map, nav_map.getCurrCell(),old_dir_);
 		if (plan_path_.empty())
+		{
 			state_i_ = st_null;
+			move_type_i_ = mt_null;
+		}
 		else
 		{
 			new_dir_ = (MapDirection)plan_path_.front().TH;
 			plan_path_.pop_front();
 			PathAlgorithmBase::displayPath(plan_path_);
 		}
-
 	}
+	else if (state_i_ == st_go_to_charger)
+	{
+		PP_INFO();
+	}
+
 	return state_i_ != st_null;
 }
 
@@ -356,7 +365,7 @@ void ACleanMode::st_init(int next) {
 		g_wf_reach_count = 0;
 		led.set_mode(LED_STEADY, LED_ORANGE);
 	}
-	if (next == st_go_charger) {
+	if (next == st_go_to_charger) {
 		gyro.TiltCheckingEnable(false); //disable tilt detect
 		led.set_mode(LED_STEADY, LED_ORANGE);
 	}
@@ -392,7 +401,7 @@ void ACleanMode::mt_init(int) {
 		turn_target_angle_ = plan_path_.front().TH;
 		ROS_INFO("%s,%d: mt_is_linear,turn(%d)", __FUNCTION__, __LINE__,turn_target_angle_);
 	}
-	else if (move_type_i_ == mt_go_charger) {
+	else if (move_type_i_ == mt_go_to_charger) {
 		ROS_INFO("%s,%d: mt_is_go_charger", __FUNCTION__, __LINE__);
 		turn_target_angle_ = ranged_angle(robot::instance()->getPoseAngle());
 	}
@@ -425,7 +434,7 @@ bool ACleanMode::mt_is_null()
 	return move_type_i_ == mt_null;
 }
 bool ACleanMode::mt_is_go_charger() {
-	return move_type_i_ == mt_go_charger;
+	return move_type_i_ == mt_go_to_charger;
 }
 
 bool ACleanMode::ac_is_forward() {
