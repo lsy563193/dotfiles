@@ -9,6 +9,7 @@
 
 ModeRemote::ModeRemote()
 {
+	// TODO: Remote mode after nav is acting weird.
 	ROS_INFO("%s %d: Switch to remote mode.", __FUNCTION__, __LINE__);
 	event_manager_register_handler(this);
 	event_manager_set_enable(true);

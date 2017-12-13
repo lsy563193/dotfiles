@@ -43,6 +43,7 @@ CleanModeNav::~CleanModeNav()
 	lidar.setScanOriginalReady(0);
 
 	robot::instance()->setBaselinkFrameType(Odom_Position_Odom_Angle);
+	slam.stop();
 	odom.setAngleOffset(0);
 
 	if (moved_during_pause_)
@@ -91,7 +92,7 @@ uint8_t CleanModeNav::setFollowWall()
 
 bool CleanModeNav::map_mark()
 {
-	PathAlgorithmBase::displayPath(passed_path_);
+	clean_path_algorithm_->displayPath(passed_path_);
 	if (move_type_i_ == mt_linear) {
 		PP_INFO()
 		nav_map.setCleaned(passed_path_);

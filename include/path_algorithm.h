@@ -13,17 +13,13 @@ typedef std::deque<Cell_t> Path_t;
 typedef std::deque<Cell_t> TargetList;
 typedef std::deque<Path_t> PathList;
 
-class IPathAlgorithm
+class APathAlgorithm
 {
 public:
 	virtual Path_t generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir) = 0;
 
 	virtual bool checkTrapped(GridMap &map, const Cell_t &curr_cell) = 0;
-};
 
-class PathAlgorithmBase
-{
-public:
 	/*
 	 * @last modify by Austin Liu
 	 *
@@ -31,7 +27,7 @@ public:
 	 *
 	 * @param: Path_t path, the path from start cell to target cell.
 	 */
-	static void displayPath(const Path_t &path);
+	void displayPath(const Path_t &path);
 
 	/*
 	 * @last modify by Austin Liu
@@ -40,7 +36,7 @@ public:
 	 *
 	 * @param: TargetList target list.
 	 */
-	static void displayTargets(const TargetList &target_list);
+	void displayTargets(const TargetList &target_list);
 
 	/*
 	 * @author Patrick Chow
@@ -54,13 +50,8 @@ public:
 	 *
 	 * @return: Path_t path, an equivalent path of input path which is most far away from the obstacles.
 	 */
-	static void optimizePath(GridMap &map, Path_t &path);
-
-};
-
-class ShortestPathAlgorithm: public PathAlgorithmBase
-{
-public:
+	void optimizePath(GridMap &map, Path_t &path);
+	public:
 	/*
 	 * @author Patrick Chow
 	 * @last modify by Austin Liu
@@ -136,7 +127,7 @@ typedef enum {
 	GO_HOME_WAY_NUM
 }GoHomeWay_t;
 
-class NavCleanPathAlgorithm: public IPathAlgorithm, public ShortestPathAlgorithm
+class NavCleanPathAlgorithm: public APathAlgorithm
 {
 	/*
 	 * @author Patrick Chow / Lin Shao Yue
@@ -232,22 +223,22 @@ private:
 
 	bool checkTrapped(GridMap &map, const Cell_t &curr_cell) override ;
 };
-
-class WFCleanPathAlgorithm: public IPathAlgorithm, public ShortestPathAlgorithm
+//
+class WFCleanPathAlgorithm: public APathAlgorithm
 {
 public:
 	Path_t generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir);
 	bool checkTrapped(GridMap &map, const Cell_t &curr_cell){};
 };
 
-class SpotCleanPathAlgorithm: public IPathAlgorithm, public ShortestPathAlgorithm
+class SpotCleanPathAlgorithm: public APathAlgorithm
 {
 public:
 	Path_t generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir);
 	bool checkTrapped(GridMap &map, const Cell_t &curr_cell){};
 };
 
-class GoHomePathAlgorithm: public IPathAlgorithm, public ShortestPathAlgorithm
+class GoHomePathAlgorithm: public APathAlgorithm
 {
 public:
 	/*

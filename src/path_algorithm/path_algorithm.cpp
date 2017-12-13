@@ -5,7 +5,7 @@
 #include "ros/ros.h"
 #include "path_algorithm.h"
 
-void PathAlgorithmBase::displayPath(const Path_t& path)
+void APathAlgorithm::displayPath(const Path_t& path)
 {
 	std::string     msg = __FUNCTION__;
 
@@ -17,7 +17,7 @@ void PathAlgorithmBase::displayPath(const Path_t& path)
 	ROS_INFO("%s",msg.c_str());
 }
 
-void PathAlgorithmBase::displayTargets(const TargetList &target_list)
+void APathAlgorithm::displayTargets(const TargetList &target_list)
 {
 	std::string     msg = __FUNCTION__;
 	msg += " " + std::to_string(__LINE__) + ": Targers(" + std::to_string(target_list.size()) + "):";
@@ -28,7 +28,7 @@ void PathAlgorithmBase::displayTargets(const TargetList &target_list)
 	ROS_INFO("%s",msg.c_str());
 }
 
-void PathAlgorithmBase::optimizePath(GridMap &map, Path_t& path)
+void APathAlgorithm::optimizePath(GridMap &map, Path_t& path)
 {
 	// Optimize only if the path have more than 3 cells.
 	if (path.size() > 3) {

@@ -184,8 +184,8 @@ public:
 
 protected:
 
-	IPathAlgorithm* clean_path_algorithm_;
-	IPathAlgorithm* go_home_path_algorithm_;
+	APathAlgorithm* clean_path_algorithm_;
+	APathAlgorithm* go_home_path_algorithm_;
 	uint8_t saveFollowWall(bool is_left);
 	bool isInitState();
 
@@ -223,7 +223,7 @@ protected:
 		st_null,
 		st_clean,
 		st_go_home_point,
-		st_go_charger,
+		st_go_to_charger,
 		st_trapped,
 		st_tmp_spot,
 		st_self_check,
@@ -235,7 +235,7 @@ protected:
 		mt_linear,
 		mt_follow_wall_left,
 		mt_follow_wall_right,
-		mt_go_charger,
+		mt_go_to_charger,
 	};
 //	int movement_i_ {mv_null};
 	enum {

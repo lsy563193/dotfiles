@@ -5,7 +5,7 @@
 #include "ros/ros.h"
 #include "path_algorithm.h"
 
-Path_t ShortestPathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start,
+Path_t APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start,
 																							 const Cell_t &target, const MapDirection &last_dir, bool use_unknown)
 {
 	Path_t path_;
@@ -227,7 +227,7 @@ Path_t ShortestPathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start
 	return path_;
 }
 
-void ShortestPathAlgorithm::fillPathWithDirection(Path_t &path)
+void APathAlgorithm::fillPathWithDirection(Path_t &path)
 {
 	displayPath(path);
 	for(auto it = path.begin(); it < path.end(); ++it) {
@@ -244,7 +244,7 @@ void ShortestPathAlgorithm::fillPathWithDirection(Path_t &path)
 					 path.back().X, path.back().Y, path.back().TH, path.front().X, path.front().Y, path.front().TH);
 }
 
-bool ShortestPathAlgorithm::findTargetUsingDijkstra(GridMap &map, const Cell_t& curr_cell, Cell_t& target, int& cleaned_count)
+bool APathAlgorithm::findTargetUsingDijkstra(GridMap &map, const Cell_t& curr_cell, Cell_t& target, int& cleaned_count)
 {
 	typedef std::multimap<double, Cell_t> Queue;
 	typedef std::pair<double, Cell_t> Entry;
@@ -306,7 +306,7 @@ bool ShortestPathAlgorithm::findTargetUsingDijkstra(GridMap &map, const Cell_t& 
 	return is_found;
 }
 
-bool ShortestPathAlgorithm::checkTrappedUsingDijkstra(GridMap &map, const Cell_t &curr_cell)
+bool APathAlgorithm::checkTrappedUsingDijkstra(GridMap &map, const Cell_t &curr_cell)
 {
 	int dijkstra_cleaned_count = 0;
 	PPTargetType path{{0,0,0}};
