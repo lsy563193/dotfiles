@@ -48,18 +48,18 @@ CleanModeFollowWall::~CleanModeFollowWall() {
 //			 static_cast<float>(robot_timer.getWorkTime()) / 60, map_area / (static_cast<float>(robot_timer.getWorkTime()) / 60));
 }
 
-bool CleanModeFollowWall::setNextMoveType() {
-	ROS_INFO("%s,%d: path_next_fw",__FUNCTION__, __LINE__);
-	if (move_type_i_ == mt_linear) {
-		ROS_INFO("%s,%d: mt_follow_wall_left", __FUNCTION__, __LINE__);
-		move_type_i_ = mt_follow_wall_left;
-	}
-	else {
-		move_type_i_ = mt_linear;
-		ROS_INFO("%s,%d: mt_linear", __FUNCTION__, __LINE__);
-	}
-	return ACleanMode::setNextMoveType();
-}
+//bool CleanModeFollowWall::setNextAction_() {
+//	ROS_INFO("%s,%d: path_next_fw",__FUNCTION__, __LINE__);
+//	if (move_type_i_ == mt_linear) {
+//		ROS_INFO("%s,%d: mt_follow_wall_left", __FUNCTION__, __LINE__);
+//		move_type_i_ = mt_follow_wall_left;
+//	}
+//	else {
+//		move_type_i_ = mt_linear;
+//		ROS_INFO("%s,%d: mt_linear", __FUNCTION__, __LINE__);
+//	}
+//	return ACleanMode::setNextAction_();
+//}
 
 bool CleanModeFollowWall::wf_is_isolate() {
 //	path_update_cell_history();

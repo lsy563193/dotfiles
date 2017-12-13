@@ -84,3 +84,4 @@ bool MoveType::should_follow_wall(const MapDirection dir, const Cell_t& curr, PP
 
 	return ret;
 }
+

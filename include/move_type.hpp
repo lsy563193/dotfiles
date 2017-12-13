@@ -9,9 +9,13 @@
 #include "boost/shared_ptr.hpp"
 
 class ACleanMode;
-class IMoveType
+class IMoveType:public IAction
 {
 public:
+	IMoveType();
+
+	bool isFinish();
+	void run();
 //	bool isFinish(int& action_i);
 //	virtual IAction* setNextAction()=0;
 //	void registerMode(ACleanMode* sp_mode)
@@ -20,33 +24,41 @@ public:
 //	}
 
 //	static ACleanMode* sp_mode_;
+	void resetTriggeredValue();
 protected:
-
+	Path_t passed_path_;
+	Path_t plan_path_;
+	int16_t turn_target_angle_{};
+	enum{//movement
+		mm_null,
+		mm_back,
+		mm_turn,
+		mm_forward,
+	};
 };
 
-class MoveTypeLinear:public IMoveType
+class ActionLinear:public IMoveType
 {
 public:
+	ActionLinear();
 //	IAction* setNextAction();
 protected:
 };
 
-class MoveTypeFollowWall:public IMoveType
+class ActionFollowWall:public IMoveType
 {
 public:
-	MoveTypeFollowWall(bool is_left)
-	{
-		is_left_ = is_left;
-	}
+	ActionFollowWall(bool is_left);
+
 //	IAction* setNextAction();
 protected:
 	static bool is_left_;
 };
 
-class MoveTypeGoCharger:public IMoveType
+class ActionGoCharger:public IMoveType
 {
 public:
-//	IAction* setNextAction();
+	ActionGoCharger();
 protected:
 };
 

@@ -40,10 +40,10 @@ FILE(GLOB PP_SRC
 				src/mode/state/state_tmp_spot.cpp
 				src/mode/state/state_exploration.cpp
 
-				src/mode/state/move_type/move_type.cpp
-				src/mode/state/move_type/move_type_linear.cpp
-				src/mode/state/move_type/move_type_follow_wall.cpp
-				src/mode/state/move_type/move_type_go_charger.cpp
+				src/action/move_type/move_type.cpp
+				src/action/move_type/action_linear.cpp
+				src/action/move_type/action_follow_wall.cpp
+				src/action/move_type/action_go_charger.cpp
 	src/mode/mode.cpp
 	src/mode/mode_sleep.cpp
 	src/mode/mode_charge.cpp
@@ -72,23 +72,23 @@ FILE(GLOB PP_SRC
 	src/action/action_charge.cpp
 	src/action/action_pause.cpp
 
-	src/action/movement/movement.cpp
-	src/action/movement/movement_new.cpp
-	src/action/movement/movement_back.cpp
-	src/action/movement/movement_back_new.cpp
-	src/action/movement/movement_fall_wall.cpp
-	src/action/movement/movement_fall_wall_new.cpp
-	src/action/movement/movement_forward.cpp
-	src/action/movement/movement_forward_new.cpp
-	src/action/movement/movement_go_charger.cpp
-	src/action/movement/movement_go_charger_new.cpp
-	src/action/movement/movement_self_check.cpp
-	src/action/movement/movement_self_check_new.cpp
-	src/action/movement/movement_turn.cpp
-	src/action/movement/movement_turn_new.cpp
-	src/action/movement/movement_turn_for_charger.cpp
-	src/action/movement/movement_stay.cpp
-	src/action/movement/movement_direct_go.cpp
+				src/action/move_type/movement/movement.cpp
+				src/action/move_type/movement/movement_new.cpp
+				src/action/move_type/movement/movement_back.cpp
+				src/action/move_type/movement/movement_back_new.cpp
+				src/action/move_type/movement/movement_fall_wall.cpp
+				src/action/move_type/movement/movement_fall_wall_new.cpp
+				src/action/move_type/movement/movement_forward.cpp
+				src/action/move_type/movement/movement_forward_new.cpp
+				src/action/move_type/movement/movement_go_charger.cpp
+				src/action/move_type/movement/movement_go_charger_new.cpp
+				src/action/move_type/movement/movement_self_check.cpp
+				src/action/move_type/movement/movement_self_check_new.cpp
+				src/action/move_type/movement/movement_turn.cpp
+				src/action/move_type/movement/movement_turn_new.cpp
+				src/action/move_type/movement/movement_turn_for_charger.cpp
+				src/action/move_type/movement/movement_stay.cpp
+				src/action/move_type/movement/movement_direct_go.cpp
 
 	src/clean_mode/clean_mode.cpp
 	src/clean_mode/exploration.cpp

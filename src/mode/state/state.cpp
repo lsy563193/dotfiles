@@ -9,7 +9,7 @@
 //bool State::isFinish(ACleanMode* p_mode, IMoveType* p_move_type,IAction* p_action, int& action_i) {
 //	PP_INFO();
 //	if(p_move_type == nullptr)
-//		p_move_type = p_mode->setNextMoveType(nav_map.getCurrCell(),old_dir_);
+//		p_move_type = p_mode->setNextAction_(nav_map.getCurrCell(),old_dir_);
 //
 //	PP_INFO();
 //	return p_move_type->isFinish(p_mode, p_action, action_i);

@@ -4,10 +4,9 @@
 
 #include <mathematics.h>
 #include <pp.h>
-#include "pp.h"
 #include "arch.hpp"
 
-#define NAV_INFO() ROS_INFO("st(%d),mt(%d),ac(%d)", state_i_, move_type_i_, action_i_)
+#define NAV_INFO() ROS_INFO("st(%d),ac(%d)", state_i_, action_i_)
 //boost::shared_ptr<State> ACleanMode::sp_state_ = nullptr;
 //boost::shared_ptr<IMoveType> ACleanMode::sp_move_type_ = nullptr;
 
@@ -52,78 +51,79 @@ bool ACleanMode::setNextAction() {
 		action_i_ = ac_open_slam;
 	else
 	{
-		if(move_type_i_ == mt_null)
-			action_i_ = ac_null;
-		else if (mt_is_linear())
-		{
-			/*
-			 * For linear move type, it starts for turning, then linear movement, and back if necessary.
-			 * It should apply to all the linear move type.
-			 */
-			if (action_i_ == ac_null)
-				action_i_ = ac_turn;
-			else if (ac_is_turn())
-				action_i_ = ac_forward;
-			else if (ac_is_forward())
-			{
-				if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered)
-					action_i_ = ac_back;
-				else
-					action_i_ = ac_null;
-			}
-			else if (ac_is_back())
-				action_i_ = ac_null;
-		}
-		else if (mt_is_follow_wall())
-		{
-			/*
-			 * For follow wall move type, it starts for turning, then follow wall movement, and back if necessary.
-			 * It should apply to all the follow wall move type.
-			 */
-			if (action_i_ == ac_null)
-				action_i_ = ac_turn;
-			else if (ac_is_turn())
-			{
-				cm_target_p_ = GridMap::cellToPoint(plan_path_.back());
-				cm_origin_p_ = GridMap::getCurrPoint();
-				action_i_ = (move_type_i_ == mt_follow_wall_left) ? ac_follow_wall_left : ac_follow_wall_right;
-				PP_INFO();NAV_INFO();
-			}
-			else if (ac_is_forward())
-			{
-				if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered)
-					action_i_ = ac_back;
-				else
-					action_i_ = (move_type_i_ == mt_follow_wall_left) ? ac_follow_wall_left : ac_follow_wall_right;
-				PP_INFO();NAV_INFO();
-			}
-			else if (ac_is_follow_wall())
-			{
-				if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip)
-					action_i_ = ac_back;
-				else if (ev.lidar_triggered || ev.obs_triggered)
-				{
-					turn_target_angle_ = GridMap::getCurrPoint().TH + g_turn_angle;
-					action_i_ = ac_turn;
-				}
-				else
-					action_i_ = ac_null;//reach
-				PP_INFO();NAV_INFO();
-			}
-			else if (action_i_ == ac_back)
-			{
-				turn_target_angle_ = GridMap::getCurrPoint().TH + g_turn_angle;
-				action_i_ = ac_turn;
-				PP_INFO();NAV_INFO();
-			}
-		}
-		else if (mt_is_go_to_charger())
-		{
-			if (ac_is_go_to_charger())
-				action_i_ = ac_null;
-			else
-				action_i_ = ac_go_to_charger;
-		}
+//		if (action_i_ == ac_linear)
+//		{
+//			/*
+//			 * For linear move type, it starts for turning, then linear movement, and back if necessary.
+//			 * It should apply to all the linear move type.
+//			 */
+//			/*if (action_i_ == ac_null)
+//				action_i_ = ac_turn;
+//			else if (ac_is_turn())
+//				action_i_ = ac_forward;
+//			else if (ac_is_forward())
+//			{
+//				if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered)
+//					action_i_ = ac_back;
+//				else
+//					action_i_ = ac_null;
+//			}
+//			else if (ac_is_back())
+//				action_i_ = ac_null;
+//			else
+//				action_i_ = ac_null;*/
+//			action_i_
+//		}
+//		else if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
+//		{
+//			/*
+//			 * For follow wall move type, it starts for turning, then follow wall movement, and back if necessary.
+//			 * It should apply to all the follow wall move type.
+//			 */
+//			if (action_i_ == ac_null)
+//				action_i_ = ac_turn;
+//			else if (ac_is_turn())
+//			{
+//				cm_target_p_ = GridMap::cellToPoint(plan_path_.back());
+//				cm_origin_p_ = GridMap::getCurrPoint();
+//				action_i_ = (move_type_i_ == mt_follow_wall_left) ? ac_follow_wall_left : ac_follow_wall_right;
+//				PP_INFO();NAV_INFO();
+//			}
+//			else if (ac_is_forward())
+//			{
+//				if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered)
+//					action_i_ = ac_back;
+//				else
+//					action_i_ = (move_type_i_ == mt_follow_wall_left) ? ac_follow_wall_left : ac_follow_wall_right;
+//				PP_INFO();NAV_INFO();
+//			}
+//			else if (ac_is_follow_wall())
+//			{
+//				if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip)
+//					action_i_ = ac_back;
+//				else if (ev.lidar_triggered || ev.obs_triggered)
+//				{
+//					turn_target_angle_ = GridMap::getCurrPoint().TH + g_turn_angle;
+//					action_i_ = ac_turn;
+//				}
+//				else
+//					action_i_ = ac_null;//reach
+//				PP_INFO();NAV_INFO();
+//			}
+//			else if (action_i_ == ac_back)
+//			{
+//				turn_target_angle_ = GridMap::getCurrPoint().TH + g_turn_angle;
+//				action_i_ = ac_turn;
+//				PP_INFO();NAV_INFO();
+//			}
+//		}
+//		else if (mt_is_go_to_charger())
+//		{
+//			if (ac_is_go_to_charger())
+//				action_i_ = ac_null;
+//			else
+//				action_i_ = ac_go_to_charger;
+//		}
 
 		if (ev.fatal_quit)
 		{
@@ -132,9 +132,20 @@ bool ACleanMode::setNextAction() {
 			action_i_ = ac_null;
 		}
 	}
-	genMoveAction();
+	genNextAction();
 	PP_INFO(); NAV_INFO();
 	return action_i_ != ac_null;
+}
+
+void ACleanMode::setNextMode(int next) {
+	if (ev.charge_detect && charger.isOnStub()) {
+		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+		Mode::setNextMode(md_charge);
+	}
+	else {
+		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+		Mode::setNextMode(md_idle);
+	}
 }
 
 bool ACleanMode::isFinish() {
@@ -148,33 +159,23 @@ bool ACleanMode::isFinish() {
 		if (!sp_action_->isFinish())
 			return false;
 
-		if(!ac_is_back())
-			nav_map.saveBlocks();
+//		if(!ac_is_back())
+//			nav_map.saveBlocks();
 
-		while (!setNextAction()) {
+//		while (!setNextAction()) {
 			PP_INFO();
-			map_mark();//not action ,switch mt
+			map_mark();
 			do{
 				if(!setNextState())
 				{
-					if (ev.charge_detect && charger.isOnStub())
-					{
-						ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
-						setNextMode(md_charge);
-						return true;
-					}
-					else
-					{
-						ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
-						setNextMode(md_idle);
-						return true;
-					}
+					setNextMode(0);
+					return true;
 				}
-			}while(!setNextMoveType());
-		}
-		ROS_INFO("%s,%d: bumper(%d)",__FUNCTION__,__LINE__, ev.bumper_triggered);
-		if(!(ac_is_back() && mt_is_linear()))
-			resetTriggeredValue();
+			}while(!setNextAction());
+//		}
+//		ROS_INFO("%s,%d: bumper(%d)",__FUNCTION__,__LINE__, ev.bumper_triggered);
+//		if(!(ac_is_back() && mt_is_linear()))
+//			resetTriggeredValue();
 	}
 	return false;
 }
@@ -195,7 +196,6 @@ bool ACleanMode::setNextState() {
 		plan_path_.pop_front();
 
 		state_i_ = st_clean;
-		move_type_i_ = mt_null;
 		st_init(state_i_);
 		clean_path_algorithm_->displayPath(plan_path_);
 	}
@@ -217,7 +217,6 @@ bool ACleanMode::setNextState() {
 			else
 				state_i_ = st_go_home_point;
 			st_init(state_i_);
-			move_type_i_ = mt_null;
 		}
 	}
 	else if (state_i_ == st_go_home_point)
@@ -236,13 +235,11 @@ bool ACleanMode::setNextState() {
 				{
 					PP_INFO();
 					state_i_ = st_null;
-					move_type_i_ = mt_null;
 				}
 				else
 				{
 					PP_INFO();
 					state_i_ = st_go_to_charger;
-					move_type_i_ = mt_null;
 				}
 			}
 			else
@@ -257,7 +254,6 @@ bool ACleanMode::setNextState() {
 			// No more paths to home cells.
 			PP_INFO();
 			state_i_ = st_null;
-			move_type_i_ = mt_null;
 		}
 	}
 	else if (state_i_ == st_go_to_charger)
@@ -266,25 +262,14 @@ bool ACleanMode::setNextState() {
 		if (ev.charge_detect && charger.isOnStub())
 		{
 			state_i_ = st_null;
-			move_type_i_ = mt_null;
 		}
 		else
 		{
 			state_i_ = st_go_home_point;
-			move_type_i_ = mt_null;
 		}
 	}
 
 	return state_i_ != st_null;
-}
-
-bool ACleanMode::setNextMoveType() {
-
-	PP_INFO()
-	ROS_INFO("move_type_i_ = %d", move_type_i_);
-	mt_init(move_type_i_);
-
-	return move_type_i_ != mt_null;
 }
 
 bool is_equal_with_angle_(const Cell_t &l, const Cell_t &r)
@@ -323,7 +308,7 @@ Cell_t ACleanMode::updatePath()
 	return curr;
 }
 
-void ACleanMode::genMoveAction() {
+void ACleanMode::genNextAction() {
 
 	if(action_i_ == ac_open_gyro)
 		sp_action_.reset(new ActionOpenGyro);
@@ -335,21 +320,16 @@ void ACleanMode::genMoveAction() {
 		sp_action_.reset(new ActionAlign);
 	else if(action_i_ == ac_open_slam)
 		sp_action_.reset(new ActionOpenSlam);
-	else if (action_i_ == ac_forward)
-		sp_action_.reset(new MovementForward(GridMap::cellToPoint(plan_path_.back()), plan_path_,new_dir_));
-	else if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
-		sp_action_.reset(new MovementFollowWall(action_i_ == ac_follow_wall_left));
-	else if (action_i_ == ac_back)
-		sp_action_.reset(new MovementBack());
-	else if (action_i_ == ac_turn)
-		sp_action_.reset(new MovementTurn(turn_target_angle_));
 	else if (action_i_ == ac_pause)
 		sp_action_.reset(new ActionPause);
 	else if (action_i_ == ac_go_to_charger)
-		sp_action_.reset(new MovementGoToCharger);
+		sp_action_.reset(new ActionLinear);
+	else if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
+		sp_action_.reset(new ActionFollowWall(action_i_ == ac_follow_wall_left));
 	else if(action_i_ == ac_null)
 		sp_action_ == nullptr;
 }
+
 
 void ACleanMode::resetTriggeredValue(void)
 {
@@ -424,67 +404,9 @@ void ACleanMode::st_init(int next) {
 	}
 }
 
-void ACleanMode::mt_init(int) {
-	auto cur = GridMap::getCurrPoint();
-	auto tar = nav_map.cellToPoint(plan_path_.back());
-	if (mt_is_follow_wall()) {
-//			ROS_INFO("%s,%d: mt_is_fw",__FUNCTION__, __LINE__);
-		if (LIDAR_FOLLOW_WALL)
-			if (!lidar_turn_angle(g_turn_angle))
-				g_turn_angle = ranged_angle(course_to_dest(cur.X, cur.Y, tar.X, tar.Y) -
-																		robot::instance()->getPoseAngle());
-		turn_target_angle_ = ranged_angle(robot::instance()->getPoseAngle() + g_turn_angle);
-		ROS_INFO("g_turn_angle(%d)cur(%d,%d,%d),tar(%d,%d,%d)", g_turn_angle, cur.X, cur.Y, cur.TH, tar.X, tar.Y, tar.TH);
-
-		if (action_i_ == ac_back) {
-			PP_INFO();
-			g_time_straight = 0.2;
-			g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
-		}
-		else if (action_i_ == ac_turn) {
-			PP_INFO();
-			g_time_straight = 0;
-			g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
-		}
-	}
-	else if (move_type_i_ == mt_linear) {
-		turn_target_angle_ = plan_path_.front().TH;
-		ROS_INFO("%s,%d: mt_is_linear,turn(%d)", __FUNCTION__, __LINE__,turn_target_angle_);
-	}
-	else if (move_type_i_ == mt_go_to_charger) {
-		ROS_INFO("%s,%d: mt_is_go_to_charger", __FUNCTION__, __LINE__);
-		turn_target_angle_ = ranged_angle(robot::instance()->getPoseAngle());
-	}
-//	turn_target_angle_ = g_turn_angle;
-	resetTriggeredValue();
-	g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
-	bumper_turn_factor = 0.85;
-	g_bumper_cnt = g_cliff_cnt = 0;
-	g_slip_cnt = 0;
-	g_slip_backward = false;
-	c_rcon.resetStatus();
-	robot::instance()->obsAdjustCount(20);
-}
 
 bool ACleanMode::st_is_finish() {
 	return state_i_ == st_null;
-}
-
-bool ACleanMode::mt_is_turn() {
-	return move_type_i_ == mt_linear;
-}
-bool ACleanMode::mt_is_linear() {
-	return move_type_i_ == mt_linear;
-}
-bool ACleanMode::mt_is_follow_wall(){
-	return move_type_i_ == mt_follow_wall_left || move_type_i_ == mt_follow_wall_right;
-}
-bool ACleanMode::mt_is_null()
-{
-	return move_type_i_ == mt_null;
-}
-bool ACleanMode::mt_is_go_to_charger() {
-	return move_type_i_ == mt_go_to_charger;
 }
 
 bool ACleanMode::ac_is_forward() {

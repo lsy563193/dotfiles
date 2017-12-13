@@ -14,11 +14,11 @@ CleanModeSpot::CleanModeSpot() {
 CleanModeSpot::~CleanModeSpot() {
 
 }
-
-bool CleanModeSpot::setNextMoveType() {
-	move_type_i_ = mt_follow_wall_left;
-	return ACleanMode::setNextMoveType();
-}
+//
+//bool CleanModeSpot::setNextAction_() {
+//	move_type_i_ = mt_follow_wall_left;
+//	return ACleanMode::setNextAction_();
+//}
 
 bool CleanModeSpot::map_mark() {
 	return false;

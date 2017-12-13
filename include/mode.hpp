@@ -18,7 +18,7 @@ public:
 
 	virtual bool isFinish();
 
-	void setNextMode(int next_mode);
+	virtual void setNextMode(int next_mode);
 
 	int getNextMode();
 
@@ -51,6 +51,7 @@ protected:
 		ac_open_lidar,
 		ac_align,//4
 		ac_open_slam,
+		ac_linear,
 		ac_turn,//6
 		ac_forward,
 		ac_follow_wall_left,//8
@@ -171,10 +172,10 @@ class ACleanMode:public Mode
 public:
 	ACleanMode();
 	bool isFinish();
+	void setNextMode(int next);
 	virtual bool setNextState();
-	virtual bool setNextMoveType();
 	virtual bool setNextAction();
-	void genMoveAction();
+	void genNextAction();
 	void resetTriggeredValue();
 
 	virtual bool map_mark() = 0;
@@ -190,11 +191,6 @@ protected:
 	bool isInitState();
 
 	bool st_is_finish();
-	bool mt_is_turn();
-	bool mt_is_linear();
-	bool mt_is_follow_wall();
-	bool mt_is_go_to_charger();
-	bool mt_is_null();
 	bool action_is_movement();
 	bool ac_is_forward();
 	bool ac_is_follow_wall();
@@ -202,7 +198,6 @@ protected:
 	bool ac_is_back();
 	bool ac_is_go_to_charger();
 	void st_init(int);
-	void mt_init(int);
 	std::vector<Cell_t> temp_fw_cells;
 	TargetList home_cells_;
 	static Path_t passed_path_;
@@ -218,7 +213,6 @@ protected:
 	MapDirection new_dir_{MAP_POS_X};
 //	static boost::shared_ptr<State> sp_state_;
 //	static boost::shared_ptr<IMoveType> sp_move_type_;
-	int16_t turn_target_angle_{};
 	int state_i_{st_null};
 	enum {
 		st_null,
@@ -230,14 +224,14 @@ protected:
 		st_self_check,
 		st_exploration,
 	};
-	int move_type_i_{mt_null};
-	enum {
-		mt_null,
-		mt_linear,
-		mt_follow_wall_left,
-		mt_follow_wall_right,
-		mt_go_to_charger,
-	};
+//	int move_type_i_{mt_null};
+//	enum {
+//		mt_null,
+//		mt_linear,
+//		mt_follow_wall_left,
+//		mt_follow_wall_right,
+//		mt_go_to_charger,
+//	};
 //	int movement_i_ {mv_null};
 	enum {
 //		mv_null,
@@ -260,7 +254,6 @@ public:
 	~CleanModeNav() override ;
 
 	uint8_t setFollowWall();
-	bool setNextMoveType() override ;
 	bool map_mark() override ;
 	bool isFinish() override ;
 	bool isExit();
@@ -295,7 +288,6 @@ public:
 	CleanModeFollowWall();
 	~CleanModeFollowWall() override ;
 
-	bool setNextMoveType() override ;
 	bool map_mark() override;
 
 
@@ -315,7 +307,6 @@ public:
 	CleanModeSpot();
 	~CleanModeSpot() override ;
 
-	bool setNextMoveType() override ;
 	bool map_mark() override;
 
 private:

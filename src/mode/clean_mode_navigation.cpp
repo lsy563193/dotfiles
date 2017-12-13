@@ -6,7 +6,7 @@
 #include <pp.h>
 #include "arch.hpp"
 
-#define NAV_INFO() ROS_INFO("st(%d),mt(%d),ac(%d)", state_i_, move_type_i_, action_i_)
+#define NAV_INFO() ROS_INFO("st(%d),ac(%d)", state_i_, action_i_)
 
 CleanModeNav::CleanModeNav()
 {
@@ -77,7 +77,7 @@ uint8_t CleanModeNav::setFollowWall()
 	{
 		std::string msg = "cell:";
 		Cell_t block_cell;
-		auto dy = move_type_i_ == mt_follow_wall_left ? 2 : -2;
+		auto dy = action_i_ == ac_follow_wall_left ? 2 : -2;
 		for(auto& cell : passed_path_){
 			if(nav_map.getCell(CLEAN_MAP,cell.X,cell.Y) != BLOCKED_RCON){
 				GridMap::robotToCell(GridMap::cellToPoint(cell), dy * CELL_SIZE, 0, block_cell.X, block_cell.Y);
@@ -93,7 +93,7 @@ uint8_t CleanModeNav::setFollowWall()
 bool CleanModeNav::map_mark()
 {
 	clean_path_algorithm_->displayPath(passed_path_);
-	if (move_type_i_ == mt_linear) {
+	if (action_i_ == ac_linear) {
 		PP_INFO()
 		nav_map.setCleaned(passed_path_);
 	}
@@ -102,7 +102,7 @@ bool CleanModeNav::map_mark()
 		nav_map.markRobot(CLEAN_MAP);
 
 	nav_map.setBlocks();
-	if (move_type_i_ == mt_follow_wall_left || move_type_i_ == mt_follow_wall_right)
+	if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
 		setFollowWall();
 	if (state_i_ == st_trapped)
 		fw_map.setFollowWall();
@@ -113,7 +113,6 @@ bool CleanModeNav::map_mark()
 	passed_path_.clear();
 	return false;
 }
-
 
 bool CleanModeNav::isFinish()
 {
@@ -126,7 +125,7 @@ bool CleanModeNav::isFinish()
 			speaker.play(SPEAKER_CLEANING_CONTINUE);
 			ROS_INFO("%s %d: Resume cleaning.", __FUNCTION__, __LINE__);
 			action_i_ = ac_open_gyro;
-			genMoveAction();
+			genNextAction();
 			return ACleanMode::isFinish();
 		}
 		else if (ev.remote_home)
@@ -141,8 +140,8 @@ bool CleanModeNav::isFinish()
 				setNextMode(md_idle);
 				return true;
 			}
-			move_type_i_ = mt_null;
-			setNextMoveType();
+//			move_type_i_ = mt_null;
+//			setNextAction_();
 			action_i_ = ac_null;
 			setNextAction();
 			return ACleanMode::isFinish();
@@ -162,7 +161,7 @@ bool CleanModeNav::isFinish()
 			paused_ = true;
 			paused_odom_angle_ = odom.getAngle();
 			action_i_ = ac_pause;
-			genMoveAction();
+			genNextAction();
 			return ACleanMode::isFinish();
 		}
 		else if (ev.remote_home)
@@ -177,8 +176,6 @@ bool CleanModeNav::isFinish()
 				setNextMode(md_idle);
 				return true;
 			}
-			move_type_i_ = mt_null;
-			setNextMoveType();
 			action_i_ = ac_null;
 			setNextAction();
 			return ACleanMode::isFinish();
@@ -243,7 +240,6 @@ bool CleanModeNav::setNextAction() {
 				action_i_ = ac_align;
 			}
 			else if (paused_) {
-				move_type_i_ = mt_null;
 				action_i_ = ac_null;
 				// Clear the pause status.
 				paused_ = false;
@@ -255,16 +251,40 @@ bool CleanModeNav::setNextAction() {
 			action_i_ = ac_open_slam;
 		else if (action_i_ == ac_open_slam) {
 			has_aligned_and_open_slam = true;
-			move_type_i_ = mt_null;
 			action_i_ = ac_null;
 			if (paused_)
 				// If paused before align and open slam, reset pause status here.
 				paused_ = false;
 		}
-		genMoveAction();
+		genNextAction();
 	}
 	else {
-		ACleanMode::setNextAction();
+		if (state_i_ == st_clean) {
+			auto start = nav_map.getCurrCell();
+			auto dir = old_dir_;
+			auto delta_y = plan_path_.back().Y - start.Y;
+			ROS_INFO(
+							"%s,%d: path size(%u), dir(%d), g_check_path_in_advance(%d), bumper(%d), cliff(%d), lidar(%d), delta_y(%d)",
+							__FUNCTION__, __LINE__, plan_path_.size(), dir, g_check_path_in_advance, ev.bumper_triggered,
+							ev.cliff_triggered,
+							ev.lidar_triggered, delta_y);
+			if (!GridMap::isXDirection(dir) // If last movement is not x axis linear movement, should not follow wall.
+					|| plan_path_.size() > 2 ||
+					(!g_check_path_in_advance && !ev.bumper_triggered && !ev.cliff_triggered && !ev.lidar_triggered)
+					|| delta_y == 0 || std::abs(delta_y) > 2) {
+				action_i_ = ac_linear;
+			}
+			else {
+				delta_y = plan_path_.back().Y - start.Y;
+				bool is_left = GridMap::isPositiveDirection(old_dir_) ^delta_y > 0;
+				ROS_INFO("\033[31m""%s,%d: target:, 0_left_1_right(%d=%d ^ %d)""\033[0m", __FUNCTION__, __LINE__, is_left,
+								 GridMap::isPositiveDirection(old_dir_), delta_y);
+				action_i_ = is_left ? ac_follow_wall_left : ac_follow_wall_right;
+			}
+		}
+		else if (state_i_ == st_go_home_point)
+			action_i_ = ac_linear;
+		genNextAction();
 	}
 	PP_INFO();
 	NAV_INFO();
@@ -309,33 +329,6 @@ void CleanModeNav::cliff_all(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Cliff all.", __FUNCTION__, __LINE__);
 
 	ev.cliff_all_triggered = true;
-}
-
-bool CleanModeNav::setNextMoveType() {
-	if (state_i_ == st_clean) {
-		auto start = nav_map.getCurrCell();
-		auto dir = old_dir_;
-		auto delta_y = plan_path_.back().Y - start.Y;
-		ROS_INFO( "%s,%d: path size(%u), dir(%d), g_check_path_in_advance(%d), bumper(%d), cliff(%d), lidar(%d), delta_y(%d)",
-						__FUNCTION__, __LINE__, plan_path_.size(), dir, g_check_path_in_advance, ev.bumper_triggered, ev.cliff_triggered,
-						ev.lidar_triggered, delta_y);
-
-		if (!GridMap::isXDirection(dir) // If last movement is not x axis linear movement, should not follow wall.
-				|| plan_path_.size() > 2 ||
-				(!g_check_path_in_advance && !ev.bumper_triggered && !ev.cliff_triggered && !ev.lidar_triggered)
-				|| delta_y == 0 || std::abs(delta_y) > 2) {
-			move_type_i_ = mt_linear;
-		}
-		else {
-			delta_y = plan_path_.back().Y - start.Y;
-			bool is_left = GridMap::isPositiveDirection(old_dir_) ^ delta_y > 0;
-			ROS_INFO("\033[31m""%s,%d: target:, 0_left_1_right(%d=%d ^ %d)""\033[0m", __FUNCTION__, __LINE__, is_left, GridMap::isPositiveDirection(old_dir_), delta_y);
-			move_type_i_ = is_left ? mt_follow_wall_left : mt_follow_wall_right;
-		}
-	}
-	else if (state_i_ == st_go_home_point)
-		move_type_i_ = mt_linear;
-	return ACleanMode::setNextMoveType();
 }
 
 bool CleanModeNav::MovementFollowWallisFinish() {
@@ -394,7 +387,7 @@ bool CleanModeNav::isNewLineReach()
 	{
 		// Robot has reached the target line center but still not reach target line limit.
 		// Check if the wall side has blocks on the costmap.
-		auto dx = (is_pos_dir ^ move_type_i_ == mt_follow_wall_left) ? +2 : -2;
+		auto dx = (is_pos_dir ^ action_i_ == ac_follow_wall_left) ? +2 : -2;
 		if (nav_map.isBlocksAtY(nav_map.countToCell(s_curr_p.X) + dx, nav_map.countToCell(s_curr_p.Y))) {
 			ROS_WARN("%s %d: Already has block at the wall side, cm_origin_p_.Y(%d), target.Y(%d),curr_y(%d)",
 					 __FUNCTION__, __LINE__, nav_map.countToCell(cm_origin_p_.Y), nav_map.countToCell(cm_target_p_.Y),
