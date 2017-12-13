@@ -26,11 +26,8 @@ ACleanMode::ACleanMode():start_timer_(time(NULL)) {
 	key.resetPressStatus();
 
 	c_rcon.resetStatus();
-	gyro.setOff();
-	usleep(30000);
-	gyro.setOn();
 
-	g_homes.resize(1,g_zero_home);
+	home_cells_.resize(1,g_zero_home);
 }
 
 bool ACleanMode::isInitState() {
@@ -147,10 +144,15 @@ bool ACleanMode::isFinish() {
 			nav_map.saveBlocks();
 
 		while (!setNextAction()) {
+			PP_INFO();
 			map_mark();//not action ,switch mt
 			do{
 				if(!setNextState())
+				{
+					ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+					setNextMode(md_idle);
 					return true;
+				}
 			}while(!setNextMoveType());
 		}
 		ROS_INFO("%s,%d: bumper(%d)",__FUNCTION__,__LINE__, ev.bumper_triggered);
@@ -162,27 +164,57 @@ bool ACleanMode::isFinish() {
 
 bool ACleanMode::setNextState() {
 	PP_INFO();
-	if(state_i_ == st_null || state_i_ == st_clean)
+	if (state_i_ == st_null)
 	{
+		auto curr = nav_map.updatePosition();
+		passed_path_.push_back(curr);
+
+		home_cells_.back().TH = robot::instance()->getPoseAngle();
 		PP_INFO();
 		old_dir_ = new_dir_;
-		plan_path_ = generatePath(nav_map, nav_map.getCurrCell(),old_dir_);
+		plan_path_ = clean_path_algorithm_->generatePath(nav_map, nav_map.getCurrCell(),old_dir_);
 		new_dir_ = (MapDirection)plan_path_.front().TH;
 		plan_path_.pop_front();
 
-		if(state_i_ == st_null)
-		{
-			g_homes[0].TH = 0;
-			auto target = plan_path_.back();
-			plan_path_.pop_back();
-			target.TH = g_homes[0].TH;
-			plan_path_.push_back(target);
-			ROS_INFO("g_homes[0](%d,%d,%d)",g_homes[0].X,g_homes[0].Y,g_homes[0].TH);
-			state_i_ = st_clean;
-		}
-		displayPath(plan_path_);
+		state_i_ = st_clean;
+		st_init(state_i_);
+		PathAlgorithmBase::displayPath(plan_path_);
 	}
-	st_init(state_i_);
+	if(state_i_ == st_clean)
+	{
+		PP_INFO();
+		old_dir_ = new_dir_;
+		plan_path_ = clean_path_algorithm_->generatePath(nav_map, nav_map.getCurrCell(),old_dir_);
+
+		if (plan_path_.empty())
+		{
+			if (clean_path_algorithm_->checkTrapped(nav_map, nav_map.getCurrCell()))
+				state_i_ = st_trapped;
+			else
+				state_i_ = st_go_home_point;
+			st_init(state_i_);
+		} else
+		{
+			new_dir_ = (MapDirection)plan_path_.front().TH;
+			plan_path_.pop_front();
+			PathAlgorithmBase::displayPath(plan_path_);
+		}
+	}
+	if (state_i_ == st_go_home_point)
+	{
+		PP_INFO();
+		old_dir_ = new_dir_;
+		plan_path_ = go_home_path_algorithm_->generatePath(nav_map, nav_map.getCurrCell(),old_dir_);
+		if (plan_path_.empty())
+			state_i_ = st_null;
+		else
+		{
+			new_dir_ = (MapDirection)plan_path_.front().TH;
+			plan_path_.pop_front();
+			PathAlgorithmBase::displayPath(plan_path_);
+		}
+
+	}
 	return state_i_ != st_null;
 }
 
@@ -275,31 +307,29 @@ void ACleanMode::st_init(int next) {
 		g_wf_reach_count = 0;
 		led.set_mode(LED_STEADY, LED_GREEN);
 	}
-	if (next == st_go_home_point) {
-		cs_work_motor();
+	if (next == st_go_home_point)
+	{
+		vacuum.setMode(Vac_Normal, false);
+		brush.setSidePwm(30, 30);
+		brush.setMainPwm(30);
+		wheel.stop();
+
 		wheel.setPidTargetSpeed(0, 0, REG_TYPE_LINEAR);
-		if (ev.remote_home || cm_is_go_charger())
+		if (ev.remote_home)
 			led.set_mode(LED_STEADY, LED_ORANGE);
 
-		// Special handling for wall follow mode_.
-		if (cm_is_follow_wall()) {
-			robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle); //For wall follow mode_.
-			nav_map.updatePosition();
-			//wf_mark_home_point();
-			nav_map.reset(CLEAN_MAP);
-			nav_map.mergeFromSlamGridMap(slam_grid_map, false, false, true, false, false);
-			nav_map.markRobot(CLEAN_MAP);//note: To clear the obstacles before go home, please don't remove it!
-		}
 		// Play wavs.
 		if (ev.battrey_home)
 			speaker.play(SPEAKER_BATTERY_LOW);
-		if (!cm_is_go_charger())
-			speaker.play(SPEAKER_BACK_TO_CHARGER);
 
-		if (ev.remote_home)
-			g_go_home_by_remote = true;
+		speaker.play(SPEAKER_BACK_TO_CHARGER);
+
 		ev.remote_home = false;
 		ev.battrey_home = false;
+
+		ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_cells_.size());
+		go_home_path_algorithm_ = new GoHomePathAlgorithm(nav_map, home_cells_);
+
 	}
 	if (next == st_tmp_spot) {
 		if (SpotMovement::instance()->getSpotType() == NO_SPOT) {

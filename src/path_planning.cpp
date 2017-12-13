@@ -1214,7 +1214,7 @@ bool path_get_home_point_target(const Cell_t &curr, PPTargetType &path) {
 			g_home_gen_rosmap = false;
 			auto map_bound = nav_map.generateBound();
 			ROS_INFO("\033[1;46;37m" "%s,%d:ros_cost_map.convert" "\033[0m", __FUNCTION__, __LINE__);
-			// TODO: do not use slam_grid_map to go home directly, Austin should fix this after creating PathAlgorithm class.
+			// TODO: do not use slam_grid_map to go home directly, Austin should fix this after creating ShortestPathAlgorithm class.
 //			slam_grid_map.reset(CLEAN_MAP);
 //			map.print(CLEAN_MAP, 0, 0);
 //			slam_grid_map.ros_convert(CLEAN_MAP, false, true, false);

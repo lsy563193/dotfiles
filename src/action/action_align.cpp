@@ -23,10 +23,8 @@ bool ActionAlign::isFinish() {
 	if (lidar.alignFinish()) {
 		float align_angle = lidar.alignAngle();
 		align_angle += (float) (LIDAR_THETA / 10);
-		robot::instance()->offsetAngle(align_angle);
-		g_homes[0].TH = -(int16_t) (align_angle);
-		ROS_INFO("%s %d: align_angle angle (%f), g_homes[0].TH (%d).", __FUNCTION__, __LINE__, align_angle, g_homes[0].TH);
-		usleep(230000);
+		odom.setAngleOffset(align_angle);
+		ROS_INFO("%s %d: align_angle angle (%f).", __FUNCTION__, __LINE__, align_angle);
 		return true;
 	}
 	return false;

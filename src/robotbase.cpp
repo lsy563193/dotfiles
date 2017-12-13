@@ -271,7 +271,7 @@ void *robotbase_routine(void*)
 		wheel.setRightWheelActualSpeed(_right_wheel_speed);
 
 		sensor.angle = -(float)((int16_t)((serial.receive_stream[REC_ANGLE_H] << 8) | serial.receive_stream[REC_ANGLE_L])) / 100.0;//ros angle * -1
-		sensor.angle -= robot::instance()->offsetAngle();
+//		sensor.angle -= robot::instance()->offsetAngle();
 		gyro.setAngle(sensor.angle);
 		sensor.angle_v = -(float)((int16_t)((serial.receive_stream[REC_ANGLE_V_H] << 8) | serial.receive_stream[REC_ANGLE_V_L])) / 100.0;//ros angle * -1
 		gyro.setAngleV(sensor.angle_v);
