@@ -25,6 +25,11 @@ public:
 
 private:
 	/*1 byte */
+	//0: Not on charger stub.
+	//1: On charger stub and charging.
+	//2: On charger stub but not charging.
+	//3: Direct connect to charge line but not charging.
+	//4: Direct connect to charge line and charging.
 	uint8_t status_;
 
 };

@@ -29,6 +29,7 @@ protected:
 	Path_t passed_path_;
 	Path_t plan_path_;
 	int16_t turn_target_angle_{};
+	float back_distance_;
 	enum{//movement
 		mm_null,
 		mm_back,
@@ -55,11 +56,25 @@ protected:
 	static bool is_left_;
 };
 
-class ActionGoCharger:public IMoveType
+class MoveTypeGoToCharger:public IMoveType
 {
 public:
-	ActionGoCharger();
+	MoveTypeGoToCharger();
+
+	bool isFinish() override ;
+
+	void run() override ;
 protected:
+
+	int state_;
+	enum {
+		gtc_back_,
+		gtc_turn_,
+		gtc_,
+	};
+	boost::shared_ptr<MovementGoToCharger> sp_gtc_movement_;
+	boost::shared_ptr<IMovement> sp_turn_movement_;
+	boost::shared_ptr<IMovement> sp_back_movement_;
 };
 
 #endif //PP_MOVE_TYPE_HPP

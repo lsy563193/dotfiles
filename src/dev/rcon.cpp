@@ -233,31 +233,33 @@ bool Rcon::estimateChargerPos(uint32_t rcon_value)
 
 uint32_t Rcon::getStatus()
 {
-	const int CHARGE_SIGNAL_RANGES = 20;//IN CELL SIZE
-	uint32_t rcon_value = 0;
-	if(found_charger_){
-		int16_t dist = (int16_t)two_points_distance(charger_pos_.X,charger_pos_.Y, nav_map.getXCell(),
-													nav_map.getYCell());
-		if(dist <= CHARGE_SIGNAL_RANGES){
-			in_rcon_signal_range_ = true;
-		}
-		else{
-			found_charger_ = false;
-			in_rcon_signal_range_ = false;
-		}
-	}
-	if (!cs.is_going_home()
-				&& g_from_charger
-				&& !in_rcon_signal_range_
-				&& g_motion_init_succeeded
-				&& !mt.is_go_to_charger()
-				&& !mt.is_follow_wall()){
-		rcon_value = 0;
-	}
-	else{
-		rcon_value = rcon_status_;
-	}
-	return rcon_value;
+//	const int CHARGE_SIGNAL_RANGES = 20;//IN CELL SIZE
+//	uint32_t rcon_value = 0;
+//	if(found_charger_){
+//		int16_t dist = (int16_t)two_points_distance(charger_pos_.X,charger_pos_.Y, nav_map.getXCell(),
+//													nav_map.getYCell());
+//		if(dist <= CHARGE_SIGNAL_RANGES){
+//			in_rcon_signal_range_ = true;
+//		}
+//		else{
+//			found_charger_ = false;
+//			in_rcon_signal_range_ = false;
+//		}
+//	}
+//	if (!cs.is_going_home()
+//				&& g_from_charger
+//				&& !in_rcon_signal_range_
+//				&& g_motion_init_succeeded
+//				&& !mt.is_go_to_charger()
+//				&& !mt.is_follow_wall()){
+//		rcon_value = 0;
+//	}
+//	else{
+//		rcon_value = rcon_status_;
+//	}
+//	return rcon_value;
+	auto rcon_status = rcon_status_;
+	return rcon_status;
 }
 
 static int get_trig_(uint32_t rcon_value)
@@ -294,6 +296,9 @@ static int get_trig_(uint32_t rcon_value)
 int Rcon::getTrig(void)
 {
 	uint32_t rcon_value = getStatus();
+	rcon_status_ = 0;
+	return rcon_value;
+/*
 	if (mt.is_follow_wall()) {
 		if ((rcon_value &
 					(RconL_HomeT | RconR_HomeT | RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT))) {
@@ -330,5 +335,5 @@ int Rcon::getTrig(void)
 		return status;
 	}
 
-	return 0;
+	return 0;*/
 }
