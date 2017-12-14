@@ -8,24 +8,12 @@
 MovementGoToCharger::MovementGoToCharger()
 {
 	ROS_INFO("%s %d: Init", __FUNCTION__, __LINE__);
-	go_home_state_now = GO_TO_CHARGER_INIT;
-}
-
-bool MovementGoToCharger::isReach()
-{
-	if (ev.charge_detect)
-		return true;
-	return false;
-}
-
-bool MovementGoToCharger::isChargerReach()
-{
-	if (ev.charge_detect)
-		return true;
-	return false;
+	gtc_state_now_ = gtc_init;
 }
 
 void MovementGoToCharger::resetGoToChargerVariables() {
+	turn_angle_ = 0;
+	back_distance_ = 0;
 	no_signal_cnt = 0;
 	move_away_from_charger_cnt = 0;
 	receive_code = 0;
@@ -42,23 +30,20 @@ void MovementGoToCharger::resetGoToChargerVariables() {
 	by_path_move_cnt = 0;
 	c_rcon.resetStatus();
 	turn_connect_cnt = 0;
-	turn_connect_dir = ROUND_RIGHT;
+	turn_connect_dir = gtc_check_position_right;
 }
 
 bool MovementGoToCharger::isSwitch()
 {
-	if (go_home_state_now == GO_TO_CHARGER_INIT)
+	if (gtc_state_now_ == gtc_init)
 	{
 		resetGoToChargerVariables();
-		g_go_to_charger_back_30cm = false;
-		g_go_to_charger_back_10cm = false;
-		g_go_to_charger_back_0cm = false;
-		go_home_state_now = CHECK_NEAR_CHARGER_STATION;
+		gtc_state_now_ = gtc_check_near_charger_station;
 	}
-	if (go_home_state_now == CHECK_NEAR_CHARGER_STATION)
+	if (gtc_state_now_ == gtc_check_near_charger_station)
 	{
-		extern bool g_charge_turn_connect_fail;
-		if(g_charge_turn_connect_fail && no_signal_cnt < 10)
+//		extern bool g_charge_turn_connect_fail;
+		if(/*g_charge_turn_connect_fail &&*/ no_signal_cnt < 10)
 		{
 			receive_code = c_rcon.getTrig();
 			ROS_INFO("%s, %d: check near home, receive_code: %8x", __FUNCTION__, __LINE__, receive_code);
@@ -68,28 +53,28 @@ bool MovementGoToCharger::isSwitch()
 				if(receive_code&(RconFL_HomeT|RconFR_HomeT|RconFL2_HomeT|RconFR2_HomeT))
 				{
 					ROS_INFO("%s %d: turn 180", __FUNCTION__, __LINE__);
-					g_go_to_charger_back_10cm = true;
-					g_turn_angle = 1800;
+					back_distance_ = 0.1;
+					turn_angle_ = 1800;
 				}
 				else if(receive_code&RconR_HomeT)
 				{
 					ROS_INFO("%s %d: turn left 90", __FUNCTION__, __LINE__);
-					g_go_to_charger_back_10cm = true;
-					g_turn_angle = 900;
+					back_distance_ = 0.1;
+					turn_angle_ = 900;
 				}
 				else if(receive_code&RconL_HomeT)
 				{
 					ROS_INFO("%s %d: turn right 90", __FUNCTION__, __LINE__);
-					g_go_to_charger_back_10cm = true;
-					g_turn_angle = 900;
+					back_distance_ = 0.1;
+					turn_angle_ = 900;
 				}
 				else //receive_code&RconBL_HomeT || receive_code&RconBR_HomeT
 				{
 					ROS_INFO("%s %d: go straight", __FUNCTION__, __LINE__);
-					g_go_to_charger_back_0cm = true;
-					g_turn_angle = 0;
+					back_distance_ = 0;
+					turn_angle_ = 0;
 				}
-				go_home_state_now = AWAY_FROM_CHARGER_STATION;
+				gtc_state_now_ = gtc_away_from_charger_station;
 				resetGoToChargerVariables();
 				return true;
 			}
@@ -98,19 +83,19 @@ bool MovementGoToCharger::isSwitch()
 		}
 		else
 		{
-			go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
+			gtc_state_now_ = gtc_turn_for_charger_signal_init;
 			resetGoToChargerVariables();
-			g_charge_turn_connect_fail = false;
+//			g_charge_turn_connect_fail = false;
 		}
 	}
-	if (go_home_state_now == AWAY_FROM_CHARGER_STATION)
+	if (gtc_state_now_ == gtc_away_from_charger_station)
 	{
 		ev.bumper_triggered = bumper.get_status();
 		if(ev.bumper_triggered)
 		{
 			ROS_WARN("%s %d: Get bumper trigered.", __FUNCTION__, __LINE__);
-			go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
-			g_turn_angle = 0;
+			gtc_state_now_ = gtc_turn_for_charger_signal_init;
+			turn_angle_ = 0;
 			resetGoToChargerVariables();
 			return true;
 		}
@@ -118,33 +103,30 @@ bool MovementGoToCharger::isSwitch()
 		if(ev.cliff_triggered)
 		{
 			ROS_WARN("%s %d: Get cliff trigered.", __FUNCTION__, __LINE__);
-			go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
-			g_turn_angle = 0;
+			gtc_state_now_ = gtc_turn_for_charger_signal_init;
+			turn_angle_ = 0;
 			resetGoToChargerVariables();
 			return true;
 		}
 		if(move_away_from_charger_cnt++ > 50)
 		{
-			go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
+			gtc_state_now_ = gtc_turn_for_charger_signal_init;
 			resetGoToChargerVariables();
 		}
 	}
-	if (go_home_state_now == TURN_FOR_CHARGER_SIGNAL_INIT)
+	if (gtc_state_now_ == gtc_turn_for_charger_signal_init)
 	{
 		resetGoToChargerVariables();
-		g_go_to_charger_back_30cm = false;
-		g_go_to_charger_back_10cm = false;
-		g_go_to_charger_back_0cm = false;
-		go_home_state_now = TURN_FOR_CHARGER_SIGNAL;
+		gtc_state_now_ = gtc_turn_for_charger_signal;
 	}
-	if (go_home_state_now == TURN_FOR_CHARGER_SIGNAL)
+	if (gtc_state_now_ == gtc_turn_for_charger_signal)
 	{
-		if(gyro_step < 360)
+		if(gyro_step < 3600)
 		{
 			// Handle for angle
 			current_angle = robot::instance()->getPoseAngle();
-			angle_offset = static_cast<float>(ranged_angle((current_angle - last_angle) * 10)) / 10;
-			ROS_DEBUG("Current_Angle = %f, Last_Angle = %f, Angle_Offset = %f, Gyro_Step = %f.", current_angle, last_angle, angle_offset, gyro_step);
+			angle_offset = static_cast<float>(ranged_angle((current_angle - last_angle)));
+			ROS_DEBUG("%s %d: Current_Angle = %f, Last_Angle = %f, Angle_Offset = %f, Gyro_Step = %f.", __FUNCTION__, __LINE__, current_angle, last_angle, angle_offset, gyro_step);
 			if (angle_offset < 0)
 				gyro_step += (-angle_offset);
 			last_angle = current_angle;
@@ -154,7 +136,7 @@ bool MovementGoToCharger::isSwitch()
 			if(ev.bumper_triggered)
 			{
 				ROS_WARN("%s %d: Get bumper trigered.", __FUNCTION__, __LINE__);
-				g_turn_angle = 0;
+				turn_angle_ = 0;
 				resetGoToChargerVariables();
 				return true;
 			}
@@ -163,24 +145,25 @@ bool MovementGoToCharger::isSwitch()
 			{
 				ROS_WARN("%s %d: Get cliff trigered.", __FUNCTION__, __LINE__);
 				resetGoToChargerVariables();
-				g_turn_angle = 0;
-				go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
+				turn_angle_ = 0;
+				gtc_state_now_ = gtc_turn_for_charger_signal_init;
 				return true;
 			}
 
 			// Handle for rcon signal
 			receive_code = c_rcon.getTrig();
+			ROS_INFO("%s %d: rcon recieve code:%d", __FUNCTION__, __LINE__, receive_code);
 			if (receive_code)
 			{
-				go_home_state_now = AROUND_CHARGER_STATION_INIT;
+				gtc_state_now_ = gtc_around_charger_station_init;
 			}
 			else
-				g_turn_angle = 0;
+				turn_angle_ = 0;
 
 			// HomeL
 			if(receive_code & (RconFL_HomeL | RconFR_HomeL))
 			{
-				g_turn_angle = -900;
+				turn_angle_ = -900;
 				around_charger_stub_dir = 1;
 				if(receive_code & RconFL_HomeL)//FL H_L
 					ROS_INFO("Start with FL-L.");
@@ -190,43 +173,43 @@ bool MovementGoToCharger::isSwitch()
 			else if(receive_code&RconFL2_HomeL)//FL2 H_L
 			{
 				ROS_INFO("Start with FL2-L.");
-				g_turn_angle = -600;
+				turn_angle_ = -600;
 				around_charger_stub_dir = 1;
 			}
 			else if(receive_code&RconFR2_HomeL)//FR2 H_L
 			{
 				ROS_INFO("Start with FR2-L.");
-				g_turn_angle = -850;
+				turn_angle_ = -850;
 				around_charger_stub_dir = 1;
 			}
 			else if(receive_code&RconL_HomeL)// L  H_L
 			{
 				ROS_INFO("Start with L-L.");
-				g_turn_angle = 0;
+				turn_angle_ = 0;
 				around_charger_stub_dir = 1;
 			}
 			else if(receive_code&RconR_HomeL)// R  H_L
 			{
 				ROS_INFO("Start with R-L.");
-				g_turn_angle = -1500;
+				turn_angle_ = -1500;
 				around_charger_stub_dir = 1;
 			}
 			else if(receive_code&RconBL_HomeL)//BL H_L
 			{
 				ROS_INFO("Start with BL-L.");
-				g_turn_angle = 800;
+				turn_angle_ = 800;
 				around_charger_stub_dir = 1;
 			}
 			else if(receive_code&RconBR_HomeL)//BL H_L
 			{
 				ROS_INFO("Start with BR-L.");
-				g_turn_angle = -800;
+				turn_angle_ = -800;
 				around_charger_stub_dir = 0;
 			}
 			// HomeR
 			else if(receive_code & (RconFL_HomeR | RconFR_HomeR))
 			{
-				g_turn_angle = 900;
+				turn_angle_ = 900;
 				around_charger_stub_dir = 0;
 				if(receive_code&RconFL_HomeR)//FL H_R
 					ROS_INFO("Start with FL-R.");
@@ -236,114 +219,114 @@ bool MovementGoToCharger::isSwitch()
 			else if(receive_code&RconFL2_HomeR)//FL2 H_R
 			{
 				ROS_INFO("Start with FL2-R.");
-				g_turn_angle = 850;
+				turn_angle_ = 850;
 				around_charger_stub_dir = 0;
 			}
 			else if(receive_code&RconFR2_HomeR)//FR2 H_R
 			{
 				ROS_INFO("Start with FR2-R.");
-				g_turn_angle = 600;
+				turn_angle_ = 600;
 				around_charger_stub_dir = 0;
 			}
 			else if(receive_code&RconL_HomeR)// L  H_R
 			{
 				ROS_INFO("Start with L-R.");
-				g_turn_angle = 1500;
+				turn_angle_ = 1500;
 				around_charger_stub_dir = 0;
 			}
 			else if(receive_code&RconR_HomeR)// R  H_R
 			{
 				ROS_INFO("Start with R-R.");
-				g_turn_angle = 0;
+				turn_angle_ = 0;
 				around_charger_stub_dir = 0;
 			}
 			else if(receive_code&RconBR_HomeR)//BR H_R
 			{
 				ROS_INFO("Start with BR-R.");
-				g_turn_angle = -800;
+				turn_angle_ = -800;
 				around_charger_stub_dir = 0;
 			}
 			else if(receive_code&RconBL_HomeR)//BL H_R
 			{
 				ROS_INFO("Start with BL-R.");
-				g_turn_angle = 800;
+				turn_angle_ = 800;
 				around_charger_stub_dir = 1;
 			}
 			// HomeT
 			else if(receive_code&RconFL_HomeT)//FL H_T
 			{
 				ROS_INFO("Start with FL-T.");
-				g_turn_angle = -600;
+				turn_angle_ = -600;
 				around_charger_stub_dir = 1;
 			}
 			else if(receive_code&RconFR_HomeT)//FR H_T
 			{
 				ROS_INFO("Start with FR-T.");
-				g_turn_angle = -800;
+				turn_angle_ = -800;
 				around_charger_stub_dir = 1;
 			}
 			else if(receive_code&RconFL2_HomeT)//FL2 H_T
 			{
 				ROS_INFO("Start with FL2-T.");
-				g_turn_angle = -600;
+				turn_angle_ = -600;
 				around_charger_stub_dir = 1;
 			}
 			else if(receive_code&RconFR2_HomeT)//FR2 H_T
 			{
 				ROS_INFO("Start with FR2-T.");
-				g_turn_angle = -800;
+				turn_angle_ = -800;
 				around_charger_stub_dir = 1;
 			}
 			else if(receive_code&RconL_HomeT)// L  H_T
 			{
 				ROS_INFO("Start with L-T.");
-				g_turn_angle = -1200;
+				turn_angle_ = -1200;
 				around_charger_stub_dir = 1;
 			}
 			else if(receive_code&RconR_HomeT)// R  H_T
 			{
 				ROS_INFO("Start with R-T.");
-				g_turn_angle = -1200;
+				turn_angle_ = -1200;
 				around_charger_stub_dir = 1;
 			}
 			else if(receive_code&RconBL_HomeT)//BL H_T
 			{
 				ROS_INFO("Start with BL-T.");
-				g_turn_angle = 300;
+				turn_angle_ = 300;
 				around_charger_stub_dir = 1;
 			}
 			else if(receive_code&RconBR_HomeT)//BR H_T
 			{
 				ROS_INFO("Start with BR-T.");
-				g_turn_angle = -300;
+				turn_angle_ = -300;
 				around_charger_stub_dir = 0;
 			}
 
-			if (g_turn_angle != 0)
+			if (turn_angle_ != 0)
 			{
-				g_go_to_charger_back_0cm = true;
+				back_distance_ = 0;
 				return true;
 			}
 		}
 		// gyro_step > 360 is handled in MovementGoToCharger::_isStop()
 	}
-	if (go_home_state_now == AROUND_CHARGER_STATION_INIT)
+	if (gtc_state_now_ == gtc_around_charger_station_init)
 	{
 		go_home_bumper_cnt = 0;
 		//wheel.move_forward(9, 9);
 		c_rcon.resetStatus();
 		ROS_INFO("%s, %d: Call Around_ChargerStation with dir = %d.", __FUNCTION__, __LINE__, around_charger_stub_dir);
-		go_home_state_now = AROUND_CHARGER_STATION;
+		gtc_state_now_ = gtc_around_charger_station;
 		around_move_cnt = 0;
 	}
-	else if (go_home_state_now == AROUND_CHARGER_STATION)
+	else if (gtc_state_now_ == gtc_around_charger_station)
 	{
 		ev.cliff_triggered = cliff.get_status();
 		if(ev.cliff_triggered)
 		{
 			ROS_WARN("%s %d: Get cliff trigered.", __FUNCTION__, __LINE__);
-			g_turn_angle = 1750;
-			go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
+			turn_angle_ = 1750;
+			gtc_state_now_ = gtc_turn_for_charger_signal_init;
 			return true;
 		}
 		ev.bumper_triggered = bumper.get_status();
@@ -351,9 +334,9 @@ bool MovementGoToCharger::isSwitch()
 		{
 			ROS_WARN("%s %d: Get bumper trigered.", __FUNCTION__, __LINE__);
 			around_charger_stub_dir = 1 - around_charger_stub_dir;
-			g_turn_angle = 1800;
+			turn_angle_ = 1800;
 			if(++go_home_bumper_cnt > 1)
-				go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
+				gtc_state_now_ = gtc_turn_for_charger_signal_init;
 			return true;
 		}
 
@@ -366,7 +349,7 @@ bool MovementGoToCharger::isSwitch()
 			else if(++no_signal_cnt > 60)
 			{
 				ROS_WARN("%s %d:No charger signal received.", __FUNCTION__, __LINE__);
-				go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
+				gtc_state_now_ = gtc_turn_for_charger_signal_init;
 			}
 
 			//ROS_DEBUG("%s %d Check DIR: %d, and do something", __FUNCTION__, __LINE__, around_charger_stub_dir);
@@ -374,8 +357,8 @@ bool MovementGoToCharger::isSwitch()
 			{
 				if(receive_code&(RconFR_HomeR|RconFL_HomeR))
 				{
-					go_home_state_now = BY_PATH_INIT;
-					g_turn_angle = 0;
+					gtc_state_now_ = gtc_by_path_init;
+					turn_angle_ = 0;
 					if(receive_code&RconFR_HomeR)
 						ROS_INFO("%s, %d: Detect FR-R, call By_Path().", __FUNCTION__, __LINE__);
 					else if(receive_code&RconFL_HomeR)
@@ -384,13 +367,13 @@ bool MovementGoToCharger::isSwitch()
 				else if(receive_code&RconL_HomeR)
 				{
 					ROS_INFO("%s, %d: Detect L-R, Check position left.", __FUNCTION__, __LINE__);
-					check_position_dir = ROUND_LEFT;
-					go_home_state_now = CHECK_POSITION_INIT;
-					g_turn_angle = 0;
+					check_position_dir = gtc_check_position_left;
+					gtc_state_now_ = gtc_check_position_init;
+					turn_angle_ = 0;
 				}
 				else if(receive_code&(RconFL_HomeL|RconFL_HomeT))
 				{
-					g_turn_angle = -500;
+					turn_angle_ = -500;
 					if(receive_code&RconFL_HomeL)//FL_HL
 						ROS_DEBUG("%s, %d: Detect FL-L.", __FUNCTION__, __LINE__);
 					else if(receive_code&RconFL_HomeT)//FL_HT
@@ -399,25 +382,25 @@ bool MovementGoToCharger::isSwitch()
 				else if(receive_code&RconFR_HomeT)//FR_HT
 				{
 					ROS_DEBUG("%s, %d: Detect FR-T.", __FUNCTION__, __LINE__);
-					g_turn_angle = -800;
+					turn_angle_ = -800;
 				}
 				else if(receive_code&RconFR2_HomeT)//FR2_T
 				{
 					ROS_DEBUG("%s, %d: Detect FR2-T.", __FUNCTION__, __LINE__);
-					g_turn_angle = -900;
+					turn_angle_ = -900;
 				}
 				else if(receive_code&RconR_HomeT)//R_HT
 				{
 					ROS_DEBUG("%s, %d: Detect R-T.", __FUNCTION__, __LINE__);
-					g_turn_angle = -1100;
+					turn_angle_ = -1100;
 					around_charger_stub_dir = 0;
 				}
 				else
-					g_turn_angle = 0;
+					turn_angle_ = 0;
 
-				if (g_turn_angle != 0)
+				if (turn_angle_ != 0)
 				{
-					g_go_to_charger_back_0cm = true;
+					back_distance_ = 0;
 					return true;
 				}
 			}
@@ -425,8 +408,8 @@ bool MovementGoToCharger::isSwitch()
 			{
 				if(receive_code&(RconFL_HomeL|RconFR_HomeL))
 				{
-					go_home_state_now = BY_PATH_INIT;
-					g_turn_angle = 0;
+					gtc_state_now_ = gtc_by_path_init;
+					turn_angle_ = 0;
 					if(receive_code&(RconFL_HomeL))
 						ROS_INFO("%s, %d: Detect FL-L, call By_Path().", __FUNCTION__, __LINE__);
 					else if(receive_code&(RconFR_HomeL))
@@ -435,13 +418,13 @@ bool MovementGoToCharger::isSwitch()
 				else if(receive_code&(RconR_HomeL))
 				{
 					ROS_INFO("%s, %d: Detect R-L, check position right.", __FUNCTION__, __LINE__);
-					check_position_dir = ROUND_RIGHT;
-					go_home_state_now = CHECK_POSITION_INIT;
-					g_turn_angle = 0;
+					check_position_dir = gtc_check_position_right;
+					gtc_state_now_ = gtc_check_position_init;
+					turn_angle_ = 0;
 				}
 				else if(receive_code&(RconFR_HomeR|RconFR_HomeT))
 				{
-					g_turn_angle = 500;
+					turn_angle_ = 500;
 					if(receive_code&RconFR_HomeR)
 						ROS_DEBUG("%s, %d: Detect FR-R.", __FUNCTION__, __LINE__);
 					else if(receive_code&RconFR_HomeT)
@@ -450,36 +433,36 @@ bool MovementGoToCharger::isSwitch()
 				else if(receive_code&RconFL_HomeT)
 				{
 					ROS_DEBUG("%s, %d: Detect FL-T.", __FUNCTION__, __LINE__);
-					g_turn_angle = 800;
+					turn_angle_ = 800;
 				}
 				else if(receive_code&RconFL2_HomeT)
 				{
 					ROS_DEBUG("%s, %d: Detect FL2-T.", __FUNCTION__, __LINE__);
-					g_turn_angle = 900;
+					turn_angle_ = 900;
 				}
 				else if(receive_code&RconL_HomeT)
 				{
 					ROS_DEBUG("%s, %d: Detect L-T.", __FUNCTION__, __LINE__);
-					g_turn_angle = 1100;
+					turn_angle_ = 1100;
 					around_charger_stub_dir = 1;
 				}
 				else
-					g_turn_angle = 0;
+					turn_angle_ = 0;
 
-				if (g_turn_angle != 0)
+				if (turn_angle_ != 0)
 				{
-					g_go_to_charger_back_0cm = true;
+					back_distance_ = 0;
 					return true;
 				}
 			}
 		}
 	}
-	if (go_home_state_now == CHECK_POSITION_INIT)
+	if (gtc_state_now_ == gtc_check_position_init)
 	{
 		resetGoToChargerVariables();
-		go_home_state_now = CHECK_POSITION;
+		gtc_state_now_ = gtc_check_position;
 	}
-	if (go_home_state_now == CHECK_POSITION)
+	if (gtc_state_now_ == gtc_check_position)
 	{
 		ev.bumper_triggered = bumper.get_status();
 		if(ev.bumper_triggered)
@@ -487,34 +470,34 @@ bool MovementGoToCharger::isSwitch()
 			ROS_WARN("%s %d: Get bumper trigered.", __FUNCTION__, __LINE__);
 			around_charger_stub_dir = 1 - around_charger_stub_dir;
 			if(++go_home_bumper_cnt > 1)
-				go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
+				gtc_state_now_ = gtc_turn_for_charger_signal_init;
 			else
-				go_home_state_now = AROUND_CHARGER_STATION_INIT;
-			g_turn_angle = 1800;
+				gtc_state_now_ = gtc_around_charger_station_init;
+			turn_angle_ = 1800;
 			return true;
 		}
 		ev.cliff_triggered = cliff.get_status();
 		if(ev.cliff_triggered)
 		{
 			ROS_WARN("%s %d: Get cliff trigered.", __FUNCTION__, __LINE__);
-			go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
-			g_turn_angle = 1800;
+			gtc_state_now_ = gtc_turn_for_charger_signal_init;
+			turn_angle_ = 1800;
 			return true;
 		}
 
-		if(gyro_step < 360)
+		if(gyro_step < 3600)
 		{
 			current_angle = robot::instance()->getPoseAngle();
-			angle_offset = static_cast<float>(ranged_angle((current_angle - last_angle) * 10)) / 10;
+			angle_offset = static_cast<float>(ranged_angle((current_angle - last_angle)));
 			ROS_DEBUG("%s %d: Current_Angle = %f, Last_Angle = %f, Angle_Offset = %f, Gyro_Step = %f.", __FUNCTION__, __LINE__, current_angle, last_angle, angle_offset, gyro_step);
-			if (check_position_dir == ROUND_LEFT && angle_offset > 0)
+			if (check_position_dir == gtc_check_position_left && angle_offset > 0)
 				gyro_step += angle_offset;
-			if (check_position_dir == ROUND_RIGHT && angle_offset < 0)
+			if (check_position_dir == gtc_check_position_right && angle_offset < 0)
 				gyro_step += (-angle_offset);
 			last_angle = current_angle;
 
-			ROS_DEBUG("%s %d: Check_Position c_rcon.getStatus() == %8x, R... == %8x.", __FUNCTION__, __LINE__,
-								c_rcon.getStatus(), RconFrontAll_Home_LR);
+			ROS_DEBUG("%s %d: Check_Position c_rcon.getTrig() == %8x, R... == %8x.", __FUNCTION__, __LINE__,
+								c_rcon.getTrig(), RconFrontAll_Home_LR);
 			receive_code = (c_rcon.getTrig()&RconFrontAll_Home_LR);
 			ROS_DEBUG("%s %d: receive code: %8x.", __FUNCTION__, __LINE__, receive_code);
 			if(receive_code)
@@ -533,26 +516,26 @@ bool MovementGoToCharger::isSwitch()
 				if (receive_code & RconFR2_HomeR)ROS_DEBUG("Check_Position get FR2-R");
 			}
 
-			if(receive_code & (RconFR_HomeL|RconFR_HomeR) && check_position_dir == ROUND_LEFT)
-				go_home_state_now = BY_PATH_INIT;
-			if(receive_code & (RconFL_HomeL|RconFL_HomeR) && check_position_dir == ROUND_RIGHT)
-				go_home_state_now = BY_PATH_INIT;
+			if(receive_code & (RconFR_HomeL|RconFR_HomeR) && check_position_dir == gtc_check_position_left)
+				gtc_state_now_ = gtc_by_path_init;
+			if(receive_code & (RconFL_HomeL|RconFL_HomeR) && check_position_dir == gtc_check_position_right)
+				gtc_state_now_ = gtc_by_path_init;
 		}
 		if(gyro_step >= 360)
 		{
 			ROS_INFO("%s, %d: Robot can't see charger, restart go to charger process.", __FUNCTION__, __LINE__);
-			g_turn_angle = 1000;
-			g_go_to_charger_back_0cm = true;
-			go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
+			turn_angle_ = 1000;
+			back_distance_ = 0;
+			gtc_state_now_ = gtc_turn_for_charger_signal_init;
 			return true;
 		}
 	}
-	if (go_home_state_now == BY_PATH_INIT)
+	if (gtc_state_now_ == gtc_by_path_init)
 	{
 		resetGoToChargerVariables();
-		go_home_state_now = BY_PATH;
+		gtc_state_now_ = gtc_by_path;
 	}
-	if (go_home_state_now == BY_PATH)
+	if (gtc_state_now_ == gtc_by_path)
 	{
 		ev.bumper_triggered = bumper.get_status();
 		if(ev.bumper_triggered)
@@ -560,20 +543,20 @@ bool MovementGoToCharger::isSwitch()
 			ROS_INFO("bumper in by path!");
 			if(!position_far)
 			{
-				go_home_state_now = TURN_CONNECT;
-				turn_connect_dir = ROUND_RIGHT;
+				gtc_state_now_ = gtc_turn_for_charger;
+				turn_connect_dir = gtc_check_position_right;
 				turn_connect_cnt = 0;
 			}
 			else
 			{
-				//if((c_rcon.getStatus()&RconFront_Home_LR) == 0)
-				//	go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
-				go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
-				g_go_to_charger_back_10cm = true;
+				//if((c_rcon.getTrig()&RconFront_Home_LR) == 0)
+				//	gtc_state_now_ = gtc_turn_for_charger_signal_init;
+				gtc_state_now_ = gtc_turn_for_charger_signal_init;
+				back_distance_ = 0.1;
 				//if(ev.bumper_triggered & BLOCK_LEFT)
-				//	g_turn_angle = -1100;
+				//	turn_angle_ = -1100;
 				//else
-				//	g_turn_angle = 1100;
+				//	turn_angle_ = 1100;
 				ROS_WARN("%d: quick_back in position_far", __LINE__);
 				return true;
 			}
@@ -581,8 +564,8 @@ bool MovementGoToCharger::isSwitch()
 		ev.cliff_triggered = cliff.get_status();
 		if(ev.cliff_triggered)
 		{
-			g_turn_angle = 1750;
-			go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
+			turn_angle_ = 1750;
+			gtc_state_now_ = gtc_turn_for_charger_signal_init;
 			return true;
 		}
 
@@ -614,9 +597,9 @@ bool MovementGoToCharger::isSwitch()
 					if((receive_code&RconFront_Home_LR) == 0 && ++side_counter > 5)
 					{
 						ROS_INFO("%s, %d: Robot away from the front of charger stub, back to gohome mode_.", __FUNCTION__, __LINE__);
-						go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
-						g_go_to_charger_back_0cm = true;
-						g_turn_angle = 0;
+						gtc_state_now_ = gtc_turn_for_charger_signal_init;
+						back_distance_ = 0;
+						turn_angle_ = 0;
 						return true;
 					}
 					else
@@ -633,86 +616,86 @@ bool MovementGoToCharger::isSwitch()
 				temp_code &= RconFrontAll_Home_LR;
 				if (temp_code)
 				{
-					g_go_to_charger_back_0cm = true;
+					back_distance_ = 0;
 					if(position_far)
 					{
 						switch(temp_code)
 						{
 							case (RconFR2_HomeL):
 								ROS_DEBUG("%s, %d: position_far, FR2_L.", __FUNCTION__, __LINE__);
-								g_turn_angle = -250;
+								turn_angle_ = -250;
 								return true;
 							case (RconFR2_HomeL|RconFR2_HomeR):
 								ROS_DEBUG("%s, %d: position_far, FR2_L/FR2_R.", __FUNCTION__, __LINE__);
-								g_turn_angle = -350;
+								turn_angle_ = -350;
 								return true;
 							case (RconR_HomeR|RconFR2_HomeL|RconFR2_HomeR):
 								ROS_DEBUG("%s, %d: position_far, R_R/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
-								g_turn_angle = -250;
+								turn_angle_ = -250;
 								return true;
 							case (RconR_HomeR|RconFR2_HomeL):
 								ROS_DEBUG("%s, %d: position_far, R_R/FR2_L.", __FUNCTION__, __LINE__);
-								g_turn_angle = -400;
+								turn_angle_ = -400;
 								return true;
 							case (RconR_HomeR|RconFR_HomeL|RconFR2_HomeL|RconFR2_HomeR):
 								ROS_DEBUG("%s, %d: position_far, R_R/FR_L/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
-								g_turn_angle = -250;
+								turn_angle_ = -250;
 								return true;
 							case (RconR_HomeR|RconR_HomeL|RconFR2_HomeL):
 								ROS_DEBUG("%s, %d: position_far, R_R/R_L/FR2_L.", __FUNCTION__, __LINE__);
-								g_turn_angle = -450;
+								turn_angle_ = -450;
 								return true;
 							case (RconR_HomeR|RconR_HomeL):
 								ROS_DEBUG("%s, %d: position_far, R_R/R_L.", __FUNCTION__, __LINE__);
-								g_turn_angle = -250;
+								turn_angle_ = -250;
 								return true;
 							case (RconR_HomeR|RconFR_HomeL|RconFR2_HomeL):
 								ROS_DEBUG("%s, %d: position_far, R_R/FR_L/FR2_L.", __FUNCTION__, __LINE__);
-								g_turn_angle = -550;
+								turn_angle_ = -550;
 								return true;
 							case (RconR_HomeL|RconFR2_HomeL):
 								ROS_DEBUG("%s, %d: position_far, R_L/FR2_L.", __FUNCTION__, __LINE__);
-								g_turn_angle = -500;
+								turn_angle_ = -500;
 								return true;
 							case (RconFL2_HomeR):
 								ROS_DEBUG("%s, %d: position_far, FL2_R.", __FUNCTION__, __LINE__);
-								g_turn_angle = 250;
+								turn_angle_ = 250;
 								return true;
 							case (RconFL2_HomeL|RconFL2_HomeR):
 								ROS_DEBUG("%s, %d: position_far, FL2_/FL2_R.", __FUNCTION__, __LINE__);
-								g_turn_angle = 350;
+								turn_angle_ = 350;
 								return true;
 							case (RconL_HomeL|RconFL2_HomeL|RconFL2_HomeR):
 								ROS_DEBUG("%s, %d: position_far, L_L/FL2_L/FL2_R.", __FUNCTION__, __LINE__);
-								g_turn_angle = 250;
+								turn_angle_ = 250;
 								return true;
 							case (RconL_HomeL|RconFL2_HomeR):
 								ROS_DEBUG("%s, %d: position_far, L_L/FL2_R.", __FUNCTION__, __LINE__);
-								g_turn_angle = 400;
+								turn_angle_ = 400;
 								return true;
 							case (RconL_HomeL|RconFL2_HomeL|RconFL2_HomeR|RconFL_HomeR):
 								ROS_DEBUG("%s, %d: position_far, L_L/FL2_L/FL2_R/FL_R.", __FUNCTION__, __LINE__);
-								g_turn_angle = 250;
+								turn_angle_ = 250;
 								return true;
 							case (RconL_HomeR|RconL_HomeL|RconFL2_HomeR):
 								ROS_DEBUG("%s, %d: position_far, L_R/L_L/FL2_R.", __FUNCTION__, __LINE__);
-								g_turn_angle = 450;
+								turn_angle_ = 450;
 								return true;
 							case (RconL_HomeR|RconL_HomeL):
 								ROS_DEBUG("%s, %d: position_far, L_R/L_L.", __FUNCTION__, __LINE__);
-								g_turn_angle = 500;
+								turn_angle_ = 500;
 								return true;
 							case (RconL_HomeR):
 								ROS_DEBUG("%s, %d: position_far, L_R.", __FUNCTION__, __LINE__);
-								g_turn_angle = 550;
+								turn_angle_ = 550;
 								return true;
 							case (RconL_HomeL|RconFL2_HomeR|RconFL_HomeR):
 								ROS_DEBUG("%s, %d: position_far, L_L/FL2_R/FL_R.", __FUNCTION__, __LINE__);
-								g_turn_angle = 250;
+								turn_angle_ = 250;
 								return true;
 							case (RconL_HomeR|RconFL2_HomeR):
 								ROS_DEBUG("%s, %d: position_far, L_R/FL2_R.", __FUNCTION__, __LINE__);
-								g_turn_angle = 500;
+								turn_angle_ = 500;
 								return true;
 						}
 					}
@@ -722,87 +705,86 @@ bool MovementGoToCharger::isSwitch()
 						{
 							case (RconFR2_HomeL):
 								ROS_DEBUG("%s, %d: !position_far, FR2_L.", __FUNCTION__, __LINE__);
-								g_turn_angle = -250;
+								turn_angle_ = -250;
 								return true;
 							case (RconFR2_HomeL|RconFR2_HomeR):
 								ROS_DEBUG("%s, %d: !position_far, FR2_L/FR2_R.", __FUNCTION__, __LINE__);
-								g_turn_angle = -350;
+								turn_angle_ = -350;
 								return true;
 							case (RconR_HomeR|RconFR2_HomeL|RconFR2_HomeR):
 								ROS_DEBUG("%s, %d: !position_far, R_R/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
-								g_turn_angle = -250;
+								turn_angle_ = -250;
 								return true;
 							case (RconR_HomeR|RconFR2_HomeL):
 								ROS_DEBUG("%s, %d: !position_far, R_R/FR2_L.", __FUNCTION__, __LINE__);
-								g_turn_angle = -400;
+								turn_angle_ = -400;
 								return true;
 							case (RconR_HomeR|RconFR_HomeL|RconFR2_HomeL|RconFR2_HomeR):
 								ROS_DEBUG("%s, %d: !position_far, R_R/FR_L/FR2_L/FR2_R.", __FUNCTION__, __LINE__);
-								g_turn_angle = -250;
+								turn_angle_ = -250;
 								return true;
 							case (RconR_HomeR|RconR_HomeL|RconFR2_HomeL):
 								ROS_DEBUG("%s, %d: !position_far, R_R/R_L/FR2_L.", __FUNCTION__, __LINE__);
-								g_turn_angle = -450;
+								turn_angle_ = -450;
 								return true;
 							case (RconR_HomeR|RconR_HomeL):
 								ROS_DEBUG("%s, %d: !position_far, R_R/R_L.", __FUNCTION__, __LINE__);
-								g_turn_angle = -500;
+								turn_angle_ = -500;
 								return true;
 							case (RconR_HomeL):
 								ROS_DEBUG("%s, %d: !position_far, R_L.", __FUNCTION__, __LINE__);
-								g_turn_angle = -550;
+								turn_angle_ = -550;
 								return true;
 							case (RconR_HomeR|RconFR_HomeL|RconFR2_HomeL):
 								ROS_DEBUG("%s, %d: !position_far, R_R/FR_L/FR2_L.", __FUNCTION__, __LINE__);
-								g_turn_angle = -250;
+								turn_angle_ = -250;
 								return true;
 							case (RconR_HomeL|RconFR2_HomeL):
 								ROS_DEBUG("%s, %d: !position_far, R_L/FR2_L.", __FUNCTION__, __LINE__);
-								g_turn_angle = -500;
+								turn_angle_ = -500;
 								return true;
 							case (RconFL2_HomeR):
 								ROS_DEBUG("%s, %d: !position_far, FL2_R.", __FUNCTION__, __LINE__);
-								g_turn_angle = 250;
+								turn_angle_ = 250;
 								return true;
 							case (RconFL2_HomeL|RconFL2_HomeR):
 								ROS_DEBUG("%s, %d: !position_far, FL2_/FL2_R.", __FUNCTION__, __LINE__);
-								g_turn_angle = 350;
+								turn_angle_ = 350;
 								return true;
 							case (RconL_HomeL|RconFL2_HomeL|RconFL2_HomeR):
 								ROS_DEBUG("%s, %d: !position_far, L_L/FL2_L/FL2_R.", __FUNCTION__, __LINE__);
-								g_turn_angle = 250;
+								turn_angle_ = 250;
 								return true;
 							case (RconL_HomeL|RconFL2_HomeR):
 								ROS_DEBUG("%s, %d: !position_far, L_L/FL2_R.", __FUNCTION__, __LINE__);
-								g_turn_angle = 400;
+								turn_angle_ = 400;
 								return true;
 							case (RconL_HomeL|RconFL2_HomeL|RconFL2_HomeR|RconFL_HomeR):
 								ROS_DEBUG("%s, %d: !position_far, L_L/FL2_L/FL2_R/FL_R.", __FUNCTION__, __LINE__);
-								g_turn_angle = 250;
+								turn_angle_ = 250;
 								return true;
 							case (RconL_HomeR|RconL_HomeL|RconFL2_HomeR):
 								ROS_DEBUG("%s, %d: !position_far, L_R/L_L/FL2_R.", __FUNCTION__, __LINE__);
-								g_turn_angle = 450;
+								turn_angle_ = 450;
 								return true;
 							case (RconL_HomeR|RconL_HomeL):
 								ROS_DEBUG("%s, %d: !position_far, L_R/L_L.", __FUNCTION__, __LINE__);
-								g_turn_angle = 500;
+								turn_angle_ = 500;
 								return true;
 							case (RconL_HomeR):
 								ROS_DEBUG("%s, %d: !position_far, L_R.", __FUNCTION__, __LINE__);
-								g_turn_angle = 250;
+								turn_angle_ = 250;
 								return true;
 							case (RconL_HomeL|RconFL2_HomeR|RconFL_HomeR):
 								ROS_DEBUG("%s, %d: !position_far, L_L/FL2_R/FL_R.", __FUNCTION__, __LINE__);
-								g_turn_angle = 250;
+								turn_angle_ = 250;
 								return true;
 							case (RconL_HomeR|RconFL2_HomeR):
 								ROS_DEBUG("%s, %d: !position_far, L_R/FL2_R.", __FUNCTION__, __LINE__);
-								g_turn_angle = 500;
+								turn_angle_ = 500;
 								return true;
 						}
 					}
-					g_go_to_charger_back_0cm = false;
 				}
 				no_signal_cnt = 0;
 			}
@@ -812,26 +794,26 @@ bool MovementGoToCharger::isSwitch()
 				if(++no_signal_cnt > 1)
 				{
 					ROS_INFO("%s %d: No signal in by path, switch to check position.", __FUNCTION__, __LINE__);
-					check_position_dir = ROUND_LEFT;
-					go_home_state_now = CHECK_POSITION_INIT;
+					check_position_dir = gtc_check_position_left;
+					gtc_state_now_ = gtc_check_position_init;
 				}
 			}
 		}
 	}
-	if (go_home_state_now == TURN_CONNECT)
+	if (gtc_state_now_ == gtc_turn_for_charger)
 	{
-		if (turn_connect_dir == ROUND_RIGHT && ++turn_connect_cnt > 50)
+		if (turn_connect_dir == gtc_check_position_right && ++turn_connect_cnt > 50)
 		{
-			turn_connect_dir = ROUND_LEFT;
+			turn_connect_dir = gtc_check_position_left;
 			turn_connect_cnt = 0;
 		}
-		if (turn_connect_dir == ROUND_LEFT && ++turn_connect_cnt > 50)
+		if (turn_connect_dir == gtc_check_position_left && ++turn_connect_cnt > 50)
 		{
 			turn_connect_cnt = 0;
-			g_go_to_charger_back_30cm = true;
-			ROS_WARN("%s %d: Turn connect failed, move back for 0.1m.", __FUNCTION__, __LINE__);
-			g_turn_angle = 0;
-			go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
+			back_distance_ = 0.3;
+			ROS_WARN("%s %d: Turn connect failed, move back for 0.3m.", __FUNCTION__, __LINE__);
+			turn_angle_ = 0;
+			gtc_state_now_ = gtc_turn_for_charger_signal_init;
 			return true;
 		}
 	}
@@ -841,7 +823,7 @@ bool MovementGoToCharger::isSwitch()
 
 bool MovementGoToCharger::_isStop()
 {
-	if (g_robot_stuck || (go_home_state_now == TURN_FOR_CHARGER_SIGNAL && gyro_step > 360))
+	if (g_robot_stuck || (gtc_state_now_ == gtc_turn_for_charger_signal && gyro_step > 3600))
 	{
 		ROS_WARN("%s %d: Stop here", __FUNCTION__, __LINE__);
 		cs.setNext(CS_CLEAN);
@@ -850,39 +832,37 @@ bool MovementGoToCharger::_isStop()
 	return false;
 }
 
-void MovementGoToCharger::setTarget()
+void MovementGoToCharger::getTurnBackInfo(int16_t &turn_angle, float &back_distance)
 {
-	g_turn_angle = 0;
+	turn_angle = turn_angle_;
+	back_distance = back_distance_;
 }
 
 void MovementGoToCharger::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
-	l_speed = r_speed = 0;
-	return;
-
 	/*---check if near charger station---*/
-	if (go_home_state_now == CHECK_NEAR_CHARGER_STATION)
+	if (gtc_state_now_ == gtc_check_near_charger_station)
 	{
 		wheel.setDirectionForward();
 		l_speed = r_speed = 0;
 	}
-	else if (go_home_state_now == AWAY_FROM_CHARGER_STATION)
+	else if (gtc_state_now_ == gtc_away_from_charger_station)
 	{
 		wheel.setDirectionForward();
 		l_speed = r_speed = 30;
 	}
-	else if (go_home_state_now == TURN_FOR_CHARGER_SIGNAL)
+	else if (gtc_state_now_ == gtc_turn_for_charger_signal)
 	{
 		wheel.setDirectionRight();
 		l_speed = r_speed = 10;
 	}
-	else if (go_home_state_now == AROUND_CHARGER_STATION_INIT)
+	else if (gtc_state_now_ == gtc_around_charger_station_init)
 	{
 		wheel.setDirectionForward();
 		l_speed = r_speed = 9;
 		around_move_cnt = 0;
 	}
-	else if (go_home_state_now == AROUND_CHARGER_STATION)
+	else if (gtc_state_now_ == gtc_around_charger_station)
 	{
 		if (around_move_cnt == 7 && around_charger_stub_dir == 1)
 		{
@@ -981,16 +961,16 @@ void MovementGoToCharger::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 			r_speed = right_speed_;
 		}
 	}
-	else if (go_home_state_now == CHECK_POSITION)
+	else if (gtc_state_now_ == gtc_check_position)
 	{
 		ROS_DEBUG("%s, %d: Check position dir: %d.", __FUNCTION__, __LINE__, check_position_dir);
-		if(check_position_dir == ROUND_LEFT)
+		if(check_position_dir == gtc_check_position_left)
 			wheel.setDirectionLeft();
-		else if(check_position_dir == ROUND_RIGHT)
+		else if(check_position_dir == gtc_check_position_right)
 			wheel.setDirectionRight();
 		l_speed = r_speed = 10;
 	}
-	else if (go_home_state_now == BY_PATH)
+	else if (gtc_state_now_ == gtc_by_path)
 	{
 		wheel.setDirectionForward();
 		auto temp_code = receive_code;
@@ -1909,11 +1889,11 @@ void MovementGoToCharger::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 			r_speed = right_speed_;
 		}
 	}
-	else if (go_home_state_now == TURN_CONNECT)
+	else if (gtc_state_now_ == gtc_turn_for_charger)
 	{
-		if (turn_connect_dir == ROUND_RIGHT)
+		if (turn_connect_dir == gtc_check_position_right)
 			wheel.setDirectionRight();
-		else if (turn_connect_dir == ROUND_LEFT)
+		else if (turn_connect_dir == gtc_check_position_left)
 			wheel.setDirectionLeft();
 		l_speed = r_speed = 5;
 	}
@@ -1922,5 +1902,7 @@ void MovementGoToCharger::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 }
 
 bool MovementGoToCharger::isFinish() {
-	return isReach();
+	if (ev.charge_detect || _isStop())
+		return true;
+	return false;
 }

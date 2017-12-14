@@ -148,7 +148,7 @@ public:
 	int getTrig(void);
 
 	void setStatus(uint32_t code) {
-		rcon_status_ = code;
+		rcon_status_ |= code;
 	}
 
 	void resetStatus(void) {

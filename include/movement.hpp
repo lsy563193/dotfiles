@@ -166,20 +166,37 @@ private:
 class MovementGoToCharger: public IMovement{
 public:
 	MovementGoToCharger();
-	~MovementGoToCharger(){ };
+	~MovementGoToCharger() = default;
 	bool _isStop();
 	bool isSwitch();
-	void adjustSpeed(int32_t&, int32_t&);
-	void setTarget();
-	bool isChargerReach();
-	void resetGoToChargerVariables();
-	bool isFinish();
-
-protected:
-	bool isReach();
+	void adjustSpeed(int32_t&, int32_t&) override ;
+	void getTurnBackInfo(int16_t &turn_angle, float &back_distance);
+	bool isFinish() override ;
 
 private:
-	int8_t go_home_state_now;
+	void resetGoToChargerVariables();
+	int8_t gtc_state_now_;
+	enum{
+		gtc_init,
+		gtc_check_near_charger_station,
+		gtc_away_from_charger_station,
+		gtc_turn_for_charger_signal_init,
+		gtc_turn_for_charger_signal,
+		gtc_around_charger_station_init,
+		gtc_around_charger_station,
+		gtc_check_position_init,
+		gtc_check_position,
+		gtc_by_path_init,
+		gtc_by_path,
+		gtc_turn_for_charger
+	};
+	enum{
+		gtc_check_position_left,
+		gtc_check_position_right
+
+	};
+	int16_t turn_angle_;
+	float back_distance_;
 	uint16_t no_signal_cnt;
 	uint8_t move_away_from_charger_cnt;
 	uint32_t receive_code;

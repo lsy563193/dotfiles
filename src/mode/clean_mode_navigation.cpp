@@ -258,6 +258,7 @@ bool CleanModeNav::setNextAction() {
 			if (paused_)
 				// If paused before align and open slam, reset pause status here.
 				paused_ = false;
+			PP_INFO();
 		}
 		if (state_i_ == st_clean) {
 			auto start = nav_map.getCurrCell();
@@ -284,6 +285,9 @@ bool CleanModeNav::setNextAction() {
 		}
 		else if (state_i_ == st_go_home_point)
 			action_i_ = ac_linear;
+		else if (state_i_ == st_go_to_charger)
+			action_i_ = ac_go_to_charger;
+
 		genNextAction();
 	}
 	PP_INFO(); NAV_INFO();
@@ -328,6 +332,17 @@ void CleanModeNav::cliff_all(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Cliff all.", __FUNCTION__, __LINE__);
 
 	ev.cliff_all_triggered = true;
+}
+
+void CleanModeNav::charge_detect(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: Charge detect!.", __FUNCTION__, __LINE__);
+	if (charger.getChargeStatus() >= 1)
+	{
+		ROS_WARN("%s %d: Set ev.charge_detect.", __FUNCTION__, __LINE__);
+		ev.charge_detect = charger.getChargeStatus();
+	}
+
 }
 
 bool CleanModeNav::MovementFollowWallisFinish() {

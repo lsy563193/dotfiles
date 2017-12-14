@@ -175,6 +175,7 @@ bool ACleanMode::setNextState() {
 
 		state_i_ = st_clean;
 		st_init(state_i_);
+		action_i_ = ac_null;
 		clean_path_algorithm_->displayPath(plan_path_);
 	}
 	else if(state_i_ == st_clean)
@@ -197,6 +198,7 @@ bool ACleanMode::setNextState() {
 			else
 				state_i_ = st_go_home_point;
 			st_init(state_i_);
+			action_i_ = ac_null;
 		}
 	}
 	else if (state_i_ == st_go_home_point)
@@ -221,6 +223,7 @@ bool ACleanMode::setNextState() {
 					PP_INFO();
 					state_i_ = st_go_to_charger;
 				}
+				action_i_ = ac_null;
 			}
 			else
 			{
@@ -291,6 +294,7 @@ Cell_t ACleanMode::updatePath()
 
 void ACleanMode::genNextAction() {
 
+	PP_INFO();
 	if(action_i_ == ac_open_gyro)
 		sp_action_.reset(new ActionOpenGyro);
 	else if(action_i_ == ac_back_form_charger)
@@ -305,10 +309,10 @@ void ACleanMode::genNextAction() {
 		sp_action_.reset(new ActionPause);
 	else if (action_i_ == ac_linear)
 		sp_action_.reset(new ActionLinear);
-	else if (action_i_ == ac_go_to_charger)
-		sp_action_.reset(new ActionGoCharger);
 	else if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
 		sp_action_.reset(new ActionFollowWall(action_i_ == ac_follow_wall_left));
+	else if (action_i_ == ac_go_to_charger)
+		sp_action_.reset(new MoveTypeGoToCharger);
 	else if(action_i_ == ac_null)
 		sp_action_ == nullptr;
 	PP_INFO();
