@@ -177,7 +177,7 @@ TargetList NavCleanPathAlgorithm::filterAllPossibleTargets(GridMap &map, const C
 		for(const auto& it:tmp_list){
 			filtered_targets.push_back(it);
 		};
-		ROS_WARN("~%s %d: Filter targets in the same line.", __FUNCTION__, __LINE__);
+//		ROS_WARN("~%s %d: Filter targets in the same line.", __FUNCTION__, __LINE__);
 	}
 
 	displayTargets(filtered_targets);

@@ -185,6 +185,9 @@ public:
 
 	static Path_t passed_path_;
 	static Path_t plan_path_;
+
+	MapDirection old_dir_{MAP_POS_X};
+	MapDirection new_dir_{MAP_POS_X};
 protected:
 
 	APathAlgorithm* clean_path_algorithm_;
@@ -209,8 +212,6 @@ protected:
 	uint32_t diff_timer_;
 
 	const int ISOLATE_COUNT_LIMIT = 4;
-	MapDirection old_dir_{MAP_POS_X};
-	MapDirection new_dir_{MAP_POS_X};
 //	static boost::shared_ptr<State> sp_state_;
 //	static boost::shared_ptr<IMoveType> sp_move_type_;
 	int state_i_{st_clean};

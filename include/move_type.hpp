@@ -24,7 +24,7 @@ public:
 //		sp_mode_ = sp_mode;
 //	}
 
-	static boost::shared_ptr<IAction> sp_movement_;
+	static boost::shared_ptr<IMovement> sp_movement_;
 	static boost::shared_ptr<ACleanMode> sp_cm_;
 	static int movement_i_;
 	void resetTriggeredValue();
@@ -44,6 +44,7 @@ class ActionLinear:public IMoveType
 {
 public:
 	ActionLinear();
+	~ActionLinear();
 	bool isFinish();
 //	IAction* setNextAction();
 protected:

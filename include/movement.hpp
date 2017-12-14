@@ -19,7 +19,8 @@ public:
 	virtual void run();
 	virtual bool isFinish()=0;
 //	static ACleanMode* sp_cm_;
-	static boost::shared_ptr<IMoveType> sp_mt_;
+//	static boost::shared_ptr<IMoveType> sp_mt_;
+	static IMoveType* sp_mt_;
 protected:
 	static Point32_t s_target_p;
 	static Point32_t s_origin_p;
@@ -43,7 +44,7 @@ public:
 	bool isPassTargetStop();
 	bool isNearTarget();
 	bool shouldMoveBack();
-	void setTarget();
+//	void setTarget();
 	void setBaseSpeed();
 
 	bool isCellReach();

@@ -5,7 +5,7 @@
 //#include "pp.h"
 #include <arch.hpp>
 #include "wheel.hpp"
-boost::shared_ptr<IMoveType> IMovement::sp_mt_  = nullptr;
+IMoveType* IMovement::sp_mt_  = nullptr;
 
 Point32_t IMovement::s_target_p = {0,0};
 Point32_t IMovement::s_origin_p = {0,0};

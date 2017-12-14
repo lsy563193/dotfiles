@@ -16,6 +16,7 @@ ActionFollowWall::ActionFollowWall(bool is_left) {
 	auto cur = GridMap::getCurrPoint();
 	auto tar = nav_map.cellToPoint(sp_cm_->plan_path_.back());
 	//			ROS_INFO("%s,%d: mt_is_fw",__FUNCTION__, __LINE__);
+//	turn_target_angle_ =
 	if (LIDAR_FOLLOW_WALL)
 		if (!lidar_turn_angle(g_turn_angle))
 			g_turn_angle = ranged_angle(course_to_dest(cur.X, cur.Y, tar.X, tar.Y) -
@@ -24,7 +25,7 @@ ActionFollowWall::ActionFollowWall(bool is_left) {
 	ROS_INFO("g_turn_angle(%d)cur(%d,%d,%d),tar(%d,%d,%d)", g_turn_angle, cur.X, cur.Y, cur.TH, tar.X, tar.Y, tar.TH);
 	movement_i_ = mm_turn;
 	sp_movement_.reset(new MovementTurn(turn_target_angle_));
-	IMovement::sp_mt_.reset(this);
+	IMovement::sp_mt_ = this;
 
 //	if (action_i_ == ac_back) {
 //		PP_INFO();

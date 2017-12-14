@@ -181,10 +181,12 @@ bool ACleanMode::setNextState() {
 	{
 		PP_INFO();
 		old_dir_ = new_dir_;
+		ROS_ERROR("old_dir_(%d)", old_dir_);
 		plan_path_.clear();
 		if (clean_path_algorithm_->generatePath(nav_map, nav_map.getCurrCell(), old_dir_, plan_path_))
 		{
 			new_dir_ = (MapDirection)plan_path_.front().TH;
+			ROS_ERROR("new_dir_(%d)", new_dir_);
 			plan_path_.pop_front();
 			clean_path_algorithm_->displayPath(plan_path_);
 		}
@@ -257,10 +259,10 @@ bool is_equal_with_angle_(const Cell_t &l, const Cell_t &r)
 
 Cell_t ACleanMode::updatePath()
 {
-//	PP_INFO()
+//	PP_INFO();
 	auto curr = nav_map.updatePosition();
 	auto point = nav_map.getCurrPoint();
-//	ROS_INFO("point(%d,%d,%d)",point.X, point.Y, curr.TH);
+//	PP_INFO();
 //	ROS_INFO("curr(%d,%d,%d)",curr.X, curr.Y, curr.TH);
 //	ROS_INFO("last(%d,%d,%d)",last_.X, last_.Y, last_.TH);
 	if (!is_equal_with_angle_(curr, last_)) {
@@ -283,6 +285,7 @@ Cell_t ACleanMode::updatePath()
 	}
 //	else
 //		is_time_up = !cs.is_trapped();
+//	PP_INFO();
 	return curr;
 }
 
@@ -308,6 +311,7 @@ void ACleanMode::genNextAction() {
 		sp_action_.reset(new ActionFollowWall(action_i_ == ac_follow_wall_left));
 	else if(action_i_ == ac_null)
 		sp_action_ == nullptr;
+	PP_INFO();
 }
 
 

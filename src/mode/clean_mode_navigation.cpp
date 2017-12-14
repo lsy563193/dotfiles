@@ -185,8 +185,6 @@ bool CleanModeNav::isFinish()
 		else
 			return ACleanMode::isFinish();
 	}
-
-	return false;
 }
 
 bool CleanModeNav::isExit()
