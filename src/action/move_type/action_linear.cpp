@@ -41,12 +41,12 @@ bool ActionLinear::isFinish() {
 				sp_movement_.reset(new MovementBack);
 			}
 			else {
-				resetTriggeredValue();
+//				resetTriggeredValue();
 				return true;
 			}
 		}
 		else {//back
-			resetTriggeredValue();
+//			resetTriggeredValue();
 			return true;
 		}
 	}
