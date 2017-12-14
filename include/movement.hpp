@@ -13,7 +13,8 @@
 
 
 class IMoveType;
-class IMovement: public IAction,public ISpeedGovernor{
+class IMovement: public IAction,public ISpeedGovernor
+{
 public:
 	virtual void adjustSpeed(int32_t&, int32_t&)=0;
 	virtual void run();
@@ -85,11 +86,11 @@ class MovementTurn: public IMovement{
 public:
 
 	MovementTurn(int16_t angle);
-	void adjustSpeed(int32_t&, int32_t&);
+	void adjustSpeed(int32_t&, int32_t&) override;
 	void setTarget();
 	bool isReach();
 	bool shouldMoveBack();
-	bool isFinish();
+	bool isFinish() override;
 
 private:
 	uint16_t accurate_;
@@ -163,7 +164,8 @@ private:
 	bool is_left_{true};
 };
 
-class MovementGoToCharger: public IMovement{
+class MovementGoToCharger: public IMovement
+{
 public:
 	MovementGoToCharger();
 	~MovementGoToCharger() = default;
@@ -218,6 +220,23 @@ private:
 
 	int32_t left_speed_;
 	int32_t right_speed_;
+};
+
+class MovementExceptionResume: public IMovement
+{
+public:
+	MovementExceptionResume();
+	~MovementExceptionResume();
+
+	void adjustSpeed(int32_t&, int32_t&) override ;
+	bool isFinish() override;
+
+private:
+	double resume_wheel_start_time_;
+	float wheel_current_sum_;
+	uint8_t wheel_current_sum_cnt_;
+	uint8_t wheel_resume_cnt_;
+	uint8_t bumper_jam_state_;
 };
 
 class MovementTurnForCharger :public IMovement

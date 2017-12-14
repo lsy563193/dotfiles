@@ -85,7 +85,7 @@ FILE(GLOB PP_SRC
 				src/action/move_type/movement/movement_go_charger.cpp
 				src/action/move_type/movement/movement_go_charger_new.cpp
 				src/action/move_type/movement/movement_self_check.cpp
-				src/action/move_type/movement/movement_self_check_new.cpp
+        src/action/move_type/movement/movement_exception_resume.cpp
 				src/action/move_type/movement/movement_turn.cpp
 				src/action/move_type/movement/movement_turn_new.cpp
 				src/action/move_type/movement/movement_turn_for_charger.cpp
