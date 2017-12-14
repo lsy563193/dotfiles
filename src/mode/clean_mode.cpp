@@ -15,9 +15,8 @@ Path_t ACleanMode::plan_path_ = {};
 Cell_t ACleanMode::last_ = {};
 //boost::shared_ptr<IMovement> ACleanMode::sp_movement_ = nullptr;
 
-ACleanMode::ACleanMode():start_timer_(time(NULL)) {
-
-	cm_register_events();
+ACleanMode::ACleanMode()
+{
 	led.set_mode(LED_FLASH, LED_GREEN, 1000);
 	ev.key_clean_pressed = false;
 	sp_action_.reset(new ActionOpenGyro());
@@ -92,7 +91,7 @@ bool ACleanMode::isFinish() {
 			return false;
 
 		PP_INFO();
-		map_mark();
+		mapMark();
 
 		if (ev.bumper_jam || ev.cliff_jam || ev.oc_wheel_left || ev.oc_wheel_right || ev.oc_suction || ev.lidar_stuck)
 		{
@@ -131,7 +130,7 @@ bool ACleanMode::setNextState() {
 		plan_path_.pop_front();
 
 		state_i_ = st_clean;
-		st_init(state_i_);
+		stateInit(state_i_);
 		action_i_ = ac_null;
 		clean_path_algorithm_->displayPath(plan_path_);
 	}
@@ -154,7 +153,7 @@ bool ACleanMode::setNextState() {
 				state_i_ = st_trapped;
 			else
 				state_i_ = st_go_home_point;
-			st_init(state_i_);
+			stateInit(state_i_);
 			action_i_ = ac_null;
 		}
 	}
@@ -288,7 +287,7 @@ void ACleanMode::resetTriggeredValue(void)
 	ev.tilt_triggered = 0;
 }
 
-void ACleanMode::st_init(int next) {
+void ACleanMode::stateInit(int next) {
 	if (next == st_clean) {
 		g_wf_reach_count = 0;
 		led.set_mode(LED_STEADY, LED_GREEN);
@@ -354,39 +353,6 @@ void ACleanMode::st_init(int next) {
 }
 
 
-bool ACleanMode::st_is_finish() {
-	return state_i_ == st_null;
-}
-
-bool ACleanMode::ac_is_forward() {
-	return action_i_ == ac_forward;
-}
-
-bool ACleanMode::ac_is_follow_wall() {
-	return action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right;
-}
-
-bool ACleanMode::ac_is_turn() {
-	return action_i_ == ac_turn;
-}
-
-bool ACleanMode::ac_is_back() {
-	return action_i_ == ac_back;
-}
-
-bool ACleanMode::ac_is_go_to_charger(){
-	return action_i_ == ac_go_to_charger;
-}
-
-bool ACleanMode::action_is_movement() {
-
-	return (action_i_ == ac_forward ||
-				 action_i_ == ac_follow_wall_left ||
-				 action_i_ == ac_follow_wall_right ||
-				 action_i_ == ac_turn ||
-				 action_i_ == ac_back);
-}
-
 uint8_t ACleanMode::saveFollowWall(bool is_left)
 {
 	auto dy = is_left ? 2 : -2;
@@ -409,17 +375,3 @@ bool ACleanMode::MovementFollowWallisFinish() {
 	return false;
 }
 
-//bool ACleanMode::isFinish() {
-//	return false;
-//}
-
-bool ACleanMode::switchToSelfCheck()
-{
-	// todo: For Debug, should be removed.
-	beeper.play_for_command(INVALID);
-
-	ROS_INFO("%s %d: Enter self check mode", __FUNCTION__, __LINE__);
-	action_i_ = ac_self_check;
-	genNextAction();
-	return false;
-}

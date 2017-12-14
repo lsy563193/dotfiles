@@ -13,21 +13,6 @@
 
 #endif
 
-/*
-typedef struct Cell_t_{
-	int16_t X;
-	int16_t Y;
-	friend bool operator==(const Cell_t_ left, const Cell_t_ right)
-	{
-		return left.X == right.X && left.Y == right.Y;
-	}
-	friend bool operator!=(const Cell_t_ left, const Cell_t_ right)
-	{
-		return !(left == right);
-	}
-} Cell_t;
-*/
-
   /**
    * Represents a 2-dimensional vector (x, y)
    */

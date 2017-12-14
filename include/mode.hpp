@@ -179,12 +179,10 @@ public:
 	void genNextAction();
 	void resetTriggeredValue();
 
-	virtual bool map_mark() = 0;
+	virtual bool mapMark() = 0;
 
 	virtual bool MovementFollowWallisFinish();
 	Cell_t updatePath();
-
-	bool switchToSelfCheck();
 
 	static Path_t passed_path_;
 	static Path_t plan_path_;
@@ -196,25 +194,12 @@ protected:
 	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_;
 	boost::shared_ptr<APathAlgorithm> go_home_path_algorithm_;
 	uint8_t saveFollowWall(bool is_left);
-	bool isInitState();
-
-	bool st_is_finish();
-	bool action_is_movement();
-	bool ac_is_forward();
-	bool ac_is_follow_wall();
-	bool ac_is_turn();
-	bool ac_is_back();
-	bool ac_is_go_to_charger();
-	void st_init(int);
+	virtual bool isInitState();
+	void stateInit(int);
 	std::vector<Cell_t> temp_fw_cells;
 	TargetList home_cells_;
 	static Cell_t last_;
-	uint32_t start_timer_;
-	uint32_t diff_timer_;
 
-	const int ISOLATE_COUNT_LIMIT = 4;
-//	static boost::shared_ptr<State> sp_state_;
-//	static boost::shared_ptr<IMoveType> sp_move_type_;
 	int state_i_{st_clean};
 	enum {
 		st_null,
@@ -226,24 +211,7 @@ protected:
 		st_self_check,
 		st_exploration,
 	};
-//	int move_type_i_{mt_null};
-//	enum {
-//		mt_null,
-//		mt_linear,
-//		mt_follow_wall_left,
-//		mt_follow_wall_right,
-//		mt_go_to_charger,
-//	};
-//	int movement_i_ {mv_null};
-	enum {
-//		mv_null,
-		mv_back,
-		mv_turn,
-		mv_forward,
-		mv_turn2,
-		mv_follow_wall,
-		mv_go_charger,
-	};
+
 private:
 	void register_events(void);
 
@@ -256,7 +224,7 @@ public:
 	~CleanModeNav() override ;
 
 	uint8_t setFollowWall();
-	bool map_mark() override ;
+	bool mapMark() override ;
 	bool isFinish() override ;
 	bool isExit();
 
@@ -300,13 +268,14 @@ public:
 	CleanModeFollowWall();
 	~CleanModeFollowWall() override ;
 
-	bool map_mark() override;
+	bool mapMark() override;
 
 
 	int16_t wf_path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound);
 	int16_t wf_path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t end_x, int16_t end_y, uint8_t bound, int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max);
 	bool wf_is_isolate();
 private:
+	uint32_t diff_timer_;
 protected:
 //	Path_t home_point_{};
 private:
@@ -319,7 +288,7 @@ public:
 	CleanModeSpot();
 	~CleanModeSpot() = default;
 
-	bool map_mark() override;
+	bool mapMark() override;
 
 private:
 protected:

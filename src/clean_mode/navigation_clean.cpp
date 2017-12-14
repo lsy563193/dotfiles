@@ -357,7 +357,7 @@ bool NavigationClean::csm_next(Cell_t &curr)
 //	if (cs.is_clean() && g_check_path_in_advance)
 //	{
 //		printf("\n\033[42m========================Generate path in advance==============================\033[0m\n");
-//		map_mark();
+//		mapMark();
 //		int16_t current_dir = new_dir_;
 //		int16_t temp_new_dir;
 //
@@ -423,7 +423,7 @@ bool NavigationClean::csm_next(Cell_t &curr)
 }
 void NavigationClean::mark()
 {
-	ROS_INFO("%s, %d: NavigationClean::map_mark", __FUNCTION__, __LINE__);
+	ROS_INFO("%s, %d: NavigationClean::mapMark", __FUNCTION__, __LINE__);
 	nav_map.saveBlocks();
 	nav_map.setBlocks();
 

@@ -1077,7 +1077,7 @@ deque <Cell_t> path_points;
  * can be reached.
  *
  * If the path is found, trace back from the target point to the current robot
- * position, and map_mark the cell value of the path as 6.
+ * position, and mapMark the cell value of the path as 6.
  *
  * @param xID	Robot X Coordinate
  * @param yID	Robot Y Coordinate
