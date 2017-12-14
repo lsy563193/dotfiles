@@ -67,6 +67,7 @@ protected:
 		ac_movement_stay,
 		ac_movement_direct_go,
 		ac_pause,
+		ac_self_check
 	};
 
 private:
@@ -183,6 +184,8 @@ public:
 	virtual bool MovementFollowWallisFinish();
 	Cell_t updatePath();
 
+	bool switchToSelfCheck();
+
 	static Path_t passed_path_;
 	static Path_t plan_path_;
 
@@ -190,8 +193,8 @@ public:
 	MapDirection new_dir_{MAP_POS_X};
 protected:
 
-	APathAlgorithm* clean_path_algorithm_;
-	APathAlgorithm* go_home_path_algorithm_;
+	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_;
+	boost::shared_ptr<APathAlgorithm> go_home_path_algorithm_;
 	uint8_t saveFollowWall(bool is_left);
 	bool isInitState();
 
@@ -265,11 +268,20 @@ public:
 	void remote_home(bool state_now, bool state_last) override ;
 	void cliff_all(bool state_now, bool state_last) override ;
 	void charge_detect(bool state_now, bool state_last) override ;
+//	void over_current_brush_left(bool state_now, bool state_last);
+//	void over_current_brush_main(bool state_now, bool state_last);
+//	void over_current_brush_right(bool state_now, bool state_last);
+	void over_current_wheel_left(bool state_now, bool state_last) override;
+	void over_current_wheel_right(bool state_now, bool state_last) override;
+//	void over_current_suction(bool state_now, bool state_last);
 
 private:
 	bool MovementFollowWallisFinish() override ;
 	bool isNewLineReach();
 	bool isOverOriginLine();
+	bool enterPause();
+	bool resumePause();
+	bool switchToGoHomePointState();
 
 	bool paused_;
 	bool has_aligned_and_open_slam;

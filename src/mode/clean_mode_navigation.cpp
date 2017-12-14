@@ -4,6 +4,7 @@
 
 #include <event_manager.h>
 #include <pp.h>
+#include <error.h>
 #include "arch.hpp"
 
 #define NAV_INFO() ROS_INFO("st(%d),ac(%d)", state_i_, action_i_)
@@ -32,8 +33,8 @@ CleanModeNav::CleanModeNav()
 	has_aligned_and_open_slam = false;
 	paused_odom_angle_ = 0;
 	moved_during_pause_ = false;
-	clean_path_algorithm_ = new NavCleanPathAlgorithm();
-	go_home_path_algorithm_ = nullptr;
+	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
+	go_home_path_algorithm_.reset();
 }
 
 CleanModeNav::~CleanModeNav()
@@ -58,6 +59,11 @@ CleanModeNav::~CleanModeNav()
 		speaker.play(SPEAKER_ERROR_LIFT_UP, false);
 		speaker.play(SPEAKER_CLEANING_STOP);
 		ROS_WARN("%s %d: Cliff all triggered. Stop cleaning.", __FUNCTION__, __LINE__);
+	}
+	else if (ev.fatal_quit)
+	{
+		speaker.play(SPEAKER_CLEANING_STOP, false);
+		error.alarm();
 	}
 	else
 	{
@@ -122,66 +128,27 @@ bool CleanModeNav::isFinish()
 	{
 		// For pausing case, only key or remote clean will wake it up.
 		if (ev.key_clean_pressed)
-		{
-			ev.key_clean_pressed = false;
-			speaker.play(SPEAKER_CLEANING_CONTINUE);
-			ROS_INFO("%s %d: Resume cleaning.", __FUNCTION__, __LINE__);
-			action_i_ = ac_open_gyro;
-			genNextAction();
-			return ACleanMode::isFinish();
-		}
+			return resumePause();
 		else if (ev.remote_home)
-		{
-			state_i_ = st_go_home_point;
-			st_init(state_i_);
-
-			map_mark();
-			if(!setNextState())
-			{
-				ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
-				setNextMode(md_idle);
-				return true;
-			}
-//			move_type_i_ = mt_null;
-//			setNextAction_();
-			action_i_ = ac_null;
-			setNextAction();
-			return ACleanMode::isFinish();
-		}
+			return switchToGoHomePointState();
 		else
 			return false;
 	}
-	// else if (action_i_ == ac_self_check)
-	// {}
+	else if (action_i_ == ac_self_check)
+	{
+		if (ev.key_clean_pressed)
+			return enterPause();
+		else if (ev.remote_home)
+			return switchToGoHomePointState();
+		else
+			return false;
+	}
 	else
 	{
 		if (ev.key_clean_pressed)
-		{
-			ev.key_clean_pressed = false;
-			speaker.play(SPEAKER_CLEANING_PAUSE);
-			ROS_INFO("%s %d: Key clean pressed, pause cleaning.", __FUNCTION__, __LINE__);
-			paused_ = true;
-			paused_odom_angle_ = odom.getAngle();
-			action_i_ = ac_pause;
-			genNextAction();
-			return ACleanMode::isFinish();
-		}
+			return enterPause();
 		else if (ev.remote_home)
-		{
-			state_i_ = st_go_home_point;
-			st_init(state_i_);
-
-			map_mark();
-			if(!setNextState())
-			{
-				ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
-				setNextMode(md_idle);
-				return true;
-			}
-			action_i_ = ac_null;
-			setNextAction();
-			return ACleanMode::isFinish();
-		}
+			return switchToGoHomePointState();
 		else
 			return ACleanMode::isFinish();
 	}
@@ -204,7 +171,7 @@ bool CleanModeNav::isExit()
 		return true;
 	}
 
-	if (ev.key_long_pressed || ev.cliff_all_triggered || sp_action_->isExit())
+	if (ev.fatal_quit || ev.key_long_pressed || ev.cliff_all_triggered || sp_action_->isExit())
 	{
 		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
 		setNextMode(md_idle);
@@ -307,6 +274,18 @@ void CleanModeNav::key_clean(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
 
 	key.resetTriggerStatus();
+}
+
+void CleanModeNav::over_current_wheel_left(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: Left wheel oc.", __FUNCTION__, __LINE__);
+	ev.oc_wheel_left = true;
+}
+
+void CleanModeNav::over_current_wheel_right(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: Right wheel oc.", __FUNCTION__, __LINE__);
+	ev.oc_wheel_right = true;
 }
 
 void CleanModeNav::remote_clean(bool state_now, bool state_last)
@@ -412,3 +391,43 @@ bool CleanModeNav::isNewLineReach()
 
 	return ret;
 }
+
+bool CleanModeNav::resumePause()
+{
+	ev.key_clean_pressed = false;
+	speaker.play(SPEAKER_CLEANING_CONTINUE);
+	ROS_INFO("%s %d: Resume cleaning.", __FUNCTION__, __LINE__);
+	action_i_ = ac_open_gyro;
+	genNextAction();
+	return ACleanMode::isFinish();
+}
+
+bool CleanModeNav::switchToGoHomePointState()
+{
+	state_i_ = st_go_home_point;
+	st_init(state_i_);
+
+	map_mark();
+	if(!setNextState())
+	{
+		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+		setNextMode(md_idle);
+		return true;
+	}
+	action_i_ = ac_null;
+	setNextAction();
+	return ACleanMode::isFinish();
+}
+
+bool CleanModeNav::enterPause()
+{
+	ev.key_clean_pressed = false;
+	speaker.play(SPEAKER_CLEANING_PAUSE);
+	ROS_INFO("%s %d: Key clean pressed, pause cleaning.", __FUNCTION__, __LINE__);
+	paused_ = true;
+	paused_odom_angle_ = odom.getAngle();
+	action_i_ = ac_pause;
+	genNextAction();
+	return ACleanMode::isFinish();
+}
+

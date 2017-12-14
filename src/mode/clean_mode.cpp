@@ -22,12 +22,15 @@ ACleanMode::ACleanMode():start_timer_(time(NULL)) {
 	ev.key_clean_pressed = false;
 	sp_action_.reset(new ActionOpenGyro());
 	action_i_ = ac_open_gyro;
+	state_i_ = st_null;
 	robot_timer.initWorkTimer();
 	key.resetPressStatus();
 
 	c_rcon.resetStatus();
 
 	home_cells_.resize(1,g_zero_home);
+	clean_path_algorithm_.reset();
+	go_home_path_algorithm_.reset();
 }
 
 bool ACleanMode::isInitState() {
@@ -132,28 +135,33 @@ bool ACleanMode::isFinish() {
 			return false;
 		setNextAction();
 	}
-	else {
+	else
+	{
 		updatePath();
+
 		if (!sp_action_->isFinish())
 			return false;
 
-//		if(!ac_is_back())
-//			nav_map.saveBlocks();
+		PP_INFO();
+		map_mark();
 
-//		while (!setNextAction()) {
-			PP_INFO();
-			map_mark();
-			do{
-				if(!setNextState())
+		if (ev.bumper_jam || ev.cliff_jam || ev.oc_wheel_left || ev.oc_wheel_right || ev.oc_suction || ev.lidar_stuck)
+		{
+			action_i_ = ac_self_check;
+			genNextAction();
+		}
+		else
+		{
+			do
+			{
+				if (!setNextState())
 				{
 					setNextMode(0);
 					return true;
 				}
-			}while(!setNextAction());
-//		}
-//		ROS_INFO("%s,%d: bumper(%d)",__FUNCTION__,__LINE__, ev.bumper_triggered);
-//		if(!(ac_is_back() && mt_is_linear()))
-//			resetTriggeredValue();
+			} while (!setNextAction());
+		}
+
 	}
 	return false;
 }
@@ -313,6 +321,8 @@ void ACleanMode::genNextAction() {
 		sp_action_.reset(new ActionFollowWall(action_i_ == ac_follow_wall_left));
 	else if (action_i_ == ac_go_to_charger)
 		sp_action_.reset(new MoveTypeGoToCharger);
+	else if (action_i_ == ac_self_check)
+		sp_action_.reset(new MovementExceptionResume);
 	else if(action_i_ == ac_null)
 		sp_action_ == nullptr;
 	PP_INFO();
@@ -333,6 +343,7 @@ void ACleanMode::st_init(int next) {
 	if (next == st_clean) {
 		g_wf_reach_count = 0;
 		led.set_mode(LED_STEADY, LED_GREEN);
+		PP_INFO();
 	}
 	if (next == st_go_home_point)
 	{
@@ -355,7 +366,8 @@ void ACleanMode::st_init(int next) {
 		ev.battrey_home = false;
 
 		ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_cells_.size());
-		go_home_path_algorithm_ = new GoHomePathAlgorithm(nav_map, home_cells_);
+		if (go_home_path_algorithm_ == nullptr)
+			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(nav_map, home_cells_));
 
 	}
 	if (next == st_tmp_spot) {
@@ -452,3 +464,13 @@ bool ACleanMode::MovementFollowWallisFinish() {
 //	return false;
 //}
 
+bool ACleanMode::switchToSelfCheck()
+{
+	// todo: For Debug, should be removed.
+	beeper.play_for_command(INVALID);
+
+	ROS_INFO("%s %d: Enter self check mode", __FUNCTION__, __LINE__);
+	action_i_ = ac_self_check;
+	genNextAction();
+	return false;
+}

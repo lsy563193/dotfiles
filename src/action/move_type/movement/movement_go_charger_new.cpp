@@ -152,7 +152,7 @@ bool MovementGoToCharger::isSwitch()
 
 			// Handle for rcon signal
 			receive_code = c_rcon.getTrig();
-			ROS_INFO("%s %d: rcon recieve code:%d", __FUNCTION__, __LINE__, receive_code);
+			//ROS_INFO("%s %d: rcon recieve code:%d", __FUNCTION__, __LINE__, receive_code);
 			if (receive_code)
 			{
 				gtc_state_now_ = gtc_around_charger_station_init;
