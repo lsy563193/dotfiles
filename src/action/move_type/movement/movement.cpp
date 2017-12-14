@@ -66,7 +66,7 @@ int16_t bumper_turn_angle()
 		} else {
 			g_turn_angle = (bumper_jam_cnt_ >= 3 || (obs.*get_obs)() <= (obs.*get_obs_value)()) ? -100 : -200;
 		}
-		//ROS_INFO("%s, %d: g_turn_angle(%d)",__FUNCTION__,__LINE__, g_turn_angle);
+		//ROS_INFO("%s, %d: turn_angle(%d)",__FUNCTION__,__LINE__, turn_angle);
 
 		bumper_jam_cnt_ = (wheel.*get_wheel_step)() < 2000 ? ++bumper_jam_cnt_ : 0;
 	}
@@ -122,7 +122,7 @@ int16_t obs_turn_angle()
 
 	if(mt.is_right())
 		g_turn_angle = -g_turn_angle;
-//	ROS_WARN("g_turn_angle(%d)",g_turn_angle);
+//	ROS_WARN("turn_angle(%d)",turn_angle);
 	return g_turn_angle;
 }
 

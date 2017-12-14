@@ -80,19 +80,19 @@ bool FollowWallMovement::shouldMoveBack()
 	ev.bumper_triggered = bumper.get_status();
 	if (ev.bumper_triggered) {
 		g_turn_angle = bumper_turn_angle();
-		ROS_WARN("%s %d: Bumper triggered, g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
+		ROS_WARN("%s %d: Bumper triggered, turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
 		return true;
 	}
 	ev.cliff_triggered = cliff.get_status();
 	if (ev.cliff_triggered) {
 		g_turn_angle = cliff_turn_angle();
-		ROS_WARN("%s %d: Cliff triggered, g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
+		ROS_WARN("%s %d: Cliff triggered, turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
 		return true;
 	}
 	ev.tilt_triggered = gyro.getTiltCheckingStatus();
 	if (ev.tilt_triggered) {
 		g_turn_angle = tilt_turn_angle();
-		ROS_WARN("%s %d: Tilt triggered, g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
+		ROS_WARN("%s %d: Tilt triggered, turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
 		return true;
 	}
 
@@ -101,7 +101,7 @@ bool FollowWallMovement::shouldMoveBack()
 		// Temporary use obs as lidar triggered.
 		ev.obs_triggered = BLOCK_FRONT;
 		g_turn_angle = obs_turn_angle();
-		ROS_WARN("%s %d: slip triggered, g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
+		ROS_WARN("%s %d: slip triggered, turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
 		return true;
 	}
 
@@ -117,7 +117,7 @@ bool FollowWallMovement::shouldTurn()
 		ev.bumper_triggered = ev.lidar_triggered;
 		g_turn_angle = bumper_turn_angle();
 		ev.bumper_triggered = 0;
-		ROS_WARN("%s %d: Lidar triggered, g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
+		ROS_WARN("%s %d: Lidar triggered, turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
 		return true;
 	}
 
@@ -126,7 +126,7 @@ bool FollowWallMovement::shouldTurn()
 	{
 		ev.obs_triggered = BLOCK_FRONT;
 		g_turn_angle = obs_turn_angle();
-		ROS_WARN("%s %d: OBS triggered, g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
+		ROS_WARN("%s %d: OBS triggered, turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
 		return true;
 	}
 
@@ -137,7 +137,7 @@ bool FollowWallMovement::isBlockCleared()
 {
 	if (!nav_map.isBlockAccessible(nav_map.getXCell(), nav_map.getYCell())) // Robot has step on blocks.
 	{
-		ROS_WARN("%s %d: Lidar triggered, g_turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
+		ROS_WARN("%s %d: Lidar triggered, turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
 		return true;
 	}
 

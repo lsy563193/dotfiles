@@ -550,9 +550,9 @@ bool GoToChargerMovement::isSwitch()
 				go_home_state_now = TURN_FOR_CHARGER_SIGNAL_INIT;
 				g_go_to_charger_back_10cm = true;
 				//if(ev.bumper_triggered & BLOCK_LEFT)
-				//	g_turn_angle = -1100;
+				//	turn_angle = -1100;
 				//else
-				//	g_turn_angle = 1100;
+				//	turn_angle = 1100;
 				ROS_WARN("%d: quick_back in position_far", __LINE__);
 				return true;
 			}

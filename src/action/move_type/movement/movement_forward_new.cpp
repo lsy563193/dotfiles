@@ -206,8 +206,8 @@ bool MovementForward::isOBSStop()
 	ev.obs_triggered = obs.get_status(200, 1700, 200);
 	if(ev.obs_triggered)
 	{
-		g_turn_angle = obs_turn_angle();
-		ROS_INFO("%s, %d: ev.obs_triggered(%d), turn for (%d).", __FUNCTION__, __LINE__, ev.obs_triggered, g_turn_angle);
+		turn_angle = obs_turn_angle();
+		ROS_INFO("%s, %d: ev.obs_triggered(%d), turn for (%d).", __FUNCTION__, __LINE__, ev.obs_triggered, turn_angle);
 		return true;
 	}
 
@@ -263,7 +263,7 @@ bool MovementForward::isPassTargetStop()
 
 //void MovementForward::setTarget()
 //{
-//	g_turn_angle = ranged_angle(
+//	turn_angle = ranged_angle(
 //						course_to_dest(s_curr_p.X, s_curr_p.Y, cm_target_p_.X, cm_target_p_.Y) - robot::instance()->getPoseAngle());
 //	s_target_p = nav_map.cellToPoint(sp_mt_->sp_cm_->plan_path_.back());
 //	sp_mt_->sp_cm_->plan_path_ = sp_mt_->sp_cm_->plan_path_;

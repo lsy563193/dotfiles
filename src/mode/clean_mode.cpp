@@ -52,57 +52,6 @@ bool ACleanMode::setNextAction() {
 	else
 	{
 
-//		else if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
-//		{
-//			/*
-//			 * For follow wall move type, it starts for turning, then follow wall movement, and back if necessary.
-//			 * It should apply to all the follow wall move type.
-//			 */
-//			if (action_i_ == ac_null)
-//				action_i_ = ac_turn;
-//			else if (ac_is_turn())
-//			{
-//				cm_target_p_ = GridMap::cellToPoint(plan_path_.back());
-//				cm_origin_p_ = GridMap::getCurrPoint();
-//				action_i_ = (move_type_i_ == mt_follow_wall_left) ? ac_follow_wall_left : ac_follow_wall_right;
-//				PP_INFO();NAV_INFO();
-//			}
-//			else if (ac_is_forward())
-//			{
-//				if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered)
-//					action_i_ = ac_back;
-//				else
-//					action_i_ = (move_type_i_ == mt_follow_wall_left) ? ac_follow_wall_left : ac_follow_wall_right;
-//				PP_INFO();NAV_INFO();
-//			}
-//			else if (ac_is_follow_wall())
-//			{
-//				if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip)
-//					action_i_ = ac_back;
-//				else if (ev.lidar_triggered || ev.obs_triggered)
-//				{
-//					turn_target_angle_ = GridMap::getCurrPoint().TH + g_turn_angle;
-//					action_i_ = ac_turn;
-//				}
-//				else
-//					action_i_ = ac_null;//reach
-//				PP_INFO();NAV_INFO();
-//			}
-//			else if (action_i_ == ac_back)
-//			{
-//				turn_target_angle_ = GridMap::getCurrPoint().TH + g_turn_angle;
-//				action_i_ = ac_turn;
-//				PP_INFO();NAV_INFO();
-//			}
-//		}
-//		else if (mt_is_go_to_charger())
-//		{
-//			if (ac_is_go_to_charger())
-//				action_i_ = ac_null;
-//			else
-//				action_i_ = ac_go_to_charger;
-//		}
-
 		if (ev.fatal_quit)
 		{
 			PP_INFO();

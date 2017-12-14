@@ -21,9 +21,9 @@ public:
 //	static ACleanMode* sp_cm_;
 //	static boost::shared_ptr<IMoveType> sp_mt_;
 	static IMoveType* sp_mt_;
-protected:
 	static Point32_t s_target_p;
-	static Point32_t s_origin_p;
+	static Point32_t s_start_p;
+protected:
 	static float s_pos_x;
 	static float s_pos_y;
 //	static Path_t path_;

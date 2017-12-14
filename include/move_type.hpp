@@ -28,6 +28,8 @@ public:
 	static boost::shared_ptr<ACleanMode> sp_cm_;
 	static int movement_i_;
 	void resetTriggeredValue();
+	Point32_t start_point_;
+	Point32_t target_point_;
 protected:
 //	Path_t passed_path_;
 //	Path_t plan_path_;
@@ -46,7 +48,7 @@ class ActionLinear:public IMoveType
 public:
 	ActionLinear();
 	~ActionLinear();
-	bool isFinish();
+	bool isFinish() override;
 //	IAction* setNextAction();
 protected:
 };
@@ -54,11 +56,23 @@ protected:
 class ActionFollowWall:public IMoveType
 {
 public:
-	ActionFollowWall(bool is_left);
+	ActionFollowWall() = delete;
+
+	explicit ActionFollowWall(bool is_left);
+
+	bool isFinish() override;
 
 //	IAction* setNextAction();
 protected:
-	static bool is_left_;
+	bool is_left_{};
+	int16_t turn_angle{};
+	int16_t bumper_turn_angle();
+	int16_t cliff_turn_angle();
+	int16_t tilt_turn_angle();
+	int16_t obs_turn_angle();
+	int16_t rcon_turn_angle();
+	int16_t get_turn_angle_by_ev();
+	int16_t get_turn_angle(bool);
 };
 
 class MoveTypeGoToCharger:public IMoveType

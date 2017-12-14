@@ -8,6 +8,7 @@
 
 ActionLinear::ActionLinear() {
 	resetTriggeredValue();
+
 	turn_target_angle_ = sp_cm_->plan_path_.front().TH;
 	ROS_INFO("%s,%d: mt_is_linear,turn(%d)", __FUNCTION__, __LINE__, turn_target_angle_);
 	movement_i_ = mm_turn;

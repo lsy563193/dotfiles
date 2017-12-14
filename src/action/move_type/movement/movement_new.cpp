@@ -8,7 +8,7 @@
 IMoveType* IMovement::sp_mt_  = nullptr;
 
 Point32_t IMovement::s_target_p = {0,0};
-Point32_t IMovement::s_origin_p = {0,0};
+Point32_t IMovement::s_start_p = {0,0};
 
 float IMovement::s_pos_x = 0;
 float IMovement::s_pos_y = 0;

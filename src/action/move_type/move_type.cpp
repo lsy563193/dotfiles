@@ -20,7 +20,8 @@ int IMoveType::movement_i_ = mm_null;
 //}
 
 IMoveType::IMoveType() {
-
+	start_point_ = GridMap::getCurrPoint();
+	target_point_ = GridMap::cellToPoint(sp_cm_->plan_path_.front());
 	g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
 	bumper_turn_factor = 0.85;
 	g_bumper_cnt = g_cliff_cnt = 0;

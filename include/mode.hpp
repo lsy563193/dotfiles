@@ -205,8 +205,6 @@ protected:
 	void st_init(int);
 	std::vector<Cell_t> temp_fw_cells;
 	TargetList home_cells_;
-	Point32_t cm_target_p_;
-	Point32_t cm_origin_p_;
 	static Cell_t last_;
 	uint32_t start_timer_;
 	uint32_t diff_timer_;
