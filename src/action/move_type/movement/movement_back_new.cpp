@@ -17,9 +17,13 @@ MovementBack::MovementBack(float back_distance) : counter_(0), speed_(BACK_MAX_S
 {
 //	ROS_INFO("%s, %d: ", __FUNCTION__, __LINE__);
 	back_distance_ = back_distance;
+	bumper_jam_cnt_ = 0;
+	cliff_jam_cnt_ = 0;
+	updateStartPose();
+	ROS_INFO("%s %d: Set back distance: %f.", __FUNCTION__, __LINE__, back_distance_);
 }
 
-void MovementBack::setTarget()
+void MovementBack::updateStartPose()
 {
 	s_pos_x = odom.getX();
 	s_pos_y = odom.getY();
@@ -29,7 +33,6 @@ void MovementBack::setTarget()
 		g_robot_slip = false;
 	}
 
-	ROS_INFO("%s %d: Set back distance: %f.", __FUNCTION__, __LINE__, back_distance_);
 }
 
 bool MovementBack::isReach()
@@ -52,23 +55,23 @@ bool MovementBack::isReach()
 			return true;
 		}
 
-		g_bumper_cnt = bumper.get_status() == 0 ? 0 : g_bumper_cnt+1 ;
-		g_cliff_cnt = cliff.get_status() == 0 ? 0 : g_cliff_cnt+1 ;
+		bumper_jam_cnt_ = bumper.get_status() == 0 ? 0 : bumper_jam_cnt_+1 ;
+		cliff_jam_cnt_ = cliff.get_status() == 0 ? 0 : cliff_jam_cnt_+1 ;
 		ev.tilt_triggered = gyro.getTiltCheckingStatus();
 		//g_lidar_bumper_cnt = robot::instance()->getLidarBumper() == 0? 0:g_lidar_bumper_cnt+1;
 
-		if (g_bumper_cnt == 0 && g_cliff_cnt == 0 && !ev.tilt_triggered)
+		if (bumper_jam_cnt_ == 0 && cliff_jam_cnt_ == 0 && !ev.tilt_triggered)
 		{
 			ROS_INFO("%s, %d: MovementBack reach target.", __FUNCTION__, __LINE__);
 			return true;
 		}
-		if (g_cliff_cnt >= 2)
+		if (cliff_jam_cnt_ >= 2)
 		{
 			ev.cliff_jam = true;
 			ROS_WARN("%s, %d: Cliff jam.", __FUNCTION__, __LINE__);
 			return true;
 		}
-		else if (g_bumper_cnt >= 2)
+		else if (bumper_jam_cnt_ >= 2)
 		{
 			ev.bumper_jam = true;
 			ROS_WARN("%s, %d: Bumper jam.", __FUNCTION__, __LINE__);
@@ -80,7 +83,7 @@ bool MovementBack::isReach()
 		//	return false;
 		//}
 		else
-			setTarget();
+			updateStartPose();
 	}
 	return false;
 }

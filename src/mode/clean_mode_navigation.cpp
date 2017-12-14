@@ -107,13 +107,14 @@ bool CleanModeNav::map_mark()
 	}
 
 	if (state_i_ == st_trapped)
+	{
 		nav_map.markRobot(CLEAN_MAP);
+		fw_map.setFollowWall();
+	}
 
 	nav_map.setBlocks();
 	if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
 		setFollowWall();
-	if (state_i_ == st_trapped)
-		fw_map.setFollowWall();
 
 	PP_INFO()
 	nav_map.print(CLEAN_MAP, nav_map.getXCell(), nav_map.getYCell());

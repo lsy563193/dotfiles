@@ -24,7 +24,6 @@ IMoveType::IMoveType() {
 	target_point_ = GridMap::cellToPoint(sp_cm_->plan_path_.front());
 	g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
 	bumper_turn_factor = 0.85;
-	g_bumper_cnt = g_cliff_cnt = 0;
 	g_slip_cnt = 0;
 	g_slip_backward = false;
 	c_rcon.resetStatus();
