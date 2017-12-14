@@ -306,8 +306,6 @@ void ACleanMode::genNextAction() {
 		sp_action_.reset(new ActionPause);
 	else if (action_i_ == ac_linear)
 		sp_action_.reset(new ActionLinear);
-	else if (action_i_ == ac_go_to_charger)
-		sp_action_.reset(new ActionGoCharger);
 	else if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
 		sp_action_.reset(new ActionFollowWall(action_i_ == ac_follow_wall_left));
 	else if (action_i_ == ac_go_to_charger)
