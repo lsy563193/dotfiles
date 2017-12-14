@@ -16,8 +16,6 @@
 
 #define RAD2DEG(rad) ((rad)*57.29578)
 
-static	robot *robot_obj = NULL;
-
 bool	g_is_low_bat_pause=false;
 bool g_is_manual_pause=false;
 time_t	start_time;
@@ -31,9 +29,8 @@ int OBS_adjust_count = 50;
 
 
 //extern pp::x900sensor sensor;
-robot::robot()/*:offset_angle_(0),saved_offset_angle_(0)*/
+robot::robot(std::string serial_port, int baudrate, std::string lidar_bumper_dev)/*:offset_angle_(0),saved_offset_angle_(0)*/
 {
-	init();
 	// Subscribers.
 	sensor_sub_ = robot_nh_.subscribe("/robot_sensor", 10, &robot::sensorCb, this);
 	odom_sub_ = robot_nh_.subscribe("/odom", 1, &robot::robotOdomCb, this);
@@ -78,26 +75,59 @@ robot::robot()/*:offset_angle_(0),saved_offset_angle_(0)*/
 
 	setBaselinkFrameType(Odom_Position_Odom_Angle);
 
+	// Init for serial.
+	serial.init(serial_port.c_str(), baudrate);
+
+#if VERIFY_CPU_ID
+	if (verify_cpu_id() < 0) {
+		verify_ok = false;
+	}
+#endif
+
+#if VERIFY_KEY
+	if (verify_ok == true && verify_key() == 0) {
+		verify_ok = false;
+	}
+#endif
+
+	// Init for lidar bumper.
+	if(bumper.lidarBumperInit(lidar_bumper_dev.c_str()) == -1){
+		ROS_ERROR(" lidar bumper open fail!");
+	}
+
+	// Init for event manager.
+	event_manager_init();
+	pthread_t	event_manager_thread_id, event_handler_thread_id;
+	int ret1 = pthread_create(&event_manager_thread_id, 0, event_manager_thread, NULL);
+	if (ret1 != 0) {
+		ROS_ERROR("%s %d: event_manager_thread fails to run!", __FUNCTION__, __LINE__);
+	} else {
+		ROS_INFO("%s %d: \033[32mevent_manager_thread\033[0m is up!", __FUNCTION__, __LINE__);
+	}
+	ret1 = pthread_create(&event_handler_thread_id, 0, event_handler_thread, NULL);
+	if (ret1 != 0) {
+		ROS_ERROR("%s %d: event_handler_thread fails to run!", __FUNCTION__, __LINE__);
+	} else {
+		ROS_INFO("%s %d: \033[32mevent_handler_thread\033[0m is up!", __FUNCTION__, __LINE__);
+	}
+
+	// Init for robotbase.
+	robotbase_reset_send_stream();
+	robotbase_init();
 	ROS_INFO("%s %d: robot init done!", __FUNCTION__, __LINE__);
 }
 
 robot::~robot()
 {
+	bumper.lidarBumperDeinit();
+	robotbase_deinit();
 	delete robot_tf_;
-
-	robot_obj = NULL;
 }
 
 robot *robot::instance()
 {
-	return robot_obj;
-}
-
-void robot::init()
-{
-	if (robot_obj == NULL) {
-		robot_obj = this;
-	}
+	extern robot* robot_instance;
+	return robot_instance;
 }
 
 void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)

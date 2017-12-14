@@ -63,7 +63,7 @@ private:
 
 class MovementBack: public IMovement{
 public:
-	MovementBack();
+	MovementBack(float back_distance = 0.01);
 	~MovementBack(){
 		//set_wheel.speed(1, 1);
 	}
@@ -74,9 +74,9 @@ public:
 	bool isFinish();
 
 private:
+	float back_distance_;
 	int counter_;
 	int32_t speed_;
-	float distance;
 	float lidar_detect_distance;
 };
 

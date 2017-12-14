@@ -34,15 +34,12 @@ extern bool g_is_manual_pause;
 class robot
 {
 public:
-	robot();
+	robot(std::string serial_port, int baudrate, std::string lidar_bumper_dev);
 	~robot();
 
 	static robot *instance();
 
 	tf::TransformListener		*robot_tf_;
-
-	// core function
-	void init();
 
 	// Publisher functions.
 	void visualizeMarkerInit();

@@ -61,10 +61,10 @@ int robotbase_init(void)
 	robotbase_thread_stop = false;
 	send_stream_thread = true;
 	
-	if (!serial.is_ready()) {
+	while (!serial.is_ready()) {
 		ROS_ERROR("serial not ready\n");
-		return -1;
 	}
+
 	serial.setCleanMode(POWER_ACTIVE);
 	g_send_stream_mutex.lock();
 	memcpy(buf, serial.send_stream, sizeof(uint8_t) * SEND_LEN);
