@@ -51,11 +51,11 @@ protected:
 		ac_open_lidar,
 		ac_align,//4
 		ac_open_slam,
-		ac_linear,
-		ac_turn,//6
+		ac_linear,//6
+		ac_follow_wall_left,
+		ac_follow_wall_right,//8
+		ac_turn,
 		ac_forward,
-		ac_follow_wall_left,//8
-		ac_follow_wall_right,
 		ac_back,//10
 //		ac_movement_follow_wall_left,
 //		ac_movement_follow_wall_right,
@@ -183,6 +183,8 @@ public:
 	virtual bool MovementFollowWallisFinish();
 	Cell_t updatePath();
 
+	static Path_t passed_path_;
+	static Path_t plan_path_;
 protected:
 
 	APathAlgorithm* clean_path_algorithm_;
@@ -200,8 +202,6 @@ protected:
 	void st_init(int);
 	std::vector<Cell_t> temp_fw_cells;
 	TargetList home_cells_;
-	static Path_t passed_path_;
-	static Path_t plan_path_;
 	Point32_t cm_target_p_;
 	Point32_t cm_origin_p_;
 	static Cell_t last_;
@@ -213,7 +213,7 @@ protected:
 	MapDirection new_dir_{MAP_POS_X};
 //	static boost::shared_ptr<State> sp_state_;
 //	static boost::shared_ptr<IMoveType> sp_move_type_;
-	int state_i_{st_null};
+	int state_i_{st_clean};
 	enum {
 		st_null,
 		st_clean,
@@ -306,7 +306,7 @@ class CleanModeSpot:public ACleanMode
 {
 public:
 	CleanModeSpot();
-	~CleanModeSpot() override ;
+	~CleanModeSpot() = default;
 
 	bool map_mark() override;
 

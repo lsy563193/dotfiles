@@ -399,7 +399,7 @@ bool MovementFollowWall::sp_turn_over(const Cell_t &curr) {
 	}
 
 bool MovementFollowWall::isFinish() {
-	return sp_cm_->MovementFollowWallisFinish() || shouldMoveBack() || shouldTurn();
+	return sp_mt_->sp_cm_->MovementFollowWallisFinish() || shouldMoveBack() || shouldTurn();
 //	return isNewLineReach() || /*isClosure(1) ||*/ shouldMoveBack() || shouldTurn()
 //					|| isBlockCleared() || isOverOriginLine();
 }

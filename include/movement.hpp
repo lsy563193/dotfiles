@@ -12,26 +12,26 @@
 
 
 
-class ACleanMode;
+class IMoveType;
 class IMovement: public IAction,public ISpeedGovernor{
 public:
 	virtual void adjustSpeed(int32_t&, int32_t&)=0;
 	virtual void run();
 	virtual bool isFinish()=0;
-	static ACleanMode* sp_cm_;
-
+//	static ACleanMode* sp_cm_;
+	static boost::shared_ptr<IMoveType> sp_mt_;
 protected:
 	static Point32_t s_target_p;
 	static Point32_t s_origin_p;
 	static float s_pos_x;
 	static float s_pos_y;
-	static Path_t path_;
+//	static Path_t path_;
 };
 
 class MovementForward: public IMovement{
 public:
 //	MovementForward(Point32_t);
-	MovementForward(Point32_t target, const PPTargetType& path, MapDirection dir);
+	MovementForward();
 //	~MovementForward(){ };
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
 	bool isFinish();
@@ -51,7 +51,6 @@ public:
 
 private:
 
-	MapDirection dir_{MAP_POS_X};
 	int32_t integrated_;
 	int32_t base_speed_;
 	uint8_t integration_cycle_;

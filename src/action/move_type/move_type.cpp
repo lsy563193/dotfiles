@@ -2,10 +2,13 @@
 // Created by lsy563193 on 12/4/17.
 //
 
+#include <mathematics.h>
 #include "pp.h"
 #include "arch.hpp"
 
-//boost::shared_ptr<IAction> IMoveType::sp_movement_ = nullptr;
+boost::shared_ptr<IAction> IMoveType::sp_movement_ = nullptr;
+boost::shared_ptr<ACleanMode> IMoveType::sp_cm_ = nullptr;
+int IMoveType::movement_i_ = mm_null;
 
 //bool IMoveType::isFinish(int& action_i) {
 //	PP_INFO();
@@ -17,7 +20,7 @@
 //}
 
 IMoveType::IMoveType() {
-//	resetTriggeredValue();
+
 	g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
 	bumper_turn_factor = 0.85;
 	g_bumper_cnt = g_cliff_cnt = 0;
@@ -39,10 +42,11 @@ void IMoveType::resetTriggeredValue() {
 }
 
 bool IMoveType::isFinish() {
-	return false;
+
 }
 
 void IMoveType::run() {
-
+//	PP_INFO();
+	sp_movement_->run();
 }
 

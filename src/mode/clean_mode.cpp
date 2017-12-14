@@ -51,29 +51,7 @@ bool ACleanMode::setNextAction() {
 		action_i_ = ac_open_slam;
 	else
 	{
-//		if (action_i_ == ac_linear)
-//		{
-//			/*
-//			 * For linear move type, it starts for turning, then linear movement, and back if necessary.
-//			 * It should apply to all the linear move type.
-//			 */
-//			/*if (action_i_ == ac_null)
-//				action_i_ = ac_turn;
-//			else if (ac_is_turn())
-//				action_i_ = ac_forward;
-//			else if (ac_is_forward())
-//			{
-//				if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered)
-//					action_i_ = ac_back;
-//				else
-//					action_i_ = ac_null;
-//			}
-//			else if (ac_is_back())
-//				action_i_ = ac_null;
-//			else
-//				action_i_ = ac_null;*/
-//			action_i_
-//		}
+
 //		else if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
 //		{
 //			/*
@@ -328,6 +306,8 @@ void ACleanMode::genNextAction() {
 		sp_action_.reset(new ActionPause);
 	else if (action_i_ == ac_linear)
 		sp_action_.reset(new ActionLinear);
+	else if (action_i_ == ac_go_to_charger)
+		sp_action_.reset(new ActionGoCharger);
 	else if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
 		sp_action_.reset(new ActionFollowWall(action_i_ == ac_follow_wall_left));
 	else if (action_i_ == ac_go_to_charger)

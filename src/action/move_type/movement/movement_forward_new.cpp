@@ -5,45 +5,45 @@
 #include "pp.h"
 #include "arch.hpp"
 
-MovementForward::MovementForward(Point32_t target, const PPTargetType& path, MapDirection dir):
-				integrated_(0),base_speed_(LINEAR_MIN_SPEED),integration_cycle_(0),tick_(0),turn_speed_(4),odom_y_start(0.0),odom_x_start(0.0),
-				dir_(dir)
+MovementForward::MovementForward():
+				integrated_(0),base_speed_(LINEAR_MIN_SPEED),integration_cycle_(0),tick_(0),turn_speed_(4),odom_y_start(0.0),odom_x_start(0.0)
 {
-	path_ = path;
-	s_target_p = GridMap::cellToPoint(path_.back());
+//	sp_mt_->sp_cm_->plan_path_ = path;
+//	s_target_p = GridMap::cellToPoint(sp_mt_->sp_cm_->plan_path_.back());
+//	PP_INFO()
+//	sp_mt_->sp_cm_->plan_path_display_sp_mt_->sp_cm_->plan_path_points();
 //	g_is_should_follow_wall = false;
 //	s_target = target;
-//	path_ = path;
-	//ROS_INFO("%s %d: current cell(%d,%d), target cell(%d,%d) ", __FUNCTION__, __LINE__, nav_map.get_x_cell(),nav_map.get_y_cell(), count_to_cell(s_target.X), count_to_cell(s_target.Y));
+//	sp_mt_->sp_cm_->plan_path_ = path;
 }
 
 void MovementForward::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 {
 //	PP_INFO();
-//	ROS_WARN("%s,%d: g_path_size(%d)",__FUNCTION__, __LINE__,path_.size());
+//	ROS_WARN("%s,%d: g_sp_mt_->sp_cm_->plan_path_size(%d)",__FUNCTION__, __LINE__,sp_mt_->sp_cm_->plan_path_.size());
 	auto s_curr_p = nav_map.getCurrPoint();
 	wheel.setDirectionForward();
-	auto curr = (GridMap::isXDirection(dir_)) ? s_curr_p.X : s_curr_p.Y;
-	auto target_p = nav_map.cellToPoint(path_.front());
-	auto &target = (GridMap::isXDirection(dir_)) ? target_p.X : target_p.Y;
+	auto curr = (GridMap::isXDirection(g_old_dir)) ? s_curr_p.X : s_curr_p.Y;
+	auto target_p = nav_map.cellToPoint(sp_mt_->sp_cm_->plan_path_.front());
+	auto &target = (GridMap::isXDirection(g_old_dir)) ? target_p.X : target_p.Y;
 
 
 	int16_t angle_diff = 0;
 	int16_t dis = std::min(std::abs(curr - target), (int32_t) (1.5 * CELL_COUNT_MUL));
-	if (!GridMap::isPositiveDirection(dir_))
+	if (!GridMap::isPositiveDirection(g_old_dir))
 		dis *= -1;
 	target = curr + dis;
 
 	angle_diff = ranged_angle(
 					course_to_dest(s_curr_p.X, s_curr_p.Y, target_p.X, target_p.Y) - robot::instance()->getPoseAngle());
 
-//	ROS_WARN("curr(%d),x?(%d),pos(%d),dis(%d), target_p(%d,%d)", curr, GridMap::isXDirection(dir_), GridMap::isPositiveDirection(dir_), dis, target_p.X, target_p.Y);
-//	auto dis_diff = GridMap::isXDirection(dir_) ? s_curr_p.Y - cm_target_p_.Y : s_curr_p.X - cm_target_p_.X;
-//	dis_diff = GridMap::isPositiveDirection(dir_) ^ GridMap::isXDirection(dir_) ? dis_diff :  -dis_diff;
+//	ROS_WARN("curr(%d),x?(%d),pos(%d),dis(%d), target_p(%d,%d)", curr, GridMap::isXDirection(g_old_dir), GridMap::isPositiveDirection(g_old_dir), dis, target_p.X, target_p.Y);
+//	auto dis_diff = GridMap::isXDirection(g_old_dir) ? s_curr_p.Y - cm_target_p_.Y : s_curr_p.X - cm_target_p_.X;
+//	dis_diff = GridMap::isPositiveDirection(g_old_dir) ^ GridMap::isXDirection(g_old_dir) ? dis_diff :  -dis_diff;
 
 	if (integration_cycle_++ > 10) {
 		auto t = nav_map.pointToCell(target_p);
-		robot::instance()->pubCleanMapMarkers(nav_map, path_, &t);
+		robot::instance()->pubCleanMapMarkers(nav_map, sp_mt_->sp_cm_->plan_path_, &t);
 		integration_cycle_ = 0;
 		integrated_ += angle_diff;
 		check_limit(integrated_, -150, 150);
@@ -102,15 +102,15 @@ bool MovementForward::isCellReach()
 {
 	// Checking if robot has reached target cell.
 	auto s_curr_p = nav_map.getCurrPoint();
-	auto curr = (GridMap::isXDirection(dir_)) ? s_curr_p.X : s_curr_p.Y;
-	auto target_p = nav_map.cellToPoint(path_.back());
-	auto target = (GridMap::isXDirection(dir_)) ? target_p.X : target_p.Y;
+	auto curr = (GridMap::isXDirection(g_old_dir)) ? s_curr_p.X : s_curr_p.Y;
+	auto target_p = nav_map.cellToPoint(sp_mt_->sp_cm_->plan_path_.back());
+	auto target = (GridMap::isXDirection(g_old_dir)) ? target_p.X : target_p.Y;
 	if (std::abs(s_curr_p.X - target_p.X) < CELL_COUNT_MUL_1_2 &&
 		std::abs(s_curr_p.Y - target_p.Y) < CELL_COUNT_MUL_1_2)
 	{
 		ROS_INFO("\033[1m""%s, %d: MovementForward, reach the target cell (%d,%d)!!""\033[0m", __FUNCTION__, __LINE__,
-						 path_.back().X, path_.back().Y);
-		g_turn_angle = ranged_angle(dir_ - robot::instance()->getPoseAngle());
+						 sp_mt_->sp_cm_->plan_path_.back().X, sp_mt_->sp_cm_->plan_path_.back().Y);
+		g_turn_angle = ranged_angle(g_old_dir - robot::instance()->getPoseAngle());
 		return true;
 	}
 
@@ -125,7 +125,7 @@ bool MovementForward::isPoseReach()
 	if (isCellReach() && std::abs(ranged_angle(robot::instance()->getPoseAngle() - target_angle)) < 200)
 	{
 		ROS_INFO("\033[1m""%s, %d: MovementForward, reach the target cell and pose(%d,%d,%d)!!""\033[0m", __FUNCTION__, __LINE__,
-				 path_.back().X, path_.back().Y, path_.back().TH);
+				 sp_mt_->sp_cm_->plan_path_.back().X, sp_mt_->sp_cm_->plan_path_.back().Y, sp_mt_->sp_cm_->plan_path_.back().TH);
 		return true;
 	}
 	return false;
@@ -134,28 +134,28 @@ bool MovementForward::isPoseReach()
 bool MovementForward::isNearTarget()
 {
 	auto s_curr_p = nav_map.getCurrPoint();
-	auto curr = (GridMap::isXDirection(dir_)) ? s_curr_p.X : s_curr_p.Y;
-	auto target_p = nav_map.cellToPoint(path_.front());
-	auto &target = (GridMap::isXDirection(dir_)) ? target_p.X : target_p.Y;
+	auto curr = (GridMap::isXDirection(g_old_dir)) ? s_curr_p.X : s_curr_p.Y;
+	auto target_p = nav_map.cellToPoint(sp_mt_->sp_cm_->plan_path_.front());
+	auto &target = (GridMap::isXDirection(g_old_dir)) ? target_p.X : target_p.Y;
 	//ROS_INFO("%s %d: s_curr_p(%d, %d), target_p(%d, %d), dir(%d)",
-	//		 __FUNCTION__, __LINE__, s_curr_p.X, s_curr_p.Y, target_p.X, target_p.Y, dir_);
-	if ((GridMap::isPositiveDirection(dir_) && (curr > target - 1.5 * CELL_COUNT_MUL)) ||
-		(!GridMap::isPositiveDirection(dir_) && (curr < target + 1.5 * CELL_COUNT_MUL))) {
-		if(path_.size() > 1)
+	//		 __FUNCTION__, __LINE__, s_curr_p.X, s_curr_p.Y, target_p.X, target_p.Y, g_old_dir);
+	if ((GridMap::isPositiveDirection(g_old_dir) && (curr > target - 1.5 * CELL_COUNT_MUL)) ||
+		(!GridMap::isPositiveDirection(g_old_dir) && (curr < target + 1.5 * CELL_COUNT_MUL))) {
+		if(sp_mt_->sp_cm_->plan_path_.size() > 1)
 		{
 			// Switch to next target for smoothly turning.
-			dir_ = static_cast<MapDirection>(path_.front().TH);
-			path_.pop_front();
+			g_old_dir = static_cast<MapDirection>(sp_mt_->sp_cm_->plan_path_.front().TH);
+			sp_mt_->sp_cm_->plan_path_.pop_front();
 			ROS_INFO("%s %d: Curr(%d, %d), switch next cell(%d, %d), new dir(%d).", __FUNCTION__, __LINE__,
 					 nav_map.getXCell(),
-					 nav_map.getYCell(), path_.front().X, path_.front().Y, dir_);
+					 nav_map.getYCell(), sp_mt_->sp_cm_->plan_path_.front().X, sp_mt_->sp_cm_->plan_path_.front().Y, g_old_dir);
 		}
-		else if(path_.front() != g_zero_home && g_allow_check_path_in_advance)
+		else if(sp_mt_->sp_cm_->plan_path_.front() != g_zero_home && g_allow_check_path_in_advance)
 		{
 			g_check_path_in_advance = true;
-			ROS_INFO("%s %d: Curr(%d, %d), target(%d, %d), dir(%d), g_check_path_in_advance(%d)", __FUNCTION__, __LINE__,
+			ROS_INFO("%s %d: Curr(%d, %d), target(%d, %d), dir(%d), g_check_sp_mt_->sp_cm_->plan_path_in_advance(%d)", __FUNCTION__, __LINE__,
 					 nav_map.getXCell(),
-					 nav_map.getYCell(), path_.front().X, path_.front().Y, dir_, g_check_path_in_advance);
+					 nav_map.getYCell(), sp_mt_->sp_cm_->plan_path_.front().X, sp_mt_->sp_cm_->plan_path_.front().Y, g_old_dir, g_check_path_in_advance);
 			return true;
 		}
 	}
@@ -243,14 +243,14 @@ bool MovementForward::isPassTargetStop()
 //	PP_INFO();
 	// Checking if robot has reached target cell.
 	auto s_curr_p = nav_map.getCurrPoint();
-	auto curr = (GridMap::isXDirection(dir_)) ? s_curr_p.X : s_curr_p.Y;
-	auto target_p = nav_map.cellToPoint(path_.back());
-	auto target = (GridMap::isXDirection(dir_)) ? target_p.X : target_p.Y;
-	if ((GridMap::isPositiveDirection(dir_) && (curr > target + CELL_COUNT_MUL / 4)) ||
-		(!GridMap::isPositiveDirection(dir_) && (curr < target - CELL_COUNT_MUL / 4)))
+	auto curr = (GridMap::isXDirection(g_old_dir)) ? s_curr_p.X : s_curr_p.Y;
+	auto target_p = nav_map.cellToPoint(sp_mt_->sp_cm_->plan_path_.back());
+	auto target = (GridMap::isXDirection(g_old_dir)) ? target_p.X : target_p.Y;
+	if ((GridMap::isPositiveDirection(g_old_dir) && (curr > target + CELL_COUNT_MUL / 4)) ||
+		(!GridMap::isPositiveDirection(g_old_dir) && (curr < target - CELL_COUNT_MUL / 4)))
 	{
-		ROS_INFO("%s, %d: MovementForward, pass target: dir_(\033[32m%d\033[0m),is_x_axis(\033[32m%d\033[0m),is_pos(\033[32m%d\033[0m),curr(\033[32m%d\033[0m),target(\033[32m%d\033[0m)",
-				 __FUNCTION__, __LINE__, dir_, GridMap::isXDirection(dir_), GridMap::isPositiveDirection(dir_), curr, target);
+		ROS_INFO("%s, %d: MovementForward, pass target: g_old_dir(\033[32m%d\033[0m),is_x_axis(\033[32m%d\033[0m),is_pos(\033[32m%d\033[0m),curr(\033[32m%d\033[0m),target(\033[32m%d\033[0m)",
+				 __FUNCTION__, __LINE__, g_old_dir, GridMap::isXDirection(g_old_dir), GridMap::isPositiveDirection(g_old_dir), curr, target);
 		return true;
 	}
 	return false;
@@ -260,8 +260,8 @@ void MovementForward::setTarget()
 {
 //	g_turn_angle = ranged_angle(
 //						course_to_dest(s_curr_p.X, s_curr_p.Y, cm_target_p_.X, cm_target_p_.Y) - robot::instance()->getPoseAngle());
-	s_target_p = nav_map.cellToPoint(path_.back());
-//	path_ = path_;
+	s_target_p = nav_map.cellToPoint(sp_mt_->sp_cm_->plan_path_.back());
+//	sp_mt_->sp_cm_->plan_path_ = sp_mt_->sp_cm_->plan_path_;
 }
 
 void MovementForward::setBaseSpeed()

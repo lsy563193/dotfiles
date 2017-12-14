@@ -13,8 +13,9 @@ class IMoveType:public IAction
 {
 public:
 	IMoveType();
+//	~IMoveType() = default;
 
-	bool isFinish();
+	virtual bool isFinish();
 	void run();
 //	bool isFinish(int& action_i);
 //	virtual IAction* setNextAction()=0;
@@ -23,11 +24,13 @@ public:
 //		sp_mode_ = sp_mode;
 //	}
 
-//	static ACleanMode* sp_mode_;
+	static boost::shared_ptr<IAction> sp_movement_;
+	static boost::shared_ptr<ACleanMode> sp_cm_;
+	static int movement_i_;
 	void resetTriggeredValue();
 protected:
-	Path_t passed_path_;
-	Path_t plan_path_;
+//	Path_t passed_path_;
+//	Path_t plan_path_;
 	int16_t turn_target_angle_{};
 	float back_distance_;
 	enum{//movement
@@ -42,6 +45,7 @@ class ActionLinear:public IMoveType
 {
 public:
 	ActionLinear();
+	bool isFinish();
 //	IAction* setNextAction();
 protected:
 };

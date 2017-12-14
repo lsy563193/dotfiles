@@ -53,5 +53,3 @@ void SpeedGovernorTurn::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 
 	left_speed = right_speed = speed_;
 }
-
-
