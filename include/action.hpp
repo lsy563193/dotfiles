@@ -12,7 +12,7 @@
 class IAction{
 public:
 
-	virtual ~IAction(){};
+	virtual ~IAction() = default;
 
 	virtual bool isFinish()=0;
 

@@ -12,7 +12,9 @@ CleanModeNav::CleanModeNav()
 {
 	event_manager_register_handler(this);
 	event_manager_set_enable(true);
-	IMovement::sp_cm_ = this;
+	PP_INFO();
+	ROS_INFO("this = %d" , this);
+	IMoveType::sp_cm_.reset(this);
 	// TODO: Remove these old checking.
 	if (g_resume_cleaning || cs_is_paused())
 	{
@@ -222,7 +224,7 @@ bool CleanModeNav::isExit()
 }
 
 bool CleanModeNav::setNextAction() {
-	if (isInitState() || action_i_ == ac_open_slam) {
+	if (isInitState()) {
 		PP_INFO();NAV_INFO();
 		if (action_i_ == ac_open_gyro) {
 			PP_INFO();
@@ -249,16 +251,16 @@ bool CleanModeNav::setNextAction() {
 		}
 		else if (action_i_ == ac_align)
 			action_i_ = ac_open_slam;
-		else if (action_i_ == ac_open_slam) {
+
+		genNextAction();
+	}
+	else {
+		if (action_i_ == ac_open_slam) {
 			has_aligned_and_open_slam = true;
-			action_i_ = ac_null;
 			if (paused_)
 				// If paused before align and open slam, reset pause status here.
 				paused_ = false;
 		}
-		genNextAction();
-	}
-	else {
 		if (state_i_ == st_clean) {
 			auto start = nav_map.getCurrCell();
 			auto dir = old_dir_;
@@ -286,8 +288,7 @@ bool CleanModeNav::setNextAction() {
 			action_i_ = ac_linear;
 		genNextAction();
 	}
-	PP_INFO();
-	NAV_INFO();
+	PP_INFO(); NAV_INFO();
 	return action_i_ != ac_null;
 }
 
