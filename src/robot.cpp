@@ -35,9 +35,9 @@ robot::robot(std::string serial_port, int baudrate, std::string lidar_bumper_dev
 	odom_sub_ = robot_nh_.subscribe("/odom", 1, &robot::robotOdomCb, this);
 	map_sub_ = robot_nh_.subscribe("/map", 1, &robot::mapCb, this);
 	scanLinear_sub_ = robot_nh_.subscribe("scanLinear", 1, &robot::scanLinearCb, this);
-	scanOriginal_sub_ = robot_nh_.subscribe("scanOriginal",1,&robot::scanOriginalCb, this);
-	scanCompensate_sub_ = robot_nh_.subscribe("scanCompensate",1,&robot::scanCompensateCb, this);
-	lidarPoint_sub_ = robot_nh_.subscribe("lidarPoint",1,&robot::lidarPointCb, this);
+	scanOriginal_sub_ = robot_nh_.subscribe("scanOriginal", 1, &robot::scanOriginalCb, this);
+	scanCompensate_sub_ = robot_nh_.subscribe("scanCompensate", 1, &robot::scanCompensateCb, this);
+	lidarPoint_sub_ = robot_nh_.subscribe("lidarPoint", 1, &robot::lidarPointCb, this);
 	/*map subscriber for exploration*/
 	//map_metadata_sub = robot_nh_.subscribe("/map_metadata", 1, &robot::robot_map_metadata_cb, this);
 
@@ -48,10 +48,10 @@ robot::robot(std::string serial_port, int baudrate, std::string lidar_bumper_dev
 	robot_tf_ = new tf::TransformListener(robot_nh_, ros::Duration(0.1), true);
 
 	// Publishers.
-	send_clean_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("clean_markers",1);
-	send_clean_map_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("clean_map_markers",1);
-	odom_pub_ = robot_nh_.advertise<nav_msgs::Odometry>("robot_odom",1);
-	scan_ctrl_pub_ = robot_nh_.advertise<pp::scan_ctrl>("scan_ctrl",1);
+	send_clean_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("clean_markers", 1);
+	send_clean_map_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("clean_map_markers", 1);
+	odom_pub_ = robot_nh_.advertise<nav_msgs::Odometry>("robot_odom", 1);
+	scan_ctrl_pub_ = robot_nh_.advertise<pp::scan_ctrl>("scan_ctrl", 1);
 	line_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("line_marker", 1);
 	line_marker_pub2_ = robot_nh_.advertise<visualization_msgs::Marker>("line_marker2", 1);
 	point_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("point_marker", 1);
@@ -90,29 +90,34 @@ robot::robot(std::string serial_port, int baudrate, std::string lidar_bumper_dev
 #endif
 
 	// Init for lidar bumper.
-	if(bumper.lidarBumperInit(lidar_bumper_dev.c_str()) == -1){
+	if (bumper.lidarBumperInit(lidar_bumper_dev.c_str()) == -1)
 		ROS_ERROR(" lidar bumper open fail!");
-	}
 
 	// Init for event manager.
 	event_manager_init();
-	pthread_t	event_manager_thread_id, event_handler_thread_id;
+	pthread_t event_manager_thread_id, event_handler_thread_id;
 	int ret1 = pthread_create(&event_manager_thread_id, 0, event_manager_thread, NULL);
-	if (ret1 != 0) {
+	if (ret1 != 0)
 		ROS_ERROR("%s %d: event_manager_thread fails to run!", __FUNCTION__, __LINE__);
-	} else {
+	else
 		ROS_INFO("%s %d: \033[32mevent_manager_thread\033[0m is up!", __FUNCTION__, __LINE__);
-	}
 	ret1 = pthread_create(&event_handler_thread_id, 0, event_handler_thread, NULL);
-	if (ret1 != 0) {
+	if (ret1 != 0)
 		ROS_ERROR("%s %d: event_handler_thread fails to run!", __FUNCTION__, __LINE__);
-	} else {
+	else
 		ROS_INFO("%s %d: \033[32mevent_handler_thread\033[0m is up!", __FUNCTION__, __LINE__);
-	}
 
 	// Init for robotbase.
 	robotbase_reset_send_stream();
 	robotbase_init();
+
+	// Init for core thread.
+	pthread_t core_move_thread_id;
+	ret1 = pthread_create(&core_move_thread_id, 0, core_thread, NULL);
+	if (ret1 != 0)
+		ROS_ERROR("%s %d: core_thread fails to run!", __FUNCTION__, __LINE__);
+	else
+		ROS_INFO("%s %d: \033[32mcore_thread\033[0m is up!", __FUNCTION__, __LINE__);
 	ROS_INFO("%s %d: robot init done!", __FUNCTION__, __LINE__);
 }
 
@@ -743,4 +748,34 @@ void robot::obsAdjustCount(int count)
 #endif
 }
 
+Mode *robot::getNextMode(int next_mode_i_)
+{
+
+	ROS_INFO("%s %d: next mode:%d", __FUNCTION__, __LINE__, next_mode_i_);
+	switch (next_mode_i_)
+	{
+		case Mode::md_charge:
+			return new ModeCharge();
+		case Mode::md_sleep:
+			return new ModeSleep();
+//		case Mode::md_go_to_charger:
+//			return new ModeGoToCharger();
+		case Mode::md_remote:
+			return new ModeRemote();
+
+		case Mode::cm_navigation:
+			return new CleanModeNav();
+		case Mode::cm_wall_follow:
+			return new CleanModeFollowWall();
+		case Mode::cm_spot:
+			return new CleanModeSpot();
+//		case Mode::cm_exploration:
+//			return new CleanModeExploration();
+		default:
+		{
+			ROS_INFO("%s %d: next mode:%d", __FUNCTION__, __LINE__, next_mode_i_);
+			return new ModeIdle();
+		}
+	}
+}
 

@@ -9,7 +9,7 @@
 
 ModeCharge::ModeCharge()
 {
-	ROS_INFO("%s %d: Switch to charge mode.", __FUNCTION__, __LINE__);
+	ROS_INFO("%s %d: Entering Charge mode\n=========================" , __FUNCTION__, __LINE__);
 
 	key.resetTriggerStatus();
 	c_rcon.resetStatus();

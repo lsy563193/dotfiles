@@ -203,8 +203,7 @@ void *core_move_thread(void *)
 
 int main(int argc, char **argv)
 {
-	int		baudrate, ret1, core_move_thread_state;
-	bool	verify_ok = true;
+	int		baudrate;
 
 	ros::init(argc, argv, "pp");
 	ros::NodeHandle	nh_private("~");
@@ -220,22 +219,8 @@ int main(int argc, char **argv)
 
 //	SpotMovement spot_obj(1.0);
 
+	ros::spin();
+	delete robot_instance;
 
-//	if (verify_ok == true) {
-		pthread_t core_move_thread_id;
-		ret1 = pthread_create(&core_move_thread_id, 0, core_move_thread, NULL);
-		if (ret1 != 0) {
-			core_move_thread_state = 0;
-		} else {
-			ROS_INFO("%s %d: \033[32mcore_move_thread\033[0m is up!", __FUNCTION__, __LINE__);
-			core_move_thread_state = 1;
-		}
-		ros::spin();
-		delete robot_instance;
-//	} else {
-//		printf("turn on led\n");
-//		led.set_mode(LED_STEADY, LED_ORANGE);
-//		sleep(10);
-//	}
 	return 0;
 }

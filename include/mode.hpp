@@ -5,10 +5,11 @@
 #ifndef PP_MODE_H_H
 #define PP_MODE_H_H
 
-#include "move_type_plan.hpp"
 #include "path_algorithm.h"
 #include "event_manager.h"
 #include "boost/shared_ptr.hpp"
+#include "move_type.hpp"
+
 class Mode:public EventHandle {
 public:
 	virtual ~Mode() { };

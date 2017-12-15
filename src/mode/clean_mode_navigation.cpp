@@ -14,7 +14,7 @@ CleanModeNav::CleanModeNav()
 	event_manager_register_handler(this);
 	event_manager_set_enable(true);
 	PP_INFO();
-	ROS_INFO("this = %d" , this);
+	ROS_INFO("%s %d: Entering Navigation mode\n=========================" , __FUNCTION__, __LINE__);
 	IMoveType::sp_cm_.reset(this);
 	// TODO: Remove these old checking.
 	// TODO: had remove

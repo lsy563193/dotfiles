@@ -9,7 +9,7 @@
 
 ModeSleep::ModeSleep()
 {
-	ROS_INFO("%s %d: Switch to sleep mode.", __FUNCTION__, __LINE__);
+	ROS_INFO("%s %d: Entering Sleep mode\n=========================" , __FUNCTION__, __LINE__);
 	event_manager_register_handler(this);
 	event_manager_reset_status();
 	event_manager_set_enable(true);

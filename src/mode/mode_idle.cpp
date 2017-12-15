@@ -5,7 +5,7 @@
 
 ModeIdle::ModeIdle()
 {
-	ROS_INFO("%s %d: Switch to idle mode.", __FUNCTION__, __LINE__);
+	ROS_INFO("%s %d: Entering Idle mode\n=========================" , __FUNCTION__, __LINE__);
 	register_events();
 	sp_action_.reset(new ActionIdle);
 	action_i_ = ac_idle;
