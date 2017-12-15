@@ -306,9 +306,9 @@ void ACleanMode::stateInit(int next) {
 
 		// Play wavs.
 		if (ev.battrey_home)
-			speaker.play(SPEAKER_BATTERY_LOW);
+			speaker.play(SPEAKER_BATTERY_LOW, true);
 
-		speaker.play(SPEAKER_BACK_TO_CHARGER);
+		speaker.play(SPEAKER_BACK_TO_CHARGER, true);
 
 		ev.remote_home = false;
 		ev.battrey_home = false;

@@ -5,6 +5,7 @@
 #include <ros/ros.h>
 
 #include "config.h"
+#include "mode.hpp"
 
 extern bool g_is_tilt;
 
@@ -29,6 +30,7 @@ void *serial_receive_routine(void*);
 void *robotbase_routine(void*);
 void *serial_send_routine(void*);
 void *core_thread(void *);
+Mode *getNextMode(int next_mode_i_);
 void process_beep();
 void process_led();
 void robotbase_reset_odom_pose(void);

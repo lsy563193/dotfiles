@@ -749,34 +749,3 @@ void robot::obsAdjustCount(int count)
 #endif
 }
 
-Mode *robot::getNextMode(int next_mode_i_)
-{
-
-	ROS_INFO("%s %d: next mode:%d", __FUNCTION__, __LINE__, next_mode_i_);
-	switch (next_mode_i_)
-	{
-		case Mode::md_charge:
-			return new ModeCharge();
-		case Mode::md_sleep:
-			return new ModeSleep();
-//		case Mode::md_go_to_charger:
-//			return new ModeGoToCharger();
-		case Mode::md_remote:
-			return new ModeRemote();
-
-		case Mode::cm_navigation:
-			return new CleanModeNav();
-		case Mode::cm_wall_follow:
-			return new CleanModeFollowWall();
-		case Mode::cm_spot:
-			return new CleanModeSpot();
-//		case Mode::cm_exploration:
-//			return new CleanModeExploration();
-		default:
-		{
-			ROS_INFO("%s %d: next mode:%d", __FUNCTION__, __LINE__, next_mode_i_);
-			return new ModeIdle();
-		}
-	}
-}
-
