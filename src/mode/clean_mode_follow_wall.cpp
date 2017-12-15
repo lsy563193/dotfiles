@@ -18,7 +18,7 @@ CleanModeFollowWall::CleanModeFollowWall()
 }
 
 
-bool CleanModeFollowWall::map_mark() {
+bool CleanModeFollowWall::mapMark() {
 	return false;
 }
 

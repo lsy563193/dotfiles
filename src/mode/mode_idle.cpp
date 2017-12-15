@@ -85,7 +85,7 @@ void ModeIdle::register_events()
 	event_manager_set_enable(true);
 }
 
-void ModeIdle::remote_cleaning(bool state_now, bool state_last)
+void ModeIdle::remoteKeyHandler(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote key %x has been pressed.", __FUNCTION__, __LINE__, remote.get());
 	//g_robot_stuck = false;
@@ -162,7 +162,7 @@ void ModeIdle::remote_cleaning(bool state_now, bool state_last)
 			{
 //				if (cs_is_paused())
 //				{
-//					ev.remote_home = true;
+//					ev.remoteHome = true;
 //					extern bool g_go_home_by_remote;
 //					g_go_home_by_remote = true;
 //					temp_mode = Clean_Mode_Navigation;
@@ -183,13 +183,13 @@ void ModeIdle::remote_cleaning(bool state_now, bool state_last)
 	remote.reset();
 }
 
-void ModeIdle::remote_max(bool state_now, bool state_last)
+void ModeIdle::remoteMax(bool state_now, bool state_last)
 {
 	beeper.play_for_command(INVALID);
 	remote.reset();
 }
 
-void ModeIdle::remote_plan(bool state_now, bool state_last)
+void ModeIdle::remotePlan(bool state_now, bool state_last)
 {
 	if (robot_timer.getPlanStatus() == 3)
 	{
@@ -227,13 +227,13 @@ void ModeIdle::remote_plan(bool state_now, bool state_last)
 		robot_timer.resetPlanStatus();
 	}
 }
-void ModeIdle::charge_detect(bool state_now, bool state_last)
+void ModeIdle::chargeDetect(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Detect charge!", __FUNCTION__, __LINE__);
 	ev.charge_detect = charger.getChargeStatus();
 }
 
-void ModeIdle::key_clean(bool state_now, bool state_last)
+void ModeIdle::keyClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: key clean.", __FUNCTION__, __LINE__);
 

@@ -579,7 +579,7 @@ uint8_t GridMap::setObs()
 		block_count++;
 	}
 	temp_obs_cells.clear();
-	ROS_INFO("%s,%d: Current(%d, %d), map_mark \033[32m%s\033[0m",__FUNCTION__, __LINE__, getXCell(), getYCell(), msg.c_str());
+	ROS_INFO("%s,%d: Current(%d, %d), mapMark \033[32m%s\033[0m",__FUNCTION__, __LINE__, getXCell(), getYCell(), msg.c_str());
 	return block_count;
 }
 
@@ -596,7 +596,7 @@ uint8_t GridMap::setBumper()
 		block_count++;
 	}
 	temp_bumper_cells.clear();
-	ROS_INFO("%s,%d: Current(%d, %d), map_mark \033[32m%s\033[0m",__FUNCTION__, __LINE__, getXCell(), getYCell(), msg.c_str());
+	ROS_INFO("%s,%d: Current(%d, %d), mapMark \033[32m%s\033[0m",__FUNCTION__, __LINE__, getXCell(), getYCell(), msg.c_str());
 	return block_count;
 }
 
@@ -613,7 +613,7 @@ uint8_t GridMap::setTilt()
 		block_count++;
 	}
 	temp_tilt_cells.clear();
-	ROS_INFO("%s,%d: Current(%d, %d), \033[32m map_mark %s\033[0m",__FUNCTION__, __LINE__, getXCell(), getYCell(), msg.c_str());
+	ROS_INFO("%s,%d: Current(%d, %d), \033[32m mapMark %s\033[0m",__FUNCTION__, __LINE__, getXCell(), getYCell(), msg.c_str());
 	return block_count;
 }
 
@@ -630,7 +630,7 @@ uint8_t GridMap::setSlip()
 		block_count++;
 	}
 	temp_slip_cells.clear();
-	ROS_INFO("%s,%d: Current(%d, %d), \033[32m map_mark %s\033[0m",__FUNCTION__, __LINE__, getXCell(), getYCell(), msg.c_str());
+	ROS_INFO("%s,%d: Current(%d, %d), \033[32m mapMark %s\033[0m",__FUNCTION__, __LINE__, getXCell(), getYCell(), msg.c_str());
 	return block_count;
 }
 
@@ -647,7 +647,7 @@ uint8_t GridMap::setCliff()
 		block_count++;
 	}
 	temp_cliff_cells.clear();
-	ROS_INFO("%s,%d: Current(%d, %d), \033[32m map_mark %s\033[0m",__FUNCTION__, __LINE__, getXCell(), getYCell(), msg.c_str());
+	ROS_INFO("%s,%d: Current(%d, %d), \033[32m mapMark %s\033[0m",__FUNCTION__, __LINE__, getXCell(), getYCell(), msg.c_str());
 	return block_count;
 }
 
@@ -664,7 +664,7 @@ uint8_t GridMap::setRcon()
 		block_count++;
 	}
 	temp_rcon_cells.clear();
-	ROS_INFO("%s,%d: Current(%d, %d), \033[32m map_mark %s\033[0m",__FUNCTION__, __LINE__, getXCell(), getYCell(), msg.c_str());
+	ROS_INFO("%s,%d: Current(%d, %d), \033[32m mapMark %s\033[0m",__FUNCTION__, __LINE__, getXCell(), getYCell(), msg.c_str());
 	return block_count;
 }
 
@@ -717,7 +717,7 @@ uint8_t GridMap::setFollowWall(bool is_left)
 				block_count++;
 			}
 		}
-		ROS_INFO("%s,%d: Current(%d, %d), \033[32m map_mark CLEAN_MAP %s\033[0m",__FUNCTION__, __LINE__, getXCell(), getYCell(), msg.c_str());
+		ROS_INFO("%s,%d: Current(%d, %d), \033[32m mapMark CLEAN_MAP %s\033[0m",__FUNCTION__, __LINE__, getXCell(), getYCell(), msg.c_str());
 	}
 }
 
@@ -914,7 +914,7 @@ uint8_t GridMap::saveRcon()
 	auto rcon_trig = ev.rcon_triggered/*rcon_get_trig()*/;
 	if(! rcon_trig)
 		return 0;
-	if( g_from_charger && g_in_charge_signal_range && cs.is_going_home())//while in cs.is_going_home() mode_ or from_station dont map_mark rcon signal
+	if( g_from_charger && g_in_charge_signal_range && cs.is_going_home())//while in cs.is_going_home() mode_ or from_station dont mapMark rcon signal
 	{
 		ev.rcon_triggered = 0;
 		return 0;

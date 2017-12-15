@@ -8,13 +8,13 @@ class Sleep_EventHandle:public EventHandle {
 
 	void rcon(bool state_now, bool state_last);
 
-	void remote_clean(bool state_now, bool state_last);
+	void remoteClean(bool state_now, bool state_last);
 
-	void remote_plan(bool state_now, bool state_last);
+	void remotePlan(bool state_now, bool state_last);
 
-	void key_clean(bool state_now, bool state_last);
+	void keyClean(bool state_now, bool state_last);
 
-	void charge_detect(bool state_now, bool state_last);
+	void chargeDetect(bool state_now, bool state_last);
 
 };
 void sleep_register_events(void);

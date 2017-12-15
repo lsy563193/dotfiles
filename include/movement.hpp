@@ -71,14 +71,14 @@ public:
 	}
 	void adjustSpeed(int32_t&, int32_t&);
 	bool isLidarStop();
-	void setTarget();
-	bool isReach();
+	void updateStartPose();
 	bool isFinish();
 
 private:
 	float back_distance_;
-	int counter_;
 	int32_t speed_;
+	uint8_t bumper_jam_cnt_;
+	uint8_t cliff_jam_cnt_;
 	float lidar_detect_distance;
 };
 

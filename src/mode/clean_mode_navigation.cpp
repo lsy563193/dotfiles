@@ -75,27 +75,7 @@ CleanModeNav::~CleanModeNav()
 			 static_cast<float>(robot_timer.getWorkTime()) / 60, map_area / (static_cast<float>(robot_timer.getWorkTime()) / 60));
 }
 
-uint8_t CleanModeNav::setFollowWall()
-{
-	uint8_t block_count = 0;
-	if (!passed_path_.empty())
-	{
-		std::string msg = "cell:";
-		Cell_t block_cell;
-		auto dy = action_i_ == ac_follow_wall_left ? 2 : -2;
-		for(auto& cell : passed_path_){
-			if(nav_map.getCell(CLEAN_MAP,cell.X,cell.Y) != BLOCKED_RCON){
-				GridMap::robotToCell(GridMap::cellToPoint(cell), dy * CELL_SIZE, 0, block_cell.X, block_cell.Y);
-				msg += "(" + std::to_string(block_cell.X) + "," + std::to_string(block_cell.Y) + ")";
-				nav_map.setCell(CLEAN_MAP, GridMap::cellToCount(block_cell.X), GridMap::cellToCount(block_cell.Y), BLOCKED_CLIFF);
-				block_count++;
-			}
-		}
-		ROS_INFO("%s,%d: Current(%d, %d), \033[32m map_mark CLEAN_MAP %s\033[0m",__FUNCTION__, __LINE__, nav_map.getXCell(), nav_map.getYCell(), msg.c_str());
-	}
-}
-
-bool CleanModeNav::map_mark()
+bool CleanModeNav::mapMark()
 {
 	clean_path_algorithm_->displayPath(passed_path_);
 	if (action_i_ == ac_linear) {
@@ -185,10 +165,13 @@ bool CleanModeNav::isExit()
 	return false;
 }
 
-bool CleanModeNav::setNextAction() {
-	if (isInitState()) {
+bool CleanModeNav::setNextAction()
+{
+	if (isInitState())
+	{
 		PP_INFO();NAV_INFO();
-		if (action_i_ == ac_open_gyro) {
+		if (action_i_ == ac_open_gyro)
+		{
 			PP_INFO();
 			if (paused_)
 				odom.setAngleOffset(paused_odom_angle_);
@@ -199,11 +182,12 @@ bool CleanModeNav::setNextAction() {
 		}
 		else if (action_i_ == ac_back_form_charger)
 			action_i_ = ac_open_lidar;
-		else if (action_i_ == ac_open_lidar) {
-			if (!has_aligned_and_open_slam) {
+		else if (action_i_ == ac_open_lidar)
+		{
+			if (!has_aligned_and_open_slam)
 				action_i_ = ac_align;
-			}
-			else if (paused_) {
+			else if (paused_)
+			{
 				action_i_ = ac_null;
 				// Clear the pause status.
 				paused_ = false;
@@ -216,15 +200,18 @@ bool CleanModeNav::setNextAction() {
 
 		genNextAction();
 	}
-	else {
-		if (action_i_ == ac_open_slam) {
+	else
+	{
+		if (action_i_ == ac_open_slam)
+		{
 			has_aligned_and_open_slam = true;
 			if (paused_)
 				// If paused before align and open slam, reset pause status here.
 				paused_ = false;
 			PP_INFO();
 		}
-		if (state_i_ == st_clean) {
+		if (state_i_ == st_clean)
+		{
 			auto start = nav_map.getCurrCell();
 			auto dir = old_dir_;
 			auto delta_y = plan_path_.back().Y - start.Y;
@@ -239,7 +226,8 @@ bool CleanModeNav::setNextAction() {
 					|| delta_y == 0 || std::abs(delta_y) > 2) {
 				action_i_ = ac_linear;
 			}
-			else {
+			else
+			{
 				delta_y = plan_path_.back().Y - start.Y;
 				bool is_left = GridMap::isPositiveDirection(old_dir_) ^delta_y > 0;
 				ROS_INFO("\033[31m""%s,%d: target:, 0_left_1_right(%d=%d ^ %d)""\033[0m", __FUNCTION__, __LINE__, is_left,
@@ -258,7 +246,7 @@ bool CleanModeNav::setNextAction() {
 	return action_i_ != ac_null;
 }
 
-void CleanModeNav::key_clean(bool state_now, bool state_last)
+void CleanModeNav::keyClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: key clean.", __FUNCTION__, __LINE__);
 
@@ -273,19 +261,19 @@ void CleanModeNav::key_clean(bool state_now, bool state_last)
 	key.resetTriggerStatus();
 }
 
-void CleanModeNav::over_current_wheel_left(bool state_now, bool state_last)
+void CleanModeNav::overCurrentWheelLeft(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Left wheel oc.", __FUNCTION__, __LINE__);
 	ev.oc_wheel_left = true;
 }
 
-void CleanModeNav::over_current_wheel_right(bool state_now, bool state_last)
+void CleanModeNav::overCurrentWheelRight(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Right wheel oc.", __FUNCTION__, __LINE__);
 	ev.oc_wheel_right = true;
 }
 
-void CleanModeNav::remote_clean(bool state_now, bool state_last)
+void CleanModeNav::remoteClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: remote clean.", __FUNCTION__, __LINE__);
 
@@ -294,7 +282,7 @@ void CleanModeNav::remote_clean(bool state_now, bool state_last)
 	remote.reset();
 }
 
-void CleanModeNav::remote_home(bool state_now, bool state_last)
+void CleanModeNav::remoteHome(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: remote home.", __FUNCTION__, __LINE__);
 
@@ -303,19 +291,19 @@ void CleanModeNav::remote_home(bool state_now, bool state_last)
 	remote.reset();
 }
 
-void CleanModeNav::cliff_all(bool state_now, bool state_last)
+void CleanModeNav::cliffAll(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Cliff all.", __FUNCTION__, __LINE__);
 
 	ev.cliff_all_triggered = true;
 }
 
-void CleanModeNav::charge_detect(bool state_now, bool state_last)
+void CleanModeNav::chargeDetect(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Charge detect!.", __FUNCTION__, __LINE__);
 	if (charger.getChargeStatus() >= 1)
 	{
-		ROS_WARN("%s %d: Set ev.charge_detect.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Set ev.chargeDetect.", __FUNCTION__, __LINE__);
 		ev.charge_detect = charger.getChargeStatus();
 	}
 
@@ -401,9 +389,9 @@ bool CleanModeNav::resumePause()
 bool CleanModeNav::switchToGoHomePointState()
 {
 	state_i_ = st_go_home_point;
-	st_init(state_i_);
+	stateInit(state_i_);
 
-	map_mark();
+	mapMark();
 	if(!setNextState())
 	{
 		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
@@ -425,5 +413,25 @@ bool CleanModeNav::enterPause()
 	action_i_ = ac_pause;
 	genNextAction();
 	return ACleanMode::isFinish();
+}
+
+uint8_t CleanModeNav::setFollowWall()
+{
+	uint8_t block_count = 0;
+	if (!passed_path_.empty())
+	{
+		std::string msg = "cell:";
+		Cell_t block_cell;
+		auto dy = action_i_ == ac_follow_wall_left ? 2 : -2;
+		for(auto& cell : passed_path_){
+			if(nav_map.getCell(CLEAN_MAP,cell.X,cell.Y) != BLOCKED_RCON){
+				GridMap::robotToCell(GridMap::cellToPoint(cell), dy * CELL_SIZE, 0, block_cell.X, block_cell.Y);
+				msg += "(" + std::to_string(block_cell.X) + "," + std::to_string(block_cell.Y) + ")";
+				nav_map.setCell(CLEAN_MAP, GridMap::cellToCount(block_cell.X), GridMap::cellToCount(block_cell.Y), BLOCKED_CLIFF);
+				block_count++;
+			}
+		}
+		ROS_INFO("%s,%d: Current(%d, %d), \033[32m mapMark CLEAN_MAP %s\033[0m",__FUNCTION__, __LINE__, nav_map.getXCell(), nav_map.getYCell(), msg.c_str());
+	}
 }
 

@@ -39,7 +39,7 @@ bool MovementExceptionResume::isFinish()
 {
 	if (!(ev.bumper_jam || ev.cliff_jam || ev.oc_wheel_left || ev.oc_wheel_right || ev.oc_suction || ev.lidar_stuck))
 	{
-		PP_INFO();
+		ROS_INFO("%s %d: All exception cleared.", __FUNCTION__, __LINE__);
 		return true;
 	}
 
@@ -171,6 +171,7 @@ bool MovementExceptionResume::isFinish()
 		}
 	}
 
-	ROS_INFO("%s %d: fatal:%d", __FUNCTION__, __LINE__, ev.fatal_quit);
+	if (ev.fatal_quit)
+		ROS_INFO("%s %d: fatal:%d", __FUNCTION__, __LINE__, ev.fatal_quit);
 	return ev.fatal_quit;
 }

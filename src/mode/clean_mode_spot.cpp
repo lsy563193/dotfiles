@@ -7,8 +7,8 @@
 CleanModeSpot::CleanModeSpot() {
 	IMoveType::sp_cm_.reset(this);
 	speaker.play(SPEAKER_CLEANING_SPOT);
-	clean_path_algorithm_ = nullptr;
-	go_home_path_algorithm_ = nullptr;
+	clean_path_algorithm_.reset();
+	go_home_path_algorithm_.reset();
 }
 
 //
@@ -17,6 +17,6 @@ CleanModeSpot::CleanModeSpot() {
 //	return ACleanMode::setNextAction_();
 //}
 
-bool CleanModeSpot::map_mark() {
+bool CleanModeSpot::mapMark() {
 	return false;
 }

@@ -152,7 +152,7 @@ IAction* ModeRemote::getNextAction()
 	return nullptr;
 }
 
-void ModeRemote::remote_clean(bool state_now, bool state_last)
+void ModeRemote::remoteClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: remote clean.", __FUNCTION__, __LINE__);
 	beeper.play_for_command(VALID);
@@ -160,7 +160,7 @@ void ModeRemote::remote_clean(bool state_now, bool state_last)
 	remote.reset();
 }
 
-void ModeRemote::remote_direction_forward(bool state_now, bool state_last)
+void ModeRemote::remoteDirectionForward(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: remote forward.", __FUNCTION__, __LINE__);
 	beeper.play_for_command(VALID);
@@ -168,7 +168,7 @@ void ModeRemote::remote_direction_forward(bool state_now, bool state_last)
 	remote.reset();
 }
 
-void ModeRemote::remote_direction_left(bool state_now, bool state_last)
+void ModeRemote::remoteDirectionLeft(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: remote left.", __FUNCTION__, __LINE__);
 	beeper.play_for_command(VALID);
@@ -176,7 +176,7 @@ void ModeRemote::remote_direction_left(bool state_now, bool state_last)
 	remote.reset();
 }
 
-void ModeRemote::remote_direction_right(bool state_now, bool state_last)
+void ModeRemote::remoteDirectionRight(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: remote right.", __FUNCTION__, __LINE__);
 	beeper.play_for_command(VALID);
@@ -184,7 +184,7 @@ void ModeRemote::remote_direction_right(bool state_now, bool state_last)
 	remote.reset();
 }
 
-void ModeRemote::key_clean(bool state_now, bool state_last)
+void ModeRemote::keyClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: key clean.", __FUNCTION__, __LINE__);
 
