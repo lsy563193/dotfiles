@@ -60,6 +60,8 @@ int robotbase_init(void)
 	serial.setSendData(SEND_LEN - 3, crc);
 	ROS_INFO("waiting robotbase awake ");
 	serr_ret = pthread_create(&receiPortThread_id, NULL, serial_receive_routine, NULL);
+	// todo:If do not usleep for 20ms, it will process died, still don't know why. --by Austin Liu
+	usleep(20000);
 	base_ret = pthread_create(&robotbaseThread_id, NULL, robotbase_routine, NULL);
 	sers_ret = pthread_create(&sendPortThread_id,NULL,serial_send_routine,NULL);
 	speaker_ret = pthread_create(&sendPortThread_id,NULL,speaker_play_routine,NULL);
@@ -533,6 +535,136 @@ void *serial_send_routine(void*)
 	ROS_INFO("\033[32m%s\033[0m,%d pthread exit",__FUNCTION__,__LINE__);
 	//pthread_exit(NULL);
 }
+
+void *core_thread(void *)
+{
+	pthread_detach(pthread_self());
+	ROS_INFO("Waiting for robot sensor ready.");
+	while (!robot::instance()->isSensorReady()) {
+		usleep(1000);
+	}
+	//ROS_INFO("Robot sensor ready.");
+	//speaker.play(SPEAKER_WELCOME_ILIFE);
+	usleep(200000);
+
+#if NEW_FRAMEWORK
+
+	boost::shared_ptr<Mode> p_mode = nullptr;
+	if (charger.isOnStub() || charger.isDirected())
+		p_mode.reset(new ModeCharge());
+	else
+	{
+
+		speaker.play(SPEAKER_PLEASE_START_CLEANING, false);
+		p_mode.reset(new CleanModeNav());
+	}
+
+	while(ros::ok())
+	{
+		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
+		p_mode->run();
+		auto next_mode = p_mode->getNextMode();
+		p_mode.reset();
+		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
+		p_mode.reset(robot::instance()->getNextMode(next_mode));
+		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
+	}
+
+#else
+	if (charger.isDirected() || charger.isOnStub())
+		cm_set(Clean_Mode_Charging);
+	else if (battery.isReadyToClean())
+		speaker.play(SPEAKER_PLEASE_START_CLEANING);
+
+	while(ros::ok()){
+		usleep(20000);
+		switch(cm_get()){
+			case Clean_Mode_Idle:
+				ROS_INFO("\n-------idle mode_------\n");
+				serial.setCleanMode(Clean_Mode_Idle);
+//				speaker.play(SPEAKER_TEST_MODE);
+				idle();
+				break;
+			case Clean_Mode_WallFollow:
+				ROS_INFO("\n-------wall follow mode_------\n");
+				serial.setCleanMode(Clean_Mode_WallFollow);
+				g_is_low_bat_pause = false;
+
+				cs_paused_setting();
+
+//				wall_follow(Map_Wall_Follow_Escape_Trapped);
+				cm_cleaning();
+				break;
+			case Clean_Mode_Navigation:
+				ROS_INFO("\n-------Navigation mode_------\n");
+				serial.setCleanMode(Clean_Mode_Navigation);
+				cm_cleaning();
+				break;
+			case Clean_Mode_Charging:
+				ROS_INFO("\n-------Charge mode_------\n");
+				serial.setCleanMode(Clean_Mode_Charging);
+				charge_function();
+				break;
+			case Clean_Mode_Go_Charger:
+				//goto_charger();
+				ROS_INFO("\n-------GoHome mode_------\n");
+				serial.setCleanMode(Clean_Mode_Go_Charger);
+				g_is_low_bat_pause = false;
+				cs_paused_setting();
+#if GO_HOME_REGULATOR
+				cm_cleaning();
+#else
+				go_home();
+#endif
+				break;
+
+			case Clean_Mode_Exploration:
+				//goto_charger();
+				ROS_INFO("\n-------Exploration mode_------\n");
+				serial.setCleanMode(Clean_Mode_Exploration);
+				g_is_low_bat_pause = false;
+				cs_paused_setting();
+				cm_cleaning();
+				break;
+
+			case Clean_Mode_Test:
+				break;
+
+			case Clean_Mode_Remote:
+				remote_mode();
+				break;
+
+			case Clean_Mode_Spot:
+				ROS_INFO("\n-------Spot mode_------\n");
+				serial.setCleanMode(Clean_Mode_Spot);
+				g_is_low_bat_pause = false;
+				cs_paused_setting();
+				remote.reset();
+				SpotMovement::instance()->setSpotType(NORMAL_SPOT);
+				cm_cleaning();
+				cs_disable_motors();
+				usleep(200000);
+				break;
+
+			case Clean_Mode_Sleep:
+				ROS_INFO("\n-------Sleep mode_------\n");
+				//serial.setStatus(Clean_Mode_Sleep);
+				g_is_low_bat_pause = false;
+				cs_paused_setting();
+				cs_disable_motors();
+				sleep_mode();
+				break;
+			default:
+				cm_set(Clean_Mode_Idle);
+				break;
+
+		}
+	}
+#endif
+
+	return nullptr;
+}
+
 
 void process_beep()
 {

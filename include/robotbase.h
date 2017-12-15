@@ -28,6 +28,7 @@ bool is_robotbase_stop(void);
 void *serial_receive_routine(void*);
 void *robotbase_routine(void*);
 void *serial_send_routine(void*);
+void *core_thread(void *);
 void process_beep();
 void process_led();
 void robotbase_reset_odom_pose(void);

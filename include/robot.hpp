@@ -17,6 +17,7 @@
 #include "config.h"
 #include "map.h"
 #include "pose.h"
+#include "mode.hpp"
 
 extern volatile int16_t g_left_wall_baseline;
 extern volatile int16_t g_right_wall_baseline;
@@ -55,6 +56,9 @@ public:
 	bool slamStop(void);
 
 	void initOdomPosition();
+
+	// Mode management.
+	Mode* getNextMode(int next_mode_i_);
 
 	// The scale should be between 0 to 1.
 	void updateRobotPose(const float& odom_x, const float& odom_y, const double& odom_yaw,
