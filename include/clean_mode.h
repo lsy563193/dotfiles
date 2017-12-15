@@ -41,6 +41,7 @@ class PathPlan
 {
 
 };
+/*
 
 class CleanMode:public Movement,PathPlan {
 public:
@@ -164,5 +165,6 @@ public:
 
 private:
 };
+*/
 
 #endif //PP_CLEAN_MODE_H

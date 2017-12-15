@@ -19,7 +19,7 @@ public:
 
 	bool lidarObstcalDetected(double distance, int angle, double range);
 
-	bool lidarGetFitLine(int begin, int end, double range, double dis_lim, double *hine_angle, double *distance);
+	bool lidarGetFitLine(int begin, int end, double range, double dis_lim, double *hine_angle, double *distance, bool is_left);
 
 	int compLaneDistance();
 	double getObstacleDistance(uint8_t dir, double range);

@@ -39,10 +39,6 @@ public:
 
 	int next_mode_i_;
 
-protected:
-	static boost::shared_ptr<IAction> sp_action_;
-	int mode_i_{ac_null};
-
 	int action_i_{ac_null};
 	enum {
 		ac_null,
@@ -69,6 +65,10 @@ protected:
 		ac_pause,
 		ac_self_check
 	};
+
+protected:
+	static boost::shared_ptr<IAction> sp_action_;
+	int mode_i_{ac_null};
 
 private:
 

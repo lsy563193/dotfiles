@@ -195,7 +195,7 @@ void quick_back(uint8_t speed,uint16_t distance);
 
 uint8_t is_encoder_fail(void);
 
-void cs_work_motor(void);
+void cs_work_motor(bool);
 
 uint8_t cs_self_check(uint8_t Check_Code);
 

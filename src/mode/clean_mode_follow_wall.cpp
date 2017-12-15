@@ -70,7 +70,7 @@ bool CleanModeFollowWall::wf_is_isolate() {
 	Cell_t out_cell {int16_t(x_max + 1),int16_t(y_max + 1)};
 
 	fw_map.markRobot(CLEAN_MAP);//note: To clear the obstacle when check isolated, please don't remove it!
-	auto curr = nav_map.pointToCell(Movement::s_curr_p);
+	auto curr = GridMap::getCurrPoint();
 	fw_map.print(CLEAN_MAP, curr.X, curr.Y);
 	ROS_WARN("%s %d: curr(%d,%d),out(%d,%d)", __FUNCTION__, __LINE__, curr.X, curr.Y,out_cell.X, out_cell.Y);
 
@@ -300,7 +300,7 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(int16_t curr_x, i
 	path_points.push_back(t);
 
 	next = 0;
-	dest_dir = (path_get_robot_direction() == MAP_POS_Y || path_get_robot_direction() == MAP_NEG_Y) ? 1: 0;
+	dest_dir = (plan_path_.front().TH == MAP_POS_Y || plan_path_.front().TH == MAP_NEG_Y) ? 1: 0;
 	ROS_INFO("%s %d: dest dir: %d", __FUNCTION__, __LINE__, dest_dir);
 	while (tracex != curr_x || tracey != curr_y) {
 		costAtCell = fw_map.getCell(COST_MAP, tracex, tracey);

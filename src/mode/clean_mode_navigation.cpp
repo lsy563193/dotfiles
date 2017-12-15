@@ -17,11 +17,8 @@ CleanModeNav::CleanModeNav()
 	ROS_INFO("this = %d" , this);
 	IMoveType::sp_cm_.reset(this);
 	// TODO: Remove these old checking.
-	if (g_resume_cleaning || cs_is_paused())
-	{
-		speaker.play(SPEAKER_CLEANING_CONTINUE);
-	}
-	else if(g_plan_activated)
+	// TODO: had remove
+	if(g_plan_activated)
 	{
 		g_plan_activated = false;
 	}
@@ -113,7 +110,7 @@ bool CleanModeNav::map_mark()
 	if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
 		setFollowWall();
 	if (state_i_ == st_trapped)
-		fw_map.setFollowWall();
+		fw_map.setFollowWall(action_i_ == ac_follow_wall_left);
 
 	PP_INFO()
 	nav_map.print(CLEAN_MAP, nav_map.getXCell(), nav_map.getYCell());

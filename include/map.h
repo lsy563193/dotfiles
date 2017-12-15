@@ -157,14 +157,14 @@ public:
 
 	uint8_t saveChargerArea(const Cell_t homepoint);
 
-	uint8_t setFollowWall();
+	uint8_t setFollowWall(bool is_left);
 
 
 	uint8_t saveLidar();
 
 	uint8_t saveObs();
 
-	uint8_t saveBumper();
+	uint8_t saveBumper(bool is_linear);
 
 	uint8_t saveRcon();
 
@@ -176,7 +176,7 @@ public:
 
 	uint8_t saveFollowWall();
 
-	uint8_t saveBlocks();
+	uint8_t saveBlocks(bool is_linear);
 
 	uint8_t setBlocks();
 
@@ -199,7 +199,7 @@ public:
 
 	uint8_t isBlocksAtY(int16_t x, int16_t y);
 
-	uint8_t isBlockBlockedXAxis(int16_t x, int16_t y);
+	uint8_t isBlockBlockedXAxis(int16_t x, int16_t y,bool is_left);
 
 /*
  * Check a block is on the boundary or not, a block is defined as have the same size of robot.

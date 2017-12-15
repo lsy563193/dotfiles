@@ -7,8 +7,6 @@
 #include "arch.hpp"
 
 #define NAV_INFO() ROS_INFO("st(%d),ac(%d)", state_i_, action_i_)
-//boost::shared_ptr<State> ACleanMode::sp_state_ = nullptr;
-//boost::shared_ptr<IMoveType> ACleanMode::sp_move_type_ = nullptr;
 
 Path_t ACleanMode::passed_path_ = {};
 Path_t ACleanMode::plan_path_ = {};
@@ -240,7 +238,7 @@ Cell_t ACleanMode::updatePath()
 			passed_path_.clear();
 			g_wf_reach_count++;
 		}
-		nav_map.saveBlocks();
+		nav_map.saveBlocks(action_i_ == ac_linear);
 //		displayPath(passed_path_);
 	}
 //	else
@@ -320,20 +318,20 @@ void ACleanMode::st_init(int next) {
 
 	}
 	if (next == st_tmp_spot) {
-		if (SpotMovement::instance()->getSpotType() == NO_SPOT) {
-			ROS_INFO("%s %d: Entering temp spot during navigation.", __FUNCTION__, __LINE__);
-			Cell_t curr_cell = nav_map.getCurrCell();
-			ROS_WARN("%s %d: current cell(%d, %d).", __FUNCTION__, __LINE__, curr_cell.X, curr_cell.Y);
-			SpotMovement::instance()->setSpotType(CLEAN_SPOT);
-			wheel.stop();
-		}
-		else if (SpotMovement::instance()->getSpotType() == CLEAN_SPOT) {
-			ROS_INFO("%s %d: Exiting temp spot.", __FUNCTION__, __LINE__);
-			SpotMovement::instance()->spotDeinit();
-			wheel.stop();
-			speaker.play(SPEAKER_CLEANING_CONTINUE);
-		}
-		ev.remote_spot = false;
+//		if (SpotMovement::instance()->getSpotType() == NO_SPOT) {
+//			ROS_INFO("%s %d: Entering temp spot during navigation.", __FUNCTION__, __LINE__);
+//			Cell_t curr_cell = nav_map.getCurrCell();
+//			ROS_WARN("%s %d: current cell(%d, %d).", __FUNCTION__, __LINE__, curr_cell.X, curr_cell.Y);
+//			SpotMovement::instance()->setSpotType(CLEAN_SPOT);
+//			wheel.stop();
+//		}
+//		else if (SpotMovement::instance()->getSpotType() == CLEAN_SPOT) {
+//			ROS_INFO("%s %d: Exiting temp spot.", __FUNCTION__, __LINE__);
+//			SpotMovement::instance()->spotDeinit();
+//			wheel.stop();
+//			speaker.play(SPEAKER_CLEANING_CONTINUE);
+//		}
+//		ev.remote_spot = false;
 	}
 	if (next == st_trapped) {
 		g_wf_start_timer = time(NULL);

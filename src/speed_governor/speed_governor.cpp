@@ -2,6 +2,7 @@
 // Created by austin on 17-12-13.
 //
 
+#include <robot.hpp>
 #include "config.h"
 #include "speed_governor.hpp"
 #include "dev.h"

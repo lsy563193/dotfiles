@@ -5,11 +5,12 @@ FILE(GLOB PP_SRC
         include/*
 				include/path_algorithm.h
 		include/action.hpp
-	src/charge.cpp
+#	src/charge.cpp
 #	src/clean_mode.cpp
-	src/clean_state.cpp
-	src/core_move.cpp
+#	src/clean_state.cpp
+#	src/core_move.cpp
 	src/des.cpp
+
 	src/dev/gyro.cpp
 	src/dev/vacuum.cpp
 	src/dev/key.cpp
@@ -62,6 +63,7 @@ FILE(GLOB PP_SRC
 	src/path_algorithm/move_type_plan.cpp
 
 	src/speed_governor/*
+	src/glogal.cpp
 
 	src/action/action.cpp
 	src/action/action_open_gyro.cpp
@@ -75,53 +77,53 @@ FILE(GLOB PP_SRC
 	src/action/action_pause.cpp
 
 				src/action/move_type/movement/movement.cpp
-				src/action/move_type/movement/movement_new.cpp
+				src/action/move_type/movement/movement.cpp
 				src/action/move_type/movement/movement_back.cpp
-				src/action/move_type/movement/movement_back_new.cpp
+				src/action/move_type/movement/movement_back.cpp
 				src/action/move_type/movement/movement_fall_wall.cpp
-				src/action/move_type/movement/movement_fall_wall_new.cpp
+				src/action/move_type/movement/movement_fall_wall.cpp
 				src/action/move_type/movement/movement_forward.cpp
-				src/action/move_type/movement/movement_forward_new.cpp
+				src/action/move_type/movement/movement_forward.cpp
 				src/action/move_type/movement/movement_go_charger.cpp
-				src/action/move_type/movement/movement_go_charger_new.cpp
+				src/action/move_type/movement/movement_go_charger.cpp
 				src/action/move_type/movement/movement_self_check.cpp
         src/action/move_type/movement/movement_exception_resume.cpp
 				src/action/move_type/movement/movement_turn.cpp
-				src/action/move_type/movement/movement_turn_new.cpp
+				src/action/move_type/movement/movement_turn.cpp
 				src/action/move_type/movement/movement_turn_for_charger.cpp
 				src/action/move_type/movement/movement_stay.cpp
 				src/action/move_type/movement/movement_direct_go.cpp
 
-	src/clean_mode/clean_mode.cpp
-	src/clean_mode/exploration.cpp
-	src/clean_mode/navigation_clean.cpp
-	src/clean_mode/spot_clean.cpp
-	src/clean_mode/wall_follow_clean.cpp
+#	src/clean_mode/clean_mode.cpp
+#	src/clean_mode/exploration.cpp
+#	src/clean_mode/navigation_clean.cpp
+#	src/clean_mode/spot_clean.cpp
+#	src/clean_mode/wall_follow_clean.cpp
 
 	src/error.cpp
 	src/event_manager.cpp
-        src/idle.cpp
+#        src/idle.cpp
 	src/main.cpp
 	src/map.cpp
 	src/mathematics.cpp
-	src/motion_manage.cpp
-	src/move_type.cpp
-	src/movement.cpp
+#	src/motion_manage.cpp
+#	src/move_type.cpp
+#	src/movement.cpp
 	src/odom.cpp
-	src/path_planning.cpp
+#	src/path_planning.cpp
 	src/pose.cpp
 #	src/regulator.cpp
-	src/remote_mode.cpp
+#	src/remote_mode.cpp
 	src/robot.cpp
 	src/robotbase.cpp
 	src/serial.cpp
-	src/shortest_path.cpp
+#	src/shortest_path.cpp
 	src/signature.c
 	src/slam.cpp
 	src/slam_map.cpp
-	src/sleep.cpp
-	src/space_exploration.cpp
-	src/spot.cpp
+#	src/sleep.cpp
+#	src/space_exploration.cpp
+#	src/spot.cpp
 	src/verify.cpp
 )
 

@@ -66,11 +66,14 @@ public:
 protected:
 	bool is_left_{};
 	int16_t turn_angle{};
-	int16_t bumper_turn_angle();
+	int16_t bumper_turn_angle(bool);
 	int16_t cliff_turn_angle();
 	int16_t tilt_turn_angle();
 	int16_t obs_turn_angle();
 	int16_t rcon_turn_angle();
+	int double_scale_10(double line_angle);
+	bool _lidar_turn_angle(bool is_left, int16_t& turn_angle, int lidar_min, int lidar_max, int angle_min,int angle_max,double dis_limit=0.217);
+	bool lidar_turn_angle(int16_t& turn_angle);
 	int16_t get_turn_angle_by_ev();
 	int16_t get_turn_angle(bool);
 };

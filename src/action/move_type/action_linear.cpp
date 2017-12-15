@@ -36,7 +36,7 @@ bool ActionLinear::isFinish() {
 		}
 		else if (movement_i_ == mm_forward) {
 			PP_INFO();
-			nav_map.saveBlocks();
+			nav_map.saveBlocks(true);
 			if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered) {
 				movement_i_ = mm_back;
 				sp_movement_.reset(new MovementBack);

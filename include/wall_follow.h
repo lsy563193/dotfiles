@@ -7,7 +7,7 @@
 
 
 #include <pp/x900sensor.h>
-#include <motion_manage.h>
+#include "lidar.hpp"
 extern pp::x900sensor sensor;
 class WallFollow {
 public:

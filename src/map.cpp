@@ -2,7 +2,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <motion_manage.h>
 #include <robot.hpp>
 #include <core_move.h>
 #include <gyro.h>
@@ -701,7 +700,7 @@ uint8_t GridMap::saveChargerArea(const Cell_t home_point)
 	return block_count;
 }
 
-uint8_t GridMap::setFollowWall()
+uint8_t GridMap::setFollowWall(bool is_left)
 {
 
 	uint8_t block_count = 0;
@@ -709,7 +708,7 @@ uint8_t GridMap::setFollowWall()
 	{
 		std::string msg = "cell:";
 		Cell_t block_cell;
-		auto dy = mt.is_left() ? 2 : -2;
+		auto dy = is_left ? 2 : -2;
 		for(auto& cell : g_passed_path){
 			if(getCell(CLEAN_MAP,cell.X,cell.Y) != BLOCKED_RCON){
 				robotToCell(cellToPoint(cell), dy * CELL_SIZE, 0, block_cell.X, block_cell.Y);
@@ -855,7 +854,7 @@ uint8_t GridMap::saveCliff()
 	return static_cast<uint8_t >(d_cells.size());
 }
 
-uint8_t GridMap::saveBumper()
+uint8_t GridMap::saveBumper(bool is_linear)
 {
 	auto bumper_trig = ev.bumper_triggered/*bumper.get_status()*/;
 //	ROS_INFO("%s,%d: Current(%d, %d), jam(%d), cnt(%d), trig(%d)",__FUNCTION__, __LINE__,get_curr_cell().X,get_curr_cell().Y, ev.bumper_jam, g_bumper_cnt, bumper_trig);
@@ -869,14 +868,14 @@ uint8_t GridMap::saveBumper()
 		d_cells = {/*{2,-1},*/ {2,0}/*, {2,1}*/};
 	else if (bumper_trig & BLOCK_LEFT)
 	{
-		if(mt.is_linear())
+		if(is_linear)
 			d_cells = {{2, 1}/*, {2,2},{1,2}*/};
 		else
 			d_cells = {/*{2, 1},*//* {2,2}, */{1,2}};
 	}
 	else if (bumper_trig & BLOCK_RIGHT)
 	{
-		if(mt.is_linear())
+		if(is_linear)
 			d_cells = {{2,-1}/*,{2,-2},{1,-2}*/};
 		else
 			d_cells = {/*{2,-1},*//*{2,-1},*/{1, -2}};
@@ -1010,10 +1009,10 @@ uint8_t GridMap::saveRcon()
 }
 
 
-uint8_t GridMap::saveBlocks()
+uint8_t GridMap::saveBlocks(bool is_linear)
 {
 	uint8_t block_count = 0;
-	block_count += saveBumper();
+	block_count += saveBumper(is_linear);
 	block_count += saveCliff();
 	block_count += saveObs();
 	block_count += saveRcon();
@@ -1246,11 +1245,11 @@ uint8_t GridMap::isBlocksAtY(int16_t x, int16_t y)
 	return retval;
 }
 
-uint8_t GridMap::isBlockBlockedXAxis(int16_t curr_x, int16_t curr_y)
+uint8_t GridMap::isBlockBlockedXAxis(int16_t curr_x, int16_t curr_y, bool is_left)
 {
 	uint8_t retval = 0;
 	int16_t x,y;
-	auto dy = mt.is_left()  ?  2 : -2;
+	auto dy = is_left  ?  2 : -2;
 	for(auto dx =-1; dx<=1,retval == 0; dx++) {
 		robotToCell(getCurrPoint(), CELL_SIZE * dy, CELL_SIZE * dx, x, y);
 		if (isABlock(x, y) == 1) {

@@ -49,6 +49,7 @@ extern double g_time_straight;
 extern double time_start_straight;
 extern bool g_slip_backward;
 extern double bumper_turn_factor;
+/*
 
 int16_t bumper_turn_angle();
 
@@ -59,6 +60,7 @@ int16_t tilt_turn_angle();
 int16_t obs_turn_angle();
 
 int16_t rcon_turn_angle();
+*/
 
 bool lidar_turn_angle(int16_t& turn_angle);
 

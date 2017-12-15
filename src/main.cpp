@@ -218,7 +218,7 @@ int main(int argc, char **argv)
 
 	robot_instance = new robot(serial_port, baudrate, lidar_bumper_dev);
 
-	SpotMovement spot_obj(1.0);
+//	SpotMovement spot_obj(1.0);
 
 
 //	if (verify_ok == true) {

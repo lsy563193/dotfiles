@@ -5,6 +5,7 @@
 #include <arch.hpp>
 #include <error.h>
 #include "dev.h"
+#include "clean_mode.h"
 
 ModeCharge::ModeCharge()
 {

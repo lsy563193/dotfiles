@@ -4,7 +4,7 @@
 
 #include "pp.h"
 #include "arch.hpp"
-
+Odom charger_pose;
 ActionBackFromCharger::ActionBackFromCharger()
 {
 	path_set_home(nav_map.getCurrCell());

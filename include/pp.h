@@ -30,7 +30,6 @@
 #include <future>
 #include <charge.hpp>
 #include "space_exploration.h"
-#include <motion_manage.h>
 #include <slam.h>
 #include "mathematics.h"
 #include <move_type.h>
