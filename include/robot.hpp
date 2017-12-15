@@ -16,7 +16,6 @@
 #include <vector>
 #include "config.h"
 #include "map.h"
-#include "movement.h"
 #include "pose.h"
 
 extern volatile int16_t g_left_wall_baseline;

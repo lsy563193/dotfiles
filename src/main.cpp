@@ -1,35 +1,4 @@
-#include <pthread.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include <unistd.h>
-#include <ros/ros.h>
-#include <battery.h>
-#include <remote.hpp>
-#include <charger.h>
-#include <clean_mode.hpp>
-#include "charge.hpp"
-#include "core_move.h"
-#include "gyro.h"
-#include "bumper.h"
-#include "led.h"
-#include "movement.h"
-#include "lidar.hpp"
-#include "robot.hpp"
-#include "main.h"
-#include "serial.h"
-#include "robotbase.h"
-#include "spot.h"
-#include "idle.h"
-#include "remote_mode.h"
-#include "sleep.h"
-#include "wall_follow_trapped.h"
-#include "event_manager.h"
-#include "go_home.hpp"
-#include "speaker.h"
-#include "clean_mode.h"
+#include "pp.h"
 #include "arch.hpp"
 
 

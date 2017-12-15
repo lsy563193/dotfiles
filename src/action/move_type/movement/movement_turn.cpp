@@ -183,26 +183,3 @@ void MovementTurn::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 bool MovementTurn::isFinish() {
 	return isReach();
 }
-
-bool TurnSpeedRegulator::adjustSpeed(int16_t diff, uint8_t& speed)
-{
-	if ((diff >= 0) && (diff <= 1800))
-		wheel.setDirectionLeft();
-	else if ((diff <= 0) && (diff >= (-1800)))
-		wheel.setDirectionRight();
-
-	tick_++;
-	if (tick_ > 2)
-	{
-		tick_ = 0;
-		if (std::abs(diff) > 350){
-			speed_ = std::min(++speed_, speed_max_);
-		}
-		else{
-			--speed_;
-			speed_ = std::max(--speed_, speed_min_);
-		}
-	}
-	speed = speed_;
-	return true;
-}

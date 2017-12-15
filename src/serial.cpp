@@ -1,17 +1,5 @@
-#include <termios.h>
-#include <stdio.h>
+#include "pp.h"
 #include <sys/ioctl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <ctype.h>
-#include <string.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <assert.h>
-#include "ros/ros.h"
-#include "serial.h"
 
 boost::mutex g_send_stream_mutex;
 boost::mutex g_receive_stream_mutex;

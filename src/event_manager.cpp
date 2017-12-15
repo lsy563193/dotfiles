@@ -1,24 +1,4 @@
-#include <pthread.h>
-#include <ros/ros.h>
-#include <pp.h>
-#include <battery.h>
-#include <brush.h>
-#include <bumper.h>
-#include <remote.hpp>
-#include <charger.h>
-#include <beep.h>
-#include <event_manager.h>
-
-#include "config.h"
-#include "serial.h"
-
-#include "movement.h"
-#include "robot.hpp"
-#include "robotbase.h"
-#include "event_manager.h"
-#include "obs.h"
-#include "error.h"
-#include "robot_timer.h"
+#include "pp.h"
 
 
 /* Events variables */

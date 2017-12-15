@@ -5,10 +5,6 @@
 #ifndef PP_RCON_H
 #define PP_RCON_H
 
-#include "move_type.h"
-//#include "clean_mode.h"
-#include "clean_state.h"
-
 #if __ROBOT_X900
 
 #define RconBL_HomeL		(uint32_t)0x40000000

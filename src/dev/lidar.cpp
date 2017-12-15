@@ -1,26 +1,7 @@
-#include <math.h>
-#include <stdio.h>
-#include <time.h>
-#include <cstring>
-#include <angles/angles.h>
+#include "pp.h"
 #include <std_srvs/Empty.h>
-#include <movement.h>
-#include <fcntl.h>
-#include <vector>
-#include <visualization_msgs/Marker.h>
-#include <ros/ros.h>
 #include <std_srvs/SetBool.h>
 #include <pp/SetLidar.h>
-#include <move_type.h>
-#include <wheel.hpp>
-#include <error.h>
-
-#include "mathematics.h"
-#include "event_manager.h"
-#include "lidar.hpp"
-#include "core_move.h"
-#include "robot.hpp"
-#include "gyro.h"
 boost::mutex scanLinear_mutex_;
 boost::mutex scanOriginal_mutex_;
 boost::mutex scanCompensate_mutex_;

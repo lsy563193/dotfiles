@@ -113,7 +113,7 @@ bool MovementForward::isCellReach()
 	{
 		ROS_INFO("\033[1m""%s, %d: MovementForward, reach the target cell (%d,%d)!!""\033[0m", __FUNCTION__, __LINE__,
 						 sp_mt_->sp_cm_->plan_path_.back().X, sp_mt_->sp_cm_->plan_path_.back().Y);
-		g_turn_angle = ranged_angle(new_dir - robot::instance()->getPoseAngle());
+//		g_turn_angle = ranged_angle(new_dir - robot::instance()->getPoseAngle());
 		return true;
 	}
 

@@ -1,11 +1,6 @@
 //
 // Created by lsy563193 on 12/14/17.
 //
-#include "ros/ros.h"
-#include <cstdint>
-#include <mathematics.h>
-#include <deque>
-#include <clean_mode.h>
 #include <pp.h>
 #include <error.h>
 Cell_t g_zero_home;
@@ -36,7 +31,7 @@ std::vector<int>::iterator g_home_way_it;
 bool g_go_home_by_remote = false;
 Cell_t g_home_point;
 
-deque <Cell_t> path_points;
+std::deque <Cell_t> path_points;
 double bumper_turn_factor = 0.85;
 CM_EventHandle eh;
 

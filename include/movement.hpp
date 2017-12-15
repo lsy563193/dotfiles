@@ -277,4 +277,5 @@ public:
 private:
 	double direct_go_time_stamp_;
 };
+
 #endif //PP_MOVEMENT_HPP

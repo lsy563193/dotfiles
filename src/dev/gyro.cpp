@@ -1,19 +1,4 @@
-#include <limits.h>
-#include <math.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <serial.h>
-
-#include "path_planning.h"
-#include "gyro.h"
-#include "movement.h"
-#include "speaker.h"
-#include "mathematics.h"
-#include "robot.hpp"
-#include "robotbase.h"
-#include "event_manager.h"
-#include "charger.h"
-#include "error.h"
+#include "pp.h"
 
 Gyro gyro;
 

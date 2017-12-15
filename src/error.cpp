@@ -1,12 +1,7 @@
 //
 // Created by root on 11/20/17.
 //
-#include "ros/ros.h"
-#include "error.h"
-#include "speaker.h"
-#include "cliff.h"
-#include "bumper.h"
-
+#include "pp.h"
 
 Error error;
 

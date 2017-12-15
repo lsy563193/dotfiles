@@ -1,22 +1,4 @@
-#include <math.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <string.h>
-#include <robot.hpp>
-#include <core_move.h>
-#include <gyro.h>
-#include <movement.h>
-#include <event_manager.h>
-#include <move_type.h>
-#include <regulator.h>
-#include <mathematics.h>
-#include <space_exploration.h>
-#include <clean_state.h>
-#include "rcon.h"
-#include "map.h"
-#include "mathematics.h"
-#include "robot.hpp"
-#include "clean_mode.h"
+#include "pp.h"
 
 #define DEBUG_MSG_SIZE	1 // 20
 GridMap nav_map;

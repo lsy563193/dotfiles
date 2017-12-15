@@ -5,7 +5,9 @@
 #include <mathematics.h>
 #include "pp.h"
 #include "arch.hpp"
-
+extern bool g_slip_backward;
+extern int g_wall_distance;
+extern double bumper_turn_factor;
 boost::shared_ptr<IMovement> IMoveType::sp_movement_ = nullptr;
 boost::shared_ptr<ACleanMode> IMoveType::sp_cm_ = nullptr;
 int IMoveType::movement_i_ = mm_null;

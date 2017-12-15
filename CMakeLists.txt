@@ -60,10 +60,9 @@ FILE(GLOB PP_SRC
 				src/path_algorithm/path_algorithm_spot.cpp
 				src/path_algorithm/path_algorithm_go_home.cpp
 				src/path_algorithm/shortest_path_algorithm.cpp
-	src/path_algorithm/move_type_plan.cpp
 
 	src/speed_governor/*
-	src/glogal.cpp
+				src/global.cpp
 
 	src/action/action.cpp
 	src/action/action_open_gyro.cpp
@@ -86,7 +85,7 @@ FILE(GLOB PP_SRC
 				src/action/move_type/movement/movement_forward.cpp
 				src/action/move_type/movement/movement_go_charger.cpp
 				src/action/move_type/movement/movement_go_charger.cpp
-				src/action/move_type/movement/movement_self_check.cpp
+#				src/action/move_type/movement/movement_self_check.cpp
         src/action/move_type/movement/movement_exception_resume.cpp
 				src/action/move_type/movement/movement_turn.cpp
 				src/action/move_type/movement/movement_turn.cpp
