@@ -64,7 +64,7 @@ public:
 		ac_movement_stay,
 		ac_movement_direct_go,
 		ac_pause,
-		ac_self_check
+		ac_exception_resume
 	};
 
 protected:
