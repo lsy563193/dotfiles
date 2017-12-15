@@ -93,7 +93,9 @@ bool ACleanMode::isFinish() {
 
 		if (ev.bumper_jam || ev.cliff_jam || ev.oc_wheel_left || ev.oc_wheel_right || ev.oc_suction || ev.lidar_stuck)
 		{
-			action_i_ = ac_self_check;
+			// If all these exception cases happens, directly set next action to exception resume action.
+			// BUT DO NOT CHANGE THE STATE!!! Because after exception resume it should restore the state.
+			action_i_ = ac_exception_resume;
 			genNextAction();
 		}
 		else
@@ -267,7 +269,7 @@ void ACleanMode::genNextAction() {
 		sp_action_.reset(new ActionFollowWall(action_i_ == ac_follow_wall_left));
 	else if (action_i_ == ac_go_to_charger)
 		sp_action_.reset(new MoveTypeGoToCharger);
-	else if (action_i_ == ac_self_check)
+	else if (action_i_ == ac_exception_resume)
 		sp_action_.reset(new MovementExceptionResume);
 	else if(action_i_ == ac_null)
 		sp_action_ == nullptr;

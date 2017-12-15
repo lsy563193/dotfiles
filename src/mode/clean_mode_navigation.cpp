@@ -111,15 +111,6 @@ bool CleanModeNav::isFinish()
 		else
 			return false;
 	}
-	else if (action_i_ == ac_self_check)
-	{
-		if (ev.key_clean_pressed)
-			return enterPause();
-		else if (ev.remote_home)
-			return switchToGoHomePointState();
-		else
-			return false;
-	}
 	else
 	{
 		if (ev.key_clean_pressed)

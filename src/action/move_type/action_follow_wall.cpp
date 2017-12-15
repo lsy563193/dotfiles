@@ -200,6 +200,7 @@ bool ActionFollowWall::lidar_turn_angle(int16_t& turn_angle)
 	}
 	return false;
 }
+
 int16_t ActionFollowWall::get_turn_angle_by_ev()
 {
 	int16_t turn_angle{};
@@ -226,7 +227,8 @@ int16_t ActionFollowWall::get_turn_angle_by_ev()
 	return turn_angle;
 }
 
-int16_t ActionFollowWall::get_turn_angle(bool use_target_angle) {
+int16_t ActionFollowWall::get_turn_angle(bool use_target_angle)
+{
 	int16_t  turn_angle{};
 	if (LIDAR_FOLLOW_WALL && lidar_turn_angle(turn_angle)) {
 		ROS_INFO("lidar_turn_angle(%d)", turn_angle);
@@ -249,7 +251,9 @@ int16_t ActionFollowWall::get_turn_angle(bool use_target_angle) {
 	resetTriggeredValue();
 	return turn_angle;
 }
-ActionFollowWall::ActionFollowWall(bool is_left) {
+
+ActionFollowWall::ActionFollowWall(bool is_left)
+{
 
 	is_left_ = is_left;
 	int16_t turn_angle = get_turn_angle(true);
