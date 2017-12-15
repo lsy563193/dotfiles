@@ -237,7 +237,7 @@ bool Movement::isExit()
 {
 	if (ev.fatal_quit || ev.key_clean_pressed || ev.charge_detect)
 	{
-		ROS_WARN("%s %d: fatal_quit(%d), key_clean_pressed(%d), charge_detect(%d)",
+		ROS_WARN("%s %d: fatal_quit(%d), key_clean_pressed(%d), chargeDetect(%d)",
 				 __FUNCTION__, __LINE__, ev.fatal_quit, ev.key_clean_pressed, ev.charge_detect);
 		return true;
 	}
@@ -248,7 +248,7 @@ bool Movement::isStop()
 {
 	if (ev.battery_home || ev.remote_spot || (!cs.is_going_home() && ev.remote_home) || cm_should_self_check())
 	{
-		ROS_WARN("%s %d: battery_home(%d), remote_spot(%d), remote_home(%d), should_self_check(%d)",
+		ROS_WARN("%s %d: batteryHome(%d), remoteSpot(%d), remoteHome(%d), should_self_check(%d)",
 				 __FUNCTION__, __LINE__, ev.battery_home, ev.remote_spot, ev.remote_home, cm_should_self_check());
 		return true;
 	}

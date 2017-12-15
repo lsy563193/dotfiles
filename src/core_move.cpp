@@ -593,7 +593,7 @@ void cm_unregister_events()
 	event_manager_set_enable(true);
 }
 
-void CM_EventHandle::bumper_all(bool state_now, bool state_last)
+void CM_EventHandle::bumperAll(bool state_now, bool state_last)
 {
 //	ev.bumper_triggered = BLOCK_ALL;
 
@@ -609,7 +609,7 @@ void CM_EventHandle::bumper_all(bool state_now, bool state_last)
 
 }
 
-void CM_EventHandle::bumper_left(bool state_now, bool state_last)
+void CM_EventHandle::bumperLeft(bool state_now, bool state_last)
 {
 //	if(ev.bumper_triggered != 0)
 //		return;
@@ -626,7 +626,7 @@ void CM_EventHandle::bumper_left(bool state_now, bool state_last)
 //		ROS_WARN("%s %d: is called, bumper: %d\tstate now: %s\tstate last: %s", __FUNCTION__, __LINE__, bumper.get_status(), state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
-void CM_EventHandle::bumper_right(bool state_now, bool state_last)
+void CM_EventHandle::bumperRight(bool state_now, bool state_last)
 {
 //	if(ev.bumper_triggered != 0)
 //		return;
@@ -645,26 +645,26 @@ void CM_EventHandle::bumper_right(bool state_now, bool state_last)
 }
 
 /* OBS */
-void CM_EventHandle::obs_front(bool state_now, bool state_last)
+void CM_EventHandle::obsFront(bool state_now, bool state_last)
 {
 //	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 //	ev.obs_triggered = Status_Front_OBS;
 }
 
-void CM_EventHandle::obs_left(bool state_now, bool state_last)
+void CM_EventHandle::obsLeft(bool state_now, bool state_last)
 {
 //	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 //	ev.obs_triggered = Status_Left_OBS;
 }
 
-void CM_EventHandle::obs_right(bool state_now, bool state_last)
+void CM_EventHandle::obsRight(bool state_now, bool state_last)
 {
 //	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 //	ev.obs_triggered = Status_Right_OBS;
 }
 
 /* Cliff */
-void CM_EventHandle::cliff_all(bool state_now, bool state_last)
+void CM_EventHandle::cliffAll(bool state_now, bool state_last)
 {
 	g_cliff_all_cnt++;
 	if (g_cliff_all_cnt++ > 2)
@@ -677,7 +677,7 @@ void CM_EventHandle::cliff_all(bool state_now, bool state_last)
 		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
-void CM_EventHandle::cliff_front_left(bool state_now, bool state_last)
+void CM_EventHandle::cliffFrontLeft(bool state_now, bool state_last)
 {
 //	ev.cliff_all_triggered = false;
 //	ev.cliff_triggered = Status_Cliff_LF;
@@ -694,7 +694,7 @@ void CM_EventHandle::cliff_front_left(bool state_now, bool state_last)
 
 }
 
-void CM_EventHandle::cliff_front_right(bool state_now, bool state_last)
+void CM_EventHandle::cliffFrontRight(bool state_now, bool state_last)
 {
 //	ev.cliff_all_triggered = false;
 //	ev.cliff_triggered = Status_Cliff_RF;
@@ -711,7 +711,7 @@ void CM_EventHandle::cliff_front_right(bool state_now, bool state_last)
 
 }
 
-void CM_EventHandle::cliff_left_right(bool state_now, bool state_last)
+void CM_EventHandle::cliffLeftRight(bool state_now, bool state_last)
 {
 //	ev.cliff_all_triggered = false;
 //	ev.cliff_triggered = Status_Cliff_LR;
@@ -727,7 +727,7 @@ void CM_EventHandle::cliff_left_right(bool state_now, bool state_last)
 //		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
-void CM_EventHandle::cliff_front(bool state_now, bool state_last)
+void CM_EventHandle::cliffFront(bool state_now, bool state_last)
 {
 //	ev.cliff_all_triggered = false;
 //	ev.cliff_triggered = Status_Cliff_Front;
@@ -743,7 +743,7 @@ void CM_EventHandle::cliff_front(bool state_now, bool state_last)
 //		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
-void CM_EventHandle::cliff_left(bool state_now, bool state_last)
+void CM_EventHandle::cliffLeft(bool state_now, bool state_last)
 {
 //	ev.cliff_all_triggered = false;
 //	ev.cliff_triggered = Status_Cliff_Left;
@@ -759,7 +759,7 @@ void CM_EventHandle::cliff_left(bool state_now, bool state_last)
 //		ROS_WARN("%s %d: is called, state now: %s\tstate last: %s", __FUNCTION__, __LINE__, state_now ? "true" : "false", state_last ? "true" : "false");
 }
 
-void CM_EventHandle::cliff_right(bool state_now, bool state_last)
+void CM_EventHandle::cliffRight(bool state_now, bool state_last)
 {
 //	ev.cliff_all_triggered = false;
 //	ev.cliff_triggered = Status_Cliff_Right;
@@ -823,7 +823,7 @@ void CM_EventHandle::rcon(bool state_now, bool state_last)
 //	}
 //}
 
-void CM_EventHandle::over_current_brush_main(bool state_now, bool state_last)
+void CM_EventHandle::overCurrentBrushMain(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
@@ -865,7 +865,7 @@ void CM_EventHandle::over_current_brush_main(bool state_now, bool state_last)
 //	}
 //}
 
-void CM_EventHandle::over_current_wheel_left(bool state_now, bool state_last)
+void CM_EventHandle::overCurrentWheelLeft(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
@@ -882,7 +882,7 @@ void CM_EventHandle::over_current_wheel_left(bool state_now, bool state_last)
 	}
 }
 
-void CM_EventHandle::over_current_wheel_right(bool state_now, bool state_last)
+void CM_EventHandle::overCurrentWheelRight(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
@@ -899,7 +899,7 @@ void CM_EventHandle::over_current_wheel_right(bool state_now, bool state_last)
 	}
 }
 
-void CM_EventHandle::over_current_suction(bool state_now, bool state_last)
+void CM_EventHandle::overCurrentSuction(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
@@ -917,7 +917,7 @@ void CM_EventHandle::over_current_suction(bool state_now, bool state_last)
 }
 
 /* Key */
-void CM_EventHandle::key_clean(bool state_now, bool state_last)
+void CM_EventHandle::keyClean(bool state_now, bool state_last)
 {
 	time_t start_time;
 	bool reset_manual_pause = false;
@@ -966,7 +966,7 @@ void CM_EventHandle::key_clean(bool state_now, bool state_last)
 
 /* Remote */
 
-void CM_EventHandle::remote_clean(bool state_now, bool state_last)
+void CM_EventHandle::remoteClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
@@ -984,7 +984,7 @@ void CM_EventHandle::remote_clean(bool state_now, bool state_last)
 	remote.reset();
 }
 
-void CM_EventHandle::remote_home(bool state_now, bool state_last)
+void CM_EventHandle::remoteHome(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
@@ -1000,16 +1000,16 @@ void CM_EventHandle::remote_home(bool state_now, bool state_last)
 				SpotMovement::instance()->spotDeinit();
 			}
 		}
-		ROS_INFO("ev.remote_home = %d", ev.remote_home);
+		ROS_INFO("ev.remoteHome = %d", ev.remote_home);
 	}
 	else {
 		beeper.play_for_command(INVALID);
-		ROS_INFO("ev.remote_home = %d", ev.remote_home);
+		ROS_INFO("ev.remoteHome = %d", ev.remote_home);
 	}
 	remote.reset();
 }
 
-void CM_EventHandle::remote_spot(bool state_now, bool state_last)
+void CM_EventHandle::remoteSpot(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
@@ -1027,7 +1027,7 @@ void CM_EventHandle::remote_spot(bool state_now, bool state_last)
 	remote.reset();
 }
 
-void CM_EventHandle::remote_max(bool state_now, bool state_last)
+void CM_EventHandle::remoteMax(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: is called.", __FUNCTION__, __LINE__);
 
@@ -1053,20 +1053,20 @@ void CM_EventHandle::remote_direction(bool state_now,bool state_last)
 	remote.reset();
 }
 
-void CM_EventHandle::remote_direction_left(bool state_now, bool state_last)
+void CM_EventHandle::remoteDirectionLeft(bool state_now, bool state_last)
 {
 	remote_direction(state_now,state_last);
 }
-void CM_EventHandle::remote_direction_right(bool state_now, bool state_last){
+void CM_EventHandle::remoteDirectionRight(bool state_now, bool state_last){
 	remote_direction(state_now,state_last);
 }
 
-void CM_EventHandle::remote_direction_forward(bool state_now, bool state_last){
+void CM_EventHandle::remoteDirectionForward(bool state_now, bool state_last){
 	remote_direction(state_now,state_last);
 }
 */
 /* Battery */
-void CM_EventHandle::battery_home(bool state_now, bool state_last)
+void CM_EventHandle::batteryHome(bool state_now, bool state_last)
 {
 	if (g_motion_init_succeeded && !cs.is_going_home()) {
 		ROS_INFO("%s %d: low battery, battery =\033[33m %dmv \033[0m", __FUNCTION__, __LINE__,
@@ -1085,7 +1085,7 @@ void CM_EventHandle::battery_home(bool state_now, bool state_last)
     }
 }
 
-void CM_EventHandle::battery_low(bool state_now, bool state_last)
+void CM_EventHandle::batteryLow(bool state_now, bool state_last)
 {
     uint8_t         v_pwr, s_pwr, m_pwr;
     uint16_t        t_vol;
@@ -1116,7 +1116,7 @@ void CM_EventHandle::battery_low(bool state_now, bool state_last)
 	}
 }
 
-void CM_EventHandle::charge_detect(bool state_now, bool state_last)
+void CM_EventHandle::chargeDetect(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: Detect charger: %d, g_charge_detect_cnt: %d.", __FUNCTION__, __LINE__, charger.getChargeStatus(), g_charge_detect_cnt);
 	if (((cm_is_exploration() || cm_is_go_charger() || cs.is_going_home()) && charger.getChargeStatus()) ||
@@ -1127,7 +1127,7 @@ void CM_EventHandle::charge_detect(bool state_now, bool state_last)
 			ev.charge_detect = charger.getChargeStatus();
 			if (!cm_is_exploration() && charger.getChargeStatus() == 3)
 				ev.fatal_quit = true;
-			ROS_WARN("%s %d: ev.charge_detect has been set to %d.", __FUNCTION__, __LINE__, ev.charge_detect);
+			ROS_WARN("%s %d: ev.chargeDetect has been set to %d.", __FUNCTION__, __LINE__, ev.charge_detect);
 			g_charge_detect_cnt = 0;
 		}
 	}

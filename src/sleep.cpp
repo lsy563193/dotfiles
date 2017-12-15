@@ -144,7 +144,7 @@ void Sleep_EventHandle::rcon(bool state_now, bool state_last)
 	serial.wakeUp();
 }
 
-void Sleep_EventHandle::remote_clean(bool state_now, bool state_last)
+void Sleep_EventHandle::remoteClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Waked up by remote key clean.", __FUNCTION__, __LINE__);
 	serial.setCleanMode(Clean_Mode_Idle);
@@ -152,7 +152,7 @@ void Sleep_EventHandle::remote_clean(bool state_now, bool state_last)
 	serial.wakeUp();
 }
 
-void Sleep_EventHandle::remote_plan(bool state_now, bool state_last)
+void Sleep_EventHandle::remotePlan(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Waked up by plan.", __FUNCTION__, __LINE__);
 	if (robot_timer.getPlanStatus() == 3)
@@ -177,7 +177,7 @@ void Sleep_EventHandle::remote_plan(bool state_now, bool state_last)
 	robot_timer.resetPlanStatus();
 }
 
-void Sleep_EventHandle::key_clean(bool state_now, bool state_last)
+void Sleep_EventHandle::keyClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Waked up by key clean.", __FUNCTION__, __LINE__);
 	ev.key_clean_pressed = true;
@@ -194,7 +194,7 @@ void Sleep_EventHandle::key_clean(bool state_now, bool state_last)
 	key.resetTriggerStatus();
 }
 
-void Sleep_EventHandle::charge_detect(bool state_now, bool state_last)
+void Sleep_EventHandle::chargeDetect(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Detect charge!", __FUNCTION__, __LINE__);
 	serial.setCleanMode(Clean_Mode_Charging);

@@ -250,7 +250,7 @@ bool CleanModeNav::setNextAction()
 	return action_i_ != ac_null;
 }
 
-void CleanModeNav::key_clean(bool state_now, bool state_last)
+void CleanModeNav::keyClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: key clean.", __FUNCTION__, __LINE__);
 
@@ -265,19 +265,19 @@ void CleanModeNav::key_clean(bool state_now, bool state_last)
 	key.resetTriggerStatus();
 }
 
-void CleanModeNav::over_current_wheel_left(bool state_now, bool state_last)
+void CleanModeNav::overCurrentWheelLeft(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Left wheel oc.", __FUNCTION__, __LINE__);
 	ev.oc_wheel_left = true;
 }
 
-void CleanModeNav::over_current_wheel_right(bool state_now, bool state_last)
+void CleanModeNav::overCurrentWheelRight(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Right wheel oc.", __FUNCTION__, __LINE__);
 	ev.oc_wheel_right = true;
 }
 
-void CleanModeNav::remote_clean(bool state_now, bool state_last)
+void CleanModeNav::remoteClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: remote clean.", __FUNCTION__, __LINE__);
 
@@ -286,7 +286,7 @@ void CleanModeNav::remote_clean(bool state_now, bool state_last)
 	remote.reset();
 }
 
-void CleanModeNav::remote_home(bool state_now, bool state_last)
+void CleanModeNav::remoteHome(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: remote home.", __FUNCTION__, __LINE__);
 
@@ -295,19 +295,19 @@ void CleanModeNav::remote_home(bool state_now, bool state_last)
 	remote.reset();
 }
 
-void CleanModeNav::cliff_all(bool state_now, bool state_last)
+void CleanModeNav::cliffAll(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Cliff all.", __FUNCTION__, __LINE__);
 
 	ev.cliff_all_triggered = true;
 }
 
-void CleanModeNav::charge_detect(bool state_now, bool state_last)
+void CleanModeNav::chargeDetect(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Charge detect!.", __FUNCTION__, __LINE__);
 	if (charger.getChargeStatus() >= 1)
 	{
-		ROS_WARN("%s %d: Set ev.charge_detect.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Set ev.chargeDetect.", __FUNCTION__, __LINE__);
 		ev.charge_detect = charger.getChargeStatus();
 	}
 

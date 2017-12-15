@@ -226,27 +226,27 @@ void Idle_EventHandle::cliff_(bool state_now, bool state_last)
 	g_charge_turn_connect_fail = false;
 }
 
-void Idle_EventHandle::cliff_left(bool state_now, bool state_last)
+void Idle_EventHandle::cliffLeft(bool state_now, bool state_last)
 {
 	cliff_(state_now, state_last);
 }
-void Idle_EventHandle::cliff_left_right(bool state_now, bool state_last)
+void Idle_EventHandle::cliffLeftRight(bool state_now, bool state_last)
 {
 	cliff_(state_now, state_last);
 }
-void Idle_EventHandle::cliff_right(bool state_now, bool state_last)
+void Idle_EventHandle::cliffRight(bool state_now, bool state_last)
 {
 	cliff_(state_now, state_last);
 }
-void Idle_EventHandle::cliff_front(bool state_now, bool state_last)
+void Idle_EventHandle::cliffFront(bool state_now, bool state_last)
 {
 	cliff_(state_now, state_last);
 }
-void Idle_EventHandle::cliff_front_left(bool state_now, bool state_last)
+void Idle_EventHandle::cliffFrontLeft(bool state_now, bool state_last)
 {
 	cliff_(state_now, state_last);
 }
-void Idle_EventHandle::cliff_front_right(bool state_now, bool state_last)
+void Idle_EventHandle::cliffFrontRight(bool state_now, bool state_last)
 {
 	cliff_(state_now, state_last);
 }
@@ -282,7 +282,7 @@ void Idle_EventHandle::rcon(bool state_now, bool state_last)
 	c_rcon.resetStatus();
 }
 
-void Idle_EventHandle::battery_low(bool state_now, bool state_last)
+void Idle_EventHandle::batteryLow(bool state_now, bool state_last)
 {
 	if (bat_low_delay == 0)
 		bat_low_start_time = time(NULL);
@@ -390,7 +390,7 @@ void Idle_EventHandle::remote_cleaning(bool state_now, bool state_last)
 	remote.reset();
 }
 
-void Idle_EventHandle::remote_plan(bool state_now, bool state_last)
+void Idle_EventHandle::remotePlan(bool state_now, bool state_last)
 {
 	/* -----------------------------Check if plan event ----------------------------------*/
 	if (robot_timer.getPlanStatus())
@@ -456,7 +456,7 @@ void Idle_EventHandle::remote_plan(bool state_now, bool state_last)
 	robot_timer.resetPlanStatus();
 }
 
-void Idle_EventHandle::key_clean(bool state_now, bool state_last)
+void Idle_EventHandle::keyClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Key clean has been pressed.", __FUNCTION__, __LINE__);
 
@@ -523,7 +523,7 @@ void Idle_EventHandle::key_clean(bool state_now, bool state_last)
 	key.resetTriggerStatus();
 }
 
-void Idle_EventHandle::charge_detect(bool state_now, bool state_last)
+void Idle_EventHandle::chargeDetect(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Detect charging.", __FUNCTION__, __LINE__);
 	temp_mode = Clean_Mode_Charging;

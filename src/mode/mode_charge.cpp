@@ -85,13 +85,13 @@ IAction* ModeCharge::getNextAction()
 	}
 }
 
-void ModeCharge::remote_clean(bool state_now, bool state_last)
+void ModeCharge::remoteClean(bool state_now, bool state_last)
 {
 	ev.key_clean_pressed = true;
 	ROS_WARN("%s %d: Waked up by remote key clean.", __FUNCTION__, __LINE__);
 }
 
-void ModeCharge::key_clean(bool state_now, bool state_last)
+void ModeCharge::keyClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Waked up by key clean.", __FUNCTION__, __LINE__);
 	ev.key_clean_pressed = true;
@@ -108,7 +108,7 @@ void ModeCharge::key_clean(bool state_now, bool state_last)
 	key.resetTriggerStatus();
 }
 
-void ModeCharge::remote_plan(bool state_now, bool state_last)
+void ModeCharge::remotePlan(bool state_now, bool state_last)
 {
 	if (robot_timer.getPlanStatus() == 3)
 	{

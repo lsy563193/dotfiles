@@ -323,19 +323,19 @@ void RM_EventHandle::bumper(bool state_now, bool state_last)
 	}
 }
 
-void RM_EventHandle::bumper_all(bool state_now, bool state_last)
+void RM_EventHandle::bumperAll(bool state_now, bool state_last)
 {
 	bumper(state_now, state_last);
 }
-void RM_EventHandle::bumper_right(bool state_now, bool state_last)
+void RM_EventHandle::bumperRight(bool state_now, bool state_last)
 {
 	bumper(state_now, state_last);
 }
-void RM_EventHandle::bumper_left(bool state_now, bool state_last)
+void RM_EventHandle::bumperLeft(bool state_now, bool state_last)
 {
 	bumper(state_now, state_last);
 }
-void RM_EventHandle::cliff_all(bool state_now, bool state_last)
+void RM_EventHandle::cliffAll(bool state_now, bool state_last)
 {
 	g_cliff_all_cnt++;
 	if (g_cliff_all_cnt++ > 2)
@@ -358,32 +358,32 @@ void RM_EventHandle::cliff(bool state_now, bool state_last)
 	}
 }
 
-void RM_EventHandle::cliff_right(bool state_now, bool state_last)
+void RM_EventHandle::cliffRight(bool state_now, bool state_last)
 {
 	cliff(state_now, state_last);
 }
 
-void RM_EventHandle::cliff_left(bool state_now, bool state_last)
+void RM_EventHandle::cliffLeft(bool state_now, bool state_last)
 {
 	cliff(state_now, state_last);
 }
 
-void RM_EventHandle::cliff_left_right(bool state_now, bool state_last)
+void RM_EventHandle::cliffLeftRight(bool state_now, bool state_last)
 {
 	cliff(state_now, state_last);
 }
 
-void RM_EventHandle::cliff_front(bool state_now, bool state_last)
+void RM_EventHandle::cliffFront(bool state_now, bool state_last)
 {
 	cliff(state_now, state_last);
 }
 
-void RM_EventHandle::cliff_front_left(bool state_now, bool state_last)
+void RM_EventHandle::cliffFrontLeft(bool state_now, bool state_last)
 {
 	cliff(state_now, state_last);
 }
 
-void RM_EventHandle::cliff_front_right(bool state_now, bool state_last)
+void RM_EventHandle::cliffFrontRight(bool state_now, bool state_last)
 {
 	cliff(state_now, state_last);
 }
@@ -397,20 +397,20 @@ void RM_EventHandle::obs(bool state_now, bool state_last)
 	}
 }
 
-void RM_EventHandle::obs_front(bool state_now, bool state_last)
+void RM_EventHandle::obsFront(bool state_now, bool state_last)
 {
 	obs(state_now, state_last);
 }
-void RM_EventHandle::obs_left(bool state_now, bool state_last)
+void RM_EventHandle::obsLeft(bool state_now, bool state_last)
 {
 	obs(state_now, state_last);
 }
-void RM_EventHandle::obs_right(bool state_now, bool state_last)
+void RM_EventHandle::obsRight(bool state_now, bool state_last)
 {
 	obs(state_now, state_last);
 }
 
-void RM_EventHandle::remote_direction_forward(bool state_now, bool state_last)
+void RM_EventHandle::remoteDirectionForward(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote forward is pressed.", __FUNCTION__, __LINE__);
 	remote_cmd_time = time(NULL);
@@ -429,7 +429,7 @@ void RM_EventHandle::remote_direction_forward(bool state_now, bool state_last)
 	remote.reset();
 }
 
-void RM_EventHandle::remote_direction_left(bool state_now, bool state_last)
+void RM_EventHandle::remoteDirectionLeft(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote left is pressed.", __FUNCTION__, __LINE__);
 	remote_cmd_time = time(NULL);
@@ -452,7 +452,7 @@ void RM_EventHandle::remote_direction_left(bool state_now, bool state_last)
 	remote.reset();
 }
 
-void RM_EventHandle::remote_direction_right(bool state_now, bool state_last)
+void RM_EventHandle::remoteDirectionRight(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote right is pressed.", __FUNCTION__, __LINE__);
 	remote_cmd_time = time(NULL);
@@ -473,7 +473,7 @@ void RM_EventHandle::remote_direction_right(bool state_now, bool state_last)
 	remote.reset();
 }
 
-void RM_EventHandle::remote_max(bool state_now, bool state_last)
+void RM_EventHandle::remoteMax(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
 	remote_cmd_time = time(NULL);
@@ -513,19 +513,19 @@ void RM_EventHandle::remote_exit(bool state_now, bool state_last)
 		beeper.play_for_command(INVALID);
 	remote.reset();
 }
-void RM_EventHandle::remote_spot(bool state_now, bool state_last)
+void RM_EventHandle::remoteSpot(bool state_now, bool state_last)
 {
  remote_exit(state_now, state_last);
 }
-void RM_EventHandle::remote_clean(bool state_now, bool state_last)
+void RM_EventHandle::remoteClean(bool state_now, bool state_last)
 {
  remote_exit(state_now, state_last);
 }
-void RM_EventHandle::remote_home(bool state_now, bool state_last)
+void RM_EventHandle::remoteHome(bool state_now, bool state_last)
 {
  remote_exit(state_now, state_last);
 }
-void RM_EventHandle::remote_wall_follow(bool state_now, bool state_last)
+void RM_EventHandle::remoteWallFollow(bool state_now, bool state_last)
 {
  remote_exit(state_now, state_last);
 }
@@ -543,7 +543,7 @@ void RM_EventHandle::rcon(bool state_now, bool state_last)
 	c_rcon.resetStatus();
 }
 
-void RM_EventHandle::key_clean(bool state_now, bool state_last)
+void RM_EventHandle::keyClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Key clean is pressed.", __FUNCTION__, __LINE__);
 	remote_cmd_time = time(NULL);
@@ -557,7 +557,7 @@ void RM_EventHandle::key_clean(bool state_now, bool state_last)
 	key.resetTriggerStatus();
 }
 
-void RM_EventHandle::charge_detect(bool state_now, bool state_last)
+void RM_EventHandle::chargeDetect(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Detect charging.", __FUNCTION__, __LINE__);
 	if (charger.getChargeStatus() == 3)
@@ -567,7 +567,7 @@ void RM_EventHandle::charge_detect(bool state_now, bool state_last)
 	}
 }
 
-void RM_EventHandle::over_current_wheel_left(bool state_now, bool state_last)
+void RM_EventHandle::overCurrentWheelLeft(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
@@ -583,7 +583,7 @@ void RM_EventHandle::over_current_wheel_left(bool state_now, bool state_last)
 	}
 }
 
-void RM_EventHandle::over_current_wheel_right(bool state_now, bool state_last)
+void RM_EventHandle::overCurrentWheelRight(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
@@ -600,7 +600,7 @@ void RM_EventHandle::over_current_wheel_right(bool state_now, bool state_last)
 	}
 }
 
-void RM_EventHandle::over_current_suction(bool state_now, bool state_last)
+void RM_EventHandle::overCurrentSuction(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
 
@@ -617,7 +617,7 @@ void RM_EventHandle::over_current_suction(bool state_now, bool state_last)
 	}
 }
 
-void RM_EventHandle::battery_low(bool state_now, bool state_last)
+void RM_EventHandle::batteryLow(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: Detects battery low.", __FUNCTION__, __LINE__);
 	if (g_battery_low_cnt++ > 50)

@@ -222,12 +222,12 @@ void charge_function(void)
 	charge_plan_status = 0;
 }
 
-void Charge_EventHandle::charge_detect(bool state_now, bool state_last)
+void Charge_EventHandle::chargeDetect(bool state_now, bool state_last)
 {
 	ev.charge_detect = 1;
 	g_stop_charge_counter = 20;
 }
-void Charge_EventHandle::remote_plan(bool state_now, bool state_last)
+void Charge_EventHandle::remotePlan(bool state_now, bool state_last)
 {
 	if (robot_timer.getPlanStatus())
 		charge_plan_confirm_time = time(NULL);
@@ -287,7 +287,7 @@ void Charge_EventHandle::remote_plan(bool state_now, bool state_last)
 	}
 	robot_timer.resetPlanStatus();
 }
-void Charge_EventHandle::cliff_all(bool state_now, bool state_last)
+void Charge_EventHandle::cliffAll(bool state_now, bool state_last)
 {
 	g_cliff_all_cnt++;
 	if (g_cliff_all_cnt++ > 2)
@@ -296,7 +296,7 @@ void Charge_EventHandle::cliff_all(bool state_now, bool state_last)
 		ev.cliff_all_triggered = true;
 	}
 }
-void Charge_EventHandle::key_clean(bool state_now, bool state_last)
+void Charge_EventHandle::keyClean(bool state_now, bool state_last)
 {
 	if (charger.isDirected())
 	{
@@ -344,7 +344,7 @@ void Charge_EventHandle::key_clean(bool state_now, bool state_last)
 
 	key.resetTriggerStatus();
 }
-void Charge_EventHandle::remote_clean(bool stat_now, bool state_last)
+void Charge_EventHandle::remoteClean(bool stat_now, bool state_last)
 {
 	if (remote.isKeyTrigger(REMOTE_CLEAN)) {
 		remote.reset();

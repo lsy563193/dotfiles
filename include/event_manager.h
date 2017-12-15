@@ -77,37 +77,37 @@ typedef struct {
 }Ev_t;
 class EventHandle{
 public:
-virtual void bumper_all(bool state_now, bool state_last);
+virtual void bumperAll(bool state_now, bool state_last);
 
-virtual void bumper_left(bool state_now, bool state_last);
+virtual void bumperLeft(bool state_now, bool state_last);
 
-virtual void bumper_right(bool state_now, bool state_last);
+virtual void bumperRight(bool state_now, bool state_last);
 
 /* OBS */
-virtual void obs_front(bool state_now, bool state_last);
+virtual void obsFront(bool state_now, bool state_last);
 
-virtual void obs_left(bool state_now, bool state_last);
+virtual void obsLeft(bool state_now, bool state_last);
 
-virtual void obs_right(bool state_now, bool state_last);
+virtual void obsRight(bool state_now, bool state_last);
 
-virtual void obs_wall_left(bool state_now, bool state_last);
+virtual void obsWallLeft(bool state_now, bool state_last);
 
-virtual void obs_wall_right(bool state_now, bool state_last);
+virtual void obsWallRight(bool state_now, bool state_last);
 
 /* Cliff */
-virtual void cliff_all(bool state_now, bool state_last);
+virtual void cliffAll(bool state_now, bool state_last);
 
-virtual void cliff_front_left(bool state_now, bool state_last);
+virtual void cliffFrontLeft(bool state_now, bool state_last);
 
-virtual void cliff_front_right(bool state_now, bool state_last);
+virtual void cliffFrontRight(bool state_now, bool state_last);
 
-virtual void cliff_left_right(bool state_now, bool state_last);
+virtual void cliffLeftRight(bool state_now, bool state_last);
 
-virtual void cliff_front(bool state_now, bool state_last);
+virtual void cliffFront(bool state_now, bool state_last);
 
-virtual void cliff_left(bool state_now, bool state_last);
+virtual void cliffLeft(bool state_now, bool state_last);
 
-virtual void cliff_right(bool state_now, bool state_last);
+virtual void cliffRight(bool state_now, bool state_last);
 
 /* RCON */
 virtual void rcon(bool state_now, bool state_last);
@@ -144,50 +144,48 @@ void rcon_right(bool state_now, bool state_last)
 */
 
 /* Over Current */
-virtual void over_current_brush_left(bool state_now, bool state_last);
+virtual void overCurrentBrushLeft(bool state_now, bool state_last);
 
-virtual void over_current_brush_main(bool state_now, bool state_last);
+virtual void overCurrentBrushMain(bool state_now, bool state_last);
 
-virtual void over_current_brush_right(bool state_now, bool state_last);
+virtual void overCurrentBrushRight(bool state_now, bool state_last);
 
-virtual void over_current_wheel_left(bool state_now, bool state_last);
+virtual void overCurrentWheelLeft(bool state_now, bool state_last);
 
-virtual void over_current_wheel_right(bool state_now, bool state_last);
+virtual void overCurrentWheelRight(bool state_now, bool state_last);
 
-virtual void over_current_suction(bool state_now, bool state_last);
+virtual void overCurrentSuction(bool state_now, bool state_last);
 
 /* Key */
-virtual void key_clean(bool state_now, bool state_last);
+virtual void keyClean(bool state_now, bool state_last);
 
 /* Remote */
-virtual void remote_plan(bool state_now, bool state_last);
+virtual void remotePlan(bool state_now, bool state_last);
 
-virtual void remote_clean(bool state_now, bool state_last);
+virtual void remoteClean(bool state_now, bool state_last);
 
-virtual void remote_home(bool state_now, bool state_last);
+virtual void remoteHome(bool state_now, bool state_last);
 
-virtual void remote_direction_forward(bool state_now, bool state_last);
+virtual void remoteDirectionForward(bool state_now, bool state_last);
 
-virtual void remote_wall_follow(bool state_now, bool state_last);
+virtual void remoteWallFollow(bool state_now, bool state_last);
 
-virtual void remote_direction_left(bool state_now, bool state_last);
+virtual void remoteDirectionLeft(bool state_now, bool state_last);
 
-virtual void remote_direction_right(bool state_now, bool state_last);
+virtual void remoteDirectionRight(bool state_now, bool state_last);
 
-virtual void remote_spot(bool state_now, bool state_last);
+virtual void remoteSpot(bool state_now, bool state_last);
 
-virtual void remote_max(bool state_now, bool state_last);
+virtual void remoteMax(bool state_now, bool state_last);
 
 /* Battery */
-virtual void battery_home(bool state_now, bool state_last);
+virtual void batteryHome(bool state_now, bool state_last);
 
-virtual void battery_low(bool state_now, bool state_last);
+virtual void batteryLow(bool state_now, bool state_last);
 
-virtual void charge_detect(bool state_now, bool state_last);
-/* Slam Error */
-virtual void slam_error(bool state_now, bool state_last);
+virtual void chargeDetect(bool state_now, bool state_last);
 
-virtual void robot_slip(bool state_new,bool state_last);
+virtual void robotSlip(bool state_new, bool state_last);
 /*
 void lidar_bumper(bool state_new,bool state_last)
 {
@@ -196,7 +194,7 @@ void lidar_bumper(bool state_new,bool state_last)
 */
 
 // Lidar stuck
-virtual void lidar_stuck(bool state_new,bool state_last);
+virtual void lidarStuck(bool state_new, bool state_last);
 /* Default: empty hanlder */
 //void empty(bool state_now, bool state_last);
 
@@ -300,8 +298,6 @@ typedef enum {
 
 	EVT_CHARGE_DETECT,
 
-	EVT_SLAM_ERROR,
-
 	EVT_ROBOT_SLIP,
 
 	EVT_LIDAR_BUMPER,
@@ -375,7 +371,6 @@ void df_remote_direction_right(bool state_now, bool state_last);
 void df_remote_spot(bool state_now, bool state_last);
 void df_remote_max(bool state_now, bool state_last);
 void df_charge_detect(bool state_now, bool state_last);
-void df_slam_error(bool state_now, bool state_last);
 void df_robot_slip(bool state_new,bool state_last);
 void df_lidar_stuck(bool state_new,bool state_last);
 #endif

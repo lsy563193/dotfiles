@@ -999,7 +999,7 @@ bool path_next(const Cell_t& start, PPTargetType& path)
 
 bool cs_path_next(const Cell_t& start, PPTargetType& path) {
 /*	if (!cs.is_going_home()) {
-		if ((ev.remote_home || ev.battery_home)) {//cs.is_switch_go_home()
+		if ((ev.remoteHome || ev.batteryHome)) {//cs.is_switch_go_home()
 			if(g_have_seen_charger)
 				cs.set(CS_GO_HOME_POINT);
 			else
@@ -1008,7 +1008,7 @@ bool cs_path_next(const Cell_t& start, PPTargetType& path) {
 	}
 
 	if (!cs.is_going_home()) {
-		if (ev.remote_spot) {//cs.is_switch_tmp_spot()
+		if (ev.remoteSpot) {//cs.is_switch_tmp_spot()
 			cs.set(CS_TMP_SPOT);
 		}
 	}*/

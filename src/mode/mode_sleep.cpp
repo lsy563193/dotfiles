@@ -77,13 +77,13 @@ IAction* ModeSleep::getNextAction()
 	return nullptr;
 }
 
-void ModeSleep::remote_clean(bool state_now, bool state_last)
+void ModeSleep::remoteClean(bool state_now, bool state_last)
 {
 	ev.key_clean_pressed = true;
 	ROS_WARN("%s %d: Waked up by remote key clean.", __FUNCTION__, __LINE__);
 }
 
-void ModeSleep::key_clean(bool state_now, bool state_last)
+void ModeSleep::keyClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Waked up by key clean.", __FUNCTION__, __LINE__);
 
@@ -100,7 +100,7 @@ void ModeSleep::key_clean(bool state_now, bool state_last)
 	key.resetTriggerStatus();
 }
 
-void ModeSleep::charge_detect(bool state_now, bool state_last)
+void ModeSleep::chargeDetect(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Detect charge!", __FUNCTION__, __LINE__);
 	ev.charge_detect = charger.getChargeStatus();
@@ -114,7 +114,7 @@ void ModeSleep::rcon(bool state_now, bool state_last)
 //	serial.wakeUp();
 }
 
-void ModeSleep::remote_plan(bool state_now, bool state_last)
+void ModeSleep::remotePlan(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Waked up by plan.", __FUNCTION__, __LINE__);
 	if (robot_timer.getPlanStatus() == 3)

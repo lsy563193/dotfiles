@@ -891,7 +891,7 @@ MotionManage::~MotionManage()
 
 	// Unregister here because robot may be lifted up during the wav playing for cleaning pause.
 	cm_unregister_events();
-	if (ev.fatal_quit) // Also handles for ev.battery_low/ev.charge_detect/ev.cliff_all_triggered.
+	if (ev.fatal_quit) // Also handles for ev.batteryLow/ev.chargeDetect/ev.cliff_all_triggered.
 	{
 		g_is_manual_pause = false;
 		g_is_low_bat_pause = false;

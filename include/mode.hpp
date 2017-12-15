@@ -78,20 +78,27 @@ class ModeIdle:public Mode
 {
 public:
 	ModeIdle();
-	~ModeIdle();
-	bool isExit();
-	void remote_cleaning(bool state_now, bool state_last);
-	void remote_direction_left(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
-	void remote_direction_right(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
-	void remote_direction_forward(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
-	void remote_home(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
-	void remote_spot(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
-	void remote_wall_follow(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
-	void remote_clean(bool state_now, bool state_last){remote_cleaning(state_now,state_last);}
-	void remote_max(bool state_now, bool state_last) override ;
-	void remote_plan(bool state_now, bool state_last) override ;
-	void key_clean(bool state_now, bool state_last) override;
-	void charge_detect(bool state_now, bool state_last) override ;
+	~ModeIdle() override;
+	bool isExit() override;
+	void remoteKeyHandler(bool state_now, bool state_last);
+	void remoteDirectionLeft(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteDirectionRight(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteDirectionForward(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteHome(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteSpot(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteWallFollow(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteClean(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteMax(bool state_now, bool state_last) override ;
+	void remotePlan(bool state_now, bool state_last) override ;
+	void keyClean(bool state_now, bool state_last) override;
+	void chargeDetect(bool state_now, bool state_last) override ;
 
 protected:
 	std::vector<Cell_t> temp_fw_cells;
@@ -113,11 +120,11 @@ public:
 	IAction* getNextAction();
 
 	// For exit event handling.
-	void remote_clean(bool state_now, bool state_last);
-	void key_clean(bool state_now, bool state_last);
-	void charge_detect(bool state_now, bool state_last);
-	void rcon(bool state_now, bool state_last);
-	void remote_plan(bool state_now, bool state_last);
+	void remoteClean(bool state_now, bool state_last) override;
+	void keyClean(bool state_now, bool state_last) override;
+	void chargeDetect(bool state_now, bool state_last) override;
+	void rcon(bool state_now, bool state_last) override;
+	void remotePlan(bool state_now, bool state_last) override;
 
 private:
 	bool plan_activated_status_;
@@ -135,9 +142,9 @@ public:
 	IAction* getNextAction();
 
 	// For exit event handling.
-	void remote_clean(bool state_now, bool state_last) override ;
-	void key_clean(bool state_now, bool state_last) override ;
-	void remote_plan(bool state_now, bool state_last) override ;
+	void remoteClean(bool state_now, bool state_last) override ;
+	void keyClean(bool state_now, bool state_last) override ;
+	void remotePlan(bool state_now, bool state_last) override ;
 
 private:
 	bool plan_activated_status_;
@@ -156,11 +163,11 @@ public:
 	IAction* getNextAction();
 
 	// For exit event handling.
-	void remote_clean(bool state_now, bool state_last) override ;
-	void remote_direction_left(bool state_now, bool state_last) override ;
-	void remote_direction_right(bool state_now, bool state_last) override ;
-	void remote_direction_forward(bool state_now, bool state_last) override ;
-	void key_clean(bool state_now, bool state_last) override ;
+	void remoteClean(bool state_now, bool state_last) override ;
+	void remoteDirectionLeft(bool state_now, bool state_last) override ;
+	void remoteDirectionRight(bool state_now, bool state_last) override ;
+	void remoteDirectionForward(bool state_now, bool state_last) override ;
+	void keyClean(bool state_now, bool state_last) override ;
 
 private:
 	double remote_mode_time_stamp_;
@@ -229,17 +236,17 @@ public:
 	bool isExit();
 
 	bool setNextAction();
-	void key_clean(bool state_now, bool state_last) override ;
-	void remote_clean(bool state_now, bool state_last) override ;
-	void remote_home(bool state_now, bool state_last) override ;
-	void cliff_all(bool state_now, bool state_last) override ;
-	void charge_detect(bool state_now, bool state_last) override ;
-//	void over_current_brush_left(bool state_now, bool state_last);
-//	void over_current_brush_main(bool state_now, bool state_last);
-//	void over_current_brush_right(bool state_now, bool state_last);
-	void over_current_wheel_left(bool state_now, bool state_last) override;
-	void over_current_wheel_right(bool state_now, bool state_last) override;
-//	void over_current_suction(bool state_now, bool state_last);
+	void keyClean(bool state_now, bool state_last) override ;
+	void remoteClean(bool state_now, bool state_last) override ;
+	void remoteHome(bool state_now, bool state_last) override ;
+	void cliffAll(bool state_now, bool state_last) override ;
+	void chargeDetect(bool state_now, bool state_last) override ;
+//	void overCurrentBrushLeft(bool state_now, bool state_last);
+//	void overCurrentBrushMain(bool state_now, bool state_last);
+//	void overCurrentBrushRight(bool state_now, bool state_last);
+	void overCurrentWheelLeft(bool state_now, bool state_last) override;
+	void overCurrentWheelRight(bool state_now, bool state_last) override;
+//	void overCurrentSuction(bool state_now, bool state_last);
 
 private:
 	bool MovementFollowWallisFinish() override ;

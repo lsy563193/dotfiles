@@ -31,7 +31,7 @@
  * 	ev.oc_wheel_left
  * 	ev.oc_wheel_right
  * 	ev.oc_suction
- * 	ev.battery_low
+ * 	ev.batteryLow
  */
 /* Bumper */
 int g_bumper_cnt = 0;
@@ -64,9 +64,6 @@ Ev_t ev;
 
 // lidar stuck
 
-static int bumper_all_cnt, bumper_left_cnt, bumper_right_cnt;
-
-//static EventModeType evt_mgr_mode = EVT_MODE_USER_INTERFACE;
 
 static EventActionType	eat;
 
@@ -88,7 +85,6 @@ void event_manager_init()
 
 	g_event_manager_enabled = g_event_handler_status = false;
 
-	bumper_all_cnt = bumper_left_cnt = bumper_right_cnt = 0;
 	event_manager_reset_status();
 
 		for (j = 0; j < EVT_MAX; j++) {
@@ -97,62 +93,60 @@ void event_manager_init()
 //			eat.handler_enabled[j] = false;
 			g_new_event_status[j] = false;
 		}
-	p_handler[EVT_BUMPER_ALL] = &EventHandle::bumper_all;
-	p_handler[EVT_BUMPER_LEFT] = &EventHandle::bumper_left;
-	p_handler[EVT_BUMPER_RIGHT] = &EventHandle::bumper_right;
+	p_handler[EVT_BUMPER_ALL] = &EventHandle::bumperAll;
+	p_handler[EVT_BUMPER_LEFT] = &EventHandle::bumperLeft;
+	p_handler[EVT_BUMPER_RIGHT] = &EventHandle::bumperRight;
 
-	p_handler[EVT_OBS_FRONT] = &EventHandle::obs_front;
-	p_handler[EVT_OBS_LEFT] = &EventHandle::obs_left;
-	p_handler[EVT_OBS_RIGHT] = &EventHandle::obs_right;
-	p_handler[EVT_OBS_WALL_LFET] = &EventHandle::obs_wall_left;
-	p_handler[EVT_OBS_WALL_RIGHT] = &EventHandle::obs_wall_right;
+	p_handler[EVT_OBS_FRONT] = &EventHandle::obsFront;
+	p_handler[EVT_OBS_LEFT] = &EventHandle::obsLeft;
+	p_handler[EVT_OBS_RIGHT] = &EventHandle::obsRight;
+	p_handler[EVT_OBS_WALL_LFET] = &EventHandle::obsWallLeft;
+	p_handler[EVT_OBS_WALL_RIGHT] = &EventHandle::obsWallRight;
 
-	p_handler[EVT_CLIFF_ALL] = &EventHandle::cliff_all;
-	p_handler[EVT_CLIFF_FRONT_LEFT] = &EventHandle::cliff_front_left;
-	p_handler[EVT_CLIFF_FRONT_RIGHT] = &EventHandle::cliff_front_right;
-	p_handler[EVT_CLIFF_LEFT_RIGHT] = &EventHandle::cliff_left_right;
-	p_handler[EVT_CLIFF_LEFT] = &EventHandle::cliff_left;
-	p_handler[EVT_CLIFF_RIGHT] = &EventHandle::cliff_right;
-	p_handler[EVT_CLIFF_FRONT] = &EventHandle::cliff_front;
+	p_handler[EVT_CLIFF_ALL] = &EventHandle::cliffAll;
+	p_handler[EVT_CLIFF_FRONT_LEFT] = &EventHandle::cliffFrontLeft;
+	p_handler[EVT_CLIFF_FRONT_RIGHT] = &EventHandle::cliffFrontRight;
+	p_handler[EVT_CLIFF_LEFT_RIGHT] = &EventHandle::cliffLeftRight;
+	p_handler[EVT_CLIFF_LEFT] = &EventHandle::cliffLeft;
+	p_handler[EVT_CLIFF_RIGHT] = &EventHandle::cliffRight;
+	p_handler[EVT_CLIFF_FRONT] = &EventHandle::cliffFront;
 
 	p_handler[EVT_RCON] = &EventHandle::rcon;
 
-	p_handler[EVT_OVER_CURRENT_BRUSH_LEFT] = &EventHandle::over_current_brush_left;
-	p_handler[EVT_OVER_CURRENT_BRUSH_MAIN] = &EventHandle::over_current_brush_main;
-	p_handler[EVT_OVER_CURRENT_BRUSH_RIGHT] = &EventHandle::over_current_brush_right;
-	p_handler[EVT_OVER_CURRENT_WHEEL_LEFT] = &EventHandle::over_current_wheel_left;
-	p_handler[EVT_OVER_CURRENT_WHEEL_RIGHT] = &EventHandle::over_current_wheel_right;
-	p_handler[EVT_OVER_CURRENT_SUCTION] = &EventHandle::over_current_suction;
+	p_handler[EVT_OVER_CURRENT_BRUSH_LEFT] = &EventHandle::overCurrentBrushLeft;
+	p_handler[EVT_OVER_CURRENT_BRUSH_MAIN] = &EventHandle::overCurrentBrushMain;
+	p_handler[EVT_OVER_CURRENT_BRUSH_RIGHT] = &EventHandle::overCurrentBrushRight;
+	p_handler[EVT_OVER_CURRENT_WHEEL_LEFT] = &EventHandle::overCurrentWheelLeft;
+	p_handler[EVT_OVER_CURRENT_WHEEL_RIGHT] = &EventHandle::overCurrentWheelRight;
+	p_handler[EVT_OVER_CURRENT_SUCTION] = &EventHandle::overCurrentSuction;
 
-	p_handler[EVT_KEY_CLEAN] = &EventHandle::key_clean;
+	p_handler[EVT_KEY_CLEAN] = &EventHandle::keyClean;
 
-	p_handler[EVT_REMOTE_PLAN] = &EventHandle::remote_plan;
-	p_handler[EVT_REMOTE_CLEAN] = &EventHandle::remote_clean;
-	p_handler[EVT_REMOTE_HOME] = &EventHandle::remote_home;
+	p_handler[EVT_REMOTE_PLAN] = &EventHandle::remotePlan;
+	p_handler[EVT_REMOTE_CLEAN] = &EventHandle::remoteClean;
+	p_handler[EVT_REMOTE_HOME] = &EventHandle::remoteHome;
 
 //	handler[EVT_REMOTE_DIRECTION_BACKWARD]=handler_remote_direction_forward;
-	p_handler[EVT_REMOTE_DIRECTION_FORWARD] = &EventHandle::remote_direction_forward;
-	p_handler[EVT_REMOTE_DIRECTION_LEFT] = &EventHandle::remote_direction_left;
-	p_handler[EVT_REMOTE_DIRECTION_RIGHT] = &EventHandle::remote_direction_right;
+	p_handler[EVT_REMOTE_DIRECTION_FORWARD] = &EventHandle::remoteDirectionForward;
+	p_handler[EVT_REMOTE_DIRECTION_LEFT] = &EventHandle::remoteDirectionLeft;
+	p_handler[EVT_REMOTE_DIRECTION_RIGHT] = &EventHandle::remoteDirectionRight;
 
-	p_handler[EVT_REMOTE_WALL_FOLLOW] = &EventHandle::remote_wall_follow;
-	p_handler[EVT_REMOTE_SPOT] = &EventHandle::remote_spot;
+	p_handler[EVT_REMOTE_WALL_FOLLOW] = &EventHandle::remoteWallFollow;
+	p_handler[EVT_REMOTE_SPOT] = &EventHandle::remoteSpot;
 
-	p_handler[EVT_REMOTE_MAX] = &EventHandle::remote_max;
+	p_handler[EVT_REMOTE_MAX] = &EventHandle::remoteMax;
 //	handler[EVT_REMOTE_TIMER]=handler_remote_max;
 //	handler[EVT_WATER_TANK]=handler_remote_max;
 
-	p_handler[EVT_BATTERY_HOME] = &EventHandle::battery_home;
-	p_handler[EVT_BATTERY_LOW] = &EventHandle::battery_low;
+	p_handler[EVT_BATTERY_HOME] = &EventHandle::batteryHome;
+	p_handler[EVT_BATTERY_LOW] = &EventHandle::batteryLow;
 
-	p_handler[EVT_CHARGE_DETECT] = &EventHandle::charge_detect;
+	p_handler[EVT_CHARGE_DETECT] = &EventHandle::chargeDetect;
 
-	p_handler[EVT_SLAM_ERROR] = &EventHandle::slam_error;
-
-	p_handler[EVT_ROBOT_SLIP] = &EventHandle::robot_slip;
+	p_handler[EVT_ROBOT_SLIP] = &EventHandle::robotSlip;
 
 //	handler[EVT_LIDAR_BUMPER]=handler_lidar_stuck;
-	p_handler[EVT_LIDAR_STUCK] = &EventHandle::lidar_stuck;
+	p_handler[EVT_LIDAR_STUCK] = &EventHandle::lidarStuck;
 	eat.peh = &deh;
 }
 
@@ -365,11 +359,6 @@ void *event_manager_thread(void *data)
 			evt_set_status_x(EVT_CHARGE_DETECT);
 		}
 
-		/* Slam Error */
-		if (ev.slam_error) {
-			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_SLAM_ERROR);
-		}
 		/* robot slip */
 		if(lidar_is_robot_slip()){
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
@@ -522,9 +511,6 @@ void *event_handler_thread(void *data) {
 		/* Charge Status */
 		evt_handle_check_event(EVT_CHARGE_DETECT);
 
-		/* Slam Error */
-		evt_handle_check_event(EVT_SLAM_ERROR);
-
 		/* robot slip*/
 		evt_handle_check_event(EVT_ROBOT_SLIP);
 
@@ -644,7 +630,7 @@ void event_manager_reset_status(void)
 /* Below are the internal functions. */
 
 /* Bumper */
-void EventHandle::bumper_all(bool state_now, bool state_last)
+void EventHandle::bumperAll(bool state_now, bool state_last)
 {
 /*	if (state_now == true && state_last == true) {
 		bumper_all_cnt++;
@@ -662,7 +648,7 @@ void EventHandle::bumper_all(bool state_now, bool state_last)
 	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, bumper.get_status());*/
 }
 
-void EventHandle::bumper_left(bool state_now, bool state_last)
+void EventHandle::bumperLeft(bool state_now, bool state_last)
 {
 /*	if (state_now == true && state_last == true) {
 		bumper_left_cnt++;
@@ -679,7 +665,7 @@ void EventHandle::bumper_left(bool state_now, bool state_last)
 	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, bumper.get_status());*/
 }
 
-void EventHandle::bumper_right(bool state_now, bool state_last)
+void EventHandle::bumperRight(bool state_now, bool state_last)
 {
 /*
 	if (state_now == true && state_last == true) {
@@ -698,35 +684,35 @@ void EventHandle::bumper_right(bool state_now, bool state_last)
 }
 
 /* OBS */
-void EventHandle::obs_front(bool state_now, bool state_last)
+void EventHandle::obsFront(bool state_now, bool state_last)
 {
 //	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 	//move_back();
 	//wheel_stop();
 }
 
-void EventHandle::obs_left(bool state_now, bool state_last)
+void EventHandle::obsLeft(bool state_now, bool state_last)
 {
 //	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 	//move_back();
 	//wheel_stop();
 }
 
-void EventHandle::obs_right(bool state_now, bool state_last)
+void EventHandle::obsRight(bool state_now, bool state_last)
 {
 //	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 	//move_back();
 	//wheel_stop();
 }
 
-void EventHandle::obs_wall_left(bool state_now, bool state_last)
+void EventHandle::obsWallLeft(bool state_now, bool state_last)
 {
 //	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 	//move_back();
 	//wheel_stop();
 }
 
-void EventHandle::obs_wall_right(bool state_now, bool state_last)
+void EventHandle::obsWallRight(bool state_now, bool state_last)
 {
 //	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 	//move_back();
@@ -734,37 +720,37 @@ void EventHandle::obs_wall_right(bool state_now, bool state_last)
 }
 
 /* Cliff */
-void EventHandle::cliff_all(bool state_now, bool state_last)
+void EventHandle::cliffAll(bool state_now, bool state_last)
 {
 //	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
-void EventHandle::cliff_front_left(bool state_now, bool state_last)
+void EventHandle::cliffFrontLeft(bool state_now, bool state_last)
 {
 //	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
-void EventHandle::cliff_front_right(bool state_now, bool state_last)
+void EventHandle::cliffFrontRight(bool state_now, bool state_last)
 {
 //	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
-void EventHandle::cliff_left_right(bool state_now, bool state_last)
+void EventHandle::cliffLeftRight(bool state_now, bool state_last)
 {
 //	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
-void EventHandle::cliff_front(bool state_now, bool state_last)
+void EventHandle::cliffFront(bool state_now, bool state_last)
 {
 //	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
-void EventHandle::cliff_left(bool state_now, bool state_last)
+void EventHandle::cliffLeft(bool state_now, bool state_last)
 {
 //	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
-void EventHandle::cliff_right(bool state_now, bool state_last)
+void EventHandle::cliffRight(bool state_now, bool state_last)
 {
 //	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
@@ -812,7 +798,7 @@ void EventHandle::rcon_right(bool state_now, bool state_last)
 */
 
 /* Over Current */
-void EventHandle::over_current_brush_left(bool state_now, bool state_last)
+void EventHandle::overCurrentBrushLeft(bool state_now, bool state_last)
 {
 
 }
@@ -828,12 +814,12 @@ void df_over_current_brush_left(bool state_now, bool state_last)
 }
 
 
-void EventHandle::over_current_brush_main(bool state_now, bool state_last)
+void EventHandle::overCurrentBrushMain(bool state_now, bool state_last)
 {
 //	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
-void EventHandle::over_current_brush_right(bool state_now, bool state_last)
+void EventHandle::overCurrentBrushRight(bool state_now, bool state_last)
 {}
 void df_over_current_brush_right(bool state_now, bool state_last)
 {
@@ -846,29 +832,29 @@ void df_over_current_brush_right(bool state_now, bool state_last)
 	}
 }
 
-void EventHandle::over_current_wheel_left(bool state_now, bool state_last)
+void EventHandle::overCurrentWheelLeft(bool state_now, bool state_last)
 {
 //	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
-void EventHandle::over_current_wheel_right(bool state_now, bool state_last)
+void EventHandle::overCurrentWheelRight(bool state_now, bool state_last)
 {
 //	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
-void EventHandle::over_current_suction(bool state_now, bool state_last)
+void EventHandle::overCurrentSuction(bool state_now, bool state_last)
 {
 //	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
 /* Key */
-void EventHandle::key_clean(bool state_now, bool state_last)
+void EventHandle::keyClean(bool state_now, bool state_last)
 {
 //	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
 /* Remote */
-void EventHandle::remote_plan(bool state_now, bool state_last)
+void EventHandle::remotePlan(bool state_now, bool state_last)
 {
 
 }
@@ -886,7 +872,7 @@ void df_remote_plan(bool state_now, bool state_last)
 	remote.reset();
 }
 
-void EventHandle::remote_clean(bool state_now, bool state_last)
+void EventHandle::remoteClean(bool state_now, bool state_last)
 {}
 void df_remote_clean(bool state_now, bool state_last)
 {
@@ -895,7 +881,7 @@ void df_remote_clean(bool state_now, bool state_last)
 	remote.reset();
 }
 
-void EventHandle::remote_home(bool state_now, bool state_last)
+void EventHandle::remoteHome(bool state_now, bool state_last)
 {}
 void df_remote_home(bool state_now, bool state_last)
 {
@@ -904,7 +890,7 @@ void df_remote_home(bool state_now, bool state_last)
 	remote.reset();
 }
 
-void EventHandle::remote_direction_forward(bool state_now, bool state_last)
+void EventHandle::remoteDirectionForward(bool state_now, bool state_last)
 {}
 void df_remote_direction_forward(bool state_now, bool state_last)
 {
@@ -913,7 +899,7 @@ void df_remote_direction_forward(bool state_now, bool state_last)
 	remote.reset();
 }
 
-void EventHandle::remote_wall_follow(bool state_now, bool state_last)
+void EventHandle::remoteWallFollow(bool state_now, bool state_last)
 {}
 void df_remote_wall_follow(bool state_now, bool state_last)
 {
@@ -922,7 +908,7 @@ void df_remote_wall_follow(bool state_now, bool state_last)
 	remote.reset();
 }
 
-void EventHandle::remote_direction_left(bool state_now, bool state_last)
+void EventHandle::remoteDirectionLeft(bool state_now, bool state_last)
 {}
 void df_remote_direction_left(bool state_now, bool state_last)
 {
@@ -931,7 +917,7 @@ void df_remote_direction_left(bool state_now, bool state_last)
 	remote.reset();
 }
 
-void EventHandle::remote_direction_right(bool state_now, bool state_last)
+void EventHandle::remoteDirectionRight(bool state_now, bool state_last)
 {}
 void df_remote_direction_right(bool state_now, bool state_last)
 {
@@ -940,7 +926,7 @@ void df_remote_direction_right(bool state_now, bool state_last)
 	remote.reset();
 }
 
-void EventHandle::remote_spot(bool state_now, bool state_last)
+void EventHandle::remoteSpot(bool state_now, bool state_last)
 {}
 void df_remote_spot(bool state_now, bool state_last)
 {
@@ -949,7 +935,7 @@ void df_remote_spot(bool state_now, bool state_last)
 	remote.reset();
 }
 
-void EventHandle::remote_max(bool state_now, bool state_last)
+void EventHandle::remoteMax(bool state_now, bool state_last)
 {}
 void df_remote_max(bool state_now, bool state_last)
 {
@@ -959,17 +945,17 @@ void df_remote_max(bool state_now, bool state_last)
 }
 
 /* Battery */
-void EventHandle::battery_home(bool state_now, bool state_last)
+void EventHandle::batteryHome(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
-void EventHandle::battery_low(bool state_now, bool state_last)
+void EventHandle::batteryLow(bool state_now, bool state_last)
 {
 	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
-void EventHandle::charge_detect(bool state_now, bool state_last)
+void EventHandle::chargeDetect(bool state_now, bool state_last)
 {}
 void df_charge_detect(bool state_now, bool state_last)
 {
@@ -977,58 +963,12 @@ void df_charge_detect(bool state_now, bool state_last)
 	if (g_charge_detect_cnt++ > 25)
 	{
 		ev.charge_detect = charger.getChargeStatus();
-		ROS_WARN("%s %d: ev.charge_detect has been set to %d.", __FUNCTION__, __LINE__, ev.charge_detect);
+		ROS_WARN("%s %d: ev.chargeDetect has been set to %d.", __FUNCTION__, __LINE__, ev.charge_detect);
 		g_charge_detect_cnt = 0;
 	}
 }
 
-/* Slam Error */
-void EventHandle::slam_error(bool state_now, bool state_last)
-{}
-void df_slam_error(bool state_now, bool state_last)
-{
-/*	static time_t slam_error_kill_timer_;
-	static bool relaunch = false;
-
-	if (!state_last)
-	{
-		ROS_ERROR("%s %d: Slam process may be dead.", __FUNCTION__, __LINE__);
-		relaunch = false;
-		slam_error_kill_timer_ = time(NULL);
-		system("rosnode kill /slam_karto &");
-	}
-
-	// Wait for 3s to make sure node has been killed.
-	if (time(NULL) - slam_error_kill_timer_ < 1)
-		return;
-
-	if (!relaunch)
-	{
-		system("roslaunch pp karto_slam.launch &");
-		//robotbase_restore_slam_correction();
-		MotionManage::s_slam->isMapReady(false);
-		relaunch = true;
-		led.set_mode(LED_FLASH, LED_GREEN, 1000);
-	}
-
-	if (MotionManage::s_slam != nullptr)
-	{
-		if (!MotionManage::s_slam->isMapReady())
-		{
-			ROS_WARN("Slam not ready yet.");
-			MotionManage::s_slam->enableMapUpdate();
-			usleep(100000);
-			return;
-		}
-	}
-	led.set_mode(LED_STEADY, LED_GREEN);
-	// Wait for 0.2s to make sure it has process the first scan.
-	usleep(200000);
-	ROS_WARN("Slam restart successed.");
-	ev.slam_error = false;*/
-}
-
-void EventHandle::robot_slip(bool state_new,bool state_last)
+void EventHandle::robotSlip(bool state_new, bool state_last)
 {}
 void df_robot_slip(bool state_new,bool state_last)
 {
@@ -1045,13 +985,13 @@ void EventHandle::lidar_bumper(bool state_new,bool state_last)
 */
 
 // Lidar stuck
-void EventHandle::lidar_stuck(bool state_new,bool state_last)
+void EventHandle::lidarStuck(bool state_new, bool state_last)
 {}
 void df_lidar_stuck(bool state_new,bool state_last)
 {
 	//beeper.play_for_command(true);
 	//ROS_WARN("\033[32m%s %d: Lidar stuck.\033[0m", __FUNCTION__, __LINE__);
-	//ev.lidar_stuck = true;
+	//ev.lidarStuck = true;
 }
 
 ///* Default: empty hanlder */

@@ -39,73 +39,73 @@ class RM_EventHandle:public EventHandle {
 
 	void bumper(bool state_now, bool state_last);
 
-	void bumper_all(bool state_now, bool state_last);
+	void bumperAll(bool state_now, bool state_last);
 
-	void bumper_right(bool state_now, bool state_last);
+	void bumperRight(bool state_now, bool state_last);
 
-	void bumper_left(bool state_now, bool state_last);
+	void bumperLeft(bool state_now, bool state_last);
 
-	void cliff_all(bool state_now, bool state_last);
+	void cliffAll(bool state_now, bool state_last);
 
 	void cliff(bool state_now, bool state_last);
 
-	void cliff_front(bool state_now, bool state_last);
+	void cliffFront(bool state_now, bool state_last);
 
-	void cliff_left(bool state_now, bool state_last);
+	void cliffLeft(bool state_now, bool state_last);
 
-	void cliff_right(bool state_now, bool state_last);
+	void cliffRight(bool state_now, bool state_last);
 
-	void cliff_left_right(bool state_now, bool state_last);
+	void cliffLeftRight(bool state_now, bool state_last);
 
-	void cliff_front_left(bool state_now, bool state_last);
+	void cliffFrontLeft(bool state_now, bool state_last);
 
-	void cliff_front_right(bool state_now, bool state_last);
+	void cliffFrontRight(bool state_now, bool state_last);
 
 	void obs(bool state_now, bool state_last);
 
-	void obs_front(bool state_now, bool state_last);
+	void obsFront(bool state_now, bool state_last);
 
-	void obs_left(bool state_now, bool state_last);
+	void obsLeft(bool state_now, bool state_last);
 
-	void obs_right(bool state_now, bool state_last);
+	void obsRight(bool state_now, bool state_last);
 
-	void remote_direction_forward(bool state_now, bool state_last);
+	void remoteDirectionForward(bool state_now, bool state_last);
 
-	void remote_direction_left(bool state_now, bool state_last);
+	void remoteDirectionLeft(bool state_now, bool state_last);
 
-	void remote_direction_right(bool state_now, bool state_last);
+	void remoteDirectionRight(bool state_now, bool state_last);
 
-	void remote_max(bool state_now, bool state_last);
+	void remoteMax(bool state_now, bool state_last);
 
 	void remote_exit(bool state_now, bool state_last);
 
-	void remote_clean(bool state_now, bool state_last);
+	void remoteClean(bool state_now, bool state_last);
 
-	void remote_home(bool state_now, bool state_last);
+	void remoteHome(bool state_now, bool state_last);
 
-	void remote_spot(bool state_now, bool state_last);
+	void remoteSpot(bool state_now, bool state_last);
 
-	void remote_wall_follow(bool state_now, bool state_last);
+	void remoteWallFollow(bool state_now, bool state_last);
 
 	void rcon(bool state_now, bool state_last);
 
-	void key_clean(bool state_now, bool state_last);
+	void keyClean(bool state_now, bool state_last);
 
-	void charge_detect(bool state_now, bool state_last);
+	void chargeDetect(bool state_now, bool state_last);
 
-	void over_current_wheel_left(bool state_now, bool state_last);
+	void overCurrentWheelLeft(bool state_now, bool state_last);
 
-	void over_current_wheel_right(bool state_now, bool state_last);
+	void overCurrentWheelRight(bool state_now, bool state_last);
 
-	void over_current_suction(bool state_now, bool state_last);
+	void overCurrentSuction(bool state_now, bool state_last);
 
-	void over_current_brush_left(bool state_now, bool state_last) { df_over_current_brush_left(state_now, state_last); }
+	void overCurrentBrushLeft(bool state_now, bool state_last) { df_over_current_brush_left(state_now, state_last); }
 
-	void over_current_brush_right(bool state_now, bool state_last) { df_over_current_brush_right(state_now, state_last); }
+	void overCurrentBrushRight(bool state_now, bool state_last) { df_over_current_brush_right(state_now, state_last); }
 
-	void battery_low(bool state_now, bool state_last);
+	void batteryLow(bool state_now, bool state_last);
 
-	void remote_plan(bool state_now, bool state_last) { df_remote_plan(state_now, state_last); }
+	void remotePlan(bool state_now, bool state_last) { df_remote_plan(state_now, state_last); }
 };
 
 #endif /*----Behaviors------*/
