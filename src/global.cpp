@@ -54,21 +54,6 @@ bool fw_is_time_up()
 	return ((uint32_t)difftime(time(NULL), g_wf_start_timer)) > g_wf_diff_timer;
 }
 
-bool cm_is_exploration()
-{
-	return  g_cleaning_mode == Clean_Mode_Exploration;
-}
-
-bool cm_is_navigation()
-{
-	return g_cleaning_mode == Clean_Mode_Navigation;
-}
-
-bool cm_is_follow_wall()
-{
-	return g_cleaning_mode == Clean_Mode_WallFollow;
-}
-
 void cm_set(uint8_t mode)
 {
 	g_cleaning_mode = mode;
