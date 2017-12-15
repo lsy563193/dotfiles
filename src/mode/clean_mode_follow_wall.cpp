@@ -14,7 +14,7 @@ CleanModeFollowWall::CleanModeFollowWall()
 	ROS_INFO("%s %d: Entering Follow wall mode\n=========================" , __FUNCTION__, __LINE__);
 	IMoveType::sp_cm_.reset(this);
 	diff_timer_ = WALL_FOLLOW_TIME;
-	speaker.play(SPEAKER_CLEANING_WALL_FOLLOW);
+	speaker.play(VOICE_CLEANING_WALL_FOLLOW);
 	clean_path_algorithm_ = nullptr;
 	go_home_path_algorithm_ = nullptr;
 }
@@ -28,18 +28,18 @@ CleanModeFollowWall::~CleanModeFollowWall() {
 
 	if (ev.key_clean_pressed)
 	{
-		speaker.play(SPEAKER_CLEANING_FINISHED);
+		speaker.play(VOICE_CLEANING_FINISHED);
 		ROS_WARN("%s %d: Key clean pressed. Finish cleaning.", __FUNCTION__, __LINE__);
 	}
 	else if (ev.cliff_all_triggered)
 	{
-		speaker.play(SPEAKER_ERROR_LIFT_UP, false);
-		speaker.play(SPEAKER_CLEANING_STOP);
+		speaker.play(VOICE_ERROR_LIFT_UP, false);
+		speaker.play(VOICE_CLEANING_STOP);
 		ROS_WARN("%s %d: Cliff all triggered. Finish cleaning.", __FUNCTION__, __LINE__);
 	}
 	else
 	{
-		speaker.play(SPEAKER_CLEANING_FINISHED);
+		speaker.play(VOICE_CLEANING_FINISHED);
 		ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
 	}
 

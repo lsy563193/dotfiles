@@ -306,9 +306,9 @@ void ACleanMode::stateInit(int next) {
 
 		// Play wavs.
 		if (ev.battrey_home)
-			speaker.play(SPEAKER_BATTERY_LOW);
+			speaker.play(VOICE_BATTERY_LOW);
 
-		speaker.play(SPEAKER_BACK_TO_CHARGER);
+		speaker.play(VOICE_BACK_TO_CHARGER);
 
 		ev.remote_home = false;
 		ev.battrey_home = false;
@@ -330,7 +330,7 @@ void ACleanMode::stateInit(int next) {
 //			ROS_INFO("%s %d: Exiting temp spot.", __FUNCTION__, __LINE__);
 //			SpotMovement::instance()->spotDeinit();
 //			wheel.stop();
-//			speaker.play(SPEAKER_CLEANING_CONTINUE);
+//			speaker.play(VOICE_CLEANING_CONTINUE);
 //		}
 //		ev.remote_spot = false;
 	}

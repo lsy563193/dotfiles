@@ -11,52 +11,52 @@ void Error::alarm(void)
 	{
 		case ERROR_CODE_LEFTWHEEL:
 		{
-			speaker.play(SPEAKER_ERROR_LEFT_WHEEL);
+			speaker.play(VOICE_ERROR_LEFT_WHEEL);
 			break;
 		}
 		case ERROR_CODE_RIGHTWHEEL:
 		{
-			speaker.play(SPEAKER_ERROR_RIGHT_WHEEL);
+			speaker.play(VOICE_ERROR_RIGHT_WHEEL);
 			break;
 		}
 		case ERROR_CODE_LEFTBRUSH:
 		{
-			speaker.play(SPEAKER_ERROR_LEFT_BRUSH);
+			speaker.play(VOICE_ERROR_LEFT_BRUSH);
 			break;
 		}
 		case ERROR_CODE_RIGHTBRUSH:
 		{
-			speaker.play(SPEAKER_ERROR_RIGHT_BRUSH);
+			speaker.play(VOICE_ERROR_RIGHT_BRUSH);
 			break;
 		}
 		case ERROR_CODE_MAINBRUSH:
 		{
-			speaker.play(SPEAKER_ERROR_MAIN_BRUSH);
+			speaker.play(VOICE_ERROR_MAIN_BRUSH);
 			break;
 		}
 		case ERROR_CODE_FAN_H:
 		{
-			speaker.play(SPEAKER_ERROR_SUCTION_FAN);
+			speaker.play(VOICE_ERROR_SUCTION_FAN);
 			break;
 		}
 		case ERROR_CODE_CLIFF:
 		{
-			speaker.play(SPEAKER_ERROR_CLIFF);
+			speaker.play(VOICE_ERROR_CLIFF);
 			break;
 		}
 		case ERROR_CODE_BUMPER:
 		{
-			speaker.play(SPEAKER_ERROR_BUMPER);
+			speaker.play(VOICE_ERROR_BUMPER);
 			break;
 		}
 		case ERROR_CODE_LIDAR:
 		{
-			speaker.play(SPEAKER_TEST_LIDAR);
+			speaker.play(VOICE_TEST_LIDAR);
 			break;
 		}
 		case ERROR_CODE_STUCK:
 		{
-			speaker.play(SPEAKER_ROBOT_STUCK);
+			speaker.play(VOICE_ROBOT_STUCK);
 			break;
 		}
 		default:

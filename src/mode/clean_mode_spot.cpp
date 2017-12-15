@@ -6,7 +6,7 @@
 
 CleanModeSpot::CleanModeSpot() {
 	IMoveType::sp_cm_.reset(this);
-	speaker.play(SPEAKER_CLEANING_SPOT);
+	speaker.play(VOICE_CLEANING_SPOT);
 	clean_path_algorithm_.reset();
 	go_home_path_algorithm_.reset();
 }

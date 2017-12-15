@@ -544,7 +544,7 @@ void *core_thread(void *)
 		usleep(1000);
 	}
 	//ROS_INFO("Robot sensor ready.");
-	//speaker.play(SPEAKER_WELCOME_ILIFE);
+	//speaker.play(VOICE_WELCOME_ILIFE);
 	usleep(200000);
 
 #if NEW_FRAMEWORK
@@ -555,7 +555,7 @@ void *core_thread(void *)
 	else
 	{
 
-		speaker.play(SPEAKER_PLEASE_START_CLEANING, false);
+		speaker.play(VOICE_PLEASE_START_CLEANING, false);
 		p_mode.reset(new CleanModeNav());
 	}
 
@@ -574,7 +574,7 @@ void *core_thread(void *)
 	if (charger.isDirected() || charger.isOnStub())
 		cm_set(Clean_Mode_Charging);
 	else if (battery.isReadyToClean())
-		speaker.play(SPEAKER_PLEASE_START_CLEANING);
+		speaker.play(VOICE_PLEASE_START_CLEANING);
 
 	while(ros::ok()){
 		usleep(20000);
@@ -582,7 +582,7 @@ void *core_thread(void *)
 			case Clean_Mode_Idle:
 				ROS_INFO("\n-------idle mode_------\n");
 				serial.setCleanMode(Clean_Mode_Idle);
-//				speaker.play(SPEAKER_TEST_MODE);
+//				speaker.play(VOICE_TEST_MODE);
 				idle();
 				break;
 			case Clean_Mode_WallFollow:
@@ -770,6 +770,6 @@ void robotbase_restore_slam_correction()
 }*/
 void *speaker_play_routine(void*)
 {
-	speaker.play_routine();
+	speaker.playRoutine();
 }
 

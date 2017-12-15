@@ -23,7 +23,7 @@ CleanModeNav::CleanModeNav()
 		g_plan_activated = false;
 	}
 	else{
-		speaker.play(SPEAKER_CLEANING_START);
+		speaker.play(VOICE_CLEANING_START);
 	}
 
 	paused_ = false;
@@ -48,23 +48,23 @@ CleanModeNav::~CleanModeNav()
 
 	if (moved_during_pause_)
 	{
-		speaker.play(SPEAKER_CLEANING_STOP);
+		speaker.play(VOICE_CLEANING_STOP);
 		ROS_WARN("%s %d: Moved during pause. Stop cleaning.", __FUNCTION__, __LINE__);
 	}
 	else if (ev.cliff_all_triggered)
 	{
-		speaker.play(SPEAKER_ERROR_LIFT_UP, false);
-		speaker.play(SPEAKER_CLEANING_STOP);
+		speaker.play(VOICE_ERROR_LIFT_UP, false);
+		speaker.play(VOICE_CLEANING_STOP);
 		ROS_WARN("%s %d: Cliff all triggered. Stop cleaning.", __FUNCTION__, __LINE__);
 	}
 	else if (ev.fatal_quit)
 	{
-		speaker.play(SPEAKER_CLEANING_STOP, false);
+		speaker.play(VOICE_CLEANING_STOP, false);
 		error.alarm();
 	}
 	else
 	{
-		speaker.play(SPEAKER_CLEANING_FINISHED);
+		speaker.play(VOICE_CLEANING_FINISHED);
 		ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
 	}
 
@@ -383,7 +383,7 @@ bool CleanModeNav::isNewLineReach()
 bool CleanModeNav::resumePause()
 {
 	ev.key_clean_pressed = false;
-	speaker.play(SPEAKER_CLEANING_CONTINUE);
+	speaker.play(VOICE_CLEANING_CONTINUE);
 	ROS_INFO("%s %d: Resume cleaning.", __FUNCTION__, __LINE__);
 	action_i_ = ac_open_gyro;
 	genNextAction();
@@ -410,7 +410,7 @@ bool CleanModeNav::switchToGoHomePointState()
 bool CleanModeNav::enterPause()
 {
 	ev.key_clean_pressed = false;
-	speaker.play(SPEAKER_CLEANING_PAUSE);
+	speaker.play(VOICE_CLEANING_PAUSE);
 	ROS_INFO("%s %d: Key clean pressed, pause cleaning.", __FUNCTION__, __LINE__);
 	paused_ = true;
 	paused_odom_angle_ = odom.getAngle();
