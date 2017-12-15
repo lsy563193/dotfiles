@@ -253,9 +253,22 @@ void CleanModeNav::keyClean(bool state_now, bool state_last)
 	beeper.play_for_command(VALID);
 
 	// Wait for key released.
+	bool long_press = false;
 	while (key.getPressStatus())
+	{
+		if (!long_press && key.getPressTime() > 3)
+		{
+			ROS_WARN("%s %d: key clean long pressed.", __FUNCTION__, __LINE__);
+			beeper.play_for_command(VALID);
+			long_press = true;
+		}
 		usleep(20000);
-	ev.key_clean_pressed = true;
+	}
+
+	if (long_press)
+		ev.key_long_pressed = true;
+	else
+		ev.key_clean_pressed = true;
 	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
 
 	key.resetTriggerStatus();

@@ -245,7 +245,7 @@ void ModeIdle::keyClean(bool state_now, bool state_last)
 	{
 		if (!long_press && key.getPressTime() > 3)
 		{
-			ROS_WARN("%s %d: key clean.", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: key clean long pressed.", __FUNCTION__, __LINE__);
 			beeper.play_for_command(VALID);
 			long_press = true;
 		}
