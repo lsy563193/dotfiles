@@ -100,16 +100,6 @@ void cm_cleaning(void);
 
 void cm_apply_cs(int next);
 
-	/* Robot will try to go to the cells in g_home_point_old_path list
-	 * first, and it will only go through the CLEANED area. If the
-	 * cell in g_home_point_new_path is unreachable through the
-	 * CLEANED area, it will be push into g_home_point_new_path list.
-	 * When all the cells in g_home_point_old_path list are unreachable
-	 * or failed to go to charger, robot will start to go to cells in
-	 * g_home_point_new_path through the UNCLEAN area (If there is a
-	 * way like this).
-	 */
-
 bool cm_go_to_charger(void);
 
 void cm_create_home_boundary(void);
@@ -127,133 +117,133 @@ void cm_set_event_manager_handler_state(bool state);
 
 void cm_block_charger_stub(int8_t direction);
 
-
-class CM_EventHandle:public EventHandle {
-
-	void bumperAll(bool state_now, bool state_last);
-
-	void bumperLeft(bool state_now, bool state_last);
-
-	void bumperRight(bool state_now, bool state_last);
-
-/* OBS */
-	void obsFront(bool state_now, bool state_last);
-
-	void obsLeft(bool state_now, bool state_last);
-
-	void obsRight(bool state_now, bool state_last);
-
-/* Cliff */
-	void cliffAll(bool state_now, bool state_last);
-
-	void cliffFrontLeft(bool state_now, bool state_last);
-
-	void cliffFrontRight(bool state_now, bool state_last);
-
-	void cliffLeftRight(bool state_now, bool state_last);
-
-	void cliffFront(bool state_now, bool state_last);
-
-	void cliffLeft(bool state_now, bool state_last);
-
-	void cliffRight(bool state_now, bool state_last);
-
-/* RCON */
-	void rcon(bool state_now, bool state_last);
-/* Over Current */
-/*
-void overCurrentBrushLeft(bool state_now, bool state_last)
-{
-	static uint8_t stop_cnt = 0;
-
-	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
-	if(!robot::instance()->getLbrushOc()) {
-		g_oc_brush_left_cnt = 0;
-		if (stop_cnt++ > 250) {
-			set_left_brush_pwm(30);
-		}
-		return;
-	}
-
-	stop_cnt = 0;
-	if (g_oc_brush_left_cnt++ > 40) {
-		g_oc_brush_left_cnt = 0;
-		set_left_brush_pwm(0);
-		ROS_WARN("%s %d: left brush over current", __FUNCTION__, __LINE__);
-	}
-}
-*/
-
-	void overCurrentBrushMain(bool state_now, bool state_last);
-
-	void overCurrentBrushLeft(bool state_now, bool state_last) { df_over_current_brush_left(state_now, state_last); }
-
-	void overCurrentBrushRight(bool state_now, bool state_last) { df_over_current_brush_right(state_now, state_last); }
-
-/*
-
-//void overCurrentBrushRight(bool state_now, bool state_last)
+//
+//class CM_EventHandle:public EventHandle {
+//
+//	void bumperAll(bool state_now, bool state_last);
+//
+//	void bumperLeft(bool state_now, bool state_last);
+//
+//	void bumperRight(bool state_now, bool state_last);
+//
+///* OBS */
+//	void obsFront(bool state_now, bool state_last);
+//
+//	void obsLeft(bool state_now, bool state_last);
+//
+//	void obsRight(bool state_now, bool state_last);
+//
+///* Cliff */
+//	void cliffAll(bool state_now, bool state_last);
+//
+//	void cliffFrontLeft(bool state_now, bool state_last);
+//
+//	void cliffFrontRight(bool state_now, bool state_last);
+//
+//	void cliffLeftRight(bool state_now, bool state_last);
+//
+//	void cliffFront(bool state_now, bool state_last);
+//
+//	void cliffLeft(bool state_now, bool state_last);
+//
+//	void cliffRight(bool state_now, bool state_last);
+//
+///* RCON */
+//	void rcon(bool state_now, bool state_last);
+///* Over Current */
+///*
+//void overCurrentBrushLeft(bool state_now, bool state_last)
 //{
 //	static uint8_t stop_cnt = 0;
 //
 //	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
-//
-//	if(!robot::instance()->getRbrushOc()) {
-//		g_oc_brush_right_cnt = 0;
+//	if(!robot::instance()->getLbrushOc()) {
+//		g_oc_brush_left_cnt = 0;
 //		if (stop_cnt++ > 250) {
-//			set_right_brush_pwm(30);
+//			set_left_brush_pwm(30);
 //		}
 //		return;
 //	}
 //
 //	stop_cnt = 0;
-//	if (g_oc_brush_right_cnt++ > 40) {
-//		g_oc_brush_right_cnt = 0;
-//		set_right_brush_pwm(0);
-//		ROS_WARN("%s %d: reft brush over current", __FUNCTION__, __LINE__);
+//	if (g_oc_brush_left_cnt++ > 40) {
+//		g_oc_brush_left_cnt = 0;
+//		set_left_brush_pwm(0);
+//		ROS_WARN("%s %d: left brush over current", __FUNCTION__, __LINE__);
 //	}
 //}
-*/
-
-	void overCurrentWheelLeft(bool state_now, bool state_last);
-
-	void overCurrentWheelRight(bool state_now, bool state_last);
-
-	void overCurrentSuction(bool state_now, bool state_last);
-
-/* Key */
-	void keyClean(bool state_now, bool state_last);
-
-/* Remote */
-	void remoteClean(bool state_now, bool state_last);
-
-	void remoteHome(bool state_now, bool state_last);
-
-	void remoteSpot(bool state_now, bool state_last);
-
-	void remoteWallFollow(bool state_now, bool state_last) { df_remote_wall_follow(state_now, state_last); }
-
-	void remoteMax(bool state_now, bool state_last);
-
-	void remoteDirectionLeft(bool state_now, bool state_last) { df_remote_direction_left(state_now, state_last); }
-
-	void remoteDirectionRight(bool state_now, bool state_last) { df_remote_direction_right(state_now, state_last); }
-
-	void remoteDirectionForward(bool state_now, bool state_last) { df_remote_direction_forward(state_now, state_last); }
-
-	void remotePlan(bool state_now, bool state_last) { df_remote_plan(state_now, state_last); }
-
-/* Battery */
-	void batteryHome(bool state_now, bool state_last);
-
-	void batteryLow(bool state_now, bool state_last);
-
-	void chargeDetect(bool state_now, bool state_last);
-
-	void robotSlip(bool state_now, bool state_last) { df_robot_slip(state_now, state_last); }
-
-	void lidarStuck(bool state_now, bool state_last) { df_lidar_stuck(state_now, state_last); }
-};
+//*/
+//
+//	void overCurrentBrushMain(bool state_now, bool state_last);
+//
+//	void overCurrentBrushLeft(bool state_now, bool state_last) { df_over_current_brush_left(state_now, state_last); }
+//
+//	void overCurrentBrushRight(bool state_now, bool state_last) { df_over_current_brush_right(state_now, state_last); }
+//
+///*
+//
+////void overCurrentBrushRight(bool state_now, bool state_last)
+////{
+////	static uint8_t stop_cnt = 0;
+////
+////	ROS_DEBUG("%s %d: is called.", __FUNCTION__, __LINE__);
+////
+////	if(!robot::instance()->getRbrushOc()) {
+////		g_oc_brush_right_cnt = 0;
+////		if (stop_cnt++ > 250) {
+////			set_right_brush_pwm(30);
+////		}
+////		return;
+////	}
+////
+////	stop_cnt = 0;
+////	if (g_oc_brush_right_cnt++ > 40) {
+////		g_oc_brush_right_cnt = 0;
+////		set_right_brush_pwm(0);
+////		ROS_WARN("%s %d: reft brush over current", __FUNCTION__, __LINE__);
+////	}
+////}
+//*/
+//
+//	void overCurrentWheelLeft(bool state_now, bool state_last);
+//
+//	void overCurrentWheelRight(bool state_now, bool state_last);
+//
+//	void overCurrentSuction(bool state_now, bool state_last);
+//
+///* Key */
+//	void keyClean(bool state_now, bool state_last);
+//
+///* Remote */
+//	void remoteClean(bool state_now, bool state_last);
+//
+//	void remoteHome(bool state_now, bool state_last);
+//
+//	void remoteSpot(bool state_now, bool state_last);
+//
+//	void remoteWallFollow(bool state_now, bool state_last) { df_remote_wall_follow(state_now, state_last); }
+//
+//	void remoteMax(bool state_now, bool state_last);
+//
+//	void remoteDirectionLeft(bool state_now, bool state_last) { df_remote_direction_left(state_now, state_last); }
+//
+//	void remoteDirectionRight(bool state_now, bool state_last) { df_remote_direction_right(state_now, state_last); }
+//
+//	void remoteDirectionForward(bool state_now, bool state_last) { df_remote_direction_forward(state_now, state_last); }
+//
+//	void remotePlan(bool state_now, bool state_last) { df_remote_plan(state_now, state_last); }
+//
+///* Battery */
+//	void batteryHome(bool state_now, bool state_last);
+//
+//	void batteryLow(bool state_now, bool state_last);
+//
+//	void chargeDetect(bool state_now, bool state_last);
+//
+//	void robotSlip(bool state_now, bool state_last) { df_robot_slip(state_now, state_last); }
+//
+//	void lidarStuck(bool state_now, bool state_last) { df_lidar_stuck(state_now, state_last); }
+//};
 
 
 #define WALL_DISTANCE_WHITE_MIN 550

@@ -1,17 +1,4 @@
 #include "pp.h"
-
-
-/* Events variables */
-/* The fatal quit event includes any of the following case:
- *  ev.bumper_jam
- * 	ev.cliff_all_triggered
- * 	ev.oc_brush_main
- * 	ev.oc_wheel_left
- * 	ev.oc_wheel_right
- * 	ev.oc_suction
- * 	ev.batteryLow
- */
-/* Bumper */
 int g_bumper_cnt = 0;
 /* OBS */
 uint8_t g_cliff_all_cnt = 0;
