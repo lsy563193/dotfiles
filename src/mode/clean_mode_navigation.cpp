@@ -242,6 +242,7 @@ void CleanModeNav::keyClean(bool state_now, bool state_last)
 	ROS_WARN("%s %d: key clean.", __FUNCTION__, __LINE__);
 
 	beeper.play_for_command(VALID);
+	wheel.stop();
 
 	// Wait for key released.
 	bool long_press = false;
@@ -282,16 +283,24 @@ void CleanModeNav::remoteClean(bool state_now, bool state_last)
 	ROS_WARN("%s %d: remote clean.", __FUNCTION__, __LINE__);
 
 	beeper.play_for_command(VALID);
+	wheel.stop();
 	ev.key_clean_pressed = true;
 	remote.reset();
 }
 
 void CleanModeNav::remoteHome(bool state_now, bool state_last)
 {
-	ROS_WARN("%s %d: remote home.", __FUNCTION__, __LINE__);
-
-	beeper.play_for_command(VALID);
-	ev.remote_home = true;
+	if (state_i_ == st_clean || action_i_ == ac_pause)
+	{
+		ROS_WARN("%s %d: remote home.", __FUNCTION__, __LINE__);
+		beeper.play_for_command(VALID);
+		ev.remote_home = true;
+	}
+	else
+	{
+		ROS_WARN("%s %d: remote home but not valid.", __FUNCTION__, __LINE__);
+		beeper.play_for_command(INVALID);
+	}
 	remote.reset();
 }
 
@@ -313,7 +322,8 @@ void CleanModeNav::chargeDetect(bool state_now, bool state_last)
 
 }
 
-bool CleanModeNav::MovementFollowWallisFinish() {
+bool CleanModeNav::MovementFollowWallisFinish()
+{
 	return isNewLineReach() || isOverOriginLine();
 }
 

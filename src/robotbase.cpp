@@ -566,7 +566,7 @@ void *core_thread(void *)
 		auto next_mode = p_mode->getNextMode();
 		p_mode.reset();
 		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
-		p_mode.reset(robot::instance()->getNextMode(next_mode));
+		p_mode.reset(getNextMode(next_mode));
 		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
 	}
 
@@ -663,6 +663,37 @@ void *core_thread(void *)
 #endif
 
 	return nullptr;
+}
+
+Mode *getNextMode(int next_mode_i_)
+{
+
+	ROS_INFO("%s %d: next mode:%d", __FUNCTION__, __LINE__, next_mode_i_);
+	switch (next_mode_i_)
+	{
+		case Mode::md_charge:
+			return new ModeCharge();
+		case Mode::md_sleep:
+			return new ModeSleep();
+//		case Mode::md_go_to_charger:
+//			return new ModeGoToCharger();
+		case Mode::md_remote:
+			return new ModeRemote();
+
+		case Mode::cm_navigation:
+			return new CleanModeNav();
+		case Mode::cm_wall_follow:
+			return new CleanModeFollowWall();
+		case Mode::cm_spot:
+			return new CleanModeSpot();
+//		case Mode::cm_exploration:
+//			return new CleanModeExploration();
+		default:
+		{
+			ROS_INFO("%s %d: next mode:%d", __FUNCTION__, __LINE__, next_mode_i_);
+			return new ModeIdle();
+		}
+	}
 }
 
 
