@@ -438,7 +438,7 @@ uint8_t CleanModeNav::setFollowWall()
 			if(nav_map.getCell(CLEAN_MAP,cell.X,cell.Y) != BLOCKED_RCON){
 				GridMap::robotToCell(GridMap::cellToPoint(cell), dy * CELL_SIZE, 0, block_cell.X, block_cell.Y);
 				msg += "(" + std::to_string(block_cell.X) + "," + std::to_string(block_cell.Y) + ")";
-				nav_map.setCell(CLEAN_MAP, GridMap::cellToCount(block_cell.X), GridMap::cellToCount(block_cell.Y), BLOCKED_CLIFF);
+				nav_map.setCell(CLEAN_MAP, block_cell.X, block_cell.Y, BLOCKED_CLIFF);
 				block_count++;
 			}
 		}

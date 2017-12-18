@@ -70,7 +70,7 @@ GoHomePathAlgorithm::GoHomePathAlgorithm(GridMap &map, TargetList home_cells)
 	auto map_tmp = map.generateBound();
 	for (const auto &cell : map_tmp) {
 		if (map.getCell(CLEAN_MAP, cell.X, cell.Y) == BLOCKED_RCON)
-			map.setCell(CLEAN_MAP, map.cellToCount(cell.X), map.cellToCount(cell.Y), UNCLEAN);
+			map.setCell(CLEAN_MAP,cell.X,cell.Y, UNCLEAN);
 	}
 
 	// Copy the map data to local go_home_map_.
