@@ -30,12 +30,14 @@ ACleanMode::ACleanMode()
 	go_home_path_algorithm_.reset();
 }
 
-bool ACleanMode::isInitState() {
+bool ACleanMode::isInitState()
+{
 	return action_i_ == ac_open_gyro || action_i_ == ac_back_form_charger || action_i_ == ac_open_lidar ||
 				action_i_ == ac_align;
 }
 
-bool ACleanMode::setNextAction() {
+bool ACleanMode::setNextAction()
+{
 	if(action_i_ == ac_open_gyro)
 	{
 		if (charger.isOnStub())
@@ -51,8 +53,9 @@ bool ACleanMode::setNextAction() {
 		action_i_ = ac_open_slam;
 	else
 	{
-
-		if (ev.fatal_quit)
+		if (isExceptionTriggered())
+			action_i_ = ac_exception_resume;
+		else if (ev.fatal_quit)
 		{
 			PP_INFO();
 			ROS_ERROR("ev.fatal_quit");
@@ -64,7 +67,8 @@ bool ACleanMode::setNextAction() {
 	return action_i_ != ac_null;
 }
 
-void ACleanMode::setNextMode(int next) {
+void ACleanMode::setNextMode(int next)
+{
 	if (ev.charge_detect && charger.isOnStub()) {
 		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
 		Mode::setNextMode(md_charge);
@@ -75,7 +79,8 @@ void ACleanMode::setNextMode(int next) {
 	}
 }
 
-bool ACleanMode::isFinish() {
+bool ACleanMode::isFinish()
+{
 	if (isInitState()) {
 		if (!sp_action_->isFinish())
 			return false;
@@ -91,31 +96,22 @@ bool ACleanMode::isFinish() {
 		PP_INFO();
 		mapMark();
 
-		if (ev.bumper_jam || ev.cliff_jam || ev.oc_wheel_left || ev.oc_wheel_right || ev.oc_suction || ev.lidar_stuck)
+		do
 		{
-			// If all these exception cases happens, directly set next action to exception resume action.
-			// BUT DO NOT CHANGE THE STATE!!! Because after exception resume it should restore the state.
-			action_i_ = ac_exception_resume;
-			genNextAction();
-		}
-		else
-		{
-			do
+			if (!setNextState())
 			{
-				if (!setNextState())
-				{
-					setNextMode(0);
-					return true;
-				}
-			} while (!setNextAction());
-		}
-
+				setNextMode(0);
+				return true;
+			}
+		} while (!setNextAction());
 	}
 	return false;
 }
 
-bool ACleanMode::setNextState() {
+bool ACleanMode::setNextState()
+{
 	PP_INFO();
+
 	if (state_i_ == st_null)
 	{
 		auto curr = nav_map.updatePosition();
@@ -133,6 +129,14 @@ bool ACleanMode::setNextState() {
 		stateInit(state_i_);
 		action_i_ = ac_null;
 		clean_path_algorithm_->displayPath(plan_path_);
+	}
+	else if (isExceptionTriggered())
+	{
+		ROS_INFO("%s %d: Pass this state switching for exception cases.", __FUNCTION__, __LINE__);
+		// Apply for all states.
+		// If all these exception cases happens, directly set next action to exception resume action.
+		// BUT DO NOT CHANGE THE STATE!!! Because after exception resume it should restore the state.
+		action_i_ = ac_null;
 	}
 	else if(state_i_ == st_clean)
 	{
@@ -248,7 +252,8 @@ Cell_t ACleanMode::updatePath()
 	return curr;
 }
 
-void ACleanMode::genNextAction() {
+void ACleanMode::genNextAction()
+{
 
 	PP_INFO();
 	if(action_i_ == ac_open_gyro)
@@ -276,7 +281,6 @@ void ACleanMode::genNextAction() {
 	PP_INFO();
 }
 
-
 void ACleanMode::resetTriggeredValue(void)
 {
 	ev.lidar_triggered = 0;
@@ -287,7 +291,8 @@ void ACleanMode::resetTriggeredValue(void)
 	ev.tilt_triggered = 0;
 }
 
-void ACleanMode::stateInit(int next) {
+void ACleanMode::stateInit(int next)
+{
 	if (next == st_clean) {
 		g_wf_reach_count = 0;
 		led.set_mode(LED_STEADY, LED_GREEN);

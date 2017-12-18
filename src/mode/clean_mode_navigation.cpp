@@ -15,9 +15,7 @@ CleanModeNav::CleanModeNav()
 	event_manager_set_enable(true);
 	PP_INFO();
 	ROS_INFO("%s %d: Entering Navigation mode\n=========================" , __FUNCTION__, __LINE__);
-	IMoveType::sp_cm_.reset(this);
-	// TODO: Remove these old checking.
-	// TODO: had remove
+	IMoveType::sp_mode_.reset(this);
 	if(g_plan_activated)
 	{
 		g_plan_activated = false;
@@ -201,17 +199,16 @@ bool CleanModeNav::setNextAction()
 				paused_ = false;
 			PP_INFO();
 		}
-		if (state_i_ == st_clean)
+		if (isExceptionTriggered())
+			action_i_ = ac_exception_resume;
+		else if (state_i_ == st_clean)
 		{
 			auto start = nav_map.getCurrCell();
-			auto dir = old_dir_;
 			auto delta_y = plan_path_.back().Y - start.Y;
-			ROS_INFO(
-							"%s,%d: path size(%u), dir(%d), g_check_path_in_advance(%d), bumper(%d), cliff(%d), lidar(%d), delta_y(%d)",
-							__FUNCTION__, __LINE__, plan_path_.size(), dir, g_check_path_in_advance, ev.bumper_triggered,
-							ev.cliff_triggered,
-							ev.lidar_triggered, delta_y);
-			if (!GridMap::isXDirection(dir) // If last movement is not x axis linear movement, should not follow wall.
+			ROS_INFO("%s,%d: path size(%u), old_dir_(%d), g_check_path_in_advance(%d), bumper(%d), cliff(%d), lidar(%d), delta_y(%d)",
+							__FUNCTION__, __LINE__, plan_path_.size(), old_dir_, g_check_path_in_advance, ev.bumper_triggered,
+							ev.cliff_triggered, ev.lidar_triggered, delta_y);
+			if (!GridMap::isXDirection(old_dir_) // If last movement is not x axis linear movement, should not follow wall.
 					|| plan_path_.size() > 2 ||
 					(!g_check_path_in_advance && !ev.bumper_triggered && !ev.cliff_triggered && !ev.lidar_triggered)
 					|| delta_y == 0 || std::abs(delta_y) > 2) {
@@ -221,8 +218,8 @@ bool CleanModeNav::setNextAction()
 			{
 				delta_y = plan_path_.back().Y - start.Y;
 				bool is_left = GridMap::isPositiveDirection(old_dir_) ^delta_y > 0;
-				ROS_INFO("\033[31m""%s,%d: target:, 0_left_1_right(%d=%d ^ %d)""\033[0m", __FUNCTION__, __LINE__, is_left,
-								 GridMap::isPositiveDirection(old_dir_), delta_y);
+				ROS_INFO("\033[31m""%s,%d: target:, 0_left_1_right(%d=%d ^ %d)""\033[0m",
+						 __FUNCTION__, __LINE__, is_left, GridMap::isPositiveDirection(old_dir_), delta_y);
 				action_i_ = is_left ? ac_follow_wall_left : ac_follow_wall_right;
 			}
 		}

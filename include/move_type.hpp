@@ -7,8 +7,9 @@
 
 #include "arch.hpp"
 #include "boost/shared_ptr.hpp"
+#include "mode.hpp"
 
-class ACleanMode;
+class Mode;
 class IMoveType:public IAction
 {
 public:
@@ -25,7 +26,7 @@ public:
 //	}
 
 	static boost::shared_ptr<IMovement> sp_movement_;
-	static boost::shared_ptr<ACleanMode> sp_cm_;
+	static boost::shared_ptr<Mode> sp_mode_;
 	static int movement_i_;
 	void resetTriggeredValue();
 	Point32_t start_point_;

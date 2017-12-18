@@ -13,7 +13,7 @@ MovementTurn::MovementTurn(int16_t angle) : speed_(ROTATE_LOW_SPEED), stage_(TUR
 	waiting_start_sec_ = ros::Time::now().toSec();
 	s_target_p.TH = angle;
 	// todo mt
-	auto mt = sp_mt_->sp_cm_->action_i_;
+	auto mt = sp_mt_->sp_mode_->action_i_;
 	if (/*mt.is_follow_wall()*/mt == Mode::ac_follow_wall_left || mt == Mode::ac_follow_wall_right)
 	{
 		wait_sec_ = 1;
@@ -38,7 +38,7 @@ bool MovementTurn::isReach()
 		/*********************************************For wall follow**********************************************/
 		if(line_is_found)
 		{
-			g_wall_distance = (sp_mt_->sp_cm_->action_i_ == Mode::ac_follow_wall_left) ? wall.getLeft() : wall.getRight();
+			g_wall_distance = (sp_mt_->sp_mode_->action_i_ == Mode::ac_follow_wall_left) ? wall.getLeft() : wall.getRight();
 /*			if(g_wall_distance < 10)	//set g_wall_distance in U round
 			{
 				g_wall_distance=last_g_wall_distance;

@@ -19,7 +19,7 @@ public:
 	virtual void adjustSpeed(int32_t&, int32_t&)=0;
 	virtual void run();
 	virtual bool isFinish()=0;
-//	static ACleanMode* sp_cm_;
+//	static ACleanMode* sp_mode_;
 //	static boost::shared_ptr<IMoveType> sp_mt_;
 	static IMoveType* sp_mt_;
 	static Point32_t s_target_p;

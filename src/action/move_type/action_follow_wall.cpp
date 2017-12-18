@@ -238,7 +238,8 @@ int16_t ActionFollowWall::get_turn_angle(bool use_target_angle)
 		ROS_INFO("event_turn_angle(%d)", ev_turn_angle);
 		if(use_target_angle) {
 			auto cur = GridMap::getCurrPoint();
-			auto tar = GridMap::cellToPoint(sp_cm_->plan_path_.back());
+			auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mode_);
+			auto tar = GridMap::cellToPoint(p_clean_mode->plan_path_.back());
 			auto tg_turn_angle = ranged_angle(course_to_dest(cur.X, cur.Y, tar.X, tar.Y) - robot::instance()->getPoseAngle());
 			ROS_INFO("target_turn_angle(%d)", tg_turn_angle);
 			ROS_INFO("choose the big one");

@@ -14,7 +14,8 @@ double robot_to_wall_distance = 0.8;
 MovementFollowWall::MovementFollowWall(bool is_left) : previous_(0), seen_charger_counter(0), is_left_(is_left)
 {
 	s_start_p = GridMap::getCurrPoint();
-	s_target_p = GridMap::cellToPoint(sp_mt_->sp_cm_->plan_path_.front());
+	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mt_->sp_mode_);
+	s_target_p = GridMap::cellToPoint(p_clean_mode->plan_path_.front());
 	start_timer_ = ros::Time::now().toSec();
 	ROS_ERROR("start_timer_(%f)",start_timer_);
 	fw_map.reset(CLEAN_MAP);
@@ -377,7 +378,8 @@ bool MovementFollowWall::sp_turn_over(const Cell_t &curr) {
 	}
 
 bool MovementFollowWall::isFinish() {
-	return sp_mt_->sp_cm_->MovementFollowWallisFinish() || shouldMoveBack() || shouldTurn();
+	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mt_->sp_mode_);
+	return p_clean_mode->MovementFollowWallisFinish() || shouldMoveBack() || shouldTurn();
 //	return isNewLineReach() || /*isClosure(1) ||*/ shouldMoveBack() || shouldTurn()
 //					|| isBlockCleared() || isOverOriginLine();
 }

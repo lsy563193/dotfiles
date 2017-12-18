@@ -12,7 +12,7 @@ extern std::deque <Cell_t> path_points;
 CleanModeFollowWall::CleanModeFollowWall()
 {
 	ROS_INFO("%s %d: Entering Follow wall mode\n=========================" , __FUNCTION__, __LINE__);
-	IMoveType::sp_cm_.reset(this);
+	IMoveType::sp_mode_.reset(this);
 	diff_timer_ = WALL_FOLLOW_TIME;
 	speaker.play(VOICE_CLEANING_WALL_FOLLOW);
 	clean_path_algorithm_ = nullptr;
