@@ -398,7 +398,7 @@ bool CleanModeNav::isBlockCleared()
 {
 	if (!passed_path_.empty())
 	{
-		ROS_INFO("%s %d: passed_path_.back(%d %d)", __FUNCTION__, __LINE__, passed_path_.back().X, passed_path_.back().Y);
+//		ROS_INFO("%s %d: passed_path_.back(%d %d)", __FUNCTION__, __LINE__, passed_path_.back().X, passed_path_.back().Y);
 		return !nav_map.isBlockAccessible(passed_path_.back().X, passed_path_.back().Y);
 	}
 
