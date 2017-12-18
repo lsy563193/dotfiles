@@ -258,6 +258,7 @@ private:
 	bool MovementFollowWallisFinish() override ;
 	bool isNewLineReach();
 	bool isOverOriginLine();
+	bool isBlockCleared();
 	bool enterPause();
 	bool resumePause();
 	bool switchToGoHomePointState();
