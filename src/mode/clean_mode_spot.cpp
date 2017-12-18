@@ -5,8 +5,8 @@
 #include "arch.hpp"
 
 CleanModeSpot::CleanModeSpot() {
-	IMoveType::sp_cm_.reset(this);
-	speaker.play(SPEAKER_CLEANING_SPOT);
+	IMoveType::sp_mode_.reset(this);
+	speaker.play(VOICE_CLEANING_SPOT);
 	clean_path_algorithm_.reset();
 	go_home_path_algorithm_.reset();
 }

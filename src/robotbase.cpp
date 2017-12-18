@@ -544,7 +544,7 @@ void *core_thread(void *)
 		usleep(1000);
 	}
 	//ROS_INFO("Robot sensor ready.");
-	//speaker.play(SPEAKER_WELCOME_ILIFE);
+	//speaker.play(VOICE_WELCOME_ILIFE);
 	usleep(200000);
 
 #if NEW_FRAMEWORK
@@ -555,7 +555,7 @@ void *core_thread(void *)
 	else
 	{
 
-		speaker.play(SPEAKER_PLEASE_START_CLEANING, false);
+		speaker.play(VOICE_PLEASE_START_CLEANING, false);
 		p_mode.reset(new CleanModeNav());
 	}
 
@@ -566,7 +566,7 @@ void *core_thread(void *)
 		auto next_mode = p_mode->getNextMode();
 		p_mode.reset();
 		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
-		p_mode.reset(robot::instance()->getNextMode(next_mode));
+		p_mode.reset(getNextMode(next_mode));
 		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
 	}
 
@@ -574,7 +574,7 @@ void *core_thread(void *)
 	if (charger.isDirected() || charger.isOnStub())
 		cm_set(Clean_Mode_Charging);
 	else if (battery.isReadyToClean())
-		speaker.play(SPEAKER_PLEASE_START_CLEANING);
+		speaker.play(VOICE_PLEASE_START_CLEANING);
 
 	while(ros::ok()){
 		usleep(20000);
@@ -582,7 +582,7 @@ void *core_thread(void *)
 			case Clean_Mode_Idle:
 				ROS_INFO("\n-------idle mode_------\n");
 				serial.setCleanMode(Clean_Mode_Idle);
-//				speaker.play(SPEAKER_TEST_MODE);
+//				speaker.play(VOICE_TEST_MODE);
 				idle();
 				break;
 			case Clean_Mode_WallFollow:
@@ -663,6 +663,37 @@ void *core_thread(void *)
 #endif
 
 	return nullptr;
+}
+
+Mode *getNextMode(int next_mode_i_)
+{
+
+	ROS_INFO("%s %d: next mode:%d", __FUNCTION__, __LINE__, next_mode_i_);
+	switch (next_mode_i_)
+	{
+		case Mode::md_charge:
+			return new ModeCharge();
+		case Mode::md_sleep:
+			return new ModeSleep();
+//		case Mode::md_go_to_charger:
+//			return new ModeGoToCharger();
+		case Mode::md_remote:
+			return new ModeRemote();
+
+		case Mode::cm_navigation:
+			return new CleanModeNav();
+		case Mode::cm_wall_follow:
+			return new CleanModeFollowWall();
+		case Mode::cm_spot:
+			return new CleanModeSpot();
+//		case Mode::cm_exploration:
+//			return new CleanModeExploration();
+		default:
+		{
+			ROS_INFO("%s %d: next mode:%d", __FUNCTION__, __LINE__, next_mode_i_);
+			return new ModeIdle();
+		}
+	}
 }
 
 
@@ -770,6 +801,6 @@ void robotbase_restore_slam_correction()
 }*/
 void *speaker_play_routine(void*)
 {
-	speaker.play_routine();
+	speaker.playRoutine();
 }
 

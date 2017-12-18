@@ -21,7 +21,7 @@ ActionCharge::ActionCharge(bool play_start_wav)
 	ROS_INFO("%s %d: Start charge action.", __FUNCTION__, __LINE__);
 
 	if (play_start_wav)
-		speaker.play(SPEAKER_BATTERY_CHARGE);
+		speaker.play(VOICE_BATTERY_CHARGE);
 	ROS_INFO("%s %d: Start charge action.", __FUNCTION__, __LINE__);
 }
 
@@ -47,14 +47,14 @@ void ActionCharge::run()
 	if (robot_timer.getPlanStatus())
 	{
 		beeper.play_for_command(VALID);
-		speaker.play(SPEAKER_APPOINTMENT_DONE);
+		speaker.play(VOICE_APPOINTMENT_DONE);
 		ROS_WARN("%s %d: Plan received.", __FUNCTION__, __LINE__);
 		robot_timer.resetPlanStatus();
 	}
 	else if (robot_timer.getPlanStatus() == 2)
 	{
 		beeper.play_for_command(VALID);
-		speaker.play(SPEAKER_CANCEL_APPOINTMENT);
+		speaker.play(VOICE_CANCEL_APPOINTMENT);
 		ROS_WARN("%s %d: Plan cancel received.", __FUNCTION__, __LINE__);
 		robot_timer.resetPlanStatus();
 	}

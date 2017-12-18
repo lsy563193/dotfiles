@@ -18,64 +18,63 @@ boost::mutex speaker_list_mutex;
 
 Speaker::Speaker(void)
 {
-	can_pp_run_ = true;
+	can_pp_keep_running_ = true;
 }
 
-void Speaker::play_routine(void)
+void Speaker::playRoutine(void)
 {
 	int	rc, ret, size, dir, channels, frequency, bit, datablock, nread;
 	char	audio_file[64];
 
 	unsigned int	val;
-	SpeakerType action;
-	bool can_be_interrupted;
+	VoiceStruct curr_voice;
 
 	snd_pcm_uframes_t	frames;
 	snd_pcm_hw_params_t	*params;
 
 	while(ros::ok())
 	{
-		if(!can_pp_run_)
+		if(!can_pp_keep_running_)
 		{
 			speaker_list_mutex.lock();
-			action = speaker_list_.front().speakerType;
-			can_be_interrupted = speaker_list_.front().canBeInterrupted;
-			speaker_list_.pop_front();
+			curr_voice.type = list_.front().type;
+			curr_voice.can_be_interrupted = list_.front().can_be_interrupted;
+			list_.pop_front();
 			speaker_list_mutex.unlock();
 
 			/*---pp can go on if the speaker can be interrupt---*/
-			if(can_be_interrupted)
-				can_pp_run_ = true;
+			if(curr_voice.can_be_interrupted)
+				can_pp_keep_running_ = true;
 			dir = 0;
-			snprintf(audio_file, 38, PP_PACKAGE_PATH, action);
+			snprintf(audio_file, 38, PP_PACKAGE_PATH, curr_voice.type);
 			fp_ = fopen(audio_file, "rb");
 			if (fp_ == NULL) {
 				ROS_ERROR("open file failed: %s\n", audio_file);
 				continue;
 			}
 
-			ROS_INFO("%s %d: Play the wav %d.", __FUNCTION__, __LINE__, action);
-			nread = fread(&speaker_header_, 1, sizeof(speaker_header_), fp_);
+			ROS_INFO("%s %d: Play the wav %d.", __FUNCTION__, __LINE__, curr_voice.type);
+			nread = fread(&voice_header_, 1, sizeof(voice_header_), fp_);
 
 			ROS_DEBUG("nread: %d\n", nread);
-			ROS_DEBUG("RIFF Type: %s\n", speaker_header_.riffType);
-			ROS_DEBUG("File Size: %d\n", speaker_header_.riffSize);
-			ROS_DEBUG("Wave Type: %s\n", speaker_header_.waveType);
-			ROS_DEBUG("Format Type: %s\n", speaker_header_.formatType);
-			ROS_DEBUG("Format Size: %d\n",speaker_header_.formatSize);
-			ROS_DEBUG("Compression Code: %d\n", speaker_header_.compressionCode);
-			ROS_DEBUG("Channels: %d\n", speaker_header_.numChannels);
-			ROS_DEBUG("Sample Rate: %d\n", speaker_header_.sampleRate);
-			ROS_DEBUG("Bytes Per Sample: %d\n", speaker_header_.bytesPerSecond);
-			ROS_DEBUG("Block Align: %d\n", speaker_header_.blockAlign);
-			ROS_DEBUG("Bits Per Sample: %d\n", speaker_header_.bitsPerSample);
-			ROS_DEBUG("Data Type: %s\n", speaker_header_.dataType);
-			ROS_DEBUG("Data Size: %d\n", speaker_header_.dataSize);
+			ROS_DEBUG("RIFF Type: %s\n", voice_header_.riff_type);
+			ROS_DEBUG("File Size: %d\n", voice_header_.riff_size);
+			ROS_DEBUG("Wave Type: %s\n", voice_header_.wave_type);
+			ROS_DEBUG("Format Type: %s\n", voice_header_.format_type);
+			ROS_DEBUG("Format Size: %d\n",voice_header_.format_size);
+			ROS_DEBUG("Compression Code: %d\n", voice_header_.compression_code);
+			ROS_DEBUG("Channels: %d\n", voice_header_.num_channels);
+			ROS_DEBUG("Sample Rate: %d\n", voice_header_.sample_rate);
+			ROS_DEBUG("Bytes Per Sample: %d\n", voice_header_.bytes_per_second);
+			ROS_DEBUG("Block Align: %d\n", voice_header_.block_align);
+			ROS_DEBUG("Bits Per Sample: %d\n", voice_header_.bits_per_sample);
+			ROS_DEBUG("Data Type: %s\n", voice_header_.data_type);
+			ROS_DEBUG("Data Size: %d\n", voice_header_.data_size);
 
-			channels = speaker_header_.numChannels;
-			frequency = speaker_header_.sampleRate;
-			bit = speaker_header_.bitsPerSample;
-			datablock = speaker_header_.blockAlign;
+			channels = voice_header_.num_channels;
+			frequency = voice_header_.sample_rate;
+			bit = voice_header_.bits_per_sample;
+			datablock = voice_header_.block_align;
 
 			openPcmDriver();
 
@@ -160,7 +159,7 @@ void Speaker::play_routine(void)
 
 			while (ros::ok()) {
 				/*---new speaker type---*/
-				if(!can_pp_run_ && can_be_interrupted)
+				if(!can_pp_keep_running_ && curr_voice.can_be_interrupted)
 					break;
 				memset(buffer_, 0, sizeof(char)* size);
 				ret = fread(buffer_, 1, size, fp_);
@@ -172,7 +171,7 @@ void Speaker::play_routine(void)
 
 				while ((ret = snd_pcm_writei(handle_, buffer_, ret/datablock)) < 0) {
 					/*---new speaker type---*/
-					if(!can_pp_run_ && can_be_interrupted)
+					if(!can_pp_keep_running_ && curr_voice.can_be_interrupted)
 						break;
 					usleep(2000);
 				  	if (ret == -EPIPE) {
@@ -184,9 +183,9 @@ void Speaker::play_routine(void)
 				}
 			}
 
-			if(can_be_interrupted)
+			if(curr_voice.can_be_interrupted)
 			{
-				/*---can_pp_run_ is already set if speaker can be interrupted, so close pcm driver only---*/
+				/*---can_pp_keep_running_ is already set if speaker can be interrupted, so close pcm driver only---*/
 				closePcmDriver();
 			}
 			else
@@ -201,18 +200,18 @@ void Speaker::play_routine(void)
 	return;
 }
 
-void Speaker::play(SpeakerType wav, bool can_be_interrupted)
+void Speaker::play(VoiceType wav, bool can_be_interrupted)
 {
 	ROS_INFO("%s %d: Ask play_routine to play wav:%d.", __FUNCTION__, __LINE__, wav);
-	SpeakerStatus temp_status;
+	VoiceStruct temp_voice;
 
-	temp_status.speakerType = wav;
-	temp_status.canBeInterrupted = can_be_interrupted;
+	temp_voice.type = wav;
+	temp_voice.can_be_interrupted = can_be_interrupted;
 	speaker_list_mutex.lock();
-	speaker_list_.push_back(temp_status);
+	list_.push_back(temp_voice);
 	speaker_list_mutex.unlock();
-	can_pp_run_ = false;
-	while(!can_pp_run_)
+	can_pp_keep_running_ = false;
+	while(!can_pp_keep_running_)
 		usleep(1000);
 }
 
@@ -311,7 +310,7 @@ void Speaker::adjustVolume(long volume)
 void Speaker::finishPlaying(void)
 {
 	closePcmDriver();
-	can_pp_run_ = true;
+	can_pp_keep_running_ = true;
 }
 
 Speaker speaker;

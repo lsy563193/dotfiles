@@ -57,9 +57,6 @@ public:
 
 	void initOdomPosition();
 
-	// Mode management.
-	Mode* getNextMode(int next_mode_i_);
-
 	// The scale should be between 0 to 1.
 	void updateRobotPose(const float& odom_x, const float& odom_y, const double& odom_yaw,
 						const float& slam_correction_x, const float& slam_correction_y, const double& slam_correction_yaw,

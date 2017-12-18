@@ -5,85 +5,85 @@
 #include <alsa/asoundlib.h>
 
 typedef enum {
-	SPEAKER_WELCOME_ILIFE				= 1,
-	SPEAKER_PLEASE_START_CLEANING		= 2,
-	SPEAKER_CLEANING_FINISHED			= 3,
-	SPEAKER_CLEANING_START				= 4,
-	SPEAKER_CLEANING_WALL_FOLLOW		= 5,
-	SPEAKER_BACK_TO_CHARGER				= 6,
-	SPEAKER_CLEANING_SPOT				= 7,
-	SPEAKER_CLEANING_NAVIGATION			= 8,
-	SPEAKER_APPOINTMENT_DONE			= 9,
-	SPEAKER_VACCUM_MAX					= 10,
-	SPEAKER_BATTERY_LOW					= 11,
-	SPEAKER_BATTERY_CHARGE				= 12,
-	SPEAKER_BATTERY_CHARGE_DONE			= 13,
-	SPEAKER_ERROR_RUBBISH_BIN			= 14,
-	SPEAKER_CLEAN_RUBBISH_BIN			= 15,
-	SPEAKER_ERROR_LEFT_BRUSH			= 16,
-	SPEAKER_ERROR_RIGHT_BRUSH			= 17,
-	SPEAKER_ERROR_LEFT_WHEEL			= 18,
-	SPEAKER_ERROR_RIGHT_WHEEL			= 19,
-	SPEAKER_ERROR_MAIN_BRUSH			= 20,
-	SPEAKER_ERROR_SUCTION_FAN			= 21,
-	SPEAKER_ERROR_BUMPER				= 22,
-	SPEAKER_ERROR_CLIFF					= 23,
-	SPEAKER_ERROR_MOBILITY_WHEEL		= 24,
-	SPEAKER_ERROR_LIFT_UP				= 25,
-	SPEAKER_TEST_MODE					= 26,
-	SPEAKER_CAMERA_CALIBRATION_MODE		= 27,
-	SPEAKER_TEST_MODE_IEC				= 28,
-	SPEAKER_CAMERA_CALIBRATION_START	= 29,
-	SPEAKER_CAMERA_CALIBRATION_SUCCESS	= 30,
-	SPEAKER_CAMERA_CALIBRATION_FAIL		= 31,
-	SPEAKER_TEST_SUCCESS				= 32,
-	SPEAKER_TEST_FAIL					= 33,
-	SPEAKER_WIFI_CONNECTING				= 34,
-	SPEAKER_WIFI_CONNECTED				= 35,
-	SPEAKER_TEST_LIDAR					= 36,
-	SPEAKER_CLEANING_CONTINUE			= 37,
-	SPEAKER_SYSTEM_INITIALIZING			= 38,
-	SPEAKER_BACK_TO_CHARGER_FAILED		= 39,
-	SPEAKER_CLEANING_PAUSE				= 40,
-	SPEAKER_CLEAR_ERROR					= 41,
-	SPEAKER_CANCEL_APPOINTMENT			= 42,
-	SPEAKER_PLAN_CLEANING_START			= 43,
-	SPEAKER_CLEANING_STOP				= 44,
-	SPEAKER_CHECK_SWITCH				= 45,
-	SPEAKER_ROBOT_STUCK					= 46,
-	SPEAKER_EXPLORATION_START			= 47,
-}SpeakerType;
+	VOICE_WELCOME_ILIFE				= 1,
+	VOICE_PLEASE_START_CLEANING		= 2,
+	VOICE_CLEANING_FINISHED			= 3,
+	VOICE_CLEANING_START				= 4,
+	VOICE_CLEANING_WALL_FOLLOW		= 5,
+	VOICE_BACK_TO_CHARGER				= 6,
+	VOICE_CLEANING_SPOT				= 7,
+	VOICE_CLEANING_NAVIGATION			= 8,
+	VOICE_APPOINTMENT_DONE			= 9,
+	VOICE_VACCUM_MAX					= 10,
+	VOICE_BATTERY_LOW					= 11,
+	VOICE_BATTERY_CHARGE				= 12,
+	VOICE_BATTERY_CHARGE_DONE			= 13,
+	VOICE_ERROR_RUBBISH_BIN			= 14,
+	VOICE_CLEAN_RUBBISH_BIN			= 15,
+	VOICE_ERROR_LEFT_BRUSH			= 16,
+	VOICE_ERROR_RIGHT_BRUSH			= 17,
+	VOICE_ERROR_LEFT_WHEEL			= 18,
+	VOICE_ERROR_RIGHT_WHEEL			= 19,
+	VOICE_ERROR_MAIN_BRUSH			= 20,
+	VOICE_ERROR_SUCTION_FAN			= 21,
+	VOICE_ERROR_BUMPER				= 22,
+	VOICE_ERROR_CLIFF					= 23,
+	VOICE_ERROR_MOBILITY_WHEEL		= 24,
+	VOICE_ERROR_LIFT_UP				= 25,
+	VOICE_TEST_MODE					= 26,
+	VOICE_CAMERA_CALIBRATION_MODE		= 27,
+	VOICE_TEST_MODE_IEC				= 28,
+	VOICE_CAMERA_CALIBRATION_START	= 29,
+	VOICE_CAMERA_CALIBRATION_SUCCESS	= 30,
+	VOICE_CAMERA_CALIBRATION_FAIL		= 31,
+	VOICE_TEST_SUCCESS				= 32,
+	VOICE_TEST_FAIL					= 33,
+	VOICE_WIFI_CONNECTING				= 34,
+	VOICE_WIFI_CONNECTED				= 35,
+	VOICE_TEST_LIDAR					= 36,
+	VOICE_CLEANING_CONTINUE			= 37,
+	VOICE_SYSTEM_INITIALIZING			= 38,
+	VOICE_BACK_TO_CHARGER_FAILED		= 39,
+	VOICE_CLEANING_PAUSE				= 40,
+	VOICE_CLEAR_ERROR					= 41,
+	VOICE_CANCEL_APPOINTMENT			= 42,
+	VOICE_PLAN_CLEANING_START			= 43,
+	VOICE_CLEANING_STOP				= 44,
+	VOICE_CHECK_SWITCH				= 45,
+	VOICE_ROBOT_STUCK					= 46,
+	VOICE_EXPLORATION_START			= 47,
+}VoiceType;
 
 typedef struct
 {
-	char			riffType[4];
-	unsigned int	riffSize;
-	char			waveType[4];
-	char			formatType[4];
-	unsigned int	formatSize;
-	unsigned short	compressionCode;
-	unsigned short	numChannels;
-	unsigned int	sampleRate;
-	unsigned int	bytesPerSecond;
-	unsigned short	blockAlign;
-	unsigned short	bitsPerSample;
-	char			dataType[4];
-	unsigned int	dataSize;
-} SpeakerHeaderType;
+	char			riff_type[4];
+	unsigned int	riff_size;
+	char			wave_type[4];
+	char			format_type[4];
+	unsigned int	format_size;
+	unsigned short	compression_code;
+	unsigned short	num_channels;
+	unsigned int	sample_rate;
+	unsigned int	bytes_per_second;
+	unsigned short	block_align;
+	unsigned short	bits_per_sample;
+	char			data_type[4];
+	unsigned int	data_size;
+}VoiceHeaderType;
 
 typedef struct
 {
-	SpeakerType speakerType;
-	bool canBeInterrupted;
-}SpeakerStatus;
+	VoiceType type;
+	bool can_be_interrupted;
+}VoiceStruct;
 
 class Speaker {
 public:
 	Speaker(void);
 
-	void play(SpeakerType wav, bool can_be_interrputed = true);
+	void play(VoiceType wav, bool can_be_interrputed = true);
 
-	void play_routine(void);
+	void playRoutine(void);
 
 private:
 	bool openPcmDriver(void);
@@ -106,11 +106,11 @@ private:
 
 	char *buffer_;
 
-	SpeakerHeaderType speaker_header_; 
+	VoiceHeaderType voice_header_;
 
-	std::list<SpeakerStatus> speaker_list_;
+	std::list<VoiceStruct> list_;
 
-	bool can_pp_run_;
+	bool can_pp_keep_running_;
 };
 
 extern Speaker speaker;

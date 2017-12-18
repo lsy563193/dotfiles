@@ -15,15 +15,13 @@ CleanModeNav::CleanModeNav()
 	event_manager_set_enable(true);
 	PP_INFO();
 	ROS_INFO("%s %d: Entering Navigation mode\n=========================" , __FUNCTION__, __LINE__);
-	IMoveType::sp_cm_.reset(this);
-	// TODO: Remove these old checking.
-	// TODO: had remove
+	IMoveType::sp_mode_.reset(this);
 	if(g_plan_activated)
 	{
 		g_plan_activated = false;
 	}
 	else{
-		speaker.play(SPEAKER_CLEANING_START);
+		speaker.play(VOICE_CLEANING_START);
 	}
 
 	paused_ = false;
@@ -48,23 +46,23 @@ CleanModeNav::~CleanModeNav()
 
 	if (moved_during_pause_)
 	{
-		speaker.play(SPEAKER_CLEANING_STOP);
+		speaker.play(VOICE_CLEANING_STOP);
 		ROS_WARN("%s %d: Moved during pause. Stop cleaning.", __FUNCTION__, __LINE__);
 	}
 	else if (ev.cliff_all_triggered)
 	{
-		speaker.play(SPEAKER_ERROR_LIFT_UP, false);
-		speaker.play(SPEAKER_CLEANING_STOP);
+		speaker.play(VOICE_ERROR_LIFT_UP, false);
+		speaker.play(VOICE_CLEANING_STOP);
 		ROS_WARN("%s %d: Cliff all triggered. Stop cleaning.", __FUNCTION__, __LINE__);
 	}
 	else if (ev.fatal_quit)
 	{
-		speaker.play(SPEAKER_CLEANING_STOP, false);
+		speaker.play(VOICE_CLEANING_STOP, false);
 		error.alarm();
 	}
 	else
 	{
-		speaker.play(SPEAKER_CLEANING_FINISHED);
+		speaker.play(VOICE_CLEANING_FINISHED);
 		ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
 	}
 
@@ -201,17 +199,16 @@ bool CleanModeNav::setNextAction()
 				paused_ = false;
 			PP_INFO();
 		}
-		if (state_i_ == st_clean)
+		if (isExceptionTriggered())
+			action_i_ = ac_exception_resume;
+		else if (state_i_ == st_clean)
 		{
 			auto start = nav_map.getCurrCell();
-			auto dir = old_dir_;
 			auto delta_y = plan_path_.back().Y - start.Y;
-			ROS_INFO(
-							"%s,%d: path size(%u), dir(%d), g_check_path_in_advance(%d), bumper(%d), cliff(%d), lidar(%d), delta_y(%d)",
-							__FUNCTION__, __LINE__, plan_path_.size(), dir, g_check_path_in_advance, ev.bumper_triggered,
-							ev.cliff_triggered,
-							ev.lidar_triggered, delta_y);
-			if (!GridMap::isXDirection(dir) // If last movement is not x axis linear movement, should not follow wall.
+			ROS_INFO("%s,%d: path size(%u), old_dir_(%d), g_check_path_in_advance(%d), bumper(%d), cliff(%d), lidar(%d), delta_y(%d)",
+							__FUNCTION__, __LINE__, plan_path_.size(), old_dir_, g_check_path_in_advance, ev.bumper_triggered,
+							ev.cliff_triggered, ev.lidar_triggered, delta_y);
+			if (!GridMap::isXDirection(old_dir_) // If last movement is not x axis linear movement, should not follow wall.
 					|| plan_path_.size() > 2 ||
 					(!g_check_path_in_advance && !ev.bumper_triggered && !ev.cliff_triggered && !ev.lidar_triggered)
 					|| delta_y == 0 || std::abs(delta_y) > 2) {
@@ -221,8 +218,8 @@ bool CleanModeNav::setNextAction()
 			{
 				delta_y = plan_path_.back().Y - start.Y;
 				bool is_left = GridMap::isPositiveDirection(old_dir_) ^delta_y > 0;
-				ROS_INFO("\033[31m""%s,%d: target:, 0_left_1_right(%d=%d ^ %d)""\033[0m", __FUNCTION__, __LINE__, is_left,
-								 GridMap::isPositiveDirection(old_dir_), delta_y);
+				ROS_INFO("\033[31m""%s,%d: target:, 0_left_1_right(%d=%d ^ %d)""\033[0m",
+						 __FUNCTION__, __LINE__, is_left, GridMap::isPositiveDirection(old_dir_), delta_y);
 				action_i_ = is_left ? ac_follow_wall_left : ac_follow_wall_right;
 			}
 		}
@@ -242,6 +239,7 @@ void CleanModeNav::keyClean(bool state_now, bool state_last)
 	ROS_WARN("%s %d: key clean.", __FUNCTION__, __LINE__);
 
 	beeper.play_for_command(VALID);
+	wheel.stop();
 
 	// Wait for key released.
 	bool long_press = false;
@@ -282,16 +280,24 @@ void CleanModeNav::remoteClean(bool state_now, bool state_last)
 	ROS_WARN("%s %d: remote clean.", __FUNCTION__, __LINE__);
 
 	beeper.play_for_command(VALID);
+	wheel.stop();
 	ev.key_clean_pressed = true;
 	remote.reset();
 }
 
 void CleanModeNav::remoteHome(bool state_now, bool state_last)
 {
-	ROS_WARN("%s %d: remote home.", __FUNCTION__, __LINE__);
-
-	beeper.play_for_command(VALID);
-	ev.remote_home = true;
+	if (state_i_ == st_clean || action_i_ == ac_pause)
+	{
+		ROS_WARN("%s %d: remote home.", __FUNCTION__, __LINE__);
+		beeper.play_for_command(VALID);
+		ev.remote_home = true;
+	}
+	else
+	{
+		ROS_WARN("%s %d: remote home but not valid.", __FUNCTION__, __LINE__);
+		beeper.play_for_command(INVALID);
+	}
 	remote.reset();
 }
 
@@ -313,7 +319,8 @@ void CleanModeNav::chargeDetect(bool state_now, bool state_last)
 
 }
 
-bool CleanModeNav::MovementFollowWallisFinish() {
+bool CleanModeNav::MovementFollowWallisFinish()
+{
 	return isNewLineReach() || isOverOriginLine();
 }
 
@@ -383,7 +390,7 @@ bool CleanModeNav::isNewLineReach()
 bool CleanModeNav::resumePause()
 {
 	ev.key_clean_pressed = false;
-	speaker.play(SPEAKER_CLEANING_CONTINUE);
+	speaker.play(VOICE_CLEANING_CONTINUE);
 	ROS_INFO("%s %d: Resume cleaning.", __FUNCTION__, __LINE__);
 	action_i_ = ac_open_gyro;
 	genNextAction();
@@ -410,7 +417,7 @@ bool CleanModeNav::switchToGoHomePointState()
 bool CleanModeNav::enterPause()
 {
 	ev.key_clean_pressed = false;
-	speaker.play(SPEAKER_CLEANING_PAUSE);
+	speaker.play(VOICE_CLEANING_PAUSE);
 	ROS_INFO("%s %d: Key clean pressed, pause cleaning.", __FUNCTION__, __LINE__);
 	paused_ = true;
 	paused_odom_angle_ = odom.getAngle();

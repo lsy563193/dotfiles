@@ -38,17 +38,6 @@ Cell_t g_home_point;
 std::deque <Cell_t> path_points;
 double bumper_turn_factor = 0.85;
 
-void path_display_path_points(const std::deque<Cell_t>& path)
-{
-	std::string     msg = __FUNCTION__;
-
-	msg += " " + std::to_string(__LINE__) + ": Path size(" + std::to_string(path.size()) + "):";
-	for (auto it = path.begin(); it != path.end(); ++it) {
-		msg += "(" + std::to_string(it->X) + ", " + std::to_string(it->Y) + ", " + std::to_string(it->TH) + ")->";
-	}
-	//msg += "\n";
-	ROS_INFO("%s",msg.c_str());
-}
 bool fw_is_time_up()
 {
 	return ((uint32_t)difftime(time(NULL), g_wf_start_timer)) > g_wf_diff_timer;
