@@ -59,7 +59,7 @@ class ActionFollowWall:public IMoveType
 public:
 	ActionFollowWall() = delete;
 
-	explicit ActionFollowWall(bool is_left);
+	explicit ActionFollowWall(bool is_left, bool is_trapped);
 
 	bool isFinish() override;
 

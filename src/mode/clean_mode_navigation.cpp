@@ -223,6 +223,8 @@ bool CleanModeNav::setNextAction()
 				action_i_ = is_left ? ac_follow_wall_left : ac_follow_wall_right;
 			}
 		}
+		else if (state_i_ == st_trapped)
+			action_i_ = ac_follow_wall_left;
 		else if (state_i_ == st_go_home_point)
 			action_i_ = ac_linear;
 		else if (state_i_ == st_go_to_charger)
@@ -321,7 +323,12 @@ void CleanModeNav::chargeDetect(bool state_now, bool state_last)
 
 bool CleanModeNav::MovementFollowWallisFinish()
 {
-	return isNewLineReach() || isOverOriginLine();
+	if (state_i_ == st_trapped)
+		return isBlockCleared();
+	else
+		return isNewLineReach() || isOverOriginLine();
+
+	return false;
 }
 
 bool CleanModeNav::isOverOriginLine()
@@ -385,6 +392,17 @@ bool CleanModeNav::isNewLineReach()
 	}
 
 	return ret;
+}
+
+bool CleanModeNav::isBlockCleared()
+{
+	if (!passed_path_.empty())
+	{
+		ROS_INFO("%s %d: passed_path_.back(%d %d)", __FUNCTION__, __LINE__, passed_path_.back().X, passed_path_.back().Y);
+		return !nav_map.isBlockAccessible(passed_path_.back().X, passed_path_.back().Y);
+	}
+
+	return false;
 }
 
 bool CleanModeNav::resumePause()

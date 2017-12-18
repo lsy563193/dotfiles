@@ -35,7 +35,6 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell, 
 	ROS_INFO("%s %d: After generating COST_MAP, Get %lu reachable targets.", __FUNCTION__, __LINE__, reachable_targets.size());
 	if (reachable_targets.size() != 0)
 		displayTargets(reachable_targets);
-//		displayPath(reachable_targets);
 	else
 		// Now plan_path is empty.
 		return false;
