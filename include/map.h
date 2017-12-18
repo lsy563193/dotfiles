@@ -181,7 +181,7 @@ public:
 	uint8_t setBlocks();
 
 
-	void setCleaned(std::deque<Cell_t> &cells);
+	void setCleaned(std::deque<Cell_t> cells);
 
 	uint32_t getCleanedArea();
 

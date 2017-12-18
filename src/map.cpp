@@ -1019,7 +1019,7 @@ uint8_t GridMap::setBlocks()
 }
 
 
-void GridMap::setCleaned(std::deque<Cell_t> &cells)
+void GridMap::setCleaned(std::deque<Cell_t> cells)
 {
 	if(cells.empty())
 		return;

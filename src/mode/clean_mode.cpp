@@ -240,6 +240,7 @@ Cell_t ACleanMode::updatePath()
 //	PP_INFO();
 	auto curr = nav_map.updatePosition();
 	auto point = nav_map.getCurrPoint();
+	robot::instance()->pubCleanMapMarkers(nav_map, plan_path_);
 //	PP_INFO();
 //	ROS_INFO("curr(%d,%d,%d)",curr.X, curr.Y, curr.TH);
 //	ROS_INFO("last(%d,%d,%d)",last_.X, last_.Y, last_.TH);

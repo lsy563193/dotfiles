@@ -236,7 +236,7 @@ public:
 	CleanModeNav();
 	~CleanModeNav() override ;
 
-	uint8_t setFollowWall();
+	uint8_t setFollowWall(const Path_t& path);
 	bool mapMark() override ;
 	bool isFinish() override ;
 	bool isExit();
