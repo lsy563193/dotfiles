@@ -225,17 +225,6 @@ protected:
 		st_exploration,
 	};
 
-protected:
-
-	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_;
-	boost::shared_ptr<APathAlgorithm> go_home_path_algorithm_;
-	uint8_t saveFollowWall(bool is_left);
-	virtual bool isInitState();
-	void stateInit(int);
-	std::vector<Cell_t> temp_fw_cells;
-	TargetList home_cells_;
-	static Cell_t last_;
-
 private:
 	void register_events(void);
 
