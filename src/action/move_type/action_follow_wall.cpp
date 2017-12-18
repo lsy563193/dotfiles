@@ -11,7 +11,7 @@
 int16_t ActionFollowWall::bumper_turn_angle(bool is_left)
 {
 	int16_t turn_angle{};
-	static int bumper_jam_cnt_ = 0;
+//	static int bumper_jam_cnt_ = 0;
 	auto get_wheel_step = is_left_ ? &Wheel::getRightStep : &Wheel::getLeftStep;
 	auto get_obs = (is_left_) ? &Obs::getLeft : &Obs::getRight;
 	auto get_obs_value = (is_left_) ? &Obs::getLeftTrigValue : &Obs::getRightTrigValue;
@@ -22,18 +22,18 @@ int16_t ActionFollowWall::bumper_turn_angle(bool is_left)
 	if (status == BLOCK_ALL)
 	{
 		turn_angle = -600;
-		bumper_jam_cnt_ = (wheel.*get_wheel_step)() < 2000 ? ++bumper_jam_cnt_ : 0;
-		g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
+//		bumper_jam_cnt_ = (wheel.*get_wheel_step)() < 2000 ? ++bumper_jam_cnt_ : 0;
+//		g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
 	} else if (status == diff_side)
 	{
 		turn_angle = -850;
-		g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
+//		g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
 	} else if (status == same_side)
 	{
-		g_wall_distance = bumper_turn_factor * g_wall_distance;
-		if(g_wall_distance < 330)
-			g_wall_distance = WALL_DISTANCE_LOW_LIMIT;
-		turn_angle =0;
+//		g_wall_distance = bumper_turn_factor * g_wall_distance;
+//		if(g_wall_distance < 330)
+//			g_wall_distance = WALL_DISTANCE_LOW_LIMIT;
+		turn_angle = -300;
 //		if (!cs.is_trapped()) {
 //			turn_angle = (bumper_jam_cnt_ >= 3 || (obs.*get_obs)() <= (obs.*get_obs_value)()) ? -180 : -280;
 //		} else {
@@ -41,7 +41,7 @@ int16_t ActionFollowWall::bumper_turn_angle(bool is_left)
 //		}
 		//ROS_INFO("%s, %d: turn_angle(%d)",__FUNCTION__,__LINE__, turn_angle);
 
-		bumper_jam_cnt_ = (wheel.*get_wheel_step)() < 2000 ? ++bumper_jam_cnt_ : 0;
+//		bumper_jam_cnt_ = (wheel.*get_wheel_step)() < 2000 ? ++bumper_jam_cnt_ : 0;
 	}
 	//ROS_INFO("%s %d: g_wall_distance in bumper_turn_angular: %d", __FUNCTION__, __LINE__, g_wall_distance);
 	wheel.resetStep();

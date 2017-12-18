@@ -10,7 +10,7 @@ MovementForward::MovementForward():
 {
 //	sp_mt_->sp_cm_->plan_path_ = path;
 //	s_target_p = GridMap::cellToPoint(sp_mt_->sp_cm_->plan_path_.back());
-	PP_INFO()
+	PP_INFO();
 //	sp_mt_->sp_cm_->plan_path_display_sp_mt_->sp_cm_->plan_path_points();
 //	g_is_should_follow_wall = false;
 //	s_target = target;

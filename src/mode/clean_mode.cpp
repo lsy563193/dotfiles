@@ -239,7 +239,9 @@ Cell_t ACleanMode::updatePath()
 			passed_path_.clear();
 			g_wf_reach_count++;
 		}
+		PP_INFO();
 		nav_map.saveBlocks(action_i_ == ac_linear);
+		PP_INFO();
 //		displayPath(passed_path_);
 	}
 //	else

@@ -47,7 +47,7 @@ bool ActionLinear::isFinish() {
 			}
 		}
 		else {//back
-			resetTriggeredValue();
+//			resetTriggeredValue();
 			PP_INFO();
 //			resetTriggeredValue();
 			return true;

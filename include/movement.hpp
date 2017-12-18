@@ -85,9 +85,8 @@ private:
 class MovementTurn: public IMovement{
 public:
 
-	MovementTurn(int16_t angle);
+	MovementTurn(int16_t target_angle);
 	void adjustSpeed(int32_t&, int32_t&) override;
-	void setTarget();
 	bool isReach();
 	bool shouldMoveBack();
 	bool isFinish() override;
@@ -95,12 +94,7 @@ public:
 private:
 	uint16_t accurate_;
 	uint8_t speed_;
-	uint8_t stage_;
-	double wait_sec_;
-	double waiting_start_sec_;
-	bool waiting_finished_;
-	// It will use lidar points to get the turn angle for every skip_lidar_turn_angle_cnt_ times.
-	uint8_t skip_lidar_turn_angle_cnt_;
+	int16_t target_angle_;
 };
 
 class MovementFollowWall:public IMovement {

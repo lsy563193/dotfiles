@@ -79,7 +79,7 @@ bool CleanModeNav::mapMark()
 {
 	clean_path_algorithm_->displayPath(passed_path_);
 	if (action_i_ == ac_linear) {
-		PP_INFO()
+		PP_INFO();
 		nav_map.setCleaned(passed_path_);
 	}
 
@@ -92,7 +92,7 @@ bool CleanModeNav::mapMark()
 	if (state_i_ == st_trapped)
 		fw_map.setFollowWall(action_i_ == ac_follow_wall_left);
 
-	PP_INFO()
+	PP_INFO();
 	nav_map.print(CLEAN_MAP, nav_map.getXCell(), nav_map.getYCell());
 
 	passed_path_.clear();

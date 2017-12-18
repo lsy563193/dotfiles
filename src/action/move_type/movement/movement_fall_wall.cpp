@@ -157,7 +157,7 @@ void MovementFollowWall::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 			return ;
 		}
 	}
-	ROS_INFO("%s,%d, speed(%d,%d)", __FUNCTION__, __LINE__, diff_speed,same_speed);
+//	ROS_INFO("%s,%d, speed(%d,%d)", __FUNCTION__, __LINE__, diff_speed,same_speed);
 	if(seen_charger_counter)
 	{
 		seen_charger_counter--;
@@ -362,7 +362,7 @@ void MovementFollowWall::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 			same_speed = 0.210 * diff_speed;
 		}
 	}
-	ROS_INFO("%s,%d, speed(%d,%d)", __FUNCTION__, __LINE__, diff_speed,same_speed);
+//	ROS_INFO("%s,%d, speed(%d,%d)", __FUNCTION__, __LINE__, diff_speed,same_speed);
 }
 
 bool MovementFollowWall::sp_turn_over(const Cell_t &curr) {
