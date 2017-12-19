@@ -358,19 +358,4 @@ void event_manager_reset_status(void);
 
 /* Bumper */
 
-void df_rcon(bool state_now, bool state_last);
-void df_over_current_brush_left(bool state_now, bool state_last);
-void df_over_current_brush_right(bool state_now, bool state_last);
-void df_remote_plan(bool state_now, bool state_last);
-void df_remote_clean(bool state_now, bool state_last);
-void df_remote_home(bool state_now, bool state_last);
-void df_remote_direction_forward(bool state_now, bool state_last);
-void df_remote_wall_follow(bool state_now, bool state_last);
-void df_remote_direction_left(bool state_now, bool state_last);
-void df_remote_direction_right(bool state_now, bool state_last);
-void df_remote_spot(bool state_now, bool state_last);
-void df_remote_max(bool state_now, bool state_last);
-void df_charge_detect(bool state_now, bool state_last);
-void df_robot_slip(bool state_new,bool state_last);
-void df_lidar_stuck(bool state_new,bool state_last);
 #endif
