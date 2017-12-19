@@ -97,16 +97,9 @@ robot::robot(std::string serial_port, int baudrate, std::string lidar_bumper_dev
 	// Init for event manager.
 	event_manager_init();
 	pthread_t event_manager_thread_id, event_handler_thread_id;
-	int ret1 = pthread_create(&event_manager_thread_id, 0, event_manager_thread, NULL);
-	if (ret1 != 0)
-		ROS_ERROR("%s %d: event_manager_thread fails to run!", __FUNCTION__, __LINE__);
-	else
-		ROS_INFO("%s %d: \033[32mevent_manager_thread\033[0m is up!", __FUNCTION__, __LINE__);
-	ret1 = pthread_create(&event_handler_thread_id, 0, event_handler_thread, NULL);
-	if (ret1 != 0)
-		ROS_ERROR("%s %d: event_handler_thread fails to run!", __FUNCTION__, __LINE__);
-	else
-		ROS_INFO("%s %d: \033[32mevent_handler_thread\033[0m is up!", __FUNCTION__, __LINE__);
+	auto event_manager_th = new boost::thread(event_manager_thread_cb);
+	event_manager_th->detach();
+//	event_manager_th.detach();
 
 	// Init for robotbase.
 	robotbase_reset_send_stream();
@@ -114,11 +107,8 @@ robot::robot(std::string serial_port, int baudrate, std::string lidar_bumper_dev
 
 	// Init for core thread.
 	pthread_t core_move_thread_id;
-	ret1 = pthread_create(&core_move_thread_id, 0, core_thread, NULL);
-	if (ret1 != 0)
-		ROS_ERROR("%s %d: core_thread fails to run!", __FUNCTION__, __LINE__);
-	else
-		ROS_INFO("%s %d: \033[32mcore_thread\033[0m is up!", __FUNCTION__, __LINE__);
+	auto core_thread = new boost::thread(core_thread_cb);
+	core_thread->detach();
 	ROS_INFO("%s %d: robot init done!", __FUNCTION__, __LINE__);
 }
 
@@ -143,7 +133,14 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 	obs.DynamicAdjust(OBS_adjust_count);
 
 	// Check for whether robot should publish this frame of scan.
-	scan_ctrl_.allow_publishing = check_pub_scan();
+		scan_ctrl_.allow_publishing =
+						!(fabs(wheel.getLeftWheelActualSpeed() - wheel.getRightWheelActualSpeed()) > 0.1
+					|| (wheel.getLeftWheelActualSpeed() * wheel.getRightWheelActualSpeed() < 0)
+					|| bumper.get_status()
+					|| gyro.getTiltCheckingStatus()
+					|| abs(wheel.getLeftSpeedAfterPid() - wheel.getRightSpeedAfterPid()) > 100
+					|| wheel.getLeftSpeedAfterPid() * wheel.getRightSpeedAfterPid() < 0);
+
 	scan_ctrl_pub_.publish(scan_ctrl_);
 }
 

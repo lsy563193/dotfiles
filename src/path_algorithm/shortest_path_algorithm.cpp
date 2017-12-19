@@ -5,8 +5,8 @@
 #include "ros/ros.h"
 #include "path_algorithm.h"
 
-Path_t APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start,
-																							 const Cell_t &target, const MapDirection &last_dir, bool use_unknown)
+Path_t APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const Cell_t &target,
+										const MapDirection &last_dir, bool use_unknown)
 {
 	Path_t path_;
 	path_.clear();
@@ -323,4 +323,3 @@ bool APathAlgorithm::checkTrappedUsingDijkstra(GridMap &map, const Cell_t &curr_
 					 __FUNCTION__, __LINE__, dijkstra_cleaned_count, map_cleand_count, clean_proportion);
 	return (clean_proportion < 0.8);
 }
-

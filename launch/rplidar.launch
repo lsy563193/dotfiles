@@ -9,9 +9,9 @@
 		<param name="LIDAR_OFFSET_X"      type="double" value="0"/>
 		<param name="LIDAR_OFFSET_Y"      type="double" value="0"/>
 		<param name="LIDAR_OFFSET_THETA"  type="double" value="0"/>
-		<param name="block_angle_1"       type="int"    value="165"/>
-		<param name="block_angle_2"       type="int"    value="45"/>
-		<param name="block_angle_3"       type="int"    value="285"/>
+		<param name="block_angle_1"       type="int"    value="9"/>
+		<param name="block_angle_2"       type="int"    value="129"/>
+		<param name="block_angle_3"       type="int"    value="250"/>
 		<param name="block_range"         type="int"    value="33"/>
 	</node>
 </launch>

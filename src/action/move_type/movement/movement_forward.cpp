@@ -11,47 +11,56 @@ MovementForward::MovementForward():
 //	sp_mt_->sp_cm_->plan_path_ = path;
 //	s_target_p = GridMap::cellToPoint(sp_mt_->sp_cm_->plan_path_.back());
 	PP_INFO();
+	tmp_target_ = updateTmpTarget();
 //	sp_mt_->sp_cm_->plan_path_display_sp_mt_->sp_cm_->plan_path_points();
 //	g_is_should_follow_wall = false;
 //	s_target = target;
 //	sp_mt_->sp_cm_->plan_path_ = path;
 }
 
-void MovementForward::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
+Point32_t MovementForward::updateTmpTarget()
 {
-//	PP_INFO();
-//	ROS_WARN("%s,%d: g_p_clean_mode->plan_path_size(%d)",__FUNCTION__, __LINE__,p_clean_mode->plan_path_.size());
 
 	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mt_->sp_mode_);
 	auto new_dir = p_clean_mode->new_dir_;
-	auto s_curr_p = nav_map.getCurrPoint();
-	wheel.setDirectionForward();
-	auto curr = (GridMap::isXDirection(new_dir)) ? s_curr_p.X : s_curr_p.Y;
-	auto target_p = nav_map.cellToPoint(p_clean_mode->plan_path_.front());
-	auto &target = (GridMap::isXDirection(new_dir)) ? target_p.X : target_p.Y;
+	auto curr_p = nav_map.getCurrPoint();
+	auto curr = (GridMap::isXDirection(new_dir)) ? curr_p.X : curr_p.Y;
+	auto tmp_target = nav_map.cellToPoint(p_clean_mode->plan_path_.front());
+	auto &target = (GridMap::isXDirection(new_dir)) ? tmp_target.X : tmp_target.Y;
 
-
-	int16_t angle_diff = 0;
 	int16_t dis = std::min(std::abs(curr - target), (int32_t) (1.5 * CELL_COUNT_MUL));
 	if (!GridMap::isPositiveDirection(new_dir))
 		dis *= -1;
 	target = curr + dis;
 
-	angle_diff = ranged_angle(
-					course_to_dest(s_curr_p.X, s_curr_p.Y, target_p.X, target_p.Y) - robot::instance()->getPoseAngle());
+	return tmp_target;
+
+}
+
+void MovementForward::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
+{
+//	PP_INFO();
+//	ROS_WARN("%s,%d: g_p_clean_mode->plan_path_size(%d)",__FUNCTION__, __LINE__,p_clean_mode->plan_path_.size());
+	wheel.setDirectionForward();
+
+	tmp_target_ = updateTmpTarget();
+
+	auto curr_p = nav_map.getCurrPoint();
+	auto angle_diff = ranged_angle(
+					course_to_dest(curr_p.X, curr_p.Y, tmp_target_.X, tmp_target_.Y) - robot::instance()->getPoseAngle());
 
 //	ROS_WARN("curr(%d),x?(%d),pos(%d),dis(%d), target_p(%d,%d)", curr, GridMap::isXDirection(new_dir), GridMap::isPositiveDirection(new_dir), dis, target_p.X, target_p.Y);
-//	auto dis_diff = GridMap::isXDirection(new_dir) ? s_curr_p.Y - cm_target_p_.Y : s_curr_p.X - cm_target_p_.X;
+//	auto dis_diff = GridMap::isXDirection(new_dir) ? curr_p.Y - cm_target_p_.Y : curr_p.X - cm_target_p_.X;
 //	dis_diff = GridMap::isPositiveDirection(new_dir) ^ GridMap::isXDirection(new_dir) ? dis_diff :  -dis_diff;
 
 	if (integration_cycle_++ > 10) {
-		auto t = nav_map.pointToCell(target_p);
-		robot::instance()->pubCleanMapMarkers(nav_map, p_clean_mode->plan_path_, &t);
+//		auto t = nav_map.pointToCell(tmp_target_);
+//		robot::instance()->pubCleanMapMarkers(nav_map, p_clean_mode->plan_path_, &t);
 		integration_cycle_ = 0;
 		integrated_ += angle_diff;
 		check_limit(integrated_, -150, 150);
 	}
-	auto distance = two_points_distance(s_curr_p.X, s_curr_p.Y, target_p.X, target_p.Y);
+	auto distance = two_points_distance(curr_p.X, curr_p.Y, tmp_target_.X, tmp_target_.Y);
 	auto obstalce_distance_front = lidar.getObstacleDistance(0,ROBOT_RADIUS);
 	uint8_t obs_state = obs.getStatus();
 	bool is_decrease_blocked = decrease_map.isFrontBlocked();
@@ -106,11 +115,8 @@ bool MovementForward::isCellReach()
 {
 	// Checking if robot has reached target cell.
 	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mt_->sp_mode_);
-	auto new_dir = p_clean_mode->new_dir_;
 	auto s_curr_p = nav_map.getCurrPoint();
-	auto curr = (GridMap::isXDirection(new_dir)) ? s_curr_p.X : s_curr_p.Y;
 	auto target_p = nav_map.cellToPoint(p_clean_mode->plan_path_.back());
-	auto target = (GridMap::isXDirection(new_dir)) ? target_p.X : target_p.Y;
 	if (std::abs(s_curr_p.X - target_p.X) < CELL_COUNT_MUL_1_2 &&
 		std::abs(s_curr_p.Y - target_p.Y) < CELL_COUNT_MUL_1_2)
 	{

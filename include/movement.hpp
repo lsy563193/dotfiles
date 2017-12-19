@@ -29,8 +29,11 @@ protected:
 	static float s_pos_y;
 //	static Path_t path_;
 };
-
-class MovementForward: public IMovement{
+class IFollowPoint{
+public:
+	virtual Point32_t updateTmpTarget()=0;
+};
+class MovementForward: public IMovement,public IFollowPoint{
 public:
 //	MovementForward(Point32_t);
 	MovementForward();
@@ -38,6 +41,7 @@ public:
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
 	bool isFinish();
 
+	Point32_t tmp_target_{};
 	bool isRconStop();
 	bool isOBSStop();
 	bool isLidarStop();
@@ -50,6 +54,8 @@ public:
 
 	bool isCellReach();
 	bool isPoseReach();
+
+	Point32_t updateTmpTarget();
 
 private:
 

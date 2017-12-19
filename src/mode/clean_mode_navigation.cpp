@@ -76,17 +76,27 @@ CleanModeNav::~CleanModeNav()
 bool CleanModeNav::mapMark()
 {
 	clean_path_algorithm_->displayPath(passed_path_);
-	if (action_i_ == ac_linear) {
-		PP_INFO();
+	robot::instance()->pubCleanMapMarkers(nav_map, plan_path_);
+//	if (action_i_ == ac_linear) {
+	PP_WARN();
 		nav_map.setCleaned(passed_path_);
-	}
+//	}
 
 	if (state_i_ == st_trapped)
 		nav_map.markRobot(CLEAN_MAP);
 
 	nav_map.setBlocks();
 	if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
-		setFollowWall();
+	{
+		ROS_ERROR("-------------------------------------------------------");
+		auto start = *passed_path_.begin();
+		passed_path_.erase(std::remove_if(passed_path_.begin(),passed_path_.end(),[&start](Cell_t& it){
+			return it == start;
+		}),passed_path_.end());
+		clean_path_algorithm_->displayPath(passed_path_);
+		ROS_ERROR("-------------------------------------------------------");
+		setFollowWall(passed_path_);
+	}
 	if (state_i_ == st_trapped)
 		fw_map.setFollowWall(action_i_ == ac_follow_wall_left);
 
@@ -174,7 +184,11 @@ bool CleanModeNav::setNextAction()
 		else if (action_i_ == ac_open_lidar)
 		{
 			if (!has_aligned_and_open_slam)
-				action_i_ = ac_align;
+			{
+				//todo for test
+//				action_i_ = ac_align;
+				action_i_ = ac_open_slam;
+			}
 			else if (paused_)
 			{
 				action_i_ = ac_null;
@@ -223,6 +237,8 @@ bool CleanModeNav::setNextAction()
 				action_i_ = is_left ? ac_follow_wall_left : ac_follow_wall_right;
 			}
 		}
+		else if (state_i_ == st_trapped)
+			action_i_ = ac_follow_wall_left;
 		else if (state_i_ == st_go_home_point)
 			action_i_ = ac_linear;
 		else if (state_i_ == st_go_to_charger)
@@ -321,7 +337,12 @@ void CleanModeNav::chargeDetect(bool state_now, bool state_last)
 
 bool CleanModeNav::MovementFollowWallisFinish()
 {
-	return isNewLineReach() || isOverOriginLine();
+	if (state_i_ == st_trapped)
+		return isBlockCleared();
+	else
+		return isNewLineReach() || isOverOriginLine();
+
+	return false;
 }
 
 bool CleanModeNav::isOverOriginLine()
@@ -387,6 +408,17 @@ bool CleanModeNav::isNewLineReach()
 	return ret;
 }
 
+bool CleanModeNav::isBlockCleared()
+{
+	if (!passed_path_.empty())
+	{
+//		ROS_INFO("%s %d: passed_path_.back(%d %d)", __FUNCTION__, __LINE__, passed_path_.back().X, passed_path_.back().Y);
+		return !nav_map.isBlockAccessible(passed_path_.back().X, passed_path_.back().Y);
+	}
+
+	return false;
+}
+
 bool CleanModeNav::resumePause()
 {
 	ev.key_clean_pressed = false;
@@ -426,15 +458,15 @@ bool CleanModeNav::enterPause()
 	return ACleanMode::isFinish();
 }
 
-uint8_t CleanModeNav::setFollowWall()
+uint8_t CleanModeNav::setFollowWall(const Path_t& path)
 {
 	uint8_t block_count = 0;
-	if (!passed_path_.empty())
+	if (!path.empty())
 	{
 		std::string msg = "cell:";
 		Cell_t block_cell;
 		auto dy = action_i_ == ac_follow_wall_left ? 2 : -2;
-		for(auto& cell : passed_path_){
+		for(auto& cell : path){
 			if(nav_map.getCell(CLEAN_MAP,cell.X,cell.Y) != BLOCKED_RCON){
 				GridMap::robotToCell(GridMap::cellToPoint(cell), dy * CELL_SIZE, 0, block_cell.X, block_cell.Y);
 				msg += "(" + std::to_string(block_cell.X) + "," + std::to_string(block_cell.Y) + ")";

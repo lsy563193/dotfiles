@@ -236,7 +236,7 @@ public:
 	CleanModeNav();
 	~CleanModeNav() override ;
 
-	uint8_t setFollowWall();
+	uint8_t setFollowWall(const Path_t& path);
 	bool mapMark() override ;
 	bool isFinish() override ;
 	bool isExit();
@@ -258,6 +258,7 @@ private:
 	bool MovementFollowWallisFinish() override ;
 	bool isNewLineReach();
 	bool isOverOriginLine();
+	bool isBlockCleared();
 	bool enterPause();
 	bool resumePause();
 	bool switchToGoHomePointState();

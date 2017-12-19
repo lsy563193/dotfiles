@@ -339,7 +339,7 @@ void event_manager_init();
 
 void event_manager_set_enable(bool enable);
 
-void *event_manager_thread(void *data);
+void event_manager_thread_cb();
 
 void *event_handler_thread(void *data);
 
