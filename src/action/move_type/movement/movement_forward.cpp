@@ -20,21 +20,19 @@ MovementForward::MovementForward():
 
 Point32_t MovementForward::calcTmpTarget()
 {
-
 	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mt_->sp_mode_);
 	auto new_dir = p_clean_mode->new_dir_;
-	auto curr_p = nav_map.getCurrPoint();
-	auto curr = (GridMap::isXDirection(new_dir)) ? curr_p.X : curr_p.Y;
+	auto curr = nav_map.getCurrPoint();
 	auto tmp_target = nav_map.cellToPoint(p_clean_mode->plan_path_.front());
-	auto &target = (GridMap::isXDirection(new_dir)) ? tmp_target.X : tmp_target.Y;
+	auto curr_xy = (GridMap::isXDirection(new_dir)) ? curr.X : curr.Y;
+	auto &target_xy = (GridMap::isXDirection(new_dir)) ? tmp_target.X : tmp_target.Y;
 
-	int16_t dis = std::min(std::abs(curr - target), (int32_t) (1.5 * CELL_COUNT_MUL));
+	int16_t dis = std::min(std::abs(curr_xy - target_xy), (int32_t) (1.5 * CELL_COUNT_MUL));
 	if (!GridMap::isPositiveDirection(new_dir))
 		dis *= -1;
-	target = curr + dis;
+	target_xy = curr_xy + dis;
 
 	return tmp_target;
-
 }
 
 void MovementForward::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
@@ -43,26 +41,32 @@ void MovementForward::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 //	ROS_WARN("%s,%d: g_p_clean_mode->plan_path_size(%d)",__FUNCTION__, __LINE__,p_clean_mode->plan_path_.size());
 	wheel.setDirectionForward();
 	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mt_->sp_mode_);
-	auto new_dir = p_clean_mode->new_dir_;
-	auto curr_p = nav_map.getCurrPoint();
-	auto curr = (GridMap::isXDirection(new_dir)) ? curr_p.X : curr_p.Y;
-	auto target = nav_map.cellToPoint(p_clean_mode->plan_path_.front());
-	auto &target_xy = (GridMap::isXDirection(new_dir)) ? target.X : target.Y;
 
-	int16_t dis = std::min(std::abs(curr - target_xy), (int32_t) (1.5 * CELL_COUNT_MUL));
-	if(dis <1.5*CELL_COUNT_MUL && p_clean_mode->plan_path_.size()>1)
-	{
-		ROS_ERROR("%s,%d",__FUNCTION__,__LINE__);
-		ROS_ERROR("%s,%d",__FUNCTION__,__LINE__);
-		ROS_ERROR("%s,%d",__FUNCTION__,__LINE__);
-		p_clean_mode->plan_path_.pop_front();
-	}
 	tmp_target_ = calcTmpTarget();
 
+	auto new_dir = p_clean_mode->new_dir_;
+
+	auto target = GridMap::cellToPoint(p_clean_mode->plan_path_.front());
+
+	auto tmp_xy = (GridMap::isXDirection(new_dir)) ? tmp_target_.X : tmp_target_.Y;
+	auto target_xy = (GridMap::isXDirection(new_dir)) ? target.X : target.Y;
+	auto is_beyond = (GridMap::isPositiveDirection(new_dir)) ? target_xy <= tmp_xy : target_xy >= tmp_xy;
+	ROS_ERROR("%s,%d,target,tmp(%d,%d)",__FUNCTION__,__LINE__,target_xy, tmp_xy);
+	if(is_beyond && p_clean_mode->plan_path_.size()>1)
+	{
+		p_clean_mode->old_dir_ = p_clean_mode->new_dir_;
+		p_clean_mode->new_dir_ = (MapDirection)p_clean_mode->plan_path_.front().TH;
+		p_clean_mode->plan_path_.pop_front();
+		tmp_target_ = calcTmpTarget();
+		ROS_ERROR("%s,%d,dir(%d,%d)target(%d,%d)",__FUNCTION__,__LINE__,p_clean_mode->old_dir_,p_clean_mode->new_dir_,(MapDirection)p_clean_mode->plan_path_.front().X,(MapDirection)p_clean_mode->plan_path_.front().Y);
+		ROS_ERROR("%s,%d,target,tmp(%d,%d)",__FUNCTION__,__LINE__,target_xy, tmp_xy);
+	}
+
+	auto curr_p = nav_map.getCurrPoint();
 	auto angle_diff = ranged_angle(
 					course_to_dest(curr_p.X, curr_p.Y, tmp_target_.X, tmp_target_.Y) - robot::instance()->getPoseAngle());
 
-//	ROS_WARN("curr(%d),x?(%d),pos(%d),dis(%d), target_p(%d,%d)", curr, GridMap::isXDirection(new_dir), GridMap::isPositiveDirection(new_dir), dis, target_p.X, target_p.Y);
+//	ROS_WARN("tmp_xy(%d),x?(%d),pos(%d),dis(%d), target_p(%d,%d)", tmp_xy, GridMap::isXDirection(new_dir), GridMap::isPositiveDirection(new_dir), dis, target_p.X, target_p.Y);
 //	auto dis_diff = GridMap::isXDirection(new_dir) ? curr_p.Y - cm_target_p_.Y : curr_p.X - cm_target_p_.X;
 //	dis_diff = GridMap::isPositiveDirection(new_dir) ^ GridMap::isXDirection(new_dir) ? dis_diff :  -dis_diff;
 
