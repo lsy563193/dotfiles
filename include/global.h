@@ -290,7 +290,7 @@ uint8_t cs_self_check(uint8_t Check_Code);
 uint8_t cm_get(void);
 void cm_set(uint8_t mode);
 void cs_disable_motors(void);
-bool check_pub_scan();
+//bool check_pub_scan();
 void cs_paused_setting();
 
 extern double robot_to_wall_distance;
