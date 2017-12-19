@@ -5,9 +5,79 @@
 #include "pp.h"
 #include "arch.hpp"
 
-//bool ActionFollowWall::isFinish() {
-//	return false;
-//}
+ActionFollowWall::ActionFollowWall(bool is_left, bool is_trapped)
+{
+
+	is_left_ = is_left;
+	int16_t turn_angle;
+	if (!is_trapped)
+		turn_angle = get_turn_angle(true);
+	else
+		turn_angle = 0;
+	turn_target_angle_ = ranged_angle(robot::instance()->getPoseAngle() + turn_angle);
+	movement_i_ = mm_turn;
+	sp_movement_.reset(new MovementTurn(turn_target_angle_));
+	IMovement::sp_mt_ = this;
+
+//	if (action_i_ == ac_back) {
+//		PP_INFO();
+//		g_time_straight = 0.2;
+//		g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
+//	}
+//	else if (action_i_ == ac_turn) {
+//		PP_INFO();
+//		g_time_straight = 0;
+//		g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
+//	}
+}
+
+ActionFollowWall::~ActionFollowWall()
+{
+	PP_WARN();
+	ROS_ERROR("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+	wheel.stop();
+}
+
+bool ActionFollowWall::isFinish()
+{
+	if (sp_movement_->isFinish()) {
+		PP_WARN();
+		if (movement_i_ == mm_turn) {
+			resetTriggeredValue();
+			movement_i_ = mm_forward;
+			sp_movement_.reset(new MovementFollowWall(is_left_));
+		}
+		else if (movement_i_ == mm_forward) {
+			if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip) {
+				PP_INFO();
+//				resetTriggeredValue();
+				movement_i_ = mm_back;
+				sp_movement_.reset(new MovementBack);
+			}
+			else if (ev.lidar_triggered || ev.obs_triggered) {
+				PP_INFO();
+				int16_t turn_angle =get_turn_angle(false);
+				turn_target_angle_ = ranged_angle(robot::instance()->getPoseAngle() + turn_angle);
+				movement_i_ = mm_turn;
+				sp_movement_.reset(new MovementTurn(turn_target_angle_));
+				resetTriggeredValue();
+			}
+			else
+			{
+				PP_INFO();
+				return true;
+			}
+		}
+		else if (movement_i_ == mm_back) {
+			movement_i_ = mm_turn;
+			int16_t turn_angle =get_turn_angle(false);
+			turn_target_angle_ = ranged_angle(robot::instance()->getPoseAngle() + turn_angle);
+			sp_movement_.reset(new MovementTurn(turn_target_angle_));
+			resetTriggeredValue();
+		}
+	}
+	return false;
+}
 
 int16_t ActionFollowWall::bumper_turn_angle(bool is_left)
 {
@@ -265,69 +335,3 @@ int16_t ActionFollowWall::get_turn_angle(bool use_target_angle)
 	return turn_angle;
 }
 
-ActionFollowWall::ActionFollowWall(bool is_left, bool is_trapped)
-{
-
-	is_left_ = is_left;
-	int16_t turn_angle;
-	if (!is_trapped)
-		turn_angle = get_turn_angle(true);
-	else
-		turn_angle = 0;
-	turn_target_angle_ = ranged_angle(robot::instance()->getPoseAngle() + turn_angle);
-	movement_i_ = mm_turn;
-	sp_movement_.reset(new MovementTurn(turn_target_angle_));
-	IMovement::sp_mt_ = this;
-
-//	if (action_i_ == ac_back) {
-//		PP_INFO();
-//		g_time_straight = 0.2;
-//		g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
-//	}
-//	else if (action_i_ == ac_turn) {
-//		PP_INFO();
-//		g_time_straight = 0;
-//		g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
-//	}
-}
-
-bool ActionFollowWall::isFinish()
-{
-	if (sp_movement_->isFinish()) {
-		PP_WARN();
-		if (movement_i_ == mm_turn) {
-			resetTriggeredValue();
-			movement_i_ = mm_forward;
-			sp_movement_.reset(new MovementFollowWall(is_left_));
-		}
-		else if (movement_i_ == mm_forward) {
-			if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip) {
-				PP_INFO();
-//				resetTriggeredValue();
-				movement_i_ = mm_back;
-				sp_movement_.reset(new MovementBack);
-			}
-			else if (ev.lidar_triggered || ev.obs_triggered) {
-				PP_INFO();
-				int16_t turn_angle =get_turn_angle(false);
-				turn_target_angle_ = ranged_angle(robot::instance()->getPoseAngle() + turn_angle);
-				movement_i_ = mm_turn;
-				sp_movement_.reset(new MovementTurn(turn_target_angle_));
-				resetTriggeredValue();
-			}
-			else
-			{
-				PP_INFO();
-				return true;
-			}
-		}
-		else if (movement_i_ == mm_back) {
-			movement_i_ = mm_turn;
-			int16_t turn_angle =get_turn_angle(false);
-			turn_target_angle_ = ranged_angle(robot::instance()->getPoseAngle() + turn_angle);
-			sp_movement_.reset(new MovementTurn(turn_target_angle_));
-			resetTriggeredValue();
-		}
-	}
-	return false;
-}

@@ -174,8 +174,6 @@ public:
 
 	uint8_t saveSlip();
 
-	uint8_t saveFollowWall();
-
 	uint8_t saveBlocks(bool is_linear);
 
 	uint8_t setBlocks();

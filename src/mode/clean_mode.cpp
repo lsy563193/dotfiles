@@ -93,6 +93,7 @@ bool ACleanMode::isFinish()
 		if (!sp_action_->isFinish())
 			return false;
 
+		sp_action_.reset();//for call ~constitution;
 		PP_INFO();
 		mapMark();
 

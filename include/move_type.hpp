@@ -58,6 +58,7 @@ class ActionFollowWall:public IMoveType
 {
 public:
 	ActionFollowWall() = delete;
+	~ActionFollowWall();
 
 	explicit ActionFollowWall(bool is_left, bool is_trapped);
 
