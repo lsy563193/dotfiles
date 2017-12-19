@@ -237,15 +237,19 @@ bool is_equal_with_angle_(const Cell_t &l, const Cell_t &r)
 
 Cell_t ACleanMode::updatePath()
 {
-//	PP_INFO();
 	auto curr = nav_map.updatePosition();
 	auto point = nav_map.getCurrPoint();
 	robot::instance()->pubCleanMapMarkers(nav_map, plan_path_);
 //	PP_INFO();
 //	ROS_INFO("curr(%d,%d,%d)",curr.X, curr.Y, curr.TH);
 //	ROS_INFO("last(%d,%d,%d)",last_.X, last_.Y, last_.TH);
-	if (!is_equal_with_angle_(curr, last_)) {
-//		PP_INFO()
+	if (passed_path_.empty())
+	{
+		passed_path_.push_back(curr);
+		ROS_INFO("curr(%d,%d,%d)",curr.X, curr.Y, curr.TH);
+	}
+	else if (!is_equal_with_angle_(curr, last_))
+	{
 		last_ = curr;
 		auto loc = std::find_if(passed_path_.begin(), passed_path_.end(), [&](Cell_t it) {
 				return is_equal_with_angle_(curr, it);
@@ -259,14 +263,9 @@ Cell_t ACleanMode::updatePath()
 			passed_path_.clear();
 			g_wf_reach_count++;
 		}
-		PP_INFO();
 		nav_map.saveBlocks(action_i_ == ac_linear);
-		PP_INFO();
 //		displayPath(passed_path_);
 	}
-//	else
-//		is_time_up = !cs.is_trapped();
-//	PP_INFO();
 	return curr;
 }
 

@@ -1,6 +1,7 @@
 //
 // Created by lsy563193 on 12/4/17.
 //
+#include <event_manager.h>
 #include "pp.h"
 #include "arch.hpp"
 
@@ -215,6 +216,17 @@ int16_t ActionFollowWall::get_turn_angle_by_ev()
 	if (ev.tilt_triggered) {
 		turn_angle = tilt_turn_angle();
 		ROS_WARN("%s %d: Tilt triggered, turn_angle: %d.", __FUNCTION__, __LINE__, turn_angle);
+	}
+	if (ev.obs_triggered) {
+		turn_angle = obs_turn_angle();
+		ROS_WARN("%s %d: OBS triggered, turn_angle: %d.", __FUNCTION__, __LINE__, turn_angle);
+	}
+	if (ev.lidar_triggered)
+	{
+		// Temporary use obs as lidar triggered.
+		ev.obs_triggered = ev.lidar_triggered;
+		turn_angle = obs_turn_angle();
+		ROS_WARN("%s %d: Lidar triggered, turn_angle: %d.", __FUNCTION__, __LINE__, turn_angle);
 	}
 
 	if(g_robot_slip)

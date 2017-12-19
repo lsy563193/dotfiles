@@ -91,7 +91,7 @@ bool CleanModeNav::mapMark()
 		ROS_ERROR("-------------------------------------------------------");
 		auto start = *passed_path_.begin();
 		passed_path_.erase(std::remove_if(passed_path_.begin(),passed_path_.end(),[&start](Cell_t& it){
-			return it == start ;
+			return it == start;
 		}),passed_path_.end());
 		clean_path_algorithm_->displayPath(passed_path_);
 		ROS_ERROR("-------------------------------------------------------");
@@ -184,7 +184,11 @@ bool CleanModeNav::setNextAction()
 		else if (action_i_ == ac_open_lidar)
 		{
 			if (!has_aligned_and_open_slam)
-				action_i_ = ac_align;
+			{
+				//todo for test
+//				action_i_ = ac_align;
+				action_i_ = ac_open_slam;
+			}
 			else if (paused_)
 			{
 				action_i_ = ac_null;
@@ -408,7 +412,7 @@ bool CleanModeNav::isBlockCleared()
 {
 	if (!passed_path_.empty())
 	{
-		ROS_INFO("%s %d: passed_path_.back(%d %d)", __FUNCTION__, __LINE__, passed_path_.back().X, passed_path_.back().Y);
+//		ROS_INFO("%s %d: passed_path_.back(%d %d)", __FUNCTION__, __LINE__, passed_path_.back().X, passed_path_.back().Y);
 		return !nav_map.isBlockAccessible(passed_path_.back().X, passed_path_.back().Y);
 	}
 
