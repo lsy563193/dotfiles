@@ -10,19 +10,14 @@ ActionCharge::ActionCharge(bool play_start_wav)
 {
 	ROS_INFO("%s %d: Start charge action.", __FUNCTION__, __LINE__);
 	led.set_mode(LED_BREATH, LED_ORANGE);
-	ROS_INFO("%s %d: Start charge action.", __FUNCTION__, __LINE__);
 	charger.setStart();
-	ROS_INFO("%s %d: Start charge action.", __FUNCTION__, __LINE__);
 	usleep(30000);
 
-	ROS_INFO("%s %d: Start charge action.", __FUNCTION__, __LINE__);
 	disconnect_charger_count_ = 0;
 	show_battery_info_time_stamp_ = time(NULL);
-	ROS_INFO("%s %d: Start charge action.", __FUNCTION__, __LINE__);
 
 	if (play_start_wav)
 		speaker.play(VOICE_BATTERY_CHARGE);
-	ROS_INFO("%s %d: Start charge action.", __FUNCTION__, __LINE__);
 }
 
 ActionCharge::~ActionCharge()
@@ -32,6 +27,12 @@ ActionCharge::~ActionCharge()
 
 bool ActionCharge::isFinish()
 {
+	if (battery.isFull())
+	{
+		charger.setStop();
+		return true;
+	}
+
 	if (disconnect_charger_count_ > 15)
 	{
 		charger.setStop();
