@@ -294,7 +294,7 @@ ActionFollowWall::ActionFollowWall(bool is_left, bool is_trapped)
 bool ActionFollowWall::isFinish()
 {
 	if (sp_movement_->isFinish()) {
-		PP_INFO();
+		PP_WARN();
 		if (movement_i_ == mm_turn) {
 			resetTriggeredValue();
 			movement_i_ = mm_forward;
@@ -302,11 +302,13 @@ bool ActionFollowWall::isFinish()
 		}
 		else if (movement_i_ == mm_forward) {
 			if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip) {
+				PP_INFO();
 //				resetTriggeredValue();
 				movement_i_ = mm_back;
 				sp_movement_.reset(new MovementBack);
 			}
 			else if (ev.lidar_triggered || ev.obs_triggered) {
+				PP_INFO();
 				int16_t turn_angle =get_turn_angle(false);
 				turn_target_angle_ = ranged_angle(robot::instance()->getPoseAngle() + turn_angle);
 				movement_i_ = mm_turn;
@@ -314,7 +316,10 @@ bool ActionFollowWall::isFinish()
 				resetTriggeredValue();
 			}
 			else
+			{
+				PP_INFO();
 				return true;
+			}
 		}
 		else if (movement_i_ == mm_back) {
 			movement_i_ = mm_turn;

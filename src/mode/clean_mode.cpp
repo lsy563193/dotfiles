@@ -238,6 +238,9 @@ bool is_equal_with_angle_(const Cell_t &l, const Cell_t &r)
 Cell_t ACleanMode::updatePath()
 {
 	auto curr = nav_map.updatePosition();
+	auto point = nav_map.getCurrPoint();
+	robot::instance()->pubCleanMapMarkers(nav_map, plan_path_);
+//	PP_INFO();
 //	ROS_INFO("curr(%d,%d,%d)",curr.X, curr.Y, curr.TH);
 //	ROS_INFO("last(%d,%d,%d)",last_.X, last_.Y, last_.TH);
 	if (passed_path_.empty())
