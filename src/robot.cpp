@@ -99,7 +99,8 @@ robot::robot(std::string serial_port, int baudrate, std::string lidar_bumper_dev
 	pthread_t event_manager_thread_id, event_handler_thread_id;
 	auto event_manager_th = new boost::thread(event_manager_thread_cb);
 	event_manager_th->detach();
-//	event_manager_th.detach();
+	auto event_handler_thread = new boost::thread(event_handler_thread_cb);
+	event_handler_thread->detach();
 
 	// Init for robotbase.
 	robotbase_reset_send_stream();

@@ -356,7 +356,7 @@ void event_manager_thread_cb()
 	ROS_ERROR("%s %d: exit\n", __FUNCTION__, __LINE__);
 }
 
-void *event_handler_thread(void *data) {
+void event_handler_thread_cb() {
 	bool status_now[EVT_MAX], status_last[EVT_MAX];
 
 	auto evt_handle_event_x = [&](EventType x)

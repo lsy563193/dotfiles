@@ -341,7 +341,7 @@ void event_manager_set_enable(bool enable);
 
 void event_manager_thread_cb();
 
-void *event_handler_thread(void *data);
+void event_handler_thread_cb();
 
 //void event_manager_set_current_mode(EventModeType mode);
 

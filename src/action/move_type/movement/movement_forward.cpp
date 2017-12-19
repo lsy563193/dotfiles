@@ -10,15 +10,15 @@ MovementForward::MovementForward():
 {
 //	sp_mt_->sp_cm_->plan_path_ = path;
 //	s_target_p = GridMap::cellToPoint(sp_mt_->sp_cm_->plan_path_.back());
-	PP_INFO();
-	tmp_target_ = updateTmpTarget();
+
+	tmp_target_ = calcTmpTarget();
 //	sp_mt_->sp_cm_->plan_path_display_sp_mt_->sp_cm_->plan_path_points();
 //	g_is_should_follow_wall = false;
 //	s_target = target;
 //	sp_mt_->sp_cm_->plan_path_ = path;
 }
 
-Point32_t MovementForward::updateTmpTarget()
+Point32_t MovementForward::calcTmpTarget()
 {
 
 	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mt_->sp_mode_);
@@ -42,10 +42,23 @@ void MovementForward::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 //	PP_INFO();
 //	ROS_WARN("%s,%d: g_p_clean_mode->plan_path_size(%d)",__FUNCTION__, __LINE__,p_clean_mode->plan_path_.size());
 	wheel.setDirectionForward();
-
-	tmp_target_ = updateTmpTarget();
-
+	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mt_->sp_mode_);
+	auto new_dir = p_clean_mode->new_dir_;
 	auto curr_p = nav_map.getCurrPoint();
+	auto curr = (GridMap::isXDirection(new_dir)) ? curr_p.X : curr_p.Y;
+	auto target = nav_map.cellToPoint(p_clean_mode->plan_path_.front());
+	auto &target_xy = (GridMap::isXDirection(new_dir)) ? target.X : target.Y;
+
+	int16_t dis = std::min(std::abs(curr - target_xy), (int32_t) (1.5 * CELL_COUNT_MUL));
+	if(dis <1.5*CELL_COUNT_MUL && p_clean_mode->plan_path_.size()>1)
+	{
+		ROS_ERROR("%s,%d",__FUNCTION__,__LINE__);
+		ROS_ERROR("%s,%d",__FUNCTION__,__LINE__);
+		ROS_ERROR("%s,%d",__FUNCTION__,__LINE__);
+		p_clean_mode->plan_path_.pop_front();
+	}
+	tmp_target_ = calcTmpTarget();
+
 	auto angle_diff = ranged_angle(
 					course_to_dest(curr_p.X, curr_p.Y, tmp_target_.X, tmp_target_.Y) - robot::instance()->getPoseAngle());
 
@@ -54,8 +67,8 @@ void MovementForward::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 //	dis_diff = GridMap::isPositiveDirection(new_dir) ^ GridMap::isXDirection(new_dir) ? dis_diff :  -dis_diff;
 
 	if (integration_cycle_++ > 10) {
-//		auto t = nav_map.pointToCell(tmp_target_);
-//		robot::instance()->pubCleanMapMarkers(nav_map, p_clean_mode->plan_path_, &t);
+		auto t = nav_map.pointToCell(tmp_target_);
+		robot::instance()->pubCleanMapMarkers(nav_map, p_clean_mode->plan_path_, &t);
 		integration_cycle_ = 0;
 		integrated_ += angle_diff;
 		check_limit(integrated_, -150, 150);

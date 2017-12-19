@@ -31,7 +31,7 @@ protected:
 };
 class IFollowPoint{
 public:
-	virtual Point32_t updateTmpTarget()=0;
+	virtual Point32_t calcTmpTarget()=0;
 };
 class MovementForward: public IMovement,public IFollowPoint{
 public:
@@ -55,7 +55,7 @@ public:
 	bool isCellReach();
 	bool isPoseReach();
 
-	Point32_t updateTmpTarget();
+	Point32_t calcTmpTarget();
 
 private:
 
