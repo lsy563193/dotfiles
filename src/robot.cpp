@@ -73,7 +73,7 @@ robot::robot(std::string serial_port, int baudrate, std::string lidar_bumper_dev
 	// Initialize the manual pause variable.
 	g_is_manual_pause = false;
 
-	setBaselinkFrameType(Odom_Position_Odom_Angle);
+	setBaselinkFrameType(ODOM_POSITION_ODOM_ANGLE);
 
 	// Init for serial.
 	serial.init(serial_port.c_str(), baudrate);
@@ -157,7 +157,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	float	odom_pose_y_;
 	double	odom_pose_yaw_;
 
-	if (getBaselinkFrameType() == Map_Position_Map_Angle)
+	if (getBaselinkFrameType() == SLAM_POSITION_SLAM_ANGLE)
 	{
 		if(slam.isMapReady() && !ev.slam_error)
 		{
@@ -196,14 +196,14 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 //			cm_update_map();
 //		cm_update_position();
 	}
-	else if (getBaselinkFrameType() == Odom_Position_Odom_Angle)
+	else if (getBaselinkFrameType() == ODOM_POSITION_ODOM_ANGLE)
 	{
 		//ROS_INFO("SLAM = 0");
 		odom_pose_x_ = odom.getX();
 		odom_pose_y_ = odom.getY();
-		odom_pose_yaw_ = odom.getAngle();
+		odom_pose_yaw_ = odom.getAngle() * M_PI / 180;
 	}
-	else if (getBaselinkFrameType() == Map_Position_Odom_Angle)
+	else if (getBaselinkFrameType() == SLAM_POSITION_ODOM_ANGLE)
 	{//Wall_Follow_Mode
 		//ROS_INFO("SLAM = 2");
 		if(slam.isMapReady() && !ev.slam_error)
@@ -721,7 +721,7 @@ void robot::updateRobotPose(const float& odom_x, const float& odom_y, const doub
 		while (yaw > 3.141592)
 			yaw -= 6.283184;
 		robot_correction_yaw += (yaw) * 0.8;
-		//printf("Slam (%f, %f, %f). Adjust (%f, %f, %f)\n", slam_correction_x, slam_correction_y, RAD2DEG(slam_correction_yaw), robot_correction_x, robot_correction_y, RAD2DEG(robot_correction_yaw));
+//		printf("Slam (%f, %f, %f). Adjust (%f, %f, %f)\n", slam_correction_x, slam_correction_y, RAD2DEG(slam_correction_yaw), robot_correction_x, robot_correction_y, RAD2DEG(robot_correction_yaw));
 	}
 
 	robot_x = odom_x + robot_correction_x;

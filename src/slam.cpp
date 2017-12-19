@@ -19,7 +19,7 @@ Slam::~Slam(){
 
 void Slam::stop(void)
 {
-	robot::instance()->setBaselinkFrameType(Odom_Position_Odom_Angle);
+	robot::instance()->setBaselinkFrameType(ODOM_POSITION_ODOM_ANGLE);
 
 	robot::instance()->slamStop();
 	robot::instance()->resetCorrection();

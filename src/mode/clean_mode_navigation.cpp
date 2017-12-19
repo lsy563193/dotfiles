@@ -40,7 +40,7 @@ CleanModeNav::~CleanModeNav()
 	lidar.motorCtrl(OFF);
 	lidar.setScanOriginalReady(0);
 
-	robot::instance()->setBaselinkFrameType(Odom_Position_Odom_Angle);
+	robot::instance()->setBaselinkFrameType(ODOM_POSITION_ODOM_ANGLE);
 	slam.stop();
 	odom.setAngleOffset(0);
 

@@ -24,9 +24,9 @@ extern volatile int16_t g_right_wall_baseline;
 extern pp::x900sensor   sensor;
 
 typedef enum {
-	Odom_Position_Odom_Angle = 0,
-	Map_Position_Map_Angle,
-	Map_Position_Odom_Angle,
+	ODOM_POSITION_ODOM_ANGLE = 0,
+	SLAM_POSITION_SLAM_ANGLE,
+	SLAM_POSITION_ODOM_ANGLE,
 } Baselink_Frame_Type;
 
 extern bool	g_is_low_bat_pause;
