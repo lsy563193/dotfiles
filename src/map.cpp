@@ -1074,11 +1074,12 @@ bool GridMap::markRobot(uint8_t id)
 	{
 		for (auto dx = -ROBOT_SIZE_1_2; dx <= ROBOT_SIZE_1_2; ++dx)
 		{
-			robotToCell(getCurrPoint(), CELL_SIZE * dy, CELL_SIZE * dx, x, y);
-			auto status = getCell(id,x,y);
+//			robotToCell(getCurrPoint(), CELL_SIZE * dy, CELL_SIZE * dx, x, y);
+			x = getCurrCell().X + dx;
+			y = getCurrCell().Y + dy;
+			auto status = getCell(id, x, y);
 			if (status > CLEANED && status < BLOCKED_BOUNDARY && (status != BLOCKED_RCON)){
-				ROS_INFO("\033[1;33m" "%s,%d: (%d,%d)" "\033[0m", __FUNCTION__, __LINE__,x,
-						 y);
+				ROS_INFO("\033[1;33m" "%s,%d: (%d,%d)" "\033[0m", __FUNCTION__, __LINE__,x, y);
 				setCell(id, x, y, CLEANED);
 				ret = true;
 			}

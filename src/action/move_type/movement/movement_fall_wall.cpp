@@ -17,7 +17,6 @@ MovementFollowWall::MovementFollowWall(bool is_left) : previous_(0), seen_charge
 	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mt_->sp_mode_);
 	s_target_p = GridMap::cellToPoint(p_clean_mode->plan_path_.front());
 	start_timer_ = ros::Time::now().toSec();
-	ROS_ERROR("start_timer_(%f)",start_timer_);
 	fw_map.reset(CLEAN_MAP);
 }
 

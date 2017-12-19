@@ -130,7 +130,7 @@ void event_manager_set_enable(bool enable)
 }
 
 
-void *event_manager_thread(void *data)
+void event_manager_thread_cb()
 {
 	bool set = false;
 	bool status[EVT_MAX];
