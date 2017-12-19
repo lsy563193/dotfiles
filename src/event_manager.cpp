@@ -819,94 +819,65 @@ void EventHandle::keyClean(bool state_now, bool state_last)
 }
 
 /* Remote */
+void df_remote()
+{
+	beeper.play_for_command(INVALID);
+	remote.reset();
+}
+
 void EventHandle::remotePlan(bool state_now, bool state_last)
 {
-
-}
-void df_remote_plan(bool state_now, bool state_last)
-{
-	if (robot_timer.getPlanStatus() == 1 || robot_timer.getPlanStatus() == 2)
-	{
-		ROS_WARN("%s %d: Remote plan is pressed.", __FUNCTION__, __LINE__);
-		beeper.play_for_command(INVALID);
-	}
-	else if (robot_timer.getPlanStatus() == 3)
-		ROS_WARN("%s %d: Plan is activated.", __FUNCTION__, __LINE__);
-
+	ROS_WARN("%s %d: Remote plan is pressed.", __FUNCTION__, __LINE__);
+	df_remote();
 	robot_timer.resetPlanStatus();
-	remote.reset();
 }
 
 void EventHandle::remoteClean(bool state_now, bool state_last)
-{}
-void df_remote_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote clean is pressed.", __FUNCTION__, __LINE__);
-	beeper.play_for_command(INVALID);
-	remote.reset();
+	df_remote();
 }
 
 void EventHandle::remoteHome(bool state_now, bool state_last)
-{}
-void df_remote_home(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote home is pressed.", __FUNCTION__, __LINE__);
-	beeper.play_for_command(INVALID);
-	remote.reset();
+	df_remote();
 }
 
 void EventHandle::remoteDirectionForward(bool state_now, bool state_last)
-{}
-void df_remote_direction_forward(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote forward is pressed.", __FUNCTION__, __LINE__);
-	beeper.play_for_command(INVALID);
-	remote.reset();
-}
-
-void EventHandle::remoteWallFollow(bool state_now, bool state_last)
-{}
-void df_remote_wall_follow(bool state_now, bool state_last)
-{
-	ROS_WARN("%s %d: Remote wall_follow is pressed.", __FUNCTION__, __LINE__);
-	beeper.play_for_command(INVALID);
-	remote.reset();
+	df_remote();
 }
 
 void EventHandle::remoteDirectionLeft(bool state_now, bool state_last)
-{}
-void df_remote_direction_left(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote left is pressed.", __FUNCTION__, __LINE__);
-	beeper.play_for_command(INVALID);
-	remote.reset();
+	df_remote();
 }
 
 void EventHandle::remoteDirectionRight(bool state_now, bool state_last)
-{}
-void df_remote_direction_right(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote right is pressed.", __FUNCTION__, __LINE__);
-	beeper.play_for_command(INVALID);
-	remote.reset();
+	df_remote();
 }
 
 void EventHandle::remoteSpot(bool state_now, bool state_last)
-{}
-void df_remote_spot(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote spot is pressed.", __FUNCTION__, __LINE__);
-	beeper.play_for_command(INVALID);
-	remote.reset();
+	df_remote();
+}
+
+void EventHandle::remoteWallFollow(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: Remote wall_follow is pressed.", __FUNCTION__, __LINE__);
+	df_remote();
 }
 
 void EventHandle::remoteMax(bool state_now, bool state_last)
-{}
-void df_remote_max(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
-	beeper.play_for_command(INVALID);
-	remote.reset();
+	df_remote();
 }
 
 /* Battery */
