@@ -32,7 +32,6 @@ ModeRemote::ModeRemote()
 	event_manager_reset_status();
 
 	remote_mode_time_stamp_ = ros::Time::now().toSec();
-	time_out_ = false;
 }
 
 ModeRemote::~ModeRemote()
@@ -49,7 +48,7 @@ ModeRemote::~ModeRemote()
 
 bool ModeRemote::isExit()
 {
-	if (time_out_ || ev.key_clean_pressed)
+	if ((action_i_ == ac_movement_stay && sp_action_->isTimeUp()) || ev.key_clean_pressed)
 	{
 		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
 		setNextMode(md_idle);
