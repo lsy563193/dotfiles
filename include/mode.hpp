@@ -175,7 +175,6 @@ public:
 
 private:
 	double remote_mode_time_stamp_;
-	bool time_out_;
 
 };
 

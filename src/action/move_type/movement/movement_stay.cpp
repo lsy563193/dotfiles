@@ -12,6 +12,8 @@ MovementStay::MovementStay()
 	brush.setSidePwm(50, 50);
 	brush.setMainPwm(30);
 	ROS_INFO("%s %d: Start movement stay.", __FUNCTION__, __LINE__);
+	start_timer_ = ros::Time::now().toSec();
+	interval_ = 15;
 }
 
 MovementStay::~MovementStay()
