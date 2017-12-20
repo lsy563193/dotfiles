@@ -38,6 +38,7 @@ protected:
 	uint8_t integration_cycle_{};
 	int32_t integrated_{};
 	int32_t base_speed_{};
+	const double TIME_STRAIGHT{0.2};
 };
 
 class MovementBack: public IMovement{
@@ -294,6 +295,19 @@ public:
 
 private:
 	double direct_go_time_stamp_;
+};
+
+class MovementStraight :public IMovement
+{
+public:
+	MovementStraight();
+	~MovementStraight();
+
+	void adjustSpeed(int32_t &left_speed, int32_t &right_speed) override;
+	bool isFinish() override;
+
+private:
+//	double direct_go_time_stamp_;
 };
 
 #endif //PP_MOVEMENT_HPP

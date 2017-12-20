@@ -92,6 +92,7 @@ FILE(GLOB PP_SRC
 				src/action/move_type/movement/movement_turn_for_charger.cpp
 				src/action/move_type/movement/movement_stay.cpp
 				src/action/move_type/movement/movement_direct_go.cpp
+				src/action/move_type/movement/movement_straight.cpp
 
 #	src/clean_mode/clean_mode.cpp
 #	src/clean_mode/exploration.cpp

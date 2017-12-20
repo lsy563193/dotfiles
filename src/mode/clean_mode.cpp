@@ -141,6 +141,7 @@ bool ACleanMode::setNextState()
 			PP_INFO();
 			old_dir_ = new_dir_;
 			ROS_ERROR("old_dir_(%d)", old_dir_);
+			plan_path_.clear();
 			if (clean_path_algorithm_->generatePath(nav_map, nav_map.getCurrCell(), old_dir_, plan_path_))
 			{
 				new_dir_ = (MapDirection)plan_path_.front().TH;

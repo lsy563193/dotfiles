@@ -41,6 +41,7 @@ protected:
 		mm_back,
 		mm_turn,
 		mm_forward,
+		mm_straight,
 	};
 };
 

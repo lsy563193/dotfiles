@@ -21,12 +21,12 @@ ActionFollowWall::ActionFollowWall(bool is_left, bool is_trapped)
 
 //	if (action_i_ == ac_back) {
 //		PP_INFO();
-//		g_time_straight = 0.2;
+//		TIME_STRAIGHT = 0.2;
 //		g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
 //	}
 //	else if (action_i_ == ac_turn) {
 //		PP_INFO();
-//		g_time_straight = 0;
+//		TIME_STRAIGHT = 0;
 //		g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
 //	}
 }
@@ -44,8 +44,12 @@ bool ActionFollowWall::isFinish()
 		PP_WARN();
 		if (movement_i_ == mm_turn) {
 			resetTriggeredValue();
+			movement_i_ = mm_straight;
+			sp_movement_.reset(new MovementStraight());
+		}
+		else if (movement_i_ == mm_straight) {
+			resetTriggeredValue();
 			movement_i_ = mm_forward;
-//			sp_movement_.reset(new MovementFollowWallInfrared(is_left_));
 			if(is_left_)
 				sp_movement_.reset(new MovementFollowWallLidar(is_left_));
 			else

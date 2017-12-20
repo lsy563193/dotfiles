@@ -1534,7 +1534,7 @@ void sort_target(std::vector<Double_Point> *point, bool is_left_wf)
 	int size = tmp_point.size();
 	//ROS_ERROR("size = %d, min_i = %d", size, min_i);
 	if (size == 0) {
-		ROS_ERROR("size = 0");
+//		ROS_ERROR("size = 0");
 		return;
 	}
 	//sort for the min distance point
@@ -1604,7 +1604,6 @@ bool Lidar::getLidarWfTarget2(std::vector<Double_Point> *points)
 	double x_1, y_1, x_2, y_2, x_3, y_3, x_4, y_4, x, y;
 	static uint32_t seq = 0;
 	double NARROW_DIS = 0.187;//0.187
-	int32_t x_tmp,y_tmp;
 	Cell_t c_target;
 	Point32_t p_target;
 	Double_Point dp_target{};
@@ -1634,7 +1633,7 @@ bool Lidar::getLidarWfTarget2(std::vector<Double_Point> *points)
 	//ROS_WARN("laser seq = %d", tmp_scan_data.header.seq);
 	if (tmp_scan_data.header.seq == seq) {
 		//ROS_WARN("laser seq still same, quit!seq = %d", tmp_scan_data.header.seq);
-		return 0;
+		return false;
 	}
 	seq = tmp_scan_data.header.seq;
 	fit_line_marker.points.clear();
@@ -1676,7 +1675,7 @@ bool Lidar::getLidarWfTarget2(std::vector<Double_Point> *points)
 	} else {
 		is_right_angle = false;
 	}
-	ROS_WARN("is_right_angle = %d", is_right_angle);
+//	ROS_WARN("is_right_angle = %d", is_right_angle);
 	for (int j = i_begin; j > i_end; j--) {//default:270, 90
 		int i = j >= 0 ? j : j + 360;
 		//ROS_INFO("i = %d", i);

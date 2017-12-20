@@ -166,34 +166,6 @@ void MovementFollowWallInfrared::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		return ;
 	}
 
-	if (ros::Time::now().toSec() - start_timer_ < g_time_straight)
-	{
-		auto time_past = ros::Time::now().toSec() - start_timer_;
-		if(time_past < (g_time_straight / 3)) {
-			if(same_speed < 8 )
-				same_speed = diff_speed += 1;
-			else
-				same_speed = diff_speed = 8;
-		}
-		else if(time_past < (2 * g_time_straight / 3)) {
-			if(same_speed < 8)
-				same_speed = diff_speed = 8;
-			if(same_speed < 13)
-				same_speed = diff_speed += 1;
-			else
-				same_speed = diff_speed = 13;
-		}
-		else {
-			if (same_speed < 13)
-				same_speed = diff_speed = 13;
-			if(same_speed < 18)
-			same_speed = diff_speed += 1;
-			else
-				same_speed = diff_speed = 18;
-		}
-	}
-	else
-	{
 		auto wheel_speed_base = 17 + diff_dist / 150;
 		if (wheel_speed_base > 28)wheel_speed_base = 28;
 
@@ -271,7 +243,6 @@ void MovementFollowWallInfrared::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 					reset_sp_turn_count();
 				}
 			}
-		}
 
 		/****************************************************turn a right angular***************************************************/
 		if (wall_buffer[0] < 100)
