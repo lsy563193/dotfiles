@@ -2,13 +2,10 @@ cmake_minimum_required(VERSION 2.8.3)
 project(pp)
 set(CMAKE_CXX_FLAGS "-std=c++11 -fpermissive ${CMAKE_CXX_FLAGS} -Wfatal-errors\ ")
 FILE(GLOB PP_SRC
-        include/*
-				include/path_algorithm.h
-		include/action.hpp
-#	src/charge.cpp
-#	src/clean_mode.cpp
-#	src/clean_state.cpp
-#	src/core_move.cpp
+	include/*
+	include/path_algorithm.h
+	include/action.hpp
+
 	src/des.cpp
 
 	src/dev/gyro.cpp
@@ -19,7 +16,7 @@ FILE(GLOB PP_SRC
 	src/dev/brush.cpp
 	src/dev/bumper.cpp
 	src/dev/rcon.cpp
-		src/dev/robot_timer.cpp
+	src/dev/robot_timer.cpp
 	src/dev/remote.cpp
 	src/dev/obs.cpp
 	src/dev/led.cpp
@@ -30,21 +27,15 @@ FILE(GLOB PP_SRC
 	src/dev/speaker.cpp
 	src/dev/lidar.cpp
 
-#				src/action/action_new.cpp
-#				src/action/action_open_gyro_new.cpp
-				src/mode/state/state.cpp
-				src/mode/state/state_clean.cpp
-				src/mode/state/state_go_home_point.cpp
-				src/mode/state/state_go_charger.cpp
-				src/mode/state/state_trapped.cpp
-				src/mode/state/state_self_check.cpp
-				src/mode/state/state_tmp_spot.cpp
-				src/mode/state/state_exploration.cpp
+	src/mode/state/state.cpp
+	src/mode/state/state_clean.cpp
+	src/mode/state/state_go_home_point.cpp
+	src/mode/state/state_go_charger.cpp
+	src/mode/state/state_trapped.cpp
+	src/mode/state/state_self_check.cpp
+	src/mode/state/state_tmp_spot.cpp
+	src/mode/state/state_exploration.cpp
 
-				src/action/move_type/move_type.cpp
-				src/action/move_type/action_linear.cpp
-				src/action/move_type/action_follow_wall.cpp
-				src/action/move_type/action_go_charger.cpp
 	src/mode/mode.cpp
 	src/mode/mode_sleep.cpp
 	src/mode/mode_charge.cpp
@@ -53,16 +44,16 @@ FILE(GLOB PP_SRC
 	src/mode/clean_mode.cpp
 	src/mode/clean_mode_navigation.cpp
 	src/mode/clean_mode_follow_wall.cpp
-				src/mode/clean_mode_spot.cpp
+	src/mode/clean_mode_spot.cpp
+
 	src/path_algorithm/path_algorithm.cpp
-				src/path_algorithm/path_algorithm_navigation_clean.cpp
-				src/path_algorithm/path_algorithm_follow_wall.cpp
-				src/path_algorithm/path_algorithm_spot.cpp
-				src/path_algorithm/path_algorithm_go_home.cpp
-				src/path_algorithm/shortest_path_algorithm.cpp
+	src/path_algorithm/path_algorithm_navigation_clean.cpp
+	src/path_algorithm/path_algorithm_follow_wall.cpp
+	src/path_algorithm/path_algorithm_spot.cpp
+	src/path_algorithm/path_algorithm_go_home.cpp
+	src/path_algorithm/shortest_path_algorithm.cpp
 
 	src/speed_governor/*
-				src/global.cpp
 
 	src/action/action.cpp
 	src/action/action_open_gyro.cpp
@@ -72,58 +63,44 @@ FILE(GLOB PP_SRC
 	src/action/action_open_slam.cpp
 	src/action/action_sleep.cpp
 	src/action/action_idle.cpp
-	src/action/action_charge.cpp
 	src/action/action_pause.cpp
 
-				src/action/move_type/movement/movement.cpp
-				src/action/move_type/movement/movement.cpp
-				src/action/move_type/movement/movement_back.cpp
-				src/action/move_type/movement/movement_back.cpp
-				src/action/move_type/movement/movement_follow_wall_infrared.cpp
-				src/action/move_type/movement/movement_follow_wall_lidar.cpp
-				src/action/move_type/movement/movement_forward.cpp
-				src/action/move_type/movement/movement_forward.cpp
-				src/action/move_type/movement/movement_go_charger.cpp
-				src/action/move_type/movement/movement_go_charger.cpp
-#				src/action/move_type/movement/movement_self_check.cpp
-        src/action/move_type/movement/movement_exception_resume.cpp
-				src/action/move_type/movement/movement_turn.cpp
-				src/action/move_type/movement/movement_turn.cpp
-				src/action/move_type/movement/movement_turn_for_charger.cpp
-				src/action/move_type/movement/movement_stay.cpp
-				src/action/move_type/movement/movement_direct_go.cpp
-				src/action/move_type/movement/movement_straight.cpp
-
-#	src/clean_mode/clean_mode.cpp
-#	src/clean_mode/exploration.cpp
-#	src/clean_mode/navigation_clean.cpp
-#	src/clean_mode/spot_clean.cpp
-#	src/clean_mode/wall_follow_clean.cpp
+	src/action/move_type/move_type.cpp
+	src/action/move_type/action_linear.cpp
+	src/action/move_type/action_follow_wall.cpp
+	src/action/move_type/move_type_go_to_charger.cpp
+	src/action/move_type/movement/movement.cpp
+	src/action/move_type/movement/movement.cpp
+	src/action/move_type/movement/movement_back.cpp
+	src/action/move_type/movement/movement_back.cpp
+	src/action/move_type/movement/movement_follow_wall_infrared.cpp
+	src/action/move_type/movement/movement_follow_wall_lidar.cpp
+	src/action/move_type/movement/movement_forward.cpp
+	src/action/move_type/movement/movement_forward.cpp
+	src/action/move_type/movement/movement_go_charger.cpp
+	src/action/move_type/movement/movement_go_charger.cpp
+	src/action/move_type/movement/movement_exception_resume.cpp
+	src/action/move_type/movement/movement_turn.cpp
+	src/action/move_type/movement/movement_turn.cpp
+	src/action/move_type/movement/movement_charge.cpp
+	src/action/move_type/movement/movement_stay.cpp
+	src/action/move_type/movement/movement_direct_go.cpp
+	src/action/move_type/movement/movement_straight.cpp
 
 	src/error.cpp
 	src/event_manager.cpp
-#        src/idle.cpp
+	src/global.cpp
 	src/main.cpp
 	src/map.cpp
 	src/mathematics.cpp
-#	src/motion_manage.cpp
-#	src/move_type.cpp
-#	src/movement.cpp
 	src/odom.cpp
-#	src/path_planning.cpp
 	src/pose.cpp
-#	src/regulator.cpp
-#	src/remote_mode.cpp
 	src/robot.cpp
 	src/robotbase.cpp
 	src/serial.cpp
-#	src/shortest_path.cpp
 	src/signature.c
 	src/slam.cpp
 	src/slam_map.cpp
-#	src/sleep.cpp
-#	src/space_exploration.cpp
-#	src/spot.cpp
 	src/verify.cpp
 )
 

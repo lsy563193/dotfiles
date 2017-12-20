@@ -258,16 +258,21 @@ private:
 	uint8_t bumper_jam_state_;
 };
 
-class MovementTurnForCharger :public IMovement
+class MovementCharge :public IMovement
 {
 public:
-	MovementTurnForCharger();
-	~MovementTurnForCharger() override ;
+	explicit MovementCharge(bool play_start_wav);
+	~MovementCharge() override ;
 
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed) override;
 	bool isFinish() override;
+	void run() override;
 
 private:
+	bool directly_charge_{false};
+	uint8_t disconnect_charger_count_{0};
+	time_t show_battery_info_time_stamp_;
+	bool turn_for_charger_{false};
 	double start_turning_time_stamp_;
 	bool turn_right_finish_;
 };

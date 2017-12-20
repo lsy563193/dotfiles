@@ -92,19 +92,6 @@ private:
 
 };
 
-class ActionCharge :public IAction
-{
-public:
-	explicit ActionCharge(bool play_start_wav);
-	~ActionCharge() override;
-	bool isFinish() override;
-	void run() override;
-
-private:
-	uint8_t disconnect_charger_count_;
-	time_t show_battery_info_time_stamp_;
-};
-
 class ActionPause :public IAction
 {
 public:

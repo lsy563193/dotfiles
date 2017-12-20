@@ -17,13 +17,11 @@ ModeCharge::ModeCharge()
 	event_manager_register_handler(this);
 	event_manager_reset_status();
 	event_manager_set_enable(true);
-	sp_action_.reset(new ActionCharge(true));
-	PP_INFO();
+	sp_action_.reset(new MovementCharge(true));
 	action_i_ = ac_charge;
 	serial.setCleanMode(Clean_Mode_Charging);
 
 	plan_activated_status_ = false;
-	directly_charge_ = (charger.getChargeStatus() == 4);
 	PP_INFO();
 }
 
@@ -51,45 +49,17 @@ bool ModeCharge::isFinish()
 	if (sp_action_->isFinish())
 	{
 		// todo: Temperary not quit charging if full.
-		if ((action_i_ == ac_charge) && charger.isOnStub() && battery.isFull())
+		if (charger.isOnStub() && battery.isFull())
 		{
 			led.set_mode(LED_STEADY, LED_GREEN);
 			return false;
 		}
 
-		sp_action_.reset(getNextAction());
-		if (sp_action_ == nullptr)
-		{
-			setNextMode(md_idle);
-			return true;
-		}
+		setNextMode(md_idle);
+		return true;
 	}
 
 	return false;
-}
-
-IAction* ModeCharge::getNextAction()
-{
-	if (action_i_ == ac_charge)
-	{
-		if (directly_charge_)
-			return nullptr;
-		else
-		{
-			action_i_ = ac_turn_for_charger;
-			return new MovementTurnForCharger;
-		}
-	}
-	else if (action_i_ == ac_turn_for_charger)
-	{
-		if (charger.getChargeStatus())
-		{
-			action_i_ = ac_charge;
-			return new ActionCharge(false);
-		}
-		else
-			return nullptr;
-	}
 }
 
 void ModeCharge::remoteClean(bool state_now, bool state_last)

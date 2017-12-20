@@ -14,7 +14,7 @@
 
 MoveTypeGoToCharger::MoveTypeGoToCharger()
 {
-	ROS_INFO("%s,%d: mt_is_go_to_charger", __FUNCTION__, __LINE__);
+	ROS_INFO("%s,%d: Move type is go to charger.", __FUNCTION__, __LINE__);
 	sp_gtc_movement_.reset(new MovementGoToCharger());
 	sp_back_movement_.reset();
 	sp_turn_movement_.reset();
