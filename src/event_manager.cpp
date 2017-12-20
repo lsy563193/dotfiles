@@ -30,8 +30,6 @@ Ev_t ev;
 // lidar stuck
 
 
-static EventActionType	eat;
-
 pthread_mutex_t	new_event_mtx;
 pthread_cond_t new_event_cond = PTHREAD_COND_INITIALIZER;
 
@@ -43,7 +41,9 @@ pthread_cond_t event_handler_cond = PTHREAD_COND_INITIALIZER;
 static bool g_new_event_status[EVT_MAX];
 
 PEHF p_handler[EVT_MAX];
-EventHandle deh;
+EventHandle default_eh;
+EventHandle* p_eh;
+
 void event_manager_init()
 {
 	int	j;
@@ -112,7 +112,7 @@ void event_manager_init()
 
 //	handler[EVT_LIDAR_BUMPER]=handler_lidar_stuck;
 	p_handler[EVT_LIDAR_STUCK] = &EventHandle::lidarStuck;
-	eat.peh = &deh;
+	p_eh = &default_eh;
 }
 
 void event_manager_set_enable(bool enable)
@@ -120,6 +120,7 @@ void event_manager_set_enable(bool enable)
 	g_event_manager_enabled = enable;
 	if (!enable)
 	{
+		p_eh = &default_eh;
 		//ROS_WARN("%s %d: Disable all event under manager mode_:%d", __FUNCTION__, __LINE__, evt_mgr_mode);
 		for (int i = 0; i < EVT_MAX; i++) {
 //			eat.handler[i] = NULL;
@@ -363,7 +364,7 @@ void event_handler_thread_cb() {
 	{
 //		if (eat.handler_enabled[x]) {
 //			if (eat.handler[x] == NULL) {
-				(eat.peh->*p_handler[x])(status_now[x], status_last[x]);
+				(p_eh->*p_handler[x])(status_now[x], status_last[x]);
 //			} else {
 //				eat.handler[x](status_now[x], status_last[x]);
 //			}
@@ -500,7 +501,7 @@ void event_handler_thread_cb() {
 
 void event_manager_register_handler(EventHandle* eh)
 {
-	eat.peh = eh;
+	p_eh = eh;
 }
 
 uint8_t event_manager_check_event(bool *p_eh_status_now, bool *p_eh_status_last)

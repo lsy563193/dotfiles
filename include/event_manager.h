@@ -271,7 +271,6 @@ typedef enum {
 	EVT_OVER_CURRENT_SUCTION,
 
 	EVT_KEY_CLEAN,
-	EVT_KEY_RANDOM,
 
 	EVT_REMOTE_PLAN,
 
@@ -284,14 +283,9 @@ typedef enum {
 	EVT_REMOTE_DIRECTION_RIGHT,
 
 	EVT_REMOTE_WALL_FOLLOW,
-	EVT_REMOTE_RANDOM,
 	EVT_REMOTE_SPOT,
 
 	EVT_REMOTE_MAX,
-
-	EVT_REMOTE_TIMER,
-
-	EVT_WATER_TANK,
 
 	EVT_BATTERY_HOME,
 	EVT_BATTERY_LOW,
@@ -323,15 +317,7 @@ typedef enum {
 	EVT_MODE_MAX,
 } EventModeType;*/
 typedef void(EventHandle::*PEHF)(bool state_now, bool state_last);
-typedef void(*event_handle_t)(bool state_now, bool state_last);
-typedef struct {
-//	EventModeType	emt;
-//	bool	handler_enabled[EVT_MAX];
-	EventHandle* peh;
-//	event_handle_t handler[EVT_MAX];
-} EventActionType;
 
-extern bool	event_handler_status;
 extern pthread_mutex_t event_handler_mtx;
 extern pthread_cond_t event_handler_cond;
 
@@ -343,19 +329,10 @@ void event_manager_thread_cb();
 
 void event_handler_thread_cb();
 
-//void event_manager_set_current_mode(EventModeType mode);
-
 void event_manager_register_handler(EventHandle* eh);
-
-void event_manager_enable_handler(EventType type, bool enabled);
 
 uint8_t event_manager_check_event(bool *eh_status_now, bool *eh_status_last);
 
 void event_manager_reset_status(void);
-
-/* Below are the internal functions. */
-/* Below are the internal functions. */
-
-/* Bumper */
 
 #endif
