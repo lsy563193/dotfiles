@@ -29,7 +29,7 @@ bool MovementStraight::isFinish()
 void MovementStraight::adjustSpeed(int32_t &left_speed, int32_t &right_speed) {
 	wheel.setDirectionForward();
 	auto tramp = ros::Time::now().toSec() - start_timer_;
-	ROS_INFO("%s,%d tramp(%d),",__FUNCTION__, __LINE__,tramp);
+//	ROS_INFO("%s,%d tramp(%f),",__FUNCTION__, __LINE__,tramp);
 	if (tramp < (interval_ / 3)) {
 		if (left_speed < 8)
 			left_speed = right_speed += 1;
