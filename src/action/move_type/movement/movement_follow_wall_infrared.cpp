@@ -11,7 +11,7 @@
 
 double robot_to_wall_distance = 0.8;
 
-MovementFollowWall::MovementFollowWall(bool is_left) : previous_(0), seen_charger_counter(0), is_left_(is_left)
+MovementFollowWallInfrared::MovementFollowWallInfrared(bool is_left) : previous_(0), seen_charger_counter(0), is_left_(is_left)
 {
 	s_start_p = GridMap::getCurrPoint();
 	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mt_->sp_mode_);
@@ -20,7 +20,7 @@ MovementFollowWall::MovementFollowWall(bool is_left) : previous_(0), seen_charge
 	fw_map.reset(CLEAN_MAP);
 }
 
-bool MovementFollowWall::isClosure(uint8_t closure_cnt)
+bool MovementFollowWallInfrared::isClosure(uint8_t closure_cnt)
 {
 	if (g_wf_reach_count >= closure_cnt) {
 		ROS_WARN("%s %d: Trapped wall follow is loop closed. reach_count(%d) ", __FUNCTION__, __LINE__, g_wf_reach_count);
@@ -29,12 +29,12 @@ bool MovementFollowWall::isClosure(uint8_t closure_cnt)
 	return false;
 }
 
-bool MovementFollowWall::isIsolate()
+bool MovementFollowWallInfrared::isIsolate()
 {
 	return false;
 }
 
-bool MovementFollowWall::isTimeUp()
+bool MovementFollowWallInfrared::isTimeUp()
 {
 	if (fw_is_time_up()) {
 		ROS_WARN("%s %d: curr(%d),start(%d),diff(%d)",__FUNCTION__, __LINE__, time(NULL), g_wf_start_timer, g_wf_diff_timer);
@@ -47,7 +47,7 @@ bool MovementFollowWall::isTimeUp()
 	return false;
 }
 
-bool MovementFollowWall::shouldMoveBack()
+bool MovementFollowWallInfrared::shouldMoveBack()
 {
 	ev.bumper_triggered = bumper.get_status();
 	ev.cliff_triggered = cliff.get_status();
@@ -56,7 +56,7 @@ bool MovementFollowWall::shouldMoveBack()
 
 }
 
-bool MovementFollowWall::shouldTurn()
+bool MovementFollowWallInfrared::shouldTurn()
 {
 	ev.lidar_triggered = lidar_get_status();
 //	if (ev.lidar_triggered)
@@ -81,7 +81,7 @@ bool MovementFollowWall::shouldTurn()
 	return false;
 }
 
-bool MovementFollowWall::isBlockCleared()
+bool MovementFollowWallInfrared::isBlockCleared()
 {
 	if (!nav_map.isBlockAccessible(nav_map.getXCell(), nav_map.getYCell())) // Robot has step on blocks.
 	{
@@ -92,14 +92,14 @@ bool MovementFollowWall::isBlockCleared()
 	return false;
 }
 
-void MovementFollowWall::setTarget()
+void MovementFollowWallInfrared::setTarget()
 {
 	// No need to set target here, it is set in path_next().
 }
 
-void MovementFollowWall::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
+void MovementFollowWallInfrared::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
-//	ROS_INFO("%s %d: MovementFollowWall.", __FUNCTION__, __LINE__);
+//	ROS_INFO("%s %d: MovementFollowWallInfrared.", __FUNCTION__, __LINE__);
 	wheel.setDirectionForward();
 //	uint32_t same_dist = (wheel.get_right_step() / 100) * 11 ;
 	uint32_t rcon_status = 0;
@@ -365,7 +365,7 @@ void MovementFollowWall::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 //	ROS_INFO("%s,%d, speed(%d,%d)", __FUNCTION__, __LINE__, diff_speed,same_speed);
 }
 
-bool MovementFollowWall::sp_turn_over(const Cell_t &curr) {
+bool MovementFollowWallInfrared::sp_turn_over(const Cell_t &curr) {
 		ROS_INFO("  %s %d:?? curr(%d,%d,%d)", __FUNCTION__, __LINE__, curr.X, curr.Y, curr.TH);
 		/*check if spot turn*/
 		if (get_sp_turn_count() > 400) {
@@ -376,7 +376,7 @@ bool MovementFollowWall::sp_turn_over(const Cell_t &curr) {
 		return false;
 	}
 
-bool MovementFollowWall::isFinish() {
+bool MovementFollowWallInfrared::isFinish() {
 	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mt_->sp_mode_);
 	return p_clean_mode->MovementFollowWallisFinish() || shouldMoveBack() || shouldTurn();
 //	return isNewLineReach() || /*isClosure(1) ||*/ shouldMoveBack() || shouldTurn()

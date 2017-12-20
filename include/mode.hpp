@@ -201,8 +201,8 @@ public:
 	MapDirection old_dir_{MAP_POS_X};
 	MapDirection new_dir_{MAP_POS_X};
 
-	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_;
-	boost::shared_ptr<APathAlgorithm> go_home_path_algorithm_;
+	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
+	boost::shared_ptr<APathAlgorithm> go_home_path_algorithm_{};
 
 protected:
 
@@ -282,6 +282,7 @@ public:
 	CleanModeFollowWall();
 	~CleanModeFollowWall() override ;
 
+	bool setNextAction() override ;
 	bool mapMark() override;
 
 

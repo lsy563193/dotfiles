@@ -300,7 +300,6 @@ extern bool g_go_to_charger_back_10cm;
 extern bool g_go_to_charger_back_0cm;
 extern int g_wall_distance;
 extern double g_time_straight;
-extern double time_start_straight;
 extern bool g_slip_backward;
 extern double bumper_turn_factor;
 extern Cell_t g_zero_home;

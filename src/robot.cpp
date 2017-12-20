@@ -20,7 +20,6 @@ bool	g_is_low_bat_pause=false;
 bool g_is_manual_pause=false;
 time_t	start_time;
 
-
 int16_t slam_error_count;
 
 // For obs dynamic adjustment
@@ -308,9 +307,9 @@ void robot::scanLinearCb(const sensor_msgs::LaserScan::ConstPtr &msg)
 	lidar.scanLinearCb(msg);
 }
 
-void robot::scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr &msg)
+void robot::scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr &scan)
 {
-	lidar.scanOriginalCb(msg);
+	lidar.scanOriginalCb(scan);
 }
 
 void robot::scanCompensateCb(const sensor_msgs::LaserScan::ConstPtr &msg)

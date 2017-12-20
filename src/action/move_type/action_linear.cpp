@@ -38,7 +38,7 @@ bool ActionLinear::isFinish()
 			PP_INFO();
 			movement_i_ = mm_forward;
 			resetTriggeredValue();
-			sp_movement_.reset(new MovementForward());
+			sp_movement_.reset(new MovementFollowPointLinear());
 		}
 		else if (movement_i_ == mm_forward) {
 			PP_INFO();

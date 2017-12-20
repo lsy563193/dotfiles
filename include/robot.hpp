@@ -248,7 +248,7 @@ private:
 //	void robot_map_metadata_cb(const nav_msgs::MapMetaData::ConstPtr& msg);
 	void mapCb(const nav_msgs::OccupancyGrid::ConstPtr &msg);
 	void scanLinearCb(const sensor_msgs::LaserScan::ConstPtr &msg);
-	void scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr &msg);
+	void scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr &scan);
 	void scanCompensateCb(const sensor_msgs::LaserScan::ConstPtr &msg);
 	void lidarPointCb(const visualization_msgs::Marker &point_marker);
 };

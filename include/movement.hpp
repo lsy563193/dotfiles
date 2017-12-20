@@ -29,44 +29,15 @@ protected:
 	static float s_pos_y;
 //	static Path_t path_;
 };
+
 class IFollowPoint{
 public:
 	virtual Point32_t calcTmpTarget()=0;
-};
-class MovementForward: public IMovement,public IFollowPoint{
-public:
-//	MovementForward(Point32_t);
-	MovementForward();
-//	~MovementForward(){ };
-	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
-	bool isFinish();
-
+protected:
 	Point32_t tmp_target_{};
-	bool isRconStop();
-	bool isOBSStop();
-	bool isLidarStop();
-	bool isBoundaryStop();
-	bool isPassTargetStop();
-	bool isNearTarget();
-	bool shouldMoveBack();
-//	void setTarget();
-	void setBaseSpeed();
-
-	bool isCellReach();
-	bool isPoseReach();
-
-	Point32_t calcTmpTarget();
-
-private:
-
-	int32_t integrated_;
-	int32_t base_speed_;
-	uint8_t integration_cycle_;
-	uint32_t tick_;
-	uint8_t turn_speed_;
-////	PPTargetType path_;
-	float odom_x_start;
-	float odom_y_start;
+	uint8_t integration_cycle_{};
+	int32_t integrated_{};
+	int32_t base_speed_{};
 };
 
 class MovementBack: public IMovement{
@@ -103,12 +74,45 @@ private:
 	int16_t target_angle_;
 };
 
-class MovementFollowWall:public IMovement {
+class MovementFollowPointLinear:public IMovement,public IFollowPoint
+{
+public:
+//	MovementFollowPointLinear(Point32_t);
+	MovementFollowPointLinear();
+//	~MovementFollowPointLinear(){ };
+	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
+	bool isFinish();
+
+	bool isRconStop();
+	bool isOBSStop();
+	bool isLidarStop();
+	bool isBoundaryStop();
+	bool isPassTargetStop();
+	bool isNearTarget();
+	bool shouldMoveBack();
+//	void setTarget();
+	void setBaseSpeed();
+
+	bool isCellReach();
+	bool isPoseReach();
+
+	Point32_t calcTmpTarget() override;
+
+private:
+
+	uint32_t tick_{};
+	uint8_t turn_speed_{};
+////	PPTargetType path_;
+	float odom_x_start{};
+	float odom_y_start{};
+};
+
+class MovementFollowWallInfrared:public IMovement{
 
 public:
-	MovementFollowWall(bool is_left);
+	explicit MovementFollowWallInfrared(bool is_left);
 
-	~MovementFollowWall() { /*set_wheel.speed(0,0);*/ };
+	~MovementFollowWallInfrared() { /*set_wheel.speed(0,0);*/ };
 
 	bool isFinish();
 	void reset_sp_turn_count() {
@@ -160,8 +164,22 @@ private:
 	double time_right_angle = 0;
 	int32_t same_speed_;
 	int32_t diff_speed_;
-private:
+protected:
 	bool is_left_{true};
+};
+
+class MovementFollowWallLidar:public IFollowPoint, public MovementFollowWallInfrared
+{
+public:
+	explicit MovementFollowWallLidar(bool is_left);
+
+	void adjustSpeed(int32_t&, int32_t&) override ;
+
+	Point32_t calcTmpTarget() override ;
+
+private:
+	bool is_no_target{};
+	bool is_sp_turn{};
 };
 
 class MovementGoToCharger: public IMovement

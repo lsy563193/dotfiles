@@ -45,7 +45,11 @@ bool ActionFollowWall::isFinish()
 		if (movement_i_ == mm_turn) {
 			resetTriggeredValue();
 			movement_i_ = mm_forward;
-			sp_movement_.reset(new MovementFollowWall(is_left_));
+//			sp_movement_.reset(new MovementFollowWallInfrared(is_left_));
+			if(is_left_)
+				sp_movement_.reset(new MovementFollowWallLidar(is_left_));
+			else
+				sp_movement_.reset(new MovementFollowWallInfrared(is_left_));
 		}
 		else if (movement_i_ == mm_forward) {
 			if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip) {

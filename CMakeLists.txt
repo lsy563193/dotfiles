@@ -79,8 +79,8 @@ FILE(GLOB PP_SRC
 				src/action/move_type/movement/movement.cpp
 				src/action/move_type/movement/movement_back.cpp
 				src/action/move_type/movement/movement_back.cpp
-				src/action/move_type/movement/movement_fall_wall.cpp
-				src/action/move_type/movement/movement_fall_wall.cpp
+				src/action/move_type/movement/movement_follow_wall_infrared.cpp
+				src/action/move_type/movement/movement_follow_wall_lidar.cpp
 				src/action/move_type/movement/movement_forward.cpp
 				src/action/move_type/movement/movement_forward.cpp
 				src/action/move_type/movement/movement_go_charger.cpp

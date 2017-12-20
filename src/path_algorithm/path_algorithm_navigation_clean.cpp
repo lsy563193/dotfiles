@@ -8,6 +8,7 @@
 bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir, Path_t &plan_path)
 {
 
+	plan_path.clear();
 	//Step 1: Find possible targets in same lane.
 	plan_path = findTargetInSameLane(map, curr_cell);
 	if (!plan_path.empty())
