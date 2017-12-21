@@ -66,7 +66,7 @@ void Lidar::scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr &scan)
 		extern Points g_wf_path;
 		std::vector<Vector2<double>> g_wf_target_point{};
 		g_wf_path.clear();
-		getLidarWfTarget2(&g_wf_target_point);
+		getLidarWfTarget2(g_wf_target_point);
 		for (auto iter = g_wf_target_point.begin(); iter != g_wf_target_point.end(); ++iter) {
 			Point32_t p_target = GridMap::getRelative(GridMap::getCurrPoint(),int(iter->Y * 1000),int(iter->X * 1000),true);
 			g_wf_path.push_back(p_target);
@@ -1515,42 +1515,24 @@ bool Lidar::openTimeOut()
 
 bool min_target(Vector2<double> a, Vector2<double> b)
 {
-	//auto dis_a = sqrt(pow(a.x - ROBOT_RADIUS, 2) + pow(a.y - 0, 2));//useful
-	//auto dis_b = sqrt(pow(b.x - ROBOT_RADIUS, 2) + pow(b.y - 0, 2));
-	auto dis_a = sqrt(pow(a.x - CHASE_X, 2) + pow(a.y - 0, 2));
-	auto dis_b = sqrt(pow(b.x - CHASE_X, 2) + pow(b.y - 0, 2));
-	//ROS_INFO("dis_a = %lf,dis_b = %lf",dis_a, dis_b);
-	return dis_a < dis_b;
+	return a.Distance({CHASE_X, 0}) < b.Distance({CHASE_X, 0});
 }
 
-void sort_target(std::vector<Vector2<double>> *point, bool is_left_wf)
+void sort_target(std::vector<Vector2<double>>& points)
 {
-	auto tmp_point = (*point);
-	(*point).clear();
+	auto tmp_point = points;
+	points.clear();
+	auto size = tmp_point.size();
+
 	auto iter_min = std::min_element(tmp_point.begin(), tmp_point.end(), min_target);
 	auto min_i = std::distance(std::begin(tmp_point), iter_min);
-	//ROS_ERROR("size = %d, min_i = %d", size, min_i);
-	if (tmp_point.empty()) {
-//		ROS_ERROR("size = 0");
-		return;
-	}
-	//sort for the min distance point
-	auto size = tmp_point.size();
 	for(int i = 0; i < size; i++) {
 		auto index = min_i + i;
 		index = index < size ? index : index - size;
-		(*point).push_back(tmp_point[index]);
-	}
-	tmp_point = (*point);
-	(*point).clear();
-	//remove the back point
-	for (auto iter = tmp_point.begin(); iter != (tmp_point.end() - 1); ++iter) {
-		Vector2<double> a = *iter;
-		auto tmp_cond = is_left_wf ? ((a.x < 0 && a.y < 0.4 && a.y > -ROBOT_RADIUS) || (a.x < CHASE_X && fabs(a.y) < ROBOT_RADIUS)) : ((a.x < 0 && a.y > -0.4 && a.y < ROBOT_RADIUS) || (a.x < CHASE_X && fabs(a.y) < ROBOT_RADIUS));
-		if (!tmp_cond)
-			(*point).push_back(a);
+		points.push_back(tmp_point[index]);
 	}
 }
+
 //
 //void Lidar::pubPointMarker(std::vector<Vector2<double>> *point)
 //{
@@ -1698,10 +1680,9 @@ bool check_is_valid(Vector2<double> point, Paras para, sensor_msgs::LaserScan sc
 	return point.Distance({0,0})<=0.4;
 }
 
-bool Lidar::getLidarWfTarget2(std::vector<Vector2<double>> *points)
-{
+bool Lidar::getLidarWfTarget2(std::vector<Vector2<double>> &points) {
 	static uint32_t seq = 0;
-	bool is_left=true;
+	bool is_left = true;
 	Paras para{is_left};
 	auto scan = lidarScanData_original_;
 
@@ -1712,34 +1693,48 @@ bool Lidar::getLidarWfTarget2(std::vector<Vector2<double>> *points)
 	}
 	seq = scan.header.seq;
 	fit_line_marker.points.clear();
-	(*points).clear();
+	points.clear();
 
 	auto is_obstacle = check_obstacle(scan, para);
 	ROS_WARN("is_obstacle = %d", is_obstacle);
 	for (int i = 359; i >= 0; i--) {
 		//ROS_INFO("i = %d", i);
 		if (scan.ranges[i] < 4 && scan.ranges[i - 1] < 4) {
-			auto point1 = polar_to_cartesian(scan.ranges[i],i);
+			auto point1 = polar_to_cartesian(scan.ranges[i], i);
 
-			if(!para.inRange(point1))
+			if (!para.inRange(point1))
 				continue;
 
-			auto point2 = polar_to_cartesian(scan.ranges[i-1],i-1);
+			auto point2 = polar_to_cartesian(scan.ranges[i - 1], i - 1);
 
 			if (point2.Distance(point1) > 0.05) {
 				//ROS_INFO("two points distance is too large");
 				continue;
 			}
-			auto target = get_middle_point(point1,point2,para);
-			if(!check_is_valid(target, para, scan))
+			auto target = get_middle_point(point1, point2, para);
+
+			auto tmp_cond = is_left ? ((target.X < 0 && target.Y < 0.4 && target.Y > -0.167) ||
+																		(target.X < CHASE_X && fabs(target.Y) < 0.167)) : (
+															(target.X < 0 && target.Y > -0.4 && target.Y < 0.167) ||
+															(target.X < CHASE_X && fabs(target.Y) < 0.167));
+
+			if (!check_is_valid(target, para, scan))
 				continue;
 
-			(*points).push_back(target);
+			points.push_back(target);
 		}
 	}
-	//ROS_INFO("wft2 size = %d", (*points).size());
-	sort_target(points, is_left);
-	robot::instance()->pubPointMarkers(points,scan.header.frame_id);
+
+	if (points.empty()) {
+		return false;
+	}
+	if (!is_left) {
+		std::reverse(points.begin(), points.end());//for the right wall follow
+	}
+	std::sort(points.begin(), points.end(), [](Vector2<double> a, Vector2<double> b) {
+		return a.Distance({CHASE_X, 0}) < b.Distance({CHASE_X, 0});
+	});
+	robot::instance()->pubPointMarkers(&points, scan.header.frame_id);
 	return true;
 }
 

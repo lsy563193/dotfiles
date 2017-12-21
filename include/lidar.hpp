@@ -47,7 +47,7 @@ public:
 	void motorCtrl(bool switch_);
 	bool openTimeOut();
 	void pubPointMarker(std::vector<Vector2<double>> *point);
-	bool getLidarWfTarget2(std::vector<Vector2<double>> *points);
+	bool getLidarWfTarget2(std::vector<Vector2<double>> &points);
 	void startAlign();
 	bool alignTimeOut();
 	bool alignFinish();
