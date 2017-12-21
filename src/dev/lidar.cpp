@@ -1592,9 +1592,12 @@ class Paras{
 public:
 	explicit Paras(bool is_left):is_left_(is_left)
 	{
-		narrow = is_left ? 0.187 : 0.197;
-		y_max = is_left ? 0.3 : 0.25;
+		auto narrow = is_left ? 0.187 : 0.197;
+		x_min = LIDAR_OFFSET_X;
 		x_max = is_left ? 0.3 : 0.25;
+
+		y_min = 0;
+		y_max = is_left ? 0.3 : 0.25;
 
 		auto y_start_forward = is_left ? 0.06: -0.06;
 		auto y_end_forward = is_left ? -ROBOT_RADIUS: ROBOT_RADIUS;
@@ -1606,6 +1609,11 @@ public:
 		y_min_forward = std::min(y_side_start, y_side_end);
 		y_max_forward = std::max(y_side_start, y_side_end);
 	};
+
+	bool inRange(const Vector2<double> &point) const {
+		return (point.X > x_min && (point.X < x_max && point.Y > y_min && point.X < y_max));
+	}
+
 	bool inForwardRange(const Vector2<double> &point) const {
 		return point.X > x_min && point.X < x_max && point.Y > y_min_forward && point.Y < y_max_forward;
 	}
@@ -1615,10 +1623,11 @@ public:
 	}
 
 	bool is_left_;
-	double x_max{0.3};
-	double x_min{LIDAR_OFFSET_X};
+	double x_min;
+	double x_max;
+
+	double y_min;
 	double y_max;
-	double narrow;
 
 	double y_min_forward;
 	double y_max_forward;
@@ -1706,17 +1715,13 @@ bool Lidar::getLidarWfTarget2(std::vector<Vector2<double>> *points)
 
 	auto is_obstacle = check_obstacle(scan, para);
 	ROS_WARN("is_obstacle = %d", is_obstacle);
-//	auto targets = genTarget();
 	for (int i = 359; i >= 0; i--) {
 		//ROS_INFO("i = %d", i);
 		if (scan.ranges[i] < 4 && scan.ranges[i - 1] < 4) {
 			auto point1 = polar_to_cartesian(scan.ranges[i],i);
 
-			if ((!is_obstacle && (point1.X > para.x_max || (is_left ^ point1.Y > 0))
-					 || std::abs(point1.Y) > para.y_max
-					 || point1.X < 0)) {
+			if(!para.inRange(point1,is_obstacle))
 				continue;
-			}
 
 			auto point2 = polar_to_cartesian(scan.ranges[i-1],i-1);
 
