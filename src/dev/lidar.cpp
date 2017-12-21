@@ -902,7 +902,7 @@ bool Lidar::fitLineGroup(std::vector<std::vector<Vector2<double>> > *groups, dou
 			//double y_l = fabs(c / b);
 			double dis = fabs(c / (sqrt(a * a + b * b)));
 			//if ((x_l > L) && (y_l > L)) {
-			if (dis > dis_lim || dis < 0.167 || x_0 < 0) {
+			if (dis > dis_lim || dis < ROBOT_RADIUS || x_0 < 0) {
 				//ROS_INFO("the line is too far away from robot. x_l = %lf, y_l = %lf", x_l, y_l);
 				ROS_DEBUG("the line is too far away from robot. dis = %lf", dis);
 				continue;
@@ -982,7 +982,7 @@ double Lidar::getLidarDistance(uint16_t angle){
 static uint8_t setLidarMarkerAcr2Dir(double X_MIN,double X_MAX,int angle_from,int angle_to,int dx,int dy,const sensor_msgs::LaserScan *scan_range,uint8_t *lidar_status,uint8_t obs_status)
 {
 	double x,y,th;
-	const	double Y_MIN = 0.140;//0.167
+	const	double Y_MIN = 0.140;//ROBOT_RADIUS
 	const	double Y_MAX = 0.237;//0.279
 	int count = 0;
 	uint8_t ret = 0;
@@ -1045,8 +1045,8 @@ uint8_t Lidar::lidarMarker(double X_MAX)
 	}
 	double x, y;
 	int dx, dy;
-//	const double X_MIN = 0.140;//0.167
-//	const	double Y_MIN = 0.167;//0.167
+//	const double X_MIN = 0.140;//ROBOT_RADIUS
+//	const	double Y_MIN = ROBOT_RADIUS;//ROBOT_RADIUS
 	const	double Y_MAX = 0.20;//0.279
 	int	count_array[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
@@ -1344,7 +1344,7 @@ int Lidar::compLaneDistance()
 			y = sin(th * PI / 180.0) * tmp_scan_data.ranges[i];
 			x1 = x * cos(0 - cur_angle * PI / 180.0) + y * sin(0 - cur_angle * PI / 180.0);
 			//ROS_INFO("x = %lf, y = %lf, x1 = %lf, y1 = %lf", x, y, x1, y1);
-			if (fabs(y1) < 0.167) {
+			if (fabs(y1) < ROBOT_RADIUS) {
 				if (fabs(x1) <= x_front_min) {
 					x_front_min = fabs(x1);
 					//ROS_WARN("x_front_min = %lf", x_front_min);
@@ -1364,7 +1364,7 @@ int Lidar::compLaneDistance()
 			x1 = x * cos(0 - cur_angle * PI / 180.0) + y * sin(0 - cur_angle * PI / 180.0);
 			y1 = y * cos(0 - cur_angle * PI / 180.0) - x * sin(0 - cur_angle * PI / 180.0);
 			//ROS_INFO("x = %lf, y = %lf, x1 = %lf, y1 = %lf", x, y, x1, y1);
-			if (fabs(y1) < 0.167) {
+			if (fabs(y1) < ROBOT_RADIUS) {
 				if (fabs(x1) <= x_back_min) {
 					x_back_min = fabs(x1);
 					//ROS_WARN("x_back_min = %lf", x_back_min);
@@ -1383,7 +1383,7 @@ int Lidar::compLaneDistance()
 			coordinate_transform(&x, &y, LIDAR_THETA, LIDAR_OFFSET_X, LIDAR_OFFSET_Y);
 			coordinate_transform(&x, &y, cur_angle * 10, 0, 0);
 			//ROS_INFO("x = %lf, y = %lf", x, y);
-			if (fabs(y) < 0.167) {
+			if (fabs(y) < ROBOT_RADIUS) {
 				if (x >= 0){
 					if (fabs(x) <= x_front_min) {
 						x_front_min = fabs(x);
@@ -1546,7 +1546,7 @@ void sort_target(std::vector<Vector2<double>> *point, bool is_left_wf)
 	//remove the back point
 	for (auto iter = tmp_point.begin(); iter != (tmp_point.end() - 1); ++iter) {
 		Vector2<double> a = *iter;
-		auto tmp_cond = is_left_wf ? ((a.x < 0 && a.y < 0.4 && a.y > -0.167) || (a.x < CHASE_X && fabs(a.y) < 0.167)) : ((a.x < 0 && a.y > -0.4 && a.y < 0.167) || (a.x < CHASE_X && fabs(a.y) < 0.167));
+		auto tmp_cond = is_left_wf ? ((a.x < 0 && a.y < 0.4 && a.y > -ROBOT_RADIUS) || (a.x < CHASE_X && fabs(a.y) < ROBOT_RADIUS)) : ((a.x < 0 && a.y > -0.4 && a.y < ROBOT_RADIUS) || (a.x < CHASE_X && fabs(a.y) < ROBOT_RADIUS));
 		if (!tmp_cond)
 			(*point).push_back(a);
 	}
@@ -1588,38 +1588,6 @@ void sort_target(std::vector<Vector2<double>> *point, bool is_left_wf)
 //	}
 //}
 
-bool check_corner(sensor_msgs::LaserScan scan,bool is_left)
-{
-	int tmp_for_count = 0;
-	int tmp_side_count = 0;
-	for (int j = 359; j > 0; j--) {
-		int i = j >= 0 ? j : j + 360;
-		if (scan.ranges[i] < 4) {
-			auto x_1 = cos((i * 1.0 + 180.0) * PI / 180.0) * scan.ranges[i];
-			auto y_1 = sin((i * 1.0 + 180.0) * PI / 180.0) * scan.ranges[i];
-			auto tmp_cond_0 = is_left ? (y_1 < 0.06 && y_1 > -0.167 && x_1 > LIDAR_OFFSET_X && x_1 < 0.3) : (y_1 > -0.06 && y_1 < 0.167 && x_1 > LIDAR_OFFSET_X && x_1 < 0.25);
-			if (tmp_cond_0) {
-				tmp_for_count++;
-				//ROS_WARN("tmp_for_count = %d x_1 = %lf, y_1 = %lf", tmp_for_count, x_1, y_1);
-				if (tmp_for_count > 10) {
-					//is_right_angle = true;
-					//break;
-				}
-			}
-			auto tmp_cond = is_left ? (x_1 > 0 && x_1 < 0.167 && y_1 > 0 && y_1 < 0.197) : (x_1 > 0 && x_1 < 0.167 && y_1 < 0 && y_1 > -0.197);
-			if (tmp_cond) {
-				//double tmp_dis = sqrt(pow(x_1, 2) + pow(y_1, 2));
-				//ROS_WARN("tmp_side_count = %d tmp_dis = %lf", tmp_side_count, tmp_dis);
-				//ROS_WARN("tmp_side_count = %d x_1 = %lf, y_1 = %lf", tmp_side_count, x_1, y_1);
-				auto tmp_cond_1 = is_left ? (y_1 < 0.197) : (y_1 > -0.197);
-				if (tmp_cond_1) {
-					tmp_side_count++;
-				}
-			}
-		}
-	}
-	return tmp_for_count > 10 && tmp_side_count > 20;
-}
 Vector2<double> polar_to_cartesian(double polar,int i)
 {
 	Vector2<double> point{cos((i * 1.0 + 180.0) * PI / 180.0) * polar,
@@ -1629,6 +1597,34 @@ Vector2<double> polar_to_cartesian(double polar,int i)
 	return point;
 
 }
+
+bool check_corner(sensor_msgs::LaserScan scan,bool is_left,const double NARROW_DIS) {
+	int tmp_forward_count = 0;
+	int tmp_side_count = 0;
+	for (int j = 359; j > 0; j--) {
+		int i = j >= 0 ? j : j + 360;
+		if (scan.ranges[i] < 4) {
+
+			auto point1 = polar_to_cartesian(scan.ranges[i], i);
+			auto forward_is_wall = is_left ? (point1.Y < 0.06 && point1.Y > -ROBOT_RADIUS && point1.X > LIDAR_OFFSET_X && point1.X < 0.3)
+																: (point1.Y > -0.06 && point1.Y < ROBOT_RADIUS && point1.X > LIDAR_OFFSET_X && point1.X < 0.25);
+			if (forward_is_wall) {
+				tmp_forward_count++;
+			}
+			auto side_is_wall = is_left ? (point1.X > 0 && point1.X < ROBOT_RADIUS && point1.Y > 0 && point1.Y < NARROW_DIS) : (
+							point1.X > 0 && point1.X < ROBOT_RADIUS && point1.Y < 0 && point1.Y > -NARROW_DIS);
+			if (side_is_wall) {
+				auto tmp_cond_1 = is_left ? (point1.Y < NARROW_DIS) : (point1.Y > -NARROW_DIS);
+				if (tmp_cond_1) {
+					tmp_side_count++;
+				}
+			}
+		}
+	}
+	return tmp_forward_count > 10 && tmp_side_count > 20;
+}
+
+
 Vector2<double> get_middle_point(Vector2<double> cart1, Vector2<double> cart2, double dis) {
 	auto cart3 = (cart1 + cart2) / 2;
 	Vector2<double> cart;
@@ -1661,13 +1657,14 @@ bool check_is_valid(Vector2<double> point, double narrow_dis, sensor_msgs::Laser
 	}
 	return point.Distance({0,0})<=0.4;
 }
+
 bool Lidar::getLidarWfTarget2(std::vector<Vector2<double>> *points)
 {
 	static uint32_t seq = 0;
-	int8_t is_left_wf;
+	int8_t is_left_;
 //	if (mt_is_left())
-			is_left_wf = 1;//left wall follow
-		double NARROW_DIS = is_left_wf ? 0.187 : 0.197;
+			is_left_ = 1;//left wall follow
+		const double NARROW_DIS = is_left_ ? 0.187 : 0.197;
 	auto tmp_scan_data = lidarScanData_original_;
 
 	//ROS_WARN("laser seq = %d", tmp_scan_data.header.seq);
@@ -1679,14 +1676,14 @@ bool Lidar::getLidarWfTarget2(std::vector<Vector2<double>> *points)
 	fit_line_marker.points.clear();
 	(*points).clear();
 
-	auto is_corner = check_corner(tmp_scan_data,is_left_wf);
+	auto is_corner = check_corner(tmp_scan_data,is_left_, NARROW_DIS);
 	ROS_WARN("is_corner = %d", is_corner);
 	for (int i = 359; i >= 0; i--) {
 		//ROS_INFO("i = %d", i);
 		if (tmp_scan_data.ranges[i] < 4 && tmp_scan_data.ranges[i - 1] < 4) {
 			auto point1 = polar_to_cartesian(tmp_scan_data.ranges[i],i);
 
-			if ((!is_corner && (point1.X > 0.3 || (is_left_wf ^ point1.Y > 0))
+			if ((!is_corner && (point1.X > 0.3 || (is_left_ ^ point1.Y > 0))
 					 || std::abs(point1.Y) > 0.3
 					 || point1.X < 0)) {
 				continue;
@@ -1699,11 +1696,9 @@ bool Lidar::getLidarWfTarget2(std::vector<Vector2<double>> *points)
 				continue;
 			}
 			auto target = get_middle_point(point1,point2,NARROW_DIS);
-
 			//ROS_WARN("i = %d, x_raw = %lf, y_raw = %lf", i, x, y);
 			//ROS_WARN("i = %d, x = %lf, y = %lf", i, x, y);
 			//ROS_INFO("p1(%lf, %lf), p2(%lf, %lf), p3(%lf, %lf), p4(%lf, %lf)", cart1_X, cart1_Y, cart2_X, cart2_Y, x_3, y_3, x_4, y_4);
-
 			if(!check_is_valid(target, NARROW_DIS, tmp_scan_data))
 				continue;
 
@@ -1711,7 +1706,7 @@ bool Lidar::getLidarWfTarget2(std::vector<Vector2<double>> *points)
 		}
 	}
 	//ROS_INFO("wft2 size = %d", (*points).size());
-	sort_target(points, is_left_wf);
+	sort_target(points, is_left_);
 	robot::instance()->pubPointMarkers(points,tmp_scan_data.header.frame_id);
 	return true;
 }
