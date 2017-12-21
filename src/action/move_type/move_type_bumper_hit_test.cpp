@@ -10,7 +10,6 @@
 MoveTypeBumperHitTest::MoveTypeBumperHitTest()
 {
 	ROS_INFO("%s,%d: Move type is bumper hit test.", __FUNCTION__, __LINE__);
-	led.set_mode(LED_STEADY, LED_GREEN);
 	p_direct_go_movement_.reset(new MovementDirectGo());
 	p_back_movement_.reset();
 	p_turn_movement_.reset();

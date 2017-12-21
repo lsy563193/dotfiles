@@ -300,6 +300,8 @@ void ACleanMode::genNextAction()
 		sp_action_.reset(new MoveTypeBumperHitTest);
 	else if (action_i_ == ac_check_vacuum)
 		sp_action_.reset(new ActionCheckVacuum);
+	else if (action_i_ == ac_movement_direct_go)
+		sp_action_.reset(new MovementDirectGo);
 	else if(action_i_ == ac_null)
 		sp_action_.reset();
 	PP_INFO();

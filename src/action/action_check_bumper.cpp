@@ -10,7 +10,6 @@
 ActionCheckBumper::ActionCheckBumper()
 {
 	ROS_INFO("%s %d: Starting action check bumper." , __FUNCTION__, __LINE__);
-	led.set_mode(LED_STEADY, LED_OFF);
 }
 
 bool ActionCheckBumper::isFinish()

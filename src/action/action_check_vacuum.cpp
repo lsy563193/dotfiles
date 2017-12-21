@@ -13,6 +13,12 @@ ActionCheckVacuum::ActionCheckVacuum()
 
 bool ActionCheckVacuum::isFinish()
 {
+	if (ev.key_clean_pressed)
+	{
+		ev.key_clean_pressed = false;
+		return true;
+	}
+
 	return false;
 }
 
@@ -24,4 +30,5 @@ bool ActionCheckVacuum::isExit()
 void ActionCheckVacuum::run()
 {
 	// Just...
+	vacuum.bldcSpeed(80);
 }
