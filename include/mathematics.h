@@ -310,8 +310,6 @@
 typedef Vector2<int16_t> Cell_t;
 typedef Vector2<int32_t> Point32_t;
 
-typedef struct Point_d_t Point_d_t;
-
 typedef struct
 {
   double A;
@@ -323,8 +321,8 @@ typedef struct
   double x2;//point 2
   double y2;
   double K; //gradient in degree
-  double dist_2_this_line(Point_d_t p){
-	  return fabs(A*p.x+B*p.y+C)/sqrt(A*A+B*B);
+  double dist_2_this_line(Vector2<double> p){
+	  return fabs(A*p.X+B*p.Y+C)/sqrt(A*A+B*B);
   }
 } LineABC;
 
