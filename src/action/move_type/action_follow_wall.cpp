@@ -18,7 +18,7 @@ ActionFollowWall::ActionFollowWall(bool is_left, bool is_trapped)
 		turn_angle = 0;
 	turn_target_angle_ = ranged_angle(robot::instance()->getPoseAngle() + turn_angle);
 	movement_i_ = mm_turn;
-	sp_movement_.reset(new MovementTurn(turn_target_angle_));
+	sp_movement_.reset(new MovementTurn(turn_target_angle_, ROTATE_TOP_SPEED));
 	IMovement::sp_mt_ = this;
 
 //	if (action_i_ == ac_back) {
@@ -62,14 +62,14 @@ bool ActionFollowWall::isFinish()
 				PP_INFO();
 //				resetTriggeredValue();
 				movement_i_ = mm_back;
-				sp_movement_.reset(new MovementBack);
+				sp_movement_.reset(new MovementBack(0.01, BACK_MAX_SPEED));
 			}
 			else if (ev.lidar_triggered || ev.obs_triggered) {
 				PP_INFO();
 				int16_t turn_angle =get_turn_angle(false);
 				turn_target_angle_ = ranged_angle(robot::instance()->getPoseAngle() + turn_angle);
 				movement_i_ = mm_turn;
-				sp_movement_.reset(new MovementTurn(turn_target_angle_));
+				sp_movement_.reset(new MovementTurn(turn_target_angle_, ROTATE_TOP_SPEED));
 				resetTriggeredValue();
 			}
 			else
@@ -82,7 +82,7 @@ bool ActionFollowWall::isFinish()
 			movement_i_ = mm_turn;
 			int16_t turn_angle =get_turn_angle(false);
 			turn_target_angle_ = ranged_angle(robot::instance()->getPoseAngle() + turn_angle);
-			sp_movement_.reset(new MovementTurn(turn_target_angle_));
+			sp_movement_.reset(new MovementTurn(turn_target_angle_, ROTATE_TOP_SPEED));
 			resetTriggeredValue();
 		}
 	}

@@ -94,7 +94,7 @@ IAction* ModeRemote::getNextAction()
 		if (bumper.get_status() || cliff.get_status())
 		{
 			action_i_ = ac_back;
-			return new MovementBack();
+			return new MovementBack(0.01, BACK_MAX_SPEED);
 		}
 		else if (ev.remote_direction_forward)
 		{
@@ -106,13 +106,13 @@ IAction* ModeRemote::getNextAction()
 		{
 			action_i_ = ac_turn;
 			ev.remote_direction_left = false;
-			return new MovementTurn(static_cast<int16_t>(robot::instance()->getPoseAngle() + 300));
+			return new MovementTurn(static_cast<int16_t>(robot::instance()->getPoseAngle() + 300), ROTATE_TOP_SPEED);
 		}
 		else if (ev.remote_direction_right)
 		{
 			action_i_ = ac_turn;
 			ev.remote_direction_right = false;
-			return new MovementTurn(static_cast<int16_t>(robot::instance()->getPoseAngle() - 300));
+			return new MovementTurn(static_cast<int16_t>(robot::instance()->getPoseAngle() - 300), ROTATE_TOP_SPEED);
 		}
 	}
 
@@ -122,7 +122,7 @@ IAction* ModeRemote::getNextAction()
 		{
 			PP_INFO();
 			action_i_ = ac_back;
-			return new MovementBack();
+			return new MovementBack(0.01, BACK_MAX_SPEED);
 		}
 		else
 		{
@@ -139,7 +139,7 @@ IAction* ModeRemote::getNextAction()
 		if (bumper.get_status() || cliff.get_status())
 		{
 			action_i_ = ac_back;
-			return new MovementBack();
+			return new MovementBack(0.01, BACK_MAX_SPEED);
 		}
 		else
 		{

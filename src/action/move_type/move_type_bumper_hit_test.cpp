@@ -37,18 +37,18 @@ bool MoveTypeBumperHitTest::isFinish()
 	}
 	else if (p_turn_movement_ != nullptr)
 	{
-		if (ros::Time::now().toSec() - turn_time_stamp_ > 0.4)
+		if (ros::Time::now().toSec() - turn_time_stamp_ > 0.6)
 			p_turn_movement_.reset();
 	}
 	else if (bumper.get_status())
 	{
 		float back_distance = 0.08;
-		p_back_movement_.reset(new MovementBack(back_distance));
+		p_back_movement_.reset(new MovementBack(back_distance, 40));
 		if (turn_left_)
 			turn_target_angle_ = ranged_angle(static_cast<int16_t>(robot::instance()->getPoseAngle() + 900));
 		else
 			turn_target_angle_ = ranged_angle(static_cast<int16_t>(robot::instance()->getPoseAngle() - 900));
-		p_turn_movement_.reset(new MovementTurn(turn_target_angle_));
+		p_turn_movement_.reset(new MovementTurn(turn_target_angle_, 40));
 		turn_left_ = !turn_left_;
 	}
 

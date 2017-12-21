@@ -43,7 +43,7 @@ protected:
 
 class MovementBack: public IMovement{
 public:
-	MovementBack(float back_distance = 0.01);
+	explicit MovementBack(float back_distance, uint8_t max_speed);
 	~MovementBack(){
 		//set_wheel.speed(1, 1);
 	}
@@ -53,6 +53,7 @@ public:
 	bool isFinish();
 
 private:
+	uint8_t max_speed_;
 	float back_distance_;
 	int32_t speed_;
 	uint8_t bumper_jam_cnt_;
@@ -63,13 +64,14 @@ private:
 class MovementTurn: public IMovement{
 public:
 
-	MovementTurn(int16_t target_angle);
+	explicit MovementTurn(int16_t target_angle, uint8_t max_speed);
 	void adjustSpeed(int32_t&, int32_t&) override;
 	bool isReach();
 	bool shouldMoveBack();
 	bool isFinish() override;
 
 private:
+	uint8_t max_speed_;
 	uint16_t accurate_;
 	uint8_t speed_;
 	int16_t target_angle_;
