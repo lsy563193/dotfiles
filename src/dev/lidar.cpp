@@ -1592,7 +1592,7 @@ class Paras{
 public:
 	explicit Paras(bool is_left):is_left_(is_left)
 	{
-		auto narrow = is_left ? 0.187 : 0.197;
+		narrow = is_left ? 0.187 : 0.197;
 		x_min = LIDAR_OFFSET_X;
 		x_max = is_left ? 0.3 : 0.25;
 
@@ -1622,6 +1622,7 @@ public:
 		return point.X > x_min && point.X < x_max && point.Y > y_min_side && point.Y < y_max_side;
 	}
 
+	double narrow;
 	bool is_left_;
 	double x_min;
 	double x_max;
@@ -1664,33 +1665,33 @@ bool check_obstacle(sensor_msgs::LaserScan scan, const Paras para) {
 }
 
 
-Vector2<double> get_middle_point(Vector2<double> cart1, Vector2<double> cart2, double dis) {
-	auto cart3 = (cart1 + cart2) / 2;
-	Vector2<double> cart;
+Vector2<double> get_middle_point(Vector2<double> p1, Vector2<double> p2,Paras para) {
+	auto cart3 = (p1 + p2) / 2;
+	Vector2<double> p;
 
-	auto x_4 = dis / (sqrt(1 + cart1.SquaredDistance(cart2))) + cart3.X;
-	auto y_4 = ((x_4 - cart3.X) * (cart1.X - cart2.X) / (cart2.Y - cart1.Y)) + cart3.Y;
+	auto x_4 = para.narrow / (sqrt(1 + p1.SquaredDistance(p2))) + cart3.X;
+	auto y_4 = ((x_4 - cart3.X) * (p1.X - p2.X) / (p2.Y - p1.Y)) + cart3.Y;
 
-	if (((cart1.X - x_4) * (cart2.Y - y_4) - (cart1.Y - y_4) * (cart2.X - x_4)) < 0) {
-		cart.X = x_4;
-		cart.Y = y_4;
+	if (((p1.X - x_4) * (p2.Y - y_4) - (p1.Y - y_4) * (p2.X - x_4)) < 0) {
+		p.X = x_4;
+		p.Y = y_4;
 	}
 	else {
-		x_4 = 0 - dis / (sqrt(1 + cart1.SquaredDistance(cart2))) + cart3.X;
-		y_4 = ((x_4 - cart3.X) * (cart1.X - cart2.X) / (cart2.Y - cart1.Y)) + cart3.Y;
+		x_4 = 0 - para.narrow / (sqrt(1 + p1.SquaredDistance(p2))) + cart3.X;
+		y_4 = ((x_4 - cart3.X) * (p1.X - p2.X) / (p2.Y - p1.Y)) + cart3.Y;
 
-		cart.X = x_4;
-		cart.Y = y_4;
+		p.X = x_4;
+		p.Y = y_4;
 	}
-	return cart;
+	return p;
 }
 
-bool check_is_valid(Vector2<double> point, double narrow_dis, sensor_msgs::LaserScan scan) {
+bool check_is_valid(Vector2<double> point, Paras para, sensor_msgs::LaserScan scan) {
 	for (int j = 359; j > 0; j--) {
 		auto cart_j = polar_to_cartesian(scan.ranges[j], j);
 		auto distance = point.Distance(cart_j);
 		//ROS_INFO("distance =  %lf", distance);
-		if (distance < narrow_dis - 0.03) {
+		if (distance < para.narrow - 0.03) {
 			return false;
 		}
 	}
@@ -1720,7 +1721,7 @@ bool Lidar::getLidarWfTarget2(std::vector<Vector2<double>> *points)
 		if (scan.ranges[i] < 4 && scan.ranges[i - 1] < 4) {
 			auto point1 = polar_to_cartesian(scan.ranges[i],i);
 
-			if(!para.inRange(point1,is_obstacle))
+			if(!para.inRange(point1))
 				continue;
 
 			auto point2 = polar_to_cartesian(scan.ranges[i-1],i-1);
@@ -1729,8 +1730,8 @@ bool Lidar::getLidarWfTarget2(std::vector<Vector2<double>> *points)
 				//ROS_INFO("two points distance is too large");
 				continue;
 			}
-			auto target = get_middle_point(point1,point2,para.narrow);
-			if(!check_is_valid(target, para.narrow, scan))
+			auto target = get_middle_point(point1,point2,para);
+			if(!check_is_valid(target, para, scan))
 				continue;
 
 			(*points).push_back(target);
