@@ -1588,6 +1588,45 @@ void sort_target(std::vector<Vector2<double>> *point, bool is_left_wf)
 //	}
 //}
 
+class Paras{
+public:
+	explicit Paras(bool is_left):is_left_(is_left)
+	{
+		narrow = is_left ? 0.187 : 0.197;
+		y_max = is_left ? 0.3 : 0.25;
+		x_max = is_left ? 0.3 : 0.25;
+
+		auto y_start_forward = is_left ? 0.06: -0.06;
+		auto y_end_forward = is_left ? -ROBOT_RADIUS: ROBOT_RADIUS;
+		y_min_forward = std::min(y_start_forward, y_end_forward);
+		y_max_forward = std::max(y_start_forward, y_end_forward);
+
+		auto y_side_start = is_left ? 0.06: -0.06;
+		auto y_side_end = is_left ? -narrow: narrow;
+		y_min_forward = std::min(y_side_start, y_side_end);
+		y_max_forward = std::max(y_side_start, y_side_end);
+	};
+	bool inForwardRange(const Vector2<double> &point) const {
+		return point.X > x_min && point.X < x_max && point.Y > y_min_forward && point.Y < y_max_forward;
+	}
+
+	bool inSidedRange(const Vector2<double> &point) const {
+		return point.X > x_min && point.X < x_max && point.Y > y_min_side && point.Y < y_max_side;
+	}
+
+	bool is_left_;
+	double x_max{0.3};
+	double x_min{LIDAR_OFFSET_X};
+	double y_max;
+	double narrow;
+
+	double y_min_forward;
+	double y_max_forward;
+
+	double y_min_side;
+	double y_max_side;
+};
+
 Vector2<double> polar_to_cartesian(double polar,int i)
 {
 	Vector2<double> point{cos((i * 1.0 + 180.0) * PI / 180.0) * polar,
@@ -1598,30 +1637,21 @@ Vector2<double> polar_to_cartesian(double polar,int i)
 
 }
 
-bool check_corner(sensor_msgs::LaserScan scan,bool is_left,const double NARROW_DIS) {
-	int tmp_forward_count = 0;
-	int tmp_side_count = 0;
-	for (int j = 359; j > 0; j--) {
-		int i = j >= 0 ? j : j + 360;
+bool check_obstacle(sensor_msgs::LaserScan scan, const Paras para) {
+	int forward_wall_count = 0;
+	int side_wall_count = 0;
+	for (int i = 359; i > 0; i--) {
 		if (scan.ranges[i] < 4) {
-
-			auto point1 = polar_to_cartesian(scan.ranges[i], i);
-			auto forward_is_wall = is_left ? (point1.Y < 0.06 && point1.Y > -ROBOT_RADIUS && point1.X > LIDAR_OFFSET_X && point1.X < 0.3)
-																: (point1.Y > -0.06 && point1.Y < ROBOT_RADIUS && point1.X > LIDAR_OFFSET_X && point1.X < 0.25);
-			if (forward_is_wall) {
-				tmp_forward_count++;
+			auto point = polar_to_cartesian(scan.ranges[i], i);
+			if (para.inForwardRange(point)) {
+				forward_wall_count++;
 			}
-			auto side_is_wall = is_left ? (point1.X > 0 && point1.X < ROBOT_RADIUS && point1.Y > 0 && point1.Y < NARROW_DIS) : (
-							point1.X > 0 && point1.X < ROBOT_RADIUS && point1.Y < 0 && point1.Y > -NARROW_DIS);
-			if (side_is_wall) {
-				auto tmp_cond_1 = is_left ? (point1.Y < NARROW_DIS) : (point1.Y > -NARROW_DIS);
-				if (tmp_cond_1) {
-					tmp_side_count++;
-				}
+			if (para.inSidedRange(point)) {
+				side_wall_count++;
 			}
 		}
 	}
-	return tmp_forward_count > 10 && tmp_side_count > 20;
+	return forward_wall_count > 10 && side_wall_count > 20;
 }
 
 
@@ -1661,53 +1691,49 @@ bool check_is_valid(Vector2<double> point, double narrow_dis, sensor_msgs::Laser
 bool Lidar::getLidarWfTarget2(std::vector<Vector2<double>> *points)
 {
 	static uint32_t seq = 0;
-	int8_t is_left_;
-//	if (mt_is_left())
-			is_left_ = 1;//left wall follow
-		const double NARROW_DIS = is_left_ ? 0.187 : 0.197;
-	auto tmp_scan_data = lidarScanData_original_;
+	bool is_left=true;
+	Paras para{is_left};
+	auto scan = lidarScanData_original_;
 
-	//ROS_WARN("laser seq = %d", tmp_scan_data.header.seq);
-	if (tmp_scan_data.header.seq == seq) {
-		//ROS_WARN("laser seq still same, quit!seq = %d", tmp_scan_data.header.seq);
+	//ROS_WARN("laser seq = %d", scan.header.seq);
+	if (scan.header.seq == seq) {
+		//ROS_WARN("laser seq still same, quit!seq = %d", scan.header.seq);
 		return false;
 	}
-	seq = tmp_scan_data.header.seq;
+	seq = scan.header.seq;
 	fit_line_marker.points.clear();
 	(*points).clear();
 
-	auto is_corner = check_corner(tmp_scan_data,is_left_, NARROW_DIS);
-	ROS_WARN("is_corner = %d", is_corner);
+	auto is_obstacle = check_obstacle(scan, para);
+	ROS_WARN("is_obstacle = %d", is_obstacle);
+//	auto targets = genTarget();
 	for (int i = 359; i >= 0; i--) {
 		//ROS_INFO("i = %d", i);
-		if (tmp_scan_data.ranges[i] < 4 && tmp_scan_data.ranges[i - 1] < 4) {
-			auto point1 = polar_to_cartesian(tmp_scan_data.ranges[i],i);
+		if (scan.ranges[i] < 4 && scan.ranges[i - 1] < 4) {
+			auto point1 = polar_to_cartesian(scan.ranges[i],i);
 
-			if ((!is_corner && (point1.X > 0.3 || (is_left_ ^ point1.Y > 0))
-					 || std::abs(point1.Y) > 0.3
+			if ((!is_obstacle && (point1.X > para.x_max || (is_left ^ point1.Y > 0))
+					 || std::abs(point1.Y) > para.y_max
 					 || point1.X < 0)) {
 				continue;
 			}
 
-			auto point2 = polar_to_cartesian(tmp_scan_data.ranges[i-1],i-1);
+			auto point2 = polar_to_cartesian(scan.ranges[i-1],i-1);
 
-			if (point1.Distance(point2) > 0.05) {
+			if (point2.Distance(point1) > 0.05) {
 				//ROS_INFO("two points distance is too large");
 				continue;
 			}
-			auto target = get_middle_point(point1,point2,NARROW_DIS);
-			//ROS_WARN("i = %d, x_raw = %lf, y_raw = %lf", i, x, y);
-			//ROS_WARN("i = %d, x = %lf, y = %lf", i, x, y);
-			//ROS_INFO("p1(%lf, %lf), p2(%lf, %lf), p3(%lf, %lf), p4(%lf, %lf)", cart1_X, cart1_Y, cart2_X, cart2_Y, x_3, y_3, x_4, y_4);
-			if(!check_is_valid(target, NARROW_DIS, tmp_scan_data))
+			auto target = get_middle_point(point1,point2,para.narrow);
+			if(!check_is_valid(target, para.narrow, scan))
 				continue;
 
 			(*points).push_back(target);
 		}
 	}
 	//ROS_INFO("wft2 size = %d", (*points).size());
-	sort_target(points, is_left_);
-	robot::instance()->pubPointMarkers(points,tmp_scan_data.header.frame_id);
+	sort_target(points, is_left);
+	robot::instance()->pubPointMarkers(points,scan.header.frame_id);
 	return true;
 }
 
