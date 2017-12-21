@@ -463,8 +463,8 @@
 #define GO_HOME_REGULATOR	(1)
 
 /* ------------------------------------- Lidar Relative Position --------------------------------------------*/
-#define LIDAR_THETA							(0)//2050
-#define LIDAR_OFFSET_X						(0)//0.031
+#define LIDAR_THETA							(2050)//2050
+#define LIDAR_OFFSET_X						(0.031)//0.031
 #define LIDAR_OFFSET_Y						(0)//0
 #define ROBOT_RADIUS						(0.167)
 
