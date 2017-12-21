@@ -1713,10 +1713,10 @@ bool Lidar::getLidarWfTarget2(std::vector<Vector2<double>> &points) {
 			}
 			auto target = get_middle_point(point1, point2, para);
 
-			auto tmp_cond = is_left ? ((target.X < 0 && target.Y < 0.4 && target.Y > -0.167) ||
-																		(target.X < CHASE_X && fabs(target.Y) < 0.167)) : (
-															(target.X < 0 && target.Y > -0.4 && target.Y < 0.167) ||
-															(target.X < CHASE_X && fabs(target.Y) < 0.167));
+			auto tmp_cond = is_left ? ((target.X < 0 && target.Y < 0.4 && target.Y > -ROBOT_RADIUS) ||
+																		(target.X < CHASE_X && fabs(target.Y) < ROBOT_RADIUS))
+															: ( (target.X < 0 && target.Y > -0.4 && target.Y < ROBOT_RADIUS) ||
+															(target.X < CHASE_X && fabs(target.Y) < ROBOT_RADIUS));
 
 			if (!check_is_valid(target, para, scan))
 				continue;
