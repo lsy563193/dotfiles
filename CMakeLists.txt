@@ -45,6 +45,7 @@ FILE(GLOB PP_SRC
 	src/mode/clean_mode_navigation.cpp
 	src/mode/clean_mode_follow_wall.cpp
 	src/mode/clean_mode_spot.cpp
+	src/mode/clean_mode_test.cpp
 
 	src/path_algorithm/path_algorithm.cpp
 	src/path_algorithm/path_algorithm_navigation_clean.cpp
@@ -64,11 +65,14 @@ FILE(GLOB PP_SRC
 	src/action/action_sleep.cpp
 	src/action/action_idle.cpp
 	src/action/action_pause.cpp
+	src/action/action_check_vacuum.cpp
+	src/action/action_check_bumper.cpp
 
 	src/action/move_type/move_type.cpp
 	src/action/move_type/action_linear.cpp
 	src/action/move_type/action_follow_wall.cpp
 	src/action/move_type/move_type_go_to_charger.cpp
+	src/action/move_type/move_type_bumper_hit_test.cpp
 	src/action/move_type/movement/movement.cpp
 	src/action/move_type/movement/movement.cpp
 	src/action/move_type/movement/movement_back.cpp

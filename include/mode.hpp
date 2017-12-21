@@ -35,7 +35,9 @@ public:
 		cm_navigation,
 		cm_wall_follow,
 		cm_spot,
-		cm_exploration
+		cm_exploration,
+
+		cm_test,
 	};
 
 	int next_mode_i_;
@@ -64,7 +66,10 @@ public:
 		ac_movement_stay,
 		ac_movement_direct_go,
 		ac_pause,
-		ac_exception_resume
+		ac_exception_resume,
+		ac_check_bumper,
+		ac_check_vacuum,
+		ac_bumper_hit_test,
 	};
 
 	bool isExceptionTriggered();
@@ -305,6 +310,22 @@ private:
 protected:
 //	Path_t home_point_{};
 private:
+
+};
+
+class CleanModeTest:public ACleanMode
+{
+public:
+	CleanModeTest();
+	~CleanModeTest() = default;
+
+	bool mapMark() override;
+
+	bool isFinish() override;
+
+	bool setNextAction() override;
+
+	void keyClean(bool state_now, bool state_last) override ;
 
 };
 #endif //PP_MODE_H_H

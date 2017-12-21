@@ -294,6 +294,12 @@ void ACleanMode::genNextAction()
 		sp_action_.reset(new MoveTypeGoToCharger);
 	else if (action_i_ == ac_exception_resume)
 		sp_action_.reset(new MovementExceptionResume);
+	else if (action_i_ == ac_check_bumper)
+		sp_action_.reset(new ActionCheckBumper);
+	else if (action_i_ == ac_bumper_hit_test)
+		sp_action_.reset(new MoveTypeBumperHitTest);
+	else if (action_i_ == ac_check_vacuum)
+		sp_action_.reset(new ActionCheckVacuum);
 	else if(action_i_ == ac_null)
 		sp_action_.reset();
 	PP_INFO();
