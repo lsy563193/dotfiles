@@ -8,6 +8,8 @@
 ActionFollowWall::ActionFollowWall(bool is_left, bool is_trapped)
 {
 
+	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mode_);
+	target_point_ = GridMap::cellToPoint(p_clean_mode->plan_path_.front());
 	is_left_ = is_left;
 	int16_t turn_angle;
 	if (!is_trapped)

@@ -22,8 +22,6 @@ int IMoveType::movement_i_ = mm_null;
 
 IMoveType::IMoveType() {
 	start_point_ = GridMap::getCurrPoint();
-	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mode_);
-	target_point_ = GridMap::cellToPoint(p_clean_mode->plan_path_.front());
 	// todo: clean up these g_xxx variables.
 	g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
 	bumper_turn_factor = 0.85;

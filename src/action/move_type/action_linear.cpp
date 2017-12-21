@@ -10,6 +10,7 @@ ActionLinear::ActionLinear() {
 	resetTriggeredValue();
 
 	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mode_);
+	target_point_ = GridMap::cellToPoint(p_clean_mode->plan_path_.front());
 	turn_target_angle_ = p_clean_mode->new_dir_;
 	ROS_INFO("%s,%d: mt_is_linear,turn(%d)", __FUNCTION__, __LINE__, turn_target_angle_);
 	movement_i_ = mm_turn;
