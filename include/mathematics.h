@@ -107,10 +107,10 @@
      * Returns the square of the length of the vector
      * @return square of the length of the vector
      */
-/*    inline int16_t SquaredLength() const
+    inline T SquaredLength() const
     {
-      return math::Square(X) + math::Square(Y);
-    }*/
+      return sqrt(X) + sqrt(Y);
+    }
 
     /**
      * Returns the length of the vector
@@ -128,7 +128,7 @@
      * @param rOther vector
      * @returns square of the distance to the given vector
      */
-    inline int16_t SquaredDistance(const Vector2& rOther) const
+    inline T SquaredDistance(const Vector2& rOther) const
     {
       return (*this - rOther).SquaredLength();
     }
@@ -138,7 +138,7 @@
      * @param rOther vector
      * @return distance to given vector
      */
-    inline int16_t Distance(const Vector2& rOther) const
+    inline T Distance(const Vector2& rOther) const
     {
       return sqrt(SquaredDistance(rOther));
     }
@@ -310,13 +310,6 @@
 typedef Vector2<int16_t> Cell_t;
 typedef Vector2<int32_t> Point32_t;
 
-typedef struct Point_d_t{
-	double x;
-	double y;
-} Double_Point;
-
-typedef struct Point_d_t Point_d_t;
-
 typedef struct
 {
   double A;
@@ -328,8 +321,8 @@ typedef struct
   double x2;//point 2
   double y2;
   double K; //gradient in degree
-  double dist_2_this_line(Point_d_t p){
-	  return fabs(A*p.x+B*p.y+C)/sqrt(A*A+B*B);
+  double dist_2_this_line(Vector2<double> p){
+	  return fabs(A*p.X+B*p.Y+C)/sqrt(A*A+B*B);
   }
 } LineABC;
 

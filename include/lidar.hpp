@@ -31,23 +31,23 @@ public:
 
 	double getLidarDistance(uint16_t angle);
 
-	bool lineFit(const std::vector<Double_Point> &points, double &a, double &b, double &c);
+	bool lineFit(const std::vector<Vector2<double>> &points, double &a, double &b, double &c);
 
-	bool splitLine(const std::vector<Double_Point> &points, double consecutive_lim, int points_count_lim);
+	bool splitLine(const std::vector<Vector2<double>> &points, double consecutive_lim, int points_count_lim);
 
-	//bool splitLine2nd(const std::vector<std::vector<Double_Point> >	&groups, double t_max, int points_count_lim);
-	bool splitLine2nd(std::vector<std::vector<Double_Point> > *groups, double t_max, int points_count_lim);
+	//bool splitLine2nd(const std::vector<std::vector<Vector2<double>> >	&groups, double t_max, int points_count_lim);
+	bool splitLine2nd(std::vector<std::vector<Vector2<double>> > *groups, double t_max, int points_count_lim);
 
-	bool mergeLine(std::vector<std::vector<Double_Point> > *groups, double t_lim);
+	bool mergeLine(std::vector<std::vector<Vector2<double>> > *groups, double t_lim);
 
-	bool fitLineGroup(std::vector<std::vector<Double_Point> > *groups, double t_lim, double dis_lim);
+	bool fitLineGroup(std::vector<std::vector<Vector2<double>> > *groups, double t_lim, double dis_lim);
 
 	void pubFitLineMarker(double a, double b, double c, double y1, double y2);
 
 	void motorCtrl(bool switch_);
 	bool openTimeOut();
-	void pubPointMarker(std::vector<Double_Point> *point);
-	bool getLidarWfTarget2(std::vector<Double_Point> *points);
+	void pubPointMarker(std::vector<Vector2<double>> *point);
+	bool getLidarWfTarget2(std::vector<Vector2<double>> &points);
 	void startAlign();
 	bool alignTimeOut();
 	bool alignFinish();
@@ -86,9 +86,9 @@ private:
 	double scanLinear_update_time;
 	double scanOriginal_update_time;
 
-	std::vector<Double_Point>	Lidar_Point;
-	std::vector<std::vector<Double_Point> >	Lidar_Group;
-	std::vector<std::vector<Double_Point> >	Lidar_Group_2nd;
+	std::vector<Vector2<double>>	Lidar_Point;
+	std::vector<std::vector<Vector2<double>> >	Lidar_Group;
+	std::vector<std::vector<Vector2<double>> >	Lidar_Group_2nd;
 	std::vector<LineABC>	fit_line;
 	//static float *last_ranges_;
 

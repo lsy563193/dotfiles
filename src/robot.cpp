@@ -555,7 +555,7 @@ void robot::pubLineMarker(const std::vector<LineABC> *lines)
 
 }
 
-void robot::pubLineMarker(std::vector<std::vector<Double_Point> > *groups)
+void robot::pubLineMarker(std::vector<std::vector<Vector2<double>> > *groups)
 {
 	int points_size;
 	visualization_msgs::Marker line_marker;
@@ -586,7 +586,7 @@ void robot::pubLineMarker(std::vector<std::vector<Double_Point> > *groups)
 	line_marker.pose.orientation.z = 0.0;
 	line_marker.pose.orientation.w = 1.0;*/
 	if (!(*groups).empty()) {
-		for (std::vector<std::vector<Double_Point> >::iterator iter = (*groups).begin(); iter != (*groups).end(); ++iter) {
+		for (auto iter = (*groups).begin(); iter != (*groups).end(); ++iter) {
 			/*x1 = iter->begin()->x;
 			y1 = iter->begin()->y;
 			x2 = (iter->end() - 1)->x;
@@ -595,8 +595,8 @@ void robot::pubLineMarker(std::vector<std::vector<Double_Point> > *groups)
 			for (int j = 0; j < points_size; j++) {
 				//line_marker.pose.position.x = (iter->begin() + j)->x;
 				//line_marker.pose.position.y = (iter->begin() + j)->y;
-				lidar_points_.x = (iter->begin() + j)->x;
-				lidar_points_.y = (iter->begin() + j)->y;
+				lidar_points_.x = (iter->begin() + j)->X;
+				lidar_points_.y = (iter->begin() + j)->Y;
 				//ROS_INFO("lidar_points_.x = %lf lidar_points_.y = %lf",lidar_points_.x, lidar_points_.y);
 				line_marker.points.push_back(lidar_points_);
 			}
@@ -614,7 +614,7 @@ void robot::pubFitLineMarker(visualization_msgs::Marker fit_line_marker)
 	fit_line_marker_pub_.publish(fit_line_marker);
 }
 
-void robot::pubPointMarkers(const std::vector<Point_d_t> *points, std::string frame_id)
+void robot::pubPointMarkers(const std::vector<Vector2<double>> *points, std::string frame_id)
 {
 	visualization_msgs::Marker point_marker;
 	point_marker.ns = "point_marker";
@@ -636,11 +636,11 @@ void robot::pubPointMarkers(const std::vector<Point_d_t> *points, std::string fr
 	lidar_points.z = 0;
 	if (!points->empty()) {
 		std::string msg("");
-		for (std::vector<Double_Point>::const_iterator iter = points->cbegin(); iter != points->cend(); ++iter) {
-			lidar_points.x = iter->x;
-			lidar_points.y = iter->y;
+		for (auto iter = points->cbegin(); iter != points->cend(); ++iter) {
+			lidar_points.x = iter->X;
+			lidar_points.y = iter->Y;
 			point_marker.points.push_back(lidar_points);
-			msg+="("+std::to_string(iter->x)+","+std::to_string(iter->y)+"),";
+			msg+="("+std::to_string(iter->X)+","+std::to_string(iter->Y)+"),";
 		}
 		point_marker_pub_.publish(point_marker);
 		//ROS_INFO("%s,%d,points size:%u,points %s",__FUNCTION__,__LINE__,points->size(),msg.c_str());
