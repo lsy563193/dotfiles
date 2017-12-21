@@ -43,7 +43,7 @@ pthread_cond_t event_handler_cond = PTHREAD_COND_INITIALIZER;
 static bool g_new_event_status[EVT_MAX];
 
 PEHF p_handler[EVT_MAX];
-EventHandle deh;
+EventHandle deh;//default event handle
 void event_manager_init()
 {
 	int	j;

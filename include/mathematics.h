@@ -107,10 +107,10 @@
      * Returns the square of the length of the vector
      * @return square of the length of the vector
      */
-/*    inline int16_t SquaredLength() const
+    inline T SquaredLength() const
     {
-      return math::Square(X) + math::Square(Y);
-    }*/
+      return sqrt(X) + sqrt(Y);
+    }
 
     /**
      * Returns the length of the vector
@@ -128,7 +128,7 @@
      * @param rOther vector
      * @returns square of the distance to the given vector
      */
-    inline int16_t SquaredDistance(const Vector2& rOther) const
+    inline T SquaredDistance(const Vector2& rOther) const
     {
       return (*this - rOther).SquaredLength();
     }
@@ -138,7 +138,7 @@
      * @param rOther vector
      * @return distance to given vector
      */
-    inline int16_t Distance(const Vector2& rOther) const
+    inline T Distance(const Vector2& rOther) const
     {
       return sqrt(SquaredDistance(rOther));
     }
@@ -309,11 +309,6 @@
    */
 typedef Vector2<int16_t> Cell_t;
 typedef Vector2<int32_t> Point32_t;
-
-typedef struct Point_d_t{
-	double x;
-	double y;
-} Double_Point;
 
 typedef struct Point_d_t Point_d_t;
 

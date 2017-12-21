@@ -322,8 +322,8 @@ typedef enum {
 	EVT_MODE_REMOTE,
 	EVT_MODE_MAX,
 } EventModeType;*/
+//p_event_handle_function
 typedef void(EventHandle::*PEHF)(bool state_now, bool state_last);
-typedef void(*event_handle_t)(bool state_now, bool state_last);
 typedef struct {
 //	EventModeType	emt;
 //	bool	handler_enabled[EVT_MAX];

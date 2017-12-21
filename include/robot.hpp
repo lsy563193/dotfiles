@@ -44,9 +44,9 @@ public:
 	// Publisher functions.
 	void visualizeMarkerInit();
 	void pubLineMarker(const std::vector<LineABC> *lines);
-	void pubLineMarker(std::vector<std::vector<Double_Point> > *groups);
+	void pubLineMarker(std::vector<std::vector<DoublePoint> > *groups);
 	void pubFitLineMarker(visualization_msgs::Marker fit_line_marker);
-	void pubPointMarkers(const std::vector<Point_d_t> *point, std::string frame_id);
+	void pubPointMarkers(const std::vector<Vector2<double>> *point, std::string frame_id);
 	void setCleanMapMarkers(int8_t x, int8_t y, CellState type);
 	void pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path, Cell_t* cell_p = nullptr);
 

@@ -555,7 +555,7 @@ void robot::pubLineMarker(const std::vector<LineABC> *lines)
 
 }
 
-void robot::pubLineMarker(std::vector<std::vector<Double_Point> > *groups)
+void robot::pubLineMarker(std::vector<std::vector<DoublePoint> > *groups)
 {
 	int points_size;
 	visualization_msgs::Marker line_marker;
@@ -586,7 +586,7 @@ void robot::pubLineMarker(std::vector<std::vector<Double_Point> > *groups)
 	line_marker.pose.orientation.z = 0.0;
 	line_marker.pose.orientation.w = 1.0;*/
 	if (!(*groups).empty()) {
-		for (std::vector<std::vector<Double_Point> >::iterator iter = (*groups).begin(); iter != (*groups).end(); ++iter) {
+		for (std::vector<std::vector<DoublePoint> >::iterator iter = (*groups).begin(); iter != (*groups).end(); ++iter) {
 			/*x1 = iter->begin()->x;
 			y1 = iter->begin()->y;
 			x2 = (iter->end() - 1)->x;
@@ -614,7 +614,7 @@ void robot::pubFitLineMarker(visualization_msgs::Marker fit_line_marker)
 	fit_line_marker_pub_.publish(fit_line_marker);
 }
 
-void robot::pubPointMarkers(const std::vector<Point_d_t> *points, std::string frame_id)
+void robot::pubPointMarkers(const std::vector<Vector2<double>> *points, std::string frame_id)
 {
 	visualization_msgs::Marker point_marker;
 	point_marker.ns = "point_marker";
@@ -636,7 +636,7 @@ void robot::pubPointMarkers(const std::vector<Point_d_t> *points, std::string fr
 	lidar_points.z = 0;
 	if (!points->empty()) {
 		std::string msg("");
-		for (std::vector<Double_Point>::const_iterator iter = points->cbegin(); iter != points->cend(); ++iter) {
+		for (std::vector<DoublePoint>::const_iterator iter = points->cbegin(); iter != points->cend(); ++iter) {
 			lidar_points.x = iter->x;
 			lidar_points.y = iter->y;
 			point_marker.points.push_back(lidar_points);

@@ -47,7 +47,6 @@ void Lidar::scanLinearCb(const sensor_msgs::LaserScan::ConstPtr &scan)
 #define WF_SCAN_TYPE						(2)
 void Lidar::scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr &scan)
 {
-	int count = 0;
 	uint8_t scan2_valid_cnt = 0;
 
 	for (uint16_t i = 0; i < 360; i++)
@@ -62,15 +61,14 @@ void Lidar::scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr &scan)
 		// lidar not been covered.
 		scan2_mutex_.lock();
 		lidarScanData_original_ = *scan;
-		count = (int) ((scan->angle_max - scan->angle_min) / scan->angle_increment);
 		setScanOriginalReady(1);
 		scanOriginal_update_time = ros::Time::now().toSec();
 		extern Points g_wf_path;
-		std::vector<Double_Point> g_wf_target_point{};
+		std::vector<Vector2<double>> g_wf_target_point{};
 		g_wf_path.clear();
 		getLidarWfTarget2(&g_wf_target_point);
 		for (auto iter = g_wf_target_point.begin(); iter != g_wf_target_point.end(); ++iter) {
-			Point32_t p_target = GridMap::getRelative(GridMap::getCurrPoint(),int(iter->y * 1000),int(iter->x * 1000),true);
+			Point32_t p_target = GridMap::getRelative(GridMap::getCurrPoint(),int(iter->Y * 1000),int(iter->X * 1000),true);
 			g_wf_path.push_back(p_target);
 		}
 		scan2_mutex_.unlock();
@@ -495,7 +493,7 @@ bool Lidar::lidarGetFitLine(int begin, int end, double range, double dis_lim, do
 	double	th;
 	double 	a, b, c;
 	//double	line_angle;
-	Double_Point	New_Lidar_Point;
+	Vector2<double>	New_Lidar_Point;
 	Lidar_Point.clear();
 	ROS_DEBUG("lidarGetFitLine");
 	scanLinear_mutex_.lock();
@@ -555,7 +553,7 @@ bool Lidar::lidarGetFitLine(int begin, int end, double range, double dis_lim, do
 	}
 }
 
-bool Lidar::lineFit(const std::vector<Double_Point> &points, double &a, double &b, double &c)
+bool Lidar::lineFit(const std::vector<Vector2<double>> &points, double &a, double &b, double &c)
 {
 	int size = points.size();
 	if(size < 2) {
@@ -604,10 +602,10 @@ bool Lidar::lineFit(const std::vector<Double_Point> &points, double &a, double &
 	return true;
 }
 
-bool Lidar::splitLine(const std::vector<Double_Point> &points, double consec_lim, int points_count_lim) {
+bool Lidar::splitLine(const std::vector<Vector2<double>> &points, double consec_lim, int points_count_lim) {
 	int points_size = points.size();
 	double distance;
-	std::vector<Double_Point> new_line;
+	std::vector<Vector2<double>> new_line;
 	for(int i = 0; i < (points_size - 1); i++) {
 		//ROS_INFO("i = %d", i);
 		distance = sqrt((points[i].x - points[i+1].x) * (points[i].x - points[i+1].x) + (points[i].y - points[i+1].y) * (points[i].y - points[i+1].y));
@@ -627,7 +625,7 @@ bool Lidar::splitLine(const std::vector<Double_Point> &points, double consec_lim
 			new_line.push_back(points[i]);
 		}
 	}
-	for (std::vector<std::vector<Double_Point> >::iterator iter = Lidar_Group.begin(); iter != Lidar_Group.end();){
+	for (std::vector<std::vector<Vector2<double>> >::iterator iter = Lidar_Group.begin(); iter != Lidar_Group.end();){
 		if (iter->size() < points_count_lim) {
 			iter = Lidar_Group.erase(iter);
 		} else {
@@ -638,7 +636,7 @@ bool Lidar::splitLine(const std::vector<Double_Point> &points, double consec_lim
 	return true;
 }
 
-bool Lidar::splitLine2nd(std::vector<std::vector<Double_Point> > *groups, double t_lim, int points_count_lim) {
+bool Lidar::splitLine2nd(std::vector<std::vector<Vector2<double>> > *groups, double t_lim, int points_count_lim) {
 	int groups_size = (*groups).size();
 	int points_size;
 	int erased_size;
@@ -648,8 +646,8 @@ bool Lidar::splitLine2nd(std::vector<std::vector<Double_Point> > *groups, double
 	int	points_index_max;
 	bool end_iterate_flag = true;
 	std::vector<int> groups_erased_index;
-	std::vector<Double_Point> new_line;
-	std::vector<std::vector<Double_Point> > new_group;
+	std::vector<Vector2<double>> new_line;
+	std::vector<std::vector<Vector2<double>> > new_group;
 
 	ROS_DEBUG("Lidar::splitLine2nd");
 	groups_erased_index.clear();
@@ -657,7 +655,7 @@ bool Lidar::splitLine2nd(std::vector<std::vector<Double_Point> > *groups, double
 	new_group.clear();
 
 	/*loop for lines in groups*/
-	for (std::vector<std::vector<Double_Point> >::iterator iter = (*groups).begin(); iter != (*groups).end(); ++iter) {
+	for (std::vector<std::vector<Vector2<double>> >::iterator iter = (*groups).begin(); iter != (*groups).end(); ++iter) {
 		x1 = iter->begin()->x;
 		y1 = iter->begin()->y;
 		x2 = (iter->end() - 1)->x;
@@ -743,7 +741,7 @@ bool Lidar::splitLine2nd(std::vector<std::vector<Double_Point> > *groups, double
 	if (!groups_erased_index.empty()) {
 		for (int i = 0; i < erased_size; i++) {
 			ROS_DEBUG("erase the unsplit line! s_index_ = %d", i);
-			std::vector<std::vector<Double_Point> >::iterator iter = (*groups).begin() + (groups_erased_index[i] + i);
+			std::vector<std::vector<Vector2<double>> >::iterator iter = (*groups).begin() + (groups_erased_index[i] + i);
 			(*groups).erase(iter);
 			ROS_DEBUG("2Lidar_Group.size = %lu", (*groups).size());
 
@@ -765,7 +763,7 @@ bool Lidar::splitLine2nd(std::vector<std::vector<Double_Point> > *groups, double
 
 	/*loop for erasing the line which size is less than points_count_lim*/
 	ROS_DEBUG("loop for erasing the line which size is less than points_count_lim");
-	for (std::vector<std::vector<Double_Point> >::iterator iter = (*groups).begin(); iter != (*groups).end();) {
+	for (std::vector<std::vector<Vector2<double>> >::iterator iter = (*groups).begin(); iter != (*groups).end();) {
 		if (iter->size() < points_count_lim) {
 			iter = (*groups).erase(iter);
 			//ROS_INFO("iter->size() = %d", iter->size());
@@ -789,19 +787,19 @@ bool Lidar::splitLine2nd(std::vector<std::vector<Double_Point> > *groups, double
 	return true;
 }
 
-bool Lidar::mergeLine(std::vector<std::vector<Double_Point> > *groups, double t_lim) {
+bool Lidar::mergeLine(std::vector<std::vector<Vector2<double>> > *groups, double t_lim) {
 	double a, b, c;
 	double x1, y1, x2, y2;
 	int points_size, points_size_2nd;
 	double t, t_max = 0;
 	int erased_size;
 	std::vector<int> merge_index;
-	std::vector<Double_Point> new_line;
-	std::vector<std::vector<Double_Point> > new_group;
+	std::vector<Vector2<double>> new_line;
+	std::vector<std::vector<Vector2<double>> > new_group;
 	new_line.clear();
 	new_group.clear();
 	if (!(*groups).empty()) {
-		for (std::vector<std::vector<Double_Point> >::iterator iter = (*groups).begin(); iter != (*groups).end() - 1; ++iter) {
+		for (std::vector<std::vector<Vector2<double>> >::iterator iter = (*groups).begin(); iter != (*groups).end() - 1; ++iter) {
 			x1 = iter->begin()->x;
 			y1 = iter->begin()->y;
 			x2 = ((iter + 1)->end() - 1)->x;
@@ -853,7 +851,7 @@ bool Lidar::mergeLine(std::vector<std::vector<Double_Point> > *groups, double t_
 	if (!merge_index.empty()) {
 		int loop_count = 0;
 		for (std::vector<int>::iterator m_iter = merge_index.begin(); m_iter != merge_index.end(); ++m_iter) {
-			std::vector<std::vector<Double_Point> >::iterator iter = (*groups).begin() + (*m_iter);
+			std::vector<std::vector<Vector2<double>> >::iterator iter = (*groups).begin() + (*m_iter);
 			points_size = iter->size();
 			points_size_2nd = (iter + 1)->size();
 			for (int j = 0; j < points_size; j++) {
@@ -879,7 +877,7 @@ bool Lidar::mergeLine(std::vector<std::vector<Double_Point> > *groups, double t_
 	return true;
 }
 
-bool Lidar::fitLineGroup(std::vector<std::vector<Double_Point> > *groups, double t_lim, double dis_lim) {
+bool Lidar::fitLineGroup(std::vector<std::vector<Vector2<double>> > *groups, double t_lim, double dis_lim) {
 	double 	a, b, c;
 	double	x_0, y_0;
 	double line_angle;
@@ -888,7 +886,7 @@ bool Lidar::fitLineGroup(std::vector<std::vector<Double_Point> > *groups, double
 	LineABC	new_fit_line;
 	fit_line.clear();
 	if (!(*groups).empty()) {
-		for (std::vector<std::vector<Double_Point> >::iterator iter = (*groups).begin(); iter != (*groups).end(); ++iter) {
+		for (std::vector<std::vector<Vector2<double>> >::iterator iter = (*groups).begin(); iter != (*groups).end(); ++iter) {
 			lineFit((*iter), a, b, c);
 			//line_angle = atan2(-a, b) * 180 / PI;
 			new_fit_line.A = a;
@@ -1515,7 +1513,7 @@ bool Lidar::openTimeOut()
 	return false;
 }
 
-bool min_target(Double_Point a, Double_Point b)
+bool min_target(Vector2<double> a, Vector2<double> b)
 {
 	//auto dis_a = sqrt(pow(a.x - ROBOT_RADIUS, 2) + pow(a.y - 0, 2));//useful
 	//auto dis_b = sqrt(pow(b.x - ROBOT_RADIUS, 2) + pow(b.y - 0, 2));
@@ -1525,21 +1523,21 @@ bool min_target(Double_Point a, Double_Point b)
 	return dis_a < dis_b;
 }
 
-void sort_target(std::vector<Double_Point> *point, bool is_left_wf)
+void sort_target(std::vector<Vector2<double>> *point, bool is_left_wf)
 {
 	auto tmp_point = (*point);
 	(*point).clear();
 	auto iter_min = std::min_element(tmp_point.begin(), tmp_point.end(), min_target);
 	auto min_i = std::distance(std::begin(tmp_point), iter_min);
-	int size = tmp_point.size();
 	//ROS_ERROR("size = %d, min_i = %d", size, min_i);
-	if (size == 0) {
+	if (tmp_point.empty()) {
 //		ROS_ERROR("size = 0");
 		return;
 	}
 	//sort for the min distance point
+	auto size = tmp_point.size();
 	for(int i = 0; i < size; i++) {
-		int index = min_i + i;
+		auto index = min_i + i;
 		index = index < size ? index : index - size;
 		(*point).push_back(tmp_point[index]);
 	}
@@ -1547,23 +1545,14 @@ void sort_target(std::vector<Double_Point> *point, bool is_left_wf)
 	(*point).clear();
 	//remove the back point
 	for (auto iter = tmp_point.begin(); iter != (tmp_point.end() - 1); ++iter) {
-		Double_Point a;
-		Double_Point b;
-		a.x = iter->x;
-		a.y = iter->y;
-		b.x = (iter + 1)->x;
-		b.y = (iter + 1)->y;
+		Vector2<double> a = *iter;
 		auto tmp_cond = is_left_wf ? ((a.x < 0 && a.y < 0.4 && a.y > -0.167) || (a.x < CHASE_X && fabs(a.y) < 0.167)) : ((a.x < 0 && a.y > -0.4 && a.y < 0.167) || (a.x < CHASE_X && fabs(a.y) < 0.167));
-		//auto tmp_cond = is_left_wf ? ((a.x < 0 && a.y < 0.4 && a.y > -0.167) || (a.x < CHASE_X && fabs(a.y) < 0.167)) : ((a.x < 0 && a.y > -0.4 && a.y < 0.167) || (a.x < CHASE_X - 0.015 && fabs(a.y) < 0.167));
-		if (tmp_cond) {
-			//ROS_WARN("remove the back point!");
-		} else {
+		if (!tmp_cond)
 			(*point).push_back(a);
-		}
 	}
 }
 //
-//void Lidar::pubPointMarker(std::vector<Double_Point> *point)
+//void Lidar::pubPointMarker(std::vector<Vector2<double>> *point)
 //{
 //	int points_size;
 //	visualization_msgs::Marker point_marker;
@@ -1586,7 +1575,7 @@ void sort_target(std::vector<Double_Point> *point, bool is_left_wf)
 //	laser_points_.z = 0.0;
 //
 //	if (!(*point).empty()) {
-//		for (std::vector<Double_Point>::iterator iter = (*point).begin(); iter != (*point).end(); ++iter) {
+//		for (std::vector<Vector2<double>>::iterator iter = (*point).begin(); iter != (*point).end(); ++iter) {
 //			laser_points_.x = iter->x;
 //			laser_points_.y = iter->y;
 //			point_marker.points.push_back(laser_points_);
@@ -1599,35 +1588,86 @@ void sort_target(std::vector<Double_Point> *point, bool is_left_wf)
 //	}
 //}
 
-bool Lidar::getLidarWfTarget2(std::vector<Double_Point> *points)
+bool check_corner(sensor_msgs::LaserScan scan,bool is_left)
 {
-	double x_1, y_1, x_2, y_2, x_3, y_3, x_4, y_4, x, y;
-	static uint32_t seq = 0;
-	double NARROW_DIS = 0.187;//0.187
-	Cell_t c_target;
-	Point32_t p_target;
-	Double_Point dp_target{};
-	const int i_begin = 359;
-	const int i_end = 0;//235
-	bool is_right_angle = false;
-	int8_t is_left_wf;
-	double TF_X, TF_Y, TF_TH;
-//	if (mt_is_left()) {
-		is_left_wf = 1;//left wall follow
-		TF_X = LIDAR_OFFSET_X;
-		TF_Y = LIDAR_OFFSET_Y;
-		TF_TH = LIDAR_THETA;
-//	} else if (mt_is_right()){
-//		is_left_wf = 0;//right wall follow
-//		TF_X = LIDAR_OFFSET_X;
-//		TF_Y = LIDAR_OFFSET_Y;
-//		TF_TH = LIDAR_THETA;
-//		NARROW_DIS = 0.197;
-//	} else {
-//		is_left_wf = -1;//not in wall follow
-//		return false;
-//	}
+	int tmp_for_count = 0;
+	int tmp_side_count = 0;
+	for (int j = 359; j > 0; j--) {
+		int i = j >= 0 ? j : j + 360;
+		if (scan.ranges[i] < 4) {
+			auto x_1 = cos((i * 1.0 + 180.0) * PI / 180.0) * scan.ranges[i];
+			auto y_1 = sin((i * 1.0 + 180.0) * PI / 180.0) * scan.ranges[i];
+			auto tmp_cond_0 = is_left ? (y_1 < 0.06 && y_1 > -0.167 && x_1 > LIDAR_OFFSET_X && x_1 < 0.3) : (y_1 > -0.06 && y_1 < 0.167 && x_1 > LIDAR_OFFSET_X && x_1 < 0.25);
+			if (tmp_cond_0) {
+				tmp_for_count++;
+				//ROS_WARN("tmp_for_count = %d x_1 = %lf, y_1 = %lf", tmp_for_count, x_1, y_1);
+				if (tmp_for_count > 10) {
+					//is_right_angle = true;
+					//break;
+				}
+			}
+			auto tmp_cond = is_left ? (x_1 > 0 && x_1 < 0.167 && y_1 > 0 && y_1 < 0.197) : (x_1 > 0 && x_1 < 0.167 && y_1 < 0 && y_1 > -0.197);
+			if (tmp_cond) {
+				//double tmp_dis = sqrt(pow(x_1, 2) + pow(y_1, 2));
+				//ROS_WARN("tmp_side_count = %d tmp_dis = %lf", tmp_side_count, tmp_dis);
+				//ROS_WARN("tmp_side_count = %d x_1 = %lf, y_1 = %lf", tmp_side_count, x_1, y_1);
+				auto tmp_cond_1 = is_left ? (y_1 < 0.197) : (y_1 > -0.197);
+				if (tmp_cond_1) {
+					tmp_side_count++;
+				}
+			}
+		}
+	}
+	return tmp_for_count > 10 && tmp_side_count > 20;
+}
+Vector2<double> polar_to_cartesian(double polar,int i)
+{
+	Vector2<double> point{cos((i * 1.0 + 180.0) * PI / 180.0) * polar,
+					sin((i * 1.0 + 180.0) * PI / 180.0) * polar };
 
+	coordinate_transform(&point.X, &point.Y, LIDAR_THETA, LIDAR_OFFSET_X, LIDAR_OFFSET_Y);
+	return point;
+
+}
+Vector2<double> get_middle_point(Vector2<double> cart1, Vector2<double> cart2, double dis) {
+	auto cart3 = (cart1 + cart2) / 2;
+	Vector2<double> cart;
+
+	auto x_4 = dis / (sqrt(1 + cart1.SquaredDistance(cart2))) + cart3.X;
+	auto y_4 = ((x_4 - cart3.X) * (cart1.X - cart2.X) / (cart2.Y - cart1.Y)) + cart3.Y;
+
+	if (((cart1.X - x_4) * (cart2.Y - y_4) - (cart1.Y - y_4) * (cart2.X - x_4)) < 0) {
+		cart.X = x_4;
+		cart.Y = y_4;
+	}
+	else {
+		x_4 = 0 - dis / (sqrt(1 + cart1.SquaredDistance(cart2))) + cart3.X;
+		y_4 = ((x_4 - cart3.X) * (cart1.X - cart2.X) / (cart2.Y - cart1.Y)) + cart3.Y;
+
+		cart.X = x_4;
+		cart.Y = y_4;
+	}
+	return cart;
+}
+
+bool check_is_valid(Vector2<double> point, double narrow_dis, sensor_msgs::LaserScan scan) {
+	for (int j = 359; j > 0; j--) {
+		auto cart_j = polar_to_cartesian(scan.ranges[j], j);
+		auto distance = point.Distance(cart_j);
+		//ROS_INFO("distance =  %lf", distance);
+		if (distance < narrow_dis - 0.03) {
+			return false;
+		}
+	}
+	return point.Distance({0,0})<=0.4;
+}
+bool Lidar::getLidarWfTarget2(std::vector<Vector2<double>> *points)
+{
+	static uint32_t seq = 0;
+	int8_t is_left_wf;
+//	if (mt_is_left())
+			is_left_wf = 1;//left wall follow
+		double NARROW_DIS = is_left_wf ? 0.187 : 0.197;
 	auto tmp_scan_data = lidarScanData_original_;
 
 	//ROS_WARN("laser seq = %d", tmp_scan_data.header.seq);
@@ -1639,140 +1679,35 @@ bool Lidar::getLidarWfTarget2(std::vector<Double_Point> *points)
 	fit_line_marker.points.clear();
 	(*points).clear();
 
-	int tmp_for_count = 0;
-	int tmp_side_count = 0;
-	for (int j = i_begin; j > i_end; j--) {//default:270, 90
-		int i = j >= 0 ? j : j + 360;
-		if (tmp_scan_data.ranges[i] < 4) {
-			x_1 = cos((i * 1.0 + 180.0) * PI / 180.0) * tmp_scan_data.ranges[i];
-			y_1 = sin((i * 1.0 + 180.0) * PI / 180.0) * tmp_scan_data.ranges[i];
-			coordinate_transform(&x_1, &y_1, TF_TH, TF_X, TF_Y);
-			auto tmp_cond_0 = is_left_wf ? (y_1 < 0.06 && y_1 > -0.167 && x_1 > LIDAR_OFFSET_X && x_1 < 0.3) : (y_1 > -0.06 && y_1 < 0.167 && x_1 > LIDAR_OFFSET_X && x_1 < 0.25);
-			if (tmp_cond_0) {
-				tmp_for_count++;
-				//ROS_WARN("tmp_for_count = %d x_1 = %lf, y_1 = %lf", tmp_for_count, x_1, y_1);
-				if (tmp_for_count > 10) {
-					//is_right_angle = true;
-					//break;
-				}
-			}
-			auto tmp_cond = is_left_wf ? (x_1 > 0 && x_1 < 0.167 && y_1 > 0 && y_1 < 0.197) : (x_1 > 0 && x_1 < 0.167 && y_1 < 0 && y_1 > -0.197);
-			if (tmp_cond) {
-				//double tmp_dis = sqrt(pow(x_1, 2) + pow(y_1, 2));
-				//ROS_WARN("tmp_side_count = %d tmp_dis = %lf", tmp_side_count, tmp_dis);
-				//ROS_WARN("tmp_side_count = %d x_1 = %lf, y_1 = %lf", tmp_side_count, x_1, y_1);
-				auto tmp_cond_1 = is_left_wf ? (y_1 < 0.197) : (y_1 > -0.197);
-				if (tmp_cond_1) {
-					tmp_side_count++;
-				}
-			}
-			//is_right_angle = false;
-		}
-	}
-	if (tmp_for_count > 10 && tmp_side_count > 20) {
-		is_right_angle = true;
-//		beep_for_command(VALID);
-	} else {
-		is_right_angle = false;
-	}
-//	ROS_WARN("is_right_angle = %d", is_right_angle);
-	for (int j = i_begin; j > i_end; j--) {//default:270, 90
-		int i = j >= 0 ? j : j + 360;
+	auto is_corner = check_corner(tmp_scan_data,is_left_wf);
+	ROS_WARN("is_corner = %d", is_corner);
+	for (int i = 359; i >= 0; i--) {
 		//ROS_INFO("i = %d", i);
-		bool is_push = true;
-		if (tmp_scan_data.ranges[i] < 4 && tmp_scan_data.ranges[i - 1] < 4 ) {
-			x_1 = cos((i * 1.0 + 180.0) * PI / 180.0) * tmp_scan_data.ranges[i];
-			y_1 = sin((i * 1.0 + 180.0) * PI / 180.0) * tmp_scan_data.ranges[i];
-			coordinate_transform(&x_1, &y_1, TF_TH, TF_X, TF_Y);
-#if 1
-			if (x_1 > 0.3 && !is_right_angle) {
-				//ROS_INFO("laser distance from robot is too far! continue!");
-				continue;
-			}
-#endif
+		if (tmp_scan_data.ranges[i] < 4 && tmp_scan_data.ranges[i - 1] < 4) {
+			auto point1 = polar_to_cartesian(tmp_scan_data.ranges[i],i);
 
-#if 1
-			auto tmp_cond = is_left_wf ? (y_1 > 0.3) : (y_1 < -0.3);
-			if (tmp_cond) {
-				//ROS_INFO("laser distance from robot is too far! continue!");
+			if ((!is_corner && (point1.X > 0.3 || (is_left_wf ^ point1.Y > 0))
+					 || std::abs(point1.Y) > 0.3
+					 || point1.X < 0)) {
 				continue;
 			}
-#endif
-			if (x_1 < -0.3) {
-				//ROS_INFO("laser distance from robot is too far! continue!");
-				continue;
-			}
-#if 1
-			if (!is_right_angle) {
-				auto tmp_cond = is_left_wf ? (y_1 < 0) : (y_1 > 0);
-				if (tmp_cond) {
-					//ROS_INFO("remove the right side points");
-					continue;
-				}
-			}
-#endif
-#if 1
-			if (x_1 < 0) {
-				//ROS_INFO("remove the back side points");
-				continue;
-			}
-#endif
-			x_2 = cos(((i - 1) * 1.0 + 180.0) * PI / 180.0) * tmp_scan_data.ranges[i - 1];
-			y_2 = sin(((i - 1) * 1.0 + 180.0) * PI / 180.0) * tmp_scan_data.ranges[i - 1];
-			coordinate_transform(&x_2, &y_2, TF_TH, TF_X, TF_Y);
 
-			if (sqrt(pow(x_1 - x_2, 2) + pow(y_1 - y_2, 2)) > 0.05) {
+			auto point2 = polar_to_cartesian(tmp_scan_data.ranges[i-1],i-1);
+
+			if (point1.Distance(point2) > 0.05) {
 				//ROS_INFO("two points distance is too large");
 				continue;
 			}
-			x_3 = (x_1 + x_2) / 2;
-			y_3 = (y_1 + y_2) / 2;
+			auto target = get_middle_point(point1,point2,NARROW_DIS);
 
-			x_4 = NARROW_DIS / (sqrt(1 + ((x_1 - x_2) / (y_2 - y_1)) * ((x_1 - x_2) / (y_2 - y_1)))) + x_3;
-			y_4 = ((x_4 - x_3) * (x_1 - x_2) / (y_2 - y_1)) + y_3;
-
-			if (((x_1 - x_4) *  (y_2 - y_4) - (y_1 - y_4) * (x_2 - x_4)) < 0) {
-				x = x_4;
-				y = y_4;
-			} else {
-				x_4 = 0 - NARROW_DIS / (sqrt(1 + ((x_1 - x_2) / (y_2 - y_1)) * ((x_1 - x_2) / (y_2 - y_1)))) + x_3;
-				y_4 = ((x_4 - x_3) * (x_1 - x_2) / (y_2 - y_1)) + y_3;
-
-				x = x_4;
-				y = y_4;
-			}
 			//ROS_WARN("i = %d, x_raw = %lf, y_raw = %lf", i, x, y);
 			//ROS_WARN("i = %d, x = %lf, y = %lf", i, x, y);
-			//ROS_INFO("p1(%lf, %lf), p2(%lf, %lf), p3(%lf, %lf), p4(%lf, %lf)", x_1, y_1, x_2, y_2, x_3, y_3, x_4, y_4);
-#if 1
-			for (int j = 359; j > 0; j--) {
-				double xj = cos((j * 1.0 + 180.0) * PI / 180.0) * tmp_scan_data.ranges[j];
-				double yj = sin((j * 1.0 + 180.0) * PI / 180.0) * tmp_scan_data.ranges[j];
-				coordinate_transform(&xj, &yj, TF_TH, TF_X, TF_Y);
-				double distance = sqrt(pow(x - xj, 2) + pow(y - yj, 2));
-				//ROS_INFO("distance =  %lf", distance);
-				if (distance < NARROW_DIS - 0.03) {
-					is_push = false;
-					//ROS_INFO("break!");
-					break;
-				}
-			}
-#endif
-			auto dis_to_robot = sqrt(pow(x, 2) + pow(y, 2));
-			if (dis_to_robot > 0.4) {
-				//ROS_INFO("outside the range!");
-				continue;
-			}
-			if (!is_push) {
-				//ROS_INFO("continue!");
-				continue;
-			}
+			//ROS_INFO("p1(%lf, %lf), p2(%lf, %lf), p3(%lf, %lf), p4(%lf, %lf)", cart1_X, cart1_Y, cart2_X, cart2_Y, x_3, y_3, x_4, y_4);
 
-			p_target = GridMap::getRelative(GridMap::getCurrPoint(), int(y * 1000), int(x * 1000),true);
-			c_target = GridMap::pointToCell(p_target);
-			dp_target.x = x;
-			dp_target.y = y;
-			(*points).push_back(dp_target);
+			if(!check_is_valid(target, NARROW_DIS, tmp_scan_data))
+				continue;
+
+			(*points).push_back(target);
 		}
 	}
 	//ROS_INFO("wft2 size = %d", (*points).size());
