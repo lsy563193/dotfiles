@@ -48,8 +48,6 @@ bool ACleanMode::setNextAction()
 	else if(action_i_ == ac_back_form_charger)
 		action_i_ = ac_open_lidar;
 	else if(action_i_ == ac_open_lidar)
-		action_i_ = ac_align;
-	else if(action_i_ == ac_align)
 		action_i_ = ac_open_slam;
 	else
 	{
