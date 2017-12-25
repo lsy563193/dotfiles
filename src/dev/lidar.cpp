@@ -1314,7 +1314,7 @@ int Lidar::compLaneDistance()
 	scanLinear_mutex_.unlock();
 
 	if (tmp_scan_data.header.seq == seq) {
-		//ROS_WARN("lidar seq still same, quit!seq = %d", tmp_scan_data.header.seq);
+		//ROS_WARN("lidar seq_ still same, quit!seq_ = %d", tmp_scan_data.header.seq_);
 		return 0;
 	}
 	ROS_INFO("compLaneDistance");

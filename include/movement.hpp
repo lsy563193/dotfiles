@@ -234,6 +234,7 @@ public:
 public:
 	explicit MovementFollowWallLidar(bool is_left);
 
+	void _adjustSpeed(int32_t& left, int32_t& right, int lower, int faster,int16_t diff=0, int kp=0);
 	void adjustSpeed(int32_t&, int32_t&) override ;
 
 	Point32_t calcTmpTarget() override ;
@@ -244,9 +245,10 @@ private:
 	bool check_is_valid(Vector2<double> point, Paras para, sensor_msgs::LaserScan scan);
 	bool check_obstacle(sensor_msgs::LaserScan scan, const Paras para);
 	Vector2<double> polar_to_cartesian(double polar,int i);
-	bool getLidarWfTarget2(std::vector<Vector2<double>> &points);
-	bool is_no_target{};
+	bool getLidarPath(std::vector<Vector2<double>> &points);
 	bool is_sp_turn{};
+	Points plan_path_{};
+	uint32_t seq_{0};
 };
 
 class MovementGoToCharger: public IMovement

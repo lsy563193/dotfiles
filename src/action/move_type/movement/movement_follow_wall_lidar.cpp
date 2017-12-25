@@ -6,7 +6,6 @@
 
 #define WF_SPEED						((int32_t) 20)
 #define WF_SCAN_TYPE						(2)
-Points g_wf_path{};
 
 const double CHASE_X = 0.107;
 
@@ -71,21 +70,20 @@ bool MovementFollowWallLidar::check_is_valid(Vector2<double> point, Paras para, 
 	return true;
 }
 
-MovementFollowWallLidar::MovementFollowWallLidar(bool is_left) : MovementFollowWallInfrared(is_left)
+MovementFollowWallLidar::MovementFollowWallLidar(bool is_left)
+				: MovementFollowWallInfrared(is_left)
 {
 	tmp_target_ = calcTmpTarget();
 }
 
-bool MovementFollowWallLidar::getLidarWfTarget2(std::vector<Vector2<double>> &points) {
-	static uint32_t seq = 0;
-	bool is_left = true;
-	Paras para{is_left};
+bool MovementFollowWallLidar::getLidarPath(std::vector<Vector2<double>> &points) {
+	Paras para{is_left_};
 	auto scan = Lidar::getLidarScanDataOriginal();
 
-	if (scan.header.seq == seq) {
+	if (scan.header.seq == seq_) {
 		return false;
 	}
-	seq = scan.header.seq;
+	seq_ = scan.header.seq;
 	points.clear();
 
 	auto is_obstacle = check_obstacle(scan, para);
@@ -122,7 +120,7 @@ bool MovementFollowWallLidar::getLidarWfTarget2(std::vector<Vector2<double>> &po
 	if (points.empty()) {
 		return false;
 	}
-	if (!is_left) {
+	if (!is_left_) {
 		std::reverse(points.begin(), points.end());//for the right wall follow
 	}
 	std::sort(points.begin(), points.end(), [](Vector2<double> a, Vector2<double> b) {
@@ -132,135 +130,88 @@ bool MovementFollowWallLidar::getLidarWfTarget2(std::vector<Vector2<double>> &po
 	return true;
 }
 
-Point32_t MovementFollowWallLidar::calcTmpTarget()
-{
-		std::vector<Vector2<double>> g_wf_target_point{};
-		g_wf_path.clear();
-		getLidarWfTarget2(g_wf_target_point);
-		for (auto iter = g_wf_target_point.begin(); iter != g_wf_target_point.end(); ++iter) {
-			Point32_t p_target = GridMap::getRelative(GridMap::getCurrPoint(),int(iter->Y * 1000),int(iter->X * 1000),true);
-			g_wf_path.push_back(p_target);
-		}
-	auto curr = nav_map.getCurrPoint();
-	extern boost::mutex scan2_mutex_;
-	PPTargetType path;
-	scan2_mutex_.lock();
-	if (is_sp_turn)
-	{
+Point32_t MovementFollowWallLidar::calcTmpTarget() {
+	std::vector<Vector2<double>> relative_plan_path{};
+	if(getLidarPath(relative_plan_path))
+		plan_path_.clear();
+	for (const auto& iter : relative_plan_path) {
+		plan_path_.push_back(GridMap::getRelative(GridMap::getCurrPoint(), int(iter.Y * 1000), int(iter.X * 1000), true));
 	}
-	else
-	{
-		if (g_wf_path.empty())
-		{
-			is_no_target = true;
-		}
-		else
-		{
+	if (is_sp_turn) {
+	}
+	else {
+		if (!plan_path_.empty()) {
+			auto curr = nav_map.getCurrPoint();
 			if (std::abs(curr.X - tmp_target_.X) < 30 && std::abs(curr.Y - tmp_target_.Y) < 30) {
-				if (g_wf_path.size() > 0) {
-					g_wf_path.pop_front();
-					tmp_target_ = g_wf_path.front();
-				}
-				ROS_ERROR("reach! g_wf_path.points.pop_front(), size = %d", g_wf_path.size());
-				is_no_target = g_wf_path.empty();
+				plan_path_.pop_front();
 			}
-
-			is_no_target = false;
-			if (tmp_target_.X != g_wf_path.front().X && tmp_target_.Y != g_wf_path.front().Y) {
-				tmp_target_ = g_wf_path.front();
-				ROS_INFO("tmp_target_ = g_wf_path.points.front()");
-			}
+			tmp_target_ = plan_path_.front();
 		}
 	}
-	scan2_mutex_.unlock();
 	return tmp_target_;
 }
 
 void MovementFollowWallLidar::adjustSpeed(int32_t &left_speed, int32_t &right_speed) {
 	wheel.setDirectionForward();
-	if (is_no_target) {
-		if (is_left_) {
-			left_speed = 8;
-			right_speed = 31;
-		}
-		else {
-			left_speed = 31;
-			right_speed = 8;
-		}
-		ROS_WARN("not target:left_speed(%d),right_speed(%d)", left_speed, right_speed);
+
+	tmp_target_ = calcTmpTarget();
+
+	auto curr = GridMap::getCurrPoint();
+	auto angle_diff = ranged_angle( course_to_dest(curr, tmp_target_) - GridMap::getCurrPoint().TH);
+
+	ROS_ERROR("find target:left_speed(%d),right_speed(%d)", left_speed, right_speed);
+
+	if (plan_path_.empty() || is_left_ ? (angle_diff > 450) : (angle_diff < -450)) {
+		_adjustSpeed(left_speed, right_speed,8,31);
 	}
 	else {
-		ROS_ERROR("find target:left_speed(%d),right_speed(%d)", left_speed, right_speed);
-		auto curr = GridMap::getCurrPoint();
-		auto angle_diff = ranged_angle(
-						course_to_dest(curr.X, curr.Y, tmp_target_.X, tmp_target_.Y) - GridMap::getCurrPoint().TH);
+		if ((is_left_ ? (angle_diff < -10) : (angle_diff > 10))) {
+			if ((is_left_ ? angle_diff < -600 : angle_diff > 600)) {
+				tmp_target_ = calcTmpTarget();
+			}
+			auto tmp_angle_diff = ranged_angle( course_to_dest(curr, tmp_target_) - GridMap::getCurrPoint().TH);
+			is_sp_turn = !(is_left_ ? (tmp_angle_diff > -10) : (tmp_angle_diff < 10));
+			_adjustSpeed(left_speed, right_speed,10,-10);
+		}
+		else {
+			_adjustSpeed(left_speed, right_speed,0,0,angle_diff,20);
+		}
+	}
+}
 
+void MovementFollowWallLidar::_adjustSpeed(int32_t& left_speed, int32_t& right_speed,int lower, int faster,int16_t angle_diff ,int kp) {
+	if(kp ==  0) {
+		if (is_left_) {
+			left_speed = lower;
+			right_speed = faster;
+		}
+		else {
+			left_speed = faster;
+			right_speed = lower;
+		}
+	}else {
 		if (integration_cycle_++ > 10) {
 			integration_cycle_ = 0;
 			integrated_ += angle_diff;
 			check_limit(integrated_, -150, 150);
 		}
 
-		int kp;
-		auto tmp_cond = is_left_ ? (angle_diff < -600 || is_sp_turn) : (angle_diff > 600 || is_sp_turn);
-		auto tmp_cond_1 = is_left_ ? (angle_diff > 450) : (angle_diff < -450);
-		if (tmp_cond) {
-			beeper.play_for_command(true);
-			if (!is_sp_turn) {
-				tmp_target_ = calcTmpTarget();
-				ROS_INFO("fresh tmp_target_!");
-			}
-			auto tmp_angle_diff = ranged_angle(
-							course_to_dest(curr.X, curr.Y, tmp_target_.X, tmp_target_.Y) - GridMap::getCurrPoint().TH);
-			ROS_INFO("tmp_angle_diff = %d angle_diff = %d", tmp_angle_diff, angle_diff);
-			auto tmp_cond_2 = is_left_ ? (tmp_angle_diff > -10) : (tmp_angle_diff < 10);
-			is_sp_turn = !tmp_cond_2;
-			int speed_lim = 0;
-			if (base_speed_ > speed_lim) {
-				base_speed_--;
-			}
-
-			if (is_left_) {
-				left_speed = 10;
-				right_speed = 0 - left_speed;
-			}
-			else {
-				right_speed = 10;
-				left_speed = 0 - right_speed;
-			}
-			base_speed_ = (left_speed + right_speed) / 2;
+		if (base_speed_ < WF_SPEED) {
+			base_speed_++;
 		}
-		else if (tmp_cond_1) {
-			if (is_left_) {
-				left_speed = 8;
-				right_speed = 31;
-			}
-			else {
-				left_speed = 31;
-				right_speed = 8;
-			}
-			base_speed_ = (left_speed + right_speed) / 2;
+		if (is_left_) {
+			left_speed = base_speed_ - angle_diff / kp -
+									 integrated_ / 150; // - Delta / 20; // - Delta * 10 ; // - integrated_ / 2500;
+			right_speed = base_speed_ + angle_diff / kp +
+										integrated_ / 150; // + Delta / 20;// + Delta * 10 ; // + integrated_ / 2500;
 		}
 		else {
-			//kp = 20;
-			kp = 20;//20
-			if (base_speed_ < WF_SPEED) {
-				base_speed_++;
-			}
-			if (is_left_) {
-				left_speed = base_speed_ - angle_diff / kp -
-										 integrated_ / 150; // - Delta / 20; // - Delta * 10 ; // - integrated_ / 2500;
-				right_speed = base_speed_ + angle_diff / kp +
-											integrated_ / 150; // + Delta / 20;// + Delta * 10 ; // + integrated_ / 2500;
-			}
-			else {
-				left_speed = base_speed_ - angle_diff / kp -
-										 integrated_ / 150; // - Delta / 20; // - Delta * 10 ; // - integrated_ / 2500;
-				right_speed = base_speed_ + angle_diff / kp +
-											integrated_ / 150; // + Delta / 20;// + Delta * 10 ; // + integrated_ / 2500;
-			}
-			base_speed_ = (left_speed + right_speed) / 2;
+			left_speed = base_speed_ - angle_diff / kp -
+									 integrated_ / 150; // - Delta / 20; // - Delta * 10 ; // - integrated_ / 2500;
+			right_speed = base_speed_ + angle_diff / kp +
+										integrated_ / 150; // + Delta / 20;// + Delta * 10 ; // + integrated_ / 2500;
 		}
 	}
-}
 
+	base_speed_ = (left_speed + right_speed) / 2;
+}

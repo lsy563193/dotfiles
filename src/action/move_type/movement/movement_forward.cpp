@@ -63,12 +63,7 @@ void MovementFollowPointLinear::adjustSpeed(int32_t &left_speed, int32_t &right_
 
 	auto curr_p = nav_map.getCurrPoint();
 	auto angle_diff = ranged_angle(
-					course_to_dest(curr_p.X, curr_p.Y, tmp_target_.X, tmp_target_.Y) - robot::instance()->getPoseAngle());
-
-//	ROS_WARN("tmp_xy(%d),x?(%d),pos(%d),dis(%d), target_p(%d,%d)", tmp_xy, GridMap::isXDirection(new_dir), GridMap::isPositiveDirection(new_dir), dis, target_p.X, target_p.Y);
-//	auto dis_diff = GridMap::isXDirection(new_dir) ? curr_p.Y - cm_target_p_.Y : curr_p.X - cm_target_p_.X;
-//	dis_diff = GridMap::isPositiveDirection(new_dir) ^ GridMap::isXDirection(new_dir) ? dis_diff :  -dis_diff;
-
+					course_to_dest(curr_p, tmp_target_) - robot::instance()->getPoseAngle());
 	if (integration_cycle_++ > 10) {
 		auto t = nav_map.pointToCell(tmp_target_);
 		robot::instance()->pubCleanMapMarkers(nav_map, p_clean_mode->plan_path_, &t);
@@ -88,13 +83,6 @@ void MovementFollowPointLinear::adjustSpeed(int32_t &left_speed, int32_t &right_
 		integrated_ = 0;
 		if (base_speed_ > (int32_t) LINEAR_MIN_SPEED){
 			base_speed_--;
-			/*if(obstalce_distance_front > 0.025 && obstalce_distance_front < 0.125 && (left_speed > 20 || right_speed > 20)) {
-				base_speed_ -= 2;
-			}
-			else if(obs_state & BLOCK_FRONT)
-				base_speed_ -=2;
-			else if(obs_state & (BLOCK_LEFT | BLOCK_RIGHT))
-				base_speed_ --;*/
 		}
 	}
 	else if (base_speed_ < (int32_t) LINEAR_MAX_SPEED) {
