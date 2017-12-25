@@ -6,6 +6,7 @@
 #define PP_MOVEMENT_HPP
 
 #include <sensor_msgs/LaserScan.h>
+#include <boost/thread.hpp>
 #include "ros/ros.h"
 #include "speed_governor.hpp"
 #include "event_manager.h"
@@ -36,6 +37,8 @@ class IFollowPoint{
 public:
 	virtual Point32_t calcTmpTarget()=0;
 protected:
+
+	boost::thread* transform_thread_{};
 	Point32_t tmp_target_{};
 	uint8_t integration_cycle_{};
 	int32_t integrated_{};
@@ -176,6 +179,25 @@ protected:
 class MovementFollowWallLidar:public IFollowPoint, public MovementFollowWallInfrared
 {
 
+public:
+	explicit MovementFollowWallLidar(bool is_left);
+
+	void adjustSpeed(int32_t&, int32_t&) override ;
+
+	Point32_t calcTmpTarget() override ;
+
+private:
+	class Paras;
+	void _adjustSpeed(int32_t& left, int32_t& right, int lower, int faster,int16_t diff=0, int kp=0);
+	Vector2<double> get_middle_point(Vector2<double> p1, Vector2<double> p2,Paras para);
+	bool check_is_valid(Vector2<double> point, Paras para, sensor_msgs::LaserScan scan);
+	bool check_obstacle(sensor_msgs::LaserScan scan, const Paras para);
+	Vector2<double> polar_to_cartesian(double polar,int i);
+	bool getLidarPath(std::vector<Vector2<double>> &points);
+	bool is_sp_turn{};
+	Points plan_path_{};
+	uint32_t seq_{0};
+
 class Paras{
 public:
 	explicit Paras(bool is_left):is_left_(is_left)
@@ -231,24 +253,6 @@ public:
 	const double CHASE_X = 0.107;
 };
 
-public:
-	explicit MovementFollowWallLidar(bool is_left);
-
-	void _adjustSpeed(int32_t& left, int32_t& right, int lower, int faster,int16_t diff=0, int kp=0);
-	void adjustSpeed(int32_t&, int32_t&) override ;
-
-	Point32_t calcTmpTarget() override ;
-
-private:
-	class Paras;
-	Vector2<double> get_middle_point(Vector2<double> p1, Vector2<double> p2,Paras para);
-	bool check_is_valid(Vector2<double> point, Paras para, sensor_msgs::LaserScan scan);
-	bool check_obstacle(sensor_msgs::LaserScan scan, const Paras para);
-	Vector2<double> polar_to_cartesian(double polar,int i);
-	bool getLidarPath(std::vector<Vector2<double>> &points);
-	bool is_sp_turn{};
-	Points plan_path_{};
-	uint32_t seq_{0};
 };
 
 class MovementGoToCharger: public IMovement

@@ -73,6 +73,7 @@ bool MovementFollowWallLidar::check_is_valid(Vector2<double> point, Paras para, 
 MovementFollowWallLidar::MovementFollowWallLidar(bool is_left)
 				: MovementFollowWallInfrared(is_left)
 {
+	transform_thread_ = new boost::thread(boost::bind(&MovementFollowWallLidar::calcTmpTarget));
 	tmp_target_ = calcTmpTarget();
 }
 
@@ -137,9 +138,7 @@ Point32_t MovementFollowWallLidar::calcTmpTarget() {
 	for (const auto& iter : relative_plan_path) {
 		plan_path_.push_back(GridMap::getRelative(GridMap::getCurrPoint(), int(iter.Y * 1000), int(iter.X * 1000), true));
 	}
-	if (is_sp_turn) {
-	}
-	else {
+	{
 		if (!plan_path_.empty()) {
 			auto curr = nav_map.getCurrPoint();
 			if (std::abs(curr.X - tmp_target_.X) < 30 && std::abs(curr.Y - tmp_target_.Y) < 30) {
@@ -165,15 +164,15 @@ void MovementFollowWallLidar::adjustSpeed(int32_t &left_speed, int32_t &right_sp
 		_adjustSpeed(left_speed, right_speed,8,31);
 	}
 	else {
-		if ((is_left_ ? (angle_diff < -10) : (angle_diff > 10))) {
+		/*if ((is_left_ ? (angle_diff < -10) : (angle_diff > 10))) {
 			if ((is_left_ ? angle_diff < -600 : angle_diff > 600)) {
 				tmp_target_ = calcTmpTarget();
 			}
 			auto tmp_angle_diff = ranged_angle( course_to_dest(curr, tmp_target_) - GridMap::getCurrPoint().TH);
 			is_sp_turn = !(is_left_ ? (tmp_angle_diff > -10) : (tmp_angle_diff < 10));
 			_adjustSpeed(left_speed, right_speed,10,-10);
-		}
-		else {
+		} else */
+		{
 			_adjustSpeed(left_speed, right_speed,0,0,angle_diff,20);
 		}
 	}
