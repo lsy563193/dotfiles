@@ -2,11 +2,11 @@
 // Created by austin on 17-12-7.
 //
 
-#include "pp.h"
+#include <global.h>
 #include "arch.hpp"
 #include "dev.h"
 
-MovementCharge::MovementCharge(bool play_start_wav)
+MovementCharge::MovementCharge()
 {
 	ROS_INFO("%s %d: Start charge action.", __FUNCTION__, __LINE__);
 	led.set_mode(LED_BREATH, LED_ORANGE);
@@ -15,8 +15,7 @@ MovementCharge::MovementCharge(bool play_start_wav)
 
 	show_battery_info_time_stamp_ = time(NULL);
 
-	if (play_start_wav)
-		speaker.play(VOICE_BATTERY_CHARGE);
+	speaker.play(VOICE_BATTERY_CHARGE);
 
 }
 

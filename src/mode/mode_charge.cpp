@@ -17,7 +17,7 @@ ModeCharge::ModeCharge()
 	event_manager_register_handler(this);
 	event_manager_reset_status();
 	event_manager_set_enable(true);
-	sp_action_.reset(new MovementCharge(true));
+	sp_action_.reset(new MovementCharge);
 	action_i_ = ac_charge;
 	serial.setCleanMode(Clean_Mode_Charging);
 
@@ -111,7 +111,7 @@ void ModeCharge::remotePlan(bool state_now, bool state_last)
 		else if (charger.getChargeStatus() == 4)
 		{
 			ROS_WARN("%s %d: Plan not activated not valid because of charging with adapter.", __FUNCTION__, __LINE__);
-			//speaker.play(???);
+			// todo: speaker.play(???);
 			speaker.play(VOICE_CANCEL_APPOINTMENT);
 		}
 		else
