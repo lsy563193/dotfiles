@@ -82,7 +82,7 @@ public:
 
 	Cell_t getCurrCell();
 
-	void setCell(uint8_t id, int32_t x, int32_t y, CellState value);
+	void setCell(uint8_t id, int16_t x, int16_t y, CellState value);
 
 	CellState getCell(int id, int16_t x, int16_t y);
 
@@ -180,6 +180,7 @@ public:
 
 
 	void setCleaned(std::deque<Cell_t> cells);
+	void setExplorationCleaned();
 
 	uint32_t getCleanedArea();
 

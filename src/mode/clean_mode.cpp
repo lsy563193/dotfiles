@@ -75,7 +75,7 @@ void ACleanMode::setNextMode(int next)
 	}
 	else {
 		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
-		Mode::setNextMode(md_idle);
+		Mode::setNextMode(next);
 	}
 }
 
@@ -200,6 +200,7 @@ bool ACleanMode::setNextState()
 					{
 						PP_INFO();
 						state_i_ = st_go_to_charger;
+						stateInit(state_i_);
 					}
 					action_i_ = ac_null;
 				}
@@ -240,14 +241,14 @@ Cell_t ACleanMode::updatePath()
 {
 	auto curr = nav_map.updatePosition();
 	auto point = nav_map.getCurrPoint();
-	robot::instance()->pubCleanMapMarkers(nav_map, plan_path_);
+//	robot::instance()->pubCleanMapMarkers(nav_map, plan_path_);
 //	PP_INFO();
-//	ROS_INFO("curr(%d,%d,%d)",curr.X, curr.Y, curr.TH);
+//	ROS_INFO("point(%d,%d,%d)",point.X, point.Y,point.TH);
 //	ROS_INFO("last(%d,%d,%d)",last_.X, last_.Y, last_.TH);
 	if (passed_path_.empty())
 	{
 		passed_path_.push_back(curr);
-		ROS_INFO("curr(%d,%d,%d)",curr.X, curr.Y, curr.TH);
+//		ROS_INFO("curr(%d,%d,%d)",curr.X, curr.Y, curr.TH);
 	}
 	else if (!is_equal_with_angle_(curr, last_))
 	{
@@ -337,8 +338,6 @@ void ACleanMode::stateInit(int next)
 		ev.battrey_home = false;
 
 		ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_cells_.size());
-		if (go_home_path_algorithm_ == nullptr)
-			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(nav_map, home_cells_));
 
 	}
 	if (next == st_tmp_spot) {
@@ -396,4 +395,7 @@ bool ACleanMode::MovementFollowWallisFinish()
 {
 	return false;
 }
+
+
+
 

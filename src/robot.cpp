@@ -490,7 +490,7 @@ void robot::pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path, Cel
 				robot::instance()->setCleanMapMarkers(x, y, TARGET_CLEAN);
 			else
 			{
-				cell_state = nav_map.getCell(CLEAN_MAP, x, y);
+				cell_state = map.getCell(CLEAN_MAP, x, y);
 				if (cell_state > UNCLEAN && cell_state < BLOCKED_BOUNDARY )
 					robot::instance()->setCleanMapMarkers(x, y, cell_state);
 			}

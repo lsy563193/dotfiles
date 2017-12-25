@@ -650,8 +650,8 @@ void core_thread_cb()
 				break;
 
 			case Clean_Mode_Sleep:
-				ROS_INFO("\n-------Sleep mode_------\n");
-				//serial.setStatus(Clean_Mode_Sleep);
+			ROS_INFO("\n-------Sleep mode_------\n");
+			//serial.setStatus(Clean_Mode_Sleep);
 				g_is_low_bat_pause = false;
 				cs_paused_setting();
 				cs_disable_motors();
@@ -688,6 +688,8 @@ Mode *getNextMode(int next_mode_i_)
 			return new CleanModeFollowWall();
 		case Mode::cm_spot:
 			return new CleanModeSpot();
+		case Mode::cm_exploration:
+			return new CleanModeExploration();
 //		case Mode::cm_exploration:
 //			return new CleanModeExploration();
 		default:

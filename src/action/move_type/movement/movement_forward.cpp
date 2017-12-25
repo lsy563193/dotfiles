@@ -129,12 +129,13 @@ bool MovementForward::isCellReach()
 	// Checking if robot has reached target cell.
 	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mt_->sp_mode_);
 	auto s_curr_p = nav_map.getCurrPoint();
+	PP_INFO();
 	auto target_p = nav_map.cellToPoint(p_clean_mode->plan_path_.back());
 	if (std::abs(s_curr_p.X - target_p.X) < CELL_COUNT_MUL_1_2 &&
 		std::abs(s_curr_p.Y - target_p.Y) < CELL_COUNT_MUL_1_2)
 	{
-		ROS_INFO("\033[1m""%s, %d: MovementForward, reach the target cell (%d,%d)!!""\033[0m", __FUNCTION__, __LINE__,
-						 p_clean_mode->plan_path_.back().X, p_clean_mode->plan_path_.back().Y);
+//		ROS_INFO("\033[1m""%s, %d: MovementForward, reach the target cell (%d,%d)!!""\033[0m", __FUNCTION__, __LINE__,
+//						 p_clean_mode->plan_path_.back().X, p_clean_mode->plan_path_.back().Y);
 //		g_turn_angle = ranged_angle(new_dir - robot::instance()->getPoseAngle());
 		return true;
 	}
@@ -274,7 +275,7 @@ bool MovementForward::isPassTargetStop()
 	auto new_dir = p_clean_mode->new_dir_;
 	auto s_curr_p = nav_map.getCurrPoint();
 	auto curr = (GridMap::isXDirection(new_dir)) ? s_curr_p.X : s_curr_p.Y;
-	auto target_p = nav_map.cellToPoint((p_clean_mode->plan_path_.back()));
+	auto target_p = (sp_mt_->target_point_);
 	auto target = (GridMap::isXDirection(new_dir)) ? target_p.X : target_p.Y;
 	if ((GridMap::isPositiveDirection(new_dir) && (curr > target + CELL_COUNT_MUL / 4)) ||
 		(!GridMap::isPositiveDirection(new_dir) && (curr < target - CELL_COUNT_MUL / 4)))

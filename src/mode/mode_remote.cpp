@@ -8,7 +8,7 @@
 #include "arch.hpp"
 
 ModeRemote::ModeRemote()
-{
+{//use dynamic then you can limit using derived class member
 	// TODO: Remote mode after nav is acting weird.
 	ROS_INFO("%s %d: Entering remote mode\n=========================" , __FUNCTION__, __LINE__);
 	event_manager_register_handler(this);

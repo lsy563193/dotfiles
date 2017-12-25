@@ -142,6 +142,7 @@ public:
 	~Rcon();
 	void init();
 	int getTrig(void);
+	bool isTrigT();
 
 	void setStatus(uint32_t code) {
 		rcon_status_ |= code;

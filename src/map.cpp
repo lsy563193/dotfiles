@@ -156,7 +156,7 @@ CellState GridMap::getCell(int id, int16_t x, int16_t y) {
  * @param y		 For CLEAN_MAP it is count y, for COST_MAP it is cell y.
  * @param value CellState
  */
-void GridMap::setCell(uint8_t id, int32_t x, int32_t y, CellState value) {
+void GridMap::setCell(uint8_t id, int16_t x, int16_t y, CellState value) {
 	CellState val;
 	int16_t ROW, COLUMN;
 
@@ -272,6 +272,7 @@ Point32_t GridMap::getRelative(Point32_t point, int16_t dy, int16_t dx, bool usi
 	{
 		point.X = cellToCount(countToCell(point.X)) + (int32_t)( ( ((double)dx * relative_cos * CELL_COUNT_MUL) - ((double)dy	* relative_sin * CELL_COUNT_MUL) ) / CELL_SIZE );
 		point.Y = cellToCount(countToCell(point.Y)) + (int32_t)( ( ((double)dx * relative_sin * CELL_COUNT_MUL) + ((double)dy	* relative_cos * CELL_COUNT_MUL) ) / CELL_SIZE );
+//		ROS_ERROR("piont.x:%d  point:y:%d",point.X,point.Y,point.TH);
 	}
 	return point;
 }
@@ -303,6 +304,7 @@ int16_t GridMap::countToCell(int32_t count) {
 }
 
 Point32_t GridMap::cellToPoint(const Cell_t &cell) {
+//	PP_INFO();
 	Point32_t pnt;
 	pnt.X = cellToCount(cell.X);
 	pnt.Y = cellToCount(cell.Y);
@@ -1079,7 +1081,7 @@ bool GridMap::markRobot(uint8_t id)
 			y = getCurrCell().Y + dy;
 			auto status = getCell(id, x, y);
 			if (status > CLEANED && status < BLOCKED_BOUNDARY && (status != BLOCKED_RCON)){
-				ROS_INFO("\033[1;33m" "%s,%d: (%d,%d)" "\033[0m", __FUNCTION__, __LINE__,x, y);
+//				ROS_INFO("\033[1;33m" "%s,%d: (%d,%d)" "\033[0m", __FUNCTION__, __LINE__,x, y);
 				setCell(id, x, y, CLEANED);
 				ret = true;
 			}
@@ -1515,5 +1517,24 @@ bool GridMap::isFrontBlocked(void)
 		}
 	}
 	return retval;
+}
+
+void GridMap::setExplorationCleaned() {
+	int16_t x, y;
+	Point32_t cur = getCurrPoint();
+	const int RADIUS_CELL = 10;//the radius of the robot can detect
+	for (int16_t angle_i = 0; angle_i <= 359; angle_i += 1) {
+		for (int dy = 0; dy < RADIUS_CELL; ++dy) {
+			auto cur_tmp = cur;
+			cur_tmp.TH += angle_i * 10;
+			robotToCell(cur_tmp, CELL_SIZE * dy, CELL_SIZE * 0, x, y);
+			auto status = getCell(CLEAN_MAP,x,y);
+			if (status > CLEANED && status < BLOCKED_BOUNDARY) {
+				//ROS_ERROR("%s,%d: (%d,%d)", __FUNCTION__, __LINE__, count_to_cell(x), count_to_cell(y));
+				break;
+			}
+			setCell(CLEAN_MAP, x, y, CLEANED);
+		}
+	}
 }
 

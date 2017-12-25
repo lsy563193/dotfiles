@@ -8,8 +8,7 @@
 Path_t APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const Cell_t &target,
 										const MapDirection &last_dir, bool use_unknown)
 {
-	Path_t path_;
-	path_.clear();
+	Path_t path_{};
 
 	// Get the map range.
 	int16_t x_min, x_max, y_min, y_max;
