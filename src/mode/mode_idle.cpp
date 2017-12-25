@@ -76,6 +76,13 @@ bool ModeIdle::isExit()
 		return true;
 	}
 
+	if (ev.rcon_triggered)
+	{
+		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+		setNextMode(md_go_to_charger);
+		return true;
+	}
+
 	return false;
 }
 
@@ -259,4 +266,11 @@ void ModeIdle::keyClean(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
 
 	key.resetTriggerStatus();
+}
+
+void ModeIdle::rcon(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: rcon signal.", __FUNCTION__, __LINE__);
+	ev.rcon_triggered = c_rcon.getStatus();
+	c_rcon.resetStatus();
 }
