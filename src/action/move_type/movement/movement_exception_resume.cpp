@@ -5,6 +5,7 @@
 #include <arch.hpp>
 #include <error.h>
 #include <pp.h>
+#include <event_manager.h>
 #include "dev.h"
 
 MovementExceptionResume::MovementExceptionResume()
@@ -30,9 +31,59 @@ MovementExceptionResume::~MovementExceptionResume()
 
 }
 
-void MovementExceptionResume::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
+void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 {
-	l_speed = r_speed = 0;
+	if (ev.oc_suction)
+		left_speed = right_speed = 0;
+	else if (ev.oc_wheel_left || ev.oc_wheel_right)
+	{
+		if (ev.oc_wheel_right)
+			wheel.setDirectionRight();
+		else
+			wheel.setDirectionLeft();
+		left_speed = 30;
+		right_speed = 30;
+	}
+	else if (ev.cliff_jam)
+	{
+		wheel.setDirBackward();
+		left_speed = right_speed = 18;
+	}
+	else if (ev.bumper_jam)
+	{
+		switch (bumper_jam_state_)
+		{
+			case 1:
+			case 2:
+			case 3:
+			{
+				// Quickly move back for a distance.
+				wheel.setDirBackward();
+				left_speed = right_speed = RUN_TOP_SPEED;
+				break;
+			}
+			case 4:
+			{
+				// Quickly turn right for 90 degrees.
+				wheel.setDirectionRight();
+				left_speed = right_speed = RUN_TOP_SPEED;
+				break;
+			}
+			case 5:
+			{
+				// Quickly turn left for 180 degrees.
+				wheel.setDirectionLeft();
+				left_speed = right_speed = RUN_TOP_SPEED;
+				break;
+			}
+		}
+	}
+	else if (ev.lidar_stuck)
+	{
+		wheel.setDirBackward();
+		left_speed = right_speed = 2;
+	}
+
 }
 
 bool MovementExceptionResume::isFinish()
@@ -99,9 +150,9 @@ bool MovementExceptionResume::isFinish()
 		else
 		{
 			if (ev.oc_wheel_left)
-				wheel_current_sum_ += (uint32_t) wheel.getLeftWheelCurrent();
+				wheel_current_sum_ += wheel.getLeftWheelCurrent();
 			else
-				wheel_current_sum_ += (uint32_t) wheel.getRightWheelCurrent();
+				wheel_current_sum_ += wheel.getRightWheelCurrent();
 			wheel_current_sum_cnt_++;
 		}
 	}

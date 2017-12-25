@@ -8,7 +8,7 @@
 ActionOpenSlam::ActionOpenSlam() {
 	PP_INFO();
 	robot::instance()->setTfReady(false);
-	robot::instance()->setBaselinkFrameType(Map_Position_Map_Angle);
+	robot::instance()->setBaselinkFrameType(SLAM_POSITION_SLAM_ANGLE);
 	// Wait for a while to make sure the scan data and odom are both updated.
 	usleep(230000);
 	slam.start();

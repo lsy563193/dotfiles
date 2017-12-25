@@ -9,10 +9,12 @@
 ActionLinear::ActionLinear() {
 	resetTriggeredValue();
 
-	turn_target_angle_ = sp_cm_->plan_path_.front().TH;
+	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mode_);
+	target_point_ = GridMap::cellToPoint(p_clean_mode->plan_path_.front());
+	turn_target_angle_ = p_clean_mode->new_dir_;
 	ROS_INFO("%s,%d: mt_is_linear,turn(%d)", __FUNCTION__, __LINE__, turn_target_angle_);
 	movement_i_ = mm_turn;
-	sp_movement_.reset(new MovementTurn(turn_target_angle_));
+	sp_movement_.reset(new MovementTurn(turn_target_angle_, ROTATE_TOP_SPEED));
 //	ROS_INFO("%s,%d: mt_is_linear,turn(%d)", __FUNCTION__, __LINE__, turn_target_angle_);
 //	ROS_ERROR("%s,%d: mt_is_linear,turn(%d)", __FUNCTION__, __LINE__, turn_target_angle_);
 	IMovement::sp_mt_ = this;
@@ -22,24 +24,29 @@ ActionLinear::ActionLinear() {
 //ActionLinear::~ActionLinear() {
 //
 //}
-bool ActionLinear::isFinish() {
+bool ActionLinear::isFinish()
+{
 //	PP_INFO();
+	if (IMoveType::isFinish())
+		return true;
+
+	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mode_);
 	if (sp_movement_->isFinish()) {
 		PP_INFO();
-		path_display_path_points(sp_cm_->plan_path_);
+		p_clean_mode->clean_path_algorithm_->displayPath(p_clean_mode->plan_path_);
 
 		if (movement_i_ == mm_turn) {
 			PP_INFO();
 			movement_i_ = mm_forward;
 			resetTriggeredValue();
-			sp_movement_.reset(new MovementForward());
+			sp_movement_.reset(new MovementFollowPointLinear());
 		}
 		else if (movement_i_ == mm_forward) {
 			PP_INFO();
 			nav_map.saveBlocks(true);
 			if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered) {
 				movement_i_ = mm_back;
-				sp_movement_.reset(new MovementBack);
+				sp_movement_.reset(new MovementBack(0.01, BACK_MAX_SPEED));
 			}
 			else {
 //				resetTriggeredValue();
@@ -47,15 +54,15 @@ bool ActionLinear::isFinish() {
 			}
 		}
 		else {//back
-			resetTriggeredValue();
-			PP_INFO();
 //			resetTriggeredValue();
+			PP_INFO();
 			return true;
 		}
 	}
 	return false;
 }
 
-ActionLinear::~ActionLinear() {
+ActionLinear::~ActionLinear()
+{
 //	PP_WARN();
 }

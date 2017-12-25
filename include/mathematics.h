@@ -308,6 +308,7 @@
    * Type declaration of int16_t Vector2 as Cell_t
    */
 typedef Vector2<int16_t> Cell_t;
+typedef Vector2<int32_t> Point32_t;
 
 typedef struct Point_d_t{
 	double x;
@@ -349,11 +350,13 @@ typedef struct LineKB{
 	}
 } LineKB;
 
+/*
 typedef struct{
 	int32_t X;
 	int32_t Y;
   int16_t TH;
 } Point32_t;
+*/
 
 typedef struct{
 	int32_t X;

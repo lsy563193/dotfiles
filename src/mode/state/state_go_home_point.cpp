@@ -13,8 +13,8 @@ StateGoHomePoint::StateGoHomePoint():gh_state_(gh_ing) {
 		led.set_mode(LED_STEADY, LED_ORANGE);
 	// Play wavs.
 	if (ev.battrey_home)
-		speaker.play(SPEAKER_BATTERY_LOW);
-	speaker.play(SPEAKER_BACK_TO_CHARGER);
+		speaker.play(VOICE_BATTERY_LOW);
+	speaker.play(VOICE_BACK_TO_CHARGER);
 
 	if (ev.remote_home)
 		g_go_home_by_remote = true;

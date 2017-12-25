@@ -11,8 +11,8 @@ CleanModeSpot::CleanModeSpot()
 {
 	event_manager_register_handler(this);
 	event_manager_set_enable(true);
-	IMoveType::sp_cm_.reset(this);
-	speaker.play(SPEAKER_CLEANING_SPOT);
+	IMoveType::sp_mode_.reset(this);
+	speaker.play(VOICE_CLEANING_SPOT);
 	usleep(200000);
 	vacuum.setMode(Vac_Save);
 	brush.setLeftPwm(50);
@@ -31,7 +31,7 @@ CleanModeSpot::~CleanModeSpot()
 	lidar.motorCtrl(OFF);
 	lidar.setScanOriginalReady(0);
 
-	robot::instance()->setBaselinkFrameType(Odom_Position_Odom_Angle);
+	robot::instance()->setBaselinkFrameType( ODOM_POSITION_ODOM_ANGLE);
 	slam.stop();
 	odom.setAngleOffset(0);
 }
@@ -46,7 +46,7 @@ bool CleanModeSpot::mapMark()
 
 	clean_path_algorithm_->displayPath(passed_path_);
 	if (action_i_ == ac_linear) {
-		PP_INFO()
+		PP_INFO();
 		nav_map.setCleaned(passed_path_);
 	}
 
@@ -54,7 +54,7 @@ bool CleanModeSpot::mapMark()
 		nav_map.markRobot(CLEAN_MAP);
 
 	nav_map.setBlocks();
-	PP_INFO()
+	PP_INFO();
 	nav_map.print(CLEAN_MAP, nav_map.getXCell(), nav_map.getYCell());
 
 	passed_path_.clear();

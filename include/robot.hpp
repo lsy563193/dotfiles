@@ -16,17 +16,17 @@
 #include <vector>
 #include "config.h"
 #include "map.h"
-#include "movement.h"
 #include "pose.h"
+#include "mode.hpp"
 
 extern volatile int16_t g_left_wall_baseline;
 extern volatile int16_t g_right_wall_baseline;
 extern pp::x900sensor   sensor;
 
 typedef enum {
-	Odom_Position_Odom_Angle = 0,
-	Map_Position_Map_Angle,
-	Map_Position_Odom_Angle,
+	ODOM_POSITION_ODOM_ANGLE = 0,
+	SLAM_POSITION_SLAM_ANGLE,
+	SLAM_POSITION_ODOM_ANGLE,
 } Baselink_Frame_Type;
 
 extern bool	g_is_low_bat_pause;
@@ -248,7 +248,7 @@ private:
 //	void robot_map_metadata_cb(const nav_msgs::MapMetaData::ConstPtr& msg);
 	void mapCb(const nav_msgs::OccupancyGrid::ConstPtr &msg);
 	void scanLinearCb(const sensor_msgs::LaserScan::ConstPtr &msg);
-	void scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr &msg);
+	void scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr &scan);
 	void scanCompensateCb(const sensor_msgs::LaserScan::ConstPtr &msg);
 	void lidarPointCb(const visualization_msgs::Marker &point_marker);
 };

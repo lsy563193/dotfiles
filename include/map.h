@@ -18,6 +18,7 @@
 #define BLOCK_ALL			((uint8_t) 0x07)
 
 typedef std::deque<Cell_t> PPTargetType;
+typedef std::deque<Point32_t> Points;
 
 typedef enum {
 	// The sequence of CLEAN_MAP value must be UNCLEAN < CLEANED < MAP_BLOCKED < SLAM_MAP_BLOCKED
@@ -76,11 +77,11 @@ public:
 
 	static Point32_t getCurrPoint(void);
 
-	int16_t getXCell(void);
+	static int16_t getXCell(void);
 
-	int16_t getYCell(void);
+	static int16_t getYCell(void);
 
-	Cell_t getCurrCell();
+	static Cell_t getCurrCell();
 
 	void setCell(uint8_t id, int32_t x, int32_t y, CellState value);
 
@@ -174,14 +175,12 @@ public:
 
 	uint8_t saveSlip();
 
-	uint8_t saveFollowWall();
-
 	uint8_t saveBlocks(bool is_linear);
 
 	uint8_t setBlocks();
 
 
-	void setCleaned(std::deque<Cell_t> &cells);
+	void setCleaned(std::deque<Cell_t> cells);
 
 	uint32_t getCleanedArea();
 

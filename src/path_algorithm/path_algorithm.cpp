@@ -32,7 +32,7 @@ void APathAlgorithm::optimizePath(GridMap &map, Path_t& path)
 {
 	// Optimize only if the path have more than 3 cells.
 	if (path.size() > 3) {
-		ROS_INFO("%s %d: Start optimizing Path");
+		ROS_INFO("%s %d: Start optimizing Path",__FUNCTION__,__LINE__);
 		auto it = path.begin();
 		for (uint16_t i = 0; i < path.size() - 3; i++) {
 			ROS_DEBUG("%s %d: i: %d, size: %ld.", __FUNCTION__, __LINE__, i, path.size());

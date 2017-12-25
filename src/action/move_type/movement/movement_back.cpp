@@ -13,10 +13,11 @@ bool g_go_to_charger_back_30cm = false;
 bool g_go_to_charger_back_10cm = false;
 bool g_go_to_charger_back_0cm = false;
 
-MovementBack::MovementBack(float back_distance)
+MovementBack::MovementBack(float back_distance, uint8_t max_speed)
 {
 	back_distance_ = back_distance;
-	speed_ = BACK_MAX_SPEED;
+	max_speed_ = max_speed;
+	speed_ = max_speed_;
 	bumper_jam_cnt_ = 0;
 	cliff_jam_cnt_ = 0;
 	updateStartPose();
@@ -28,6 +29,7 @@ void MovementBack::updateStartPose()
 	s_pos_x = odom.getX();
 	s_pos_y = odom.getY();
 }
+
 bool MovementBack::isLidarStop()
 {
 	auto obstacle_distance = lidar.getObstacleDistance(1, ROBOT_RADIUS);
@@ -44,7 +46,7 @@ void MovementBack::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
 //	ROS_INFO("MovementBack::adjustSpeed");
 	wheel.setDirBackward();
-	speed_ = (speed_ > BACK_MAX_SPEED) ? BACK_MAX_SPEED : speed_;
+	speed_ = (speed_ > max_speed_) ? max_speed_ : speed_;
 	wheel.resetStep();
 	l_speed = r_speed = speed_;
 }

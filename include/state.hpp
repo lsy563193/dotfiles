@@ -7,7 +7,6 @@
 
 //#include <boost/shared_ptr.hpp>
 class ACleanMode;
-#include "move_type_plan.hpp"
 class State {
 public:
 //	virtual IMoveType* setNextAction_()=0;

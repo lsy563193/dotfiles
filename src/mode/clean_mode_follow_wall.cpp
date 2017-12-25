@@ -2,6 +2,7 @@
 // Created by lsy563193 on 12/9/17.
 //
 
+#include <pp.h>
 #include "robot.hpp"
 #include "arch.hpp"
 #include "dev.h"
@@ -10,13 +11,13 @@ extern std::deque <Cell_t> path_points;
 
 CleanModeFollowWall::CleanModeFollowWall()
 {
-	IMoveType::sp_cm_.reset(this);
+	ROS_INFO("%s %d: Entering Follow wall mode\n=========================" , __FUNCTION__, __LINE__);
+	IMoveType::sp_mode_.reset(this);
 	diff_timer_ = WALL_FOLLOW_TIME;
-	speaker.play(SPEAKER_CLEANING_WALL_FOLLOW);
-	clean_path_algorithm_ = nullptr;
-	go_home_path_algorithm_ = nullptr;
+	speaker.play(VOICE_CLEANING_WALL_FOLLOW);
+	clean_path_algorithm_.reset(new WFCleanPathAlgorithm);
+	go_home_path_algorithm_.reset(new GoHomePathAlgorithm(nav_map, home_cells_));
 }
-
 
 bool CleanModeFollowWall::mapMark() {
 	return false;
@@ -26,18 +27,18 @@ CleanModeFollowWall::~CleanModeFollowWall() {
 
 	if (ev.key_clean_pressed)
 	{
-		speaker.play(SPEAKER_CLEANING_FINISHED);
+		speaker.play(VOICE_CLEANING_FINISHED);
 		ROS_WARN("%s %d: Key clean pressed. Finish cleaning.", __FUNCTION__, __LINE__);
 	}
 	else if (ev.cliff_all_triggered)
 	{
-		speaker.play(SPEAKER_ERROR_LIFT_UP, false);
-		speaker.play(SPEAKER_CLEANING_STOP);
+		speaker.play(VOICE_ERROR_LIFT_UP, false);
+		speaker.play(VOICE_CLEANING_STOP);
 		ROS_WARN("%s %d: Cliff all triggered. Finish cleaning.", __FUNCTION__, __LINE__);
 	}
 	else
 	{
-		speaker.play(SPEAKER_CLEANING_FINISHED);
+		speaker.play(VOICE_CLEANING_FINISHED);
 		ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
 	}
 
@@ -48,18 +49,26 @@ CleanModeFollowWall::~CleanModeFollowWall() {
 //			 static_cast<float>(robot_timer.getWorkTime()) / 60, map_area / (static_cast<float>(robot_timer.getWorkTime()) / 60));
 }
 
-//bool CleanModeFollowWall::setNextAction_() {
-//	ROS_INFO("%s,%d: path_next_fw",__FUNCTION__, __LINE__);
-//	if (move_type_i_ == mt_linear) {
-//		ROS_INFO("%s,%d: mt_follow_wall_left", __FUNCTION__, __LINE__);
-//		move_type_i_ = mt_follow_wall_left;
-//	}
-//	else {
-//		move_type_i_ = mt_linear;
-//		ROS_INFO("%s,%d: mt_linear", __FUNCTION__, __LINE__);
-//	}
-//	return ACleanMode::setNextAction_();
-//}
+bool CleanModeFollowWall::setNextAction() {
+	ROS_INFO("%s,%d:",__FUNCTION__, __LINE__);
+	if(isInitState())
+	{
+		return ACleanMode::setNextAction();
+	}
+	if (action_i_ == ac_linear) {
+		ROS_INFO("%s,%d: mt_follow_wall_left", __FUNCTION__, __LINE__);
+		action_i_ = ac_follow_wall_left;
+		genNextAction();
+		return true;
+	}
+	else {
+		action_i_ = ac_linear;
+		ROS_INFO("%s,%d: mt_linear", __FUNCTION__, __LINE__);
+		genNextAction();
+		return true;
+	}
+	return false;
+}
 
 bool CleanModeFollowWall::wf_is_isolate() {
 //	path_update_cell_history();

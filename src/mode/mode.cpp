@@ -58,3 +58,8 @@ int Mode::getNextMode()
 	return next_mode_i_;
 }
 
+bool Mode::isExceptionTriggered()
+{
+	return ev.bumper_jam || ev.cliff_jam || ev.oc_wheel_left || ev.oc_wheel_right || ev.oc_suction || ev.lidar_stuck;
+}
+

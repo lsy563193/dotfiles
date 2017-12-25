@@ -1,4 +1,4 @@
 <?xml version="1.0"?>
 <launch>
-  <node pkg="tf" type="static_transform_publisher" name="base_link2lidarscan" args="0 0 0 0 0 0 base_link lidar 20" />
+  <node pkg="tf" type="static_transform_publisher" name="base_link2lidarscan" args="0.031 0 0 3.5779249665883754 0 0 base_link lidar 20" />
 </launch>

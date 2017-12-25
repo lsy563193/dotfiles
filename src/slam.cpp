@@ -1,18 +1,7 @@
 //
 // Created by lsy563193 on 5/10/17.
 //
-#include "ros/ros.h"
-#include <cstdlib>
-#include <movement.h>
-#include <nav_msgs/OccupancyGrid.h>
-#include <error.h>
-#include <event_manager.h>
-#include "slam.h"
-#include "robot.hpp"
-#include "std_srvs/Empty.h"
-#include "clean_mode.h"
-#include "slam_map.hpp"
-
+#include "pp.h"
 Slam slam;
 
 Slam::Slam():is_map_ready_(false)
@@ -30,7 +19,7 @@ Slam::~Slam(){
 
 void Slam::stop(void)
 {
-	robot::instance()->setBaselinkFrameType(Odom_Position_Odom_Angle);
+	robot::instance()->setBaselinkFrameType(ODOM_POSITION_ODOM_ANGLE);
 
 	robot::instance()->slamStop();
 	robot::instance()->resetCorrection();

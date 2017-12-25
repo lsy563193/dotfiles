@@ -9,7 +9,7 @@
 
 ModeSleep::ModeSleep()
 {
-	ROS_INFO("%s %d: Switch to sleep mode.", __FUNCTION__, __LINE__);
+	ROS_INFO("%s %d: Entering Sleep mode\n=========================" , __FUNCTION__, __LINE__);
 	event_manager_register_handler(this);
 	event_manager_reset_status();
 	event_manager_set_enable(true);
@@ -123,19 +123,19 @@ void ModeSleep::remotePlan(bool state_now, bool state_last)
 		{
 			ROS_WARN("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
 			error.alarm();
-			speaker.play(SPEAKER_CANCEL_APPOINTMENT);
+			speaker.play(VOICE_CANCEL_APPOINTMENT);
 		}
 		else if(cliff.get_status() & (BLOCK_LEFT|BLOCK_FRONT|BLOCK_RIGHT))
 		{
 			ROS_WARN("%s %d: Plan not activated not valid because of robot lifted up.", __FUNCTION__, __LINE__);
-			speaker.play(SPEAKER_ERROR_LIFT_UP);
-			speaker.play(SPEAKER_CANCEL_APPOINTMENT);
+			speaker.play(VOICE_ERROR_LIFT_UP);
+			speaker.play(VOICE_CANCEL_APPOINTMENT);
 		}
 		else if(!battery.isReadyToClean())
 		{
 			ROS_WARN("%s %d: Plan not activated not valid because of robot battery not ready to clean.", __FUNCTION__, __LINE__);
-			speaker.play(SPEAKER_BATTERY_LOW);
-			speaker.play(SPEAKER_CANCEL_APPOINTMENT);
+			speaker.play(VOICE_BATTERY_LOW);
+			speaker.play(VOICE_CANCEL_APPOINTMENT);
 		}
 		else
 		{

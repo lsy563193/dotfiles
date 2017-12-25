@@ -4,7 +4,6 @@
 #include <nav_msgs/Odometry.h>
 #include <ros/ros.h>
 #include <visualization_msgs/Marker.h>
-#include <movement.h>
 #include <sensor_msgs/LaserScan.h>
 #include "mathematics.h"
 
@@ -47,6 +46,8 @@ public:
 
 	void motorCtrl(bool switch_);
 	bool openTimeOut();
+	void pubPointMarker(std::vector<Double_Point> *point);
+	bool getLidarWfTarget2(std::vector<Double_Point> *points);
 	void startAlign();
 	bool alignTimeOut();
 	bool alignFinish();
@@ -103,6 +104,7 @@ private:
 	time_t start_align_time_stamp_;
 	bool align_finish_;
 	float align_angle_;
+	geometry_msgs::Point laser_points_;
 };
 
 bool lidar_is_stuck();

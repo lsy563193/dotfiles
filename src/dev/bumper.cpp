@@ -61,9 +61,13 @@ void Bumper::setLidarBumperStatus()
 				lidar_bumper_status_ = true;
 				return;
 			}
+			else if (temp_buf[12] == 0)
+			{
+				lidar_bumper_status_ = false;
+				return;
+			}
 		}
 	}
-	lidar_bumper_status_ = false;
 	return;
 }
 
