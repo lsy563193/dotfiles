@@ -141,7 +141,6 @@ bool ACleanMode::setNextState()
 			PP_INFO();
 			old_dir_ = new_dir_;
 			ROS_ERROR("old_dir_(%d)", old_dir_);
-			plan_path_.clear();
 			if (clean_path_algorithm_->generatePath(nav_map, nav_map.getCurrCell(), old_dir_, plan_path_))
 			{
 				new_dir_ = (MapDirection)plan_path_.front().TH;
@@ -252,7 +251,6 @@ Cell_t ACleanMode::updatePath()
 	else if (!is_equal_with_angle_(curr, last_))
 	{
 		last_ = curr;
-		plan_path_.pop_front();
 		auto loc = std::find_if(passed_path_.begin(), passed_path_.end(), [&](Cell_t it) {
 				return is_equal_with_angle_(curr, it);
 		});
