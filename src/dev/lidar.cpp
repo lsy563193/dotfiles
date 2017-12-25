@@ -476,7 +476,7 @@ bool Lidar::getAlignAngle(const std::vector<LineABC> *lines ,float *align_angle)
 					if(fabs((it1+1)->K - it1->K) < DIF_ANG_RANGE){
 						sum += it1->K;
 						same_angle_count.push_back(it1->K);
-						printf("similar angle %f\n",it1->K);
+						//printf("similar angle %f\n",it1->K);
 						if(same_angle_count.size() > lines->size()/2 ){//if number count more than 1/2 of total ,return
 							avg = sum / (1.0*same_angle_count.size());
 							*align_angle = avg;

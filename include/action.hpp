@@ -82,7 +82,8 @@ private:
 };
 
 
-class ActionIdle :public IAction {
+class ActionIdle :public IAction
+{
 public:
 	ActionIdle();
 	~ActionIdle();

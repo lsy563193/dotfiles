@@ -92,6 +92,7 @@ void *core_move_thread(void *)
 		p_mode.reset(new ModeCharge());
 	else
 		p_mode.reset(new CleanModeNav());
+		//p_mode.reset(new CleanModeSpot());
 
 	while(ros::ok())
 	{

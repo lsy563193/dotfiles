@@ -9,7 +9,9 @@
 #include "path_algorithm.h"
 #include "event_manager.h"
 #include "boost/shared_ptr.hpp"
-class Mode:public EventHandle {
+
+class Mode:public EventHandle
+{
 public:
 	virtual ~Mode() { };
 	void run();
@@ -293,14 +295,15 @@ class CleanModeSpot:public ACleanMode
 {
 public:
 	CleanModeSpot();
-	~CleanModeSpot() = default;
-
+	~CleanModeSpot();
+	bool isFinish() override;
 	bool mapMark() override;
-
+	bool isExit();
+	bool setNextAction();
 private:
 protected:
 //	Path_t home_point_{};
 private:
-
+	bool has_aligned_and_open_slam;
 };
 #endif //PP_MODE_H_H

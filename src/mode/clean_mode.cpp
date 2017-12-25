@@ -30,12 +30,14 @@ ACleanMode::ACleanMode()
 	go_home_path_algorithm_.reset();
 }
 
-bool ACleanMode::isInitState() {
+bool ACleanMode::isInitState()
+{
 	return action_i_ == ac_open_gyro || action_i_ == ac_back_form_charger || action_i_ == ac_open_lidar ||
 				action_i_ == ac_align;
 }
 
-bool ACleanMode::setNextAction() {
+bool ACleanMode::setNextAction()
+{
 	if(action_i_ == ac_open_gyro)
 	{
 		if (charger.isOnStub())
@@ -64,7 +66,8 @@ bool ACleanMode::setNextAction() {
 	return action_i_ != ac_null;
 }
 
-void ACleanMode::setNextMode(int next) {
+void ACleanMode::setNextMode(int next)
+{
 	if (ev.charge_detect && charger.isOnStub()) {
 		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
 		Mode::setNextMode(md_charge);
@@ -75,7 +78,8 @@ void ACleanMode::setNextMode(int next) {
 	}
 }
 
-bool ACleanMode::isFinish() {
+bool ACleanMode::isFinish()
+{
 	if (isInitState()) {
 		if (!sp_action_->isFinish())
 			return false;
@@ -112,7 +116,8 @@ bool ACleanMode::isFinish() {
 	return false;
 }
 
-bool ACleanMode::setNextState() {
+bool ACleanMode::setNextState()
+{
 	PP_INFO();
 	if (state_i_ == st_null)
 	{
@@ -137,13 +142,12 @@ bool ACleanMode::setNextState() {
 		PP_INFO();
 		old_dir_ = new_dir_;
 		ROS_ERROR("old_dir_(%d)", old_dir_);
-		plan_path_.clear();
 		if (clean_path_algorithm_->generatePath(nav_map, nav_map.getCurrCell(), old_dir_, plan_path_))
 		{
 			new_dir_ = (MapDirection)plan_path_.front().TH;
-			ROS_ERROR("new_dir_(%d)", new_dir_);
 			plan_path_.pop_front();
 			clean_path_algorithm_->displayPath(plan_path_);
+			ROS_ERROR("new_dir_(%d)", new_dir_);
 		}
 		else
 		{
@@ -225,6 +229,7 @@ Cell_t ACleanMode::updatePath()
 	if (!is_equal_with_angle_(curr, last_)) {
 //		PP_INFO()
 		last_ = curr;
+		plan_path_.pop_front();
 		auto loc = std::find_if(passed_path_.begin(), passed_path_.end(), [&](Cell_t it) {
 				return is_equal_with_angle_(curr, it);
 		});
@@ -246,7 +251,8 @@ Cell_t ACleanMode::updatePath()
 	return curr;
 }
 
-void ACleanMode::genNextAction() {
+void ACleanMode::genNextAction()
+{
 
 	PP_INFO();
 	if(action_i_ == ac_open_gyro)
@@ -285,7 +291,8 @@ void ACleanMode::resetTriggeredValue(void)
 	ev.tilt_triggered = 0;
 }
 
-void ACleanMode::stateInit(int next) {
+void ACleanMode::stateInit(int next)
+{
 	if (next == st_clean) {
 		g_wf_reach_count = 0;
 		led.set_mode(LED_STEADY, LED_GREEN);
@@ -369,7 +376,8 @@ uint8_t ACleanMode::saveFollowWall(bool is_left)
 	return 1;
 }
 
-bool ACleanMode::MovementFollowWallisFinish() {
+bool ACleanMode::MovementFollowWallisFinish()
+{
 	return false;
 }
 
