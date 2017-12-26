@@ -15,9 +15,7 @@ CleanModeSpot::CleanModeSpot()
 	speaker.play(VOICE_CLEANING_SPOT);
 	usleep(200000);
 	vacuum.setMode(Vac_Save);
-	brush.setLeftPwm(50);
-	brush.setRightPwm(50);
-	brush.setMainPwm(50);
+	brush.fullOperate();
 	clean_path_algorithm_.reset(new SpotCleanPathAlgorithm());
 	go_home_path_algorithm_.reset();
 	has_aligned_and_open_slam = false;

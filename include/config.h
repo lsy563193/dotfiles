@@ -101,6 +101,10 @@
 
 /* Continue cleaning voltage value */
 #define CONTINUE_CLEANING_VOLTAGE	(1530)
+
+/* Battery voltage criterion for brush setting*/
+#define FULL_OPERATE_VOLTAGE_FOR_BRUSH	(800)
+
 /* ------------------------------------- Obs config ------------------------------------- */
 /* OBS setting */
 #define OBS_DYNAMIC			(1)

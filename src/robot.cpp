@@ -673,7 +673,7 @@ bool robot::lidarMotorCtrl(bool switch_)
 bool robot::slamStart(void)
 {
 	std_srvs::Empty empty;
-	ROS_INFO("......................");
+	ROS_INFO("%s %d: Call start slam service.", __FUNCTION__, __LINE__);
 	return start_slam_cli_.call(empty);
 }
 

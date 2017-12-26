@@ -9,9 +9,7 @@ ActionOpenLidar::ActionOpenLidar() {
 	wheel.stop();
 
 	vacuum.setMode(Vac_Save);
-	brush.setSidePwm(50, 50);
-	brush.setMainPwm(30);
-
+	brush.normalOperate();
 	lidar.motorCtrl(ON);
 	lidar.setScanOriginalReady(0);
 //	ROS_INFO("%s,%d:add ActionOpenLidar,sp_action_(%d)",__FUNCTION__, __LINE__,sp_action_);

@@ -508,6 +508,7 @@ void serial_send_routine_cb()
 		//if(!is_flag_set()){
 			/*---pid for wheels---*/
 		wheel.pidAdjustSpeed();
+		brush.updatePWM();
 
 		g_send_stream_mutex.lock();
 		memcpy(buf,serial.send_stream,sizeof(uint8_t)*SEND_LEN);

@@ -303,8 +303,6 @@ if (next == st_clean) {
 	if (next == st_go_home_point)
 	{
 		vacuum.setMode(Vac_Normal, false);
-		brush.setSidePwm(30, 30);
-		brush.setMainPwm(30);
 		wheel.stop();
 
 		wheel.setPidTargetSpeed(0, 0, REG_TYPE_LINEAR);
