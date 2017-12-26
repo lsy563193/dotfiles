@@ -333,6 +333,7 @@ public:
 	bool mapMark() override;
 	bool isExit();
 	bool setNextAction();
+	bool setNextState();
 private:
 protected:
 //	Path_t home_point_{};
