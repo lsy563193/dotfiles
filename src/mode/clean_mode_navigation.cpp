@@ -456,7 +456,7 @@ void CleanModeNav::chargeDetect(bool state_now, bool state_last)
 
 }
 
-bool CleanModeNav::MovementFollowWallisFinish()
+bool CleanModeNav::ActionFollowWallisFinish()
 {
 	if (state_i_ == st_trapped)
 		return isBlockCleared();

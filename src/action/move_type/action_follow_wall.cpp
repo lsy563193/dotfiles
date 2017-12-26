@@ -43,7 +43,8 @@ ActionFollowWall::~ActionFollowWall()
 bool ActionFollowWall::isFinish()
 {
 	auto p_cm = boost::dynamic_pointer_cast<ACleanMode>(sp_mode_);
-	if(p_cm->MovementFollowWallisFinish())
+
+	if(p_cm->ActionFollowWallisFinish())
 		return true;
 
 	if (sp_movement_->isFinish()) {

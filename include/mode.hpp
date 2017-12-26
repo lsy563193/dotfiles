@@ -195,7 +195,7 @@ public:
 
 	virtual bool mapMark() = 0;
 
-	virtual bool MovementFollowWallisFinish();
+	virtual bool ActionFollowWallisFinish();
 	Cell_t updatePath(GridMap& map);
 
 	static Path_t passed_path_;
@@ -261,7 +261,7 @@ public:
 //	void overCurrentSuction(bool state_now, bool state_last);
 
 private:
-	bool MovementFollowWallisFinish() override ;
+	bool ActionFollowWallisFinish() override ;
 	bool isNewLineReach();
 	bool isOverOriginLine();
 	bool isBlockCleared();
