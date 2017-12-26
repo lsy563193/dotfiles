@@ -77,7 +77,7 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Path_t *t
 				if(spiral_number %2 == 0)
 				{
 					x = x + 1 ;
-					targets->push_back({x,y});
+					targets->push_back({x,y,0});
 					msg += "->("+std::to_string(x)+","+std::to_string(y)+")";
 				}
 				break;
@@ -89,13 +89,13 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Path_t *t
 				for (i = 0; i < cell_number; i=i+1)
 				{
 					y = y_l + i;
-					targets->push_back({x, y});
+					targets->push_back({x, y,0});
 					msg += "->("+std::to_string(x)+","+std::to_string(y)+")";
 				}
 				for (i = 1; i < cell_number; i=i+1)
 				{
 					x =  x_l +i;
-					targets->push_back({x,y});
+					targets->push_back({x,y,0});
 					msg += "->("+std::to_string(x)+","+std::to_string(y)+")";
 				}
 
@@ -107,13 +107,13 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Path_t *t
 				for (i = 0; i < cell_number; i=i+1)
 				{
 					y = y_l - i;
-					targets->push_back({x, y});
+					targets->push_back({x, y,0});
 					msg += "->("+std::to_string(x)+","+std::to_string(y)+")";
 				}
 				for (i = 1; i < cell_number ; i=i+1)
 				{
 					x =  x_l -i ;
-					targets->push_back({x,y});
+					targets->push_back({x,y,0});
 					msg += "->("+std::to_string(x)+","+std::to_string(y)+")";
 				}
 			}
@@ -129,7 +129,7 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Path_t *t
 		spiral_count = 1;
 		cell_number = 1;
 		if(spiral_count == 1){
-			targets->push_back({x,y});
+			targets->push_back({x,y,0});
 			spiral_count +=1;
 			cell_number +=1;
 		}
@@ -139,7 +139,7 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Path_t *t
 			if (spiral_count > spiral_number){
 				if(spiral_number %2 == 0){
 					y = y + 2;
-					targets->push_back({x,y});
+					targets->push_back({x,y,0});
 					msg += "<-("+std::to_string(x)+","+std::to_string(y)+")";
 				}
 				break;
@@ -151,13 +151,13 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Path_t *t
 				for (i = 0; i < cell_number; i=i+1)
 				{
 					x = x_l + i;
-					targets->push_back({x, y});
+					targets->push_back({x, y,0});
 					msg += "<-("+std::to_string(x)+","+std::to_string(y)+")";
 				}
 				for (i = 1; i < cell_number; i=i+1)
 				{
 					y = y_l + i;
-					targets->push_back({x,y});
+					targets->push_back({x,y,0});
 					msg += "<-("+std::to_string(x)+","+std::to_string(y)+")";
 				}
 			}
@@ -168,13 +168,13 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Path_t *t
 				for (i = 0; i < cell_number; i=i+1)
 				{
 					x = x_l - i;
-					targets->push_back({x, y});
+					targets->push_back({x, y,0});
 					msg += "<-("+std::to_string(x)+","+std::to_string(y)+")";
 				}
 				for (i = 1; i < cell_number; i=i+1)
 				{
 					y = y_l - i;
-					targets->push_back({x,y});
+					targets->push_back({x,y,0});
 					msg += "<-("+std::to_string(x)+","+std::to_string(y)+")";
 				}
 			}
@@ -197,7 +197,7 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Path_t *t
 				if(spiral_number %2 == 0)
 				{
 					x = x+ 1 ;
-					targets->push_back({x,y});
+					targets->push_back({x,y,0});
 					msg += "->("+std::to_string(x)+","+std::to_string(y)+")";
 				}
 				break;
@@ -209,13 +209,13 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Path_t *t
 				for (i = 0; i < cell_number; i=i+1)
 				{
 					y = y_l + i;
-					targets->push_back({x, y});
+					targets->push_back({x, y,0});
 					msg += "->("+std::to_string(x)+","+std::to_string(y)+")";
 				}
 				for (i = 1; i < cell_number; i=i+1)
 				{
 					x =  x_l - i;
-					targets->push_back({x,y});
+					targets->push_back({x,y,0});
 					msg += "->("+std::to_string(x)+","+std::to_string(y)+")";
 				}
 
@@ -227,13 +227,13 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Path_t *t
 				for (i = 0; i < cell_number; i=i+1)
 				{
 					y = y_l - i;
-					targets->push_back({x, y});
+					targets->push_back({x, y,0});
 					msg += "->("+std::to_string(x)+","+std::to_string(y)+")";
 				}
 				for (i = 1; i < cell_number ; i=i+1)
 				{
 					x =  x_l + i ;
-					targets->push_back({x,y});
+					targets->push_back({x,y,0});
 					msg += "->("+std::to_string(x)+","+std::to_string(y)+")";
 				}
 			}
@@ -248,7 +248,7 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Path_t *t
 		y = y_l = begincell.Y;
 		spiral_count = 1;cell_number = 1;
 		if(spiral_count == 1){
-			targets->push_back({x,y});
+			targets->push_back({x,y,0});
 			spiral_count +=1;
 			cell_number +=1;
 		}
@@ -258,7 +258,7 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Path_t *t
 			if (spiral_count > spiral_number){
 				if(spiral_number %2 == 0){
 					y = y + 1;
-					targets->push_back({x,y});
+					targets->push_back({x,y,0});
 					msg += "<-("+std::to_string(x)+","+std::to_string(y)+")";
 				}
 				break;
@@ -270,13 +270,13 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Path_t *t
 				for (i = 0; i < cell_number; i=i+1)
 				{
 					x = x_l - i;
-					targets->push_back({x, y});
+					targets->push_back({x, y,0});
 					msg += "<-("+std::to_string(x)+","+std::to_string(y)+")";
 				}
 				for (i = 1; i < cell_number; i=i+1)
 				{
 					y = y_l + i;
-					targets->push_back({x,y});
+					targets->push_back({x,y,0});
 					msg += "<-("+std::to_string(x)+","+std::to_string(y)+")";
 				}
 			}
@@ -287,13 +287,13 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Path_t *t
 				for (i = 0; i < cell_number; i=i+1)
 				{
 					x = x_l + i;
-					targets->push_back({x, y});
+					targets->push_back({x, y,0});
 					msg += "<-("+std::to_string(x)+","+std::to_string(y)+")";
 				}
 				for (i = 1; i < cell_number; i=i+1)
 				{
 					y = y_l - i;
-					targets->push_back({x,y});
+					targets->push_back({x,y,0});
 					msg += "<-("+std::to_string(x)+","+std::to_string(y)+")";
 				}
 			}
@@ -329,10 +329,12 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell,
 			}
 		}
 		ROS_INFO("plan_path size %d",plan_path.size());
+		fillPathWithDirection(plan_path);
 		return true;
 	}
 	else if(ev.bumper_triggered || ev.cliff_triggered || ev.rcon_triggered)
 	{
+		PP_INFO();
 		bool ret = false;
 		Path_t shortest_path;
 		if(targets_last_.empty())
@@ -380,6 +382,7 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell,
 		}
 		plan_path.clear();
 		plan_path = shortest_path;
+		fillPathWithDirection(plan_path);
 		return ret;
 	}
 }
