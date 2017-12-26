@@ -3,5 +3,5 @@
 	<node name="ldslidar" pkg = "lds_lidar" type="ldslidar" output = "screen"/>
 		<param name="~serial_port" type="string" value="/dev/ttyUSB0" />
 		<param name="~baudrate" type="int" value="230400" />
-		<param name="~frame_id" type="string" value="lidar" />
+		<param name="~frame_id" type="string" value="laser" />
 </launch>

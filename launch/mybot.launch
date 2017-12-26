@@ -7,7 +7,7 @@
 	<include file="$(find pp)/launch/rplidar.launch" />
 	<!-- <include file="$(find pp)/launch/median_filter_5_example.launch" /> -->
 
-	<include file="$(find pp)/launch/tf_lidar2base.launch" />
+	<include file="$(find pp)/launch/tf_laser2base.launch" />
 	<!--<include file="$(find pp)/launch/obstacle_detector.launch" />-->
 	<include file="$(find pp)/launch/pp.launch" />
 
