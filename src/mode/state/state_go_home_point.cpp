@@ -12,14 +12,14 @@ StateGoHomePoint::StateGoHomePoint():gh_state_(gh_ing) {
 	if (ev.remote_home || cm_is_go_charger())
 		led.set_mode(LED_STEADY, LED_ORANGE);
 	// Play wavs.
-	if (ev.battrey_home)
+	if (ev.battery_home)
 		speaker.play(VOICE_BATTERY_LOW);
 	speaker.play(VOICE_BACK_TO_CHARGER);
 
 	if (ev.remote_home)
 		g_go_home_by_remote = true;
 	ev.remote_home = false;
-	ev.battrey_home = false;
+	ev.battery_home = false;
 }
 
 //
