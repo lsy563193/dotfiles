@@ -312,13 +312,13 @@ if (next == st_clean) {
 			led.set_mode(LED_STEADY, LED_ORANGE);
 
 		// Play wavs.
-		if (ev.battrey_home)
+		if (ev.battery_home)
 			speaker.play(VOICE_BATTERY_LOW, true);
 
 		speaker.play(VOICE_BACK_TO_CHARGER, true);
 
 		ev.remote_home = false;
-		ev.battrey_home = false;
+		ev.battery_home = false;
 
 		if (go_home_path_algorithm_ == nullptr)
 			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(exploration_map, home_cells_));

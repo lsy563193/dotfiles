@@ -29,10 +29,7 @@ bool MovementCharge::isFinish()
 {
 
 	if (battery.isFull())
-	{
-		charger.setStop();
 		return true;
-	}
 
 	if (!turn_for_charger_)
 	{

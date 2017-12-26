@@ -521,7 +521,7 @@ bool MovementGoToCharger::isSwitch()
 			if(receive_code & (RconFL_HomeL|RconFL_HomeR) && check_position_dir == gtc_check_position_right)
 				gtc_state_now_ = gtc_by_path_init;
 		}
-		if(gyro_step >= 360)
+		if(gyro_step >= 3600)
 		{
 			ROS_INFO("%s, %d: Robot can't see charger, restart go to charger process.", __FUNCTION__, __LINE__);
 			turn_angle_ = 1000;

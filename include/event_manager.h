@@ -48,7 +48,6 @@ typedef struct {
 		bool battery_low;
 		bool remote_spot;
 
-		bool battrey_home;
 		bool fatal_quit;
 		uint8_t bumper_triggered;
 		int rcon_triggered;

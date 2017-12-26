@@ -109,6 +109,7 @@ public:
 	void remotePlan(bool state_now, bool state_last) override ;
 	void keyClean(bool state_now, bool state_last) override;
 	void chargeDetect(bool state_now, bool state_last) override ;
+	void rcon(bool state_now, bool state_last) override ;
 
 protected:
 	std::vector<Cell_t> temp_fw_cells;
@@ -181,6 +182,30 @@ private:
 
 };
 
+class ModeGoToCharger: public Mode
+{
+public:
+	ModeGoToCharger();
+	~ModeGoToCharger();
+
+	bool isExit() override;
+	bool isFinish() override;
+
+	IAction* getNextAction();
+
+	void keyClean(bool state_now, bool state_last) override ;
+	void remoteClean(bool state_now, bool state_last) override ;
+	void cliffAll(bool state_now, bool state_last) override ;
+	void chargeDetect(bool state_now, bool state_last) override ;
+//void overCurrentBrushLeft(bool state_now, bool state_last);
+//void overCurrentBrushMain(bool state_now, bool state_last);
+//void overCurrentBrushRight(bool state_now, bool state_last);
+	void overCurrentWheelLeft(bool state_now, bool state_last) override;
+	void overCurrentWheelRight(bool state_now, bool state_last) override;
+//	void overCurrentSuction(bool state_now, bool state_last);
+
+};
+
 class ACleanMode:public Mode
 {
 public:
@@ -228,17 +253,13 @@ protected:
 		st_self_check,
 		st_exploration,
 	};
-
-private:
-	void register_events(void);
-
 };
 
 class CleanModeNav:public ACleanMode
 {
 public:
 	CleanModeNav();
-	~CleanModeNav() override;
+	~CleanModeNav();
 
 	uint8_t setFollowWall(const Path_t& path);
 	bool mapMark() override ;
