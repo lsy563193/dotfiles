@@ -317,3 +317,46 @@ void CleanModeExploration::printMapAndPath()
 	clean_path_algorithm_->displayPath(passed_path_);
 	exploration_map.print(CLEAN_MAP,exploration_map.getXCell(),exploration_map.getYCell());
 }
+
+void CleanModeExploration::stateInit(int next) {
+if (next == st_clean) {
+		g_wf_reach_count = 0;
+		led.set_mode(LED_STEADY, LED_GREEN);
+		PP_INFO();
+	}
+	if (next == st_go_home_point)
+	{
+		vacuum.setMode(Vac_Normal, false);
+		brush.setSidePwm(30, 30);
+		brush.setMainPwm(30);
+		wheel.stop();
+
+		wheel.setPidTargetSpeed(0, 0, REG_TYPE_LINEAR);
+		if (ev.remote_home)
+			led.set_mode(LED_STEADY, LED_ORANGE);
+
+		// Play wavs.
+		if (ev.battrey_home)
+			speaker.play(VOICE_BATTERY_LOW, true);
+
+		speaker.play(VOICE_BACK_TO_CHARGER, true);
+
+		ev.remote_home = false;
+		ev.battrey_home = false;
+
+		if (go_home_path_algorithm_ == nullptr)
+			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(exploration_map, home_cells_));
+		ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_cells_.size());
+	}
+	if (next == st_exploration) {
+		g_wf_reach_count = 0;
+		led.set_mode(LED_STEADY, LED_ORANGE);
+	}
+	if (next == st_go_to_charger) {
+		gyro.TiltCheckingEnable(false); //disable tilt detect
+		led.set_mode(LED_STEADY, LED_ORANGE);
+	}
+	if (next == st_self_check) {
+		led.set_mode(LED_STEADY, LED_GREEN);
+	}
+}

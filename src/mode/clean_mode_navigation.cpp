@@ -477,12 +477,3 @@ uint8_t CleanModeNav::setFollowWall(const Path_t& path)
 	}
 }
 
-bool CleanModeNav::setNextState()
-{
-	bool isSet = ACleanMode::setNextState();
-	if(state_i_ == st_go_home_point){
-		if (go_home_path_algorithm_ == nullptr)
-			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(nav_map, home_cells_));
-	}
-	return isSet;
-}

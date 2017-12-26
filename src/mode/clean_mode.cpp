@@ -342,6 +342,8 @@ void ACleanMode::stateInit(int next)
 		ev.remote_home = false;
 		ev.battrey_home = false;
 
+		if (go_home_path_algorithm_ == nullptr)
+			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(nav_map, home_cells_));
 		ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_cells_.size());
 
 	}

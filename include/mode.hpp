@@ -211,7 +211,7 @@ protected:
 
 	uint8_t saveFollowWall(bool is_left);
 	virtual bool isInitState();
-	void stateInit(int);
+	virtual void stateInit(int next);
 	std::vector<Cell_t> temp_fw_cells;
 	TargetList home_cells_;
 	static Cell_t last_;
@@ -243,7 +243,6 @@ public:
 	bool mapMark() override ;
 	bool isFinish() override ;
 	bool isExit() override;
-	bool setNextState() override;
 
 	bool setNextAction() override ;
 	void keyClean(bool state_now, bool state_last) override ;
@@ -302,6 +301,9 @@ public:
 	void overCurrentWheelRight(bool state_now, bool state_last) override;
 //	void overCurrentSuction(bool state_now, bool state_last);
 	void printMapAndPath();
+
+protected:
+	void stateInit(int next) override;
 };
 
 class CleanModeFollowWall:public ACleanMode
