@@ -16,6 +16,7 @@ CleanModeExploration::CleanModeExploration() {
 	action_i_ = ac_open_gyro;
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
 	IMoveType::sp_mode_.reset(this);
+	cleanMap_ = &exploration_map;
 }
 
 CleanModeExploration::~CleanModeExploration() {
@@ -72,7 +73,7 @@ bool CleanModeExploration::isFinish() {
 	}
 	else
 	{
-		updatePath();
+		updatePath(*cleanMap_);
 		mapMark();
 
 		if (!sp_action_->isFinish())
@@ -113,40 +114,16 @@ bool CleanModeExploration::isExit() {
 
 bool CleanModeExploration::setNextAction() {
 	PP_INFO();
-	if(isInitState()) {
-		if (action_i_ == ac_open_gyro) {
-			if (charger.isOnStub())
-				action_i_ = ac_back_form_charger;
-			else
-				action_i_ = ac_open_lidar;
-		} else if (action_i_ == ac_back_form_charger)
-			action_i_ = ac_open_lidar;
-		else if (action_i_ == ac_open_lidar)
-			action_i_ = ac_align;
-		else if (action_i_ == ac_align)
-			action_i_ = ac_open_slam;
-		else {
-			if (isExceptionTriggered())
-				action_i_ = ac_exception_resume;
-			else if (ev.fatal_quit) {
-				PP_INFO();
-				ROS_ERROR("ev.fatal_quit");
-				action_i_ = ac_null;
-			}
-		}
-		genNextAction();
-	}else{
-		//todo action convert
-		if(state_i_ == st_clean)
-			action_i_ = ac_linear;
-		else if(state_i_ == st_go_to_charger)
-			action_i_ = ac_go_to_charger;
-		else if(state_i_ == st_go_home_point)
-			action_i_ = ac_linear;
-		else
-			action_i_ = ac_null;
-		genNextAction();
-	}
+	//todo action convert
+	if(state_i_ == st_clean)
+		action_i_ = ac_linear;
+	else if(state_i_ == st_go_to_charger)
+		action_i_ = ac_go_to_charger;
+	else if(state_i_ == st_go_home_point)
+		action_i_ = ac_linear;
+	else
+		action_i_ = ac_null;
+	genNextAction();
 	return action_i_ != ac_null;
 }
 
@@ -315,4 +292,47 @@ void CleanModeExploration::printMapAndPath()
 {
 	clean_path_algorithm_->displayPath(passed_path_);
 	exploration_map.print(CLEAN_MAP,exploration_map.getXCell(),exploration_map.getYCell());
+}
+
+void CleanModeExploration::stateInit(int next) {
+if (next == st_clean) {
+		g_wf_reach_count = 0;
+		led.set_mode(LED_STEADY, LED_GREEN);
+		PP_INFO();
+	}
+	if (next == st_go_home_point)
+	{
+		vacuum.setMode(Vac_Normal, false);
+		brush.setSidePwm(30, 30);
+		brush.setMainPwm(30);
+		wheel.stop();
+
+		wheel.setPidTargetSpeed(0, 0, REG_TYPE_LINEAR);
+		if (ev.remote_home)
+			led.set_mode(LED_STEADY, LED_ORANGE);
+
+		// Play wavs.
+		if (ev.battrey_home)
+			speaker.play(VOICE_BATTERY_LOW, true);
+
+		speaker.play(VOICE_BACK_TO_CHARGER, true);
+
+		ev.remote_home = false;
+		ev.battrey_home = false;
+
+		if (go_home_path_algorithm_ == nullptr)
+			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(exploration_map, home_cells_));
+		ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_cells_.size());
+	}
+	if (next == st_exploration) {
+		g_wf_reach_count = 0;
+		led.set_mode(LED_STEADY, LED_ORANGE);
+	}
+	if (next == st_go_to_charger) {
+		gyro.TiltCheckingEnable(false); //disable tilt detect
+		led.set_mode(LED_STEADY, LED_ORANGE);
+	}
+	if (next == st_self_check) {
+		led.set_mode(LED_STEADY, LED_GREEN);
+	}
 }

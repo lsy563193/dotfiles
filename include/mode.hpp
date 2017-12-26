@@ -187,7 +187,8 @@ public:
 	ACleanMode();
 	bool isFinish() override;
 	void setNextMode(int next);
-	virtual bool setNextState();
+	virtual bool setNextState() = 0;
+	virtual bool setNextInitAction();
 	virtual bool setNextAction();
 	void genNextAction();
 	void resetTriggeredValue();
@@ -195,7 +196,7 @@ public:
 	virtual bool mapMark() = 0;
 
 	virtual bool MovementFollowWallisFinish();
-	Cell_t updatePath();
+	Cell_t updatePath(GridMap& map);
 
 	static Path_t passed_path_;
 	static Path_t plan_path_;
@@ -205,12 +206,13 @@ public:
 
 	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
 	boost::shared_ptr<APathAlgorithm> go_home_path_algorithm_{};
+	GridMap* cleanMap_ = nullptr;
 
 protected:
 
 	uint8_t saveFollowWall(bool is_left);
 	virtual bool isInitState();
-	void stateInit(int);
+	virtual void stateInit(int next);
 	std::vector<Cell_t> temp_fw_cells;
 	TargetList home_cells_;
 	static Cell_t last_;
@@ -242,9 +244,10 @@ public:
 	bool mapMark() override ;
 	bool isFinish() override ;
 	bool isExit() override;
-	bool setNextState() override;
 
+	bool setNextInitAction() override ;
 	bool setNextAction() override ;
+	bool setNextState() override ;
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteClean(bool state_now, bool state_last) override ;
 	void remoteHome(bool state_now, bool state_last) override ;
@@ -301,6 +304,9 @@ public:
 	void overCurrentWheelRight(bool state_now, bool state_last) override;
 //	void overCurrentSuction(bool state_now, bool state_last);
 	void printMapAndPath();
+
+protected:
+	void stateInit(int next) override;
 };
 
 class CleanModeFollowWall:public ACleanMode
@@ -310,6 +316,7 @@ public:
 	~CleanModeFollowWall() override ;
 
 	bool setNextAction() override ;
+	bool setNextState() override ;
 	bool mapMark() override;
 
 
@@ -333,6 +340,7 @@ public:
 	bool mapMark() override;
 	bool isExit();
 	bool setNextAction();
+	bool setNextState();
 private:
 protected:
 //	Path_t home_point_{};
@@ -351,6 +359,7 @@ public:
 	bool isFinish() override;
 
 	bool setNextAction() override;
+	bool setNextState() override ;
 
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteMax(bool state_now, bool state_last) override ;

@@ -64,6 +64,7 @@ class GridMap {
 public:
 
 	GridMap();
+	~GridMap();
 
 	static bool isPositiveDirection(MapDirection dir);
 

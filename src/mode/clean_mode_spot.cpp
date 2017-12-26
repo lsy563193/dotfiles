@@ -21,6 +21,7 @@ CleanModeSpot::CleanModeSpot()
 	clean_path_algorithm_.reset(new SpotCleanPathAlgorithm());
 	go_home_path_algorithm_.reset();
 	has_aligned_and_open_slam = false;
+	cleanMap_ = &nav_map;
 }
 
 CleanModeSpot::~CleanModeSpot()
@@ -95,44 +96,117 @@ bool CleanModeSpot::isExit()
 }
 
 bool CleanModeSpot::setNextAction()
-{	
-	if(isInitState()){	
+{
+	if (state_i_ == st_clean)
+	{
 		PP_INFO();
-		if (action_i_ == ac_open_gyro)
-		{
-			PP_INFO();
-			if (charger.isOnStub())
-				action_i_ = ac_back_form_charger;
-			else
-				action_i_ = ac_open_lidar;
-		}
-		else if (action_i_ == ac_open_lidar)
-		{
-			if (!has_aligned_and_open_slam)
-				action_i_ = ac_align;
-			else
-				action_i_ = ac_null;
-		}
-		else if (action_i_ == ac_align)
-			action_i_ = ac_open_slam;
-		genNextAction();
+		if(plan_path_.size() >= 2)
+			action_i_ = ac_linear;
+		else
+			action_i_ = ac_null;
 	}
-	else{
+	genNextAction();
 
-		if (action_i_ == ac_open_slam)
-		{
-			has_aligned_and_open_slam == true;
-			PP_INFO();
-		}
-		if (state_i_ == st_clean)
-		{
-			PP_INFO();
-			if(plan_path_.size() >= 2)
-				action_i_ = ac_linear;
-			else
-				action_i_ = ac_null;
-		}
-		genNextAction();
-	}
 	return action_i_ != ac_null;
 }
+
+bool CleanModeSpot::setNextState()
+{
+	PP_INFO();
+	bool state_confirm = false;
+	while (ros::ok() && !state_confirm)
+	{
+		if (state_i_ == st_null)
+		{
+			auto curr = nav_map.updatePosition();
+			passed_path_.push_back(curr);
+
+			home_cells_.back().TH = robot::instance()->getPoseAngle();
+			PP_INFO();
+
+			state_i_ = st_clean;
+			stateInit(state_i_);
+			action_i_ = ac_null;
+		}
+		else if (isExceptionTriggered())
+		{
+			ROS_INFO("%s %d: Pass this state switching for exception cases.", __FUNCTION__, __LINE__);
+			// Apply for all states.
+			// If all these exception cases happens, directly set next action to exception resume action.
+			// BUT DO NOT CHANGE THE STATE!!! Because after exception resume it should restore the state.
+			action_i_ = ac_null;
+			state_confirm = true;
+		}
+		else if(state_i_ == st_clean)
+		{
+			PP_INFO();
+			old_dir_ = new_dir_;
+			ROS_ERROR("old_dir_(%d)", old_dir_);
+			if (clean_path_algorithm_->generatePath(nav_map, nav_map.getCurrCell(), old_dir_, plan_path_))
+			{
+				new_dir_ = (MapDirection)plan_path_.front().TH;
+				ROS_ERROR("new_dir_(%d)", new_dir_);
+				plan_path_.pop_front();
+				clean_path_algorithm_->displayPath(plan_path_);
+				state_confirm = true;
+			}
+			else
+			{
+				state_i_ = st_go_home_point;
+				stateInit(state_i_);
+				action_i_ = ac_null;
+			}
+		}
+		else if (state_i_ == st_go_home_point)
+		{
+			PP_INFO();
+			old_dir_ = new_dir_;
+			plan_path_.clear();
+			if (go_home_path_algorithm_->generatePath(nav_map, nav_map.getCurrCell(),old_dir_, plan_path_))
+			{
+				// Reach home cell or new path to home cell is generated.
+				if (plan_path_.empty())
+				{
+					// Reach home cell.
+					PP_INFO();
+					if (nav_map.getCurrCell() == g_zero_home)
+					{
+						PP_INFO();
+						state_i_ = st_null;
+					}
+					else
+					{
+						PP_INFO();
+						state_i_ = st_go_to_charger;
+						stateInit(state_i_);
+					}
+					action_i_ = ac_null;
+				}
+				else
+				{
+					new_dir_ = (MapDirection)plan_path_.front().TH;
+					plan_path_.pop_front();
+					go_home_path_algorithm_->displayPath(plan_path_);
+				}
+			}
+			else
+			{
+				// No more paths to home cells.
+				PP_INFO();
+				state_i_ = st_null;
+			}
+			state_confirm = true;
+		}
+		else if (state_i_ == st_go_to_charger)
+		{
+			PP_INFO();
+			if (ev.charge_detect && charger.isOnStub())
+				state_i_ = st_null;
+			else
+				state_i_ = st_go_home_point;
+		}
+	}
+
+	return state_i_ != st_null;
+}
+

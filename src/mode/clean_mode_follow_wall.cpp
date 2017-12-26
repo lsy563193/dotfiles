@@ -17,6 +17,7 @@ CleanModeFollowWall::CleanModeFollowWall()
 	speaker.play(VOICE_CLEANING_WALL_FOLLOW);
 	clean_path_algorithm_.reset(new WFCleanPathAlgorithm);
 	go_home_path_algorithm_.reset(new GoHomePathAlgorithm(nav_map, home_cells_));
+	cleanMap_ = &fw_map;
 }
 
 bool CleanModeFollowWall::mapMark() {
@@ -51,11 +52,6 @@ CleanModeFollowWall::~CleanModeFollowWall() {
 
 bool CleanModeFollowWall::setNextAction() {
 	PP_INFO();
-	if(isInitState())
-	{
-		ROS_INFO("%s,%d: isInitState,action(%d)", __FUNCTION__, __LINE__,action_i_);
-		return ACleanMode::setNextAction();
-	}
 	if (action_i_ == ac_linear) {
 		ROS_INFO("%s,%d: mt_follow_wall_left", __FUNCTION__, __LINE__);
 		action_i_ = ac_follow_wall_left;
@@ -68,6 +64,11 @@ bool CleanModeFollowWall::setNextAction() {
 		genNextAction();
 		return true;
 	}
+	return false;
+}
+
+bool CleanModeFollowWall::setNextState()
+{
 	return false;
 }
 
@@ -392,3 +393,4 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(int16_t curr_x, i
 
 	return totalCost;
 }
+
