@@ -10,7 +10,8 @@
 #include "boost/shared_ptr.hpp"
 #include "move_type.hpp"
 
-class Mode:public EventHandle {
+class Mode:public EventHandle
+{
 public:
 	virtual ~Mode() { };
 	void run();
@@ -35,7 +36,9 @@ public:
 		cm_navigation,
 		cm_wall_follow,
 		cm_spot,
-		cm_exploration
+		cm_exploration,
+
+		cm_test,
 	};
 
 	int next_mode_i_;
@@ -64,7 +67,10 @@ public:
 		ac_movement_stay,
 		ac_movement_direct_go,
 		ac_pause,
-		ac_exception_resume
+		ac_exception_resume,
+		ac_check_bumper,
+		ac_check_vacuum,
+		ac_bumper_hit_test,
 	};
 
 	bool isExceptionTriggered();
@@ -204,17 +210,18 @@ class ACleanMode:public Mode
 {
 public:
 	ACleanMode();
-	bool isFinish();
+	bool isFinish() override;
 	void setNextMode(int next);
-	virtual bool setNextState();
+	virtual bool setNextState() = 0;
+	virtual bool setNextInitAction();
 	virtual bool setNextAction();
 	void genNextAction();
 	void resetTriggeredValue();
 
 	virtual bool mapMark() = 0;
 
-	virtual bool MovementFollowWallisFinish();
-	Cell_t updatePath();
+	virtual bool ActionFollowWallisFinish();
+	Cell_t updatePath(GridMap& map);
 
 	static Path_t passed_path_;
 	static Path_t plan_path_;
@@ -224,12 +231,13 @@ public:
 
 	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
 	boost::shared_ptr<APathAlgorithm> go_home_path_algorithm_{};
+	GridMap* cleanMap_ = nullptr;
 
 protected:
 
 	uint8_t saveFollowWall(bool is_left);
 	virtual bool isInitState();
-	void stateInit(int);
+	virtual void stateInit(int next);
 	std::vector<Cell_t> temp_fw_cells;
 	TargetList home_cells_;
 	static Cell_t last_;
@@ -256,9 +264,11 @@ public:
 	uint8_t setFollowWall(const Path_t& path);
 	bool mapMark() override ;
 	bool isFinish() override ;
-	bool isExit();
+	bool isExit() override;
 
-	bool setNextAction();
+	bool setNextInitAction() override ;
+	bool setNextAction() override ;
+	bool setNextState() override ;
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteClean(bool state_now, bool state_last) override ;
 	void remoteHome(bool state_now, bool state_last) override ;
@@ -272,7 +282,7 @@ public:
 //	void overCurrentSuction(bool state_now, bool state_last);
 
 private:
-	bool MovementFollowWallisFinish() override ;
+	bool ActionFollowWallisFinish() override ;
 	bool isNewLineReach();
 	bool isOverOriginLine();
 	bool isBlockCleared();
@@ -293,6 +303,33 @@ public:
 
 };
 
+class CleanModeExploration : public ACleanMode
+{
+public:
+	CleanModeExploration();
+	~CleanModeExploration();
+
+	bool mapMark() override;
+	bool isFinish() override;
+	bool isExit() override;
+	bool setNextAction() override;
+	bool setNextState() override;
+	void keyClean(bool state_now, bool state_last) override ;
+	void remoteClean(bool state_now, bool state_last) override ;
+	void cliffAll(bool state_now, bool state_last) override ;
+	void chargeDetect(bool state_now, bool state_last) override ;
+//	void overCurrentBrushLeft(bool state_now, bool state_last);
+//	void overCurrentBrushMain(bool state_now, bool state_last);
+//	void overCurrentBrushRight(bool state_now, bool state_last);
+	void overCurrentWheelLeft(bool state_now, bool state_last) override;
+	void overCurrentWheelRight(bool state_now, bool state_last) override;
+//	void overCurrentSuction(bool state_now, bool state_last);
+	void printMapAndPath();
+
+protected:
+	void stateInit(int next) override;
+};
+
 class CleanModeFollowWall:public ACleanMode
 {
 public:
@@ -300,6 +337,7 @@ public:
 	~CleanModeFollowWall() override ;
 
 	bool setNextAction() override ;
+	bool setNextState() override ;
 	bool mapMark() override;
 
 
@@ -318,14 +356,35 @@ class CleanModeSpot:public ACleanMode
 {
 public:
 	CleanModeSpot();
-	~CleanModeSpot() = default;
-
+	~CleanModeSpot();
+	bool isFinish() override;
 	bool mapMark() override;
-
+	bool isExit();
+	bool setNextAction();
+	bool setNextState();
 private:
 protected:
 //	Path_t home_point_{};
 private:
+	bool has_aligned_and_open_slam;
+};
+
+class CleanModeTest:public ACleanMode
+{
+public:
+	CleanModeTest();
+	~CleanModeTest() = default;
+
+	bool mapMark() override;
+
+	bool isFinish() override;
+
+	bool setNextAction() override;
+	bool setNextState() override ;
+
+	void keyClean(bool state_now, bool state_last) override ;
+	void remoteMax(bool state_now, bool state_last) override ;
+	void remoteDirectionForward(bool state_now, bool state_last) override ;
 
 };
 #endif //PP_MODE_H_H

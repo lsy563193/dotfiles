@@ -30,6 +30,7 @@ CleanModeNav::CleanModeNav()
 	moved_during_pause_ = false;
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
 	go_home_path_algorithm_.reset();
+	cleanMap_ = &nav_map;
 }
 
 CleanModeNav::~CleanModeNav()
@@ -82,9 +83,6 @@ bool CleanModeNav::mapMark()
 		nav_map.setCleaned(passed_path_);
 //	}
 
-	if (state_i_ == st_trapped)
-		nav_map.markRobot(CLEAN_MAP);
-
 	nav_map.setBlocks();
 	if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
 	{
@@ -100,6 +98,7 @@ bool CleanModeNav::mapMark()
 	if (state_i_ == st_trapped)
 		fw_map.setFollowWall(action_i_ == ac_follow_wall_left);
 
+	nav_map.markRobot(CLEAN_MAP);
 	PP_INFO();
 	nav_map.print(CLEAN_MAP, nav_map.getXCell(), nav_map.getYCell());
 
@@ -166,88 +165,210 @@ bool CleanModeNav::isExit()
 
 bool CleanModeNav::setNextAction()
 {
-	if (isInitState())
+	if (action_i_ == ac_open_slam)
 	{
-		PP_INFO();NAV_INFO();
-		if (action_i_ == ac_open_gyro)
-		{
-			PP_INFO();
-			if (paused_)
-				odom.setAngleOffset(paused_odom_angle_);
-			if (charger.isOnStub())
-				action_i_ = ac_back_form_charger;
-			else
-				action_i_ = ac_open_lidar;
-		}
-		else if (action_i_ == ac_back_form_charger)
-			action_i_ = ac_open_lidar;
-		else if (action_i_ == ac_open_lidar)
-		{
-			if (!has_aligned_and_open_slam)
-			{
-				//todo for test
-//				action_i_ = ac_align;
-				action_i_ = ac_open_slam;
-			}
-			else if (paused_)
-			{
-				action_i_ = ac_null;
-				// Clear the pause status.
-				paused_ = false;
-			}
-			else
-				action_i_ = ac_null;
-		}
-		else if (action_i_ == ac_align)
-			action_i_ = ac_open_slam;
-
-		genNextAction();
+		has_aligned_and_open_slam = true;
+		if (paused_)
+			// If paused before align and open slam, reset pause status here.
+			paused_ = false;
+		PP_INFO();
 	}
-	else
+	if (isExceptionTriggered())
+		action_i_ = ac_exception_resume;
+	else if (state_i_ == st_clean)
 	{
-		if (action_i_ == ac_open_slam)
-		{
-			has_aligned_and_open_slam = true;
-			if (paused_)
-				// If paused before align and open slam, reset pause status here.
-				paused_ = false;
-			PP_INFO();
+		auto start = nav_map.getCurrCell();
+		auto delta_y = plan_path_.back().Y - start.Y;
+		ROS_INFO("%s,%d: path size(%u), old_dir_(%d), g_check_path_in_advance(%d), bumper(%d), cliff(%d), lidar(%d), delta_y(%d)",
+						__FUNCTION__, __LINE__, plan_path_.size(), old_dir_, g_check_path_in_advance, ev.bumper_triggered,
+						ev.cliff_triggered, ev.lidar_triggered, delta_y);
+		if (!GridMap::isXDirection(old_dir_) // If last movement is not x axis linear movement, should not follow wall.
+				|| plan_path_.size() > 2 ||
+				(!g_check_path_in_advance && !ev.bumper_triggered && !ev.cliff_triggered && !ev.lidar_triggered)
+				|| delta_y == 0 || std::abs(delta_y) > 2) {
+			action_i_ = ac_linear;
 		}
-		if (isExceptionTriggered())
-			action_i_ = ac_exception_resume;
-		else if (state_i_ == st_clean)
+		else
 		{
-			auto start = nav_map.getCurrCell();
-			auto delta_y = plan_path_.back().Y - start.Y;
-			ROS_INFO("%s,%d: path size(%u), old_dir_(%d), g_check_path_in_advance(%d), bumper(%d), cliff(%d), lidar(%d), delta_y(%d)",
-							__FUNCTION__, __LINE__, plan_path_.size(), old_dir_, g_check_path_in_advance, ev.bumper_triggered,
-							ev.cliff_triggered, ev.lidar_triggered, delta_y);
-			if (!GridMap::isXDirection(old_dir_) // If last movement is not x axis linear movement, should not follow wall.
-					|| plan_path_.size() > 2 ||
-					(!g_check_path_in_advance && !ev.bumper_triggered && !ev.cliff_triggered && !ev.lidar_triggered)
-					|| delta_y == 0 || std::abs(delta_y) > 2) {
-				action_i_ = ac_linear;
+			delta_y = plan_path_.back().Y - start.Y;
+			bool is_left = GridMap::isPositiveDirection(old_dir_) ^delta_y > 0;
+			ROS_INFO("\033[31m""%s,%d: target:, 0_left_1_right(%d=%d ^ %d)""\033[0m",
+					 __FUNCTION__, __LINE__, is_left, GridMap::isPositiveDirection(old_dir_), delta_y);
+			action_i_ = is_left ? ac_follow_wall_left : ac_follow_wall_right;
+		}
+	}
+	else if (state_i_ == st_trapped)
+		action_i_ = ac_follow_wall_left;
+	else if (state_i_ == st_go_home_point)
+		action_i_ = ac_linear;
+	else if (state_i_ == st_go_to_charger)
+		action_i_ = ac_go_to_charger;
+
+	genNextAction();
+	PP_INFO(); NAV_INFO();
+	return action_i_ != ac_null;
+}
+
+bool CleanModeNav::setNextInitAction()
+{
+	PP_INFO();NAV_INFO();
+	if (action_i_ == ac_open_gyro)
+	{
+		PP_INFO();
+		// If it is the starting of navigation mode, paused_odom_angle_ will be zero.
+		odom.setAngleOffset(paused_odom_angle_);
+		if (charger.isOnStub())
+			action_i_ = ac_back_form_charger;
+		else
+			action_i_ = ac_open_lidar;
+	}
+	else if (action_i_ == ac_back_form_charger)
+		action_i_ = ac_open_lidar;
+	else if (action_i_ == ac_open_lidar)
+	{
+		if (!has_aligned_and_open_slam)
+		{
+			//todo for test
+//			action_i_ = ac_align;
+			action_i_ = ac_open_slam;
+		}
+		else if (paused_)
+		{
+			action_i_ = ac_null;
+			// Clear the pause status.
+			paused_ = false;
+		}
+		else
+			action_i_ = ac_null;
+	}
+	else if (action_i_ == ac_align)
+		action_i_ = ac_open_slam;
+
+	genNextAction();
+	PP_INFO(); NAV_INFO();
+	return action_i_ != ac_null;
+}
+
+bool CleanModeNav::setNextState()
+{
+	PP_INFO();
+	bool state_confirm = false;
+	while (ros::ok() && !state_confirm)
+	{
+		if (state_i_ == st_null)
+		{
+			auto curr = nav_map.updatePosition();
+			passed_path_.push_back(curr);
+
+			home_cells_.back().TH = robot::instance()->getPoseAngle();
+			PP_INFO();
+
+			state_i_ = st_clean;
+			stateInit(state_i_);
+			action_i_ = ac_null;
+		}
+		else if (isExceptionTriggered())
+		{
+			ROS_INFO("%s %d: Pass this state switching for exception cases.", __FUNCTION__, __LINE__);
+			// Apply for all states.
+			// If all these exception cases happens, directly set next action to exception resume action.
+			// BUT DO NOT CHANGE THE STATE!!! Because after exception resume it should restore the state.
+			action_i_ = ac_null;
+			state_confirm = true;
+		}
+		else if(state_i_ == st_clean)
+		{
+			PP_INFO();
+			old_dir_ = new_dir_;
+			ROS_ERROR("old_dir_(%d)", old_dir_);
+			if (clean_path_algorithm_->generatePath(nav_map, nav_map.getCurrCell(), old_dir_, plan_path_))
+			{
+				new_dir_ = (MapDirection)plan_path_.front().TH;
+				ROS_ERROR("new_dir_(%d)", new_dir_);
+				plan_path_.pop_front();
+				clean_path_algorithm_->displayPath(plan_path_);
+				state_confirm = true;
 			}
 			else
 			{
-				delta_y = plan_path_.back().Y - start.Y;
-				bool is_left = GridMap::isPositiveDirection(old_dir_) ^delta_y > 0;
-				ROS_INFO("\033[31m""%s,%d: target:, 0_left_1_right(%d=%d ^ %d)""\033[0m",
-						 __FUNCTION__, __LINE__, is_left, GridMap::isPositiveDirection(old_dir_), delta_y);
-				action_i_ = is_left ? ac_follow_wall_left : ac_follow_wall_right;
+				if (clean_path_algorithm_->checkTrapped(nav_map, nav_map.getCurrCell()))
+					state_i_ = st_trapped;
+				else
+					state_i_ = st_go_home_point;
+				stateInit(state_i_);
+				action_i_ = ac_null;
 			}
 		}
 		else if (state_i_ == st_trapped)
-			action_i_ = ac_follow_wall_left;
+		{
+			PP_INFO();
+			if (robot_timer.trapTimeout(ESCAPE_TRAPPED_TIME))
+			{
+				ROS_WARN("%s %d: Escape trapped timeout!(%d)", __FUNCTION__, __LINE__, ESCAPE_TRAPPED_TIME);
+				state_i_ = st_null;
+				state_confirm = true;
+			}
+			else if (!clean_path_algorithm_->checkTrapped(nav_map, nav_map.getCurrCell()))
+			{
+				ROS_WARN("%s %d: Escape trapped !", __FUNCTION__, __LINE__);
+				state_i_ = st_clean;
+				stateInit(state_i_);
+			}
+			else
+				// Still trapped.
+				state_confirm = true;
+		}
 		else if (state_i_ == st_go_home_point)
-			action_i_ = ac_linear;
+		{
+			PP_INFO();
+			old_dir_ = new_dir_;
+			plan_path_.clear();
+			if (go_home_path_algorithm_->generatePath(nav_map, nav_map.getCurrCell(),old_dir_, plan_path_))
+			{
+				// Reach home cell or new path to home cell is generated.
+				if (plan_path_.empty())
+				{
+					// Reach home cell.
+					PP_INFO();
+					if (nav_map.getCurrCell() == g_zero_home)
+					{
+						PP_INFO();
+						state_i_ = st_null;
+					}
+					else
+					{
+						PP_INFO();
+						state_i_ = st_go_to_charger;
+						stateInit(state_i_);
+					}
+					action_i_ = ac_null;
+				}
+				else
+				{
+					new_dir_ = (MapDirection)plan_path_.front().TH;
+					plan_path_.pop_front();
+					go_home_path_algorithm_->displayPath(plan_path_);
+				}
+			}
+			else
+			{
+				// No more paths to home cells.
+				PP_INFO();
+				state_i_ = st_null;
+			}
+			state_confirm = true;
+		}
 		else if (state_i_ == st_go_to_charger)
-			action_i_ = ac_go_to_charger;
-
-		genNextAction();
+		{
+			PP_INFO();
+			if (ev.charge_detect && charger.isOnStub())
+				state_i_ = st_null;
+			else
+				state_i_ = st_go_home_point;
+		}
 	}
-	PP_INFO(); NAV_INFO();
-	return action_i_ != ac_null;
+
+	return state_i_ != st_null;
 }
 
 void CleanModeNav::keyClean(bool state_now, bool state_last)
@@ -335,7 +456,7 @@ void CleanModeNav::chargeDetect(bool state_now, bool state_last)
 
 }
 
-bool CleanModeNav::MovementFollowWallisFinish()
+bool CleanModeNav::ActionFollowWallisFinish()
 {
 	if (state_i_ == st_trapped)
 		return isBlockCleared();
@@ -348,27 +469,28 @@ bool CleanModeNav::MovementFollowWallisFinish()
 bool CleanModeNav::isOverOriginLine()
 {
 	auto s_curr_p = nav_map.getCurrPoint();
-	if ((IMovement::s_target_p.Y > IMovement::s_start_p.Y && (IMovement::s_start_p.Y - s_curr_p.Y) > 120)
-		|| (IMovement::s_target_p.Y < IMovement::s_start_p.Y && (s_curr_p.Y - IMovement::s_start_p.Y) > 120))
+	auto p_mt = boost::dynamic_pointer_cast<IMoveType>(sp_action_);
+	if ((p_mt->target_point_.Y > p_mt->start_point_.Y && (p_mt->start_point_.Y - s_curr_p.Y) > 120)
+		|| (p_mt->target_point_.Y < p_mt->start_point_.Y && (s_curr_p.Y - p_mt->start_point_.Y) > 120))
 	{
-		ROS_WARN("origin(%d,%d) curr_p(%d, %d), IMovement::s_target_p_(%d, %d)",IMovement::s_start_p.X, IMovement::s_start_p.Y,  s_curr_p.X, s_curr_p.Y, IMovement::s_target_p.X, IMovement::s_target_p.Y);
+		ROS_WARN("origin(%d,%d) curr_p(%d, %d), p_mt->target_point__(%d, %d)",p_mt->start_point_.X, p_mt->start_point_.Y,  s_curr_p.X, s_curr_p.Y, p_mt->target_point_.X, p_mt->target_point_.Y);
 		auto curr = nav_map.pointToCell(s_curr_p);
-		auto target_angle = (IMovement::s_target_p.Y > IMovement::s_start_p.Y) ? -900 : 900;
+		auto target_angle = (p_mt->target_point_.Y > p_mt->start_point_.Y) ? -900 : 900;
 		if (std::abs(ranged_angle(robot::instance()->getPoseAngle() - target_angle)) < 50) // If robot is directly heading to the opposite side of target line, stop.
 		{
-			ROS_WARN("%s %d: Opposite to target angle. s_curr_p(%d, %d), IMovement::s_target_p(%d, %d), gyro(%d), target_angle(%d)", __FUNCTION__, __LINE__, s_curr_p.X, s_curr_p.Y, IMovement::s_target_p.X, IMovement::s_target_p.Y, robot::instance()->getPoseAngle(), target_angle);
+			ROS_WARN("%s %d: Opposite to target angle. s_curr_p(%d, %d), p_mt->target_point_(%d, %d), gyro(%d), target_angle(%d)", __FUNCTION__, __LINE__, s_curr_p.X, s_curr_p.Y, p_mt->target_point_.X, p_mt->target_point_.Y, robot::instance()->getPoseAngle(), target_angle);
 			return true;
 		}
 		else if (nav_map.isBlockCleaned(curr.X, curr.Y)) // If robot covers a big block, stop.
 		{
-			ROS_WARN("%s %d: Back to cleaned place, current(%d, %d), s_curr_p(%d, %d), IMovement::s_target_p(%d, %d).",
-					 __FUNCTION__, __LINE__, curr.X, curr.Y, s_curr_p.X, s_curr_p.Y, IMovement::s_target_p.X, IMovement::s_target_p.Y);
+			ROS_WARN("%s %d: Back to cleaned place, current(%d, %d), s_curr_p(%d, %d), p_mt->target_point_(%d, %d).",
+					 __FUNCTION__, __LINE__, curr.X, curr.Y, s_curr_p.X, s_curr_p.Y, p_mt->target_point_.X, p_mt->target_point_.Y);
 			return true;
 		}
 		else{
 			ROS_WARN("%s %d: Dynamic adjust the origin line and target line, so it can smoothly follow the wall to clean..",__FUNCTION__,__LINE__);
-			IMovement::s_target_p.Y += s_curr_p.Y - IMovement::s_start_p.Y;
-			IMovement::s_start_p.Y = s_curr_p.Y;
+			p_mt->target_point_.Y += s_curr_p.Y - p_mt->start_point_.Y;
+			p_mt->start_point_.Y = s_curr_p.Y;
 		}
 	}
 
@@ -379,27 +501,28 @@ bool CleanModeNav::isNewLineReach()
 {
 	auto s_curr_p = nav_map.getCurrPoint();
 	auto ret = false;
-	auto is_pos_dir = IMovement::s_target_p.Y - IMovement::s_start_p.Y > 0;
+	auto p_mt = boost::dynamic_pointer_cast<IMoveType>(sp_action_);
+	auto is_pos_dir = p_mt->target_point_.Y - p_mt->start_point_.Y > 0;
 	// The limit is CELL_COUNT_MUL / 8 * 3 further than target line center.
-	auto target_limit = IMovement::s_target_p.Y + CELL_COUNT_MUL / 8 * 3 * is_pos_dir;
+	auto target_limit = p_mt->target_point_.Y + CELL_COUNT_MUL / 8 * 3 * is_pos_dir;
 //	ROS_WARN("~~~~~~~~~~~~~~~~~%s %d: start_p.Y(%d), target.Y(%d),curr_y(%d)",
-//					 __FUNCTION__, __LINE__, nav_map.countToCell(start_p.Y), nav_map.countToCell(IMovement::s_target_p.Y),
+//					 __FUNCTION__, __LINE__, nav_map.countToCell(s_curr_p.Y), nav_map.countToCell(p_mt->target_point_.Y),
 //					 nav_map.countToCell(s_curr_p.Y));
 	if (is_pos_dir ^ s_curr_p.Y < target_limit) // Robot has reached the target line limit.
 	{
 		ROS_WARN("%s %d: Reach the target limit, start_p.Y(%d), target.Y(%d),curr_y(%d)",
-				 __FUNCTION__, __LINE__, nav_map.countToCell(IMovement::s_start_p.Y), nav_map.countToCell(IMovement::s_target_p.Y),
+				 __FUNCTION__, __LINE__, nav_map.countToCell(p_mt->start_point_.Y), nav_map.countToCell(p_mt->target_point_.Y),
 				 nav_map.countToCell(s_curr_p.Y));
 		ret = true;
 	}
-	else if (is_pos_dir ^ s_curr_p.Y < IMovement::s_target_p.Y)
+	else if (is_pos_dir ^ s_curr_p.Y < p_mt->target_point_.Y)
 	{
 		// Robot has reached the target line center but still not reach target line limit.
 		// Check if the wall side has blocks on the costmap.
 		auto dx = (is_pos_dir ^ action_i_ == ac_follow_wall_left) ? +2 : -2;
 		if (nav_map.isBlocksAtY(nav_map.countToCell(s_curr_p.X) + dx, nav_map.countToCell(s_curr_p.Y))) {
 			ROS_WARN("%s %d: Already has block at the wall side, start_p.Y(%d), target.Y(%d),curr_y(%d)",
-					 __FUNCTION__, __LINE__, nav_map.countToCell(IMovement::s_start_p.Y), nav_map.countToCell(IMovement::s_target_p.Y),
+					 __FUNCTION__, __LINE__, nav_map.countToCell(p_mt->start_point_.Y), nav_map.countToCell(p_mt->target_point_.Y),
 					 nav_map.countToCell(s_curr_p.Y));
 			ret = true;
 		}

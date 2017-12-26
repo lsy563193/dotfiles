@@ -298,8 +298,7 @@ int Rcon::getTrig(void)
 	uint32_t rcon_value = getStatus();
 	rcon_status_ = 0;
 	return rcon_value;
-/*
-	if (mt.is_follow_wall()) {
+/*	if (mt.is_follow_wall()) {
 		if ((rcon_value &
 					(RconL_HomeT | RconR_HomeT | RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT))) {
 			rcon_status_ = 0;
@@ -337,3 +336,15 @@ int Rcon::getTrig(void)
 
 	return 0;*/
 }
+
+bool Rcon::isTrigT() {
+	auto trig = getStatus();
+	if(trig) {
+		if (trig & (RconL_HomeT | RconR_HomeT | RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT)){
+			resetStatus();
+			return true;
+		}
+	}
+	return false;
+}
+

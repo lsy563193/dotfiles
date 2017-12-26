@@ -234,8 +234,23 @@ public:
 class SpotCleanPathAlgorithm: public APathAlgorithm
 {
 public:
+	SpotCleanPathAlgorithm();
+	SpotCleanPathAlgorithm(float diameter,Cell_t curcell);
+	~SpotCleanPathAlgorithm();
+
 	bool generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir, Path_t &plan_path) override;
-	bool checkTrapped(GridMap &map, const Cell_t &curr_cell){};
+	bool checkTrapped(GridMap &map, const Cell_t &curr_cell) override;
+	void genTargets(uint8_t type,float diameter,Path_t *targets,const Cell_t begincell);
+private:
+
+	void initVariables(float diameter,Cell_t cur_cell);
+private:
+	
+	float spot_diameter_ ;
+	bool spot_running_;
+	Path_t targets_;
+	Path_t targets_last_;
+	Cell_t begin_cell_; 
 };
 
 class GoHomePathAlgorithm: public APathAlgorithm

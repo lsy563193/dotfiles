@@ -5,7 +5,7 @@
 #include "arch.hpp"
 
 StateExploration::StateExploration() {
-
+	led.set_mode(LED_STEADY, LED_GREEN);
 }
 
 

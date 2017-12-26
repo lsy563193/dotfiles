@@ -274,6 +274,8 @@
 #define BACK_MIN_SPEED					((int32_t) 11)
 #define LINEAR_MIN_SPEED				((int32_t) 10) // 15)
 #define LINEAR_MAX_SPEED				((int32_t) 40) // 15)
+#define FALL_WALL_MIN_SPEED			((int32_t) 5)
+#define FALL_WALL_MAX_SPEED			((int32_t) 20)
 #define ROTATE_TOP_SPEED				((uint8_t) 20) // 22)
 #define ROTATE_LOW_SPEED				((uint8_t) 5)
 #if __ROBOT_X900
@@ -463,8 +465,8 @@
 #define GO_HOME_REGULATOR	(1)
 
 /* ------------------------------------- Lidar Relative Position --------------------------------------------*/
-#define LIDAR_THETA							(0)//2050
-#define LIDAR_OFFSET_X						(0)//0.031
+#define LIDAR_THETA							(2050)//2050
+#define LIDAR_OFFSET_X						(0.031)//0.031
 #define LIDAR_OFFSET_Y						(0)//0
 #define ROBOT_RADIUS						(0.167)
 

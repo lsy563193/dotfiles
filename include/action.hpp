@@ -82,7 +82,8 @@ private:
 };
 
 
-class ActionIdle :public IAction {
+class ActionIdle :public IAction
+{
 public:
 	ActionIdle();
 	~ActionIdle();
@@ -104,5 +105,29 @@ public:
 private:
 	double pause_start_time_;
 	Pose pause_pose_;
+};
+
+class ActionCheckVacuum: public IAction
+{
+public:
+	ActionCheckVacuum();
+	~ActionCheckVacuum() = default;
+
+	bool isFinish() override;
+	bool isExit() override;
+
+	void run() override;
+};
+
+class ActionCheckBumper: public IAction
+{
+public:
+	ActionCheckBumper();
+	~ActionCheckBumper() = default;
+
+	bool isFinish() override;
+	bool isExit() override;
+
+	void run() override;
 };
 #endif //PP_ACTION_H

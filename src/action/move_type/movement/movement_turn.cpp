@@ -4,10 +4,11 @@
 #include "pp.h"
 #include "arch.hpp"
 
-MovementTurn::MovementTurn(int16_t angle) : speed_(ROTATE_LOW_SPEED)
+MovementTurn::MovementTurn(int16_t angle, uint8_t max_speed) : speed_(ROTATE_LOW_SPEED)
 {
 	accurate_ = ROTATE_TOP_SPEED > 30 ? 30 : 15;
 	target_angle_ = angle;
+	max_speed_ = max_speed;
 	ROS_INFO("%s %d: Init, \033[32ms_target_p.TH: %d\033[0m", __FUNCTION__, __LINE__, angle);
 }
 
@@ -21,24 +22,6 @@ bool MovementTurn::isReach()
 	return false;
 }
 
-bool MovementTurn::shouldMoveBack()
-{
-	// Robot should move back for these cases.
-	ev.bumper_triggered = bumper.get_status();
-	ev.cliff_triggered = cliff.get_status();
-	ev.tilt_triggered = gyro.getTiltCheckingStatus();
-
-	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip)
-	{
-		ROS_WARN("%s, %d,MovementTurn, ev.bumper_triggered(\033[32m%d\033[0m) ev.cliff_triggered(\033[32m%d\033[0m) ev.tilt_triggered(\033[32m%d\033[0m) g_robot_slip(\033[32m%d\033[0m)."
-				, __FUNCTION__, __LINE__,ev.bumper_triggered,ev.cliff_triggered,ev.tilt_triggered,g_robot_slip);
-		return true;
-	}
-
-	return false;
-
-}
-
 void MovementTurn::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
 	auto diff = ranged_angle(target_angle_ - robot::instance()->getPoseAngle());
@@ -48,7 +31,7 @@ void MovementTurn::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 //	ROS_INFO("MovementTurn::adjustSpeed");
 	if (std::abs(diff) > 200){
 		speed_ += 1;
-		speed_ = std::min(speed_, ROTATE_TOP_SPEED);
+		speed_ = std::min(speed_, max_speed_);
 	}
 	else if (std::abs(diff) > 100){
 		speed_ -= 2;
@@ -66,6 +49,7 @@ void MovementTurn::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 
 }
 
-bool MovementTurn::isFinish() {
+bool MovementTurn::isFinish()
+{
 	return isReach();
 }

@@ -15,29 +15,29 @@
 MoveTypeGoToCharger::MoveTypeGoToCharger()
 {
 	ROS_INFO("%s,%d: Move type is go to charger.", __FUNCTION__, __LINE__);
-	sp_gtc_movement_.reset(new MovementGoToCharger());
-	sp_back_movement_.reset();
-	sp_turn_movement_.reset();
+	p_gtc_movement_.reset(new MovementGoToCharger());
+	p_back_movement_.reset();
+	p_turn_movement_.reset();
 }
 
 bool MoveTypeGoToCharger::isFinish()
 {
-	if (sp_gtc_movement_->isFinish())
+	if (p_gtc_movement_->isFinish())
 		return true;
-	else if ((sp_back_movement_ != nullptr) && sp_back_movement_->isFinish())
-		sp_back_movement_.reset();
-	else if ((sp_turn_movement_ != nullptr) && sp_turn_movement_->isFinish())
-		sp_turn_movement_.reset();
-	else if (sp_gtc_movement_->isSwitch())
+	else if ((p_back_movement_ != nullptr) && p_back_movement_->isFinish())
+		p_back_movement_.reset();
+	else if ((p_turn_movement_ != nullptr) && p_turn_movement_->isFinish())
+		p_turn_movement_.reset();
+	else if (p_gtc_movement_->isSwitch())
 	{
 		int16_t turn_angle;
-		sp_gtc_movement_->getTurnBackInfo(turn_angle, back_distance_);
+		p_gtc_movement_->getTurnBackInfo(turn_angle, back_distance_);
 		if (back_distance_ != 0)
-			sp_back_movement_.reset(new MovementBack(back_distance_));
+			p_back_movement_.reset(new MovementBack(back_distance_, BACK_MAX_SPEED));
 		if (turn_angle != 0)
 		{
 			turn_target_angle_ = robot::instance()->getPoseAngle() + turn_angle;
-			sp_turn_movement_.reset(new MovementTurn(turn_target_angle_));
+			p_turn_movement_.reset(new MovementTurn(turn_target_angle_, ROTATE_TOP_SPEED));
 		}
 	}
 
@@ -47,19 +47,19 @@ bool MoveTypeGoToCharger::isFinish()
 void MoveTypeGoToCharger::run()
 {
 //	PP_INFO();
-	if (sp_back_movement_ != nullptr)
+	if (p_back_movement_ != nullptr)
 	{
 //		PP_INFO();
-		sp_back_movement_->run();
+		p_back_movement_->run();
 	}
-	else if (sp_turn_movement_ != nullptr)
+	else if (p_turn_movement_ != nullptr)
 	{
 //		PP_INFO();
-		sp_turn_movement_->run();
+		p_turn_movement_->run();
 	}
 	else
 	{
 //		PP_INFO();
-		sp_gtc_movement_->run();
+		p_gtc_movement_->run();
 	}
 }

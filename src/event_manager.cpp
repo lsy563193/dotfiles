@@ -568,7 +568,6 @@ void event_manager_reset_status(void)
 	ev.remote_spot = false;
 	ev.remote_wallfollow = false;
 	ev.remote_direction_forward = false;
-	ev.remote_direction_back = false;
 	ev.remote_direction_left = false;
 	ev.remote_direction_right = false;
 	/* Battery */

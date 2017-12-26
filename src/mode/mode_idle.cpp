@@ -17,6 +17,7 @@ ModeIdle::ModeIdle()
 	event_manager_reset_status();
 
 	plan_activated_status_ = false;
+	ROS_INFO("%s %d: Current battery voltage \033[32m%5.2f V\033[0m.", __FUNCTION__, __LINE__, (float)battery.getVoltage()/100.0);
 }
 
 ModeIdle::~ModeIdle()
@@ -30,6 +31,12 @@ bool ModeIdle::isExit()
 {
 	if(ev.key_clean_pressed || plan_activated_status_)
 	{
+		if (ev.key_clean_pressed && bumper.getLeft())
+		{
+			ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+			setNextMode(cm_test);
+			return true;
+		}
 		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
 		setNextMode(cm_navigation);
 		return true;
@@ -272,7 +279,7 @@ void ModeIdle::rcon(bool state_now, bool state_last)
 {
 	static double first_time_seen_charger=0, last_time_seen_charger=0, time_for_now=0;
 	time_for_now = ros::Time::now().toSec();
-	ROS_WARN("%s %d: rcon signal. first: %lf, last: %lf, now: %lf", __FUNCTION__, __LINE__, first_time_seen_charger, last_time_seen_charger, time_for_now);
+//	ROS_WARN("%s %d: rcon signal. first: %lf, last: %lf, now: %lf", __FUNCTION__, __LINE__, first_time_seen_charger, last_time_seen_charger, time_for_now);
 	if(time_for_now - last_time_seen_charger > 60)
 	{
 		/*---more than 1 min haven't seen charger, reset first_time_seen_charger---*/

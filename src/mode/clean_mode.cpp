@@ -36,32 +36,27 @@ bool ACleanMode::isInitState()
 				action_i_ == ac_align;
 }
 
-bool ACleanMode::setNextAction()
+bool ACleanMode::setNextInitAction()
 {
 	if(action_i_ == ac_open_gyro)
-	{
-		if (charger.isOnStub())
-			action_i_ = ac_back_form_charger;
-		else
-			action_i_ = ac_open_lidar;
-	}
-	else if(action_i_ == ac_back_form_charger)
 		action_i_ = ac_open_lidar;
 	else if(action_i_ == ac_open_lidar)
-		action_i_ = ac_align;
-	else if(action_i_ == ac_align)
 		action_i_ = ac_open_slam;
 	else
-	{
-		if (isExceptionTriggered())
-			action_i_ = ac_exception_resume;
-		else if (ev.fatal_quit)
-		{
-			PP_INFO();
-			ROS_ERROR("ev.fatal_quit");
-			action_i_ = ac_null;
-		}
-	}
+		action_i_ = ac_null;
+
+	genNextAction();
+	PP_INFO(); NAV_INFO();
+	return action_i_ != ac_null;
+}
+
+bool ACleanMode::setNextAction()
+{
+	if (isExceptionTriggered())
+		action_i_ = ac_exception_resume;
+	else
+		action_i_ = ac_null;
+
 	genNextAction();
 	PP_INFO(); NAV_INFO();
 	return action_i_ != ac_null;
@@ -75,7 +70,7 @@ void ACleanMode::setNextMode(int next)
 	}
 	else {
 		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
-		Mode::setNextMode(md_idle);
+		Mode::setNextMode(next);
 	}
 }
 
@@ -84,11 +79,11 @@ bool ACleanMode::isFinish()
 	if (isInitState()) {
 		if (!sp_action_->isFinish())
 			return false;
-		setNextAction();
+		setNextInitAction();
 	}
 	else
 	{
-		updatePath();
+		updatePath(*cleanMap_);
 
 		if (!sp_action_->isFinish())
 			return false;
@@ -109,145 +104,23 @@ bool ACleanMode::isFinish()
 	return false;
 }
 
-bool ACleanMode::setNextState()
-{
-	PP_INFO();
-	bool state_confirm = false;
-	while (ros::ok() && !state_confirm)
-	{
-		if (state_i_ == st_null)
-		{
-			auto curr = nav_map.updatePosition();
-			passed_path_.push_back(curr);
-
-			home_cells_.back().TH = robot::instance()->getPoseAngle();
-			PP_INFO();
-
-			state_i_ = st_clean;
-			stateInit(state_i_);
-			action_i_ = ac_null;
-		}
-		else if (isExceptionTriggered())
-		{
-			ROS_INFO("%s %d: Pass this state switching for exception cases.", __FUNCTION__, __LINE__);
-			// Apply for all states.
-			// If all these exception cases happens, directly set next action to exception resume action.
-			// BUT DO NOT CHANGE THE STATE!!! Because after exception resume it should restore the state.
-			action_i_ = ac_null;
-			state_confirm = true;
-		}
-		else if(state_i_ == st_clean)
-		{
-			PP_INFO();
-			old_dir_ = new_dir_;
-			ROS_ERROR("old_dir_(%d)", old_dir_);
-			plan_path_.clear();
-			if (clean_path_algorithm_->generatePath(nav_map, nav_map.getCurrCell(), old_dir_, plan_path_))
-			{
-				new_dir_ = (MapDirection)plan_path_.front().TH;
-				ROS_ERROR("new_dir_(%d)", new_dir_);
-				plan_path_.pop_front();
-				clean_path_algorithm_->displayPath(plan_path_);
-				state_confirm = true;
-			}
-			else
-			{
-				if (clean_path_algorithm_->checkTrapped(nav_map, nav_map.getCurrCell()))
-					state_i_ = st_trapped;
-				else
-					state_i_ = st_go_home_point;
-				stateInit(state_i_);
-				action_i_ = ac_null;
-			}
-		}
-		else if (state_i_ == st_trapped)
-		{
-			PP_INFO();
-			if (robot_timer.trapTimeout(ESCAPE_TRAPPED_TIME))
-			{
-				ROS_WARN("%s %d: Escape trapped timeout!(%d)", __FUNCTION__, __LINE__, ESCAPE_TRAPPED_TIME);
-				state_i_ = st_null;
-				state_confirm = true;
-			}
-			else if (!clean_path_algorithm_->checkTrapped(nav_map, nav_map.getCurrCell()))
-			{
-				ROS_WARN("%s %d: Escape trapped !", __FUNCTION__, __LINE__);
-				state_i_ = st_clean;
-				stateInit(state_i_);
-			}
-			else
-				// Still trapped.
-				state_confirm = true;
-		}
-		else if (state_i_ == st_go_home_point)
-		{
-			PP_INFO();
-			old_dir_ = new_dir_;
-			plan_path_.clear();
-			if (go_home_path_algorithm_->generatePath(nav_map, nav_map.getCurrCell(),old_dir_, plan_path_))
-			{
-				// Reach home cell or new path to home cell is generated.
-				if (plan_path_.empty())
-				{
-					// Reach home cell.
-					PP_INFO();
-					if (nav_map.getCurrCell() == g_zero_home)
-					{
-						PP_INFO();
-						state_i_ = st_null;
-					}
-					else
-					{
-						PP_INFO();
-						state_i_ = st_go_to_charger;
-					}
-					action_i_ = ac_null;
-				}
-				else
-				{
-					new_dir_ = (MapDirection)plan_path_.front().TH;
-					plan_path_.pop_front();
-					go_home_path_algorithm_->displayPath(plan_path_);
-				}
-			}
-			else
-			{
-				// No more paths to home cells.
-				PP_INFO();
-				state_i_ = st_null;
-			}
-			state_confirm = true;
-		}
-		else if (state_i_ == st_go_to_charger)
-		{
-			PP_INFO();
-			if (ev.charge_detect && charger.isOnStub())
-				state_i_ = st_null;
-			else
-				state_i_ = st_go_home_point;
-		}
-	}
-
-	return state_i_ != st_null;
-}
-
 bool is_equal_with_angle_(const Cell_t &l, const Cell_t &r)
 {
 	return  l == r && std::abs(ranged_angle(l.TH - r.TH)) < 200;
 }
 
-Cell_t ACleanMode::updatePath()
+Cell_t ACleanMode::updatePath(GridMap& map)
 {
-	auto curr = nav_map.updatePosition();
-	auto point = nav_map.getCurrPoint();
-//	robot::instance()->pubCleanMapMarkers(nav_map, plan_path_);
+	auto curr = map.updatePosition();
+//	auto point = map.getCurrPoint();
+//	robot::instance()->pubCleanMapMarkers(nav_map, tmp_plan_path_);
 //	PP_INFO();
-//	ROS_INFO("curr(%d,%d,%d)",curr.X, curr.Y, curr.TH);
+//	ROS_INFO("point(%d,%d,%d)",point.X, point.Y,point.TH);
 //	ROS_INFO("last(%d,%d,%d)",last_.X, last_.Y, last_.TH);
 	if (passed_path_.empty())
 	{
 		passed_path_.push_back(curr);
-		ROS_INFO("curr(%d,%d,%d)",curr.X, curr.Y, curr.TH);
+//		ROS_INFO("curr(%d,%d,%d)",curr.X, curr.Y, curr.TH);
 	}
 	else if (!is_equal_with_angle_(curr, last_))
 	{
@@ -264,7 +137,7 @@ Cell_t ACleanMode::updatePath()
 			passed_path_.clear();
 			g_wf_reach_count++;
 		}
-		nav_map.saveBlocks(action_i_ == ac_linear);
+		map.saveBlocks(action_i_ == ac_linear);
 //		displayPath(passed_path_);
 	}
 	return curr;
@@ -294,6 +167,14 @@ void ACleanMode::genNextAction()
 		sp_action_.reset(new MoveTypeGoToCharger);
 	else if (action_i_ == ac_exception_resume)
 		sp_action_.reset(new MovementExceptionResume);
+	else if (action_i_ == ac_check_bumper)
+		sp_action_.reset(new ActionCheckBumper);
+	else if (action_i_ == ac_bumper_hit_test)
+		sp_action_.reset(new MoveTypeBumperHitTest);
+	else if (action_i_ == ac_check_vacuum)
+		sp_action_.reset(new ActionCheckVacuum);
+	else if (action_i_ == ac_movement_direct_go)
+		sp_action_.reset(new MovementDirectGo);
 	else if(action_i_ == ac_null)
 		sp_action_.reset();
 	PP_INFO();
@@ -336,9 +217,9 @@ void ACleanMode::stateInit(int next)
 		ev.remote_home = false;
 		ev.battery_home = false;
 
-		ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_cells_.size());
 		if (go_home_path_algorithm_ == nullptr)
 			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(nav_map, home_cells_));
+		ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_cells_.size());
 
 	}
 	if (next == st_tmp_spot) {
@@ -392,8 +273,11 @@ uint8_t ACleanMode::saveFollowWall(bool is_left)
 	return 1;
 }
 
-bool ACleanMode::MovementFollowWallisFinish()
+bool ACleanMode::ActionFollowWallisFinish()
 {
 	return false;
 }
+
+
+
 

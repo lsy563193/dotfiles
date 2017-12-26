@@ -14,7 +14,7 @@ ActionLinear::ActionLinear() {
 	turn_target_angle_ = p_clean_mode->new_dir_;
 	ROS_INFO("%s,%d: mt_is_linear,turn(%d)", __FUNCTION__, __LINE__, turn_target_angle_);
 	movement_i_ = mm_turn;
-	sp_movement_.reset(new MovementTurn(turn_target_angle_));
+	sp_movement_.reset(new MovementTurn(turn_target_angle_, ROTATE_TOP_SPEED));
 //	ROS_INFO("%s,%d: mt_is_linear,turn(%d)", __FUNCTION__, __LINE__, turn_target_angle_);
 //	ROS_ERROR("%s,%d: mt_is_linear,turn(%d)", __FUNCTION__, __LINE__, turn_target_angle_);
 	IMovement::sp_mt_ = this;
@@ -46,7 +46,7 @@ bool ActionLinear::isFinish()
 			nav_map.saveBlocks(true);
 			if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered) {
 				movement_i_ = mm_back;
-				sp_movement_.reset(new MovementBack);
+				sp_movement_.reset(new MovementBack(0.01, BACK_MAX_SPEED));
 			}
 			else {
 //				resetTriggeredValue();

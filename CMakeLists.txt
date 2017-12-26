@@ -42,10 +42,12 @@ FILE(GLOB PP_SRC
 	src/mode/mode_idle.cpp
 	src/mode/mode_remote.cpp
 	src/mode/mode_go_to_charger.cpp
+	src/mode/clean_mode_exploration.cpp
 	src/mode/clean_mode.cpp
 	src/mode/clean_mode_navigation.cpp
 	src/mode/clean_mode_follow_wall.cpp
 	src/mode/clean_mode_spot.cpp
+	src/mode/clean_mode_test.cpp
 
 	src/path_algorithm/path_algorithm.cpp
 	src/path_algorithm/path_algorithm_navigation_clean.cpp
@@ -65,20 +67,21 @@ FILE(GLOB PP_SRC
 	src/action/action_sleep.cpp
 	src/action/action_idle.cpp
 	src/action/action_pause.cpp
+	src/action/action_check_vacuum.cpp
+	src/action/action_check_bumper.cpp
 
 	src/action/move_type/move_type.cpp
 	src/action/move_type/action_linear.cpp
 	src/action/move_type/action_follow_wall.cpp
 	src/action/move_type/move_type_go_to_charger.cpp
+	src/action/move_type/move_type_bumper_hit_test.cpp
 	src/action/move_type/movement/movement.cpp
 	src/action/move_type/movement/movement.cpp
 	src/action/move_type/movement/movement_back.cpp
 	src/action/move_type/movement/movement_back.cpp
 	src/action/move_type/movement/movement_follow_wall_infrared.cpp
 	src/action/move_type/movement/movement_follow_wall_lidar.cpp
-	src/action/move_type/movement/movement_forward.cpp
-	src/action/move_type/movement/movement_forward.cpp
-	src/action/move_type/movement/movement_go_charger.cpp
+	src/action/move_type/movement/movement_follow_point_linear.cpp
 	src/action/move_type/movement/movement_go_charger.cpp
 	src/action/move_type/movement/movement_exception_resume.cpp
 	src/action/move_type/movement/movement_turn.cpp
@@ -87,6 +90,8 @@ FILE(GLOB PP_SRC
 	src/action/move_type/movement/movement_stay.cpp
 	src/action/move_type/movement/movement_direct_go.cpp
 	src/action/move_type/movement/movement_straight.cpp
+	src/action/move_type/movement/movement_forward_turn.cpp
+				src/action/move_type/movement_follow_point.cpp
 
 	src/error.cpp
 	src/event_manager.cpp

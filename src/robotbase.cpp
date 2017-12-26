@@ -306,7 +306,12 @@ void robotbase_routine_cb()
 //		printf("bl(%d),br(%d)\n",bumper.getLeft(), bumper.getRight());
 
 		bumper.setLidarBumperStatus();
-		sensor.rbumper = static_cast<uint8_t>(bumper.getLidarBumperStatus());
+		if (bumper.getLidarBumperStatus())
+		{
+			sensor.lbumper = sensor.rbumper = 1;
+			bumper.setLeft(true);
+			bumper.setRight(true);
+		}
 
 		sensor.ir_ctrl = serial.receive_stream[REC_REMOTE_IR];
 		if (sensor.ir_ctrl > 0)
@@ -688,6 +693,10 @@ Mode *getNextMode(int next_mode_i_)
 			return new CleanModeFollowWall();
 		case Mode::cm_spot:
 			return new CleanModeSpot();
+		case Mode::cm_test:
+			return new CleanModeTest();
+		case Mode::cm_exploration:
+			return new CleanModeExploration();
 //		case Mode::cm_exploration:
 //			return new CleanModeExploration();
 		default:
