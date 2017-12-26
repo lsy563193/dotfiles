@@ -33,7 +33,7 @@ public:
 	Point32_t target_point_;
 protected:
 //	Path_t passed_path_;
-//	Path_t plan_path_;
+//	Path_t tmp_plan_path_;
 	int16_t turn_target_angle_{};
 	float back_distance_;
 	enum{//movement

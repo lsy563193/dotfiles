@@ -4,10 +4,34 @@
 #include "pp.h"
 #include "arch.hpp"
 
-#define WF_SPEED						((int32_t) 20)
 #define WF_SCAN_TYPE						(2)
 
 const double CHASE_X = 0.107;
+
+MovementFollowWallLidar::MovementFollowWallLidar(bool is_left)
+				: IFollowWall(is_left)
+{
+	min_speed_ = FALL_WALL_MIN_SPEED;
+	max_speed_ = FALL_WALL_MAX_SPEED;
+	base_speed_ = min_speed_;
+	tick_limit_ = 0;
+
+//	path_thread_ = new boost::thread(boost::bind(&MovementFollowWallLidar::calcTmpTarget));
+//	path_thread_->detach();
+}
+
+Point32_t MovementFollowWallLidar::calcTmpTarget() {
+	if(calcLidarPath())
+	{
+		if (!tmp_plan_path_.empty()) {
+			auto curr = nav_map.getCurrPoint();
+			if (std::abs(curr.X - tmp_plan_path_.front().X) < 30 && std::abs(curr.Y - tmp_plan_path_.front().Y) < 30) {
+				tmp_plan_path_.pop_front();
+			}
+		}
+	}
+	return tmp_plan_path_.front();
+}
 
 Vector2<double> MovementFollowWallLidar::polar_to_cartesian(double polar,int i)
 {
@@ -70,14 +94,8 @@ bool MovementFollowWallLidar::check_is_valid(Vector2<double> point, Paras para, 
 	return true;
 }
 
-MovementFollowWallLidar::MovementFollowWallLidar(bool is_left)
-				: MovementFollowWallInfrared(is_left)
-{
-	transform_thread_ = new boost::thread(boost::bind(&MovementFollowWallLidar::calcTmpTarget));
-	tmp_target_ = calcTmpTarget();
-}
-
-bool MovementFollowWallLidar::getLidarPath(std::vector<Vector2<double>> &points) {
+bool MovementFollowWallLidar::calcLidarPath() {
+	std::vector<Vector2<double>> points{};
 	Paras para{is_left_};
 	auto scan = Lidar::getLidarScanDataOriginal();
 
@@ -128,89 +146,15 @@ bool MovementFollowWallLidar::getLidarPath(std::vector<Vector2<double>> &points)
 		return a.Distance({CHASE_X, 0}) < b.Distance({CHASE_X, 0});
 	});
 	robot::instance()->pubPointMarkers(&points, scan.header.frame_id);
+
+	tmp_plan_path_.clear();
+	for (const auto& iter : points) {
+		tmp_plan_path_.push_back(GridMap::getRelative(GridMap::getCurrPoint(), int(iter.Y * 1000), int(iter.X * 1000), true));
+	}
+
 	return true;
 }
 
-Point32_t MovementFollowWallLidar::calcTmpTarget() {
-	std::vector<Vector2<double>> relative_plan_path{};
-	if(getLidarPath(relative_plan_path))
-		plan_path_.clear();
-	for (const auto& iter : relative_plan_path) {
-		plan_path_.push_back(GridMap::getRelative(GridMap::getCurrPoint(), int(iter.Y * 1000), int(iter.X * 1000), true));
-	}
-	{
-		if (!plan_path_.empty()) {
-			auto curr = nav_map.getCurrPoint();
-			if (std::abs(curr.X - tmp_target_.X) < 30 && std::abs(curr.Y - tmp_target_.Y) < 30) {
-				plan_path_.pop_front();
-			}
-			tmp_target_ = plan_path_.front();
-		}
-	}
-	return tmp_target_;
-}
-
-void MovementFollowWallLidar::adjustSpeed(int32_t &left_speed, int32_t &right_speed) {
-	wheel.setDirectionForward();
-
-	tmp_target_ = calcTmpTarget();
-
-	auto curr = GridMap::getCurrPoint();
-	auto angle_diff = ranged_angle( course_to_dest(curr, tmp_target_) - GridMap::getCurrPoint().TH);
-
-	ROS_ERROR("find target:left_speed(%d),right_speed(%d)", left_speed, right_speed);
-
-	if (plan_path_.empty() || is_left_ ? (angle_diff > 450) : (angle_diff < -450)) {
-		_adjustSpeed(left_speed, right_speed,8,31);
-	}
-	else {
-		/*if ((is_left_ ? (angle_diff < -10) : (angle_diff > 10))) {
-			if ((is_left_ ? angle_diff < -600 : angle_diff > 600)) {
-				tmp_target_ = calcTmpTarget();
-			}
-			auto tmp_angle_diff = ranged_angle( course_to_dest(curr, tmp_target_) - GridMap::getCurrPoint().TH);
-			is_sp_turn = !(is_left_ ? (tmp_angle_diff > -10) : (tmp_angle_diff < 10));
-			_adjustSpeed(left_speed, right_speed,10,-10);
-		} else */
-		{
-			_adjustSpeed(left_speed, right_speed,0,0,angle_diff,20);
-		}
-	}
-}
-
-void MovementFollowWallLidar::_adjustSpeed(int32_t& left_speed, int32_t& right_speed,int lower, int faster,int16_t angle_diff ,int kp) {
-	if(kp ==  0) {
-		if (is_left_) {
-			left_speed = lower;
-			right_speed = faster;
-		}
-		else {
-			left_speed = faster;
-			right_speed = lower;
-		}
-	}else {
-		if (integration_cycle_++ > 10) {
-			integration_cycle_ = 0;
-			integrated_ += angle_diff;
-			check_limit(integrated_, -150, 150);
-		}
-
-		if (base_speed_ < WF_SPEED) {
-			base_speed_++;
-		}
-		if (is_left_) {
-			left_speed = base_speed_ - angle_diff / kp -
-									 integrated_ / 150; // - Delta / 20; // - Delta * 10 ; // - integrated_ / 2500;
-			right_speed = base_speed_ + angle_diff / kp +
-										integrated_ / 150; // + Delta / 20;// + Delta * 10 ; // + integrated_ / 2500;
-		}
-		else {
-			left_speed = base_speed_ - angle_diff / kp -
-									 integrated_ / 150; // - Delta / 20; // - Delta * 10 ; // - integrated_ / 2500;
-			right_speed = base_speed_ + angle_diff / kp +
-										integrated_ / 150; // + Delta / 20;// + Delta * 10 ; // + integrated_ / 2500;
-		}
-	}
-
-	base_speed_ = (left_speed + right_speed) / 2;
+bool MovementFollowWallLidar::isFinish() {
+	return false;
 }

@@ -7,14 +7,16 @@
 
 MovementFollowPointLinear::MovementFollowPointLinear()
 {
-//	sp_mt_->sp_cm_->plan_path_ = path;
-//	s_target_p = GridMap::cellToPoint(sp_mt_->sp_cm_->plan_path_.back());
-	base_speed_ = LINEAR_MIN_SPEED,
-	tmp_target_ = calcTmpTarget();
+	min_speed_ = LINEAR_MIN_SPEED;
+	max_speed_ = LINEAR_MAX_SPEED;
+//	sp_mt_->sp_cm_->tmp_plan_path_ = path;
+//	s_target_p = GridMap::cellToPoint(sp_mt_->sp_cm_->tmp_plan_path_.back());
+	base_speed_ = LINEAR_MIN_SPEED;
+	tick_limit_ = 1;
 //	sp_mt_->sp_cm_->plan_path_display_sp_mt_->sp_cm_->plan_path_points();
 //	g_is_should_follow_wall = false;
 //	s_target = target;
-//	sp_mt_->sp_cm_->plan_path_ = path;
+//	sp_mt_->sp_cm_->tmp_plan_path_ = path;
 }
 
 Point32_t MovementFollowPointLinear::calcTmpTarget()
@@ -31,82 +33,19 @@ Point32_t MovementFollowPointLinear::calcTmpTarget()
 		dis *= -1;
 	target_xy = curr_xy + dis;
 
-	return tmp_target;
-}
-
-void MovementFollowPointLinear::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
-{
-//	PP_INFO();
-//	ROS_WARN("%s,%d: g_p_clean_mode->plan_path_size(%d)",__FUNCTION__, __LINE__,p_clean_mode->plan_path_.size());
-	wheel.setDirectionForward();
-	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mt_->sp_mode_);
-
-	tmp_target_ = calcTmpTarget();
-
-	auto new_dir = p_clean_mode->new_dir_;
-
-	auto target = GridMap::cellToPoint(p_clean_mode->plan_path_.front());
-
-	auto tmp_xy = (GridMap::isXDirection(new_dir)) ? tmp_target_.X : tmp_target_.Y;
-	auto target_xy = (GridMap::isXDirection(new_dir)) ? target.X : target.Y;
+	auto tmp_xy = (GridMap::isXDirection(new_dir)) ? tmp_target.X : tmp_target.Y;
 	auto is_beyond = (GridMap::isPositiveDirection(new_dir)) ? target_xy <= tmp_xy : target_xy >= tmp_xy;
-//	ROS_ERROR("%s,%d,target,tmp(%d,%d)",__FUNCTION__,__LINE__,target_xy, tmp_xy);
 	if(is_beyond && p_clean_mode->plan_path_.size()>1)
 	{
 		p_clean_mode->old_dir_ = p_clean_mode->new_dir_;
 		p_clean_mode->new_dir_ = (MapDirection)p_clean_mode->plan_path_.front().TH;
 		p_clean_mode->plan_path_.pop_front();
-		tmp_target_ = calcTmpTarget();
+		tmp_target = calcTmpTarget();
 		ROS_INFO("%s,%d,dir(%d,%d)target(%d,%d)",__FUNCTION__,__LINE__,p_clean_mode->old_dir_,p_clean_mode->new_dir_,(MapDirection)p_clean_mode->plan_path_.front().X,(MapDirection)p_clean_mode->plan_path_.front().Y);
 		ROS_INFO("%s,%d,target,tmp(%d,%d)",__FUNCTION__,__LINE__,target_xy, tmp_xy);
 	}
 
-	auto curr_p = nav_map.getCurrPoint();
-	auto angle_diff = ranged_angle(
-					course_to_dest(curr_p, tmp_target_) - robot::instance()->getPoseAngle());
-	if (integration_cycle_++ > 10) {
-		auto t = nav_map.pointToCell(tmp_target_);
-		robot::instance()->pubCleanMapMarkers(nav_map, p_clean_mode->plan_path_, &t);
-		integration_cycle_ = 0;
-		integrated_ += angle_diff;
-		check_limit(integrated_, -150, 150);
-	}
-	auto distance = two_points_distance(curr_p.X, curr_p.Y, tmp_target_.X, tmp_target_.Y);
-	auto obstalce_distance_front = lidar.getObstacleDistance(0,ROBOT_RADIUS);
-	uint8_t obs_state = obs.getStatus();
-	bool is_decrease_blocked = decrease_map.isFrontBlocked();
-	if (obs_state > 0 || (distance < SLOW_DOWN_DISTANCE) || nav_map.isFrontBlockBoundary(3) || (obstalce_distance_front < 0.25) || is_decrease_blocked)
-	{
-//		ROS_WARN("decelarate");
-		if (distance < SLOW_DOWN_DISTANCE)
-			angle_diff = 0;
-		integrated_ = 0;
-		if (base_speed_ > (int32_t) LINEAR_MIN_SPEED){
-			base_speed_--;
-		}
-	}
-	else if (base_speed_ < (int32_t) LINEAR_MAX_SPEED) {
-		if (tick_++ > 1) {
-			tick_ = 0;
-			base_speed_++;
-		}
-		integrated_ = 0;
-	}
-
-	left_speed =
-					base_speed_ - angle_diff / 20 - integrated_ / 150; // - Delta / 20; // - Delta * 10 ; // - integrated_ / 2500;
-	right_speed =
-					base_speed_ + angle_diff / 20 + integrated_ / 150; // + Delta / 20;// + Delta * 10 ; // + integrated_ / 2500;
-//		ROS_ERROR("left_speed(%d),right_speed(%d),angle_diff(%d), intergrated_(%d)",left_speed, right_speed, angle_diff, integrated_);
-
-#if LINEAR_MOVE_WITH_PATH
-	check_limit(left_speed, 0, LINEAR_MAX_SPEED);
-	check_limit(right_speed, 0, LINEAR_MAX_SPEED);
-#else
-	check_limit(left_speed, LINEAR_MIN_SPEED, LINEAR_MAX_SPEED);
-	check_limit(right_speed, LINEAR_MIN_SPEED, LINEAR_MAX_SPEED);
-#endif
-	base_speed_ = (left_speed + right_speed) / 2;
+	return tmp_target;
 }
 
 bool MovementFollowPointLinear::isFinish()
@@ -281,8 +220,8 @@ bool MovementFollowPointLinear::isPassTargetStop()
 //{
 //	turn_angle = ranged_angle(
 //						course_to_dest(s_curr_p.X, s_curr_p.Y, cm_target_p_.X, cm_target_p_.Y) - robot::instance()->getPoseAngle());
-//	s_target_p = nav_map.cellToPoint(p_clean_mode->plan_path_.back());
-//	p_clean_mode->plan_path_ = p_clean_mode->plan_path_;
+//	s_target_p = nav_map.cellToPoint(p_clean_mode->tmp_plan_path_.back());
+//	p_clean_mode->tmp_plan_path_ = p_clean_mode->tmp_plan_path_;
 //}
 
 void MovementFollowPointLinear::setBaseSpeed()

@@ -90,6 +90,8 @@ FILE(GLOB PP_SRC
 	src/action/move_type/movement/movement_stay.cpp
 	src/action/move_type/movement/movement_direct_go.cpp
 	src/action/move_type/movement/movement_straight.cpp
+	src/action/move_type/movement/movement_forward_turn.cpp
+	src/action/move_type/follow_point.cpp
 
 	src/error.cpp
 	src/event_manager.cpp
