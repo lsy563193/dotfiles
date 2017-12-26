@@ -32,7 +32,6 @@ ModeRemote::ModeRemote()
 	event_manager_reset_status();
 
 	remote_mode_time_stamp_ = ros::Time::now().toSec();
-	time_out_ = false;
 }
 
 ModeRemote::~ModeRemote()
@@ -49,7 +48,7 @@ ModeRemote::~ModeRemote()
 
 bool ModeRemote::isExit()
 {
-	if (time_out_ || ev.key_clean_pressed)
+	if ((action_i_ == ac_movement_stay && sp_action_->isTimeUp()) || ev.key_clean_pressed)
 	{
 		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
 		setNextMode(md_idle);
@@ -95,7 +94,7 @@ IAction* ModeRemote::getNextAction()
 		if (bumper.get_status() || cliff.get_status())
 		{
 			action_i_ = ac_back;
-			return new MovementBack();
+			return new MovementBack(0.01, BACK_MAX_SPEED);
 		}
 		else if (ev.remote_direction_forward)
 		{
@@ -107,13 +106,13 @@ IAction* ModeRemote::getNextAction()
 		{
 			action_i_ = ac_turn;
 			ev.remote_direction_left = false;
-			return new MovementTurn(static_cast<int16_t>(robot::instance()->getPoseAngle() + 300));
+			return new MovementTurn(static_cast<int16_t>(robot::instance()->getPoseAngle() + 300), ROTATE_TOP_SPEED);
 		}
 		else if (ev.remote_direction_right)
 		{
 			action_i_ = ac_turn;
 			ev.remote_direction_right = false;
-			return new MovementTurn(static_cast<int16_t>(robot::instance()->getPoseAngle() - 300));
+			return new MovementTurn(static_cast<int16_t>(robot::instance()->getPoseAngle() - 300), ROTATE_TOP_SPEED);
 		}
 	}
 
@@ -123,7 +122,7 @@ IAction* ModeRemote::getNextAction()
 		{
 			PP_INFO();
 			action_i_ = ac_back;
-			return new MovementBack();
+			return new MovementBack(0.01, BACK_MAX_SPEED);
 		}
 		else
 		{
@@ -140,7 +139,7 @@ IAction* ModeRemote::getNextAction()
 		if (bumper.get_status() || cliff.get_status())
 		{
 			action_i_ = ac_back;
-			return new MovementBack();
+			return new MovementBack(0.01, BACK_MAX_SPEED);
 		}
 		else
 		{

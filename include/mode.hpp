@@ -10,7 +10,8 @@
 #include "boost/shared_ptr.hpp"
 #include "move_type.hpp"
 
-class Mode:public EventHandle {
+class Mode:public EventHandle
+{
 public:
 	virtual ~Mode() { };
 	void run();
@@ -35,7 +36,9 @@ public:
 		cm_navigation,
 		cm_wall_follow,
 		cm_spot,
-		cm_exploration
+		cm_exploration,
+
+		cm_test,
 	};
 
 	int next_mode_i_;
@@ -64,7 +67,10 @@ public:
 		ac_movement_stay,
 		ac_movement_direct_go,
 		ac_pause,
-		ac_exception_resume
+		ac_exception_resume,
+		ac_check_bumper,
+		ac_check_vacuum,
+		ac_bumper_hit_test,
 	};
 
 	bool isExceptionTriggered();
@@ -143,8 +149,6 @@ public:
 	bool isExit() override ;
 	bool isFinish() override ;
 
-	IAction* getNextAction();
-
 	// For exit event handling.
 	void remoteClean(bool state_now, bool state_last) override ;
 	void keyClean(bool state_now, bool state_last) override ;
@@ -152,7 +156,6 @@ public:
 
 private:
 	bool plan_activated_status_;
-	bool directly_charge_;
 };
 
 class ModeRemote: public Mode
@@ -175,7 +178,6 @@ public:
 
 private:
 	double remote_mode_time_stamp_;
-	bool time_out_;
 
 };
 
@@ -201,8 +203,8 @@ public:
 	MapDirection old_dir_{MAP_POS_X};
 	MapDirection new_dir_{MAP_POS_X};
 
-	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_;
-	boost::shared_ptr<APathAlgorithm> go_home_path_algorithm_;
+	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
+	boost::shared_ptr<APathAlgorithm> go_home_path_algorithm_{};
 
 protected:
 
@@ -307,6 +309,7 @@ public:
 	CleanModeFollowWall();
 	~CleanModeFollowWall() override ;
 
+	bool setNextAction() override ;
 	bool mapMark() override;
 
 
@@ -325,14 +328,33 @@ class CleanModeSpot:public ACleanMode
 {
 public:
 	CleanModeSpot();
-	~CleanModeSpot() = default;
-
+	~CleanModeSpot();
+	bool isFinish() override;
 	bool mapMark() override;
-
+	bool isExit();
+	bool setNextAction();
 private:
 protected:
 //	Path_t home_point_{};
 private:
+	bool has_aligned_and_open_slam;
+};
+
+class CleanModeTest:public ACleanMode
+{
+public:
+	CleanModeTest();
+	~CleanModeTest() = default;
+
+	bool mapMark() override;
+
+	bool isFinish() override;
+
+	bool setNextAction() override;
+
+	void keyClean(bool state_now, bool state_last) override ;
+	void remoteMax(bool state_now, bool state_last) override ;
+	void remoteDirectionForward(bool state_now, bool state_last) override ;
 
 };
 #endif //PP_MODE_H_H

@@ -30,6 +30,12 @@ bool ModeIdle::isExit()
 {
 	if(ev.key_clean_pressed || plan_activated_status_)
 	{
+		if (ev.key_clean_pressed && bumper.getLeft())
+		{
+			ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+			setNextMode(cm_test);
+			return true;
+		}
 		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
 		setNextMode(cm_navigation);
 		return true;

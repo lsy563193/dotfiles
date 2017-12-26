@@ -29,19 +29,63 @@ protected:
 	static float s_pos_y;
 //	static Path_t path_;
 };
+
 class IFollowPoint{
 public:
 	virtual Point32_t calcTmpTarget()=0;
+protected:
+	Point32_t tmp_target_{};
+	uint8_t integration_cycle_{};
+	int32_t integrated_{};
+	int32_t base_speed_{};
+	const double TIME_STRAIGHT{0.2};
 };
-class MovementForward: public IMovement,public IFollowPoint{
+
+class MovementBack: public IMovement{
 public:
-//	MovementForward(Point32_t);
-	MovementForward();
-//	~MovementForward(){ };
+	explicit MovementBack(float back_distance, uint8_t max_speed);
+	~MovementBack(){
+		//set_wheel.speed(1, 1);
+	}
+	void adjustSpeed(int32_t&, int32_t&);
+	bool isLidarStop();
+	void updateStartPose();
+	bool isFinish();
+
+private:
+	uint8_t max_speed_;
+	float back_distance_;
+	int32_t speed_;
+	uint8_t bumper_jam_cnt_;
+	uint8_t cliff_jam_cnt_;
+	float lidar_detect_distance;
+};
+
+class MovementTurn: public IMovement{
+public:
+
+	explicit MovementTurn(int16_t target_angle, uint8_t max_speed);
+	void adjustSpeed(int32_t&, int32_t&) override;
+	bool isReach();
+	bool shouldMoveBack();
+	bool isFinish() override;
+
+private:
+	uint8_t max_speed_;
+	uint16_t accurate_;
+	uint8_t speed_;
+	int16_t target_angle_;
+};
+
+class MovementFollowPointLinear:public IMovement,public IFollowPoint
+{
+public:
+//	MovementFollowPointLinear(Point32_t);
+	MovementFollowPointLinear();
+//	~MovementFollowPointLinear(){ };
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
 	bool isFinish();
 
-	Point32_t tmp_target_{};
 	bool isRconStop();
 	bool isOBSStop();
 	bool isLidarStop();
@@ -55,60 +99,23 @@ public:
 	bool isCellReach();
 	bool isPoseReach();
 
-	Point32_t calcTmpTarget();
+	Point32_t calcTmpTarget() override;
 
 private:
 
-	int32_t integrated_;
-	int32_t base_speed_;
-	uint8_t integration_cycle_;
-	uint32_t tick_;
-	uint8_t turn_speed_;
+	uint32_t tick_{};
+	uint8_t turn_speed_{};
 ////	PPTargetType path_;
-	float odom_x_start;
-	float odom_y_start;
+	float odom_x_start{};
+	float odom_y_start{};
 };
 
-class MovementBack: public IMovement{
-public:
-	MovementBack(float back_distance = 0.01);
-	~MovementBack(){
-		//set_wheel.speed(1, 1);
-	}
-	void adjustSpeed(int32_t&, int32_t&);
-	bool isLidarStop();
-	void updateStartPose();
-	bool isFinish();
-
-private:
-	float back_distance_;
-	int32_t speed_;
-	uint8_t bumper_jam_cnt_;
-	uint8_t cliff_jam_cnt_;
-	float lidar_detect_distance;
-};
-
-class MovementTurn: public IMovement{
-public:
-
-	MovementTurn(int16_t target_angle);
-	void adjustSpeed(int32_t&, int32_t&) override;
-	bool isReach();
-	bool shouldMoveBack();
-	bool isFinish() override;
-
-private:
-	uint16_t accurate_;
-	uint8_t speed_;
-	int16_t target_angle_;
-};
-
-class MovementFollowWall:public IMovement {
+class MovementFollowWallInfrared:public IMovement{
 
 public:
-	MovementFollowWall(bool is_left);
+	explicit MovementFollowWallInfrared(bool is_left);
 
-	~MovementFollowWall() { /*set_wheel.speed(0,0);*/ };
+	~MovementFollowWallInfrared() { /*set_wheel.speed(0,0);*/ };
 
 	bool isFinish();
 	void reset_sp_turn_count() {
@@ -160,8 +167,22 @@ private:
 	double time_right_angle = 0;
 	int32_t same_speed_;
 	int32_t diff_speed_;
-private:
+protected:
 	bool is_left_{true};
+};
+
+class MovementFollowWallLidar:public IFollowPoint, public MovementFollowWallInfrared
+{
+public:
+	explicit MovementFollowWallLidar(bool is_left);
+
+	void adjustSpeed(int32_t&, int32_t&) override ;
+
+	Point32_t calcTmpTarget() override ;
+
+private:
+	bool is_no_target{};
+	bool is_sp_turn{};
 };
 
 class MovementGoToCharger: public IMovement
@@ -239,16 +260,21 @@ private:
 	uint8_t bumper_jam_state_;
 };
 
-class MovementTurnForCharger :public IMovement
+class MovementCharge :public IMovement
 {
 public:
-	MovementTurnForCharger();
-	~MovementTurnForCharger() override ;
+	MovementCharge();
+	~MovementCharge() override ;
 
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed) override;
 	bool isFinish() override;
+	void run() override;
 
 private:
+	bool directly_charge_{false};
+	uint8_t disconnect_charger_count_{0};
+	time_t show_battery_info_time_stamp_;
+	bool turn_for_charger_{false};
 	double start_turning_time_stamp_;
 	bool turn_right_finish_;
 };
@@ -276,6 +302,19 @@ public:
 
 private:
 	double direct_go_time_stamp_;
+};
+
+class MovementStraight :public IMovement
+{
+public:
+	MovementStraight();
+	~MovementStraight();
+
+	void adjustSpeed(int32_t &left_speed, int32_t &right_speed) override;
+	bool isFinish() override;
+
+private:
+//	double direct_go_time_stamp_;
 };
 
 #endif //PP_MOVEMENT_HPP

@@ -30,8 +30,6 @@ Ev_t ev;
 // lidar stuck
 
 
-static EventActionType	eat;
-
 pthread_mutex_t	new_event_mtx;
 pthread_cond_t new_event_cond = PTHREAD_COND_INITIALIZER;
 
@@ -43,7 +41,9 @@ pthread_cond_t event_handler_cond = PTHREAD_COND_INITIALIZER;
 static bool g_new_event_status[EVT_MAX];
 
 PEHF p_handler[EVT_MAX];
-EventHandle deh;
+EventHandle default_eh;
+EventHandle* p_eh;
+
 void event_manager_init()
 {
 	int	j;
@@ -112,7 +112,7 @@ void event_manager_init()
 
 //	handler[EVT_LIDAR_BUMPER]=handler_lidar_stuck;
 	p_handler[EVT_LIDAR_STUCK] = &EventHandle::lidarStuck;
-	eat.peh = &deh;
+	p_eh = &default_eh;
 }
 
 void event_manager_set_enable(bool enable)
@@ -120,6 +120,7 @@ void event_manager_set_enable(bool enable)
 	g_event_manager_enabled = enable;
 	if (!enable)
 	{
+		p_eh = &default_eh;
 		//ROS_WARN("%s %d: Disable all event under manager mode_:%d", __FUNCTION__, __LINE__, evt_mgr_mode);
 		for (int i = 0; i < EVT_MAX; i++) {
 //			eat.handler[i] = NULL;
@@ -363,7 +364,7 @@ void event_handler_thread_cb() {
 	{
 //		if (eat.handler_enabled[x]) {
 //			if (eat.handler[x] == NULL) {
-				(eat.peh->*p_handler[x])(status_now[x], status_last[x]);
+				(p_eh->*p_handler[x])(status_now[x], status_last[x]);
 //			} else {
 //				eat.handler[x](status_now[x], status_last[x]);
 //			}
@@ -500,7 +501,7 @@ void event_handler_thread_cb() {
 
 void event_manager_register_handler(EventHandle* eh)
 {
-	eat.peh = eh;
+	p_eh = eh;
 }
 
 uint8_t event_manager_check_event(bool *p_eh_status_now, bool *p_eh_status_last)
@@ -818,94 +819,65 @@ void EventHandle::keyClean(bool state_now, bool state_last)
 }
 
 /* Remote */
+void df_remote()
+{
+	beeper.play_for_command(INVALID);
+	remote.reset();
+}
+
 void EventHandle::remotePlan(bool state_now, bool state_last)
 {
-
-}
-void df_remote_plan(bool state_now, bool state_last)
-{
-	if (robot_timer.getPlanStatus() == 1 || robot_timer.getPlanStatus() == 2)
-	{
-		ROS_WARN("%s %d: Remote plan is pressed.", __FUNCTION__, __LINE__);
-		beeper.play_for_command(INVALID);
-	}
-	else if (robot_timer.getPlanStatus() == 3)
-		ROS_WARN("%s %d: Plan is activated.", __FUNCTION__, __LINE__);
-
+	ROS_WARN("%s %d: Remote plan is pressed.", __FUNCTION__, __LINE__);
+	df_remote();
 	robot_timer.resetPlanStatus();
-	remote.reset();
 }
 
 void EventHandle::remoteClean(bool state_now, bool state_last)
-{}
-void df_remote_clean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote clean is pressed.", __FUNCTION__, __LINE__);
-	beeper.play_for_command(INVALID);
-	remote.reset();
+	df_remote();
 }
 
 void EventHandle::remoteHome(bool state_now, bool state_last)
-{}
-void df_remote_home(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote home is pressed.", __FUNCTION__, __LINE__);
-	beeper.play_for_command(INVALID);
-	remote.reset();
+	df_remote();
 }
 
 void EventHandle::remoteDirectionForward(bool state_now, bool state_last)
-{}
-void df_remote_direction_forward(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote forward is pressed.", __FUNCTION__, __LINE__);
-	beeper.play_for_command(INVALID);
-	remote.reset();
-}
-
-void EventHandle::remoteWallFollow(bool state_now, bool state_last)
-{}
-void df_remote_wall_follow(bool state_now, bool state_last)
-{
-	ROS_WARN("%s %d: Remote wall_follow is pressed.", __FUNCTION__, __LINE__);
-	beeper.play_for_command(INVALID);
-	remote.reset();
+	df_remote();
 }
 
 void EventHandle::remoteDirectionLeft(bool state_now, bool state_last)
-{}
-void df_remote_direction_left(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote left is pressed.", __FUNCTION__, __LINE__);
-	beeper.play_for_command(INVALID);
-	remote.reset();
+	df_remote();
 }
 
 void EventHandle::remoteDirectionRight(bool state_now, bool state_last)
-{}
-void df_remote_direction_right(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote right is pressed.", __FUNCTION__, __LINE__);
-	beeper.play_for_command(INVALID);
-	remote.reset();
+	df_remote();
 }
 
 void EventHandle::remoteSpot(bool state_now, bool state_last)
-{}
-void df_remote_spot(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote spot is pressed.", __FUNCTION__, __LINE__);
-	beeper.play_for_command(INVALID);
-	remote.reset();
+	df_remote();
+}
+
+void EventHandle::remoteWallFollow(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: Remote wall_follow is pressed.", __FUNCTION__, __LINE__);
+	df_remote();
 }
 
 void EventHandle::remoteMax(bool state_now, bool state_last)
-{}
-void df_remote_max(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
-	beeper.play_for_command(INVALID);
-	remote.reset();
+	df_remote();
 }
 
 /* Battery */

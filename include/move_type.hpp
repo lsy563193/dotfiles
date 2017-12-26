@@ -41,6 +41,7 @@ protected:
 		mm_back,
 		mm_turn,
 		mm_forward,
+		mm_straight,
 	};
 };
 
@@ -90,15 +91,27 @@ public:
 	void run() override ;
 protected:
 
-	int state_;
-	enum {
-		gtc_back_,
-		gtc_turn_,
-		gtc_,
-	};
-	boost::shared_ptr<MovementGoToCharger> sp_gtc_movement_;
-	boost::shared_ptr<IMovement> sp_turn_movement_;
-	boost::shared_ptr<IMovement> sp_back_movement_;
+	boost::shared_ptr<MovementGoToCharger> p_gtc_movement_;
+	boost::shared_ptr<IMovement> p_turn_movement_;
+	boost::shared_ptr<IMovement> p_back_movement_;
 };
 
+class MoveTypeBumperHitTest: public IMoveType
+{
+public:
+	MoveTypeBumperHitTest();
+	~MoveTypeBumperHitTest() = default;
+
+	bool isFinish() override;
+
+	void run() override ;
+
+private:
+	bool turn_left_{true};
+	int16_t turn_target_angle_{0};
+	double turn_time_stamp_;
+	boost::shared_ptr<IMovement> p_direct_go_movement_;
+	boost::shared_ptr<IMovement> p_turn_movement_;
+	boost::shared_ptr<IMovement> p_back_movement_;
+};
 #endif //PP_MOVE_TYPE_HPP

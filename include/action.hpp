@@ -11,7 +11,7 @@
 
 class IAction{
 public:
-
+	IAction();
 	virtual ~IAction() = default;
 
 	virtual bool isFinish()=0;
@@ -82,7 +82,8 @@ private:
 };
 
 
-class ActionIdle :public IAction {
+class ActionIdle :public IAction
+{
 public:
 	ActionIdle();
 	~ActionIdle();
@@ -90,19 +91,6 @@ public:
 	void run();
 private:
 
-};
-
-class ActionCharge :public IAction
-{
-public:
-	explicit ActionCharge(bool play_start_wav);
-	~ActionCharge() override;
-	bool isFinish() override;
-	void run() override;
-
-private:
-	uint8_t disconnect_charger_count_;
-	time_t show_battery_info_time_stamp_;
 };
 
 class ActionPause :public IAction
@@ -117,5 +105,29 @@ public:
 private:
 	double pause_start_time_;
 	Pose pause_pose_;
+};
+
+class ActionCheckVacuum: public IAction
+{
+public:
+	ActionCheckVacuum();
+	~ActionCheckVacuum() = default;
+
+	bool isFinish() override;
+	bool isExit() override;
+
+	void run() override;
+};
+
+class ActionCheckBumper: public IAction
+{
+public:
+	ActionCheckBumper();
+	~ActionCheckBumper() = default;
+
+	bool isFinish() override;
+	bool isExit() override;
+
+	void run() override;
 };
 #endif //PP_ACTION_H

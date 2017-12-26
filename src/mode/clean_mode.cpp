@@ -253,6 +253,7 @@ Cell_t ACleanMode::updatePath()
 	else if (!is_equal_with_angle_(curr, last_))
 	{
 		last_ = curr;
+		plan_path_.pop_front();
 		auto loc = std::find_if(passed_path_.begin(), passed_path_.end(), [&](Cell_t it) {
 				return is_equal_with_angle_(curr, it);
 		});
@@ -295,6 +296,14 @@ void ACleanMode::genNextAction()
 		sp_action_.reset(new MoveTypeGoToCharger);
 	else if (action_i_ == ac_exception_resume)
 		sp_action_.reset(new MovementExceptionResume);
+	else if (action_i_ == ac_check_bumper)
+		sp_action_.reset(new ActionCheckBumper);
+	else if (action_i_ == ac_bumper_hit_test)
+		sp_action_.reset(new MoveTypeBumperHitTest);
+	else if (action_i_ == ac_check_vacuum)
+		sp_action_.reset(new ActionCheckVacuum);
+	else if (action_i_ == ac_movement_direct_go)
+		sp_action_.reset(new MovementDirectGo);
 	else if(action_i_ == ac_null)
 		sp_action_.reset();
 	PP_INFO();

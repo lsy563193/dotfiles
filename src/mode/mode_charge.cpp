@@ -17,13 +17,11 @@ ModeCharge::ModeCharge()
 	event_manager_register_handler(this);
 	event_manager_reset_status();
 	event_manager_set_enable(true);
-	sp_action_.reset(new ActionCharge(true));
-	PP_INFO();
+	sp_action_.reset(new MovementCharge);
 	action_i_ = ac_charge;
 	serial.setCleanMode(Clean_Mode_Charging);
 
 	plan_activated_status_ = false;
-	directly_charge_ = (charger.getChargeStatus() == 4);
 	PP_INFO();
 }
 
@@ -50,39 +48,18 @@ bool ModeCharge::isFinish()
 {
 	if (sp_action_->isFinish())
 	{
-		sp_action_.reset(getNextAction());
-		if (sp_action_ == nullptr)
+		// todo: Temperary not quit charging if full.
+		if (charger.isOnStub() && battery.isFull())
 		{
-			setNextMode(md_idle);
-			return true;
+			led.set_mode(LED_STEADY, LED_GREEN);
+			return false;
 		}
+
+		setNextMode(md_idle);
+		return true;
 	}
 
 	return false;
-}
-
-IAction* ModeCharge::getNextAction()
-{
-	if (action_i_ == ac_charge)
-	{
-		if (directly_charge_)
-			return nullptr;
-		else
-		{
-			action_i_ = ac_turn_for_charger;
-			return new MovementTurnForCharger;
-		}
-	}
-	else if (action_i_ == ac_turn_for_charger)
-	{
-		if (charger.getChargeStatus())
-		{
-			action_i_ = ac_charge;
-			return new ActionCharge(false);
-		}
-		else
-			return nullptr;
-	}
 }
 
 void ModeCharge::remoteClean(bool state_now, bool state_last)
@@ -134,7 +111,7 @@ void ModeCharge::remotePlan(bool state_now, bool state_last)
 		else if (charger.getChargeStatus() == 4)
 		{
 			ROS_WARN("%s %d: Plan not activated not valid because of charging with adapter.", __FUNCTION__, __LINE__);
-			//speaker.play(???);
+			// todo: speaker.play(???);
 			speaker.play(VOICE_CANCEL_APPOINTMENT);
 		}
 		else
