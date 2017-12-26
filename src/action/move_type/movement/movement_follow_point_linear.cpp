@@ -57,14 +57,13 @@ bool MovementFollowPointLinear::isFinish()
 bool MovementFollowPointLinear::isCellReach()
 {
 	// Checking if robot has reached target cell.
-	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mt_->sp_mode_);
 	auto s_curr_p = nav_map.getCurrPoint();
-	auto target_p = nav_map.cellToPoint(p_clean_mode->plan_path_.back());
+	auto target_p = sp_mt_->target_point_;
 	if (std::abs(s_curr_p.X - target_p.X) < CELL_COUNT_MUL_1_2 &&
 		std::abs(s_curr_p.Y - target_p.Y) < CELL_COUNT_MUL_1_2)
 	{
 		ROS_INFO("\033[1m""%s, %d: MovementFollowPointLinear, reach the target cell (%d,%d)!!""\033[0m", __FUNCTION__, __LINE__,
-						 p_clean_mode->plan_path_.back().X, p_clean_mode->plan_path_.back().Y);
+						 sp_mt_->target_point_.X, sp_mt_->target_point_.Y);
 //		g_turn_angle = ranged_angle(new_dir - robot::instance()->getPoseAngle());
 		return true;
 	}
@@ -77,11 +76,10 @@ bool MovementFollowPointLinear::isPoseReach()
 	// Checking if robot has reached target cell and target angle.
 //	PP_INFO();
 	auto target_angle = sp_mt_->target_point_.TH;
-	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mt_->sp_mode_);
 	if (isCellReach() && std::abs(ranged_angle(robot::instance()->getPoseAngle() - target_angle)) < 200)
 	{
 		ROS_INFO("\033[1m""%s, %d: MovementFollowPointLinear, reach the target cell and pose(%d,%d,%d)!!""\033[0m", __FUNCTION__, __LINE__,
-				 p_clean_mode->plan_path_.back().X, p_clean_mode->plan_path_.back().Y, p_clean_mode->plan_path_.back().TH);
+				 sp_mt_->target_point_.X, sp_mt_->target_point_.Y, sp_mt_->target_point_.TH);
 		return true;
 	}
 	return false;
@@ -89,34 +87,34 @@ bool MovementFollowPointLinear::isPoseReach()
 
 bool MovementFollowPointLinear::isNearTarget()
 {
-	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mt_->sp_mode_);
-	auto new_dir = p_clean_mode->new_dir_;
-	auto s_curr_p = nav_map.getCurrPoint();
-	auto curr = (GridMap::isXDirection(new_dir)) ? s_curr_p.X : s_curr_p.Y;
-	auto target_p = nav_map.cellToPoint(p_clean_mode->plan_path_.front());
-	auto &target = (GridMap::isXDirection(new_dir)) ? target_p.X : target_p.Y;
-	//ROS_INFO("%s %d: s_curr_p(%d, %d), target_p(%d, %d), dir(%d)",
-	//		 __FUNCTION__, __LINE__, s_curr_p.X, s_curr_p.Y, target_p.X, target_p.Y, new_dir);
-	if ((GridMap::isPositiveDirection(new_dir) && (curr > target - 1.5 * CELL_COUNT_MUL)) ||
-		(!GridMap::isPositiveDirection(new_dir) && (curr < target + 1.5 * CELL_COUNT_MUL))) {
-		if(p_clean_mode->plan_path_.size() > 1)
-		{
-			// Switch to next target for smoothly turning.
-			new_dir = static_cast<MapDirection>(p_clean_mode->plan_path_.front().TH);
-			p_clean_mode->plan_path_.pop_front();
-			ROS_INFO("%s %d: Curr(%d, %d), switch next cell(%d, %d), new dir(%d).", __FUNCTION__, __LINE__,
-					 nav_map.getXCell(),
-					 nav_map.getYCell(), p_clean_mode->plan_path_.front().X, p_clean_mode->plan_path_.front().Y, new_dir);
-		}
-		else if(p_clean_mode->plan_path_.front() != g_zero_home && g_allow_check_path_in_advance)
-		{
-			g_check_path_in_advance = true;
-			ROS_INFO("%s %d: Curr(%d, %d), target(%d, %d), dir(%d), g_check_path_in_advance(%d)",
-					 __FUNCTION__, __LINE__, nav_map.getXCell(), nav_map.getYCell(),
-					 p_clean_mode->plan_path_.front().X, p_clean_mode->plan_path_.front().Y, new_dir, g_check_path_in_advance);
-			return true;
-		}
-	}
+//	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mt_->sp_mode_);
+//	auto new_dir = p_clean_mode->new_dir_;
+//	auto s_curr_p = nav_map.getCurrPoint();
+//	auto curr = (GridMap::isXDirection(new_dir)) ? s_curr_p.X : s_curr_p.Y;
+//	auto target_p = sp_mt_->target_point_;
+//	auto &target = (GridMap::isXDirection(new_dir)) ? target_p.X : target_p.Y;
+//	//ROS_INFO("%s %d: s_curr_p(%d, %d), target_p(%d, %d), dir(%d)",
+//	//		 __FUNCTION__, __LINE__, s_curr_p.X, s_curr_p.Y, target_p.X, target_p.Y, new_dir);
+//	if ((GridMap::isPositiveDirection(new_dir) && (curr > target - 1.5 * CELL_COUNT_MUL)) ||
+//		(!GridMap::isPositiveDirection(new_dir) && (curr < target + 1.5 * CELL_COUNT_MUL))) {
+//		if(p_clean_mode->plan_path_.size() > 1)
+//		{
+//			// Switch to next target for smoothly turning.
+//			new_dir = static_cast<MapDirection>(p_clean_mode->plan_path_.front().TH);
+//			p_clean_mode->plan_path_.pop_front();
+//			ROS_INFO("%s %d: Curr(%d, %d), switch next cell(%d, %d), new dir(%d).", __FUNCTION__, __LINE__,
+//					 nav_map.getXCell(),
+//					 nav_map.getYCell(), p_clean_mode->plan_path_.front().X, p_clean_mode->plan_path_.front().Y, new_dir);
+//		}
+//		else if(p_clean_mode->plan_path_.front() != g_zero_home && g_allow_check_path_in_advance)
+//		{
+//			g_check_path_in_advance = true;
+//			ROS_INFO("%s %d: Curr(%d, %d), target(%d, %d), dir(%d), g_check_path_in_advance(%d)",
+//					 __FUNCTION__, __LINE__, nav_map.getXCell(), nav_map.getYCell(),
+//					 p_clean_mode->plan_path_.front().X, p_clean_mode->plan_path_.front().Y, new_dir, g_check_path_in_advance);
+//			return true;
+//		}
+//	}
 	return false;
 }
 
