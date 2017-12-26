@@ -376,7 +376,7 @@ typedef struct Pose16_t_{
 int16_t ranged_angle(int16_t angle);
 double deg_to_rad(double deg, int8_t scale = 1);
 double rad_2_deg(double rad, int8_t scale);
-uint16_t course_to_dest(int32_t startx, int32_t starty, int32_t destx, int32_t desty);
+uint16_t course_to_dest(const Point32_t& start, const Point32_t& dest);
 uint32_t two_points_distance(int32_t startx, int32_t starty, int32_t destx, int32_t desty);
 float two_points_distance_double(float startx,float starty,float destx,float desty);
 int32_t two_points_distance_at_direction(int32_t startx, int32_t starty, int32_t destx, int32_t desty, int16_t theta);

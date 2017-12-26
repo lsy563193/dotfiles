@@ -28,23 +28,23 @@ double rad_2_deg(double rad, int8_t scale)
 	return (scale * rad * 180 / PI);
 }
 
-uint16_t course_to_dest(int32_t startx, int32_t starty, int32_t destx, int32_t desty)
+uint16_t course_to_dest(const Point32_t& start, const Point32_t& dest)
 {
 	int16_t alpha = 0;
 
-//	ROS_WARN("startx(%d),starty(%d),destx(%d),desty(%d)",startx,starty,destx,desty);
-	if (startx == destx) {
-		if (desty > starty) {
+//	ROS_WARN("start.X(%d),start.Y(%d),dest.X(%d),dest.Y(%d)",start.X,start.Y,dest.X,dest.Y);
+	if (start.X == dest.X) {
+		if (dest.Y > start.Y) {
 			alpha = 900;
-		} else if (desty < starty) {
+		} else if (dest.Y < start.Y) {
 			alpha = 2700;
 		} else {
 			alpha = 0;
 		}
 	} else {
-		alpha = round(rad_2_deg(atan(((double) (desty - starty) / (destx - startx))), 10));
+		alpha = round(rad_2_deg(atan(((double) (dest.Y - start.Y) / (dest.X - start.X))), 10));
 
-		if (destx < startx) {
+		if (dest.X < start.X) {
 			alpha += 1800;
 		}
 

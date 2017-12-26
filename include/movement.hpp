@@ -5,6 +5,9 @@
 #ifndef PP_MOVEMENT_HPP
 #define PP_MOVEMENT_HPP
 
+#include <sensor_msgs/LaserScan.h>
+#include <boost/thread.hpp>
+#include "ros/ros.h"
 #include "speed_governor.hpp"
 #include "event_manager.h"
 #include "path_algorithm.h"
@@ -19,25 +22,35 @@ public:
 	virtual void adjustSpeed(int32_t&, int32_t&)=0;
 	virtual void run();
 	virtual bool isFinish()=0;
+	bool is_near();
 //	static ACleanMode* sp_mode_;
 //	static boost::shared_ptr<IMoveType> sp_mt_;
 	static IMoveType* sp_mt_;
 	static Point32_t s_target_p;
 	static Point32_t s_start_p;
 protected:
+	uint32_t tick_{};
+	uint32_t tick_limit_{};
 	static float s_pos_x;
 	static float s_pos_y;
 //	static Path_t path_;
 };
 
-class IFollowPoint{
+class AMovementFollowPoint:public IMovement{
 public:
 	virtual Point32_t calcTmpTarget()=0;
+	void adjustSpeed(int32_t &left_speed, int32_t &right_speed) override ;
+
 protected:
-	Point32_t tmp_target_{};
+
+	int32_t min_speed_;
+	int32_t max_speed_;
+//	boost::thread* path_thread_{};
+//	Point32_t tmp_target_{};
 	uint8_t integration_cycle_{};
 	int32_t integrated_{};
 	int32_t base_speed_{};
+	int kp_{20};
 	const double TIME_STRAIGHT{0.2};
 };
 
@@ -77,14 +90,13 @@ private:
 	int16_t target_angle_;
 };
 
-class MovementFollowPointLinear:public IMovement,public IFollowPoint
+class MovementFollowPointLinear:public AMovementFollowPoint
 {
 public:
 //	MovementFollowPointLinear(Point32_t);
 	MovementFollowPointLinear();
 //	~MovementFollowPointLinear(){ };
-	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
-	bool isFinish();
+	bool isFinish() ;
 
 	bool isRconStop();
 	bool isOBSStop();
@@ -99,25 +111,24 @@ public:
 	bool isCellReach();
 	bool isPoseReach();
 
-	Point32_t calcTmpTarget() override;
+	Point32_t calcTmpTarget() override ;
 
 private:
 
-	uint32_t tick_{};
 	uint8_t turn_speed_{};
 ////	PPTargetType path_;
 	float odom_x_start{};
 	float odom_y_start{};
 };
 
-class MovementFollowWallInfrared:public IMovement{
+class IFollowWall{
 
 public:
-	explicit MovementFollowWallInfrared(bool is_left);
+	explicit IFollowWall(bool is_left);
 
-	~MovementFollowWallInfrared() { /*set_wheel.speed(0,0);*/ };
+	~IFollowWall() { /*set_wheel.speed(0,0);*/ };
 
-	bool isFinish();
+//	bool isFinish();
 	void reset_sp_turn_count() {
 		turn_count = 0;
 	}
@@ -132,17 +143,11 @@ public:
 
 	bool sp_turn_over(const Cell_t &curr);
 
-	void adjustSpeed(int32_t &left_speed, int32_t &right_speed);
-
 	bool shouldMoveBack();
 
 	bool shouldTurn();
 
 	bool isBlockCleared();
-
-	bool isOverOriginLine();
-
-	bool isNewLineReach();
 
 	bool isClosure(uint8_t closure_cnt);
 
@@ -171,18 +176,81 @@ protected:
 	bool is_left_{true};
 };
 
-class MovementFollowWallLidar:public IFollowPoint, public MovementFollowWallInfrared
+class MovementFollowWallLidar:public AMovementFollowPoint, public IFollowWall
 {
+
 public:
 	explicit MovementFollowWallLidar(bool is_left);
 
-	void adjustSpeed(int32_t&, int32_t&) override ;
-
 	Point32_t calcTmpTarget() override ;
 
+	bool isFinish() override ;
 private:
-	bool is_no_target{};
+	class Paras;
+	Vector2<double> get_middle_point(Vector2<double> p1, Vector2<double> p2,Paras para);
+	bool check_is_valid(Vector2<double> point, Paras para, sensor_msgs::LaserScan scan);
+	bool check_obstacle(sensor_msgs::LaserScan scan, const Paras para);
+	Vector2<double> polar_to_cartesian(double polar,int i);
+	bool calcLidarPath();
 	bool is_sp_turn{};
+	Points tmp_plan_path_{};
+	uint32_t seq_{0};
+
+class Paras{
+public:
+	explicit Paras(bool is_left):is_left_(is_left)
+	{
+		narrow = is_left ? 0.187 : 0.197;
+		x_min = LIDAR_OFFSET_X;
+		x_max = is_left ? 0.3 : 0.25;
+
+		y_min = 0;
+		y_max = is_left ? 0.3 : 0.25;
+
+		auto y_start_forward = is_left ? 0.06: -0.06;
+		auto y_end_forward = is_left ? -ROBOT_RADIUS: ROBOT_RADIUS;
+		y_min_forward = std::min(y_start_forward, y_end_forward);
+		y_max_forward = std::max(y_start_forward, y_end_forward);
+
+		auto y_side_start = is_left ? 0.06: -0.06;
+		auto y_side_end = is_left ? -narrow: narrow;
+		y_min_forward = std::min(y_side_start, y_side_end);
+		y_max_forward = std::max(y_side_start, y_side_end);
+	};
+
+	bool inRange(const Vector2<double> &point) const {
+		return (point.X > x_min && (point.X < x_max && point.Y > y_min && point.X < y_max));
+	}
+	bool inTargetRange(const Vector2<double> &target) {
+		return is_left_ ? ((target.X < 0 && target.Y < 0.4 && target.Y > -ROBOT_RADIUS) ||
+											 (target.X < CHASE_X && fabs(target.Y) < ROBOT_RADIUS))
+										: ((target.X < 0 && target.Y > -0.4 && target.Y < ROBOT_RADIUS) ||
+											 (target.X < CHASE_X && fabs(target.Y) < ROBOT_RADIUS));
+	}
+	bool inForwardRange(const Vector2<double> &point) const {
+		return point.X > x_min && point.X < x_max && point.Y > y_min_forward && point.Y < y_max_forward;
+	}
+
+	bool inSidedRange(const Vector2<double> &point) const {
+		return point.X > x_min && point.X < x_max && point.Y > y_min_side && point.Y < y_max_side;
+	}
+
+	double narrow;
+	bool is_left_;
+	double x_min;
+	double x_max;
+
+	double y_min;
+	double y_max;
+
+	double y_min_forward;
+	double y_max_forward;
+
+	double y_min_side;
+	double y_max_side;
+	const double CHASE_X = 0.107;
+};
+
 };
 
 class MovementGoToCharger: public IMovement
@@ -314,6 +382,21 @@ public:
 	bool isFinish() override;
 
 private:
+//	double direct_go_time_stamp_;
+};
+class MovementForwardTurn :public IMovement
+{
+public:
+	MovementForwardTurn() = delete;
+
+	explicit MovementForwardTurn(bool);
+	~MovementForwardTurn() = default;
+
+	void adjustSpeed(int32_t &left_speed, int32_t &right_speed) override;
+	bool isFinish() override;
+
+private:
+	bool is_left_;
 //	double direct_go_time_stamp_;
 };
 
