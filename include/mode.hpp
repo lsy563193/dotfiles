@@ -10,7 +10,8 @@
 #include "boost/shared_ptr.hpp"
 #include "move_type.hpp"
 
-class Mode:public EventHandle {
+class Mode:public EventHandle
+{
 public:
 	virtual ~Mode() { };
 	void run();
@@ -184,7 +185,7 @@ class ACleanMode:public Mode
 {
 public:
 	ACleanMode();
-	bool isFinish();
+	bool isFinish() override;
 	void setNextMode(int next);
 	virtual bool setNextState();
 	virtual bool setNextAction();
@@ -235,14 +236,15 @@ class CleanModeNav:public ACleanMode
 {
 public:
 	CleanModeNav();
-	~CleanModeNav() override ;
+	~CleanModeNav() override;
 
 	uint8_t setFollowWall(const Path_t& path);
 	bool mapMark() override ;
 	bool isFinish() override ;
-	bool isExit();
+	bool isExit() override;
+	bool setNextState() override;
 
-	bool setNextAction();
+	bool setNextAction() override ;
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteClean(bool state_now, bool state_last) override ;
 	void remoteHome(bool state_now, bool state_last) override ;
@@ -277,6 +279,30 @@ public:
 
 };
 
+class CleanModeExploration : public ACleanMode
+{
+public:
+	CleanModeExploration();
+	~CleanModeExploration();
+
+	bool mapMark() override;
+	bool isFinish() override;
+	bool isExit() override;
+	bool setNextAction() override;
+	bool setNextState() override;
+	void keyClean(bool state_now, bool state_last) override ;
+	void remoteClean(bool state_now, bool state_last) override ;
+	void cliffAll(bool state_now, bool state_last) override ;
+	void chargeDetect(bool state_now, bool state_last) override ;
+//	void overCurrentBrushLeft(bool state_now, bool state_last);
+//	void overCurrentBrushMain(bool state_now, bool state_last);
+//	void overCurrentBrushRight(bool state_now, bool state_last);
+	void overCurrentWheelLeft(bool state_now, bool state_last) override;
+	void overCurrentWheelRight(bool state_now, bool state_last) override;
+//	void overCurrentSuction(bool state_now, bool state_last);
+	void printMapAndPath();
+};
+
 class CleanModeFollowWall:public ACleanMode
 {
 public:
@@ -302,15 +328,16 @@ class CleanModeSpot:public ACleanMode
 {
 public:
 	CleanModeSpot();
-	~CleanModeSpot() = default;
-
+	~CleanModeSpot();
+	bool isFinish() override;
 	bool mapMark() override;
-
+	bool isExit();
+	bool setNextAction();
 private:
 protected:
 //	Path_t home_point_{};
 private:
-
+	bool has_aligned_and_open_slam;
 };
 
 class CleanModeTest:public ACleanMode

@@ -82,9 +82,6 @@ bool CleanModeNav::mapMark()
 		nav_map.setCleaned(passed_path_);
 //	}
 
-	if (state_i_ == st_trapped)
-		nav_map.markRobot(CLEAN_MAP);
-
 	nav_map.setBlocks();
 	if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
 	{
@@ -100,6 +97,7 @@ bool CleanModeNav::mapMark()
 	if (state_i_ == st_trapped)
 		fw_map.setFollowWall(action_i_ == ac_follow_wall_left);
 
+	nav_map.markRobot(CLEAN_MAP);
 	PP_INFO();
 	nav_map.print(CLEAN_MAP, nav_map.getXCell(), nav_map.getYCell());
 
@@ -478,3 +476,12 @@ uint8_t CleanModeNav::setFollowWall(const Path_t& path)
 	}
 }
 
+bool CleanModeNav::setNextState()
+{
+	bool isSet = ACleanMode::setNextState();
+	if(state_i_ == st_go_home_point){
+		if (go_home_path_algorithm_ == nullptr)
+			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(nav_map, home_cells_));
+	}
+	return isSet;
+}
