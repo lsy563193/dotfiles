@@ -9,17 +9,17 @@ ModeGoToCharger::ModeGoToCharger()
 {
 	ROS_INFO("%s, %d: Entering go to charger mode\n=========================", __FUNCTION__, __LINE__);
 	event_manager_register_handler(this);
+	event_manager_reset_status();
 	event_manager_set_enable(true);
 
 	led.set_mode(LED_STEADY, LED_ORANGE);
 	sp_action_.reset(new ActionOpenGyro);
 	action_i_ = ac_open_gyro;
-
-	speaker.play(VOICE_BACK_TO_CHARGER);
 }
 
 ModeGoToCharger::~ModeGoToCharger()
 {
+	event_manager_set_enable(false);
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
@@ -31,6 +31,8 @@ bool ModeGoToCharger::isExit()
 	{
 		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
 		setNextMode(md_idle);
+		ev.cliff_all_triggered = false;
+		ev.key_clean_pressed = false;
 		return true;
 	}
 	return false;
@@ -48,6 +50,7 @@ bool ModeGoToCharger::isFinish()
 				setNextMode(md_charge);
 			else
 				setNextMode(md_idle);
+			ev.charge_detect = 0;
 			return true;
 		}
 	}
