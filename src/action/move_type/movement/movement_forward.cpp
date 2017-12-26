@@ -204,7 +204,7 @@ bool MovementFollowPointLinear::isPassTargetStop()
 	auto new_dir = p_clean_mode->new_dir_;
 	auto s_curr_p = nav_map.getCurrPoint();
 	auto curr = (GridMap::isXDirection(new_dir)) ? s_curr_p.X : s_curr_p.Y;
-	auto target_p = nav_map.cellToPoint((p_clean_mode->plan_path_.back()));
+	auto target_p = (sp_mt_->target_point_);
 	auto target = (GridMap::isXDirection(new_dir)) ? target_p.X : target_p.Y;
 	if ((GridMap::isPositiveDirection(new_dir) && (curr > target + CELL_COUNT_MUL / 4)) ||
 		(!GridMap::isPositiveDirection(new_dir) && (curr < target - CELL_COUNT_MUL / 4)))

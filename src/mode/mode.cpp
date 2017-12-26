@@ -8,7 +8,8 @@
 boost::shared_ptr<IAction> Mode::sp_action_ = nullptr;
 //IAction* Mode::sp_action_ = nullptr;
 
-void Mode::run() {
+void Mode::run()
+{
 	PP_INFO();
 	bool eh_status_now = false, eh_status_last = false;
 
@@ -42,7 +43,8 @@ bool Mode::isExit()
 	return false;
 }
 
-bool Mode::isFinish() {
+bool Mode::isFinish()
+{
 	return sp_action_->isFinish();
 }
 

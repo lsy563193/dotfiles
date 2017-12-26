@@ -331,7 +331,7 @@ private:
 class MovementCharge :public IMovement
 {
 public:
-	explicit MovementCharge(bool play_start_wav);
+	MovementCharge();
 	~MovementCharge() override ;
 
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed) override;

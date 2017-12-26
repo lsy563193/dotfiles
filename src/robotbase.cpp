@@ -695,6 +695,8 @@ Mode *getNextMode(int next_mode_i_)
 			return new CleanModeSpot();
 		case Mode::cm_test:
 			return new CleanModeTest();
+		case Mode::cm_exploration:
+			return new CleanModeExploration();
 //		case Mode::cm_exploration:
 //			return new CleanModeExploration();
 		default:
