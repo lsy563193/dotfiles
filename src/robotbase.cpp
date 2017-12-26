@@ -291,8 +291,6 @@ void robotbase_routine_cb()
 		obs.setRight(_right_obs_value);
 		sensor.r_obs = obs.getRight();
 
-#if __ROBOT_X900
-
 		sensor.right_wall = ((serial.receive_stream[REC_R_WALL_H]<<8)|serial.receive_stream[REC_R_WALL_L]);
 
 		sensor.lbumper = (serial.receive_stream[REC_BUMPER] & 0xf0) ? true : false;
@@ -425,39 +423,15 @@ void robotbase_routine_cb()
 		if(sensor.plan)
 			robot_timer.setPlanStatus(sensor.plan);
 
-#elif __ROBOT_X400
-		sensor.lbumper = (serial.receive_stream[22] & 0xf0)?true:false;
-		sensor.rbumper = (serial.receive_stream[22] & 0x0f)?true:false;
-		sensor.c_stub = (serial.receive_stream[24] << 16) | (serial.receive_stream[25] << 8) | serial.receive_stream[26];
-		sensor.key = serial.receive_stream[27];
-		sensor.c_s = serial.receive_stream[28];
-		sensor.w_tank_ = (serial.receive_stream[29] > 0) ? true : false;
-		sensor.batv = serial.receive_stream[30];
-
-		sensor.lcliff = ((serial.receive_stream[31] << 8) | serial.receive_stream[32]);
-		sensor.fcliff = ((serial.receive_stream[33] << 8) | serial.receive_stream[34]);
-		sensor.rcliff = ((serial.receive_stream[35] << 8) | serial.receive_stream[36]);
-
-		sensor.lbrush_oc_ = (serial.receive_stream[37] & 0x08) ? true : false;		// left brush over current
-		sensor.mbrush_oc_ = (serial.receive_stream[37] & 0x04) ? true : false;		// main brush over current
-		sensor.rbrush_oc_ = (serial.receive_stream[37] & 0x02) ? true : false;		// right brush over current
-		sensor.vcum_oc = (serial.receive_stream[37] & 0x01) ? true : false;		// vaccum over current
-		sensor.gyro_dymc_ = serial.receive_stream[38];
-		gyro.setCalibration(sensor.gyro_dymc_);
-		sensor.right_wall_ = ((serial.receive_stream[39]<<8)|serial.receive_stream[40]);
-		sensor.x_acc = (serial.receive_stream[41]<<8)|serial.receive_stream[42]; //in mG
-		sensor.y_acc = (serial.receive_stream[43]<<8)|serial.receive_stream[44];//in mG
-		sensor.z_acc = (serial.receive_stream[45]<<8)|serial.receive_stream[46]; //in mG
-#endif
-	#if GYRO_DYNAMIC_ADJUSTMENT
-	if (wheel.getLeftWheelActualSpeed() < 0.01 && wheel.getRightWheelActualSpeed() < 0.01)
-	{
-		gyro.setDynamicOn();
-	} else
-	{
-		gyro.setDynamicOff();
-	}
-	gyro.checkTilt();
+#if GYRO_DYNAMIC_ADJUSTMENT
+		if (wheel.getLeftWheelActualSpeed() < 0.01 && wheel.getRightWheelActualSpeed() < 0.01)
+		{
+			gyro.setDynamicOn();
+		} else
+		{
+			gyro.setDynamicOff();
+		}
+		gyro.checkTilt();
 #endif
 		/*---------extrict end-------*/
 
@@ -556,8 +530,6 @@ void core_thread_cb()
 //	speaker.play(VOICE_WELCOME_ILIFE);
 	usleep(200000);
 
-#if NEW_FRAMEWORK
-
 	boost::shared_ptr<Mode> p_mode = nullptr;
 	if (charger.isOnStub() || charger.isDirected())
 		p_mode.reset(new ModeCharge());
@@ -577,98 +549,6 @@ void core_thread_cb()
 		p_mode.reset(getNextMode(next_mode));
 		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
 	}
-
-#else
-	if (charger.isDirected() || charger.isOnStub())
-		cm_set(Clean_Mode_Charging);
-	else if (battery.isReadyToClean())
-		speaker.play(VOICE_PLEASE_START_CLEANING);
-
-	while(ros::ok()){
-		usleep(20000);
-		switch(cm_get()){
-			case Clean_Mode_Idle:
-				ROS_INFO("\n-------idle mode_------\n");
-				serial.setCleanMode(Clean_Mode_Idle);
-//				speaker.play(VOICE_TEST_MODE);
-				idle();
-				break;
-			case Clean_Mode_WallFollow:
-				ROS_INFO("\n-------wall follow mode_------\n");
-				serial.setCleanMode(Clean_Mode_WallFollow);
-				g_is_low_bat_pause = false;
-
-				cs_paused_setting();
-
-//				wall_follow(Map_Wall_Follow_Escape_Trapped);
-				cm_cleaning();
-				break;
-			case Clean_Mode_Navigation:
-				ROS_INFO("\n-------Navigation mode_------\n");
-				serial.setCleanMode(Clean_Mode_Navigation);
-				cm_cleaning();
-				break;
-			case Clean_Mode_Charging:
-				ROS_INFO("\n-------Charge mode_------\n");
-				serial.setCleanMode(Clean_Mode_Charging);
-				charge_function();
-				break;
-			case Clean_Mode_Go_Charger:
-				//goto_charger();
-				ROS_INFO("\n-------GoHome mode_------\n");
-				serial.setCleanMode(Clean_Mode_Go_Charger);
-				g_is_low_bat_pause = false;
-				cs_paused_setting();
-#if GO_HOME_REGULATOR
-				cm_cleaning();
-#else
-				go_home();
-#endif
-				break;
-
-			case Clean_Mode_Exploration:
-				//goto_charger();
-				ROS_INFO("\n-------Exploration mode_------\n");
-				serial.setCleanMode(Clean_Mode_Exploration);
-				g_is_low_bat_pause = false;
-				cs_paused_setting();
-				cm_cleaning();
-				break;
-
-			case Clean_Mode_Test:
-				break;
-
-			case Clean_Mode_Remote:
-				remote_mode();
-				break;
-
-			case Clean_Mode_Spot:
-				ROS_INFO("\n-------Spot mode_------\n");
-				serial.setCleanMode(Clean_Mode_Spot);
-				g_is_low_bat_pause = false;
-				cs_paused_setting();
-				remote.reset();
-				SpotMovement::instance()->setSpotType(NORMAL_SPOT);
-				cm_cleaning();
-				cs_disable_motors();
-				usleep(200000);
-				break;
-
-			case Clean_Mode_Sleep:
-				ROS_INFO("\n-------Sleep mode_------\n");
-				//serial.setStatus(Clean_Mode_Sleep);
-				g_is_low_bat_pause = false;
-				cs_paused_setting();
-				cs_disable_motors();
-				sleep_mode();
-				break;
-			default:
-				cm_set(Clean_Mode_Idle);
-				break;
-
-		}
-	}
-#endif
 
 }
 

@@ -241,6 +241,7 @@ void ModeIdle::remotePlan(bool state_now, bool state_last)
 		robot_timer.resetPlanStatus();
 	}
 }
+
 void ModeIdle::chargeDetect(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Detect charge!", __FUNCTION__, __LINE__);

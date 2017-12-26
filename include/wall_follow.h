@@ -121,11 +121,7 @@ void dynamic_base(uint32_t Cy)
 
 	int16_t getRight() const
 	{
-#if __ROBOT_X900
 		return sensor.right_wall - right_baseline;
-#elif __ROBOT_X400
-		return 0;
-#endif
 	}
 
 private:
