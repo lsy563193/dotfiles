@@ -19,39 +19,39 @@ MovementFollowPointLinear::MovementFollowPointLinear()
 //	sp_mt_->sp_cm_->tmp_plan_path_ = path;
 }
 
-Point32_t MovementFollowPointLinear::calcTmpTarget()
-{
+bool MovementFollowPointLinear::calcTmpTarget(Point32_t& tmp_target) {
 	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mt_->sp_mode_);
 	auto new_dir = p_clean_mode->new_dir_;
 	auto curr = nav_map.getCurrPoint();
-	auto tmp_target = nav_map.cellToPoint(p_clean_mode->plan_path_.front());
+	tmp_target = nav_map.cellToPoint(p_clean_mode->plan_path_.front());
 	auto curr_xy = (GridMap::isXDirection(new_dir)) ? curr.X : curr.Y;
 	auto &target_xy = (GridMap::isXDirection(new_dir)) ? tmp_target.X : tmp_target.Y;
-
-	int16_t dis = std::min(std::abs(curr_xy - target_xy), (int32_t) (1.5 * CELL_COUNT_MUL));
-	if (!GridMap::isPositiveDirection(new_dir))
-		dis *= -1;
-	target_xy = curr_xy + dis;
-
 	auto tmp_xy = (GridMap::isXDirection(new_dir)) ? tmp_target.X : tmp_target.Y;
 	auto is_beyond = (GridMap::isPositiveDirection(new_dir)) ? target_xy <= tmp_xy : target_xy >= tmp_xy;
-	if(is_beyond && p_clean_mode->plan_path_.size()>1)
-	{
+
+	if (is_beyond && p_clean_mode->plan_path_.size() > 1) {
 		p_clean_mode->old_dir_ = p_clean_mode->new_dir_;
-		p_clean_mode->new_dir_ = (MapDirection)p_clean_mode->plan_path_.front().TH;
+		tmp_target = nav_map.cellToPoint(p_clean_mode->plan_path_.front());
+		p_clean_mode->new_dir_ = (MapDirection) p_clean_mode->plan_path_.front().TH;
 		p_clean_mode->plan_path_.pop_front();
-		tmp_target = calcTmpTarget();
-		ROS_INFO("%s,%d,dir(%d,%d)target(%d,%d)",__FUNCTION__,__LINE__,p_clean_mode->old_dir_,p_clean_mode->new_dir_,(MapDirection)p_clean_mode->plan_path_.front().X,(MapDirection)p_clean_mode->plan_path_.front().Y);
-		ROS_INFO("%s,%d,target,tmp(%d,%d)",__FUNCTION__,__LINE__,target_xy, tmp_xy);
+
+		auto dis = std::min(std::abs(curr_xy - target_xy), (int32_t) (1.5 * CELL_COUNT_MUL));
+		if (!GridMap::isPositiveDirection(new_dir))
+			dis *= -1;
+		target_xy = curr_xy + dis;
+
+		ROS_INFO("%s,%d,dir(%d,%d)target(%d,%d)", __FUNCTION__, __LINE__, p_clean_mode->old_dir_, p_clean_mode->new_dir_,
+						 (MapDirection) p_clean_mode->plan_path_.front().X, (MapDirection) p_clean_mode->plan_path_.front().Y);
+		ROS_INFO("%s,%d,target,tmp(%d,%d)", __FUNCTION__, __LINE__, target_xy, tmp_xy);
 	}
 
-	return tmp_target;
+	return true;
 }
 
 bool MovementFollowPointLinear::isFinish()
 {
-	return isPoseReach() || shouldMoveBack() || isBoundaryStop() || isLidarStop() || isOBSStop() || isRconStop() || isPassTargetStop() ||
-				 is_robotbase_stop();
+	auto p_mt = (ActionFollowWall*)(sp_mt_);
+	return isPoseReach() || isBoundaryStop() || isPassTargetStop() || p_mt->shouldMoveBack() || p_mt->shouldTurn() || p_mt->shouldTurn();
 }
 
 bool MovementFollowPointLinear::isCellReach()
@@ -76,7 +76,7 @@ bool MovementFollowPointLinear::isPoseReach()
 {
 	// Checking if robot has reached target cell and target angle.
 //	PP_INFO();
-	auto target_angle = s_target_p.TH;
+	auto target_angle = sp_mt_->target_point_.TH;
 	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mt_->sp_mode_);
 	if (isCellReach() && std::abs(ranged_angle(robot::instance()->getPoseAngle() - target_angle)) < 200)
 	{
@@ -117,70 +117,6 @@ bool MovementFollowPointLinear::isNearTarget()
 			return true;
 		}
 	}
-	return false;
-}
-
-bool MovementFollowPointLinear::shouldMoveBack()
-{
-	// Robot should move back for these cases.
-	ev.bumper_triggered = bumper.get_status();
-	ev.cliff_triggered = cliff.get_status();
-	ev.tilt_triggered = gyro.getTiltCheckingStatus();
-
-	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip)
-	{
-		ROS_WARN("%s, %d,ev.bumper_triggered(%d) ev.cliff_triggered(%d) ev.tilt_triggered(%d) g_robot_slip(%d)."
-				, __FUNCTION__, __LINE__,ev.bumper_triggered,ev.cliff_triggered,ev.tilt_triggered,g_robot_slip);
-		return true;
-	}
-
-	return false;
-}
-
-bool MovementFollowPointLinear::isRconStop()
-{
-//	PP_INFO();
-	ev.rcon_triggered = c_rcon.getTrig();
-	if(ev.rcon_triggered)
-	{
-//		g_turn_angle = rcon_turn_angle();
-//		ROS_INFO("%s, %d: ev.rcon_triggered(%d), turn for (%d).", __FUNCTION__, __LINE__, ev.rcon_triggered, g_turn_angle);
-//		return true;
-	}
-
-	return false;
-}
-
-bool MovementFollowPointLinear::isOBSStop()
-{
-	// Now OBS sensor is just for slowing down.
-//	PP_INFO();
-	return false;
-/*
-	ev.obs_triggered = obs.get_status(200, 1700, 200);
-	if(ev.obs_triggered)
-	{
-		turn_angle = obs_turn_angle();
-		ROS_INFO("%s, %d: ev.obs_triggered(%d), turn for (%d).", __FUNCTION__, __LINE__, ev.obs_triggered, turn_angle);
-		return true;
-	}
-
-	return false;*/
-}
-
-bool MovementFollowPointLinear::isLidarStop()
-{
-//	PP_INFO();
-	ev.lidar_triggered = lidar_get_status();
-	if (ev.lidar_triggered)
-	{
-		// Temporary use OBS to get angle.
-//		ev.obs_triggered = ev.lidar_triggered;
-//		g_turn_angle = obs_turn_angle();
-//		ROS_WARN("%s, %d: ev.lidar_triggered(%d), turn for (%d).", __FUNCTION__, __LINE__, ev.lidar_triggered, g_turn_angle);
-		return true;
-	}
-
 	return false;
 }
 

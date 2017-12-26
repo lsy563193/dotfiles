@@ -14,6 +14,12 @@ class IMoveType:public IAction
 {
 public:
 	IMoveType();
+
+	bool isRconStop();
+	bool isOBSStop();
+	bool isLidarStop();
+	bool shouldMoveBack();
+	bool shouldTurn();
 //	~IMoveType() = default;
 
 	virtual bool isFinish();
@@ -66,6 +72,7 @@ public:
 	bool isFinish() override;
 
 //	IAction* setNextAction();
+	Points tmp_plan_path_{};
 protected:
 	bool is_left_{};
 	int16_t turn_angle{};
@@ -79,6 +86,7 @@ protected:
 	bool lidar_turn_angle(int16_t& turn_angle);
 	int16_t get_turn_angle_by_ev();
 	int16_t get_turn_angle(bool);
+
 };
 
 class MoveTypeGoToCharger:public IMoveType

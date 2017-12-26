@@ -80,9 +80,7 @@ FILE(GLOB PP_SRC
 	src/action/move_type/movement/movement_back.cpp
 	src/action/move_type/movement/movement_follow_wall_infrared.cpp
 	src/action/move_type/movement/movement_follow_wall_lidar.cpp
-	src/action/move_type/movement/movement_forward.cpp
-	src/action/move_type/movement/movement_forward.cpp
-	src/action/move_type/movement/movement_go_charger.cpp
+	src/action/move_type/movement/movement_follow_point_linear.cpp
 	src/action/move_type/movement/movement_go_charger.cpp
 	src/action/move_type/movement/movement_exception_resume.cpp
 	src/action/move_type/movement/movement_turn.cpp
@@ -92,7 +90,7 @@ FILE(GLOB PP_SRC
 	src/action/move_type/movement/movement_direct_go.cpp
 	src/action/move_type/movement/movement_straight.cpp
 	src/action/move_type/movement/movement_forward_turn.cpp
-	src/action/move_type/follow_point.cpp
+				src/action/move_type/movement_follow_point.cpp
 
 	src/error.cpp
 	src/event_manager.cpp

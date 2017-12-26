@@ -9,7 +9,13 @@ void AMovementFollowPoint::adjustSpeed(int32_t &left_speed, int32_t &right_speed
 //	PP_INFO();
 //	ROS_WARN("%s,%d: g_p_clean_mode->plan_path_size(%d)",__FUNCTION__, __LINE__,p_clean_mode->tmp_plan_path_.size());
 	wheel.setDirectionForward();
-	auto tmp_target = calcTmpTarget();
+	Point32_t tmp_target;
+	if(!calcTmpTarget(tmp_target))
+	{
+		left_speed = right_speed = 0;
+		return;
+	}
+
 	auto curr_p = nav_map.getCurrPoint();
 	auto angle_diff = ranged_angle( course_to_dest(curr_p, tmp_target) - GridMap::getCurrPoint().TH);
 	if (integration_cycle_++ > 10) {

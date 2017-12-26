@@ -26,8 +26,8 @@ public:
 //	static ACleanMode* sp_mode_;
 //	static boost::shared_ptr<IMoveType> sp_mt_;
 	static IMoveType* sp_mt_;
-	static Point32_t s_target_p;
-	static Point32_t s_start_p;
+//	static Point32_t s_target_p;
+//	static Point32_t s_start_p;
 protected:
 	uint32_t tick_{};
 	uint32_t tick_limit_{};
@@ -38,7 +38,7 @@ protected:
 
 class AMovementFollowPoint:public IMovement{
 public:
-	virtual Point32_t calcTmpTarget()=0;
+	virtual bool calcTmpTarget(Point32_t& )=0;
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed) override ;
 
 protected:
@@ -80,7 +80,6 @@ public:
 	explicit MovementTurn(int16_t target_angle, uint8_t max_speed);
 	void adjustSpeed(int32_t&, int32_t&) override;
 	bool isReach();
-	bool shouldMoveBack();
 	bool isFinish() override;
 
 private:
@@ -96,22 +95,19 @@ public:
 //	MovementFollowPointLinear(Point32_t);
 	MovementFollowPointLinear();
 //	~MovementFollowPointLinear(){ };
-	bool isFinish() ;
+	bool isFinish() override;
 
-	bool isRconStop();
-	bool isOBSStop();
-	bool isLidarStop();
+
 	bool isBoundaryStop();
 	bool isPassTargetStop();
 	bool isNearTarget();
-	bool shouldMoveBack();
 //	void setTarget();
 	void setBaseSpeed();
 
 	bool isCellReach();
 	bool isPoseReach();
 
-	Point32_t calcTmpTarget() override ;
+	bool calcTmpTarget(Point32_t&) override ;
 
 private:
 
@@ -127,7 +123,6 @@ public:
 	explicit IFollowWall(bool is_left);
 
 	~IFollowWall() { /*set_wheel.speed(0,0);*/ };
-
 //	bool isFinish();
 	void reset_sp_turn_count() {
 		turn_count = 0;
@@ -142,10 +137,6 @@ public:
 	}
 
 	bool sp_turn_over(const Cell_t &curr);
-
-	bool shouldMoveBack();
-
-	bool shouldTurn();
 
 	bool isBlockCleared();
 
@@ -182,7 +173,7 @@ class MovementFollowWallLidar:public AMovementFollowPoint, public IFollowWall
 public:
 	explicit MovementFollowWallLidar(bool is_left);
 
-	Point32_t calcTmpTarget() override ;
+	bool calcTmpTarget(Point32_t&) override ;
 
 	bool isFinish() override ;
 private:
@@ -193,7 +184,6 @@ private:
 	Vector2<double> polar_to_cartesian(double polar,int i);
 	bool calcLidarPath();
 	bool is_sp_turn{};
-	Points tmp_plan_path_{};
 	uint32_t seq_{0};
 
 class Paras{

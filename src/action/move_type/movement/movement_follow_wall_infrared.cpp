@@ -47,40 +47,6 @@ bool IFollowWall::isTimeUp()
 	return false;
 }
 
-bool IFollowWall::shouldMoveBack()
-{
-	ev.bumper_triggered = bumper.get_status();
-	ev.cliff_triggered = cliff.get_status();
-	ev.tilt_triggered = gyro.getTiltCheckingStatus();
-	return ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip;
-
-}
-
-bool IFollowWall::shouldTurn()
-{
-	ev.lidar_triggered = lidar_get_status();
-//	if (ev.lidar_triggered)
-//	{
-//		// Temporary use bumper as lidar triggered.
-//		ev.bumper_triggered = ev.lidar_triggered;
-//		g_turn_angle = bumper_turn_angle();
-//		ev.bumper_triggered = 0;
-//		ROS_WARN("%s %d: Lidar triggered, turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
-//		return true;
-//	}
-
-	ev.obs_triggered = (obs.getFront() > obs.getFrontTrigValue() + 1700);
-	if (ev.obs_triggered)
-	{
-//		ev.obs_triggered = BLOCK_FRONT;
-//		g_turn_angle = obs_turn_angle();
-//		ROS_WARN("%s %d: OBS triggered, turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
-		return true;
-	}
-
-	return false;
-}
-
 bool IFollowWall::isBlockCleared()
 {
 	if (!nav_map.isBlockAccessible(nav_map.getXCell(), nav_map.getYCell())) // Robot has step on blocks.

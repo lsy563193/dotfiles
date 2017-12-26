@@ -22,24 +22,6 @@ bool MovementTurn::isReach()
 	return false;
 }
 
-bool MovementTurn::shouldMoveBack()
-{
-	// Robot should move back for these cases.
-	ev.bumper_triggered = bumper.get_status();
-	ev.cliff_triggered = cliff.get_status();
-	ev.tilt_triggered = gyro.getTiltCheckingStatus();
-
-	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip)
-	{
-		ROS_WARN("%s, %d,MovementTurn, ev.bumper_triggered(\033[32m%d\033[0m) ev.cliff_triggered(\033[32m%d\033[0m) ev.tilt_triggered(\033[32m%d\033[0m) g_robot_slip(\033[32m%d\033[0m)."
-				, __FUNCTION__, __LINE__,ev.bumper_triggered,ev.cliff_triggered,ev.tilt_triggered,g_robot_slip);
-		return true;
-	}
-
-	return false;
-
-}
-
 void MovementTurn::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
 	auto diff = ranged_angle(target_angle_ - robot::instance()->getPoseAngle());

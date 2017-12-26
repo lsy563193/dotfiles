@@ -20,17 +20,19 @@ MovementFollowWallLidar::MovementFollowWallLidar(bool is_left)
 //	path_thread_->detach();
 }
 
-Point32_t MovementFollowWallLidar::calcTmpTarget() {
-	if(calcLidarPath())
-	{
-		if (!tmp_plan_path_.empty()) {
-			auto curr = nav_map.getCurrPoint();
-			if (std::abs(curr.X - tmp_plan_path_.front().X) < 30 && std::abs(curr.Y - tmp_plan_path_.front().Y) < 30) {
-				tmp_plan_path_.pop_front();
-			}
-		}
-	}
-	return tmp_plan_path_.front();
+bool MovementFollowWallLidar::calcTmpTarget(Point32_t& point) {
+//	if(calcLidarPath())
+//	{
+//		if (!tmp_plan_path_.empty()) {
+//			auto curr = nav_map.getCurrPoint();
+//			if (std::abs(curr.X - tmp_plan_path_.front().X) < 30 && std::abs(curr.Y - tmp_plan_path_.front().Y) < 30) {
+//				tmp_plan_path_.pop_front();
+//				point = tmp_plan_path_.front();
+//			}
+//		}
+//	}
+//	return tmp_plan_path_.empty();
+	return false;
 }
 
 Vector2<double> MovementFollowWallLidar::polar_to_cartesian(double polar,int i)
@@ -95,66 +97,69 @@ bool MovementFollowWallLidar::check_is_valid(Vector2<double> point, Paras para, 
 }
 
 bool MovementFollowWallLidar::calcLidarPath() {
-	std::vector<Vector2<double>> points{};
-	Paras para{is_left_};
-	auto scan = Lidar::getLidarScanDataOriginal();
-
-	if (scan.header.seq == seq_) {
-		return false;
-	}
-	seq_ = scan.header.seq;
-	points.clear();
-
-	auto is_obstacle = check_obstacle(scan, para);
-	ROS_WARN("is_obstacle = %d", is_obstacle);
-	for (int i = 359; i >= 0; i--) {
-		//ROS_INFO("i = %d", i);
-		if (scan.ranges[i] < 4 && scan.ranges[i - 1] < 4) {
-			auto point1 = polar_to_cartesian(scan.ranges[i], i);
-
-			if (!para.inRange(point1))
-				continue;
-
-			auto point2 = polar_to_cartesian(scan.ranges[i - 1], i - 1);
-
-			if (point2.Distance(point1) > 0.05) {
-				//ROS_INFO("two points distance is too large");
-				continue;
-			}
-			auto target = get_middle_point(point1, point2, para);
-
-			if(para.inTargetRange(target))
-				continue;
-
-			if(target.Distance({0,0})<=0.4)
-				continue;
-
-			if (!check_is_valid(target, para, scan))
-				continue;
-
-			points.push_back(target);
-		}
-	}
-
-	if (points.empty()) {
-		return false;
-	}
-	if (!is_left_) {
-		std::reverse(points.begin(), points.end());//for the right wall follow
-	}
-	std::sort(points.begin(), points.end(), [](Vector2<double> a, Vector2<double> b) {
-		return a.Distance({CHASE_X, 0}) < b.Distance({CHASE_X, 0});
-	});
-	robot::instance()->pubPointMarkers(&points, scan.header.frame_id);
-
-	tmp_plan_path_.clear();
-	for (const auto& iter : points) {
-		tmp_plan_path_.push_back(GridMap::getRelative(GridMap::getCurrPoint(), int(iter.Y * 1000), int(iter.X * 1000), true));
-	}
+//	std::vector<Vector2<double>> points{};
+//	Paras para{is_left_};
+//	auto scan = Lidar::getLidarScanDataOriginal();
+//
+//	if (scan.header.seq == seq_) {
+//		return false;
+//	}
+//	seq_ = scan.header.seq;
+//	points.clear();
+//
+//	auto is_obstacle = check_obstacle(scan, para);
+//	ROS_WARN("is_obstacle = %d", is_obstacle);
+//	for (int i = 359; i >= 0; i--) {
+//		//ROS_INFO("i = %d", i);
+//		if (scan.ranges[i] < 4 && scan.ranges[i - 1] < 4) {
+//			auto point1 = polar_to_cartesian(scan.ranges[i], i);
+//
+//			if (!para.inRange(point1))
+//				continue;
+//
+//			auto point2 = polar_to_cartesian(scan.ranges[i - 1], i - 1);
+//
+//			if (point2.Distance(point1) > 0.05) {
+//				//ROS_INFO("two points distance is too large");
+//				continue;
+//			}
+//			auto target = get_middle_point(point1, point2, para);
+//
+//			if(para.inTargetRange(target))
+//				continue;
+//
+//			if(target.Distance({0,0})<=0.4)
+//				continue;
+//
+//			if (!check_is_valid(target, para, scan))
+//				continue;
+//
+//			points.push_back(target);
+//		}
+//	}
+//
+//	if (points.empty()) {
+//		return false;
+//	}
+//	if (!is_left_) {
+//		std::reverse(points.begin(), points.end());//for the right wall follow
+//	}
+//	std::sort(points.begin(), points.end(), [](Vector2<double> a, Vector2<double> b) {
+//		return a.Distance({CHASE_X, 0}) < b.Distance({CHASE_X, 0});
+//	});
+//	robot::instance()->pubPointMarkers(&points, scan.header.frame_id);
+//
+//	tmp_plan_path_.clear();
+//	for (const auto& iter : points) {
+//		tmp_plan_path_.push_back(GridMap::getRelative(GridMap::getCurrPoint(), int(iter.Y * 1000), int(iter.X * 1000), true));
+//	}
 
 	return true;
 }
 
 bool MovementFollowWallLidar::isFinish() {
-	return false;
+	auto p_mt = (ActionFollowWall*)(sp_mt_);
+	auto p_cm = boost::dynamic_pointer_cast<ACleanMode>(sp_mt_->sp_mode_);
+	return p_mt->tmp_plan_path_.empty() || p_mt->shouldMoveBack() || p_mt->shouldTurn();
 }
+

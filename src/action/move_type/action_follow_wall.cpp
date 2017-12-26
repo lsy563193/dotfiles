@@ -42,6 +42,10 @@ ActionFollowWall::~ActionFollowWall()
 
 bool ActionFollowWall::isFinish()
 {
+	auto p_cm = boost::dynamic_pointer_cast<ACleanMode>(sp_mode_);
+	if(p_cm->MovementFollowWallisFinish())
+		return true;
+
 	if (sp_movement_->isFinish()) {
 		PP_WARN();
 		if (movement_i_ == mm_turn) {
@@ -72,10 +76,9 @@ bool ActionFollowWall::isFinish()
 				sp_movement_.reset(new MovementTurn(turn_target_angle_, ROTATE_TOP_SPEED));
 				resetTriggeredValue();
 			}
-			else
+			else if(tmp_plan_path_.empty())
 			{
-				PP_INFO();
-				return true;
+				sp_movement_.reset(new MovementForwardTurn(is_left_));
 			}
 		}
 		else if (movement_i_ == mm_back) {
