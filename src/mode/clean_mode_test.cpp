@@ -96,3 +96,8 @@ void CleanModeTest::remoteDirectionForward(bool state_now, bool state_last)
 	remote.reset();
 }
 
+bool CleanModeTest::setNextState()
+{
+	return false;
+}
+

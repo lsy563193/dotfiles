@@ -67,6 +67,11 @@ bool CleanModeFollowWall::setNextAction() {
 	return false;
 }
 
+bool CleanModeFollowWall::setNextState()
+{
+	return false;
+}
+
 bool CleanModeFollowWall::wf_is_isolate() {
 //	path_update_cell_history();
 	int16_t	val = 0;
@@ -388,3 +393,4 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(int16_t curr_x, i
 
 	return totalCost;
 }
+

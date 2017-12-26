@@ -187,7 +187,7 @@ public:
 	ACleanMode();
 	bool isFinish() override;
 	void setNextMode(int next);
-	virtual bool setNextState();
+	virtual bool setNextState() = 0;
 	virtual bool setNextInitAction();
 	virtual bool setNextAction();
 	void genNextAction();
@@ -247,6 +247,7 @@ public:
 
 	bool setNextInitAction() override ;
 	bool setNextAction() override ;
+	bool setNextState() override ;
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteClean(bool state_now, bool state_last) override ;
 	void remoteHome(bool state_now, bool state_last) override ;
@@ -315,6 +316,7 @@ public:
 	~CleanModeFollowWall() override ;
 
 	bool setNextAction() override ;
+	bool setNextState() override ;
 	bool mapMark() override;
 
 
@@ -357,6 +359,7 @@ public:
 	bool isFinish() override;
 
 	bool setNextAction() override;
+	bool setNextState() override ;
 
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteMax(bool state_now, bool state_last) override ;
