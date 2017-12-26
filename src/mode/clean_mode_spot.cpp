@@ -21,6 +21,7 @@ CleanModeSpot::CleanModeSpot()
 	clean_path_algorithm_.reset(new SpotCleanPathAlgorithm());
 	go_home_path_algorithm_.reset();
 	has_aligned_and_open_slam = false;
+	cleanMap_ = &nav_map;
 }
 
 CleanModeSpot::~CleanModeSpot()

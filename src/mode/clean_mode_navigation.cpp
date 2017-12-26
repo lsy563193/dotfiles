@@ -30,6 +30,7 @@ CleanModeNav::CleanModeNav()
 	moved_during_pause_ = false;
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
 	go_home_path_algorithm_.reset();
+	cleanMap_ = &nav_map;
 }
 
 CleanModeNav::~CleanModeNav()

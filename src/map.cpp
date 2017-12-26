@@ -47,6 +47,9 @@ GridMap::GridMap() {
 //		xCount = 0;
 //		yCount = 0;
 }
+GridMap::~GridMap()
+{
+}
 
 bool GridMap::isPositiveDirection(MapDirection dir)
 {

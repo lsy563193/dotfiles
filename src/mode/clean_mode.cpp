@@ -86,7 +86,7 @@ bool ACleanMode::isFinish()
 	}
 	else
 	{
-		updatePath();
+		updatePath(*cleanMap_);
 
 		if (!sp_action_->isFinish())
 			return false;
@@ -234,10 +234,10 @@ bool is_equal_with_angle_(const Cell_t &l, const Cell_t &r)
 	return  l == r && std::abs(ranged_angle(l.TH - r.TH)) < 200;
 }
 
-Cell_t ACleanMode::updatePath()
+Cell_t ACleanMode::updatePath(GridMap& map)
 {
-	auto curr = nav_map.updatePosition();
-	auto point = nav_map.getCurrPoint();
+	auto curr = map.updatePosition();
+//	auto point = map.getCurrPoint();
 //	robot::instance()->pubCleanMapMarkers(nav_map, tmp_plan_path_);
 //	PP_INFO();
 //	ROS_INFO("point(%d,%d,%d)",point.X, point.Y,point.TH);
@@ -262,7 +262,7 @@ Cell_t ACleanMode::updatePath()
 			passed_path_.clear();
 			g_wf_reach_count++;
 		}
-		nav_map.saveBlocks(action_i_ == ac_linear);
+		map.saveBlocks(action_i_ == ac_linear);
 //		displayPath(passed_path_);
 	}
 	return curr;

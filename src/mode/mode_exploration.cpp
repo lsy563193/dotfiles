@@ -16,6 +16,7 @@ CleanModeExploration::CleanModeExploration() {
 	action_i_ = ac_open_gyro;
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
 	IMoveType::sp_mode_.reset(this);
+	cleanMap_ = &exploration_map;
 }
 
 CleanModeExploration::~CleanModeExploration() {
@@ -72,7 +73,7 @@ bool CleanModeExploration::isFinish() {
 	}
 	else
 	{
-		updatePath();
+		updatePath(*cleanMap_);
 		mapMark();
 
 		if (!sp_action_->isFinish())

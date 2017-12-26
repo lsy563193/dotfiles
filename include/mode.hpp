@@ -195,7 +195,7 @@ public:
 	virtual bool mapMark() = 0;
 
 	virtual bool MovementFollowWallisFinish();
-	Cell_t updatePath();
+	Cell_t updatePath(GridMap& map);
 
 	static Path_t passed_path_;
 	static Path_t plan_path_;
@@ -205,6 +205,7 @@ public:
 
 	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
 	boost::shared_ptr<APathAlgorithm> go_home_path_algorithm_{};
+	GridMap* cleanMap_ = nullptr;
 
 protected:
 
