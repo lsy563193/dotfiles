@@ -564,7 +564,7 @@ void core_thread_cb()
 	else
 	{
 		speaker.play(VOICE_PLEASE_START_CLEANING, false);
-		p_mode.reset(new ModeIdle());
+		p_mode.reset(new CleanModeNav());
 	}
 
 	while(ros::ok())

@@ -50,9 +50,10 @@ CleanModeFollowWall::~CleanModeFollowWall() {
 }
 
 bool CleanModeFollowWall::setNextAction() {
-	ROS_INFO("%s,%d:",__FUNCTION__, __LINE__);
+	PP_INFO();
 	if(isInitState())
 	{
+		ROS_INFO("%s,%d: isInitState,action(%d)", __FUNCTION__, __LINE__,action_i_);
 		return ACleanMode::setNextAction();
 	}
 	if (action_i_ == ac_linear) {

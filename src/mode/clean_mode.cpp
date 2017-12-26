@@ -48,8 +48,6 @@ bool ACleanMode::setNextAction()
 	else if(action_i_ == ac_back_form_charger)
 		action_i_ = ac_open_lidar;
 	else if(action_i_ == ac_open_lidar)
-		action_i_ = ac_align;
-	else if(action_i_ == ac_align)
 		action_i_ = ac_open_slam;
 	else
 	{
@@ -240,7 +238,7 @@ Cell_t ACleanMode::updatePath()
 {
 	auto curr = nav_map.updatePosition();
 	auto point = nav_map.getCurrPoint();
-//	robot::instance()->pubCleanMapMarkers(nav_map, plan_path_);
+//	robot::instance()->pubCleanMapMarkers(nav_map, tmp_plan_path_);
 //	PP_INFO();
 //	ROS_INFO("point(%d,%d,%d)",point.X, point.Y,point.TH);
 //	ROS_INFO("last(%d,%d,%d)",last_.X, last_.Y, last_.TH);

@@ -9,10 +9,10 @@ Assumes an 'odom_combined' frame, that provides reasonably accurate odometry
        value="$(find pp)/custom_rosconsole.conf"/>
 
   <node pkg="slam_karto" type="slam_karto" name="slam_karto" output="screen">
-    <param name="scan_frame" value="scanLinear"/>
     <param name="odom_frame" value="odom"/>
     <param name="map_update_interval" value="5"/>
     <param name="resolution" value="0.025"/>
+    <param name="scan_frame" value="scanLinear" />
      <rosparam file="$(find pp)/config/mapper_params.yaml" command="load" />
   </node>
 </launch>
