@@ -188,6 +188,7 @@ public:
 	bool isFinish() override;
 	void setNextMode(int next);
 	virtual bool setNextState();
+	virtual bool setNextInitAction();
 	virtual bool setNextAction();
 	void genNextAction();
 	void resetTriggeredValue();
@@ -244,6 +245,7 @@ public:
 	bool isFinish() override ;
 	bool isExit() override;
 
+	bool setNextInitAction() override ;
 	bool setNextAction() override ;
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteClean(bool state_now, bool state_last) override ;

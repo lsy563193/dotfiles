@@ -96,45 +96,17 @@ bool CleanModeSpot::isExit()
 }
 
 bool CleanModeSpot::setNextAction()
-{	
-	if(isInitState()){	
+{
+	if (state_i_ == st_clean)
+	{
 		PP_INFO();
-		if (action_i_ == ac_open_gyro)
-		{
-			PP_INFO();
-			if (charger.isOnStub())
-				action_i_ = ac_back_form_charger;
-			else
-				action_i_ = ac_open_lidar;
-		}
-		else if (action_i_ == ac_open_lidar)
-		{
-			if (!has_aligned_and_open_slam)
-				action_i_ = ac_align;
-			else
-				action_i_ = ac_null;
-		}
-		else if (action_i_ == ac_align)
-			action_i_ = ac_open_slam;
-		genNextAction();
+		if(plan_path_.size() >= 2)
+			action_i_ = ac_linear;
+		else
+			action_i_ = ac_null;
 	}
-	else{
+	genNextAction();
 
-		if (action_i_ == ac_open_slam)
-		{
-			has_aligned_and_open_slam == true;
-			PP_INFO();
-		}
-		if (state_i_ == st_clean)
-		{
-			PP_INFO();
-			if(plan_path_.size() >= 2)
-				action_i_ = ac_linear;
-			else
-				action_i_ = ac_null;
-		}
-		genNextAction();
-	}
 	return action_i_ != ac_null;
 }
 

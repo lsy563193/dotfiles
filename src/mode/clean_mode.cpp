@@ -36,30 +36,27 @@ bool ACleanMode::isInitState()
 				action_i_ == ac_align;
 }
 
-bool ACleanMode::setNextAction()
+bool ACleanMode::setNextInitAction()
 {
 	if(action_i_ == ac_open_gyro)
-	{
-		if (charger.isOnStub())
-			action_i_ = ac_back_form_charger;
-		else
-			action_i_ = ac_open_lidar;
-	}
-	else if(action_i_ == ac_back_form_charger)
 		action_i_ = ac_open_lidar;
 	else if(action_i_ == ac_open_lidar)
 		action_i_ = ac_open_slam;
 	else
-	{
-		if (isExceptionTriggered())
-			action_i_ = ac_exception_resume;
-		else if (ev.fatal_quit)
-		{
-			PP_INFO();
-			ROS_ERROR("ev.fatal_quit");
-			action_i_ = ac_null;
-		}
-	}
+		action_i_ = ac_null;
+
+	genNextAction();
+	PP_INFO(); NAV_INFO();
+	return action_i_ != ac_null;
+}
+
+bool ACleanMode::setNextAction()
+{
+	if (isExceptionTriggered())
+		action_i_ = ac_exception_resume;
+	else
+		action_i_ = ac_null;
+
 	genNextAction();
 	PP_INFO(); NAV_INFO();
 	return action_i_ != ac_null;
@@ -82,7 +79,7 @@ bool ACleanMode::isFinish()
 	if (isInitState()) {
 		if (!sp_action_->isFinish())
 			return false;
-		setNextAction();
+		setNextInitAction();
 	}
 	else
 	{

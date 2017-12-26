@@ -165,86 +165,86 @@ bool CleanModeNav::isExit()
 
 bool CleanModeNav::setNextAction()
 {
-	if (isInitState())
+	if (action_i_ == ac_open_slam)
 	{
-		PP_INFO();NAV_INFO();
-		if (action_i_ == ac_open_gyro)
-		{
-			PP_INFO();
-			if (paused_)
-				odom.setAngleOffset(paused_odom_angle_);
-			if (charger.isOnStub())
-				action_i_ = ac_back_form_charger;
-			else
-				action_i_ = ac_open_lidar;
-		}
-		else if (action_i_ == ac_back_form_charger)
-			action_i_ = ac_open_lidar;
-		else if (action_i_ == ac_open_lidar)
-		{
-			if (!has_aligned_and_open_slam)
-			{
-				//todo for test
-//				action_i_ = ac_align;
-				action_i_ = ac_open_slam;
-			}
-			else if (paused_)
-			{
-				action_i_ = ac_null;
-				// Clear the pause status.
-				paused_ = false;
-			}
-			else
-				action_i_ = ac_null;
-		}
-		else if (action_i_ == ac_align)
-			action_i_ = ac_open_slam;
-
-		genNextAction();
+		has_aligned_and_open_slam = true;
+		if (paused_)
+			// If paused before align and open slam, reset pause status here.
+			paused_ = false;
+		PP_INFO();
 	}
-	else
+	if (isExceptionTriggered())
+		action_i_ = ac_exception_resume;
+	else if (state_i_ == st_clean)
 	{
-		if (action_i_ == ac_open_slam)
-		{
-			has_aligned_and_open_slam = true;
-			if (paused_)
-				// If paused before align and open slam, reset pause status here.
-				paused_ = false;
-			PP_INFO();
-		}
-		if (isExceptionTriggered())
-			action_i_ = ac_exception_resume;
-		else if (state_i_ == st_clean)
-		{
-			auto start = nav_map.getCurrCell();
-			auto delta_y = plan_path_.back().Y - start.Y;
-			ROS_INFO("%s,%d: path size(%u), old_dir_(%d), g_check_path_in_advance(%d), bumper(%d), cliff(%d), lidar(%d), delta_y(%d)",
-							__FUNCTION__, __LINE__, plan_path_.size(), old_dir_, g_check_path_in_advance, ev.bumper_triggered,
-							ev.cliff_triggered, ev.lidar_triggered, delta_y);
-			if (!GridMap::isXDirection(old_dir_) // If last movement is not x axis linear movement, should not follow wall.
-					|| plan_path_.size() > 2 ||
-					(!g_check_path_in_advance && !ev.bumper_triggered && !ev.cliff_triggered && !ev.lidar_triggered)
-					|| delta_y == 0 || std::abs(delta_y) > 2) {
-				action_i_ = ac_linear;
-			}
-			else
-			{
-				delta_y = plan_path_.back().Y - start.Y;
-				bool is_left = GridMap::isPositiveDirection(old_dir_) ^delta_y > 0;
-				ROS_INFO("\033[31m""%s,%d: target:, 0_left_1_right(%d=%d ^ %d)""\033[0m",
-						 __FUNCTION__, __LINE__, is_left, GridMap::isPositiveDirection(old_dir_), delta_y);
-				action_i_ = is_left ? ac_follow_wall_left : ac_follow_wall_right;
-			}
-		}
-		else if (state_i_ == st_trapped)
-			action_i_ = ac_follow_wall_left;
-		else if (state_i_ == st_go_home_point)
+		auto start = nav_map.getCurrCell();
+		auto delta_y = plan_path_.back().Y - start.Y;
+		ROS_INFO("%s,%d: path size(%u), old_dir_(%d), g_check_path_in_advance(%d), bumper(%d), cliff(%d), lidar(%d), delta_y(%d)",
+						__FUNCTION__, __LINE__, plan_path_.size(), old_dir_, g_check_path_in_advance, ev.bumper_triggered,
+						ev.cliff_triggered, ev.lidar_triggered, delta_y);
+		if (!GridMap::isXDirection(old_dir_) // If last movement is not x axis linear movement, should not follow wall.
+				|| plan_path_.size() > 2 ||
+				(!g_check_path_in_advance && !ev.bumper_triggered && !ev.cliff_triggered && !ev.lidar_triggered)
+				|| delta_y == 0 || std::abs(delta_y) > 2) {
 			action_i_ = ac_linear;
-		else if (state_i_ == st_go_to_charger)
-			action_i_ = ac_go_to_charger;
-
-		genNextAction();
+		}
+		else
+		{
+			delta_y = plan_path_.back().Y - start.Y;
+			bool is_left = GridMap::isPositiveDirection(old_dir_) ^delta_y > 0;
+			ROS_INFO("\033[31m""%s,%d: target:, 0_left_1_right(%d=%d ^ %d)""\033[0m",
+					 __FUNCTION__, __LINE__, is_left, GridMap::isPositiveDirection(old_dir_), delta_y);
+			action_i_ = is_left ? ac_follow_wall_left : ac_follow_wall_right;
+		}
 	}
+	else if (state_i_ == st_trapped)
+		action_i_ = ac_follow_wall_left;
+	else if (state_i_ == st_go_home_point)
+		action_i_ = ac_linear;
+	else if (state_i_ == st_go_to_charger)
+		action_i_ = ac_go_to_charger;
+
+	genNextAction();
+	PP_INFO(); NAV_INFO();
+	return action_i_ != ac_null;
+}
+
+bool CleanModeNav::setNextInitAction()
+{
+	PP_INFO();NAV_INFO();
+	if (action_i_ == ac_open_gyro)
+	{
+		PP_INFO();
+		// If it is the starting of navigation mode, paused_odom_angle_ will be zero.
+		odom.setAngleOffset(paused_odom_angle_);
+		if (charger.isOnStub())
+			action_i_ = ac_back_form_charger;
+		else
+			action_i_ = ac_open_lidar;
+	}
+	else if (action_i_ == ac_back_form_charger)
+		action_i_ = ac_open_lidar;
+	else if (action_i_ == ac_open_lidar)
+	{
+		if (!has_aligned_and_open_slam)
+		{
+			//todo for test
+//			action_i_ = ac_align;
+			action_i_ = ac_open_slam;
+		}
+		else if (paused_)
+		{
+			action_i_ = ac_null;
+			// Clear the pause status.
+			paused_ = false;
+		}
+		else
+			action_i_ = ac_null;
+	}
+	else if (action_i_ == ac_align)
+		action_i_ = ac_open_slam;
+
+	genNextAction();
 	PP_INFO(); NAV_INFO();
 	return action_i_ != ac_null;
 }

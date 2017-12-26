@@ -52,11 +52,6 @@ CleanModeFollowWall::~CleanModeFollowWall() {
 
 bool CleanModeFollowWall::setNextAction() {
 	PP_INFO();
-	if(isInitState())
-	{
-		ROS_INFO("%s,%d: isInitState,action(%d)", __FUNCTION__, __LINE__,action_i_);
-		return ACleanMode::setNextAction();
-	}
 	if (action_i_ == ac_linear) {
 		ROS_INFO("%s,%d: mt_follow_wall_left", __FUNCTION__, __LINE__);
 		action_i_ = ac_follow_wall_left;

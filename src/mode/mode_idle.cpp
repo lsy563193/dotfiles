@@ -17,6 +17,7 @@ ModeIdle::ModeIdle()
 	event_manager_reset_status();
 
 	plan_activated_status_ = false;
+	ROS_INFO("%s %d: Current battery voltage \033[32m%5.2f V\033[0m.", __FUNCTION__, __LINE__, (float)battery.getVoltage()/100.0);
 }
 
 ModeIdle::~ModeIdle()

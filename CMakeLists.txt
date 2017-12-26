@@ -41,7 +41,7 @@ FILE(GLOB PP_SRC
 	src/mode/mode_charge.cpp
 	src/mode/mode_idle.cpp
 	src/mode/mode_remote.cpp
-		src/mode/mode_exploration.cpp
+	src/mode/clean_mode_exploration.cpp
 	src/mode/clean_mode.cpp
 	src/mode/clean_mode_navigation.cpp
 	src/mode/clean_mode_follow_wall.cpp

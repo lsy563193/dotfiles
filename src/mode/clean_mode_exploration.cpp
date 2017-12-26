@@ -114,40 +114,16 @@ bool CleanModeExploration::isExit() {
 
 bool CleanModeExploration::setNextAction() {
 	PP_INFO();
-	if(isInitState()) {
-		if (action_i_ == ac_open_gyro) {
-			if (charger.isOnStub())
-				action_i_ = ac_back_form_charger;
-			else
-				action_i_ = ac_open_lidar;
-		} else if (action_i_ == ac_back_form_charger)
-			action_i_ = ac_open_lidar;
-		else if (action_i_ == ac_open_lidar)
-			action_i_ = ac_align;
-		else if (action_i_ == ac_align)
-			action_i_ = ac_open_slam;
-		else {
-			if (isExceptionTriggered())
-				action_i_ = ac_exception_resume;
-			else if (ev.fatal_quit) {
-				PP_INFO();
-				ROS_ERROR("ev.fatal_quit");
-				action_i_ = ac_null;
-			}
-		}
-		genNextAction();
-	}else{
-		//todo action convert
-		if(state_i_ == st_clean)
-			action_i_ = ac_linear;
-		else if(state_i_ == st_go_to_charger)
-			action_i_ = ac_go_to_charger;
-		else if(state_i_ == st_go_home_point)
-			action_i_ = ac_linear;
-		else
-			action_i_ = ac_null;
-		genNextAction();
-	}
+	//todo action convert
+	if(state_i_ == st_clean)
+		action_i_ = ac_linear;
+	else if(state_i_ == st_go_to_charger)
+		action_i_ = ac_go_to_charger;
+	else if(state_i_ == st_go_home_point)
+		action_i_ = ac_linear;
+	else
+		action_i_ = ac_null;
+	genNextAction();
 	return action_i_ != ac_null;
 }
 
