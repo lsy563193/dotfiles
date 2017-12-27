@@ -99,14 +99,14 @@ bool CleanModeNav::mapMark()
 		// Set home cell.
 		if (ev.rcon_triggered)
 		{
-			home_points_.push_front(GridMap::getCurrPoint());
+			home_points_.push_front(getCurrPoint());
 			ROS_INFO("%s %d: Set home cell(%d, %d).", __FUNCTION__, __LINE__, home_points_.front().X, home_points_.front().Y);
 		}
 	}
 
 	nav_map.markRobot(CLEAN_MAP);
 	PP_INFO();
-	nav_map.print(CLEAN_MAP, nav_map.getXCell(), nav_map.getYCell());
+	nav_map.print(CLEAN_MAP, getCurrCell().X, getCurrCell().Y);
 
 	passed_path_.clear();
 	return false;
@@ -228,12 +228,12 @@ bool CleanModeNav::setNextAction()
 		action_i_ = ac_exception_resume;
 	else if (state_i_ == st_clean)
 	{
-		auto start = nav_map.getCurrCell();
+		auto start = getCurrCell();
 		auto delta_y = plan_path_.back().Y - start.Y;
 		ROS_INFO("%s,%d: path size(%u), old_dir_(%d), bumper(%d), cliff(%d), lidar(%d), delta_y(%d)",
 						__FUNCTION__, __LINE__, plan_path_.size(), old_dir_, ev.bumper_triggered,
 						ev.cliff_triggered, ev.lidar_triggered, delta_y);
-		if (!GridMap::isXAxis(old_dir_) // If last movement is not x axis linear movement, should not follow wall.
+		if (!isXAxis(old_dir_) // If last movement is not x axis linear movement, should not follow wall.
 				|| plan_path_.size() > 2 ||
 				(!ev.bumper_triggered && !ev.cliff_triggered && !ev.lidar_triggered)
 				|| delta_y == 0 || std::abs(delta_y) > 2) {
@@ -242,9 +242,9 @@ bool CleanModeNav::setNextAction()
 		else
 		{
 			delta_y = plan_path_.back().Y - start.Y;
-			bool is_left = GridMap::isPos(old_dir_) ^delta_y > 0;
+			bool is_left = isPos(old_dir_) ^delta_y > 0;
 			ROS_INFO("\033[31m""%s,%d: target:, 0_left_1_right(%d=%d ^ %d)""\033[0m",
-					 __FUNCTION__, __LINE__, is_left, GridMap::isPos(old_dir_), delta_y);
+					 __FUNCTION__, __LINE__, is_left, isPos(old_dir_), delta_y);
 			action_i_ = is_left ? ac_follow_wall_left : ac_follow_wall_right;
 		}
 	}
@@ -271,7 +271,7 @@ bool CleanModeNav::setNextState()
 	{
 		if (state_i_ == st_null)
 		{
-			auto curr = nav_map.updatePosition();
+			auto curr = updatePosition();
 			passed_path_.push_back(curr);
 
 			home_points_.back().TH = robot::instance()->getPoseAngle();
@@ -293,7 +293,7 @@ bool CleanModeNav::setNextState()
 			PP_INFO();
 			old_dir_ = new_dir_;
 			ROS_ERROR("old_dir_(%d)", old_dir_);
-			if (clean_path_algorithm_->generatePath(nav_map, nav_map.getCurrPoint(), old_dir_, plan_path_))
+			if (clean_path_algorithm_->generatePath(nav_map, getCurrPoint(), old_dir_, plan_path_))
 			{
 				new_dir_ = (MapDirection)plan_path_.front().TH;
 				ROS_ERROR("new_dir_(%d)", new_dir_);
@@ -303,7 +303,7 @@ bool CleanModeNav::setNextState()
 			}
 			else
 			{
-				if (clean_path_algorithm_->checkTrapped(nav_map, nav_map.getCurrCell()))
+				if (clean_path_algorithm_->checkTrapped(nav_map, getCurrCell()))
 					state_i_ = st_trapped;
 				else
 					state_i_ = st_go_home_point;
@@ -319,7 +319,7 @@ bool CleanModeNav::setNextState()
 				state_i_ = st_null;
 				state_confirm = true;
 			}
-			else if (!clean_path_algorithm_->checkTrapped(nav_map, nav_map.getCurrCell()))
+			else if (!clean_path_algorithm_->checkTrapped(nav_map, getCurrCell()))
 			{
 				ROS_WARN("%s %d: Escape trapped !", __FUNCTION__, __LINE__);
 				state_i_ = st_clean;
@@ -339,7 +339,7 @@ bool CleanModeNav::setNextState()
 			PP_INFO();
 			old_dir_ = new_dir_;
 			ROS_ERROR("old_dir_(%d)", old_dir_);
-			clean_path_algorithm_->generateShortestPath(nav_map, GridMap::getCurrPoint(), continue_point_, old_dir_,plan_path_);
+			clean_path_algorithm_->generateShortestPath(nav_map, getCurrPoint(), continue_point_, old_dir_,plan_path_);
 			if (!plan_path_.empty())
 			{
 				new_dir_ = (MapDirection)plan_path_.front().TH;
@@ -442,7 +442,7 @@ void CleanModeNav::remoteDirectionLeft(bool state_now, bool state_last)
 	if (state_i_ == st_clean)
 	{
 		beeper.play_for_command(VALID);
-		continue_point_ = nav_map.getCurrPoint();
+		continue_point_ = getCurrPoint();
 		ROS_INFO("%s %d: low battery, battery =\033[33m %dmv \033[0m, continue cell(%d, %d)", __FUNCTION__, __LINE__,
 				 battery.getVoltage(), continue_point_.X, continue_point_.Y);
 		ev.battery_home = true;
@@ -465,7 +465,7 @@ void CleanModeNav::batteryHome(bool state_now, bool state_last)
 {
 	if (state_i_ == st_clean)
 	{
-		continue_point_ = nav_map.getCurrPoint();
+		continue_point_ = getCurrPoint();
 		ROS_INFO("%s %d: low battery, battery =\033[33m %dmv \033[0m, continue cell(%d, %d)", __FUNCTION__, __LINE__,
 				 battery.getVoltage(), continue_point_.X, continue_point_.Y);
 		ev.battery_home = true;
@@ -496,7 +496,7 @@ bool CleanModeNav::ActionFollowWallisFinish()
 
 bool CleanModeNav::isOverOriginLine()
 {
-	auto curr = nav_map.getCurrPoint();
+	auto curr = getCurrPoint();
 	auto p_mt = boost::dynamic_pointer_cast<IMoveType>(sp_action_);
 	if ((p_mt->target_point_.Y > p_mt->start_point_.Y && (p_mt->start_point_.Y - curr.Y) > 120)
 		|| (p_mt->target_point_.Y < p_mt->start_point_.Y && (curr.Y - p_mt->start_point_.Y) > 120))
@@ -526,20 +526,20 @@ bool CleanModeNav::isOverOriginLine()
 
 bool CleanModeNav::isNewLineReach()
 {
-	auto s_curr_p = nav_map.getCurrPoint();
+	auto s_curr_p = getCurrPoint();
 	auto ret = false;
 	auto p_mt = boost::dynamic_pointer_cast<IMoveType>(sp_action_);
 	auto is_pos_dir = p_mt->target_point_.Y - p_mt->start_point_.Y > 0;
 	// The limit is CELL_COUNT_MUL / 8 * 3 further than target line center.
 	auto target_limit = p_mt->target_point_.Y + CELL_COUNT_MUL / 8 * 3 * is_pos_dir;
 //	ROS_WARN("~~~~~~~~~~~~~~~~~%s %d: start_p.Y(%d), target.Y(%d),curr_y(%d)",
-//					 __FUNCTION__, __LINE__, nav_map.countToCell(s_curr_p.Y), nav_map.countToCell(p_mt->target_point_.Y),
-//					 nav_map.countToCell(s_curr_p.Y));
+//					 __FUNCTION__, __LINE__, countToCell(s_curr_p.Y), countToCell(p_mt->target_point_.Y),
+//					 countToCell(s_curr_p.Y));
 	if (is_pos_dir ^ s_curr_p.Y < target_limit) // Robot has reached the target line limit.
 	{
 		ROS_WARN("%s %d: Reach the target limit, start_p.Y(%d), target.Y(%d),curr_y(%d)",
-				 __FUNCTION__, __LINE__, nav_map.countToCell(p_mt->start_point_.Y), nav_map.countToCell(p_mt->target_point_.Y),
-				 nav_map.countToCell(s_curr_p.Y));
+				 __FUNCTION__, __LINE__, p_mt->start_point_.Y, p_mt->target_point_.Y,
+				 s_curr_p.Y);
 		ret = true;
 	}
 	else if (is_pos_dir ^ s_curr_p.Y < p_mt->target_point_.Y)
@@ -547,10 +547,10 @@ bool CleanModeNav::isNewLineReach()
 		// Robot has reached the target line center but still not reach target line limit.
 		// Check if the wall side has blocks on the costmap.
 		auto dx = (is_pos_dir ^ action_i_ == ac_follow_wall_left) ? +2 : -2;
-		if (nav_map.isBlocksAtY(nav_map.countToCell(s_curr_p.X) + dx, nav_map.countToCell(s_curr_p.Y))) {
+		if (nav_map.isBlocksAtY(s_curr_p.toCell().X + dx, s_curr_p.toCell().Y)) {
 			ROS_WARN("%s %d: Already has block at the wall side, start_p.Y(%d), target.Y(%d),curr_y(%d)",
-					 __FUNCTION__, __LINE__, nav_map.countToCell(p_mt->start_point_.Y), nav_map.countToCell(p_mt->target_point_.Y),
-					 nav_map.countToCell(s_curr_p.Y));
+					 __FUNCTION__, __LINE__, p_mt->start_point_.toCell().Y, p_mt->target_point_.toCell().Y,
+					 s_curr_p.toCell().Y);
 			ret = true;
 		}
 	}
@@ -649,14 +649,14 @@ uint8_t CleanModeNav::setFollowWall(const Points& path)
 		Cell_t block_cell;
 		auto dy = action_i_ == ac_follow_wall_left ? 2 : -2;
 		for(auto& point : path){
-			if(nav_map.getCell(CLEAN_MAP,GridMap::countToCell(point.X),GridMap::countToCell(point.Y)) != BLOCKED_RCON){
+			if(nav_map.getCell(CLEAN_MAP,point.toCell().X,point.toCell().Y) != BLOCKED_RCON){
 				GridMap::robotToCell(point, dy * CELL_SIZE, 0, block_cell.X, block_cell.Y);
 				msg += "(" + std::to_string(block_cell.X) + "," + std::to_string(block_cell.Y) + ")";
 				nav_map.setCell(CLEAN_MAP, block_cell.X, block_cell.Y, BLOCKED_CLIFF);
 				block_count++;
 			}
 		}
-		ROS_INFO("%s,%d: Current(%d, %d), \033[32m mapMark CLEAN_MAP %s\033[0m",__FUNCTION__, __LINE__, nav_map.getXCell(), nav_map.getYCell(), msg.c_str());
+		ROS_INFO("%s,%d: Current(%d, %d), \033[32m mapMark CLEAN_MAP %s\033[0m",__FUNCTION__, __LINE__, getCurrCell().X, getCurrCell().Y, msg.c_str());
 	}
 }
 

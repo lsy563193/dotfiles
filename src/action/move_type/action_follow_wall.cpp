@@ -339,7 +339,7 @@ int16_t ActionFollowWall::get_turn_angle(bool use_target_angle)
 		auto ev_turn_angle = get_turn_angle_by_ev();
 		ROS_INFO("%s %d: event_turn_angle(%d)", __FUNCTION__, __LINE__, ev_turn_angle);
 		if(use_target_angle) {
-			auto cur = GridMap::getCurrPoint();
+			auto cur = getCurrPoint();
 			auto p_clean_mode = (ACleanMode*)sp_mode_;
 			auto tar = p_clean_mode->plan_path_.back();
 			auto tg_turn_angle = ranged_angle(course_to_dest(cur, tar) - robot::instance()->getPoseAngle());

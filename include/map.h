@@ -65,41 +65,16 @@ public:
 	GridMap();
 	~GridMap();
 
-	static bool isPos(MapDirection dir);
-
-	static bool isXAxis(MapDirection dir);
-
-	static bool isYDirection(MapDirection dir);
-
-	static int32_t getXCount(void);
-
-	static int32_t getYCount(void);
-
-	static Point32_t getCurrPoint(void);
-
-	static int16_t getXCell(void);
-
-	static int16_t getYCell(void);
-
-	static Cell_t getCurrCell();
-
 	void setCell(uint8_t id, int16_t x, int16_t y, CellState value);
 
 	CellState getCell(int id, int16_t x, int16_t y);
 
-	void setPosition(double x, double y);
-
-	static Point32_t getRelative(Point32_t point, int16_t dy, int16_t dx, bool using_point_pos);
 
 	void robotToPoint(Point32_t point, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
 
 	static void robotToCell(Point32_t point, int16_t offset_lat, int16_t offset_long, int16_t &x, int16_t &y);
 
 	void clearBlocks(void);
-
-	static int32_t cellToCount(int16_t distance);
-
-	static int16_t countToCell(int32_t count);
 
 	void setCells(int8_t count, int16_t cell_x, int16_t cell_y, CellState state);
 
@@ -135,8 +110,6 @@ public:
 	void cellToWorld(double &worldX, double &worldY, int16_t &cellX, int16_t &cellY);
 
 	bool markRobot(uint8_t id);
-
-	Point32_t updatePosition();
 
 	uint8_t setLidar();
 
@@ -308,8 +281,6 @@ private:
 
 	int16_t g_x_min, g_x_max, g_y_min, g_y_max;
 	int16_t xRangeMin, xRangeMax, yRangeMin, yRangeMax;
-
-	static double xCount, yCount;
 
 	// Cells that temporary save the blocks.
 	std::vector<Cell_t> temp_bumper_cells;

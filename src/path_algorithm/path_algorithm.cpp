@@ -2,6 +2,7 @@
 // Created by austin on 17-12-3.
 //
 
+#include <pp.h>
 #include "ros/ros.h"
 #include "path_algorithm.h"
 
@@ -143,7 +144,7 @@ Points APathAlgorithm::cells_generate_points(Cells &path)
 //	displayCellPath(path);
 	Points targets{};
 	for(auto it = path.begin(); it < path.end(); ++it) {
-		Point32_t target {GridMap::cellToCount((*it).X),GridMap::cellToCount((*it).Y),0};
+		Point32_t target {cellToCount((*it).X),cellToCount((*it).Y),0};
 		auto it_next = it+1;
 		if (it->X == it_next->X)
 			target.TH = it->Y > it_next->Y ? MAP_NEG_Y : MAP_POS_Y;

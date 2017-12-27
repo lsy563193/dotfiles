@@ -16,8 +16,8 @@ void AMovementFollowPoint::adjustSpeed(int32_t &left_speed, int32_t &right_speed
 		return;
 	}
 
-	auto curr_p = nav_map.getCurrPoint();
-	auto angle_diff = ranged_angle( course_to_dest(curr_p, tmp_target) - GridMap::getCurrPoint().TH);
+	auto curr_p = getCurrPoint();
+	auto angle_diff = ranged_angle( course_to_dest(curr_p, tmp_target) - getCurrPoint().TH);
 	if (integration_cycle_++ > 10) {
 		integration_cycle_ = 0;
 		integrated_ += angle_diff;

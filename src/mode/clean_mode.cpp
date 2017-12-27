@@ -107,8 +107,8 @@ bool is_equal_with_angle_(const Point32_t &l, const Point32_t &r)
 
 Point32_t ACleanMode::updatePath(GridMap& map)
 {
-	auto curr = map.updatePosition();
-//	auto point = map.getCurrPoint();
+	auto curr = updatePosition();
+//	auto point = getCurrPoint();
 //	robot::instance()->pubCleanMapMarkers(nav_map, tmp_plan_path_);
 //	PP_INFO();
 //	ROS_INFO("point(%d,%d,%d)",point.X, point.Y,point.TH);
@@ -247,7 +247,7 @@ void ACleanMode::stateInit(int next)
 //	int16_t x, y;
 //	//int32_t	x2, y2;
 //	std::string msg = "cell:";
-//	GridMap::robotToCell(GridMap::getCurrPoint(), dy * CELL_SIZE, 0, x, y);
+//	GridMap::robotToCell(getCurrPoint(), dy * CELL_SIZE, 0, x, y);
 //	//robot_to_point(robot::instance()->getPoseAngle(), dy * CELL_SIZE, 0, &x2, &y2);
 //	//ROS_WARN("%s %d: d_cell(0, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
 //	//			, __FUNCTION__, __LINE__, dy, robot::instance()->getPoseAngle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
@@ -277,10 +277,10 @@ bool ACleanMode::setNextStateForGoHomePoint(GridMap &map)
 		state_i_ = st_go_to_charger;
 		stateInit(state_i_);
 	}
-	else if (map.getCurrCell() == plan_path_.back().toCell())
+	else if (getCurrCell() == plan_path_.back().toCell())
 	{
 		// Reach home cell!!
-		if (map.getCurrCell() == g_zero_home.toCell())
+		if (getCurrCell() == g_zero_home.toCell())
 		{
 			PP_INFO();
 			state_i_ = st_null;
@@ -292,7 +292,7 @@ bool ACleanMode::setNextStateForGoHomePoint(GridMap &map)
 			stateInit(state_i_);
 		}
 	}
-	else if (go_home_path_algorithm_->generatePath(map, GridMap::getCurrPoint(),old_dir_, plan_path_))
+	else if (go_home_path_algorithm_->generatePath(map, getCurrPoint(),old_dir_, plan_path_))
 	{
 		// New path to home cell is generated.
 		new_dir_ = (MapDirection)plan_path_.front().TH;

@@ -739,3 +739,88 @@ void robot::obsAdjustCount(int count)
 #endif
 }
 
+//--------------------
+static double xCount{}, yCount{};
+
+Point32_t getCurrPoint(void)
+{
+	return {(int32_t)round(xCount), (int32_t)round(yCount),robot::instance()->getPoseAngle()};
+}
+
+Cell_t getCurrCell()
+{
+	return Cell_t{countToCell(xCount), countToCell(yCount)};
+}
+
+int32_t cellToCount(int16_t i) {
+	return i * CELL_COUNT_MUL;
+}
+
+int16_t countToCell(int32_t count) {
+	if(count < -CELL_COUNT_MUL_1_2) {
+		return (count + CELL_COUNT_MUL_1_2) / CELL_COUNT_MUL - 1;
+	} else {
+		return (count + CELL_COUNT_MUL_1_2) / CELL_COUNT_MUL;
+	}
+}
+
+void setPosition(double x, double y) {
+	xCount = x;
+	yCount = y;
+}
+
+bool isPos(MapDirection dir)
+{
+	return (dir == MAP_POS_X || dir == MAP_POS_Y || dir == MAP_NONE);
+}
+
+bool isXAxis(MapDirection dir)
+{
+	return dir == MAP_POS_X || dir == MAP_NEG_X || dir == MAP_NONE;
+}
+
+Point32_t updatePosition()
+{
+	auto pos_x = robot::instance()->getPoseX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	auto pos_y = robot::instance()->getPoseY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	setPosition(pos_x, pos_y);
+//	ROS_INFO("%s %d:", __FUNCTION__, __LINE__);
+	return getCurrPoint();
+}
+
+uint16_t relative_theta = 3600;
+Point32_t getRelative(Point32_t point, int16_t dy, int16_t dx, bool using_point_pos) {
+	double relative_sin, relative_cos;
+	if(point.TH != relative_theta) {
+		if(point.TH == 0) {
+			relative_sin = 0;
+			relative_cos = 1;
+		} else if(point.TH == 900) {
+			relative_sin = 1;
+			relative_cos = 0;
+		} else if(point.TH == 1800) {
+			relative_sin = 0;
+			relative_cos = -1;
+		} else if(point.TH == -900) {
+			relative_sin = -1;
+			relative_cos = 0;
+		} else {
+			relative_sin = sin(deg_to_rad(point.TH, 10));
+			relative_cos = cos(deg_to_rad(point.TH, 10));
+		}
+	}
+
+	if (using_point_pos)
+	{
+		point.X += (int32_t)( ( ((double)dx * relative_cos * CELL_COUNT_MUL) - ((double)dy	* relative_sin * CELL_COUNT_MUL) ) / CELL_SIZE );
+		point.Y += (int32_t)( ( ((double)dx * relative_sin * CELL_COUNT_MUL) + ((double)dy	* relative_cos * CELL_COUNT_MUL) ) / CELL_SIZE );
+	}
+	else
+	{
+		point.X = cellToCount(point.toCell().X) + (int32_t)( ( ((double)dx * relative_cos * CELL_COUNT_MUL) - ((double)dy	* relative_sin * CELL_COUNT_MUL) ) / CELL_SIZE );
+		point.Y = cellToCount(point.toCell().Y) + (int32_t)( ( ((double)dx * relative_sin * CELL_COUNT_MUL) + ((double)dy	* relative_cos * CELL_COUNT_MUL) ) / CELL_SIZE );
+//		ROS_ERROR("piont.x:%d  point:y:%d",point.X,point.Y,point.TH);
+	}
+	return point;
+}
+

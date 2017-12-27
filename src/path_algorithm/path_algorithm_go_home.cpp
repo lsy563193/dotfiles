@@ -97,7 +97,7 @@ bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, cons
 		auto cnt = *go_home_way_list_it_ / GO_HOME_WAY_NUM;
 		current_home_target_ = home_points_[cnt];
 		ROS_INFO("\033[1;46;37m" "%s,%d:current_home_target_(%d, %d, %d), way(%d), cnt(%d) " "\033[0m",
-				 __FUNCTION__, __LINE__, GridMap::countToCell(current_home_target_.X), GridMap::countToCell(current_home_target_.Y), current_home_target_.TH, way, cnt);
+				 __FUNCTION__, __LINE__, current_home_target_.toCell().X, current_home_target_.toCell().Y, current_home_target_.TH, way, cnt);
 		// Update go_home_map_.
 		go_home_map_.copy(map);
 		if (way == THROUGH_SLAM_MAP_REACHABLE_AREA) {

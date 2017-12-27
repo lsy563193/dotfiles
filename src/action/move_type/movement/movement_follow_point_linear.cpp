@@ -23,22 +23,22 @@ MovementFollowPointLinear::MovementFollowPointLinear()
 }
 
 bool MovementFollowPointLinear::_checkIsNear(const Point32_t& tmp_target, const Point32_t& target,MapDirection new_dir) {
-	auto &target_xy = (GridMap::isXAxis(new_dir)) ? target.X : target.Y;
-	auto &tmp_xy = (GridMap::isXAxis(new_dir)) ? tmp_target.X : tmp_target.Y;
+	auto &target_xy = (isXAxis(new_dir)) ? target.X : target.Y;
+	auto &tmp_xy = (isXAxis(new_dir)) ? tmp_target.X : tmp_target.Y;
 
-	return (GridMap::isPos(new_dir)) ? target_xy <= tmp_xy : target_xy >= tmp_xy;
+	return (isPos(new_dir)) ? target_xy <= tmp_xy : target_xy >= tmp_xy;
 }
 
 Point32_t MovementFollowPointLinear::_calcTmpTarget(const Point32_t& curr, const Point32_t& target,MapDirection new_dir) {
-	auto curr_xy = (GridMap::isXAxis(new_dir)) ? curr.X : curr.Y;
-	auto &target_xy = (GridMap::isXAxis(new_dir)) ? target.X : target.Y;
+	auto curr_xy = (isXAxis(new_dir)) ? curr.X : curr.Y;
+	auto &target_xy = (isXAxis(new_dir)) ? target.X : target.Y;
 
 	auto tmp_target = curr;
-	auto &tmp_xy = (GridMap::isXAxis(new_dir)) ? tmp_target.X : tmp_target.Y;
+	auto &tmp_xy = (isXAxis(new_dir)) ? tmp_target.X : tmp_target.Y;
 //	ROS_WARN("curr_xy(%d), target_xy(%d)", curr_xy, target_xy);
 	auto dis = std::min(std::abs(curr_xy - target_xy), (int32_t) (CELL_COUNT_MUL*0.75));
 //	ROS_INFO("dis(%d)",dis);
-	if (!GridMap::isPos(new_dir))
+	if (!isPos(new_dir))
 		dis *= -1;
 	tmp_xy = curr_xy + dis;
 //	ROS_WARN("tmp(%d,%d)",tmp_target.X, tmp_target.Y);
@@ -48,7 +48,7 @@ Point32_t MovementFollowPointLinear::_calcTmpTarget(const Point32_t& curr, const
 
 bool MovementFollowPointLinear::calcTmpTarget(Point32_t& tmp_target) {
 	auto p_cm = (ACleanMode*)(sp_mt_->sp_mode_);
-	auto curr = GridMap::getCurrPoint();
+	auto curr = getCurrPoint();
 
 	tmp_target = _calcTmpTarget(curr, sp_mt_->target_point_,p_cm->new_dir_);
 
@@ -116,7 +116,7 @@ int MovementFollowPointLinear::countRconTriggered(uint32_t rcon_value)
 bool MovementFollowPointLinear::isCellReach()
 {
 	// Checking if robot has reached target cell.
-	auto s_curr_p = nav_map.getCurrPoint();
+	auto s_curr_p = getCurrPoint();
 	auto target_p = sp_mt_->target_point_;
 	if (std::abs(s_curr_p.X - target_p.X) < CELL_COUNT_MUL_1_2 &&
 		std::abs(s_curr_p.Y - target_p.Y) < CELL_COUNT_MUL_1_2)
@@ -148,10 +148,10 @@ bool MovementFollowPointLinear::isNearTarget()
 {
 //	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mt_->sp_mode_);
 //	auto new_dir = p_clean_mode->new_dir_;
-//	auto s_curr_p = nav_map.getCurrPoint();
-//	auto curr = (GridMap::isXAxis(new_dir)) ? s_curr_p.X : s_curr_p.Y;
+//	auto s_curr_p = getCurrPoint();
+//	auto curr = (isXAxis(new_dir)) ? s_curr_p.X : s_curr_p.Y;
 //	auto target_p = sp_mt_->target_point_;
-//	auto &target = (GridMap::isXAxis(new_dir)) ? target_p.X : target_p.Y;
+//	auto &target = (isXAxis(new_dir)) ? target_p.X : target_p.Y;
 //	//ROS_INFO("%s %d: s_curr_p(%d, %d), target_p(%d, %d), dir(%d)",
 //	//		 __FUNCTION__, __LINE__, s_curr_p.X, s_curr_p.Y, target_p.X, target_p.Y, new_dir);
 //	if ((GridMap::isPos(new_dir) && (curr > target - 1.5 * CELL_COUNT_MUL)) ||
@@ -195,15 +195,15 @@ bool MovementFollowPointLinear::isPassTargetStop()
 	// Checking if robot has reached target cell.
 	auto p_clean_mode = (ACleanMode*)sp_mt_->sp_mode_;
 	auto new_dir = p_clean_mode->new_dir_;
-	auto s_curr_p = nav_map.getCurrPoint();
-	auto curr = (GridMap::isXAxis(new_dir)) ? s_curr_p.X : s_curr_p.Y;
+	auto s_curr_p = getCurrPoint();
+	auto curr = (isXAxis(new_dir)) ? s_curr_p.X : s_curr_p.Y;
 	auto target_p = (sp_mt_->target_point_);
-	auto target = (GridMap::isXAxis(new_dir)) ? target_p.X : target_p.Y;
-	if ((GridMap::isPos(new_dir) && (curr > target + CELL_COUNT_MUL / 4)) ||
-		(!GridMap::isPos(new_dir) && (curr < target - CELL_COUNT_MUL / 4)))
+	auto target = (isXAxis(new_dir)) ? target_p.X : target_p.Y;
+	if ((isPos(new_dir) && (curr > target + CELL_COUNT_MUL / 4)) ||
+		(!isPos(new_dir) && (curr < target - CELL_COUNT_MUL / 4)))
 	{
 		ROS_INFO("%s, %d: MovementFollowPointLinear, pass target: new_dir(\033[32m%d\033[0m),is_x_axis(\033[32m%d\033[0m),is_pos(\033[32m%d\033[0m),curr(\033[32m%d\033[0m),target(\033[32m%d\033[0m)",
-				 __FUNCTION__, __LINE__, new_dir, GridMap::isXAxis(new_dir), GridMap::isPos(new_dir), curr, target);
+				 __FUNCTION__, __LINE__, new_dir, isXAxis(new_dir), isPos(new_dir), curr, target);
 		return true;
 	}
 	return false;

@@ -118,7 +118,7 @@ bool CleanModeExploration::setNextState() {
 	{
 		if (state_i_ == st_null)
 		{
-			auto curr = exploration_map.updatePosition();
+			auto curr = updatePosition();
 			passed_path_.push_back(curr);
 			home_points_.back().TH = robot::instance()->getPoseAngle();
 			PP_INFO();
@@ -150,7 +150,7 @@ bool CleanModeExploration::setNextState() {
 				state_confirm = true;
 				action_i_ = ac_go_to_charger;
 			}
-			else if (clean_path_algorithm_->generatePath(exploration_map,GridMap::getCurrPoint(), old_dir_, plan_path_))
+			else if (clean_path_algorithm_->generatePath(exploration_map,getCurrPoint(), old_dir_, plan_path_))
 			{
 				new_dir_ = (MapDirection)plan_path_.front().TH;
 				ROS_WARN("new_dir_(%d)", new_dir_);
@@ -250,6 +250,6 @@ void CleanModeExploration::chargeDetect(bool state_now, bool state_last) {
 void CleanModeExploration::printMapAndPath()
 {
 	clean_path_algorithm_->displayCellPath(points_generate_cells(passed_path_));
-	exploration_map.print(CLEAN_MAP,exploration_map.getXCell(),exploration_map.getYCell());
+	exploration_map.print(CLEAN_MAP,getCurrCell().X,getCurrCell().Y);
 }
 

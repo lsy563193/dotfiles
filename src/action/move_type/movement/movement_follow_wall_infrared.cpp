@@ -48,7 +48,7 @@ bool IFollowWall::isIsolate()
 
 bool IFollowWall::isBlockCleared()
 {
-	if (!nav_map.isBlockAccessible(nav_map.getXCell(), nav_map.getYCell())) // Robot has step on blocks.
+	if (!nav_map.isBlockAccessible(getCurrCell().X, getCurrCell().Y)) // Robot has step on blocks.
 	{
 //		ROS_WARN("%s %d: Lidar triggered, turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
 		return true;
