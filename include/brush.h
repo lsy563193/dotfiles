@@ -9,15 +9,11 @@ class Brush {
 public:
 	Brush(void);
 
+	void normalOperate(void);
+	void fullOperate(void);
 	void stop(void);
 
-	void setMainPwm(uint16_t PWM);
-
-	void setSidePwm(uint16_t L, uint16_t R);
-
-	void setLeftPwm(uint16_t L);
-
-	void setRightPwm(uint16_t R);
+	void setPWM(uint8_t L, uint8_t R, uint8_t M);
 
 	uint8_t leftIsStall(void);
 
@@ -53,15 +49,24 @@ public:
 		return is_main_oc_;
 	}
 
+	void checkBatterySetPWM();
+	void updatePWM();
+
 	uint8_t oc_left_cnt_;
 	uint8_t oc_main_cnt_;
 	uint8_t oc_right_cnt_;
+
 private:
 
-//Value for saving SideBrush_PWM
-	uint16_t left_pwm_;
-	uint16_t right_pwm_;
-	uint16_t main_pwm_;
+	//Value for saving SideBrush_PWM
+	enum {
+		brush_stop,
+		brush_normal,
+		brush_max,
+	};
+	double check_battery_time_stamp_;
+	uint8_t brush_status_;
+	uint8_t normal_PWM;
 
 	bool is_left_oc_;
 	bool is_right_oc_;

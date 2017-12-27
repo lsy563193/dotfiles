@@ -65,8 +65,7 @@ IAction* ModeGoToCharger::getNextAction()
 	{
 		action_i_ = ac_go_to_charger;
 		led.set_mode(LED_STEADY, LED_ORANGE);
-		brush.setSidePwm(30, 30);
-		brush.setMainPwm(30);
+		brush.normalOperate();
 		vacuum.setMode(Vac_Speed_NormalL, false);
 		return new MoveTypeGoToCharger();
 	}

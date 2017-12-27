@@ -12,19 +12,17 @@ extern std::deque <Cell_t> path_points;
 CleanModeFollowWall::CleanModeFollowWall()
 {
 	ROS_INFO("%s %d: Entering Follow wall mode\n=========================" , __FUNCTION__, __LINE__);
-	IMoveType::sp_mode_.reset(this);
+	IMoveType::sp_mode_ = this;
 	diff_timer_ = WALL_FOLLOW_TIME;
 	speaker.play(VOICE_CLEANING_WALL_FOLLOW);
 	clean_path_algorithm_.reset(new WFCleanPathAlgorithm);
 	go_home_path_algorithm_.reset(new GoHomePathAlgorithm(nav_map, home_cells_));
-	cleanMap_ = &fw_map;
+	clean_map_ = &fw_map;
 }
 
-bool CleanModeFollowWall::mapMark() {
-	return false;
-}
-
-CleanModeFollowWall::~CleanModeFollowWall() {
+CleanModeFollowWall::~CleanModeFollowWall()
+{
+	IMoveType::sp_mode_ = nullptr;
 
 	if (ev.key_clean_pressed)
 	{
@@ -50,8 +48,15 @@ CleanModeFollowWall::~CleanModeFollowWall() {
 //			 static_cast<float>(robot_timer.getWorkTime()) / 60, map_area / (static_cast<float>(robot_timer.getWorkTime()) / 60));
 }
 
-bool CleanModeFollowWall::setNextAction() {
+bool CleanModeFollowWall::mapMark() {
+	return false;
+}
+
+bool CleanModeFollowWall::setNextAction()
+{
 	PP_INFO();
+	if (!isInitFinished_)
+		return ACleanMode::setNextAction();
 	if (action_i_ == ac_linear) {
 		ROS_INFO("%s,%d: mt_follow_wall_left", __FUNCTION__, __LINE__);
 		action_i_ = ac_follow_wall_left;

@@ -8,7 +8,7 @@
 ActionFollowWall::ActionFollowWall(bool is_left, bool is_trapped)
 {
 
-	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mode_);
+	auto p_clean_mode = (ACleanMode*)sp_mode_;
 	target_point_ = GridMap::cellToPoint(p_clean_mode->plan_path_.front());
 	is_left_ = is_left;
 	int16_t turn_angle;
@@ -42,9 +42,9 @@ ActionFollowWall::~ActionFollowWall()
 
 bool ActionFollowWall::isFinish()
 {
-	auto p_cm = boost::dynamic_pointer_cast<ACleanMode>(sp_mode_);
+	auto p_clean_mode = (ACleanMode*)sp_mode_;
 
-	if(p_cm->ActionFollowWallisFinish())
+	if(p_clean_mode->ActionFollowWallisFinish())
 		return true;
 
 	if (sp_movement_->isFinish()) {
@@ -334,7 +334,7 @@ int16_t ActionFollowWall::get_turn_angle(bool use_target_angle)
 		ROS_INFO("%s %d: event_turn_angle(%d)", __FUNCTION__, __LINE__, ev_turn_angle);
 		if(use_target_angle) {
 			auto cur = GridMap::getCurrPoint();
-			auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mode_);
+			auto p_clean_mode = (ACleanMode*)sp_mode_;
 			auto tar = GridMap::cellToPoint(p_clean_mode->plan_path_.back());
 			auto tg_turn_angle = ranged_angle(course_to_dest(cur, tar) - robot::instance()->getPoseAngle());
 			ROS_INFO("%s %d: target_turn_angle(%d)", __FUNCTION__, __LINE__, tg_turn_angle);

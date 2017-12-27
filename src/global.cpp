@@ -81,7 +81,7 @@ void path_set_home(const Cell_t& curr)
 		// If curr near (0, 0)
 		if (abs(curr.X) >= 5 || abs(curr.Y) >= 5)
 		{
-			if(g_homes.size() >= ESCAPE_TRAPPED_REF_CELL_SIZE+1)//escape_count + zero_home = 3+1 = 4
+			if(g_homes.size() >= HOME_CELLS_SIZE+1)//escape_count + zero_home = 3+1 = 4
 			{
 				std::copy(g_homes.begin() + 2, g_homes.end(), g_homes.begin()+1);//shift 1 but save zero_home
 				g_homes.pop_back();

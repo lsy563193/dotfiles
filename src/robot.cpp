@@ -330,11 +330,8 @@ void robot::visualizeMarkerInit()
 	clean_markers_.type = visualization_msgs::Marker::LINE_STRIP;
 	clean_markers_.action= 0;//add
 	clean_markers_.lifetime=ros::Duration(0);
-#if __ROBOT_X400
-	clean_markers_.scale.x = 0.31;
-#elif __ROBOT_X900
+
 	clean_markers_.scale.x = 0.33;
-#endif
 //	clean_markers_.scale.y = 0.31;
 	clean_markers_.color.r = 0.0;
 	clean_markers_.color.g = 1.0;
@@ -495,7 +492,6 @@ void robot::pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path, Cel
 			}
 		}
 	}
-#if LINEAR_MOVE_WITH_PATH
 	if (!path.empty())
 	{
 		for (auto it = path.begin(); it->X != path.back().X || it->Y != path.back().Y; it++)
@@ -503,7 +499,6 @@ void robot::pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path, Cel
 
 		robot::instance()->setCleanMapMarkers(path.back().X, path.back().Y, TARGET_CLEAN);
 	}
-#endif
 
 	clean_map_markers_.header.stamp = ros::Time::now();
 	send_clean_map_marker_pub_.publish(clean_map_markers_);
@@ -678,7 +673,7 @@ bool robot::lidarMotorCtrl(bool switch_)
 bool robot::slamStart(void)
 {
 	std_srvs::Empty empty;
-	ROS_INFO("......................");
+	ROS_INFO("%s %d: Call start slam service.", __FUNCTION__, __LINE__);
 	return start_slam_cli_.call(empty);
 }
 

@@ -10,8 +10,7 @@ ActionBackFromCharger::ActionBackFromCharger()
 	path_set_home(nav_map.getCurrCell());
 
 	vacuum.setMode(Vac_Normal, false);
-	brush.setSidePwm(30, 30);
-	brush.setMainPwm(30);
+	brush.normalOperate();
 	wheel.setDirBackward();
 	charger_pose.setX(odom.getX());
 	charger_pose.setY(odom.getY());

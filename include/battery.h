@@ -26,7 +26,7 @@ public:
 	}
 
 private:
-		uint16_t voltage_;
+	uint16_t voltage_;
 };
 
 extern Battery battery;

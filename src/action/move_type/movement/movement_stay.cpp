@@ -9,8 +9,7 @@
 MovementStay::MovementStay()
 {
 	vacuum.setMode(Vac_Save);
-	brush.setSidePwm(50, 50);
-	brush.setMainPwm(30);
+	brush.normalOperate();
 	ROS_INFO("%s %d: Start movement stay.", __FUNCTION__, __LINE__);
 	start_timer_ = ros::Time::now().toSec();
 	interval_ = 15;

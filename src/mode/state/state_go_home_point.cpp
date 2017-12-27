@@ -7,7 +7,7 @@
 
 StateGoHomePoint::StateGoHomePoint():gh_state_(gh_ing) {
 	vacuum.setMode(Vac_Normal, false);
-	brush.setSidePwm(30, 30);
+	brush.normalOperate();
 	wheel.setPidTargetSpeed(0, 0, REG_TYPE_LINEAR);
 	if (ev.remote_home || cm_is_go_charger())
 		led.set_mode(LED_STEADY, LED_ORANGE);

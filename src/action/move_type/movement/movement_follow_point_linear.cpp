@@ -13,7 +13,7 @@ MovementFollowPointLinear::MovementFollowPointLinear()
 //	s_target_p = GridMap::cellToPoint(sp_mt_->sp_cm_->tmp_plan_path_.back());
 	base_speed_ = LINEAR_MIN_SPEED;
 	tick_limit_ = 1;
-	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mt_->sp_mode_);
+	auto p_clean_mode = (ACleanMode*)(sp_mt_->sp_mode_);
 	sp_mt_->target_point_ = GridMap::cellToPoint(p_clean_mode->plan_path_.front());
 //	sp_mt_->sp_cm_->plan_path_display_sp_mt_->sp_cm_->plan_path_points();
 //	g_is_should_follow_wall = false;
@@ -27,6 +27,7 @@ bool MovementFollowPointLinear::_checkIsNear(const Point32_t& tmp_target, const 
 
 	return (GridMap::isPos(new_dir)) ? target_xy <= tmp_xy : target_xy >= tmp_xy;
 }
+
 Point32_t MovementFollowPointLinear::_calcTmpTarget(const Point32_t& curr, const Point32_t& target,MapDirection new_dir) {
 	auto curr_xy = (GridMap::isXAxis(new_dir)) ? curr.X : curr.Y;
 	auto &target_xy = (GridMap::isXAxis(new_dir)) ? target.X : target.Y;
@@ -45,7 +46,7 @@ Point32_t MovementFollowPointLinear::_calcTmpTarget(const Point32_t& curr, const
 }
 
 bool MovementFollowPointLinear::calcTmpTarget(Point32_t& tmp_target) {
-	auto p_cm = boost::dynamic_pointer_cast<ACleanMode>(sp_mt_->sp_mode_);
+	auto p_cm = (ACleanMode*)(sp_mt_->sp_mode_);
 	auto curr = GridMap::getCurrPoint();
 
 	tmp_target = _calcTmpTarget(curr, sp_mt_->target_point_,p_cm->new_dir_);
@@ -57,10 +58,10 @@ bool MovementFollowPointLinear::calcTmpTarget(Point32_t& tmp_target) {
 		p_cm->new_dir_ = (MapDirection) p_cm->plan_path_.front().TH;
 		p_cm->plan_path_.pop_front();
 		sp_mt_->target_point_ = GridMap::cellToPoint(p_cm->plan_path_.front());
-		ROS_WARN("%s,%d,is_near(%d),dir(%d),target(%d,%d),tmp(%d,%d)", __FUNCTION__, __LINE__, is_near, p_cm->new_dir_, sp_mt_->target_point_.X, sp_mt_->target_point_.Y, tmp_target.X, tmp_target.Y);
+//		ROS_INFO("%s,%d,is_near(%d),dir(%d),target(%d,%d),tmp(%d,%d)", __FUNCTION__, __LINE__, is_near, p_cm->new_dir_, sp_mt_->target_point_.X, sp_mt_->target_point_.Y, tmp_target.X, tmp_target.Y);
 		tmp_target = _calcTmpTarget(curr, sp_mt_->target_point_,p_cm->new_dir_);
 
-		ROS_ERROR("%s,%d,dir(%d),target(%d,%d),tmp(%d,%d)", __FUNCTION__, __LINE__, p_cm->new_dir_, sp_mt_->target_point_.X, sp_mt_->target_point_.Y, tmp_target.X, tmp_target.Y);
+		ROS_INFO("%s,%d,dir(%d),target(%d,%d),tmp(%d,%d)", __FUNCTION__, __LINE__, p_cm->new_dir_, sp_mt_->target_point_.X, sp_mt_->target_point_.Y, tmp_target.X, tmp_target.Y);
 	}
 
 	return true;
@@ -152,7 +153,7 @@ bool MovementFollowPointLinear::isPassTargetStop()
 {
 //	PP_INFO();
 	// Checking if robot has reached target cell.
-	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mt_->sp_mode_);
+	auto p_clean_mode = (ACleanMode*)sp_mt_->sp_mode_;
 	auto new_dir = p_clean_mode->new_dir_;
 	auto s_curr_p = nav_map.getCurrPoint();
 	auto curr = (GridMap::isXAxis(new_dir)) ? s_curr_p.X : s_curr_p.Y;
