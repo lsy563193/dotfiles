@@ -73,11 +73,11 @@ CleanModeNav::~CleanModeNav()
 
 bool CleanModeNav::mapMark()
 {
-	clean_path_algorithm_->displayCellPath(passed_path_);
-	robot::instance()->pubCleanMapMarkers(nav_map, targetsGeneratePath(targets_));
+	clean_path_algorithm_->displayCellPath(points_generate_cells(passed_path_));
+	robot::instance()->pubCleanMapMarkers(nav_map, points_generate_cells(plan_path_));
 //	if (action_i_ == ac_linear) {
 	PP_WARN();
-		nav_map.setCleaned(passed_path_);
+		nav_map.setCleaned(points_generate_cells(passed_path_));
 //	}
 
 	nav_map.setBlocks();
@@ -85,15 +85,15 @@ bool CleanModeNav::mapMark()
 	{
 		ROS_ERROR("-------------------------------------------------------");
 		auto start = *passed_path_.begin();
-		passed_path_.erase(std::remove_if(passed_path_.begin(),passed_path_.end(),[&start](Cell_t& it){
-			return it == start;
+		passed_path_.erase(std::remove_if(passed_path_.begin(),passed_path_.end(),[&start](Point32_t& it){
+			return GridMap::pointToCell(it) == GridMap::pointToCell(start);
 		}),passed_path_.end());
-		clean_path_algorithm_->displayCellPath(passed_path_);
+		clean_path_algorithm_->displayCellPath(points_generate_cells(passed_path_));
 		ROS_ERROR("-------------------------------------------------------");
 		setFollowWall(passed_path_);
 	}
 	if (state_i_ == st_trapped)
-		fw_map.setFollowWall(action_i_ == ac_follow_wall_left);
+		fw_map.setFollowWall(action_i_ == ac_follow_wall_left,plan_path_);
 
 	nav_map.markRobot(CLEAN_MAP);
 	PP_INFO();
@@ -206,19 +206,19 @@ bool CleanModeNav::setNextAction()
 	else if (state_i_ == st_clean)
 	{
 		auto start = nav_map.getCurrCell();
-		auto delta_y = targets_.back().Y - start.Y;
+		auto delta_y = plan_path_.back().Y - start.Y;
 		ROS_INFO("%s,%d: path size(%u), old_dir_(%d), g_check_path_in_advance(%d), bumper(%d), cliff(%d), lidar(%d), delta_y(%d)",
-						__FUNCTION__, __LINE__, targets_.size(), old_dir_, g_check_path_in_advance, ev.bumper_triggered,
+						__FUNCTION__, __LINE__, plan_path_.size(), old_dir_, g_check_path_in_advance, ev.bumper_triggered,
 						ev.cliff_triggered, ev.lidar_triggered, delta_y);
 		if (!GridMap::isXAxis(old_dir_) // If last movement is not x axis linear movement, should not follow wall.
-				|| targets_.size() > 2 ||
+				|| plan_path_.size() > 2 ||
 				(!g_check_path_in_advance && !ev.bumper_triggered && !ev.cliff_triggered && !ev.lidar_triggered)
 				|| delta_y == 0 || std::abs(delta_y) > 2) {
 			action_i_ = ac_linear;
 		}
 		else
 		{
-			delta_y = targets_.back().Y - start.Y;
+			delta_y = plan_path_.back().Y - start.Y;
 			bool is_left = GridMap::isPos(old_dir_) ^delta_y > 0;
 			ROS_INFO("\033[31m""%s,%d: target:, 0_left_1_right(%d=%d ^ %d)""\033[0m",
 					 __FUNCTION__, __LINE__, is_left, GridMap::isPos(old_dir_), delta_y);
@@ -251,7 +251,7 @@ bool CleanModeNav::setNextState()
 			auto curr = nav_map.updatePosition();
 			passed_path_.push_back(curr);
 
-			home_cells_.back().TH = robot::instance()->getPoseAngle();
+			home_points_.back().TH = robot::instance()->getPoseAngle();
 			PP_INFO();
 
 			state_i_ = st_clean;
@@ -272,12 +272,12 @@ bool CleanModeNav::setNextState()
 			PP_INFO();
 			old_dir_ = new_dir_;
 			ROS_ERROR("old_dir_(%d)", old_dir_);
-			if (clean_path_algorithm_->generatePath(nav_map, nav_map.getCurrCell(), old_dir_, targets_))
+			if (clean_path_algorithm_->generatePath(nav_map, nav_map.getCurrPoint(), old_dir_, plan_path_))
 			{
-				new_dir_ = (MapDirection)targets_.front().TH;
+				new_dir_ = (MapDirection)plan_path_.front().TH;
 				ROS_ERROR("new_dir_(%d)", new_dir_);
-				targets_.pop_front();
-				clean_path_algorithm_->displayPointPath(targets_);
+				plan_path_.pop_front();
+				clean_path_algorithm_->displayCellPath(points_generate_cells(plan_path_));
 				state_confirm = true;
 			}
 			else
@@ -313,15 +313,15 @@ bool CleanModeNav::setNextState()
 		{
 			PP_INFO();
 			old_dir_ = new_dir_;
-			targets_.clear();
-			if (go_home_path_algorithm_->generatePath(nav_map, nav_map.getCurrCell(),old_dir_, targets_))
+			plan_path_.clear();
+			if (go_home_path_algorithm_->generatePath(nav_map, nav_map.getCurrPoint(),old_dir_, plan_path_))
 			{
 				// Reach home cell or new path to home cell is generated.
-				if (targets_.empty())
+				if (plan_path_.empty())
 				{
 					// Reach home cell.
 					PP_INFO();
-					if (nav_map.getCurrCell() == g_zero_home)
+					if (nav_map.getCurrCell() == GridMap::pointToCell(g_zero_home))
 					{
 						PP_INFO();
 						state_i_ = st_null;
@@ -336,9 +336,9 @@ bool CleanModeNav::setNextState()
 				}
 				else
 				{
-					new_dir_ = (MapDirection)targets_.front().TH;
-					targets_.pop_front();
-					go_home_path_algorithm_->displayPointPath(targets_);
+					new_dir_ = (MapDirection)plan_path_.front().TH;
+					plan_path_.pop_front();
+					go_home_path_algorithm_->displayCellPath(points_generate_cells(plan_path_));
 				}
 			}
 			else
@@ -573,7 +573,7 @@ bool CleanModeNav::enterPause()
 	return ACleanMode::isFinish();
 }
 
-uint8_t CleanModeNav::setFollowWall(const CellPath& path)
+uint8_t CleanModeNav::setFollowWall(const Points& path)
 {
 	uint8_t block_count = 0;
 	if (!path.empty())
@@ -581,9 +581,9 @@ uint8_t CleanModeNav::setFollowWall(const CellPath& path)
 		std::string msg = "cell:";
 		Cell_t block_cell;
 		auto dy = action_i_ == ac_follow_wall_left ? 2 : -2;
-		for(auto& cell : path){
-			if(nav_map.getCell(CLEAN_MAP,cell.X,cell.Y) != BLOCKED_RCON){
-				GridMap::robotToCell(GridMap::cellToPoint(cell), dy * CELL_SIZE, 0, block_cell.X, block_cell.Y);
+		for(auto& point : path){
+			if(nav_map.getCell(CLEAN_MAP,GridMap::countToCell(point.X),GridMap::countToCell(point.Y)) != BLOCKED_RCON){
+				GridMap::robotToCell(point, dy * CELL_SIZE, 0, block_cell.X, block_cell.Y);
 				msg += "(" + std::to_string(block_cell.X) + "," + std::to_string(block_cell.Y) + ")";
 				nav_map.setCell(CLEAN_MAP, block_cell.X, block_cell.Y, BLOCKED_CLIFF);
 				block_count++;

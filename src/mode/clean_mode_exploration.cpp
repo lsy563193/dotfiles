@@ -63,7 +63,7 @@ bool CleanModeExploration::mapMark()
 	exploration_map.setExplorationCleaned();
 	exploration_map.setBlocks();
 	exploration_map.markRobot(CLEAN_MAP);
-	robot::instance()->pubCleanMapMarkers(exploration_map, targetsGeneratePath(targets_));
+	robot::instance()->pubCleanMapMarkers(exploration_map, points_generate_cells(plan_path_));
 	passed_path_.clear();
 	return false;
 }
@@ -120,7 +120,7 @@ bool CleanModeExploration::setNextState() {
 		{
 			auto curr = exploration_map.updatePosition();
 			passed_path_.push_back(curr);
-			home_cells_.back().TH = robot::instance()->getPoseAngle();
+			home_points_.back().TH = robot::instance()->getPoseAngle();
 			PP_INFO();
 
 			state_i_ = st_clean;
@@ -141,13 +141,13 @@ bool CleanModeExploration::setNextState() {
 			PP_INFO();
 			old_dir_ = new_dir_;
 			ROS_WARN("old_dir_(%d)", old_dir_);
-			targets_.clear();
-			if (clean_path_algorithm_->generatePath(exploration_map,exploration_map.getCurrCell(), old_dir_, targets_))
+			plan_path_.clear();
+			if (clean_path_algorithm_->generatePath(exploration_map,exploration_map.getCurrPoint(), old_dir_, plan_path_))
 			{
-				new_dir_ = (MapDirection)targets_.front().TH;
+				new_dir_ = (MapDirection)plan_path_.front().TH;
 				ROS_WARN("new_dir_(%d)", new_dir_);
-				targets_.pop_front();
-				clean_path_algorithm_->displayPointPath(targets_);
+				plan_path_.pop_front();
+				clean_path_algorithm_->displayCellPath(points_generate_cells(plan_path_));
 				state_confirm = true;
 			}
 			else
@@ -155,7 +155,7 @@ bool CleanModeExploration::setNextState() {
 				ROS_WARN("%s,%d:exploration finish,did not find charge",__func__,__LINE__);
 				state_i_ = st_go_home_point;
 				if (go_home_path_algorithm_ == nullptr)
-					go_home_path_algorithm_.reset(new GoHomePathAlgorithm(exploration_map, home_cells_));
+					go_home_path_algorithm_.reset(new GoHomePathAlgorithm(exploration_map, home_points_));
 				stateInit(state_i_);
 				action_i_ = ac_null;
 			}
@@ -172,11 +172,11 @@ bool CleanModeExploration::setNextState() {
 		{
 			PP_INFO();
 			old_dir_ = new_dir_;
-			targets_.clear();
-			if (go_home_path_algorithm_->generatePath(exploration_map, exploration_map.getCurrCell(),old_dir_, targets_))
+			plan_path_.clear();
+			if (go_home_path_algorithm_->generatePath(exploration_map, exploration_map.getCurrPoint(),old_dir_, plan_path_))
 			{
 				// Reach home cell or new path to home cell is generated.
-				if (targets_.empty())
+				if (plan_path_.empty())
 				{
 					// Reach home cell.
 					ROS_WARN("Reach home point(0,0)");
@@ -185,9 +185,9 @@ bool CleanModeExploration::setNextState() {
 				}
 				else
 				{
-					new_dir_ = (MapDirection)targets_.front().TH;
-					targets_.pop_front();
-					go_home_path_algorithm_->displayPointPath(targets_);
+					new_dir_ = (MapDirection)plan_path_.front().TH;
+					plan_path_.pop_front();
+					go_home_path_algorithm_->displayCellPath(points_generate_cells(plan_path_));
 				}
 			}
 			else
@@ -274,7 +274,7 @@ void CleanModeExploration::chargeDetect(bool state_now, bool state_last) {
 
 void CleanModeExploration::printMapAndPath()
 {
-	clean_path_algorithm_->displayCellPath(passed_path_);
+	clean_path_algorithm_->displayCellPath(points_generate_cells(passed_path_));
 	exploration_map.print(CLEAN_MAP,exploration_map.getXCell(),exploration_map.getYCell());
 }
 
@@ -303,8 +303,8 @@ if (next == st_clean) {
 		ev.battery_home = false;
 
 		if (go_home_path_algorithm_ == nullptr)
-			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(exploration_map, home_cells_));
-		ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_cells_.size());
+			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(exploration_map, home_points_));
+		ROS_INFO("%s %d: home_points_.size(%lu)", __FUNCTION__, __LINE__, home_points_.size());
 	}
 	if (next == st_exploration) {
 		g_wf_reach_count = 0;

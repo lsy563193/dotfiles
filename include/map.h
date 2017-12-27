@@ -17,8 +17,7 @@
 #define BLOCK_FRONT			((uint8_t) 0x04)
 #define BLOCK_ALL			((uint8_t) 0x07)
 
-typedef std::deque<Cell_t> PPTargetType;
-typedef std::deque<Point32_t> PointPath;
+typedef std::deque<Point32_t> Points;
 
 typedef enum {
 	// The sequence of CLEAN_MAP value must be UNCLEAN < CLEANED < MAP_BLOCKED < SLAM_MAP_BLOCKED
@@ -102,8 +101,6 @@ public:
 
 	static int16_t countToCell(int32_t count);
 
-	static Point32_t cellToPoint(const Cell_t &cell);
-
 	static Cell_t pointToCell(Point32_t pnt);
 
 	void setCells(int8_t count, int16_t cell_x, int16_t cell_y, CellState state);
@@ -141,7 +138,7 @@ public:
 
 	bool markRobot(uint8_t id);
 
-	Cell_t updatePosition();
+	Point32_t updatePosition();
 
 	uint8_t setLidar();
 
@@ -159,7 +156,7 @@ public:
 
 	uint8_t saveChargerArea(const Cell_t homepoint);
 
-	uint8_t setFollowWall(bool is_left);
+	uint8_t setFollowWall(bool is_left, const Points&);
 
 
 	uint8_t saveLidar();
@@ -274,7 +271,7 @@ public:
 
 	bool isFrontBlockBoundary(int dx);
 
-	void generateSPMAP(const Cell_t &curr, PPTargetType &target_list);
+	void generateSPMAP(const Cell_t &curr, Cells &target_list);
 /*
  * Function to find the X/Y range of the Map or wfMap, if the range is to small,
  * use the offset of those value to 3.

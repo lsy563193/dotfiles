@@ -9,7 +9,7 @@ ActionFollowWall::ActionFollowWall(bool is_left, bool is_trapped)
 {
 
 	auto p_clean_mode = (ACleanMode*)sp_mode_;
-	target_point_ = p_clean_mode->targets_.front();
+	target_point_ = p_clean_mode->plan_path_.front();
 	is_left_ = is_left;
 	int16_t turn_angle;
 	if (!is_trapped)
@@ -335,7 +335,7 @@ int16_t ActionFollowWall::get_turn_angle(bool use_target_angle)
 		if(use_target_angle) {
 			auto cur = GridMap::getCurrPoint();
 			auto p_clean_mode = (ACleanMode*)sp_mode_;
-			auto tar = p_clean_mode->targets_.back();
+			auto tar = p_clean_mode->plan_path_.back();
 			auto tg_turn_angle = ranged_angle(course_to_dest(cur, tar) - robot::instance()->getPoseAngle());
 			ROS_INFO("%s %d: target_turn_angle(%d)", __FUNCTION__, __LINE__, tg_turn_angle);
 			turn_angle = (std::abs(ev_turn_angle) > std::abs(tg_turn_angle)) ? ev_turn_angle : tg_turn_angle;

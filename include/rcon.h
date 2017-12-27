@@ -90,15 +90,12 @@
 
 class Rcon {
 public:
-	bool found_charger_;
-	bool found_temp_charger_;
-	bool in_rcon_signal_range_;
-	bool should_mark_charger_;
-	bool should_mark_temp_charger_;
+	bool found_charger_{};
+	bool found_temp_charger_{};
+	bool in_rcon_signal_range_{};
+	bool should_mark_charger_{};
+	bool should_mark_temp_charger_{};
 public:
-	Rcon();
-	~Rcon();
-	void init();
 	int getTrig(void);
 	bool isTrigT();
 
@@ -119,7 +116,7 @@ public:
 	 * @param1 pos ,position in cell_t
 	 * @return void
 	 * */
-	void setRconPos(Cell_t pos)
+	void setRconPos(Point32_t pos)
 	{
 		charger_pos_ = pos;
 	}
@@ -129,7 +126,7 @@ public:
 	 * @breif get rcon position
 	 * @return rcon position
 	 * */
-	Cell_t getRconPos()
+	Point32_t getRconPos()
 	{
 		return charger_pos_;
 	}
@@ -141,8 +138,8 @@ public:
 	bool estimateChargerPos(uint32_t rcon_value);
 
 private:
-	uint32_t rcon_status_;
-	Cell_t charger_pos_;//charger postion 
+	uint32_t rcon_status_{};
+	Point32_t charger_pos_{0,0,0};//charger postion
 
 	/*
 	 * @author

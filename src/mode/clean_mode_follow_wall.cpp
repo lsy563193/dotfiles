@@ -7,7 +7,7 @@
 #include "arch.hpp"
 #include "dev.h"
 
-extern std::deque <Cell_t> path_points;
+Cells path_points;
 
 CleanModeFollowWall::CleanModeFollowWall()
 {
@@ -16,7 +16,7 @@ CleanModeFollowWall::CleanModeFollowWall()
 	diff_timer_ = WALL_FOLLOW_TIME;
 	speaker.play(VOICE_CLEANING_WALL_FOLLOW);
 	clean_path_algorithm_.reset(new WFCleanPathAlgorithm);
-	go_home_path_algorithm_.reset(new GoHomePathAlgorithm(nav_map, home_cells_));
+	go_home_path_algorithm_.reset(new GoHomePathAlgorithm(nav_map, home_points_));
 	clean_map_ = &fw_map;
 }
 
@@ -77,47 +77,47 @@ bool CleanModeFollowWall::setNextState()
 	return false;
 }
 
-bool CleanModeFollowWall::wf_is_isolate() {
-//	path_update_cell_history();
-	int16_t	val = 0;
-	uint16_t i = 0;
-	int16_t x_min, x_max, y_min, y_max;
-	fw_map.getMapRange(CLEAN_MAP, &x_min, &x_max, &y_min, &y_max);
-	Cell_t out_cell {int16_t(x_max + 1),int16_t(y_max + 1)};
-
-	fw_map.markRobot(CLEAN_MAP);//note: To clear the obstacle when check isolated, please don't remove it!
-	auto curr = GridMap::getCurrPoint();
-	fw_map.print(CLEAN_MAP, curr.X, curr.Y);
-	ROS_WARN("%s %d: curr(%d,%d),out(%d,%d)", __FUNCTION__, __LINE__, curr.X, curr.Y,out_cell.X, out_cell.Y);
-
-	if ( out_cell != g_zero_home){
-			val = wf_path_find_shortest_path(curr.X, curr.Y, out_cell.X, out_cell.Y, 0);
-			val = (val < 0 || val == SCHAR_MAX) ? 0 : 1;
-	} else {
-		if (!nav_map.isBlockAccessible(0, 0)) {
-			val = wf_path_find_shortest_path(curr.X, curr.Y, 0, 0, 0);
-			if (val < 0 || val == SCHAR_MAX) {
-				/* Robot start position is blocked. */
-				val = wf_path_find_shortest_path(curr.X, curr.Y, 0, 0, 0);
-
-				if (val < 0 || val == SCHAR_MAX) {
-					val = 0;
-				} else {
-					val = 1;
-				};
-			} else {
-				val = 1;
-			}
-		} else {
-			val = wf_path_find_shortest_path(curr.X, curr.Y, 0, 0, 0);
-			if (val < 0 || val == SCHAR_MAX)
-				val = 0;
-			else
-				val = 1;
-		}
-	}
-	return val != 0;
-}
+//bool CleanModeFollowWall::wf_is_isolate() {
+////	path_update_cell_history();
+//	int16_t	val = 0;
+//	uint16_t i = 0;
+//	int16_t x_min, x_max, y_min, y_max;
+//	fw_map.getMapRange(CLEAN_MAP, &x_min, &x_max, &y_min, &y_max);
+//	Cell_t out_cell {int16_t(x_max + 1),int16_t(y_max + 1)};
+//
+//	fw_map.markRobot(CLEAN_MAP);//note: To clear the obstacle when check isolated, please don't remove it!
+//	auto curr = GridMap::getCurrPoint();
+//	fw_map.print(CLEAN_MAP, curr.X, curr.Y);
+//	ROS_WARN("%s %d: curr(%d,%d),out(%d,%d)", __FUNCTION__, __LINE__, curr.X, curr.Y,out_cell.X, out_cell.Y);
+//
+//	if ( out_cell != g_zero_home){
+//			val = wf_path_find_shortest_path(curr.X, curr.Y, out_cell.X, out_cell.Y, 0);
+//			val = (val < 0 || val == SCHAR_MAX) ? 0 : 1;
+//	} else {
+//		if (!nav_map.isBlockAccessible(0, 0)) {
+//			val = wf_path_find_shortest_path(curr.X, curr.Y, 0, 0, 0);
+//			if (val < 0 || val == SCHAR_MAX) {
+//				/* Robot start position is blocked. */
+//				val = wf_path_find_shortest_path(curr.X, curr.Y, 0, 0, 0);
+//
+//				if (val < 0 || val == SCHAR_MAX) {
+//					val = 0;
+//				} else {
+//					val = 1;
+//				};
+//			} else {
+//				val = 1;
+//			}
+//		} else {
+//			val = wf_path_find_shortest_path(curr.X, curr.Y, 0, 0, 0);
+//			if (val < 0 || val == SCHAR_MAX)
+//				val = 0;
+//			else
+//				val = 1;
+//		}
+//	}
+//	return val != 0;
+//}
 
 
 /*

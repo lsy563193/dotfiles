@@ -44,10 +44,10 @@ bool CleanModeSpot::isFinish()
 bool CleanModeSpot::mapMark()
 {
 
-	clean_path_algorithm_->displayCellPath(passed_path_);
+	clean_path_algorithm_->displayCellPath(points_generate_cells(passed_path_));
 	if (action_i_ == ac_linear) {
 		PP_INFO();
-		nav_map.setCleaned(passed_path_);
+		nav_map.setCleaned(points_generate_cells(passed_path_));
 	}
 
 	if (state_i_ == st_trapped)
@@ -101,7 +101,7 @@ bool CleanModeSpot::setNextAction()
 	else if (state_i_ == st_clean)
 	{
 		PP_INFO();
-		if(targets_.size() >= 2)
+		if(plan_path_.size() >= 2)
 			action_i_ = ac_linear;
 		else
 			action_i_ = ac_null;
@@ -126,7 +126,7 @@ bool CleanModeSpot::setNextState()
 			auto curr = nav_map.updatePosition();
 			passed_path_.push_back(curr);
 
-			home_cells_.back().TH = robot::instance()->getPoseAngle();
+			home_points_.back().TH = robot::instance()->getPoseAngle();
 			PP_INFO();
 
 			state_i_ = st_clean;
@@ -147,12 +147,12 @@ bool CleanModeSpot::setNextState()
 			PP_INFO();
 			old_dir_ = new_dir_;
 			ROS_ERROR("old_dir_(%d)", old_dir_);
-			if (clean_path_algorithm_->generatePath(nav_map, nav_map.getCurrCell(), old_dir_, targets_))
+			if (clean_path_algorithm_->generatePath(nav_map, nav_map.getCurrPoint(), old_dir_, plan_path_))
 			{
-				new_dir_ = (MapDirection)targets_.front().TH;
+				new_dir_ = (MapDirection)plan_path_.front().TH;
 				ROS_ERROR("new_dir_(%d)", new_dir_);
-				targets_.pop_front();
-				clean_path_algorithm_->displayPointPath(targets_);
+				plan_path_.pop_front();
+				clean_path_algorithm_->displayCellPath(points_generate_cells(plan_path_));
 				state_confirm = true;
 			}
 			else
@@ -166,15 +166,15 @@ bool CleanModeSpot::setNextState()
 		{
 			PP_INFO();
 			old_dir_ = new_dir_;
-			targets_.clear();
-			if (go_home_path_algorithm_->generatePath(nav_map, nav_map.getCurrCell(),old_dir_, targets_))
+			plan_path_.clear();
+			if (go_home_path_algorithm_->generatePath(nav_map, nav_map.getCurrPoint(),old_dir_, plan_path_))
 			{
 				// Reach home cell or new path to home cell is generated.
-				if (targets_.empty())
+				if (plan_path_.empty())
 				{
 					// Reach home cell.
 					PP_INFO();
-					if (nav_map.getCurrCell() == g_zero_home)
+					if (GridMap::getCurrCell() == GridMap::pointToCell(g_zero_home))
 					{
 						PP_INFO();
 						state_i_ = st_null;
@@ -189,9 +189,9 @@ bool CleanModeSpot::setNextState()
 				}
 				else
 				{
-					new_dir_ = (MapDirection)targets_.front().TH;
-					targets_.pop_front();
-					go_home_path_algorithm_->displayPointPath(targets_);
+					new_dir_ = (MapDirection)plan_path_.front().TH;
+					plan_path_.pop_front();
+					go_home_path_algorithm_->displayPointPath(plan_path_);
 				}
 			}
 			else

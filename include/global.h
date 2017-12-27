@@ -59,9 +59,9 @@ enum {
 	REATH_TARGET=1,
 };
 
-typedef struct {
-	Cell_t	pos;
-} VWType;
+//typedef struct {
+//	Cell_t	pos;
+//} VWType;
 
 extern float saved_pos_x, saved_pos_y;
 extern bool g_move_back_finished;
@@ -78,7 +78,7 @@ extern bool g_resume_cleaning;
 extern bool g_have_seen_charger;
 extern bool	g_start_point_seen_charger;
 extern bool g_exploration_home;
-extern std::deque<Cell_t> g_passed_path;
+//extern std::deque<Cell_t> g_passed_path;
 
 uint8_t angle_to_bumper_status(void);
 //int16_t calc_target(int16_t);
@@ -94,16 +94,16 @@ void cm_cleaning(void);
 #define WALL_DISTANCE_HIGH_LIMIT 625
 #define WALL_DISTANCE_LOW_LIMIT 150
 
-void path_display_path_points(const std::deque<Cell_t>& path);
+//void path_display_path_points(const std::deque<Cell_t>& path);
 
-extern std::vector<Cell_t> g_homes;
+extern Points g_homes;
 extern std::vector<int> g_home_way_list;
 extern std::vector<int>::iterator g_home_way_it;
-extern Cell_t g_zero_home;
+extern Point32_t g_zero_home;
 extern int g_wf_reach_count;
 extern bool g_check_path_in_advance;
 extern bool g_allow_check_path_in_advance;
-void path_set_home(const Cell_t& cell);
+void path_set_home(const Point32_t& cell);
 bool is_fobbit_free();
 bool fw_is_time_up();
 
@@ -303,7 +303,7 @@ extern int g_wall_distance;
 extern double g_time_straight;
 extern bool g_slip_backward;
 extern double bumper_turn_factor;
-extern Cell_t g_zero_home;
+extern Point32_t g_zero_home;
 
-CellPath targetsGeneratePath(PointPath &targets);
+Cells points_generate_cells(Points &targets);
 #endif

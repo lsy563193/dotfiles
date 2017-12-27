@@ -38,8 +38,8 @@ public:
 	Point32_t start_point_;
 	Point32_t target_point_;
 protected:
-//	CellPath passed_path_;
-//	CellPath tmp_plan_path_;
+//	Cells passed_path_;
+//	Cells tmp_plan_path_;
 	int16_t turn_target_angle_{};
 	float back_distance_;
 	enum{//movement
@@ -72,7 +72,7 @@ public:
 	bool isFinish() override;
 
 //	IAction* setNextAction();
-	PointPath tmp_plan_path_{};
+	Points tmp_plan_path_{};
 protected:
 	bool is_left_{};
 	int16_t turn_angle{};

@@ -8,9 +8,9 @@
 
 #define NAV_INFO() ROS_INFO("st(%d),ac(%d)", state_i_, action_i_)
 
-CellPath ACleanMode::passed_path_ = {};
-PointPath ACleanMode::targets_ = {};
-Cell_t ACleanMode::last_ = {};
+Points ACleanMode::passed_path_ = {};
+Points ACleanMode::plan_path_ = {};
+Point32_t ACleanMode::last_ = {};
 //boost::shared_ptr<IMovement> ACleanMode::sp_movement_ = nullptr;
 
 ACleanMode::ACleanMode()
@@ -26,7 +26,7 @@ ACleanMode::ACleanMode()
 
 	c_rcon.resetStatus();
 
-	home_cells_.resize(1,g_zero_home);
+	home_points_.resize(1,g_zero_home);
 	clean_path_algorithm_.reset();
 	go_home_path_algorithm_.reset();
 }
@@ -97,12 +97,12 @@ bool ACleanMode::isFinish()
 	return false;
 }
 
-bool is_equal_with_angle_(const Cell_t &l, const Cell_t &r)
+bool is_equal_with_angle_(const Point32_t &l, const Point32_t &r)
 {
-	return  l == r && std::abs(ranged_angle(l.TH - r.TH)) < 200;
+	return  GridMap::pointToCell(l) == GridMap::pointToCell(r) && std::abs(ranged_angle(l.TH - r.TH)) < 200;
 }
 
-Cell_t ACleanMode::updatePath(GridMap& map)
+Point32_t ACleanMode::updatePath(GridMap& map)
 {
 	auto curr = map.updatePosition();
 //	auto point = map.getCurrPoint();
@@ -118,7 +118,7 @@ Cell_t ACleanMode::updatePath(GridMap& map)
 	else if (!is_equal_with_angle_(curr, last_))
 	{
 		last_ = curr;
-		auto loc = std::find_if(passed_path_.begin(), passed_path_.end(), [&](Cell_t it) {
+		auto loc = std::find_if(passed_path_.begin(), passed_path_.end(), [&](Point32_t it) {
 				return is_equal_with_angle_(curr, it);
 		});
 		auto distance = std::distance(loc, passed_path_.end());
@@ -209,8 +209,8 @@ void ACleanMode::stateInit(int next)
 		ev.battery_home = false;
 
 		if (go_home_path_algorithm_ == nullptr)
-			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(nav_map, home_cells_));
-		ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_cells_.size());
+			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(nav_map, home_points_));
+		ROS_INFO("%s %d: home_points_.size(%lu)", __FUNCTION__, __LINE__, home_points_.size());
 
 	}
 	if (next == st_tmp_spot) {
@@ -246,23 +246,23 @@ void ACleanMode::stateInit(int next)
 	}
 }
 
-uint8_t ACleanMode::saveFollowWall(bool is_left)
-{
-	auto dy = is_left ? 2 : -2;
-	int16_t x, y;
-	//int32_t	x2, y2;
-	std::string msg = "cell:";
-	GridMap::robotToCell(GridMap::getCurrPoint(), dy * CELL_SIZE, 0, x, y);
-	//robot_to_point(robot::instance()->getPoseAngle(), dy * CELL_SIZE, 0, &x2, &y2);
-	//ROS_WARN("%s %d: d_cell(0, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
-	//			, __FUNCTION__, __LINE__, dy, robot::instance()->getPoseAngle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
-//	bool should_save_for_MAP = !(cm_is_navigation() && mt.is_follow_wall() && Movement::getMoveDistance() < 0.1);
-	temp_fw_cells.push_back({x, y});
-	msg += "[0," + std::to_string(dy) + "](" + std::to_string(x) + "," + std::to_string(y) + ")";
-	//ROS_INFO("%s,%d: Current(%d, %d), save \033[32m%s\033[0m",__FUNCTION__, __LINE__, get_x_cell(), get_y_cell(), msg.c_str());
-
-	return 1;
-}
+//uint8_t ACleanMode::saveFollowWall(bool is_left)
+//{
+//	auto dy = is_left ? 2 : -2;
+//	int16_t x, y;
+//	//int32_t	x2, y2;
+//	std::string msg = "cell:";
+//	GridMap::robotToCell(GridMap::getCurrPoint(), dy * CELL_SIZE, 0, x, y);
+//	//robot_to_point(robot::instance()->getPoseAngle(), dy * CELL_SIZE, 0, &x2, &y2);
+//	//ROS_WARN("%s %d: d_cell(0, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
+//	//			, __FUNCTION__, __LINE__, dy, robot::instance()->getPoseAngle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
+////	bool should_save_for_MAP = !(cm_is_navigation() && mt.is_follow_wall() && Movement::getMoveDistance() < 0.1);
+//	temp_fw_cells.push_back({x, y});
+//	msg += "[0," + std::to_string(dy) + "](" + std::to_string(x) + "," + std::to_string(y) + ")";
+//	//ROS_INFO("%s,%d: Current(%d, %d), save \033[32m%s\033[0m",__FUNCTION__, __LINE__, get_x_cell(), get_y_cell(), msg.c_str());
+//
+//	return 1;
+//}
 
 bool ACleanMode::ActionFollowWallisFinish()
 {

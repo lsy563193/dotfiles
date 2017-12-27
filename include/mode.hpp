@@ -112,7 +112,7 @@ public:
 	void rcon(bool state_now, bool state_last) override ;
 
 protected:
-	std::vector<Cell_t> temp_fw_cells;
+//	std::vector<Cell_t> temp_fw_cells;
 private:
 	void register_events(void);
 
@@ -220,10 +220,10 @@ public:
 	virtual bool mapMark() = 0;
 
 	virtual bool ActionFollowWallisFinish();
-	Cell_t updatePath(GridMap& map);
+	Point32_t updatePath(GridMap& map);
 
-	static CellPath passed_path_;
-	static PointPath targets_;
+	static Points passed_path_;
+	static Points plan_path_;
 
 	MapDirection old_dir_{MAP_POS_X};
 	MapDirection new_dir_{MAP_POS_X};
@@ -234,11 +234,11 @@ public:
 
 protected:
 
-	uint8_t saveFollowWall(bool is_left);
+//	uint8_t saveFollowWall(bool is_left);
 	virtual void stateInit(int next);
-	std::vector<Cell_t> temp_fw_cells;
-	TargetList home_cells_;
-	static Cell_t last_;
+//	std::vector<Cell_t> temp_fw_cells;
+	Points home_points_;
+	static Point32_t last_;
 
 	int state_i_{st_clean};
 	enum {
@@ -260,7 +260,7 @@ public:
 	CleanModeNav();
 	~CleanModeNav();
 
-	uint8_t setFollowWall(const CellPath& path);
+	uint8_t setFollowWall(const Points& path);
 	bool mapMark() override ;
 	bool isFinish() override ;
 	bool isExit() override;
@@ -296,7 +296,7 @@ private:
 // For path planning.
 
 protected:
-//	CellPath home_point_{};
+//	Cells home_point_{};
 public:
 
 };
@@ -341,11 +341,11 @@ public:
 
 	int16_t wf_path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound);
 	int16_t wf_path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t end_x, int16_t end_y, uint8_t bound, int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max);
-	bool wf_is_isolate();
+//	bool wf_is_isolate();
 private:
 	uint32_t diff_timer_;
 protected:
-//	CellPath home_point_{};
+//	Cells home_point_{};
 private:
 
 };
@@ -362,7 +362,7 @@ public:
 	bool setNextState();
 private:
 protected:
-//	CellPath home_point_{};
+//	Cells home_point_{};
 private:
 	bool has_aligned_and_open_slam;
 };

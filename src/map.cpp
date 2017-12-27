@@ -14,7 +14,7 @@ boost::mutex slam_map_mutex;
 
 //int16_t homeX, homeY;
 
-// CellPath that temporary save the blocks.
+// Cells that temporary save the blocks.
 std::vector<Cell_t> temp_bumper_cells;
 std::vector<Cell_t> temp_obs_cells;
 std::vector<Cell_t> temp_rcon_cells;
@@ -95,7 +95,7 @@ int16_t GridMap::getYCell(void) {
 
 Cell_t GridMap::getCurrCell()
 {
-	return Cell_t{getXCell(), GridMap::getYCell(),robot::instance()->getPoseAngle()};
+	return Cell_t{getXCell(), GridMap::getYCell()};
 }
 
 void GridMap::setPosition(double x, double y) {
@@ -306,20 +306,10 @@ int16_t GridMap::countToCell(int32_t count) {
 	}
 }
 
-Point32_t GridMap::cellToPoint(const Cell_t &cell) {
-//	PP_INFO();
-	Point32_t pnt;
-	pnt.X = cellToCount(cell.X);
-	pnt.Y = cellToCount(cell.Y);
-	pnt.TH = cell.TH;
-	return pnt;
-}
-
 Cell_t GridMap::pointToCell(Point32_t pnt) {
 	Cell_t cell;
 	cell.X = countToCell(pnt.X);
 	cell.Y = countToCell(pnt.Y);
-	cell.TH = robot::instance()->getPoseAngle();
 	return cell;
 }
 
@@ -687,18 +677,18 @@ uint8_t GridMap::saveChargerArea(const Cell_t home_point)
 	return block_count;
 }
 
-uint8_t GridMap::setFollowWall(bool is_left)
+uint8_t GridMap::setFollowWall(bool is_left,const Points& passed_path)
 {
 
 	uint8_t block_count = 0;
-	if (!g_passed_path.empty())
+	if (!passed_path.empty())
 	{
 		std::string msg = "cell:";
 		Cell_t block_cell;
 		auto dy = is_left ? 2 : -2;
-		for(auto& cell : g_passed_path){
-			if(getCell(CLEAN_MAP,cell.X,cell.Y) != BLOCKED_RCON){
-				robotToCell(cellToPoint(cell), dy * CELL_SIZE, 0, block_cell.X, block_cell.Y);
+		for(auto& point : passed_path){
+			if(getCell(CLEAN_MAP,point.X,point.Y) != BLOCKED_RCON){
+				robotToCell(point, dy * CELL_SIZE, 0, block_cell.X, block_cell.Y);
 				msg += "(" + std::to_string(block_cell.X) + "," + std::to_string(block_cell.Y) + ")";
 				setCell(CLEAN_MAP,block_cell.X,block_cell.Y, BLOCKED_CLIFF);
 				block_count++;
@@ -889,11 +879,11 @@ uint8_t GridMap::saveRcon()
 	uint8_t block_count;
 	if(c_rcon.should_mark_charger_ ){
 		c_rcon.should_mark_charger_ = false;
-		block_count += nav_map.saveChargerArea(c_rcon.getRconPos());
+		block_count += nav_map.saveChargerArea(GridMap::pointToCell(c_rcon.getRconPos()));
 	}
 	else if(c_rcon.should_mark_temp_charger_ ){
 		c_rcon.should_mark_temp_charger_ = false;
-		block_count += nav_map.saveChargerArea(c_rcon.getRconPos());
+		block_count += nav_map.saveChargerArea(GridMap::pointToCell(c_rcon.getRconPos()));
 	}
 	return block_count;
 
@@ -1040,7 +1030,7 @@ void GridMap::setCleaned(std::deque<Cell_t> cells)
 	std::string msg = "Cell:\n";
 	for (const auto& cell :  cells)
 	{
-		msg += "(" + std::to_string(cell.X) + "," + std::to_string(cell.Y)  + "," + std::to_string(cell.TH)+ "),";
+		msg += "(" + std::to_string(cell.X) + "," + std::to_string(cell.Y)  + "," + "),";
 		for (auto dy = -ROBOT_SIZE_1_2; dy <= ROBOT_SIZE_1_2; dy++)
 		{
 			auto y = cell.Y + dy;
@@ -1093,13 +1083,13 @@ bool GridMap::markRobot(uint8_t id)
 	return ret;
 }
 
-Cell_t GridMap::updatePosition()
+Point32_t GridMap::updatePosition()
 {
 	auto pos_x = robot::instance()->getPoseX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	auto pos_y = robot::instance()->getPoseY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	setPosition(pos_x, pos_y);
 //	ROS_INFO("%s %d:", __FUNCTION__, __LINE__);
-	return getCurrCell();
+	return getCurrPoint();
 }
 
 uint32_t GridMap::getCleanedArea(void)
@@ -1249,7 +1239,7 @@ uint8_t GridMap::isBlockBlockedXAxis(int16_t curr_x, int16_t curr_y, bool is_lef
 	return retval;
 }
 
-void GridMap::generateSPMAP(const Cell_t &curr, PPTargetType &target_list)
+void GridMap::generateSPMAP(const Cell_t &curr, Cells &target_list)
 {
 	bool		all_set;
 	int16_t		x, y, offset, passValue, nextPassValue, passSet, x_min, x_max, y_min, y_max;

@@ -9,14 +9,12 @@
 #include <deque>
 #include <map.h>
 
-typedef std::deque<Cell_t> CellPath;
-typedef std::deque<Cell_t> TargetList;
-typedef std::deque<CellPath> PathList;
+typedef std::deque<Cells> PathList;
 
 class APathAlgorithm
 {
 public:
-	virtual bool generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir, PointPath &plan_path) = 0;
+	virtual bool generatePath(GridMap &map, const Point32_t &curr, const MapDirection &last_dir, Points &plan_path) = 0;
 
 	virtual bool checkTrapped(GridMap &map, const Cell_t &curr_cell) = 0;
 
@@ -25,20 +23,20 @@ public:
 	 *
 	 * Print the path.
 	 *
-	 * @param: CellPath path, the path from start cell to target cell.
+	 * @param: Cells path, the path from start cell to target cell.
 	 */
-	void displayCellPath(const CellPath &path);
-
-	void displayPointPath(const PointPath &point_path);
+	void displayCellPath(const Cells &path);
 
 	/*
 	 * @last modify by Austin Liu
 	 *
 	 * Print the targets.
 	 *
-	 * @param: TargetList target list.
+	 * @param: Cells target list.
 	 */
-	void displayTargetList(const TargetList &target_list);
+	void displayTargetList(const Cells &target_list);
+
+	void displayPointPath(const Points &point_path);
 
 	/*
 	 * @author Patrick Chow
@@ -48,11 +46,11 @@ public:
 	 * still the same.
 	 *
 	 * @param: GridMap map, it will use it's CLEAN_MAP data.
-	 * @param: CellPath path, the path from start cell to target cell.
+	 * @param: Cells path, the path from start cell to target cell.
 	 *
-	 * @return: CellPath path, an equivalent path of input path which is most far away from the obstacles.
+	 * @return: Cells path, an equivalent path of input path which is most far away from the obstacles.
 	 */
-	void optimizePath(GridMap &map, CellPath &path);
+	void optimizePath(GridMap &map, Cells &path);
 	public:
 	/*
 	 * @author Patrick Chow
@@ -68,9 +66,9 @@ public:
 	 * @param: Cell_t target, the target cell.
 	 * @param: MapDirection last_dir, the direction of robot last moving.
 	 *
-	 * @return: CellPath path, the shortest path from start cell to target cell.
+	 * @return: Cells path, the shortest path from start cell to target cell.
 	 */
-	CellPath findShortestPath(GridMap &map, const Cell_t &start,
+	Cells findShortestPath(GridMap &map, const Cell_t &start,
 							  const Cell_t &target, const MapDirection &last_dir, bool use_unknown);
 
 	/*
@@ -80,11 +78,11 @@ public:
 	 * This function is for filling the path' cells with the direction towards next cell, the last one's
 	 * direction is the same as its previous one.
 	 *
-	 * @param: CellPath path, the path from start cell to target cell.
+	 * @param: Cells path, the path from start cell to target cell.
 	 *
-	 * @return: CellPath path, the path from start cell to target cell with direction.
+	 * @return: Cells path, the path from start cell to target cell with direction.
 	 */
-	PointPath pathGenerateTargets(CellPath &path);
+	Points cells_generate_points(Cells &path);
 
 	/*
 	 * @author Lin Shao Yue
@@ -141,9 +139,9 @@ class NavCleanPathAlgorithm: public APathAlgorithm
 	 * @param: Cell_t curr_cell, the current cell of robot.
 	 * @param: MapDirection last_dir, the direction of last movement.
 	 *
-	 * @return: CellPath path, the path to unclean area.
+	 * @return: Cells path, the path to unclean area.
 	 */
-	bool generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir, PointPath &point_path) override;
+	bool generatePath(GridMap &map, const Point32_t &curr, const MapDirection &last_dir, Points &plan_path) override;
 
 private:
 	/*
@@ -155,9 +153,9 @@ private:
 	 * @param: GridMap map, it will use it's CLEAN_MAP data.
 	 * @param: Cell_t curr_cell, the current cell of robot.
 	 *
-	 * @return: CellPath path, the path to unclean area in the same lane.
+	 * @return: Cells path, the path to unclean area in the same lane.
 	 */
-	CellPath findTargetInSameLane(GridMap &map, const Cell_t &curr_cell);
+	Cells findTargetInSameLane(GridMap &map, const Cell_t &curr_cell);
 
 	/*
 	 * @author Lin Shao Yue
@@ -170,9 +168,9 @@ private:
 	 * @param: Cell_t curr_cell, the current cell of robot.
 	 * @param: BoundingBox2 b_map, generate by map, for simplifying code.
 	 *
-	 * @return: TargetList, a deque of possible targets.
+	 * @return: Cells, a deque of possible targets.
 	 */
-	TargetList filterAllPossibleTargets(GridMap &map, const Cell_t &curr_cell, BoundingBox2 &b_map);
+	Cells filterAllPossibleTargets(GridMap &map, const Cell_t &curr_cell, BoundingBox2 &b_map);
 
 	/*
 	 * @author Patrick Chow
@@ -182,11 +180,11 @@ private:
 	 *
 	 * @param: GridMap map, it will use it's CLEAN_MAP data.
 	 * @param: Cell_t curr_cell, the current cell of robot.
-	 * @param: TargetList possible_targets, input target list.
+	 * @param: Cells possible_targets, input target list.
 	 *
-	 * @return: TargetList, a deque of reachable targets.
+	 * @return: Cells, a deque of reachable targets.
 	 */
-	TargetList getReachableTargets(GridMap &map, const Cell_t &curr_cell, TargetList &possible_targets);
+	Cells getReachableTargets(GridMap &map, const Cell_t &curr_cell, Cells &possible_targets);
 
 	/*
 	 * @author Patrick Chow
@@ -195,12 +193,12 @@ private:
 	 * This function is for tracing the path from start cell to targets.
 	 *
 	 * @param: GridMap map, it will use it's CLEAN_MAP data.
-	 * @param: TargetList target_list, input target list.
+	 * @param: Cells target_list, input target list.
 	 * @param: Cell_t start, the start cell.
 	 *
 	 * @return: PathList, a deque of paths from start cell to the input targets.
 	 */
-	PathList tracePathsToTargets(GridMap &map, const TargetList &target_list, const Cell_t& start);
+	PathList tracePathsToTargets(GridMap &map, const Cells &target_list, const Cell_t& start);
 
 	/*
 	 * @author Patrick Chow
@@ -221,7 +219,7 @@ private:
 	/*
 	 * Sorting function, for sorting paths with their targets by Y+ ascending sequence.
 	 */
-	static bool sortPathsWithTargetYAscend(const CellPath a, const CellPath b);
+	static bool sortPathsWithTargetYAscend(const Cells a, const Cells b);
 
 	bool checkTrapped(GridMap &map, const Cell_t &curr_cell) override ;
 };
@@ -229,7 +227,7 @@ private:
 class WFCleanPathAlgorithm: public APathAlgorithm
 {
 public:
-	bool generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir, PointPath &targets) override;
+	bool generatePath(GridMap &map, const Point32_t &curr, const MapDirection &last_dir, Points &targets) override;
 	bool checkTrapped(GridMap &map, const Cell_t &curr_cell){};
 };
 
@@ -240,9 +238,9 @@ public:
 	SpotCleanPathAlgorithm(float diameter,Cell_t curcell);
 	~SpotCleanPathAlgorithm();
 
-	bool generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir, PointPath &targets) override;
+	bool generatePath(GridMap &map, const Point32_t &curr, const MapDirection &last_dir, Points &targets) override;
 	bool checkTrapped(GridMap &map, const Cell_t &curr_cell) override;
-	void genTargets(uint8_t type,float diameter,CellPath *targets,const Cell_t begincell);
+	void genTargets(uint8_t type,float diameter,Cells *targets,const Cell_t begincell);
 private:
 
 	void initVariables(float diameter,Cell_t cur_cell);
@@ -250,8 +248,8 @@ private:
 	
 	float spot_diameter_ ;
 	bool spot_running_;
-	CellPath plan_path_;
-	CellPath plan_path_last_;
+	Cells plan_path_;
+	Cells plan_path_last_;
 	Cell_t begin_cell_; 
 };
 
@@ -265,12 +263,12 @@ public:
 	 * The constructor requires current clean map and stored home cells.
 	 *
 	 * @param: GridMap map, it will be copied to go_home_map_.
-	 * @param: TargetList home_cells, stored home_cells, size should be limited in 4, including
+	 * @param: Cells home_cells, stored home_cells, size should be limited in 4, including
 	 * home cell(0, 0).
 	 *
-	 * @return: CellPath path, the path to selected home cell.
+	 * @return: Cells path, the path to selected home cell.
 	 */
-	GoHomePathAlgorithm(GridMap &map, TargetList home_cells);
+	GoHomePathAlgorithm(GridMap &map, Points home_cells);
 	~GoHomePathAlgorithm() = default;
 
 	/*
@@ -282,17 +280,17 @@ public:
 	 * @param: GridMap map, it will use it's CLEAN_MAP data.
 	 * @param: Cell_t curr_cell, the current cell of robot.
 	 *
-	 * @return: CellPath path, the path to selected home cell.
+	 * @return: Cells path, the path to selected home cell.
 	 */
-	bool generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir, PointPath &plan_path) override;
+	bool generatePath(GridMap &map, const Point32_t &curr, const MapDirection &last_dir, Points &plan_path) override;
 
 	bool checkTrapped(GridMap &map, const Cell_t &curr_cell){};
-	TargetList getRestHomeCells();
+//	Cells getRestHomeCells();
 private:
 
 	GridMap go_home_map_;
-	TargetList home_cells_;
-	Cell_t current_home_target_;
+	Points home_points_;
+	Point32_t current_home_target_;
 	std::vector<int> go_home_way_list_;
 	std::vector<int>::iterator go_home_way_list_it_;
 };

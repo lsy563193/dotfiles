@@ -12,7 +12,7 @@ IMoveType* IMovement::sp_mt_  = nullptr;
 
 float IMovement::s_pos_x = 0;
 float IMovement::s_pos_y = 0;
-//CellPath IMovement::path_ = {};
+//Cells IMovement::path_ = {};
 
 void IMovement::run() {
 //	PP_INFO();

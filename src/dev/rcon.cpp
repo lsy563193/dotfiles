@@ -10,40 +10,15 @@
 
 Rcon c_rcon;
 
-Rcon::Rcon()
-{
-	init();
-}
-void Rcon::init()
-{
-	rcon_status_ = 0;
-	found_charger_ = false;
-	found_temp_charger_ = false;
-	in_rcon_signal_range_ = false;
-	charger_pos_.X = 0;
-	charger_pos_.Y = 0;
-	should_mark_charger_ = false;
-	should_mark_temp_charger_ = false;
-}
-Rcon::~Rcon()
-{
-	init();
-}
-
 void Rcon::setRconPos(float cd,float dist)
 {
-	int16_t x = 0;
-	int16_t y = 0;
 	float yaw = robot::instance()->getPoseAngle()/10.0;
 	float wpx = cosf( (float)ranged_angle((yaw+cd)*10)/10.0 * PI/180.0 )*dist+robot::instance()->getPoseX();
 	float wpy = sinf( (float)ranged_angle((yaw+cd)*10)/10.0 * PI/180.0 )*dist+robot::instance()->getPoseY();
-	x = (int16_t)(wpx*1000/CELL_SIZE);
-	y = (int16_t)(wpy*1000/CELL_SIZE);
-	charger_pos_.X = x;
-	charger_pos_.Y = y;
+	charger_pos_ = {(int32_t)(wpx*1000/CELL_SIZE), (int32_t)(wpy*1000/CELL_SIZE),(int16_t)0};
 	if(found_charger_)
 		g_homes.push_back(charger_pos_);
-	ROS_INFO("%s,%d:rcon value \033[32m0x%x\033[0m,charger direction \033[32m%f\033[0m,cureent direction \033[32m%f\033[0m,distance \033[32m%f\033[0m,world pos(\033[32m%f,%f\033[0m), cell pos(\033[32m%hd,%hd\033[0m)",__FUNCTION__,__LINE__,rcon_status_&RconAll_Home_T,cd,yaw,dist,wpx,wpy,x,y);
+	ROS_INFO("%s,%d:rcon value \033[32m0x%x\033[0m,charger direction \033[32m%f\033[0m,cureent direction \033[32m%f\033[0m,distance \033[32m%f\033[0m,world pos(\033[32m%f,%f\033[0m), cell pos(\033[32m%hd,%hd\033[0m)",__FUNCTION__,__LINE__,rcon_status_&RconAll_Home_T,cd,yaw,dist,wpx,wpy,charger_pos_.X,charger_pos_.Y);
 
 }
 

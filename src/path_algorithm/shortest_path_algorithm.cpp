@@ -5,10 +5,10 @@
 #include "ros/ros.h"
 #include "path_algorithm.h"
 
-CellPath APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const Cell_t &target,
+Cells APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const Cell_t &target,
 										const MapDirection &last_dir, bool use_unknown)
 {
-	CellPath path_{};
+	Cells path_{};
 
 	// Get the map range.
 	int16_t x_min, x_max, y_min, y_max;
@@ -226,12 +226,13 @@ CellPath APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, con
 	return path_;
 }
 
-PointPath APathAlgorithm::pathGenerateTargets(CellPath &path)
+
+Points APathAlgorithm::cells_generate_points(Cells &path)
 {
 	displayCellPath(path);
-	PointPath targets{};
+	Points targets{};
 	for(auto it = path.begin(); it < path.end(); ++it) {
-		auto target = GridMap::cellToPoint(*it);
+		Point32_t target {GridMap::cellToCount((*it).X),GridMap::cellToCount((*it).Y),0};
 		auto it_next = it+1;
 		if (it->X == it_next->X)
 			target.TH = it->Y > it_next->Y ? MAP_NEG_Y : MAP_POS_Y;
@@ -241,7 +242,7 @@ PointPath APathAlgorithm::pathGenerateTargets(CellPath &path)
 	}
 //		ROS_INFO("path.back(%d,%d,%d)",path.back().X, path.back().Y, path.back().TH);
 
-	targets.back().TH = (path.end()-2)->TH;
+	targets.back().TH = (targets.end()-2)->TH;
 //	ROS_INFO("%s %d: path.back(%d,%d,%d), path.front(%d,%d,%d)", __FUNCTION__, __LINE__,
 //					 path.back().X, path.back().Y, path.back().TH, path.front().X, path.front().Y, path.front().TH);
 	return targets;
@@ -312,7 +313,7 @@ bool APathAlgorithm::findTargetUsingDijkstra(GridMap &map, const Cell_t& curr_ce
 bool APathAlgorithm::checkTrappedUsingDijkstra(GridMap &map, const Cell_t &curr_cell)
 {
 	int dijkstra_cleaned_count = 0;
-	PPTargetType path{{0,0,0}};
+	Cells path{{0,0}};
 	Cell_t target;
 	// Check if there is any reachable target.
 	bool is_found = findTargetUsingDijkstra(map, curr_cell, target, dijkstra_cleaned_count);

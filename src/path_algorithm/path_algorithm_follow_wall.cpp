@@ -6,8 +6,9 @@
 #include "path_algorithm.h"
 #include "pp.h"
 
-bool WFCleanPathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir, PointPath &targets)
+bool WFCleanPathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, const MapDirection &last_dir, Points &targets)
 {
+	auto curr_cell = GridMap::pointToCell(curr);
 	if (targets.empty()) {//fw ->linear
 		auto curr = GridMap::getCurrPoint();
 		curr.TH = 0;
