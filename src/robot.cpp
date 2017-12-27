@@ -95,9 +95,8 @@ robot::robot(std::string serial_port, int baudrate, std::string lidar_bumper_dev
 
 	// Init for event manager.
 	event_manager_init();
-	pthread_t event_manager_thread_id, event_handler_thread_id;
-	auto event_manager_th = new boost::thread(event_manager_thread_cb);
-	event_manager_th->detach();
+	auto event_manager_thread = new boost::thread(event_manager_thread_cb);
+	event_manager_thread->detach();
 	auto event_handler_thread = new boost::thread(event_handler_thread_cb);
 	event_handler_thread->detach();
 
@@ -106,7 +105,6 @@ robot::robot(std::string serial_port, int baudrate, std::string lidar_bumper_dev
 	robotbase_init();
 
 	// Init for core thread.
-	pthread_t core_move_thread_id;
 	auto core_thread = new boost::thread(core_thread_cb);
 	core_thread->detach();
 	ROS_INFO("%s %d: robot init done!", __FUNCTION__, __LINE__);

@@ -59,7 +59,7 @@ bool ACleanMode::setNextAction()
 	return action_i_ != ac_null;
 }
 
-void ACleanMode::setNextMode(int next)
+void ACleanMode::setNextModeDefault()
 {
 	if (ev.charge_detect && charger.isOnStub()) {
 		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
@@ -67,7 +67,7 @@ void ACleanMode::setNextMode(int next)
 	}
 	else {
 		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
-		Mode::setNextMode(next);
+		Mode::setNextMode(md_idle);
 	}
 }
 
@@ -89,7 +89,7 @@ bool ACleanMode::isFinish()
 	{
 		if (!setNextState())
 		{
-			setNextMode(0);
+			setNextModeDefault();
 			return true;
 		}
 	} while (!setNextAction());
@@ -160,6 +160,8 @@ void ACleanMode::genNextAction()
 		sp_action_.reset(new MoveTypeGoToCharger);
 	else if (action_i_ == ac_exception_resume)
 		sp_action_.reset(new MovementExceptionResume);
+	else if (action_i_ == ac_charge)
+		sp_action_.reset(new MovementCharge);
 	else if (action_i_ == ac_check_bumper)
 		sp_action_.reset(new ActionCheckBumper);
 	else if (action_i_ == ac_bumper_hit_test)
@@ -171,16 +173,6 @@ void ACleanMode::genNextAction()
 	else if(action_i_ == ac_null)
 		sp_action_.reset();
 	PP_INFO();
-}
-
-void ACleanMode::resetTriggeredValue(void)
-{
-	ev.lidar_triggered = 0;
-	ev.rcon_triggered = 0;
-	ev.bumper_triggered = 0;
-	ev.obs_triggered = 0;
-	ev.cliff_triggered = 0;
-	ev.tilt_triggered = 0;
 }
 
 void ACleanMode::stateInit(int next)
@@ -201,7 +193,7 @@ void ACleanMode::stateInit(int next)
 
 		// Play wavs.
 		if (ev.battery_home)
-			speaker.play(VOICE_BATTERY_LOW, true);
+			speaker.play(VOICE_BATTERY_LOW, false);
 
 		speaker.play(VOICE_BACK_TO_CHARGER, true);
 
