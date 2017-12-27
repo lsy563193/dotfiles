@@ -13,9 +13,14 @@ CleanModeTest::CleanModeTest()
 	ROS_WARN("%s %d: Entering Test mode\n=========================" , __FUNCTION__, __LINE__);
 	event_manager_register_handler(this);
 	event_manager_set_enable(true);
-	IMoveType::sp_mode_.reset(this);
+	IMoveType::sp_mode_ = this;
 
 	speaker.play(VOICE_TEST_MODE);
+}
+
+CleanModeTest::~CleanModeTest()
+{
+	IMoveType::sp_mode_ = nullptr;
 }
 
 bool CleanModeTest::mapMark()

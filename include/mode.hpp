@@ -213,7 +213,6 @@ public:
 	bool isFinish() override;
 	void setNextMode(int next);
 	virtual bool setNextState() = 0;
-	virtual bool setNextInitAction();
 	virtual bool setNextAction();
 	void genNextAction();
 	void resetTriggeredValue();
@@ -231,12 +230,11 @@ public:
 
 	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
 	boost::shared_ptr<APathAlgorithm> go_home_path_algorithm_{};
-	GridMap* cleanMap_ = nullptr;
+	GridMap* clean_map_ = nullptr;
 
 protected:
 
 	uint8_t saveFollowWall(bool is_left);
-	virtual bool isInitState();
 	virtual void stateInit(int next);
 	std::vector<Cell_t> temp_fw_cells;
 	TargetList home_cells_;
@@ -253,6 +251,7 @@ protected:
 		st_self_check,
 		st_exploration,
 	};
+	bool isInitFinished_{false};
 };
 
 class CleanModeNav:public ACleanMode
@@ -266,7 +265,6 @@ public:
 	bool isFinish() override ;
 	bool isExit() override;
 
-	bool setNextInitAction() override ;
 	bool setNextAction() override ;
 	bool setNextState() override ;
 	void keyClean(bool state_now, bool state_last) override ;
@@ -373,7 +371,7 @@ class CleanModeTest:public ACleanMode
 {
 public:
 	CleanModeTest();
-	~CleanModeTest() = default;
+	~CleanModeTest();
 
 	bool mapMark() override;
 

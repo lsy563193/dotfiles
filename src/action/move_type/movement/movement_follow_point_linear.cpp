@@ -20,7 +20,7 @@ MovementFollowPointLinear::MovementFollowPointLinear()
 }
 
 bool MovementFollowPointLinear::calcTmpTarget(Point32_t& tmp_target) {
-	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mt_->sp_mode_);
+	auto p_clean_mode = (ACleanMode*)sp_mt_->sp_mode_;
 	auto new_dir = p_clean_mode->new_dir_;
 	auto curr = nav_map.getCurrPoint();
 	tmp_target = nav_map.cellToPoint(p_clean_mode->plan_path_.front());
@@ -134,7 +134,7 @@ bool MovementFollowPointLinear::isPassTargetStop()
 {
 //	PP_INFO();
 	// Checking if robot has reached target cell.
-	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mt_->sp_mode_);
+	auto p_clean_mode = (ACleanMode*)sp_mt_->sp_mode_;
 	auto new_dir = p_clean_mode->new_dir_;
 	auto s_curr_p = nav_map.getCurrPoint();
 	auto curr = (GridMap::isXDirection(new_dir)) ? s_curr_p.X : s_curr_p.Y;

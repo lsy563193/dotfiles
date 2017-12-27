@@ -159,7 +159,6 @@ bool MovementFollowWallLidar::calcLidarPath() {
 
 bool MovementFollowWallLidar::isFinish() {
 	auto p_mt = (ActionFollowWall*)(sp_mt_);
-	auto p_cm = boost::dynamic_pointer_cast<ACleanMode>(sp_mt_->sp_mode_);
 	return p_mt->tmp_plan_path_.empty() || p_mt->shouldMoveBack() || p_mt->shouldTurn();
 }
 

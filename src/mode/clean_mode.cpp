@@ -20,6 +20,7 @@ ACleanMode::ACleanMode()
 	sp_action_.reset(new ActionOpenGyro());
 	action_i_ = ac_open_gyro;
 	state_i_ = st_null;
+	isInitFinished_ = false;
 	robot_timer.initWorkTimer();
 	key.resetPressStatus();
 
@@ -30,29 +31,25 @@ ACleanMode::ACleanMode()
 	go_home_path_algorithm_.reset();
 }
 
-bool ACleanMode::isInitState()
-{
-	return action_i_ == ac_open_gyro || action_i_ == ac_back_form_charger || action_i_ == ac_open_lidar ||
-				action_i_ == ac_align;
-}
-
-bool ACleanMode::setNextInitAction()
-{
-	if(action_i_ == ac_open_gyro)
-		action_i_ = ac_open_lidar;
-	else if(action_i_ == ac_open_lidar)
-		action_i_ = ac_open_slam;
-	else
-		action_i_ = ac_null;
-
-	genNextAction();
-	PP_INFO(); NAV_INFO();
-	return action_i_ != ac_null;
-}
-
 bool ACleanMode::setNextAction()
 {
-	if (isExceptionTriggered())
+	if (!isInitFinished_)
+	{
+		if(action_i_ == ac_open_gyro)
+		{
+			vacuum.setMode(Vac_Save);
+			brush.normalOperate();
+			action_i_ = ac_open_lidar;
+		}
+		else if(action_i_ == ac_open_lidar)
+			action_i_ = ac_open_slam;
+		else
+		{
+			isInitFinished_ = true;
+			action_i_ = ac_null;
+		}
+	}
+	else if (isExceptionTriggered())
 		action_i_ = ac_exception_resume;
 	else
 		action_i_ = ac_null;
@@ -76,31 +73,27 @@ void ACleanMode::setNextMode(int next)
 
 bool ACleanMode::isFinish()
 {
-	if (isInitState()) {
-		if (!sp_action_->isFinish())
-			return false;
-		setNextInitAction();
-	}
-	else
-	{
-		updatePath(*cleanMap_);
+	if (isInitFinished_)
+		updatePath(*clean_map_);
 
-		if (!sp_action_->isFinish())
-			return false;
+	if (!sp_action_->isFinish())
+		return false;
 
-		sp_action_.reset();//for call ~constitution;
-		PP_INFO();
+	sp_action_.reset();//for call ~constitution;
+	PP_INFO();
+
+	if (isInitFinished_)
 		mapMark();
 
-		do
+	do
+	{
+		if (!setNextState())
 		{
-			if (!setNextState())
-			{
-				setNextMode(0);
-				return true;
-			}
-		} while (!setNextAction());
-	}
+			setNextMode(0);
+			return true;
+		}
+	} while (!setNextAction());
+
 	return false;
 }
 

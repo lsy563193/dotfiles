@@ -11,7 +11,7 @@ CleanModeSpot::CleanModeSpot()
 {
 	event_manager_register_handler(this);
 	event_manager_set_enable(true);
-	IMoveType::sp_mode_.reset(this);
+	IMoveType::sp_mode_ = this;
 	speaker.play(VOICE_CLEANING_SPOT);
 	usleep(200000);
 	vacuum.setMode(Vac_Save);
@@ -19,11 +19,12 @@ CleanModeSpot::CleanModeSpot()
 	clean_path_algorithm_.reset(new SpotCleanPathAlgorithm());
 	go_home_path_algorithm_.reset();
 	has_aligned_and_open_slam = false;
-	cleanMap_ = &nav_map;
+	clean_map_ = &nav_map;
 }
 
 CleanModeSpot::~CleanModeSpot()
 {
+	IMoveType::sp_mode_ = nullptr;
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
@@ -95,7 +96,9 @@ bool CleanModeSpot::isExit()
 
 bool CleanModeSpot::setNextAction()
 {
-	if (state_i_ == st_clean)
+	if (!isInitFinished_)
+		return ACleanMode::setNextAction();
+	else if (state_i_ == st_clean)
 	{
 		PP_INFO();
 		if(plan_path_.size() >= 2)
@@ -111,6 +114,10 @@ bool CleanModeSpot::setNextAction()
 bool CleanModeSpot::setNextState()
 {
 	PP_INFO();
+
+	if (!isInitFinished_)
+		return true;
+
 	bool state_confirm = false;
 	while (ros::ok() && !state_confirm)
 	{

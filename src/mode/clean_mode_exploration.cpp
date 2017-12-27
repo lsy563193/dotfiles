@@ -15,11 +15,13 @@ CleanModeExploration::CleanModeExploration() {
 	speaker.play(VOICE_EXPLORATION_START);
 	action_i_ = ac_open_gyro;
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
-	IMoveType::sp_mode_.reset(this);
-	cleanMap_ = &exploration_map;
+	IMoveType::sp_mode_ = this;
+	clean_map_ = &exploration_map;
 }
 
-CleanModeExploration::~CleanModeExploration() {
+CleanModeExploration::~CleanModeExploration()
+{
+	IMoveType::sp_mode_ = nullptr;
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
@@ -53,6 +55,7 @@ CleanModeExploration::~CleanModeExploration() {
 		ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
 	}
 }
+
 bool CleanModeExploration::mapMark()
 {
 //	PP_WARN();
@@ -65,37 +68,12 @@ bool CleanModeExploration::mapMark()
 	return false;
 }
 
-bool CleanModeExploration::isFinish() {
-	if (isInitState()) {
-		if (!sp_action_->isFinish())
-			return false;
-		setNextAction();
-	}
-	else
-	{
-		updatePath(*cleanMap_);
+bool CleanModeExploration::isFinish()
+{
+	if (isInitFinished_)
 		mapMark();
 
-		if (!sp_action_->isFinish())
-		{
-			return false;
-		}
-
-		printMapAndPath();
-		ROS_ERROR("%s,%d,next",__FUNCTION__,__LINE__);
-
-		sp_action_.reset();//for call ~constitution;
-		PP_INFO();
-		do
-		{
-			if (!setNextState())
-			{
-				setNextMode(0);
-				return true;
-			}
-		} while (!setNextAction());
-	}
-	return false;
+	return ACleanMode::isFinish();
 }
 
 bool CleanModeExploration::isExit() {
@@ -115,7 +93,9 @@ bool CleanModeExploration::isExit() {
 bool CleanModeExploration::setNextAction() {
 	PP_INFO();
 	//todo action convert
-	if(state_i_ == st_clean)
+	if (!isInitFinished_)
+		return ACleanMode::setNextAction();
+	else if(state_i_ == st_clean)
 		action_i_ = ac_linear;
 	else if(state_i_ == st_go_to_charger)
 		action_i_ = ac_go_to_charger;
@@ -129,6 +109,10 @@ bool CleanModeExploration::setNextAction() {
 
 bool CleanModeExploration::setNextState() {
 	PP_INFO();
+
+	if (!isInitFinished_)
+		return true;
+
 	bool state_confirm = false;
 	while (ros::ok() && !state_confirm)
 	{

@@ -13,16 +13,12 @@ CleanModeNav::CleanModeNav()
 {
 	event_manager_register_handler(this);
 	event_manager_set_enable(true);
-	PP_INFO();
 	ROS_INFO("%s %d: Entering Navigation mode\n=========================" , __FUNCTION__, __LINE__);
-	IMoveType::sp_mode_.reset(this);
+	IMoveType::sp_mode_ = this;
 	if(g_plan_activated)
-	{
 		g_plan_activated = false;
-	}
-	else{
+	else
 		speaker.play(VOICE_CLEANING_START);
-	}
 
 	paused_ = false;
 	has_aligned_and_open_slam = false;
@@ -30,11 +26,12 @@ CleanModeNav::CleanModeNav()
 	moved_during_pause_ = false;
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
 	go_home_path_algorithm_.reset();
-	cleanMap_ = &nav_map;
+	clean_map_ = &nav_map;
 }
 
 CleanModeNav::~CleanModeNav()
 {
+	IMoveType::sp_mode_ = nullptr;
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
@@ -165,15 +162,46 @@ bool CleanModeNav::isExit()
 
 bool CleanModeNav::setNextAction()
 {
-	if (action_i_ == ac_open_slam)
+	if (!isInitFinished_)
 	{
-		has_aligned_and_open_slam = true;
-		if (paused_)
-			// If paused before align and open slam, reset pause status here.
+		if (action_i_ == ac_open_gyro)
+		{
+			// If it is the starting of navigation mode, paused_odom_angle_ will be zero.
+			odom.setAngleOffset(paused_odom_angle_);
+			if (charger.isOnStub())
+				action_i_ = ac_back_form_charger;
+			else
+				action_i_ = ac_open_lidar;
+
+			vacuum.setMode(Vac_Save);
+			brush.normalOperate();
+		}
+		else if (action_i_ == ac_back_form_charger)
+			action_i_ = ac_open_lidar;
+		else if (action_i_ == ac_open_lidar)
+		{
+			if (!has_aligned_and_open_slam)
+				action_i_ = ac_align;
+			else
+			{
+				action_i_ = ac_null;
+				// Clear the pause status.
+				paused_ = false;
+				isInitFinished_ = true;
+			}
+		}
+		else if (action_i_ == ac_align)
+			action_i_ = ac_open_slam;
+		else if (action_i_ == ac_open_slam)
+		{
+			action_i_ = ac_null;
+			has_aligned_and_open_slam = true;
+			// If paused during init state, reset pause status here.
 			paused_ = false;
-		PP_INFO();
+			isInitFinished_ = true;
+		}
 	}
-	if (isExceptionTriggered())
+	else if (isExceptionTriggered())
 		action_i_ = ac_exception_resume;
 	else if (state_i_ == st_clean)
 	{
@@ -209,49 +237,12 @@ bool CleanModeNav::setNextAction()
 	return action_i_ != ac_null;
 }
 
-bool CleanModeNav::setNextInitAction()
-{
-	PP_INFO();NAV_INFO();
-	if (action_i_ == ac_open_gyro)
-	{
-		PP_INFO();
-		// If it is the starting of navigation mode, paused_odom_angle_ will be zero.
-		odom.setAngleOffset(paused_odom_angle_);
-		if (charger.isOnStub())
-			action_i_ = ac_back_form_charger;
-		else
-			action_i_ = ac_open_lidar;
-	}
-	else if (action_i_ == ac_back_form_charger)
-		action_i_ = ac_open_lidar;
-	else if (action_i_ == ac_open_lidar)
-	{
-		if (!has_aligned_and_open_slam)
-		{
-			//todo for test
-//			action_i_ = ac_align;
-			action_i_ = ac_open_slam;
-		}
-		else if (paused_)
-		{
-			action_i_ = ac_null;
-			// Clear the pause status.
-			paused_ = false;
-		}
-		else
-			action_i_ = ac_null;
-	}
-	else if (action_i_ == ac_align)
-		action_i_ = ac_open_slam;
-
-	genNextAction();
-	PP_INFO(); NAV_INFO();
-	return action_i_ != ac_null;
-}
-
 bool CleanModeNav::setNextState()
 {
 	PP_INFO();
+	if (!isInitFinished_)
+		return true;
+
 	bool state_confirm = false;
 	while (ros::ok() && !state_confirm)
 	{
@@ -548,6 +539,7 @@ bool CleanModeNav::resumePause()
 	speaker.play(VOICE_CLEANING_CONTINUE);
 	ROS_INFO("%s %d: Resume cleaning.", __FUNCTION__, __LINE__);
 	action_i_ = ac_open_gyro;
+	isInitFinished_ = false;
 	genNextAction();
 	return ACleanMode::isFinish();
 }
