@@ -10,12 +10,12 @@ SpotCleanPathAlgorithm::SpotCleanPathAlgorithm()
 {
 	initVariables(1.0,nav_map.getCurrCell());
 	//random set spot direction
-	if ((clock() / CLOCKS_PER_SEC) % 2 == 0){
-		genTargets( CLOCKWISE,  spot_diameter_, &targets_,     begin_cell_);
-	}
-	else{
+//	if ((clock() / CLOCKS_PER_SEC) % 2 == 0){
+//		genTargets( CLOCKWISE,  spot_diameter_, &targets_,     begin_cell_);
+//	}
+//	else{
 		genTargets( ANTI_CLOCKWISE, spot_diameter_, &targets_,     begin_cell_);
-	}
+//	}
 
 }
 
@@ -329,6 +329,7 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell,
 			}
 		}
 		ROS_INFO("plan_path size %d",plan_path.size());
+		fillPathWithDirection(plan_path);
 		return true;
 	}
 	else if(ev.bumper_triggered || ev.cliff_triggered || ev.rcon_triggered)
@@ -380,6 +381,7 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell,
 		}
 		plan_path.clear();
 		plan_path = shortest_path;
+		fillPathWithDirection(plan_path);
 		return ret;
 	}
 }

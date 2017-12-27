@@ -66,9 +66,9 @@ public:
 	GridMap();
 	~GridMap();
 
-	static bool isPositiveDirection(MapDirection dir);
+	static bool isPos(MapDirection dir);
 
-	static bool isXDirection(MapDirection dir);
+	static bool isXAxis(MapDirection dir);
 
 	static bool isYDirection(MapDirection dir);
 

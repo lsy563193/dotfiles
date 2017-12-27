@@ -182,7 +182,7 @@ bool CleanModeNav::setNextAction()
 		ROS_INFO("%s,%d: path size(%u), old_dir_(%d), g_check_path_in_advance(%d), bumper(%d), cliff(%d), lidar(%d), delta_y(%d)",
 						__FUNCTION__, __LINE__, plan_path_.size(), old_dir_, g_check_path_in_advance, ev.bumper_triggered,
 						ev.cliff_triggered, ev.lidar_triggered, delta_y);
-		if (!GridMap::isXDirection(old_dir_) // If last movement is not x axis linear movement, should not follow wall.
+		if (!GridMap::isXAxis(old_dir_) // If last movement is not x axis linear movement, should not follow wall.
 				|| plan_path_.size() > 2 ||
 				(!g_check_path_in_advance && !ev.bumper_triggered && !ev.cliff_triggered && !ev.lidar_triggered)
 				|| delta_y == 0 || std::abs(delta_y) > 2) {
@@ -191,9 +191,9 @@ bool CleanModeNav::setNextAction()
 		else
 		{
 			delta_y = plan_path_.back().Y - start.Y;
-			bool is_left = GridMap::isPositiveDirection(old_dir_) ^delta_y > 0;
+			bool is_left = GridMap::isPos(old_dir_) ^delta_y > 0;
 			ROS_INFO("\033[31m""%s,%d: target:, 0_left_1_right(%d=%d ^ %d)""\033[0m",
-					 __FUNCTION__, __LINE__, is_left, GridMap::isPositiveDirection(old_dir_), delta_y);
+					 __FUNCTION__, __LINE__, is_left, GridMap::isPos(old_dir_), delta_y);
 			action_i_ = is_left ? ac_follow_wall_left : ac_follow_wall_right;
 		}
 	}

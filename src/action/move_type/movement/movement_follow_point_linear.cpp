@@ -13,36 +13,54 @@ MovementFollowPointLinear::MovementFollowPointLinear()
 //	s_target_p = GridMap::cellToPoint(sp_mt_->sp_cm_->tmp_plan_path_.back());
 	base_speed_ = LINEAR_MIN_SPEED;
 	tick_limit_ = 1;
+	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mt_->sp_mode_);
+	sp_mt_->target_point_ = GridMap::cellToPoint(p_clean_mode->plan_path_.front());
 //	sp_mt_->sp_cm_->plan_path_display_sp_mt_->sp_cm_->plan_path_points();
 //	g_is_should_follow_wall = false;
 //	s_target = target;
 //	sp_mt_->sp_cm_->tmp_plan_path_ = path;
 }
 
+bool MovementFollowPointLinear::_checkIsNear(const Point32_t& tmp_target, const Point32_t& target,MapDirection new_dir) {
+	auto &target_xy = (GridMap::isXAxis(new_dir)) ? target.X : target.Y;
+	auto &tmp_xy = (GridMap::isXAxis(new_dir)) ? tmp_target.X : tmp_target.Y;
+
+	return (GridMap::isPos(new_dir)) ? target_xy <= tmp_xy : target_xy >= tmp_xy;
+}
+Point32_t MovementFollowPointLinear::_calcTmpTarget(const Point32_t& curr, const Point32_t& target,MapDirection new_dir) {
+	auto curr_xy = (GridMap::isXAxis(new_dir)) ? curr.X : curr.Y;
+	auto &target_xy = (GridMap::isXAxis(new_dir)) ? target.X : target.Y;
+
+	auto tmp_target = curr;
+	auto &tmp_xy = (GridMap::isXAxis(new_dir)) ? tmp_target.X : tmp_target.Y;
+//	ROS_WARN("curr_xy(%d), target_xy(%d)", curr_xy, target_xy);
+	auto dis = std::min(std::abs(curr_xy - target_xy), (int32_t) (CELL_COUNT_MUL*0.75));
+//	ROS_INFO("dis(%d)",dis);
+	if (!GridMap::isPos(new_dir))
+		dis *= -1;
+	tmp_xy = curr_xy + dis;
+//	ROS_WARN("tmp(%d,%d)",tmp_target.X, tmp_target.Y);
+//	ROS_WARN("dis(%d),dir(%d),curr_xy(%d),tmp_xy(%d)",dis, GridMap::isPos(new_dir),curr_xy, tmp_xy);
+	return tmp_target;
+}
+
 bool MovementFollowPointLinear::calcTmpTarget(Point32_t& tmp_target) {
-	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mt_->sp_mode_);
-	auto new_dir = p_clean_mode->new_dir_;
-	auto curr = nav_map.getCurrPoint();
-	tmp_target = nav_map.cellToPoint(p_clean_mode->plan_path_.front());
-	auto curr_xy = (GridMap::isXDirection(new_dir)) ? curr.X : curr.Y;
-	auto &target_xy = (GridMap::isXDirection(new_dir)) ? tmp_target.X : tmp_target.Y;
-	auto tmp_xy = (GridMap::isXDirection(new_dir)) ? tmp_target.X : tmp_target.Y;
-	auto is_beyond = (GridMap::isPositiveDirection(new_dir)) ? target_xy <= tmp_xy : target_xy >= tmp_xy;
+	auto p_cm = boost::dynamic_pointer_cast<ACleanMode>(sp_mt_->sp_mode_);
+	auto curr = GridMap::getCurrPoint();
 
-	if (is_beyond && p_clean_mode->plan_path_.size() > 1) {
-		p_clean_mode->old_dir_ = p_clean_mode->new_dir_;
-		tmp_target = nav_map.cellToPoint(p_clean_mode->plan_path_.front());
-		p_clean_mode->new_dir_ = (MapDirection) p_clean_mode->plan_path_.front().TH;
-		p_clean_mode->plan_path_.pop_front();
+	tmp_target = _calcTmpTarget(curr, sp_mt_->target_point_,p_cm->new_dir_);
 
-		auto dis = std::min(std::abs(curr_xy - target_xy), (int32_t) (1.5 * CELL_COUNT_MUL));
-		if (!GridMap::isPositiveDirection(new_dir))
-			dis *= -1;
-		target_xy = curr_xy + dis;
+	auto is_near = _checkIsNear(tmp_target, sp_mt_->target_point_, p_cm->new_dir_);
 
-		ROS_INFO("%s,%d,dir(%d,%d)target(%d,%d)", __FUNCTION__, __LINE__, p_clean_mode->old_dir_, p_clean_mode->new_dir_,
-						 (MapDirection) p_clean_mode->plan_path_.front().X, (MapDirection) p_clean_mode->plan_path_.front().Y);
-		ROS_INFO("%s,%d,target,tmp(%d,%d)", __FUNCTION__, __LINE__, target_xy, tmp_xy);
+	if (is_near && p_cm->plan_path_.size() > 1) {
+		p_cm->old_dir_ = p_cm->new_dir_;
+		p_cm->new_dir_ = (MapDirection) p_cm->plan_path_.front().TH;
+		p_cm->plan_path_.pop_front();
+		sp_mt_->target_point_ = GridMap::cellToPoint(p_cm->plan_path_.front());
+		ROS_WARN("%s,%d,is_near(%d),dir(%d),target(%d,%d),tmp(%d,%d)", __FUNCTION__, __LINE__, is_near, p_cm->new_dir_, sp_mt_->target_point_.X, sp_mt_->target_point_.Y, tmp_target.X, tmp_target.Y);
+		tmp_target = _calcTmpTarget(curr, sp_mt_->target_point_,p_cm->new_dir_);
+
+		ROS_ERROR("%s,%d,dir(%d),target(%d,%d),tmp(%d,%d)", __FUNCTION__, __LINE__, p_cm->new_dir_, sp_mt_->target_point_.X, sp_mt_->target_point_.Y, tmp_target.X, tmp_target.Y);
 	}
 
 	return true;
@@ -90,13 +108,13 @@ bool MovementFollowPointLinear::isNearTarget()
 //	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mt_->sp_mode_);
 //	auto new_dir = p_clean_mode->new_dir_;
 //	auto s_curr_p = nav_map.getCurrPoint();
-//	auto curr = (GridMap::isXDirection(new_dir)) ? s_curr_p.X : s_curr_p.Y;
+//	auto curr = (GridMap::isXAxis(new_dir)) ? s_curr_p.X : s_curr_p.Y;
 //	auto target_p = sp_mt_->target_point_;
-//	auto &target = (GridMap::isXDirection(new_dir)) ? target_p.X : target_p.Y;
+//	auto &target = (GridMap::isXAxis(new_dir)) ? target_p.X : target_p.Y;
 //	//ROS_INFO("%s %d: s_curr_p(%d, %d), target_p(%d, %d), dir(%d)",
 //	//		 __FUNCTION__, __LINE__, s_curr_p.X, s_curr_p.Y, target_p.X, target_p.Y, new_dir);
-//	if ((GridMap::isPositiveDirection(new_dir) && (curr > target - 1.5 * CELL_COUNT_MUL)) ||
-//		(!GridMap::isPositiveDirection(new_dir) && (curr < target + 1.5 * CELL_COUNT_MUL))) {
+//	if ((GridMap::isPos(new_dir) && (curr > target - 1.5 * CELL_COUNT_MUL)) ||
+//		(!GridMap::isPos(new_dir) && (curr < target + 1.5 * CELL_COUNT_MUL))) {
 //		if(p_clean_mode->plan_path_.size() > 1)
 //		{
 //			// Switch to next target for smoothly turning.
@@ -137,14 +155,14 @@ bool MovementFollowPointLinear::isPassTargetStop()
 	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mt_->sp_mode_);
 	auto new_dir = p_clean_mode->new_dir_;
 	auto s_curr_p = nav_map.getCurrPoint();
-	auto curr = (GridMap::isXDirection(new_dir)) ? s_curr_p.X : s_curr_p.Y;
+	auto curr = (GridMap::isXAxis(new_dir)) ? s_curr_p.X : s_curr_p.Y;
 	auto target_p = (sp_mt_->target_point_);
-	auto target = (GridMap::isXDirection(new_dir)) ? target_p.X : target_p.Y;
-	if ((GridMap::isPositiveDirection(new_dir) && (curr > target + CELL_COUNT_MUL / 4)) ||
-		(!GridMap::isPositiveDirection(new_dir) && (curr < target - CELL_COUNT_MUL / 4)))
+	auto target = (GridMap::isXAxis(new_dir)) ? target_p.X : target_p.Y;
+	if ((GridMap::isPos(new_dir) && (curr > target + CELL_COUNT_MUL / 4)) ||
+		(!GridMap::isPos(new_dir) && (curr < target - CELL_COUNT_MUL / 4)))
 	{
 		ROS_INFO("%s, %d: MovementFollowPointLinear, pass target: new_dir(\033[32m%d\033[0m),is_x_axis(\033[32m%d\033[0m),is_pos(\033[32m%d\033[0m),curr(\033[32m%d\033[0m),target(\033[32m%d\033[0m)",
-				 __FUNCTION__, __LINE__, new_dir, GridMap::isXDirection(new_dir), GridMap::isPositiveDirection(new_dir), curr, target);
+				 __FUNCTION__, __LINE__, new_dir, GridMap::isXAxis(new_dir), GridMap::isPos(new_dir), curr, target);
 		return true;
 	}
 	return false;
