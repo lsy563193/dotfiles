@@ -5,6 +5,7 @@
 #include <deque>
 #include <bitset>
 #include "mathematics.h"
+#include <path_algorithm.h>
 #include "event_manager.h"
 
 #define MS_Clear 		0x00
@@ -303,4 +304,6 @@ extern double g_time_straight;
 extern bool g_slip_backward;
 extern double bumper_turn_factor;
 extern Cell_t g_zero_home;
+
+Path_t targetsGeneratePath(Points &targets);
 #endif

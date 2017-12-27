@@ -223,7 +223,7 @@ public:
 	Cell_t updatePath(GridMap& map);
 
 	static Path_t passed_path_;
-	static Path_t plan_path_;
+	static Points targets_;
 
 	MapDirection old_dir_{MAP_POS_X};
 	MapDirection new_dir_{MAP_POS_X};

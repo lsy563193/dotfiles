@@ -9,7 +9,7 @@
 #define NAV_INFO() ROS_INFO("st(%d),ac(%d)", state_i_, action_i_)
 
 Path_t ACleanMode::passed_path_ = {};
-Path_t ACleanMode::plan_path_ = {};
+Points ACleanMode::targets_ = {};
 Cell_t ACleanMode::last_ = {};
 //boost::shared_ptr<IMovement> ACleanMode::sp_movement_ = nullptr;
 

@@ -14,7 +14,7 @@ MovementFollowPointLinear::MovementFollowPointLinear()
 	base_speed_ = LINEAR_MIN_SPEED;
 	tick_limit_ = 1;
 	auto p_clean_mode = (ACleanMode*)(sp_mt_->sp_mode_);
-	sp_mt_->target_point_ = GridMap::cellToPoint(p_clean_mode->plan_path_.front());
+	sp_mt_->target_point_ = p_clean_mode->targets_.front();
 //	sp_mt_->sp_cm_->plan_path_display_sp_mt_->sp_cm_->plan_path_points();
 //	g_is_should_follow_wall = false;
 //	s_target = target;
@@ -53,11 +53,11 @@ bool MovementFollowPointLinear::calcTmpTarget(Point32_t& tmp_target) {
 
 	auto is_near = _checkIsNear(tmp_target, sp_mt_->target_point_, p_cm->new_dir_);
 
-	if (is_near && p_cm->plan_path_.size() > 1) {
+	if (is_near && p_cm->targets_.size() > 1) {
 		p_cm->old_dir_ = p_cm->new_dir_;
-		p_cm->new_dir_ = (MapDirection) p_cm->plan_path_.front().TH;
-		p_cm->plan_path_.pop_front();
-		sp_mt_->target_point_ = GridMap::cellToPoint(p_cm->plan_path_.front());
+		p_cm->new_dir_ = (MapDirection) p_cm->targets_.front().TH;
+		p_cm->targets_.pop_front();
+		sp_mt_->target_point_ = p_cm->targets_.front();
 //		ROS_INFO("%s,%d,is_near(%d),dir(%d),target(%d,%d),tmp(%d,%d)", __FUNCTION__, __LINE__, is_near, p_cm->new_dir_, sp_mt_->target_point_.X, sp_mt_->target_point_.Y, tmp_target.X, tmp_target.Y);
 		tmp_target = _calcTmpTarget(curr, sp_mt_->target_point_,p_cm->new_dir_);
 
@@ -116,21 +116,21 @@ bool MovementFollowPointLinear::isNearTarget()
 //	//		 __FUNCTION__, __LINE__, s_curr_p.X, s_curr_p.Y, target_p.X, target_p.Y, new_dir);
 //	if ((GridMap::isPos(new_dir) && (curr > target - 1.5 * CELL_COUNT_MUL)) ||
 //		(!GridMap::isPos(new_dir) && (curr < target + 1.5 * CELL_COUNT_MUL))) {
-//		if(p_clean_mode->plan_path_.size() > 1)
+//		if(p_clean_mode->targets_.size() > 1)
 //		{
 //			// Switch to next target for smoothly turning.
-//			new_dir = static_cast<MapDirection>(p_clean_mode->plan_path_.front().TH);
-//			p_clean_mode->plan_path_.pop_front();
+//			new_dir = static_cast<MapDirection>(p_clean_mode->targets_.front().TH);
+//			p_clean_mode->targets_.pop_front();
 //			ROS_INFO("%s %d: Curr(%d, %d), switch next cell(%d, %d), new dir(%d).", __FUNCTION__, __LINE__,
 //					 nav_map.getXCell(),
-//					 nav_map.getYCell(), p_clean_mode->plan_path_.front().X, p_clean_mode->plan_path_.front().Y, new_dir);
+//					 nav_map.getYCell(), p_clean_mode->targets_.front().X, p_clean_mode->targets_.front().Y, new_dir);
 //		}
-//		else if(p_clean_mode->plan_path_.front() != g_zero_home && g_allow_check_path_in_advance)
+//		else if(p_clean_mode->targets_.front() != g_zero_home && g_allow_check_path_in_advance)
 //		{
 //			g_check_path_in_advance = true;
 //			ROS_INFO("%s %d: Curr(%d, %d), target(%d, %d), dir(%d), g_check_path_in_advance(%d)",
 //					 __FUNCTION__, __LINE__, nav_map.getXCell(), nav_map.getYCell(),
-//					 p_clean_mode->plan_path_.front().X, p_clean_mode->plan_path_.front().Y, new_dir, g_check_path_in_advance);
+//					 p_clean_mode->targets_.front().X, p_clean_mode->targets_.front().Y, new_dir, g_check_path_in_advance);
 //			return true;
 //		}
 //	}

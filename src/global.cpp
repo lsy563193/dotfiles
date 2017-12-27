@@ -2,10 +2,10 @@
 // Created by lsy563193 on 12/14/17.
 //
 #include "ros/ros.h"
-#include <cstdint>
 #include <mathematics.h>
 #include <deque>
 #include <pp.h>
+#include <path_algorithm.h>
 #include <error.h>
 Cell_t g_zero_home;
 bool	g_start_point_seen_charger;
@@ -101,5 +101,16 @@ void cs_disable_motors(void)
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
+}
+
+
+Path_t targetsGeneratePath(Points &targets)
+{
+//	displayPath(targets);
+	Points path{};
+	for(const Point32_t& point : targets) {
+		targets.push_back(GridMap::pointToCell(point));
+	}
+	return path;
 }
 

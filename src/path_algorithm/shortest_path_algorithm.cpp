@@ -226,21 +226,25 @@ Path_t APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const
 	return path_;
 }
 
-void APathAlgorithm::fillPathWithDirection(Path_t &path)
+Points APathAlgorithm::pathGenerateTargets(Path_t &path)
 {
 	displayPath(path);
+	Points targets{};
 	for(auto it = path.begin(); it < path.end(); ++it) {
+		auto target = GridMap::cellToPoint(*it);
 		auto it_next = it+1;
 		if (it->X == it_next->X)
-			it->TH = it->Y > it_next->Y ? MAP_NEG_Y : MAP_POS_Y;
+			target.TH = it->Y > it_next->Y ? MAP_NEG_Y : MAP_POS_Y;
 		else
-			it->TH = it->X > it_next->X ? MAP_NEG_X : MAP_POS_X;
+			target.TH = it->X > it_next->X ? MAP_NEG_X : MAP_POS_X;
+		targets.push_back(target);
 	}
 //		ROS_INFO("path.back(%d,%d,%d)",path.back().X, path.back().Y, path.back().TH);
 
-	path.back().TH = (path.end()-2)->TH;
-	ROS_INFO("%s %d: path.back(%d,%d,%d), path.front(%d,%d,%d)", __FUNCTION__, __LINE__,
-					 path.back().X, path.back().Y, path.back().TH, path.front().X, path.front().Y, path.front().TH);
+	targets.back().TH = (path.end()-2)->TH;
+//	ROS_INFO("%s %d: path.back(%d,%d,%d), path.front(%d,%d,%d)", __FUNCTION__, __LINE__,
+//					 path.back().X, path.back().Y, path.back().TH, path.front().X, path.front().Y, path.front().TH);
+	return targets;
 }
 
 bool APathAlgorithm::findTargetUsingDijkstra(GridMap &map, const Cell_t& curr_cell, Cell_t& target, int& cleaned_count)

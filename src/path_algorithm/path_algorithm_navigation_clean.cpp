@@ -5,16 +5,16 @@
 #include "ros/ros.h"
 #include "path_algorithm.h"
 
-bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir, Path_t &plan_path)
+bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir, Points &targets)
 {
 
-	plan_path.clear();
+	targets.clear();
 	//Step 1: Find possible targets in same lane.
-	plan_path = findTargetInSameLane(map, curr_cell);
+	auto plan_path = findTargetInSameLane(map, curr_cell);
 	if (!plan_path.empty())
 	{
-		fillPathWithDirection(plan_path);
-		// Congratulation!! plan_path is generated successfully!!
+		targets = pathGenerateTargets(plan_path);
+		// Congratulation!! targets is generated successfully!!
 		return true;
 	}
 
@@ -35,9 +35,9 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell, 
 	TargetList reachable_targets = getReachableTargets(map, curr_cell, filtered_targets);
 	ROS_INFO("%s %d: After generating COST_MAP, Get %lu reachable targets.", __FUNCTION__, __LINE__, reachable_targets.size());
 	if (reachable_targets.size() != 0)
-		displayTargets(reachable_targets);
+		displayTargetList(reachable_targets);
 	else
-		// Now plan_path is empty.
+		// Now targets is empty.
 		return false;
 
 	//Step 4: Trace back the path of these targets in COST_MAP.
@@ -46,23 +46,23 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell, 
 	//Step 5: Filter paths to get the best target.
 	Cell_t best_target;
 	if (!filterPathsToSelectTarget(map, paths_for_reachable_targets, curr_cell, best_target))
-		// Now plan_path is empty.
+		// Now targets is empty.
 		return false;
 
 	//Step 6: Find shortest path for this best target.
 	Path_t shortest_path = findShortestPath(map, curr_cell, best_target, last_dir, true);
 	if (shortest_path.empty())
-		// Now plan_path is empty.
+		// Now targets is empty.
 		return false;
 
 	//Step 7: Optimize path for adjusting it away from obstacles..
 	optimizePath(map, shortest_path);
 
 	//Step 8: Fill path with direction.
-	fillPathWithDirection(shortest_path);
+	targets = pathGenerateTargets(shortest_path);
 
-	// Congratulation!! plan_path is generated successfully!!
-	plan_path = shortest_path;
+	// Congratulation!! targets is generated successfully!!
+//	plan_path = shortest_path;
 
 	return true;
 }
@@ -153,7 +153,7 @@ TargetList NavCleanPathAlgorithm::filterAllPossibleTargets(GridMap &map, const C
 		return (l.Y < r.Y || (l.Y == r.Y && l.X < r.X));
 	});
 
-	displayTargets(possible_target_list);
+	displayTargetList(possible_target_list);
 
 	ROS_INFO("%s %d: Filter targets in the same line.", __FUNCTION__, __LINE__);
 	TargetList filtered_targets{};
@@ -180,7 +180,7 @@ TargetList NavCleanPathAlgorithm::filterAllPossibleTargets(GridMap &map, const C
 //		ROS_WARN("~%s %d: Filter targets in the same line.", __FUNCTION__, __LINE__);
 	}
 
-	displayTargets(filtered_targets);
+	displayTargetList(filtered_targets);
 
 	return filtered_targets;
 }

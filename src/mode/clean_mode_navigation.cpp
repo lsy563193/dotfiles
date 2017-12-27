@@ -74,7 +74,7 @@ CleanModeNav::~CleanModeNav()
 bool CleanModeNav::mapMark()
 {
 	clean_path_algorithm_->displayPath(passed_path_);
-	robot::instance()->pubCleanMapMarkers(nav_map, plan_path_);
+	robot::instance()->pubCleanMapMarkers(nav_map, targetsGeneratePath(targets_));
 //	if (action_i_ == ac_linear) {
 	PP_WARN();
 		nav_map.setCleaned(passed_path_);
@@ -206,19 +206,19 @@ bool CleanModeNav::setNextAction()
 	else if (state_i_ == st_clean)
 	{
 		auto start = nav_map.getCurrCell();
-		auto delta_y = plan_path_.back().Y - start.Y;
+		auto delta_y = targets_.back().Y - start.Y;
 		ROS_INFO("%s,%d: path size(%u), old_dir_(%d), g_check_path_in_advance(%d), bumper(%d), cliff(%d), lidar(%d), delta_y(%d)",
-						__FUNCTION__, __LINE__, plan_path_.size(), old_dir_, g_check_path_in_advance, ev.bumper_triggered,
+						__FUNCTION__, __LINE__, targets_.size(), old_dir_, g_check_path_in_advance, ev.bumper_triggered,
 						ev.cliff_triggered, ev.lidar_triggered, delta_y);
 		if (!GridMap::isXAxis(old_dir_) // If last movement is not x axis linear movement, should not follow wall.
-				|| plan_path_.size() > 2 ||
+				|| targets_.size() > 2 ||
 				(!g_check_path_in_advance && !ev.bumper_triggered && !ev.cliff_triggered && !ev.lidar_triggered)
 				|| delta_y == 0 || std::abs(delta_y) > 2) {
 			action_i_ = ac_linear;
 		}
 		else
 		{
-			delta_y = plan_path_.back().Y - start.Y;
+			delta_y = targets_.back().Y - start.Y;
 			bool is_left = GridMap::isPos(old_dir_) ^delta_y > 0;
 			ROS_INFO("\033[31m""%s,%d: target:, 0_left_1_right(%d=%d ^ %d)""\033[0m",
 					 __FUNCTION__, __LINE__, is_left, GridMap::isPos(old_dir_), delta_y);
@@ -272,12 +272,12 @@ bool CleanModeNav::setNextState()
 			PP_INFO();
 			old_dir_ = new_dir_;
 			ROS_ERROR("old_dir_(%d)", old_dir_);
-			if (clean_path_algorithm_->generatePath(nav_map, nav_map.getCurrCell(), old_dir_, plan_path_))
+			if (clean_path_algorithm_->generatePath(nav_map, nav_map.getCurrCell(), old_dir_, targets_))
 			{
-				new_dir_ = (MapDirection)plan_path_.front().TH;
+				new_dir_ = (MapDirection)targets_.front().TH;
 				ROS_ERROR("new_dir_(%d)", new_dir_);
-				plan_path_.pop_front();
-				clean_path_algorithm_->displayPath(plan_path_);
+				targets_.pop_front();
+				clean_path_algorithm_->displayTargets(targets_);
 				state_confirm = true;
 			}
 			else
@@ -313,11 +313,11 @@ bool CleanModeNav::setNextState()
 		{
 			PP_INFO();
 			old_dir_ = new_dir_;
-			plan_path_.clear();
-			if (go_home_path_algorithm_->generatePath(nav_map, nav_map.getCurrCell(),old_dir_, plan_path_))
+			targets_.clear();
+			if (go_home_path_algorithm_->generatePath(nav_map, nav_map.getCurrCell(),old_dir_, targets_))
 			{
 				// Reach home cell or new path to home cell is generated.
-				if (plan_path_.empty())
+				if (targets_.empty())
 				{
 					// Reach home cell.
 					PP_INFO();
@@ -336,9 +336,9 @@ bool CleanModeNav::setNextState()
 				}
 				else
 				{
-					new_dir_ = (MapDirection)plan_path_.front().TH;
-					plan_path_.pop_front();
-					go_home_path_algorithm_->displayPath(plan_path_);
+					new_dir_ = (MapDirection)targets_.front().TH;
+					targets_.pop_front();
+					go_home_path_algorithm_->displayTargets(targets_);
 				}
 			}
 			else

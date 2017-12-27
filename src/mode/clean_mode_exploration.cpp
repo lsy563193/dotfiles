@@ -63,7 +63,7 @@ bool CleanModeExploration::mapMark()
 	exploration_map.setExplorationCleaned();
 	exploration_map.setBlocks();
 	exploration_map.markRobot(CLEAN_MAP);
-	robot::instance()->pubCleanMapMarkers(exploration_map, plan_path_);
+	robot::instance()->pubCleanMapMarkers(exploration_map, targetsGeneratePath(targets_));
 	passed_path_.clear();
 	return false;
 }
@@ -141,13 +141,13 @@ bool CleanModeExploration::setNextState() {
 			PP_INFO();
 			old_dir_ = new_dir_;
 			ROS_WARN("old_dir_(%d)", old_dir_);
-			plan_path_.clear();
-			if (clean_path_algorithm_->generatePath(exploration_map,exploration_map.getCurrCell(), old_dir_, plan_path_))
+			targets_.clear();
+			if (clean_path_algorithm_->generatePath(exploration_map,exploration_map.getCurrCell(), old_dir_, targets_))
 			{
-				new_dir_ = (MapDirection)plan_path_.front().TH;
+				new_dir_ = (MapDirection)targets_.front().TH;
 				ROS_WARN("new_dir_(%d)", new_dir_);
-				plan_path_.pop_front();
-				clean_path_algorithm_->displayPath(plan_path_);
+				targets_.pop_front();
+				clean_path_algorithm_->displayTargets(targets_);
 				state_confirm = true;
 			}
 			else
@@ -172,11 +172,11 @@ bool CleanModeExploration::setNextState() {
 		{
 			PP_INFO();
 			old_dir_ = new_dir_;
-			plan_path_.clear();
-			if (go_home_path_algorithm_->generatePath(exploration_map, exploration_map.getCurrCell(),old_dir_, plan_path_))
+			targets_.clear();
+			if (go_home_path_algorithm_->generatePath(exploration_map, exploration_map.getCurrCell(),old_dir_, targets_))
 			{
 				// Reach home cell or new path to home cell is generated.
-				if (plan_path_.empty())
+				if (targets_.empty())
 				{
 					// Reach home cell.
 					ROS_WARN("Reach home point(0,0)");
@@ -185,9 +185,9 @@ bool CleanModeExploration::setNextState() {
 				}
 				else
 				{
-					new_dir_ = (MapDirection)plan_path_.front().TH;
-					plan_path_.pop_front();
-					go_home_path_algorithm_->displayPath(plan_path_);
+					new_dir_ = (MapDirection)targets_.front().TH;
+					targets_.pop_front();
+					go_home_path_algorithm_->displayTargets(targets_);
 				}
 			}
 			else

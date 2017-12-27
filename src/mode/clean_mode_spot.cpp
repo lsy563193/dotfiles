@@ -101,7 +101,7 @@ bool CleanModeSpot::setNextAction()
 	else if (state_i_ == st_clean)
 	{
 		PP_INFO();
-		if(plan_path_.size() >= 2)
+		if(targets_.size() >= 2)
 			action_i_ = ac_linear;
 		else
 			action_i_ = ac_null;
@@ -147,12 +147,12 @@ bool CleanModeSpot::setNextState()
 			PP_INFO();
 			old_dir_ = new_dir_;
 			ROS_ERROR("old_dir_(%d)", old_dir_);
-			if (clean_path_algorithm_->generatePath(nav_map, nav_map.getCurrCell(), old_dir_, plan_path_))
+			if (clean_path_algorithm_->generatePath(nav_map, nav_map.getCurrCell(), old_dir_, targets_))
 			{
-				new_dir_ = (MapDirection)plan_path_.front().TH;
+				new_dir_ = (MapDirection)targets_.front().TH;
 				ROS_ERROR("new_dir_(%d)", new_dir_);
-				plan_path_.pop_front();
-				clean_path_algorithm_->displayPath(plan_path_);
+				targets_.pop_front();
+				clean_path_algorithm_->displayTargets(targets_);
 				state_confirm = true;
 			}
 			else
@@ -166,11 +166,11 @@ bool CleanModeSpot::setNextState()
 		{
 			PP_INFO();
 			old_dir_ = new_dir_;
-			plan_path_.clear();
-			if (go_home_path_algorithm_->generatePath(nav_map, nav_map.getCurrCell(),old_dir_, plan_path_))
+			targets_.clear();
+			if (go_home_path_algorithm_->generatePath(nav_map, nav_map.getCurrCell(),old_dir_, targets_))
 			{
 				// Reach home cell or new path to home cell is generated.
-				if (plan_path_.empty())
+				if (targets_.empty())
 				{
 					// Reach home cell.
 					PP_INFO();
@@ -189,9 +189,9 @@ bool CleanModeSpot::setNextState()
 				}
 				else
 				{
-					new_dir_ = (MapDirection)plan_path_.front().TH;
-					plan_path_.pop_front();
-					go_home_path_algorithm_->displayPath(plan_path_);
+					new_dir_ = (MapDirection)targets_.front().TH;
+					targets_.pop_front();
+					go_home_path_algorithm_->displayTargets(targets_);
 				}
 			}
 			else

@@ -14,7 +14,7 @@ SpotCleanPathAlgorithm::SpotCleanPathAlgorithm()
 //		genTargets( CLOCKWISE,  spot_diameter_, &targets_,     begin_cell_);
 //	}
 //	else{
-		genTargets( ANTI_CLOCKWISE, spot_diameter_, &targets_,     begin_cell_);
+		genTargets( ANTI_CLOCKWISE, spot_diameter_, &plan_path_,     begin_cell_);
 //	}
 
 }
@@ -24,10 +24,10 @@ SpotCleanPathAlgorithm::SpotCleanPathAlgorithm(float diameter,Cell_t cur_cell)
 	initVariables(diameter,cur_cell);
 	//random set spot direction
 	if ((clock() / CLOCKS_PER_SEC) % 2 == 0){
-		genTargets( CLOCKWISE,  spot_diameter_, &targets_,     begin_cell_);
+		genTargets( CLOCKWISE,  spot_diameter_, &plan_path_,     begin_cell_);
 	}
 	else{
-		genTargets( ANTI_CLOCKWISE, spot_diameter_, &targets_,     begin_cell_);
+		genTargets( ANTI_CLOCKWISE, spot_diameter_, &plan_path_,     begin_cell_);
 	}
 
 }
@@ -43,7 +43,7 @@ void SpotCleanPathAlgorithm::initVariables(float diameter,Cell_t cur_cell)
 	spot_diameter_ = diameter;
 	spot_running_ = false;
 	begin_cell_ = cur_cell;
-	targets_last_.clear();
+	plan_path_last_.clear();
 }
 
 void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Path_t *targets,const Cell_t begincell)
@@ -307,49 +307,46 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Path_t *t
 	}
 }
 
-bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir, Path_t &plan_path)
+bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir, Points &targets)
 {
 	if(!ev.bumper_triggered && !ev.cliff_triggered && !ev.rcon_triggered){
 		if(!spot_running_){
 			spot_running_ = true;
-			plan_path = targets_;
+			targets = pathGenerateTargets(plan_path_);
 			PP_INFO();
-			ROS_INFO("targets size %d",targets_.size());
+			ROS_INFO("targets size %d",plan_path_.size());
 		}
 		else{
 			PP_INFO();
-			if(plan_path.size() >= 2)
-				if(!targets_last_.empty())
-					plan_path = targets_last_;
-				else
-					plan_path = plan_path;
+			if(targets.size() >= 2)
+				if(!plan_path_last_.empty())
+					targets = pathGenerateTargets(plan_path_);
 			else{
-				plan_path.clear();
+				targets.clear();
 				return false;
 			}
 		}
-		ROS_INFO("plan_path size %d",plan_path.size());
-		fillPathWithDirection(plan_path);
+		ROS_INFO("targets size %d",targets.size());
 		return true;
 	}
 	else if(ev.bumper_triggered || ev.cliff_triggered || ev.rcon_triggered)
 	{
 		bool ret = false;
 		Path_t shortest_path;
-		if(targets_last_.empty())
+		if(plan_path_last_.empty())
 		{
 			while(ros::ok())
 			{
-				if(plan_path.size() > 2){
-					plan_path.pop_front();
-					auto next_cell = plan_path.front();
+				if(targets.size() > 2){
+					targets.pop_front();
+					auto next_cell = GridMap::pointToCell(targets.front());
 					shortest_path = findShortestPath(map,curr_cell,next_cell,last_dir,false);
 					if(shortest_path.empty()){
 						continue;
 					}
 					else{
 						ret = true;
-						targets_last_ = shortest_path;
+						plan_path_last_ = shortest_path;
 						break;
 					}
 				}
@@ -362,10 +359,10 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell,
 		{
 			while(ros::ok())
 			{
-				if(targets_last_.size() > 2)
+				if(plan_path_last_.size() > 2)
 				{
-					targets_last_.pop_front();
-					auto next_cell = targets_last_.front();
+					plan_path_last_.pop_front();
+					auto next_cell = plan_path_last_.front();
 					shortest_path = findShortestPath(map,curr_cell,next_cell,last_dir,false);
 					if(shortest_path.empty()){
 						continue;
@@ -379,9 +376,7 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell,
 					break;
 			}
 		}
-		plan_path.clear();
-		plan_path = shortest_path;
-		fillPathWithDirection(plan_path);
+		targets = pathGenerateTargets(shortest_path);
 		return ret;
 	}
 }

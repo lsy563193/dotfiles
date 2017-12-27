@@ -16,7 +16,7 @@ typedef std::deque<Path_t> PathList;
 class APathAlgorithm
 {
 public:
-	virtual bool generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir, Path_t &plan_path) = 0;
+	virtual bool generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir, Points &plan_path) = 0;
 
 	virtual bool checkTrapped(GridMap &map, const Cell_t &curr_cell) = 0;
 
@@ -36,7 +36,9 @@ public:
 	 *
 	 * @param: TargetList target list.
 	 */
-	void displayTargets(const TargetList &target_list);
+	void displayTargetList(const TargetList &target_list);
+
+	void displayTargets(const Points &targets);
 
 	/*
 	 * @author Patrick Chow
@@ -82,7 +84,7 @@ public:
 	 *
 	 * @return: Path_t path, the path from start cell to target cell with direction.
 	 */
-	void fillPathWithDirection(Path_t &path);
+	Points pathGenerateTargets(Path_t &path);
 
 	/*
 	 * @author Lin Shao Yue
@@ -141,7 +143,7 @@ class NavCleanPathAlgorithm: public APathAlgorithm
 	 *
 	 * @return: Path_t path, the path to unclean area.
 	 */
-	bool generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir, Path_t &plan_path) override;
+	bool generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir, Points &targets) override;
 
 private:
 	/*
@@ -227,7 +229,7 @@ private:
 class WFCleanPathAlgorithm: public APathAlgorithm
 {
 public:
-	bool generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir, Path_t &plan_path) override;
+	bool generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir, Points &targets) override;
 	bool checkTrapped(GridMap &map, const Cell_t &curr_cell){};
 };
 
@@ -238,7 +240,7 @@ public:
 	SpotCleanPathAlgorithm(float diameter,Cell_t curcell);
 	~SpotCleanPathAlgorithm();
 
-	bool generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir, Path_t &plan_path) override;
+	bool generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir, Points &targets) override;
 	bool checkTrapped(GridMap &map, const Cell_t &curr_cell) override;
 	void genTargets(uint8_t type,float diameter,Path_t *targets,const Cell_t begincell);
 private:
@@ -248,8 +250,8 @@ private:
 	
 	float spot_diameter_ ;
 	bool spot_running_;
-	Path_t targets_;
-	Path_t targets_last_;
+	Path_t plan_path_;
+	Path_t plan_path_last_;
 	Cell_t begin_cell_; 
 };
 
@@ -282,7 +284,7 @@ public:
 	 *
 	 * @return: Path_t path, the path to selected home cell.
 	 */
-	bool generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir, Path_t &plan_path) override;
+	bool generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir, Points &plan_path) override;
 
 	bool checkTrapped(GridMap &map, const Cell_t &curr_cell){};
 	TargetList getRestHomeCells();
