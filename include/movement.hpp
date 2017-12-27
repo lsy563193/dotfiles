@@ -97,7 +97,7 @@ public:
 //	~MovementFollowPointLinear(){ };
 	bool isFinish() override;
 
-
+	bool isRconStop();
 	bool isBoundaryStop();
 	bool isPassTargetStop();
 	bool isNearTarget();
@@ -117,6 +117,11 @@ private:
 ////	PPTargetType path_;
 	float odom_x_start{};
 	float odom_y_start{};
+	enum {
+		left, fl1, fl2, fr2, fr1, right
+	};
+	int8_t rcon_cnt[6]{};
+	int countRconTriggered(uint32_t rcon_value);
 };
 
 class IFollowWall{

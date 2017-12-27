@@ -12,10 +12,6 @@ Rcon c_rcon;
 
 Rcon::Rcon()
 {
-	init();
-}
-void Rcon::init()
-{
 	rcon_status_ = 0;
 	found_charger_ = false;
 	found_temp_charger_ = false;
@@ -24,10 +20,6 @@ void Rcon::init()
 	charger_pos_.Y = 0;
 	should_mark_charger_ = false;
 	should_mark_temp_charger_ = false;
-}
-Rcon::~Rcon()
-{
-	init();
 }
 
 void Rcon::setRconPos(float cd,float dist)
@@ -231,72 +223,10 @@ bool Rcon::estimateChargerPos(uint32_t rcon_value)
 	return true;
 }
 
-uint32_t Rcon::getStatus()
-{
-//	const int CHARGE_SIGNAL_RANGES = 20;//IN CELL SIZE
-//	uint32_t rcon_value = 0;
-//	if(found_charger_){
-//		int16_t dist = (int16_t)two_points_distance(charger_pos_.X,charger_pos_.Y, nav_map.getXCell(),
-//													nav_map.getYCell());
-//		if(dist <= CHARGE_SIGNAL_RANGES){
-//			in_rcon_signal_range_ = true;
-//		}
-//		else{
-//			found_charger_ = false;
-//			in_rcon_signal_range_ = false;
-//		}
-//	}
-//	if (!cs.is_going_home()
-//				&& g_from_charger
-//				&& !in_rcon_signal_range_
-//				&& g_motion_init_succeeded
-//				&& !mt.is_go_to_charger()
-//				&& !mt.is_follow_wall()){
-//		rcon_value = 0;
-//	}
-//	else{
-//		rcon_value = rcon_status_;
-//	}
-//	return rcon_value;
-	auto rcon_status = rcon_status_;
-	return rcon_status;
-}
-
-static int get_trig_(uint32_t rcon_value)
-{
-	if(rcon_value == 0)
-		return 0;
-	enum {
-		left, fl1, fl2, fr2, fr1, right
-	};
-	static int8_t cnt[6] = {0, 0, 0, 0, 0, 0};
-	const int MAX_CNT = 1;
-	if ( rcon_value& RconL_HomeT)
-		cnt[left]++;
-	if ( rcon_value& RconFL_HomeT)
-		cnt[fl1]++;
-	if ( rcon_value& RconFL2_HomeT)
-		cnt[fl2]++;
-	if ( rcon_value& RconFR2_HomeT)
-		cnt[fr2]++;
-	if ( rcon_value& RconFR_HomeT)
-		cnt[fr1]++;
-	if ( rcon_value& RconR_HomeT)
-		cnt[right]++;
-	auto ret = 0;
-	for (int i = 0; i < 6; i++)
-		if (cnt[i] > MAX_CNT) {
-			cnt[left] = cnt[fl1] = cnt[fl2] = cnt[fr2] = cnt[fr1] = cnt[right] = 0;
-			ret = i + 1;
-			break;
-		}
-	return ret;
-}
-
-int Rcon::getTrig(void)
+uint32_t Rcon::getAll(void)
 {
 	uint32_t rcon_value = getStatus();
-	rcon_status_ = 0;
+	resetStatus();
 	return rcon_value;
 /*	if (mt.is_follow_wall()) {
 		if ((rcon_value &
@@ -337,14 +267,10 @@ int Rcon::getTrig(void)
 	return 0;*/
 }
 
-bool Rcon::isTrigT() {
-	auto trig = getStatus();
-	if(trig) {
-		if (trig & (RconL_HomeT | RconR_HomeT | RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT)){
-			resetStatus();
-			return true;
-		}
-	}
-	return false;
+uint32_t Rcon::getForwardTop()
+{
+	uint32_t rcon_status = getStatus() & (RconL_HomeT | RconR_HomeT | RconFL_HomeT | RconFR_HomeT | RconFL2_HomeT | RconFR2_HomeT);
+	resetStatus();
+	return rcon_status;
 }
 

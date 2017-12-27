@@ -22,7 +22,6 @@ ModeIdle::ModeIdle()
 	/*---reset values for rcon handle---*/
 	first_time_seen_charger_ = 0.0;
 	last_time_seen_charger_ = 0.0;
-	time_for_now_ = 0.0;
 }
 
 ModeIdle::~ModeIdle()
@@ -283,7 +282,7 @@ void ModeIdle::keyClean(bool state_now, bool state_last)
 
 void ModeIdle::rcon(bool state_now, bool state_last)
 {
-	time_for_now_ = ros::Time::now().toSec();
+	auto time_for_now_ = ros::Time::now().toSec();
 //	ROS_WARN("%s %d: rcon signal. first: %lf, last: %lf, now: %lf", __FUNCTION__, __LINE__, first_time_seen_charger, last_time_seen_charger, time_for_now);
 	if(time_for_now_ - last_time_seen_charger_ > 60)
 	{
@@ -294,8 +293,7 @@ void ModeIdle::rcon(bool state_now, bool state_last)
 	{
 		/*---received charger signal continuously, check if more than 3 mins---*/
 		if(time_for_now_ - first_time_seen_charger_ > 180)
-			ev.rcon_triggered = c_rcon.getTrig();
+			ev.rcon_triggered = c_rcon.getAll();
 	}
 	last_time_seen_charger_ = time_for_now_;
-	c_rcon.resetStatus();
 }

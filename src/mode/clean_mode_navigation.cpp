@@ -94,6 +94,15 @@ bool CleanModeNav::mapMark()
 	}
 	if (state_i_ == st_trapped)
 		fw_map.setFollowWall(action_i_ == ac_follow_wall_left);
+	else if (state_i_ == st_clean)
+	{
+		// Set home cell.
+		if (ev.rcon_triggered)
+		{
+			home_cells_.push_front(clean_map_->getCurrCell());
+			ROS_INFO("%s %d: Set home cell(%d, %d).", __FUNCTION__, __LINE__, home_cells_.front().X, home_cells_.front().Y);
+		}
+	}
 
 	nav_map.markRobot(CLEAN_MAP);
 	PP_INFO();

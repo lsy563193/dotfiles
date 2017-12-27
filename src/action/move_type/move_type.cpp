@@ -26,20 +26,6 @@ bool IMoveType::shouldMoveBack()
 	return false;
 }
 
-bool IMoveType::isRconStop()
-{
-//	PP_INFO();
-	ev.rcon_triggered = c_rcon.getTrig();
-	if(ev.rcon_triggered)
-	{
-//		g_turn_angle = rcon_turn_angle();
-//		ROS_INFO("%s, %d: ev.rcon_triggered(%d), turn for (%d).", __FUNCTION__, __LINE__, ev.rcon_triggered, g_turn_angle);
-//		return true;
-	}
-
-	return false;
-}
-
 bool IMoveType::isOBSStop()
 {
 	// Now OBS sensor is just for slowing down.

@@ -2,6 +2,7 @@
 // Created by lsy563193 on 12/5/17.
 //
 
+#include <event_manager.h>
 #include "pp.h"
 #include "arch.hpp"
 
@@ -70,7 +71,46 @@ bool MovementFollowPointLinear::calcTmpTarget(Point32_t& tmp_target) {
 bool MovementFollowPointLinear::isFinish()
 {
 	auto p_mt = (ActionFollowWall*)(sp_mt_);
-	return isPoseReach() || isBoundaryStop() || isPassTargetStop() || p_mt->shouldMoveBack() || p_mt->shouldTurn();
+	return isPoseReach() || isBoundaryStop() || isPassTargetStop() || isRconStop() || p_mt->shouldMoveBack() || p_mt->shouldTurn();
+}
+
+bool MovementFollowPointLinear::isRconStop()
+{
+	ev.rcon_triggered = countRconTriggered(c_rcon.getForwardTop());
+
+	bool ret = false;
+	if(ev.rcon_triggered)
+		ret = true;
+
+	return ret;
+}
+
+int MovementFollowPointLinear::countRconTriggered(uint32_t rcon_value)
+{
+	if(rcon_value == 0)
+		return 0;
+
+	int MAX_CNT = 1;
+	if ( rcon_value& RconL_HomeT)
+		rcon_cnt[left]++;
+	if ( rcon_value& RconFL_HomeT)
+		rcon_cnt[fl1]++;
+	if ( rcon_value& RconFL2_HomeT)
+		rcon_cnt[fl2]++;
+	if ( rcon_value& RconFR2_HomeT)
+		rcon_cnt[fr2]++;
+	if ( rcon_value& RconFR_HomeT)
+		rcon_cnt[fr1]++;
+	if ( rcon_value& RconR_HomeT)
+		rcon_cnt[right]++;
+	auto ret = 0;
+	for (int i = 0; i < 6; i++)
+		if (rcon_cnt[i] > MAX_CNT) {
+			rcon_cnt[left] = rcon_cnt[fl1] = rcon_cnt[fl2] = rcon_cnt[fr2] = rcon_cnt[fr1] = rcon_cnt[right] = 0;
+			ret = i + 1;
+			break;
+		}
+	return ret;
 }
 
 bool MovementFollowPointLinear::isCellReach()

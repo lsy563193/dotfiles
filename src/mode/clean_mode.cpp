@@ -83,7 +83,10 @@ bool ACleanMode::isFinish()
 	PP_INFO();
 
 	if (isInitFinished_)
+	{
+		clean_map_->saveBlocks(action_i_ == ac_linear);
 		mapMark();
+	}
 
 	do
 	{

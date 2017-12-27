@@ -97,10 +97,7 @@ public:
 	bool should_mark_temp_charger_;
 public:
 	Rcon();
-	~Rcon();
-	void init();
-	int getTrig(void);
-	bool isTrigT();
+	~Rcon() = default;
 
 	void setStatus(uint32_t code) {
 		rcon_status_ |= code;
@@ -110,9 +107,19 @@ public:
 		rcon_status_ = 0;
 	}
 
-	uint32_t getStatus();
+	uint32_t getStatus()
+	{
+		return rcon_status_;
+	};
 
-	
+	uint32_t getAll(void);
+
+	/*
+	 * For checking if L/R/FL/FR/FL2/FR2 receive HomeT signal.
+	 */
+	uint32_t getForwardTop();
+
+
 	/*
 	 * @author
 	 * @breif set rcon position

@@ -45,7 +45,7 @@ bool MovementGoToCharger::isSwitch()
 //		extern bool g_charge_turn_connect_fail;
 		if(/*g_charge_turn_connect_fail &&*/ no_signal_cnt < 10)
 		{
-			receive_code = c_rcon.getTrig();
+			receive_code = c_rcon.getAll();
 			ROS_INFO("%s, %d: check near home, receive_code: %8x", __FUNCTION__, __LINE__, receive_code);
 			if(receive_code&RconAll_Home_T)
 			{
@@ -151,7 +151,7 @@ bool MovementGoToCharger::isSwitch()
 			}
 
 			// Handle for rcon signal
-			receive_code = c_rcon.getTrig();
+			receive_code = c_rcon.getAll();
 			//ROS_INFO("%s %d: rcon recieve code:%d", __FUNCTION__, __LINE__, receive_code);
 			if (receive_code)
 			{
@@ -343,7 +343,7 @@ bool MovementGoToCharger::isSwitch()
 		if (--around_move_cnt <= 0)
 		{
 			around_move_cnt = 7;
-			receive_code = c_rcon.getTrig();
+			receive_code = c_rcon.getAll();
 			if(receive_code)
 				no_signal_cnt = 0;
 			else if(++no_signal_cnt > 60)
@@ -496,9 +496,9 @@ bool MovementGoToCharger::isSwitch()
 				gyro_step += (-angle_offset);
 			last_angle = current_angle;
 
-			ROS_DEBUG("%s %d: Check_Position c_rcon.getTrig() == %8x, R... == %8x.", __FUNCTION__, __LINE__,
-								c_rcon.getTrig(), RconFrontAll_Home_LR);
-			receive_code = (c_rcon.getTrig()&RconFrontAll_Home_LR);
+			receive_code = (c_rcon.getAll()&RconFrontAll_Home_LR);
+			ROS_DEBUG("%s %d: Check_Position receive_code == %8x, R... == %8x.", __FUNCTION__, __LINE__,
+					  receive_code, RconFrontAll_Home_LR);
 			ROS_DEBUG("%s %d: receive code: %8x.", __FUNCTION__, __LINE__, receive_code);
 			if(receive_code)
 			{
@@ -549,7 +549,7 @@ bool MovementGoToCharger::isSwitch()
 			}
 			else
 			{
-				//if((c_rcon.getTrig()&RconFront_Home_LR) == 0)
+				//if((c_rcon.getAll()&RconFront_Home_LR) == 0)
 				//	gtc_state_now_ = gtc_turn_for_charger_signal_init;
 				gtc_state_now_ = gtc_turn_for_charger_signal_init;
 				back_distance_ = 0.1;
@@ -572,7 +572,7 @@ bool MovementGoToCharger::isSwitch()
 		if (--by_path_move_cnt < 0)
 		{
 			by_path_move_cnt = 25;
-			receive_code = c_rcon.getTrig();
+			receive_code = c_rcon.getAll();
 			if(receive_code)
 			{
 				if(receive_code&RconFR_HomeT && receive_code&RconFL_HomeT)

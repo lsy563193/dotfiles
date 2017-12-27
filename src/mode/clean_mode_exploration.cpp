@@ -159,7 +159,7 @@ bool CleanModeExploration::setNextState() {
 				stateInit(state_i_);
 				action_i_ = ac_null;
 			}
-			if(c_rcon.isTrigT())
+			if(c_rcon.getForwardTop())
 			{
 				ROS_WARN("%s,%d:find charge success,convert to go to charge state",__func__,__LINE__);
 				state_i_ = st_go_to_charger;
