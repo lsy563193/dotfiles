@@ -111,6 +111,8 @@ public:
 
 private:
 
+	Point32_t _calcTmpTarget(const Point32_t& curr, const Point32_t& target,MapDirection new_dir);
+	bool _checkIsNear(const Point32_t& curr, const Point32_t& target,MapDirection new_dir);
 	uint8_t turn_speed_{};
 ////	PPTargetType path_;
 	float odom_x_start{};
