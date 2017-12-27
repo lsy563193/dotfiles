@@ -12,7 +12,7 @@
 
 IFollowWall::IFollowWall(bool is_left) : previous_(0), seen_charger_counter(0), is_left_(is_left)
 {
-//	s_start_p = GridMap::getCurrPoint();
+//	s_start_p = GridMap::getPosition();
 //	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mt_->sp_mode_);
 //	s_target_p = GridMap::cellToPoint(p_clean_mode->plan_path_.front());
 //	start_timer_ = ros::Time::now().toSec();
@@ -48,7 +48,7 @@ bool IFollowWall::isIsolate()
 
 bool IFollowWall::isBlockCleared()
 {
-	if (!nav_map.isBlockAccessible(getCurrCell().X, getCurrCell().Y)) // Robot has step on blocks.
+	if (!nav_map.isBlockAccessible(getPosition().toCell().X, getPosition().toCell().Y)) // Robot has step on blocks.
 	{
 //		ROS_WARN("%s %d: Lidar triggered, turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
 		return true;

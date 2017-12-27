@@ -165,10 +165,10 @@ void GridMap::clearBlocks(void) {
 		}
 	}
 
-	setCell(CLEAN_MAP,getCurrCell().X - 1, getCurrCell().Y , CLEANED);
-	setCell(CLEAN_MAP,getCurrCell().X,getCurrCell().Y + 1, CLEANED);
-	setCell(CLEAN_MAP,getCurrCell().X + 1,getCurrCell().Y, CLEANED);
-	setCell(CLEAN_MAP,getCurrCell().X,getCurrCell().Y - 1, CLEANED);
+	setCell(CLEAN_MAP,getPosition().toCell().X - 1, getPosition().toCell().Y , CLEANED);
+	setCell(CLEAN_MAP,getPosition().toCell().X,getPosition().toCell().Y + 1, CLEANED);
+	setCell(CLEAN_MAP,getPosition().toCell().X + 1,getPosition().toCell().Y, CLEANED);
+	setCell(CLEAN_MAP,getPosition().toCell().X,getPosition().toCell().Y - 1, CLEANED);
 }
 
 void GridMap::robotToPoint(Point32_t point, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y)
@@ -428,7 +428,7 @@ uint8_t GridMap::setObs()
 		block_count++;
 	}
 	temp_obs_cells.clear();
-	ROS_INFO("%s,%d: Current(%d, %d), mapMark \033[32m%s\033[0m",__FUNCTION__, __LINE__, getCurrCell().X, getCurrCell().Y, msg.c_str());
+	ROS_INFO("%s,%d: Current(%d, %d), mapMark \033[32m%s\033[0m",__FUNCTION__, __LINE__, getPosition().toCell().X, getPosition().toCell().Y, msg.c_str());
 	return block_count;
 }
 
@@ -445,7 +445,7 @@ uint8_t GridMap::setBumper()
 		block_count++;
 	}
 	temp_bumper_cells.clear();
-	ROS_INFO("%s,%d: Current(%d, %d), mapMark \033[32m%s\033[0m",__FUNCTION__, __LINE__, getCurrCell().X, getCurrCell().Y, msg.c_str());
+	ROS_INFO("%s,%d: Current(%d, %d), mapMark \033[32m%s\033[0m",__FUNCTION__, __LINE__, getPosition().toCell().X, getPosition().toCell().Y, msg.c_str());
 	return block_count;
 }
 
@@ -462,7 +462,7 @@ uint8_t GridMap::setTilt()
 		block_count++;
 	}
 	temp_tilt_cells.clear();
-	ROS_INFO("%s,%d: Current(%d, %d), \033[32m mapMark %s\033[0m",__FUNCTION__, __LINE__, getCurrCell().X, getCurrCell().Y, msg.c_str());
+	ROS_INFO("%s,%d: Current(%d, %d), \033[32m mapMark %s\033[0m",__FUNCTION__, __LINE__, getPosition().toCell().X, getPosition().toCell().Y, msg.c_str());
 	return block_count;
 }
 
@@ -479,7 +479,7 @@ uint8_t GridMap::setSlip()
 		block_count++;
 	}
 	temp_slip_cells.clear();
-	ROS_INFO("%s,%d: Current(%d, %d), \033[32m mapMark %s\033[0m",__FUNCTION__, __LINE__, getCurrCell().X, getCurrCell().Y, msg.c_str());
+	ROS_INFO("%s,%d: Current(%d, %d), \033[32m mapMark %s\033[0m",__FUNCTION__, __LINE__, getPosition().toCell().X, getPosition().toCell().Y, msg.c_str());
 	return block_count;
 }
 
@@ -496,7 +496,7 @@ uint8_t GridMap::setCliff()
 		block_count++;
 	}
 	temp_cliff_cells.clear();
-	ROS_INFO("%s,%d: Current(%d, %d), \033[32m mapMark %s\033[0m",__FUNCTION__, __LINE__, getCurrCell().X, getCurrCell().Y, msg.c_str());
+	ROS_INFO("%s,%d: Current(%d, %d), \033[32m mapMark %s\033[0m",__FUNCTION__, __LINE__, getPosition().toCell().X, getPosition().toCell().Y, msg.c_str());
 	return block_count;
 }
 
@@ -513,7 +513,7 @@ uint8_t GridMap::setRcon()
 		block_count++;
 	}
 	temp_rcon_cells.clear();
-	ROS_INFO("%s,%d: Current(%d, %d), \033[32m mapMark %s\033[0m",__FUNCTION__, __LINE__, getCurrCell().X, getCurrCell().Y, msg.c_str());
+	ROS_INFO("%s,%d: Current(%d, %d), \033[32m mapMark %s\033[0m",__FUNCTION__, __LINE__, getPosition().toCell().X, getPosition().toCell().Y, msg.c_str());
 	return block_count;
 }
 
@@ -566,7 +566,7 @@ uint8_t GridMap::setFollowWall(bool is_left,const Points& passed_path)
 				block_count++;
 			}
 		}
-		ROS_INFO("%s,%d: Current(%d, %d), \033[32m mapMark CLEAN_MAP %s\033[0m",__FUNCTION__, __LINE__, getCurrCell().X, getCurrCell().Y, msg.c_str());
+		ROS_INFO("%s,%d: Current(%d, %d), \033[32m mapMark CLEAN_MAP %s\033[0m",__FUNCTION__, __LINE__, getPosition().toCell().X, getPosition().toCell().Y, msg.c_str());
 	}
 }
 
@@ -583,14 +583,14 @@ uint8_t GridMap::saveSlip()
 	std::string msg = "cells:";
 	for(auto& d_cell : d_cells)
 	{
-		robotToCell(getCurrPoint(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
+		robotToCell(getPosition(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
 		//cm_world_to_point(robot::instance()->getPoseAngle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x2, &y2);
 		//ROS_WARN("%s %d: d_cell(%d, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
 		//			, __FUNCTION__, __LINE__, d_cell.X, d_cell.Y, robot::instance()->getPoseAngle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
 		temp_slip_cells.push_back({x, y});
 		msg += "[" + std::to_string(d_cell.X) + "," + std::to_string(d_cell.Y) + "](" + std::to_string(x) + "," + std::to_string(y) + ")";
 	}
-	ROS_INFO("%s,%d: Current(%d, %d), save \033[32m%s\033[0m",__FUNCTION__, __LINE__, getCurrCell().X, getCurrCell().Y, msg.c_str());
+	ROS_INFO("%s,%d: Current(%d, %d), save \033[32m%s\033[0m",__FUNCTION__, __LINE__, getPosition().toCell().X, getPosition().toCell().Y, msg.c_str());
 	return static_cast<uint8_t >(d_cells.size());
 }
 
@@ -615,14 +615,14 @@ uint8_t GridMap::saveTilt()
 	std::string msg = "cells:";
 	for(auto& d_cell : d_cells)
 	{
-		robotToCell(getCurrPoint(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
+		robotToCell(getPosition(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
 		//cm_world_to_point(robot::instance()->getPoseAngle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x2, &y2);
 		//ROS_WARN("%s %d: d_cell(%d, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
 		//			, __FUNCTION__, __LINE__, d_cell.X, d_cell.Y, robot::instance()->getPoseAngle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
 		temp_tilt_cells.push_back({x, y});
 		msg += "[" + std::to_string(d_cell.X) + "," + std::to_string(d_cell.Y) + "](" + std::to_string(x) + "," + std::to_string(y) + ")";
 	}
-	ROS_INFO("%s,%d: Current(%d, %d), save \033[32m%s\033[0m",__FUNCTION__, __LINE__, getCurrCell().X, getCurrCell().Y, msg.c_str());
+	ROS_INFO("%s,%d: Current(%d, %d), save \033[32m%s\033[0m",__FUNCTION__, __LINE__, getPosition().toCell().X, getPosition().toCell().Y, msg.c_str());
 	return static_cast<uint8_t >(d_cells.size());
 }
 
@@ -692,14 +692,14 @@ uint8_t GridMap::saveCliff()
 	std::string msg = "cells:";
 	for(auto& d_cell : d_cells)
 	{
-		robotToCell(getCurrPoint(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
+		robotToCell(getPosition(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
 		//robot_to_point(robot::instance()->getPoseAngle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x2, &y2);
 		//ROS_WARN("%s %d: d_cell(%d, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
 		//			, __FUNCTION__, __LINE__, d_cell.X, d_cell.Y, robot::instance()->getPoseAngle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
 		temp_cliff_cells.push_back({x, y});
 		msg += "[" + std::to_string(d_cell.X) + "," + std::to_string(d_cell.Y) + "](" + std::to_string(x) + "," + std::to_string(y) + ")";
 	}
-	ROS_INFO("%s,%d: Current(%d, %d), save \033[32m%s\033[0m",__FUNCTION__, __LINE__, getCurrCell().X, getCurrCell().Y, msg.c_str());
+	ROS_INFO("%s,%d: Current(%d, %d), save \033[32m%s\033[0m",__FUNCTION__, __LINE__, getPosition().toCell().X, getPosition().toCell().Y, msg.c_str());
 	return static_cast<uint8_t >(d_cells.size());
 }
 
@@ -735,14 +735,14 @@ uint8_t GridMap::saveBumper(bool is_linear)
 	std::string msg = "cells:";
 	for(auto& d_cell : d_cells)
 	{
-		robotToCell(getCurrPoint(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
+		robotToCell(getPosition(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
 		//robot_to_point(robot::instance()->getPoseAngle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x2, &y2);
 		//ROS_WARN("%s %d: d_cell(%d, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
 		//			, __FUNCTION__, __LINE__, d_cell.X, d_cell.Y, robot::instance()->getPoseAngle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
 		temp_bumper_cells.push_back({x, y});
 		msg += "[" + std::to_string(d_cell.X) + "," + std::to_string(d_cell.Y) + "](" + std::to_string(x) + "," + std::to_string(y) + ")";
 	}
-	ROS_INFO("%s,%d: Current(%d, %d), save \033[32m%s\033[0m",__FUNCTION__, __LINE__, getCurrCell().X, getCurrCell().Y, msg.c_str());
+	ROS_INFO("%s,%d: Current(%d, %d), save \033[32m%s\033[0m",__FUNCTION__, __LINE__, getPosition().toCell().X, getPosition().toCell().Y, msg.c_str());
 	return static_cast<uint8_t >(d_cells.size());
 }
 
@@ -837,11 +837,11 @@ uint8_t GridMap::saveRcon()
 	std::string msg = "cells:";
 	for(auto& d_cell : d_cells)
 	{
-		robotToCell(getCurrPoint(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
+		robotToCell(getPosition(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
 		temp_rcon_cells.push_back({x, y});
 		msg += "[" + std::to_string(d_cell.X) + "," + std::to_string(d_cell.Y) + "](" + std::to_string(x) + "," + std::to_string(y) + ")";
 	}
-	ROS_INFO("%s,%d: Current(%d, %d), save \033[32m%s\033[0m",__FUNCTION__, __LINE__, getCurrCell().X, getCurrCell().Y, msg.c_str());
+	ROS_INFO("%s,%d: Current(%d, %d), save \033[32m%s\033[0m",__FUNCTION__, __LINE__, getPosition().toCell().X, getPosition().toCell().Y, msg.c_str());
 	return static_cast<uint8_t>(d_cells.size());
 }
 
@@ -910,10 +910,10 @@ void GridMap::setCleaned(std::deque<Cell_t> cells)
 		for (auto dx = -ROBOT_SIZE_1_2; dx <= ROBOT_SIZE_1_2; ++dx)
 		{
 			//robot_to_point(robot::instance()->getPoseAngle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
-			auto status = getCell(CLEAN_MAP, getCurrCell().X + dx, getCurrCell().Y + dy);
+			auto status = getCell(CLEAN_MAP, getPosition().toCell().X + dx, getPosition().toCell().Y + dy);
 			if (status == UNCLEAN){
-				setCell(CLEAN_MAP,getCurrCell().X + dx,getCurrCell().Y + dy, CLEANED);
-				msg += "(" + std::to_string(getCurrCell().X + dx) + "," + std::to_string(getCurrCell().Y + dy) + "),";
+				setCell(CLEAN_MAP,getPosition().toCell().X + dx,getPosition().toCell().Y + dy, CLEANED);
+				msg += "(" + std::to_string(getPosition().toCell().X + dx) + "," + std::to_string(getPosition().toCell().Y + dy) + "),";
 			}
 		}
 	}
@@ -928,9 +928,9 @@ bool GridMap::markRobot(uint8_t id)
 	{
 		for (auto dx = -ROBOT_SIZE_1_2; dx <= ROBOT_SIZE_1_2; ++dx)
 		{
-//			robotToCell(getCurrPoint(), CELL_SIZE * dy, CELL_SIZE * dx, x, y);
-			x = getCurrCell().X + dx;
-			y = getCurrCell().Y + dy;
+//			robotToCell(getPosition(), CELL_SIZE * dy, CELL_SIZE * dx, x, y);
+			x = getPosition().toCell().X + dx;
+			y = getPosition().toCell().Y + dy;
 			auto status = getCell(id, x, y);
 			if (status > CLEANED && status < BLOCKED_BOUNDARY && (status != BLOCKED_RCON)){
 //				ROS_INFO("\033[1;33m" "%s,%d: (%d,%d)" "\033[0m", __FUNCTION__, __LINE__,x, y);
@@ -1079,7 +1079,7 @@ uint8_t GridMap::isBlockBlockedXAxis(int16_t curr_x, int16_t curr_y, bool is_lef
 	int16_t x,y;
 	auto dy = is_left  ?  2 : -2;
 	for(auto dx =-1; dx<=1,retval == 0; dx++) {
-		robotToCell(getCurrPoint(), CELL_SIZE * dy, CELL_SIZE * dx, x, y);
+		robotToCell(getPosition(), CELL_SIZE * dy, CELL_SIZE * dx, x, y);
 		if (isABlock(x, y) == 1) {
 			retval = 1;
 		}
@@ -1179,7 +1179,7 @@ bool GridMap::isFrontBlockBoundary(int dx)
 	Point32_t point;
 	for (auto dy = -1; dy <= 1; dy++)
 	{
-		robotToPoint(getCurrPoint(), dy * CELL_SIZE, CELL_SIZE * dx, &point.X, &point.Y);
+		robotToPoint(getPosition(), dy * CELL_SIZE, CELL_SIZE * dx, &point.X, &point.Y);
 		if (getCell(CLEAN_MAP, point.toCell().X, point.toCell().Y) == BLOCKED_BOUNDARY)
 			return true;
 	}
@@ -1211,7 +1211,7 @@ void GridMap::print(uint8_t id, int16_t endx, int16_t endy)
 	CellState	cs;
 	Cell_t temp_cell;
 
-	temp_cell = getCurrCell();
+	temp_cell = getPosition().toCell();
 
 	getMapRange(id, &x_min, &x_max, &y_min, &y_max);
 
@@ -1356,7 +1356,7 @@ bool GridMap::isFrontBlocked(void)
 
 	for(auto& d_cell : d_cells)
 	{
-		robotToCell(getCurrPoint(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
+		robotToCell(getPosition(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
 		if(getCell(CLEAN_MAP, x, y) == SLAM_MAP_BLOCKED)
 		{
 			retval = true;
@@ -1368,7 +1368,7 @@ bool GridMap::isFrontBlocked(void)
 
 void GridMap::setExplorationCleaned() {
 	int16_t x, y;
-	Point32_t cur = getCurrPoint();
+	Point32_t cur = getPosition();
 	const int RADIUS_CELL = 10;//the radius of the robot can detect
 	for (int16_t angle_i = 0; angle_i <= 359; angle_i += 1) {
 		for (int dy = 0; dy < RADIUS_CELL; ++dy) {

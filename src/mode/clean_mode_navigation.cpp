@@ -99,14 +99,14 @@ bool CleanModeNav::mapMark()
 		// Set home cell.
 		if (ev.rcon_triggered)
 		{
-			home_points_.push_front(getCurrPoint());
+			home_points_.push_front(getPosition());
 			ROS_INFO("%s %d: Set home cell(%d, %d).", __FUNCTION__, __LINE__, home_points_.front().X, home_points_.front().Y);
 		}
 	}
 
 	nav_map.markRobot(CLEAN_MAP);
 	PP_INFO();
-	nav_map.print(CLEAN_MAP, getCurrCell().X, getCurrCell().Y);
+	nav_map.print(CLEAN_MAP, getPosition().toCell().X, getPosition().toCell().Y);
 
 	passed_path_.clear();
 	return false;
@@ -228,7 +228,7 @@ bool CleanModeNav::setNextAction()
 		action_i_ = ac_exception_resume;
 	else if (state_i_ == st_clean)
 	{
-		auto start = getCurrCell();
+		auto start = getPosition().toCell();
 		auto delta_y = plan_path_.back().Y - start.Y;
 		ROS_INFO("%s,%d: path size(%u), old_dir_(%d), bumper(%d), cliff(%d), lidar(%d), delta_y(%d)",
 						__FUNCTION__, __LINE__, plan_path_.size(), old_dir_, ev.bumper_triggered,
@@ -293,7 +293,7 @@ bool CleanModeNav::setNextState()
 			PP_INFO();
 			old_dir_ = new_dir_;
 			ROS_ERROR("old_dir_(%d)", old_dir_);
-			if (clean_path_algorithm_->generatePath(nav_map, getCurrPoint(), old_dir_, plan_path_))
+			if (clean_path_algorithm_->generatePath(nav_map, getPosition(), old_dir_, plan_path_))
 			{
 				new_dir_ = (MapDirection)plan_path_.front().TH;
 				ROS_ERROR("new_dir_(%d)", new_dir_);
@@ -303,7 +303,7 @@ bool CleanModeNav::setNextState()
 			}
 			else
 			{
-				if (clean_path_algorithm_->checkTrapped(nav_map, getCurrCell()))
+				if (clean_path_algorithm_->checkTrapped(nav_map, getPosition().toCell()))
 					state_i_ = st_trapped;
 				else
 					state_i_ = st_go_home_point;
@@ -319,7 +319,7 @@ bool CleanModeNav::setNextState()
 				state_i_ = st_null;
 				state_confirm = true;
 			}
-			else if (!clean_path_algorithm_->checkTrapped(nav_map, getCurrCell()))
+			else if (!clean_path_algorithm_->checkTrapped(nav_map, getPosition().toCell()))
 			{
 				ROS_WARN("%s %d: Escape trapped !", __FUNCTION__, __LINE__);
 				state_i_ = st_clean;
@@ -339,7 +339,7 @@ bool CleanModeNav::setNextState()
 			PP_INFO();
 			old_dir_ = new_dir_;
 			ROS_ERROR("old_dir_(%d)", old_dir_);
-			clean_path_algorithm_->generateShortestPath(nav_map, getCurrPoint(), continue_point_, old_dir_,plan_path_);
+			clean_path_algorithm_->generateShortestPath(nav_map, getPosition(), continue_point_, old_dir_,plan_path_);
 			if (!plan_path_.empty())
 			{
 				new_dir_ = (MapDirection)plan_path_.front().TH;
@@ -442,7 +442,7 @@ void CleanModeNav::remoteDirectionLeft(bool state_now, bool state_last)
 	if (state_i_ == st_clean)
 	{
 		beeper.play_for_command(VALID);
-		continue_point_ = getCurrPoint();
+		continue_point_ = getPosition();
 		ROS_INFO("%s %d: low battery, battery =\033[33m %dmv \033[0m, continue cell(%d, %d)", __FUNCTION__, __LINE__,
 				 battery.getVoltage(), continue_point_.X, continue_point_.Y);
 		ev.battery_home = true;
@@ -465,7 +465,7 @@ void CleanModeNav::batteryHome(bool state_now, bool state_last)
 {
 	if (state_i_ == st_clean)
 	{
-		continue_point_ = getCurrPoint();
+		continue_point_ = getPosition();
 		ROS_INFO("%s %d: low battery, battery =\033[33m %dmv \033[0m, continue cell(%d, %d)", __FUNCTION__, __LINE__,
 				 battery.getVoltage(), continue_point_.X, continue_point_.Y);
 		ev.battery_home = true;
@@ -496,7 +496,7 @@ bool CleanModeNav::ActionFollowWallisFinish()
 
 bool CleanModeNav::isOverOriginLine()
 {
-	auto curr = getCurrPoint();
+	auto curr = getPosition();
 	auto p_mt = boost::dynamic_pointer_cast<IMoveType>(sp_action_);
 	if ((p_mt->target_point_.Y > p_mt->start_point_.Y && (p_mt->start_point_.Y - curr.Y) > 120)
 		|| (p_mt->target_point_.Y < p_mt->start_point_.Y && (curr.Y - p_mt->start_point_.Y) > 120))
@@ -526,7 +526,7 @@ bool CleanModeNav::isOverOriginLine()
 
 bool CleanModeNav::isNewLineReach()
 {
-	auto s_curr_p = getCurrPoint();
+	auto s_curr_p = getPosition();
 	auto ret = false;
 	auto p_mt = boost::dynamic_pointer_cast<IMoveType>(sp_action_);
 	auto is_pos_dir = p_mt->target_point_.Y - p_mt->start_point_.Y > 0;
@@ -656,7 +656,7 @@ uint8_t CleanModeNav::setFollowWall(const Points& path)
 				block_count++;
 			}
 		}
-		ROS_INFO("%s,%d: Current(%d, %d), \033[32m mapMark CLEAN_MAP %s\033[0m",__FUNCTION__, __LINE__, getCurrCell().X, getCurrCell().Y, msg.c_str());
+		ROS_INFO("%s,%d: Current(%d, %d), \033[32m mapMark CLEAN_MAP %s\033[0m",__FUNCTION__, __LINE__, getPosition().toCell().X, getPosition().toCell().Y, msg.c_str());
 	}
 }
 

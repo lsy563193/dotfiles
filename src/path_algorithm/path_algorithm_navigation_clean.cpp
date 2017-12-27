@@ -121,7 +121,7 @@ Cells NavCleanPathAlgorithm::findTargetInSameLane(GridMap &map, const Cell_t &cu
 	if (is_found)
 	{
 		path.push_front(target);
-		path.push_front(getCurrCell());
+		path.push_front(getPosition().toCell());
 		ROS_INFO("%s %d: X pos:(%d,%d), X neg:(%d,%d), target:(%d,%d)", __FUNCTION__, __LINE__, it[0].X, it[0].Y, it[1].X, it[1].Y, target.X, target.Y);
 //		map.print(CLEAN_MAP, target.X, target.Y);
 	}

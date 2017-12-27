@@ -48,7 +48,7 @@ Point32_t MovementFollowPointLinear::_calcTmpTarget(const Point32_t& curr, const
 
 bool MovementFollowPointLinear::calcTmpTarget(Point32_t& tmp_target) {
 	auto p_cm = (ACleanMode*)(sp_mt_->sp_mode_);
-	auto curr = getCurrPoint();
+	auto curr = getPosition();
 
 	tmp_target = _calcTmpTarget(curr, sp_mt_->target_point_,p_cm->new_dir_);
 
@@ -116,7 +116,7 @@ int MovementFollowPointLinear::countRconTriggered(uint32_t rcon_value)
 bool MovementFollowPointLinear::isCellReach()
 {
 	// Checking if robot has reached target cell.
-	auto s_curr_p = getCurrPoint();
+	auto s_curr_p = getPosition();
 	auto target_p = sp_mt_->target_point_;
 	if (std::abs(s_curr_p.X - target_p.X) < CELL_COUNT_MUL_1_2 &&
 		std::abs(s_curr_p.Y - target_p.Y) < CELL_COUNT_MUL_1_2)
@@ -148,7 +148,7 @@ bool MovementFollowPointLinear::isNearTarget()
 {
 //	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mt_->sp_mode_);
 //	auto new_dir = p_clean_mode->new_dir_;
-//	auto s_curr_p = getCurrPoint();
+//	auto s_curr_p = getPosition();
 //	auto curr = (isXAxis(new_dir)) ? s_curr_p.X : s_curr_p.Y;
 //	auto target_p = sp_mt_->target_point_;
 //	auto &target = (isXAxis(new_dir)) ? target_p.X : target_p.Y;
@@ -195,7 +195,7 @@ bool MovementFollowPointLinear::isPassTargetStop()
 	// Checking if robot has reached target cell.
 	auto p_clean_mode = (ACleanMode*)sp_mt_->sp_mode_;
 	auto new_dir = p_clean_mode->new_dir_;
-	auto s_curr_p = getCurrPoint();
+	auto s_curr_p = getPosition();
 	auto curr = (isXAxis(new_dir)) ? s_curr_p.X : s_curr_p.Y;
 	auto target_p = (sp_mt_->target_point_);
 	auto target = (isXAxis(new_dir)) ? target_p.X : target_p.Y;

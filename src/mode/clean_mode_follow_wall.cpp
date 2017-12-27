@@ -86,7 +86,7 @@ bool CleanModeFollowWall::setNextState()
 //	Cell_t out_cell {int16_t(x_max + 1),int16_t(y_max + 1)};
 //
 //	fw_map.markRobot(CLEAN_MAP);//note: To clear the obstacle when check isolated, please don't remove it!
-//	auto curr = getCurrPoint();
+//	auto curr = getPosition();
 //	fw_map.print(CLEAN_MAP, curr.X, curr.Y);
 //	ROS_WARN("%s %d: curr(%d,%d),out(%d,%d)", __FUNCTION__, __LINE__, curr.X, curr.Y,out_cell.X, out_cell.Y);
 //

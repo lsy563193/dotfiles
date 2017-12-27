@@ -85,7 +85,7 @@ bool IMoveType::shouldTurn()
 }
 
 IMoveType::IMoveType() {
-	start_point_ = getCurrPoint();
+	start_point_ = getPosition();
 	g_slip_cnt = 0;
 	c_rcon.resetStatus();
 	robot::instance()->obsAdjustCount(20);

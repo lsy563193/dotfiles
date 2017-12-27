@@ -8,7 +8,7 @@
 
 SpotCleanPathAlgorithm::SpotCleanPathAlgorithm()
 {
-	initVariables(1.0,getCurrCell());
+	initVariables(1.0,getPosition().toCell());
 	//random set spot direction
 //	if ((clock() / CLOCKS_PER_SEC) % 2 == 0){
 //		genTargets( CLOCKWISE,  spot_diameter_, &plan_path_,     begin_cell_);

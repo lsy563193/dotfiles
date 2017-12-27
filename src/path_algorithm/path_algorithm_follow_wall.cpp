@@ -9,7 +9,7 @@
 bool WFCleanPathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, const MapDirection &last_dir, Points &targets)
 {
 	if (targets.empty()) {//fw ->linear
-		auto curr = getCurrPoint();
+		auto curr = getPosition();
 		curr.TH = 0;
 		targets.push_back(curr);
 //		if (g_wf_reach_count == 0 ||
@@ -21,7 +21,7 @@ bool WFCleanPathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, con
 //				angle = -900;
 //			}
 			const float FIND_WALL_DISTANCE = 8;//8 means 8 metres, it is the distance limit when the robot move straight to find wall
-			auto point = getCurrPoint();
+			auto point = getPosition();
 			point.TH = ranged_angle(robot::instance()->getPoseAngle() + angle);
 			nav_map.robotToPoint(point, 0, FIND_WALL_DISTANCE * 1000, &curr.X, &curr.Y);
 			targets.push_back(curr);
@@ -33,7 +33,7 @@ bool WFCleanPathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, con
 	{
 		targets.empty();
 		ROS_INFO("%s,%d: path_next_fw", __FUNCTION__, __LINE__);
-		targets.push_back(getCurrPoint());
+		targets.push_back(getPosition());
 		return true;
 	}
 	return false;

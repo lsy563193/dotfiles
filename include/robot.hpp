@@ -257,9 +257,7 @@ private:
 
 	int16_t countToCell(int32_t count);
 
-	Point32_t getCurrPoint(void);
-
-	Cell_t getCurrCell();
+	Point32_t getPosition(void);
 
 	bool isPos(MapDirection dir);
 

@@ -742,7 +742,7 @@ void robot::obsAdjustCount(int count)
 //--------------------
 static double xCount{}, yCount{};
 
-Point32_t getCurrPoint(void)
+Point32_t getPosition(void)
 {
 	return {(int32_t)round(xCount), (int32_t)round(yCount),robot::instance()->getPoseAngle()};
 }
@@ -785,7 +785,7 @@ Point32_t updatePosition()
 	auto pos_y = robot::instance()->getPoseY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	setPosition(pos_x, pos_y);
 //	ROS_INFO("%s %d:", __FUNCTION__, __LINE__);
-	return getCurrPoint();
+	return getPosition();
 }
 
 uint16_t relative_theta = 3600;

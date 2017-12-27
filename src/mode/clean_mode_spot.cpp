@@ -54,7 +54,7 @@ bool CleanModeSpot::mapMark()
 
 	nav_map.setBlocks();
 	PP_INFO();
-	nav_map.print(CLEAN_MAP, getCurrCell().X, getCurrCell().Y);
+	nav_map.print(CLEAN_MAP, getPosition().toCell().X, getPosition().toCell().Y);
 
 	passed_path_.clear();
 	return false;
@@ -146,7 +146,7 @@ bool CleanModeSpot::setNextState()
 			PP_INFO();
 			old_dir_ = new_dir_;
 			ROS_ERROR("old_dir_(%d)", old_dir_);
-			if (clean_path_algorithm_->generatePath(nav_map, getCurrPoint(), old_dir_, plan_path_))
+			if (clean_path_algorithm_->generatePath(nav_map, getPosition(), old_dir_, plan_path_))
 			{
 				new_dir_ = (MapDirection)plan_path_.front().TH;
 				ROS_ERROR("new_dir_(%d)", new_dir_);
@@ -166,14 +166,14 @@ bool CleanModeSpot::setNextState()
 			PP_INFO();
 			old_dir_ = new_dir_;
 			plan_path_.clear();
-			if (go_home_path_algorithm_->generatePath(nav_map, getCurrPoint(),old_dir_, plan_path_))
+			if (go_home_path_algorithm_->generatePath(nav_map, getPosition(),old_dir_, plan_path_))
 			{
 				// Reach home cell or new path to home cell is generated.
 				if (plan_path_.empty())
 				{
 					// Reach home cell.
 					PP_INFO();
-					if (getCurrCell() == g_zero_home.toCell())
+					if (getPosition().toCell() == g_zero_home.toCell())
 					{
 						PP_INFO();
 						state_i_ = st_null;
