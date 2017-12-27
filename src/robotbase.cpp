@@ -119,7 +119,9 @@ void robotbase_deinit(void)
 		led.set_mode(LED_STEADY, LED_OFF);
 		serial.setSendData(CTL_BUZZER, 0x00);
 		gyro.setOff();
-		cs_disable_motors();
+		wheel.stop();
+		brush.stop();
+		vacuum.stop();
 		serial.setCleanMode(POWER_DOWN);
 		usleep(40000);
 		send_stream_thread = false;

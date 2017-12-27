@@ -9,7 +9,6 @@
 #include "pp.h"
 #include "arch.hpp"
 
-double robot_to_wall_distance = 0.8;
 
 IFollowWall::IFollowWall(bool is_left) : previous_(0), seen_charger_counter(0), is_left_(is_left)
 {
@@ -34,18 +33,18 @@ bool IFollowWall::isIsolate()
 	return false;
 }
 
-bool IFollowWall::isTimeUp()
-{
-	if (fw_is_time_up()) {
-		ROS_WARN("%s %d: curr(%d),start(%d),diff(%d)",__FUNCTION__, __LINE__, time(NULL), g_wf_start_timer, g_wf_diff_timer);
-		ev.fatal_quit = true;
-		ROS_INFO("%s %d: curr(%d),start(%d),diff(%d)",__FUNCTION__, __LINE__, time(NULL), g_wf_start_timer, g_wf_diff_timer);
-		ev.fatal_quit = true;
-		return true;
-	}
+//bool IFollowWall::isTimeUp()
+//{
+//	if (fw_is_time_up()) {
+//		ROS_WARN("%s %d: curr(%d),start(%d),diff(%d)",__FUNCTION__, __LINE__, time(NULL), g_wf_start_timer, g_wf_diff_timer);
+//		ev.fatal_quit = true;
+//		ROS_INFO("%s %d: curr(%d),start(%d),diff(%d)",__FUNCTION__, __LINE__, time(NULL), g_wf_start_timer, g_wf_diff_timer);
+//		ev.fatal_quit = true;
+//		return true;
+//	}
 
-	return false;
-}
+//	return false;
+//}
 
 bool IFollowWall::isBlockCleared()
 {

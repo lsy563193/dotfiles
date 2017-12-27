@@ -7,7 +7,7 @@
 Odom charger_pose;
 ActionBackFromCharger::ActionBackFromCharger()
 {
-	path_set_home(nav_map.getCurrPoint());
+//	path_set_home(nav_map.getCurrPoint());
 
 	vacuum.setMode(Vac_Normal, false);
 	brush.normalOperate();

@@ -305,5 +305,36 @@ bool ACleanMode::setNextStateForGoHomePoint(GridMap &map)
 }
 
 
+void ACleanMode::path_set_home(const Point32_t& curr)
+{
+	bool is_found = false;
+
+	for (const auto& it : g_homes) {
+		ROS_INFO("%s %d: curr\033[33m(%d, %d)\033[0m home_it\033[33m(%d,%d)\033[0m.", __FUNCTION__, __LINE__, curr.X, curr.Y,it.X,it.Y);
+		if (GridMap::pointToCell(it) == GridMap::pointToCell(curr)) {
+			is_found = true;
+			break;
+		}
+	}
+	if (!is_found) {
+		ROS_INFO("%s %d: Push new reachable home:\033[33m (%d, %d)\033[0m to home point list.", __FUNCTION__, __LINE__, curr.X, curr.Y);
+		g_have_seen_charger = true;
+		// If curr near (0, 0)
+		if (abs(curr.X) >= 5 || abs(curr.Y) >= 5)
+		{
+			if(g_homes.size() >= HOME_CELLS_SIZE+1)//escape_count + zero_home = 3+1 = 4
+			{
+				std::copy(g_homes.begin() + 2, g_homes.end(), g_homes.begin()+1);//shift 1 but save zero_home
+				g_homes.pop_back();
+			}
+			g_homes.push_back(curr);
+		}
+	}
+	else if(GridMap::pointToCell(curr) == GridMap::pointToCell(g_zero_home))
+	{
+		g_start_point_seen_charger = true;
+		g_have_seen_charger = true;
+	}
+}
 
 

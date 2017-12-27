@@ -5,6 +5,7 @@
 #include "pp.h"
 #include "arch.hpp"
 
+
 ActionFollowWall::ActionFollowWall(bool is_left, bool is_trapped)
 {
 

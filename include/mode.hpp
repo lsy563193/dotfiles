@@ -220,6 +220,7 @@ public:
 	virtual bool setNextAction();
 	void genNextAction();
 	bool setNextStateForGoHomePoint(GridMap &map);
+	void path_set_home(const Point32_t& curr);
 
 	virtual bool mapMark() = 0;
 
@@ -238,6 +239,8 @@ public:
 
 protected:
 
+	bool	g_start_point_seen_charger{};
+	bool g_have_seen_charger{};
 //	uint8_t saveFollowWall(bool is_left);
 	virtual void stateInit(int next);
 //	std::vector<Cell_t> temp_fw_cells;
@@ -258,6 +261,7 @@ protected:
 		st_resume_low_battery_charge,
 	};
 	bool isInitFinished_{false};
+	Point32_t g_zero_home{0,0,0};
 };
 
 class CleanModeNav:public ACleanMode
@@ -350,7 +354,7 @@ public:
 
 
 	int16_t wf_path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound);
-	int16_t wf_path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t end_x, int16_t end_y, uint8_t bound, int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max);
+	int16_t wf_path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t end_x, int16_t end_y, uint8_t bound, int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max,bool used_unknown);
 //	bool wf_is_isolate();
 private:
 	uint32_t diff_timer_;

@@ -147,7 +147,7 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path(int16_t xID, int16_t yID
 		y_min = (yID > endy ? endy : yID) - 8;
 		y_max = (yID > endy ? yID : endy) + 8;
 		ROS_INFO("shortest path(%d): endx: %d\tendy: %d\tx: %d - %d\ty: %d - %d\n", __LINE__, endx, endy, x_min, x_max, y_min, y_max);
-		val =  wf_path_find_shortest_path_ranged(xID, yID, endx, endy, bound, x_min, x_max, y_min, y_max);
+		val =  wf_path_find_shortest_path_ranged(xID, yID, endx, endy, bound, x_min, x_max, y_min, y_max,false);
 	} else {
 		/* If bound is not set, set the search range to the whole costmap. */
 		fw_map.getMapRange(CLEAN_MAP, &x_min, &x_max, &y_min, &y_max);
@@ -156,7 +156,7 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path(int16_t xID, int16_t yID
 		y_min = y_min - 8;
 		y_max = y_max + 8;
 
-		val =  wf_path_find_shortest_path_ranged(xID, yID, endx, endy, bound, x_min, x_max, y_min, y_max);
+		val =  wf_path_find_shortest_path_ranged(xID, yID, endx, endy, bound, x_min, x_max, y_min, y_max,false);
 		ROS_INFO("shortest path(%d): endx: %d\tendy: %d\tx: %d - %d\ty: %d - %d\t return: %d\n", __LINE__, endx, endy, x_min, x_max, y_min, y_max, val);
 	}
 
@@ -166,7 +166,7 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path(int16_t xID, int16_t yID
 	return val;
 }
 
-int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t end_x, int16_t end_y, uint8_t bound, int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max) {
+int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t end_x, int16_t end_y, uint8_t bound, int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max,bool used_unknown) {
 	uint16_t	next;
 	int16_t	totalCost, costAtCell, targetCost, dest_dir;
 	int16_t i, j, m, n, tracex, tracey, tracex_tmp, tracey_tmp, passValue, nextPassValue, passSet, offset;
@@ -204,7 +204,7 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(int16_t curr_x, i
 					}
 				}
 			}
-			else if(cs == UNCLEAN && is_fobbit_free())
+			else if(cs == UNCLEAN && used_unknown)
 				fw_map.setCell(COST_MAP, (int32_t) (i), (int32_t) (j), COST_HIGH);
 		}
 	}

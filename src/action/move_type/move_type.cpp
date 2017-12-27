@@ -86,9 +86,6 @@ bool IMoveType::shouldTurn()
 
 IMoveType::IMoveType() {
 	start_point_ = GridMap::getCurrPoint();
-	// todo: clean up these g_xxx variables.
-	g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
-	bumper_turn_factor = 0.85;
 	g_slip_cnt = 0;
 	c_rcon.resetStatus();
 	robot::instance()->obsAdjustCount(20);

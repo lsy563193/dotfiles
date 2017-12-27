@@ -178,14 +178,6 @@ void ModeIdle::remoteKeyHandler(bool state_now, bool state_last)
 			}
 			case REMOTE_HOME:
 			{
-//				if (cs_is_paused())
-//				{
-//					ev.remoteHome = true;
-//					extern bool g_go_home_by_remote;
-//					g_go_home_by_remote = true;
-//					temp_mode = Clean_Mode_Navigation;
-//				}
-//				else
 				ev.remote_home = true;
 				break;
 			}

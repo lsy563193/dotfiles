@@ -71,12 +71,9 @@ extern bool g_from_charger;
 extern uint32_t g_wf_start_timer;
 extern uint32_t g_wf_diff_timer;
 extern bool g_motion_init_succeeded;
-extern bool g_go_home_by_remote;
 //extern Cell_t g_next_cell;
 //extern Cell_t g_target_cell;
 extern bool g_resume_cleaning;
-extern bool g_have_seen_charger;
-extern bool	g_start_point_seen_charger;
 extern bool g_exploration_home;
 //extern std::deque<Cell_t> g_passed_path;
 
@@ -99,13 +96,11 @@ void cm_cleaning(void);
 extern Points g_homes;
 extern std::vector<int> g_home_way_list;
 extern std::vector<int>::iterator g_home_way_it;
-extern Point32_t g_zero_home;
 extern int g_wf_reach_count;
 extern bool g_check_path_in_advance;
 extern bool g_allow_check_path_in_advance;
 void path_set_home(const Point32_t& cell);
-bool is_fobbit_free();
-bool fw_is_time_up();
+//bool is_fobbit_free();
 
 
 enum {
@@ -120,11 +115,6 @@ enum {
 	Clean_Mode_Navigation,
 	Clean_Mode_Exploration
 };
-bool cm_is_navigation();
-bool cm_is_exploration();
-bool cm_is_go_charger();
-void cm_set(uint8_t mode);
-uint8_t cm_get(void);
 
 #define Brush_Power					128
 #define MainBrush_Power				70
@@ -285,25 +275,10 @@ typedef enum{
 #define TILT_FRONT					0x2
 #define TILT_LEFT					0x4
 
-void cs_work_motor(bool);
-uint8_t cs_self_check(uint8_t Check_Code);
-uint8_t cm_get(void);
-void cm_set(uint8_t mode);
-void cs_disable_motors(void);
-//bool check_pub_scan();
-void cs_paused_setting();
-
-extern double robot_to_wall_distance;
 extern float g_back_distance;
 extern bool line_is_found;
-extern bool g_go_to_charger_back_30cm;
-extern bool g_go_to_charger_back_10cm;
-extern bool g_go_to_charger_back_0cm;
-extern int g_wall_distance;
-extern double g_time_straight;
+//extern int g_wall_distance;
 extern bool g_slip_backward;
-extern double bumper_turn_factor;
-extern Point32_t g_zero_home;
 
 Cells points_generate_cells(Points &targets);
 Points cells_generate_points(Cells &path);

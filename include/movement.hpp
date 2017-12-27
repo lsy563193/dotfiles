@@ -151,7 +151,7 @@ public:
 
 	bool isIsolate();
 
-	bool isTimeUp();
+//	bool isTimeUp();
 
 	void setTarget();
 
