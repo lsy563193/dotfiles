@@ -13,9 +13,6 @@ CleanModeSpot::CleanModeSpot()
 	event_manager_set_enable(true);
 	IMoveType::sp_mode_ = this;
 	speaker.play(VOICE_CLEANING_SPOT);
-	usleep(200000);
-	vacuum.setMode(Vac_Save);
-	brush.fullOperate();
 	clean_path_algorithm_.reset(new SpotCleanPathAlgorithm());
 	go_home_path_algorithm_.reset();
 	has_aligned_and_open_slam = false;
@@ -38,6 +35,12 @@ CleanModeSpot::~CleanModeSpot()
 
 bool CleanModeSpot::isFinish()
 {
+	if(action_i_ == ac_open_slam){
+		vacuum.setMode(Vac_Save);
+		brush.setLeftPwm(50);
+		brush.setRightPwm(50);
+		brush.setMainPwm(50);
+	}
 	return ACleanMode::isFinish();
 }
 
@@ -151,6 +154,7 @@ bool CleanModeSpot::setNextState()
 			{
 				new_dir_ = (MapDirection)plan_path_.front().TH;
 				ROS_ERROR("new_dir_(%d)", new_dir_);
+				PP_INFO();
 				plan_path_.pop_front();
 				clean_path_algorithm_->displayPath(plan_path_);
 				state_confirm = true;
@@ -167,6 +171,8 @@ bool CleanModeSpot::setNextState()
 			PP_INFO();
 			old_dir_ = new_dir_;
 			plan_path_.clear();
+			state_i_ = st_null;
+#if 0
 			if (go_home_path_algorithm_->generatePath(nav_map, nav_map.getCurrCell(),old_dir_, plan_path_))
 			{
 				// Reach home cell or new path to home cell is generated.
@@ -200,15 +206,8 @@ bool CleanModeSpot::setNextState()
 				PP_INFO();
 				state_i_ = st_null;
 			}
+#endif
 			state_confirm = true;
-		}
-		else if (state_i_ == st_go_to_charger)
-		{
-			PP_INFO();
-			if (ev.charge_detect && charger.isOnStub())
-				state_i_ = st_null;
-			else
-				state_i_ = st_go_home_point;
 		}
 	}
 

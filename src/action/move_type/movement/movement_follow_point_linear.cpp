@@ -1,6 +1,4 @@
-//
-// Created by lsy563193 on 12/5/17.
-//
+// // Created by lsy563193 on 12/5/17.  //
 
 #include "pp.h"
 #include "arch.hpp"
@@ -22,23 +20,31 @@ MovementFollowPointLinear::MovementFollowPointLinear()
 bool MovementFollowPointLinear::calcTmpTarget(Point32_t& tmp_target) {
 	auto p_clean_mode = (ACleanMode*)sp_mt_->sp_mode_;
 	auto new_dir = p_clean_mode->new_dir_;
-	auto curr = nav_map.getCurrPoint();
-	tmp_target = nav_map.cellToPoint(p_clean_mode->plan_path_.front());
-	auto curr_xy = (GridMap::isXDirection(new_dir)) ? curr.X : curr.Y;
+	auto curr    =  nav_map.getCurrPoint();
+	tmp_target   = nav_map.cellToPoint(p_clean_mode->plan_path_.front());
+	auto curr_xy    = (GridMap::isXDirection(new_dir)) ? curr.X       : curr.Y;
 	auto &target_xy = (GridMap::isXDirection(new_dir)) ? tmp_target.X : tmp_target.Y;
-	auto tmp_xy = (GridMap::isXDirection(new_dir)) ? tmp_target.X : tmp_target.Y;
-	auto is_beyond = (GridMap::isPositiveDirection(new_dir)) ? target_xy <= tmp_xy : target_xy >= tmp_xy;
+	auto tmp_xy     = (GridMap::isXDirection(new_dir)) ? tmp_target.X : tmp_target.Y;
+	auto is_beyond  = (GridMap::isPositiveDirection(new_dir)) ? target_xy <= tmp_xy : target_xy >= tmp_xy;
 
 	if (is_beyond && p_clean_mode->plan_path_.size() > 1) {
 		p_clean_mode->old_dir_ = p_clean_mode->new_dir_;
+		p_clean_mode->plan_path_.pop_front();
 		tmp_target = nav_map.cellToPoint(p_clean_mode->plan_path_.front());
 		p_clean_mode->new_dir_ = (MapDirection) p_clean_mode->plan_path_.front().TH;
-		p_clean_mode->plan_path_.pop_front();
+
+		curr_xy         = (GridMap::isXDirection(new_dir)) ? curr.X : curr.Y;
+		auto &target_xy = (GridMap::isXDirection(new_dir)) ? tmp_target.X : tmp_target.Y;
+		auto tmp_xy     = (GridMap::isXDirection(new_dir)) ? tmp_target.X : tmp_target.Y;
 
 		auto dis = std::min(std::abs(curr_xy - target_xy), (int32_t) (1.5 * CELL_COUNT_MUL));
+
+		ROS_INFO("%s,%d,dis(%d),curr_xy(%d)", __FUNCTION__, __LINE__, dis,curr_xy);
+
 		if (!GridMap::isPositiveDirection(new_dir))
 			dis *= -1;
 		target_xy = curr_xy + dis;
+		ROS_INFO("%s,%d,dis(%d),curr_xy(%d)", __FUNCTION__, __LINE__, dis,curr_xy);
 
 		ROS_INFO("%s,%d,dir(%d,%d)target(%d,%d)", __FUNCTION__, __LINE__, p_clean_mode->old_dir_, p_clean_mode->new_dir_,
 						 (MapDirection) p_clean_mode->plan_path_.front().X, (MapDirection) p_clean_mode->plan_path_.front().Y);
