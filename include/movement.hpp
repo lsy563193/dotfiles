@@ -33,7 +33,7 @@ protected:
 	uint32_t tick_limit_{};
 	static float s_pos_x;
 	static float s_pos_y;
-//	static Path_t path_;
+//	static CellPath path_;
 };
 
 class AMovementFollowPoint:public IMovement{

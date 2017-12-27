@@ -222,8 +222,8 @@ public:
 	virtual bool ActionFollowWallisFinish();
 	Cell_t updatePath(GridMap& map);
 
-	static Path_t passed_path_;
-	static Points targets_;
+	static CellPath passed_path_;
+	static PointPath targets_;
 
 	MapDirection old_dir_{MAP_POS_X};
 	MapDirection new_dir_{MAP_POS_X};
@@ -260,7 +260,7 @@ public:
 	CleanModeNav();
 	~CleanModeNav();
 
-	uint8_t setFollowWall(const Path_t& path);
+	uint8_t setFollowWall(const CellPath& path);
 	bool mapMark() override ;
 	bool isFinish() override ;
 	bool isExit() override;
@@ -296,7 +296,7 @@ private:
 // For path planning.
 
 protected:
-//	Path_t home_point_{};
+//	CellPath home_point_{};
 public:
 
 };
@@ -345,7 +345,7 @@ public:
 private:
 	uint32_t diff_timer_;
 protected:
-//	Path_t home_point_{};
+//	CellPath home_point_{};
 private:
 
 };
@@ -362,7 +362,7 @@ public:
 	bool setNextState();
 private:
 protected:
-//	Path_t home_point_{};
+//	CellPath home_point_{};
 private:
 	bool has_aligned_and_open_slam;
 };

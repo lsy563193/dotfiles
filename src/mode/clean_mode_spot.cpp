@@ -44,7 +44,7 @@ bool CleanModeSpot::isFinish()
 bool CleanModeSpot::mapMark()
 {
 
-	clean_path_algorithm_->displayPath(passed_path_);
+	clean_path_algorithm_->displayCellPath(passed_path_);
 	if (action_i_ == ac_linear) {
 		PP_INFO();
 		nav_map.setCleaned(passed_path_);
@@ -152,7 +152,7 @@ bool CleanModeSpot::setNextState()
 				new_dir_ = (MapDirection)targets_.front().TH;
 				ROS_ERROR("new_dir_(%d)", new_dir_);
 				targets_.pop_front();
-				clean_path_algorithm_->displayTargets(targets_);
+				clean_path_algorithm_->displayPointPath(targets_);
 				state_confirm = true;
 			}
 			else
@@ -191,7 +191,7 @@ bool CleanModeSpot::setNextState()
 				{
 					new_dir_ = (MapDirection)targets_.front().TH;
 					targets_.pop_front();
-					go_home_path_algorithm_->displayTargets(targets_);
+					go_home_path_algorithm_->displayPointPath(targets_);
 				}
 			}
 			else

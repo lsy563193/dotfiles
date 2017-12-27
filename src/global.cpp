@@ -104,10 +104,10 @@ void cs_disable_motors(void)
 }
 
 
-Path_t targetsGeneratePath(Points &targets)
+CellPath targetsGeneratePath(PointPath &targets)
 {
-//	displayPath(targets);
-	Path_t path{};
+//	displayCellPath(targets);
+	CellPath path{};
 	for(const Point32_t& point : targets) {
 		path.push_back(GridMap::pointToCell(point));
 	}

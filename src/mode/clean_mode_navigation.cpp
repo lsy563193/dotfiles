@@ -73,7 +73,7 @@ CleanModeNav::~CleanModeNav()
 
 bool CleanModeNav::mapMark()
 {
-	clean_path_algorithm_->displayPath(passed_path_);
+	clean_path_algorithm_->displayCellPath(passed_path_);
 	robot::instance()->pubCleanMapMarkers(nav_map, targetsGeneratePath(targets_));
 //	if (action_i_ == ac_linear) {
 	PP_WARN();
@@ -88,7 +88,7 @@ bool CleanModeNav::mapMark()
 		passed_path_.erase(std::remove_if(passed_path_.begin(),passed_path_.end(),[&start](Cell_t& it){
 			return it == start;
 		}),passed_path_.end());
-		clean_path_algorithm_->displayPath(passed_path_);
+		clean_path_algorithm_->displayCellPath(passed_path_);
 		ROS_ERROR("-------------------------------------------------------");
 		setFollowWall(passed_path_);
 	}
@@ -277,7 +277,7 @@ bool CleanModeNav::setNextState()
 				new_dir_ = (MapDirection)targets_.front().TH;
 				ROS_ERROR("new_dir_(%d)", new_dir_);
 				targets_.pop_front();
-				clean_path_algorithm_->displayTargets(targets_);
+				clean_path_algorithm_->displayPointPath(targets_);
 				state_confirm = true;
 			}
 			else
@@ -338,7 +338,7 @@ bool CleanModeNav::setNextState()
 				{
 					new_dir_ = (MapDirection)targets_.front().TH;
 					targets_.pop_front();
-					go_home_path_algorithm_->displayTargets(targets_);
+					go_home_path_algorithm_->displayPointPath(targets_);
 				}
 			}
 			else
@@ -573,7 +573,7 @@ bool CleanModeNav::enterPause()
 	return ACleanMode::isFinish();
 }
 
-uint8_t CleanModeNav::setFollowWall(const Path_t& path)
+uint8_t CleanModeNav::setFollowWall(const CellPath& path)
 {
 	uint8_t block_count = 0;
 	if (!path.empty())

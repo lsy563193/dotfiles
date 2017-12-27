@@ -18,7 +18,7 @@
 #define BLOCK_ALL			((uint8_t) 0x07)
 
 typedef std::deque<Cell_t> PPTargetType;
-typedef std::deque<Point32_t> Points;
+typedef std::deque<Point32_t> PointPath;
 
 typedef enum {
 	// The sequence of CLEAN_MAP value must be UNCLEAN < CLEANED < MAP_BLOCKED < SLAM_MAP_BLOCKED

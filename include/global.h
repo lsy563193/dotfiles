@@ -305,5 +305,5 @@ extern bool g_slip_backward;
 extern double bumper_turn_factor;
 extern Cell_t g_zero_home;
 
-Path_t targetsGeneratePath(Points &targets);
+CellPath targetsGeneratePath(PointPath &targets);
 #endif

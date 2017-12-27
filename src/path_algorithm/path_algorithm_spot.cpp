@@ -46,7 +46,7 @@ void SpotCleanPathAlgorithm::initVariables(float diameter,Cell_t cur_cell)
 	plan_path_last_.clear();
 }
 
-void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Path_t *targets,const Cell_t begincell)
+void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,CellPath *targets,const Cell_t begincell)
 {
 	uint8_t spt = sp_type;
 	int16_t x, x_l, y, y_l;
@@ -307,7 +307,7 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Path_t *t
 	}
 }
 
-bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir, Points &targets)
+bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir, PointPath &targets)
 {
 	if(!ev.bumper_triggered && !ev.cliff_triggered && !ev.rcon_triggered){
 		if(!spot_running_){
@@ -332,7 +332,7 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell,
 	else if(ev.bumper_triggered || ev.cliff_triggered || ev.rcon_triggered)
 	{
 		bool ret = false;
-		Path_t shortest_path;
+		CellPath shortest_path;
 		if(plan_path_last_.empty())
 		{
 			while(ros::ok())
@@ -412,7 +412,7 @@ void SpotCleanPathAlgorithm::filterTarget()
 	}
 }
 
-void SpotCleanPathAlgorithm::pushAllTargets(Path_t *targets)
+void SpotCleanPathAlgorithm::pushAllTargets(CellPath *targets)
 {
 	(*targets).clear();
 	while(tp_ != targets_->end() && ros::ok()){
@@ -431,7 +431,7 @@ void SpotCleanPathAlgorithm::pushAllTargets(Path_t *targets)
 	}
 }
 
-bool SpotCleanPathAlgorithm::endSpot(Path_t *targets)
+bool SpotCleanPathAlgorithm::endSpot(CellPath *targets)
 {
 	bool ret;
 	if(go_last_cell_== false){
@@ -450,7 +450,7 @@ bool SpotCleanPathAlgorithm::endSpot(Path_t *targets)
 	return ret;
 }
 
-bool SpotCleanPathAlgorithm::spotNextTarget(const Cell_t& cur_cell,Path_t *targets)
+bool SpotCleanPathAlgorithm::spotNextTarget(const Cell_t& cur_cell,CellPath *targets)
 {
 	auto last = targets->front();
 	bool ret = false;

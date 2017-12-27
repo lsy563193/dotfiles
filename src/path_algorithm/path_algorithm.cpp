@@ -5,13 +5,13 @@
 #include "ros/ros.h"
 #include "path_algorithm.h"
 
-void APathAlgorithm::displayPath(const Path_t& path)
+void APathAlgorithm::displayCellPath(const CellPath &path)
 {
 	std::string     msg = __FUNCTION__;
 
 	msg += " " + std::to_string(__LINE__) + ": Path size(" + std::to_string(path.size()) + "):";
 	for (auto it = path.begin(); it != path.end(); ++it) {
-		msg += "(" + std::to_string(it->X) + ", " + std::to_string(it->Y) + ", " + std::to_string(it->TH) + ")->";
+		msg += "(" + std::to_string(it->X) + ", " + std::to_string(it->Y) + ")->";
 	}
 	//msg += "\n";
 	ROS_INFO("%s",msg.c_str());
@@ -28,18 +28,18 @@ void APathAlgorithm::displayTargetList(const TargetList &target_list)
 	ROS_INFO("%s",msg.c_str());
 }
 
-void APathAlgorithm::displayTargets(const Points &targets)
+void APathAlgorithm::displayPointPath(const PointPath &point_path)
 {
 	std::string     msg = __FUNCTION__;
-	msg += " " + std::to_string(__LINE__) + ": Targers(" + std::to_string(targets.size()) + "):";
-	for (auto it = targets.begin(); it != targets.end(); ++it) {
+	msg += " " + std::to_string(__LINE__) + ": Targers(" + std::to_string(point_path.size()) + "):";
+	for (auto it = point_path.begin(); it != point_path.end(); ++it) {
 		msg += "(" + std::to_string(it->X) + ", " + std::to_string(it->Y) + ", " + std::to_string(it->TH) + "),";
 	}
 	//msg += "\n";
 	ROS_INFO("%s",msg.c_str());
 }
 
-void APathAlgorithm::optimizePath(GridMap &map, Path_t& path)
+void APathAlgorithm::optimizePath(GridMap &map, CellPath& path)
 {
 	// Optimize only if the path have more than 3 cells.
 	if (path.size() > 3) {
@@ -133,7 +133,7 @@ void APathAlgorithm::optimizePath(GridMap &map, Path_t& path)
 
 			it++;
 		}
-		displayPath(path);
+		displayCellPath(path);
 	} else
 		ROS_INFO("%s %d:Path too short(size: %ld), optimization terminated.", __FUNCTION__, __LINE__, path.size());
 

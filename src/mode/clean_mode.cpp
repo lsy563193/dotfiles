@@ -8,8 +8,8 @@
 
 #define NAV_INFO() ROS_INFO("st(%d),ac(%d)", state_i_, action_i_)
 
-Path_t ACleanMode::passed_path_ = {};
-Points ACleanMode::targets_ = {};
+CellPath ACleanMode::passed_path_ = {};
+PointPath ACleanMode::targets_ = {};
 Cell_t ACleanMode::last_ = {};
 //boost::shared_ptr<IMovement> ACleanMode::sp_movement_ = nullptr;
 
@@ -131,7 +131,7 @@ Cell_t ACleanMode::updatePath(GridMap& map)
 			g_wf_reach_count++;
 		}
 		map.saveBlocks(action_i_ == ac_linear);
-//		displayPath(passed_path_);
+//		displayCellPath(passed_path_);
 	}
 	return curr;
 }

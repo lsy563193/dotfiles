@@ -14,7 +14,7 @@ boost::mutex slam_map_mutex;
 
 //int16_t homeX, homeY;
 
-// Cells that temporary save the blocks.
+// CellPath that temporary save the blocks.
 std::vector<Cell_t> temp_bumper_cells;
 std::vector<Cell_t> temp_obs_cells;
 std::vector<Cell_t> temp_rcon_cells;

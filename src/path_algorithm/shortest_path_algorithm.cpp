@@ -5,10 +5,10 @@
 #include "ros/ros.h"
 #include "path_algorithm.h"
 
-Path_t APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const Cell_t &target,
+CellPath APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const Cell_t &target,
 										const MapDirection &last_dir, bool use_unknown)
 {
-	Path_t path_{};
+	CellPath path_{};
 
 	// Get the map range.
 	int16_t x_min, x_max, y_min, y_max;
@@ -221,15 +221,15 @@ Path_t APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const
 	trace_cell.Y = target.Y;
 	path_.push_back(trace_cell);
 
-	displayPath(path_);
+	displayCellPath(path_);
 
 	return path_;
 }
 
-Points APathAlgorithm::pathGenerateTargets(Path_t &path)
+PointPath APathAlgorithm::pathGenerateTargets(CellPath &path)
 {
-	displayPath(path);
-	Points targets{};
+	displayCellPath(path);
+	PointPath targets{};
 	for(auto it = path.begin(); it < path.end(); ++it) {
 		auto target = GridMap::cellToPoint(*it);
 		auto it_next = it+1;

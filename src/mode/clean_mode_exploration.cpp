@@ -147,7 +147,7 @@ bool CleanModeExploration::setNextState() {
 				new_dir_ = (MapDirection)targets_.front().TH;
 				ROS_WARN("new_dir_(%d)", new_dir_);
 				targets_.pop_front();
-				clean_path_algorithm_->displayTargets(targets_);
+				clean_path_algorithm_->displayPointPath(targets_);
 				state_confirm = true;
 			}
 			else
@@ -187,7 +187,7 @@ bool CleanModeExploration::setNextState() {
 				{
 					new_dir_ = (MapDirection)targets_.front().TH;
 					targets_.pop_front();
-					go_home_path_algorithm_->displayTargets(targets_);
+					go_home_path_algorithm_->displayPointPath(targets_);
 				}
 			}
 			else
@@ -274,7 +274,7 @@ void CleanModeExploration::chargeDetect(bool state_now, bool state_last) {
 
 void CleanModeExploration::printMapAndPath()
 {
-	clean_path_algorithm_->displayPath(passed_path_);
+	clean_path_algorithm_->displayCellPath(passed_path_);
 	exploration_map.print(CLEAN_MAP,exploration_map.getXCell(),exploration_map.getYCell());
 }
 
