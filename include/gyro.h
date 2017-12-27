@@ -1,6 +1,18 @@
 #ifndef __GYRO_H__
 #define __GYRO_H__
 
+//for tilt detct
+#define TILT_COUNT_REACH			50
+#define DIF_TILT_X_VAL				170
+#define DIF_TILT_Y_VAL				170
+#define DIF_TILT_Z_VAL				70
+#define FRONT_TILT_LIMIT			120
+#define LEFT_TILT_LIMIT				120
+#define RIGHT_TILT_LIMIT			120
+#define TILT_RIGHT					0x1
+#define TILT_FRONT					0x2
+#define TILT_LEFT					0x4
+
 typedef enum{
 	WAIT_FOR_OPEN = 0,
 	WAIT_FOR_STABLE,

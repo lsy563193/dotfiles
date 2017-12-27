@@ -233,6 +233,8 @@ public:
 	 * */
 	bool estimateChargerPos(uint32_t rcon_value);
 
+	Cells points_generate_cells(Points &targets);
+
 	virtual bool ActionFollowWallisFinish();
 	void setRconPos(Point32_t pos);
 	Point32_t updatePath(GridMap& map);
@@ -322,7 +324,7 @@ private:
 	bool has_aligned_and_open_slam;
 	float paused_odom_angle_{0};
 	bool moved_during_pause_;
-	Cell_t continue_cell_{};
+	Point32_t continue_point_{};
 	bool go_home_for_low_battery_{false};
 
 // For path planning.

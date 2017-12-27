@@ -18,6 +18,7 @@ public:
 
 	virtual bool checkTrapped(GridMap &map, const Cell_t &curr_cell) = 0;
 
+	Points cells_generate_points(Cells &path);
 	/*
 	 * @last modify by Austin Liu
 	 *
@@ -70,6 +71,8 @@ public:
 	 */
 	Cells findShortestPath(GridMap &map, const Cell_t &start,
 							  const Cell_t &target, const MapDirection &last_dir, bool use_unknown);
+
+	bool generateShortestPath(GridMap &map, const Point32_t &curr,const Point32_t &target, const MapDirection &last_dir, Points &plan_path);
 
 	/*
 	 * @author Lin Shao Yue
@@ -272,6 +275,7 @@ public:
 	bool generatePath(GridMap &map, const Point32_t &curr, const MapDirection &last_dir, Points &plan_path) override;
 
 	bool checkTrapped(GridMap &map, const Cell_t &curr_cell){};
+
 //	Cells getRestHomeCells();
 private:
 

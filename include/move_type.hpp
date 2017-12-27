@@ -86,6 +86,7 @@ protected:
 	int16_t get_turn_angle_by_ev();
 	int16_t get_turn_angle(bool);
 	double robot_to_wall_distance = 0.8;
+	float g_back_distance = 0.01;
 };
 
 class MoveTypeGoToCharger:public IMoveType

@@ -226,8 +226,6 @@ Cells APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const 
 	return path_;
 }
 
-
-
 bool APathAlgorithm::findTargetUsingDijkstra(GridMap &map, const Cell_t& curr_cell, Cell_t& target, int& cleaned_count)
 {
 	typedef std::multimap<double, Cell_t> Queue;

@@ -33,7 +33,6 @@ bool ActionLinear::isFinish()
 	auto p_clean_mode = (ACleanMode*)sp_mode_;
 	if (sp_movement_->isFinish()) {
 		PP_INFO();
-		p_clean_mode->clean_path_algorithm_->displayCellPath(points_generate_cells(p_clean_mode->plan_path_));
 
 		if (movement_i_ == mm_turn) {
 			PP_INFO();

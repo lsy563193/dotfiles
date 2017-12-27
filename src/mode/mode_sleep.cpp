@@ -16,7 +16,7 @@ ModeSleep::ModeSleep()
 
 	sp_action_.reset(new ActionSleep);
 	action_i_ = ac_sleep;
-	serial.setCleanMode(Clean_Mode_Sleep);
+//	serial.setCleanMode(Clean_Mode_Sleep);
 	usleep(30000);
 	serial.sleep();
 

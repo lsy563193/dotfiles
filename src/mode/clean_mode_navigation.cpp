@@ -339,8 +339,7 @@ bool CleanModeNav::setNextState()
 			PP_INFO();
 			old_dir_ = new_dir_;
 			ROS_ERROR("old_dir_(%d)", old_dir_);
-			auto plan_path_cell = clean_path_algorithm_->findShortestPath(nav_map, GridMap::getCurrCell(), continue_cell_, old_dir_, false);
-			plan_path_ = cells_generate_points(plan_path_cell);
+			clean_path_algorithm_->generateShortestPath(nav_map, GridMap::getCurrPoint(), continue_point_, old_dir_,plan_path_);
 			if (!plan_path_.empty())
 			{
 				new_dir_ = (MapDirection)plan_path_.front().TH;
@@ -443,9 +442,9 @@ void CleanModeNav::remoteDirectionLeft(bool state_now, bool state_last)
 	if (state_i_ == st_clean)
 	{
 		beeper.play_for_command(VALID);
-		continue_cell_ = nav_map.getCurrCell();
+		continue_point_ = nav_map.getCurrPoint();
 		ROS_INFO("%s %d: low battery, battery =\033[33m %dmv \033[0m, continue cell(%d, %d)", __FUNCTION__, __LINE__,
-				 battery.getVoltage(), continue_cell_.X, continue_cell_.Y);
+				 battery.getVoltage(), continue_point_.X, continue_point_.Y);
 		ev.battery_home = true;
 		go_home_for_low_battery_ = true;
 	}
@@ -466,9 +465,9 @@ void CleanModeNav::batteryHome(bool state_now, bool state_last)
 {
 	if (state_i_ == st_clean)
 	{
-		continue_cell_ = nav_map.getCurrCell();
+		continue_point_ = nav_map.getCurrPoint();
 		ROS_INFO("%s %d: low battery, battery =\033[33m %dmv \033[0m, continue cell(%d, %d)", __FUNCTION__, __LINE__,
-				 battery.getVoltage(), continue_cell_.X, continue_cell_.Y);
+				 battery.getVoltage(), continue_point_.X, continue_point_.Y);
 		ev.battery_home = true;
 		go_home_for_low_battery_ = true;
 	}

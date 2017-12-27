@@ -536,3 +536,14 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 	setRconPos(cd,dist);
 	return true;
 }
+
+Cells ACleanMode::points_generate_cells(Points &targets)
+{
+//	displayCellPath(targets);
+	Cells path{};
+	for(const Point32_t& point : targets) {
+		path.push_back(GridMap::pointToCell(point));
+	}
+	return path;
+}
+

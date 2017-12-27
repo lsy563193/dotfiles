@@ -124,6 +124,7 @@ bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, cons
 	return true;
 }
 
+
 //Cells GoHomePathAlgorithm::getRestHomeCells()
 //{
 //	// Return rest home cells.
