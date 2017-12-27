@@ -117,6 +117,11 @@ private:
 	void register_events(void);
 
 	bool plan_activated_status_;
+
+	/*---values for rcon handle---*/
+	double first_time_seen_charger_;
+	double last_time_seen_charger_;
+	double time_for_now_;
 };
 
 class ModeSleep: public Mode
