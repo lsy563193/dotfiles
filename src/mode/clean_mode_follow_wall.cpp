@@ -316,7 +316,7 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(int16_t curr_x, i
 	path_points.push_back(t);
 
 	next = 0;
-	dest_dir = (plan_path_.front().TH == MAP_POS_Y || plan_path_.front().TH == MAP_NEG_Y) ? 1: 0;
+	dest_dir = (new_dir_ == MAP_POS_Y || new_dir_ == MAP_NEG_Y) ? 1: 0;
 	ROS_INFO("%s %d: dest dir: %d", __FUNCTION__, __LINE__, dest_dir);
 	while (tracex != curr_x || tracey != curr_y) {
 		costAtCell = fw_map.getCell(COST_MAP, tracex, tracey);

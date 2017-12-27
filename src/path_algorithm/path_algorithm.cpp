@@ -17,11 +17,22 @@ void APathAlgorithm::displayPath(const Path_t& path)
 	ROS_INFO("%s",msg.c_str());
 }
 
-void APathAlgorithm::displayTargets(const TargetList &target_list)
+void APathAlgorithm::displayTargetList(const TargetList &target_list)
 {
 	std::string     msg = __FUNCTION__;
 	msg += " " + std::to_string(__LINE__) + ": Targers(" + std::to_string(target_list.size()) + "):";
 	for (auto it = target_list.begin(); it != target_list.end(); ++it) {
+		msg += "(" + std::to_string(it->X) + ", " + std::to_string(it->Y) + ", " + std::to_string(it->TH) + "),";
+	}
+	//msg += "\n";
+	ROS_INFO("%s",msg.c_str());
+}
+
+void APathAlgorithm::displayTargets(const Points &targets)
+{
+	std::string     msg = __FUNCTION__;
+	msg += " " + std::to_string(__LINE__) + ": Targers(" + std::to_string(targets.size()) + "):";
+	for (auto it = targets.begin(); it != targets.end(); ++it) {
 		msg += "(" + std::to_string(it->X) + ", " + std::to_string(it->Y) + ", " + std::to_string(it->TH) + "),";
 	}
 	//msg += "\n";

@@ -10,7 +10,7 @@ ActionLinear::ActionLinear() {
 	resetTriggeredValue();
 
 	auto p_clean_mode = (ACleanMode*)sp_mode_;
-	target_point_ = GridMap::cellToPoint(p_clean_mode->plan_path_.front());
+	target_point_ = p_clean_mode->targets_.front();
 	turn_target_angle_ = p_clean_mode->new_dir_;
 	ROS_INFO("%s,%d: mt_is_linear,turn(%d)", __FUNCTION__, __LINE__, turn_target_angle_);
 	movement_i_ = mm_turn;
@@ -33,7 +33,7 @@ bool ActionLinear::isFinish()
 	auto p_clean_mode = (ACleanMode*)sp_mode_;
 	if (sp_movement_->isFinish()) {
 		PP_INFO();
-		p_clean_mode->clean_path_algorithm_->displayPath(p_clean_mode->plan_path_);
+		p_clean_mode->clean_path_algorithm_->displayTargets(p_clean_mode->targets_);
 
 		if (movement_i_ == mm_turn) {
 			PP_INFO();

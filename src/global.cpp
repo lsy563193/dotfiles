@@ -107,9 +107,9 @@ void cs_disable_motors(void)
 Path_t targetsGeneratePath(Points &targets)
 {
 //	displayPath(targets);
-	Points path{};
+	Path_t path{};
 	for(const Point32_t& point : targets) {
-		targets.push_back(GridMap::pointToCell(point));
+		path.push_back(GridMap::pointToCell(point));
 	}
 	return path;
 }
