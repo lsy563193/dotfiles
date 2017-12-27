@@ -70,7 +70,7 @@ bool MovementFollowPointLinear::calcTmpTarget(Point32_t& tmp_target) {
 bool MovementFollowPointLinear::isFinish()
 {
 	auto p_mt = (ActionFollowWall*)(sp_mt_);
-	return isPoseReach() || isBoundaryStop() || isPassTargetStop() || p_mt->shouldMoveBack() || p_mt->shouldTurn() || p_mt->shouldTurn();
+	return isPoseReach() || isBoundaryStop() || isPassTargetStop() || p_mt->shouldMoveBack() || p_mt->shouldTurn();
 }
 
 bool MovementFollowPointLinear::isCellReach()
