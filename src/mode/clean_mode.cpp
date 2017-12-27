@@ -84,7 +84,7 @@ bool ACleanMode::isFinish()
 
 	if (isInitFinished_)
 	{
-		clean_map_->saveBlocks(action_i_ == ac_linear);
+		clean_map_->saveBlocks(action_i_ == ac_linear, state_i_ == st_clean);
 		mapMark();
 	}
 
@@ -133,7 +133,7 @@ Cell_t ACleanMode::updatePath(GridMap& map)
 			passed_path_.clear();
 			g_wf_reach_count++;
 		}
-		map.saveBlocks(action_i_ == ac_linear);
+		map.saveBlocks(action_i_ == ac_linear, state_i_ == st_clean);
 //		displayPath(passed_path_);
 	}
 	return curr;
@@ -204,7 +204,7 @@ void ACleanMode::stateInit(int next)
 		ev.battery_home = false;
 
 		if (go_home_path_algorithm_ == nullptr)
-			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(nav_map, home_cells_));
+			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(*clean_map_, home_cells_));
 		ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_cells_.size());
 
 	}
@@ -262,6 +262,46 @@ uint8_t ACleanMode::saveFollowWall(bool is_left)
 bool ACleanMode::ActionFollowWallisFinish()
 {
 	return false;
+}
+
+bool ACleanMode::setNextStateForGoHomePoint(GridMap &map)
+{
+	bool state_confirm = true;
+	old_dir_ = new_dir_;
+	if (ev.rcon_triggered)
+	{
+		state_i_ = st_go_to_charger;
+		stateInit(state_i_);
+	}
+	else if (map.getCurrCell() == plan_path_.back())
+	{
+		// Reach home cell!!
+		if (map.getCurrCell() == g_zero_home)
+		{
+			PP_INFO();
+			state_i_ = st_null;
+		}
+		else
+		{
+			PP_INFO();
+			state_i_ = st_go_to_charger;
+			stateInit(state_i_);
+		}
+	}
+	else if (go_home_path_algorithm_->generatePath(map, map.getCurrCell(),old_dir_, plan_path_))
+	{
+		// New path to home cell is generated.
+		new_dir_ = (MapDirection)plan_path_.front().TH;
+		plan_path_.pop_front();
+		go_home_path_algorithm_->displayPath(plan_path_);
+	}
+	else
+	{
+		// No more paths to home cells.
+		PP_INFO();
+		state_i_ = st_null;
+	}
+	return state_confirm;
 }
 
 

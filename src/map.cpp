@@ -965,13 +965,14 @@ uint8_t GridMap::saveRcon()
 	return static_cast<uint8_t>(d_cells.size());
 }
 
-uint8_t GridMap::saveBlocks(bool is_linear)
+uint8_t GridMap::saveBlocks(bool is_linear, bool is_state_clean)
 {
 	uint8_t block_count = 0;
+	if (is_linear && is_state_clean)
+		block_count += saveRcon();
 	block_count += saveBumper(is_linear);
 	block_count += saveCliff();
 	block_count += saveObs();
-	block_count += saveRcon();
 	block_count += saveSlip();
 //	block_count += save_follow_wall();
 
@@ -1365,6 +1366,8 @@ void GridMap::print(uint8_t id, int16_t endx, int16_t endy)
 	printf("%s\n",outString);
 	index = 0;
 	outString[index++] = '\t';
+	outString[index++] = ' ';
+	outString[index++] = ' ';
 	for (j = y_min; j <= y_max; j++) {
 		outString[index++] = abs(j) % 10 + 48;
 	}
@@ -1379,6 +1382,8 @@ void GridMap::print(uint8_t id, int16_t endx, int16_t endy)
 		outString[index++] = 48 + (abs(i) >= 10 ? ((abs(i) % 100) / 10) : 0);
 		outString[index++] = abs(i) % 10 + 48;
 		outString[index++] = '\t';
+		outString[index++] = ' ';
+		outString[index++] = ' ';
 
 		for (j = y_min; j <= y_max; j++) {
 			cs = getCell(id, i, j);

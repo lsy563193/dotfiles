@@ -219,6 +219,7 @@ public:
 	virtual bool setNextState() = 0;
 	virtual bool setNextAction();
 	void genNextAction();
+	bool setNextStateForGoHomePoint(GridMap &map);
 
 	virtual bool mapMark() = 0;
 
@@ -335,8 +336,6 @@ public:
 //	void overCurrentSuction(bool state_now, bool state_last);
 	void printMapAndPath();
 
-protected:
-	void stateInit(int next) override;
 };
 
 class CleanModeFollowWall:public ACleanMode

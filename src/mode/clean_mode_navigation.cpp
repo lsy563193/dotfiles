@@ -44,7 +44,7 @@ CleanModeNav::~CleanModeNav()
 
 	if (moved_during_pause_)
 	{
-		speaker.play(VOICE_CLEANING_STOP);
+		speaker.play(VOICE_CLEANING_STOP, false);
 		ROS_WARN("%s %d: Moved during pause. Stop cleaning.", __FUNCTION__, __LINE__);
 	}
 	else if (ev.cliff_all_triggered)
@@ -60,7 +60,7 @@ CleanModeNav::~CleanModeNav()
 	}
 	else
 	{
-		speaker.play(VOICE_CLEANING_FINISHED);
+		speaker.play(VOICE_CLEANING_FINISHED, false);
 		ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
 	}
 
@@ -99,7 +99,7 @@ bool CleanModeNav::mapMark()
 		// Set home cell.
 		if (ev.rcon_triggered)
 		{
-			home_cells_.push_front(clean_map_->getCurrCell());
+			home_cells_.push_front(nav_map.getCurrCell());
 			ROS_INFO("%s %d: Set home cell(%d, %d).", __FUNCTION__, __LINE__, home_cells_.front().X, home_cells_.front().Y);
 		}
 	}
@@ -279,7 +279,6 @@ bool CleanModeNav::setNextState()
 
 			state_i_ = st_clean;
 			stateInit(state_i_);
-			action_i_ = ac_null;
 		}
 		else if (isExceptionTriggered())
 		{
@@ -287,7 +286,6 @@ bool CleanModeNav::setNextState()
 			// Apply for all states.
 			// If all these exception cases happens, directly set next action to exception resume action.
 			// BUT DO NOT CHANGE THE STATE!!! Because after exception resume it should restore the state.
-			action_i_ = ac_null;
 			state_confirm = true;
 		}
 		else if(state_i_ == st_clean)
@@ -310,7 +308,6 @@ bool CleanModeNav::setNextState()
 				else
 					state_i_ = st_go_home_point;
 				stateInit(state_i_);
-				action_i_ = ac_null;
 			}
 		}
 		else if (state_i_ == st_trapped)
@@ -335,42 +332,7 @@ bool CleanModeNav::setNextState()
 		else if (state_i_ == st_go_home_point)
 		{
 			PP_INFO();
-			old_dir_ = new_dir_;
-			plan_path_.clear();
-			if (go_home_path_algorithm_->generatePath(nav_map, nav_map.getCurrCell(),old_dir_, plan_path_))
-			{
-				// Reach home cell or new path to home cell is generated.
-				if (plan_path_.empty())
-				{
-					// Reach home cell.
-					PP_INFO();
-					if (nav_map.getCurrCell() == g_zero_home)
-					{
-						PP_INFO();
-						state_i_ = st_null;
-					}
-					else
-					{
-						PP_INFO();
-						state_i_ = st_go_to_charger;
-						stateInit(state_i_);
-					}
-					action_i_ = ac_null;
-				}
-				else
-				{
-					new_dir_ = (MapDirection)plan_path_.front().TH;
-					plan_path_.pop_front();
-					go_home_path_algorithm_->displayPath(plan_path_);
-				}
-			}
-			else
-			{
-				// No more paths to home cells.
-				PP_INFO();
-				state_i_ = st_null;
-			}
-			state_confirm = true;
+			state_confirm = setNextStateForGoHomePoint(nav_map);
 		}
 		else if (state_i_ == st_resume_low_battery_charge)
 		{
@@ -390,14 +352,16 @@ bool CleanModeNav::setNextState()
 			{
 				state_i_ = st_clean;
 				stateInit(state_i_);
-				action_i_ = ac_null;
 			}
 		}
 		else if (state_i_ == st_go_to_charger)
 		{
 			PP_INFO();
 			if (ev.charge_detect && charger.isOnStub())
+			{
 				state_i_ = st_null;
+				state_confirm = true;
+			}
 			else
 				state_i_ = st_go_home_point;
 		}
@@ -511,10 +475,9 @@ void CleanModeNav::batteryHome(bool state_now, bool state_last)
 
 void CleanModeNav::chargeDetect(bool state_now, bool state_last)
 {
-	ROS_WARN("%s %d: Charge detect!.", __FUNCTION__, __LINE__);
-	if (charger.getChargeStatus() >= 1)
+	if (!ev.charge_detect)
 	{
-		ROS_WARN("%s %d: Set ev.chargeDetect.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Charge detect!.", __FUNCTION__, __LINE__);
 		ev.charge_detect = charger.getChargeStatus();
 	}
 

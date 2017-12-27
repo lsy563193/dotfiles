@@ -79,14 +79,8 @@ GoHomePathAlgorithm::GoHomePathAlgorithm(GridMap &map, TargetList home_cells)
 
 bool GoHomePathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir, Path_t &plan_path)
 {
-	ROS_INFO("%s %d: current_cell(%d, %d, %d), Reach home cell(%d, %d, %d)", __FUNCTION__ ,__LINE__,
+	ROS_INFO("%s %d: current_cell(%d, %d, %d), home cell(%d, %d, %d)", __FUNCTION__ ,__LINE__,
 			 curr_cell.X, curr_cell.Y, curr_cell.TH, current_home_target_.X, current_home_target_.Y, current_home_target_.TH);
-	if (curr_cell == current_home_target_/* && abs(curr_cell.TH -  current_home_target_.TH) < 50*/)
-	{
-		ROS_INFO("%s %d: Reach home cell(%d, %d)", __FUNCTION__ ,__LINE__, current_home_target_.X, current_home_target_.Y);
-		// Congratulations! You have reached home.
-		return true;
-	}
 
 	// Search path to home cells.
 	for (; go_home_way_list_it_ != go_home_way_list_.end(); ++go_home_way_list_it_) {
