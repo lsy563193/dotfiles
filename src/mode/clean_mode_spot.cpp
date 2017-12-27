@@ -13,11 +13,6 @@ CleanModeSpot::CleanModeSpot()
 	event_manager_set_enable(true);
 	IMoveType::sp_mode_.reset(this);
 	speaker.play(VOICE_CLEANING_SPOT);
-	usleep(200000);
-	vacuum.setMode(Vac_Save);
-	brush.setLeftPwm(50);
-	brush.setRightPwm(50);
-	brush.setMainPwm(50);
 	clean_path_algorithm_.reset(new SpotCleanPathAlgorithm());
 	go_home_path_algorithm_.reset();
 	has_aligned_and_open_slam = false;
@@ -39,6 +34,12 @@ CleanModeSpot::~CleanModeSpot()
 
 bool CleanModeSpot::isFinish()
 {
+	if(action_i_ == ac_open_slam){
+		vacuum.setMode(Vac_Save);
+		brush.setLeftPwm(50);
+		brush.setRightPwm(50);
+		brush.setMainPwm(50);
+	}
 	return ACleanMode::isFinish();
 }
 

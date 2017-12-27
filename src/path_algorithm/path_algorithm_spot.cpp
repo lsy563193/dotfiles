@@ -51,7 +51,7 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Path_t *t
 	uint16_t spiral_number = (uint16_t) ceil(diameter * 1000 / (CELL_SIZE));//number of spiral
 	ROS_INFO( "%s,%d,number of cells" "\033[36m" " %d" "\033[0m",__FUNCTION__,__LINE__,spiral_number);
 	int16_t i;
-	int mid_it;// for store the last pos in clockwise/anti clockwise out
+	uint32_t mid_it;// for store the last pos in clockwise/anti clockwise out
 
 	if(spiral_count == 1){
 		targets->push_back({x,y,0});
