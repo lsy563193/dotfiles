@@ -96,9 +96,6 @@ void cm_cleaning(void);
 extern Points g_homes;
 extern std::vector<int> g_home_way_list;
 extern std::vector<int>::iterator g_home_way_it;
-extern int g_wf_reach_count;
-extern bool g_check_path_in_advance;
-extern bool g_allow_check_path_in_advance;
 void path_set_home(const Point32_t& cell);
 //bool is_fobbit_free();
 

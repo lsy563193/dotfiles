@@ -5,9 +5,6 @@
 #include <mathematics.h>
 #include <deque>
 #include <pp.h>
-bool line_is_found;
-int g_wf_reach_count;
-bool g_check_path_in_advance;
 Points g_homes;
 
 Cells points_generate_cells(Points &targets)

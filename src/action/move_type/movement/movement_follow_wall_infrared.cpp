@@ -19,14 +19,14 @@ IFollowWall::IFollowWall(bool is_left) : previous_(0), seen_charger_counter(0), 
 	fw_map.reset(CLEAN_MAP);
 }
 
-bool IFollowWall::isClosure(uint8_t closure_cnt)
-{
-	if (g_wf_reach_count >= closure_cnt) {
-		ROS_WARN("%s %d: Trapped wall follow is loop closed. reach_count(%d) ", __FUNCTION__, __LINE__, g_wf_reach_count);
-		return true;
-	}
-	return false;
-}
+//bool IFollowWall::isClosure(uint8_t closure_cnt)
+//{
+//	if (g_wf_reach_count >= closure_cnt) {
+//		ROS_WARN("%s %d: Trapped wall follow is loop closed. reach_count(%d) ", __FUNCTION__, __LINE__, g_wf_reach_count);
+//		return true;
+//	}
+//	return false;
+//}
 
 bool IFollowWall::isIsolate()
 {

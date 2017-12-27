@@ -230,12 +230,12 @@ bool CleanModeNav::setNextAction()
 	{
 		auto start = nav_map.getCurrCell();
 		auto delta_y = plan_path_.back().Y - start.Y;
-		ROS_INFO("%s,%d: path size(%u), old_dir_(%d), g_check_path_in_advance(%d), bumper(%d), cliff(%d), lidar(%d), delta_y(%d)",
-						__FUNCTION__, __LINE__, plan_path_.size(), old_dir_, g_check_path_in_advance, ev.bumper_triggered,
+		ROS_INFO("%s,%d: path size(%u), old_dir_(%d), bumper(%d), cliff(%d), lidar(%d), delta_y(%d)",
+						__FUNCTION__, __LINE__, plan_path_.size(), old_dir_, ev.bumper_triggered,
 						ev.cliff_triggered, ev.lidar_triggered, delta_y);
 		if (!GridMap::isXAxis(old_dir_) // If last movement is not x axis linear movement, should not follow wall.
 				|| plan_path_.size() > 2 ||
-				(!g_check_path_in_advance && !ev.bumper_triggered && !ev.cliff_triggered && !ev.lidar_triggered)
+				(!ev.bumper_triggered && !ev.cliff_triggered && !ev.lidar_triggered)
 				|| delta_y == 0 || std::abs(delta_y) > 2) {
 			action_i_ = ac_linear;
 		}

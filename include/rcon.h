@@ -90,12 +90,6 @@
 
 class Rcon {
 public:
-	bool found_charger_{};
-	bool found_temp_charger_{};
-	bool in_rcon_signal_range_{};
-	bool should_mark_charger_{};
-	bool should_mark_temp_charger_{};
-public:
 	int getTrig(void);
 	bool isTrigT();
 
@@ -126,30 +120,9 @@ public:
 	 * @param1 pos ,position in cell_t
 	 * @return void
 	 * */
-	void setRconPos(Point32_t pos)
-	{
-		charger_pos_ = pos;
-	}
-
-	/*
-	 * @author
-	 * @breif get rcon position
-	 * @return rcon position
-	 * */
-	Point32_t getRconPos()
-	{
-		return charger_pos_;
-	}
-	/*
-	 * @author mengshige1988@qq.com
-	 * @breif estimate charge postiion ,according to rcon sensor signals
-	 * @return true if found ,else false
-	 * */
-	bool estimateChargerPos(uint32_t rcon_value);
 
 private:
 	uint32_t rcon_status_{};
-	Point32_t charger_pos_{0,0,0};//charger postion
 
 	/*
 	 * @author
@@ -158,8 +131,6 @@ private:
 	 * @param2 dist ,distance between robot and charger
 	 * @return void
 	 * */
-	void setRconPos(float cd,float dist);
-
 };
 
 extern Rcon c_rcon;

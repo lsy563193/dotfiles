@@ -147,7 +147,7 @@ public:
 
 	bool isBlockCleared();
 
-	bool isClosure(uint8_t closure_cnt);
+//	bool isClosure(uint8_t closure_cnt);
 
 	bool isIsolate();
 

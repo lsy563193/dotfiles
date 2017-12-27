@@ -220,13 +220,23 @@ public:
 	virtual bool setNextAction();
 	void genNextAction();
 	bool setNextStateForGoHomePoint(GridMap &map);
+
+	void setRconPos(float cd,float dist);
+
 	void path_set_home(const Point32_t& curr);
 
 	virtual bool mapMark() = 0;
+	/*
+	 * @author mengshige1988@qq.com
+	 * @breif estimate charge postiion ,according to rcon sensor signals
+	 * @return true if found ,else false
+	 * */
+	bool estimateChargerPos(uint32_t rcon_value);
 
 	virtual bool ActionFollowWallisFinish();
+	void setRconPos(Point32_t pos);
 	Point32_t updatePath(GridMap& map);
-
+	int g_wf_reach_count{};
 	static Points passed_path_;
 	static Points plan_path_;
 
@@ -236,7 +246,7 @@ public:
 	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
 	boost::shared_ptr<APathAlgorithm> go_home_path_algorithm_{};
 	GridMap* clean_map_ = nullptr;
-
+	Point32_t charger_pos_{};//charger postion
 protected:
 
 	bool	g_start_point_seen_charger{};
@@ -245,6 +255,7 @@ protected:
 	virtual void stateInit(int next);
 //	std::vector<Cell_t> temp_fw_cells;
 	Points home_points_;
+	Points g_homes;
 	static Point32_t last_;
 
 	int state_i_{st_clean};
@@ -262,6 +273,11 @@ protected:
 	};
 	bool isInitFinished_{false};
 	Point32_t g_zero_home{0,0,0};
+	bool found_temp_charger_{};
+	bool in_rcon_signal_range_{};
+	bool should_mark_charger_{};
+	bool should_mark_temp_charger_{};
+	bool found_charger_{};
 };
 
 class CleanModeNav:public ACleanMode
