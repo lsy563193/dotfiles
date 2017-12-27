@@ -173,7 +173,7 @@ public:
 
 	uint8_t saveSlip();
 
-	uint8_t saveBlocks(bool is_linear);
+	uint8_t saveBlocks(bool is_linear, bool is_state_clean);
 
 	uint8_t setBlocks();
 
@@ -312,6 +312,16 @@ private:
 	int16_t xRangeMin, xRangeMax, yRangeMin, yRangeMax;
 
 	static double xCount, yCount;
+
+	// Cells that temporary save the blocks.
+	std::vector<Cell_t> temp_bumper_cells;
+	std::vector<Cell_t> temp_obs_cells;
+	std::vector<Cell_t> temp_rcon_cells;
+	std::vector<Cell_t> temp_tilt_cells;
+	std::vector<Cell_t> temp_slip_cells;
+	std::vector<Cell_t> temp_cliff_cells;
+	std::vector<Cell_t> temp_fw_cells;
+	std::vector<Cell_t> temp_WFMAP_follow_wall_cells;
 
 };
 

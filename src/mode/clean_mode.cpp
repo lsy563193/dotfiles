@@ -59,7 +59,7 @@ bool ACleanMode::setNextAction()
 	return action_i_ != ac_null;
 }
 
-void ACleanMode::setNextMode(int next)
+void ACleanMode::setNextModeDefault()
 {
 	if (ev.charge_detect && charger.isOnStub()) {
 		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
@@ -67,7 +67,7 @@ void ACleanMode::setNextMode(int next)
 	}
 	else {
 		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
-		Mode::setNextMode(next);
+		Mode::setNextMode(md_idle);
 	}
 }
 
@@ -83,13 +83,16 @@ bool ACleanMode::isFinish()
 	PP_INFO();
 
 	if (isInitFinished_)
+	{
+		clean_map_->saveBlocks(action_i_ == ac_linear, state_i_ == st_clean);
 		mapMark();
+	}
 
 	do
 	{
 		if (!setNextState())
 		{
-			setNextMode(0);
+			setNextModeDefault();
 			return true;
 		}
 	} while (!setNextAction());
@@ -130,8 +133,8 @@ Point32_t ACleanMode::updatePath(GridMap& map)
 			passed_path_.clear();
 			g_wf_reach_count++;
 		}
-		map.saveBlocks(action_i_ == ac_linear);
-//		displayCellPath(passed_path_);
+		map.saveBlocks(action_i_ == ac_linear, state_i_ == st_clean);
+//		displayPath(passed_path_);
 	}
 	return curr;
 }
@@ -160,6 +163,8 @@ void ACleanMode::genNextAction()
 		sp_action_.reset(new MoveTypeGoToCharger);
 	else if (action_i_ == ac_exception_resume)
 		sp_action_.reset(new MovementExceptionResume);
+	else if (action_i_ == ac_charge)
+		sp_action_.reset(new MovementCharge);
 	else if (action_i_ == ac_check_bumper)
 		sp_action_.reset(new ActionCheckBumper);
 	else if (action_i_ == ac_bumper_hit_test)
@@ -171,16 +176,6 @@ void ACleanMode::genNextAction()
 	else if(action_i_ == ac_null)
 		sp_action_.reset();
 	PP_INFO();
-}
-
-void ACleanMode::resetTriggeredValue(void)
-{
-	ev.lidar_triggered = 0;
-	ev.rcon_triggered = 0;
-	ev.bumper_triggered = 0;
-	ev.obs_triggered = 0;
-	ev.cliff_triggered = 0;
-	ev.tilt_triggered = 0;
 }
 
 void ACleanMode::stateInit(int next)
@@ -201,7 +196,7 @@ void ACleanMode::stateInit(int next)
 
 		// Play wavs.
 		if (ev.battery_home)
-			speaker.play(VOICE_BATTERY_LOW, true);
+			speaker.play(VOICE_BATTERY_LOW, false);
 
 		speaker.play(VOICE_BACK_TO_CHARGER, true);
 
@@ -209,8 +204,8 @@ void ACleanMode::stateInit(int next)
 		ev.battery_home = false;
 
 		if (go_home_path_algorithm_ == nullptr)
-			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(nav_map, home_points_));
-		ROS_INFO("%s %d: home_points_.size(%lu)", __FUNCTION__, __LINE__, home_points_.size());
+			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(*clean_map_, home_points_));
+		ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_points_.size());
 
 	}
 	if (next == st_tmp_spot) {
@@ -267,6 +262,46 @@ void ACleanMode::stateInit(int next)
 bool ACleanMode::ActionFollowWallisFinish()
 {
 	return false;
+}
+
+bool ACleanMode::setNextStateForGoHomePoint(GridMap &map)
+{
+	bool state_confirm = true;
+	old_dir_ = new_dir_;
+	if (ev.rcon_triggered)
+	{
+		state_i_ = st_go_to_charger;
+		stateInit(state_i_);
+	}
+	else if (map.getCurrCell() == GridMap::pointToCell(plan_path_.back()))
+	{
+		// Reach home cell!!
+		if (map.getCurrCell() == GridMap::pointToCell(g_zero_home))
+		{
+			PP_INFO();
+			state_i_ = st_null;
+		}
+		else
+		{
+			PP_INFO();
+			state_i_ = st_go_to_charger;
+			stateInit(state_i_);
+		}
+	}
+	else if (go_home_path_algorithm_->generatePath(map, GridMap::getCurrPoint(),old_dir_, plan_path_))
+	{
+		// New path to home cell is generated.
+		new_dir_ = (MapDirection)plan_path_.front().TH;
+		plan_path_.pop_front();
+		go_home_path_algorithm_->displayCellPath(points_generate_cells(plan_path_));
+	}
+	else
+	{
+		// No more paths to home cells.
+		PP_INFO();
+		state_i_ = st_null;
+	}
+	return state_confirm;
 }
 
 

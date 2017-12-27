@@ -4,6 +4,7 @@
 
 #include "pp.h"
 #include <arch.hpp>
+#include <event_manager.h>
 
 StateGoHomePoint::StateGoHomePoint():gh_state_(gh_ing) {
 	vacuum.setMode(Vac_Normal, false);

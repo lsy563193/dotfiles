@@ -111,3 +111,24 @@ Cells points_generate_cells(Points &targets)
 	return path;
 }
 
+Points cells_generate_points(Cells &path)
+{
+//	displayCellPath(path);
+	Points targets{};
+	for(auto it = path.begin(); it < path.end(); ++it) {
+		Point32_t target {GridMap::cellToCount((*it).X),GridMap::cellToCount((*it).Y),0};
+		auto it_next = it+1;
+		if (it->X == it_next->X)
+			target.TH = it->Y > it_next->Y ? MAP_NEG_Y : MAP_POS_Y;
+		else
+			target.TH = it->X > it_next->X ? MAP_NEG_X : MAP_POS_X;
+		targets.push_back(target);
+	}
+//		ROS_INFO("path.back(%d,%d,%d)",path.back().X, path.back().Y, path.back().TH);
+
+	targets.back().TH = (targets.end()-2)->TH;
+//	ROS_INFO("%s %d: path.back(%d,%d,%d), path.front(%d,%d,%d)", __FUNCTION__, __LINE__,
+//					 path.back().X, path.back().Y, path.back().TH, path.front().X, path.front().Y, path.front().TH);
+	return targets;
+}
+

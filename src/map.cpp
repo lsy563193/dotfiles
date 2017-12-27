@@ -1,28 +1,10 @@
 #include "pp.h"
 
-#define DEBUG_MSG_SIZE	1 // 20
 GridMap nav_map;
 GridMap fw_map;
 GridMap exploration_map;
 GridMap slam_grid_map;
 GridMap decrease_map;
-
-boost::mutex slam_map_mutex;
-
-#ifndef SHORTEST_PATH_V2
-#endif
-
-//int16_t homeX, homeY;
-
-// Cells that temporary save the blocks.
-std::vector<Cell_t> temp_bumper_cells;
-std::vector<Cell_t> temp_obs_cells;
-std::vector<Cell_t> temp_rcon_cells;
-std::vector<Cell_t> temp_tilt_cells;
-std::vector<Cell_t> temp_slip_cells;
-std::vector<Cell_t> temp_cliff_cells;
-std::vector<Cell_t> temp_fw_cells;
-std::vector<Cell_t> temp_WFMAP_follow_wall_cells;
 
 uint16_t relative_theta = 3600;
 
@@ -876,6 +858,7 @@ uint8_t GridMap::saveBumper(bool is_linear)
 
 uint8_t GridMap::saveRcon()
 {
+/*
 	uint8_t block_count;
 	if(c_rcon.should_mark_charger_ ){
 		c_rcon.should_mark_charger_ = false;
@@ -886,20 +869,14 @@ uint8_t GridMap::saveRcon()
 		block_count += nav_map.saveChargerArea(GridMap::pointToCell(c_rcon.getRconPos()));
 	}
 	return block_count;
+*/
 
-#if 0
 	auto rcon_trig = ev.rcon_triggered/*rcon_get_trig()*/;
 	if(! rcon_trig)
 		return 0;
-	if( g_from_charger && g_in_charge_signal_range && cs.is_going_home())//while in cs.is_going_home() mode_ or from_station dont mapMark rcon signal
-	{
-		ev.rcon_triggered = 0;
-		return 0;
-	}
 
-	path_set_home(get_curr_cell());
 	enum {
-			left, fl2, fl1, fr1, fr2, right,
+		left, fl2, fl1, fr1, fr2, right,
 	};
 	std::vector<Cell_t> d_cells;
 	switch (ev.rcon_triggered - 1)
@@ -967,32 +944,25 @@ uint8_t GridMap::saveRcon()
 	}
 
 	int16_t	x, y;
-	//int32_t	x2, y2;
 	std::string msg = "cells:";
 	for(auto& d_cell : d_cells)
 	{
-		auto point = get_curr_point();
-		point.TH = new_dir_;
-		robot_to_cell(point, d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
-		//robot_to_point(robot::instance()->getPoseAngle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x2, &y2);
-		//ROS_WARN("%s %d: d_cell(%d, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
-		//			, __FUNCTION__, __LINE__, d_cell.X, d_cell.Y, robot::instance()->getPoseAngle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
+		robotToCell(getCurrPoint(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, x, y);
 		temp_rcon_cells.push_back({x, y});
 		msg += "[" + std::to_string(d_cell.X) + "," + std::to_string(d_cell.Y) + "](" + std::to_string(x) + "," + std::to_string(y) + ")";
 	}
-	ROS_INFO("%s,%d: Current(%d, %d), save \033[32m%s\033[0m",__FUNCTION__, __LINE__, get_x_cell(), get_y_cell(), msg.c_str());
-	return static_cast<uint8_t >(d_cells.size());
-#endif
+	ROS_INFO("%s,%d: Current(%d, %d), save \033[32m%s\033[0m",__FUNCTION__, __LINE__, getCurrCell().X, getCurrCell().Y, msg.c_str());
+	return static_cast<uint8_t>(d_cells.size());
 }
 
-
-uint8_t GridMap::saveBlocks(bool is_linear)
+uint8_t GridMap::saveBlocks(bool is_linear, bool is_state_clean)
 {
 	uint8_t block_count = 0;
+	if (is_linear && is_state_clean)
+		block_count += saveRcon();
 	block_count += saveBumper(is_linear);
 	block_count += saveCliff();
 	block_count += saveObs();
-	block_count += saveRcon();
 	block_count += saveSlip();
 //	block_count += save_follow_wall();
 
@@ -1012,7 +982,6 @@ uint8_t GridMap::setBlocks()
 
 	return block_count;
 }
-
 
 void GridMap::setCleaned(std::deque<Cell_t> cells)
 {
@@ -1387,6 +1356,8 @@ void GridMap::print(uint8_t id, int16_t endx, int16_t endy)
 	printf("%s\n",outString);
 	index = 0;
 	outString[index++] = '\t';
+	outString[index++] = ' ';
+	outString[index++] = ' ';
 	for (j = y_min; j <= y_max; j++) {
 		outString[index++] = abs(j) % 10 + 48;
 	}
@@ -1401,6 +1372,8 @@ void GridMap::print(uint8_t id, int16_t endx, int16_t endy)
 		outString[index++] = 48 + (abs(i) >= 10 ? ((abs(i) % 100) / 10) : 0);
 		outString[index++] = abs(i) % 10 + 48;
 		outString[index++] = '\t';
+		outString[index++] = ' ';
+		outString[index++] = ' ';
 
 		for (j = y_min; j <= y_max; j++) {
 			cs = getCell(id, i, j);

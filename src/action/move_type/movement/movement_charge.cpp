@@ -8,7 +8,7 @@
 
 MovementCharge::MovementCharge()
 {
-	ROS_INFO("%s %d: Start charge action.", __FUNCTION__, __LINE__);
+	ROS_INFO("%s %d: Start charge action. Battery voltage \033[32m%5.2f V\033[0m.", __FUNCTION__, __LINE__, (float)battery.getVoltage()/100.0);
 	led.set_mode(LED_BREATH, LED_ORANGE);
 	charger.setStart();
 	usleep(30000);

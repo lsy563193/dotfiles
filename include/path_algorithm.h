@@ -75,19 +75,6 @@ public:
 	 * @author Lin Shao Yue
 	 * @last modify by Austin Liu
 	 *
-	 * This function is for filling the path' cells with the direction towards next cell, the last one's
-	 * direction is the same as its previous one.
-	 *
-	 * @param: Cells path, the path from start cell to target cell.
-	 *
-	 * @return: Cells path, the path from start cell to target cell with direction.
-	 */
-	Points cells_generate_points(Cells &path);
-
-	/*
-	 * @author Lin Shao Yue
-	 * @last modify by Austin Liu
-	 *
 	 * This function is for finding targets using Dijkstra algorithm.
 	 *
 	 * @param: GridMap map, it will use it's CLEAN_MAP data.

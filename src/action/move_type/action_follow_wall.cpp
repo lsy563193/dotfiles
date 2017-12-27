@@ -312,6 +312,11 @@ int16_t ActionFollowWall::get_turn_angle_by_ev()
 		turn_angle = obs_turn_angle();
 		ROS_WARN("%s %d: Lidar triggered, turn_angle: %d.", __FUNCTION__, __LINE__, turn_angle);
 	}
+	if (ev.rcon_triggered)
+	{
+		turn_angle = rcon_turn_angle();
+		ROS_WARN("%s %d: Rcon triggered, turn_angle: %d.", __FUNCTION__, __LINE__, turn_angle);
+	}
 
 	if(g_robot_slip)
 	{

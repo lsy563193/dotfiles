@@ -117,6 +117,10 @@ private:
 	void register_events(void);
 
 	bool plan_activated_status_;
+
+	/*---values for rcon handle---*/
+	double first_time_seen_charger_;
+	double last_time_seen_charger_;
 };
 
 class ModeSleep: public Mode
@@ -211,11 +215,11 @@ class ACleanMode:public Mode
 public:
 	ACleanMode();
 	bool isFinish() override;
-	void setNextMode(int next);
+	void setNextModeDefault();
 	virtual bool setNextState() = 0;
 	virtual bool setNextAction();
 	void genNextAction();
-	void resetTriggeredValue();
+	bool setNextStateForGoHomePoint(GridMap &map);
 
 	virtual bool mapMark() = 0;
 
@@ -250,6 +254,8 @@ protected:
 		st_tmp_spot,
 		st_self_check,
 		st_exploration,
+		st_charge,
+		st_resume_low_battery_charge,
 	};
 	bool isInitFinished_{false};
 };
@@ -265,13 +271,15 @@ public:
 	bool isFinish() override ;
 	bool isExit() override;
 
-	bool setNextAction() override ;
-	bool setNextState() override ;
+	bool setNextAction() override;
+	bool setNextState() override;
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteClean(bool state_now, bool state_last) override ;
 	void remoteHome(bool state_now, bool state_last) override ;
+	void remoteDirectionLeft(bool state_now, bool state_last) override ;
 	void cliffAll(bool state_now, bool state_last) override ;
 	void chargeDetect(bool state_now, bool state_last) override ;
+	void batteryHome(bool state_now, bool state_last) override ;
 //	void overCurrentBrushLeft(bool state_now, bool state_last);
 //	void overCurrentBrushMain(bool state_now, bool state_last);
 //	void overCurrentBrushRight(bool state_now, bool state_last);
@@ -285,13 +293,17 @@ private:
 	bool isOverOriginLine();
 	bool isBlockCleared();
 	bool enterPause();
+	bool enterLowBatteryCharge();
 	bool resumePause();
+	bool resumeLowBatteryCharge();
 	bool switchToGoHomePointState();
 
 	bool paused_;
 	bool has_aligned_and_open_slam;
-	float paused_odom_angle_;
+	float paused_odom_angle_{0};
 	bool moved_during_pause_;
+	Cell_t continue_cell_{};
+	bool go_home_for_low_battery_{false};
 
 // For path planning.
 
@@ -324,8 +336,6 @@ public:
 //	void overCurrentSuction(bool state_now, bool state_last);
 	void printMapAndPath();
 
-protected:
-	void stateInit(int next) override;
 };
 
 class CleanModeFollowWall:public ACleanMode
@@ -354,7 +364,7 @@ class CleanModeSpot:public ACleanMode
 {
 public:
 	CleanModeSpot();
-	~CleanModeSpot();
+	~CleanModeSpot() ;
 	bool isFinish() override;
 	bool mapMark() override;
 	bool isExit();
@@ -364,7 +374,7 @@ private:
 protected:
 //	Cells home_point_{};
 private:
-	bool has_aligned_and_open_slam;
+
 };
 
 class CleanModeTest:public ACleanMode

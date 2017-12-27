@@ -306,4 +306,5 @@ extern double bumper_turn_factor;
 extern Point32_t g_zero_home;
 
 Cells points_generate_cells(Points &targets);
+Points cells_generate_points(Cells &path);
 #endif
