@@ -80,8 +80,8 @@ GoHomePathAlgorithm::GoHomePathAlgorithm(GridMap &map, Points home_points)
 
 bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, const MapDirection &last_dir, Points &plan_path)
 {
-	auto curr_cell = GridMap::pointToCell(curr);
-	auto current_home_target_cell = GridMap::pointToCell(current_home_target_);
+	auto curr_cell = curr.toCell();
+	auto current_home_target_cell = current_home_target_.toCell();
 	ROS_INFO("%s %d: current_cell(%d, %d), Reach home cell(%d, %d)", __FUNCTION__ ,__LINE__,
 			 curr_cell.X, curr_cell.Y, curr_cell, current_home_target_cell.X, current_home_target_cell.Y);
 	if (curr_cell == current_home_target_cell/* && abs(curr_cell.TH -  current_home_target_.TH) < 50*/)
@@ -105,7 +105,7 @@ bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, cons
 			go_home_map_.mergeFromSlamGridMap(slam_grid_map, false, false, false, false, false, true);
 		}
 
-		auto plan_path_cell = findShortestPath(go_home_map_, curr_cell, GridMap::pointToCell(current_home_target_), last_dir, true);
+		auto plan_path_cell = findShortestPath(go_home_map_, curr_cell, current_home_target_.toCell(), last_dir, true);
 
 		if (!plan_path_cell.empty())
 		{

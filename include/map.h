@@ -101,8 +101,6 @@ public:
 
 	static int16_t countToCell(int32_t count);
 
-	static Cell_t pointToCell(Point32_t pnt);
-
 	void setCells(int8_t count, int16_t cell_x, int16_t cell_y, CellState state);
 
 	void reset(uint8_t id);

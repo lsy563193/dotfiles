@@ -309,7 +309,7 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Cells *ta
 
 bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, const MapDirection &last_dir, Points &targets)
 {
-	auto curr_cell = GridMap::pointToCell(curr);
+	auto curr_cell = curr.toCell();
 	if(!ev.bumper_triggered && !ev.cliff_triggered && !ev.rcon_triggered){
 		if(!spot_running_){
 			spot_running_ = true;
@@ -340,7 +340,7 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, c
 			{
 				if(targets.size() > 2){
 					targets.pop_front();
-					auto next_cell = GridMap::pointToCell(targets.front());
+					auto next_cell = targets.front().toCell();
 					shortest_path = findShortestPath(map,curr_cell,next_cell,last_dir,false);
 					if(shortest_path.empty()){
 						continue;

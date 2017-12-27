@@ -10,7 +10,7 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, co
 {
 
 	plan_path.clear();
-	auto curr_cell = GridMap::pointToCell(curr);
+	auto curr_cell = curr.toCell();
 	//Step 1: Find possible plan_path in same lane.
 	auto plan_path_cell = findTargetInSameLane(map, curr_cell);
 	if (!plan_path_cell.empty())

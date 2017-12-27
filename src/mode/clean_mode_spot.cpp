@@ -173,7 +173,7 @@ bool CleanModeSpot::setNextState()
 				{
 					// Reach home cell.
 					PP_INFO();
-					if (GridMap::getCurrCell() == GridMap::pointToCell(g_zero_home))
+					if (GridMap::getCurrCell() == g_zero_home.toCell())
 					{
 						PP_INFO();
 						state_i_ = st_null;

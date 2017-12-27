@@ -102,7 +102,7 @@ bool ACleanMode::isFinish()
 
 bool is_equal_with_angle_(const Point32_t &l, const Point32_t &r)
 {
-	return  GridMap::pointToCell(l) == GridMap::pointToCell(r) && std::abs(ranged_angle(l.TH - r.TH)) < 200;
+	return  l.toCell() == r.toCell() && std::abs(ranged_angle(l.TH - r.TH)) < 200;
 }
 
 Point32_t ACleanMode::updatePath(GridMap& map)
@@ -277,10 +277,10 @@ bool ACleanMode::setNextStateForGoHomePoint(GridMap &map)
 		state_i_ = st_go_to_charger;
 		stateInit(state_i_);
 	}
-	else if (map.getCurrCell() == GridMap::pointToCell(plan_path_.back()))
+	else if (map.getCurrCell() == plan_path_.back().toCell())
 	{
 		// Reach home cell!!
-		if (map.getCurrCell() == GridMap::pointToCell(g_zero_home))
+		if (map.getCurrCell() == g_zero_home.toCell())
 		{
 			PP_INFO();
 			state_i_ = st_null;
@@ -315,7 +315,7 @@ void ACleanMode::path_set_home(const Point32_t& curr)
 
 	for (const auto& it : g_homes) {
 		ROS_INFO("%s %d: curr\033[33m(%d, %d)\033[0m home_it\033[33m(%d,%d)\033[0m.", __FUNCTION__, __LINE__, curr.X, curr.Y,it.X,it.Y);
-		if (GridMap::pointToCell(it) == GridMap::pointToCell(curr)) {
+		if (it.toCell() == curr.toCell()) {
 			is_found = true;
 			break;
 		}
@@ -334,7 +334,7 @@ void ACleanMode::path_set_home(const Point32_t& curr)
 			g_homes.push_back(curr);
 		}
 	}
-	else if(GridMap::pointToCell(curr) == GridMap::pointToCell(g_zero_home))
+	else if(curr.toCell() == g_zero_home.toCell())
 	{
 		g_start_point_seen_charger = true;
 		g_have_seen_charger = true;
@@ -542,7 +542,7 @@ Cells ACleanMode::points_generate_cells(Points &targets)
 //	displayCellPath(targets);
 	Cells path{};
 	for(const Point32_t& point : targets) {
-		path.push_back(GridMap::pointToCell(point));
+		path.push_back(point.toCell());
 	}
 	return path;
 }

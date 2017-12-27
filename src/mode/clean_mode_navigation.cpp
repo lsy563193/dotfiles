@@ -86,7 +86,7 @@ bool CleanModeNav::mapMark()
 		ROS_ERROR("-------------------------------------------------------");
 		auto start = *passed_path_.begin();
 		passed_path_.erase(std::remove_if(passed_path_.begin(),passed_path_.end(),[&start](Point32_t& it){
-			return GridMap::pointToCell(it) == GridMap::pointToCell(start);
+			return it.toCell() == start.toCell();
 		}),passed_path_.end());
 		clean_path_algorithm_->displayCellPath(points_generate_cells(passed_path_));
 		ROS_ERROR("-------------------------------------------------------");
@@ -496,29 +496,28 @@ bool CleanModeNav::ActionFollowWallisFinish()
 
 bool CleanModeNav::isOverOriginLine()
 {
-	auto s_curr_p = nav_map.getCurrPoint();
+	auto curr = nav_map.getCurrPoint();
 	auto p_mt = boost::dynamic_pointer_cast<IMoveType>(sp_action_);
-	if ((p_mt->target_point_.Y > p_mt->start_point_.Y && (p_mt->start_point_.Y - s_curr_p.Y) > 120)
-		|| (p_mt->target_point_.Y < p_mt->start_point_.Y && (s_curr_p.Y - p_mt->start_point_.Y) > 120))
+	if ((p_mt->target_point_.Y > p_mt->start_point_.Y && (p_mt->start_point_.Y - curr.Y) > 120)
+		|| (p_mt->target_point_.Y < p_mt->start_point_.Y && (curr.Y - p_mt->start_point_.Y) > 120))
 	{
-		ROS_WARN("origin(%d,%d) curr_p(%d, %d), p_mt->target_point__(%d, %d)",p_mt->start_point_.X, p_mt->start_point_.Y,  s_curr_p.X, s_curr_p.Y, p_mt->target_point_.X, p_mt->target_point_.Y);
-		auto curr = nav_map.pointToCell(s_curr_p);
+		ROS_WARN("origin(%d,%d) curr_p(%d, %d), p_mt->target_point__(%d, %d)",p_mt->start_point_.X, p_mt->start_point_.Y,  curr.X, curr.Y, p_mt->target_point_.X, p_mt->target_point_.Y);
 		auto target_angle = (p_mt->target_point_.Y > p_mt->start_point_.Y) ? -900 : 900;
 		if (std::abs(ranged_angle(robot::instance()->getPoseAngle() - target_angle)) < 50) // If robot is directly heading to the opposite side of target line, stop.
 		{
-			ROS_WARN("%s %d: Opposite to target angle. s_curr_p(%d, %d), p_mt->target_point_(%d, %d), gyro(%d), target_angle(%d)", __FUNCTION__, __LINE__, s_curr_p.X, s_curr_p.Y, p_mt->target_point_.X, p_mt->target_point_.Y, robot::instance()->getPoseAngle(), target_angle);
+			ROS_WARN("%s %d: Opposite to target angle. curr(%d, %d), p_mt->target_point_(%d, %d), gyro(%d), target_angle(%d)", __FUNCTION__, __LINE__, curr.X, curr.Y, p_mt->target_point_.X, p_mt->target_point_.Y, robot::instance()->getPoseAngle(), target_angle);
 			return true;
 		}
-		else if (nav_map.isBlockCleaned(curr.X, curr.Y)) // If robot covers a big block, stop.
+		else if (nav_map.isBlockCleaned(curr.toCell().X, curr.toCell().Y)) // If robot covers a big block, stop.
 		{
-			ROS_WARN("%s %d: Back to cleaned place, current(%d, %d), s_curr_p(%d, %d), p_mt->target_point_(%d, %d).",
-					 __FUNCTION__, __LINE__, curr.X, curr.Y, s_curr_p.X, s_curr_p.Y, p_mt->target_point_.X, p_mt->target_point_.Y);
+			ROS_WARN("%s %d: Back to cleaned place, current(%d, %d), curr(%d, %d), p_mt->target_point_(%d, %d).",
+					 __FUNCTION__, __LINE__, curr.X, curr.Y, curr.X, curr.Y, p_mt->target_point_.X, p_mt->target_point_.Y);
 			return true;
 		}
 		else{
 			ROS_WARN("%s %d: Dynamic adjust the origin line and target line, so it can smoothly follow the wall to clean..",__FUNCTION__,__LINE__);
-			p_mt->target_point_.Y += s_curr_p.Y - p_mt->start_point_.Y;
-			p_mt->start_point_.Y = s_curr_p.Y;
+			p_mt->target_point_.Y += curr.Y - p_mt->start_point_.Y;
+			p_mt->start_point_.Y = curr.Y;
 		}
 	}
 

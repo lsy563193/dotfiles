@@ -160,7 +160,7 @@ Points APathAlgorithm::cells_generate_points(Cells &path)
 }
 
 bool APathAlgorithm::generateShortestPath(GridMap &map, const Point32_t &curr,const Point32_t &target, const MapDirection &last_dir, Points &plan_path) {
-	auto path_cell = findShortestPath(map, GridMap::pointToCell(curr), GridMap::pointToCell(target),last_dir, false);
+	auto path_cell = findShortestPath(map, curr.toCell(), target.toCell(),last_dir, false);
 
 	plan_path = cells_generate_points(path_cell);
 }

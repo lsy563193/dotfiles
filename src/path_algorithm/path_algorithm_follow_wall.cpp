@@ -8,7 +8,6 @@
 
 bool WFCleanPathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, const MapDirection &last_dir, Points &targets)
 {
-	auto curr_cell = GridMap::pointToCell(curr);
 	if (targets.empty()) {//fw ->linear
 		auto curr = GridMap::getCurrPoint();
 		curr.TH = 0;

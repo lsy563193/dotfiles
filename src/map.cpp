@@ -288,13 +288,6 @@ int16_t GridMap::countToCell(int32_t count) {
 	}
 }
 
-Cell_t GridMap::pointToCell(Point32_t pnt) {
-	Cell_t cell;
-	cell.X = countToCell(pnt.X);
-	cell.Y = countToCell(pnt.Y);
-	return cell;
-}
-
 void GridMap::setCells(int8_t count, int16_t cell_x, int16_t cell_y, CellState state)
 {
 	int8_t i, j;
