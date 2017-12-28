@@ -7,7 +7,8 @@
 Odom charger_pose;
 ActionBackFromCharger::ActionBackFromCharger()
 {
-//	path_set_home(nav_map.getPosition());
+	ROS_INFO("%s %d, Init action back from charger.", __FUNCTION__, __LINE__);
+//	path_set_home(nav_map.getCurrCell());
 
 	vacuum.setMode(Vac_Normal, false);
 	brush.normalOperate();

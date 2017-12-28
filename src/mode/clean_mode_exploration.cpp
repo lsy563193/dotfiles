@@ -63,7 +63,7 @@ bool CleanModeExploration::mapMark()
 	exploration_map.setExplorationCleaned();
 	exploration_map.setBlocks();
 	exploration_map.markRobot(CLEAN_MAP);
-	robot::instance()->pubCleanMapMarkers(exploration_map, points_generate_cells(plan_path_));
+	robot::instance()->pubCleanMapMarkers(exploration_map, pointsGenerateCells(plan_path_));
 	passed_path_.clear();
 	return false;
 }
@@ -155,7 +155,7 @@ bool CleanModeExploration::setNextState() {
 				new_dir_ = (MapDirection)plan_path_.front().TH;
 				ROS_WARN("new_dir_(%d)", new_dir_);
 				plan_path_.pop_front();
-				clean_path_algorithm_->displayCellPath(points_generate_cells(plan_path_));
+				clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
 				state_confirm = true;
 			}
 			else
@@ -249,7 +249,7 @@ void CleanModeExploration::chargeDetect(bool state_now, bool state_last) {
 
 void CleanModeExploration::printMapAndPath()
 {
-	clean_path_algorithm_->displayCellPath(points_generate_cells(passed_path_));
+	clean_path_algorithm_->displayCellPath(pointsGenerateCells(passed_path_));
 	exploration_map.print(CLEAN_MAP,getPosition().toCell().X,getPosition().toCell().Y);
 }
 

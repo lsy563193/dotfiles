@@ -54,7 +54,6 @@ FILE(GLOB PP_SRC
 	src/path_algorithm/path_algorithm_follow_wall.cpp
 	src/path_algorithm/path_algorithm_spot.cpp
 	src/path_algorithm/path_algorithm_go_home.cpp
-	src/path_algorithm/shortest_path_algorithm.cpp
 
 	src/speed_governor/*
 

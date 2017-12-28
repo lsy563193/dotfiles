@@ -95,7 +95,7 @@ bool ACleanMode::isFinish()
 			setNextModeDefault();
 			return true;
 		}
-	} while (!setNextAction());
+	} while (ros::ok() && !setNextAction());
 
 	return false;
 }
@@ -239,6 +239,14 @@ void ACleanMode::stateInit(int next)
 	if (next == st_self_check) {
 		led.set_mode(LED_STEADY, LED_GREEN);
 	}
+	if (next == st_charge)
+	{
+		// Nothing
+	}
+	if (next == st_resume_low_battery_charge)
+	{
+		// Nothing
+	}
 }
 
 //uint8_t ACleanMode::saveFollowWall(bool is_left)
@@ -297,7 +305,7 @@ bool ACleanMode::setNextStateForGoHomePoint(GridMap &map)
 		// New path to home cell is generated.
 		new_dir_ = (MapDirection)plan_path_.front().TH;
 		plan_path_.pop_front();
-		go_home_path_algorithm_->displayCellPath(points_generate_cells(plan_path_));
+		go_home_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
 	}
 	else
 	{
@@ -537,7 +545,7 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 	return true;
 }
 
-Cells ACleanMode::points_generate_cells(Points &targets)
+Cells ACleanMode::pointsGenerateCells(Points &targets)
 {
 //	displayCellPath(targets);
 	Cells path{};

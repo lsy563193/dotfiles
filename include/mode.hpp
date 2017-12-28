@@ -233,7 +233,7 @@ public:
 	 * */
 	bool estimateChargerPos(uint32_t rcon_value);
 
-	Cells points_generate_cells(Points &targets);
+	Cells pointsGenerateCells(Points &targets);
 
 	virtual bool ActionFollowWallisFinish();
 	void setRconPos(Point32_t pos);
@@ -315,7 +315,6 @@ private:
 	bool isOverOriginLine();
 	bool isBlockCleared();
 	bool enterPause();
-	bool enterLowBatteryCharge();
 	bool resumePause();
 	bool resumeLowBatteryCharge();
 	bool switchToGoHomePointState();

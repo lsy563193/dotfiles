@@ -10,6 +10,16 @@ MovementCharge::MovementCharge()
 {
 	ROS_INFO("%s %d: Start charge action. Battery voltage \033[32m%5.2f V\033[0m.", __FUNCTION__, __LINE__, (float)battery.getVoltage()/100.0);
 	led.set_mode(LED_BREATH, LED_ORANGE);
+	wheel.stop();
+	brush.stop();
+	vacuum.stop();
+
+	if(lidar.isScanOriginalReady())
+	{
+		lidar.motorCtrl(OFF);
+		lidar.setScanOriginalReady(0);
+	}
+
 	charger.setStart();
 	usleep(30000);
 
@@ -22,6 +32,7 @@ MovementCharge::MovementCharge()
 MovementCharge::~MovementCharge()
 {
 	wheel.stop();
+	charger.setStop();
 	ROS_INFO("%s %d: End movement turn for charger.", __FUNCTION__, __LINE__);
 }
 
@@ -62,10 +73,7 @@ bool MovementCharge::isFinish()
 		if (charger.getChargeStatus())
 			turn_for_charger_ = false;
 		if (ros::Time::now().toSec() - start_turning_time_stamp_ > 3)
-		{
-			charger.setStop();
 			return true;
-		}
 	}
 
 	return false;
