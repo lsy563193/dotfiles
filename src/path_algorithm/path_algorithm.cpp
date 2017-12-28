@@ -94,7 +94,7 @@ void APathAlgorithm::optimizePath(GridMap &map, Cells& path)
 				if (it_ptr3->X != (x_min + x_max) / 2) {
 					it_ptr2->X = it_ptr3->X = (x_min + x_max) / 2;
 				}
-				//ROS_INFO("%s %d: Loop i:%d\tx_min: %d\tx_max: %d\tget x:%d", __FUNCTION__, __LINE__, i, x_min, x_max, (x_min + x_max) / 2);
+				//ROS_INFO("%s %d: Loop i:%d\tx_min_forward: %d\tx_max_forward: %d\tget x:%d", __FUNCTION__, __LINE__, i, x_min_forward, x_max_forward, (x_min_forward + x_max_forward) / 2);
 			} else {
 				int16_t y_min, y_max;
 				y_min = y_max = it_ptr2->Y;

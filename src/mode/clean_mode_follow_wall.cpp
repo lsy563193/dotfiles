@@ -90,9 +90,9 @@ bool CleanModeFollowWall::setNextState()
 ////	path_update_cell_history();
 //	int16_t	val = 0;
 //	uint16_t i = 0;
-//	int16_t x_min, x_max, y_min, y_max;
-//	fw_map.getMapRange(CLEAN_MAP, &x_min, &x_max, &y_min, &y_max);
-//	Cell_t out_cell {int16_t(x_max + 1),int16_t(y_max + 1)};
+//	int16_t x_min_forward, x_max_forward, y_min, y_max;
+//	fw_map.getMapRange(CLEAN_MAP, &x_min_forward, &x_max_forward, &y_min, &y_max);
+//	Cell_t out_cell {int16_t(x_max_forward + 1),int16_t(y_max + 1)};
 //
 //	fw_map.markRobot(CLEAN_MAP);//note: To clear the obstacle when check isolated, please don't remove it!
 //	auto curr = getPosition();

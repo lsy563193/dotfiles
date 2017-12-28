@@ -607,7 +607,7 @@ void robot::pubFitLineMarker(visualization_msgs::Marker fit_line_marker)
 	fit_line_marker_pub_.publish(fit_line_marker);
 }
 
-void robot::pubPointMarkers(const std::vector<Vector2<double>> *points, std::string frame_id)
+void robot::pubPointMarkers(const std::deque<Vector2<double>> *points, std::string frame_id)
 {
 	visualization_msgs::Marker point_marker;
 	point_marker.ns = "point_marker";

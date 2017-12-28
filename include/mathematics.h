@@ -106,19 +106,17 @@
      */
     inline T SquaredLength() const
     {
-      return sqrt(X) + sqrt(Y);
+      return pow(X,2) + pow(Y,2);
     }
 
     /**
      * Returns the length of the vector
      * @return length of the vector
      */
-/*
-    inline int16_t Length() const
+    inline T Length() const
     {
       return sqrt(SquaredLength());
     }
-*/
 
     /**
      * Returns the square of the distance to the given vector

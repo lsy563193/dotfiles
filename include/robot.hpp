@@ -46,7 +46,7 @@ public:
 	void pubLineMarker(const std::vector<LineABC> *lines);
 	void pubLineMarker(std::vector<std::vector<Vector2<double>> > *groups);
 	void pubFitLineMarker(visualization_msgs::Marker fit_line_marker);
-	void pubPointMarkers(const std::vector<Vector2<double>> *point, std::string frame_id);
+	void pubPointMarkers(const std::deque<Vector2<double>> *point, std::string frame_id);
 	void setCleanMapMarkers(int8_t x, int8_t y, CellState type);
 	void pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path, Cell_t* cell_p = nullptr);
 

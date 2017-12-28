@@ -276,7 +276,7 @@ void GridMap::convertFromSlamMap(float threshold)
 				auto data_map_x_max = ((data_map_x + multi/2) < width) ? (data_map_x + multi/2) : width;
 				auto data_map_y_min = (data_map_y > multi/2) ? (data_map_y - multi/2) : 0;
 				auto data_map_y_max = ((data_map_y + multi/2) < height) ? (data_map_y + multi/2) : height;
-				//ROS_INFO("%s %d: data map: x_min(%d), x_max(%d), y_min(%d), y_max(%d)",
+				//ROS_INFO("%s %d: data map: x_min_forward(%d), x_max_forward(%d), y_min(%d), y_max(%d)",
 				//		 __FUNCTION__, __LINE__, data_map_x_min, data_map_x_max, data_map_y_min, data_map_y_max);
 
 				// Get the slam map data s_index_ of this range.

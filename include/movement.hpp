@@ -185,9 +185,9 @@ public:
 	bool isFinish() override ;
 private:
 	class Paras;
-	Vector2<double> get_middle_point(Vector2<double> p1, Vector2<double> p2,Paras para);
-	bool check_is_valid(Vector2<double> point, Paras para, sensor_msgs::LaserScan scan);
-	bool check_obstacle(sensor_msgs::LaserScan scan, const Paras para);
+	Vector2<double> get_middle_point(const Vector2<double>& p1,const Vector2<double>& p2,const Paras& para);
+	bool check_is_valid(const Vector2<double>& point, Paras& para, sensor_msgs::LaserScan& scan);
+	bool check_corner(sensor_msgs::LaserScan scan, const Paras para);
 	Vector2<double> polar_to_cartesian(double polar,int i);
 	bool calcLidarPath();
 	bool is_sp_turn{};
@@ -198,44 +198,70 @@ public:
 	explicit Paras(bool is_left):is_left_(is_left)
 	{
 		narrow = is_left ? 0.187 : 0.197;
-		x_min = LIDAR_OFFSET_X;
-		x_max = is_left ? 0.3 : 0.25;
 
-		y_min = 0;
+		y_min = 0.0;
 		y_max = is_left ? 0.3 : 0.25;
 
+		x_min_forward = LIDAR_OFFSET_X;
+		x_max_forward = is_left ? 0.3 : 0.25;
 		auto y_start_forward = is_left ? 0.06: -0.06;
 		auto y_end_forward = is_left ? -ROBOT_RADIUS: ROBOT_RADIUS;
 		y_min_forward = std::min(y_start_forward, y_end_forward);
 		y_max_forward = std::max(y_start_forward, y_end_forward);
 
-		auto y_side_start = is_left ? 0.06: -0.06;
-		auto y_side_end = is_left ? -narrow: narrow;
-		y_min_forward = std::min(y_side_start, y_side_end);
-		y_max_forward = std::max(y_side_start, y_side_end);
+		auto x_side_start = 0.0;
+		auto x_side_end = ROBOT_RADIUS;
+		x_min_side = std::min(x_side_start, x_side_end);
+		x_max_side = std::max(x_side_start, x_side_end);
+
+		auto y_side_start = 0.0;
+		auto y_side_end = is_left ? narrow: -narrow;
+		y_min_side = std::min(y_side_start, y_side_end);
+		y_max_side = std::max(y_side_start, y_side_end);
+
+		auto y_point1_start_corner = is_left ? 0.3 : -0.3;
+		auto y_point1_end_corner = is_left ? -4.0 : 4.0;
+		y_min_point1_corner = std::min(y_point1_start_corner, y_point1_end_corner);
+		y_max_point1_corner = std::max(y_point1_start_corner, y_point1_end_corner);
+
+	 	auto y_point1_start = 0.0;
+		auto y_point1_end = is_left ? 4.0 : -4.0;
+		y_min_point1 = std::min(y_point1_start, y_point1_end);
+		y_max_point1 = std::max(y_point1_start, y_point1_end);
+
+		auto y_target_start = is_left ? ROBOT_RADIUS : -ROBOT_RADIUS;
+		auto y_target_end = is_left ? 0.4 : -4.0;
+		y_min_target = std::min(y_point1_start, y_point1_end);
+		y_max_target = std::max(y_point1_start, y_point1_end);
 	};
 
-	bool inRange(const Vector2<double> &point) const {
-		return (point.X > x_min && (point.X < x_max && point.Y > y_min && point.X < y_max));
+	bool inPoint1Range(const Vector2<double> &point, bool is_corner) const {
+		if(is_corner)
+			return (point.X > 0 && point.X < 4 && point.Y > y_min_point1_corner && point.Y < y_max_point1_corner);
+		else
+			return (point.X > -4 && point.X < 0.3 && point.Y > y_min_point1 && point.Y < y_max_point1);
 	}
+
 	bool inTargetRange(const Vector2<double> &target) {
-		return is_left_ ? ((target.X < 0 && target.Y < 0.4 && target.Y > -ROBOT_RADIUS) ||
-											 (target.X < CHASE_X && fabs(target.Y) < ROBOT_RADIUS))
-										: ((target.X < 0 && target.Y > -0.4 && target.Y < ROBOT_RADIUS) ||
-											 (target.X < CHASE_X && fabs(target.Y) < ROBOT_RADIUS));
+		return target.X < 4
+					 && ((target.X > CHASE_X && fabs(target.Y) < ROBOT_RADIUS)
+							 || (target.X > 0  && target.Y >y_min_target && target.Y < y_max_target ));
 	}
+
 	bool inForwardRange(const Vector2<double> &point) const {
-		return point.X > x_min && point.X < x_max && point.Y > y_min_forward && point.Y < y_max_forward;
+		return point.X > x_min_forward && point.X < x_max_forward && point.Y > y_min_forward && point.Y < y_max_forward;
 	}
 
 	bool inSidedRange(const Vector2<double> &point) const {
-		return point.X > x_min && point.X < x_max && point.Y > y_min_side && point.Y < y_max_side;
+		return point.X > x_min_side && point.X < x_max_side && point.Y > y_min_side && point.Y < y_max_side;
 	}
 
 	double narrow;
 	bool is_left_;
-	double x_min;
-	double x_max;
+	double x_min_forward;
+	double x_max_forward;
+	double x_min_side;
+	double x_max_side;
 
 	double y_min;
 	double y_max;
@@ -245,6 +271,15 @@ public:
 
 	double y_min_side;
 	double y_max_side;
+
+	double y_min_point1_corner;
+	double y_max_point1_corner;
+	double y_min_point1;
+	double y_max_point1;
+
+	double y_min_target;
+	double y_max_target;
+
 	const double CHASE_X = 0.107;
 };
 
