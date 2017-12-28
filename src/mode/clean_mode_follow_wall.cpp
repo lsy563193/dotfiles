@@ -56,7 +56,7 @@ bool CleanModeFollowWall::mapMark() {
 bool CleanModeFollowWall::setNextAction()
 {
 	PP_INFO();
-	if (!isInitFinished_)
+	if (state_i_ == st_init)
 		return ACleanMode::setNextAction();
 	ROS_WARN("%s,%d: mt_follow_wall_left", __FUNCTION__, __LINE__);
 	action_i_ = ac_follow_wall_left;

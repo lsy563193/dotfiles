@@ -72,7 +72,7 @@ bool CleanModeExploration::mapMark()
 
 bool CleanModeExploration::isFinish()
 {
-	if (isInitFinished_)
+	if (state_i_ == st_init)
 		mapMark();
 
 	return ACleanMode::isFinish();
@@ -95,7 +95,7 @@ bool CleanModeExploration::isExit() {
 bool CleanModeExploration::setNextAction() {
 	PP_INFO();
 	//todo action convert
-	if (!isInitFinished_)
+	if (state_i_ == st_init)
 		return ACleanMode::setNextAction();
 	else if(state_i_ == st_clean)
 		action_i_ = ac_linear;
@@ -112,22 +112,27 @@ bool CleanModeExploration::setNextAction() {
 bool CleanModeExploration::setNextState() {
 	PP_INFO();
 
-	if (!isInitFinished_)
+	if (state_i_ == st_init)
 		return true;
 
 	bool state_confirm = false;
 	while (ros::ok() && !state_confirm)
 	{
-		if (state_i_ == st_null)
+		if (state_i_ == st_init)
 		{
-			auto curr = updatePosition();
-			passed_path_.push_back(curr);
-			home_points_.back().TH = robot::instance()->getWorldPoseAngle();
-			PP_INFO();
+			if (action_i_ == ac_open_slam)
+			{
+				auto curr = updatePosition();
+				passed_path_.push_back(curr);
+				home_points_.back().TH = robot::instance()->getWorldPoseAngle();
+				PP_INFO();
 
-			state_i_ = st_clean;
-			stateInit(state_i_);
-			action_i_ = ac_null;
+				state_i_ = st_clean;
+				stateInit(state_i_);
+				action_i_ = ac_null;
+			}
+			else
+				state_confirm = true;
 		}
 		else if (isExceptionTriggered())
 		{

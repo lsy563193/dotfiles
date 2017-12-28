@@ -96,7 +96,7 @@ bool CleanModeSpot::isExit()
 
 bool CleanModeSpot::setNextAction()
 {
-	if (!isInitFinished_)
+	if (state_i_ == st_init)
 		return ACleanMode::setNextAction();
 	else if (state_i_ == st_clean)
 	{
@@ -115,7 +115,7 @@ bool CleanModeSpot::setNextState()
 {
 	PP_INFO();
 
-	if (!isInitFinished_)
+	if (state_i_ == st_init)
 		return true;
 
 	bool state_confirm = false;

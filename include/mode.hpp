@@ -263,6 +263,7 @@ protected:
 	int state_i_{st_clean};
 	enum {
 		st_null,
+		st_init,
 		st_clean,
 		st_go_home_point,
 		st_go_to_charger,
@@ -272,8 +273,8 @@ protected:
 		st_exploration,
 		st_charge,
 		st_resume_low_battery_charge,
+		st_pause,
 	};
-	bool isInitFinished_{false};
 	Point32_t g_zero_home{0,0,0};
 	bool found_temp_charger_{};
 	bool in_rcon_signal_range_{};
@@ -314,19 +315,19 @@ private:
 	bool isNewLineReach();
 	bool isOverOriginLine();
 	bool isBlockCleared();
-	bool enterPause();
-	bool resumePause();
-	bool resumeLowBatteryCharge();
-	bool switchToGoHomePointState();
+	void enterPause();
+	void resumePause();
+	void resumeLowBatteryCharge();
+	void switchToGoHomePointState();
 
-	bool paused_;
-	bool has_aligned_and_open_slam;
+	bool low_battery_charge_{false};
+	bool has_aligned_and_open_slam_{false};
 	float paused_odom_angle_{0};
 	bool moved_during_pause_;
 	Point32_t continue_point_{};
 	bool go_home_for_low_battery_{false};
 
-// For path planning.
+	int saved_state_i_before_pause{st_null};
 
 protected:
 //	Cells home_point_{};

@@ -15,12 +15,10 @@ Point32_t ACleanMode::last_ = {};
 
 ACleanMode::ACleanMode()
 {
-	led.set_mode(LED_FLASH, LED_GREEN, 1000);
 	ev.key_clean_pressed = false;
-	sp_action_.reset(new ActionOpenGyro());
-	action_i_ = ac_open_gyro;
-	state_i_ = st_null;
-	isInitFinished_ = false;
+	state_i_ = st_init;
+	stateInit(state_i_);
+	setNextAction();
 	robot_timer.initWorkTimer();
 	key.resetPressStatus();
 
@@ -39,9 +37,11 @@ ACleanMode::ACleanMode()
 
 bool ACleanMode::setNextAction()
 {
-	if (!isInitFinished_)
+	if (state_i_ == st_init)
 	{
-		if(action_i_ == ac_open_gyro)
+		if (action_i_ == ac_null)
+			action_i_ = ac_open_gyro;
+		else if(action_i_ == ac_open_gyro)
 		{
 			vacuum.setMode(Vac_Save);
 			brush.normalOperate();
@@ -50,10 +50,7 @@ bool ACleanMode::setNextAction()
 		else if(action_i_ == ac_open_lidar)
 			action_i_ = ac_open_slam;
 		else // action_open_slam
-		{
-			isInitFinished_ = true;
 			action_i_ = ac_null;
-		}
 	}
 	else if (isExceptionTriggered())
 		action_i_ = ac_exception_resume;
@@ -79,16 +76,16 @@ void ACleanMode::setNextModeDefault()
 
 bool ACleanMode::isFinish()
 {
-	if (isInitFinished_)
+	if (state_i_ != st_init)
 		updatePath(*map_);
 
-	if (!sp_action_->isFinish())
+	if (sp_action_ != nullptr && !sp_action_->isFinish())
 		return false;
 
 	sp_action_.reset();//for call ~constitution;
 	PP_INFO();
 
-	if (isInitFinished_)
+	if (state_i_ != st_init)
 	{
 		map_->saveBlocks(action_i_ == ac_linear, state_i_ == st_clean);
 		mapMark();
@@ -147,7 +144,6 @@ Point32_t ACleanMode::updatePath(GridMap& map)
 
 void ACleanMode::genNextAction()
 {
-
 	PP_INFO();
 	if(action_i_ == ac_open_gyro)
 		sp_action_.reset(new ActionOpenGyro);
@@ -186,6 +182,12 @@ void ACleanMode::genNextAction()
 
 void ACleanMode::stateInit(int next)
 {
+	if (next == st_init)
+	{
+		action_i_ = ac_null;
+		led.set_mode(LED_FLASH, LED_GREEN, 1000);
+		PP_INFO();
+	}
 	if (next == st_clean) {
 		g_wf_reach_count = 0;
 		led.set_mode(LED_STEADY, LED_GREEN);
