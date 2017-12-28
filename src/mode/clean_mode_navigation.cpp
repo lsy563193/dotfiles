@@ -18,7 +18,7 @@ CleanModeNav::CleanModeNav()
 	if(g_plan_activated)
 		g_plan_activated = false;
 	else
-		speaker.play(VOICE_CLEANING_START);
+		speaker.play(VOICE_CLEANING_START, false);
 
 	has_aligned_and_open_slam_ = false;
 	paused_odom_angle_ = 0;

@@ -13,7 +13,7 @@ CleanModeExploration::CleanModeExploration()
 	event_manager_reset_status();
 	PP_INFO();
 	ROS_INFO("%s %d: Entering Exporation mode\n=========================" , __FUNCTION__, __LINE__);
-	speaker.play(VOICE_EXPLORATION_START);
+	speaker.play(VOICE_EXPLORATION_START, false);
 	action_i_ = ac_open_gyro;
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
 	IMoveType::sp_mode_ = this;

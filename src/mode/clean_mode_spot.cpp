@@ -12,7 +12,7 @@ CleanModeSpot::CleanModeSpot()
 	event_manager_register_handler(this);
 	event_manager_set_enable(true);
 	IMoveType::sp_mode_ = this;
-	speaker.play(VOICE_CLEANING_SPOT);
+	speaker.play(VOICE_CLEANING_SPOT, false);
 	usleep(200000);
 	vacuum.setMode(Vac_Save);
 	brush.fullOperate();
