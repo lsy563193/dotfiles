@@ -208,6 +208,11 @@ void GridMap::reset(uint8_t id)
 		for (idx = 0; idx < MAP_SIZE; idx++) {
 			memset((clean_map[idx]), 0, ((MAP_SIZE + 1) / 2) * sizeof(uint8_t));
 		}
+		g_x_min = g_x_max = g_y_min = g_y_max = 0;
+		xRangeMin = static_cast<int16_t>(g_x_min - (MAP_SIZE - (g_x_max - g_x_min + 1)));
+		xRangeMax = static_cast<int16_t>(g_x_max + (MAP_SIZE - (g_x_max - g_x_min + 1)));
+		yRangeMin = static_cast<int16_t>(g_y_min - (MAP_SIZE - (g_y_max - g_y_min + 1)));
+		yRangeMax = static_cast<int16_t>(g_y_max + (MAP_SIZE - (g_y_max - g_y_min + 1)));
 	}
 #endif
 }

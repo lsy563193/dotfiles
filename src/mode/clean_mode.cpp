@@ -29,6 +29,12 @@ ACleanMode::ACleanMode()
 	home_points_.resize(1,g_zero_home);
 	clean_path_algorithm_.reset();
 	go_home_path_algorithm_.reset();
+
+	// Init odom position here.
+	robot::instance()->initOdomPosition();
+
+	passed_path_.clear();
+	plan_path_.clear();
 }
 
 bool ACleanMode::setNextAction()
@@ -43,7 +49,7 @@ bool ACleanMode::setNextAction()
 		}
 		else if(action_i_ == ac_open_lidar)
 			action_i_ = ac_open_slam;
-		else
+		else // action_open_slam
 		{
 			isInitFinished_ = true;
 			action_i_ = ac_null;

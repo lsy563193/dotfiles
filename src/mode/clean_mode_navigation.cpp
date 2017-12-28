@@ -27,6 +27,7 @@ CleanModeNav::CleanModeNav()
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
 	go_home_path_algorithm_.reset();
 	map_ = &nav_map;
+	map_->reset(CLEAN_MAP);
 }
 
 CleanModeNav::~CleanModeNav()
@@ -194,7 +195,11 @@ bool CleanModeNav::setNextAction()
 			brush.normalOperate();
 		}
 		else if (action_i_ == ac_back_form_charger)
+		{
 			action_i_ = ac_open_lidar;
+			// Init odom position here.
+			robot::instance()->initOdomPosition();
+		}
 		else if (action_i_ == ac_open_lidar)
 		{
 			if (!has_aligned_and_open_slam)
@@ -473,9 +478,11 @@ void CleanModeNav::remoteDirectionLeft(bool state_now, bool state_last)
 
 void CleanModeNav::cliffAll(bool state_now, bool state_last)
 {
-	ROS_WARN("%s %d: Cliff all.", __FUNCTION__, __LINE__);
-
-	ev.cliff_all_triggered = true;
+	if (!ev.cliff_all_triggered)
+	{
+		ROS_WARN("%s %d: Cliff all.", __FUNCTION__, __LINE__);
+		ev.cliff_all_triggered = true;
+	}
 }
 
 void CleanModeNav::batteryHome(bool state_now, bool state_last)

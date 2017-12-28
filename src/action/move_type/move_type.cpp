@@ -77,7 +77,7 @@ bool IMoveType::shouldTurn()
 	{
 //		ev.obs_triggered = BLOCK_FRONT;
 //		g_turn_angle = obs_turn_angle();
-//		ROS_WARN("%s %d: OBS triggered, turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
+		ROS_WARN("%s %d: OBS triggered.", __FUNCTION__, __LINE__);
 		return true;
 	}
 

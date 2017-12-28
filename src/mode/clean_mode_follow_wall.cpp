@@ -18,6 +18,7 @@ CleanModeFollowWall::CleanModeFollowWall()
 	clean_path_algorithm_.reset(new WFCleanPathAlgorithm);
 	go_home_path_algorithm_.reset(new GoHomePathAlgorithm(nav_map, home_points_));
 	map_ = &fw_map;
+	map_->reset(CLEAN_MAP);
 }
 
 CleanModeFollowWall::~CleanModeFollowWall()

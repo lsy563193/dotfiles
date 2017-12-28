@@ -30,7 +30,6 @@ bool MoveTypeLinear::isFinish()
 	if (IMoveType::isFinish())
 		return true;
 
-	auto p_clean_mode = (ACleanMode*)sp_mode_;
 	if (sp_movement_->isFinish()) {
 		PP_INFO();
 

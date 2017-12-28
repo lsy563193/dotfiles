@@ -6,7 +6,8 @@
 #include <error.h>
 #include "arch.hpp"
 
-CleanModeExploration::CleanModeExploration() {
+CleanModeExploration::CleanModeExploration()
+{
 	event_manager_register_handler(this);
 	event_manager_set_enable(true);
 	event_manager_reset_status();
@@ -17,6 +18,7 @@ CleanModeExploration::CleanModeExploration() {
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
 	IMoveType::sp_mode_ = this;
 	map_ = &exploration_map;
+	map_->reset(CLEAN_MAP);
 }
 
 CleanModeExploration::~CleanModeExploration()
