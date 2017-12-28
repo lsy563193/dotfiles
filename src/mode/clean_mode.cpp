@@ -248,9 +248,9 @@ void ACleanMode::stateInit(int next)
 //	//int32_t	x2, y2;
 //	std::string msg = "cell:";
 //	GridMap::robotToCell(getPosition(), dy * CELL_SIZE, 0, x, y);
-//	//robot_to_point(robot::instance()->getPoseAngle(), dy * CELL_SIZE, 0, &x2, &y2);
+//	//robot_to_point(robot::instance()->getWorldPoseAngle(), dy * CELL_SIZE, 0, &x2, &y2);
 //	//ROS_WARN("%s %d: d_cell(0, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
-//	//			, __FUNCTION__, __LINE__, dy, robot::instance()->getPoseAngle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
+//	//			, __FUNCTION__, __LINE__, dy, robot::instance()->getWorldPoseAngle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
 ////	bool should_save_for_MAP = !(cm_is_navigation() && mt.is_follow_wall() && Movement::getMoveDistance() < 0.1);
 //	temp_fw_cells.push_back({x, y});
 //	msg += "[0," + std::to_string(dy) + "](" + std::to_string(x) + "," + std::to_string(y) + ")";
@@ -343,9 +343,9 @@ void ACleanMode::path_set_home(const Point32_t& curr)
 
 void ACleanMode::setRconPos(float cd,float dist)
 {
-	float yaw = robot::instance()->getPoseAngle()/10.0;
-	float wpx = cosf( (float)ranged_angle((yaw+cd)*10)/10.0 * PI/180.0 )*dist+robot::instance()->getPoseX();
-	float wpy = sinf( (float)ranged_angle((yaw+cd)*10)/10.0 * PI/180.0 )*dist+robot::instance()->getPoseY();
+	float yaw = robot::instance()->getWorldPoseAngle()/10.0;
+	float wpx = cosf( (float)ranged_angle((yaw+cd)*10)/10.0 * PI/180.0 )*dist+ robot::instance()->getWorldPoseX();
+	float wpy = sinf( (float)ranged_angle((yaw+cd)*10)/10.0 * PI/180.0 )*dist+ robot::instance()->getWorldPoseY();
 	charger_pos_ = {(int32_t)(wpx*1000/CELL_SIZE), (int32_t)(wpy*1000/CELL_SIZE),(int16_t)0};
 	if(found_charger_)
 		g_homes.push_back(charger_pos_);

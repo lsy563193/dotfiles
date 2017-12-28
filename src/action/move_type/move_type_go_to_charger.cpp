@@ -36,7 +36,7 @@ bool MoveTypeGoToCharger::isFinish()
 			p_back_movement_.reset(new MovementBack(back_distance_, BACK_MAX_SPEED));
 		if (turn_angle != 0)
 		{
-			turn_target_angle_ = robot::instance()->getPoseAngle() + turn_angle;
+			turn_target_angle_ = robot::instance()->getWorldPoseAngle() + turn_angle;
 			p_turn_movement_.reset(new MovementTurn(turn_target_angle_, ROTATE_TOP_SPEED));
 		}
 	}

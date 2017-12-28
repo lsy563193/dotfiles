@@ -278,9 +278,9 @@ bool Lidar::findLines(std::vector<LineABC> *lines,bool combine)
 	std::vector<Vector2<double>> point_set;
 	for(i=0;i<n_angle;i++){
 		if(scan_data.ranges[i] <= MAX_LIDAR_DIST){
-			double cor_yaw =(double) robot::instance()->getPoseAngle()/10.0;
-			double cor_p_x =(double) robot::instance()->getPoseX();
-			double cor_p_y =(double) robot::instance()->getPoseY();
+			double cor_yaw =(double) robot::instance()->getWorldPoseAngle()/10.0;
+			double cor_p_x =(double) robot::instance()->getWorldPoseX();
+			double cor_p_y =(double) robot::instance()->getWorldPoseY();
 
 			double ranges = scan_data.ranges[i];
 			lidar_point_pos.X = cos(( i + cor_yaw + 180.0)*PI/180.0 ) *ranges + cor_p_x;//in meters
@@ -1319,7 +1319,7 @@ int Lidar::compLaneDistance()
 	}
 	ROS_INFO("compLaneDistance");
 	seq = tmp_scan_data.header.seq;
-	int cur_angle = robot::instance()->getPoseAngle() / 10;
+	int cur_angle = robot::instance()->getWorldPoseAngle() / 10;
 #if 0
 	angle_from = 149 - cur_angle;
 	angle_to = 210 - cur_angle;

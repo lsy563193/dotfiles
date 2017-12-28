@@ -280,9 +280,9 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	robot_pose.twist.twist.angular.z = 0.0;
 	odom_pub_.publish(robot_pose);
 	//printf("Map->base(%f, %f, %f). Map->robot (%f, %f, %f)\n", tmp_x, tmp_y, RAD2DEG(tmp_yaw), robot_x_, robot_y_, RAD2DEG(robot_yaw_));
-	pose.setX(robot_x_);
-	pose.setY(robot_y_);
-	pose.setAngle(ranged_angle(robot_yaw_ * 1800 / M_PI));
+	world_pose_.setX(robot_x_);
+	world_pose_.setY(robot_y_);
+	world_pose_.setAngle(ranged_angle(robot_yaw_ * 1800 / M_PI));
 #else
 	pose.setX(tmp_x_);
 	pose.setY(tmp_y_);
@@ -744,7 +744,7 @@ static int32_t xCount{}, yCount{};
 
 Point32_t getPosition(void)
 {
-	return {(int32_t)round(xCount), (int32_t)round(yCount),robot::instance()->getPoseAngle()};
+	return {(int32_t)round(xCount), (int32_t)round(yCount), robot::instance()->getWorldPoseAngle()};
 }
 
 int32_t cellToCount(int16_t i) {
@@ -776,8 +776,8 @@ bool isXAxis(MapDirection dir)
 
 Point32_t updatePosition()
 {
-	auto pos_x = robot::instance()->getPoseX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-	auto pos_y = robot::instance()->getPoseY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	auto pos_x = robot::instance()->getWorldPoseX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	auto pos_y = robot::instance()->getWorldPoseY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	setPosition(pos_x, pos_y);
 //	ROS_INFO("%s %d:", __FUNCTION__, __LINE__);
 	return getPosition();

@@ -125,7 +125,7 @@ bool CleanModeSpot::setNextState()
 			auto curr = updatePosition();
 			passed_path_.push_back(curr);
 
-			home_points_.back().TH = robot::instance()->getPoseAngle();
+			home_points_.back().TH = robot::instance()->getWorldPoseAngle();
 			PP_INFO();
 
 			state_i_ = st_clean;

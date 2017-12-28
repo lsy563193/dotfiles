@@ -274,7 +274,7 @@ bool CleanModeNav::setNextState()
 			auto curr = updatePosition();
 			passed_path_.push_back(curr);
 
-			home_points_.back().TH = robot::instance()->getPoseAngle();
+			home_points_.back().TH = robot::instance()->getWorldPoseAngle();
 			PP_INFO();
 
 			state_i_ = st_clean;
@@ -503,9 +503,10 @@ bool CleanModeNav::isOverOriginLine()
 	{
 		ROS_WARN("origin(%d,%d) curr_p(%d, %d), p_mt->target_point__(%d, %d)",p_mt->start_point_.X, p_mt->start_point_.Y,  curr.X, curr.Y, p_mt->target_point_.X, p_mt->target_point_.Y);
 		auto target_angle = (p_mt->target_point_.Y > p_mt->start_point_.Y) ? -900 : 900;
-		if (std::abs(ranged_angle(robot::instance()->getPoseAngle() - target_angle)) < 50) // If robot is directly heading to the opposite side of target line, stop.
+		if (std::abs(ranged_angle(robot::instance()->getWorldPoseAngle() - target_angle)) < 50) // If robot is directly heading to the opposite side of target line, stop.
 		{
-			ROS_WARN("%s %d: Opposite to target angle. curr(%d, %d), p_mt->target_point_(%d, %d), gyro(%d), target_angle(%d)", __FUNCTION__, __LINE__, curr.X, curr.Y, p_mt->target_point_.X, p_mt->target_point_.Y, robot::instance()->getPoseAngle(), target_angle);
+			ROS_WARN("%s %d: Opposite to target angle. curr(%d, %d), p_mt->target_point_(%d, %d), gyro(%d), target_angle(%d)", __FUNCTION__, __LINE__, curr.X, curr.Y, p_mt->target_point_.X, p_mt->target_point_.Y,
+					 robot::instance()->getWorldPoseAngle(), target_angle);
 			return true;
 		}
 		else if (nav_map.isBlockCleaned(curr.toCell().X, curr.toCell().Y)) // If robot covers a big block, stop.

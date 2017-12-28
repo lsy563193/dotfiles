@@ -17,7 +17,7 @@ ActionFollowWall::ActionFollowWall(bool is_left, bool is_trapped)
 		turn_angle = get_turn_angle(true);
 	else
 		turn_angle = 0;
-	turn_target_angle_ = ranged_angle(robot::instance()->getPoseAngle() + turn_angle);
+	turn_target_angle_ = ranged_angle(robot::instance()->getWorldPoseAngle() + turn_angle);
 	movement_i_ = mm_turn;
 	sp_movement_.reset(new MovementTurn(turn_target_angle_, ROTATE_TOP_SPEED));
 	IMovement::sp_mt_ = this;
@@ -73,7 +73,7 @@ bool ActionFollowWall::isFinish()
 			else if (ev.lidar_triggered || ev.obs_triggered) {
 				PP_INFO();
 				int16_t turn_angle =get_turn_angle(false);
-				turn_target_angle_ = ranged_angle(robot::instance()->getPoseAngle() + turn_angle);
+				turn_target_angle_ = ranged_angle(robot::instance()->getWorldPoseAngle() + turn_angle);
 				movement_i_ = mm_turn;
 				sp_movement_.reset(new MovementTurn(turn_target_angle_, ROTATE_TOP_SPEED));
 				resetTriggeredValue();
@@ -86,7 +86,7 @@ bool ActionFollowWall::isFinish()
 		else if (movement_i_ == mm_back) {
 			movement_i_ = mm_turn;
 			int16_t turn_angle =get_turn_angle(false);
-			turn_target_angle_ = ranged_angle(robot::instance()->getPoseAngle() + turn_angle);
+			turn_target_angle_ = ranged_angle(robot::instance()->getWorldPoseAngle() + turn_angle);
 			sp_movement_.reset(new MovementTurn(turn_target_angle_, ROTATE_TOP_SPEED));
 			resetTriggeredValue();
 		}
@@ -342,7 +342,7 @@ int16_t ActionFollowWall::get_turn_angle(bool use_target_angle)
 			auto cur = getPosition();
 			auto p_clean_mode = (ACleanMode*)sp_mode_;
 			auto tar = p_clean_mode->plan_path_.back();
-			auto tg_turn_angle = ranged_angle(course_to_dest(cur, tar) - robot::instance()->getPoseAngle());
+			auto tg_turn_angle = ranged_angle(course_to_dest(cur, tar) - robot::instance()->getWorldPoseAngle());
 			ROS_INFO("%s %d: target_turn_angle(%d)", __FUNCTION__, __LINE__, tg_turn_angle);
 			turn_angle = (std::abs(ev_turn_angle) > std::abs(tg_turn_angle)) ? ev_turn_angle : tg_turn_angle;
 			ROS_INFO("%s %d: choose the big one(%d)", __FUNCTION__, __LINE__, turn_angle);

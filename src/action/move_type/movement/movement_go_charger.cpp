@@ -18,7 +18,7 @@ void MovementGoToCharger::resetGoToChargerVariables() {
 	move_away_from_charger_cnt = 0;
 	receive_code = 0;
 	current_angle = 0;
-	last_angle = robot::instance()->getPoseAngle();
+	last_angle = robot::instance()->getWorldPoseAngle();
 	angle_offset = 0;
 	gyro_step = 0;
 	around_charger_stub_dir = 0;
@@ -124,7 +124,7 @@ bool MovementGoToCharger::isSwitch()
 		if(gyro_step < 3600)
 		{
 			// Handle for angle
-			current_angle = robot::instance()->getPoseAngle();
+			current_angle = robot::instance()->getWorldPoseAngle();
 			angle_offset = static_cast<float>(ranged_angle((current_angle - last_angle)));
 			ROS_DEBUG("%s %d: Current_Angle = %f, Last_Angle = %f, Angle_Offset = %f, Gyro_Step = %f.", __FUNCTION__, __LINE__, current_angle, last_angle, angle_offset, gyro_step);
 			if (angle_offset < 0)
@@ -487,7 +487,7 @@ bool MovementGoToCharger::isSwitch()
 
 		if(gyro_step < 3600)
 		{
-			current_angle = robot::instance()->getPoseAngle();
+			current_angle = robot::instance()->getWorldPoseAngle();
 			angle_offset = static_cast<float>(ranged_angle((current_angle - last_angle)));
 			ROS_DEBUG("%s %d: Current_Angle = %f, Last_Angle = %f, Angle_Offset = %f, Gyro_Step = %f.", __FUNCTION__, __LINE__, current_angle, last_angle, angle_offset, gyro_step);
 			if (check_position_dir == gtc_check_position_left && angle_offset > 0)

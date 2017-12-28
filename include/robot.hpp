@@ -104,25 +104,25 @@ public:
 	};
 */
 
-	int16_t getPoseAngle()
+	int16_t getWorldPoseAngle()
 	{
 		// It is 10x degrees.
-		return static_cast<int16_t>(pose.getAngle());
+		return static_cast<int16_t>(world_pose_.getAngle());
 	}
 
-	float getPoseX()
+	float getWorldPoseX()
 	{
-		return pose.getX();
+		return world_pose_.getX();
 	}
 
-	float getPoseY()
+	float getWorldPoseY()
 	{
-		return pose.getY();
+		return world_pose_.getY();
 	}
 
-	float getPoseZ()
+	float getWorldPoseZ()
 	{
-		return pose.getZ();
+		return world_pose_.getZ();
 	}
 
 	float getRobotCorrectionX() const
@@ -196,7 +196,7 @@ private:
 
 	bool	is_align_active_;
 
-	Pose pose;
+	Pose world_pose_;
 
 	// This is for the slam correction variables.
 	float	robot_correction_x_;

@@ -123,7 +123,7 @@ bool MovementFollowPointLinear::isCellReach()
 	{
 		ROS_INFO("\033[1m""%s, %d: MovementFollowPointLinear, reach the target cell (%d,%d)!!""\033[0m", __FUNCTION__, __LINE__,
 						 sp_mt_->target_point_.X, sp_mt_->target_point_.Y);
-//		g_turn_angle = ranged_angle(new_dir - robot::instance()->getPoseAngle());
+//		g_turn_angle = ranged_angle(new_dir - robot::instance()->getWorldPoseAngle());
 		return true;
 	}
 
@@ -135,7 +135,7 @@ bool MovementFollowPointLinear::isPoseReach()
 	// Checking if robot has reached target cell and target angle.
 //	PP_INFO();
 	auto target_angle = sp_mt_->target_point_.TH;
-	if (isCellReach() && std::abs(ranged_angle(robot::instance()->getPoseAngle() - target_angle)) < 200)
+	if (isCellReach() && std::abs(ranged_angle(robot::instance()->getWorldPoseAngle() - target_angle)) < 200)
 	{
 		ROS_INFO("\033[1m""%s, %d: MovementFollowPointLinear, reach the target cell and pose(%d,%d,%d)!!""\033[0m", __FUNCTION__, __LINE__,
 				 sp_mt_->target_point_.X, sp_mt_->target_point_.Y, sp_mt_->target_point_.TH);
@@ -212,7 +212,7 @@ bool MovementFollowPointLinear::isPassTargetStop()
 //void MovementFollowPointLinear::setTarget()
 //{
 //	turn_angle = ranged_angle(
-//						course_to_dest(s_curr_p.X, s_curr_p.Y, cm_target_p_.X, cm_target_p_.Y) - robot::instance()->getPoseAngle());
+//						course_to_dest(s_curr_p.X, s_curr_p.Y, cm_target_p_.X, cm_target_p_.Y) - robot::instance()->getWorldPoseAngle());
 //	s_target_p = nav_map.cellToPoint(p_clean_mode->tmp_plan_path_.back());
 //	p_clean_mode->tmp_plan_path_ = p_clean_mode->tmp_plan_path_;
 //}
