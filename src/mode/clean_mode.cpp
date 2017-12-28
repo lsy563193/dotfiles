@@ -156,9 +156,9 @@ void ACleanMode::genNextAction()
 	else if (action_i_ == ac_pause)
 		sp_action_.reset(new ActionPause);
 	else if (action_i_ == ac_linear)
-		sp_action_.reset(new ActionLinear);
+		sp_action_.reset(new MoveTypeLinear);
 	else if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
-		sp_action_.reset(new ActionFollowWall(action_i_ == ac_follow_wall_left, state_i_ == st_trapped));
+		sp_action_.reset(new MoveTypeFollowWall(action_i_ == ac_follow_wall_left, state_i_ == st_trapped));
 	else if (action_i_ == ac_go_to_charger)
 		sp_action_.reset(new MoveTypeGoToCharger);
 	else if (action_i_ == ac_exception_resume)

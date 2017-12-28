@@ -158,7 +158,7 @@ bool MovementFollowWallLidar::calcLidarPath() {
 }
 
 bool MovementFollowWallLidar::isFinish() {
-	auto p_mt = (ActionFollowWall*)(sp_mt_);
+	auto p_mt = (MoveTypeFollowWall*)(sp_mt_);
 	return p_mt->tmp_plan_path_.empty() || p_mt->shouldMoveBack() || p_mt->shouldTurn();
 }
 

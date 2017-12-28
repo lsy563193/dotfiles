@@ -70,8 +70,8 @@ FILE(GLOB PP_SRC
 	src/action/action_check_bumper.cpp
 
 	src/action/move_type/move_type.cpp
-	src/action/move_type/action_linear.cpp
-	src/action/move_type/action_follow_wall.cpp
+		src/action/move_type/move_type_linear.cpp
+        src/action/move_type/move_type_follow_wall.cpp
 	src/action/move_type/move_type_go_to_charger.cpp
 	src/action/move_type/move_type_bumper_hit_test.cpp
 	src/action/move_type/movement/movement.cpp
@@ -90,7 +90,7 @@ FILE(GLOB PP_SRC
 	src/action/move_type/movement/movement_direct_go.cpp
 	src/action/move_type/movement/movement_straight.cpp
 	src/action/move_type/movement/movement_forward_turn.cpp
-				src/action/move_type/movement_follow_point.cpp
+		src/action/move_type/movement/movement_follow_point.cpp
 
 	src/error.cpp
 	src/event_manager.cpp
