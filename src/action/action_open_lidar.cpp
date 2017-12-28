@@ -5,7 +5,7 @@
 #include "arch.hpp"
 
 ActionOpenLidar::ActionOpenLidar() {
-	PP_INFO();
+	ROS_INFO("%s %d: Enter action open lidar.", __FUNCTION__, __LINE__);
 	wheel.stop();
 
 	lidar.motorCtrl(ON);
@@ -15,7 +15,13 @@ ActionOpenLidar::ActionOpenLidar() {
 }
 
 bool ActionOpenLidar::isFinish(){
-	return (lidar.isScanOriginalReady() == 1);
+	if (lidar.isScanOriginalReady() == 1)
+	{
+		ROS_INFO("%s %d: Action open lidar succeed.", __FUNCTION__, __LINE__);
+		return true;
+	}
+
+	return false;
 }
 
 void ActionOpenLidar::run() {

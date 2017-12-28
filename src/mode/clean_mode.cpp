@@ -79,7 +79,7 @@ bool ACleanMode::isFinish()
 	if (state_i_ != st_init)
 		updatePath(*map_);
 
-	if (sp_action_ != nullptr && !sp_action_->isFinish())
+	if (!(sp_action_ == nullptr || sp_action_->isFinish()))
 		return false;
 
 	sp_action_.reset();//for call ~constitution;
@@ -253,7 +253,8 @@ void ACleanMode::stateInit(int next)
 	}
 	if (next == st_resume_low_battery_charge)
 	{
-		// Nothing
+		led.set_mode(LED_STEADY, LED_GREEN);
+		PP_INFO();
 	}
 }
 

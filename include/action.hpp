@@ -50,6 +50,7 @@ public:
 class ActionOpenLidar :public IAction
 {
 public:
+	//todo: timeout handling??
 	ActionOpenLidar();
 	bool isFinish();
 	void run();

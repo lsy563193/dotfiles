@@ -13,6 +13,10 @@ public:
 
 	bool isReadyToClean(void);
 
+	bool shouldGoHome(void);
+
+	bool isReadyToResumeCleaning(void);
+
 	bool isLow(void);
 
 	uint16_t getVoltage()

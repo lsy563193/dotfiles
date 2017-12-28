@@ -154,7 +154,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 
 	if (getBaselinkFrameType() == SLAM_POSITION_SLAM_ANGLE)
 	{
-		if(slam.isMapReady() && !ev.slam_error)
+		if(slam.isMapReady()/* && !ev.slam_error*/)
 		{
 			try {
 				robot_tf_->lookupTransform("/map", "/base_link", ros::Time(0), transform);
@@ -174,10 +174,10 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 				slam_error_count++;
 				if (slam_error_count > 1)
 				{
-					ev.slam_error = true;
+//					ev.slam_error = true;
 					slam_error_count = 0;
 				}
-				return;
+//				return;
 			}
 
 			if (!isTfReady())
@@ -201,7 +201,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	else if (getBaselinkFrameType() == SLAM_POSITION_ODOM_ANGLE)
 	{//Wall_Follow_Mode
 		//ROS_INFO("SLAM = 2");
-		if(slam.isMapReady() && !ev.slam_error)
+		if(slam.isMapReady()/* && !ev.slam_error*/)
 		{
 			tf::Stamped<tf::Pose> ident;
 			ident.setIdentity();
@@ -228,10 +228,10 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 				slam_error_count++;
 				if (slam_error_count > 1)
 				{
-					ev.slam_error = true;
+//					ev.slam_error = true;
 					slam_error_count = 0;
 				}
-				return;
+//				return;
 			}
 
 			if (!isTfReady())
