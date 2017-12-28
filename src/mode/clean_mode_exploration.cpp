@@ -78,7 +78,8 @@ bool CleanModeExploration::isFinish()
 	return ACleanMode::isFinish();
 }
 
-bool CleanModeExploration::isExit() {
+bool CleanModeExploration::isExit()
+{
 	if(ev.cliff_all_triggered){
 		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
 		setNextMode(md_idle);
@@ -92,7 +93,8 @@ bool CleanModeExploration::isExit() {
 	return false;
 }
 
-bool CleanModeExploration::setNextAction() {
+bool CleanModeExploration::setNextAction()
+{
 	PP_INFO();
 	//todo action convert
 	if (state_i_ == st_init)
@@ -109,11 +111,9 @@ bool CleanModeExploration::setNextAction() {
 	return action_i_ != ac_null;
 }
 
-bool CleanModeExploration::setNextState() {
+bool CleanModeExploration::setNextState()
+{
 	PP_INFO();
-
-	if (state_i_ == st_init)
-		return true;
 
 	bool state_confirm = false;
 	while (ros::ok() && !state_confirm)
