@@ -742,21 +742,13 @@ void robot::obsAdjustCount(int count)
 //--------------------
 static int32_t xCount{}, yCount{};
 
-Point32_t getPosition(void)
+Point32_t getPosition()
 {
 	return {(int32_t)round(xCount), (int32_t)round(yCount), robot::instance()->getWorldPoseAngle()};
 }
 
 int32_t cellToCount(int16_t i) {
 	return i * CELL_COUNT_MUL;
-}
-
-int16_t countToCell(int32_t count) {
-	if(count < -CELL_COUNT_MUL_1_2) {
-		return (count + CELL_COUNT_MUL_1_2) / CELL_COUNT_MUL - 1;
-	} else {
-		return (count + CELL_COUNT_MUL_1_2) / CELL_COUNT_MUL;
-	}
 }
 
 void setPosition(int32_t x, int32_t y) {

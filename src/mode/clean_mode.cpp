@@ -126,7 +126,7 @@ Point32_t ACleanMode::updatePath(GridMap& map)
 		});
 		auto distance = std::distance(loc, passed_path_.end());
 		if (distance == 0) {
-			ROS_INFO("curr(%d,%d,%d)",curr.X, curr.Y, curr.TH);
+			ROS_INFO("curr(%d,%d,%d)",curr.toCell().X, curr.toCell().Y, curr.TH);
 			passed_path_.push_back(curr);
 		}
 		if (distance > 5) {
