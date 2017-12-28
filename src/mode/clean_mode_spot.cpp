@@ -12,10 +12,12 @@ CleanModeSpot::CleanModeSpot()
 	event_manager_register_handler(this);
 	event_manager_set_enable(true);
 	IMoveType::sp_mode_ = this;
-	speaker.play(VOICE_CLEANING_SPOT);
+	speaker.play(VOICE_CLEANING_SPOT,false);
 	clean_path_algorithm_.reset(new SpotCleanPathAlgorithm());
 	go_home_path_algorithm_.reset();
 	has_aligned_and_open_slam = false;
+	nav_map.reset(COST_MAP);
+	nav_map.reset(CLEAN_MAP);
 	clean_map_ = &nav_map;
 }
 
@@ -36,17 +38,15 @@ CleanModeSpot::~CleanModeSpot()
 bool CleanModeSpot::isFinish()
 {
 	if(action_i_ == ac_open_slam){
-		vacuum.setMode(Vac_Save);
-		brush.setLeftPwm(50);
-		brush.setRightPwm(50);
-		brush.setMainPwm(50);
+		vacuum.setMode(Vac_Max);
+		brush.setPWM(50,50,50);
 	}
 	return ACleanMode::isFinish();
 }
 
 bool CleanModeSpot::mapMark()
 {
-
+	ROS_INFO("%s,%d,passed_path",__FUNCTION__,__LINE__);
 	clean_path_algorithm_->displayPath(passed_path_);
 	if (action_i_ == ac_linear) {
 		PP_INFO();
@@ -55,9 +55,7 @@ bool CleanModeSpot::mapMark()
 
 	if (state_i_ == st_trapped)
 		nav_map.markRobot(CLEAN_MAP);
-
 	nav_map.setBlocks();
-	PP_INFO();
 	nav_map.print(CLEAN_MAP, nav_map.getXCell(), nav_map.getYCell());
 
 	passed_path_.clear();
@@ -66,52 +64,27 @@ bool CleanModeSpot::mapMark()
 
 bool CleanModeSpot::isExit()
 {
-	if (action_i_ == ac_pause && sp_action_->isTimeUp())
-	{
-		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
-		setNextMode(md_sleep);
-		return true;
-	}
-
-	if (action_i_ == ac_pause && sp_action_->isExit())
+	
+	if (ev.fatal_quit || sp_action_->isExit())
 	{
 		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
 		setNextMode(md_idle);
 		return true;
 	}
 
-	if (ev.fatal_quit || ev.key_long_pressed || ev.cliff_all_triggered || sp_action_->isExit())
-	{
+	if(ev.key_clean_pressed){
+		ev.key_clean_pressed = false;
 		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
 		setNextMode(md_idle);
 		return true;
 	}
-
-	if (ev.charge_detect >= 3)
-	{
-		ROS_WARN("%s %d: Exit for directly charge.", __FUNCTION__, __LINE__);
-		setNextMode(md_charge);
+	if(ev.cliff_all_triggered) {
+		ev.cliff_all_triggered = false;
+		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+		setNextMode(md_idle);
 		return true;
 	}
-
 	return false;
-}
-
-bool CleanModeSpot::setNextAction()
-{
-	if (!isInitFinished_)
-		return ACleanMode::setNextAction();
-	else if (state_i_ == st_clean)
-	{
-		PP_INFO();
-		if(plan_path_.size() >= 2)
-			action_i_ = ac_linear;
-		else
-			action_i_ = ac_null;
-	}
-	genNextAction();
-
-	return action_i_ != ac_null;
 }
 
 bool CleanModeSpot::setNextState()
@@ -149,7 +122,7 @@ bool CleanModeSpot::setNextState()
 		{
 			PP_INFO();
 			old_dir_ = new_dir_;
-			ROS_ERROR("old_dir_(%d)", old_dir_);
+			ROS_INFO("\033old_dir_(%d)", old_dir_);
 			if (clean_path_algorithm_->generatePath(nav_map, nav_map.getCurrCell(), old_dir_, plan_path_))
 			{
 				new_dir_ = (MapDirection)plan_path_.front().TH;
@@ -161,56 +134,46 @@ bool CleanModeSpot::setNextState()
 			}
 			else
 			{
-				state_i_ = st_go_home_point;
-				stateInit(state_i_);
-				action_i_ = ac_null;
-			}
-		}
-		else if (state_i_ == st_go_home_point)
-		{
-			PP_INFO();
-			old_dir_ = new_dir_;
-			plan_path_.clear();
-			state_i_ = st_null;
-#if 0
-			if (go_home_path_algorithm_->generatePath(nav_map, nav_map.getCurrCell(),old_dir_, plan_path_))
-			{
-				// Reach home cell or new path to home cell is generated.
-				if (plan_path_.empty())
-				{
-					// Reach home cell.
-					PP_INFO();
-					if (nav_map.getCurrCell() == g_zero_home)
-					{
-						PP_INFO();
-						state_i_ = st_null;
-					}
-					else
-					{
-						PP_INFO();
-						state_i_ = st_go_to_charger;
-						stateInit(state_i_);
-					}
-					action_i_ = ac_null;
-				}
-				else
-				{
-					new_dir_ = (MapDirection)plan_path_.front().TH;
-					plan_path_.pop_front();
-					go_home_path_algorithm_->displayPath(plan_path_);
-				}
-			}
-			else
-			{
-				// No more paths to home cells.
-				PP_INFO();
 				state_i_ = st_null;
+				action_i_ = ac_null;
+				state_confirm = true;
 			}
-#endif
-			state_confirm = true;
 		}
 	}
 
 	return state_i_ != st_null;
+}
+
+bool CleanModeSpot::setNextAction()
+{
+	if (!isInitFinished_)
+		return ACleanMode::setNextAction();
+	else if (state_i_ == st_clean)
+	{
+		PP_INFO();
+		if(plan_path_.size() >= 2)
+			action_i_ = ac_linear;
+		else
+			action_i_ = ac_null;
+	}
+	genNextAction();
+	return action_i_ != ac_null;
+}
+
+void CleanModeSpot::remoteClean(bool state_now, bool state_last)
+{
+	ev.key_clean_pressed = true;
+	beeper.play_for_command(true);
+}
+
+void CleanModeSpot::keyClean(bool state_now,bool state_last)
+{
+	ev.key_clean_pressed = true;
+	beeper.play_for_command(true);
+}
+
+void CleanModeSpot::cliffAll(bool state_now, bool state_last)
+{
+	ev.cliff_all_triggered = true;
 }
 

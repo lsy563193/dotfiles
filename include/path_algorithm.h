@@ -240,10 +240,11 @@ public:
 
 	bool generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir, Path_t &plan_path) override;
 	bool checkTrapped(GridMap &map, const Cell_t &curr_cell) override;
-	void genTargets(uint8_t type,float diameter,Path_t *targets,const Cell_t begincell);
-private:
 
+	void genTargets(uint8_t type,float diameter,Path_t *targets,const Cell_t begincell);
 	void initVariables(float diameter,Cell_t cur_cell);
+	Cell_t giveMeCleanCell(GridMap map,Cell_t cell);
+	void refactorTargets(GridMap map,Path_t *targets);
 private:
 	
 	float spot_diameter_ ;
@@ -251,6 +252,7 @@ private:
 	Path_t targets_;
 	Path_t targets_last_;
 	Cell_t begin_cell_; 
+	Cell_t state_cell_;
 };
 
 class GoHomePathAlgorithm: public APathAlgorithm

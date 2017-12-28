@@ -355,14 +355,16 @@ class CleanModeSpot:public ACleanMode
 public:
 	CleanModeSpot();
 	~CleanModeSpot();
+
 	bool isFinish() override;
 	bool mapMark() override;
-	bool isExit();
-	bool setNextAction();
-	bool setNextState();
-private:
-protected:
-//	Path_t home_point_{};
+	bool isExit() override;
+	bool setNextAction() override;
+	bool setNextState() override;
+	void cliffAll(bool state_now, bool state_last) override;
+	void remoteClean(bool state_now, bool state_last) override;
+	void keyClean(bool state_now, bool state_last) override;
+
 private:
 	bool has_aligned_and_open_slam;
 };

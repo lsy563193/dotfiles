@@ -32,21 +32,28 @@ double GridMap::xCount = 0;
 double GridMap::yCount = 0;
 
 GridMap::GridMap() {
-		for(auto c = 0; c < MAP_SIZE; ++c) {
-			for(auto d = 0; d < (MAP_SIZE + 1) / 2; ++d) {
-				clean_map[c][d] = 0;
-				cost_map[c][d] = 0;
-			}
+	mapInit();
+}
+
+void GridMap::mapInit()
+{
+	for(auto c = 0; c < MAP_SIZE; ++c) {
+		for(auto d = 0; d < (MAP_SIZE + 1) / 2; ++d) {
+			clean_map[c][d] = 0;
+			cost_map[c][d] = 0;
 		}
-		g_x_min = g_x_max = g_y_min = g_y_max = 0;
-		xRangeMin = static_cast<int16_t>(g_x_min - (MAP_SIZE - (g_x_max - g_x_min + 1)));
-		xRangeMax = static_cast<int16_t>(g_x_max + (MAP_SIZE - (g_x_max - g_x_min + 1)));
-		yRangeMin = static_cast<int16_t>(g_y_min - (MAP_SIZE - (g_y_max - g_y_min + 1)));
-		yRangeMax = static_cast<int16_t>(g_y_max + (MAP_SIZE - (g_y_max - g_y_min + 1)));
+	}
+	g_x_min = g_x_max = g_y_min = g_y_max = 0;
+	xRangeMin = static_cast<int16_t>(g_x_min - (MAP_SIZE - (g_x_max - g_x_min + 1)));
+	xRangeMax = static_cast<int16_t>(g_x_max + (MAP_SIZE - (g_x_max - g_x_min + 1)));
+	yRangeMin = static_cast<int16_t>(g_y_min - (MAP_SIZE - (g_y_max - g_y_min + 1)));
+	yRangeMax = static_cast<int16_t>(g_y_max + (MAP_SIZE - (g_y_max - g_y_min + 1)));
 
 //		xCount = 0;
 //		yCount = 0;
+
 }
+
 GridMap::~GridMap()
 {
 }
@@ -62,6 +69,14 @@ bool GridMap::isXAxis(MapDirection dir)
 		return true;
 
 	return false;
+}
+bool GridMap::isYAxis(MapDirection dir)
+{
+	if (dir == MAP_POS_Y || dir == MAP_NEG_Y || dir == MAP_NONE)
+		return true;
+
+	return false;
+
 }
 
 bool GridMap::isYDirection(MapDirection dir)
@@ -889,11 +904,11 @@ uint8_t GridMap::saveRcon()
 	uint8_t block_count;
 	if(c_rcon.should_mark_charger_ ){
 		c_rcon.should_mark_charger_ = false;
-		block_count += nav_map.saveChargerArea(c_rcon.getRconPos());
+		block_count += saveChargerArea(c_rcon.getRconPos());
 	}
 	else if(c_rcon.should_mark_temp_charger_ ){
 		c_rcon.should_mark_temp_charger_ = false;
-		block_count += nav_map.saveChargerArea(c_rcon.getRconPos());
+		block_count += saveChargerArea(c_rcon.getRconPos());
 	}
 	return block_count;
 

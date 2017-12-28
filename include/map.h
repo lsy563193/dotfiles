@@ -65,10 +65,12 @@ public:
 
 	GridMap();
 	~GridMap();
-
+	void mapInit();
 	static bool isPos(MapDirection dir);
 
 	static bool isXAxis(MapDirection dir);
+
+	static bool isYAxis(MapDirection dir);
 
 	static bool isYDirection(MapDirection dir);
 
