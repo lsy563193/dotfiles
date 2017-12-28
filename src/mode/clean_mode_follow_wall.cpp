@@ -17,7 +17,7 @@ CleanModeFollowWall::CleanModeFollowWall()
 	speaker.play(VOICE_CLEANING_WALL_FOLLOW);
 	clean_path_algorithm_.reset(new WFCleanPathAlgorithm);
 	go_home_path_algorithm_.reset(new GoHomePathAlgorithm(nav_map, home_points_));
-	clean_map_ = &fw_map;
+	map_ = &fw_map;
 }
 
 CleanModeFollowWall::~CleanModeFollowWall()

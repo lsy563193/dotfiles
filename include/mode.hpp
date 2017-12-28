@@ -247,7 +247,7 @@ public:
 
 	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
 	boost::shared_ptr<APathAlgorithm> go_home_path_algorithm_{};
-	GridMap* clean_map_ = nullptr;
+	GridMap *map_;
 	Point32_t charger_pos_{};//charger postion
 protected:
 

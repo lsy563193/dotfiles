@@ -740,16 +740,11 @@ void robot::obsAdjustCount(int count)
 }
 
 //--------------------
-static double xCount{}, yCount{};
+static int32_t xCount{}, yCount{};
 
 Point32_t getPosition(void)
 {
 	return {(int32_t)round(xCount), (int32_t)round(yCount),robot::instance()->getPoseAngle()};
-}
-
-Cell_t getCurrCell()
-{
-	return Cell_t{countToCell(xCount), countToCell(yCount)};
 }
 
 int32_t cellToCount(int16_t i) {
@@ -764,7 +759,7 @@ int16_t countToCell(int32_t count) {
 	}
 }
 
-void setPosition(double x, double y) {
+void setPosition(int32_t x, int32_t y) {
 	xCount = x;
 	yCount = y;
 }

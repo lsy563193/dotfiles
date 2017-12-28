@@ -267,5 +267,5 @@ private:
 
 	Point32_t updatePosition();
 
-	void setPosition(double x, double y);
+	void setPosition(int32_t x, int32_t y);
 #endif

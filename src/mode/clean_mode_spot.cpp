@@ -18,7 +18,7 @@ CleanModeSpot::CleanModeSpot()
 	brush.fullOperate();
 	clean_path_algorithm_.reset(new SpotCleanPathAlgorithm());
 	go_home_path_algorithm_.reset();
-	clean_map_ = &nav_map;
+	map_ = &nav_map;
 }
 
 CleanModeSpot::~CleanModeSpot()

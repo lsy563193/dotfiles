@@ -16,7 +16,7 @@ CleanModeExploration::CleanModeExploration() {
 	action_i_ = ac_open_gyro;
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
 	IMoveType::sp_mode_ = this;
-	clean_map_ = &exploration_map;
+	map_ = &exploration_map;
 }
 
 CleanModeExploration::~CleanModeExploration()
