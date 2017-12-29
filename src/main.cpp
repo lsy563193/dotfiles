@@ -6,7 +6,7 @@
 #include "verify.h"
 #endif
 
-robot* robot_instance;
+robot* robot_instance = nullptr;
 
 int main(int argc, char **argv)
 {

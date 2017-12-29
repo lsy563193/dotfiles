@@ -26,9 +26,11 @@ MoveTypeLinear::MoveTypeLinear() {
 //}
 bool MoveTypeLinear::isFinish()
 {
-//	PP_INFO();
 	if (IMoveType::isFinish())
+	{
+		PP_INFO();
 		return true;
+	}
 
 	if (sp_movement_->isFinish()) {
 		PP_INFO();

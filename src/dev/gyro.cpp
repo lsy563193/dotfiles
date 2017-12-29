@@ -52,8 +52,8 @@ void Gyro::reOpen(void)
 	skip_count_ = 0;
 	average_angle_ = 0;
 	check_stable_count_ = 0;
-	setOn();
-	open_state_ = WAIT_FOR_OPEN;
+	setOff();
+	open_state_ = WAIT_FOR_CLOSE;
 }
 
 bool Gyro::waitForOn(void)
@@ -87,15 +87,10 @@ bool Gyro::waitForOn(void)
 	else if (open_state_ == WAIT_FOR_REOPEN)
 	{
 		if (skip_count_ != 0)
-		{
 			skip_count_--;
-			if (skip_count_ == 0)
-			{
-				ROS_WARN("re-open gyro");
-			}
-		}
 		else
 		{
+			ROS_DEBUG("re-open gyro");
 			setOn();
 			open_state_ = WAIT_FOR_OPEN;
 		}
@@ -146,134 +141,11 @@ bool Gyro::waitForOn(void)
 				speaker.play(VOICE_SYSTEM_INITIALIZING, false);
 			}
 			else
-			{
 				// Open gyro succeeded.
 				setStatus();
-				ROS_INFO("%s %d: Open gyro succeeded.", __FUNCTION__, __LINE__);
-			}
-		}
-
-	}
-/*	// Count for cliff triggered during opening gyro.
-	uint8_t error_count = 0;
-	// Count for detecting angle_v_ jump, it means that gyro has been successly turned on.
-	int success_count = 0;
-	// Count for 20ms that should skip checking to avoid robot still moving before re-open gyro again..
-	uint8_t skip_count = 0;
-	bool open_success = false;
-	bool	eh_status_now=false, eh_status_last=false;
-
-	ROS_INFO("waiting for gyro start");
-	while (error_count < 10)
-	{
-		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1)
-			continue;
-
-		usleep(10000);
-
-		// This count is for how many count of looping should it skip after robot lifted up and put down during gyro opening.
-		if (skip_count != 0)
-		{
-			skip_count--;
-			if (skip_count == 0)
-			{
-				ROS_WARN("re-open gyro");
-			}
-		}
-		else
-		{
-			setOn();
-		}
-
-		if (ev.key_clean_pressed || ev.cliff_all_triggered || ev.fatal_quit || charger.isDirected())
-			break;
-
-		if (skip_count == 0 && getAngleV() != 0){
-			success_count++;
-		}
-		ROS_DEBUG("Opening%d, angle_v_ = %f.angle = %f.", success_count, getAngleV(), getAngle());
-		if (success_count == 5)
-		{
-			if (isStable())
-			{
-				open_success = true;
-				break;
-			}
-			else
-			{
-				skip_count = 25;
-				error_count++;
-				success_count = 0;
-			}
-		}
-		//ROS_WARN("gyro start ready(%d),angle_v_(%f)", count, robot::instance()->getAngleV());
-	}
-	if(open_success)
-	{
-		ROS_INFO("gyro start ok");
-		setStatus();
-		return true;
-	}
-	ROS_INFO("gyro start fail");
-	setOff();
-	return false;*/
-}
-
-bool Gyro::isStable()
-{
-	// Average angle value for checking whether gyro is stable.
-	float average_angle = 0;
-	// Current angle is the current robot angle value from gyro.
-	float current_angle = 0;
-	// Count for 20ms that the angle is stable after turning the gyro on.
-	uint8_t check_stable_count = 0;
-	bool	eh_status_now=false, eh_status_last=false;
-
-	ROS_DEBUG("Gyro open success, check stablization.");
-	// Wait for 1s to see if the angle change too much.
-	while (check_stable_count < 50)
-	{
-		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1)
-			continue;
-		usleep(10000);
-		if (ev.key_clean_pressed || ev.cliff_all_triggered || ev.fatal_quit || charger.isDirected())
-			break;
-		current_angle = getAngle();
-		ROS_DEBUG("Checking%d, angle_v_ = %f.angle = %f, average_angle = %f.", check_stable_count,
-							getAngleV(), current_angle, average_angle);
-		if (current_angle > 0.02 || current_angle < -0.02)
-		{
-			Gyro::setOff();
-			speaker.play(VOICE_SYSTEM_INITIALIZING, false);
-			break;
-		}
-		check_stable_count++;
-		average_angle = (average_angle + current_angle) / 2;
-	}
-
-	if (check_stable_count == 50)
-	{
-		if (average_angle > 0.002)
-		{
-			ROS_WARN("%s %d: Robot is moved when opening gyro, re-open gyro, average_angle = %f.", __FUNCTION__, __LINE__, average_angle);
-			Gyro::setOff();
-			average_angle = 0;
-			speaker.play(VOICE_SYSTEM_INITIALIZING, false);
-		}
-		else
-		{
-			ROS_DEBUG("%s %d: Robot succeeded opening gyro, average_angle = %f.", __FUNCTION__, __LINE__, average_angle);
-			// Gyro stable now, break the waiting loop.
-			return true;
 		}
 	}
-	else
-	{
-		// If check_stable_count < 50 means the process is broken by events or current angle too big. Events can be handle by the main while loop.
-		//ROS_WARN("Reset counting.");
-		check_stable_count = 0;
-	}
-	return false;
+
 }
 
 void Gyro::setOff()
@@ -283,33 +155,6 @@ void Gyro::setOff()
 		ROS_INFO("gyro stop already");
 		return;
 	}
-/*	uint8_t count = 0;
-	uint8_t sum = 0;
-
-	ROS_INFO("waiting for gyro stop");
-	auto angle_v = getAngleV();
-
-	while(count <= 10)
-	{
-		serial.setSendData(CTL_GYRO, 0x00);
-		usleep(20000);
-		count++;
-		if (getAngleV() != angle_v){
-			count=0;
-			sum++;
-			ROS_DEBUG("Current angle_v_ = %f, angle_v_ = %f, sum = %d.", getAngleV(), angle_v, sum);
-			angle_v = getAngleV();
-			if (sum > 10) {
-				error.set(Error_Code_Gyro);
-				ROS_WARN("%s,%d, gyro off failed!",__FUNCTION__,__LINE__);
-				return;
-			}
-		}
-//		ROS_INFO("gyro stop ready(%d),angle_v_(%f)", count, robot::instance()->getAngleV());
-	}
-	resetStatus();
-	robot::instance()->offsetAngle(0);
-	ROS_INFO("gyro stop ok");*/
 }
 
 #if GYRO_DYNAMIC_ADJUSTMENT

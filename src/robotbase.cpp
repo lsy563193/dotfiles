@@ -44,7 +44,6 @@ int robotbase_init(void)
 	int base_ret;
 	int sers_ret;
 	int speaker_ret;
-	uint8_t buf[SEND_LEN];
 
 	robotbase_thread_stop = false;
 	send_stream_thread = true;
@@ -53,19 +52,15 @@ int robotbase_init(void)
 		ROS_ERROR("serial not ready\n");
 	}
 
-	serial.setCleanMode(POWER_ACTIVE);
-	g_send_stream_mutex.lock();
-	memcpy(buf, serial.send_stream, sizeof(uint8_t) * SEND_LEN);
-	g_send_stream_mutex.unlock();
-	uint8_t crc;
-	crc = serial.calc_buf_crc8(buf, SEND_LEN - 3);
-	serial.setSendData(SEND_LEN - 3, crc);
+	robotbase_reset_send_stream();
+
 	ROS_INFO("waiting robotbase awake ");
 //	serr_ret = pthread_create(&receiPortThread_id, NULL, serial_receive_routine_cb, NULL);
 	auto serial_receive_routine = new boost::thread(serial_receive_routine_cb);
 	serial_receive_routine->detach();
 	// todo:If do not usleep for 20ms, it will process died, still don't know why. --by Austin Liu
-	usleep(20000);
+	// todo:Seems it works fine now, still don't know why. --by Austin Liu(171228)
+	//usleep(20000);
 //	base_ret = pthread_create(&robotbaseThread_id, NULL, robotbase_routine_cb, NULL);
 	auto robotbase_routine = new boost::thread(robotbase_routine_cb);
 	robotbase_routine->detach();
@@ -152,6 +147,13 @@ void robotbase_reset_send_stream(void)
 	serial.setSendData(1, 0x55);
 	serial.setSendData(SEND_LEN - 2, 0xcc);
 	serial.setSendData(SEND_LEN - 1, 0x33);
+
+	serial.setCleanMode(POWER_ACTIVE);
+	uint8_t buf[SEND_LEN];
+	memcpy(buf, serial.send_stream, sizeof(uint8_t) * SEND_LEN);
+	uint8_t crc;
+	crc = serial.calc_buf_crc8(buf, SEND_LEN - 3);
+	serial.setSendData(SEND_LEN - 3, crc);
 }
 
 void serial_receive_routine_cb()
@@ -210,10 +212,12 @@ void serial_receive_routine_cb()
 				}
 				if(pthread_cond_signal(&recev_cond)<0)//if receive data corret than send signal
 					ROS_ERROR(" in serial read, pthread signal fail !");
-			} else {
+			}
+			else {
 				ROS_WARN(" in serial read ,data tail error\n");
 			}
-		} else {
+		}
+		else {
 			ROS_ERROR("%s,%d,in serial read ,data crc error\n",__FUNCTION__,__LINE__);
 		}
 	}
@@ -528,10 +532,10 @@ void serial_send_routine_cb()
 void core_thread_cb()
 {
 	ROS_INFO("Waiting for robot sensor ready.");
-	while (!robot::instance()->isSensorReady()) {
+	while (robot::instance() == nullptr || !robot::instance()->isSensorReady()) {
 		usleep(1000);
 	}
-	ROS_ERROR("Robot sensor ready.");
+	ROS_INFO("Robot sensor ready.");
 //	speaker.play(VOICE_WELCOME_ILIFE);
 	usleep(200000);
 

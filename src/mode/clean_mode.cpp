@@ -79,7 +79,7 @@ bool ACleanMode::isFinish()
 	if (state_i_ != st_init)
 		updatePath(*map_);
 
-	if (sp_action_ != nullptr && !sp_action_->isFinish())
+	if (!(sp_action_ == nullptr || sp_action_->isFinish()))
 		return false;
 
 	sp_action_.reset();//for call ~constitution;
@@ -89,6 +89,7 @@ bool ACleanMode::isFinish()
 	{
 		map_->saveBlocks(action_i_ == ac_linear, state_i_ == st_clean);
 		mapMark();
+
 	}
 
 	do
@@ -124,6 +125,8 @@ Point32_t ACleanMode::updatePath(GridMap& map)
 	else if (!is_equal_with_angle_(curr, last_))
 	{
 		last_ = curr;
+		passed_path_.push_back(curr);
+		/*
 		auto loc = std::find_if(passed_path_.begin(), passed_path_.end(), [&](Point32_t it) {
 				return is_equal_with_angle_(curr, it);
 		});
@@ -136,6 +139,7 @@ Point32_t ACleanMode::updatePath(GridMap& map)
 			passed_path_.clear();
 			g_wf_reach_count++;
 		}
+		*/
 		map.saveBlocks(action_i_ == ac_linear, state_i_ == st_clean);
 //		displayPath(passed_path_);
 	}
@@ -217,20 +221,6 @@ void ACleanMode::stateInit(int next)
 
 	}
 	if (next == st_tmp_spot) {
-//		if (SpotMovement::instance()->getSpotType() == NO_SPOT) {
-//			ROS_INFO("%s %d: Entering temp spot during navigation.", __FUNCTION__, __LINE__);
-//			Cell_t curr_cell = nav_map.getPosition().toCell();
-//			ROS_WARN("%s %d: current cell(%d, %d).", __FUNCTION__, __LINE__, curr_cell.X, curr_cell.Y);
-//			SpotMovement::instance()->setSpotType(CLEAN_SPOT);
-//			wheel.stop();
-//		}
-//		else if (SpotMovement::instance()->getSpotType() == CLEAN_SPOT) {
-//			ROS_INFO("%s %d: Exiting temp spot.", __FUNCTION__, __LINE__);
-//			SpotMovement::instance()->spotDeinit();
-//			wheel.stop();
-//			speaker.play(VOICE_CLEANING_CONTINUE);
-//		}
-//		ev.remote_spot = false;
 	}
 	if (next == st_trapped) {
 		robot_timer.initTrapTimer();
@@ -253,7 +243,8 @@ void ACleanMode::stateInit(int next)
 	}
 	if (next == st_resume_low_battery_charge)
 	{
-		// Nothing
+		led.set_mode(LED_STEADY, LED_GREEN);
+		PP_INFO();
 	}
 }
 

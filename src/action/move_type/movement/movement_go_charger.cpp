@@ -1902,8 +1902,7 @@ void MovementGoToCharger::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	right_speed_ = r_speed;
 }
 
-bool MovementGoToCharger::isFinish() {
-	if (ev.charge_detect || _isStop())
-		return true;
-	return false;
+bool MovementGoToCharger::isFinish()
+{
+	return charger.getChargeStatus() || _isStop();
 }

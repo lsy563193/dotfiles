@@ -18,7 +18,7 @@ CleanModeNav::CleanModeNav()
 	if(g_plan_activated)
 		g_plan_activated = false;
 	else
-		speaker.play(VOICE_CLEANING_START);
+		speaker.play(VOICE_CLEANING_START, false);
 
 	has_aligned_and_open_slam_ = false;
 	paused_odom_angle_ = 0;
@@ -117,14 +117,9 @@ bool CleanModeNav::isFinish()
 	if (state_i_ == st_pause)
 	{
 		// For pausing case, only key or remote clean will wake it up.
-		if (ev.key_clean_pressed)
+		if (ev.key_clean_pressed || ev.remote_home)
 		{
 			resumePause();
-			setNextAction();
-		}
-		else if (ev.remote_home)
-		{
-			switchToGoHomePointState();
 			setNextAction();
 		}
 	}
@@ -143,10 +138,10 @@ bool CleanModeNav::isFinish()
 			enterPause();
 			setNextAction();
 		}
-		else if (ev.remote_home || ev.battery_home)
+		else if (state_i_ == st_clean)
 		{
-			switchToGoHomePointState();
-			setNextAction();
+			if (ev.remote_home || ev.battery_home)
+				switchToGoHomePointState();
 		}
 	}
 	return ACleanMode::isFinish();
@@ -169,6 +164,11 @@ bool CleanModeNav::isExit()
 			setNextMode(md_idle);
 			return true;
 		}
+	}
+
+	if (state_i_ == st_init && action_i_ == ac_open_lidar && sp_action_->isTimeUp())
+	{
+		//todo
 	}
 
 	if (ev.fatal_quit || ev.key_long_pressed || ev.cliff_all_triggered || sp_action_->isExit())
@@ -330,8 +330,11 @@ bool CleanModeNav::setNextState()
 					stateInit(state_i_);
 				}
 				else
+				{
 					// Robot should go home.
-					switchToGoHomePointState();
+					state_i_ = st_go_home_point;
+					stateInit(state_i_);
+				}
 			}
 		}
 		else if (state_i_ == st_trapped)
@@ -390,7 +393,7 @@ bool CleanModeNav::setNextState()
 		else if (state_i_ == st_go_to_charger)
 		{
 			PP_INFO();
-			if (ev.charge_detect && charger.isOnStub())
+			if (charger.isOnStub())
 			{
 				if (go_home_for_low_battery_)
 				{
@@ -413,7 +416,7 @@ bool CleanModeNav::setNextState()
 		else if (state_i_ == st_charge)
 		{
 			// For low battery charge case.
-			if (battery.isFull() || !charger.getChargeStatus())
+			if (battery.isReadyToResumeCleaning() || !charger.getChargeStatus())
 				resumeLowBatteryCharge();
 			else
 				// Still charging.
@@ -532,7 +535,7 @@ void CleanModeNav::batteryHome(bool state_now, bool state_last)
 
 void CleanModeNav::chargeDetect(bool state_now, bool state_last)
 {
-	if (!ev.charge_detect)
+	if (!ev.charge_detect && charger.isDirected())
 	{
 		ROS_WARN("%s %d: Charge detect!.", __FUNCTION__, __LINE__);
 		ev.charge_detect = charger.getChargeStatus();
@@ -633,6 +636,8 @@ void CleanModeNav::resumePause()
 	speaker.play(VOICE_CLEANING_CONTINUE);
 	ROS_INFO("%s %d: Resume cleaning.", __FUNCTION__, __LINE__);
 	// It will NOT change the state.
+	if (ev.remote_home)
+		saved_state_i_before_pause = st_go_home_point;
 	state_i_ = st_init;
 	stateInit(state_i_);
 }
@@ -652,6 +657,11 @@ void CleanModeNav::resumeLowBatteryCharge()
 
 void CleanModeNav::switchToGoHomePointState()
 {
+	if (ev.battery_home)
+		low_battery_charge_ = true;
+
+	// Quit current movement.
+	sp_action_.reset();
 	state_i_ = st_go_home_point;
 	stateInit(state_i_);
 	mapMark();

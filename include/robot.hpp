@@ -253,19 +253,21 @@ private:
 	void lidarPointCb(const visualization_msgs::Marker &point_marker);
 };
 
-	int32_t cellToCount(int16_t distance);
+int32_t cellToCount(int16_t distance);
 
-	int16_t countToCell(int32_t count);
+int16_t countToCell(int32_t count);
 
-	Point32_t getPosition(void);
+Point32_t getPosition(void);
 
-	bool isPos(MapDirection dir);
+bool isPos(MapDirection dir);
 
-	bool isXAxis(MapDirection dir);
+bool isXAxis(MapDirection dir);
 
-	Point32_t getRelative(Point32_t point, int16_t dy, int16_t dx, bool using_point_pos);
+bool isYAxis(MapDirection dir);
 
-	Point32_t updatePosition();
+Point32_t getRelative(Point32_t point, int16_t dy, int16_t dx, bool using_point_pos);
 
-	void setPosition(int32_t x, int32_t y);
+Point32_t updatePosition();
+
+void setPosition(int32_t x, int32_t y);
 #endif
