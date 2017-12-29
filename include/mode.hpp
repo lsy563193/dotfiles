@@ -45,28 +45,31 @@ public:
 
 	int action_i_{ac_null};
 	enum {
+		//0
 		ac_null,
 		ac_open_gyro,
-		ac_back_form_charger,//2
+		ac_back_form_charger,
 		ac_open_lidar,
-		ac_align,//4
+		ac_align,
+		//5
 		ac_open_slam,
-		ac_linear,//6
+		ac_linear,
 		ac_follow_wall_left,
-		ac_follow_wall_right,//8
+		ac_follow_wall_right,
 		ac_turn,
+		//10
 		ac_forward,
-		ac_back,//10
-//		ac_movement_follow_wall_left,
-//		ac_movement_follow_wall_right,
+		ac_back,
 		ac_go_to_charger,
 		ac_idle,
 		ac_sleep,
+		//15
 		ac_charge,
 		ac_turn_for_charger,
 		ac_movement_stay,
 		ac_movement_direct_go,
 		ac_pause,
+		//20
 		ac_exception_resume,
 		ac_check_bumper,
 		ac_check_vacuum,

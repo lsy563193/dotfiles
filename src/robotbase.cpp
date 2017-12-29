@@ -322,7 +322,7 @@ void robotbase_routine_cb()
 		sensor.ir_ctrl = serial.receive_stream[REC_REMOTE_IR];
 		if (sensor.ir_ctrl > 0)
 		{
-			ROS_DEBUG("%s %d: Remote received:%d", __FUNCTION__, __LINE__, sensor.ir_ctrl);
+			ROS_INFO("%s %d: Remote received:%d", __FUNCTION__, __LINE__, sensor.ir_ctrl);
 			remote.set(sensor.ir_ctrl);
 		}
 
@@ -689,16 +689,7 @@ void robotbase_reset_odom_pose(void)
 	odom.setX(0);
 	odom.setY(0);
 }
-/*
-void robotbase_restore_slam_correction()
-{
-	// For restarting slam
-	boost::mutex::scoped_lock(odom_mutex);
-	pose_x += robot::instance()->getRobotCorrectionX();
-	pose_y += robot::instance()->getRobotCorrectionY();
-	robot::instance()->offsetAngle(robot::instance()->offsetAngle() + robot::instance()->getRobotCorrectionYaw());
-	ROS_INFO("%s %d: Restore slam correction as x: %f, y: %f, angle: %f.", __FUNCTION__, __LINE__, robot::instance()->getRobotCorrectionX(), robot::instance()->getRobotCorrectionY(), robot::instance()->getRobotCorrectionYaw());
-}*/
+
 void speaker_play_routine_cb()
 {
 	speaker.playRoutine();
