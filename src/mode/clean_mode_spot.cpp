@@ -40,7 +40,7 @@ bool CleanModeSpot::isFinish()
 {
 	if(action_i_ == ac_open_slam){
 		vacuum.setMode(Vac_Max);
-		brush.setPWM(50,50,50);
+		brush.fullOperate();
 	}
 	return ACleanMode::isFinish();
 }
@@ -111,7 +111,6 @@ bool CleanModeSpot::setNextState()
 			}
 			else
 				state_confirm = true;
-			
 		}
 		else if (isExceptionTriggered())
 		{

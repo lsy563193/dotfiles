@@ -23,3 +23,15 @@ bool Battery::isLow()
 	return (getVoltage() <= LOW_BATTERY_STOP_VOLTAGE);
 }
 
+bool Battery::isReadyToResumeCleaning(void)
+{
+	// Check if battary is lower than the low battery go home voltage value.
+	return (getVoltage() >= RESUME_CLEANING_VOLTAGE);
+}
+
+bool Battery::shouldGoHome(void)
+{
+	// Check if battary is lower than the low battery go home voltage value.
+	return (getVoltage() < LOW_BATTERY_GO_HOME_VOLTAGE);
+}
+

@@ -75,7 +75,12 @@ robot::robot(std::string serial_port, int baudrate, std::string lidar_bumper_dev
 	setBaselinkFrameType(ODOM_POSITION_ODOM_ANGLE);
 
 	// Init for serial.
-	serial.init(serial_port.c_str(), baudrate);
+	if (!serial.init(serial_port.c_str(), baudrate))
+	{
+		ROS_ERROR("%s %d: Serial init failed!!", __FUNCTION__, __LINE__);
+		return;
+	}
+
 
 #if VERIFY_CPU_ID
 	if (verify_cpu_id() < 0) {
@@ -93,16 +98,15 @@ robot::robot(std::string serial_port, int baudrate, std::string lidar_bumper_dev
 	if (bumper.lidarBumperInit(lidar_bumper_dev.c_str()) == -1)
 		ROS_ERROR(" lidar bumper open fail!");
 
+	// Init for robotbase.
+	robotbase_init();
+
 	// Init for event manager.
 	event_manager_init();
 	auto event_manager_thread = new boost::thread(event_manager_thread_cb);
 	event_manager_thread->detach();
 	auto event_handler_thread = new boost::thread(event_handler_thread_cb);
 	event_handler_thread->detach();
-
-	// Init for robotbase.
-	robotbase_reset_send_stream();
-	robotbase_init();
 
 	// Init for core thread.
 	auto core_thread = new boost::thread(core_thread_cb);
@@ -154,7 +158,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 
 	if (getBaselinkFrameType() == SLAM_POSITION_SLAM_ANGLE)
 	{
-		if(slam.isMapReady() && !ev.slam_error)
+		if(slam.isMapReady()/* && !ev.slam_error*/)
 		{
 			try {
 				robot_tf_->lookupTransform("/map", "/base_link", ros::Time(0), transform);
@@ -174,10 +178,10 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 				slam_error_count++;
 				if (slam_error_count > 1)
 				{
-					ev.slam_error = true;
+//					ev.slam_error = true;
 					slam_error_count = 0;
 				}
-				return;
+//				return;
 			}
 
 			if (!isTfReady())
@@ -201,7 +205,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	else if (getBaselinkFrameType() == SLAM_POSITION_ODOM_ANGLE)
 	{//Wall_Follow_Mode
 		//ROS_INFO("SLAM = 2");
-		if(slam.isMapReady() && !ev.slam_error)
+		if(slam.isMapReady()/* && !ev.slam_error*/)
 		{
 			tf::Stamped<tf::Pose> ident;
 			ident.setIdentity();
@@ -228,10 +232,10 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 				slam_error_count++;
 				if (slam_error_count > 1)
 				{
-					ev.slam_error = true;
+//					ev.slam_error = true;
 					slam_error_count = 0;
 				}
-				return;
+//				return;
 			}
 
 			if (!isTfReady())

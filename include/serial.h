@@ -138,7 +138,7 @@ public:
 	Serial();
 	~Serial(){};
 
-	void init(const char* port,int baudrate);
+	bool init(const char* port,int baudrate);
 
 	int close();
 
