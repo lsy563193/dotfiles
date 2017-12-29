@@ -886,7 +886,7 @@ void robot::setTempTarget(std::deque<Vector2<double>>& points) {
 
 //	ROS_ERROR("curr_point(%d,%d)",getPosition().X,getPosition().Y);
 	for (const auto &iter : points) {
-		auto target = getPosition().getRelative(int(iter.Y * 1000), int(iter.X * 1000));
+		auto target = getPosition().getRelative(int(iter.X * 1000), int(iter.Y * 1000));
 		tmp_plan_path_.push_back(target);
 //		ROS_INFO("temp_target(%d,%d)",target.X,target.Y);
 	}

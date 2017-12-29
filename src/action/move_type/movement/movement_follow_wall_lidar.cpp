@@ -23,10 +23,10 @@ Points MovementFollowWallLidar::_calcTmpTarget() {
 	Point32_t tmp_target{};
 	Points tmp_targets{};
 
-	tmp_target = getPosition().getRelative(CELL_SIZE * 0, CELL_SIZE * 1);
+	tmp_target = getPosition().getRelative(CELL_SIZE * 1, CELL_SIZE * 0);
 	tmp_targets.push_back(tmp_target);
 	auto dy = is_left_ ? 1 : -1;
-	tmp_target = getPosition().getRelative(CELL_SIZE * dy, CELL_SIZE * 1);
+	tmp_target = getPosition().getRelative(CELL_SIZE * 1, CELL_SIZE * dy);
 	tmp_targets.push_back(tmp_target);
 
 	ROS_INFO("_calc tmp_targets.size(%d)",tmp_targets.size());

@@ -956,7 +956,7 @@ static uint8_t setLidarMarkerAcr2Dir(double X_MIN,double X_MAX,int angle_from,in
 		}
 	}
 	if (count > 10) {
-		auto cell = getPosition().getRelative(CELL_SIZE * dy, CELL_SIZE * dx).toCell();
+		auto cell = getPosition().getRelative(CELL_SIZE * dx, CELL_SIZE * dy).toCell();
 		if (nav_map.getCell(CLEAN_MAP,cell.X, cell.Y) != BLOCKED_BUMPER)
 		{
 			ROS_INFO("\033[36mlidar marker : (%d,%d)\033[0m",cell.X,cell.Y);
@@ -1135,7 +1135,7 @@ uint8_t Lidar::lidarMarker(double X_MAX)
 				}
 			}
 
-			auto cell = getPosition().getRelative(CELL_SIZE * dy, CELL_SIZE * dx).toCell();
+			auto cell = getPosition().getRelative(CELL_SIZE * dx, CELL_SIZE * dy).toCell();
 			auto cell_status = nav_map.getCell(CLEAN_MAP, cell.X, cell.Y);
 			if (cell_status != BLOCKED_BUMPER && cell_status != BLOCKED_OBS)
 			{

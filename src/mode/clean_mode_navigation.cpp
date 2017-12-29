@@ -692,7 +692,7 @@ uint8_t CleanModeNav::setFollowWall(const Points& path)
 		auto dy = action_i_ == ac_follow_wall_left ? 2 : -2;
 		for(auto& point : path){
 			if(nav_map.getCell(CLEAN_MAP,point.toCell().X,point.toCell().Y) != BLOCKED_RCON){
-				auto block_cell = point.getRelative(dy * CELL_SIZE, 0).toCell();
+				auto block_cell = point.getRelative(0, dy * CELL_SIZE).toCell();
 				msg += "(" + std::to_string(block_cell.X) + "," + std::to_string(block_cell.Y) + ")";
 				nav_map.setCell(CLEAN_MAP, block_cell.X, block_cell.Y, BLOCKED_CLIFF);
 				block_count++;

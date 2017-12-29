@@ -338,7 +338,7 @@ public:
     TH = th;
   }
 
-  Point32_t getRelative(int16_t dy, int16_t dx) const {
+  Point32_t getRelative(int16_t dx, int16_t dy) const {
 		Point32_t point;
 		double relative_sin, relative_cos;
 		if (TH != 3600) {

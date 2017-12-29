@@ -557,7 +557,7 @@ uint8_t GridMap::setFollowWall(bool is_left,const Points& passed_path)
 		auto dy = is_left ? 2 : -2;
 		for(auto& point : passed_path){
 			if(getCell(CLEAN_MAP,point.X,point.Y) != BLOCKED_RCON){
-				auto block_cell = point.getRelative(dy * CELL_SIZE, 0).toCell();
+				auto block_cell = point.getRelative(0, dy * CELL_SIZE).toCell();
 				msg += "(" + std::to_string(block_cell.X) + "," + std::to_string(block_cell.Y) + ")";
 				setCell(CLEAN_MAP,block_cell.X,block_cell.Y, BLOCKED_CLIFF);
 				block_count++;
@@ -579,7 +579,7 @@ uint8_t GridMap::saveSlip()
 	std::string msg = "cells:";
 	for(auto& d_cell : d_cells)
 	{
-		auto cell = getPosition().getRelative(d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE).toCell();
+		auto cell = getPosition().getRelative(d_cell.X * CELL_SIZE, d_cell.Y * CELL_SIZE).toCell();
 		//cm_world_to_point(robot::instance()->getWorldPoseAngle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x2, &y2);
 		//ROS_WARN("%s %d: d_cell(%d, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
 		//			, __FUNCTION__, __LINE__, d_cell.X, d_cell.Y, robot::instance()->getWorldPoseAngle(), x2, y2, count_to_cell(x2), count_to_cell(y2), cell_x, cell_y);
@@ -609,7 +609,7 @@ uint8_t GridMap::saveTilt()
 	std::string msg = "cells:";
 	for(auto& d_cell : d_cells)
 	{
-		auto cell = getPosition().getRelative(d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE).toCell();
+		auto cell = getPosition().getRelative(d_cell.X * CELL_SIZE, d_cell.Y * CELL_SIZE).toCell();
 		//cm_world_to_point(robot::instance()->getWorldPoseAngle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x2, &y2);
 		//ROS_WARN("%s %d: d_cell(%d, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
 		//			, __FUNCTION__, __LINE__, d_cell.X, d_cell.Y, robot::instance()->getWorldPoseAngle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
@@ -684,7 +684,7 @@ uint8_t GridMap::saveCliff()
 	std::string msg = "cells:";
 	for(auto& d_cell : d_cells)
 	{
-		auto cell = getPosition().getRelative(d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE).toCell();
+		auto cell = getPosition().getRelative(d_cell.X * CELL_SIZE, d_cell.Y * CELL_SIZE).toCell();
 		//robot_to_point(robot::instance()->getWorldPoseAngle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x2, &y2);
 		//ROS_WARN("%s %d: d_cell(%d, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
 		//			, __FUNCTION__, __LINE__, d_cell.X, d_cell.Y, robot::instance()->getWorldPoseAngle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
@@ -725,7 +725,7 @@ uint8_t GridMap::saveBumper(bool is_linear)
 	std::string msg = "d_cells:";
 	for(auto& d_cell : d_cells)
 	{
-		auto cell = getPosition().getRelative(d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE).toCell();
+		auto cell = getPosition().getRelative(d_cell.X * CELL_SIZE, d_cell.Y * CELL_SIZE).toCell();
 		//robot_to_point(robot::instance()->getWorldPoseAngle(), d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE, &x2, &y2);
 		//ROS_WARN("%s %d: d_cell(%d, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
 		//			, __FUNCTION__, __LINE__, d_cell.X, d_cell.Y, robot::instance()->getWorldPoseAngle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
@@ -826,7 +826,7 @@ uint8_t GridMap::saveRcon()
 	std::string msg = "cells:";
 	for(auto& d_cell : d_cells)
 	{
-		auto cell = getPosition().getRelative(d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE).toCell();
+		auto cell = getPosition().getRelative(d_cell.X * CELL_SIZE, d_cell.Y * CELL_SIZE).toCell();
 		temp_rcon_cells.push_back(cell);
 		msg += "[" + std::to_string(d_cell.X) + "," + std::to_string(d_cell.Y) + "](" + std::to_string(cell.X) + "," + std::to_string(cell.Y) + ")";
 	}
@@ -1067,7 +1067,7 @@ uint8_t GridMap::isBlockBlockedXAxis(int16_t curr_x, int16_t curr_y, bool is_lef
 	uint8_t retval = 0;
 	auto dy = is_left  ?  2 : -2;
 	for(auto dx =-1; dx<=1,retval == 0; dx++) {
-		auto cell = getPosition().getRelative(CELL_SIZE * dy, CELL_SIZE * dx).toCell();
+		auto cell = getPosition().getRelative(CELL_SIZE * dx, CELL_SIZE * dy).toCell();
 		if (isABlock(cell.X, cell.Y) == 1) {
 			retval = 1;
 		}
@@ -1167,7 +1167,7 @@ bool GridMap::isFrontBlockBoundary(int dx)
 	Point32_t point;
 	for (auto dy = -1; dy <= 1; dy++)
 	{
-		auto cell = getPosition().getRelative(dy * CELL_SIZE, CELL_SIZE * dx).toCell();
+		auto cell = getPosition().getRelative(dx * CELL_SIZE, CELL_SIZE * dy).toCell();
 		if (getCell(CLEAN_MAP, cell.X, cell.Y) == BLOCKED_BOUNDARY)
 			return true;
 	}
@@ -1343,7 +1343,7 @@ bool GridMap::isFrontBlocked(void)
 
 	for(auto& d_cell : d_cells)
 	{
-		auto cell = getPosition().getRelative(d_cell.Y * CELL_SIZE, d_cell.X * CELL_SIZE).toCell();
+		auto cell = getPosition().getRelative(d_cell.X * CELL_SIZE, d_cell.Y * CELL_SIZE).toCell();
 		if(getCell(CLEAN_MAP, cell.X, cell.Y) == SLAM_MAP_BLOCKED)
 		{
 			retval = true;
@@ -1360,7 +1360,7 @@ void GridMap::setExplorationCleaned() {
 		for (int dy = 0; dy < RADIUS_CELL; ++dy) {
 			auto cur_tmp = cur;
 			cur_tmp.TH += angle_i * 10;
-			auto cell = cur_tmp.getRelative(dy * CELL_SIZE, 0).toCell();
+			auto cell = cur_tmp.getRelative(0, dy * CELL_SIZE).toCell();
 			auto status = getCell(CLEAN_MAP,cell.X,cell.Y);
 			if (status > CLEANED && status < BLOCKED_BOUNDARY) {
 				//ROS_ERROR("%s,%d: (%d,%d)", __FUNCTION__, __LINE__, count_to_cell(x), count_to_cell(y));
