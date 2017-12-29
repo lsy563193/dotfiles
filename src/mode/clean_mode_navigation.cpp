@@ -243,7 +243,7 @@ bool CleanModeNav::setNextAction()
 		else
 		{
 			delta_y = plan_path_.back().toCell().y - start.y;
-			bool is_left = isPos(old_dir_) ^delta_y > 0;
+			bool is_left = isPos(old_dir_) ^ delta_y > 0;
 			ROS_INFO("\033[31m""%s,%d: target:, 0_left_1_right(%d=%d ^ %d)""\033[0m",
 					 __FUNCTION__, __LINE__, is_left, isPos(old_dir_), delta_y);
 			action_i_ = is_left ? ac_follow_wall_left : ac_follow_wall_right;
