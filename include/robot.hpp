@@ -367,8 +367,6 @@ bool isXAxis(MapDirection dir);
 
 bool isYAxis(MapDirection dir);
 
-Point32_t getRelative(Point32_t point, int16_t dy, int16_t dx, bool using_point_pos);
-
 Point32_t updatePosition();
 
 void setPosition(int32_t x, int32_t y);

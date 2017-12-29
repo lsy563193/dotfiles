@@ -920,7 +920,7 @@ void robot::setTempTarget(std::deque<Vector2<double>>& points) {
 
 //	ROS_ERROR("curr_point(%d,%d)",getPosition().X,getPosition().Y);
 	for (const auto &iter : points) {
-		auto target = getRelative(getPosition(), int(iter.Y * 1000), int(iter.X * 1000), true);
+		auto target = getPosition().getRelative(int(iter.Y * 1000), int(iter.X * 1000));
 		tmp_plan_path_.push_back(target);
 //		ROS_INFO("temp_target(%d,%d)",target.X,target.Y);
 	}
@@ -975,40 +975,3 @@ Point32_t updatePosition()
 //	ROS_INFO("%s %d:", __FUNCTION__, __LINE__);
 	return getPosition();
 }
-
-uint16_t relative_theta = 3600;
-Point32_t getRelative(Point32_t point, int16_t dy, int16_t dx, bool using_point_pos) {
-	double relative_sin, relative_cos;
-	if(point.TH != relative_theta) {
-		if(point.TH == 0) {
-			relative_sin = 0;
-			relative_cos = 1;
-		} else if(point.TH == 900) {
-			relative_sin = 1;
-			relative_cos = 0;
-		} else if(point.TH == 1800) {
-			relative_sin = 0;
-			relative_cos = -1;
-		} else if(point.TH == -900) {
-			relative_sin = -1;
-			relative_cos = 0;
-		} else {
-			relative_sin = sin(deg_to_rad(point.TH, 10));
-			relative_cos = cos(deg_to_rad(point.TH, 10));
-		}
-	}
-
-	if (using_point_pos)
-	{
-		point.X += (int32_t)( ( ((double)dx * relative_cos * CELL_COUNT_MUL) - ((double)dy	* relative_sin * CELL_COUNT_MUL) ) / CELL_SIZE );
-		point.Y += (int32_t)( ( ((double)dx * relative_sin * CELL_COUNT_MUL) + ((double)dy	* relative_cos * CELL_COUNT_MUL) ) / CELL_SIZE );
-	}
-	else
-	{
-		point.X = cellToCount(point.toCell().X) + (int32_t)( ( ((double)dx * relative_cos * CELL_COUNT_MUL) - ((double)dy	* relative_sin * CELL_COUNT_MUL) ) / CELL_SIZE );
-		point.Y = cellToCount(point.toCell().Y) + (int32_t)( ( ((double)dx * relative_sin * CELL_COUNT_MUL) + ((double)dy	* relative_cos * CELL_COUNT_MUL) ) / CELL_SIZE );
-//		ROS_ERROR("piont.x:%d  point:y:%d",point.X,point.Y,point.TH);
-	}
-	return point;
-}
-

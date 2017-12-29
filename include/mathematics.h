@@ -15,6 +15,25 @@
 
 #endif
 
+/*
+typedef struct Pose16_t_{
+	int16_t X;
+	int16_t Y;
+	int16_t	TH;
+	friend bool operator==(const Pose16_t_ left, const Pose16_t_ right)
+	{
+		return left.X == right.X && left.Y == right.Y;
+	}
+	friend bool operator!=(const Pose16_t_ left, const Pose16_t_ right)
+	{
+		return !(left == right);
+	}
+} Pose16_t;*/
+
+int16_t ranged_angle(int16_t angle);
+double deg_to_rad(double deg, int8_t scale = 1);
+double rad_2_deg(double rad, int8_t scale);
+
   /**
    * Represents a 2-dimensional vector (x, y)
    */
@@ -319,6 +338,41 @@ public:
     TH = th;
   }
 
+  Point32_t getRelative(int16_t dy, int16_t dx) const {
+		Point32_t point;
+		double relative_sin, relative_cos;
+		if (TH != 3600) {
+			if (TH == 0) {
+				relative_sin = 0;
+				relative_cos = 1;
+			}
+			else if (TH == 900) {
+				relative_sin = 1;
+				relative_cos = 0;
+			}
+			else if (TH == 1800) {
+				relative_sin = 0;
+				relative_cos = -1;
+			}
+			else if (TH == -900) {
+				relative_sin = -1;
+				relative_cos = 0;
+			}
+			else {
+				relative_sin = sin(deg_to_rad(TH, 10));
+				relative_cos = cos(deg_to_rad(TH, 10));
+			}
+		}
+		point.X = X + (int32_t) (
+						(((double) dx * relative_cos * CELL_COUNT_MUL) - ((double) dy * relative_sin * CELL_COUNT_MUL)) /
+						CELL_SIZE);
+		point.Y = Y + (int32_t) (
+						(((double) dx * relative_sin * CELL_COUNT_MUL) + ((double) dy * relative_cos * CELL_COUNT_MUL)) /
+						CELL_SIZE);
+		point.TH = TH;
+		return point;
+	}
+
   Cell_t toCell() const {
     return {countToCell(X), countToCell(Y)};
   }
@@ -334,7 +388,6 @@ private:
     }
   }
 };
-//typedef Vector2<int32_t> Point32_t;
 
 typedef struct
 {
@@ -384,24 +437,8 @@ typedef struct{
 } PointTh;
 
 
-/*
-typedef struct Pose16_t_{
-	int16_t X;
-	int16_t Y;
-	int16_t	TH;
-	friend bool operator==(const Pose16_t_ left, const Pose16_t_ right)
-	{
-		return left.X == right.X && left.Y == right.Y;
-	}
-	friend bool operator!=(const Pose16_t_ left, const Pose16_t_ right)
-	{
-		return !(left == right);
-	}
-} Pose16_t;*/
+//typedef Vector2<int32_t> Point32_t;
 
-int16_t ranged_angle(int16_t angle);
-double deg_to_rad(double deg, int8_t scale = 1);
-double rad_2_deg(double rad, int8_t scale);
 uint16_t course_to_dest(const Point32_t& start, const Point32_t& dest);
 uint32_t two_points_distance(int32_t startx, int32_t starty, int32_t destx, int32_t desty);
 float two_points_distance_double(float startx,float starty,float destx,float desty);

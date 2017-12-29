@@ -689,11 +689,10 @@ uint8_t CleanModeNav::setFollowWall(const Points& path)
 	if (!path.empty())
 	{
 		std::string msg = "cell:";
-		Cell_t block_cell;
 		auto dy = action_i_ == ac_follow_wall_left ? 2 : -2;
 		for(auto& point : path){
 			if(nav_map.getCell(CLEAN_MAP,point.toCell().X,point.toCell().Y) != BLOCKED_RCON){
-				GridMap::robotToCell(point, dy * CELL_SIZE, 0, block_cell.X, block_cell.Y);
+				auto block_cell = point.getRelative(dy * CELL_SIZE, 0).toCell();
 				msg += "(" + std::to_string(block_cell.X) + "," + std::to_string(block_cell.Y) + ")";
 				nav_map.setCell(CLEAN_MAP, block_cell.X, block_cell.Y, BLOCKED_CLIFF);
 				block_count++;

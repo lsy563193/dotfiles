@@ -23,7 +23,7 @@ bool WFCleanPathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, con
 			const float FIND_WALL_DISTANCE = 8;//8 means 8 metres, it is the distance limit when the robot move straight to find wall
 			auto point = getPosition();
 			point.TH = ranged_angle(robot::instance()->getWorldPoseAngle() + angle);
-			nav_map.robotToPoint(point, 0, FIND_WALL_DISTANCE * 1000, &curr.X, &curr.Y);
+			curr = point.getRelative(0, FIND_WALL_DISTANCE * 1000);
 			targets.push_back(curr);
 		ROS_INFO("%s,%d: path_next_linear(%d)", __FUNCTION__, __LINE__,point.TH);
 //		}

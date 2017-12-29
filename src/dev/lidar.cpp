@@ -1001,12 +1001,11 @@ static uint8_t setLidarMarkerAcr2Dir(double X_MIN,double X_MAX,int angle_from,in
 		}
 	}
 	if (count > 10) {
-		int16_t x_tmp,y_tmp;
-		nav_map.robotToCell(getPosition(), CELL_SIZE * dy, CELL_SIZE * dx, x_tmp, y_tmp);
-		if (nav_map.getCell(CLEAN_MAP,x_tmp,y_tmp) != BLOCKED_BUMPER)
+		auto cell = getPosition().getRelative(CELL_SIZE * dy, CELL_SIZE * dx).toCell();
+		if (nav_map.getCell(CLEAN_MAP,cell.X, cell.Y) != BLOCKED_BUMPER)
 		{
-			ROS_INFO("\033[36mlidar marker : (%d,%d)\033[0m",x_tmp,y_tmp);
-			nav_map.setCell(CLEAN_MAP, x_tmp, y_tmp, BLOCKED_LIDAR);
+			ROS_INFO("\033[36mlidar marker : (%d,%d)\033[0m",cell.X,cell.Y);
+			nav_map.setCell(CLEAN_MAP, cell.X, cell.Y, BLOCKED_LIDAR);
 		}
 		ret = 1;
 		*lidar_status |= obs_status;
@@ -1103,7 +1102,6 @@ uint8_t Lidar::lidarMarker(double X_MAX)
 	uint8_t block_status = 0;
 	for (int i = 0; i < 12; i++) {
 		if (count_array[i] > 10) {
-			int16_t x_tmp,y_tmp;
 			switch(i) {
 				case 0 : {
 					dx = 2;
@@ -1182,13 +1180,13 @@ uint8_t Lidar::lidarMarker(double X_MAX)
 				}
 			}
 
-			nav_map.robotToCell(getPosition(), CELL_SIZE * dy, CELL_SIZE * dx, x_tmp, y_tmp);
-			auto cell_status = nav_map.getCell(CLEAN_MAP, x_tmp, y_tmp);
+			auto cell = getPosition().getRelative(CELL_SIZE * dy, CELL_SIZE * dx).toCell();
+			auto cell_status = nav_map.getCell(CLEAN_MAP, cell.X, cell.Y);
 			if (cell_status != BLOCKED_BUMPER && cell_status != BLOCKED_OBS)
 			{
 				//ROS_INFO("    \033[36mlidar marker : (%d,%d), i = %d, dx = %d, dy = %d.\033[0m",count_to_cell(x_tmp),count_to_cell(y_tmp), i, dx, dy);
-				msg += direction_msg + "(" + std::to_string(x_tmp) + ", " + std::to_string(y_tmp) + ")";
-				nav_map.setCell(CLEAN_MAP,x_tmp,y_tmp, BLOCKED_LIDAR); //BLOCKED_OBS);
+				msg += direction_msg + "(" + std::to_string(cell.X) + ", " + std::to_string(cell.Y) + ")";
+				nav_map.setCell(CLEAN_MAP,cell.X,cell.Y, BLOCKED_LIDAR); //BLOCKED_OBS);
 			}
 		}
 	}
