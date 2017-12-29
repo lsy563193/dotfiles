@@ -184,12 +184,13 @@ public:
 
 	bool isFinish() override ;
 private:
+//	Point32_t temp_target{};
 	class Paras;
 	Vector2<double> get_middle_point(const Vector2<double>& p1,const Vector2<double>& p2,const Paras& para);
 	bool check_is_valid(const Vector2<double>& point, Paras& para, sensor_msgs::LaserScan& scan);
 	bool check_corner(sensor_msgs::LaserScan scan, const Paras para);
 	Vector2<double> polar_to_cartesian(double polar,int i);
-	bool calcLidarPath();
+	bool calcLidarPath(sensor_msgs::LaserScan);
 	bool is_sp_turn{};
 	uint32_t seq_{0};
 

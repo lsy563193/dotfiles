@@ -20,18 +20,29 @@ MovementFollowWallLidar::MovementFollowWallLidar(bool is_left)
 //	path_thread_->detach();
 }
 
-bool MovementFollowWallLidar::calcTmpTarget(Point32_t& point) {
-	auto p_mt = (ActionFollowWall*)sp_mt_;
-	if(calcLidarPath())
-	{
-		auto curr = getPosition();
-		if (std::abs(curr.X - p_mt->tmp_plan_path_.front().X) < 30 && std::abs(curr.Y - p_mt->tmp_plan_path_.front().Y) < 30) {
+bool MovementFollowWallLidar::calcTmpTarget(Point32_t& tmp_target) {
+	auto p_mt = (ActionFollowWall *) sp_mt_;
+
+	auto scan = Lidar::getLidarScanDataOriginal();
+	if (scan.header.seq == seq_) {
+		if (p_mt->tmp_plan_path_.empty())
+			return false;
+		tmp_target = p_mt->tmp_plan_path_.front();
+		if (std::abs(getPosition().X - tmp_target.X) < 30 && std::abs(getPosition().Y - tmp_target.Y) < 30) {
 			p_mt->tmp_plan_path_.pop_front();
-			point = p_mt->tmp_plan_path_.front();
+			if (p_mt->tmp_plan_path_.empty()) {
+				return false;
+			}
+			tmp_target = p_mt->tmp_plan_path_.front();
 		}
+		return true;
 	}
-	return p_mt->tmp_plan_path_.empty();
-//	return false;
+	seq_ = scan.header.seq;
+
+	if (calcLidarPath(scan))
+		return false;
+
+	tmp_target = p_mt->tmp_plan_path_.front();
 }
 
 Vector2<double> MovementFollowWallLidar::polar_to_cartesian(double polar,int i)
@@ -111,16 +122,9 @@ bool MovementFollowWallLidar::check_is_valid(const Vector2<double>& point, Paras
 	return true;
 }
 
-bool MovementFollowWallLidar::calcLidarPath() {
+bool MovementFollowWallLidar::calcLidarPath(sensor_msgs::LaserScan scan) {
 	std::deque<Vector2<double>> points{};
 	Paras para{is_left_};
-	auto scan = Lidar::getLidarScanDataOriginal();
-
-	if (scan.header.seq == seq_) {
-		return false;
-	}
-	seq_ = scan.header.seq;
-	points.clear();
 
 	auto is_corner = check_corner(scan, para);
 	ROS_WARN("is_corner = %d", is_corner);
@@ -185,8 +189,8 @@ bool MovementFollowWallLidar::calcLidarPath() {
 }
 
 bool MovementFollowWallLidar::isFinish() {
-	return false;
-//	auto p_mt = (ActionFollowWall*)(sp_mt_);
-//	return p_mt->tmp_plan_path_.empty() || p_mt->shouldMoveBack() || p_mt->shouldTurn();
+//	return false;
+	auto p_mt = (ActionFollowWall*)(sp_mt_);
+	return p_mt->tmp_plan_path_.empty() || p_mt->shouldMoveBack() || p_mt->shouldTurn();
 }
 
