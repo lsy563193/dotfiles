@@ -1,6 +1,4 @@
-//
-// Created by lsy563193 on 12/5/17.
-//
+// // Created by lsy563193 on 12/5/17.  //
 
 #include <event_manager.h>
 #include "pp.h"
@@ -70,8 +68,8 @@ bool MovementFollowPointLinear::calcTmpTarget(Point32_t& tmp_target) {
 
 bool MovementFollowPointLinear::isFinish()
 {
-	auto p_mt = (ActionFollowWall*)(sp_mt_);
-	return isPoseReach() || isBoundaryStop() || isPassTargetStop() || isRconStop() || p_mt->shouldMoveBack() || p_mt->shouldTurn();
+	auto p_mt = (MoveTypeFollowWall*)(sp_mt_);
+	return isPoseReach() || isBoundaryStop() || isPassTargetStop() || isRconStop() || p_mt->shouldMoveBack();
 }
 
 bool MovementFollowPointLinear::isRconStop()
@@ -80,7 +78,10 @@ bool MovementFollowPointLinear::isRconStop()
 
 	bool ret = false;
 	if(ev.rcon_triggered)
+	{
+		ROS_WARN("%s %d: Rcon triggered and stop.", __FUNCTION__, __LINE__);
 		ret = true;
+	}
 
 	return ret;
 }
@@ -182,7 +183,7 @@ bool MovementFollowPointLinear::isBoundaryStop()
 //	PP_INFO();
 	if (nav_map.isFrontBlockBoundary(2))
 	{
-		ROS_INFO("%s, %d: MovementFollowPointLinear, Blocked boundary.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s, %d: MovementFollowPointLinear, Blocked boundary.", __FUNCTION__, __LINE__);
 		return true;
 	}
 
@@ -202,7 +203,7 @@ bool MovementFollowPointLinear::isPassTargetStop()
 	if ((isPos(new_dir) && (curr > target + CELL_COUNT_MUL / 4)) ||
 		(!isPos(new_dir) && (curr < target - CELL_COUNT_MUL / 4)))
 	{
-		ROS_INFO("%s, %d: MovementFollowPointLinear, pass target: new_dir(\033[32m%d\033[0m),is_x_axis(\033[32m%d\033[0m),is_pos(\033[32m%d\033[0m),curr(\033[32m%d\033[0m),target(\033[32m%d\033[0m)",
+		ROS_WARN("%s, %d: MovementFollowPointLinear, pass target: new_dir(\033[32m%d\033[0m),is_x_axis(\033[32m%d\033[0m),is_pos(\033[32m%d\033[0m),curr(\033[32m%d\033[0m),target(\033[32m%d\033[0m)",
 				 __FUNCTION__, __LINE__, new_dir, isXAxis(new_dir), isPos(new_dir), curr, target);
 		return true;
 	}

@@ -8,23 +8,21 @@ Serial serial;
 
 Serial::Serial()
 {
-	crport_fd_ = -1;
+	crport_fd_ = 0;
 	serial_init_done_ = false;
 	made_table_ = 0;
 	sleep_status_ = false;
 }
 
-void Serial::init(const char* port,int baudrate)
+bool Serial::init(const char* port,int baudrate)
 {
 	char buf[1024];
 
-	if( crport_fd_ != -1 )
-		return;	
 	bardrate_ = baudrate;
 	sprintf(buf, "%s", port);
 	crport_fd_ = open(buf, O_RDWR | O_NOCTTY | O_NONBLOCK);
 	if (crport_fd_ == -1)
-		return;
+		return false;
 
 	fcntl(crport_fd_, F_SETFL, FNDELAY);
 
@@ -66,10 +64,12 @@ void Serial::init(const char* port,int baudrate)
 
 	cfmakeraw(&curopt_);		//make raw mode_
 
-	if (tcsetattr(crport_fd_, TCSANOW, &curopt_) == 0){
-		serial_init_done_ = true;
-		ROS_INFO("\033[32mserial.cpp\033[0m init done...\n");
+	if (tcsetattr(crport_fd_, TCSANOW, &curopt_) != 0){
+		return false;
 	}
+	serial_init_done_ = true;
+	ROS_INFO("\033[32mserial.cpp\033[0m init done...\n");
+	return true;
 }
 
 bool Serial::is_ready()

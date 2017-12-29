@@ -6,7 +6,7 @@
 #include "arch.hpp"
 
 
-ActionFollowWall::ActionFollowWall(bool is_left, bool is_trapped)
+MoveTypeFollowWall::MoveTypeFollowWall(bool is_left, bool is_trapped)
 {
 
 	auto p_clean_mode = (ACleanMode*)sp_mode_;
@@ -39,14 +39,14 @@ ActionFollowWall::ActionFollowWall(bool is_left, bool is_trapped)
 //	}
 }
 
-ActionFollowWall::~ActionFollowWall()
+MoveTypeFollowWall::~MoveTypeFollowWall()
 {
 	PP_WARN();
 	ROS_ERROR("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 	wheel.stop();
 }
 
-bool ActionFollowWall::isFinish()
+bool MoveTypeFollowWall::isFinish()
 {
 	auto p_clean_mode = (ACleanMode*)sp_mode_;
 
@@ -96,7 +96,7 @@ bool ActionFollowWall::isFinish()
 	return false;
 }
 
-int16_t ActionFollowWall::bumper_turn_angle(bool is_left)
+int16_t MoveTypeFollowWall::bumper_turn_angle(bool is_left)
 {
 	int16_t turn_angle{};
 //	static int bumper_jam_cnt_ = 0;
@@ -138,7 +138,7 @@ int16_t ActionFollowWall::bumper_turn_angle(bool is_left)
 	return turn_angle;
 }
 
-int16_t ActionFollowWall::cliff_turn_angle()
+int16_t MoveTypeFollowWall::cliff_turn_angle()
 {
 	int16_t turn_angle = -750;
 	if(!is_left_)
@@ -146,7 +146,7 @@ int16_t ActionFollowWall::cliff_turn_angle()
 	return turn_angle;
 }
 
-int16_t ActionFollowWall::tilt_turn_angle()
+int16_t MoveTypeFollowWall::tilt_turn_angle()
 {
 	int16_t turn_angle{};
 	auto tmp_status = gyro.getTiltCheckingStatus();
@@ -171,7 +171,7 @@ int16_t ActionFollowWall::tilt_turn_angle()
 	return turn_angle;
 }
 
-int16_t ActionFollowWall::obs_turn_angle()
+int16_t MoveTypeFollowWall::obs_turn_angle()
 {
 	int16_t turn_angle{};
 	auto diff_side = (is_left_) ? BLOCK_RIGHT : BLOCK_LEFT;
@@ -189,7 +189,7 @@ int16_t ActionFollowWall::obs_turn_angle()
 	return turn_angle;
 }
 
-int16_t ActionFollowWall::rcon_turn_angle()
+int16_t MoveTypeFollowWall::rcon_turn_angle()
 {
 	int16_t turn_angle{};
 	enum {left,fl2,fl,fr,fr2,right};
@@ -203,7 +203,7 @@ int16_t ActionFollowWall::rcon_turn_angle()
 	return turn_angle;
 }
 
-int ActionFollowWall::double_scale_10(double line_angle)
+int MoveTypeFollowWall::double_scale_10(double line_angle)
 {
 	int angle;
 	if (line_angle > 0)
@@ -216,7 +216,7 @@ int ActionFollowWall::double_scale_10(double line_angle)
 	return angle;
 }
 
-bool ActionFollowWall::_lidar_turn_angle(bool is_left, int16_t& turn_angle, int lidar_min, int lidar_max, int angle_min,int angle_max,double dis_limit)
+bool MoveTypeFollowWall::_lidar_turn_angle(bool is_left, int16_t& turn_angle, int lidar_min, int lidar_max, int angle_min,int angle_max,double dis_limit)
 {
 //	ROS_INFO("%s,%d,bumper (\033[32m%d\033[0m)!",__FUNCTION__,__LINE__,bumper.get_status());
 	double line_angle;
@@ -249,7 +249,7 @@ bool ActionFollowWall::_lidar_turn_angle(bool is_left, int16_t& turn_angle, int 
 	return false;
 }
 
-bool ActionFollowWall::lidar_turn_angle(int16_t& turn_angle)
+bool MoveTypeFollowWall::lidar_turn_angle(int16_t& turn_angle)
 {
 //	ROS_INFO("%s,%d: mt.is_fw",__FUNCTION__, __LINE__);
 	wheel.stop();
@@ -289,7 +289,7 @@ bool ActionFollowWall::lidar_turn_angle(int16_t& turn_angle)
 	return false;
 }
 
-int16_t ActionFollowWall::get_turn_angle_by_ev()
+int16_t MoveTypeFollowWall::get_turn_angle_by_ev()
 {
 	int16_t turn_angle{};
 	if (ev.bumper_triggered) {
@@ -331,7 +331,7 @@ int16_t ActionFollowWall::get_turn_angle_by_ev()
 	return turn_angle;
 }
 
-int16_t ActionFollowWall::get_turn_angle(bool use_target_angle)
+int16_t MoveTypeFollowWall::get_turn_angle(bool use_target_angle)
 {
 	int16_t  turn_angle{};
 	if (LIDAR_FOLLOW_WALL && lidar_turn_angle(turn_angle)) {

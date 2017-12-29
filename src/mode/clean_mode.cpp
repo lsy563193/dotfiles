@@ -15,12 +15,10 @@ Point32_t ACleanMode::last_ = {};
 
 ACleanMode::ACleanMode()
 {
-	led.set_mode(LED_FLASH, LED_GREEN, 1000);
 	ev.key_clean_pressed = false;
-	sp_action_.reset(new ActionOpenGyro());
-	action_i_ = ac_open_gyro;
-	state_i_ = st_null;
-	isInitFinished_ = false;
+	state_i_ = st_init;
+	stateInit(state_i_);
+	setNextAction();
 	robot_timer.initWorkTimer();
 	key.resetPressStatus();
 
@@ -29,13 +27,21 @@ ACleanMode::ACleanMode()
 	home_points_.resize(1,g_zero_home);
 	clean_path_algorithm_.reset();
 	go_home_path_algorithm_.reset();
+
+	// Init odom position here.
+	robot::instance()->initOdomPosition();
+
+	passed_path_.clear();
+	plan_path_.clear();
 }
 
 bool ACleanMode::setNextAction()
 {
-	if (!isInitFinished_)
+	if (state_i_ == st_init)
 	{
-		if(action_i_ == ac_open_gyro)
+		if (action_i_ == ac_null)
+			action_i_ = ac_open_gyro;
+		else if(action_i_ == ac_open_gyro)
 		{
 			vacuum.setMode(Vac_Save);
 			brush.normalOperate();
@@ -43,11 +49,8 @@ bool ACleanMode::setNextAction()
 		}
 		else if(action_i_ == ac_open_lidar)
 			action_i_ = ac_open_slam;
-		else
-		{
-			isInitFinished_ = true;
+		else // action_open_slam
 			action_i_ = ac_null;
-		}
 	}
 	else if (isExceptionTriggered())
 		action_i_ = ac_exception_resume;
@@ -73,19 +76,20 @@ void ACleanMode::setNextModeDefault()
 
 bool ACleanMode::isFinish()
 {
-	if (isInitFinished_)
+	if (state_i_ != st_init)
 		updatePath(*map_);
 
-	if (!sp_action_->isFinish())
+	if (!(sp_action_ == nullptr || sp_action_->isFinish()))
 		return false;
 
 	sp_action_.reset();//for call ~constitution;
 	PP_INFO();
 
-	if (isInitFinished_)
+	if (state_i_ != st_init)
 	{
 		map_->saveBlocks(action_i_ == ac_linear, state_i_ == st_clean);
 		mapMark();
+
 	}
 
 	do
@@ -121,6 +125,8 @@ Point32_t ACleanMode::updatePath(GridMap& map)
 	else if (!is_equal_with_angle_(curr, last_))
 	{
 		last_ = curr;
+		passed_path_.push_back(curr);
+		/*
 		auto loc = std::find_if(passed_path_.begin(), passed_path_.end(), [&](Point32_t it) {
 				return is_equal_with_angle_(curr, it);
 		});
@@ -133,6 +139,7 @@ Point32_t ACleanMode::updatePath(GridMap& map)
 			passed_path_.clear();
 			g_wf_reach_count++;
 		}
+		*/
 		map.saveBlocks(action_i_ == ac_linear, state_i_ == st_clean);
 //		displayPath(passed_path_);
 	}
@@ -141,7 +148,6 @@ Point32_t ACleanMode::updatePath(GridMap& map)
 
 void ACleanMode::genNextAction()
 {
-
 	PP_INFO();
 	if(action_i_ == ac_open_gyro)
 		sp_action_.reset(new ActionOpenGyro);
@@ -156,9 +162,9 @@ void ACleanMode::genNextAction()
 	else if (action_i_ == ac_pause)
 		sp_action_.reset(new ActionPause);
 	else if (action_i_ == ac_linear)
-		sp_action_.reset(new ActionLinear);
+		sp_action_.reset(new MoveTypeLinear);
 	else if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
-		sp_action_.reset(new ActionFollowWall(action_i_ == ac_follow_wall_left, state_i_ == st_trapped));
+		sp_action_.reset(new MoveTypeFollowWall(action_i_ == ac_follow_wall_left, state_i_ == st_trapped));
 	else if (action_i_ == ac_go_to_charger)
 		sp_action_.reset(new MoveTypeGoToCharger);
 	else if (action_i_ == ac_exception_resume)
@@ -180,6 +186,12 @@ void ACleanMode::genNextAction()
 
 void ACleanMode::stateInit(int next)
 {
+	if (next == st_init)
+	{
+		action_i_ = ac_null;
+		led.set_mode(LED_FLASH, LED_GREEN, 1000);
+		PP_INFO();
+	}
 	if (next == st_clean) {
 		g_wf_reach_count = 0;
 		led.set_mode(LED_STEADY, LED_GREEN);
@@ -209,20 +221,6 @@ void ACleanMode::stateInit(int next)
 
 	}
 	if (next == st_tmp_spot) {
-//		if (SpotMovement::instance()->getSpotType() == NO_SPOT) {
-//			ROS_INFO("%s %d: Entering temp spot during navigation.", __FUNCTION__, __LINE__);
-//			Cell_t curr_cell = nav_map.getPosition().toCell();
-//			ROS_WARN("%s %d: current cell(%d, %d).", __FUNCTION__, __LINE__, curr_cell.X, curr_cell.Y);
-//			SpotMovement::instance()->setSpotType(CLEAN_SPOT);
-//			wheel.stop();
-//		}
-//		else if (SpotMovement::instance()->getSpotType() == CLEAN_SPOT) {
-//			ROS_INFO("%s %d: Exiting temp spot.", __FUNCTION__, __LINE__);
-//			SpotMovement::instance()->spotDeinit();
-//			wheel.stop();
-//			speaker.play(VOICE_CLEANING_CONTINUE);
-//		}
-//		ev.remote_spot = false;
 	}
 	if (next == st_trapped) {
 		robot_timer.initTrapTimer();
@@ -245,7 +243,8 @@ void ACleanMode::stateInit(int next)
 	}
 	if (next == st_resume_low_battery_charge)
 	{
-		// Nothing
+		led.set_mode(LED_STEADY, LED_GREEN);
+		PP_INFO();
 	}
 }
 

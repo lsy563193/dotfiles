@@ -54,7 +54,7 @@ bool MovementFollowWallLidar::calcTmpTarget(Point32_t& tmp_target) {
 
 bool MovementFollowWallLidar::isFinish() {
 //	return false;
-	auto p_mt = (ActionFollowWall*)(sp_mt_);
+	auto p_mt = (MoveTypeFollowWall*)(sp_mt_);
 	return p_mt->shouldMoveBack() || p_mt->shouldTurn();
 }
 

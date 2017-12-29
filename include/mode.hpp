@@ -45,28 +45,31 @@ public:
 
 	int action_i_{ac_null};
 	enum {
+		//0
 		ac_null,
 		ac_open_gyro,
-		ac_back_form_charger,//2
+		ac_back_form_charger,
 		ac_open_lidar,
-		ac_align,//4
+		ac_align,
+		//5
 		ac_open_slam,
-		ac_linear,//6
+		ac_linear,
 		ac_follow_wall_left,
-		ac_follow_wall_right,//8
+		ac_follow_wall_right,
 		ac_turn,
+		//10
 		ac_forward,
-		ac_back,//10
-//		ac_movement_follow_wall_left,
-//		ac_movement_follow_wall_right,
+		ac_back,
 		ac_go_to_charger,
 		ac_idle,
 		ac_sleep,
+		//15
 		ac_charge,
 		ac_turn_for_charger,
 		ac_movement_stay,
 		ac_movement_direct_go,
 		ac_pause,
+		//20
 		ac_exception_resume,
 		ac_check_bumper,
 		ac_check_vacuum,
@@ -263,6 +266,7 @@ protected:
 	int state_i_{st_clean};
 	enum {
 		st_null,
+		st_init,
 		st_clean,
 		st_go_home_point,
 		st_go_to_charger,
@@ -272,8 +276,8 @@ protected:
 		st_exploration,
 		st_charge,
 		st_resume_low_battery_charge,
+		st_pause,
 	};
-	bool isInitFinished_{false};
 	Point32_t g_zero_home{0,0,0};
 	bool found_temp_charger_{};
 	bool in_rcon_signal_range_{};
@@ -314,19 +318,19 @@ private:
 	bool isNewLineReach();
 	bool isOverOriginLine();
 	bool isBlockCleared();
-	bool enterPause();
-	bool resumePause();
-	bool resumeLowBatteryCharge();
-	bool switchToGoHomePointState();
+	void enterPause();
+	void resumePause();
+	void resumeLowBatteryCharge();
+	void switchToGoHomePointState();
 
-	bool paused_;
-	bool has_aligned_and_open_slam;
+	bool low_battery_charge_{false};
+	bool has_aligned_and_open_slam_{false};
 	float paused_odom_angle_{0};
 	bool moved_during_pause_;
 	Point32_t continue_point_{};
 	bool go_home_for_low_battery_{false};
 
-// For path planning.
+	int saved_state_i_before_pause{st_null};
 
 protected:
 //	Cells home_point_{};
@@ -385,15 +389,17 @@ class CleanModeSpot:public ACleanMode
 {
 public:
 	CleanModeSpot();
-	~CleanModeSpot() ;
+	~CleanModeSpot();
+
 	bool isFinish() override;
 	bool mapMark() override;
-	bool isExit();
-	bool setNextAction();
-	bool setNextState();
-private:
-protected:
-//	Cells home_point_{};
+	bool isExit() override;
+	bool setNextAction() override;
+	bool setNextState() override;
+	void cliffAll(bool state_now, bool state_last) override;
+	void remoteClean(bool state_now, bool state_last) override;
+	void keyClean(bool state_now, bool state_last) override;
+
 private:
 
 };

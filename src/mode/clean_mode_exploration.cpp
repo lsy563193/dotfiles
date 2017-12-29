@@ -6,17 +6,19 @@
 #include <error.h>
 #include "arch.hpp"
 
-CleanModeExploration::CleanModeExploration() {
+CleanModeExploration::CleanModeExploration()
+{
 	event_manager_register_handler(this);
 	event_manager_set_enable(true);
 	event_manager_reset_status();
 	PP_INFO();
 	ROS_INFO("%s %d: Entering Exporation mode\n=========================" , __FUNCTION__, __LINE__);
-	speaker.play(VOICE_EXPLORATION_START);
+	speaker.play(VOICE_EXPLORATION_START, false);
 	action_i_ = ac_open_gyro;
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
 	IMoveType::sp_mode_ = this;
 	map_ = &exploration_map;
+	map_->reset(CLEAN_MAP);
 }
 
 CleanModeExploration::~CleanModeExploration()
@@ -70,13 +72,14 @@ bool CleanModeExploration::mapMark()
 
 bool CleanModeExploration::isFinish()
 {
-	if (isInitFinished_)
+	if (state_i_ == st_init)
 		mapMark();
 
 	return ACleanMode::isFinish();
 }
 
-bool CleanModeExploration::isExit() {
+bool CleanModeExploration::isExit()
+{
 	if(ev.cliff_all_triggered){
 		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
 		setNextMode(md_idle);
@@ -90,10 +93,11 @@ bool CleanModeExploration::isExit() {
 	return false;
 }
 
-bool CleanModeExploration::setNextAction() {
+bool CleanModeExploration::setNextAction()
+{
 	PP_INFO();
 	//todo action convert
-	if (!isInitFinished_)
+	if (state_i_ == st_init)
 		return ACleanMode::setNextAction();
 	else if(state_i_ == st_clean)
 		action_i_ = ac_linear;
@@ -107,25 +111,28 @@ bool CleanModeExploration::setNextAction() {
 	return action_i_ != ac_null;
 }
 
-bool CleanModeExploration::setNextState() {
+bool CleanModeExploration::setNextState()
+{
 	PP_INFO();
-
-	if (!isInitFinished_)
-		return true;
 
 	bool state_confirm = false;
 	while (ros::ok() && !state_confirm)
 	{
-		if (state_i_ == st_null)
+		if (state_i_ == st_init)
 		{
-			auto curr = updatePosition();
-			passed_path_.push_back(curr);
-			home_points_.back().TH = robot::instance()->getWorldPoseAngle();
-			PP_INFO();
+			if (action_i_ == ac_open_slam)
+			{
+				auto curr = updatePosition();
+				passed_path_.push_back(curr);
+				home_points_.back().TH = robot::instance()->getWorldPoseAngle();
+				PP_INFO();
 
-			state_i_ = st_clean;
-			stateInit(state_i_);
-			action_i_ = ac_null;
+				state_i_ = st_clean;
+				stateInit(state_i_);
+				action_i_ = ac_null;
+			}
+			else
+				state_confirm = true;
 		}
 		else if (isExceptionTriggered())
 		{

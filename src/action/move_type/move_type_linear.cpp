@@ -6,7 +6,7 @@
 
 
 
-ActionLinear::ActionLinear() {
+MoveTypeLinear::MoveTypeLinear() {
 	resetTriggeredValue();
 
 	auto p_clean_mode = (ACleanMode*)sp_mode_;
@@ -21,16 +21,17 @@ ActionLinear::ActionLinear() {
 //	ROS_WARN("%s,%d: mt_is_linear,turn(%d)", __FUNCTION__, __LINE__, turn_target_angle_);
 }
 
-//ActionLinear::~ActionLinear() {
+//MoveTypeLinear::MoveTypeLinearar() {
 //
 //}
-bool ActionLinear::isFinish()
+bool MoveTypeLinear::isFinish()
 {
-//	PP_INFO();
 	if (IMoveType::isFinish())
+	{
+		PP_INFO();
 		return true;
+	}
 
-	auto p_clean_mode = (ACleanMode*)sp_mode_;
 	if (sp_movement_->isFinish()) {
 		PP_INFO();
 
@@ -60,7 +61,7 @@ bool ActionLinear::isFinish()
 	return false;
 }
 
-ActionLinear::~ActionLinear()
+MoveTypeLinear::~MoveTypeLinear()
 {
 //	PP_WARN();
 }

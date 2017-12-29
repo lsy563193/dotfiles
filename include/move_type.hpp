@@ -50,23 +50,23 @@ protected:
 	};
 };
 
-class ActionLinear:public IMoveType
+class MoveTypeLinear:public IMoveType
 {
 public:
-	ActionLinear();
-	~ActionLinear();
+	MoveTypeLinear();
+	~MoveTypeLinear();
 	bool isFinish() override;
 //	IAction* setNextAction();
 protected:
 };
 
-class ActionFollowWall:public IMoveType
+class MoveTypeFollowWall:public IMoveType
 {
 public:
-	ActionFollowWall() = delete;
-	~ActionFollowWall();
+	MoveTypeFollowWall() = delete;
+	~MoveTypeFollowWall();
 
-	explicit ActionFollowWall(bool is_left, bool is_trapped);
+	explicit MoveTypeFollowWall(bool is_left, bool is_trapped);
 
 	bool isFinish() override;
 

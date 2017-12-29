@@ -65,16 +65,17 @@ bool ModeCharge::isFinish()
 void ModeCharge::remoteClean(bool state_now, bool state_last)
 {
 	ev.key_clean_pressed = true;
-	ROS_WARN("%s %d: Waked up by remote key clean.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Receive remote key clean.", __FUNCTION__, __LINE__);
+	beeper.play_for_command(VALID);
+	remote.reset();
 }
 
 void ModeCharge::keyClean(bool state_now, bool state_last)
 {
-	ROS_WARN("%s %d: Waked up by key clean.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Receive key clean.", __FUNCTION__, __LINE__);
 	ev.key_clean_pressed = true;
 
 	// Wake up serial so it can beep.
-	serial.wakeUp();
 	beeper.play_for_command(VALID);
 
 	// Wait for key released.

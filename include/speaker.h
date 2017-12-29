@@ -5,6 +5,7 @@
 #include <alsa/asoundlib.h>
 
 typedef enum {
+	VOICE_NULL						= 0,
 	VOICE_WELCOME_ILIFE				= 1,
 	VOICE_PLEASE_START_CLEANING		= 2,
 	VOICE_CLEANING_FINISHED			= 3,
@@ -75,18 +76,22 @@ typedef struct
 {
 	VoiceType type;
 	bool can_be_interrupted;
-}VoiceStruct;
+}Voice;
 
 class Speaker {
 public:
 	Speaker(void);
 
-	void play(VoiceType wav, bool can_be_interrputed = true);
+	void play(VoiceType voice_type, bool can_be_interrputed = true);
 
 	void playRoutine(void);
 
 private:
+	bool openVoiceFile(Voice voice);
+
 	bool openPcmDriver(void);
+
+	bool initPcmDriver(void);
 
 	void closePcmDriver(void);
 
@@ -94,7 +99,7 @@ private:
 
 	void adjustVolume(long volume);
 
-	void finishPlaying(void);
+	void _play(void);
 
 	snd_pcm_t *handle_;
 
@@ -106,11 +111,17 @@ private:
 
 	char *buffer_;
 
+	size_t buffer_size_;
+
 	VoiceHeaderType voice_header_;
 
-	std::list<VoiceStruct> list_;
+	Voice curr_voice_{VOICE_NULL, true};
 
-	bool can_pp_keep_running_;
+	bool finish_playing_{true};
+
+	bool can_be_interrupted_{true};
+
+	bool break_playing_{false};
 };
 
 extern Speaker speaker;

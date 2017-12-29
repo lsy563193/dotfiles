@@ -36,8 +36,6 @@ public:
 
 	bool waitForOn(void);
 
-	bool isStable(void);
-
 	void setOff(void);
 
 	int16_t getFront(void);

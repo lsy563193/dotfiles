@@ -33,7 +33,7 @@ MovementCharge::~MovementCharge()
 {
 	wheel.stop();
 	charger.setStop();
-	ROS_INFO("%s %d: End movement turn for charger.", __FUNCTION__, __LINE__);
+	ROS_INFO("%s %d: End movement charge.", __FUNCTION__, __LINE__);
 }
 
 bool MovementCharge::isFinish()
@@ -63,7 +63,7 @@ bool MovementCharge::isFinish()
 				turn_for_charger_ = true;
 				start_turning_time_stamp_ = ros::Time::now().toSec();
 				turn_right_finish_ = false;
-				ROS_INFO("%s %d: Start movement turn for charger.", __FUNCTION__, __LINE__);
+				ROS_INFO("%s %d: Start turn for charger.", __FUNCTION__, __LINE__);
 			}
 		}
 	}

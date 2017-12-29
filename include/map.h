@@ -64,6 +64,7 @@ public:
 
 	GridMap();
 	~GridMap();
+	void mapInit();
 
 	void setCell(uint8_t id, int16_t x, int16_t y, CellState value);
 

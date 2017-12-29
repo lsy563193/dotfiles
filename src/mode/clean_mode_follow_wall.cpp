@@ -14,10 +14,11 @@ CleanModeFollowWall::CleanModeFollowWall()
 	ROS_INFO("%s %d: Entering Follow wall mode\n=========================" , __FUNCTION__, __LINE__);
 	IMoveType::sp_mode_ = this;
 	diff_timer_ = WALL_FOLLOW_TIME;
-	speaker.play(VOICE_CLEANING_WALL_FOLLOW);
+	speaker.play(VOICE_CLEANING_WALL_FOLLOW, false);
 	clean_path_algorithm_.reset(new WFCleanPathAlgorithm);
 	go_home_path_algorithm_.reset(new GoHomePathAlgorithm(nav_map, home_points_));
 	map_ = &fw_map;
+	map_->reset(CLEAN_MAP);
 }
 
 CleanModeFollowWall::~CleanModeFollowWall()
@@ -55,7 +56,7 @@ bool CleanModeFollowWall::mapMark() {
 bool CleanModeFollowWall::setNextAction()
 {
 	PP_INFO();
-	if (!isInitFinished_)
+	if (state_i_ == st_init)
 		return ACleanMode::setNextAction();
 	ROS_WARN("%s,%d: mt_follow_wall_left", __FUNCTION__, __LINE__);
 	action_i_ = ac_follow_wall_left;
