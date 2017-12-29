@@ -1359,7 +1359,7 @@ void GridMap::setExplorationCleaned() {
 	for (int16_t angle_i = 0; angle_i <= 359; angle_i += 1) {
 		for (int dy = 0; dy < RADIUS_CELL; ++dy) {
 			auto cur_tmp = cur;
-			cur_tmp.TH += angle_i * 10;
+			cur_tmp.th += angle_i * 10;
 			auto cell = cur_tmp.getRelative(0, dy * CELL_SIZE).toCell();
 			auto status = getCell(CLEAN_MAP,cell.X,cell.Y);
 			if (status > CLEANED && status < BLOCKED_BOUNDARY) {

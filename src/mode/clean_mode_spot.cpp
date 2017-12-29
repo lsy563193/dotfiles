@@ -103,7 +103,7 @@ bool CleanModeSpot::setNextState()
 				auto curr = updatePosition();
 				passed_path_.push_back(curr);
 
-				home_points_.back().TH = robot::instance()->getWorldPoseAngle();
+				home_points_.back().th = robot::instance()->getWorldPoseAngle();
 				PP_INFO();
 
 				state_i_ = st_clean;
@@ -129,7 +129,7 @@ bool CleanModeSpot::setNextState()
 			ROS_INFO("\033[32m plan_path front (%d,%d)\033[0m",plan_path_.front().toCell().X,plan_path_.front().toCell().Y);
 			if (clean_path_algorithm_->generatePath(nav_map, getPosition(), old_dir_, plan_path_))
 			{
-				new_dir_ = (MapDirection)plan_path_.front().TH;
+				new_dir_ = (MapDirection)plan_path_.front().th;
 				ROS_ERROR("new_dir_(%d)", new_dir_);
 				PP_INFO();
 				plan_path_.pop_front();

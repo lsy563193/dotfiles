@@ -19,7 +19,7 @@
 typedef struct Pose16_t_{
 	int16_t X;
 	int16_t Y;
-	int16_t	TH;
+	int16_t	th;
 	friend bool operator==(const Pose16_t_ left, const Pose16_t_ right)
 	{
 		return left.X == right.X && left.Y == right.Y;
@@ -315,7 +315,7 @@ double rad_2_deg(double rad, int8_t scale);
   public:
     T X;
     T Y;
-//    int16_t	TH;
+//    int16_t	th;
 }; // class Vector2<T>
 
   /*
@@ -329,38 +329,38 @@ public:
   Point32_t() {
     X = 0;
     Y = 0;
-    TH = 0;
+    th = 0;
   }
 
   Point32_t(int32_t x, int32_t y, int16_t th) {
     X = x;
     Y = y;
-    TH = th;
+    th = th;
   }
 
   Point32_t getRelative(int16_t dx, int16_t dy) const {
 		Point32_t point;
 		double relative_sin, relative_cos;
-		if (TH != 3600) {
-			if (TH == 0) {
+		if (th != 3600) {
+			if (th == 0) {
 				relative_sin = 0;
 				relative_cos = 1;
 			}
-			else if (TH == 900) {
+			else if (th == 900) {
 				relative_sin = 1;
 				relative_cos = 0;
 			}
-			else if (TH == 1800) {
+			else if (th == 1800) {
 				relative_sin = 0;
 				relative_cos = -1;
 			}
-			else if (TH == -900) {
+			else if (th == -900) {
 				relative_sin = -1;
 				relative_cos = 0;
 			}
 			else {
-				relative_sin = sin(deg_to_rad(TH, 10));
-				relative_cos = cos(deg_to_rad(TH, 10));
+				relative_sin = sin(deg_to_rad(th, 10));
+				relative_cos = cos(deg_to_rad(th, 10));
 			}
 		}
 		point.X = X + (int32_t) (
@@ -369,7 +369,7 @@ public:
 		point.Y = Y + (int32_t) (
 						(((double) dx * relative_sin * CELL_COUNT_MUL) + ((double) dy * relative_cos * CELL_COUNT_MUL)) /
 						CELL_SIZE);
-		point.TH = TH;
+		point.th = th;
 		return point;
 	}
 
@@ -377,7 +377,7 @@ public:
     return {countToCell(X), countToCell(Y)};
   }
 
-  int16_t TH{};
+  int16_t th{};
 private:
   int16_t countToCell(int32_t count) const {
     if (count < -CELL_COUNT_MUL_1_2) {
@@ -426,7 +426,7 @@ typedef struct LineKB{
 typedef struct{
 	int32_t X;
 	int32_t Y;
-  int16_t TH;
+  int16_t th;
 } Point32_t;
 */
 

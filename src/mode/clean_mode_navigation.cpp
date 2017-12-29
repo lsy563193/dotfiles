@@ -281,7 +281,7 @@ bool CleanModeNav::setNextState()
 				auto curr = updatePosition();
 				passed_path_.push_back(curr);
 
-				home_points_.back().TH = robot::instance()->getWorldPoseAngle();
+				home_points_.back().th = robot::instance()->getWorldPoseAngle();
 				PP_INFO();
 
 				state_i_ = st_clean;
@@ -316,7 +316,7 @@ bool CleanModeNav::setNextState()
 			ROS_ERROR("old_dir_(%d)", old_dir_);
 			if (clean_path_algorithm_->generatePath(nav_map, getPosition(), old_dir_, plan_path_))
 			{
-				new_dir_ = (MapDirection)plan_path_.front().TH;
+				new_dir_ = (MapDirection)plan_path_.front().th;
 				ROS_ERROR("new_dir_(%d)", new_dir_);
 				plan_path_.pop_front();
 				clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
@@ -378,7 +378,7 @@ bool CleanModeNav::setNextState()
 				clean_path_algorithm_->generateShortestPath(nav_map, getPosition(), continue_point_, old_dir_, plan_path_);
 				if (!plan_path_.empty())
 				{
-					new_dir_ = (MapDirection)plan_path_.front().TH;
+					new_dir_ = (MapDirection)plan_path_.front().th;
 					ROS_ERROR("new_dir_(%d)", new_dir_);
 					plan_path_.pop_front();
 					clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));

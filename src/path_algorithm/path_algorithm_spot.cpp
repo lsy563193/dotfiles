@@ -319,15 +319,15 @@ void SpotCleanPathAlgorithm::giveMeCleanPoint(GridMap map,Point32_t &point)
 {
 	Cell_t cell = point.toCell();
 	if(map.getCell(COST_MAP,cell.X,cell.Y) >= COST_HIGH){
-		if(isXAxis((MapDirection)point.TH)){
-			if(isPos((MapDirection)point.TH))
+		if(isXAxis((MapDirection)point.th)){
+			if(isPos((MapDirection)point.th))
 				point.Y = cellToCount(cell.Y+1);
 			else
 				point.Y = cellToCount(cell.Y-1);
 
 		}
-		else if(isYAxis((MapDirection)point.TH)){
-			if(isPos((MapDirection)point.TH))
+		else if(isYAxis((MapDirection)point.th)){
+			if(isPos((MapDirection)point.th))
 				point.X = cellToCount(cell.X-1);
 			else
 				point.X = cellToCount(cell.X+1);

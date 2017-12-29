@@ -34,7 +34,7 @@ void APathAlgorithm::displayPointPath(const Points &point_path)
 	std::string     msg = __FUNCTION__;
 	msg += " " + std::to_string(__LINE__) + ": Targers(" + std::to_string(point_path.size()) + "):";
 	for (auto it = point_path.begin(); it != point_path.end(); ++it) {
-		msg += "(" + std::to_string(it->X) + ", " + std::to_string(it->Y) + ", " + std::to_string(it->TH) + "),";
+		msg += "(" + std::to_string(it->X) + ", " + std::to_string(it->Y) + ", " + std::to_string(it->th) + "),";
 	}
 	//msg += "\n";
 	ROS_INFO("%s",msg.c_str());
@@ -147,16 +147,16 @@ Points APathAlgorithm::cells_generate_points(Cells &path)
 		Point32_t target {cellToCount((*it).X),cellToCount((*it).Y),0};
 		auto it_next = it+1;
 		if (it->X == it_next->X)
-			target.TH = it->Y > it_next->Y ? MAP_NEG_Y : MAP_POS_Y;
+			target.th = it->Y > it_next->Y ? MAP_NEG_Y : MAP_POS_Y;
 		else
-			target.TH = it->X > it_next->X ? MAP_NEG_X : MAP_POS_X;
+			target.th = it->X > it_next->X ? MAP_NEG_X : MAP_POS_X;
 		targets.push_back(target);
 	}
-//		ROS_INFO("path.back(%d,%d,%d)",path.back().X, path.back().Y, path.back().TH);
+//		ROS_INFO("path.back(%d,%d,%d)",path.back().X, path.back().Y, path.back().th);
 
-	targets.back().TH = (targets.end()-2)->TH;
+	targets.back().th = (targets.end()-2)->th;
 //	ROS_INFO("%s %d: path.back(%d,%d,%d), path.front(%d,%d,%d)", __FUNCTION__, __LINE__,
-//					 path.back().X, path.back().Y, path.back().TH, path.front().X, path.front().Y, path.front().TH);
+//					 path.back().X, path.back().Y, path.back().th, path.front().X, path.front().Y, path.front().th);
 	return targets;
 }
 

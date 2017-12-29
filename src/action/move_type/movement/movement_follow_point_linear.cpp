@@ -54,7 +54,7 @@ bool MovementFollowPointLinear::calcTmpTarget(Point32_t& tmp_target) {
 
 	if (is_near && p_cm->plan_path_.size() > 1) {
 		p_cm->old_dir_ = p_cm->new_dir_;
-		p_cm->new_dir_ = (MapDirection) p_cm->plan_path_.front().TH;
+		p_cm->new_dir_ = (MapDirection) p_cm->plan_path_.front().th;
 		p_cm->plan_path_.pop_front();
 		sp_mt_->target_point_ = p_cm->plan_path_.front();
 //		ROS_INFO("%s,%d,is_near(%d),dir(%d),target(%d,%d),tmp(%d,%d)", __FUNCTION__, __LINE__, is_near, p_cm->new_dir_, sp_mt_->target_point_.X, sp_mt_->target_point_.Y, tmp_target.X, tmp_target.Y);
@@ -135,11 +135,11 @@ bool MovementFollowPointLinear::isPoseReach()
 {
 	// Checking if robot has reached target cell and target angle.
 //	PP_INFO();
-	auto target_angle = sp_mt_->target_point_.TH;
+	auto target_angle = sp_mt_->target_point_.th;
 	if (isCellReach() && std::abs(ranged_angle(robot::instance()->getWorldPoseAngle() - target_angle)) < 200)
 	{
 		ROS_INFO("\033[1m""%s, %d: MovementFollowPointLinear, reach the target cell and pose(%d,%d,%d)!!""\033[0m", __FUNCTION__, __LINE__,
-				 sp_mt_->target_point_.X, sp_mt_->target_point_.Y, sp_mt_->target_point_.TH);
+				 sp_mt_->target_point_.X, sp_mt_->target_point_.Y, sp_mt_->target_point_.th);
 		return true;
 	}
 	return false;
@@ -160,7 +160,7 @@ bool MovementFollowPointLinear::isNearTarget()
 //		if(p_clean_mode->plan_path_.size() > 1)
 //		{
 //			// Switch to next target for smoothly turning.
-//			new_dir = static_cast<MapDirection>(p_clean_mode->plan_path_.front().TH);
+//			new_dir = static_cast<MapDirection>(p_clean_mode->plan_path_.front().th);
 //			p_clean_mode->plan_path_.pop_front();
 //			ROS_INFO("%s %d: Curr(%d, %d), switch next cell(%d, %d), new dir(%d).", __FUNCTION__, __LINE__,
 //					 nav_map.getXCell(),

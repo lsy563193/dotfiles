@@ -123,7 +123,7 @@ bool ACleanMode::isFinish()
 
 bool is_equal_with_angle_(const Point32_t &l, const Point32_t &r)
 {
-	return  l.toCell() == r.toCell() && std::abs(ranged_angle(l.TH - r.TH)) < 200;
+	return  l.toCell() == r.toCell() && std::abs(ranged_angle(l.th - r.th)) < 200;
 }
 
 Point32_t ACleanMode::updatePath(GridMap& map)
@@ -132,12 +132,12 @@ Point32_t ACleanMode::updatePath(GridMap& map)
 //	auto point = getPosition();
 //	robot::instance()->pubCleanMapMarkers(nav_map, tmp_plan_path_);
 //	PP_INFO();
-//	ROS_INFO("point(%d,%d,%d)",point.X, point.Y,point.TH);
-//	ROS_INFO("last(%d,%d,%d)",last_.X, last_.Y, last_.TH);
+//	ROS_INFO("point(%d,%d,%d)",point.X, point.Y,point.th);
+//	ROS_INFO("last(%d,%d,%d)",last_.X, last_.Y, last_.th);
 	if (passed_path_.empty())
 	{
 		passed_path_.push_back(curr);
-//		ROS_INFO("curr(%d,%d,%d)",curr.X, curr.Y, curr.TH);
+//		ROS_INFO("curr(%d,%d,%d)",curr.X, curr.Y, curr.th);
 	}
 	else if (!is_equal_with_angle_(curr, last_))
 	{
@@ -149,7 +149,7 @@ Point32_t ACleanMode::updatePath(GridMap& map)
 		});
 		auto distance = std::distance(loc, passed_path_.end());
 		if (distance == 0) {
-			ROS_INFO("curr(%d,%d,%d)",curr.toCell().X, curr.toCell().Y, curr.TH);
+			ROS_INFO("curr(%d,%d,%d)",curr.toCell().X, curr.toCell().Y, curr.th);
 			passed_path_.push_back(curr);
 		}
 		if (distance > 5) {
@@ -319,7 +319,7 @@ bool ACleanMode::setNextStateForGoHomePoint(GridMap &map)
 	else if (go_home_path_algorithm_->generatePath(map, getPosition(),old_dir_, plan_path_))
 	{
 		// New path to home cell is generated.
-		new_dir_ = (MapDirection)plan_path_.front().TH;
+		new_dir_ = (MapDirection)plan_path_.front().th;
 		plan_path_.pop_front();
 		go_home_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
 	}
