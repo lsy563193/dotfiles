@@ -31,12 +31,11 @@ class ActionOpenGyro :public IAction
 {
 public:
 	ActionOpenGyro();
-	bool isFinish();
+	bool isFinish() override;
 	void run();
-//	virtual void curr()=0;
-//friend Mode;
 
-
+private:
+	bool gyro_closed_{false};
 };
 
 class ActionBackFromCharger :public IAction
