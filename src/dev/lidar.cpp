@@ -36,43 +36,48 @@ Lidar::~Lidar()
 
 void Lidar::scanLinearCb(const sensor_msgs::LaserScan::ConstPtr &scan)
 {
-	if(1){
+	if(switch_){
 		scanLinear_mutex_.lock();
 		lidarScanData_linear_ = *scan;
 		scanLinear_mutex_.unlock();
 		angle_n_ = (int)((scan->angle_max - scan->angle_min) / scan->angle_increment);
 		setScanLinearReady(1);
+		scanLinear_update_time = ros::Time::now().toSec();
 	}
-	scanLinear_update_time = ros::Time::now().toSec();
-
 }
 
 #define WF_SCAN_TYPE						(2)
 void Lidar::scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr &scan)
 {
-	uint8_t scan2_valid_cnt = 0;
-
-	for (uint16_t i = 0; i < 360; i++)
+	if (switch_)
 	{
-		if (scan->ranges[i] != std::numeric_limits<float>::infinity())
+		uint8_t scan2_valid_cnt = 0;
+		for (uint16_t i = 0; i < 360; i++)
 		{
-			if (++scan2_valid_cnt > 30)
-				break;
+			if (scan->ranges[i] != std::numeric_limits<float>::infinity())
+			{
+				if (++scan2_valid_cnt > 30)
+					break;
+			}
 		}
-	}
-	if (scan2_valid_cnt > 30) {
-		// lidar not been covered.
-		setLidarScanDataOriginal(scan);
-		scanOriginal_update_time = ros::Time::now().toSec();
-		setScanOriginalReady(1);
+		if (scan2_valid_cnt > 30) {
+			// lidar not been covered.
+			setLidarScanDataOriginal(scan);
+			scanOriginal_update_time = ros::Time::now().toSec();
+			setScanOriginalReady(1);
+		}
 	}
 }
 
-void Lidar::scanCompensateCb(const sensor_msgs::LaserScan::ConstPtr &scan){
-	scanCompensate_mutex_.lock();
-	lidarScanData_compensate_ = *scan;
-	scanCompensate_mutex_.unlock();
-	setScanCompensateReady(1);
+void Lidar::scanCompensateCb(const sensor_msgs::LaserScan::ConstPtr &scan)
+{
+	if (switch_)
+	{
+		scanCompensate_mutex_.lock();
+		lidarScanData_compensate_ = *scan;
+		scanCompensate_mutex_.unlock();
+		setScanCompensateReady(1);
+	}
 }
 
 void Lidar::lidarPointCb(const visualization_msgs::Marker &point_marker) {
@@ -142,76 +147,26 @@ void Lidar::setScanCompensateReady(uint8_t val)
 	is_scanCompensate_ready_ = val;
 }
 
-void Lidar::motorCtrl(bool switch_)
+void Lidar::motorCtrl(bool new_switch_)
 {
-	ROS_INFO("%s %d: Operate on lidar.", __FUNCTION__, __LINE__);
+	switch_ = new_switch_;
 	if(switch_){
 		scanLinear_update_time = ros::Time::now().toSec();
 		scanOriginal_update_time = ros::Time::now().toSec();
-		open_command_time_stamp_ = time(NULL);
+		ROS_INFO("\033[35m" "%s %d: Open lidar." "\033[0m", __FUNCTION__, __LINE__);
 	}
-
-	if (!robot::instance()->lidarMotorCtrl(switch_))
-		ROS_ERROR("%s %d: Lidar service not received!",__FUNCTION__,__LINE__);
-
-	if (!switch_)
+	else
 	{
 		setScanLinearReady(0);
 		setScanOriginalReady(0);
 		setScanCompensateReady(0);
 		//delete []last_ranges_;
-		ROS_INFO("\033[35m" "%s %d: Lidar stopped." "\033[0m", __FUNCTION__, __LINE__);
+		ROS_INFO("\033[35m" "%s %d: Stop lidar." "\033[0m", __FUNCTION__, __LINE__);
 	}
-/*	time_t start_time = time(NULL);
-	bool eh_status_now = false, eh_status_last = false;
-	bool request_sent = false;
-	while(ros::ok())
-	{
-		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
-			continue;
-		}
 
-		if (switch_ && (ev.fatal_quit || ev.key_clean_pressed || ev.cliff_all_triggered)) // Interrupt only happens during starting lidar.
-		{
-			if (!ev.fatal_quit)
-			{
-				setScanLinearReady(0);
-				ROS_WARN("\033[34m" "%s %d: Lidar starting interrupted, status: %d" "\033[0m", __FUNCTION__, __LINE__, isScanLinearReady());
-			}
-			else
-				setScanLinearReady(-1);//open lidar fail ,stop process
-			break;
-		}
+	if (!robot::instance()->lidarMotorCtrl(switch_))
+		ROS_ERROR("%s %d: Lidar service not received!",__FUNCTION__,__LINE__);
 
-		if (!request_sent)
-		{
-			request_sent = true;
-			ROS_INFO("\033[35m" "%s %d: Send command %s!" "\033[0m", __FUNCTION__, __LINE__, switch_ ? "ON":"OFF");
-			if (robot::instance()->lidarMotorCtrl(switch_)){
-				start_time = time(NULL);
-				if (!switch_)
-					// For stop command.
-					break;
-			}
-			else{
-				ROS_ERROR("\033[35m" "%s %d: Service not received!" "\033[0m",__FUNCTION__,__LINE__);
-				request_sent = false;
-				setScanLinearReady(0);
-			}
-		}
-
-		if (switch_ && isScanLinearReady())
-		{
-			ROS_INFO("\033[32m" "%s %d: Scan topic received, start lidar successed." "\033[0m", __FUNCTION__, __LINE__);
-			break;
-		}
-
-		if (switch_ && (time(NULL) - start_time > 8)){ // Time out
-			//ROS_ERROR("lidar.cpp, %s,%d,start lidar motor timeout",__FUNCTION__,__LINE__);
-			ev.fatal_quit = true;
-			continue;
-		}
-	}*/
 }
 
 /*
@@ -1472,22 +1427,6 @@ bool Lidar::lidarCheckFresh(float duration, uint8_t type)
 	}
 
 	//ROS_INFO("%s %d: type:%d, time_gap(%lf), duration(%f).", __FUNCTION__, __LINE__, type, time_gap, duration);
-	return false;
-}
-
-bool Lidar::openTimeOut()
-{
-	auto time_diff = time(NULL) - open_command_time_stamp_;
-	//ROS_INFO("%s %d: Time diff:%d", __FUNCTION__, __LINE__, time_diff);
-	if (time_diff > 8)
-	{
-		motorCtrl(OFF);
-		ROS_ERROR("%s %d: Lidar Open time out.", __FUNCTION__, __LINE__);
-		ev.fatal_quit = true;
-		error.set(ERROR_CODE_LIDAR);
-		return true;
-	}
-
 	return false;
 }
 

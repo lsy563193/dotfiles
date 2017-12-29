@@ -17,16 +17,9 @@
 #define RAD2DEG(rad) ((rad)*57.29578)
 
 const double CHASE_X = 0.107;
-bool	g_is_low_bat_pause=false;
-bool g_is_manual_pause=false;
-time_t	start_time;
-
-int16_t slam_error_count;
 
 // For obs dynamic adjustment
 int OBS_adjust_count = 50;
-
-
 
 //extern pp::x900sensor sensor;
 robot::robot(std::string serial_port, int baudrate, std::string lidar_bumper_dev)/*:offset_angle_(0),saved_offset_angle_(0)*/
@@ -66,13 +59,6 @@ robot::robot(std::string serial_port, int baudrate, std::string lidar_bumper_dev
 
 	resetCorrection();
 
-	start_time = time(NULL);
-
-	// Initialize the low battery pause variable.
-	// Initialize the key press count.
-	// Initialize the manual pause variable.
-	g_is_manual_pause = false;
-
 	setBaselinkFrameType(ODOM_POSITION_ODOM_ANGLE);
 
 	// Init for serial.
@@ -81,7 +67,6 @@ robot::robot(std::string serial_port, int baudrate, std::string lidar_bumper_dev
 		ROS_ERROR("%s %d: Serial init failed!!", __FUNCTION__, __LINE__);
 		return;
 	}
-
 
 #if VERIFY_CPU_ID
 	if (verify_cpu_id() < 0) {
@@ -203,28 +188,17 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 				slam_correction_x_ = tmp_x - odom_pose_x_;
 				slam_correction_y_ = tmp_y - odom_pose_y_;
 				slam_correction_yaw_ = tmp_yaw - odom_pose_yaw_;
-			} catch(tf::TransformException e) {
+			} catch(tf::TransformException e)
+			{
 				ROS_WARN("%s %d: Failed to compute map transform, skipping scan (%s)", __FUNCTION__, __LINE__, e.what());
-				setTfReady(false);
-				slam_error_count++;
-				if (slam_error_count > 1)
-				{
-//					ev.slam_error = true;
-					slam_error_count = 0;
-				}
-//				return;
 			}
 
 			if (!isTfReady())
 			{
-				ROS_INFO("%s %d: Set is_tf_ready_ to true.", __FUNCTION__, __LINE__);
+				ROS_INFO("%s %d: TF ready.", __FUNCTION__, __LINE__);
 				setTfReady(true);
-				slam_error_count = 0;
 			}
 		}
-//		if(! is_turn())
-//			cm_update_map();
-//		cm_update_position();
 	}
 	else if (getBaselinkFrameType() == ODOM_POSITION_ODOM_ANGLE)
 	{
@@ -257,27 +231,18 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 				slam_correction_x_ = tmp_x - odom_pose_x_;
 				slam_correction_y_ = tmp_y - odom_pose_y_;
 				slam_correction_yaw_ = tmp_yaw - odom_pose_yaw_;
-			} catch(tf::TransformException e) {
+			} catch(tf::TransformException e)
+			{
 				ROS_WARN("%s %d: Failed to compute map transform, skipping scan (%s)", __FUNCTION__, __LINE__, e.what());
-				setTfReady(false);
-				slam_error_count++;
-				if (slam_error_count > 1)
-				{
-//					ev.slam_error = true;
-					slam_error_count = 0;
-				}
-//				return;
 			}
+
 
 			if (!isTfReady())
 			{
-				ROS_INFO("%s %d: Set is_tf_ready_ to true.", __FUNCTION__, __LINE__);
+				ROS_INFO("%s %d: TF ready.", __FUNCTION__, __LINE__);
 				setTfReady(true);
-				slam_error_count = 0;
 			}
 		}
-
-//		cm_update_map();
 	}
 
 #if USE_ROBOT_TF
@@ -475,7 +440,8 @@ bool robot::calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,bool is_
 	return true;
 }
 
-void robot::scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr& scan) {
+void robot::scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr& scan)
+{
 	lidar.scanOriginalCb(scan);
 	if (lidar.isScanOriginalReady() && (p_mode->action_i_ == p_mode->ac_follow_wall_left || p_mode->action_i_ == p_mode->ac_follow_wall_right)) {
 		std::deque<Vector2<double>> points{};
