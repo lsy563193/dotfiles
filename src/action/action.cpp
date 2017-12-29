@@ -14,11 +14,11 @@ IAction::IAction():start_timer_(ros::Time::now().toSec()) {
 
 bool IAction::isTimeUp()
 {
-	if (interval_ == 0)
+	if (timeout_interval_ == 0)
 		return false;
 //	PP_INFO();
-//	ROS_INFO("tramp(%f),interval(%f)",ros::Time::now().toSec() - start_timer_,interval_);
-	return (ros::Time::now().toSec() - start_timer_ > interval_);
+//	ROS_INFO("tramp(%f),interval(%f)",ros::Time::now().toSec() - start_timer_,timeout_interval_);
+	return (ros::Time::now().toSec() - start_timer_ > timeout_interval_);
 }
 
 bool IAction::isExit()

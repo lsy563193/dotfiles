@@ -4,6 +4,7 @@
 
 #include <mathematics.h>
 #include <pp.h>
+#include <event_manager.h>
 #include "arch.hpp"
 
 #define NAV_INFO() ROS_INFO("st(%d),ac(%d)", state_i_, action_i_)
@@ -72,6 +73,22 @@ void ACleanMode::setNextModeDefault()
 		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
 		Mode::setNextMode(md_idle);
 	}
+}
+
+bool ACleanMode::isExit()
+{
+	if (state_i_ == st_init)
+	{
+		if (action_i_ == ac_open_lidar && sp_action_->isTimeUp())
+		{
+			error.set(ERROR_CODE_LIDAR);
+			setNextMode(md_idle);
+			ev.fatal_quit = true;
+			return true;
+		}
+	}
+
+	return false;
 }
 
 bool ACleanMode::isFinish()

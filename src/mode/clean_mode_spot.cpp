@@ -87,7 +87,7 @@ bool CleanModeSpot::isExit()
 		setNextMode(md_idle);
 		return true;
 	}
-	return false;
+	return ACleanMode::isExit();
 }
 
 bool CleanModeSpot::setNextState()

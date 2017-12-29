@@ -172,11 +172,6 @@ bool CleanModeNav::isExit()
 		}
 	}
 
-	if (state_i_ == st_init && action_i_ == ac_open_lidar && sp_action_->isTimeUp())
-	{
-		//todo
-	}
-
 	if (ev.fatal_quit || ev.key_long_pressed || ev.cliff_all_triggered || sp_action_->isExit())
 	{
 		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
@@ -191,7 +186,7 @@ bool CleanModeNav::isExit()
 		return true;
 	}
 
-	return false;
+	return ACleanMode::isExit();
 }
 
 bool CleanModeNav::setNextAction()

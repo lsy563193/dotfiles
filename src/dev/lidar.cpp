@@ -14,6 +14,9 @@ Lidar lidar;
 Lidar::Lidar():angle_n_(0)
 {
 	//todo: lidar should add a status for setting ScanReady in case lidar still get a scan after shutting down.
+	setScanLinearReady(0);
+	setScanOriginalReady(0);
+	setScanCompensateReady(0);
 //	setScanLinearReady(0);
 //	setScanOriginalReady(0);
 //	scanLinear_update_time = ros::Time::now().toSec();
@@ -155,6 +158,7 @@ void Lidar::motorCtrl(bool switch_)
 	{
 		setScanLinearReady(0);
 		setScanOriginalReady(0);
+		setScanCompensateReady(0);
 		//delete []last_ranges_;
 		ROS_INFO("\033[35m" "%s %d: Lidar stopped." "\033[0m", __FUNCTION__, __LINE__);
 	}
@@ -384,21 +388,7 @@ bool Lidar::findLines(std::vector<LineABC> *lines,bool combine)
 
 void Lidar::startAlign()
 {
-	start_align_time_stamp_ = time(NULL);
 	align_finish_ = false;
-}
-
-bool Lidar::alignTimeOut()
-{
-	auto time_diff = time(NULL) - start_align_time_stamp_;
-	//ROS_INFO("%s %d: Time diff:%d", __FUNCTION__, __LINE__, time_diff);
-	if (time_diff > 2)
-	{
-		ROS_WARN("%s %d: Align time out.", __FUNCTION__, __LINE__);
-		return true;
-	}
-
-	return false;
 }
 
 bool Lidar::alignFinish()

@@ -63,7 +63,7 @@ void Speaker::playRoutine(void)
 
 void Speaker::play(VoiceType voice_type, bool can_be_interrupted)
 {
-	if (!curr_voice_.can_be_interrupted)
+	if (!finish_playing_ && !curr_voice_.can_be_interrupted)
 	{
 		ROS_INFO("%s %d: Wait for previous voice finish.", __FUNCTION__, __LINE__);
 		while (!finish_playing_)
