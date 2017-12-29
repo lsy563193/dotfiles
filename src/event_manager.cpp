@@ -47,18 +47,15 @@ EventHandle* p_eh;
 
 void event_manager_init()
 {
-	int	j;
 
 	g_event_manager_enabled = g_event_handler_status = false;
 
 	event_manager_reset_status();
 
-		for (j = 0; j < EVT_MAX; j++) {
-//			eat.handler[j] = NULL;
-//			p_handler[j] = NULL;
-//			eat.handler_enabled[j] = false;
-			g_new_event_status[j] = false;
-		}
+	for (auto j = 0; j < EVT_MAX; j++) {
+		g_new_event_status[j] = false;
+	}
+
 	p_handler[EVT_BUMPER_ALL] = &EventHandle::bumperAll;
 	p_handler[EVT_BUMPER_LEFT] = &EventHandle::bumperLeft;
 	p_handler[EVT_BUMPER_RIGHT] = &EventHandle::bumperRight;
