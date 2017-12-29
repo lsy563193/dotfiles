@@ -153,15 +153,21 @@ bool CleanModeNav::isExit()
 	{
 		if (sp_action_->isTimeUp())
 		{
-			ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Exit for pause timeout(%d)", __FUNCTION__, __LINE__, IDLE_TIMEOUT);
 			setNextMode(md_sleep);
 			return true;
 		}
 		else if (sp_action_->isExit())
 		{
-			ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Action pause exit.", __FUNCTION__, __LINE__);
 			moved_during_pause_ = true;
 			setNextMode(md_idle);
+			return true;
+		}
+		else if (charger.getChargeStatus())
+		{
+			ROS_WARN("%s %d: Exit for pause and detect charge.", __FUNCTION__, __LINE__);
+			setNextMode(md_charge);
 			return true;
 		}
 	}
@@ -412,6 +418,10 @@ bool CleanModeNav::setNextState()
 			}
 			else
 				state_i_ = st_go_home_point;
+		}
+		else if (state_i_ == st_pause)
+		{
+			// Nothing
 		}
 		else if (state_i_ == st_charge)
 		{
