@@ -925,9 +925,13 @@ void robot::setTempTarget(std::deque<Vector2<double>>& points) {
 	}
 }
 
-Points robot::getTempTarget()
+Points robot::getTempTarget() const
 {
 	boost::mutex::scoped_lock(temp_target_mutex_);
+
+//	auto tmp = tmp_plan_path_;
+//	tmp_plan_path_.clear();
+//	return tmp;
 	return tmp_plan_path_;
 }
 //--------------------

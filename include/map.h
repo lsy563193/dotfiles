@@ -72,6 +72,7 @@ public:
 
 
 	static void robotToPoint(Point32_t point, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
+	static void robotToPointAccurate(Point32_t point, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
 
 	static void robotToCell(Point32_t point, int16_t offset_lat, int16_t offset_long, int16_t &x, int16_t &y);
 

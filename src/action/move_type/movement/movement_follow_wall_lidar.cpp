@@ -19,36 +19,58 @@ MovementFollowWallLidar::MovementFollowWallLidar(bool is_left)
 //	path_thread_->detach();
 }
 
+Points MovementFollowWallLidar::_calcTmpTarget() {
+	Point32_t tmp_target{};
+	Points tmp_targets{};
+
+	GridMap::robotToPointAccurate(getPosition(), CELL_SIZE * 0, CELL_SIZE * 1, &tmp_target.X, &tmp_target.Y);
+	tmp_targets.push_back(tmp_target);
+	auto dy = is_left_ ? 1 : -1;
+	GridMap::robotToPointAccurate(getPosition(), CELL_SIZE * dy, CELL_SIZE * 1, &tmp_target.X, &tmp_target.Y);
+	tmp_targets.push_back(tmp_target);
+
+	ROS_INFO("_calc tmp_targets.size(%d)",tmp_targets.size());
+	return tmp_targets;
+}
 bool MovementFollowWallLidar::calcTmpTarget(Point32_t& tmp_target) {
-//		tmp_target = p_mt->tmp_plan_path_.front();
-//		if (std::abs(getPosition().X - tmp_target.X) < 30 && std::abs(getPosition().Y - tmp_target.Y) < 30) {
-//			p_mt->tmp_plan_path_.pop_front();
-//			if (p_mt->tmp_plan_path_.empty()) {
-//				return false;
-//			}
-//			tmp_target = p_mt->tmp_plan_path_.front();
-//		}
-//		return true;
-//	auto p_mt = (ActionFollowWall *) (sp_mt_);
-	auto tmp_targets = robot::instance()->getTempTarget();
 
-	ROS_WARN("curr_point(%d,%d)",getPosition().X, getPosition().Y);
-//	if (robot::instance()->getTempTarget().empty())
-//		return false;
-//	tmp_target = p_mt->tmp_plan_path_.front();
-	if(tmp_targets.empty())
+	ROS_WARN("curr_point(%d,%d)", getPosition().X, getPosition().Y);
+	auto lidar_targets = robot::instance()->getTempTarget();
+	if (lidar_targets.empty()) {
+		p_tmp_targets_ = &virtual_targets_;
+		if(virtual_targets_.empty()){
+			ROS_INFO_FL();
+			ROS_WARN("lidar_targets is emply");
+			virtual_targets_ = _calcTmpTarget();
+		}
+	}
+	else{
+		if(std::equal(lidar_targets_old_.begin(),lidar_targets_old_.end(), lidar_targets.begin()), [](Point32_t &l,Point32_t &r){
+			return l == r;
+		}) {
+			p_tmp_targets_ = &lidar_targets_;
+			ROS_WARN("lidar_targets update ");
+			lidar_targets_ = lidar_targets;
+			lidar_targets_old_ = lidar_targets;
+		}
+	}
+	ROS_INFO("targets:");
+	for(auto &target:*p_tmp_targets_)
 	{
-//		Points d_points = GridMap::r
-//		tmp_target = getPosition() + {};
-		ROS_WARN("tmp_targets is emply");
-		auto dy =  is_left_ ? -1 : 1;
-		GridMap::robotToPoint(getPosition(), CELL_SIZE * dy, CELL_SIZE * 1, &tmp_target.X, &tmp_target.Y);
+		ROS_INFO("   (%d,%d)",target.X, target.Y);
 	}
-	else {
-		tmp_target = tmp_targets.front();
+	tmp_target = p_tmp_targets_->front();
+	if (std::abs(getPosition().X - tmp_target.X) < CELL_COUNT_MUL*0.75 && std::abs(getPosition().Y - tmp_target.Y) < CELL_COUNT_MUL*0.75) {
+		ROS_INFO_FL();
+		p_tmp_targets_->pop_front();
+		if (p_tmp_targets_->empty()) {
+			ROS_INFO_FL();
+			_calcTmpTarget();
+			p_tmp_targets_ = &virtual_targets_;
+		}
+		tmp_target = p_tmp_targets_->front();
 	}
-
-	ROS_WARN("tmp_target(%d,%d)",tmp_target.X, tmp_target.Y);
+	ROS_WARN("tmp_target(%d,%d)", tmp_target.X, getPosition().Y);
 	return true;
 }
 
@@ -59,6 +81,7 @@ bool MovementFollowWallLidar::isFinish() {
 }
 
 bool MovementFollowWallLidar::is_near() {
-	return false;
+//	if(tmp_targets.empty())
+		return false;
 }
 

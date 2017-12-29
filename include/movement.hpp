@@ -182,11 +182,15 @@ public:
 	explicit MovementFollowWallLidar(bool is_left);
 
 	bool calcTmpTarget(Point32_t&) override ;
+	Points _calcTmpTarget();
 
 	bool isFinish() override ;
 	bool is_near();
 private:
-//	Point32_t temp_target{};
+	Points virtual_targets_{};
+	Points lidar_targets_{};
+	Points lidar_targets_old_{};
+	Points* p_tmp_targets_{};
 
 	bool is_sp_turn{};
 	uint32_t seq_{0};

@@ -178,7 +178,7 @@ public:
 		return scan_ctrl_.allow_publishing?true:false;
 	}
 
-	Points getTempTarget();
+	Points getTempTarget()const;
 	void setTempTarget(std::deque<Vector2<double>>& points);
 private:
 	Points tmp_plan_path_{};

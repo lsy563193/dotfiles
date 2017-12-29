@@ -185,6 +185,13 @@ void GridMap::robotToPoint(Point32_t point, int16_t offset_lat, int16_t offset_l
 	*y = cellToCount(relative_point.toCell().Y);
 }
 
+void GridMap::robotToPointAccurate(Point32_t point, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y)
+{
+	auto relative_point = getRelative(point, offset_lat, offset_long, true);
+	*x = relative_point.X;
+	*y = relative_point.Y;
+}
+
 void GridMap::robotToCell(Point32_t point, int16_t offset_lat, int16_t offset_long, int16_t &x, int16_t &y)
 {
 	auto relative_point = getRelative(point, offset_lat, offset_long, false);
