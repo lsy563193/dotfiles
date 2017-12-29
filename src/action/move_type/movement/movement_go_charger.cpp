@@ -137,6 +137,7 @@ bool MovementGoToCharger::isSwitch()
 			{
 				ROS_WARN("%s %d: Get bumper trigered.", __FUNCTION__, __LINE__);
 				turn_angle_ = 0;
+				back_distance_ = 0.01;
 				resetGoToChargerVariables();
 				return true;
 			}
@@ -146,6 +147,7 @@ bool MovementGoToCharger::isSwitch()
 				ROS_WARN("%s %d: Get cliff trigered.", __FUNCTION__, __LINE__);
 				resetGoToChargerVariables();
 				turn_angle_ = 0;
+				back_distance_ = 0.01;
 				gtc_state_now_ = gtc_turn_for_charger_signal_init;
 				return true;
 			}
@@ -326,6 +328,7 @@ bool MovementGoToCharger::isSwitch()
 		{
 			ROS_WARN("%s %d: Get cliff trigered.", __FUNCTION__, __LINE__);
 			turn_angle_ = 1750;
+			back_distance_ = 0.01;
 			gtc_state_now_ = gtc_turn_for_charger_signal_init;
 			return true;
 		}
@@ -335,6 +338,7 @@ bool MovementGoToCharger::isSwitch()
 			ROS_WARN("%s %d: Get bumper trigered.", __FUNCTION__, __LINE__);
 			around_charger_stub_dir = 1 - around_charger_stub_dir;
 			turn_angle_ = 1800;
+			back_distance_ = 0.01;
 			if(++go_home_bumper_cnt > 1)
 				gtc_state_now_ = gtc_turn_for_charger_signal_init;
 			return true;
@@ -483,6 +487,7 @@ bool MovementGoToCharger::isSwitch()
 			ROS_WARN("%s %d: Get cliff trigered.", __FUNCTION__, __LINE__);
 			gtc_state_now_ = gtc_turn_for_charger_signal_init;
 			turn_angle_ = 1800;
+			back_distance_ = 0.01;
 			return true;
 		}
 
@@ -566,6 +571,7 @@ bool MovementGoToCharger::isSwitch()
 		if(ev.cliff_triggered)
 		{
 			turn_angle_ = 1750;
+			back_distance_ = 0.01;
 			gtc_state_now_ = gtc_turn_for_charger_signal_init;
 			return true;
 		}

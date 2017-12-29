@@ -8,7 +8,7 @@
 #include "dev.h"
 MovementStraight::MovementStraight()
 {
-	interval_ = 0.2;
+	timeout_interval_ = 0.2;
 	ROS_INFO("%s %d: Start movement Straight.", __FUNCTION__, __LINE__);
 }
 
@@ -30,13 +30,13 @@ void MovementStraight::adjustSpeed(int32_t &left_speed, int32_t &right_speed) {
 	wheel.setDirectionForward();
 	auto tramp = ros::Time::now().toSec() - start_timer_;
 //	ROS_INFO("%s,%d tramp(%f),",__FUNCTION__, __LINE__,tramp);
-	if (tramp < (interval_ / 3)) {
+	if (tramp < (timeout_interval_ / 3)) {
 		if (left_speed < 8)
 			left_speed = right_speed += 1;
 		else
 			left_speed = right_speed = 8;
 	}
-	else if (tramp < (2 * interval_ / 3)) {
+	else if (tramp < (2 * timeout_interval_ / 3)) {
 		if (left_speed < 8)
 			left_speed = right_speed = 8;
 		if (left_speed < 13)

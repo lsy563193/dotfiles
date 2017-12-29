@@ -49,7 +49,6 @@ public:
 	void pubPointMarker(std::vector<Vector2<double>> *point);
 	bool getLidarWfTarget2(std::vector<Vector2<double>> &points);
 	void startAlign();
-	bool alignTimeOut();
 	bool alignFinish();
 	float alignAngle(void)
 	{
@@ -104,7 +103,6 @@ private:
 	time_t open_command_time_stamp_;
 
 	// For aligning.
-	time_t start_align_time_stamp_;
 	bool align_finish_;
 	float align_angle_;
 	geometry_msgs::Point laser_points_;

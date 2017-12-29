@@ -218,6 +218,7 @@ class ACleanMode:public Mode
 public:
 	ACleanMode();
 	bool isFinish() override;
+	bool isExit() override;
 	void setNextModeDefault();
 	virtual bool setNextState() = 0;
 	virtual bool setNextAction();

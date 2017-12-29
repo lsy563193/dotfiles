@@ -114,13 +114,14 @@ robot::robot(std::string serial_port, int baudrate, std::string lidar_bumper_dev
 	core_thread->detach();
 	ROS_INFO("%s %d: robot init done!", __FUNCTION__, __LINE__);
 }
+
 void robot::core_thread_cb()
 {
 	ROS_INFO("Waiting for robot sensor ready.");
-	while (isSensorReady()) {
+	while (!isSensorReady()) {
 		usleep(1000);
 	}
-	ROS_ERROR("Robot sensor ready.");
+	ROS_INFO("Robot sensor ready.");
 //	speaker.play(VOICE_WELCOME_ILIFE);
 	usleep(200000);
 
@@ -476,9 +477,9 @@ bool robot::calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,bool is_
 
 void robot::scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr& scan) {
 	lidar.scanOriginalCb(scan);
-	if (p_mode->action_i_ == p_mode->ac_follow_wall_left || p_mode->action_i_ == p_mode->ac_follow_wall_right) {
+	if (lidar.isScanOriginalReady() && (p_mode->action_i_ == p_mode->ac_follow_wall_left || p_mode->action_i_ == p_mode->ac_follow_wall_right)) {
 		std::deque<Vector2<double>> points{};
-		if (calcLidarPath(scan, p_mode->action_i_ == p_mode->ac_follow_wall_left,points)) {
+		if (calcLidarPath(scan, p_mode->action_i_ == p_mode->ac_follow_wall_left, points)) {
 			setTempTarget(points);
 		}
 	}
