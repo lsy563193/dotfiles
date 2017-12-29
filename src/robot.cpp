@@ -16,6 +16,7 @@
 
 #define RAD2DEG(rad) ((rad)*57.29578)
 
+const double CHASE_X = 0.107;
 bool	g_is_low_bat_pause=false;
 bool g_is_manual_pause=false;
 time_t	start_time;
@@ -105,9 +106,38 @@ robot::robot(std::string serial_port, int baudrate, std::string lidar_bumper_dev
 	robotbase_init();
 
 	// Init for core thread.
-	auto core_thread = new boost::thread(core_thread_cb);
+	auto core_thread = new boost::thread(boost::bind(&robot::core_thread_cb,this));
 	core_thread->detach();
 	ROS_INFO("%s %d: robot init done!", __FUNCTION__, __LINE__);
+}
+void robot::core_thread_cb()
+{
+	ROS_INFO("Waiting for robot sensor ready.");
+	while (isSensorReady()) {
+		usleep(1000);
+	}
+	ROS_ERROR("Robot sensor ready.");
+//	speaker.play(VOICE_WELCOME_ILIFE);
+	usleep(200000);
+
+	if (charger.isOnStub() || charger.isDirected())
+		p_mode.reset(new ModeCharge());
+	else
+	{
+		speaker.play(VOICE_PLEASE_START_CLEANING, false);
+		p_mode.reset(new ModeIdle());
+	}
+
+	while(ros::ok())
+	{
+		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
+		p_mode->run();
+		auto next_mode = p_mode->getNextMode();
+		p_mode.reset();
+		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
+		p_mode.reset(getNextMode(next_mode));
+		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
+	}
 }
 
 robot::~robot()
@@ -305,9 +335,149 @@ void robot::scanLinearCb(const sensor_msgs::LaserScan::ConstPtr &msg)
 	lidar.scanLinearCb(msg);
 }
 
-void robot::scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr &scan)
+bool robot::check_corner(const sensor_msgs::LaserScan::ConstPtr & scan, const Paras para) {
+	int forward_wall_count = 0;
+	int side_wall_count = 0;
+	for (int i = 359; i > 0; i--) {
+		if (scan->ranges[i] < 4) {
+			auto point = polar_to_cartesian(scan->ranges[i], i);
+			if (para.inForwardRange(point)) {
+				forward_wall_count++;
+//			ROS_INFO("point(%f,%f)",point.X,point.Y);
+//				ROS_INFO("forward_wall_count(%d)",forward_wall_count);
+			}
+			if (para.inSidedRange(point)) {
+				side_wall_count++;
+//			ROS_INFO("point(%f,%f)",point.X,point.Y);
+//				ROS_INFO("side_wall_count(%d)",side_wall_count);
+			}
+		}
+	}
+	return forward_wall_count > 10 && side_wall_count > 20;
+}
+
+Vector2<double> robot::polar_to_cartesian(double polar,int i)
 {
+	Vector2<double> point{cos((i * 1.0 + 180.0) * PI / 180.0) * polar,
+					sin((i * 1.0 + 180.0) * PI / 180.0) * polar };
+
+	coordinate_transform(&point.X, &point.Y, LIDAR_THETA, LIDAR_OFFSET_X, LIDAR_OFFSET_Y);
+	return point;
+
+}
+
+Vector2<double> robot::get_middle_point(const Vector2<double>& p1,const Vector2<double>& p2,const Paras& para) {
+	auto p3 = (p1 + p2) / 2;
+	Vector2<double> target{};
+
+//	ROS_INFO("p1(%f,%f)", p1.X, p1.Y);
+//	ROS_INFO("p2(%f,%f)", p2.X, p2.Y);
+//	ROS_INFO("p3 (%f,%f)", p3.X, p3.Y);
+
+//	auto x4 = para.narrow / (sqrt(1 + p1.SquaredDistance(p2))) + p3.X;
+//	auto y4 = ((x4 - p3.X) * (p1.X - p2.X) / (p2.Y - p1.Y)) + p3.Y;
+	auto dx = para.narrow / (sqrt(1 + ((p1.X - p2.X) / (p2.Y - p1.Y)) * ((p1.X - p2.X) / (p2.Y - p1.Y))));
+	auto x4 = dx + p3.X;
+
+	auto dy = (x4 - p3.X) * (p1.X - p2.X) / (p2.Y - p1.Y);
+	auto y4 = dy + p3.Y;
+
+//	ROS_INFO("x4,y4(%f,%f)", x4, y4);
+
+	if (((p1.X - x4) * (p2.Y - y4) - (p1.Y - y4) * (p2.X - x4)) < 0) {
+		target = {x4,y4};
+//		ROS_INFO_FL();
+//		ROS_INFO("target(%f,%f)", target.X, target.Y);
+	}
+	else {
+		x4 =  -dx + p3.X;
+		y4 = (x4 - p3.X) * (p1.X - p2.X) / (p2.Y - p1.Y) + p3.Y;
+		target = {x4,y4};
+//		ROS_INFO_FL();
+//		ROS_INFO("target(%f,%f)", target.X, target.Y);
+	}
+	return target;
+}
+
+bool robot::check_is_valid(const Vector2<double>& point, Paras& para, const sensor_msgs::LaserScan::ConstPtr & scan) {
+	for (int i = 359; i >= 0; i--) {
+		auto tmp_point = polar_to_cartesian(scan->ranges[i], i);
+		auto distance = point.Distance(tmp_point);
+		//ROS_INFO("distance =  %lf", distance);
+		if (distance < para.narrow - 0.03) {
+			return false;
+		}
+	}
+	return true;
+}
+
+bool robot::calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,bool is_left, std::deque<Vector2<double>>& points) {
+	Paras para{is_left};
+
+	auto is_corner = check_corner(scan, para);
+	ROS_WARN("is_corner = %d", is_corner);
+	for (int i = 359; i >= 0; i--) {
+		//ROS_INFO("i = %d", i);
+		if (scan->ranges[i] < 4 && scan->ranges[i - 1] < 4) {
+			auto point1 = polar_to_cartesian(scan->ranges[i], i);
+
+			if (!para.inPoint1Range(point1, is_corner))
+				continue;
+
+			auto point2 = polar_to_cartesian(scan->ranges[i - 1], i - 1);
+
+			if (point2.Distance(point1) > 0.05) {
+				//ROS_INFO("two points distance is too large");
+				continue;
+			}
+			auto target = get_middle_point(point1, point2, para);
+
+			if (!para.inTargetRange(target))
+				continue;
+
+			if (target.Distance({0, 0}) > 0.4)
+				continue;
+
+			if (!check_is_valid(target, para, scan))
+				continue;
+
+//			ROS_INFO("points(%d):target(%lf,%lf),dis(%f)", points.size(), target.X, target.Y, target.Distance({CHASE_X, 0}));
+			points.push_back(target);
+		}
+	}
+
+	if (points.empty()) {
+		return false;
+	}
+	if (!is_left) {
+		std::reverse(points.begin(), points.end());//for the right wall follow
+	}
+	auto min = std::min_element(points.rbegin(), points.rend(), [](Vector2<double>& a, Vector2<double>& b) {
+//		ROS_INFO("dis(%f,%f)", a.Distance({CHASE_X, 0}), b.Distance({CHASE_X, 0}));
+		return a.Distance({CHASE_X, 0}) < b.Distance({CHASE_X, 0});
+	});
+//	ROS_INFO("min(%f,%f)",min->X, min->Y);
+
+	auto size = points.size();
+	std::copy(points.rbegin(), min+1, std::front_inserter(points));
+	points.resize(size);
+//	for (const auto &target :points)
+//	{
+//		ROS_WARN("points(%d):target(%lf,%lf),dis(%f)", points.size(), target.X, target.Y, target.Distance({CHASE_X, 0}));
+//	}
+	robot::instance()->pubPointMarkers(&points, "base_link");
+
+	return true;
+}
+
+void robot::scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr& scan) {
 	lidar.scanOriginalCb(scan);
+	if (p_mode->action_i_ == p_mode->ac_follow_wall_left || p_mode->action_i_ == p_mode->ac_follow_wall_right) {
+		std::deque<Vector2<double>> points{};
+		if (calcLidarPath(scan, p_mode->action_i_ == p_mode->ac_follow_wall_left,points)) {
+			setTempTarget(points);
+		}
+	}
 }
 
 void robot::scanCompensateCb(const sensor_msgs::LaserScan::ConstPtr &msg)
@@ -739,6 +909,23 @@ void robot::obsAdjustCount(int count)
 #endif
 }
 
+void robot::setTempTarget(std::deque<Vector2<double>>& points) {
+	boost::mutex::scoped_lock(temp_target_mutex_);
+	tmp_plan_path_.clear();
+
+//	ROS_ERROR("curr_point(%d,%d)",getPosition().X,getPosition().Y);
+	for (const auto &iter : points) {
+		auto target = getRelative(getPosition(), int(iter.Y * 1000), int(iter.X * 1000), true);
+		tmp_plan_path_.push_back(target);
+//		ROS_INFO("temp_target(%d,%d)",target.X,target.Y);
+	}
+}
+
+Points robot::getTempTarget()
+{
+	boost::mutex::scoped_lock(temp_target_mutex_);
+	return tmp_plan_path_;
+}
 //--------------------
 static int32_t xCount{}, yCount{};
 

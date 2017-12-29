@@ -75,9 +75,9 @@ public:
 
 	bool isExceptionTriggered();
 
+	static boost::shared_ptr<IAction> sp_action_;
 protected:
 
-	static boost::shared_ptr<IAction> sp_action_;
 	int mode_i_{ac_null};
 
 private:

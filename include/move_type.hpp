@@ -71,7 +71,7 @@ public:
 	bool isFinish() override;
 
 //	IAction* setNextAction();
-	Points tmp_plan_path_{};
+//	Points tmp_plan_path_{};
 protected:
 	bool is_left_{};
 	int16_t turn_angle{};

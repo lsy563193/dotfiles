@@ -80,10 +80,10 @@ bool ActionFollowWall::isFinish()
 				sp_movement_.reset(new MovementTurn(turn_target_angle_, ROTATE_TOP_SPEED));
 				resetTriggeredValue();
 			}
-			else if(tmp_plan_path_.empty())
-			{
-				sp_movement_.reset(new MovementForwardTurn(is_left_));
-			}
+//			else if(tmp_plan_path_.empty())
+//			{
+//				sp_movement_.reset(new MovementForwardTurn(is_left_));
+//			}
 		}
 		else if (movement_i_ == mm_back) {
 			movement_i_ = mm_turn;

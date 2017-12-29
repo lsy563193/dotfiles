@@ -525,37 +525,6 @@ void serial_send_routine_cb()
 	//pthread_exit(NULL);
 }
 
-void core_thread_cb()
-{
-	ROS_INFO("Waiting for robot sensor ready.");
-	while (!robot::instance()->isSensorReady()) {
-		usleep(1000);
-	}
-	ROS_ERROR("Robot sensor ready.");
-//	speaker.play(VOICE_WELCOME_ILIFE);
-	usleep(200000);
-
-	boost::shared_ptr<Mode> p_mode = nullptr;
-	if (charger.isOnStub() || charger.isDirected())
-		p_mode.reset(new ModeCharge());
-	else
-	{
-		speaker.play(VOICE_PLEASE_START_CLEANING, false);
-		p_mode.reset(new ModeIdle());
-	}
-
-	while(ros::ok())
-	{
-		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
-		p_mode->run();
-		auto next_mode = p_mode->getNextMode();
-		p_mode.reset();
-		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
-		p_mode.reset(getNextMode(next_mode));
-		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
-	}
-
-}
 
 Mode *getNextMode(int next_mode_i_)
 {
