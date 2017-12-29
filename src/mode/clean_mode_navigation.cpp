@@ -230,7 +230,7 @@ bool CleanModeNav::setNextAction()
 	else if (state_i_ == st_clean)
 	{
 		auto start = getPosition().toCell();
-		auto delta_y = plan_path_.back().y - start.y;
+		auto delta_y = plan_path_.back().toCell().y - start.y;
 		ROS_INFO("%s,%d: path size(%u), old_dir_(%d), bumper(%d), cliff(%d), lidar(%d), delta_y(%d)",
 						__FUNCTION__, __LINE__, plan_path_.size(), old_dir_, ev.bumper_triggered,
 						ev.cliff_triggered, ev.lidar_triggered, delta_y);
@@ -242,7 +242,7 @@ bool CleanModeNav::setNextAction()
 		}
 		else
 		{
-			delta_y = plan_path_.back().y - start.y;
+			delta_y = plan_path_.back().toCell().y - start.y;
 			bool is_left = isPos(old_dir_) ^delta_y > 0;
 			ROS_INFO("\033[31m""%s,%d: target:, 0_left_1_right(%d=%d ^ %d)""\033[0m",
 					 __FUNCTION__, __LINE__, is_left, isPos(old_dir_), delta_y);
