@@ -58,3 +58,7 @@ bool MovementFollowWallLidar::isFinish() {
 	return p_mt->shouldMoveBack() || p_mt->shouldTurn();
 }
 
+bool MovementFollowWallLidar::is_near() {
+	return false;
+}
+

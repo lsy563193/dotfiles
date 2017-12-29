@@ -58,10 +58,13 @@ bool CleanModeFollowWall::setNextAction()
 	PP_INFO();
 	if (state_i_ == st_init)
 		return ACleanMode::setNextAction();
-	ROS_WARN("%s,%d: mt_follow_wall_left", __FUNCTION__, __LINE__);
-	action_i_ = ac_follow_wall_left;
-	genNextAction();
-	ROS_WARN("%s,%d: mt_follow_wall_left", __FUNCTION__, __LINE__);
+	else {
+		ROS_WARN("%s,%d: mt_follow_wall_left", __FUNCTION__, __LINE__);
+		action_i_ = ac_follow_wall_left;
+		genNextAction();
+		ROS_WARN("%s,%d: mt_follow_wall_left", __FUNCTION__, __LINE__);
+	}
+
 	return true;
 //	if (action_i_ == ac_linear) {
 //		ROS_INFO("%s,%d: mt_follow_wall_left", __FUNCTION__, __LINE__);
@@ -80,11 +83,25 @@ bool CleanModeFollowWall::setNextAction()
 
 bool CleanModeFollowWall::setNextState()
 {
+	if(state_i_ == st_init)
+	{
+			if(action_i_ == ac_open_slam)
+		state_i_ = st_clean;
 //	if (clean_path_algorithm_->generatePath(nav_map, getPosition(), old_dir_, plan_path_))
 //	{
 //		plan_path_.pop_front();
-		return true;
 //	}
+	}
+	if(state_i_ == st_clean)
+	{
+//	if(action_i_ == ac_open_slam)
+//	state_i_ = st_clean;
+//	if (clean_path_algorithm_->generatePath(nav_map, getPosition(), old_dir_, plan_path_))
+//	{
+//		plan_path_.pop_front();
+//	}
+	}
+	return true;
 }
 
 //bool CleanModeFollowWall::wf_is_isolate() {

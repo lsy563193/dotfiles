@@ -21,11 +21,4 @@ void IMovement::run() {
 	wheel.setPidTargetSpeed(l_speed, r_speed);
 }
 
-bool IMovement::is_near()
-{
-	auto curr_p = getPosition();
-	bool is_decrease_blocked = decrease_map.isFrontBlocked();
-//	auto distance = two_points_distance(curr_p.X, curr_p.Y, s_target_p.X, s_target_p.Y);
-	auto obstacle_distance_front = lidar.getObstacleDistance(0,ROBOT_RADIUS);
-	return obs.getStatus() > 0 || /*(distance < SLOW_DOWN_DISTANCE) ||*/ nav_map.isFrontBlockBoundary(3) || (obstacle_distance_front < 0.25) || is_decrease_blocked;
-}
+

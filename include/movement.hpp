@@ -22,7 +22,6 @@ public:
 	virtual void adjustSpeed(int32_t&, int32_t&)=0;
 	virtual void run();
 	virtual bool isFinish()=0;
-	bool is_near();
 //	static ACleanMode* sp_mode_;
 //	static boost::shared_ptr<IMoveType> sp_mt_;
 	static IMoveType* sp_mt_;
@@ -38,6 +37,7 @@ protected:
 
 class AMovementFollowPoint:public IMovement{
 public:
+	virtual bool is_near()=0;
 	virtual bool calcTmpTarget(Point32_t& )=0;
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed) override ;
 
@@ -97,6 +97,7 @@ public:
 //	~MovementFollowPointLinear(){ };
 	bool isFinish() override;
 
+	bool is_near();
 	bool isRconStop();
 	bool isBoundaryStop();
 	bool isPassTargetStop();
@@ -183,6 +184,7 @@ public:
 	bool calcTmpTarget(Point32_t&) override ;
 
 	bool isFinish() override ;
+	bool is_near();
 private:
 //	Point32_t temp_target{};
 
