@@ -34,7 +34,7 @@ Points MovementFollowWallLidar::_calcTmpTarget() {
 }
 bool MovementFollowWallLidar::calcTmpTarget(Point32_t& tmp_target) {
 
-	ROS_WARN("curr_point(%d,%d)", getPosition().X, getPosition().Y);
+	ROS_WARN("curr_point(%d,%d)", getPosition().x, getPosition().y);
 	auto lidar_targets = robot::instance()->getTempTarget();
 	if (lidar_targets.empty()) {
 		p_tmp_targets_ = &virtual_targets_;
@@ -57,10 +57,10 @@ bool MovementFollowWallLidar::calcTmpTarget(Point32_t& tmp_target) {
 //	ROS_INFO("targets:");
 //	for(auto &target:*p_tmp_targets_)
 //	{
-//		ROS_INFO("   (%d,%d)",target.X, target.Y);
+//		ROS_INFO("   (%d,%d)",target.x, target.y);
 //	}
 	tmp_target = p_tmp_targets_->front();
-	if (std::abs(getPosition().X - tmp_target.X) < CELL_COUNT_MUL*0.75 && std::abs(getPosition().Y - tmp_target.Y) < CELL_COUNT_MUL*0.75) {
+	if (std::abs(getPosition().x - tmp_target.x) < CELL_COUNT_MUL*0.75 && std::abs(getPosition().y - tmp_target.y) < CELL_COUNT_MUL*0.75) {
 		ROS_INFO_FL();
 		p_tmp_targets_->pop_front();
 		if (p_tmp_targets_->empty()) {
@@ -70,7 +70,7 @@ bool MovementFollowWallLidar::calcTmpTarget(Point32_t& tmp_target) {
 		}
 		tmp_target = p_tmp_targets_->front();
 	}
-	ROS_WARN("tmp_target(%d,%d)", tmp_target.X, getPosition().Y);
+	ROS_WARN("tmp_target(%d,%d)", tmp_target.x, getPosition().y);
 	return true;
 }
 

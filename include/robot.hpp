@@ -274,23 +274,23 @@ public:
 
 	bool inPoint1Range(const Vector2<double> &point, bool is_corner) const {
 		if(is_corner)
-			return (point.X > 0 && point.X < 4 && point.Y > y_min_point1_corner && point.Y < y_max_point1_corner);
+			return (point.x > 0 && point.x < 4 && point.y > y_min_point1_corner && point.y < y_max_point1_corner);
 		else
-			return (point.X > -4 && point.X < 0.3 && point.Y > y_min_point1 && point.Y < y_max_point1);
+			return (point.x > -4 && point.x < 0.3 && point.y > y_min_point1 && point.y < y_max_point1);
 	}
 
 	bool inTargetRange(const Vector2<double> &target) {
-		return target.X < 4
-					 && ((target.X > CHASE_X && fabs(target.Y) < ROBOT_RADIUS)
-							 || (target.X > 0  && target.Y >y_min_target && target.Y < y_max_target ));
+		return target.x < 4
+					 && ((target.x > CHASE_X && fabs(target.y) < ROBOT_RADIUS)
+							 || (target.x > 0  && target.y >y_min_target && target.y < y_max_target ));
 	}
 
 	bool inForwardRange(const Vector2<double> &point) const {
-		return point.X > x_min_forward && point.X < x_max_forward && point.Y > y_min_forward && point.Y < y_max_forward;
+		return point.x > x_min_forward && point.x < x_max_forward && point.y > y_min_forward && point.y < y_max_forward;
 	}
 
 	bool inSidedRange(const Vector2<double> &point) const {
-		return point.X > x_min_side && point.X < x_max_side && point.Y > y_min_side && point.Y < y_max_side;
+		return point.x > x_min_side && point.x < x_max_side && point.y > y_min_side && point.y < y_max_side;
 	}
 
 	double narrow;

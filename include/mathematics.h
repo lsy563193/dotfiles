@@ -5,6 +5,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <deque>
+#include <ros/ros.h>
 #include "config.h"
 
 #define PI  3.141592653589793
@@ -17,12 +18,12 @@
 
 /*
 typedef struct Pose16_t_{
-	int16_t X;
-	int16_t Y;
+	int16_t x;
+	int16_t y;
 	int16_t	th;
 	friend bool operator==(const Pose16_t_ left, const Pose16_t_ right)
 	{
-		return left.X == right.X && left.Y == right.Y;
+		return left.x == right.x && left.y == right.y;
 	}
 	friend bool operator!=(const Pose16_t_ left, const Pose16_t_ right)
 	{
@@ -46,8 +47,8 @@ double rad_2_deg(double rad, int8_t scale);
      */
     Vector2()
     {
-      X = 0;
-      Y = 0;
+      x = 0;
+      y = 0;
     }
 
     /**
@@ -55,10 +56,10 @@ double rad_2_deg(double rad, int8_t scale);
      * @param x x
      * @param y y
      */
-    Vector2(T x, T y)
+    Vector2(T _x, T _y)
     {
-      X = x;
-      Y = y;
+      x = _x;
+      y = _y;
     }
 
   public:
@@ -68,16 +69,16 @@ double rad_2_deg(double rad, int8_t scale);
      */
     inline const T& GetX() const
     {
-      return X;
+      return x;
     }
 
     /**
      * Sets the x-coordinate of this vector
      * @param x the x-coordinate of the vector
      */
-    inline void SetX(const T& x)
+    inline void SetX(const T& _x)
     {
-      X = x;
+      x = _x;
     }
 
     /**
@@ -86,16 +87,16 @@ double rad_2_deg(double rad, int8_t scale);
      */
     inline const T& GetY() const
     {
-      return Y;
+      return y;
     }
 
     /**
      * Sets the y-coordinate of this vector
      * @param y the y-coordinate of the vector
      */
-    inline void SetY(const T& y)
+    inline void SetY(const T& _y)
     {
-      Y = y;
+      y = _y;
     }
 
     /**
@@ -104,8 +105,8 @@ double rad_2_deg(double rad, int8_t scale);
      */
     inline void MakeFloor(const Vector2& rOther)
     {
-      if (rOther.X < X) X = rOther.X;
-      if (rOther.Y < Y) Y = rOther.Y;
+      if (rOther.x < x) x = rOther.x;
+      if (rOther.y < y) y = rOther.y;
     }
 
     /**
@@ -114,9 +115,9 @@ double rad_2_deg(double rad, int8_t scale);
      */
     inline void MakeCeil(const Vector2& rOther)
     {
-      if (rOther.X > X) X = rOther.X;
+      if (rOther.x > x) x = rOther.x;
 
-      if (rOther.Y > Y) Y = rOther.Y;
+      if (rOther.y > y) y = rOther.y;
     }
 
     /**
@@ -125,7 +126,7 @@ double rad_2_deg(double rad, int8_t scale);
      */
     inline T SquaredLength() const
     {
-      return pow(X,2) + pow(Y,2);
+      return pow(x,2) + pow(y,2);
     }
 
     /**
@@ -181,8 +182,8 @@ double rad_2_deg(double rad, int8_t scale);
      */
     inline void operator+=(const Vector2& rOther)
     {
-      X += rOther.X;
-      Y += rOther.Y;
+      x += rOther.x;
+      y += rOther.y;
     }
 
     /**
@@ -190,8 +191,8 @@ double rad_2_deg(double rad, int8_t scale);
      */
     inline void operator-=(const Vector2& rOther)
     {
-      X -= rOther.X;
-      Y -= rOther.Y;
+      x -= rOther.x;
+      y -= rOther.y;
     }
 
     /**
@@ -199,7 +200,7 @@ double rad_2_deg(double rad, int8_t scale);
      */
     inline const Vector2 operator+(const Vector2& rOther) const
     {
-      return Vector2(X + rOther.X, Y + rOther.Y);
+      return Vector2(x + rOther.x, y + rOther.y);
     }
 
     /**
@@ -207,7 +208,7 @@ double rad_2_deg(double rad, int8_t scale);
      */
     inline const Vector2 operator-(const Vector2& rOther) const
     {
-      return Vector2(X - rOther.X, Y - rOther.Y);
+      return Vector2(x - rOther.x, y - rOther.y);
     }
 
     /**
@@ -215,8 +216,8 @@ double rad_2_deg(double rad, int8_t scale);
      */
     inline void operator/=(T scalar)
     {
-      X /= scalar;
-      Y /= scalar;
+      x /= scalar;
+      y /= scalar;
     }
 
     /**
@@ -224,7 +225,7 @@ double rad_2_deg(double rad, int8_t scale);
      */
     inline const Vector2 operator/(T scalar) const
     {
-      return Vector2(X / scalar, Y / scalar);
+      return Vector2(x / scalar, y / scalar);
     }
 
     /**
@@ -232,7 +233,7 @@ double rad_2_deg(double rad, int8_t scale);
      */
     inline int16_t operator*(const Vector2& rOther) const
     {
-      return X * rOther.X + Y * rOther.Y;
+      return x * rOther.x + y * rOther.y;
     }
 
     /**
@@ -240,7 +241,7 @@ double rad_2_deg(double rad, int8_t scale);
      */
     inline const Vector2 operator*(T scalar) const
     {
-      return Vector2(X * scalar, Y * scalar);
+      return Vector2(x * scalar, y * scalar);
     }
 
     /**
@@ -248,7 +249,7 @@ double rad_2_deg(double rad, int8_t scale);
      */
     inline const Vector2 operator-(T scalar) const
     {
-      return Vector2(X - scalar, Y - scalar);
+      return Vector2(x - scalar, y - scalar);
     }
 
     /**
@@ -256,8 +257,8 @@ double rad_2_deg(double rad, int8_t scale);
      */
     inline void operator*=(T scalar)
     {
-      X *= scalar;
-      Y *= scalar;
+      x *= scalar;
+      y *= scalar;
     }
 
     /**
@@ -265,7 +266,7 @@ double rad_2_deg(double rad, int8_t scale);
      */
     inline bool operator==(const Vector2& rOther) const
     {
-      return (X == rOther.X && Y == rOther.Y);
+      return (x == rOther.x && y == rOther.y);
     }
 
     /**
@@ -273,7 +274,7 @@ double rad_2_deg(double rad, int8_t scale);
      */
     inline bool operator!=(const Vector2& rOther) const
     {
-      return (X != rOther.X || Y != rOther.Y);
+      return (x != rOther.x || y != rOther.y);
     }
 
     /**
@@ -284,23 +285,23 @@ double rad_2_deg(double rad, int8_t scale);
      */
     inline bool operator<(const Vector2& rOther) const
     {
-      if (X < rOther.X)
+      if (x < rOther.x)
       {
         return true;
       }
-      else if (X > rOther.X)
+      else if (x > rOther.x)
       {
         return false;
       }
       else
       {
-        return (Y < rOther.Y);
+        return (y < rOther.y);
       }
     }
 
     inline bool operator>(const Vector2& rOther) const
     {
-        Vector2 this_{X,Y};
+        Vector2 this_{x,y};
         return !(this_ < rOther || this_ == rOther);
     }
     /**
@@ -313,8 +314,8 @@ double rad_2_deg(double rad, int8_t scale);
 //    }
 
   public:
-    T X;
-    T Y;
+    T x;
+    T y;
 //    int16_t	th;
 }; // class Vector2<T>
 
@@ -327,15 +328,15 @@ typedef std::deque<Cell_t> Cells;
 class Point32_t:public Vector2<int32_t> {
 public:
   Point32_t() {
-    X = 0;
-    Y = 0;
+    x = 0;
+    y = 0;
     th = 0;
   }
 
-  Point32_t(int32_t x, int32_t y, int16_t th) {
-    X = x;
-    Y = y;
-    th = th;
+  Point32_t(int32_t _x, int32_t _y, int16_t _th) {
+    x = _x;
+    y = _y;
+    th = _th;
   }
 
   Point32_t getRelative(int16_t dx, int16_t dy) const {
@@ -363,10 +364,10 @@ public:
 				relative_cos = cos(deg_to_rad(th, 10));
 			}
 		}
-		point.X = X + (int32_t) (
+		point.x = x + (int32_t) (
 						(((double) dx * relative_cos * CELL_COUNT_MUL) - ((double) dy * relative_sin * CELL_COUNT_MUL)) /
 						CELL_SIZE);
-		point.Y = Y + (int32_t) (
+		point.y = y + (int32_t) (
 						(((double) dx * relative_sin * CELL_COUNT_MUL) + ((double) dy * relative_cos * CELL_COUNT_MUL)) /
 						CELL_SIZE);
 		point.th = th;
@@ -374,7 +375,7 @@ public:
 	}
 
   Cell_t toCell() const {
-    return {countToCell(X), countToCell(Y)};
+    return {countToCell(x), countToCell(y)};
   }
 
   int16_t th{};
@@ -401,7 +402,7 @@ typedef struct
   double y2;
   double K; //gradient in degree
   double dist_2_this_line(Vector2<double> p){
-	  return fabs(A*p.X+B*p.Y+C)/sqrt(A*A+B*B);
+	  return fabs(A*p.x+B*p.y+C)/sqrt(A*A+B*B);
   }
 } LineABC;
 
@@ -424,18 +425,11 @@ typedef struct LineKB{
 
 /*
 typedef struct{
-	int32_t X;
-	int32_t Y;
+	int32_t x;
+	int32_t y;
   int16_t th;
 } Point32_t;
 */
-
-typedef struct{
-	int32_t X;
-	int32_t Y;
-  int16_t TH;
-} PointTh;
-
 
 //typedef Vector2<int32_t> Point32_t;
 

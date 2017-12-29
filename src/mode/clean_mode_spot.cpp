@@ -59,7 +59,7 @@ bool CleanModeSpot::mapMark()
 		nav_map.markRobot(CLEAN_MAP);
 	nav_map.setBlocks();
 	PP_INFO();
-	nav_map.print(CLEAN_MAP, getPosition().toCell().X, getPosition().toCell().Y);
+	nav_map.print(CLEAN_MAP, getPosition().toCell().x, getPosition().toCell().y);
 
 	passed_path_.clear();
 	return false;
@@ -126,7 +126,7 @@ bool CleanModeSpot::setNextState()
 			PP_INFO();
 			old_dir_ = new_dir_;
 			ROS_ERROR("old_dir_(%d)", old_dir_);
-			ROS_INFO("\033[32m plan_path front (%d,%d)\033[0m",plan_path_.front().toCell().X,plan_path_.front().toCell().Y);
+			ROS_INFO("\033[32m plan_path front (%d,%d)\033[0m",plan_path_.front().toCell().x,plan_path_.front().toCell().y);
 			if (clean_path_algorithm_->generatePath(nav_map, getPosition(), old_dir_, plan_path_))
 			{
 				new_dir_ = (MapDirection)plan_path_.front().th;

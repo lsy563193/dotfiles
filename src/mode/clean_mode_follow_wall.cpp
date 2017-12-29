@@ -114,18 +114,18 @@ bool CleanModeFollowWall::setNextState()
 //
 //	fw_map.markRobot(CLEAN_MAP);//note: To clear the obstacle when check isolated, please don't remove it!
 //	auto curr = getPosition();
-//	fw_map.print(CLEAN_MAP, curr.X, curr.Y);
-//	ROS_WARN("%s %d: curr(%d,%d),out(%d,%d)", __FUNCTION__, __LINE__, curr.X, curr.Y,out_cell.X, out_cell.Y);
+//	fw_map.print(CLEAN_MAP, curr.x, curr.y);
+//	ROS_WARN("%s %d: curr(%d,%d),out(%d,%d)", __FUNCTION__, __LINE__, curr.x, curr.y,out_cell.x, out_cell.y);
 //
 //	if ( out_cell != g_zero_home){
-//			val = wf_path_find_shortest_path(curr.X, curr.Y, out_cell.X, out_cell.Y, 0);
+//			val = wf_path_find_shortest_path(curr.x, curr.y, out_cell.x, out_cell.y, 0);
 //			val = (val < 0 || val == SCHAR_MAX) ? 0 : 1;
 //	} else {
 //		if (!nav_map.isBlockAccessible(0, 0)) {
-//			val = wf_path_find_shortest_path(curr.X, curr.Y, 0, 0, 0);
+//			val = wf_path_find_shortest_path(curr.x, curr.y, 0, 0, 0);
 //			if (val < 0 || val == SCHAR_MAX) {
 //				/* Robot start position is blocked. */
-//				val = wf_path_find_shortest_path(curr.X, curr.Y, 0, 0, 0);
+//				val = wf_path_find_shortest_path(curr.x, curr.y, 0, 0, 0);
 //
 //				if (val < 0 || val == SCHAR_MAX) {
 //					val = 0;
@@ -136,7 +136,7 @@ bool CleanModeFollowWall::setNextState()
 //				val = 1;
 //			}
 //		} else {
-//			val = wf_path_find_shortest_path(curr.X, curr.Y, 0, 0, 0);
+//			val = wf_path_find_shortest_path(curr.x, curr.y, 0, 0, 0);
 //			if (val < 0 || val == SCHAR_MAX)
 //				val = 0;
 //			else
@@ -151,10 +151,10 @@ bool CleanModeFollowWall::setNextState()
  * Give a target point, find the shorest path from the current robot position to the
  * target position.
  *
- * @param xID	Robot X Coordinate
- * @param yID	Robot Y Coordinate
- * @param endx	Target X Coordinate
- * @param endy	Target Y Coordinate
+ * @param xID	Robot x Coordinate
+ * @param yID	Robot y Coordinate
+ * @param endx	Target x Coordinate
+ * @param endy	Target y Coordinate
  * @param bound	Limit to the search range to (xID, yID) and (endx, endy)
  *
  * @return	-2: Robot is trapped
@@ -264,7 +264,7 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(int16_t curr_x, i
 		 * cell that have the next pass value.
 		 *
 		 * It can use the offset to limit the range of searching, since in each loop
-		 * the cell (X -/+ offset, Y -/+ offset) would be set only. The cells far away
+		 * the cell (x -/+ offset, y -/+ offset) would be set only. The cells far away
 		 * to the robot position won't be set.
 		 */
 		for (i = curr_x - offset; i <= curr_x + offset; i++) {
@@ -338,8 +338,8 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(int16_t curr_x, i
 	 * have the same direction as previous action.
 	 */
 	Cell_t t;
-	t.X = tracex = tracex_tmp = end_x;
-	t.Y = tracey = tracey_tmp = end_y;
+	t.x = tracex = tracex_tmp = end_x;
+	t.y = tracey = tracey_tmp = end_y;
 	path_points.push_back(t);
 
 	next = 0;
@@ -407,9 +407,9 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(int16_t curr_x, i
 #undef COST_NORTH
 
 		totalCost++;
-		if (path_points.back().X != tracex && path_points.back().Y != tracey) {
-			t.X = tracex_tmp;
-			t.Y = tracey_tmp;
+		if (path_points.back().x != tracex && path_points.back().y != tracey) {
+			t.x = tracex_tmp;
+			t.y = tracey_tmp;
 			path_points.push_back(t);
 		}
 		tracex_tmp = tracex;
@@ -417,8 +417,8 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(int16_t curr_x, i
 	}
 	fw_map.setCell(COST_MAP, (int32_t) tracex, (int32_t) tracey, COST_PATH);
 
-	t.X = tracex_tmp;
-	t.Y = tracey_tmp;
+	t.x = tracex_tmp;
+	t.y = tracey_tmp;
 	path_points.push_back(t);
 
 //	path_display_path_points(path_points);

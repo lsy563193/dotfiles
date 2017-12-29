@@ -257,6 +257,6 @@ void CleanModeExploration::chargeDetect(bool state_now, bool state_last) {
 void CleanModeExploration::printMapAndPath()
 {
 	clean_path_algorithm_->displayCellPath(pointsGenerateCells(passed_path_));
-	exploration_map.print(CLEAN_MAP,getPosition().toCell().X,getPosition().toCell().Y);
+	exploration_map.print(CLEAN_MAP,getPosition().toCell().x,getPosition().toCell().y);
 }
 

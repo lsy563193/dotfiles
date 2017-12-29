@@ -313,12 +313,12 @@ bool robot::check_corner(const sensor_msgs::LaserScan::ConstPtr & scan, const Pa
 			auto point = polar_to_cartesian(scan->ranges[i], i);
 			if (para.inForwardRange(point)) {
 				forward_wall_count++;
-//			ROS_INFO("point(%f,%f)",point.X,point.Y);
+//			ROS_INFO("point(%f,%f)",point.x,point.y);
 //				ROS_INFO("forward_wall_count(%d)",forward_wall_count);
 			}
 			if (para.inSidedRange(point)) {
 				side_wall_count++;
-//			ROS_INFO("point(%f,%f)",point.X,point.Y);
+//			ROS_INFO("point(%f,%f)",point.x,point.y);
 //				ROS_INFO("side_wall_count(%d)",side_wall_count);
 			}
 		}
@@ -331,7 +331,7 @@ Vector2<double> robot::polar_to_cartesian(double polar,int i)
 	Vector2<double> point{cos((i * 1.0 + 180.0) * PI / 180.0) * polar,
 					sin((i * 1.0 + 180.0) * PI / 180.0) * polar };
 
-	coordinate_transform(&point.X, &point.Y, LIDAR_THETA, LIDAR_OFFSET_X, LIDAR_OFFSET_Y);
+	coordinate_transform(&point.x, &point.y, LIDAR_THETA, LIDAR_OFFSET_X, LIDAR_OFFSET_Y);
 	return point;
 
 }
@@ -340,31 +340,31 @@ Vector2<double> robot::get_middle_point(const Vector2<double>& p1,const Vector2<
 	auto p3 = (p1 + p2) / 2;
 	Vector2<double> target{};
 
-//	ROS_INFO("p1(%f,%f)", p1.X, p1.Y);
-//	ROS_INFO("p2(%f,%f)", p2.X, p2.Y);
-//	ROS_INFO("p3 (%f,%f)", p3.X, p3.Y);
+//	ROS_INFO("p1(%f,%f)", p1.x, p1.y);
+//	ROS_INFO("p2(%f,%f)", p2.x, p2.y);
+//	ROS_INFO("p3 (%f,%f)", p3.x, p3.y);
 
-//	auto x4 = para.narrow / (sqrt(1 + p1.SquaredDistance(p2))) + p3.X;
-//	auto y4 = ((x4 - p3.X) * (p1.X - p2.X) / (p2.Y - p1.Y)) + p3.Y;
-	auto dx = para.narrow / (sqrt(1 + ((p1.X - p2.X) / (p2.Y - p1.Y)) * ((p1.X - p2.X) / (p2.Y - p1.Y))));
-	auto x4 = dx + p3.X;
+//	auto x4 = para.narrow / (sqrt(1 + p1.SquaredDistance(p2))) + p3.x;
+//	auto y4 = ((x4 - p3.x) * (p1.x - p2.x) / (p2.y - p1.y)) + p3.y;
+	auto dx = para.narrow / (sqrt(1 + ((p1.x - p2.x) / (p2.y - p1.y)) * ((p1.x - p2.x) / (p2.y - p1.y))));
+	auto x4 = dx + p3.x;
 
-	auto dy = (x4 - p3.X) * (p1.X - p2.X) / (p2.Y - p1.Y);
-	auto y4 = dy + p3.Y;
+	auto dy = (x4 - p3.x) * (p1.x - p2.x) / (p2.y - p1.y);
+	auto y4 = dy + p3.y;
 
 //	ROS_INFO("x4,y4(%f,%f)", x4, y4);
 
-	if (((p1.X - x4) * (p2.Y - y4) - (p1.Y - y4) * (p2.X - x4)) < 0) {
+	if (((p1.x - x4) * (p2.y - y4) - (p1.y - y4) * (p2.x - x4)) < 0) {
 		target = {x4,y4};
 //		ROS_INFO_FL();
-//		ROS_INFO("target(%f,%f)", target.X, target.Y);
+//		ROS_INFO("target(%f,%f)", target.x, target.y);
 	}
 	else {
-		x4 =  -dx + p3.X;
-		y4 = (x4 - p3.X) * (p1.X - p2.X) / (p2.Y - p1.Y) + p3.Y;
+		x4 =  -dx + p3.x;
+		y4 = (x4 - p3.x) * (p1.x - p2.x) / (p2.y - p1.y) + p3.y;
 		target = {x4,y4};
 //		ROS_INFO_FL();
-//		ROS_INFO("target(%f,%f)", target.X, target.Y);
+//		ROS_INFO("target(%f,%f)", target.x, target.y);
 	}
 	return target;
 }
@@ -411,7 +411,7 @@ bool robot::calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,bool is_
 			if (!check_is_valid(target, para, scan))
 				continue;
 
-//			ROS_INFO("points(%d):target(%lf,%lf),dis(%f)", points.size(), target.X, target.Y, target.Distance({CHASE_X, 0}));
+//			ROS_INFO("points(%d):target(%lf,%lf),dis(%f)", points.size(), target.x, target.y, target.Distance({CHASE_X, 0}));
 			points.push_back(target);
 		}
 	}
@@ -426,14 +426,14 @@ bool robot::calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,bool is_
 //		ROS_INFO("dis(%f,%f)", a.Distance({CHASE_X, 0}), b.Distance({CHASE_X, 0}));
 		return a.Distance({CHASE_X, 0}) < b.Distance({CHASE_X, 0});
 	});
-//	ROS_INFO("min(%f,%f)",min->X, min->Y);
+//	ROS_INFO("min(%f,%f)",min->x, min->y);
 
 	auto size = points.size();
 	std::copy(points.rbegin(), min+1, std::front_inserter(points));
 	points.resize(size);
 //	for (const auto &target :points)
 //	{
-//		ROS_WARN("points(%d):target(%lf,%lf),dis(%f)", points.size(), target.X, target.Y, target.Distance({CHASE_X, 0}));
+//		ROS_WARN("points(%d):target(%lf,%lf),dis(%f)", points.size(), target.x, target.y, target.Distance({CHASE_X, 0}));
 //	}
 	robot::instance()->pubPointMarkers(&points, "base_link");
 
@@ -608,20 +608,20 @@ void robot::pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path, Cel
 	Cell_t target = path.back();
 	map.getMapRange(CLEAN_MAP, &x_min, &x_max, &y_min, &y_max);
 
-	if (next.X == SHRT_MIN )
-		next.X = x_min;
-	else if (next.X == SHRT_MAX)
-		next.X = x_max;
+	if (next.x == SHRT_MIN )
+		next.x = x_min;
+	else if (next.x == SHRT_MAX)
+		next.x = x_max;
 
 	for (x = x_min; x <= x_max; x++)
 	{
 		for (y = y_min; y <= y_max; y++)
 		{
-			if (x == target.X && y == target.Y)
+			if (x == target.x && y == target.y)
 				robot::instance()->setCleanMapMarkers(x, y, TARGET_CLEAN);
-			else if (x == next.X && y == next.Y)
+			else if (x == next.x && y == next.y)
 				robot::instance()->setCleanMapMarkers(x, y, TARGET);
-			else if (cell_p != nullptr && x == (*cell_p).X && y == (*cell_p).Y)
+			else if (cell_p != nullptr && x == (*cell_p).x && y == (*cell_p).y)
 				robot::instance()->setCleanMapMarkers(x, y, TARGET_CLEAN);
 			else
 			{
@@ -633,10 +633,10 @@ void robot::pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path, Cel
 	}
 	if (!path.empty())
 	{
-		for (auto it = path.begin(); it->X != path.back().X || it->Y != path.back().Y; it++)
-			robot::instance()->setCleanMapMarkers(it->X, it->Y, TARGET);
+		for (auto it = path.begin(); it->x != path.back().x || it->y != path.back().y; it++)
+			robot::instance()->setCleanMapMarkers(it->x, it->y, TARGET);
 
-		robot::instance()->setCleanMapMarkers(path.back().X, path.back().Y, TARGET_CLEAN);
+		robot::instance()->setCleanMapMarkers(path.back().x, path.back().y, TARGET_CLEAN);
 	}
 
 	clean_map_markers_.header.stamp = ros::Time::now();
@@ -729,8 +729,8 @@ void robot::pubLineMarker(std::vector<std::vector<Vector2<double>> > *groups)
 			for (int j = 0; j < points_size; j++) {
 				//line_marker.pose.position.x = (iter->begin() + j)->x;
 				//line_marker.pose.position.y = (iter->begin() + j)->y;
-				lidar_points_.x = (iter->begin() + j)->X;
-				lidar_points_.y = (iter->begin() + j)->Y;
+				lidar_points_.x = (iter->begin() + j)->x;
+				lidar_points_.y = (iter->begin() + j)->y;
 				//ROS_INFO("lidar_points_.x = %lf lidar_points_.y = %lf",lidar_points_.x, lidar_points_.y);
 				line_marker.points.push_back(lidar_points_);
 			}
@@ -771,10 +771,10 @@ void robot::pubPointMarkers(const std::deque<Vector2<double>> *points, std::stri
 	if (!points->empty()) {
 		std::string msg("");
 		for (auto iter = points->cbegin(); iter != points->cend(); ++iter) {
-			lidar_points.x = iter->X;
-			lidar_points.y = iter->Y;
+			lidar_points.x = iter->x;
+			lidar_points.y = iter->y;
 			point_marker.points.push_back(lidar_points);
-			msg+="("+std::to_string(iter->X)+","+std::to_string(iter->Y)+"),";
+			msg+="("+std::to_string(iter->x)+","+std::to_string(iter->y)+"),";
 		}
 		point_marker_pub_.publish(point_marker);
 		//ROS_INFO("%s,%d,points size:%u,points %s",__FUNCTION__,__LINE__,points->size(),msg.c_str());
@@ -884,11 +884,11 @@ void robot::setTempTarget(std::deque<Vector2<double>>& points) {
 	boost::mutex::scoped_lock(temp_target_mutex_);
 	tmp_plan_path_.clear();
 
-//	ROS_ERROR("curr_point(%d,%d)",getPosition().X,getPosition().Y);
+//	ROS_ERROR("curr_point(%d,%d)",getPosition().x,getPosition().y);
 	for (const auto &iter : points) {
-		auto target = getPosition().getRelative(int(iter.X * 1000), int(iter.Y * 1000));
+		auto target = getPosition().getRelative(int(iter.x * 1000), int(iter.y * 1000));
 		tmp_plan_path_.push_back(target);
-//		ROS_INFO("temp_target(%d,%d)",target.X,target.Y);
+//		ROS_INFO("temp_target(%d,%d)",target.x,target.y);
 	}
 }
 

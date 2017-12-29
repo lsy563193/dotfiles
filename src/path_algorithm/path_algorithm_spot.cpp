@@ -128,8 +128,8 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Cells *ta
 		{
 			mid_it = targets->size();
 			//reset some variables
-			x = x_last = begincell.X;
-			y = y_last = begincell.Y;
+			x = x_last = begincell.x;
+			y = y_last = begincell.y;
 			spiral_count = 1;
 			cell_number = 1;
 
@@ -223,8 +223,8 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Cells *ta
 		{
 			mid_it = targets->size();
 			//reset some variable
-			x = x_last = begincell.X;
-			y = y_last = begincell.Y;
+			x = x_last = begincell.x;
+			y = y_last = begincell.y;
 			spiral_count = 1;
 			cell_number = 1;
 			targets->push_back({x,y});
@@ -318,19 +318,19 @@ bool SpotCleanPathAlgorithm::checkTrapped(GridMap &map, const Cell_t &curr_cell)
 void SpotCleanPathAlgorithm::giveMeCleanPoint(GridMap map,Point32_t &point)
 {
 	Cell_t cell = point.toCell();
-	if(map.getCell(COST_MAP,cell.X,cell.Y) >= COST_HIGH){
+	if(map.getCell(COST_MAP,cell.x,cell.y) >= COST_HIGH){
 		if(isXAxis((MapDirection)point.th)){
 			if(isPos((MapDirection)point.th))
-				point.Y = cellToCount(cell.Y+1);
+				point.y = cellToCount(cell.y+1);
 			else
-				point.Y = cellToCount(cell.Y-1);
+				point.y = cellToCount(cell.y-1);
 
 		}
 		else if(isYAxis((MapDirection)point.th)){
 			if(isPos((MapDirection)point.th))
-				point.X = cellToCount(cell.X-1);
+				point.x = cellToCount(cell.x-1);
 			else
-				point.X = cellToCount(cell.X+1);
+				point.x = cellToCount(cell.x+1);
 		}
 	}
 }
@@ -358,7 +358,7 @@ void SpotCleanPathAlgorithm::refactorTargets(GridMap map,Points *targets)
 			}
 		}
 	}
-	map.print(COST_MAP,getPosition().toCell().X,getPosition().toCell().Y);
+	map.print(COST_MAP,getPosition().toCell().x,getPosition().toCell().y);
 
 	Points::iterator it;
 	for( it= targets->begin();it!=targets->end();it++){

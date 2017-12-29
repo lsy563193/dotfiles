@@ -132,12 +132,12 @@ Point32_t ACleanMode::updatePath(GridMap& map)
 //	auto point = getPosition();
 //	robot::instance()->pubCleanMapMarkers(nav_map, tmp_plan_path_);
 //	PP_INFO();
-//	ROS_INFO("point(%d,%d,%d)",point.X, point.Y,point.th);
-//	ROS_INFO("last(%d,%d,%d)",last_.X, last_.Y, last_.th);
+//	ROS_INFO("point(%d,%d,%d)",point.x, point.y,point.th);
+//	ROS_INFO("last(%d,%d,%d)",last_.x, last_.y, last_.th);
 	if (passed_path_.empty())
 	{
 		passed_path_.push_back(curr);
-//		ROS_INFO("curr(%d,%d,%d)",curr.X, curr.Y, curr.th);
+//		ROS_INFO("curr(%d,%d,%d)",curr.x, curr.y, curr.th);
 	}
 	else if (!is_equal_with_angle_(curr, last_))
 	{
@@ -149,7 +149,7 @@ Point32_t ACleanMode::updatePath(GridMap& map)
 		});
 		auto distance = std::distance(loc, passed_path_.end());
 		if (distance == 0) {
-			ROS_INFO("curr(%d,%d,%d)",curr.toCell().X, curr.toCell().Y, curr.th);
+			ROS_INFO("curr(%d,%d,%d)",curr.toCell().x, curr.toCell().y, curr.th);
 			passed_path_.push_back(curr);
 		}
 		if (distance > 5) {
@@ -338,17 +338,17 @@ void ACleanMode::path_set_home(const Point32_t& curr)
 	bool is_found = false;
 
 	for (const auto& it : g_homes) {
-		ROS_INFO("%s %d: curr\033[33m(%d, %d)\033[0m home_it\033[33m(%d,%d)\033[0m.", __FUNCTION__, __LINE__, curr.X, curr.Y,it.X,it.Y);
+		ROS_INFO("%s %d: curr\033[33m(%d, %d)\033[0m home_it\033[33m(%d,%d)\033[0m.", __FUNCTION__, __LINE__, curr.x, curr.y,it.x,it.y);
 		if (it.toCell() == curr.toCell()) {
 			is_found = true;
 			break;
 		}
 	}
 	if (!is_found) {
-		ROS_INFO("%s %d: Push new reachable home:\033[33m (%d, %d)\033[0m to home point list.", __FUNCTION__, __LINE__, curr.X, curr.Y);
+		ROS_INFO("%s %d: Push new reachable home:\033[33m (%d, %d)\033[0m to home point list.", __FUNCTION__, __LINE__, curr.x, curr.y);
 		g_have_seen_charger = true;
 		// If curr near (0, 0)
-		if (abs(curr.X) >= 5 || abs(curr.Y) >= 5)
+		if (abs(curr.x) >= 5 || abs(curr.y) >= 5)
 		{
 			if(g_homes.size() >= HOME_CELLS_SIZE+1)//escape_count + zero_home = 3+1 = 4
 			{
@@ -373,7 +373,7 @@ void ACleanMode::setRconPos(float cd,float dist)
 	charger_pos_ = {(int32_t)(wpx*1000/CELL_SIZE), (int32_t)(wpy*1000/CELL_SIZE),(int16_t)0};
 	if(found_charger_)
 		g_homes.push_back(charger_pos_);
-//	ROS_INFO("%s,%d:rcon value \033[32m0x%x\033[0m,charger direction \033[32m%f\033[0m,cureent direction \033[32m%f\033[0m,distance \033[32m%f\033[0m,world pos(\033[32m%f,%f\033[0m), cell pos(\033[32m%hd,%hd\033[0m)",__FUNCTION__,__LINE__,rcon_status_&RconAll_Home_T,cd,yaw,dist,wpx,wpy,charger_pos_.X,charger_pos_.Y);
+//	ROS_INFO("%s,%d:rcon value \033[32m0x%x\033[0m,charger direction \033[32m%f\033[0m,cureent direction \033[32m%f\033[0m,distance \033[32m%f\033[0m,world pos(\033[32m%f,%f\033[0m), cell pos(\033[32m%hd,%hd\033[0m)",__FUNCTION__,__LINE__,rcon_status_&RconAll_Home_T,cd,yaw,dist,wpx,wpy,charger_pos_.x,charger_pos_.y);
 
 }
 

@@ -48,7 +48,7 @@ bool IFollowWall::isIsolate()
 
 bool IFollowWall::isBlockCleared()
 {
-	return !nav_map.isBlockAccessible(getPosition().toCell().X, getPosition().toCell().Y);
+	return !nav_map.isBlockAccessible(getPosition().toCell().x, getPosition().toCell().y);
 
 }
 
@@ -297,7 +297,7 @@ void IFollowWall::setTarget()
 //}
 
 bool IFollowWall::sp_turn_over(const Cell_t &curr) {
-		ROS_INFO("  %s %d:?? curr(%d,%d,%d)", __FUNCTION__, __LINE__, curr.X, curr.Y);
+		ROS_INFO("  %s %d:?? curr(%d,%d,%d)", __FUNCTION__, __LINE__, curr.x, curr.y);
 		/*check if spot turn*/
 		if (get_sp_turn_count() > 400) {
 			reset_sp_turn_count();

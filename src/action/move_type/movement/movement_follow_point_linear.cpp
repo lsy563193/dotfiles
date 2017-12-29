@@ -21,25 +21,25 @@ MovementFollowPointLinear::MovementFollowPointLinear()
 }
 
 bool MovementFollowPointLinear::_checkIsNear(const Point32_t& tmp_target, const Point32_t& target,MapDirection new_dir) {
-	auto &target_xy = (isXAxis(new_dir)) ? target.X : target.Y;
-	auto &tmp_xy = (isXAxis(new_dir)) ? tmp_target.X : tmp_target.Y;
+	auto &target_xy = (isXAxis(new_dir)) ? target.x : target.y;
+	auto &tmp_xy = (isXAxis(new_dir)) ? tmp_target.x : tmp_target.y;
 
 	return (isPos(new_dir)) ? target_xy <= tmp_xy : target_xy >= tmp_xy;
 }
 
 Point32_t MovementFollowPointLinear::_calcTmpTarget(const Point32_t& curr, const Point32_t& target,MapDirection new_dir) {
-	auto curr_xy = (isXAxis(new_dir)) ? curr.X : curr.Y;
-	auto &target_xy = (isXAxis(new_dir)) ? target.X : target.Y;
+	auto curr_xy = (isXAxis(new_dir)) ? curr.x : curr.y;
+	auto &target_xy = (isXAxis(new_dir)) ? target.x : target.y;
 
 	auto tmp_target = curr;
-	auto &tmp_xy = (isXAxis(new_dir)) ? tmp_target.X : tmp_target.Y;
+	auto &tmp_xy = (isXAxis(new_dir)) ? tmp_target.x : tmp_target.y;
 //	ROS_WARN("curr_xy(%d), target_xy(%d)", curr_xy, target_xy);
 	auto dis = std::min(std::abs(curr_xy - target_xy), (int32_t) (CELL_COUNT_MUL*0.75));
 //	ROS_INFO("dis(%d)",dis);
 	if (!isPos(new_dir))
 		dis *= -1;
 	tmp_xy = curr_xy + dis;
-//	ROS_WARN("tmp(%d,%d)",tmp_target.X, tmp_target.Y);
+//	ROS_WARN("tmp(%d,%d)",tmp_target.x, tmp_target.y);
 //	ROS_WARN("dis(%d),dir(%d),curr_xy(%d),tmp_xy(%d)",dis, GridMap::isPos(new_dir),curr_xy, tmp_xy);
 	return tmp_target;
 }
@@ -57,10 +57,10 @@ bool MovementFollowPointLinear::calcTmpTarget(Point32_t& tmp_target) {
 		p_cm->new_dir_ = (MapDirection) p_cm->plan_path_.front().th;
 		p_cm->plan_path_.pop_front();
 		sp_mt_->target_point_ = p_cm->plan_path_.front();
-//		ROS_INFO("%s,%d,is_near(%d),dir(%d),target(%d,%d),tmp(%d,%d)", __FUNCTION__, __LINE__, is_near, p_cm->new_dir_, sp_mt_->target_point_.X, sp_mt_->target_point_.Y, tmp_target.X, tmp_target.Y);
+//		ROS_INFO("%s,%d,is_near(%d),dir(%d),target(%d,%d),tmp(%d,%d)", __FUNCTION__, __LINE__, is_near, p_cm->new_dir_, sp_mt_->target_point_.x, sp_mt_->target_point_.y, tmp_target.x, tmp_target.y);
 		tmp_target = _calcTmpTarget(curr, sp_mt_->target_point_,p_cm->new_dir_);
 
-		ROS_INFO("%s,%d,dir(%d),target(%d,%d),tmp(%d,%d)", __FUNCTION__, __LINE__, p_cm->new_dir_, sp_mt_->target_point_.X, sp_mt_->target_point_.Y, tmp_target.X, tmp_target.Y);
+		ROS_INFO("%s,%d,dir(%d),target(%d,%d),tmp(%d,%d)", __FUNCTION__, __LINE__, p_cm->new_dir_, sp_mt_->target_point_.x, sp_mt_->target_point_.y, tmp_target.x, tmp_target.y);
 	}
 
 	return true;
@@ -119,11 +119,11 @@ bool MovementFollowPointLinear::isCellReach()
 	// Checking if robot has reached target cell.
 	auto s_curr_p = getPosition();
 	auto target_p = sp_mt_->target_point_;
-	if (std::abs(s_curr_p.X - target_p.X) < CELL_COUNT_MUL_1_2 &&
-		std::abs(s_curr_p.Y - target_p.Y) < CELL_COUNT_MUL_1_2)
+	if (std::abs(s_curr_p.x - target_p.x) < CELL_COUNT_MUL_1_2 &&
+		std::abs(s_curr_p.y - target_p.y) < CELL_COUNT_MUL_1_2)
 	{
 		ROS_INFO("\033[1m""%s, %d: MovementFollowPointLinear, reach the target cell (%d,%d)!!""\033[0m", __FUNCTION__, __LINE__,
-						 sp_mt_->target_point_.X, sp_mt_->target_point_.Y);
+						 sp_mt_->target_point_.x, sp_mt_->target_point_.y);
 //		g_turn_angle = ranged_angle(new_dir - robot::instance()->getWorldPoseAngle());
 		return true;
 	}
@@ -139,7 +139,7 @@ bool MovementFollowPointLinear::isPoseReach()
 	if (isCellReach() && std::abs(ranged_angle(robot::instance()->getWorldPoseAngle() - target_angle)) < 200)
 	{
 		ROS_INFO("\033[1m""%s, %d: MovementFollowPointLinear, reach the target cell and pose(%d,%d,%d)!!""\033[0m", __FUNCTION__, __LINE__,
-				 sp_mt_->target_point_.X, sp_mt_->target_point_.Y, sp_mt_->target_point_.th);
+				 sp_mt_->target_point_.x, sp_mt_->target_point_.y, sp_mt_->target_point_.th);
 		return true;
 	}
 	return false;
@@ -150,11 +150,11 @@ bool MovementFollowPointLinear::isNearTarget()
 //	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mt_->sp_mode_);
 //	auto new_dir = p_clean_mode->new_dir_;
 //	auto s_curr_p = getPosition();
-//	auto curr = (isXAxis(new_dir)) ? s_curr_p.X : s_curr_p.Y;
+//	auto curr = (isXAxis(new_dir)) ? s_curr_p.x : s_curr_p.y;
 //	auto target_p = sp_mt_->target_point_;
-//	auto &target = (isXAxis(new_dir)) ? target_p.X : target_p.Y;
+//	auto &target = (isXAxis(new_dir)) ? target_p.x : target_p.y;
 //	//ROS_INFO("%s %d: s_curr_p(%d, %d), target_p(%d, %d), dir(%d)",
-//	//		 __FUNCTION__, __LINE__, s_curr_p.X, s_curr_p.Y, target_p.X, target_p.Y, new_dir);
+//	//		 __FUNCTION__, __LINE__, s_curr_p.x, s_curr_p.y, target_p.x, target_p.y, new_dir);
 //	if ((GridMap::isPos(new_dir) && (curr > target - 1.5 * CELL_COUNT_MUL)) ||
 //		(!GridMap::isPos(new_dir) && (curr < target + 1.5 * CELL_COUNT_MUL))) {
 //		if(p_clean_mode->plan_path_.size() > 1)
@@ -164,14 +164,14 @@ bool MovementFollowPointLinear::isNearTarget()
 //			p_clean_mode->plan_path_.pop_front();
 //			ROS_INFO("%s %d: Curr(%d, %d), switch next cell(%d, %d), new dir(%d).", __FUNCTION__, __LINE__,
 //					 nav_map.getXCell(),
-//					 nav_map.getYCell(), p_clean_mode->plan_path_.front().X, p_clean_mode->plan_path_.front().Y, new_dir);
+//					 nav_map.getYCell(), p_clean_mode->plan_path_.front().x, p_clean_mode->plan_path_.front().y, new_dir);
 //		}
 //		else if(p_clean_mode->plan_path_.front() != g_zero_home && g_allow_check_path_in_advance)
 //		{
 //			g_check_path_in_advance = true;
 //			ROS_INFO("%s %d: Curr(%d, %d), target(%d, %d), dir(%d), g_check_path_in_advance(%d)",
 //					 __FUNCTION__, __LINE__, nav_map.getXCell(), nav_map.getYCell(),
-//					 p_clean_mode->plan_path_.front().X, p_clean_mode->plan_path_.front().Y, new_dir, g_check_path_in_advance);
+//					 p_clean_mode->plan_path_.front().x, p_clean_mode->plan_path_.front().y, new_dir, g_check_path_in_advance);
 //			return true;
 //		}
 //	}
@@ -197,9 +197,9 @@ bool MovementFollowPointLinear::isPassTargetStop()
 	auto p_clean_mode = (ACleanMode*)sp_mt_->sp_mode_;
 	auto new_dir = p_clean_mode->new_dir_;
 	auto s_curr_p = getPosition();
-	auto curr = (isXAxis(new_dir)) ? s_curr_p.X : s_curr_p.Y;
+	auto curr = (isXAxis(new_dir)) ? s_curr_p.x : s_curr_p.y;
 	auto target_p = (sp_mt_->target_point_);
-	auto target = (isXAxis(new_dir)) ? target_p.X : target_p.Y;
+	auto target = (isXAxis(new_dir)) ? target_p.x : target_p.y;
 	if ((isPos(new_dir) && (curr > target + CELL_COUNT_MUL / 4)) ||
 		(!isPos(new_dir) && (curr < target - CELL_COUNT_MUL / 4)))
 	{
@@ -213,7 +213,7 @@ bool MovementFollowPointLinear::isPassTargetStop()
 //void MovementFollowPointLinear::setTarget()
 //{
 //	turn_angle = ranged_angle(
-//						course_to_dest(s_curr_p.X, s_curr_p.Y, cm_target_p_.X, cm_target_p_.Y) - robot::instance()->getWorldPoseAngle());
+//						course_to_dest(s_curr_p.x, s_curr_p.y, cm_target_p_.x, cm_target_p_.y) - robot::instance()->getWorldPoseAngle());
 //	s_target_p = nav_map.cellToPoint(p_clean_mode->tmp_plan_path_.back());
 //	p_clean_mode->tmp_plan_path_ = p_clean_mode->tmp_plan_path_;
 //}
@@ -226,7 +226,7 @@ bool MovementFollowPointLinear::is_near()
 {
 	auto curr_p = getPosition();
 	bool is_decrease_blocked = decrease_map.isFrontBlocked();
-//	auto distance = two_points_distance(curr_p.X, curr_p.Y, s_target_p.X, s_target_p.Y);
+//	auto distance = two_points_distance(curr_p.x, curr_p.y, s_target_p.x, s_target_p.y);
 	auto obstacle_distance_front = lidar.getObstacleDistance(0,ROBOT_RADIUS);
 	return obs.getStatus() > 0 || /*(distance < SLOW_DOWN_DISTANCE) ||*/ nav_map.isFrontBlockBoundary(3) || (obstacle_distance_front < 0.25) || is_decrease_blocked;
 }

@@ -100,13 +100,13 @@ bool CleanModeNav::mapMark()
 		if (ev.rcon_triggered)
 		{
 			home_points_.push_front(getPosition());
-			ROS_INFO("%s %d: Set home cell(%d, %d).", __FUNCTION__, __LINE__, home_points_.front().X, home_points_.front().Y);
+			ROS_INFO("%s %d: Set home cell(%d, %d).", __FUNCTION__, __LINE__, home_points_.front().x, home_points_.front().y);
 		}
 	}
 
 	nav_map.markRobot(CLEAN_MAP);
 	PP_INFO();
-	nav_map.print(CLEAN_MAP, getPosition().toCell().X, getPosition().toCell().Y);
+	nav_map.print(CLEAN_MAP, getPosition().toCell().x, getPosition().toCell().y);
 
 	passed_path_.clear();
 	return false;
@@ -230,7 +230,7 @@ bool CleanModeNav::setNextAction()
 	else if (state_i_ == st_clean)
 	{
 		auto start = getPosition().toCell();
-		auto delta_y = plan_path_.back().Y - start.Y;
+		auto delta_y = plan_path_.back().y - start.y;
 		ROS_INFO("%s,%d: path size(%u), old_dir_(%d), bumper(%d), cliff(%d), lidar(%d), delta_y(%d)",
 						__FUNCTION__, __LINE__, plan_path_.size(), old_dir_, ev.bumper_triggered,
 						ev.cliff_triggered, ev.lidar_triggered, delta_y);
@@ -242,7 +242,7 @@ bool CleanModeNav::setNextAction()
 		}
 		else
 		{
-			delta_y = plan_path_.back().Y - start.Y;
+			delta_y = plan_path_.back().y - start.y;
 			bool is_left = isPos(old_dir_) ^delta_y > 0;
 			ROS_INFO("\033[31m""%s,%d: target:, 0_left_1_right(%d=%d ^ %d)""\033[0m",
 					 __FUNCTION__, __LINE__, is_left, isPos(old_dir_), delta_y);
@@ -507,7 +507,7 @@ void CleanModeNav::remoteDirectionLeft(bool state_now, bool state_last)
 		beeper.play_for_command(VALID);
 		continue_point_ = getPosition();
 		ROS_INFO("%s %d: low battery, battery =\033[33m %dmv \033[0m, continue cell(%d, %d)", __FUNCTION__, __LINE__,
-				 battery.getVoltage(), continue_point_.X, continue_point_.Y);
+				 battery.getVoltage(), continue_point_.x, continue_point_.y);
 		ev.battery_home = true;
 		go_home_for_low_battery_ = true;
 	}
@@ -532,7 +532,7 @@ void CleanModeNav::batteryHome(bool state_now, bool state_last)
 	{
 		continue_point_ = getPosition();
 		ROS_INFO("%s %d: low battery, battery =\033[33m %dmv \033[0m, continue cell(%d, %d)", __FUNCTION__, __LINE__,
-				 battery.getVoltage(), continue_point_.X, continue_point_.Y);
+				 battery.getVoltage(), continue_point_.x, continue_point_.y);
 		ev.battery_home = true;
 		go_home_for_low_battery_ = true;
 	}
@@ -563,27 +563,27 @@ bool CleanModeNav::isOverOriginLine()
 {
 	auto curr = getPosition();
 	auto p_mt = boost::dynamic_pointer_cast<IMoveType>(sp_action_);
-	if ((p_mt->target_point_.Y > p_mt->start_point_.Y && (p_mt->start_point_.Y - curr.Y) > 120)
-		|| (p_mt->target_point_.Y < p_mt->start_point_.Y && (curr.Y - p_mt->start_point_.Y) > 120))
+	if ((p_mt->target_point_.y > p_mt->start_point_.y && (p_mt->start_point_.y - curr.y) > 120)
+		|| (p_mt->target_point_.y < p_mt->start_point_.y && (curr.y - p_mt->start_point_.y) > 120))
 	{
-		ROS_WARN("origin(%d,%d) curr_p(%d, %d), p_mt->target_point__(%d, %d)",p_mt->start_point_.X, p_mt->start_point_.Y,  curr.X, curr.Y, p_mt->target_point_.X, p_mt->target_point_.Y);
-		auto target_angle = (p_mt->target_point_.Y > p_mt->start_point_.Y) ? -900 : 900;
+		ROS_WARN("origin(%d,%d) curr_p(%d, %d), p_mt->target_point__(%d, %d)",p_mt->start_point_.x, p_mt->start_point_.y,  curr.x, curr.y, p_mt->target_point_.x, p_mt->target_point_.y);
+		auto target_angle = (p_mt->target_point_.y > p_mt->start_point_.y) ? -900 : 900;
 		if (std::abs(ranged_angle(robot::instance()->getWorldPoseAngle() - target_angle)) < 50) // If robot is directly heading to the opposite side of target line, stop.
 		{
-			ROS_WARN("%s %d: Opposite to target angle. curr(%d, %d), p_mt->target_point_(%d, %d), gyro(%d), target_angle(%d)", __FUNCTION__, __LINE__, curr.X, curr.Y, p_mt->target_point_.X, p_mt->target_point_.Y,
+			ROS_WARN("%s %d: Opposite to target angle. curr(%d, %d), p_mt->target_point_(%d, %d), gyro(%d), target_angle(%d)", __FUNCTION__, __LINE__, curr.x, curr.y, p_mt->target_point_.x, p_mt->target_point_.y,
 					 robot::instance()->getWorldPoseAngle(), target_angle);
 			return true;
 		}
-		else if (nav_map.isBlockCleaned(curr.toCell().X, curr.toCell().Y)) // If robot covers a big block, stop.
+		else if (nav_map.isBlockCleaned(curr.toCell().x, curr.toCell().y)) // If robot covers a big block, stop.
 		{
 			ROS_WARN("%s %d: Back to cleaned place, current(%d, %d), curr(%d, %d), p_mt->target_point_(%d, %d).",
-					 __FUNCTION__, __LINE__, curr.X, curr.Y, curr.X, curr.Y, p_mt->target_point_.X, p_mt->target_point_.Y);
+					 __FUNCTION__, __LINE__, curr.x, curr.y, curr.x, curr.y, p_mt->target_point_.x, p_mt->target_point_.y);
 			return true;
 		}
 		else{
 			ROS_WARN("%s %d: Dynamic adjust the origin line and target line, so it can smoothly follow the wall to clean..",__FUNCTION__,__LINE__);
-			p_mt->target_point_.Y += curr.Y - p_mt->start_point_.Y;
-			p_mt->start_point_.Y = curr.Y;
+			p_mt->target_point_.y += curr.y - p_mt->start_point_.y;
+			p_mt->start_point_.y = curr.y;
 		}
 	}
 
@@ -595,28 +595,28 @@ bool CleanModeNav::isNewLineReach()
 	auto s_curr_p = getPosition();
 	auto ret = false;
 	auto p_mt = boost::dynamic_pointer_cast<IMoveType>(sp_action_);
-	auto is_pos_dir = p_mt->target_point_.Y - p_mt->start_point_.Y > 0;
+	auto is_pos_dir = p_mt->target_point_.y - p_mt->start_point_.y > 0;
 	// The limit is CELL_COUNT_MUL / 8 * 3 further than target line center.
-	auto target_limit = p_mt->target_point_.Y + CELL_COUNT_MUL / 8 * 3 * is_pos_dir;
-//	ROS_WARN("~~~~~~~~~~~~~~~~~%s %d: start_p.Y(%d), target.Y(%d),curr_y(%d)",
-//					 __FUNCTION__, __LINE__, countToCell(s_curr_p.Y), countToCell(p_mt->target_point_.Y),
-//					 countToCell(s_curr_p.Y));
-	if (is_pos_dir ^ s_curr_p.Y < target_limit) // Robot has reached the target line limit.
+	auto target_limit = p_mt->target_point_.y + CELL_COUNT_MUL / 8 * 3 * is_pos_dir;
+//	ROS_WARN("~~~~~~~~~~~~~~~~~%s %d: start_p.y(%d), target.y(%d),curr_y(%d)",
+//					 __FUNCTION__, __LINE__, countToCell(s_curr_p.y), countToCell(p_mt->target_point_.y),
+//					 countToCell(s_curr_p.y));
+	if (is_pos_dir ^ s_curr_p.y < target_limit) // Robot has reached the target line limit.
 	{
-		ROS_WARN("%s %d: Reach the target limit, start_p.Y(%d), target.Y(%d),curr_y(%d)",
-				 __FUNCTION__, __LINE__, p_mt->start_point_.Y, p_mt->target_point_.Y,
-				 s_curr_p.Y);
+		ROS_WARN("%s %d: Reach the target limit, start_p.y(%d), target.y(%d),curr_y(%d)",
+				 __FUNCTION__, __LINE__, p_mt->start_point_.y, p_mt->target_point_.y,
+				 s_curr_p.y);
 		ret = true;
 	}
-	else if (is_pos_dir ^ s_curr_p.Y < p_mt->target_point_.Y)
+	else if (is_pos_dir ^ s_curr_p.y < p_mt->target_point_.y)
 	{
 		// Robot has reached the target line center but still not reach target line limit.
 		// Check if the wall side has blocks on the costmap.
 		auto dx = (is_pos_dir ^ action_i_ == ac_follow_wall_left) ? +2 : -2;
-		if (nav_map.isBlocksAtY(s_curr_p.toCell().X + dx, s_curr_p.toCell().Y)) {
-			ROS_WARN("%s %d: Already has block at the wall side, start_p.Y(%d), target.Y(%d),curr_y(%d)",
-					 __FUNCTION__, __LINE__, p_mt->start_point_.toCell().Y, p_mt->target_point_.toCell().Y,
-					 s_curr_p.toCell().Y);
+		if (nav_map.isBlocksAtY(s_curr_p.toCell().x + dx, s_curr_p.toCell().y)) {
+			ROS_WARN("%s %d: Already has block at the wall side, start_p.y(%d), target.y(%d),curr_y(%d)",
+					 __FUNCTION__, __LINE__, p_mt->start_point_.toCell().y, p_mt->target_point_.toCell().y,
+					 s_curr_p.toCell().y);
 			ret = true;
 		}
 	}
@@ -628,8 +628,8 @@ bool CleanModeNav::isBlockCleared()
 {
 	if (!passed_path_.empty())
 	{
-//		ROS_INFO("%s %d: passed_path_.back(%d %d)", __FUNCTION__, __LINE__, passed_path_.back().X, passed_path_.back().Y);
-		return !nav_map.isBlockAccessible(passed_path_.back().X, passed_path_.back().Y);
+//		ROS_INFO("%s %d: passed_path_.back(%d %d)", __FUNCTION__, __LINE__, passed_path_.back().x, passed_path_.back().y);
+		return !nav_map.isBlockAccessible(passed_path_.back().x, passed_path_.back().y);
 	}
 
 	return false;
@@ -691,14 +691,14 @@ uint8_t CleanModeNav::setFollowWall(const Points& path)
 		std::string msg = "cell:";
 		auto dy = action_i_ == ac_follow_wall_left ? 2 : -2;
 		for(auto& point : path){
-			if(nav_map.getCell(CLEAN_MAP,point.toCell().X,point.toCell().Y) != BLOCKED_RCON){
+			if(nav_map.getCell(CLEAN_MAP,point.toCell().x,point.toCell().y) != BLOCKED_RCON){
 				auto block_cell = point.getRelative(0, dy * CELL_SIZE).toCell();
-				msg += "(" + std::to_string(block_cell.X) + "," + std::to_string(block_cell.Y) + ")";
-				nav_map.setCell(CLEAN_MAP, block_cell.X, block_cell.Y, BLOCKED_CLIFF);
+				msg += "(" + std::to_string(block_cell.x) + "," + std::to_string(block_cell.y) + ")";
+				nav_map.setCell(CLEAN_MAP, block_cell.x, block_cell.y, BLOCKED_CLIFF);
 				block_count++;
 			}
 		}
-		ROS_INFO("%s,%d: Current(%d, %d), \033[32m mapMark CLEAN_MAP %s\033[0m",__FUNCTION__, __LINE__, getPosition().toCell().X, getPosition().toCell().Y, msg.c_str());
+		ROS_INFO("%s,%d: Current(%d, %d), \033[32m mapMark CLEAN_MAP %s\033[0m",__FUNCTION__, __LINE__, getPosition().toCell().x, getPosition().toCell().y, msg.c_str());
 	}
 }
 
