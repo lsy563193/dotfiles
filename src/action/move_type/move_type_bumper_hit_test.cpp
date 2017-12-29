@@ -44,9 +44,9 @@ bool MoveTypeBumperHitTest::isFinish()
 		float back_distance = 0.08;
 		p_back_movement_.reset(new MovementBack(back_distance, 40));
 		if (turn_left_)
-			turn_target_angle_ = ranged_angle(static_cast<int16_t>(robot::instance()->getPoseAngle() + 900));
+			turn_target_angle_ = ranged_angle(static_cast<int16_t>(robot::instance()->getWorldPoseAngle() + 900));
 		else
-			turn_target_angle_ = ranged_angle(static_cast<int16_t>(robot::instance()->getPoseAngle() - 900));
+			turn_target_angle_ = ranged_angle(static_cast<int16_t>(robot::instance()->getWorldPoseAngle() - 900));
 		p_turn_movement_.reset(new MovementTurn(turn_target_angle_, 40));
 		turn_left_ = !turn_left_;
 	}

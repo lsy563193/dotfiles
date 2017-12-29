@@ -90,15 +90,6 @@
 
 class Rcon {
 public:
-	bool found_charger_;
-	bool found_temp_charger_;
-	bool in_rcon_signal_range_;
-	bool should_mark_charger_;
-	bool should_mark_temp_charger_;
-public:
-	Rcon();
-	~Rcon();
-	void init();
 	int getTrig(void);
 	bool isTrigT();
 
@@ -110,39 +101,28 @@ public:
 		rcon_status_ = 0;
 	}
 
-	uint32_t getStatus();
+	uint32_t getStatus()
+	{
+		return rcon_status_;
+	};
 
-	
+	uint32_t getAll(void);
+
+	/*
+	 * For checking if L/R/FL/FR/FL2/FR2 receive HomeT signal.
+	 */
+	uint32_t getForwardTop();
+
+
 	/*
 	 * @author
 	 * @breif set rcon position
 	 * @param1 pos ,position in cell_t
 	 * @return void
 	 * */
-	void setRconPos(Cell_t pos)
-	{
-		charger_pos_ = pos;
-	}
-
-	/*
-	 * @author
-	 * @breif get rcon position
-	 * @return rcon position
-	 * */
-	Cell_t getRconPos()
-	{
-		return charger_pos_;
-	}
-	/*
-	 * @author mengshige1988@qq.com
-	 * @breif estimate charge postiion ,according to rcon sensor signals
-	 * @return true if found ,else false
-	 * */
-	bool estimateChargerPos(uint32_t rcon_value);
 
 private:
-	uint32_t rcon_status_;
-	Cell_t charger_pos_;//charger postion 
+	uint32_t rcon_status_{};
 
 	/*
 	 * @author
@@ -151,8 +131,6 @@ private:
 	 * @param2 dist ,distance between robot and charger
 	 * @return void
 	 * */
-	void setRconPos(float cd,float dist);
-
 };
 
 extern Rcon c_rcon;

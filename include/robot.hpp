@@ -104,25 +104,25 @@ public:
 	};
 */
 
-	int16_t getPoseAngle()
+	int16_t getWorldPoseAngle()
 	{
 		// It is 10x degrees.
-		return static_cast<int16_t>(pose.getAngle());
+		return static_cast<int16_t>(world_pose_.getAngle());
 	}
 
-	float getPoseX()
+	float getWorldPoseX()
 	{
-		return pose.getX();
+		return world_pose_.getX();
 	}
 
-	float getPoseY()
+	float getWorldPoseY()
 	{
-		return pose.getY();
+		return world_pose_.getY();
 	}
 
-	float getPoseZ()
+	float getWorldPoseZ()
 	{
-		return pose.getZ();
+		return world_pose_.getZ();
 	}
 
 	float getRobotCorrectionX() const
@@ -196,7 +196,7 @@ private:
 
 	bool	is_align_active_;
 
-	Pose pose;
+	Pose world_pose_;
 
 	// This is for the slam correction variables.
 	float	robot_correction_x_;
@@ -253,4 +253,21 @@ private:
 	void lidarPointCb(const visualization_msgs::Marker &point_marker);
 };
 
+int32_t cellToCount(int16_t distance);
+
+int16_t countToCell(int32_t count);
+
+Point32_t getPosition(void);
+
+bool isPos(MapDirection dir);
+
+bool isXAxis(MapDirection dir);
+
+bool isYAxis(MapDirection dir);
+
+Point32_t getRelative(Point32_t point, int16_t dy, int16_t dx, bool using_point_pos);
+
+Point32_t updatePosition();
+
+void setPosition(int32_t x, int32_t y);
 #endif

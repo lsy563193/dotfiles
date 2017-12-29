@@ -15,10 +15,10 @@ CleanModeSpot::CleanModeSpot()
 	speaker.play(VOICE_CLEANING_SPOT,false);
 	clean_path_algorithm_.reset(new SpotCleanPathAlgorithm());
 	go_home_path_algorithm_.reset();
-	has_aligned_and_open_slam = false;
 	nav_map.reset(COST_MAP);
 	nav_map.reset(CLEAN_MAP);
-	clean_map_ = &nav_map;
+	map_ = &nav_map;
+	map_->reset(CLEAN_MAP);
 }
 
 CleanModeSpot::~CleanModeSpot()
@@ -33,6 +33,7 @@ CleanModeSpot::~CleanModeSpot()
 	robot::instance()->setBaselinkFrameType( ODOM_POSITION_ODOM_ANGLE);
 	slam.stop();
 	odom.setAngleOffset(0);
+	speaker.play(VOICE_CLEANING_STOP,false);
 }
 
 bool CleanModeSpot::isFinish()
@@ -47,16 +48,18 @@ bool CleanModeSpot::isFinish()
 bool CleanModeSpot::mapMark()
 {
 	ROS_INFO("%s,%d,passed_path",__FUNCTION__,__LINE__);
-	clean_path_algorithm_->displayPath(passed_path_);
+	clean_path_algorithm_->displayPointPath(passed_path_);
+
 	if (action_i_ == ac_linear) {
 		PP_INFO();
-		nav_map.setCleaned(passed_path_);
+		nav_map.setCleaned(pointsGenerateCells(passed_path_));
 	}
 
 	if (state_i_ == st_trapped)
 		nav_map.markRobot(CLEAN_MAP);
 	nav_map.setBlocks();
-	nav_map.print(CLEAN_MAP, nav_map.getXCell(), nav_map.getYCell());
+	PP_INFO();
+	nav_map.print(CLEAN_MAP, getPosition().toCell().X, getPosition().toCell().Y);
 
 	passed_path_.clear();
 	return false;
@@ -90,24 +93,25 @@ bool CleanModeSpot::isExit()
 bool CleanModeSpot::setNextState()
 {
 	PP_INFO();
-
-	if (!isInitFinished_)
-		return true;
-
 	bool state_confirm = false;
 	while (ros::ok() && !state_confirm)
 	{
-		if (state_i_ == st_null)
+		if (state_i_ == st_init)
 		{
-			auto curr = nav_map.updatePosition();
-			passed_path_.push_back(curr);
+			if (action_i_ == ac_open_slam)
+			{
+				auto curr = updatePosition();
+				passed_path_.push_back(curr);
 
-			home_cells_.back().TH = robot::instance()->getPoseAngle();
-			PP_INFO();
+				home_points_.back().TH = robot::instance()->getWorldPoseAngle();
+				PP_INFO();
 
-			state_i_ = st_clean;
-			stateInit(state_i_);
-			action_i_ = ac_null;
+				state_i_ = st_clean;
+				stateInit(state_i_);
+			}
+			else
+				state_confirm = true;
+			
 		}
 		else if (isExceptionTriggered())
 		{
@@ -122,14 +126,15 @@ bool CleanModeSpot::setNextState()
 		{
 			PP_INFO();
 			old_dir_ = new_dir_;
-			ROS_INFO("\033old_dir_(%d)", old_dir_);
-			if (clean_path_algorithm_->generatePath(nav_map, nav_map.getCurrCell(), old_dir_, plan_path_))
+			ROS_ERROR("old_dir_(%d)", old_dir_);
+			ROS_INFO("\033[32m plan_path front (%d,%d)\033[0m",plan_path_.front().toCell().X,plan_path_.front().toCell().Y);
+			if (clean_path_algorithm_->generatePath(nav_map, getPosition(), old_dir_, plan_path_))
 			{
 				new_dir_ = (MapDirection)plan_path_.front().TH;
 				ROS_ERROR("new_dir_(%d)", new_dir_);
 				PP_INFO();
 				plan_path_.pop_front();
-				clean_path_algorithm_->displayPath(plan_path_);
+				clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
 				state_confirm = true;
 			}
 			else
@@ -146,7 +151,7 @@ bool CleanModeSpot::setNextState()
 
 bool CleanModeSpot::setNextAction()
 {
-	if (!isInitFinished_)
+	if (state_i_ == st_init)
 		return ACleanMode::setNextAction();
 	else if (state_i_ == st_clean)
 	{

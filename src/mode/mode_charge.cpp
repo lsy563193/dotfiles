@@ -19,7 +19,7 @@ ModeCharge::ModeCharge()
 	event_manager_set_enable(true);
 	sp_action_.reset(new MovementCharge);
 	action_i_ = ac_charge;
-	serial.setCleanMode(Clean_Mode_Charging);
+//	serial.setCleanMode(Clean_Mode_Charging);
 
 	plan_activated_status_ = false;
 	PP_INFO();

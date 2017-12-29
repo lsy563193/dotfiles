@@ -9,53 +9,47 @@
 #include "pp.h"
 #include "arch.hpp"
 
-double robot_to_wall_distance = 0.8;
 
 IFollowWall::IFollowWall(bool is_left) : previous_(0), seen_charger_counter(0), is_left_(is_left)
 {
-//	s_start_p = GridMap::getCurrPoint();
+//	s_start_p = GridMap::getPosition();
 //	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mt_->sp_mode_);
 //	s_target_p = GridMap::cellToPoint(p_clean_mode->plan_path_.front());
 //	start_timer_ = ros::Time::now().toSec();
 	fw_map.reset(CLEAN_MAP);
 }
 
-bool IFollowWall::isClosure(uint8_t closure_cnt)
-{
-	if (g_wf_reach_count >= closure_cnt) {
-		ROS_WARN("%s %d: Trapped wall follow is loop closed. reach_count(%d) ", __FUNCTION__, __LINE__, g_wf_reach_count);
-		return true;
-	}
-	return false;
-}
+//bool IFollowWall::isClosure(uint8_t closure_cnt)
+//{
+//	if (g_wf_reach_count >= closure_cnt) {
+//		ROS_WARN("%s %d: Trapped wall follow is loop closed. reach_count(%d) ", __FUNCTION__, __LINE__, g_wf_reach_count);
+//		return true;
+//	}
+//	return false;
+//}
 
 bool IFollowWall::isIsolate()
 {
 	return false;
 }
 
-bool IFollowWall::isTimeUp()
-{
-	if (fw_is_time_up()) {
-		ROS_WARN("%s %d: curr(%d),start(%d),diff(%d)",__FUNCTION__, __LINE__, time(NULL), g_wf_start_timer, g_wf_diff_timer);
-		ev.fatal_quit = true;
-		ROS_INFO("%s %d: curr(%d),start(%d),diff(%d)",__FUNCTION__, __LINE__, time(NULL), g_wf_start_timer, g_wf_diff_timer);
-		ev.fatal_quit = true;
-		return true;
-	}
+//bool IFollowWall::isTimeUp()
+//{
+//	if (fw_is_time_up()) {
+//		ROS_WARN("%s %d: curr(%d),start(%d),diff(%d)",__FUNCTION__, __LINE__, time(NULL), g_wf_start_timer, g_wf_diff_timer);
+//		ev.fatal_quit = true;
+//		ROS_INFO("%s %d: curr(%d),start(%d),diff(%d)",__FUNCTION__, __LINE__, time(NULL), g_wf_start_timer, g_wf_diff_timer);
+//		ev.fatal_quit = true;
+//		return true;
+//	}
 
-	return false;
-}
+//	return false;
+//}
 
 bool IFollowWall::isBlockCleared()
 {
-	if (!nav_map.isBlockAccessible(nav_map.getXCell(), nav_map.getYCell())) // Robot has step on blocks.
-	{
-//		ROS_WARN("%s %d: Lidar triggered, turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
-		return true;
-	}
+	return !nav_map.isBlockAccessible(getPosition().toCell().X, getPosition().toCell().Y);
 
-	return false;
 }
 
 void IFollowWall::setTarget()
@@ -303,7 +297,7 @@ void IFollowWall::setTarget()
 //}
 
 bool IFollowWall::sp_turn_over(const Cell_t &curr) {
-		ROS_INFO("  %s %d:?? curr(%d,%d,%d)", __FUNCTION__, __LINE__, curr.X, curr.Y, curr.TH);
+		ROS_INFO("  %s %d:?? curr(%d,%d,%d)", __FUNCTION__, __LINE__, curr.X, curr.Y);
 		/*check if spot turn*/
 		if (get_sp_turn_count() > 400) {
 			reset_sp_turn_count();

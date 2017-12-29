@@ -29,10 +29,10 @@ SpeedGovernorTurn::SpeedGovernorTurn(int16_t target_angle)
 void SpeedGovernorTurn::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 {
 
-	auto diff = ranged_angle(target_angle_ - robot::instance()->getPoseAngle());
-//	ROS_INFO("SpeedGovernorTurn::adjustSpeed diff(%d),(%d,%d)", diff, target_angle_, robot::instance()->getPoseAngle());
+	auto diff = ranged_angle(target_angle_ - robot::instance()->getWorldPoseAngle());
+//	ROS_INFO("SpeedGovernorTurn::adjustSpeed diff(%d),(%d,%d)", diff, target_angle_, robot::instance()->getWorldPoseAngle());
 	ROS_DEBUG("%s %d: SpeedGovernorTurn diff: %d, target_angle_: %d, current angle: %d.",
-			  __FUNCTION__, __LINE__, diff, target_angle_, robot::instance()->getPoseAngle());
+			  __FUNCTION__, __LINE__, diff, target_angle_, robot::instance()->getWorldPoseAngle());
 
 	(diff >= 0) ? wheel.setDirectionLeft() : wheel.setDirectionRight();
 

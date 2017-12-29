@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <math.h>
 #include <stdlib.h>
+#include <deque>
+#include "config.h"
 
 #define PI  3.141592653589793
 
@@ -39,12 +41,7 @@
       X = x;
       Y = y;
     }
-    Vector2(T x, T y,int16_t th)
-    {
-      X = x;
-      Y = y;
-      TH = th;
-    }
+
   public:
     /**
      * Gets the x-coordinate of this vector
@@ -301,14 +298,45 @@
   public:
     T X;
     T Y;
-    int16_t	TH;
+//    int16_t	TH;
 }; // class Vector2<T>
 
   /*
    * Type declaration of int16_t Vector2 as Cell_t
    */
 typedef Vector2<int16_t> Cell_t;
-typedef Vector2<int32_t> Point32_t;
+typedef std::deque<Cell_t> Cells;
+
+class Point32_t:public Vector2<int32_t> {
+public:
+  Point32_t() {
+    X = 0;
+    Y = 0;
+    TH = 0;
+  }
+
+  Point32_t(int32_t x, int32_t y, int16_t th) {
+    X = x;
+    Y = y;
+    TH = th;
+  }
+
+  Cell_t toCell() const {
+    return {countToCell(X), countToCell(Y)};
+  }
+
+  int16_t TH{};
+private:
+  int16_t countToCell(int32_t count) const {
+    if (count < -CELL_COUNT_MUL_1_2) {
+      return (count + CELL_COUNT_MUL_1_2) / CELL_COUNT_MUL - 1;
+    }
+    else {
+      return (count + CELL_COUNT_MUL_1_2) / CELL_COUNT_MUL;
+    }
+  }
+};
+//typedef Vector2<int32_t> Point32_t;
 
 typedef struct
 {

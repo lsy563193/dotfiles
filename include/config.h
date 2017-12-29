@@ -179,5 +179,6 @@
 #define LIDAR_OFFSET_Y						(0)//0
 #define ROBOT_RADIUS						(0.167)
 
+#define Two_Hours         7200
 #endif //__CONFIG_H__
 

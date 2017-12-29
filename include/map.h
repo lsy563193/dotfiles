@@ -17,7 +17,6 @@
 #define BLOCK_FRONT			((uint8_t) 0x04)
 #define BLOCK_ALL			((uint8_t) 0x07)
 
-typedef std::deque<Cell_t> PPTargetType;
 typedef std::deque<Point32_t> Points;
 
 typedef enum {
@@ -66,47 +65,17 @@ public:
 	GridMap();
 	~GridMap();
 	void mapInit();
-	static bool isPos(MapDirection dir);
-
-	static bool isXAxis(MapDirection dir);
-
-	static bool isYAxis(MapDirection dir);
-
-	static bool isYDirection(MapDirection dir);
-
-	static int32_t getXCount(void);
-
-	static int32_t getYCount(void);
-
-	static Point32_t getCurrPoint(void);
-
-	static int16_t getXCell(void);
-
-	static int16_t getYCell(void);
-
-	static Cell_t getCurrCell();
 
 	void setCell(uint8_t id, int16_t x, int16_t y, CellState value);
 
 	CellState getCell(int id, int16_t x, int16_t y);
 
-	void setPosition(double x, double y);
-
-	static Point32_t getRelative(Point32_t point, int16_t dy, int16_t dx, bool using_point_pos);
 
 	void robotToPoint(Point32_t point, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
 
 	static void robotToCell(Point32_t point, int16_t offset_lat, int16_t offset_long, int16_t &x, int16_t &y);
 
 	void clearBlocks(void);
-
-	static int32_t cellToCount(int16_t distance);
-
-	static int16_t countToCell(int32_t count);
-
-	static Point32_t cellToPoint(const Cell_t &cell);
-
-	static Cell_t pointToCell(Point32_t pnt);
 
 	void setCells(int8_t count, int16_t cell_x, int16_t cell_y, CellState state);
 
@@ -143,8 +112,6 @@ public:
 
 	bool markRobot(uint8_t id);
 
-	Cell_t updatePosition();
-
 	uint8_t setLidar();
 
 	uint8_t setObs();
@@ -161,7 +128,7 @@ public:
 
 	uint8_t saveChargerArea(const Cell_t homepoint);
 
-	uint8_t setFollowWall(bool is_left);
+	uint8_t setFollowWall(bool is_left, const Points&);
 
 
 	uint8_t saveLidar();
@@ -178,7 +145,7 @@ public:
 
 	uint8_t saveSlip();
 
-	uint8_t saveBlocks(bool is_linear);
+	uint8_t saveBlocks(bool is_linear, bool is_state_clean);
 
 	uint8_t setBlocks();
 
@@ -276,7 +243,7 @@ public:
 
 	bool isFrontBlockBoundary(int dx);
 
-	void generateSPMAP(const Cell_t &curr, PPTargetType &target_list);
+	void generateSPMAP(const Cell_t &curr, Cells &target_list);
 /*
  * Function to find the X/Y range of the Map or wfMap, if the range is to small,
  * use the offset of those value to 3.
@@ -316,7 +283,15 @@ private:
 	int16_t g_x_min, g_x_max, g_y_min, g_y_max;
 	int16_t xRangeMin, xRangeMax, yRangeMin, yRangeMax;
 
-	static double xCount, yCount;
+	// Cells that temporary save the blocks.
+	std::vector<Cell_t> temp_bumper_cells;
+	std::vector<Cell_t> temp_obs_cells;
+	std::vector<Cell_t> temp_rcon_cells;
+	std::vector<Cell_t> temp_tilt_cells;
+	std::vector<Cell_t> temp_slip_cells;
+	std::vector<Cell_t> temp_cliff_cells;
+	std::vector<Cell_t> temp_fw_cells;
+	std::vector<Cell_t> temp_WFMAP_follow_wall_cells;
 
 };
 

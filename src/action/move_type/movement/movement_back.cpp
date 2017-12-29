@@ -6,7 +6,6 @@
 #include "arch.hpp"
 
 
-float g_back_distance = 0.01;
 
 // Back distance for go to charger regulator
 bool g_go_to_charger_back_30cm = false;

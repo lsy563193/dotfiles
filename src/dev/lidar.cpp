@@ -278,9 +278,9 @@ bool Lidar::findLines(std::vector<LineABC> *lines,bool combine)
 	std::vector<Vector2<double>> point_set;
 	for(i=0;i<n_angle;i++){
 		if(scan_data.ranges[i] <= MAX_LIDAR_DIST){
-			double cor_yaw =(double) robot::instance()->getPoseAngle()/10.0;
-			double cor_p_x =(double) robot::instance()->getPoseX();
-			double cor_p_y =(double) robot::instance()->getPoseY();
+			double cor_yaw =(double) robot::instance()->getWorldPoseAngle()/10.0;
+			double cor_p_x =(double) robot::instance()->getWorldPoseX();
+			double cor_p_y =(double) robot::instance()->getWorldPoseY();
 
 			double ranges = scan_data.ranges[i];
 			lidar_point_pos.X = cos(( i + cor_yaw + 180.0)*PI/180.0 ) *ranges + cor_p_x;//in meters
@@ -1012,7 +1012,7 @@ static uint8_t setLidarMarkerAcr2Dir(double X_MIN,double X_MAX,int angle_from,in
 	}
 	if (count > 10) {
 		int16_t x_tmp,y_tmp;
-		nav_map.robotToCell(nav_map.getCurrPoint(), CELL_SIZE * dy, CELL_SIZE * dx, x_tmp, y_tmp);
+		nav_map.robotToCell(getPosition(), CELL_SIZE * dy, CELL_SIZE * dx, x_tmp, y_tmp);
 		if (nav_map.getCell(CLEAN_MAP,x_tmp,y_tmp) != BLOCKED_BUMPER)
 		{
 			ROS_INFO("\033[36mlidar marker : (%d,%d)\033[0m",x_tmp,y_tmp);
@@ -1192,7 +1192,7 @@ uint8_t Lidar::lidarMarker(double X_MAX)
 				}
 			}
 
-			nav_map.robotToCell(nav_map.getCurrPoint(), CELL_SIZE * dy, CELL_SIZE * dx, x_tmp, y_tmp);
+			nav_map.robotToCell(getPosition(), CELL_SIZE * dy, CELL_SIZE * dx, x_tmp, y_tmp);
 			auto cell_status = nav_map.getCell(CLEAN_MAP, x_tmp, y_tmp);
 			if (cell_status != BLOCKED_BUMPER && cell_status != BLOCKED_OBS)
 			{
@@ -1319,7 +1319,7 @@ int Lidar::compLaneDistance()
 	}
 	ROS_INFO("compLaneDistance");
 	seq = tmp_scan_data.header.seq;
-	int cur_angle = robot::instance()->getPoseAngle() / 10;
+	int cur_angle = robot::instance()->getWorldPoseAngle() / 10;
 #if 0
 	angle_from = 149 - cur_angle;
 	angle_to = 210 - cur_angle;

@@ -26,20 +26,6 @@ bool IMoveType::shouldMoveBack()
 	return false;
 }
 
-bool IMoveType::isRconStop()
-{
-//	PP_INFO();
-	ev.rcon_triggered = c_rcon.getTrig();
-	if(ev.rcon_triggered)
-	{
-//		g_turn_angle = rcon_turn_angle();
-//		ROS_INFO("%s, %d: ev.rcon_triggered(%d), turn for (%d).", __FUNCTION__, __LINE__, ev.rcon_triggered, g_turn_angle);
-//		return true;
-	}
-
-	return false;
-}
-
 bool IMoveType::isOBSStop()
 {
 	// Now OBS sensor is just for slowing down.
@@ -91,7 +77,7 @@ bool IMoveType::shouldTurn()
 	{
 //		ev.obs_triggered = BLOCK_FRONT;
 //		g_turn_angle = obs_turn_angle();
-//		ROS_WARN("%s %d: OBS triggered, turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
+		ROS_WARN("%s %d: OBS triggered.", __FUNCTION__, __LINE__);
 		return true;
 	}
 
@@ -99,10 +85,7 @@ bool IMoveType::shouldTurn()
 }
 
 IMoveType::IMoveType() {
-	start_point_ = GridMap::getCurrPoint();
-	// todo: clean up these g_xxx variables.
-	g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
-	bumper_turn_factor = 0.85;
+	start_point_ = getPosition();
 	g_slip_cnt = 0;
 	c_rcon.resetStatus();
 	robot::instance()->obsAdjustCount(20);

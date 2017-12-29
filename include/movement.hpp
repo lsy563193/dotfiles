@@ -33,7 +33,7 @@ protected:
 	uint32_t tick_limit_{};
 	static float s_pos_x;
 	static float s_pos_y;
-//	static Path_t path_;
+//	static Cells path_;
 };
 
 class AMovementFollowPoint:public IMovement{
@@ -97,7 +97,7 @@ public:
 //	~MovementFollowPointLinear(){ };
 	bool isFinish() override;
 
-
+	bool isRconStop();
 	bool isBoundaryStop();
 	bool isPassTargetStop();
 	bool isNearTarget();
@@ -117,6 +117,11 @@ private:
 ////	PPTargetType path_;
 	float odom_x_start{};
 	float odom_y_start{};
+	enum {
+		left, fl1, fl2, fr2, fr1, right
+	};
+	int8_t rcon_cnt[6]{};
+	int countRconTriggered(uint32_t rcon_value);
 };
 
 class IFollowWall{
@@ -142,11 +147,11 @@ public:
 
 	bool isBlockCleared();
 
-	bool isClosure(uint8_t closure_cnt);
+//	bool isClosure(uint8_t closure_cnt);
 
 	bool isIsolate();
 
-	bool isTimeUp();
+//	bool isTimeUp();
 
 	void setTarget();
 

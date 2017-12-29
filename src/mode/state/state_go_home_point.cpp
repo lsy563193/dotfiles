@@ -4,20 +4,19 @@
 
 #include "pp.h"
 #include <arch.hpp>
+#include <event_manager.h>
 
 StateGoHomePoint::StateGoHomePoint():gh_state_(gh_ing) {
 	vacuum.setMode(Vac_Normal, false);
 	brush.normalOperate();
 	wheel.setPidTargetSpeed(0, 0, REG_TYPE_LINEAR);
-	if (ev.remote_home || cm_is_go_charger())
+	if (ev.remote_home )
 		led.set_mode(LED_STEADY, LED_ORANGE);
 	// Play wavs.
 	if (ev.battery_home)
 		speaker.play(VOICE_BATTERY_LOW);
 	speaker.play(VOICE_BACK_TO_CHARGER);
 
-	if (ev.remote_home)
-		g_go_home_by_remote = true;
 	ev.remote_home = false;
 	ev.battery_home = false;
 }

@@ -24,7 +24,7 @@ bool MovementFollowWallLidar::calcTmpTarget(Point32_t& point) {
 //	if(calcLidarPath())
 //	{
 //		if (!tmp_plan_path_.empty()) {
-//			auto curr = nav_map.getCurrPoint();
+//			auto curr = nav_map.getPosition();
 //			if (std::abs(curr.X - tmp_plan_path_.front().X) < 30 && std::abs(curr.Y - tmp_plan_path_.front().Y) < 30) {
 //				tmp_plan_path_.pop_front();
 //				point = tmp_plan_path_.front();
@@ -151,14 +151,15 @@ bool MovementFollowWallLidar::calcLidarPath() {
 //
 //	tmp_plan_path_.clear();
 //	for (const auto& iter : points) {
-//		tmp_plan_path_.push_back(GridMap::getRelative(GridMap::getCurrPoint(), int(iter.Y * 1000), int(iter.X * 1000), true));
+//		tmp_plan_path_.push_back(GridMap::getRelative(GridMap::getPosition(), int(iter.Y * 1000), int(iter.X * 1000), true));
 //	}
 
 	return true;
 }
 
 bool MovementFollowWallLidar::isFinish() {
-	auto p_mt = (ActionFollowWall*)(sp_mt_);
-	return p_mt->tmp_plan_path_.empty() || p_mt->shouldMoveBack() || p_mt->shouldTurn();
+	return false;
+//	auto p_mt = (MoveTypeFollowWall*)(sp_mt_);
+//	return p_mt->tmp_plan_path_.empty() || p_mt->shouldMoveBack() || p_mt->shouldTurn();
 }
 

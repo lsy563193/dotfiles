@@ -6,7 +6,8 @@
 #include <error.h>
 #include "arch.hpp"
 
-CleanModeExploration::CleanModeExploration() {
+CleanModeExploration::CleanModeExploration()
+{
 	event_manager_register_handler(this);
 	event_manager_set_enable(true);
 	event_manager_reset_status();
@@ -16,7 +17,8 @@ CleanModeExploration::CleanModeExploration() {
 	action_i_ = ac_open_gyro;
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
 	IMoveType::sp_mode_ = this;
-	clean_map_ = &exploration_map;
+	map_ = &exploration_map;
+	map_->reset(CLEAN_MAP);
 }
 
 CleanModeExploration::~CleanModeExploration()
@@ -63,14 +65,14 @@ bool CleanModeExploration::mapMark()
 	exploration_map.setExplorationCleaned();
 	exploration_map.setBlocks();
 	exploration_map.markRobot(CLEAN_MAP);
-	robot::instance()->pubCleanMapMarkers(exploration_map, plan_path_);
+	robot::instance()->pubCleanMapMarkers(exploration_map, pointsGenerateCells(plan_path_));
 	passed_path_.clear();
 	return false;
 }
 
 bool CleanModeExploration::isFinish()
 {
-	if (isInitFinished_)
+	if (state_i_ == st_init)
 		mapMark();
 
 	return ACleanMode::isFinish();
@@ -93,7 +95,7 @@ bool CleanModeExploration::isExit() {
 bool CleanModeExploration::setNextAction() {
 	PP_INFO();
 	//todo action convert
-	if (!isInitFinished_)
+	if (state_i_ == st_init)
 		return ACleanMode::setNextAction();
 	else if(state_i_ == st_clean)
 		action_i_ = ac_linear;
@@ -110,22 +112,27 @@ bool CleanModeExploration::setNextAction() {
 bool CleanModeExploration::setNextState() {
 	PP_INFO();
 
-	if (!isInitFinished_)
+	if (state_i_ == st_init)
 		return true;
 
 	bool state_confirm = false;
 	while (ros::ok() && !state_confirm)
 	{
-		if (state_i_ == st_null)
+		if (state_i_ == st_init)
 		{
-			auto curr = exploration_map.updatePosition();
-			passed_path_.push_back(curr);
-			home_cells_.back().TH = robot::instance()->getPoseAngle();
-			PP_INFO();
+			if (action_i_ == ac_open_slam)
+			{
+				auto curr = updatePosition();
+				passed_path_.push_back(curr);
+				home_points_.back().TH = robot::instance()->getWorldPoseAngle();
+				PP_INFO();
 
-			state_i_ = st_clean;
-			stateInit(state_i_);
-			action_i_ = ac_null;
+				state_i_ = st_clean;
+				stateInit(state_i_);
+				action_i_ = ac_null;
+			}
+			else
+				state_confirm = true;
 		}
 		else if (isExceptionTriggered())
 		{
@@ -142,24 +149,7 @@ bool CleanModeExploration::setNextState() {
 			old_dir_ = new_dir_;
 			ROS_WARN("old_dir_(%d)", old_dir_);
 			plan_path_.clear();
-			if (clean_path_algorithm_->generatePath(exploration_map,exploration_map.getCurrCell(), old_dir_, plan_path_))
-			{
-				new_dir_ = (MapDirection)plan_path_.front().TH;
-				ROS_WARN("new_dir_(%d)", new_dir_);
-				plan_path_.pop_front();
-				clean_path_algorithm_->displayPath(plan_path_);
-				state_confirm = true;
-			}
-			else
-			{
-				ROS_WARN("%s,%d:exploration finish,did not find charge",__func__,__LINE__);
-				state_i_ = st_go_home_point;
-				if (go_home_path_algorithm_ == nullptr)
-					go_home_path_algorithm_.reset(new GoHomePathAlgorithm(exploration_map, home_cells_));
-				stateInit(state_i_);
-				action_i_ = ac_null;
-			}
-			if(c_rcon.isTrigT())
+			if(ev.rcon_triggered)
 			{
 				ROS_WARN("%s,%d:find charge success,convert to go to charge state",__func__,__LINE__);
 				state_i_ = st_go_to_charger;
@@ -167,36 +157,28 @@ bool CleanModeExploration::setNextState() {
 				state_confirm = true;
 				action_i_ = ac_go_to_charger;
 			}
+			else if (clean_path_algorithm_->generatePath(exploration_map, getPosition(), old_dir_, plan_path_))
+			{
+				new_dir_ = (MapDirection)plan_path_.front().TH;
+				ROS_WARN("new_dir_(%d)", new_dir_);
+				plan_path_.pop_front();
+				clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
+				state_confirm = true;
+			}
+			else
+			{
+				ROS_WARN("%s,%d:exploration finish,did not find charge",__func__,__LINE__);
+				state_i_ = st_go_home_point;
+				if (go_home_path_algorithm_ == nullptr)
+					go_home_path_algorithm_.reset(new GoHomePathAlgorithm(exploration_map, home_points_));
+				stateInit(state_i_);
+				action_i_ = ac_null;
+			}
 		}
 		else if(state_i_ == st_go_home_point)
 		{
 			PP_INFO();
-			old_dir_ = new_dir_;
-			plan_path_.clear();
-			if (go_home_path_algorithm_->generatePath(exploration_map, exploration_map.getCurrCell(),old_dir_, plan_path_))
-			{
-				// Reach home cell or new path to home cell is generated.
-				if (plan_path_.empty())
-				{
-					// Reach home cell.
-					ROS_WARN("Reach home point(0,0)");
-					state_i_ = st_null;
-					action_i_ = ac_null;
-				}
-				else
-				{
-					new_dir_ = (MapDirection)plan_path_.front().TH;
-					plan_path_.pop_front();
-					go_home_path_algorithm_->displayPath(plan_path_);
-				}
-			}
-			else
-			{
-				// No more paths to home cells.
-				ROS_WARN("can't go to home point(0,0)");
-				state_i_ = st_null;
-			}
-			state_confirm = true;
+			state_confirm = setNextStateForGoHomePoint(exploration_map);
 		}
 		else if (state_i_ == st_go_to_charger)
 		{
@@ -274,47 +256,7 @@ void CleanModeExploration::chargeDetect(bool state_now, bool state_last) {
 
 void CleanModeExploration::printMapAndPath()
 {
-	clean_path_algorithm_->displayPath(passed_path_);
-	exploration_map.print(CLEAN_MAP,exploration_map.getXCell(),exploration_map.getYCell());
+	clean_path_algorithm_->displayCellPath(pointsGenerateCells(passed_path_));
+	exploration_map.print(CLEAN_MAP,getPosition().toCell().X,getPosition().toCell().Y);
 }
 
-void CleanModeExploration::stateInit(int next) {
-if (next == st_clean) {
-		g_wf_reach_count = 0;
-		led.set_mode(LED_STEADY, LED_GREEN);
-		PP_INFO();
-	}
-	if (next == st_go_home_point)
-	{
-		vacuum.setMode(Vac_Normal, false);
-		wheel.stop();
-
-		wheel.setPidTargetSpeed(0, 0, REG_TYPE_LINEAR);
-		if (ev.remote_home)
-			led.set_mode(LED_STEADY, LED_ORANGE);
-
-		// Play wavs.
-		if (ev.battery_home)
-			speaker.play(VOICE_BATTERY_LOW, true);
-
-		speaker.play(VOICE_BACK_TO_CHARGER, true);
-
-		ev.remote_home = false;
-		ev.battery_home = false;
-
-		if (go_home_path_algorithm_ == nullptr)
-			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(exploration_map, home_cells_));
-		ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_cells_.size());
-	}
-	if (next == st_exploration) {
-		g_wf_reach_count = 0;
-		led.set_mode(LED_STEADY, LED_ORANGE);
-	}
-	if (next == st_go_to_charger) {
-		gyro.TiltCheckingEnable(false); //disable tilt detect
-		led.set_mode(LED_STEADY, LED_ORANGE);
-	}
-	if (next == st_self_check) {
-		led.set_mode(LED_STEADY, LED_GREEN);
-	}
-}

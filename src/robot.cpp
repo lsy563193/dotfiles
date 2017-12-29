@@ -95,9 +95,8 @@ robot::robot(std::string serial_port, int baudrate, std::string lidar_bumper_dev
 
 	// Init for event manager.
 	event_manager_init();
-	pthread_t event_manager_thread_id, event_handler_thread_id;
-	auto event_manager_th = new boost::thread(event_manager_thread_cb);
-	event_manager_th->detach();
+	auto event_manager_thread = new boost::thread(event_manager_thread_cb);
+	event_manager_thread->detach();
 	auto event_handler_thread = new boost::thread(event_handler_thread_cb);
 	event_handler_thread->detach();
 
@@ -106,7 +105,6 @@ robot::robot(std::string serial_port, int baudrate, std::string lidar_bumper_dev
 	robotbase_init();
 
 	// Init for core thread.
-	pthread_t core_move_thread_id;
 	auto core_thread = new boost::thread(core_thread_cb);
 	core_thread->detach();
 	ROS_INFO("%s %d: robot init done!", __FUNCTION__, __LINE__);
@@ -282,9 +280,9 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	robot_pose.twist.twist.angular.z = 0.0;
 	odom_pub_.publish(robot_pose);
 	//printf("Map->base(%f, %f, %f). Map->robot (%f, %f, %f)\n", tmp_x, tmp_y, RAD2DEG(tmp_yaw), robot_x_, robot_y_, RAD2DEG(robot_yaw_));
-	pose.setX(robot_x_);
-	pose.setY(robot_y_);
-	pose.setAngle(ranged_angle(robot_yaw_ * 1800 / M_PI));
+	world_pose_.setX(robot_x_);
+	world_pose_.setY(robot_y_);
+	world_pose_.setAngle(ranged_angle(robot_yaw_ * 1800 / M_PI));
 #else
 	pose.setX(tmp_x_);
 	pose.setY(tmp_y_);
@@ -739,5 +737,82 @@ void robot::obsAdjustCount(int count)
 #ifdef OBS_DYNAMIC
 	OBS_adjust_count = count;
 #endif
+}
+
+//--------------------
+static int32_t xCount{}, yCount{};
+
+Point32_t getPosition()
+{
+	return {(int32_t)round(xCount), (int32_t)round(yCount), robot::instance()->getWorldPoseAngle()};
+}
+
+int32_t cellToCount(int16_t i) {
+	return i * CELL_COUNT_MUL;
+}
+
+void setPosition(int32_t x, int32_t y) {
+	xCount = x;
+	yCount = y;
+}
+
+bool isPos(MapDirection dir)
+{
+	return (dir == MAP_POS_X || dir == MAP_POS_Y || dir == MAP_NONE);
+}
+
+bool isXAxis(MapDirection dir)
+{
+	return dir == MAP_POS_X || dir == MAP_NEG_X || dir == MAP_NONE;
+}
+bool isYAxis(MapDirection dir)
+{
+	return dir == MAP_POS_Y || dir == MAP_NEG_Y || dir == MAP_NONE;
+}
+
+
+Point32_t updatePosition()
+{
+	auto pos_x = robot::instance()->getWorldPoseX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	auto pos_y = robot::instance()->getWorldPoseY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	setPosition(pos_x, pos_y);
+//	ROS_INFO("%s %d:", __FUNCTION__, __LINE__);
+	return getPosition();
+}
+
+uint16_t relative_theta = 3600;
+Point32_t getRelative(Point32_t point, int16_t dy, int16_t dx, bool using_point_pos) {
+	double relative_sin, relative_cos;
+	if(point.TH != relative_theta) {
+		if(point.TH == 0) {
+			relative_sin = 0;
+			relative_cos = 1;
+		} else if(point.TH == 900) {
+			relative_sin = 1;
+			relative_cos = 0;
+		} else if(point.TH == 1800) {
+			relative_sin = 0;
+			relative_cos = -1;
+		} else if(point.TH == -900) {
+			relative_sin = -1;
+			relative_cos = 0;
+		} else {
+			relative_sin = sin(deg_to_rad(point.TH, 10));
+			relative_cos = cos(deg_to_rad(point.TH, 10));
+		}
+	}
+
+	if (using_point_pos)
+	{
+		point.X += (int32_t)( ( ((double)dx * relative_cos * CELL_COUNT_MUL) - ((double)dy	* relative_sin * CELL_COUNT_MUL) ) / CELL_SIZE );
+		point.Y += (int32_t)( ( ((double)dx * relative_sin * CELL_COUNT_MUL) + ((double)dy	* relative_cos * CELL_COUNT_MUL) ) / CELL_SIZE );
+	}
+	else
+	{
+		point.X = cellToCount(point.toCell().X) + (int32_t)( ( ((double)dx * relative_cos * CELL_COUNT_MUL) - ((double)dy	* relative_sin * CELL_COUNT_MUL) ) / CELL_SIZE );
+		point.Y = cellToCount(point.toCell().Y) + (int32_t)( ( ((double)dx * relative_sin * CELL_COUNT_MUL) + ((double)dy	* relative_cos * CELL_COUNT_MUL) ) / CELL_SIZE );
+//		ROS_ERROR("piont.x:%d  point:y:%d",point.X,point.Y,point.TH);
+	}
+	return point;
 }
 

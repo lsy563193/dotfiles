@@ -16,7 +16,7 @@ ModeSleep::ModeSleep()
 
 	sp_action_.reset(new ActionSleep);
 	action_i_ = ac_sleep;
-	serial.setCleanMode(Clean_Mode_Sleep);
+//	serial.setCleanMode(Clean_Mode_Sleep);
 	usleep(30000);
 	serial.sleep();
 
@@ -109,7 +109,7 @@ void ModeSleep::chargeDetect(bool state_now, bool state_last)
 void ModeSleep::rcon(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Waked up by rcon signal.", __FUNCTION__, __LINE__);
-	ev.rcon_triggered = c_rcon.getStatus();
+	ev.rcon_triggered = c_rcon.getAll();
 	c_rcon.resetStatus();
 	serial.wakeUp();
 }

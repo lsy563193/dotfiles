@@ -15,7 +15,6 @@ class IMoveType:public IAction
 public:
 	IMoveType();
 
-	bool isRconStop();
 	bool isOBSStop();
 	bool isLidarStop();
 	bool shouldMoveBack();
@@ -38,8 +37,8 @@ public:
 	Point32_t start_point_;
 	Point32_t target_point_;
 protected:
-//	Path_t passed_path_;
-//	Path_t tmp_plan_path_;
+//	Cells passed_path_;
+//	Cells tmp_plan_path_;
 	int16_t turn_target_angle_{};
 	float back_distance_;
 	enum{//movement
@@ -51,23 +50,23 @@ protected:
 	};
 };
 
-class ActionLinear:public IMoveType
+class MoveTypeLinear:public IMoveType
 {
 public:
-	ActionLinear();
-	~ActionLinear();
+	MoveTypeLinear();
+	~MoveTypeLinear();
 	bool isFinish() override;
 //	IAction* setNextAction();
 protected:
 };
 
-class ActionFollowWall:public IMoveType
+class MoveTypeFollowWall:public IMoveType
 {
 public:
-	ActionFollowWall() = delete;
-	~ActionFollowWall();
+	MoveTypeFollowWall() = delete;
+	~MoveTypeFollowWall();
 
-	explicit ActionFollowWall(bool is_left, bool is_trapped);
+	explicit MoveTypeFollowWall(bool is_left, bool is_trapped);
 
 	bool isFinish() override;
 
@@ -78,15 +77,16 @@ protected:
 	int16_t turn_angle{};
 	int16_t bumper_turn_angle(bool);
 	int16_t cliff_turn_angle();
+	int16_t rcon_turn_angle();
 	int16_t tilt_turn_angle();
 	int16_t obs_turn_angle();
-	int16_t rcon_turn_angle();
 	int double_scale_10(double line_angle);
 	bool _lidar_turn_angle(bool is_left, int16_t& turn_angle, int lidar_min, int lidar_max, int angle_min,int angle_max,double dis_limit=0.217);
 	bool lidar_turn_angle(int16_t& turn_angle);
 	int16_t get_turn_angle_by_ev();
 	int16_t get_turn_angle(bool);
-
+	double robot_to_wall_distance = 0.8;
+	float g_back_distance = 0.01;
 };
 
 class MoveTypeGoToCharger:public IMoveType

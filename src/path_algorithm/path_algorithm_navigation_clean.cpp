@@ -2,23 +2,25 @@
 // Created by lsy563193 on 12/13/17.
 //
 
+#include <pp.h>
 #include "ros/ros.h"
 #include "path_algorithm.h"
 
-bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell, const MapDirection &last_dir, Path_t &plan_path)
+bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, const MapDirection &last_dir, Points &plan_path)
 {
 
 	plan_path.clear();
-	//Step 1: Find possible targets in same lane.
-	plan_path = findTargetInSameLane(map, curr_cell);
-	if (!plan_path.empty())
+	auto curr_cell = curr.toCell();
+	//Step 1: Find possible plan_path in same lane.
+	auto plan_path_cell = findTargetInSameLane(map, curr_cell);
+	if (!plan_path_cell.empty())
 	{
-		fillPathWithDirection(plan_path);
+		plan_path = cells_generate_points(plan_path_cell);
 		// Congratulation!! plan_path is generated successfully!!
 		return true;
 	}
 
-	//Step 2: Find all possible targets at the edge of cleaned area and filter targets in same lane.
+	//Step 2: Find all possible plan_path at the edge of cleaned area and filter plan_path in same lane.
 
 	// Copy map to a BoundingBox2 type b_map.
 	BoundingBox2 b_map;
@@ -29,18 +31,18 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell, 
 			b_map.Add(cell);
 	}
 
-	TargetList filtered_targets = filterAllPossibleTargets(map, curr_cell, b_map);
+	Cells filtered_targets = filterAllPossibleTargets(map, curr_cell, b_map);
 
-	//Step 3: Generate the COST_MAP for map and filter targets that are unreachable.
-	TargetList reachable_targets = getReachableTargets(map, curr_cell, filtered_targets);
-	ROS_INFO("%s %d: After generating COST_MAP, Get %lu reachable targets.", __FUNCTION__, __LINE__, reachable_targets.size());
+	//Step 3: Generate the COST_MAP for map and filter plan_path that are unreachable.
+	Cells reachable_targets = getReachableTargets(map, curr_cell, filtered_targets);
+	ROS_INFO("%s %d: After generating COST_MAP, Get %lu reachable plan_path.", __FUNCTION__, __LINE__, reachable_targets.size());
 	if (reachable_targets.size() != 0)
-		displayTargets(reachable_targets);
+		displayTargetList(reachable_targets);
 	else
 		// Now plan_path is empty.
 		return false;
 
-	//Step 4: Trace back the path of these targets in COST_MAP.
+	//Step 4: Trace back the path of these plan_path in COST_MAP.
 	PathList paths_for_reachable_targets = tracePathsToTargets(map, reachable_targets, curr_cell);
 
 	//Step 5: Filter paths to get the best target.
@@ -50,7 +52,7 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell, 
 		return false;
 
 	//Step 6: Find shortest path for this best target.
-	Path_t shortest_path = findShortestPath(map, curr_cell, best_target, last_dir, true);
+	Cells shortest_path = findShortestPath(map, curr_cell, best_target, last_dir, true);
 	if (shortest_path.empty())
 		// Now plan_path is empty.
 		return false;
@@ -59,15 +61,15 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Cell_t &curr_cell, 
 	optimizePath(map, shortest_path);
 
 	//Step 8: Fill path with direction.
-	fillPathWithDirection(shortest_path);
+	plan_path = cells_generate_points(shortest_path);
 
 	// Congratulation!! plan_path is generated successfully!!
-	plan_path = shortest_path;
+//	plan_path_cell = shortest_path;
 
 	return true;
 }
 
-Path_t NavCleanPathAlgorithm::findTargetInSameLane(GridMap &map, const Cell_t &curr_cell)
+Cells NavCleanPathAlgorithm::findTargetInSameLane(GridMap &map, const Cell_t &curr_cell)
 {
 	int8_t is_found = 0;
 	Cell_t it[2]; // it[0] means the furthest cell of X positive direction, it[1] means the furthest cell of X negative direction.
@@ -115,11 +117,11 @@ Path_t NavCleanPathAlgorithm::findTargetInSameLane(GridMap &map, const Cell_t &c
 //		}
 	}
 
-	Path_t path{};
+	Cells path{};
 	if (is_found)
 	{
 		path.push_front(target);
-		path.push_front(nav_map.getCurrCell());
+		path.push_front(getPosition().toCell());
 		ROS_INFO("%s %d: X pos:(%d,%d), X neg:(%d,%d), target:(%d,%d)", __FUNCTION__, __LINE__, it[0].X, it[0].Y, it[1].X, it[1].Y, target.X, target.Y);
 //		map.print(CLEAN_MAP, target.X, target.Y);
 	}
@@ -129,9 +131,9 @@ Path_t NavCleanPathAlgorithm::findTargetInSameLane(GridMap &map, const Cell_t &c
 	return path;
 }
 
-TargetList NavCleanPathAlgorithm::filterAllPossibleTargets(GridMap &map, const Cell_t &curr_cell, BoundingBox2 &b_map)
+Cells NavCleanPathAlgorithm::filterAllPossibleTargets(GridMap &map, const Cell_t &curr_cell, BoundingBox2 &b_map)
 {
-	TargetList possible_target_list{};
+	Cells possible_target_list{};
 
 	auto b_map_copy = b_map;
 	b_map_copy.pos_ = b_map.min;
@@ -153,14 +155,14 @@ TargetList NavCleanPathAlgorithm::filterAllPossibleTargets(GridMap &map, const C
 		return (l.Y < r.Y || (l.Y == r.Y && l.X < r.X));
 	});
 
-	displayTargets(possible_target_list);
+	displayTargetList(possible_target_list);
 
 	ROS_INFO("%s %d: Filter targets in the same line.", __FUNCTION__, __LINE__);
-	TargetList filtered_targets{};
+	Cells filtered_targets{};
 	/* Filter the targets. */
 	for(;!possible_target_list.empty();) {
 		auto y = possible_target_list.front().Y;
-		TargetList tmp_list{};
+		Cells tmp_list{};
 		std::remove_if(possible_target_list.begin(), possible_target_list.end(), [&y, &tmp_list](Cell_t &it) {
 			if (it.Y == y && (tmp_list.empty() || (it.X - tmp_list.back().X == 1))) {
 				tmp_list.push_back(it);
@@ -180,15 +182,15 @@ TargetList NavCleanPathAlgorithm::filterAllPossibleTargets(GridMap &map, const C
 //		ROS_WARN("~%s %d: Filter targets in the same line.", __FUNCTION__, __LINE__);
 	}
 
-	displayTargets(filtered_targets);
+	displayTargetList(filtered_targets);
 
 	return filtered_targets;
 }
 
-TargetList NavCleanPathAlgorithm::getReachableTargets(GridMap &map, const Cell_t &curr_cell, TargetList &possible_targets)
+Cells NavCleanPathAlgorithm::getReachableTargets(GridMap &map, const Cell_t &curr_cell, Cells &possible_targets)
 {
 	map.generateSPMAP(curr_cell, possible_targets);
-	TargetList reachable_targets{};
+	Cells reachable_targets{};
 	for (auto it = possible_targets.begin(); it != possible_targets.end();)
 	{
 		CellState it_cost = map.getCell(COST_MAP, it->X, it->Y);
@@ -206,14 +208,14 @@ TargetList NavCleanPathAlgorithm::getReachableTargets(GridMap &map, const Cell_t
 	return reachable_targets;
 }
 
-PathList NavCleanPathAlgorithm::tracePathsToTargets(GridMap &map, const TargetList &target_list, const Cell_t& start)
+PathList NavCleanPathAlgorithm::tracePathsToTargets(GridMap &map, const Cells &target_list, const Cell_t& start)
 {
 	PathList paths{};
 	int16_t trace_cost, x_min, x_max, y_min, y_max;
 	map.getMapRange(COST_MAP, &x_min, &x_max, &y_min, &y_max);
 	for (auto& it : target_list) {
 		auto trace = it;
-		Path_t path{};
+		Cells path{};
 		//Trace the path for this target 'it'.
 		while (trace != start) {
 			trace_cost = map.getCell(COST_MAP, trace.X, trace.Y) - 1;
@@ -321,7 +323,7 @@ bool NavCleanPathAlgorithm::filterPathsToSelectTarget(GridMap &map, const PathLi
 	return match_target_found;
 }
 
-bool NavCleanPathAlgorithm::sortPathsWithTargetYAscend(const Path_t a, const Path_t b)
+bool NavCleanPathAlgorithm::sortPathsWithTargetYAscend(const Cells a, const Cells b)
 {
 	return a.back().Y < b.back().Y;
 }

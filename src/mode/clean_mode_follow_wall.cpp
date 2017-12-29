@@ -7,7 +7,7 @@
 #include "arch.hpp"
 #include "dev.h"
 
-extern std::deque <Cell_t> path_points;
+Cells path_points;
 
 CleanModeFollowWall::CleanModeFollowWall()
 {
@@ -16,8 +16,9 @@ CleanModeFollowWall::CleanModeFollowWall()
 	diff_timer_ = WALL_FOLLOW_TIME;
 	speaker.play(VOICE_CLEANING_WALL_FOLLOW);
 	clean_path_algorithm_.reset(new WFCleanPathAlgorithm);
-	go_home_path_algorithm_.reset(new GoHomePathAlgorithm(nav_map, home_cells_));
-	clean_map_ = &fw_map;
+	go_home_path_algorithm_.reset(new GoHomePathAlgorithm(nav_map, home_points_));
+	map_ = &fw_map;
+	map_->reset(CLEAN_MAP);
 }
 
 CleanModeFollowWall::~CleanModeFollowWall()
@@ -55,69 +56,78 @@ bool CleanModeFollowWall::mapMark() {
 bool CleanModeFollowWall::setNextAction()
 {
 	PP_INFO();
-	if (!isInitFinished_)
+	if (state_i_ == st_init)
 		return ACleanMode::setNextAction();
-	if (action_i_ == ac_linear) {
-		ROS_INFO("%s,%d: mt_follow_wall_left", __FUNCTION__, __LINE__);
-		action_i_ = ac_follow_wall_left;
-		genNextAction();
-		return true;
-	}
-	else {
-		action_i_ = ac_linear;
-		ROS_INFO("%s,%d: mt_linear", __FUNCTION__, __LINE__);
-		genNextAction();
-		return true;
-	}
-	return false;
+	ROS_WARN("%s,%d: mt_follow_wall_left", __FUNCTION__, __LINE__);
+	action_i_ = ac_follow_wall_left;
+	genNextAction();
+	ROS_WARN("%s,%d: mt_follow_wall_left", __FUNCTION__, __LINE__);
+	return true;
+//	if (action_i_ == ac_linear) {
+//		ROS_INFO("%s,%d: mt_follow_wall_left", __FUNCTION__, __LINE__);
+//		action_i_ = ac_follow_wall_left;
+//		genNextAction();
+//		return true;
+//	}
+//	else {
+//		action_i_ = ac_linear;
+//		ROS_INFO("%s,%d: mt_linear", __FUNCTION__, __LINE__);
+//		genNextAction();
+//		return true;
+//	}
+//	return false;
 }
 
 bool CleanModeFollowWall::setNextState()
 {
-	return false;
+//	if (clean_path_algorithm_->generatePath(nav_map, getPosition(), old_dir_, plan_path_))
+//	{
+//		plan_path_.pop_front();
+		return true;
+//	}
 }
 
-bool CleanModeFollowWall::wf_is_isolate() {
-//	path_update_cell_history();
-	int16_t	val = 0;
-	uint16_t i = 0;
-	int16_t x_min, x_max, y_min, y_max;
-	fw_map.getMapRange(CLEAN_MAP, &x_min, &x_max, &y_min, &y_max);
-	Cell_t out_cell {int16_t(x_max + 1),int16_t(y_max + 1)};
-
-	fw_map.markRobot(CLEAN_MAP);//note: To clear the obstacle when check isolated, please don't remove it!
-	auto curr = GridMap::getCurrPoint();
-	fw_map.print(CLEAN_MAP, curr.X, curr.Y);
-	ROS_WARN("%s %d: curr(%d,%d),out(%d,%d)", __FUNCTION__, __LINE__, curr.X, curr.Y,out_cell.X, out_cell.Y);
-
-	if ( out_cell != g_zero_home){
-			val = wf_path_find_shortest_path(curr.X, curr.Y, out_cell.X, out_cell.Y, 0);
-			val = (val < 0 || val == SCHAR_MAX) ? 0 : 1;
-	} else {
-		if (!nav_map.isBlockAccessible(0, 0)) {
-			val = wf_path_find_shortest_path(curr.X, curr.Y, 0, 0, 0);
-			if (val < 0 || val == SCHAR_MAX) {
-				/* Robot start position is blocked. */
-				val = wf_path_find_shortest_path(curr.X, curr.Y, 0, 0, 0);
-
-				if (val < 0 || val == SCHAR_MAX) {
-					val = 0;
-				} else {
-					val = 1;
-				};
-			} else {
-				val = 1;
-			}
-		} else {
-			val = wf_path_find_shortest_path(curr.X, curr.Y, 0, 0, 0);
-			if (val < 0 || val == SCHAR_MAX)
-				val = 0;
-			else
-				val = 1;
-		}
-	}
-	return val != 0;
-}
+//bool CleanModeFollowWall::wf_is_isolate() {
+////	path_update_cell_history();
+//	int16_t	val = 0;
+//	uint16_t i = 0;
+//	int16_t x_min, x_max, y_min, y_max;
+//	fw_map.getMapRange(CLEAN_MAP, &x_min, &x_max, &y_min, &y_max);
+//	Cell_t out_cell {int16_t(x_max + 1),int16_t(y_max + 1)};
+//
+//	fw_map.markRobot(CLEAN_MAP);//note: To clear the obstacle when check isolated, please don't remove it!
+//	auto curr = getPosition();
+//	fw_map.print(CLEAN_MAP, curr.X, curr.Y);
+//	ROS_WARN("%s %d: curr(%d,%d),out(%d,%d)", __FUNCTION__, __LINE__, curr.X, curr.Y,out_cell.X, out_cell.Y);
+//
+//	if ( out_cell != g_zero_home){
+//			val = wf_path_find_shortest_path(curr.X, curr.Y, out_cell.X, out_cell.Y, 0);
+//			val = (val < 0 || val == SCHAR_MAX) ? 0 : 1;
+//	} else {
+//		if (!nav_map.isBlockAccessible(0, 0)) {
+//			val = wf_path_find_shortest_path(curr.X, curr.Y, 0, 0, 0);
+//			if (val < 0 || val == SCHAR_MAX) {
+//				/* Robot start position is blocked. */
+//				val = wf_path_find_shortest_path(curr.X, curr.Y, 0, 0, 0);
+//
+//				if (val < 0 || val == SCHAR_MAX) {
+//					val = 0;
+//				} else {
+//					val = 1;
+//				};
+//			} else {
+//				val = 1;
+//			}
+//		} else {
+//			val = wf_path_find_shortest_path(curr.X, curr.Y, 0, 0, 0);
+//			if (val < 0 || val == SCHAR_MAX)
+//				val = 0;
+//			else
+//				val = 1;
+//		}
+//	}
+//	return val != 0;
+//}
 
 
 /*
@@ -147,7 +157,7 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path(int16_t xID, int16_t yID
 		y_min = (yID > endy ? endy : yID) - 8;
 		y_max = (yID > endy ? yID : endy) + 8;
 		ROS_INFO("shortest path(%d): endx: %d\tendy: %d\tx: %d - %d\ty: %d - %d\n", __LINE__, endx, endy, x_min, x_max, y_min, y_max);
-		val =  wf_path_find_shortest_path_ranged(xID, yID, endx, endy, bound, x_min, x_max, y_min, y_max);
+		val =  wf_path_find_shortest_path_ranged(xID, yID, endx, endy, bound, x_min, x_max, y_min, y_max,false);
 	} else {
 		/* If bound is not set, set the search range to the whole costmap. */
 		fw_map.getMapRange(CLEAN_MAP, &x_min, &x_max, &y_min, &y_max);
@@ -156,7 +166,7 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path(int16_t xID, int16_t yID
 		y_min = y_min - 8;
 		y_max = y_max + 8;
 
-		val =  wf_path_find_shortest_path_ranged(xID, yID, endx, endy, bound, x_min, x_max, y_min, y_max);
+		val =  wf_path_find_shortest_path_ranged(xID, yID, endx, endy, bound, x_min, x_max, y_min, y_max,false);
 		ROS_INFO("shortest path(%d): endx: %d\tendy: %d\tx: %d - %d\ty: %d - %d\t return: %d\n", __LINE__, endx, endy, x_min, x_max, y_min, y_max, val);
 	}
 
@@ -166,7 +176,7 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path(int16_t xID, int16_t yID
 	return val;
 }
 
-int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t end_x, int16_t end_y, uint8_t bound, int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max) {
+int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t end_x, int16_t end_y, uint8_t bound, int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max,bool used_unknown) {
 	uint16_t	next;
 	int16_t	totalCost, costAtCell, targetCost, dest_dir;
 	int16_t i, j, m, n, tracex, tracey, tracex_tmp, tracey_tmp, passValue, nextPassValue, passSet, offset;
@@ -204,7 +214,7 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(int16_t curr_x, i
 					}
 				}
 			}
-			else if(cs == UNCLEAN && is_fobbit_free())
+			else if(cs == UNCLEAN && used_unknown)
 				fw_map.setCell(COST_MAP, (int32_t) (i), (int32_t) (j), COST_HIGH);
 		}
 	}
@@ -316,7 +326,7 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(int16_t curr_x, i
 	path_points.push_back(t);
 
 	next = 0;
-	dest_dir = (plan_path_.front().TH == MAP_POS_Y || plan_path_.front().TH == MAP_NEG_Y) ? 1: 0;
+	dest_dir = (new_dir_ == MAP_POS_Y || new_dir_ == MAP_NEG_Y) ? 1: 0;
 	ROS_INFO("%s %d: dest dir: %d", __FUNCTION__, __LINE__, dest_dir);
 	while (tracex != curr_x || tracey != curr_y) {
 		costAtCell = fw_map.getCell(COST_MAP, tracex, tracey);

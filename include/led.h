@@ -5,6 +5,17 @@
 #ifndef PP_LED_H
 #define PP_LED_H
 
+// For LED control
+// LED type
+#define LED_STEADY					0
+#define LED_FLASH					1
+#define LED_BREATH					2
+// LED color
+#define LED_OFF						0
+#define LED_GREEN					1
+#define LED_ORANGE					2
+#define LED_RED						3
+
 
 class Led {
 public:

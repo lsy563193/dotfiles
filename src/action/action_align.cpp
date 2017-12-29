@@ -19,7 +19,7 @@ bool ActionAlign::isFinish() {
 	if (lidar.alignFinish()) {
 		float align_angle = lidar.alignAngle();
 		align_angle += (float) (LIDAR_THETA / 10);
-		odom.setAngleOffset(align_angle);
+		odom.setAngleOffset(-align_angle);
 		ROS_INFO("%s %d: align_angle angle (%f).", __FUNCTION__, __LINE__, align_angle);
 		return true;
 	}

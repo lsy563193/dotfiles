@@ -14,9 +14,9 @@ MovementTurn::MovementTurn(int16_t angle, uint8_t max_speed) : speed_(ROTATE_LOW
 
 bool MovementTurn::isReach()
 {
-	if (abs(ranged_angle(target_angle_ - robot::instance()->getPoseAngle())) < accurate_){
+	if (abs(ranged_angle(target_angle_ - robot::instance()->getWorldPoseAngle())) < accurate_){
 			ROS_INFO("%s, %d: MovementTurn target_angle_: \033[32m%d\033[0m, current angle: \033[32m%d\033[0m, line is not found."
-					, __FUNCTION__, __LINE__, target_angle_, robot::instance()->getPoseAngle());
+					, __FUNCTION__, __LINE__, target_angle_, robot::instance()->getWorldPoseAngle());
 		return true;
 	}
 	return false;
@@ -24,8 +24,8 @@ bool MovementTurn::isReach()
 
 void MovementTurn::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
-	auto diff = ranged_angle(target_angle_ - robot::instance()->getPoseAngle());
-//	ROS_DEBUG("%s %d: MovementTurn diff: %d, cm_target_p_.TH: %d, current angle: %d.", __FUNCTION__, __LINE__, diff, target_angle_ robot::instance()->getPoseAngle());
+	auto diff = ranged_angle(target_angle_ - robot::instance()->getWorldPoseAngle());
+//	ROS_DEBUG("%s %d: MovementTurn diff: %d, cm_target_p_.TH: %d, current angle: %d.", __FUNCTION__, __LINE__, diff, target_angle_ robot::instance()->getWorldPoseAngle());
 	(diff >= 0) ? wheel.setDirectionLeft() : wheel.setDirectionRight();
 
 //	ROS_INFO("MovementTurn::adjustSpeed");

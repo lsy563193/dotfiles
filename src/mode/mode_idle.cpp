@@ -18,6 +18,10 @@ ModeIdle::ModeIdle()
 
 	plan_activated_status_ = false;
 	ROS_INFO("%s %d: Current battery voltage \033[32m%5.2f V\033[0m.", __FUNCTION__, __LINE__, (float)battery.getVoltage()/100.0);
+
+	/*---reset values for rcon handle---*/
+	first_time_seen_charger_ = 0.0;
+	last_time_seen_charger_ = 0.0;
 }
 
 ModeIdle::~ModeIdle()
@@ -174,14 +178,6 @@ void ModeIdle::remoteKeyHandler(bool state_now, bool state_last)
 			}
 			case REMOTE_HOME:
 			{
-//				if (cs_is_paused())
-//				{
-//					ev.remoteHome = true;
-//					extern bool g_go_home_by_remote;
-//					g_go_home_by_remote = true;
-//					temp_mode = Clean_Mode_Navigation;
-//				}
-//				else
 				ev.remote_home = true;
 				break;
 			}
@@ -278,20 +274,18 @@ void ModeIdle::keyClean(bool state_now, bool state_last)
 
 void ModeIdle::rcon(bool state_now, bool state_last)
 {
-	static double first_time_seen_charger=0, last_time_seen_charger=0, time_for_now=0;
-	time_for_now = ros::Time::now().toSec();
+	auto time_for_now_ = ros::Time::now().toSec();
 //	ROS_WARN("%s %d: rcon signal. first: %lf, last: %lf, now: %lf", __FUNCTION__, __LINE__, first_time_seen_charger, last_time_seen_charger, time_for_now);
-	if(time_for_now - last_time_seen_charger > 60)
+	if(time_for_now_ - last_time_seen_charger_ > 60)
 	{
 		/*---more than 1 min haven't seen charger, reset first_time_seen_charger---*/
-		first_time_seen_charger = time_for_now;
+		first_time_seen_charger_ = time_for_now_;
 	}
 	else
 	{
 		/*---received charger signal continuously, check if more than 3 mins---*/
-		if(time_for_now - first_time_seen_charger > 180)
-			ev.rcon_triggered = c_rcon.getTrig();
+		if(time_for_now_ - first_time_seen_charger_ > 180)
+			ev.rcon_triggered = c_rcon.getAll();
 	}
-	last_time_seen_charger = time_for_now;
-	c_rcon.resetStatus();
+	last_time_seen_charger_ = time_for_now_;
 }
