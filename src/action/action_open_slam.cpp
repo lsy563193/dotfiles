@@ -6,10 +6,11 @@
 #include "arch.hpp"
 
 ActionOpenSlam::ActionOpenSlam() {
-	PP_INFO();
+	ROS_INFO("%s %d: Enter action open slam.", __FUNCTION__, __LINE__);
 	robot::instance()->setTfReady(false);
 	robot::instance()->setBaselinkFrameType(SLAM_POSITION_SLAM_ANGLE);
 	// Wait for a while to make sure the scan data and odom are both updated.
+	// It is important, otherwise, align will failed and slam start with a correction just as align angle.
 	usleep(230000);
 	slam.start();
 }

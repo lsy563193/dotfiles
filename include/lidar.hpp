@@ -44,8 +44,7 @@ public:
 
 	void pubFitLineMarker(double a, double b, double c, double y1, double y2);
 
-	void motorCtrl(bool switch_);
-	bool openTimeOut();
+	void motorCtrl(bool new_switch_);
 	void pubPointMarker(std::vector<Vector2<double>> *point);
 	bool getLidarWfTarget2(std::vector<Vector2<double>> &points);
 	void startAlign();
@@ -75,6 +74,10 @@ public:
 	static void setLidarScanDataOriginal(const sensor_msgs::LaserScan::ConstPtr &scan);
 	static sensor_msgs::LaserScan getLidarScanDataOriginal(void);
 private:
+
+	// switch_ is the target status of lidar.
+	bool switch_{OFF};
+
 	int angle_n_;
 	uint8_t is_scanLinear_ready_;
 	uint8_t is_scanOriginal_ready_;
@@ -98,9 +101,6 @@ private:
 	visualization_msgs::Marker fit_line_marker;
 
 	geometry_msgs::Point lidar_points_;
-
-	// For opening lidar.
-	time_t open_command_time_stamp_;
 
 	// For aligning.
 	bool align_finish_;

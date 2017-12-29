@@ -29,8 +29,6 @@ typedef enum {
 	SLAM_POSITION_ODOM_ANGLE,
 } Baselink_Frame_Type;
 
-extern bool	g_is_low_bat_pause;
-extern bool g_is_manual_pause;
 class robot
 {
 public:
@@ -78,32 +76,6 @@ public:
 	{
 		return is_tf_ready_;
 	}
-/*
-
-	void offsetAngle(float angle)
-	{
-		boost::mutex::scoped_lock(offset_angle_metux_);
-		offset_angle_ = angle;
-	};
-
-	float offsetAngle(void) const
-	{
-		boost::mutex::scoped_lock(offset_angle_metux_);
-		return offset_angle_;
-	};
-
-	void savedOffsetAngle(float angle)
-	{
-		if (angle > 180)
-			angle -= 360;
-		saved_offset_angle_ = -angle;
-	};
-
-	float savedOffsetAngle(void) const
-	{
-		return saved_offset_angle_;
-	};
-*/
 
 	int16_t getWorldPoseAngle()
 	{
