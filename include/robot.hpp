@@ -167,10 +167,9 @@ public:
 
 	void setBaselinkFrameType(Baselink_Frame_Type frame)
 	{
-		baselink_frame_type_mutex_.lock();
+		boost::mutex::scoped_lock(baselink_frame_type_mutex_);
 		baselink_frame_type_ = frame;
-		baselink_frame_type_mutex_.unlock();
-		ROS_INFO("%s %d: Base link frame type has been reset to %d.", __FUNCTION__, __LINE__, getBaselinkFrameType());
+		ROS_DEBUG("%s %d: Base link frame type has been reset to %d.", __FUNCTION__, __LINE__, getBaselinkFrameType());
 	}
 
 	bool isScanAllow()

@@ -55,19 +55,12 @@ int robotbase_init(void)
 	robotbase_reset_send_stream();
 
 	ROS_INFO("waiting robotbase awake ");
-//	serr_ret = pthread_create(&receiPortThread_id, NULL, serial_receive_routine_cb, NULL);
 	auto serial_receive_routine = new boost::thread(serial_receive_routine_cb);
 	serial_receive_routine->detach();
-	// todo:If do not usleep for 20ms, it will process died, still don't know why. --by Austin Liu
-	// todo:Seems it works fine now, still don't know why. --by Austin Liu(171228)
-	//usleep(20000);
-//	base_ret = pthread_create(&robotbaseThread_id, NULL, robotbase_routine_cb, NULL);
 	auto robotbase_routine = new boost::thread(robotbase_routine_cb);
 	robotbase_routine->detach();
-//	sers_ret = pthread_create(&sendPortThread_id, NULL, serial_send_routine_cb, NULL);
 	auto serial_send_routine = new boost::thread(serial_send_routine_cb);
 	serial_send_routine->detach();
-//	speaker_ret = pthread_create(&sendPortThread_id, NULL, speaker_play_routine_cb, NULL);
 	auto speaker_play_routine = new boost::thread(speaker_play_routine_cb);
 	speaker_play_routine->detach();
 	if (base_ret < 0 || serr_ret < 0 || sers_ret < 0 || speaker_ret < 0) {
@@ -158,7 +151,7 @@ void robotbase_reset_send_stream(void)
 
 void serial_receive_routine_cb()
 {
-	ROS_INFO("robotbase,\033[32m%s\033[0m,%d thread is up",__FUNCTION__,__LINE__);
+	ROS_INFO("robotbase,\033[32m%s\033[0m,%d is up.",__FUNCTION__,__LINE__);
 	int i, j, ret, wh_len, wht_len, whtc_len;
 
 	uint8_t r_crc, c_crc;
@@ -226,7 +219,7 @@ void serial_receive_routine_cb()
 
 void robotbase_routine_cb()
 {
-	ROS_INFO("robotbase,\033[32m%s\033[0m,%d, is up!",__FUNCTION__,__LINE__);
+	ROS_INFO("robotbase,\033[32m%s\033[0m,%d is up.",__FUNCTION__,__LINE__);
 
 	ros::Rate	r(_RATE);
 	ros::Time	cur_time, last_time;
@@ -488,7 +481,7 @@ void robotbase_routine_cb()
 
 void serial_send_routine_cb()
 {
-	ROS_INFO("robotbase,\033[32m%s\033[0m,%d is up",__FUNCTION__,__LINE__);
+	ROS_INFO("robotbase,\033[32m%s\033[0m,%d is up.",__FUNCTION__,__LINE__);
 	ros::Rate r(_RATE);
 	uint8_t buf[SEND_LEN];
 	int sl = SEND_LEN-3;
@@ -529,7 +522,6 @@ void serial_send_routine_cb()
 	//pthread_exit(NULL);
 }
 
-
 Mode *getNextMode(int next_mode_i_)
 {
 
@@ -564,7 +556,6 @@ Mode *getNextMode(int next_mode_i_)
 		}
 	}
 }
-
 
 void process_beep()
 {
@@ -661,6 +652,7 @@ void robotbase_reset_odom_pose(void)
 
 void speaker_play_routine_cb()
 {
+	ROS_INFO("robotbase,\033[32m%s\033[0m,%d is up.",__FUNCTION__,__LINE__);
 	speaker.playRoutine();
 }
 

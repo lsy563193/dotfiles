@@ -114,13 +114,14 @@ robot::robot(std::string serial_port, int baudrate, std::string lidar_bumper_dev
 	core_thread->detach();
 	ROS_INFO("%s %d: robot init done!", __FUNCTION__, __LINE__);
 }
+
 void robot::core_thread_cb()
 {
 	ROS_INFO("Waiting for robot sensor ready.");
-	while (isSensorReady()) {
+	while (!isSensorReady()) {
 		usleep(1000);
 	}
-	ROS_ERROR("Robot sensor ready.");
+	ROS_INFO("Robot sensor ready.");
 //	speaker.play(VOICE_WELCOME_ILIFE);
 	usleep(200000);
 
