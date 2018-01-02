@@ -19,7 +19,7 @@ CleanModeFollowWall::CleanModeFollowWall()
 	speaker.play(VOICE_CLEANING_WALL_FOLLOW, false);
 	clean_path_algorithm_.reset(new WFCleanPathAlgorithm);
 	go_home_path_algorithm_.reset(new GoHomePathAlgorithm(nav_map, home_points_));
-	map_ = &fw_map;
+	map_ = &nav_map;
 	map_->reset(CLEAN_MAP);
 }
 
@@ -52,6 +52,25 @@ CleanModeFollowWall::~CleanModeFollowWall()
 }
 
 bool CleanModeFollowWall::mapMark() {
+	clean_path_algorithm_->displayCellPath(pointsGenerateCells(passed_path_));
+	robot::instance()->pubCleanMapMarkers(*map_, pointsGenerateCells(plan_path_));
+	PP_WARN();
+	if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
+	{
+		map_->setCleaned(pointsGenerateCells(passed_path_));
+		map_->setBlocks();
+		ROS_ERROR("-------------------------------------------------------");
+		auto start = *passed_path_.begin();
+		passed_path_.erase(std::remove_if(passed_path_.begin(),passed_path_.end(),[&start](Point32_t& it){
+			return it.toCell() == start.toCell();
+		}),passed_path_.end());
+		clean_path_algorithm_->displayCellPath(pointsGenerateCells(passed_path_));
+		ROS_ERROR("-------------------------------------------------------");
+		map_->setFollowWall(action_i_ == ac_follow_wall_left, passed_path_);
+	}
+	map_->markRobot(CLEAN_MAP);
+	map_->print(CLEAN_MAP, getPosition().toCell().x, getPosition().toCell().y);
+	passed_path_.clear();
 	return false;
 }
 
@@ -105,18 +124,17 @@ bool CleanModeFollowWall::setNextState()
 			}
 		}
 		else if(reach_cleaned_count_ <= 3){
-			if(wf_is_isolate()) {
+			if(wf_is_isolate(map_)) {
 				if (clean_path_algorithm_->generatePath(nav_map, getPosition(), old_dir_, plan_path_)) {
 					plan_path_.pop_front();
 					ROS_ERROR("plan_path_.size(%d)", plan_path_.size());
 				}
-			}else{
-				ROS_WARN("%s,%d:follow clean finish,did not find charge",__func__,__LINE__);
+			}else {
+				ROS_WARN("%s,%d:follow clean finish,did not find charge", __func__, __LINE__);
 				state_i_ = st_go_home_point;
-				go_home_path_algorithm_.reset(new GoHomePathAlgorithm(exploration_map, home_points_));
+				go_home_path_algorithm_.reset(new GoHomePathAlgorithm(*map_, home_points_));
 				stateInit(state_i_);
 				action_i_ = ac_null;
-//				return false;
 			}
 		}
 	}
@@ -240,26 +258,26 @@ void CleanModeFollowWall::remoteClean(bool state_now, bool state_last)
 //}
 // End event handlers.
 
-bool CleanModeFollowWall::wf_is_isolate() {
+bool CleanModeFollowWall::wf_is_isolate(GridMap* map) {
 	int16_t	val = 0;
 	int16_t x_min_forward, x_max_forward, y_min, y_max;
-	fw_map.getMapRange(CLEAN_MAP, &x_min_forward, &x_max_forward, &y_min, &y_max);
+	map->getMapRange(CLEAN_MAP, &x_min_forward, &x_max_forward, &y_min, &y_max);
 	Cell_t out_cell {int16_t(x_max_forward + 1),int16_t(y_max + 1)};
 
-	fw_map.markRobot(CLEAN_MAP);//note: To clear the obstacle when check isolated, please don't remove it!
+	map->markRobot(CLEAN_MAP);//note: To clear the obstacle when check isolated, please don't remove it!
 	auto curr = getPosition().toCell();
-	fw_map.print(CLEAN_MAP, curr.x, curr.y);
+	map->print(CLEAN_MAP, curr.x, curr.y);
 	ROS_WARN("%s %d: curr(%d,%d),out(%d,%d)", __FUNCTION__, __LINE__, curr.x, curr.y,out_cell.x, out_cell.y);
 
 	if ( out_cell != g_zero_home.toCell()){
-			val = wf_path_find_shortest_path(curr.x, curr.y, out_cell.x, out_cell.y, 0);
+			val = wf_path_find_shortest_path(map, curr.x, curr.y, out_cell.x, out_cell.y, 0);
 			val = (val < 0 || val == SCHAR_MAX) ? 0 : 1;
 	} else {
 		if (!nav_map.isBlockAccessible(0, 0)) {
-			val = wf_path_find_shortest_path(curr.x, curr.y, 0, 0, 0);
+			val = wf_path_find_shortest_path(map, curr.x, curr.y, 0, 0, 0);
 			if (val < 0 || val == SCHAR_MAX) {
 				/* Robot start position is blocked. */
-				val = wf_path_find_shortest_path(curr.x, curr.y, 0, 0, 0);
+				val = wf_path_find_shortest_path(map, curr.x, curr.y, 0, 0, 0);
 
 				if (val < 0 || val == SCHAR_MAX) {
 					val = 0;
@@ -270,7 +288,7 @@ bool CleanModeFollowWall::wf_is_isolate() {
 				val = 1;
 			}
 		} else {
-			val = wf_path_find_shortest_path(curr.x, curr.y, 0, 0, 0);
+			val = wf_path_find_shortest_path(map, curr.x, curr.y, 0, 0, 0);
 			if (val < 0 || val == SCHAR_MAX)
 				val = 0;
 			else
@@ -297,7 +315,7 @@ bool CleanModeFollowWall::wf_is_isolate() {
  * 		(totalCost: from function path_find_shortest_path_ranged)
  *
  */
-int16_t CleanModeFollowWall::wf_path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound) {
+int16_t CleanModeFollowWall::wf_path_find_shortest_path(GridMap* map, int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound) {
 	int16_t val;
 	int16_t x_min, x_max, y_min, y_max;
 
@@ -308,22 +326,22 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path(int16_t xID, int16_t yID
 		y_min = (yID > endy ? endy : yID) - 8;
 		y_max = (yID > endy ? yID : endy) + 8;
 		ROS_INFO("shortest path(%d): endx: %d\tendy: %d\tx: %d - %d\ty: %d - %d\n", __LINE__, endx, endy, x_min, x_max, y_min, y_max);
-		val =  wf_path_find_shortest_path_ranged(xID, yID, endx, endy, bound, x_min, x_max, y_min, y_max,false);
+		val =  wf_path_find_shortest_path_ranged(map, xID, yID, endx, endy, bound, x_min, x_max, y_min, y_max,false);
 	} else {
 		/* If bound is not set, set the search range to the whole costmap. */
-		fw_map.getMapRange(CLEAN_MAP, &x_min, &x_max, &y_min, &y_max);
+		map->getMapRange(CLEAN_MAP, &x_min, &x_max, &y_min, &y_max);
 		x_min = x_min - 8;
 		x_max = x_max + 8;
 		y_min = y_min - 8;
 		y_max = y_max + 8;
 
-		val =  wf_path_find_shortest_path_ranged(xID, yID, endx, endy, bound, x_min, x_max, y_min, y_max,false);
+		val =  wf_path_find_shortest_path_ranged(map, xID, yID, endx, endy, bound, x_min, x_max, y_min, y_max,false);
 		ROS_INFO("shortest path(%d): endx: %d\tendy: %d\tx: %d - %d\ty: %d - %d\t return: %d\n", __LINE__, endx, endy, x_min, x_max, y_min, y_max, val);
 	}
 	return val;
 }
 
-int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t end_x, int16_t end_y, uint8_t bound, int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max,bool used_unknown) {
+int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(GridMap* map, int16_t curr_x, int16_t curr_y, int16_t end_x, int16_t end_y, uint8_t bound, int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max,bool used_unknown) {
 	uint16_t	next;
 	int16_t	totalCost, costAtCell, targetCost, dest_dir;
 	int16_t i, j, m, n, tracex, tracey, tracex_tmp, tracey_tmp, passValue, nextPassValue, passSet, offset;
@@ -345,35 +363,35 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(int16_t curr_x, i
 	/* Reset the cells in the shorest path costmap. */
 	for (i = x_min - 1; i <= x_max + 1; ++i) {
 		for (j = y_min - 1; j <= y_max + 1; ++j) {
-			fw_map.setCell(COST_MAP, (int32_t) i, (int32_t) j, COST_NO);
+			map->setCell(COST_MAP, (int32_t) i, (int32_t) j, COST_NO);
 		}
 	}
 
 	/* Marked the obstcals to the shorest path costmap. */
 	for (i = x_min - 1; i <= x_max + 1; ++i) {
 		for (j = y_min - 1; j <= y_max + 1; ++j) {
-			cs = fw_map.getCell(CLEAN_MAP, i, j);
+			cs = map->getCell(CLEAN_MAP, i, j);
 			if (cs >= BLOCKED && cs <= BLOCKED_BOUNDARY) {
 				//for (m = ROBOT_RIGHT_OFFSET + 1; m <= ROBOT_LEFT_OFFSET - 1; m++) {
 				for (m = ROBOT_RIGHT_OFFSET; m <= ROBOT_LEFT_OFFSET; m++) {
 					for (n = ROBOT_RIGHT_OFFSET; n <= ROBOT_LEFT_OFFSET; n++) {
-						fw_map.setCell(COST_MAP, (int32_t) (i + m), (int32_t) (j + n), COST_HIGH);
+						map->setCell(COST_MAP, (int32_t) (i + m), (int32_t) (j + n), COST_HIGH);
 					}
 				}
 			}
 			else if(cs == UNCLEAN && used_unknown)
-				fw_map.setCell(COST_MAP, (int32_t) (i), (int32_t) (j), COST_HIGH);
+				map->setCell(COST_MAP, (int32_t) (i), (int32_t) (j), COST_HIGH);
 		}
 	}
 
 	// Now it is always finding the path from robot to target, so comment below sentence.
 	// If needs to find path from target to robot, please uncomment below sentence.
-	//if (fw_map.getCell(COST_MAP, end_x, end_y, true) == COST_HIGH) {
-	//	fw_map.set_cell(COST_MAP, end_x, end_y, COST_NO);
+	//if (map.getCell(COST_MAP, end_x, end_y, true) == COST_HIGH) {
+	//	map.set_cell(COST_MAP, end_x, end_y, COST_NO);
 	//}
 
 	/* Set the current robot position has the cost value of 1. */
-	fw_map.setCell(COST_MAP, (int32_t) curr_x, (int32_t) curr_y, COST_1);
+	map->setCell(COST_MAP, (int32_t) curr_x, (int32_t) curr_y, COST_1);
 
 	/*
 	 * Find the path to target from the current robot position. Set the cell values
@@ -384,7 +402,7 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(int16_t curr_x, i
 	passSet = 1;
 	passValue = 1;
 	nextPassValue = 2;
-	while (fw_map.getCell(COST_MAP, end_x, end_y) == COST_NO && passSet == 1) {
+	while (map->getCell(COST_MAP, end_x, end_y) == COST_NO && passSet == 1) {
 		offset++;
 		passSet = 0;
 
@@ -406,28 +424,28 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(int16_t curr_x, i
 					continue;
 
 				/* Found a cell that has a pass value equal to the current pass value. */
-				if(fw_map.getCell(COST_MAP, i, j) == passValue) {
+				if(map->getCell(COST_MAP, i, j) == passValue) {
 					/* Set the lower cell of the cell which has the pass value equal to current pass value. */
-					if (fw_map.getCell(COST_MAP, i - 1, j) == COST_NO) {
-						fw_map.setCell(COST_MAP, (int32_t) (i - 1), (int32_t) j, (CellState) nextPassValue);
+					if (map->getCell(COST_MAP, i - 1, j) == COST_NO) {
+						map->setCell(COST_MAP, (int32_t) (i - 1), (int32_t) j, (CellState) nextPassValue);
 						passSet = 1;
 					}
 
 					/* Set the upper cell of the cell which has the pass value equal to current pass value. */
-					if (fw_map.getCell(COST_MAP, i + 1, j) == COST_NO) {
-						fw_map.setCell(COST_MAP, (int32_t) (i + 1), (int32_t) j, (CellState) nextPassValue);
+					if (map->getCell(COST_MAP, i + 1, j) == COST_NO) {
+						map->setCell(COST_MAP, (int32_t) (i + 1), (int32_t) j, (CellState) nextPassValue);
 						passSet = 1;
 					}
 
 					/* Set the cell on the right hand side of the cell which has the pass value equal to current pass value. */
-					if (fw_map.getCell(COST_MAP, i, j - 1) == COST_NO) {
-						fw_map.setCell(COST_MAP, (int32_t) i, (int32_t) (j - 1), (CellState) nextPassValue);
+					if (map->getCell(COST_MAP, i, j - 1) == COST_NO) {
+						map->setCell(COST_MAP, (int32_t) i, (int32_t) (j - 1), (CellState) nextPassValue);
 						passSet = 1;
 					}
 
 					/* Set the cell on the left hand side of the cell which has the pass value equal to current pass value. */
-					if (fw_map.getCell(COST_MAP, i, j + 1) == COST_NO) {
-						fw_map.setCell(COST_MAP, (int32_t) i, (int32_t) (j + 1), (CellState) nextPassValue);
+					if (map->getCell(COST_MAP, i, j + 1) == COST_NO) {
+						map->setCell(COST_MAP, (int32_t) i, (int32_t) (j + 1), (CellState) nextPassValue);
 						passSet = 1;
 					}
 				}
@@ -445,9 +463,9 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(int16_t curr_x, i
 
 	/* The target position still have a cost of 0, which mean it is not reachable. */
 	totalCost = 0;
-	if (fw_map.getCell(COST_MAP, end_x, end_y) == COST_NO || fw_map.getCell(COST_MAP, end_x, end_y) == COST_HIGH) {
+	if (map->getCell(COST_MAP, end_x, end_y) == COST_NO || map->getCell(COST_MAP, end_x, end_y) == COST_HIGH) {
 		ROS_WARN("%s, %d: target point (%d, %d) is not reachable(%d), return -2.", __FUNCTION__, __LINE__, end_x, end_y,
-				 fw_map.getCell(COST_MAP, end_x, end_y));
+				 map->getCell(COST_MAP, end_x, end_y));
 #if	DEBUG_COST_MAP
 		nav_map.print(COST_MAP, end_x, end_y);
 #endif
@@ -476,7 +494,7 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(int16_t curr_x, i
 	dest_dir = (new_dir_ == MAP_POS_Y || new_dir_ == MAP_NEG_Y) ? 1: 0;
 	ROS_INFO("%s %d: dest dir: %d", __FUNCTION__, __LINE__, dest_dir);
 	while (tracex != curr_x || tracey != curr_y) {
-		costAtCell = fw_map.getCell(COST_MAP, tracex, tracey);
+		costAtCell = map->getCell(COST_MAP, tracex, tracey);
 		targetCost = costAtCell - 1;
 
 		/* Reset target cost to 5, since cost only set from 1 to 5 in the shorest path costmap. */
@@ -484,10 +502,10 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(int16_t curr_x, i
 			targetCost = COST_5;
 
 		/* Set the cell value to 6 if the cells is on the path. */
-		fw_map.setCell(COST_MAP, (int32_t) tracex, (int32_t) tracey, COST_PATH);
+		map->setCell(COST_MAP, (int32_t) tracex, (int32_t) tracey, COST_PATH);
 
 #define COST_SOUTH	{											\
-				if (next == 0 && (fw_map.getCell(COST_MAP, tracex - 1, tracey) == targetCost)) {	\
+				if (next == 0 && (map->getCell(COST_MAP, tracex - 1, tracey) == targetCost)) {	\
 					tracex--;								\
 					next = 1;								\
 					dest_dir = 1;								\
@@ -495,7 +513,7 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(int16_t curr_x, i
 			}
 
 #define COST_WEST	{											\
-				if (next == 0 && (fw_map.getCell(COST_MAP, tracex, tracey - 1) == targetCost)) {	\
+				if (next == 0 && (map->getCell(COST_MAP, tracex, tracey - 1) == targetCost)) {	\
 					tracey--;								\
 					next = 1;								\
 					dest_dir = 0;								\
@@ -503,7 +521,7 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(int16_t curr_x, i
 			}
 
 #define COST_EAST	{											\
-				if (next == 0 && (fw_map.getCell(COST_MAP, tracex, tracey + 1) == targetCost)) {	\
+				if (next == 0 && (map->getCell(COST_MAP, tracex, tracey + 1) == targetCost)) {	\
 					tracey++;								\
 					next = 1;								\
 					dest_dir = 0;								\
@@ -511,7 +529,7 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(int16_t curr_x, i
 			}
 
 #define COST_NORTH	{											\
-				if (next == 0 && fw_map.getCell(COST_MAP, tracex + 1, tracey) == targetCost) {	\
+				if (next == 0 && map->getCell(COST_MAP, tracex + 1, tracey) == targetCost) {	\
 					tracex++;								\
 					next = 1;								\
 					dest_dir = 1;								\
@@ -545,7 +563,7 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(int16_t curr_x, i
 		tracex_tmp = tracex;
 		tracey_tmp = tracey;
 	}
-	fw_map.setCell(COST_MAP, (int32_t) tracex, (int32_t) tracey, COST_PATH);
+	map->setCell(COST_MAP, (int32_t) tracex, (int32_t) tracey, COST_PATH);
 
 	t.x = tracex_tmp;
 	t.y = tracey_tmp;

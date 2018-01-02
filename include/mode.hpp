@@ -293,7 +293,6 @@ public:
 	CleanModeNav();
 	~CleanModeNav();
 
-	uint8_t setFollowWall(const Points& path);
 	bool mapMark() override ;
 	bool isFinish() override ;
 	bool isExit() override;
@@ -396,12 +395,12 @@ public:
 //
 //	void chargeDetect(bool state_now, bool state_last);
 
-	int16_t wf_path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound);
+	int16_t wf_path_find_shortest_path(GridMap* map, int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound);
 
-	int16_t wf_path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t end_x, int16_t end_y, uint8_t bound,
+	int16_t wf_path_find_shortest_path_ranged(GridMap* map, int16_t curr_x, int16_t curr_y, int16_t end_x, int16_t end_y, uint8_t bound,
 																						int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max,
 																						bool used_unknown);
-	bool wf_is_isolate();
+	bool wf_is_isolate(GridMap* map);
 private:
 	uint32_t diff_timer_;
 protected:

@@ -147,7 +147,6 @@ Point32_t ACleanMode::updatePath(GridMap& map)
 		}
 		if (distance > 5) {
 		ROS_INFO("reach_cleaned_count_(%d)",reach_cleaned_count_);
-			passed_path_.clear();
 			reach_cleaned_count_++;
 		}
 		map.saveBlocks(action_i_ == ac_linear, state_i_ == st_clean);
