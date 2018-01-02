@@ -267,9 +267,9 @@ public:
 		y_max_point1 = std::max(y_point1_start, y_point1_end);
 
 		auto y_target_start = is_left ? ROBOT_RADIUS : -ROBOT_RADIUS;
-		auto y_target_end = is_left ? 0.4 : -4.0;
-		y_min_target = std::min(y_point1_start, y_point1_end);
-		y_max_target = std::max(y_point1_start, y_point1_end);
+		auto y_target_end = is_left ? 0.4 : -0.4;
+		y_min_target = std::min(y_target_start, y_target_end);
+		y_max_target = std::max(y_target_start, y_target_end);
 	};
 
 	bool inPoint1Range(const Vector2<double> &point, bool is_corner) const {

@@ -432,8 +432,7 @@ bool robot::calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,bool is_
 	std::copy(points.rbegin(), min+1, std::front_inserter(points));
 	points.resize(size);
 //	for (const auto &target :points)
-//	{
-//		ROS_WARN("points(%d):target(%lf,%lf),dis(%f)", points.size(), target.x, target.y, target.Distance({CHASE_X, 0}));
+//			ROS_WARN("points(%d):target(%lf,%lf),dis(%f)", points.size(), target.x, target.y, target.Distance({CHASE_X, 0}));
 //	}
 	robot::instance()->pubPointMarkers(&points, "base_link");
 
@@ -753,15 +752,15 @@ void robot::pubPointMarkers(const std::deque<Vector2<double>> *points, std::stri
 	visualization_msgs::Marker point_marker;
 	point_marker.ns = "point_marker";
 	point_marker.id = 0;
-	point_marker.type = visualization_msgs::Marker::POINTS;
+	point_marker.type = visualization_msgs::Marker::SPHERE_LIST;
 	point_marker.action= 0;//add
 	point_marker.lifetime=ros::Duration(0),"base_link";
-	point_marker.scale.x = 0.02;
-	point_marker.scale.y = 0.02;
-	point_marker.scale.z = 0.0;
-	point_marker.color.r = 1.0;
+	point_marker.scale.x = 0.05;
+	point_marker.scale.y = 0.05;
+	point_marker.scale.z = 0.05;
+	point_marker.color.r = 0.0;
 	point_marker.color.g = 1.0;
-	point_marker.color.b = 1.0;
+	point_marker.color.b = 0.0;
 	point_marker.color.a = 1.0;
 	point_marker.header.frame_id = frame_id;
 	point_marker.header.stamp = ros::Time::now();
@@ -779,13 +778,12 @@ void robot::pubPointMarkers(const std::deque<Vector2<double>> *points, std::stri
 		point_marker_pub_.publish(point_marker);
 		//ROS_INFO("%s,%d,points size:%u,points %s",__FUNCTION__,__LINE__,points->size(),msg.c_str());
 		point_marker.points.clear();
+		ROS_INFO("pub point!!");
 	}
-	/*
 	else {
 		point_marker.points.clear();
-		point_marker_pub.publish(point_marker);
+		point_marker_pub_.publish(point_marker);
 	}
-	*/
 }
 
 bool robot::lidarMotorCtrl(bool switch_)
