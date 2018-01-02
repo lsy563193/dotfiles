@@ -12,12 +12,12 @@ bool WFCleanPathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, con
 		auto curr = getPosition();
 		curr.th = 0;
 		targets.push_back(curr);
-//		if (reach_cleaned_count == 0 ||
-//				(reach_cleaned_count < ISOLATE_COUNT_LIMIT && !fw_is_time_up()/*get_work_time() < WALL_FOLLOW_TIME*/ &&
+//		if (reach_cleaned_count_ == 0 ||
+//				(reach_cleaned_count_ < ISOLATE_COUNT_LIMIT && !fw_is_time_up()/*get_work_time() < WALL_FOLLOW_TIME*/ &&
 //				 wf_is_isolate())) {
 			fw_map.reset(CLEAN_MAP);
 			auto angle = 0;
-//			if (reach_cleaned_count == -900) {
+//			if (reach_cleaned_count_ == -900) {
 //				angle = -900;
 //			}
 			auto point = getPosition();

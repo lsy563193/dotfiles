@@ -98,10 +98,25 @@ bool CleanModeFollowWall::setNextState()
 		state_i_ = st_clean;
 	}
 	if(state_i_ == st_clean) {
-		if(wf_is_isolate()) {
+		if(reach_cleaned_count_ == 0) {
 			if (clean_path_algorithm_->generatePath(nav_map, getPosition(), old_dir_, plan_path_)) {
 				plan_path_.pop_front();
 				ROS_ERROR("plan_path_.size(%d)", plan_path_.size());
+			}
+		}
+		else if(reach_cleaned_count_ <= 3){
+			if(wf_is_isolate()) {
+				if (clean_path_algorithm_->generatePath(nav_map, getPosition(), old_dir_, plan_path_)) {
+					plan_path_.pop_front();
+					ROS_ERROR("plan_path_.size(%d)", plan_path_.size());
+				}
+			}else{
+				ROS_WARN("%s,%d:follow clean finish,did not find charge",__func__,__LINE__);
+				state_i_ = st_go_home_point;
+				go_home_path_algorithm_.reset(new GoHomePathAlgorithm(exploration_map, home_points_));
+				stateInit(state_i_);
+				action_i_ = ac_null;
+//				return false;
 			}
 		}
 	}
@@ -543,6 +558,6 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(int16_t curr_x, i
 
 bool CleanModeFollowWall::ActionFollowWallisFinish() {
 //	return ACleanMode::ActionFollowWallisFinish();
-	return reach_cleaned_count > 0;
+	return reach_cleaned_count_ > 0;
 }
 

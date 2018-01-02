@@ -242,7 +242,7 @@ public:
 	virtual bool ActionFollowWallisFinish();
 	void setRconPos(Point32_t pos);
 	Point32_t updatePath(GridMap& map);
-	int reach_cleaned_count{};
+	int reach_cleaned_count_{};
 	static Points passed_path_;
 	static Points plan_path_;
 

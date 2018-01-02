@@ -21,8 +21,8 @@ IFollowWall::IFollowWall(bool is_left) : previous_(0), seen_charger_counter(0), 
 
 //bool IFollowWall::isClosure(uint8_t closure_cnt)
 //{
-//	if (reach_cleaned_count >= closure_cnt) {
-//		ROS_WARN("%s %d: Trapped wall follow is loop closed. reach_count(%d) ", __FUNCTION__, __LINE__, reach_cleaned_count);
+//	if (reach_cleaned_count_ >= closure_cnt) {
+//		ROS_WARN("%s %d: Trapped wall follow is loop closed. reach_count(%d) ", __FUNCTION__, __LINE__, reach_cleaned_count_);
 //		return true;
 //	}
 //	return false;

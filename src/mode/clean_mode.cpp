@@ -145,10 +145,10 @@ Point32_t ACleanMode::updatePath(GridMap& map)
 			ROS_INFO("curr(%d,%d,%d)",curr.toCell().x, curr.toCell().y, curr.th);
 			passed_path_.push_back(curr);
 		}
-//		ROS_INFO("distance(%d)",distance);
 		if (distance > 5) {
+		ROS_INFO("reach_cleaned_count_(%d)",reach_cleaned_count_);
 			passed_path_.clear();
-			reach_cleaned_count++;
+			reach_cleaned_count_++;
 		}
 		map.saveBlocks(action_i_ == ac_linear, state_i_ == st_clean);
 //		displayPath(passed_path_);
@@ -203,7 +203,7 @@ void ACleanMode::stateInit(int next)
 		PP_INFO();
 	}
 	if (next == st_clean) {
-		reach_cleaned_count = 0;
+		reach_cleaned_count_ = 0;
 		led.set_mode(LED_STEADY, LED_GREEN);
 		PP_INFO();
 	}
@@ -237,7 +237,7 @@ void ACleanMode::stateInit(int next)
 		led.set_mode(LED_FLASH, LED_GREEN, 300);
 	}
 	if (next == st_exploration) {
-		reach_cleaned_count = 0;
+		reach_cleaned_count_ = 0;
 		led.set_mode(LED_STEADY, LED_ORANGE);
 	}
 	if (next == st_go_to_charger) {
