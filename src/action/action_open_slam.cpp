@@ -16,7 +16,13 @@ ActionOpenSlam::ActionOpenSlam() {
 }
 
 bool ActionOpenSlam::isFinish(){
-	return slam.isMapReady() && robot::instance()->isTfReady();
+	if (slam.isMapReady() && robot::instance()->isTfReady())
+	{
+		// Wait a while to make sure robot has used new base link framework.
+		usleep(20000);
+		return true;
+	}
+	return false;
 }
 
 void ActionOpenSlam::run() {

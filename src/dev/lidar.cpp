@@ -956,12 +956,6 @@ static uint8_t setLidarMarkerAcr2Dir(double X_MIN,double X_MAX,int angle_from,in
 		}
 	}
 	if (count > 10) {
-		auto cell = getPosition().getRelative(CELL_SIZE * dx, CELL_SIZE * dy).toCell();
-		if (nav_map.getCell(CLEAN_MAP,cell.x, cell.y) != BLOCKED_BUMPER)
-		{
-			ROS_INFO("\033[36mlidar marker : (%d,%d)\033[0m",cell.x,cell.y);
-			nav_map.setCell(CLEAN_MAP, cell.x, cell.y, BLOCKED_LIDAR);
-		}
 		ret = 1;
 		*lidar_status |= obs_status;
 	}
@@ -1133,15 +1127,6 @@ uint8_t Lidar::lidarMarker(double X_MAX)
 					direction_msg = "right back";
 					break;
 				}
-			}
-
-			auto cell = getPosition().getRelative(CELL_SIZE * dx, CELL_SIZE * dy).toCell();
-			auto cell_status = nav_map.getCell(CLEAN_MAP, cell.x, cell.y);
-			if (cell_status != BLOCKED_BUMPER && cell_status != BLOCKED_OBS)
-			{
-				//ROS_INFO("    \033[36mlidar marker : (%d,%d), i = %d, dx = %d, dy = %d.\033[0m",count_to_cell(x_tmp),count_to_cell(y_tmp), i, dx, dy);
-				msg += direction_msg + "(" + std::to_string(cell.x) + ", " + std::to_string(cell.y) + ")";
-				nav_map.setCell(CLEAN_MAP,cell.x,cell.y, BLOCKED_LIDAR); //BLOCKED_OBS);
 			}
 		}
 	}

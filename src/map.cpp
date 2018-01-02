@@ -1,8 +1,6 @@
 #include "pp.h"
 
-GridMap nav_map;
 GridMap fw_map;
-GridMap exploration_map;
 GridMap slam_grid_map;
 GridMap decrease_map;
 
@@ -162,7 +160,7 @@ void GridMap::clearBlocks(void) {
 	for(c = g_x_min; c < g_x_max; ++c) {
 		for(d = g_y_min; d < g_y_max; ++d) {
 			CellState state = getCell(CLEAN_MAP, c, d);
-			if(state == BLOCKED_LIDAR || state == BLOCKED_BUMPER ||	state == BLOCKED_CLIFF || state  == BLOCKED_OBS) {
+			if(state == BLOCKED_LIDAR || state == BLOCKED_BUMPER ||	state == BLOCKED_CLIFF || state  == BLOCKED_FW) {
 				if(getCell(CLEAN_MAP, c - 1, d) != UNCLEAN && getCell(CLEAN_MAP, c, d + 1) != UNCLEAN &&
 						getCell(CLEAN_MAP, c + 1, d) != UNCLEAN &&
 						getCell(CLEAN_MAP, c, d - 1) != UNCLEAN) {
@@ -422,7 +420,7 @@ uint8_t GridMap::setObs()
 	std::string msg = "cell:";
 	for(auto& cell : temp_obs_cells){
 		msg += "(" + std::to_string(cell.x) + "," + std::to_string(cell.y) + ")";
-		setCell(CLEAN_MAP,cell.x,cell.y, BLOCKED_OBS);
+		setCell(CLEAN_MAP,cell.x,cell.y, BLOCKED_FW);
 		block_count++;
 	}
 	temp_obs_cells.clear();
@@ -559,7 +557,7 @@ uint8_t GridMap::setFollowWall(bool is_left,const Points& passed_path)
 			if(getCell(CLEAN_MAP,point.toCell().x,point.toCell().y) != BLOCKED_RCON){
 				auto block_cell = point.getRelative(0, dy * CELL_SIZE).toCell();
 				msg += "(" + std::to_string(block_cell.x) + "," + std::to_string(block_cell.y) + ")";
-				setCell(CLEAN_MAP,block_cell.x,block_cell.y, BLOCKED_CLIFF);
+				setCell(CLEAN_MAP,block_cell.x,block_cell.y, BLOCKED_FW);
 				block_count++;
 			}
 		}
@@ -868,12 +866,12 @@ void GridMap::setCleaned(std::deque<Cell_t> cells)
 		return;
 	int8_t x_offset;
 
-		x_offset = (cells.front().x < cells.back().x) ? 1 : -1;//X_POS
-		Cell_t cell_front = {int16_t(cells.front().x - x_offset),cells.front().y};
-		Cell_t cell_back = {int16_t(cells.back().x + x_offset),cells.back().y};
-		cells.push_front(cell_front);
-		cells.push_back(cell_back);
-//		auto is_follow_y_min = x_offset == 1 ^ mt.is_left();
+	x_offset = (cells.front().x < cells.back().x) ? 1 : -1;//X_POS
+	Cell_t cell_front = {int16_t(cells.front().x - x_offset),cells.front().y};
+	Cell_t cell_back = {int16_t(cells.back().x + x_offset),cells.back().y};
+	cells.push_front(cell_front);
+	cells.push_back(cell_back);
+//	auto is_follow_y_min = x_offset == 1 ^ mt.is_left();
 
 	std::string msg = "Cell:\n";
 	for (const auto& cell :  cells)
@@ -970,8 +968,8 @@ uint8_t GridMap::isBlockedByBumper(int16_t x, int16_t y)
 	for (i = ROBOT_RIGHT_OFFSET; retval == 0 && i <= ROBOT_LEFT_OFFSET; i++) {
 		for (j = ROBOT_RIGHT_OFFSET; retval == 0 && j <= ROBOT_LEFT_OFFSET; j++) {
 			cs = getCell(CLEAN_MAP, x + i, y + j);
-			//if ((cs >= BLOCKED && cs <= BLOCKED_BOUNDARY) && cs != BLOCKED_OBS) {
-			if ((cs >= BLOCKED && cs <= BLOCKED_CLIFF) && cs != BLOCKED_OBS) {
+			//if ((cs >= BLOCKED && cs <= BLOCKED_BOUNDARY) && cs != BLOCKED_FW) {
+			if ((cs >= BLOCKED && cs <= BLOCKED_CLIFF) && cs != BLOCKED_FW) {
 				retval = 1;
 			}
 		}

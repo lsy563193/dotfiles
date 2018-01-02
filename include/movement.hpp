@@ -99,9 +99,7 @@ public:
 
 	bool is_near();
 	bool isRconStop();
-	bool isBoundaryStop();
 	bool isPassTargetStop();
-	bool isNearTarget();
 //	void setTarget();
 	void setBaseSpeed();
 
@@ -145,8 +143,6 @@ public:
 	}
 
 	bool sp_turn_over(const Cell_t &curr);
-
-	bool isBlockCleared();
 
 //	bool isClosure(uint8_t closure_cnt);
 
@@ -269,6 +265,7 @@ private:
 	uint8_t wheel_current_sum_cnt_;
 	uint8_t wheel_resume_cnt_;
 	uint8_t bumper_jam_state_;
+	uint8_t cliff_resume_cnt_;
 };
 
 class MovementCharge :public IMovement

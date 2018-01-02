@@ -11,7 +11,7 @@
 
 Points ACleanMode::passed_path_ = {};
 Points ACleanMode::plan_path_ = {};
-Point32_t ACleanMode::last_ = {};
+//Point32_t ACleanMode::last_ = {};
 //boost::shared_ptr<IMovement> ACleanMode::sp_movement_ = nullptr;
 
 ACleanMode::ACleanMode()
@@ -94,7 +94,7 @@ bool ACleanMode::isExit()
 bool ACleanMode::isFinish()
 {
 	if (state_i_ != st_init)
-		updatePath(*map_);
+		updatePath(clean_map_);
 
 	if (!(sp_action_ == nullptr || sp_action_->isFinish()))
 		return false;
@@ -104,7 +104,7 @@ bool ACleanMode::isFinish()
 
 	if (state_i_ != st_init)
 	{
-		map_->saveBlocks(action_i_ == ac_linear, state_i_ == st_clean);
+		clean_map_.saveBlocks(action_i_ == ac_linear, state_i_ == st_clean);
 		mapMark();
 
 	}
@@ -121,11 +121,6 @@ bool ACleanMode::isFinish()
 	return false;
 }
 
-bool is_equal_with_angle_(const Point32_t &l, const Point32_t &r)
-{
-	return  l.toCell() == r.toCell() && std::abs(ranged_angle(l.th - r.th)) < 200;
-}
-
 Point32_t ACleanMode::updatePath(GridMap& map)
 {
 	auto curr = updatePosition();
@@ -137,15 +132,13 @@ Point32_t ACleanMode::updatePath(GridMap& map)
 	if (passed_path_.empty())
 	{
 		passed_path_.push_back(curr);
-//		ROS_INFO("curr(%d,%d,%d)",curr.x, curr.y, curr.th);
+		last_ = curr;
 	}
-	else if (!is_equal_with_angle_(curr, last_))
+	else if (!curr.isCellAndAngleEqual(last_))
 	{
 		last_ = curr;
-		passed_path_.push_back(curr);
-		/*
 		auto loc = std::find_if(passed_path_.begin(), passed_path_.end(), [&](Point32_t it) {
-				return is_equal_with_angle_(curr, it);
+				return curr.isCellAndAngleEqual(it);
 		});
 		auto distance = std::distance(loc, passed_path_.end());
 		if (distance == 0) {
@@ -153,10 +146,9 @@ Point32_t ACleanMode::updatePath(GridMap& map)
 			passed_path_.push_back(curr);
 		}
 		if (distance > 5) {
-			passed_path_.clear();
-			g_wf_reach_count++;
+		ROS_INFO("reach_cleaned_count_(%d)",reach_cleaned_count_);
+			reach_cleaned_count_++;
 		}
-		*/
 		map.saveBlocks(action_i_ == ac_linear, state_i_ == st_clean);
 //		displayPath(passed_path_);
 	}
@@ -210,7 +202,7 @@ void ACleanMode::stateInit(int next)
 		PP_INFO();
 	}
 	if (next == st_clean) {
-		g_wf_reach_count = 0;
+		reach_cleaned_count_ = 0;
 		led.set_mode(LED_STEADY, LED_GREEN);
 		PP_INFO();
 	}
@@ -233,7 +225,7 @@ void ACleanMode::stateInit(int next)
 		ev.battery_home = false;
 
 		if (go_home_path_algorithm_ == nullptr)
-			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(*map_, home_points_));
+			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
 		ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_points_.size());
 
 	}
@@ -244,7 +236,7 @@ void ACleanMode::stateInit(int next)
 		led.set_mode(LED_FLASH, LED_GREEN, 300);
 	}
 	if (next == st_exploration) {
-		g_wf_reach_count = 0;
+		reach_cleaned_count_ = 0;
 		led.set_mode(LED_STEADY, LED_ORANGE);
 	}
 	if (next == st_go_to_charger) {
@@ -322,6 +314,7 @@ bool ACleanMode::setNextStateForGoHomePoint(GridMap &map)
 		new_dir_ = (MapDirection)plan_path_.front().th;
 		plan_path_.pop_front();
 		go_home_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
+		robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 	}
 	else
 	{

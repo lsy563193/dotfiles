@@ -10,16 +10,17 @@ MoveTypeFollowWall::MoveTypeFollowWall(bool is_left, bool is_trapped)
 {
 
 	auto p_clean_mode = (ACleanMode*)sp_mode_;
-	target_point_ = p_clean_mode->plan_path_.front();
+	if(! p_clean_mode->plan_path_.empty())
+		target_point_ = p_clean_mode->plan_path_.front();
 	is_left_ = is_left;
 	int16_t turn_angle;
 	PP_INFO();
 	if (!is_trapped)
-		turn_angle = get_turn_angle(true);
+		turn_angle = get_turn_angle(! p_clean_mode->plan_path_.empty());
 	else
 		turn_angle = 0;
 	PP_INFO();
-	turn_target_angle_ = ranged_angle(robot::instance()->getWorldPoseAngle() + turn_angle);
+	turn_target_angle_ = ranged_angle(getPosition().th + turn_angle);
 	movement_i_ = mm_turn;
 	PP_INFO();
 	sp_movement_.reset(new MovementTurn(turn_target_angle_, ROTATE_TOP_SPEED));
@@ -341,8 +342,8 @@ int16_t MoveTypeFollowWall::get_turn_angle(bool use_target_angle)
 		auto ev_turn_angle = get_turn_angle_by_ev();
 		ROS_INFO("%s %d: event_turn_angle(%d)", __FUNCTION__, __LINE__, ev_turn_angle);
 		if(use_target_angle) {
-			auto cur = getPosition();
-			auto tg_turn_angle = ranged_angle(course_to_dest(cur, target_point_) - robot::instance()->getWorldPoseAngle());
+			auto curr = getPosition();
+			auto tg_turn_angle = ranged_angle(course_to_dest(curr, target_point_) - curr.th);
 			ROS_INFO("%s %d: target_turn_angle(%d)", __FUNCTION__, __LINE__, tg_turn_angle);
 			turn_angle = (std::abs(ev_turn_angle) > std::abs(tg_turn_angle)) ? ev_turn_angle : tg_turn_angle;
 			ROS_INFO("%s %d: choose the big one(%d)", __FUNCTION__, __LINE__, turn_angle);

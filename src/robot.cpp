@@ -283,6 +283,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	world_pose_.setX(robot_x_);
 	world_pose_.setY(robot_y_);
 	world_pose_.setAngle(ranged_angle(robot_yaw_ * 1800 / M_PI));
+//	ROS_WARN("Position (%f, %f), angle: %f.", world_pose_.getX(), world_pose_.getY(), world_pose_.getAngle());
 #else
 	pose.setX(tmp_x_);
 	pose.setY(tmp_y_);
@@ -292,7 +293,6 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	//ROS_WARN("%s %d: Position diff(%f, %f), yaw diff: %f.", __FUNCTION__, __LINE__, tmp_x - odom_pose_x_, tmp_y - odom_pose_y_, tmp_yaw - odom_pose_yaw_);
 	//ROS_WARN("%s %d: Odom diff(%f, %f).", __FUNCTION__, __LINE__, odom_pose_x_ - msg->pose.pose.position.x, odom_pose_y_ - msg->pose.pose.position.y);
 	//ROS_WARN("%s %d: Correct  diff(%f, %f), yaw diff: %f.", __FUNCTION__, __LINE__, correct_x, correct_y, correct_yaw);
-//	ROS_WARN("Position (%f, %f), angle: %d.", odom_pose_x_, odom_pose_y_, gyro.get_angle());
 }
 
 void robot::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
@@ -496,7 +496,7 @@ void robot::visualizeMarkerInit()
 	clean_map_markers_.colors.clear();
 }
 
-void robot::setCleanMapMarkers(int8_t x, int8_t y, CellState type)
+void robot::setCleanMapMarkers(int16_t x, int16_t y, CellState type)
 {
 	m_points_.x = x * (float)CELL_SIZE / 1000;
 	m_points_.y = y * (float)CELL_SIZE / 1000;
@@ -516,7 +516,7 @@ void robot::setCleanMapMarkers(int8_t x, int8_t y, CellState type)
 			color_.b = 0.0;
 		}
 	}
-	else if (type == BLOCKED_OBS)
+	else if (type == BLOCKED_FW)
 	{
 		color_.r = 0.2;
 		color_.g = 0.1;
@@ -595,7 +595,7 @@ void robot::setCleanMapMarkers(int8_t x, int8_t y, CellState type)
 	clean_map_markers_.colors.push_back(color_);
 }
 
-void robot::pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path, Cell_t* cell_p)
+void robot::pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path)
 {
 	// temp_target is valid if only path is not empty.
 	if (path.empty())
@@ -620,8 +620,6 @@ void robot::pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path, Cel
 				robot::instance()->setCleanMapMarkers(x, y, TARGET_CLEAN);
 			else if (x == next.x && y == next.y)
 				robot::instance()->setCleanMapMarkers(x, y, TARGET);
-			else if (cell_p != nullptr && x == (*cell_p).x && y == (*cell_p).y)
-				robot::instance()->setCleanMapMarkers(x, y, TARGET_CLEAN);
 			else
 			{
 				cell_state = map.getCell(CLEAN_MAP, x, y);

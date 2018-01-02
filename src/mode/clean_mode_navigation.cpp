@@ -25,13 +25,12 @@ CleanModeNav::CleanModeNav()
 	moved_during_pause_ = false;
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
 	go_home_path_algorithm_.reset();
-	map_ = &nav_map;
-	map_->reset(CLEAN_MAP);
 }
 
 CleanModeNav::~CleanModeNav()
 {
 	IMoveType::sp_mode_ = nullptr;
+	event_manager_set_enable(false);
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
@@ -64,7 +63,7 @@ CleanModeNav::~CleanModeNav()
 		ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
 	}
 
-	auto cleaned_count = nav_map.getCleanedArea();
+	auto cleaned_count = clean_map_.getCleanedArea();
 	auto map_area = cleaned_count * (CELL_SIZE * 0.001) * (CELL_SIZE * 0.001);
 	ROS_INFO("%s %d: Cleaned area = \033[32m%.2fm2\033[0m, cleaning time: \033[32m%d(s) %.2f(min)\033[0m, cleaning speed: \033[32m%.2f(m2/min)\033[0m.",
 			 __FUNCTION__, __LINE__, map_area, robot_timer.getWorkTime(),
@@ -74,13 +73,12 @@ CleanModeNav::~CleanModeNav()
 bool CleanModeNav::mapMark()
 {
 	clean_path_algorithm_->displayCellPath(pointsGenerateCells(passed_path_));
-	robot::instance()->pubCleanMapMarkers(nav_map, pointsGenerateCells(plan_path_));
 //	if (action_i_ == ac_linear) {
 	PP_WARN();
-		nav_map.setCleaned(pointsGenerateCells(passed_path_));
+		clean_map_.setCleaned(pointsGenerateCells(passed_path_));
 //	}
 
-	nav_map.setBlocks();
+	clean_map_.setBlocks();
 	if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
 	{
 		ROS_ERROR("-------------------------------------------------------");
@@ -90,7 +88,7 @@ bool CleanModeNav::mapMark()
 		}),passed_path_.end());
 		clean_path_algorithm_->displayCellPath(pointsGenerateCells(passed_path_));
 		ROS_ERROR("-------------------------------------------------------");
-		setFollowWall(passed_path_);
+		clean_map_.setFollowWall(action_i_ == ac_follow_wall_left, passed_path_);
 	}
 	if (state_i_ == st_trapped)
 		fw_map.setFollowWall(action_i_ == ac_follow_wall_left,plan_path_);
@@ -104,9 +102,9 @@ bool CleanModeNav::mapMark()
 		}
 	}
 
-	nav_map.markRobot(CLEAN_MAP);
+	clean_map_.markRobot(CLEAN_MAP);
 	PP_INFO();
-	nav_map.print(CLEAN_MAP, getPosition().toCell().x, getPosition().toCell().y);
+	clean_map_.print(CLEAN_MAP, getPosition().toCell().x, getPosition().toCell().y);
 
 	passed_path_.clear();
 	return false;
@@ -314,21 +312,23 @@ bool CleanModeNav::setNextState()
 			PP_INFO();
 			old_dir_ = new_dir_;
 			ROS_ERROR("old_dir_(%d)", old_dir_);
-			if (clean_path_algorithm_->generatePath(nav_map, getPosition(), old_dir_, plan_path_))
+			if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_))
 			{
 				new_dir_ = (MapDirection)plan_path_.front().th;
 				ROS_ERROR("new_dir_(%d)", new_dir_);
 				plan_path_.pop_front();
 				clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
 				state_confirm = true;
+				robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 			}
 			else
 			{
-				if (clean_path_algorithm_->checkTrapped(nav_map, getPosition().toCell()))
+				if (clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell()))
 				{
 					// Robot trapped.
 					state_i_ = st_trapped;
 					stateInit(state_i_);
+					state_confirm = true;
 				}
 				else
 				{
@@ -347,7 +347,7 @@ bool CleanModeNav::setNextState()
 				state_i_ = st_null;
 				state_confirm = true;
 			}
-			else if (!clean_path_algorithm_->checkTrapped(nav_map, getPosition().toCell()))
+			else if (!clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell()))
 			{
 				ROS_WARN("%s %d: Escape trapped !", __FUNCTION__, __LINE__);
 				state_i_ = st_clean;
@@ -360,7 +360,7 @@ bool CleanModeNav::setNextState()
 		else if (state_i_ == st_go_home_point)
 		{
 			PP_INFO();
-			state_confirm = setNextStateForGoHomePoint(nav_map);
+			state_confirm = setNextStateForGoHomePoint(clean_map_);
 		}
 		else if (state_i_ == st_resume_low_battery_charge)
 		{
@@ -375,7 +375,7 @@ bool CleanModeNav::setNextState()
 			{
 				old_dir_ = new_dir_;
 				ROS_ERROR("old_dir_(%d)", old_dir_);
-				clean_path_algorithm_->generateShortestPath(nav_map, getPosition(), continue_point_, old_dir_, plan_path_);
+				clean_path_algorithm_->generateShortestPath(clean_map_, getPosition(), continue_point_, old_dir_, plan_path_);
 				if (!plan_path_.empty())
 				{
 					new_dir_ = (MapDirection)plan_path_.front().th;
@@ -383,6 +383,7 @@ bool CleanModeNav::setNextState()
 					plan_path_.pop_front();
 					clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
 					state_confirm = true;
+					robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 				}
 				else
 				{
@@ -574,7 +575,7 @@ bool CleanModeNav::isOverOriginLine()
 					 robot::instance()->getWorldPoseAngle(), target_angle);
 			return true;
 		}
-		else if (nav_map.isBlockCleaned(curr.toCell().x, curr.toCell().y)) // If robot covers a big block, stop.
+		else if (clean_map_.isBlockCleaned(curr.toCell().x, curr.toCell().y)) // If robot covers a big block, stop.
 		{
 			ROS_WARN("%s %d: Back to cleaned place, current(%d, %d), curr(%d, %d), p_mt->target_point_(%d, %d).",
 					 __FUNCTION__, __LINE__, curr.x, curr.y, curr.x, curr.y, p_mt->target_point_.x, p_mt->target_point_.y);
@@ -613,7 +614,7 @@ bool CleanModeNav::isNewLineReach()
 		// Robot has reached the target line center but still not reach target line limit.
 		// Check if the wall side has blocks on the costmap.
 		auto dx = (is_pos_dir ^ action_i_ == ac_follow_wall_left) ? +2 : -2;
-		if (nav_map.isBlocksAtY(s_curr_p.toCell().x + dx, s_curr_p.toCell().y)) {
+		if (clean_map_.isBlocksAtY(s_curr_p.toCell().x + dx, s_curr_p.toCell().y)) {
 			ROS_WARN("%s %d: Already has block at the wall side, start_p.y(%d), target.y(%d),curr_y(%d)",
 					 __FUNCTION__, __LINE__, p_mt->start_point_.toCell().y, p_mt->target_point_.toCell().y,
 					 s_curr_p.toCell().y);
@@ -629,7 +630,7 @@ bool CleanModeNav::isBlockCleared()
 	if (!passed_path_.empty())
 	{
 //		ROS_INFO("%s %d: passed_path_.back(%d %d)", __FUNCTION__, __LINE__, passed_path_.back().x, passed_path_.back().y);
-		return !nav_map.isBlockAccessible(passed_path_.back().x, passed_path_.back().y);
+		return !clean_map_.isBlockAccessible(passed_path_.back().toCell().x, passed_path_.back().toCell().y);
 	}
 
 	return false;
@@ -682,24 +683,4 @@ void CleanModeNav::enterPause()
 	state_i_ = st_pause;
 	mapMark();
 }
-
-uint8_t CleanModeNav::setFollowWall(const Points& path)
-{
-	uint8_t block_count = 0;
-	if (!path.empty())
-	{
-		std::string msg = "cell:";
-		auto dy = action_i_ == ac_follow_wall_left ? 2 : -2;
-		for(auto& point : path){
-			if(nav_map.getCell(CLEAN_MAP,point.toCell().x,point.toCell().y) != BLOCKED_RCON){
-				auto block_cell = point.getRelative(0, dy * CELL_SIZE).toCell();
-				msg += "(" + std::to_string(block_cell.x) + "," + std::to_string(block_cell.y) + ")";
-				nav_map.setCell(CLEAN_MAP, block_cell.x, block_cell.y, BLOCKED_CLIFF);
-				block_count++;
-			}
-		}
-		ROS_INFO("%s,%d: Current(%d, %d), \033[32m mapMark CLEAN_MAP %s\033[0m",__FUNCTION__, __LINE__, getPosition().toCell().x, getPosition().toCell().y, msg.c_str());
-	}
-}
-
 

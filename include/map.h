@@ -26,7 +26,7 @@ typedef enum {
   CLEANED = 1,
   SLAM_MAP_CLEANABLE = 1,
   BLOCKED = 2,
-  BLOCKED_OBS = 2,
+  BLOCKED_FW = 2,
   BLOCKED_BUMPER = 3,
   BLOCKED_CLIFF = 4,
   BLOCKED_RCON = 5,
@@ -290,10 +290,8 @@ private:
 
 };
 
-extern GridMap nav_map;
 /*wf_map is to record the wall follow path to caculate the isolate islands*/
 extern GridMap fw_map;
-extern GridMap exploration_map;
 extern GridMap slam_grid_map;
 extern GridMap decrease_map;
 
