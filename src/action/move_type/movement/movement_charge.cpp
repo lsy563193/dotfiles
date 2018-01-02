@@ -74,6 +74,8 @@ bool MovementCharge::isFinish()
 			turn_for_charger_ = false;
 		if (ros::Time::now().toSec() - start_turning_time_stamp_ > 3)
 			return true;
+		if (cliff.getStatus() == BLOCK_ALL)
+			return true;
 	}
 
 	return false;

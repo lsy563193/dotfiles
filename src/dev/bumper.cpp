@@ -7,7 +7,7 @@
 
 Bumper bumper;
 
-uint8_t Bumper::get_status(void)
+uint8_t Bumper::getStatus(void)
 {
 	uint8_t temp_status = 0;
 

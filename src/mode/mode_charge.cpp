@@ -97,7 +97,7 @@ void ModeCharge::remotePlan(bool state_now, bool state_last)
 			error.alarm();
 			speaker.play(VOICE_CANCEL_APPOINTMENT);
 		}
-		else if(cliff.get_status() & (BLOCK_LEFT|BLOCK_FRONT|BLOCK_RIGHT))
+		else if(cliff.getStatus() & (BLOCK_LEFT|BLOCK_FRONT|BLOCK_RIGHT))
 		{
 			ROS_WARN("%s %d: Plan not activated not valid because of robot lifted up.", __FUNCTION__, __LINE__);
 			speaker.play(VOICE_ERROR_LIFT_UP);

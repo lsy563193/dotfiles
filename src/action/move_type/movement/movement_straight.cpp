@@ -21,8 +21,8 @@ MovementStraight::~MovementStraight()
 
 bool MovementStraight::isFinish()
 {
-	return/* bumper.get_status() ||
-		   cliff.get_status() ||*/
+	return/* bumper.getStatus() ||
+		   cliff.getStatus() ||*/
 		   isTimeUp();
 }
 

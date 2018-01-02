@@ -67,7 +67,7 @@ public:
 
 	void resetStep(void);
 
-	void setDirBackward(void);
+	void setDirectionBackward(void);
 
 	void setDirectionForward(void);
 

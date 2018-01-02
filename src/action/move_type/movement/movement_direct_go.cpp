@@ -25,8 +25,8 @@ bool MovementDirectGo::isFinish()
 	return ev.remote_direction_forward ||
 		   ev.remote_direction_left ||
 		   ev.remote_direction_right ||
-		   bumper.get_status() ||
-		   cliff.get_status() ||
+			bumper.getStatus() ||
+			cliff.getStatus() ||
 		   ros::Time::now().toSec() - direct_go_time_stamp_ > 5;
 
 }

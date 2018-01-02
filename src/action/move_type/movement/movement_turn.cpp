@@ -15,7 +15,7 @@ MovementTurn::MovementTurn(int16_t angle, uint8_t max_speed) : speed_(ROTATE_LOW
 bool MovementTurn::isReach()
 {
 	if (abs(ranged_angle(target_angle_ - robot::instance()->getWorldPoseAngle())) < accurate_){
-			ROS_INFO("%s, %d: MovementTurn target_angle_: \033[32m%d\033[0m, current angle: \033[32m%d\033[0m, line is not found."
+			ROS_INFO("%s, %d: MovementTurn target_angle_: \033[32m%d\033[0m, current angle: \033[32m%d\033[0m."
 					, __FUNCTION__, __LINE__, target_angle_, robot::instance()->getWorldPoseAngle());
 		return true;
 	}

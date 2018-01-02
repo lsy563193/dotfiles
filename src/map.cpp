@@ -661,7 +661,7 @@ uint8_t GridMap::saveObs()
 
 uint8_t GridMap::saveCliff()
 {
-	auto cliff_trig = ev.cliff_triggered/*cliff.get_status()*/;
+	auto cliff_trig = ev.cliff_triggered/*cliff.getStatus()*/;
 	if (! cliff_trig)
 		// During self check.
 		return 0;
@@ -697,7 +697,7 @@ uint8_t GridMap::saveCliff()
 
 uint8_t GridMap::saveBumper(bool is_linear)
 {
-	auto bumper_trig = ev.bumper_triggered/*bumper.get_status()*/;
+	auto bumper_trig = ev.bumper_triggered/*bumper.getStatus()*/;
 //	ROS_INFO("%s,%d: Current(%d, %d), jam(%d), cnt(%d), trig(%d)",__FUNCTION__, __LINE__,get_curr_cell().x,get_curr_cell().y, ev.bumper_jam, g_bumper_cnt, bumper_trig);
 	if (!bumper_trig)
 		// During self check.

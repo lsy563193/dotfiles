@@ -219,7 +219,7 @@ int MoveTypeFollowWall::double_scale_10(double line_angle)
 
 bool MoveTypeFollowWall::_lidar_turn_angle(bool is_left, int16_t& turn_angle, int lidar_min, int lidar_max, int angle_min,int angle_max,double dis_limit)
 {
-//	ROS_INFO("%s,%d,bumper (\033[32m%d\033[0m)!",__FUNCTION__,__LINE__,bumper.get_status());
+//	ROS_INFO("%s,%d,bumper (\033[32m%d\033[0m)!",__FUNCTION__,__LINE__,bumper.getStatus());
 	double line_angle;
 	double distance;
 //	auto RESET_WALL_DIS = 100;
