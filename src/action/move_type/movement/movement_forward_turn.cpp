@@ -23,7 +23,7 @@ void MovementForwardTurn::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 bool MovementForwardTurn::isFinish()
 {
 		// Robot should move back for these cases.
-	ev.bumper_triggered = bumper.get_status();
+	ev.bumper_triggered = bumper.getStatus();
 	ev.cliff_triggered = cliff.getStatus();
 	ev.tilt_triggered = gyro.getTiltCheckingStatus();
 

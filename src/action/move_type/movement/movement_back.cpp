@@ -58,7 +58,7 @@ bool MovementBack::isFinish()
 	if(fabsf(distance) >= back_distance_)
 	{
 
-		bumper_jam_cnt_ = bumper.get_status() == 0 ? 0 : bumper_jam_cnt_+1 ;
+		bumper_jam_cnt_ = bumper.getStatus() == 0 ? 0 : bumper_jam_cnt_+1 ;
 		cliff_jam_cnt_ = cliff.getStatus() == 0 ? 0 : cliff_jam_cnt_+1 ;
 		ev.tilt_triggered = gyro.getTiltCheckingStatus();
 		//g_lidar_bumper_cnt = robot::instance()->getLidarBumper() == 0? 0:g_lidar_bumper_cnt+1;

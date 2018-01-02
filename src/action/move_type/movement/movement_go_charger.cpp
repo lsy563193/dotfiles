@@ -91,7 +91,7 @@ bool MovementGoToCharger::isSwitch()
 	}
 	if (gtc_state_now_ == gtc_away_from_charger_station)
 	{
-		if(bumper.get_status())
+		if(bumper.getStatus())
 		{
 			ROS_WARN("%s %d: Get bumper triggered.", __FUNCTION__, __LINE__);
 			gtc_state_now_ = gtc_turn_for_charger_signal_init;
@@ -133,7 +133,7 @@ bool MovementGoToCharger::isSwitch()
 			last_angle = current_angle;
 
 			// Handle for bumper and cliff
-			if(bumper.get_status())
+			if(bumper.getStatus())
 			{
 				ROS_WARN("%s %d: Get bumper triggered.", __FUNCTION__, __LINE__);
 				turn_angle_ = 0;
@@ -330,7 +330,7 @@ bool MovementGoToCharger::isSwitch()
 			gtc_state_now_ = gtc_turn_for_charger_signal_init;
 			return true;
 		}
-		if(bumper.get_status())
+		if(bumper.getStatus())
 		{
 			ROS_WARN("%s %d: Get bumper triggered.", __FUNCTION__, __LINE__);
 			around_charger_stub_dir = 1 - around_charger_stub_dir;
@@ -465,7 +465,7 @@ bool MovementGoToCharger::isSwitch()
 	}
 	if (gtc_state_now_ == gtc_check_position)
 	{
-		if(bumper.get_status())
+		if(bumper.getStatus())
 		{
 			ROS_WARN("%s %d: Get bumper triggered.", __FUNCTION__, __LINE__);
 			around_charger_stub_dir = 1 - around_charger_stub_dir;
@@ -538,7 +538,7 @@ bool MovementGoToCharger::isSwitch()
 	}
 	if (gtc_state_now_ == gtc_by_path)
 	{
-		if(bumper.get_status())
+		if(bumper.getStatus())
 		{
 			ROS_INFO("bumper in by path!");
 			if(!position_far)

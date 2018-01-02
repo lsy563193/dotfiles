@@ -12,7 +12,7 @@ int IMoveType::movement_i_ = mm_null;
 bool IMoveType::shouldMoveBack()
 {
 	// Robot should move back for these cases.
-	ev.bumper_triggered = bumper.get_status();
+	ev.bumper_triggered = bumper.getStatus();
 	ev.cliff_triggered = cliff.getStatus();
 	ev.tilt_triggered = gyro.getTiltCheckingStatus();
 

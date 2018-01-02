@@ -156,7 +156,7 @@ bool MovementExceptionResume::isFinish()
 	}
 	else if (ev.bumper_jam)
 	{
-		if (!bumper.get_status())
+		if (!bumper.getStatus())
 		{
 			ROS_WARN("%s %d: Bumper resume succeeded.", __FUNCTION__, __LINE__);
 			ev.bumper_jam = false;

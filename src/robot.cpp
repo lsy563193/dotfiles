@@ -154,7 +154,7 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 		scan_ctrl_.allow_publishing =
 						!(fabs(wheel.getLeftWheelActualSpeed() - wheel.getRightWheelActualSpeed()) > 0.1
 					|| (wheel.getLeftWheelActualSpeed() * wheel.getRightWheelActualSpeed() < 0)
-					|| bumper.get_status()
+					|| bumper.getStatus()
 					|| gyro.getTiltCheckingStatus()
 					|| abs(wheel.getLeftSpeedAfterPid() - wheel.getRightSpeedAfterPid()) > 100
 					|| wheel.getLeftSpeedAfterPid() * wheel.getRightSpeedAfterPid() < 0);

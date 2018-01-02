@@ -83,7 +83,7 @@ bool Error::clear(uint8_t code)
 		}
 		case ERROR_CODE_BUMPER:
 		{
-			if (bumper.get_status())
+			if (bumper.getStatus())
 			{
 				ROS_WARN("%s %d: Bumper still triggered.", __FUNCTION__, __LINE__);
 				cleared = false;
