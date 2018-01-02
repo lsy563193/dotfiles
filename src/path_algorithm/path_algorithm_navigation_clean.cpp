@@ -17,6 +17,7 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, co
 	{
 		plan_path = cells_generate_points(plan_path_cell);
 		// Congratulation!! plan_path is generated successfully!!
+		map.print(CLEAN_MAP, plan_path_cell.back().x, plan_path_cell.back().y);
 		return true;
 	}
 
@@ -59,6 +60,7 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, co
 
 	//Step 7: Optimize path for adjusting it away from obstacles..
 	optimizePath(map, shortest_path);
+	map.print(CLEAN_MAP, shortest_path.back().x, shortest_path.back().y);
 
 	//Step 8: Fill path with direction.
 	plan_path = cells_generate_points(shortest_path);

@@ -866,12 +866,12 @@ void GridMap::setCleaned(std::deque<Cell_t> cells)
 		return;
 	int8_t x_offset;
 
-		x_offset = (cells.front().x < cells.back().x) ? 1 : -1;//X_POS
-		Cell_t cell_front = {int16_t(cells.front().x - x_offset),cells.front().y};
-		Cell_t cell_back = {int16_t(cells.back().x + x_offset),cells.back().y};
-		cells.push_front(cell_front);
-		cells.push_back(cell_back);
-//		auto is_follow_y_min = x_offset == 1 ^ mt.is_left();
+	x_offset = (cells.front().x < cells.back().x) ? 1 : -1;//X_POS
+	Cell_t cell_front = {int16_t(cells.front().x - x_offset),cells.front().y};
+	Cell_t cell_back = {int16_t(cells.back().x + x_offset),cells.back().y};
+	cells.push_front(cell_front);
+	cells.push_back(cell_back);
+//	auto is_follow_y_min = x_offset == 1 ^ mt.is_left();
 
 	std::string msg = "Cell:\n";
 	for (const auto& cell :  cells)
