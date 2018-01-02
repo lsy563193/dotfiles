@@ -17,9 +17,9 @@ CleanModeFollowWall::CleanModeFollowWall()
 	IMoveType::sp_mode_ = this;
 	diff_timer_ = WALL_FOLLOW_TIME;
 	speaker.play(VOICE_CLEANING_WALL_FOLLOW, false);
-	clean_path_algorithm_.reset(new WFCleanPathAlgorithm);
-	go_home_path_algorithm_.reset(new GoHomePathAlgorithm(nav_map, home_points_));
 	map_ = &nav_map;
+	clean_path_algorithm_.reset(new WFCleanPathAlgorithm);
+	go_home_path_algorithm_.reset(new GoHomePathAlgorithm(*map_, home_points_));
 	map_->reset(CLEAN_MAP);
 }
 
@@ -44,7 +44,7 @@ CleanModeFollowWall::~CleanModeFollowWall()
 		ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
 	}
 
-//	auto cleaned_count = nav_map.getCleanedArea();
+//	auto cleaned_count = map_->getCleanedArea();
 //	auto map_area = cleaned_count * (CELL_SIZE * 0.001) * (CELL_SIZE * 0.001);
 //	ROS_INFO("%s %d: Cleaned area = \033[32m%.2fm2\033[0m, cleaning time: \033[32m%d(s) %.2f(min)\033[0m, cleaning speed: \033[32m%.2f(m2/min)\033[0m.",
 //			 __FUNCTION__, __LINE__, map_area, robot_timer.getWorkTime(),
@@ -118,14 +118,14 @@ bool CleanModeFollowWall::setNextState()
 	}
 	if(state_i_ == st_clean) {
 		if(reach_cleaned_count_ == 0) {
-			if (clean_path_algorithm_->generatePath(nav_map, getPosition(), old_dir_, plan_path_)) {
+			if (clean_path_algorithm_->generatePath(*map_, getPosition(), old_dir_, plan_path_)) {
 				plan_path_.pop_front();
 				ROS_ERROR("plan_path_.size(%d)", plan_path_.size());
 			}
 		}
 		else if(reach_cleaned_count_ <= 3){
 			if(wf_is_isolate(map_)) {
-				if (clean_path_algorithm_->generatePath(nav_map, getPosition(), old_dir_, plan_path_)) {
+				if (clean_path_algorithm_->generatePath(*map_, getPosition(), old_dir_, plan_path_)) {
 					plan_path_.pop_front();
 					ROS_ERROR("plan_path_.size(%d)", plan_path_.size());
 				}
@@ -273,7 +273,7 @@ bool CleanModeFollowWall::wf_is_isolate(GridMap* map) {
 			val = wf_path_find_shortest_path(map, curr.x, curr.y, out_cell.x, out_cell.y, 0);
 			val = (val < 0 || val == SCHAR_MAX) ? 0 : 1;
 	} else {
-		if (!nav_map.isBlockAccessible(0, 0)) {
+		if (!map_->isBlockAccessible(0, 0)) {
 			val = wf_path_find_shortest_path(map, curr.x, curr.y, 0, 0, 0);
 			if (val < 0 || val == SCHAR_MAX) {
 				/* Robot start position is blocked. */
@@ -467,7 +467,7 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(GridMap* map, int
 		ROS_WARN("%s, %d: target point (%d, %d) is not reachable(%d), return -2.", __FUNCTION__, __LINE__, end_x, end_y,
 				 map->getCell(COST_MAP, end_x, end_y));
 #if	DEBUG_COST_MAP
-		nav_map.print(COST_MAP, end_x, end_y);
+		map_->print(COST_MAP, end_x, end_y);
 #endif
 		return -2;
 	}

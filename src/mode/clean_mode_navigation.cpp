@@ -23,9 +23,9 @@ CleanModeNav::CleanModeNav()
 	has_aligned_and_open_slam_ = false;
 	paused_odom_angle_ = 0;
 	moved_during_pause_ = false;
+	map_ = &nav_map;
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
 	go_home_path_algorithm_.reset();
-	map_ = &nav_map;
 	map_->reset(CLEAN_MAP);
 }
 

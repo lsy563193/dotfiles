@@ -2,7 +2,6 @@
 
 GridMap nav_map;
 GridMap fw_map;
-GridMap exploration_map;
 GridMap slam_grid_map;
 GridMap decrease_map;
 

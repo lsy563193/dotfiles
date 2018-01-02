@@ -15,9 +15,9 @@ CleanModeExploration::CleanModeExploration()
 	ROS_INFO("%s %d: Entering Exporation mode\n=========================" , __FUNCTION__, __LINE__);
 	speaker.play(VOICE_EXPLORATION_START, false);
 	action_i_ = ac_open_gyro;
+	map_ = &nav_map;
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
 	IMoveType::sp_mode_ = this;
-	map_ = &exploration_map;
 	map_->reset(CLEAN_MAP);
 }
 
@@ -61,11 +61,11 @@ CleanModeExploration::~CleanModeExploration()
 bool CleanModeExploration::mapMark()
 {
 //	PP_WARN();
-	exploration_map.mergeFromSlamGridMap(slam_grid_map,true,true);
-	exploration_map.setExplorationCleaned();
-	exploration_map.setBlocks();
-	exploration_map.markRobot(CLEAN_MAP);
-	robot::instance()->pubCleanMapMarkers(exploration_map, pointsGenerateCells(plan_path_));
+	map_->mergeFromSlamGridMap(slam_grid_map,true,true);
+	map_->setExplorationCleaned();
+	map_->setBlocks();
+	map_->markRobot(CLEAN_MAP);
+	robot::instance()->pubCleanMapMarkers(*map_, pointsGenerateCells(plan_path_));
 	passed_path_.clear();
 	return false;
 }
@@ -157,7 +157,7 @@ bool CleanModeExploration::setNextState()
 				state_confirm = true;
 				action_i_ = ac_go_to_charger;
 			}
-			else if (clean_path_algorithm_->generatePath(exploration_map, getPosition(), old_dir_, plan_path_))
+			else if (clean_path_algorithm_->generatePath(*map_, getPosition(), old_dir_, plan_path_))
 			{
 				new_dir_ = (MapDirection)plan_path_.front().th;
 				ROS_WARN("new_dir_(%d)", new_dir_);
@@ -170,7 +170,7 @@ bool CleanModeExploration::setNextState()
 				ROS_WARN("%s,%d:exploration finish,did not find charge",__func__,__LINE__);
 				state_i_ = st_go_home_point;
 				if (go_home_path_algorithm_ == nullptr)
-					go_home_path_algorithm_.reset(new GoHomePathAlgorithm(exploration_map, home_points_));
+					go_home_path_algorithm_.reset(new GoHomePathAlgorithm(*map_, home_points_));
 				stateInit(state_i_);
 				action_i_ = ac_null;
 			}
@@ -178,7 +178,7 @@ bool CleanModeExploration::setNextState()
 		else if(state_i_ == st_go_home_point)
 		{
 			PP_INFO();
-			state_confirm = setNextStateForGoHomePoint(exploration_map);
+			state_confirm = setNextStateForGoHomePoint(*map_);
 		}
 		else if (state_i_ == st_go_to_charger)
 		{
@@ -257,6 +257,6 @@ void CleanModeExploration::chargeDetect(bool state_now, bool state_last) {
 void CleanModeExploration::printMapAndPath()
 {
 	clean_path_algorithm_->displayCellPath(pointsGenerateCells(passed_path_));
-	exploration_map.print(CLEAN_MAP,getPosition().toCell().x,getPosition().toCell().y);
+	map_->print(CLEAN_MAP,getPosition().toCell().x,getPosition().toCell().y);
 }
 
