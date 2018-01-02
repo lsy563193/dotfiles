@@ -284,7 +284,7 @@ void ModeIdle::rcon(bool state_now, bool state_last)
 	else
 	{
 		/*---received charger signal continuously, check if more than 3 mins---*/
-		if(time_for_now_ - first_time_seen_charger_ > 3)
+		if(time_for_now_ - first_time_seen_charger_ > 180)
 			ev.rcon_triggered = c_rcon.getAll();
 	}
 	last_time_seen_charger_ = time_for_now_;
