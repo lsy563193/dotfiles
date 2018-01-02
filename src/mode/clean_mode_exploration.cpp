@@ -64,7 +64,6 @@ bool CleanModeExploration::mapMark()
 	clean_map_.setExplorationCleaned();
 	clean_map_.setBlocks();
 	clean_map_.markRobot(CLEAN_MAP);
-	robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 	passed_path_.clear();
 	return false;
 }
@@ -163,6 +162,7 @@ bool CleanModeExploration::setNextState()
 				plan_path_.pop_front();
 				clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
 				state_confirm = true;
+				robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 			}
 			else
 			{

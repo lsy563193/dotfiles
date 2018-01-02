@@ -497,7 +497,7 @@ void robot::visualizeMarkerInit()
 	clean_map_markers_.colors.clear();
 }
 
-void robot::setCleanMapMarkers(int8_t x, int8_t y, CellState type)
+void robot::setCleanMapMarkers(int16_t x, int16_t y, CellState type)
 {
 	m_points_.x = x * (float)CELL_SIZE / 1000;
 	m_points_.y = y * (float)CELL_SIZE / 1000;
@@ -596,7 +596,7 @@ void robot::setCleanMapMarkers(int8_t x, int8_t y, CellState type)
 	clean_map_markers_.colors.push_back(color_);
 }
 
-void robot::pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path, Cell_t* cell_p)
+void robot::pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path)
 {
 	// temp_target is valid if only path is not empty.
 	if (path.empty())
@@ -621,8 +621,6 @@ void robot::pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path, Cel
 				robot::instance()->setCleanMapMarkers(x, y, TARGET_CLEAN);
 			else if (x == next.x && y == next.y)
 				robot::instance()->setCleanMapMarkers(x, y, TARGET);
-			else if (cell_p != nullptr && x == (*cell_p).x && y == (*cell_p).y)
-				robot::instance()->setCleanMapMarkers(x, y, TARGET_CLEAN);
 			else
 			{
 				cell_state = map.getCell(CLEAN_MAP, x, y);

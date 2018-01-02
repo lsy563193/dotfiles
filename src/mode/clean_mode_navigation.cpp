@@ -73,7 +73,6 @@ CleanModeNav::~CleanModeNav()
 bool CleanModeNav::mapMark()
 {
 	clean_path_algorithm_->displayCellPath(pointsGenerateCells(passed_path_));
-	robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 //	if (action_i_ == ac_linear) {
 	PP_WARN();
 		clean_map_.setCleaned(pointsGenerateCells(passed_path_));
@@ -320,6 +319,7 @@ bool CleanModeNav::setNextState()
 				plan_path_.pop_front();
 				clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
 				state_confirm = true;
+				robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 			}
 			else
 			{
@@ -383,6 +383,7 @@ bool CleanModeNav::setNextState()
 					plan_path_.pop_front();
 					clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
 					state_confirm = true;
+					robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 				}
 				else
 				{
