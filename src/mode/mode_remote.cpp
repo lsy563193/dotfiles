@@ -91,7 +91,7 @@ IAction* ModeRemote::getNextAction()
 
 	if (action_i_ == ac_movement_stay)
 	{
-		if (bumper.get_status() || cliff.get_status())
+		if (bumper.get_status() || cliff.getStatus())
 		{
 			action_i_ = ac_back;
 			return new MovementBack(0.01, BACK_MAX_SPEED);
@@ -118,7 +118,7 @@ IAction* ModeRemote::getNextAction()
 
 	if (action_i_ == ac_movement_direct_go || action_i_ == ac_turn)
 	{
-		if (bumper.get_status() || cliff.get_status())
+		if (bumper.get_status() || cliff.getStatus())
 		{
 			PP_INFO();
 			action_i_ = ac_back;
@@ -136,7 +136,7 @@ IAction* ModeRemote::getNextAction()
 
 	if (action_i_ == ac_back)
 	{
-		if (bumper.get_status() || cliff.get_status())
+		if (bumper.get_status() || cliff.getStatus())
 		{
 			action_i_ = ac_back;
 			return new MovementBack(0.01, BACK_MAX_SPEED);

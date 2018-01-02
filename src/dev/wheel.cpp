@@ -37,7 +37,7 @@ void Wheel::resetStep(void)
 	left_wheel_step_ = 0;
 }
 
-void Wheel::setDirBackward(void)
+void Wheel::setDirectionBackward(void)
 {
 	left_direction_ = DIRECTION_BACKWARD;
 	right_direction_ = DIRECTION_BACKWARD;

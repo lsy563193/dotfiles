@@ -46,7 +46,7 @@ void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_sp
 	}
 	else if (ev.cliff_jam)
 	{
-		wheel.setDirBackward();
+		wheel.setDirectionBackward();
 		left_speed = right_speed = 18;
 	}
 	else if (ev.bumper_jam)
@@ -58,7 +58,7 @@ void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_sp
 			case 3:
 			{
 				// Quickly move back for a distance.
-				wheel.setDirBackward();
+				wheel.setDirectionBackward();
 				left_speed = right_speed = RUN_TOP_SPEED;
 				break;
 			}
@@ -80,7 +80,7 @@ void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_sp
 	}
 	else if (ev.lidar_stuck)
 	{
-		wheel.setDirBackward();
+		wheel.setDirectionBackward();
 		left_speed = right_speed = 2;
 	}
 
@@ -175,7 +175,7 @@ bool MovementExceptionResume::isFinish()
 				{
 					wheel.stop();
 					// If cliff jam during bumper self resume.
-					if (cliff.get_status() && ++g_cliff_cnt > 2)
+					if (cliff.getStatus() && ++g_cliff_cnt > 2)
 					{
 						ev.cliff_jam = true;
 						wheel_resume_cnt_ = 0;
@@ -197,7 +197,7 @@ bool MovementExceptionResume::isFinish()
 				ROS_DEBUG("%s %d: robot::instance()->getWorldPoseAngle(): %d", __FUNCTION__, __LINE__,
 						  robot::instance()->getWorldPoseAngle());
 				// If cliff jam during bumper self resume.
-				if (cliff.get_status() && ++g_cliff_cnt > 2)
+				if (cliff.getStatus() && ++g_cliff_cnt > 2)
 				{
 					ev.cliff_jam = true;
 					wheel_resume_cnt_ = 0;

@@ -74,7 +74,7 @@ bool Error::clear(uint8_t code)
 	{
 		case ERROR_CODE_CLIFF:
 		{
-			if (cliff.get_status())
+			if (cliff.getStatus())
 			{
 				ROS_WARN("%s %d: Cliff still triggered.", __FUNCTION__, __LINE__);
 				cleared = false;

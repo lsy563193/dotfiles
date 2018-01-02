@@ -12,7 +12,7 @@ ActionBackFromCharger::ActionBackFromCharger()
 
 	vacuum.setMode(Vac_Normal, false);
 	brush.normalOperate();
-	wheel.setDirBackward();
+	wheel.setDirectionBackward();
 	charger_pose.setX(odom.getX());
 	charger_pose.setY(odom.getY());
 };

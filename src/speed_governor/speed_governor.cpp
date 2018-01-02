@@ -18,7 +18,7 @@ void SpeedGovernorBack::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 	speed_++;
 	speed_ = (speed_ > BACK_MAX_SPEED) ? BACK_MAX_SPEED : speed_;
 	left_speed = right_speed = speed_;
-	wheel.setDirBackward();
+	wheel.setDirectionBackward();
 }
 
 SpeedGovernorTurn::SpeedGovernorTurn(int16_t target_angle)

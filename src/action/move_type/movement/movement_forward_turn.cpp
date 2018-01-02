@@ -24,7 +24,7 @@ bool MovementForwardTurn::isFinish()
 {
 		// Robot should move back for these cases.
 	ev.bumper_triggered = bumper.get_status();
-	ev.cliff_triggered = cliff.get_status();
+	ev.cliff_triggered = cliff.getStatus();
 	ev.tilt_triggered = gyro.getTiltCheckingStatus();
 
 	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip)

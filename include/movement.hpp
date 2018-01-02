@@ -232,7 +232,7 @@ private:
 	int16_t turn_angle_;
 	float back_distance_;
 	uint16_t no_signal_cnt;
-	uint8_t move_away_from_charger_cnt;
+	double move_away_from_charger_time_stamp_;
 	uint32_t receive_code;
 	// This variables is for robot turning.
 	float current_angle;
