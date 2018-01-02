@@ -517,7 +517,7 @@ void robot::setCleanMapMarkers(int8_t x, int8_t y, CellState type)
 			color_.b = 0.0;
 		}
 	}
-	else if (type == BLOCKED_OBS)
+	else if (type == BLOCKED_FW)
 	{
 		color_.r = 0.2;
 		color_.g = 0.1;
