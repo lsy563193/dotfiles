@@ -290,7 +290,6 @@ private:
 
 };
 
-extern GridMap nav_map;
 /*wf_map is to record the wall follow path to caculate the isolate islands*/
 extern GridMap fw_map;
 extern GridMap slam_grid_map;

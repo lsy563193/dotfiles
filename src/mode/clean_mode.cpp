@@ -94,7 +94,7 @@ bool ACleanMode::isExit()
 bool ACleanMode::isFinish()
 {
 	if (state_i_ != st_init)
-		updatePath(*map_);
+		updatePath(clean_map_);
 
 	if (!(sp_action_ == nullptr || sp_action_->isFinish()))
 		return false;
@@ -104,7 +104,7 @@ bool ACleanMode::isFinish()
 
 	if (state_i_ != st_init)
 	{
-		map_->saveBlocks(action_i_ == ac_linear, state_i_ == st_clean);
+		clean_map_.saveBlocks(action_i_ == ac_linear, state_i_ == st_clean);
 		mapMark();
 
 	}
@@ -225,7 +225,7 @@ void ACleanMode::stateInit(int next)
 		ev.battery_home = false;
 
 		if (go_home_path_algorithm_ == nullptr)
-			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(*map_, home_points_));
+			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
 		ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_points_.size());
 
 	}

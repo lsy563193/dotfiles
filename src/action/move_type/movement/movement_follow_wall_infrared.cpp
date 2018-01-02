@@ -46,12 +46,6 @@ bool IFollowWall::isIsolate()
 //	return false;
 //}
 
-bool IFollowWall::isBlockCleared()
-{
-	return !nav_map.isBlockAccessible(getPosition().toCell().x, getPosition().toCell().y);
-
-}
-
 void IFollowWall::setTarget()
 {
 	// No need to set target here, it is set in path_next().

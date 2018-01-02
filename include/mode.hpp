@@ -251,7 +251,7 @@ public:
 
 	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
 	boost::shared_ptr<APathAlgorithm> go_home_path_algorithm_{};
-	GridMap *map_;
+	GridMap clean_map_;
 	Point32_t charger_pos_{};//charger postion
 protected:
 
@@ -395,12 +395,12 @@ public:
 //
 //	void chargeDetect(bool state_now, bool state_last);
 
-	int16_t wf_path_find_shortest_path(GridMap* map, int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound);
+	int16_t wf_path_find_shortest_path(GridMap& map, int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound);
 
-	int16_t wf_path_find_shortest_path_ranged(GridMap* map, int16_t curr_x, int16_t curr_y, int16_t end_x, int16_t end_y, uint8_t bound,
+	int16_t wf_path_find_shortest_path_ranged(GridMap& map, int16_t curr_x, int16_t curr_y, int16_t end_x, int16_t end_y, uint8_t bound,
 																						int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max,
 																						bool used_unknown);
-	bool wf_is_isolate(GridMap* map);
+	bool wf_is_isolate(GridMap& map);
 private:
 	uint32_t diff_timer_;
 protected:

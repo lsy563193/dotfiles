@@ -1,6 +1,5 @@
 #include "pp.h"
 
-GridMap nav_map;
 GridMap fw_map;
 GridMap slam_grid_map;
 GridMap decrease_map;
