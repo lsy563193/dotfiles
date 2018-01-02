@@ -265,6 +265,7 @@ private:
 	uint8_t wheel_current_sum_cnt_;
 	uint8_t wheel_resume_cnt_;
 	uint8_t bumper_jam_state_;
+	uint8_t cliff_resume_cnt_;
 };
 
 class MovementCharge :public IMovement

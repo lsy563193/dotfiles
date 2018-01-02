@@ -10,19 +10,18 @@
 
 MovementExceptionResume::MovementExceptionResume()
 {
-	PP_INFO();
-	if (ev.bumper_jam || ev.cliff_jam || ev.lidar_stuck)
-	{
-		// Save current position for moving back detection.
-		s_pos_x = odom.getX();
-		s_pos_y = odom.getY();
-	}
+	ROS_INFO("%s %d: Entering movement exception resume.", __FUNCTION__, __LINE__);
+
+	// Save current position for moving back detection.
+	s_pos_x = odom.getX();
+	s_pos_y = odom.getY();
 
 	wheel_current_sum_ = 0;
 	wheel_current_sum_cnt_ = 0;
 	wheel_resume_cnt_ = 0;
 	resume_wheel_start_time_ = ros::Time::now().toSec();
 	bumper_jam_state_ = 1;
+	cliff_resume_cnt_ = 1;
 
 }
 
@@ -154,68 +153,99 @@ bool MovementExceptionResume::isFinish()
 			wheel_current_sum_cnt_++;
 		}
 	}
+	else if (ev.cliff_jam)
+	{
+		if (!cliff.getStatus())
+		{
+			ROS_INFO("%s %d: Cliff resume succeeded.", __FUNCTION__, __LINE__);
+			ev.cliff_jam = false;
+			ev.cliff_triggered = 0;
+			g_cliff_cnt = 0;
+		}
+		else if (cliff_resume_cnt_ < 5)
+		{
+			float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getX(), odom.getY());
+			if (fabsf(distance) > 0.02f)
+			{
+				wheel.stop();
+				cliff_resume_cnt_++;
+				ROS_WARN("%s %d: Try cliff resume for the %d time.", __FUNCTION__, __LINE__, cliff_resume_cnt_);
+				s_pos_x = odom.getX();
+				s_pos_y = odom.getY();
+			}
+		}
+		else
+		{
+			ROS_WARN("%s %d: Cliff jamed.", __FUNCTION__, __LINE__);
+			ev.fatal_quit = true;
+			error.set(ERROR_CODE_CLIFF);
+		}
+	}
 	else if (ev.bumper_jam)
 	{
 		if (!bumper.getStatus())
 		{
-			ROS_WARN("%s %d: Bumper resume succeeded.", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: Bumper resume succeeded.", __FUNCTION__, __LINE__);
 			ev.bumper_jam = false;
 			ev.bumper_triggered = 0;
 			g_bumper_cnt = 0;
 		}
-
-		switch (bumper_jam_state_)
+		else
 		{
-			case 1: // Move back for the first time.
-			case 2: // Move back for the second time.
-			case 3: // Move back for the third time.
+			switch (bumper_jam_state_)
 			{
-				float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getX(), odom.getY());
-				if (fabsf(distance) > 0.05f)
+				case 1: // Move back for the first time.
+				case 2: // Move back for the second time.
+				case 3: // Move back for the third time.
 				{
-					wheel.stop();
+					float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getX(), odom.getY());
+					if (fabsf(distance) > 0.05f)
+					{
+						wheel.stop();
+						// If cliff jam during bumper self resume.
+						if (cliff.getStatus() && ++g_cliff_cnt > 2)
+						{
+							ev.cliff_jam = true;
+							bumper_jam_state_ = 1;
+							wheel_resume_cnt_ = 0;
+						} else
+						{
+							bumper_jam_state_++;
+							ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state_);
+							if (bumper_jam_state_ == 4)
+								resume_wheel_start_time_ = ros::Time::now().toSec();
+						}
+						s_pos_x = odom.getX();
+						s_pos_y = odom.getY();
+					}
+					break;
+				}
+				case 4:
+				case 5:
+				{
+					ROS_DEBUG("%s %d: robot::instance()->getWorldPoseAngle(): %d", __FUNCTION__, __LINE__,
+							  robot::instance()->getWorldPoseAngle());
 					// If cliff jam during bumper self resume.
 					if (cliff.getStatus() && ++g_cliff_cnt > 2)
 					{
 						ev.cliff_jam = true;
+						bumper_jam_state_ = 1;
 						wheel_resume_cnt_ = 0;
-					} else
+					} else if (ros::Time::now().toSec() - resume_wheel_start_time_ >= 2)
 					{
 						bumper_jam_state_++;
+						resume_wheel_start_time_ = ros::Time::now().toSec();
 						ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state_);
-						if (bumper_jam_state_ == 4)
-							resume_wheel_start_time_ = ros::Time::now().toSec();
 					}
-					s_pos_x = odom.getX();
-					s_pos_y = odom.getY();
+					break;
 				}
-				break;
-			}
-			case 4:
-			case 5:
-			{
-				ROS_DEBUG("%s %d: robot::instance()->getWorldPoseAngle(): %d", __FUNCTION__, __LINE__,
-						  robot::instance()->getWorldPoseAngle());
-				// If cliff jam during bumper self resume.
-				if (cliff.getStatus() && ++g_cliff_cnt > 2)
+				default: //case 6:
 				{
-					ev.cliff_jam = true;
-					wheel_resume_cnt_ = 0;
+					ROS_WARN("%s %d: Bumper jamed.", __FUNCTION__, __LINE__);
+					ev.fatal_quit = true;
+					error.set(ERROR_CODE_BUMPER);
+					break;
 				}
-				else if (ros::Time::now().toSec() - resume_wheel_start_time_ >= 2)
-				{
-					bumper_jam_state_++;
-					resume_wheel_start_time_ = ros::Time::now().toSec();
-					ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state_);
-				}
-				break;
-			}
-			default: //case 6:
-			{
-				ROS_WARN("%s %d: Bumper jamed.", __FUNCTION__, __LINE__);
-				ev.fatal_quit = true;
-				error.set(ERROR_CODE_BUMPER);
-				break;
 			}
 		}
 	}
