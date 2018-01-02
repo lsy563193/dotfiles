@@ -242,7 +242,7 @@ public:
 	virtual bool ActionFollowWallisFinish();
 	void setRconPos(Point32_t pos);
 	Point32_t updatePath(GridMap& map);
-	int g_wf_reach_count{};
+	int reach_cleaned_count{};
 	static Points passed_path_;
 	static Points plan_path_;
 
@@ -262,7 +262,7 @@ protected:
 //	std::vector<Cell_t> temp_fw_cells;
 	Points home_points_;
 	Points g_homes;
-	static Point32_t last_;
+	Point32_t last_;
 
 	int state_i_{st_clean};
 	enum {
@@ -364,20 +364,44 @@ public:
 
 };
 
-class CleanModeFollowWall:public ACleanMode
-{
+class CleanModeFollowWall:public ACleanMode {
 public:
 	CleanModeFollowWall();
-	~CleanModeFollowWall() override ;
 
-	bool setNextAction() override ;
-	bool setNextState() override ;
+	~CleanModeFollowWall() override;
+
+	bool ActionFollowWallisFinish() override;
+
+	bool setNextAction() override;
+
+	bool setNextState() override;
+
 	bool mapMark() override;
 
+	void keyClean(bool state_now, bool state_last);
+
+//	void overCurrentWheelLeft(bool state_now, bool state_last);
+//
+//	void overCurrentWheelRight(bool state_now, bool state_last);
+//
+	void remoteClean(bool state_now, bool state_last);
+//
+//	void remoteHome(bool state_now, bool state_last);
+//
+//	void remoteDirectionLeft(bool state_now, bool state_last);
+//
+//	void cliffAll(bool state_now, bool state_last);
+//
+//	void batteryHome(bool state_now, bool state_last);
+//
+//	void chargeDetect(bool state_now, bool state_last);
 
 	int16_t wf_path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound);
-	int16_t wf_path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t end_x, int16_t end_y, uint8_t bound, int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max,bool used_unknown);
-//	bool wf_is_isolate();
+
+	int16_t wf_path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t end_x, int16_t end_y, uint8_t bound,
+																						int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max,
+																						bool used_unknown);
+	bool wf_is_isolate();
 private:
 	uint32_t diff_timer_;
 protected:

@@ -11,7 +11,7 @@
 
 Points ACleanMode::passed_path_ = {};
 Points ACleanMode::plan_path_ = {};
-Point32_t ACleanMode::last_ = {};
+//Point32_t ACleanMode::last_ = {};
 //boost::shared_ptr<IMovement> ACleanMode::sp_movement_ = nullptr;
 
 ACleanMode::ACleanMode()
@@ -121,11 +121,6 @@ bool ACleanMode::isFinish()
 	return false;
 }
 
-bool is_equal_with_angle_(const Point32_t &l, const Point32_t &r)
-{
-	return  l.toCell() == r.toCell() && std::abs(ranged_angle(l.th - r.th)) < 200;
-}
-
 Point32_t ACleanMode::updatePath(GridMap& map)
 {
 	auto curr = updatePosition();
@@ -137,26 +132,24 @@ Point32_t ACleanMode::updatePath(GridMap& map)
 	if (passed_path_.empty())
 	{
 		passed_path_.push_back(curr);
-//		ROS_INFO("curr(%d,%d,%d)",curr.x, curr.y, curr.th);
+		last_ = curr;
 	}
-	else if (!is_equal_with_angle_(curr, last_))
+	else if (!curr.isCellAndAngleEqual(last_))
 	{
 		last_ = curr;
-		passed_path_.push_back(curr);
-		/*
 		auto loc = std::find_if(passed_path_.begin(), passed_path_.end(), [&](Point32_t it) {
-				return is_equal_with_angle_(curr, it);
+				return curr.isCellAndAngleEqual(it);
 		});
 		auto distance = std::distance(loc, passed_path_.end());
 		if (distance == 0) {
 			ROS_INFO("curr(%d,%d,%d)",curr.toCell().x, curr.toCell().y, curr.th);
 			passed_path_.push_back(curr);
 		}
+//		ROS_INFO("distance(%d)",distance);
 		if (distance > 5) {
 			passed_path_.clear();
-			g_wf_reach_count++;
+			reach_cleaned_count++;
 		}
-		*/
 		map.saveBlocks(action_i_ == ac_linear, state_i_ == st_clean);
 //		displayPath(passed_path_);
 	}
@@ -210,7 +203,7 @@ void ACleanMode::stateInit(int next)
 		PP_INFO();
 	}
 	if (next == st_clean) {
-		g_wf_reach_count = 0;
+		reach_cleaned_count = 0;
 		led.set_mode(LED_STEADY, LED_GREEN);
 		PP_INFO();
 	}
@@ -244,7 +237,7 @@ void ACleanMode::stateInit(int next)
 		led.set_mode(LED_FLASH, LED_GREEN, 300);
 	}
 	if (next == st_exploration) {
-		g_wf_reach_count = 0;
+		reach_cleaned_count = 0;
 		led.set_mode(LED_STEADY, LED_ORANGE);
 	}
 	if (next == st_go_to_charger) {

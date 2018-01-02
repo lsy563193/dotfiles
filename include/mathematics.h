@@ -378,6 +378,21 @@ public:
     return {countToCell(x), countToCell(y)};
   }
 
+	bool isCellEqual(const Point32_t &r) const
+	{
+		return  toCell() == r.toCell();
+	}
+
+	bool isAngleNear(const Point32_t &r) const
+	{
+		return  std::abs(ranged_angle(th - r.th)) < 200;
+	}
+
+	bool isCellAndAngleEqual(const Point32_t &r) const
+	{
+		return  isCellEqual(r) && isAngleNear(r);
+	}
+
   int16_t th{};
 private:
   int16_t countToCell(int32_t count) const {

@@ -11,6 +11,8 @@ Cells path_points;
 
 CleanModeFollowWall::CleanModeFollowWall()
 {
+	event_manager_register_handler(this);
+	event_manager_set_enable(true);
 	ROS_INFO("%s %d: Entering Follow wall mode\n=========================" , __FUNCTION__, __LINE__);
 	IMoveType::sp_mode_ = this;
 	diff_timer_ = WALL_FOLLOW_TIME;
@@ -59,10 +61,17 @@ bool CleanModeFollowWall::setNextAction()
 	if (state_i_ == st_init)
 		return ACleanMode::setNextAction();
 	else {
-		ROS_WARN("%s,%d: mt_follow_wall_left", __FUNCTION__, __LINE__);
-		action_i_ = ac_follow_wall_left;
-		genNextAction();
-		ROS_WARN("%s,%d: mt_follow_wall_left", __FUNCTION__, __LINE__);
+		if(plan_path_.empty())
+		{
+			ROS_WARN("%s,%d: mt_follow_wall_left", __FUNCTION__, __LINE__);
+			action_i_ = ac_follow_wall_left;
+			genNextAction();
+			ROS_WARN("%s,%d: mt_follow_wall_left", __FUNCTION__, __LINE__);
+		}else{
+			action_i_ = ac_linear;
+			genNextAction();
+			ROS_WARN("%s,%d: ac_linear", __FUNCTION__, __LINE__);
+		}
 	}
 
 	return true;
@@ -87,64 +96,174 @@ bool CleanModeFollowWall::setNextState()
 	{
 			if(action_i_ == ac_open_slam)
 		state_i_ = st_clean;
-//	if (clean_path_algorithm_->generatePath(nav_map, getPosition(), old_dir_, plan_path_))
-//	{
-//		plan_path_.pop_front();
-//	}
 	}
-	if(state_i_ == st_clean)
-	{
-//	if(action_i_ == ac_open_slam)
-//	state_i_ = st_clean;
-//	if (clean_path_algorithm_->generatePath(nav_map, getPosition(), old_dir_, plan_path_))
-//	{
-//		plan_path_.pop_front();
-//	}
+	if(state_i_ == st_clean) {
+		if(wf_is_isolate()) {
+			if (clean_path_algorithm_->generatePath(nav_map, getPosition(), old_dir_, plan_path_)) {
+				plan_path_.pop_front();
+				ROS_ERROR("plan_path_.size(%d)", plan_path_.size());
+			}
+		}
 	}
 	return true;
 }
 
-//bool CleanModeFollowWall::wf_is_isolate() {
-////	path_update_cell_history();
-//	int16_t	val = 0;
-//	uint16_t i = 0;
-//	int16_t x_min_forward, x_max_forward, y_min, y_max;
-//	fw_map.getMapRange(CLEAN_MAP, &x_min_forward, &x_max_forward, &y_min, &y_max);
-//	Cell_t out_cell {int16_t(x_max_forward + 1),int16_t(y_max + 1)};
+void CleanModeFollowWall::keyClean(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: key clean.", __FUNCTION__, __LINE__);
+
+	beeper.play_for_command(VALID);
+	wheel.stop();
+
+	// Wait for key released.
+	bool long_press = false;
+	while (key.getPressStatus())
+	{
+		if (!long_press && key.getPressTime() > 3)
+		{
+			ROS_WARN("%s %d: key clean long pressed.", __FUNCTION__, __LINE__);
+			beeper.play_for_command(VALID);
+			long_press = true;
+		}
+		usleep(20000);
+	}
+
+	if (long_press)
+		ev.key_long_pressed = true;
+	else
+		ev.key_clean_pressed = true;
+	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
+
+	key.resetTriggerStatus();
+}
 //
-//	fw_map.markRobot(CLEAN_MAP);//note: To clear the obstacle when check isolated, please don't remove it!
-//	auto curr = getPosition();
-//	fw_map.print(CLEAN_MAP, curr.x, curr.y);
-//	ROS_WARN("%s %d: curr(%d,%d),out(%d,%d)", __FUNCTION__, __LINE__, curr.x, curr.y,out_cell.x, out_cell.y);
-//
-//	if ( out_cell != g_zero_home){
-//			val = wf_path_find_shortest_path(curr.x, curr.y, out_cell.x, out_cell.y, 0);
-//			val = (val < 0 || val == SCHAR_MAX) ? 0 : 1;
-//	} else {
-//		if (!nav_map.isBlockAccessible(0, 0)) {
-//			val = wf_path_find_shortest_path(curr.x, curr.y, 0, 0, 0);
-//			if (val < 0 || val == SCHAR_MAX) {
-//				/* Robot start position is blocked. */
-//				val = wf_path_find_shortest_path(curr.x, curr.y, 0, 0, 0);
-//
-//				if (val < 0 || val == SCHAR_MAX) {
-//					val = 0;
-//				} else {
-//					val = 1;
-//				};
-//			} else {
-//				val = 1;
-//			}
-//		} else {
-//			val = wf_path_find_shortest_path(curr.x, curr.y, 0, 0, 0);
-//			if (val < 0 || val == SCHAR_MAX)
-//				val = 0;
-//			else
-//				val = 1;
-//		}
-//	}
-//	return val != 0;
+//void CleanModeFollowWall::overCurrentWheelLeft(bool state_now, bool state_last)
+//{
+//	ROS_WARN("%s %d: Left wheel oc.", __FUNCTION__, __LINE__);
+//	ev.oc_wheel_left = true;
 //}
+//
+//void CleanModeFollowWall::overCurrentWheelRight(bool state_now, bool state_last)
+//{
+//	ROS_WARN("%s %d: Right wheel oc.", __FUNCTION__, __LINE__);
+//	ev.oc_wheel_right = true;
+//}
+//
+void CleanModeFollowWall::remoteClean(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: remote clean.", __FUNCTION__, __LINE__);
+
+	beeper.play_for_command(VALID);
+	wheel.stop();
+	ev.key_clean_pressed = true;
+	remote.reset();
+}
+
+//void CleanModeFollowWall::remoteHome(bool state_now, bool state_last)
+//{
+//	if (state_i_ == st_clean || action_i_ == ac_pause)
+//	{
+//		ROS_WARN("%s %d: remote home.", __FUNCTION__, __LINE__);
+//		beeper.play_for_command(VALID);
+//		ev.remote_home = true;
+//	}
+//	else
+//	{
+//		ROS_WARN("%s %d: remote home but not valid.", __FUNCTION__, __LINE__);
+//		beeper.play_for_command(INVALID);
+//	}
+//	remote.reset();
+//}
+//
+//void CleanModeFollowWall::remoteDirectionLeft(bool state_now, bool state_last)
+//{
+//	//todo: Just for debug
+//	if (state_i_ == st_clean)
+//	{
+//		beeper.play_for_command(VALID);
+//		continue_point_ = getPosition();
+//		ROS_INFO("%s %d: low battery, battery =\033[33m %dmv \033[0m, continue cell(%d, %d)", __FUNCTION__, __LINE__,
+//				 battery.getVoltage(), continue_point_.x, continue_point_.y);
+//		ev.battery_home = true;
+//		go_home_for_low_battery_ = true;
+//	}
+//	else
+//		beeper.play_for_command(INVALID);
+//
+//	remote.reset();
+//}
+//
+//void CleanModeFollowWall::cliffAll(bool state_now, bool state_last)
+//{
+//	if (!ev.cliff_all_triggered)
+//	{
+//		ROS_WARN("%s %d: Cliff all.", __FUNCTION__, __LINE__);
+//		ev.cliff_all_triggered = true;
+//	}
+//}
+//
+//void CleanModeFollowWall::batteryHome(bool state_now, bool state_last)
+//{
+//	if (state_i_ == st_clean)
+//	{
+//		continue_point_ = getPosition();
+//		ROS_INFO("%s %d: low battery, battery =\033[33m %dmv \033[0m, continue cell(%d, %d)", __FUNCTION__, __LINE__,
+//				 battery.getVoltage(), continue_point_.x, continue_point_.y);
+//		ev.battery_home = true;
+//		go_home_for_low_battery_ = true;
+//	}
+//}
+//
+//void CleanModeFollowWall::chargeDetect(bool state_now, bool state_last)
+//{
+//	if (!ev.charge_detect && charger.isDirected())
+//	{
+//		ROS_WARN("%s %d: Charge detect!.", __FUNCTION__, __LINE__);
+//		ev.charge_detect = charger.getChargeStatus();
+//	}
+//
+//}
+// End event handlers.
+
+bool CleanModeFollowWall::wf_is_isolate() {
+	int16_t	val = 0;
+	int16_t x_min_forward, x_max_forward, y_min, y_max;
+	fw_map.getMapRange(CLEAN_MAP, &x_min_forward, &x_max_forward, &y_min, &y_max);
+	Cell_t out_cell {int16_t(x_max_forward + 1),int16_t(y_max + 1)};
+
+	fw_map.markRobot(CLEAN_MAP);//note: To clear the obstacle when check isolated, please don't remove it!
+	auto curr = getPosition().toCell();
+	fw_map.print(CLEAN_MAP, curr.x, curr.y);
+	ROS_WARN("%s %d: curr(%d,%d),out(%d,%d)", __FUNCTION__, __LINE__, curr.x, curr.y,out_cell.x, out_cell.y);
+
+	if ( out_cell != g_zero_home.toCell()){
+			val = wf_path_find_shortest_path(curr.x, curr.y, out_cell.x, out_cell.y, 0);
+			val = (val < 0 || val == SCHAR_MAX) ? 0 : 1;
+	} else {
+		if (!nav_map.isBlockAccessible(0, 0)) {
+			val = wf_path_find_shortest_path(curr.x, curr.y, 0, 0, 0);
+			if (val < 0 || val == SCHAR_MAX) {
+				/* Robot start position is blocked. */
+				val = wf_path_find_shortest_path(curr.x, curr.y, 0, 0, 0);
+
+				if (val < 0 || val == SCHAR_MAX) {
+					val = 0;
+				} else {
+					val = 1;
+				};
+			} else {
+				val = 1;
+			}
+		} else {
+			val = wf_path_find_shortest_path(curr.x, curr.y, 0, 0, 0);
+			if (val < 0 || val == SCHAR_MAX)
+				val = 0;
+			else
+				val = 1;
+		}
+	}
+	return val != 0;
+}
 
 
 /*
@@ -186,10 +305,6 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path(int16_t xID, int16_t yID
 		val =  wf_path_find_shortest_path_ranged(xID, yID, endx, endy, bound, x_min, x_max, y_min, y_max,false);
 		ROS_INFO("shortest path(%d): endx: %d\tendy: %d\tx: %d - %d\ty: %d - %d\t return: %d\n", __LINE__, endx, endy, x_min, x_max, y_min, y_max, val);
 	}
-
-#if	DEBUG_COST_MAP
-	nav_map.print(COST_MAP, endx, endy);
-#endif
 	return val;
 }
 
@@ -424,5 +539,10 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(int16_t curr_x, i
 //	path_display_path_points(path_points);
 
 	return totalCost;
+}
+
+bool CleanModeFollowWall::ActionFollowWallisFinish() {
+//	return ACleanMode::ActionFollowWallisFinish();
+	return reach_cleaned_count > 0;
 }
 
