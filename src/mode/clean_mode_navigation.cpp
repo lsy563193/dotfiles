@@ -30,6 +30,7 @@ CleanModeNav::CleanModeNav()
 CleanModeNav::~CleanModeNav()
 {
 	IMoveType::sp_mode_ = nullptr;
+	event_manager_set_enable(false);
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
@@ -327,6 +328,7 @@ bool CleanModeNav::setNextState()
 					// Robot trapped.
 					state_i_ = st_trapped;
 					stateInit(state_i_);
+					state_confirm = true;
 				}
 				else
 				{
@@ -627,7 +629,7 @@ bool CleanModeNav::isBlockCleared()
 	if (!passed_path_.empty())
 	{
 //		ROS_INFO("%s %d: passed_path_.back(%d %d)", __FUNCTION__, __LINE__, passed_path_.back().x, passed_path_.back().y);
-		return !clean_map_.isBlockAccessible(passed_path_.back().x, passed_path_.back().y);
+		return !clean_map_.isBlockAccessible(passed_path_.back().toCell().x, passed_path_.back().toCell().y);
 	}
 
 	return false;

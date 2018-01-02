@@ -24,6 +24,7 @@ CleanModeFollowWall::CleanModeFollowWall()
 CleanModeFollowWall::~CleanModeFollowWall()
 {
 	IMoveType::sp_mode_ = nullptr;
+	event_manager_set_enable(false);
 
 	if (ev.key_clean_pressed)
 	{

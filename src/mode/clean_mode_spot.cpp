@@ -20,6 +20,7 @@ CleanModeSpot::CleanModeSpot()
 CleanModeSpot::~CleanModeSpot()
 {
 	IMoveType::sp_mode_ = nullptr;
+	event_manager_set_enable(false);
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
