@@ -3,8 +3,6 @@
 
 #define  _RATE 50
 
-#define POWER_ACTIVE 1
-#define POWER_DOWN 7
 bool is_robotbase_init = false;
 bool robotbase_thread_stop = false;
 bool send_stream_thread = false;

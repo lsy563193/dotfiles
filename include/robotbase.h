@@ -7,6 +7,8 @@
 #include "config.h"
 #include "mode.hpp"
 
+#define POWER_ACTIVE 1
+#define POWER_DOWN 7
 extern bool g_is_tilt;
 
 extern bool robotbase_beep_update_flag;

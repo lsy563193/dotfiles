@@ -19,6 +19,8 @@ ActionSleep::ActionSleep()
 	beeper.play(4, 80, 0, 1);
 	usleep(100000);
 	led.set_mode(LED_STEADY, LED_OFF);
+	serial.setCleanMode(POWER_DOWN);
+	usleep(25000);
 	ROS_INFO("%s %d: Start sleep action.", __FUNCTION__, __LINE__);
 }
 
