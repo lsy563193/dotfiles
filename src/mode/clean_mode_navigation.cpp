@@ -681,7 +681,6 @@ void CleanModeNav::switchToGoHomePointState()
 	sp_action_.reset();
 	state_i_ = st_go_home_point;
 	stateInit(state_i_);
-	mapMark();
 }
 
 void CleanModeNav::enterPause()
