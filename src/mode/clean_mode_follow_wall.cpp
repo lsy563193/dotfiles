@@ -107,7 +107,7 @@ bool CleanModeFollowWall::setNextAction()
 //	return false;
 }
 
-bool CleanModeFollowWall::setNextState()
+/*bool CleanModeFollowWall::setNextState()
 {
 	if(sp_state == state_init)
 	{
@@ -139,7 +139,7 @@ bool CleanModeFollowWall::setNextState()
 		}
 	}
 	return true;
-}
+}*/
 
 void CleanModeFollowWall::keyClean(bool state_now, bool state_last)
 {
@@ -577,5 +577,21 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(GridMap& map, int
 bool CleanModeFollowWall::actionFollowWallisFinish() {
 //	return ACleanMode::actionFollowWallisFinish();
 	return reach_cleaned_count_ > 0;
+}
+
+bool CleanModeFollowWall::isFinishInit() {
+	return ACleanMode::isFinishInit();
+}
+
+bool CleanModeFollowWall::isFinishClean() {
+	return ACleanMode::isFinishClean();
+}
+
+bool CleanModeFollowWall::isFinishGoHomePoint() {
+	return ACleanMode::isFinishGoHomePoint();
+}
+
+bool CleanModeFollowWall::isFinishGoCharger() {
+	return ACleanMode::isFinishGoCharger();
 }
 

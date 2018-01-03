@@ -584,3 +584,18 @@ Cells ACleanMode::pointsGenerateCells(Points &targets)
 	return path;
 }
 
+bool ACleanMode::setNextState() {
+	PP_INFO();
+	if (isExceptionTriggered()) {
+		ROS_INFO("%s %d: Pass this state switching for exception cases.", __FUNCTION__, __LINE__);
+		// Apply for all states.
+		// If all these exception cases happens, directly set next action to exception resume action.
+		// BUT DO NOT CHANGE THE STATE!!! Because after exception resume it should restore the state.
+		sp_state = nullptr;
+	}
+	else
+		while (ros::ok() && !sp_state->isFinish());
+
+	return sp_state != nullptr;
+}
+

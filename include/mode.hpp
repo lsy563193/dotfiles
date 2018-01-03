@@ -223,7 +223,7 @@ public:
 	bool isFinish() override;
 	bool isExit() override;
 	void setNextModeDefault();
-	virtual bool setNextState() = 0;
+	bool setNextState();
 	virtual bool setNextAction();
 	void genNextAction();
 
@@ -362,7 +362,6 @@ public:
 	bool isExit() override;
 
 	bool setNextAction() override;
-	bool setNextState() override;
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteClean(bool state_now, bool state_last) override ;
 	void remoteHome(bool state_now, bool state_last) override ;
@@ -427,7 +426,6 @@ public:
 	bool isFinish() override;
 	bool isExit() override;
 	bool setNextAction() override;
-	bool setNextState() override;
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteClean(bool state_now, bool state_last) override ;
 	void cliffAll(bool state_now, bool state_last) override ;
@@ -440,6 +438,11 @@ public:
 //	void overCurrentSuction(bool state_now, bool state_last);
 	void printMapAndPath();
 
+	bool isFinishInit() override;
+	bool isFinishClean() override;
+	bool isFinishGoHomePoint() override;
+	bool isFinishGoCharger() override;
+
 };
 
 class CleanModeFollowWall:public ACleanMode {
@@ -451,8 +454,6 @@ public:
 	bool actionFollowWallisFinish() override;
 
 	bool setNextAction() override;
-
-	bool setNextState() override;
 
 	bool mapMark() override;
 
@@ -480,6 +481,12 @@ public:
 																						int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max,
 																						bool used_unknown);
 	bool wf_is_isolate(GridMap& map);
+
+
+	bool isFinishInit() override;
+	bool isFinishClean() override;
+	bool isFinishGoHomePoint() override;
+	bool isFinishGoCharger() override;
 private:
 	uint32_t diff_timer_;
 protected:
@@ -498,11 +505,12 @@ public:
 	bool mapMark() override;
 	bool isExit() override;
 	bool setNextAction() override;
-	bool setNextState() override;
 	void cliffAll(bool state_now, bool state_last) override;
 	void remoteClean(bool state_now, bool state_last) override;
 	void keyClean(bool state_now, bool state_last) override;
 
+	bool isFinishInit() override;
+	bool isFinishClean() override;
 private:
 
 };
@@ -518,8 +526,6 @@ public:
 	bool isFinish() override;
 
 	bool setNextAction() override;
-	bool setNextState() override ;
-
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteMax(bool state_now, bool state_last) override ;
 	void remoteDirectionForward(bool state_now, bool state_last) override ;

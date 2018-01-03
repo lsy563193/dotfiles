@@ -101,9 +101,3 @@ void CleanModeTest::remoteDirectionForward(bool state_now, bool state_last)
 	ev.remote_direction_forward = true;
 	remote.reset();
 }
-
-bool CleanModeTest::setNextState()
-{
-	return false;
-}
-

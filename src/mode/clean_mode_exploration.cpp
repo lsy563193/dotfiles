@@ -108,92 +108,7 @@ bool CleanModeExploration::setNextAction()
 	genNextAction();
 	return action_i_ != ac_null;
 }
-
-bool CleanModeExploration::setNextState()
-{
-	PP_INFO();
-
-	bool state_confirm = false;
-	while (ros::ok() && !state_confirm)
-	{
-		if (sp_state == state_init)
-		{
-			if (action_i_ == ac_open_slam)
-			{
-				auto curr = updatePosition();
-				passed_path_.push_back(curr);
-				home_points_.back().th = robot::instance()->getWorldPoseAngle();
-				PP_INFO();
-
-				sp_state = state_clean;
-				stateInit(sp_state);
-				action_i_ = ac_null;
-			}
-			else
-				state_confirm = true;
-		}
-		else if (isExceptionTriggered())
-		{
-			ROS_INFO("%s %d: Pass this state switching for exception cases.", __FUNCTION__, __LINE__);
-			// Apply for all states.
-			// If all these exception cases happens, directly set next action to exception resume action.
-			// BUT DO NOT CHANGE THE STATE!!! Because after exception resume it should restore the state.
-			action_i_ = ac_null;
-			state_confirm = true;
-		}
-		else if(sp_state == state_clean)
-		{
-			PP_INFO();
-			old_dir_ = new_dir_;
-			ROS_WARN("old_dir_(%d)", old_dir_);
-			plan_path_.clear();
-			if(ev.rcon_triggered)
-			{
-				ROS_WARN("%s,%d:find charge success,convert to go to charge state",__func__,__LINE__);
-				sp_state = state_go_charger;
-				stateInit(sp_state);
-				state_confirm = true;
-				action_i_ = ac_go_to_charger;
-			}
-			else if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_))
-			{
-				new_dir_ = (MapDirection)plan_path_.front().th;
-				ROS_WARN("new_dir_(%d)", new_dir_);
-				plan_path_.pop_front();
-				clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
-				state_confirm = true;
-				robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
-			}
-			else
-			{
-				ROS_WARN("%s,%d:exploration finish,did not find charge",__func__,__LINE__);
-				sp_state = state_go_home_point;
-				if (go_home_path_algorithm_ == nullptr)
-					go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
-				stateInit(sp_state);
-				action_i_ = ac_null;
-			}
-		}
-		else if(sp_state == state_go_home_point)
-		{
-			PP_INFO();
-			state_confirm = setNextStateForGoHomePoint(clean_map_);
-		}
-		else if (sp_state == state_go_charger)
-		{
-			PP_INFO();
-			if (ev.charge_detect && charger.isOnStub())
-			{
-				sp_state = nullptr;
-				state_confirm = true;
-			}
-			else
-				sp_state = state_clean;
-		}
-	}
-	return sp_state != nullptr;
-}
-
+// event
 void CleanModeExploration::keyClean(bool state_now, bool state_last) {
 	ROS_WARN("%s %d: key clean.", __FUNCTION__, __LINE__);
 
@@ -259,3 +174,68 @@ void CleanModeExploration::printMapAndPath()
 	clean_map_.print(CLEAN_MAP,getPosition().toCell().x,getPosition().toCell().y);
 }
 
+// state
+
+bool CleanModeExploration::isFinishInit() {
+	if (action_i_ == ac_open_slam) {
+		auto curr = updatePosition();
+		passed_path_.push_back(curr);
+		home_points_.back().th = robot::instance()->getWorldPoseAngle();
+		PP_INFO();
+
+		sp_state = state_clean;
+		sp_state->update();
+		action_i_ = ac_null;
+	}
+	else
+		return true;
+	return false;
+}
+
+bool CleanModeExploration::isFinishClean() {
+	PP_INFO();
+	old_dir_ = new_dir_;
+	ROS_WARN("old_dir_(%d)", old_dir_);
+	plan_path_.clear();
+	if (ev.rcon_triggered) {
+		ROS_WARN("%s,%d:find charge success,convert to go to charge state", __func__, __LINE__);
+		sp_state = state_go_charger;
+		sp_state->update();
+		action_i_ = ac_go_to_charger;
+		return true;
+	}
+	else if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
+		new_dir_ = (MapDirection) plan_path_.front().th;
+		ROS_WARN("new_dir_(%d)", new_dir_);
+		plan_path_.pop_front();
+		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
+		robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
+		return true;
+	}
+	else {
+		ROS_WARN("%s,%d:exploration finish,did not find charge", __func__, __LINE__);
+		sp_state = state_go_home_point;
+		if (go_home_path_algorithm_ == nullptr)
+			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
+		stateInit(sp_state);
+		action_i_ = ac_null;
+	}
+	return false;
+}
+
+bool CleanModeExploration::isFinishGoHomePoint() {
+	PP_INFO();
+	setNextStateForGoHomePoint(clean_map_);
+	return true;
+}
+
+bool CleanModeExploration::isFinishGoCharger() {
+	PP_INFO();
+	if (ev.charge_detect && charger.isOnStub()) {
+		sp_state = nullptr;
+		return true;
+	}
+	else
+		sp_state = state_clean;
+	return false;
+}

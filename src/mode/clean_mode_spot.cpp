@@ -86,67 +86,6 @@ bool CleanModeSpot::isExit()
 	return ACleanMode::isExit();
 }
 
-bool CleanModeSpot::setNextState()
-{
-	PP_INFO();
-	bool state_confirm = false;
-	while (ros::ok() && !state_confirm)
-	{
-		if (sp_state == state_init)
-		{
-			if (action_i_ == ac_open_slam)
-			{
-				auto curr = updatePosition();
-				passed_path_.push_back(curr);
-
-				home_points_.back().th = robot::instance()->getWorldPoseAngle();
-				PP_INFO();
-				vacuum.setMode(Vac_Max);
-				brush.fullOperate();
-
-				sp_state = state_clean;
-				stateInit(sp_state);
-			}
-			else
-				state_confirm = true;
-		}
-		else if (isExceptionTriggered())
-		{
-			ROS_INFO("%s %d: Pass this state switching for exception cases.", __FUNCTION__, __LINE__);
-			// Apply for all states.
-			// If all these exception cases happens, directly set next action to exception resume action.
-			// BUT DO NOT CHANGE THE STATE!!! Because after exception resume it should restore the state.
-			action_i_ = ac_null;
-			state_confirm = true;
-		}
-		else if(sp_state == state_clean)
-		{
-			PP_INFO();
-			old_dir_ = new_dir_;
-			ROS_ERROR("old_dir_(%d)", old_dir_);
-			auto cur_point = getPosition();
-			//ROS_INFO("\033[32m plan_path front (%d,%d),cur point:(%d,%d)\033[0m",plan_path_.front().toCell().X,plan_path_.front().toCell().Y,cur_point.toCell().X,cur_point.toCell().Y);
-			if (clean_path_algorithm_->generatePath(clean_map_, cur_point, old_dir_, plan_path_))
-			{
-				new_dir_ = (MapDirection)plan_path_.front().th;
-				ROS_ERROR("new_dir_(%d)", new_dir_);
-				PP_INFO();
-				clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
-				plan_path_.pop_front();
-				state_confirm = true;
-			}
-			else
-			{
-				sp_state = nullptr;
-				action_i_ = ac_null;
-				state_confirm = true;
-			}
-		}
-	}
-
-	return sp_state != nullptr;
-}
-
 bool CleanModeSpot::setNextAction()
 {
 	if (sp_state == state_init)
@@ -180,3 +119,43 @@ void CleanModeSpot::cliffAll(bool state_now, bool state_last)
 	ev.cliff_all_triggered = true;
 }
 
+//state
+bool CleanModeSpot::isFinishInit() {
+	if (action_i_ == ac_open_slam) {
+		auto curr = updatePosition();
+		passed_path_.push_back(curr);
+
+		home_points_.back().th = robot::instance()->getWorldPoseAngle();
+		PP_INFO();
+		vacuum.setMode(Vac_Max);
+		brush.fullOperate();
+
+		sp_state = state_clean;
+		stateInit(sp_state);
+	}
+	else
+		return true;
+	return false;
+}
+
+bool CleanModeSpot::isFinishClean() {
+	PP_INFO();
+	old_dir_ = new_dir_;
+	ROS_ERROR("old_dir_(%d)", old_dir_);
+	auto cur_point = getPosition();
+	//ROS_INFO("\033[32m plan_path front (%d,%d),cur point:(%d,%d)\033[0m",plan_path_.front().toCell().X,plan_path_.front().toCell().Y,cur_point.toCell().X,cur_point.toCell().Y);
+	if (clean_path_algorithm_->generatePath(clean_map_, cur_point, old_dir_, plan_path_)) {
+		new_dir_ = (MapDirection) plan_path_.front().th;
+		ROS_ERROR("new_dir_(%d)", new_dir_);
+		PP_INFO();
+		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
+		plan_path_.pop_front();
+		return true;
+	}
+	else {
+		sp_state = nullptr;
+		action_i_ = ac_null;
+		return true;
+	}
+//	return false;
+}
