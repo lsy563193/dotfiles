@@ -275,55 +275,55 @@ public:
 
 public:
 	State* getState() const {
-		return p_state;
+		return sp_state;
 	};
 	void setState(State* state){
-		p_state = state;
+		sp_state = state;
 	}
 	bool isStateInit() const
 	{
-		return p_state == state_init;
+		return sp_state == state_init;
 	}
+
 	bool isStateClean() const
 	{
-		return p_state == state_clean;
+		return sp_state == state_clean;
 	}
 	bool isStateGoHomePoint() const
 	{
-		return p_state == state_go_home_point;
+		return sp_state == state_go_home_point;
 	}
 	bool isStateGoCharger() const
 	{
-		return p_state == state_go_charger;
+		return sp_state == state_go_charger;
 	}
 	bool isStateTrapped() const
 	{
-		return p_state == state_trapped;
+		return sp_state == state_trapped;
 	}
 	bool isStateTmpSpot() const
 	{
-		return p_state == state_tmp_spot;
+		return sp_state == state_tmp_spot;
 	}
 	bool isStateSelfCheck() const
 	{
-		return p_state == state_self_check;
+		return sp_state == state_self_check;
 	}
 	bool isStateExploration() const
 	{
-		return p_state == state_exploration;
+		return sp_state == state_exploration;
 	}
 	bool isStateResumeLowBatteryCharge() const
 	{
-		return p_state == state_resume_low_battery_charge;
+		return sp_state == state_resume_low_battery_charge;
 	}
 	bool isStateSavedBeforePause() const
 	{
-		return p_state == state_saved_state_before_pause;
+		return sp_state == state_saved_state_before_pause;
 	}
 protected:
-	State* p_state{};
-	State *state_saved_state_before_pause;
-protected:
+	static State* sp_state;
+	static State *state_saved_state_before_pause;
 	static State *state_init;
 	static State *state_clean;
 	static State *state_go_home_point;

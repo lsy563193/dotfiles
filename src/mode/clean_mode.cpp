@@ -9,6 +9,8 @@
 
 //#define NAV_INFO() ROS_INFO("st(%d),ac(%d)", state_i_, action_i_)
 
+State* ACleanMode::sp_state{};
+State* ACleanMode::state_saved_state_before_pause{};
 State* ACleanMode::state_init = new StateInit();
 State* ACleanMode::state_clean = new StateClean();
 State* ACleanMode::state_go_home_point = new StateGoHomePoint();
@@ -27,9 +29,11 @@ Points ACleanMode::plan_path_ = {};
 
 ACleanMode::ACleanMode()
 {
+	sp_state->setMode(this);
 	ev.key_clean_pressed = false;
-	p_state = state_init;
-	stateInit(p_state);
+	sp_state = state_init;
+	ROS_ERROR("%d",sp_state);
+	sp_state->update();
 	setNextAction();
 	robot_timer.initWorkTimer();
 	key.resetPressStatus();
@@ -49,7 +53,7 @@ ACleanMode::ACleanMode()
 
 bool ACleanMode::setNextAction()
 {
-	if (p_state == state_init)
+	if (sp_state == state_init)
 	{
 		if (action_i_ == ac_null)
 			action_i_ = ac_open_gyro;
@@ -88,7 +92,7 @@ void ACleanMode::setNextModeDefault()
 
 bool ACleanMode::isExit()
 {
-	if (p_state == state_init)
+	if (sp_state == state_init)
 	{
 		if (action_i_ == ac_open_lidar && sp_action_->isTimeUp())
 		{
@@ -104,7 +108,7 @@ bool ACleanMode::isExit()
 
 bool ACleanMode::isFinish()
 {
-	if (p_state != state_init)
+	if (sp_state != state_init)
 		updatePath(clean_map_);
 
 	if (!(sp_action_ == nullptr || sp_action_->isFinish()))
@@ -113,9 +117,9 @@ bool ACleanMode::isFinish()
 	sp_action_.reset();//for call ~constitution;
 	PP_INFO();
 
-	if (p_state != state_init)
+	if (sp_state != state_init)
 	{
-		clean_map_.saveBlocks(action_i_ == ac_linear, p_state == state_clean);
+		clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
 		mapMark();
 
 	}
@@ -160,7 +164,7 @@ Point32_t ACleanMode::updatePath(GridMap& map)
 		ROS_INFO("reach_cleaned_count_(%d)",reach_cleaned_count_);
 			reach_cleaned_count_++;
 		}
-		map.saveBlocks(action_i_ == ac_linear, p_state == state_clean);
+		map.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
 //		displayPath(passed_path_);
 	}
 	return curr;
@@ -184,7 +188,7 @@ void ACleanMode::genNextAction()
 	else if (action_i_ == ac_linear)
 		sp_action_.reset(new MoveTypeLinear);
 	else if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
-		sp_action_.reset(new MoveTypeFollowWall(action_i_ == ac_follow_wall_left, p_state == state_trapped));
+		sp_action_.reset(new MoveTypeFollowWall(action_i_ == ac_follow_wall_left, sp_state == state_trapped));
 	else if (action_i_ == ac_go_to_charger)
 		sp_action_.reset(new MoveTypeGoToCharger);
 	else if (action_i_ == ac_exception_resume)
@@ -306,8 +310,8 @@ bool ACleanMode::setNextStateForGoHomePoint(GridMap &map)
 	old_dir_ = new_dir_;
 	if (ev.rcon_triggered)
 	{
-		p_state = state_go_charger;
-		stateInit(p_state);
+		sp_state = state_go_charger;
+		stateInit(sp_state);
 	}
 	else if (getPosition().toCell() == plan_path_.back().toCell())
 	{
@@ -315,13 +319,13 @@ bool ACleanMode::setNextStateForGoHomePoint(GridMap &map)
 		if (getPosition().toCell() == g_zero_home.toCell())
 		{
 			PP_INFO();
-			p_state = nullptr;
+			sp_state = nullptr;
 		}
 		else
 		{
 			PP_INFO();
-			p_state = state_go_charger;
-			stateInit(p_state);
+			sp_state = state_go_charger;
+			stateInit(sp_state);
 		}
 	}
 	else if (go_home_path_algorithm_->generatePath(map, getPosition(),old_dir_, plan_path_))
@@ -336,7 +340,7 @@ bool ACleanMode::setNextStateForGoHomePoint(GridMap &map)
 	{
 		// No more paths to home cells.
 		PP_INFO();
-		p_state = nullptr;
+		sp_state = nullptr;
 	}
 	return state_confirm;
 }

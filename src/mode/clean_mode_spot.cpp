@@ -51,7 +51,7 @@ bool CleanModeSpot::mapMark()
 		clean_map_.setCleaned(pointsGenerateCells(passed_path_));
 	}
 
-	if (p_state == state_trapped)
+	if (sp_state == state_trapped)
 		clean_map_.markRobot(CLEAN_MAP);
 	clean_map_.setBlocks();
 	PP_INFO();
@@ -92,7 +92,7 @@ bool CleanModeSpot::setNextState()
 	bool state_confirm = false;
 	while (ros::ok() && !state_confirm)
 	{
-		if (p_state == state_init)
+		if (sp_state == state_init)
 		{
 			if (action_i_ == ac_open_slam)
 			{
@@ -104,8 +104,8 @@ bool CleanModeSpot::setNextState()
 				vacuum.setMode(Vac_Max);
 				brush.fullOperate();
 
-				p_state = state_clean;
-				stateInit(p_state);
+				sp_state = state_clean;
+				stateInit(sp_state);
 			}
 			else
 				state_confirm = true;
@@ -119,7 +119,7 @@ bool CleanModeSpot::setNextState()
 			action_i_ = ac_null;
 			state_confirm = true;
 		}
-		else if(p_state == state_clean)
+		else if(sp_state == state_clean)
 		{
 			PP_INFO();
 			old_dir_ = new_dir_;
@@ -137,21 +137,21 @@ bool CleanModeSpot::setNextState()
 			}
 			else
 			{
-				p_state = nullptr;
+				sp_state = nullptr;
 				action_i_ = ac_null;
 				state_confirm = true;
 			}
 		}
 	}
 
-	return p_state != nullptr;
+	return sp_state != nullptr;
 }
 
 bool CleanModeSpot::setNextAction()
 {
-	if (p_state == state_init)
+	if (sp_state == state_init)
 		return ACleanMode::setNextAction();
-	else if (p_state == state_clean)
+	else if (sp_state == state_clean)
 	{
 		PP_INFO();
 		if(plan_path_.size() >= 2)

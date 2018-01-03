@@ -14,10 +14,15 @@ public:
 	bool isFinish();
 //	bool setNextState();
 //	State* getNextState();
+	void setMode(ACleanMode* cm)
+	{sp_cm_ = cm;}
+	ACleanMode* getMode()
+	{return sp_cm_;}
+
 	virtual void update()=0;
 
 protected:
-	ACleanMode* cm{};
+	static ACleanMode* sp_cm_;
 };
 
 class StateInit: public State {
