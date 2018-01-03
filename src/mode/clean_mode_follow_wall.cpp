@@ -24,6 +24,7 @@ CleanModeFollowWall::CleanModeFollowWall()
 CleanModeFollowWall::~CleanModeFollowWall()
 {
 	IMoveType::sp_mode_ = nullptr;
+	event_manager_set_enable(false);
 
 	if (ev.key_clean_pressed)
 	{
@@ -51,7 +52,6 @@ CleanModeFollowWall::~CleanModeFollowWall()
 
 bool CleanModeFollowWall::mapMark() {
 	clean_path_algorithm_->displayCellPath(pointsGenerateCells(passed_path_));
-	robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 	PP_WARN();
 	if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
 	{
@@ -119,6 +119,7 @@ bool CleanModeFollowWall::setNextState()
 			if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
 				plan_path_.pop_front();
 				ROS_ERROR("plan_path_.size(%d)", plan_path_.size());
+				robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 			}
 		}
 		else if(reach_cleaned_count_ <= 3){
@@ -126,6 +127,7 @@ bool CleanModeFollowWall::setNextState()
 				if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
 					plan_path_.pop_front();
 					ROS_ERROR("plan_path_.size(%d)", plan_path_.size());
+					robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 				}
 			}else {
 				ROS_WARN("%s,%d:follow clean finish,did not find charge", __func__, __LINE__);
@@ -572,8 +574,8 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(GridMap& map, int
 	return totalCost;
 }
 
-bool CleanModeFollowWall::ActionFollowWallisFinish() {
-//	return ACleanMode::ActionFollowWallisFinish();
+bool CleanModeFollowWall::actionFollowWallisFinish() {
+//	return ACleanMode::actionFollowWallisFinish();
 	return reach_cleaned_count_ > 0;
 }
 

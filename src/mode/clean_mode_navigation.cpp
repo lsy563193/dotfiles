@@ -30,6 +30,7 @@ CleanModeNav::CleanModeNav()
 CleanModeNav::~CleanModeNav()
 {
 	IMoveType::sp_mode_ = nullptr;
+	event_manager_set_enable(false);
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
@@ -72,13 +73,11 @@ CleanModeNav::~CleanModeNav()
 bool CleanModeNav::mapMark()
 {
 	clean_path_algorithm_->displayCellPath(pointsGenerateCells(passed_path_));
-	robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 //	if (action_i_ == ac_linear) {
 	PP_WARN();
 		clean_map_.setCleaned(pointsGenerateCells(passed_path_));
 //	}
 
-	clean_map_.setBlocks();
 	if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
 	{
 		ROS_ERROR("-------------------------------------------------------");
@@ -102,6 +101,7 @@ bool CleanModeNav::mapMark()
 		}
 	}
 
+	clean_map_.setBlocks();
 	clean_map_.markRobot(CLEAN_MAP);
 	PP_INFO();
 	clean_map_.print(CLEAN_MAP, getPosition().toCell().x, getPosition().toCell().y);
@@ -319,6 +319,7 @@ bool CleanModeNav::setNextState()
 				plan_path_.pop_front();
 				clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
 				state_confirm = true;
+				robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 			}
 			else
 			{
@@ -327,6 +328,7 @@ bool CleanModeNav::setNextState()
 					// Robot trapped.
 					state_i_ = st_trapped;
 					stateInit(state_i_);
+					state_confirm = true;
 				}
 				else
 				{
@@ -381,6 +383,7 @@ bool CleanModeNav::setNextState()
 					plan_path_.pop_front();
 					clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
 					state_confirm = true;
+					robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 				}
 				else
 				{
@@ -545,9 +548,15 @@ void CleanModeNav::chargeDetect(bool state_now, bool state_last)
 	}
 
 }
+void CleanModeNav::remoteSpot(bool state_now, bool state_last)
+{
+	//ev.remote_spot = true;
+	beeper.play_for_command(VALID);
+}
+
 // End event handlers.
 
-bool CleanModeNav::ActionFollowWallisFinish()
+bool CleanModeNav::actionFollowWallisFinish()
 {
 	if (state_i_ == st_trapped)
 		return isBlockCleared();
@@ -555,6 +564,11 @@ bool CleanModeNav::ActionFollowWallisFinish()
 		return isNewLineReach() || isOverOriginLine();
 
 	return false;
+}
+
+void CleanModeNav::actionFollowWallSaveBlocks()
+{
+	clean_map_.saveBlocks(action_i_ == ac_linear, state_i_ == st_clean);
 }
 
 bool CleanModeNav::isOverOriginLine()
@@ -627,7 +641,7 @@ bool CleanModeNav::isBlockCleared()
 	if (!passed_path_.empty())
 	{
 //		ROS_INFO("%s %d: passed_path_.back(%d %d)", __FUNCTION__, __LINE__, passed_path_.back().x, passed_path_.back().y);
-		return !clean_map_.isBlockAccessible(passed_path_.back().x, passed_path_.back().y);
+		return !clean_map_.isBlockAccessible(passed_path_.back().toCell().x, passed_path_.back().toCell().y);
 	}
 
 	return false;
@@ -667,7 +681,6 @@ void CleanModeNav::switchToGoHomePointState()
 	sp_action_.reset();
 	state_i_ = st_go_home_point;
 	stateInit(state_i_);
-	mapMark();
 }
 
 void CleanModeNav::enterPause()

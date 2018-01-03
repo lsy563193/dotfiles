@@ -21,6 +21,7 @@ CleanModeTest::CleanModeTest()
 CleanModeTest::~CleanModeTest()
 {
 	IMoveType::sp_mode_ = nullptr;
+	event_manager_set_enable(false);
 }
 
 bool CleanModeTest::mapMark()

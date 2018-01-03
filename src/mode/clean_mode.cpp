@@ -290,9 +290,14 @@ void ACleanMode::setRconPos(Point32_t pos)
 		charger_pos_ = pos;
 }
 
-bool ACleanMode::ActionFollowWallisFinish()
+bool ACleanMode::actionFollowWallisFinish()
 {
 	return false;
+}
+
+void ACleanMode::actionFollowWallSaveBlocks()
+{
+	return;
 }
 
 bool ACleanMode::setNextStateForGoHomePoint(GridMap &map)
@@ -325,6 +330,7 @@ bool ACleanMode::setNextStateForGoHomePoint(GridMap &map)
 		new_dir_ = (MapDirection)plan_path_.front().th;
 		plan_path_.pop_front();
 		go_home_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
+		robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 	}
 	else
 	{

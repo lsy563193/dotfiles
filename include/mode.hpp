@@ -93,6 +93,7 @@ public:
 	ModeIdle();
 	~ModeIdle() override;
 	bool isExit() override;
+	bool isFinish() override;
 	void remoteKeyHandler(bool state_now, bool state_last);
 	void remoteDirectionLeft(bool state_now, bool state_last) override
 	{ remoteKeyHandler(state_now, state_last);}
@@ -118,6 +119,7 @@ protected:
 //	std::vector<Cell_t> temp_fw_cells;
 private:
 	void register_events(void);
+	bool battery_low_{false};
 
 	bool plan_activated_status_;
 
@@ -227,7 +229,6 @@ public:
 
 	void stateInit(int next);
 	bool setNextStateForGoHomePoint(GridMap &map);
-
 	void setRconPos(float cd,float dist);
 
 	void path_set_home(const Point32_t& curr);
@@ -242,7 +243,8 @@ public:
 
 	Cells pointsGenerateCells(Points &targets);
 
-	virtual bool ActionFollowWallisFinish();
+	virtual bool actionFollowWallisFinish();
+	virtual void actionFollowWallSaveBlocks();
 	void setRconPos(Point32_t pos);
 	Point32_t updatePath(GridMap& map);
 	int reach_cleaned_count_{};
@@ -388,6 +390,7 @@ public:
 //	void overCurrentBrushRight(bool state_now, bool state_last);
 	void overCurrentWheelLeft(bool state_now, bool state_last) override;
 	void overCurrentWheelRight(bool state_now, bool state_last) override;
+	void remoteSpot(bool state_now, bool state_last) override;
 //	void overCurrentSuction(bool state_now, bool state_last);
 
 
@@ -406,7 +409,8 @@ public:
 	bool isFinishPause() override;
 
 private:
-	bool ActionFollowWallisFinish() override ;
+	bool actionFollowWallisFinish() override ;
+	void actionFollowWallSaveBlocks() override ;
 	bool isNewLineReach();
 	bool isOverOriginLine();
 	bool isBlockCleared();
@@ -461,7 +465,7 @@ public:
 
 	~CleanModeFollowWall() override;
 
-	bool ActionFollowWallisFinish() override;
+	bool actionFollowWallisFinish() override;
 
 	bool setNextAction() override;
 

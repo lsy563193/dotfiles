@@ -45,8 +45,8 @@ public:
 	void pubLineMarker(std::vector<std::vector<Vector2<double>> > *groups);
 	void pubFitLineMarker(visualization_msgs::Marker fit_line_marker);
 	void pubPointMarkers(const std::deque<Vector2<double>> *point, std::string frame_id);
-	void setCleanMapMarkers(int8_t x, int8_t y, CellState type);
-	void pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path, Cell_t* cell_p = nullptr);
+	void setCleanMapMarkers(int16_t x, int16_t y, CellState type);
+	void pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path);
 
 	void core_thread_cb();
 	// Service caller functions.
@@ -267,9 +267,9 @@ public:
 		y_max_point1 = std::max(y_point1_start, y_point1_end);
 
 		auto y_target_start = is_left ? ROBOT_RADIUS : -ROBOT_RADIUS;
-		auto y_target_end = is_left ? 0.4 : -4.0;
-		y_min_target = std::min(y_point1_start, y_point1_end);
-		y_max_target = std::max(y_point1_start, y_point1_end);
+		auto y_target_end = is_left ? 0.4 : -0.4;
+		y_min_target = std::min(y_target_start, y_target_end);
+		y_max_target = std::max(y_target_start, y_target_end);
 	};
 
 	bool inPoint1Range(const Vector2<double> &point, bool is_corner) const {
