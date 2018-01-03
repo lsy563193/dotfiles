@@ -15,8 +15,6 @@ CleanModeSpot::CleanModeSpot()
 	event_manager_set_enable(true);
 	IMoveType::sp_mode_ = this;
 	speaker.play(VOICE_CLEANING_SPOT,false);
-	nav_map.reset(COST_MAP);
-	nav_map.reset(CLEAN_MAP);
 	clean_path_algorithm_.reset(new SpotCleanPathAlgorithm());
 	go_home_path_algorithm_.reset();
 }
@@ -127,8 +125,8 @@ bool CleanModeSpot::setNextState()
 			old_dir_ = new_dir_;
 			ROS_ERROR("old_dir_(%d)", old_dir_);
 			auto cur_point = getPosition();
-			ROS_INFO("\033[32m plan_path front (%d,%d),cur point:(%d,%d)\033[0m",plan_path_.front().toCell().X,plan_path_.front().toCell().Y,cur_point.toCell().X,cur_point.toCell().Y);
-			if (clean_path_algorithm_->generatePath(nav_map, cur_point, old_dir_, plan_path_))
+			//ROS_INFO("\033[32m plan_path front (%d,%d),cur point:(%d,%d)\033[0m",plan_path_.front().toCell().X,plan_path_.front().toCell().Y,cur_point.toCell().X,cur_point.toCell().Y);
+			if (clean_path_algorithm_->generatePath(clean_map_, cur_point, old_dir_, plan_path_))
 			{
 				new_dir_ = (MapDirection)plan_path_.front().th;
 				ROS_ERROR("new_dir_(%d)", new_dir_);

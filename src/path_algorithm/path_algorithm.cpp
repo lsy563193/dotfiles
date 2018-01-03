@@ -145,19 +145,19 @@ Points APathAlgorithm::cells_generate_points(Cells &path)
 	Points targets{};
 	if(!path.empty()){
 		for(auto it = path.begin(); it < path.end(); ++it) {
-			Point32_t target {cellToCount((*it).X),cellToCount((*it).Y),0};
+			Point32_t target {cellToCount((*it).x),cellToCount((*it).y),0};
 			auto it_next = it+1;
-			if (it->X == it_next->X)
-				target.TH = it->Y > it_next->Y ? MAP_NEG_Y : MAP_POS_Y;
+			if (it->x == it_next->x)
+				target.th = it->y > it_next->y ? MAP_NEG_Y : MAP_POS_Y;
 			else
-				target.TH = it->X > it_next->X ? MAP_NEG_X : MAP_POS_X;
+				target.th = it->x > it_next->x ? MAP_NEG_X : MAP_POS_X;
 			targets.push_back(target);
 		}
-	//		ROS_INFO("path.back(%d,%d,%d)",path.back().X, path.back().Y, path.back().TH);
+	//		ROS_INFO("path.back(%d,%d,%d)",path.back().n, path.back().y, path.back().TH);
 
-		targets.back().TH = (targets.end()-2)->TH;
+		targets.back().th = (targets.end()-2)->th;
 //	ROS_INFO("%s %d: path.back(%d,%d,%d), path.front(%d,%d,%d)", __FUNCTION__, __LINE__,
-//					 path.back().X, path.back().Y, path.back().TH, path.front().X, path.front().Y, path.front().TH);
+//					 path.back().x, path.back().y, path.back().TH, path.front().x, path.front().y, path.front().TH);
 	}
 	return targets;
 }

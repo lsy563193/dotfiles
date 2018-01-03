@@ -57,10 +57,10 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, c
 				else{
 					new_plan_path.clear();
 					for(Point32_t point:shortest_path){
-						ROS_INFO("\033[32m first find short path:(%d,%d)\033[0m",point.toCell().X,point.toCell().Y);
+						ROS_INFO("\033[32m first find short path:(%d,%d)\033[0m",point.toCell().x,point.toCell().y);
 						new_plan_path.push_back(point);
 					}
-					ROS_INFO("target (%d,%d)",next_point.toCell().X,next_point.toCell().Y);
+					ROS_INFO("target (%d,%d)",next_point.toCell().x,next_point.toCell().y);
 					break;
 				}
 			}while(ros::ok() && plan_path.size() >=1 );
@@ -70,15 +70,15 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, c
 			{
 				plan_path.pop_front();
 				cur = plan_path.front();
-				if(map.getCell(COST_MAP,cur.toCell().X,cur.toCell().Y) < COST_HIGH ){
-					ROS_INFO("\033[32m push back to new plan_path :(%d,%d)\033[0m",cur.toCell().X,cur.toCell().Y);
+				if(map.getCell(COST_MAP,cur.toCell().x,cur.toCell().y) < COST_HIGH ){
+					ROS_INFO("\033[32m push back to new plan_path :(%d,%d)\033[0m",cur.toCell().x,cur.toCell().y);
 					new_plan_path.push_back(cur);
 				}
 				else{
 					do{
 						plan_path.pop_front();
 						cur = plan_path.front();
-						if(map.getCell(COST_MAP,cur.toCell().X,cur.toCell().Y) < COST_HIGH)
+						if(map.getCell(COST_MAP,cur.toCell().x,cur.toCell().y) < COST_HIGH)
 							break;
 					}while(plan_path.size() >= 1);
 
@@ -86,16 +86,16 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, c
 						break;
 					next_point = cur;
 					cur = new_plan_path.back();
-					auto next_dir = (MapDirection)cur.TH;
+					auto next_dir = (MapDirection)cur.th;
 					auto shortest_path_cells = findShortestPath(map,cur.toCell(),next_point.toCell(),next_dir,true);
 					auto shortest_path = cells_generate_points(shortest_path_cells);
 					if(shortest_path.empty()){
 						ROS_INFO("not find shortest_path %d continue",__LINE__);
 					}
 					else{
-						ROS_INFO("target (%d,%d)",next_point.toCell().X,next_point.toCell().Y);
+						ROS_INFO("target (%d,%d)",next_point.toCell().x,next_point.toCell().y);
 						for(Point32_t point:shortest_path){
-							ROS_INFO("\033[32m After first find, short path:(%d,%d)\033[0m",point.toCell().X,point.toCell().Y);
+							ROS_INFO("\033[32m After first find, short path:(%d,%d)\033[0m",point.toCell().x,point.toCell().y);
 							new_plan_path.push_back(point);
 						}
 					}
