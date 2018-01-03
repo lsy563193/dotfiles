@@ -227,7 +227,6 @@ public:
 	virtual bool setNextAction();
 	void genNextAction();
 
-	void stateInit(State* next);
 	bool setNextStateForGoHomePoint(GridMap &map);
 	void setRconPos(float cd,float dist);
 

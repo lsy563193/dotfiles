@@ -492,7 +492,7 @@ void CleanModeNav::resumePause()
 	if (ev.remote_home)
 		state_saved_state_before_pause = state_go_home_point;
 	sp_state = state_init;
-	stateInit(sp_state);
+	sp_state->update();
 }
 
 void CleanModeNav::resumeLowBatteryCharge()
@@ -516,7 +516,7 @@ void CleanModeNav::switchToGoHomePointState()
 	// Quit current movement.
 	sp_action_.reset();
 	sp_state = state_go_home_point;
-	stateInit(sp_state);
+	sp_state->update();
 }
 
 void CleanModeNav::enterPause()

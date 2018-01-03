@@ -208,70 +208,6 @@ void ACleanMode::genNextAction()
 	PP_INFO();
 }
 
-void ACleanMode::stateInit(State* next)
-{
-	if (next == state_init)
-	{
-		action_i_ = ac_null;
-		led.set_mode(LED_FLASH, LED_GREEN, 1000);
-		PP_INFO();
-	}
-	if (next == state_clean) {
-		reach_cleaned_count_ = 0;
-		led.set_mode(LED_STEADY, LED_GREEN);
-		PP_INFO();
-	}
-	if (next == state_go_home_point)
-	{
-		vacuum.setMode(Vac_Normal, false);
-		wheel.stop();
-
-		wheel.setPidTargetSpeed(0, 0, REG_TYPE_LINEAR);
-		if (ev.remote_home)
-			led.set_mode(LED_STEADY, LED_ORANGE);
-
-		// Play wavs.
-		if (ev.battery_home)
-			speaker.play(VOICE_BATTERY_LOW, false);
-
-		speaker.play(VOICE_BACK_TO_CHARGER, true);
-
-		ev.remote_home = false;
-		ev.battery_home = false;
-
-		if (go_home_path_algorithm_ == nullptr)
-			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
-		ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_points_.size());
-
-	}
-	if (next == state_tmp_spot) {
-	}
-	if (next == state_trapped) {
-		robot_timer.initTrapTimer();
-		led.set_mode(LED_FLASH, LED_GREEN, 300);
-	}
-	if (next == state_exploration) {
-		reach_cleaned_count_ = 0;
-		led.set_mode(LED_STEADY, LED_ORANGE);
-	}
-	if (next == state_go_to_charger) {
-		gyro.TiltCheckingEnable(false); //disable tilt detect
-		led.set_mode(LED_STEADY, LED_ORANGE);
-	}
-	if (next == state_exception_resume) {
-		led.set_mode(LED_STEADY, LED_GREEN);
-	}
-	if (next == state_charge)
-	{
-		// Nothing
-	}
-	if (next == state_resume_low_battery_charge)
-	{
-		led.set_mode(LED_STEADY, LED_GREEN);
-		PP_INFO();
-	}
-}
-
 //uint8_t ACleanMode::saveFollowWall(bool is_left)
 //{
 //	auto dy = is_left ? 2 : -2;
@@ -312,7 +248,7 @@ bool ACleanMode::setNextStateForGoHomePoint(GridMap &map)
 	{
 		ev.rcon_triggered = 0;
 		sp_state = state_go_to_charger;
-		stateInit(sp_state);
+		sp_state->update();
 	}
 	else if (!reach_home_point_ && getPosition().toCell() == go_home_path_algorithm_->getCurrentHomePoint().home_point.toCell())
 	{
@@ -323,7 +259,7 @@ bool ACleanMode::setNextStateForGoHomePoint(GridMap &map)
 					 go_home_path_algorithm_->getCurrentHomePoint().home_point.toCell().x,
 					 go_home_path_algorithm_->getCurrentHomePoint().home_point.toCell().y);
 			sp_state = state_go_to_charger;
-			stateInit(sp_state);
+			sp_state->update();
 		}
 		else
 		{

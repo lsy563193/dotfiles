@@ -218,7 +218,7 @@ bool CleanModeExploration::isFinishClean() {
 		sp_state = state_go_home_point;
 		if (go_home_path_algorithm_ == nullptr)
 			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
-		stateInit(sp_state);
+		sp_state->update();
 		action_i_ = ac_null;
 	}
 	return false;
