@@ -144,6 +144,7 @@ bool CleanModeNav::isFinish()
 			if (ev.remote_home || ev.battery_home)
 				switchToGoHomePointState();
 		}
+
 	}
 	return ACleanMode::isFinish();
 }
@@ -386,7 +387,7 @@ void CleanModeNav::chargeDetect(bool state_now, bool state_last)
 }
 void CleanModeNav::remoteSpot(bool state_now, bool state_last)
 {
-	//ev.remote_spot = true;
+	ev.remote_spot = true;
 	beeper.play_for_command(VALID);
 }
 
@@ -580,6 +581,15 @@ bool CleanModeNav::isFinishClean() {
 		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
 		return true;
 	}
+
+	if(ev.remote_spot)
+	{
+		ev.remote_spot = false;
+		sp_state = state_tmp_spot;
+		sp_state->update();
+		clean_path_algorithm_.reset(new SpotCleanPathAlgorithm);
+		return true;
+	}
 	else {
 		if (clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell())) {
 			// Robot trapped.
@@ -596,6 +606,7 @@ bool CleanModeNav::isFinishClean() {
 			ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_points_.size());
 		}
 	}
+
 	return false;
 }
 
@@ -636,14 +647,25 @@ bool CleanModeNav::isFinishGoCharger() {
 }
 
 bool CleanModeNav::isFinishTmpSpot() {
-//	updatePath(clean_map_);
-//	if(!sp_action_->isFinish())
-		return false;
-//	sp_action_.reset();//for call ~constitution;
-//	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
-//	mapMark();
-
-//	return true;
+	PP_INFO();
+	old_dir_ = new_dir_;
+	ROS_ERROR("old_dir_(%d)", old_dir_);
+	auto cur_point = getPosition();
+	//ROS_INFO("\033[32m plan_path front (%d,%d),cur point:(%d,%d)\033[0m",plan_path_.front().toCell().X,plan_path_.front().toCell().Y,cur_point.toCell().X,cur_point.toCell().Y);
+	if (clean_path_algorithm_->generatePath(clean_map_, cur_point, old_dir_, plan_path_)) {
+		new_dir_ = (MapDirection) plan_path_.front().th;
+		ROS_ERROR("new_dir_(%d)", new_dir_);
+		PP_INFO();
+		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
+		plan_path_.pop_front();
+		return true;
+	}
+	else {
+		sp_state = nullptr;
+		action_i_ = ac_null;
+		return true;
+	}
+	return false;
 }
 
 bool CleanModeNav::isFinishTrapped() {
