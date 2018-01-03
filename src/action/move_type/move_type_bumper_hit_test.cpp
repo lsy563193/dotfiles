@@ -28,7 +28,7 @@ bool MoveTypeBumperHitTest::isFinish()
 	{
 		if (p_back_movement_->isFinish())
 		{
-			if (bumper.get_status())
+			if (bumper.getStatus())
 				return true;
 			p_back_movement_.reset();
 			turn_time_stamp_ = ros::Time::now().toSec();
@@ -39,7 +39,7 @@ bool MoveTypeBumperHitTest::isFinish()
 		if (ros::Time::now().toSec() - turn_time_stamp_ > 0.6)
 			p_turn_movement_.reset();
 	}
-	else if (bumper.get_status())
+	else if (bumper.getStatus())
 	{
 		float back_distance = 0.08;
 		p_back_movement_.reset(new MovementBack(back_distance, 40));

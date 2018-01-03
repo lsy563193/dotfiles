@@ -17,16 +17,10 @@
 
 #define RAD2DEG(rad) ((rad)*57.29578)
 
-bool	g_is_low_bat_pause=false;
-bool g_is_manual_pause=false;
-time_t	start_time;
-
-int16_t slam_error_count;
+const double CHASE_X = 0.107;
 
 // For obs dynamic adjustment
 int OBS_adjust_count = 50;
-
-
 
 //extern pp::x900sensor sensor;
 robot::robot(std::string serial_port, int baudrate, std::string lidar_bumper_dev)/*:offset_angle_(0),saved_offset_angle_(0)*/
@@ -66,13 +60,6 @@ robot::robot(std::string serial_port, int baudrate, std::string lidar_bumper_dev
 
 	resetCorrection();
 
-	start_time = time(NULL);
-
-	// Initialize the low battery pause variable.
-	// Initialize the key press count.
-	// Initialize the manual pause variable.
-	g_is_manual_pause = false;
-
 	setBaselinkFrameType(ODOM_POSITION_ODOM_ANGLE);
 
 	// Init for serial.
@@ -81,7 +68,6 @@ robot::robot(std::string serial_port, int baudrate, std::string lidar_bumper_dev
 		ROS_ERROR("%s %d: Serial init failed!!", __FUNCTION__, __LINE__);
 		return;
 	}
-
 
 #if VERIFY_CPU_ID
 	if (verify_cpu_id() < 0) {
@@ -110,9 +96,39 @@ robot::robot(std::string serial_port, int baudrate, std::string lidar_bumper_dev
 	event_handler_thread->detach();
 
 	// Init for core thread.
-	auto core_thread = new boost::thread(core_thread_cb);
+	auto core_thread = new boost::thread(boost::bind(&robot::core_thread_cb,this));
 	core_thread->detach();
 	ROS_INFO("%s %d: robot init done!", __FUNCTION__, __LINE__);
+}
+
+void robot::core_thread_cb()
+{
+	ROS_INFO("Waiting for robot sensor ready.");
+	while (!isSensorReady()) {
+		usleep(1000);
+	}
+	ROS_INFO("Robot sensor ready.");
+//	speaker.play(VOICE_WELCOME_ILIFE);
+	usleep(200000);
+
+	if (charger.isOnStub() || charger.isDirected())
+		p_mode.reset(new ModeCharge());
+	else
+	{
+		speaker.play(VOICE_PLEASE_START_CLEANING, false);
+		p_mode.reset(new ModeIdle());
+	}
+
+	while(ros::ok())
+	{
+		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
+		p_mode->run();
+		auto next_mode = p_mode->getNextMode();
+		p_mode.reset();
+		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
+		p_mode.reset(getNextMode(next_mode));
+		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
+	}
 }
 
 robot::~robot()
@@ -139,8 +155,8 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 		scan_ctrl_.allow_publishing =
 						!(fabs(wheel.getLeftWheelActualSpeed() - wheel.getRightWheelActualSpeed()) > 0.1
 					|| (wheel.getLeftWheelActualSpeed() * wheel.getRightWheelActualSpeed() < 0)
-					|| bumper.get_status()
-					|| ev.tilt_triggered
+					|| bumper.getStatus()
+					|| gyro.getTiltCheckingStatus()
 					|| abs(wheel.getLeftSpeedAfterPid() - wheel.getRightSpeedAfterPid()) > 100
 					|| wheel.getLeftSpeedAfterPid() * wheel.getRightSpeedAfterPid() < 0);
 
@@ -173,28 +189,17 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 				slam_correction_x_ = tmp_x - odom_pose_x_;
 				slam_correction_y_ = tmp_y - odom_pose_y_;
 				slam_correction_yaw_ = tmp_yaw - odom_pose_yaw_;
-			} catch(tf::TransformException e) {
+			} catch(tf::TransformException e)
+			{
 				ROS_WARN("%s %d: Failed to compute map transform, skipping scan (%s)", __FUNCTION__, __LINE__, e.what());
-				setTfReady(false);
-				slam_error_count++;
-				if (slam_error_count > 1)
-				{
-//					ev.slam_error = true;
-					slam_error_count = 0;
-				}
-//				return;
 			}
 
 			if (!isTfReady())
 			{
-				ROS_INFO("%s %d: Set is_tf_ready_ to true.", __FUNCTION__, __LINE__);
+				ROS_INFO("%s %d: TF ready.", __FUNCTION__, __LINE__);
 				setTfReady(true);
-				slam_error_count = 0;
 			}
 		}
-//		if(! is_turn())
-//			cm_update_map();
-//		cm_update_position();
 	}
 	else if (getBaselinkFrameType() == ODOM_POSITION_ODOM_ANGLE)
 	{
@@ -227,27 +232,18 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 				slam_correction_x_ = tmp_x - odom_pose_x_;
 				slam_correction_y_ = tmp_y - odom_pose_y_;
 				slam_correction_yaw_ = tmp_yaw - odom_pose_yaw_;
-			} catch(tf::TransformException e) {
+			} catch(tf::TransformException e)
+			{
 				ROS_WARN("%s %d: Failed to compute map transform, skipping scan (%s)", __FUNCTION__, __LINE__, e.what());
-				setTfReady(false);
-				slam_error_count++;
-				if (slam_error_count > 1)
-				{
-//					ev.slam_error = true;
-					slam_error_count = 0;
-				}
-//				return;
 			}
+
 
 			if (!isTfReady())
 			{
-				ROS_INFO("%s %d: Set is_tf_ready_ to true.", __FUNCTION__, __LINE__);
+				ROS_INFO("%s %d: TF ready.", __FUNCTION__, __LINE__);
 				setTfReady(true);
-				slam_error_count = 0;
 			}
 		}
-
-//		cm_update_map();
 	}
 
 #if USE_ROBOT_TF
@@ -288,6 +284,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	world_pose_.setX(robot_x_);
 	world_pose_.setY(robot_y_);
 	world_pose_.setAngle(ranged_angle(robot_yaw_ * 1800 / M_PI));
+//	ROS_WARN("Position (%f, %f), angle: %f.", world_pose_.getX(), world_pose_.getY(), world_pose_.getAngle());
 #else
 	pose.setX(tmp_x_);
 	pose.setY(tmp_y_);
@@ -297,7 +294,6 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	//ROS_WARN("%s %d: Position diff(%f, %f), yaw diff: %f.", __FUNCTION__, __LINE__, tmp_x - odom_pose_x_, tmp_y - odom_pose_y_, tmp_yaw - odom_pose_yaw_);
 	//ROS_WARN("%s %d: Odom diff(%f, %f).", __FUNCTION__, __LINE__, odom_pose_x_ - msg->pose.pose.position.x, odom_pose_y_ - msg->pose.pose.position.y);
 	//ROS_WARN("%s %d: Correct  diff(%f, %f), yaw diff: %f.", __FUNCTION__, __LINE__, correct_x, correct_y, correct_yaw);
-//	ROS_WARN("Position (%f, %f), angle: %d.", odom_pose_x_, odom_pose_y_, gyro.get_angle());
 }
 
 void robot::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
@@ -310,9 +306,149 @@ void robot::scanLinearCb(const sensor_msgs::LaserScan::ConstPtr &msg)
 	lidar.scanLinearCb(msg);
 }
 
-void robot::scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr &scan)
+bool robot::check_corner(const sensor_msgs::LaserScan::ConstPtr & scan, const Paras para) {
+	int forward_wall_count = 0;
+	int side_wall_count = 0;
+	for (int i = 359; i > 0; i--) {
+		if (scan->ranges[i] < 4) {
+			auto point = polar_to_cartesian(scan->ranges[i], i);
+			if (para.inForwardRange(point)) {
+				forward_wall_count++;
+//			ROS_INFO("point(%f,%f)",point.x,point.y);
+//				ROS_INFO("forward_wall_count(%d)",forward_wall_count);
+			}
+			if (para.inSidedRange(point)) {
+				side_wall_count++;
+//			ROS_INFO("point(%f,%f)",point.x,point.y);
+//				ROS_INFO("side_wall_count(%d)",side_wall_count);
+			}
+		}
+	}
+	return forward_wall_count > 10 && side_wall_count > 20;
+}
+
+Vector2<double> robot::polar_to_cartesian(double polar,int i)
+{
+	Vector2<double> point{cos((i * 1.0 + 180.0) * PI / 180.0) * polar,
+					sin((i * 1.0 + 180.0) * PI / 180.0) * polar };
+
+	coordinate_transform(&point.x, &point.y, LIDAR_THETA, LIDAR_OFFSET_X, LIDAR_OFFSET_Y);
+	return point;
+
+}
+
+Vector2<double> robot::get_middle_point(const Vector2<double>& p1,const Vector2<double>& p2,const Paras& para) {
+	auto p3 = (p1 + p2) / 2;
+	Vector2<double> target{};
+
+//	ROS_INFO("p1(%f,%f)", p1.x, p1.y);
+//	ROS_INFO("p2(%f,%f)", p2.x, p2.y);
+//	ROS_INFO("p3 (%f,%f)", p3.x, p3.y);
+
+//	auto x4 = para.narrow / (sqrt(1 + p1.SquaredDistance(p2))) + p3.x;
+//	auto y4 = ((x4 - p3.x) * (p1.x - p2.x) / (p2.y - p1.y)) + p3.y;
+	auto dx = para.narrow / (sqrt(1 + ((p1.x - p2.x) / (p2.y - p1.y)) * ((p1.x - p2.x) / (p2.y - p1.y))));
+	auto x4 = dx + p3.x;
+
+	auto dy = (x4 - p3.x) * (p1.x - p2.x) / (p2.y - p1.y);
+	auto y4 = dy + p3.y;
+
+//	ROS_INFO("x4,y4(%f,%f)", x4, y4);
+
+	if (((p1.x - x4) * (p2.y - y4) - (p1.y - y4) * (p2.x - x4)) < 0) {
+		target = {x4,y4};
+//		ROS_INFO_FL();
+//		ROS_INFO("target(%f,%f)", target.x, target.y);
+	}
+	else {
+		x4 =  -dx + p3.x;
+		y4 = (x4 - p3.x) * (p1.x - p2.x) / (p2.y - p1.y) + p3.y;
+		target = {x4,y4};
+//		ROS_INFO_FL();
+//		ROS_INFO("target(%f,%f)", target.x, target.y);
+	}
+	return target;
+}
+
+bool robot::check_is_valid(const Vector2<double>& point, Paras& para, const sensor_msgs::LaserScan::ConstPtr & scan) {
+	for (int i = 359; i >= 0; i--) {
+		auto tmp_point = polar_to_cartesian(scan->ranges[i], i);
+		auto distance = point.Distance(tmp_point);
+		//ROS_INFO("distance =  %lf", distance);
+		if (distance < para.narrow - 0.03) {
+			return false;
+		}
+	}
+	return true;
+}
+
+bool robot::calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,bool is_left, std::deque<Vector2<double>>& points) {
+	Paras para{is_left};
+
+	auto is_corner = check_corner(scan, para);
+	ROS_WARN("is_corner = %d", is_corner);
+	for (int i = 359; i >= 0; i--) {
+		//ROS_INFO("i = %d", i);
+		if (scan->ranges[i] < 4 && scan->ranges[i - 1] < 4) {
+			auto point1 = polar_to_cartesian(scan->ranges[i], i);
+
+			if (!para.inPoint1Range(point1, is_corner))
+				continue;
+
+			auto point2 = polar_to_cartesian(scan->ranges[i - 1], i - 1);
+
+			if (point2.Distance(point1) > 0.05) {
+				//ROS_INFO("two points distance is too large");
+				continue;
+			}
+			auto target = get_middle_point(point1, point2, para);
+
+			if (!para.inTargetRange(target))
+				continue;
+
+			if (target.Distance({0, 0}) > 0.4)
+				continue;
+
+			if (!check_is_valid(target, para, scan))
+				continue;
+
+//			ROS_INFO("points(%d):target(%lf,%lf),dis(%f)", points.size(), target.x, target.y, target.Distance({CHASE_X, 0}));
+			points.push_back(target);
+		}
+	}
+
+	if (points.empty()) {
+		return false;
+	}
+	if (!is_left) {
+		std::reverse(points.begin(), points.end());//for the right wall follow
+	}
+	auto min = std::min_element(points.rbegin(), points.rend(), [](Vector2<double>& a, Vector2<double>& b) {
+//		ROS_INFO("dis(%f,%f)", a.Distance({CHASE_X, 0}), b.Distance({CHASE_X, 0}));
+		return a.Distance({CHASE_X, 0}) < b.Distance({CHASE_X, 0});
+	});
+//	ROS_INFO("min(%f,%f)",min->x, min->y);
+
+	auto size = points.size();
+	std::copy(points.rbegin(), min+1, std::front_inserter(points));
+	points.resize(size);
+//	for (const auto &target :points)
+//			ROS_WARN("points(%d):target(%lf,%lf),dis(%f)", points.size(), target.x, target.y, target.Distance({CHASE_X, 0}));
+//	}
+	robot::instance()->pubPointMarkers(&points, "base_link");
+
+	return true;
+}
+
+void robot::scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr& scan)
 {
 	lidar.scanOriginalCb(scan);
+	if (lidar.isScanOriginalReady() && (p_mode->action_i_ == p_mode->ac_follow_wall_left || p_mode->action_i_ == p_mode->ac_follow_wall_right)) {
+		std::deque<Vector2<double>> points{};
+		if (calcLidarPath(scan, p_mode->action_i_ == p_mode->ac_follow_wall_left, points)) {
+			setTempTarget(points);
+		}
+	}
 }
 
 void robot::scanCompensateCb(const sensor_msgs::LaserScan::ConstPtr &msg)
@@ -361,7 +497,7 @@ void robot::visualizeMarkerInit()
 	clean_map_markers_.colors.clear();
 }
 
-void robot::setCleanMapMarkers(int8_t x, int8_t y, CellState type)
+void robot::setCleanMapMarkers(int16_t x, int16_t y, CellState type)
 {
 	m_points_.x = x * (float)CELL_SIZE / 1000;
 	m_points_.y = y * (float)CELL_SIZE / 1000;
@@ -381,7 +517,7 @@ void robot::setCleanMapMarkers(int8_t x, int8_t y, CellState type)
 			color_.b = 0.0;
 		}
 	}
-	else if (type == BLOCKED_OBS)
+	else if (type == BLOCKED_FW)
 	{
 		color_.r = 0.2;
 		color_.g = 0.1;
@@ -460,7 +596,7 @@ void robot::setCleanMapMarkers(int8_t x, int8_t y, CellState type)
 	clean_map_markers_.colors.push_back(color_);
 }
 
-void robot::pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path, Cell_t* cell_p)
+void robot::pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path)
 {
 	// temp_target is valid if only path is not empty.
 	if (path.empty())
@@ -472,21 +608,19 @@ void robot::pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path, Cel
 	Cell_t target = path.back();
 	map.getMapRange(CLEAN_MAP, &x_min, &x_max, &y_min, &y_max);
 
-	if (next.X == SHRT_MIN )
-		next.X = x_min;
-	else if (next.X == SHRT_MAX)
-		next.X = x_max;
+	if (next.x == SHRT_MIN )
+		next.x = x_min;
+	else if (next.x == SHRT_MAX)
+		next.x = x_max;
 
 	for (x = x_min; x <= x_max; x++)
 	{
 		for (y = y_min; y <= y_max; y++)
 		{
-			if (x == target.X && y == target.Y)
+			if (x == target.x && y == target.y)
 				robot::instance()->setCleanMapMarkers(x, y, TARGET_CLEAN);
-			else if (x == next.X && y == next.Y)
+			else if (x == next.x && y == next.y)
 				robot::instance()->setCleanMapMarkers(x, y, TARGET);
-			else if (cell_p != nullptr && x == (*cell_p).X && y == (*cell_p).Y)
-				robot::instance()->setCleanMapMarkers(x, y, TARGET_CLEAN);
 			else
 			{
 				cell_state = map.getCell(CLEAN_MAP, x, y);
@@ -497,10 +631,10 @@ void robot::pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path, Cel
 	}
 	if (!path.empty())
 	{
-		for (auto it = path.begin(); it->X != path.back().X || it->Y != path.back().Y; it++)
-			robot::instance()->setCleanMapMarkers(it->X, it->Y, TARGET);
+		for (auto it = path.begin(); it->x != path.back().x || it->y != path.back().y; it++)
+			robot::instance()->setCleanMapMarkers(it->x, it->y, TARGET);
 
-		robot::instance()->setCleanMapMarkers(path.back().X, path.back().Y, TARGET_CLEAN);
+		robot::instance()->setCleanMapMarkers(path.back().x, path.back().y, TARGET_CLEAN);
 	}
 
 	clean_map_markers_.header.stamp = ros::Time::now();
@@ -593,8 +727,8 @@ void robot::pubLineMarker(std::vector<std::vector<Vector2<double>> > *groups)
 			for (int j = 0; j < points_size; j++) {
 				//line_marker.pose.position.x = (iter->begin() + j)->x;
 				//line_marker.pose.position.y = (iter->begin() + j)->y;
-				lidar_points_.x = (iter->begin() + j)->X;
-				lidar_points_.y = (iter->begin() + j)->Y;
+				lidar_points_.x = (iter->begin() + j)->x;
+				lidar_points_.y = (iter->begin() + j)->y;
 				//ROS_INFO("lidar_points_.x = %lf lidar_points_.y = %lf",lidar_points_.x, lidar_points_.y);
 				line_marker.points.push_back(lidar_points_);
 			}
@@ -612,20 +746,20 @@ void robot::pubFitLineMarker(visualization_msgs::Marker fit_line_marker)
 	fit_line_marker_pub_.publish(fit_line_marker);
 }
 
-void robot::pubPointMarkers(const std::vector<Vector2<double>> *points, std::string frame_id)
+void robot::pubPointMarkers(const std::deque<Vector2<double>> *points, std::string frame_id)
 {
 	visualization_msgs::Marker point_marker;
 	point_marker.ns = "point_marker";
 	point_marker.id = 0;
-	point_marker.type = visualization_msgs::Marker::POINTS;
+	point_marker.type = visualization_msgs::Marker::SPHERE_LIST;
 	point_marker.action= 0;//add
 	point_marker.lifetime=ros::Duration(0),"base_link";
-	point_marker.scale.x = 0.02;
-	point_marker.scale.y = 0.02;
-	point_marker.scale.z = 0.0;
-	point_marker.color.r = 1.0;
+	point_marker.scale.x = 0.05;
+	point_marker.scale.y = 0.05;
+	point_marker.scale.z = 0.05;
+	point_marker.color.r = 0.0;
 	point_marker.color.g = 1.0;
-	point_marker.color.b = 1.0;
+	point_marker.color.b = 0.0;
 	point_marker.color.a = 1.0;
 	point_marker.header.frame_id = frame_id;
 	point_marker.header.stamp = ros::Time::now();
@@ -635,21 +769,20 @@ void robot::pubPointMarkers(const std::vector<Vector2<double>> *points, std::str
 	if (!points->empty()) {
 		std::string msg("");
 		for (auto iter = points->cbegin(); iter != points->cend(); ++iter) {
-			lidar_points.x = iter->X;
-			lidar_points.y = iter->Y;
+			lidar_points.x = iter->x;
+			lidar_points.y = iter->y;
 			point_marker.points.push_back(lidar_points);
-			msg+="("+std::to_string(iter->X)+","+std::to_string(iter->Y)+"),";
+			msg+="("+std::to_string(iter->x)+","+std::to_string(iter->y)+"),";
 		}
 		point_marker_pub_.publish(point_marker);
 		//ROS_INFO("%s,%d,points size:%u,points %s",__FUNCTION__,__LINE__,points->size(),msg.c_str());
 		point_marker.points.clear();
+		ROS_INFO("pub point!!");
 	}
-	/*
 	else {
 		point_marker.points.clear();
-		point_marker_pub.publish(point_marker);
+		point_marker_pub_.publish(point_marker);
 	}
-	*/
 }
 
 bool robot::lidarMotorCtrl(bool switch_)
@@ -744,6 +877,27 @@ void robot::obsAdjustCount(int count)
 #endif
 }
 
+void robot::setTempTarget(std::deque<Vector2<double>>& points) {
+	boost::mutex::scoped_lock(temp_target_mutex_);
+	tmp_plan_path_.clear();
+
+//	ROS_ERROR("curr_point(%d,%d)",getPosition().x,getPosition().y);
+	for (const auto &iter : points) {
+		auto target = getPosition().getRelative(int(iter.x * 1000), int(iter.y * 1000));
+		tmp_plan_path_.push_back(target);
+//		ROS_INFO("temp_target(%d,%d)",target.x,target.y);
+	}
+}
+
+Points robot::getTempTarget() const
+{
+	boost::mutex::scoped_lock(temp_target_mutex_);
+
+//	auto tmp = tmp_plan_path_;
+//	tmp_plan_path_.clear();
+//	return tmp;
+	return tmp_plan_path_;
+}
 //--------------------
 static int32_t xCount{}, yCount{};
 
@@ -784,40 +938,3 @@ Point32_t updatePosition()
 //	ROS_INFO("%s %d:", __FUNCTION__, __LINE__);
 	return getPosition();
 }
-
-uint16_t relative_theta = 3600;
-Point32_t getRelative(Point32_t point, int16_t dy, int16_t dx, bool using_point_pos) {
-	double relative_sin, relative_cos;
-	if(point.TH != relative_theta) {
-		if(point.TH == 0) {
-			relative_sin = 0;
-			relative_cos = 1;
-		} else if(point.TH == 900) {
-			relative_sin = 1;
-			relative_cos = 0;
-		} else if(point.TH == 1800) {
-			relative_sin = 0;
-			relative_cos = -1;
-		} else if(point.TH == -900) {
-			relative_sin = -1;
-			relative_cos = 0;
-		} else {
-			relative_sin = sin(deg_to_rad(point.TH, 10));
-			relative_cos = cos(deg_to_rad(point.TH, 10));
-		}
-	}
-
-	if (using_point_pos)
-	{
-		point.X += (int32_t)( ( ((double)dx * relative_cos * CELL_COUNT_MUL) - ((double)dy	* relative_sin * CELL_COUNT_MUL) ) / CELL_SIZE );
-		point.Y += (int32_t)( ( ((double)dx * relative_sin * CELL_COUNT_MUL) + ((double)dy	* relative_cos * CELL_COUNT_MUL) ) / CELL_SIZE );
-	}
-	else
-	{
-		point.X = cellToCount(point.toCell().X) + (int32_t)( ( ((double)dx * relative_cos * CELL_COUNT_MUL) - ((double)dy	* relative_sin * CELL_COUNT_MUL) ) / CELL_SIZE );
-		point.Y = cellToCount(point.toCell().Y) + (int32_t)( ( ((double)dx * relative_sin * CELL_COUNT_MUL) + ((double)dy	* relative_cos * CELL_COUNT_MUL) ) / CELL_SIZE );
-//		ROS_ERROR("piont.x:%d  point:y:%d",point.X,point.Y,point.TH);
-	}
-	return point;
-}
-

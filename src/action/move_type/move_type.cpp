@@ -13,8 +13,8 @@ int IMoveType::movement_i_ = mm_null;
 bool IMoveType::shouldMoveBack()
 {
 	// Robot should move back for these cases.
-	ev.bumper_triggered = bumper.get_status();
-	ev.cliff_triggered = cliff.get_status();
+	ev.bumper_triggered = bumper.getStatus();
+	ev.cliff_triggered = cliff.getStatus();
 	ev.tilt_triggered = gyro.getTiltCheckingStatus();
 
 	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip)
@@ -33,7 +33,7 @@ bool IMoveType::isOBSStop()
 //	PP_INFO();
 	return false;
 /*
-	ev.obs_triggered = obs.get_status(200, 1700, 200);
+	ev.obs_triggered = obs.getStatus(200, 1700, 200);
 	if(ev.obs_triggered)
 	{
 		turn_angle = obs_turn_angle();

@@ -4,13 +4,14 @@
 
 #include <mathematics.h>
 #include <pp.h>
+#include <event_manager.h>
 #include "arch.hpp"
 
 #define NAV_INFO() ROS_INFO("st(%d),ac(%d)", state_i_, action_i_)
 
 Points ACleanMode::passed_path_ = {};
 Points ACleanMode::plan_path_ = {};
-Point32_t ACleanMode::last_ = {};
+//Point32_t ACleanMode::last_ = {};
 //boost::shared_ptr<IMovement> ACleanMode::sp_movement_ = nullptr;
 
 ACleanMode::ACleanMode()
@@ -74,10 +75,26 @@ void ACleanMode::setNextModeDefault()
 	}
 }
 
+bool ACleanMode::isExit()
+{
+	if (state_i_ == st_init)
+	{
+		if (action_i_ == ac_open_lidar && sp_action_->isTimeUp())
+		{
+			error.set(ERROR_CODE_LIDAR);
+			setNextMode(md_idle);
+			ev.fatal_quit = true;
+			return true;
+		}
+	}
+
+	return false;
+}
+
 bool ACleanMode::isFinish()
 {
 	if (state_i_ != st_init)
-		updatePath(*map_);
+		updatePath(clean_map_);
 
 	if (!(sp_action_ == nullptr || sp_action_->isFinish()))
 		return false;
@@ -87,7 +104,7 @@ bool ACleanMode::isFinish()
 
 	if (state_i_ != st_init)
 	{
-		map_->saveBlocks(action_i_ == ac_linear, state_i_ == st_clean);
+		clean_map_.saveBlocks(action_i_ == ac_linear, state_i_ == st_clean);
 		mapMark();
 
 	}
@@ -104,42 +121,34 @@ bool ACleanMode::isFinish()
 	return false;
 }
 
-bool is_equal_with_angle_(const Point32_t &l, const Point32_t &r)
-{
-	return  l.toCell() == r.toCell() && std::abs(ranged_angle(l.TH - r.TH)) < 200;
-}
-
 Point32_t ACleanMode::updatePath(GridMap& map)
 {
 	auto curr = updatePosition();
 //	auto point = getPosition();
 //	robot::instance()->pubCleanMapMarkers(nav_map, tmp_plan_path_);
 //	PP_INFO();
-//	ROS_INFO("point(%d,%d,%d)",point.X, point.Y,point.TH);
-//	ROS_INFO("last(%d,%d,%d)",last_.X, last_.Y, last_.TH);
+//	ROS_INFO("point(%d,%d,%d)",point.x, point.y,point.th);
+//	ROS_INFO("last(%d,%d,%d)",last_.x, last_.y, last_.th);
 	if (passed_path_.empty())
 	{
 		passed_path_.push_back(curr);
-//		ROS_INFO("curr(%d,%d,%d)",curr.X, curr.Y, curr.TH);
+		last_ = curr;
 	}
-	else if (!is_equal_with_angle_(curr, last_))
+	else if (!curr.isCellAndAngleEqual(last_))
 	{
 		last_ = curr;
-		passed_path_.push_back(curr);
-		/*
 		auto loc = std::find_if(passed_path_.begin(), passed_path_.end(), [&](Point32_t it) {
-				return is_equal_with_angle_(curr, it);
+				return curr.isCellAndAngleEqual(it);
 		});
 		auto distance = std::distance(loc, passed_path_.end());
 		if (distance == 0) {
-			ROS_INFO("curr(%d,%d,%d)",curr.toCell().X, curr.toCell().Y, curr.TH);
+			ROS_INFO("curr(%d,%d,%d)",curr.toCell().x, curr.toCell().y, curr.th);
 			passed_path_.push_back(curr);
 		}
 		if (distance > 5) {
-			passed_path_.clear();
-			g_wf_reach_count++;
+		ROS_INFO("reach_cleaned_count_(%d)",reach_cleaned_count_);
+			reach_cleaned_count_++;
 		}
-		*/
 		map.saveBlocks(action_i_ == ac_linear, state_i_ == st_clean);
 //		displayPath(passed_path_);
 	}
@@ -193,7 +202,7 @@ void ACleanMode::stateInit(int next)
 		PP_INFO();
 	}
 	if (next == st_clean) {
-		g_wf_reach_count = 0;
+		reach_cleaned_count_ = 0;
 		led.set_mode(LED_STEADY, LED_GREEN);
 		PP_INFO();
 	}
@@ -216,7 +225,7 @@ void ACleanMode::stateInit(int next)
 		ev.battery_home = false;
 
 		if (go_home_path_algorithm_ == nullptr)
-			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(*map_, home_points_));
+			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
 		ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_points_.size());
 
 	}
@@ -227,7 +236,7 @@ void ACleanMode::stateInit(int next)
 		led.set_mode(LED_FLASH, LED_GREEN, 300);
 	}
 	if (next == st_exploration) {
-		g_wf_reach_count = 0;
+		reach_cleaned_count_ = 0;
 		led.set_mode(LED_STEADY, LED_ORANGE);
 	}
 	if (next == st_go_to_charger) {
@@ -270,9 +279,14 @@ void ACleanMode::setRconPos(Point32_t pos)
 		charger_pos_ = pos;
 }
 
-bool ACleanMode::ActionFollowWallisFinish()
+bool ACleanMode::actionFollowWallisFinish()
 {
 	return false;
+}
+
+void ACleanMode::actionFollowWallSaveBlocks()
+{
+	return;
 }
 
 bool ACleanMode::setNextStateForGoHomePoint(GridMap &map)
@@ -302,9 +316,10 @@ bool ACleanMode::setNextStateForGoHomePoint(GridMap &map)
 	else if (go_home_path_algorithm_->generatePath(map, getPosition(),old_dir_, plan_path_))
 	{
 		// New path to home cell is generated.
-		new_dir_ = (MapDirection)plan_path_.front().TH;
+		new_dir_ = (MapDirection)plan_path_.front().th;
 		plan_path_.pop_front();
 		go_home_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
+		robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 	}
 	else
 	{
@@ -321,17 +336,17 @@ void ACleanMode::path_set_home(const Point32_t& curr)
 	bool is_found = false;
 
 	for (const auto& it : g_homes) {
-		ROS_INFO("%s %d: curr\033[33m(%d, %d)\033[0m home_it\033[33m(%d,%d)\033[0m.", __FUNCTION__, __LINE__, curr.X, curr.Y,it.X,it.Y);
+		ROS_INFO("%s %d: curr\033[33m(%d, %d)\033[0m home_it\033[33m(%d,%d)\033[0m.", __FUNCTION__, __LINE__, curr.x, curr.y,it.x,it.y);
 		if (it.toCell() == curr.toCell()) {
 			is_found = true;
 			break;
 		}
 	}
 	if (!is_found) {
-		ROS_INFO("%s %d: Push new reachable home:\033[33m (%d, %d)\033[0m to home point list.", __FUNCTION__, __LINE__, curr.X, curr.Y);
+		ROS_INFO("%s %d: Push new reachable home:\033[33m (%d, %d)\033[0m to home point list.", __FUNCTION__, __LINE__, curr.x, curr.y);
 		g_have_seen_charger = true;
 		// If curr near (0, 0)
-		if (abs(curr.X) >= 5 || abs(curr.Y) >= 5)
+		if (abs(curr.x) >= 5 || abs(curr.y) >= 5)
 		{
 			if(g_homes.size() >= HOME_CELLS_SIZE+1)//escape_count + zero_home = 3+1 = 4
 			{
@@ -356,7 +371,7 @@ void ACleanMode::setRconPos(float cd,float dist)
 	charger_pos_ = {(int32_t)(wpx*1000/CELL_SIZE), (int32_t)(wpy*1000/CELL_SIZE),(int16_t)0};
 	if(found_charger_)
 		g_homes.push_back(charger_pos_);
-//	ROS_INFO("%s,%d:rcon value \033[32m0x%x\033[0m,charger direction \033[32m%f\033[0m,cureent direction \033[32m%f\033[0m,distance \033[32m%f\033[0m,world pos(\033[32m%f,%f\033[0m), cell pos(\033[32m%hd,%hd\033[0m)",__FUNCTION__,__LINE__,rcon_status_&RconAll_Home_T,cd,yaw,dist,wpx,wpy,charger_pos_.X,charger_pos_.Y);
+//	ROS_INFO("%s,%d:rcon value \033[32m0x%x\033[0m,charger direction \033[32m%f\033[0m,cureent direction \033[32m%f\033[0m,distance \033[32m%f\033[0m,world pos(\033[32m%f,%f\033[0m), cell pos(\033[32m%hd,%hd\033[0m)",__FUNCTION__,__LINE__,rcon_status_&RconAll_Home_T,cd,yaw,dist,wpx,wpy,charger_pos_.x,charger_pos_.y);
 
 }
 

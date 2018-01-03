@@ -29,7 +29,6 @@ bool is_robotbase_stop(void);
 void serial_receive_routine_cb();
 void robotbase_routine_cb();
 void serial_send_routine_cb();
-void core_thread_cb();
 Mode *getNextMode(int next_mode_i_);
 void process_beep();
 void process_led();

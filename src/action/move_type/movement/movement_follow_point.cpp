@@ -10,14 +10,10 @@ void AMovementFollowPoint::adjustSpeed(int32_t &left_speed, int32_t &right_speed
 //	ROS_WARN("%s,%d: g_p_clean_mode->plan_path_size(%d)",__FUNCTION__, __LINE__,p_clean_mode->tmp_plan_path_.size());
 	wheel.setDirectionForward();
 	Point32_t tmp_target;
-	if(!calcTmpTarget(tmp_target))
-	{
-		left_speed = right_speed = 0;
-		return;
-	}
+	calcTmpTarget(tmp_target);
 
 	auto curr_p = getPosition();
-	auto angle_diff = ranged_angle( course_to_dest(curr_p, tmp_target) - getPosition().TH);
+	auto angle_diff = ranged_angle( course_to_dest(curr_p, tmp_target) - getPosition().th);
 	if (integration_cycle_++ > 10) {
 		integration_cycle_ = 0;
 		integrated_ += angle_diff;

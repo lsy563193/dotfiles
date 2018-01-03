@@ -107,7 +107,7 @@ protected:
 	 */
 	bool checkTrappedUsingDijkstra(GridMap &map, const Cell_t &curr_cell);
 
-	Cell_t cell_direction_index_[9]={{1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1},{0,0}};
+	const Cell_t cell_direction_index_[9]{{1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1},{0,0}};
 };
 
 typedef enum {
@@ -207,7 +207,7 @@ private:
 	bool filterPathsToSelectTarget(GridMap &map, const PathList &paths, const Cell_t &curr_cell, Cell_t &best_target);
 
 	/*
-	 * Sorting function, for sorting paths with their targets by Y+ ascending sequence.
+	 * Sorting function, for sorting paths with their targets by y+ ascending sequence.
 	 */
 	static bool sortPathsWithTargetYAscend(const Cells a, const Cells b);
 
@@ -225,7 +225,8 @@ class SpotCleanPathAlgorithm: public APathAlgorithm
 {
 public:
 	SpotCleanPathAlgorithm();
-	SpotCleanPathAlgorithm(float diameter,Cell_t curcell);
+	SpotCleanPathAlgorithm(float diameter,Cell_t cur_cell);
+
 	~SpotCleanPathAlgorithm();
 
 	bool generatePath(GridMap &map, const Point32_t &curr, const MapDirection &last_dir, Points &targets) override;
@@ -239,9 +240,7 @@ private:
 	
 	float spot_diameter_ ;
 	bool spot_running_;
-	bool block_event_;
 	Cells targets_cells_;
-	Points targets_last_points_;
 	Cell_t begin_cell_; 
 	Cell_t state_cell_;
 };

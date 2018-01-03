@@ -7,7 +7,7 @@
 
 Cliff cliff;
 
-uint8_t Cliff::get_status(void)
+uint8_t Cliff::getStatus(void)
 {
 	uint8_t status = 0x00;
 

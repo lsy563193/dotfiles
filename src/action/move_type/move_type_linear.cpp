@@ -38,6 +38,7 @@ bool MoveTypeLinear::isFinish()
 
 		if (movement_i_ == mm_turn) {
 			PP_INFO();
+			// todo: Add checking for bumper/cliff/etc.
 			movement_i_ = mm_forward;
 			resetTriggeredValue();
 			sp_movement_.reset(new MovementFollowPointLinear());
@@ -70,3 +71,5 @@ MoveTypeLinear::~MoveTypeLinear()
 {
 //	PP_WARN();
 }
+
+

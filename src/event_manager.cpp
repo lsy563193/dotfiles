@@ -161,13 +161,13 @@ void event_manager_thread_cb()
 
 
 		/* Bumper */
-		if (bumper.get_status() == BLOCK_ALL) {
+		if (bumper.getStatus() == BLOCK_ALL) {
 			ROS_DEBUG("%s %d: setting event:all bumper trig ", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_BUMPER_ALL);
-		} else if (bumper.get_status() & BLOCK_LEFT) {
+		} else if (bumper.getStatus() & BLOCK_LEFT) {
 			ROS_DEBUG("%s %d: setting event: left bumper trig", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_BUMPER_LEFT);
-		} else if (bumper.get_status() & BLOCK_RIGHT) {
+		} else if (bumper.getStatus() & BLOCK_RIGHT) {
 			ROS_DEBUG("%s %d: setting event: right bumper trig", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_BUMPER_RIGHT);
 		}
@@ -187,25 +187,25 @@ void event_manager_thread_cb()
 		}
 
 		/* Cliff */
-		if (cliff.get_status() == BLOCK_ALL) {
+		if (cliff.getStatus() == BLOCK_ALL) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_ALL);
-		} else if (cliff.get_status() == (BLOCK_FRONT | BLOCK_LEFT)) {
+		} else if (cliff.getStatus() == (BLOCK_FRONT | BLOCK_LEFT)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_FRONT_LEFT);
-		} else if (cliff.get_status() == (BLOCK_FRONT | BLOCK_RIGHT)) {
+		} else if (cliff.getStatus() == (BLOCK_FRONT | BLOCK_RIGHT)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_FRONT_RIGHT);
-		} else if (cliff.get_status() == (BLOCK_LEFT | BLOCK_RIGHT)) {
+		} else if (cliff.getStatus() == (BLOCK_LEFT | BLOCK_RIGHT)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_LEFT_RIGHT);
-		} else if (cliff.get_status() == (BLOCK_FRONT)) {
+		} else if (cliff.getStatus() == (BLOCK_FRONT)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_FRONT);
-		} else if (cliff.get_status() == (BLOCK_LEFT)) {
+		} else if (cliff.getStatus() == (BLOCK_LEFT)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_LEFT);
-		} else if (cliff.get_status() == (BLOCK_RIGHT)) {
+		} else if (cliff.getStatus() == (BLOCK_RIGHT)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_RIGHT);
 		}
@@ -620,7 +620,7 @@ void EventHandle::bumperAll(bool state_now, bool state_last)
 	move_back();
 	wheel_stop();
 
-	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, bumper.get_status());*/
+	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, bumper.getStatus());*/
 }
 
 void EventHandle::bumperLeft(bool state_now, bool state_last)
@@ -637,7 +637,7 @@ void EventHandle::bumperLeft(bool state_now, bool state_last)
 
 	move_back();
 	wheel_stop();
-	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, bumper.get_status());*/
+	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, bumper.getStatus());*/
 }
 
 void EventHandle::bumperRight(bool state_now, bool state_last)
@@ -655,7 +655,7 @@ void EventHandle::bumperRight(bool state_now, bool state_last)
 
 	move_back();
 	wheel_stop();
-	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, bumper.get_status());*/
+	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, bumper.getStatus());*/
 }
 
 /* OBS */

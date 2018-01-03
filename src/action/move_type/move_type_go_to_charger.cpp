@@ -1,6 +1,7 @@
 //
 // Created by lsy563193 on 12/4/17.
 //
+#include <event_manager.h>
 #include "pp.h"
 #include "arch.hpp"
 
@@ -24,10 +25,16 @@ bool MoveTypeGoToCharger::isFinish()
 {
 	if (p_gtc_movement_->isFinish())
 		return true;
-	else if ((p_back_movement_ != nullptr) && p_back_movement_->isFinish())
-		p_back_movement_.reset();
-	else if ((p_turn_movement_ != nullptr) && p_turn_movement_->isFinish())
-		p_turn_movement_.reset();
+	else if (p_back_movement_ != nullptr)
+	{
+		if (p_back_movement_->isFinish())
+			p_back_movement_.reset();
+	}
+	else if (p_turn_movement_ != nullptr)
+	{
+		if (p_turn_movement_->isFinish())
+			p_turn_movement_.reset();
+	}
 	else if (p_gtc_movement_->isSwitch())
 	{
 		int16_t turn_angle;

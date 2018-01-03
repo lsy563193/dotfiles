@@ -16,6 +16,7 @@ ActionIdle::ActionIdle()
 	else
 		led.set_mode(LED_BREATH, LED_GREEN);
 }
+
 ActionIdle::~ActionIdle()
 {
 
