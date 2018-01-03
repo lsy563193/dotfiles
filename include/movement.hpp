@@ -19,7 +19,7 @@ class IMoveType;
 class IMovement: public IAction,public ISpeedGovernor
 {
 public:
-	virtual void adjustSpeed(int32_t&, int32_t&)=0;
+//	virtual void adjustSpeed(int32_t&, int32_t&)=0;
 	virtual void run();
 	virtual bool isFinish()=0;
 //	static ACleanMode* sp_mode_;
@@ -181,7 +181,7 @@ public:
 	Points _calcTmpTarget();
 
 	bool isFinish() override ;
-	bool is_near();
+	bool is_near() override ;
 private:
 	Points virtual_targets_{};
 	Points lidar_targets_{};
