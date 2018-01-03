@@ -93,6 +93,7 @@ public:
 	ModeIdle();
 	~ModeIdle() override;
 	bool isExit() override;
+	bool isFinish() override;
 	void remoteKeyHandler(bool state_now, bool state_last);
 	void remoteDirectionLeft(bool state_now, bool state_last) override
 	{ remoteKeyHandler(state_now, state_last);}
@@ -118,6 +119,7 @@ protected:
 //	std::vector<Cell_t> temp_fw_cells;
 private:
 	void register_events(void);
+	bool battery_low_{false};
 
 	bool plan_activated_status_;
 
@@ -224,7 +226,6 @@ public:
 	virtual bool setNextAction();
 	void genNextAction();
 	bool setNextStateForGoHomePoint(GridMap &map);
-
 	void setRconPos(float cd,float dist);
 
 	void path_set_home(const Point32_t& curr);
