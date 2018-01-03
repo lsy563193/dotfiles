@@ -108,31 +108,21 @@ bool ACleanMode::isExit()
 
 bool ACleanMode::isFinish()
 {
-	if (sp_state != state_init)
-		updatePath(clean_map_);
-
-	if (!(sp_action_ == nullptr || sp_action_->isFinish()))
-		return false;
-
-	sp_action_.reset();//for call ~constitution;
-	PP_INFO();
-
-	if (sp_state != state_init)
-	{
-		clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
-		mapMark();
-
+	if (isExceptionTriggered()) {
+		ROS_INFO("%s %d: Pass this state switching for exception cases.", __FUNCTION__, __LINE__);
+		// Apply for all states.
+		// If all these exception cases happens, directly set next action to exception resume action.
+		// BUT DO NOT CHANGE THE STATE!!! Because after exception resume it should restore the state.
+		sp_state = nullptr;
 	}
+	else
+		while (ros::ok() && !sp_state->isFinish());
 
-	do
+	if(sp_state == nullptr)
 	{
-		if (!setNextState())
-		{
-			setNextModeDefault();
-			return true;
-		}
-	} while (ros::ok() && !setNextAction());
-
+		setNextModeDefault();
+		return true;
+	}
 	return false;
 }
 
@@ -495,17 +485,6 @@ Cells ACleanMode::pointsGenerateCells(Points &targets)
 }
 
 bool ACleanMode::setNextState() {
-	PP_INFO();
-	if (isExceptionTriggered()) {
-		ROS_INFO("%s %d: Pass this state switching for exception cases.", __FUNCTION__, __LINE__);
-		// Apply for all states.
-		// If all these exception cases happens, directly set next action to exception resume action.
-		// BUT DO NOT CHANGE THE STATE!!! Because after exception resume it should restore the state.
-		sp_state = nullptr;
-	}
-	else
-		while (ros::ok() && !sp_state->isFinish());
 
-	return sp_state != nullptr;
 }
 

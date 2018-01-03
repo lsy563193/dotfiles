@@ -533,10 +533,10 @@ void CleanModeNav::enterPause()
 //isFinish--------------------------------------------
 
 bool CleanModeNav::isFinishInit() {
-	ROS_ERROR("isFinishInit");
-//	if (!sp_action_->isFinish())
-//		return false;
-//	sp_action_.reset();//for call ~constitution;
+	if (!sp_action_->isFinish())
+		return true;
+
+	sp_action_.reset();//for call ~constitution;
 
 	if (action_i_ == ac_open_slam) {
 		has_aligned_and_open_slam_ = true;
@@ -544,7 +544,6 @@ bool CleanModeNav::isFinishInit() {
 		auto curr = updatePosition();
 		passed_path_.push_back(curr);
 		home_points_.back().home_point.th = curr.th;
-		PP_INFO();
 		sp_state = state_clean;
 		sp_state->update();
 	}
@@ -559,19 +558,24 @@ bool CleanModeNav::isFinishInit() {
 		sp_state->update();
 	}
 	else
+	{
+		setNextAction();
 		return true;
+	}
+
 	return false;
 }
 
 bool CleanModeNav::isFinishClean() {
-//	updatePath(clean_map_);
-//	if(!sp_action_->isFinish())
-//		return false;
-//	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
-//	mapMark();
-//	sp_action_.reset();//for call ~constitution;
-
+	updatePath(clean_map_);
+	if(sp_action_ != nullptr && !sp_action_->isFinish())
+		return true;
+	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
+	mapMark();
+	sp_action_.reset();//for call ~constitution;
 	PP_INFO();
+
+
 	old_dir_ = new_dir_;
 	ROS_ERROR("old_dir_(%d)", old_dir_);
 	if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
@@ -579,6 +583,7 @@ bool CleanModeNav::isFinishClean() {
 		ROS_ERROR("new_dir_(%d)", new_dir_);
 		plan_path_.pop_front();
 		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
+		setNextAction();
 		return true;
 	}
 
@@ -588,6 +593,7 @@ bool CleanModeNav::isFinishClean() {
 		sp_state = state_tmp_spot;
 		sp_state->update();
 		clean_path_algorithm_.reset(new SpotCleanPathAlgorithm);
+		setNextAction();
 		return true;
 	}
 	else {
@@ -595,6 +601,7 @@ bool CleanModeNav::isFinishClean() {
 			// Robot trapped.
 			sp_state = state_trapped;
 			sp_state->update();
+			setNextAction();
 			return true;
 		}
 		else {
@@ -611,21 +618,23 @@ bool CleanModeNav::isFinishClean() {
 }
 
 bool CleanModeNav::isFinishGoHomePoint() {
-//	updatePath(clean_map_);
-//	if(!sp_action_->isFinish())
-//		return false;
-//	sp_action_.reset();//for call ~constitution;
-//	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
-//	mapMark();
+	updatePath(clean_map_);
+	if(sp_action_ != nullptr && !sp_action_->isFinish())
+		return true;
+	sp_action_.reset();//for call ~constitution;
+	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
+	mapMark();
+
 	setNextStateForGoHomePoint(clean_map_);
+	setNextAction();
 	return true;
 }
 
 bool CleanModeNav::isFinishGoCharger() {
-//	PP_INFO();
-//	if(!sp_action_->isFinish())
-//		return false;
-//	sp_action_.reset();//for call ~constitution;
+	PP_INFO();
+	if(sp_action_ != nullptr && !sp_action_->isFinish())
+		return true;
+	sp_action_.reset();//for call ~constitution;
 
 	if (charger.isOnStub()) {
 		if (go_home_for_low_battery_) {
@@ -647,6 +656,14 @@ bool CleanModeNav::isFinishGoCharger() {
 }
 
 bool CleanModeNav::isFinishTmpSpot() {
+
+	updatePath(clean_map_);
+	if(sp_action_ != nullptr && !sp_action_->isFinish())
+		return true;
+	sp_action_.reset();//for call ~constitution;
+	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
+	mapMark();
+
 	PP_INFO();
 	old_dir_ = new_dir_;
 	ROS_ERROR("old_dir_(%d)", old_dir_);
@@ -669,12 +686,12 @@ bool CleanModeNav::isFinishTmpSpot() {
 }
 
 bool CleanModeNav::isFinishTrapped() {
-//	updatePath(clean_map_);
-//	if(!sp_action_->isFinish())
-//		return false;
-//	sp_action_.reset();//for call ~constitution;
-//	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
-//	mapMark();
+	updatePath(clean_map_);
+	if(sp_action_ != nullptr && !sp_action_->isFinish())
+		return true;
+	sp_action_.reset();//for call ~constitution;
+	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
+	mapMark();
 
 	PP_INFO();
 	if (robot_timer.trapTimeout(ESCAPE_TRAPPED_TIME)) {
@@ -693,21 +710,22 @@ bool CleanModeNav::isFinishTrapped() {
 }
 
 bool CleanModeNav::isFinishExceptionResume() {
-//	if(!sp_action_->isFinish())
-//		return false;
-//	sp_action_.reset();//for call ~constitution;
+	if(sp_action_ != nullptr && !sp_action_->isFinish())
+		return true;
+	sp_action_.reset();//for call ~constitution;
 	return true;
 }
 
 bool CleanModeNav::isFinishExploration() {
-	return false;
+	return true;
 }
 
 bool CleanModeNav::isFinishResumeLowBatteryCharge() {
-		// For key clean force continue cleaning.
-//	if(!sp_action_->isFinish())
-//		return false;
-//	sp_action_.reset();//for call ~constitution;
+//		 For key clean force continue cleaning.
+	if(sp_action_ != nullptr && !sp_action_->isFinish())
+		return true;
+	sp_action_.reset();//for call ~constitution;
+
 	if (ev.key_clean_pressed)
 		ev.key_clean_pressed = false;
 
@@ -719,6 +737,11 @@ bool CleanModeNav::isFinishResumeLowBatteryCharge() {
 }
 
 bool CleanModeNav::isFinishLowBatteryResume() {
+	if(!sp_action_->isFinish())
+		return true;
+
+	sp_action_.reset();//for call ~constitution;
+
 	PP_INFO();
 	if (getPosition().toCell() == plan_path_.back().toCell()) {
 		// Reach continue point.
@@ -745,10 +768,16 @@ bool CleanModeNav::isFinishLowBatteryResume() {
 }
 
 bool CleanModeNav::isFinishSavedBeforePause() {
+	if(sp_action_ != nullptr && !sp_action_->isFinish())
+		return true;
+	sp_action_.reset();//for call ~constitution;
 	return false;
 }
 
 bool CleanModeNav::isFinishCharge() {
+	if(sp_action_ != nullptr && !sp_action_->isFinish())
+		return true;
+	sp_action_.reset();//for call ~constitution;
 		// For low battery charge case.
 	if (battery.isReadyToResumeCleaning() || !charger.getChargeStatus())
 		resumeLowBatteryCharge();
@@ -758,5 +787,8 @@ bool CleanModeNav::isFinishCharge() {
 }
 
 bool CleanModeNav::isFinishPause() {
+	if(sp_action_ != nullptr && !sp_action_->isFinish())
+		return true;
+	sp_action_.reset();//for call ~constitution;
 	return false;
 }

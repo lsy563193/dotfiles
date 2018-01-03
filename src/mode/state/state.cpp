@@ -49,7 +49,6 @@ bool State::isFinish()
 {
 	if(sp_cm_->isStateInit())
 	{
-		ROS_INFO("!!isStateInit");
 		return sp_cm_->isFinishInit();
 	}
 
