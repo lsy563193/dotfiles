@@ -9,6 +9,17 @@
 
 #define NAV_INFO() ROS_INFO("st(%d),ac(%d)", state_i_, action_i_)
 
+State* ACleanMode::state_init = new StateInit();
+State* ACleanMode::state_clean = new StateClean();
+State* ACleanMode::state_go_home_point = new StateGoHomePoint();
+State* ACleanMode::state_go_charger = new StateGoCharger();
+State* ACleanMode::state_charge = new StateCharge();
+State* ACleanMode::state_trapped = new StateTrapped();
+State* ACleanMode::state_tmp_spot = new StateTmpSpot();
+State* ACleanMode::state_self_check = new StateSelfCheck();
+State* ACleanMode::state_exploration = new StateExploration();
+State* ACleanMode::state_resume_low_battery_charge = new StateResumeLowBatteryCharge();
+State* ACleanMode::state_saved_state_before_pause = new StateSavedStateBeforePause();
 Points ACleanMode::passed_path_ = {};
 Points ACleanMode::plan_path_ = {};
 //Point32_t ACleanMode::last_ = {};
