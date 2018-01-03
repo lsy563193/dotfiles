@@ -9,6 +9,7 @@
 #include <pp.h>
 #include <pp/SetLidar.h>
 #include <odom.h>
+#include <event_manager.h>
 #include "lidar.hpp"
 #include "robot.hpp"
 
@@ -139,7 +140,7 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 						!(fabs(wheel.getLeftWheelActualSpeed() - wheel.getRightWheelActualSpeed()) > 0.1
 					|| (wheel.getLeftWheelActualSpeed() * wheel.getRightWheelActualSpeed() < 0)
 					|| bumper.get_status()
-					|| gyro.getTiltCheckingStatus()
+					|| ev.tilt_triggered
 					|| abs(wheel.getLeftSpeedAfterPid() - wheel.getRightSpeedAfterPid()) > 100
 					|| wheel.getLeftSpeedAfterPid() * wheel.getRightSpeedAfterPid() < 0);
 

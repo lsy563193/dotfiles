@@ -3,6 +3,7 @@
 //
 
 #include <mathematics.h>
+#include <event_manager.h>
 #include "pp.h"
 #include "arch.hpp"
 boost::shared_ptr<IMovement> IMoveType::sp_movement_ = nullptr;

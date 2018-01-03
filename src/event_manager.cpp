@@ -110,6 +110,7 @@ void event_manager_init()
 
 //	handler[EVT_LIDAR_BUMPER]=handler_lidar_stuck;
 	p_handler[EVT_LIDAR_STUCK] = &EventHandle::lidarStuck;
+	p_handler[EVT_ROBOT_TILT] = &EventHandle::tilt;
 	p_eh = &default_eh;
 }
 
@@ -341,6 +342,12 @@ void event_manager_thread_cb()
 			evt_set_status_x(EVT_LIDAR_STUCK);
 		}
 
+		/*---tilt---*/
+		if(true){
+			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
+			evt_set_status_x(EVT_ROBOT_TILT);
+		}
+
 		if (set) {
 			//ROS_INFO("%s %d: going to broadcase new event", __FUNCTION__, __LINE__);
 			pthread_mutex_lock(&new_event_mtx);
@@ -454,7 +461,7 @@ void event_handler_thread_cb()
 		evt_handle_check_event(EVT_OVER_CURRENT_WHEEL_LEFT);
 		evt_handle_check_event(EVT_OVER_CURRENT_WHEEL_RIGHT);
 		evt_handle_check_event(EVT_OVER_CURRENT_SUCTION);
-		
+
 		/* Key */
 		evt_handle_check_event(EVT_KEY_CLEAN);
 
@@ -484,6 +491,9 @@ void event_handler_thread_cb()
 
 		// Lidar stuck
 		evt_handle_check_event(EVT_LIDAR_STUCK);
+
+		/*---tilt---*/
+		evt_handle_check_event(EVT_ROBOT_TILT);
 
 		pthread_mutex_lock(&event_handler_mtx);
 		g_event_handler_status = false;
@@ -930,6 +940,11 @@ void df_lidar_stuck(bool state_new,bool state_last)
 	//ev.lidarStuck = true;
 }
 
+/*---robot tilt---*/
+void EventHandle::tilt(bool state_new, bool state_last)
+{
+	ROS_DEBUG("%s %d: default tilt handle is called", __FUNCTION__, __LINE__);
+}
 ///* Default: empty hanlder */
 //void EventHandle::empty(bool state_now, bool state_last)
 //{

@@ -94,7 +94,6 @@ FILE(GLOB PP_SRC
 
 	src/error.cpp
 	src/event_manager.cpp
-	src/global.cpp
 	src/main.cpp
 	src/map.cpp
 	src/mathematics.cpp
