@@ -279,9 +279,14 @@ void ACleanMode::setRconPos(Point32_t pos)
 		charger_pos_ = pos;
 }
 
-bool ACleanMode::ActionFollowWallisFinish()
+bool ACleanMode::actionFollowWallisFinish()
 {
 	return false;
+}
+
+void ACleanMode::actionFollowWallSaveBlocks()
+{
+	return;
 }
 
 bool ACleanMode::setNextStateForGoHomePoint(GridMap &map)

@@ -881,7 +881,7 @@ void GridMap::setCleaned(std::deque<Cell_t> cells)
 		{
 			auto y = cell.y + dy;
 			auto status = getCell(CLEAN_MAP, cell.x, y);
-			if (status != BLOCKED_TILT && status != BLOCKED_SLIP && status != BLOCKED_RCON)
+			if (status != BLOCKED_TILT && status != BLOCKED_SLIP/* && status != BLOCKED_RCON*/)
 			{
 				setCell(CLEAN_MAP,cell.x,y, CLEANED);
 				//msg += "(" + std::to_string(cell.x) + "," + std::to_string(y) + "),";

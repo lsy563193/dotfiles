@@ -240,7 +240,8 @@ public:
 
 	Cells pointsGenerateCells(Points &targets);
 
-	virtual bool ActionFollowWallisFinish();
+	virtual bool actionFollowWallisFinish();
+	virtual void actionFollowWallSaveBlocks();
 	void setRconPos(Point32_t pos);
 	Point32_t updatePath(GridMap& map);
 	int reach_cleaned_count_{};
@@ -315,7 +316,8 @@ public:
 //	void overCurrentSuction(bool state_now, bool state_last);
 
 private:
-	bool ActionFollowWallisFinish() override ;
+	bool actionFollowWallisFinish() override ;
+	void actionFollowWallSaveBlocks() override ;
 	bool isNewLineReach();
 	bool isOverOriginLine();
 	bool isBlockCleared();
@@ -370,7 +372,7 @@ public:
 
 	~CleanModeFollowWall() override;
 
-	bool ActionFollowWallisFinish() override;
+	bool actionFollowWallisFinish() override;
 
 	bool setNextAction() override;
 
