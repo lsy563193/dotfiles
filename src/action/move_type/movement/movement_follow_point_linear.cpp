@@ -30,8 +30,9 @@ bool MovementFollowPointLinear::_checkIsNear(const Point32_t& tmp_target, const 
 Point32_t MovementFollowPointLinear::_calcTmpTarget(const Point32_t& curr, const Point32_t& target,MapDirection new_dir) {
 	auto curr_xy = (isXAxis(new_dir)) ? curr.x : curr.y;
 	auto &target_xy = (isXAxis(new_dir)) ? target.x : target.y;
-
-	auto tmp_target = curr;
+	Point32_t tmp_target;
+	tmp_target.x = isXAxis(new_dir) ? curr_xy : target.x;
+	tmp_target.y = isXAxis(new_dir) ? target.y : curr_xy;
 	auto &tmp_xy = (isXAxis(new_dir)) ? tmp_target.x : tmp_target.y;
 //	ROS_WARN("curr_xy(%d), target_xy(%d)", curr_xy, target_xy);
 	auto dis = std::min(std::abs(curr_xy - target_xy), (int32_t) (CELL_COUNT_MUL*0.75));
@@ -40,7 +41,7 @@ Point32_t MovementFollowPointLinear::_calcTmpTarget(const Point32_t& curr, const
 		dis *= -1;
 	tmp_xy = curr_xy + dis;
 //	ROS_WARN("tmp(%d,%d)",tmp_target.x, tmp_target.y);
-//	ROS_WARN("dis(%d),dir(%d),curr_xy(%d),tmp_xy(%d)",dis, GridMap::isPos(new_dir),curr_xy, tmp_xy);
+//	ROS_WARN("dis(%d),dir(%d), curr(%d, %d), tmp_target(%d, %d)", dis, new_dir, curr.x, curr.y, tmp_target.x, tmp_target.y);
 	return tmp_target;
 }
 

@@ -13,7 +13,7 @@ void AMovementFollowPoint::adjustSpeed(int32_t &left_speed, int32_t &right_speed
 	calcTmpTarget(tmp_target);
 
 	auto curr_p = getPosition();
-	auto angle_diff = ranged_angle( course_to_dest(curr_p, tmp_target) - getPosition().th);
+	auto angle_diff = ranged_angle( course_to_dest(curr_p, tmp_target) - curr_p.th);
 	if (integration_cycle_++ > 10) {
 		integration_cycle_ = 0;
 		integrated_ += angle_diff;
