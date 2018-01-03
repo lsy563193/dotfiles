@@ -28,6 +28,5 @@
 #include <slam.h>
 #include "mathematics.h"
 #include <event_manager.h>
-#include "global.h"
 #include "error.h"
 #endif //PP_PP_H

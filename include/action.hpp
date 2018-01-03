@@ -18,13 +18,13 @@ public:
 
 	virtual bool isExit();
 
-	bool isTimeUp();
+	virtual bool isTimeUp();
 
 	virtual void run()=0;
 
 protected:
 	double start_timer_{};
-	double interval_{};
+	double timeout_interval_{};
 };
 
 class ActionOpenGyro :public IAction
@@ -49,18 +49,19 @@ public:
 class ActionOpenLidar :public IAction
 {
 public:
-	//todo: timeout handling??
 	ActionOpenLidar();
-	bool isFinish();
-	void run();
+	bool isFinish() override;
+	bool isTimeUp() override;
+	void run() override;
 };
 
 class ActionAlign :public IAction
 {
 public:
 	ActionAlign();
-	bool isFinish();
-	void run();
+	bool isFinish() override;
+	bool isTimeUp() override;
+	void run() override;
 };
 
 class ActionOpenSlam :public IAction

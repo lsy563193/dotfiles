@@ -19,9 +19,10 @@ ActionPause::ActionPause()
 	}
 
 	start_timer_ = ros::Time::now().toSec();
-	interval_ = 600;
+	timeout_interval_ = IDLE_TIMEOUT;
 	pause_pose_.setX(odom.getX());
 	pause_pose_.setY(odom.getY());
+	ROS_INFO("%s %d: Enter action pause.", __FUNCTION__, __LINE__);
 }
 
 ActionPause::~ActionPause()

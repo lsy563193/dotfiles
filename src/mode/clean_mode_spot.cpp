@@ -15,19 +15,16 @@ CleanModeSpot::CleanModeSpot()
 	event_manager_set_enable(true);
 	IMoveType::sp_mode_ = this;
 	speaker.play(VOICE_CLEANING_SPOT,false);
-
 	nav_map.reset(COST_MAP);
 	nav_map.reset(CLEAN_MAP);
-
 	clean_path_algorithm_.reset(new SpotCleanPathAlgorithm());
 	go_home_path_algorithm_.reset();
-	map_ = &nav_map;
-	map_->reset(CLEAN_MAP);
 }
 
 CleanModeSpot::~CleanModeSpot()
 {
 	IMoveType::sp_mode_ = nullptr;
+	event_manager_set_enable(false);
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
@@ -52,14 +49,16 @@ bool CleanModeSpot::mapMark()
 	clean_path_algorithm_->displayCellPath(passed_path_cells);
 
 	if (action_i_ == ac_linear) {
-		nav_map.setCleaned(passed_path_cells);
+		PP_INFO();
+		clean_map_.setCleaned(pointsGenerateCells(passed_path_));
 	}
 
 	if (state_i_ == st_trapped)
-		nav_map.markRobot(CLEAN_MAP);
+		clean_map_.markRobot(CLEAN_MAP);
+	clean_map_.setBlocks();
+	PP_INFO();
+	clean_map_.print(CLEAN_MAP, getPosition().toCell().x, getPosition().toCell().y);
 
-	nav_map.setBlocks();
-	nav_map.print(CLEAN_MAP, getPosition().toCell().X, getPosition().toCell().Y);
 	passed_path_.clear();
 	return false;
 }
@@ -86,7 +85,7 @@ bool CleanModeSpot::isExit()
 		setNextMode(md_idle);
 		return true;
 	}
-	return false;
+	return ACleanMode::isExit();
 }
 
 bool CleanModeSpot::setNextState()
@@ -102,7 +101,7 @@ bool CleanModeSpot::setNextState()
 				auto curr = updatePosition();
 				passed_path_.push_back(curr);
 
-				home_points_.back().TH = robot::instance()->getWorldPoseAngle();
+				home_points_.back().th = robot::instance()->getWorldPoseAngle();
 				PP_INFO();
 				vacuum.setMode(Vac_Max);
 				brush.fullOperate();
@@ -131,7 +130,7 @@ bool CleanModeSpot::setNextState()
 			ROS_INFO("\033[32m plan_path front (%d,%d),cur point:(%d,%d)\033[0m",plan_path_.front().toCell().X,plan_path_.front().toCell().Y,cur_point.toCell().X,cur_point.toCell().Y);
 			if (clean_path_algorithm_->generatePath(nav_map, cur_point, old_dir_, plan_path_))
 			{
-				new_dir_ = (MapDirection)plan_path_.front().TH;
+				new_dir_ = (MapDirection)plan_path_.front().th;
 				ROS_ERROR("new_dir_(%d)", new_dir_);
 				PP_INFO();
 				clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));

@@ -45,28 +45,31 @@ public:
 
 	int action_i_{ac_null};
 	enum {
+		//0
 		ac_null,
 		ac_open_gyro,
-		ac_back_form_charger,//2
+		ac_back_form_charger,
 		ac_open_lidar,
-		ac_align,//4
+		ac_align,
+		//5
 		ac_open_slam,
-		ac_linear,//6
+		ac_linear,
 		ac_follow_wall_left,
-		ac_follow_wall_right,//8
+		ac_follow_wall_right,
 		ac_turn,
+		//10
 		ac_forward,
-		ac_back,//10
-//		ac_movement_follow_wall_left,
-//		ac_movement_follow_wall_right,
+		ac_back,
 		ac_go_to_charger,
 		ac_idle,
 		ac_sleep,
+		//15
 		ac_charge,
 		ac_turn_for_charger,
 		ac_movement_stay,
 		ac_movement_direct_go,
 		ac_pause,
+		//20
 		ac_exception_resume,
 		ac_check_bumper,
 		ac_check_vacuum,
@@ -75,9 +78,9 @@ public:
 
 	bool isExceptionTriggered();
 
+	static boost::shared_ptr<IAction> sp_action_;
 protected:
 
-	static boost::shared_ptr<IAction> sp_action_;
 	int mode_i_{ac_null};
 
 private:
@@ -90,6 +93,7 @@ public:
 	ModeIdle();
 	~ModeIdle() override;
 	bool isExit() override;
+	bool isFinish() override;
 	void remoteKeyHandler(bool state_now, bool state_last);
 	void remoteDirectionLeft(bool state_now, bool state_last) override
 	{ remoteKeyHandler(state_now, state_last);}
@@ -115,6 +119,7 @@ protected:
 //	std::vector<Cell_t> temp_fw_cells;
 private:
 	void register_events(void);
+	bool battery_low_{false};
 
 	bool plan_activated_status_;
 
@@ -215,12 +220,12 @@ class ACleanMode:public Mode
 public:
 	ACleanMode();
 	bool isFinish() override;
+	bool isExit() override;
 	void setNextModeDefault();
 	virtual bool setNextState() = 0;
 	virtual bool setNextAction();
 	void genNextAction();
 	bool setNextStateForGoHomePoint(GridMap &map);
-
 	void setRconPos(float cd,float dist);
 
 	void path_set_home(const Point32_t& curr);
@@ -235,10 +240,11 @@ public:
 
 	Cells pointsGenerateCells(Points &targets);
 
-	virtual bool ActionFollowWallisFinish();
+	virtual bool actionFollowWallisFinish();
+	virtual void actionFollowWallSaveBlocks();
 	void setRconPos(Point32_t pos);
 	Point32_t updatePath(GridMap& map);
-	int g_wf_reach_count{};
+	int reach_cleaned_count_{};
 	static Points passed_path_;
 	static Points plan_path_;
 
@@ -247,7 +253,7 @@ public:
 
 	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
 	boost::shared_ptr<APathAlgorithm> go_home_path_algorithm_{};
-	GridMap *map_;
+	GridMap clean_map_;
 	Point32_t charger_pos_{};//charger postion
 protected:
 
@@ -258,7 +264,7 @@ protected:
 //	std::vector<Cell_t> temp_fw_cells;
 	Points home_points_;
 	Points g_homes;
-	static Point32_t last_;
+	Point32_t last_;
 
 	int state_i_{st_clean};
 	enum {
@@ -289,7 +295,6 @@ public:
 	CleanModeNav();
 	~CleanModeNav();
 
-	uint8_t setFollowWall(const Points& path);
 	bool mapMark() override ;
 	bool isFinish() override ;
 	bool isExit() override;
@@ -312,7 +317,8 @@ public:
 //	void overCurrentSuction(bool state_now, bool state_last);
 
 private:
-	bool ActionFollowWallisFinish() override ;
+	bool actionFollowWallisFinish() override ;
+	void actionFollowWallSaveBlocks() override ;
 	bool isNewLineReach();
 	bool isOverOriginLine();
 	bool isBlockCleared();
@@ -361,20 +367,44 @@ public:
 
 };
 
-class CleanModeFollowWall:public ACleanMode
-{
+class CleanModeFollowWall:public ACleanMode {
 public:
 	CleanModeFollowWall();
-	~CleanModeFollowWall() override ;
 
-	bool setNextAction() override ;
-	bool setNextState() override ;
+	~CleanModeFollowWall() override;
+
+	bool actionFollowWallisFinish() override;
+
+	bool setNextAction() override;
+
+	bool setNextState() override;
+
 	bool mapMark() override;
 
+	void keyClean(bool state_now, bool state_last);
 
-	int16_t wf_path_find_shortest_path(int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound);
-	int16_t wf_path_find_shortest_path_ranged(int16_t curr_x, int16_t curr_y, int16_t end_x, int16_t end_y, uint8_t bound, int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max,bool used_unknown);
-//	bool wf_is_isolate();
+//	void overCurrentWheelLeft(bool state_now, bool state_last);
+//
+//	void overCurrentWheelRight(bool state_now, bool state_last);
+//
+	void remoteClean(bool state_now, bool state_last);
+//
+//	void remoteHome(bool state_now, bool state_last);
+//
+//	void remoteDirectionLeft(bool state_now, bool state_last);
+//
+//	void cliffAll(bool state_now, bool state_last);
+//
+//	void batteryHome(bool state_now, bool state_last);
+//
+//	void chargeDetect(bool state_now, bool state_last);
+
+	int16_t wf_path_find_shortest_path(GridMap& map, int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound);
+
+	int16_t wf_path_find_shortest_path_ranged(GridMap& map, int16_t curr_x, int16_t curr_y, int16_t end_x, int16_t end_y, uint8_t bound,
+																						int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max,
+																						bool used_unknown);
+	bool wf_is_isolate(GridMap& map);
 private:
 	uint32_t diff_timer_;
 protected:

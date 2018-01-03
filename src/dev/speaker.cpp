@@ -7,6 +7,7 @@
 #include <ros/ros.h>
 
 #include <string>
+#include <dev.h>
 
 #include "speaker.h"
 
@@ -14,185 +15,45 @@ using namespace std;
 
 #define PP_PACKAGE_PATH	"/opt/ros/indigo/share/pp/audio/%02d.wav"
 
-boost::mutex speaker_list_mutex;
+Speaker speaker;
 
 Speaker::Speaker(void)
 {
-	can_pp_keep_running_ = true;
 }
 
 void Speaker::playRoutine(void)
 {
-	int	rc, ret, size, dir, channels, frequency, bit, datablock, nread;
-	char	audio_file[64];
-
-	unsigned int	val;
-	VoiceStruct curr_voice;
-
-	snd_pcm_uframes_t	frames;
-	snd_pcm_hw_params_t	*params;
-
 	while(ros::ok())
 	{
-		if(!can_pp_keep_running_)
+		if(!finish_playing_)
 		{
-			speaker_list_mutex.lock();
-			curr_voice.type = list_.front().type;
-			curr_voice.can_be_interrupted = list_.front().can_be_interrupted;
-			list_.pop_front();
-			speaker_list_mutex.unlock();
-
-			/*---pp can go on if the speaker can be interrupt---*/
-			if(curr_voice.can_be_interrupted)
-				can_pp_keep_running_ = true;
-			dir = 0;
-			snprintf(audio_file, 38, PP_PACKAGE_PATH, curr_voice.type);
-			fp_ = fopen(audio_file, "rb");
-			if (fp_ == NULL) {
-				ROS_ERROR("open file failed: %s\n", audio_file);
-				continue;
-			}
-
-			ROS_INFO("%s %d: Play the wav %d.", __FUNCTION__, __LINE__, curr_voice.type);
-			nread = fread(&voice_header_, 1, sizeof(voice_header_), fp_);
-
-			ROS_DEBUG("nread: %d\n", nread);
-			ROS_DEBUG("RIFF Type: %s\n", voice_header_.riff_type);
-			ROS_DEBUG("File Size: %d\n", voice_header_.riff_size);
-			ROS_DEBUG("Wave Type: %s\n", voice_header_.wave_type);
-			ROS_DEBUG("Format Type: %s\n", voice_header_.format_type);
-			ROS_DEBUG("Format Size: %d\n",voice_header_.format_size);
-			ROS_DEBUG("Compression Code: %d\n", voice_header_.compression_code);
-			ROS_DEBUG("Channels: %d\n", voice_header_.num_channels);
-			ROS_DEBUG("Sample Rate: %d\n", voice_header_.sample_rate);
-			ROS_DEBUG("Bytes Per Sample: %d\n", voice_header_.bytes_per_second);
-			ROS_DEBUG("Block Align: %d\n", voice_header_.block_align);
-			ROS_DEBUG("Bits Per Sample: %d\n", voice_header_.bits_per_sample);
-			ROS_DEBUG("Data Type: %s\n", voice_header_.data_type);
-			ROS_DEBUG("Data Size: %d\n", voice_header_.data_size);
-
-			channels = voice_header_.num_channels;
-			frequency = voice_header_.sample_rate;
-			bit = voice_header_.bits_per_sample;
-			datablock = voice_header_.block_align;
-
-			openPcmDriver();
-
-			snd_pcm_hw_params_alloca(&params);
-
-			rc = snd_pcm_hw_params_any(handle_, params);
-			if (rc < 0) {
-				ROS_ERROR("snd_pcm_hw_params_any");
-				finishPlaying();
-				continue;
-			}
-
-			rc = snd_pcm_hw_params_set_access(handle_, params, SND_PCM_ACCESS_RW_INTERLEAVED);
-			if (rc < 0) {
-				ROS_ERROR("sed_pcm_hw_set_access");
-				finishPlaying();
-				continue;
-			}
-
-			switch (bit / 8) {
-				case 1:
-					rc = snd_pcm_hw_params_set_format(handle_, params, SND_PCM_FORMAT_U8);
-					if (rc < 0) {
-						ROS_ERROR("%s %d: snd_pcm_hw_params_set_format", __FUNCTION__, __LINE__);
-						finishPlaying();
-						continue;
-					}
-					break ;
-				case 2:
-					rc = snd_pcm_hw_params_set_format(handle_, params, SND_PCM_FORMAT_S16_LE);
-					if (rc < 0) {
-						ROS_ERROR("%s %d: snd_pcm_hw_params_set_format", __FUNCTION__, __LINE__);
-						finishPlaying();
-						continue;
-					}
-					break ;
-				case 3:
-					rc = snd_pcm_hw_params_set_format(handle_, params, SND_PCM_FORMAT_S24_LE);
-					if (rc < 0) {
-						ROS_ERROR("%s %d: snd_pcm_hw_params_set_format", __FUNCTION__, __LINE__);
-						finishPlaying();
-						continue;
-					}
-					break ;
-			}
-
-			rc = snd_pcm_hw_params_set_channels(handle_, params, channels);
-			if (rc < 0) {
-				ROS_ERROR("snd_pcm_hw_params_set_channels:");
-				finishPlaying();
-				continue;
-			}
-
-			val = frequency;
-			rc = snd_pcm_hw_params_set_rate_near(handle_, params, &val, &dir);
-			if (rc < 0) {
-				ROS_ERROR("snd_pcm_hw_params_set_rate_near:");
-				finishPlaying();
-				continue;
-			}
-
-			rc = snd_pcm_hw_params(handle_, params);
-			if (rc < 0) {
-				ROS_ERROR("snd_pcm_hw_params: ");
-				finishPlaying();
-				continue;
-			}
-
-			rc = snd_pcm_hw_params_get_period_size(params, &frames, &dir);
-			if (rc < 0) {
-				ROS_ERROR("snd_pcm_hw_params_get_period_size:");
-				finishPlaying();
-				continue;
-			}
-
-			size = frames * datablock;
-
-			buffer_ = (char*) malloc(size);
-
-			// Seek to audio data
-			fseek(fp_, 58, SEEK_SET);
-
-			while (ros::ok()) {
-				/*---new speaker type---*/
-				if(!can_pp_keep_running_ && curr_voice.can_be_interrupted)
-					break;
-				memset(buffer_, 0, sizeof(char)* size);
-				ret = fread(buffer_, 1, size, fp_);
-				if (ret == 0) {
-					ROS_DEBUG("end of audio file");
-					break;
-				} else if (ret != size) {
-				}
-
-				while ((ret = snd_pcm_writei(handle_, buffer_, ret/datablock)) < 0) {
-					/*---new speaker type---*/
-					if(!can_pp_keep_running_ && curr_voice.can_be_interrupted)
-						break;
-					usleep(2000);
-				  	if (ret == -EPIPE) {
-						ROS_DEBUG("audio underrun occurred");
-						snd_pcm_prepare(handle_);
-					} else if (ret < 0) {
-						ROS_DEBUG("error from writei: %s", snd_strerror(ret));
-					}
-				}
-			}
-
-			if(curr_voice.can_be_interrupted)
+			if (!openVoiceFile(curr_voice_))
 			{
-				/*---can_pp_keep_running_ is already set if speaker can be interrupted, so close pcm driver only---*/
+				finish_playing_ = true;
+				continue;
+			}
+
+			if (!openPcmDriver())
+			{
+				finish_playing_ = true;
+				continue;
+			}
+
+			if (!initPcmDriver())
+			{
+				finish_playing_ = true;
 				closePcmDriver();
+				continue;
 			}
-			else
-			{
-				/*---speaker can not be interrupted means playing is already finished now, close pcm driver and let pp run---*/
-				finishPlaying();
-			}
+
+			_play();
+
+			if (break_playing_)
+				break_playing_ = false;
+
+			closePcmDriver();
+			ROS_INFO("%s %d: Finish playing voice:%d", __FUNCTION__, __LINE__, curr_voice_.type);
+			finish_playing_ = true;
 		}
 		else
 			usleep(1000);
@@ -200,33 +61,156 @@ void Speaker::playRoutine(void)
 	return;
 }
 
-void Speaker::play(VoiceType wav, bool can_be_interrupted)
+void Speaker::play(VoiceType voice_type, bool can_be_interrupted)
 {
-	ROS_INFO("%s %d: Ask play_routine to play wav:%d.", __FUNCTION__, __LINE__, wav);
-	VoiceStruct temp_voice;
+	if (!finish_playing_ && !curr_voice_.can_be_interrupted)
+	{
+		ROS_INFO("%s %d: Wait for previous voice finish.", __FUNCTION__, __LINE__);
+		while (!finish_playing_)
+			usleep(1500);
+	}
 
-	temp_voice.type = wav;
-	temp_voice.can_be_interrupted = can_be_interrupted;
-	speaker_list_mutex.lock();
-	list_.push_back(temp_voice);
-	speaker_list_mutex.unlock();
-	can_pp_keep_running_ = false;
-	while(!can_pp_keep_running_)
-		usleep(1000);
+	ROS_INFO("%s %d: Ask play_routine to play voice:%d.(%sallowed to be interrupted)",
+			 __FUNCTION__, __LINE__, voice_type, can_be_interrupted ? "" : "not ");
+
+	if (!finish_playing_)
+	{
+		break_playing_ = true;
+		ROS_INFO("%s %d: Wait for breaking previous voice.", __FUNCTION__, __LINE__);
+		while (!finish_playing_)
+			usleep(1500);
+	}
+
+	curr_voice_.type = voice_type;
+	curr_voice_.can_be_interrupted = can_be_interrupted;
+
+	finish_playing_ = false;
+}
+
+bool Speaker::openVoiceFile(Voice voice)
+{
+	char	audio_file[64];
+	snprintf(audio_file, 38, PP_PACKAGE_PATH, voice.type);
+	fp_ = fopen(audio_file, "rb");
+	if (fp_ == NULL)
+	{
+		ROS_ERROR("open file failed: %s\n", audio_file);
+		return false;
+	}
+
+	auto nread = fread(&voice_header_, 1, sizeof(voice_header_), fp_);
+
+	ROS_DEBUG("nread: %d", nread);
+	ROS_DEBUG("RIFF Type: %s", voice_header_.riff_type);
+	ROS_DEBUG("File Size: %d", voice_header_.riff_size);
+	ROS_DEBUG("Wave Type: %s", voice_header_.wave_type);
+	ROS_DEBUG("Format Type: %s", voice_header_.format_type);
+	ROS_DEBUG("Format Size: %d", voice_header_.format_size);
+	ROS_DEBUG("Compression Code: %d", voice_header_.compression_code);
+	ROS_DEBUG("Channels: %d", voice_header_.num_channels);
+	ROS_DEBUG("Sample Rate: %d", voice_header_.sample_rate);
+	ROS_DEBUG("Bytes Per Sample: %d", voice_header_.bytes_per_second);
+	ROS_DEBUG("Block Align: %d", voice_header_.block_align);
+	ROS_DEBUG("Bits Per Sample: %d", voice_header_.bits_per_sample);
+	ROS_DEBUG("Data Type: %s", voice_header_.data_type);
+	ROS_DEBUG("Data Size: %d", voice_header_.data_size);
+
+	return true;
 }
 
 bool Speaker::openPcmDriver(void)
 {
-	int rc = 0;
 	launchMixer();
 	adjustVolume(0);
 	ROS_DEBUG("%s %d: Open wav driver.", __FUNCTION__, __LINE__);
-	rc = snd_pcm_open(&handle_, "plug:dmix", SND_PCM_STREAM_PLAYBACK, 0);
-	if (rc < 0)	{
+	if (snd_pcm_open(&handle_, "plug:dmix", SND_PCM_STREAM_PLAYBACK, 0) < 0)
+	{
 		ROS_ERROR("open PCM device failed:");
 		return false;
 	}
 	adjustVolume(55);
+	return true;
+}
+
+bool Speaker::initPcmDriver()
+{
+	snd_pcm_hw_params_t	*params;
+	snd_pcm_hw_params_alloca(&params);
+
+	if (snd_pcm_hw_params_any(handle_, params) < 0)
+	{
+		ROS_ERROR("snd_pcm_hw_params_any");
+		return false;
+	}
+
+	if (snd_pcm_hw_params_set_access(handle_, params, SND_PCM_ACCESS_RW_INTERLEAVED) < 0)
+	{
+		ROS_ERROR("sed_pcm_hw_set_access");
+		return false;
+	}
+
+	auto bit = voice_header_.bits_per_sample;
+	switch (bit / 8)
+	{
+		case 1:
+			if (snd_pcm_hw_params_set_format(handle_, params, SND_PCM_FORMAT_U8) < 0)
+			{
+				ROS_ERROR("%s %d: snd_pcm_hw_params_set_format", __FUNCTION__, __LINE__);
+				return false;
+			}
+			break;
+		case 2:
+			if (snd_pcm_hw_params_set_format(handle_, params, SND_PCM_FORMAT_S16_LE) < 0)
+			{
+				ROS_ERROR("%s %d: snd_pcm_hw_params_set_format", __FUNCTION__, __LINE__);
+				return false;
+			}
+			break;
+		case 3:
+			if (snd_pcm_hw_params_set_format(handle_, params, SND_PCM_FORMAT_S24_LE) < 0)
+			{
+				ROS_ERROR("%s %d: snd_pcm_hw_params_set_format", __FUNCTION__, __LINE__);
+				return false;
+			}
+			break;
+	}
+
+	auto channels = voice_header_.num_channels;
+	if (snd_pcm_hw_params_set_channels(handle_, params, channels) < 0)
+	{
+		ROS_ERROR("snd_pcm_hw_params_set_channels:");
+		return false;
+	}
+
+	auto frequency = voice_header_.sample_rate;
+	int dir = 0;
+	if (snd_pcm_hw_params_set_rate_near(handle_, params, &frequency, &dir) < 0)
+	{
+		ROS_ERROR("snd_pcm_hw_params_set_rate_near:");
+		return false;
+	}
+
+	if (snd_pcm_hw_params(handle_, params) < 0)
+	{
+		ROS_ERROR("snd_pcm_hw_params: ");
+		return false;
+	}
+
+	snd_pcm_uframes_t	frames;
+	if (snd_pcm_hw_params_get_period_size(params, &frames, &dir) < 0)
+	{
+		ROS_ERROR("snd_pcm_hw_params_get_period_size:");
+		return false;
+	}
+
+	auto datablock = voice_header_.block_align;
+	buffer_size_ = frames * datablock;
+
+	buffer_ = (char *) malloc(buffer_size_);
+
+	// Seek to audio data
+	fseek(fp_, 58, SEEK_SET);
+
 	return true;
 }
 
@@ -307,11 +291,40 @@ void Speaker::adjustVolume(long volume)
 	}
 }
 
-void Speaker::finishPlaying(void)
+void Speaker::_play(void)
 {
-	closePcmDriver();
-	can_pp_keep_running_ = true;
-}
+	while (ros::ok())
+	{
+		if (break_playing_)
+			break;
+		memset(buffer_, 0, sizeof(char) * buffer_size_);
+		auto ret = fread(buffer_, 1, buffer_size_, fp_);
+		if (ret == 0)
+		{
+			ROS_DEBUG("end of audio file");
+			break;
+		}
+//				else if (ret != buffer_size_) {
+//
+//				}
 
-Speaker speaker;
+		snd_pcm_sframes_t ret_vel;
+		while ((ret_vel = snd_pcm_writei(handle_, buffer_,
+										 static_cast<snd_pcm_uframes_t>(ret / voice_header_.block_align))) < 0)
+		{
+			if (break_playing_)
+				break;
+			usleep(2000);
+			if (ret_vel == -EPIPE)
+			{
+				ROS_DEBUG("audio underrun occurred");
+				snd_pcm_prepare(handle_);
+			} else if (ret_vel < 0)
+			{
+				ROS_DEBUG("error from writei: %s", snd_strerror(ret_vel));
+			}
+		}
+	}
+
+}
 

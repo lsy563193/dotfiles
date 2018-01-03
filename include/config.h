@@ -131,7 +131,7 @@
  * Defines for enabling/disabling tilted detect or not.
  * When detecting the robot is tilted, it will check the all the 3 cliff
  * sensors value, which if all are less then 1500, and at the same time,
- * if the gyro X-axis & Y-axis angle are greater than 5 degree, we will
+ * if the gyro x-axis & y-axis angle are greater than 5 degree, we will
  * confirmed that the robot is tilted.
  */
 //#define ENABLE_TILTED_DETECT		(1)

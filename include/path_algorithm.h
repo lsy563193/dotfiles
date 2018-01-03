@@ -107,7 +107,7 @@ protected:
 	 */
 	bool checkTrappedUsingDijkstra(GridMap &map, const Cell_t &curr_cell);
 
-	Cell_t cell_direction_index_[9]={{1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1},{0,0}};
+	const Cell_t cell_direction_index_[9]{{1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1},{0,0}};
 };
 
 typedef enum {
@@ -207,7 +207,7 @@ private:
 	bool filterPathsToSelectTarget(GridMap &map, const PathList &paths, const Cell_t &curr_cell, Cell_t &best_target);
 
 	/*
-	 * Sorting function, for sorting paths with their targets by Y+ ascending sequence.
+	 * Sorting function, for sorting paths with their targets by y+ ascending sequence.
 	 */
 	static bool sortPathsWithTargetYAscend(const Cells a, const Cells b);
 

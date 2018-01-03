@@ -24,7 +24,7 @@ Interface action{
   +bool isTimeUp();
 
  #double start_timer_{};
- #double interval_{};
+ #double timeout_interval_{};
 }
 
 class Mode{

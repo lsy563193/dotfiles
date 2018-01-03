@@ -26,7 +26,7 @@ typedef enum {
   CLEANED = 1,
   SLAM_MAP_CLEANABLE = 1,
   BLOCKED = 2,
-  BLOCKED_OBS = 2,
+  BLOCKED_FW = 2,
   BLOCKED_BUMPER = 3,
   BLOCKED_CLIFF = 4,
   BLOCKED_RCON = 5,
@@ -69,11 +69,6 @@ public:
 	void setCell(uint8_t id, int16_t x, int16_t y, CellState value);
 
 	CellState getCell(int id, int16_t x, int16_t y);
-
-
-	void robotToPoint(Point32_t point, int16_t offset_lat, int16_t offset_long, int32_t *x, int32_t *y);
-
-	static void robotToCell(Point32_t point, int16_t offset_lat, int16_t offset_long, int16_t &x, int16_t &y);
 
 	void clearBlocks(void);
 
@@ -159,8 +154,8 @@ public:
  * Check a block is accessible by the robot or not.
  * A block is defined as have the same size of robot.
  *
- * @param x	X coordinate of the block
- * @param y	Y coordinate of the block
+ * @param x	x coordinate of the block
+ * @param y	y coordinate of the block
  *
  * @return	0 if the block is not blocked by bumper, obs or cliff
  *		1 if the block is blocked
@@ -174,8 +169,8 @@ public:
 /*
  * Check a block is on the boundary or not, a block is defined as have the same size of robot.
  *
- * @param x	X coordinate of the block
- * @param y	Y coordinate of the block
+ * @param x	x coordinate of the block
+ * @param y	y coordinate of the block
  *
  * @return	0 if the block is not on the boundary
  *		1 if the block is on the boundary
@@ -187,8 +182,8 @@ public:
  * Since the brush occupies 3 cells, if there is any one of those 3 cells unclean, then the
  * block is treated as unclean.
  *
- * @param x	X coordinate of the block
- * @param y	Y coordinate of the block
+ * @param x	x coordinate of the block
+ * @param y	y coordinate of the block
  *
  * @return	0 if the block is cleaned
  *		1 if the block is uncleaned
@@ -199,8 +194,8 @@ public:
  * Check a block is cleaned or not, a block is defined as have the same size of brush.
  *
  *
- * @param x	X coordinate of the block
- * @param y	Y coordinate of the block
+ * @param x	x coordinate of the block
+ * @param y	y coordinate of the block
  *
  * @return	0 if the block is not cleaned
  *		1 if the block is cleaned
@@ -211,8 +206,8 @@ public:
  * Check a block is cleanable or not, a block is defined as have the same size of brush.
  *
  *
- * @param x	X coordinate of the block
- * @param y	Y coordinate of the block
+ * @param x	x coordinate of the block
+ * @param y	y coordinate of the block
  *
  * @return	0 if the block is not cleanable
  *		1 if the block is cleanable
@@ -222,8 +217,8 @@ public:
 /*
  * Check a given point is blocked by bumper and/or cliff or not.
  *
- * @param x	X coordinate of the given point
- * @param y	Y coordinate of the given point
+ * @param x	x coordinate of the given point
+ * @param y	y coordinate of the given point
  *
  * @return	0 if it is not blocked by bumper and/or cliff
  *		1 if it is blocked by bumper and/or cliff
@@ -233,8 +228,8 @@ public:
 /*
  * Check whether a given point is an blocked or not.
  *
- * @param x	X coordinate of the give point.
- * @param y	Y coordinate of the give point.
+ * @param x	x coordinate of the give point.
+ * @param y	y coordinate of the give point.
  *
  * @return	0 if the given point is not blocked
  * 		1 if the given point is blocked
@@ -245,13 +240,13 @@ public:
 
 	void generateSPMAP(const Cell_t &curr, Cells &target_list);
 /*
- * Function to find the X/Y range of the Map or wfMap, if the range is to small,
+ * Function to find the x/y range of the Map or wfMap, if the range is to small,
  * use the offset of those value to 3.
  *
- * @param *x_range_min	Pointer for minimum X value of the Map
- * @param *x_range_max	Pointer for maximum X value of the Map
- * @param *y_range_min	Pointer for minimum Y value of the Map
- * @param *y_range_max	Pointer for maximum Y value of the Map
+ * @param *x_range_min	Pointer for minimum x value of the Map
+ * @param *x_range_max	Pointer for maximum x value of the Map
+ * @param *y_range_min	Pointer for minimum y value of the Map
+ * @param *y_range_max	Pointer for maximum y value of the Map
  *
  * @return
  */
@@ -295,10 +290,8 @@ private:
 
 };
 
-extern GridMap nav_map;
 /*wf_map is to record the wall follow path to caculate the isolate islands*/
 extern GridMap fw_map;
-extern GridMap exploration_map;
 extern GridMap slam_grid_map;
 extern GridMap decrease_map;
 

@@ -143,8 +143,8 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Cells *ta
 		{
 			mid_it = targets->size();
 			//reset some variables
-			x = x_last = begincell.X;
-			y = y_last = begincell.Y;
+			x = x_last = begincell.x;
+			y = y_last = begincell.y;
 			spiral_count = 1;
 			cell_number = 1;
 
@@ -238,8 +238,8 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Cells *ta
 		{
 			mid_it = targets->size();
 			//reset some variable
-			x = x_last = begincell.X;
-			y = y_last = begincell.Y;
+			x = x_last = begincell.x;
+			y = y_last = begincell.y;
 			spiral_count = 1;
 			cell_number = 1;
 			targets->push_back({x,y});
@@ -329,5 +329,4 @@ bool SpotCleanPathAlgorithm::checkTrapped(GridMap &map, const Cell_t &curr_cell)
 {
 	checkTrappedUsingDijkstra(map, curr_cell);
 }
-
 

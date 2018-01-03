@@ -21,7 +21,7 @@ public:
 		right_value_ = 0;
 	};
 
-	uint8_t get_status(void);
+	uint8_t getStatus(void);
 
 	int16_t getFrontTrigValue(void) {
 		return front_trig_value_;

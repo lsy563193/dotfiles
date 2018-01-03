@@ -3,6 +3,7 @@
 //
 
 #include "odom.h"
+#include "ros/ros.h"
 
 Odom odom;
 
@@ -57,6 +58,7 @@ float Odom::getAngle(void)
 void Odom::setAngleOffset(float angle)
 {
 	angle_offset_ = angle;
+	ROS_INFO("%s %d: Set odom angle offset to %f.", __FUNCTION__, __LINE__, angle_offset_);
 }
 
 float Odom::getAngleOffset(void)

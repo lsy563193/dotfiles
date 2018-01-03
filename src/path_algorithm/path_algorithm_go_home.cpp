@@ -70,8 +70,8 @@ GoHomePathAlgorithm::GoHomePathAlgorithm(GridMap &map, Points home_points)
 	// Clear the rcon blocks in map.
 	auto map_tmp = map.generateBound();
 	for (const auto &cell : map_tmp) {
-		if (map.getCell(CLEAN_MAP, cell.X, cell.Y) == BLOCKED_RCON)
-			map.setCell(CLEAN_MAP,cell.X,cell.Y, UNCLEAN);
+		if (map.getCell(CLEAN_MAP, cell.x, cell.y) == BLOCKED_RCON)
+			map.setCell(CLEAN_MAP,cell.x,cell.y, UNCLEAN);
 	}
 
 	// Copy the map data to local go_home_map_.
@@ -83,10 +83,10 @@ bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, cons
 	auto curr_cell = curr.toCell();
 	auto current_home_target_cell = current_home_target_.toCell();
 	ROS_INFO("%s %d: current_cell(%d, %d), Reach home cell(%d, %d)", __FUNCTION__ ,__LINE__,
-			 curr_cell.X, curr_cell.Y, curr_cell, current_home_target_cell.X, current_home_target_cell.Y);
-	if (curr_cell == current_home_target_cell/* && abs(curr_cell.TH -  current_home_target_.TH) < 50*/)
+			 curr_cell.x, curr_cell.y, curr_cell, current_home_target_cell.x, current_home_target_cell.y);
+	if (curr_cell == current_home_target_cell/* && abs(curr_cell.th -  current_home_target_.th) < 50*/)
 	{
-		ROS_INFO("%s %d: Reach home cell(%d, %d)", __FUNCTION__ ,__LINE__, current_home_target_.X, current_home_target_.Y);
+		ROS_INFO("%s %d: Reach home cell(%d, %d)", __FUNCTION__ ,__LINE__, current_home_target_.x, current_home_target_.y);
 		// Congratulations! You have reached home.
 		return true;
 	}
@@ -97,7 +97,7 @@ bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, cons
 		auto cnt = *go_home_way_list_it_ / GO_HOME_WAY_NUM;
 		current_home_target_ = home_points_[cnt];
 		ROS_INFO("\033[1;46;37m" "%s,%d:current_home_target_(%d, %d, %d), way(%d), cnt(%d) " "\033[0m",
-				 __FUNCTION__, __LINE__, current_home_target_.toCell().X, current_home_target_.toCell().Y, current_home_target_.TH, way, cnt);
+				 __FUNCTION__, __LINE__, current_home_target_.toCell().x, current_home_target_.toCell().y, current_home_target_.th, way, cnt);
 		// Update go_home_map_.
 		go_home_map_.copy(map);
 		if (way == THROUGH_SLAM_MAP_REACHABLE_AREA) {
