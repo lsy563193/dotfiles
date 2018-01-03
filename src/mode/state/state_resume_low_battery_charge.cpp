@@ -4,9 +4,8 @@
 #include "pp.h"
 #include "arch.hpp"
 
-void StateTrapped::update() {
-	robot_timer.initTrapTimer();
-	led.set_mode(LED_FLASH, LED_GREEN, 300);
+void StateResumeLowBatteryCharge::update() {
+	led.set_mode(LED_STEADY, LED_GREEN);
 }
 
 //bool StateTrapped::isFinish() {

@@ -11,15 +11,25 @@ class State {
 public:
 //	virtual IMoveType* setNextAction_()=0;
 
-//	bool isFinish(ACleanMode* p_mode, IMoveType* p_move_type,IAction* p_action, int& action_i);
+	bool isFinish();
+//	bool setNextState();
+//	State* getNextState();
+	virtual void update()=0;
 
 protected:
+	ACleanMode* cm{};
+};
 
+class StateInit: public State {
+public:
+	StateInit() = default;
+	void update() override;
 };
 
 class StateClean: public State {
 public:
-	StateClean();
+	StateClean() = default;
+	void update() override;
 //	IMoveType* setNextAction_();
 
 public:
@@ -27,47 +37,67 @@ public:
 
 class StateGoHomePoint: public State {
 public:
-	StateGoHomePoint();
+	StateGoHomePoint() = default;
+	void update() override;
 //	IMoveType* setNextAction_();
-
-protected:
-	int gh_state_{};
-
-private:
-	enum {gh_ing=0,gh_succuss,gh_faile};
 };
 
 class StateGoCharger: public State {
 public:
-	StateGoCharger();
+	StateGoCharger() = default;
+	void update() override;
 //	IMoveType* setNextAction_();
 
 };
 
+
+class StateCharge: public State {
+public:
+	StateCharge() = default;
+	void update() override;
+//	IMoveType* setNextAction_();
+
+};
 class StateTrapped: public State {
 public:
-	StateTrapped();
+	StateTrapped()= default;
+	void update() override;
 //	IMoveType* setNextAction_();
 };
 
 class StateTmpSpot: public State {
 public:
-	StateTmpSpot();
+	StateTmpSpot()= default;
+	void update() override;
 //	IMoveType* setNextAction_();
 };
 
 class StateSelfCheck: public State {
 public:
-	StateSelfCheck();
+	StateSelfCheck()= default;
+	void update() override;
 //	IMoveType* setNextAction_();
 };
 
 class StateExploration: public State {
 public:
-	StateExploration();
+	StateExploration()= default;
+	void update() override;
+//	IMoveType* setNextAction_();
+};
+class StateResumeLowBatteryCharge: public State {
+public:
+	StateResumeLowBatteryCharge()= default;
+	void update() override;
 //	IMoveType* setNextAction_();
 };
 
+class StatePause: public State {
+public:
+	StatePause()= default;
+	void update() override;
+//	IMoveType* setNextAction_();
+};
 //Movement *StateClean::generateMovement(PathType path, const Cell_t &curr) {
 //	return nullptr;
 //}
