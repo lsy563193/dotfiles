@@ -70,7 +70,7 @@ bool CleanModeExploration::mapMark()
 
 bool CleanModeExploration::isFinish()
 {
-	if (p_state == state_init)
+	if (sp_state == state_init)
 		mapMark();
 
 	return ACleanMode::isFinish();
@@ -95,13 +95,13 @@ bool CleanModeExploration::setNextAction()
 {
 	PP_INFO();
 	//todo action convert
-	if (p_state == state_init)
+	if (sp_state == state_init)
 		return ACleanMode::setNextAction();
-	else if(p_state == state_clean)
+	else if(sp_state == state_clean)
 		action_i_ = ac_linear;
-	else if(p_state == state_go_charger)
+	else if(sp_state == state_go_to_charger)
 		action_i_ = ac_go_to_charger;
-	else if(p_state == state_go_home_point)
+	else if(sp_state == state_go_home_point)
 		action_i_ = ac_linear;
 	else
 		action_i_ = ac_null;
@@ -116,17 +116,17 @@ bool CleanModeExploration::setNextState()
 	bool state_confirm = false;
 	while (ros::ok() && !state_confirm)
 	{
-		if (p_state == state_init)
+		if (sp_state == state_init)
 		{
 			if (action_i_ == ac_open_slam)
 			{
 				auto curr = updatePosition();
 				passed_path_.push_back(curr);
-				home_points_.back().th = robot::instance()->getWorldPoseAngle();
+				home_points_.back().home_point.th = robot::instance()->getWorldPoseAngle();
 				PP_INFO();
 
-				p_state = state_clean;
-				stateInit(p_state);
+				sp_state = state_clean;
+				stateInit(sp_state);
 				action_i_ = ac_null;
 			}
 			else
@@ -141,7 +141,7 @@ bool CleanModeExploration::setNextState()
 			action_i_ = ac_null;
 			state_confirm = true;
 		}
-		else if(p_state == state_clean)
+		else if(sp_state == state_clean)
 		{
 			PP_INFO();
 			old_dir_ = new_dir_;
@@ -150,8 +150,8 @@ bool CleanModeExploration::setNextState()
 			if(ev.rcon_triggered)
 			{
 				ROS_WARN("%s,%d:find charge success,convert to go to charge state",__func__,__LINE__);
-				p_state = state_go_charger;
-				stateInit(p_state);
+				sp_state = state_go_to_charger;
+				stateInit(sp_state);
 				state_confirm = true;
 				action_i_ = ac_go_to_charger;
 			}
@@ -167,31 +167,31 @@ bool CleanModeExploration::setNextState()
 			else
 			{
 				ROS_WARN("%s,%d:exploration finish,did not find charge",__func__,__LINE__);
-				p_state = state_go_home_point;
+				sp_state = state_go_home_point;
 				if (go_home_path_algorithm_ == nullptr)
 					go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
-				stateInit(p_state);
+				stateInit(sp_state);
 				action_i_ = ac_null;
 			}
 		}
-		else if(p_state == state_go_home_point)
+		else if(sp_state == state_go_home_point)
 		{
 			PP_INFO();
 			state_confirm = setNextStateForGoHomePoint(clean_map_);
 		}
-		else if (p_state == state_go_charger)
+		else if (sp_state == state_go_to_charger)
 		{
 			PP_INFO();
 			if (ev.charge_detect && charger.isOnStub())
 			{
-				p_state = nullptr;
+				sp_state = nullptr;
 				state_confirm = true;
 			}
 			else
-				p_state = state_clean;
+				sp_state = state_clean;
 		}
 	}
-	return p_state != nullptr;
+	return sp_state != nullptr;
 }
 
 void CleanModeExploration::keyClean(bool state_now, bool state_last) {

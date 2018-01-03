@@ -51,7 +51,7 @@ bool CleanModeSpot::mapMark()
 		clean_map_.setCleaned(pointsGenerateCells(passed_path_));
 	}
 
-	if (p_state == state_trapped)
+	if (sp_state == state_trapped)
 		clean_map_.markRobot(CLEAN_MAP);
 	clean_map_.setBlocks();
 	PP_INFO();
@@ -92,20 +92,20 @@ bool CleanModeSpot::setNextState()
 	bool state_confirm = false;
 	while (ros::ok() && !state_confirm)
 	{
-		if (p_state == state_init)
+		if (sp_state == state_init)
 		{
 			if (action_i_ == ac_open_slam)
 			{
 				auto curr = updatePosition();
 				passed_path_.push_back(curr);
 
-				home_points_.back().th = robot::instance()->getWorldPoseAngle();
+				home_points_.back().home_point.th = robot::instance()->getWorldPoseAngle();
 				PP_INFO();
 				vacuum.setMode(Vac_Max);
 				brush.fullOperate();
 
-				p_state = state_clean;
-				stateInit(p_state);
+				sp_state = state_clean;
+				stateInit(sp_state);
 			}
 			else
 				state_confirm = true;
@@ -119,39 +119,39 @@ bool CleanModeSpot::setNextState()
 			action_i_ = ac_null;
 			state_confirm = true;
 		}
-		else if(p_state == state_clean)
+		else if(sp_state == state_clean)
 		{
 			PP_INFO();
 			old_dir_ = new_dir_;
-			ROS_ERROR("old_dir_(%d)", old_dir_);
+			ROS_INFO("\033[34mold_dir_(%d)\033[0m", old_dir_);
 			auto cur_point = getPosition();
-			//ROS_INFO("\033[32m plan_path front (%d,%d),cur point:(%d,%d)\033[0m",plan_path_.front().toCell().X,plan_path_.front().toCell().Y,cur_point.toCell().X,cur_point.toCell().Y);
+			ROS_INFO("%s,%s,%d,\033[32m plan_path front (%d,%d),cur point:(%d,%d)\033[0m",__FILE__,__FUNCTION__,__LINE__,plan_path_.front().toCell().x,plan_path_.front().toCell().y,cur_point.toCell().x,cur_point.toCell().y);
 			if (clean_path_algorithm_->generatePath(clean_map_, cur_point, old_dir_, plan_path_))
 			{
 				new_dir_ = (MapDirection)plan_path_.front().th;
-				ROS_ERROR("new_dir_(%d)", new_dir_);
+				ROS_INFO("\033[34mnew_dir_(%d)\033[0m", new_dir_);
 				PP_INFO();
-				clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
+				clean_path_algorithm_->displayPointPath(plan_path_);
 				plan_path_.pop_front();
 				state_confirm = true;
 			}
 			else
 			{
-				p_state = nullptr;
+				sp_state = nullptr;
 				action_i_ = ac_null;
 				state_confirm = true;
 			}
 		}
 	}
 
-	return p_state != nullptr;
+	return sp_state != nullptr;
 }
 
 bool CleanModeSpot::setNextAction()
 {
-	if (p_state == state_init)
+	if (sp_state == state_init)
 		return ACleanMode::setNextAction();
-	else if (p_state == state_clean)
+	else if (sp_state == state_clean)
 	{
 		PP_INFO();
 		if(plan_path_.size() >= 2)

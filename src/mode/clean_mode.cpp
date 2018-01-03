@@ -9,14 +9,16 @@
 
 //#define NAV_INFO() ROS_INFO("st(%d),ac(%d)", state_i_, action_i_)
 
+State* ACleanMode::sp_state{};
+State* ACleanMode::state_saved_state_before_pause{};
 State* ACleanMode::state_init = new StateInit();
 State* ACleanMode::state_clean = new StateClean();
 State* ACleanMode::state_go_home_point = new StateGoHomePoint();
-State* ACleanMode::state_go_charger = new StateGoCharger();
+State* ACleanMode::state_go_to_charger = new StateGoCharger();
 State* ACleanMode::state_charge = new StateCharge();
 State* ACleanMode::state_trapped = new StateTrapped();
 State* ACleanMode::state_tmp_spot = new StateTmpSpot();
-State* ACleanMode::state_self_check = new StateSelfCheck();
+State* ACleanMode::state_exception_resume = new StateSelfCheck();
 State* ACleanMode::state_exploration = new StateExploration();
 State* ACleanMode::state_resume_low_battery_charge = new StateResumeLowBatteryCharge();
 State* ACleanMode::state_pause = new StatePause();
@@ -27,16 +29,18 @@ Points ACleanMode::plan_path_ = {};
 
 ACleanMode::ACleanMode()
 {
+	sp_state->setMode(this);
 	ev.key_clean_pressed = false;
-	p_state = state_init;
-	stateInit(p_state);
+	sp_state = state_init;
+	ROS_ERROR("%d",sp_state);
+	sp_state->update();
 	setNextAction();
 	robot_timer.initWorkTimer();
 	key.resetPressStatus();
 
 	c_rcon.resetStatus();
 
-	home_points_.resize(1,g_zero_home);
+	home_points_.resize(1, {{0, 0, 0}, false});
 	clean_path_algorithm_.reset();
 	go_home_path_algorithm_.reset();
 
@@ -49,7 +53,7 @@ ACleanMode::ACleanMode()
 
 bool ACleanMode::setNextAction()
 {
-	if (p_state == state_init)
+	if (sp_state == state_init)
 	{
 		if (action_i_ == ac_null)
 			action_i_ = ac_open_gyro;
@@ -88,7 +92,7 @@ void ACleanMode::setNextModeDefault()
 
 bool ACleanMode::isExit()
 {
-	if (p_state == state_init)
+	if (sp_state == state_init)
 	{
 		if (action_i_ == ac_open_lidar && sp_action_->isTimeUp())
 		{
@@ -104,7 +108,7 @@ bool ACleanMode::isExit()
 
 bool ACleanMode::isFinish()
 {
-	if (p_state != state_init)
+	if (sp_state != state_init)
 		updatePath(clean_map_);
 
 	if (!(sp_action_ == nullptr || sp_action_->isFinish()))
@@ -113,9 +117,9 @@ bool ACleanMode::isFinish()
 	sp_action_.reset();//for call ~constitution;
 	PP_INFO();
 
-	if (p_state != state_init)
+	if (sp_state != state_init)
 	{
-		clean_map_.saveBlocks(action_i_ == ac_linear, p_state == state_clean);
+		clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
 		mapMark();
 
 	}
@@ -160,7 +164,7 @@ Point32_t ACleanMode::updatePath(GridMap& map)
 		ROS_INFO("reach_cleaned_count_(%d)",reach_cleaned_count_);
 			reach_cleaned_count_++;
 		}
-		map.saveBlocks(action_i_ == ac_linear, p_state == state_clean);
+		map.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
 //		displayPath(passed_path_);
 	}
 	return curr;
@@ -184,7 +188,7 @@ void ACleanMode::genNextAction()
 	else if (action_i_ == ac_linear)
 		sp_action_.reset(new MoveTypeLinear);
 	else if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
-		sp_action_.reset(new MoveTypeFollowWall(action_i_ == ac_follow_wall_left, p_state == state_trapped));
+		sp_action_.reset(new MoveTypeFollowWall(action_i_ == ac_follow_wall_left, sp_state == state_trapped));
 	else if (action_i_ == ac_go_to_charger)
 		sp_action_.reset(new MoveTypeGoToCharger);
 	else if (action_i_ == ac_exception_resume)
@@ -250,11 +254,11 @@ void ACleanMode::stateInit(State* next)
 		reach_cleaned_count_ = 0;
 		led.set_mode(LED_STEADY, LED_ORANGE);
 	}
-	if (next == state_go_charger) {
+	if (next == state_go_to_charger) {
 		gyro.TiltCheckingEnable(false); //disable tilt detect
 		led.set_mode(LED_STEADY, LED_ORANGE);
 	}
-	if (next == state_self_check) {
+	if (next == state_exception_resume) {
 		led.set_mode(LED_STEADY, LED_GREEN);
 	}
 	if (next == state_charge)
@@ -306,23 +310,29 @@ bool ACleanMode::setNextStateForGoHomePoint(GridMap &map)
 	old_dir_ = new_dir_;
 	if (ev.rcon_triggered)
 	{
-		p_state = state_go_charger;
-		stateInit(p_state);
+		ev.rcon_triggered = 0;
+		sp_state = state_go_to_charger;
+		stateInit(sp_state);
 	}
-	else if (getPosition().toCell() == plan_path_.back().toCell())
+	else if (!reach_home_point_ && getPosition().toCell() == go_home_path_algorithm_->getCurrentHomePoint().home_point.toCell())
 	{
 		// Reach home cell!!
-		if (getPosition().toCell() == g_zero_home.toCell())
+		if (go_home_path_algorithm_->getCurrentHomePoint().have_seen_charger)
 		{
-			PP_INFO();
-			p_state = nullptr;
+			ROS_INFO("%s %d: Reach home cell (%d, %d).", __FUNCTION__, __LINE__,
+					 go_home_path_algorithm_->getCurrentHomePoint().home_point.toCell().x,
+					 go_home_path_algorithm_->getCurrentHomePoint().home_point.toCell().y);
+			sp_state = state_go_to_charger;
+			stateInit(sp_state);
 		}
 		else
 		{
-			PP_INFO();
-			p_state = state_go_charger;
-			stateInit(p_state);
+			ROS_INFO("%s %d: Reach home cell (%d, %d) but do not go to charger.", __FUNCTION__, __LINE__,
+					 go_home_path_algorithm_->getCurrentHomePoint().home_point.toCell().x,
+					 go_home_path_algorithm_->getCurrentHomePoint().home_point.toCell().y);
+			sp_state = nullptr;
 		}
+		reach_home_point_ = true;
 	}
 	else if (go_home_path_algorithm_->generatePath(map, getPosition(),old_dir_, plan_path_))
 	{
@@ -331,57 +341,25 @@ bool ACleanMode::setNextStateForGoHomePoint(GridMap &map)
 		plan_path_.pop_front();
 		go_home_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
 		robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
+		reach_home_point_ = false;
 	}
 	else
 	{
 		// No more paths to home cells.
 		PP_INFO();
-		p_state = nullptr;
+		sp_state = nullptr;
 	}
 	return state_confirm;
 }
 
-
-void ACleanMode::path_set_home(const Point32_t& curr)
-{
-	bool is_found = false;
-
-	for (const auto& it : g_homes) {
-		ROS_INFO("%s %d: curr\033[33m(%d, %d)\033[0m home_it\033[33m(%d,%d)\033[0m.", __FUNCTION__, __LINE__, curr.x, curr.y,it.x,it.y);
-		if (it.toCell() == curr.toCell()) {
-			is_found = true;
-			break;
-		}
-	}
-	if (!is_found) {
-		ROS_INFO("%s %d: Push new reachable home:\033[33m (%d, %d)\033[0m to home point list.", __FUNCTION__, __LINE__, curr.x, curr.y);
-		g_have_seen_charger = true;
-		// If curr near (0, 0)
-		if (abs(curr.x) >= 5 || abs(curr.y) >= 5)
-		{
-			if(g_homes.size() >= HOME_CELLS_SIZE+1)//escape_count + zero_home = 3+1 = 4
-			{
-				std::copy(g_homes.begin() + 2, g_homes.end(), g_homes.begin()+1);//shift 1 but save zero_home
-				g_homes.pop_back();
-			}
-			g_homes.push_back(curr);
-		}
-	}
-	else if(curr.toCell() == g_zero_home.toCell())
-	{
-		g_start_point_seen_charger = true;
-		g_have_seen_charger = true;
-	}
-}
-
 void ACleanMode::setRconPos(float cd,float dist)
 {
-	float yaw = robot::instance()->getWorldPoseAngle()/10.0;
-	float wpx = cosf( (float)ranged_angle((yaw+cd)*10)/10.0 * PI/180.0 )*dist+ robot::instance()->getWorldPoseX();
-	float wpy = sinf( (float)ranged_angle((yaw+cd)*10)/10.0 * PI/180.0 )*dist+ robot::instance()->getWorldPoseY();
-	charger_pos_ = {(int32_t)(wpx*1000/CELL_SIZE), (int32_t)(wpy*1000/CELL_SIZE),(int16_t)0};
-	if(found_charger_)
-		g_homes.push_back(charger_pos_);
+//	float yaw = robot::instance()->getWorldPoseAngle()/10.0;
+//	float wpx = cosf( (float)ranged_angle((yaw+cd)*10)/10.0 * PI/180.0 )*dist+ robot::instance()->getWorldPoseX();
+//	float wpy = sinf( (float)ranged_angle((yaw+cd)*10)/10.0 * PI/180.0 )*dist+ robot::instance()->getWorldPoseY();
+//	charger_pos_ = {(int32_t)(wpx*1000/CELL_SIZE), (int32_t)(wpy*1000/CELL_SIZE),(int16_t)0};
+//	if(found_charger_)
+//		g_homes.push_back(charger_pos_);
 //	ROS_INFO("%s,%d:rcon value \033[32m0x%x\033[0m,charger direction \033[32m%f\033[0m,cureent direction \033[32m%f\033[0m,distance \033[32m%f\033[0m,world pos(\033[32m%f,%f\033[0m), cell pos(\033[32m%hd,%hd\033[0m)",__FUNCTION__,__LINE__,rcon_status_&RconAll_Home_T,cd,yaw,dist,wpx,wpy,charger_pos_.x,charger_pos_.y);
 
 }

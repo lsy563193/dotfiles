@@ -8,7 +8,7 @@
 
 SpotCleanPathAlgorithm::SpotCleanPathAlgorithm()
 {
-	initVariables(0.6,updatePosition().toCell());
+	initVariables(1.0,updatePosition().toCell());
 	genTargets( ANTI_CLOCKWISE, spot_diameter_, &targets_cells_,     begin_cell_);
 }
 
@@ -44,6 +44,7 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, c
 		Point32_t cur = curr;
 		if(plan_path.size() >= 2)
 		{
+			/*---first find shortest path---*/
 			Point32_t next_point;
 			do{
 				plan_path.pop_front();
@@ -65,13 +66,15 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, c
 				}
 			}while(ros::ok() && plan_path.size() >=1 );
 
+			/*-----second put the remaind targets into new_plan_path -----*/
+			/*-----if remaind targets in COST_HIGH find shortest path-----*/
 			ROS_INFO("\033[32m new_plan_path size %d,the remained points size %d\033[0m",new_plan_path.size(),plan_path.size());	
 			while(ros::ok() && plan_path.size() >=2)
 			{
 				plan_path.pop_front();
 				cur = plan_path.front();
 				if(map.getCell(COST_MAP,cur.toCell().x,cur.toCell().y) < COST_HIGH ){
-					ROS_INFO("\033[32m push back to new plan_path :(%d,%d)\033[0m",cur.toCell().x,cur.toCell().y);
+					ROS_INFO("\033[32m push back to new_plan_path :(%d,%d)\033[0m",cur.toCell().x,cur.toCell().y);
 					new_plan_path.push_back(cur);
 				}
 				else{
@@ -135,8 +138,9 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Cells *ta
 	int16_t x_last,y_last;
 	uint16_t spiral_count = 1;//number of spiral count
 	uint16_t cell_number = 1;//cell counter
-	uint16_t spiral_number = (uint16_t) ceil(diameter * 1000 / (CELL_SIZE));//number of spiral
-	ROS_INFO( "%s,%d,number of cells" "\033[36m" " %d" "\033[0m",__FUNCTION__,__LINE__,spiral_number);
+	uint16_t step = 2;
+	uint16_t spiral_number = (uint16_t) ceil(diameter * 1000 / (CELL_SIZE))/step;//number of spiral
+	ROS_INFO( "%s,%d,number of spiral" "\033[36m" " %d" "\033[0m",__FUNCTION__,__LINE__,spiral_number);
 	if (sp_type == CLOCKWISE)
 	{
 		for(int OUT = 1;OUT>=0;OUT--)
@@ -147,13 +151,9 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Cells *ta
 			y = y_last = begincell.y;
 			spiral_count = 1;
 			cell_number = 1;
-
-			if(spiral_count == 1){
-				targets->push_back({x,y});
-				spiral_count +=1;
-				cell_number +=1;
-			}
-
+			targets->push_back({x,y});
+			spiral_count +=step;
+			cell_number +=step;
 			while (ros::ok()) //clockwise out
 			{
 				if (spiral_count > spiral_number)
@@ -161,7 +161,7 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Cells *ta
 					if(spiral_number %2 == 0)
 					{
 						if(OUT){
-							x = x + 1 ;
+							x = x + step ;
 							targets->push_back({x,y});
 						}
 					}
@@ -173,14 +173,14 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Cells *ta
 				else if ((spiral_count % 2) == 0)
 				{
 					if(OUT){
-						x =  x_last -1;
+						x = x_last - step;
 						x_last = x;
 					}
 					else{
-						y = y_last - 1;
+						y = y_last - step;
 						y_last = y;
 					}
-					for (i = 0; i < cell_number; i=i+1)
+					for (i = 0; i < cell_number; i=i+step)
 					{
 						if(OUT)
 							y = y_last + i;
@@ -188,7 +188,7 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Cells *ta
 							x = x_last + i;
 						targets->push_back({x,y});
 					}
-					for (i = 1; i < cell_number; i=i+1)
+					for (i = step; i < cell_number; i=i+step)
 					{
 						if(OUT)
 							x = x_last + i;
@@ -200,14 +200,14 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Cells *ta
 				else
 				{
 					if(OUT){
-						x = x_last + 1;
+						x = x_last + step;
 						x_last = x;
 					}
 					else{
-						y = y_last + 1;
+						y = y_last + step;
 						y_last = y;
 					}
-					for (i = 0; i < cell_number; i=i+1)
+					for (i = 0; i < cell_number; i=i+step)
 					{
 						if(OUT)
 							y = y_last - i;
@@ -215,7 +215,7 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Cells *ta
 							x = x_last - i;
 						targets->push_back({0,0});
 					}
-					for (i = 1; i < cell_number ; i=i+1)
+					for (i = step; i < cell_number ; i=i+step)
 					{
 						if(OUT)
 							x =  x_last -i ;
@@ -226,8 +226,8 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Cells *ta
 				}
 				x_last = x;
 				y_last = y;
-				spiral_count += 1;
-				cell_number += 1;
+				spiral_count += step;
+				cell_number += step;
 			}
 		}
 		std::reverse(targets->begin()+mid_it, targets->end());
@@ -244,7 +244,7 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Cells *ta
 			cell_number = 1;
 			targets->push_back({x,y});
 			spiral_count +=1;
-			cell_number +=1;
+			cell_number +=step;
 			while (ros::ok()) //anti clockwise out
 			{
 				if (spiral_count > spiral_number)
@@ -252,7 +252,7 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Cells *ta
 					if(spiral_number %2 == 0)
 					{
 						if(OUT){
-							x = x - 1;
+							x = x - step;
 							targets->push_back({x,y});
 						}
 					}
@@ -263,14 +263,14 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Cells *ta
 				else if ((spiral_count % 2) == 0)
 				{
 					if(OUT){
-						x =  x_last + 1;
+						x =  x_last + step;
 						x_last = x;
 					}
 					else{
-						y = y_last - 1;
+						y = y_last - step;
 						y_last = y;
 					}
-					for (i = 0; i < cell_number; i=i+1)
+					for (i = 0; i < cell_number; i=i+step)
 					{
 						if(OUT)
 							y = y_last + i;
@@ -278,7 +278,7 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Cells *ta
 							x = x_last - i;
 						targets->push_back({x,y});
 					}
-					for (i = 1; i < cell_number; i=i+1)
+					for (i = step; i < cell_number; i=i+step)
 					{
 						if(OUT)
 							x = x_last - i;
@@ -290,14 +290,14 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Cells *ta
 				else
 				{
 					if(OUT){
-						x = x_last - 1;
+						x = x_last - step;
 						x_last = x;
 					}
 					else{
-						y = y_last + 1;
+						y = y_last + step;
 						y_last = y;
 					}
-					for (i = 0; i < cell_number; i=i+1)
+					for (i = 0; i < cell_number; i=i+step)
 					{
 						if(OUT)
 							y = y_last - i;
@@ -305,7 +305,7 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Cells *ta
 							x = x_last + i;
 						targets->push_back({x,y});
 					}
-					for (i = 1; i < cell_number ; i=i+1)
+					for (i = step; i < cell_number ; i=i+step)
 					{
 						if(OUT)
 							x =  x_last + i ;
@@ -317,7 +317,7 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Cells *ta
 				x_last = x;
 				y_last = y;
 				spiral_count += 1;
-				cell_number += 1;
+				cell_number += step;
 			}
 		}
 		std::reverse(targets->begin()+mid_it, targets->end());

@@ -75,7 +75,7 @@ bool CleanModeFollowWall::mapMark() {
 bool CleanModeFollowWall::setNextAction()
 {
 	PP_INFO();
-	if (p_state == state_init)
+	if (sp_state == state_init)
 		return ACleanMode::setNextAction();
 	else {
 		if(plan_path_.empty())
@@ -109,12 +109,12 @@ bool CleanModeFollowWall::setNextAction()
 
 bool CleanModeFollowWall::setNextState()
 {
-	if(p_state == state_init)
+	if(sp_state == state_init)
 	{
 			if(action_i_ == ac_open_slam)
-		p_state = state_clean;
+		sp_state = state_clean;
 	}
-	if(p_state == state_clean) {
+	if(sp_state == state_clean) {
 		if(reach_cleaned_count_ == 0) {
 			if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
 				plan_path_.pop_front();
@@ -131,9 +131,9 @@ bool CleanModeFollowWall::setNextState()
 				}
 			}else {
 				ROS_WARN("%s,%d:follow clean finish,did not find charge", __func__, __LINE__);
-				p_state = state_go_home_point;
+				sp_state = state_go_home_point;
 				go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
-				stateInit(p_state);
+				stateInit(sp_state);
 				action_i_ = ac_null;
 			}
 		}
@@ -194,7 +194,7 @@ void CleanModeFollowWall::remoteClean(bool state_now, bool state_last)
 
 //void CleanModeFollowWall::remoteHome(bool state_now, bool state_last)
 //{
-//	if (p_state == state_clean || action_i_ == ac_pause)
+//	if (sp_state == state_clean || action_i_ == ac_pause)
 //	{
 //		ROS_WARN("%s %d: remote home.", __FUNCTION__, __LINE__);
 //		beeper.play_for_command(VALID);
@@ -211,7 +211,7 @@ void CleanModeFollowWall::remoteClean(bool state_now, bool state_last)
 //void CleanModeFollowWall::remoteDirectionLeft(bool state_now, bool state_last)
 //{
 //	//todo: Just for debug
-//	if (p_state == state_clean)
+//	if (sp_state == state_clean)
 //	{
 //		beeper.play_for_command(VALID);
 //		continue_point_ = getPosition();
@@ -237,7 +237,7 @@ void CleanModeFollowWall::remoteClean(bool state_now, bool state_last)
 //
 //void CleanModeFollowWall::batteryHome(bool state_now, bool state_last)
 //{
-//	if (p_state == state_clean)
+//	if (sp_state == state_clean)
 //	{
 //		continue_point_ = getPosition();
 //		ROS_INFO("%s %d: low battery, battery =\033[33m %dmv \033[0m, continue cell(%d, %d)", __FUNCTION__, __LINE__,
@@ -263,13 +263,14 @@ bool CleanModeFollowWall::wf_is_isolate(GridMap& map) {
 	int16_t x_min_forward, x_max_forward, y_min, y_max;
 	map.getMapRange(CLEAN_MAP, &x_min_forward, &x_max_forward, &y_min, &y_max);
 	Cell_t out_cell {int16_t(x_max_forward + 1),int16_t(y_max + 1)};
+	Cell_t zero_home = {0, 0};
 
 	map.markRobot(CLEAN_MAP);//note: To clear the obstacle when check isolated, please don't remove it!
 	auto curr = getPosition().toCell();
 	map.print(CLEAN_MAP, curr.x, curr.y);
 	ROS_WARN("%s %d: curr(%d,%d),out(%d,%d)", __FUNCTION__, __LINE__, curr.x, curr.y,out_cell.x, out_cell.y);
 
-	if ( out_cell != g_zero_home.toCell()){
+	if ( out_cell != zero_home){
 			val = wf_path_find_shortest_path(map, curr.x, curr.y, out_cell.x, out_cell.y, 0);
 			val = (val < 0 || val == SCHAR_MAX) ? 0 : 1;
 	} else {
