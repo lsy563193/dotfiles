@@ -4,7 +4,7 @@
 #include "pp.h"
 #include "arch.hpp"
 
-void StateSavedStateBeforePause::update() {
+void StatePause::update() {
 
 }
 

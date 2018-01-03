@@ -92,9 +92,9 @@ public:
 //	IMoveType* setNextAction_();
 };
 
-class StateSavedStateBeforePause: public State {
+class StatePause: public State {
 public:
-	StateSavedStateBeforePause()= default;
+	StatePause()= default;
 	void update() override;
 //	IMoveType* setNextAction_();
 };

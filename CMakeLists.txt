@@ -30,7 +30,7 @@ FILE(GLOB PP_SRC
 	src/mode/state/state.cpp
 	src/mode/state/state_init.cpp
 	src/mode/state/state_resume_low_battery_charge.cpp
-	src/mode/state/state_saved_state_before_pause.cpp
+				src/mode/state/state_pause.cpp
 	src/mode/state/state_charge.cpp
 	src/mode/state/state_clean.cpp
 	src/mode/state/state_go_home_point.cpp

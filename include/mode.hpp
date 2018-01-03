@@ -227,7 +227,7 @@ public:
 	virtual bool setNextAction();
 	void genNextAction();
 
-	void stateInit(int next);
+	void stateInit(State* next);
 	bool setNextStateForGoHomePoint(GridMap &map);
 	void setRconPos(float cd,float dist);
 
@@ -322,6 +322,7 @@ public:
 	}
 protected:
 	State* p_state{};
+	State *state_saved_state_before_pause;
 protected:
 	static State *state_init;
 	static State *state_clean;
@@ -333,7 +334,7 @@ protected:
 	static State *state_self_check;
 	static State *state_exploration;
 	static State *state_resume_low_battery_charge;
-	static State *state_saved_state_before_pause;
+	static State *state_pause;
 public:
 	bool	g_start_point_seen_charger{};
 	bool g_have_seen_charger{};
@@ -342,22 +343,6 @@ public:
 	Points home_points_;
 	Points g_homes;
 	Point32_t last_;
-
-	int state_i_{st_clean};
-	enum {
-		st_null,
-		st_init,
-		st_clean,
-		st_go_home_point,
-		st_go_to_charger,
-		st_trapped,
-		st_tmp_spot,
-		st_self_check,
-		st_exploration,
-		st_charge,
-		st_resume_low_battery_charge,
-		st_pause,
-	};
 	Point32_t g_zero_home{0,0,0};
 	bool found_temp_charger_{};
 	bool in_rcon_signal_range_{};
@@ -425,8 +410,6 @@ private:
 	bool moved_during_pause_;
 	Point32_t continue_point_{};
 	bool go_home_for_low_battery_{false};
-
-	int saved_state_i_before_pause{st_null};
 
 protected:
 //	Cells home_point_{};
