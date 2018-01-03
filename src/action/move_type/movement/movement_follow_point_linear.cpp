@@ -61,6 +61,7 @@ bool MovementFollowPointLinear::calcTmpTarget(Point32_t& tmp_target) {
 		tmp_target = _calcTmpTarget(curr, sp_mt_->target_point_,p_cm->new_dir_);
 
 		ROS_INFO("%s,%d,dir(%d),target(%d,%d),tmp(%d,%d)", __FUNCTION__, __LINE__, p_cm->new_dir_, sp_mt_->target_point_.x, sp_mt_->target_point_.y, tmp_target.x, tmp_target.y);
+		ROS_INFO("%s,%d,next target_point(%d,%d)",__FUNCTION__,__LINE__,sp_mt_->target_point_.toCell().x,sp_mt_->target_point_.toCell().y);
 	}
 
 	return true;
@@ -160,6 +161,7 @@ bool MovementFollowPointLinear::isPassTargetStop()
 	{
 		ROS_WARN("%s, %d: MovementFollowPointLinear, pass target: new_dir(\033[32m%d\033[0m),is_x_axis(\033[32m%d\033[0m),is_pos(\033[32m%d\033[0m),curr(\033[32m%d\033[0m),target(\033[32m%d\033[0m)",
 				 __FUNCTION__, __LINE__, new_dir, isXAxis(new_dir), isPos(new_dir), curr, target);
+		ROS_INFO("%s,%s,%d,\033[32m curr_cell(%d,%d),target_cell(%d,%d)\033[0m",__FILE__,__FUNCTION__,__LINE__,s_curr_p.toCell().x,s_curr_p.toCell().y,target_p.toCell().x,target_p.toCell().y);
 		return true;
 	}
 	return false;
