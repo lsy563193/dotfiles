@@ -280,90 +280,82 @@ void Gyro::setAccInitData()
 uint8_t Gyro::checkTilt()
 {
 	//todo Change the method of getting the acc data, now data is from gyro instance.
-	static uint16_t front_count = 0;
-	static uint16_t left_count = 0;
-	static uint16_t right_count = 0;
-	static uint16_t z_count = 0;
 	uint8_t tmp_status = 0;
 
 	if (tilt_checking_enable_)
 	{
 		if (getFront() - getFrontInit() > FRONT_TILT_LIMIT)
 		{
-			front_count += 2;
-			//ROS_WARN("%s %d: front(%d)\tfront init(%d), front cnt(%d).", __FUNCTION__, __LINE__, getFront(), getFrontInit(), front_count);
+			tilt_front_count_ += 2;
+			//ROS_WARN("%s %d: front(%d)\tfront init(%d), front cnt(%d).", __FUNCTION__, __LINE__, getFront(), getFrontInit(), tilt_front_count_);
 		}
 		else
 		{
-			if (front_count > 0)
-				front_count--;
+			if (tilt_front_count_ > 0)
+				tilt_front_count_--;
 			else
-				front_count = 0;
+				tilt_front_count_ = 0;
 		}
 		if (getLeft() - getLeftInit() > LEFT_TILT_LIMIT)
 		{
-			left_count++;
-			//ROS_WARN("%s %d: left(%d)\tleft init(%d), left cnt(%d).", __FUNCTION__, __LINE__, getLeft(), getLeftInit(), left_count);
+			tilt_left_count_++;
+			//ROS_WARN("%s %d: left(%d)\tleft init(%d), left cnt(%d).", __FUNCTION__, __LINE__, getLeft(), getLeftInit(), tilt_left_count_);
 		}
 		else
 		{
-			if (left_count > 0)
-				left_count--;
-			else
-				left_count = 0;
+			if (tilt_left_count_ > 0)
+				tilt_left_count_--;
 		}
 		if (getRight() - getRightInit() > RIGHT_TILT_LIMIT)
 		{
-			right_count++;
-			//ROS_WARN("%s %d: right(%d)\tright init(%d), right cnt(%d).", __FUNCTION__, __LINE__, getRight(), getRightInit(), right_count);
+			tilt_right_count_++;
+			//ROS_WARN("%s %d: right(%d)\tright init(%d), right cnt(%d).", __FUNCTION__, __LINE__, getRight(), getRightInit(), tilt_right_count_);
 		}
 		else
 		{
-			if (right_count > 0)
-				right_count--;
-			else
-				right_count = 0;
+			if (tilt_right_count_ > 0)
+				tilt_right_count_--;
 		}
 		if (abs(getZAcc() - getInitZAcc()) > DIF_TILT_Z_VAL)
 		{
-			z_count++;
+			tilt_z_count_++;
 			//ROS_WARN("%s %d: z(%d)\tzi(%d).", __FUNCTION__, __LINE__, getZAcc(), getInitZAcc());
 		}
 		else
 		{
-			if (z_count > 1)
-				z_count -= 2;
+			if (tilt_z_count_ > 1)
+				tilt_z_count_ -= 2;
 			else
-				z_count = 0;
+				tilt_z_count_ = 0;
 		}
 
 		//if (left_count > 7 || front_count > 7 || right_count > 7 || z_count > 7)
 			//ROS_WARN("%s %d: count left:%d, front:%d, right:%d, z:%d", __FUNCTION__, __LINE__, left_count, front_count, right_count, z_count);
 
-		if (front_count + left_count + right_count + z_count > TILT_COUNT_REACH)
+		if (tilt_front_count_ + tilt_left_count_ + tilt_right_count_ + tilt_z_count_ > TILT_COUNT_REACH)
 		{
 			ROS_INFO("\033[47;34m" "%s,%d,robot tilt !!" "\033[0m",__FUNCTION__,__LINE__);
-			if (left_count > TILT_COUNT_REACH / 3)
+			if (tilt_left_count_ > TILT_COUNT_REACH / 3)
 				tmp_status |= TILT_LEFT;
-			if (right_count > TILT_COUNT_REACH / 3)
+			if (tilt_right_count_ > TILT_COUNT_REACH / 3)
 				tmp_status |= TILT_RIGHT;
 
-			if (front_count > TILT_COUNT_REACH / 3 || !tmp_status)
+			if (tilt_front_count_ > TILT_COUNT_REACH / 3 || !tmp_status)
 				tmp_status |= TILT_FRONT;
 			setTiltCheckingStatus(tmp_status);
-			front_count /= 3;
-			left_count /= 3;
-			right_count /= 3;
-			z_count /= 3;
+			tilt_front_count_ /= 3;
+			tilt_left_count_ /= 3;
+			tilt_right_count_ /= 3;
+			tilt_z_count_ /= 3;
 		}
-		else if (front_count + left_count + right_count + z_count < TILT_COUNT_REACH / 4)
+		else if (tilt_front_count_ + tilt_left_count_ + tilt_right_count_ + tilt_z_count_ < TILT_COUNT_REACH / 4)
 			setTiltCheckingStatus(0);
 	}
 	else{
-		front_count = 0;
-		left_count = 0;
-		right_count = 0;
-		z_count = 0;
+		tilt_front_count_ = 0;
+		tilt_left_count_ = 0;
+		tilt_right_count_ = 0;
+		tilt_z_count_ = 0;
 		setTiltCheckingStatus(0);
 	}
 

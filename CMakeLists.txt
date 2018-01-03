@@ -28,6 +28,10 @@ FILE(GLOB PP_SRC
 	src/dev/lidar.cpp
 
 	src/mode/state/state.cpp
+	src/mode/state/state_init.cpp
+	src/mode/state/state_resume_low_battery_charge.cpp
+				src/mode/state/state_pause.cpp
+	src/mode/state/state_charge.cpp
 	src/mode/state/state_clean.cpp
 	src/mode/state/state_go_home_point.cpp
 	src/mode/state/state_go_charger.cpp
@@ -94,7 +98,6 @@ FILE(GLOB PP_SRC
 
 	src/error.cpp
 	src/event_manager.cpp
-	src/global.cpp
 	src/main.cpp
 	src/map.cpp
 	src/mathematics.cpp

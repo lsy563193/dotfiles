@@ -5,9 +5,8 @@
 #include "pp.h"
 #include "arch.hpp"
 
-StateClean::StateClean() {
+void StateClean::update() {
 	led.set_mode(LED_STEADY, LED_GREEN);
-//	sp_move_type_.reset(new IMoveType);
 }
 
 //bool StateClean::isFinish() {

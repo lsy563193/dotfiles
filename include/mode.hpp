@@ -93,6 +93,7 @@ public:
 	ModeIdle();
 	~ModeIdle() override;
 	bool isExit() override;
+	bool isFinish() override;
 	void remoteKeyHandler(bool state_now, bool state_last);
 	void remoteDirectionLeft(bool state_now, bool state_last) override
 	{ remoteKeyHandler(state_now, state_last);}
@@ -118,6 +119,7 @@ protected:
 //	std::vector<Cell_t> temp_fw_cells;
 private:
 	void register_events(void);
+	bool battery_low_{false};
 
 	bool plan_activated_status_;
 
@@ -213,6 +215,7 @@ public:
 
 };
 
+class State;
 class ACleanMode:public Mode
 {
 public:
@@ -223,8 +226,9 @@ public:
 	virtual bool setNextState() = 0;
 	virtual bool setNextAction();
 	void genNextAction();
-	bool setNextStateForGoHomePoint(GridMap &map);
 
+	void stateInit(State* next);
+	bool setNextStateForGoHomePoint(GridMap &map);
 	void setRconPos(float cd,float dist);
 
 	void path_set_home(const Point32_t& curr);
@@ -239,7 +243,8 @@ public:
 
 	Cells pointsGenerateCells(Points &targets);
 
-	virtual bool ActionFollowWallisFinish();
+	virtual bool actionFollowWallisFinish();
+	virtual void actionFollowWallSaveBlocks();
 	void setRconPos(Point32_t pos);
 	Point32_t updatePath(GridMap& map);
 	int reach_cleaned_count_{};
@@ -253,32 +258,91 @@ public:
 	boost::shared_ptr<APathAlgorithm> go_home_path_algorithm_{};
 	GridMap clean_map_;
 	Point32_t charger_pos_{};//charger postion
-protected:
 
+	virtual bool isFinishInit(){return false;};
+	virtual bool isFinishClean(){return false;};
+	virtual bool isFinishGoHomePoint(){return false;};
+	virtual bool isFinishGoCharger(){return false;};
+	virtual bool isFinishTmpSpot(){return false;};
+	virtual bool isFinishTrapped(){ return false;};
+	virtual bool isFinishSelfCheck(){return false;};
+	virtual bool isFinishExploration(){ return false;};
+	virtual bool isFinishResumeLowBatteryCharge(){return false;};
+	virtual bool isFinishLowBatteryResume(){return false;};
+	virtual bool isFinishSavedBeforePause(){return false;};
+	virtual bool isFinishCharge(){return false;};
+	virtual bool isFinishPause(){return false;};
+
+public:
+	State* getState() const {
+		return p_state;
+	};
+	void setState(State* state){
+		p_state = state;
+	}
+	bool isStateInit() const
+	{
+		return p_state == state_init;
+	}
+	bool isStateClean() const
+	{
+		return p_state == state_clean;
+	}
+	bool isStateGoHomePoint() const
+	{
+		return p_state == state_go_home_point;
+	}
+	bool isStateGoCharger() const
+	{
+		return p_state == state_go_charger;
+	}
+	bool isStateTrapped() const
+	{
+		return p_state == state_trapped;
+	}
+	bool isStateTmpSpot() const
+	{
+		return p_state == state_tmp_spot;
+	}
+	bool isStateSelfCheck() const
+	{
+		return p_state == state_self_check;
+	}
+	bool isStateExploration() const
+	{
+		return p_state == state_exploration;
+	}
+	bool isStateResumeLowBatteryCharge() const
+	{
+		return p_state == state_resume_low_battery_charge;
+	}
+	bool isStateSavedBeforePause() const
+	{
+		return p_state == state_saved_state_before_pause;
+	}
+protected:
+	State* p_state{};
+	State *state_saved_state_before_pause;
+protected:
+	static State *state_init;
+	static State *state_clean;
+	static State *state_go_home_point;
+	static State *state_go_charger;
+	static State *state_charge;
+	static State *state_trapped;
+	static State *state_tmp_spot;
+	static State *state_self_check;
+	static State *state_exploration;
+	static State *state_resume_low_battery_charge;
+	static State *state_pause;
+public:
 	bool	g_start_point_seen_charger{};
 	bool g_have_seen_charger{};
 //	uint8_t saveFollowWall(bool is_left);
-	virtual void stateInit(int next);
 //	std::vector<Cell_t> temp_fw_cells;
 	Points home_points_;
 	Points g_homes;
 	Point32_t last_;
-
-	int state_i_{st_clean};
-	enum {
-		st_null,
-		st_init,
-		st_clean,
-		st_go_home_point,
-		st_go_to_charger,
-		st_trapped,
-		st_tmp_spot,
-		st_self_check,
-		st_exploration,
-		st_charge,
-		st_resume_low_battery_charge,
-		st_pause,
-	};
 	Point32_t g_zero_home{0,0,0};
 	bool found_temp_charger_{};
 	bool in_rcon_signal_range_{};
@@ -311,10 +375,27 @@ public:
 //	void overCurrentBrushRight(bool state_now, bool state_last);
 	void overCurrentWheelLeft(bool state_now, bool state_last) override;
 	void overCurrentWheelRight(bool state_now, bool state_last) override;
+	void remoteSpot(bool state_now, bool state_last) override;
 //	void overCurrentSuction(bool state_now, bool state_last);
 
+
+	bool isFinishInit() override;
+	bool isFinishClean() override;
+	bool isFinishGoHomePoint() override;
+	bool isFinishGoCharger() override;
+	bool isFinishTmpSpot() override;
+	bool isFinishTrapped() override;
+	bool isFinishSelfCheck() override;
+	bool isFinishExploration() override;
+	bool isFinishResumeLowBatteryCharge() override;
+	bool isFinishLowBatteryResume() override;
+	bool isFinishSavedBeforePause() override;
+	bool isFinishCharge() override;
+	bool isFinishPause() override;
+
 private:
-	bool ActionFollowWallisFinish() override ;
+	bool actionFollowWallisFinish() override ;
+	void actionFollowWallSaveBlocks() override ;
 	bool isNewLineReach();
 	bool isOverOriginLine();
 	bool isBlockCleared();
@@ -329,8 +410,6 @@ private:
 	bool moved_during_pause_;
 	Point32_t continue_point_{};
 	bool go_home_for_low_battery_{false};
-
-	int saved_state_i_before_pause{st_null};
 
 protected:
 //	Cells home_point_{};
@@ -369,7 +448,7 @@ public:
 
 	~CleanModeFollowWall() override;
 
-	bool ActionFollowWallisFinish() override;
+	bool actionFollowWallisFinish() override;
 
 	bool setNextAction() override;
 

@@ -51,17 +51,19 @@ bool MoveTypeFollowWall::isFinish()
 {
 	auto p_clean_mode = (ACleanMode*)sp_mode_;
 
-	if(p_clean_mode->ActionFollowWallisFinish())
+	if(p_clean_mode->actionFollowWallisFinish())
 		return true;
 
 	if (sp_movement_->isFinish()) {
 		PP_WARN();
 		if (movement_i_ == mm_turn) {
+			// todo: Add checking for bumper/cliff/etc.
 			resetTriggeredValue();
 			movement_i_ = mm_straight;
 			sp_movement_.reset(new MovementStraight());
 		}
 		else if (movement_i_ == mm_straight) {
+			// todo: Add checking for bumper/cliff/etc.
 			resetTriggeredValue();
 			movement_i_ = mm_forward;
 			sp_movement_.reset(new MovementFollowWallLidar(is_left_));
@@ -69,12 +71,14 @@ bool MoveTypeFollowWall::isFinish()
 		else if (movement_i_ == mm_forward) {
 			if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip) {
 				PP_INFO();
+				p_clean_mode->actionFollowWallSaveBlocks();
 //				resetTriggeredValue();
 				movement_i_ = mm_back;
 				sp_movement_.reset(new MovementBack(0.01, BACK_MAX_SPEED));
 			}
 			else if (ev.lidar_triggered || ev.obs_triggered) {
 				PP_INFO();
+				p_clean_mode->actionFollowWallSaveBlocks();
 				int16_t turn_angle =get_turn_angle(false);
 				turn_target_angle_ = ranged_angle(robot::instance()->getWorldPoseAngle() + turn_angle);
 				movement_i_ = mm_turn;

@@ -111,6 +111,7 @@ bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, cons
 		{
 			ROS_INFO("%s %d", __FUNCTION__, __LINE__);
 			plan_path = cells_generate_points(plan_path_cell);
+			go_home_map_.print(CLEAN_MAP, plan_path_cell.back().x, plan_path_cell.back().y);
 			break;
 		}
 	}

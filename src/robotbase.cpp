@@ -515,7 +515,7 @@ void serial_send_routine_cb()
 		memcpy(buf,serial.send_stream,sizeof(uint8_t)*SEND_LEN);
 		g_send_stream_mutex.unlock();
 		buf[CTL_CRC] = serial.calc_buf_crc8(buf, sl);
-		//debug_send_stream(&buf[0]);
+//		debug_send_stream(&buf[0]);
 		serial.write(SEND_LEN, buf);
 	}
 	ROS_INFO("\033[32m%s\033[0m,%d pthread exit",__FUNCTION__,__LINE__);
