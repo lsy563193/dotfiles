@@ -1,6 +1,7 @@
 //
 // Created by lsy563193 on 12/9/17.
 //
+#include <map.h>
 #include "dev.h"
 #include "arch.hpp"
 #include "path_algorithm.h"
@@ -125,7 +126,7 @@ bool CleanModeSpot::isFinishInit() {
 		auto curr = updatePosition();
 		passed_path_.push_back(curr);
 
-		home_points_.back().th = robot::instance()->getWorldPoseAngle();
+		home_points_.back().home_point.th = robot::instance()->getWorldPoseAngle();
 		PP_INFO();
 		vacuum.setMode(Vac_Max);
 		brush.fullOperate();

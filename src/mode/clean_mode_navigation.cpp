@@ -5,6 +5,7 @@
 #include <event_manager.h>
 #include <pp.h>
 #include <error.h>
+#include <map.h>
 #include "arch.hpp"
 
 //#define NAV_INFO() ROS_INFO("st(%d),ac(%d)", state_i_, action_i_)
@@ -96,8 +97,10 @@ bool CleanModeNav::mapMark()
 		// Set home cell.
 		if (ev.rcon_triggered)
 		{
-			home_points_.push_front(getPosition());
-			ROS_INFO("%s %d: Set home cell(%d, %d).", __FUNCTION__, __LINE__, home_points_.front().x, home_points_.front().y);
+			home_points_.push_front({getPosition(), true});
+			ROS_INFO("%s %d: Set home cell(%d, %d).", __FUNCTION__, __LINE__,
+					 home_points_.front().home_point.toCell().x,
+					 home_points_.front().home_point.toCell().y);
 		}
 	}
 
@@ -198,7 +201,10 @@ bool CleanModeNav::setNextAction()
 			// If it is the starting of navigation mode, paused_odom_angle_ will be zero.
 			odom.setAngleOffset(paused_odom_angle_);
 			if (charger.isOnStub())
+			{
 				action_i_ = ac_back_form_charger;
+				home_points_.back().have_seen_charger = true;
+			}
 			else
 				action_i_ = ac_open_lidar;
 
@@ -251,7 +257,7 @@ bool CleanModeNav::setNextAction()
 		action_i_ = ac_follow_wall_left;
 	else if (sp_state == state_go_home_point || sp_state == state_resume_low_battery_charge)
 		action_i_ = ac_linear;
-	else if (sp_state == state_go_charger)
+	else if (sp_state == state_go_to_charger)
 		action_i_ = ac_go_to_charger;
 	else if (sp_state == state_charge)
 		action_i_ = ac_charge;
@@ -536,7 +542,7 @@ bool CleanModeNav::isFinishInit() {
 
 		auto curr = updatePosition();
 		passed_path_.push_back(curr);
-		home_points_.back().th = curr.th;
+		home_points_.back().home_point.th = curr.th;
 		PP_INFO();
 		sp_state = state_clean;
 		sp_state->update();
@@ -664,7 +670,7 @@ bool CleanModeNav::isFinishTrapped() {
 	return false;
 }
 
-bool CleanModeNav::isFinishSelfCheck() {
+bool CleanModeNav::isFinishExceptionResume() {
 //	if(!sp_action_->isFinish())
 //		return false;
 //	sp_action_.reset();//for call ~constitution;

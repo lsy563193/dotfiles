@@ -231,8 +231,6 @@ public:
 	bool setNextStateForGoHomePoint(GridMap &map);
 	void setRconPos(float cd,float dist);
 
-	void path_set_home(const Point32_t& curr);
-
 	virtual bool mapMark() = 0;
 	/*
 	 * @author mengshige1988@qq.com
@@ -255,7 +253,7 @@ public:
 	MapDirection new_dir_{MAP_POS_X};
 
 	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
-	boost::shared_ptr<APathAlgorithm> go_home_path_algorithm_{};
+	boost::shared_ptr<GoHomePathAlgorithm> go_home_path_algorithm_{};
 	GridMap clean_map_;
 	Point32_t charger_pos_{};//charger postion
 
@@ -265,7 +263,7 @@ public:
 	virtual bool isFinishGoCharger(){return false;};
 	virtual bool isFinishTmpSpot(){return false;};
 	virtual bool isFinishTrapped(){ return false;};
-	virtual bool isFinishSelfCheck(){return false;};
+	virtual bool isFinishExceptionResume(){return false;};
 	virtual bool isFinishExploration(){ return false;};
 	virtual bool isFinishResumeLowBatteryCharge(){return false;};
 	virtual bool isFinishLowBatteryResume(){return false;};
@@ -295,7 +293,7 @@ public:
 	}
 	bool isStateGoCharger() const
 	{
-		return sp_state == state_go_charger;
+		return sp_state == state_go_to_charger;
 	}
 	bool isStateTrapped() const
 	{
@@ -305,9 +303,9 @@ public:
 	{
 		return sp_state == state_tmp_spot;
 	}
-	bool isStateSelfCheck() const
+	bool isStateExceptionResume() const
 	{
-		return sp_state == state_self_check;
+		return sp_state == state_exception_resume;
 	}
 	bool isStateExploration() const
 	{
@@ -322,28 +320,26 @@ public:
 		return sp_state == state_saved_state_before_pause;
 	}
 protected:
-	static State* sp_state;
+	static State *sp_state;
 	static State *state_saved_state_before_pause;
 	static State *state_init;
 	static State *state_clean;
 	static State *state_go_home_point;
-	static State *state_go_charger;
+	static State *state_go_to_charger;
 	static State *state_charge;
 	static State *state_trapped;
 	static State *state_tmp_spot;
-	static State *state_self_check;
+	static State *state_exception_resume;
 	static State *state_exploration;
 	static State *state_resume_low_battery_charge;
 	static State *state_pause;
+
+	HomePoints home_points_;
+	bool reach_home_point_{false};
 public:
-	bool	g_start_point_seen_charger{};
-	bool g_have_seen_charger{};
 //	uint8_t saveFollowWall(bool is_left);
 //	std::vector<Cell_t> temp_fw_cells;
-	Points home_points_;
-	Points g_homes;
 	Point32_t last_;
-	Point32_t g_zero_home{0,0,0};
 	bool found_temp_charger_{};
 	bool in_rcon_signal_range_{};
 	bool should_mark_charger_{};
@@ -384,7 +380,7 @@ public:
 	bool isFinishGoCharger() override;
 	bool isFinishTmpSpot() override;
 	bool isFinishTrapped() override;
-	bool isFinishSelfCheck() override;
+	bool isFinishExceptionResume() override;
 	bool isFinishExploration() override;
 	bool isFinishResumeLowBatteryCharge() override;
 	bool isFinishLowBatteryResume() override;

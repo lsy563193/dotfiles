@@ -4,6 +4,7 @@
 #include <event_manager.h>
 #include <pp.h>
 #include <error.h>
+#include <map.h>
 #include "arch.hpp"
 
 CleanModeExploration::CleanModeExploration()
@@ -99,7 +100,7 @@ bool CleanModeExploration::setNextAction()
 		return ACleanMode::setNextAction();
 	else if(sp_state == state_clean)
 		action_i_ = ac_linear;
-	else if(sp_state == state_go_charger)
+	else if(sp_state == state_go_to_charger)
 		action_i_ = ac_go_to_charger;
 	else if(sp_state == state_go_home_point)
 		action_i_ = ac_linear;
@@ -180,7 +181,7 @@ bool CleanModeExploration::isFinishInit() {
 	if (action_i_ == ac_open_slam) {
 		auto curr = updatePosition();
 		passed_path_.push_back(curr);
-		home_points_.back().th = robot::instance()->getWorldPoseAngle();
+		home_points_.back().home_point.th = robot::instance()->getWorldPoseAngle();
 		PP_INFO();
 
 		sp_state = state_clean;
@@ -199,7 +200,7 @@ bool CleanModeExploration::isFinishClean() {
 	plan_path_.clear();
 	if (ev.rcon_triggered) {
 		ROS_WARN("%s,%d:find charge success,convert to go to charge state", __func__, __LINE__);
-		sp_state = state_go_charger;
+		sp_state = state_go_to_charger;
 		sp_state->update();
 		action_i_ = ac_go_to_charger;
 		return true;

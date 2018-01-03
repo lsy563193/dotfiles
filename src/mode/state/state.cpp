@@ -30,7 +30,7 @@ State *State::getNextState() {
 	else if(sp_cm_->isStateTrapped())
 		return sp_cm_->getNextStateOfTrapped();
 
-	else if(sp_cm_->isStateSelfCheck())
+	else if(sp_cm_->isStateExceptionResume())
 		return sp_cm_->getNextStateOfSelfCheck();
 
 	else if(sp_cm_->isStateExploration())
@@ -45,7 +45,8 @@ State *State::getNextState() {
 */
 
 ACleanMode* State::sp_cm_{};
-bool State::isFinish() {
+bool State::isFinish()
+{
 	if(sp_cm_->isStateInit())
 	{
 		ROS_INFO("!!isStateInit");
@@ -67,8 +68,8 @@ bool State::isFinish() {
 	else if(sp_cm_->isStateTrapped())
 		return sp_cm_->isFinishTrapped();
 
-	else if(sp_cm_->isStateSelfCheck())
-		return sp_cm_->isFinishSelfCheck();
+	else if(sp_cm_->isStateExceptionResume())
+		return sp_cm_->isFinishExceptionResume();
 
 	else if(sp_cm_->isStateExploration())
 		return sp_cm_->isFinishExploration();

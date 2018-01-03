@@ -111,9 +111,9 @@ protected:
 };
 
 typedef enum {
-	THROUGH_UNKNOWN_AREA,
-	THROUGH_SLAM_MAP_REACHABLE_AREA,
 	THROUGH_CLEANED_AREA,
+	THROUGH_SLAM_MAP_REACHABLE_AREA,
+	THROUGH_UNKNOWN_AREA,
 	GO_HOME_WAY_NUM
 }GoHomeWay_t;
 
@@ -218,7 +218,7 @@ class WFCleanPathAlgorithm: public APathAlgorithm
 {
 public:
 	bool generatePath(GridMap &map, const Point32_t &curr, const MapDirection &last_dir, Points &targets) override;
-	bool checkTrapped(GridMap &map, const Cell_t &curr_cell){};
+	bool checkTrapped(GridMap &map, const Cell_t &curr_cell) override {};
 };
 
 class SpotCleanPathAlgorithm: public APathAlgorithm
@@ -260,7 +260,7 @@ public:
 	 *
 	 * @return: Cells path, the path to selected home cell.
 	 */
-	GoHomePathAlgorithm(GridMap &map, Points home_cells);
+	GoHomePathAlgorithm(GridMap &map, HomePoints home_cells);
 	~GoHomePathAlgorithm() = default;
 
 	/*
@@ -276,14 +276,15 @@ public:
 	 */
 	bool generatePath(GridMap &map, const Point32_t &curr, const MapDirection &last_dir, Points &plan_path) override;
 
-	bool checkTrapped(GridMap &map, const Cell_t &curr_cell){};
+	bool checkTrapped(GridMap &map, const Cell_t &curr_cell) override {};
 
-//	Cells getRestHomeCells();
+	HomePoint getCurrentHomePoint();
 private:
 
 	GridMap go_home_map_;
-	Points home_points_;
-	Point32_t current_home_target_;
+	HomePoints home_points_;
+	// current_home_point_ is initialized as an unreachable point.
+	HomePoint current_home_point_{{CELL_COUNT_MUL * MAP_SIZE + 1, CELL_COUNT_MUL * MAP_SIZE + 1, 0}, false};
 	std::vector<int> go_home_way_list_;
 	std::vector<int>::iterator go_home_way_list_it_;
 };
