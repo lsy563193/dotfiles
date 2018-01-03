@@ -314,9 +314,9 @@ public:
 	{
 		return sp_state == state_resume_low_battery_charge;
 	}
-	bool isStateSavedBeforePause() const
+	bool isStatePause() const
 	{
-		return sp_state == state_saved_state_before_pause;
+		return sp_state == state_pause;
 	}
 protected:
 	static State *sp_state;

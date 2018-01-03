@@ -39,7 +39,7 @@ State *State::getNextState() {
 	else if(sp_cm_->isStateResumeLowBatteryCharge())
 		return sp_cm_->getNextStateOfResumeLowBatteryCharge();
 
-	else if(sp_cm_->isStateSavedBeforePause())
+	else if(sp_cm_->isStatePause())
 		return sp_cm_->getNextStateOfSavedBeforePause();
 }
 */
@@ -76,7 +76,7 @@ bool State::isFinish()
 	else if(sp_cm_->isStateResumeLowBatteryCharge())
 		return sp_cm_->isFinishResumeLowBatteryCharge();
 
-	else if(sp_cm_->isStateSavedBeforePause())
-		return sp_cm_->isFinishLowBatteryResume();
+	else if(sp_cm_->isStatePause())
+		return sp_cm_->isFinishPause();
 	return false;
 }
