@@ -840,6 +840,7 @@ uint8_t GridMap::saveBlocks(bool is_linear, bool is_state_clean)
 	block_count += saveCliff();
 	block_count += saveObs();
 	block_count += saveSlip();
+	block_count += saveTilt();
 //	block_count += save_follow_wall();
 
 	return block_count;

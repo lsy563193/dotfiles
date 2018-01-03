@@ -18,9 +18,13 @@ ActionOpenGyro::ActionOpenGyro()
 bool ActionOpenGyro::isFinish()
 {
 	if (gyro.isOn())
+	{
 		ROS_INFO("%s %d: Open gyro succeeded.", __FUNCTION__, __LINE__);
-
-	return (gyro.isOn());
+		gyro.setAccInitData();
+		gyro.TiltCheckingEnable(true);
+		return true;
+	}
+	return false;
 }
 
 void ActionOpenGyro::run()

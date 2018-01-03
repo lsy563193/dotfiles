@@ -9,6 +9,7 @@
 #include <pp.h>
 #include <pp/SetLidar.h>
 #include <odom.h>
+#include <event_manager.h>
 #include "lidar.hpp"
 #include "robot.hpp"
 

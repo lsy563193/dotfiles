@@ -189,6 +189,10 @@ private:
 	//for tilt checking
 	bool tilt_checking_enable_;
 	uint8_t tilt_checking_status_;
+	uint16_t tilt_front_count_;
+	uint16_t tilt_left_count_;
+	uint16_t tilt_right_count_;
+	uint16_t tilt_z_count_;
 };
 
 extern Gyro gyro;
