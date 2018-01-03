@@ -10,11 +10,11 @@
 ModeSleep::ModeSleep()
 {
 	ROS_INFO("%s %d: Entering Sleep mode\n=========================" , __FUNCTION__, __LINE__);
+	sp_action_.reset(new ActionSleep);
 	event_manager_register_handler(this);
 	event_manager_reset_status();
 	event_manager_set_enable(true);
 
-	sp_action_.reset(new ActionSleep);
 	action_i_ = ac_sleep;
 //	serial.setCleanMode(Clean_Mode_Sleep);
 	usleep(30000);
@@ -43,6 +43,7 @@ bool ModeSleep::isExit()
 	if (ev.charge_detect)
 	{
 		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+		serial.setCleanMode(POWER_ACTIVE);
 		serial.wakeUp();
 		setNextMode(md_charge);
 		return true;
@@ -51,6 +52,7 @@ bool ModeSleep::isExit()
 	if (ev.key_clean_pressed || plan_activated_status_)
 	{
 		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+		serial.setCleanMode(POWER_ACTIVE);
 		serial.wakeUp();
 		setNextMode(md_idle);
 		return true;
@@ -59,6 +61,7 @@ bool ModeSleep::isExit()
 	if (ev.rcon_triggered)
 	{
 		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+		serial.setCleanMode(POWER_ACTIVE);
 		serial.wakeUp();
 		setNextMode(md_go_to_charger);
 		return true;
@@ -88,6 +91,7 @@ void ModeSleep::keyClean(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Waked up by key clean.", __FUNCTION__, __LINE__);
 
 	// Wake up serial so it can beep.
+	serial.setCleanMode(POWER_ACTIVE);
 	serial.wakeUp();
 	beeper.play_for_command(VALID);
 
@@ -111,6 +115,7 @@ void ModeSleep::rcon(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Waked up by rcon signal.", __FUNCTION__, __LINE__);
 	ev.rcon_triggered = c_rcon.getAll();
 	c_rcon.resetStatus();
+	serial.setCleanMode(POWER_ACTIVE);
 	serial.wakeUp();
 }
 
