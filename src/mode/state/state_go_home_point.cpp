@@ -13,6 +13,8 @@ void StateGoHomePoint::update(){
 	wheel.setPidTargetSpeed(0, 0, REG_TYPE_LINEAR);
 	if (ev.remote_home)
 		led.set_mode(LED_STEADY, LED_ORANGE);
+	else
+		led.set_mode(LED_STEADY, LED_GREEN);
 
 	// Play wavs.
 	if (ev.battery_home)

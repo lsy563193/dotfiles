@@ -3,11 +3,12 @@
 //
 
 #include <pp.h>
+#include <map.h>
 #include "ros/ros.h"
 #include "path_algorithm.h"
 
 //----------
-GoHomePathAlgorithm::GoHomePathAlgorithm(GridMap &map, Points home_points)
+GoHomePathAlgorithm::GoHomePathAlgorithm(GridMap &map, HomePoints home_points)
 {
 	// Save the home_points to local.
 	switch (home_points.size())
@@ -16,37 +17,37 @@ GoHomePathAlgorithm::GoHomePathAlgorithm(GridMap &map, Points home_points)
 		{
 			ROS_ERROR("%s,%d: input home_points are empty,at least it should has a home cell(0, 0)!! "
 							  "Now set go_home_way_list_ as one home cell (0, 0).", __FUNCTION__, __LINE__);
-			home_points_ = {{0, 0,0}};
-			go_home_way_list_ = {                                       2,1,0};
-			ROS_INFO("%s,%d: go_home_way_list_ 1:                       2,1,0", __FUNCTION__, __LINE__);
+			home_points_ = {{{0, 0, 0}, false}};
+			go_home_way_list_ = {                                      9,10,11};
+			ROS_INFO("%s,%d: go_home_way_list_ 1:                      9,10,11", __FUNCTION__, __LINE__);
 			break;
 		}
 		case 1:
 		{
 			home_points_ = home_points;
-			go_home_way_list_ = {                                       2,1,0};
-			ROS_INFO("%s,%d: go_home_way_list_ 1:                       2,1,0", __FUNCTION__, __LINE__);
+			go_home_way_list_ = {                                      9,10,11};
+			ROS_INFO("%s,%d: go_home_way_list_ 1:                      9,10,11", __FUNCTION__, __LINE__);
 			break;
 		}
 		case 2:
 		{
 			home_points_ = home_points;
-			go_home_way_list_ = {                 5,      4,     3,     2,1,0};
-			ROS_INFO("%s,%d: go_home_way_list_ 2: 5,      4,     3,     2,1,0", __FUNCTION__, __LINE__);
+			go_home_way_list_ = {                 0,     1,     2,     9,10,11};
+			ROS_INFO("%s,%d: go_home_way_list_ 2: 0,     1,     2,     9,10,11", __FUNCTION__, __LINE__);
 			break;
 		}
 		case 3:
 		{
 			home_points_ = home_points;
-			go_home_way_list_ = {                 5,8,    4,7,   3,6,   2,1,0};
-			ROS_INFO("%s,%d: go_home_way_list_ 3: 5,8,    4,7,   3,6,   2,1,0", __FUNCTION__, __LINE__);
+			go_home_way_list_ = {                 0,3,   1,4,   2,5,   9,10,11};
+			ROS_INFO("%s,%d: go_home_way_list_ 3: 0,3,   1,4,   2,5,   9,10,11", __FUNCTION__, __LINE__);
 			break;
 		}
 		case 4:
 		{
 			home_points_ = home_points;
-			go_home_way_list_ = {                 5,8,11, 4,7,10,3,6,9, 2,1,0};
-			ROS_INFO("%s,%d: go_home_way_list_ 4: 5,8,11, 4,7,10,3,6,9, 2,1,0", __FUNCTION__, __LINE__);
+			go_home_way_list_ = {                 0,3,6, 1,4,7, 2,5,8, 9,10,11};
+			ROS_INFO("%s,%d: go_home_way_list_ 4: 0,3,6, 1,4,7, 2,5,8, 9,10,11", __FUNCTION__, __LINE__);
 			break;
 		}
 		default:
@@ -59,13 +60,18 @@ GoHomePathAlgorithm::GoHomePathAlgorithm(GridMap &map, Points home_points)
 				home_points_.push_back(*it);
 				it++;
 			}
-			home_points_.push_back({0, 0, 0});
-			go_home_way_list_ = {                 5,8,11, 4,7,10,3,6,9, 2,1,0};
-			ROS_INFO("%s,%d: go_home_way_list_ 4: 5,8,11, 4,7,10,3,6,9, 2,1,0", __FUNCTION__, __LINE__);
+			home_points_.push_back(home_points.back());
+			go_home_way_list_ = {                 0,3,6, 1,4,7, 2,5,8, 9,10,11};
+			ROS_INFO("%s,%d: go_home_way_list_ 4: 0,3,6, 1,4,7, 2,5,8, 9,10,11", __FUNCTION__, __LINE__);
 			break;
 		}
 	}
 	go_home_way_list_it_ = go_home_way_list_.begin();
+
+	std::string msg = "Home_points_: ";
+	for (auto it : home_points_)
+		msg += "(" + std::to_string(it.home_point.toCell().x) + ", " + std::to_string(it.home_point.toCell().y) + "),";
+	ROS_INFO("%s %d: %s", __FUNCTION__, __LINE__, msg.c_str());
 
 	// Clear the rcon blocks in map.
 	auto map_tmp = map.generateBound();
@@ -81,23 +87,15 @@ GoHomePathAlgorithm::GoHomePathAlgorithm(GridMap &map, Points home_points)
 bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, const MapDirection &last_dir, Points &plan_path)
 {
 	auto curr_cell = curr.toCell();
-	auto current_home_target_cell = current_home_target_.toCell();
-	ROS_INFO("%s %d: current_cell(%d, %d), Reach home cell(%d, %d)", __FUNCTION__ ,__LINE__,
-			 curr_cell.x, curr_cell.y, curr_cell, current_home_target_cell.x, current_home_target_cell.y);
-	if (curr_cell == current_home_target_cell/* && abs(curr_cell.th -  current_home_target_.th) < 50*/)
-	{
-		ROS_INFO("%s %d: Reach home cell(%d, %d)", __FUNCTION__ ,__LINE__, current_home_target_.x, current_home_target_.y);
-		// Congratulations! You have reached home.
-		return true;
-	}
 
 	// Search path to home cells.
 	for (; go_home_way_list_it_ != go_home_way_list_.end(); ++go_home_way_list_it_) {
 		auto way = *go_home_way_list_it_ % GO_HOME_WAY_NUM;
 		auto cnt = *go_home_way_list_it_ / GO_HOME_WAY_NUM;
-		current_home_target_ = home_points_[cnt];
-		ROS_INFO("\033[1;46;37m" "%s,%d:current_home_target_(%d, %d, %d), way(%d), cnt(%d) " "\033[0m",
-				 __FUNCTION__, __LINE__, current_home_target_.toCell().x, current_home_target_.toCell().y, current_home_target_.th, way, cnt);
+		current_home_point_ = home_points_[cnt];
+		ROS_INFO("\033[1;46;37m" "%s,%d:current_home_point_(%d, %d, %d), have_seen_charger?%d, way(%d), cnt(%d) " "\033[0m",
+				 __FUNCTION__, __LINE__, current_home_point_.home_point.toCell().x, current_home_point_.home_point.toCell().y,
+				 current_home_point_.home_point.th, current_home_point_.have_seen_charger, way, cnt);
 		// Update go_home_map_.
 		go_home_map_.copy(map);
 		if (way == THROUGH_SLAM_MAP_REACHABLE_AREA) {
@@ -105,13 +103,13 @@ bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, cons
 			go_home_map_.mergeFromSlamGridMap(slam_grid_map, false, false, false, false, false, true);
 		}
 
-		auto plan_path_cell = findShortestPath(go_home_map_, curr_cell, current_home_target_.toCell(), last_dir, true);
+		auto plan_path_cell = findShortestPath(go_home_map_, curr_cell, current_home_point_.home_point.toCell(), last_dir, true);
 
 		if (!plan_path_cell.empty())
 		{
-			ROS_INFO("%s %d", __FUNCTION__, __LINE__);
 			plan_path = cells_generate_points(plan_path_cell);
 			go_home_map_.print(CLEAN_MAP, plan_path_cell.back().x, plan_path_cell.back().y);
+			go_home_way_list_it_++;
 			break;
 		}
 	}
@@ -123,6 +121,11 @@ bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, cons
 	}
 
 	return true;
+}
+
+HomePoint GoHomePathAlgorithm::getCurrentHomePoint()
+{
+	return current_home_point_;
 }
 
 

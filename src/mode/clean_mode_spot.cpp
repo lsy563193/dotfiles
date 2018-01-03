@@ -99,7 +99,7 @@ bool CleanModeSpot::setNextState()
 				auto curr = updatePosition();
 				passed_path_.push_back(curr);
 
-				home_points_.back().th = robot::instance()->getWorldPoseAngle();
+				home_points_.back().home_point.th = robot::instance()->getWorldPoseAngle();
 				PP_INFO();
 				vacuum.setMode(Vac_Max);
 				brush.fullOperate();

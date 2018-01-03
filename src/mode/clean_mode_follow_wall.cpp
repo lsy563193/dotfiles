@@ -263,13 +263,14 @@ bool CleanModeFollowWall::wf_is_isolate(GridMap& map) {
 	int16_t x_min_forward, x_max_forward, y_min, y_max;
 	map.getMapRange(CLEAN_MAP, &x_min_forward, &x_max_forward, &y_min, &y_max);
 	Cell_t out_cell {int16_t(x_max_forward + 1),int16_t(y_max + 1)};
+	Cell_t zero_home = {0, 0};
 
 	map.markRobot(CLEAN_MAP);//note: To clear the obstacle when check isolated, please don't remove it!
 	auto curr = getPosition().toCell();
 	map.print(CLEAN_MAP, curr.x, curr.y);
 	ROS_WARN("%s %d: curr(%d,%d),out(%d,%d)", __FUNCTION__, __LINE__, curr.x, curr.y,out_cell.x, out_cell.y);
 
-	if ( out_cell != g_zero_home.toCell()){
+	if ( out_cell != zero_home){
 			val = wf_path_find_shortest_path(map, curr.x, curr.y, out_cell.x, out_cell.y, 0);
 			val = (val < 0 || val == SCHAR_MAX) ? 0 : 1;
 	} else {
