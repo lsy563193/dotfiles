@@ -70,7 +70,7 @@ bool CleanModeExploration::mapMark()
 
 bool CleanModeExploration::isFinish()
 {
-	if (state_i_ == st_init)
+	if (sp_state == state_init)
 		mapMark();
 
 	return ACleanMode::isFinish();
@@ -95,13 +95,13 @@ bool CleanModeExploration::setNextAction()
 {
 	PP_INFO();
 	//todo action convert
-	if (state_i_ == st_init)
+	if (sp_state == state_init)
 		return ACleanMode::setNextAction();
-	else if(state_i_ == st_clean)
+	else if(sp_state == state_clean)
 		action_i_ = ac_linear;
-	else if(state_i_ == st_go_to_charger)
+	else if(sp_state == state_go_charger)
 		action_i_ = ac_go_to_charger;
-	else if(state_i_ == st_go_home_point)
+	else if(sp_state == state_go_home_point)
 		action_i_ = ac_linear;
 	else
 		action_i_ = ac_null;
@@ -116,7 +116,7 @@ bool CleanModeExploration::setNextState()
 	bool state_confirm = false;
 	while (ros::ok() && !state_confirm)
 	{
-		if (state_i_ == st_init)
+		if (sp_state == state_init)
 		{
 			if (action_i_ == ac_open_slam)
 			{
@@ -125,8 +125,8 @@ bool CleanModeExploration::setNextState()
 				home_points_.back().th = robot::instance()->getWorldPoseAngle();
 				PP_INFO();
 
-				state_i_ = st_clean;
-				stateInit(state_i_);
+				sp_state = state_clean;
+				stateInit(sp_state);
 				action_i_ = ac_null;
 			}
 			else
@@ -141,7 +141,7 @@ bool CleanModeExploration::setNextState()
 			action_i_ = ac_null;
 			state_confirm = true;
 		}
-		else if(state_i_ == st_clean)
+		else if(sp_state == state_clean)
 		{
 			PP_INFO();
 			old_dir_ = new_dir_;
@@ -150,8 +150,8 @@ bool CleanModeExploration::setNextState()
 			if(ev.rcon_triggered)
 			{
 				ROS_WARN("%s,%d:find charge success,convert to go to charge state",__func__,__LINE__);
-				state_i_ = st_go_to_charger;
-				stateInit(state_i_);
+				sp_state = state_go_charger;
+				stateInit(sp_state);
 				state_confirm = true;
 				action_i_ = ac_go_to_charger;
 			}
@@ -167,31 +167,31 @@ bool CleanModeExploration::setNextState()
 			else
 			{
 				ROS_WARN("%s,%d:exploration finish,did not find charge",__func__,__LINE__);
-				state_i_ = st_go_home_point;
+				sp_state = state_go_home_point;
 				if (go_home_path_algorithm_ == nullptr)
 					go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
-				stateInit(state_i_);
+				stateInit(sp_state);
 				action_i_ = ac_null;
 			}
 		}
-		else if(state_i_ == st_go_home_point)
+		else if(sp_state == state_go_home_point)
 		{
 			PP_INFO();
 			state_confirm = setNextStateForGoHomePoint(clean_map_);
 		}
-		else if (state_i_ == st_go_to_charger)
+		else if (sp_state == state_go_charger)
 		{
 			PP_INFO();
 			if (ev.charge_detect && charger.isOnStub())
 			{
-				state_i_ = st_null;
+				sp_state = nullptr;
 				state_confirm = true;
 			}
 			else
-				state_i_ = st_clean;
+				sp_state = state_clean;
 		}
 	}
-	return state_i_ != st_null;
+	return sp_state != nullptr;
 }
 
 void CleanModeExploration::keyClean(bool state_now, bool state_last) {

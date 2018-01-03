@@ -1,6 +1,7 @@
 //
 // Created by lsy563193 on 12/4/17.
 //
+#include <event_manager.h>
 #include "pp.h"
 #include "arch.hpp"
 
@@ -44,9 +45,13 @@ bool MoveTypeLinear::isFinish()
 		}
 		else if (movement_i_ == mm_forward) {
 			PP_INFO();
-			if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered) {
+			if (ev.bumper_triggered || ev.cliff_triggered) {
 				movement_i_ = mm_back;
 				sp_movement_.reset(new MovementBack(0.01, BACK_MAX_SPEED));
+			}
+			else if(ev.tilt_triggered){
+				movement_i_ = mm_back;
+				sp_movement_.reset(new MovementBack(0.2, BACK_MAX_SPEED));
 			}
 			else {
 //				resetTriggeredValue();

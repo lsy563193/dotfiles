@@ -21,6 +21,11 @@ public:
 	bool shouldTurn();
 //	~IMoveType() = default;
 
+	void setMode(Mode* cm)
+	{sp_mode_ = cm;}
+	Mode* getMode()
+	{return sp_mode_;}
+
 	virtual bool isFinish();
 	void run();
 //	bool isFinish(int& action_i);

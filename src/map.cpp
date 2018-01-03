@@ -211,14 +211,13 @@ void GridMap::reset(uint8_t id)
 void GridMap::copy(GridMap &source_map)
 {
 	int16_t map_x_min, map_y_min, map_x_max, map_y_max;
+	reset(CLEAN_MAP);
 	source_map.getMapRange(CLEAN_MAP, &map_x_min, &map_x_max, &map_y_min, &map_y_max);
 
 	for (int16_t x = map_x_min; x <= map_x_max; x++)
 	{
-		for (int16_t y = map_x_min; y <= map_x_max; y++)
-		{
-			setCell(CLEAN_MAP,x,y, source_map.getCell(CLEAN_MAP, x, y));
-		}
+		for (int16_t y = map_y_min; y <= map_y_max; y++)
+			setCell(CLEAN_MAP, x, y, source_map.getCell(CLEAN_MAP, x, y));
 	}
 }
 
@@ -841,6 +840,7 @@ uint8_t GridMap::saveBlocks(bool is_linear, bool is_state_clean)
 	block_count += saveCliff();
 	block_count += saveObs();
 	block_count += saveSlip();
+	block_count += saveTilt();
 //	block_count += save_follow_wall();
 
 	return block_count;
@@ -1213,7 +1213,7 @@ void GridMap::print(uint8_t id, int16_t endx, int16_t endy)
 			outString[index++] = (j < 0 ? '-' : ' ');
 			outString[index++] = (abs(j) >= 100 ? abs(j) / 100 + 48 : ' ');
 			outString[index++] = 48 + (abs(j) >= 10 ? ((abs(j) % 100) / 10) : 0);
-			j += 3;
+			j += 2;
 		} else {
 			outString[index++] = ' ';
 		}

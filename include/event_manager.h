@@ -197,6 +197,9 @@ virtual void lidarStuck(bool state_new, bool state_last);
 /* Default: empty hanlder */
 //void empty(bool state_now, bool state_last);
 
+/*---robot tilt---*/
+virtual void tilt(bool state_new, bool state_last);
+
 };
 
 /* Bumper */
@@ -296,6 +299,8 @@ typedef enum {
 	EVT_LIDAR_BUMPER,
 
 	EVT_LIDAR_STUCK,
+
+	EVT_ROBOT_TILT,
 
 	EVT_MAX,
 } EventType;

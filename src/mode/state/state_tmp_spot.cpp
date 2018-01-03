@@ -7,7 +7,6 @@
 #include "arch.hpp"
 
 
-StateTmpSpot::StateTmpSpot() {
+void StateTmpSpot::update() {
 
 }
-

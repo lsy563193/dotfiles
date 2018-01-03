@@ -75,7 +75,7 @@ bool CleanModeFollowWall::mapMark() {
 bool CleanModeFollowWall::setNextAction()
 {
 	PP_INFO();
-	if (state_i_ == st_init)
+	if (sp_state == state_init)
 		return ACleanMode::setNextAction();
 	else {
 		if(plan_path_.empty())
@@ -109,12 +109,12 @@ bool CleanModeFollowWall::setNextAction()
 
 bool CleanModeFollowWall::setNextState()
 {
-	if(state_i_ == st_init)
+	if(sp_state == state_init)
 	{
 			if(action_i_ == ac_open_slam)
-		state_i_ = st_clean;
+		sp_state = state_clean;
 	}
-	if(state_i_ == st_clean) {
+	if(sp_state == state_clean) {
 		if(reach_cleaned_count_ == 0) {
 			if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
 				plan_path_.pop_front();
@@ -131,9 +131,9 @@ bool CleanModeFollowWall::setNextState()
 				}
 			}else {
 				ROS_WARN("%s,%d:follow clean finish,did not find charge", __func__, __LINE__);
-				state_i_ = st_go_home_point;
+				sp_state = state_go_home_point;
 				go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
-				stateInit(state_i_);
+				stateInit(sp_state);
 				action_i_ = ac_null;
 			}
 		}
@@ -194,7 +194,7 @@ void CleanModeFollowWall::remoteClean(bool state_now, bool state_last)
 
 //void CleanModeFollowWall::remoteHome(bool state_now, bool state_last)
 //{
-//	if (state_i_ == st_clean || action_i_ == ac_pause)
+//	if (sp_state == state_clean || action_i_ == ac_pause)
 //	{
 //		ROS_WARN("%s %d: remote home.", __FUNCTION__, __LINE__);
 //		beeper.play_for_command(VALID);
@@ -211,7 +211,7 @@ void CleanModeFollowWall::remoteClean(bool state_now, bool state_last)
 //void CleanModeFollowWall::remoteDirectionLeft(bool state_now, bool state_last)
 //{
 //	//todo: Just for debug
-//	if (state_i_ == st_clean)
+//	if (sp_state == state_clean)
 //	{
 //		beeper.play_for_command(VALID);
 //		continue_point_ = getPosition();
@@ -237,7 +237,7 @@ void CleanModeFollowWall::remoteClean(bool state_now, bool state_last)
 //
 //void CleanModeFollowWall::batteryHome(bool state_now, bool state_last)
 //{
-//	if (state_i_ == st_clean)
+//	if (sp_state == state_clean)
 //	{
 //		continue_point_ = getPosition();
 //		ROS_INFO("%s %d: low battery, battery =\033[33m %dmv \033[0m, continue cell(%d, %d)", __FUNCTION__, __LINE__,
