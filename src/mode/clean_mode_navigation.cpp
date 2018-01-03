@@ -542,6 +542,12 @@ void CleanModeNav::chargeDetect(bool state_now, bool state_last)
 	}
 
 }
+void CleanModeNav::remoteSpot(bool state_now, bool state_last)
+{
+	//ev.remote_spot = true;
+	beeper.play_for_command(VALID);
+}
+
 // End event handlers.
 
 bool CleanModeNav::ActionFollowWallisFinish()

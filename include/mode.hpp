@@ -308,6 +308,7 @@ public:
 //	void overCurrentBrushRight(bool state_now, bool state_last);
 	void overCurrentWheelLeft(bool state_now, bool state_last) override;
 	void overCurrentWheelRight(bool state_now, bool state_last) override;
+	void remoteSpot(bool state_now, bool state_last) override;
 //	void overCurrentSuction(bool state_now, bool state_last);
 
 private:

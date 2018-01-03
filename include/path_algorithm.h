@@ -225,7 +225,8 @@ class SpotCleanPathAlgorithm: public APathAlgorithm
 {
 public:
 	SpotCleanPathAlgorithm();
-	SpotCleanPathAlgorithm(float diameter,Cell_t curcell);
+	SpotCleanPathAlgorithm(float diameter,Cell_t cur_cell);
+
 	~SpotCleanPathAlgorithm();
 
 	bool generatePath(GridMap &map, const Point32_t &curr, const MapDirection &last_dir, Points &targets) override;
@@ -239,9 +240,7 @@ private:
 	
 	float spot_diameter_ ;
 	bool spot_running_;
-	bool block_event_;
 	Cells targets_cells_;
-	Points targets_last_points_;
 	Cell_t begin_cell_; 
 	Cell_t state_cell_;
 };

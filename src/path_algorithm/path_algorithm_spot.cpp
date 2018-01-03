@@ -8,7 +8,7 @@
 
 SpotCleanPathAlgorithm::SpotCleanPathAlgorithm()
 {
-	initVariables(0.8,getPosition().toCell());
+	initVariables(0.6,updatePosition().toCell());
 	genTargets( ANTI_CLOCKWISE, spot_diameter_, &targets_cells_,     begin_cell_);
 }
 
@@ -25,79 +25,96 @@ SpotCleanPathAlgorithm::~SpotCleanPathAlgorithm()
 
 bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, const MapDirection &last_dir, Points &plan_path)
 {
-	auto curr_cell = curr.toCell();
 	if(!ev.bumper_triggered && !ev.cliff_triggered && !ev.rcon_triggered){
 		if(!spot_running_){
 			spot_running_ = true;
 			plan_path = cells_generate_points(targets_cells_);
+			ROS_INFO("targets size %d",plan_path.size());
+			return true;
 		}
 		else{
-			if(targets_last_points_.size() >= 1 && block_event_){
-				block_event_ = false;
-				refactorTargets(map, &targets_last_points_);
-				plan_path = targets_last_points_;
-			}
-			else{
-				plan_path.clear();
-				ROS_INFO("spot end...");
-				return false;
-			}
+			plan_path.clear();
+			ROS_INFO("spot end...");
+			return false;
 		}
-		ROS_INFO("targets size %d",plan_path.size());
-		return true;
 	}
 	else if(ev.bumper_triggered || ev.cliff_triggered || ev.rcon_triggered)
 	{
-		PP_INFO();
-		block_event_ = true;
-		bool ret = false;
-		Cells shortest_path;
-		if(targets_last_points_.empty())
+		Points new_plan_path;
+		Point32_t cur = curr;
+		if(plan_path.size() >= 2)
 		{
-			while(ros::ok())
-			{
-				if(plan_path.size() >= 1){
-					plan_path.pop_front();
-					auto next_cell = plan_path.front().toCell();
-					shortest_path = findShortestPath(map,curr_cell,next_cell,last_dir,false);
-					if(shortest_path.empty()){
-						continue;
-					}
-					else{
-						ret = true;
-						targets_last_points_ = plan_path;
-							break;
-					}
+			Point32_t next_point;
+			do{
+				plan_path.pop_front();
+				next_point = plan_path.front();
+				auto shortest_path_cells = findShortestPath(map,cur.toCell(),next_point.toCell(),last_dir,true);
+				auto shortest_path = cells_generate_points(shortest_path_cells);
+				if(shortest_path.empty()){
+					ROS_INFO("not find shortest_path %d continue",__LINE__);
+					continue;
 				}
 				else{
+					new_plan_path.clear();
+					for(Point32_t point:shortest_path){
+						ROS_INFO("\033[32m first find short path:(%d,%d)\033[0m",point.toCell().X,point.toCell().Y);
+						new_plan_path.push_back(point);
+					}
+					ROS_INFO("target (%d,%d)",next_point.toCell().X,next_point.toCell().Y);
 					break;
 				}
-			}
-		}
-		else
-		{
-			while(ros::ok())
+			}while(ros::ok() && plan_path.size() >=1 );
+
+			ROS_INFO("\033[32m new_plan_path size %d,the remained points size %d\033[0m",new_plan_path.size(),plan_path.size());	
+			while(ros::ok() && plan_path.size() >=2)
 			{
-				if(targets_last_points_.size() >= 1)
-				{
-					targets_last_points_.pop_front();
-					auto next_cell = targets_last_points_.front().toCell();
-					shortest_path = findShortestPath(map,curr_cell,next_cell,last_dir,false);
+				plan_path.pop_front();
+				cur = plan_path.front();
+				if(map.getCell(COST_MAP,cur.toCell().X,cur.toCell().Y) < COST_HIGH ){
+					ROS_INFO("\033[32m push back to new plan_path :(%d,%d)\033[0m",cur.toCell().X,cur.toCell().Y);
+					new_plan_path.push_back(cur);
+				}
+				else{
+					do{
+						plan_path.pop_front();
+						cur = plan_path.front();
+						if(map.getCell(COST_MAP,cur.toCell().X,cur.toCell().Y) < COST_HIGH)
+							break;
+					}while(plan_path.size() >= 1);
+
+					if(plan_path.size()<1)
+						break;
+					next_point = cur;
+					cur = new_plan_path.back();
+					auto next_dir = (MapDirection)cur.TH;
+					auto shortest_path_cells = findShortestPath(map,cur.toCell(),next_point.toCell(),next_dir,true);
+					auto shortest_path = cells_generate_points(shortest_path_cells);
 					if(shortest_path.empty()){
-						continue;
+						ROS_INFO("not find shortest_path %d continue",__LINE__);
 					}
 					else{
-						ret = true;
-						break;
+						ROS_INFO("target (%d,%d)",next_point.toCell().X,next_point.toCell().Y);
+						for(Point32_t point:shortest_path){
+							ROS_INFO("\033[32m After first find, short path:(%d,%d)\033[0m",point.toCell().X,point.toCell().Y);
+							new_plan_path.push_back(point);
+						}
 					}
 				}
-				else
-					break;
 			}
+			plan_path.clear();
+			ROS_INFO("\033[32m new_plan_path size %d\033[0m",new_plan_path.size());	
+			plan_path = new_plan_path;
+			if(new_plan_path.size()<1)
+				return false;
+			return true;
 		}
-		plan_path = cells_generate_points(shortest_path);
-		return ret;
+		else{
+			plan_path.clear();
+			ROS_INFO("spot end...");
+			return false;
+		}
 	}
+
 }
 
 void SpotCleanPathAlgorithm::initVariables(float diameter,Cell_t cur_cell)
@@ -105,9 +122,7 @@ void SpotCleanPathAlgorithm::initVariables(float diameter,Cell_t cur_cell)
 	PP_INFO();
 	spot_diameter_ = diameter;
 	spot_running_ = false;
-	block_event_ = false;
 	begin_cell_ = cur_cell;
-	targets_last_points_.clear();
 	targets_cells_.clear();
 }
 
@@ -315,54 +330,4 @@ bool SpotCleanPathAlgorithm::checkTrapped(GridMap &map, const Cell_t &curr_cell)
 	checkTrappedUsingDijkstra(map, curr_cell);
 }
 
-void SpotCleanPathAlgorithm::giveMeCleanPoint(GridMap map,Point32_t &point)
-{
-	Cell_t cell = point.toCell();
-	if(map.getCell(COST_MAP,cell.X,cell.Y) >= COST_HIGH){
-		if(isXAxis((MapDirection)point.TH)){
-			if(isPos((MapDirection)point.TH))
-				point.Y = cellToCount(cell.Y+1);
-			else
-				point.Y = cellToCount(cell.Y-1);
 
-		}
-		else if(isYAxis((MapDirection)point.TH)){
-			if(isPos((MapDirection)point.TH))
-				point.X = cellToCount(cell.X-1);
-			else
-				point.X = cellToCount(cell.X+1);
-		}
-	}
-}
-
-void SpotCleanPathAlgorithm::refactorTargets(GridMap map,Points *targets)
-{
-
-	ROS_INFO("%s,%d",__FUNCTION__,__LINE__);
-	// Get the map range.
-	int16_t x_min, x_max, y_min, y_max;
-	map.getMapRange(CLEAN_MAP, &x_min, &x_max, &y_min, &y_max);
-	// Reset the COST_MAP.
-	map.reset(COST_MAP);
-	// Mark obstacles in COST_MAP
-	for (int16_t i = x_min - 1; i <= x_max + 1; ++i) {
-		for (int16_t j = y_min - 1; j <= y_max + 1; ++j) {
-			CellState cs = map.getCell(CLEAN_MAP, i, j);
-			if (cs >= BLOCKED && cs <= BLOCKED_BOUNDARY) {
-				//for (m = ROBOT_RIGHT_OFFSET + 1; m <= ROBOT_LEFT_OFFSET - 1; m++)
-				for (int16_t m = ROBOT_RIGHT_OFFSET; m <= ROBOT_LEFT_OFFSET; m++) {
-					for (int16_t n = ROBOT_RIGHT_OFFSET; n <= ROBOT_LEFT_OFFSET; n++) {
-						map.setCell(COST_MAP, (i + m), (j + n), COST_HIGH);
-					}
-				}
-			}
-		}
-	}
-	map.print(COST_MAP,getPosition().toCell().X,getPosition().toCell().Y);
-
-	Points::iterator it;
-	for( it= targets->begin();it!=targets->end();it++){
-		giveMeCleanPoint(map, *it);
-	}
-	displayPointPath(*targets);
-}
