@@ -220,6 +220,7 @@ class ACleanMode:public Mode
 {
 public:
 	ACleanMode();
+	State* updateState();
 	bool isFinish() override ;
 	bool isExit() override;
 	void setNextModeDefault();
@@ -257,18 +258,18 @@ public:
 	GridMap clean_map_;
 	Point32_t charger_pos_{};//charger postion
 
-	virtual bool isStateInitConfirmed(){return false;};
-	virtual bool isStateCleanConfirmed(){return false;};
-	virtual bool isStateGoHomePointConfirmed(){return false;};
-	virtual bool isStateGoToChargerConfirmed(){return false;};
-	virtual bool isStateTmpSpotConformed(){return false;};
-	virtual bool isStateTrappedConfirmed(){ return false;};
-	virtual bool isStateExceptionResumeConfirmed(){return false;};
-	virtual bool isStateExplorationConfirmed(){ return false;};
-	virtual bool isStateResumeLowBatteryChargeConfirmed(){return false;};
+	virtual bool isStateInitUpdateFinish(){return false;};
+	virtual bool isStateCleanUpdateFinish(){return false;};
+	virtual bool isStateGoHomePointUpdateFinish(){return false;};
+	virtual bool isStateGoToChargerUpdateFinish(){return false;};
+	virtual bool isStateTmpSpotUpdateFinish(){return false;};
+	virtual bool isStateTrappedUpdateFinish(){ return false;};
+	virtual bool isStateExceptionResumeUpdateFinish(){return false;};
+	virtual bool isStateExplorationUpdateFinish(){ return false;};
+	virtual bool isStateResumeLowBatteryChargeUpdateFinish(){return false;};
 	virtual bool isStateLowBatteryResumeConfirmed(){return false;};
 	virtual bool isStateChargeConfirmed(){return false;};
-	virtual bool isStatePauseConfirmed(){return false;};
+	virtual bool isStatePauseUpdateFinish(){return false;};
 
 public:
 	State* getState() const {
@@ -372,18 +373,18 @@ public:
 //	void overCurrentSuction(bool state_now, bool state_last);
 
 
-	bool isStateInitConfirmed() override;
-	bool isStateCleanConfirmed() override;
-	bool isStateGoHomePointConfirmed() override;
-	bool isStateGoToChargerConfirmed() override;
-	bool isStateTmpSpotConformed() override;
-	bool isStateTrappedConfirmed() override;
-	bool isStateExceptionResumeConfirmed() override;
-	bool isStateExplorationConfirmed() override;
-	bool isStateResumeLowBatteryChargeConfirmed() override;
+	bool isStateInitUpdateFinish() override;
+	bool isStateCleanUpdateFinish() override;
+	bool isStateGoHomePointUpdateFinish() override;
+	bool isStateGoToChargerUpdateFinish() override;
+	bool isStateTmpSpotUpdateFinish() override;
+	bool isStateTrappedUpdateFinish() override;
+	bool isStateExceptionResumeUpdateFinish() override;
+	bool isStateExplorationUpdateFinish() override;
+	bool isStateResumeLowBatteryChargeUpdateFinish() override;
 	bool isStateLowBatteryResumeConfirmed() override;
 	bool isStateChargeConfirmed() override;
-	bool isStatePauseConfirmed() override;
+	bool isStatePauseUpdateFinish() override;
 
 private:
 	bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
@@ -430,10 +431,10 @@ public:
 //	void overCurrentSuction(bool state_now, bool state_last);
 	void printMapAndPath();
 
-	bool isStateInitConfirmed() override;
-	bool isStateCleanConfirmed() override;
-	bool isStateGoHomePointConfirmed() override;
-	bool isStateGoToChargerConfirmed() override;
+	bool isStateInitUpdateFinish() override;
+	bool isStateCleanUpdateFinish() override;
+	bool isStateGoHomePointUpdateFinish() override;
+	bool isStateGoToChargerUpdateFinish() override;
 
 };
 
@@ -475,10 +476,10 @@ public:
 	bool wf_is_isolate(GridMap& map);
 
 
-	bool isStateInitConfirmed() override;
-	bool isStateCleanConfirmed() override;
-	bool isStateGoHomePointConfirmed() override;
-	bool isStateGoToChargerConfirmed() override;
+	bool isStateInitUpdateFinish() override;
+	bool isStateCleanUpdateFinish() override;
+	bool isStateGoHomePointUpdateFinish() override;
+	bool isStateGoToChargerUpdateFinish() override;
 private:
 	uint32_t diff_timer_;
 protected:
@@ -500,8 +501,8 @@ public:
 	void remoteClean(bool state_now, bool state_last) override;
 	void keyClean(bool state_now, bool state_last) override;
 
-	bool isStateInitConfirmed() override;
-	bool isStateCleanConfirmed() override;
+	bool isStateInitUpdateFinish() override;
+	bool isStateCleanUpdateFinish() override;
 private:
 
 };

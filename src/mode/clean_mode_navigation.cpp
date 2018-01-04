@@ -445,7 +445,7 @@ bool CleanModeNav::checkEnterPause()
 
 //state--------------------------------------------
 
-bool CleanModeNav::isStateInitConfirmed()
+bool CleanModeNav::isStateInitUpdateFinish()
 {
 	if (checkEnterPause())
 		return true;
@@ -522,7 +522,7 @@ bool CleanModeNav::isStateInitConfirmed()
 	return false;
 }
 
-bool CleanModeNav::isStateCleanConfirmed()
+bool CleanModeNav::isStateCleanUpdateFinish()
 {
 
 	if (checkEnterPause() || checkEnterGoHomePointState()
@@ -589,7 +589,7 @@ bool CleanModeNav::isStateCleanConfirmed()
 	return false;
 }
 
-bool CleanModeNav::isStateGoHomePointConfirmed()
+bool CleanModeNav::isStateGoHomePointUpdateFinish()
 {
 	if (checkEnterPause() || checkEnterExceptionResumeState())
 		return false;
@@ -597,7 +597,7 @@ bool CleanModeNav::isStateGoHomePointConfirmed()
 	return ACleanMode::isStateGoHomePointConfirmed(clean_map_);
 }
 
-bool CleanModeNav::isStateGoToChargerConfirmed()
+bool CleanModeNav::isStateGoToChargerUpdateFinish()
 {
 	if (checkEnterPause() || checkEnterExceptionResumeState())
 		return false;
@@ -641,7 +641,7 @@ bool CleanModeNav::isStateGoToChargerConfirmed()
 	return false;
 }
 
-bool CleanModeNav::isStateTmpSpotConformed() {
+bool CleanModeNav::isStateTmpSpotUpdateFinish() {
 	if (isExceptionTriggered()) {
 		ROS_INFO("%s %d: Pass this state switching for exception cases.", __FUNCTION__, __LINE__);
 		sp_state = state_exception_resume;
@@ -679,7 +679,7 @@ bool CleanModeNav::isStateTmpSpotConformed() {
 	return false;
 }
 
-bool CleanModeNav::isStateTrappedConfirmed() {
+bool CleanModeNav::isStateTrappedUpdateFinish() {
 	if (isExceptionTriggered()) {
 		ROS_INFO("%s %d: Pass this state switching for exception cases.", __FUNCTION__, __LINE__);
 		sp_state = state_exception_resume;
@@ -712,7 +712,7 @@ bool CleanModeNav::isStateTrappedConfirmed() {
 	return false;
 }
 
-bool CleanModeNav::isStateExceptionResumeConfirmed() {
+bool CleanModeNav::isStateExceptionResumeUpdateFinish() {
 	if (ev.key_clean_pressed)
 	{
 		checkEnterPause();
@@ -724,7 +724,7 @@ bool CleanModeNav::isStateExceptionResumeConfirmed() {
 	return true;
 }
 
-bool CleanModeNav::isStateExplorationConfirmed() {
+bool CleanModeNav::isStateExplorationUpdateFinish() {
 	if (isExceptionTriggered()) {
 		ROS_INFO("%s %d: Pass this state switching for exception cases.", __FUNCTION__, __LINE__);
 		sp_state = state_exception_resume;
@@ -737,7 +737,7 @@ bool CleanModeNav::isStateExplorationConfirmed() {
 	return true;
 }
 
-bool CleanModeNav::isStateResumeLowBatteryChargeConfirmed() {
+bool CleanModeNav::isStateResumeLowBatteryChargeUpdateFinish() {
 	if (isExceptionTriggered()) {
 		ROS_INFO("%s %d: Pass this state switching for exception cases.", __FUNCTION__, __LINE__);
 		sp_state = state_exception_resume;
@@ -821,7 +821,7 @@ bool CleanModeNav::isStateChargeConfirmed() {
 	return false;
 }
 
-bool CleanModeNav::isStatePauseConfirmed() {
+bool CleanModeNav::isStatePauseUpdateFinish() {
 // For pausing case, only key or remote clean will wake it up.
 		if (ev.key_clean_pressed || ev.remote_home)
 		{

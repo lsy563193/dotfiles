@@ -5,37 +5,37 @@
 
 ACleanMode* State::sp_cm_{};
 
-bool State::isConfirmed()
+bool State::isUpdateFinish()
 {
 	if(sp_cm_->isStateInit())
-		return sp_cm_->isStateInitConfirmed();
+		return sp_cm_->isStateInitUpdateFinish();
 
 	else if(sp_cm_->isStateClean())
-		return sp_cm_->isStateCleanConfirmed();
+		return sp_cm_->isStateCleanUpdateFinish();
 
 	else if(sp_cm_->isStateGoHomePoint())
-		return sp_cm_->isStateGoHomePointConfirmed();
+		return sp_cm_->isStateGoHomePointUpdateFinish();
 
 	else if(sp_cm_->isStateGoCharger())
-		return sp_cm_->isStateGoToChargerConfirmed();
+		return sp_cm_->isStateGoToChargerUpdateFinish();
 
 	else if(sp_cm_->isStateTmpSpot())
-		return sp_cm_->isStateTmpSpotConformed();
+		return sp_cm_->isStateTmpSpotUpdateFinish();
 
 	else if(sp_cm_->isStateTrapped())
-		return sp_cm_->isStateTrappedConfirmed();
+		return sp_cm_->isStateTrappedUpdateFinish();
 
 	else if(sp_cm_->isStateExceptionResume())
-		return sp_cm_->isStateExceptionResumeConfirmed();
+		return sp_cm_->isStateExceptionResumeUpdateFinish();
 
 	else if(sp_cm_->isStateExploration())
-		return sp_cm_->isStateExplorationConfirmed();
+		return sp_cm_->isStateExplorationUpdateFinish();
 
 	else if(sp_cm_->isStateResumeLowBatteryCharge())
-		return sp_cm_->isStateResumeLowBatteryChargeConfirmed();
+		return sp_cm_->isStateResumeLowBatteryChargeUpdateFinish();
 
 	else if(sp_cm_->isStatePause())
-		return sp_cm_->isStatePauseConfirmed();
+		return sp_cm_->isStatePauseUpdateFinish();
 
 	return false;
 }

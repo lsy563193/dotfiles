@@ -105,10 +105,15 @@ bool ACleanMode::isExit()
 
 	return false;
 }
+State* ACleanMode::updateState()
+{
+	while (!sp_state->isUpdateFinish() && ros::ok());
+}
 
 bool ACleanMode::isFinish()
 {
-	while (ros::ok() && !sp_state->isConfirmed());
+
+	updateState();
 
 	if(sp_state == nullptr)
 	{

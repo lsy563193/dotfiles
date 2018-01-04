@@ -169,7 +169,7 @@ void CleanModeExploration::printMapAndPath()
 
 // state
 
-bool CleanModeExploration::isStateInitConfirmed() {
+bool CleanModeExploration::isStateInitUpdateFinish() {
 	if (action_i_ == ac_open_slam) {
 		auto curr = updatePosition();
 		passed_path_.push_back(curr);
@@ -185,7 +185,7 @@ bool CleanModeExploration::isStateInitConfirmed() {
 	return false;
 }
 
-bool CleanModeExploration::isStateCleanConfirmed() {
+bool CleanModeExploration::isStateCleanUpdateFinish() {
 	mapMark();
 	PP_INFO();
 	old_dir_ = new_dir_;
@@ -217,11 +217,11 @@ bool CleanModeExploration::isStateCleanConfirmed() {
 	return false;
 }
 
-bool CleanModeExploration::isStateGoHomePointConfirmed() {
+bool CleanModeExploration::isStateGoHomePointUpdateFinish() {
 	return ACleanMode::isStateGoHomePointConfirmed(clean_map_);
 }
 
-bool CleanModeExploration::isStateGoToChargerConfirmed() {
+bool CleanModeExploration::isStateGoToChargerUpdateFinish() {
 	PP_INFO();
 	if (ev.charge_detect && charger.isOnStub()) {
 		sp_state = nullptr;

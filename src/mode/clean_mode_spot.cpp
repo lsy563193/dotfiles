@@ -116,7 +116,7 @@ void CleanModeSpot::cliffAll(bool state_now, bool state_last)
 }
 
 //state
-bool CleanModeSpot::isStateInitConfirmed() {
+bool CleanModeSpot::isStateInitUpdateFinish() {
 	if (action_i_ == ac_open_slam) {
 		auto curr = updatePosition();
 		passed_path_.push_back(curr);
@@ -134,7 +134,7 @@ bool CleanModeSpot::isStateInitConfirmed() {
 	return false;
 }
 
-bool CleanModeSpot::isStateCleanConfirmed() {
+bool CleanModeSpot::isStateCleanUpdateFinish() {
 	PP_INFO();
 	old_dir_ = new_dir_;
 	ROS_ERROR("old_dir_(%d)", old_dir_);

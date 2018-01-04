@@ -11,9 +11,9 @@ class State {
 public:
 //	virtual IMoveType* setNextAction_()=0;
 
-	bool isConfirmed();
+	bool isUpdateFinish();
 //	bool setNextState();
-//	State* getNextState();
+//	State* updateState();
 	void setMode(ACleanMode* cm)
 	{sp_cm_ = cm;}
 	ACleanMode* getMode()
