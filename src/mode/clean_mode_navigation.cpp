@@ -113,42 +113,6 @@ bool CleanModeNav::mapMark()
 	return false;
 }
 
-bool CleanModeNav::isFinish()
-{
-	if (sp_state == state_pause)
-	{
-		// For pausing case, only key or remote clean will wake it up.
-		if (ev.key_clean_pressed || ev.remote_home)
-		{
-			resumePause();
-			setNextAction();
-		}
-	}
-	else if (sp_state == state_charge)
-	{
-		if (ev.key_clean_pressed)
-		{
-			resumeLowBatteryCharge();
-			setNextAction();
-		}
-	}
-	else // For any else state.
-	{
-		if (ev.key_clean_pressed)
-		{
-			enterPause();
-			setNextAction();
-		}
-		else if (sp_state == state_clean)
-		{
-			if (ev.remote_home || ev.battery_home)
-				switchToGoHomePointState();
-		}
-
-	}
-	return ACleanMode::isFinish();
-}
-
 bool CleanModeNav::isExit()
 {
 	if (sp_state == state_pause)
@@ -533,6 +497,11 @@ void CleanModeNav::enterPause()
 //isFinish--------------------------------------------
 
 bool CleanModeNav::isFinishInit() {
+	if (ev.key_clean_pressed)
+		{
+			enterPause();
+			setNextAction();
+		}
 	if (!sp_action_->isFinish())
 		return true;
 
@@ -567,10 +536,36 @@ bool CleanModeNav::isFinishInit() {
 }
 
 bool CleanModeNav::isFinishClean() {
+	if (isExceptionTriggered()) {
+		ROS_INFO("%s %d: Pass this state switching for exception cases.", __FUNCTION__, __LINE__);
+		sp_state = state_exception_resume;
+	}
+
+	if (ev.remote_home || ev.battery_home)
+		switchToGoHomePointState();
+
+	if (ev.remote_spot)
+	{
+		ev.remote_spot= false;
+		switchToGoHomePointState();
+		sp_action_.reset();
+		sp_state = state_tmp_spot;
+		sp_state->update();
+	}
+
+	if (ev.key_clean_pressed)
+		{
+			enterPause();
+			setNextAction();
+		}
+
 	updatePath(clean_map_);
+
 	if(sp_action_ != nullptr && !sp_action_->isFinish())
 		return true;
+
 	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
+
 	mapMark();
 	sp_action_.reset();//for call ~constitution;
 	PP_INFO();
@@ -618,6 +613,15 @@ bool CleanModeNav::isFinishClean() {
 }
 
 bool CleanModeNav::isFinishGoHomePoint() {
+	if (isExceptionTriggered()) {
+		ROS_INFO("%s %d: Pass this state switching for exception cases.", __FUNCTION__, __LINE__);
+		sp_state = state_exception_resume;
+	}
+	if (ev.key_clean_pressed)
+		{
+			enterPause();
+			setNextAction();
+		}
 	updatePath(clean_map_);
 	if(sp_action_ != nullptr && !sp_action_->isFinish())
 		return true;
@@ -631,6 +635,15 @@ bool CleanModeNav::isFinishGoHomePoint() {
 }
 
 bool CleanModeNav::isFinishGoCharger() {
+	if (isExceptionTriggered()) {
+		ROS_INFO("%s %d: Pass this state switching for exception cases.", __FUNCTION__, __LINE__);
+		sp_state = state_exception_resume;
+	}
+	if (ev.key_clean_pressed)
+		{
+			enterPause();
+			setNextAction();
+		}
 	PP_INFO();
 	if(sp_action_ != nullptr && !sp_action_->isFinish())
 		return true;
@@ -656,7 +669,15 @@ bool CleanModeNav::isFinishGoCharger() {
 }
 
 bool CleanModeNav::isFinishTmpSpot() {
-
+	if (isExceptionTriggered()) {
+		ROS_INFO("%s %d: Pass this state switching for exception cases.", __FUNCTION__, __LINE__);
+		sp_state = state_exception_resume;
+	}
+if (ev.key_clean_pressed)
+		{
+			enterPause();
+			setNextAction();
+		}
 	updatePath(clean_map_);
 	if(sp_action_ != nullptr && !sp_action_->isFinish())
 		return true;
@@ -686,6 +707,15 @@ bool CleanModeNav::isFinishTmpSpot() {
 }
 
 bool CleanModeNav::isFinishTrapped() {
+	if (isExceptionTriggered()) {
+		ROS_INFO("%s %d: Pass this state switching for exception cases.", __FUNCTION__, __LINE__);
+		sp_state = state_exception_resume;
+	}
+	if (ev.key_clean_pressed)
+		{
+			enterPause();
+			setNextAction();
+		}
 	updatePath(clean_map_);
 	if(sp_action_ != nullptr && !sp_action_->isFinish())
 		return true;
@@ -710,6 +740,11 @@ bool CleanModeNav::isFinishTrapped() {
 }
 
 bool CleanModeNav::isFinishExceptionResume() {
+	if (ev.key_clean_pressed)
+	{
+		enterPause();
+		setNextAction();
+	}
 	if(sp_action_ != nullptr && !sp_action_->isFinish())
 		return true;
 	sp_action_.reset();//for call ~constitution;
@@ -717,10 +752,28 @@ bool CleanModeNav::isFinishExceptionResume() {
 }
 
 bool CleanModeNav::isFinishExploration() {
+	if (isExceptionTriggered()) {
+		ROS_INFO("%s %d: Pass this state switching for exception cases.", __FUNCTION__, __LINE__);
+		sp_state = state_exception_resume;
+	}
+	if (ev.key_clean_pressed)
+		{
+			enterPause();
+			setNextAction();
+		}
 	return true;
 }
 
 bool CleanModeNav::isFinishResumeLowBatteryCharge() {
+	if (isExceptionTriggered()) {
+		ROS_INFO("%s %d: Pass this state switching for exception cases.", __FUNCTION__, __LINE__);
+		sp_state = state_exception_resume;
+	}
+	if (ev.key_clean_pressed)
+		{
+			enterPause();
+			setNextAction();
+		}
 //		 For key clean force continue cleaning.
 	if(sp_action_ != nullptr && !sp_action_->isFinish())
 		return true;
@@ -737,6 +790,15 @@ bool CleanModeNav::isFinishResumeLowBatteryCharge() {
 }
 
 bool CleanModeNav::isFinishLowBatteryResume() {
+	if (isExceptionTriggered()) {
+		ROS_INFO("%s %d: Pass this state switching for exception cases.", __FUNCTION__, __LINE__);
+		sp_state = state_exception_resume;
+	}
+	if (ev.key_clean_pressed)
+		{
+			enterPause();
+			setNextAction();
+		}
 	if(!sp_action_->isFinish())
 		return true;
 
@@ -767,14 +829,14 @@ bool CleanModeNav::isFinishLowBatteryResume() {
 	return false;
 }
 
-bool CleanModeNav::isFinishSavedBeforePause() {
-	if(sp_action_ != nullptr && !sp_action_->isFinish())
-		return true;
-	sp_action_.reset();//for call ~constitution;
-	return false;
-}
-
 bool CleanModeNav::isFinishCharge() {
+
+	if(ev.key_clean_pressed)
+	{
+		sp_action_.reset();//for call ~constitution;
+		resumeLowBatteryCharge();
+		return false;
+	}
 	if(sp_action_ != nullptr && !sp_action_->isFinish())
 		return true;
 	sp_action_.reset();//for call ~constitution;
@@ -787,8 +849,12 @@ bool CleanModeNav::isFinishCharge() {
 }
 
 bool CleanModeNav::isFinishPause() {
-	if(sp_action_ != nullptr && !sp_action_->isFinish())
-		return true;
-	sp_action_.reset();//for call ~constitution;
+// For pausing case, only key or remote clean will wake it up.
+		if (ev.key_clean_pressed || ev.remote_home)
+		{
+			resumePause();
+			return false;
+		}
 	return false;
 }
+

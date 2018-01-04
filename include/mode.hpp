@@ -220,7 +220,7 @@ class ACleanMode:public Mode
 {
 public:
 	ACleanMode();
-	bool isFinish() override;
+	bool isFinish() override ;
 	bool isExit() override;
 	void setNextModeDefault();
 	bool setNextState();
@@ -266,7 +266,6 @@ public:
 	virtual bool isFinishExploration(){ return false;};
 	virtual bool isFinishResumeLowBatteryCharge(){return false;};
 	virtual bool isFinishLowBatteryResume(){return false;};
-	virtual bool isFinishSavedBeforePause(){return false;};
 	virtual bool isFinishCharge(){return false;};
 	virtual bool isFinishPause(){return false;};
 
@@ -353,7 +352,6 @@ public:
 	~CleanModeNav();
 
 	bool mapMark() override ;
-	bool isFinish() override ;
 	bool isExit() override;
 
 	bool setNextAction() override;
@@ -383,7 +381,6 @@ public:
 	bool isFinishExploration() override;
 	bool isFinishResumeLowBatteryCharge() override;
 	bool isFinishLowBatteryResume() override;
-	bool isFinishSavedBeforePause() override;
 	bool isFinishCharge() override;
 	bool isFinishPause() override;
 
@@ -418,7 +415,6 @@ public:
 	~CleanModeExploration();
 
 	bool mapMark() override;
-	bool isFinish() override;
 	bool isExit() override;
 	bool setNextAction() override;
 	void keyClean(bool state_now, bool state_last) override ;
@@ -496,7 +492,6 @@ public:
 	CleanModeSpot();
 	~CleanModeSpot();
 
-	bool isFinish() override;
 	bool mapMark() override;
 	bool isExit() override;
 	bool setNextAction() override;

@@ -77,9 +77,9 @@ public:
 //	IMoveType* setNextAction_();
 };
 
-class StateSelfCheck: public State {
+class ExceptionResume: public State {
 public:
-	StateSelfCheck()= default;
+	ExceptionResume()= default;
 	void update() override;
 //	IMoveType* setNextAction_();
 };

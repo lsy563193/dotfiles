@@ -18,7 +18,7 @@ State* ACleanMode::state_go_to_charger = new StateGoCharger();
 State* ACleanMode::state_charge = new StateCharge();
 State* ACleanMode::state_trapped = new StateTrapped();
 State* ACleanMode::state_tmp_spot = new StateTmpSpot();
-State* ACleanMode::state_exception_resume = new StateSelfCheck();
+State* ACleanMode::state_exception_resume = new ExceptionResume();
 State* ACleanMode::state_exploration = new StateExploration();
 State* ACleanMode::state_resume_low_battery_charge = new StateResumeLowBatteryCharge();
 State* ACleanMode::state_pause = new StatePause();
@@ -108,15 +108,8 @@ bool ACleanMode::isExit()
 
 bool ACleanMode::isFinish()
 {
-	if (isExceptionTriggered()) {
-		ROS_INFO("%s %d: Pass this state switching for exception cases.", __FUNCTION__, __LINE__);
-		// Apply for all states.
-		// If all these exception cases happens, directly set next action to exception resume action.
-		// BUT DO NOT CHANGE THE STATE!!! Because after exception resume it should restore the state.
-		sp_state = nullptr;
-	}
-	else
-		while (ros::ok() && !sp_state->isFinish());
+
+	while (ros::ok() && !sp_state->isFinish());
 
 	if(sp_state == nullptr)
 	{
@@ -487,4 +480,3 @@ Cells ACleanMode::pointsGenerateCells(Points &targets)
 bool ACleanMode::setNextState() {
 
 }
-
