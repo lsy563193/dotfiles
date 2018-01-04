@@ -546,25 +546,7 @@ bool CleanModeNav::isStateCleanUpdateFinish()
 //		ROS_ERROR("new_dir_(%d)", new_dir_);
 		plan_path_.pop_front();
 		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
-		auto start = getPosition().toCell();
-		auto delta_y = plan_path_.back().toCell().y - start.y;
-		ROS_INFO("%s,%d: path size(%u), old_dir_(%d), bumper(%d), cliff(%d), lidar(%d), delta_y(%d)",
-						__FUNCTION__, __LINE__, plan_path_.size(), old_dir_, ev.bumper_triggered,
-						ev.cliff_triggered, ev.lidar_triggered, delta_y);
-		if (!isXAxis(old_dir_) // If last movement is not x axis linear movement, should not follow wall.
-				|| plan_path_.size() > 2 ||
-				(!ev.bumper_triggered && !ev.cliff_triggered && !ev.lidar_triggered)
-				|| delta_y == 0 || std::abs(delta_y) > 2) {
-			action_i_ = ac_linear;
-		}
-		else
-		{
-			delta_y = plan_path_.back().toCell().y - start.y;
-			bool is_left = isPos(old_dir_) ^ delta_y > 0;
-			ROS_INFO("\033[31m""%s,%d: target:, 0_left_1_right(%d=%d ^ %d)""\033[0m",
-					 __FUNCTION__, __LINE__, is_left, isPos(old_dir_), delta_y);
-			action_i_ = is_left ? ac_follow_wall_left : ac_follow_wall_right;
-		}
+		setNextAction();
 		genNextAction();
 		return true;
 	}
