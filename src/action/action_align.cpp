@@ -21,7 +21,6 @@ bool ActionAlign::isFinish()
 	if (lidar.alignFinish())
 	{
 		float align_angle = lidar.alignAngle();
-		align_angle += (float) (LIDAR_THETA / 10);
 		odom.setAngleOffset(-align_angle);
 		ROS_INFO("%s %d: align_angle angle (%f).", __FUNCTION__, __LINE__, align_angle);
 		return true;
@@ -31,11 +30,9 @@ bool ActionAlign::isFinish()
 
 void ActionAlign::run() {
 	wheel.setPidTargetSpeed(0, 0);
-	std::vector<LineABC> lines;
-	float align_angle = 0.0;
-	if (lidar.findLines(&lines, true)) {
-		if (lidar.getAlignAngle(&lines, &align_angle))
-			lidar.alignAngle(align_angle);
+	if(lidar.lidarGetFitLine(0,359,-1.0,3.0,&align_angle,&distance,isLeft,true))
+	{
+		lidar.alignAngle(static_cast<float>(align_angle));
 	}
 }
 

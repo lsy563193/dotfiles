@@ -108,7 +108,6 @@ bool ACleanMode::isExit()
 
 bool ACleanMode::isFinish()
 {
-
 	while (ros::ok() && !sp_state->isFinish());
 
 	if(sp_state == nullptr)
@@ -223,7 +222,7 @@ void ACleanMode::actionFollowWallSaveBlocks()
 	return;
 }
 
-bool ACleanMode::setNextStateForGoHomePoint(GridMap &map)
+bool ACleanMode::isStateGoHomePointConfirmed(GridMap &map)
 {
 	bool state_confirm = true;
 	old_dir_ = new_dir_;
@@ -232,6 +231,7 @@ bool ACleanMode::setNextStateForGoHomePoint(GridMap &map)
 		ev.rcon_triggered = 0;
 		sp_state = state_go_to_charger;
 		sp_state->update();
+		state_confirm = false;
 	}
 	else if (!reach_home_point_ && getPosition().toCell() == go_home_path_algorithm_->getCurrentHomePoint().home_point.toCell())
 	{
@@ -243,6 +243,7 @@ bool ACleanMode::setNextStateForGoHomePoint(GridMap &map)
 					 go_home_path_algorithm_->getCurrentHomePoint().home_point.toCell().y);
 			sp_state = state_go_to_charger;
 			sp_state->update();
+			state_confirm = false;
 		}
 		else
 		{
@@ -261,6 +262,8 @@ bool ACleanMode::setNextStateForGoHomePoint(GridMap &map)
 		go_home_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
 		robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 		reach_home_point_ = false;
+		action_i_ = ac_linear;
+		genNextAction();
 	}
 	else
 	{

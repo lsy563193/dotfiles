@@ -227,7 +227,7 @@ public:
 	virtual bool setNextAction();
 	void genNextAction();
 
-	bool setNextStateForGoHomePoint(GridMap &map);
+	bool isStateGoHomePointConfirmed(GridMap &map);
 	void setRconPos(float cd,float dist);
 
 	virtual bool mapMark() = 0;
@@ -257,18 +257,18 @@ public:
 	GridMap clean_map_;
 	Point32_t charger_pos_{};//charger postion
 
-	virtual bool isFinishInit(){return false;};
-	virtual bool isFinishClean(){return false;};
-	virtual bool isFinishGoHomePoint(){return false;};
-	virtual bool isFinishGoCharger(){return false;};
-	virtual bool isFinishTmpSpot(){return false;};
-	virtual bool isFinishTrapped(){ return false;};
-	virtual bool isFinishExceptionResume(){return false;};
-	virtual bool isFinishExploration(){ return false;};
-	virtual bool isFinishResumeLowBatteryCharge(){return false;};
-	virtual bool isFinishLowBatteryResume(){return false;};
-	virtual bool isFinishCharge(){return false;};
-	virtual bool isFinishPause(){return false;};
+	virtual bool isStateInitConfirmed(){return false;};
+	virtual bool isStateCleanConfirmed(){return false;};
+	virtual bool isStateGoHomePointConfirmed(){return false;};
+	virtual bool isStateGoToChargerConfirmed(){return false;};
+	virtual bool isStateTmpSpotConformed(){return false;};
+	virtual bool isStateTrappedConfirmed(){ return false;};
+	virtual bool isStateExceptionResumeConfirmed(){return false;};
+	virtual bool isStateExplorationConfirmed(){ return false;};
+	virtual bool isStateResumeLowBatteryChargeConfirmed(){return false;};
+	virtual bool isStateLowBatteryResumeConfirmed(){return false;};
+	virtual bool isStateChargeConfirmed(){return false;};
+	virtual bool isStatePauseConfirmed(){return false;};
 
 public:
 	State* getState() const {
@@ -372,27 +372,29 @@ public:
 //	void overCurrentSuction(bool state_now, bool state_last);
 
 
-	bool isFinishInit() override;
-	bool isFinishClean() override;
-	bool isFinishGoHomePoint() override;
-	bool isFinishGoCharger() override;
-	bool isFinishTmpSpot() override;
-	bool isFinishTrapped() override;
-	bool isFinishExceptionResume() override;
-	bool isFinishExploration() override;
-	bool isFinishResumeLowBatteryCharge() override;
-	bool isFinishLowBatteryResume() override;
-	bool isFinishCharge() override;
-	bool isFinishPause() override;
+	bool isStateInitConfirmed() override;
+	bool isStateCleanConfirmed() override;
+	bool isStateGoHomePointConfirmed() override;
+	bool isStateGoToChargerConfirmed() override;
+	bool isStateTmpSpotConformed() override;
+	bool isStateTrappedConfirmed() override;
+	bool isStateExceptionResumeConfirmed() override;
+	bool isStateExplorationConfirmed() override;
+	bool isStateResumeLowBatteryChargeConfirmed() override;
+	bool isStateLowBatteryResumeConfirmed() override;
+	bool isStateChargeConfirmed() override;
+	bool isStatePauseConfirmed() override;
 
 private:
 	bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
 	bool actionLinearIsFinish(MoveTypeLinear *p_mt) override;
 	void actionFollowWallSaveBlocks() override ;
-	void enterPause();
 	void resumePause();
 	void resumeLowBatteryCharge();
-	void switchToGoHomePointState();
+	bool checkEnterPause();
+	bool checkEnterTempSpotState();
+	bool checkEnterGoHomePointState();
+	bool checkEnterExceptionResumeState();
 
 	bool low_battery_charge_{false};
 	bool has_aligned_and_open_slam_{false};
@@ -428,10 +430,10 @@ public:
 //	void overCurrentSuction(bool state_now, bool state_last);
 	void printMapAndPath();
 
-	bool isFinishInit() override;
-	bool isFinishClean() override;
-	bool isFinishGoHomePoint() override;
-	bool isFinishGoCharger() override;
+	bool isStateInitConfirmed() override;
+	bool isStateCleanConfirmed() override;
+	bool isStateGoHomePointConfirmed() override;
+	bool isStateGoToChargerConfirmed() override;
 
 };
 
@@ -473,10 +475,10 @@ public:
 	bool wf_is_isolate(GridMap& map);
 
 
-	bool isFinishInit() override;
-	bool isFinishClean() override;
-	bool isFinishGoHomePoint() override;
-	bool isFinishGoCharger() override;
+	bool isStateInitConfirmed() override;
+	bool isStateCleanConfirmed() override;
+	bool isStateGoHomePointConfirmed() override;
+	bool isStateGoToChargerConfirmed() override;
 private:
 	uint32_t diff_timer_;
 protected:
@@ -498,8 +500,8 @@ public:
 	void remoteClean(bool state_now, bool state_last) override;
 	void keyClean(bool state_now, bool state_last) override;
 
-	bool isFinishInit() override;
-	bool isFinishClean() override;
+	bool isStateInitConfirmed() override;
+	bool isStateCleanConfirmed() override;
 private:
 
 };

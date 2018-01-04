@@ -18,6 +18,7 @@
 #include "map.h"
 #include "pose.h"
 #include "mode.hpp"
+#include <string.h>
 
 extern volatile int16_t g_left_wall_baseline;
 extern volatile int16_t g_right_wall_baseline;
@@ -42,7 +43,7 @@ public:
 	// Publisher functions.
 	void visualizeMarkerInit();
 	void pubLineMarker(const std::vector<LineABC> *lines);
-	void pubLineMarker(std::vector<std::vector<Vector2<double>> > *groups);
+	void pubLineMarker(std::vector<std::vector<Vector2<double>> > *groups,std::string name);
 	void pubFitLineMarker(visualization_msgs::Marker fit_line_marker);
 	void pubPointMarkers(const std::deque<Vector2<double>> *point, std::string frame_id);
 	void setCleanMapMarkers(int16_t x, int16_t y, CellState type);

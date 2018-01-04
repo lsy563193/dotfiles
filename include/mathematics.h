@@ -410,7 +410,8 @@ typedef struct
   double A;
   double B;
   double C;
-  double len;
+  int len;
+  double dis;
   double x1;//point 1
   double y1;
   double x2;//point 2
