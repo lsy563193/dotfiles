@@ -228,7 +228,6 @@ public:
 	virtual bool setNextAction();
 	void genNextAction();
 
-	bool isStateGoHomePointConfirmed(GridMap &map);
 	void setRconPos(float cd,float dist);
 
 	virtual bool mapMark() = 0;
@@ -243,7 +242,7 @@ public:
 
 	virtual bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt);
 	virtual void actionFollowWallSaveBlocks();
-	void goHomePointUpdateAction(GridMap& map);
+	void goHomePointUpdateAction();
 	virtual bool actionLinearIsFinish(MoveTypeLinear *p_mt);
 	void setRconPos(Point32_t pos);
 	Point32_t updatePath(GridMap& map);
@@ -261,7 +260,7 @@ public:
 
 	virtual bool isStateInitUpdateFinish(){return false;};
 	virtual bool isStateCleanUpdateFinish(){return false;};
-	virtual bool isStateGoHomePointUpdateFinish(){return false;};
+	virtual bool isStateGoHomePointUpdateFinish();
 	virtual bool isStateGoToChargerUpdateFinish(){return false;};
 	virtual bool isStateTmpSpotUpdateFinish(){return false;};
 	virtual bool isStateTrappedUpdateFinish(){ return false;};
@@ -387,6 +386,7 @@ public:
 	bool isStateChargeConfirmed() override;
 	bool isStatePauseUpdateFinish() override;
 	bool cleanUpdateAction();
+	bool goToChargerUpdateAction();
 private:
 	bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
 	bool actionLinearIsFinish(MoveTypeLinear *p_mt) override;

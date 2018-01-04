@@ -467,7 +467,6 @@ bool CleanModeNav::isStateInitUpdateFinish()
 
 	sp_action_.reset();//for call ~constitution;
 
-
 	if (action_i_ == ac_null)
 	{
 		action_i_ = ac_open_gyro;
@@ -536,12 +535,22 @@ bool CleanModeNav::isStateInitUpdateFinish()
 
 bool CleanModeNav::isStateCleanUpdateFinish()
 {
-
 	if (checkEnterPause() || checkEnterGoHomePointState()
 		|| checkEnterExceptionResumeState() || checkEnterTempSpotState())
 		return false;
 
+	if(sp_action_ == nullptr)
+	{
+		cleanUpdateAction();
+		return false;
+	}
+
+	updatePath(clean_map_);
+	if(!sp_action_->isFinish())
+		return true;
+
 	cleanUpdateAction();
+
 	if(sp_action_ == nullptr)
 	{
 		if (clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell())) {
@@ -569,7 +578,7 @@ bool CleanModeNav::isStateGoHomePointUpdateFinish()
 	if (checkEnterPause() || checkEnterExceptionResumeState() || checkEnterGoCharger())
 		return false;
 
-	return ACleanMode::isStateGoHomePointConfirmed(clean_map_);
+	return ACleanMode::isStateGoHomePointUpdateFinish();
 }
 
 bool CleanModeNav::isStateGoToChargerUpdateFinish()
@@ -577,43 +586,42 @@ bool CleanModeNav::isStateGoToChargerUpdateFinish()
 	if (checkEnterPause() || checkEnterExceptionResumeState())
 		return false;
 
-	if (sp_action_ != nullptr && !sp_action_->isFinish())
-		return true;
+	 if(sp_action_ == nullptr)
+	 {
+		 action_i_ = ac_go_to_charger;
+		 genNextAction();
+		 return false;
+	 }
 
-	if (sp_action_ == nullptr)
-	{
-		// For Just entering go to charger state.
-		action_i_ = ac_go_to_charger;
-		genNextAction();
-		return true;
-	}
+	goToChargerUpdateAction();
 
-	sp_action_.reset();//for call ~constitution;
-
-	if (charger.isOnStub()) {
-		if (go_home_for_low_battery_) {
-			// If it is during low battery go home, it should not leave the clean mode, it should just charge.
-			ROS_INFO("%s %d: Enter low battery charge.", __FUNCTION__, __LINE__);
-			sp_state = state_charge;
+	if (sp_action_ == nullptr) {
+		if (charger.isOnStub()) {
+			if (go_home_for_low_battery_) {
+				// If it is during low battery go home, it should not leave the clean mode, it should just charge.
+				ROS_INFO("%s %d: Enter low battery charge.", __FUNCTION__, __LINE__);
+				sp_state = state_charge;
+				sp_state->update();
+				paused_odom_angle_ = odom.getAngle();
+				go_home_for_low_battery_ = false;
+				go_home_path_algorithm_.reset();
+				return false;
+			}
+			else {
+				sp_state = nullptr;
+				return true;
+			}
+		}
+		else {
+			ROS_INFO("%s %d: Failed to go to charger, try next home point.", __FUNCTION__, __LINE__);
+			sp_state = state_go_home_point;
 			sp_state->update();
-			paused_odom_angle_ = odom.getAngle();
-			go_home_for_low_battery_ = false;
-			go_home_path_algorithm_.reset();
 			return false;
 		}
-		else
-		{
-			sp_state = nullptr;
-			return true;
-		}
+
 	}
-	else
-	{
-		ROS_INFO("%s %d: Failed to go to charger, try next home point.", __FUNCTION__, __LINE__);
-		sp_state = state_go_home_point;
-		sp_state->update();
-	}
-	return false;
+
+	return true;
 }
 
 bool CleanModeNav::isStateTmpSpotUpdateFinish() {
@@ -807,13 +815,7 @@ bool CleanModeNav::isStatePauseUpdateFinish() {
 }
 
 bool CleanModeNav::cleanUpdateAction(){
-	updatePath(clean_map_);
-
-	if(sp_action_ != nullptr && !sp_action_->isFinish())
-		return true;
-
 	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
-
 	mapMark();
 	sp_action_.reset();//for call ~constitution;
 
@@ -847,4 +849,10 @@ bool CleanModeNav::cleanUpdateAction(){
 		genNextAction();
 		return true;
 	}
+}
+
+bool CleanModeNav::goToChargerUpdateAction(){
+	if (!sp_action_->isFinish())
+			return true;
+	sp_action_.reset();//for call ~constitution;
 }

@@ -218,7 +218,7 @@ bool CleanModeExploration::isStateCleanUpdateFinish() {
 }
 
 bool CleanModeExploration::isStateGoHomePointUpdateFinish() {
-	return ACleanMode::isStateGoHomePointConfirmed(clean_map_);
+	return ACleanMode::isStateGoHomePointUpdateFinish();
 }
 
 bool CleanModeExploration::isStateGoToChargerUpdateFinish() {

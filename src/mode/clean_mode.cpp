@@ -231,7 +231,7 @@ void ACleanMode::actionFollowWallSaveBlocks()
 	return;
 }
 
-void ACleanMode::goHomePointUpdateAction(GridMap& map)
+void ACleanMode::goHomePointUpdateAction()
 {
 	updatePath(clean_map_);
 	if(sp_action_ != nullptr && !sp_action_->isFinish())
@@ -252,7 +252,7 @@ void ACleanMode::goHomePointUpdateAction(GridMap& map)
 			return;
 		}
 	}
-	if (go_home_path_algorithm_->generatePath(map, getPosition(),old_dir_, plan_path_))
+	if (go_home_path_algorithm_->generatePath(clean_map_, getPosition(),old_dir_, plan_path_))
 	{
 		// New path to home cell is generated.
 		new_dir_ = plan_path_.front().th;
@@ -270,9 +270,9 @@ void ACleanMode::goHomePointUpdateAction(GridMap& map)
 }
 
 
-bool ACleanMode::isStateGoHomePointConfirmed(GridMap &map)
+bool ACleanMode::isStateGoHomePointUpdateFinish()
 {
-	goHomePointUpdateAction(map);
+	goHomePointUpdateAction();
 
 	if(sp_action_ == nullptr) {
 		if (reach_home_point_ && go_home_path_algorithm_->getCurrentHomePoint().have_seen_charger) {
