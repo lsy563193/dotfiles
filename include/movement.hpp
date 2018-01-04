@@ -97,14 +97,8 @@ public:
 //	~MovementFollowPointLinear(){ };
 	bool isFinish() override;
 
-	bool is_near();
-	bool isRconStop();
-	bool isPassTargetStop();
+	bool is_near() override;
 //	void setTarget();
-	void setBaseSpeed();
-
-	bool isCellReach();
-	bool isPoseReach();
 
 	bool calcTmpTarget(Point32_t&) override ;
 
@@ -112,15 +106,7 @@ private:
 
 	Point32_t _calcTmpTarget(const Point32_t& curr, const Point32_t& target,MapDirection new_dir);
 	bool _checkIsNear(const Point32_t& curr, const Point32_t& target,MapDirection new_dir);
-	uint8_t turn_speed_{};
-////	PPTargetType path_;
-	float odom_x_start{};
-	float odom_y_start{};
-	enum {
-		left, fl1, fl2, fr2, fr1, right
-	};
-	int8_t rcon_cnt[6]{};
-	int countRconTriggered(uint32_t rcon_value);
+
 };
 
 class IFollowWall{

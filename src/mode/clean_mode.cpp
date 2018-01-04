@@ -480,3 +480,8 @@ Cells ACleanMode::pointsGenerateCells(Points &targets)
 bool ACleanMode::setNextState() {
 
 }
+
+bool ACleanMode::actionLinearisFinish(MoveTypeLinear *p_mt)
+{
+	return false;
+}

@@ -32,6 +32,7 @@ Points MovementFollowWallLidar::_calcTmpTarget() {
 	ROS_INFO("_calc tmp_targets.size(%d)",tmp_targets.size());
 	return tmp_targets;
 }
+
 bool MovementFollowWallLidar::calcTmpTarget(Point32_t& tmp_target) {
 
 //	ROS_WARN("curr_point(%d,%d)", getPosition().x, getPosition().y);
@@ -75,9 +76,7 @@ bool MovementFollowWallLidar::calcTmpTarget(Point32_t& tmp_target) {
 }
 
 bool MovementFollowWallLidar::isFinish() {
-//	return false;
-	auto p_mt = (MoveTypeFollowWall*)(sp_mt_);
-	return p_mt->shouldMoveBack() || p_mt->shouldTurn();
+	return sp_mt_->shouldMoveBack() || sp_mt_->shouldTurn();
 }
 
 bool MovementFollowWallLidar::is_near() {

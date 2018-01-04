@@ -15,8 +15,6 @@ class IMoveType:public IAction
 public:
 	IMoveType();
 
-	bool isOBSStop();
-	bool isLidarStop();
 	bool shouldMoveBack();
 	bool shouldTurn();
 //	~IMoveType() = default;
@@ -27,13 +25,16 @@ public:
 	{return sp_mode_;}
 
 	virtual bool isFinish();
-	void run();
-//	bool isFinish(int& action_i);
-//	virtual IAction* setNextAction()=0;
-//	void registerMode(ACleanMode* sp_mode)
-//	{
-//		sp_mode_ = sp_mode;
-//	}
+	void run() override;
+
+	enum {
+		left, fl1, fl2, fr2, fr1, right
+	};
+	int8_t rcon_cnt[6]{};
+	int countRconTriggered(uint32_t rcon_value);
+	bool isRconStop();
+	bool isOBSStop();
+	bool isLidarStop();
 
 	static boost::shared_ptr<IMovement> sp_movement_;
 	static Mode *sp_mode_;
@@ -62,6 +63,12 @@ public:
 	~MoveTypeLinear();
 	bool isFinish() override;
 //	IAction* setNextAction();
+
+	bool isPassTargetStop(MapDirection &dir);
+	bool isCellReach();
+	bool isPoseReach();
+
+	bool isLinearForward();
 protected:
 };
 

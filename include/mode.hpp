@@ -215,6 +215,7 @@ public:
 
 class State;
 class MoveTypeFollowWall;
+class MoveTypeLinear;
 class ACleanMode:public Mode
 {
 public:
@@ -241,6 +242,7 @@ public:
 
 	virtual bool actionFollowWallisFinish(MoveTypeFollowWall* p_mt);
 	virtual void actionFollowWallSaveBlocks();
+	virtual bool actionLinearisFinish(MoveTypeLinear* p_mt);
 	void setRconPos(Point32_t pos);
 	Point32_t updatePath(GridMap& map);
 	int reach_cleaned_count_{};
@@ -384,7 +386,8 @@ public:
 	bool isFinishPause() override;
 
 private:
-	bool actionFollowWallisFinish(MoveTypeFollowWall* p_mt) override ;
+	bool actionFollowWallisFinish(MoveTypeFollowWall* p_mt) override;
+	bool actionLinearisFinish(MoveTypeLinear* p_mt) override;
 	void actionFollowWallSaveBlocks() override ;
 	void enterPause();
 	void resumePause();

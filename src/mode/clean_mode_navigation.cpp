@@ -372,6 +372,16 @@ void CleanModeNav::actionFollowWallSaveBlocks()
 	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
 }
 
+bool CleanModeNav::actionLinearisFinish(MoveTypeLinear *p_mt)
+{
+	if (p_mt->isLinearForward())
+		return p_mt->isPoseReach() || p_mt->isPassTargetStop(new_dir_) || p_mt->isRconStop();
+	else
+		return p_mt->isPoseReach() || p_mt->isPassTargetStop(new_dir_);
+
+	return false;
+}
+
 void CleanModeNav::resumePause()
 {
 	ev.key_clean_pressed = false;
