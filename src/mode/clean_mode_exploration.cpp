@@ -199,7 +199,7 @@ bool CleanModeExploration::isStateCleanUpdateFinish() {
 		return true;
 	}
 	else if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
-		new_dir_ = (MapDirection) plan_path_.front().th;
+		new_dir_ = plan_path_.front().th;
 		ROS_WARN("new_dir_(%d)", new_dir_);
 		plan_path_.pop_front();
 		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));

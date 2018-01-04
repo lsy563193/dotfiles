@@ -54,7 +54,7 @@ typedef enum {
   COST_HIGH = 7,
 } CellState;
 
-typedef enum {
+enum {
   MAP_POS_X = 0,
   MAP_PX_PY = 450,
   MAP_POS_Y = 900,
@@ -64,7 +64,7 @@ typedef enum {
   MAP_NEG_Y =-900,
   MAP_PX_NY =-450,
   MAP_NONE = 0,
-} MapDirection;
+} ;
 
 class GridMap {
 public:

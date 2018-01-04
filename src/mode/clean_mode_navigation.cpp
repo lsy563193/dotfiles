@@ -380,6 +380,7 @@ bool CleanModeNav::checkEnterGoHomePointState()
 {
 	if (ev.remote_home || ev.battery_home)
 	{
+		ROS_INFO("checkEnterGoHomePointState~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 		if (ev.battery_home)
 			low_battery_charge_ = true;
 
@@ -420,7 +421,18 @@ bool CleanModeNav::checkEnterTempSpotState()
 		sp_state->update();
 		return false;
 	}
+	return false;
+}
 
+bool CleanModeNav::checkEnterGoCharger()
+{
+	if (ev.rcon_triggered)
+	{
+		ev.rcon_triggered = 0;
+		sp_state = state_go_to_charger;
+		sp_state->update();
+		return true;
+	}
 	return false;
 }
 
@@ -529,28 +541,8 @@ bool CleanModeNav::isStateCleanUpdateFinish()
 		|| checkEnterExceptionResumeState() || checkEnterTempSpotState())
 		return false;
 
-	updatePath(clean_map_);
-
-	if(sp_action_ != nullptr && !sp_action_->isFinish())
-		return true;
-
-	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
-
-	mapMark();
-	sp_action_.reset();//for call ~constitution;
-
-	old_dir_ = new_dir_;
-	if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
-//		ROS_ERROR("old_dir_(%d)", old_dir_);
-		new_dir_ = (MapDirection) plan_path_.front().th;
-//		ROS_ERROR("new_dir_(%d)", new_dir_);
-		plan_path_.pop_front();
-		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
-		setNextAction();
-		genNextAction();
-		return true;
-	}
-	else
+	cleanUpdateAction();
+	if(sp_action_ == nullptr)
 	{
 		if (clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell())) {
 			// Robot trapped.
@@ -566,14 +558,15 @@ bool CleanModeNav::isStateCleanUpdateFinish()
 			go_home_path_algorithm_.reset();
 			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
 		}
+		return false;
 	}
 
-	return false;
+	return true;
 }
 
 bool CleanModeNav::isStateGoHomePointUpdateFinish()
 {
-	if (checkEnterPause() || checkEnterExceptionResumeState())
+	if (checkEnterPause() || checkEnterExceptionResumeState() || checkEnterGoCharger())
 		return false;
 
 	return ACleanMode::isStateGoHomePointConfirmed(clean_map_);
@@ -646,7 +639,7 @@ bool CleanModeNav::isStateTmpSpotUpdateFinish() {
 	auto cur_point = getPosition();
 	//ROS_INFO("\033[32m plan_path front (%d,%d),cur point:(%d,%d)\033[0m",plan_path_.front().toCell().X,plan_path_.front().toCell().Y,cur_point.toCell().X,cur_point.toCell().Y);
 	if (clean_path_algorithm_->generatePath(clean_map_, cur_point, old_dir_, plan_path_)) {
-		new_dir_ = (MapDirection) plan_path_.front().th;
+		new_dir_ = plan_path_.front().th;
 		ROS_ERROR("new_dir_(%d)", new_dir_);
 		PP_INFO();
 		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
@@ -770,7 +763,7 @@ bool CleanModeNav::isStateLowBatteryResumeConfirmed() {
 		ROS_ERROR("old_dir_(%d)", old_dir_);
 		clean_path_algorithm_->generateShortestPath(clean_map_, getPosition(), continue_point_, old_dir_, plan_path_);
 		if (!plan_path_.empty()) {
-			new_dir_ = (MapDirection) plan_path_.front().th;
+			new_dir_ = plan_path_.front().th;
 			ROS_ERROR("new_dir_(%d)", new_dir_);
 			plan_path_.pop_front();
 			clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
@@ -813,3 +806,45 @@ bool CleanModeNav::isStatePauseUpdateFinish() {
 	return false;
 }
 
+bool CleanModeNav::cleanUpdateAction(){
+	updatePath(clean_map_);
+
+	if(sp_action_ != nullptr && !sp_action_->isFinish())
+		return true;
+
+	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
+
+	mapMark();
+	sp_action_.reset();//for call ~constitution;
+
+	old_dir_ = new_dir_;
+	if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
+//		ROS_ERROR("old_dir_(%d)", old_dir_);
+		new_dir_ = plan_path_.front().th;
+//		ROS_ERROR("new_dir_(%d)", new_dir_);
+		plan_path_.pop_front();
+		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
+
+		auto start = getPosition().toCell();
+		auto delta_y = plan_path_.back().toCell().y - start.y;
+		ROS_INFO("%s,%d: path size(%u), old_dir_(%d), bumper(%d), cliff(%d), lidar(%d), delta_y(%d)",
+						__FUNCTION__, __LINE__, plan_path_.size(), old_dir_, ev.bumper_triggered,
+						ev.cliff_triggered, ev.lidar_triggered, delta_y);
+		if (!isXAxis(old_dir_) // If last movement is not x axis linear movement, should not follow wall.
+				|| plan_path_.size() > 2 ||
+				(!ev.bumper_triggered && !ev.cliff_triggered && !ev.lidar_triggered)
+				|| delta_y == 0 || std::abs(delta_y) > 2) {
+			action_i_ = ac_linear;
+		}
+		else
+		{
+			delta_y = plan_path_.back().toCell().y - start.y;
+			bool is_left = isPos(old_dir_) ^ delta_y > 0;
+			ROS_INFO("\033[31m""%s,%d: target:, 0_left_1_right(%d=%d ^ %d)""\033[0m",
+					 __FUNCTION__, __LINE__, is_left, isPos(old_dir_), delta_y);
+			action_i_ = is_left ? ac_follow_wall_left : ac_follow_wall_right;
+		}
+		genNextAction();
+		return true;
+	}
+}

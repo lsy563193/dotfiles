@@ -243,6 +243,7 @@ public:
 
 	virtual bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt);
 	virtual void actionFollowWallSaveBlocks();
+	void goHomePointUpdateAction(GridMap& map);
 	virtual bool actionLinearIsFinish(MoveTypeLinear *p_mt);
 	void setRconPos(Point32_t pos);
 	Point32_t updatePath(GridMap& map);
@@ -250,12 +251,12 @@ public:
 	static Points passed_path_;
 	static Points plan_path_;
 
-	MapDirection old_dir_{MAP_POS_X};
-	MapDirection new_dir_{MAP_POS_X};
+	static int old_dir_;
+	static int new_dir_;
 
 	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
 	boost::shared_ptr<GoHomePathAlgorithm> go_home_path_algorithm_{};
-	GridMap clean_map_;
+	static GridMap clean_map_;
 	Point32_t charger_pos_{};//charger postion
 
 	virtual bool isStateInitUpdateFinish(){return false;};
@@ -385,7 +386,7 @@ public:
 	bool isStateLowBatteryResumeConfirmed() override;
 	bool isStateChargeConfirmed() override;
 	bool isStatePauseUpdateFinish() override;
-
+	bool cleanUpdateAction();
 private:
 	bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
 	bool actionLinearIsFinish(MoveTypeLinear *p_mt) override;
@@ -393,6 +394,7 @@ private:
 	void resumePause();
 	void resumeLowBatteryCharge();
 	bool checkEnterPause();
+	bool checkEnterGoCharger();
 	bool checkEnterTempSpotState();
 	bool checkEnterGoHomePointState();
 	bool checkEnterExceptionResumeState();

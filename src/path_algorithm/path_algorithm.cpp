@@ -162,14 +162,14 @@ Points APathAlgorithm::cells_generate_points(Cells &path)
 	return targets;
 }
 
-bool APathAlgorithm::generateShortestPath(GridMap &map, const Point32_t &curr,const Point32_t &target, const MapDirection &last_dir, Points &plan_path) {
+bool APathAlgorithm::generateShortestPath(GridMap &map, const Point32_t &curr,const Point32_t &target, const int &last_dir, Points &plan_path) {
 	auto path_cell = findShortestPath(map, curr.toCell(), target.toCell(),last_dir, false);
 
 	plan_path = cells_generate_points(path_cell);
 }
 
 Cells APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const Cell_t &target,
-										const MapDirection &last_dir, bool use_unknown)
+										const int &last_dir, bool use_unknown)
 {
 	Cells path_{};
 
@@ -180,12 +180,15 @@ Cells APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const 
 	// Reset the COST_MAP.
 	map.reset(COST_MAP);
 
+//	ROS_INFO("111111111111111111111111111");
+//	map.print(CLEAN_MAP, 0, 0);
 	// Mark obstacles in COST_MAP
 	for (int16_t i = x_min - 1; i <= x_max + 1; ++i) {
 		for (int16_t j = y_min - 1; j <= y_max + 1; ++j) {
 			CellState cs = map.getCell(CLEAN_MAP, i, j);
 			if (cs >= BLOCKED && cs <= BLOCKED_BOUNDARY) {
 				//for (m = ROBOT_RIGHT_OFFSET + 1; m <= ROBOT_LEFT_OFFSET - 1; m++)
+				ROS_INFO("cs(%d)",cs);
 				for (int16_t m = ROBOT_RIGHT_OFFSET; m <= ROBOT_LEFT_OFFSET; m++) {
 					for (int16_t n = ROBOT_RIGHT_OFFSET; n <= ROBOT_LEFT_OFFSET; n++) {
 						map.setCell(COST_MAP, (i + m), (j + n), COST_HIGH);
@@ -200,6 +203,8 @@ Cells APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const 
 	// Set for target cell. For reverse algorithm, we will generate a-star map from target cell.
 	map.setCell(COST_MAP, target.x, target.y, COST_1);
 
+//	map.print(COST_MAP, 0, 0);
+//	ROS_INFO("222222222222222222222222222");
 	// For protection, the start cell must be reachable.
 	if (map.getCell(COST_MAP, start.x, start.y) == COST_HIGH)
 	{

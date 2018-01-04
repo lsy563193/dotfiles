@@ -24,6 +24,10 @@ State* ACleanMode::state_resume_low_battery_charge = new StateResumeLowBatteryCh
 State* ACleanMode::state_pause = new StatePause();
 Points ACleanMode::passed_path_ = {};
 Points ACleanMode::plan_path_ = {};
+int ACleanMode::old_dir_{};
+int ACleanMode::new_dir_{};
+GridMap ACleanMode::clean_map_{};
+
 //Point32_t ACleanMode::last_ = {};
 //boost::shared_ptr<IMovement> ACleanMode::sp_movement_ = nullptr;
 
@@ -227,66 +231,63 @@ void ACleanMode::actionFollowWallSaveBlocks()
 	return;
 }
 
-bool ACleanMode::isStateGoHomePointConfirmed(GridMap &map)
+void ACleanMode::goHomePointUpdateAction(GridMap& map)
 {
 	updatePath(clean_map_);
 	if(sp_action_ != nullptr && !sp_action_->isFinish())
-		return true;
+		return;
 	sp_action_.reset();//for call ~constitution;
 	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
 	mapMark();
 
 	old_dir_ = new_dir_;
-	if (ev.rcon_triggered)
+
+	if(getPosition().toCell() == go_home_path_algorithm_->getCurrentHomePoint().home_point.toCell())
 	{
-		ev.rcon_triggered = 0;
-		sp_state = state_go_to_charger;
-		sp_state->update();
-		return false;
-	}
-	else if (!reach_home_point_ && getPosition().toCell() == go_home_path_algorithm_->getCurrentHomePoint().home_point.toCell())
-	{
-		// Reach home cell!!
+		reach_home_point_ = true;
 		if (go_home_path_algorithm_->getCurrentHomePoint().have_seen_charger)
 		{
-			ROS_INFO("%s %d: Reach home cell (%d, %d).", __FUNCTION__, __LINE__,
-					 go_home_path_algorithm_->getCurrentHomePoint().home_point.toCell().x,
-					 go_home_path_algorithm_->getCurrentHomePoint().home_point.toCell().y);
-			sp_state = state_go_to_charger;
-			sp_state->update();
-			reach_home_point_ = true;
-			return false;
-		}
-		else
-		{
-			ROS_INFO("%s %d: Reach home cell (%d, %d) but do not go to charger.", __FUNCTION__, __LINE__,
-					 go_home_path_algorithm_->getCurrentHomePoint().home_point.toCell().x,
-					 go_home_path_algorithm_->getCurrentHomePoint().home_point.toCell().y);
-			sp_state = nullptr;
-			return true;
+			action_i_ = ac_null;
+			sp_action_ = nullptr;
+			return;
 		}
 	}
-	else if (go_home_path_algorithm_->generatePath(map, getPosition(),old_dir_, plan_path_))
+	if (go_home_path_algorithm_->generatePath(map, getPosition(),old_dir_, plan_path_))
 	{
 		// New path to home cell is generated.
-		new_dir_ = (MapDirection)plan_path_.front().th;
+		new_dir_ = plan_path_.front().th;
 		plan_path_.pop_front();
 		go_home_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
 		robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 		reach_home_point_ = false;
 		action_i_ = ac_linear;
 		genNextAction();
-		return true;
+	}else{
+		// path is emply;
+		action_i_ = ac_null;
+		sp_action_ = nullptr;
 	}
-	else
-	{
-		// No more paths to home cells.
-		ROS_INFO("%s %d: No more path to any home cells.", __FUNCTION__, __LINE__);
-		sp_state = nullptr;
-		return true;
-	}
+}
 
-	return false;
+
+bool ACleanMode::isStateGoHomePointConfirmed(GridMap &map)
+{
+	goHomePointUpdateAction(map);
+
+	if(sp_action_ == nullptr) {
+		if (reach_home_point_ && go_home_path_algorithm_->getCurrentHomePoint().have_seen_charger) {
+			reach_home_point_ = false;
+			sp_state = state_go_to_charger;
+			sp_state->update();
+			return false;
+		}
+		else {
+			// path is emply;
+			sp_state = nullptr;
+			return true;
+		}
+	}
+	return true;
 }
 
 void ACleanMode::setRconPos(float cd,float dist)
@@ -503,3 +504,4 @@ bool ACleanMode::actionLinearIsFinish(MoveTypeLinear *p_mt)
 {
 	return false;
 }
+
