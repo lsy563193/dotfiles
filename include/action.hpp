@@ -62,6 +62,11 @@ public:
 	ActionAlign();
 	bool isFinish();
 	void run();
+
+private:
+	double align_angle = 0.0;
+	double distance;
+	bool isLeft = true;
 };
 
 class ActionOpenSlam :public IAction

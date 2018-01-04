@@ -552,21 +552,21 @@ void robot::pubLineMarker(const std::vector<LineABC> *lines)
 
 }
 
-void robot::pubLineMarker(std::vector<std::vector<Vector2<double>> > *groups)
+void robot::pubLineMarker(std::vector<std::vector<Vector2<double>> > *groups,std::string name)
 {
 	int points_size;
 	visualization_msgs::Marker line_marker;
-	line_marker.ns = "line_marker";
+	line_marker.ns = name;
 	line_marker.id = 0;
 	line_marker.type = visualization_msgs::Marker::SPHERE_LIST;
 	line_marker.action= 0;//add
 	line_marker.lifetime=ros::Duration(0);
-	line_marker.scale.x = 0.03;
-	line_marker.scale.y = 0.03;
-	line_marker.scale.z = 0.03;
+	line_marker.scale.x = 0.05;
+	line_marker.scale.y = 0.05;
+	line_marker.scale.z = 0.05;
 	line_marker.color.r = 0.0;
-	line_marker.color.g = 1.0;
-	line_marker.color.b = 0.0;
+	line_marker.color.g = 0.0;
+	line_marker.color.b = 1.0;
 	line_marker.color.a = 1.0;
 	line_marker.header.frame_id = "/base_link";
 	line_marker.header.stamp = ros::Time::now();
@@ -600,9 +600,6 @@ void robot::pubLineMarker(std::vector<std::vector<Vector2<double>> > *groups)
 		}
 		line_marker_pub_.publish(line_marker);
 		line_marker.points.clear();
-	} else {
-		line_marker.points.clear();
-		line_marker_pub_.publish(line_marker);
 	}
 }
 

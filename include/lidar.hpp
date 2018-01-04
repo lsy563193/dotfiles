@@ -18,7 +18,7 @@ public:
 
 	bool lidarObstcalDetected(double distance, int angle, double range);
 
-	bool lidarGetFitLine(int begin, int end, double range, double dis_lim, double *hine_angle, double *distance, bool is_left);
+	bool lidarGetFitLine(int begin, int end, double range, double dis_lim, double *hine_angle, double *distance, bool is_left, bool is_align = false);
 
 	int compLaneDistance();
 	double getObstacleDistance(uint8_t dir, double range);
@@ -40,7 +40,7 @@ public:
 
 	bool mergeLine(std::vector<std::vector<Vector2<double>> > *groups, double t_lim);
 
-	bool fitLineGroup(std::vector<std::vector<Vector2<double>> > *groups, double t_lim, double dis_lim);
+	bool fitLineGroup(std::vector<std::vector<Vector2<double>> > *groups, double dis_lim, bool is_align);
 
 	void pubFitLineMarker(double a, double b, double c, double y1, double y2);
 

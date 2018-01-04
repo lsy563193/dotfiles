@@ -94,7 +94,6 @@ FILE(GLOB PP_SRC
 
 	src/error.cpp
 	src/event_manager.cpp
-	src/global.cpp
 	src/main.cpp
 	src/map.cpp
 	src/mathematics.cpp
@@ -122,6 +121,7 @@ find_package(catkin REQUIRED COMPONENTS
 	cmake_modules
 	tf
 )
+
 
 find_package(PkgConfig)
 find_package(Eigen REQUIRED)
