@@ -159,39 +159,56 @@ Point32_t ACleanMode::updatePath(GridMap& map)
 
 void ACleanMode::genNextAction()
 {
-	PP_INFO();
+	INFO_GREEN(before genNextAction);
 	if(action_i_ == ac_open_gyro)
 		sp_action_.reset(new ActionOpenGyro);
+
 	else if(action_i_ == ac_back_form_charger)
 		sp_action_.reset(new ActionBackFromCharger);
+
 	else if(action_i_ == ac_open_lidar)
 		sp_action_.reset(new ActionOpenLidar);
+
 	else if(action_i_ == ac_align)
 		sp_action_.reset(new ActionAlign);
+
 	else if(action_i_ == ac_open_slam)
 		sp_action_.reset(new ActionOpenSlam);
+
 	else if (action_i_ == ac_pause)
 		sp_action_.reset(new ActionPause);
+
 	else if (action_i_ == ac_linear)
 		sp_action_.reset(new MoveTypeLinear);
+
 	else if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
 		sp_action_.reset(new MoveTypeFollowWall(action_i_ == ac_follow_wall_left, sp_state == state_trapped));
+
 	else if (action_i_ == ac_go_to_charger)
 		sp_action_.reset(new MoveTypeGoToCharger);
+
 	else if (action_i_ == ac_exception_resume)
 		sp_action_.reset(new MovementExceptionResume);
+
 	else if (action_i_ == ac_charge)
 		sp_action_.reset(new MovementCharge);
+
 	else if (action_i_ == ac_check_bumper)
 		sp_action_.reset(new ActionCheckBumper);
+
 	else if (action_i_ == ac_bumper_hit_test)
 		sp_action_.reset(new MoveTypeBumperHitTest);
+
 	else if (action_i_ == ac_check_vacuum)
 		sp_action_.reset(new ActionCheckVacuum);
+
 	else if (action_i_ == ac_movement_direct_go)
 		sp_action_.reset(new MovementDirectGo);
+
 	else if(action_i_ == ac_null)
 		sp_action_.reset();
+
+	INFO_GREEN(after genNextAction);
 	PP_INFO();
 }
 

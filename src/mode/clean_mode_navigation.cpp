@@ -672,8 +672,8 @@ bool CleanModeNav::isStateTmpSpotUpdateFinish() {
 		return true;
 	}
 	else {
-		sp_state = nullptr;
-		action_i_ = ac_null;
+		sp_state = state_clean;
+		action_i_ = ac_linear;
 		return true;
 	}
 	return false;
