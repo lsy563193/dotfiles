@@ -452,6 +452,8 @@ void CleanModeNav::resumePause()
 {
 	ev.key_clean_pressed = false;
 	speaker.play(VOICE_CLEANING_CONTINUE);
+	action_i_ = ac_null;
+	sp_action_.reset();
 	ROS_INFO("%s %d: Resume cleaning.", __FUNCTION__, __LINE__);
 	// It will NOT change the state.
 	if (ev.remote_home)
@@ -494,7 +496,8 @@ void CleanModeNav::enterPause()
 	sp_state = state_pause;
 	mapMark();
 }
-//isFinish--------------------------------------------
+
+//state--------------------------------------------
 
 bool CleanModeNav::isFinishInit() {
 	if (ev.key_clean_pressed)
@@ -502,7 +505,7 @@ bool CleanModeNav::isFinishInit() {
 			enterPause();
 			setNextAction();
 		}
-	if (!sp_action_->isFinish())
+	if (sp_action_ != nullptr && !sp_action_->isFinish())
 		return true;
 
 	sp_action_.reset();//for call ~constitution;

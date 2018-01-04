@@ -58,14 +58,12 @@ public:
 		ac_follow_wall_right,
 		ac_turn,
 		//10
-		ac_forward,
 		ac_back,
 		ac_go_to_charger,
 		ac_idle,
 		ac_sleep,
 		//15
 		ac_charge,
-		ac_turn_for_charger,
 		ac_movement_stay,
 		ac_movement_direct_go,
 		ac_pause,
