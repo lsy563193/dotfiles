@@ -58,14 +58,12 @@ public:
 		ac_follow_wall_right,
 		ac_turn,
 		//10
-		ac_forward,
 		ac_back,
 		ac_go_to_charger,
 		ac_idle,
 		ac_sleep,
 		//15
 		ac_charge,
-		ac_turn_for_charger,
 		ac_movement_stay,
 		ac_movement_direct_go,
 		ac_pause,
@@ -221,7 +219,7 @@ class ACleanMode:public Mode
 {
 public:
 	ACleanMode();
-	bool isFinish() override;
+	bool isFinish() override ;
 	bool isExit() override;
 	void setNextModeDefault();
 	bool setNextState();
@@ -267,7 +265,6 @@ public:
 	virtual bool isFinishExploration(){ return false;};
 	virtual bool isFinishResumeLowBatteryCharge(){return false;};
 	virtual bool isFinishLowBatteryResume(){return false;};
-	virtual bool isFinishSavedBeforePause(){return false;};
 	virtual bool isFinishCharge(){return false;};
 	virtual bool isFinishPause(){return false;};
 
@@ -315,9 +312,9 @@ public:
 	{
 		return sp_state == state_resume_low_battery_charge;
 	}
-	bool isStateSavedBeforePause() const
+	bool isStatePause() const
 	{
-		return sp_state == state_saved_state_before_pause;
+		return sp_state == state_pause;
 	}
 protected:
 	static State *sp_state;
@@ -354,7 +351,6 @@ public:
 	~CleanModeNav();
 
 	bool mapMark() override ;
-	bool isFinish() override ;
 	bool isExit() override;
 
 	bool setNextAction() override;
@@ -384,7 +380,6 @@ public:
 	bool isFinishExploration() override;
 	bool isFinishResumeLowBatteryCharge() override;
 	bool isFinishLowBatteryResume() override;
-	bool isFinishSavedBeforePause() override;
 	bool isFinishCharge() override;
 	bool isFinishPause() override;
 
@@ -416,7 +411,6 @@ public:
 	~CleanModeExploration();
 
 	bool mapMark() override;
-	bool isFinish() override;
 	bool isExit() override;
 	bool setNextAction() override;
 	void keyClean(bool state_now, bool state_last) override ;
@@ -494,7 +488,6 @@ public:
 	CleanModeSpot();
 	~CleanModeSpot();
 
-	bool isFinish() override;
 	bool mapMark() override;
 	bool isExit() override;
 	bool setNextAction() override;

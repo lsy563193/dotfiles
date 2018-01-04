@@ -36,7 +36,7 @@ FILE(GLOB PP_SRC
 	src/mode/state/state_go_home_point.cpp
 	src/mode/state/state_go_charger.cpp
 	src/mode/state/state_trapped.cpp
-	src/mode/state/state_self_check.cpp
+				src/mode/state/state_exception_resume.cpp
 	src/mode/state/state_tmp_spot.cpp
 	src/mode/state/state_exploration.cpp
 

@@ -69,14 +69,6 @@ bool CleanModeExploration::mapMark()
 	return false;
 }
 
-bool CleanModeExploration::isFinish()
-{
-	if (sp_state == state_init)
-		mapMark();
-
-	return ACleanMode::isFinish();
-}
-
 bool CleanModeExploration::isExit()
 {
 	if(ev.cliff_all_triggered){
@@ -194,6 +186,7 @@ bool CleanModeExploration::isFinishInit() {
 }
 
 bool CleanModeExploration::isFinishClean() {
+	mapMark();
 	PP_INFO();
 	old_dir_ = new_dir_;
 	ROS_WARN("old_dir_(%d)", old_dir_);
