@@ -227,7 +227,7 @@ public:
 	virtual bool setNextAction();
 	void genNextAction();
 
-	bool setNextStateForGoHomePoint(GridMap &map);
+	bool isStateGoHomePointConfirmed(GridMap &map);
 	void setRconPos(float cd,float dist);
 
 	virtual bool mapMark() = 0;
@@ -389,10 +389,12 @@ private:
 	bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
 	bool actionLinearIsFinish(MoveTypeLinear *p_mt) override;
 	void actionFollowWallSaveBlocks() override ;
-	bool checkEnterPause();
 	void resumePause();
 	void resumeLowBatteryCharge();
-	void switchToGoHomePointState();
+	bool checkEnterPause();
+	bool checkEnterTempSpotState();
+	bool checkEnterGoHomePointState();
+	bool checkEnterExceptionResumeState();
 
 	bool low_battery_charge_{false};
 	bool has_aligned_and_open_slam_{false};

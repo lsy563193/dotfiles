@@ -218,9 +218,7 @@ bool CleanModeExploration::isStateCleanConfirmed() {
 }
 
 bool CleanModeExploration::isStateGoHomePointConfirmed() {
-	PP_INFO();
-	setNextStateForGoHomePoint(clean_map_);
-	return true;
+	return ACleanMode::isStateGoHomePointConfirmed(clean_map_);
 }
 
 bool CleanModeExploration::isStateGoToChargerConfirmed() {
