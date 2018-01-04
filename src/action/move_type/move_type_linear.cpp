@@ -12,6 +12,7 @@ MoveTypeLinear::MoveTypeLinear() {
 
 	auto p_clean_mode = (ACleanMode*)sp_mode_;
 	target_point_ = p_clean_mode->plan_path_.front();
+	dir_ = p_clean_mode->new_dir_;
 	turn_target_angle_ = p_clean_mode->new_dir_;
 	ROS_INFO("%s,%d: mt_is_linear,turn(%d)", __FUNCTION__, __LINE__, turn_target_angle_);
 	movement_i_ = mm_turn;
@@ -35,8 +36,11 @@ bool MoveTypeLinear::isFinish()
 
 	auto p_clean_mode = (ACleanMode*)sp_mode_;
 
-	if(p_clean_mode->actionLinearisFinish(this))
+	if (p_clean_mode->actionLinearIsFinish(this))
 		return true;
+
+	if (isLinearForward())
+		switchLinearTarget(p_clean_mode);
 
 	if (sp_movement_->isFinish()) {
 		PP_INFO();
@@ -131,5 +135,25 @@ bool MoveTypeLinear::isPassTargetStop(MapDirection &dir)
 bool MoveTypeLinear::isLinearForward()
 {
 	return movement_i_ == mm_forward;
+}
+
+void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
+{
+	if (p_clean_mode->plan_path_.size() > 1)
+	{
+		auto &target_xy = (isXAxis(p_clean_mode->new_dir_)) ? target_point_.x : target_point_.y;
+		auto curr_xy = (isXAxis(p_clean_mode->new_dir_)) ? getPosition().x : getPosition().y;
+
+		if (abs(target_xy - curr_xy) < LINEAR_NEAR_DISTANCE) {
+			p_clean_mode->old_dir_ = p_clean_mode->new_dir_;
+			p_clean_mode->new_dir_ = (MapDirection) p_clean_mode->plan_path_.front().th;
+			dir_ = p_clean_mode->new_dir_;
+			p_clean_mode->plan_path_.pop_front();
+			target_point_ = p_clean_mode->plan_path_.front();
+
+			ROS_INFO("%s,%d,next target_point(%d,%d), dir(%d)",
+					 __FUNCTION__,__LINE__,target_point_.toCell().x,target_point_.toCell().y, p_clean_mode->new_dir_);
+		}
+	}
 }
 

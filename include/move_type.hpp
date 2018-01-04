@@ -42,6 +42,7 @@ public:
 	void resetTriggeredValue();
 	Point32_t start_point_;
 	Point32_t target_point_;
+	MapDirection dir_;
 protected:
 //	Cells passed_path_;
 //	Cells tmp_plan_path_;
@@ -70,6 +71,7 @@ public:
 
 	bool isLinearForward();
 protected:
+	void switchLinearTarget(ACleanMode * p_clean_mode);
 };
 
 class MoveTypeFollowWall:public IMoveType

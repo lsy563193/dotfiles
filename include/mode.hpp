@@ -240,9 +240,9 @@ public:
 
 	Cells pointsGenerateCells(Points &targets);
 
-	virtual bool actionFollowWallisFinish(MoveTypeFollowWall* p_mt);
+	virtual bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt);
 	virtual void actionFollowWallSaveBlocks();
-	virtual bool actionLinearisFinish(MoveTypeLinear* p_mt);
+	virtual bool actionLinearIsFinish(MoveTypeLinear *p_mt);
 	void setRconPos(Point32_t pos);
 	Point32_t updatePath(GridMap& map);
 	int reach_cleaned_count_{};
@@ -386,8 +386,8 @@ public:
 	bool isFinishPause() override;
 
 private:
-	bool actionFollowWallisFinish(MoveTypeFollowWall* p_mt) override;
-	bool actionLinearisFinish(MoveTypeLinear* p_mt) override;
+	bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
+	bool actionLinearIsFinish(MoveTypeLinear *p_mt) override;
 	void actionFollowWallSaveBlocks() override ;
 	void enterPause();
 	void resumePause();
@@ -441,19 +441,19 @@ public:
 
 	~CleanModeFollowWall() override;
 
-	bool actionFollowWallisFinish(MoveTypeFollowWall* p_mt) override;
+	bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
 
 	bool setNextAction() override;
 
 	bool mapMark() override;
 
-	void keyClean(bool state_now, bool state_last);
+	void keyClean(bool state_now, bool state_last) override;
 
 //	void overCurrentWheelLeft(bool state_now, bool state_last);
 //
 //	void overCurrentWheelRight(bool state_now, bool state_last);
 //
-	void remoteClean(bool state_now, bool state_last);
+	void remoteClean(bool state_now, bool state_last) override;
 //
 //	void remoteHome(bool state_now, bool state_last);
 //

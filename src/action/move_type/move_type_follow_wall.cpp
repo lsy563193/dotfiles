@@ -57,7 +57,7 @@ bool MoveTypeFollowWall::isFinish()
 
 	auto p_clean_mode = (ACleanMode*)sp_mode_;
 
-	if(p_clean_mode->actionFollowWallisFinish(this))
+	if(p_clean_mode->actionFollowWallIsFinish(this))
 		return true;
 
 	if (sp_movement_->isFinish()) {

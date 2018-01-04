@@ -357,7 +357,7 @@ void CleanModeNav::remoteSpot(bool state_now, bool state_last)
 
 // End event handlers.
 
-bool CleanModeNav::actionFollowWallisFinish(MoveTypeFollowWall* p_mt)
+bool CleanModeNav::actionFollowWallIsFinish(MoveTypeFollowWall *p_mt)
 {
 	if (sp_state == state_trapped)
 		return p_mt->isBlockCleared(clean_map_, passed_path_);
@@ -372,7 +372,7 @@ void CleanModeNav::actionFollowWallSaveBlocks()
 	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
 }
 
-bool CleanModeNav::actionLinearisFinish(MoveTypeLinear *p_mt)
+bool CleanModeNav::actionLinearIsFinish(MoveTypeLinear *p_mt)
 {
 	if (p_mt->isLinearForward())
 		return p_mt->isPoseReach() || p_mt->isPassTargetStop(new_dir_) || p_mt->isRconStop();

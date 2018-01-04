@@ -213,7 +213,7 @@ void ACleanMode::setRconPos(Point32_t pos)
 		charger_pos_ = pos;
 }
 
-bool ACleanMode::actionFollowWallisFinish(MoveTypeFollowWall* p_mt)
+bool ACleanMode::actionFollowWallIsFinish(MoveTypeFollowWall *p_mt)
 {
 	return false;
 }
@@ -481,7 +481,7 @@ bool ACleanMode::setNextState() {
 
 }
 
-bool ACleanMode::actionLinearisFinish(MoveTypeLinear *p_mt)
+bool ACleanMode::actionLinearIsFinish(MoveTypeLinear *p_mt)
 {
 	return false;
 }
