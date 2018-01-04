@@ -566,7 +566,7 @@ uint8_t GridMap::setFollowWall(bool is_left,const Points& passed_path)
 
 uint8_t GridMap::saveSlip()
 {
-	if (!g_robot_slip)
+	if (!ev.robot_slip)
 		return 0;
 
 	std::vector<Cell_t> d_cells;

@@ -1161,7 +1161,7 @@ uint8_t Lidar::isRobotSlip()
 	uint8_t ret = 0;
 	uint16_t tol_count = 0;
 	auto tmp_scan_data = getLidarScanDataOriginal();
-	if(g_robot_slip_enable && seq != tmp_scan_data.header.seq && isScanOriginalReady() && ( std::abs(
+	if(ev.slip_enable && seq != tmp_scan_data.header.seq && isScanOriginalReady() && ( std::abs(
 			wheel.getLeftWheelActualSpeed()) >= WSL || std::abs(wheel.getRightWheelActualSpeed()) >= WSL ) )
 	{
 		seq = tmp_scan_data.header.seq;
@@ -1212,7 +1212,7 @@ uint8_t Lidar::isRobotSlip()
 			slip_count = 0;
 		}
 	}
-	else if(!g_robot_slip_enable)
+	else if(!ev.slip_enable)
 	{
 		seq = 0;
 		seq_count = 0;
@@ -1398,7 +1398,7 @@ double Lidar::getObstacleDistance(uint8_t dir, double range)
 bool Lidar::lidarCheckFresh(float duration, uint8_t type)
 {
 	double time_gap;
-	if (type == 1 && time_gap < duration)
+	if (type == 1)
 		time_gap = ros::Time::now().toSec() - scanLinear_update_time;
 	if (type == 2)
 		time_gap = ros::Time::now().toSec() - scanOriginal_update_time;

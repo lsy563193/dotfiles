@@ -19,6 +19,7 @@
 #define ROS_INFO_FL() ROS_INFO("%s,%d",__FUNCTION__, __LINE__)
 #define PP_INFO() ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__)
 #define PP_WARN() ROS_WARN("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__)
+#define INFO_GREEN(X) ROS_INFO("%s,%d,\033[32mX\033[0m",__FUNCTION__,__LINE__)
 //#define PP_INFO(...) ROS_LOG( __VA_ARGS__)
 //#define ROS_INFO(...) ROS_LOG(::ros::console::levels::Info, ROSCONSOLE_DEFAULT_NAME, __VA_ARGS__)
 

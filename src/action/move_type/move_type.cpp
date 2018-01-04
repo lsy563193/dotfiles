@@ -17,10 +17,10 @@ bool IMoveType::shouldMoveBack()
 	ev.cliff_triggered = cliff.getStatus();
 	ev.tilt_triggered = gyro.getTiltCheckingStatus();
 
-	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip)
+	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || ev.robot_slip)
 	{
-		ROS_WARN("%s, %d,ev.bumper_triggered(%d) ev.cliff_triggered(%d) ev.tilt_triggered(%d) g_robot_slip(%d)."
-				, __FUNCTION__, __LINE__,ev.bumper_triggered,ev.cliff_triggered,ev.tilt_triggered,g_robot_slip);
+		ROS_WARN("%s, %d,ev.bumper_triggered(%d) ev.cliff_triggered(%d) ev.tilt_triggered(%d) ev.robot_slip(%d)."
+				, __FUNCTION__, __LINE__,ev.bumper_triggered,ev.cliff_triggered,ev.tilt_triggered,ev.robot_slip);
 		return true;
 	}
 
@@ -87,7 +87,6 @@ bool IMoveType::shouldTurn()
 
 IMoveType::IMoveType() {
 	start_point_ = getPosition();
-	g_slip_cnt = 0;
 	c_rcon.resetStatus();
 	robot::instance()->obsAdjustCount(20);
 }
@@ -100,6 +99,8 @@ void IMoveType::resetTriggeredValue() {
 	ev.obs_triggered = 0;
 	ev.cliff_triggered = 0;
 	ev.tilt_triggered = 0;
+	ev.robot_slip = false;
+	ev.robot_stuck = false;
 }
 }
 

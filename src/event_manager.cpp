@@ -16,12 +16,6 @@ uint8_t g_charge_detect_cnt = 0;
 bool g_plan_activated = false;
 
 
-/* robot slip & stuck */
-uint8_t g_slip_cnt = 0;
-bool g_robot_slip = false;
-bool g_robot_slip_enable = false;
-bool g_robot_stuck = false;
-
 Ev_t ev;
 /* lidar bumper */
 //bool g_lidar_bumper = false;
@@ -587,10 +581,11 @@ void event_manager_reset_status(void)
 	g_charge_detect_cnt = 0;
 	/* Slam Error */
 	ev.slam_error = false;
-	/* robot stuck */
-	//g_robot_stuck = false;
-	g_robot_slip = false;
-	g_slip_cnt = 0;
+	/* robot slip || stuck */
+	ev.robot_slip = false;
+	ev.slip_enable = true;
+	ev.robot_stuck = false;
+
 	/* tilt switch*/
 	gyro.TiltCheckingEnable(false);
 	ev.tilt_triggered = false;
@@ -914,15 +909,23 @@ void df_charge_detect(bool state_now, bool state_last)
 	}
 }
 
-void EventHandle::robotSlip(bool state_new, bool state_last)
-{}
-void df_robot_slip(bool state_new,bool state_last)
+void df_robot_slip()
 {
+	static int slip_cnt = 0;
 	ROS_WARN("\033[32m%s,%d,set robot slip!! \033[0m",__FUNCTION__,__LINE__);
 	beeper.play_for_command(true);
-	g_robot_slip = true;
-	g_slip_cnt ++;
+	ev.robot_slip = true;
+	if(slip_cnt++ > 2){
+		slip_cnt = 0;
+		ev.robot_stuck = true;
+	}
 }
+
+void EventHandle::robotSlip(bool state_new, bool state_last)
+{
+	df_robot_slip();
+}
+
 /*
 void EventHandle::lidar_bumper(bool state_new,bool state_last)
 {

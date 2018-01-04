@@ -1,5 +1,5 @@
-#include <event_manager.h>
-#include <pp.h>
+#include "event_manager.h"
+#include "pp.h"
 #include "arch.hpp"
 #include "error.h"
 
@@ -22,6 +22,7 @@ ModeIdle::ModeIdle()
 	/*---reset values for rcon handle---*/
 	first_time_seen_charger_ = 0.0;
 	last_time_seen_charger_ = 0.0;
+
 }
 
 ModeIdle::~ModeIdle()
@@ -106,7 +107,6 @@ void ModeIdle::register_events()
 void ModeIdle::remoteKeyHandler(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote key %x has been pressed.", __FUNCTION__, __LINE__, remote.get());
-	//g_robot_stuck = false;
 
 	if (error.get())
 	{

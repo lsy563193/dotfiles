@@ -69,7 +69,7 @@ bool MoveTypeFollowWall::isFinish()
 			sp_movement_.reset(new MovementFollowWallLidar(is_left_));
 		}
 		else if (movement_i_ == mm_forward) {
-			if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip) {
+			if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || ev.robot_slip) {
 				PP_INFO();
 				p_clean_mode->actionFollowWallSaveBlocks();
 //				resetTriggeredValue();
@@ -326,7 +326,7 @@ int16_t MoveTypeFollowWall::get_turn_angle_by_ev()
 		ROS_WARN("%s %d: Rcon triggered, turn_angle: %d.", __FUNCTION__, __LINE__, turn_angle);
 	}
 
-	if(g_robot_slip)
+	if(ev.robot_slip)
 	{
 		// Temporary use obs as lidar triggered.
 		ev.obs_triggered = BLOCK_FRONT;
