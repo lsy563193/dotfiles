@@ -29,7 +29,7 @@ bool MoveTypeLinear::isFinish()
 {
 	if (IMoveType::isFinish())
 	{
-		PP_INFO();
+		ROS_INFO("%s %d: Move type aborted.", __FUNCTION__, __LINE__);
 		return true;
 	}
 

@@ -49,6 +49,12 @@ MoveTypeFollowWall::~MoveTypeFollowWall()
 
 bool MoveTypeFollowWall::isFinish()
 {
+	if (IMoveType::isFinish())
+	{
+		ROS_INFO("%s %d: Move type aborted.", __FUNCTION__, __LINE__);
+		return true;
+	}
+
 	auto p_clean_mode = (ACleanMode*)sp_mode_;
 
 	if(p_clean_mode->actionFollowWallisFinish())
