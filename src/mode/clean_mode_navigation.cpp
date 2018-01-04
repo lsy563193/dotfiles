@@ -420,25 +420,32 @@ void CleanModeNav::switchToGoHomePointState()
 	sp_state->update();
 }
 
-void CleanModeNav::enterPause()
+bool CleanModeNav::checkEnterPause()
 {
-	ev.key_clean_pressed = false;
-	speaker.play(VOICE_CLEANING_PAUSE);
-	ROS_INFO("%s %d: Key clean pressed, pause cleaning.", __FUNCTION__, __LINE__);
-	paused_odom_angle_ = odom.getAngle();
-	state_saved_state_before_pause = sp_state;
-	sp_state = state_pause;
-	mapMark();
+	if (ev.key_clean_pressed)
+	{
+		ev.key_clean_pressed = false;
+		speaker.play(VOICE_CLEANING_PAUSE);
+		ROS_INFO("%s %d: Key clean pressed, pause cleaning.", __FUNCTION__, __LINE__);
+		paused_odom_angle_ = odom.getAngle();
+		state_saved_state_before_pause = sp_state;
+		sp_state = state_pause;
+		mapMark();
+		action_i_ = ac_pause;
+		genNextAction();
+		return true;
+	}
+
+	return false;
 }
 
 //state--------------------------------------------
 
-bool CleanModeNav::isFinishInit() {
-	if (ev.key_clean_pressed)
-		{
-			enterPause();
-			setNextAction();
-		}
+bool CleanModeNav::isStateInitConfirmed() {
+
+	if (checkEnterPause())
+		return true;
+
 	if (sp_action_ != nullptr && !sp_action_->isFinish())
 		return true;
 
@@ -465,14 +472,46 @@ bool CleanModeNav::isFinishInit() {
 	}
 	else
 	{
-		setNextAction();
+		if (action_i_ == ac_null)
+			action_i_ = ac_open_gyro;
+		else if (action_i_ == ac_open_gyro)
+		{
+			// If it is the starting of navigation mode, paused_odom_angle_ will be zero.
+			odom.setAngleOffset(paused_odom_angle_);
+			if (charger.isOnStub())
+			{
+				action_i_ = ac_back_form_charger;
+				home_points_.back().have_seen_charger = true;
+			}
+			else
+				action_i_ = ac_open_lidar;
+
+			vacuum.setMode(Vac_Save);
+			brush.normalOperate();
+		}
+		else if (action_i_ == ac_back_form_charger)
+		{
+			action_i_ = ac_open_lidar;
+			// Init odom position here.
+			robot::instance()->initOdomPosition();
+		}
+		else if (action_i_ == ac_open_lidar)
+		{
+			if (!has_aligned_and_open_slam_)
+				action_i_ = ac_align;
+			else
+				action_i_ = ac_null;
+		}
+		else if (action_i_ == ac_align)
+			action_i_ = ac_open_slam;
+		genNextAction();
 		return true;
 	}
 
 	return false;
 }
 
-bool CleanModeNav::isFinishClean() {
+bool CleanModeNav::isStateCleanConfirmed() {
 	if (isExceptionTriggered()) {
 		ROS_INFO("%s %d: Pass this state switching for exception cases.", __FUNCTION__, __LINE__);
 		sp_state = state_exception_resume;
@@ -484,17 +523,19 @@ bool CleanModeNav::isFinishClean() {
 	if (ev.remote_spot)
 	{
 		ev.remote_spot= false;
-		switchToGoHomePointState();
 		sp_action_.reset();
+		clean_path_algorithm_.reset(new SpotCleanPathAlgorithm);
+		setNextAction();
 		sp_state = state_tmp_spot;
 		sp_state->update();
 	}
 
 	if (ev.key_clean_pressed)
-		{
-			enterPause();
-			setNextAction();
-		}
+	{
+		checkEnterPause();
+		setNextAction();
+		return true;
+	}
 
 	updatePath(clean_map_);
 
@@ -518,17 +559,8 @@ bool CleanModeNav::isFinishClean() {
 		setNextAction();
 		return true;
 	}
-
-	if(ev.remote_spot)
+	else
 	{
-		ev.remote_spot = false;
-		sp_state = state_tmp_spot;
-		sp_state->update();
-		clean_path_algorithm_.reset(new SpotCleanPathAlgorithm);
-		setNextAction();
-		return true;
-	}
-	else {
 		if (clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell())) {
 			// Robot trapped.
 			sp_state = state_trapped;
@@ -549,16 +581,17 @@ bool CleanModeNav::isFinishClean() {
 	return false;
 }
 
-bool CleanModeNav::isFinishGoHomePoint() {
+bool CleanModeNav::isStateGoHomePointConfirmed() {
 	if (isExceptionTriggered()) {
 		ROS_INFO("%s %d: Pass this state switching for exception cases.", __FUNCTION__, __LINE__);
 		sp_state = state_exception_resume;
 	}
 	if (ev.key_clean_pressed)
-		{
-			enterPause();
-			setNextAction();
-		}
+	{
+		checkEnterPause();
+		setNextAction();
+		return true;
+	}
 	updatePath(clean_map_);
 	if(sp_action_ != nullptr && !sp_action_->isFinish())
 		return true;
@@ -571,16 +604,17 @@ bool CleanModeNav::isFinishGoHomePoint() {
 	return true;
 }
 
-bool CleanModeNav::isFinishGoCharger() {
+bool CleanModeNav::isStateGoToChargerConfirmed() {
 	if (isExceptionTriggered()) {
 		ROS_INFO("%s %d: Pass this state switching for exception cases.", __FUNCTION__, __LINE__);
 		sp_state = state_exception_resume;
 	}
 	if (ev.key_clean_pressed)
-		{
-			enterPause();
-			setNextAction();
-		}
+	{
+		checkEnterPause();
+		setNextAction();
+		return true;
+	}
 	PP_INFO();
 	if(sp_action_ != nullptr && !sp_action_->isFinish())
 		return true;
@@ -605,16 +639,16 @@ bool CleanModeNav::isFinishGoCharger() {
 	return false;
 }
 
-bool CleanModeNav::isFinishTmpSpot() {
+bool CleanModeNav::isStateTmpSpotConformed() {
 	if (isExceptionTriggered()) {
 		ROS_INFO("%s %d: Pass this state switching for exception cases.", __FUNCTION__, __LINE__);
 		sp_state = state_exception_resume;
 	}
-if (ev.key_clean_pressed)
-		{
-			enterPause();
-			setNextAction();
-		}
+	if (ev.key_clean_pressed)
+	{
+		checkEnterPause();
+		setNextAction();
+	}
 	updatePath(clean_map_);
 	if(sp_action_ != nullptr && !sp_action_->isFinish())
 		return true;
@@ -643,14 +677,14 @@ if (ev.key_clean_pressed)
 	return false;
 }
 
-bool CleanModeNav::isFinishTrapped() {
+bool CleanModeNav::isStateTrappedConfirmed() {
 	if (isExceptionTriggered()) {
 		ROS_INFO("%s %d: Pass this state switching for exception cases.", __FUNCTION__, __LINE__);
 		sp_state = state_exception_resume;
 	}
 	if (ev.key_clean_pressed)
 		{
-			enterPause();
+			checkEnterPause();
 			setNextAction();
 		}
 	updatePath(clean_map_);
@@ -676,10 +710,10 @@ bool CleanModeNav::isFinishTrapped() {
 	return false;
 }
 
-bool CleanModeNav::isFinishExceptionResume() {
+bool CleanModeNav::isStateExceptionResumeConfirmed() {
 	if (ev.key_clean_pressed)
 	{
-		enterPause();
+		checkEnterPause();
 		setNextAction();
 	}
 	if(sp_action_ != nullptr && !sp_action_->isFinish())
@@ -688,27 +722,27 @@ bool CleanModeNav::isFinishExceptionResume() {
 	return true;
 }
 
-bool CleanModeNav::isFinishExploration() {
+bool CleanModeNav::isStateExplorationConfirmed() {
 	if (isExceptionTriggered()) {
 		ROS_INFO("%s %d: Pass this state switching for exception cases.", __FUNCTION__, __LINE__);
 		sp_state = state_exception_resume;
 	}
 	if (ev.key_clean_pressed)
 		{
-			enterPause();
+			checkEnterPause();
 			setNextAction();
 		}
 	return true;
 }
 
-bool CleanModeNav::isFinishResumeLowBatteryCharge() {
+bool CleanModeNav::isStateResumeLowBatteryChargeConfirmed() {
 	if (isExceptionTriggered()) {
 		ROS_INFO("%s %d: Pass this state switching for exception cases.", __FUNCTION__, __LINE__);
 		sp_state = state_exception_resume;
 	}
 	if (ev.key_clean_pressed)
 		{
-			enterPause();
+			checkEnterPause();
 			setNextAction();
 		}
 //		 For key clean force continue cleaning.
@@ -726,14 +760,14 @@ bool CleanModeNav::isFinishResumeLowBatteryCharge() {
 	return true;
 }
 
-bool CleanModeNav::isFinishLowBatteryResume() {
+bool CleanModeNav::isStateLowBatteryResumeConfirmed() {
 	if (isExceptionTriggered()) {
 		ROS_INFO("%s %d: Pass this state switching for exception cases.", __FUNCTION__, __LINE__);
 		sp_state = state_exception_resume;
 	}
 	if (ev.key_clean_pressed)
 		{
-			enterPause();
+			checkEnterPause();
 			setNextAction();
 		}
 	if(!sp_action_->isFinish())
@@ -766,7 +800,7 @@ bool CleanModeNav::isFinishLowBatteryResume() {
 	return false;
 }
 
-bool CleanModeNav::isFinishCharge() {
+bool CleanModeNav::isStateChargeConfirmed() {
 
 	if(ev.key_clean_pressed)
 	{
@@ -785,7 +819,7 @@ bool CleanModeNav::isFinishCharge() {
 	return false;
 }
 
-bool CleanModeNav::isFinishPause() {
+bool CleanModeNav::isStatePauseConfirmed() {
 // For pausing case, only key or remote clean will wake it up.
 		if (ev.key_clean_pressed || ev.remote_home)
 		{

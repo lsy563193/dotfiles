@@ -580,19 +580,19 @@ bool CleanModeFollowWall::actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) {
 	return reach_cleaned_count_ > 0;
 }
 
-bool CleanModeFollowWall::isFinishInit() {
-	return ACleanMode::isFinishInit();
+bool CleanModeFollowWall::isStateInitConfirmed() {
+	return ACleanMode::isStateInitConfirmed();
 }
 
-bool CleanModeFollowWall::isFinishClean() {
-	return ACleanMode::isFinishClean();
+bool CleanModeFollowWall::isStateCleanConfirmed() {
+	return ACleanMode::isStateCleanConfirmed();
 }
 
-bool CleanModeFollowWall::isFinishGoHomePoint() {
-	return ACleanMode::isFinishGoHomePoint();
+bool CleanModeFollowWall::isStateGoHomePointConfirmed() {
+	return ACleanMode::isStateGoHomePointConfirmed();
 }
 
-bool CleanModeFollowWall::isFinishGoCharger() {
-	return ACleanMode::isFinishGoCharger();
+bool CleanModeFollowWall::isStateGoToChargerConfirmed() {
+	return ACleanMode::isStateGoToChargerConfirmed();
 }
 

@@ -108,7 +108,6 @@ bool ACleanMode::isExit()
 
 bool ACleanMode::isFinish()
 {
-
 	while (ros::ok() && !sp_state->isFinish());
 
 	if(sp_state == nullptr)
