@@ -575,7 +575,7 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(GridMap& map, int
 	return totalCost;
 }
 
-bool CleanModeFollowWall::actionFollowWallisFinish() {
+bool CleanModeFollowWall::actionFollowWallisFinish(MoveTypeFollowWall* p_mt) {
 //	return ACleanMode::actionFollowWallisFinish();
 	return reach_cleaned_count_ > 0;
 }

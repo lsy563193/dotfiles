@@ -230,7 +230,7 @@ void ACleanMode::setRconPos(Point32_t pos)
 		charger_pos_ = pos;
 }
 
-bool ACleanMode::actionFollowWallisFinish()
+bool ACleanMode::actionFollowWallisFinish(MoveTypeFollowWall* p_mt)
 {
 	return false;
 }

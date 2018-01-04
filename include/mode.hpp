@@ -216,6 +216,7 @@ public:
 };
 
 class State;
+class MoveTypeFollowWall;
 class ACleanMode:public Mode
 {
 public:
@@ -240,7 +241,7 @@ public:
 
 	Cells pointsGenerateCells(Points &targets);
 
-	virtual bool actionFollowWallisFinish();
+	virtual bool actionFollowWallisFinish(MoveTypeFollowWall* p_mt);
 	virtual void actionFollowWallSaveBlocks();
 	void setRconPos(Point32_t pos);
 	Point32_t updatePath(GridMap& map);
@@ -388,11 +389,8 @@ public:
 	bool isFinishPause() override;
 
 private:
-	bool actionFollowWallisFinish() override ;
+	bool actionFollowWallisFinish(MoveTypeFollowWall* p_mt) override ;
 	void actionFollowWallSaveBlocks() override ;
-	bool isNewLineReach();
-	bool isOverOriginLine();
-	bool isBlockCleared();
 	void enterPause();
 	void resumePause();
 	void resumeLowBatteryCharge();
@@ -446,7 +444,7 @@ public:
 
 	~CleanModeFollowWall() override;
 
-	bool actionFollowWallisFinish() override;
+	bool actionFollowWallisFinish(MoveTypeFollowWall* p_mt) override;
 
 	bool setNextAction() override;
 

@@ -393,12 +393,12 @@ void CleanModeNav::remoteSpot(bool state_now, bool state_last)
 
 // End event handlers.
 
-bool CleanModeNav::actionFollowWallisFinish()
+bool CleanModeNav::actionFollowWallisFinish(MoveTypeFollowWall* p_mt)
 {
 	if (sp_state == state_trapped)
-		return isBlockCleared();
+		return p_mt->isBlockCleared(clean_map_, passed_path_);
 	else
-		return isNewLineReach() || isOverOriginLine();
+		return p_mt->isNewLineReach(clean_map_) || p_mt->isOverOriginLine(clean_map_);
 
 	return false;
 }
@@ -406,82 +406,6 @@ bool CleanModeNav::actionFollowWallisFinish()
 void CleanModeNav::actionFollowWallSaveBlocks()
 {
 	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
-}
-
-bool CleanModeNav::isOverOriginLine()
-{
-	auto curr = getPosition();
-	auto p_mt = boost::dynamic_pointer_cast<IMoveType>(sp_action_);
-	if ((p_mt->target_point_.y > p_mt->start_point_.y && (p_mt->start_point_.y - curr.y) > 120)
-		|| (p_mt->target_point_.y < p_mt->start_point_.y && (curr.y - p_mt->start_point_.y) > 120))
-	{
-		ROS_WARN("origin(%d,%d) curr_p(%d, %d), p_mt->target_point__(%d, %d)",p_mt->start_point_.x, p_mt->start_point_.y,  curr.x, curr.y, p_mt->target_point_.x, p_mt->target_point_.y);
-		auto target_angle = (p_mt->target_point_.y > p_mt->start_point_.y) ? -900 : 900;
-		if (std::abs(ranged_angle(robot::instance()->getWorldPoseAngle() - target_angle)) < 50) // If robot is directly heading to the opposite side of target line, stop.
-		{
-			ROS_WARN("%s %d: Opposite to target angle. curr(%d, %d), p_mt->target_point_(%d, %d), gyro(%d), target_angle(%d)", __FUNCTION__, __LINE__, curr.x, curr.y, p_mt->target_point_.x, p_mt->target_point_.y,
-					 robot::instance()->getWorldPoseAngle(), target_angle);
-			return true;
-		}
-		else if (clean_map_.isBlockCleaned(curr.toCell().x, curr.toCell().y)) // If robot covers a big block, stop.
-		{
-			ROS_WARN("%s %d: Back to cleaned place, current(%d, %d), curr(%d, %d), p_mt->target_point_(%d, %d).",
-					 __FUNCTION__, __LINE__, curr.x, curr.y, curr.x, curr.y, p_mt->target_point_.x, p_mt->target_point_.y);
-			return true;
-		}
-		else{
-			ROS_WARN("%s %d: Dynamic adjust the origin line and target line, so it can smoothly follow the wall to clean..",__FUNCTION__,__LINE__);
-			p_mt->target_point_.y += curr.y - p_mt->start_point_.y;
-			p_mt->start_point_.y = curr.y;
-		}
-	}
-
-	return false;
-}
-
-bool CleanModeNav::isNewLineReach()
-{
-	auto s_curr_p = getPosition();
-	auto ret = false;
-	auto p_mt = boost::dynamic_pointer_cast<IMoveType>(sp_action_);
-	auto is_pos_dir = p_mt->target_point_.y - p_mt->start_point_.y > 0;
-	// The limit is CELL_COUNT_MUL / 8 * 3 further than target line center.
-	auto target_limit = p_mt->target_point_.y + CELL_COUNT_MUL / 8 * 3 * is_pos_dir;
-//	ROS_WARN("~~~~~~~~~~~~~~~~~%s %d: start_p.y(%d), target.y(%d),curr_y(%d)",
-//					 __FUNCTION__, __LINE__, countToCell(s_curr_p.y), countToCell(p_mt->target_point_.y),
-//					 countToCell(s_curr_p.y));
-	if (is_pos_dir ^ s_curr_p.y < target_limit) // Robot has reached the target line limit.
-	{
-		ROS_WARN("%s %d: Reach the target limit, start_p.y(%d), target.y(%d),curr_y(%d)",
-				 __FUNCTION__, __LINE__, p_mt->start_point_.y, p_mt->target_point_.y,
-				 s_curr_p.y);
-		ret = true;
-	}
-	else if (is_pos_dir ^ s_curr_p.y < p_mt->target_point_.y)
-	{
-		// Robot has reached the target line center but still not reach target line limit.
-		// Check if the wall side has blocks on the costmap.
-		auto dx = (is_pos_dir ^ action_i_ == ac_follow_wall_left) ? +2 : -2;
-		if (clean_map_.isBlocksAtY(s_curr_p.toCell().x + dx, s_curr_p.toCell().y)) {
-			ROS_WARN("%s %d: Already has block at the wall side, start_p.y(%d), target.y(%d),curr_y(%d)",
-					 __FUNCTION__, __LINE__, p_mt->start_point_.toCell().y, p_mt->target_point_.toCell().y,
-					 s_curr_p.toCell().y);
-			ret = true;
-		}
-	}
-
-	return ret;
-}
-
-bool CleanModeNav::isBlockCleared()
-{
-	if (!passed_path_.empty())
-	{
-//		ROS_INFO("%s %d: passed_path_.back(%d %d)", __FUNCTION__, __LINE__, passed_path_.back().x, passed_path_.back().y);
-		return !clean_map_.isBlockAccessible(passed_path_.back().toCell().x, passed_path_.back().toCell().y);
-	}
-
-	return false;
 }
 
 void CleanModeNav::resumePause()

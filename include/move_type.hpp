@@ -69,11 +69,15 @@ class MoveTypeFollowWall:public IMoveType
 {
 public:
 	MoveTypeFollowWall() = delete;
-	~MoveTypeFollowWall();
+	~MoveTypeFollowWall() override;
 
 	explicit MoveTypeFollowWall(bool is_left, bool is_trapped);
 
 	bool isFinish() override;
+
+	bool isNewLineReach(GridMap &map);
+	bool isOverOriginLine(GridMap &map);
+	bool isBlockCleared(GridMap &map, Points &passed_path);
 
 //	IAction* setNextAction();
 //	Points tmp_plan_path_{};
