@@ -594,13 +594,6 @@ bool CleanModeNav::isStateGoHomePointConfirmed()
 	if (checkEnterPause() || checkEnterExceptionResumeState())
 		return false;
 
-	updatePath(clean_map_);
-	if(sp_action_ != nullptr && !sp_action_->isFinish())
-		return true;
-	sp_action_.reset();//for call ~constitution;
-	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
-	mapMark();
-
 	return ACleanMode::isStateGoHomePointConfirmed(clean_map_);
 }
 
@@ -609,8 +602,16 @@ bool CleanModeNav::isStateGoToChargerConfirmed()
 	if (checkEnterPause() || checkEnterExceptionResumeState())
 		return false;
 
-	if(sp_action_ != nullptr && !sp_action_->isFinish())
+	if (sp_action_ != nullptr && !sp_action_->isFinish())
 		return true;
+
+	if (sp_action_ == nullptr)
+	{
+		// For Just entering go to charger state.
+		action_i_ = ac_go_to_charger;
+		genNextAction();
+		return true;
+	}
 
 	sp_action_.reset();//for call ~constitution;
 

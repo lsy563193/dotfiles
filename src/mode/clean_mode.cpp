@@ -108,7 +108,7 @@ bool ACleanMode::isExit()
 
 bool ACleanMode::isFinish()
 {
-	while (ros::ok() && !sp_state->isFinish());
+	while (ros::ok() && !sp_state->isConfirmed());
 
 	if(sp_state == nullptr)
 	{
@@ -224,14 +224,20 @@ void ACleanMode::actionFollowWallSaveBlocks()
 
 bool ACleanMode::isStateGoHomePointConfirmed(GridMap &map)
 {
-	bool state_confirm = true;
+	updatePath(clean_map_);
+	if(sp_action_ != nullptr && !sp_action_->isFinish())
+		return true;
+	sp_action_.reset();//for call ~constitution;
+	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
+	mapMark();
+
 	old_dir_ = new_dir_;
 	if (ev.rcon_triggered)
 	{
 		ev.rcon_triggered = 0;
 		sp_state = state_go_to_charger;
 		sp_state->update();
-		state_confirm = false;
+		return false;
 	}
 	else if (!reach_home_point_ && getPosition().toCell() == go_home_path_algorithm_->getCurrentHomePoint().home_point.toCell())
 	{
@@ -243,7 +249,8 @@ bool ACleanMode::isStateGoHomePointConfirmed(GridMap &map)
 					 go_home_path_algorithm_->getCurrentHomePoint().home_point.toCell().y);
 			sp_state = state_go_to_charger;
 			sp_state->update();
-			state_confirm = false;
+			reach_home_point_ = true;
+			return false;
 		}
 		else
 		{
@@ -251,8 +258,8 @@ bool ACleanMode::isStateGoHomePointConfirmed(GridMap &map)
 					 go_home_path_algorithm_->getCurrentHomePoint().home_point.toCell().x,
 					 go_home_path_algorithm_->getCurrentHomePoint().home_point.toCell().y);
 			sp_state = nullptr;
+			return true;
 		}
-		reach_home_point_ = true;
 	}
 	else if (go_home_path_algorithm_->generatePath(map, getPosition(),old_dir_, plan_path_))
 	{
@@ -264,14 +271,17 @@ bool ACleanMode::isStateGoHomePointConfirmed(GridMap &map)
 		reach_home_point_ = false;
 		action_i_ = ac_linear;
 		genNextAction();
+		return true;
 	}
 	else
 	{
 		// No more paths to home cells.
-		PP_INFO();
+		ROS_INFO("%s %d: No more path to any home cells.", __FUNCTION__, __LINE__);
 		sp_state = nullptr;
+		return true;
 	}
-	return state_confirm;
+
+	return false;
 }
 
 void ACleanMode::setRconPos(float cd,float dist)

@@ -5,7 +5,7 @@
 
 ACleanMode* State::sp_cm_{};
 
-bool State::isFinish()
+bool State::isConfirmed()
 {
 	if(sp_cm_->isStateInit())
 		return sp_cm_->isStateInitConfirmed();
