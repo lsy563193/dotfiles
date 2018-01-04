@@ -1,5 +1,5 @@
-#include <event_manager.h>
-#include <pp.h>
+#include "event_manager.h"
+#include "pp.h"
 #include "arch.hpp"
 #include "error.h"
 
@@ -22,6 +22,7 @@ ModeIdle::ModeIdle()
 	/*---reset values for rcon handle---*/
 	first_time_seen_charger_ = 0.0;
 	last_time_seen_charger_ = 0.0;
+
 }
 
 ModeIdle::~ModeIdle()
@@ -106,17 +107,19 @@ void ModeIdle::register_events()
 void ModeIdle::remoteKeyHandler(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote key %x has been pressed.", __FUNCTION__, __LINE__, remote.get());
-	//g_robot_stuck = false;
 
 	if (error.get())
 	{
 		if (remote.isKeyTrigger(REMOTE_CLEAN))
 		{
-			ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
 			if (error.clear(error.get()))
 			{
+				ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
 				beeper.play_for_command(VALID);
-				led.set_mode(LED_BREATH, LED_GREEN);
+				if (battery_low_)
+					led.set_mode(LED_BREATH, LED_ORANGE);
+				else
+					led.set_mode(LED_BREATH, LED_GREEN);
 				speaker.play(VOICE_CLEAR_ERROR);
 			}
 			else
@@ -132,7 +135,7 @@ void ModeIdle::remoteKeyHandler(bool state_now, bool state_last)
 			beeper.play_for_command(INVALID);
 		}
 	}
-	else if (cliff.get_status() == BLOCK_ALL)
+	else if (cliff.getStatus() == BLOCK_ALL)
 	{
 		ROS_WARN("%s %d: Remote key %x not valid because of robot lifted up.", __FUNCTION__, __LINE__, remote.get());
 		beeper.play_for_command(INVALID);
@@ -140,9 +143,10 @@ void ModeIdle::remoteKeyHandler(bool state_now, bool state_last)
 	}
 	else if ((!remote.isKeyTrigger(REMOTE_FORWARD) && !remote.isKeyTrigger(REMOTE_LEFT)
 			  && !remote.isKeyTrigger(REMOTE_RIGHT) && !remote.isKeyTrigger(REMOTE_HOME))
-			  && !battery.isReadyToClean())
+			  && battery_low_)
 	{
 		ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, battery.getVoltage(), (int)BATTERY_READY_TO_CLEAN_VOLTAGE);
+		led.set_mode(LED_BREATH, LED_ORANGE);
 		beeper.play_for_command(INVALID);
 		speaker.play(VOICE_BATTERY_LOW);
 	}
@@ -210,7 +214,7 @@ void ModeIdle::remotePlan(bool state_now, bool state_last)
 			error.alarm();
 			speaker.play(VOICE_CANCEL_APPOINTMENT);
 		}
-		else if(cliff.get_status() & (BLOCK_LEFT|BLOCK_FRONT|BLOCK_RIGHT))
+		else if(cliff.getStatus() & (BLOCK_LEFT|BLOCK_FRONT|BLOCK_RIGHT))
 		{
 			ROS_WARN("%s %d: Plan not activated not valid because of robot lifted up.", __FUNCTION__, __LINE__);
 			speaker.play(VOICE_ERROR_LIFT_UP);
@@ -247,7 +251,6 @@ void ModeIdle::chargeDetect(bool state_now, bool state_last)
 void ModeIdle::keyClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: key clean.", __FUNCTION__, __LINE__);
-
 	beeper.play_for_command(VALID);
 
 	// Wait for key released.
@@ -262,12 +265,42 @@ void ModeIdle::keyClean(bool state_now, bool state_last)
 		}
 		usleep(20000);
 	}
+	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
 
 	if (long_press)
 		ev.key_long_pressed = true;
 	else
-		ev.key_clean_pressed = true;
-	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
+	{
+		if (error.get())
+		{
+			if (error.clear(error.get()))
+			{
+				ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
+				if (battery_low_)
+					led.set_mode(LED_BREATH, LED_ORANGE);
+				else
+					led.set_mode(LED_BREATH, LED_GREEN);
+				speaker.play(VOICE_CLEAR_ERROR);
+			}
+			else
+				error.alarm();
+		}
+		else if (cliff.getStatus() == BLOCK_ALL)
+		{
+			ROS_WARN("%s %d: Remote key %x not valid because of robot lifted up.", __FUNCTION__, __LINE__,
+					 remote.get());
+			speaker.play(VOICE_ERROR_LIFT_UP);
+		}
+		else if (battery_low_)
+		{
+			ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, battery.getVoltage(),
+					 (int) BATTERY_READY_TO_CLEAN_VOLTAGE);
+			led.set_mode(LED_BREATH, LED_ORANGE);
+			speaker.play(VOICE_BATTERY_LOW);
+		}
+		else
+			ev.key_clean_pressed = true;
+	}
 
 	key.resetTriggerStatus();
 }
@@ -288,4 +321,14 @@ void ModeIdle::rcon(bool state_now, bool state_last)
 			ev.rcon_triggered = c_rcon.getAll();
 	}
 	last_time_seen_charger_ = time_for_now_;
+}
+
+bool ModeIdle::isFinish()
+{
+	if (!battery_low_ && !battery.isReadyToClean())
+	{
+		led.set_mode(LED_BREATH, LED_ORANGE);
+		battery_low_ = true;
+	}
+	return false;
 }

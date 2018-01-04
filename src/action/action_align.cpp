@@ -6,15 +6,20 @@
 
 ActionAlign::ActionAlign() {
 	wheel.stop();
+
 	lidar.startAlign();
 //	ROS_INFO("%s,%d:add ActionOpenLidar,sp_action_(%d)",__FUNCTION__, __LINE__,sp_action_);
+
+	timeout_interval_ = 3;
 }
 
-bool ActionAlign::isFinish() {
-	if (lidar.alignTimeOut()) {
+bool ActionAlign::isFinish()
+{
+	if (isTimeUp())
 		return true;
-	}
-	if (lidar.alignFinish()) {
+
+	if (lidar.alignFinish())
+	{
 		float align_angle = lidar.alignAngle();
 		odom.setAngleOffset(-align_angle);
 		ROS_INFO("%s %d: align_angle angle (%f).", __FUNCTION__, __LINE__, align_angle);
@@ -29,6 +34,17 @@ void ActionAlign::run() {
 	{
 		lidar.alignAngle(static_cast<float>(align_angle));
 	}
+}
+
+bool ActionAlign::isTimeUp()
+{
+	if (IAction::isTimeUp())
+	{
+		ROS_WARN("%s %d: Align timeout", __FUNCTION__, __LINE__);
+		return true;
+	}
+
+	return false;
 }
 
 //IAction* ActionAlign::setNextAction() {

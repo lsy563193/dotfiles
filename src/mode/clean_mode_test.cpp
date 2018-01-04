@@ -21,6 +21,7 @@ CleanModeTest::CleanModeTest()
 CleanModeTest::~CleanModeTest()
 {
 	IMoveType::sp_mode_ = nullptr;
+	event_manager_set_enable(false);
 }
 
 bool CleanModeTest::mapMark()
@@ -100,9 +101,3 @@ void CleanModeTest::remoteDirectionForward(bool state_now, bool state_last)
 	ev.remote_direction_forward = true;
 	remote.reset();
 }
-
-bool CleanModeTest::setNextState()
-{
-	return false;
-}
-

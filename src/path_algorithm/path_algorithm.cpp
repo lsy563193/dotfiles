@@ -12,7 +12,7 @@ void APathAlgorithm::displayCellPath(const Cells &path)
 
 	msg += " " + std::to_string(__LINE__) + ": Path size(" + std::to_string(path.size()) + "):";
 	for (auto it = path.begin(); it != path.end(); ++it) {
-		msg += "(" + std::to_string(it->X) + ", " + std::to_string(it->Y) + ")->";
+		msg += "(" + std::to_string(it->x) + ", " + std::to_string(it->y) + ")->";
 	}
 	//msg += "\n";
 	ROS_INFO("%s",msg.c_str());
@@ -23,7 +23,7 @@ void APathAlgorithm::displayTargetList(const Cells &target_list)
 	std::string     msg = __FUNCTION__;
 	msg += " " + std::to_string(__LINE__) + ": Targers(" + std::to_string(target_list.size()) + "):";
 	for (auto it = target_list.begin(); it != target_list.end(); ++it) {
-		msg += "(" + std::to_string(it->X) + ", " + std::to_string(it->Y) + ", " + "),";
+		msg += "(" + std::to_string(it->x) + ", " + std::to_string(it->y) + ", " + "),";
 	}
 	//msg += "\n";
 	ROS_INFO("%s",msg.c_str());
@@ -34,7 +34,7 @@ void APathAlgorithm::displayPointPath(const Points &point_path)
 	std::string     msg = __FUNCTION__;
 	msg += " " + std::to_string(__LINE__) + ": Targers(" + std::to_string(point_path.size()) + "):";
 	for (auto it = point_path.begin(); it != point_path.end(); ++it) {
-		msg += "(" + std::to_string(it->X) + ", " + std::to_string(it->Y) + ", " + std::to_string(it->TH) + "),";
+		msg += "(" + std::to_string(it->x) + ", " + std::to_string(it->y) + ", " + std::to_string(it->th) + "),";
 	}
 	//msg += "\n";
 	ROS_INFO("%s",msg.c_str());
@@ -60,15 +60,15 @@ void APathAlgorithm::optimizePath(GridMap &map, Cells& path)
 			if (it_ptr3 == path.end())
 				break;
 
-			if (it_ptr2->X == it_ptr3->X) {		// X coordinates are the same for p1, p2, find a better Y coordinate.
+			if (it_ptr2->x == it_ptr3->x) {		// x coordinates are the same for p1, p2, find a better y coordinate.
 				int16_t x_min, x_max;
-				x_min = x_max = it_ptr2->X;
+				x_min = x_max = it_ptr2->x;
 
 				int16_t	ei, ej, si, sj;
-				sj = it_ptr1->X > it_ptr2->X ? it_ptr2->X : it_ptr1->X;
-				ej = it_ptr1->X > it_ptr2->X ? it_ptr1->X : it_ptr2->X;
-				si = it_ptr2->Y > it_ptr3->Y ? it_ptr3->Y : it_ptr2->Y;
-				ei = it_ptr2->Y > it_ptr3->Y ? it_ptr2->Y : it_ptr3->Y;
+				sj = it_ptr1->x > it_ptr2->x ? it_ptr2->x : it_ptr1->x;
+				ej = it_ptr1->x > it_ptr2->x ? it_ptr1->x : it_ptr2->x;
+				si = it_ptr2->y > it_ptr3->y ? it_ptr3->y : it_ptr2->y;
+				ei = it_ptr2->y > it_ptr3->y ? it_ptr2->y : it_ptr3->y;
 
 				bool blocked_min, blocked_max;
 				blocked_min = blocked_max = false;
@@ -91,19 +91,19 @@ void APathAlgorithm::optimizePath(GridMap &map, Cells& path)
 					}
 				}
 
-				if (it_ptr3->X != (x_min + x_max) / 2) {
-					it_ptr2->X = it_ptr3->X = (x_min + x_max) / 2;
+				if (it_ptr3->x != (x_min + x_max) / 2) {
+					it_ptr2->x = it_ptr3->x = (x_min + x_max) / 2;
 				}
-				//ROS_INFO("%s %d: Loop i:%d\tx_min: %d\tx_max: %d\tget x:%d", __FUNCTION__, __LINE__, i, x_min, x_max, (x_min + x_max) / 2);
+				//ROS_INFO("%s %d: Loop i:%d\tx_min_forward: %d\tx_max_forward: %d\tget x:%d", __FUNCTION__, __LINE__, i, x_min_forward, x_max_forward, (x_min_forward + x_max_forward) / 2);
 			} else {
 				int16_t y_min, y_max;
-				y_min = y_max = it_ptr2->Y;
+				y_min = y_max = it_ptr2->y;
 
 				int16_t	ei, ej, si, sj;
-				sj = it_ptr1->Y > it_ptr2->Y ? it_ptr2->Y : it_ptr1->Y;
-				ej = it_ptr1->Y > it_ptr2->Y ? it_ptr1->Y : it_ptr2->Y;
-				si = it_ptr2->X > it_ptr3->X ? it_ptr3->X : it_ptr2->X;
-				ei = it_ptr2->X > it_ptr3->X ? it_ptr2->X : it_ptr3->X;
+				sj = it_ptr1->y > it_ptr2->y ? it_ptr2->y : it_ptr1->y;
+				ej = it_ptr1->y > it_ptr2->y ? it_ptr1->y : it_ptr2->y;
+				si = it_ptr2->x > it_ptr3->x ? it_ptr3->x : it_ptr2->x;
+				ei = it_ptr2->x > it_ptr3->x ? it_ptr2->x : it_ptr3->x;
 
 				bool blocked_min, blocked_max;
 				blocked_min = blocked_max = false;
@@ -126,8 +126,8 @@ void APathAlgorithm::optimizePath(GridMap &map, Cells& path)
 					}
 				}
 
-				if (it_ptr3->Y != (y_min + y_max) / 2) {
-					it_ptr2->Y = it_ptr3->Y = (y_min + y_max) / 2;
+				if (it_ptr3->y != (y_min + y_max) / 2) {
+					it_ptr2->y = it_ptr3->y = (y_min + y_max) / 2;
 				}
 				//ROS_INFO("%s %d: Loop i:%d\ty_min: %d\ty_max: %d\tget y:%d", __FUNCTION__, __LINE__, i, y_min, y_max, (y_min + y_max) / 2);
 			}
@@ -143,20 +143,22 @@ Points APathAlgorithm::cells_generate_points(Cells &path)
 {
 //	displayCellPath(path);
 	Points targets{};
-	for(auto it = path.begin(); it < path.end(); ++it) {
-		Point32_t target {cellToCount((*it).X),cellToCount((*it).Y),0};
-		auto it_next = it+1;
-		if (it->X == it_next->X)
-			target.TH = it->Y > it_next->Y ? MAP_NEG_Y : MAP_POS_Y;
-		else
-			target.TH = it->X > it_next->X ? MAP_NEG_X : MAP_POS_X;
-		targets.push_back(target);
-	}
-//		ROS_INFO("path.back(%d,%d,%d)",path.back().X, path.back().Y, path.back().TH);
+	if(!path.empty()){
+		for(auto it = path.begin(); it < path.end(); ++it) {
+			Point32_t target {cellToCount((*it).x),cellToCount((*it).y),0};
+			auto it_next = it+1;
+			if (it->x == it_next->x)
+				target.th = it->y > it_next->y ? MAP_NEG_Y : MAP_POS_Y;
+			else
+				target.th = it->x > it_next->x ? MAP_NEG_X : MAP_POS_X;
+			targets.push_back(target);
+		}
+	//		ROS_INFO("path.back(%d,%d,%d)",path.back().n, path.back().y, path.back().TH);
 
-	targets.back().TH = (targets.end()-2)->TH;
+		targets.back().th = (targets.end()-2)->th;
 //	ROS_INFO("%s %d: path.back(%d,%d,%d), path.front(%d,%d,%d)", __FUNCTION__, __LINE__,
-//					 path.back().X, path.back().Y, path.back().TH, path.front().X, path.front().Y, path.front().TH);
+//					 path.back().x, path.back().y, path.back().TH, path.front().x, path.front().y, path.front().TH);
+	}
 	return targets;
 }
 
@@ -196,15 +198,15 @@ Cells APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const 
 	}
 
 	// Set for target cell. For reverse algorithm, we will generate a-star map from target cell.
-	map.setCell(COST_MAP, target.X, target.Y, COST_1);
+	map.setCell(COST_MAP, target.x, target.y, COST_1);
 
 	// For protection, the start cell must be reachable.
-	if (map.getCell(COST_MAP, start.X, start.Y) == COST_HIGH)
+	if (map.getCell(COST_MAP, start.x, start.y) == COST_HIGH)
 	{
 		ROS_ERROR("%s %d: Start cell has high cost(%d)! It may cause bug, please check.",
-							__FUNCTION__, __LINE__, map.getCell(COST_MAP, start.X, start.Y));
-		map.print(COST_MAP, target.X, target.Y);
-		map.setCell(COST_MAP, start.X, start.Y, COST_NO);
+							__FUNCTION__, __LINE__, map.getCell(COST_MAP, start.x, start.y));
+		map.print(COST_MAP, target.x, target.y);
+		map.setCell(COST_MAP, start.x, start.y, COST_NO);
 	}
 
 	/*
@@ -216,7 +218,7 @@ Cells APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const 
 	bool cost_updated = true;
 	int16_t cost_value = 1;
 	int16_t next_cost_value = 2;
-	while (map.getCell(COST_MAP, start.X, start.Y) == COST_NO && cost_updated) {
+	while (map.getCell(COST_MAP, start.x, start.y) == COST_NO && cost_updated) {
 		offset++;
 		cost_updated = false;
 
@@ -226,14 +228,14 @@ Cells APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const 
 		 * cell that have the next pass value.
 		 *
 		 * It can use the offset to limit the range of searching, since in each loop
-		 * the cell (X -/+ offset, Y -/+ offset) would be set only. The cells far away
+		 * the cell (x -/+ offset, y -/+ offset) would be set only. The cells far away
 		 * to the robot position won'trace_cell be set.
 		 */
-		for (auto i = target.X - offset; i <= target.X + offset; i++) {
+		for (auto i = target.x - offset; i <= target.x + offset; i++) {
 			if (i < x_min || i > x_max)
 				continue;
 
-			for (auto j = target.Y - offset; j <= target.Y + offset; j++) {
+			for (auto j = target.y - offset; j <= target.y + offset; j++) {
 				if (j < y_min || j > y_max)
 					continue;
 
@@ -276,12 +278,12 @@ Cells APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const 
 	}
 
 	// If the start cell still have a cost of 0, it means target is not reachable.
-	CellState start_cell_state = map.getCell(COST_MAP, start.X, start.Y);
+	CellState start_cell_state = map.getCell(COST_MAP, start.x, start.y);
 	if (start_cell_state == COST_NO || start_cell_state == COST_HIGH) {
 		ROS_WARN("%s, %d: Target (%d, %d) is not reachable for start cell(%d, %d)(%d), return empty path.",
-						 __FUNCTION__, __LINE__, target.X, target.Y, start.X, start.Y, start_cell_state);
+						 __FUNCTION__, __LINE__, target.x, target.y, start.x, start.y, start_cell_state);
 #if	DEBUG_COST_MAP
-		map.print(COST_MAP, target.X, target.Y);
+		map.print(COST_MAP, target.x, target.y);
 #endif
 		// Now the path_ is empty.
 		return path_;
@@ -297,14 +299,14 @@ Cells APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const 
 	 */
 	Cell_t trace_cell;
 	int16_t trace_x, trace_y, trace_x_last, trace_y_last, total_cost = 0;
-	trace_cell.X = trace_x = trace_x_last = start.X;
-	trace_cell.Y = trace_y = trace_y_last = start.Y;
+	trace_cell.x = trace_x = trace_x_last = start.x;
+	trace_cell.y = trace_y = trace_y_last = start.y;
 	path_.push_back(trace_cell);
 
 	uint16_t next = 0;
 	auto trace_dir = (last_dir == MAP_POS_Y || last_dir == MAP_NEG_Y) ? 1: 0;
 	//ROS_INFO("%s %d: trace dir: %d", __FUNCTION__, __LINE__, trace_dir);
-	while (trace_x != target.X || trace_y != target.Y) {
+	while (trace_x != target.x || trace_y != target.y) {
 		CellState cost_at_cell = map.getCell(COST_MAP, trace_x, trace_y);
 		auto target_cost = static_cast<CellState>(cost_at_cell - 1);
 
@@ -366,20 +368,20 @@ Cells APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const 
 #undef COST_NORTH
 
 		total_cost++;
-		if (path_.back().X != trace_x && path_.back().Y != trace_y) {
+		if (path_.back().x != trace_x && path_.back().y != trace_y) {
 			// Only turning cell will be pushed to path.
-			trace_cell.X = trace_x_last;
-			trace_cell.Y = trace_y_last;
+			trace_cell.x = trace_x_last;
+			trace_cell.y = trace_y_last;
 			path_.push_back(trace_cell);
 		}
 		trace_x_last = trace_x;
 		trace_y_last = trace_y;
 	}
 
-	map.setCell(COST_MAP, (int32_t) target.X, (int32_t) target.Y, COST_PATH);
+	map.setCell(COST_MAP, (int32_t) target.x, (int32_t) target.y, COST_PATH);
 
-	trace_cell.X = target.X;
-	trace_cell.Y = target.Y;
+	trace_cell.x = target.x;
+	trace_cell.y = target.y;
 	path_.push_back(trace_cell);
 
 	displayCellPath(path_);
@@ -393,14 +395,14 @@ bool APathAlgorithm::findTargetUsingDijkstra(GridMap &map, const Cell_t& curr_ce
 	typedef std::pair<double, Cell_t> Entry;
 
 	map.reset(COST_MAP);
-	map.setCell(COST_MAP, curr_cell.X, curr_cell.Y, COST_1);
+	map.setCell(COST_MAP, curr_cell.x, curr_cell.y, COST_1);
 
 	Queue queue;
 	Entry startPoint(0.0, curr_cell);
 	cleaned_count = 1;
 	queue.insert(startPoint);
 	bool is_found = false;
-//	map.print(CLEAN_MAP,curr.X, curr.Y);
+//	map.print(CLEAN_MAP,curr.x, curr.y);
 	ROS_INFO("Do full search with weightless Dijkstra-Algorithm\n");
 	while (!queue.empty())
 	{
@@ -409,10 +411,10 @@ bool APathAlgorithm::findTargetUsingDijkstra(GridMap &map, const Cell_t& curr_ce
 		auto next = start->second;
 		queue.erase(start);
 
-//		ROS_WARN("adjacent cell(%d,%d)", next.X, next.Y);
-		if (map.getCell(CLEAN_MAP, next.X, next.Y) == UNCLEAN && map.isBlockAccessible(next.X, next.Y))
+//		ROS_WARN("adjacent cell(%d,%d)", next.x, next.y);
+		if (map.getCell(CLEAN_MAP, next.x, next.y) == UNCLEAN && map.isBlockAccessible(next.x, next.y))
 		{
-			ROS_WARN("We find the Unclean next(%d,%d)", next.X, next.Y);
+			ROS_WARN("We find the Unclean next(%d,%d)", next.x, next.y);
 			is_found = true;
 			target = next;
 			break;
@@ -421,25 +423,25 @@ bool APathAlgorithm::findTargetUsingDijkstra(GridMap &map, const Cell_t& curr_ce
 			for (auto it1 = 0; it1 < 4; it1++)
 			{
 				auto neighbor = next + cell_direction_index_[it1];
-//				ROS_INFO("g_index[%d],next(%d,%d)", it1, neighbor.X,neighbor.Y);
-				if (map.getCell(COST_MAP, neighbor.X, neighbor.Y) != COST_1) {
-//					ROS_INFO("(%d,%d),", neighbor.X, neighbor.Y);
+//				ROS_INFO("g_index[%d],next(%d,%d)", it1, neighbor.x,neighbor.y);
+				if (map.getCell(COST_MAP, neighbor.x, neighbor.y) != COST_1) {
+//					ROS_INFO("(%d,%d),", neighbor.x, neighbor.y);
 
 					for (auto it2 = 0; it2 < 9; it2++) {
 						auto neighbor_ = neighbor + cell_direction_index_[it2];
-						if (map.getCell(CLEAN_MAP, neighbor_.X, neighbor_.Y) == CLEANED &&
-								map.getCell(COST_MAP, neighbor_.X, neighbor_.Y) == COST_NO)
+						if (map.getCell(CLEAN_MAP, neighbor_.x, neighbor_.y) == CLEANED &&
+								map.getCell(COST_MAP, neighbor_.x, neighbor_.y) == COST_NO)
 						{
 							cleaned_count++;
-							map.setCell(COST_MAP, neighbor_.X, neighbor_.Y, COST_2);
-//							ROS_INFO("(%d,%d, cleaned_count(%d)),", neighbor_.X, neighbor_.Y, cleaned_count);
+							map.setCell(COST_MAP, neighbor_.x, neighbor_.y, COST_2);
+//							ROS_INFO("(%d,%d, cleaned_count(%d)),", neighbor_.x, neighbor_.y, cleaned_count);
 						}
 					}
 
-					if (map.isBlockAccessible(neighbor.X, neighbor.Y)) {
-//						ROS_WARN("add to Queue:(%d,%d)", neighbor.X, neighbor.Y);
+					if (map.isBlockAccessible(neighbor.x, neighbor.y)) {
+//						ROS_WARN("add to Queue:(%d,%d)", neighbor.x, neighbor.y);
 						queue.insert(Entry(0, neighbor));
-						map.setCell(COST_MAP, neighbor.X, neighbor.Y, COST_1);
+						map.setCell(COST_MAP, neighbor.x, neighbor.y, COST_1);
 					}
 				}
 			}

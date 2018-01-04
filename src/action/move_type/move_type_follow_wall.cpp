@@ -10,16 +10,17 @@ MoveTypeFollowWall::MoveTypeFollowWall(bool is_left, bool is_trapped)
 {
 
 	auto p_clean_mode = (ACleanMode*)sp_mode_;
-	target_point_ = p_clean_mode->plan_path_.front();
+	if(! p_clean_mode->plan_path_.empty())
+		target_point_ = p_clean_mode->plan_path_.front();
 	is_left_ = is_left;
 	int16_t turn_angle;
 	PP_INFO();
 	if (!is_trapped)
-		turn_angle = get_turn_angle(true);
+		turn_angle = get_turn_angle(! p_clean_mode->plan_path_.empty());
 	else
 		turn_angle = 0;
 	PP_INFO();
-	turn_target_angle_ = ranged_angle(robot::instance()->getWorldPoseAngle() + turn_angle);
+	turn_target_angle_ = ranged_angle(getPosition().th + turn_angle);
 	movement_i_ = mm_turn;
 	PP_INFO();
 	sp_movement_.reset(new MovementTurn(turn_target_angle_, ROTATE_TOP_SPEED));
@@ -48,42 +49,52 @@ MoveTypeFollowWall::~MoveTypeFollowWall()
 
 bool MoveTypeFollowWall::isFinish()
 {
+	if (IMoveType::isFinish())
+	{
+		ROS_INFO("%s %d: Move type aborted.", __FUNCTION__, __LINE__);
+		return true;
+	}
+
 	auto p_clean_mode = (ACleanMode*)sp_mode_;
 
-	if(p_clean_mode->ActionFollowWallisFinish())
+	if(p_clean_mode->actionFollowWallIsFinish(this))
 		return true;
 
 	if (sp_movement_->isFinish()) {
 		PP_WARN();
 		if (movement_i_ == mm_turn) {
+			// todo: Add checking for bumper/cliff/etc.
 			resetTriggeredValue();
 			movement_i_ = mm_straight;
 			sp_movement_.reset(new MovementStraight());
 		}
 		else if (movement_i_ == mm_straight) {
+			// todo: Add checking for bumper/cliff/etc.
 			resetTriggeredValue();
 			movement_i_ = mm_forward;
 			sp_movement_.reset(new MovementFollowWallLidar(is_left_));
 		}
 		else if (movement_i_ == mm_forward) {
-			if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip) {
+			if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || ev.robot_slip) {
 				PP_INFO();
+				p_clean_mode->actionFollowWallSaveBlocks();
 //				resetTriggeredValue();
 				movement_i_ = mm_back;
 				sp_movement_.reset(new MovementBack(0.01, BACK_MAX_SPEED));
 			}
 			else if (ev.lidar_triggered || ev.obs_triggered) {
 				PP_INFO();
+				p_clean_mode->actionFollowWallSaveBlocks();
 				int16_t turn_angle =get_turn_angle(false);
 				turn_target_angle_ = ranged_angle(robot::instance()->getWorldPoseAngle() + turn_angle);
 				movement_i_ = mm_turn;
 				sp_movement_.reset(new MovementTurn(turn_target_angle_, ROTATE_TOP_SPEED));
 				resetTriggeredValue();
 			}
-			else if(tmp_plan_path_.empty())
-			{
-				sp_movement_.reset(new MovementForwardTurn(is_left_));
-			}
+//			else if(tmp_plan_path_.empty())
+//			{
+//				sp_movement_.reset(new MovementForwardTurn(is_left_));
+//			}
 		}
 		else if (movement_i_ == mm_back) {
 			movement_i_ = mm_turn;
@@ -218,7 +229,7 @@ int MoveTypeFollowWall::double_scale_10(double line_angle)
 
 bool MoveTypeFollowWall::_lidar_turn_angle(bool is_left, int16_t& turn_angle, int lidar_min, int lidar_max, int angle_min,int angle_max,double dis_limit)
 {
-//	ROS_INFO("%s,%d,bumper (\033[32m%d\033[0m)!",__FUNCTION__,__LINE__,bumper.get_status());
+//	ROS_INFO("%s,%d,bumper (\033[32m%d\033[0m)!",__FUNCTION__,__LINE__,bumper.getStatus());
 	double line_angle;
 	double distance;
 //	auto RESET_WALL_DIS = 100;
@@ -321,7 +332,7 @@ int16_t MoveTypeFollowWall::get_turn_angle_by_ev()
 		ROS_WARN("%s %d: Rcon triggered, turn_angle: %d.", __FUNCTION__, __LINE__, turn_angle);
 	}
 
-	if(g_robot_slip)
+	if(ev.robot_slip)
 	{
 		// Temporary use obs as lidar triggered.
 		ev.obs_triggered = BLOCK_FRONT;
@@ -341,8 +352,8 @@ int16_t MoveTypeFollowWall::get_turn_angle(bool use_target_angle)
 		auto ev_turn_angle = get_turn_angle_by_ev();
 		ROS_INFO("%s %d: event_turn_angle(%d)", __FUNCTION__, __LINE__, ev_turn_angle);
 		if(use_target_angle) {
-			auto cur = getPosition();
-			auto tg_turn_angle = ranged_angle(course_to_dest(cur, target_point_) - robot::instance()->getWorldPoseAngle());
+			auto curr = getPosition();
+			auto tg_turn_angle = ranged_angle(course_to_dest(curr, target_point_) - curr.th);
 			ROS_INFO("%s %d: target_turn_angle(%d)", __FUNCTION__, __LINE__, tg_turn_angle);
 			turn_angle = (std::abs(ev_turn_angle) > std::abs(tg_turn_angle)) ? ev_turn_angle : tg_turn_angle;
 			ROS_INFO("%s %d: choose the big one(%d)", __FUNCTION__, __LINE__, turn_angle);
@@ -353,5 +364,79 @@ int16_t MoveTypeFollowWall::get_turn_angle(bool use_target_angle)
 	ROS_INFO("turn_angle(%d)", turn_angle);
 	resetTriggeredValue();
 	return turn_angle;
+}
+
+bool MoveTypeFollowWall::isOverOriginLine(GridMap &map)
+{
+	auto curr = getPosition();
+	if ((target_point_.y > start_point_.y && (start_point_.y - curr.y) > 120)
+		|| (target_point_.y < start_point_.y && (curr.y - start_point_.y) > 120))
+	{
+		ROS_WARN("origin(%d,%d) curr_p(%d, %d), target_point__(%d, %d)",start_point_.x, start_point_.y,  curr.x, curr.y, target_point_.x, target_point_.y);
+		auto target_angle = (target_point_.y > start_point_.y) ? -900 : 900;
+		if (std::abs(ranged_angle(robot::instance()->getWorldPoseAngle() - target_angle)) < 50) // If robot is directly heading to the opposite side of target line, stop.
+		{
+			ROS_WARN("%s %d: Opposite to target angle. curr(%d, %d), target_point_(%d, %d), gyro(%d), target_angle(%d)", __FUNCTION__, __LINE__, curr.x, curr.y, target_point_.x, target_point_.y,
+					 robot::instance()->getWorldPoseAngle(), target_angle);
+			return true;
+		}
+		else if (map.isBlockCleaned(curr.toCell().x, curr.toCell().y)) // If robot covers a big block, stop.
+		{
+			ROS_WARN("%s %d: Back to cleaned place, current(%d, %d), curr(%d, %d), target_point_(%d, %d).",
+					 __FUNCTION__, __LINE__, curr.x, curr.y, curr.x, curr.y, target_point_.x, target_point_.y);
+			return true;
+		}
+		else{
+			ROS_WARN("%s %d: Dynamic adjust the origin line and target line, so it can smoothly follow the wall to clean..",__FUNCTION__,__LINE__);
+			target_point_.y += curr.y - start_point_.y;
+			start_point_.y = curr.y;
+		}
+	}
+
+	return false;
+}
+
+bool MoveTypeFollowWall::isNewLineReach(GridMap &map)
+{
+	auto s_curr_p = getPosition();
+	auto ret = false;
+	auto is_pos_dir = target_point_.y - start_point_.y > 0;
+	// The limit is CELL_COUNT_MUL / 8 * 3 further than target line center.
+	auto target_limit = target_point_.y + CELL_COUNT_MUL / 8 * 3 * is_pos_dir;
+//	ROS_WARN("~~~~~~~~~~~~~~~~~%s %d: start_p.y(%d), target.y(%d),curr_y(%d)",
+//					 __FUNCTION__, __LINE__, countToCell(s_curr_p.y), countToCell(target_point_.y),
+//					 countToCell(s_curr_p.y));
+	if (is_pos_dir ^ s_curr_p.y < target_limit) // Robot has reached the target line limit.
+	{
+		ROS_WARN("%s %d: Reach the target limit, start_p.y(%d), target.y(%d),curr_y(%d)",
+				 __FUNCTION__, __LINE__, start_point_.y, target_point_.y,
+				 s_curr_p.y);
+		ret = true;
+	}
+	else if (is_pos_dir ^ s_curr_p.y < target_point_.y)
+	{
+		// Robot has reached the target line center but still not reach target line limit.
+		// Check if the wall side has blocks on the costmap.
+		auto dx = (is_pos_dir ^ is_left_) ? +2 : -2;
+		if (map.isBlocksAtY(s_curr_p.toCell().x + dx, s_curr_p.toCell().y)) {
+			ROS_WARN("%s %d: Already has block at the wall side, start_p.y(%d), target.y(%d),curr_y(%d)",
+					 __FUNCTION__, __LINE__, start_point_.toCell().y, target_point_.toCell().y,
+					 s_curr_p.toCell().y);
+			ret = true;
+		}
+	}
+
+	return ret;
+}
+
+bool MoveTypeFollowWall::isBlockCleared(GridMap &map, Points &passed_path)
+{
+	if (!passed_path.empty())
+	{
+//		ROS_INFO("%s %d: passed_path.back(%d %d)", __FUNCTION__, __LINE__, passed_path.back().x, passed_path.back().y);
+		return !map.isBlockAccessible(passed_path.back().toCell().x, passed_path.back().toCell().y);
+	}
+
+	return false;
 }
 

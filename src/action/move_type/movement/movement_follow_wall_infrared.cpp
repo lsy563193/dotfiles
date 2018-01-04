@@ -21,8 +21,8 @@ IFollowWall::IFollowWall(bool is_left) : previous_(0), seen_charger_counter(0), 
 
 //bool IFollowWall::isClosure(uint8_t closure_cnt)
 //{
-//	if (g_wf_reach_count >= closure_cnt) {
-//		ROS_WARN("%s %d: Trapped wall follow is loop closed. reach_count(%d) ", __FUNCTION__, __LINE__, g_wf_reach_count);
+//	if (reach_cleaned_count_ >= closure_cnt) {
+//		ROS_WARN("%s %d: Trapped wall follow is loop closed. reach_count(%d) ", __FUNCTION__, __LINE__, reach_cleaned_count_);
 //		return true;
 //	}
 //	return false;
@@ -45,12 +45,6 @@ bool IFollowWall::isIsolate()
 
 //	return false;
 //}
-
-bool IFollowWall::isBlockCleared()
-{
-	return !nav_map.isBlockAccessible(getPosition().toCell().X, getPosition().toCell().Y);
-
-}
 
 void IFollowWall::setTarget()
 {
@@ -297,7 +291,7 @@ void IFollowWall::setTarget()
 //}
 
 bool IFollowWall::sp_turn_over(const Cell_t &curr) {
-		ROS_INFO("  %s %d:?? curr(%d,%d,%d)", __FUNCTION__, __LINE__, curr.X, curr.Y);
+		ROS_INFO("  %s %d:?? curr(%d,%d,%d)", __FUNCTION__, __LINE__, curr.x, curr.y);
 		/*check if spot turn*/
 		if (get_sp_turn_count() > 400) {
 			reset_sp_turn_count();
@@ -309,7 +303,7 @@ bool IFollowWall::sp_turn_over(const Cell_t &curr) {
 
 //bool IFollowWall::isFinish() {
 //	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mt_->sp_mode_);
-//	return p_clean_mode->ActionFollowWallisFinish() || shouldMoveBack() || shouldTurn();
+//	return p_clean_mode->actionFollowWallIsFinish() || shouldMoveBack() || shouldTurn();
 //	return isNewLineReach() || /*isClosure(1) ||*/ shouldMoveBack() || shouldTurn()
 //					|| isBlockCleared() || isOverOriginLine();
 //}

@@ -6,16 +6,21 @@
 #include <arch.hpp>
 #include <event_manager.h>
 
-StateGoHomePoint::StateGoHomePoint():gh_state_(gh_ing) {
+void StateGoHomePoint::update(){
 	vacuum.setMode(Vac_Normal, false);
-	brush.normalOperate();
+	wheel.stop();
+
 	wheel.setPidTargetSpeed(0, 0, REG_TYPE_LINEAR);
-	if (ev.remote_home )
+	if (ev.remote_home)
 		led.set_mode(LED_STEADY, LED_ORANGE);
+	else
+		led.set_mode(LED_STEADY, LED_GREEN);
+
 	// Play wavs.
 	if (ev.battery_home)
-		speaker.play(VOICE_BATTERY_LOW);
-	speaker.play(VOICE_BACK_TO_CHARGER);
+		speaker.play(VOICE_BATTERY_LOW, false);
+
+	speaker.play(VOICE_BACK_TO_CHARGER, true);
 
 	ev.remote_home = false;
 	ev.battery_home = false;

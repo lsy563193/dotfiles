@@ -16,12 +16,6 @@ uint8_t g_charge_detect_cnt = 0;
 bool g_plan_activated = false;
 
 
-/* robot slip & stuck */
-uint8_t g_slip_cnt = 0;
-bool g_robot_slip = false;
-bool g_robot_slip_enable = false;
-bool g_robot_stuck = false;
-
 Ev_t ev;
 /* lidar bumper */
 //bool g_lidar_bumper = false;
@@ -110,6 +104,7 @@ void event_manager_init()
 
 //	handler[EVT_LIDAR_BUMPER]=handler_lidar_stuck;
 	p_handler[EVT_LIDAR_STUCK] = &EventHandle::lidarStuck;
+	p_handler[EVT_ROBOT_TILT] = &EventHandle::tilt;
 	p_eh = &default_eh;
 }
 
@@ -160,13 +155,13 @@ void event_manager_thread_cb()
 
 
 		/* Bumper */
-		if (bumper.get_status() == BLOCK_ALL) {
+		if (bumper.getStatus() == BLOCK_ALL) {
 			ROS_DEBUG("%s %d: setting event:all bumper trig ", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_BUMPER_ALL);
-		} else if (bumper.get_status() & BLOCK_LEFT) {
+		} else if (bumper.getStatus() & BLOCK_LEFT) {
 			ROS_DEBUG("%s %d: setting event: left bumper trig", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_BUMPER_LEFT);
-		} else if (bumper.get_status() & BLOCK_RIGHT) {
+		} else if (bumper.getStatus() & BLOCK_RIGHT) {
 			ROS_DEBUG("%s %d: setting event: right bumper trig", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_BUMPER_RIGHT);
 		}
@@ -186,25 +181,25 @@ void event_manager_thread_cb()
 		}
 
 		/* Cliff */
-		if (cliff.get_status() == BLOCK_ALL) {
+		if (cliff.getStatus() == BLOCK_ALL) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_ALL);
-		} else if (cliff.get_status() == (BLOCK_FRONT | BLOCK_LEFT)) {
+		} else if (cliff.getStatus() == (BLOCK_FRONT | BLOCK_LEFT)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_FRONT_LEFT);
-		} else if (cliff.get_status() == (BLOCK_FRONT | BLOCK_RIGHT)) {
+		} else if (cliff.getStatus() == (BLOCK_FRONT | BLOCK_RIGHT)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_FRONT_RIGHT);
-		} else if (cliff.get_status() == (BLOCK_LEFT | BLOCK_RIGHT)) {
+		} else if (cliff.getStatus() == (BLOCK_LEFT | BLOCK_RIGHT)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_LEFT_RIGHT);
-		} else if (cliff.get_status() == (BLOCK_FRONT)) {
+		} else if (cliff.getStatus() == (BLOCK_FRONT)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_FRONT);
-		} else if (cliff.get_status() == (BLOCK_LEFT)) {
+		} else if (cliff.getStatus() == (BLOCK_LEFT)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_LEFT);
-		} else if (cliff.get_status() == (BLOCK_RIGHT)) {
+		} else if (cliff.getStatus() == (BLOCK_RIGHT)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_RIGHT);
 		}
@@ -341,6 +336,12 @@ void event_manager_thread_cb()
 			evt_set_status_x(EVT_LIDAR_STUCK);
 		}
 
+		/*---tilt---*/
+		if(true){
+			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
+			evt_set_status_x(EVT_ROBOT_TILT);
+		}
+
 		if (set) {
 			//ROS_INFO("%s %d: going to broadcase new event", __FUNCTION__, __LINE__);
 			pthread_mutex_lock(&new_event_mtx);
@@ -454,7 +455,7 @@ void event_handler_thread_cb()
 		evt_handle_check_event(EVT_OVER_CURRENT_WHEEL_LEFT);
 		evt_handle_check_event(EVT_OVER_CURRENT_WHEEL_RIGHT);
 		evt_handle_check_event(EVT_OVER_CURRENT_SUCTION);
-		
+
 		/* Key */
 		evt_handle_check_event(EVT_KEY_CLEAN);
 
@@ -484,6 +485,9 @@ void event_handler_thread_cb()
 
 		// Lidar stuck
 		evt_handle_check_event(EVT_LIDAR_STUCK);
+
+		/*---tilt---*/
+		evt_handle_check_event(EVT_ROBOT_TILT);
 
 		pthread_mutex_lock(&event_handler_mtx);
 		g_event_handler_status = false;
@@ -577,10 +581,11 @@ void event_manager_reset_status(void)
 	g_charge_detect_cnt = 0;
 	/* Slam Error */
 	ev.slam_error = false;
-	/* robot stuck */
-	//g_robot_stuck = false;
-	g_robot_slip = false;
-	g_slip_cnt = 0;
+	/* robot slip || stuck */
+	ev.robot_slip = false;
+	ev.slip_enable = true;
+	ev.robot_stuck = false;
+
 	/* tilt switch*/
 	gyro.TiltCheckingEnable(false);
 	ev.tilt_triggered = false;
@@ -610,7 +615,7 @@ void EventHandle::bumperAll(bool state_now, bool state_last)
 	move_back();
 	wheel_stop();
 
-	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, bumper.get_status());*/
+	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, bumper.getStatus());*/
 }
 
 void EventHandle::bumperLeft(bool state_now, bool state_last)
@@ -627,7 +632,7 @@ void EventHandle::bumperLeft(bool state_now, bool state_last)
 
 	move_back();
 	wheel_stop();
-	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, bumper.get_status());*/
+	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, bumper.getStatus());*/
 }
 
 void EventHandle::bumperRight(bool state_now, bool state_last)
@@ -645,7 +650,7 @@ void EventHandle::bumperRight(bool state_now, bool state_last)
 
 	move_back();
 	wheel_stop();
-	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, bumper.get_status());*/
+	ROS_DEBUG("%s %d: is called, bumper: %d", __FUNCTION__, __LINE__, bumper.getStatus());*/
 }
 
 /* OBS */
@@ -904,15 +909,23 @@ void df_charge_detect(bool state_now, bool state_last)
 	}
 }
 
-void EventHandle::robotSlip(bool state_new, bool state_last)
-{}
-void df_robot_slip(bool state_new,bool state_last)
+void df_robot_slip()
 {
+	static int slip_cnt = 0;
 	ROS_WARN("\033[32m%s,%d,set robot slip!! \033[0m",__FUNCTION__,__LINE__);
 	beeper.play_for_command(true);
-	g_robot_slip = true;
-	g_slip_cnt ++;
+	ev.robot_slip = true;
+	if(slip_cnt++ > 2){
+		slip_cnt = 0;
+		ev.robot_stuck = true;
+	}
 }
+
+void EventHandle::robotSlip(bool state_new, bool state_last)
+{
+	df_robot_slip();
+}
+
 /*
 void EventHandle::lidar_bumper(bool state_new,bool state_last)
 {
@@ -930,6 +943,11 @@ void df_lidar_stuck(bool state_new,bool state_last)
 	//ev.lidarStuck = true;
 }
 
+/*---robot tilt---*/
+void EventHandle::tilt(bool state_new, bool state_last)
+{
+	ROS_DEBUG("%s %d: default tilt handle is called", __FUNCTION__, __LINE__);
+}
 ///* Default: empty hanlder */
 //void EventHandle::empty(bool state_now, bool state_last)
 //{

@@ -3,8 +3,6 @@
 
 #define  _RATE 50
 
-#define POWER_ACTIVE 1
-#define POWER_DOWN 7
 bool is_robotbase_init = false;
 bool robotbase_thread_stop = false;
 bool send_stream_thread = false;
@@ -55,19 +53,12 @@ int robotbase_init(void)
 	robotbase_reset_send_stream();
 
 	ROS_INFO("waiting robotbase awake ");
-//	serr_ret = pthread_create(&receiPortThread_id, NULL, serial_receive_routine_cb, NULL);
 	auto serial_receive_routine = new boost::thread(serial_receive_routine_cb);
 	serial_receive_routine->detach();
-	// todo:If do not usleep for 20ms, it will process died, still don't know why. --by Austin Liu
-	// todo:Seems it works fine now, still don't know why. --by Austin Liu(171228)
-	//usleep(20000);
-//	base_ret = pthread_create(&robotbaseThread_id, NULL, robotbase_routine_cb, NULL);
 	auto robotbase_routine = new boost::thread(robotbase_routine_cb);
 	robotbase_routine->detach();
-//	sers_ret = pthread_create(&sendPortThread_id, NULL, serial_send_routine_cb, NULL);
 	auto serial_send_routine = new boost::thread(serial_send_routine_cb);
 	serial_send_routine->detach();
-//	speaker_ret = pthread_create(&sendPortThread_id, NULL, speaker_play_routine_cb, NULL);
 	auto speaker_play_routine = new boost::thread(speaker_play_routine_cb);
 	speaker_play_routine->detach();
 	if (base_ret < 0 || serr_ret < 0 || sers_ret < 0 || speaker_ret < 0) {
@@ -158,7 +149,7 @@ void robotbase_reset_send_stream(void)
 
 void serial_receive_routine_cb()
 {
-	ROS_INFO("robotbase,\033[32m%s\033[0m,%d thread is up",__FUNCTION__,__LINE__);
+	ROS_INFO("robotbase,\033[32m%s\033[0m,%d is up.",__FUNCTION__,__LINE__);
 	int i, j, ret, wh_len, wht_len, whtc_len;
 
 	uint8_t r_crc, c_crc;
@@ -226,7 +217,7 @@ void serial_receive_routine_cb()
 
 void robotbase_routine_cb()
 {
-	ROS_INFO("robotbase,\033[32m%s\033[0m,%d, is up!",__FUNCTION__,__LINE__);
+	ROS_INFO("robotbase,\033[32m%s\033[0m,%d is up.",__FUNCTION__,__LINE__);
 
 	ros::Rate	r(_RATE);
 	ros::Time	cur_time, last_time;
@@ -322,7 +313,7 @@ void robotbase_routine_cb()
 		sensor.ir_ctrl = serial.receive_stream[REC_REMOTE_IR];
 		if (sensor.ir_ctrl > 0)
 		{
-			ROS_DEBUG("%s %d: Remote received:%d", __FUNCTION__, __LINE__, sensor.ir_ctrl);
+			ROS_INFO("%s %d: Remote received:%d", __FUNCTION__, __LINE__, sensor.ir_ctrl);
 			remote.set(sensor.ir_ctrl);
 		}
 
@@ -488,7 +479,7 @@ void robotbase_routine_cb()
 
 void serial_send_routine_cb()
 {
-	ROS_INFO("robotbase,\033[32m%s\033[0m,%d is up",__FUNCTION__,__LINE__);
+	ROS_INFO("robotbase,\033[32m%s\033[0m,%d is up.",__FUNCTION__,__LINE__);
 	ros::Rate r(_RATE);
 	uint8_t buf[SEND_LEN];
 	int sl = SEND_LEN-3;
@@ -522,43 +513,11 @@ void serial_send_routine_cb()
 		memcpy(buf,serial.send_stream,sizeof(uint8_t)*SEND_LEN);
 		g_send_stream_mutex.unlock();
 		buf[CTL_CRC] = serial.calc_buf_crc8(buf, sl);
-		//debug_send_stream(&buf[0]);
+//		debug_send_stream(&buf[0]);
 		serial.write(SEND_LEN, buf);
 	}
 	ROS_INFO("\033[32m%s\033[0m,%d pthread exit",__FUNCTION__,__LINE__);
 	//pthread_exit(NULL);
-}
-
-void core_thread_cb()
-{
-	ROS_INFO("Waiting for robot sensor ready.");
-	while (robot::instance() == nullptr || !robot::instance()->isSensorReady()) {
-		usleep(1000);
-	}
-	ROS_INFO("Robot sensor ready.");
-//	speaker.play(VOICE_WELCOME_ILIFE);
-	usleep(200000);
-
-	boost::shared_ptr<Mode> p_mode = nullptr;
-	if (charger.isOnStub() || charger.isDirected())
-		p_mode.reset(new ModeCharge());
-	else
-	{
-		speaker.play(VOICE_PLEASE_START_CLEANING, false);
-		p_mode.reset(new ModeIdle());
-	}
-
-	while(ros::ok())
-	{
-		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
-		p_mode->run();
-		auto next_mode = p_mode->getNextMode();
-		p_mode.reset();
-		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
-		p_mode.reset(getNextMode(next_mode));
-		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
-	}
-
 }
 
 Mode *getNextMode(int next_mode_i_)
@@ -595,7 +554,6 @@ Mode *getNextMode(int next_mode_i_)
 		}
 	}
 }
-
 
 void process_beep()
 {
@@ -689,18 +647,10 @@ void robotbase_reset_odom_pose(void)
 	odom.setX(0);
 	odom.setY(0);
 }
-/*
-void robotbase_restore_slam_correction()
-{
-	// For restarting slam
-	boost::mutex::scoped_lock(odom_mutex);
-	pose_x += robot::instance()->getRobotCorrectionX();
-	pose_y += robot::instance()->getRobotCorrectionY();
-	robot::instance()->offsetAngle(robot::instance()->offsetAngle() + robot::instance()->getRobotCorrectionYaw());
-	ROS_INFO("%s %d: Restore slam correction as x: %f, y: %f, angle: %f.", __FUNCTION__, __LINE__, robot::instance()->getRobotCorrectionX(), robot::instance()->getRobotCorrectionY(), robot::instance()->getRobotCorrectionYaw());
-}*/
+
 void speaker_play_routine_cb()
 {
+	ROS_INFO("robotbase,\033[32m%s\033[0m,%d is up.",__FUNCTION__,__LINE__);
 	speaker.playRoutine();
 }
 

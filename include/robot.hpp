@@ -30,8 +30,6 @@ typedef enum {
 	SLAM_POSITION_ODOM_ANGLE,
 } Baselink_Frame_Type;
 
-extern bool	g_is_low_bat_pause;
-extern bool g_is_manual_pause;
 class robot
 {
 public:
@@ -47,10 +45,11 @@ public:
 	void pubLineMarker(const std::vector<LineABC> *lines);
 	void pubLineMarker(std::vector<std::vector<Vector2<double>> > *groups,std::string name);
 	void pubFitLineMarker(visualization_msgs::Marker fit_line_marker);
-	void pubPointMarkers(const std::vector<Vector2<double>> *point, std::string frame_id);
-	void setCleanMapMarkers(int8_t x, int8_t y, CellState type);
-	void pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path, Cell_t* cell_p = nullptr);
+	void pubPointMarkers(const std::deque<Vector2<double>> *point, std::string frame_id);
+	void setCleanMapMarkers(int16_t x, int16_t y, CellState type);
+	void pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path);
 
+	void core_thread_cb();
 	// Service caller functions.
 	bool lidarMotorCtrl(bool switch_);
 	bool slamStart(void);
@@ -78,32 +77,6 @@ public:
 	{
 		return is_tf_ready_;
 	}
-/*
-
-	void offsetAngle(float angle)
-	{
-		boost::mutex::scoped_lock(offset_angle_metux_);
-		offset_angle_ = angle;
-	};
-
-	float offsetAngle(void) const
-	{
-		boost::mutex::scoped_lock(offset_angle_metux_);
-		return offset_angle_;
-	};
-
-	void savedOffsetAngle(float angle)
-	{
-		if (angle > 180)
-			angle -= 360;
-		saved_offset_angle_ = -angle;
-	};
-
-	float savedOffsetAngle(void) const
-	{
-		return saved_offset_angle_;
-	};
-*/
 
 	int16_t getWorldPoseAngle()
 	{
@@ -167,18 +140,20 @@ public:
 
 	void setBaselinkFrameType(Baselink_Frame_Type frame)
 	{
-		baselink_frame_type_mutex_.lock();
+		boost::mutex::scoped_lock(baselink_frame_type_mutex_);
 		baselink_frame_type_ = frame;
-		baselink_frame_type_mutex_.unlock();
-		ROS_INFO("%s %d: Base link frame type has been reset to %d.", __FUNCTION__, __LINE__, getBaselinkFrameType());
+		ROS_DEBUG("%s %d: Base link frame type has been reset to %d.", __FUNCTION__, __LINE__, getBaselinkFrameType());
 	}
 
 	bool isScanAllow()
 	{
 		return scan_ctrl_.allow_publishing?true:false;
 	}
-private:
 
+	Points getTempTarget()const;
+	void setTempTarget(std::deque<Vector2<double>>& points);
+private:
+	Points tmp_plan_path_{};
 	Baselink_Frame_Type baselink_frame_type_;
 	boost::mutex baselink_frame_type_mutex_;
 
@@ -243,30 +218,129 @@ private:
 
 	pp::scan_ctrl scan_ctrl_;
 
+	boost::mutex temp_target_mutex_;
+	class Paras;
+	Vector2<double> get_middle_point(const Vector2<double>& p1,const Vector2<double>& p2,const Paras& para);
+	bool check_is_valid(const Vector2<double>& point, Paras& para, const sensor_msgs::LaserScan::ConstPtr & scan);
+	bool check_corner(const sensor_msgs::LaserScan::ConstPtr & scan, const Paras para);
+
+	Vector2<double> polar_to_cartesian(double polar,int i);
 	//callback function
 	void sensorCb(const pp::x900sensor::ConstPtr &msg);
 	void robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg);
 //	void robot_map_metadata_cb(const nav_msgs::MapMetaData::ConstPtr& msg);
 	void mapCb(const nav_msgs::OccupancyGrid::ConstPtr &msg);
 	void scanLinearCb(const sensor_msgs::LaserScan::ConstPtr &msg);
-	void scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr &scan);
+	class Paras{
+public:
+	explicit Paras(bool is_left):is_left_(is_left)
+	{
+		narrow = is_left ? 0.187 : 0.197;
+
+		y_min = 0.0;
+		y_max = is_left ? 0.3 : 0.25;
+
+		x_min_forward = LIDAR_OFFSET_X;
+		x_max_forward = is_left ? 0.3 : 0.25;
+		auto y_start_forward = is_left ? 0.06: -0.06;
+		auto y_end_forward = is_left ? -ROBOT_RADIUS: ROBOT_RADIUS;
+		y_min_forward = std::min(y_start_forward, y_end_forward);
+		y_max_forward = std::max(y_start_forward, y_end_forward);
+
+		auto x_side_start = 0.0;
+		auto x_side_end = ROBOT_RADIUS;
+		x_min_side = std::min(x_side_start, x_side_end);
+		x_max_side = std::max(x_side_start, x_side_end);
+
+		auto y_side_start = 0.0;
+		auto y_side_end = is_left ? narrow: -narrow;
+		y_min_side = std::min(y_side_start, y_side_end);
+		y_max_side = std::max(y_side_start, y_side_end);
+
+		auto y_point1_start_corner = is_left ? 0.3 : -0.3;
+		auto y_point1_end_corner = is_left ? -4.0 : 4.0;
+		y_min_point1_corner = std::min(y_point1_start_corner, y_point1_end_corner);
+		y_max_point1_corner = std::max(y_point1_start_corner, y_point1_end_corner);
+
+	 	auto y_point1_start = 0.0;
+		auto y_point1_end = is_left ? 4.0 : -4.0;
+		y_min_point1 = std::min(y_point1_start, y_point1_end);
+		y_max_point1 = std::max(y_point1_start, y_point1_end);
+
+		auto y_target_start = is_left ? ROBOT_RADIUS : -ROBOT_RADIUS;
+		auto y_target_end = is_left ? 0.4 : -0.4;
+		y_min_target = std::min(y_target_start, y_target_end);
+		y_max_target = std::max(y_target_start, y_target_end);
+	};
+
+	bool inPoint1Range(const Vector2<double> &point, bool is_corner) const {
+		if(is_corner)
+			return (point.x > 0 && point.x < 4 && point.y > y_min_point1_corner && point.y < y_max_point1_corner);
+		else
+			return (point.x > -4 && point.x < 0.3 && point.y > y_min_point1 && point.y < y_max_point1);
+	}
+
+	bool inTargetRange(const Vector2<double> &target) {
+		return target.x < 4
+					 && ((target.x > CHASE_X && fabs(target.y) < ROBOT_RADIUS)
+							 || (target.x > 0  && target.y >y_min_target && target.y < y_max_target ));
+	}
+
+	bool inForwardRange(const Vector2<double> &point) const {
+		return point.x > x_min_forward && point.x < x_max_forward && point.y > y_min_forward && point.y < y_max_forward;
+	}
+
+	bool inSidedRange(const Vector2<double> &point) const {
+		return point.x > x_min_side && point.x < x_max_side && point.y > y_min_side && point.y < y_max_side;
+	}
+
+	double narrow;
+	bool is_left_;
+	double x_min_forward;
+	double x_max_forward;
+	double x_min_side;
+	double x_max_side;
+
+	double y_min;
+	double y_max;
+
+	double y_min_forward;
+	double y_max_forward;
+
+	double y_min_side;
+	double y_max_side;
+
+	double y_min_point1_corner;
+	double y_max_point1_corner;
+	double y_min_point1;
+	double y_max_point1;
+
+	double y_min_target;
+	double y_max_target;
+
+	const double CHASE_X = 0.107;
+};
+	bool calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,bool is_left ,std::deque<Vector2<double>>& points);
+	void scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr& scan);
 	void scanCompensateCb(const sensor_msgs::LaserScan::ConstPtr &msg);
 	void lidarPointCb(const visualization_msgs::Marker &point_marker);
+
+	boost::shared_ptr<Mode> p_mode{};
 };
 
-	int32_t cellToCount(int16_t distance);
+int32_t cellToCount(int16_t distance);
 
-	int16_t countToCell(int32_t count);
+int16_t countToCell(int32_t count);
 
-	Point32_t getPosition(void);
+Point32_t getPosition(void);
 
-	bool isPos(MapDirection dir);
+bool isPos(MapDirection dir);
 
-	bool isXAxis(MapDirection dir);
+bool isXAxis(MapDirection dir);
 
-	Point32_t getRelative(Point32_t point, int16_t dy, int16_t dx, bool using_point_pos);
+bool isYAxis(MapDirection dir);
 
-	Point32_t updatePosition();
+Point32_t updatePosition();
 
-	void setPosition(int32_t x, int32_t y);
+void setPosition(int32_t x, int32_t y);
 #endif

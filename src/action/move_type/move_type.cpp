@@ -3,6 +3,7 @@
 //
 
 #include <mathematics.h>
+#include <event_manager.h>
 #include "pp.h"
 #include "arch.hpp"
 boost::shared_ptr<IMovement> IMoveType::sp_movement_ = nullptr;
@@ -12,14 +13,14 @@ int IMoveType::movement_i_ = mm_null;
 bool IMoveType::shouldMoveBack()
 {
 	// Robot should move back for these cases.
-	ev.bumper_triggered = bumper.get_status();
-	ev.cliff_triggered = cliff.get_status();
+	ev.bumper_triggered = bumper.getStatus();
+	ev.cliff_triggered = cliff.getStatus();
 	ev.tilt_triggered = gyro.getTiltCheckingStatus();
 
-	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || g_robot_slip)
+	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || ev.robot_slip)
 	{
-		ROS_WARN("%s, %d,ev.bumper_triggered(%d) ev.cliff_triggered(%d) ev.tilt_triggered(%d) g_robot_slip(%d)."
-				, __FUNCTION__, __LINE__,ev.bumper_triggered,ev.cliff_triggered,ev.tilt_triggered,g_robot_slip);
+		ROS_WARN("%s, %d,ev.bumper_triggered(%d) ev.cliff_triggered(%d) ev.tilt_triggered(%d) ev.robot_slip(%d)."
+				, __FUNCTION__, __LINE__,ev.bumper_triggered,ev.cliff_triggered,ev.tilt_triggered,ev.robot_slip);
 		return true;
 	}
 
@@ -32,7 +33,7 @@ bool IMoveType::isOBSStop()
 //	PP_INFO();
 	return false;
 /*
-	ev.obs_triggered = obs.get_status(200, 1700, 200);
+	ev.obs_triggered = obs.getStatus(200, 1700, 200);
 	if(ev.obs_triggered)
 	{
 		turn_angle = obs_turn_angle();
@@ -86,7 +87,6 @@ bool IMoveType::shouldTurn()
 
 IMoveType::IMoveType() {
 	start_point_ = getPosition();
-	g_slip_cnt = 0;
 	c_rcon.resetStatus();
 	robot::instance()->obsAdjustCount(20);
 }
@@ -99,6 +99,8 @@ void IMoveType::resetTriggeredValue() {
 	ev.obs_triggered = 0;
 	ev.cliff_triggered = 0;
 	ev.tilt_triggered = 0;
+	ev.robot_slip = false;
+	ev.robot_stuck = false;
 }
 }
 
@@ -110,3 +112,46 @@ void IMoveType::run() {
 //	PP_INFO();
 	sp_movement_->run();
 }
+
+int IMoveType::countRconTriggered(uint32_t rcon_value)
+{
+	if(rcon_value == 0)
+		return 0;
+
+	int MAX_CNT = 1;
+	if ( rcon_value& RconL_HomeT)
+		rcon_cnt[left]++;
+	if ( rcon_value& RconFL_HomeT)
+		rcon_cnt[fl1]++;
+	if ( rcon_value& RconFL2_HomeT)
+		rcon_cnt[fl2]++;
+	if ( rcon_value& RconFR2_HomeT)
+		rcon_cnt[fr2]++;
+	if ( rcon_value& RconFR_HomeT)
+		rcon_cnt[fr1]++;
+	if ( rcon_value& RconR_HomeT)
+		rcon_cnt[right]++;
+	auto ret = 0;
+	for (int i = 0; i < 6; i++)
+		if (rcon_cnt[i] > MAX_CNT) {
+			rcon_cnt[left] = rcon_cnt[fl1] = rcon_cnt[fl2] = rcon_cnt[fr2] = rcon_cnt[fr1] = rcon_cnt[right] = 0;
+			ret = i + 1;
+			break;
+		}
+	return ret;
+}
+
+bool IMoveType::isRconStop()
+{
+	ev.rcon_triggered = countRconTriggered(c_rcon.getForwardTop());
+
+	bool ret = false;
+	if(ev.rcon_triggered)
+	{
+		ROS_WARN("%s %d: Rcon triggered and stop.", __FUNCTION__, __LINE__);
+		ret = true;
+	}
+
+	return ret;
+}
+

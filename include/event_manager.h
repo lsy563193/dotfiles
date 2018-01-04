@@ -70,6 +70,9 @@ typedef struct {
 		bool slam_error;
 		bool tilt_triggered;
 		uint8_t charge_detect;
+		bool robot_stuck;
+		bool robot_slip;
+		bool slip_enable;
 		bool lidar_stuck = false;
 		uint8_t lidar_triggered;
 		bool cliff_all_triggered;
@@ -197,6 +200,9 @@ virtual void lidarStuck(bool state_new, bool state_last);
 /* Default: empty hanlder */
 //void empty(bool state_now, bool state_last);
 
+/*---robot tilt---*/
+virtual void tilt(bool state_new, bool state_last);
+
 };
 
 /* Bumper */
@@ -225,12 +231,8 @@ extern uint8_t g_charge_detect_cnt;
 extern bool g_plan_activated;
 /* tilt enable */
 extern bool g_tilt_triggered;
-/* robot stuck */
-extern bool g_robot_stuck;
-extern bool g_robot_slip;
+
 extern bool g_wf_is_reach;
-extern bool g_robot_slip_enable;
-extern uint8_t g_slip_cnt;
 
 typedef enum {
 	EVT_BUMPER_ALL = 0,
@@ -296,6 +298,8 @@ typedef enum {
 	EVT_LIDAR_BUMPER,
 
 	EVT_LIDAR_STUCK,
+
+	EVT_ROBOT_TILT,
 
 	EVT_MAX,
 } EventType;

@@ -18,25 +18,24 @@ public:
 
 	virtual bool isExit();
 
-	bool isTimeUp();
+	virtual bool isTimeUp();
 
 	virtual void run()=0;
 
 protected:
 	double start_timer_{};
-	double interval_{};
+	double timeout_interval_{};
 };
 
 class ActionOpenGyro :public IAction
 {
 public:
 	ActionOpenGyro();
-	bool isFinish();
+	bool isFinish() override;
 	void run();
-//	virtual void curr()=0;
-//friend Mode;
 
-
+private:
+	bool gyro_closed_{false};
 };
 
 class ActionBackFromCharger :public IAction
@@ -50,18 +49,19 @@ public:
 class ActionOpenLidar :public IAction
 {
 public:
-	//todo: timeout handling??
 	ActionOpenLidar();
-	bool isFinish();
-	void run();
+	bool isFinish() override;
+	bool isTimeUp() override;
+	void run() override;
 };
 
 class ActionAlign :public IAction
 {
 public:
 	ActionAlign();
-	bool isFinish();
-	void run();
+	bool isFinish() override;
+	bool isTimeUp() override;
+	void run() override;
 
 private:
 	double align_angle = 0.0;

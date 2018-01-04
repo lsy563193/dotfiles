@@ -37,7 +37,7 @@ void Wheel::resetStep(void)
 	left_wheel_step_ = 0;
 }
 
-void Wheel::setDirBackward(void)
+void Wheel::setDirectionBackward(void)
 {
 	left_direction_ = DIRECTION_BACKWARD;
 	right_direction_ = DIRECTION_BACKWARD;
@@ -250,7 +250,7 @@ void Wheel::pidAdjustSpeed(void)
 		if(right_pid.actual_speed > RUN_TOP_SPEED)right_pid.actual_speed = (int8_t)RUN_TOP_SPEED;
 		else if(right_pid.actual_speed < -RUN_TOP_SPEED)right_pid.actual_speed = -(int8_t)RUN_TOP_SPEED;
 	}
-	//ROS_INFO("%s %d: real speed: %f, %f, target speed: %f, %f, reg_type: %d.", __FUNCTION__, __LINE__, left_pid.actual_speed, right_pid.actual_speed, left_pid.target_speed, right_pid.target_speed, argu_for_pid.reg_type);
+//	ROS_INFO("%s %d: real speed: %f, %f, target speed: %f, %f, reg_type: %d.", __FUNCTION__, __LINE__, left_pid.actual_speed, right_pid.actual_speed, left_pid.target_speed, right_pid.target_speed, argu_for_pid.reg_type);
 
 	/*---update status---*/
 	left_pid.last_target_speed = left_pid.target_speed;

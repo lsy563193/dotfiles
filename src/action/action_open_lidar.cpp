@@ -4,13 +4,15 @@
 #include "pp.h"
 #include "arch.hpp"
 
-ActionOpenLidar::ActionOpenLidar() {
+ActionOpenLidar::ActionOpenLidar()
+{
 	ROS_INFO("%s %d: Enter action open lidar.", __FUNCTION__, __LINE__);
 	wheel.stop();
 
 	lidar.motorCtrl(ON);
 	lidar.setScanOriginalReady(0);
-//	ROS_INFO("%s,%d:add ActionOpenLidar,sp_action_(%d)",__FUNCTION__, __LINE__,sp_action_);
+
+	timeout_interval_ = 10;
 
 }
 
@@ -26,6 +28,17 @@ bool ActionOpenLidar::isFinish(){
 
 void ActionOpenLidar::run() {
 	wheel.setPidTargetSpeed(0, 0);
+}
+
+bool ActionOpenLidar::isTimeUp()
+{
+	if (IAction::isTimeUp())
+	{
+		ROS_ERROR("%s %d: Open lidar timeout", __FUNCTION__, __LINE__);
+		return true;
+	}
+
+	return false;
 }
 
 //IAction* ActionOpenLidar::setNextAction() {

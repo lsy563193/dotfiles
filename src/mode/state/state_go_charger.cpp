@@ -4,7 +4,7 @@
 #include "pp.h"
 #include "arch.hpp"
 
-StateGoCharger::StateGoCharger() {
+void StateGoCharger::update() {
 	gyro.TiltCheckingEnable(false); //disable tilt detect
 	led.set_mode(LED_STEADY, LED_ORANGE);
 }

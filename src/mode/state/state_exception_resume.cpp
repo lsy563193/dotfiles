@@ -4,8 +4,6 @@
 #include "pp.h"
 #include "arch.hpp"
 
-StateSelfCheck::StateSelfCheck() {
-
+void ExceptionResume::update() {
+	led.set_mode(LED_STEADY, LED_GREEN);
 }
-
-

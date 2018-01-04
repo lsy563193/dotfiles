@@ -44,7 +44,7 @@ bool MovementBack::isLidarStop()
 void MovementBack::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
 //	ROS_INFO("MovementBack::adjustSpeed");
-	wheel.setDirBackward();
+	wheel.setDirectionBackward();
 	speed_ = (speed_ > max_speed_) ? max_speed_ : speed_;
 	wheel.resetStep();
 	l_speed = r_speed = speed_;
@@ -58,12 +58,11 @@ bool MovementBack::isFinish()
 	if(fabsf(distance) >= back_distance_)
 	{
 
-		bumper_jam_cnt_ = bumper.get_status() == 0 ? 0 : bumper_jam_cnt_+1 ;
-		cliff_jam_cnt_ = cliff.get_status() == 0 ? 0 : cliff_jam_cnt_+1 ;
-		ev.tilt_triggered = gyro.getTiltCheckingStatus();
+		bumper_jam_cnt_ = bumper.getStatus() == 0 ? 0 : bumper_jam_cnt_+1 ;
+		cliff_jam_cnt_ = cliff.getStatus() == 0 ? 0 : cliff_jam_cnt_+1 ;
 		//g_lidar_bumper_cnt = robot::instance()->getLidarBumper() == 0? 0:g_lidar_bumper_cnt+1;
 
-		if (bumper_jam_cnt_ == 0 && cliff_jam_cnt_ == 0 && !ev.tilt_triggered)
+		if (bumper_jam_cnt_ == 0 && cliff_jam_cnt_ == 0 && !gyro.getTiltCheckingStatus())
 		{
 			ROS_INFO("%s, %d: MovementBack reach target.", __FUNCTION__, __LINE__);
 			return true;

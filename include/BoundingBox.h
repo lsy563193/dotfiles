@@ -25,16 +25,16 @@ class BoundingBox2 {
 
     bool operator!=(const iterator &other) const
     {
-//      ROS_INFO("this(%d,%d),other(%d,%d)", pos_->X,pos_->Y, other.pos_->X, other.pos_->Y);
+//      ROS_INFO("this(%d,%d),other(%d,%d)", pos_->x,pos_->y, other.pos_->x, other.pos_->y);
       return *pos_ != *other.pos_;
     }
 
     const iterator &operator++()
     {
-      pos_->X++;
-      if(pos_->X > max_){
-        pos_->X = min_;
-        pos_->Y++;
+      pos_->x++;
+      if(pos_->x > max_){
+        pos_->x = min_;
+        pos_->y++;
       }
       return *this;
     }
@@ -189,15 +189,15 @@ public:
 
   iterator begin()
   {
-    iterator sc(&pos_,min.X,max.X);
+    iterator sc(&pos_,min.x,max.x);
 //    ROS_INFO("min(%d)",sc);
     return sc;
   }
 
   iterator end()
   {
-		end_ = {min.X,int16_t(max.Y+1)};
-    iterator sc(&end_,min.X,max.X);
+		end_ = {min.x,int16_t(max.y+1)};
+    iterator sc(&end_,min.x,max.x);
 //    iterator sc(&max);
 //    ROS_INFO("max(%d)",sc);
     return sc;

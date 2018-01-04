@@ -16,7 +16,7 @@ public:
 		lidar_bumper_activated_ = false;
 	}
 
-	uint8_t get_status(void);
+	uint8_t getStatus(void);
 
 	bool getLeft() const
 	{

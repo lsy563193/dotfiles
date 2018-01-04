@@ -3,15 +3,40 @@
 //
 #include <arch.hpp>
 
-//extern MapDirection g_old_dir;
-//int State::action_i_= st_null;
+ACleanMode* State::sp_cm_{};
 
-//bool State::isFinish(ACleanMode* p_mode, IMoveType* p_move_type,IAction* p_action, int& action_i) {
-//	PP_INFO();
-//	if(p_move_type == nullptr)
-//		p_move_type = p_mode->setNextAction_(nav_map.getCurrCell(),old_dir_);
-//
-//	PP_INFO();
-//	return p_move_type->isFinish(p_mode, p_action, action_i);
+bool State::isFinish()
+{
+	if(sp_cm_->isStateInit())
+	{
+		return sp_cm_->isFinishInit();
+	}
 
-//}
+	else if(sp_cm_->isStateClean())
+		return sp_cm_->isFinishClean();
+
+	else if(sp_cm_->isStateGoHomePoint())
+		return sp_cm_->isFinishGoHomePoint();
+
+	else if(sp_cm_->isStateGoCharger())
+		return sp_cm_->isFinishGoCharger();
+
+	else if(sp_cm_->isStateTmpSpot())
+		return sp_cm_->isFinishTmpSpot();
+
+	else if(sp_cm_->isStateTrapped())
+		return sp_cm_->isFinishTrapped();
+
+	else if(sp_cm_->isStateExceptionResume())
+		return sp_cm_->isFinishExceptionResume();
+
+	else if(sp_cm_->isStateExploration())
+		return sp_cm_->isFinishExploration();
+
+	else if(sp_cm_->isStateResumeLowBatteryCharge())
+		return sp_cm_->isFinishResumeLowBatteryCharge();
+
+	else if(sp_cm_->isStatePause())
+		return sp_cm_->isFinishPause();
+	return false;
+}

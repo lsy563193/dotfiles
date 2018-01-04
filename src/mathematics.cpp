@@ -32,19 +32,19 @@ uint16_t course_to_dest(const Point32_t& start, const Point32_t& dest)
 {
 	int16_t alpha = 0;
 
-//	ROS_WARN("start.X(%d),start.Y(%d),dest.X(%d),dest.Y(%d)",start.X,start.Y,dest.X,dest.Y);
-	if (start.X == dest.X) {
-		if (dest.Y > start.Y) {
+//	ROS_WARN("start.x(%d),start.y(%d),dest.x(%d),dest.y(%d)",start.x,start.y,dest.x,dest.y);
+	if (start.x == dest.x) {
+		if (dest.y > start.y) {
 			alpha = 900;
-		} else if (dest.Y < start.Y) {
+		} else if (dest.y < start.y) {
 			alpha = 2700;
 		} else {
 			alpha = 0;
 		}
 	} else {
-		alpha = round(rad_2_deg(atan(((double) (dest.Y - start.Y) / (dest.X - start.X))), 10));
+		alpha = round(rad_2_deg(atan(((double) (dest.y - start.y) / (dest.x - start.x))), 10));
 
-		if (dest.X < start.X) {
+		if (dest.x < start.x) {
 			alpha += 1800;
 		}
 
@@ -158,11 +158,11 @@ Cell_t cal_inters_point(Cell_t l1StartPnt, Cell_t l1EndPnt,
 {
 	Cell_t retval;
 	double l1[4], l2[4], p[2] = { 32555, 32555 };
-	l1[0] = (double)(l1StartPnt.X); l1[1] = (double)(l1StartPnt.Y);
-	l1[2] = (double)(l1EndPnt.X);	 l1[3] = (double)(l1EndPnt.Y);
+	l1[0] = (double)(l1StartPnt.x); l1[1] = (double)(l1StartPnt.y);
+	l1[2] = (double)(l1EndPnt.x);	 l1[3] = (double)(l1EndPnt.y);
 
-	l2[0] = (double)(l2StartPnt.X); l2[1] = (double)(l2StartPnt.Y);
-	l2[2] = (double)(l2EndPnt.X);	 l2[3] = (double)(l2EndPnt.Y);
+	l2[0] = (double)(l2StartPnt.x); l2[1] = (double)(l2StartPnt.y);
+	l2[2] = (double)(l2EndPnt.x);	 l2[3] = (double)(l2EndPnt.y);
 	//Two line is vertical, return a special point 32766, 32766, means that no intersection point
 	if ( std::abs(l1[0] - l1[2]) < 0.1 && std::abs(l2[0] - l2[2]) < 0.1 ) {
 		p[0] = 32666;
@@ -200,8 +200,8 @@ Cell_t cal_inters_point(Cell_t l1StartPnt, Cell_t l1EndPnt,
 		p[1] = ( l1[1] - l1[3] ) * ( p[0] - l1[0] ) / ( l1[0] - l1[2] ) + l1[1];
 	}
 
-	retval.X = (int16_t)p[0];
-	retval.Y = (int16_t)p[1];
+	retval.x = (int16_t)p[0];
+	retval.y = (int16_t)p[1];
 	return retval;
 }
 
@@ -310,7 +310,7 @@ double line_angle(LineABC l, uint8_t mode) {
 
 uint8_t is_same_point_and_angle(Point32_t pnt1, uint16_t angle1, Point32_t pnt2, uint16_t angle2,
 																uint32_t pntThres, uint16_t angleThres) {
-	if (two_points_distance(pnt1.X, pnt1.Y, pnt2.X, pnt2.Y) < pntThres &&
+	if (two_points_distance(pnt1.x, pnt1.y, pnt2.x, pnt2.y) < pntThres &&
 	     abs(degree_delta_angle_vector(angle1, angle2) ) < angleThres )
 		return 1;
 	else return 0;

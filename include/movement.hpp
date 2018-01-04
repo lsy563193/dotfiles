@@ -19,10 +19,9 @@ class IMoveType;
 class IMovement: public IAction,public ISpeedGovernor
 {
 public:
-	virtual void adjustSpeed(int32_t&, int32_t&)=0;
+//	virtual void adjustSpeed(int32_t&, int32_t&)=0;
 	virtual void run();
 	virtual bool isFinish()=0;
-	bool is_near();
 //	static ACleanMode* sp_mode_;
 //	static boost::shared_ptr<IMoveType> sp_mt_;
 	static IMoveType* sp_mt_;
@@ -38,6 +37,7 @@ protected:
 
 class AMovementFollowPoint:public IMovement{
 public:
+	virtual bool is_near()=0;
 	virtual bool calcTmpTarget(Point32_t& )=0;
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed) override ;
 
@@ -97,31 +97,13 @@ public:
 //	~MovementFollowPointLinear(){ };
 	bool isFinish() override;
 
-	bool isRconStop();
-	bool isBoundaryStop();
-	bool isPassTargetStop();
-	bool isNearTarget();
+	bool is_near() override;
 //	void setTarget();
-	void setBaseSpeed();
-
-	bool isCellReach();
-	bool isPoseReach();
 
 	bool calcTmpTarget(Point32_t&) override ;
 
 private:
 
-	Point32_t _calcTmpTarget(const Point32_t& curr, const Point32_t& target,MapDirection new_dir);
-	bool _checkIsNear(const Point32_t& curr, const Point32_t& target,MapDirection new_dir);
-	uint8_t turn_speed_{};
-////	PPTargetType path_;
-	float odom_x_start{};
-	float odom_y_start{};
-	enum {
-		left, fl1, fl2, fr2, fr1, right
-	};
-	int8_t rcon_cnt[6]{};
-	int countRconTriggered(uint32_t rcon_value);
 };
 
 class IFollowWall{
@@ -144,8 +126,6 @@ public:
 	}
 
 	bool sp_turn_over(const Cell_t &curr);
-
-	bool isBlockCleared();
 
 //	bool isClosure(uint8_t closure_cnt);
 
@@ -181,73 +161,18 @@ public:
 	explicit MovementFollowWallLidar(bool is_left);
 
 	bool calcTmpTarget(Point32_t&) override ;
+	Points _calcTmpTarget();
 
 	bool isFinish() override ;
+	bool is_near() override ;
 private:
-	class Paras;
-	Vector2<double> get_middle_point(Vector2<double> p1, Vector2<double> p2,Paras para);
-	bool check_is_valid(Vector2<double> point, Paras para, sensor_msgs::LaserScan scan);
-	bool check_obstacle(sensor_msgs::LaserScan scan, const Paras para);
-	Vector2<double> polar_to_cartesian(double polar,int i);
-	bool calcLidarPath();
+	Points virtual_targets_{};
+	Points lidar_targets_{};
+	Points lidar_targets_old_{};
+	Points* p_tmp_targets_{};
+
 	bool is_sp_turn{};
 	uint32_t seq_{0};
-
-class Paras{
-public:
-	explicit Paras(bool is_left):is_left_(is_left)
-	{
-		narrow = is_left ? 0.187 : 0.197;
-		x_min = LIDAR_OFFSET_X;
-		x_max = is_left ? 0.3 : 0.25;
-
-		y_min = 0;
-		y_max = is_left ? 0.3 : 0.25;
-
-		auto y_start_forward = is_left ? 0.06: -0.06;
-		auto y_end_forward = is_left ? -ROBOT_RADIUS: ROBOT_RADIUS;
-		y_min_forward = std::min(y_start_forward, y_end_forward);
-		y_max_forward = std::max(y_start_forward, y_end_forward);
-
-		auto y_side_start = is_left ? 0.06: -0.06;
-		auto y_side_end = is_left ? -narrow: narrow;
-		y_min_forward = std::min(y_side_start, y_side_end);
-		y_max_forward = std::max(y_side_start, y_side_end);
-	};
-
-	bool inRange(const Vector2<double> &point) const {
-		return (point.X > x_min && (point.X < x_max && point.Y > y_min && point.X < y_max));
-	}
-	bool inTargetRange(const Vector2<double> &target) {
-		return is_left_ ? ((target.X < 0 && target.Y < 0.4 && target.Y > -ROBOT_RADIUS) ||
-											 (target.X < CHASE_X && fabs(target.Y) < ROBOT_RADIUS))
-										: ((target.X < 0 && target.Y > -0.4 && target.Y < ROBOT_RADIUS) ||
-											 (target.X < CHASE_X && fabs(target.Y) < ROBOT_RADIUS));
-	}
-	bool inForwardRange(const Vector2<double> &point) const {
-		return point.X > x_min && point.X < x_max && point.Y > y_min_forward && point.Y < y_max_forward;
-	}
-
-	bool inSidedRange(const Vector2<double> &point) const {
-		return point.X > x_min && point.X < x_max && point.Y > y_min_side && point.Y < y_max_side;
-	}
-
-	double narrow;
-	bool is_left_;
-	double x_min;
-	double x_max;
-
-	double y_min;
-	double y_max;
-
-	double y_min_forward;
-	double y_max_forward;
-
-	double y_min_side;
-	double y_max_side;
-	const double CHASE_X = 0.107;
-};
-
 };
 
 class MovementGoToCharger: public IMovement
@@ -286,7 +211,7 @@ private:
 	int16_t turn_angle_;
 	float back_distance_;
 	uint16_t no_signal_cnt;
-	uint8_t move_away_from_charger_cnt;
+	double move_away_from_charger_time_stamp_;
 	uint32_t receive_code;
 	// This variables is for robot turning.
 	float current_angle;
@@ -323,6 +248,7 @@ private:
 	uint8_t wheel_current_sum_cnt_;
 	uint8_t wheel_resume_cnt_;
 	uint8_t bumper_jam_state_;
+	uint8_t cliff_resume_cnt_;
 };
 
 class MovementCharge :public IMovement

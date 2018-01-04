@@ -9,25 +9,21 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <limits.h>
-
-#include "main.h"
-#include "robotbase.h"
-#include "dev.h"
-#include "robot.hpp"
-
-
-#include "mathematics.h"
-#include <wall_follow.h>
-
 #include <ros/ros.h>
 #include <vector>
 #include <chrono>
 #include <functional>
 #include <future>
-#include <charge.hpp>
-#include <slam.h>
-#include "mathematics.h"
-#include <event_manager.h>
-#include "global.h"
+
+#include "main.h"
+#include "robotbase.h"
+#include "dev.h"
+#include "robot.hpp"
 #include "error.h"
+#include "mathematics.h"
+#include "wall_follow.h"
+#include "charge.hpp"
+#include "slam.h"
+#include "event_manager.h"
+
 #endif //PP_PP_H
