@@ -58,14 +58,12 @@ public:
 		ac_follow_wall_right,
 		ac_turn,
 		//10
-		ac_forward,
 		ac_back,
 		ac_go_to_charger,
 		ac_idle,
 		ac_sleep,
 		//15
 		ac_charge,
-		ac_turn_for_charger,
 		ac_movement_stay,
 		ac_movement_direct_go,
 		ac_pause,
@@ -216,11 +214,13 @@ public:
 };
 
 class State;
+class MoveTypeFollowWall;
+class MoveTypeLinear;
 class ACleanMode:public Mode
 {
 public:
 	ACleanMode();
-	bool isFinish() override;
+	bool isFinish() override ;
 	bool isExit() override;
 	void setNextModeDefault();
 	bool setNextState();
@@ -240,8 +240,9 @@ public:
 
 	Cells pointsGenerateCells(Points &targets);
 
-	virtual bool actionFollowWallisFinish();
+	virtual bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt);
 	virtual void actionFollowWallSaveBlocks();
+	virtual bool actionLinearIsFinish(MoveTypeLinear *p_mt);
 	void setRconPos(Point32_t pos);
 	Point32_t updatePath(GridMap& map);
 	int reach_cleaned_count_{};
@@ -266,7 +267,6 @@ public:
 	virtual bool isFinishExploration(){ return false;};
 	virtual bool isFinishResumeLowBatteryCharge(){return false;};
 	virtual bool isFinishLowBatteryResume(){return false;};
-	virtual bool isFinishSavedBeforePause(){return false;};
 	virtual bool isFinishCharge(){return false;};
 	virtual bool isFinishPause(){return false;};
 
@@ -314,9 +314,9 @@ public:
 	{
 		return sp_state == state_resume_low_battery_charge;
 	}
-	bool isStateSavedBeforePause() const
+	bool isStatePause() const
 	{
-		return sp_state == state_saved_state_before_pause;
+		return sp_state == state_pause;
 	}
 protected:
 	static State *sp_state;
@@ -353,7 +353,6 @@ public:
 	~CleanModeNav();
 
 	bool mapMark() override ;
-	bool isFinish() override ;
 	bool isExit() override;
 
 	bool setNextAction() override;
@@ -383,16 +382,13 @@ public:
 	bool isFinishExploration() override;
 	bool isFinishResumeLowBatteryCharge() override;
 	bool isFinishLowBatteryResume() override;
-	bool isFinishSavedBeforePause() override;
 	bool isFinishCharge() override;
 	bool isFinishPause() override;
 
 private:
-	bool actionFollowWallisFinish() override ;
+	bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
+	bool actionLinearIsFinish(MoveTypeLinear *p_mt) override;
 	void actionFollowWallSaveBlocks() override ;
-	bool isNewLineReach();
-	bool isOverOriginLine();
-	bool isBlockCleared();
 	void enterPause();
 	void resumePause();
 	void resumeLowBatteryCharge();
@@ -418,7 +414,6 @@ public:
 	~CleanModeExploration();
 
 	bool mapMark() override;
-	bool isFinish() override;
 	bool isExit() override;
 	bool setNextAction() override;
 	void keyClean(bool state_now, bool state_last) override ;
@@ -446,19 +441,19 @@ public:
 
 	~CleanModeFollowWall() override;
 
-	bool actionFollowWallisFinish() override;
+	bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
 
 	bool setNextAction() override;
 
 	bool mapMark() override;
 
-	void keyClean(bool state_now, bool state_last);
+	void keyClean(bool state_now, bool state_last) override;
 
 //	void overCurrentWheelLeft(bool state_now, bool state_last);
 //
 //	void overCurrentWheelRight(bool state_now, bool state_last);
 //
-	void remoteClean(bool state_now, bool state_last);
+	void remoteClean(bool state_now, bool state_last) override;
 //
 //	void remoteHome(bool state_now, bool state_last);
 //
@@ -496,7 +491,6 @@ public:
 	CleanModeSpot();
 	~CleanModeSpot();
 
-	bool isFinish() override;
 	bool mapMark() override;
 	bool isExit() override;
 	bool setNextAction() override;

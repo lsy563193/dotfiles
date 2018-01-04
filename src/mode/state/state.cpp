@@ -3,53 +3,12 @@
 //
 #include <arch.hpp>
 
-/*bool State::setNextState() {
-	State::sp_cm_->setState(getNextState());
-	State::sp_cm_->getState()->update();
-	return false;
-}*/
-
-/*
-
-State *State::getNextState() {
-	if(sp_cm_->isStateInit())
-		return sp_cm_->getNextStateOfInit();
-
-	else if(sp_cm_->isStateClean())
-		return sp_cm_->getNextStateOfClean();
-
-	else if(sp_cm_->isStateGoHomePoint())
-		return sp_cm_->getNextStateOfGoHomePoint();
-
-	else if(sp_cm_->isStateGoCharger())
-		return sp_cm_->getNextStateOfGoCharger();
-
-	else if(sp_cm_->isStateTmpSpot())
-		return sp_cm_->getNextStateOfTmpSpot();
-
-	else if(sp_cm_->isStateTrapped())
-		return sp_cm_->getNextStateOfTrapped();
-
-	else if(sp_cm_->isStateExceptionResume())
-		return sp_cm_->getNextStateOfSelfCheck();
-
-	else if(sp_cm_->isStateExploration())
-		return sp_cm_->getNextStateOfExploration();
-
-	else if(sp_cm_->isStateResumeLowBatteryCharge())
-		return sp_cm_->getNextStateOfResumeLowBatteryCharge();
-
-	else if(sp_cm_->isStateSavedBeforePause())
-		return sp_cm_->getNextStateOfSavedBeforePause();
-}
-*/
-
 ACleanMode* State::sp_cm_{};
+
 bool State::isFinish()
 {
 	if(sp_cm_->isStateInit())
 	{
-		ROS_INFO("!!isStateInit");
 		return sp_cm_->isFinishInit();
 	}
 
@@ -77,7 +36,7 @@ bool State::isFinish()
 	else if(sp_cm_->isStateResumeLowBatteryCharge())
 		return sp_cm_->isFinishResumeLowBatteryCharge();
 
-	else if(sp_cm_->isStateSavedBeforePause())
-		return sp_cm_->isFinishLowBatteryResume();
+	else if(sp_cm_->isStatePause())
+		return sp_cm_->isFinishPause();
 	return false;
 }

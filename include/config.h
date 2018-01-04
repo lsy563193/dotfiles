@@ -165,6 +165,7 @@
 #define ROTATE_LOW_SPEED				((uint8_t) 5)
 #define RUN_TOP_SPEED					((int32_t) 40) // 45)
 
+#define LINEAR_NEAR_DISTANCE			CELL_COUNT_MUL*0.75
 
 /* ------------------------------------- Slam config ------------------------------------- */
 #define USE_ROBOT_TF						(1)

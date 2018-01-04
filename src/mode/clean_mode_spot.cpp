@@ -36,11 +36,6 @@ CleanModeSpot::~CleanModeSpot()
 	speaker.play(VOICE_CLEANING_STOP,false);
 }
 
-bool CleanModeSpot::isFinish()
-{
-	return ACleanMode::isFinish();
-}
-
 bool CleanModeSpot::mapMark()
 {
 	ROS_INFO("%s,%d,passed_path",__FUNCTION__,__LINE__);

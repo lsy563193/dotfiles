@@ -15,8 +15,6 @@ class IMoveType:public IAction
 public:
 	IMoveType();
 
-	bool isOBSStop();
-	bool isLidarStop();
 	bool shouldMoveBack();
 	bool shouldTurn();
 //	~IMoveType() = default;
@@ -27,13 +25,16 @@ public:
 	{return sp_mode_;}
 
 	virtual bool isFinish();
-	void run();
-//	bool isFinish(int& action_i);
-//	virtual IAction* setNextAction()=0;
-//	void registerMode(ACleanMode* sp_mode)
-//	{
-//		sp_mode_ = sp_mode;
-//	}
+	void run() override;
+
+	enum {
+		left, fl1, fl2, fr2, fr1, right
+	};
+	int8_t rcon_cnt[6]{};
+	int countRconTriggered(uint32_t rcon_value);
+	bool isRconStop();
+	bool isOBSStop();
+	bool isLidarStop();
 
 	static boost::shared_ptr<IMovement> sp_movement_;
 	static Mode *sp_mode_;
@@ -41,6 +42,7 @@ public:
 	void resetTriggeredValue();
 	Point32_t start_point_;
 	Point32_t target_point_;
+	MapDirection dir_;
 protected:
 //	Cells passed_path_;
 //	Cells tmp_plan_path_;
@@ -62,18 +64,29 @@ public:
 	~MoveTypeLinear();
 	bool isFinish() override;
 //	IAction* setNextAction();
+
+	bool isPassTargetStop(MapDirection &dir);
+	bool isCellReach();
+	bool isPoseReach();
+
+	bool isLinearForward();
 protected:
+	void switchLinearTarget(ACleanMode * p_clean_mode);
 };
 
 class MoveTypeFollowWall:public IMoveType
 {
 public:
 	MoveTypeFollowWall() = delete;
-	~MoveTypeFollowWall();
+	~MoveTypeFollowWall() override;
 
 	explicit MoveTypeFollowWall(bool is_left, bool is_trapped);
 
 	bool isFinish() override;
+
+	bool isNewLineReach(GridMap &map);
+	bool isOverOriginLine(GridMap &map);
+	bool isBlockCleared(GridMap &map, Points &passed_path);
 
 //	IAction* setNextAction();
 //	Points tmp_plan_path_{};
