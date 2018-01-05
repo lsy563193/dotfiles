@@ -50,7 +50,7 @@ bool MovementFollowWallLidar::calcTmpTarget(Point32_t& tmp_target) {
 			return l == r;
 		}) {
 			p_tmp_targets_ = &lidar_targets_;
-//			ROS_WARN("lidar_targets update ");
+//			ROS_WARN("lidar_targets init ");
 			lidar_targets_ = lidar_targets;
 			lidar_targets_old_ = lidar_targets;
 		}

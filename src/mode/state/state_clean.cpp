@@ -5,7 +5,7 @@
 #include "pp.h"
 #include "arch.hpp"
 
-void StateClean::update() {
+void StateClean::init() {
 	led.set_mode(LED_STEADY, LED_GREEN);
 }
 

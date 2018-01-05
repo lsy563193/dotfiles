@@ -37,7 +37,7 @@ ACleanMode::ACleanMode()
 	ev.key_clean_pressed = false;
 	sp_state = state_init;
 	ROS_ERROR("%d",sp_state);
-	sp_state->update();
+	sp_state->init();
 	setNextAction();
 	robot_timer.initWorkTimer();
 	key.resetPressStatus();
@@ -109,9 +109,30 @@ bool ACleanMode::isExit()
 
 	return false;
 }
+
+bool ACleanMode::isUpdateFinish() {
+	if (sp_state->isSwitchByEvent())
+		return false;
+
+	if (sp_action_ == nullptr) {
+		sp_state->updateAction();
+		return true;
+	}
+	if (!sp_action_->isFinish())
+		return true;
+
+//	sp_action_.reset();//for call ~constitution;
+
+	if (!sp_state->updateAction()) {
+		sp_state->switchState();
+		return sp_state == nullptr;
+	}
+	return true;
+}
+
 State* ACleanMode::updateState()
 {
-	while (!sp_state->isUpdateFinish() && ros::ok());
+	while (!isUpdateFinish() && ros::ok());
 }
 
 bool ACleanMode::isFinish()
@@ -127,43 +148,12 @@ bool ACleanMode::isFinish()
 	return false;
 }
 
-Point32_t ACleanMode::updatePath(GridMap& map)
-{
-	auto curr = updatePosition();
-//	auto point = getPosition();
-//	robot::instance()->pubCleanMapMarkers(nav_map, tmp_plan_path_);
-//	PP_INFO();
-//	ROS_INFO("point(%d,%d,%d)",point.x, point.y,point.th);
-//	ROS_INFO("last(%d,%d,%d)",last_.x, last_.y, last_.th);
-	if (passed_path_.empty())
-	{
-		passed_path_.push_back(curr);
-		last_ = curr;
-	}
-	else if (!curr.isCellAndAngleEqual(last_))
-	{
-		last_ = curr;
-		auto loc = std::find_if(passed_path_.begin(), passed_path_.end(), [&](Point32_t it) {
-				return curr.isCellAndAngleEqual(it);
-		});
-		auto distance = std::distance(loc, passed_path_.end());
-		if (distance == 0) {
-			ROS_INFO("curr(%d,%d,%d)",curr.toCell().x, curr.toCell().y, curr.th);
-			passed_path_.push_back(curr);
-		}
-		if (distance > 5) {
-		ROS_INFO("reach_cleaned_count_(%d)",reach_cleaned_count_);
-			reach_cleaned_count_++;
-		}
-		map.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
-//		displayPath(passed_path_);
-	}
-	return curr;
-}
 
 void ACleanMode::genNextAction()
 {
 	PP_INFO();
+	if(action_i_ == ac_null)
+		sp_action_.reset();
 	if(action_i_ == ac_open_gyro)
 		sp_action_.reset(new ActionOpenGyro);
 	else if(action_i_ == ac_back_form_charger)
@@ -194,8 +184,7 @@ void ACleanMode::genNextAction()
 		sp_action_.reset(new ActionCheckVacuum);
 	else if (action_i_ == ac_movement_direct_go)
 		sp_action_.reset(new MovementDirectGo);
-	else if(action_i_ == ac_null)
-		sp_action_.reset();
+
 	PP_INFO();
 }
 
@@ -233,7 +222,6 @@ void ACleanMode::actionFollowWallSaveBlocks()
 
 void ACleanMode::goHomePointUpdateAction()
 {
-	updatePath(clean_map_);
 	if(sp_action_ != nullptr && !sp_action_->isFinish())
 		return;
 	sp_action_.reset();//for call ~constitution;
@@ -269,7 +257,6 @@ void ACleanMode::goHomePointUpdateAction()
 	}
 }
 
-
 bool ACleanMode::isStateGoHomePointUpdateFinish()
 {
 	goHomePointUpdateAction();
@@ -278,7 +265,7 @@ bool ACleanMode::isStateGoHomePointUpdateFinish()
 		if (reach_home_point_ && go_home_path_algorithm_->getCurrentHomePoint().have_seen_charger) {
 			reach_home_point_ = false;
 			sp_state = state_go_to_charger;
-			sp_state->update();
+			sp_state->init();
 			return false;
 		}
 		else {

@@ -120,7 +120,7 @@ void Wheel::pidAdjustSpeed(void)
 	right_pid.variation = argu_for_pid.Kp*right_pid.delta + argu_for_pid.Ki*right_pid.delta_sum + argu_for_pid.Kd*(right_pid.delta - right_pid.delta_last);
 	right_pid.actual_speed += right_pid.variation;
 
-	/*---update status---*/
+	/*---init status---*/
 	right_pid.last_target_speed = right_pid.target_speed;
 	right_pid.delta_last = right_pid.delta;
 #else
@@ -252,7 +252,7 @@ void Wheel::pidAdjustSpeed(void)
 	}
 //	ROS_INFO("%s %d: real speed: %f, %f, target speed: %f, %f, reg_type: %d.", __FUNCTION__, __LINE__, left_pid.actual_speed, right_pid.actual_speed, left_pid.target_speed, right_pid.target_speed, argu_for_pid.reg_type);
 
-	/*---update status---*/
+	/*---init status---*/
 	left_pid.last_target_speed = left_pid.target_speed;
 	right_pid.last_target_speed = right_pid.target_speed;
 	pidSetLeftSpeed(left_pid.actual_speed);

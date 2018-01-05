@@ -16,7 +16,7 @@ void Beep::play(uint8_t Sound_Code, int Sound_Time_Ms, int Silence_Time_Ms, int 
 	robotbase_speaker_sound_time_count = Sound_Time_Ms / 20;
 	// Silence_Time_Count means how many loops of g_send_stream loop will it be silence in one speaker sound loop, -1 means consistently beeper.play.
 	robotbase_speaker_silence_time_count = Silence_Time_Ms / 20;
-	// Trigger the update flag to start the new beeper.play action
+	// Trigger the init flag to start the new beeper.play action
 	robotbase_beep_update_flag = true;
 }
 

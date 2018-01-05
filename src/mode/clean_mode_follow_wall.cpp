@@ -397,7 +397,7 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(GridMap& map, int
 	/*
 	 * Find the path to target from the current robot position. Set the cell values
 	 * in shorest path costmap either 1, 2, 3, 4 or 5. This is a method like A-Star, starting
-	 * from a start point, update the cells one level away, until we reach the target.
+	 * from a start point, init the cells one level away, until we reach the target.
 	 */
 	offset = 0;
 	passSet = 1;

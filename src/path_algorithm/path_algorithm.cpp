@@ -217,7 +217,7 @@ Cells APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const 
 	/*
 	 * Find the path to target from the start cell. Set the cell values
 	 * in COST_MAP to 1, 2, 3, 4 or 5. This is a method like A-Star, starting
-	 * from a start point, update the cells one level away, until we reach the target.
+	 * from a start point, init the cells one level away, until we reach the target.
 	 */
 	int16_t offset = 0;
 	bool cost_updated = true;

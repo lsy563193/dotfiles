@@ -223,6 +223,8 @@ public:
 	State* updateState();
 	bool isFinish() override ;
 	bool isExit() override;
+	bool isUpdateFinish();
+
 	void setNextModeDefault();
 	bool setNextState();
 	virtual bool setNextAction();
@@ -243,9 +245,9 @@ public:
 	virtual bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt);
 	virtual void actionFollowWallSaveBlocks();
 	void goHomePointUpdateAction();
+
 	virtual bool actionLinearIsFinish(MoveTypeLinear *p_mt);
 	void setRconPos(Point32_t pos);
-	Point32_t updatePath(GridMap& map);
 	int reach_cleaned_count_{};
 	static Points passed_path_;
 	static Points plan_path_;
@@ -258,18 +260,47 @@ public:
 	static GridMap clean_map_;
 	Point32_t charger_pos_{};//charger postion
 
-	virtual bool isStateInitUpdateFinish(){return false;};
-	virtual bool isStateCleanUpdateFinish(){return false;};
+	virtual bool isStateInitUpdateFinish(){};
+	virtual bool isStateCleanUpdateFinish(){};
 	virtual bool isStateGoHomePointUpdateFinish();
-	virtual bool isStateGoToChargerUpdateFinish(){return false;};
-	virtual bool isStateTmpSpotUpdateFinish(){return false;};
-	virtual bool isStateTrappedUpdateFinish(){ return false;};
-	virtual bool isStateExceptionResumeUpdateFinish(){return false;};
-	virtual bool isStateExplorationUpdateFinish(){ return false;};
-	virtual bool isStateResumeLowBatteryChargeUpdateFinish(){return false;};
-	virtual bool isStateLowBatteryResumeConfirmed(){return false;};
-	virtual bool isStateChargeConfirmed(){return false;};
-	virtual bool isStatePauseUpdateFinish(){return false;};
+	virtual bool isStateGoToChargerUpdateFinish(){};
+
+	virtual bool isSwitchByEventInStateInit(){return false;};
+	virtual bool isSwitchByEventInStateClean(){return false;};
+	virtual bool isSwitchByEventInStateGoHomePoint(){return false;};
+	virtual bool isSwitchByEventInStateGoToCharger(){return false;};
+	virtual bool isSwitchByEventInStateTmpSpot(){return false;};
+	virtual bool isSwitchByEventInStateTrapped(){ return false;};
+	virtual bool isSwitchByEventInStateExceptionResume(){return false;};
+	virtual bool isSwitchByEventInStateExploration(){ return false;};
+	virtual bool isSwitchByEventInStateResumeLowBatteryCharge(){return false;};
+	virtual bool isSwitchByEventInStateLowBatteryResume(){return false;};
+	virtual bool isSwitchByEventInStateCharge(){return false;};
+	virtual bool isSwitchByEventInStatePause(){return false;};
+
+	virtual bool updateActionInStateInit(){};
+	virtual bool updateActionInStateClean(){};
+	virtual bool updateActionInStateGoHomePoint(){};
+	virtual bool updateActionInStateGoToCharger(){};
+	virtual bool updateActionInStateTmpSpot(){};
+	virtual bool updateActionInStateTrapped(){};
+	virtual bool updateActionInStateExceptionResume(){};
+	virtual bool updateActionInStateExploration(){};
+	virtual bool updateActionInStateResumeLowBatteryCharge(){};
+	virtual bool updateActionInkStateLowBatteryResume(){};
+	virtual bool updateActionStateCharge(){};
+	virtual bool updateActionInStatePause(){};
+
+	virtual void switchInStateInit(){};
+	virtual void switchInStateClean(){};
+	virtual void switchInStateGoHomePoint(){};
+	virtual void switchInStateGoToCharger(){};
+	virtual void switchInStateTmpSpot(){};
+	virtual void switchInStateTrapped(){ };
+	virtual void switchInStateExceptionResume(){};
+	virtual void switchInStateExploration(){ };
+	virtual void switchInStateResumeLowBatteryCharge(){};
+	virtual void switchInStatePause(){};
 
 public:
 	State* getState() const {
@@ -319,11 +350,11 @@ public:
 	{
 		return sp_state == state_pause;
 	}
-protected:
 	static State *sp_state;
+	static State *state_clean;
+protected:
 	static State *state_saved_state_before_pause;
 	static State *state_init;
-	static State *state_clean;
 	static State *state_go_home_point;
 	static State *state_go_to_charger;
 	static State *state_charge;
@@ -372,21 +403,15 @@ public:
 	void remoteSpot(bool state_now, bool state_last) override;
 //	void overCurrentSuction(bool state_now, bool state_last);
 
+	bool updateActionInStateInit();
+	bool updateActionInStateClean();
 
-	bool isStateInitUpdateFinish() override;
-	bool isStateCleanUpdateFinish() override;
-	bool isStateGoHomePointUpdateFinish() override;
-	bool isStateGoToChargerUpdateFinish() override;
-	bool isStateTmpSpotUpdateFinish() override;
-	bool isStateTrappedUpdateFinish() override;
-	bool isStateExceptionResumeUpdateFinish() override;
-	bool isStateExplorationUpdateFinish() override;
-	bool isStateResumeLowBatteryChargeUpdateFinish() override;
-	bool isStateLowBatteryResumeConfirmed() override;
-	bool isStateChargeConfirmed() override;
-	bool isStatePauseUpdateFinish() override;
-	bool cleanUpdateAction();
-	bool goToChargerUpdateAction();
+	void goToChargerUpdateAction();
+
+	bool isSwitchByEventInStateInit() override;
+	bool isSwitchByEventInStateClean() override;
+	void switchInStateInit() override ;
+	void switchInStateClean() override ;
 private:
 	bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
 	bool actionLinearIsFinish(MoveTypeLinear *p_mt) override;
@@ -433,10 +458,10 @@ public:
 //	void overCurrentSuction(bool state_now, bool state_last);
 	void printMapAndPath();
 
-	bool isStateInitUpdateFinish() override;
-	bool isStateCleanUpdateFinish() override;
-	bool isStateGoHomePointUpdateFinish() override;
-	bool isStateGoToChargerUpdateFinish() override;
+	bool isStateInitUpdateFinish();
+	bool isStateCleanUpdateFinish();
+	bool isStateGoHomePointUpdateFinish();
+	bool isStateGoToChargerUpdateFinish();
 
 };
 
@@ -478,10 +503,10 @@ public:
 	bool wf_is_isolate(GridMap& map);
 
 
-	bool isStateInitUpdateFinish() override;
-	bool isStateCleanUpdateFinish() override;
-	bool isStateGoHomePointUpdateFinish() override;
-	bool isStateGoToChargerUpdateFinish() override;
+	bool isStateInitUpdateFinish() ;
+	bool isStateCleanUpdateFinish() ;
+	bool isStateGoHomePointUpdateFinish() ;
+	bool isStateGoToChargerUpdateFinish() ;
 private:
 	uint32_t diff_timer_;
 protected:
@@ -503,8 +528,8 @@ public:
 	void remoteClean(bool state_now, bool state_last) override;
 	void keyClean(bool state_now, bool state_last) override;
 
-	bool isStateInitUpdateFinish() override;
-	bool isStateCleanUpdateFinish() override;
+	bool isStateInitUpdateFinish();
+	bool isStateCleanUpdateFinish();
 private:
 
 };

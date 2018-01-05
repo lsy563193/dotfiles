@@ -4,7 +4,7 @@
 #include "pp.h"
 #include "arch.hpp"
 
-void StatePause::update() {
+void StatePause::init() {
 
 }
 

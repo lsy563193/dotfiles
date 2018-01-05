@@ -127,7 +127,7 @@ bool CleanModeSpot::isStateInitUpdateFinish() {
 		brush.fullOperate();
 
 		sp_state = state_clean;
-		sp_state->update();
+		sp_state->init();
 	}
 	else
 		return true;

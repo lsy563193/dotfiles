@@ -4,7 +4,7 @@
 #include "pp.h"
 #include "arch.hpp"
 
-void StateCharge::update() {
+void StateCharge::init() {
 }
 
 //bool StateTrapped::isFinish() {

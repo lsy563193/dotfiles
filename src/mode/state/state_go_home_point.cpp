@@ -6,7 +6,7 @@
 #include <arch.hpp>
 #include <event_manager.h>
 
-void StateGoHomePoint::update(){
+void StateGoHomePoint::init(){
 	vacuum.setMode(Vac_Normal, false);
 	wheel.stop();
 
