@@ -18,36 +18,36 @@ GoHomePathAlgorithm::GoHomePathAlgorithm(GridMap &map, HomePoints home_points)
 			ROS_ERROR("%s,%d: input home_points are empty,at least it should has a home cell(0, 0)!! "
 							  "Now set go_home_way_list_ as one home cell (0, 0).", __FUNCTION__, __LINE__);
 			home_points_ = {{{0, 0, 0}, false}};
-			go_home_way_list_ = {                                      9,10,11};
-			ROS_INFO("%s,%d: go_home_way_list_ 1:                      9,10,11", __FUNCTION__, __LINE__);
+			go_home_way_list_ = {0,1,2};
+			ROS_INFO("%s,%d: go_home_way_list_ 1:0,1,2", __FUNCTION__, __LINE__);
 			break;
 		}
 		case 1:
 		{
 			home_points_ = home_points;
-			go_home_way_list_ = {                                      9,10,11};
-			ROS_INFO("%s,%d: go_home_way_list_ 1:                      9,10,11", __FUNCTION__, __LINE__);
+			go_home_way_list_ = {0,1,2};
+			ROS_INFO("%s,%d: go_home_way_list_ 1:0,1,2", __FUNCTION__, __LINE__);
 			break;
 		}
 		case 2:
 		{
 			home_points_ = home_points;
-			go_home_way_list_ = {                 0,     1,     2,     9,10,11};
-			ROS_INFO("%s,%d: go_home_way_list_ 2: 0,     1,     2,     9,10,11", __FUNCTION__, __LINE__);
+			go_home_way_list_ = {0,1,2,3,4,5};
+			ROS_INFO("%s,%d: go_home_way_list_ 2:0,1,2,3,4,5", __FUNCTION__, __LINE__);
 			break;
 		}
 		case 3:
 		{
 			home_points_ = home_points;
-			go_home_way_list_ = {                 0,3,   1,4,   2,5,   9,10,11};
-			ROS_INFO("%s,%d: go_home_way_list_ 3: 0,3,   1,4,   2,5,   9,10,11", __FUNCTION__, __LINE__);
+			go_home_way_list_ = {0,3,1,4,2,5,6,7,8};
+			ROS_INFO("%s,%d: go_home_way_list_ 3:0,3,1,4,2,5,6,7,8", __FUNCTION__, __LINE__);
 			break;
 		}
 		case 4:
 		{
 			home_points_ = home_points;
-			go_home_way_list_ = {                 0,3,6, 1,4,7, 2,5,8, 9,10,11};
-			ROS_INFO("%s,%d: go_home_way_list_ 4: 0,3,6, 1,4,7, 2,5,8, 9,10,11", __FUNCTION__, __LINE__);
+			go_home_way_list_ = {0,3,6,1,4,7,2,5,8,9,10,11};
+			ROS_INFO("%s,%d: go_home_way_list_ 4:0,3,6,1,4,7,2,5,8,9,10,11", __FUNCTION__, __LINE__);
 			break;
 		}
 		default:
@@ -61,8 +61,8 @@ GoHomePathAlgorithm::GoHomePathAlgorithm(GridMap &map, HomePoints home_points)
 				it++;
 			}
 			home_points_.push_back(home_points.back());
-			go_home_way_list_ = {                 0,3,6, 1,4,7, 2,5,8, 9,10,11};
-			ROS_INFO("%s,%d: go_home_way_list_ 4: 0,3,6, 1,4,7, 2,5,8, 9,10,11", __FUNCTION__, __LINE__);
+			go_home_way_list_ = {0,3,6,1,4,7,2,5,8,9,10,11};
+			ROS_INFO("%s,%d: go_home_way_list_ 4:0,3,6,1,4,7,2,5,8,9,10,11", __FUNCTION__, __LINE__);
 			break;
 		}
 	}

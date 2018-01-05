@@ -353,7 +353,7 @@ public:
 	static State *sp_state;
 	static State *state_clean;
 protected:
-	static State *state_saved_state_before_pause;
+	static State *sp_saved_state;
 	static State *state_init;
 	static State *state_go_home_point;
 	static State *state_go_to_charger;

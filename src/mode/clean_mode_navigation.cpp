@@ -353,12 +353,11 @@ void CleanModeNav::resumePause()
 {
 	ev.key_clean_pressed = false;
 	speaker.play(VOICE_CLEANING_CONTINUE);
-	action_i_ = ac_null;
 	sp_action_.reset();
 	ROS_INFO("%s %d: Resume cleaning.", __FUNCTION__, __LINE__);
 	// It will NOT change the state.
-	if (ev.remote_home)
-		state_saved_state_before_pause = state_go_home_point;
+	if (ev.remote_home && sp_saved_state != state_go_home_point)
+		sp_saved_state = state_go_home_point;
 	sp_state = state_init;
 	sp_state->init();
 }
@@ -380,7 +379,6 @@ bool CleanModeNav::checkEnterGoHomePointState()
 {
 	if (ev.remote_home || ev.battery_home)
 	{
-		ROS_INFO("checkEnterGoHomePointState~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 		if (ev.battery_home)
 			low_battery_charge_ = true;
 
@@ -445,7 +443,13 @@ bool CleanModeNav::checkEnterPause()
 		ROS_INFO("%s %d: Key clean pressed, pause cleaning.", __FUNCTION__, __LINE__);
 		paused_odom_angle_ = odom.getAngle();
 		sp_action_.reset();
-		state_saved_state_before_pause = sp_state;
+		if (sp_state == state_go_home_point || sp_state == state_go_to_charger)
+			sp_saved_state = state_go_home_point;
+		else if (sp_state == state_resume_low_battery_charge)
+			sp_saved_state = state_resume_low_battery_charge;
+//		else //state_init || state_exception_resume || state_charge
+//			sp_saved_state = sp_saved_state;
+
 		sp_state = state_pause;
 		sp_state->init();
 		mapMark();
@@ -754,7 +758,7 @@ void CleanModeNav::switchInStateInit() {
 			sp_state = state_resume_low_battery_charge;
 		}
 		else // Resume from pause, because slam is not opened for the first time that open lidar action finished.
-			sp_state = state_saved_state_before_pause;
+			sp_state = sp_saved_state;
 	}
 	else {//if (action_i_ == ac_open_slam)
 		ROS_INFO("2switchInStateInit!!!!!!!!");
