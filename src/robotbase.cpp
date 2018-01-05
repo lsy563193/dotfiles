@@ -387,7 +387,10 @@ void robotbase_routine_cb()
 			sensor.rcliff = last_rcliff;
 			cliff.setRight(last_rcliff);
 		}
-
+		/*sensor.lcliff =((serial.receive_stream[REC_L_CLIFF_H] << 8) | serial.receive_stream[REC_L_CLIFF_L]);
+		sensor.rcliff = ((serial.receive_stream[REC_R_CLIFF_H] << 8) | serial.receive_stream[REC_R_CLIFF_L]);
+		sensor.fcliff =((serial.receive_stream[REC_F_CLIFF_H] << 8) | serial.receive_stream[REC_F_CLIFF_L]);
+*/
 		sensor.vacuum_selfcheck_status = (serial.receive_stream[REC_CL_OC] & 0x30);
 		sensor.lbrush_oc = (serial.receive_stream[REC_CL_OC] & 0x08) ? true : false;		// left brush over current
 		brush.setLeftOc(sensor.lbrush_oc);
