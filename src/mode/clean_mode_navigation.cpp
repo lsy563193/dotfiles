@@ -353,12 +353,11 @@ void CleanModeNav::resumePause()
 {
 	ev.key_clean_pressed = false;
 	speaker.play(VOICE_CLEANING_CONTINUE);
-	action_i_ = ac_null;
 	sp_action_.reset();
 	ROS_INFO("%s %d: Resume cleaning.", __FUNCTION__, __LINE__);
 	// It will NOT change the state.
-	if (ev.remote_home)
-		state_saved_state_before_pause = state_go_home_point;
+	if (ev.remote_home && sp_saved_state != state_go_home_point)
+		sp_saved_state = state_go_home_point;
 	sp_state = state_init;
 	sp_state->update();
 }
@@ -433,7 +432,15 @@ bool CleanModeNav::checkEnterPause()
 		ROS_INFO("%s %d: Key clean pressed, pause cleaning.", __FUNCTION__, __LINE__);
 		paused_odom_angle_ = odom.getAngle();
 		sp_action_.reset();
-		state_saved_state_before_pause = sp_state;
+		if (sp_state == state_clean || sp_state == state_trapped || sp_state == state_tmp_spot)
+			sp_saved_state = state_clean;
+		else if (sp_state == state_go_home_point || sp_state == state_go_to_charger)
+			sp_saved_state = state_go_home_point;
+		else if (sp_state == state_resume_low_battery_charge)
+			sp_saved_state = state_resume_low_battery_charge;
+//		else //state_init || state_exception_resume || state_charge
+//			sp_saved_state = sp_saved_state;
+
 		sp_state = state_pause;
 		sp_state->update();
 		mapMark();
@@ -453,15 +460,16 @@ bool CleanModeNav::isStateInitUpdateFinish()
 	if (sp_action_ != nullptr && !sp_action_->isFinish())
 		return true;
 
-	sp_action_.reset();//for call ~constitution;
-
-
-	if (action_i_ == ac_null)
+	if (sp_action_ == nullptr)
 	{
 		action_i_ = ac_open_gyro;
 		genNextAction();
 		return true;
-	} else if (action_i_ == ac_open_gyro)
+	}
+
+	sp_action_.reset();//for call ~constitution;
+
+	if (action_i_ == ac_open_gyro)
 	{
 		// If it is the starting of navigation mode, paused_odom_angle_ will be zero.
 		odom.setAngleOffset(paused_odom_angle_);
@@ -497,7 +505,7 @@ bool CleanModeNav::isStateInitUpdateFinish()
 				low_battery_charge_ = false;
 				sp_state = state_resume_low_battery_charge;
 			} else // Resume from pause, because slam is not opened for the first time that open lidar action finished.
-				sp_state = state_saved_state_before_pause;
+				sp_state = sp_saved_state;
 
 			sp_state->update();
 			return false;
@@ -821,13 +829,21 @@ bool CleanModeNav::isStateChargeConfirmed() {
 	return false;
 }
 
-bool CleanModeNav::isStatePauseUpdateFinish() {
-// For pausing case, only key or remote clean will wake it up.
-		if (ev.key_clean_pressed || ev.remote_home)
-		{
-			resumePause();
-			return false;
-		}
+bool CleanModeNav::isStatePauseUpdateFinish()
+{
+	if (sp_action_ == nullptr)
+	{
+		action_i_ = ac_pause;
+		genNextAction();
+		return true;
+	}
+
+	// For pausing case, only key or remote clean will wake it up.
+	if (ev.key_clean_pressed || ev.remote_home)
+	{
+		resumePause();
+		return false;
+	}
 	return false;
 }
 

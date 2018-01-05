@@ -10,7 +10,7 @@
 //#define NAV_INFO() ROS_INFO("st(%d),ac(%d)", state_i_, action_i_)
 
 State* ACleanMode::sp_state{};
-State* ACleanMode::state_saved_state_before_pause{};
+State* ACleanMode::sp_saved_state{};
 State* ACleanMode::state_init = new StateInit();
 State* ACleanMode::state_clean = new StateClean();
 State* ACleanMode::state_go_home_point = new StateGoHomePoint();
