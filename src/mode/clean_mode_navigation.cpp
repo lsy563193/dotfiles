@@ -375,25 +375,6 @@ void CleanModeNav::resumeLowBatteryCharge()
 	sp_state->init();
 }
 
-bool CleanModeNav::checkEnterGoHomePointState()
-{
-	if (ev.remote_home || ev.battery_home)
-	{
-		if (ev.battery_home)
-			low_battery_charge_ = true;
-
-		mapMark();
-		sp_action_.reset();
-		sp_state = state_go_home_point;
-		sp_state->init();
-		if (go_home_path_algorithm_ == nullptr)
-			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
-		return true;
-	}
-
-	return false;
-}
-
 bool CleanModeNav::checkEnterExceptionResumeState()
 {
 	if (isExceptionTriggered()) {
@@ -701,7 +682,7 @@ bool CleanModeNav::checkEnterPause()
 
 //fill init state
 bool CleanModeNav::isSwitchByEventInStateInit() {
-	return checkEnterPause();
+	return ACleanMode::isSwitchByEventInStateInit();
 }
 
 bool CleanModeNav::updateActionInStateInit() {

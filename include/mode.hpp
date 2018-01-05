@@ -255,8 +255,8 @@ public:
 	static int old_dir_;
 	static int new_dir_;
 
-	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
-	boost::shared_ptr<GoHomePathAlgorithm> go_home_path_algorithm_{};
+	static boost::shared_ptr<APathAlgorithm> clean_path_algorithm_;
+	static boost::shared_ptr<GoHomePathAlgorithm> go_home_path_algorithm_;
 	static GridMap clean_map_;
 	Point32_t charger_pos_{};//charger postion
 
@@ -264,9 +264,10 @@ public:
 	virtual bool isStateCleanUpdateFinish(){};
 	virtual bool isStateGoHomePointUpdateFinish();
 	virtual bool isStateGoToChargerUpdateFinish(){};
-
-	virtual bool isSwitchByEventInStateInit(){return false;};
-	virtual bool isSwitchByEventInStateClean(){return false;};
+	bool checkEnterNullState();
+	bool checkEnterGoHomePointState();
+	virtual bool isSwitchByEventInStateInit();
+	virtual bool isSwitchByEventInStateClean();
 	virtual bool isSwitchByEventInStateGoHomePoint(){return false;};
 	virtual bool isSwitchByEventInStateGoToCharger(){return false;};
 	virtual bool isSwitchByEventInStateTmpSpot(){return false;};
@@ -278,8 +279,8 @@ public:
 	virtual bool isSwitchByEventInStateCharge(){return false;};
 	virtual bool isSwitchByEventInStatePause(){return false;};
 
-	virtual bool updateActionInStateInit(){};
-	virtual bool updateActionInStateClean(){};
+	virtual bool updateActionInStateInit();
+	virtual bool updateActionInStateClean() = 0;
 	virtual bool updateActionInStateGoHomePoint(){};
 	virtual bool updateActionInStateGoToCharger(){};
 	virtual bool updateActionInStateTmpSpot(){};
@@ -291,8 +292,8 @@ public:
 	virtual bool updateActionStateCharge(){};
 	virtual bool updateActionInStatePause(){};
 
-	virtual void switchInStateInit(){};
-	virtual void switchInStateClean(){};
+	virtual void switchInStateInit();
+	virtual void switchInStateClean();
 	virtual void switchInStateGoHomePoint(){};
 	virtual void switchInStateGoToCharger(){};
 	virtual void switchInStateTmpSpot(){};
@@ -376,6 +377,9 @@ public:
 	bool should_mark_charger_{};
 	bool should_mark_temp_charger_{};
 	bool found_charger_{};
+
+protected:
+	static bool low_battery_charge_;
 };
 
 class CleanModeNav:public ACleanMode
@@ -421,10 +425,8 @@ private:
 	bool checkEnterPause();
 	bool checkEnterGoCharger();
 	bool checkEnterTempSpotState();
-	bool checkEnterGoHomePointState();
 	bool checkEnterExceptionResumeState();
 
-	bool low_battery_charge_{false};
 	bool has_aligned_and_open_slam_{false};
 	float paused_odom_angle_{0};
 	bool moved_during_pause_;
@@ -450,6 +452,8 @@ public:
 	void remoteClean(bool state_now, bool state_last) override ;
 	void cliffAll(bool state_now, bool state_last) override ;
 	void chargeDetect(bool state_now, bool state_last) override ;
+
+	bool updateActionInStateClean(){};
 //	void overCurrentBrushLeft(bool state_now, bool state_last);
 //	void overCurrentBrushMain(bool state_now, bool state_last);
 //	void overCurrentBrushRight(bool state_now, bool state_last);
@@ -471,9 +475,7 @@ public:
 
 	~CleanModeFollowWall() override;
 
-	bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
-
-	bool setNextAction() override;
+//	bool setNextAction() override;
 
 	bool mapMark() override;
 
@@ -502,11 +504,8 @@ public:
 																						bool used_unknown);
 	bool wf_is_isolate(GridMap& map);
 
+	bool updateActionInStateClean()override ;
 
-	bool isStateInitUpdateFinish() ;
-	bool isStateCleanUpdateFinish() ;
-	bool isStateGoHomePointUpdateFinish() ;
-	bool isStateGoToChargerUpdateFinish() ;
 private:
 	uint32_t diff_timer_;
 protected:
@@ -530,6 +529,8 @@ public:
 
 	bool isStateInitUpdateFinish();
 	bool isStateCleanUpdateFinish();
+
+	bool updateActionInStateClean(){};
 private:
 
 };
@@ -548,6 +549,7 @@ public:
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteMax(bool state_now, bool state_last) override ;
 	void remoteDirectionForward(bool state_now, bool state_last) override ;
+	bool updateActionInStateClean(){};
 
 };
 #endif //PP_MODE_H_H

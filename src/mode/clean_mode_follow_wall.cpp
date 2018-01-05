@@ -72,75 +72,6 @@ bool CleanModeFollowWall::mapMark() {
 	return false;
 }
 
-bool CleanModeFollowWall::setNextAction()
-{
-	PP_INFO();
-	if (sp_state == state_init)
-		return ACleanMode::setNextAction();
-	else {
-		if(plan_path_.empty())
-		{
-			ROS_WARN("%s,%d: mt_follow_wall_left", __FUNCTION__, __LINE__);
-			action_i_ = ac_follow_wall_left;
-			genNextAction();
-			ROS_WARN("%s,%d: mt_follow_wall_left", __FUNCTION__, __LINE__);
-		}else{
-			action_i_ = ac_linear;
-			genNextAction();
-			ROS_WARN("%s,%d: ac_linear", __FUNCTION__, __LINE__);
-		}
-	}
-
-	return true;
-//	if (action_i_ == ac_linear) {
-//		ROS_INFO("%s,%d: mt_follow_wall_left", __FUNCTION__, __LINE__);
-//		action_i_ = ac_follow_wall_left;
-//		genNextAction();
-//		return true;
-//	}
-//	else {
-//		action_i_ = ac_linear;
-//		ROS_INFO("%s,%d: mt_linear", __FUNCTION__, __LINE__);
-//		genNextAction();
-//		return true;
-//	}
-//	return false;
-}
-
-/*bool CleanModeFollowWall::setNextState()
-{
-	if(sp_state == state_init)
-	{
-			if(action_i_ == ac_open_slam)
-		sp_state = state_clean;
-	}
-	if(sp_state == state_clean) {
-		if(reach_cleaned_count_ == 0) {
-			if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
-				plan_path_.pop_front();
-				ROS_ERROR("plan_path_.size(%d)", plan_path_.size());
-				robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
-			}
-		}
-		else if(reach_cleaned_count_ <= 3){
-			if(wf_is_isolate(clean_map_)) {
-				if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
-					plan_path_.pop_front();
-					ROS_ERROR("plan_path_.size(%d)", plan_path_.size());
-					robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
-				}
-			}else {
-				ROS_WARN("%s,%d:follow clean finish,did not find charge", __func__, __LINE__);
-				sp_state = state_go_home_point;
-				go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
-				stateInit(sp_state);
-				action_i_ = ac_null;
-			}
-		}
-	}
-	return true;
-}*/
-
 void CleanModeFollowWall::keyClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: key clean.", __FUNCTION__, __LINE__);
@@ -575,24 +506,47 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(GridMap& map, int
 	return totalCost;
 }
 
-bool CleanModeFollowWall::actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) {
-//	return ACleanMode::actionFollowWallIsFinish();
-	return reach_cleaned_count_ > 0;
-}
+bool CleanModeFollowWall::updateActionInStateClean() {
+	if (reach_cleaned_count_ == 0) {
+		if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
+			plan_path_.pop_front();
+			ROS_ERROR("plan_path_.size(%d)", plan_path_.size());
+			robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
+		}
+	}
+	else if (reach_cleaned_count_ <= 3) {
+		if (wf_is_isolate(clean_map_)) {
+			if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
+				plan_path_.pop_front();
+				ROS_ERROR("plan_path_.size(%d)", plan_path_.size());
+				robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
+			}
+		}
+		else {
+/*			ROS_WARN("%s,%d:follow clean finish,did not find charge", __func__, __LINE__);
+			sp_state = state_go_home_point;
+			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
+			sp_state->init();
+			action_i_ = ac_null;*/
+			return false;
+		}
+	}else{
+		return false;
+	}
 
-bool CleanModeFollowWall::isStateInitUpdateFinish() {
-	return ACleanMode::isStateInitUpdateFinish();
-}
 
-bool CleanModeFollowWall::isStateCleanUpdateFinish() {
-	return ACleanMode::isStateCleanUpdateFinish();
-}
-
-bool CleanModeFollowWall::isStateGoHomePointUpdateFinish() {
-	return ACleanMode::isStateGoHomePointUpdateFinish();
-}
-
-bool CleanModeFollowWall::isStateGoToChargerUpdateFinish() {
-	return ACleanMode::isStateGoToChargerUpdateFinish();
+	PP_INFO();
+	if (plan_path_.empty()) {
+		ROS_WARN("%s,%d: mt_follow_wall_left", __FUNCTION__, __LINE__);
+		action_i_ = ac_follow_wall_left;
+		genNextAction();
+		ROS_WARN("%s,%d: mt_follow_wall_left", __FUNCTION__, __LINE__);
+	}
+	else {
+		action_i_ = ac_linear;
+		genNextAction();
+		ROS_WARN("%s,%d: ac_linear", __FUNCTION__, __LINE__);
+	}
+	return true;
 }
 

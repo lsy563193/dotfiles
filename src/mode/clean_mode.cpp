@@ -24,6 +24,12 @@ State* ACleanMode::state_resume_low_battery_charge = new StateResumeLowBatteryCh
 State* ACleanMode::state_pause = new StatePause();
 Points ACleanMode::passed_path_ = {};
 Points ACleanMode::plan_path_ = {};
+
+bool ACleanMode::low_battery_charge_{};
+
+boost::shared_ptr<APathAlgorithm> ACleanMode::clean_path_algorithm_{};
+boost::shared_ptr<GoHomePathAlgorithm> ACleanMode::go_home_path_algorithm_{};
+
 int ACleanMode::old_dir_{};
 int ACleanMode::new_dir_{};
 GridMap ACleanMode::clean_map_{};
@@ -508,5 +514,80 @@ bool ACleanMode::setNextState() {
 bool ACleanMode::actionLinearIsFinish(MoveTypeLinear *p_mt)
 {
 	return false;
+}
+
+bool ACleanMode::checkEnterNullState()
+{
+	if (ev.key_clean_pressed)
+	{
+		ev.key_clean_pressed = false;
+		action_i_ = ac_null;
+		sp_action_.reset();
+		sp_state = nullptr;
+		return true;
+	}
+
+	return false;
+}
+
+//default init state
+bool ACleanMode::isSwitchByEventInStateInit() {
+	return checkEnterNullState();
+}
+
+bool ACleanMode::updateActionInStateInit() {
+	if (action_i_ == ac_null)
+		action_i_ = ac_open_gyro;
+	else if (action_i_ == ac_open_gyro) {
+		vacuum.setMode(Vac_Save);
+		brush.normalOperate();
+		action_i_ = ac_open_lidar;
+	}
+	else if (action_i_ == ac_open_lidar)
+		action_i_ = ac_open_slam;
+	else // action_open_slam
+		return false;
+
+	genNextAction();
+	return true;
+}
+
+void ACleanMode::switchInStateInit() {
+//	if(action_i_ == ac_open_slam)
+	action_i_ = ac_null;
+	sp_action_ = nullptr;
+	sp_state = state_clean;
+}
+
+bool ACleanMode::checkEnterGoHomePointState()
+{
+	if (ev.remote_home || ev.battery_home)
+	{
+		if (ev.battery_home)
+			low_battery_charge_ = true;
+
+		mapMark();
+		sp_action_.reset();
+		sp_state = state_go_home_point;
+		sp_state->init();
+		if (go_home_path_algorithm_ == nullptr)
+			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
+		return true;
+	}
+
+	return false;
+}
+
+//default clean state
+bool ACleanMode::isSwitchByEventInStateClean() {
+	return checkEnterNullState() || checkEnterGoHomePointState();
+}
+
+void ACleanMode::switchInStateClean() {
+//	if(action_i_ == ac_open_slam)
+	action_i_ = ac_null;
+	sp_action_ = nullptr;
+	sp_state = state_go_home_point;
+	sp_state->init();
 }
 
