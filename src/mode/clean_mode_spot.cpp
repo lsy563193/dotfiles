@@ -10,9 +10,6 @@
 
 CleanModeSpot::CleanModeSpot()
 {
-	event_manager_register_handler(this);
-	event_manager_set_enable(true);
-	IMoveType::sp_mode_ = this;
 	speaker.play(VOICE_CLEANING_SPOT,false);
 	clean_path_algorithm_.reset(new SpotCleanPathAlgorithm());
 	go_home_path_algorithm_.reset();
@@ -20,7 +17,7 @@ CleanModeSpot::CleanModeSpot()
 
 CleanModeSpot::~CleanModeSpot()
 {
-	IMoveType::sp_mode_ = nullptr;
+/*	IMoveType::sp_mode_ = nullptr;
 	event_manager_set_enable(false);
 	wheel.stop();
 	brush.stop();
@@ -31,7 +28,7 @@ CleanModeSpot::~CleanModeSpot()
 	robot::instance()->setBaselinkFrameType( ODOM_POSITION_ODOM_ANGLE);
 	slam.stop();
 	odom.setAngleOffset(0);
-	speaker.play(VOICE_CLEANING_STOP,false);
+	speaker.play(VOICE_CLEANING_STOP,false);*/
 }
 
 bool CleanModeSpot::mapMark()

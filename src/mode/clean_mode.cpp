@@ -26,6 +26,8 @@ Points ACleanMode::passed_path_ = {};
 Points ACleanMode::plan_path_ = {};
 
 bool ACleanMode::low_battery_charge_{};
+bool ACleanMode::moved_during_pause_{};
+
 
 boost::shared_ptr<APathAlgorithm> ACleanMode::clean_path_algorithm_{};
 boost::shared_ptr<GoHomePathAlgorithm> ACleanMode::go_home_path_algorithm_{};
@@ -39,10 +41,12 @@ GridMap ACleanMode::clean_map_{};
 
 ACleanMode::ACleanMode()
 {
+	event_manager_register_handler(this);
+	event_manager_set_enable(true);
+	IMoveType::sp_mode_ = this;
 	sp_state->setMode(this);
 	ev.key_clean_pressed = false;
 	sp_state = state_init;
-	ROS_ERROR("%d",sp_state);
 	sp_state->init();
 	setNextAction();
 	robot_timer.initWorkTimer();
@@ -61,6 +65,47 @@ ACleanMode::ACleanMode()
 	plan_path_.clear();
 }
 
+ACleanMode::~ACleanMode() {
+	IMoveType::sp_mode_ = nullptr;
+	event_manager_set_enable(false);
+	wheel.stop();
+	brush.stop();
+	vacuum.stop();
+	lidar.motorCtrl(OFF);
+	lidar.setScanOriginalReady(0);
+
+	robot::instance()->setBaselinkFrameType(ODOM_POSITION_ODOM_ANGLE);
+	slam.stop();
+	odom.setAngleOffset(0);
+
+	if (moved_during_pause_)
+	{
+		speaker.play(VOICE_CLEANING_STOP, false);
+		ROS_WARN("%s %d: Moved during pause. Stop cleaning.", __FUNCTION__, __LINE__);
+	}
+	else if (ev.cliff_all_triggered)
+	{
+		speaker.play(VOICE_ERROR_LIFT_UP, false);
+		speaker.play(VOICE_CLEANING_STOP);
+		ROS_WARN("%s %d: Cliff all triggered. Stop cleaning.", __FUNCTION__, __LINE__);
+	}
+	else if (ev.fatal_quit)
+	{
+		speaker.play(VOICE_CLEANING_STOP, false);
+		error.alarm();
+	}
+	else
+	{
+		speaker.play(VOICE_CLEANING_FINISHED, false);
+		ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
+	}
+
+	auto cleaned_count = clean_map_.getCleanedArea();
+	auto map_area = cleaned_count * (CELL_SIZE * 0.001) * (CELL_SIZE * 0.001);
+	ROS_INFO("%s %d: Cleaned area = \033[32m%.2fm2\033[0m, cleaning time: \033[32m%d(s) %.2f(min)\033[0m, cleaning speed: \033[32m%.2f(m2/min)\033[0m.",
+			 __FUNCTION__, __LINE__, map_area, robot_timer.getWorkTime(),
+			 static_cast<float>(robot_timer.getWorkTime()) / 60, map_area / (static_cast<float>(robot_timer.getWorkTime()) / 60));
+}
 bool ACleanMode::setNextAction()
 {
 	if (sp_state == state_init)
@@ -118,7 +163,7 @@ bool ACleanMode::isExit()
 
 bool ACleanMode::isUpdateFinish() {
 	if (sp_state->isSwitchByEvent())
-		return false;
+		return sp_state == nullptr;
 
 	if (sp_action_ == nullptr) {
 		sp_state->updateAction();
@@ -700,3 +745,4 @@ bool ACleanMode::updateActionSpot() {
 bool ACleanMode::updateActionInStateTmpSpot() {
 	return updateActionSpot();
 }
+

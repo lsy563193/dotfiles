@@ -12,10 +12,7 @@
 
 CleanModeNav::CleanModeNav()
 {
-	event_manager_register_handler(this);
-	event_manager_set_enable(true);
-	ROS_INFO("%s %d: Entering Navigation mode\n=========================" , __FUNCTION__, __LINE__);
-	IMoveType::sp_mode_ = this;
+
 	if(g_plan_activated)
 		g_plan_activated = false;
 	else
@@ -30,45 +27,7 @@ CleanModeNav::CleanModeNav()
 
 CleanModeNav::~CleanModeNav()
 {
-	IMoveType::sp_mode_ = nullptr;
-	event_manager_set_enable(false);
-	wheel.stop();
-	brush.stop();
-	vacuum.stop();
-	lidar.motorCtrl(OFF);
-	lidar.setScanOriginalReady(0);
 
-	robot::instance()->setBaselinkFrameType(ODOM_POSITION_ODOM_ANGLE);
-	slam.stop();
-	odom.setAngleOffset(0);
-
-	if (moved_during_pause_)
-	{
-		speaker.play(VOICE_CLEANING_STOP, false);
-		ROS_WARN("%s %d: Moved during pause. Stop cleaning.", __FUNCTION__, __LINE__);
-	}
-	else if (ev.cliff_all_triggered)
-	{
-		speaker.play(VOICE_ERROR_LIFT_UP, false);
-		speaker.play(VOICE_CLEANING_STOP);
-		ROS_WARN("%s %d: Cliff all triggered. Stop cleaning.", __FUNCTION__, __LINE__);
-	}
-	else if (ev.fatal_quit)
-	{
-		speaker.play(VOICE_CLEANING_STOP, false);
-		error.alarm();
-	}
-	else
-	{
-		speaker.play(VOICE_CLEANING_FINISHED, false);
-		ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
-	}
-
-	auto cleaned_count = clean_map_.getCleanedArea();
-	auto map_area = cleaned_count * (CELL_SIZE * 0.001) * (CELL_SIZE * 0.001);
-	ROS_INFO("%s %d: Cleaned area = \033[32m%.2fm2\033[0m, cleaning time: \033[32m%d(s) %.2f(min)\033[0m, cleaning speed: \033[32m%.2f(m2/min)\033[0m.",
-			 __FUNCTION__, __LINE__, map_area, robot_timer.getWorkTime(),
-			 static_cast<float>(robot_timer.getWorkTime()) / 60, map_area / (static_cast<float>(robot_timer.getWorkTime()) / 60));
 }
 
 bool CleanModeNav::mapMark()
