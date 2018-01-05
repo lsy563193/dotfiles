@@ -375,8 +375,7 @@ void CleanModeNav::resumeLowBatteryCharge()
 	sp_state->init();
 }
 
-bool CleanModeNav::checkEnterExceptionResumeState()
-{
+bool CleanModeNav::checkEnterExceptionResumeState() {
 	if (isExceptionTriggered()) {
 		mapMark();
 		sp_action_.reset();
@@ -386,6 +385,14 @@ bool CleanModeNav::checkEnterExceptionResumeState()
 	}
 
 	return false;
+}
+
+bool CleanModeNav::checkEnterGoHomePointState()
+{
+	if (ev.battery_home)
+		low_battery_charge_ = true;
+
+	return ACleanMode::checkEnterGoHomePointState();
 }
 
 bool CleanModeNav::checkEnterTempSpotState()
@@ -403,18 +410,6 @@ bool CleanModeNav::checkEnterTempSpotState()
 	return false;
 }
 
-bool CleanModeNav::checkEnterGoCharger()
-{
-	if (ev.rcon_triggered)
-	{
-		ev.rcon_triggered = 0;
-		sp_state = state_go_to_charger;
-		sp_state->init();
-		return true;
-	}
-	return false;
-}
-
 bool CleanModeNav::checkEnterPause()
 {
 	if (ev.key_clean_pressed)
@@ -424,7 +419,9 @@ bool CleanModeNav::checkEnterPause()
 		ROS_INFO("%s %d: Key clean pressed, pause cleaning.", __FUNCTION__, __LINE__);
 		paused_odom_angle_ = odom.getAngle();
 		sp_action_.reset();
-		if (sp_state == state_go_home_point || sp_state == state_go_to_charger)
+		if (sp_state == state_clean || sp_state == state_trapped || sp_state == state_tmp_spot)
+			sp_saved_state = state_clean;
+		else if (sp_state == state_go_home_point || sp_state == state_go_to_charger)
 			sp_saved_state = state_go_home_point;
 		else if (sp_state == state_resume_low_battery_charge)
 			sp_saved_state = state_resume_low_battery_charge;
@@ -680,16 +677,14 @@ bool CleanModeNav::checkEnterPause()
 //	return false;
 //}
 
-//fill init state
+// ------------------State init--------------------
 bool CleanModeNav::isSwitchByEventInStateInit() {
 	return ACleanMode::isSwitchByEventInStateInit();
 }
 
 bool CleanModeNav::updateActionInStateInit() {
 	if (action_i_ == ac_null)
-	{
 		action_i_ = ac_open_gyro;
-	}
 	else if (action_i_ == ac_open_gyro)
 	{
 		// If it is the starting of navigation mode, paused_odom_angle_ will be zero.
@@ -710,29 +705,18 @@ bool CleanModeNav::updateActionInStateInit() {
 	} else if (action_i_ == ac_open_lidar)
 	{
 		if (!has_aligned_and_open_slam_)
-		{
 			action_i_ = ac_align;
-		}else
-		{
+		else
 			return false;
-		}
 	} else if (action_i_ == ac_align)
-	{
 		action_i_ = ac_open_slam;
-	}
 	else if (action_i_ == ac_open_slam)
-	{
 		return false;
-	}
-	PP_WARN();
-	ROS_INFO("%d", action_i_);
 	genNextAction();
-	PP_WARN();
 	return true;
 }
 
 void CleanModeNav::switchInStateInit() {
-	ROS_INFO("switchInStateInit!!!!!!!!");
 	if (action_i_ == ac_open_lidar) {
 		if (low_battery_charge_) {
 			low_battery_charge_ = false;
@@ -742,7 +726,6 @@ void CleanModeNav::switchInStateInit() {
 			sp_state = sp_saved_state;
 	}
 	else {//if (action_i_ == ac_open_slam)
-		ROS_INFO("2switchInStateInit!!!!!!!!");
 		has_aligned_and_open_slam_ = true;
 
 		auto curr = updatePosition();
@@ -755,7 +738,7 @@ void CleanModeNav::switchInStateInit() {
 	genNextAction();
 }
 
-//fill clean state
+// ------------------State clean--------------------
 bool CleanModeNav::isSwitchByEventInStateClean() {
 	return checkEnterPause() ||
 					checkEnterGoHomePointState() ||
@@ -813,9 +796,20 @@ void CleanModeNav::switchInStateClean() {
 	action_i_ = ac_null;
 	genNextAction();
 }
-//fill go to charger state
-void CleanModeNav::goToChargerUpdateAction(){
-	if (!sp_action_->isFinish())
-		return;
-	sp_action_.reset();//for call ~constitution;
+
+// ------------------State go home point--------------------
+bool CleanModeNav::isSwitchByEventInStateGoHomePoint()
+{
+	return checkEnterPause() || ACleanMode::isSwitchByEventInStateGoHomePoint();
 }
+
+bool CleanModeNav::updateActionInStateGoHomePoint()
+{
+	return ACleanMode::updateActionInStateGoHomePoint();
+}
+
+void CleanModeNav::switchInStateGoHomePoint()
+{
+	ACleanMode::switchInStateGoHomePoint();
+}
+

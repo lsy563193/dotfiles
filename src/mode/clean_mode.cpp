@@ -124,6 +124,7 @@ bool ACleanMode::isUpdateFinish() {
 		sp_state->updateAction();
 		return true;
 	}
+
 	if (!sp_action_->isFinish())
 		return true;
 
@@ -246,39 +247,7 @@ void ACleanMode::actionFollowWallSaveBlocks()
 
 void ACleanMode::goHomePointUpdateAction()
 {
-	if(sp_action_ != nullptr && !sp_action_->isFinish())
-		return;
-	sp_action_.reset();//for call ~constitution;
-	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
-	mapMark();
 
-	old_dir_ = new_dir_;
-
-	if(getPosition().toCell() == go_home_path_algorithm_->getCurrentHomePoint().home_point.toCell())
-	{
-		reach_home_point_ = true;
-		if (go_home_path_algorithm_->getCurrentHomePoint().have_seen_charger)
-		{
-			action_i_ = ac_null;
-			sp_action_ = nullptr;
-			return;
-		}
-	}
-	if (go_home_path_algorithm_->generatePath(clean_map_, getPosition(),old_dir_, plan_path_))
-	{
-		// New path to home cell is generated.
-		new_dir_ = plan_path_.front().th;
-		plan_path_.pop_front();
-		go_home_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
-		robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
-		reach_home_point_ = false;
-		action_i_ = ac_linear;
-		genNextAction();
-	}else{
-		// path is emply;
-		action_i_ = ac_null;
-		sp_action_ = nullptr;
-	}
 }
 
 bool ACleanMode::isStateGoHomePointUpdateFinish()
@@ -515,6 +484,83 @@ bool ACleanMode::actionLinearIsFinish(MoveTypeLinear *p_mt)
 {
 	return false;
 }
+
+bool ACleanMode::checkEnterExceptionResumeState()
+{
+	if (isExceptionTriggered()) {
+		mapMark();
+		sp_action_.reset();
+		sp_state = state_exception_resume;
+		sp_state->init();
+		return true;
+	}
+
+	return false;
+}
+
+bool ACleanMode::checkEnterGoCharger()
+{
+	if (ev.rcon_triggered)
+	{
+		ev.rcon_triggered = 0;
+		sp_state = state_go_to_charger;
+		sp_state->init();
+		return true;
+	}
+	return false;
+}
+
+
+bool ACleanMode::isSwitchByEventInStateGoHomePoint()
+{
+	return checkEnterExceptionResumeState() || checkEnterGoCharger();
+}
+
+bool ACleanMode::updateActionInStateGoHomePoint()
+{
+	bool update_finish;
+	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
+	mapMark();
+
+	old_dir_ = new_dir_;
+
+	if(!reach_home_point_ && getPosition().toCell() == go_home_path_algorithm_->getCurrentHomePoint().home_point.toCell())
+	{
+		reach_home_point_ = true;
+		update_finish = false;
+	}
+	else if (go_home_path_algorithm_->generatePath(clean_map_, getPosition(),old_dir_, plan_path_))
+	{
+		// New path to home cell is generated.
+		new_dir_ = plan_path_.front().th;
+		plan_path_.pop_front();
+		go_home_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
+		robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
+		reach_home_point_ = false;
+		action_i_ = ac_linear;
+		genNextAction();
+		update_finish = true;
+	}else{
+		// path is empty.
+		update_finish = false;
+	}
+
+	return update_finish;
+}
+
+void ACleanMode::switchInStateGoHomePoint()
+{
+	if (reach_home_point_)
+	{
+		if (go_home_path_algorithm_->getCurrentHomePoint().have_seen_charger)
+			sp_state = state_go_to_charger;
+		else // For last home point.
+			sp_state = nullptr;
+	}
+	else // path is empty.
+		sp_state = nullptr;
+}
+
 
 bool ACleanMode::checkEnterNullState()
 {

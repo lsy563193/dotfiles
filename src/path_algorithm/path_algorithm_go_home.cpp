@@ -102,7 +102,12 @@ bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, cons
 			// Using slam grid map to clear the bumper and laser blocks.
 			go_home_map_.mergeFromSlamGridMap(slam_grid_map, false, false, false, false, false, true);
 		}
-		auto plan_path_cell = findShortestPath(go_home_map_, curr_cell, current_home_point_.home_point.toCell(), last_dir, true);
+
+		Cells plan_path_cell;
+		if (way == THROUGH_UNKNOWN_AREA)
+			plan_path_cell = findShortestPath(go_home_map_, curr_cell, current_home_point_.home_point.toCell(), last_dir, true);
+		else
+			plan_path_cell = findShortestPath(go_home_map_, curr_cell, current_home_point_.home_point.toCell(), last_dir, false);
 
 		if (!plan_path_cell.empty())
 		{
