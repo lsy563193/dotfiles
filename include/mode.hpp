@@ -227,7 +227,6 @@ public:
 	bool isUpdateFinish();
 
 	void setNextModeDefault();
-	bool setNextState();
 	virtual bool setNextAction();
 	void genNextAction();
 
