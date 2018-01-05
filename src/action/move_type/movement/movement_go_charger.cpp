@@ -309,7 +309,7 @@ bool MovementGoToCharger::isSwitch()
 				return true;
 			}
 		}
-		// gyro_step > 360 is handled in MovementGoToCharger::_isStop()
+		// gyro_step >= 3600 is handled in MovementGoToCharger::_isStop()
 	}
 	if (gtc_state_now_ == gtc_around_charger_station_init)
 	{
@@ -823,7 +823,7 @@ bool MovementGoToCharger::isSwitch()
 
 bool MovementGoToCharger::_isStop()
 {
-	if (ev.robot_stuck || (gtc_state_now_ == gtc_turn_for_charger_signal && gyro_step > 3600))
+	if (ev.robot_stuck || (gtc_state_now_ == gtc_turn_for_charger_signal && gyro_step >= 3600))
 	{
 		ROS_WARN("%s %d: Stop here", __FUNCTION__, __LINE__);
 //		cs.setNext(CS_CLEAN);
