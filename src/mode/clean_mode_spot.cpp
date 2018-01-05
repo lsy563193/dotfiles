@@ -113,62 +113,7 @@ void CleanModeSpot::cliffAll(bool state_now, bool state_last)
 	ev.cliff_all_triggered = true;
 }
 
-//state
-bool CleanModeSpot::isStateInitUpdateFinish()
-{
-	bool ret = false;
-	if (sp_action_ != nullptr && !sp_action_->isFinish())
-		return true;
-
-	sp_action_.reset();//for call ~constitution;
-
-	if (action_i_ == ac_null)
-	{
-		action_i_ = ac_open_gyro;
-		INFO_CYAN(ac_open_gyro);
-		ret = true;
-	}
-	else if (action_i_ == ac_open_gyro)
-	{
-		INFO_CYAN(ac_open_lidar);
-		action_i_ = ac_open_lidar;
-		vacuum.setMode(Vac_Max);
-		brush.fullOperate();
-		ret = true;
-	}
-	else if (action_i_ == ac_open_lidar)
-	{
-		INFO_CYAN(ac_open_slam);
-		action_i_ = ac_open_slam;
-		ret = true;
-	}
-	else if(action_i_ == ac_open_slam)
-	{
-		INFO_CYAN(init_finish!!);
-		auto curr = updatePosition();
-		passed_path_.push_back(curr);
-
-		home_points_.back().home_point.th = curr.th;
-		vacuum.setMode(Vac_Max);
-		brush.fullOperate();
-
-		sp_state->init();
-//
-//	else
-//		return true;
-//	return false;
-//		sp_state->init();
-		return false;
-	}
-	genNextAction();
-	return ret;
-}
-
-bool CleanModeSpot::isStateCleanUpdateFinish()
-{
-	if (sp_action_ != nullptr && !sp_action_->isFinish())
-		return true;
-	sp_action_.reset();//for call ~constitution;
+bool CleanModeSpot::updateActionInStateClean() {
 	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
 	mapMark();
 
@@ -187,9 +132,6 @@ bool CleanModeSpot::isStateCleanUpdateFinish()
 		return true;
 	}
 	else {
-		sp_state = nullptr;
-		action_i_ = ac_null;
-		return true;
+		return false;
 	}
-	return false;
 }

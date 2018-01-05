@@ -630,10 +630,10 @@ bool ACleanMode::isSwitchByEventInStateClean() {
 }
 
 void ACleanMode::switchInStateClean() {
+//    checkEnterNullState()
 //	if(action_i_ == ac_open_slam)
 	action_i_ = ac_null;
-	sp_action_ = nullptr;
-	sp_state = state_go_home_point;
-	sp_state->init();
+	sp_action_.reset();
+	sp_state = nullptr;
 }
 

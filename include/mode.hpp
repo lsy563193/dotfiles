@@ -562,11 +562,7 @@ public:
 	void remoteClean(bool state_now, bool state_last) override;
 	void keyClean(bool state_now, bool state_last) override;
 
-	// todo: Delete below 2 function.
-	bool isStateInitUpdateFinish();
-	bool isStateCleanUpdateFinish();
-
-	bool updateActionInStateClean(){};
+	bool updateActionInStateClean();
 private:
 
 };
