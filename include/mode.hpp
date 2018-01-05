@@ -235,10 +235,11 @@ public:
 	virtual bool mapMark() = 0;
 	/*
 	 * @author mengshige1988@qq.com
-	 * @breif estimate charge postiion ,according to rcon sensor signals
+	 * @brief estimate charge position ,according to rcon sensor signals
 	 * @return true if found ,else false
 	 * */
 	bool estimateChargerPos(uint32_t rcon_value);
+	void setRconPos(Point32_t pos);
 
 	Cells pointsGenerateCells(Points &targets);
 
@@ -247,7 +248,6 @@ public:
 	void goHomePointUpdateAction();
 
 	virtual bool actionLinearIsFinish(MoveTypeLinear *p_mt);
-	void setRconPos(Point32_t pos);
 	int reach_cleaned_count_{};
 	static Points passed_path_;
 	static Points plan_path_;
@@ -287,7 +287,7 @@ public:
 	virtual bool updateActionInStateExceptionResume(){};
 	virtual bool updateActionInStateExploration(){};
 	virtual bool updateActionInStateResumeLowBatteryCharge(){};
-	virtual bool updateActionInkStateLowBatteryResume(){};
+	virtual bool updateActionInStateLowBatteryResume(){};
 	virtual bool updateActionStateCharge(){};
 	virtual bool updateActionInStatePause(){};
 
@@ -300,6 +300,8 @@ public:
 	virtual void switchInStateExceptionResume(){};
 	virtual void switchInStateExploration(){ };
 	virtual void switchInStateResumeLowBatteryCharge(){};
+	virtual void switchInStateStateLowBatteryResume(){};
+	virtual void switchInStateStateCharge(){};
 	virtual void switchInStatePause(){};
 
 public:
@@ -403,15 +405,23 @@ public:
 	void remoteSpot(bool state_now, bool state_last) override;
 //	void overCurrentSuction(bool state_now, bool state_last);
 
-	bool updateActionInStateInit();
-	bool updateActionInStateClean();
-
-	void goToChargerUpdateAction();
-
+	// State init
 	bool isSwitchByEventInStateInit() override;
-	bool isSwitchByEventInStateClean() override;
+	bool updateActionInStateInit() override;
 	void switchInStateInit() override ;
+
+	// State clean
+	bool isSwitchByEventInStateClean() override;
+	bool updateActionInStateClean() override;
 	void switchInStateClean() override ;
+
+	// State go home point
+//	bool isSwitchByEventInStateGoHomePoint() override;
+//	bool updateActionInStateGoHomePoint() override;
+//	void switchInStateGoHomePoint() override ;
+
+	// State go to charger
+
 private:
 	bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
 	bool actionLinearIsFinish(MoveTypeLinear *p_mt) override;

@@ -706,9 +706,7 @@ bool CleanModeNav::isSwitchByEventInStateInit() {
 
 bool CleanModeNav::updateActionInStateInit() {
 	if (action_i_ == ac_null)
-	{
 		action_i_ = ac_open_gyro;
-	}
 	else if (action_i_ == ac_open_gyro)
 	{
 		// If it is the starting of navigation mode, paused_odom_angle_ will be zero.
@@ -729,29 +727,18 @@ bool CleanModeNav::updateActionInStateInit() {
 	} else if (action_i_ == ac_open_lidar)
 	{
 		if (!has_aligned_and_open_slam_)
-		{
 			action_i_ = ac_align;
-		}else
-		{
+		else
 			return false;
-		}
 	} else if (action_i_ == ac_align)
-	{
 		action_i_ = ac_open_slam;
-	}
 	else if (action_i_ == ac_open_slam)
-	{
 		return false;
-	}
-	PP_WARN();
-	ROS_INFO("%d", action_i_);
 	genNextAction();
-	PP_WARN();
 	return true;
 }
 
 void CleanModeNav::switchInStateInit() {
-	ROS_INFO("switchInStateInit!!!!!!!!");
 	if (action_i_ == ac_open_lidar) {
 		if (low_battery_charge_) {
 			low_battery_charge_ = false;
@@ -761,7 +748,6 @@ void CleanModeNav::switchInStateInit() {
 			sp_state = sp_saved_state;
 	}
 	else {//if (action_i_ == ac_open_slam)
-		ROS_INFO("2switchInStateInit!!!!!!!!");
 		has_aligned_and_open_slam_ = true;
 
 		auto curr = updatePosition();
@@ -832,9 +818,4 @@ void CleanModeNav::switchInStateClean() {
 	action_i_ = ac_null;
 	genNextAction();
 }
-//fill go to charger state
-void CleanModeNav::goToChargerUpdateAction(){
-	if (!sp_action_->isFinish())
-		return;
-	sp_action_.reset();//for call ~constitution;
-}
+
