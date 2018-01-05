@@ -5,7 +5,7 @@
 #include "arch.hpp"
 
 void StatePause::init() {
-
+	led.set_mode(LED_BREATH, LED_GREEN);
 }
 
 //bool StateTrapped::isFinish() {

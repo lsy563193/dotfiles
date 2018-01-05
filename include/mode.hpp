@@ -220,6 +220,7 @@ class ACleanMode:public Mode
 {
 public:
 	ACleanMode();
+	~ACleanMode();
 	State* updateState();
 	bool isFinish() override ;
 	bool isExit() override;
@@ -279,10 +280,9 @@ public:
 	virtual void switchInStateGoHomePoint();
 
 	// State go to charger
-	bool checkEnterGoCharger();
 	virtual bool isSwitchByEventInStateGoToCharger(){return false;};
-	virtual bool updateActionInStateGoToCharger(){};
-	virtual void switchInStateGoToCharger(){};
+	virtual bool updateActionInStateGoToCharger();
+	virtual void switchInStateGoToCharger();
 
 	// State exception resume
 	bool checkEnterExceptionResumeState();
@@ -291,8 +291,9 @@ public:
 	virtual void switchInStateExceptionResume(){};
 
 	// State temp spot
+	bool updateActionSpot();
 	virtual bool isSwitchByEventInStateTmpSpot(){return false;};
-	virtual bool updateActionInStateTmpSpot(){};
+	virtual bool updateActionInStateTmpSpot();
 	virtual void switchInStateTmpSpot(){};
 
 	// State trapped
@@ -392,6 +393,10 @@ protected:
 	static State *state_resume_low_battery_charge;
 	static State *state_pause;
 
+
+protected:
+	static bool low_battery_charge_;
+	static bool moved_during_pause_;
 	HomePoints home_points_;
 	bool reach_home_point_{false};
 public:
@@ -403,9 +408,6 @@ public:
 	bool should_mark_charger_{};
 	bool should_mark_temp_charger_{};
 	bool found_charger_{};
-
-protected:
-	static bool low_battery_charge_;
 };
 
 class CleanModeNav:public ACleanMode
@@ -444,26 +446,35 @@ public:
 	void switchInStateClean() override ;
 
 	// State go home point
+	bool checkEnterGoHomePointState() override;
 	bool isSwitchByEventInStateGoHomePoint() override;
 	bool updateActionInStateGoHomePoint() override;
 	void switchInStateGoHomePoint() override ;
 
 	// State go to charger
+	bool isSwitchByEventInStateGoToCharger() override;
+	void switchInStateGoToCharger() override;
+
+	// State tmp spot
+    bool isSwitchByEventInStateTmpSpot() override;
+//    bool updateActionInStateTmpSpot() override ;
+    void switchInStateTmpSpot() override;
+
+	// State pause
+	bool checkEnterPause();
+	bool checkResumePause();
+	bool isSwitchByEventInStatePause() override;
+	bool updateActionInStatePause() override;
 
 private:
 	bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
-	bool actionLinearIsFinish(MoveTypeLinear *p_mt) override;
 	void actionFollowWallSaveBlocks() override ;
-	void resumePause();
+	bool actionLinearIsFinish(MoveTypeLinear *p_mt);
 	void resumeLowBatteryCharge();
-	bool checkEnterPause();
 	bool checkEnterTempSpotState();
-	bool checkEnterGoHomePointState() override;
-	bool checkEnterExceptionResumeState();
 
 	bool has_aligned_and_open_slam_{false};
 	float paused_odom_angle_{0};
-	bool moved_during_pause_;
 	Point32_t continue_point_{};
 	bool go_home_for_low_battery_{false};
 
@@ -562,11 +573,7 @@ public:
 	void remoteClean(bool state_now, bool state_last) override;
 	void keyClean(bool state_now, bool state_last) override;
 
-	// todo: Delete below 2 function.
-	bool isStateInitUpdateFinish();
-	bool isStateCleanUpdateFinish();
-
-	bool updateActionInStateClean(){};
+	bool updateActionInStateClean();
 private:
 
 };

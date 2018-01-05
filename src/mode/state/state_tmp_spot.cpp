@@ -7,6 +7,9 @@
 #include "arch.hpp"
 
 
-void StateTmpSpot::init() {
 
+void StateTmpSpot::init() {
+    vacuum.setMode(Vac_Max);
+    brush.fullOperate();
+    speaker.play(VOICE_CLEANING_SPOT,false);
 }

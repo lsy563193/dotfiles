@@ -43,7 +43,7 @@ MoveTypeFollowWall::MoveTypeFollowWall(bool is_left, bool is_trapped)
 MoveTypeFollowWall::~MoveTypeFollowWall()
 {
 	PP_WARN();
-	ROS_ERROR("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+//	ROS_ERROR("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 	wheel.stop();
 }
 

@@ -12,10 +12,7 @@
 
 CleanModeNav::CleanModeNav()
 {
-	event_manager_register_handler(this);
-	event_manager_set_enable(true);
-	ROS_INFO("%s %d: Entering Navigation mode\n=========================" , __FUNCTION__, __LINE__);
-	IMoveType::sp_mode_ = this;
+
 	if(g_plan_activated)
 		g_plan_activated = false;
 	else
@@ -30,45 +27,7 @@ CleanModeNav::CleanModeNav()
 
 CleanModeNav::~CleanModeNav()
 {
-	IMoveType::sp_mode_ = nullptr;
-	event_manager_set_enable(false);
-	wheel.stop();
-	brush.stop();
-	vacuum.stop();
-	lidar.motorCtrl(OFF);
-	lidar.setScanOriginalReady(0);
 
-	robot::instance()->setBaselinkFrameType(ODOM_POSITION_ODOM_ANGLE);
-	slam.stop();
-	odom.setAngleOffset(0);
-
-	if (moved_during_pause_)
-	{
-		speaker.play(VOICE_CLEANING_STOP, false);
-		ROS_WARN("%s %d: Moved during pause. Stop cleaning.", __FUNCTION__, __LINE__);
-	}
-	else if (ev.cliff_all_triggered)
-	{
-		speaker.play(VOICE_ERROR_LIFT_UP, false);
-		speaker.play(VOICE_CLEANING_STOP);
-		ROS_WARN("%s %d: Cliff all triggered. Stop cleaning.", __FUNCTION__, __LINE__);
-	}
-	else if (ev.fatal_quit)
-	{
-		speaker.play(VOICE_CLEANING_STOP, false);
-		error.alarm();
-	}
-	else
-	{
-		speaker.play(VOICE_CLEANING_FINISHED, false);
-		ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
-	}
-
-	auto cleaned_count = clean_map_.getCleanedArea();
-	auto map_area = cleaned_count * (CELL_SIZE * 0.001) * (CELL_SIZE * 0.001);
-	ROS_INFO("%s %d: Cleaned area = \033[32m%.2fm2\033[0m, cleaning time: \033[32m%d(s) %.2f(min)\033[0m, cleaning speed: \033[32m%.2f(m2/min)\033[0m.",
-			 __FUNCTION__, __LINE__, map_area, robot_timer.getWorkTime(),
-			 static_cast<float>(robot_timer.getWorkTime()) / 60, map_area / (static_cast<float>(robot_timer.getWorkTime()) / 60));
 }
 
 bool CleanModeNav::mapMark()
@@ -145,7 +104,7 @@ bool CleanModeNav::isExit()
 		return true;
 	}
 
-	if (ev.charge_detect >= 3)
+	if (charger.isDirected())
 	{
 		ROS_WARN("%s %d: Exit for directly charge.", __FUNCTION__, __LINE__);
 		setNextMode(md_charge);
@@ -316,10 +275,13 @@ void CleanModeNav::chargeDetect(bool state_now, bool state_last)
 	}
 
 }
+
 void CleanModeNav::remoteSpot(bool state_now, bool state_last)
 {
 	ev.remote_spot = true;
 	beeper.play_for_command(VALID);
+
+	remote.reset();
 }
 
 // End event handlers.
@@ -342,24 +304,9 @@ void CleanModeNav::actionFollowWallSaveBlocks()
 bool CleanModeNav::actionLinearIsFinish(MoveTypeLinear *p_mt)
 {
 	if (p_mt->isLinearForward())
-		return p_mt->isPoseReach() || p_mt->isPassTargetStop(new_dir_) || p_mt->isRconStop();
+		return p_mt->isRconStop() || ACleanMode::actionLinearIsFinish(p_mt);
 	else
-		return p_mt->isPoseReach() || p_mt->isPassTargetStop(new_dir_);
-
-	return false;
-}
-
-void CleanModeNav::resumePause()
-{
-	ev.key_clean_pressed = false;
-	speaker.play(VOICE_CLEANING_CONTINUE);
-	sp_action_.reset();
-	ROS_INFO("%s %d: Resume cleaning.", __FUNCTION__, __LINE__);
-	// It will NOT change the state.
-	if (ev.remote_home && sp_saved_state != state_go_home_point)
-		sp_saved_state = state_go_home_point;
-	sp_state = state_init;
-	sp_state->init();
+		return ACleanMode::actionLinearIsFinish(p_mt);
 }
 
 void CleanModeNav::resumeLowBatteryCharge()
@@ -371,28 +318,10 @@ void CleanModeNav::resumeLowBatteryCharge()
 	// Resume from low battery charge.
 	speaker.play(VOICE_CLEANING_CONTINUE, false);
 	ROS_INFO("%s %d: Resume low battery charge.", __FUNCTION__, __LINE__);
+	sp_action_.reset();
+	action_i_ = ac_null;
 	sp_state = state_init;
 	sp_state->init();
-}
-
-bool CleanModeNav::checkEnterExceptionResumeState() {
-	if (isExceptionTriggered()) {
-		mapMark();
-		sp_action_.reset();
-		sp_state = state_exception_resume;
-		sp_state->init();
-		return true;
-	}
-
-	return false;
-}
-
-bool CleanModeNav::checkEnterGoHomePointState()
-{
-	if (ev.battery_home)
-		low_battery_charge_ = true;
-
-	return ACleanMode::checkEnterGoHomePointState();
 }
 
 bool CleanModeNav::checkEnterTempSpotState()
@@ -405,35 +334,8 @@ bool CleanModeNav::checkEnterTempSpotState()
 		clean_path_algorithm_.reset(new SpotCleanPathAlgorithm);
 		sp_state = state_tmp_spot;
 		sp_state->init();
-		return false;
-	}
-	return false;
-}
-
-bool CleanModeNav::checkEnterPause()
-{
-	if (ev.key_clean_pressed)
-	{
-		ev.key_clean_pressed = false;
-		speaker.play(VOICE_CLEANING_PAUSE);
-		ROS_INFO("%s %d: Key clean pressed, pause cleaning.", __FUNCTION__, __LINE__);
-		paused_odom_angle_ = odom.getAngle();
-		sp_action_.reset();
-		if (sp_state == state_clean || sp_state == state_trapped || sp_state == state_tmp_spot)
-			sp_saved_state = state_clean;
-		else if (sp_state == state_go_home_point || sp_state == state_go_to_charger)
-			sp_saved_state = state_go_home_point;
-		else if (sp_state == state_resume_low_battery_charge)
-			sp_saved_state = state_resume_low_battery_charge;
-//		else //state_init || state_exception_resume || state_charge
-//			sp_saved_state = sp_saved_state;
-
-		sp_state = state_pause;
-		sp_state->init();
-		mapMark();
 		return true;
 	}
-
 	return false;
 }
 
@@ -671,15 +573,17 @@ bool CleanModeNav::checkEnterPause()
 //// For pausing case, only key or remote clean will wake it up.
 //		if (ev.key_clean_pressed || ev.remote_home)
 //		{
-//			resumePause();
+//			checkResumePause();
 //			return false;
 //		}
 //	return false;
 //}
 
 // ------------------State init--------------------
+
+// ------------------State init--------------------
 bool CleanModeNav::isSwitchByEventInStateInit() {
-	return ACleanMode::isSwitchByEventInStateInit();
+	return checkEnterPause();
 }
 
 bool CleanModeNav::updateActionInStateInit() {
@@ -798,6 +702,15 @@ void CleanModeNav::switchInStateClean() {
 }
 
 // ------------------State go home point--------------------
+
+bool CleanModeNav::checkEnterGoHomePointState()
+{
+	if (ev.battery_home)
+		low_battery_charge_ = true;
+
+	return ACleanMode::checkEnterGoHomePointState();
+}
+
 bool CleanModeNav::isSwitchByEventInStateGoHomePoint()
 {
 	return checkEnterPause() || ACleanMode::isSwitchByEventInStateGoHomePoint();
@@ -811,5 +724,111 @@ bool CleanModeNav::updateActionInStateGoHomePoint()
 void CleanModeNav::switchInStateGoHomePoint()
 {
 	ACleanMode::switchInStateGoHomePoint();
+}
+
+// ------------------State go to charger--------------------
+bool CleanModeNav::isSwitchByEventInStateGoToCharger()
+{
+	return checkEnterPause();
+}
+
+void CleanModeNav::switchInStateGoToCharger()
+{
+	if (charger.isOnStub())
+	{
+		if (go_home_for_low_battery_)
+		{
+			// If it is during low battery go home, it should not leave the clean mode, it should just charge.
+			ROS_INFO("%s %d: Enter low battery charge.", __FUNCTION__, __LINE__);
+			sp_state = state_charge;
+			sp_state->init();
+			paused_odom_angle_ = odom.getAngle();
+			go_home_for_low_battery_ = false;
+			go_home_path_algorithm_.reset();
+		} else
+		{
+			// Reach charger and exit clean mode.
+			sp_state = nullptr;
+		}
+	}
+	else
+	{
+		ROS_INFO("%s %d: Failed to go to charger, try next home point.", __FUNCTION__, __LINE__);
+		sp_state = state_go_home_point;
+		sp_state->init();
+	}
+	sp_action_.reset();
+}
+
+// ------------------State tmp spot--------------------
+bool CleanModeNav::isSwitchByEventInStateTmpSpot() {
+	return ACleanMode::isSwitchByEventInStateTmpSpot();
+}
+
+void CleanModeNav::switchInStateTmpSpot() {
+	ACleanMode::switchInStateTmpSpot();
+}
+
+
+// ------------------State pause--------------------
+
+bool CleanModeNav::checkEnterPause()
+{
+	if (ev.key_clean_pressed)
+	{
+		ev.key_clean_pressed = false;
+		speaker.play(VOICE_CLEANING_PAUSE);
+		ROS_INFO("%s %d: Key clean pressed, pause cleaning.", __FUNCTION__, __LINE__);
+		paused_odom_angle_ = odom.getAngle();
+		sp_action_.reset();
+		if (sp_state == state_clean || sp_state == state_trapped || sp_state == state_tmp_spot)
+			sp_saved_state = state_clean;
+		else if (sp_state == state_go_home_point || sp_state == state_go_to_charger)
+			sp_saved_state = state_go_home_point;
+		else if (sp_state == state_resume_low_battery_charge)
+			sp_saved_state = state_resume_low_battery_charge;
+//		else //state_init || state_exception_resume || state_charge
+//			sp_saved_state = sp_saved_state;
+
+		sp_state = state_pause;
+		sp_state->init();
+		mapMark();
+		return true;
+	}
+
+	return false;
+}
+
+bool CleanModeNav::checkResumePause()
+{
+	if (ev.key_clean_pressed || ev.remote_home)
+	{
+		ev.key_clean_pressed = false;
+		speaker.play(VOICE_CLEANING_CONTINUE);
+		sp_action_.reset();
+		action_i_ = ac_null;
+		ROS_INFO("%s %d: Resume cleaning.", __FUNCTION__, __LINE__);
+		// It will NOT change the state.
+		if (ev.remote_home && sp_saved_state != state_go_home_point)
+		{
+			sp_saved_state = state_go_home_point;
+			if (go_home_path_algorithm_ == nullptr)
+				go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
+		}
+		sp_state = state_init;
+		sp_state->init();
+	}
+}
+
+bool CleanModeNav::isSwitchByEventInStatePause()
+{
+	return checkResumePause();
+}
+
+bool CleanModeNav::updateActionInStatePause()
+{
+	action_i_ = ac_pause;
+	genNextAction();
+	return true;
 }
 

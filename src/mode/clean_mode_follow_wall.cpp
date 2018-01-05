@@ -11,10 +11,10 @@ Cells path_points;
 
 CleanModeFollowWall::CleanModeFollowWall()
 {
-	event_manager_register_handler(this);
-	event_manager_set_enable(true);
-	ROS_INFO("%s %d: Entering Follow wall mode\n=========================" , __FUNCTION__, __LINE__);
-	IMoveType::sp_mode_ = this;
+//	event_manager_register_handler(this);
+//	event_manager_set_enable(true);
+//	ROS_INFO("%s %d: Entering Follow wall mode\n=========================" , __FUNCTION__, __LINE__);
+//	IMoveType::sp_mode_ = this;
 	diff_timer_ = WALL_FOLLOW_TIME;
 	speaker.play(VOICE_CLEANING_WALL_FOLLOW, false);
 	clean_path_algorithm_.reset(new WFCleanPathAlgorithm);
@@ -23,6 +23,7 @@ CleanModeFollowWall::CleanModeFollowWall()
 
 CleanModeFollowWall::~CleanModeFollowWall()
 {
+/*
 	IMoveType::sp_mode_ = nullptr;
 	event_manager_set_enable(false);
 
@@ -42,12 +43,7 @@ CleanModeFollowWall::~CleanModeFollowWall()
 		speaker.play(VOICE_CLEANING_FINISHED);
 		ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
 	}
-
-//	auto cleaned_count = clean_map_.getCleanedArea();
-//	auto map_area = cleaned_count * (CELL_SIZE * 0.001) * (CELL_SIZE * 0.001);
-//	ROS_INFO("%s %d: Cleaned area = \033[32m%.2fm2\033[0m, cleaning time: \033[32m%d(s) %.2f(min)\033[0m, cleaning speed: \033[32m%.2f(m2/min)\033[0m.",
-//			 __FUNCTION__, __LINE__, map_area, robot_timer.getWorkTime(),
-//			 static_cast<float>(robot_timer.getWorkTime()) / 60, map_area / (static_cast<float>(robot_timer.getWorkTime()) / 60));
+*/
 }
 
 bool CleanModeFollowWall::mapMark() {
