@@ -9,7 +9,7 @@
 
 
 void StateTmpSpot::init() {
-    vacuum.setMode(Vac_Max);
+    vacuum.setTmpMode(Vac_Max);
     brush.fullOperate();
     speaker.play(VOICE_CLEANING_SPOT,false);
 }

@@ -6,7 +6,10 @@
 #include "arch.hpp"
 
 void StateClean::init() {
+
 	led.set_mode(LED_STEADY, LED_GREEN);
+	vacuum.setLastMode();
+	brush.fullOperate();
 }
 
 //bool StateClean::isFinish() {

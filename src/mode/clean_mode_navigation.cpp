@@ -670,7 +670,7 @@ bool CleanModeNav::updateActionInStateInit() {
 			home_points_.front().have_seen_charger = true;
 		} else
 			action_i_ = ac_open_lidar;
-		vacuum.setMode(Vac_Save);
+		vacuum.setLastMode();
 		brush.normalOperate();
 	} else if (action_i_ == ac_back_form_charger)
 	{
@@ -836,7 +836,13 @@ bool CleanModeNav::isSwitchByEventInStateTmpSpot() {
 	return ACleanMode::isSwitchByEventInStateTmpSpot();
 }
 
-void CleanModeNav::switchInStateTmpSpot() {
-	ACleanMode::switchInStateTmpSpot();
+bool CleanModeNav::updateActionInStateTmpSpot() {
+	return updateActionSpot();
 }
-
+void CleanModeNav::switchInStateTmpSpot() {
+	action_i_ = ac_null;
+	sp_action_.reset();
+    sp_state = state_clean;
+    sp_state->init();
+    clean_path_algorithm_.reset(new NavCleanPathAlgorithm);
+}

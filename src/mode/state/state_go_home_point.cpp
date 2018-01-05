@@ -7,7 +7,7 @@
 #include <event_manager.h>
 
 void StateGoHomePoint::init(){
-	vacuum.setMode(Vac_Normal, false);
+	vacuum.setTmpMode(Vac_Normal);
 	wheel.stop();
 
 	wheel.setPidTargetSpeed(0, 0, REG_TYPE_LINEAR);

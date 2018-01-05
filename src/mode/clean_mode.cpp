@@ -69,7 +69,7 @@ bool ACleanMode::setNextAction()
 			action_i_ = ac_open_gyro;
 		else if(action_i_ == ac_open_gyro)
 		{
-			vacuum.setMode(Vac_Save);
+			vacuum.setLastMode();
 			brush.normalOperate();
 			action_i_ = ac_open_lidar;
 		}
@@ -521,7 +521,7 @@ bool ACleanMode::updateActionInStateInit() {
 	if (action_i_ == ac_null)
 		action_i_ = ac_open_gyro;
 	else if (action_i_ == ac_open_gyro) {
-		vacuum.setMode(Vac_Save);
+		vacuum.setLastMode();
 		brush.normalOperate();
 		action_i_ = ac_open_lidar;
 	}
@@ -695,8 +695,4 @@ bool ACleanMode::updateActionSpot() {
 	else {
 		return false;
 	}
-}
-
-bool ACleanMode::updateActionInStateTmpSpot() {
-	return updateActionSpot();
 }
