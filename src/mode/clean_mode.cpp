@@ -612,6 +612,7 @@ bool ACleanMode::checkEnterGoHomePointState()
 {
 	if (ev.remote_home || ev.battery_home)
 	{
+		speaker.play(VOICE_BACK_TO_CHARGER, true);
 		mapMark();
 		sp_action_.reset();
 		sp_state = state_go_home_point;
