@@ -279,7 +279,6 @@ public:
 	virtual void switchInStateGoHomePoint();
 
 	// State go to charger
-	bool checkEnterGoCharger();
 	virtual bool isSwitchByEventInStateGoToCharger(){return false;};
 	virtual bool updateActionInStateGoToCharger();
 	virtual void switchInStateGoToCharger();
@@ -458,12 +457,18 @@ public:
     bool isSwitchByEventInStateTmpSpot() override;
     bool updateActionInStateTmpSpot() override ;
     void switchInStateTmpSpot() override;
+
+	// State pause
+	bool checkEnterPause();
+	bool checkResumePause();
+	bool isSwitchByEventInStatePause() override;
+	bool updateActionInStatePause() override;
+
 private:
 	bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
 	void actionFollowWallSaveBlocks() override ;
-	void resumePause();
+	bool actionLinearIsFinish(MoveTypeLinear *p_mt);
 	void resumeLowBatteryCharge();
-	bool checkEnterPause();
 	bool checkEnterTempSpotState();
 
 	bool has_aligned_and_open_slam_{false};
