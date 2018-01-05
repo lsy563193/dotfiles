@@ -290,6 +290,11 @@ void ACleanMode::actionFollowWallSaveBlocks()
 	return;
 }
 
+bool ACleanMode::actionLinearIsFinish(MoveTypeLinear *p_mt)
+{
+	return p_mt->isPoseReach() || p_mt->isPassTargetStop(new_dir_);
+}
+
 void ACleanMode::goHomePointUpdateAction()
 {
 
@@ -525,11 +530,6 @@ bool ACleanMode::setNextState() {
 
 }
 
-bool ACleanMode::actionLinearIsFinish(MoveTypeLinear *p_mt)
-{
-	return p_mt->isPoseReach() || p_mt->isPassTargetStop(new_dir_);
-}
-
 bool ACleanMode::checkEnterExceptionResumeState()
 {
 	if (isExceptionTriggered()) {
@@ -626,7 +626,7 @@ bool ACleanMode::checkEnterGoHomePointState()
 
 bool ACleanMode::isSwitchByEventInStateGoHomePoint()
 {
-	return checkEnterExceptionResumeState() || checkEnterGoCharger();
+	return checkEnterExceptionResumeState();
 }
 
 bool ACleanMode::updateActionInStateGoHomePoint()
@@ -638,10 +638,13 @@ bool ACleanMode::updateActionInStateGoHomePoint()
 	old_dir_ = new_dir_;
 
 	ROS_INFO("%s %d: reach_home_point_(%d), curr(%d, %d), current home point(%d, %d).", __FUNCTION__, __LINE__,
-			 getPosition().toCell().x, getPosition().toCell().y,
+			 reach_home_point_, getPosition().toCell().x, getPosition().toCell().y,
 			 go_home_path_algorithm_->getCurrentHomePoint().home_point.toCell().x,
 			 go_home_path_algorithm_->getCurrentHomePoint().home_point.toCell().y);
-	if(!reach_home_point_ && getPosition().toCell() == go_home_path_algorithm_->getCurrentHomePoint().home_point.toCell())
+	if (ev.rcon_triggered)
+		// Directly switch to state go to charger.
+		update_finish = false;
+	else if(!reach_home_point_ && getPosition().toCell() == go_home_path_algorithm_->getCurrentHomePoint().home_point.toCell())
 	{
 		reach_home_point_ = true;
 		update_finish = false;
@@ -667,11 +670,20 @@ bool ACleanMode::updateActionInStateGoHomePoint()
 
 void ACleanMode::switchInStateGoHomePoint()
 {
-	if (reach_home_point_)
+	if (ev.rcon_triggered)
+	{
+		ROS_INFO("%s %d: Rcon T signal triggered and switch to state go to charger.", __FUNCTION__, __LINE__);
+		ev.rcon_triggered = 0;
+		sp_state = state_go_to_charger;
+		sp_state->init();
+		sp_action_.reset();
+	}
+	else if (reach_home_point_)
 	{
 		if (go_home_path_algorithm_->getCurrentHomePoint().have_seen_charger)
 		{
 			sp_state = state_go_to_charger;
+			sp_state->init();
 			sp_action_.reset();
 		}
 		else // For last home point.
@@ -682,18 +694,6 @@ void ACleanMode::switchInStateGoHomePoint()
 }
 
 // ------------------State go to charger--------------------
-bool ACleanMode::checkEnterGoCharger()
-{
-	if (c_rcon.getForwardTop())
-	{
-		sp_state = state_go_to_charger;
-		sp_state->init();
-		sp_action_.reset();
-		ROS_INFO("%s %d: Rcon T signal triggered and switch to state go to charger.", __FUNCTION__, __LINE__);
-		return true;
-	}
-	return false;
-}
 
 bool ACleanMode::updateActionInStateGoToCharger()
 {

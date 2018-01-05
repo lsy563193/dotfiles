@@ -104,7 +104,7 @@ bool CleanModeNav::isExit()
 		return true;
 	}
 
-	if (ev.charge_detect >= 3)
+	if (charger.isDirected())
 	{
 		ROS_WARN("%s %d: Exit for directly charge.", __FUNCTION__, __LINE__);
 		setNextMode(md_charge);
@@ -299,6 +299,14 @@ bool CleanModeNav::actionFollowWallIsFinish(MoveTypeFollowWall *p_mt)
 void CleanModeNav::actionFollowWallSaveBlocks()
 {
 	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
+}
+
+bool CleanModeNav::actionLinearIsFinish(MoveTypeLinear *p_mt)
+{
+	if (p_mt->isLinearForward())
+		return p_mt->isRconStop() || ACleanMode::actionLinearIsFinish(p_mt);
+	else
+		return ACleanMode::actionLinearIsFinish(p_mt);
 }
 
 void CleanModeNav::resumeLowBatteryCharge()
@@ -823,3 +831,4 @@ bool CleanModeNav::updateActionInStatePause()
 	genNextAction();
 	return true;
 }
+

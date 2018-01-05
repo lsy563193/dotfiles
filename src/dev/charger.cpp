@@ -19,10 +19,7 @@ bool Charger::isOnStub(void) {
 bool Charger::isDirected(void) {
 	// 3: Direct connect to charge line but not charging.
 	// 4: Direct connect to charge line and charging.
-	if (status_ == 3 || status_ == 4)
-		return true;
-	else
-		return false;
+	return status_ == 3 || status_ == 4;
 }
 
 void Charger::setStart(void) {
