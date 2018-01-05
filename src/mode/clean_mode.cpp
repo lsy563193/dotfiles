@@ -674,3 +674,29 @@ void ACleanMode::switchInStateGoToCharger() {
 	}
 }
 
+bool ACleanMode::updateActionSpot() {
+		clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
+	mapMark();
+
+	old_dir_ = new_dir_;
+	ROS_ERROR("old_dir_(%d)", old_dir_);
+	auto cur_point = getPosition();
+	ROS_INFO("\033[32m plan_path front (%d,%d),cur point:(%d,%d)\033[0m",plan_path_.front().toCell().x,plan_path_.front().toCell().y,cur_point.toCell().x,cur_point.toCell().y);
+	if (clean_path_algorithm_->generatePath(clean_map_, cur_point, old_dir_, plan_path_)) {
+		new_dir_ = plan_path_.front().th;
+		ROS_ERROR("new_dir_(%d)", new_dir_);
+		PP_INFO();
+		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
+		plan_path_.pop_front();
+		action_i_ = ac_linear;
+		genNextAction();
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
+bool ACleanMode::updateActionInStateTmpSpot() {
+	return updateActionSpot();
+}

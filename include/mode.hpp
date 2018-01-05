@@ -291,8 +291,9 @@ public:
 	virtual void switchInStateExceptionResume(){};
 
 	// State temp spot
+	bool updateActionSpot();
 	virtual bool isSwitchByEventInStateTmpSpot(){return false;};
-	virtual bool updateActionInStateTmpSpot(){};
+	virtual bool updateActionInStateTmpSpot();
 	virtual void switchInStateTmpSpot(){};
 
 	// State trapped
@@ -453,6 +454,10 @@ public:
 	bool isSwitchByEventInStateGoToCharger() override;
 	void switchInStateGoToCharger() override;
 
+	// State tmp spot
+    bool isSwitchByEventInStateTmpSpot() override;
+//    bool updateActionInStateTmpSpot() override ;
+    void switchInStateTmpSpot() override;
 private:
 	bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
 	void actionFollowWallSaveBlocks() override ;

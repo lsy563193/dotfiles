@@ -321,6 +321,8 @@ void CleanModeNav::remoteSpot(bool state_now, bool state_last)
 {
 	ev.remote_spot = true;
 	beeper.play_for_command(VALID);
+
+	remote.reset();
 }
 
 // End event handlers.
@@ -376,7 +378,7 @@ bool CleanModeNav::checkEnterTempSpotState()
 		clean_path_algorithm_.reset(new SpotCleanPathAlgorithm);
 		sp_state = state_tmp_spot;
 		sp_state->init();
-		return false;
+		return true;
 	}
 	return false;
 }
@@ -649,6 +651,8 @@ bool CleanModeNav::checkEnterPause()
 //}
 
 // ------------------State init--------------------
+
+// ------------------State init--------------------
 bool CleanModeNav::isSwitchByEventInStateInit() {
 	return ACleanMode::isSwitchByEventInStateInit();
 }
@@ -826,3 +830,13 @@ void CleanModeNav::switchInStateGoToCharger()
 	}
 	sp_action_.reset();
 }
+
+// ------------------State tmp spot--------------------
+bool CleanModeNav::isSwitchByEventInStateTmpSpot() {
+	return ACleanMode::isSwitchByEventInStateTmpSpot();
+}
+
+void CleanModeNav::switchInStateTmpSpot() {
+	ACleanMode::switchInStateTmpSpot();
+}
+
