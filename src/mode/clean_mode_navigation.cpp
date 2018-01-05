@@ -788,7 +788,7 @@ void CleanModeNav::switchInStateClean() {
 // ------------------State go home point--------------------
 bool CleanModeNav::isSwitchByEventInStateGoHomePoint()
 {
-	return checkEnterPause() || checkEnterExceptionResumeState() || checkEnterGoCharger();
+	return checkEnterPause() || ACleanMode::isSwitchByEventInStateGoHomePoint();
 }
 
 bool CleanModeNav::updateActionInStateGoHomePoint()

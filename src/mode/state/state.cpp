@@ -34,6 +34,9 @@ bool State::isSwitchByEvent() {
 	else if(sp_cm_->isStateResumeLowBatteryCharge())
 		return sp_cm_->isSwitchByEventInStateResumeLowBatteryCharge();
 
+	else if(sp_cm_->isStateCharge())
+		return sp_cm_->isSwitchByEventInStateCharge();
+
 	else if(sp_cm_->isStatePause())
 		return sp_cm_->isSwitchByEventInStatePause();
 
@@ -67,6 +70,9 @@ bool State::updateAction() {
 	else if(sp_cm_->isStateResumeLowBatteryCharge())
 		return sp_cm_->updateActionInStateResumeLowBatteryCharge();
 
+	else if(sp_cm_->isStateCharge())
+		return sp_cm_->updateActionStateCharge();
+
 	else if(sp_cm_->isStatePause())
 		return sp_cm_->updateActionInStatePause();
 }
@@ -99,6 +105,8 @@ void State::switchState() {
 	else if(sp_cm_->isStateResumeLowBatteryCharge())
 		return sp_cm_->switchInStateResumeLowBatteryCharge();
 
+	else if(sp_cm_->isStateCharge())
+		return sp_cm_->switchInStateCharge();
 	else if(sp_cm_->isStatePause())
 		return sp_cm_->switchInStatePause();
 }

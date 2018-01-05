@@ -288,28 +288,34 @@ public:
 	virtual bool updateActionInStateExceptionResume(){};
 	virtual void switchInStateExceptionResume(){};
 
+	// State temp spot
 	virtual bool isSwitchByEventInStateTmpSpot(){return false;};
-	virtual bool isSwitchByEventInStateTrapped(){ return false;};
-	virtual bool isSwitchByEventInStateExploration(){ return false;};
-	virtual bool isSwitchByEventInStateResumeLowBatteryCharge(){return false;};
-	virtual bool isSwitchByEventInStateLowBatteryResume(){return false;};
-	virtual bool isSwitchByEventInStateCharge(){return false;};
-	virtual bool isSwitchByEventInStatePause(){return false;};
-
 	virtual bool updateActionInStateTmpSpot(){};
-	virtual bool updateActionInStateTrapped(){};
-	virtual bool updateActionInStateExploration(){};
-	virtual bool updateActionInStateResumeLowBatteryCharge(){};
-	virtual bool updateActionInStateLowBatteryResume(){};
-	virtual bool updateActionStateCharge(){};
-	virtual bool updateActionInStatePause(){};
-
 	virtual void switchInStateTmpSpot(){};
+
+	// State trapped
+	virtual bool isSwitchByEventInStateTrapped(){ return false;};
+	virtual bool updateActionInStateTrapped(){};
 	virtual void switchInStateTrapped(){ };
+
+	// State exploration
+	virtual bool isSwitchByEventInStateExploration(){ return false;};
+	virtual bool updateActionInStateExploration(){};
 	virtual void switchInStateExploration(){ };
+
+	// State resume low battery charge
+	virtual bool isSwitchByEventInStateResumeLowBatteryCharge(){return false;};
+	virtual bool updateActionInStateResumeLowBatteryCharge(){};
 	virtual void switchInStateResumeLowBatteryCharge(){};
-	virtual void switchInStateStateLowBatteryResume(){};
-	virtual void switchInStateStateCharge(){};
+
+	// State charge
+	virtual bool isSwitchByEventInStateCharge(){return false;};
+	virtual bool updateActionStateCharge(){};
+	virtual void switchInStateCharge(){};
+
+	// State pause
+	virtual bool isSwitchByEventInStatePause(){return false;};
+	virtual bool updateActionInStatePause(){};
 	virtual void switchInStatePause(){};
 
 	// todo: Delete below 4 function.
@@ -329,7 +335,6 @@ public:
 	{
 		return sp_state == state_init;
 	}
-
 	bool isStateClean() const
 	{
 		return sp_state == state_clean;
@@ -361,6 +366,10 @@ public:
 	bool isStateResumeLowBatteryCharge() const
 	{
 		return sp_state == state_resume_low_battery_charge;
+	}
+	bool isStateCharge() const
+	{
+		return sp_state == state_charge;
 	}
 	bool isStatePause() const
 	{
