@@ -377,34 +377,10 @@ void CleanModeNav::resumeLowBatteryCharge()
 
 bool CleanModeNav::checkEnterGoHomePointState()
 {
-	if (ev.remote_home || ev.battery_home)
-	{
-		if (ev.battery_home)
-			low_battery_charge_ = true;
+	if (ev.battery_home)
+		low_battery_charge_ = true;
 
-		mapMark();
-		sp_action_.reset();
-		sp_state = state_go_home_point;
-		sp_state->init();
-		if (go_home_path_algorithm_ == nullptr)
-			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
-		return true;
-	}
-
-	return false;
-}
-
-bool CleanModeNav::checkEnterExceptionResumeState()
-{
-	if (isExceptionTriggered()) {
-		mapMark();
-		sp_action_.reset();
-		sp_state = state_exception_resume;
-		sp_state->init();
-		return true;
-	}
-
-	return false;
+	return ACleanMode::checkEnterGoHomePointState();
 }
 
 bool CleanModeNav::checkEnterTempSpotState()
@@ -422,18 +398,6 @@ bool CleanModeNav::checkEnterTempSpotState()
 	return false;
 }
 
-bool CleanModeNav::checkEnterGoCharger()
-{
-	if (ev.rcon_triggered)
-	{
-		ev.rcon_triggered = 0;
-		sp_state = state_go_to_charger;
-		sp_state->init();
-		return true;
-	}
-	return false;
-}
-
 bool CleanModeNav::checkEnterPause()
 {
 	if (ev.key_clean_pressed)
@@ -443,7 +407,9 @@ bool CleanModeNav::checkEnterPause()
 		ROS_INFO("%s %d: Key clean pressed, pause cleaning.", __FUNCTION__, __LINE__);
 		paused_odom_angle_ = odom.getAngle();
 		sp_action_.reset();
-		if (sp_state == state_go_home_point || sp_state == state_go_to_charger)
+		if (sp_state == state_clean || sp_state == state_trapped || sp_state == state_tmp_spot)
+			sp_saved_state = state_clean;
+		else if (sp_state == state_go_home_point || sp_state == state_go_to_charger)
 			sp_saved_state = state_go_home_point;
 		else if (sp_state == state_resume_low_battery_charge)
 			sp_saved_state = state_resume_low_battery_charge;
@@ -699,7 +665,7 @@ bool CleanModeNav::checkEnterPause()
 //	return false;
 //}
 
-//fill init state
+// ------------------State init--------------------
 bool CleanModeNav::isSwitchByEventInStateInit() {
 	return checkEnterPause();
 }
@@ -760,7 +726,7 @@ void CleanModeNav::switchInStateInit() {
 	genNextAction();
 }
 
-//fill clean state
+// ------------------State clean--------------------
 bool CleanModeNav::isSwitchByEventInStateClean() {
 	return checkEnterPause() ||
 					checkEnterGoHomePointState() ||
@@ -817,5 +783,21 @@ void CleanModeNav::switchInStateClean() {
 	sp_state->init();
 	action_i_ = ac_null;
 	genNextAction();
+}
+
+// ------------------State go home point--------------------
+bool CleanModeNav::isSwitchByEventInStateGoHomePoint()
+{
+	return checkEnterPause() || checkEnterExceptionResumeState() || checkEnterGoCharger();
+}
+
+bool CleanModeNav::updateActionInStateGoHomePoint()
+{
+	return ACleanMode::updateActionInStateGoHomePoint();
+}
+
+void CleanModeNav::switchInStateGoHomePoint()
+{
+	ACleanMode::switchInStateGoHomePoint();
 }
 

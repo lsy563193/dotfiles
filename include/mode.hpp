@@ -260,49 +260,63 @@ public:
 	static GridMap clean_map_;
 	Point32_t charger_pos_{};//charger postion
 
-	virtual bool isStateInitUpdateFinish(){};
-	virtual bool isStateCleanUpdateFinish(){};
-	virtual bool isStateGoHomePointUpdateFinish();
-	virtual bool isStateGoToChargerUpdateFinish(){};
-
+	// State init
 	virtual bool isSwitchByEventInStateInit(){return false;};
+	virtual bool updateActionInStateInit(){};
+	virtual void switchInStateInit(){};
+
+	// State clean
 	virtual bool isSwitchByEventInStateClean(){return false;};
-	virtual bool isSwitchByEventInStateGoHomePoint(){return false;};
+	virtual bool updateActionInStateClean(){};
+	virtual void switchInStateClean(){};
+
+	// State go home point
+	virtual bool checkEnterGoHomePointState();
+	virtual bool isSwitchByEventInStateGoHomePoint();
+	virtual bool updateActionInStateGoHomePoint();
+	virtual void switchInStateGoHomePoint();
+
+	// State go to charger
+	bool checkEnterGoCharger();
 	virtual bool isSwitchByEventInStateGoToCharger(){return false;};
+	virtual bool updateActionInStateGoToCharger(){};
+	virtual void switchInStateGoToCharger(){};
+
+	// State exception resume
+	bool checkEnterExceptionResumeState();
+	virtual bool isSwitchByEventInStateExceptionResume(){return false;};
+	virtual bool updateActionInStateExceptionResume(){};
+	virtual void switchInStateExceptionResume(){};
+
 	virtual bool isSwitchByEventInStateTmpSpot(){return false;};
 	virtual bool isSwitchByEventInStateTrapped(){ return false;};
-	virtual bool isSwitchByEventInStateExceptionResume(){return false;};
 	virtual bool isSwitchByEventInStateExploration(){ return false;};
 	virtual bool isSwitchByEventInStateResumeLowBatteryCharge(){return false;};
 	virtual bool isSwitchByEventInStateLowBatteryResume(){return false;};
 	virtual bool isSwitchByEventInStateCharge(){return false;};
 	virtual bool isSwitchByEventInStatePause(){return false;};
 
-	virtual bool updateActionInStateInit(){};
-	virtual bool updateActionInStateClean(){};
-	virtual bool updateActionInStateGoHomePoint(){};
-	virtual bool updateActionInStateGoToCharger(){};
 	virtual bool updateActionInStateTmpSpot(){};
 	virtual bool updateActionInStateTrapped(){};
-	virtual bool updateActionInStateExceptionResume(){};
 	virtual bool updateActionInStateExploration(){};
 	virtual bool updateActionInStateResumeLowBatteryCharge(){};
 	virtual bool updateActionInStateLowBatteryResume(){};
 	virtual bool updateActionStateCharge(){};
 	virtual bool updateActionInStatePause(){};
 
-	virtual void switchInStateInit(){};
-	virtual void switchInStateClean(){};
-	virtual void switchInStateGoHomePoint(){};
-	virtual void switchInStateGoToCharger(){};
 	virtual void switchInStateTmpSpot(){};
 	virtual void switchInStateTrapped(){ };
-	virtual void switchInStateExceptionResume(){};
 	virtual void switchInStateExploration(){ };
 	virtual void switchInStateResumeLowBatteryCharge(){};
 	virtual void switchInStateStateLowBatteryResume(){};
 	virtual void switchInStateStateCharge(){};
 	virtual void switchInStatePause(){};
+
+	// todo: Delete below 4 function.
+	virtual bool isStateInitUpdateFinish(){};
+	virtual bool isStateCleanUpdateFinish(){};
+	virtual bool isStateGoHomePointUpdateFinish();
+	virtual bool isStateGoToChargerUpdateFinish(){};
 
 public:
 	State* getState() const {
@@ -416,9 +430,9 @@ public:
 	void switchInStateClean() override ;
 
 	// State go home point
-//	bool isSwitchByEventInStateGoHomePoint() override;
-//	bool updateActionInStateGoHomePoint() override;
-//	void switchInStateGoHomePoint() override ;
+	bool isSwitchByEventInStateGoHomePoint() override;
+	bool updateActionInStateGoHomePoint() override;
+	void switchInStateGoHomePoint() override ;
 
 	// State go to charger
 
@@ -429,10 +443,8 @@ private:
 	void resumePause();
 	void resumeLowBatteryCharge();
 	bool checkEnterPause();
-	bool checkEnterGoCharger();
 	bool checkEnterTempSpotState();
-	bool checkEnterGoHomePointState();
-	bool checkEnterExceptionResumeState();
+	bool checkEnterGoHomePointState() override;
 
 	bool low_battery_charge_{false};
 	bool has_aligned_and_open_slam_{false};
@@ -468,6 +480,7 @@ public:
 //	void overCurrentSuction(bool state_now, bool state_last);
 	void printMapAndPath();
 
+	// todo: Delete below 4 function.
 	bool isStateInitUpdateFinish();
 	bool isStateCleanUpdateFinish();
 	bool isStateGoHomePointUpdateFinish();
@@ -513,6 +526,7 @@ public:
 	bool wf_is_isolate(GridMap& map);
 
 
+	// todo: Delete below 4 function.
 	bool isStateInitUpdateFinish() ;
 	bool isStateCleanUpdateFinish() ;
 	bool isStateGoHomePointUpdateFinish() ;
@@ -538,6 +552,7 @@ public:
 	void remoteClean(bool state_now, bool state_last) override;
 	void keyClean(bool state_now, bool state_last) override;
 
+	// todo: Delete below 2 function.
 	bool isStateInitUpdateFinish();
 	bool isStateCleanUpdateFinish();
 private:
