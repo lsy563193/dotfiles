@@ -333,7 +333,7 @@ void robotbase_routine_cb()
 
 		sensor.batv = (serial.receive_stream[REC_BAT_V]);
 		battery.setVoltage((uint16_t)sensor.batv * 10);
-
+/*
 		if(((serial.receive_stream[REC_L_CLIFF_H] << 8) | serial.receive_stream[REC_L_CLIFF_L]) < CLIFF_LIMIT)
 		{
 			if(last_lcliff > CLIFF_LIMIT)
@@ -386,7 +386,13 @@ void robotbase_routine_cb()
 			last_rcliff = ((serial.receive_stream[REC_R_CLIFF_H] << 8) | serial.receive_stream[REC_R_CLIFF_L]);
 			sensor.rcliff = last_rcliff;
 			cliff.setRight(last_rcliff);
-		}
+		}*/
+		sensor.rcliff = ((serial.receive_stream[REC_R_CLIFF_H] << 8) | serial.receive_stream[REC_R_CLIFF_L]);
+		cliff.setRight(sensor.rcliff);
+		sensor.fcliff = ((serial.receive_stream[REC_F_CLIFF_H] << 8) | serial.receive_stream[REC_F_CLIFF_L]);
+		cliff.setFront(sensor.fcliff);
+		sensor.lcliff = ((serial.receive_stream[REC_L_CLIFF_H] << 8) | serial.receive_stream[REC_L_CLIFF_L]);
+		cliff.setLeft(sensor.lcliff);
 
 		sensor.vacuum_selfcheck_status = (serial.receive_stream[REC_CL_OC] & 0x30);
 		sensor.lbrush_oc = (serial.receive_stream[REC_CL_OC] & 0x08) ? true : false;		// left brush over current
