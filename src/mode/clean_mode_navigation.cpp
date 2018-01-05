@@ -750,14 +750,10 @@ void CleanModeNav::switchInStateGoToCharger()
 			// Reach charger and exit clean mode.
 			sp_state = nullptr;
 		}
+		sp_action_.reset();
 	}
 	else
-	{
-		ROS_INFO("%s %d: Failed to go to charger, try next home point.", __FUNCTION__, __LINE__);
-		sp_state = state_go_home_point;
-		sp_state->init();
-	}
-	sp_action_.reset();
+		ACleanMode::switchInStateGoToCharger();
 }
 
 // ------------------State tmp spot--------------------
