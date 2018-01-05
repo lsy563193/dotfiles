@@ -546,14 +546,22 @@ bool ACleanMode::isSwitchByEventInStateClean() {
 	return checkEnterNullState() || checkEnterGoHomePointState();
 }
 
+
 void ACleanMode::switchInStateClean() {
+//    checkEnterNullState()
 //	if(action_i_ == ac_open_slam)
 	action_i_ = ac_null;
-	sp_action_ = nullptr;
-	sp_state = state_go_home_point;
-	sp_state->init();
+	sp_action_.reset();
+	sp_state = nullptr;
 }
 
+//void ACleanMode::switchInStateClean() {
+//	if(action_i_ == ac_open_slam)
+//	action_i_ = ac_null;
+//	sp_action_ = nullptr;
+//	sp_state = state_go_home_point;
+//	sp_state->init();
+//}
 // ------------------State go home point--------------------
 bool ACleanMode::checkEnterGoHomePointState()
 {
@@ -655,29 +663,14 @@ bool ACleanMode::updateActionInStateGoToCharger()
 	return false;
 }
 
-void ACleanMode::switchInStateGoToCharger()
-{
-	if (charger.isOnStub())
-	{
+void ACleanMode::switchInStateGoToCharger() {
+	if (charger.isOnStub()) {
 		// Reach charger and exit clean mode.
 		sp_state = nullptr;
-	}
-	else
-	{
+	} else {
 		ROS_INFO("%s %d: Failed to go to charger, try next home point.", __FUNCTION__, __LINE__);
 		sp_state = state_go_home_point;
 		sp_state->init();
 	}
-//default clean state
-bool ACleanMode::isSwitchByEventInStateClean() {
-	return checkEnterNullState() || checkEnterGoHomePointState();
-}
-
-void ACleanMode::switchInStateClean() {
-//    checkEnterNullState()
-//	if(action_i_ == ac_open_slam)
-	action_i_ = ac_null;
-	sp_action_.reset();
-	sp_state = nullptr;
 }
 
