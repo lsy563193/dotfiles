@@ -113,7 +113,7 @@ bool MoveTypeLinear::isPoseReach()
 	return false;
 }
 
-bool MoveTypeLinear::isPassTargetStop(MapDirection &dir)
+bool MoveTypeLinear::isPassTargetStop(int &dir)
 {
 //	PP_INFO();
 	// Checking if robot has reached target cell.
@@ -146,7 +146,7 @@ void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 
 		if (abs(target_xy - curr_xy) < LINEAR_NEAR_DISTANCE) {
 			p_clean_mode->old_dir_ = p_clean_mode->new_dir_;
-			p_clean_mode->new_dir_ = (MapDirection) p_clean_mode->plan_path_.front().th;
+			p_clean_mode->new_dir_ = p_clean_mode->plan_path_.front().th;
 			dir_ = p_clean_mode->new_dir_;
 			p_clean_mode->plan_path_.pop_front();
 			target_point_ = p_clean_mode->plan_path_.front();

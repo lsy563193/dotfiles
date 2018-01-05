@@ -57,7 +57,7 @@ void Brush::updatePWM()
 		setPWM(normal_PWM, normal_PWM, normal_PWM);
 		check_battery_time_stamp_ = ros::Time::now().toSec();
 	}
-	// else no need to update.
+	// else no need to init.
 }
 
 void Brush::checkBatterySetPWM()

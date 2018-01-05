@@ -177,7 +177,7 @@ bool CleanModeExploration::isStateInitUpdateFinish() {
 		PP_INFO();
 
 		sp_state = state_clean;
-		sp_state->update();
+		sp_state->init();
 		action_i_ = ac_null;
 	}
 	else
@@ -194,12 +194,12 @@ bool CleanModeExploration::isStateCleanUpdateFinish() {
 	if (ev.rcon_triggered) {
 		ROS_WARN("%s,%d:find charge success,convert to go to charge state", __func__, __LINE__);
 		sp_state = state_go_to_charger;
-		sp_state->update();
+		sp_state->init();
 		action_i_ = ac_go_to_charger;
 		return true;
 	}
 	else if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
-		new_dir_ = (MapDirection) plan_path_.front().th;
+		new_dir_ = plan_path_.front().th;
 		ROS_WARN("new_dir_(%d)", new_dir_);
 		plan_path_.pop_front();
 		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
@@ -211,14 +211,14 @@ bool CleanModeExploration::isStateCleanUpdateFinish() {
 		sp_state = state_go_home_point;
 		if (go_home_path_algorithm_ == nullptr)
 			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
-		sp_state->update();
+		sp_state->init();
 		action_i_ = ac_null;
 	}
 	return false;
 }
 
 bool CleanModeExploration::isStateGoHomePointUpdateFinish() {
-	return ACleanMode::isStateGoHomePointConfirmed(clean_map_);
+	return ACleanMode::isStateGoHomePointUpdateFinish();
 }
 
 bool CleanModeExploration::isStateGoToChargerUpdateFinish() {

@@ -25,6 +25,7 @@ public:
 	{return sp_mode_;}
 
 	virtual bool isFinish();
+	void updatePath(GridMap &map);
 	void run() override;
 
 	enum {
@@ -42,7 +43,7 @@ public:
 	void resetTriggeredValue();
 	Point32_t start_point_;
 	Point32_t target_point_;
-	MapDirection dir_;
+	int dir_;
 protected:
 //	Cells passed_path_;
 //	Cells tmp_plan_path_;
@@ -65,7 +66,7 @@ public:
 	bool isFinish() override;
 //	IAction* setNextAction();
 
-	bool isPassTargetStop(MapDirection &dir);
+	bool isPassTargetStop(int &dir);
 	bool isCellReach();
 	bool isPoseReach();
 

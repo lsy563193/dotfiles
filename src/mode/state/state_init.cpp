@@ -4,7 +4,7 @@
 #include "pp.h"
 #include "arch.hpp"
 
-void StateInit::update() {
+void StateInit::init() {
 	led.set_mode(LED_FLASH, LED_GREEN, 1000);
 }
 

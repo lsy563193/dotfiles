@@ -11,7 +11,9 @@ class State {
 public:
 //	virtual IMoveType* setNextAction_()=0;
 
-	bool isUpdateFinish();
+	bool isSwitchByEvent();
+	bool updateAction();
+	void switchState();
 //	bool setNextState();
 //	State* updateState();
 	void setMode(ACleanMode* cm)
@@ -19,7 +21,7 @@ public:
 	ACleanMode* getMode()
 	{return sp_cm_;}
 
-	virtual void update()=0;
+	virtual void init()=0;
 
 protected:
 	static ACleanMode* sp_cm_;
@@ -28,13 +30,13 @@ protected:
 class StateInit: public State {
 public:
 	StateInit() = default;
-	void update() override;
+	void init() override;
 };
 
 class StateClean: public State {
 public:
 	StateClean() = default;
-	void update() override;
+	void init() override;
 //	IMoveType* setNextAction_();
 
 public:
@@ -43,14 +45,14 @@ public:
 class StateGoHomePoint: public State {
 public:
 	StateGoHomePoint() = default;
-	void update() override;
+	void init() override;
 //	IMoveType* setNextAction_();
 };
 
 class StateGoCharger: public State {
 public:
 	StateGoCharger() = default;
-	void update() override;
+	void init() override;
 //	IMoveType* setNextAction_();
 
 };
@@ -59,48 +61,48 @@ public:
 class StateCharge: public State {
 public:
 	StateCharge() = default;
-	void update() override;
+	void init() override;
 //	IMoveType* setNextAction_();
 
 };
 class StateTrapped: public State {
 public:
 	StateTrapped()= default;
-	void update() override;
+	void init() override;
 //	IMoveType* setNextAction_();
 };
 
 class StateTmpSpot: public State {
 public:
 	StateTmpSpot()= default;
-	void update() override;
+	void init() override;
 //	IMoveType* setNextAction_();
 };
 
 class ExceptionResume: public State {
 public:
 	ExceptionResume()= default;
-	void update() override;
+	void init() override;
 //	IMoveType* setNextAction_();
 };
 
 class StateExploration: public State {
 public:
 	StateExploration()= default;
-	void update() override;
+	void init() override;
 //	IMoveType* setNextAction_();
 };
 class StateResumeLowBatteryCharge: public State {
 public:
 	StateResumeLowBatteryCharge()= default;
-	void update() override;
+	void init() override;
 //	IMoveType* setNextAction_();
 };
 
 class StatePause: public State {
 public:
 	StatePause()= default;
-	void update() override;
+	void init() override;
 //	IMoveType* setNextAction_();
 };
 //Movement *StateClean::generateMovement(PathType path, const Cell_t &curr) {

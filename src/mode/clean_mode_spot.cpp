@@ -121,13 +121,13 @@ bool CleanModeSpot::isStateInitUpdateFinish()
 		return true;
 
 	sp_action_.reset();//for call ~constitution;
-	
+
 	if (action_i_ == ac_null)
 	{
 		action_i_ = ac_open_gyro;
 		INFO_CYAN(ac_open_gyro);
 		ret = true;
-	} 
+	}
 	else if (action_i_ == ac_open_gyro)
 	{
 		INFO_CYAN(ac_open_lidar);
@@ -148,12 +148,16 @@ bool CleanModeSpot::isStateInitUpdateFinish()
 		auto curr = updatePosition();
 		passed_path_.push_back(curr);
 
-		home_points_.back().home_point.th = curr.th; 
+		home_points_.back().home_point.th = curr.th;
 		vacuum.setMode(Vac_Max);
 		brush.fullOperate();
 
-		sp_state = state_clean;
-		sp_state->update();
+		sp_state->init();
+//
+//	else
+//		return true;
+//	return false;
+//		sp_state->init();
 		return false;
 	}
 	genNextAction();
@@ -162,7 +166,6 @@ bool CleanModeSpot::isStateInitUpdateFinish()
 
 bool CleanModeSpot::isStateCleanUpdateFinish()
 {
-	updatePath(clean_map_);
 	if (sp_action_ != nullptr && !sp_action_->isFinish())
 		return true;
 	sp_action_.reset();//for call ~constitution;
@@ -174,7 +177,7 @@ bool CleanModeSpot::isStateCleanUpdateFinish()
 	auto cur_point = getPosition();
 	ROS_INFO("\033[32m plan_path front (%d,%d),cur point:(%d,%d)\033[0m",plan_path_.front().toCell().x,plan_path_.front().toCell().y,cur_point.toCell().x,cur_point.toCell().y);
 	if (clean_path_algorithm_->generatePath(clean_map_, cur_point, old_dir_, plan_path_)) {
-		new_dir_ = (MapDirection) plan_path_.front().th;
+		new_dir_ = plan_path_.front().th;
 		ROS_ERROR("new_dir_(%d)", new_dir_);
 		PP_INFO();
 		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));

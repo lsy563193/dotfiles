@@ -108,8 +108,43 @@ bool IMoveType::isFinish() {
 	return sp_mode_->isExceptionTriggered();
 }
 
+void IMoveType::updatePath(GridMap& map)
+{
+	auto curr = updatePosition();
+//	auto point = getPosition();
+//	robot::instance()->pubCleanMapMarkers(nav_map, tmp_plan_path_);
+//	PP_INFO();
+//	ROS_INFO("point(%d,%d,%d)",point.x, point.y,point.th);
+//	ROS_INFO("last(%d,%d,%d)",last_.x, last_.y, last_.th);
+	auto p_mode = (ACleanMode*)sp_mode_;
+	if (p_mode->passed_path_.empty())
+	{
+		p_mode->passed_path_.push_back(curr);
+		p_mode->last_ = curr;
+	}
+	else if (!curr.isCellAndAngleEqual(p_mode->last_))
+	{
+		p_mode->last_ = curr;
+		auto loc = std::find_if(p_mode->passed_path_.begin(), p_mode->passed_path_.end(), [&](Point32_t it) {
+			return curr.isCellAndAngleEqual(it);
+		});
+		auto distance = std::distance(loc, p_mode->passed_path_.end());
+		if (distance == 0) {
+			ROS_INFO("curr(%d,%d,%d)",curr.toCell().x, curr.toCell().y, curr.th);
+			p_mode->passed_path_.push_back(curr);
+		}
+		if (distance > 5) {
+			ROS_INFO("reach_cleaned_count_(%d)",p_mode->reach_cleaned_count_);
+			p_mode->reach_cleaned_count_++;
+		}
+		map.saveBlocks(p_mode->action_i_ == p_mode->ac_linear, p_mode->sp_state == p_mode->state_clean);
+//		displayPath(passed_path_);
+	}
+}
 void IMoveType::run() {
 //	PP_INFO();
+	auto p_mode = (ACleanMode*)sp_mode_;
+	updatePath(p_mode->clean_map_);
 	sp_movement_->run();
 }
 

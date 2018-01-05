@@ -84,7 +84,7 @@ GoHomePathAlgorithm::GoHomePathAlgorithm(GridMap &map, HomePoints home_points)
 	go_home_map_.copy(map);
 }
 
-bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, const MapDirection &last_dir, Points &plan_path)
+bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, const int &last_dir, Points &plan_path)
 {
 	auto curr_cell = curr.toCell();
 
@@ -103,7 +103,11 @@ bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, cons
 			go_home_map_.mergeFromSlamGridMap(slam_grid_map, false, false, false, false, false, true);
 		}
 
-		auto plan_path_cell = findShortestPath(go_home_map_, curr_cell, current_home_point_.home_point.toCell(), last_dir, true);
+		Cells plan_path_cell;
+		if (way == THROUGH_UNKNOWN_AREA)
+			plan_path_cell = findShortestPath(go_home_map_, curr_cell, current_home_point_.home_point.toCell(), last_dir, true);
+		else
+			plan_path_cell = findShortestPath(go_home_map_, curr_cell, current_home_point_.home_point.toCell(), last_dir, false);
 
 		if (!plan_path_cell.empty())
 		{

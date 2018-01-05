@@ -4,6 +4,6 @@
 #include "pp.h"
 #include "arch.hpp"
 
-void ExceptionResume::update() {
+void ExceptionResume::init() {
 	led.set_mode(LED_STEADY, LED_GREEN);
 }

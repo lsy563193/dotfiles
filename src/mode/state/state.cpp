@@ -5,37 +5,108 @@
 
 ACleanMode* State::sp_cm_{};
 
-bool State::isUpdateFinish()
-{
+bool State::isSwitchByEvent() {
+
 	if(sp_cm_->isStateInit())
-		return sp_cm_->isStateInitUpdateFinish();
+		return sp_cm_->isSwitchByEventInStateInit();
 
 	else if(sp_cm_->isStateClean())
-		return sp_cm_->isStateCleanUpdateFinish();
+		return sp_cm_->isSwitchByEventInStateClean();
 
 	else if(sp_cm_->isStateGoHomePoint())
-		return sp_cm_->isStateGoHomePointUpdateFinish();
+		return sp_cm_->isSwitchByEventInStateGoHomePoint();
 
 	else if(sp_cm_->isStateGoCharger())
-		return sp_cm_->isStateGoToChargerUpdateFinish();
+		return sp_cm_->isSwitchByEventInStateGoToCharger();
 
 	else if(sp_cm_->isStateTmpSpot())
-		return sp_cm_->isStateTmpSpotUpdateFinish();
+		return sp_cm_->isSwitchByEventInStateTmpSpot();
 
 	else if(sp_cm_->isStateTrapped())
-		return sp_cm_->isStateTrappedUpdateFinish();
+		return sp_cm_->isSwitchByEventInStateTrapped();
 
 	else if(sp_cm_->isStateExceptionResume())
-		return sp_cm_->isStateExceptionResumeUpdateFinish();
+		return sp_cm_->isSwitchByEventInStateExceptionResume();
 
 	else if(sp_cm_->isStateExploration())
-		return sp_cm_->isStateExplorationUpdateFinish();
+		return sp_cm_->isSwitchByEventInStateExploration();
 
 	else if(sp_cm_->isStateResumeLowBatteryCharge())
-		return sp_cm_->isStateResumeLowBatteryChargeUpdateFinish();
+		return sp_cm_->isSwitchByEventInStateResumeLowBatteryCharge();
+
+	else if(sp_cm_->isStateCharge())
+		return sp_cm_->isSwitchByEventInStateCharge();
 
 	else if(sp_cm_->isStatePause())
-		return sp_cm_->isStatePauseUpdateFinish();
+		return sp_cm_->isSwitchByEventInStatePause();
 
-	return false;
+}
+
+bool State::updateAction() {
+	if(sp_cm_->isStateInit())
+		return sp_cm_->updateActionInStateInit();
+
+	else if(sp_cm_->isStateClean())
+		return sp_cm_->updateActionInStateClean();
+
+	else if(sp_cm_->isStateGoHomePoint())
+		return sp_cm_->updateActionInStateGoHomePoint();
+
+	else if(sp_cm_->isStateGoCharger())
+		return sp_cm_->updateActionInStateGoToCharger();
+
+	else if(sp_cm_->isStateTmpSpot())
+		return sp_cm_->updateActionInStateTmpSpot();
+
+	else if(sp_cm_->isStateTrapped())
+		return sp_cm_->updateActionInStateTrapped();
+
+	else if(sp_cm_->isStateExceptionResume())
+		return sp_cm_->updateActionInStateExceptionResume();
+
+	else if(sp_cm_->isStateExploration())
+		return sp_cm_->updateActionInStateExploration();
+
+	else if(sp_cm_->isStateResumeLowBatteryCharge())
+		return sp_cm_->updateActionInStateResumeLowBatteryCharge();
+
+	else if(sp_cm_->isStateCharge())
+		return sp_cm_->updateActionStateCharge();
+
+	else if(sp_cm_->isStatePause())
+		return sp_cm_->updateActionInStatePause();
+}
+
+void State::switchState() {
+	if(sp_cm_->isStateInit())
+		return sp_cm_->switchInStateInit();
+
+	else if(sp_cm_->isStateClean())
+		return sp_cm_->switchInStateClean();
+
+	else if(sp_cm_->isStateGoHomePoint())
+		return sp_cm_->switchInStateGoHomePoint();
+
+	else if(sp_cm_->isStateGoCharger())
+		return sp_cm_->switchInStateGoToCharger();
+
+	else if(sp_cm_->isStateTmpSpot())
+		return sp_cm_->switchInStateTmpSpot();
+
+	else if(sp_cm_->isStateTrapped())
+		return sp_cm_->switchInStateTrapped();
+
+	else if(sp_cm_->isStateExceptionResume())
+		return sp_cm_->switchInStateExceptionResume();
+
+	else if(sp_cm_->isStateExploration())
+		return sp_cm_->switchInStateExploration();
+
+	else if(sp_cm_->isStateResumeLowBatteryCharge())
+		return sp_cm_->switchInStateResumeLowBatteryCharge();
+
+	else if(sp_cm_->isStateCharge())
+		return sp_cm_->switchInStateCharge();
+	else if(sp_cm_->isStatePause())
+		return sp_cm_->switchInStatePause();
 }

@@ -302,7 +302,7 @@ bool Lidar::findLines(std::vector<LineABC> *lines,bool combine)
 			if(point_count>3){
 				double xn_2 = (point_set.at(i-1).x - point_set.at(i-2).x) /2.0 + point_set.at(i-2).x;
 				double yn_2 = (point_set.at(i-1).y - point_set.at(i-2).y) /2.0 + point_set.at(i-2).y;
-				/*---update A,B,C,x2,y2,K---*/
+				/*---init A,B,C,x2,y2,K---*/
 				LineABC *last_line = &lines->back();
 				last_line->A = yn_2 - line.y1;
 				last_line->B = line.x1 - xn_2;

@@ -912,16 +912,16 @@ void setPosition(int32_t x, int32_t y) {
 	yCount = y;
 }
 
-bool isPos(MapDirection dir)
+bool isPos(int dir)
 {
 	return (dir == MAP_POS_X || dir == MAP_POS_Y || dir == MAP_NONE);
 }
 
-bool isXAxis(MapDirection dir)
+bool isXAxis(int dir)
 {
 	return dir == MAP_POS_X || dir == MAP_NEG_X || dir == MAP_NONE;
 }
-bool isYAxis(MapDirection dir)
+bool isYAxis(int dir)
 {
 	return dir == MAP_POS_Y || dir == MAP_NEG_Y || dir == MAP_NONE;
 }

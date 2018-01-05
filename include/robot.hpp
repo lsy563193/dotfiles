@@ -334,11 +334,11 @@ int16_t countToCell(int32_t count);
 
 Point32_t getPosition(void);
 
-bool isPos(MapDirection dir);
+bool isPos(int dir);
 
-bool isXAxis(MapDirection dir);
+bool isXAxis(int dir);
 
-bool isYAxis(MapDirection dir);
+bool isYAxis(int dir);
 
 Point32_t updatePosition();
 

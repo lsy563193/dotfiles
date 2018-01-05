@@ -4,7 +4,7 @@
 #include "pp.h"
 #include "arch.hpp"
 
-void StateResumeLowBatteryCharge::update() {
+void StateResumeLowBatteryCharge::init() {
 	led.set_mode(LED_STEADY, LED_GREEN);
 }
 

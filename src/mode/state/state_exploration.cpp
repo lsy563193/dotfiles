@@ -4,7 +4,7 @@
 #include "pp.h"
 #include "arch.hpp"
 
-void StateExploration::update() {
+void StateExploration::init() {
 	led.set_mode(LED_STEADY, LED_ORANGE);
 }
 

@@ -23,7 +23,7 @@ SpotCleanPathAlgorithm::~SpotCleanPathAlgorithm()
 	initVariables(0,{0,0});
 }
 
-bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, const MapDirection &last_dir, Points &plan_path)
+bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, const int &last_dir, Points &plan_path)
 {
 	if(!ev.bumper_triggered && !ev.cliff_triggered && !ev.rcon_triggered){
 		if(!spot_running_){
@@ -89,7 +89,7 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, c
 						break;
 					next_point = cur;
 					cur = new_plan_path.back();
-					auto next_dir = (MapDirection)cur.th;
+					auto next_dir = cur.th;
 					auto shortest_path_cells = findShortestPath(map,cur.toCell(),next_point.toCell(),next_dir,true);
 					auto shortest_path = cells_generate_points(shortest_path_cells);
 					if(shortest_path.empty()){

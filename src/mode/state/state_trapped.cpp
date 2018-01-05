@@ -4,7 +4,7 @@
 #include "pp.h"
 #include "arch.hpp"
 
-void StateTrapped::update() {
+void StateTrapped::init() {
 	robot_timer.initTrapTimer();
 	led.set_mode(LED_FLASH, LED_GREEN, 300);
 }
