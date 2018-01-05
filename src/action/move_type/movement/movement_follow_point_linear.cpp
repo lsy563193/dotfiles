@@ -20,22 +20,26 @@ MovementFollowPointLinear::MovementFollowPointLinear()
 //	sp_mt_->sp_cm_->tmp_plan_path_ = path;
 }
 
-bool MovementFollowPointLinear::calcTmpTarget(Point32_t& tmp_target)
+bool MovementFollowPointLinear::calcTmpTarget()
 {
 	auto curr = getPosition();
 	auto curr_xy = (isXAxis(sp_mt_->dir_)) ? curr.x : curr.y;
-	auto &target_xy = (isXAxis(sp_mt_->dir_)) ? sp_mt_->target_point_.x : sp_mt_->target_point_.y;
+	auto tmp_target_xy = (isXAxis(sp_mt_->dir_)) ? tmp_target_.x :tmp_target_.y;
+	if(fabs(curr_xy - tmp_target_xy) > LINEAR_NEAR_DISTANCE && tmp_target_xy != 0) {
+		return false;
+	}
 
-	tmp_target.x = isXAxis(sp_mt_->dir_) ? curr_xy : sp_mt_->target_point_.x;
-	tmp_target.y = isXAxis(sp_mt_->dir_) ? sp_mt_->target_point_.y : curr_xy;
-	auto &tmp_xy = (isXAxis(sp_mt_->dir_)) ? tmp_target.x : tmp_target.y;
+	auto &target_xy = (isXAxis(sp_mt_->dir_)) ? sp_mt_->target_point_.x : sp_mt_->target_point_.y;
+	tmp_target_.x = isXAxis(sp_mt_->dir_) ? curr_xy : sp_mt_->target_point_.x;
+	tmp_target_.y = isXAxis(sp_mt_->dir_) ? sp_mt_->target_point_.y : curr_xy;
+	auto &tmp_xy = (isXAxis(sp_mt_->dir_)) ? tmp_target_.x : tmp_target_.y;
 //	ROS_WARN("curr_xy(%d), target_xy(%d)", curr_xy, target_xy);
-	auto dis = std::min(std::abs(curr_xy - target_xy), (int32_t) (LINEAR_NEAR_DISTANCE));
+	auto dis = std::min(std::abs(curr_xy - target_xy), (int32_t) (LINEAR_NEAR_DISTANCE + CELL_COUNT_MUL));
 //	ROS_INFO("dis(%d)",dis);
 	if (!isPos(sp_mt_->dir_))
 		dis *= -1;
 	tmp_xy = curr_xy + dis;
-//	ROS_WARN("tmp(%d,%d)",tmp_target.x, tmp_target.y);
+//	ROS_WARN("tmp(%d,%d)",tmp_target_.x, tmp_target_.y);
 //	ROS_WARN("dis(%d),dir(%d), curr(%d, %d), tmp_target(%d, %d)", dis, sp_mt_->dir_, curr.x, curr.y, tmp_target.x, tmp_target.y);
 	return true;
 }

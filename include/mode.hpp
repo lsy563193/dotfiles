@@ -281,8 +281,8 @@ public:
 	// State go to charger
 	bool checkEnterGoCharger();
 	virtual bool isSwitchByEventInStateGoToCharger(){return false;};
-	virtual bool updateActionInStateGoToCharger(){};
-	virtual void switchInStateGoToCharger(){};
+	virtual bool updateActionInStateGoToCharger();
+	virtual void switchInStateGoToCharger();
 
 	// State exception resume
 	bool checkEnterExceptionResumeState();
@@ -444,22 +444,22 @@ public:
 	void switchInStateClean() override ;
 
 	// State go home point
+	bool checkEnterGoHomePointState() override;
 	bool isSwitchByEventInStateGoHomePoint() override;
 	bool updateActionInStateGoHomePoint() override;
 	void switchInStateGoHomePoint() override ;
 
 	// State go to charger
+	bool isSwitchByEventInStateGoToCharger() override;
+	void switchInStateGoToCharger() override;
 
 private:
 	bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
-	bool actionLinearIsFinish(MoveTypeLinear *p_mt) override;
 	void actionFollowWallSaveBlocks() override ;
 	void resumePause();
 	void resumeLowBatteryCharge();
 	bool checkEnterPause();
 	bool checkEnterTempSpotState();
-	bool checkEnterGoHomePointState() override;
-	bool checkEnterExceptionResumeState();
 
 	bool has_aligned_and_open_slam_{false};
 	float paused_odom_angle_{0};
