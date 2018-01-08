@@ -317,6 +317,8 @@ public:
 	virtual bool updateActionInStatePause(){};
 	virtual void switchInStatePause(){};
 
+	void remoteHome(bool state_now, bool state_last) override ;
+
 	// todo: Delete below 4 function.
 	virtual bool isStateInitUpdateFinish(){};
 	virtual bool isStateCleanUpdateFinish(){};
@@ -418,7 +420,7 @@ public:
 	bool setNextAction() override;
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteClean(bool state_now, bool state_last) override ;
-	void remoteHome(bool state_now, bool state_last) override ;
+//	void remoteHome(bool state_now, bool state_last) override ;
 	void remoteDirectionLeft(bool state_now, bool state_last) override ;
 	void cliffAll(bool state_now, bool state_last) override ;
 	void chargeDetect(bool state_now, bool state_last) override ;

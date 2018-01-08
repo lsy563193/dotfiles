@@ -763,3 +763,20 @@ void ACleanMode::setHomePoint()
 			 home_points_.front().home_point.y);
 }
 
+void ACleanMode::remoteHome(bool state_now, bool state_last)
+{
+	if (sp_state == state_clean || action_i_ == ac_pause)
+	{
+		ROS_WARN("%s %d: remote home.", __FUNCTION__, __LINE__);
+		beeper.play_for_command(VALID);
+		ev.remote_home = true;
+	}
+	else
+	{
+		ROS_WARN("%s %d: remote home but not valid.", __FUNCTION__, __LINE__);
+		beeper.play_for_command(INVALID);
+	}
+	remote.reset();
+}
+
+
