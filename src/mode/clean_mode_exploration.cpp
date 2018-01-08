@@ -9,11 +9,6 @@
 
 CleanModeExploration::CleanModeExploration()
 {
-	event_manager_register_handler(this);
-	event_manager_set_enable(true);
-	event_manager_reset_status();
-	PP_INFO();
-	ROS_INFO("%s %d: Entering Exporation mode\n=========================" , __FUNCTION__, __LINE__);
 	speaker.play(VOICE_EXPLORATION_START, false);
 	action_i_ = ac_open_gyro;
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
@@ -22,7 +17,7 @@ CleanModeExploration::CleanModeExploration()
 
 CleanModeExploration::~CleanModeExploration()
 {
-	IMoveType::sp_mode_ = nullptr;
+/*	IMoveType::sp_mode_ = nullptr;
 	event_manager_set_enable(false);
 	wheel.stop();
 	brush.stop();
@@ -55,7 +50,7 @@ CleanModeExploration::~CleanModeExploration()
 	{
 		speaker.play(VOICE_CLEANING_FINISHED);
 		ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
-	}
+	}*/
 }
 
 bool CleanModeExploration::mapMark()

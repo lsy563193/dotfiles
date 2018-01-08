@@ -220,6 +220,7 @@ class ACleanMode:public Mode
 {
 public:
 	ACleanMode();
+	~ACleanMode();
 	State* updateState();
 	bool isFinish() override ;
 	bool isExit() override;
@@ -233,11 +234,7 @@ public:
 	void setRconPos(float cd,float dist);
 
 	virtual bool mapMark() = 0;
-	/*
-	 * @author mengshige1988@qq.com
-	 * @brief estimate charge position ,according to rcon sensor signals
-	 * @return true if found ,else false
-	 * */
+
 	bool estimateChargerPos(uint32_t rcon_value);
 	void setRconPos(Point32_t pos);
 
@@ -392,6 +389,10 @@ protected:
 	static State *state_resume_low_battery_charge;
 	static State *state_pause;
 
+
+protected:
+	static bool low_battery_charge_;
+	static bool moved_during_pause_;
 	HomePoints home_points_;
 	bool reach_home_point_{false};
 public:
@@ -403,9 +404,6 @@ public:
 	bool should_mark_charger_{};
 	bool should_mark_temp_charger_{};
 	bool found_charger_{};
-
-protected:
-	static bool low_battery_charge_;
 };
 
 class CleanModeNav:public ACleanMode
@@ -473,7 +471,6 @@ private:
 
 	bool has_aligned_and_open_slam_{false};
 	float paused_odom_angle_{0};
-	bool moved_during_pause_;
 	Point32_t continue_point_{};
 	bool go_home_for_low_battery_{false};
 
@@ -572,7 +569,8 @@ public:
 	void remoteClean(bool state_now, bool state_last) override;
 	void keyClean(bool state_now, bool state_last) override;
 
-	bool updateActionInStateClean();
+	bool updateActionInStateClean() override;
+	bool updateActionInStateInit() override;
 private:
 
 };

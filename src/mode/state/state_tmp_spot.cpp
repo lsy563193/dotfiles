@@ -6,8 +6,6 @@
 #include "pp.h"
 #include "arch.hpp"
 
-
-
 void StateTmpSpot::init() {
     vacuum.setTmpMode(Vac_Max);
     brush.fullOperate();

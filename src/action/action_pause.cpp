@@ -12,11 +12,7 @@ ActionPause::ActionPause()
 	brush.stop();
 	vacuum.stop();
 
-	if(lidar.isScanOriginalReady())
-	{
-		lidar.motorCtrl(OFF);
-		lidar.setScanOriginalReady(0);
-	}
+	lidar.motorCtrl(OFF);
 
 	start_timer_ = ros::Time::now().toSec();
 	timeout_interval_ = IDLE_TIMEOUT;

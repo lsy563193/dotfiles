@@ -66,6 +66,8 @@ GoHomePathAlgorithm::GoHomePathAlgorithm(GridMap &map, HomePoints home_points)
 			break;
 		}
 	}
+	rest_home_points_ = home_points_;
+
 	go_home_way_list_it_ = go_home_way_list_.begin();
 
 	std::string msg = "Home_points_: ";
@@ -98,16 +100,14 @@ bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, cons
 				 current_home_point_.home_point.th, current_home_point_.have_seen_charger, way, cnt);
 		// Update go_home_map_.
 		go_home_map_.copy(map);
-		if (way == THROUGH_SLAM_MAP_REACHABLE_AREA) {
+		if (way != THROUGH_CLEANED_AREA) {
 			// Using slam grid map to clear the bumper and laser blocks.
 			go_home_map_.mergeFromSlamGridMap(slam_grid_map, false, false, false, false, false, true);
 		}
 
 		Cells plan_path_cell;
-		if (way == THROUGH_UNKNOWN_AREA)
-			plan_path_cell = findShortestPath(go_home_map_, curr_cell, current_home_point_.home_point.toCell(), last_dir, true);
-		else
-			plan_path_cell = findShortestPath(go_home_map_, curr_cell, current_home_point_.home_point.toCell(), last_dir, false);
+		plan_path_cell = findShortestPath(go_home_map_, curr_cell, current_home_point_.home_point.toCell(), last_dir,
+										  way == THROUGH_UNKNOWN_AREA);
 
 		if (!plan_path_cell.empty())
 		{
@@ -115,6 +115,23 @@ bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, cons
 			go_home_map_.print(CLEAN_MAP, plan_path_cell.back().x, plan_path_cell.back().y);
 			go_home_way_list_it_++;
 			break;
+		}
+		else if (way == THROUGH_UNKNOWN_AREA)
+		{
+			// This home point is never valid.
+			ROS_INFO("%s %d: This home point(Point32_t)(%d, %d) is never reachable.", __FUNCTION__, __LINE__,
+					 current_home_point_.home_point.x, current_home_point_.home_point.y);
+			HomePoints::iterator home_point_it = rest_home_points_.begin();
+			for (;home_point_it != rest_home_points_.end(); home_point_it++)
+			{
+				if (home_point_it->home_point == current_home_point_.home_point)
+				{
+					ROS_INFO("%s %d: Erase this home point(Point32_t)(%d, %d)",
+							 __FUNCTION__, __LINE__, home_point_it->home_point.x, home_point_it->home_point.y);
+					rest_home_points_.erase(home_point_it);
+					break;
+				}
+			}
 		}
 	}
 
@@ -130,6 +147,11 @@ bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, cons
 HomePoint GoHomePathAlgorithm::getCurrentHomePoint()
 {
 	return current_home_point_;
+}
+
+HomePoints GoHomePathAlgorithm::getRestHomePoints()
+{
+	return rest_home_points_;
 }
 
 
