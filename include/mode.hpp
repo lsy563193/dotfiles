@@ -227,7 +227,6 @@ public:
 	bool isUpdateFinish();
 
 	void setNextModeDefault();
-	bool setNextState();
 	virtual bool setNextAction();
 	void genNextAction();
 
@@ -235,6 +234,7 @@ public:
 
 	virtual bool mapMark() = 0;
 
+	void setHomePoint();
 	bool estimateChargerPos(uint32_t rcon_value);
 	void setRconPos(Point32_t pos);
 
@@ -315,6 +315,8 @@ public:
 	virtual bool isSwitchByEventInStatePause(){return false;};
 	virtual bool updateActionInStatePause(){};
 	virtual void switchInStatePause(){};
+
+	void remoteHome(bool state_now, bool state_last) override ;
 
 	// todo: Delete below 4 function.
 	virtual bool isStateInitUpdateFinish(){};
@@ -417,7 +419,7 @@ public:
 	bool setNextAction() override;
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteClean(bool state_now, bool state_last) override ;
-	void remoteHome(bool state_now, bool state_last) override ;
+//	void remoteHome(bool state_now, bool state_last) override ;
 	void remoteDirectionLeft(bool state_now, bool state_last) override ;
 	void cliffAll(bool state_now, bool state_last) override ;
 	void chargeDetect(bool state_now, bool state_last) override ;
@@ -428,6 +430,8 @@ public:
 	void overCurrentWheelLeft(bool state_now, bool state_last) override;
 	void overCurrentWheelRight(bool state_now, bool state_last) override;
 	void remoteSpot(bool state_now, bool state_last) override;
+	void remoteMax(bool state_now, bool state_last) override;
+
 //	void overCurrentSuction(bool state_now, bool state_last);
 
 	// State init
@@ -521,12 +525,14 @@ public:
 	bool mapMark() override;
 
 	void keyClean(bool state_now, bool state_last) override;
+	void remoteMax(bool state_now, bool state_last) override;
 
 //	void overCurrentWheelLeft(bool state_now, bool state_last);
 //
 //	void overCurrentWheelRight(bool state_now, bool state_last);
 //
 	void remoteClean(bool state_now, bool state_last) override;
+	void switchInStateClean() override;
 //
 //	void remoteHome(bool state_now, bool state_last);
 //
@@ -537,6 +543,7 @@ public:
 //	void batteryHome(bool state_now, bool state_last);
 //
 //	void chargeDetect(bool state_now, bool state_last);
+	bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) override ;
 
 	int16_t wf_path_find_shortest_path(GridMap& map, int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound);
 
@@ -552,7 +559,7 @@ private:
 protected:
 //	Cells home_point_{};
 private:
-
+ int reach_cleaned_count_save{};
 };
 
 class CleanModeSpot:public ACleanMode
