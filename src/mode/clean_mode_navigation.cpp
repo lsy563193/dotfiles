@@ -55,12 +55,7 @@ bool CleanModeNav::mapMark()
 	{
 		// Set home cell.
 		if (ev.rcon_triggered)
-		{
-			home_points_.push_front({getPosition(), true});
-			ROS_INFO("%s %d: Set home cell(%d, %d).", __FUNCTION__, __LINE__,
-					 home_points_.front().home_point.toCell().x,
-					 home_points_.front().home_point.toCell().y);
-		}
+			setHomePoint();
 	}
 
 	clean_map_.setBlocks();

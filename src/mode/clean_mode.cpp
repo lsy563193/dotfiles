@@ -5,6 +5,7 @@
 #include <mathematics.h>
 #include <pp.h>
 #include <event_manager.h>
+#include <map.h>
 #include "arch.hpp"
 
 //#define NAV_INFO() ROS_INFO("st(%d),ac(%d)", state_i_, action_i_)
@@ -740,5 +741,24 @@ bool ACleanMode::updateActionSpot() {
 	else {
 		return false;
 	}
+}
+
+void ACleanMode::setHomePoint()
+{
+	// Set home cell.
+	HomePoints::iterator home_point_it = home_points_.begin();
+	for (;home_point_it != home_points_.end(); home_point_it++)
+	{
+		if (home_point_it->home_point.toCell() == getPosition().toCell())
+		{
+			ROS_INFO("%s %d: Home cell(%d, %d) exists.",
+					 __FUNCTION__, __LINE__, home_point_it->home_point.toCell().x, home_point_it->home_point.toCell().y);
+			return;
+		}
+	}
+	home_points_.push_front({getPosition(), true});
+	ROS_INFO("%s %d: Set home cell(%d, %d).", __FUNCTION__, __LINE__,
+			 home_points_.front().home_point.x,
+			 home_points_.front().home_point.y);
 }
 
