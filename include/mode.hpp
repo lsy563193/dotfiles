@@ -227,18 +227,13 @@ public:
 	bool isUpdateFinish();
 
 	void setNextModeDefault();
-	bool setNextState();
 	virtual bool setNextAction();
 	void genNextAction();
 
 	void setRconPos(float cd,float dist);
 
 	virtual bool mapMark() = 0;
-	/*
-	 * @author mengshige1988@qq.com
-	 * @brief estimate charge position ,according to rcon sensor signals
-	 * @return true if found ,else false
-	 * */
+
 	bool estimateChargerPos(uint32_t rcon_value);
 	void setRconPos(Point32_t pos);
 
@@ -293,7 +288,7 @@ public:
 	// State temp spot
 	bool updateActionSpot();
 	virtual bool isSwitchByEventInStateTmpSpot(){return false;};
-	virtual bool updateActionInStateTmpSpot();
+	virtual bool updateActionInStateTmpSpot(){};
 	virtual void switchInStateTmpSpot(){};
 
 	// State trapped
@@ -433,6 +428,8 @@ public:
 	void overCurrentWheelLeft(bool state_now, bool state_last) override;
 	void overCurrentWheelRight(bool state_now, bool state_last) override;
 	void remoteSpot(bool state_now, bool state_last) override;
+	void remoteMax(bool state_now, bool state_last) override;
+
 //	void overCurrentSuction(bool state_now, bool state_last);
 
 	// State init
@@ -457,7 +454,7 @@ public:
 
 	// State tmp spot
     bool isSwitchByEventInStateTmpSpot() override;
-//    bool updateActionInStateTmpSpot() override ;
+    bool updateActionInStateTmpSpot() override ;
     void switchInStateTmpSpot() override;
 
 	// State pause
@@ -526,6 +523,7 @@ public:
 	bool mapMark() override;
 
 	void keyClean(bool state_now, bool state_last) override;
+	void remoteMax(bool state_now, bool state_last) override;
 
 //	void overCurrentWheelLeft(bool state_now, bool state_last);
 //
@@ -574,7 +572,8 @@ public:
 	void remoteClean(bool state_now, bool state_last) override;
 	void keyClean(bool state_now, bool state_last) override;
 
-	bool updateActionInStateClean();
+	bool updateActionInStateClean() override;
+	bool updateActionInStateInit() override;
 private:
 
 };

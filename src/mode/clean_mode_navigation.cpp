@@ -284,6 +284,13 @@ void CleanModeNav::remoteSpot(bool state_now, bool state_last)
 	remote.reset();
 }
 
+void CleanModeNav::remoteMax(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
+	beeper.play_for_command(VALID);
+	vacuum.switchToNext();
+	remote.reset();
+}
 // End event handlers.
 
 bool CleanModeNav::actionFollowWallIsFinish(MoveTypeFollowWall *p_mt)
@@ -599,8 +606,6 @@ bool CleanModeNav::updateActionInStateInit() {
 			home_points_.front().have_seen_charger = true;
 		} else
 			action_i_ = ac_open_lidar;
-		vacuum.setMode(Vac_Save);
-		brush.normalOperate();
 	} else if (action_i_ == ac_back_form_charger)
 	{
 		action_i_ = ac_open_lidar;
@@ -764,8 +769,15 @@ bool CleanModeNav::isSwitchByEventInStateTmpSpot() {
 	return ACleanMode::isSwitchByEventInStateTmpSpot();
 }
 
+bool CleanModeNav::updateActionInStateTmpSpot() {
+	return updateActionSpot();
+}
 void CleanModeNav::switchInStateTmpSpot() {
-	ACleanMode::switchInStateTmpSpot();
+	action_i_ = ac_null;
+	sp_action_.reset();
+    sp_state = state_clean;
+    sp_state->init();
+    clean_path_algorithm_.reset(new NavCleanPathAlgorithm);
 }
 
 // ------------------State pause--------------------

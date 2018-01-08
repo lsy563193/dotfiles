@@ -10,7 +10,7 @@ ActionBackFromCharger::ActionBackFromCharger()
 	ROS_INFO("%s %d, Init action back from charger.", __FUNCTION__, __LINE__);
 //	path_set_home(nav_map.getCurrCell());
 
-	vacuum.setMode(Vac_Normal, false);
+	vacuum.setTmpMode(Vac_Normal);
 	brush.normalOperate();
 	wheel.setDirectionBackward();
 	charger_pose.setX(odom.getX());

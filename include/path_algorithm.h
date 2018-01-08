@@ -234,8 +234,6 @@ public:
 
 	void genTargets(uint8_t type,float diameter,Cells *targets,const Cell_t begincell);
 	void initVariables(float diameter,Cell_t cur_cell);
-	void giveMeCleanPoint(GridMap map,Point32_t &point);
-	void refactorTargets(GridMap map,Points *targets);
 private:
 	
 	float spot_diameter_ ;

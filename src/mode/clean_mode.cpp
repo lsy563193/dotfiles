@@ -114,7 +114,7 @@ bool ACleanMode::setNextAction()
 			action_i_ = ac_open_gyro;
 		else if(action_i_ == ac_open_gyro)
 		{
-			vacuum.setMode(Vac_Save);
+			vacuum.setLastMode();
 			brush.normalOperate();
 			action_i_ = ac_open_lidar;
 		}
@@ -189,7 +189,6 @@ State* ACleanMode::updateState()
 
 bool ACleanMode::isFinish()
 {
-
 	updateState();
 
 	if(sp_state == nullptr)
@@ -258,23 +257,6 @@ void ACleanMode::genNextAction()
 	PP_INFO();
 }
 
-//uint8_t ACleanMode::saveFollowWall(bool is_left)
-//{
-//	auto dy = is_left ? 2 : -2;
-//	int16_t x, y;
-//	//int32_t	x2, y2;
-//	std::string msg = "cell:";
-//	GridMap::robotToCell(getPosition(), dy * CELL_SIZE, 0, x, y);
-//	//robot_to_point(robot::instance()->getWorldPoseAngle(), dy * CELL_SIZE, 0, &x2, &y2);
-//	//ROS_WARN("%s %d: d_cell(0, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
-//	//			, __FUNCTION__, __LINE__, dy, robot::instance()->getWorldPoseAngle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
-////	bool should_save_for_MAP = !(cm_is_navigation() && mt.is_follow_wall() && Movement::getMoveDistance() < 0.1);
-//	temp_fw_cells.push_back({x, y});
-//	msg += "[0," + std::to_string(dy) + "](" + std::to_string(x) + "," + std::to_string(y) + ")";
-//	//ROS_INFO("%s,%d: Current(%d, %d), save \033[32m%s\033[0m",__FUNCTION__, __LINE__, get_x_cell(), get_y_cell(), msg.c_str());
-//
-//	return 1;
-//}
 void ACleanMode::setRconPos(Point32_t pos)
 {
 		charger_pos_ = pos;
@@ -526,10 +508,6 @@ Cells ACleanMode::pointsGenerateCells(Points &targets)
 	return path;
 }
 
-bool ACleanMode::setNextState() {
-
-}
-
 bool ACleanMode::checkEnterExceptionResumeState()
 {
 	if (isExceptionTriggered()) {
@@ -566,7 +544,7 @@ bool ACleanMode::updateActionInStateInit() {
 	if (action_i_ == ac_null)
 		action_i_ = ac_open_gyro;
 	else if (action_i_ == ac_open_gyro) {
-		vacuum.setMode(Vac_Save);
+		vacuum.setLastMode();
 		brush.normalOperate();
 		action_i_ = ac_open_lidar;
 	}
@@ -601,13 +579,6 @@ void ACleanMode::switchInStateClean() {
 	sp_state = nullptr;
 }
 
-//void ACleanMode::switchInStateClean() {
-//	if(action_i_ == ac_open_slam)
-//	action_i_ = ac_null;
-//	sp_action_ = nullptr;
-//	sp_state = state_go_home_point;
-//	sp_state->init();
-//}
 // ------------------State go home point--------------------
 bool ACleanMode::checkEnterGoHomePointState()
 {
@@ -750,7 +721,7 @@ void ACleanMode::switchInStateGoToCharger() {
 
 // For spot cleaning.
 bool ACleanMode::updateActionSpot() {
-		clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
+	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
 	mapMark();
 
 	old_dir_ = new_dir_;
@@ -770,9 +741,5 @@ bool ACleanMode::updateActionSpot() {
 	else {
 		return false;
 	}
-}
-
-bool ACleanMode::updateActionInStateTmpSpot() {
-	return updateActionSpot();
 }
 
