@@ -55,12 +55,7 @@ bool CleanModeNav::mapMark()
 	{
 		// Set home cell.
 		if (ev.rcon_triggered)
-		{
-			home_points_.push_front({getPosition(), true});
-			ROS_INFO("%s %d: Set home cell(%d, %d).", __FUNCTION__, __LINE__,
-					 home_points_.front().home_point.toCell().x,
-					 home_points_.front().home_point.toCell().y);
-		}
+			setHomePoint();
 	}
 
 	clean_map_.setBlocks();
@@ -600,6 +595,10 @@ bool CleanModeNav::updateActionInStateInit() {
 	{
 		// If it is the starting of navigation mode, paused_odom_angle_ will be zero.
 		odom.setAngleOffset(paused_odom_angle_);
+
+		vacuum.setLastMode();
+		brush.normalOperate();
+
 		if (charger.isOnStub())
 		{
 			action_i_ = ac_back_form_charger;

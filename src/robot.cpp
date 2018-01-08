@@ -774,7 +774,7 @@ void robot::pubPointMarkers(const std::deque<Vector2<double>> *points, std::stri
 		point_marker_pub_.publish(point_marker);
 		//ROS_INFO("%s,%d,points size:%u,points %s",__FUNCTION__,__LINE__,points->size(),msg.c_str());
 		point_marker.points.clear();
-		ROS_INFO("pub point!!");
+		//ROS_INFO("pub point!!");
 	}
 	else {
 		point_marker.points.clear();
