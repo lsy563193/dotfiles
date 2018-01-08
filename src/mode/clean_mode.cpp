@@ -584,6 +584,7 @@ bool ACleanMode::checkEnterGoHomePointState()
 {
 	if (ev.remote_home || ev.battery_home)
 	{
+		speaker.play(VOICE_BACK_TO_CHARGER, true);
 		mapMark();
 		sp_action_.reset();
 		sp_state = state_go_home_point;
@@ -636,6 +637,7 @@ bool ACleanMode::updateActionInStateGoHomePoint()
 		// path is empty.
 		update_finish = false;
 	}
+	home_points_ = go_home_path_algorithm_->getRestHomePoints();
 
 	return update_finish;
 }
@@ -659,10 +661,16 @@ void ACleanMode::switchInStateGoHomePoint()
 			sp_action_.reset();
 		}
 		else // For last home point.
+		{
+			ROS_INFO("%s %d, No more home point, finish cleaning.", __FUNCTION__, __LINE__);
 			sp_state = nullptr;
+		}
 	}
 	else // path is empty.
+	{
+		ROS_INFO("%s %d, No more home point, finish cleaning.", __FUNCTION__, __LINE__);
 		sp_state = nullptr;
+	}
 }
 
 // ------------------State go to charger--------------------
@@ -685,12 +693,33 @@ void ACleanMode::switchInStateGoToCharger() {
 		// Reach charger and exit clean mode.
 		sp_state = nullptr;
 	} else {
-		ROS_INFO("%s %d: Failed to go to charger, try next home point.", __FUNCTION__, __LINE__);
-		sp_state = state_go_home_point;
-		sp_state->init();
+		if (reach_home_point_)
+		{
+			if (home_points_.empty())
+			{
+				ROS_INFO("%s %d: No more home points, just go back to (0, 0).", __FUNCTION__, __LINE__);
+				home_points_.push_front({{0, 0, 0}, false});
+				go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
+			} else
+			{
+				ROS_INFO("%s %d: Failed to go to charger, try next home point.", __FUNCTION__, __LINE__);
+				home_points_.pop_front();
+				go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
+				sp_state = state_go_home_point;
+				sp_state->init();
+			}
+		}
+		else // Triggered by rcon signal but didn't reach home point.
+		{
+			ROS_INFO("%s %d: Failed to go to charger, resume go to this home point.", __FUNCTION__, __LINE__);
+			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
+			sp_state = state_go_home_point;
+			sp_state->init();
+		}
 	}
 }
 
+// For spot cleaning.
 bool ACleanMode::updateActionSpot() {
 		clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
 	mapMark();

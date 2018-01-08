@@ -16,12 +16,6 @@ void StateGoHomePoint::init(){
 	else
 		led.set_mode(LED_STEADY, LED_GREEN);
 
-	// Play wavs.
-	if (ev.battery_home)
-		speaker.play(VOICE_BATTERY_LOW, false);
-
-	speaker.play(VOICE_BACK_TO_CHARGER, true);
-
 	ev.remote_home = false;
 	ev.battery_home = false;
 }
