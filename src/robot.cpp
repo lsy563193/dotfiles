@@ -598,7 +598,7 @@ void robot::setCleanMapMarkers(int16_t x, int16_t y, CellState type)
 
 void robot::pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path)
 {
-	// temp_target is valid if only path is not empty.
+
 	if (path.empty())
 		return;
 
