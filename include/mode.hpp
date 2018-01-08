@@ -234,6 +234,7 @@ public:
 
 	virtual bool mapMark() = 0;
 
+	void setHomePoint();
 	bool estimateChargerPos(uint32_t rcon_value);
 	void setRconPos(Point32_t pos);
 
