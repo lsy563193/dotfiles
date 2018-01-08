@@ -428,6 +428,8 @@ public:
 	void overCurrentWheelLeft(bool state_now, bool state_last) override;
 	void overCurrentWheelRight(bool state_now, bool state_last) override;
 	void remoteSpot(bool state_now, bool state_last) override;
+	void remoteMax(bool state_now, bool state_last) override;
+
 //	void overCurrentSuction(bool state_now, bool state_last);
 
 	// State init
@@ -521,6 +523,7 @@ public:
 	bool mapMark() override;
 
 	void keyClean(bool state_now, bool state_last) override;
+	void remoteMax(bool state_now, bool state_last) override;
 
 //	void overCurrentWheelLeft(bool state_now, bool state_last);
 //

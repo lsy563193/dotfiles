@@ -109,6 +109,13 @@ void CleanModeFollowWall::keyClean(bool state_now, bool state_last)
 //	ev.oc_wheel_right = true;
 //}
 //
+void CleanModeFollowWall::remoteMax(bool state_now, bool state_last)
+{
+
+	beeper.play_for_command(VALID);
+	vacuum.switchToNext();
+	remote.reset();
+}
 void CleanModeFollowWall::remoteClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: remote clean.", __FUNCTION__, __LINE__);

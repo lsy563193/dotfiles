@@ -284,6 +284,13 @@ void CleanModeNav::remoteSpot(bool state_now, bool state_last)
 	remote.reset();
 }
 
+void CleanModeNav::remoteMax(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
+	beeper.play_for_command(VALID);
+	vacuum.switchToNext();
+	remote.reset();
+}
 // End event handlers.
 
 bool CleanModeNav::actionFollowWallIsFinish(MoveTypeFollowWall *p_mt)

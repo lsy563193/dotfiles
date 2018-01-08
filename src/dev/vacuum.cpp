@@ -33,6 +33,19 @@ void Vacuum::setMode(uint8_t mode)
 	setSpeedByMode(mode);
 }
 
+void Vacuum::switchToNext()
+{
+	// Switch the vacuum mode_ between Max and Normal
+	if (mode_ == Vac_Normal)
+	{
+		setMode(Vac_Max);
+	} else
+	{
+		setMode(Vac_Normal);
+	}
+	// Process the vacuum mode_
+	setSpeedByMode(mode_);
+}
 void Vacuum::setLastMode()
 {
 	setSpeedByMode(mode_);
