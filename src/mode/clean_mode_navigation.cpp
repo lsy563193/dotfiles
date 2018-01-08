@@ -595,6 +595,10 @@ bool CleanModeNav::updateActionInStateInit() {
 	{
 		// If it is the starting of navigation mode, paused_odom_angle_ will be zero.
 		odom.setAngleOffset(paused_odom_angle_);
+
+		vacuum.setLastMode();
+		brush.normalOperate();
+
 		if (charger.isOnStub())
 		{
 			action_i_ = ac_back_form_charger;
