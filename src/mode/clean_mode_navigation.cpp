@@ -40,13 +40,13 @@ bool CleanModeNav::mapMark()
 
 	if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
 	{
-		ROS_ERROR("-------------------------------------------------------");
+//		ROS_ERROR("-------------------------------------------------------");
 		auto start = *passed_path_.begin();
 		passed_path_.erase(std::remove_if(passed_path_.begin(),passed_path_.end(),[&start](Point32_t& it){
 			return it.toCell() == start.toCell();
 		}),passed_path_.end());
 		clean_path_algorithm_->displayCellPath(pointsGenerateCells(passed_path_));
-		ROS_ERROR("-------------------------------------------------------");
+//		ROS_ERROR("-------------------------------------------------------");
 		clean_map_.setFollowWall(action_i_ == ac_follow_wall_left, passed_path_);
 	}
 	if (sp_state == state_trapped)
@@ -680,7 +680,7 @@ bool CleanModeNav::updateActionInStateClean(){
 		{
 			delta_y = plan_path_.back().toCell().y - start.y;
 			bool is_left = isPos(old_dir_) ^ delta_y > 0;
-			ROS_INFO("\033[31m""%s,%d: target:, 0_left_1_right(%d=%d ^ %d)""\033[0m",
+			ROS_INFO("%s,%d: target:, 0_left_1_right(%d=%d ^ %d)",
 							 __FUNCTION__, __LINE__, is_left, isPos(old_dir_), delta_y);
 			action_i_ = is_left ? ac_follow_wall_left : ac_follow_wall_right;
 		}

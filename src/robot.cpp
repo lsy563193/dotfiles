@@ -386,7 +386,7 @@ bool robot::calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,bool is_
 	Paras para{is_left};
 
 	auto is_corner = check_corner(scan, para);
-	ROS_WARN("is_corner = %d", is_corner);
+//	ROS_WARN("is_corner = %d", is_corner);
 	for (int i = 359; i >= 0; i--) {
 		//ROS_INFO("i = %d", i);
 		if (scan->ranges[i] < 4 && scan->ranges[i - 1] < 4) {
