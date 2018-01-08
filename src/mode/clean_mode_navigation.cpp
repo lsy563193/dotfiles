@@ -768,7 +768,6 @@ void CleanModeNav::switchInStateTmpSpot() {
 	ACleanMode::switchInStateTmpSpot();
 }
 
-
 // ------------------State pause--------------------
 
 bool CleanModeNav::checkEnterPause()

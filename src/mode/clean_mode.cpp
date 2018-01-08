@@ -665,6 +665,7 @@ bool ACleanMode::updateActionInStateGoHomePoint()
 		// path is empty.
 		update_finish = false;
 	}
+	home_points_ = go_home_path_algorithm_->getRestHomePoints();
 
 	return update_finish;
 }
@@ -694,7 +695,10 @@ void ACleanMode::switchInStateGoHomePoint()
 		}
 	}
 	else // path is empty.
+	{
+		ROS_INFO("%s %d, No more home point, finish cleaning.", __FUNCTION__, __LINE__);
 		sp_state = nullptr;
+	}
 }
 
 // ------------------State go to charger--------------------
