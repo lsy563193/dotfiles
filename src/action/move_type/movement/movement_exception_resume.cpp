@@ -133,13 +133,13 @@ bool MovementExceptionResume::isFinish()
 				{
 					ROS_WARN("%s %d: Left wheel resume succeeded.", __FUNCTION__, __LINE__);
 					ev.oc_wheel_left = false;
-					vacuum.setMode(Vac_Save);
+					vacuum.setLastMode();
 					brush.normalOperate();
 				} else
 				{
 					ROS_WARN("%s %d: Left wheel resume succeeded.", __FUNCTION__, __LINE__);
 					ev.oc_wheel_right = false;
-					vacuum.setMode(Vac_Save);
+					vacuum.setLastMode();
 					brush.normalOperate();
 				}
 			}

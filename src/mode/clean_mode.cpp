@@ -114,7 +114,7 @@ bool ACleanMode::setNextAction()
 			action_i_ = ac_open_gyro;
 		else if(action_i_ == ac_open_gyro)
 		{
-			vacuum.setMode(Vac_Save);
+			vacuum.setLastMode();
 			brush.normalOperate();
 			action_i_ = ac_open_lidar;
 		}
@@ -189,7 +189,6 @@ State* ACleanMode::updateState()
 
 bool ACleanMode::isFinish()
 {
-
 	updateState();
 
 	if(sp_state == nullptr)
@@ -545,7 +544,7 @@ bool ACleanMode::updateActionInStateInit() {
 	if (action_i_ == ac_null)
 		action_i_ = ac_open_gyro;
 	else if (action_i_ == ac_open_gyro) {
-		vacuum.setMode(Vac_Save);
+		vacuum.setLastMode();
 		brush.normalOperate();
 		action_i_ = ac_open_lidar;
 	}
@@ -721,7 +720,7 @@ void ACleanMode::switchInStateGoToCharger() {
 
 // For spot cleaning.
 bool ACleanMode::updateActionSpot() {
-		clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
+	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
 	mapMark();
 
 	old_dir_ = new_dir_;
@@ -741,9 +740,5 @@ bool ACleanMode::updateActionSpot() {
 	else {
 		return false;
 	}
-}
-
-bool ACleanMode::updateActionInStateTmpSpot() {
-	return updateActionSpot();
 }
 

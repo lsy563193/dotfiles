@@ -113,3 +113,22 @@ void CleanModeSpot::cliffAll(bool state_now, bool state_last)
 bool CleanModeSpot::updateActionInStateClean() {
     ACleanMode::updateActionSpot();
 }
+
+bool CleanModeSpot::updateActionInStateInit() {
+	if (action_i_ == ac_null)
+		action_i_ = ac_open_gyro;
+	else if (action_i_ == ac_open_gyro) {
+		action_i_ = ac_open_lidar;
+	}
+	else if (action_i_ == ac_open_lidar){
+		vacuum.setTmpMode(Vac_Speed_Max);
+		led.set_mode(LED_STEADY,LED_GREEN);
+		brush.fullOperate();
+		action_i_ = ac_open_slam;
+	}
+	else // action_open_slam
+		return false;
+
+	genNextAction();
+	return true;
+}
