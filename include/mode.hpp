@@ -530,6 +530,7 @@ public:
 //	void overCurrentWheelRight(bool state_now, bool state_last);
 //
 	void remoteClean(bool state_now, bool state_last) override;
+	void switchInStateClean() override;
 //
 //	void remoteHome(bool state_now, bool state_last);
 //

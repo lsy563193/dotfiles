@@ -209,7 +209,7 @@ bool CleanModeFollowWall::wf_is_isolate(GridMap& map)
 			val = wf_path_find_shortest_path(map, curr.x, curr.y, out_cell.x, out_cell.y, 0);
 			val = (val < 0 || val == SCHAR_MAX) ? 0 : 1;
 	} else {
-		if (!clean_map_.isBlockAccessible(0, 0)) {
+		if (!map.isBlockAccessible(0, 0)) {
 			val = wf_path_find_shortest_path(map, curr.x, curr.y, 0, 0, 0);
 			if (val < 0 || val == SCHAR_MAX) {
 				/* Robot start position is blocked. */
@@ -515,6 +515,7 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(GridMap& map, int
 bool CleanModeFollowWall::updateActionInStateClean()
 {
 	ROS_INFO_FL();
+	mapMark();
 	if (reach_cleaned_count_ == 0) {
 		if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
 			plan_path_.pop_front();
@@ -523,6 +524,7 @@ bool CleanModeFollowWall::updateActionInStateClean()
 		}
 	}
 	else if (reach_cleaned_count_ <= 3) {
+
 		if (wf_is_isolate(clean_map_)) {
 			if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
 				plan_path_.pop_front();
@@ -531,6 +533,7 @@ bool CleanModeFollowWall::updateActionInStateClean()
 			}
 		}
 		else {
+			ROS_WARN("%s,%d:follow clean finish", __func__, __LINE__);
 /*			ROS_WARN("%s,%d:follow clean finish,did not find charge", __func__, __LINE__);
 			sp_state = state_go_home_point;
 			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
@@ -559,6 +562,22 @@ bool CleanModeFollowWall::updateActionInStateClean()
 }
 
 bool CleanModeFollowWall::actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) {
-	return reach_cleaned_count_ > reach_cleaned_count_save;
+	ROS_INFO("reach_cleaned_count_ = %d, reach_cleaned_count_save = %d", reach_cleaned_count_, reach_cleaned_count_save);
+	if(reach_cleaned_count_ > reach_cleaned_count_save)
+	{
+		reach_cleaned_count_save = reach_cleaned_count_;
+		return true;
+	}
+	return false;
 }
 
+void CleanModeFollowWall::switchInStateClean() {
+	sp_state = state_go_home_point;
+	ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_points_.size());
+	speaker.play(VOICE_BACK_TO_CHARGER, true);
+	go_home_path_algorithm_.reset();
+	go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
+	sp_state->init();
+	action_i_ = ac_null;
+	genNextAction();
+}
