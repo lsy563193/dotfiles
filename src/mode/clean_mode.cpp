@@ -17,7 +17,7 @@ State* ACleanMode::state_go_home_point = new StateGoHomePoint();
 State* ACleanMode::state_go_to_charger = new StateGoCharger();
 State* ACleanMode::state_charge = new StateCharge();
 State* ACleanMode::state_trapped = new StateTrapped();
-State* ACleanMode::state_tmp_spot = new StateTmpSpot();
+State* ACleanMode::state_spot = new StateSpot();
 State* ACleanMode::state_exception_resume = new ExceptionResume();
 State* ACleanMode::state_exploration = new StateExploration();
 State* ACleanMode::state_resume_low_battery_charge = new StateResumeLowBatteryCharge();
@@ -291,7 +291,7 @@ void ACleanMode::actionFollowWallSaveBlocks()
 
 bool ACleanMode::actionLinearIsFinish(MoveTypeLinear *p_mt)
 {
-	return p_mt->isPoseReach() || p_mt->isPassTargetStop(new_dir_);
+	return p_mt->isPoseReach() ;/*|| p_mt->isPassTargetStop(new_dir_);*/
 }
 
 void ACleanMode::goHomePointUpdateAction()
@@ -747,7 +747,7 @@ void ACleanMode::switchInStateGoToCharger() {
 }
 
 // For spot cleaning.
-bool ACleanMode::updateActionSpot() {
+bool ACleanMode::updateActionInStateSpot() {
 	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
 	mapMark();
 

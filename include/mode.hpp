@@ -266,7 +266,7 @@ public:
 
 	// State clean
 	virtual bool isSwitchByEventInStateClean();
-	virtual bool updateActionInStateClean() = 0;
+	virtual bool updateActionInStateClean(){ return false;};
 	virtual void switchInStateClean();
 
 	// State go home point
@@ -287,10 +287,9 @@ public:
 	virtual void switchInStateExceptionResume(){};
 
 	// State temp spot
-	bool updateActionSpot();
-	virtual bool isSwitchByEventInStateTmpSpot(){return false;};
-	virtual bool updateActionInStateTmpSpot(){};
-	virtual void switchInStateTmpSpot(){};
+	virtual bool isSwitchByEventInStateSpot(){return false;};
+	virtual bool updateActionInStateSpot();
+	virtual void switchInStateSpot(){};
 
 	// State trapped
 	virtual bool isSwitchByEventInStateTrapped(){ return false;};
@@ -352,7 +351,7 @@ public:
 	}
 	bool isStateTmpSpot() const
 	{
-		return sp_state == state_tmp_spot;
+		return sp_state == state_spot;
 	}
 	bool isStateExceptionResume() const
 	{
@@ -383,7 +382,7 @@ protected:
 	static State *state_go_to_charger;
 	static State *state_charge;
 	static State *state_trapped;
-	static State *state_tmp_spot;
+	static State *state_spot;
 	static State *state_exception_resume;
 	static State *state_exploration;
 	static State *state_resume_low_battery_charge;
@@ -452,9 +451,9 @@ public:
 	void switchInStateGoToCharger() override;
 
 	// State tmp spot
-    bool isSwitchByEventInStateTmpSpot() override;
-    bool updateActionInStateTmpSpot() override ;
-    void switchInStateTmpSpot() override;
+    bool isSwitchByEventInStateSpot() override;
+    bool updateActionInStateSpot() override ;
+    void switchInStateSpot() override;
 
 	// State pause
 	bool checkEnterPause();
@@ -568,9 +567,8 @@ public:
 	void cliffAll(bool state_now, bool state_last) override;
 	void remoteClean(bool state_now, bool state_last) override;
 	void keyClean(bool state_now, bool state_last) override;
-
-	bool updateActionInStateClean() override;
-	bool updateActionInStateInit() override;
+	void switchInStateInit() override ;
+	void switchInStateSpot() override ;
 private:
 
 };

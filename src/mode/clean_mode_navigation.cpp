@@ -332,13 +332,15 @@ bool CleanModeNav::checkEnterTempSpotState()
 		mapMark();
 		sp_action_.reset();
 		clean_path_algorithm_.reset(new SpotCleanPathAlgorithm);
-		sp_state = state_tmp_spot;
+		sp_state = state_spot;
 		sp_state->init();
 		return true;
 	}
 	return false;
 }
 
+
+#if 0
 //state--------------------------------------------
 //bool CleanModeNav::isStateGoHomePointUpdateFinish()
 //{
@@ -578,7 +580,7 @@ bool CleanModeNav::checkEnterTempSpotState()
 //		}
 //	return false;
 //}
-
+#endif
 // ------------------State init--------------------
 
 // ------------------State init--------------------
@@ -758,14 +760,14 @@ void CleanModeNav::switchInStateGoToCharger()
 }
 
 // ------------------State tmp spot--------------------
-bool CleanModeNav::isSwitchByEventInStateTmpSpot() {
-	return ACleanMode::isSwitchByEventInStateTmpSpot();
+bool CleanModeNav::isSwitchByEventInStateSpot() {
+	return ACleanMode::isSwitchByEventInStateSpot();
 }
 
-bool CleanModeNav::updateActionInStateTmpSpot() {
-	return updateActionSpot();
+bool CleanModeNav::updateActionInStateSpot() {
+	return updateActionInStateSpot();
 }
-void CleanModeNav::switchInStateTmpSpot() {
+void CleanModeNav::switchInStateSpot() {
 	action_i_ = ac_null;
 	sp_action_.reset();
     sp_state = state_clean;
@@ -784,7 +786,7 @@ bool CleanModeNav::checkEnterPause()
 		ROS_INFO("%s %d: Key clean pressed, pause cleaning.", __FUNCTION__, __LINE__);
 		paused_odom_angle_ = odom.getAngle();
 		sp_action_.reset();
-		if (sp_state == state_clean || sp_state == state_trapped || sp_state == state_tmp_spot)
+		if (sp_state == state_clean || sp_state == state_trapped || sp_state == state_spot)
 			sp_saved_state = state_clean;
 		else if (sp_state == state_go_home_point || sp_state == state_go_to_charger)
 			sp_saved_state = state_go_home_point;

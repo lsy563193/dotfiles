@@ -138,7 +138,7 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Cells *ta
 	int16_t x_last,y_last;
 	uint16_t spiral_count = 1;//number of spiral count
 	uint16_t cell_number = 1;//cell counter
-	uint16_t step = 1;
+	uint16_t step = 2;
 	uint16_t spiral_number = (uint16_t) ceil(diameter * 1000 / (CELL_SIZE))/step;//number of spiral
 	ROS_INFO( "%s,%d,number of spiral" "\033[36m" " %d" "\033[0m",__FUNCTION__,__LINE__,spiral_number);
 	if (sp_type == CLOCKWISE)
