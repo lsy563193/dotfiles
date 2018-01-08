@@ -8,7 +8,7 @@
 
 MovementStay::MovementStay()
 {
-	vacuum.setMode(Vac_Save);
+	vacuum.setLastMode();
 	brush.normalOperate();
 	ROS_INFO("%s %d: Start movement stay.", __FUNCTION__, __LINE__);
 	start_timer_ = ros::Time::now().toSec();

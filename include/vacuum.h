@@ -12,7 +12,6 @@
 enum {
 Vac_Normal=0,
 Vac_Max,
-Vac_Save,
 };
 
 class Vacuum {
@@ -27,13 +26,15 @@ public:
  * save: if save is ture,save this mode,next time clean will reload at interface
  * */
 
-	void setMode(uint8_t mode, bool is_save);
+	void setTmpMode(uint8_t mode);
 
 	void setMode(uint8_t mode);
 
-	void stop();
+	void switchToNext();
 
-	void switchToNext(bool is_save);
+	void setLastMode();
+
+	void stop();
 
 	uint8_t getMode(void)
 	{
@@ -63,7 +64,7 @@ public:
 	}
 
 private:
-	void setSpeedByMode(void);
+	void setSpeedByMode(uint8_t);
 
 	uint8_t mode_;
 	uint8_t mode_save_;

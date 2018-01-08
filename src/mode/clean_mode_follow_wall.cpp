@@ -109,6 +109,13 @@ void CleanModeFollowWall::keyClean(bool state_now, bool state_last)
 //	ev.oc_wheel_right = true;
 //}
 //
+void CleanModeFollowWall::remoteMax(bool state_now, bool state_last)
+{
+
+	beeper.play_for_command(VALID);
+	vacuum.switchToNext();
+	remote.reset();
+}
 void CleanModeFollowWall::remoteClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: remote clean.", __FUNCTION__, __LINE__);
@@ -185,7 +192,8 @@ void CleanModeFollowWall::remoteClean(bool state_now, bool state_last)
 //}
 // End event handlers.
 
-bool CleanModeFollowWall::wf_is_isolate(GridMap& map) {
+bool CleanModeFollowWall::wf_is_isolate(GridMap& map)
+{
 	int16_t	val = 0;
 	int16_t x_min_forward, x_max_forward, y_min, y_max;
 	map.getMapRange(CLEAN_MAP, &x_min_forward, &x_max_forward, &y_min, &y_max);
@@ -201,7 +209,7 @@ bool CleanModeFollowWall::wf_is_isolate(GridMap& map) {
 			val = wf_path_find_shortest_path(map, curr.x, curr.y, out_cell.x, out_cell.y, 0);
 			val = (val < 0 || val == SCHAR_MAX) ? 0 : 1;
 	} else {
-		if (!clean_map_.isBlockAccessible(0, 0)) {
+		if (!map.isBlockAccessible(0, 0)) {
 			val = wf_path_find_shortest_path(map, curr.x, curr.y, 0, 0, 0);
 			if (val < 0 || val == SCHAR_MAX) {
 				/* Robot start position is blocked. */
@@ -243,7 +251,8 @@ bool CleanModeFollowWall::wf_is_isolate(GridMap& map) {
  * 		(totalCost: from function path_find_shortest_path_ranged)
  *
  */
-int16_t CleanModeFollowWall::wf_path_find_shortest_path(GridMap& map, int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound) {
+int16_t CleanModeFollowWall::wf_path_find_shortest_path(GridMap& map, int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound)
+{
 	int16_t val;
 	int16_t x_min, x_max, y_min, y_max;
 
@@ -269,7 +278,8 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path(GridMap& map, int16_t xI
 	return val;
 }
 
-int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(GridMap& map, int16_t curr_x, int16_t curr_y, int16_t end_x, int16_t end_y, uint8_t bound, int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max,bool used_unknown) {
+int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(GridMap& map, int16_t curr_x, int16_t curr_y, int16_t end_x, int16_t end_y, uint8_t bound, int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max,bool used_unknown)
+{
 	uint16_t	next;
 	int16_t	totalCost, costAtCell, targetCost, dest_dir;
 	int16_t i, j, m, n, tracex, tracey, tracex_tmp, tracey_tmp, passValue, nextPassValue, passSet, offset;
@@ -502,7 +512,10 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(GridMap& map, int
 	return totalCost;
 }
 
-bool CleanModeFollowWall::updateActionInStateClean() {
+bool CleanModeFollowWall::updateActionInStateClean()
+{
+	ROS_INFO_FL();
+	mapMark();
 	if (reach_cleaned_count_ == 0) {
 		if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
 			plan_path_.pop_front();
@@ -511,6 +524,7 @@ bool CleanModeFollowWall::updateActionInStateClean() {
 		}
 	}
 	else if (reach_cleaned_count_ <= 3) {
+
 		if (wf_is_isolate(clean_map_)) {
 			if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
 				plan_path_.pop_front();
@@ -519,6 +533,7 @@ bool CleanModeFollowWall::updateActionInStateClean() {
 			}
 		}
 		else {
+			ROS_WARN("%s,%d:follow clean finish", __func__, __LINE__);
 /*			ROS_WARN("%s,%d:follow clean finish,did not find charge", __func__, __LINE__);
 			sp_state = state_go_home_point;
 			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
@@ -546,3 +561,23 @@ bool CleanModeFollowWall::updateActionInStateClean() {
 	return true;
 }
 
+bool CleanModeFollowWall::actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) {
+	ROS_INFO("reach_cleaned_count_ = %d, reach_cleaned_count_save = %d", reach_cleaned_count_, reach_cleaned_count_save);
+	if(reach_cleaned_count_ > reach_cleaned_count_save)
+	{
+		reach_cleaned_count_save = reach_cleaned_count_;
+		return true;
+	}
+	return false;
+}
+
+void CleanModeFollowWall::switchInStateClean() {
+	sp_state = state_go_home_point;
+	ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_points_.size());
+	speaker.play(VOICE_BACK_TO_CHARGER, true);
+	go_home_path_algorithm_.reset();
+	go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
+	sp_state->init();
+	action_i_ = ac_null;
+	genNextAction();
+}

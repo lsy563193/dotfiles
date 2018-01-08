@@ -234,8 +234,6 @@ public:
 
 	void genTargets(uint8_t type,float diameter,Cells *targets,const Cell_t begincell);
 	void initVariables(float diameter,Cell_t cur_cell);
-	void giveMeCleanPoint(GridMap map,Point32_t &point);
-	void refactorTargets(GridMap map,Points *targets);
 private:
 	
 	float spot_diameter_ ;
@@ -279,10 +277,12 @@ public:
 	bool checkTrapped(GridMap &map, const Cell_t &curr_cell) override {};
 
 	HomePoint getCurrentHomePoint();
+	HomePoints getRestHomePoints();
 private:
 
 	GridMap go_home_map_;
 	HomePoints home_points_;
+	HomePoints rest_home_points_;
 	// current_home_point_ is initialized as an unreachable point.
 	HomePoint current_home_point_{{CELL_COUNT_MUL * MAP_SIZE + 1, CELL_COUNT_MUL * MAP_SIZE + 1, 0}, false};
 	std::vector<int> go_home_way_list_;

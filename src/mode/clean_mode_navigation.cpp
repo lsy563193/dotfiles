@@ -40,13 +40,13 @@ bool CleanModeNav::mapMark()
 
 	if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
 	{
-		ROS_ERROR("-------------------------------------------------------");
+//		ROS_ERROR("-------------------------------------------------------");
 		auto start = *passed_path_.begin();
 		passed_path_.erase(std::remove_if(passed_path_.begin(),passed_path_.end(),[&start](Point32_t& it){
 			return it.toCell() == start.toCell();
 		}),passed_path_.end());
 		clean_path_algorithm_->displayCellPath(pointsGenerateCells(passed_path_));
-		ROS_ERROR("-------------------------------------------------------");
+//		ROS_ERROR("-------------------------------------------------------");
 		clean_map_.setFollowWall(action_i_ == ac_follow_wall_left, passed_path_);
 	}
 	if (sp_state == state_trapped)
@@ -55,12 +55,7 @@ bool CleanModeNav::mapMark()
 	{
 		// Set home cell.
 		if (ev.rcon_triggered)
-		{
-			home_points_.push_front({getPosition(), true});
-			ROS_INFO("%s %d: Set home cell(%d, %d).", __FUNCTION__, __LINE__,
-					 home_points_.front().home_point.toCell().x,
-					 home_points_.front().home_point.toCell().y);
-		}
+			setHomePoint();
 	}
 
 	clean_map_.setBlocks();
@@ -211,22 +206,6 @@ void CleanModeNav::remoteClean(bool state_now, bool state_last)
 	remote.reset();
 }
 
-void CleanModeNav::remoteHome(bool state_now, bool state_last)
-{
-	if (sp_state == state_clean || action_i_ == ac_pause)
-	{
-		ROS_WARN("%s %d: remote home.", __FUNCTION__, __LINE__);
-		beeper.play_for_command(VALID);
-		ev.remote_home = true;
-	}
-	else
-	{
-		ROS_WARN("%s %d: remote home but not valid.", __FUNCTION__, __LINE__);
-		beeper.play_for_command(INVALID);
-	}
-	remote.reset();
-}
-
 void CleanModeNav::remoteDirectionLeft(bool state_now, bool state_last)
 {
 	//todo: Just for debug
@@ -284,6 +263,13 @@ void CleanModeNav::remoteSpot(bool state_now, bool state_last)
 	remote.reset();
 }
 
+void CleanModeNav::remoteMax(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
+	beeper.play_for_command(VALID);
+	vacuum.switchToNext();
+	remote.reset();
+}
 // End event handlers.
 
 bool CleanModeNav::actionFollowWallIsFinish(MoveTypeFollowWall *p_mt)
@@ -593,14 +579,16 @@ bool CleanModeNav::updateActionInStateInit() {
 	{
 		// If it is the starting of navigation mode, paused_odom_angle_ will be zero.
 		odom.setAngleOffset(paused_odom_angle_);
+
+		vacuum.setLastMode();
+		brush.normalOperate();
+
 		if (charger.isOnStub())
 		{
 			action_i_ = ac_back_form_charger;
 			home_points_.front().have_seen_charger = true;
 		} else
 			action_i_ = ac_open_lidar;
-		vacuum.setMode(Vac_Save);
-		brush.normalOperate();
 	} else if (action_i_ == ac_back_form_charger)
 	{
 		action_i_ = ac_open_lidar;
@@ -676,7 +664,7 @@ bool CleanModeNav::updateActionInStateClean(){
 		{
 			delta_y = plan_path_.back().toCell().y - start.y;
 			bool is_left = isPos(old_dir_) ^ delta_y > 0;
-			ROS_INFO("\033[31m""%s,%d: target:, 0_left_1_right(%d=%d ^ %d)""\033[0m",
+			ROS_INFO("%s,%d: target:, 0_left_1_right(%d=%d ^ %d)",
 							 __FUNCTION__, __LINE__, is_left, isPos(old_dir_), delta_y);
 			action_i_ = is_left ? ac_follow_wall_left : ac_follow_wall_right;
 		}
@@ -764,10 +752,16 @@ bool CleanModeNav::isSwitchByEventInStateTmpSpot() {
 	return ACleanMode::isSwitchByEventInStateTmpSpot();
 }
 
-void CleanModeNav::switchInStateTmpSpot() {
-	ACleanMode::switchInStateTmpSpot();
+bool CleanModeNav::updateActionInStateTmpSpot() {
+	return updateActionSpot();
 }
-
+void CleanModeNav::switchInStateTmpSpot() {
+	action_i_ = ac_null;
+	sp_action_.reset();
+    sp_state = state_clean;
+    sp_state->init();
+    clean_path_algorithm_.reset(new NavCleanPathAlgorithm);
+}
 
 // ------------------State pause--------------------
 
