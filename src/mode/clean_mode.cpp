@@ -563,6 +563,7 @@ void ACleanMode::switchInStateInit() {
 	action_i_ = ac_null;
 	sp_action_ = nullptr;
 	sp_state = state_clean;
+	sp_state->init();
 }
 
 // ------------------State clean--------------------
