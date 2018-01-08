@@ -542,6 +542,7 @@ public:
 //	void batteryHome(bool state_now, bool state_last);
 //
 //	void chargeDetect(bool state_now, bool state_last);
+	bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) override ;
 
 	int16_t wf_path_find_shortest_path(GridMap& map, int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound);
 
@@ -557,7 +558,7 @@ private:
 protected:
 //	Cells home_point_{};
 private:
-
+ int reach_cleaned_count_save{};
 };
 
 class CleanModeSpot:public ACleanMode

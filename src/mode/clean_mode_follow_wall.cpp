@@ -185,7 +185,8 @@ void CleanModeFollowWall::remoteClean(bool state_now, bool state_last)
 //}
 // End event handlers.
 
-bool CleanModeFollowWall::wf_is_isolate(GridMap& map) {
+bool CleanModeFollowWall::wf_is_isolate(GridMap& map)
+{
 	int16_t	val = 0;
 	int16_t x_min_forward, x_max_forward, y_min, y_max;
 	map.getMapRange(CLEAN_MAP, &x_min_forward, &x_max_forward, &y_min, &y_max);
@@ -243,7 +244,8 @@ bool CleanModeFollowWall::wf_is_isolate(GridMap& map) {
  * 		(totalCost: from function path_find_shortest_path_ranged)
  *
  */
-int16_t CleanModeFollowWall::wf_path_find_shortest_path(GridMap& map, int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound) {
+int16_t CleanModeFollowWall::wf_path_find_shortest_path(GridMap& map, int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound)
+{
 	int16_t val;
 	int16_t x_min, x_max, y_min, y_max;
 
@@ -269,7 +271,8 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path(GridMap& map, int16_t xI
 	return val;
 }
 
-int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(GridMap& map, int16_t curr_x, int16_t curr_y, int16_t end_x, int16_t end_y, uint8_t bound, int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max,bool used_unknown) {
+int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(GridMap& map, int16_t curr_x, int16_t curr_y, int16_t end_x, int16_t end_y, uint8_t bound, int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max,bool used_unknown)
+{
 	uint16_t	next;
 	int16_t	totalCost, costAtCell, targetCost, dest_dir;
 	int16_t i, j, m, n, tracex, tracey, tracex_tmp, tracey_tmp, passValue, nextPassValue, passSet, offset;
@@ -502,7 +505,9 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(GridMap& map, int
 	return totalCost;
 }
 
-bool CleanModeFollowWall::updateActionInStateClean() {
+bool CleanModeFollowWall::updateActionInStateClean()
+{
+	ROS_INFO_FL();
 	if (reach_cleaned_count_ == 0) {
 		if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
 			plan_path_.pop_front();
@@ -544,5 +549,9 @@ bool CleanModeFollowWall::updateActionInStateClean() {
 		ROS_WARN("%s,%d: ac_linear", __FUNCTION__, __LINE__);
 	}
 	return true;
+}
+
+bool CleanModeFollowWall::actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) {
+	return reach_cleaned_count_ > reach_cleaned_count_save;
 }
 
