@@ -85,8 +85,7 @@ ACleanMode::~ACleanMode() {
 	}
 	else if (ev.cliff_all_triggered)
 	{
-		speaker.play(VOICE_ERROR_LIFT_UP, false);
-		speaker.play(VOICE_CLEANING_STOP);
+		speaker.play(VOICE_ERROR_LIFT_UP_CLEANING_STOP);
 		ROS_WARN("%s %d: Cliff all triggered. Stop cleaning.", __FUNCTION__, __LINE__);
 	}
 	else if (ev.fatal_quit)

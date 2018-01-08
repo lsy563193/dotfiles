@@ -133,14 +133,12 @@ void ModeSleep::remotePlan(bool state_now, bool state_last)
 		else if(cliff.getStatus() & (BLOCK_LEFT|BLOCK_FRONT|BLOCK_RIGHT))
 		{
 			ROS_WARN("%s %d: Plan not activated not valid because of robot lifted up.", __FUNCTION__, __LINE__);
-			speaker.play(VOICE_ERROR_LIFT_UP);
-			speaker.play(VOICE_CANCEL_APPOINTMENT);
+			speaker.play(VOICE_ERROR_LIFT_UP_CANCEL_APPOINTMENT);
 		}
 		else if(!battery.isReadyToClean())
 		{
 			ROS_WARN("%s %d: Plan not activated not valid because of robot battery not ready to clean.", __FUNCTION__, __LINE__);
-			speaker.play(VOICE_BATTERY_LOW);
-			speaker.play(VOICE_CANCEL_APPOINTMENT);
+			speaker.play(VOICE_BATTERY_LOW_CANCEL_APPOINTMENT);
 		}
 		else
 		{
