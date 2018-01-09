@@ -21,6 +21,8 @@ CleanModeNav::CleanModeNav()
 	has_aligned_and_open_slam_ = false;
 	paused_odom_angle_ = 0;
 	moved_during_pause_ = false;
+
+	IMoveType::sp_mode_ = this;
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
 	go_home_path_algorithm_.reset();
 }
@@ -40,13 +42,13 @@ bool CleanModeNav::mapMark()
 
 	if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
 	{
-		ROS_ERROR("-------------------------------------------------------");
+//		ROS_ERROR("-------------------------------------------------------");
 		auto start = *passed_path_.begin();
 		passed_path_.erase(std::remove_if(passed_path_.begin(),passed_path_.end(),[&start](Point32_t& it){
 			return it.toCell() == start.toCell();
 		}),passed_path_.end());
 		clean_path_algorithm_->displayCellPath(pointsGenerateCells(passed_path_));
-		ROS_ERROR("-------------------------------------------------------");
+//		ROS_ERROR("-------------------------------------------------------");
 		clean_map_.setFollowWall(action_i_ == ac_follow_wall_left, passed_path_);
 	}
 	if (sp_state == state_trapped)
@@ -206,22 +208,6 @@ void CleanModeNav::remoteClean(bool state_now, bool state_last)
 	remote.reset();
 }
 
-void CleanModeNav::remoteHome(bool state_now, bool state_last)
-{
-	if (sp_state == state_clean || action_i_ == ac_pause)
-	{
-		ROS_WARN("%s %d: remote home.", __FUNCTION__, __LINE__);
-		beeper.play_for_command(VALID);
-		ev.remote_home = true;
-	}
-	else
-	{
-		ROS_WARN("%s %d: remote home but not valid.", __FUNCTION__, __LINE__);
-		beeper.play_for_command(INVALID);
-	}
-	remote.reset();
-}
-
 void CleanModeNav::remoteDirectionLeft(bool state_now, bool state_last)
 {
 	//todo: Just for debug
@@ -298,11 +284,6 @@ bool CleanModeNav::actionFollowWallIsFinish(MoveTypeFollowWall *p_mt)
 	return false;
 }
 
-void CleanModeNav::actionFollowWallSaveBlocks()
-{
-	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
-}
-
 bool CleanModeNav::actionLinearIsFinish(MoveTypeLinear *p_mt)
 {
 	if (p_mt->isLinearForward())
@@ -334,13 +315,15 @@ bool CleanModeNav::checkEnterTempSpotState()
 		mapMark();
 		sp_action_.reset();
 		clean_path_algorithm_.reset(new SpotCleanPathAlgorithm);
-		sp_state = state_tmp_spot;
+		sp_state = state_spot;
 		sp_state->init();
 		return true;
 	}
 	return false;
 }
 
+
+#if 0
 //state--------------------------------------------
 //bool CleanModeNav::isStateGoHomePointUpdateFinish()
 //{
@@ -580,7 +563,7 @@ bool CleanModeNav::checkEnterTempSpotState()
 //		}
 //	return false;
 //}
-
+#endif
 // ------------------State init--------------------
 
 // ------------------State init--------------------
@@ -607,9 +590,10 @@ bool CleanModeNav::updateActionInStateInit() {
 			action_i_ = ac_open_lidar;
 	} else if (action_i_ == ac_back_form_charger)
 	{
+		if (!has_aligned_and_open_slam_)
+			// Init odom position here.
+			robot::instance()->initOdomPosition();
 		action_i_ = ac_open_lidar;
-		// Init odom position here.
-		robot::instance()->initOdomPosition();
 	} else if (action_i_ == ac_open_lidar)
 	{
 		if (!has_aligned_and_open_slam_)
@@ -682,7 +666,7 @@ bool CleanModeNav::updateActionInStateClean(){
 		{
 			delta_y = plan_path_.back().toCell().y - start.y;
 			bool is_left = isPos(old_dir_) ^ delta_y > 0;
-			ROS_INFO("\033[31m""%s,%d: target:, 0_left_1_right(%d=%d ^ %d)""\033[0m",
+			ROS_INFO("%s,%d: target:, 0_left_1_right(%d=%d ^ %d)",
 							 __FUNCTION__, __LINE__, is_left, isPos(old_dir_), delta_y);
 			action_i_ = is_left ? ac_follow_wall_left : ac_follow_wall_right;
 		}
@@ -766,14 +750,14 @@ void CleanModeNav::switchInStateGoToCharger()
 }
 
 // ------------------State tmp spot--------------------
-bool CleanModeNav::isSwitchByEventInStateTmpSpot() {
-	return ACleanMode::isSwitchByEventInStateTmpSpot();
+bool CleanModeNav::isSwitchByEventInStateSpot() {
+	return ACleanMode::isSwitchByEventInStateSpot();
 }
 
-bool CleanModeNav::updateActionInStateTmpSpot() {
-	return updateActionSpot();
+bool CleanModeNav::updateActionInStateSpot() {
+	return updateActionInStateSpot();
 }
-void CleanModeNav::switchInStateTmpSpot() {
+void CleanModeNav::switchInStateSpot() {
 	action_i_ = ac_null;
 	sp_action_.reset();
     sp_state = state_clean;
@@ -792,7 +776,7 @@ bool CleanModeNav::checkEnterPause()
 		ROS_INFO("%s %d: Key clean pressed, pause cleaning.", __FUNCTION__, __LINE__);
 		paused_odom_angle_ = odom.getAngle();
 		sp_action_.reset();
-		if (sp_state == state_clean || sp_state == state_trapped || sp_state == state_tmp_spot)
+		if (sp_state == state_clean || sp_state == state_trapped || sp_state == state_spot)
 			sp_saved_state = state_clean;
 		else if (sp_state == state_go_home_point || sp_state == state_go_to_charger)
 			sp_saved_state = state_go_home_point;

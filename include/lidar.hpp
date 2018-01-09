@@ -59,8 +59,10 @@ public:
 	}
 
 	uint8_t lidarMarker(double X_MAX = 0.237);
-	uint8_t isRobotSlip();
+	void checkRobotSlip();
+	bool isRobotSlip();
 
+	// type 1 for linear scan data, type 2 for origin scan data.
 	bool lidarCheckFresh(float duration, uint8_t type = 1);
 	bool findLines(std::vector<LineABC> *lines,bool combine);
 	bool getAlignAngle(const std::vector<LineABC> *lines,float *align_angle);
@@ -106,11 +108,20 @@ private:
 	bool align_finish_;
 	float align_angle_;
 	geometry_msgs::Point laser_points_;
+
+	// For slip checking
+	bool slip_status_{false};
+	uint8_t slip_frame_cnt_{0};
+	std::vector<float> last_frame_ranges_{};
+	double last_frame_time_stamp_{};
+	double current_frame_time_stamp_{};
+	float slip_ranges_percent_{0.85};//85%
+	uint8_t slip_cnt_limit_{5};
+
 };
 
 bool lidar_is_stuck();
 uint8_t lidar_get_status();
-uint8_t lidar_is_robot_slip();
 
 extern Lidar lidar;
 #endif

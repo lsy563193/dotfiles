@@ -18,7 +18,7 @@ State* ACleanMode::state_go_home_point = new StateGoHomePoint();
 State* ACleanMode::state_go_to_charger = new StateGoCharger();
 State* ACleanMode::state_charge = new StateCharge();
 State* ACleanMode::state_trapped = new StateTrapped();
-State* ACleanMode::state_tmp_spot = new StateTmpSpot();
+State* ACleanMode::state_spot = new StateSpot();
 State* ACleanMode::state_exception_resume = new ExceptionResume();
 State* ACleanMode::state_exploration = new StateExploration();
 State* ACleanMode::state_resume_low_battery_charge = new StateResumeLowBatteryCharge();
@@ -64,7 +64,7 @@ ACleanMode::ACleanMode()
 
 	passed_path_.clear();
 	plan_path_.clear();
-	clean_map_.mapInit();
+	clean_map_.reset(CLEAN_MAP);
 }
 
 ACleanMode::~ACleanMode() {
@@ -87,8 +87,7 @@ ACleanMode::~ACleanMode() {
 	}
 	else if (ev.cliff_all_triggered)
 	{
-		speaker.play(VOICE_ERROR_LIFT_UP, false);
-		speaker.play(VOICE_CLEANING_STOP);
+		speaker.play(VOICE_ERROR_LIFT_UP_CLEANING_STOP);
 		ROS_WARN("%s %d: Cliff all triggered. Stop cleaning.", __FUNCTION__, __LINE__);
 	}
 	else if (ev.fatal_quit)
@@ -271,12 +270,17 @@ bool ACleanMode::actionFollowWallIsFinish(MoveTypeFollowWall *p_mt)
 
 void ACleanMode::actionFollowWallSaveBlocks()
 {
-	return;
+	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
 }
 
 bool ACleanMode::actionLinearIsFinish(MoveTypeLinear *p_mt)
 {
-	return p_mt->isPoseReach() || p_mt->isPassTargetStop(new_dir_);
+	return p_mt->isPoseReach() ;/*|| p_mt->isPassTargetStop(new_dir_);*/
+}
+
+void ACleanMode::actionLinearSaveBlocks()
+{
+	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
 }
 
 void ACleanMode::goHomePointUpdateAction()
@@ -510,11 +514,51 @@ Cells ACleanMode::pointsGenerateCells(Points &targets)
 	return path;
 }
 
+void ACleanMode::setHomePoint()
+{
+	// Set home cell.
+	HomePoints::iterator home_point_it = home_points_.begin();
+	for (;home_point_it != home_points_.end(); home_point_it++)
+	{
+		if (home_point_it->home_point.toCell() == getPosition().toCell())
+		{
+			ROS_INFO("%s %d: Home cell(%d, %d) exists.",
+					 __FUNCTION__, __LINE__, home_point_it->home_point.toCell().x, home_point_it->home_point.toCell().y);
+			return;
+		}
+	}
+	home_points_.push_front({getPosition(), true});
+	ROS_INFO("%s %d: Set home cell(%d, %d).", __FUNCTION__, __LINE__,
+			 home_points_.front().home_point.x,
+			 home_points_.front().home_point.y);
+}
+
+// ------------------Handlers--------------------------
+void ACleanMode::remoteHome(bool state_now, bool state_last)
+{
+	if (sp_state == state_clean || action_i_ == ac_pause)
+	{
+		ROS_WARN("%s %d: remote home.", __FUNCTION__, __LINE__);
+		beeper.play_for_command(VALID);
+		ev.remote_home = true;
+	}
+	else
+	{
+		ROS_WARN("%s %d: remote home but not valid.", __FUNCTION__, __LINE__);
+		beeper.play_for_command(INVALID);
+	}
+	remote.reset();
+}
+
+// ------------------Handlers end--------------------------
+
 bool ACleanMode::checkEnterExceptionResumeState()
 {
 	if (isExceptionTriggered()) {
+		ROS_WARN("%s %d: Exception triggered!", __FUNCTION__, __LINE__);
 		mapMark();
 		sp_action_.reset();
+		sp_saved_state = sp_state;
 		sp_state = state_exception_resume;
 		sp_state->init();
 		return true;
@@ -534,6 +578,21 @@ bool ACleanMode::checkEnterNullState()
 		return true;
 	}
 
+	return false;
+}
+
+bool ACleanMode::checkEnterGoCharger()
+{
+	ev.rcon_triggered = c_rcon.getForwardTop();
+	if (ev.rcon_triggered) {
+		ev.rcon_triggered= false;
+		ROS_WARN("%s,%d:find charge success,convert to go to charge state", __func__, __LINE__);
+		sp_state = state_go_to_charger;
+		sp_state->init();
+		action_i_ = ac_go_to_charger;
+		genNextAction();
+		return true;
+	}
 	return false;
 }
 
@@ -721,8 +780,8 @@ void ACleanMode::switchInStateGoToCharger() {
 	}
 }
 
-// For spot cleaning.
-bool ACleanMode::updateActionSpot() {
+// ------------------State spot--------------------
+bool ACleanMode::updateActionInStateSpot() {
 	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
 	mapMark();
 
@@ -745,22 +804,65 @@ bool ACleanMode::updateActionSpot() {
 	}
 }
 
-void ACleanMode::setHomePoint()
+// ------------------State exception resume--------------
+bool ACleanMode::updateActionInStateExceptionResume()
 {
-	// Set home cell.
-	HomePoints::iterator home_point_it = home_points_.begin();
-	for (;home_point_it != home_points_.end(); home_point_it++)
+	if (isExceptionTriggered())
 	{
-		if (home_point_it->home_point.toCell() == getPosition().toCell())
-		{
-			ROS_INFO("%s %d: Home cell(%d, %d) exists.",
-					 __FUNCTION__, __LINE__, home_point_it->home_point.toCell().x, home_point_it->home_point.toCell().y);
-			return;
-		}
+		sp_action_.reset();
+		action_i_ = ac_exception_resume;
+		genNextAction();
+		return true;
 	}
-	home_points_.push_front({getPosition(), true});
-	ROS_INFO("%s %d: Set home cell(%d, %d).", __FUNCTION__, __LINE__,
-			 home_points_.front().home_point.x,
-			 home_points_.front().home_point.y);
+	return false;
+}
+
+void ACleanMode::switchInStateExceptionResume()
+{
+	if (!isExceptionTriggered())
+	{
+		ROS_INFO("%s %d: Resume to previous state", __FUNCTION__, __LINE__);
+		sp_action_.reset();
+		sp_state = sp_saved_state;
+	}
+}
+
+// State exploration
+bool ACleanMode::isSwitchByEventInStateExploration() {
+	return checkEnterGoCharger();
+}
+
+bool ACleanMode::updateActionInStateExploration() {
+	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
+	mapMark();
+	PP_INFO();
+	old_dir_ = new_dir_;
+	ROS_WARN("old_dir_(%d)", old_dir_);
+	plan_path_.clear();
+
+	if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
+		action_i_ = ac_linear;
+		new_dir_ = plan_path_.front().th;
+		ROS_WARN("new_dir_(%d)", new_dir_);
+		plan_path_.pop_front();
+		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
+		robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
+		genNextAction();
+		return true;
+	}
+	else {
+		ROS_WARN("%s,%d:exploration finish,did not find charge", __func__, __LINE__);
+		if (go_home_path_algorithm_ == nullptr)
+			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
+		action_i_ = ac_null;
+//		genNextAction();
+	}
+	return false;
+}
+
+void ACleanMode::switchInStateExploration() {
+	PP_INFO();
+	sp_state = state_go_home_point;
+	sp_state->init();
 }
 

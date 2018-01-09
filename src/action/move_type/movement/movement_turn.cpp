@@ -51,5 +51,5 @@ void MovementTurn::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 
 bool MovementTurn::isFinish()
 {
-	return isReach();
+	return isReach() || sp_mt_->shouldMoveBack();
 }

@@ -8,25 +8,21 @@
 
 MoveTypeFollowWall::MoveTypeFollowWall(bool is_left, bool is_trapped)
 {
+	ROS_INFO("%s %d: Entering move type follow wall.", __FUNCTION__, __LINE__);
 
 	auto p_clean_mode = (ACleanMode*)sp_mode_;
 	if(! p_clean_mode->plan_path_.empty())
 		target_point_ = p_clean_mode->plan_path_.front();
 	is_left_ = is_left;
 	int16_t turn_angle;
-	PP_INFO();
 	if (!is_trapped)
 		turn_angle = get_turn_angle(! p_clean_mode->plan_path_.empty());
 	else
 		turn_angle = 0;
-	PP_INFO();
 	turn_target_angle_ = ranged_angle(getPosition().th + turn_angle);
 	movement_i_ = mm_turn;
-	PP_INFO();
 	sp_movement_.reset(new MovementTurn(turn_target_angle_, ROTATE_TOP_SPEED));
-	PP_INFO();
 	IMovement::sp_mt_ = this;
-	PP_INFO();
 
 //	if (action_i_ == ac_back) {
 //		PP_INFO();
@@ -61,40 +57,35 @@ bool MoveTypeFollowWall::isFinish()
 		return true;
 
 	if (sp_movement_->isFinish()) {
-		PP_WARN();
-		if (movement_i_ == mm_turn) {
-			// todo: Add checking for bumper/cliff/etc.
-			resetTriggeredValue();
-			movement_i_ = mm_straight;
-			sp_movement_.reset(new MovementStraight());
-		}
-		else if (movement_i_ == mm_straight) {
-			// todo: Add checking for bumper/cliff/etc.
-			resetTriggeredValue();
-			movement_i_ = mm_forward;
-			sp_movement_.reset(new MovementFollowWallLidar(is_left_));
-		}
-		else if (movement_i_ == mm_forward) {
-			if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || ev.robot_slip) {
-				PP_INFO();
-				p_clean_mode->actionFollowWallSaveBlocks();
-//				resetTriggeredValue();
-				movement_i_ = mm_back;
-				sp_movement_.reset(new MovementBack(0.01, BACK_MAX_SPEED));
+		if (movement_i_ == mm_turn)
+		{
+			if (!handleMoveBackEvent(p_clean_mode))
+			{
+				resetTriggeredValue();// is it necessary?
+				movement_i_ = mm_straight;
+				sp_movement_.reset(new MovementStraight());
 			}
-			else if (ev.lidar_triggered || ev.obs_triggered) {
-				PP_INFO();
+		}
+		else if (movement_i_ == mm_straight)
+		{
+			if (!handleMoveBackEvent(p_clean_mode))
+			{
+				resetTriggeredValue();// is it necessary?
+				movement_i_ = mm_forward;
+				sp_movement_.reset(new MovementFollowWallLidar(is_left_));
+			}
+		}
+		else if (movement_i_ == mm_forward)
+		{
+			if (!handleMoveBackEvent(p_clean_mode))
+			{
 				p_clean_mode->actionFollowWallSaveBlocks();
-				int16_t turn_angle =get_turn_angle(false);
+				int16_t turn_angle = get_turn_angle(false);
 				turn_target_angle_ = ranged_angle(robot::instance()->getWorldPoseAngle() + turn_angle);
 				movement_i_ = mm_turn;
 				sp_movement_.reset(new MovementTurn(turn_target_angle_, ROTATE_TOP_SPEED));
 				resetTriggeredValue();
 			}
-//			else if(tmp_plan_path_.empty())
-//			{
-//				sp_movement_.reset(new MovementForwardTurn(is_left_));
-//			}
 		}
 		else if (movement_i_ == mm_back) {
 			movement_i_ = mm_turn;
@@ -435,6 +426,33 @@ bool MoveTypeFollowWall::isBlockCleared(GridMap &map, Points &passed_path)
 	{
 //		ROS_INFO("%s %d: passed_path.back(%d %d)", __FUNCTION__, __LINE__, passed_path.back().x, passed_path.back().y);
 		return !map.isBlockAccessible(passed_path.back().toCell().x, passed_path.back().toCell().y);
+	}
+
+	return false;
+}
+
+bool MoveTypeFollowWall::handleMoveBackEvent(ACleanMode* p_clean_mode)
+{
+	if (ev.bumper_triggered || ev.cliff_triggered)
+	{
+		p_clean_mode->actionFollowWallSaveBlocks();
+		movement_i_ = mm_back;
+		sp_movement_.reset(new MovementBack(0.01, BACK_MAX_SPEED));
+		return true;
+	}
+	else if(ev.tilt_triggered)
+	{
+		p_clean_mode->actionFollowWallSaveBlocks();
+		movement_i_ = mm_back;
+		sp_movement_.reset(new MovementBack(0.3, BACK_MAX_SPEED));
+		return true;
+	}
+	else if (ev.robot_slip)
+	{
+		p_clean_mode->actionFollowWallSaveBlocks();
+		movement_i_ = mm_back;
+		sp_movement_.reset(new MovementBack(0.3, BACK_MIN_SPEED));
+		return true;
 	}
 
 	return false;
