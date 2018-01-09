@@ -258,7 +258,6 @@ public:
 
 	// State null
 	bool checkEnterNullState();
-	bool checkEnterGoCharger();
 	// State init
 	virtual bool isSwitchByEventInStateInit();
 	virtual bool updateActionInStateInit();
@@ -276,13 +275,14 @@ public:
 	virtual void switchInStateGoHomePoint();
 
 	// State go to charger
+	bool checkEnterGoCharger();
 	virtual bool isSwitchByEventInStateGoToCharger(){return false;};
 	virtual bool updateActionInStateGoToCharger();
 	virtual void switchInStateGoToCharger();
 
 	// State exception resume
 	bool checkEnterExceptionResumeState();
-	virtual bool isSwitchByEventInStateExceptionResume(){return false;};
+	virtual bool isSwitchByEventInStateExceptionResume();
 	virtual bool updateActionInStateExceptionResume();
 	virtual void switchInStateExceptionResume();
 
@@ -378,8 +378,7 @@ public:
 	static State *sp_state;
 	static State *state_clean;
 protected:
-	static State *sp_saved_state;
-	static State *sp_tmp_state;//state before inter trapped,as clean or exploration;
+	static std::vector<State*> sp_saved_states;
 	static State *state_init;
 	static State *state_go_home_point;
 	static State *state_go_to_charger;
@@ -454,6 +453,7 @@ public:
 	void switchInStateGoToCharger() override;
 
 	// State tmp spot
+	bool checkEnterTempSpotState();
 	bool checkOutOfSpot();
 	bool isSwitchByEventInStateSpot() override;
 	void switchInStateSpot() override;
@@ -466,11 +466,24 @@ public:
 
 	// State trapped
 	bool isSwitchByEventInStateTrapped() override;
+
+	// State charge
+	bool isSwitchByEventInStateCharge() override;
+	bool updateActionStateCharge() override;
+	void switchInStateCharge() override;
+
+	// State resume low battery charge
+	bool checkEnterResumeLowBatteryCharge();
+	bool isSwitchByEventInStateResumeLowBatteryCharge() override;
+	bool updateActionInStateResumeLowBatteryCharge() override;
+	void switchInStateResumeLowBatteryCharge() override;
+
+	// State exception resume
+	bool isSwitchByEventInStateExceptionResume();
+
 private:
 	bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
-	bool actionLinearIsFinish(MoveTypeLinear *p_mt);
-	void resumeLowBatteryCharge();
-	bool checkEnterTempSpotState();
+	bool actionLinearIsFinish(MoveTypeLinear *p_mt) override;
 
 	bool has_aligned_and_open_slam_{false};
 	float paused_odom_angle_{0};
