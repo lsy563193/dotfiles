@@ -562,7 +562,7 @@ bool CleanModeFollowWall::updateActionInStateClean()
 }
 
 bool CleanModeFollowWall::actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) {
-	ROS_INFO("reach_cleaned_count_ = %d, reach_cleaned_count_save = %d", reach_cleaned_count_, reach_cleaned_count_save);
+//	ROS_INFO("reach_cleaned_count_ = %d, reach_cleaned_count_save = %d", reach_cleaned_count_, reach_cleaned_count_save);
 	if(reach_cleaned_count_ > reach_cleaned_count_save)
 	{
 		reach_cleaned_count_save = reach_cleaned_count_;
