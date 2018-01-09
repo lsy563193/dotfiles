@@ -413,7 +413,7 @@ bool CleanModeNav::checkEnterTempSpotState()
 //	return false;
 //}
 //
-/
+
 //bool CleanModeNav::isStateExceptionResumeUpdateFinish() {
 //	if (ev.key_clean_pressed)
 //	{
@@ -709,15 +709,15 @@ void CleanModeNav::switchInStateGoToCharger()
 
 // ------------------State tmp spot--------------------
 bool CleanModeNav::isSwitchByEventInStateSpot() {
-	return ACleanMode::isSwitchByEventInStateSpot();
+	return checkEnterPause() || checkOutOfSpot();
 }
 
 void CleanModeNav::switchInStateSpot() {
 	action_i_ = ac_null;
 	sp_action_.reset();
-    sp_state = state_clean;
-    sp_state->init();
-    clean_path_algorithm_.reset(new NavCleanPathAlgorithm);
+	sp_state = state_clean;
+	sp_state->init();
+	clean_path_algorithm_.reset(new NavCleanPathAlgorithm);
 }
 
 // ------------------State pause--------------------
@@ -783,6 +783,18 @@ bool CleanModeNav::updateActionInStatePause()
 }
 
 // ------------------State trapped------------------
+bool CleanModeNav::checkOutOfSpot() {
+	if (ev.remote_spot) {
+		ev.remote_spot = false;
+		sp_state = state_clean;
+		sp_state->init();
+		action_i_ = ac_null;
+		sp_action_.reset();
+		clean_path_algorithm_.reset(new NavCleanPathAlgorithm);
+		return true;
+	}
+	return false;
+}
 bool CleanModeNav::isSwitchByEventInStateTrapped()
 {
 	return checkEnterExceptionResumeState()||checkEnterPause();

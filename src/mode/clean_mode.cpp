@@ -798,6 +798,11 @@ bool ACleanMode::updateActionInStateSpot() {
 	}
 }
 
+bool ACleanMode::isSwitchByEventInStateSpot()
+{
+	return false;
+}
+
 // ------------------State exception resume--------------
 bool ACleanMode::updateActionInStateExceptionResume()
 {

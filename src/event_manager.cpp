@@ -244,11 +244,11 @@ void event_manager_thread_cb()
 			//ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OVER_CURRENT_BRUSH_RIGHT);
 		}
-		if ((uint32_t) wheel.getLeftWheelCurrent() > Wheel_Stall_Limit) {
+		if ((uint32_t) wheel.getLeftWheelOc()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OVER_CURRENT_WHEEL_LEFT);
 		}
-		if ((uint32_t) wheel.getRightWheelCurrent() > Wheel_Stall_Limit) {
+		if ((uint32_t) wheel.getRightWheelOc()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_OVER_CURRENT_WHEEL_RIGHT);
 		}

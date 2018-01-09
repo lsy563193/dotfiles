@@ -287,7 +287,7 @@ public:
 	virtual void switchInStateExceptionResume();
 
 	// State temp spot
-	virtual bool isSwitchByEventInStateSpot(){return false;};
+	virtual bool isSwitchByEventInStateSpot();
 	virtual bool updateActionInStateSpot();
 	virtual void switchInStateSpot(){};
 
@@ -335,8 +335,7 @@ public:
 	{
 		return sp_state == state_init;
 	}
-	bool isStateClean() const
-	{
+	bool isStateClean() const {
 		return sp_state == state_clean;
 	}
 	bool isStateGoHomePoint() const
@@ -453,6 +452,7 @@ public:
 	void switchInStateGoToCharger() override;
 
 	// State tmp spot
+	bool checkOutOfSpot();
 	bool isSwitchByEventInStateSpot() override;
 	void switchInStateSpot() override;
 
@@ -577,6 +577,8 @@ public:
 	void keyClean(bool state_now, bool state_last) override;
 	void switchInStateInit() override ;
 	void switchInStateSpot() override ;
+	void overCurrentWheelLeft(bool state_now, bool state_last) override;
+	void overCurrentWheelRight(bool state_now, bool state_last) override;
 private:
 
 };
