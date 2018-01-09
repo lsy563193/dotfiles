@@ -240,6 +240,7 @@ public:
 
 	virtual bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt);
 	virtual void actionFollowWallSaveBlocks();
+	virtual void actionLinearSaveBlocks();
 	void goHomePointUpdateAction();
 
 	virtual bool actionLinearIsFinish(MoveTypeLinear *p_mt);
@@ -466,7 +467,6 @@ public:
 
 private:
 	bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
-	void actionFollowWallSaveBlocks() override ;
 	bool actionLinearIsFinish(MoveTypeLinear *p_mt);
 	void resumeLowBatteryCharge();
 	bool checkEnterTempSpotState();

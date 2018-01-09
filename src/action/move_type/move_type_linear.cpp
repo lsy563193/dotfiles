@@ -43,41 +43,20 @@ bool MoveTypeLinear::isFinish()
 		switchLinearTarget(p_clean_mode);
 
 	if (sp_movement_->isFinish()) {
-		PP_INFO();
 
-		if (movement_i_ == mm_turn) {
-			PP_INFO();
-			// todo: Add checking for bumper/cliff/etc.
-			movement_i_ = mm_forward;
-			resetTriggeredValue();
-			sp_movement_.reset(new MovementFollowPointLinear());
-		}
-		else if (movement_i_ == mm_forward) {
-			PP_INFO();
-			if (ev.bumper_triggered || ev.cliff_triggered) {
-
-				movement_i_ = mm_back;
-				sp_movement_.reset(new MovementBack(0.01, BACK_MAX_SPEED));
-			}
-			else if(ev.tilt_triggered){
-				movement_i_ = mm_back;
-				sp_movement_.reset(new MovementBack(0.3, BACK_MAX_SPEED));
-			}
-			else if (ev.robot_slip)
+		if(movement_i_ == mm_turn)
+		{
+			if (!handleMoveBackEvent(p_clean_mode))
 			{
-				movement_i_ = mm_back;
-				sp_movement_.reset(new MovementBack(0.3, BACK_MIN_SPEED));
-			}
-			else {
-//				resetTriggeredValue();
-				return true;
+				movement_i_ = mm_forward;
+				resetTriggeredValue();
+				sp_movement_.reset(new MovementFollowPointLinear());
 			}
 		}
-		else {//back
-//			resetTriggeredValue();
-			PP_INFO();
+		else if (movement_i_ == mm_forward && !handleMoveBackEvent(p_clean_mode))
 			return true;
-		}
+		else //if (movement_i_ == mm_back)
+			return true;
 	}
 	return false;
 }
@@ -161,5 +140,31 @@ void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 					 __FUNCTION__,__LINE__,target_point_.toCell().x,target_point_.toCell().y, p_clean_mode->new_dir_);
 		}
 	}
+}
+
+bool MoveTypeLinear::handleMoveBackEvent(ACleanMode *p_clean_mode)
+{
+	if (ev.bumper_triggered || ev.cliff_triggered)
+	{
+		p_clean_mode->actionLinearSaveBlocks();
+		movement_i_ = mm_back;
+		sp_movement_.reset(new MovementBack(0.01, BACK_MAX_SPEED));
+		return true;
+	}
+	else if(ev.tilt_triggered){
+		p_clean_mode->actionLinearSaveBlocks();
+		movement_i_ = mm_back;
+		sp_movement_.reset(new MovementBack(0.3, BACK_MAX_SPEED));
+		return true;
+	}
+	else if (ev.robot_slip)
+	{
+		p_clean_mode->actionLinearSaveBlocks();
+		movement_i_ = mm_back;
+		sp_movement_.reset(new MovementBack(0.3, BACK_MIN_SPEED));
+		return true;
+	}
+
+	return false;
 }
 

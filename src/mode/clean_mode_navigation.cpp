@@ -284,11 +284,6 @@ bool CleanModeNav::actionFollowWallIsFinish(MoveTypeFollowWall *p_mt)
 	return false;
 }
 
-void CleanModeNav::actionFollowWallSaveBlocks()
-{
-	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
-}
-
 bool CleanModeNav::actionLinearIsFinish(MoveTypeLinear *p_mt)
 {
 	if (p_mt->isLinearForward())

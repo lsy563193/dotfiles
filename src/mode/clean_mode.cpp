@@ -269,12 +269,17 @@ bool ACleanMode::actionFollowWallIsFinish(MoveTypeFollowWall *p_mt)
 
 void ACleanMode::actionFollowWallSaveBlocks()
 {
-	return;
+	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
 }
 
 bool ACleanMode::actionLinearIsFinish(MoveTypeLinear *p_mt)
 {
 	return p_mt->isPoseReach() ;/*|| p_mt->isPassTargetStop(new_dir_);*/
+}
+
+void ACleanMode::actionLinearSaveBlocks()
+{
+	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
 }
 
 void ACleanMode::goHomePointUpdateAction()

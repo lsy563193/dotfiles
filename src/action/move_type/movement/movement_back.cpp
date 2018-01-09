@@ -74,19 +74,19 @@ bool MovementBack::isFinish()
 		{
 			ev.cliff_jam = true;
 			ROS_WARN("%s, %d: Cliff jam.", __FUNCTION__, __LINE__);
-			return true;
+			return false;
 		}
 		else if (bumper_jam_cnt_ >= 2)
 		{
 			ev.bumper_jam = true;
 			ROS_WARN("%s, %d: Bumper jam.", __FUNCTION__, __LINE__);
-			return true;
+			return false;
 		}
 		else if (robot_stuck_cnt_ >= 2)
 		{
 			ev.robot_stuck = true;
 			ROS_WARN("%s, %d: Robot stuck.", __FUNCTION__, __LINE__);
-			return true;
+			return false;
 		}
 		//else if (g_lidar_bumper_cnt >= 2)
 		//{
