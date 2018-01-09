@@ -292,9 +292,10 @@ public:
 	virtual void switchInStateSpot(){};
 
 	// State trapped
-	virtual bool isSwitchByEventInStateTrapped(){ return false;};
-	virtual bool updateActionInStateTrapped(){};
-	virtual void switchInStateTrapped(){ };
+	virtual bool isSwitchByEventInStateTrapped();
+	virtual bool updateActionInStateTrapped();
+	virtual void switchInStateTrapped();
+	bool trapped_time_out_{};
 
 	// State exploration
 	virtual bool isSwitchByEventInStateExploration();
@@ -378,6 +379,7 @@ public:
 	static State *state_clean;
 protected:
 	static State *sp_saved_state;
+	static State *sp_tmp_state;//state before inter trapped,as clean or exploration;
 	static State *state_init;
 	static State *state_go_home_point;
 	static State *state_go_to_charger;
@@ -464,10 +466,6 @@ public:
 
 	// State trapped
 	bool isSwitchByEventInStateTrapped() override;
-	bool updateActionInStateTrapped() override;
-	void switchInStateTrapped() override;
-	bool trapped_time_out_{};
-	bool escape_trapped_{};
 private:
 	bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
 	bool actionLinearIsFinish(MoveTypeLinear *p_mt);

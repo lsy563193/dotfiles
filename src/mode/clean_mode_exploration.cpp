@@ -160,3 +160,4 @@ void CleanModeExploration::switchInStateGoHomePoint() {
 	PP_INFO();
 	sp_state = nullptr;
 }
+

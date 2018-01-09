@@ -12,6 +12,8 @@
 
 State* ACleanMode::sp_state{};
 State* ACleanMode::sp_saved_state{};
+State* ACleanMode::sp_tmp_state{};
+
 State* ACleanMode::state_init = new StateInit();
 State* ACleanMode::state_clean = new StateClean();
 State* ACleanMode::state_go_home_point = new StateGoHomePoint();
@@ -865,3 +867,55 @@ void ACleanMode::switchInStateExploration() {
 	sp_state->init();
 }
 
+// ------------------State trapped------------------
+
+bool ACleanMode::isSwitchByEventInStateTrapped()
+{
+	return checkEnterExceptionResumeState();
+}
+
+bool ACleanMode::updateActionInStateTrapped()
+{
+	PP_INFO();
+//	sp_action_.reset();//for call ~constitution;
+	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
+	mapMark();
+
+	if(sp_action_ == nullptr)
+	{
+		action_i_ = ac_follow_wall_left;
+		genNextAction();
+		return true;
+	}
+
+	if (robot_timer.trapTimeout(ESCAPE_TRAPPED_TIME)) {
+		action_i_ = ac_null;
+		genNextAction();
+		trapped_time_out_ = true;
+		return false;
+	}
+	else if (!clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell())) {
+		action_i_ = ac_null;
+		genNextAction();
+		return false;
+	}
+
+	return true;
+}
+
+void ACleanMode::switchInStateTrapped()
+{
+	PP_INFO();
+	if (trapped_time_out_) {
+		trapped_time_out_ = false;
+		ROS_WARN("%s %d: Escape trapped timeout!(%d)", __FUNCTION__, __LINE__, ESCAPE_TRAPPED_TIME);
+		reach_cleaned_count_ = 0;
+		sp_state = nullptr;
+	}
+	else/* if (escape_trapped_)*/ {
+		ROS_WARN("%s %d: Escape trapped !", __FUNCTION__, __LINE__);
+		reach_cleaned_count_ = 0;
+		sp_state = (sp_tmp_state == state_clean) ? state_clean : state_exploration;
+		sp_state->init();
+	}
+}
