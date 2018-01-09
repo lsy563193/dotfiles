@@ -446,17 +446,15 @@ public:
 	// State go home point
 	bool checkEnterGoHomePointState() override;
 	bool isSwitchByEventInStateGoHomePoint() override;
-	bool updateActionInStateGoHomePoint() override;
-	void switchInStateGoHomePoint() override ;
 
 	// State go to charger
 	bool isSwitchByEventInStateGoToCharger() override;
 	void switchInStateGoToCharger() override;
 
 	// State tmp spot
-    bool isSwitchByEventInStateSpot() override;
-    bool updateActionInStateSpot() override ;
-    void switchInStateSpot() override;
+	bool checkOutOfSpot();
+	bool isSwitchByEventInStateSpot() override;
+	void switchInStateSpot() override;
 
 	// State pause
 	bool checkEnterPause();
@@ -464,6 +462,12 @@ public:
 	bool isSwitchByEventInStatePause() override;
 	bool updateActionInStatePause() override;
 
+	// State trapped
+	bool isSwitchByEventInStateTrapped() override;
+	bool updateActionInStateTrapped() override;
+	void switchInStateTrapped() override;
+	bool trapped_time_out_{};
+	bool escape_trapped_{};
 private:
 	bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
 	bool actionLinearIsFinish(MoveTypeLinear *p_mt);

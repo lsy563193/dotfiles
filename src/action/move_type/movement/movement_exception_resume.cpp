@@ -98,8 +98,7 @@ bool MovementExceptionResume::isFinish()
 	{
 		if (ros::Time::now().toSec() - resume_wheel_start_time_ >= 1)
 		{
-			wheel_current_sum_ /= wheel_current_sum_cnt_;
-			if (wheel_current_sum_ > Wheel_Stall_Limit)
+			if (wheel.getLeftWheelOc() || wheel.getRightWheelOc())
 			{
 				if (wheel_resume_cnt_ >= 3)
 				{
@@ -122,8 +121,6 @@ bool MovementExceptionResume::isFinish()
 				{
 					resume_wheel_start_time_ = time(NULL);
 					wheel_resume_cnt_++;
-					wheel_current_sum_ = 0;
-					wheel_current_sum_cnt_ = 0;
 					ROS_WARN("%s %d: Failed to resume for %d times.", __FUNCTION__, __LINE__, wheel_resume_cnt_);
 				}
 			}
@@ -137,20 +134,12 @@ bool MovementExceptionResume::isFinish()
 					brush.normalOperate();
 				} else
 				{
-					ROS_WARN("%s %d: Left wheel resume succeeded.", __FUNCTION__, __LINE__);
+					ROS_WARN("%s %d: Right wheel resume succeeded.", __FUNCTION__, __LINE__);
 					ev.oc_wheel_right = false;
 					vacuum.setLastMode();
 					brush.normalOperate();
 				}
 			}
-		}
-		else
-		{
-			if (ev.oc_wheel_left)
-				wheel_current_sum_ += wheel.getLeftWheelCurrent();
-			else
-				wheel_current_sum_ += wheel.getRightWheelCurrent();
-			wheel_current_sum_cnt_++;
 		}
 	}
 	else if (ev.robot_stuck)

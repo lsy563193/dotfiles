@@ -413,38 +413,7 @@ bool CleanModeNav::checkEnterTempSpotState()
 //	return false;
 //}
 //
-//bool CleanModeNav::isStateTrappedUpdateFinish() {
-//	if (isExceptionTriggered()) {
-//		ROS_INFO("%s %d: Pass this state switching for exception cases.", __FUNCTION__, __LINE__);
-//		sp_state = state_exception_resume;
-//	}
-//	if (ev.key_clean_pressed)
-//		{
-//			checkEnterPause();
-//			setNextAction();
-//		}
-//	if(sp_action_ != nullptr && !sp_action_->isFinish())
-//		return true;
-//	sp_action_.reset();//for call ~constitution;
-//	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
-//	mapMark();
-//
-//	PP_INFO();
-//	if (robot_timer.trapTimeout(ESCAPE_TRAPPED_TIME)) {
-//		ROS_WARN("%s %d: Escape trapped timeout!(%d)", __FUNCTION__, __LINE__, ESCAPE_TRAPPED_TIME);
-//		sp_state = nullptr;
-//		return true;
-//	}
-//	else if (!clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell())) {
-//		ROS_WARN("%s %d: Escape trapped !", __FUNCTION__, __LINE__);
-//		reach_cleaned_count_ = 0;
-//		sp_state = state_clean;
-//		sp_state->init();
-//	}
-//	// Still trapped.
-//	return false;
-//}
-//
+
 //bool CleanModeNav::isStateExceptionResumeUpdateFinish() {
 //	if (ev.key_clean_pressed)
 //	{
@@ -708,16 +677,6 @@ bool CleanModeNav::isSwitchByEventInStateGoHomePoint()
 	return checkEnterPause() || ACleanMode::isSwitchByEventInStateGoHomePoint();
 }
 
-bool CleanModeNav::updateActionInStateGoHomePoint()
-{
-	return ACleanMode::updateActionInStateGoHomePoint();
-}
-
-void CleanModeNav::switchInStateGoHomePoint()
-{
-	ACleanMode::switchInStateGoHomePoint();
-}
-
 // ------------------State go to charger--------------------
 bool CleanModeNav::isSwitchByEventInStateGoToCharger()
 {
@@ -750,30 +709,15 @@ void CleanModeNav::switchInStateGoToCharger()
 
 // ------------------State tmp spot--------------------
 bool CleanModeNav::isSwitchByEventInStateSpot() {
-	//return ACleanMode::isSwitchByEventInStateSpot();
-
-	if(ev.key_clean_pressed){
-		ev.key_clean_pressed = false;
-		sp_state = state_clean;
-		sp_state->init();
-		action_i_ = ac_null;
-		sp_action_.reset();
-		clean_path_algorithm_.reset(new NavCleanPathAlgorithm);
-		return true;
-	}
-	return false;
-}
-
-bool CleanModeNav::updateActionInStateSpot() {
-	return ACleanMode::updateActionInStateSpot();
+	return checkEnterPause() || checkOutOfSpot();
 }
 
 void CleanModeNav::switchInStateSpot() {
 	action_i_ = ac_null;
 	sp_action_.reset();
-    sp_state = state_clean;
-    sp_state->init();
-    clean_path_algorithm_.reset(new NavCleanPathAlgorithm);
+	sp_state = state_clean;
+	sp_state->init();
+	clean_path_algorithm_.reset(new NavCleanPathAlgorithm);
 }
 
 // ------------------State pause--------------------
@@ -838,3 +782,66 @@ bool CleanModeNav::updateActionInStatePause()
 	return true;
 }
 
+// ------------------State trapped------------------
+bool CleanModeNav::checkOutOfSpot() {
+	if (ev.remote_spot) {
+		ev.remote_spot = false;
+		sp_state = state_clean;
+		sp_state->init();
+		action_i_ = ac_null;
+		sp_action_.reset();
+		clean_path_algorithm_.reset(new NavCleanPathAlgorithm);
+		return true;
+	}
+	return false;
+}
+bool CleanModeNav::isSwitchByEventInStateTrapped()
+{
+	return checkEnterExceptionResumeState()||checkEnterPause();
+}
+
+bool CleanModeNav::updateActionInStateTrapped()
+{
+//	sp_action_.reset();//for call ~constitution;
+	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
+	mapMark();
+
+	if(sp_action_ == nullptr)
+	{
+		action_i_ = ac_follow_wall_left;
+		genNextAction();
+		return true;
+	}
+
+	if (robot_timer.trapTimeout(ESCAPE_TRAPPED_TIME)) {
+		action_i_ = ac_null;
+		genNextAction();
+		trapped_time_out_ = true;
+		return false;
+	}
+	else if (!clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell())) {
+		action_i_ = ac_null;
+		genNextAction();
+		escape_trapped_ = true;
+		return false;
+	}
+
+	return true;
+}
+
+void CleanModeNav::switchInStateTrapped()
+{
+	if (trapped_time_out_) {
+		trapped_time_out_ = false;
+		ROS_WARN("%s %d: Escape trapped timeout!(%d)", __FUNCTION__, __LINE__, ESCAPE_TRAPPED_TIME);
+		reach_cleaned_count_ = 0;
+		sp_state = nullptr;
+	}
+	else/* if (escape_trapped_)*/ {
+		escape_trapped_ = false;
+		ROS_WARN("%s %d: Escape trapped !", __FUNCTION__, __LINE__);
+		reach_cleaned_count_ = 0;
+		sp_state = state_clean;
+		sp_state->init();
+	}
+}

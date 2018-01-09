@@ -53,8 +53,8 @@ public:
 		right_speed_after_pid_ = 0;
 		left_wheel_step_ = 0;
 		right_wheel_step_ = 0;
-		left_wheel_current_ = 0;
-		right_wheel_current_ = 0;
+		is_left_wheel_over_current_ = false;
+		is_right_wheel_over_current_= false;
 		left_wheel_actual_speed_ = 0;
 		right_wheel_actual_speed_ = 0;
 	};
@@ -95,24 +95,24 @@ public:
 
 	void moveForward(uint8_t Left_Speed, uint8_t Right_Speed);
 
-	float getLeftWheelCurrent() const
+	bool getLeftWheelOc() const
 	{
-		return left_wheel_current_;
+		return is_left_wheel_over_current_;
 	}
 
-	void setLeftWheelCurrent(float current)
+	void setLeftWheelOc(bool lw_oc)
 	{
-		left_wheel_current_ = current;
+		is_left_wheel_over_current_ = lw_oc;
 	}
 
-	float getRightWheelCurrent() const
+	bool getRightWheelOc() const
 	{
-		return right_wheel_current_;
+		return is_right_wheel_over_current_;
 	}
 
-	void setRightWheelCurrent(float current)
+	void setRightWheelOc(bool rw_oc)
 	{
-		right_wheel_current_ = current;
+		is_right_wheel_over_current_ = rw_oc;
 	}
 
 	float getLeftWheelActualSpeed() const
@@ -143,8 +143,8 @@ private:
 	uint32_t left_wheel_step_;
 	uint32_t right_wheel_step_;
 
-	float left_wheel_current_;
-	float right_wheel_current_;
+	bool is_left_wheel_over_current_;
+	bool is_right_wheel_over_current_;
 	float left_wheel_actual_speed_;
 	float right_wheel_actual_speed_;
 
