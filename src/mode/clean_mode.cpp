@@ -64,6 +64,7 @@ ACleanMode::ACleanMode()
 
 	passed_path_.clear();
 	plan_path_.clear();
+	clean_map_.mapInit();
 }
 
 ACleanMode::~ACleanMode() {

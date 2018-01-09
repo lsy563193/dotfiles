@@ -374,6 +374,11 @@ public:
 		return point;
 	}
 
+	Point32_t getCenterRelative(int16_t dx, int16_t dy) const {
+		auto Cell = this->toCell();
+		Point32_t point{cellToCount(Cell.x),cellToCount(Cell.y),th};
+		return point.getRelative(dx,dy);
+	}
   Cell_t toCell() const {
     return {countToCell(x), countToCell(y)};
   }
@@ -403,6 +408,11 @@ private:
       return (count + CELL_COUNT_MUL_1_2) / CELL_COUNT_MUL;
     }
   }
+
+	int32_t cellToCount(int16_t i) const {
+		return i * CELL_COUNT_MUL;
+	}
+
 };
 
 typedef struct
