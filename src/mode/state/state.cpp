@@ -20,7 +20,7 @@ bool State::isSwitchByEvent() {
 		return sp_cm_->isSwitchByEventInStateGoToCharger();
 
 	else if(sp_cm_->isStateTmpSpot())
-		return sp_cm_->isSwitchByEventInStateTmpSpot();
+		return sp_cm_->isSwitchByEventInStateSpot();
 
 	else if(sp_cm_->isStateTrapped())
 		return sp_cm_->isSwitchByEventInStateTrapped();
@@ -56,7 +56,7 @@ bool State::updateAction() {
 		return sp_cm_->updateActionInStateGoToCharger();
 
 	else if(sp_cm_->isStateTmpSpot())
-		return sp_cm_->updateActionInStateTmpSpot();
+		return sp_cm_->updateActionInStateSpot();
 
 	else if(sp_cm_->isStateTrapped())
 		return sp_cm_->updateActionInStateTrapped();
@@ -79,34 +79,34 @@ bool State::updateAction() {
 
 void State::switchState() {
 	if(sp_cm_->isStateInit())
-		return sp_cm_->switchInStateInit();
+		sp_cm_->switchInStateInit();
 
 	else if(sp_cm_->isStateClean())
-		return sp_cm_->switchInStateClean();
+		sp_cm_->switchInStateClean();
 
 	else if(sp_cm_->isStateGoHomePoint())
-		return sp_cm_->switchInStateGoHomePoint();
+		sp_cm_->switchInStateGoHomePoint();
 
 	else if(sp_cm_->isStateGoCharger())
-		return sp_cm_->switchInStateGoToCharger();
+		sp_cm_->switchInStateGoToCharger();
 
 	else if(sp_cm_->isStateTmpSpot())
-		return sp_cm_->switchInStateTmpSpot();
+		sp_cm_->switchInStateSpot();
 
 	else if(sp_cm_->isStateTrapped())
-		return sp_cm_->switchInStateTrapped();
+		sp_cm_->switchInStateTrapped();
 
 	else if(sp_cm_->isStateExceptionResume())
-		return sp_cm_->switchInStateExceptionResume();
+		sp_cm_->switchInStateExceptionResume();
 
 	else if(sp_cm_->isStateExploration())
-		return sp_cm_->switchInStateExploration();
+		sp_cm_->switchInStateExploration();
 
 	else if(sp_cm_->isStateResumeLowBatteryCharge())
-		return sp_cm_->switchInStateResumeLowBatteryCharge();
+		sp_cm_->switchInStateResumeLowBatteryCharge();
 
 	else if(sp_cm_->isStateCharge())
-		return sp_cm_->switchInStateCharge();
+		sp_cm_->switchInStateCharge();
 	else if(sp_cm_->isStatePause())
-		return sp_cm_->switchInStatePause();
+		sp_cm_->switchInStatePause();
 }

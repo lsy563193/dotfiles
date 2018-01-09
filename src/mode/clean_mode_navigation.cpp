@@ -21,6 +21,8 @@ CleanModeNav::CleanModeNav()
 	has_aligned_and_open_slam_ = false;
 	paused_odom_angle_ = 0;
 	moved_during_pause_ = false;
+
+	IMoveType::sp_mode_ = this;
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
 	go_home_path_algorithm_.reset();
 }
@@ -282,11 +284,6 @@ bool CleanModeNav::actionFollowWallIsFinish(MoveTypeFollowWall *p_mt)
 	return false;
 }
 
-void CleanModeNav::actionFollowWallSaveBlocks()
-{
-	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
-}
-
 bool CleanModeNav::actionLinearIsFinish(MoveTypeLinear *p_mt)
 {
 	if (p_mt->isLinearForward())
@@ -318,13 +315,15 @@ bool CleanModeNav::checkEnterTempSpotState()
 		mapMark();
 		sp_action_.reset();
 		clean_path_algorithm_.reset(new SpotCleanPathAlgorithm);
-		sp_state = state_tmp_spot;
+		sp_state = state_spot;
 		sp_state->init();
 		return true;
 	}
 	return false;
 }
 
+
+#if 0
 //state--------------------------------------------
 //bool CleanModeNav::isStateGoHomePointUpdateFinish()
 //{
@@ -564,7 +563,7 @@ bool CleanModeNav::checkEnterTempSpotState()
 //		}
 //	return false;
 //}
-
+#endif
 // ------------------State init--------------------
 
 // ------------------State init--------------------
@@ -591,9 +590,10 @@ bool CleanModeNav::updateActionInStateInit() {
 			action_i_ = ac_open_lidar;
 	} else if (action_i_ == ac_back_form_charger)
 	{
+		if (!has_aligned_and_open_slam_)
+			// Init odom position here.
+			robot::instance()->initOdomPosition();
 		action_i_ = ac_open_lidar;
-		// Init odom position here.
-		robot::instance()->initOdomPosition();
 	} else if (action_i_ == ac_open_lidar)
 	{
 		if (!has_aligned_and_open_slam_)
@@ -641,8 +641,10 @@ bool CleanModeNav::isSwitchByEventInStateClean() {
 bool CleanModeNav::updateActionInStateClean(){
 	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
 	mapMark();
+	robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 	old_dir_ = new_dir_;
 	if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
+
 //		ROS_ERROR("old_dir_(%d)", old_dir_);
 		new_dir_ = plan_path_.front().th;
 //		ROS_ERROR("new_dir_(%d)", new_dir_);
@@ -748,14 +750,14 @@ void CleanModeNav::switchInStateGoToCharger()
 }
 
 // ------------------State tmp spot--------------------
-bool CleanModeNav::isSwitchByEventInStateTmpSpot() {
-	return ACleanMode::isSwitchByEventInStateTmpSpot();
+bool CleanModeNav::isSwitchByEventInStateSpot() {
+	return ACleanMode::isSwitchByEventInStateSpot();
 }
 
-bool CleanModeNav::updateActionInStateTmpSpot() {
-	return updateActionSpot();
+bool CleanModeNav::updateActionInStateSpot() {
+	return updateActionInStateSpot();
 }
-void CleanModeNav::switchInStateTmpSpot() {
+void CleanModeNav::switchInStateSpot() {
 	action_i_ = ac_null;
 	sp_action_.reset();
     sp_state = state_clean;
@@ -774,7 +776,7 @@ bool CleanModeNav::checkEnterPause()
 		ROS_INFO("%s %d: Key clean pressed, pause cleaning.", __FUNCTION__, __LINE__);
 		paused_odom_angle_ = odom.getAngle();
 		sp_action_.reset();
-		if (sp_state == state_clean || sp_state == state_trapped || sp_state == state_tmp_spot)
+		if (sp_state == state_clean || sp_state == state_trapped || sp_state == state_spot)
 			sp_saved_state = state_clean;
 		else if (sp_state == state_go_home_point || sp_state == state_go_to_charger)
 			sp_saved_state = state_go_home_point;

@@ -72,7 +72,6 @@ typedef struct {
 		uint8_t charge_detect;
 		bool robot_stuck;
 		bool robot_slip;
-		bool slip_enable;
 		bool lidar_stuck = false;
 		uint8_t lidar_triggered;
 		bool cliff_all_triggered;
@@ -211,6 +210,7 @@ extern int g_bumper_cnt;
 /* Cliff */
 extern bool g_cliff_all_triggered;
 extern uint8_t g_cliff_all_cnt;
+//todo remove this variable.
 extern int g_cliff_cnt;
 /* RCON */
 extern bool g_rcon_during_go_home;

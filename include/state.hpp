@@ -72,9 +72,9 @@ public:
 //	IMoveType* setNextAction_();
 };
 
-class StateTmpSpot: public State {
+class StateSpot: public State {
 public:
-	StateTmpSpot()= default;
+	StateSpot()= default;
 	void init() override;
 //	IMoveType* setNextAction_();
 };

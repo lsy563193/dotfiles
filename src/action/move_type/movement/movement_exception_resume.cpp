@@ -21,8 +21,8 @@ MovementExceptionResume::MovementExceptionResume()
 	wheel_resume_cnt_ = 0;
 	resume_wheel_start_time_ = ros::Time::now().toSec();
 	bumper_jam_state_ = 1;
-	cliff_resume_cnt_ = 1;
-
+	cliff_resume_cnt_ = 0;
+	robot_stuck_resume_cnt_ = 0;
 }
 
 MovementExceptionResume::~MovementExceptionResume()
@@ -43,7 +43,7 @@ void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_sp
 		left_speed = 30;
 		right_speed = 30;
 	}
-	else if (ev.cliff_jam)
+	else if (ev.robot_stuck || ev.cliff_jam)
 	{
 		wheel.setDirectionBackward();
 		left_speed = right_speed = 18;
@@ -87,7 +87,7 @@ void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_sp
 
 bool MovementExceptionResume::isFinish()
 {
-	if (!(ev.bumper_jam || ev.cliff_jam || ev.oc_wheel_left || ev.oc_wheel_right || ev.oc_suction || ev.lidar_stuck))
+	if (!(ev.bumper_jam || ev.cliff_jam || ev.oc_wheel_left || ev.oc_wheel_right || ev.oc_suction || ev.lidar_stuck || ev.robot_stuck))
 	{
 		ROS_INFO("%s %d: All exception cleared.", __FUNCTION__, __LINE__);
 		return true;
@@ -151,6 +151,33 @@ bool MovementExceptionResume::isFinish()
 			else
 				wheel_current_sum_ += wheel.getRightWheelCurrent();
 			wheel_current_sum_cnt_++;
+		}
+	}
+	else if (ev.robot_stuck)
+	{
+		if (!lidar.isRobotSlip())
+		{
+			ROS_INFO("%s %d: Cliff resume succeeded.", __FUNCTION__, __LINE__);
+			ev.robot_slip = false;
+			ev.robot_stuck = false;
+		}
+		else if (robot_stuck_resume_cnt_ < 5)
+		{
+			float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getX(), odom.getY());
+			if (fabsf(distance) > 0.05f)
+			{
+				wheel.stop();
+				robot_stuck_resume_cnt_++;
+				ROS_WARN("%s %d: Try robot stuck resume for the %d time.", __FUNCTION__, __LINE__, robot_stuck_resume_cnt_);
+				s_pos_x = odom.getX();
+				s_pos_y = odom.getY();
+			}
+		}
+		else
+		{
+			ROS_WARN("%s %d: Robot stuck.", __FUNCTION__, __LINE__);
+			ev.fatal_quit = true;
+			error.set(ERROR_CODE_STUCK);
 		}
 	}
 	else if (ev.cliff_jam)
