@@ -590,9 +590,10 @@ bool CleanModeNav::updateActionInStateInit() {
 			action_i_ = ac_open_lidar;
 	} else if (action_i_ == ac_back_form_charger)
 	{
+		if (!has_aligned_and_open_slam_)
+			// Init odom position here.
+			robot::instance()->initOdomPosition();
 		action_i_ = ac_open_lidar;
-		// Init odom position here.
-		robot::instance()->initOdomPosition();
 	} else if (action_i_ == ac_open_lidar)
 	{
 		if (!has_aligned_and_open_slam_)

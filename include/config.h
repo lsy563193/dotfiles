@@ -18,7 +18,8 @@
 #define VERIFY_KEY							(0)
 
 /* ------------------------------------- Speaker config ------------------------------------- */
-#define SPEAKER_VOLUME						(55)
+//#define SPEAKER_VOLUME						(55)
+#define SPEAKER_VOLUME						(30)
 
 /* ------------------------------------- Grid Map config ------------------------------------- */
 
