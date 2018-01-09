@@ -11,46 +11,15 @@ CleanModeExploration::CleanModeExploration()
 {
 	speaker.play(VOICE_EXPLORATION_START, false);
 	action_i_ = ac_open_gyro;
+	mode_i_ = cm_exploration;
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
 	IMoveType::sp_mode_ = this;
+	go_home_path_algorithm_.reset();
+	clean_map_.mapInit();
 }
 
 CleanModeExploration::~CleanModeExploration()
 {
-/*	IMoveType::sp_mode_ = nullptr;
-	event_manager_set_enable(false);
-	wheel.stop();
-	brush.stop();
-	vacuum.stop();
-	lidar.motorCtrl(OFF);
-	lidar.setScanLinearReady(0);
-	lidar.setScanOriginalReady(0);
-
-	robot::instance()->setBaselinkFrameType(ODOM_POSITION_ODOM_ANGLE);
-	slam.stop();
-	odom.setAngleOffset(0);
-
-	if(ev.key_clean_pressed || ev.key_long_pressed) {
-		speaker.play(VOICE_CLEANING_STOP);
-		ROS_WARN("%s %d: Press remote clean.Stop Exploration", __FUNCTION__, __LINE__);
-	}
-	else if (ev.cliff_all_triggered)
-	{
-		speaker.play(VOICE_ERROR_LIFT_UP, false);
-		speaker.play(VOICE_CLEANING_STOP);
-		ROS_WARN("%s %d: Cliff all triggered. Stop Exploration.", __FUNCTION__, __LINE__);
-	}
-	else if (ev.fatal_quit)
-	{
-		speaker.play(VOICE_CLEANING_STOP, false);
-		error.alarm();
-		ROS_WARN("%s %d: fatal_quit. Stop Exploration.", __FUNCTION__, __LINE__);
-	}
-	else
-	{
-		speaker.play(VOICE_CLEANING_FINISHED);
-		ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
-	}*/
 }
 
 bool CleanModeExploration::mapMark()
@@ -85,7 +54,7 @@ bool CleanModeExploration::setNextAction()
 	//todo action convert
 	if (sp_state == state_init)
 		return ACleanMode::setNextAction();
-	else if(sp_state == state_clean)
+	else if(sp_state == state_exploration)
 		action_i_ = ac_linear;
 	else if(sp_state == state_go_to_charger)
 		action_i_ = ac_go_to_charger;
@@ -156,73 +125,38 @@ void CleanModeExploration::chargeDetect(bool state_now, bool state_last) {
 	}
 }
 
-void CleanModeExploration::printMapAndPath()
+/*void CleanModeExploration::printMapAndPath()
 {
 	clean_path_algorithm_->displayCellPath(pointsGenerateCells(passed_path_));
 	clean_map_.print(CLEAN_MAP,getPosition().toCell().x,getPosition().toCell().y);
-}
+}*/
 
-// state
-
-bool CleanModeExploration::isStateInitUpdateFinish() {
-	if (action_i_ == ac_open_slam) {
-		auto curr = updatePosition();
-		passed_path_.push_back(curr);
-		home_points_.back().home_point.th = robot::instance()->getWorldPoseAngle();
-		PP_INFO();
-
-		sp_state = state_clean;
-		sp_state->init();
-		action_i_ = ac_null;
-	}
-	else
-		return true;
-	return false;
-}
-
-bool CleanModeExploration::isStateCleanUpdateFinish() {
-	mapMark();
-	PP_INFO();
-	old_dir_ = new_dir_;
-	ROS_WARN("old_dir_(%d)", old_dir_);
-	plan_path_.clear();
-	if (ev.rcon_triggered) {
-		ROS_WARN("%s,%d:find charge success,convert to go to charge state", __func__, __LINE__);
-		sp_state = state_go_to_charger;
-		sp_state->init();
-		action_i_ = ac_go_to_charger;
-		return true;
-	}
-	else if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
-		new_dir_ = plan_path_.front().th;
-		ROS_WARN("new_dir_(%d)", new_dir_);
-		plan_path_.pop_front();
-		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
-		robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
-		return true;
-	}
-	else {
-		ROS_WARN("%s,%d:exploration finish,did not find charge", __func__, __LINE__);
-		sp_state = state_go_home_point;
-		if (go_home_path_algorithm_ == nullptr)
-			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
-		sp_state->init();
-		action_i_ = ac_null;
-	}
-	return false;
-}
-
-bool CleanModeExploration::isStateGoHomePointUpdateFinish() {
-	return ACleanMode::isStateGoHomePointUpdateFinish();
-}
-
-bool CleanModeExploration::isStateGoToChargerUpdateFinish() {
+//state GoToCharger
+void CleanModeExploration::switchInStateGoToCharger() {
 	PP_INFO();
 	if (ev.charge_detect && charger.isOnStub()) {
+		ev.charge_detect = 0;
 		sp_state = nullptr;
-		return true;
+		return;
 	}
 	else
-		sp_state = state_clean;
-	return false;
+	{
+		sp_state = state_exploration;
+	}
+	sp_state->init();
+}
+
+//state Init
+void CleanModeExploration::switchInStateInit() {
+	PP_INFO();
+	action_i_ = ac_null;
+	sp_action_ = nullptr;
+	sp_state = state_exploration;
+	sp_state->init();
+}
+
+//state GoHomePoint
+void CleanModeExploration::switchInStateGoHomePoint() {
+	PP_INFO();
+	sp_state = nullptr;
 }

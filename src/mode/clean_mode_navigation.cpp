@@ -21,6 +21,8 @@ CleanModeNav::CleanModeNav()
 	has_aligned_and_open_slam_ = false;
 	paused_odom_angle_ = 0;
 	moved_during_pause_ = false;
+
+	IMoveType::sp_mode_ = this;
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
 	go_home_path_algorithm_.reset();
 }
@@ -280,11 +282,6 @@ bool CleanModeNav::actionFollowWallIsFinish(MoveTypeFollowWall *p_mt)
 		return p_mt->isNewLineReach(clean_map_) || p_mt->isOverOriginLine(clean_map_);
 
 	return false;
-}
-
-void CleanModeNav::actionFollowWallSaveBlocks()
-{
-	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
 }
 
 bool CleanModeNav::actionLinearIsFinish(MoveTypeLinear *p_mt)
@@ -593,9 +590,10 @@ bool CleanModeNav::updateActionInStateInit() {
 			action_i_ = ac_open_lidar;
 	} else if (action_i_ == ac_back_form_charger)
 	{
+		if (!has_aligned_and_open_slam_)
+			// Init odom position here.
+			robot::instance()->initOdomPosition();
 		action_i_ = ac_open_lidar;
-		// Init odom position here.
-		robot::instance()->initOdomPosition();
 	} else if (action_i_ == ac_open_lidar)
 	{
 		if (!has_aligned_and_open_slam_)
@@ -643,8 +641,10 @@ bool CleanModeNav::isSwitchByEventInStateClean() {
 bool CleanModeNav::updateActionInStateClean(){
 	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
 	mapMark();
+	robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 	old_dir_ = new_dir_;
 	if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
+
 //		ROS_ERROR("old_dir_(%d)", old_dir_);
 		new_dir_ = plan_path_.front().th;
 //		ROS_ERROR("new_dir_(%d)", new_dir_);
@@ -683,7 +683,6 @@ void CleanModeNav::switchInStateClean() {
 	else {
 		sp_state = state_go_home_point;
 		ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_points_.size());
-		speaker.play(VOICE_BACK_TO_CHARGER, true);
 		go_home_path_algorithm_.reset();
 		go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
 	}

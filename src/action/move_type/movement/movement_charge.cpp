@@ -104,22 +104,6 @@ void MovementCharge::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 
 void MovementCharge::run()
 {
-		// Check for plan status.
-	if (robot_timer.getPlanStatus())
-	{
-		beeper.play_for_command(VALID);
-		speaker.play(VOICE_APPOINTMENT_DONE);
-		ROS_WARN("%s %d: Plan received.", __FUNCTION__, __LINE__);
-		robot_timer.resetPlanStatus();
-	}
-	else if (robot_timer.getPlanStatus() == 2)
-	{
-		beeper.play_for_command(VALID);
-		speaker.play(VOICE_CANCEL_APPOINTMENT);
-		ROS_WARN("%s %d: Plan cancel received.", __FUNCTION__, __LINE__);
-		robot_timer.resetPlanStatus();
-	}
-
 	// Debug for charge info
 	if (time(NULL) - show_battery_info_time_stamp_ > 5)
 	{

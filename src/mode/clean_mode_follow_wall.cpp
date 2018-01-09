@@ -562,7 +562,7 @@ bool CleanModeFollowWall::updateActionInStateClean()
 }
 
 bool CleanModeFollowWall::actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) {
-	ROS_INFO("reach_cleaned_count_ = %d, reach_cleaned_count_save = %d", reach_cleaned_count_, reach_cleaned_count_save);
+//	ROS_INFO("reach_cleaned_count_ = %d, reach_cleaned_count_save = %d", reach_cleaned_count_, reach_cleaned_count_save);
 	if(reach_cleaned_count_ > reach_cleaned_count_save)
 	{
 		reach_cleaned_count_save = reach_cleaned_count_;
@@ -574,7 +574,6 @@ bool CleanModeFollowWall::actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) {
 void CleanModeFollowWall::switchInStateClean() {
 	sp_state = state_go_home_point;
 	ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_points_.size());
-	speaker.play(VOICE_BACK_TO_CHARGER, true);
 	go_home_path_algorithm_.reset();
 	go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
 	sp_state->init();

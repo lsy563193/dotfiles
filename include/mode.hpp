@@ -78,9 +78,7 @@ public:
 
 	static boost::shared_ptr<IAction> sp_action_;
 protected:
-
 	int mode_i_{ac_null};
-
 private:
 
 };
@@ -242,6 +240,7 @@ public:
 
 	virtual bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt);
 	virtual void actionFollowWallSaveBlocks();
+	virtual void actionLinearSaveBlocks();
 	void goHomePointUpdateAction();
 
 	virtual bool actionLinearIsFinish(MoveTypeLinear *p_mt);
@@ -259,6 +258,7 @@ public:
 
 	// State null
 	bool checkEnterNullState();
+	bool checkEnterGoCharger();
 	// State init
 	virtual bool isSwitchByEventInStateInit();
 	virtual bool updateActionInStateInit();
@@ -283,8 +283,8 @@ public:
 	// State exception resume
 	bool checkEnterExceptionResumeState();
 	virtual bool isSwitchByEventInStateExceptionResume(){return false;};
-	virtual bool updateActionInStateExceptionResume(){};
-	virtual void switchInStateExceptionResume(){};
+	virtual bool updateActionInStateExceptionResume();
+	virtual void switchInStateExceptionResume();
 
 	// State temp spot
 	virtual bool isSwitchByEventInStateSpot();
@@ -297,9 +297,9 @@ public:
 	virtual void switchInStateTrapped(){ };
 
 	// State exploration
-	virtual bool isSwitchByEventInStateExploration(){ return false;};
-	virtual bool updateActionInStateExploration(){};
-	virtual void switchInStateExploration(){ };
+	virtual bool isSwitchByEventInStateExploration();
+	virtual bool updateActionInStateExploration();
+	virtual void switchInStateExploration();
 
 	// State resume low battery charge
 	virtual bool isSwitchByEventInStateResumeLowBatteryCharge(){return false;};
@@ -466,7 +466,6 @@ public:
 
 private:
 	bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
-	void actionFollowWallSaveBlocks() override ;
 	bool actionLinearIsFinish(MoveTypeLinear *p_mt);
 	void resumeLowBatteryCharge();
 	bool checkEnterTempSpotState();
@@ -496,21 +495,20 @@ public:
 	void cliffAll(bool state_now, bool state_last) override ;
 	void chargeDetect(bool state_now, bool state_last) override ;
 
-	bool updateActionInStateClean(){};
 //	void overCurrentBrushLeft(bool state_now, bool state_last);
 //	void overCurrentBrushMain(bool state_now, bool state_last);
 //	void overCurrentBrushRight(bool state_now, bool state_last);
 	void overCurrentWheelLeft(bool state_now, bool state_last) override;
 	void overCurrentWheelRight(bool state_now, bool state_last) override;
 //	void overCurrentSuction(bool state_now, bool state_last);
-	void printMapAndPath();
+//	void printMapAndPath();
+	void switchInStateInit() override;
 
 	// todo: Delete below 4 function.
-	bool isStateInitUpdateFinish();
-	bool isStateCleanUpdateFinish();
-	bool isStateGoHomePointUpdateFinish();
-	bool isStateGoToChargerUpdateFinish();
+	void switchInStateGoHomePoint() override;
+	void switchInStateGoToCharger() override;
 
+	virtual bool updateActionInStateClean(){};
 };
 
 class CleanModeFollowWall:public ACleanMode {

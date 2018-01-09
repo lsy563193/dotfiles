@@ -11,13 +11,13 @@ uint8_t Cliff::getStatus(void)
 {
 	uint8_t status = 0x00;
 
-	if (getLeft() < getLeftTrigValue())
+	if (getLeft())
 		status |= BLOCK_LEFT;
 
-	if (getFront() < getFrontTrigValue())
+	if (getFront())
 		status |= BLOCK_FRONT;
 
-	if (getRight() < getRightTrigValue())
+	if (getRight())
 		status |= BLOCK_RIGHT;
 
 	//if (status != 0x00){
