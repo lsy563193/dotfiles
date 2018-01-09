@@ -18,6 +18,7 @@ void StateGoHomePoint::init(){
 
 	ev.remote_home = false;
 	ev.battery_home = false;
+	speaker.play(VOICE_BACK_TO_CHARGER, true);
 }
 
 //

@@ -165,12 +165,7 @@ bool ACleanMode::isUpdateFinish() {
 	if (sp_state->isSwitchByEvent())
 		return sp_state == nullptr;
 
-	if (sp_action_ == nullptr) {
-		sp_state->updateAction();
-		return true;
-	}
-
-	if (!sp_action_->isFinish())
+	if (sp_action_ != nullptr && !sp_action_->isFinish())
 		return true;
 
 //	sp_action_.reset();//for call ~constitution;
@@ -584,7 +579,6 @@ bool ACleanMode::checkEnterGoHomePointState()
 {
 	if (ev.remote_home || ev.battery_home)
 	{
-		speaker.play(VOICE_BACK_TO_CHARGER, true);
 		mapMark();
 		sp_action_.reset();
 		sp_state = state_go_home_point;
