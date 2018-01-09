@@ -115,7 +115,7 @@ private:
 	std::vector<float> last_frame_ranges_{};
 	double last_frame_time_stamp_{};
 	double current_frame_time_stamp_{};
-	float slip_ranges_percent_{0.80};//85%
+	float slip_ranges_percent_{0.85};//85%
 	uint8_t slip_cnt_limit_{5};
 
 };
