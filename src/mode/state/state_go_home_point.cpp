@@ -7,7 +7,7 @@
 #include <event_manager.h>
 
 void StateGoHomePoint::init(){
-	vacuum.setMode(Vac_Normal, false);
+	vacuum.setTmpMode(Vac_Normal);
 	wheel.stop();
 
 	wheel.setPidTargetSpeed(0, 0, REG_TYPE_LINEAR);
@@ -15,12 +15,6 @@ void StateGoHomePoint::init(){
 		led.set_mode(LED_STEADY, LED_ORANGE);
 	else
 		led.set_mode(LED_STEADY, LED_GREEN);
-
-	// Play wavs.
-	if (ev.battery_home)
-		speaker.play(VOICE_BATTERY_LOW, false);
-
-	speaker.play(VOICE_BACK_TO_CHARGER, true);
 
 	ev.remote_home = false;
 	ev.battery_home = false;

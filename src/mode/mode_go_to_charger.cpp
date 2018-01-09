@@ -67,7 +67,7 @@ IAction* ModeGoToCharger::getNextAction()
 		action_i_ = ac_go_to_charger;
 		led.set_mode(LED_STEADY, LED_ORANGE);
 		brush.normalOperate();
-		vacuum.setMode(Vac_Speed_NormalL, false);
+		vacuum.setTmpMode(Vac_Speed_NormalL);
 		return new MoveTypeGoToCharger();
 	}
 	return nullptr;

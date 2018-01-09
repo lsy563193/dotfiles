@@ -108,7 +108,7 @@ bool IMoveType::isFinish() {
 	return sp_mode_->isExceptionTriggered();
 }
 
-void IMoveType::updatePath(GridMap& map)
+void IMoveType::updatePath()
 {
 	auto curr = updatePosition();
 //	auto point = getPosition();
@@ -137,14 +137,12 @@ void IMoveType::updatePath(GridMap& map)
 			ROS_INFO("reach_cleaned_count_(%d)",p_mode->reach_cleaned_count_);
 			p_mode->reach_cleaned_count_++;
 		}
-		map.saveBlocks(p_mode->action_i_ == p_mode->ac_linear, p_mode->sp_state == p_mode->state_clean);
+		p_mode->clean_map_.saveBlocks(p_mode->action_i_ == p_mode->ac_linear, p_mode->sp_state == p_mode->state_clean);
 //		displayPath(passed_path_);
 	}
 }
 void IMoveType::run() {
-//	PP_INFO();
-	auto p_mode = (ACleanMode*)sp_mode_;
-	updatePath(p_mode->clean_map_);
+	updatePath();
 	sp_movement_->run();
 }
 

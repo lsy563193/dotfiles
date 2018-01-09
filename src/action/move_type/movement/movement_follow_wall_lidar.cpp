@@ -29,7 +29,7 @@ Points MovementFollowWallLidar::_calcTmpTarget() {
 	tmp_target = getPosition().getRelative(CELL_SIZE * 1, CELL_SIZE * dy);
 	tmp_targets.push_back(tmp_target);
 
-	ROS_INFO("_calc tmp_targets.size(%d)",tmp_targets.size());
+//	ROS_INFO("_calc tmp_targets.size(%d)",tmp_targets.size());
 	return tmp_targets;
 }
 
@@ -40,7 +40,6 @@ bool MovementFollowWallLidar::calcTmpTarget() {
 	if (lidar_targets.empty()) {
 		p_tmp_targets_ = &virtual_targets_;
 		if(virtual_targets_.empty()){
-			ROS_INFO_FL();
 			ROS_WARN("lidar_targets is emply");
 			virtual_targets_ = _calcTmpTarget();
 		}
@@ -65,7 +64,6 @@ bool MovementFollowWallLidar::calcTmpTarget() {
 //		ROS_INFO_FL();
 		p_tmp_targets_->pop_front();
 		if (p_tmp_targets_->empty()) {
-			ROS_INFO_FL();
 			_calcTmpTarget();
 			p_tmp_targets_ = &virtual_targets_;
 		}

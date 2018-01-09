@@ -225,18 +225,14 @@ public:
 	bool isUpdateFinish();
 
 	void setNextModeDefault();
-	bool setNextState();
 	virtual bool setNextAction();
 	void genNextAction();
 
 	void setRconPos(float cd,float dist);
 
 	virtual bool mapMark() = 0;
-	/*
-	 * @author mengshige1988@qq.com
-	 * @brief estimate charge position ,according to rcon sensor signals
-	 * @return true if found ,else false
-	 * */
+
+	void setHomePoint();
 	bool estimateChargerPos(uint32_t rcon_value);
 	void setRconPos(Point32_t pos);
 
@@ -269,7 +265,7 @@ public:
 
 	// State clean
 	virtual bool isSwitchByEventInStateClean();
-	virtual bool updateActionInStateClean() = 0;
+	virtual bool updateActionInStateClean(){ return false;};
 	virtual void switchInStateClean();
 
 	// State go home point
@@ -290,10 +286,9 @@ public:
 	virtual void switchInStateExceptionResume(){};
 
 	// State temp spot
-	bool updateActionSpot();
-	virtual bool isSwitchByEventInStateTmpSpot(){return false;};
-	virtual bool updateActionInStateTmpSpot();
-	virtual void switchInStateTmpSpot(){};
+	virtual bool isSwitchByEventInStateSpot(){return false;};
+	virtual bool updateActionInStateSpot();
+	virtual void switchInStateSpot(){};
 
 	// State trapped
 	virtual bool isSwitchByEventInStateTrapped(){ return false;};
@@ -319,6 +314,8 @@ public:
 	virtual bool isSwitchByEventInStatePause(){return false;};
 	virtual bool updateActionInStatePause(){};
 	virtual void switchInStatePause(){};
+
+	void remoteHome(bool state_now, bool state_last) override ;
 
 	// todo: Delete below 4 function.
 	virtual bool isStateInitUpdateFinish(){};
@@ -355,7 +352,7 @@ public:
 	}
 	bool isStateTmpSpot() const
 	{
-		return sp_state == state_tmp_spot;
+		return sp_state == state_spot;
 	}
 	bool isStateExceptionResume() const
 	{
@@ -386,7 +383,7 @@ protected:
 	static State *state_go_to_charger;
 	static State *state_charge;
 	static State *state_trapped;
-	static State *state_tmp_spot;
+	static State *state_spot;
 	static State *state_exception_resume;
 	static State *state_exploration;
 	static State *state_resume_low_battery_charge;
@@ -421,7 +418,7 @@ public:
 	bool setNextAction() override;
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteClean(bool state_now, bool state_last) override ;
-	void remoteHome(bool state_now, bool state_last) override ;
+//	void remoteHome(bool state_now, bool state_last) override ;
 	void remoteDirectionLeft(bool state_now, bool state_last) override ;
 	void cliffAll(bool state_now, bool state_last) override ;
 	void chargeDetect(bool state_now, bool state_last) override ;
@@ -432,6 +429,8 @@ public:
 	void overCurrentWheelLeft(bool state_now, bool state_last) override;
 	void overCurrentWheelRight(bool state_now, bool state_last) override;
 	void remoteSpot(bool state_now, bool state_last) override;
+	void remoteMax(bool state_now, bool state_last) override;
+
 //	void overCurrentSuction(bool state_now, bool state_last);
 
 	// State init
@@ -455,9 +454,9 @@ public:
 	void switchInStateGoToCharger() override;
 
 	// State tmp spot
-    bool isSwitchByEventInStateTmpSpot() override;
-//    bool updateActionInStateTmpSpot() override ;
-    void switchInStateTmpSpot() override;
+    bool isSwitchByEventInStateSpot() override;
+    bool updateActionInStateSpot() override ;
+    void switchInStateSpot() override;
 
 	// State pause
 	bool checkEnterPause();
@@ -524,12 +523,14 @@ public:
 	bool mapMark() override;
 
 	void keyClean(bool state_now, bool state_last) override;
+	void remoteMax(bool state_now, bool state_last) override;
 
 //	void overCurrentWheelLeft(bool state_now, bool state_last);
 //
 //	void overCurrentWheelRight(bool state_now, bool state_last);
 //
 	void remoteClean(bool state_now, bool state_last) override;
+	void switchInStateClean() override;
 //
 //	void remoteHome(bool state_now, bool state_last);
 //
@@ -540,6 +541,7 @@ public:
 //	void batteryHome(bool state_now, bool state_last);
 //
 //	void chargeDetect(bool state_now, bool state_last);
+	bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) override ;
 
 	int16_t wf_path_find_shortest_path(GridMap& map, int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound);
 
@@ -555,7 +557,7 @@ private:
 protected:
 //	Cells home_point_{};
 private:
-
+ int reach_cleaned_count_save{};
 };
 
 class CleanModeSpot:public ACleanMode
@@ -570,8 +572,8 @@ public:
 	void cliffAll(bool state_now, bool state_last) override;
 	void remoteClean(bool state_now, bool state_last) override;
 	void keyClean(bool state_now, bool state_last) override;
-
-	bool updateActionInStateClean();
+	void switchInStateInit() override ;
+	void switchInStateSpot() override ;
 private:
 
 };

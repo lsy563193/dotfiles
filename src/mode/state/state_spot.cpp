@@ -6,10 +6,8 @@
 #include "pp.h"
 #include "arch.hpp"
 
-
-
-void StateTmpSpot::init() {
-    vacuum.setMode(Vac_Max);
+void StateSpot::init() {
+    vacuum.setTmpMode(Vac_Max);
     brush.fullOperate();
     speaker.play(VOICE_CLEANING_SPOT,false);
 }

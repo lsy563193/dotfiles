@@ -10,7 +10,7 @@
 
 CleanModeSpot::CleanModeSpot()
 {
-	speaker.play(VOICE_CLEANING_SPOT,false);
+	//speaker.play(VOICE_CLEANING_SPOT,false);
 	clean_path_algorithm_.reset(new SpotCleanPathAlgorithm());
 	go_home_path_algorithm_.reset();
 }
@@ -110,6 +110,37 @@ void CleanModeSpot::cliffAll(bool state_now, bool state_last)
 	ev.cliff_all_triggered = true;
 }
 
-bool CleanModeSpot::updateActionInStateClean() {
-    ACleanMode::updateActionSpot();
+void CleanModeSpot::switchInStateInit() {
+//	if(action_i_ == ac_open_slam)
+	action_i_ = ac_null;
+	sp_action_ = nullptr;
+	sp_state = state_spot;
+	sp_state->init();
 }
+
+void CleanModeSpot::switchInStateSpot() {
+	action_i_ = ac_null;
+	sp_action_ = nullptr;
+	sp_state = nullptr;
+//	sp_state->init();
+}
+
+/*
+bool CleanModeSpot::updateActionInStateInit() {
+	if (action_i_ == ac_null)
+		action_i_ = ac_open_gyro;
+	else if (action_i_ == ac_open_gyro) {
+		action_i_ = ac_open_lidar;
+	}
+	else if (action_i_ == ac_open_lidar){
+//		vacuum.setTmpMode(Vac_Speed_Max);
+//		led.set_mode(LED_STEADY,LED_GREEN);
+//		brush.fullOperate();
+		action_i_ = ac_open_slam;
+	}
+	else // action_open_slam
+		return false;
+
+	genNextAction();
+	return true;
+}*/

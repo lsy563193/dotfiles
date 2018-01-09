@@ -25,7 +25,7 @@ public:
 	{return sp_mode_;}
 
 	virtual bool isFinish();
-	void updatePath(GridMap &map);
+	void updatePath();
 	void run() override;
 
 	enum {
