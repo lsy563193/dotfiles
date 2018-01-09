@@ -269,13 +269,6 @@ void robotbase_routine_cb()
 		sensor.angle_v = -(float)((int16_t)((serial.receive_stream[REC_ANGLE_V_H] << 8) | serial.receive_stream[REC_ANGLE_V_L])) / 100.0;//ros angle * -1
 		gyro.setAngleV(sensor.angle_v);
 
-		auto _left_wheel_current = static_cast<float>((((serial.receive_stream[REC_LW_C_H] << 8) | serial.receive_stream[REC_LW_C_L]) & 0x7fff) * 1.622);
-		auto _right_wheel_current = static_cast<float>((((serial.receive_stream[REC_RW_C_H] << 8) | serial.receive_stream[REC_RW_C_L]) & 0x7fff) * 1.622);
-		sensor.lw_crt = _left_wheel_current;
-		sensor.rw_crt = _right_wheel_current;
-		wheel.setLeftWheelCurrent(_left_wheel_current);
-		wheel.setRightWheelCurrent(_right_wheel_current);
-
 		sensor.left_wall = ((serial.receive_stream[REC_L_WALL_H] << 8)| serial.receive_stream[REC_L_WALL_L]);
 
 		auto _left_obs_value = ((serial.receive_stream[REC_L_OBS_H] << 8) | serial.receive_stream[REC_L_OBS_L]);
@@ -394,7 +387,11 @@ void robotbase_routine_cb()
 		sensor.lcliff = ((serial.receive_stream[REC_L_CLIFF_H] << 8) | serial.receive_stream[REC_L_CLIFF_L]);
 		cliff.setLeft(!static_cast<bool>(sensor.lcliff));
 
-		sensor.vacuum_selfcheck_status = (serial.receive_stream[REC_CL_OC] & 0x30);
+		sensor.vacuum_selfcheck_status = (serial.receive_stream[REC_CL_OC] & 0xC0) >> 2;
+		sensor.lw_crt = (serial.receive_stream[REC_CL_OC] & 0x20) ? true : false;		// left wheel over current
+		wheel.setLeftWheelOc(sensor.lw_crt);
+		sensor.rw_crt = (serial.receive_stream[REC_CL_OC] & 0x10) ? true : false;		// right wheel over current
+		wheel.setRightWheelOc(sensor.lw_crt);
 		sensor.lbrush_oc = (serial.receive_stream[REC_CL_OC] & 0x08) ? true : false;		// left brush over current
 		brush.setLeftOc(sensor.lbrush_oc);
 		sensor.mbrush_oc = (serial.receive_stream[REC_CL_OC] & 0x04) ? true : false;		// main brush over current
