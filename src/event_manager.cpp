@@ -181,10 +181,10 @@ void event_manager_thread_cb()
 		}
 
 		/* Cliff */
-		/*if (cliff.getStatus() == BLOCK_ALL) {
+		if (cliff.getStatus() == BLOCK_ALL) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_ALL);
-		} else if (cliff.getStatus() == (BLOCK_FRONT | BLOCK_LEFT)) {
+		} /*else if (cliff.getStatus() == (BLOCK_FRONT | BLOCK_LEFT)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_FRONT_LEFT);
 		} else if (cliff.getStatus() == (BLOCK_FRONT | BLOCK_RIGHT)) {
