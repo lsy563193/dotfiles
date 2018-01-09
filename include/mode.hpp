@@ -506,11 +506,10 @@ public:
 //	void printMapAndPath();
 	void switchInStateInit() override;
 
-	// todo: Delete below 4 function.
 	void switchInStateGoHomePoint() override;
 	void switchInStateGoToCharger() override;
 
-	virtual bool updateActionInStateClean(){};
+	bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
 };
 
 class CleanModeFollowWall:public ACleanMode {
