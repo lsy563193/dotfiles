@@ -1132,7 +1132,7 @@ void Lidar::checkRobotSlip()
 				last_frame_ranges_ = tmp_scan_data.ranges;
 				// For debug
 //				beeper.play_for_command(VALID);
-				slip_status_ = true;
+//				slip_status_ = true;
 			}
 		}
 		else
