@@ -11,7 +11,7 @@
 //#define NAV_INFO() ROS_INFO("st(%d),ac(%d)", state_i_, action_i_)
 
 State* ACleanMode::sp_state{};
-State* ACleanMode::sp_saved_state{};
+std::vector<State*> ACleanMode::sp_saved_states{};
 State* ACleanMode::state_init = new StateInit();
 State* ACleanMode::state_clean = new StateClean();
 State* ACleanMode::state_go_home_point = new StateGoHomePoint();
@@ -65,6 +65,7 @@ ACleanMode::ACleanMode()
 	passed_path_.clear();
 	plan_path_.clear();
 	clean_map_.reset(CLEAN_MAP);
+	sp_saved_states={};
 }
 
 ACleanMode::~ACleanMode() {
@@ -553,7 +554,7 @@ bool ACleanMode::checkEnterExceptionResumeState()
 		ROS_WARN("%s %d: Exception triggered!", __FUNCTION__, __LINE__);
 		mapMark();
 		sp_action_.reset();
-		sp_saved_state = sp_state;
+		sp_saved_states.push_back(sp_state);
 		sp_state = state_exception_resume;
 		sp_state->init();
 		return true;
@@ -822,7 +823,8 @@ void ACleanMode::switchInStateExceptionResume()
 	{
 		ROS_INFO("%s %d: Resume to previous state", __FUNCTION__, __LINE__);
 		sp_action_.reset();
-		sp_state = sp_saved_state;
+		sp_state = sp_saved_states.back();
+		sp_saved_states.pop_back();
 	}
 }
 
