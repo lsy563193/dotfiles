@@ -77,6 +77,7 @@ ACleanMode::~ACleanMode() {
 	robot::instance()->setBaselinkFrameType(ODOM_POSITION_ODOM_ANGLE);
 	slam.stop();
 	odom.setAngleOffset(0);
+	clean_map_.clearBlocks();
 
 	if (moved_during_pause_)
 	{
@@ -162,16 +163,18 @@ bool ACleanMode::isExit()
 }
 
 bool ACleanMode::isUpdateFinish() {
-	if (sp_state->isSwitchByEvent())
+	if (sp_state->isSwitchByEvent()) {
 		return sp_state == nullptr;
+	}
 
 	if (sp_action_ == nullptr) {
 		sp_state->updateAction();
 		return true;
 	}
 
-	if (!sp_action_->isFinish())
+	if (!sp_action_->isFinish()) {
 		return true;
+	}
 
 //	sp_action_.reset();//for call ~constitution;
 
@@ -557,6 +560,21 @@ bool ACleanMode::checkEnterNullState()
 	return false;
 }
 
+bool ACleanMode::checkEnterGoCharger()
+{
+	ev.rcon_triggered = c_rcon.getForwardTop();
+	if (ev.rcon_triggered) {
+		ev.rcon_triggered= false;
+		ROS_WARN("%s,%d:find charge success,convert to go to charge state", __func__, __LINE__);
+		sp_state = state_go_to_charger;
+		sp_state->init();
+		action_i_ = ac_go_to_charger;
+		genNextAction();
+		return true;
+	}
+	return false;
+}
+
 // ------------------State init--------------------
 bool ACleanMode::isSwitchByEventInStateInit() {
 	return checkEnterNullState();
@@ -744,5 +762,44 @@ bool ACleanMode::updateActionSpot() {
 
 bool ACleanMode::updateActionInStateTmpSpot() {
 	return updateActionSpot();
+}
+
+// State exploration
+bool ACleanMode::isSwitchByEventInStateExploration() {
+	return checkEnterGoCharger();
+}
+
+bool ACleanMode::updateActionInStateExploration() {
+	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
+	mapMark();
+	PP_INFO();
+	old_dir_ = new_dir_;
+	ROS_WARN("old_dir_(%d)", old_dir_);
+	plan_path_.clear();
+
+	if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
+		action_i_ = ac_linear;
+		new_dir_ = plan_path_.front().th;
+		ROS_WARN("new_dir_(%d)", new_dir_);
+		plan_path_.pop_front();
+		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
+		robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
+		genNextAction();
+		return true;
+	}
+	else {
+		ROS_WARN("%s,%d:exploration finish,did not find charge", __func__, __LINE__);
+		if (go_home_path_algorithm_ == nullptr)
+			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
+		action_i_ = ac_null;
+//		genNextAction();
+	}
+	return false;
+}
+
+void ACleanMode::switchInStateExploration() {
+	PP_INFO();
+	sp_state = state_go_home_point;
+	sp_state->init();
 }
 

@@ -21,6 +21,8 @@ CleanModeNav::CleanModeNav()
 	has_aligned_and_open_slam_ = false;
 	paused_odom_angle_ = 0;
 	moved_during_pause_ = false;
+
+	IMoveType::sp_mode_ = this;
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
 	go_home_path_algorithm_.reset();
 }
