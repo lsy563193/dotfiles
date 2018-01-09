@@ -88,7 +88,21 @@ void ModeCharge::keyClean(bool state_now, bool state_last)
 
 void ModeCharge::remotePlan(bool state_now, bool state_last)
 {
-	if (robot_timer.getPlanStatus() == 3)
+	if (robot_timer.getPlanStatus() == 1)
+	{
+		beeper.play_for_command(VALID);
+		speaker.play(VOICE_APPOINTMENT_DONE);
+		ROS_WARN("%s %d: Plan received.", __FUNCTION__, __LINE__);
+		robot_timer.resetPlanStatus();
+	}
+	else if (robot_timer.getPlanStatus() == 2)
+	{
+		beeper.play_for_command(VALID);
+		speaker.play(VOICE_CANCEL_APPOINTMENT);
+		ROS_WARN("%s %d: Plan cancel received.", __FUNCTION__, __LINE__);
+		robot_timer.resetPlanStatus();
+	}
+	else if (robot_timer.getPlanStatus() == 3)
 	{
 		ROS_WARN("%s %d: Plan activated.", __FUNCTION__, __LINE__);
 		if (error.get() != ERROR_CODE_NONE)

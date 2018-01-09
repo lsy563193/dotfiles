@@ -128,7 +128,7 @@ bool Speaker::openPcmDriver(void)
 		ROS_ERROR("open PCM device failed:");
 		return false;
 	}
-	adjustVolume(55);
+	adjustVolume(SPEAKER_VOLUME);
 	return true;
 }
 

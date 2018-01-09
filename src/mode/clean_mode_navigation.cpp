@@ -590,9 +590,10 @@ bool CleanModeNav::updateActionInStateInit() {
 			action_i_ = ac_open_lidar;
 	} else if (action_i_ == ac_back_form_charger)
 	{
+		if (!has_aligned_and_open_slam_)
+			// Init odom position here.
+			robot::instance()->initOdomPosition();
 		action_i_ = ac_open_lidar;
-		// Init odom position here.
-		robot::instance()->initOdomPosition();
 	} else if (action_i_ == ac_open_lidar)
 	{
 		if (!has_aligned_and_open_slam_)
@@ -640,8 +641,10 @@ bool CleanModeNav::isSwitchByEventInStateClean() {
 bool CleanModeNav::updateActionInStateClean(){
 	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
 	mapMark();
+	robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 	old_dir_ = new_dir_;
 	if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
+
 //		ROS_ERROR("old_dir_(%d)", old_dir_);
 		new_dir_ = plan_path_.front().th;
 //		ROS_ERROR("new_dir_(%d)", new_dir_);
