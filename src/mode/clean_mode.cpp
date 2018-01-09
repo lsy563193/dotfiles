@@ -804,6 +804,11 @@ bool ACleanMode::isSwitchByEventInStateSpot()
 }
 
 // ------------------State exception resume--------------
+bool ACleanMode::isSwitchByEventInStateExceptionResume()
+{
+	return checkEnterNullState();
+}
+
 bool ACleanMode::updateActionInStateExceptionResume()
 {
 	if (isExceptionTriggered())
@@ -914,7 +919,9 @@ void ACleanMode::switchInStateTrapped()
 	else/* if (escape_trapped_)*/ {
 		ROS_WARN("%s %d: Escape trapped !", __FUNCTION__, __LINE__);
 		reach_cleaned_count_ = 0;
-		sp_state = (sp_tmp_state == state_clean) ? state_clean : state_exploration;
+//		sp_state = (sp_tmp_state == state_clean) ? state_clean : state_exploration;
+		sp_state = sp_saved_states.back();
+		sp_saved_states.pop_back();
 		sp_state->init();
 	}
 }

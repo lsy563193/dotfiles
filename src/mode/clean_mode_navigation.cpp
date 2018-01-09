@@ -444,7 +444,7 @@ bool CleanModeNav::updateActionInStateClean(){
 void CleanModeNav::switchInStateClean() {
 	if (clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell())) {
 		ROS_WARN("%s,%d: enter state trapped",__FUNCTION__,__LINE__);
-		sp_tmp_state = sp_state;
+		sp_saved_states.push_back(sp_state);
 		sp_state = state_trapped;
 	}
 	else {
@@ -700,5 +700,9 @@ void CleanModeNav::switchInStateResumeLowBatteryCharge()
 	sp_state = state_clean;
 	sp_state->init();
 	sp_action_.reset();
+}
+// ------------------State Exception Resume--------------------
+bool CleanModeNav::isSwitchByEventInStateExceptionResume() {
+	return checkEnterPause();
 }
 

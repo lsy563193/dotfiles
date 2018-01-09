@@ -282,7 +282,7 @@ public:
 
 	// State exception resume
 	bool checkEnterExceptionResumeState();
-	virtual bool isSwitchByEventInStateExceptionResume(){return false;};
+	virtual bool isSwitchByEventInStateExceptionResume();
 	virtual bool updateActionInStateExceptionResume();
 	virtual void switchInStateExceptionResume();
 
@@ -379,6 +379,7 @@ public:
 	static State *state_clean;
 protected:
 	static std::vector<State*> sp_saved_states;
+	static State* sp_tmp_state;
 	static State *state_init;
 	static State *state_go_home_point;
 	static State *state_go_to_charger;
@@ -477,6 +478,9 @@ public:
 	bool isSwitchByEventInStateResumeLowBatteryCharge() override;
 	bool updateActionInStateResumeLowBatteryCharge() override;
 	void switchInStateResumeLowBatteryCharge() override;
+
+	// State exception resume
+	bool isSwitchByEventInStateExceptionResume();
 
 private:
 	bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
