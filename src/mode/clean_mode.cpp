@@ -578,21 +578,6 @@ bool ACleanMode::checkEnterNullState()
 	return false;
 }
 
-bool ACleanMode::checkEnterGoCharger()
-{
-	ev.rcon_triggered = c_rcon.getForwardTop();
-	if (ev.rcon_triggered) {
-		ev.rcon_triggered= false;
-		ROS_WARN("%s,%d:find charge success,convert to go to charge state", __func__, __LINE__);
-		sp_state = state_go_to_charger;
-		sp_state->init();
-		action_i_ = ac_go_to_charger;
-		genNextAction();
-		return true;
-	}
-	return false;
-}
-
 // ------------------State init--------------------
 bool ACleanMode::isSwitchByEventInStateInit() {
 	return checkEnterNullState();
@@ -731,6 +716,20 @@ void ACleanMode::switchInStateGoHomePoint()
 }
 
 // ------------------State go to charger--------------------
+bool ACleanMode::checkEnterGoCharger()
+{
+	ev.rcon_triggered = c_rcon.getForwardTop();
+	if (ev.rcon_triggered) {
+		ev.rcon_triggered= false;
+		ROS_WARN("%s,%d:find charge success,convert to go to charge state", __func__, __LINE__);
+		sp_state = state_go_to_charger;
+		sp_state->init();
+		action_i_ = ac_go_to_charger;
+		genNextAction();
+		return true;
+	}
+	return false;
+}
 
 bool ACleanMode::updateActionInStateGoToCharger()
 {
@@ -828,7 +827,7 @@ void ACleanMode::switchInStateExceptionResume()
 	}
 }
 
-// State exploration
+// ------------------State exploration--------------
 bool ACleanMode::isSwitchByEventInStateExploration() {
 	return checkEnterGoCharger();
 }

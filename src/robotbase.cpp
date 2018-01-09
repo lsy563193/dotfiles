@@ -321,6 +321,7 @@ void robotbase_routine_cb()
 
 		sensor.c_s = serial.receive_stream[REC_CHARGE_STATE];
 		charger.setChargeStatus(sensor.c_s);
+//		ROS_INFO("%s %d: charger%d", __FUNCTION__, __LINE__, charger.getChargeStatus());
 
 		sensor.w_tank = (serial.receive_stream[REC_WATER_TANK]>0)?true:false;
 
