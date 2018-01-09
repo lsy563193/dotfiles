@@ -155,7 +155,7 @@ void event_manager_thread_cb()
 
 
 		/* Bumper */
-		if (bumper.getStatus() == BLOCK_ALL) {
+		/*if (bumper.getStatus() == BLOCK_ALL) {
 			ROS_DEBUG("%s %d: setting event:all bumper trig ", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_BUMPER_ALL);
 		} else if (bumper.getStatus() & BLOCK_LEFT) {
@@ -164,7 +164,7 @@ void event_manager_thread_cb()
 		} else if (bumper.getStatus() & BLOCK_RIGHT) {
 			ROS_DEBUG("%s %d: setting event: right bumper trig", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_BUMPER_RIGHT);
-		}
+		}*/
 
 		/* OBS */
 		if (obs.getFront() > obs.getFrontTrigValue() + 1700) {
@@ -181,7 +181,7 @@ void event_manager_thread_cb()
 		}
 
 		/* Cliff */
-		if (cliff.getStatus() == BLOCK_ALL) {
+		/*if (cliff.getStatus() == BLOCK_ALL) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_ALL);
 		} else if (cliff.getStatus() == (BLOCK_FRONT | BLOCK_LEFT)) {
@@ -202,7 +202,7 @@ void event_manager_thread_cb()
 		} else if (cliff.getStatus() == (BLOCK_RIGHT)) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_CLIFF_RIGHT);
-		}
+		}*/
 
 		/* RCON */
 		if (c_rcon.getStatus()) {
@@ -319,7 +319,7 @@ void event_manager_thread_cb()
 		}
 
 		/* robot slip */
-		if(lidar_is_robot_slip()){
+		if(lidar.isRobotSlip()){
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_ROBOT_SLIP);
 		}
@@ -583,7 +583,6 @@ void event_manager_reset_status(void)
 	ev.slam_error = false;
 	/* robot slip || stuck */
 	ev.robot_slip = false;
-	ev.slip_enable = true;
 	ev.robot_stuck = false;
 
 	/* tilt switch*/
@@ -911,14 +910,14 @@ void df_charge_detect(bool state_now, bool state_last)
 
 void df_robot_slip()
 {
-	static int slip_cnt = 0;
+/*	static int slip_cnt = 0;
 	ROS_WARN("\033[32m%s,%d,set robot slip!! \033[0m",__FUNCTION__,__LINE__);
 	beeper.play_for_command(true);
 	ev.robot_slip = true;
 	if(slip_cnt++ > 2){
 		slip_cnt = 0;
 		ev.robot_stuck = true;
-	}
+	}*/
 }
 
 void EventHandle::robotSlip(bool state_new, bool state_last)

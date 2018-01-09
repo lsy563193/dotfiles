@@ -71,7 +71,9 @@ public:
 	bool isPoseReach();
 
 	bool isLinearForward();
-protected:
+
+private:
+	bool handleMoveBackEvent(ACleanMode* p_clean_mode);
 	void switchLinearTarget(ACleanMode * p_clean_mode);
 };
 
@@ -89,9 +91,8 @@ public:
 	bool isOverOriginLine(GridMap &map);
 	bool isBlockCleared(GridMap &map, Points &passed_path);
 
-//	IAction* setNextAction();
-//	Points tmp_plan_path_{};
-protected:
+private:
+	bool handleMoveBackEvent(ACleanMode* p_clean_mode);
 	bool is_left_{};
 	int16_t turn_angle{};
 	int16_t bumper_turn_angle(bool);

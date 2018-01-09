@@ -156,7 +156,7 @@
  * When it is too large, it will fall down when reach the cliff.
  */
 #define BACK_MAX_SPEED					((int32_t) 11) // 15)
-#define BACK_MIN_SPEED					((int32_t) 11)
+#define BACK_MIN_SPEED					((int32_t) 8)
 #define LINEAR_MIN_SPEED				((int32_t) 10) // 15)
 #define LINEAR_MAX_SPEED				((int32_t) 40) // 15)
 #define FALL_WALL_MIN_SPEED			((int32_t) 5)

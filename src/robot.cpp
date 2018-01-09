@@ -443,6 +443,7 @@ bool robot::calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,bool is_
 void robot::scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr& scan)
 {
 	lidar.scanOriginalCb(scan);
+	lidar.checkRobotSlip();
 	if (lidar.isScanOriginalReady() && (p_mode->action_i_ == p_mode->ac_follow_wall_left || p_mode->action_i_ == p_mode->ac_follow_wall_right)) {
 		std::deque<Vector2<double>> points{};
 		if (calcLidarPath(scan, p_mode->action_i_ == p_mode->ac_follow_wall_left, points)) {
