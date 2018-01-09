@@ -258,7 +258,6 @@ public:
 
 	// State null
 	bool checkEnterNullState();
-	bool checkEnterGoCharger();
 	// State init
 	virtual bool isSwitchByEventInStateInit();
 	virtual bool updateActionInStateInit();
@@ -276,6 +275,7 @@ public:
 	virtual void switchInStateGoHomePoint();
 
 	// State go to charger
+	bool checkEnterGoCharger();
 	virtual bool isSwitchByEventInStateGoToCharger(){return false;};
 	virtual bool updateActionInStateGoToCharger();
 	virtual void switchInStateGoToCharger();
@@ -292,9 +292,10 @@ public:
 	virtual void switchInStateSpot(){};
 
 	// State trapped
-	virtual bool isSwitchByEventInStateTrapped(){ return false;};
-	virtual bool updateActionInStateTrapped(){};
-	virtual void switchInStateTrapped(){ };
+	virtual bool isSwitchByEventInStateTrapped();
+	virtual bool updateActionInStateTrapped();
+	virtual void switchInStateTrapped();
+	bool trapped_time_out_{};
 
 	// State exploration
 	virtual bool isSwitchByEventInStateExploration();
@@ -452,6 +453,7 @@ public:
 	void switchInStateGoToCharger() override;
 
 	// State tmp spot
+	bool checkEnterTempSpotState();
 	bool checkOutOfSpot();
 	bool isSwitchByEventInStateSpot() override;
 	void switchInStateSpot() override;
@@ -464,15 +466,21 @@ public:
 
 	// State trapped
 	bool isSwitchByEventInStateTrapped() override;
-	bool updateActionInStateTrapped() override;
-	void switchInStateTrapped() override;
-	bool trapped_time_out_{};
-	bool escape_trapped_{};
+
+	// State charge
+	bool isSwitchByEventInStateCharge() override;
+	bool updateActionStateCharge() override;
+	void switchInStateCharge() override;
+
+	// State resume low battery charge
+	bool checkEnterResumeLowBatteryCharge();
+	bool isSwitchByEventInStateResumeLowBatteryCharge() override;
+	bool updateActionInStateResumeLowBatteryCharge() override;
+	void switchInStateResumeLowBatteryCharge() override;
+
 private:
 	bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
-	bool actionLinearIsFinish(MoveTypeLinear *p_mt);
-	void resumeLowBatteryCharge();
-	bool checkEnterTempSpotState();
+	bool actionLinearIsFinish(MoveTypeLinear *p_mt) override;
 
 	bool has_aligned_and_open_slam_{false};
 	float paused_odom_angle_{0};
