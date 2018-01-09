@@ -719,7 +719,7 @@ void ACleanMode::switchInStateGoToCharger() {
 	}
 }
 
-// For spot cleaning.
+// ------------------ For spot cleaning--------------------
 bool ACleanMode::updateActionInStateSpot() {
 	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
 	mapMark();
@@ -741,6 +741,11 @@ bool ACleanMode::updateActionInStateSpot() {
 	else {
 		return false;
 	}
+}
+
+bool ACleanMode::isSwitchByEventInStateSpot()
+{
+	return false;
 }
 
 void ACleanMode::setHomePoint()

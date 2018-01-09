@@ -751,12 +751,24 @@ void CleanModeNav::switchInStateGoToCharger()
 
 // ------------------State tmp spot--------------------
 bool CleanModeNav::isSwitchByEventInStateSpot() {
-	return ACleanMode::isSwitchByEventInStateSpot();
+	//return ACleanMode::isSwitchByEventInStateSpot();
+
+	if(ev.key_clean_pressed){
+		ev.key_clean_pressed = false;
+		sp_state = state_clean;
+		sp_state->init();
+		action_i_ = ac_null;
+		sp_action_.reset();
+		clean_path_algorithm_.reset(new NavCleanPathAlgorithm);
+		return true;
+	}
+	return false;
 }
 
 bool CleanModeNav::updateActionInStateSpot() {
-	return updateActionInStateSpot();
+	return ACleanMode::updateActionInStateSpot();
 }
+
 void CleanModeNav::switchInStateSpot() {
 	action_i_ = ac_null;
 	sp_action_.reset();
@@ -826,3 +838,4 @@ bool CleanModeNav::updateActionInStatePause()
 	genNextAction();
 	return true;
 }
+
