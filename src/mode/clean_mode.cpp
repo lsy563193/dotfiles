@@ -198,7 +198,7 @@ bool ACleanMode::isFinish()
 
 void ACleanMode::genNextAction()
 {
-	INFO_GREEN(before genNextAction);
+	INFO_GREEN("before genNextAction");
 	if(action_i_ == ac_null)
 		sp_action_.reset();
 	if(action_i_ == ac_open_gyro)
@@ -249,7 +249,7 @@ void ACleanMode::genNextAction()
 	else if(action_i_ == ac_null)
 		sp_action_.reset();
 
-	INFO_GREEN(after genNextAction);
+	INFO_GREEN("after genNextAction");
 	PP_INFO();
 }
 
@@ -270,7 +270,7 @@ void ACleanMode::actionFollowWallSaveBlocks()
 
 bool ACleanMode::actionLinearIsFinish(MoveTypeLinear *p_mt)
 {
-	return p_mt->isPoseReach() ;/*|| p_mt->isPassTargetStop(new_dir_);*/
+	return p_mt->isPoseReach() || p_mt->isPassTargetStop(new_dir_);
 }
 
 void ACleanMode::actionLinearSaveBlocks()

@@ -25,7 +25,7 @@ void Vacuum::setTmpMode(uint8_t mode)
 //	}
 
 	setSpeedByMode(mode);
-	INFO_GREEN(set temp vacuum mode);
+	INFO_GREEN("set temp vacuum mode");
 }
 
 void Vacuum::setMode(uint8_t mode)

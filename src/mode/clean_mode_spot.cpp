@@ -131,7 +131,7 @@ void CleanModeSpot::cliffAll(bool state_now, bool state_last)
 
 void CleanModeSpot::keyClean(bool state_now, bool state_last)
 {
-	INFO_GREEN(key clean);
+	INFO_GREEN("key clean");
 
 	beeper.play_for_command(VALID);
 	wheel.stop();
@@ -142,7 +142,7 @@ void CleanModeSpot::keyClean(bool state_now, bool state_last)
 	{
 		if (!long_press && key.getPressTime() > 3)
 		{
-			INFO_GREEN(key clean long pressed);
+			INFO_GREEN("key clean long pressed");
 			beeper.play_for_command(VALID);
 			long_press = true;
 		}
@@ -153,7 +153,7 @@ void CleanModeSpot::keyClean(bool state_now, bool state_last)
 		ev.key_long_pressed = true;
 	else
 		ev.key_clean_pressed = true;
-	INFO_GREEN(Key clean is released);
+	INFO_GREEN("Key clean is released");
 
 	key.resetTriggerStatus();
 }
