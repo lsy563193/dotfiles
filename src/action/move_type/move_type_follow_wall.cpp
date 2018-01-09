@@ -24,6 +24,7 @@ MoveTypeFollowWall::MoveTypeFollowWall(bool is_left, bool is_trapped)
 	sp_movement_.reset(new MovementTurn(turn_target_angle_, ROTATE_TOP_SPEED));
 	IMovement::sp_mt_ = this;
 
+	resetTriggeredValue();
 //	if (action_i_ == ac_back) {
 //		PP_INFO();
 //		TIME_STRAIGHT = 0.2;

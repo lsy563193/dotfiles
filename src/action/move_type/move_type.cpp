@@ -86,6 +86,7 @@ bool IMoveType::shouldTurn()
 }
 
 IMoveType::IMoveType() {
+//	resetTriggeredValue();
 	start_point_ = getPosition();
 	c_rcon.resetStatus();
 	robot::instance()->obsAdjustCount(20);
