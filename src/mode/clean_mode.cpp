@@ -508,11 +508,51 @@ Cells ACleanMode::pointsGenerateCells(Points &targets)
 	return path;
 }
 
+void ACleanMode::setHomePoint()
+{
+	// Set home cell.
+	HomePoints::iterator home_point_it = home_points_.begin();
+	for (;home_point_it != home_points_.end(); home_point_it++)
+	{
+		if (home_point_it->home_point.toCell() == getPosition().toCell())
+		{
+			ROS_INFO("%s %d: Home cell(%d, %d) exists.",
+					 __FUNCTION__, __LINE__, home_point_it->home_point.toCell().x, home_point_it->home_point.toCell().y);
+			return;
+		}
+	}
+	home_points_.push_front({getPosition(), true});
+	ROS_INFO("%s %d: Set home cell(%d, %d).", __FUNCTION__, __LINE__,
+			 home_points_.front().home_point.x,
+			 home_points_.front().home_point.y);
+}
+
+// ------------------Handlers--------------------------
+void ACleanMode::remoteHome(bool state_now, bool state_last)
+{
+	if (sp_state == state_clean || action_i_ == ac_pause)
+	{
+		ROS_WARN("%s %d: remote home.", __FUNCTION__, __LINE__);
+		beeper.play_for_command(VALID);
+		ev.remote_home = true;
+	}
+	else
+	{
+		ROS_WARN("%s %d: remote home but not valid.", __FUNCTION__, __LINE__);
+		beeper.play_for_command(INVALID);
+	}
+	remote.reset();
+}
+
+// ------------------Handlers end--------------------------
+
 bool ACleanMode::checkEnterExceptionResumeState()
 {
 	if (isExceptionTriggered()) {
+		ROS_WARN("%s %d: Exception triggered!", __FUNCTION__, __LINE__);
 		mapMark();
 		sp_action_.reset();
+		sp_saved_state = sp_state;
 		sp_state = state_exception_resume;
 		sp_state->init();
 		return true;
@@ -734,7 +774,7 @@ void ACleanMode::switchInStateGoToCharger() {
 	}
 }
 
-// For spot cleaning.
+// ------------------State spot--------------------
 bool ACleanMode::updateActionInStateSpot() {
 	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
 	mapMark();
@@ -758,41 +798,28 @@ bool ACleanMode::updateActionInStateSpot() {
 	}
 }
 
-void ACleanMode::setHomePoint()
+// ------------------State exception resume--------------
+bool ACleanMode::updateActionInStateExceptionResume()
 {
-	// Set home cell.
-	HomePoints::iterator home_point_it = home_points_.begin();
-	for (;home_point_it != home_points_.end(); home_point_it++)
+	if (isExceptionTriggered())
 	{
-		if (home_point_it->home_point.toCell() == getPosition().toCell())
-		{
-			ROS_INFO("%s %d: Home cell(%d, %d) exists.",
-					 __FUNCTION__, __LINE__, home_point_it->home_point.toCell().x, home_point_it->home_point.toCell().y);
-			return;
-		}
+		sp_action_.reset();
+		action_i_ = ac_exception_resume;
+		genNextAction();
+		return true;
 	}
-	home_points_.push_front({getPosition(), true});
-	ROS_INFO("%s %d: Set home cell(%d, %d).", __FUNCTION__, __LINE__,
-			 home_points_.front().home_point.x,
-			 home_points_.front().home_point.y);
+	return false;
 }
 
-void ACleanMode::remoteHome(bool state_now, bool state_last)
+void ACleanMode::switchInStateExceptionResume()
 {
-	if (sp_state == state_clean || action_i_ == ac_pause)
+	if (!isExceptionTriggered())
 	{
-		ROS_WARN("%s %d: remote home.", __FUNCTION__, __LINE__);
-		beeper.play_for_command(VALID);
-		ev.remote_home = true;
+		ROS_INFO("%s %d: Resume to previous state", __FUNCTION__, __LINE__);
+		sp_action_.reset();
+		sp_state = sp_saved_state;
 	}
-	else
-	{
-		ROS_WARN("%s %d: remote home but not valid.", __FUNCTION__, __LINE__);
-		beeper.play_for_command(INVALID);
-	}
-	remote.reset();
 }
-
 
 // State exploration
 bool ACleanMode::isSwitchByEventInStateExploration() {

@@ -70,11 +70,20 @@ bool MoveTypeFollowWall::isFinish()
 			sp_movement_.reset(new MovementFollowWallLidar(is_left_));
 		}
 		else if (movement_i_ == mm_forward) {
-			if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || ev.robot_slip) {
+			if (ev.bumper_triggered || ev.cliff_triggered) {
 				p_clean_mode->actionFollowWallSaveBlocks();
 //				resetTriggeredValue();
 				movement_i_ = mm_back;
 				sp_movement_.reset(new MovementBack(0.01, BACK_MAX_SPEED));
+			}
+			else if(ev.tilt_triggered){
+				movement_i_ = mm_back;
+				sp_movement_.reset(new MovementBack(0.3, BACK_MAX_SPEED));
+			}
+			else if (ev.robot_slip)
+			{
+				movement_i_ = mm_back;
+				sp_movement_.reset(new MovementBack(0.3, BACK_MIN_SPEED));
 			}
 			else if (ev.lidar_triggered || ev.obs_triggered) {
 				p_clean_mode->actionFollowWallSaveBlocks();

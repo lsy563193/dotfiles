@@ -4,6 +4,7 @@
 
 #include <pp.h>
 #include <arch.hpp>
+#include <event_manager.h>
 
 boost::shared_ptr<IAction> Mode::sp_action_ = nullptr;
 //IAction* Mode::sp_action_ = nullptr;
@@ -60,6 +61,7 @@ int Mode::getNextMode()
 
 bool Mode::isExceptionTriggered()
 {
-	return ev.bumper_jam || ev.cliff_jam || ev.oc_wheel_left || ev.oc_wheel_right || ev.oc_suction || ev.lidar_stuck;
+	return ev.bumper_jam || ev.cliff_jam || ev.oc_wheel_left || ev.oc_wheel_right
+		   || ev.oc_suction || ev.lidar_stuck || ev.robot_stuck;
 }
 

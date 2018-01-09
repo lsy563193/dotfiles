@@ -55,12 +55,18 @@ bool MoveTypeLinear::isFinish()
 		else if (movement_i_ == mm_forward) {
 			PP_INFO();
 			if (ev.bumper_triggered || ev.cliff_triggered) {
+
 				movement_i_ = mm_back;
 				sp_movement_.reset(new MovementBack(0.01, BACK_MAX_SPEED));
 			}
 			else if(ev.tilt_triggered){
 				movement_i_ = mm_back;
-				sp_movement_.reset(new MovementBack(0.2, BACK_MAX_SPEED));
+				sp_movement_.reset(new MovementBack(0.3, BACK_MAX_SPEED));
+			}
+			else if (ev.robot_slip)
+			{
+				movement_i_ = mm_back;
+				sp_movement_.reset(new MovementBack(0.3, BACK_MIN_SPEED));
 			}
 			else {
 //				resetTriggeredValue();

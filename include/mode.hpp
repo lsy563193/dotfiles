@@ -282,8 +282,8 @@ public:
 	// State exception resume
 	bool checkEnterExceptionResumeState();
 	virtual bool isSwitchByEventInStateExceptionResume(){return false;};
-	virtual bool updateActionInStateExceptionResume(){};
-	virtual void switchInStateExceptionResume(){};
+	virtual bool updateActionInStateExceptionResume();
+	virtual void switchInStateExceptionResume();
 
 	// State temp spot
 	virtual bool isSwitchByEventInStateSpot(){return false;};

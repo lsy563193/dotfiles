@@ -72,6 +72,7 @@ private:
 	int32_t speed_;
 	uint8_t bumper_jam_cnt_;
 	uint8_t cliff_jam_cnt_;
+	uint8_t robot_stuck_cnt_;
 	float lidar_detect_distance;
 };
 
@@ -249,6 +250,7 @@ private:
 	uint8_t wheel_resume_cnt_;
 	uint8_t bumper_jam_state_;
 	uint8_t cliff_resume_cnt_;
+	uint8_t robot_stuck_resume_cnt_;
 };
 
 class MovementCharge :public IMovement
