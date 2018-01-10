@@ -46,6 +46,7 @@ public:
 	void pubLineMarker(std::vector<std::vector<Vector2<double>> > *groups,std::string name);
 	void pubFitLineMarker(visualization_msgs::Marker fit_line_marker);
 	void pubPointMarkers(const std::deque<Vector2<double>> *point, std::string frame_id);
+	void pubTmpTarget(const Point32_t& point);
 	void setCleanMapMarkers(int16_t x, int16_t y, CellState type);
 	void pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path);
 
@@ -202,6 +203,7 @@ private:
 	ros::Publisher line_marker_pub_;
 	ros::Publisher line_marker_pub2_;
 	ros::Publisher point_marker_pub_;
+	ros::Publisher tmp_target_pub_;
 	ros::Publisher fit_line_marker_pub_;
 
 	ros::ServiceClient lidar_motor_cli_;

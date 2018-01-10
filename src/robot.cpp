@@ -50,6 +50,7 @@ robot::robot(std::string serial_port, int baudrate, std::string lidar_bumper_dev
 	line_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("line_marker", 1);
 	line_marker_pub2_ = robot_nh_.advertise<visualization_msgs::Marker>("line_marker2", 1);
 	point_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("point_marker", 1);
+	tmp_target_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("tmp_target", 1);
 	fit_line_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("fit_line_marker", 1);
 
 	visualizeMarkerInit();
@@ -152,7 +153,8 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 	obs.DynamicAdjust(OBS_adjust_count);
 
 	// Check for whether robot should publish this frame of scan.
-		scan_ctrl_.allow_publishing =
+
+	scan_ctrl_.allow_publishing =
 						!(fabs(wheel.getLeftWheelActualSpeed() - wheel.getRightWheelActualSpeed()) > 0.1
 					|| (wheel.getLeftWheelActualSpeed() * wheel.getRightWheelActualSpeed() < 0)
 					|| bumper.getStatus()
@@ -783,6 +785,35 @@ void robot::pubPointMarkers(const std::deque<Vector2<double>> *points, std::stri
 	}
 }
 
+void robot::pubTmpTarget(const Point32_t &point) {
+	visualization_msgs::Marker point_marker;
+	point_marker.ns = "tmp_target";
+	point_marker.id = 0;
+	point_marker.type = visualization_msgs::Marker::SPHERE_LIST;
+	point_marker.action = 0;//add
+	point_marker.lifetime = ros::Duration(0), "base_link";
+	point_marker.scale.x = 0.03;
+	point_marker.scale.y = 0.03;
+	point_marker.scale.z = 0.10;
+	point_marker.color.r = 0.75;
+	point_marker.color.g = 0.25;
+	point_marker.color.b = 0.0;
+	point_marker.color.a = 1.0;
+	point_marker.header.frame_id = "/map";
+	point_marker.header.stamp = ros::Time::now();
+
+	geometry_msgs::Point target_points;
+	target_points.x = point.toCell().x * (float)CELL_SIZE / 1000;
+	target_points.y = point.toCell().y * (float)CELL_SIZE / 1000;
+	target_points.z = 0;
+	point_marker.points.push_back(target_points);
+	tmp_target_pub_.publish(point_marker);
+	//ROS_INFO("%s,%d,points size:%u,points %s",__FUNCTION__,__LINE__,points->size(),msg.c_str());
+	point_marker.points.clear();
+	//ROS_INFO("pub point!!");
+}
+
+
 bool robot::lidarMotorCtrl(bool switch_)
 {
 	pp::SetLidar ctrl_message;
@@ -896,6 +927,7 @@ Points robot::getTempTarget() const
 //	return tmp;
 	return tmp_plan_path_;
 }
+
 //--------------------
 static int32_t xCount{}, yCount{};
 

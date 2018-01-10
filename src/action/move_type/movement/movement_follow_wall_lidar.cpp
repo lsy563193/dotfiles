@@ -70,6 +70,7 @@ bool MovementFollowWallLidar::calcTmpTarget() {
 		tmp_target_ = p_tmp_targets_->front();
 	}
 //	ROS_WARN("tmp_target(%d,%d)", tmp_target.x, getPosition().y);
+	robot::instance()->pubTmpTarget(tmp_target_);
 	return true;
 }
 

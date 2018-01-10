@@ -47,6 +47,8 @@ bool MovementFollowPointLinear::calcTmpTarget()
 //		return false;
 //	}
 	tmp_target_ = _calcTmpTarget();
+
+	robot::instance()->pubTmpTarget(tmp_target_);
 	return true;
 }
 
