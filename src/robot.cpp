@@ -799,8 +799,8 @@ void robot::pubTmpTarget(const Point32_t &point) {
 	point_marker.type = visualization_msgs::Marker::SPHERE_LIST;
 	point_marker.action = 0;//add
 	point_marker.lifetime = ros::Duration(0), "base_link";
-	point_marker.scale.x = 0.03;
-	point_marker.scale.y = 0.03;
+	point_marker.scale.x = 0.30;
+	point_marker.scale.y = 0.30;
 	point_marker.scale.z = 0.10;
 	point_marker.color.r = 1.0;
 	point_marker.color.g = 0.75;

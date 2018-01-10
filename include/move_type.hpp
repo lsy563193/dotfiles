@@ -42,7 +42,7 @@ public:
 	static int movement_i_;
 	void resetTriggeredValue();
 	Point32_t start_point_;
-	Point32_t target_point_;
+//	Point32_t target_point_;
 	int dir_;
 protected:
 //	Cells passed_path_;
@@ -83,7 +83,7 @@ public:
 	MoveTypeFollowWall() = delete;
 	~MoveTypeFollowWall() override;
 
-	explicit MoveTypeFollowWall(bool is_left, bool is_trapped);
+	explicit MoveTypeFollowWall(bool is_left);
 
 	bool isFinish() override;
 

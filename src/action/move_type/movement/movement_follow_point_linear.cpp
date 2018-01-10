@@ -8,34 +8,26 @@ MovementFollowPointLinear::MovementFollowPointLinear()
 {
 	min_speed_ = LINEAR_MIN_SPEED;
 	max_speed_ = LINEAR_MAX_SPEED;
-//	sp_mt_->sp_cm_->tmp_plan_path_ = path;
-//	s_target_p = GridMap::cellToPoint(sp_mt_->sp_cm_->tmp_plan_path_.back());
 	base_speed_ = LINEAR_MIN_SPEED;
 	tick_limit_ = 1;
-	auto p_clean_mode = (ACleanMode*)(sp_mt_->sp_mode_);
-	sp_mt_->target_point_ = p_clean_mode->plan_path_.front();
-//	tmp_target_.th = sp_mt_->target_point_.th;
-//	tmp_target_ = _calcTmpTarget();
-//	sp_mt_->sp_cm_->plan_path_display_sp_mt_->sp_cm_->plan_path_points();
-//	g_is_should_follow_wall = false;
-//	s_target = target;
-//	sp_mt_->sp_cm_->tmp_plan_path_ = path;
 }
 
 Point32_t MovementFollowPointLinear::_calcTmpTarget()
 {
-	auto tmp_target_ = sp_mt_->target_point_;
-	auto target_xy = (isXAxis(tmp_target_.th)) ? sp_mt_->target_point_.x : sp_mt_->target_point_.y;
-	auto curr_xy = (isXAxis(tmp_target_.th)) ? getPosition().x : getPosition().y;
-	auto &tmp_xy = (isXAxis(tmp_target_.th)) ? tmp_target_.x : tmp_target_.y;
-//	ROS_WARN("curr_xy(%d), target_xy(%d)", curr_xy, target_xy);
-	auto dis = std::min(std::abs(curr_xy - target_xy), (int32_t) (LINEAR_NEAR_DISTANCE /*+ CELL_COUNT_MUL*/));
-//	ROS_INFO("dis(%d)",dis);
-	if (!isPos(tmp_target_.th))
+	auto p_mode = ((ACleanMode*)(sp_mt_->sp_mode_));
+	auto curr = getPosition();
+	auto tmp_target_ = p_mode->plan_path_.front();
+	auto &tmp_target_xy = (isXAxis(p_mode->new_dir_)) ? tmp_target_.x : tmp_target_.y;
+	auto curr_xy = (isXAxis(p_mode->new_dir_)) ? getPosition().x : getPosition().y;
+//	ROS_INFO("curr_xy(%d), target_xy(%d)", curr_xy, tmp_target_xy);
+	auto dis = std::min(std::abs(curr_xy - tmp_target_xy), (int32_t) (LINEAR_NEAR_DISTANCE /*+ CELL_COUNT_MUL*/));
+	if (!isPos(p_mode->new_dir_))
 		dis *= -1;
-	tmp_xy = curr_xy + dis;
-	return tmp_target_;
+	tmp_target_xy = curr_xy + dis;
+//	ROS_INFO("dis(%d)",dis);
+//	ROS_WARN("curr(%d,%d), target(%d,%d), dir(%d) ", curr.x,curr.y, tmp_target_.x,tmp_target_.y,p_mode->new_dir_);
 //	ROS_WARN("tmp(%d,%d)",tmp_target_.x, tmp_target_.y);
+	return tmp_target_;
 //	ROS_WARN("dis(%d),dir(%d), curr(%d, %d), tmp_target(%d, %d)", dis, tmp_target_.th, curr.x, curr.y, tmp_target.x, tmp_target.y);
 }
 

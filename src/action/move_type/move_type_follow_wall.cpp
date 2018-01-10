@@ -6,20 +6,16 @@
 #include "arch.hpp"
 
 
-MoveTypeFollowWall::MoveTypeFollowWall(bool is_left, bool is_trapped)
+MoveTypeFollowWall::MoveTypeFollowWall(bool is_left)
 {
 	ROS_INFO("%s %d: Entering move type %s follow wall%s.", __FUNCTION__, __LINE__,
-			 is_left ? "left" : "right", is_trapped ? " (robot trapped)" : "");
+			 is_left ? "left" : "right");
 
 	auto p_clean_mode = (ACleanMode*)sp_mode_;
-	if(! p_clean_mode->plan_path_.empty())
-		target_point_ = p_clean_mode->plan_path_.front();
+//	if(! p_clean_mode->plan_path_.empty())
+//		p_clean_mode.target_point_ = p_clean_mode->plan_path_.front();
 	is_left_ = is_left;
-	int16_t turn_angle;
-	if (!is_trapped)
-		turn_angle = getTurnAngle(!p_clean_mode->plan_path_.empty());
-	else
-		turn_angle = 0;
+	int16_t turn_angle = getTurnAngle(!p_clean_mode->plan_path_.empty());
 	turn_target_angle_ = ranged_angle(getPosition().th + turn_angle);
 	movement_i_ = mm_turn;
 	sp_movement_.reset(new MovementTurn(turn_target_angle_, ROTATE_TOP_SPEED));
@@ -346,6 +342,7 @@ int16_t MoveTypeFollowWall::getTurnAngle(bool use_target_angle)
 		auto ev_turn_angle = getTurnAngleByEvent();
 		if(use_target_angle) {
 			auto curr = getPosition();
+			auto target_point_ = ((ACleanMode*)sp_mode_)->plan_path_.front();
 			auto tg_turn_angle = ranged_angle(course_to_dest(curr, target_point_) - curr.th);
 			turn_angle = (std::abs(ev_turn_angle) > std::abs(tg_turn_angle)) ? ev_turn_angle : tg_turn_angle;
 			ROS_INFO("%s %d: target_turn_angle(%d), event_turn_angle(%d), choose the big one(%d)",
@@ -364,28 +361,29 @@ int16_t MoveTypeFollowWall::getTurnAngle(bool use_target_angle)
 bool MoveTypeFollowWall::isOverOriginLine(GridMap &map)
 {
 	auto curr = getPosition();
+	auto target_point_ = ((ACleanMode*)sp_mode_)->plan_path_.front();
 	if ((target_point_.y > start_point_.y && (start_point_.y - curr.y) > 120)
 		|| (target_point_.y < start_point_.y && (curr.y - start_point_.y) > 120))
 	{
-		ROS_WARN("origin(%d,%d) curr_p(%d, %d), target_point__(%d, %d)",start_point_.x, start_point_.y,  curr.x, curr.y, target_point_.x, target_point_.y);
-		auto target_angle = (target_point_.y > start_point_.y) ? -900 : 900;
-		if (std::abs(ranged_angle(robot::instance()->getWorldPoseAngle() - target_angle)) < 50) // If robot is directly heading to the opposite side of target line, stop.
-		{
-			ROS_WARN("%s %d: Opposite to target angle. curr(%d, %d), target_point_(%d, %d), gyro(%d), target_angle(%d)", __FUNCTION__, __LINE__, curr.x, curr.y, target_point_.x, target_point_.y,
-					 robot::instance()->getWorldPoseAngle(), target_angle);
+//		ROS_WARN("origin(%d,%d) curr_p(%d, %d), target_point__(%d, %d)",start_point_.x, start_point_.y,  curr.x, curr.y, target_point_.x, target_point_.y);
+//		auto target_angle = (target_point_.y > start_point_.y) ? -900 : 900;
+//		if (std::abs(ranged_angle(robot::instance()->getWorldPoseAngle() - target_angle)) < 50) // If robot is directly heading to the opposite side of target line, stop.
+//		{
+//			ROS_WARN("%s %d: Opposite to target angle. curr(%d, %d), target_point_(%d, %d), gyro(%d), target_angle(%d)", __FUNCTION__, __LINE__, curr.x, curr.y, target_point_.x, target_point_.y,
+//					 robot::instance()->getWorldPoseAngle(), target_angle);
+//			return true;
+//		}
+//		else if (map.isBlockCleaned(curr.toCell().x, curr.toCell().y)) // If robot covers a big block, stop.
+//		{
+//			ROS_WARN("%s %d: Back to cleaned place, current(%d, %d), curr(%d, %d), target_point_(%d, %d).",
+//					 __FUNCTION__, __LINE__, curr.x, curr.y, curr.x, curr.y, target_point_.x, target_point_.y);
 			return true;
-		}
-		else if (map.isBlockCleaned(curr.toCell().x, curr.toCell().y)) // If robot covers a big block, stop.
-		{
-			ROS_WARN("%s %d: Back to cleaned place, current(%d, %d), curr(%d, %d), target_point_(%d, %d).",
-					 __FUNCTION__, __LINE__, curr.x, curr.y, curr.x, curr.y, target_point_.x, target_point_.y);
-			return true;
-		}
-		else{
-			ROS_WARN("%s %d: Dynamic adjust the origin line and target line, so it can smoothly follow the wall to clean..",__FUNCTION__,__LINE__);
-			target_point_.y += curr.y - start_point_.y;
-			start_point_.y = curr.y;
-		}
+//		}
+//		else{
+//			ROS_WARN("%s %d: Dynamic adjust the origin line and target line, so it can smoothly follow the wall to clean..",__FUNCTION__,__LINE__);
+//			target_point_.y += curr.y - start_point_.y;
+//			start_point_.y = curr.y;
+//		}
 	}
 
 	return false;
@@ -393,6 +391,7 @@ bool MoveTypeFollowWall::isOverOriginLine(GridMap &map)
 
 bool MoveTypeFollowWall::isNewLineReach(GridMap &map)
 {
+	auto target_point_ = ((ACleanMode*)sp_mode_)->plan_path_.front();
 	auto s_curr_p = getPosition();
 	auto ret = false;
 	auto is_pos_dir = target_point_.y - start_point_.y > 0;

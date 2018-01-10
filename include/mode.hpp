@@ -504,7 +504,7 @@ public:
 
 	bool mapMark() override;
 	bool isExit() override;
-	bool setNextAction() override;
+//	bool setNextAction() override;
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteClean(bool state_now, bool state_last) override ;
 	void cliffAll(bool state_now, bool state_last) override ;
