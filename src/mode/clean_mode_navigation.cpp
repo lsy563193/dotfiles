@@ -285,7 +285,6 @@ bool CleanModeNav::actionFollowWallIsFinish(MoveTypeFollowWall *p_mt)
 		return p_mt->isBlockCleared(clean_map_, passed_path_);
 	else
 		return p_mt->isNewLineReach(clean_map_) || p_mt->isOverOriginLine(clean_map_);
-
 	return false;
 }
 

@@ -860,15 +860,24 @@ bool ACleanMode::updateActionInStateExploration() {
 		if (go_home_path_algorithm_ == nullptr)
 			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
 		action_i_ = ac_null;
-//		genNextAction();
 	}
 	return false;
 }
 
 void ACleanMode::switchInStateExploration() {
 	PP_INFO();
-	sp_state = state_go_home_point;
+	if (clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell())) {
+		ROS_WARN("%s,%d: enter state trapped",__FUNCTION__,__LINE__);
+		sp_saved_states.push_back(sp_state);
+		sp_state = state_trapped;
+	}
+	else{
+		sp_state = state_go_home_point;
+	}
+
+	action_i_ = ac_null;
 	sp_state->init();
+	genNextAction();
 }
 
 // ------------------State trapped------------------
@@ -882,7 +891,7 @@ bool ACleanMode::updateActionInStateTrapped()
 {
 	PP_INFO();
 //	sp_action_.reset();//for call ~constitution;
-	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
+	clean_map_.saveBlocks(action_i_ == ac_linear, (sp_state == state_clean) || (sp_state == state_exploration));
 	mapMark();
 
 	if(sp_action_ == nullptr)

@@ -147,7 +147,7 @@ public:
 
 	uint8_t saveSlip();
 
-	uint8_t saveBlocks(bool is_linear, bool is_state_clean);
+	uint8_t saveBlocks(bool is_linear, bool is_save_rcon);
 
 	uint8_t setBlocks();
 

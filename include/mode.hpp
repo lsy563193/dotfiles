@@ -379,7 +379,6 @@ public:
 	static State *state_clean;
 protected:
 	static std::vector<State*> sp_saved_states;
-	static State* sp_tmp_state;
 	static State *state_init;
 	static State *state_go_home_point;
 	static State *state_go_to_charger;
@@ -520,11 +519,10 @@ public:
 //	void printMapAndPath();
 	void switchInStateInit() override;
 
-	// todo: Delete below 4 function.
 	void switchInStateGoHomePoint() override;
 	void switchInStateGoToCharger() override;
 
-	virtual bool updateActionInStateClean(){};
+	bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
 };
 
 class CleanModeFollowWall:public ACleanMode {
@@ -546,6 +544,7 @@ public:
 //
 	void remoteClean(bool state_now, bool state_last) override;
 	void switchInStateClean() override;
+	bool generatePath(GridMap &map, const Point32_t &curr, const int &last_dir, Points &targets);
 //
 //	void remoteHome(bool state_now, bool state_last);
 //
