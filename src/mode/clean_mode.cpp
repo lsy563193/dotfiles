@@ -260,7 +260,7 @@ void ACleanMode::setRconPos(Point32_t pos)
 		charger_pos_ = pos;
 }
 
-bool ACleanMode::actionFollowWallIsFinish(MoveTypeFollowWall *p_mt)
+bool ACleanMode::MoveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt)
 {
 	return false;
 }
@@ -270,7 +270,7 @@ void ACleanMode::actionFollowWallSaveBlocks()
 	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
 }
 
-bool ACleanMode::actionLinearIsFinish(MoveTypeLinear *p_mt)
+bool ACleanMode::MoveTypeLinearIsFinish(MoveTypeLinear *p_mt)
 {
 	return p_mt->isPoseReach() || p_mt->isPassTargetStop(new_dir_);
 }

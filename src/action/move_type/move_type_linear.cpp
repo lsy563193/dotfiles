@@ -39,7 +39,7 @@ bool MoveTypeLinear::isFinish()
 
 	auto p_clean_mode = (ACleanMode*)sp_mode_;
 
-	if (p_clean_mode->actionLinearIsFinish(this))
+	if (p_clean_mode->MoveTypeLinearIsFinish(this))
 		return true;
 
 	if (isLinearForward())

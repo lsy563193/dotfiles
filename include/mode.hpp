@@ -238,12 +238,12 @@ public:
 
 	Cells pointsGenerateCells(Points &targets);
 
-	virtual bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt);
+	virtual bool MoveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt);
 	virtual void actionFollowWallSaveBlocks();
 	virtual void actionLinearSaveBlocks();
 	void goHomePointUpdateAction();
 
-	virtual bool actionLinearIsFinish(MoveTypeLinear *p_mt);
+	virtual bool MoveTypeLinearIsFinish(MoveTypeLinear *p_mt);
 	int reach_cleaned_count_{};
 	static Points passed_path_;
 	static Points plan_path_;
@@ -482,8 +482,8 @@ public:
 	bool isSwitchByEventInStateExceptionResume();
 
 private:
-	bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
-	bool actionLinearIsFinish(MoveTypeLinear *p_mt) override;
+	bool MoveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
+	bool MoveTypeLinearIsFinish(MoveTypeLinear *p_mt) override;
 
 	bool has_aligned_and_open_slam_{false};
 	float paused_odom_angle_{0};
@@ -522,7 +522,7 @@ public:
 	void switchInStateGoHomePoint() override;
 	void switchInStateGoToCharger() override;
 
-	bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
+	bool MoveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
 };
 
 class CleanModeFollowWall:public ACleanMode {
@@ -555,7 +555,7 @@ public:
 //	void batteryHome(bool state_now, bool state_last);
 //
 //	void chargeDetect(bool state_now, bool state_last);
-	bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) override ;
+	bool MoveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) override ;
 
 	int16_t wf_path_find_shortest_path(GridMap& map, int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound);
 

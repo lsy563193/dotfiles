@@ -277,7 +277,7 @@ void CleanModeNav::remoteMax(bool state_now, bool state_last)
 }
 // End event handlers.
 
-bool CleanModeNav::actionFollowWallIsFinish(MoveTypeFollowWall *p_mt)
+bool CleanModeNav::MoveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt)
 {
 	if (sp_state == state_trapped)
 		return p_mt->isBlockCleared(clean_map_, passed_path_);
@@ -286,47 +286,13 @@ bool CleanModeNav::actionFollowWallIsFinish(MoveTypeFollowWall *p_mt)
 	return false;
 }
 
-bool CleanModeNav::actionLinearIsFinish(MoveTypeLinear *p_mt)
+bool CleanModeNav::MoveTypeLinearIsFinish(MoveTypeLinear *p_mt)
 {
 	if (p_mt->isLinearForward())
-		return p_mt->isRconStop() || ACleanMode::actionLinearIsFinish(p_mt);
+		return p_mt->isRconStop() || ACleanMode::MoveTypeLinearIsFinish(p_mt);
 	else
-		return ACleanMode::actionLinearIsFinish(p_mt);
+		return ACleanMode::MoveTypeLinearIsFinish(p_mt);
 }
-
-
-#if 0
-//state--------------------------------------------
-
-//bool CleanModeNav::isStateExceptionResumeUpdateFinish() {
-//	if (ev.key_clean_pressed)
-//	{
-//		checkEnterPause();
-//		setNextAction();
-//	}
-//	if(sp_action_ != nullptr && !sp_action_->isFinish())
-//		return true;
-//	sp_action_.reset();//for call ~constitution;
-//	return true;
-//}
-//
-//bool CleanModeNav::isStateExplorationUpdateFinish() {
-//	if (isExceptionTriggered()) {
-//		ROS_INFO("%s %d: Pass this state switching for exception cases.", __FUNCTION__, __LINE__);
-//		sp_state = state_exception_resume;
-//	}
-//	if (ev.key_clean_pressed)
-//		{
-//			checkEnterPause();
-//			setNextAction();
-//		}
-//	return true;
-//}
-//
-
-#endif
-// ------------------State init--------------------
-
 // ------------------State init--------------------
 bool CleanModeNav::isSwitchByEventInStateInit() {
 	return checkEnterPause();

@@ -54,7 +54,7 @@ bool MoveTypeFollowWall::isFinish()
 
 	auto p_clean_mode = (ACleanMode*)sp_mode_;
 
-	if(p_clean_mode->actionFollowWallIsFinish(this))
+	if(p_clean_mode->MoveTypeFollowWallIsFinish(this))
 		return true;
 
 	if (sp_movement_->isFinish()) {
@@ -397,7 +397,8 @@ bool MoveTypeFollowWall::isNewLineReach(GridMap &map)
 	auto ret = false;
 	auto is_pos_dir = target_point_.y - start_point_.y > 0;
 	// The limit is CELL_COUNT_MUL / 8 * 3 further than target line center.
-	auto target_limit = target_point_.y + CELL_COUNT_MUL / 8 * 3 * is_pos_dir;
+//	auto target_limit = target_point_.y + CELL_COUNT_MUL / 8 * 3 * is_pos_dir;
+	auto target_limit = target_point_.y;
 //	ROS_WARN("~~~~~~~~~~~~~~~~~%s %d: start_p.y(%d), target.y(%d),curr_y(%d)",
 //					 __FUNCTION__, __LINE__, countToCell(s_curr_p.y), countToCell(target_point_.y),
 //					 countToCell(s_curr_p.y));

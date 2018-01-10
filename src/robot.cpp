@@ -795,10 +795,10 @@ void robot::pubTmpTarget(const Point32_t &point) {
 	point_marker.scale.x = 0.03;
 	point_marker.scale.y = 0.03;
 	point_marker.scale.z = 0.10;
-	point_marker.color.r = 0.75;
-	point_marker.color.g = 0.25;
-	point_marker.color.b = 0.0;
-	point_marker.color.a = 1.0;
+	point_marker.color.r = 1.0;
+	point_marker.color.g = 0.75;
+	point_marker.color.b = 1.0;
+	point_marker.color.a = 0.90;
 	point_marker.header.frame_id = "/map";
 	point_marker.header.stamp = ros::Time::now();
 
