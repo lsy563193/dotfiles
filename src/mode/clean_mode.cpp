@@ -70,6 +70,7 @@ ACleanMode::ACleanMode()
 
 ACleanMode::~ACleanMode() {
 	IMoveType::sp_mode_ = nullptr;
+	sp_state = nullptr;
 	event_manager_set_enable(false);
 	wheel.stop();
 	brush.stop();

@@ -376,10 +376,10 @@ public:
 		return sp_state == state_pause;
 	}
 	static State *sp_state;
+	static State *state_init;
 	static State *state_clean;
 protected:
 	static std::vector<State*> sp_saved_states;
-	static State *state_init;
 	static State *state_go_home_point;
 	static State *state_go_to_charger;
 	static State *state_charge;

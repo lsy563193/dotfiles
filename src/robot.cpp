@@ -153,14 +153,21 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 	obs.DynamicAdjust(OBS_adjust_count);
 
 	// Check for whether robot should publish this frame of scan.
-
-	scan_ctrl_.allow_publishing =
-						!(fabs(wheel.getLeftWheelActualSpeed() - wheel.getRightWheelActualSpeed()) > 0.1
-					|| (wheel.getLeftWheelActualSpeed() * wheel.getRightWheelActualSpeed() < 0)
-					|| bumper.getStatus()
-					|| gyro.getTiltCheckingStatus()
-					|| abs(wheel.getLeftSpeedAfterPid() - wheel.getRightSpeedAfterPid()) > 100
-					|| wheel.getLeftSpeedAfterPid() * wheel.getRightSpeedAfterPid() < 0);
+	if (p_mode != nullptr)
+	{
+		if (ACleanMode::sp_state == ACleanMode::state_init)
+			scan_ctrl_.allow_publishing = 1;
+		else
+			scan_ctrl_.allow_publishing =
+					!(fabs(wheel.getLeftWheelActualSpeed() - wheel.getRightWheelActualSpeed()) > 0.1
+					  || (wheel.getLeftWheelActualSpeed() * wheel.getRightWheelActualSpeed() < 0)
+					  || bumper.getStatus()
+					  || gyro.getTiltCheckingStatus()
+					  || abs(wheel.getLeftSpeedAfterPid() - wheel.getRightSpeedAfterPid()) > 100
+					  || wheel.getLeftSpeedAfterPid() * wheel.getRightSpeedAfterPid() < 0);
+	}
+	else
+		scan_ctrl_.allow_publishing = 1;
 
 	scan_ctrl_pub_.publish(scan_ctrl_);
 }
