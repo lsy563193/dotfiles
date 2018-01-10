@@ -22,7 +22,6 @@ ModeCharge::ModeCharge()
 //	serial.setCleanMode(Clean_Mode_Charging);
 
 	plan_activated_status_ = false;
-	PP_INFO();
 }
 
 ModeCharge::~ModeCharge()

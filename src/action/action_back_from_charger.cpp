@@ -17,6 +17,11 @@ ActionBackFromCharger::ActionBackFromCharger()
 	charger_pose.setY(odom.getY());
 };
 
+ActionBackFromCharger::~ActionBackFromCharger()
+{
+	ROS_INFO("%s %d, Finish action back from charger.", __FUNCTION__, __LINE__);
+}
+
 bool ActionBackFromCharger::isFinish() {
 	return  (two_points_distance_double(charger_pose.getX(), charger_pose.getY(), odom.getX(), odom.getY()) > 0.5);
 }

@@ -10,7 +10,7 @@
 
 ActionIdle::ActionIdle()
 {
-	PP_INFO();
+	ROS_INFO("%s %d: Start action idle.", __FUNCTION__, __LINE__);
 	if (error.get())
 		led.set_mode(LED_FLASH, LED_RED);
 	else
@@ -19,8 +19,7 @@ ActionIdle::ActionIdle()
 
 ActionIdle::~ActionIdle()
 {
-
-	PP_INFO();
+	ROS_INFO("%s %d: Exit action idle.", __FUNCTION__, __LINE__);
 }
 
 bool ActionIdle::isFinish()

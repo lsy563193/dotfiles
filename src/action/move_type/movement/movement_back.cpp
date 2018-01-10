@@ -65,11 +65,10 @@ bool MovementBack::isFinish()
 		robot_stuck_cnt_ = lidar.isRobotSlip() == 0 ? 0 : robot_stuck_cnt_+1 ;
 		//g_lidar_bumper_cnt = robot::instance()->getLidarBumper() == 0? 0:g_lidar_bumper_cnt+1;
 
+		ROS_INFO("%s, %d: MovementBack reach target, bumper_jam_cnt_(%d), cliff_jam_cnt_(%d), robot_stuck_cnt_(%d), tilt status(%d).",
+				 __FUNCTION__, __LINE__, bumper_jam_cnt_, cliff_jam_cnt_, robot_stuck_cnt_, gyro.getTiltCheckingStatus());
 		if (bumper_jam_cnt_ == 0 && cliff_jam_cnt_ == 0 && robot_stuck_cnt_ == 0 && !gyro.getTiltCheckingStatus())// todo need a tilt_cnt_
-		{
-			ROS_INFO("%s, %d: MovementBack reach target.", __FUNCTION__, __LINE__);
 			return true;
-		}
 		if (cliff_jam_cnt_ >= 2)
 		{
 			ev.cliff_jam = true;

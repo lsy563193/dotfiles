@@ -25,7 +25,7 @@ void Vacuum::setTmpMode(uint8_t mode)
 //	}
 
 	setSpeedByMode(mode);
-	INFO_GREEN("set temp vacuum mode");
+	ROS_INFO("%s %d: Set vacuum mode:%d.", __FUNCTION__, __LINE__, mode);
 }
 
 void Vacuum::setMode(uint8_t mode)

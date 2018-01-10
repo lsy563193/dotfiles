@@ -12,6 +12,7 @@
 
 CleanModeNav::CleanModeNav()
 {
+	ROS_INFO("%s %d: Entering Navigation mode\n=========================" , __FUNCTION__, __LINE__);
 
 	if(g_plan_activated)
 		g_plan_activated = false;
@@ -34,11 +35,9 @@ CleanModeNav::~CleanModeNav()
 
 bool CleanModeNav::mapMark()
 {
+	ROS_INFO("%s %d: Start updating map.", __FUNCTION__, __LINE__);
 	clean_path_algorithm_->displayCellPath(pointsGenerateCells(passed_path_));
-//	if (action_i_ == ac_linear) {
-	PP_WARN();
-		clean_map_.setCleaned(pointsGenerateCells(passed_path_));
-//	}
+	clean_map_.setCleaned(pointsGenerateCells(passed_path_));
 
 	if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
 	{
@@ -62,7 +61,6 @@ bool CleanModeNav::mapMark()
 
 	clean_map_.setBlocks();
 	clean_map_.markRobot(CLEAN_MAP);
-	PP_INFO();
 	clean_map_.print(CLEAN_MAP, getPosition().toCell().x, getPosition().toCell().y);
 
 	passed_path_.clear();
@@ -392,7 +390,7 @@ void CleanModeNav::switchInStateInit() {
 	}
 	sp_state->init();
 	action_i_ = ac_null;
-	genNextAction();
+	sp_action_.reset();
 }
 
 // ------------------State clean--------------------
@@ -418,8 +416,8 @@ bool CleanModeNav::updateActionInStateClean(){
 
 		auto start = getPosition().toCell();
 		auto delta_y = plan_path_.back().toCell().y - start.y;
-		ROS_INFO("%s,%d: path size(%u), old_dir_(%d), bumper(%d), cliff(%d), lidar(%d), delta_y(%d)",
-						 __FUNCTION__, __LINE__, plan_path_.size(), old_dir_, ev.bumper_triggered,
+		ROS_INFO("%s,%d: path size(%u), old_dir_(%d), new_dir_(%d), bumper(%d), cliff(%d), lidar(%d), delta_y(%d)",
+						 __FUNCTION__, __LINE__, plan_path_.size(), old_dir_, new_dir_, ev.bumper_triggered,
 						 ev.cliff_triggered, ev.lidar_triggered, delta_y);
 		if (!isXAxis(old_dir_) // If last movement is not x axis linear movement, should not follow wall.
 				|| plan_path_.size() > 2 ||
@@ -431,8 +429,8 @@ bool CleanModeNav::updateActionInStateClean(){
 		{
 			delta_y = plan_path_.back().toCell().y - start.y;
 			bool is_left = isPos(old_dir_) ^ delta_y > 0;
-			ROS_INFO("%s,%d: target:, 0_left_1_right(%d=%d ^ %d)",
-							 __FUNCTION__, __LINE__, is_left, isPos(old_dir_), delta_y);
+//			ROS_INFO("%s,%d: target:, 1_left_0_right(%d = %d ^ %d)",
+//							 __FUNCTION__, __LINE__, is_left, isPos(old_dir_), delta_y);
 			action_i_ = is_left ? ac_follow_wall_left : ac_follow_wall_right;
 		}
 		genNextAction();
@@ -440,6 +438,7 @@ bool CleanModeNav::updateActionInStateClean(){
 	}
 	return false;
 }
+
 void CleanModeNav::switchInStateClean() {
 	if (clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell())) {
 		ROS_WARN("%s,%d: enter state trapped",__FUNCTION__,__LINE__);

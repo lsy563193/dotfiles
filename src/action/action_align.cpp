@@ -5,12 +5,11 @@
 #include "arch.hpp"
 
 ActionAlign::ActionAlign() {
-	wheel.stop();
-
-	lidar.startAlign();
-//	ROS_INFO("%s,%d:add ActionOpenLidar,sp_action_(%d)",__FUNCTION__, __LINE__,sp_action_);
-
 	timeout_interval_ = 3;
+	ROS_INFO("%s %d: Start action align, timeout(%f)s.",__FUNCTION__, __LINE__, timeout_interval_);
+
+	wheel.stop();
+	lidar.startAlign();
 }
 
 bool ActionAlign::isFinish()

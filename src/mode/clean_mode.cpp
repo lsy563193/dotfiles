@@ -108,6 +108,7 @@ ACleanMode::~ACleanMode() {
 			 __FUNCTION__, __LINE__, map_area, robot_timer.getWorkTime(),
 			 static_cast<float>(robot_timer.getWorkTime()) / 60, map_area / (static_cast<float>(robot_timer.getWorkTime()) / 60));
 }
+
 bool ACleanMode::setNextAction()
 {
 	if (sp_state == state_init)
@@ -131,7 +132,6 @@ bool ACleanMode::setNextAction()
 		action_i_ = ac_null;
 
 	genNextAction();
-	PP_INFO();
 	return action_i_ != ac_null;
 }
 
@@ -186,7 +186,9 @@ State* ACleanMode::updateState()
 
 bool ACleanMode::isFinish()
 {
+//	printf("\033[1;40;32m\n====================================Start update state===============================\n\033[0m");
 	updateState();
+//	printf("\033[1;40;34m\n=====================================End update state================================\n\033[0m");
 
 	if(sp_state == nullptr)
 	{
@@ -199,7 +201,7 @@ bool ACleanMode::isFinish()
 
 void ACleanMode::genNextAction()
 {
-	INFO_GREEN("before genNextAction");
+	INFO_GREEN(before genNextAction);
 	if(action_i_ == ac_null)
 		sp_action_.reset();
 	if(action_i_ == ac_open_gyro)
@@ -250,8 +252,7 @@ void ACleanMode::genNextAction()
 	else if(action_i_ == ac_null)
 		sp_action_.reset();
 
-	INFO_GREEN("after genNextAction");
-	PP_INFO();
+	INFO_GREEN(after genNextAction);
 }
 
 void ACleanMode::setRconPos(Point32_t pos)

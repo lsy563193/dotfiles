@@ -864,16 +864,14 @@ void GridMap::setCleaned(std::deque<Cell_t> cells)
 {
 	if(cells.empty())
 		return;
-	int8_t x_offset;
 
-	x_offset = (cells.front().x < cells.back().x) ? 1 : -1;//X_POS
+	auto x_offset = (cells.front().x < cells.back().x) ? 1 : -1;//X_POS
 	Cell_t cell_front = {int16_t(cells.front().x - x_offset),cells.front().y};
 	Cell_t cell_back = {int16_t(cells.back().x + x_offset),cells.back().y};
 	cells.push_front(cell_front);
 	cells.push_back(cell_back);
-//	auto is_follow_y_min = x_offset == 1 ^ mt.is_left();
 
-	std::string msg = "Cell:\n";
+	std::string msg = "Cell:";
 	for (const auto& cell :  cells)
 	{
 		msg += "(" + std::to_string(cell.x) + "," + std::to_string(cell.y)  + "," + "),";
@@ -1195,9 +1193,7 @@ void GridMap::print(uint8_t id, int16_t endx, int16_t endy)
 	#if ENABLE_DEBUG
 	int16_t		i, j, x_min, x_max, y_min, y_max, index;
 	CellState	cs;
-	Cell_t temp_cell;
-
-	temp_cell = getPosition().toCell();
+	Cell_t curr_cell = getPosition().toCell();
 
 	getMapRange(id, &x_min, &x_max, &y_min, &y_max);
 
@@ -1244,7 +1240,7 @@ void GridMap::print(uint8_t id, int16_t endx, int16_t endy)
 
 		for (j = y_min; j <= y_max; j++) {
 			cs = getCell(id, i, j);
-			if (i == temp_cell.x && j == temp_cell.y) {
+			if (i == curr_cell.x && j == curr_cell.y) {
 				outString[index++] = 'x';
 			} else if (i == endx && j == endy) {
 				outString[index++] = 'e';
