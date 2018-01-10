@@ -531,6 +531,7 @@ public:
 //
 	void remoteClean(bool state_now, bool state_last) override;
 	void switchInStateClean() override;
+	bool generatePath(GridMap &map, const Point32_t &curr, const int &last_dir, Points &targets);
 //
 //	void remoteHome(bool state_now, bool state_last);
 //
