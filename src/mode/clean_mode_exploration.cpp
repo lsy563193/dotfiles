@@ -160,3 +160,8 @@ void CleanModeExploration::switchInStateGoHomePoint() {
 	PP_INFO();
 	sp_state = nullptr;
 }
+
+bool CleanModeExploration::actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) {
+	return p_mt->isBlockCleared(clean_map_, passed_path_);
+}
+

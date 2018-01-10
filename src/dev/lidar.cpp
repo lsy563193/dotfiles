@@ -442,7 +442,7 @@ bool Lidar::lidarGetFitLine(int begin, int end, double range, double dis_lim, do
 	}
 	ROS_DEBUG("lidarGetFitLine");
 	scanLinear_mutex_.lock();
-	auto tmp_scan_data = lidarScanData_linear_;
+	auto tmp_scan_data = lidarScanData_compensate_;
 	scanLinear_mutex_.unlock();
 	begin = static_cast<int>(atan2(ROBOT_RADIUS * sin(begin * M_PI / 180),
 																	 LIDAR_OFFSET_X + ROBOT_RADIUS * cos(begin * M_PI / 180)) * 180 / M_PI);

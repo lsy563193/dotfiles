@@ -62,7 +62,7 @@ bool CleanModeSpot::isExit()
 		return true;
 	}
 
-	if(ev.key_clean_pressed){
+	if(ev.key_clean_pressed || ev.key_long_pressed){
 		ev.key_clean_pressed = false;
 		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
 		setNextMode(md_idle);
@@ -99,18 +99,8 @@ void CleanModeSpot::remoteClean(bool state_now, bool state_last)
 	beeper.play_for_command(true);
 }
 
-void CleanModeSpot::keyClean(bool state_now,bool state_last)
+void CleanModeSpot::switchInStateInit()
 {
-	ev.key_clean_pressed = true;
-	beeper.play_for_command(true);
-}
-
-void CleanModeSpot::cliffAll(bool state_now, bool state_last)
-{
-	ev.cliff_all_triggered = true;
-}
-
-void CleanModeSpot::switchInStateInit() {
 //	if(action_i_ == ac_open_slam)
 	action_i_ = ac_null;
 	sp_action_ = nullptr;
@@ -118,7 +108,8 @@ void CleanModeSpot::switchInStateInit() {
 	sp_state->init();
 }
 
-void CleanModeSpot::switchInStateSpot() {
+void CleanModeSpot::switchInStateSpot()
+{
 	action_i_ = ac_null;
 	sp_action_ = nullptr;
 	sp_state = nullptr;
@@ -126,21 +117,56 @@ void CleanModeSpot::switchInStateSpot() {
 }
 
 /*
-bool CleanModeSpot::updateActionInStateInit() {
-	if (action_i_ == ac_null)
-		action_i_ = ac_open_gyro;
-	else if (action_i_ == ac_open_gyro) {
-		action_i_ = ac_open_lidar;
-	}
-	else if (action_i_ == ac_open_lidar){
-//		vacuum.setTmpMode(Vac_Speed_Max);
-//		led.set_mode(LED_STEADY,LED_GREEN);
-//		brush.fullOperate();
-		action_i_ = ac_open_slam;
-	}
-	else // action_open_slam
-		return false;
+void CleanModeSpot::keyClean(bool state_now,bool state_last)
+{
+	ev.key_clean_pressed = true;
+	beeper.play_for_command(true);
+}
+*/
 
-	genNextAction();
-	return true;
-}*/
+void CleanModeSpot::cliffAll(bool state_now, bool state_last)
+{
+	ev.cliff_all_triggered = true;
+}
+
+void CleanModeSpot::keyClean(bool state_now, bool state_last)
+{
+	INFO_GREEN("key clean");
+
+	beeper.play_for_command(VALID);
+	wheel.stop();
+
+	// Wait for key released.
+	bool long_press = false;
+	while (key.getPressStatus())
+	{
+		if (!long_press && key.getPressTime() > 3)
+		{
+			INFO_GREEN("key clean long pressed");
+			beeper.play_for_command(VALID);
+			long_press = true;
+		}
+		usleep(20000);
+	}
+
+	if (long_press)
+		ev.key_long_pressed = true;
+	else
+		ev.key_clean_pressed = true;
+	INFO_GREEN("Key clean is released");
+
+	key.resetTriggerStatus();
+}
+
+void CleanModeSpot::overCurrentWheelLeft(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: Left wheel oc.", __FUNCTION__, __LINE__);
+	ev.oc_wheel_left = true;
+}
+
+void CleanModeSpot::overCurrentWheelRight(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: Right wheel oc.", __FUNCTION__, __LINE__);
+	ev.oc_wheel_right = true;
+}
+

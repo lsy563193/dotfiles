@@ -258,7 +258,6 @@ public:
 
 	// State null
 	bool checkEnterNullState();
-	bool checkEnterGoCharger();
 	// State init
 	virtual bool isSwitchByEventInStateInit();
 	virtual bool updateActionInStateInit();
@@ -276,25 +275,27 @@ public:
 	virtual void switchInStateGoHomePoint();
 
 	// State go to charger
+	bool checkEnterGoCharger();
 	virtual bool isSwitchByEventInStateGoToCharger(){return false;};
 	virtual bool updateActionInStateGoToCharger();
 	virtual void switchInStateGoToCharger();
 
 	// State exception resume
 	bool checkEnterExceptionResumeState();
-	virtual bool isSwitchByEventInStateExceptionResume(){return false;};
+	virtual bool isSwitchByEventInStateExceptionResume();
 	virtual bool updateActionInStateExceptionResume();
 	virtual void switchInStateExceptionResume();
 
 	// State temp spot
-	virtual bool isSwitchByEventInStateSpot(){return false;};
+	virtual bool isSwitchByEventInStateSpot();
 	virtual bool updateActionInStateSpot();
 	virtual void switchInStateSpot(){};
 
 	// State trapped
-	virtual bool isSwitchByEventInStateTrapped(){ return false;};
-	virtual bool updateActionInStateTrapped(){};
-	virtual void switchInStateTrapped(){ };
+	virtual bool isSwitchByEventInStateTrapped();
+	virtual bool updateActionInStateTrapped();
+	virtual void switchInStateTrapped();
+	bool trapped_time_out_{};
 
 	// State exploration
 	virtual bool isSwitchByEventInStateExploration();
@@ -335,8 +336,7 @@ public:
 	{
 		return sp_state == state_init;
 	}
-	bool isStateClean() const
-	{
+	bool isStateClean() const {
 		return sp_state == state_clean;
 	}
 	bool isStateGoHomePoint() const
@@ -378,7 +378,7 @@ public:
 	static State *sp_state;
 	static State *state_clean;
 protected:
-	static State *sp_saved_state;
+	static std::vector<State*> sp_saved_states;
 	static State *state_init;
 	static State *state_go_home_point;
 	static State *state_go_to_charger;
@@ -447,17 +447,16 @@ public:
 	// State go home point
 	bool checkEnterGoHomePointState() override;
 	bool isSwitchByEventInStateGoHomePoint() override;
-	bool updateActionInStateGoHomePoint() override;
-	void switchInStateGoHomePoint() override ;
 
 	// State go to charger
 	bool isSwitchByEventInStateGoToCharger() override;
 	void switchInStateGoToCharger() override;
 
 	// State tmp spot
-    bool isSwitchByEventInStateSpot() override;
-    bool updateActionInStateSpot() override ;
-    void switchInStateSpot() override;
+	bool checkEnterTempSpotState();
+	bool checkOutOfSpot();
+	bool isSwitchByEventInStateSpot() override;
+	void switchInStateSpot() override;
 
 	// State pause
 	bool checkEnterPause();
@@ -465,11 +464,26 @@ public:
 	bool isSwitchByEventInStatePause() override;
 	bool updateActionInStatePause() override;
 
+	// State trapped
+	bool isSwitchByEventInStateTrapped() override;
+
+	// State charge
+	bool isSwitchByEventInStateCharge() override;
+	bool updateActionStateCharge() override;
+	void switchInStateCharge() override;
+
+	// State resume low battery charge
+	bool checkEnterResumeLowBatteryCharge();
+	bool isSwitchByEventInStateResumeLowBatteryCharge() override;
+	bool updateActionInStateResumeLowBatteryCharge() override;
+	void switchInStateResumeLowBatteryCharge() override;
+
+	// State exception resume
+	bool isSwitchByEventInStateExceptionResume();
+
 private:
 	bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
-	bool actionLinearIsFinish(MoveTypeLinear *p_mt);
-	void resumeLowBatteryCharge();
-	bool checkEnterTempSpotState();
+	bool actionLinearIsFinish(MoveTypeLinear *p_mt) override;
 
 	bool has_aligned_and_open_slam_{false};
 	float paused_odom_angle_{0};
@@ -505,11 +519,10 @@ public:
 //	void printMapAndPath();
 	void switchInStateInit() override;
 
-	// todo: Delete below 4 function.
 	void switchInStateGoHomePoint() override;
 	void switchInStateGoToCharger() override;
 
-	virtual bool updateActionInStateClean(){};
+	bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
 };
 
 class CleanModeFollowWall:public ACleanMode {
@@ -575,6 +588,8 @@ public:
 	void keyClean(bool state_now, bool state_last) override;
 	void switchInStateInit() override ;
 	void switchInStateSpot() override ;
+	void overCurrentWheelLeft(bool state_now, bool state_last) override;
+	void overCurrentWheelRight(bool state_now, bool state_last) override;
 private:
 
 };

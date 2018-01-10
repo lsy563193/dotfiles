@@ -831,10 +831,10 @@ uint8_t GridMap::saveRcon()
 	return static_cast<uint8_t>(d_cells.size());
 }
 
-uint8_t GridMap::saveBlocks(bool is_linear, bool is_state_clean)
+uint8_t GridMap::saveBlocks(bool is_linear, bool is_save_rcon)
 {
 	uint8_t block_count = 0;
-	if (is_linear && is_state_clean)
+	if (is_linear && is_save_rcon)
 		block_count += saveRcon();
 	block_count += saveBumper(is_linear);
 	block_count += saveCliff();

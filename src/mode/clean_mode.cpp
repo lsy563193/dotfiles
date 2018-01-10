@@ -11,7 +11,7 @@
 //#define NAV_INFO() ROS_INFO("st(%d),ac(%d)", state_i_, action_i_)
 
 State* ACleanMode::sp_state{};
-State* ACleanMode::sp_saved_state{};
+std::vector<State*> ACleanMode::sp_saved_states{};
 State* ACleanMode::state_init = new StateInit();
 State* ACleanMode::state_clean = new StateClean();
 State* ACleanMode::state_go_home_point = new StateGoHomePoint();
@@ -65,6 +65,7 @@ ACleanMode::ACleanMode()
 	passed_path_.clear();
 	plan_path_.clear();
 	clean_map_.reset(CLEAN_MAP);
+	sp_saved_states={};
 }
 
 ACleanMode::~ACleanMode() {
@@ -198,7 +199,7 @@ bool ACleanMode::isFinish()
 
 void ACleanMode::genNextAction()
 {
-	INFO_GREEN(before genNextAction);
+	INFO_GREEN("before genNextAction");
 	if(action_i_ == ac_null)
 		sp_action_.reset();
 	if(action_i_ == ac_open_gyro)
@@ -249,7 +250,7 @@ void ACleanMode::genNextAction()
 	else if(action_i_ == ac_null)
 		sp_action_.reset();
 
-	INFO_GREEN(after genNextAction);
+	INFO_GREEN("after genNextAction");
 	PP_INFO();
 }
 
@@ -270,7 +271,7 @@ void ACleanMode::actionFollowWallSaveBlocks()
 
 bool ACleanMode::actionLinearIsFinish(MoveTypeLinear *p_mt)
 {
-	return p_mt->isPoseReach() ;/*|| p_mt->isPassTargetStop(new_dir_);*/
+	return p_mt->isPoseReach() || p_mt->isPassTargetStop(new_dir_);
 }
 
 void ACleanMode::actionLinearSaveBlocks()
@@ -553,7 +554,7 @@ bool ACleanMode::checkEnterExceptionResumeState()
 		ROS_WARN("%s %d: Exception triggered!", __FUNCTION__, __LINE__);
 		mapMark();
 		sp_action_.reset();
-		sp_saved_state = sp_state;
+		sp_saved_states.push_back(sp_state);
 		sp_state = state_exception_resume;
 		sp_state->init();
 		return true;
@@ -573,21 +574,6 @@ bool ACleanMode::checkEnterNullState()
 		return true;
 	}
 
-	return false;
-}
-
-bool ACleanMode::checkEnterGoCharger()
-{
-	ev.rcon_triggered = c_rcon.getForwardTop();
-	if (ev.rcon_triggered) {
-		ev.rcon_triggered= false;
-		ROS_WARN("%s,%d:find charge success,convert to go to charge state", __func__, __LINE__);
-		sp_state = state_go_to_charger;
-		sp_state->init();
-		action_i_ = ac_go_to_charger;
-		genNextAction();
-		return true;
-	}
 	return false;
 }
 
@@ -729,6 +715,20 @@ void ACleanMode::switchInStateGoHomePoint()
 }
 
 // ------------------State go to charger--------------------
+bool ACleanMode::checkEnterGoCharger()
+{
+	ev.rcon_triggered = c_rcon.getForwardTop();
+	if (ev.rcon_triggered) {
+		ev.rcon_triggered= false;
+		ROS_WARN("%s,%d:find charge success,convert to go to charge state", __func__, __LINE__);
+		sp_state = state_go_to_charger;
+		sp_state->init();
+		action_i_ = ac_go_to_charger;
+		genNextAction();
+		return true;
+	}
+	return false;
+}
 
 bool ACleanMode::updateActionInStateGoToCharger()
 {
@@ -798,7 +798,17 @@ bool ACleanMode::updateActionInStateSpot() {
 	}
 }
 
+bool ACleanMode::isSwitchByEventInStateSpot()
+{
+	return false;
+}
+
 // ------------------State exception resume--------------
+bool ACleanMode::isSwitchByEventInStateExceptionResume()
+{
+	return checkEnterNullState();
+}
+
 bool ACleanMode::updateActionInStateExceptionResume()
 {
 	if (isExceptionTriggered())
@@ -817,11 +827,12 @@ void ACleanMode::switchInStateExceptionResume()
 	{
 		ROS_INFO("%s %d: Resume to previous state", __FUNCTION__, __LINE__);
 		sp_action_.reset();
-		sp_state = sp_saved_state;
+		sp_state = sp_saved_states.back();
+		sp_saved_states.pop_back();
 	}
 }
 
-// State exploration
+// ------------------State exploration--------------
 bool ACleanMode::isSwitchByEventInStateExploration() {
 	return checkEnterGoCharger();
 }
@@ -849,14 +860,77 @@ bool ACleanMode::updateActionInStateExploration() {
 		if (go_home_path_algorithm_ == nullptr)
 			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
 		action_i_ = ac_null;
-//		genNextAction();
 	}
 	return false;
 }
 
 void ACleanMode::switchInStateExploration() {
 	PP_INFO();
-	sp_state = state_go_home_point;
+	if (clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell())) {
+		ROS_WARN("%s,%d: enter state trapped",__FUNCTION__,__LINE__);
+		sp_saved_states.push_back(sp_state);
+		sp_state = state_trapped;
+	}
+	else{
+		sp_state = state_go_home_point;
+	}
+
+	action_i_ = ac_null;
 	sp_state->init();
+	genNextAction();
 }
 
+// ------------------State trapped------------------
+
+bool ACleanMode::isSwitchByEventInStateTrapped()
+{
+	return checkEnterExceptionResumeState();
+}
+
+bool ACleanMode::updateActionInStateTrapped()
+{
+	PP_INFO();
+//	sp_action_.reset();//for call ~constitution;
+	clean_map_.saveBlocks(action_i_ == ac_linear, (sp_state == state_clean) || (sp_state == state_exploration));
+	mapMark();
+
+	if(sp_action_ == nullptr)
+	{
+		action_i_ = ac_follow_wall_left;
+		genNextAction();
+		return true;
+	}
+
+	if (robot_timer.trapTimeout(ESCAPE_TRAPPED_TIME)) {
+		action_i_ = ac_null;
+		genNextAction();
+		trapped_time_out_ = true;
+		return false;
+	}
+	else if (!clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell())) {
+		action_i_ = ac_null;
+		genNextAction();
+		return false;
+	}
+
+	return true;
+}
+
+void ACleanMode::switchInStateTrapped()
+{
+	PP_INFO();
+	if (trapped_time_out_) {
+		trapped_time_out_ = false;
+		ROS_WARN("%s %d: Escape trapped timeout!(%d)", __FUNCTION__, __LINE__, ESCAPE_TRAPPED_TIME);
+		reach_cleaned_count_ = 0;
+		sp_state = nullptr;
+	}
+	else/* if (escape_trapped_)*/ {
+		ROS_WARN("%s %d: Escape trapped !", __FUNCTION__, __LINE__);
+		reach_cleaned_count_ = 0;
+//		sp_state = (sp_tmp_state == state_clean) ? state_clean : state_exploration;
+		sp_state = sp_saved_states.back();
+		sp_saved_states.pop_back();
+		sp_state->init();
+	}
+}
