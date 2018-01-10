@@ -4,6 +4,8 @@
 #include "pp.h"
 #include "arch.hpp"
 
+Point32_t AMovementFollowPoint::tmp_target_{};
+
 void AMovementFollowPoint::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 {
 //	PP_INFO();

@@ -45,7 +45,7 @@ protected:
 
 	int32_t min_speed_;
 	int32_t max_speed_;
-	Point32_t tmp_target_{};
+	static Point32_t tmp_target_;
 //	boost::thread* path_thread_{};
 //	Point32_t tmp_target_{};
 	uint8_t integration_cycle_{};
@@ -103,6 +103,7 @@ public:
 //	void setTarget();
 
 	bool calcTmpTarget() override ;
+	Point32_t _calcTmpTarget();
 
 private:
 };
