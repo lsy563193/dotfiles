@@ -37,7 +37,7 @@ bool IMoveType::isOBSStop()
 	ev.obs_triggered = obs.getStatus(200, 1700, 200);
 	if(ev.obs_triggered)
 	{
-		turn_angle = obs_turn_angle();
+		turn_angle = obsTurnAngle();
 		ROS_INFO("%s, %d: ev.obs_triggered(%d), turn for (%d).", __FUNCTION__, __LINE__, ev.obs_triggered, turn_angle);
 		return true;
 	}
@@ -53,7 +53,7 @@ bool IMoveType::isLidarStop()
 	{
 		// Temporary use OBS to get angle.
 //		ev.obs_triggered = ev.lidar_triggered;
-//		g_turn_angle = obs_turn_angle();
+//		g_turn_angle = obsTurnAngle();
 //		ROS_WARN("%s, %d: ev.lidar_triggered(%d), turn for (%d).", __FUNCTION__, __LINE__, ev.lidar_triggered, g_turn_angle);
 		return true;
 	}
@@ -68,7 +68,7 @@ bool IMoveType::shouldTurn()
 //	{
 //		// Temporary use bumper as lidar triggered.
 //		ev.bumper_triggered = ev.lidar_triggered;
-//		g_turn_angle = bumper_turn_angle();
+//		g_turn_angle = bumperTurnAngle();
 //		ev.bumper_triggered = 0;
 //		ROS_WARN("%s %d: Lidar triggered, turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
 //		return true;
@@ -78,7 +78,7 @@ bool IMoveType::shouldTurn()
 	if (ev.obs_triggered)
 	{
 //		ev.obs_triggered = BLOCK_FRONT;
-//		g_turn_angle = obs_turn_angle();
+//		g_turn_angle = obsTurnAngle();
 		ROS_WARN("%s %d: OBS triggered.", __FUNCTION__, __LINE__);
 		return true;
 	}

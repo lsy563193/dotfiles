@@ -825,7 +825,7 @@ bool MovementGoToCharger::_isStop()
 {
 	if (gtc_state_now_ == gtc_turn_for_charger_signal && gyro_step >= 3600)
 	{
-		ROS_WARN("%s %d: Stop here", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Turn for charger signal failed, no charger signal received.", __FUNCTION__, __LINE__);
 		return true;
 	}
 	return false;

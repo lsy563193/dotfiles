@@ -21,7 +21,7 @@ void APathAlgorithm::displayCellPath(const Cells &path)
 void APathAlgorithm::displayTargetList(const Cells &target_list)
 {
 	std::string     msg = __FUNCTION__;
-	msg += " " + std::to_string(__LINE__) + ": Targers(" + std::to_string(target_list.size()) + "):";
+	msg += " " + std::to_string(__LINE__) + ": Targets(" + std::to_string(target_list.size()) + "):";
 	for (auto it = target_list.begin(); it != target_list.end(); ++it) {
 		msg += "(" + std::to_string(it->x) + ", " + std::to_string(it->y) + ", " + "),";
 	}
