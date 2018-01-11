@@ -455,9 +455,8 @@ void robot::scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr& scan)
 	lidar.checkRobotSlip();
 	if (lidar.isScanOriginalReady() && (p_mode->action_i_ == p_mode->ac_follow_wall_left || p_mode->action_i_ == p_mode->ac_follow_wall_right)) {
 		std::deque<Vector2<double>> points{};
-		if (calcLidarPath(scan, p_mode->action_i_ == p_mode->ac_follow_wall_left, points)) {
-			setTempTarget(points, scan->header.seq);
-		}
+		calcLidarPath(scan, p_mode->action_i_ == p_mode->ac_follow_wall_left, points);
+		setTempTarget(points, scan->header.seq);
 	}
 }
 
@@ -820,8 +819,8 @@ void robot::pubTmpTarget(const Points &points, bool is_virtual) {
 	for(const auto & point : points)
 	{
 		geometry_msgs::Point point_marker;
-		point_marker.x = point.toCell().x * (float)CELL_SIZE / 1000;
-		point_marker.y = point.toCell().y * (float)CELL_SIZE / 1000;
+		point_marker.x = (static_cast<double>(point.x * CELL_SIZE)) /CELL_COUNT_MUL / 1000;
+		point_marker.y = (static_cast<double>(point.y * CELL_SIZE)) /CELL_COUNT_MUL / 1000;
 		point_marker.z = 0;
 		point_markers.points.push_back(point_marker);
 	}
