@@ -33,21 +33,6 @@ bool CleanModeExploration::mapMark()
 	return false;
 }
 
-bool CleanModeExploration::isExit()
-{
-	if(ev.cliff_all_triggered){
-		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
-		setNextMode(md_idle);
-		return true;
-	}
-	if(ev.key_clean_pressed || ev.key_long_pressed){
-		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
-		setNextMode(md_idle);
-		return true;
-	}
-	return ACleanMode::isExit();
-}
-
 bool CleanModeExploration::setNextAction()
 {
 	PP_INFO();
@@ -99,11 +84,6 @@ void CleanModeExploration::remoteClean(bool state_now, bool state_last) {
 	beeper.play_for_command(VALID);
 	ev.key_clean_pressed = true;
 	remote.reset();
-}
-
-void CleanModeExploration::cliffAll(bool state_now, bool state_last) {
-	ROS_WARN("%s %d: Cliff all.", __FUNCTION__, __LINE__);
-	ev.cliff_all_triggered = true;
 }
 
 void CleanModeExploration::overCurrentWheelLeft(bool state_now, bool state_last) {
