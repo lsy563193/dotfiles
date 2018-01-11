@@ -91,9 +91,9 @@ void APathAlgorithm::optimizePath(GridMap &map, Cells& path)
 					}
 				}
 
-				if (it_ptr3->x != (x_min + x_max) / 2) {
+				if ((it_ptr3->x != (x_min + x_max) / 2) && (it_ptr1->x != (x_min + x_max) / 2))
 					it_ptr2->x = it_ptr3->x = (x_min + x_max) / 2;
-				}
+
 				//ROS_INFO("%s %d: Loop i:%d\tx_min_forward: %d\tx_max_forward: %d\tget x:%d", __FUNCTION__, __LINE__, i, x_min_forward, x_max_forward, (x_min_forward + x_max_forward) / 2);
 			} else {
 				int16_t y_min, y_max;
@@ -126,9 +126,8 @@ void APathAlgorithm::optimizePath(GridMap &map, Cells& path)
 					}
 				}
 
-				if (it_ptr3->y != (y_min + y_max) / 2) {
+				if ((it_ptr3->y != (y_min + y_max) / 2) && (it_ptr1->y != (y_min + y_max) / 2))
 					it_ptr2->y = it_ptr3->y = (y_min + y_max) / 2;
-				}
 				//ROS_INFO("%s %d: Loop i:%d\ty_min: %d\ty_max: %d\tget y:%d", __FUNCTION__, __LINE__, i, y_min, y_max, (y_min + y_max) / 2);
 			}
 
