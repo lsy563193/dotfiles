@@ -103,7 +103,8 @@ public:
 //	void setTarget();
 
 	bool calcTmpTarget() override ;
-	Point32_t _calcTmpTarget();
+	Point32_t _calcTmpTargetNoneRealTime();
+	Point32_t _calcTmpTargetRealTime();
 
 private:
 };

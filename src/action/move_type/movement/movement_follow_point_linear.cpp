@@ -22,7 +22,7 @@ MovementFollowPointLinear::MovementFollowPointLinear()
 //	sp_mt_->sp_cm_->tmp_plan_path_ = path;
 }
 
-Point32_t MovementFollowPointLinear::_calcTmpTarget()
+Point32_t MovementFollowPointLinear::_calcTmpTargetRealTime()
 {
 	auto tmp_target_ = sp_mt_->target_point_;
 	auto target_xy = (isXAxis(tmp_target_.th)) ? sp_mt_->target_point_.x : sp_mt_->target_point_.y;
@@ -41,13 +41,7 @@ Point32_t MovementFollowPointLinear::_calcTmpTarget()
 
 bool MovementFollowPointLinear::calcTmpTarget()
 {
-//	auto curr_xy = (isXAxis(tmp_target_.th)) ? getPosition().x : getPosition().y;
-//	auto tmp_target_xy = (isXAxis(tmp_target_.th)) ? tmp_target_.x :tmp_target_.y;
-//	if(std::abs(curr_xy - tmp_target_xy) > LINEAR_NEAR_DISTANCE) {
-//		return false;
-//	}
-	tmp_target_ = _calcTmpTarget();
-
+	tmp_target_ = _calcTmpTargetRealTime();
 	robot::instance()->pubTmpTarget(tmp_target_);
 	return true;
 }
@@ -64,4 +58,30 @@ bool MovementFollowPointLinear::is_near()
 //	auto distance = two_points_distance(curr_p.x, curr_p.y, s_target_p.x, s_target_p.y);
 	auto obstacle_distance_front = lidar.getObstacleDistance(0,ROBOT_RADIUS);
 	return obs.getStatus() > 0 || /*(distance < SLOW_DOWN_DISTANCE) ||*/  (obstacle_distance_front < 0.25) || is_decrease_blocked;
+}
+
+Point32_t MovementFollowPointLinear::_calcTmpTargetNoneRealTime() {
+	auto curr = getPosition();
+	ACleanMode* p_mode = dynamic_cast<ACleanMode*>(sp_mt_->sp_mode_);
+	auto curr_xy = (isXAxis(p_mode->new_dir_)) ? curr.x : curr.y;
+	auto tmp_target_xy = (isXAxis(p_mode->new_dir_)) ? tmp_target_.x :tmp_target_.y;
+	if(abs(curr_xy - tmp_target_xy) > LINEAR_NEAR_DISTANCE &&
+		 abs(curr_xy - tmp_target_xy) < (LINEAR_NEAR_DISTANCE + CELL_COUNT_MUL) &&
+		 tmp_target_xy != 0) {
+		return tmp_target_;
+	}
+	if(isXAxis(p_mode->new_dir_)){
+		tmp_target_.x = sp_mt_->target_point_.x;
+		tmp_target_.y = getPosition().y;
+	}else{
+		tmp_target_.x = getPosition().x;
+		tmp_target_.y = sp_mt_->target_point_.y;
+	}
+	auto &tmp_xy = (isXAxis(p_mode->new_dir_)) ? tmp_target_.x : tmp_target_.y;
+	auto &target_xy = (isXAxis(p_mode->new_dir_)) ? sp_mt_->target_point_.x : sp_mt_->target_point_.y;
+	auto dis = std::min(std::abs(curr_xy - target_xy), (int32_t) (LINEAR_NEAR_DISTANCE + CELL_COUNT_MUL));
+	if (!isPos(p_mode->new_dir_))
+		dis *= -1;
+	tmp_xy = curr_xy + dis;
+	return tmp_target_;
 }
