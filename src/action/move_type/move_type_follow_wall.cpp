@@ -8,7 +8,7 @@
 
 MoveTypeFollowWall::MoveTypeFollowWall(bool is_left)
 {
-	ROS_INFO("%s %d: Entering move type %s follow wall%s.", __FUNCTION__, __LINE__,
+	ROS_INFO("%s %d: Entering move type %s follow wall.", __FUNCTION__, __LINE__,
 			 is_left ? "left" : "right");
 
 	auto p_clean_mode = (ACleanMode*)sp_mode_;
