@@ -150,7 +150,7 @@ void ACleanMode::setNextModeDefault()
 
 bool ACleanMode::isExit()
 {
-	INFO_BLUE("ACleanMode::isExit()");
+//	INFO_BLUE("ACleanMode::isExit()");
 	if (sp_state == state_init)
 	{
 		if (action_i_ == ac_open_lidar && sp_action_->isTimeUp())
