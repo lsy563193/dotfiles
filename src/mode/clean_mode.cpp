@@ -250,7 +250,6 @@ void ACleanMode::genNextAction()
 		sp_action_.reset();
 
 	INFO_GREEN("after genNextAction");
-	PP_INFO();
 }
 
 void ACleanMode::setRconPos(Point32_t pos)

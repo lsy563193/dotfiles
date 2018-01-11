@@ -66,11 +66,14 @@ public:
 	 * @param: Cell_t start, the start cell.
 	 * @param: Cell_t target, the target cell.
 	 * @param: MapDirection last_dir, the direction of robot last moving.
+	 * @param: Boundery between min_corner and max_corner
+	 * @param: min corner
+	 * @param: max corner
 	 *
 	 * @return: Cells path, the shortest path from start cell to target cell.
 	 */
 	Cells findShortestPath(GridMap &map, const Cell_t &start,
-							  const Cell_t &target, const int &last_dir, bool use_unknown);
+							  const Cell_t &target, const int &last_dir, bool use_unknown,bool bound,Cell_t min_corner ,Cell_t max_corner);
 
 	bool generateShortestPath(GridMap &map, const Point32_t &curr,const Point32_t &target, const int &last_dir, Points &plan_path);
 
@@ -234,13 +237,16 @@ public:
 
 	void genTargets(uint8_t type,float diameter,Cells *targets,const Cell_t begincell);
 	void initVariables(float diameter,Cell_t cur_cell);
+
+	Cells spotFindShortestPath(GridMap& map, Cell_t cur,Cell_t target,int dir,bool used_unknow); 
 private:
 	
 	float spot_diameter_ ;
 	bool spot_running_;
 	Cells targets_cells_;
 	Cell_t begin_cell_; 
-	Cell_t state_cell_;
+	Cell_t min_corner_;
+	Cell_t max_corner_;
 };
 
 class GoHomePathAlgorithm: public APathAlgorithm

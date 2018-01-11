@@ -106,8 +106,9 @@ bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, cons
 		}
 
 		Cells plan_path_cell;
+		Cell_t corner1,corner2;
 		plan_path_cell = findShortestPath(go_home_map_, curr_cell, current_home_point_.home_point.toCell(), last_dir,
-										  way == THROUGH_UNKNOWN_AREA);
+										  way == THROUGH_UNKNOWN_AREA, false,corner1,corner2);
 
 		if (!plan_path_cell.empty())
 		{

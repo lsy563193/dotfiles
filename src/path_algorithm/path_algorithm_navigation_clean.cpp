@@ -53,7 +53,8 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, co
 		return false;
 
 	//Step 6: Find shortest path for this best target.
-	Cells shortest_path = findShortestPath(map, curr_cell, best_target, last_dir, true);
+	Cell_t corner1,corner2;
+	Cells shortest_path = findShortestPath(map, curr_cell, best_target, last_dir, true,false,corner1,corner2);
 	if (shortest_path.empty())
 		// Now plan_path is empty.
 		return false;

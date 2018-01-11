@@ -163,19 +163,26 @@ Points APathAlgorithm::cells_generate_points(Cells &path)
 }
 
 bool APathAlgorithm::generateShortestPath(GridMap &map, const Point32_t &curr,const Point32_t &target, const int &last_dir, Points &plan_path) {
-	auto path_cell = findShortestPath(map, curr.toCell(), target.toCell(),last_dir, false);
+	Cell_t corner1 ,corner2;
+	auto path_cell = findShortestPath(map, curr.toCell(), target.toCell(),last_dir, false,false,corner1,corner2);
 
 	plan_path = cells_generate_points(path_cell);
 }
 
 Cells APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const Cell_t &target,
-										const int &last_dir, bool use_unknown)
+										const int &last_dir, bool use_unknown,bool bound ,Cell_t min_corner,Cell_t max_corner)
 {
 	Cells path_{};
-
-	// Get the map range.
+	// limit cost map range or get the total map range.
 	int16_t x_min, x_max, y_min, y_max;
-	map.getMapRange(CLEAN_MAP, &x_min, &x_max, &y_min, &y_max);
+	if(bound){
+		x_min = min_corner.x;
+		y_min = min_corner.y;	
+		x_max = max_corner.x;
+		y_max = max_corner.y;
+	}
+	else
+		map.getMapRange(CLEAN_MAP, &x_min, &x_max, &y_min, &y_max);
 
 	// Reset the COST_MAP.
 	map.reset(COST_MAP);
