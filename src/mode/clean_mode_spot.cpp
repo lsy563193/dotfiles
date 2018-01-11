@@ -103,12 +103,6 @@ void CleanModeSpot::keyClean(bool state_now,bool state_last)
 
 }
 
-
-void CleanModeSpot::cliffAll(bool state_now, bool state_last)
-{
-	ev.cliff_all_triggered = true;
-}
-
 void CleanModeSpot::overCurrentWheelLeft(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Left wheel oc.", __FUNCTION__, __LINE__);
