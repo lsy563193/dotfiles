@@ -18,7 +18,7 @@ CleanModeFollowWall::CleanModeFollowWall()
 	diff_timer_ = WALL_FOLLOW_TIME;
 	speaker.play(VOICE_CLEANING_WALL_FOLLOW, false);
 	clean_path_algorithm_.reset(new WFCleanPathAlgorithm);
-	go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
+	go_home_path_algorithm_.reset();
 }
 
 CleanModeFollowWall::~CleanModeFollowWall()
@@ -202,7 +202,7 @@ void CleanModeFollowWall::switchInStateClean() {
 	sp_state = state_go_home_point;
 	ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_points_.size());
 	go_home_path_algorithm_.reset();
-	go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
+	go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_, start_point_));
 	sp_state->init();
 	action_i_ = ac_null;
 	genNextAction();

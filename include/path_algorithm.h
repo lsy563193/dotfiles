@@ -119,13 +119,6 @@ protected:
 	const Cell_t cell_direction_index_[9]{{1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1},{0,0}};
 };
 
-typedef enum {
-	THROUGH_CLEANED_AREA,
-	THROUGH_SLAM_MAP_REACHABLE_AREA,
-	THROUGH_UNKNOWN_AREA,
-	GO_HOME_WAY_NUM
-}GoHomeWay_t;
-
 class NavCleanPathAlgorithm: public APathAlgorithm
 {
 	/*
@@ -268,7 +261,7 @@ public:
 	 *
 	 * @return: Cells path, the path to selected home cell.
 	 */
-	GoHomePathAlgorithm(GridMap &map, HomePoints home_cells);
+	GoHomePathAlgorithm(GridMap &map, Points &home_points, Point32_t start_point);
 	~GoHomePathAlgorithm() = default;
 
 	/*
@@ -286,16 +279,27 @@ public:
 
 	bool checkTrapped(GridMap &map, const Cell_t &curr_cell) override {};
 
-	HomePoint getCurrentHomePoint();
-	HomePoints getRestHomePoints();
+	bool reachTarget(bool &should_go_to_charger);
+	Point32_t getCurrentHomePoint();
+	Points getRestHomePoints();
+	bool eraseHomePoint(Point32_t target_home_point);
 private:
+	bool generatePathThroughCleanedArea(GridMap &map, const Point32_t &curr, const int &last_dir, Points &plan_path);
+	bool generatePathThroughSlamMapReachableArea(GridMap &map, const Point32_t &curr, const int &last_dir, Points &plan_path);
+	bool generatePathThroughUnknownArea(GridMap &map, const Point32_t &curr, const int &last_dir, Points &plan_path);
 
-	GridMap go_home_map_;
-	HomePoints home_points_;
-	HomePoints rest_home_points_;
-	// current_home_point_ is initialized as an unreachable point.
-	HomePoint current_home_point_{{CELL_COUNT_MUL * MAP_SIZE + 1, CELL_COUNT_MUL * MAP_SIZE + 1, 0}, false};
-	std::vector<int> go_home_way_list_;
-	std::vector<int>::iterator go_home_way_list_it_;
+typedef enum {
+	THROUGH_CLEANED_AREA = 0,
+	THROUGH_SLAM_MAP_REACHABLE_AREA,
+	THROUGH_UNKNOWN_AREA,
+	GO_HOME_WAY_NUM
+}GoHomeWay_t;
+
+	GoHomeWay_t home_way_index_{THROUGH_CLEANED_AREA};
+	int home_point_index_[GO_HOME_WAY_NUM]{};
+	Points home_points_;
+	Point32_t start_point_;
+	// current_home_point_ is initialized as an unreachable point because state go home point will check if reach home point first.
+	Point32_t current_home_point_{CELL_COUNT_MUL * (MAP_SIZE + 1), CELL_COUNT_MUL * (MAP_SIZE + 1), 0};
 };
 #endif //PP_PATH_ALGORITHM_H
