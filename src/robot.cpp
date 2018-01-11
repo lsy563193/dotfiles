@@ -798,14 +798,14 @@ void robot::pubTmpTarget(const Points &points, bool is_virtual) {
 	point_markers.type = visualization_msgs::Marker::SPHERE_LIST;
 	point_markers.action = 0;//add
 	point_markers.lifetime = ros::Duration(0), "base_link";
-	point_markers.scale.x = 0.05;
-	point_markers.scale.y = 0.05;
+	point_markers.scale.x = 0.07;
+	point_markers.scale.y = 0.07;
 	point_markers.scale.z = 0.10;
 	if(!is_virtual)
 	{
 		point_markers.color.r = 1.0;
-		point_markers.color.g = 0.0;
-		point_markers.color.b = 0.0;
+		point_markers.color.g = 0.5;
+		point_markers.color.b = 0.5;
 	}else{
 		point_markers.color.r = 0.3;
 		point_markers.color.g = 0.3;

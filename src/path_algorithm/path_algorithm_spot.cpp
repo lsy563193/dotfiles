@@ -59,8 +59,10 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, c
 				if( isTargetReachable(map,next_point.toCell()) ){
 
 					auto shortest_path_cells = findShortestPath(map,cur.toCell(),next_point.toCell(),last_dir,true,true,min_corner_,max_corner_);
-					shortest_path = cells_generate_points(shortest_path_cells);
-
+					if(!shortest_path_cells.empty())
+						shortest_path = cells_generate_points(shortest_path_cells);
+					else
+						continue;
 				}
 				else{
 					ROS_INFO("not find shortest_path %d continue",__LINE__);
@@ -104,7 +106,11 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, c
 					Points shortest_path;
 					if( isTargetReachable(map,next_point.toCell()) ){
 						auto shortest_path_cells = findShortestPath(map, cur.toCell(), next_point.toCell(), next_dir, true, true, min_corner_, max_corner_);
-						shortest_path = cells_generate_points(shortest_path_cells);
+
+						if(!shortest_path_cells.empty())
+							shortest_path = cells_generate_points(shortest_path_cells);
+						else
+							continue;
 					}
 					else{
 						ROS_INFO("not find shortest_path %d continue",__LINE__);

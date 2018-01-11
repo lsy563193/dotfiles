@@ -49,8 +49,10 @@ Points MovementFollowWallLidar::_calcTmpTarget() {
 
 	Points tmp_targets{};
 	auto d_points = circle.getPoints(10);
-	for(const auto& point:d_points)
+	for(auto& point:d_points)
 	{
+		if(!is_left_)
+			point.y = -point.y;
 		tmp_targets.push_back(getPosition().getRelative(point.x, point.y));
 	}
 	return tmp_targets;
