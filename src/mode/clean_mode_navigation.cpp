@@ -301,10 +301,8 @@ bool CleanModeNav::updateActionInStateInit() {
 		brush.normalOperate();
 
 		if (charger.isOnStub())
-		{
 			action_i_ = ac_back_form_charger;
-			home_points_.front().have_seen_charger = true;
-		} else
+		else
 			action_i_ = ac_open_lidar;
 	} else if (action_i_ == ac_back_form_charger)
 	{
@@ -312,6 +310,7 @@ bool CleanModeNav::updateActionInStateInit() {
 			// Init odom position here.
 			robot::instance()->initOdomPosition();
 		action_i_ = ac_open_lidar;
+		setHomePoint();
 	} else if (action_i_ == ac_open_lidar)
 	{
 		if (!has_aligned_and_open_slam_)
@@ -342,7 +341,7 @@ void CleanModeNav::switchInStateInit() {
 
 		auto curr = updatePosition();
 		passed_path_.push_back(curr);
-		home_points_.back().home_point.th = curr.th;
+		start_point_.th = curr.th;
 		sp_state = state_clean;
 	}
 	sp_state->init();
@@ -406,7 +405,7 @@ void CleanModeNav::switchInStateClean() {
 		sp_state = state_go_home_point;
 		ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_points_.size());
 		go_home_path_algorithm_.reset();
-		go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
+		go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_, start_point_));
 	}
 	sp_state->init();
 	action_i_ = ac_null;
@@ -536,7 +535,7 @@ bool CleanModeNav::checkResumePause()
 			sp_saved_states.pop_back();
 			sp_saved_states.push_back(state_go_home_point);
 			if (go_home_path_algorithm_ == nullptr)
-				go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
+				go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_, start_point_));
 		}
 		sp_state = state_init;
 		sp_state->init();

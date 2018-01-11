@@ -324,7 +324,6 @@ public:
 	// todo: Delete below 4 function.
 	virtual bool isStateInitUpdateFinish(){};
 	virtual bool isStateCleanUpdateFinish(){};
-	virtual bool isStateGoHomePointUpdateFinish();
 	virtual bool isStateGoToChargerUpdateFinish(){};
 
 public:
@@ -396,8 +395,9 @@ protected:
 protected:
 	static bool low_battery_charge_;
 	static bool moved_during_pause_;
-	HomePoints home_points_;
-	bool reach_home_point_{false};
+	Points home_points_;
+	Point32_t start_point_{0, 0, 0};
+	bool should_go_to_charger_{false};
 public:
 //	uint8_t saveFollowWall(bool is_left);
 //	std::vector<Cell_t> temp_fw_cells;
