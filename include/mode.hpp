@@ -238,12 +238,12 @@ public:
 
 	Cells pointsGenerateCells(Points &targets);
 
-	virtual bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt);
+	virtual bool MoveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt);
 	virtual void actionFollowWallSaveBlocks();
 	virtual void actionLinearSaveBlocks();
 	void goHomePointUpdateAction();
 
-	virtual bool actionLinearIsFinish(MoveTypeLinear *p_mt);
+	virtual bool MoveTypeLinearIsFinish(MoveTypeLinear *p_mt);
 	int reach_cleaned_count_{};
 	static Points passed_path_;
 	static Points plan_path_;
@@ -258,7 +258,6 @@ public:
 
 	// State null
 	bool checkEnterNullState();
-	bool checkEnterGoCharger();
 	// State init
 	virtual bool isSwitchByEventInStateInit();
 	virtual bool updateActionInStateInit();
@@ -276,13 +275,14 @@ public:
 	virtual void switchInStateGoHomePoint();
 
 	// State go to charger
+	bool checkEnterGoCharger();
 	virtual bool isSwitchByEventInStateGoToCharger(){return false;};
 	virtual bool updateActionInStateGoToCharger();
 	virtual void switchInStateGoToCharger();
 
 	// State exception resume
 	bool checkEnterExceptionResumeState();
-	virtual bool isSwitchByEventInStateExceptionResume(){return false;};
+	virtual bool isSwitchByEventInStateExceptionResume();
 	virtual bool updateActionInStateExceptionResume();
 	virtual void switchInStateExceptionResume();
 
@@ -292,9 +292,10 @@ public:
 	virtual void switchInStateSpot(){};
 
 	// State trapped
-	virtual bool isSwitchByEventInStateTrapped(){ return false;};
-	virtual bool updateActionInStateTrapped(){};
-	virtual void switchInStateTrapped(){ };
+	virtual bool isSwitchByEventInStateTrapped();
+	virtual bool updateActionInStateTrapped();
+	virtual void switchInStateTrapped();
+	bool trapped_time_out_{};
 
 	// State exploration
 	virtual bool isSwitchByEventInStateExploration();
@@ -317,6 +318,8 @@ public:
 	virtual void switchInStatePause(){};
 
 	void remoteHome(bool state_now, bool state_last) override ;
+
+	void cliffAll(bool state_now, bool state_last) override ;
 
 	// todo: Delete below 4 function.
 	virtual bool isStateInitUpdateFinish(){};
@@ -375,10 +378,10 @@ public:
 		return sp_state == state_pause;
 	}
 	static State *sp_state;
+	static State *state_init;
 	static State *state_clean;
 protected:
-	static State *sp_saved_state;
-	static State *state_init;
+	static std::vector<State*> sp_saved_states;
 	static State *state_go_home_point;
 	static State *state_go_to_charger;
 	static State *state_charge;
@@ -420,7 +423,6 @@ public:
 	void remoteClean(bool state_now, bool state_last) override ;
 //	void remoteHome(bool state_now, bool state_last) override ;
 	void remoteDirectionLeft(bool state_now, bool state_last) override ;
-	void cliffAll(bool state_now, bool state_last) override ;
 	void chargeDetect(bool state_now, bool state_last) override ;
 	void batteryHome(bool state_now, bool state_last) override ;
 //	void overCurrentBrushLeft(bool state_now, bool state_last);
@@ -452,6 +454,7 @@ public:
 	void switchInStateGoToCharger() override;
 
 	// State tmp spot
+	bool checkEnterTempSpotState();
 	bool checkOutOfSpot();
 	bool isSwitchByEventInStateSpot() override;
 	void switchInStateSpot() override;
@@ -464,15 +467,24 @@ public:
 
 	// State trapped
 	bool isSwitchByEventInStateTrapped() override;
-	bool updateActionInStateTrapped() override;
-	void switchInStateTrapped() override;
-	bool trapped_time_out_{};
-	bool escape_trapped_{};
+
+	// State charge
+	bool isSwitchByEventInStateCharge() override;
+	bool updateActionStateCharge() override;
+	void switchInStateCharge() override;
+
+	// State resume low battery charge
+	bool checkEnterResumeLowBatteryCharge();
+	bool isSwitchByEventInStateResumeLowBatteryCharge() override;
+	bool updateActionInStateResumeLowBatteryCharge() override;
+	void switchInStateResumeLowBatteryCharge() override;
+
+	// State exception resume
+	bool isSwitchByEventInStateExceptionResume();
+
 private:
-	bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
-	bool actionLinearIsFinish(MoveTypeLinear *p_mt);
-	void resumeLowBatteryCharge();
-	bool checkEnterTempSpotState();
+	bool MoveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
+	bool MoveTypeLinearIsFinish(MoveTypeLinear *p_mt) override;
 
 	bool has_aligned_and_open_slam_{false};
 	float paused_odom_angle_{0};
@@ -492,11 +504,9 @@ public:
 	~CleanModeExploration();
 
 	bool mapMark() override;
-	bool isExit() override;
 	bool setNextAction() override;
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteClean(bool state_now, bool state_last) override ;
-	void cliffAll(bool state_now, bool state_last) override ;
 	void chargeDetect(bool state_now, bool state_last) override ;
 
 //	void overCurrentBrushLeft(bool state_now, bool state_last);
@@ -508,11 +518,10 @@ public:
 //	void printMapAndPath();
 	void switchInStateInit() override;
 
-	// todo: Delete below 4 function.
 	void switchInStateGoHomePoint() override;
 	void switchInStateGoToCharger() override;
 
-	virtual bool updateActionInStateClean(){};
+	bool MoveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
 };
 
 class CleanModeFollowWall:public ACleanMode {
@@ -534,6 +543,7 @@ public:
 //
 	void remoteClean(bool state_now, bool state_last) override;
 	void switchInStateClean() override;
+	bool generatePath(GridMap &map, const Point32_t &curr, const int &last_dir, Points &targets);
 //
 //	void remoteHome(bool state_now, bool state_last);
 //
@@ -544,7 +554,7 @@ public:
 //	void batteryHome(bool state_now, bool state_last);
 //
 //	void chargeDetect(bool state_now, bool state_last);
-	bool actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) override ;
+	bool MoveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) override ;
 
 	int16_t wf_path_find_shortest_path(GridMap& map, int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound);
 
@@ -570,9 +580,7 @@ public:
 	~CleanModeSpot();
 
 	bool mapMark() override;
-	bool isExit() override;
 	bool setNextAction() override;
-	void cliffAll(bool state_now, bool state_last) override;
 	void remoteClean(bool state_now, bool state_last) override;
 	void keyClean(bool state_now, bool state_last) override;
 	void switchInStateInit() override ;

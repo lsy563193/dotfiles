@@ -303,7 +303,7 @@ bool IFollowWall::sp_turn_over(const Cell_t &curr) {
 
 //bool IFollowWall::isFinish() {
 //	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mt_->sp_mode_);
-//	return p_clean_mode->actionFollowWallIsFinish() || shouldMoveBack() || shouldTurn();
+//	return p_clean_mode->MoveTypeFollowWallIsFinish() || shouldMoveBack() || shouldTurn();
 //	return isNewLineReach() || /*isClosure(1) ||*/ shouldMoveBack() || shouldTurn()
 //					|| isBlockCleared() || isOverOriginLine();
 //}

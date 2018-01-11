@@ -50,6 +50,7 @@ robot::robot(std::string serial_port, int baudrate, std::string lidar_bumper_dev
 	line_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("line_marker", 1);
 	line_marker_pub2_ = robot_nh_.advertise<visualization_msgs::Marker>("line_marker2", 1);
 	point_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("point_marker", 1);
+	tmp_target_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("tmp_target", 1);
 	fit_line_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("fit_line_marker", 1);
 
 	visualizeMarkerInit();
@@ -121,13 +122,13 @@ void robot::core_thread_cb()
 
 	while(ros::ok())
 	{
-		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
+//		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
 		p_mode->run();
 		auto next_mode = p_mode->getNextMode();
 		p_mode.reset();
-		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
+//		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
 		p_mode.reset(getNextMode(next_mode));
-		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
+//		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
 	}
 }
 
@@ -152,13 +153,21 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 	obs.DynamicAdjust(OBS_adjust_count);
 
 	// Check for whether robot should publish this frame of scan.
-		scan_ctrl_.allow_publishing =
-						!(fabs(wheel.getLeftWheelActualSpeed() - wheel.getRightWheelActualSpeed()) > 0.1
-					|| (wheel.getLeftWheelActualSpeed() * wheel.getRightWheelActualSpeed() < 0)
-					|| bumper.getStatus()
-					|| gyro.getTiltCheckingStatus()
-					|| abs(wheel.getLeftSpeedAfterPid() - wheel.getRightSpeedAfterPid()) > 100
-					|| wheel.getLeftSpeedAfterPid() * wheel.getRightSpeedAfterPid() < 0);
+	if (p_mode != nullptr)
+	{
+		if (ACleanMode::sp_state == ACleanMode::state_init)
+			scan_ctrl_.allow_publishing = 1;
+		else
+			scan_ctrl_.allow_publishing =
+					!(fabs(wheel.getLeftWheelActualSpeed() - wheel.getRightWheelActualSpeed()) > 0.1
+					  || (wheel.getLeftWheelActualSpeed() * wheel.getRightWheelActualSpeed() < 0)
+					  || bumper.getStatus()
+					  || gyro.getTiltCheckingStatus()
+					  || abs(wheel.getLeftSpeedAfterPid() - wheel.getRightSpeedAfterPid()) > 100
+					  || wheel.getLeftSpeedAfterPid() * wheel.getRightSpeedAfterPid() < 0);
+	}
+	else
+		scan_ctrl_.allow_publishing = 1;
 
 	scan_ctrl_pub_.publish(scan_ctrl_);
 }
@@ -447,7 +456,7 @@ void robot::scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr& scan)
 	if (lidar.isScanOriginalReady() && (p_mode->action_i_ == p_mode->ac_follow_wall_left || p_mode->action_i_ == p_mode->ac_follow_wall_right)) {
 		std::deque<Vector2<double>> points{};
 		if (calcLidarPath(scan, p_mode->action_i_ == p_mode->ac_follow_wall_left, points)) {
-			setTempTarget(points);
+			setTempTarget(points, scan->header.seq);
 		}
 	}
 }
@@ -783,6 +792,46 @@ void robot::pubPointMarkers(const std::deque<Vector2<double>> *points, std::stri
 	}
 }
 
+void robot::pubTmpTarget(const Points &points, bool is_virtual) {
+	visualization_msgs::Marker point_markers;
+	point_markers.ns = "tmp_target";
+	point_markers.id = 0;
+	point_markers.type = visualization_msgs::Marker::SPHERE_LIST;
+	point_markers.action = 0;//add
+	point_markers.lifetime = ros::Duration(0), "base_link";
+	point_markers.scale.x = 0.05;
+	point_markers.scale.y = 0.05;
+	point_markers.scale.z = 0.10;
+	if(!is_virtual)
+	{
+		point_markers.color.r = 1.0;
+		point_markers.color.g = 0.0;
+		point_markers.color.b = 0.0;
+	}else{
+		point_markers.color.r = 0.3;
+		point_markers.color.g = 0.3;
+		point_markers.color.b = 0.4;
+	}
+
+	point_markers.color.a = 1.0;
+	point_markers.header.frame_id = "/map";
+	point_markers.header.stamp = ros::Time::now();
+
+	for(const auto & point : points)
+	{
+		geometry_msgs::Point point_marker;
+		point_marker.x = point.toCell().x * (float)CELL_SIZE / 1000;
+		point_marker.y = point.toCell().y * (float)CELL_SIZE / 1000;
+		point_marker.z = 0;
+		point_markers.points.push_back(point_marker);
+	}
+	tmp_target_pub_.publish(point_markers);
+	//ROS_INFO("%s,%d,points size:%u,points %s",__FUNCTION__,__LINE__,points->size(),msg.c_str());
+	point_markers.points.clear();
+	//ROS_INFO("pub points!!");
+}
+
+
 bool robot::lidarMotorCtrl(bool switch_)
 {
 	pp::SetLidar ctrl_message;
@@ -875,27 +924,30 @@ void robot::obsAdjustCount(int count)
 #endif
 }
 
-void robot::setTempTarget(std::deque<Vector2<double>>& points) {
+void robot::setTempTarget(std::deque<Vector2<double>>& points, uint32_t  seq) {
 	boost::mutex::scoped_lock(temp_target_mutex_);
-	tmp_plan_path_.clear();
+	path_head_ = {};
+	path_head_.tmp_plan_path_.clear();
 
 //	ROS_ERROR("curr_point(%d,%d)",getPosition().x,getPosition().y);
 	for (const auto &iter : points) {
 		auto target = getPosition().getRelative(int(iter.x * 1000), int(iter.y * 1000));
-		tmp_plan_path_.push_back(target);
+		path_head_.tmp_plan_path_.push_back(target);
 //		ROS_INFO("temp_target(%d,%d)",target.x,target.y);
 	}
+	path_head_.seq = seq;
 }
 
-Points robot::getTempTarget() const
+PathHead robot::getTempTarget() const
 {
 	boost::mutex::scoped_lock(temp_target_mutex_);
 
 //	auto tmp = tmp_plan_path_;
 //	tmp_plan_path_.clear();
 //	return tmp;
-	return tmp_plan_path_;
+	return path_head_;
 }
+
 //--------------------
 static int32_t xCount{}, yCount{};
 

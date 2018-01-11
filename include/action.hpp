@@ -42,6 +42,7 @@ class ActionBackFromCharger :public IAction
 {
 public:
 	ActionBackFromCharger();
+	~ActionBackFromCharger();
 	bool isFinish();
 	void run();
 };

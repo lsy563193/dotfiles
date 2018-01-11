@@ -30,7 +30,8 @@ void Slam::stop(void)
 void Slam::start(void)
 {
 	isMapReady(false);
-	robot::instance()->slamStart();
+	while (!robot::instance()->slamStart())
+		ROS_WARN("%s %d: Start slam service not received, retry.", __FUNCTION__, __LINE__);
 	robot::instance()->resetCorrection();
 	open_command_time_stamp_ = time(NULL);
 }

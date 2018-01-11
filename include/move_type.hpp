@@ -42,7 +42,7 @@ public:
 	static int movement_i_;
 	void resetTriggeredValue();
 	Point32_t start_point_;
-	Point32_t target_point_;
+//	Point32_t target_point_;
 	int dir_;
 protected:
 //	Cells passed_path_;
@@ -62,7 +62,7 @@ class MoveTypeLinear:public IMoveType
 {
 public:
 	MoveTypeLinear();
-	~MoveTypeLinear();
+	~MoveTypeLinear() override;
 	bool isFinish() override;
 //	IAction* setNextAction();
 
@@ -83,7 +83,7 @@ public:
 	MoveTypeFollowWall() = delete;
 	~MoveTypeFollowWall() override;
 
-	explicit MoveTypeFollowWall(bool is_left, bool is_trapped);
+	explicit MoveTypeFollowWall(bool is_left);
 
 	bool isFinish() override;
 
@@ -95,16 +95,17 @@ private:
 	bool handleMoveBackEvent(ACleanMode* p_clean_mode);
 	bool is_left_{};
 	int16_t turn_angle{};
-	int16_t bumper_turn_angle(bool);
-	int16_t cliff_turn_angle();
-	int16_t rcon_turn_angle();
-	int16_t tilt_turn_angle();
-	int16_t obs_turn_angle();
+	int16_t bumperTurnAngle();
+	int16_t cliffTurnAngle();
+	int16_t rconTurnAngle();
+	int16_t tiltTurnAngle();
+	int16_t obsTurnAngle();
 	int double_scale_10(double line_angle);
-	bool _lidar_turn_angle(bool is_left, int16_t& turn_angle, int lidar_min, int lidar_max, int angle_min,int angle_max,double dis_limit=0.217);
-	bool lidar_turn_angle(int16_t& turn_angle);
-	int16_t get_turn_angle_by_ev();
-	int16_t get_turn_angle(bool);
+	bool _lidarTurnAngle(bool is_left, int16_t &turn_angle, int lidar_min, int lidar_max, int angle_min, int angle_max,
+						 double dis_limit = 0.217);
+	bool lidarTurnAngle(int16_t &turn_angle);
+	int16_t getTurnAngleByEvent();
+	int16_t getTurnAngle(bool);
 	double robot_to_wall_distance = 0.8;
 	float g_back_distance = 0.01;
 };

@@ -516,19 +516,20 @@ bool CleanModeFollowWall::updateActionInStateClean()
 {
 	ROS_INFO_FL();
 	mapMark();
+	old_dir_ = new_dir_;
 	if (reach_cleaned_count_ == 0) {
-		if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
+		if (generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
+			new_dir_ = plan_path_.front().th;
 			plan_path_.pop_front();
-			ROS_ERROR("plan_path_.size(%d)", plan_path_.size());
 			robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 		}
 	}
 	else if (reach_cleaned_count_ <= 3) {
 
 		if (wf_is_isolate(clean_map_)) {
-			if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
+			if (generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
+				new_dir_ = plan_path_.front().th;
 				plan_path_.pop_front();
-				ROS_ERROR("plan_path_.size(%d)", plan_path_.size());
 				robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 			}
 		}
@@ -561,7 +562,7 @@ bool CleanModeFollowWall::updateActionInStateClean()
 	return true;
 }
 
-bool CleanModeFollowWall::actionFollowWallIsFinish(MoveTypeFollowWall *p_mt) {
+bool CleanModeFollowWall::MoveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) {
 //	ROS_INFO("reach_cleaned_count_ = %d, reach_cleaned_count_save = %d", reach_cleaned_count_, reach_cleaned_count_save);
 	if(reach_cleaned_count_ > reach_cleaned_count_save)
 	{
@@ -579,4 +580,27 @@ void CleanModeFollowWall::switchInStateClean() {
 	sp_state->init();
 	action_i_ = ac_null;
 	genNextAction();
+}
+
+bool CleanModeFollowWall::generatePath(GridMap &map, const Point32_t &curr, const int &last_dir, Points &targets)
+{
+	if (targets.empty()) {//fw ->linear
+		auto curr = getPosition();
+		fw_map.reset(CLEAN_MAP);
+		auto angle = (reach_cleaned_count_ != 0 && reach_cleaned_count_ <= 3) ? -900 : 0;
+		auto point = getPosition();
+		point.th = ranged_angle(curr.th + angle);
+		targets.push_back(point);
+		ROS_WARN("curr.th = %d, angle = %d,point.th(%d)", curr.th, angle,point.th);
+		point = point.getRelative(8 * 1000, 0);
+		targets.push_back(point);
+		ROS_WARN("%s,%d: empty! point(%d, %d, %d)", __FUNCTION__, __LINE__,targets.back().x, targets.back().y, targets.back().th);
+	}
+	else//linear->fw
+	{
+		targets.clear();
+		targets.push_back(getPosition());
+		ROS_WARN("%s,%d: not empty! point(%d, %d, %d)", __FUNCTION__, __LINE__,targets.back().x, targets.back().y, targets.back().th);
+	}
+	return true;
 }

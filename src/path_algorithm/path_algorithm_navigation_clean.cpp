@@ -137,6 +137,7 @@ Cells NavCleanPathAlgorithm::findTargetInSameLane(GridMap &map, const Cell_t &cu
 
 Cells NavCleanPathAlgorithm::filterAllPossibleTargets(GridMap &map, const Cell_t &curr_cell, BoundingBox2 &b_map)
 {
+	ROS_INFO("%s %d: Find all possible targets.", __FUNCTION__, __LINE__);
 	Cells possible_target_list{};
 
 	auto b_map_copy = b_map;

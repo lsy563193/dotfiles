@@ -9,12 +9,11 @@
 
 MoveTypeLinear::MoveTypeLinear() {
 	resetTriggeredValue();
-
-	auto p_clean_mode = (ACleanMode*)sp_mode_;
-	target_point_ = p_clean_mode->plan_path_.front();
-	dir_ = p_clean_mode->new_dir_;
-	turn_target_angle_ = p_clean_mode->new_dir_;
-	ROS_INFO("%s,%d: mt_is_linear,turn(%d)", __FUNCTION__, __LINE__, turn_target_angle_);
+	auto p_mode = ((ACleanMode*)sp_mode_);
+	auto target_point_ = p_mode->plan_path_.front();
+	turn_target_angle_ = p_mode->new_dir_;
+	ROS_INFO("%s,%d: Enter move type linear, turn target angle(%d), first target(%d, %d).",
+			 __FUNCTION__, __LINE__, turn_target_angle_, target_point_.toCell().x, target_point_.toCell().y);
 	movement_i_ = mm_turn;
 	sp_movement_.reset(new MovementTurn(turn_target_angle_, ROTATE_TOP_SPEED));
 //	ROS_INFO("%s,%d: mt_is_linear,turn(%d)", __FUNCTION__, __LINE__, turn_target_angle_);
@@ -23,9 +22,11 @@ MoveTypeLinear::MoveTypeLinear() {
 //	ROS_WARN("%s,%d: mt_is_linear,turn(%d)", __FUNCTION__, __LINE__, turn_target_angle_);
 }
 
-//MoveTypeLinear::MoveTypeLinearar() {
-//
-//}
+MoveTypeLinear::~MoveTypeLinear()
+{
+	ROS_INFO("%s %d: Exit move type linear.", __FUNCTION__, __LINE__);
+}
+
 bool MoveTypeLinear::isFinish()
 {
 	if (IMoveType::isFinish())
@@ -36,7 +37,7 @@ bool MoveTypeLinear::isFinish()
 
 	auto p_clean_mode = (ACleanMode*)sp_mode_;
 
-	if (p_clean_mode->actionLinearIsFinish(this))
+	if (p_clean_mode->MoveTypeLinearIsFinish(this))
 		return true;
 
 	if (isLinearForward())
@@ -61,22 +62,17 @@ bool MoveTypeLinear::isFinish()
 	return false;
 }
 
-MoveTypeLinear::~MoveTypeLinear()
-{
-//	PP_WARN();
-}
-
-
 bool MoveTypeLinear::isCellReach()
 {
 	// Checking if robot has reached target cell.
 	auto s_curr_p = getPosition();
-	auto target_p = target_point_;
-	if (std::abs(s_curr_p.x - target_p.x) < CELL_COUNT_MUL_1_2 &&
-		std::abs(s_curr_p.y - target_p.y) < CELL_COUNT_MUL_1_2)
+	auto p_clean_mode = (ACleanMode*)sp_mode_;
+	auto target_point_ = p_clean_mode->plan_path_.front();
+	if (std::abs(s_curr_p.x - target_point_.x) < CELL_COUNT_MUL_1_2 &&
+		std::abs(s_curr_p.y - target_point_.y) < CELL_COUNT_MUL_1_2)
 	{
-		ROS_INFO("\033[1m""%s, %d: MoveTypeLinear, reach the target cell (%d,%d)!!""\033[0m", __FUNCTION__, __LINE__,
-						 target_point_.toCell().x, target_point_.toCell().y);
+		ROS_INFO("%s, %d: MoveTypeLinear, reach the target cell (%d,%d), current angle(%d), target angle(%d).", __FUNCTION__, __LINE__,
+						 target_point_.toCell().x, target_point_.toCell().y, s_curr_p.th, target_point_.th);
 //		g_turn_angle = ranged_angle(new_dir - robot::instance()->getWorldPoseAngle());
 		return true;
 	}
@@ -88,10 +84,11 @@ bool MoveTypeLinear::isPoseReach()
 {
 	// Checking if robot has reached target cell and target angle.
 //	PP_INFO();
+	auto target_point_ = ((ACleanMode*)sp_mode_)->plan_path_.front();
 	auto target_angle = target_point_.th;
 	if (isCellReach() && std::abs(ranged_angle(robot::instance()->getWorldPoseAngle() - target_angle)) < 200)
 	{
-		ROS_INFO("\033[1m""%s, %d: MoveTypeLinear, reach the target cell and pose(%d,%d,%d)!!""\033[0m", __FUNCTION__, __LINE__,
+		ROS_INFO("\033[1m""%s, %d: MoveTypeLinear, reach the target cell and pose(%d,%d,%d)""\033[0m", __FUNCTION__, __LINE__,
 				 target_point_.toCell().x, target_point_.toCell().y, target_point_.th);
 		return true;
 	}
@@ -104,14 +101,14 @@ bool MoveTypeLinear::isPassTargetStop(int &dir)
 	// Checking if robot has reached target cell.
 	auto s_curr_p = getPosition();
 	auto curr = (isXAxis(dir)) ? s_curr_p.x : s_curr_p.y;
-	auto target_p = (target_point_);
-	auto target = (isXAxis(dir)) ? target_p.x : target_p.y;
+	auto target_point_ = ((ACleanMode*)sp_mode_)->plan_path_.front();
+	auto target = (isXAxis(dir)) ? target_point_.x : target_point_.y;
 	if ((isPos(dir) && (curr > target + CELL_COUNT_MUL / 4)) ||
 		(!isPos(dir) && (curr < target - CELL_COUNT_MUL / 4)))
 	{
 		ROS_WARN("%s, %d: MoveTypeLinear, pass target: dir(\033[32m%d\033[0m),is_x_axis(\033[32m%d\033[0m),is_pos(\033[32m%d\033[0m),curr(\033[32m%d\033[0m),target(\033[32m%d\033[0m)",
 				 __FUNCTION__, __LINE__, dir, isXAxis(dir), isPos(dir), curr, target);
-		ROS_INFO("%s,%s,%d,\033[32m curr_cell(%d,%d),target_cell(%d,%d)\033[0m",__FILE__,__FUNCTION__,__LINE__,s_curr_p.toCell().x,s_curr_p.toCell().y,target_p.toCell().x,target_p.toCell().y);
+		ROS_INFO("%s,%s,%d,\033[32m curr_cell(%d,%d),target_cell(%d,%d)\033[0m",__FILE__,__FUNCTION__,__LINE__,s_curr_p.toCell().x,s_curr_p.toCell().y,target_point_.toCell().x,target_point_.toCell().y);
 		return true;
 	}
 	return false;
@@ -126,18 +123,18 @@ void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 {
 	if (p_clean_mode->plan_path_.size() > 1)
 	{
+		auto target_point_ = p_clean_mode->plan_path_.front();
 		auto &target_xy = (isXAxis(p_clean_mode->new_dir_)) ? target_point_.x : target_point_.y;
 		auto curr_xy = (isXAxis(p_clean_mode->new_dir_)) ? getPosition().x : getPosition().y;
 
 		if (abs(target_xy - curr_xy) < LINEAR_NEAR_DISTANCE) {
 			p_clean_mode->old_dir_ = p_clean_mode->new_dir_;
 			p_clean_mode->new_dir_ = p_clean_mode->plan_path_.front().th;
-			dir_ = p_clean_mode->new_dir_;
 			p_clean_mode->plan_path_.pop_front();
-			target_point_ = p_clean_mode->plan_path_.front();
+//			target_point_ = p_clean_mode->plan_path_.front();
 
-			ROS_INFO("%s,%d,next target_point(%d,%d), dir(%d)",
-					 __FUNCTION__,__LINE__,target_point_.toCell().x,target_point_.toCell().y, p_clean_mode->new_dir_);
+//			ROS_INFO("%s,%d,next target_point(%d,%d), dir(%d)",
+//					 __FUNCTION__,__LINE__,target_point_.toCell().x,target_point_.toCell().y, p_clean_mode->new_dir_);
 		}
 	}
 }

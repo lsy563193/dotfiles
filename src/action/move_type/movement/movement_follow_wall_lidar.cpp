@@ -14,6 +14,9 @@ MovementFollowWallLidar::MovementFollowWallLidar(bool is_left)
 	max_speed_ = FALL_WALL_MAX_SPEED;
 	base_speed_ = min_speed_;
 	tick_limit_ = 0;
+	lidar_targets_.empty();
+	virtual_targets_.empty();
+	p_tmp_targets_ = &virtual_targets_;
 
 //	path_thread_ = new boost::thread(boost::bind(&MovementFollowWallLidar::calcTmpTarget));
 //	path_thread_->detach();
@@ -33,44 +36,31 @@ Points MovementFollowWallLidar::_calcTmpTarget() {
 	return tmp_targets;
 }
 
-bool MovementFollowWallLidar::calcTmpTarget() {
+Point32_t MovementFollowWallLidar::calcTmpTarget() {
 
 //	ROS_WARN("curr_point(%d,%d)", getPosition().x, getPosition().y);
-	auto lidar_targets = robot::instance()->getTempTarget();
-	if (lidar_targets.empty()) {
+	auto path_head = robot::instance()->getTempTarget();
+
+	if (path_head.seq != seq_) {
+		seq_ = path_head.seq;
+		lidar_targets_ = path_head.tmp_plan_path_;
+		p_tmp_targets_ = lidar_targets_.empty() ? &virtual_targets_ : &lidar_targets_;
+		ROS_WARN("get_lidar_target(%d)", lidar_targets_.size());
+	}
+
+	if(p_tmp_targets_->empty()) {
+		virtual_targets_ = _calcTmpTarget();
 		p_tmp_targets_ = &virtual_targets_;
-		if(virtual_targets_.empty()){
-			ROS_WARN("lidar_targets is emply");
-			virtual_targets_ = _calcTmpTarget();
-		}
+		INFO_PURPLE("p_tmp_targets_->empty(), use virtual target");
 	}
-	else{
-		if(std::equal(lidar_targets_old_.begin(),lidar_targets_old_.end(), lidar_targets.begin()), [](Point32_t &l,Point32_t &r){
-			return l == r;
-		}) {
-			p_tmp_targets_ = &lidar_targets_;
-//			ROS_WARN("lidar_targets init ");
-			lidar_targets_ = lidar_targets;
-			lidar_targets_old_ = lidar_targets;
-		}
-	}
-//	ROS_INFO("targets:");
-//	for(auto &target:*p_tmp_targets_)
-//	{
-//		ROS_INFO("   (%d,%d)",target.x, target.y);
-//	}
-	tmp_target_ = p_tmp_targets_->front();
-	if (std::abs(getPosition().x - tmp_target_.x) < CELL_COUNT_MUL*0.75 && std::abs(getPosition().y - tmp_target_.y) < CELL_COUNT_MUL*0.75) {
-//		ROS_INFO_FL();
+
+	if (p_tmp_targets_->front().isNearTo(getPosition(), CELL_COUNT_MUL * 0.75)){
 		p_tmp_targets_->pop_front();
-		if (p_tmp_targets_->empty()) {
-			_calcTmpTarget();
-			p_tmp_targets_ = &virtual_targets_;
-		}
-		tmp_target_ = p_tmp_targets_->front();
+		ROS_WARN("near pop target(%d)",p_tmp_targets_->size());
 	}
-//	ROS_WARN("tmp_target(%d,%d)", tmp_target.x, getPosition().y);
-	return true;
+//	ROS_WARN("is_virtual_target(%d,%d)", lidar_targets_.empty(),lidar_targets_.size());
+	robot::instance()->pubTmpTarget(virtual_targets_, p_tmp_targets_ == &virtual_targets_ );
+	return p_tmp_targets_->front();
 }
 
 bool MovementFollowWallLidar::isFinish() {

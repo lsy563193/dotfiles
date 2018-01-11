@@ -379,6 +379,10 @@ public:
 		Point32_t point{cellToCount(Cell.x),cellToCount(Cell.y),th};
 		return point.getRelative(dx,dy);
 	}
+
+	bool isNearTo(Point32_t other, int32_t count) const {
+		return std::abs(this->x - other.x) <count && std::abs(this->y - other.y) < count;
+	};
   Cell_t toCell() const {
     return {countToCell(x), countToCell(y)};
   }
