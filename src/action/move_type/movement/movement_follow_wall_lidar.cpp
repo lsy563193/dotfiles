@@ -22,17 +22,49 @@ MovementFollowWallLidar::MovementFollowWallLidar(bool is_left)
 //	path_thread_->detach();
 }
 
+typedef struct{
+	int32_t r;
+	Points getPoints(int precision);
+}Circle;
+
+Points Circle::getPoints(int precision)
+{
+	Points points1;
+	Points points2;
+	for(auto i=1; i<=precision; i++)
+	{
+		auto y = (this->r*2)/precision*i;
+		auto x = static_cast<int32_t>(sqrt(pow(this->r, 2) - pow(y - this->r, 2)));
+		printf("x,y(%d,%d) ",x, y);
+		points1.push_back({x,y,0});
+		points2.push_front({-x,y,0});
+	}
+
+	std::move(points2.begin(), points2.end(), std::back_inserter(points1));
+	return points1;
+}
+
 Points MovementFollowWallLidar::_calcTmpTarget() {
-	Point32_t tmp_target{};
+	Circle circle{CELL_SIZE_3/2};
+
 	Points tmp_targets{};
-
-	tmp_target = getPosition().getRelative(CELL_SIZE * 1, CELL_SIZE * 0);
-	tmp_targets.push_back(tmp_target);
-	auto dy = is_left_ ? 1 : -1;
-	tmp_target = getPosition().getRelative(CELL_SIZE * 1, CELL_SIZE * dy);
-	tmp_targets.push_back(tmp_target);
-
-//	ROS_INFO("_calc tmp_targets.size(%d)",tmp_targets.size());
+	auto d_points = circle.getPoints(10);
+	ROS_ERROR("curr(%d,%d,%d) d_points: ",getPosition().x, getPosition().y,getPosition().th);
+	for(const auto& point:d_points)
+	{
+		printf("(%d,%d) ",point.x, point.y);
+		tmp_targets.push_back(getPosition().getRelative(point.x, -point.y));
+//		tmp_targets.push_back();
+//		getPosition().getRelative(point.x, point.y);
+	}
+	printf("\n");
+	ROS_ERROR("~tmp_target ");
+	for(const auto&target :tmp_targets)
+	{
+		printf("(%d,%d) ",target.x, target.y);
+	}
+	printf("\n");
+//	ROS_INFO("_calc d_points.size(%d)",d_points.size());
 	return tmp_targets;
 }
 
@@ -44,6 +76,7 @@ Point32_t MovementFollowWallLidar::calcTmpTarget() {
 	if (path_head.seq != seq_) {
 		seq_ = path_head.seq;
 		lidar_targets_ = path_head.tmp_plan_path_;
+		virtual_targets_.clear();
 		p_tmp_targets_ = lidar_targets_.empty() ? &virtual_targets_ : &lidar_targets_;
 		ROS_WARN("get_lidar_target(%d)", lidar_targets_.size());
 	}

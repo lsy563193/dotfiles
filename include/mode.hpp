@@ -423,6 +423,7 @@ public:
 	void remoteClean(bool state_now, bool state_last) override ;
 //	void remoteHome(bool state_now, bool state_last) override ;
 	void remoteDirectionLeft(bool state_now, bool state_last) override ;
+//	void cliffAll(bool state_now, bool state_last) override ;
 	void chargeDetect(bool state_now, bool state_last) override ;
 	void batteryHome(bool state_now, bool state_last) override ;
 //	void overCurrentBrushLeft(bool state_now, bool state_last);
@@ -504,9 +505,11 @@ public:
 	~CleanModeExploration();
 
 	bool mapMark() override;
+//	bool isExit() override;
 	bool setNextAction() override;
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteClean(bool state_now, bool state_last) override ;
+//	void cliffAll(bool state_now, bool state_last) override ;
 	void chargeDetect(bool state_now, bool state_last) override ;
 
 //	void overCurrentBrushLeft(bool state_now, bool state_last);
@@ -580,7 +583,9 @@ public:
 	~CleanModeSpot();
 
 	bool mapMark() override;
+//	bool isExit() override;
 	bool setNextAction() override;
+//	void cliffAll(bool state_now, bool state_last) override;
 	void remoteClean(bool state_now, bool state_last) override;
 	void keyClean(bool state_now, bool state_last) override;
 	void switchInStateInit() override ;
