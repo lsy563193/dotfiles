@@ -224,15 +224,6 @@ void CleanModeNav::remoteDirectionLeft(bool state_now, bool state_last)
 	remote.reset();
 }
 
-void CleanModeNav::cliffAll(bool state_now, bool state_last)
-{
-	if (!ev.cliff_all_triggered)
-	{
-		ROS_WARN("%s %d: Cliff all.", __FUNCTION__, __LINE__);
-		ev.cliff_all_triggered = true;
-	}
-}
-
 void CleanModeNav::batteryHome(bool state_now, bool state_last)
 {
 	if (sp_state == state_clean)
