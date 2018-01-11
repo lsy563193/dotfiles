@@ -482,3 +482,17 @@ bool APathAlgorithm::checkTrappedUsingDijkstra(GridMap &map, const Cell_t &curr_
 					 __FUNCTION__, __LINE__, dijkstra_cleaned_count, map_cleand_count, clean_proportion);
 	return (clean_proportion < 0.8);
 }
+
+bool APathAlgorithm::isTargetReachable(GridMap map,Cell_t target)
+{
+	for (int16_t i = target.x - 1; i <= target.x + 1; ++i) {
+		for (int16_t j = target.y- 1; j <= target.y + 1; ++j) {
+			CellState cs = map.getCell(CLEAN_MAP, i, j);
+			if (cs >= BLOCKED && cs <= BLOCKED_BOUNDARY) {
+				return false;
+			}
+		}
+	}
+	return true;
+
+}

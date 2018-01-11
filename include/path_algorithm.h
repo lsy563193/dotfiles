@@ -93,6 +93,12 @@ public:
 	 */
 	bool findTargetUsingDijkstra(GridMap &map, const Cell_t& curr_cell, Cell_t& target, int& cleaned_count);
 
+
+	/*
+	 * @
+	 *
+	 */
+	bool isTargetReachable(GridMap map,Cell_t target);
 protected:
 
 	/*
@@ -238,13 +244,11 @@ public:
 	void genTargets(uint8_t type,float diameter,Cells *targets,const Cell_t begincell);
 	void initVariables(float diameter,Cell_t cur_cell);
 
-	Cells spotFindShortestPath(GridMap& map, Cell_t cur,Cell_t target,int dir,bool used_unknow); 
 private:
 	
 	float spot_diameter_ ;
 	bool spot_running_;
 	Cells targets_cells_;
-	Cell_t begin_cell_; 
 	Cell_t min_corner_;
 	Cell_t max_corner_;
 };
