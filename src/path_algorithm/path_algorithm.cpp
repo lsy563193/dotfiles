@@ -203,12 +203,14 @@ Cells APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const 
 		}
 	}
 
-	if(map.getCell(COST_MAP,target.x,target.y) == COST_HIGH){
-		INFO_RED("target cell cost high");
-		map.print(COST_MAP,target.x,target.y);
-		path_.clear();
+	// For protection, the target cell must be reachable.
+	if (map.getCell(COST_MAP, target.x, target.y) == COST_HIGH)
+	{
+		ROS_ERROR("%s %d: Start cell has high cost(%d)! This target should be filtered before calling this function.",
+				  __FUNCTION__, __LINE__, map.getCell(COST_MAP, start.x, start.y));
 		return path_;
 	}
+
 	// Set for target cell. For reverse algorithm, we will generate a-star map from target cell.
 	map.setCell(COST_MAP, target.x, target.y, COST_1);
 

@@ -221,58 +221,76 @@ bool ACleanMode::isFinish()
 
 void ACleanMode::genNextAction()
 {
-	INFO_GREEN("genNextAction");
-	if(action_i_ == ac_null)
-		sp_action_.reset();
-	if(action_i_ == ac_open_gyro)
-		sp_action_.reset(new ActionOpenGyro);
+	INFO_GREEN(before genNextAction);
 
-	else if(action_i_ == ac_back_form_charger)
-		sp_action_.reset(new ActionBackFromCharger);
-
-	else if(action_i_ == ac_open_lidar)
-		sp_action_.reset(new ActionOpenLidar);
-
-	else if(action_i_ == ac_align)
-		sp_action_.reset(new ActionAlign);
-
-	else if(action_i_ == ac_open_slam)
-		sp_action_.reset(new ActionOpenSlam);
-
-	else if (action_i_ == ac_pause)
-		sp_action_.reset(new ActionPause);
-
-	else if (action_i_ == ac_linear)
-		sp_action_.reset(new MoveTypeLinear);
-
-	else if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
-		sp_action_.reset(new MoveTypeFollowWall(action_i_ == ac_follow_wall_left));
-
-	else if (action_i_ == ac_go_to_charger)
-		sp_action_.reset(new MoveTypeGoToCharger);
-
-	else if (action_i_ == ac_exception_resume)
-		sp_action_.reset(new MovementExceptionResume);
-
-	else if (action_i_ == ac_charge)
-		sp_action_.reset(new MovementCharge);
-
-	else if (action_i_ == ac_check_bumper)
-		sp_action_.reset(new ActionCheckBumper);
-
-	else if (action_i_ == ac_bumper_hit_test)
-		sp_action_.reset(new MoveTypeBumperHitTest);
-
-	else if (action_i_ == ac_check_vacuum)
-		sp_action_.reset(new ActionCheckVacuum);
-
-	else if (action_i_ == ac_movement_direct_go)
-		sp_action_.reset(new MovementDirectGo);
-
-	else if(action_i_ == ac_null)
-		sp_action_.reset();
-
-	INFO_GREEN("after genNextAction");
+	switch (action_i_) {
+		case ac_null :
+			ROS_INFO_FL();
+			sp_action_.reset();
+			break;
+		case ac_open_gyro :
+			ROS_INFO_FL();
+			sp_action_.reset(new ActionOpenGyro);
+			break;
+		case ac_back_form_charger :
+			ROS_INFO_FL();
+			sp_action_.reset(new ActionBackFromCharger);
+			break;
+		case ac_open_lidar :
+			ROS_INFO_FL();
+			sp_action_.reset(new ActionOpenLidar);
+			break;
+		case ac_align :
+			ROS_INFO_FL();
+			sp_action_.reset(new ActionAlign);
+			break;
+		case ac_open_slam :
+			ROS_INFO_FL();
+			sp_action_.reset(new ActionOpenSlam);
+			break;
+		case ac_pause :
+			ROS_INFO_FL();
+			sp_action_.reset(new ActionPause);
+			break;
+		case ac_linear :
+			ROS_INFO_FL();
+			sp_action_.reset(new MoveTypeLinear);
+			break;
+		case ac_follow_wall_left  :
+		case ac_follow_wall_right :
+			ROS_INFO_FL();
+			sp_action_.reset(new MoveTypeFollowWall(action_i_ == ac_follow_wall_left));
+			break;
+		case ac_go_to_charger :
+			ROS_INFO_FL();
+			sp_action_.reset(new MoveTypeGoToCharger);
+			break;
+		case ac_exception_resume :
+			ROS_INFO_FL();
+			sp_action_.reset(new MovementExceptionResume);
+			break;
+		case ac_charge :
+			ROS_INFO_FL();
+			sp_action_.reset(new MovementCharge);
+			break;
+		case ac_check_bumper :
+			ROS_INFO_FL();
+			sp_action_.reset(new ActionCheckBumper);
+			break;
+		case ac_bumper_hit_test :
+			ROS_INFO_FL();
+			sp_action_.reset(new MoveTypeBumperHitTest);
+			break;
+		case ac_check_vacuum :
+			ROS_INFO_FL();
+			sp_action_.reset(new ActionCheckVacuum);
+			break;
+		case ac_movement_direct_go :
+			ROS_INFO_FL();
+			sp_action_.reset(new MovementDirectGo);
+			break;
+	}
+	INFO_GREEN(after genNextAction);
 }
 
 void ACleanMode::setRconPos(Point32_t pos)
