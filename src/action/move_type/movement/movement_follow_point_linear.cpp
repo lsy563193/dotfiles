@@ -31,17 +31,17 @@ Point32_t MovementFollowPointLinear::_calcTmpTarget()
 //	ROS_WARN("dis(%d),dir(%d), curr(%d, %d), tmp_target(%d, %d)", dis, tmp_target_.th, curr.x, curr.y, tmp_target.x, tmp_target.y);
 }
 
-bool MovementFollowPointLinear::calcTmpTarget()
+Point32_t MovementFollowPointLinear::calcTmpTarget()
 {
 //	auto curr_xy = (isXAxis(tmp_target_.th)) ? getPosition().x : getPosition().y;
 //	auto tmp_target_xy = (isXAxis(tmp_target_.th)) ? tmp_target_.x :tmp_target_.y;
 //	if(std::abs(curr_xy - tmp_target_xy) > LINEAR_NEAR_DISTANCE) {
 //		return false;
 //	}
-	tmp_target_ = _calcTmpTarget();
+	auto tmp_target_ = _calcTmpTarget();
 
-	robot::instance()->pubTmpTarget(tmp_target_);
-	return true;
+	robot::instance()->pubTmpTarget(Points{tmp_target_});
+	return tmp_target_;
 }
 
 bool MovementFollowPointLinear::isFinish()

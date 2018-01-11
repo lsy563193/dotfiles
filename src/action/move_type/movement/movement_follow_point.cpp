@@ -4,17 +4,17 @@
 #include "pp.h"
 #include "arch.hpp"
 
-Point32_t AMovementFollowPoint::tmp_target_{};
+//Point32_t AMovementFollowPoint::tmp_target_{};
 
 void AMovementFollowPoint::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 {
 //	PP_INFO();
 //	ROS_WARN("%s,%d: g_p_clean_mode->plan_path_size(%d)",__FUNCTION__, __LINE__,p_clean_mode->tmp_plan_path_.size());
 	wheel.setDirectionForward();
-	calcTmpTarget();
+	auto tmp_target = calcTmpTarget();
 
 	auto curr_p = getPosition();
-	auto angle_diff = ranged_angle( course_to_dest(curr_p, tmp_target_) - curr_p.th);
+	auto angle_diff = ranged_angle( course_to_dest(curr_p, tmp_target) - curr_p.th);
 	if (integration_cycle_++ > 10) {
 		integration_cycle_ = 0;
 		integrated_ += angle_diff;

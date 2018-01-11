@@ -456,7 +456,7 @@ void robot::scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr& scan)
 	if (lidar.isScanOriginalReady() && (p_mode->action_i_ == p_mode->ac_follow_wall_left || p_mode->action_i_ == p_mode->ac_follow_wall_right)) {
 		std::deque<Vector2<double>> points{};
 		if (calcLidarPath(scan, p_mode->action_i_ == p_mode->ac_follow_wall_left, points)) {
-			setTempTarget(points);
+			setTempTarget(points, scan->header.seq);
 		}
 	}
 }
@@ -792,32 +792,43 @@ void robot::pubPointMarkers(const std::deque<Vector2<double>> *points, std::stri
 	}
 }
 
-void robot::pubTmpTarget(const Point32_t &point) {
-	visualization_msgs::Marker point_marker;
-	point_marker.ns = "tmp_target";
-	point_marker.id = 0;
-	point_marker.type = visualization_msgs::Marker::SPHERE_LIST;
-	point_marker.action = 0;//add
-	point_marker.lifetime = ros::Duration(0), "base_link";
-	point_marker.scale.x = 0.30;
-	point_marker.scale.y = 0.30;
-	point_marker.scale.z = 0.10;
-	point_marker.color.r = 1.0;
-	point_marker.color.g = 0.75;
-	point_marker.color.b = 1.0;
-	point_marker.color.a = 0.90;
-	point_marker.header.frame_id = "/map";
-	point_marker.header.stamp = ros::Time::now();
+void robot::pubTmpTarget(const Points &points, bool is_virtual) {
+	visualization_msgs::Marker point_markers;
+	point_markers.ns = "tmp_target";
+	point_markers.id = 0;
+	point_markers.type = visualization_msgs::Marker::SPHERE_LIST;
+	point_markers.action = 0;//add
+	point_markers.lifetime = ros::Duration(0), "base_link";
+	point_markers.scale.x = 0.05;
+	point_markers.scale.y = 0.05;
+	point_markers.scale.z = 0.10;
+	if(!is_virtual)
+	{
+		point_markers.color.r = 1.0;
+		point_markers.color.g = 0.0;
+		point_markers.color.b = 0.0;
+	}else{
+		point_markers.color.r = 0.3;
+		point_markers.color.g = 0.3;
+		point_markers.color.b = 0.4;
+	}
 
-	geometry_msgs::Point target_points;
-	target_points.x = point.toCell().x * (float)CELL_SIZE / 1000;
-	target_points.y = point.toCell().y * (float)CELL_SIZE / 1000;
-	target_points.z = 0;
-	point_marker.points.push_back(target_points);
-	tmp_target_pub_.publish(point_marker);
+	point_markers.color.a = 1.0;
+	point_markers.header.frame_id = "/map";
+	point_markers.header.stamp = ros::Time::now();
+
+	for(const auto & point : points)
+	{
+		geometry_msgs::Point point_marker;
+		point_marker.x = point.toCell().x * (float)CELL_SIZE / 1000;
+		point_marker.y = point.toCell().y * (float)CELL_SIZE / 1000;
+		point_marker.z = 0;
+		point_markers.points.push_back(point_marker);
+	}
+	tmp_target_pub_.publish(point_markers);
 	//ROS_INFO("%s,%d,points size:%u,points %s",__FUNCTION__,__LINE__,points->size(),msg.c_str());
-	point_marker.points.clear();
-	//ROS_INFO("pub point!!");
+	point_markers.points.clear();
+	//ROS_INFO("pub points!!");
 }
 
 
@@ -913,26 +924,28 @@ void robot::obsAdjustCount(int count)
 #endif
 }
 
-void robot::setTempTarget(std::deque<Vector2<double>>& points) {
+void robot::setTempTarget(std::deque<Vector2<double>>& points, uint32_t  seq) {
 	boost::mutex::scoped_lock(temp_target_mutex_);
-	tmp_plan_path_.clear();
+	path_head_ = {};
+	path_head_.tmp_plan_path_.clear();
 
 //	ROS_ERROR("curr_point(%d,%d)",getPosition().x,getPosition().y);
 	for (const auto &iter : points) {
 		auto target = getPosition().getRelative(int(iter.x * 1000), int(iter.y * 1000));
-		tmp_plan_path_.push_back(target);
+		path_head_.tmp_plan_path_.push_back(target);
 //		ROS_INFO("temp_target(%d,%d)",target.x,target.y);
 	}
+	path_head_.seq = seq;
 }
 
-Points robot::getTempTarget() const
+PathHead robot::getTempTarget() const
 {
 	boost::mutex::scoped_lock(temp_target_mutex_);
 
 //	auto tmp = tmp_plan_path_;
 //	tmp_plan_path_.clear();
 //	return tmp;
-	return tmp_plan_path_;
+	return path_head_;
 }
 
 //--------------------

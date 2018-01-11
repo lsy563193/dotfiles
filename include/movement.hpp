@@ -38,14 +38,14 @@ protected:
 class AMovementFollowPoint:public IMovement{
 public:
 	virtual bool is_near()=0;
-	virtual bool calcTmpTarget()=0;
+	virtual Point32_t calcTmpTarget()=0;
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed) override ;
 
 protected:
 
 	int32_t min_speed_;
 	int32_t max_speed_;
-	static Point32_t tmp_target_;
+//	static Point32_t tmp_target_;
 //	boost::thread* path_thread_{};
 //	Point32_t tmp_target_{};
 	uint8_t integration_cycle_{};
@@ -102,7 +102,7 @@ public:
 	bool is_near() override;
 //	void setTarget();
 
-	bool calcTmpTarget() override ;
+	Point32_t calcTmpTarget() override ;
 	Point32_t _calcTmpTarget();
 
 private:
@@ -162,7 +162,7 @@ class MovementFollowWallLidar:public AMovementFollowPoint, public IFollowWall
 public:
 	explicit MovementFollowWallLidar(bool is_left);
 
-	bool calcTmpTarget() override ;
+	Point32_t calcTmpTarget() override ;
 	Points _calcTmpTarget();
 
 	bool isFinish() override ;
@@ -170,7 +170,6 @@ public:
 private:
 	Points virtual_targets_{};
 	Points lidar_targets_{};
-	Points lidar_targets_old_{};
 	Points* p_tmp_targets_{};
 
 	bool is_sp_turn{};
