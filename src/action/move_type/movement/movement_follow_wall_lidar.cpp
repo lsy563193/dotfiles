@@ -49,22 +49,10 @@ Points MovementFollowWallLidar::_calcTmpTarget() {
 
 	Points tmp_targets{};
 	auto d_points = circle.getPoints(10);
-	ROS_ERROR("curr(%d,%d,%d) d_points: ",getPosition().x, getPosition().y,getPosition().th);
 	for(const auto& point:d_points)
 	{
-		printf("(%d,%d) ",point.x, point.y);
-		tmp_targets.push_back(getPosition().getRelative(point.x, -point.y));
-//		tmp_targets.push_back();
-//		getPosition().getRelative(point.x, point.y);
+		tmp_targets.push_back(getPosition().getRelative(point.x, point.y));
 	}
-	printf("\n");
-	ROS_ERROR("~tmp_target ");
-	for(const auto&target :tmp_targets)
-	{
-		printf("(%d,%d) ",target.x, target.y);
-	}
-	printf("\n");
-//	ROS_INFO("_calc d_points.size(%d)",d_points.size());
 	return tmp_targets;
 }
 
@@ -76,20 +64,21 @@ Point32_t MovementFollowWallLidar::calcTmpTarget() {
 	if (path_head.seq != seq_) {
 		seq_ = path_head.seq;
 		lidar_targets_ = path_head.tmp_plan_path_;
-		virtual_targets_.clear();
+		if(!lidar_targets_.empty())
+			virtual_targets_.clear();
 		p_tmp_targets_ = lidar_targets_.empty() ? &virtual_targets_ : &lidar_targets_;
-		ROS_WARN("get_lidar_target(%d)", lidar_targets_.size());
+//		ROS_WARN("get_lidar_target(%d)", lidar_targets_.size());
 	}
 
 	if(p_tmp_targets_->empty()) {
 		virtual_targets_ = _calcTmpTarget();
 		p_tmp_targets_ = &virtual_targets_;
-		INFO_PURPLE("p_tmp_targets_->empty(), use virtual target");
+//		INFO_PURPLE("p_tmp_targets_->empty(), use virtual target");
 	}
 
 	if (p_tmp_targets_->front().isNearTo(getPosition(), CELL_COUNT_MUL * 0.75)){
 		p_tmp_targets_->pop_front();
-		ROS_WARN("near pop target(%d)",p_tmp_targets_->size());
+//		ROS_WARN("near pop target(%d)",p_tmp_targets_->size());
 	}
 //	ROS_WARN("is_virtual_target(%d,%d)", lidar_targets_.empty(),lidar_targets_.size());
 	robot::instance()->pubTmpTarget(virtual_targets_, p_tmp_targets_ == &virtual_targets_ );
