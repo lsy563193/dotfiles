@@ -33,38 +33,23 @@ bool CleanModeExploration::mapMark()
 	return false;
 }
 
-bool CleanModeExploration::isExit()
+bool CleanModeExploration::setNextAction()
 {
-	if(ev.cliff_all_triggered){
-		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
-		setNextMode(md_idle);
-		return true;
-	}
-	if(ev.key_clean_pressed || ev.key_long_pressed){
-		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
-		setNextMode(md_idle);
-		return true;
-	}
-	return ACleanMode::isExit();
+	PP_INFO();
+	//todo action convert
+	if (sp_state == state_init)
+		return ACleanMode::setNextAction();
+	else if(sp_state == state_exploration)
+		action_i_ = ac_linear;
+	else if(sp_state == state_go_to_charger)
+		action_i_ = ac_go_to_charger;
+	else if(sp_state == state_go_home_point)
+		action_i_ = ac_linear;
+	else
+		action_i_ = ac_null;
+	genNextAction();
+	return action_i_ != ac_null;
 }
-
-//bool CleanModeExploration::setNextAction()
-//{
-//	PP_INFO();
-//	//todo action convert
-//	if (sp_state == state_init)
-//		return ACleanMode::setNextAction();
-//	else if(sp_state == state_exploration)
-//		action_i_ = ac_linear;
-//	else if(sp_state == state_go_to_charger)
-//		action_i_ = ac_go_to_charger;
-//	else if(sp_state == state_go_home_point)
-//		action_i_ = ac_linear;
-//	else
-//		action_i_ = ac_null;
-//	genNextAction();
-//	return action_i_ != ac_null;
-//}
 // event
 void CleanModeExploration::keyClean(bool state_now, bool state_last) {
 	ROS_WARN("%s %d: key clean.", __FUNCTION__, __LINE__);
@@ -99,11 +84,6 @@ void CleanModeExploration::remoteClean(bool state_now, bool state_last) {
 	beeper.play_for_command(VALID);
 	ev.key_clean_pressed = true;
 	remote.reset();
-}
-
-void CleanModeExploration::cliffAll(bool state_now, bool state_last) {
-	ROS_WARN("%s %d: Cliff all.", __FUNCTION__, __LINE__);
-	ev.cliff_all_triggered = true;
 }
 
 void CleanModeExploration::overCurrentWheelLeft(bool state_now, bool state_last) {

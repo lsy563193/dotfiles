@@ -1,7 +1,7 @@
 # General Parameters
 use_scan_matching: true
 use_scan_barycenter: true
-minimum_travel_distance: 0.2
+minimum_travel_distance: 0.12
 minimum_travel_heading: 0.122                  #in radians
 scan_buffer_size: 1750
 scan_buffer_maximum_scan_distance: 350.0
@@ -26,10 +26,14 @@ loop_search_space_smear_deviation: 0.1
 
 # Scan Matcher Parameters
 distance_variance_penalty: 0.3              # gets squared later
-angle_variance_penalty: 0.384                # 22 in degrees (gets converted to radians then squared)
-fine_search_angle_offset: 0.00384               # in degrees (gets converted to radians)
-coarse_search_angle_offset: 0.384       # in degrees (gets converted to radians)
-coarse_angle_resolution: 0.0384                # in degrees (gets converted to radians)
+#angle_variance_penalty: 0.384                # 22 in degrees (gets converted to radians then squared)
+#fine_search_angle_offset: 0.00384               # in degrees (gets converted to radians)
+#coarse_search_angle_offset: 0.384       # in degrees (gets converted to radians)
+#coarse_angle_resolution: 0.0384                # in degrees (gets converted to radians)
+angle_variance_penalty: 0.523                # 30 in degrees (gets converted to radians then squared)
+fine_search_angle_offset: 0.00523               # in degrees (gets converted to radians)
+coarse_search_angle_offset: 0.523       # in degrees (gets converted to radians)
+coarse_angle_resolution: 0.0523                # in degrees (gets converted to radians)
 minimum_angle_penalty: 0.9
 minimum_distance_penalty: 0.5
 use_response_expansion: true

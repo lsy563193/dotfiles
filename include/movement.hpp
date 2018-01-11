@@ -104,6 +104,9 @@ public:
 
 	Point32_t calcTmpTarget() override ;
 	Point32_t _calcTmpTarget();
+	bool calcTmpTarget() override ;
+	Point32_t _calcTmpTargetNoneRealTime();
+	Point32_t _calcTmpTargetRealTime();
 
 private:
 };

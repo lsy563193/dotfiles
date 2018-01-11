@@ -52,31 +52,6 @@ bool CleanModeSpot::mapMark()
 	return false;
 }
 
-bool CleanModeSpot::isExit()
-{
-	
-	if (ev.fatal_quit || sp_action_->isExit())
-	{
-		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
-		setNextMode(md_idle);
-		return true;
-	}
-
-	if(ev.key_clean_pressed || ev.key_long_pressed){
-		ev.key_clean_pressed = false;
-		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
-		setNextMode(md_idle);
-		return true;
-	}
-	if(ev.cliff_all_triggered) {
-		ev.cliff_all_triggered = false;
-		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
-		setNextMode(md_idle);
-		return true;
-	}
-	return ACleanMode::isExit();
-}
-
 bool CleanModeSpot::setNextAction()
 {
 	if (sp_state == state_init)
@@ -123,11 +98,6 @@ void CleanModeSpot::keyClean(bool state_now,bool state_last)
 	beeper.play_for_command(true);
 }
 */
-
-void CleanModeSpot::cliffAll(bool state_now, bool state_last)
-{
-	ev.cliff_all_triggered = true;
-}
 
 void CleanModeSpot::keyClean(bool state_now, bool state_last)
 {
