@@ -19,13 +19,6 @@
 
 typedef std::deque<Point32_t> Points;
 
-typedef struct {
-	Point32_t home_point;
-	bool have_seen_charger;
-} HomePoint;
-
-typedef std::deque<HomePoint> HomePoints;
-
 typedef enum {
 	// The sequence of CLEAN_MAP value must be UNCLEAN < CLEANED < MAP_BLOCKED < SLAM_MAP_BLOCKED
   UNCLEAN  = 0,

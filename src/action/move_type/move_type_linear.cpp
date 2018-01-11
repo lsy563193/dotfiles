@@ -54,8 +54,11 @@ bool MoveTypeLinear::isFinish()
 				sp_movement_.reset(new MovementFollowPointLinear());
 			}
 		}
-		else if (movement_i_ == mm_forward && !handleMoveBackEvent(p_clean_mode))
-			return true;
+		else if (movement_i_ == mm_forward)
+		{
+			if (!handleMoveBackEvent(p_clean_mode))
+				return true;
+		}
 		else //if (movement_i_ == mm_back)
 			return true;
 	}

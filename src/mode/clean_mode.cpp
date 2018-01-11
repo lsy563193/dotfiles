@@ -55,7 +55,7 @@ ACleanMode::ACleanMode()
 
 	c_rcon.resetStatus();
 
-	home_points_.resize(1, {{0, 0, 0}, false});
+	home_points_.clear();
 	clean_path_algorithm_.reset();
 	go_home_path_algorithm_.reset();
 
@@ -323,26 +323,6 @@ void ACleanMode::goHomePointUpdateAction()
 
 }
 
-bool ACleanMode::isStateGoHomePointUpdateFinish()
-{
-	goHomePointUpdateAction();
-
-	if(sp_action_ == nullptr) {
-		if (reach_home_point_ && go_home_path_algorithm_->getCurrentHomePoint().have_seen_charger) {
-			reach_home_point_ = false;
-			sp_state = state_go_to_charger;
-			sp_state->init();
-			return false;
-		}
-		else {
-			// path is emply;
-			sp_state = nullptr;
-			return true;
-		}
-	}
-	return true;
-}
-
 void ACleanMode::setRconPos(float cd,float dist)
 {
 //	float yaw = robot::instance()->getWorldPoseAngle()/10.0;
@@ -552,20 +532,26 @@ Cells ACleanMode::pointsGenerateCells(Points &targets)
 void ACleanMode::setHomePoint()
 {
 	// Set home cell.
-	HomePoints::iterator home_point_it = home_points_.begin();
+	Points::iterator home_point_it = home_points_.begin();
 	for (;home_point_it != home_points_.end(); home_point_it++)
 	{
-		if (home_point_it->home_point.toCell() == getPosition().toCell())
+		if (home_point_it->toCell() == getPosition().toCell())
 		{
-			ROS_INFO("%s %d: Home cell(%d, %d) exists.",
-					 __FUNCTION__, __LINE__, home_point_it->home_point.toCell().x, home_point_it->home_point.toCell().y);
+			ROS_INFO("%s %d: Home point(%d, %d) exists.",
+					 __FUNCTION__, __LINE__, home_point_it->toCell().x, home_point_it->toCell().y);
 			return;
 		}
 	}
-	home_points_.push_front({getPosition(), true});
-	ROS_INFO("%s %d: Set home cell(%d, %d).", __FUNCTION__, __LINE__,
-			 home_points_.front().home_point.x,
-			 home_points_.front().home_point.y);
+
+	if (home_points_.size() >= HOME_POINTS_SIZE)
+		// Drop the oldest home point to keep the home_points_.size() is within HOME_POINTS_SIZE.
+		home_points_.pop_back();
+
+	home_points_.push_front(getPosition());
+	std::string msg = "Update Home_points_: ";
+	for (auto it : home_points_)
+		msg += "(" + std::to_string(it.toCell().x) + ", " + std::to_string(it.toCell().y) + "),";
+	ROS_INFO("%s %d: %s", __FUNCTION__, __LINE__, msg.c_str());
 }
 
 // ------------------Handlers--------------------------
@@ -670,7 +656,7 @@ bool ACleanMode::checkEnterGoHomePointState()
 		sp_state = state_go_home_point;
 		sp_state->init();
 		if (go_home_path_algorithm_ == nullptr)
-			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
+			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_, start_point_));
 		return true;
 	}
 
@@ -690,17 +676,22 @@ bool ACleanMode::updateActionInStateGoHomePoint()
 
 	old_dir_ = new_dir_;
 
-	ROS_INFO("%s %d: reach_home_point_(%d), curr(%d, %d), current home point(%d, %d).", __FUNCTION__, __LINE__,
-			 reach_home_point_, getPosition().toCell().x, getPosition().toCell().y,
-			 go_home_path_algorithm_->getCurrentHomePoint().home_point.toCell().x,
-			 go_home_path_algorithm_->getCurrentHomePoint().home_point.toCell().y);
+//	ROS_INFO("%s %d: curr(%d, %d), current home point(%d, %d).", __FUNCTION__, __LINE__,
+//			 getPosition().toCell().x, getPosition().toCell().y,
+//			 go_home_path_algorithm_->getCurrentHomePoint().toCell().x,
+//			 go_home_path_algorithm_->getCurrentHomePoint().toCell().y);
 	if (ev.rcon_triggered)
-		// Directly switch to state go to charger.
-		update_finish = false;
-	else if(!reach_home_point_ && getPosition().toCell() == go_home_path_algorithm_->getCurrentHomePoint().home_point.toCell())
 	{
-		reach_home_point_ = true;
+		// Directly switch to state go to charger.
+		ROS_INFO("%s %d: Rcon T signal triggered and switch to state go to charger.", __FUNCTION__, __LINE__);
+		should_go_to_charger_ = true;
+		ev.rcon_triggered = 0;
 		update_finish = false;
+	}
+	else if (go_home_path_algorithm_->reachTarget(should_go_to_charger_))
+	{
+		update_finish = false;
+		home_points_ = go_home_path_algorithm_->getRestHomePoints();
 	}
 	else if (go_home_path_algorithm_->generatePath(clean_map_, getPosition(),old_dir_, plan_path_))
 	{
@@ -709,42 +700,27 @@ bool ACleanMode::updateActionInStateGoHomePoint()
 		plan_path_.pop_front();
 		go_home_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
 		robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
-		reach_home_point_ = false;
+		should_go_to_charger_ = false;
 		action_i_ = ac_linear;
 		genNextAction();
 		update_finish = true;
-	}else{
+		home_points_ = go_home_path_algorithm_->getRestHomePoints();
+	}else
 		// path is empty.
 		update_finish = false;
-	}
-	home_points_ = go_home_path_algorithm_->getRestHomePoints();
+
 
 	return update_finish;
 }
 
 void ACleanMode::switchInStateGoHomePoint()
 {
-	if (ev.rcon_triggered)
+	if (should_go_to_charger_)
 	{
-		ROS_INFO("%s %d: Rcon T signal triggered and switch to state go to charger.", __FUNCTION__, __LINE__);
-		ev.rcon_triggered = 0;
+		should_go_to_charger_ = false;
 		sp_state = state_go_to_charger;
 		sp_state->init();
 		sp_action_.reset();
-	}
-	else if (reach_home_point_)
-	{
-		if (go_home_path_algorithm_->getCurrentHomePoint().have_seen_charger)
-		{
-			sp_state = state_go_to_charger;
-			sp_state->init();
-			sp_action_.reset();
-		}
-		else // For last home point.
-		{
-			ROS_INFO("%s %d, No more home point, finish cleaning.", __FUNCTION__, __LINE__);
-			sp_state = nullptr;
-		}
 	}
 	else // path is empty.
 	{
@@ -787,29 +763,9 @@ void ACleanMode::switchInStateGoToCharger() {
 		// Reach charger and exit clean mode.
 		sp_state = nullptr;
 	} else {
-		if (reach_home_point_)
-		{
-			if (home_points_.empty())
-			{
-				ROS_INFO("%s %d: No more home points, just go back to (0, 0).", __FUNCTION__, __LINE__);
-				home_points_.push_front({{0, 0, 0}, false});
-				go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
-			} else
-			{
-				ROS_INFO("%s %d: Failed to go to charger, try next home point.", __FUNCTION__, __LINE__);
-				home_points_.pop_front();
-				go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
-				sp_state = state_go_home_point;
-				sp_state->init();
-			}
-		}
-		else // Triggered by rcon signal but didn't reach home point.
-		{
-			ROS_INFO("%s %d: Failed to go to charger, resume go to this home point.", __FUNCTION__, __LINE__);
-			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
-			sp_state = state_go_home_point;
-			sp_state->init();
-		}
+		ROS_INFO("%s %d: Failed to go to charger, resume state go home point.", __FUNCTION__, __LINE__);
+		sp_state = state_go_home_point;
+		sp_state->init();
 	}
 }
 
@@ -897,7 +853,7 @@ bool ACleanMode::updateActionInStateExploration() {
 	else {
 		ROS_WARN("%s,%d:exploration finish,did not find charge", __func__, __LINE__);
 		if (go_home_path_algorithm_ == nullptr)
-			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
+			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_, start_point_));
 		action_i_ = ac_null;
 	}
 	return false;
