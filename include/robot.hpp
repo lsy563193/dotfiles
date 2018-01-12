@@ -289,8 +289,9 @@ public:
 	}
 
 	bool inTargetRange(const Vector2<double> &target) {
-		return (target.x > CHASE_X && target.x < 4 && fabs(target.y) < ROBOT_RADIUS ) ||
-					 (target.x > 0 && target.x < 4 && target.y >y_min_target && target.y < y_max_target);
+		return (target.x > 0 && target.y > 0.4) ||
+					 (target.x > CHASE_X && std::abs(target.y) < ROBOT_RADIUS) ||
+					 (target.y < -ROBOT_RADIUS);
 	}
 
 	bool inForwardRange(const Vector2<double> &point) const {

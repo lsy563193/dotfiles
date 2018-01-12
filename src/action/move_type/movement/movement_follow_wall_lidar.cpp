@@ -96,6 +96,9 @@ bool MovementFollowWallLidar::isFinish() {
 
 bool MovementFollowWallLidar::is_near() {
 //	if(tmp_targets.empty())
-		return false;
+//	auto obs_dis_front = lidar.getObstacleDistance(0,ROBOT_RADIUS);
+//	ROS_ERROR("obs_dis_front(%d)",obs_dis_front);
+//	return obs_dis_front < 0.25;
+	return false;
 }
 

@@ -1282,7 +1282,7 @@ double Lidar::getObstacleDistance(uint8_t dir, double range)
 		return 0;
 	}
 
-	for(auto point:lidarXY_points){
+	for( auto point:lidarXY_points){
 		x = point.x;
 		y = point.y;
 		x_to_robot = fabs(x) - ROBOT_RADIUS * sin(acos(fabs(y) / ROBOT_RADIUS));
