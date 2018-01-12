@@ -243,7 +243,7 @@ private:
 public:
 	explicit Paras(bool is_left):is_left_(is_left)
 {
-		narrow = 0.197;
+		narrow = is_left ? 0.187 : 0.197;
 
 		y_min = 0.0;
 		y_max = is_left ? 0.3 : 0.25;
@@ -261,7 +261,7 @@ public:
 		x_max_side = std::max(x_side_start, x_side_end);
 
 		auto y_side_start = 0.0;
-		auto y_side_end = is_left ? narrow: -narrow;
+		auto y_side_end = is_left ? narrow + 0.01 : -narrow + 0.01;
 		y_min_side = std::min(y_side_start, y_side_end);
 		y_max_side = std::max(y_side_start, y_side_end);
 
