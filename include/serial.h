@@ -99,10 +99,6 @@
 #define CTL_CMD				17
 #define CTL_CRC				18
 
-#ifndef CR_PORT
-#define CR_PORT			"/dev/ttyS3"
-#endif
-
 #define DUMMY_DOWNLINK_OFFSET		2
 #define KEY_DOWNLINK_OFFSET			9
 #define SEQUENCE_DOWNLINK_OFFSET	7

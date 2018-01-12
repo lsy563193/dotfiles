@@ -18,13 +18,14 @@ pthread_cond_t serial_data_ready_cond = PTHREAD_COND_INITIALIZER;
 
 pp::x900sensor	sensor;
 
+// todo: These variables and the function should be moved to Beeper class.
 bool robotbase_beep_update_flag = false;
-int robotbase_speaker_sound_loop_count = 0;
+int robotbase_beeper_sound_loop_count = 0;
 uint8_t robotbase_sound_code = 0;
-int robotbase_speaker_sound_time_count = 0;
-int temp_speaker_sound_time_count = -1;
-int robotbase_speaker_silence_time_count = 0;
-int temp_speaker_silence_time_count = 0;
+int robotbase_beeper_sound_time_count = 0;
+int temp_beeper_sound_time_count = -1;
+int robotbase_beeper_silence_time_count = 0;
+int temp_beeper_silence_time_count = 0;
 
 // For led control.
 uint8_t robotbase_led_type = LED_STEADY;
@@ -495,13 +496,13 @@ void serial_send_routine_cb()
 		/*-------------------Process for beeper.play and led -----------------------*/
 		// Force reset the beeper action when beeper() function is called, especially when last beeper action is not over. It can stop last beeper action and directly start the updated beeper.play action.
 		if (robotbase_beep_update_flag){
-			temp_speaker_sound_time_count = -1;
-			temp_speaker_silence_time_count = 0;
+			temp_beeper_sound_time_count = -1;
+			temp_beeper_silence_time_count = 0;
 			robotbase_beep_update_flag = false;
 		}
-		//ROS_INFO("%s %d: tmp_sound_count: %d, tmp_silence_count: %d, sound_loop_count: %d.", __FUNCTION__, __LINE__, temp_speaker_sound_time_count, temp_speaker_silence_time_count, robotbase_speaker_sound_loop_count);
+		//ROS_INFO("%s %d: tmp_sound_count: %d, tmp_silence_count: %d, sound_loop_count: %d.", __FUNCTION__, __LINE__, temp_beeper_sound_time_count, temp_beeper_silence_time_count, robotbase_beeper_sound_loop_count);
 		// If count > 0, it is processing for different alarm.
-		if (robotbase_speaker_sound_loop_count != 0){
+		if (robotbase_beeper_sound_loop_count != 0){
 			process_beep();
 		}
 
@@ -562,30 +563,30 @@ Mode *getNextMode(int next_mode_i_)
 void process_beep()
 {
 	// This routine handles the speaker sounding logic
-	// If temp_speaker_silence_time_count == 0, it is the end of loop of silence, so decrease the count and set sound in g_send_stream.
-	if (temp_speaker_silence_time_count == 0){
-		temp_speaker_silence_time_count--;
-		temp_speaker_sound_time_count = robotbase_speaker_sound_time_count;
+	// If temp_beeper_silence_time_count == 0, it is the end of loop of silence, so decrease the count and set sound in g_send_stream.
+	if (temp_beeper_silence_time_count == 0){
+		temp_beeper_silence_time_count--;
+		temp_beeper_sound_time_count = robotbase_beeper_sound_time_count;
 		serial.setSendData(CTL_BUZZER, robotbase_sound_code & 0xFF);
 	}
-	// If temp_speaker_sound_time_count == 0, it is the end of loop of sound, so decrease the count and set sound in g_send_stream.
-	if (temp_speaker_sound_time_count == 0){
-		temp_speaker_sound_time_count--;
-		temp_speaker_silence_time_count = robotbase_speaker_silence_time_count;
+	// If temp_beeper_sound_time_count == 0, it is the end of loop of sound, so decrease the count and set sound in g_send_stream.
+	if (temp_beeper_sound_time_count == 0){
+		temp_beeper_sound_time_count--;
+		temp_beeper_silence_time_count = robotbase_beeper_silence_time_count;
 		serial.setSendData(CTL_BUZZER, 0x00);
 		// Decreace the speaker sound loop count because when it turns to silence this sound loop will be over when silence end, so we can decreace the sound loop count here.
 		// If it is for constant beeper.play, the loop count will be less than 0, it will not decrease either.
-		if (robotbase_speaker_sound_loop_count > 0){
-			robotbase_speaker_sound_loop_count--;
+		if (robotbase_beeper_sound_loop_count > 0){
+			robotbase_beeper_sound_loop_count--;
 		}
 	}
-	// If temp_speaker_silence_time_count == -1, it is in loop of sound, so decrease the count.
-	if (temp_speaker_silence_time_count == -1){
-		temp_speaker_sound_time_count--;
+	// If temp_beeper_silence_time_count == -1, it is in loop of sound, so decrease the count.
+	if (temp_beeper_silence_time_count == -1){
+		temp_beeper_sound_time_count--;
 	}
-	// If temp_speaker_sound_time_count == -1, it is in loop of silence, so decrease the count.
-	if (temp_speaker_sound_time_count == -1){
-		temp_speaker_silence_time_count--;
+	// If temp_beeper_sound_time_count == -1, it is in loop of silence, so decrease the count.
+	if (temp_beeper_sound_time_count == -1){
+		temp_beeper_silence_time_count--;
 	}
 }
 

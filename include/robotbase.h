@@ -12,10 +12,10 @@
 extern bool g_is_tilt;
 
 extern bool robotbase_beep_update_flag;
-extern int robotbase_speaker_sound_loop_count;
+extern int robotbase_beeper_sound_loop_count;
 extern uint8_t robotbase_sound_code;
-extern int robotbase_speaker_sound_time_count;
-extern int robotbase_speaker_silence_time_count;
+extern int robotbase_beeper_sound_time_count;
+extern int robotbase_beeper_silence_time_count;
 // For led control.
 extern uint8_t robotbase_led_type;
 extern bool robotbase_led_update_flag;
