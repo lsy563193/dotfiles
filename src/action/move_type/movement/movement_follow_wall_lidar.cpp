@@ -31,7 +31,7 @@ Points Circle::getPoints(int precision)
 {
 	Points points1;
 	Points points2;
-	for(auto i=1; i<=precision; i++)
+	for(auto i=0; i<=precision; i++)
 	{
 		auto y = (this->r*2)/precision*i;
 		auto x = static_cast<int32_t>(sqrt(pow(this->r, 2) - pow(y - this->r, 2)));
@@ -53,7 +53,7 @@ Points MovementFollowWallLidar::_calcTmpTarget() {
 	{
 		if(!is_left_)
 			point.y = -point.y;
-		tmp_targets.push_back(getPosition().getRelative(point.x, point.y));
+		tmp_targets.push_back(getPosition().getRelative(point.x + CELL_SIZE, point.y));
 	}
 	return tmp_targets;
 }
