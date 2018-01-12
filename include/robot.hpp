@@ -243,7 +243,7 @@ private:
 public:
 	explicit Paras(bool is_left):is_left_(is_left)
 {
-		narrow = is_left ? 0.187 : 0.197;
+		narrow = 0.197;
 
 		y_min = 0.0;
 		y_max = is_left ? 0.3 : 0.25;
