@@ -206,8 +206,8 @@ Cells APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const 
 	// For protection, the target cell must be reachable.
 	if (map.getCell(COST_MAP, target.x, target.y) == COST_HIGH)
 	{
-		ROS_ERROR("%s %d: Start cell has high cost(%d)! This target should be filtered before calling this function.",
-				  __FUNCTION__, __LINE__, map.getCell(COST_MAP, start.x, start.y));
+		ROS_ERROR("%s %d: Target cell has high cost(%d)! This target should be filtered before calling this function.",
+				  __FUNCTION__, __LINE__, map.getCell(COST_MAP, target.x, target.y));
 		return path_;
 	}
 
