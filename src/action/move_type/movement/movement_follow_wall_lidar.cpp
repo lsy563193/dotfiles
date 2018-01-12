@@ -83,7 +83,7 @@ Point32_t MovementFollowWallLidar::calcTmpTarget() {
 //		ROS_WARN("near pop target(%d)",p_tmp_targets_->size());
 	}
 //	ROS_WARN("is_virtual_target(%d,%d)", lidar_targets_.empty(),lidar_targets_.size());
-	robot::instance()->pubTmpTarget(virtual_targets_, p_tmp_targets_ == &virtual_targets_ );
+	robot::instance()->pubTmpTarget(p_tmp_targets_->front(), p_tmp_targets_ == &virtual_targets_ );
 	return p_tmp_targets_->front();
 }
 

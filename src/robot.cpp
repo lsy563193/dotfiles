@@ -791,7 +791,7 @@ void robot::pubPointMarkers(const std::deque<Vector2<double>> *points, std::stri
 	}
 }
 
-void robot::pubTmpTarget(const Points &points, bool is_virtual) {
+void robot::pubTmpTarget(const Point32_t &point, bool is_virtual) {
 	visualization_msgs::Marker point_markers;
 	point_markers.ns = "tmp_target";
 	point_markers.id = 0;
@@ -816,7 +816,7 @@ void robot::pubTmpTarget(const Points &points, bool is_virtual) {
 	point_markers.header.frame_id = "/map";
 	point_markers.header.stamp = ros::Time::now();
 
-	for(const auto & point : points)
+//	for(const auto & point : points)
 	{
 		geometry_msgs::Point point_marker;
 		point_marker.x = (static_cast<double>(point.x * CELL_SIZE)) /CELL_COUNT_MUL / 1000;

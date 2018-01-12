@@ -44,7 +44,7 @@ Point32_t MovementFollowPointLinear::calcTmpTarget()
 //	}
 	auto tmp_target_ = _calcTmpTarget();
 
-	robot::instance()->pubTmpTarget(Points{tmp_target_});
+	robot::instance()->pubTmpTarget(tmp_target_);
 	return tmp_target_;
 }
 
