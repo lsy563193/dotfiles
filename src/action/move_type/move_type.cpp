@@ -63,7 +63,7 @@ bool IMoveType::isLidarStop()
 
 bool IMoveType::shouldTurn()
 {
-	ev.lidar_triggered = lidar_get_status();
+//	ev.lidar_triggered = lidar_get_status();
 //	if (ev.lidar_triggered)
 //	{
 //		// Temporary use bumper as lidar triggered.
@@ -74,14 +74,14 @@ bool IMoveType::shouldTurn()
 //		return true;
 //	}
 
-	ev.obs_triggered = (obs.getFront() > obs.getFrontTrigValue() + 1700);
-	if (ev.obs_triggered)
-	{
-//		ev.obs_triggered = BLOCK_FRONT;
-//		g_turn_angle = obsTurnAngle();
-		ROS_WARN("%s %d: OBS triggered.", __FUNCTION__, __LINE__);
-		return true;
-	}
+//	ev.obs_triggered = (obs.getFront() > obs.getFrontTrigValue() + 1700);
+//	if (ev.obs_triggered)
+//	{
+////		ev.obs_triggered = BLOCK_FRONT;
+////		g_turn_angle = obsTurnAngle();
+//		ROS_WARN("%s %d: OBS triggered.", __FUNCTION__, __LINE__);
+//		return true;
+//	}
 
 	return false;
 }

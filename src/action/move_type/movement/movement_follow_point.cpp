@@ -21,41 +21,45 @@ void AMovementFollowPoint::adjustSpeed(int32_t &left_speed, int32_t &right_speed
 		check_limit(integrated_, -150, 150);
 	}
 
-
-//	ROS_INFO("angle_forward_to_turn_(%d),diff(%d)",angle_forward_to_turn_,angle_diff);
-//	if(angle_diff >angle_forward_to_turn_)
-//	{
-//		ROS_WARN("angle_forward_to_turn_(%d),diff(%d)",angle_forward_to_turn_,angle_diff);
-//		base_speed_ = 0;
-//	}else{
-//		if(base_speed_ == 0)
-//		{
-//			ROS_ERROR("angle_turn_to_forward_(%d),diff(%d)",angle_turn_to_forward_,angle_diff);
-//			if(angle_diff < angle_turn_to_forward_)
-//			 base_speed_ = min_speed_;
-//		}
-//	}
-
-	if(is_near())
+	if(std::abs(angle_diff) > angle_forward_to_turn_)
 	{
-		if (base_speed_ > (int32_t) min_speed_){
-			base_speed_--;
-		}
-	}
-	else if (base_speed_ < (int32_t) max_speed_) {
-		if (tick_++ > tick_limit_) {
-			tick_ = 0;
-			base_speed_++;
-		}
-		integrated_ = 0;
+		state_turn = true;
 	}
 
-	left_speed = base_speed_ - angle_diff / kp_ - integrated_ / 150; // - Delta / 20; // - Delta * 10 ; // - integrated_ / 2500;
-	right_speed = base_speed_ + angle_diff / kp_ + integrated_ / 150; // + Delta / 20;// + Delta * 10 ; // + integrated_ / 2500;
+	ROS_INFO("diff(%d), angle_forward_to_turn_(%d)",angle_diff, angle_forward_to_turn_);
+
+	if(!state_turn) {
+		if (is_near()) {
+			if (base_speed_ > (int32_t) min_speed_) {
+				base_speed_--;
+			}
+		}
+		else if (base_speed_ < (int32_t) max_speed_) {
+			if (tick_++ > tick_limit_) {
+				tick_ = 0;
+				base_speed_++;
+			}
+			integrated_ = 0;
+		}
+
+		left_speed = base_speed_ - angle_diff / kp_ -
+								 integrated_ / 150; // - Delta / 20; // - Delta * 10 ; // - integrated_ / 2500;
+		right_speed = base_speed_ + angle_diff / kp_ +
+									integrated_ / 150; // + Delta / 20;// + Delta * 10 ; // + integrated_ / 2500;
 
 //	check_limit(left_speed, 0, max_speed_);
 //	check_limit(right_speed, 0, max_speed_);
+	ROS_INFO("speed(%d,%d)", left_speed, right_speed);
+	}
+	else{//turn
+		left_speed = 5;
+		right_speed = -5;
+		if(std::abs(angle_diff) < angle_turn_to_forward_)
+			state_turn = false;
+	ROS_WARN("speed(%d,%d)", left_speed, right_speed);
+	}
+
 	base_speed_ = (left_speed + right_speed) / 2;
-	ROS_INFO("spedd(%d,%d)",left_speed,right_speed);
+
 }
 
