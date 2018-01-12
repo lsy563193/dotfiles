@@ -127,6 +127,10 @@ bool GoHomePathAlgorithm::generatePathThroughCleanedArea(GridMap &map, const Poi
 			// In this way, start point is not reachable.
 			ROS_INFO("\033[1;46;37m" "%s,%d: start_point_(%d, %d) NOT reachable in this way." "\033[0m",
 					 __FUNCTION__, __LINE__, start_point_.toCell().x, start_point_.toCell().y);
+			home_way_index_ = THROUGH_SLAM_MAP_REACHABLE_AREA;
+			ROS_INFO("%s %d: Clear blocks with slam map.", __FUNCTION__, __LINE__);
+			map.mergeFromSlamGridMap(slam_grid_map, false, false, false, false, false, true);
+			map.print(CLEAN_MAP, curr.toCell().x, curr.toCell().y);
 			return false;
 		}
 	}
@@ -195,6 +199,7 @@ GoHomePathAlgorithm::generatePathThroughSlamMapReachableArea(GridMap &map, const
 			// In this way, start point is not reachable.
 			ROS_INFO("\033[1;46;37m" "%s,%d: start_point_(%d, %d) NOT reachable in this way." "\033[0m",
 					 __FUNCTION__, __LINE__, start_point_.toCell().x, start_point_.toCell().y);
+			home_way_index_ = THROUGH_UNKNOWN_AREA;
 			return false;
 		}
 	}

@@ -163,23 +163,32 @@ bool ACleanMode::isExit()
 	}
 	if (ev.fatal_quit || sp_action_->isExit())
 	{
-		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Exit for ev.fatal_quit or sp_action_->isExit()", __FUNCTION__, __LINE__);
 		setNextMode(md_idle);
 		return true;
 	}
 
 	if(ev.key_clean_pressed || ev.key_long_pressed){
 		ev.key_clean_pressed = false;
-		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Exit for remote key or clean key or long press clean key.", __FUNCTION__, __LINE__);
 		setNextMode(md_idle);
 		return true;
 	}
+
 	if(ev.cliff_all_triggered) {
 		ev.cliff_all_triggered = false;
-		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Exit for cliff all.", __FUNCTION__, __LINE__);
 		setNextMode(md_idle);
 		return true;
 	}
+
+	if (charger.isDirected())
+	{
+		ROS_WARN("%s %d: Exit for directly charge.", __FUNCTION__, __LINE__);
+		setNextMode(md_charge);
+		return true;
+	}
+
 	return false;
 }
 

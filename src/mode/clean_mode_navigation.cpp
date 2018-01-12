@@ -69,6 +69,17 @@ bool CleanModeNav::mapMark()
 
 bool CleanModeNav::isExit()
 {
+	if (sp_state == state_init)
+	{
+		if (action_i_ == ac_open_lidar && sp_action_->isTimeUp())
+		{
+			error.set(ERROR_CODE_LIDAR);
+			setNextMode(md_idle);
+			ev.fatal_quit = true;
+			return true;
+		}
+	}
+
 	if (sp_state == state_pause)
 	{
 		if (sp_action_->isTimeUp())
@@ -94,7 +105,7 @@ bool CleanModeNav::isExit()
 
 	if (ev.fatal_quit || ev.key_long_pressed || ev.cliff_all_triggered || sp_action_->isExit())
 	{
-		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Exit for ev.fatal_quit || ev.key_long_pressed || ev.cliff_all_triggered || sp_action_->isExit().", __FUNCTION__, __LINE__);
 		setNextMode(md_idle);
 		return true;
 	}
@@ -106,7 +117,7 @@ bool CleanModeNav::isExit()
 		return true;
 	}
 
-	return ACleanMode::isExit();
+	return false;
 }
 
 bool CleanModeNav::setNextAction()
