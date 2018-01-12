@@ -261,7 +261,7 @@ public:
 		x_max_side = std::max(x_side_start, x_side_end);
 
 		auto y_side_start = 0.0;
-		auto y_side_end = is_left ? narrow: -narrow;
+		auto y_side_end = is_left ? narrow + 0.01 : -narrow + 0.01;
 		y_min_side = std::min(y_side_start, y_side_end);
 		y_max_side = std::max(y_side_start, y_side_end);
 
