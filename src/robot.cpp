@@ -412,8 +412,8 @@ bool robot::calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,bool is_
 			}
 			auto target = get_middle_point(point1, point2, para);
 
-			if (!para.inTargetRange(target))
-				continue;
+//			if (!para.inTargetRange(target))
+//				continue;
 
 			if (target.Distance({0, 0}) > 0.4)
 				continue;

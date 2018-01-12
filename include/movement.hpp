@@ -51,6 +51,8 @@ protected:
 	uint8_t integration_cycle_{};
 	int32_t integrated_{};
 	int32_t base_speed_{};
+	int16_t angle_forward_to_turn_{};
+	int16_t angle_turn_to_forward_{};
 	int kp_{20};
 	const double TIME_STRAIGHT{0.2};
 };

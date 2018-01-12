@@ -10,6 +10,9 @@
 MovementFollowWallLidar::MovementFollowWallLidar(bool is_left)
 				: IFollowWall(is_left)
 {
+
+	angle_forward_to_turn_ = 600;
+	angle_turn_to_forward_ = 60;
 	min_speed_ = FALL_WALL_MIN_SPEED;
 	max_speed_ = FALL_WALL_MAX_SPEED;
 	base_speed_ = min_speed_;

@@ -6,6 +6,8 @@
 
 MovementFollowPointLinear::MovementFollowPointLinear()
 {
+	angle_forward_to_turn_ = 100;
+	angle_turn_to_forward_ = 60;
 	min_speed_ = LINEAR_MIN_SPEED;
 	max_speed_ = LINEAR_MAX_SPEED;
 	base_speed_ = LINEAR_MIN_SPEED;

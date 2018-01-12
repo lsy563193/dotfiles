@@ -21,6 +21,21 @@ void AMovementFollowPoint::adjustSpeed(int32_t &left_speed, int32_t &right_speed
 		check_limit(integrated_, -150, 150);
 	}
 
+
+//	ROS_INFO("angle_forward_to_turn_(%d),diff(%d)",angle_forward_to_turn_,angle_diff);
+	if(angle_diff >angle_forward_to_turn_)
+	{
+//		ROS_WARN("angle_forward_to_turn_(%d),diff(%d)",angle_forward_to_turn_,angle_diff);
+		base_speed_ = 0;
+	}else{
+		if(base_speed_ == 0)
+		{
+//			ROS_ERROR("angle_turn_to_forward_(%d),diff(%d)",angle_turn_to_forward_,angle_diff);
+			if(angle_diff < angle_turn_to_forward_)
+			 base_speed_ = min_speed_;
+		}
+	}
+
 	if(is_near())
 	{
 		if (base_speed_ > (int32_t) min_speed_){

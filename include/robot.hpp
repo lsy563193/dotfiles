@@ -242,7 +242,7 @@ private:
 	class Paras{
 public:
 	explicit Paras(bool is_left):is_left_(is_left)
-	{
+{
 		narrow = is_left ? 0.187 : 0.197;
 
 		y_min = 0.0;
@@ -289,9 +289,8 @@ public:
 	}
 
 	bool inTargetRange(const Vector2<double> &target) {
-		return target.x < 4
-					 && ((target.x > CHASE_X && fabs(target.y) < ROBOT_RADIUS)
-							 || (target.x > 0  && target.y >y_min_target && target.y < y_max_target ));
+		return (target.x > CHASE_X && target.x < 4 && fabs(target.y) < ROBOT_RADIUS ) ||
+					 (target.x > 0 && target.x < 4 && target.y >y_min_target && target.y < y_max_target);
 	}
 
 	bool inForwardRange(const Vector2<double> &point) const {
