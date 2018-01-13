@@ -3,11 +3,10 @@
 #include <event_manager.h>
 #include "pp.h"
 #include "arch.hpp"
-
+//CELL_COUNT_MUL*1.5
 MovementFollowPointLinear::MovementFollowPointLinear()
 {
-	angle_forward_to_turn_ = 100;
-	angle_turn_to_forward_ = 60;
+	angle_forward_to_turn_ = 1500;
 	min_speed_ = LINEAR_MIN_SPEED;
 	max_speed_ = LINEAR_MAX_SPEED;
 	base_speed_ = LINEAR_MIN_SPEED;
@@ -26,7 +25,7 @@ Point32_t MovementFollowPointLinear::_calcTmpTarget()
 	auto &tmp_target_xy = (isXAxis(p_mode->new_dir_)) ? tmp_target_.x : tmp_target_.y;
 	auto curr_xy = (isXAxis(p_mode->new_dir_)) ? getPosition().x : getPosition().y;
 //	ROS_INFO("curr_xy(%d), target_xy(%d)", curr_xy, tmp_target_xy);
-	auto dis = std::min(std::abs(curr_xy - tmp_target_xy), (int32_t) (LINEAR_NEAR_DISTANCE /*+ CELL_COUNT_MUL*/));
+	auto dis = std::min(std::abs(curr_xy - tmp_target_xy),  (CELL_COUNT_MUL*2 /*+ CELL_COUNT_MUL*/));
 	if (!isPos(p_mode->new_dir_))
 		dis *= -1;
 	tmp_target_xy = curr_xy + dis;
@@ -53,9 +52,9 @@ Point32_t MovementFollowPointLinear::calcTmpTarget()
 bool MovementFollowPointLinear::isFinish()
 {
 
-//	if(AMovementFollowPoint::isFinish())
-//		return true;
-//
+	if(AMovementFollowPoint::isFinish())
+		return true;
+
 	return sp_mt_->shouldMoveBack();
 }
 

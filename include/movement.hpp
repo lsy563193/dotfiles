@@ -37,7 +37,6 @@ protected:
 
 class AMovementFollowPoint:public IMovement{
 public:
-	AMovementFollowPoint();
 	virtual bool is_near()=0;
 	virtual Point32_t calcTmpTarget()=0;
 	bool isFinish() override ;

@@ -18,7 +18,7 @@ void AMovementFollowPoint::adjustSpeed(int32_t &left_speed, int32_t &right_speed
 		check_limit(integrated_, -150, 150);
 	}
 
-	ROS_INFO("diff(%d), angle_forward_to_turn_(%d)",angle_diff, angle_forward_to_turn_);
+//	ROS_INFO("diff(%d), angle_forward_to_turn_(%d)",angle_diff, angle_forward_to_turn_);
 
 		if (is_near()) {
 			if (base_speed_ > (int32_t) min_speed_) {
@@ -48,17 +48,11 @@ void AMovementFollowPoint::adjustSpeed(int32_t &left_speed, int32_t &right_speed
 
 bool AMovementFollowPoint::isFinish() {
 	angle_diff = getPosition().angleDiffPoint(calcTmpTarget());
-	INFO_BLUE("angle_diff");
-	ROS_INFO("angle_diff(%d)", angle_diff);
 	if(std::abs(angle_diff) > angle_forward_to_turn_)
 	{
-		INFO_RED("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+		ROS_INFO("angle_diff(%d)", angle_diff);
 		sp_mt_->state_turn = true;
 		return true;
 	}
 	return false;
-}
-
-AMovementFollowPoint::AMovementFollowPoint() {
-
 }
