@@ -214,8 +214,7 @@ bool CleanModeFollowWall::generatePath(GridMap &map, const Point32_t &curr, cons
 		auto curr = getPosition();
 		fw_map.reset(CLEAN_MAP);
 		auto angle = (reach_cleaned_count_ != 0 && reach_cleaned_count_ <= 3) ? -900 : 0;
-		auto point = getPosition();
-		point.th = ranged_angle(curr.th + angle);
+		auto point = getPosition().addAngle(angle);
 		targets.push_back(point);
 		ROS_WARN("curr.th = %d, angle = %d,point.th(%d)", curr.th, angle,point.th);
 		point = point.getRelative(8 * 1000, 0);

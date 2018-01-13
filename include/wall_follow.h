@@ -59,7 +59,7 @@ void dynamic_base(uint32_t Cy)
 	obstacle_distance_left = lidar.getObstacleDistance(2,ROBOT_RADIUS);
 	obstacle_distance_right = lidar.getObstacleDistance(3,ROBOT_RADIUS);
 
-	if (abs_minus(Left_Everage_Value, Left_Temp_Buffer) > 20 || obstacle_distance_left < (ROBOT_RADIUS + 0.30) || sensor.left_wall > 300)
+	if (std::abs(Left_Everage_Value - Left_Temp_Buffer) > 20 || obstacle_distance_left < (ROBOT_RADIUS + 0.30) || sensor.left_wall > 300)
 	{
 //		ROS_ERROR("left_reset");
 		Left_Everage_Value = 0;
@@ -88,7 +88,7 @@ void dynamic_base(uint32_t Cy)
 	Right_E_Counter++;
 	Right_Everage_Value = Right_Sum_Value / Right_E_Counter;
 
-	if (abs_minus(Right_Everage_Value, Right_Temp_Buffer) > 20 || obstacle_distance_right < (ROBOT_RADIUS + 0.30) || sensor.right_wall > 300)
+	if (std::abs(Right_Everage_Value - Right_Temp_Buffer) > 20 || obstacle_distance_right < (ROBOT_RADIUS + 0.30) || sensor.right_wall > 300)
 	{
 //		ROS_ERROR("right_reset");
 		Right_Everage_Value = 0;

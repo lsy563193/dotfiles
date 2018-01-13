@@ -125,8 +125,8 @@ bool MovementGoToCharger::isSwitch()
 		if(gyro_step < 3600)
 		{
 			// Handle for angle
-			current_angle = robot::instance()->getWorldPoseAngle();
-			angle_offset = static_cast<float>(ranged_angle((current_angle - last_angle)));
+			current_angle = getPosition().th;
+			angle_offset = static_cast<double>(getPosition().angleDiff(last_angle));
 			ROS_DEBUG("%s %d: Current_Angle = %f, Last_Angle = %f, Angle_Offset = %f, Gyro_Step = %f.", __FUNCTION__, __LINE__, current_angle, last_angle, angle_offset, gyro_step);
 			if (angle_offset < 0)
 				gyro_step += (-angle_offset);
@@ -488,8 +488,8 @@ bool MovementGoToCharger::isSwitch()
 
 		if(gyro_step < 3600)
 		{
-			current_angle = robot::instance()->getWorldPoseAngle();
-			angle_offset = static_cast<float>(ranged_angle((current_angle - last_angle)));
+			current_angle = getPosition().th;
+			angle_offset = static_cast<float>(getPosition().angleDiff(last_angle));
 			ROS_DEBUG("%s %d: Current_Angle = %f, Last_Angle = %f, Angle_Offset = %f, Gyro_Step = %f.", __FUNCTION__, __LINE__, current_angle, last_angle, angle_offset, gyro_step);
 			if (check_position_dir == gtc_check_position_left && angle_offset > 0)
 				gyro_step += angle_offset;

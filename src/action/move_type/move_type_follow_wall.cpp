@@ -16,7 +16,7 @@ MoveTypeFollowWall::MoveTypeFollowWall(bool is_left)
 //		p_clean_mode.target_point_ = p_clean_mode->plan_path_.front();
 	is_left_ = is_left;
 	int16_t turn_angle = getTurnAngle(!p_clean_mode->plan_path_.empty());
-	turn_target_angle_ = ranged_angle(getPosition().th + turn_angle);
+	turn_target_angle_ = getPosition().addAngle(turn_angle).th;
 	movement_i_ = mm_turn;
 	sp_movement_.reset(new MovementTurn(turn_target_angle_, ROTATE_TOP_SPEED));
 	IMovement::sp_mt_ = this;
@@ -78,7 +78,7 @@ bool MoveTypeFollowWall::isFinish()
 			{
 				p_clean_mode->actionFollowWallSaveBlocks();
 				int16_t turn_angle = getTurnAngle(false);
-				turn_target_angle_ = ranged_angle(robot::instance()->getWorldPoseAngle() + turn_angle);
+				turn_target_angle_ = getPosition().addAngle(turn_angle).th;
 				movement_i_ = mm_turn;
 				sp_movement_.reset(new MovementTurn(turn_target_angle_, ROTATE_TOP_SPEED));
 				resetTriggeredValue();
@@ -87,7 +87,7 @@ bool MoveTypeFollowWall::isFinish()
 		else if (movement_i_ == mm_back) {
 			movement_i_ = mm_turn;
 			int16_t turn_angle = getTurnAngle(false);
-			turn_target_angle_ = ranged_angle(robot::instance()->getWorldPoseAngle() + turn_angle);
+			turn_target_angle_ = getPosition().addAngle(turn_angle).th;
 			sp_movement_.reset(new MovementTurn(turn_target_angle_, ROTATE_TOP_SPEED));
 			resetTriggeredValue();
 		}
@@ -349,7 +349,7 @@ int16_t MoveTypeFollowWall::getTurnAngle(bool use_target_angle)
 		auto ev_turn_angle = getTurnAngleByEvent();
 		if(use_target_angle) {
 			auto target_point_ = ((ACleanMode*)sp_mode_)->plan_path_.front();
-			auto tg_turn_angle = getPosition().angleDiff(target_point_);;
+			auto tg_turn_angle = getPosition().angleDiffPoint(target_point_);;
 			turn_angle = (std::abs(ev_turn_angle) > std::abs(tg_turn_angle)) ? ev_turn_angle : tg_turn_angle;
 			ROS_INFO("%s %d: target_turn_angle(%d), event_turn_angle(%d), choose the big one(%d)",
 					 __FUNCTION__, __LINE__, tg_turn_angle, ev_turn_angle, turn_angle);

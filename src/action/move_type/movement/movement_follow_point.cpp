@@ -47,7 +47,7 @@ void AMovementFollowPoint::adjustSpeed(int32_t &left_speed, int32_t &right_speed
 }
 
 bool AMovementFollowPoint::isFinish() {
-	angle_diff = getPosition().angleDiff(calcTmpTarget());
+	angle_diff = getPosition().angleDiffPoint(calcTmpTarget());
 	INFO_BLUE("angle_diff");
 	ROS_INFO("angle_diff(%d)", angle_diff);
 	if(std::abs(angle_diff) > angle_forward_to_turn_)

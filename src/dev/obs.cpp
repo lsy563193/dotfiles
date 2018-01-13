@@ -66,7 +66,7 @@ void Obs::DynamicAdjust(uint16_t count) {
 		cnt[i]++;
 		int16_t avg = sum[i] / cnt[i];
 //		ROS_WARN("i = %d, avg(%d), (%d / %d), ",i, avg, sum[i], cnt[i]);
-		auto diff = abs_minus(avg, get);
+		auto diff = std::abs(avg - get);
 		if (diff > 50) {
 //		ROS_WARN("i = %d, diff = (%d) > 50.", i, diff);
 			cnt[i] = 0;

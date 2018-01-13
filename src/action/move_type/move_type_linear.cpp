@@ -88,8 +88,7 @@ bool MoveTypeLinear::isPoseReach()
 	// Checking if robot has reached target cell and target angle.
 //	PP_INFO();
 	auto target_point_ = ((ACleanMode*)sp_mode_)->plan_path_.front();
-	auto target_angle = target_point_.th;
-	if (isCellReach() && std::abs(ranged_angle(robot::instance()->getWorldPoseAngle() - target_angle)) < 200)
+	if (isCellReach() && std::abs(getPosition().angleDiffPoint(target_point_)) < 200)
 	{
 		ROS_INFO("\033[1m""%s, %d: MoveTypeLinear, reach the target cell and pose(%d,%d,%d)""\033[0m", __FUNCTION__, __LINE__,
 				 target_point_.toCell().x, target_point_.toCell().y, target_point_.th);
