@@ -383,6 +383,31 @@ public:
 	bool isNearTo(Point32_t other, int32_t count) const {
 		return std::abs(this->x - other.x) <count && std::abs(this->y - other.y) < count;
 	};
+
+	int16_t angleDiff(Point32_t other) const {
+			int16_t alpha = 0;
+			if (this->x == other.x) {
+				if (other.y > this->y) {
+					alpha = 900;
+				} else if (other.y < this->y) {
+					alpha = 2700;
+				} else {
+					alpha = 0;
+				}
+			} else {
+				alpha = round(rad_2_deg(atan(((double) (other.y - this->y) / (other.x - this->x))), 10));
+
+				if (other.x < this->x) {
+					alpha += 1800;
+				}
+
+				if (alpha < 0) {
+					alpha += 3600;
+				}
+			}
+
+			return ranged_angle(alpha - this->th);
+	}
   Cell_t toCell() const {
     return {countToCell(x), countToCell(y)};
   }

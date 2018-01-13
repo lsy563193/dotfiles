@@ -52,6 +52,10 @@ Point32_t MovementFollowPointLinear::calcTmpTarget()
 
 bool MovementFollowPointLinear::isFinish()
 {
+
+//	if(AMovementFollowPoint::isFinish())
+//		return true;
+//
 	return sp_mt_->shouldMoveBack();
 }
 

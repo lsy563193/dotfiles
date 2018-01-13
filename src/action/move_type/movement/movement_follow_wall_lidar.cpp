@@ -91,6 +91,8 @@ Point32_t MovementFollowWallLidar::calcTmpTarget() {
 }
 
 bool MovementFollowWallLidar::isFinish() {
+	if(AMovementFollowPoint::isFinish())
+		return true;
 	return sp_mt_->shouldMoveBack() || sp_mt_->shouldTurn();
 }
 
