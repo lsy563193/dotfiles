@@ -245,15 +245,15 @@ public:
 
 	virtual bool MoveTypeLinearIsFinish(MoveTypeLinear *p_mt);
 	int reach_cleaned_count_{};
-	static Points passed_path_;
-	static Points plan_path_;
+	Points passed_path_{};
+	Points plan_path_{};
 
-	static int old_dir_;
-	static int new_dir_;
+	int old_dir_{};
+	int new_dir_{};
 
-	static boost::shared_ptr<APathAlgorithm> clean_path_algorithm_;
-	static boost::shared_ptr<GoHomePathAlgorithm> go_home_path_algorithm_;
-	static GridMap clean_map_;
+	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
+	boost::shared_ptr<GoHomePathAlgorithm> go_home_path_algorithm_{};
+	GridMap clean_map_{};
 	Point32_t charger_pos_{};//charger postion
 
 	// State null
@@ -376,32 +376,32 @@ public:
 	{
 		return sp_state == state_pause;
 	}
-	static State *sp_state;
-	static State *state_init;
-	static State *state_clean;
+	State *sp_state{};
+	State *state_init;
+	State *state_clean;
 protected:
-	static std::vector<State*> sp_saved_states;
-	static State *state_go_home_point;
-	static State *state_go_to_charger;
-	static State *state_charge;
-	static State *state_trapped;
-	static State *state_spot;
-	static State *state_exception_resume;
-	static State *state_exploration;
-	static State *state_resume_low_battery_charge;
-	static State *state_pause;
+	std::vector<State*> sp_saved_states;
+	State *state_go_home_point;
+	State *state_go_to_charger;
+	State *state_charge;
+	State *state_trapped;
+	State *state_spot;
+	State *state_exception_resume;
+	State *state_exploration;
+	State *state_resume_low_battery_charge;
+	State *state_pause;
 
 
 protected:
-	static bool low_battery_charge_;
-	static bool moved_during_pause_;
-	Points home_points_;
+	bool low_battery_charge_{};
+	bool moved_during_pause_{};
+	Points home_points_{};
 	Point32_t start_point_{0, 0, 0};
 	bool should_go_to_charger_{false};
 public:
 //	uint8_t saveFollowWall(bool is_left);
 //	std::vector<Cell_t> temp_fw_cells;
-	Point32_t last_;
+	Point32_t last_{};
 	bool found_temp_charger_{};
 	bool in_rcon_signal_range_{};
 	bool should_mark_charger_{};
@@ -533,45 +533,19 @@ public:
 
 	~CleanModeFollowWall() override;
 
-//	bool setNextAction() override;
-
 	bool mapMark() override;
 
 	void keyClean(bool state_now, bool state_last) override;
 	void remoteMax(bool state_now, bool state_last) override;
 
-//	void overCurrentWheelLeft(bool state_now, bool state_last);
-//
-//	void overCurrentWheelRight(bool state_now, bool state_last);
-//
 	void remoteClean(bool state_now, bool state_last) override;
 	void switchInStateClean() override;
 	bool generatePath(GridMap &map, const Point32_t &curr, const int &last_dir, Points &targets);
-//
-//	void remoteHome(bool state_now, bool state_last);
-//
-//	void remoteDirectionLeft(bool state_now, bool state_last);
-//
-//	void cliffAll(bool state_now, bool state_last);
-//
-//	void batteryHome(bool state_now, bool state_last);
-//
-//	void chargeDetect(bool state_now, bool state_last);
+
 	bool MoveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) override ;
-
-	int16_t wf_path_find_shortest_path(GridMap& map, int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound);
-
-	int16_t wf_path_find_shortest_path_ranged(GridMap& map, int16_t curr_x, int16_t curr_y, int16_t end_x, int16_t end_y, uint8_t bound,
-																						int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max,
-																						bool used_unknown);
-	bool wf_is_isolate(GridMap& map);
 
 	bool updateActionInStateClean()override ;
 
-private:
-	uint32_t diff_timer_;
-protected:
-//	Cells home_point_{};
 private:
  int reach_cleaned_count_save{};
 };

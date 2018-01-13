@@ -15,7 +15,7 @@ CleanModeFollowWall::CleanModeFollowWall()
 //	event_manager_set_enable(true);
 //	ROS_INFO("%s %d: Entering Follow wall mode\n=========================" , __FUNCTION__, __LINE__);
 //	IMoveType::sp_mode_ = this;
-	diff_timer_ = WALL_FOLLOW_TIME;
+//	diff_timer_ = WALL_FOLLOW_TIME;
 	speaker.play(VOICE_CLEANING_WALL_FOLLOW, false);
 	clean_path_algorithm_.reset(new WFCleanPathAlgorithm);
 	go_home_path_algorithm_.reset();
