@@ -116,7 +116,7 @@ void IMoveType::updatePath()
 //	PP_INFO();
 //	ROS_INFO("point(%d,%d,%d)",point.x, point.y,point.th);
 //	ROS_INFO("last(%d,%d,%d)",last_.x, last_.y, last_.th);
-	auto p_mode = (ACleanMode*)sp_mode_;
+	auto p_mode = dynamic_cast<ACleanMode*> (sp_mode_);
 	if (p_mode->passed_path_.empty())
 	{
 		p_mode->passed_path_.push_back(curr);

@@ -14,13 +14,13 @@ MovementFollowPointLinear::MovementFollowPointLinear()
 	tick_limit_ = 1;
 
 //	tick_limit_ = 1;
-//	auto p_clean_mode = (ACleanMode*)(sp_mt_->sp_mode_);
+//	auto p_clean_mode = dynamic_cast<ACleanMode*> (sp_mt_->sp_mode_);
 //	sp_mt_->target_point_ = p_clean_mode->plan_path_.front();
 }
 
 Point32_t MovementFollowPointLinear::_calcTmpTarget()
 {
-	auto p_mode = ((ACleanMode*)(sp_mt_->sp_mode_));
+	auto p_mode = dynamic_cast<ACleanMode*> (sp_mt_->sp_mode_);
 	auto curr = getPosition();
 	auto tmp_target_ = p_mode->plan_path_.front();
 	auto &tmp_target_xy = (isXAxis(p_mode->new_dir_)) ? tmp_target_.x : tmp_target_.y;

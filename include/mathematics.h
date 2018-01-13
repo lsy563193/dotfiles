@@ -415,6 +415,7 @@ public:
 	int16_t angleDiff(int16_t other_angle) const {
 		return ranged_angle(other_angle - this->th);
 	}
+
   Cell_t toCell() const {
     return {countToCell(x), countToCell(y)};
   }
