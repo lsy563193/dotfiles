@@ -44,7 +44,7 @@ MoveTypeFollowWall::~MoveTypeFollowWall()
 {
 	if(sp_mode_ != nullptr){
 		auto p_mode = (ACleanMode*)sp_mode_;
-		p_mode->clean_map_.saveBlocks(p_mode->action_i_ == p_mode->ac_linear, p_mode->sp_state == p_mode->state_clean);
+		p_mode->clean_map_.saveBlocks(p_mode->action_i_ == p_mode->ac_linear, p_mode->isStateClean());
 		p_mode->mapMark();
 	}
 	ROS_INFO("%s %d: Exit move type follow wall.", __FUNCTION__, __LINE__);
@@ -61,7 +61,7 @@ bool MoveTypeFollowWall::isFinish()
 
 	auto p_clean_mode = dynamic_cast<ACleanMode*> (sp_mode_);
 
-	if(p_clean_mode->MoveTypeFollowWallIsFinish(this))
+	if(p_clean_mode->moveTypeFollowWallIsFinish(this))
 		return true;
 
 	if (sp_movement_->isFinish()) {
@@ -87,7 +87,7 @@ bool MoveTypeFollowWall::isFinish()
 		{
 			if (!handleMoveBackEvent(p_clean_mode))
 			{
-				p_clean_mode->actionFollowWallSaveBlocks();
+				p_clean_mode->moveTypeFollowWallSaveBlocks();
 				int16_t turn_angle = getTurnAngle(false);
 				turn_target_angle_ = getPosition().addAngle(turn_angle).th;
 				movement_i_ = mm_turn;
@@ -456,21 +456,21 @@ bool MoveTypeFollowWall::handleMoveBackEvent(ACleanMode* p_clean_mode)
 {
 	if (ev.bumper_triggered || ev.cliff_triggered)
 	{
-		p_clean_mode->actionFollowWallSaveBlocks();
+		p_clean_mode->moveTypeFollowWallSaveBlocks();
 		movement_i_ = mm_back;
 		sp_movement_.reset(new MovementBack(0.01, BACK_MAX_SPEED));
 		return true;
 	}
 	else if(ev.tilt_triggered)
 	{
-		p_clean_mode->actionFollowWallSaveBlocks();
+		p_clean_mode->moveTypeFollowWallSaveBlocks();
 		movement_i_ = mm_back;
 		sp_movement_.reset(new MovementBack(0.3, BACK_MAX_SPEED));
 		return true;
 	}
 	else if (ev.robot_slip)
 	{
-		p_clean_mode->actionFollowWallSaveBlocks();
+		p_clean_mode->moveTypeFollowWallSaveBlocks();
 		movement_i_ = mm_back;
 		sp_movement_.reset(new MovementBack(0.3, BACK_MIN_SPEED));
 		return true;
