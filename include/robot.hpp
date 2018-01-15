@@ -347,7 +347,7 @@ bool isXAxis(int dir);
 
 bool isYAxis(int dir);
 
-Point32_t updatePosition();
+void updatePosition();
 
 Mode *getNextMode(int next_mode_i_);
 void setPosition(int32_t x, int32_t y);

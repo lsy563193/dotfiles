@@ -95,13 +95,13 @@ robot::robot(std::string serial_port, int baudrate, std::string lidar_bumper_dev
 	// Init for event manager.
 	event_manager_init();
 	auto event_manager_thread = new boost::thread(event_manager_thread_cb);
-	event_manager_thread->detach();
+//	event_manager_thread->detach();
 	auto event_handler_thread = new boost::thread(event_handler_thread_cb);
-	event_handler_thread->detach();
+//	event_handler_thread->detach();
 
 	// Init for core thread.
 	auto core_thread = new boost::thread(boost::bind(&robot::core_thread_cb,this));
-	core_thread->detach();
+//	core_thread->detach();
 	ROS_INFO("%s %d: robot init done!", __FUNCTION__, __LINE__);
 }
 
@@ -980,13 +980,12 @@ bool isYAxis(int dir)
 }
 
 
-Point32_t updatePosition()
+void updatePosition()
 {
 	auto pos_x = robot::instance()->getWorldPoseX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	auto pos_y = robot::instance()->getWorldPoseY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	setPosition(pos_x, pos_y);
 //	ROS_INFO("%s %d:", __FUNCTION__, __LINE__);
-	return getPosition();
 }
 
 

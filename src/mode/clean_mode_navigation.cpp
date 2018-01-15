@@ -373,7 +373,7 @@ void CleanModeNav::switchInStateInit() {
 	else {//if (action_i_ == ac_open_slam)
 		has_aligned_and_open_slam_ = true;
 
-		auto curr = updatePosition();
+		auto curr = getPosition();
 		passed_path_.push_back(curr);
 		start_point_.th = curr.th;
 		sp_state = state_clean;

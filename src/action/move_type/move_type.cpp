@@ -115,8 +115,8 @@ bool IMoveType::isFinish() {
 
 void IMoveType::updatePath()
 {
-	auto curr = updatePosition();
-//	auto point = getPosition();
+	updatePosition();
+	auto curr = getPosition();
 //	robot::instance()->pubCleanMapMarkers(nav_map, tmp_plan_path_);
 //	PP_INFO();
 //	ROS_INFO("point(%d,%d,%d)",point.x, point.y,point.th);

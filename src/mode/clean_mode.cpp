@@ -810,7 +810,7 @@ void ACleanMode::switchInStateExploration() {
 		sp_state = state_trapped;
 	}
 	else{
-		auto curr = updatePosition();
+		auto curr = getPosition();
 		start_point_.th = curr.th;
 		sp_state = state_go_home_point;
 		speaker.play(VOICE_BACK_TO_CHARGER, true);
