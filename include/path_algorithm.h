@@ -238,7 +238,7 @@ public:
 	void initVariables(float radius,Cell_t cur_cell);
 
 private:
-	
+
 	bool spot_running_;
 	Cells targets_cells_;
 	Cell_t min_corner_;

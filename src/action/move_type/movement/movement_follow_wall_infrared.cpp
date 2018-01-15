@@ -291,7 +291,7 @@ void IFollowWall::setTarget()
 //}
 
 bool IFollowWall::sp_turn_over(const Cell_t &curr) {
-		ROS_INFO("  %s %d:?? curr(%d,%d,%d)", __FUNCTION__, __LINE__, curr.x, curr.y);
+		ROS_INFO("  %s %d:?? curr(%d,%d)", __FUNCTION__, __LINE__, curr.x, curr.y);
 		/*check if spot turn*/
 		if (get_sp_turn_count() > 400) {
 			reset_sp_turn_count();

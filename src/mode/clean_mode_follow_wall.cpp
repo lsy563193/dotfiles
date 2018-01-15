@@ -129,7 +129,7 @@ void CleanModeFollowWall::remoteClean(bool state_now, bool state_last)
 bool CleanModeFollowWall::updateActionInStateClean()
 {
 	ROS_INFO_FL();
-	mapMark();
+	sp_action_.reset();// to mark in destructor
 	old_dir_ = new_dir_;
 	if (reach_cleaned_count_ == 0) {
 		if (generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
@@ -201,6 +201,7 @@ bool CleanModeFollowWall::MoveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) {
 void CleanModeFollowWall::switchInStateClean() {
 	sp_state = state_go_home_point;
 	ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_points_.size());
+	speaker.play(VOICE_BACK_TO_CHARGER, true);
 	go_home_path_algorithm_.reset();
 	go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_, start_point_));
 	sp_state->init();

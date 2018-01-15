@@ -24,7 +24,6 @@ CleanModeExploration::~CleanModeExploration()
 
 bool CleanModeExploration::mapMark()
 {
-//	PP_WARN();
 	clean_map_.mergeFromSlamGridMap(slam_grid_map,true,true);
 	clean_map_.setExplorationCleaned();
 	clean_map_.setBlocks();
@@ -143,5 +142,10 @@ void CleanModeExploration::switchInStateGoHomePoint() {
 
 bool CleanModeExploration::MoveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) {
 	return p_mt->isBlockCleared(clean_map_, passed_path_);
+}
+
+bool CleanModeExploration::markRealTime() {
+	mapMark();
+	return true;
 }
 

@@ -7,7 +7,6 @@
 #include "arch.hpp"
 
 
-
 MoveTypeLinear::MoveTypeLinear() {
 	resetTriggeredValue();
 	auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
@@ -25,6 +24,11 @@ MoveTypeLinear::MoveTypeLinear() {
 
 MoveTypeLinear::~MoveTypeLinear()
 {
+	if(sp_mode_ != nullptr){
+		auto p_mode = (ACleanMode*)sp_mode_;
+		p_mode->clean_map_.saveBlocks(p_mode->action_i_ == p_mode->ac_linear, p_mode->sp_state == p_mode->state_clean);
+		p_mode->mapMark();
+	}
 	ROS_INFO("%s %d: Exit move type linear.", __FUNCTION__, __LINE__);
 }
 
@@ -57,10 +61,12 @@ bool MoveTypeLinear::isFinish()
 		}
 		else if (movement_i_ == mm_forward)
 		{
-			if (!handleMoveBackEvent(p_clean_mode))
+			if(handleMoveBackEvent(p_clean_mode)){
+				return false;
+			}else
 				return true;
 		}
-		else //if (movement_i_ == mm_back)
+		else
 			return true;
 	}
 	return false;

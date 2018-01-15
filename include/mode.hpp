@@ -235,7 +235,9 @@ public:
 	void setRconPos(float cd,float dist);
 
 	virtual bool mapMark() = 0;
+	virtual bool markRealTime(){return false;};
 
+	bool isRemoteGoHomePoint();
 	void setHomePoint();
 	bool estimateChargerPos(uint32_t rcon_value);
 	void setRconPos(Point32_t pos);
@@ -383,6 +385,8 @@ public:
 	State *sp_state{};
 	State *state_init;
 	State *state_clean;
+	State *state_exception_resume;
+	State *state_exploration;
 protected:
 	std::vector<State*> sp_saved_states;
 	State *state_go_home_point;
@@ -390,8 +394,6 @@ protected:
 	State *state_charge;
 	State *state_trapped;
 	State *state_spot;
-	State *state_exception_resume;
-	State *state_exploration;
 	State *state_resume_low_battery_charge;
 	State *state_pause;
 
@@ -402,6 +404,7 @@ protected:
 	Points home_points_{};
 	Point32_t start_point_{0, 0, 0};
 	bool should_go_to_charger_{false};
+	bool remote_go_home_point{false};
 public:
 //	uint8_t saveFollowWall(bool is_left);
 //	std::vector<Cell_t> temp_fw_cells;
@@ -509,6 +512,7 @@ public:
 	~CleanModeExploration();
 
 	bool mapMark() override;
+	bool markRealTime() override;
 //	bool isExit() override;
 	bool setNextAction() override;
 	void keyClean(bool state_now, bool state_last) override ;

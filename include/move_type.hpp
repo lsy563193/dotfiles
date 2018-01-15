@@ -15,7 +15,6 @@ class IMoveType:public IAction
 {
 public:
 	IMoveType();
-
 	bool shouldMoveBack();
 	bool shouldTurn();
 //	~IMoveType() = default;

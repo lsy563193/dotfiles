@@ -836,6 +836,7 @@ uint8_t GridMap::saveRcon()
 
 uint8_t GridMap::saveBlocks(bool is_linear, bool is_save_rcon)
 {
+//	PP_INFO();
 	uint8_t block_count = 0;
 	if (is_linear && is_save_rcon)
 		block_count += saveRcon();
