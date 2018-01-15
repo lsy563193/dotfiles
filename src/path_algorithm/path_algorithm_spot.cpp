@@ -2,7 +2,6 @@
 #include <event_manager.h>
 #include "robot.hpp"
 #include "path_algorithm.h"
-//#include "arch.hpp"
 
 #define CLOCKWISE 1
 #define ANTI_CLOCKWISE 2
