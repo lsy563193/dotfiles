@@ -6,6 +6,9 @@
 #define PP_KEY_H
 
 
+#include <ctime>
+#include <cstdint>
+
 class Key {
 public:
 	Key() {

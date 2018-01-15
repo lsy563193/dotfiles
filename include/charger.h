@@ -4,15 +4,18 @@
 
 #ifndef PP_CHARGER_H
 #define PP_CHARGER_H
+
+#include <cstdint>
+
 class Charger {
 public:
-	bool isOnStub(void);
+	bool isOnStub();
 
-	bool isDirected(void);
+	bool isDirected();
 
-	void setStart(void);
+	void setStart();
 
-	void setStop(void);
+	void setStop();
 
 	void setChargeStatus(uint8_t val)
 	{

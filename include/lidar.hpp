@@ -1,7 +1,9 @@
 #ifndef __LIDAR_H__
 #define __LIDAR_H__
 
+
 #include <nav_msgs/Odometry.h>
+#include "boost/thread.hpp"
 #include <ros/ros.h>
 #include <visualization_msgs/Marker.h>
 #include <sensor_msgs/LaserScan.h>

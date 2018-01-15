@@ -5,6 +5,8 @@
 #ifndef PP_VACUUM_H
 #define PP_VACUUM_H
 
+#include <cstdint>
+
 #define Vac_Speed_Max				100 //15500rpm
 #define Vac_Speed_Normal			60 //9000rpm
 #define Vac_Speed_NormalL			50 //8000rpm

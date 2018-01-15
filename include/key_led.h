@@ -7,6 +7,8 @@
 
 // For LED control
 // LED type
+#include <cstdint>
+
 #define LED_STEADY					0
 #define LED_FLASH					1
 #define LED_BREATH					2
@@ -17,14 +19,14 @@
 #define LED_RED						3
 
 
-class Led {
+class KeyLed{
 public:
-void set(uint16_t G, uint16_t R);
+void set(uint16_t green, uint16_t red);
 // time_ms is used for both LED_FLASH type and LED_BREATH type, the default value is for LED_BREATH.
 void set_mode(uint8_t type, uint8_t color, uint16_t time_ms = 3000);
 
 };
 
-extern Led led;
+extern KeyLed led;
 #endif //PP_LED_H
 

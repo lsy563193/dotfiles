@@ -1,7 +1,9 @@
-#include "pp.h"
+#include "lidar.hpp"
+#include "robot.hpp"
 #include <std_srvs/Empty.h>
 #include <std_srvs/SetBool.h>
 #include <pp/SetLidar.h>
+#include <wheel.hpp>
 boost::mutex scanLinear_mutex_;
 boost::mutex scanOriginal_mutex_;
 boost::mutex scanCompensate_mutex_;

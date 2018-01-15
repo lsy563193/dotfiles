@@ -2,12 +2,11 @@
 // Created by root on 11/17/17.
 //
 #include "cliff.h"
-#include "mathematics.h"
 #include "map.h"
 
 Cliff cliff;
 
-uint8_t Cliff::getStatus(void)
+uint8_t Cliff::getStatus()
 {
 	uint8_t status = 0x00;
 

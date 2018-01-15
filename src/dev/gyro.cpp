@@ -1,4 +1,8 @@
-#include "pp.h"
+#include <ros/ros.h>
+#include <serial.h>
+#include <speaker.h>
+#include "gyro.h"
+#include "event_manager.h"
 
 Gyro gyro;
 
