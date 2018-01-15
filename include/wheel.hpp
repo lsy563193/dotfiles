@@ -57,6 +57,8 @@ public:
 		is_right_wheel_over_current_= false;
 		left_wheel_actual_speed_ = 0;
 		right_wheel_actual_speed_ = 0;
+		left_wheel_cliff_ = false;
+		right_wheel_cliff_ = false;
 	};
 
 	void stop(void);
@@ -135,6 +137,26 @@ public:
 		right_wheel_actual_speed_ = speed;
 	}
 
+	bool getLeftWheelCliffStatus()
+	{
+		return left_wheel_cliff_;
+	}
+
+	void setLeftWheelCliffStatus(bool val)
+	{
+		left_wheel_cliff_ = val;
+	}
+
+	bool getRightWheelCliffStatus()
+	{
+		return right_wheel_cliff_;
+	}
+
+	void setRightWheelCliffStatus(bool val)
+	{
+		right_wheel_cliff_ = val;
+	}
+
 private:
 	DirectionType left_direction_;
 	DirectionType right_direction_;
@@ -148,6 +170,8 @@ private:
 	float left_wheel_actual_speed_;
 	float right_wheel_actual_speed_;
 
+	bool left_wheel_cliff_;
+	bool right_wheel_cliff_;
 	struct pid_argu_struct argu_for_pid = {REG_TYPE_NONE,0,0,0};
 	struct pid_struct left_pid = {0,0,0,0,0,0,0,0}, right_pid = {0,0,0,0,0,0,0,0};
 	// These variables are used for calculate wheel step.

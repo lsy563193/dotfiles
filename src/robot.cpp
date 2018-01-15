@@ -15,8 +15,6 @@
 
 #include "std_srvs/Empty.h"
 
-#define RAD2DEG(rad) ((rad)*57.29578)
-
 const double CHASE_X = 0.107;
 
 // For obs dynamic adjustment
@@ -838,16 +836,8 @@ void robot::pubTmpTarget(const Point32_t &point, bool is_virtual) {
 
 bool robot::lidarMotorCtrl(bool switch_)
 {
-	pp::SetLidar ctrl_message;
-	if(switch_){
-/*		ctrl_message.request.x_acc_init= gyro.getInitXAcc();
-		ctrl_message.request.y_acc_init= gyro.getInitYAcc();
-		ctrl_message.request.z_acc_init= gyro.getInitZAcc();*/
-		ctrl_message.request.x_acc_init= 0;
-		ctrl_message.request.y_acc_init= 0;
-		ctrl_message.request.z_acc_init= 0;
-	}
-	ctrl_message.request.data = switch_;
+	rplidar_ros::SetLidar ctrl_message;
+	ctrl_message.request.switch_status = switch_;
 
 	if (lidar_motor_cli_.call(ctrl_message))
 	{
@@ -900,7 +890,9 @@ void robot::updateRobotPose(const float& odom_x, const float& odom_y, const doub
 		while (yaw > 3.141592)
 			yaw -= 6.283184;
 		robot_correction_yaw += (yaw) * 0.8;
-//		printf("Slam (%f, %f, %f). Adjust (%f, %f, %f)\n", slam_correction_x, slam_correction_y, RAD2DEG(slam_correction_yaw), robot_correction_x, robot_correction_y, RAD2DEG(robot_correction_yaw));
+//		printf("Slam (%f, %f, %f). Adjust (%f, %f, %f)\n", slam_correction_x, slam_correction_y,
+//			   rad_2_deg(slam_correction_yaw, 1), robot_correction_x,
+//			   robot_correction_y, rad_2_deg(robot_correction_yaw, 1));
 	}
 
 	robot_x = odom_x + robot_correction_x;
