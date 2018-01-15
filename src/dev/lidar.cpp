@@ -196,13 +196,14 @@ bool Lidar::findLines(std::vector<LineABC> *lines,bool combine)
 	const float ACCR_PERSET = 0.05;//%5
 
 	sensor_msgs::LaserScan scan_data;
-	//scanLinear_mutex_.lock();
-	if(lidarCheckFresh(0.210,1)){
+	if (lidarCheckFresh(0.210,1))
+	{
+		scanLinear_mutex_.lock();
 		scan_data = lidarScanData_linear_;
+		scanLinear_mutex_.unlock();
 	}
 	else
 		return false;
-	//scanLinear_mutex_.unlock();
 
 	/*---------translate lidar distance to point set----------*/
 	int n_angle = angle_n_;
@@ -860,11 +861,12 @@ static uint8_t setLidarMarkerAcr2Dir(double X_MIN,double X_MAX,int angle_from,in
 
 uint8_t Lidar::lidarMarker(double X_MAX)
 {
+	if(!lidarCheckFresh(0.6,1))
+		return 0;
+
 	scanCompensate_mutex_.lock();
-	if(!lidarCheckFresh(0.6,1)){
-		scanCompensate_mutex_.unlock();
-		return false;
-	}
+	auto tmp_lidarXY_points = lidarXY_points;
+	scanCompensate_mutex_.unlock();
 	double x, y;
 	int dx, dy;
 //	const double X_MIN = 0.140;//ROBOT_RADIUS
@@ -872,7 +874,7 @@ uint8_t Lidar::lidarMarker(double X_MAX)
 	const	double Y_MAX = 0.20;//0.279
 	int	count_array[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-	for(auto point:lidarXY_points){
+	for(auto point:tmp_lidarXY_points){
 		x = point.x;
 		y = point.y;
 		//front
@@ -1027,7 +1029,6 @@ uint8_t Lidar::lidarMarker(double X_MAX)
 	}
 //	if (!msg.empty())
 //		ROS_INFO("%s %d: \033[36mlidar marker: %s.\033[0m", __FUNCTION__, __LINE__, msg.c_str());
-	scanCompensate_mutex_.unlock();
 	return block_status;
 }
 
@@ -1225,11 +1226,12 @@ int Lidar::compLaneDistance()
 
 double Lidar::getObstacleDistance(uint8_t dir, double range)
 {
-	scanCompensate_mutex_.lock();
-	if(!lidarCheckFresh(0.6,1)){
-		scanCompensate_mutex_.unlock();
+	if(!lidarCheckFresh(0.6,1))
 		return DBL_MAX;
-	}
+
+	scanCompensate_mutex_.lock();
+	auto tmp_lidarXY_points = lidarXY_points;
+	scanCompensate_mutex_.unlock();
 	double x,y;
 	double x_to_robot,y_to_robot;
 	double min_dis = DBL_MAX;
@@ -1240,7 +1242,7 @@ double Lidar::getObstacleDistance(uint8_t dir, double range)
 		return 0;
 	}
 
-	for(const auto& point:lidarXY_points){
+	for(const auto& point:tmp_lidarXY_points){
 		x = point.x;
 		y = point.y;
 		x_to_robot = fabs(x) - ROBOT_RADIUS * sin(acos(fabs(y) / ROBOT_RADIUS));
@@ -1284,7 +1286,6 @@ double Lidar::getObstacleDistance(uint8_t dir, double range)
 				}
 		}
 	}
-	scanCompensate_mutex_.unlock();
 	return min_dis;
 }
 
