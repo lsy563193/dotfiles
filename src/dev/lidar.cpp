@@ -1223,7 +1223,6 @@ int Lidar::compLaneDistance()
 	return ret;
 }
 
-
 double Lidar::getObstacleDistance(uint8_t dir, double range)
 {
 	scanCompensate_mutex_.lock();
