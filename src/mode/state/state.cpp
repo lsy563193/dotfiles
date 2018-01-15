@@ -1,7 +1,9 @@
 //
 // Created by lsy563193 on 12/4/17.
 //
-#include <arch.hpp>
+#include <state.hpp>
+#include <action.hpp>
+#include <mode.hpp>
 
 ACleanMode* State::sp_cm_{};
 

@@ -3,11 +3,14 @@
 //
 
 
+#include <state.hpp>
+#include <action.hpp>
+#include <mode.hpp>
+
 #include "vacuum.h"
 #include "brush.h"
 #include "key_led.h"
 #include "speaker.h"
-#include "arch.hpp"
 
 void StateSpot::init() {
     vacuum.setTmpMode(Vac_Max);

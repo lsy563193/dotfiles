@@ -1,9 +1,13 @@
 //
 // Created by lsy563193 on 12/4/17.
 //
+
+#include <state.hpp>
+#include <action.hpp>
+#include <mode.hpp>
+
 #include <robot_timer.h>
 #include "key_led.h"
-#include "arch.hpp"
 
 void StateTrapped::init() {
 	robot_timer.initTrapTimer();
