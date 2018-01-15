@@ -168,7 +168,6 @@ bool ACleanMode::isFinish()
 	return false;
 }
 
-
 void ACleanMode::genNextAction()
 {
 	ROS_WARN("before genNextAction");
@@ -248,22 +247,22 @@ void ACleanMode::setRconPos(Point32_t pos)
 		charger_pos_ = pos;
 }
 
-bool ACleanMode::MoveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt)
+bool ACleanMode::moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt)
 {
 	return false;
 }
 
-void ACleanMode::actionFollowWallSaveBlocks()
+void ACleanMode::moveTypeFollowWallSaveBlocks()
 {
-	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
+	clean_map_.saveBlocks(action_i_ == ac_linear, isStateClean());
 }
 
-bool ACleanMode::MoveTypeLinearIsFinish(MoveTypeLinear *p_mt)
+bool ACleanMode::moveTypeLinearIsFinish(MoveTypeLinear *p_mt)
 {
 	return p_mt->isPoseReach() || p_mt->isPassTargetStop(new_dir_);
 }
 
-void ACleanMode::actionLinearSaveBlocks()
+void ACleanMode::moveTypeLinearSaveBlocks()
 {
 	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
 }

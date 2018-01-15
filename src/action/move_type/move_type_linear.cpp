@@ -30,7 +30,7 @@ MoveTypeLinear::~MoveTypeLinear()
 {
 	if(sp_mode_ != nullptr){
 		auto p_mode = (ACleanMode*)sp_mode_;
-		p_mode->clean_map_.saveBlocks(p_mode->action_i_ == p_mode->ac_linear, p_mode->sp_state == p_mode->state_clean);
+		p_mode->clean_map_.saveBlocks(p_mode->action_i_ == p_mode->ac_linear, p_mode->isStateClean());
 		p_mode->mapMark();
 	}
 	ROS_INFO("%s %d: Exit move type linear.", __FUNCTION__, __LINE__);
@@ -46,7 +46,7 @@ bool MoveTypeLinear::isFinish()
 
 	auto p_clean_mode = dynamic_cast<ACleanMode*> (sp_mode_);
 
-	if (p_clean_mode->MoveTypeLinearIsFinish(this))
+	if (p_clean_mode->moveTypeLinearIsFinish(this))
 		return true;
 
 	if (isLinearForward())
@@ -156,20 +156,20 @@ bool MoveTypeLinear::handleMoveBackEvent(ACleanMode *p_clean_mode)
 {
 	if (ev.bumper_triggered || ev.cliff_triggered)
 	{
-		p_clean_mode->actionLinearSaveBlocks();
+		p_clean_mode->moveTypeLinearSaveBlocks();
 		movement_i_ = mm_back;
 		sp_movement_.reset(new MovementBack(0.01, BACK_MAX_SPEED));
 		return true;
 	}
 	else if(ev.tilt_triggered){
-		p_clean_mode->actionLinearSaveBlocks();
+		p_clean_mode->moveTypeLinearSaveBlocks();
 		movement_i_ = mm_back;
 		sp_movement_.reset(new MovementBack(0.3, BACK_MAX_SPEED));
 		return true;
 	}
 	else if (ev.robot_slip)
 	{
-		p_clean_mode->actionLinearSaveBlocks();
+		p_clean_mode->moveTypeLinearSaveBlocks();
 		movement_i_ = mm_back;
 		sp_movement_.reset(new MovementBack(0.3, BACK_MIN_SPEED));
 		return true;

@@ -308,7 +308,7 @@ void CleanModeNav::chargeDetect(bool state_now, bool state_last)
 
 // End event handlers.
 
-bool CleanModeNav::MoveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt)
+bool CleanModeNav::moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt)
 {
 	if (sp_state == state_trapped)
 		return p_mt->isBlockCleared(clean_map_, passed_path_);
@@ -317,12 +317,12 @@ bool CleanModeNav::MoveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt)
 	return false;
 }
 
-bool CleanModeNav::MoveTypeLinearIsFinish(MoveTypeLinear *p_mt)
+bool CleanModeNav::moveTypeLinearIsFinish(MoveTypeLinear *p_mt)
 {
 	if (p_mt->isLinearForward())
-		return p_mt->isRconStop() || ACleanMode::MoveTypeLinearIsFinish(p_mt);
+		return p_mt->isRconStop() || ACleanMode::moveTypeLinearIsFinish(p_mt);
 	else
-		return ACleanMode::MoveTypeLinearIsFinish(p_mt);
+		return ACleanMode::moveTypeLinearIsFinish(p_mt);
 }
 // ------------------State init--------------------
 bool CleanModeNav::isSwitchByEventInStateInit() {
