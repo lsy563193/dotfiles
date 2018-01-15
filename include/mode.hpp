@@ -235,7 +235,7 @@ public:
 	void setRconPos(float cd,float dist);
 
 	virtual bool mapMark() = 0;
-	virtual bool MarkRealTime(){return false;};
+	virtual bool markRealTime(){return false;};
 
 	void setHomePoint();
 	bool estimateChargerPos(uint32_t rcon_value);
@@ -381,20 +381,20 @@ public:
 	{
 		return sp_state == state_pause;
 	}
-	static State *sp_state;
-	static State *state_init;
-	static State *state_clean;
-	static State *state_exception_resume;
-	static State *state_exploration;
+	State *sp_state{};
+	State *state_init;
+	State *state_clean;
+	State *state_exception_resume;
+	State *state_exploration;
 protected:
-	static std::vector<State*> sp_saved_states;
-	static State *state_go_home_point;
-	static State *state_go_to_charger;
-	static State *state_charge;
-	static State *state_trapped;
-	static State *state_spot;
-	static State *state_resume_low_battery_charge;
-	static State *state_pause;
+	std::vector<State*> sp_saved_states;
+	State *state_go_home_point;
+	State *state_go_to_charger;
+	State *state_charge;
+	State *state_trapped;
+	State *state_spot;
+	State *state_resume_low_battery_charge;
+	State *state_pause;
 
 
 protected:
@@ -510,6 +510,7 @@ public:
 	~CleanModeExploration();
 
 	bool mapMark() override;
+	bool markRealTime() override;
 //	bool isExit() override;
 	bool setNextAction() override;
 	void keyClean(bool state_now, bool state_last) override ;
@@ -530,7 +531,6 @@ public:
 	void switchInStateGoToCharger() override;
 
 	bool MoveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
-	bool MarkRealTime() override;
 };
 
 class CleanModeFollowWall:public ACleanMode {

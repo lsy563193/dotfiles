@@ -243,7 +243,7 @@ bool ACleanMode::isFinish()
 
 void ACleanMode::genNextAction()
 {
-	INFO_GREEN(before genNextAction);
+	INFO_GREEN("before genNextAction");
 
 	switch (action_i_) {
 		case ac_null :
@@ -312,7 +312,7 @@ void ACleanMode::genNextAction()
 			sp_action_.reset(new MovementDirectGo);
 			break;
 	}
-	INFO_GREEN(after genNextAction);
+	INFO_GREEN("after genNextAction");
 }
 
 void ACleanMode::setRconPos(Point32_t pos)
@@ -792,7 +792,8 @@ bool ACleanMode::updateActionInStateSpot() {
 	old_dir_ = new_dir_;
 	ROS_ERROR("old_dir_(%d)", old_dir_);
 	auto cur_point = getPosition();
-	ROS_INFO("\033[32m plan_path front (%d,%d),cur point:(%d,%d)\033[0m",plan_path_.front().toCell().x,plan_path_.front().toCell().y,cur_point.toCell().x,cur_point.toCell().y);
+	ROS_INFO("\033[32m plan_path size(%d), front (%d,%d),cur point:(%d,%d)\033[0m",plan_path_.size(),
+				plan_path_.front().toCell().x,plan_path_.front().toCell().y,cur_point.toCell().x,cur_point.toCell().y);
 	sp_action_.reset();// to mark in destructor
 	if (clean_path_algorithm_->generatePath(clean_map_, cur_point, old_dir_, plan_path_)) {
 		new_dir_ = plan_path_.front().th;

@@ -144,7 +144,7 @@ bool CleanModeExploration::MoveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) 
 	return p_mt->isBlockCleared(clean_map_, passed_path_);
 }
 
-bool CleanModeExploration::MarkRealTime() {
+bool CleanModeExploration::markRealTime() {
 	mapMark();
 	return true;
 }

@@ -140,7 +140,7 @@ void IMoveType::updatePath()
 		}
 		p_mode->clean_map_.saveBlocks(p_mode->action_i_ == p_mode->ac_linear,
 					(p_mode->sp_state == p_mode->state_clean || p_mode->sp_state == p_mode->state_exploration));
-		p_mode->MarkRealTime();//real time mark to exploration
+		p_mode->markRealTime();//real time mark to exploration
 //		displayPath(passed_path_);
 	}
 }
