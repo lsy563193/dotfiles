@@ -3,10 +3,15 @@
 //
 
 #include <mathematics.h>
-#include <pp.h>
+//#include <pp.h>
 #include <event_manager.h>
 #include <map.h>
+#include "dev.h"
+#include <robot_timer.h>
+#include <robot.hpp>
+#include <slam.h>
 #include "arch.hpp"
+#include "error.h"
 
 //#define NAV_INFO() ROS_INFO("st(%d),ac(%d)", state_i_, action_i_)
 

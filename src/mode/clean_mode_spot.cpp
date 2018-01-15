@@ -5,7 +5,6 @@
 #include "dev.h"
 #include "arch.hpp"
 #include "path_algorithm.h"
-#include "pp.h"
 #include "robot.hpp"
 
 CleanModeSpot::CleanModeSpot()
