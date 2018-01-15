@@ -121,10 +121,9 @@ public:
 
 	uint8_t setSlip();
 
-	uint8_t saveChargerArea(const Cell_t homepoint);
-
 	uint8_t setFollowWall(bool is_left, const Points&);
 
+	uint8_t setBlocks();
 
 	uint8_t saveLidar();
 
@@ -140,10 +139,9 @@ public:
 
 	uint8_t saveSlip();
 
+	uint8_t saveChargerArea(const Cell_t homepoint);
+
 	uint8_t saveBlocks(bool is_linear, bool is_save_rcon);
-
-	uint8_t setBlocks();
-
 
 	void setCleaned(std::deque<Cell_t> cells);
 	void setExplorationCleaned();
@@ -285,6 +283,7 @@ private:
 	std::vector<Cell_t> temp_tilt_cells;
 	std::vector<Cell_t> temp_slip_cells;
 	std::vector<Cell_t> temp_cliff_cells;
+	std::vector<Cell_t> temp_lidar_cells;
 	std::vector<Cell_t> temp_fw_cells;
 	std::vector<Cell_t> temp_WFMAP_follow_wall_cells;
 

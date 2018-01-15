@@ -166,7 +166,7 @@ bool ACleanMode::isFinish()
 
 void ACleanMode::genNextAction()
 {
-	ROS_WARN("before genNextAction");
+	INFO_GREEN(before genNextAction);
 
 	switch (action_i_) {
 		case ac_null :
@@ -235,7 +235,7 @@ void ACleanMode::genNextAction()
 			sp_action_.reset(new MovementDirectGo);
 			break;
 	}
-	INFO_GREEN("after genNextAction");
+	INFO_GREEN(after genNextAction);
 }
 
 void ACleanMode::setRconPos(Point32_t pos)

@@ -55,11 +55,7 @@ Point32_t MovementFollowPointLinear::calcTmpTarget()
 
 bool MovementFollowPointLinear::isFinish()
 {
-
-	if(AMovementFollowPoint::isFinish())
-		return true;
-
-	return sp_mt_->shouldMoveBack();
+	return AMovementFollowPoint::isFinish() || sp_mt_->shouldMoveBack() || sp_mt_->isLidarStop();
 }
 
 bool MovementFollowPointLinear::is_near()

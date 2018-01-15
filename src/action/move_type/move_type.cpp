@@ -53,13 +53,11 @@ bool IMoveType::isOBSStop()
 bool IMoveType::isLidarStop()
 {
 //	PP_INFO();
-	ev.lidar_triggered = lidar_get_status();
+	ev.lidar_triggered = lidar.getObstacleDistance(0, 0.1) < 0.02 ? BLOCK_FRONT : 0;
 	if (ev.lidar_triggered)
 	{
 		// Temporary use OBS to get angle.
-//		ev.obs_triggered = ev.lidar_triggered;
-//		g_turn_angle = obsTurnAngle();
-//		ROS_WARN("%s, %d: ev.lidar_triggered(%d), turn for (%d).", __FUNCTION__, __LINE__, ev.lidar_triggered, g_turn_angle);
+		ROS_WARN("%s, %d: ev.lidar_triggered(%d).", __FUNCTION__, __LINE__, ev.lidar_triggered);
 		return true;
 	}
 

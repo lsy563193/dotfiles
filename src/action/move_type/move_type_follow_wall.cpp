@@ -212,16 +212,13 @@ int16_t MoveTypeFollowWall::rconTurnAngle()
 	return turn_angle;
 }
 
-int MoveTypeFollowWall::double_scale_10(double line_angle)
+int16_t MoveTypeFollowWall::double_scale_10(double line_angle)
 {
-	int angle;
+	int16_t angle;
 	if (line_angle > 0)
-	{
-		angle = int((180 - line_angle) * 10);
-	} else
-	{
-		angle = int(fabs(line_angle) * 10);
-	}
+		angle = static_cast<int16_t>((180 - line_angle) * 10);
+	else
+		angle = static_cast<int16_t>(fabs(line_angle) * 10);
 	return angle;
 }
 
@@ -240,7 +237,7 @@ bool MoveTypeFollowWall::_lidarTurnAngle(bool is_left, int16_t &turn_angle, int 
 	auto angle = double_scale_10(line_angle);
 
 	if (is_left_)
-		angle  = 1800-angle;
+		angle  = 1800 - angle;
 
 //	ROS_INFO("line_angle = %d", angle);
 	if (line_is_found && angle >= angle_min && angle < angle_max)
@@ -252,7 +249,7 @@ bool MoveTypeFollowWall::_lidarTurnAngle(bool is_left, int16_t &turn_angle, int 
 		else
 			robot_to_wall_distance=g_back_distance*100*sin((180-line_angle)*3.1415/180.0);
 //		ROS_ERROR("left_x= %f  left_angle= %lf",x,line_angle);
-		turn_angle = !is_left ? angle : -angle;
+		turn_angle = static_cast<int16_t>(!is_left ? angle : -angle);
 //		ROS_INFO("lidar generate turn angle(%d)!",turn_angle);
 		return true;
 	}
@@ -264,12 +261,12 @@ bool MoveTypeFollowWall::lidarTurnAngle(int16_t &turn_angle)
 //	ROS_INFO("%s,%d: mt.is_fw",__FUNCTION__, __LINE__);
 	wheel.stop();
 
-	if (ev.obs_triggered != 0)
+	if (ev.obs_triggered)
 	{
 //		ROS_INFO("%s %d: \033[32mfront obs trigger.\033[0m", __FUNCTION__, __LINE__);
 		return _lidarTurnAngle(is_left_, turn_angle, 90, 270, 450, 1800, 0.25);
 	}
-	else if(ev.bumper_triggered != 0)
+	else if(ev.bumper_triggered)
 	{
 		int angle_min, angle_max;
 		if (is_left_ ^ (ev.bumper_triggered == BLOCK_LEFT))
@@ -296,6 +293,9 @@ bool MoveTypeFollowWall::lidarTurnAngle(int16_t &turn_angle)
 			return _lidarTurnAngle(is_left_, turn_angle, 180, 270, angle_min, angle_max);
 		}
 	}
+	else if (ev.lidar_triggered)
+		return _lidarTurnAngle(is_left_, turn_angle, 90, 270, 900, 1800);
+
 	return false;
 }
 

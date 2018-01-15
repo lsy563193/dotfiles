@@ -12,7 +12,7 @@ MovementTurn::MovementTurn(int16_t angle, uint8_t max_speed) : speed_(ROTATE_LOW
 	accurate_ = ROTATE_TOP_SPEED > 30 ? 30 : 15;
 	target_angle_ = angle;
 	max_speed_ = max_speed;
-	ROS_INFO("%s %d: Init, \033[32mtarget_angle_: %d\033[0m", __FUNCTION__, __LINE__, angle);
+	ROS_INFO("%s %d: Init, \033[32mtarget_angle_: %d, current angle: %d\033[0m", __FUNCTION__, __LINE__, angle, getPosition().th);
 }
 
 bool MovementTurn::isReach()
