@@ -17,9 +17,10 @@
 #include "config.h"
 #include "map.h"
 #include "pose.h"
-#include "mode.hpp"
+//#include "mode.hpp"
 #include <string.h>
 
+class Mode;
 extern volatile int16_t g_left_wall_baseline;
 extern volatile int16_t g_right_wall_baseline;
 extern pp::x900sensor   sensor;

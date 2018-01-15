@@ -12,6 +12,7 @@
 #include <event_manager.h>
 #include "lidar.hpp"
 #include "robot.hpp"
+#include "arch.hpp"
 
 #include "std_srvs/Empty.h"
 

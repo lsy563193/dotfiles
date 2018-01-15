@@ -8,7 +8,7 @@
 #include "path_algorithm.h"
 #include "event_manager.h"
 #include "boost/shared_ptr.hpp"
-#include "move_type.hpp"
+//#include "move_type.hpp"
 
 class Mode:public EventHandle
 {
