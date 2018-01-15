@@ -11,8 +11,13 @@
 #include "lidar.hpp"
 #include "robot.hpp"
 #include "slam.h"
-#include "arch.hpp"
 
+
+#include "action.hpp"
+#include "movement.hpp"
+#include "move_type.hpp"
+#include "state.hpp"
+#include "mode.hpp"
 #include "std_srvs/Empty.h"
 
 const double CHASE_X = 0.107;

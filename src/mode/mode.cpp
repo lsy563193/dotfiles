@@ -3,7 +3,6 @@
 //
 
 #include <dev.h>
-#include <arch.hpp>
 #include <event_manager.h>
 
 
