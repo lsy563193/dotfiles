@@ -68,6 +68,7 @@ float Odom::getAngleOffset(void)
 
 void Odom::setMovingSpeed(float speed)
 {
+//	ROS_INFO("%s %d: Moving speed %f.", __FUNCTION__, __LINE__, moving_speed_);
 	moving_speed_ = speed;
 }
 

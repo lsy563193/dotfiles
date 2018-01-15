@@ -7,7 +7,6 @@
 #include <global.h>
 #include <std_srvs/SetBool.h>
 #include <pp.h>
-#include <pp/SetLidar.h>
 #include <odom.h>
 #include <event_manager.h>
 #include "lidar.hpp"
@@ -15,8 +14,6 @@
 #include "arch.hpp"
 
 #include "std_srvs/Empty.h"
-
-#define RAD2DEG(rad) ((rad)*57.29578)
 
 const double CHASE_X = 0.107;
 
@@ -38,7 +35,7 @@ robot::robot(std::string serial_port, int baudrate, std::string lidar_bumper_dev
 	//map_metadata_sub = robot_nh_.subscribe("/map_metadata", 1, &robot::robot_map_metadata_cb, this);
 
 	// Service clients.
-	lidar_motor_cli_ = robot_nh_.serviceClient<pp::SetLidar>("lidar_motor_ctrl");
+	lidar_motor_cli_ = robot_nh_.serviceClient<rplidar_ros::SetLidar>("lidar_motor_ctrl");
 	end_slam_cli_ = robot_nh_.serviceClient<std_srvs::Empty>("End_Slam");
 	start_slam_cli_ = robot_nh_.serviceClient<std_srvs::Empty>("Start_Slam");
 	robot_tf_ = new tf::TransformListener(robot_nh_, ros::Duration(0.1), true);
@@ -838,16 +835,8 @@ void robot::pubTmpTarget(const Point32_t &point, bool is_virtual) {
 
 bool robot::lidarMotorCtrl(bool switch_)
 {
-	pp::SetLidar ctrl_message;
-	if(switch_){
-/*		ctrl_message.request.x_acc_init= gyro.getInitXAcc();
-		ctrl_message.request.y_acc_init= gyro.getInitYAcc();
-		ctrl_message.request.z_acc_init= gyro.getInitZAcc();*/
-		ctrl_message.request.x_acc_init= 0;
-		ctrl_message.request.y_acc_init= 0;
-		ctrl_message.request.z_acc_init= 0;
-	}
-	ctrl_message.request.data = switch_;
+	rplidar_ros::SetLidar ctrl_message;
+	ctrl_message.request.switch_status = switch_;
 
 	if (lidar_motor_cli_.call(ctrl_message))
 	{
@@ -900,7 +889,9 @@ void robot::updateRobotPose(const float& odom_x, const float& odom_y, const doub
 		while (yaw > 3.141592)
 			yaw -= 6.283184;
 		robot_correction_yaw += (yaw) * 0.8;
-//		printf("Slam (%f, %f, %f). Adjust (%f, %f, %f)\n", slam_correction_x, slam_correction_y, RAD2DEG(slam_correction_yaw), robot_correction_x, robot_correction_y, RAD2DEG(robot_correction_yaw));
+//		printf("Slam (%f, %f, %f). Adjust (%f, %f, %f)\n", slam_correction_x, slam_correction_y,
+//			   rad_2_deg(slam_correction_yaw, 1), robot_correction_x,
+//			   robot_correction_y, rad_2_deg(robot_correction_yaw, 1));
 	}
 
 	robot_x = odom_x + robot_correction_x;

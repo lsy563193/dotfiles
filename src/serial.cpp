@@ -224,6 +224,7 @@ void Serial::setReceiveData(uint8_t (&buf)[RECEI_LEN])
 //	}
 }
 
+/*
 int Serial::get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequence_number)
 {
 	int num_send_packets = key_length / KEY_DOWNLINK_LENGTH;
@@ -336,7 +337,7 @@ int Serial::get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequen
 
 				if (ptr[CMD_UPLINK_OFFSET - 2] == CMD_ACK) {  //set finished
 					//printf("Downlink command ACKed!!\n");
-					setSendData(CTL_CMD, 0x00);
+					setSendData(CTL_KEY_VALIDATION, 0x00);
 					break;
 				}
 			}
@@ -396,7 +397,7 @@ int Serial::get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequen
 				sign[j] = ptr[KEY_UPLINK_OFFSET - 2 + j];
 
 			//Send acknowledge back to MCU.
-			setSendData(CTL_CMD, CMD_ACK);
+			setSendData(CTL_KEY_VALIDATION, CMD_ACK);
 			for (int k = 0; k < 20; k++) {
 				g_send_stream_mutex.lock();
 				memcpy(buf, send_stream, sizeof(uint8_t) * SEND_LEN);
@@ -406,7 +407,7 @@ int Serial::get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequen
 
 				usleep(500);
 			}
-			setSendData(CTL_CMD, 0x00);
+			setSendData(CTL_KEY_VALIDATION, 0x00);
 
 #if VERIFY_DEBUG
 			printf("%s %d: exit\n", __FUNCTION__, __LINE__);
@@ -416,7 +417,7 @@ int Serial::get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequen
 		}
 		usleep(500);
 	}
-	setSendData(CTL_CMD, 0x00);
+	setSendData(CTL_KEY_VALIDATION, 0x00);
 
 #if VERIFY_DEBUG
 	printf("%s %d: exit\n", __FUNCTION__, __LINE__);
@@ -424,15 +425,16 @@ int Serial::get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequen
 
 	return -1;
 }
+*/
 
 void Serial::setCleanMode(uint8_t val)
 {
-	setSendData(CTL_MAIN_PWR, val & 0xff);
+	setSendData(CTL_CLEAN_MODE, val & 0xff);
 }
 
 uint8_t Serial::getCleanMode()
 {
-	return getSendData(CTL_MAIN_PWR);
+	return getSendData(CTL_CLEAN_MODE);
 }
 
 void Serial::init_crc8(void)
