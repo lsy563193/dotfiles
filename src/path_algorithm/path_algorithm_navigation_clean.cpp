@@ -2,8 +2,8 @@
 // Created by lsy563193 on 12/13/17.
 //
 
-#include <pp.h>
 #include "ros/ros.h"
+#include "robot.hpp"
 #include "path_algorithm.h"
 
 bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, const int &last_dir, Points &plan_path)
