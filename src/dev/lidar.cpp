@@ -48,7 +48,6 @@ void Lidar::scanLinearCb(const sensor_msgs::LaserScan::ConstPtr &scan)
 	}
 }
 
-#define WF_SCAN_TYPE						(2)
 void Lidar::scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr &scan)
 {
 	if (switch_)
@@ -86,37 +85,6 @@ void Lidar::lidarPointCb(const visualization_msgs::Marker &point_marker) {
 	scanCompensate_mutex_.lock();
 	lidarXY_points = point_marker.points;
 	scanCompensate_mutex_.unlock();
-}
-
-bool Lidar::lidarObstcalDetected(double distance, int angle, double range)
-{
-	int		i, count;
-	bool	found = false;
-	double	angle_min, angle_max, tmp, range_tmp;
-
-	if (range < 0.0) {
-		range_tmp = 0.155;
-	} else {
-		range_tmp = range;
-	}
-	angle_min = deg_to_rad((double) (angle % 360), 1) - atan(range_tmp / (distance + 0.155));
-	angle_max = deg_to_rad((double) (angle % 360), 1) + atan(range_tmp / (distance + 0.155));
-
-	scanLinear_mutex_.lock();
-	auto tmp_scan_data = lidarScanData_linear_;
-	scanLinear_mutex_.unlock();
-	count = (int)((tmp_scan_data.angle_max - tmp_scan_data.angle_min) / tmp_scan_data.angle_increment);
-	//ROS_INFO("%s %d %f %f %f %f", __FUNCTION__, __LINE__, range_tmp, distance + 0.155, range_tmp / (distance + 0.155), atan(range_tmp / (distance + 0.155)));
-	//ROS_INFO("%s %d: angle min: %f max: %f\tcount: %d\tdtor: %f\ttan: %f", __FUNCTION__, __LINE__, angle_min, angle_max, count, deg_to_rad((double) (angle % 360), 1),  atan(range_tmp / (distance + 0.155)));
-	for (i = 0; found == false && i < count; i++) {
-		tmp = tmp_scan_data.angle_min + i * tmp_scan_data.angle_increment;
-		if (tmp > angle_min && tmp < angle_max && tmp_scan_data.ranges[i] < distance + 0.155) {
-			//ROS_INFO("%s %d: i: %d\ttmp: %f(%f, %f)\tdist: %f(%f)", __FUNCTION__, __LINE__, i, tmp, angle_min, angle_max, tmp_scan_data.ranges[i], distance + 0.155);
-			found = true;
-		}
-	}
-
-	return found;
 }
 
 int8_t Lidar::isScanOriginalReady()
@@ -1159,12 +1127,7 @@ bool Lidar::isRobotSlip()
 	return slip_status_;
 }
 
-/*
- * @author Alvin Xie
- * @brief make use of lidar to judge x+ or x- is more closer to the wall
- * @return the closer direction of x to the wall
- * if x+ is closer, return 1, else return 0
- * */
+
 int Lidar::compLaneDistance()
 {
 	int ret = 0;
@@ -1260,13 +1223,7 @@ int Lidar::compLaneDistance()
 	return ret;
 }
 
-/*
- * @author Alvin Xie
- * @brief make use of lidar to get the obstacle distance
- * @param dir:0-front 1-back 2-left 3-right
- *        range: dectect range
- * @return the distance to the obstacle
- * */
+
 double Lidar::getObstacleDistance(uint8_t dir, double range)
 {
 	scanCompensate_mutex_.lock();
@@ -1402,12 +1359,4 @@ bool lidar_is_stuck()
 	if (lidar.isScanOriginalReady() && !lidar.lidarCheckFresh(4, 2))
 		return true;
 	return false;
-}
-
-uint8_t lidar_get_status()
-{
-	if (lidar.isScanOriginalReady())
-		return lidar.lidarMarker(0.20);
-
-	return 0;
 }
