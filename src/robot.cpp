@@ -34,7 +34,7 @@ robot::robot(std::string serial_port, int baudrate, std::string lidar_bumper_dev
 	//map_metadata_sub = robot_nh_.subscribe("/map_metadata", 1, &robot::robot_map_metadata_cb, this);
 
 	// Service clients.
-	lidar_motor_cli_ = robot_nh_.serviceClient<pp::SetLidar>("lidar_motor_ctrl");
+	lidar_motor_cli_ = robot_nh_.serviceClient<rplidar_ros::SetLidar>("lidar_motor_ctrl");
 	end_slam_cli_ = robot_nh_.serviceClient<std_srvs::Empty>("End_Slam");
 	start_slam_cli_ = robot_nh_.serviceClient<std_srvs::Empty>("Start_Slam");
 	robot_tf_ = new tf::TransformListener(robot_nh_, ros::Duration(0.1), true);
