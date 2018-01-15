@@ -3,7 +3,10 @@
 //
 
 
-#include "pp.h"
+#include "vacuum.h"
+#include "brush.h"
+#include "key_led.h"
+#include "speaker.h"
 #include "arch.hpp"
 
 void StateSpot::init() {
