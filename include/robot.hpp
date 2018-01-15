@@ -17,9 +17,10 @@
 #include "config.h"
 #include "map.h"
 #include "pose.h"
-#include "mode.hpp"
+//#include "mode.hpp"
 #include <string.h>
 
+class Mode;
 extern volatile int16_t g_left_wall_baseline;
 extern volatile int16_t g_right_wall_baseline;
 extern pp::x900sensor   sensor;
@@ -242,7 +243,7 @@ private:
 	class Paras{
 public:
 	explicit Paras(bool is_left):is_left_(is_left)
-	{
+{
 		narrow = is_left ? 0.187 : 0.197;
 
 		y_min = 0.0;
@@ -261,7 +262,7 @@ public:
 		x_max_side = std::max(x_side_start, x_side_end);
 
 		auto y_side_start = 0.0;
-		auto y_side_end = is_left ? narrow: -narrow;
+		auto y_side_end = is_left ? narrow + 0.01 : -narrow + 0.01;
 		y_min_side = std::min(y_side_start, y_side_end);
 		y_max_side = std::max(y_side_start, y_side_end);
 
@@ -289,9 +290,9 @@ public:
 	}
 
 	bool inTargetRange(const Vector2<double> &target) {
-		return target.x < 4
-					 && ((target.x > CHASE_X && fabs(target.y) < ROBOT_RADIUS)
-							 || (target.x > 0  && target.y >y_min_target && target.y < y_max_target ));
+		return (target.x > 0 && target.y > 0.4) ||
+					 (target.x > CHASE_X && std::abs(target.y) < ROBOT_RADIUS) ||
+					 (target.y < -ROBOT_RADIUS);
 	}
 
 	bool inForwardRange(const Vector2<double> &point) const {
@@ -350,5 +351,6 @@ bool isYAxis(int dir);
 
 Point32_t updatePosition();
 
+Mode *getNextMode(int next_mode_i_);
 void setPosition(int32_t x, int32_t y);
 #endif

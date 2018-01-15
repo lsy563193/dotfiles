@@ -339,6 +339,9 @@ public:
     th = _th;
   }
 
+	Point32_t addAngle(int16_t diff) const {
+		return {this->x, this->y, ranged_angle(this->th + diff)};
+	}
   Point32_t getRelative(int32_t dx, int32_t dy) const {
 		Point32_t point;
 		double relative_sin, relative_cos;
@@ -383,6 +386,36 @@ public:
 	bool isNearTo(Point32_t other, int32_t count) const {
 		return std::abs(this->x - other.x) <count && std::abs(this->y - other.y) < count;
 	};
+
+	int16_t angleDiffPoint(Point32_t other) const {
+			int16_t alpha = 0;
+			if (this->x == other.x) {
+				if (other.y > this->y) {
+					alpha = 900;
+				} else if (other.y < this->y) {
+					alpha = 2700;
+				} else {
+					alpha = 0;
+				}
+			} else {
+				alpha = round(rad_2_deg(atan(((double) (other.y - this->y) / (other.x - this->x))), 10));
+
+				if (other.x < this->x) {
+					alpha += 1800;
+				}
+
+				if (alpha < 0) {
+					alpha += 3600;
+				}
+			}
+
+			return ranged_angle(alpha - this->th);
+	}
+
+	int16_t angleDiff(int16_t other_angle) const {
+		return ranged_angle(other_angle - this->th);
+	}
+
   Cell_t toCell() const {
     return {countToCell(x), countToCell(y)};
   }
@@ -436,57 +469,13 @@ typedef struct
   }
 } LineABC;
 
-// line: y=Kx+B
-typedef struct LineKB{
-	float K;
-	float B;
-	float len;
-	float x1;
-	float y1;
-	float x2;
-	float y2;
-	float get_x_by_y(const float y){
-		return (float)(y-B)/K;
-	}
-	float get_y_by_x(const float x){
-		return (float)(K*x)+B;
-	}
-} LineKB;
-
-/*
-typedef struct{
-	int32_t x;
-	int32_t y;
-  int16_t th;
-} Point32_t;
-*/
-
-//typedef Vector2<int32_t> Point32_t;
-
-uint16_t course_to_dest(const Point32_t& start, const Point32_t& dest);
-uint32_t two_points_distance(int32_t startx, int32_t starty, int32_t destx, int32_t desty);
 float two_points_distance_double(float startx,float starty,float destx,float desty);
-int32_t two_points_distance_at_direction(int32_t startx, int32_t starty, int32_t destx, int32_t desty, int16_t theta);
-int16_t distance2line(int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t px, int32_t py);
-uint16_t angle_delta(uint16_t a, uint16_t b);
-int32_t limit(int32_t i, int32_t lower_limit, int32_t upper_limit);
 void matrix_translate(double *x, double *y, double offset_x, double offset_y);
 void matrix_rotate(double *x, double *y, double theta);
-Cell_t cal_inters_point(Cell_t l1StartPnt, Cell_t l1EndPnt,
-												Cell_t l2StartPnt, Cell_t l2EndPnt);
 
-double rad_delta_angle_vector(double a, double b);
-int16_t degree_delta_angle_vector(uint16_t a, uint16_t b) ;
-double rad_delta_angle_min(double a, double b);
-int16_t degreeDeltaAngleMin( uint16_t a, uint16_t b );
-
-double arctan( double deltay, double deltax );
-double two_lines_angle(LineABC la, LineABC lb);
 double line_angle(LineABC l, uint8_t mode);
-uint8_t is_same_point_and_angle(Point32_t pnt1, uint16_t angle1, Point32_t pnt2, uint16_t angle2,
-																uint32_t pntThres, uint16_t angleThres);
+
 void coordinate_transform(double *x, double *y, double theta, double offset_x, double offset_y);
 
-int32_t abs_minus(int32_t A, int32_t B);
 
 #endif

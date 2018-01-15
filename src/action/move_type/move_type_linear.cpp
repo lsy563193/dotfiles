@@ -2,14 +2,15 @@
 // Created by lsy563193 on 12/4/17.
 //
 #include <event_manager.h>
-#include "pp.h"
+#include "dev.h"
+#include "robot.hpp"
 #include "arch.hpp"
 
 
 
 MoveTypeLinear::MoveTypeLinear() {
 	resetTriggeredValue();
-	auto p_mode = ((ACleanMode*)sp_mode_);
+	auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
 	auto target_point_ = p_mode->plan_path_.front();
 	turn_target_angle_ = p_mode->new_dir_;
 	ROS_INFO("%s,%d: Enter move type linear, turn target angle(%d), first target(%d, %d).",
@@ -35,7 +36,7 @@ bool MoveTypeLinear::isFinish()
 		return true;
 	}
 
-	auto p_clean_mode = (ACleanMode*)sp_mode_;
+	auto p_clean_mode = dynamic_cast<ACleanMode*> (sp_mode_);
 
 	if (p_clean_mode->MoveTypeLinearIsFinish(this))
 		return true;
@@ -69,7 +70,7 @@ bool MoveTypeLinear::isCellReach()
 {
 	// Checking if robot has reached target cell.
 	auto s_curr_p = getPosition();
-	auto p_clean_mode = (ACleanMode*)sp_mode_;
+	auto p_clean_mode = dynamic_cast<ACleanMode*> (sp_mode_);
 	auto target_point_ = p_clean_mode->plan_path_.front();
 	if (std::abs(s_curr_p.x - target_point_.x) < CELL_COUNT_MUL_1_2 &&
 		std::abs(s_curr_p.y - target_point_.y) < CELL_COUNT_MUL_1_2)
@@ -87,9 +88,8 @@ bool MoveTypeLinear::isPoseReach()
 {
 	// Checking if robot has reached target cell and target angle.
 //	PP_INFO();
-	auto target_point_ = ((ACleanMode*)sp_mode_)->plan_path_.front();
-	auto target_angle = target_point_.th;
-	if (isCellReach() && std::abs(ranged_angle(robot::instance()->getWorldPoseAngle() - target_angle)) < 200)
+	auto target_point_ = dynamic_cast<ACleanMode*>(sp_mode_)->plan_path_.front();
+	if (isCellReach() && std::abs(getPosition().angleDiffPoint(target_point_)) < 200)
 	{
 		ROS_INFO("\033[1m""%s, %d: MoveTypeLinear, reach the target cell and pose(%d,%d,%d)""\033[0m", __FUNCTION__, __LINE__,
 				 target_point_.toCell().x, target_point_.toCell().y, target_point_.th);
@@ -104,7 +104,7 @@ bool MoveTypeLinear::isPassTargetStop(int &dir)
 	// Checking if robot has reached target cell.
 	auto s_curr_p = getPosition();
 	auto curr = (isXAxis(dir)) ? s_curr_p.x : s_curr_p.y;
-	auto target_point_ = ((ACleanMode*)sp_mode_)->plan_path_.front();
+	auto target_point_ = dynamic_cast<ACleanMode*>(sp_mode_)->plan_path_.front();
 	auto target = (isXAxis(dir)) ? target_point_.x : target_point_.y;
 	if ((isPos(dir) && (curr > target + CELL_COUNT_MUL / 4)) ||
 		(!isPos(dir) && (curr < target - CELL_COUNT_MUL / 4)))

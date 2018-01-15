@@ -39,7 +39,9 @@ class AMovementFollowPoint:public IMovement{
 public:
 	virtual bool is_near()=0;
 	virtual Point32_t calcTmpTarget()=0;
+	bool isFinish() override ;
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed) override ;
+	int16_t angle_diff{};
 
 protected:
 
@@ -51,8 +53,10 @@ protected:
 	uint8_t integration_cycle_{};
 	int32_t integrated_{};
 	int32_t base_speed_{};
+	int16_t angle_forward_to_turn_{};
+	int16_t angle_turn_to_forward_{};
 	int kp_{20};
-	const double TIME_STRAIGHT{0.2};
+//	const double TIME_STRAIGHT{0.2};
 };
 
 class MovementBack: public IMovement{

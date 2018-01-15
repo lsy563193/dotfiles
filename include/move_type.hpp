@@ -5,11 +5,12 @@
 #ifndef PP_MOVE_TYPE_HPP
 #define PP_MOVE_TYPE_HPP
 
-#include "arch.hpp"
+//#include "arch.hpp"
 #include "boost/shared_ptr.hpp"
-#include "mode.hpp"
+//#include "mode.hpp"
 
 class Mode;
+class ACleanMode;
 class IMoveType:public IAction
 {
 public:
@@ -42,6 +43,7 @@ public:
 	static int movement_i_;
 	void resetTriggeredValue();
 	Point32_t start_point_;
+	bool state_turn{};
 //	Point32_t target_point_;
 	int dir_;
 protected:

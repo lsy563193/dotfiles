@@ -5,7 +5,6 @@
 
 #include <arch.hpp>
 #include <error.h>
-#include <pp.h>
 #include "dev.h"
 
 ActionIdle::ActionIdle()

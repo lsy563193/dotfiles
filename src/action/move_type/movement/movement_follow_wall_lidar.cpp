@@ -1,8 +1,9 @@
 //
 // Created by lsy563193 on 12/19/17.
 //
-#include "pp.h"
+//#include "pp.h"
 #include "arch.hpp"
+#include "robot.hpp"
 
 #define WF_SCAN_TYPE						(2)
 
@@ -10,6 +11,8 @@
 MovementFollowWallLidar::MovementFollowWallLidar(bool is_left)
 				: IFollowWall(is_left)
 {
+
+	angle_forward_to_turn_ = 600;
 	min_speed_ = FALL_WALL_MIN_SPEED;
 	max_speed_ = FALL_WALL_MAX_SPEED;
 	base_speed_ = min_speed_;
@@ -88,11 +91,16 @@ Point32_t MovementFollowWallLidar::calcTmpTarget() {
 }
 
 bool MovementFollowWallLidar::isFinish() {
+	if(AMovementFollowPoint::isFinish())
+		return true;
 	return sp_mt_->shouldMoveBack() || sp_mt_->shouldTurn();
 }
 
 bool MovementFollowWallLidar::is_near() {
 //	if(tmp_targets.empty())
-		return false;
+//	auto obs_dis_front = lidar.getObstacleDistance(0,ROBOT_RADIUS);
+//	ROS_ERROR("obs_dis_front(%d)",obs_dis_front);
+//	return obs_dis_front < 0.25;
+	return false;
 }
 

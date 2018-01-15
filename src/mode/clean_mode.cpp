@@ -10,38 +10,51 @@
 
 //#define NAV_INFO() ROS_INFO("st(%d),ac(%d)", state_i_, action_i_)
 
-State* ACleanMode::sp_state{};
-std::vector<State*> ACleanMode::sp_saved_states{};
-State* ACleanMode::state_init = new StateInit();
-State* ACleanMode::state_clean = new StateClean();
-State* ACleanMode::state_go_home_point = new StateGoHomePoint();
-State* ACleanMode::state_go_to_charger = new StateGoCharger();
-State* ACleanMode::state_charge = new StateCharge();
-State* ACleanMode::state_trapped = new StateTrapped();
-State* ACleanMode::state_spot = new StateSpot();
-State* ACleanMode::state_exception_resume = new ExceptionResume();
-State* ACleanMode::state_exploration = new StateExploration();
-State* ACleanMode::state_resume_low_battery_charge = new StateResumeLowBatteryCharge();
-State* ACleanMode::state_pause = new StatePause();
-Points ACleanMode::passed_path_ = {};
-Points ACleanMode::plan_path_ = {};
+//State* ACleanMode::sp_state{};
+//std::vector<State*> ACleanMode::sp_saved_states{};
+//State* ACleanMode::state_init = new StateInit();
+//State* ACleanMode::state_clean = new StateClean();
+//State* ACleanMode::state_go_home_point = new StateGoHomePoint();
+//State* ACleanMode::state_go_to_charger = new StateGoCharger();
+//State* ACleanMode::state_charge = new StateCharge();
+//State* ACleanMode::state_trapped = new StateTrapped();
+//State* ACleanMode::state_spot = new StateSpot();
+//State* ACleanMode::state_exception_resume = new ExceptionResume();
+//State* ACleanMode::state_exploration = new StateExploration();
+//State* ACleanMode::state_resume_low_battery_charge = new StateResumeLowBatteryCharge();
+//State* ACleanMode::state_pause = new StatePause();
+//Points ACleanMode::passed_path_ = {};
+//Points ACleanMode::plan_path_ = {};
 
-bool ACleanMode::low_battery_charge_{};
-bool ACleanMode::moved_during_pause_{};
+//bool ACleanMode::low_battery_charge_{};
+//bool ACleanMode::moved_during_pause_{};
 
 
-boost::shared_ptr<APathAlgorithm> ACleanMode::clean_path_algorithm_{};
-boost::shared_ptr<GoHomePathAlgorithm> ACleanMode::go_home_path_algorithm_{};
+//boost::shared_ptr<APathAlgorithm> ACleanMode::clean_path_algorithm_{};
+//boost::shared_ptr<GoHomePathAlgorithm> ACleanMode::go_home_path_algorithm_{};
 
-int ACleanMode::old_dir_{};
-int ACleanMode::new_dir_{};
-GridMap ACleanMode::clean_map_{};
+//int ACleanMode::old_dir_{};
+//int ACleanMode::new_dir_{};
+//GridMap ACleanMode::clean_map_{};
 
 //Point32_t ACleanMode::last_ = {};
 //boost::shared_ptr<IMovement> ACleanMode::sp_movement_ = nullptr;
 
 ACleanMode::ACleanMode()
 {
+
+state_init = new StateInit();
+state_clean = new StateClean();
+state_go_home_point = new StateGoHomePoint();
+state_go_to_charger = new StateGoCharger();
+state_charge = new StateCharge();
+state_trapped = new StateTrapped();
+state_spot = new StateSpot();
+state_exception_resume = new ExceptionResume();
+state_exploration = new StateExploration();
+state_resume_low_battery_charge = new StateResumeLowBatteryCharge();
+state_pause = new StatePause();
+
 	event_manager_register_handler(this);
 	event_manager_set_enable(true);
 	IMoveType::sp_mode_ = this;
@@ -55,17 +68,18 @@ ACleanMode::ACleanMode()
 
 	c_rcon.resetStatus();
 
-	home_points_.clear();
-	clean_path_algorithm_.reset();
-	go_home_path_algorithm_.reset();
+//	home_points_.clear();
+//	clean_path_algorithm_.reset();
+//	go_home_path_algorithm_.reset();
 
 	// Init odom position here.
 	robot::instance()->initOdomPosition();
+//
+//	passed_path_.clear();
+//	plan_path_.clear();
+//	clean_map_.reset(CLEAN_MAP);
+//	sp_saved_states={};
 
-	passed_path_.clear();
-	plan_path_.clear();
-	clean_map_.reset(CLEAN_MAP);
-	sp_saved_states={};
 }
 
 ACleanMode::~ACleanMode() {

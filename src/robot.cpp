@@ -12,6 +12,7 @@
 #include <event_manager.h>
 #include "lidar.hpp"
 #include "robot.hpp"
+#include "arch.hpp"
 
 #include "std_srvs/Empty.h"
 
@@ -155,7 +156,7 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 	// Check for whether robot should publish this frame of scan.
 	if (p_mode != nullptr)
 	{
-		if (ACleanMode::sp_state == ACleanMode::state_init)
+		if (p_mode->sp_action_ != nullptr && p_mode->isInitState())
 			scan_ctrl_.allow_publishing = 1;
 		else
 			scan_ctrl_.allow_publishing =
@@ -395,7 +396,11 @@ bool robot::calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,bool is_
 	Paras para{is_left};
 
 	auto is_corner = check_corner(scan, para);
-//	ROS_WARN("is_corner = %d", is_corner);
+	if(is_corner)
+	{
+		beeper.play_for_command(VALID);
+	ROS_WARN("is_corner = %d", is_corner);
+	}
 	for (int i = 359; i >= 0; i--) {
 		//ROS_INFO("i = %d", i);
 		if (scan->ranges[i] < 4 && scan->ranges[i - 1] < 4) {
@@ -986,4 +991,40 @@ Point32_t updatePosition()
 	setPosition(pos_x, pos_y);
 //	ROS_INFO("%s %d:", __FUNCTION__, __LINE__);
 	return getPosition();
+}
+
+
+Mode *getNextMode(int next_mode_i_)
+{
+
+	ROS_INFO("%s %d: next mode:%d", __FUNCTION__, __LINE__, next_mode_i_);
+	switch (next_mode_i_)
+	{
+		case Mode::md_charge:
+			return new ModeCharge();
+		case Mode::md_sleep:
+			return new ModeSleep();
+		case Mode::md_go_to_charger:
+			return new ModeGoToCharger();
+		case Mode::md_remote:
+			return new ModeRemote();
+
+		case Mode::cm_navigation:
+			return new CleanModeNav();
+		case Mode::cm_wall_follow:
+			return new CleanModeFollowWall();
+		case Mode::cm_spot:
+			return new CleanModeSpot();
+		case Mode::cm_test:
+			return new CleanModeTest();
+		case Mode::cm_exploration:
+			return new CleanModeExploration();
+//		case Mode::cm_exploration:
+//			return new CleanModeExploration();
+		default:
+		{
+			ROS_INFO("%s %d: next mode:%d", __FUNCTION__, __LINE__, next_mode_i_);
+			return new ModeIdle();
+		}
+	}
 }

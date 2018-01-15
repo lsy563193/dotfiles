@@ -2,7 +2,8 @@
 // Created by lsy563193 on 12/4/17.
 //
 #include <event_manager.h>
-#include "pp.h"
+#include "dev.h"
+#include "robot.hpp"
 #include "arch.hpp"
 
 
@@ -11,12 +12,13 @@ MoveTypeFollowWall::MoveTypeFollowWall(bool is_left)
 	ROS_INFO("%s %d: Entering move type %s follow wall.", __FUNCTION__, __LINE__,
 			 is_left ? "left" : "right");
 
-	auto p_clean_mode = (ACleanMode*)sp_mode_;
+
+	auto p_mode = dynamic_cast<ACleanMode*> (sp_mode_);
 //	if(! p_clean_mode->plan_path_.empty())
 //		p_clean_mode.target_point_ = p_clean_mode->plan_path_.front();
 	is_left_ = is_left;
-	int16_t turn_angle = getTurnAngle(!p_clean_mode->plan_path_.empty());
-	turn_target_angle_ = ranged_angle(getPosition().th + turn_angle);
+	int16_t turn_angle = getTurnAngle(!p_mode->plan_path_.empty());
+	turn_target_angle_ = getPosition().addAngle(turn_angle).th;
 	movement_i_ = mm_turn;
 	sp_movement_.reset(new MovementTurn(turn_target_angle_, ROTATE_TOP_SPEED));
 	IMovement::sp_mt_ = this;
@@ -48,7 +50,7 @@ bool MoveTypeFollowWall::isFinish()
 		return true;
 	}
 
-	auto p_clean_mode = (ACleanMode*)sp_mode_;
+	auto p_clean_mode = dynamic_cast<ACleanMode*> (sp_mode_);
 
 	if(p_clean_mode->MoveTypeFollowWallIsFinish(this))
 		return true;
@@ -78,7 +80,7 @@ bool MoveTypeFollowWall::isFinish()
 			{
 				p_clean_mode->actionFollowWallSaveBlocks();
 				int16_t turn_angle = getTurnAngle(false);
-				turn_target_angle_ = ranged_angle(robot::instance()->getWorldPoseAngle() + turn_angle);
+				turn_target_angle_ = getPosition().addAngle(turn_angle).th;
 				movement_i_ = mm_turn;
 				sp_movement_.reset(new MovementTurn(turn_target_angle_, ROTATE_TOP_SPEED));
 				resetTriggeredValue();
@@ -87,7 +89,7 @@ bool MoveTypeFollowWall::isFinish()
 		else if (movement_i_ == mm_back) {
 			movement_i_ = mm_turn;
 			int16_t turn_angle = getTurnAngle(false);
-			turn_target_angle_ = ranged_angle(robot::instance()->getWorldPoseAngle() + turn_angle);
+			turn_target_angle_ = getPosition().addAngle(turn_angle).th;
 			sp_movement_.reset(new MovementTurn(turn_target_angle_, ROTATE_TOP_SPEED));
 			resetTriggeredValue();
 		}
@@ -335,15 +337,21 @@ int16_t MoveTypeFollowWall::getTurnAngleByEvent()
 int16_t MoveTypeFollowWall::getTurnAngle(bool use_target_angle)
 {
 	int16_t  turn_angle{};
+	if(state_turn){
+		state_turn = false;
+		INFO_RED("getTurnAngle");
+		auto diff = boost::dynamic_pointer_cast<AMovementFollowPoint>(sp_movement_)->angle_diff;
+		ROS_INFO("angle_diff(%d)",diff);
+		return diff;
+	}
 	if (LIDAR_FOLLOW_WALL && lidarTurnAngle(turn_angle)) {
 		ROS_INFO("%s %d: Use lidarTurnAngle(%d)", __FUNCTION__, __LINE__, turn_angle);
 	}
 	else {
 		auto ev_turn_angle = getTurnAngleByEvent();
 		if(use_target_angle) {
-			auto curr = getPosition();
-			auto target_point_ = ((ACleanMode*)sp_mode_)->plan_path_.front();
-			auto tg_turn_angle = ranged_angle(course_to_dest(curr, target_point_) - curr.th);
+			auto target_point_ = dynamic_cast<ACleanMode*> (sp_mode_)->plan_path_.front();
+			auto tg_turn_angle = getPosition().angleDiffPoint(target_point_);;
 			turn_angle = (std::abs(ev_turn_angle) > std::abs(tg_turn_angle)) ? ev_turn_angle : tg_turn_angle;
 			ROS_INFO("%s %d: target_turn_angle(%d), event_turn_angle(%d), choose the big one(%d)",
 					 __FUNCTION__, __LINE__, tg_turn_angle, ev_turn_angle, turn_angle);
@@ -361,7 +369,7 @@ int16_t MoveTypeFollowWall::getTurnAngle(bool use_target_angle)
 bool MoveTypeFollowWall::isOverOriginLine(GridMap &map)
 {
 	auto curr = getPosition();
-	auto target_point_ = ((ACleanMode*)sp_mode_)->plan_path_.front();
+	auto target_point_ = dynamic_cast<ACleanMode*>(sp_mode_)->plan_path_.front();
 	if ((target_point_.y > start_point_.y && (start_point_.y - curr.y) > 120)
 		|| (target_point_.y < start_point_.y && (curr.y - start_point_.y) > 120))
 	{
@@ -391,7 +399,7 @@ bool MoveTypeFollowWall::isOverOriginLine(GridMap &map)
 
 bool MoveTypeFollowWall::isNewLineReach(GridMap &map)
 {
-	auto target_point_ = ((ACleanMode*)sp_mode_)->plan_path_.front();
+	auto target_point_ = dynamic_cast<ACleanMode*>(sp_mode_)->plan_path_.front();
 	auto s_curr_p = getPosition();
 	auto ret = false;
 	auto is_pos_dir = target_point_.y - start_point_.y > 0;

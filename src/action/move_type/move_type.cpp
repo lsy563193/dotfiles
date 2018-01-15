@@ -4,7 +4,8 @@
 
 #include <mathematics.h>
 #include <event_manager.h>
-#include "pp.h"
+#include "dev.h"
+#include "robot.hpp"
 #include "arch.hpp"
 boost::shared_ptr<IMovement> IMoveType::sp_movement_ = nullptr;
 Mode* IMoveType::sp_mode_ = nullptr;
@@ -63,7 +64,7 @@ bool IMoveType::isLidarStop()
 
 bool IMoveType::shouldTurn()
 {
-	ev.lidar_triggered = lidar_get_status();
+//	ev.lidar_triggered = lidar_get_status();
 //	if (ev.lidar_triggered)
 //	{
 //		// Temporary use bumper as lidar triggered.
@@ -74,14 +75,14 @@ bool IMoveType::shouldTurn()
 //		return true;
 //	}
 
-	ev.obs_triggered = (obs.getFront() > obs.getFrontTrigValue() + 1700);
-	if (ev.obs_triggered)
-	{
-//		ev.obs_triggered = BLOCK_FRONT;
-//		g_turn_angle = obsTurnAngle();
-		ROS_WARN("%s %d: OBS triggered.", __FUNCTION__, __LINE__);
-		return true;
-	}
+//	ev.obs_triggered = (obs.getFront() > obs.getFrontTrigValue() + 1700);
+//	if (ev.obs_triggered)
+//	{
+////		ev.obs_triggered = BLOCK_FRONT;
+////		g_turn_angle = obsTurnAngle();
+//		ROS_WARN("%s %d: OBS triggered.", __FUNCTION__, __LINE__);
+//		return true;
+//	}
 
 	return false;
 }
@@ -116,7 +117,7 @@ void IMoveType::updatePath()
 //	PP_INFO();
 //	ROS_INFO("point(%d,%d,%d)",point.x, point.y,point.th);
 //	ROS_INFO("last(%d,%d,%d)",last_.x, last_.y, last_.th);
-	auto p_mode = (ACleanMode*)sp_mode_;
+	auto p_mode = dynamic_cast<ACleanMode*> (sp_mode_);
 	if (p_mode->passed_path_.empty())
 	{
 		p_mode->passed_path_.push_back(curr);
