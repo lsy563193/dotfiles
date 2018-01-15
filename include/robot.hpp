@@ -13,6 +13,7 @@
 #include <sensor_msgs/LaserScan.h>
 #include <pp/x900sensor.h>
 #include <pp/scan_ctrl.h>
+#include <rplidar_ros/SetLidar.h>
 #include <vector>
 #include "config.h"
 #include "map.h"
@@ -21,9 +22,6 @@
 #include <string.h>
 
 class Mode;
-extern volatile int16_t g_left_wall_baseline;
-extern volatile int16_t g_right_wall_baseline;
-extern pp::x900sensor   sensor;
 
 typedef enum {
 	ODOM_POSITION_ODOM_ANGLE = 0,

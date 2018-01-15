@@ -9,9 +9,9 @@ Gyro gyro;
 Gyro::Gyro(void) {
 	angle_ = 0;
 	angle_v_ = 0;
-	x_acc_ = 0;
-	y_acc_ = 0;
-	z_acc_ = 0;
+	x_acc_ = -1000;
+	y_acc_ = -1000;
+	z_acc_ = -1000;
 	init_x_acc_ = 0;
 	init_y_acc_ = 0;
 	init_z_acc_ = 0;

@@ -45,16 +45,16 @@ public:
 
 	void bldcSpeed(uint32_t S);
 
-	void startSelfCheck(void);
+	void startExceptionResume(void);
 
-	void resetSelfCheck(void);
+	void resetExceptionResume(void);
 
-	void setSelfCheckStatus(uint8_t val)
+	void setExceptionResumeStatus(uint8_t val)
 	{
-		self_check_status_ = val;
+		exception_resume_status_ = val;
 	}
-	uint8_t getSelfCheckStatus() const {
-		return self_check_status_;
+	uint8_t getExceptionResumeStatus() const {
+		return exception_resume_status_;
 	}
 
 	void setOc(bool val)
@@ -70,7 +70,7 @@ private:
 
 	uint8_t mode_;
 	uint8_t mode_save_;
-	uint8_t self_check_status_;
+	uint8_t exception_resume_status_;
 	bool oc_;
 
 };

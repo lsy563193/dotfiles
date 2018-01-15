@@ -92,13 +92,13 @@ void Vacuum::stop(){
 	bldcSpeed(0);
 }
 
-void Vacuum::startSelfCheck(void) {
-	uint8_t omni_reset_byte = serial.getSendData(CTL_OMNI_RESET);
-	serial.setSendData(CTL_OMNI_RESET, omni_reset_byte | 0x02);
+void Vacuum::startExceptionResume(void) {
+	uint8_t omni_reset_byte = serial.getSendData(CTL_MIX);
+	serial.setSendData(CTL_MIX, omni_reset_byte | 0x02);
 }
 
-void Vacuum::resetSelfCheck(void) {
-	uint8_t omni_reset_byte = serial.getSendData(CTL_OMNI_RESET);
-	serial.setSendData(CTL_OMNI_RESET, omni_reset_byte & ~0x06);
+void Vacuum::resetExceptionResume(void) {
+	uint8_t omni_reset_byte = serial.getSendData(CTL_MIX);
+	serial.setSendData(CTL_MIX, omni_reset_byte & ~0x06);
 }
 
