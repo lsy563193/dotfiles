@@ -57,10 +57,6 @@ robot::robot()/*:offset_angle_(0),saved_offset_angle_(0)*/
 	fit_line_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("fit_line_marker", 1);
 
 	visualizeMarkerInit();
-	is_sensor_ready_ = false;
-	is_tf_ready_ = false;
-
-	temp_spot_set_ = false;
 
 	resetCorrection();
 

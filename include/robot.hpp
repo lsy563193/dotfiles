@@ -163,11 +163,11 @@ private:
 	Baselink_Frame_Type baselink_frame_type_;
 	boost::mutex baselink_frame_type_mutex_;
 
-	bool	is_sensor_ready_;
+	bool	is_sensor_ready_{};
 
-	bool	is_tf_ready_;
+	bool	is_tf_ready_{};
 
-	bool temp_spot_set_;
+	bool temp_spot_set_{};
 /*
 	// TODO: Delete these offset variables.
 	boost::mutex offset_angle_metux_;
