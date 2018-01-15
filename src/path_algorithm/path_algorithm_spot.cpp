@@ -31,7 +31,7 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, c
 		if(!spot_running_){
 			spot_running_ = true;
 			plan_path = cells_generate_points(targets_cells_);
-			ROS_INFO("targets size %d",plan_path.size());
+			ROS_INFO("targets size %lu",plan_path.size());
 			return true;
 		}
 		else if(plan_path.size() >= 2){
@@ -82,7 +82,7 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, c
 
 			/*-----second put the remaind targets into new_plan_path -----*/
 			/*-----if remaind targets in COST_HIGH find shortest path again-----*/
-			ROS_INFO("\033[32m new_plan_path size %d,the remained points size %d\033[0m",new_plan_path.size(),plan_path.size());	
+			ROS_INFO("\033[32m new_plan_path size %lu,the remained points size %lu\033[0m",new_plan_path.size(),plan_path.size());	
 			while(ros::ok() && plan_path.size() >=2)
 			{
 				plan_path.pop_front();
@@ -125,7 +125,7 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, c
 				}
 			}
 			plan_path.clear();
-			ROS_INFO("\033[32m new_plan_path size %d\033[0m",new_plan_path.size());	
+			ROS_INFO("\033[32m new_plan_path size %lu\033[0m",new_plan_path.size());	
 			plan_path = new_plan_path;
 			if(new_plan_path.size()<1)
 				return false;
