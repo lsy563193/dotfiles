@@ -155,10 +155,9 @@ void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
 	// Check for whether robot should publish this frame of scan.
 	if (p_mode != nullptr)
 	{
-		//todo ACleanMode::sp_state == ACleanMode::state_init);
-//		if (ACleanMode::sp_state == ACleanMode::state_init)
-//			scan_ctrl_.allow_publishing = 1;
-//		else
+		if (p_mode->sp_action_ != nullptr && p_mode->isInitState())
+			scan_ctrl_.allow_publishing = 1;
+		else
 			scan_ctrl_.allow_publishing =
 					!(fabs(wheel.getLeftWheelActualSpeed() - wheel.getRightWheelActualSpeed()) > 0.1
 					  || (wheel.getLeftWheelActualSpeed() * wheel.getRightWheelActualSpeed() < 0)
