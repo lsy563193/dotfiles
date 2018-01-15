@@ -416,6 +416,7 @@ void CleanModeNav::switchInStateClean() {
 		ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_points_.size());
 		go_home_path_algorithm_.reset();
 		go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_, start_point_));
+		speaker.play(VOICE_BACK_TO_CHARGER, true);
 	}
 	sp_state->init();
 	action_i_ = ac_null;

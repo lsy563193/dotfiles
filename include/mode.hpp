@@ -237,6 +237,7 @@ public:
 	virtual bool mapMark() = 0;
 	virtual bool markRealTime(){return false;};
 
+	bool isRemoteGoHomePoint();
 	void setHomePoint();
 	bool estimateChargerPos(uint32_t rcon_value);
 	void setRconPos(Point32_t pos);
@@ -403,6 +404,7 @@ protected:
 	Points home_points_{};
 	Point32_t start_point_{0, 0, 0};
 	bool should_go_to_charger_{false};
+	bool remote_go_home_point{false};
 public:
 //	uint8_t saveFollowWall(bool is_left);
 //	std::vector<Cell_t> temp_fw_cells;

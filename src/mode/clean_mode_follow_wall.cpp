@@ -201,6 +201,7 @@ bool CleanModeFollowWall::MoveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) {
 void CleanModeFollowWall::switchInStateClean() {
 	sp_state = state_go_home_point;
 	ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_points_.size());
+	speaker.play(VOICE_BACK_TO_CHARGER, true);
 	go_home_path_algorithm_.reset();
 	go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_, start_point_));
 	sp_state->init();

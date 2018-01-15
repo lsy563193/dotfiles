@@ -247,35 +247,35 @@ void ACleanMode::genNextAction()
 
 	switch (action_i_) {
 		case ac_null :
-			ROS_INFO_FL();
+//			ROS_INFO_FL();
 			sp_action_.reset();
 			break;
 		case ac_open_gyro :
-			ROS_INFO_FL();
+//			ROS_INFO_FL();
 			sp_action_.reset(new ActionOpenGyro);
 			break;
 		case ac_back_form_charger :
-			ROS_INFO_FL();
+//			ROS_INFO_FL();
 			sp_action_.reset(new ActionBackFromCharger);
 			break;
 		case ac_open_lidar :
-			ROS_INFO_FL();
+//			ROS_INFO_FL();
 			sp_action_.reset(new ActionOpenLidar);
 			break;
 		case ac_align :
-			ROS_INFO_FL();
+//			ROS_INFO_FL();
 			sp_action_.reset(new ActionAlign);
 			break;
 		case ac_open_slam :
-			ROS_INFO_FL();
+//			ROS_INFO_FL();
 			sp_action_.reset(new ActionOpenSlam);
 			break;
 		case ac_pause :
-			ROS_INFO_FL();
+//			ROS_INFO_FL();
 			sp_action_.reset(new ActionPause);
 			break;
 		case ac_linear :
-			ROS_INFO_FL();
+//			ROS_INFO_FL();
 			sp_action_.reset(new MoveTypeLinear);
 			break;
 		case ac_follow_wall_left  :
@@ -284,31 +284,31 @@ void ACleanMode::genNextAction()
 			sp_action_.reset(new MoveTypeFollowWall(action_i_ == ac_follow_wall_left));
 			break;
 		case ac_go_to_charger :
-			ROS_INFO_FL();
+//			ROS_INFO_FL();
 			sp_action_.reset(new MoveTypeGoToCharger);
 			break;
 		case ac_exception_resume :
-			ROS_INFO_FL();
+//			ROS_INFO_FL();
 			sp_action_.reset(new MovementExceptionResume);
 			break;
 		case ac_charge :
-			ROS_INFO_FL();
+//			ROS_INFO_FL();
 			sp_action_.reset(new MovementCharge);
 			break;
 		case ac_check_bumper :
-			ROS_INFO_FL();
+//			ROS_INFO_FL();
 			sp_action_.reset(new ActionCheckBumper);
 			break;
 		case ac_bumper_hit_test :
-			ROS_INFO_FL();
+//			ROS_INFO_FL();
 			sp_action_.reset(new MoveTypeBumperHitTest);
 			break;
 		case ac_check_vacuum :
-			ROS_INFO_FL();
+//			ROS_INFO_FL();
 			sp_action_.reset(new ActionCheckVacuum);
 			break;
 		case ac_movement_direct_go :
-			ROS_INFO_FL();
+//			ROS_INFO_FL();
 			sp_action_.reset(new MovementDirectGo);
 			break;
 	}
@@ -576,6 +576,11 @@ void ACleanMode::setHomePoint()
 	ROS_INFO("%s %d: %s", __FUNCTION__, __LINE__, msg.c_str());
 }
 
+bool ACleanMode::isRemoteGoHomePoint()
+{
+	return remote_go_home_point;
+}
+
 // ------------------Handlers--------------------------
 void ACleanMode::remoteHome(bool state_now, bool state_last)
 {
@@ -593,6 +598,10 @@ void ACleanMode::remoteHome(bool state_now, bool state_last)
 	remote.reset();
 }
 
+void ACleanMode::cliffAll(bool state_now, bool state_last) {
+	ROS_WARN("%s %d: Cliff all.", __FUNCTION__, __LINE__);
+	ev.cliff_all_triggered = true;
+}
 // ------------------Handlers end--------------------------
 
 bool ACleanMode::checkEnterExceptionResumeState()
@@ -672,9 +681,12 @@ bool ACleanMode::checkEnterGoHomePointState()
 {
 	if (ev.remote_home || ev.battery_home)
 	{
+		if (ev.remote_home)
+			remote_go_home_point = true;
 		sp_action_.reset();
 		sp_state = state_go_home_point;
 		sp_state->init();
+		speaker.play(VOICE_BACK_TO_CHARGER, true);
 		if (go_home_path_algorithm_ == nullptr)
 			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_, start_point_));
 		return true;
@@ -883,6 +895,7 @@ void ACleanMode::switchInStateExploration() {
 		auto curr = updatePosition();
 		start_point_.th = curr.th;
 		sp_state = state_go_home_point;
+		speaker.play(VOICE_BACK_TO_CHARGER, true);
 		if (go_home_path_algorithm_ == nullptr)
 			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_, start_point_));
 	}
@@ -940,7 +953,3 @@ void ACleanMode::switchInStateTrapped()
 	}
 }
 
-void ACleanMode::cliffAll(bool state_now, bool state_last) {
-	ROS_WARN("%s %d: Cliff all.", __FUNCTION__, __LINE__);
-	ev.cliff_all_triggered = true;
-}
