@@ -36,7 +36,7 @@ typedef struct{
 class robot
 {
 public:
-	robot(std::string serial_port, int baudrate, std::string lidar_bumper_dev);
+	robot();
 	~robot();
 
 	static robot *instance();
