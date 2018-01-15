@@ -7,8 +7,13 @@
 #include <robot.hpp>
 #include <error.h>
 #include <map.h>
-#include "arch.hpp"
 
+
+#include "action.hpp"
+#include "movement.hpp"
+#include "move_type.hpp"
+#include "state.hpp"
+#include "mode.hpp"
 //#define NAV_INFO() ROS_INFO("st(%d),ac(%d)", state_i_, action_i_)
 
 CleanModeNav::CleanModeNav()

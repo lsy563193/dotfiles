@@ -5,8 +5,13 @@
 #include <event_manager.h>
 #include "dev.h"
 #include <error.h>
-#include "arch.hpp"
 
+
+#include "action.hpp"
+#include "movement.hpp"
+#include "move_type.hpp"
+#include "state.hpp"
+#include "mode.hpp"
 CleanModeTest::CleanModeTest()
 {
 	ROS_WARN("%s %d: Entering Test mode\n=========================" , __FUNCTION__, __LINE__);

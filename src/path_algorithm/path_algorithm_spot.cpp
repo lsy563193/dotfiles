@@ -1,7 +1,8 @@
 #include <ros/ros.h>
+#include <event_manager.h>
 #include "robot.hpp"
 #include "path_algorithm.h"
-#include "arch.hpp"
+//#include "arch.hpp"
 
 #define CLOCKWISE 1
 #define ANTI_CLOCKWISE 2
@@ -35,7 +36,7 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, c
 			return true;
 		}
 		else if(plan_path.size() >= 2){
-			INFO_CYAN("maybe run over the target");
+			ROS_INFO("maybe run over the target");
 			plan_path = plan_path;
 			return true;
 		}
@@ -142,7 +143,7 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, c
 
 void SpotCleanPathAlgorithm::initVariables(float radius,Cell_t cur_cell)
 {
-	PP_INFO();
+//	ROS_INFO();
 	spot_running_ = false;
 	const int abit = 3;
 	int16_t half_cell_num = (int16_t)ceil(radius*1000/CELL_SIZE);

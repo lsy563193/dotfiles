@@ -2,10 +2,15 @@
 // Created by austin on 17-12-6.
 //
 
-#include <arch.hpp>
 #include "error.h"
 #include "dev.h"
 
+
+#include "action.hpp"
+#include "movement.hpp"
+#include "move_type.hpp"
+#include "state.hpp"
+#include "mode.hpp"
 ModeCharge::ModeCharge()
 {
 	ROS_INFO("%s %d: Entering Charge mode\n=========================" , __FUNCTION__, __LINE__);

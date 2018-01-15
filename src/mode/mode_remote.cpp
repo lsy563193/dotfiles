@@ -5,7 +5,14 @@
 #include <event_manager.h>
 #include <robot.hpp>
 #include "dev.h"
-#include "arch.hpp"
+
+
+
+#include "action.hpp"
+#include "movement.hpp"
+#include "move_type.hpp"
+#include "state.hpp"
+#include "mode.hpp"
 
 ModeRemote::ModeRemote()
 {//use dynamic then you can limit using derived class member

@@ -6,6 +6,12 @@
 #include <arch.hpp>
 #include <event_manager.h>
 
+
+#include "action.hpp"
+#include "movement.hpp"
+#include "move_type.hpp"
+#include "state.hpp"
+#include "mode.hpp"
 boost::shared_ptr<IAction> Mode::sp_action_ = nullptr;
 //IAction* Mode::sp_action_ = nullptr;
 

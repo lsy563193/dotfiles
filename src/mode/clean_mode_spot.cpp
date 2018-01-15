@@ -3,10 +3,15 @@
 //
 #include <map.h>
 #include "dev.h"
-#include "arch.hpp"
 #include "path_algorithm.h"
 #include "robot.hpp"
 
+
+#include "action.hpp"
+#include "movement.hpp"
+#include "move_type.hpp"
+#include "state.hpp"
+#include "mode.hpp"
 CleanModeSpot::CleanModeSpot()
 {
 	//speaker.play(VOICE_CLEANING_SPOT,false);
