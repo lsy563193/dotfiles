@@ -26,7 +26,7 @@ const double CHASE_X = 0.107;
 int OBS_adjust_count = 50;
 
 //extern pp::x900sensor sensor;
-robot::robot(std::string serial_port, int baudrate, std::string lidar_bumper_dev)/*:offset_angle_(0),saved_offset_angle_(0)*/
+robot::robot()/*:offset_angle_(0),saved_offset_angle_(0)*/
 {
 	// Subscribers.
 	sensor_sub_ = robot_nh_.subscribe("/robot_sensor", 10, &robot::sensorCb, this);
@@ -57,21 +57,10 @@ robot::robot(std::string serial_port, int baudrate, std::string lidar_bumper_dev
 	fit_line_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("fit_line_marker", 1);
 
 	visualizeMarkerInit();
-	is_sensor_ready_ = false;
-	is_tf_ready_ = false;
-
-	temp_spot_set_ = false;
 
 	resetCorrection();
 
 	setBaselinkFrameType(ODOM_POSITION_ODOM_ANGLE);
-
-	// Init for serial.
-	if (!serial.init(serial_port.c_str(), baudrate))
-	{
-		ROS_ERROR("%s %d: Serial init failed!!", __FUNCTION__, __LINE__);
-		return;
-	}
 
 #if VERIFY_CPU_ID
 	if (verify_cpu_id() < 0) {
@@ -85,23 +74,11 @@ robot::robot(std::string serial_port, int baudrate, std::string lidar_bumper_dev
 	}
 #endif
 
-	// Init for lidar bumper.
-	if (bumper.lidarBumperInit(lidar_bumper_dev.c_str()) == -1)
-		ROS_ERROR(" lidar bumper open fail!");
-
-	// Init for robotbase.
-	robotbase_init();
-
 	// Init for event manager.
 	event_manager_init();
 	auto event_manager_thread = new boost::thread(event_manager_thread_cb);
-	event_manager_thread->detach();
 	auto event_handler_thread = new boost::thread(event_handler_thread_cb);
-	event_handler_thread->detach();
-
-	// Init for core thread.
 	auto core_thread = new boost::thread(boost::bind(&robot::core_thread_cb,this));
-	core_thread->detach();
 	ROS_INFO("%s %d: robot init done!", __FUNCTION__, __LINE__);
 }
 
@@ -980,13 +957,12 @@ bool isYAxis(int dir)
 }
 
 
-Point32_t updatePosition()
+void updatePosition()
 {
 	auto pos_x = robot::instance()->getWorldPoseX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	auto pos_y = robot::instance()->getWorldPoseY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	setPosition(pos_x, pos_y);
 //	ROS_INFO("%s %d:", __FUNCTION__, __LINE__);
-	return getPosition();
 }
 
 
