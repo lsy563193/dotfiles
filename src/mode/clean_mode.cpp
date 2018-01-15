@@ -10,38 +10,51 @@
 
 //#define NAV_INFO() ROS_INFO("st(%d),ac(%d)", state_i_, action_i_)
 
-State* ACleanMode::sp_state{};
-std::vector<State*> ACleanMode::sp_saved_states{};
-State* ACleanMode::state_init = new StateInit();
-State* ACleanMode::state_clean = new StateClean();
-State* ACleanMode::state_go_home_point = new StateGoHomePoint();
-State* ACleanMode::state_go_to_charger = new StateGoCharger();
-State* ACleanMode::state_charge = new StateCharge();
-State* ACleanMode::state_trapped = new StateTrapped();
-State* ACleanMode::state_spot = new StateSpot();
-State* ACleanMode::state_exception_resume = new ExceptionResume();
-State* ACleanMode::state_exploration = new StateExploration();
-State* ACleanMode::state_resume_low_battery_charge = new StateResumeLowBatteryCharge();
-State* ACleanMode::state_pause = new StatePause();
-Points ACleanMode::passed_path_ = {};
-Points ACleanMode::plan_path_ = {};
+//State* ACleanMode::sp_state{};
+//std::vector<State*> ACleanMode::sp_saved_states{};
+//State* ACleanMode::state_init = new StateInit();
+//State* ACleanMode::state_clean = new StateClean();
+//State* ACleanMode::state_go_home_point = new StateGoHomePoint();
+//State* ACleanMode::state_go_to_charger = new StateGoCharger();
+//State* ACleanMode::state_charge = new StateCharge();
+//State* ACleanMode::state_trapped = new StateTrapped();
+//State* ACleanMode::state_spot = new StateSpot();
+//State* ACleanMode::state_exception_resume = new ExceptionResume();
+//State* ACleanMode::state_exploration = new StateExploration();
+//State* ACleanMode::state_resume_low_battery_charge = new StateResumeLowBatteryCharge();
+//State* ACleanMode::state_pause = new StatePause();
+//Points ACleanMode::passed_path_ = {};
+//Points ACleanMode::plan_path_ = {};
 
-bool ACleanMode::low_battery_charge_{};
-bool ACleanMode::moved_during_pause_{};
+//bool ACleanMode::low_battery_charge_{};
+//bool ACleanMode::moved_during_pause_{};
 
 
-boost::shared_ptr<APathAlgorithm> ACleanMode::clean_path_algorithm_{};
-boost::shared_ptr<GoHomePathAlgorithm> ACleanMode::go_home_path_algorithm_{};
+//boost::shared_ptr<APathAlgorithm> ACleanMode::clean_path_algorithm_{};
+//boost::shared_ptr<GoHomePathAlgorithm> ACleanMode::go_home_path_algorithm_{};
 
-int ACleanMode::old_dir_{};
-int ACleanMode::new_dir_{};
-GridMap ACleanMode::clean_map_{};
+//int ACleanMode::old_dir_{};
+//int ACleanMode::new_dir_{};
+//GridMap ACleanMode::clean_map_{};
 
 //Point32_t ACleanMode::last_ = {};
 //boost::shared_ptr<IMovement> ACleanMode::sp_movement_ = nullptr;
 
 ACleanMode::ACleanMode()
 {
+
+state_init = new StateInit();
+state_clean = new StateClean();
+state_go_home_point = new StateGoHomePoint();
+state_go_to_charger = new StateGoCharger();
+state_charge = new StateCharge();
+state_trapped = new StateTrapped();
+state_spot = new StateSpot();
+state_exception_resume = new ExceptionResume();
+state_exploration = new StateExploration();
+state_resume_low_battery_charge = new StateResumeLowBatteryCharge();
+state_pause = new StatePause();
+
 	event_manager_register_handler(this);
 	event_manager_set_enable(true);
 	IMoveType::sp_mode_ = this;
@@ -55,17 +68,18 @@ ACleanMode::ACleanMode()
 
 	c_rcon.resetStatus();
 
-	home_points_.resize(1, {{0, 0, 0}, false});
-	clean_path_algorithm_.reset();
-	go_home_path_algorithm_.reset();
+//	home_points_.clear();
+//	clean_path_algorithm_.reset();
+//	go_home_path_algorithm_.reset();
 
 	// Init odom position here.
 	robot::instance()->initOdomPosition();
+//
+//	passed_path_.clear();
+//	plan_path_.clear();
+//	clean_map_.reset(CLEAN_MAP);
+//	sp_saved_states={};
 
-	passed_path_.clear();
-	plan_path_.clear();
-	clean_map_.reset(CLEAN_MAP);
-	sp_saved_states={};
 }
 
 ACleanMode::~ACleanMode() {
@@ -150,6 +164,7 @@ void ACleanMode::setNextModeDefault()
 
 bool ACleanMode::isExit()
 {
+//	INFO_BLUE("ACleanMode::isExit()");
 	if (sp_state == state_init)
 	{
 		if (action_i_ == ac_open_lidar && sp_action_->isTimeUp())
@@ -159,6 +174,33 @@ bool ACleanMode::isExit()
 			ev.fatal_quit = true;
 			return true;
 		}
+	}
+	if (ev.fatal_quit || sp_action_->isExit())
+	{
+		ROS_WARN("%s %d: Exit for ev.fatal_quit or sp_action_->isExit()", __FUNCTION__, __LINE__);
+		setNextMode(md_idle);
+		return true;
+	}
+
+	if(ev.key_clean_pressed || ev.key_long_pressed){
+		ev.key_clean_pressed = false;
+		ROS_WARN("%s %d: Exit for remote key or clean key or long press clean key.", __FUNCTION__, __LINE__);
+		setNextMode(md_idle);
+		return true;
+	}
+
+	if(ev.cliff_all_triggered) {
+		ev.cliff_all_triggered = false;
+		ROS_WARN("%s %d: Exit for cliff all.", __FUNCTION__, __LINE__);
+		setNextMode(md_idle);
+		return true;
+	}
+
+	if (charger.isDirected())
+	{
+		ROS_WARN("%s %d: Exit for directly charge.", __FUNCTION__, __LINE__);
+		setNextMode(md_charge);
+		return true;
 	}
 
 	return false;
@@ -202,56 +244,74 @@ bool ACleanMode::isFinish()
 void ACleanMode::genNextAction()
 {
 	INFO_GREEN(before genNextAction);
-	if(action_i_ == ac_null)
-		sp_action_.reset();
-	if(action_i_ == ac_open_gyro)
-		sp_action_.reset(new ActionOpenGyro);
 
-	else if(action_i_ == ac_back_form_charger)
-		sp_action_.reset(new ActionBackFromCharger);
-
-	else if(action_i_ == ac_open_lidar)
-		sp_action_.reset(new ActionOpenLidar);
-
-	else if(action_i_ == ac_align)
-		sp_action_.reset(new ActionAlign);
-
-	else if(action_i_ == ac_open_slam)
-		sp_action_.reset(new ActionOpenSlam);
-
-	else if (action_i_ == ac_pause)
-		sp_action_.reset(new ActionPause);
-
-	else if (action_i_ == ac_linear)
-		sp_action_.reset(new MoveTypeLinear);
-
-	else if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
-		sp_action_.reset(new MoveTypeFollowWall(action_i_ == ac_follow_wall_left, sp_state == state_trapped));
-
-	else if (action_i_ == ac_go_to_charger)
-		sp_action_.reset(new MoveTypeGoToCharger);
-
-	else if (action_i_ == ac_exception_resume)
-		sp_action_.reset(new MovementExceptionResume);
-
-	else if (action_i_ == ac_charge)
-		sp_action_.reset(new MovementCharge);
-
-	else if (action_i_ == ac_check_bumper)
-		sp_action_.reset(new ActionCheckBumper);
-
-	else if (action_i_ == ac_bumper_hit_test)
-		sp_action_.reset(new MoveTypeBumperHitTest);
-
-	else if (action_i_ == ac_check_vacuum)
-		sp_action_.reset(new ActionCheckVacuum);
-
-	else if (action_i_ == ac_movement_direct_go)
-		sp_action_.reset(new MovementDirectGo);
-
-	else if(action_i_ == ac_null)
-		sp_action_.reset();
-
+	switch (action_i_) {
+		case ac_null :
+			ROS_INFO_FL();
+			sp_action_.reset();
+			break;
+		case ac_open_gyro :
+			ROS_INFO_FL();
+			sp_action_.reset(new ActionOpenGyro);
+			break;
+		case ac_back_form_charger :
+			ROS_INFO_FL();
+			sp_action_.reset(new ActionBackFromCharger);
+			break;
+		case ac_open_lidar :
+			ROS_INFO_FL();
+			sp_action_.reset(new ActionOpenLidar);
+			break;
+		case ac_align :
+			ROS_INFO_FL();
+			sp_action_.reset(new ActionAlign);
+			break;
+		case ac_open_slam :
+			ROS_INFO_FL();
+			sp_action_.reset(new ActionOpenSlam);
+			break;
+		case ac_pause :
+			ROS_INFO_FL();
+			sp_action_.reset(new ActionPause);
+			break;
+		case ac_linear :
+			ROS_INFO_FL();
+			sp_action_.reset(new MoveTypeLinear);
+			break;
+		case ac_follow_wall_left  :
+		case ac_follow_wall_right :
+			ROS_INFO_FL();
+			sp_action_.reset(new MoveTypeFollowWall(action_i_ == ac_follow_wall_left));
+			break;
+		case ac_go_to_charger :
+			ROS_INFO_FL();
+			sp_action_.reset(new MoveTypeGoToCharger);
+			break;
+		case ac_exception_resume :
+			ROS_INFO_FL();
+			sp_action_.reset(new MovementExceptionResume);
+			break;
+		case ac_charge :
+			ROS_INFO_FL();
+			sp_action_.reset(new MovementCharge);
+			break;
+		case ac_check_bumper :
+			ROS_INFO_FL();
+			sp_action_.reset(new ActionCheckBumper);
+			break;
+		case ac_bumper_hit_test :
+			ROS_INFO_FL();
+			sp_action_.reset(new MoveTypeBumperHitTest);
+			break;
+		case ac_check_vacuum :
+			ROS_INFO_FL();
+			sp_action_.reset(new ActionCheckVacuum);
+			break;
+		case ac_movement_direct_go :
+			ROS_INFO_FL();
+			sp_action_.reset(new MovementDirectGo);
+			break;
+	}
 	INFO_GREEN(after genNextAction);
 }
 
@@ -283,26 +343,6 @@ void ACleanMode::actionLinearSaveBlocks()
 void ACleanMode::goHomePointUpdateAction()
 {
 
-}
-
-bool ACleanMode::isStateGoHomePointUpdateFinish()
-{
-	goHomePointUpdateAction();
-
-	if(sp_action_ == nullptr) {
-		if (reach_home_point_ && go_home_path_algorithm_->getCurrentHomePoint().have_seen_charger) {
-			reach_home_point_ = false;
-			sp_state = state_go_to_charger;
-			sp_state->init();
-			return false;
-		}
-		else {
-			// path is emply;
-			sp_state = nullptr;
-			return true;
-		}
-	}
-	return true;
 }
 
 void ACleanMode::setRconPos(float cd,float dist)
@@ -514,20 +554,26 @@ Cells ACleanMode::pointsGenerateCells(Points &targets)
 void ACleanMode::setHomePoint()
 {
 	// Set home cell.
-	HomePoints::iterator home_point_it = home_points_.begin();
+	Points::iterator home_point_it = home_points_.begin();
 	for (;home_point_it != home_points_.end(); home_point_it++)
 	{
-		if (home_point_it->home_point.toCell() == getPosition().toCell())
+		if (home_point_it->toCell() == getPosition().toCell())
 		{
-			ROS_INFO("%s %d: Home cell(%d, %d) exists.",
-					 __FUNCTION__, __LINE__, home_point_it->home_point.toCell().x, home_point_it->home_point.toCell().y);
+			ROS_INFO("%s %d: Home point(%d, %d) exists.",
+					 __FUNCTION__, __LINE__, home_point_it->toCell().x, home_point_it->toCell().y);
 			return;
 		}
 	}
-	home_points_.push_front({getPosition(), true});
-	ROS_INFO("%s %d: Set home cell(%d, %d).", __FUNCTION__, __LINE__,
-			 home_points_.front().home_point.x,
-			 home_points_.front().home_point.y);
+
+	if (home_points_.size() >= HOME_POINTS_SIZE)
+		// Drop the oldest home point to keep the home_points_.size() is within HOME_POINTS_SIZE.
+		home_points_.pop_back();
+
+	home_points_.push_front(getPosition());
+	std::string msg = "Update Home_points_: ";
+	for (auto it : home_points_)
+		msg += "(" + std::to_string(it.toCell().x) + ", " + std::to_string(it.toCell().y) + "),";
+	ROS_INFO("%s %d: %s", __FUNCTION__, __LINE__, msg.c_str());
 }
 
 // ------------------Handlers--------------------------
@@ -612,6 +658,7 @@ bool ACleanMode::isSwitchByEventInStateClean() {
 	return checkEnterNullState() || checkEnterGoHomePointState();
 }
 
+
 void ACleanMode::switchInStateClean() {
 //    checkEnterNullState()
 //	if(action_i_ == ac_open_slam)
@@ -629,7 +676,7 @@ bool ACleanMode::checkEnterGoHomePointState()
 		sp_state = state_go_home_point;
 		sp_state->init();
 		if (go_home_path_algorithm_ == nullptr)
-			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
+			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_, start_point_));
 		return true;
 	}
 
@@ -647,17 +694,22 @@ bool ACleanMode::updateActionInStateGoHomePoint()
 	sp_action_.reset();//to mark in destructor
 	old_dir_ = new_dir_;
 
-	ROS_INFO("%s %d: reach_home_point_(%d), curr(%d, %d), current home point(%d, %d).", __FUNCTION__, __LINE__,
-			 reach_home_point_, getPosition().toCell().x, getPosition().toCell().y,
-			 go_home_path_algorithm_->getCurrentHomePoint().home_point.toCell().x,
-			 go_home_path_algorithm_->getCurrentHomePoint().home_point.toCell().y);
+//	ROS_INFO("%s %d: curr(%d, %d), current home point(%d, %d).", __FUNCTION__, __LINE__,
+//			 getPosition().toCell().x, getPosition().toCell().y,
+//			 go_home_path_algorithm_->getCurrentHomePoint().toCell().x,
+//			 go_home_path_algorithm_->getCurrentHomePoint().toCell().y);
 	if (ev.rcon_triggered)
-		// Directly switch to state go to charger.
-		update_finish = false;
-	else if(!reach_home_point_ && getPosition().toCell() == go_home_path_algorithm_->getCurrentHomePoint().home_point.toCell())
 	{
-		reach_home_point_ = true;
+		// Directly switch to state go to charger.
+		ROS_INFO("%s %d: Rcon T signal triggered and switch to state go to charger.", __FUNCTION__, __LINE__);
+		should_go_to_charger_ = true;
+		ev.rcon_triggered = 0;
 		update_finish = false;
+	}
+	else if (go_home_path_algorithm_->reachTarget(should_go_to_charger_))
+	{
+		update_finish = false;
+		home_points_ = go_home_path_algorithm_->getRestHomePoints();
 	}
 	else if (go_home_path_algorithm_->generatePath(clean_map_, getPosition(),old_dir_, plan_path_))
 	{
@@ -666,42 +718,27 @@ bool ACleanMode::updateActionInStateGoHomePoint()
 		plan_path_.pop_front();
 		go_home_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
 		robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
-		reach_home_point_ = false;
+		should_go_to_charger_ = false;
 		action_i_ = ac_linear;
 		genNextAction();
 		update_finish = true;
-	}else{
+		home_points_ = go_home_path_algorithm_->getRestHomePoints();
+	}else
 		// path is empty.
 		update_finish = false;
-	}
-	home_points_ = go_home_path_algorithm_->getRestHomePoints();
+
 
 	return update_finish;
 }
 
 void ACleanMode::switchInStateGoHomePoint()
 {
-	if (ev.rcon_triggered)
+	if (should_go_to_charger_)
 	{
-		ROS_INFO("%s %d: Rcon T signal triggered and switch to state go to charger.", __FUNCTION__, __LINE__);
-		ev.rcon_triggered = 0;
+		should_go_to_charger_ = false;
 		sp_state = state_go_to_charger;
 		sp_state->init();
 		sp_action_.reset();
-	}
-	else if (reach_home_point_)
-	{
-		if (go_home_path_algorithm_->getCurrentHomePoint().have_seen_charger)
-		{
-			sp_state = state_go_to_charger;
-			sp_state->init();
-			sp_action_.reset();
-		}
-		else // For last home point.
-		{
-			ROS_INFO("%s %d, No more home point, finish cleaning.", __FUNCTION__, __LINE__);
-			sp_state = nullptr;
-		}
 	}
 	else // path is empty.
 	{
@@ -744,29 +781,9 @@ void ACleanMode::switchInStateGoToCharger() {
 		// Reach charger and exit clean mode.
 		sp_state = nullptr;
 	} else {
-		if (reach_home_point_)
-		{
-			if (home_points_.empty())
-			{
-				ROS_INFO("%s %d: No more home points, just go back to (0, 0).", __FUNCTION__, __LINE__);
-				home_points_.push_front({{0, 0, 0}, false});
-				go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
-			} else
-			{
-				ROS_INFO("%s %d: Failed to go to charger, try next home point.", __FUNCTION__, __LINE__);
-				home_points_.pop_front();
-				go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
-				sp_state = state_go_home_point;
-				sp_state->init();
-			}
-		}
-		else // Triggered by rcon signal but didn't reach home point.
-		{
-			ROS_INFO("%s %d: Failed to go to charger, resume go to this home point.", __FUNCTION__, __LINE__);
-			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
-			sp_state = state_go_home_point;
-			sp_state->init();
-		}
+		ROS_INFO("%s %d: Failed to go to charger, resume state go home point.", __FUNCTION__, __LINE__);
+		sp_state = state_go_home_point;
+		sp_state->init();
 	}
 }
 
@@ -862,11 +879,12 @@ void ACleanMode::switchInStateExploration() {
 		sp_state = state_trapped;
 	}
 	else{
+		auto curr = updatePosition();
+		start_point_.th = curr.th;
 		sp_state = state_go_home_point;
 		if (go_home_path_algorithm_ == nullptr)
-			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
+			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_, start_point_));
 	}
-
 	action_i_ = ac_null;
 	sp_state->init();
 	genNextAction();
@@ -919,4 +937,9 @@ void ACleanMode::switchInStateTrapped()
 		sp_saved_states.pop_back();
 		sp_state->init();
 	}
+}
+
+void ACleanMode::cliffAll(bool state_now, bool state_last) {
+	ROS_WARN("%s %d: Cliff all.", __FUNCTION__, __LINE__);
+	ev.cliff_all_triggered = true;
 }

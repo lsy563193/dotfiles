@@ -95,12 +95,12 @@ public:
 		z_acc_ = z_acc;
 	}
 
-	uint8_t getCalibration(void)
+	bool getCalibration(void)
 	{
 		return calibration_status_;
 	}
 
-	void setCalibration(uint8_t val)
+	void setCalibration(bool val)
 	{
 		calibration_status_ = val;
 	}

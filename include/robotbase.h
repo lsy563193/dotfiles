@@ -5,17 +5,16 @@
 #include <ros/ros.h>
 
 #include "config.h"
-#include "mode.hpp"
 
 #define POWER_ACTIVE 1
 #define POWER_DOWN 7
 extern bool g_is_tilt;
 
 extern bool robotbase_beep_update_flag;
-extern int robotbase_speaker_sound_loop_count;
+extern int robotbase_beeper_sound_loop_count;
 extern uint8_t robotbase_sound_code;
-extern int robotbase_speaker_sound_time_count;
-extern int robotbase_speaker_silence_time_count;
+extern int robotbase_beeper_sound_time_count;
+extern int robotbase_beeper_silence_time_count;
 // For led control.
 extern uint8_t robotbase_led_type;
 extern bool robotbase_led_update_flag;
@@ -31,7 +30,6 @@ bool is_robotbase_stop(void);
 void serial_receive_routine_cb();
 void robotbase_routine_cb();
 void serial_send_routine_cb();
-Mode *getNextMode(int next_mode_i_);
 void process_beep();
 void process_led();
 void robotbase_reset_odom_pose(void);

@@ -13,16 +13,15 @@
 #include <sensor_msgs/LaserScan.h>
 #include <pp/x900sensor.h>
 #include <pp/scan_ctrl.h>
+#include <rplidar_ros/SetLidar.h>
 #include <vector>
 #include "config.h"
 #include "map.h"
 #include "pose.h"
-#include "mode.hpp"
+//#include "mode.hpp"
 #include <string.h>
 
-extern volatile int16_t g_left_wall_baseline;
-extern volatile int16_t g_right_wall_baseline;
-extern pp::x900sensor   sensor;
+class Mode;
 
 typedef enum {
 	ODOM_POSITION_ODOM_ANGLE = 0,
@@ -30,6 +29,10 @@ typedef enum {
 	SLAM_POSITION_ODOM_ANGLE,
 } Baselink_Frame_Type;
 
+typedef struct{
+		uint32_t seq{};
+		Points tmp_plan_path_{};
+	} PathHead;
 class robot
 {
 public:
@@ -46,7 +49,8 @@ public:
 	void pubLineMarker(std::vector<std::vector<Vector2<double>> > *groups,std::string name);
 	void pubFitLineMarker(visualization_msgs::Marker fit_line_marker);
 	void pubPointMarkers(const std::deque<Vector2<double>> *point, std::string frame_id);
-	void pubTmpTarget(const Point32_t& point);
+//	void pubTmpTarget(const Points &points,bool is_virtual=false);
+	void pubTmpTarget(const Point32_t &point,bool is_virtual=false);
 	void setCleanMapMarkers(int16_t x, int16_t y, CellState type);
 	void pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path);
 
@@ -151,10 +155,11 @@ public:
 		return scan_ctrl_.allow_publishing?true:false;
 	}
 
-	Points getTempTarget()const;
-	void setTempTarget(std::deque<Vector2<double>>& points);
+	PathHead getTempTarget()const;
+	void setTempTarget(std::deque<Vector2<double>>& points, uint32_t  seq);
 private:
-	Points tmp_plan_path_{};
+
+	PathHead path_head_{};
 	Baselink_Frame_Type baselink_frame_type_;
 	boost::mutex baselink_frame_type_mutex_;
 
@@ -236,7 +241,7 @@ private:
 	class Paras{
 public:
 	explicit Paras(bool is_left):is_left_(is_left)
-	{
+{
 		narrow = is_left ? 0.187 : 0.197;
 
 		y_min = 0.0;
@@ -255,7 +260,7 @@ public:
 		x_max_side = std::max(x_side_start, x_side_end);
 
 		auto y_side_start = 0.0;
-		auto y_side_end = is_left ? narrow: -narrow;
+		auto y_side_end = is_left ? narrow + 0.01 : -narrow + 0.01;
 		y_min_side = std::min(y_side_start, y_side_end);
 		y_max_side = std::max(y_side_start, y_side_end);
 
@@ -283,9 +288,9 @@ public:
 	}
 
 	bool inTargetRange(const Vector2<double> &target) {
-		return target.x < 4
-					 && ((target.x > CHASE_X && fabs(target.y) < ROBOT_RADIUS)
-							 || (target.x > 0  && target.y >y_min_target && target.y < y_max_target ));
+		return (target.x > 0 && target.y > 0.4) ||
+					 (target.x > CHASE_X && std::abs(target.y) < ROBOT_RADIUS) ||
+					 (target.y < -ROBOT_RADIUS);
 	}
 
 	bool inForwardRange(const Vector2<double> &point) const {
@@ -344,5 +349,6 @@ bool isYAxis(int dir);
 
 Point32_t updatePosition();
 
+Mode *getNextMode(int next_mode_i_);
 void setPosition(int32_t x, int32_t y);
 #endif

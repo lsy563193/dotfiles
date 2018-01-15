@@ -8,14 +8,15 @@
 
 SpotCleanPathAlgorithm::SpotCleanPathAlgorithm()
 {
-	initVariables(1.0,updatePosition().toCell());
-	genTargets( ANTI_CLOCKWISE, spot_diameter_, &targets_cells_,     begin_cell_);
+	Cell_t  cur = getPosition().toCell();
+	initVariables(1.0,cur);
+	genTargets( ANTI_CLOCKWISE, spot_diameter_, &targets_cells_,cur);
 }
 
 SpotCleanPathAlgorithm::SpotCleanPathAlgorithm(float diameter,Cell_t cur_cell)
 {
 	initVariables(diameter,cur_cell);
-	genTargets( ANTI_CLOCKWISE, spot_diameter_, &targets_cells_,     begin_cell_);
+	genTargets( ANTI_CLOCKWISE, spot_diameter_, &targets_cells_, cur_cell);
 }
 
 SpotCleanPathAlgorithm::~SpotCleanPathAlgorithm()
@@ -33,7 +34,7 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, c
 			return true;
 		}
 		else if(plan_path.size() >= 2){
-			INFO_CYAN("maybe over the tmp target");
+			INFO_CYAN("maybe run over the target");
 			plan_path = plan_path;
 			return true;
 		}
@@ -54,25 +55,32 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, c
 			do{
 				plan_path.pop_front();
 				next_point = plan_path.front();
-				auto shortest_path_cells = findShortestPath(map,cur.toCell(),next_point.toCell(),last_dir,true);
-				auto shortest_path = cells_generate_points(shortest_path_cells);
-				if(shortest_path.empty()){
+				Points shortest_path;
+				if( isTargetReachable(map,next_point.toCell()) ){
+
+					auto shortest_path_cells = findShortestPath(map,cur.toCell(),next_point.toCell(),last_dir,true,true,min_corner_,max_corner_);
+					if(!shortest_path_cells.empty())
+						shortest_path = cells_generate_points(shortest_path_cells);
+					else
+						continue;
+				}
+				else{
 					ROS_INFO("not find shortest_path %d continue",__LINE__);
 					continue;
 				}
-				else{
-					new_plan_path.clear();
-					for(Point32_t point:shortest_path){
-						ROS_INFO("\033[32m first find short path:(%d,%d)\033[0m",point.toCell().x,point.toCell().y);
-						new_plan_path.push_back(point);
-					}
-					ROS_INFO("target (%d,%d)",next_point.toCell().x,next_point.toCell().y);
-					break;
+
+				new_plan_path.clear();
+				for(Point32_t point:shortest_path){
+					ROS_INFO("\033[32m first find short path:(%d,%d)\033[0m",point.toCell().x,point.toCell().y);
+					new_plan_path.push_back(point);
 				}
+
+				ROS_INFO("target (%d,%d)",next_point.toCell().x,next_point.toCell().y);
+				break;
 			}while(ros::ok() && plan_path.size() >=1 );
 
 			/*-----second put the remaind targets into new_plan_path -----*/
-			/*-----if remaind targets in COST_HIGH find shortest path-----*/
+			/*-----if remaind targets in COST_HIGH find shortest path again-----*/
 			ROS_INFO("\033[32m new_plan_path size %d,the remained points size %d\033[0m",new_plan_path.size(),plan_path.size());	
 			while(ros::ok() && plan_path.size() >=2)
 			{
@@ -95,17 +103,23 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, c
 					next_point = cur;
 					cur = new_plan_path.back();
 					auto next_dir = cur.th;
-					auto shortest_path_cells = findShortestPath(map,cur.toCell(),next_point.toCell(),next_dir,true);
-					auto shortest_path = cells_generate_points(shortest_path_cells);
-					if(shortest_path.empty()){
-						ROS_INFO("not find shortest_path %d continue",__LINE__);
+					Points shortest_path;
+					if( isTargetReachable(map,next_point.toCell()) ){
+						auto shortest_path_cells = findShortestPath(map, cur.toCell(), next_point.toCell(), next_dir, true, true, min_corner_, max_corner_);
+
+						if(!shortest_path_cells.empty())
+							shortest_path = cells_generate_points(shortest_path_cells);
+						else
+							continue;
 					}
 					else{
-						ROS_INFO("target (%d,%d)",next_point.toCell().x,next_point.toCell().y);
-						for(Point32_t point:shortest_path){
-							ROS_INFO("\033[32m After first find, short path:(%d,%d)\033[0m",point.toCell().x,point.toCell().y);
-							new_plan_path.push_back(point);
-						}
+						ROS_INFO("not find shortest_path %d continue",__LINE__);
+						continue;
+					}
+					ROS_INFO("target (%d,%d)",next_point.toCell().x,next_point.toCell().y);
+					for(Point32_t point:shortest_path){
+						ROS_INFO("\033[32m After first find, short path:(%d,%d)\033[0m",point.toCell().x,point.toCell().y);
+						new_plan_path.push_back(point);
 					}
 				}
 			}
@@ -130,7 +144,12 @@ void SpotCleanPathAlgorithm::initVariables(float diameter,Cell_t cur_cell)
 	PP_INFO();
 	spot_diameter_ = diameter;
 	spot_running_ = false;
-	begin_cell_ = cur_cell;
+	const int abit = 3;
+	int16_t half_cell_num = (int16_t)ceil(spot_diameter_*1000/CELL_SIZE)/2;
+	min_corner_.x = cur_cell.x - half_cell_num - abit;
+	min_corner_.y = cur_cell.y - half_cell_num - abit;
+	max_corner_.x = cur_cell.x + half_cell_num + abit;
+	max_corner_.y = cur_cell.y + half_cell_num + abit;
 	targets_cells_.clear();
 }
 

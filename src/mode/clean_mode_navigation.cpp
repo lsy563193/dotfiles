@@ -69,6 +69,17 @@ bool CleanModeNav::mapMark()
 
 bool CleanModeNav::isExit()
 {
+	if (sp_state == state_init)
+	{
+		if (action_i_ == ac_open_lidar && sp_action_->isTimeUp())
+		{
+			error.set(ERROR_CODE_LIDAR);
+			setNextMode(md_idle);
+			ev.fatal_quit = true;
+			return true;
+		}
+	}
+
 	if (sp_state == state_pause)
 	{
 		if (sp_action_->isTimeUp())
@@ -94,7 +105,7 @@ bool CleanModeNav::isExit()
 
 	if (ev.fatal_quit || ev.key_long_pressed || ev.cliff_all_triggered || sp_action_->isExit())
 	{
-		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Exit for ev.fatal_quit || ev.key_long_pressed || ev.cliff_all_triggered || sp_action_->isExit().", __FUNCTION__, __LINE__);
 		setNextMode(md_idle);
 		return true;
 	}
@@ -106,7 +117,7 @@ bool CleanModeNav::isExit()
 		return true;
 	}
 
-	return ACleanMode::isExit();
+	return false;
 }
 
 bool CleanModeNav::setNextAction()
@@ -224,15 +235,6 @@ void CleanModeNav::remoteDirectionLeft(bool state_now, bool state_last)
 	remote.reset();
 }
 
-void CleanModeNav::cliffAll(bool state_now, bool state_last)
-{
-	if (!ev.cliff_all_triggered)
-	{
-		ROS_WARN("%s %d: Cliff all.", __FUNCTION__, __LINE__);
-		ev.cliff_all_triggered = true;
-	}
-}
-
 void CleanModeNav::batteryHome(bool state_now, bool state_last)
 {
 	if (sp_state == state_clean)
@@ -310,10 +312,8 @@ bool CleanModeNav::updateActionInStateInit() {
 		brush.normalOperate();
 
 		if (charger.isOnStub())
-		{
 			action_i_ = ac_back_form_charger;
-			home_points_.front().have_seen_charger = true;
-		} else
+		else
 			action_i_ = ac_open_lidar;
 	} else if (action_i_ == ac_back_form_charger)
 	{
@@ -321,6 +321,7 @@ bool CleanModeNav::updateActionInStateInit() {
 			// Init odom position here.
 			robot::instance()->initOdomPosition();
 		action_i_ = ac_open_lidar;
+		setHomePoint();
 	} else if (action_i_ == ac_open_lidar)
 	{
 		if (!has_aligned_and_open_slam_)
@@ -351,7 +352,7 @@ void CleanModeNav::switchInStateInit() {
 
 		auto curr = updatePosition();
 		passed_path_.push_back(curr);
-		home_points_.back().home_point.th = curr.th;
+		start_point_.th = curr.th;
 		sp_state = state_clean;
 	}
 	sp_state->init();
@@ -414,7 +415,7 @@ void CleanModeNav::switchInStateClean() {
 		sp_state = state_go_home_point;
 		ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_points_.size());
 		go_home_path_algorithm_.reset();
-		go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
+		go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_, start_point_));
 	}
 	sp_state->init();
 	action_i_ = ac_null;
@@ -544,7 +545,7 @@ bool CleanModeNav::checkResumePause()
 			sp_saved_states.pop_back();
 			sp_saved_states.push_back(state_go_home_point);
 			if (go_home_path_algorithm_ == nullptr)
-				go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
+				go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_, start_point_));
 		}
 		sp_state = state_init;
 		sp_state->init();

@@ -38,21 +38,25 @@ protected:
 class AMovementFollowPoint:public IMovement{
 public:
 	virtual bool is_near()=0;
-	virtual bool calcTmpTarget()=0;
+	virtual Point32_t calcTmpTarget()=0;
+	bool isFinish() override ;
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed) override ;
+	int16_t angle_diff{};
 
 protected:
 
 	int32_t min_speed_;
 	int32_t max_speed_;
-	static Point32_t tmp_target_;
+//	static Point32_t tmp_target_;
 //	boost::thread* path_thread_{};
 //	Point32_t tmp_target_{};
 	uint8_t integration_cycle_{};
 	int32_t integrated_{};
 	int32_t base_speed_{};
+	int16_t angle_forward_to_turn_{};
+	int16_t angle_turn_to_forward_{};
 	int kp_{20};
-	const double TIME_STRAIGHT{0.2};
+//	const double TIME_STRAIGHT{0.2};
 };
 
 class MovementBack: public IMovement{
@@ -102,9 +106,11 @@ public:
 	bool is_near() override;
 //	void setTarget();
 
-	bool calcTmpTarget() override ;
-	Point32_t _calcTmpTargetNoneRealTime();
-	Point32_t _calcTmpTargetRealTime();
+	Point32_t calcTmpTarget() override ;
+	Point32_t _calcTmpTarget();
+//	bool calcTmpTarget() override ;
+//	Point32_t _calcTmpTargetNoneRealTime();
+//	Point32_t _calcTmpTargetRealTime();
 
 private:
 };
@@ -163,7 +169,7 @@ class MovementFollowWallLidar:public AMovementFollowPoint, public IFollowWall
 public:
 	explicit MovementFollowWallLidar(bool is_left);
 
-	bool calcTmpTarget() override ;
+	Point32_t calcTmpTarget() override ;
 	Points _calcTmpTarget();
 
 	bool isFinish() override ;
@@ -171,7 +177,6 @@ public:
 private:
 	Points virtual_targets_{};
 	Points lidar_targets_{};
-	Points lidar_targets_old_{};
 	Points* p_tmp_targets_{};
 
 	bool is_sp_turn{};

@@ -16,7 +16,7 @@ class APathAlgorithm
 public:
 	virtual bool generatePath(GridMap &map, const Point32_t &curr, const int &last_dir, Points &plan_path) = 0;
 
-	virtual bool checkTrapped(GridMap &map, const Cell_t &curr_cell) = 0;
+	virtual bool checkTrapped(GridMap &map, const Cell_t &curr_cell) {};
 
 	Points cells_generate_points(Cells &path);
 	/*
@@ -66,11 +66,14 @@ public:
 	 * @param: Cell_t start, the start cell.
 	 * @param: Cell_t target, the target cell.
 	 * @param: MapDirection last_dir, the direction of robot last moving.
+	 * @param: Boundery between min_corner and max_corner
+	 * @param: min corner
+	 * @param: max corner
 	 *
 	 * @return: Cells path, the shortest path from start cell to target cell.
 	 */
 	Cells findShortestPath(GridMap &map, const Cell_t &start,
-							  const Cell_t &target, const int &last_dir, bool use_unknown);
+							  const Cell_t &target, const int &last_dir, bool use_unknown,bool bound,Cell_t min_corner ,Cell_t max_corner);
 
 	bool generateShortestPath(GridMap &map, const Point32_t &curr,const Point32_t &target, const int &last_dir, Points &plan_path);
 
@@ -90,6 +93,12 @@ public:
 	 */
 	bool findTargetUsingDijkstra(GridMap &map, const Cell_t& curr_cell, Cell_t& target, int& cleaned_count);
 
+
+	/*
+	 * @
+	 *
+	 */
+	bool isTargetReachable(GridMap map,Cell_t target);
 protected:
 
 	/*
@@ -110,13 +119,6 @@ protected:
 	const Cell_t cell_direction_index_[9]{{1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1},{0,0}};
 };
 
-typedef enum {
-	THROUGH_CLEANED_AREA,
-	THROUGH_SLAM_MAP_REACHABLE_AREA,
-	THROUGH_UNKNOWN_AREA,
-	GO_HOME_WAY_NUM
-}GoHomeWay_t;
-
 class NavCleanPathAlgorithm: public APathAlgorithm
 {
 	/*
@@ -126,10 +128,11 @@ class NavCleanPathAlgorithm: public APathAlgorithm
 	 * This function is for finding path to unclean area.
 	 *
 	 * @param: GridMap map, it will use it's CLEAN_MAP data.
-	 * @param: Cell_t curr_cell, the current cell of robot.
-	 * @param: MapDirection last_dir, the direction of last movement.
+	 * @param: Point32_t curr, the current cell of robot.
+	 * @param: int last_dir, the direction of last movement.
 	 *
-	 * @return: Cells path, the path to unclean area.
+	 * @return: Points path, the path to unclean area.
+	 * @return: bool, true if generating succeeds.
 	 */
 	bool generatePath(GridMap &map, const Point32_t &curr, const int &last_dir, Points &plan_path) override;
 
@@ -218,7 +221,6 @@ class WFCleanPathAlgorithm: public APathAlgorithm
 {
 public:
 	bool generatePath(GridMap &map, const Point32_t &curr, const int &last_dir, Points &targets) override;
-	bool checkTrapped(GridMap &map, const Cell_t &curr_cell) override {};
 };
 
 class SpotCleanPathAlgorithm: public APathAlgorithm
@@ -234,13 +236,14 @@ public:
 
 	void genTargets(uint8_t type,float diameter,Cells *targets,const Cell_t begincell);
 	void initVariables(float diameter,Cell_t cur_cell);
+
 private:
 	
 	float spot_diameter_ ;
 	bool spot_running_;
 	Cells targets_cells_;
-	Cell_t begin_cell_; 
-	Cell_t state_cell_;
+	Cell_t min_corner_;
+	Cell_t max_corner_;
 };
 
 class GoHomePathAlgorithm: public APathAlgorithm
@@ -250,42 +253,129 @@ public:
 	 * @author Lin Shao Yue / Austin Liu
 	 * @last modify by Austin Liu
 	 *
-	 * The constructor requires current clean map and stored home cells.
+	 * The constructor requires current clean map and stored home points and start point.
 	 *
 	 * @param: GridMap map, it will be copied to go_home_map_.
-	 * @param: Cells home_cells, stored home_cells, size should be limited in 4, including
-	 * home cell(0, 0).
-	 *
-	 * @return: Cells path, the path to selected home cell.
+	 * @param: Points home_points, stored home points, size should be limited in 3.
+	 * @param: Point32_t start_point, the start point of this cleaning.
 	 */
-	GoHomePathAlgorithm(GridMap &map, HomePoints home_cells);
+	GoHomePathAlgorithm(GridMap &map, Points &home_points, Point32_t start_point);
 	~GoHomePathAlgorithm() = default;
 
 	/*
-	 * @author Lin Shao Yue / Austin Liu
+	 * @author Austin Liu
 	 * @last modify by Austin Liu
 	 *
-	 * This function is for selecting the home cell and finding path to this home cell.
+	 * This function is for selecting the home point and finding path to this home point.
 	 *
 	 * @param: GridMap map, it will use it's CLEAN_MAP data.
-	 * @param: Cell_t curr_cell, the current cell of robot.
+	 * @param: Point32_t curr, the current cell of robot.
+	 * @param: int last_dir, the direction of last movement.
 	 *
-	 * @return: Cells path, the path to selected home cell.
+	 * @return: Points plan_path, the path to selected home point.
+	 * @return: bool, true if generating succeeds.
 	 */
 	bool generatePath(GridMap &map, const Point32_t &curr, const int &last_dir, Points &plan_path) override;
 
-	bool checkTrapped(GridMap &map, const Cell_t &curr_cell) override {};
+	/*
+	 * @author Austin Liu
+	 *
+	 * This function is for checking if robot has reached home point or start point.
+	 * If it reaches home point, also remove this home point from the home point list.
+	 *
+	 * @param: bool should_go_to_charger, if robot reaches the target, it decides whether next state is
+	 *         state go to charger.
+	 *
+	 * @return: bool, true if robot has reach home point or start point.
+	 */
+	bool reachTarget(bool &should_go_to_charger);
 
-	HomePoint getCurrentHomePoint();
-	HomePoints getRestHomePoints();
+	/*
+	 * @author Austin Liu
+	 *
+	 * This function is for getting rest home points for clean mode.
+	 *
+	 * @return: Points, rest home points.
+	 */
+	Points getRestHomePoints();
+
 private:
 
-	GridMap go_home_map_;
-	HomePoints home_points_;
-	HomePoints rest_home_points_;
-	// current_home_point_ is initialized as an unreachable point.
-	HomePoint current_home_point_{{CELL_COUNT_MUL * MAP_SIZE + 1, CELL_COUNT_MUL * MAP_SIZE + 1, 0}, false};
-	std::vector<int> go_home_way_list_;
-	std::vector<int>::iterator go_home_way_list_it_;
+	/*
+	 * @author Austin Liu
+	 *
+	 * This function is for getting current home point.
+	 *
+	 * @return: Point32_t, current home point.
+	 */
+	Point32_t getCurrentHomePoint();
+
+	/*
+	 * @author Austin Liu
+	 *
+	 * This function is for erasing the target home point from the home point list.
+	 *
+	 * @param: Point32_t target_home_point, home point to be erased.
+	 *
+	 * @return: bool, true if operation succeeds.
+	 */
+	bool eraseHomePoint(Point32_t target_home_point);
+
+	/*
+	 * @author Austin Liu
+	 *
+	 * This function is for generating path to home point through the cleaned area(CLEANED in CLEAN_MAP).
+	 *
+	 * @param: GridMap map, it will use it's CLEAN_MAP data.
+	 * @param: Cell_t curr_cell, the current cell of robot.
+	 * @param: MapDirection last_dir, the direction of last movement.
+	 *
+	 * @return: Cells path, the path to unclean area.
+	 * @return: bool, true if operation succeeds.
+	 */
+	bool generatePathThroughCleanedArea(GridMap &map, const Point32_t &curr, const int &last_dir, Points &plan_path);
+
+	/*
+	 * @author Austin Liu
+	 *
+	 * This function is for generating path to home point through the cleaned area(CLEANED in CLEAN_MAP).
+	 * This map has been covered by the slam map to clear the uncertain blocks.
+	 *
+	 * @param: GridMap map, it will use it's CLEAN_MAP data.
+	 * @param: Cell_t curr_cell, the current cell of robot.
+	 * @param: MapDirection last_dir, the direction of last movement.
+	 *
+	 * @return: Cells path, the path to unclean area.
+	 * @return: bool, true if operation succeeds.
+	 */
+	bool generatePathThroughSlamMapReachableArea(GridMap &map, const Point32_t &curr, const int &last_dir, Points &plan_path);
+
+	/*
+	 * @author Austin Liu
+	 *
+	 * This function is for generating path to home point through the uncertain area(CLEANED and UNCLEANED in CLEAN_MAP).
+	 *
+	 * @param: GridMap map, it will use it's CLEAN_MAP data.
+	 * @param: Cell_t curr_cell, the current cell of robot.
+	 * @param: MapDirection last_dir, the direction of last movement.
+	 *
+	 * @return: Cells path, the path to unclean area.
+	 * @return: bool, true if operation succeeds.
+	 */
+	bool generatePathThroughUnknownArea(GridMap &map, const Point32_t &curr, const int &last_dir, Points &plan_path);
+
+typedef enum {
+	THROUGH_CLEANED_AREA = 0,
+	THROUGH_SLAM_MAP_REACHABLE_AREA,
+	THROUGH_UNKNOWN_AREA,
+	GO_HOME_WAY_NUM
+}GoHomeWay_t;
+
+	GoHomeWay_t home_way_index_{THROUGH_CLEANED_AREA};
+	int home_point_index_[GO_HOME_WAY_NUM]{};
+	Points home_points_;
+	Point32_t start_point_;
+	// current_home_point_ is initialized as an unreachable point because state go home point will check if reach home point first.
+	Point32_t current_home_point_{CELL_COUNT_MUL * (MAP_SIZE + 1), CELL_COUNT_MUL * (MAP_SIZE + 1), 0};
 };
 #endif //PP_PATH_ALGORITHM_H

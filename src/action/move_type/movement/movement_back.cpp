@@ -3,15 +3,9 @@
 //
 
 #include <event_manager.h>
-#include "pp.h"
+//#include "pp.h"
 #include "arch.hpp"
-
-
-
-// Back distance for go to charger regulator
-bool g_go_to_charger_back_30cm = false;
-bool g_go_to_charger_back_10cm = false;
-bool g_go_to_charger_back_0cm = false;
+#include "dev.h"
 
 MovementBack::MovementBack(float back_distance, uint8_t max_speed)
 {
@@ -30,18 +24,18 @@ void MovementBack::updateStartPose()
 	s_pos_x = odom.getX();
 	s_pos_y = odom.getY();
 }
-
-bool MovementBack::isLidarStop()
-{
-	auto obstacle_distance = lidar.getObstacleDistance(1, ROBOT_RADIUS);
-	if (back_distance_ >= 0.05 && obstacle_distance < 0.03)
-	{
-		ROS_WARN("%s, %d: obstacle_distance:%f.", __FUNCTION__, __LINE__, obstacle_distance);
-		return true;
-	}
-
-	return false;
-}
+//
+//bool MovementBack::isLidarStop()
+//{
+//	auto obstacle_distance = lidar.getObstacleDistance(1, ROBOT_RADIUS);
+//	if (back_distance_ >= 0.05 && obstacle_distance < 0.03)
+//	{
+//		ROS_WARN("%s, %d: obstacle_distance:%f.", __FUNCTION__, __LINE__, obstacle_distance);
+//		return true;
+//	}
+//
+//	return false;
+//}
 
 void MovementBack::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {

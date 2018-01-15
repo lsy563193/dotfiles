@@ -4,7 +4,6 @@
 
 #include <arch.hpp>
 #include <error.h>
-#include <pp.h>
 #include <event_manager.h>
 #include "dev.h"
 
@@ -239,8 +238,8 @@ bool MovementExceptionResume::isFinish()
 				case 4:
 				case 5:
 				{
-					ROS_DEBUG("%s %d: robot::instance()->getWorldPoseAngle(): %d", __FUNCTION__, __LINE__,
-							  robot::instance()->getWorldPoseAngle());
+//					ROS_DEBUG("%s %d: robot::instance()->getWorldPoseAngle(): %d", __FUNCTION__, __LINE__,
+//							  robot::instance()->getWorldPoseAngle());
 					// If cliff jam during bumper self resume.
 					if (cliff.getStatus() && ++g_cliff_cnt > 2)
 					{

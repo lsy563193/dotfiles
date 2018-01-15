@@ -4,6 +4,7 @@
 
 #include <event_manager.h>
 #include <pp.h>
+#include <arch.hpp>
 
 ModeGoToCharger::ModeGoToCharger()
 {

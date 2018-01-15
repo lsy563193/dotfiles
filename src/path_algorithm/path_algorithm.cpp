@@ -162,19 +162,26 @@ Points APathAlgorithm::cells_generate_points(Cells &path)
 }
 
 bool APathAlgorithm::generateShortestPath(GridMap &map, const Point32_t &curr,const Point32_t &target, const int &last_dir, Points &plan_path) {
-	auto path_cell = findShortestPath(map, curr.toCell(), target.toCell(),last_dir, false);
+	Cell_t corner1 ,corner2;
+	auto path_cell = findShortestPath(map, curr.toCell(), target.toCell(),last_dir, false,false,corner1,corner2);
 
 	plan_path = cells_generate_points(path_cell);
 }
 
 Cells APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const Cell_t &target,
-										const int &last_dir, bool use_unknown)
+										const int &last_dir, bool use_unknown,bool bound ,Cell_t min_corner,Cell_t max_corner)
 {
 	Cells path_{};
-
-	// Get the map range.
+	// limit cost map range or get the total map range.
 	int16_t x_min, x_max, y_min, y_max;
-	map.getMapRange(CLEAN_MAP, &x_min, &x_max, &y_min, &y_max);
+	if(bound){
+		x_min = min_corner.x;
+		y_min = min_corner.y;	
+		x_max = max_corner.x;
+		y_max = max_corner.y;
+	}
+	else
+		map.getMapRange(CLEAN_MAP, &x_min, &x_max, &y_min, &y_max);
 
 	// Reset the COST_MAP.
 	map.reset(COST_MAP);
@@ -194,6 +201,14 @@ Cells APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const 
 			else if(cs == UNCLEAN && !use_unknown)
 				map.setCell(COST_MAP, i, j, COST_HIGH);
 		}
+	}
+
+	// For protection, the target cell must be reachable.
+	if (map.getCell(COST_MAP, target.x, target.y) == COST_HIGH)
+	{
+		ROS_ERROR("%s %d: Target cell has high cost(%d)! This target should be filtered before calling this function.",
+				  __FUNCTION__, __LINE__, map.getCell(COST_MAP, target.x, target.y));
+		return path_;
 	}
 
 	// Set for target cell. For reverse algorithm, we will generate a-star map from target cell.
@@ -466,4 +481,18 @@ bool APathAlgorithm::checkTrappedUsingDijkstra(GridMap &map, const Cell_t &curr_
 	ROS_WARN("%s %d: dijkstra_cleaned_count(%d), map_cleand_count(%d), clean_proportion(%f) ,when prop < 0,8 is trapped",
 					 __FUNCTION__, __LINE__, dijkstra_cleaned_count, map_cleand_count, clean_proportion);
 	return (clean_proportion < 0.8);
+}
+
+bool APathAlgorithm::isTargetReachable(GridMap map,Cell_t target)
+{
+	for (int16_t i = target.x - 1; i <= target.x + 1; ++i) {
+		for (int16_t j = target.y- 1; j <= target.y + 1; ++j) {
+			CellState cs = map.getCell(CLEAN_MAP, i, j);
+			if (cs >= BLOCKED && cs <= BLOCKED_BOUNDARY) {
+				return false;
+			}
+		}
+	}
+	return true;
+
 }

@@ -280,18 +280,13 @@ void Wheel::setPidTargetSpeed(uint8_t Left, uint8_t Right, uint8_t reg_type, flo
 void Wheel::pidSetLeftSpeed(float speed)
 {
 	left_speed_after_pid_ = static_cast<int8_t>(speed);
-	uint16_t stream_speed;
+	int16_t stream_speed;
 	if (speed >= 0)
-	{
 		speed = speed > RUN_TOP_SPEED ? RUN_TOP_SPEED : speed;
-		stream_speed = static_cast<uint16_t>(speed * SPEED_ALF);
-	}
 	else
-	{
-		speed = fabs(speed) > RUN_TOP_SPEED ? RUN_TOP_SPEED : fabs(speed);
-		stream_speed = static_cast<uint16_t>(speed * SPEED_ALF);
-		stream_speed |= 0x8000;
-	}
+		speed = fabs(speed) > RUN_TOP_SPEED ? -1 * RUN_TOP_SPEED : speed;
+	stream_speed = static_cast<int16_t>(speed * SPEED_ALF);
+
 	serial.setSendData(CTL_WHEEL_LEFT_HIGH, (stream_speed >> 8) & 0xff);
 	serial.setSendData(CTL_WHEEL_LEFT_LOW, stream_speed & 0xff);
 }
@@ -299,18 +294,13 @@ void Wheel::pidSetLeftSpeed(float speed)
 void Wheel::pidSetRightSpeed(float speed)
 {
 	right_speed_after_pid_ = static_cast<int8_t>(speed);
-	uint16_t stream_speed;
+	int16_t stream_speed;
 	if (speed >= 0)
-	{
 		speed = speed > RUN_TOP_SPEED ? RUN_TOP_SPEED : speed;
-		stream_speed = static_cast<uint16_t>(speed * SPEED_ALF);
-	}
 	else
-	{
-		speed = fabs(speed) > RUN_TOP_SPEED ? RUN_TOP_SPEED : fabs(speed);
-		stream_speed = static_cast<uint16_t>(speed * SPEED_ALF);
-		stream_speed |= 0x8000;
-	}
+		speed = fabs(speed) > RUN_TOP_SPEED ? -1 * RUN_TOP_SPEED : speed;
+	stream_speed = static_cast<int16_t>(speed * SPEED_ALF);
+
 	serial.setSendData(CTL_WHEEL_RIGHT_HIGH, (stream_speed >> 8) & 0xff);
 	serial.setSendData(CTL_WHEEL_RIGHT_LOW, stream_speed & 0xff);
 }

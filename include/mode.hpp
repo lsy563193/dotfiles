@@ -8,7 +8,7 @@
 #include "path_algorithm.h"
 #include "event_manager.h"
 #include "boost/shared_ptr.hpp"
-#include "move_type.hpp"
+//#include "move_type.hpp"
 
 class Mode:public EventHandle
 {
@@ -22,9 +22,13 @@ public:
 
 	virtual void setNextMode(int next_mode);
 
+	bool isInitState() const{
+			return action_i_ == ac_open_gyro || action_i_ == ac_back_form_charger ||
+		action_i_ == ac_open_lidar || action_i_	== ac_align || ac_align == ac_open_slam;
+	};
 	int getNextMode();
 
-	friend IMoveType;
+//	friend IMoveType;
 
 	enum {
 		md_idle,
@@ -246,15 +250,15 @@ public:
 
 	virtual bool MoveTypeLinearIsFinish(MoveTypeLinear *p_mt);
 	int reach_cleaned_count_{};
-	static Points passed_path_;
-	static Points plan_path_;
+	Points passed_path_{};
+	Points plan_path_{};
 
-	static int old_dir_;
-	static int new_dir_;
+	int old_dir_{};
+	int new_dir_{};
 
-	static boost::shared_ptr<APathAlgorithm> clean_path_algorithm_;
-	static boost::shared_ptr<GoHomePathAlgorithm> go_home_path_algorithm_;
-	static GridMap clean_map_;
+	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
+	boost::shared_ptr<GoHomePathAlgorithm> go_home_path_algorithm_{};
+	GridMap clean_map_{};
 	Point32_t charger_pos_{};//charger postion
 
 	// State null
@@ -320,10 +324,11 @@ public:
 
 	void remoteHome(bool state_now, bool state_last) override ;
 
+	void cliffAll(bool state_now, bool state_last) override ;
+
 	// todo: Delete below 4 function.
 	virtual bool isStateInitUpdateFinish(){};
 	virtual bool isStateCleanUpdateFinish(){};
-	virtual bool isStateGoHomePointUpdateFinish();
 	virtual bool isStateGoToChargerUpdateFinish(){};
 
 public:
@@ -393,14 +398,15 @@ protected:
 
 
 protected:
-	static bool low_battery_charge_;
-	static bool moved_during_pause_;
-	HomePoints home_points_;
-	bool reach_home_point_{false};
+	bool low_battery_charge_{};
+	bool moved_during_pause_{};
+	Points home_points_{};
+	Point32_t start_point_{0, 0, 0};
+	bool should_go_to_charger_{false};
 public:
 //	uint8_t saveFollowWall(bool is_left);
 //	std::vector<Cell_t> temp_fw_cells;
-	Point32_t last_;
+	Point32_t last_{};
 	bool found_temp_charger_{};
 	bool in_rcon_signal_range_{};
 	bool should_mark_charger_{};
@@ -422,7 +428,7 @@ public:
 	void remoteClean(bool state_now, bool state_last) override ;
 //	void remoteHome(bool state_now, bool state_last) override ;
 	void remoteDirectionLeft(bool state_now, bool state_last) override ;
-	void cliffAll(bool state_now, bool state_last) override ;
+//	void cliffAll(bool state_now, bool state_last) override ;
 	void chargeDetect(bool state_now, bool state_last) override ;
 	void batteryHome(bool state_now, bool state_last) override ;
 //	void overCurrentBrushLeft(bool state_now, bool state_last);
@@ -504,11 +510,11 @@ public:
 	~CleanModeExploration();
 
 	bool mapMark() override;
-	bool isExit() override;
+//	bool isExit() override;
 	bool setNextAction() override;
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteClean(bool state_now, bool state_last) override ;
-	void cliffAll(bool state_now, bool state_last) override ;
+//	void cliffAll(bool state_now, bool state_last) override ;
 	void chargeDetect(bool state_now, bool state_last) override ;
 
 //	void overCurrentBrushLeft(bool state_now, bool state_last);
@@ -533,45 +539,19 @@ public:
 
 	~CleanModeFollowWall() override;
 
-//	bool setNextAction() override;
-
 	bool mapMark() override;
 
 	void keyClean(bool state_now, bool state_last) override;
 	void remoteMax(bool state_now, bool state_last) override;
 
-//	void overCurrentWheelLeft(bool state_now, bool state_last);
-//
-//	void overCurrentWheelRight(bool state_now, bool state_last);
-//
 	void remoteClean(bool state_now, bool state_last) override;
 	void switchInStateClean() override;
 	bool generatePath(GridMap &map, const Point32_t &curr, const int &last_dir, Points &targets);
-//
-//	void remoteHome(bool state_now, bool state_last);
-//
-//	void remoteDirectionLeft(bool state_now, bool state_last);
-//
-//	void cliffAll(bool state_now, bool state_last);
-//
-//	void batteryHome(bool state_now, bool state_last);
-//
-//	void chargeDetect(bool state_now, bool state_last);
+
 	bool MoveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) override ;
-
-	int16_t wf_path_find_shortest_path(GridMap& map, int16_t xID, int16_t yID, int16_t endx, int16_t endy, uint8_t bound);
-
-	int16_t wf_path_find_shortest_path_ranged(GridMap& map, int16_t curr_x, int16_t curr_y, int16_t end_x, int16_t end_y, uint8_t bound,
-																						int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max,
-																						bool used_unknown);
-	bool wf_is_isolate(GridMap& map);
 
 	bool updateActionInStateClean()override ;
 
-private:
-	uint32_t diff_timer_;
-protected:
-//	Cells home_point_{};
 private:
  int reach_cleaned_count_save{};
 };
@@ -583,9 +563,9 @@ public:
 	~CleanModeSpot();
 
 	bool mapMark() override;
-	bool isExit() override;
+//	bool isExit() override;
 	bool setNextAction() override;
-	void cliffAll(bool state_now, bool state_last) override;
+//	void cliffAll(bool state_now, bool state_last) override;
 	void remoteClean(bool state_now, bool state_last) override;
 	void keyClean(bool state_now, bool state_last) override;
 	void switchInStateInit() override ;

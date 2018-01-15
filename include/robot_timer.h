@@ -39,7 +39,7 @@ public:
 	}
 
 	void setPlanStatus(uint8_t Status) {
-		plan_status_ = Status;
+		plan_status_ |= Status;
 		if (plan_status_ != 0)
 			ROS_DEBUG("Plan status return %d.", plan_status_);
 	}

@@ -1,7 +1,6 @@
 #include "pp.h"
 #include <std_srvs/Empty.h>
 #include <std_srvs/SetBool.h>
-#include <pp/SetLidar.h>
 boost::mutex scanLinear_mutex_;
 boost::mutex scanOriginal_mutex_;
 boost::mutex scanCompensate_mutex_;
@@ -1282,7 +1281,7 @@ double Lidar::getObstacleDistance(uint8_t dir, double range)
 		return 0;
 	}
 
-	for(auto point:lidarXY_points){
+	for(const auto& point:lidarXY_points){
 		x = point.x;
 		y = point.y;
 		x_to_robot = fabs(x) - ROBOT_RADIUS * sin(acos(fabs(y) / ROBOT_RADIUS));
