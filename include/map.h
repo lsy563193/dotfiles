@@ -2,26 +2,38 @@
 #define __MAP_H__
 
 #include "config.h"
-#include "mathematics.h"
+#include <deque>
 #include <vector>
+#include "mathematics.h"
+#include "BoundingBox.h"
+#include <boost/thread/mutex.hpp>
+#include "slam_map.hpp"
 
-#define MAP 0
-#define SPMAP 1
-#define WFMAP 2
-#define ROSMAP 3
+#define CLEAN_MAP 0
+#define COST_MAP 1
+
+#define BLOCK_LEFT				((uint8_t) 0x01)
+#define BLOCK_RIGHT			((uint8_t) 0x02)
+#define BLOCK_FRONT			((uint8_t) 0x04)
+#define BLOCK_ALL			((uint8_t) 0x07)
+
+typedef std::deque<Point32_t> Points;
 
 typedef enum {
+	// The sequence of CLEAN_MAP value must be UNCLEAN < CLEANED < MAP_BLOCKED < SLAM_MAP_BLOCKED
   UNCLEAN  = 0,
+  SLAM_MAP_UNKNOWN = 0,
   CLEANED = 1,
+  SLAM_MAP_CLEANABLE = 1,
   BLOCKED = 2,
-  BLOCKED_OBS = 2,
+  BLOCKED_FW = 2,
   BLOCKED_BUMPER = 3,
   BLOCKED_CLIFF = 4,
   BLOCKED_RCON = 5,
-  BLOCKED_LASER = 6,
+  BLOCKED_LIDAR = 6,
   BLOCKED_TILT = 7,
   BLOCKED_SLIP = 8,
-  BLOCKED_ROS_MAP = 9,
+  SLAM_MAP_BLOCKED = 9,
   BLOCKED_BOUNDARY = 10,
   TARGET_CLEAN = 13,
   TARGET = 14,
@@ -35,93 +47,252 @@ typedef enum {
   COST_HIGH = 7,
 } CellState;
 
-typedef enum {
-  POS_X = 0,
-  PX_PY = 450,
-  POS_Y = 900,
-  NS_PY = 1350,
-  NEG_X = 1800,
-  NX_NY = 2250,
-  NEG_Y = 2700,
-  PX_NY = 3150,
-  NONE = 3600,
-} Direction_Cardinal;
+enum {
+  MAP_POS_X = 0,
+  MAP_PX_PY = 450,
+  MAP_POS_Y = 900,
+  MAP_NS_PY = 1350,
+  MAP_NEG_X = 1800,
+  MAP_NX_NY =-1350,
+  MAP_NEG_Y =-900,
+  MAP_PX_NY =-450,
+  MAP_NONE = 0,
+} ;
 
-#define IS_POS_AXIS(x) (x == POS_X || x == POS_Y || x == NONE)
-#define	IS_X_AXIS(x) (x == NEG_X || x == POS_X || x == NONE)
-#define	IS_Y_AXIS(x) (x == POS_Y || x == NEG_Y)
+class GridMap {
+public:
 
-void map_init(uint8_t id);
+	GridMap();
+	~GridMap();
+	void mapInit();
 
-int32_t map_get_x_count(void);
-int32_t map_get_y_count(void);
-int16_t map_get_x_cell(void);
-int16_t map_get_y_cell(void);
+	void setCell(uint8_t id, int16_t x, int16_t y, CellState value);
 
-void map_move_to(double x, double y);
-void map_set_position(double x, double y);
+	CellState getCell(int id, int16_t x, int16_t y);
 
-int32_t map_get_relative_x(int16_t heading, int16_t dy, int16_t dx, bool using_point_pos);
-int32_t map_get_relative_y(int16_t heading, int16_t dy, int16_t dx, bool using_point_pos);
+	void clearBlocks(void);
 
-int16_t Map_GetLateralOffset(uint16_t heading);
-int16_t Map_GetLongitudinalOffset(uint16_t heading);
+	void setCells(int8_t count, int16_t cell_x, int16_t cell_y, CellState state);
 
-int16_t next_x_id(uint16_t heading, int16_t offset_lat, int16_t offset_long);
-int16_t next_y_id(uint16_t heading, int16_t offset_lat, int16_t offset_long);
+	void reset(uint8_t id);
 
-void Map_GetRelativePosition(uint16_t heading, int16_t *x, int16_t *y);
+	void copy(GridMap &source_map);
 
-CellState map_get_cell(uint8_t id, int16_t x, int16_t y, bool is_wf_map = false);
-Cell_t map_get_curr_cell();
-void map_set_cell(uint8_t id, int32_t x, int32_t y, CellState value);
-
-void map_clear_blocks(void);
-int32_t Map_DistanceLimit(uint16_t heading);
-
-int32_t cell_to_count(int16_t distance);
-int16_t count_to_cell(double count);
-Point32_t map_cell_to_point(const Cell_t& cell);
-Cell_t map_point_to_cell(Point32_t pnt);
-
-void map_set_cells(int8_t count, int16_t cell_x, int16_t cell_y, CellState state);
-
-void map_reset(uint8_t id);
-
-void map_copy(uint8_t id,uint8_t **new_map);
 /*
- * @author Alvin Xie
- * @brief Convert the ros map to grid map for the pathplanning algorithm.
- * @param is_mark_cleaned to decide if mark the free space to CLENAED
+ * @author Alvin Xie/ Li Shao Yan
+ * @brief Convert the ros map to grid map for the path algorithm.
  * @return None
  */
-void ros_map_convert(int16_t id, bool is_mark_cleaned, bool is_clear_block, bool is_freshen_map);
+	void convertFromSlamMap(float threshold);
 
-unsigned char getCost(std::vector<int8_t> &p_map_data, unsigned int mx, unsigned int my);
-void mapToWorld(double origin_x_, double origin_y_, float resolution_, unsigned int mx, unsigned int my, double& wx, double& wy);
-bool worldToMap(double origin_x_, double origin_y_, float resolution_, int size_x_, int size_y_, double wx, double wy, unsigned int& mx, unsigned int& my);
-unsigned int getIndex(int size_x_, unsigned int mx, unsigned int my);
-void indexToCells(int size_x_, unsigned int index, unsigned int& mx, unsigned int& my);
-bool worldToCount(double &wx, double &wy, int32_t &cx, int32_t &cy);
-bool map_mark_robot(uint8_t id);
-uint8_t map_set_laser();
-uint8_t map_set_obs();
-uint8_t map_set_bumper();
-//			if (mt_is_follow_wall() || path_get_path_points_count() < 3 || !cm_curve_move_to_point())
-uint8_t map_set_rcon();
-uint8_t map_set_cliff();
-uint8_t map_set_tilt();
-uint8_t map_set_slip();
-uint8_t map_set_charge_position(const Cell_t homepoint);
-uint8_t map_set_blocked();
-void map_set_cleaned(const Cell_t& curr);
+	void mergeFromSlamGridMap(GridMap source_map, bool add_slam_map_blocks_to_uncleaned = false,
+							  bool add_slam_map_blocks_to_cleaned = false,
+							  bool add_slam_map_cleanable_area = false, bool clear_map_blocks = false,
+							  bool clear_slam_map_blocks = false,
+							  bool clear_bumper_and_lidar_blocks = false);
 
-double world_distance(void);
-int16_t rm_angle(int16_t a1, int16_t a2);
-void map_set_follow_wall(uint8_t id, const Cell_t& curr);
-void map_set_cleaned(std::vector<Cell_t>& cells);
-void map_set_follow_wall(std::vector<Cell_t>& cells);
-uint32_t map_get_cleaned_area();
-void map_set_block(const Cell_t &start, const Cell_t &stop,CellState state);
-void map_set_block_with_bound(const Cell_t &start, const Cell_t &stop,CellState state);
+	void slamMapToWorld(double origin_x_, double origin_y_, float resolution_, int16_t slam_map_x,
+						int16_t slam_map_y, double &world_x, double &world_y);
+
+	bool worldToSlamMap(double origin_x_, double origin_y_, float resolution_, uint32_t slam_map_width,
+								 uint32_t slam_map_height, double world_x, double world_y, uint32_t &data_map_x, uint32_t &data_map_y);
+
+	uint32_t getIndexOfSlamMapData(uint32_t slam_map_width, uint32_t data_map_x, uint32_t data_map_y);
+
+	void indexToCells(int size_x_, unsigned int index, unsigned int &mx, unsigned int &my);
+
+	bool worldToCount(double &wx, double &wy, int32_t &cx, int32_t &cy);
+
+	void cellToWorld(double &worldX, double &worldY, int16_t &cellX, int16_t &cellY);
+
+	bool markRobot(uint8_t id);
+
+	uint8_t setLidar();
+
+	uint8_t setObs();
+
+	uint8_t setBumper();
+
+	uint8_t setRcon();
+
+	uint8_t setCliff();
+
+	uint8_t setTilt();
+
+	uint8_t setSlip();
+
+	uint8_t saveChargerArea(const Cell_t homepoint);
+
+	uint8_t setFollowWall(bool is_left, const Points&);
+
+
+	uint8_t saveLidar();
+
+	uint8_t saveObs();
+
+	uint8_t saveBumper(bool is_linear);
+
+	uint8_t saveRcon();
+
+	uint8_t saveCliff();
+
+	uint8_t saveTilt();
+
+	uint8_t saveSlip();
+
+	uint8_t saveBlocks(bool is_linear, bool is_save_rcon);
+
+	uint8_t setBlocks();
+
+
+	void setCleaned(std::deque<Cell_t> cells);
+	void setExplorationCleaned();
+
+	uint32_t getCleanedArea();
+
+/*
+ * Check a block is accessible by the robot or not.
+ * A block is defined as have the same size of robot.
+ *
+ * @param x	x coordinate of the block
+ * @param y	y coordinate of the block
+ *
+ * @return	0 if the block is not blocked by bumper, obs or cliff
+ *		1 if the block is blocked
+ */
+	bool isBlockAccessible(int16_t x, int16_t y);
+
+	uint8_t isBlocksAtY(int16_t x, int16_t y);
+
+	uint8_t isBlockBlockedXAxis(int16_t x, int16_t y,bool is_left);
+
+/*
+ * Check a block is on the boundary or not, a block is defined as have the same size of robot.
+ *
+ * @param x	x coordinate of the block
+ * @param y	y coordinate of the block
+ *
+ * @return	0 if the block is not on the boundary
+ *		1 if the block is on the boundary
+ */
+	uint8_t isBlockBoundary(int16_t x, int16_t y);
+
+/*
+ * Check a block is uncleaned or not, a block is defined as have the same size of brush.
+ * Since the brush occupies 3 cells, if there is any one of those 3 cells unclean, then the
+ * block is treated as unclean.
+ *
+ * @param x	x coordinate of the block
+ * @param y	y coordinate of the block
+ *
+ * @return	0 if the block is cleaned
+ *		1 if the block is uncleaned
+ */
+	uint8_t isUncleanAtY(int16_t x, int16_t y);
+
+/*
+ * Check a block is cleaned or not, a block is defined as have the same size of brush.
+ *
+ *
+ * @param x	x coordinate of the block
+ * @param y	y coordinate of the block
+ *
+ * @return	0 if the block is not cleaned
+ *		1 if the block is cleaned
+ */
+	int8_t isBlockCleaned(int16_t x, int16_t y);
+
+/*
+ * Check a block is cleanable or not, a block is defined as have the same size of brush.
+ *
+ *
+ * @param x	x coordinate of the block
+ * @param y	y coordinate of the block
+ *
+ * @return	0 if the block is not cleanable
+ *		1 if the block is cleanable
+ */
+	bool isBlockCleanable(int16_t x, int16_t y);
+
+/*
+ * Check a given point is blocked by bumper and/or cliff or not.
+ *
+ * @param x	x coordinate of the given point
+ * @param y	y coordinate of the given point
+ *
+ * @return	0 if it is not blocked by bumper and/or cliff
+ *		1 if it is blocked by bumper and/or cliff
+ */
+	uint8_t isBlockedByBumper(int16_t x, int16_t y);
+
+/*
+ * Check whether a given point is an blocked or not.
+ *
+ * @param x	x coordinate of the give point.
+ * @param y	y coordinate of the give point.
+ *
+ * @return	0 if the given point is not blocked
+ * 		1 if the given point is blocked
+ */
+	uint8_t isABlock(int16_t x, int16_t y);
+
+	bool isFrontBlockBoundary(int dx);
+
+	void generateSPMAP(const Cell_t &curr, Cells &target_list);
+/*
+ * Function to find the x/y range of the Map or wfMap, if the range is to small,
+ * use the offset of those value to 3.
+ *
+ * @param *x_range_min	Pointer for minimum x value of the Map
+ * @param *x_range_max	Pointer for maximum x value of the Map
+ * @param *y_range_min	Pointer for minimum y value of the Map
+ * @param *y_range_max	Pointer for maximum y value of the Map
+ *
+ * @return
+ */
+
+	bool isFrontBlocked(void);
+
+	BoundingBox2 generateBound()
+	{
+		BoundingBox2 bound{{int16_t(g_x_min), int16_t(g_y_min)}, {g_x_max, g_y_max}};
+		return bound;
+	}
+
+	BoundingBox2 generateBound2()
+	{
+		BoundingBox2 bound{{int16_t(g_x_min - 1), int16_t(g_y_min - 1)}, {g_x_max, g_y_max}};
+		return bound;
+	}
+	void getMapRange(uint8_t id, int16_t *x_range_min, int16_t *x_range_max, int16_t *y_range_min, int16_t *y_range_max);
+
+	bool cellIsOutOfRange(Cell_t cell);
+
+	void colorPrint(char *outString, int16_t y_min, int16_t y_max);
+	void print(uint8_t id, int16_t endx, int16_t endy);
+
+private:
+	uint8_t clean_map[MAP_SIZE][(MAP_SIZE + 1) / 2];
+	uint8_t cost_map[MAP_SIZE][(MAP_SIZE + 1) / 2];
+
+	int16_t g_x_min, g_x_max, g_y_min, g_y_max;
+	int16_t xRangeMin, xRangeMax, yRangeMin, yRangeMax;
+
+	// Cells that temporary save the blocks.
+	std::vector<Cell_t> temp_bumper_cells;
+	std::vector<Cell_t> temp_obs_cells;
+	std::vector<Cell_t> temp_rcon_cells;
+	std::vector<Cell_t> temp_tilt_cells;
+	std::vector<Cell_t> temp_slip_cells;
+	std::vector<Cell_t> temp_cliff_cells;
+	std::vector<Cell_t> temp_fw_cells;
+	std::vector<Cell_t> temp_WFMAP_follow_wall_cells;
+
+};
+
+/*wf_map is to record the wall follow path to caculate the isolate islands*/
+extern GridMap fw_map;
+extern GridMap slam_grid_map;
+extern GridMap decrease_map;
+
 #endif /* __MAP_H */

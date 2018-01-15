@@ -1,23 +1,4 @@
-#include <errno.h>
-#include <fcntl.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include <unistd.h>
-
-#include <linux/elf.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-
-#include <ros/ros.h>
-
-#include <random>
-
-#include "movement.h"
-#include "des.h"
-#include "verify.h"
+#include "stdlib.h"
 
 using namespace std;
 

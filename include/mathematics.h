@@ -2,9 +2,11 @@
 #define __MYMATH_H
 
 #include <stdint.h>
-
-#include "mathematics.h"
-#include "stdlib.h"
+#include <math.h>
+#include <stdlib.h>
+#include <deque>
+#include <ros/ros.h>
+#include "config.h"
 
 #define PI  3.141592653589793
 
@@ -15,19 +17,23 @@
 #endif
 
 /*
-typedef struct Cell_t_{
-	int16_t X;
-	int16_t Y;
-	friend bool operator==(const Cell_t_ left, const Cell_t_ right)
+typedef struct Pose16_t_{
+	int16_t x;
+	int16_t y;
+	int16_t	th;
+	friend bool operator==(const Pose16_t_ left, const Pose16_t_ right)
 	{
-		return left.X == right.X && left.Y == right.Y;
+		return left.x == right.x && left.y == right.y;
 	}
-	friend bool operator!=(const Cell_t_ left, const Cell_t_ right)
+	friend bool operator!=(const Pose16_t_ left, const Pose16_t_ right)
 	{
 		return !(left == right);
 	}
-} Cell_t;
-*/
+} Pose16_t;*/
+
+int16_t ranged_angle(int16_t angle);
+double deg_to_rad(double deg, int8_t scale = 1);
+double rad_2_deg(double rad, int8_t scale);
 
   /**
    * Represents a 2-dimensional vector (x, y)
@@ -41,8 +47,8 @@ typedef struct Cell_t_{
      */
     Vector2()
     {
-      X = 0;
-      Y = 0;
+      x = 0;
+      y = 0;
     }
 
     /**
@@ -50,17 +56,12 @@ typedef struct Cell_t_{
      * @param x x
      * @param y y
      */
-    Vector2(T x, T y)
+    Vector2(T _x, T _y)
     {
-      X = x;
-      Y = y;
+      x = _x;
+      y = _y;
     }
-    Vector2(T x, T y,int16_t th)
-    {
-      X = x;
-      Y = y;
-      TH = th;
-    }
+
   public:
     /**
      * Gets the x-coordinate of this vector
@@ -68,16 +69,16 @@ typedef struct Cell_t_{
      */
     inline const T& GetX() const
     {
-      return X;
+      return x;
     }
 
     /**
      * Sets the x-coordinate of this vector
      * @param x the x-coordinate of the vector
      */
-    inline void SetX(const T& x)
+    inline void SetX(const T& _x)
     {
-      X = x;
+      x = _x;
     }
 
     /**
@@ -86,16 +87,16 @@ typedef struct Cell_t_{
      */
     inline const T& GetY() const
     {
-      return Y;
+      return y;
     }
 
     /**
      * Sets the y-coordinate of this vector
      * @param y the y-coordinate of the vector
      */
-    inline void SetY(const T& y)
+    inline void SetY(const T& _y)
     {
-      Y = y;
+      y = _y;
     }
 
     /**
@@ -104,8 +105,8 @@ typedef struct Cell_t_{
      */
     inline void MakeFloor(const Vector2& rOther)
     {
-      if (rOther.X < X) X = rOther.X;
-      if (rOther.Y < Y) Y = rOther.Y;
+      if (rOther.x < x) x = rOther.x;
+      if (rOther.y < y) y = rOther.y;
     }
 
     /**
@@ -114,37 +115,35 @@ typedef struct Cell_t_{
      */
     inline void MakeCeil(const Vector2& rOther)
     {
-      if (rOther.X > X) X = rOther.X;
+      if (rOther.x > x) x = rOther.x;
 
-      if (rOther.Y > Y) Y = rOther.Y;
+      if (rOther.y > y) y = rOther.y;
     }
 
     /**
      * Returns the square of the length of the vector
      * @return square of the length of the vector
      */
-/*    inline int16_t SquaredLength() const
+    inline T SquaredLength() const
     {
-      return math::Square(X) + math::Square(Y);
-    }*/
+      return pow(x,2) + pow(y,2);
+    }
 
     /**
      * Returns the length of the vector
      * @return length of the vector
      */
-/*
-    inline int16_t Length() const
+    inline T Length() const
     {
       return sqrt(SquaredLength());
     }
-*/
 
     /**
      * Returns the square of the distance to the given vector
      * @param rOther vector
      * @returns square of the distance to the given vector
      */
-    inline int16_t SquaredDistance(const Vector2& rOther) const
+    inline T SquaredDistance(const Vector2& rOther) const
     {
       return (*this - rOther).SquaredLength();
     }
@@ -154,7 +153,7 @@ typedef struct Cell_t_{
      * @param rOther vector
      * @return distance to given vector
      */
-    inline int16_t Distance(const Vector2& rOther) const
+    inline T Distance(const Vector2& rOther) const
     {
       return sqrt(SquaredDistance(rOther));
     }
@@ -183,8 +182,8 @@ typedef struct Cell_t_{
      */
     inline void operator+=(const Vector2& rOther)
     {
-      X += rOther.X;
-      Y += rOther.Y;
+      x += rOther.x;
+      y += rOther.y;
     }
 
     /**
@@ -192,8 +191,8 @@ typedef struct Cell_t_{
      */
     inline void operator-=(const Vector2& rOther)
     {
-      X -= rOther.X;
-      Y -= rOther.Y;
+      x -= rOther.x;
+      y -= rOther.y;
     }
 
     /**
@@ -201,7 +200,7 @@ typedef struct Cell_t_{
      */
     inline const Vector2 operator+(const Vector2& rOther) const
     {
-      return Vector2(X + rOther.X, Y + rOther.Y);
+      return Vector2(x + rOther.x, y + rOther.y);
     }
 
     /**
@@ -209,7 +208,7 @@ typedef struct Cell_t_{
      */
     inline const Vector2 operator-(const Vector2& rOther) const
     {
-      return Vector2(X - rOther.X, Y - rOther.Y);
+      return Vector2(x - rOther.x, y - rOther.y);
     }
 
     /**
@@ -217,8 +216,8 @@ typedef struct Cell_t_{
      */
     inline void operator/=(T scalar)
     {
-      X /= scalar;
-      Y /= scalar;
+      x /= scalar;
+      y /= scalar;
     }
 
     /**
@@ -226,7 +225,7 @@ typedef struct Cell_t_{
      */
     inline const Vector2 operator/(T scalar) const
     {
-      return Vector2(X / scalar, Y / scalar);
+      return Vector2(x / scalar, y / scalar);
     }
 
     /**
@@ -234,7 +233,7 @@ typedef struct Cell_t_{
      */
     inline int16_t operator*(const Vector2& rOther) const
     {
-      return X * rOther.X + Y * rOther.Y;
+      return x * rOther.x + y * rOther.y;
     }
 
     /**
@@ -242,7 +241,7 @@ typedef struct Cell_t_{
      */
     inline const Vector2 operator*(T scalar) const
     {
-      return Vector2(X * scalar, Y * scalar);
+      return Vector2(x * scalar, y * scalar);
     }
 
     /**
@@ -250,7 +249,7 @@ typedef struct Cell_t_{
      */
     inline const Vector2 operator-(T scalar) const
     {
-      return Vector2(X - scalar, Y - scalar);
+      return Vector2(x - scalar, y - scalar);
     }
 
     /**
@@ -258,8 +257,8 @@ typedef struct Cell_t_{
      */
     inline void operator*=(T scalar)
     {
-      X *= scalar;
-      Y *= scalar;
+      x *= scalar;
+      y *= scalar;
     }
 
     /**
@@ -267,7 +266,7 @@ typedef struct Cell_t_{
      */
     inline bool operator==(const Vector2& rOther) const
     {
-      return (X == rOther.X && Y == rOther.Y);
+      return (x == rOther.x && y == rOther.y);
     }
 
     /**
@@ -275,7 +274,7 @@ typedef struct Cell_t_{
      */
     inline bool operator!=(const Vector2& rOther) const
     {
-      return (X != rOther.X || Y != rOther.Y);
+      return (x != rOther.x || y != rOther.y);
     }
 
     /**
@@ -286,23 +285,23 @@ typedef struct Cell_t_{
      */
     inline bool operator<(const Vector2& rOther) const
     {
-      if (X < rOther.X)
+      if (x < rOther.x)
       {
         return true;
       }
-      else if (X > rOther.X)
+      else if (x > rOther.x)
       {
         return false;
       }
       else
       {
-        return (Y < rOther.Y);
+        return (y < rOther.y);
       }
     }
 
     inline bool operator>(const Vector2& rOther) const
     {
-        Vector2 this_{X,Y};
+        Vector2 this_{x,y};
         return !(this_ < rOther || this_ == rOther);
     }
     /**
@@ -315,71 +314,168 @@ typedef struct Cell_t_{
 //    }
 
   public:
-    T X;
-    T Y;
-    int16_t	TH;
+    T x;
+    T y;
+//    int16_t	th;
 }; // class Vector2<T>
 
   /*
    * Type declaration of int16_t Vector2 as Cell_t
    */
-  typedef Vector2<int16_t> Cell_t;
+typedef Vector2<int16_t> Cell_t;
+typedef std::deque<Cell_t> Cells;
 
+class Point32_t:public Vector2<int32_t> {
+public:
+  Point32_t() {
+    x = 0;
+    y = 0;
+    th = 0;
+  }
 
-typedef struct{
+  Point32_t(int32_t _x, int32_t _y, int16_t _th) {
+    x = _x;
+    y = _y;
+    th = _th;
+  }
+
+	Point32_t addAngle(int16_t diff) const {
+		return {this->x, this->y, ranged_angle(this->th + diff)};
+	}
+  Point32_t getRelative(int32_t dx, int32_t dy) const {
+		Point32_t point;
+		double relative_sin, relative_cos;
+		if (th != 3600) {
+			if (th == 0) {
+				relative_sin = 0;
+				relative_cos = 1;
+			}
+			else if (th == 900) {
+				relative_sin = 1;
+				relative_cos = 0;
+			}
+			else if (th == 1800) {
+				relative_sin = 0;
+				relative_cos = -1;
+			}
+			else if (th == -900) {
+				relative_sin = -1;
+				relative_cos = 0;
+			}
+			else {
+				relative_sin = sin(deg_to_rad(th, 10));
+				relative_cos = cos(deg_to_rad(th, 10));
+			}
+		}
+		point.x = x + (int32_t) (
+						(((double) dx * relative_cos * CELL_COUNT_MUL) - ((double) dy * relative_sin * CELL_COUNT_MUL)) /
+						CELL_SIZE);
+		point.y = y + (int32_t) (
+						(((double) dx * relative_sin * CELL_COUNT_MUL) + ((double) dy * relative_cos * CELL_COUNT_MUL)) /
+						CELL_SIZE);
+		point.th = th;
+		return point;
+	}
+
+	Point32_t getCenterRelative(int16_t dx, int16_t dy) const {
+		auto Cell = this->toCell();
+		Point32_t point{cellToCount(Cell.x),cellToCount(Cell.y),th};
+		return point.getRelative(dx,dy);
+	}
+
+	bool isNearTo(Point32_t other, int32_t count) const {
+		return std::abs(this->x - other.x) <count && std::abs(this->y - other.y) < count;
+	};
+
+	int16_t angleDiffPoint(Point32_t other) const {
+			int16_t alpha = 0;
+			if (this->x == other.x) {
+				if (other.y > this->y) {
+					alpha = 900;
+				} else if (other.y < this->y) {
+					alpha = 2700;
+				} else {
+					alpha = 0;
+				}
+			} else {
+				alpha = round(rad_2_deg(atan(((double) (other.y - this->y) / (other.x - this->x))), 10));
+
+				if (other.x < this->x) {
+					alpha += 1800;
+				}
+
+				if (alpha < 0) {
+					alpha += 3600;
+				}
+			}
+
+			return ranged_angle(alpha - this->th);
+	}
+
+	int16_t angleDiff(int16_t other_angle) const {
+		return ranged_angle(other_angle - this->th);
+	}
+
+  Cell_t toCell() const {
+    return {countToCell(x), countToCell(y)};
+  }
+
+	bool isCellEqual(const Point32_t &r) const
+	{
+		return  toCell() == r.toCell();
+	}
+
+	bool isAngleNear(const Point32_t &r) const
+	{
+		return  std::abs(ranged_angle(th - r.th)) < 200;
+	}
+
+	bool isCellAndAngleEqual(const Point32_t &r) const
+	{
+		return  isCellEqual(r) && isAngleNear(r);
+	}
+
+  int16_t th{};
+private:
+  int16_t countToCell(int32_t count) const {
+    if (count < -CELL_COUNT_MUL_1_2) {
+      return (count + CELL_COUNT_MUL_1_2) / CELL_COUNT_MUL - 1;
+    }
+    else {
+      return (count + CELL_COUNT_MUL_1_2) / CELL_COUNT_MUL;
+    }
+  }
+
+	int32_t cellToCount(int16_t i) const {
+		return i * CELL_COUNT_MUL;
+	}
+
+};
+
+typedef struct
+{
   double A;
   double B;
   double C;
+  int len;
+  double dis;
+  double x1;//point 1
+  double y1;
+  double x2;//point 2
+  double y2;
+  double K; //gradient in degree
+  double dist_2_this_line(Vector2<double> p){
+	  return fabs(A*p.x+B*p.y+C)/sqrt(A*A+B*B);
+  }
 } LineABC;
 
-typedef struct{
-	int32_t X;
-	int32_t Y;
-} Point32_t;
-
-typedef struct{
-	double x;
-	double y;
-} Double_Point;
-/*
-typedef struct Pose16_t_{
-	int16_t X;
-	int16_t Y;
-	int16_t	TH;
-	friend bool operator==(const Pose16_t_ left, const Pose16_t_ right)
-	{
-		return left.X == right.X && left.Y == right.Y;
-	}
-	friend bool operator!=(const Pose16_t_ left, const Pose16_t_ right)
-	{
-		return !(left == right);
-	}
-} Pose16_t;*/
-
-double absolute(double d);
-double deg_to_rad(double deg, int8_t scale);
-double rad_2_deg(double rad, int8_t scale);
-uint16_t course_to_dest(int32_t startx, int32_t starty, int32_t destx, int32_t desty);
-uint32_t two_points_distance(int32_t startx, int32_t starty, int32_t destx, int32_t desty);
 float two_points_distance_double(float startx,float starty,float destx,float desty);
-int32_t two_points_distance_at_direction(int32_t startx, int32_t starty, int32_t destx, int32_t desty, int16_t theta);
-int16_t distance2line(int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t px, int32_t py);
-uint16_t angle_delta(uint16_t a, uint16_t b);
-int32_t limit(int32_t i, int32_t lower_limit, int32_t upper_limit);
 void matrix_translate(double *x, double *y, double offset_x, double offset_y);
 void matrix_rotate(double *x, double *y, double theta);
-Cell_t cal_inters_point(Cell_t l1StartPnt, Cell_t l1EndPnt,
-												Cell_t l2StartPnt, Cell_t l2EndPnt);
 
-double rad_delta_angle_vector(double a, double b);
-int16_t degree_delta_angle_vector(uint16_t a, uint16_t b) ;
-double rad_delta_angle_min(double a, double b);
-int16_t degreeDeltaAngleMin( uint16_t a, uint16_t b );
-
-double arctan( double deltay, double deltax );
-double two_lines_angle(LineABC la, LineABC lb);
 double line_angle(LineABC l, uint8_t mode);
-uint8_t is_same_point_and_angle(Point32_t pnt1, uint16_t angle1, Point32_t pnt2, uint16_t angle2,
-																uint32_t pntThres, uint16_t angleThres);
+
 void coordinate_transform(double *x, double *y, double theta, double offset_x, double offset_y);
+
+
 #endif

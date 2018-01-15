@@ -12,6 +12,7 @@ Assumes an 'odom_combined' frame, that provides reasonably accurate odometry
     <param name="odom_frame" value="odom"/>
     <param name="map_update_interval" value="5"/>
     <param name="resolution" value="0.025"/>
+    <param name="scan_frame" value="scanLinear" />
      <rosparam file="$(find pp)/config/mapper_params.yaml" command="load" />
   </node>
 </launch>

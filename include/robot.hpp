@@ -5,45 +5,72 @@
 #include <nav_msgs/MapMetaData.h>
 #include <nav_msgs/Odometry.h>
 #include <nav_msgs/OccupancyGrid.h>
-#include <obstacle_detector/Obstacles.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/Point.h>
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
 #include <visualization_msgs/Marker.h>
+#include <sensor_msgs/LaserScan.h>
 #include <pp/x900sensor.h>
 #include <pp/scan_ctrl.h>
+#include <rplidar_ros/SetLidar.h>
 #include <vector>
 #include "config.h"
 #include "map.h"
-#include "movement.h"
+#include "pose.h"
+//#include "mode.hpp"
+#include <string.h>
 
-extern pp::x900sensor   sensor;
+class Mode;
 
 typedef enum {
-	Odom_Position_Odom_Angle = 0,
-	Map_Position_Map_Angle,
-	Map_Position_Odom_Angle,
+	ODOM_POSITION_ODOM_ANGLE = 0,
+	SLAM_POSITION_SLAM_ANGLE,
+	SLAM_POSITION_ODOM_ANGLE,
 } Baselink_Frame_Type;
 
+typedef struct{
+		uint32_t seq{};
+		Points tmp_plan_path_{};
+	} PathHead;
 class robot
 {
 public:
-	robot();
+	robot(std::string serial_port, int baudrate, std::string lidar_bumper_dev);
 	~robot();
 
 	static robot *instance();
 
 	tf::TransformListener		*robot_tf_;
 
-	// core function
-	void init();
-	void displayPositions();
-	void pubCleanMarkers(void);
-	void setCleanMapMarkers(int8_t x, int8_t y, CellState type);
-	void pubCleanMapMarkers(void);
+	// Publisher functions.
 	void visualizeMarkerInit();
+	void pubLineMarker(const std::vector<LineABC> *lines);
+	void pubLineMarker(std::vector<std::vector<Vector2<double>> > *groups,std::string name);
+	void pubFitLineMarker(visualization_msgs::Marker fit_line_marker);
+	void pubPointMarkers(const std::deque<Vector2<double>> *point, std::string frame_id);
+//	void pubTmpTarget(const Points &points,bool is_virtual=false);
+	void pubTmpTarget(const Point32_t &point,bool is_virtual=false);
+	void setCleanMapMarkers(int16_t x, int16_t y, CellState type);
+	void pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path);
+
+	void core_thread_cb();
+	// Service caller functions.
+	bool lidarMotorCtrl(bool switch_);
+	bool slamStart(void);
+	bool slamStop(void);
+
 	void initOdomPosition();
+
+	// The scale should be between 0 to 1.
+	void updateRobotPose(const float& odom_x, const float& odom_y, const double& odom_yaw,
+						const float& slam_correction_x, const float& slam_correction_y, const double& slam_correction_yaw,
+						float& robot_correction_x, float& robot_correction_y, double& robot_correction_yaw,
+						float& robot_x, float& robot_y, double& robot_yaw);
+
+	void resetCorrection();
+
+	void obsAdjustCount(int count);
 
 	//get and set function
 	bool isSensorReady() const
@@ -56,273 +83,25 @@ public:
 		return is_tf_ready_;
 	}
 
-	float getAngle() const
+	int16_t getWorldPoseAngle()
 	{
-		return angle_;
+		// It is 10x degrees.
+		return static_cast<int16_t>(world_pose_.getAngle());
 	}
 
-	void offsetAngle(float angle)
+	float getWorldPoseX()
 	{
-		boost::mutex::scoped_lock(offset_angle_metux_);
-		offset_angle_ = angle;
-	};
-
-	float offsetAngle(void) const
-	{
-		boost::mutex::scoped_lock(offset_angle_metux_);
-		return offset_angle_;
-	};
-
-	void startAngle(float angle)
-	{
-		start_angle_ = angle;
-	};
-
-	float startAngle(void) const
-	{
-		return start_angle_;
-	};
-
-	void savedOffsetAngle(float angle)
-	{
-		if (angle > 180)
-			angle -= 360;
-		saved_offset_angle_ = -angle;
-	};
-
-	float savedOffsetAngle(void) const
-	{
-		return saved_offset_angle_;
-	};
-
-	float getLeftWheelSpeed() const
-	{
-		return lw_vel_;
-	}
-	float getRightWheelSpeed() const
-	{
-		return rw_vel_;
-	}
-	float getAngleV() const
-	{
-		return angle_v_;
+		return world_pose_.getX();
 	}
 
-	int16_t getCliffRight() const
+	float getWorldPoseY()
 	{
-		return sensor.rcliff;
+		return world_pose_.getY();
 	}
 
-	int16_t getCliffLeft() const
+	float getWorldPoseZ()
 	{
-		return sensor.lcliff;
-	}
-
-	int16_t getCliffFront() const
-	{
-		return sensor.fcliff;
-	}
-
-	int16_t getLeftWall() const
-	{
-		return sensor.left_wall - g_left_wall_baseline;
-	}
-
-	int16_t getRightWall() const
-	{
-#if __ROBOT_X900
-		return sensor.right_wall - g_right_wall_baseline;
-#elif __ROBOT_X400
-		return 0;
-#endif
-	}
-
-	int16_t getOmniWheel() const
-	{
-#if __ROBOT_X9000
-		//return sensor.omni_wheel;
-		return omni_wheel_;
-#elif __ROBOT_X400
-		return 0;
-#endif
-	}
-
-	void resetOmniWheel()
-	{
-#if __ROBOT_X9000
-		omni_wheel_ = 0;
-		reset_mobility_step();
-#endif
-	}
-
-	int16_t getVisualWall() const
-	{
-#if __ROBOT_X900
-		return sensor.visual_wall;
-#elif __ROBOT_X400
-		return 0;
-#endif
-	}
-
-	uint8_t getVacuumSelfCheckStatus() const
-	{
-		return vacuum_selfcheck_status_;
-	}
-
-	bool getLbrushOc() const
-	{
-		return lbrush_oc_;
-	}
-
-	bool getRbrushOc() const
-	{
-		return rbrush_oc_;
-	}
-
-	bool getMbrushOc() const
-	{
-		return mbrush_oc_;
-	}
-
-	bool getVacuumOc() const
-	{
-		return vacuum_oc_;
-	}
-
-	uint8_t getKey() const
-	{
-		return key;
-	}
-
-	int getChargeStatus() const
-	{
-		return charge_status_;
-	}
-
-	uint8_t getIrCtrl() const
-	{
-		return  ir_ctrl_;
-	}
-
-	float getLwheelCurrent() const
-	{
-		return lw_crt_;
-	}
-
-	float getRwheelCurrent() const
-	{
-		return rw_crt_;
-	}
-
-	uint32_t getRcon() const
-	{
-		return charge_stub_;
-	}
-
-	bool getBumperRight() const
-	{
-		return sensor.rbumper;
-	}
-
-	bool getBumperLeft() const
-	{
-		return sensor.lbumper;
-	}
-
-	int16_t getObsLeft()
-	{
-		int16_t left_obs = sensor.l_obs - g_obs_left_baseline;
-		//ROS_INFO("%s %d: sensor.l_obs(%d) - obs_l_baseline(%d) = %d", __FUNCTION__, __LINE__, sensor.l_obs, g_obs_left_baseline, left_obs);
-		return left_obs;
-	}
-
-	int16_t getObsRight()
-	{
-		int16_t right_obs = sensor.r_obs - g_obs_right_baseline;
-		//ROS_INFO("%s %d: sensor.r_obs(%d) - obs_r_baseline(%d) = %d", __FUNCTION__, __LINE__, sensor.r_obs, g_obs_right_baseline, right_obs);
-		return right_obs;
-	}
-
-	int16_t getObsFront()
-	{
-		int16_t front_obs = sensor.f_obs - g_obs_front_baseline;
-		//ROS_INFO("%s %d: sensor.f_obs(%d) - obs_f_baseline(%d) = %d", __FUNCTION__, __LINE__, sensor.f_obs, g_obs_front_baseline, front_obs);
-		return front_obs;
-	}
-
-	bool getWaterTank() const
-	{
-		return w_tank_;
-	}
-
-	uint16_t getBatteryVoltage() const
-	{
-		return battery_voltage_*10;
-	}
-
-	bool isMoving() const
-	{
-		return is_moving_;
-	}
-
-	float getLinearX() const
-	{
-		return linear_x_;
-	}
-
-	float getLinearY() const
-	{
-		return linear_y_;
-	}
-
-	float getLinearZ() const
-	{
-		return linear_z_;
-	}
-
-	int16_t getYaw() const
-	{
-		return ((int16_t)(position_yaw_ * 1800 / M_PI));
-	}
-
-	float getPositionX() const
-	{
-		return position_x_;
-	}
-
-	float getPositionY() const
-	{
-		return position_y_;
-	}
-
-	float getPositionZ() const
-	{
-		return position_z_;
-	}
-
-	float getWfPositionX() const
-	{
-		return wf_position_x_;
-	}
-
-	float getWfPositionY() const
-	{
-		return wf_position_y_;
-	}
-
-	float getOdomPositionX() const
-	{
-		return odom_pose_x_;
-	}
-
-	float getOdomPositionY() const
-	{
-		return odom_pose_y_;
-	}
-
-	double getOdomPositionYaw() const
-	{
-		return odom_pose_yaw_;
+		return world_pose_.getZ();
 	}
 
 	float getRobotCorrectionX() const
@@ -338,56 +117,6 @@ public:
 	double getRobotCorrectionYaw() const
 	{
 		return robot_correction_yaw_;
-	}
-
-	int16_t getXAcc() const
-	{
-		return x_acc_;
-	}
-
-	int16_t getYAcc() const
-	{
-		return y_acc_;
-	}
-
-	int16_t getZAcc() const
-	{
-		return z_acc_;
-	}
-
-	int16_t getInitXAcc() const
-	{
-		return init_x_acc_;
-	}
-
-	int16_t getInitYAcc() const
-	{
-		return init_y_acc_;
-	}
-
-	int16_t getInitZAcc() const
-	{
-		return init_z_acc_;
-	}
-
-	uint8_t getLidarBumper() const
-	{
-		return (uint8_t)sensor.lidar_bumper;
-	}
-
-	void setInitXAcc(int16_t val)
-	{
-		init_x_acc_ = val;
-	}
-
-	void setInitYAcc(int16_t val)
-	{
-		init_y_acc_ = val;
-	}
-
-	void setInitZAcc(int16_t val)
-	{
-		init_z_acc_ = val;
 	}
 
 	void setTfReady(bool is_ready)
@@ -408,59 +137,6 @@ public:
 		return temp_spot_set_;
 	}
 
-//#if CONTINUE_CLEANING_AFTER_CHARGE
-// These 3 functions are for continue cleaning after charge.
-	bool isLowBatPaused(void) const
-	{
-#if CONTINUE_CLEANING_AFTER_CHARGE
-		return low_bat_pause_cleaning_;
-#else
-		return false;
-#endif
-	}
-
-	void setLowBatPause(void)
-	{
-#if CONTINUE_CLEANING_AFTER_CHARGE
-		ROS_WARN("%s %d.", __FUNCTION__, __LINE__);
-		low_bat_pause_cleaning_ = true;
-#endif
-	}
-
-	void resetLowBatPause(void)
-	{
-#if CONTINUE_CLEANING_AFTER_CHARGE
-		ROS_WARN("%s %d.", __FUNCTION__, __LINE__);
-		low_bat_pause_cleaning_ = false;
-#endif
-	}
-
-// These 3 functions are for manual pause cleaning.
-	bool isManualPaused(void) const
-	{
-#if MANUAL_PAUSE_CLEANING
-		return manual_pause_cleaning_;
-#else
-		return false;
-#endif
-	}
-
-	void setManualPause(void)
-	{
-#if MANUAL_PAUSE_CLEANING
-		ROS_WARN("%s %d.", __FUNCTION__, __LINE__);
-		manual_pause_cleaning_ = true;
-#endif
-	}
-
-	void resetManualPause(void)
-	{
-#if MANUAL_PAUSE_CLEANING
-		ROS_WARN("%s %d.", __FUNCTION__, __LINE__);
-		manual_pause_cleaning_ = false;
-#endif
-	}
-
 	Baselink_Frame_Type getBaselinkFrameType(void)
 	{
 		boost::mutex::scoped_lock(baselink_frame_type_mutex_);
@@ -469,219 +145,40 @@ public:
 
 	void setBaselinkFrameType(Baselink_Frame_Type frame)
 	{
-		baselink_frame_type_mutex_.lock();
+		boost::mutex::scoped_lock(baselink_frame_type_mutex_);
 		baselink_frame_type_ = frame;
-		baselink_frame_type_mutex_.unlock();
-		ROS_INFO("%s %d: Base link frame type has been reset to %d.", __FUNCTION__, __LINE__, getBaselinkFrameType());
+		ROS_DEBUG("%s %d: Base link frame type has been reset to %d.", __FUNCTION__, __LINE__, getBaselinkFrameType());
 	}
 
-	uint32_t mapGetWidth()
+	bool isScanAllow()
 	{
-		return width_;
+		return scan_ctrl_.allow_publishing?true:false;
 	}
 
-	uint32_t mapGetHeight()
-	{
-		return height_;
-	}
-
-	float mapGetResolution()
-	{
-		return resolution_;
-	}
-
-	double mapGetOriginX()
-	{
-		return origin_x_;
-	}
-
-	double mapGetOriginY()
-	{
-		return origin_y_;
-	}
-
-	std::vector<int8_t> *mapGetMapData()
-	{
-		return map_ptr_;
-	}
-
-	// The scale should be between 0 to 1.
-	void updateRobotPose(const float& odom_x, const float& odom_y, const double& odom_yaw,
-						const float& slam_correction_x, const float& slam_correction_y, const double& slam_correction_yaw,
-						float& robot_correction_x, float& robot_correction_y, double& robot_correction_yaw,
-						float& robot_x, float& robot_y, double& robot_yaw);
-
-	void resetCorrection();
-
-	void obsAdjustCount(int count);
-
-	void setAccInitData();
-
-	//callback function
+	PathHead getTempTarget()const;
+	void setTempTarget(std::deque<Vector2<double>>& points, uint32_t  seq);
 private:
-	void sensorCb(const pp::x900sensor::ConstPtr &msg);
-	void robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg);
-//	void robot_map_metadata_cb(const nav_msgs::MapMetaData::ConstPtr& msg);
-	void mapCb(const nav_msgs::OccupancyGrid::ConstPtr &msg);
 
+	PathHead path_head_{};
 	Baselink_Frame_Type baselink_frame_type_;
 	boost::mutex baselink_frame_type_mutex_;
-
-// These variable is indicating robot detects battery low, it is going back to home cells.
-	bool	low_bat_pause_cleaning_;
-
-// These variable is indicating robot is during pause of navigation mode.
-	bool	manual_pause_cleaning_;
-
 
 	bool	is_sensor_ready_;
 
 	bool	is_tf_ready_;
 
-    bool temp_spot_set_;
-
+	bool temp_spot_set_;
+/*
+	// TODO: Delete these offset variables.
 	boost::mutex offset_angle_metux_;
 	float offset_angle_;
 	float start_angle_;
 	float saved_offset_angle_;
-
-	/*2 byte*/
-	float lw_vel_;
-	float rw_vel_;
-	/* 1 byte */
-	float	angle_;
+*/
 
 	bool	is_align_active_;
-	/* 1 byte */
-	float	angle_v_;
 
-	/* 1 byte */
-	int32_t brush_left_;
-
-	/* 1 byte */
-	int32_t brush_right_;
-
-	/* 1 byte */
-	int32_t brush_main_;
-
-	/* 2 bytes */
-	int16_t cliff_right_;
-
-	/* 2 bytes */
-	int16_t cliff_left_;
-
-	/* 2 bytes */
-	int16_t cliff_front_;
-
-	/*1 byte */
-	uint8_t key;
-
-	/*1 byte */
-	uint8_t charge_status_;
-
-	/*1 byte*/
-	bool w_tank_; //water tank
-
-	/* 1 byte */
-	uint16_t battery_voltage_;
-
-	/*1 byte*/
-	uint8_t vacuum_selfcheck_status_;
-	bool lbrush_oc_; //oc: over current
-	bool rbrush_oc_;
-	bool mbrush_oc_;
-	bool vacuum_oc_;
-
-	/*2 bytes*/
-	float lw_crt_;//left wheel current
-	
-	/*2 bytes*/
-	float rw_crt_; // right wheel current
-
-	/*1 byte*/
-	uint16_t left_wall_; // left wall sensor
-	
-	/*1 byte*/
-	uint16_t right_wall_; // left wall sensor
-	
-	/*? byte*/
-	int16_t x_acc_; // accelaration of x
-	
-	/*? byte*/
-	int16_t y_acc_; // accelaration of y
-	
-	/*? byte*/
-	int16_t z_acc_; // accelaration of z
-	
-	/*1 byte*/
-	uint8_t gyro_dymc_; // ??
-	
-	/*1 byte*/
-	uint16_t ir_ctrl_;
-	
-	/*3 bytes*/
-	uint32_t charge_stub_;
-
-	/* 1 byte */
-	uint32_t rcon_front_left_;
-
-	/* 1 byte */
-	uint32_t rcon_front_right_;
-
-	/* 1 byte */
-	uint32_t rcon_back_left_;
-
-	/* 1 byte */
-	uint32_t rcon_back_right_;
-
-	/* 1 byte */
-	uint32_t rcon_left_;
-
-	/* 1 byte */
-	uint32_t rcon_right_;
-
-	/* 1 byte */
-	bool bumper_right_;
-
-	/* 1 byte */
-	bool bumper_left_;
-	/* 1 byte */
-	int16_t obs_left_;
-
-	/* 1 byte */
-	int16_t obs_right_;
-
-	/* 1 byte */
-	int16_t obs_front_;
-
-	#if __ROBOT_X900
-	//new variable visual wall
-	int16_t visual_wall;
-	//new variable in x900 robot
-	int16_t omni_wheel_;
-	//new variable plan
-	int8_t plan;
-	#endif
-
-	int16_t init_x_acc_;
-	int16_t init_y_acc_;
-	int16_t init_z_acc_;
-
-	bool	is_moving_;
-
-	float	linear_x_;
-	float	linear_y_;
-	float	linear_z_;
-
-	float	position_x_;
-	float	position_y_;
-	float	position_z_;
-	double	position_yaw_;
-	float	wf_position_x_;
-	float	wf_position_y_;
-	float	odom_pose_x_;
-	float	odom_pose_y_;
-	double	odom_pose_yaw_;
+	Pose world_pose_;
 
 	// This is for the slam correction variables.
 	float	robot_correction_x_;
@@ -694,23 +191,29 @@ private:
 	float	robot_y_;
 	double	robot_yaw_;
 
-	/*for ros map*/
-	uint32_t width_;
-	uint32_t height_;
-	float resolution_;
-	double origin_x_;
-	double origin_y_;
-	std::vector<int8_t> map_data_;
-	std::vector<int8_t> *map_ptr_;
-
 	ros::NodeHandle robot_nh_;
+
 	ros::Subscriber sensor_sub_;
 	ros::Subscriber map_sub_;
 	ros::Subscriber odom_sub_;
-	ros::Publisher robot_odom_pub_;
+	ros::Subscriber	scanLinear_sub_;
+	ros::Subscriber	scanOriginal_sub_;
+	ros::Subscriber	scanCompensate_sub_;
+	ros::Subscriber lidarPoint_sub_;
+
+	ros::Publisher odom_pub_;
 	ros::Publisher send_clean_marker_pub_;
 	ros::Publisher send_clean_map_marker_pub_;
 	ros::Publisher scan_ctrl_pub_;
+	ros::Publisher line_marker_pub_;
+	ros::Publisher line_marker_pub2_;
+	ros::Publisher point_marker_pub_;
+	ros::Publisher tmp_target_pub_;
+	ros::Publisher fit_line_marker_pub_;
+
+	ros::ServiceClient lidar_motor_cli_;
+	ros::ServiceClient start_slam_cli_;
+	ros::ServiceClient end_slam_cli_;
 
 	visualization_msgs::Marker clean_markers_,bumper_markers_, clean_map_markers_;
 	geometry_msgs::Point m_points_;
@@ -720,10 +223,132 @@ private:
 	tf::Stamped<tf::Transform>	map_pose;
 	tf::Stamped<tf::Transform>	wf_map_pose;
 
-	//tf::TransformBroadcaster	robot_broad;
-	//geometry_msgs::TransformStamped robot_trans;
-	nav_msgs::Odometry robot_odom;
 	pp::scan_ctrl scan_ctrl_;
+
+	boost::mutex temp_target_mutex_;
+	class Paras;
+	Vector2<double> get_middle_point(const Vector2<double>& p1,const Vector2<double>& p2,const Paras& para);
+	bool check_is_valid(const Vector2<double>& point, Paras& para, const sensor_msgs::LaserScan::ConstPtr & scan);
+	bool check_corner(const sensor_msgs::LaserScan::ConstPtr & scan, const Paras para);
+
+	Vector2<double> polar_to_cartesian(double polar,int i);
+	//callback function
+	void sensorCb(const pp::x900sensor::ConstPtr &msg);
+	void robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg);
+//	void robot_map_metadata_cb(const nav_msgs::MapMetaData::ConstPtr& msg);
+	void mapCb(const nav_msgs::OccupancyGrid::ConstPtr &msg);
+	void scanLinearCb(const sensor_msgs::LaserScan::ConstPtr &msg);
+	class Paras{
+public:
+	explicit Paras(bool is_left):is_left_(is_left)
+{
+		narrow = is_left ? 0.187 : 0.197;
+
+		y_min = 0.0;
+		y_max = is_left ? 0.3 : 0.25;
+
+		x_min_forward = LIDAR_OFFSET_X;
+		x_max_forward = is_left ? 0.3 : 0.25;
+		auto y_start_forward = is_left ? 0.06: -0.06;
+		auto y_end_forward = is_left ? -ROBOT_RADIUS: ROBOT_RADIUS;
+		y_min_forward = std::min(y_start_forward, y_end_forward);
+		y_max_forward = std::max(y_start_forward, y_end_forward);
+
+		auto x_side_start = 0.0;
+		auto x_side_end = ROBOT_RADIUS;
+		x_min_side = std::min(x_side_start, x_side_end);
+		x_max_side = std::max(x_side_start, x_side_end);
+
+		auto y_side_start = 0.0;
+		auto y_side_end = is_left ? narrow + 0.01 : -narrow + 0.01;
+		y_min_side = std::min(y_side_start, y_side_end);
+		y_max_side = std::max(y_side_start, y_side_end);
+
+		auto y_point1_start_corner = is_left ? 0.3 : -0.3;
+		auto y_point1_end_corner = is_left ? -4.0 : 4.0;
+		y_min_point1_corner = std::min(y_point1_start_corner, y_point1_end_corner);
+		y_max_point1_corner = std::max(y_point1_start_corner, y_point1_end_corner);
+
+	 	auto y_point1_start = 0.0;
+		auto y_point1_end = is_left ? 4.0 : -4.0;
+		y_min_point1 = std::min(y_point1_start, y_point1_end);
+		y_max_point1 = std::max(y_point1_start, y_point1_end);
+
+		auto y_target_start = is_left ? ROBOT_RADIUS : -ROBOT_RADIUS;
+		auto y_target_end = is_left ? 0.4 : -0.4;
+		y_min_target = std::min(y_target_start, y_target_end);
+		y_max_target = std::max(y_target_start, y_target_end);
+	};
+
+	bool inPoint1Range(const Vector2<double> &point, bool is_corner) const {
+		if(is_corner)
+			return (point.x > 0 && point.x < 4 && point.y > y_min_point1_corner && point.y < y_max_point1_corner);
+		else
+			return (point.x > -4 && point.x < 0.3 && point.y > y_min_point1 && point.y < y_max_point1);
+	}
+
+	bool inTargetRange(const Vector2<double> &target) {
+		return (target.x > 0 && target.y > 0.4) ||
+					 (target.x > CHASE_X && std::abs(target.y) < ROBOT_RADIUS) ||
+					 (target.y < -ROBOT_RADIUS);
+	}
+
+	bool inForwardRange(const Vector2<double> &point) const {
+		return point.x > x_min_forward && point.x < x_max_forward && point.y > y_min_forward && point.y < y_max_forward;
+	}
+
+	bool inSidedRange(const Vector2<double> &point) const {
+		return point.x > x_min_side && point.x < x_max_side && point.y > y_min_side && point.y < y_max_side;
+	}
+
+	double narrow;
+	bool is_left_;
+	double x_min_forward;
+	double x_max_forward;
+	double x_min_side;
+	double x_max_side;
+
+	double y_min;
+	double y_max;
+
+	double y_min_forward;
+	double y_max_forward;
+
+	double y_min_side;
+	double y_max_side;
+
+	double y_min_point1_corner;
+	double y_max_point1_corner;
+	double y_min_point1;
+	double y_max_point1;
+
+	double y_min_target;
+	double y_max_target;
+
+	const double CHASE_X = 0.107;
+};
+	bool calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,bool is_left ,std::deque<Vector2<double>>& points);
+	void scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr& scan);
+	void scanCompensateCb(const sensor_msgs::LaserScan::ConstPtr &msg);
+	void lidarPointCb(const visualization_msgs::Marker &point_marker);
+
+	boost::shared_ptr<Mode> p_mode{};
 };
 
+int32_t cellToCount(int16_t distance);
+
+int16_t countToCell(int32_t count);
+
+Point32_t getPosition(void);
+
+bool isPos(int dir);
+
+bool isXAxis(int dir);
+
+bool isYAxis(int dir);
+
+Point32_t updatePosition();
+
+Mode *getNextMode(int next_mode_i_);
+void setPosition(int32_t x, int32_t y);
 #endif

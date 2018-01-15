@@ -1,0 +1,52 @@
+@startuml
+Mode ----right----> action
+ACleanMode -up-|> Mode
+ModeIdle -up-|> Mode
+NavigationCleanMode -up-|>ACleanMode
+OpenGyro -up-|> action
+AMoveType -up-|> action
+
+LinearAMoveType -up-|> AMoveType
+FollowWallAMoveType -up-|> AMoveType
+
+MovementForward -up-> FollowWallAMoveType
+MovementTurn -up-> FollowWallAMoveType
+MovementBack -up-> FollowWallAMoveType
+
+MovementForward -up-> LinearAMoveType
+MovementTurn -up-> LinearAMoveType
+MovementBack -up-> LinearAMoveType
+
+
+Interface action{
+  +virtual bool isFinish()=0;
+  +virtual void run()=0;
+  +bool isTimeUp();
+
+ #double start_timer_{};
+ #double timeout_interval_{};
+}
+
+class Mode{
+	+void run();
+	+virtual bool isFinish();
+	+virtual bool isExit();
+}
+
+abstract ACleanMode{
+ +bool isFinish();
+ -bool setNextAction();
+ -bool setNextState();
+	#int state;
+}
+
+abstract AMoveType
+class NavigationCleanMode {
+ +bool isFinish()
+}
+note left of Mode : core func **run()**
+note left of ACleanMode : core func **isFinish()**
+
+test2 --|> test
+class test
+@enduml
