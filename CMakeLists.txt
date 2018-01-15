@@ -152,10 +152,10 @@ add_message_files(
 	scan_ctrl.msg
 )
 
-add_service_files(
-	DIRECTORY srv
-	FILES
-)
+#add_service_files(
+#	DIRECTORY srv
+#	FILES
+#)
 
 generate_messages(
 	DEPENDENCIES
