@@ -350,5 +350,6 @@ bool isYAxis(int dir);
 
 Point32_t updatePosition();
 
+Mode *getNextMode(int next_mode_i_);
 void setPosition(int32_t x, int32_t y);
 #endif

@@ -5,7 +5,6 @@
 #include <ros/ros.h>
 
 #include "config.h"
-#include "mode.hpp"
 
 #define POWER_ACTIVE 1
 #define POWER_DOWN 7
@@ -31,7 +30,6 @@ bool is_robotbase_stop(void);
 void serial_receive_routine_cb();
 void robotbase_routine_cb();
 void serial_send_routine_cb();
-Mode *getNextMode(int next_mode_i_);
 void process_beep();
 void process_led();
 void robotbase_reset_odom_pose(void);
