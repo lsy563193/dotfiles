@@ -26,6 +26,8 @@ ACleanMode::ACleanMode()
 	ev.key_clean_pressed = false;
 	sp_state = state_init;
 	sp_state->init();
+	action_i_ = ac_open_gyro;
+	genNextAction();
 	robot_timer.initWorkTimer();
 	key.resetPressStatus();
 
