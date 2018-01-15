@@ -1,5 +1,4 @@
-#include "pp.h"
-#include "arch.hpp"
+#include "robot.hpp"
 
 
 #if VERIFY_CPU_ID || VERIFY_KEY

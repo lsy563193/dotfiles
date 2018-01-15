@@ -1,7 +1,6 @@
 //
 // Created by lsy563193 on 12/25/17.
 //
-//#include "pp.h"
 #include "dev.h"
 #include "arch.hpp"
 MovementForwardTurn::MovementForwardTurn(bool is_left) : is_left_(is_left) {

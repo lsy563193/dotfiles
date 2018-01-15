@@ -1,5 +1,9 @@
-#include "pp.h"
+#include "ros/ros.h"
+#include "dev.h"
 #include <std_msgs/String.h>
+#include <pp/x900sensor.h>
+#include <tf/transform_broadcaster.h>
+#include "robotbase.h"
 
 #define  _RATE 50
 

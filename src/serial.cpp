@@ -1,5 +1,8 @@
-#include "pp.h"
+#include "ros/ros.h"
+#include "boost/thread.hpp"
+#include "serial.h"
 #include <sys/ioctl.h>
+#include <fcntl.h>
 
 boost::mutex g_send_stream_mutex;
 boost::mutex g_receive_stream_mutex;

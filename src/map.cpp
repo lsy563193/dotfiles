@@ -1,4 +1,7 @@
-#include "pp.h"
+#include <gyro.h>
+#include "map.h"
+#include "robot.hpp"
+#include "event_manager.h"
 
 GridMap fw_map;
 GridMap slam_grid_map;

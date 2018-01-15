@@ -2,7 +2,6 @@
 
 #include <event_manager.h>
 #include <robot.hpp>
-//#include "pp.h"
 #include "arch.hpp"
 #include "dev.h"
 //CELL_COUNT_MUL*1.5
