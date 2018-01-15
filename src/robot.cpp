@@ -7,7 +7,6 @@
 #include <global.h>
 #include <std_srvs/SetBool.h>
 #include <pp.h>
-#include <pp/SetLidar.h>
 #include <odom.h>
 #include <event_manager.h>
 #include "lidar.hpp"
