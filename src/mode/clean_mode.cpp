@@ -66,7 +66,6 @@ ACleanMode::ACleanMode()
 	ev.key_clean_pressed = false;
 	sp_state = state_init;
 	sp_state->init();
-	setNextAction();
 	robot_timer.initWorkTimer();
 	key.resetPressStatus();
 
@@ -126,32 +125,6 @@ ACleanMode::~ACleanMode() {
 	ROS_INFO("%s %d: Cleaned area = \033[32m%.2fm2\033[0m, cleaning time: \033[32m%d(s) %.2f(min)\033[0m, cleaning speed: \033[32m%.2f(m2/min)\033[0m.",
 			 __FUNCTION__, __LINE__, map_area, robot_timer.getWorkTime(),
 			 static_cast<float>(robot_timer.getWorkTime()) / 60, map_area / (static_cast<float>(robot_timer.getWorkTime()) / 60));
-}
-
-bool ACleanMode::setNextAction()
-{
-	if (sp_state == state_init)
-	{
-		if (action_i_ == ac_null)
-			action_i_ = ac_open_gyro;
-		else if(action_i_ == ac_open_gyro)
-		{
-			vacuum.setLastMode();
-			brush.normalOperate();
-			action_i_ = ac_open_lidar;
-		}
-		else if(action_i_ == ac_open_lidar)
-			action_i_ = ac_open_slam;
-		else // action_open_slam
-			action_i_ = ac_null;
-	}
-	else if (isExceptionTriggered())
-		action_i_ = ac_exception_resume;
-	else
-		action_i_ = ac_null;
-
-	genNextAction();
-	return action_i_ != ac_null;
 }
 
 void ACleanMode::setNextModeDefault()
@@ -342,11 +315,6 @@ bool ACleanMode::MoveTypeLinearIsFinish(MoveTypeLinear *p_mt)
 void ACleanMode::actionLinearSaveBlocks()
 {
 	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
-}
-
-void ACleanMode::goHomePointUpdateAction()
-{
-
 }
 
 void ACleanMode::setRconPos(float cd,float dist)

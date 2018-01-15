@@ -33,12 +33,10 @@ bool CleanModeTest::isFinish()
 	if (!sp_action_->isFinish() && !ev.remote_direction_back && !ev.remote_direction_forward)
 		return false;
 
-	setNextAction();
-
 	return false;
 }
 
-bool CleanModeTest::setNextAction()
+/*bool CleanModeTest::setNextAction()
 {
 	if (ev.remote_direction_back)
 	{
@@ -78,7 +76,7 @@ bool CleanModeTest::setNextAction()
 	genNextAction();
 	PP_INFO();
 	return action_i_ != ac_null;
-}
+}*/
 
 void CleanModeTest::keyClean(bool state_now, bool state_last)
 {

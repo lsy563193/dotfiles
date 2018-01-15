@@ -32,23 +32,6 @@ bool CleanModeExploration::mapMark()
 	return false;
 }
 
-bool CleanModeExploration::setNextAction()
-{
-	PP_INFO();
-	//todo action convert
-	if (sp_state == state_init)
-		return ACleanMode::setNextAction();
-	else if(sp_state == state_exploration)
-		action_i_ = ac_linear;
-	else if(sp_state == state_go_to_charger)
-		action_i_ = ac_go_to_charger;
-	else if(sp_state == state_go_home_point)
-		action_i_ = ac_linear;
-	else
-		action_i_ = ac_null;
-	genNextAction();
-	return action_i_ != ac_null;
-}
 // event
 void CleanModeExploration::keyClean(bool state_now, bool state_last) {
 	ROS_WARN("%s %d: key clean.", __FUNCTION__, __LINE__);
