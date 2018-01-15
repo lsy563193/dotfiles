@@ -39,7 +39,7 @@ public:
 		return press_status_;
 	}
 
-	void eliminate_jitter(uint8_t key_triggered);
+	void eliminate_jitter(bool key_triggered);
 
 	double getPressTime();
 
