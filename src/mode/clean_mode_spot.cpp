@@ -51,22 +51,6 @@ bool CleanModeSpot::mapMark()
 	return false;
 }
 
-bool CleanModeSpot::setNextAction()
-{
-	if (sp_state == state_init)
-		return ACleanMode::setNextAction();
-	else if (sp_state == state_clean)
-	{
-		PP_INFO();
-		if(plan_path_.size() >= 2)
-			action_i_ = ac_linear;
-		else
-			action_i_ = ac_null;
-	}
-	genNextAction();
-	return action_i_ != ac_null;
-}
-
 void CleanModeSpot::remoteClean(bool state_now, bool state_last)
 {
 	ev.key_clean_pressed = true;

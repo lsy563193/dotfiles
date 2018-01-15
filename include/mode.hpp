@@ -229,7 +229,6 @@ public:
 	bool isUpdateFinish();
 
 	void setNextModeDefault();
-	virtual bool setNextAction();
 	void genNextAction();
 
 	void setRconPos(float cd,float dist);
@@ -247,7 +246,6 @@ public:
 	virtual bool MoveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt);
 	virtual void actionFollowWallSaveBlocks();
 	virtual void actionLinearSaveBlocks();
-	void goHomePointUpdateAction();
 
 	virtual bool MoveTypeLinearIsFinish(MoveTypeLinear *p_mt);
 	int reach_cleaned_count_{};
@@ -425,7 +423,6 @@ public:
 	bool mapMark() override ;
 	bool isExit() override;
 
-	bool setNextAction() override;
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteClean(bool state_now, bool state_last) override ;
 	void remoteDirectionLeft(bool state_now, bool state_last) override ;
@@ -516,7 +513,6 @@ public:
 	bool mapMark() override;
 	bool markRealTime() override;
 //	bool isExit() override;
-	bool setNextAction() override;
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteClean(bool state_now, bool state_last) override ;
 //	void cliffAll(bool state_now, bool state_last) override ;
@@ -568,7 +564,6 @@ public:
 
 	bool mapMark() override;
 //	bool isExit() override;
-	bool setNextAction() override;
 //	void cliffAll(bool state_now, bool state_last) override;
 	void remoteClean(bool state_now, bool state_last) override;
 	void keyClean(bool state_now, bool state_last) override;
@@ -590,11 +585,9 @@ public:
 
 	bool isFinish() override;
 
-	bool setNextAction() override;
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteMax(bool state_now, bool state_last) override ;
 	void remoteDirectionForward(bool state_now, bool state_last) override ;
-	bool updateActionInStateClean(){};
 
 };
 #endif //PP_MODE_H_H
