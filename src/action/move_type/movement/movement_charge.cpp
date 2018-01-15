@@ -2,10 +2,7 @@
 // Created by austin on 17-12-7.
 //
 
-#include <action.hpp>
 #include <movement.hpp>
-#include <move_type.hpp>
-
 #include "dev.h"
 
 MovementCharge::MovementCharge()

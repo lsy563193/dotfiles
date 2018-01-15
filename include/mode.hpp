@@ -5,6 +5,7 @@
 #ifndef PP_MODE_H_H
 #define PP_MODE_H_H
 
+#include "state.hpp"
 #include "path_algorithm.h"
 #include "event_manager.h"
 #include "boost/shared_ptr.hpp"

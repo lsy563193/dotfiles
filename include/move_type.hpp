@@ -5,6 +5,8 @@
 #ifndef PP_MOVE_TYPE_HPP
 #define PP_MOVE_TYPE_HPP
 
+#include "action.hpp"
+#include "movement.hpp"
 #include "boost/shared_ptr.hpp"
 //#include "mode.hpp"
 

@@ -13,7 +13,7 @@
 #include "path_algorithm.h"
 #include "boost/shared_ptr.hpp"
 
-
+#include "action.hpp"
 
 class IMoveType;
 class IMovement: public IAction,public ISpeedGovernor

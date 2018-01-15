@@ -7,8 +7,6 @@
 #include "dev.h"
 #include "robot.hpp"
 
-#include <action.hpp>
-#include <movement.hpp>
 #include <move_type.hpp>
 #include <state.hpp>
 #include <mode.hpp>

@@ -2,10 +2,6 @@
 // Created by lsy563193 on 17-12-3.
 //
 
-#include <state.hpp>
-#include <action.hpp>
-#include <movement.hpp>
-#include <move_type.hpp>
 #include <mode.hpp>
 #include <mathematics.h>
 #include <event_manager.h>

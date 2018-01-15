@@ -2,7 +2,6 @@
 // Created by lsy563193 on 12/19/17.
 //
 
-#include <action.hpp>
 #include <movement.hpp>
 #include <move_type.hpp>
 #include "robot.hpp"

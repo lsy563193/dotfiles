@@ -2,8 +2,6 @@
 // Created by lsy563193 on 12/5/17.
 //
 
-#include <action.hpp>
-#include <movement.hpp>
 #include <move_type.hpp>
 
 #include "wheel.hpp"

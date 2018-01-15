@@ -6,10 +6,6 @@
 #include <error.h>
 #include <map.h>
 
-#include "action.hpp"
-#include "movement.hpp"
-#include "move_type.hpp"
-#include "state.hpp"
 #include "mode.hpp"
 
 CleanModeExploration::CleanModeExploration()
