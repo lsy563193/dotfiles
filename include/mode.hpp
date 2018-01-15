@@ -28,7 +28,7 @@ public:
 	};
 	int getNextMode();
 
-	friend IMoveType;
+//	friend IMoveType;
 
 	enum {
 		md_idle,
