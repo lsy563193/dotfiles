@@ -4,7 +4,8 @@
 
 #include <mathematics.h>
 #include <event_manager.h>
-#include "pp.h"
+#include "dev.h"
+#include "robot.hpp"
 #include "arch.hpp"
 boost::shared_ptr<IMovement> IMoveType::sp_movement_ = nullptr;
 Mode* IMoveType::sp_mode_ = nullptr;

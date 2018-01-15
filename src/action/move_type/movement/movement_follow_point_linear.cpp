@@ -1,8 +1,10 @@
 // // Created by lsy563193 on 12/5/17.  //
 
 #include <event_manager.h>
-#include "pp.h"
+#include <robot.hpp>
+//#include "pp.h"
 #include "arch.hpp"
+#include "dev.h"
 //CELL_COUNT_MUL*1.5
 MovementFollowPointLinear::MovementFollowPointLinear()
 {
