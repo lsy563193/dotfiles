@@ -2,7 +2,9 @@
 // Created by lsy563193 on 11/29/17.
 //
 
-#include <arch.hpp>
+#include <action.hpp>
+#include <movement.hpp>
+#include <move_type.hpp>
 #include <error.h>
 #include <event_manager.h>
 #include "dev.h"

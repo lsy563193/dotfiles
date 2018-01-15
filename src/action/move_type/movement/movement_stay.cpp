@@ -2,7 +2,9 @@
 // Created by austin on 17-12-8.
 //
 
-#include "arch.hpp"
+#include <action.hpp>
+#include <movement.hpp>
+#include <move_type.hpp>
 #include "dev.h"
 
 MovementStay::MovementStay()

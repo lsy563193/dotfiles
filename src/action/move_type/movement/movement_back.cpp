@@ -3,7 +3,10 @@
 //
 
 #include <event_manager.h>
-#include "arch.hpp"
+#include <action.hpp>
+#include <movement.hpp>
+#include <move_type.hpp>
+
 #include "dev.h"
 
 MovementBack::MovementBack(float back_distance, uint8_t max_speed)

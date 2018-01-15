@@ -1,11 +1,15 @@
 //
 // Created by lsy563193 on 12/4/17.
 //
+#include "ros/ros.h"
 #include <event_manager.h>
 #include "dev.h"
 #include "robot.hpp"
-#include "arch.hpp"
-
+#include <action.hpp>
+#include <movement.hpp>
+#include <move_type.hpp>
+#include <state.hpp>
+#include <mode.hpp>
 
 MoveTypeFollowWall::MoveTypeFollowWall(bool is_left)
 {
@@ -344,7 +348,7 @@ int16_t MoveTypeFollowWall::getTurnAngle(bool use_target_angle)
 	int16_t  turn_angle{};
 	if(state_turn){
 		state_turn = false;
-		INFO_RED("getTurnAngle");
+		ROS_ERROR("getTurnAngle");
 		auto diff = boost::dynamic_pointer_cast<AMovementFollowPoint>(sp_movement_)->angle_diff;
 		ROS_INFO("angle_diff(%d)",diff);
 		return diff;

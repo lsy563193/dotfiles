@@ -6,7 +6,13 @@
 #include <event_manager.h>
 #include "dev.h"
 #include "robot.hpp"
-#include "arch.hpp"
+
+#include <action.hpp>
+#include <movement.hpp>
+#include <move_type.hpp>
+#include <state.hpp>
+#include <mode.hpp>
+
 boost::shared_ptr<IMovement> IMoveType::sp_movement_ = nullptr;
 Mode* IMoveType::sp_mode_ = nullptr;
 int IMoveType::movement_i_ = mm_null;

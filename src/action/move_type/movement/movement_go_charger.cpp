@@ -2,9 +2,11 @@
 // Created by lsy563193 on 6/28/17.
 //
 
+#include <action.hpp>
+#include <movement.hpp>
+#include <move_type.hpp>
 #include <robot.hpp>
 #include <dev.h>
-#include "arch.hpp"
 
 MovementGoToCharger::MovementGoToCharger()
 {

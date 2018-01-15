@@ -6,8 +6,10 @@
 // Created by lsy563193 on 11/29/17.
 //
 
+#include <action.hpp>
+#include <movement.hpp>
+#include <move_type.hpp>
 #include "dev.h"
-#include "arch.hpp"
 
 
 IFollowWall::IFollowWall(bool is_left) : previous_(0), seen_charger_counter(0), is_left_(is_left)
