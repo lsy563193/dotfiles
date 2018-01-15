@@ -12,6 +12,7 @@
 
 CleanModeNav::CleanModeNav()
 {
+	setNavMode(true);
 	ROS_INFO("%s %d: Entering Navigation mode\n=========================" , __FUNCTION__, __LINE__);
 
 	if(g_plan_activated)
@@ -30,7 +31,7 @@ CleanModeNav::CleanModeNav()
 
 CleanModeNav::~CleanModeNav()
 {
-
+	setNavMode(false);
 }
 
 bool CleanModeNav::mapMark()

@@ -96,7 +96,17 @@ public:
 	bool isExceptionTriggered();
 
 	static boost::shared_ptr<IAction> sp_action_;
+	bool isNavMode()
+	{
+		return isNavMode_;
+	}
+	void setNavMode(bool set)
+	{
+		isNavMode_ = set;
+	}
+
 protected:
+	bool isNavMode_{false};
 	int mode_i_{ac_null};
 private:
 

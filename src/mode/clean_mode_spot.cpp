@@ -8,7 +8,7 @@
 #include "mode.hpp"
 CleanModeSpot::CleanModeSpot()
 {
-	//speaker.play(VOICE_CLEANING_SPOT,false);
+	speaker.play(VOICE_CLEANING_SPOT,false);
 	clean_path_algorithm_.reset(new SpotCleanPathAlgorithm());
 	go_home_path_algorithm_.reset();
 }
