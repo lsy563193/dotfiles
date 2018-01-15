@@ -4,7 +4,7 @@
 
 #include <odom.h>
 #include <dev.h>
-#include "arch.hpp"
+#include "action.hpp"
 
 ActionPause::ActionPause()
 {
