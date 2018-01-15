@@ -6,6 +6,7 @@
 
 MovementFollowPointLinear::MovementFollowPointLinear()
 {
+	PP_INFO();
 	min_speed_ = LINEAR_MIN_SPEED;
 	max_speed_ = LINEAR_MAX_SPEED;
 //	sp_mt_->sp_cm_->tmp_plan_path_ = path;

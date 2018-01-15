@@ -170,7 +170,6 @@ bool ACleanMode::isUpdateFinish() {
 
 	if (sp_action_ != nullptr && !sp_action_->isFinish())
 		return true;
-
 //	sp_action_.reset();//for call ~constitution;
 
 	if (!sp_state->updateAction()) {
@@ -554,7 +553,6 @@ bool ACleanMode::checkEnterExceptionResumeState()
 {
 	if (isExceptionTriggered()) {
 		ROS_WARN("%s %d: Exception triggered!", __FUNCTION__, __LINE__);
-		mapMark();
 		sp_action_.reset();
 		sp_saved_states.push_back(sp_state);
 		sp_state = state_exception_resume;
@@ -614,7 +612,6 @@ bool ACleanMode::isSwitchByEventInStateClean() {
 	return checkEnterNullState() || checkEnterGoHomePointState();
 }
 
-
 void ACleanMode::switchInStateClean() {
 //    checkEnterNullState()
 //	if(action_i_ == ac_open_slam)
@@ -628,7 +625,6 @@ bool ACleanMode::checkEnterGoHomePointState()
 {
 	if (ev.remote_home || ev.battery_home)
 	{
-		mapMark();
 		sp_action_.reset();
 		sp_state = state_go_home_point;
 		sp_state->init();
@@ -648,9 +644,7 @@ bool ACleanMode::isSwitchByEventInStateGoHomePoint()
 bool ACleanMode::updateActionInStateGoHomePoint()
 {
 	bool update_finish;
-	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
-	mapMark();
-
+	sp_action_.reset();//to mark in destructor
 	old_dir_ = new_dir_;
 
 	ROS_INFO("%s %d: reach_home_point_(%d), curr(%d, %d), current home point(%d, %d).", __FUNCTION__, __LINE__,
@@ -778,13 +772,11 @@ void ACleanMode::switchInStateGoToCharger() {
 
 // ------------------State spot--------------------
 bool ACleanMode::updateActionInStateSpot() {
-	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
-	mapMark();
-
 	old_dir_ = new_dir_;
 	ROS_ERROR("old_dir_(%d)", old_dir_);
 	auto cur_point = getPosition();
 	ROS_INFO("\033[32m plan_path front (%d,%d),cur point:(%d,%d)\033[0m",plan_path_.front().toCell().x,plan_path_.front().toCell().y,cur_point.toCell().x,cur_point.toCell().y);
+	sp_action_.reset();// to mark in destructor
 	if (clean_path_algorithm_->generatePath(clean_map_, cur_point, old_dir_, plan_path_)) {
 		new_dir_ = plan_path_.front().th;
 		ROS_ERROR("new_dir_(%d)", new_dir_);
@@ -840,13 +832,11 @@ bool ACleanMode::isSwitchByEventInStateExploration() {
 }
 
 bool ACleanMode::updateActionInStateExploration() {
-	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
-	mapMark();
 	PP_INFO();
 	old_dir_ = new_dir_;
 	ROS_WARN("old_dir_(%d)", old_dir_);
 	plan_path_.clear();
-
+	sp_action_.reset();//to mark in constructor
 	if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
 		action_i_ = ac_linear;
 		new_dir_ = plan_path_.front().th;
@@ -859,8 +849,6 @@ bool ACleanMode::updateActionInStateExploration() {
 	}
 	else {
 		ROS_WARN("%s,%d:exploration finish,did not find charge", __func__, __LINE__);
-		if (go_home_path_algorithm_ == nullptr)
-			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
 		action_i_ = ac_null;
 	}
 	return false;
@@ -875,6 +863,8 @@ void ACleanMode::switchInStateExploration() {
 	}
 	else{
 		sp_state = state_go_home_point;
+		if (go_home_path_algorithm_ == nullptr)
+			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
 	}
 
 	action_i_ = ac_null;
@@ -892,16 +882,10 @@ bool ACleanMode::isSwitchByEventInStateTrapped()
 bool ACleanMode::updateActionInStateTrapped()
 {
 	PP_INFO();
-//	sp_action_.reset();//for call ~constitution;
-	clean_map_.saveBlocks(action_i_ == ac_linear, (sp_state == state_clean) || (sp_state == state_exploration));
-	mapMark();
 
-	if(sp_action_ == nullptr)
-	{
-		action_i_ = ac_follow_wall_left;
-		genNextAction();
-		return true;
-	}
+	sp_action_.reset();// to mark in destructor
+	action_i_ = ac_follow_wall_left;
+	genNextAction();
 
 	if (robot_timer.trapTimeout(ESCAPE_TRAPPED_TIME)) {
 		action_i_ = ac_null;

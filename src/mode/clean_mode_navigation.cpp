@@ -368,8 +368,7 @@ bool CleanModeNav::isSwitchByEventInStateClean() {
 }
 
 bool CleanModeNav::updateActionInStateClean(){
-	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
-	mapMark();
+	sp_action_.reset();//to mark in destructor
 	robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 	old_dir_ = new_dir_;
 	if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
@@ -473,7 +472,7 @@ bool CleanModeNav::checkEnterTempSpotState()
 	if (ev.remote_spot)
 	{
 		ev.remote_spot= false;
-		mapMark();
+//		mapMark();
 		sp_action_.reset();
 		clean_path_algorithm_.reset(new SpotCleanPathAlgorithm);
 		sp_state = state_spot;
@@ -523,7 +522,7 @@ bool CleanModeNav::checkEnterPause()
 		sp_saved_states.push_back(sp_state);
 		sp_state = state_pause;
 		sp_state->init();
-		mapMark();
+//		mapMark();
 		return true;
 	}
 
@@ -635,8 +634,9 @@ bool CleanModeNav::updateActionInStateResumeLowBatteryCharge()
 	if (getPosition().toCell() == continue_point_.toCell())
 		return false;
 	else {
-		clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
-		mapMark();
+//		clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
+//		mapMark();
+		sp_action_.reset();
 		old_dir_ = new_dir_;
 		ROS_ERROR("old_dir_(%d)", old_dir_);
 		clean_path_algorithm_->generateShortestPath(clean_map_, getPosition(), continue_point_, old_dir_, plan_path_);

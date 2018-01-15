@@ -515,7 +515,7 @@ int16_t CleanModeFollowWall::wf_path_find_shortest_path_ranged(GridMap& map, int
 bool CleanModeFollowWall::updateActionInStateClean()
 {
 	ROS_INFO_FL();
-	mapMark();
+	sp_action_.reset();// to mark in destructor
 	old_dir_ = new_dir_;
 	if (reach_cleaned_count_ == 0) {
 		if (generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {

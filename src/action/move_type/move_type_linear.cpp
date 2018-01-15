@@ -6,7 +6,6 @@
 #include "arch.hpp"
 
 
-
 MoveTypeLinear::MoveTypeLinear() {
 	resetTriggeredValue();
 
@@ -26,6 +25,11 @@ MoveTypeLinear::MoveTypeLinear() {
 
 MoveTypeLinear::~MoveTypeLinear()
 {
+	if(sp_mode_ != nullptr){
+		auto p_mode = (ACleanMode*)sp_mode_;
+		p_mode->clean_map_.saveBlocks(p_mode->action_i_ == p_mode->ac_linear, p_mode->sp_state == p_mode->state_clean);
+		p_mode->mapMark();
+	}
 	ROS_INFO("%s %d: Exit move type linear.", __FUNCTION__, __LINE__);
 }
 
@@ -56,9 +60,14 @@ bool MoveTypeLinear::isFinish()
 				sp_movement_.reset(new MovementFollowPointLinear());
 			}
 		}
-		else if (movement_i_ == mm_forward && !handleMoveBackEvent(p_clean_mode))
-			return true;
-		else //if (movement_i_ == mm_back)
+		else if (movement_i_ == mm_forward)
+		{
+			if(handleMoveBackEvent(p_clean_mode)){
+				return false;
+			}else
+				return true;
+		}
+		else
 			return true;
 	}
 	return false;
@@ -81,8 +90,7 @@ bool MoveTypeLinear::isCellReach()
 	return false;
 }
 
-bool MoveTypeLinear::isPoseReach()
-{
+bool MoveTypeLinear::isPoseReach(){
 	// Checking if robot has reached target cell and target angle.
 //	PP_INFO();
 	auto target_angle = target_point_.th;
