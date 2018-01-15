@@ -92,7 +92,6 @@ void CleanModeSpot::switchInStateSpot()
 //	sp_state->init();
 }
 
-
 void CleanModeSpot::keyClean(bool state_now,bool state_last)
 {
 	INFO_GREEN("key clean press");
