@@ -9,14 +9,15 @@
 SpotCleanPathAlgorithm::SpotCleanPathAlgorithm()
 {
 	Cell_t  cur = getPosition().toCell();
-	initVariables(1.0,cur);
-	genTargets( ANTI_CLOCKWISE, spot_diameter_, &targets_cells_,cur);
+	float radius = 0.5;
+	initVariables(radius,cur);
+	genTargets( ANTI_CLOCKWISE, radius, &targets_cells_,cur);
 }
 
-SpotCleanPathAlgorithm::SpotCleanPathAlgorithm(float diameter,Cell_t cur_cell)
+SpotCleanPathAlgorithm::SpotCleanPathAlgorithm(float radius,Cell_t cur_cell)
 {
-	initVariables(diameter,cur_cell);
-	genTargets( ANTI_CLOCKWISE, spot_diameter_, &targets_cells_, cur_cell);
+	initVariables(radius,cur_cell);
+	genTargets( ANTI_CLOCKWISE,radius, &targets_cells_, cur_cell);
 }
 
 SpotCleanPathAlgorithm::~SpotCleanPathAlgorithm()
@@ -139,13 +140,12 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, c
 
 }
 
-void SpotCleanPathAlgorithm::initVariables(float diameter,Cell_t cur_cell)
+void SpotCleanPathAlgorithm::initVariables(float radius,Cell_t cur_cell)
 {
 	PP_INFO();
-	spot_diameter_ = diameter;
 	spot_running_ = false;
 	const int abit = 3;
-	int16_t half_cell_num = (int16_t)ceil(spot_diameter_*1000/CELL_SIZE)/2;
+	int16_t half_cell_num = (int16_t)ceil(radius*1000/CELL_SIZE);
 	min_corner_.x = cur_cell.x - half_cell_num - abit;
 	min_corner_.y = cur_cell.y - half_cell_num - abit;
 	max_corner_.x = cur_cell.x + half_cell_num + abit;
@@ -153,7 +153,7 @@ void SpotCleanPathAlgorithm::initVariables(float diameter,Cell_t cur_cell)
 	targets_cells_.clear();
 }
 
-void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Cells *targets,const Cell_t begincell)
+void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float radius,Cells *targets,const Cell_t begincell)
 {
 	targets->clear();
 	int16_t i;
@@ -163,7 +163,7 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float diameter,Cells *ta
 	uint16_t spiral_count = 1;//number of spiral count
 	uint16_t cell_number = 1;//cell counter
 	uint16_t step = 1;
-	uint16_t spiral_number = (uint16_t) ceil(diameter * 1000 / (CELL_SIZE))/step;//number of spiral
+	uint16_t spiral_number = (uint16_t) ceil(radius * 1000 *2  / (CELL_SIZE))/step;//number of spiral
 	ROS_INFO( "%s,%d,number of spiral" "\033[36m" " %d" "\033[0m",__FUNCTION__,__LINE__,spiral_number);
 	if (sp_type == CLOCKWISE)
 	{
