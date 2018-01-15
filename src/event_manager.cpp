@@ -572,7 +572,7 @@ void event_manager_reset_status(void)
 	/* Remote */
 	ev.remote_home = false;
 	ev.remote_spot = false;
-	ev.remote_wallfollow = false;
+	ev.remote_follow_wall = false;
 	ev.remote_direction_forward = false;
 	ev.remote_direction_left = false;
 	ev.remote_direction_right = false;

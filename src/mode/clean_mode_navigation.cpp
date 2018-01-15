@@ -102,6 +102,24 @@ bool CleanModeNav::isExit()
 			setNextMode(md_charge);
 			return true;
 		}
+		else if (ev.remote_direction_left || ev.remote_direction_right || ev.remote_direction_forward)
+		{
+			ROS_WARN("%s %d: Exit for pause and remote left/right/forward.", __FUNCTION__, __LINE__);
+			setNextMode(md_remote);
+			return true;
+		}
+		else if (ev.remote_follow_wall)
+		{
+			ROS_WARN("%s %d: Exit for pause and remote follow wall.", __FUNCTION__, __LINE__);
+			setNextMode(cm_wall_follow);
+			return true;
+		}
+//		else if (ev.remote_spot)
+//		{
+//			ROS_WARN("%s %d: Exit for pause and remote spot.", __FUNCTION__, __LINE__);
+//			setNextMode(cm_spot);
+//			return true;
+//		}
 	}
 
 	if (ev.fatal_quit || ev.key_long_pressed || ev.cliff_all_triggered || sp_action_->isExit())
@@ -233,9 +251,80 @@ void CleanModeNav::remoteDirectionLeft(bool state_now, bool state_last)
 	else
 		beeper.play_for_command(INVALID);
 
+	/*if (sp_state == state_pause)
+	{
+		beeper.play_for_command(VALID);
+		ROS_INFO("%s %d: Remote left.", __FUNCTION__, __LINE__);
+		ev.remote_direction_right = true;
+	}
+	else
+		beeper.play_for_command(INVALID);*/
+
 	remote.reset();
 }
 
+void CleanModeNav::remoteDirectionRight(bool state_now, bool state_last)
+{
+	if (sp_state == state_pause)
+	{
+		beeper.play_for_command(VALID);
+		ROS_INFO("%s %d: Remote right.", __FUNCTION__, __LINE__);
+		ev.remote_direction_right = true;
+	}
+	else
+		beeper.play_for_command(INVALID);
+
+	remote.reset();
+}
+
+void CleanModeNav::remoteDirectionForward(bool state_now, bool state_last)
+{
+	if (sp_state == state_pause)
+	{
+		beeper.play_for_command(VALID);
+		ROS_INFO("%s %d: Remote forward.", __FUNCTION__, __LINE__);
+		ev.remote_direction_right = true;
+	}
+	else
+		beeper.play_for_command(INVALID);
+
+	remote.reset();
+}
+
+void CleanModeNav::remoteWallFollow(bool state_now, bool state_last)
+{
+	if (sp_state == state_pause)
+	{
+		beeper.play_for_command(VALID);
+		ROS_INFO("%s %d: Remote follow wall.", __FUNCTION__, __LINE__);
+		ev.remote_follow_wall = true;
+	}
+	else
+		beeper.play_for_command(INVALID);
+
+	remote.reset();
+}
+
+void CleanModeNav::remoteSpot(bool state_now, bool state_last)
+{
+	if (sp_state == state_clean || sp_state == state_spot /*|| sp_state == state_pause*/)
+	{
+		ev.remote_spot = true;
+		beeper.play_for_command(VALID);
+	}
+	else
+		beeper.play_for_command(INVALID);
+
+	remote.reset();
+}
+
+void CleanModeNav::remoteMax(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
+	beeper.play_for_command(VALID);
+	vacuum.switchToNext();
+	remote.reset();
+}
 void CleanModeNav::batteryHome(bool state_now, bool state_last)
 {
 	if (sp_state == state_clean)
@@ -258,26 +347,6 @@ void CleanModeNav::chargeDetect(bool state_now, bool state_last)
 
 }
 
-void CleanModeNav::remoteSpot(bool state_now, bool state_last)
-{
-	if (sp_state == state_clean || sp_state == state_spot)
-	{
-		ev.remote_spot = true;
-		beeper.play_for_command(VALID);
-	}
-	else
-		beeper.play_for_command(INVALID);
-
-	remote.reset();
-}
-
-void CleanModeNav::remoteMax(bool state_now, bool state_last)
-{
-	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
-	beeper.play_for_command(VALID);
-	vacuum.switchToNext();
-	remote.reset();
-}
 // End event handlers.
 
 bool CleanModeNav::MoveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt)
