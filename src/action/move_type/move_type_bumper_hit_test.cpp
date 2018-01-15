@@ -2,7 +2,6 @@
 // Created by austin on 17-12-21.
 //
 
-#include <global.h>
 #include <robot.hpp>
 #include "arch.hpp"
 #include "dev.h"

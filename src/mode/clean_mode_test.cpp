@@ -5,7 +5,6 @@
 #include <event_manager.h>
 #include "dev.h"
 #include <error.h>
-#include <global.h>
 #include "arch.hpp"
 
 CleanModeTest::CleanModeTest()

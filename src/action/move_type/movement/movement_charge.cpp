@@ -2,7 +2,6 @@
 // Created by austin on 17-12-7.
 //
 
-#include <global.h>
 #include "arch.hpp"
 #include "dev.h"
 

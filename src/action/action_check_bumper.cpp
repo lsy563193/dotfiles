@@ -5,7 +5,6 @@
 #include <event_manager.h>
 #include "arch.hpp"
 #include "dev.h"
-#include "global.h"
 
 ActionCheckBumper::ActionCheckBumper()
 {

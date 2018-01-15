@@ -3,7 +3,6 @@
 //
 
 #include "rcon.h"
-#include "global.h"
 #include "mathematics.h"
 #include "lidar.hpp"
 

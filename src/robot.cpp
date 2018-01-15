@@ -4,7 +4,6 @@
 #include <time.h>
 #include <math.h>
 #include <nav_msgs/OccupancyGrid.h>
-#include <global.h>
 #include <std_srvs/SetBool.h>
 #include <odom.h>
 #include <event_manager.h>
