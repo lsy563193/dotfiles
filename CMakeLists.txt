@@ -135,6 +135,7 @@ pkg_check_modules(ALSA alsa REQUIRED)
 include_directories(SYSTEM ${EIGEN_INCLUDE_DIRS})
 include_directories(/usr/include/eigen3)
 include_directories(include ${catkin_INCLUDE_DIRS} ${Eigin3_INCLUDE_DIRS})
+include_directories(/opt/projects/yocto/yocto-build/tmp/work/cortexa7hf-neon-vfpv4-poky-linux-gnueabi/rplidar-ros/git-r0/build/devel/include)
 link_directories(${catkin_LIBRARY_DIRS} ${Eigen3_LIBRARY_DIRS})
 
 include_directories(
