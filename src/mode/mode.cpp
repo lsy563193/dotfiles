@@ -16,7 +16,7 @@ boost::shared_ptr<IAction> Mode::sp_action_ = nullptr;
 
 void Mode::run()
 {
-	ROS_INFO("%s %d: Mode start running.", __FUNCTION__, __LINE__);
+//	ROS_INFO("%s %d: Mode start running.", __FUNCTION__, __LINE__);
 	bool eh_status_now = false, eh_status_last = false;
 
 	while (ros::ok())
