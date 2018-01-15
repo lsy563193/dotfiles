@@ -2,7 +2,7 @@
 // Created by lsy563193 on 11/30/17.
 //
 #include "dev.h"
-#include "arch.hpp"
+#include "action.hpp"
 
 ActionAlign::ActionAlign() {
 	timeout_interval_ = 3;

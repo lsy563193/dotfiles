@@ -381,19 +381,19 @@ public:
 		return sp_state == state_pause;
 	}
 	State *sp_state{};
-	State *state_init;
-	State *state_clean;
-	State *state_exception_resume;
-	State *state_exploration;
+	State *state_init = new StateInit();
+	State *state_clean = new StateClean();
+	State *state_exception_resume = new ExceptionResume();
+	State *state_exploration = new StateExploration();
 protected:
 	std::vector<State*> sp_saved_states;
-	State *state_go_home_point;
-	State *state_go_to_charger;
-	State *state_charge;
-	State *state_trapped;
-	State *state_spot;
-	State *state_resume_low_battery_charge;
-	State *state_pause;
+	State *state_go_home_point = new StateGoHomePoint();
+	State *state_go_to_charger = new StateGoCharger();
+	State *state_charge = new StateCharge();
+	State *state_trapped = new StateTrapped();
+	State *state_spot =  new StateSpot();
+	State *state_resume_low_battery_charge = new StateResumeLowBatteryCharge();
+	State *state_pause = new StatePause();
 
 
 protected:

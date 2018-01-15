@@ -47,17 +47,17 @@
 ACleanMode::ACleanMode()
 {
 
-	state_init = new StateInit();
-	state_clean = new StateClean();
-	state_go_home_point = new StateGoHomePoint();
-	state_go_to_charger = new StateGoCharger();
-	state_charge = new StateCharge();
-	state_trapped = new StateTrapped();
-	state_spot = new StateSpot();
-	state_exception_resume = new ExceptionResume();
-	state_exploration = new StateExploration();
-	state_resume_low_battery_charge = new StateResumeLowBatteryCharge();
-	state_pause = new StatePause();
+//state_init = new StateInit();
+//state_clean = new StateClean();
+//state_go_home_point = new StateGoHomePoint();
+//state_go_to_charger = new StateGoCharger();
+//state_charge = new StateCharge();
+//state_trapped = new StateTrapped();
+//state_spot = new StateSpot();
+//state_exception_resume = new ExceptionResume();
+//state_exploration = new StateExploration();
+//state_resume_low_battery_charge = new StateResumeLowBatteryCharge();
+//state_pause = new StatePause();
 
 	event_manager_register_handler(this);
 	event_manager_set_enable(true);
