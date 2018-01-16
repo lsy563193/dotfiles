@@ -15,6 +15,10 @@
 ACleanMode::ACleanMode()
 {
 
+	scanLinear_sub_ = clean_nh_.subscribe("scanLinear", 1, &Lidar::scanLinearCb, &lidar);
+	scanCompensate_sub_ = clean_nh_.subscribe("scanCompensate", 1, &Lidar::scanCompensateCb, &lidar);
+	lidarPoint_sub_ = clean_nh_.subscribe("lidarPoint", 1, &Lidar::lidarPointCb, &lidar);
+
 	event_manager_register_handler(this);
 	event_manager_set_enable(true);
 	IMoveType::sp_mode_ = this;
@@ -33,6 +37,11 @@ ACleanMode::ACleanMode()
 }
 
 ACleanMode::~ACleanMode() {
+	scanLinear_sub_.shutdown();
+	scanCompensate_sub_.shutdown();
+	lidarPoint_sub_.shutdown();
+	clean_nh_.shutdown();
+
 	IMoveType::sp_mode_ = nullptr;
 	sp_state = nullptr;
 	event_manager_set_enable(false);

@@ -191,10 +191,7 @@ private:
 
 	ros::Subscriber map_sub_;
 	ros::Subscriber odom_sub_;
-	ros::Subscriber	scanLinear_sub_;
 	ros::Subscriber	scanOriginal_sub_;
-	ros::Subscriber	scanCompensate_sub_;
-	ros::Subscriber lidarPoint_sub_;
 
 	ros::Publisher odom_pub_;
 	ros::Publisher send_clean_marker_pub_;

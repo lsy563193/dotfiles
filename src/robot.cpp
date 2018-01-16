@@ -45,12 +45,8 @@ robot::robot()/*:offset_angle_(0),saved_offset_angle_(0)*/
 	// Subscribers.
 	odom_sub_ = robot_nh_.subscribe("/odom", 1, &robot::robotOdomCb, this);
 	map_sub_ = robot_nh_.subscribe("/map", 1, &Slam::mapCb, &slam);
-	scanLinear_sub_ = robot_nh_.subscribe("scanLinear", 1, &Lidar::scanLinearCb, &lidar);
 	scanOriginal_sub_ = robot_nh_.subscribe("scanOriginal", 1, &robot::scanOriginalCb, this);
-	scanCompensate_sub_ = robot_nh_.subscribe("scanCompensate", 1, &Lidar::scanCompensateCb, &lidar);
-	lidarPoint_sub_ = robot_nh_.subscribe("lidarPoint", 1, &Lidar::lidarPointCb, &lidar);
-	/*map subscriber for exploration*/
-	//map_metadata_sub = robot_nh_.subscribe("/map_metadata", 1, &robot::robot_map_metadata_cb, this);
+
 
 	// Service clients.
 	lidar_motor_cli_ = robot_nh_.serviceClient<rplidar_ros::SetLidar>("lidar_motor_ctrl");

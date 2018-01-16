@@ -248,6 +248,12 @@ class ACleanMode:public Mode
 public:
 	ACleanMode();
 	~ACleanMode();
+
+	ros::NodeHandle clean_nh_;
+	ros::Subscriber	scanLinear_sub_;
+	ros::Subscriber	scanCompensate_sub_;
+	ros::Subscriber lidarPoint_sub_;
+
 	State* updateState();
 	bool isFinish() override ;
 	bool isExit() override;
