@@ -13,8 +13,6 @@ MoveTypeFollowWall::MoveTypeFollowWall(bool is_left)
 {
 	ROS_INFO("%s %d: Entering move type %s follow wall.", __FUNCTION__, __LINE__,
 			 is_left ? "left" : "right");
-
-
 	auto p_mode = dynamic_cast<ACleanMode*> (sp_mode_);
 //	if(! p_clean_mode->plan_path_.empty())
 //		p_clean_mode.target_point_ = p_clean_mode->plan_path_.front();
@@ -41,8 +39,8 @@ MoveTypeFollowWall::MoveTypeFollowWall(bool is_left)
 MoveTypeFollowWall::~MoveTypeFollowWall()
 {
 	if(sp_mode_ != nullptr){
-		auto p_mode = (ACleanMode*)sp_mode_;
-		p_mode->clean_map_.saveBlocks(p_mode->action_i_ == p_mode->ac_linear, p_mode->isStateClean());
+		auto p_mode = dynamic_cast<ACleanMode*> (sp_mode_);
+		p_mode->clean_map_.saveBlocks(p_mode->action_i_ == p_mode->ac_linear, p_mode->sp_state == p_mode->state_clean);
 		p_mode->mapMark();
 	}
 	ROS_INFO("%s %d: Exit move type follow wall.", __FUNCTION__, __LINE__);
@@ -346,9 +344,8 @@ int16_t MoveTypeFollowWall::getTurnAngle(bool use_target_angle)
 	int16_t  turn_angle{};
 	if(state_turn){
 		state_turn = false;
-		ROS_ERROR("getTurnAngle");
 		auto diff = boost::dynamic_pointer_cast<AMovementFollowPoint>(sp_movement_)->angle_diff;
-		ROS_INFO("angle_diff(%d)",diff);
+		ROS_INFO("%s %d: Use angle_diff(%d)", __FUNCTION__, __LINE__, diff);
 		return diff;
 	}
 	if (LIDAR_FOLLOW_WALL && lidarTurnAngle(turn_angle)) {

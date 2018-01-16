@@ -258,7 +258,7 @@ public:
 
 	void setRconPos(float cd,float dist);
 
-	virtual bool mapMark() = 0;
+	virtual bool mapMark(bool isMarkRobot = true) = 0;
 	virtual bool markRealTime(){return false;};
 
 	bool isRemoteGoHomePoint();
@@ -438,7 +438,7 @@ public:
 	CleanModeNav();
 	~CleanModeNav();
 
-	bool mapMark() override ;
+	bool mapMark(bool isMarkRobot = true) override ;
 	bool isExit() override;
 
 	void keyClean(bool state_now, bool state_last) override ;
@@ -528,7 +528,7 @@ public:
 	CleanModeExploration();
 	~CleanModeExploration();
 
-	bool mapMark() override;
+	bool mapMark(bool isMarkRobot = true) override;
 	bool markRealTime() override;
 //	bool isExit() override;
 	void keyClean(bool state_now, bool state_last) override ;
@@ -557,7 +557,7 @@ public:
 
 	~CleanModeFollowWall() override;
 
-	bool mapMark() override;
+	bool mapMark(bool isMarkRobot = true) override;
 
 	void keyClean(bool state_now, bool state_last) override;
 	void remoteMax(bool state_now, bool state_last) override;
@@ -580,7 +580,7 @@ public:
 	CleanModeSpot();
 	~CleanModeSpot();
 
-	bool mapMark() override;
+	bool mapMark(bool isMarkRobot = true) override;
 //	bool isExit() override;
 //	void cliffAll(bool state_now, bool state_last) override;
 	void remoteClean(bool state_now, bool state_last) override;
@@ -599,7 +599,7 @@ public:
 	CleanModeTest();
 	~CleanModeTest();
 
-	bool mapMark() override;
+	bool mapMark(bool isMarkRobot = true) override;
 
 	bool isFinish() override;
 

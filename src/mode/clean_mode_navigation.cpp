@@ -34,7 +34,7 @@ CleanModeNav::~CleanModeNav()
 	setNavMode(false);
 }
 
-bool CleanModeNav::mapMark()
+bool CleanModeNav::mapMark(bool isMarkRobot)
 {
 	ROS_INFO("%s %d: Start updating map.", __FUNCTION__, __LINE__);
 	clean_path_algorithm_->displayCellPath(pointsGenerateCells(passed_path_));
@@ -275,8 +275,12 @@ void CleanModeNav::remoteSpot(bool state_now, bool state_last)
 void CleanModeNav::remoteMax(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
-	beeper.play_for_command(VALID);
-	vacuum.switchToNext();
+	if(isStateClean())
+	{
+		beeper.play_for_command(VALID);
+		vacuum.switchToNext();
+	}else
+		beeper.play_for_command(INVALID);
 	remote.reset();
 }
 void CleanModeNav::batteryHome(bool state_now, bool state_last)

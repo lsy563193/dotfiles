@@ -22,7 +22,7 @@ CleanModeTest::~CleanModeTest()
 	event_manager_set_enable(false);
 }
 
-bool CleanModeTest::mapMark()
+bool CleanModeTest::mapMark(bool isMarkRobot)
 {
 	return false;
 }

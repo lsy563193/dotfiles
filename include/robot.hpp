@@ -53,7 +53,7 @@ public:
 	void pubTmpTarget(const Point32_t &point,bool is_virtual=false);
 	void setCleanMapMarkers(int16_t x, int16_t y, CellState type);
 	void pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path);
-
+	void robotbase_routine_cb();
 	void core_thread_cb();
 	// Service caller functions.
 	bool lidarMotorCtrl(bool switch_);
@@ -63,10 +63,7 @@ public:
 	void initOdomPosition();
 
 	// The scale should be between 0 to 1.
-	void updateRobotPose(const float& odom_x, const float& odom_y, const double& odom_yaw,
-						const float& slam_correction_x, const float& slam_correction_y, const double& slam_correction_yaw,
-						float& robot_correction_x, float& robot_correction_y, double& robot_correction_yaw,
-						float& robot_x, float& robot_y, double& robot_yaw);
+	void updateRobotPose(tf::Vector3 &odom, double odom_yaw);
 
 	void resetCorrection();
 
@@ -103,6 +100,7 @@ public:
 	{
 		return world_pose_.getZ();
 	}
+/*
 
 	float getRobotCorrectionX() const
 	{
@@ -113,6 +111,7 @@ public:
 	{
 		return robot_correction_y_;
 	}
+*/
 
 	double getRobotCorrectionYaw() const
 	{
@@ -181,19 +180,15 @@ private:
 	Pose world_pose_;
 
 	// This is for the slam correction variables.
-	float	robot_correction_x_;
-	float	robot_correction_y_;
+	tf::Vector3	robot_correction_pos;
 	double	robot_correction_yaw_;
-	float	slam_correction_x_;
-	float	slam_correction_y_;
+	tf::Vector3	slam_correction_pos;
 	double	slam_correction_yaw_;
-	float	robot_x_;
-	float	robot_y_;
+	tf::Vector3	robot_pos;
 	double	robot_yaw_;
 
 	ros::NodeHandle robot_nh_;
 
-	ros::Subscriber sensor_sub_;
 	ros::Subscriber map_sub_;
 	ros::Subscriber odom_sub_;
 	ros::Subscriber	scanLinear_sub_;
@@ -233,8 +228,8 @@ private:
 
 	Vector2<double> polar_to_cartesian(double polar,int i);
 	//callback function
-	void sensorCb(const pp::x900sensor::ConstPtr &msg);
 	void robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg);
+	void odomPublish();
 //	void robot_map_metadata_cb(const nav_msgs::MapMetaData::ConstPtr& msg);
 	void mapCb(const nav_msgs::OccupancyGrid::ConstPtr &msg);
 	void scanLinearCb(const sensor_msgs::LaserScan::ConstPtr &msg);
