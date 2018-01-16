@@ -396,7 +396,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 
 	if (getBaselinkFrameType() == SLAM_POSITION_SLAM_ANGLE || getBaselinkFrameType() == SLAM_POSITION_ODOM_ANGLE)
 	{
-		if(slam.isMapReady()/* && !ev.slam_error*/)
+		if(slam.isMapReady())
 		{
 			try {
 				robot_tf_->lookupTransform("/map", "/base_link", ros::Time(0), transform);
@@ -435,9 +435,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	}
 
 #if USE_ROBOT_TF
-	updateRobotPose(odom_pose_x_, odom_pose_y_, odom_pose_yaw_,
-					slam_correction_x_, slam_correction_y_, slam_correction_yaw_,
-					robot_x_, robot_y_, robot_yaw_);
+	updateRobotPose(odom_pose_x_, odom_pose_y_, odom_pose_yaw_);
 
 	ros::Time cur_time;
 
@@ -1035,20 +1033,18 @@ void robot::initOdomPosition()
 	visualizeMarkerInit();
 }
 
-void robot::updateRobotPose(const float& odom_x, const float& odom_y, const double& odom_yaw,
-					const float& slam_correction_x, const float& slam_correction_y, const double& slam_correction_yaw,
-					float& robot_x, float& robot_y, double& robot_yaw)
+void robot::updateRobotPose(float odom_x, float odom_y, double odom_yaw)
 {
 	if (wheel.getLeftSpeedAfterPid() * wheel.getRightSpeedAfterPid() > 0)
 	{
 		float scale;
-		scale = fabs(slam_correction_x - robot_correction_x_) > 0.05 ? 0.1 * fabs(slam_correction_x - robot_correction_x_) / 0.05 : 0.03;
+		scale = fabs(slam_correction_x_ - robot_correction_x_) > 0.05 ? 0.1 * fabs(slam_correction_x_ - robot_correction_x_) / 0.05 : 0.03;
 		scale = scale > 1.0 ? 1.0 : scale;
-		robot_correction_x_ += (slam_correction_x - robot_correction_x_) * scale;
-		scale = fabs(slam_correction_y - robot_correction_y_) > 0.05 ? 0.1 * fabs(slam_correction_y - robot_correction_y_) / 0.05 : 0.03;
+		robot_correction_x_ += (slam_correction_x_ - robot_correction_x_) * scale;
+		scale = fabs(slam_correction_y_ - robot_correction_y_) > 0.05 ? 0.1 * fabs(slam_correction_y_ - robot_correction_y_) / 0.05 : 0.03;
 		scale = scale > 1.0 ? 1.0 : scale;
-		robot_correction_y_ += (slam_correction_y - robot_correction_y_) * scale;
-		double yaw = slam_correction_yaw - robot_correction_yaw_;
+		robot_correction_y_ += (slam_correction_y_ - robot_correction_y_) * scale;
+		double yaw = slam_correction_yaw_ - robot_correction_yaw_;
 		while (yaw < -3.141592)
 			yaw += 6.283184;
 		while (yaw > 3.141592)
@@ -1059,9 +1055,9 @@ void robot::updateRobotPose(const float& odom_x, const float& odom_y, const doub
 //			   robot_correction_y, rad_2_deg(robot_correction_yaw, 1));
 	}
 
-	robot_x = odom_x + robot_correction_x_;
-	robot_y = odom_y + robot_correction_y_;
-	robot_yaw = odom_yaw + robot_correction_yaw_;
+	robot_x_ = odom_x + robot_correction_x_;
+	robot_y_ = odom_y + robot_correction_y_;
+	robot_yaw_ = odom_yaw + robot_correction_yaw_;
 }
 
 void robot::resetCorrection()
