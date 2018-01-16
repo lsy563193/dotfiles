@@ -344,9 +344,8 @@ int16_t MoveTypeFollowWall::getTurnAngle(bool use_target_angle)
 	int16_t  turn_angle{};
 	if(state_turn){
 		state_turn = false;
-		ROS_ERROR("getTurnAngle");
 		auto diff = boost::dynamic_pointer_cast<AMovementFollowPoint>(sp_movement_)->angle_diff;
-		ROS_INFO("angle_diff(%d)",diff);
+		ROS_INFO("%s %d: Use angle_diff(%d)", __FUNCTION__, __LINE__, diff);
 		return diff;
 	}
 	if (LIDAR_FOLLOW_WALL && lidarTurnAngle(turn_angle)) {

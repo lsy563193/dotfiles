@@ -214,10 +214,11 @@ void robot::robotbase_routine_cb()
 		sensor.left_cliff = cliff.getLeft();
 
 		// For remote device.
-		remote.set(serial.receive_stream[REC_REMOTE]);
+		auto remote_signal = serial.receive_stream[REC_REMOTE];
+		remote.set(remote_signal);
 		sensor.remote = remote.get();
-		if (remote.get() > 0)
-			ROS_INFO("%s %d: Remote received:%d", __FUNCTION__, __LINE__, remote.get());
+		if (remote_signal > 0)
+			ROS_INFO("%s %d: Remote received:%d", __FUNCTION__, __LINE__, remote_signal);
 
 		// For rcon device.
 		c_rcon.setStatus((serial.receive_stream[REC_RCON_CHARGER_4] << 24) | (serial.receive_stream[REC_RCON_CHARGER_3] << 16)

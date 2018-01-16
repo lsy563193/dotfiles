@@ -53,7 +53,8 @@ bool AMovementFollowPoint::isFinish() {
 	angle_diff = getPosition().angleDiffPoint(calcTmpTarget());
 	if(std::abs(angle_diff) > angle_forward_to_turn_)
 	{
-		ROS_INFO("angle_diff(%d)", angle_diff);
+		ROS_INFO("%s %d: angle_diff(%d) > angle_forward_to_turn_(%d)",
+				 __FUNCTION__, __LINE__, angle_diff, angle_forward_to_turn_);
 		sp_mt_->state_turn = true;
 		return true;
 	}
