@@ -446,8 +446,8 @@ bool Lidar::lidarGetFitLine(int begin, int end, double range, double dis_lim, do
 
 	splitLine(Lidar_Point, consec_lim,points_count_lim);
 	splitLine2nd(&Lidar_Group, t_lim_split,points_count_lim);
-	mergeLine(&Lidar_Group, t_lim_merge);
-	fitLineGroup(&Lidar_Group,dis_lim,is_align);
+	mergeLine(&Lidar_Group, t_lim_merge, is_align);
+	fitLineGroup(&Lidar_Group,dis_lim , is_align);
 	//*line_angle = atan2(-a, b) * 180 / PI;
 	Lidar_Group.clear();
 	if (!fit_line.empty()) {
@@ -646,7 +646,7 @@ bool Lidar::splitLine2nd(std::vector<std::vector<Vector2<double>> > *groups, dou
 	return true;
 }
 
-bool Lidar::mergeLine(std::vector<std::vector<Vector2<double>> > *groups, double t_lim) {
+bool Lidar::mergeLine(std::vector<std::vector<Vector2<double>> > *groups, double t_lim , bool is_align) {
 	double a, b, c;
 	double x1, y1, x2, y2;
 	int points_size, points_size_2nd;
@@ -709,6 +709,13 @@ bool Lidar::mergeLine(std::vector<std::vector<Vector2<double>> > *groups, double
 			loop_count++;
 		}
 	}
+	if(is_align){
+		std::sort((*groups).begin(),(*groups).end(),[](std::vector<Vector2<double>> a,std::vector<Vector2<double>> b){
+			auto a_dis = pow((a.begin()->x - (a.end()-1)->x),2) + pow((a.begin()->y - (a.end()-1)->y),2);
+			auto b_dis = pow((b.begin()->x - (b.end()-1)->x),2) + pow((b.begin()->y - (b.end()-1)->y),2);
+			return a_dis > b_dis;
+		});
+	}
 	ROS_DEBUG("pub line marker");
 	robot::instance()->pubLineMarker(&Lidar_Group,"merge");
 	return true;
@@ -747,11 +754,7 @@ bool Lidar::fitLineGroup(std::vector<std::vector<Vector2<double>> > *groups, dou
 		robot::instance()->pubFitLineMarker(fit_line_marker);
 	}
 	fit_line_marker.points.clear();
-	if(is_align){
-		std::sort(fit_line.begin(),fit_line.end(),[](LineABC a,LineABC b){
-			return a.len > b.len;
-		});
-	}
+
 	return true;
 }
 

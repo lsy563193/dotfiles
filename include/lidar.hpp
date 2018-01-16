@@ -52,9 +52,9 @@ public:
 	//bool splitLine2nd(const std::vector<std::vector<Vector2<double>> >	&groups, double t_max, int points_count_lim);
 	bool splitLine2nd(std::vector<std::vector<Vector2<double>> > *groups, double t_max, int points_count_lim);
 
-	bool mergeLine(std::vector<std::vector<Vector2<double>> > *groups, double t_lim);
+	bool mergeLine(std::vector<std::vector<Vector2<double>> > *groups, double t_lim , bool is_align);
 
-	bool fitLineGroup(std::vector<std::vector<Vector2<double>> > *groups, double dis_lim, bool is_align);
+	bool fitLineGroup(std::vector<std::vector<Vector2<double>> > *groups, double dis_lim , bool is_align);
 
 	void pubFitLineMarker(double a, double b, double c, double y1, double y2);
 
