@@ -231,8 +231,6 @@ private:
 	void robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg);
 	void odomPublish();
 //	void robot_map_metadata_cb(const nav_msgs::MapMetaData::ConstPtr& msg);
-	void mapCb(const nav_msgs::OccupancyGrid::ConstPtr &msg);
-	void scanLinearCb(const sensor_msgs::LaserScan::ConstPtr &msg);
 	class Paras{
 public:
 	explicit Paras(bool is_left):is_left_(is_left)
@@ -324,8 +322,6 @@ public:
 };
 	bool calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,bool is_left ,std::deque<Vector2<double>>& points);
 	void scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr& scan);
-	void scanCompensateCb(const sensor_msgs::LaserScan::ConstPtr &msg);
-	void lidarPointCb(const visualization_msgs::Marker &point_marker);
 
 	boost::shared_ptr<Mode> p_mode{};
 };

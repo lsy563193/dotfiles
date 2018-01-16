@@ -44,11 +44,11 @@ robot::robot()/*:offset_angle_(0),saved_offset_angle_(0)*/
 
 	// Subscribers.
 	odom_sub_ = robot_nh_.subscribe("/odom", 1, &robot::robotOdomCb, this);
-	map_sub_ = robot_nh_.subscribe("/map", 1, &robot::mapCb, this);
-	scanLinear_sub_ = robot_nh_.subscribe("scanLinear", 1, &robot::scanLinearCb, this);
+	map_sub_ = robot_nh_.subscribe("/map", 1, &Slam::mapCb, &slam);
+	scanLinear_sub_ = robot_nh_.subscribe("scanLinear", 1, &Lidar::scanLinearCb, &lidar);
 	scanOriginal_sub_ = robot_nh_.subscribe("scanOriginal", 1, &robot::scanOriginalCb, this);
-	scanCompensate_sub_ = robot_nh_.subscribe("scanCompensate", 1, &robot::scanCompensateCb, this);
-	lidarPoint_sub_ = robot_nh_.subscribe("lidarPoint", 1, &robot::lidarPointCb, this);
+	scanCompensate_sub_ = robot_nh_.subscribe("scanCompensate", 1, &Lidar::scanCompensateCb, &lidar);
+	lidarPoint_sub_ = robot_nh_.subscribe("lidarPoint", 1, &Lidar::lidarPointCb, &lidar);
 	/*map subscriber for exploration*/
 	//map_metadata_sub = robot_nh_.subscribe("/map_metadata", 1, &robot::robot_map_metadata_cb, this);
 
@@ -464,16 +464,6 @@ void robot::odomPublish()
 	odom_pub_.publish(robot_pose);
 }
 
-void robot::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
-{
-	slam.mapCb(map);
-}
-
-void robot::scanLinearCb(const sensor_msgs::LaserScan::ConstPtr &msg)
-{
-	lidar.scanLinearCb(msg);
-}
-
 bool robot::check_corner(const sensor_msgs::LaserScan::ConstPtr & scan, const Paras para) {
 	int forward_wall_count = 0;
 	int side_wall_count = 0;
@@ -622,17 +612,6 @@ void robot::scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr& scan)
 		calcLidarPath(scan, p_mode->action_i_ == p_mode->ac_follow_wall_left, points);
 		setTempTarget(points, scan->header.seq);
 	}
-}
-
-void robot::scanCompensateCb(const sensor_msgs::LaserScan::ConstPtr &msg)
-{
-	lidar.scanCompensateCb(msg);
-}
-
-void robot::lidarPointCb(const visualization_msgs::Marker &point_marker)
-{
-	if (lidar.isScanOriginalReady())
-		lidar.lidarPointCb(point_marker);
 }
 
 void robot::visualizeMarkerInit()

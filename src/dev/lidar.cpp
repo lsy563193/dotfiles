@@ -82,9 +82,12 @@ void Lidar::scanCompensateCb(const sensor_msgs::LaserScan::ConstPtr &scan)
 }
 
 void Lidar::lidarPointCb(const visualization_msgs::Marker &point_marker) {
-	scanCompensate_mutex_.lock();
-	lidarXY_points = point_marker.points;
-	scanCompensate_mutex_.unlock();
+	if (isScanOriginalReady())
+	{
+		scanCompensate_mutex_.lock();
+		lidarXY_points = point_marker.points;
+		scanCompensate_mutex_.unlock();
+	}
 }
 
 int8_t Lidar::isScanOriginalReady()
