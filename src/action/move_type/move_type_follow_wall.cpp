@@ -11,8 +11,6 @@ MoveTypeFollowWall::MoveTypeFollowWall(bool is_left)
 {
 	ROS_INFO("%s %d: Entering move type %s follow wall.", __FUNCTION__, __LINE__,
 			 is_left ? "left" : "right");
-
-
 	auto p_mode = dynamic_cast<ACleanMode*> (sp_mode_);
 //	if(! p_clean_mode->plan_path_.empty())
 //		p_clean_mode.target_point_ = p_clean_mode->plan_path_.front();
@@ -39,7 +37,7 @@ MoveTypeFollowWall::MoveTypeFollowWall(bool is_left)
 MoveTypeFollowWall::~MoveTypeFollowWall()
 {
 	if(sp_mode_ != nullptr){
-		auto p_mode = (ACleanMode*)sp_mode_;
+		auto p_mode = dynamic_cast<ACleanMode*> (sp_mode_);
 		p_mode->clean_map_.saveBlocks(p_mode->action_i_ == p_mode->ac_linear, p_mode->sp_state == p_mode->state_clean);
 		p_mode->mapMark();
 	}

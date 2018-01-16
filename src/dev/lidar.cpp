@@ -422,7 +422,7 @@ bool Lidar::getAlignAngle(const std::vector<LineABC> *lines ,float *align_angle)
 
 bool Lidar::lidarGetFitLine(int begin, int end, double range, double dis_lim, double *line_angle, double *distance,bool is_left,bool is_align)
 {
-	if(isScanLinearReady() == 0)
+	if(isScanCompensateReady() == 0)
 		return false;
 	bool isReverse = false;
 	float consec_lim = 0.10;
@@ -761,7 +761,6 @@ bool Lidar::fitLineGroup(std::vector<std::vector<Vector2<double>> > *groups, dou
 			/*erase the lines which are far away from the robot*/
 			double dis = fabs(c / (sqrt(a * a + b * b)));
 			new_fit_line.dis = dis;
-			//todo x_0
 			if (dis > dis_lim || dis < ROBOT_RADIUS || (is_align ? 0 : x_0 < 0)) {
 				ROS_DEBUG("the line is too far away from robot. dis = %lf,x_0:%lf,dis_lim:%lf", dis,x_0,dis_lim);
 				continue;
@@ -896,12 +895,10 @@ uint8_t Lidar::lidarMarker(double X_MAX)
 	}
 	double x, y;
 	int dx, dy;
-//	const double X_MIN = 0.140;//ROBOT_RADIUS
-//	const	double Y_MIN = ROBOT_RADIUS;//ROBOT_RADIUS
 	const	double Y_MAX = 0.20;//0.279
 	int	count_array[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-	for(auto point:lidarXY_points){
+	for(const auto& point:lidarXY_points){
 		x = point.x;
 		y = point.y;
 		//front
@@ -1403,7 +1400,7 @@ bool lidar_is_stuck()
 
 uint8_t lidar_get_status()
 {
-	if (lidar.isScanOriginalReady())
+	if (lidar.isScanCompensateReady())
 		return lidar.lidarMarker(0.20);
 
 	return 0;

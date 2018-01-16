@@ -31,7 +31,7 @@ CleanModeSpot::~CleanModeSpot()
 	speaker.play(VOICE_CLEANING_STOP,false);*/
 }
 
-bool CleanModeSpot::mapMark()
+bool CleanModeSpot::mapMark(bool isMarkRobot)
 {
 	ROS_INFO("%s,%d,passed_path",__FUNCTION__,__LINE__);
 	auto passed_path_cells = pointsGenerateCells(passed_path_);

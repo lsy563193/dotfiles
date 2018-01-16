@@ -25,7 +25,7 @@ MoveTypeLinear::MoveTypeLinear() {
 MoveTypeLinear::~MoveTypeLinear()
 {
 	if(sp_mode_ != nullptr){
-		auto p_mode = (ACleanMode*)sp_mode_;
+		auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
 		p_mode->clean_map_.saveBlocks(p_mode->action_i_ == p_mode->ac_linear, p_mode->sp_state == p_mode->state_clean);
 		p_mode->mapMark();
 	}
@@ -142,8 +142,8 @@ void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 			p_clean_mode->plan_path_.pop_front();
 //			target_point_ = p_clean_mode->plan_path_.front();
 
-//			ROS_INFO("%s,%d,next target_point(%d,%d), dir(%d)",
-//					 __FUNCTION__,__LINE__,target_point_.toCell().x,target_point_.toCell().y, p_clean_mode->new_dir_);
+			ROS_INFO("%s,%d,next target_point(%d,%d), dir(%d)",
+					 __FUNCTION__,__LINE__,target_point_.toCell().x,target_point_.toCell().y, p_clean_mode->new_dir_);
 		}
 	}
 }
