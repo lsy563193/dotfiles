@@ -12,11 +12,13 @@
 #include <slam.h>
 #include "error.h"
 
+const double CHASE_X = 0.107;
 ACleanMode::ACleanMode()
 {
 
 	scanLinear_sub_ = clean_nh_.subscribe("scanLinear", 1, &Lidar::scanLinearCb, &lidar);
 	scanCompensate_sub_ = clean_nh_.subscribe("scanCompensate", 1, &Lidar::scanCompensateCb, &lidar);
+	scanOriginal_sub_ = clean_nh_.subscribe("scanOriginal", 1, &ACleanMode::scanOriginalCb, this);
 	lidarPoint_sub_ = clean_nh_.subscribe("lidarPoint", 1, &Lidar::lidarPointCb, &lidar);
 	map_sub_ = clean_nh_.subscribe("/map", 1, &Slam::mapCb, &slam);
 
@@ -46,6 +48,7 @@ ACleanMode::ACleanMode()
 ACleanMode::~ACleanMode() {
 	scanLinear_sub_.shutdown();
 	scanCompensate_sub_.shutdown();
+	scanOriginal_sub_.shutdown();
 	lidarPoint_sub_.shutdown();
 	map_sub_.shutdown();
 
@@ -94,6 +97,156 @@ ACleanMode::~ACleanMode() {
 	ROS_INFO("%s %d: Cleaned area = \033[32m%.2fm2\033[0m, cleaning time: \033[32m%d(s) %.2f(min)\033[0m, cleaning speed: \033[32m%.2f(m2/min)\033[0m.",
 			 __FUNCTION__, __LINE__, map_area, robot_timer.getWorkTime(),
 			 static_cast<float>(robot_timer.getWorkTime()) / 60, map_area / (static_cast<float>(robot_timer.getWorkTime()) / 60));
+}
+
+bool ACleanMode::check_corner(const sensor_msgs::LaserScan::ConstPtr & scan, const Paras &para) {
+	int forward_wall_count = 0;
+	int side_wall_count = 0;
+	for (int i = 359; i > 0; i--) {
+		if (scan->ranges[i] < 4) {
+			auto point = polar_to_cartesian(scan->ranges[i], i);
+			if (para.inForwardRange(point)) {
+				forward_wall_count++;
+//			ROS_INFO("point(%f,%f)",point.x,point.y);
+//				ROS_INFO("forward_wall_count(%d)",forward_wall_count);
+			}
+			if (para.inSidedRange(point)) {
+				side_wall_count++;
+//			ROS_INFO("point(%f,%f)",point.x,point.y);
+//				ROS_INFO("side_wall_count(%d)",side_wall_count);
+			}
+		}
+	}
+	return forward_wall_count > 10 && side_wall_count > 20;
+}
+
+Vector2<double> ACleanMode::polar_to_cartesian(double polar,int i)
+{
+	Vector2<double> point{cos((i * 1.0 + 180.0) * PI / 180.0) * polar,
+					sin((i * 1.0 + 180.0) * PI / 180.0) * polar };
+
+	coordinate_transform(&point.x, &point.y, LIDAR_THETA, LIDAR_OFFSET_X, LIDAR_OFFSET_Y);
+	return point;
+
+}
+
+Vector2<double> ACleanMode::get_middle_point(const Vector2<double>& p1,const Vector2<double>& p2,const Paras& para) {
+	auto p3 = (p1 + p2) / 2;
+	Vector2<double> target{};
+
+//	ROS_INFO("p1(%f,%f)", p1.x, p1.y);
+//	ROS_INFO("p2(%f,%f)", p2.x, p2.y);
+//	ROS_INFO("p3 (%f,%f)", p3.x, p3.y);
+
+//	auto x4 = para.narrow / (sqrt(1 + p1.SquaredDistance(p2))) + p3.x;
+//	auto y4 = ((x4 - p3.x) * (p1.x - p2.x) / (p2.y - p1.y)) + p3.y;
+	auto dx = para.narrow / (sqrt(1 + ((p1.x - p2.x) / (p2.y - p1.y)) * ((p1.x - p2.x) / (p2.y - p1.y))));
+	auto x4 = dx + p3.x;
+
+	auto dy = (x4 - p3.x) * (p1.x - p2.x) / (p2.y - p1.y);
+	auto y4 = dy + p3.y;
+
+//	ROS_INFO("x4,y4(%f,%f)", x4, y4);
+
+	if (((p1.x - x4) * (p2.y - y4) - (p1.y - y4) * (p2.x - x4)) < 0) {
+		target = {x4,y4};
+//		ROS_INFO_FL();
+//		ROS_INFO("target(%f,%f)", target.x, target.y);
+	}
+	else {
+		x4 =  -dx + p3.x;
+		y4 = (x4 - p3.x) * (p1.x - p2.x) / (p2.y - p1.y) + p3.y;
+		target = {x4,y4};
+//		ROS_INFO_FL();
+//		ROS_INFO("target(%f,%f)", target.x, target.y);
+	}
+	return target;
+}
+
+bool ACleanMode::check_is_valid(const Vector2<double>& point, Paras& para, const sensor_msgs::LaserScan::ConstPtr & scan) {
+	for (int i = 359; i >= 0; i--) {
+		auto tmp_point = polar_to_cartesian(scan->ranges[i], i);
+		auto distance = point.Distance(tmp_point);
+		//ROS_INFO("distance =  %lf", distance);
+		if (distance < para.narrow - 0.03) {
+			return false;
+		}
+	}
+	return true;
+}
+
+bool ACleanMode::calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,bool is_left, std::deque<Vector2<double>>& points) {
+	Paras para{is_left};
+
+	auto is_corner = check_corner(scan, para);
+	if(is_corner)
+	{
+//		beeper.play_for_command(VALID);
+		ROS_WARN("is_corner = %d", is_corner);
+	}
+	for (int i = 359; i >= 0; i--) {
+		//ROS_INFO("i = %d", i);
+		if (scan->ranges[i] < 4 && scan->ranges[i - 1] < 4) {
+			auto point1 = polar_to_cartesian(scan->ranges[i], i);
+
+			if (!para.inPoint1Range(point1, is_corner))
+				continue;
+
+			auto point2 = polar_to_cartesian(scan->ranges[i - 1], i - 1);
+
+			if (point2.Distance(point1) > 0.05) {
+				//ROS_INFO("two points distance is too large");
+				continue;
+			}
+			auto target = get_middle_point(point1, point2, para);
+
+			if (!para.inTargetRange(target))
+				continue;
+
+			if (target.Distance({0, 0}) > 0.4)
+				continue;
+
+			if (!check_is_valid(target, para, scan))
+				continue;
+
+//			ROS_INFO("points(%d):target(%lf,%lf),dis(%f)", points.size(), target.x, target.y, target.Distance({CHASE_X, 0}));
+			points.push_back(target);
+		}
+	}
+
+	if (points.empty()) {
+		return false;
+	}
+	if (!is_left) {
+		std::reverse(points.begin(), points.end());//for the right wall follow
+	}
+	auto min = std::min_element(points.rbegin(), points.rend(), [](Vector2<double>& a, Vector2<double>& b) {
+//		ROS_INFO("dis(%f,%f)", a.Distance({CHASE_X, 0}), b.Distance({CHASE_X, 0}));
+		return a.Distance({CHASE_X, 0}) < b.Distance({CHASE_X, 0});
+	});
+//	ROS_INFO("min(%f,%f)",min->x, min->y);
+
+	auto size = points.size();
+	std::copy(points.rbegin(), min+1, std::front_inserter(points));
+	points.resize(size);
+//	for (const auto &target :points)
+//			ROS_WARN("points(%d):target(%lf,%lf),dis(%f)", points.size(), target.x, target.y, target.Distance({CHASE_X, 0}));
+//	}
+	ROS_WARN("points(%d):target(%lf,%lf)", points.size(), points.front().x, points.front().y);
+	pubPointMarkers(&points, "base_link");
+
+	return true;
+}
+
+void ACleanMode::scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr& scan)
+{
+	lidar.scanOriginalCb(scan);
+	lidar.checkRobotSlip();
+	if (lidar.isScanOriginalReady() && (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)) {
+		std::deque<Vector2<double>> points{};
+		calcLidarPath(scan, action_i_ == ac_follow_wall_left, points);
+		setTempTarget(points, scan->header.seq);
+	}
 }
 
 void ACleanMode::pubFitLineMarker(visualization_msgs::Marker fit_line_marker)
@@ -1111,5 +1264,29 @@ void ACleanMode::switchInStateTrapped()
 		sp_saved_states.pop_back();
 		sp_state->init();
 	}
+}
+
+void ACleanMode::setTempTarget(std::deque<Vector2<double>>& points, uint32_t  seq) {
+	boost::mutex::scoped_lock(temp_target_mutex_);
+	path_head_ = {};
+	path_head_.tmp_plan_path_.clear();
+
+//	ROS_ERROR("curr_point(%d,%d)",getPosition().x,getPosition().y);
+	for (const auto &iter : points) {
+		auto target = getPosition().getRelative(int(iter.x * 1000), int(iter.y * 1000));
+		path_head_.tmp_plan_path_.push_back(target);
+//		ROS_INFO("temp_target(%d,%d)",target.x,target.y);
+	}
+	path_head_.seq = seq;
+}
+
+PathHead ACleanMode::getTempTarget() const
+{
+	boost::mutex::scoped_lock(temp_target_mutex_);
+
+//	auto tmp = tmp_plan_path_;
+//	tmp_plan_path_.clear();
+//	return tmp;
+	return path_head_;
 }
 

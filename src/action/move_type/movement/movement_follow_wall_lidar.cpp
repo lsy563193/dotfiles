@@ -88,7 +88,7 @@ Points MovementFollowWallLidar::_calcTmpTarget() {
 Point_t MovementFollowWallLidar::calcTmpTarget() {
 
 //	ROS_WARN("curr_point(%d,%d)", getPosition().x, getPosition().y);
-	auto path_head = robot::instance()->getTempTarget();
+	auto path_head = dynamic_cast<ACleanMode*>(sp_mt_->sp_mode_)->getTempTarget();
 
 	if (path_head.seq != seq_) {
 		seq_ = path_head.seq;

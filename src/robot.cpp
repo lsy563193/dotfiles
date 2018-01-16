@@ -20,7 +20,6 @@
 #include "mode.hpp"
 #include "std_srvs/Empty.h"
 
-const double CHASE_X = 0.107;
 
 // For obs dynamic adjustment
 int OBS_adjust_count = 50;
@@ -43,7 +42,6 @@ robot::robot()/*:offset_angle_(0),saved_offset_angle_(0)*/
 
 	// Subscribers.
 	odom_sub_ = robot_nh_.subscribe("/odom", 1, &robot::robotOdomCb, this);
-	scanOriginal_sub_ = robot_nh_.subscribe("scanOriginal", 1, &robot::scanOriginalCb, this);
 	// Service clients.
 	lidar_motor_cli_ = robot_nh_.serviceClient<rplidar_ros::SetLidar>("lidar_motor_ctrl");
 	end_slam_cli_ = robot_nh_.serviceClient<std_srvs::Empty>("End_Slam");
@@ -449,156 +447,6 @@ void robot::odomPublish()
 	odom_pub_.publish(robot_pose);
 }
 
-bool robot::check_corner(const sensor_msgs::LaserScan::ConstPtr & scan, const Paras para) {
-	int forward_wall_count = 0;
-	int side_wall_count = 0;
-	for (int i = 359; i > 0; i--) {
-		if (scan->ranges[i] < 4) {
-			auto point = polar_to_cartesian(scan->ranges[i], i);
-			if (para.inForwardRange(point)) {
-				forward_wall_count++;
-//			ROS_INFO("point(%f,%f)",point.x,point.y);
-//				ROS_INFO("forward_wall_count(%d)",forward_wall_count);
-			}
-			if (para.inSidedRange(point)) {
-				side_wall_count++;
-//			ROS_INFO("point(%f,%f)",point.x,point.y);
-//				ROS_INFO("side_wall_count(%d)",side_wall_count);
-			}
-		}
-	}
-	return forward_wall_count > 10 && side_wall_count > 20;
-}
-
-Vector2<double> robot::polar_to_cartesian(double polar,int i)
-{
-	Vector2<double> point{cos((i * 1.0 + 180.0) * PI / 180.0) * polar,
-					sin((i * 1.0 + 180.0) * PI / 180.0) * polar };
-
-	coordinate_transform(&point.x, &point.y, LIDAR_THETA, LIDAR_OFFSET_X, LIDAR_OFFSET_Y);
-	return point;
-
-}
-
-Vector2<double> robot::get_middle_point(const Vector2<double>& p1,const Vector2<double>& p2,const Paras& para) {
-	auto p3 = (p1 + p2) / 2;
-	Vector2<double> target{};
-
-//	ROS_INFO("p1(%f,%f)", p1.x, p1.y);
-//	ROS_INFO("p2(%f,%f)", p2.x, p2.y);
-//	ROS_INFO("p3 (%f,%f)", p3.x, p3.y);
-
-//	auto x4 = para.narrow / (sqrt(1 + p1.SquaredDistance(p2))) + p3.x;
-//	auto y4 = ((x4 - p3.x) * (p1.x - p2.x) / (p2.y - p1.y)) + p3.y;
-	auto dx = para.narrow / (sqrt(1 + ((p1.x - p2.x) / (p2.y - p1.y)) * ((p1.x - p2.x) / (p2.y - p1.y))));
-	auto x4 = dx + p3.x;
-
-	auto dy = (x4 - p3.x) * (p1.x - p2.x) / (p2.y - p1.y);
-	auto y4 = dy + p3.y;
-
-//	ROS_INFO("x4,y4(%f,%f)", x4, y4);
-
-	if (((p1.x - x4) * (p2.y - y4) - (p1.y - y4) * (p2.x - x4)) < 0) {
-		target = {x4,y4};
-//		ROS_INFO_FL();
-//		ROS_INFO("target(%f,%f)", target.x, target.y);
-	}
-	else {
-		x4 =  -dx + p3.x;
-		y4 = (x4 - p3.x) * (p1.x - p2.x) / (p2.y - p1.y) + p3.y;
-		target = {x4,y4};
-//		ROS_INFO_FL();
-//		ROS_INFO("target(%f,%f)", target.x, target.y);
-	}
-	return target;
-}
-
-bool robot::check_is_valid(const Vector2<double>& point, Paras& para, const sensor_msgs::LaserScan::ConstPtr & scan) {
-	for (int i = 359; i >= 0; i--) {
-		auto tmp_point = polar_to_cartesian(scan->ranges[i], i);
-		auto distance = point.Distance(tmp_point);
-		//ROS_INFO("distance =  %lf", distance);
-		if (distance < para.narrow - 0.03) {
-			return false;
-		}
-	}
-	return true;
-}
-
-bool robot::calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,bool is_left, std::deque<Vector2<double>>& points) {
-	Paras para{is_left};
-
-	auto is_corner = check_corner(scan, para);
-	if(is_corner)
-	{
-//		beeper.play_for_command(VALID);
-		ROS_WARN("is_corner = %d", is_corner);
-	}
-	for (int i = 359; i >= 0; i--) {
-		//ROS_INFO("i = %d", i);
-		if (scan->ranges[i] < 4 && scan->ranges[i - 1] < 4) {
-			auto point1 = polar_to_cartesian(scan->ranges[i], i);
-
-			if (!para.inPoint1Range(point1, is_corner))
-				continue;
-
-			auto point2 = polar_to_cartesian(scan->ranges[i - 1], i - 1);
-
-			if (point2.Distance(point1) > 0.05) {
-				//ROS_INFO("two points distance is too large");
-				continue;
-			}
-			auto target = get_middle_point(point1, point2, para);
-
-			if (!para.inTargetRange(target))
-				continue;
-
-			if (target.Distance({0, 0}) > 0.4)
-				continue;
-
-			if (!check_is_valid(target, para, scan))
-				continue;
-
-//			ROS_INFO("points(%d):target(%lf,%lf),dis(%f)", points.size(), target.x, target.y, target.Distance({CHASE_X, 0}));
-			points.push_back(target);
-		}
-	}
-
-	if (points.empty()) {
-		return false;
-	}
-	if (!is_left) {
-		std::reverse(points.begin(), points.end());//for the right wall follow
-	}
-	auto min = std::min_element(points.rbegin(), points.rend(), [](Vector2<double>& a, Vector2<double>& b) {
-//		ROS_INFO("dis(%f,%f)", a.Distance({CHASE_X, 0}), b.Distance({CHASE_X, 0}));
-		return a.Distance({CHASE_X, 0}) < b.Distance({CHASE_X, 0});
-	});
-//	ROS_INFO("min(%f,%f)",min->x, min->y);
-
-	auto size = points.size();
-	std::copy(points.rbegin(), min+1, std::front_inserter(points));
-	points.resize(size);
-//	for (const auto &target :points)
-//			ROS_WARN("points(%d):target(%lf,%lf),dis(%f)", points.size(), target.x, target.y, target.Distance({CHASE_X, 0}));
-//	}
-	ROS_WARN("points(%d):target(%lf,%lf)", points.size(), points.front().x, points.front().y);
-	pubPointMarkers(&points, "base_link");
-
-	return true;
-}
-
-void robot::scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr& scan)
-{
-	lidar.scanOriginalCb(scan);
-	lidar.checkRobotSlip();
-	if (lidar.isScanOriginalReady() && (p_mode->action_i_ == p_mode->ac_follow_wall_left || p_mode->action_i_ == p_mode->ac_follow_wall_right)) {
-		std::deque<Vector2<double>> points{};
-		calcLidarPath(scan, p_mode->action_i_ == p_mode->ac_follow_wall_left, points);
-		setTempTarget(points, scan->header.seq);
-	}
-}
-
 void robot::pubPointMarkers(const std::deque<Vector2<double>> *points, std::string frame_id)
 {
 	visualization_msgs::Marker point_marker;
@@ -754,30 +602,6 @@ void robot::obsAdjustCount(int count)
 #ifdef OBS_DYNAMIC
 	OBS_adjust_count = count;
 #endif
-}
-
-void robot::setTempTarget(std::deque<Vector2<double>>& points, uint32_t  seq) {
-	boost::mutex::scoped_lock(temp_target_mutex_);
-	path_head_ = {};
-	path_head_.tmp_plan_path_.clear();
-
-//	ROS_ERROR("curr_point(%d,%d)",getPosition().x,getPosition().y);
-	for (const auto &iter : points) {
-		auto target = getPosition().getRelative(int(iter.x * 1000), int(iter.y * 1000));
-		path_head_.tmp_plan_path_.push_back(target);
-//		ROS_INFO("temp_target(%d,%d)",target.x,target.y);
-	}
-	path_head_.seq = seq;
-}
-
-PathHead robot::getTempTarget() const
-{
-	boost::mutex::scoped_lock(temp_target_mutex_);
-
-//	auto tmp = tmp_plan_path_;
-//	tmp_plan_path_.clear();
-//	return tmp;
-	return path_head_;
 }
 
 //--------------------
