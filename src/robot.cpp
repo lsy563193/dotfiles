@@ -41,14 +41,8 @@ robot::robot()/*:offset_angle_(0),saved_offset_angle_(0)*/
 
 	robotbase_reset_send_stream();
 
-	ROS_INFO("waiting robotbase awake ");
-	auto serial_receive_routine = new boost::thread(boost::bind(&Serial::receive_routine_cb, &serial));
-	auto robotbase_routine = new boost::thread(boost::bind(&robot::robotbase_routine_cb, this));
-	auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
-	auto speaker_play_routine = new boost::thread(boost::bind(&Speaker::playRoutine, &speaker));
-	is_robotbase_init = true;
+
 	// Subscribers.
-	sensor_sub_ = robot_nh_.subscribe("/robot_sensor", 10, &robot::sensorCb, this);
 	odom_sub_ = robot_nh_.subscribe("/odom", 1, &robot::robotOdomCb, this);
 	map_sub_ = robot_nh_.subscribe("/map", 1, &robot::mapCb, this);
 	scanLinear_sub_ = robot_nh_.subscribe("scanLinear", 1, &robot::scanLinearCb, this);
@@ -94,6 +88,12 @@ robot::robot()/*:offset_angle_(0),saved_offset_angle_(0)*/
 #endif
 
 	// Init for event manager.
+	ROS_INFO("waiting robotbase awake ");
+	auto serial_receive_routine = new boost::thread(boost::bind(&Serial::receive_routine_cb, &serial));
+	auto robotbase_routine = new boost::thread(boost::bind(&robot::robotbase_routine_cb, this));
+	auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
+	auto speaker_play_routine = new boost::thread(boost::bind(&Speaker::playRoutine, &speaker));
+	is_robotbase_init = true;
 	event_manager_init();
 	auto event_manager_thread = new boost::thread(event_manager_thread_cb);
 	auto event_handler_thread = new boost::thread(event_handler_thread_cb);
@@ -311,6 +311,29 @@ void robot::robotbase_routine_cb()
 		odom_trans.transform.translation.z = 0.0;
 		odom_trans.transform.rotation = odom_quat;
 		odom_broad.sendTransform(odom_trans);
+			is_sensor_ready_ = true;
+
+	// Dynamic adjust obs
+	obs.DynamicAdjust(OBS_adjust_count);
+
+	// Check for whether robot should publish this frame of scan.
+	if (p_mode != nullptr)
+	{
+		if (p_mode->sp_action_ != nullptr && p_mode->isInitState())
+			scan_ctrl_.allow_publishing = 1;
+		else
+			scan_ctrl_.allow_publishing =
+					!(fabs(wheel.getLeftWheelActualSpeed() - wheel.getRightWheelActualSpeed()) > 0.1
+					  || (wheel.getLeftWheelActualSpeed() * wheel.getRightWheelActualSpeed() < 0)
+					  || bumper.getStatus()
+					  || gyro.getTiltCheckingStatus()
+					  || abs(wheel.getLeftSpeedAfterPid() - wheel.getRightSpeedAfterPid()) > 100
+					  || wheel.getLeftSpeedAfterPid() * wheel.getRightSpeedAfterPid() < 0);
+	}
+	else
+		scan_ctrl_.allow_publishing = 1;
+
+	scan_ctrl_pub_.publish(scan_ctrl_);
 		/*------publish end -----------*/
 
 	}//end while
@@ -358,33 +381,6 @@ robot *robot::instance()
 {
 	extern robot* robot_instance;
 	return robot_instance;
-}
-
-void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
-{
-	is_sensor_ready_ = true;
-
-	// Dynamic adjust obs
-	obs.DynamicAdjust(OBS_adjust_count);
-
-	// Check for whether robot should publish this frame of scan.
-	if (p_mode != nullptr)
-	{
-		if (p_mode->sp_action_ != nullptr && p_mode->isInitState())
-			scan_ctrl_.allow_publishing = 1;
-		else
-			scan_ctrl_.allow_publishing =
-					!(fabs(wheel.getLeftWheelActualSpeed() - wheel.getRightWheelActualSpeed()) > 0.1
-					  || (wheel.getLeftWheelActualSpeed() * wheel.getRightWheelActualSpeed() < 0)
-					  || bumper.getStatus()
-					  || gyro.getTiltCheckingStatus()
-					  || abs(wheel.getLeftSpeedAfterPid() - wheel.getRightSpeedAfterPid()) > 100
-					  || wheel.getLeftSpeedAfterPid() * wheel.getRightSpeedAfterPid() < 0);
-	}
-	else
-		scan_ctrl_.allow_publishing = 1;
-
-	scan_ctrl_pub_.publish(scan_ctrl_);
 }
 
 void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
