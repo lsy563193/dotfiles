@@ -21,8 +21,9 @@ Speaker::Speaker(void)
 {
 }
 
-void Speaker::playRoutine(void)
+void Speaker::playRoutine()
 {
+	ROS_INFO("robotbase,\033[32m%s\033[0m,%d is up.",__FUNCTION__,__LINE__);
 	while(ros::ok())
 	{
 		if(!finish_playing_)

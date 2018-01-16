@@ -481,3 +481,71 @@ uint8_t Serial::calc_buf_crc8(const uint8_t *inBuf, uint32_t inBufSz)
 	return crc_base;
 }
 
+void Serial::receive_routine_cb()
+{
+	ROS_INFO("robotbase,\033[32m%s\033[0m,%d is up.",__FUNCTION__,__LINE__);
+	int i, j, ret, wh_len, wht_len, whtc_len;
+
+	uint8_t r_crc, c_crc;
+	uint8_t h1 = 0xaa, h2 = 0x55, header[2], t1 = 0xcc, t2 = 0x33;
+	uint8_t header1 = 0x00;
+	uint8_t header2 = 0x00;
+	uint8_t tempData[RECEI_LEN], receiData[RECEI_LEN];
+	tempData[0] = h1;
+	tempData[1] = h2;
+
+	wh_len = RECEI_LEN - 2; //length without header bytes
+	wht_len = wh_len - 2; //length without header and tail bytes
+	whtc_len = wht_len - 1; //length without header and tail and crc bytes
+
+	while (ros::ok() && (!robotbase_thread_stop)) {
+		ret = serial.read(1, &header1);
+		if (ret <= 0 ){
+			ROS_WARN("%s, %d, serial read return %d ,  requst %d byte",__FUNCTION__,__LINE__,ret,1);
+			continue;
+		}
+		if(header1 != h1)
+			continue;
+		ret= serial.read(1,&header2);
+		if (ret <= 0 ){
+			ROS_WARN("%s,%d,serial read return %d , requst %d byte",__FUNCTION__,__LINE__,ret,1);
+			continue;
+		}
+		if(header2 != h2){
+			continue;
+		}
+		ret = serial.read(wh_len, receiData);
+		if(ret < wh_len){
+			ROS_WARN("%s,%d,serial read %d bytes, requst %d bytes",__FUNCTION__,__LINE__,ret,wh_len);
+		}
+		if(ret<= 0){
+			ROS_WARN("%s,%d,serial read return %d",__FUNCTION__,__LINE__,ret);
+			continue;
+		}
+
+		for (i = 0; i < whtc_len; i++){
+			tempData[i + 2] = receiData[i];
+		}
+
+		c_crc = serial.calc_buf_crc8(tempData, wh_len - 1);//calculate crc8 with header bytes
+		r_crc = receiData[whtc_len];
+
+		if (r_crc == c_crc){
+			if (receiData[wh_len - 1] == t2 && receiData[wh_len - 2] == t1) {
+				for (j = 0; j < wht_len; j++) {
+					serial.receive_stream[j + 2] = receiData[j];
+				}
+				if(pthread_cond_signal(&recev_cond)<0)//if receive data corret than send signal
+					ROS_ERROR(" in serial read, pthread signal fail !");
+			}
+			else {
+				ROS_WARN(" in serial read ,data tail error\n");
+			}
+		}
+		else {
+			ROS_ERROR("%s,%d,in serial read ,data crc error\n",__FUNCTION__,__LINE__);
+		}
+	}
+	ROS_INFO("\033[32m%s\033[0m,%d,exit!",__FUNCTION__,__LINE__);
+}
+

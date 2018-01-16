@@ -39,12 +39,11 @@ robot::robot()/*:offset_angle_(0),saved_offset_angle_(0)*/
 	robotbase_reset_send_stream();
 
 	ROS_INFO("waiting robotbase awake ");
-	auto serial_receive_routine = new boost::thread(serial_receive_routine_cb);
+	auto serial_receive_routine = new boost::thread(boost::bind(&Serial::receive_routine_cb, &serial));
 	auto robotbase_routine = new boost::thread(robotbase_routine_cb);
 	auto serial_send_routine = new boost::thread(serial_send_routine_cb);
-	auto speaker_play_routine = new boost::thread(speaker_play_routine_cb);
+	auto speaker_play_routine = new boost::thread(boost::bind(&Speaker::playRoutine, &speaker));
 	is_robotbase_init = true;
-
 	// Subscribers.
 	sensor_sub_ = robot_nh_.subscribe("/robot_sensor", 10, &robot::sensorCb, this);
 	odom_sub_ = robot_nh_.subscribe("/odom", 1, &robot::robotOdomCb, this);

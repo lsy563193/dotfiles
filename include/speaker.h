@@ -87,7 +87,7 @@ public:
 
 	void play(VoiceType voice_type, bool can_be_interrputed = true);
 
-	void playRoutine(void);
+	void playRoutine();
 
 private:
 	bool openVoiceFile(Voice voice);
