@@ -49,7 +49,7 @@ Point_t MovementFollowPointLinear::calcTmpTarget()
 //	}
 	auto tmp_target_ = _calcTmpTarget();
 
-	robot::instance()->pubTmpTarget(tmp_target_);
+	dynamic_cast<ACleanMode*>(sp_mt_->sp_mode_)->pubTmpTarget(tmp_target_);
 	return tmp_target_;
 }
 

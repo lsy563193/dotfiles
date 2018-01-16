@@ -121,7 +121,7 @@ Point_t MovementFollowWallLidar::calcTmpTarget() {
 		INFO_PURPLE("p_tmp_targets_->empty(), use virtual target");
 	}
 //	ROS_WARN("is_virtual_target(%d,%d)", lidar_targets_.empty(),lidar_targets_.size());
-	robot::instance()->pubTmpTarget(p_tmp_targets_->front(), p_tmp_targets_ == &virtual_targets_ );
+	dynamic_cast<ACleanMode*>(sp_mt_->sp_mode_)->pubTmpTarget(p_tmp_targets_->front(), p_tmp_targets_ == &virtual_targets_ );
 //	ROS_INFO("p_tmp_targets_(%d,%d,%d)", p_tmp_targets_->front().x, p_tmp_targets_->front().y, p_tmp_targets_->front().th);
 	return p_tmp_targets_->front();
 }
