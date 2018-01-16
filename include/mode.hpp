@@ -9,6 +9,8 @@
 #include "path_algorithm.h"
 #include "event_manager.h"
 #include "boost/shared_ptr.hpp"
+
+#include <visualization_msgs/Marker.h>
 //#include "move_type.hpp"
 
 
@@ -249,11 +251,6 @@ public:
 	ACleanMode();
 	~ACleanMode();
 
-	ros::NodeHandle clean_nh_;
-	ros::Subscriber	scanLinear_sub_;
-	ros::Subscriber	scanCompensate_sub_;
-	ros::Subscriber lidarPoint_sub_;
-
 	State* updateState();
 	bool isFinish() override ;
 	bool isExit() override;
@@ -436,6 +433,20 @@ protected:
 	Point_t start_point_{0, 0, 0};
 	bool should_go_to_charger_{false};
 	bool remote_go_home_point{false};
+public:
+	void visualizeMarkerInit();
+	void setCleanMapMarkers(int16_t x, int16_t y, CellState type);
+	void pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path);
+
+private:
+	visualization_msgs::Marker clean_markers_,bumper_markers_, clean_map_markers_;
+	ros::NodeHandle clean_nh_;
+	ros::Subscriber	scanLinear_sub_;
+	ros::Subscriber	scanCompensate_sub_;
+	ros::Subscriber lidarPoint_sub_;
+
+	ros::Publisher send_clean_map_marker_pub_;
+
 };
 
 class CleanModeNav:public ACleanMode

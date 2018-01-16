@@ -19,6 +19,8 @@ ACleanMode::ACleanMode()
 	scanCompensate_sub_ = clean_nh_.subscribe("scanCompensate", 1, &Lidar::scanCompensateCb, &lidar);
 	lidarPoint_sub_ = clean_nh_.subscribe("lidarPoint", 1, &Lidar::lidarPointCb, &lidar);
 
+	send_clean_map_marker_pub_ = clean_nh_.advertise<visualization_msgs::Marker>("clean_map_markers", 1);
+
 	event_manager_register_handler(this);
 	event_manager_set_enable(true);
 	IMoveType::sp_mode_ = this;
@@ -40,6 +42,7 @@ ACleanMode::~ACleanMode() {
 	scanLinear_sub_.shutdown();
 	scanCompensate_sub_.shutdown();
 	lidarPoint_sub_.shutdown();
+	send_clean_map_marker_pub_.shutdown();
 	clean_nh_.shutdown();
 
 	IMoveType::sp_mode_ = nullptr;
@@ -81,6 +84,178 @@ ACleanMode::~ACleanMode() {
 	ROS_INFO("%s %d: Cleaned area = \033[32m%.2fm2\033[0m, cleaning time: \033[32m%d(s) %.2f(min)\033[0m, cleaning speed: \033[32m%.2f(m2/min)\033[0m.",
 			 __FUNCTION__, __LINE__, map_area, robot_timer.getWorkTime(),
 			 static_cast<float>(robot_timer.getWorkTime()) / 60, map_area / (static_cast<float>(robot_timer.getWorkTime()) / 60));
+}
+
+void ACleanMode::visualizeMarkerInit()
+{
+	clean_markers_.points.clear();
+
+	geometry_msgs::Point m_points_{};
+	clean_markers_.points.push_back(m_points_);
+
+	clean_map_markers_.ns = "cleaning_grid_map";
+	clean_map_markers_.id = 1;
+	clean_map_markers_.type = visualization_msgs::Marker::POINTS;
+	clean_map_markers_.action= visualization_msgs::Marker::ADD;
+	clean_map_markers_.lifetime=ros::Duration(0);
+	clean_map_markers_.scale.x = 0.1;
+	clean_map_markers_.scale.y = 0.1;
+	clean_map_markers_.header.frame_id = "/map";
+	clean_map_markers_.points.clear();
+	clean_map_markers_.colors.clear();
+}
+
+void ACleanMode::setCleanMapMarkers(int16_t x, int16_t y, CellState type)
+{
+	geometry_msgs::Point m_points_;
+	m_points_.x = 0.0;
+	m_points_.y = 0.0;
+	m_points_.z = 0.0;
+	std_msgs::ColorRGBA color_;
+	color_.a = 0.7;
+	m_points_.x = x * CELL_SIZE ;
+	m_points_.y = y * CELL_SIZE ;
+	m_points_.z = 0;
+	if (type == CLEANED)
+	{
+		// Green
+		if(y%2==0)
+		{
+			color_.r = 0.0;
+			color_.g = 0.5;
+			color_.b = 0.0;
+		}
+		else{
+			color_.r = 0.0;
+			color_.g = 1.0;
+			color_.b = 0.0;
+		}
+	}
+	else if (type == BLOCKED_FW)
+	{
+		color_.r = 0.2;
+		color_.g = 0.1;
+		color_.b = 0.5;
+	}
+	else if (type == BLOCKED_BUMPER)
+	{
+		// Red
+		color_.r = 1.0;
+		color_.g = 0.0;
+		color_.b = 0.0;
+	}
+	else if (type == BLOCKED_CLIFF)
+	{
+		// Magenta
+		color_.r = 1.0;
+		color_.g = 0.0;
+		color_.b = 1.0;
+	}
+	else if (type == BLOCKED_RCON)
+	{
+		// White
+		color_.r = 1.0;
+		color_.g = 1.0;
+		color_.b = 1.0;
+	}
+	else if (type == BLOCKED_LIDAR)
+	{
+		//Blue
+		color_.r = 0.0;
+		color_.g = 0.0;
+		color_.b = 1.0;
+	}
+	else if (type == BLOCKED_TILT)
+	{
+		// Gray
+		color_.r = 0.5;
+		color_.g = 0.5;
+		color_.b = 0.5;
+	}
+	else if (type == SLAM_MAP_BLOCKED)
+	{
+		color_.r = 0.75;
+		color_.g = 0.33;
+		color_.b = 0.50;
+	}
+	else if (type == TARGET)// Next point
+	{
+		// Yellow
+		color_.r = 1.0;
+		color_.g = 1.0;
+		color_.b = 0.0;
+	}
+	else if (type == TARGET_CLEAN)// Target point
+	{
+		// Cyan
+		color_.r = 0.0;
+		color_.g = 1.0;
+		color_.b = 1.0;
+	}
+	else if (type == BLOCKED_TILT)
+	{
+		// Gray
+		color_.r = 0.5;
+		color_.g = 0.5;
+		color_.b = 0.5;
+	}
+	else if (type == BLOCKED_SLIP)
+	{
+		// i dont know what color it is..
+		color_.r = 0.7;
+		color_.g = 0.7;
+		color_.b = 0.2;
+	}
+	clean_map_markers_.points.push_back(m_points_);
+	clean_map_markers_.colors.push_back(color_);
+}
+
+void ACleanMode::pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path)
+{
+
+	if (path.empty())
+		return;
+
+	visualizeMarkerInit();
+	int16_t x, y, x_min, x_max, y_min, y_max;
+	CellState cell_state;
+	Cell_t next = path.front();
+	Cell_t target = path.back();
+	map.getMapRange(CLEAN_MAP, &x_min, &x_max, &y_min, &y_max);
+
+	if (next.x == SHRT_MIN )
+		next.x = x_min;
+	else if (next.x == SHRT_MAX)
+		next.x = x_max;
+
+	for (x = x_min; x <= x_max; x++)
+	{
+		for (y = y_min; y <= y_max; y++)
+		{
+			if (x == target.x && y == target.y)
+				setCleanMapMarkers(x, y, TARGET_CLEAN);
+			else if (x == next.x && y == next.y)
+				setCleanMapMarkers(x, y, TARGET);
+			else
+			{
+				cell_state = map.getCell(CLEAN_MAP, x, y);
+				if (cell_state > UNCLEAN && cell_state < BLOCKED_BOUNDARY )
+					setCleanMapMarkers(x, y, cell_state);
+			}
+		}
+	}
+	if (!path.empty())
+	{
+		for (auto it = path.begin(); it->x != path.back().x || it->y != path.back().y; it++)
+			setCleanMapMarkers(it->x, it->y, TARGET);
+
+		setCleanMapMarkers(path.back().x, path.back().y, TARGET_CLEAN);
+	}
+
+	clean_map_markers_.header.stamp = ros::Time::now();
+	send_clean_map_marker_pub_.publish(clean_map_markers_);
+	clean_map_markers_.points.clear();
+	clean_map_markers_.colors.clear();
 }
 
 void ACleanMode::setNextModeDefault()
@@ -656,7 +831,7 @@ bool ACleanMode::updateActionInStateGoHomePoint()
 		new_dir_ = plan_path_.front().th;
 		plan_path_.pop_front();
 		go_home_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
-		robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
+		pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 		should_go_to_charger_ = false;
 		action_i_ = ac_linear;
 		genNextAction();
@@ -800,7 +975,7 @@ bool ACleanMode::updateActionInStateExploration() {
 		ROS_WARN("new_dir_(%d)", new_dir_);
 		plan_path_.pop_front();
 		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
-		robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
+		pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 		genNextAction();
 		return true;
 	}

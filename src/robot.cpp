@@ -55,8 +55,6 @@ robot::robot()/*:offset_angle_(0),saved_offset_angle_(0)*/
 	robot_tf_ = new tf::TransformListener(robot_nh_, ros::Duration(0.1), true);
 
 	// Publishers.
-	send_clean_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("clean_markers", 1);
-	send_clean_map_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("clean_map_markers", 1);
 	odom_pub_ = robot_nh_.advertise<nav_msgs::Odometry>("robot_odom", 1);
 	scan_ctrl_pub_ = robot_nh_.advertise<pp::scan_ctrl>("scan_ctrl", 1);
 	line_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("line_marker", 1);
@@ -64,8 +62,6 @@ robot::robot()/*:offset_angle_(0),saved_offset_angle_(0)*/
 	point_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("point_marker", 1);
 	tmp_target_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("tmp_target", 1);
 	fit_line_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("fit_line_marker", 1);
-
-	visualizeMarkerInit();
 
 	resetCorrection();
 
@@ -610,186 +606,6 @@ void robot::scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr& scan)
 	}
 }
 
-void robot::visualizeMarkerInit()
-{
-	clean_markers_.ns = "waypoints";
-	clean_markers_.id = 0;
-	clean_markers_.type = visualization_msgs::Marker::LINE_STRIP;
-	clean_markers_.action= 0;//add
-	clean_markers_.lifetime=ros::Duration(0);
-
-	clean_markers_.scale.x = 0.33;
-//	clean_markers_.scale.y = 0.31;
-	clean_markers_.color.r = 0.0;
-	clean_markers_.color.g = 1.0;
-	clean_markers_.color.b = 0.0;
-	clean_markers_.color.a = 0.4;
-	clean_markers_.header.frame_id = "/map";
-	clean_markers_.header.stamp = ros::Time::now();
-	m_points_.x = 0.0;
-	m_points_.y = 0.0;
-	m_points_.z = 0.0;
-	clean_markers_.points.clear();
-	clean_markers_.points.push_back(m_points_);
-
-	clean_map_markers_.ns = "cleaning_grid_map";
-	clean_map_markers_.id = 1;
-	clean_map_markers_.type = visualization_msgs::Marker::POINTS;
-	clean_map_markers_.action= visualization_msgs::Marker::ADD;
-	clean_map_markers_.lifetime=ros::Duration(0);
-	clean_map_markers_.scale.x = 0.1;
-	clean_map_markers_.scale.y = 0.1;
-	color_.a = 0.7;
-	clean_map_markers_.header.frame_id = "/map";
-	clean_map_markers_.points.clear();
-	clean_map_markers_.colors.clear();
-}
-
-void robot::setCleanMapMarkers(int16_t x, int16_t y, CellState type)
-{
-	m_points_.x = x * CELL_SIZE ;
-	m_points_.y = y * CELL_SIZE ;
-	m_points_.z = 0;
-	if (type == CLEANED)
-	{
-		// Green
-		if(y%2==0)
-		{
-			color_.r = 0.0;
-			color_.g = 0.5;
-			color_.b = 0.0;
-		}
-		else{
-			color_.r = 0.0;
-			color_.g = 1.0;
-			color_.b = 0.0;
-		}
-	}
-	else if (type == BLOCKED_FW)
-	{
-		color_.r = 0.2;
-		color_.g = 0.1;
-		color_.b = 0.5;
-	}
-	else if (type == BLOCKED_BUMPER)
-	{
-		// Red
-		color_.r = 1.0;
-		color_.g = 0.0;
-		color_.b = 0.0;
-	}
-	else if (type == BLOCKED_CLIFF)
-	{
-		// Magenta
-		color_.r = 1.0;
-		color_.g = 0.0;
-		color_.b = 1.0;
-	}
-	else if (type == BLOCKED_RCON)
-	{
-		// White
-		color_.r = 1.0;
-		color_.g = 1.0;
-		color_.b = 1.0;
-	}
-	else if (type == BLOCKED_LIDAR)
-	{
-		//Blue
-		color_.r = 0.0;
-		color_.g = 0.0;
-		color_.b = 1.0;
-	}
-	else if (type == BLOCKED_TILT)
-	{
-		// Gray
-		color_.r = 0.5;
-		color_.g = 0.5;
-		color_.b = 0.5;
-	}
-	else if (type == SLAM_MAP_BLOCKED)
-	{
-		color_.r = 0.75;
-		color_.g = 0.33;
-		color_.b = 0.50;
-	}
-	else if (type == TARGET)// Next point
-	{
-		// Yellow
-		color_.r = 1.0;
-		color_.g = 1.0;
-		color_.b = 0.0;
-	}
-	else if (type == TARGET_CLEAN)// Target point
-	{
-		// Cyan
-		color_.r = 0.0;
-		color_.g = 1.0;
-		color_.b = 1.0;
-	}
-	else if (type == BLOCKED_TILT)
-	{
-		// Gray
-		color_.r = 0.5;
-		color_.g = 0.5;
-		color_.b = 0.5;
-	}
-	else if (type == BLOCKED_SLIP)
-	{
-		// i dont know what color it is..
-		color_.r = 0.7;
-		color_.g = 0.7;
-		color_.b = 0.2;
-	}
-	clean_map_markers_.points.push_back(m_points_);
-	clean_map_markers_.colors.push_back(color_);
-}
-
-void robot::pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path)
-{
-
-	if (path.empty())
-		return;
-
-	int16_t x, y, x_min, x_max, y_min, y_max;
-	CellState cell_state;
-	Cell_t next = path.front();
-	Cell_t target = path.back();
-	map.getMapRange(CLEAN_MAP, &x_min, &x_max, &y_min, &y_max);
-
-	if (next.x == SHRT_MIN )
-		next.x = x_min;
-	else if (next.x == SHRT_MAX)
-		next.x = x_max;
-
-	for (x = x_min; x <= x_max; x++)
-	{
-		for (y = y_min; y <= y_max; y++)
-		{
-			if (x == target.x && y == target.y)
-				robot::instance()->setCleanMapMarkers(x, y, TARGET_CLEAN);
-			else if (x == next.x && y == next.y)
-				robot::instance()->setCleanMapMarkers(x, y, TARGET);
-			else
-			{
-				cell_state = map.getCell(CLEAN_MAP, x, y);
-				if (cell_state > UNCLEAN && cell_state < BLOCKED_BOUNDARY )
-					robot::instance()->setCleanMapMarkers(x, y, cell_state);
-			}
-		}
-	}
-	if (!path.empty())
-	{
-		for (auto it = path.begin(); it->x != path.back().x || it->y != path.back().y; it++)
-			robot::instance()->setCleanMapMarkers(it->x, it->y, TARGET);
-
-		robot::instance()->setCleanMapMarkers(path.back().x, path.back().y, TARGET_CLEAN);
-	}
-
-	clean_map_markers_.header.stamp = ros::Time::now();
-	send_clean_map_marker_pub_.publish(clean_map_markers_);
-	clean_map_markers_.points.clear();
-	clean_map_markers_.colors.clear();
-}
 
 void robot::pubLineMarker(const std::vector<LineABC> *lines)
 {
@@ -1003,7 +819,6 @@ void robot::initOdomPosition()
 //	position_y_=0;
 //	position_z_=0;
 	robotbase_reset_odom_pose();
-	visualizeMarkerInit();
 }
 
 void robot::updateRobotPose(tf::Vector3& odom, double odom_yaw)

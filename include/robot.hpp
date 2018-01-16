@@ -44,7 +44,6 @@ public:
 	tf::TransformListener		*robot_tf_;
 
 	// Publisher functions.
-	void visualizeMarkerInit();
 	void pubLineMarker(const std::vector<LineABC> *lines);
 	void pubLineMarker(std::vector<std::vector<Vector2<double>> > *groups,std::string name);
 	void pubFitLineMarker(visualization_msgs::Marker fit_line_marker);
@@ -194,8 +193,6 @@ private:
 	ros::Subscriber	scanOriginal_sub_;
 
 	ros::Publisher odom_pub_;
-	ros::Publisher send_clean_marker_pub_;
-	ros::Publisher send_clean_map_marker_pub_;
 	ros::Publisher scan_ctrl_pub_;
 	ros::Publisher line_marker_pub_;
 	ros::Publisher line_marker_pub2_;
@@ -208,8 +205,6 @@ private:
 	ros::ServiceClient end_slam_cli_;
 
 	visualization_msgs::Marker clean_markers_,bumper_markers_, clean_map_markers_;
-	geometry_msgs::Point m_points_;
-	std_msgs::ColorRGBA color_;
 
 	tf::TransformListener		*robot_wf_tf_;
 	tf::Stamped<tf::Transform>	map_pose;

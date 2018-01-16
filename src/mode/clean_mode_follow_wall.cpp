@@ -134,7 +134,7 @@ bool CleanModeFollowWall::updateActionInStateClean()
 		if (generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
 			new_dir_ = plan_path_.front().th;
 			plan_path_.pop_front();
-			robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
+			pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 		}
 	}
 	else if (reach_cleaned_count_ <= 3) {
@@ -155,7 +155,7 @@ bool CleanModeFollowWall::updateActionInStateClean()
 			if (generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
 				new_dir_ = plan_path_.front().th;
 				plan_path_.pop_front();
-				robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
+				pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 			}
 		}
 		else {
