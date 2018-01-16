@@ -436,21 +436,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 
 #if USE_ROBOT_TF
 	updateRobotPose(odom_pose_x_, odom_pose_y_, odom_pose_yaw_);
-
-	ros::Time cur_time;
-
-	nav_msgs::Odometry robot_pose;
-	robot_pose.header.stamp = cur_time;
-	robot_pose.header.frame_id = "map";
-	robot_pose.child_frame_id = "robot";
-	robot_pose.pose.pose.position.x = robot_x_;
-	robot_pose.pose.pose.position.y = robot_y_;
-	robot_pose.pose.pose.position.z = 0.0;
-	robot_pose.pose.pose.orientation = tf::createQuaternionMsgFromYaw(robot_yaw_);
-	robot_pose.twist.twist.linear.x = 0.0;
-	robot_pose.twist.twist.linear.y = 0.0;
-	robot_pose.twist.twist.angular.z = 0.0;
-	odom_pub_.publish(robot_pose);
+	odomPublish();
 	//printf("Map->base(%f, %f, %f). Map->robot (%f, %f, %f)\n", tmp_x, tmp_y, RAD2DEG(tmp_yaw), robot_x_, robot_y_, RAD2DEG(robot_yaw_));
 	world_pose_.setX(robot_x_);
 	world_pose_.setY(robot_y_);
@@ -465,6 +451,23 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	//ROS_WARN("%s %d: Position diff(%f, %f), yaw diff: %f.", __FUNCTION__, __LINE__, tmp_x - odom_pose_x_, tmp_y - odom_pose_y_, tmp_yaw - odom_pose_yaw_);
 	//ROS_WARN("%s %d: Odom diff(%f, %f).", __FUNCTION__, __LINE__, odom_pose_x_ - msg->pose.pose.position.x, odom_pose_y_ - msg->pose.pose.position.y);
 	//ROS_WARN("%s %d: Correct  diff(%f, %f), yaw diff: %f.", __FUNCTION__, __LINE__, correct_x, correct_y, correct_yaw);
+}
+
+void robot::odomPublish()
+{
+	ros::Time cur_time;
+	nav_msgs::Odometry robot_pose;
+	robot_pose.header.stamp = cur_time;
+	robot_pose.header.frame_id = "map";
+	robot_pose.child_frame_id = "robot";
+	robot_pose.pose.pose.position.x = robot_x_;
+	robot_pose.pose.pose.position.y = robot_y_;
+	robot_pose.pose.pose.position.z = 0.0;
+	robot_pose.pose.pose.orientation = tf::createQuaternionMsgFromYaw(robot_yaw_);
+	robot_pose.twist.twist.linear.x = 0.0;
+	robot_pose.twist.twist.linear.y = 0.0;
+	robot_pose.twist.twist.angular.z = 0.0;
+	odom_pub_.publish(robot_pose);
 }
 
 void robot::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)

@@ -230,6 +230,7 @@ private:
 	Vector2<double> polar_to_cartesian(double polar,int i);
 	//callback function
 	void robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg);
+	void odomPublish();
 //	void robot_map_metadata_cb(const nav_msgs::MapMetaData::ConstPtr& msg);
 	void mapCb(const nav_msgs::OccupancyGrid::ConstPtr &msg);
 	void scanLinearCb(const sensor_msgs::LaserScan::ConstPtr &msg);
