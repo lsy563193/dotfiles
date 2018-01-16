@@ -23,12 +23,8 @@ MovementStay::~MovementStay()
 
 bool MovementStay::isFinish()
 {
-
-	if (ev.remote_direction_forward || ev.remote_direction_left ||
-		ev.remote_direction_right)
-		return true;
-
-	return false;
+	return ev.remote_direction_forward || ev.remote_direction_left ||
+		   ev.remote_direction_right;
 }
 
 void MovementStay::adjustSpeed(int32_t &left_speed, int32_t &right_speed)

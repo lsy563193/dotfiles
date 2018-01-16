@@ -67,7 +67,11 @@ bool ModeRemote::isExit()
 
 bool ModeRemote::isFinish()
 {
-	if (sp_action_->isFinish())
+	if (sp_action_->isFinish() ||
+			(action_i_ == ac_turn &&
+				(ev.remote_direction_forward || ev.remote_direction_left || ev.remote_direction_right)
+			)
+		)
 	{
 		PP_INFO();
 		sp_action_.reset(getNextAction());
@@ -116,11 +120,42 @@ IAction* ModeRemote::getNextAction()
 		}
 	}
 
-	if (action_i_ == ac_movement_direct_go || action_i_ == ac_turn)
+	else if (action_i_ == ac_movement_direct_go)
 	{
-		if (bumper.getStatus() || cliff.getStatus())
+		if (ev.bumper_triggered || ev.cliff_triggered)
 		{
-			PP_INFO();
+			ROS_INFO("%s %d: ev.bumper_triggered(%d), ev.cliff_triggered(%d).",
+					 __FUNCTION__, __LINE__, ev.bumper_triggered, ev.cliff_triggered);
+			ev.bumper_triggered = 0;
+			ev.cliff_triggered = 0;
+			action_i_ = ac_back;
+			return new MovementBack(0.01, BACK_MAX_SPEED);
+		}
+		else if (ev.rcon_triggered)
+		{
+			ROS_INFO("%s %d: ev.rcon_triggered(%d).",
+					 __FUNCTION__, __LINE__, ev.rcon_triggered);
+			ev.rcon_triggered = 0;
+			action_i_ = ac_back;
+			return new MovementBack(0.05, BACK_MAX_SPEED);
+		}
+		else
+		{
+			ev.remote_direction_forward = false;
+			ev.remote_direction_left = false;
+			ev.remote_direction_right = false;
+			action_i_ = ac_movement_stay;
+			return new MovementStay();
+		}
+	}
+	else if (action_i_ == ac_turn)
+	{
+		if (ev.bumper_triggered || ev.cliff_triggered)
+		{
+			ROS_INFO("%s %d: ev.bumper_triggered(%d), ev.cliff_triggered(%d).",
+					 __FUNCTION__, __LINE__, ev.bumper_triggered, ev.cliff_triggered);
+			ev.bumper_triggered = 0;
+			ev.cliff_triggered = 0;
 			action_i_ = ac_back;
 			return new MovementBack(0.01, BACK_MAX_SPEED);
 		}
@@ -133,8 +168,7 @@ IAction* ModeRemote::getNextAction()
 			return new MovementStay();
 		}
 	}
-
-	if (action_i_ == ac_back)
+	else if (action_i_ == ac_back)
 	{
 		if (bumper.getStatus() || cliff.getStatus())
 		{

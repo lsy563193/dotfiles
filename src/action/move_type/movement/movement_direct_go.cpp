@@ -4,11 +4,13 @@
 
 #include <movement.hpp>
 #include <move_type.hpp>
+#include <event_manager.h>
 #include "dev.h"
 
 MovementDirectGo::MovementDirectGo()
 {
 	direct_go_time_stamp_ = ros::Time::now().toSec();
+	c_rcon.resetStatus();
 	ROS_INFO("%s %d: Start movement direct go.", __FUNCTION__, __LINE__);
 }
 
@@ -21,14 +23,17 @@ MovementDirectGo::~MovementDirectGo()
 
 bool MovementDirectGo::isFinish()
 {
+	ev.bumper_triggered = bumper.getStatus();
+	ev.cliff_triggered = cliff.getStatus();
+	ev.rcon_triggered = c_rcon.getForwardTop();
 
 	return ev.remote_direction_forward ||
 		   ev.remote_direction_left ||
 		   ev.remote_direction_right ||
-			bumper.getStatus() ||
-			cliff.getStatus() ||
+		   ev.bumper_triggered ||
+		   ev.cliff_triggered ||
+		   ev.rcon_triggered ||
 		   ros::Time::now().toSec() - direct_go_time_stamp_ > 5;
-
 }
 
 void MovementDirectGo::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
