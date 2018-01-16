@@ -65,7 +65,6 @@ public:
 	// The scale should be between 0 to 1.
 	void updateRobotPose(const float& odom_x, const float& odom_y, const double& odom_yaw,
 						const float& slam_correction_x, const float& slam_correction_y, const double& slam_correction_yaw,
-						float& robot_correction_x, float& robot_correction_y, double& robot_correction_yaw,
 						float& robot_x, float& robot_y, double& robot_yaw);
 
 	void resetCorrection();
