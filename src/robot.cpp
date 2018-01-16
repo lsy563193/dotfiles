@@ -387,11 +387,8 @@ robot *robot::instance()
 void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 {
 	tf::StampedTransform		transform;
-	float tmp_x = 0, tmp_y = 0;
-	double tmp_yaw = 0;
 
-	float	odom_pose_x_;
-	float	odom_pose_y_;
+	tf::Vector3	odom_pose;
 	double	odom_pose_yaw_;
 
 	if (getBaselinkFrameType() == SLAM_POSITION_SLAM_ANGLE || getBaselinkFrameType() == SLAM_POSITION_ODOM_ANGLE)
@@ -400,19 +397,16 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 		{
 			try {
 				robot_tf_->lookupTransform("/map", "/base_link", ros::Time(0), transform);
-				tmp_x = transform.getOrigin().x();
-				tmp_y = transform.getOrigin().y();
-				tmp_yaw = tf::getYaw(transform.getRotation());
+				auto tmp = transform.getOrigin();
+				auto tmp_yaw = tf::getYaw(transform.getRotation());
 
 				robot_tf_->lookupTransform("/odom", "/base_link", ros::Time(0), transform);
 				if(getBaselinkFrameType() == SLAM_POSITION_ODOM_ANGLE)
 					tmp_yaw = tf::getYaw(transform.getRotation());
 
-				odom_pose_x_ = transform.getOrigin().x();
-				odom_pose_y_ = transform.getOrigin().y();
+				odom_pose = transform.getOrigin();
 				odom_pose_yaw_ = tf::getYaw(transform.getRotation());
-				slam_correction_x_ = tmp_x - odom_pose_x_;
-				slam_correction_y_ = tmp_y - odom_pose_y_;
+				slam_correction_pos = tmp - odom_pose;
 				slam_correction_yaw_ = tmp_yaw - odom_pose_yaw_;
 			} catch(tf::TransformException e)
 			{
@@ -429,17 +423,17 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	else if (getBaselinkFrameType() == ODOM_POSITION_ODOM_ANGLE)
 	{
 		//ROS_INFO("SLAM = 0");
-		odom_pose_x_ = odom.getX();
-		odom_pose_y_ = odom.getY();
+		odom_pose.setX(odom.getX());
+		odom_pose.setY(odom.getY());
 		odom_pose_yaw_ = odom.getAngle() * M_PI / 180;
 	}
 
-#if USE_ROBOT_TF
-	updateRobotPose(odom_pose_x_, odom_pose_y_, odom_pose_yaw_);
+#if 1
+	updateRobotPose(odom_pose, odom_pose_yaw_);
 	odomPublish();
 	//printf("Map->base(%f, %f, %f). Map->robot (%f, %f, %f)\n", tmp_x, tmp_y, RAD2DEG(tmp_yaw), robot_x_, robot_y_, RAD2DEG(robot_yaw_));
-	world_pose_.setX(robot_x_);
-	world_pose_.setY(robot_y_);
+	world_pose_.setX(robot_pos.x());
+	world_pose_.setY(robot_pos.y());
 	world_pose_.setAngle(ranged_angle(robot_yaw_ * 1800 / M_PI));
 //	ROS_WARN("Position (%f, %f), angle: %f.", world_pose_.getX(), world_pose_.getY(), world_pose_.getAngle());
 #else
@@ -460,8 +454,8 @@ void robot::odomPublish()
 	robot_pose.header.stamp = cur_time;
 	robot_pose.header.frame_id = "map";
 	robot_pose.child_frame_id = "robot";
-	robot_pose.pose.pose.position.x = robot_x_;
-	robot_pose.pose.pose.position.y = robot_y_;
+	robot_pose.pose.pose.position.x = robot_pos.x();
+	robot_pose.pose.pose.position.y = robot_pos.y();
 	robot_pose.pose.pose.position.z = 0.0;
 	robot_pose.pose.pose.orientation = tf::createQuaternionMsgFromYaw(robot_yaw_);
 	robot_pose.twist.twist.linear.x = 0.0;
@@ -1036,17 +1030,17 @@ void robot::initOdomPosition()
 	visualizeMarkerInit();
 }
 
-void robot::updateRobotPose(float odom_x, float odom_y, double odom_yaw)
+void robot::updateRobotPose(tf::Vector3& odom, double odom_yaw)
 {
+	auto cal_scale = [](double val){
+		double scale = fabs(val) > 0.05 ? 0.1 * fabs(val) / 0.05 : 0.03;
+		scale = scale > 1.0 ? 1.0 : scale;
+		return scale;
+	};
 	if (wheel.getLeftSpeedAfterPid() * wheel.getRightSpeedAfterPid() > 0)
 	{
-		float scale;
-		scale = fabs(slam_correction_x_ - robot_correction_x_) > 0.05 ? 0.1 * fabs(slam_correction_x_ - robot_correction_x_) / 0.05 : 0.03;
-		scale = scale > 1.0 ? 1.0 : scale;
-		robot_correction_x_ += (slam_correction_x_ - robot_correction_x_) * scale;
-		scale = fabs(slam_correction_y_ - robot_correction_y_) > 0.05 ? 0.1 * fabs(slam_correction_y_ - robot_correction_y_) / 0.05 : 0.03;
-		scale = scale > 1.0 ? 1.0 : scale;
-		robot_correction_y_ += (slam_correction_y_ - robot_correction_y_) * scale;
+		auto diff = slam_correction_pos - robot_correction_pos;
+		robot_correction_pos += {cal_scale(diff.x()) * diff.x(), cal_scale(diff.y()) * diff.y(), 0};
 		double yaw = slam_correction_yaw_ - robot_correction_yaw_;
 		while (yaw < -3.141592)
 			yaw += 6.283184;
@@ -1058,21 +1052,17 @@ void robot::updateRobotPose(float odom_x, float odom_y, double odom_yaw)
 //			   robot_correction_y, rad_2_deg(robot_correction_yaw, 1));
 	}
 
-	robot_x_ = odom_x + robot_correction_x_;
-	robot_y_ = odom_y + robot_correction_y_;
+	robot_pos = odom + robot_correction_pos;
 	robot_yaw_ = odom_yaw + robot_correction_yaw_;
 }
 
 void robot::resetCorrection()
 {
-	slam_correction_x_ = 0;
-	slam_correction_y_ = 0;
+	slam_correction_pos = {};
 	slam_correction_yaw_ = 0;
-	robot_correction_x_ = 0;
-	robot_correction_y_ = 0;
+	robot_correction_pos = {};
 	robot_correction_yaw_ = 0;
-	robot_x_ = 0;
-	robot_y_ = 0;
+	robot_pos = {};
 	robot_yaw_ = 0;
 }
 
