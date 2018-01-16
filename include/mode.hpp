@@ -444,6 +444,7 @@ public:
 private:
 	visualization_msgs::Marker clean_markers_,bumper_markers_, clean_map_markers_;
 	ros::NodeHandle clean_nh_;
+	ros::Subscriber map_sub_;
 	ros::Subscriber	scanLinear_sub_;
 	ros::Subscriber	scanCompensate_sub_;
 	ros::Subscriber lidarPoint_sub_;

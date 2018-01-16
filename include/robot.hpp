@@ -183,7 +183,6 @@ private:
 
 	ros::NodeHandle robot_nh_;
 
-	ros::Subscriber map_sub_;
 	ros::Subscriber odom_sub_;
 	ros::Subscriber	scanOriginal_sub_;
 

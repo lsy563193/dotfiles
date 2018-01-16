@@ -18,9 +18,11 @@ ACleanMode::ACleanMode()
 	scanLinear_sub_ = clean_nh_.subscribe("scanLinear", 1, &Lidar::scanLinearCb, &lidar);
 	scanCompensate_sub_ = clean_nh_.subscribe("scanCompensate", 1, &Lidar::scanCompensateCb, &lidar);
 	lidarPoint_sub_ = clean_nh_.subscribe("lidarPoint", 1, &Lidar::lidarPointCb, &lidar);
-	fit_line_marker_pub_ = clean_nh_.advertise<visualization_msgs::Marker>("fit_line_marker", 1);
+	map_sub_ = clean_nh_.subscribe("/map", 1, &Slam::mapCb, &slam);
+
 
 	send_clean_map_marker_pub_ = clean_nh_.advertise<visualization_msgs::Marker>("clean_map_markers", 1);
+	fit_line_marker_pub_ = clean_nh_.advertise<visualization_msgs::Marker>("fit_line_marker", 1);
 	line_marker_pub_ = clean_nh_.advertise<visualization_msgs::Marker>("line_marker", 1);
 	line_marker_pub2_ = clean_nh_.advertise<visualization_msgs::Marker>("line_marker2", 1);
 
@@ -45,10 +47,12 @@ ACleanMode::~ACleanMode() {
 	scanLinear_sub_.shutdown();
 	scanCompensate_sub_.shutdown();
 	lidarPoint_sub_.shutdown();
+	map_sub_.shutdown();
+
 	send_clean_map_marker_pub_.shutdown();
+	fit_line_marker_pub_.shutdown();
 	line_marker_pub_.shutdown();
 	line_marker_pub2_.shutdown();
-	fit_line_marker_pub_.shutdown();
 	clean_nh_.shutdown();
 
 	IMoveType::sp_mode_ = nullptr;

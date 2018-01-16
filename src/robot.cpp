@@ -41,13 +41,9 @@ robot::robot()/*:offset_angle_(0),saved_offset_angle_(0)*/
 
 	robotbase_reset_send_stream();
 
-
 	// Subscribers.
 	odom_sub_ = robot_nh_.subscribe("/odom", 1, &robot::robotOdomCb, this);
-	map_sub_ = robot_nh_.subscribe("/map", 1, &Slam::mapCb, &slam);
 	scanOriginal_sub_ = robot_nh_.subscribe("scanOriginal", 1, &robot::scanOriginalCb, this);
-
-
 	// Service clients.
 	lidar_motor_cli_ = robot_nh_.serviceClient<rplidar_ros::SetLidar>("lidar_motor_ctrl");
 	end_slam_cli_ = robot_nh_.serviceClient<std_srvs::Empty>("End_Slam");
@@ -587,7 +583,7 @@ bool robot::calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,bool is_
 //			ROS_WARN("points(%d):target(%lf,%lf),dis(%f)", points.size(), target.x, target.y, target.Distance({CHASE_X, 0}));
 //	}
 	ROS_WARN("points(%d):target(%lf,%lf)", points.size(), points.front().x, points.front().y);
-	robot::instance()->pubPointMarkers(&points, "base_link");
+	pubPointMarkers(&points, "base_link");
 
 	return true;
 }
