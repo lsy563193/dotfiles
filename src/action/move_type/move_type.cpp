@@ -108,17 +108,8 @@ void IMoveType::resetTriggeredValue()
 }
 
 bool IMoveType::isFinish() {
-	return sp_mode_->isExceptionTriggered();
-}
-
-void IMoveType::updatePath()
-{
 	updatePosition();
 	auto curr = getPosition();
-//	robot::instance()->pubCleanMapMarkers(nav_map, tmp_plan_path_);
-//	PP_INFO();
-//	ROS_INFO("point(%d,%d,%d)",point.x, point.y,point.th);
-//	ROS_INFO("last(%d,%d,%d)",last_.x, last_.y, last_.th);
 	auto p_mode = dynamic_cast<ACleanMode*> (sp_mode_);
 	if (p_mode->passed_path_.empty())
 	{
@@ -140,14 +131,13 @@ void IMoveType::updatePath()
 			ROS_INFO("reach_cleaned_count_(%d)",p_mode->reach_cleaned_count_);
 			p_mode->reach_cleaned_count_++;
 		}
-		p_mode->clean_map_.saveBlocks(p_mode->action_i_ == p_mode->ac_linear,
-					(p_mode->isStateClean() || p_mode->isStateExploration()));
 		p_mode->markRealTime();//real time mark to exploration
 //		displayPath(passed_path_);
 	}
+	return sp_mode_->isExceptionTriggered();
 }
+
 void IMoveType::run() {
-	updatePath();
 	sp_movement_->run();
 }
 
