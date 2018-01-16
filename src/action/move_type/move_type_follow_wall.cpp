@@ -355,7 +355,7 @@ int16_t MoveTypeFollowWall::getTurnAngle(bool use_target_angle)
 		auto ev_turn_angle = getTurnAngleByEvent();
 		if(use_target_angle) {
 			auto target_point_ = dynamic_cast<ACleanMode*> (sp_mode_)->plan_path_.front();
-			auto tg_turn_angle = getPosition().angleDiffPoint(target_point_);;
+			auto tg_turn_angle = getPosition().angleDiffPoint(target_point_);
 			turn_angle = (std::abs(ev_turn_angle) > std::abs(tg_turn_angle)) ? ev_turn_angle : tg_turn_angle;
 			ROS_INFO("%s %d: target_turn_angle(%d), event_turn_angle(%d), choose the big one(%d)",
 					 __FUNCTION__, __LINE__, tg_turn_angle, ev_turn_angle, turn_angle);
@@ -374,8 +374,8 @@ bool MoveTypeFollowWall::isOverOriginLine(GridMap &map)
 {
 	auto curr = getPosition();
 	auto target_point_ = dynamic_cast<ACleanMode*>(sp_mode_)->plan_path_.front();
-	if ((target_point_.y > start_point_.y && (start_point_.y - curr.y) > 120)
-		|| (target_point_.y < start_point_.y && (curr.y - start_point_.y) > 120))
+	if ((target_point_.y > start_point_.y && (start_point_.y - curr.y) > CELL_SIZE/4)
+		|| (target_point_.y < start_point_.y && (curr.y - start_point_.y) > CELL_SIZE/4))
 	{
 //		ROS_WARN("origin(%d,%d) curr_p(%d, %d), target_point__(%d, %d)",start_point_.x, start_point_.y,  curr.x, curr.y, target_point_.x, target_point_.y);
 //		auto target_angle = (target_point_.y > start_point_.y) ? -900 : 900;

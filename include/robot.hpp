@@ -279,7 +279,7 @@ public:
 		if(is_corner)
 			return (point.x > 0 && point.x < 4 && point.y > y_min_point1_corner && point.y < y_max_point1_corner);
 		else
-			return (point.x > -4 && point.x < 0.3 && point.y > y_min_point1 && point.y < y_max_point1);
+			return (point.x > 0 && point.x < 0.3 && point.y > y_min_point1 && point.y < y_max_point1);
 	}
 
 	bool inTargetRange(const Vector2<double> &target) {

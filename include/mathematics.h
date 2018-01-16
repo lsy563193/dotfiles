@@ -404,7 +404,7 @@ public:
 					alpha += 3600;
 				}
 			}
-
+//			ROS_INFO("alpha = %d, th = %d", alpha, this->th);
 			return ranged_angle(alpha - this->th);
 	}
 

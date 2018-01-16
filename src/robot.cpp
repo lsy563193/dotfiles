@@ -607,6 +607,7 @@ bool robot::calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,bool is_
 //	for (const auto &target :points)
 //			ROS_WARN("points(%d):target(%lf,%lf),dis(%f)", points.size(), target.x, target.y, target.Distance({CHASE_X, 0}));
 //	}
+	ROS_WARN("points(%d):target(%lf,%lf)", points.size(), points.front().x, points.front().y);
 	robot::instance()->pubPointMarkers(&points, "base_link");
 
 	return true;
