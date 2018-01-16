@@ -23,6 +23,7 @@ ACleanMode::ACleanMode()
 	map_sub_ = clean_nh_.subscribe("/map", 1, &Slam::mapCb, &slam);
 
 
+	point_marker_pub_ = clean_nh_.advertise<visualization_msgs::Marker>("point_marker", 1);
 	send_clean_map_marker_pub_ = clean_nh_.advertise<visualization_msgs::Marker>("clean_map_markers", 1);
 	fit_line_marker_pub_ = clean_nh_.advertise<visualization_msgs::Marker>("fit_line_marker", 1);
 	line_marker_pub_ = clean_nh_.advertise<visualization_msgs::Marker>("line_marker", 1);
@@ -53,6 +54,7 @@ ACleanMode::~ACleanMode() {
 	map_sub_.shutdown();
 
 	send_clean_map_marker_pub_.shutdown();
+	point_marker_pub_.shutdown();
 	fit_line_marker_pub_.shutdown();
 	line_marker_pub_.shutdown();
 	line_marker_pub2_.shutdown();
@@ -97,6 +99,45 @@ ACleanMode::~ACleanMode() {
 	ROS_INFO("%s %d: Cleaned area = \033[32m%.2fm2\033[0m, cleaning time: \033[32m%d(s) %.2f(min)\033[0m, cleaning speed: \033[32m%.2f(m2/min)\033[0m.",
 			 __FUNCTION__, __LINE__, map_area, robot_timer.getWorkTime(),
 			 static_cast<float>(robot_timer.getWorkTime()) / 60, map_area / (static_cast<float>(robot_timer.getWorkTime()) / 60));
+}
+
+void ACleanMode::pubPointMarkers(const std::deque<Vector2<double>> *points, std::string frame_id)
+{
+	visualization_msgs::Marker point_marker;
+	point_marker.ns = "point_marker";
+	point_marker.id = 0;
+	point_marker.type = visualization_msgs::Marker::SPHERE_LIST;
+	point_marker.action= 0;//add
+	point_marker.lifetime=ros::Duration(0),"base_link";
+	point_marker.scale.x = 0.05;
+	point_marker.scale.y = 0.05;
+	point_marker.scale.z = 0.05;
+	point_marker.color.r = 0.0;
+	point_marker.color.g = 1.0;
+	point_marker.color.b = 0.0;
+	point_marker.color.a = 1.0;
+	point_marker.header.frame_id = frame_id;
+	point_marker.header.stamp = ros::Time::now();
+
+	geometry_msgs::Point lidar_points;
+	lidar_points.z = 0;
+	if (!points->empty()) {
+		std::string msg("");
+		for (auto iter = points->cbegin(); iter != points->cend(); ++iter) {
+			lidar_points.x = iter->x;
+			lidar_points.y = iter->y;
+			point_marker.points.push_back(lidar_points);
+			msg+="("+std::to_string(iter->x)+","+std::to_string(iter->y)+"),";
+		}
+		point_marker_pub_.publish(point_marker);
+		//ROS_INFO("%s,%d,points size:%u,points %s",__FUNCTION__,__LINE__,points->size(),msg.c_str());
+		point_marker.points.clear();
+		//ROS_INFO("pub point!!");
+	}
+	else {
+		point_marker.points.clear();
+		point_marker_pub_.publish(point_marker);
+	}
 }
 
 bool ACleanMode::check_corner(const sensor_msgs::LaserScan::ConstPtr & scan, const Paras &para) {
@@ -221,7 +262,6 @@ bool ACleanMode::calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,boo
 		std::reverse(points.begin(), points.end());//for the right wall follow
 	}
 	auto min = std::min_element(points.rbegin(), points.rend(), [](Vector2<double>& a, Vector2<double>& b) {
-//		ROS_INFO("dis(%f,%f)", a.Distance({CHASE_X, 0}), b.Distance({CHASE_X, 0}));
 		return a.Distance({CHASE_X, 0}) < b.Distance({CHASE_X, 0});
 	});
 //	ROS_INFO("min(%f,%f)",min->x, min->y);
@@ -231,7 +271,6 @@ bool ACleanMode::calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,boo
 	points.resize(size);
 //	for (const auto &target :points)
 //			ROS_WARN("points(%d):target(%lf,%lf),dis(%f)", points.size(), target.x, target.y, target.Distance({CHASE_X, 0}));
-//	}
 	ROS_WARN("points(%d):target(%lf,%lf)", points.size(), points.front().x, points.front().y);
 	pubPointMarkers(&points, "base_link");
 

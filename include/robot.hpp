@@ -40,7 +40,6 @@ public:
 	tf::TransformListener		*robot_tf_;
 
 	// Publisher functions.
-	void pubPointMarkers(const std::deque<Vector2<double>> *point, std::string frame_id);
 //	void pubTmpTarget(const Points &points,bool is_virtual=false);
 	void pubTmpTarget(const Point_t &point,bool is_virtual=false);
 	void robotbase_routine_cb();
@@ -181,7 +180,6 @@ private:
 
 	ros::Publisher odom_pub_;
 	ros::Publisher scan_ctrl_pub_;
-	ros::Publisher point_marker_pub_;
 	ros::Publisher tmp_target_pub_;
 
 	ros::ServiceClient lidar_motor_cli_;

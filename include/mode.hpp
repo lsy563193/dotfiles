@@ -530,6 +530,7 @@ protected:
 	bool remote_go_home_point{false};
 public:
 
+	void pubPointMarkers(const std::deque<Vector2<double>> *point, std::string frame_id);
 	void pubFitLineMarker(visualization_msgs::Marker fit_line_marker);
 	void visualizeMarkerInit();
 	void scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr& scan);
@@ -555,6 +556,7 @@ private:
 	ros::Subscriber lidarPoint_sub_;
 	ros::Subscriber	scanOriginal_sub_;
 
+	ros::Publisher point_marker_pub_;
 	ros::Publisher send_clean_map_marker_pub_;
 	ros::Publisher line_marker_pub_;
 	ros::Publisher line_marker_pub2_;

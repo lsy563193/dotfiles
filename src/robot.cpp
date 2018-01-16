@@ -51,7 +51,6 @@ robot::robot()/*:offset_angle_(0),saved_offset_angle_(0)*/
 	// Publishers.
 	odom_pub_ = robot_nh_.advertise<nav_msgs::Odometry>("robot_odom", 1);
 	scan_ctrl_pub_ = robot_nh_.advertise<pp::scan_ctrl>("scan_ctrl", 1);
-	point_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("point_marker", 1);
 	tmp_target_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("tmp_target", 1);
 
 	resetCorrection();
@@ -447,44 +446,6 @@ void robot::odomPublish()
 	odom_pub_.publish(robot_pose);
 }
 
-void robot::pubPointMarkers(const std::deque<Vector2<double>> *points, std::string frame_id)
-{
-	visualization_msgs::Marker point_marker;
-	point_marker.ns = "point_marker";
-	point_marker.id = 0;
-	point_marker.type = visualization_msgs::Marker::SPHERE_LIST;
-	point_marker.action= 0;//add
-	point_marker.lifetime=ros::Duration(0),"base_link";
-	point_marker.scale.x = 0.05;
-	point_marker.scale.y = 0.05;
-	point_marker.scale.z = 0.05;
-	point_marker.color.r = 0.0;
-	point_marker.color.g = 1.0;
-	point_marker.color.b = 0.0;
-	point_marker.color.a = 1.0;
-	point_marker.header.frame_id = frame_id;
-	point_marker.header.stamp = ros::Time::now();
-
-	geometry_msgs::Point lidar_points;
-	lidar_points.z = 0;
-	if (!points->empty()) {
-		std::string msg("");
-		for (auto iter = points->cbegin(); iter != points->cend(); ++iter) {
-			lidar_points.x = iter->x;
-			lidar_points.y = iter->y;
-			point_marker.points.push_back(lidar_points);
-			msg+="("+std::to_string(iter->x)+","+std::to_string(iter->y)+"),";
-		}
-		point_marker_pub_.publish(point_marker);
-		//ROS_INFO("%s,%d,points size:%u,points %s",__FUNCTION__,__LINE__,points->size(),msg.c_str());
-		point_marker.points.clear();
-		//ROS_INFO("pub point!!");
-	}
-	else {
-		point_marker.points.clear();
-		point_marker_pub_.publish(point_marker);
-	}
-}
 
 void robot::pubTmpTarget(const Point_t &point, bool is_virtual) {
 	visualization_msgs::Marker point_markers;
