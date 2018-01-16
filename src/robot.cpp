@@ -393,7 +393,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	float	odom_pose_y_;
 	double	odom_pose_yaw_;
 
-	if (getBaselinkFrameType() == SLAM_POSITION_SLAM_ANGLE)
+	if (getBaselinkFrameType() == SLAM_POSITION_SLAM_ANGLE || getBaselinkFrameType() == SLAM_POSITION_ODOM_ANGLE)
 	{
 		if(slam.isMapReady()/* && !ev.slam_error*/)
 		{
@@ -402,7 +402,11 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 				tmp_x = transform.getOrigin().x();
 				tmp_y = transform.getOrigin().y();
 				tmp_yaw = tf::getYaw(transform.getRotation());
+
 				robot_tf_->lookupTransform("/odom", "/base_link", ros::Time(0), transform);
+				if(getBaselinkFrameType() == SLAM_POSITION_ODOM_ANGLE)
+					tmp_yaw = tf::getYaw(transform.getRotation());
+
 				odom_pose_x_ = transform.getOrigin().x();
 				odom_pose_y_ = transform.getOrigin().y();
 				odom_pose_yaw_ = tf::getYaw(transform.getRotation());
@@ -427,43 +431,6 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 		odom_pose_x_ = odom.getX();
 		odom_pose_y_ = odom.getY();
 		odom_pose_yaw_ = odom.getAngle() * M_PI / 180;
-	}
-	else if (getBaselinkFrameType() == SLAM_POSITION_ODOM_ANGLE)
-	{//Wall_Follow_Mode
-		//ROS_INFO("SLAM = 2");
-		if(slam.isMapReady()/* && !ev.slam_error*/)
-		{
-			tf::Stamped<tf::Pose> ident;
-			ident.setIdentity();
-			ident.frame_id_ = "base_link";
-			ident.stamp_ = msg->header.stamp;
-			try {
-				robot_tf_->lookupTransform("/map", "/base_link", ros::Time(0), transform);
-				//robot_tf_->waitForTransform("/map", ros::Time::now(), ident.frame_id_, msg->header.stamp, ident.frame_id_, ros::Duration(0.5));
-				//robot_tf_->lookupTransform("/map", "/base_link", ros::Time(0), transform);
-				tmp_x = transform.getOrigin().x();
-				tmp_y = transform.getOrigin().y();
-				//robot_tf_->waitForTransform("/odom", ros::Time::now(), ident.frame_id_, msg->header.stamp, ident.frame_id_, ros::Duration(0.5));
-				robot_tf_->lookupTransform("/odom", "/base_link", ros::Time(0), transform);
-				tmp_yaw = tf::getYaw(transform.getRotation());
-				odom_pose_x_ = transform.getOrigin().x();
-				odom_pose_y_ = transform.getOrigin().y();
-				odom_pose_yaw_ = tf::getYaw(transform.getRotation());
-				slam_correction_x_ = tmp_x - odom_pose_x_;
-				slam_correction_y_ = tmp_y - odom_pose_y_;
-				slam_correction_yaw_ = tmp_yaw - odom_pose_yaw_;
-			} catch(tf::TransformException e)
-			{
-				ROS_WARN("%s %d: Failed to compute map transform, skipping scan (%s)", __FUNCTION__, __LINE__, e.what());
-			}
-
-
-			if (!isTfReady())
-			{
-				ROS_INFO("%s %d: TF ready.", __FUNCTION__, __LINE__);
-				setTfReady(true);
-			}
-		}
 	}
 
 #if USE_ROBOT_TF
