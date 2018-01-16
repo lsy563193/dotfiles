@@ -44,8 +44,6 @@ public:
 	tf::TransformListener		*robot_tf_;
 
 	// Publisher functions.
-	void pubLineMarker(const std::vector<LineABC> *lines);
-	void pubLineMarker(std::vector<std::vector<Vector2<double>> > *groups,std::string name);
 	void pubFitLineMarker(visualization_msgs::Marker fit_line_marker);
 	void pubPointMarkers(const std::deque<Vector2<double>> *point, std::string frame_id);
 //	void pubTmpTarget(const Points &points,bool is_virtual=false);
@@ -194,8 +192,6 @@ private:
 
 	ros::Publisher odom_pub_;
 	ros::Publisher scan_ctrl_pub_;
-	ros::Publisher line_marker_pub_;
-	ros::Publisher line_marker_pub2_;
 	ros::Publisher point_marker_pub_;
 	ros::Publisher tmp_target_pub_;
 	ros::Publisher fit_line_marker_pub_;

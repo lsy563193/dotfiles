@@ -437,6 +437,7 @@ public:
 	void visualizeMarkerInit();
 	void setCleanMapMarkers(int16_t x, int16_t y, CellState type);
 	void pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path);
+	void pubLineMarker(const std::vector<LineABC> *lines);
 
 private:
 	visualization_msgs::Marker clean_markers_,bumper_markers_, clean_map_markers_;
@@ -446,6 +447,8 @@ private:
 	ros::Subscriber lidarPoint_sub_;
 
 	ros::Publisher send_clean_map_marker_pub_;
+	ros::Publisher line_marker_pub_;
+	ros::Publisher line_marker_pub2_;
 
 };
 

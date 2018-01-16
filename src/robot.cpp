@@ -57,8 +57,6 @@ robot::robot()/*:offset_angle_(0),saved_offset_angle_(0)*/
 	// Publishers.
 	odom_pub_ = robot_nh_.advertise<nav_msgs::Odometry>("robot_odom", 1);
 	scan_ctrl_pub_ = robot_nh_.advertise<pp::scan_ctrl>("scan_ctrl", 1);
-	line_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("line_marker", 1);
-	line_marker_pub2_ = robot_nh_.advertise<visualization_msgs::Marker>("line_marker2", 1);
 	point_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("point_marker", 1);
 	tmp_target_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("tmp_target", 1);
 	fit_line_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("fit_line_marker", 1);
@@ -603,102 +601,6 @@ void robot::scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr& scan)
 		std::deque<Vector2<double>> points{};
 		calcLidarPath(scan, p_mode->action_i_ == p_mode->ac_follow_wall_left, points);
 		setTempTarget(points, scan->header.seq);
-	}
-}
-
-
-void robot::pubLineMarker(const std::vector<LineABC> *lines)
-{
-	visualization_msgs::Marker line_marker;
-	line_marker.ns = "line_marker_2";
-	line_marker.id = 0;
-	line_marker.type = visualization_msgs::Marker::LINE_LIST;
-	line_marker.action= 0;//add
-	line_marker.lifetime=ros::Duration(0);
-	line_marker.scale.x = 0.05;
-	//line_marker.scale.y = 0.05;
-	//line_marker.scale.z = 0.05;
-	line_marker.color.r = 0.5;
-	line_marker.color.g = 1.0;
-	line_marker.color.b = 0.2;
-	line_marker.color.a = 1.0;
-	line_marker.header.frame_id = "/map";
-	line_marker.header.stamp = ros::Time::now();
-	geometry_msgs::Point point1;
-	point1.z = 0.0;
-	geometry_msgs::Point point2;
-	point2.z = 0.0;
-	line_marker.points.clear();
-	std::vector<LineABC>::const_iterator it;
-	if(!lines->empty() && lines->size() >= 2){
-		for(it = lines->cbegin(); it != lines->cend();it++){
-			point1.x = it->x1;
-			point1.y = it->y1;
-			point2.x = it->x2;
-			point2.y = it->y2;
-			line_marker.points.push_back(point1);
-			line_marker.points.push_back(point2);
-		}
-		line_marker_pub2_.publish(line_marker);
-		line_marker.points.clear();
-	}
-	/*
-	else{
-		line_marker.points.clear();
-		line_marker_pub2.publish(line_marker);
-	}
-	*/
-
-}
-
-void robot::pubLineMarker(std::vector<std::vector<Vector2<double>> > *groups,std::string name)
-{
-	int points_size;
-	visualization_msgs::Marker line_marker;
-	line_marker.ns = name;
-	line_marker.id = 0;
-	line_marker.type = visualization_msgs::Marker::SPHERE_LIST;
-	line_marker.action= 0;//add
-	line_marker.lifetime=ros::Duration(0);
-	line_marker.scale.x = 0.05;
-	line_marker.scale.y = 0.05;
-	line_marker.scale.z = 0.05;
-	line_marker.color.r = 0.0;
-	line_marker.color.g = 0.0;
-	line_marker.color.b = 1.0;
-	line_marker.color.a = 1.0;
-	line_marker.header.frame_id = "/base_link";
-	line_marker.header.stamp = ros::Time::now();
-	geometry_msgs::Point lidar_points_;
-	lidar_points_.x = 0.0;
-	lidar_points_.y = 0.0;
-	lidar_points_.z = 0.0;
-
-	/*line_marker.pose.position.x = 0.0;
-	line_marker.pose.position.y = 0.0;
-	line_marker.pose.position.z = 0.0;
-	line_marker.pose.orientation.x = 0.0;
-	line_marker.pose.orientation.y = 0.0;
-	line_marker.pose.orientation.z = 0.0;
-	line_marker.pose.orientation.w = 1.0;*/
-	if (!(*groups).empty()) {
-		for (auto iter = (*groups).begin(); iter != (*groups).end(); ++iter) {
-			/*x1 = iter->begin()->x;
-			y1 = iter->begin()->y;
-			x2 = (iter->end() - 1)->x;
-			y2 = (iter->end() - 1)->y;*/
-			points_size = iter->size();
-			for (int j = 0; j < points_size; j++) {
-				//line_marker.pose.position.x = (iter->begin() + j)->x;
-				//line_marker.pose.position.y = (iter->begin() + j)->y;
-				lidar_points_.x = (iter->begin() + j)->x;
-				lidar_points_.y = (iter->begin() + j)->y;
-				//ROS_INFO("lidar_points_.x = %lf lidar_points_.y = %lf",lidar_points_.x, lidar_points_.y);
-				line_marker.points.push_back(lidar_points_);
-			}
-		}
-		line_marker_pub_.publish(line_marker);
-		line_marker.points.clear();
 	}
 }
 

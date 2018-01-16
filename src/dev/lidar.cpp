@@ -315,7 +315,7 @@ bool Lidar::findLines(std::vector<LineABC> *lines,bool combine)
 	}
 	ROS_INFO("%s,%d,pub line markers,lines numbers \033[35m%u\033[0m, lines:\033[32m %s \033[0m",__FUNCTION__,__LINE__,lines->size(),msg.c_str());
 	*/
-	robot::instance()->pubLineMarker(lines);
+//	robot::instance()->pubLineMarker(lines);
 	return true;
 }
 
@@ -720,7 +720,7 @@ bool Lidar::mergeLine(std::vector<std::vector<Vector2<double>> > *groups, double
 		});
 	}
 	ROS_DEBUG("pub line marker");
-	robot::instance()->pubLineMarker(&Lidar_Group,"merge");
+//	robot::instance()->pubLineMarker(&Lidar_Group,"merge");
 	return true;
 }
 

@@ -20,6 +20,8 @@ ACleanMode::ACleanMode()
 	lidarPoint_sub_ = clean_nh_.subscribe("lidarPoint", 1, &Lidar::lidarPointCb, &lidar);
 
 	send_clean_map_marker_pub_ = clean_nh_.advertise<visualization_msgs::Marker>("clean_map_markers", 1);
+	line_marker_pub_ = clean_nh_.advertise<visualization_msgs::Marker>("line_marker", 1);
+	line_marker_pub2_ = clean_nh_.advertise<visualization_msgs::Marker>("line_marker2", 1);
 
 	event_manager_register_handler(this);
 	event_manager_set_enable(true);
@@ -43,6 +45,8 @@ ACleanMode::~ACleanMode() {
 	scanCompensate_sub_.shutdown();
 	lidarPoint_sub_.shutdown();
 	send_clean_map_marker_pub_.shutdown();
+	line_marker_pub_.shutdown();
+	line_marker_pub2_.shutdown();
 	clean_nh_.shutdown();
 
 	IMoveType::sp_mode_ = nullptr;
@@ -256,6 +260,49 @@ void ACleanMode::pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path
 	send_clean_map_marker_pub_.publish(clean_map_markers_);
 	clean_map_markers_.points.clear();
 	clean_map_markers_.colors.clear();
+}
+void ACleanMode::pubLineMarker(const std::vector<LineABC> *lines)
+{
+	visualization_msgs::Marker line_marker;
+	line_marker.ns = "line_marker_2";
+	line_marker.id = 0;
+	line_marker.type = visualization_msgs::Marker::LINE_LIST;
+	line_marker.action= 0;//add
+	line_marker.lifetime=ros::Duration(0);
+	line_marker.scale.x = 0.05;
+	//line_marker.scale.y = 0.05;
+	//line_marker.scale.z = 0.05;
+	line_marker.color.r = 0.5;
+	line_marker.color.g = 1.0;
+	line_marker.color.b = 0.2;
+	line_marker.color.a = 1.0;
+	line_marker.header.frame_id = "/map";
+	line_marker.header.stamp = ros::Time::now();
+	geometry_msgs::Point point1;
+	point1.z = 0.0;
+	geometry_msgs::Point point2;
+	point2.z = 0.0;
+	line_marker.points.clear();
+	std::vector<LineABC>::const_iterator it;
+	if(!lines->empty() && lines->size() >= 2){
+		for(it = lines->cbegin(); it != lines->cend();it++){
+			point1.x = it->x1;
+			point1.y = it->y1;
+			point2.x = it->x2;
+			point2.y = it->y2;
+			line_marker.points.push_back(point1);
+			line_marker.points.push_back(point2);
+		}
+		line_marker_pub2_.publish(line_marker);
+		line_marker.points.clear();
+	}
+	/*
+	else{
+		line_marker.points.clear();
+		line_marker_pub2.publish(line_marker);
+	}
+	*/
+
 }
 
 void ACleanMode::setNextModeDefault()
