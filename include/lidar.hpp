@@ -1,7 +1,9 @@
 #ifndef __LIDAR_H__
 #define __LIDAR_H__
 
+
 #include <nav_msgs/Odometry.h>
+#include "boost/thread.hpp"
 #include <ros/ros.h>
 #include <visualization_msgs/Marker.h>
 #include <sensor_msgs/LaserScan.h>
@@ -16,11 +18,23 @@ public:
 	Lidar();
 	~Lidar();
 
-	bool lidarObstcalDetected(double distance, int angle, double range);
-
 	bool lidarGetFitLine(int begin, int end, double range, double dis_lim, double *hine_angle, double *distance, bool is_left, bool is_align = false);
 
+	/*
+	 * @author Alvin Xie
+	 * @brief make use of lidar to judge x+ or x- is more closer to the wall
+	 * @return the closer direction of x to the wall
+	 * if x+ is closer, return 1, else return 0
+	 * */
 	int compLaneDistance();
+
+	/*
+	 * @author Alvin Xie
+	 * @brief make use of lidar to get the obstacle distance
+	 * @param dir:0-front 1-back 2-left 3-right
+	 *        range: detect range for one side in meters, it will detect both side.
+	 * @return the distance to the obstacle
+	 * */
 	double getObstacleDistance(uint8_t dir, double range);
 	void setScanLinearReady(uint8_t val);
 	void setScanOriginalReady(uint8_t val);
@@ -45,8 +59,6 @@ public:
 	void pubFitLineMarker(double a, double b, double c, double y1, double y2);
 
 	void motorCtrl(bool new_switch_);
-	void pubPointMarker(std::vector<Vector2<double>> *point);
-	bool getLidarWfTarget2(std::vector<Vector2<double>> &points);
 	void startAlign();
 	bool alignFinish();
 	float alignAngle(void)
@@ -121,7 +133,6 @@ private:
 };
 
 bool lidar_is_stuck();
-uint8_t lidar_get_status();
 
 extern Lidar lidar;
 #endif

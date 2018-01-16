@@ -4,8 +4,10 @@
 #include <event_manager.h>
 #include "dev.h"
 #include "robot.hpp"
-#include "arch.hpp"
 
+#include <move_type.hpp>
+#include <state.hpp>
+#include <mode.hpp>
 
 MoveTypeLinear::MoveTypeLinear() {
 	resetTriggeredValue();
@@ -42,7 +44,7 @@ bool MoveTypeLinear::isFinish()
 
 	auto p_clean_mode = dynamic_cast<ACleanMode*> (sp_mode_);
 
-	if (p_clean_mode->MoveTypeLinearIsFinish(this))
+	if (p_clean_mode->moveTypeLinearIsFinish(this))
 		return true;
 
 	if (isLinearForward())
@@ -142,8 +144,8 @@ void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 			p_clean_mode->plan_path_.pop_front();
 //			target_point_ = p_clean_mode->plan_path_.front();
 
-			ROS_INFO("%s,%d,next target_point(%d,%d), dir(%d)",
-					 __FUNCTION__,__LINE__,target_point_.toCell().x,target_point_.toCell().y, p_clean_mode->new_dir_);
+//			ROS_INFO("%s,%d,next target_point(%d,%d), dir(%d)",
+//					 __FUNCTION__,__LINE__,target_point_.toCell().x,target_point_.toCell().y, p_clean_mode->new_dir_);
 		}
 	}
 }
@@ -152,20 +154,20 @@ bool MoveTypeLinear::handleMoveBackEvent(ACleanMode *p_clean_mode)
 {
 	if (ev.bumper_triggered || ev.cliff_triggered)
 	{
-		p_clean_mode->actionLinearSaveBlocks();
+		p_clean_mode->moveTypeLinearSaveBlocks();
 		movement_i_ = mm_back;
 		sp_movement_.reset(new MovementBack(0.01, BACK_MAX_SPEED));
 		return true;
 	}
 	else if(ev.tilt_triggered){
-		p_clean_mode->actionLinearSaveBlocks();
+		p_clean_mode->moveTypeLinearSaveBlocks();
 		movement_i_ = mm_back;
 		sp_movement_.reset(new MovementBack(0.3, BACK_MAX_SPEED));
 		return true;
 	}
 	else if (ev.robot_slip)
 	{
-		p_clean_mode->actionLinearSaveBlocks();
+		p_clean_mode->moveTypeLinearSaveBlocks();
 		movement_i_ = mm_back;
 		sp_movement_.reset(new MovementBack(0.3, BACK_MIN_SPEED));
 		return true;

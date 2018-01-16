@@ -2,8 +2,8 @@
 // Created by lsy563193 on 12/5/17.
 //
 
-//#include "pp.h"
-#include <arch.hpp>
+#include <move_type.hpp>
+
 #include "wheel.hpp"
 IMoveType* IMovement::sp_mt_  = nullptr;
 

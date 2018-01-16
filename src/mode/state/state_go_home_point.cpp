@@ -2,8 +2,8 @@
 // Created by lsy563193 on 12/4/17.
 //
 
-#include "pp.h"
-#include <arch.hpp>
+#include <mode.hpp>
+#include "dev.h"
 #include <event_manager.h>
 
 void StateGoHomePoint::init(){
@@ -11,14 +11,13 @@ void StateGoHomePoint::init(){
 	wheel.stop();
 
 	wheel.setPidTargetSpeed(0, 0, REG_TYPE_LINEAR);
-	if (ev.remote_home)
+	if (sp_cm_->isRemoteGoHomePoint())
 		led.set_mode(LED_STEADY, LED_ORANGE);
 	else
 		led.set_mode(LED_STEADY, LED_GREEN);
 
 	ev.remote_home = false;
 	ev.battery_home = false;
-	speaker.play(VOICE_BACK_TO_CHARGER, true);
 }
 
 //

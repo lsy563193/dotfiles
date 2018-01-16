@@ -1,5 +1,9 @@
 #include <event_manager.h>
-#include "pp.h"
+#include <error.h>
+#include "serial.h"
+#include "ros/ros.h"
+#include "dev.h"
+#include "map.h"
 int g_bumper_cnt = 0;
 /* OBS */
 uint8_t g_cliff_all_cnt = 0;
@@ -568,7 +572,7 @@ void event_manager_reset_status(void)
 	/* Remote */
 	ev.remote_home = false;
 	ev.remote_spot = false;
-	ev.remote_wallfollow = false;
+	ev.remote_follow_wall = false;
 	ev.remote_direction_forward = false;
 	ev.remote_direction_left = false;
 	ev.remote_direction_right = false;

@@ -1,18 +1,23 @@
-#include "pp.h"
+#include "dev.h"
 
 #include <stdio.h>
 #include <time.h>
 #include <math.h>
 #include <nav_msgs/OccupancyGrid.h>
-#include <global.h>
 #include <std_srvs/SetBool.h>
-#include <pp.h>
 #include <odom.h>
 #include <event_manager.h>
+#include <robotbase.h>
 #include "lidar.hpp"
 #include "robot.hpp"
-#include "arch.hpp"
+#include "slam.h"
 
+
+#include "action.hpp"
+#include "movement.hpp"
+#include "move_type.hpp"
+#include "state.hpp"
+#include "mode.hpp"
 #include "std_srvs/Empty.h"
 
 const double CHASE_X = 0.107;
@@ -20,9 +25,28 @@ const double CHASE_X = 0.107;
 // For obs dynamic adjustment
 int OBS_adjust_count = 50;
 
+// Lock for odom coordinate
+boost::mutex odom_mutex;
+
 //extern pp::x900sensor sensor;
-robot::robot(std::string serial_port, int baudrate, std::string lidar_bumper_dev)/*:offset_angle_(0),saved_offset_angle_(0)*/
+robot::robot()/*:offset_angle_(0),saved_offset_angle_(0)*/
 {
+
+	robotbase_thread_stop = false;
+	send_stream_thread = true;
+
+	while (!serial.is_ready()) {
+		ROS_ERROR("serial not ready\n");
+	}
+
+	robotbase_reset_send_stream();
+
+	ROS_INFO("waiting robotbase awake ");
+	auto serial_receive_routine = new boost::thread(boost::bind(&Serial::receive_routine_cb, &serial));
+	auto robotbase_routine = new boost::thread(boost::bind(&robot::robotbase_routine_cb, this));
+	auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
+	auto speaker_play_routine = new boost::thread(boost::bind(&Speaker::playRoutine, &speaker));
+	is_robotbase_init = true;
 	// Subscribers.
 	sensor_sub_ = robot_nh_.subscribe("/robot_sensor", 10, &robot::sensorCb, this);
 	odom_sub_ = robot_nh_.subscribe("/odom", 1, &robot::robotOdomCb, this);
@@ -52,21 +76,10 @@ robot::robot(std::string serial_port, int baudrate, std::string lidar_bumper_dev
 	fit_line_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("fit_line_marker", 1);
 
 	visualizeMarkerInit();
-	is_sensor_ready_ = false;
-	is_tf_ready_ = false;
-
-	temp_spot_set_ = false;
 
 	resetCorrection();
 
 	setBaselinkFrameType(ODOM_POSITION_ODOM_ANGLE);
-
-	// Init for serial.
-	if (!serial.init(serial_port.c_str(), baudrate))
-	{
-		ROS_ERROR("%s %d: Serial init failed!!", __FUNCTION__, __LINE__);
-		return;
-	}
 
 #if VERIFY_CPU_ID
 	if (verify_cpu_id() < 0) {
@@ -80,24 +93,228 @@ robot::robot(std::string serial_port, int baudrate, std::string lidar_bumper_dev
 	}
 #endif
 
-	// Init for lidar bumper.
-	if (bumper.lidarBumperInit(lidar_bumper_dev.c_str()) == -1)
-		ROS_ERROR(" lidar bumper open fail!");
-
-	// Init for robotbase.
-	robotbase_init();
-
 	// Init for event manager.
 	event_manager_init();
 	auto event_manager_thread = new boost::thread(event_manager_thread_cb);
-	event_manager_thread->detach();
 	auto event_handler_thread = new boost::thread(event_handler_thread_cb);
-	event_handler_thread->detach();
-
-	// Init for core thread.
 	auto core_thread = new boost::thread(boost::bind(&robot::core_thread_cb,this));
-	core_thread->detach();
 	ROS_INFO("%s %d: robot init done!", __FUNCTION__, __LINE__);
+}
+
+void robot::robotbase_routine_cb()
+{
+	ROS_INFO("robotbase,\033[32m%s\033[0m,%d is up.",__FUNCTION__,__LINE__);
+
+	ros::Rate	r(_RATE);
+	ros::Time	cur_time, last_time;
+
+	//Debug
+	uint16_t error_count = 0;
+
+	nav_msgs::Odometry			odom_msg;
+	tf::TransformBroadcaster	odom_broad;
+	geometry_msgs::Quaternion	odom_quat;
+
+	geometry_msgs::TransformStamped	odom_trans;
+
+	ros::Publisher	odom_pub, sensor_pub;
+	ros::NodeHandle	robotsensor_node;
+	ros::NodeHandle	odom_node;
+
+	sensor_pub = robotsensor_node.advertise<pp::x900sensor>("/robot_sensor",1);
+	odom_pub = odom_node.advertise<nav_msgs::Odometry>("/odom",1);
+
+	cur_time = ros::Time::now();
+	last_time  = cur_time;
+	int16_t last_rcliff = 0, last_fcliff = 0, last_lcliff = 0;
+	int16_t last_x_acc = -1000, last_y_acc = -1000, last_z_acc = -1000;
+	while (ros::ok() && !robotbase_thread_stop)
+	{
+		/*--------data extrict from serial com--------*/
+		if(pthread_mutex_lock(&recev_lock)!=0)ROS_ERROR("robotbase pthread receive lock fail");
+		if(pthread_cond_wait(&recev_cond,&recev_lock)!=0)ROS_ERROR("robotbase pthread receive cond wait fail");
+		if(pthread_mutex_unlock(&recev_lock)!=0)ROS_WARN("robotbase pthread receive unlock fail");
+		//ros::spinOnce();
+
+		boost::mutex::scoped_lock(odom_mutex);
+
+		pp::x900sensor sensor;
+
+		// For wheel device.
+		wheel.setLeftWheelActualSpeed(static_cast<float>(static_cast<int16_t>((serial.receive_stream[REC_WHEEL_L_SPEED_H] << 8) | serial.receive_stream[REC_WHEEL_L_SPEED_L]) / 1000.0));
+		wheel.setRightWheelActualSpeed(static_cast<float>(static_cast<int16_t>((serial.receive_stream[REC_WHEEL_R_SPEED_H] << 8) | serial.receive_stream[REC_WHEEL_R_SPEED_L]) / 1000.0));
+		sensor.left_wheel_speed = wheel.getLeftWheelActualSpeed();
+		sensor.right_wheel_speed = wheel.getRightWheelActualSpeed();
+
+		wheel.setLeftWheelCliffStatus((serial.receive_stream[REC_WHEEL_CLIFF] & 0x02) != 0);
+		wheel.setRightWheelCliffStatus((serial.receive_stream[REC_WHEEL_CLIFF] & 0x01) != 0);
+		sensor.left_wheel_cliff = wheel.getLeftWheelCliffStatus();
+		sensor.right_wheel_cliff = wheel.getRightWheelCliffStatus();
+
+		// For gyro device.
+		gyro.setCalibration(serial.receive_stream[REC_GYRO_CALIBRATION] != 0);
+		sensor.gyro_calibration = gyro.getCalibration();
+
+		gyro.setAngle(static_cast<float>(static_cast<int16_t>((serial.receive_stream[REC_ANGLE_H] << 8) | serial.receive_stream[REC_ANGLE_L]) / 100.0 * -1));
+		sensor.angle = gyro.getAngle();
+		gyro.setAngleV(static_cast<float>(static_cast<int16_t>((serial.receive_stream[REC_ANGLE_V_H] << 8) | serial.receive_stream[REC_ANGLE_V_H]) / 100.0 * -1));
+		sensor.angle_v = gyro.getAngleV();
+
+		if (gyro.getXAcc() == -1000)
+			gyro.setXAcc(static_cast<int16_t>((serial.receive_stream[REC_XACC_H] << 8) | serial.receive_stream[REC_XACC_L]));
+		else
+			gyro.setXAcc(static_cast<int16_t>((static_cast<int16_t>((serial.receive_stream[REC_XACC_H] << 8)|serial.receive_stream[REC_XACC_L]) + gyro.getXAcc()) / 2));
+		if (gyro.getYAcc() == -1000)
+			gyro.setYAcc(static_cast<int16_t>((serial.receive_stream[REC_YACC_H] << 8) | serial.receive_stream[REC_YACC_L]));
+		else
+			gyro.setYAcc(static_cast<int16_t>((static_cast<int16_t>((serial.receive_stream[REC_YACC_H] << 8)|serial.receive_stream[REC_YACC_L]) + gyro.getYAcc()) / 2));
+		if (gyro.getZAcc() == -1000)
+			gyro.setZAcc(static_cast<int16_t>((serial.receive_stream[REC_ZACC_H] << 8) | serial.receive_stream[REC_ZACC_L]));
+		else
+			gyro.setZAcc(static_cast<int16_t>((static_cast<int16_t>((serial.receive_stream[REC_ZACC_H] << 8)|serial.receive_stream[REC_ZACC_L]) + gyro.getZAcc()) / 2));
+
+		sensor.x_acc = gyro.getXAcc();//in mG
+		sensor.y_acc = gyro.getYAcc();//in mG
+		sensor.z_acc = gyro.getZAcc();//in mG
+
+		// For wall sensor device.
+		wall.setLeft((serial.receive_stream[REC_L_WALL_H] << 8)| serial.receive_stream[REC_L_WALL_L]);
+		sensor.left_wall = wall.getLeft();
+		wall.setRight((serial.receive_stream[REC_R_WALL_H] << 8)| serial.receive_stream[REC_R_WALL_L]);
+		sensor.right_wall = wall.getRight();
+
+		// For obs sensor device.
+		obs.setLeft((serial.receive_stream[REC_L_OBS_H] << 8) | serial.receive_stream[REC_L_OBS_L]);
+		sensor.left_obs = obs.getLeft();
+		obs.setFront((serial.receive_stream[REC_F_OBS_H] << 8) | serial.receive_stream[REC_F_OBS_L]);
+		sensor.front_obs = obs.getFront();
+		obs.setRight((serial.receive_stream[REC_R_OBS_H] << 8) | serial.receive_stream[REC_R_OBS_L]);
+		sensor.right_obs = obs.getRight();
+
+		// For bumper device.
+		bumper.setLeft((serial.receive_stream[REC_BUMPER_AND_CLIFF] & 0x20) != 0);
+		bumper.setRight((serial.receive_stream[REC_BUMPER_AND_CLIFF] & 0x10) != 0);
+		sensor.left_bumper = bumper.getLeft();
+		sensor.right_bumper = bumper.getRight();
+
+		bumper.setLidarBumperStatus();
+		sensor.lidar_bumper = bumper.getLidarBumperStatus();
+		if (bumper.getLidarBumperStatus())
+		{
+			bumper.setLeft(true);
+			bumper.setRight(true);
+		}
+
+		// For cliff device.
+		cliff.setLeft((serial.receive_stream[REC_BUMPER_AND_CLIFF] & 0x04) != 0);
+		cliff.setFront((serial.receive_stream[REC_BUMPER_AND_CLIFF] & 0x02) != 0);
+		cliff.setRight((serial.receive_stream[REC_BUMPER_AND_CLIFF] & 0x01) != 0);
+		sensor.right_cliff = cliff.getRight();
+		sensor.front_cliff = cliff.getFront();
+		sensor.left_cliff = cliff.getLeft();
+
+		// For remote device.
+		remote.set(serial.receive_stream[REC_REMOTE]);
+		sensor.remote = remote.get();
+		if (remote.get() > 0)
+			ROS_INFO("%s %d: Remote received:%d", __FUNCTION__, __LINE__, remote.get());
+
+		// For rcon device.
+		c_rcon.setStatus((serial.receive_stream[REC_RCON_CHARGER_4] << 24) | (serial.receive_stream[REC_RCON_CHARGER_3] << 16)
+						 | (serial.receive_stream[REC_RCON_CHARGER_2] << 8) | serial.receive_stream[REC_RCON_CHARGER_1]);
+		sensor.rcon = c_rcon.getStatus();
+
+		// For virtual wall.
+		sensor.virtual_wall = (serial.receive_stream[REC_VISUAL_WALL_H] << 8)| serial.receive_stream[REC_VISUAL_WALL_L];
+
+		// For key device.
+		key.eliminate_jitter((serial.receive_stream[REC_MIX_BYTE] & 0x01) != 0);
+		sensor.key = key.getTriggerStatus();
+
+		// For timer device.
+		robot_timer.setPlanStatus(static_cast<uint8_t>((serial.receive_stream[REC_MIX_BYTE] >> 1) & 0x03));
+		sensor.plan = robot_timer.getPlanStatus();
+
+		// For water tank device.
+		sensor.water_tank = (serial.receive_stream[REC_MIX_BYTE] & 0x08) != 0;
+
+		// For charger device.
+		charger.setChargeStatus((serial.receive_stream[REC_MIX_BYTE] >> 4) & 0x07);
+		sensor.charge_status = charger.getChargeStatus();
+
+		// For battery device.
+		battery.setVoltage(serial.receive_stream[REC_BATTERY] * 10);
+		sensor.battery = static_cast<float>(battery.getVoltage() / 100.0);
+
+		// For vacuum device.
+		vacuum.setExceptionResumeStatus(serial.receive_stream[REC_VACUUM_EXCEPTION_RESUME]);
+		sensor.vacuum_exception_resume = vacuum.getExceptionResumeStatus();
+
+		// For over current checking.
+		vacuum.setOc((serial.receive_stream[REC_OC] & 0x01) != 0);
+		sensor.vacuum_oc = vacuum.getOc();
+		brush.setRightOc((serial.receive_stream[REC_OC] & 0x02) != 0);
+		sensor.right_brush_oc = brush.getRightOc();
+		brush.setMainOc((serial.receive_stream[REC_OC] & 0x04) != 0);
+		sensor.main_brush_oc = brush.getMainOc();
+		brush.setLeftOc((serial.receive_stream[REC_OC] & 0x08) != 0);
+		sensor.left_brush_oc = brush.getLeftOc();
+		wheel.setRightWheelOc((serial.receive_stream[REC_OC] & 0x10) != 0);
+		sensor.right_wheel_oc = wheel.getRightWheelOc();
+		wheel.setLeftWheelOc((serial.receive_stream[REC_OC] & 0x20) != 0);
+		sensor.left_wheel_oc = wheel.getLeftWheelOc();
+
+//		debug_received_stream();
+#if GYRO_DYNAMIC_ADJUSTMENT
+		if (wheel.getLeftWheelActualSpeed() < 0.01 && wheel.getRightWheelActualSpeed() < 0.01)
+			gyro.setDynamicOn();
+		else
+			gyro.setDynamicOff();
+		gyro.checkTilt();
+#endif
+		/*---------extrict end-------*/
+
+		pthread_mutex_lock(&serial_data_ready_mtx);
+		pthread_cond_broadcast(&serial_data_ready_cond);
+		pthread_mutex_unlock(&serial_data_ready_mtx);
+		sensor_pub.publish(sensor);
+
+		/*------------setting for odom and publish odom topic --------*/
+		odom.setMovingSpeed(static_cast<float>((wheel.getLeftWheelActualSpeed() + wheel.getRightWheelActualSpeed()) / 2.0));
+		odom.setAngle(gyro.getAngle());
+		odom.setAngleSpeed(gyro.getAngleV());
+		cur_time = ros::Time::now();
+		double angle_rad, dt;
+		angle_rad = deg_to_rad(odom.getAngle());
+		dt = (cur_time - last_time).toSec();
+		last_time = cur_time;
+		odom.setX(static_cast<float>(odom.getX() + (odom.getMovingSpeed() * cos(angle_rad)) * dt));
+		odom.setY(static_cast<float>(odom.getY() + (odom.getMovingSpeed() * sin(angle_rad)) * dt));
+		odom_quat = tf::createQuaternionMsgFromYaw(angle_rad);
+		odom_msg.header.stamp = cur_time;
+		odom_msg.header.frame_id = "odom";
+		odom_msg.child_frame_id = "base_link";
+		odom_msg.pose.pose.position.x = odom.getX();
+		odom_msg.pose.pose.position.y = odom.getY();
+		odom_msg.pose.pose.position.z = 0.0;
+		odom_msg.pose.pose.orientation = odom_quat;
+		odom_msg.twist.twist.linear.x = odom.getMovingSpeed();
+		odom_msg.twist.twist.linear.y = 0.0;
+		odom_msg.twist.twist.angular.z = odom.getAngleSpeed();
+		odom_pub.publish(odom_msg);
+
+		odom_trans.header.stamp = cur_time;
+		odom_trans.header.frame_id = "odom";
+		odom_trans.child_frame_id = "base_link";
+		odom_trans.transform.translation.x = odom.getX();
+		odom_trans.transform.translation.y = odom.getY();
+		odom_trans.transform.translation.z = 0.0;
+		odom_trans.transform.rotation = odom_quat;
+		odom_broad.sendTransform(odom_trans);
+		/*------publish end -----------*/
+
+	}//end while
+	ROS_INFO("\033[32m%s\033[0m,%d,robotbase thread exit",__FUNCTION__,__LINE__);
 }
 
 void robot::core_thread_cb()
@@ -395,8 +612,8 @@ bool robot::calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,bool is_
 	auto is_corner = check_corner(scan, para);
 	if(is_corner)
 	{
-		beeper.play_for_command(VALID);
-	ROS_WARN("is_corner = %d", is_corner);
+//		beeper.play_for_command(VALID);
+		ROS_WARN("is_corner = %d", is_corner);
 	}
 	for (int i = 359; i >= 0; i--) {
 		//ROS_INFO("i = %d", i);
@@ -975,13 +1192,12 @@ bool isYAxis(int dir)
 }
 
 
-Point32_t updatePosition()
+void updatePosition()
 {
 	auto pos_x = robot::instance()->getWorldPoseX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	auto pos_y = robot::instance()->getWorldPoseY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
 	setPosition(pos_x, pos_y);
 //	ROS_INFO("%s %d:", __FUNCTION__, __LINE__);
-	return getPosition();
 }
 
 

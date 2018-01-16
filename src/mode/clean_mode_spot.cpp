@@ -3,14 +3,12 @@
 //
 #include <map.h>
 #include "dev.h"
-#include "arch.hpp"
 #include "path_algorithm.h"
-#include "pp.h"
 #include "robot.hpp"
-
+#include "mode.hpp"
 CleanModeSpot::CleanModeSpot()
 {
-	//speaker.play(VOICE_CLEANING_SPOT,false);
+	speaker.play(VOICE_CLEANING_SPOT,false);
 	clean_path_algorithm_.reset(new SpotCleanPathAlgorithm());
 	go_home_path_algorithm_.reset();
 }
@@ -50,22 +48,6 @@ bool CleanModeSpot::mapMark(bool isMarkRobot)
 
 	passed_path_.clear();
 	return false;
-}
-
-bool CleanModeSpot::setNextAction()
-{
-	if (sp_state == state_init)
-		return ACleanMode::setNextAction();
-	else if (sp_state == state_clean)
-	{
-		PP_INFO();
-		if(plan_path_.size() >= 2)
-			action_i_ = ac_linear;
-		else
-			action_i_ = ac_null;
-	}
-	genNextAction();
-	return action_i_ != ac_null;
 }
 
 void CleanModeSpot::remoteClean(bool state_now, bool state_last)

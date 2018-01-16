@@ -13,14 +13,14 @@
 #include "path_algorithm.h"
 #include "boost/shared_ptr.hpp"
 
-
+#include "action.hpp"
 
 class IMoveType;
 class IMovement: public IAction,public ISpeedGovernor
 {
 public:
 //	virtual void adjustSpeed(int32_t&, int32_t&)=0;
-	virtual void run();
+	void run() override;
 	virtual bool isFinish()=0;
 //	static ACleanMode* sp_mode_;
 //	static boost::shared_ptr<IMoveType> sp_mt_;
@@ -62,13 +62,11 @@ protected:
 class MovementBack: public IMovement{
 public:
 	explicit MovementBack(float back_distance, uint8_t max_speed);
-	~MovementBack(){
-		//set_wheel.speed(1, 1);
-	}
-	void adjustSpeed(int32_t&, int32_t&);
+
+	void adjustSpeed(int32_t&, int32_t&) override;
 	bool isLidarStop();
 	void updateStartPose();
-	bool isFinish();
+	bool isFinish() override;
 
 private:
 	uint8_t max_speed_;
@@ -120,7 +118,6 @@ class IFollowWall{
 public:
 	explicit IFollowWall(bool is_left);
 
-	~IFollowWall() { /*set_wheel.speed(0,0);*/ };
 //	bool isFinish();
 	void reset_sp_turn_count() {
 		turn_count = 0;

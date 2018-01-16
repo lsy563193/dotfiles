@@ -2,7 +2,8 @@
 // Created by austin on 17-12-21.
 //
 
-#include "arch.hpp"
+#include <event_manager.h>
+#include "action.hpp"
 #include "dev.h"
 
 ActionCheckVacuum::ActionCheckVacuum()

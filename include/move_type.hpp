@@ -5,7 +5,8 @@
 #ifndef PP_MOVE_TYPE_HPP
 #define PP_MOVE_TYPE_HPP
 
-//#include "arch.hpp"
+#include "action.hpp"
+#include "movement.hpp"
 #include "boost/shared_ptr.hpp"
 //#include "mode.hpp"
 
@@ -95,13 +96,12 @@ public:
 private:
 	bool handleMoveBackEvent(ACleanMode* p_clean_mode);
 	bool is_left_{};
-	int16_t turn_angle{};
 	int16_t bumperTurnAngle();
 	int16_t cliffTurnAngle();
 	int16_t rconTurnAngle();
 	int16_t tiltTurnAngle();
 	int16_t obsTurnAngle();
-	int double_scale_10(double line_angle);
+	int16_t double_scale_10(double line_angle);
 	bool _lidarTurnAngle(bool is_left, int16_t &turn_angle, int lidar_min, int lidar_max, int angle_min, int angle_max,
 						 double dis_limit = 0.217);
 	bool lidarTurnAngle(int16_t &turn_angle);

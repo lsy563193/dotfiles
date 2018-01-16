@@ -1,8 +1,10 @@
 //
 // Created by root on 11/20/17.
 //
-#include "pp.h"
-
+#include <cliff.h>
+#include <bumper.h>
+#include "error.h"
+#include "speaker.h"
 Error error;
 
 void Error::alarm(void)

@@ -1,8 +1,10 @@
 //
 // Created by lsy563193 on 12/25/17.
 //
+
+#include <movement.hpp>
+#include <move_type.hpp>
 #include "dev.h"
-#include "arch.hpp"
 #include "robot.hpp"
 
 //Point32_t AMovementFollowPoint::tmp_target_{};

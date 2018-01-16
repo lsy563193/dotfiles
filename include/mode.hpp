@@ -5,10 +5,25 @@
 #ifndef PP_MODE_H_H
 #define PP_MODE_H_H
 
+#include "state.hpp"
 #include "path_algorithm.h"
 #include "event_manager.h"
 #include "boost/shared_ptr.hpp"
 //#include "move_type.hpp"
+
+
+#define ROS_INFO_FL() ROS_INFO("%s,%d",__FUNCTION__, __LINE__)
+#define PP_INFO() ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__)
+#define PP_WARN() ROS_WARN("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__)
+
+#define INFO_RED(X)		ROS_INFO("%s,%d,\033[1;40;31m"#X"\033[0m",__FUNCTION__,__LINE__)
+#define INFO_GREEN(X)	ROS_INFO("%s,%d,\033[1;40;32m"#X"\033[0m",__FUNCTION__,__LINE__)
+#define INFO_YELLOW(X)	ROS_INFO("%s,%d,\033[1;40;33m"#X"\033[0m",__FUNCTION__,__LINE__)
+#define INFO_BLUE(X)	ROS_INFO("%s,%d,\033[1;40;34m"#X"\033[0m",__FUNCTION__,__LINE__)
+#define INFO_PURPLE(X)	ROS_INFO("%s,%d,\033[1;40;35m"#X"\033[0m",__FUNCTION__,__LINE__)
+#define INFO_CYAN(X)	ROS_INFO("%s,%d,\033[1;40;36m"#X"\033[0m",__FUNCTION__,__LINE__)
+#define INFO_WHITE(X)	ROS_INFO("%s,%d,\033[1;40;37m"#X"\033[0m",__FUNCTION__,__LINE__)
+#define INFO_BLACK(X)	ROS_INFO("%s,%d,\033[1;40;30m"#X"\033[0m",__FUNCTION__,__LINE__)
 
 class Mode:public EventHandle
 {
@@ -81,7 +96,17 @@ public:
 	bool isExceptionTriggered();
 
 	static boost::shared_ptr<IAction> sp_action_;
+	bool isNavMode()
+	{
+		return isNavMode_;
+	}
+	void setNavMode(bool set)
+	{
+		isNavMode_ = set;
+	}
+
 protected:
+	bool isNavMode_{false};
 	int mode_i_{ac_null};
 private:
 
@@ -229,7 +254,6 @@ public:
 	bool isUpdateFinish();
 
 	void setNextModeDefault();
-	virtual bool setNextAction();
 	void genNextAction();
 
 	void setRconPos(float cd,float dist);
@@ -237,21 +261,150 @@ public:
 	virtual bool mapMark(bool isMarkRobot = true) = 0;
 	virtual bool markRealTime(){return false;};
 
+	bool isRemoteGoHomePoint();
 	void setHomePoint();
 	bool estimateChargerPos(uint32_t rcon_value);
 	void setRconPos(Point32_t pos);
 
 	Cells pointsGenerateCells(Points &targets);
 
-	virtual bool MoveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt);
-	virtual void actionFollowWallSaveBlocks();
-	virtual void actionLinearSaveBlocks();
-	void goHomePointUpdateAction();
+	// For move types
+	virtual bool moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt);
+	virtual void moveTypeFollowWallSaveBlocks();
+	virtual bool moveTypeLinearIsFinish(MoveTypeLinear *p_mt);
+	virtual void moveTypeLinearSaveBlocks();
 
-	virtual bool MoveTypeLinearIsFinish(MoveTypeLinear *p_mt);
+	// Handlers
+	void remoteHome(bool state_now, bool state_last) override ;
+	void cliffAll(bool state_now, bool state_last) override ;
+
+	// State null
+	bool checkEnterNullState();
+	// State init
+	bool isStateInit() const
+	{
+		return sp_state == state_init;
+	}
+	virtual bool isSwitchByEventInStateInit();
+	virtual bool updateActionInStateInit();
+	virtual void switchInStateInit();
+
+	// State clean
+	bool isStateClean() const
+	{
+		return sp_state == state_clean;
+	}
+	virtual bool isSwitchByEventInStateClean();
+	virtual bool updateActionInStateClean(){ return false;};
+	virtual void switchInStateClean();
+
+	// State go home point
+	bool isStateGoHomePoint() const
+	{
+		return sp_state == state_go_home_point;
+	}
+	virtual bool checkEnterGoHomePointState();
+	virtual bool isSwitchByEventInStateGoHomePoint();
+	virtual bool updateActionInStateGoHomePoint();
+	virtual void switchInStateGoHomePoint();
+
+	// State go to charger
+	bool isStateGoCharger() const
+	{
+		return sp_state == state_go_to_charger;
+	}
+	bool checkEnterGoCharger();
+	virtual bool isSwitchByEventInStateGoToCharger(){return false;};
+	virtual bool updateActionInStateGoToCharger();
+	virtual void switchInStateGoToCharger();
+
+	// State exception resume
+	bool isStateExceptionResume() const
+	{
+		return sp_state == state_exception_resume;
+	}
+	bool checkEnterExceptionResumeState();
+	virtual bool isSwitchByEventInStateExceptionResume();
+	virtual bool updateActionInStateExceptionResume();
+	virtual void switchInStateExceptionResume();
+
+	// State temp spot
+	bool isStateTmpSpot() const
+	{
+		return sp_state == state_spot;
+	}
+	virtual bool isSwitchByEventInStateSpot();
+	virtual bool updateActionInStateSpot();
+	virtual void switchInStateSpot(){};
+
+	// State trapped
+	bool isStateTrapped() const
+	{
+		return sp_state == state_trapped;
+	}
+	virtual bool isSwitchByEventInStateTrapped();
+	virtual bool updateActionInStateTrapped();
+	virtual void switchInStateTrapped();
+	bool trapped_time_out_{};
+
+	// State exploration
+	bool isStateExploration() const
+	{
+		return sp_state == state_exploration;
+	}
+	virtual bool isSwitchByEventInStateExploration();
+	virtual bool updateActionInStateExploration();
+	virtual void switchInStateExploration();
+
+	// State resume low battery charge
+	bool isStateResumeLowBatteryCharge() const
+	{
+		return sp_state == state_resume_low_battery_charge;
+	}
+	virtual bool isSwitchByEventInStateResumeLowBatteryCharge(){return false;};
+	virtual bool updateActionInStateResumeLowBatteryCharge(){};
+	virtual void switchInStateResumeLowBatteryCharge(){};
+
+	// State charge
+	bool isStateCharge() const
+	{
+		return sp_state == state_charge;
+	}
+	virtual bool isSwitchByEventInStateCharge(){return false;};
+	virtual bool updateActionStateCharge(){};
+	virtual void switchInStateCharge(){};
+
+	// State pause
+	bool isStatePause() const
+	{
+		return sp_state == state_pause;
+	}
+	virtual bool isSwitchByEventInStatePause(){return false;};
+	virtual bool updateActionInStatePause(){};
+	virtual void switchInStatePause(){};
+
+	State *sp_state{};
+	State* getState() const {
+		return sp_state;
+	};
+	void setState(State* state){
+		sp_state = state;
+	}
+
+	State *state_init = new StateInit();
+	State *state_clean = new StateClean();
+	State *state_exception_resume = new ExceptionResume();
+	State *state_exploration = new StateExploration();
+
 	int reach_cleaned_count_{};
 	Points passed_path_{};
 	Points plan_path_{};
+	Point32_t last_{};
+	bool found_temp_charger_{};
+	bool in_rcon_signal_range_{};
+	bool should_mark_charger_{};
+	bool should_mark_temp_charger_{};
+	bool found_charger_{};
 
 	int old_dir_{};
 	int new_dir_{};
@@ -261,157 +414,22 @@ public:
 	GridMap clean_map_{};
 	Point32_t charger_pos_{};//charger postion
 
-	// State null
-	bool checkEnterNullState();
-	// State init
-	virtual bool isSwitchByEventInStateInit();
-	virtual bool updateActionInStateInit();
-	virtual void switchInStateInit();
-
-	// State clean
-	virtual bool isSwitchByEventInStateClean();
-	virtual bool updateActionInStateClean(){ return false;};
-	virtual void switchInStateClean();
-
-	// State go home point
-	virtual bool checkEnterGoHomePointState();
-	virtual bool isSwitchByEventInStateGoHomePoint();
-	virtual bool updateActionInStateGoHomePoint();
-	virtual void switchInStateGoHomePoint();
-
-	// State go to charger
-	bool checkEnterGoCharger();
-	virtual bool isSwitchByEventInStateGoToCharger(){return false;};
-	virtual bool updateActionInStateGoToCharger();
-	virtual void switchInStateGoToCharger();
-
-	// State exception resume
-	bool checkEnterExceptionResumeState();
-	virtual bool isSwitchByEventInStateExceptionResume();
-	virtual bool updateActionInStateExceptionResume();
-	virtual void switchInStateExceptionResume();
-
-	// State temp spot
-	virtual bool isSwitchByEventInStateSpot();
-	virtual bool updateActionInStateSpot();
-	virtual void switchInStateSpot(){};
-
-	// State trapped
-	virtual bool isSwitchByEventInStateTrapped();
-	virtual bool updateActionInStateTrapped();
-	virtual void switchInStateTrapped();
-	bool trapped_time_out_{};
-
-	// State exploration
-	virtual bool isSwitchByEventInStateExploration();
-	virtual bool updateActionInStateExploration();
-	virtual void switchInStateExploration();
-
-	// State resume low battery charge
-	virtual bool isSwitchByEventInStateResumeLowBatteryCharge(){return false;};
-	virtual bool updateActionInStateResumeLowBatteryCharge(){};
-	virtual void switchInStateResumeLowBatteryCharge(){};
-
-	// State charge
-	virtual bool isSwitchByEventInStateCharge(){return false;};
-	virtual bool updateActionStateCharge(){};
-	virtual void switchInStateCharge(){};
-
-	// State pause
-	virtual bool isSwitchByEventInStatePause(){return false;};
-	virtual bool updateActionInStatePause(){};
-	virtual void switchInStatePause(){};
-
-	void remoteHome(bool state_now, bool state_last) override ;
-
-	void cliffAll(bool state_now, bool state_last) override ;
-
-	// todo: Delete below 4 function.
-	virtual bool isStateInitUpdateFinish(){};
-	virtual bool isStateCleanUpdateFinish(){};
-	virtual bool isStateGoToChargerUpdateFinish(){};
-
-public:
-	State* getState() const {
-		return sp_state;
-	};
-	void setState(State* state){
-		sp_state = state;
-	}
-	bool isStateInit() const
-	{
-		return sp_state == state_init;
-	}
-	bool isStateClean() const {
-		return sp_state == state_clean;
-	}
-	bool isStateGoHomePoint() const
-	{
-		return sp_state == state_go_home_point;
-	}
-	bool isStateGoCharger() const
-	{
-		return sp_state == state_go_to_charger;
-	}
-	bool isStateTrapped() const
-	{
-		return sp_state == state_trapped;
-	}
-	bool isStateTmpSpot() const
-	{
-		return sp_state == state_spot;
-	}
-	bool isStateExceptionResume() const
-	{
-		return sp_state == state_exception_resume;
-	}
-	bool isStateExploration() const
-	{
-		return sp_state == state_exploration;
-	}
-	bool isStateResumeLowBatteryCharge() const
-	{
-		return sp_state == state_resume_low_battery_charge;
-	}
-	bool isStateCharge() const
-	{
-		return sp_state == state_charge;
-	}
-	bool isStatePause() const
-	{
-		return sp_state == state_pause;
-	}
-	State *sp_state{};
-	State *state_init;
-	State *state_clean;
-	State *state_exception_resume;
-	State *state_exploration;
 protected:
 	std::vector<State*> sp_saved_states;
-	State *state_go_home_point;
-	State *state_go_to_charger;
-	State *state_charge;
-	State *state_trapped;
-	State *state_spot;
-	State *state_resume_low_battery_charge;
-	State *state_pause;
+	State *state_go_home_point = new StateGoHomePoint();
+	State *state_go_to_charger = new StateGoCharger();
+	State *state_charge = new StateCharge();
+	State *state_trapped = new StateTrapped();
+	State *state_spot =  new StateSpot();
+	State *state_resume_low_battery_charge = new StateResumeLowBatteryCharge();
+	State *state_pause = new StatePause();
 
-
-protected:
 	bool low_battery_charge_{};
 	bool moved_during_pause_{};
 	Points home_points_{};
 	Point32_t start_point_{0, 0, 0};
 	bool should_go_to_charger_{false};
-public:
-//	uint8_t saveFollowWall(bool is_left);
-//	std::vector<Cell_t> temp_fw_cells;
-	Point32_t last_{};
-	bool found_temp_charger_{};
-	bool in_rcon_signal_range_{};
-	bool should_mark_charger_{};
-	bool should_mark_temp_charger_{};
-	bool found_charger_{};
+	bool remote_go_home_point{false};
 };
 
 class CleanModeNav:public ACleanMode
@@ -423,11 +441,14 @@ public:
 	bool mapMark(bool isMarkRobot = true) override ;
 	bool isExit() override;
 
-	bool setNextAction() override;
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteClean(bool state_now, bool state_last) override ;
-//	void remoteHome(bool state_now, bool state_last) override ;
 	void remoteDirectionLeft(bool state_now, bool state_last) override ;
+	void remoteDirectionRight(bool state_now, bool state_last) override ;
+	void remoteDirectionForward(bool state_now, bool state_last) override ;
+	void remoteWallFollow(bool state_now, bool state_last) override ;
+	void remoteSpot(bool state_now, bool state_last) override;
+	void remoteMax(bool state_now, bool state_last) override;
 //	void cliffAll(bool state_now, bool state_last) override ;
 	void chargeDetect(bool state_now, bool state_last) override ;
 	void batteryHome(bool state_now, bool state_last) override ;
@@ -436,8 +457,6 @@ public:
 //	void overCurrentBrushRight(bool state_now, bool state_last);
 	void overCurrentWheelLeft(bool state_now, bool state_last) override;
 	void overCurrentWheelRight(bool state_now, bool state_last) override;
-	void remoteSpot(bool state_now, bool state_last) override;
-	void remoteMax(bool state_now, bool state_last) override;
 
 //	void overCurrentSuction(bool state_now, bool state_last);
 
@@ -486,11 +505,11 @@ public:
 	void switchInStateResumeLowBatteryCharge() override;
 
 	// State exception resume
-	bool isSwitchByEventInStateExceptionResume();
+	bool isSwitchByEventInStateExceptionResume() override;
 
 private:
-	bool MoveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
-	bool MoveTypeLinearIsFinish(MoveTypeLinear *p_mt) override;
+	bool moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
+	bool moveTypeLinearIsFinish(MoveTypeLinear *p_mt) override;
 
 	bool has_aligned_and_open_slam_{false};
 	float paused_odom_angle_{0};
@@ -512,7 +531,6 @@ public:
 	bool mapMark(bool isMarkRobot = true) override;
 	bool markRealTime() override;
 //	bool isExit() override;
-	bool setNextAction() override;
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteClean(bool state_now, bool state_last) override ;
 //	void cliffAll(bool state_now, bool state_last) override ;
@@ -530,7 +548,7 @@ public:
 	void switchInStateGoHomePoint() override;
 	void switchInStateGoToCharger() override;
 
-	bool MoveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
+	bool moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
 };
 
 class CleanModeFollowWall:public ACleanMode {
@@ -548,7 +566,7 @@ public:
 	void switchInStateClean() override;
 	bool generatePath(GridMap &map, const Point32_t &curr, const int &last_dir, Points &targets);
 
-	bool MoveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) override ;
+	bool moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) override ;
 
 	bool updateActionInStateClean()override ;
 
@@ -564,7 +582,6 @@ public:
 
 	bool mapMark(bool isMarkRobot = true) override;
 //	bool isExit() override;
-	bool setNextAction() override;
 //	void cliffAll(bool state_now, bool state_last) override;
 	void remoteClean(bool state_now, bool state_last) override;
 	void keyClean(bool state_now, bool state_last) override;
@@ -586,11 +603,9 @@ public:
 
 	bool isFinish() override;
 
-	bool setNextAction() override;
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteMax(bool state_now, bool state_last) override ;
 	void remoteDirectionForward(bool state_now, bool state_last) override ;
-	bool updateActionInStateClean(){};
 
 };
 #endif //PP_MODE_H_H

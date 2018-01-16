@@ -2,16 +2,15 @@
 // Created by lsy563193 on 12/4/17.
 //
 
-#include <pp.h>
-#include <arch.hpp>
+#include <dev.h>
 #include <event_manager.h>
-
+#include "mode.hpp"
 boost::shared_ptr<IAction> Mode::sp_action_ = nullptr;
 //IAction* Mode::sp_action_ = nullptr;
 
 void Mode::run()
 {
-	ROS_INFO("%s %d: Mode start running.", __FUNCTION__, __LINE__);
+//	ROS_INFO("%s %d: Mode start running.", __FUNCTION__, __LINE__);
 	bool eh_status_now = false, eh_status_last = false;
 
 	while (ros::ok())

@@ -1,4 +1,8 @@
-#include "pp.h"
+#include <gyro.h>
+#include <event_manager.h>
+#include "map.h"
+#include "robot.hpp"
+#include "event_manager.h"
 
 GridMap fw_map;
 GridMap slam_grid_map;
@@ -405,9 +409,19 @@ void GridMap::cellToWorld(double &worldX, double &worldY, int16_t &cellX, int16_
 
 uint8_t GridMap::setLidar()
 {
-#if LIDAR_MARKER
-	//MotionManage::s_lidar->lidarMarker(true);
-#endif
+	if (temp_lidar_cells.empty())
+		return 0;
+
+	uint8_t block_count = 0;
+	std::string msg = "cell:";
+	for(auto& cell : temp_lidar_cells){
+		msg += "(" + std::to_string(cell.x) + "," + std::to_string(cell.y) + ")";
+		setCell(CLEAN_MAP,cell.x,cell.y, BLOCKED_LIDAR);
+		block_count++;
+	}
+	temp_lidar_cells.clear();
+	ROS_INFO("%s,%d: Current(%d, %d), mapMark \033[32m%s\033[0m",__FUNCTION__, __LINE__, getPosition().toCell().x, getPosition().toCell().y, msg.c_str());
+	return block_count;
 }
 
 uint8_t GridMap::setObs()
@@ -512,6 +526,40 @@ uint8_t GridMap::setRcon()
 	return block_count;
 }
 
+uint8_t GridMap::setFollowWall(bool is_left,const Points& passed_path)
+{
+
+	uint8_t block_count = 0;
+	if (!passed_path.empty())
+	{
+		std::string msg = "cell:";
+		auto dy = is_left ? 2 : -2;
+		for(auto& point : passed_path){
+			if(getCell(CLEAN_MAP,point.toCell().x,point.toCell().y) != BLOCKED_RCON){
+				auto block_cell = point.getRelative(0, dy * CELL_SIZE).toCell();
+				msg += "(" + std::to_string(block_cell.x) + "," + std::to_string(block_cell.y) + ")";
+				setCell(CLEAN_MAP,block_cell.x,block_cell.y, BLOCKED_FW);
+				block_count++;
+			}
+		}
+		ROS_INFO("%s,%d: Current(%d, %d), \033[32m mapMark CLEAN_MAP %s\033[0m",__FUNCTION__, __LINE__, getPosition().toCell().x, getPosition().toCell().y, msg.c_str());
+	}
+}
+
+uint8_t GridMap::setBlocks()
+{
+	uint8_t block_count = 0;
+	block_count += setObs();
+	block_count += setBumper();
+	block_count += setRcon();
+	block_count += setCliff();
+	block_count += setTilt();
+	block_count += setSlip();
+	block_count += setLidar();
+
+	return block_count;
+}
+
 uint8_t GridMap::saveChargerArea(const Cell_t home_point)
 {
 	//before set BLOCKED_RCON, clean BLOCKED_RCON in first.
@@ -542,26 +590,6 @@ uint8_t GridMap::saveChargerArea(const Cell_t home_point)
 	}
 	ROS_INFO("%s,%d: set charge area:\033[32m%s\033[0m",__FUNCTION__,__LINE__,print_msg.c_str());
 	return block_count;
-}
-
-uint8_t GridMap::setFollowWall(bool is_left,const Points& passed_path)
-{
-
-	uint8_t block_count = 0;
-	if (!passed_path.empty())
-	{
-		std::string msg = "cell:";
-		auto dy = is_left ? 2 : -2;
-		for(auto& point : passed_path){
-			if(getCell(CLEAN_MAP,point.toCell().x,point.toCell().y) != BLOCKED_RCON){
-				auto block_cell = point.getRelative(0, dy * CELL_SIZE).toCell();
-				msg += "(" + std::to_string(block_cell.x) + "," + std::to_string(block_cell.y) + ")";
-				setCell(CLEAN_MAP,block_cell.x,block_cell.y, BLOCKED_FW);
-				block_count++;
-			}
-		}
-		ROS_INFO("%s,%d: Current(%d, %d), \033[32m mapMark CLEAN_MAP %s\033[0m",__FUNCTION__, __LINE__, getPosition().toCell().x, getPosition().toCell().y, msg.c_str());
-	}
 }
 
 uint8_t GridMap::saveSlip()
@@ -656,11 +684,45 @@ uint8_t GridMap::saveObs()
 	return static_cast<uint8_t >(d_cells.size());*/
 }
 
+uint8_t GridMap::saveLidar()
+{
+	auto lidar_trig = ev.lidar_triggered;
+	if (!lidar_trig)
+		return 0;
+
+	std::vector<Cell_t> d_cells;
+	if (lidar_trig & BLOCK_FRONT){
+		d_cells.push_back({2,-1});
+		d_cells.push_back({2, 0});
+		d_cells.push_back({2, 1});
+	}
+	if (lidar_trig & BLOCK_LEFT){
+		d_cells.push_back({2, 1});
+		d_cells.push_back({2, 2});
+	}
+	if (lidar_trig & BLOCK_RIGHT){
+		d_cells.push_back({2,-1});
+		d_cells.push_back({2,-2});
+	}
+
+	std::string msg = "cells:";
+	for(auto& d_cell : d_cells)
+	{
+		auto cell = getPosition().getCenterRelative(d_cell.x * CELL_SIZE, d_cell.y * CELL_SIZE).toCell();
+		//robot_to_point(robot::instance()->getWorldPoseAngle(), d_cell.y * CELL_SIZE, d_cell.x * CELL_SIZE, &x2, &y2);
+		//ROS_WARN("%s %d: d_cell(%d, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
+		//			, __FUNCTION__, __LINE__, d_cell.x, d_cell.y, robot::instance()->getWorldPoseAngle(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
+		temp_lidar_cells.push_back(cell);
+		msg += "[" + std::to_string(d_cell.x) + "," + std::to_string(d_cell.y) + "](" + std::to_string(cell.x) + "," + std::to_string(cell.y) + ")";
+	}
+	ROS_INFO("%s,%d: Current(%d, %d), save \033[32m%s\033[0m",__FUNCTION__, __LINE__, getPosition().toCell().x, getPosition().toCell().y, msg.c_str());
+	return static_cast<uint8_t >(d_cells.size());
+}
+
 uint8_t GridMap::saveCliff()
 {
 	auto cliff_trig = ev.cliff_triggered/*cliff.getStatus()*/;
 	if (! cliff_trig)
-		// During self check.
 		return 0;
 
 	std::vector<Cell_t> d_cells;
@@ -842,21 +904,8 @@ uint8_t GridMap::saveBlocks(bool is_linear, bool is_save_rcon)
 	block_count += saveObs();
 	block_count += saveSlip();
 	block_count += saveTilt();
+	block_count += saveLidar();
 //	block_count += save_follow_wall();
-
-	return block_count;
-}
-
-uint8_t GridMap::setBlocks()
-{
-	uint8_t block_count = 0;
-	block_count += setObs();
-	block_count += setBumper();
-	block_count += setRcon();
-	block_count += setCliff();
-	block_count += setTilt();
-	block_count += setSlip();
-	block_count += setLidar();
 
 	return block_count;
 }

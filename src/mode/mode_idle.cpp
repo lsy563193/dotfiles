@@ -1,7 +1,7 @@
 #include "event_manager.h"
-#include "pp.h"
-#include "arch.hpp"
+#include "dev.h"
 #include "error.h"
+#include "mode.hpp"
 
 ModeIdle::ModeIdle()
 {
@@ -47,7 +47,7 @@ bool ModeIdle::isExit()
 		return true;
 	}
 
-	if(ev.remote_wallfollow)
+	if(ev.remote_follow_wall)
 	{
 		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
 		setNextMode(cm_wall_follow);
@@ -187,7 +187,7 @@ void ModeIdle::remoteKeyHandler(bool state_now, bool state_last)
 			}
 			case REMOTE_WALL_FOLLOW:
 			{
-				ev.remote_wallfollow = true;
+				ev.remote_follow_wall = true;
 				break;
 			}
 			default: // REMOTE_PLAN/REMOTE_MAX is not handled here.

@@ -36,7 +36,7 @@ typedef struct{
 class robot
 {
 public:
-	robot(std::string serial_port, int baudrate, std::string lidar_bumper_dev);
+	robot();
 	~robot();
 
 	static robot *instance();
@@ -53,7 +53,7 @@ public:
 	void pubTmpTarget(const Point32_t &point,bool is_virtual=false);
 	void setCleanMapMarkers(int16_t x, int16_t y, CellState type);
 	void pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path);
-
+	void robotbase_routine_cb();
 	void core_thread_cb();
 	// Service caller functions.
 	bool lidarMotorCtrl(bool switch_);
@@ -163,11 +163,11 @@ private:
 	Baselink_Frame_Type baselink_frame_type_;
 	boost::mutex baselink_frame_type_mutex_;
 
-	bool	is_sensor_ready_;
+	bool	is_sensor_ready_{};
 
-	bool	is_tf_ready_;
+	bool	is_tf_ready_{};
 
-	bool temp_spot_set_;
+	bool temp_spot_set_{};
 /*
 	// TODO: Delete these offset variables.
 	boost::mutex offset_angle_metux_;
@@ -347,7 +347,7 @@ bool isXAxis(int dir);
 
 bool isYAxis(int dir);
 
-Point32_t updatePosition();
+void updatePosition();
 
 Mode *getNextMode(int next_mode_i_);
 void setPosition(int32_t x, int32_t y);

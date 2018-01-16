@@ -19,7 +19,7 @@ FILE(GLOB PP_SRC
 	src/dev/robot_timer.cpp
 	src/dev/remote.cpp
 	src/dev/obs.cpp
-	src/dev/led.cpp
+				src/dev/key_led.cpp
 	src/dev/beep.cpp
 	src/dev/charger.cpp
 	src/dev/wall_follow.cpp

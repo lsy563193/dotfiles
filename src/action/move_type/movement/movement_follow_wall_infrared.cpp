@@ -6,9 +6,8 @@
 // Created by lsy563193 on 11/29/17.
 //
 
-//#include "pp.h"
+#include <movement.hpp>
 #include "dev.h"
-#include "arch.hpp"
 
 
 IFollowWall::IFollowWall(bool is_left) : previous_(0), seen_charger_counter(0), is_left_(is_left)
@@ -304,7 +303,7 @@ bool IFollowWall::sp_turn_over(const Cell_t &curr) {
 
 //bool IFollowWall::isFinish() {
 //	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mt_->sp_mode_);
-//	return p_clean_mode->MoveTypeFollowWallIsFinish() || shouldMoveBack() || shouldTurn();
+//	return p_clean_mode->moveTypeFollowWallIsFinish() || shouldMoveBack() || shouldTurn();
 //	return isNewLineReach() || /*isClosure(1) ||*/ shouldMoveBack() || shouldTurn()
 //					|| isBlockCleared() || isOverOriginLine();
 //}

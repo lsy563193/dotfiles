@@ -5,9 +5,7 @@
 #include <event_manager.h>
 #include "dev.h"
 #include <error.h>
-#include <global.h>
-#include "arch.hpp"
-
+#include "mode.hpp"
 CleanModeTest::CleanModeTest()
 {
 	ROS_WARN("%s %d: Entering Test mode\n=========================" , __FUNCTION__, __LINE__);
@@ -34,12 +32,10 @@ bool CleanModeTest::isFinish()
 	if (!sp_action_->isFinish() && !ev.remote_direction_back && !ev.remote_direction_forward)
 		return false;
 
-	setNextAction();
-
 	return false;
 }
 
-bool CleanModeTest::setNextAction()
+/*bool CleanModeTest::setNextAction()
 {
 	if (ev.remote_direction_back)
 	{
@@ -79,7 +75,7 @@ bool CleanModeTest::setNextAction()
 	genNextAction();
 	PP_INFO();
 	return action_i_ != ac_null;
-}
+}*/
 
 void CleanModeTest::keyClean(bool state_now, bool state_last)
 {

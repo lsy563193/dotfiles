@@ -1,7 +1,10 @@
 //
 // Created by lsy563193 on 5/10/17.
 //
-#include "pp.h"
+#include <robot.hpp>
+#include <error.h>
+#include "event_manager.h"
+#include "slam.h"
 Slam slam;
 
 Slam::Slam():is_map_ready_(false)

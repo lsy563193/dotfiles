@@ -5,7 +5,7 @@
 #include <robot.hpp>
 #include <slam.h>
 #include "dev.h"
-#include "arch.hpp"
+#include "action.hpp"
 
 ActionOpenSlam::ActionOpenSlam() {
 	ROS_INFO("%s %d: Enter action open slam.", __FUNCTION__, __LINE__);

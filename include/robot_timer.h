@@ -7,7 +7,6 @@
 
 #include "ros/ros.h"
 
-//#include "pp.h"
 class Timer {
 public:
 	Timer() {

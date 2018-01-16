@@ -2,6 +2,8 @@
 #define __GYRO_H__
 
 //for tilt detct
+#include <cstdint>
+
 #define TILT_COUNT_REACH			50
 #define DIF_TILT_X_VAL				170
 #define DIF_TILT_Y_VAL				170

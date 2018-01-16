@@ -3,9 +3,9 @@
 //
 
 #include <error.h>
-#include <pp.h>
 #include "dev.h"
-#include "arch.hpp"
+#include "robotbase.h"
+#include "mode.hpp"
 
 ModeSleep::ModeSleep()
 {

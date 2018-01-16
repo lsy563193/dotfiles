@@ -3,8 +3,8 @@
 //
 
 #include <event_manager.h>
-#include <pp.h>
-#include <arch.hpp>
+#include <dev.h>
+#include "mode.hpp"
 
 ModeGoToCharger::ModeGoToCharger()
 {

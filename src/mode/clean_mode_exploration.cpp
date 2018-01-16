@@ -2,10 +2,11 @@
 // Created by pierre on 17-12-20.
 //
 #include <event_manager.h>
-#include <pp.h>
+#include <dev.h>
 #include <error.h>
 #include <map.h>
-#include "arch.hpp"
+
+#include "mode.hpp"
 
 CleanModeExploration::CleanModeExploration()
 {
@@ -33,23 +34,6 @@ bool CleanModeExploration::mapMark(bool isMarkRobot)
 	return false;
 }
 
-bool CleanModeExploration::setNextAction()
-{
-	PP_INFO();
-	//todo action convert
-	if (sp_state == state_init)
-		return ACleanMode::setNextAction();
-	else if(sp_state == state_exploration)
-		action_i_ = ac_linear;
-	else if(sp_state == state_go_to_charger)
-		action_i_ = ac_go_to_charger;
-	else if(sp_state == state_go_home_point)
-		action_i_ = ac_linear;
-	else
-		action_i_ = ac_null;
-	genNextAction();
-	return action_i_ != ac_null;
-}
 // event
 void CleanModeExploration::keyClean(bool state_now, bool state_last) {
 	ROS_WARN("%s %d: key clean.", __FUNCTION__, __LINE__);
@@ -141,8 +125,7 @@ void CleanModeExploration::switchInStateGoHomePoint() {
 	sp_state = nullptr;
 }
 
-
-bool CleanModeExploration::MoveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) {
+bool CleanModeExploration::moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) {
 	return p_mt->isBlockCleared(clean_map_, passed_path_);
 }
 

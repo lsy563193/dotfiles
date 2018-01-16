@@ -1,13 +1,12 @@
 //
 // Created by root on 11/20/17.
 //
-#include "pp.h"
 #include "charger.h"
 #include "serial.h"
 
 Charger charger;
 /*-------------------------------Check if at charger stub------------------------------------*/
-bool Charger::isOnStub(void) {
+bool Charger::isOnStub() {
 	// 1: On charger stub and charging.
 	// 2: On charger stub but not charging.
 	if (status_ == 2 || status_ == 1)
@@ -16,18 +15,18 @@ bool Charger::isOnStub(void) {
 		return false;
 }
 
-bool Charger::isDirected(void) {
+bool Charger::isDirected() {
 	// 3: Direct connect to charge line but not charging.
 	// 4: Direct connect to charge line and charging.
 	return status_ == 3 || status_ == 4;
 }
 
-void Charger::setStart(void) {
+void Charger::setStart() {
 	// This function will turn on the charging function.
 	serial.setSendData(CTL_CHARGER, 0x01);
 }
 
-void Charger::setStop(void) {
+void Charger::setStop() {
 	// Set the flag to false so that it can quit charger mode_.
 	serial.setSendData(CTL_CHARGER, 0x00);
 }

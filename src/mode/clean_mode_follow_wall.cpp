@@ -2,11 +2,10 @@
 // Created by lsy563193 on 12/9/17.
 //
 
-#include <pp.h>
+#include <dev.h>
 #include "robot.hpp"
-#include "arch.hpp"
 #include "dev.h"
-
+#include "mode.hpp"
 Cells path_points;
 
 CleanModeFollowWall::CleanModeFollowWall()
@@ -188,7 +187,7 @@ bool CleanModeFollowWall::updateActionInStateClean()
 	return true;
 }
 
-bool CleanModeFollowWall::MoveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) {
+bool CleanModeFollowWall::moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) {
 //	ROS_INFO("reach_cleaned_count_ = %d, reach_cleaned_count_save = %d", reach_cleaned_count_, reach_cleaned_count_save);
 	if(reach_cleaned_count_ > reach_cleaned_count_save)
 	{
@@ -201,6 +200,7 @@ bool CleanModeFollowWall::MoveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) {
 void CleanModeFollowWall::switchInStateClean() {
 	sp_state = state_go_home_point;
 	ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_points_.size());
+	speaker.play(VOICE_BACK_TO_CHARGER, true);
 	go_home_path_algorithm_.reset();
 	go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_, start_point_));
 	sp_state->init();

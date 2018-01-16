@@ -1,9 +1,11 @@
 // // Created by lsy563193 on 12/5/17.  //
 
+#include <movement.hpp>
+#include <move_type.hpp>
+#include <state.hpp>
+#include <mode.hpp>
 #include <event_manager.h>
 #include <robot.hpp>
-//#include "pp.h"
-#include "arch.hpp"
 #include "dev.h"
 //CELL_COUNT_MUL*1.5
 MovementFollowPointLinear::MovementFollowPointLinear()
@@ -53,11 +55,7 @@ Point32_t MovementFollowPointLinear::calcTmpTarget()
 
 bool MovementFollowPointLinear::isFinish()
 {
-
-	if(AMovementFollowPoint::isFinish())
-		return true;
-
-	return sp_mt_->shouldMoveBack();
+	return AMovementFollowPoint::isFinish() || sp_mt_->shouldMoveBack() || sp_mt_->isLidarStop();
 }
 
 bool MovementFollowPointLinear::is_near()
