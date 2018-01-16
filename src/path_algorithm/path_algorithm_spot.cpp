@@ -25,7 +25,7 @@ SpotCleanPathAlgorithm::~SpotCleanPathAlgorithm()
 	initVariables(0,{0,0});
 }
 
-bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, const int &last_dir, Points &plan_path)
+bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &plan_path)
 {
 	if(!ev.bumper_triggered && !ev.cliff_triggered && !ev.rcon_triggered){
 		if(!spot_running_){
@@ -48,11 +48,11 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, c
 	else if(ev.bumper_triggered || ev.cliff_triggered || ev.rcon_triggered)
 	{
 		Points new_plan_path;
-		Point32_t cur = curr;
+		Point_t cur = curr;
 		if(plan_path.size() >= 2)
 		{
 			/*---first find shortest path---*/
-			Point32_t next_point;
+			Point_t next_point;
 			do{
 				plan_path.pop_front();
 				next_point = plan_path.front();
@@ -71,7 +71,7 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, c
 				}
 
 				new_plan_path.clear();
-				for(Point32_t point:shortest_path){
+				for(Point_t point:shortest_path){
 					ROS_INFO("\033[32m first find short path:(%d,%d)\033[0m",point.toCell().x,point.toCell().y);
 					new_plan_path.push_back(point);
 				}
@@ -118,7 +118,7 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, c
 						continue;
 					}
 					ROS_INFO("target (%d,%d)",next_point.toCell().x,next_point.toCell().y);
-					for(Point32_t point:shortest_path){
+					for(Point_t point:shortest_path){
 						ROS_INFO("\033[32m After first find, short path:(%d,%d)\033[0m",point.toCell().x,point.toCell().y);
 						new_plan_path.push_back(point);
 					}
@@ -145,7 +145,7 @@ void SpotCleanPathAlgorithm::initVariables(float radius,Cell_t cur_cell)
 //	ROS_INFO();
 	spot_running_ = false;
 	const int abit = 3;
-	int16_t half_cell_num = (int16_t)ceil(radius*1000/CELL_SIZE);
+	int16_t half_cell_num = (int16_t)ceil(radius/CELL_SIZE);
 	min_corner_.x = cur_cell.x - half_cell_num - abit;
 	min_corner_.y = cur_cell.y - half_cell_num - abit;
 	max_corner_.x = cur_cell.x + half_cell_num + abit;
@@ -163,7 +163,7 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float radius,Cells *targ
 	uint16_t spiral_count = 1;//number of spiral count
 	uint16_t cell_number = 1;//cell counter
 	uint16_t step = 1;
-	uint16_t spiral_number = (uint16_t) ceil(radius * 1000 *2  / (CELL_SIZE))/step;//number of spiral
+	uint16_t spiral_number = (uint16_t) ceil(radius * 2  / (CELL_SIZE))/step;//number of spiral
 	ROS_INFO( "%s,%d,number of spiral" "\033[36m" " %d" "\033[0m",__FUNCTION__,__LINE__,spiral_number);
 	if (sp_type == CLOCKWISE)
 	{

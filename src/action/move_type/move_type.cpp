@@ -119,7 +119,7 @@ bool IMoveType::isFinish() {
 	else if (!curr.isCellAndAngleEqual(p_mode->last_))
 	{
 		p_mode->last_ = curr;
-		auto loc = std::find_if(p_mode->passed_path_.begin(), p_mode->passed_path_.end(), [&](Point32_t it) {
+		auto loc = std::find_if(p_mode->passed_path_.begin(), p_mode->passed_path_.end(), [&](Point_t it) {
 			return curr.isCellAndAngleEqual(it);
 		});
 		auto distance = std::distance(loc, p_mode->passed_path_.end());

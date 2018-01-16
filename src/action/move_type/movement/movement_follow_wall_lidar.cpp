@@ -28,7 +28,7 @@ MovementFollowWallLidar::MovementFollowWallLidar(bool is_left)
 }
 
 typedef struct{
-	int32_t r;
+	float r;
 	Points getPoints(int precision);
 }Circle;
 
@@ -39,7 +39,7 @@ Points Circle::getPoints(int precision)
 	for(auto i=0; i<=precision; i++)
 	{
 		auto y = (this->r*2)/precision*i;
-		auto x = static_cast<int32_t>(sqrt(pow(this->r, 2) - pow(y - this->r, 2)));
+		auto x = sqrt(pow(this->r, 2) - pow(y - this->r, 2));
 		printf("x,y(%d,%d) ",x, y);
 		points1.push_back({x,y,0});
 		points2.push_front({-x,y,0});
@@ -63,7 +63,7 @@ Points MovementFollowWallLidar::_calcTmpTarget() {
 	return tmp_targets;
 }
 
-Point32_t MovementFollowWallLidar::calcTmpTarget() {
+Point_t MovementFollowWallLidar::calcTmpTarget() {
 
 //	ROS_WARN("curr_point(%d,%d)", getPosition().x, getPosition().y);
 	auto path_head = robot::instance()->getTempTarget();
@@ -83,7 +83,7 @@ Point32_t MovementFollowWallLidar::calcTmpTarget() {
 //		INFO_PURPLE("p_tmp_targets_->empty(), use virtual target");
 	}
 
-	if (p_tmp_targets_->front().isNearTo(getPosition(), CELL_COUNT_MUL * 0.75)){
+	if (p_tmp_targets_->front().isNearTo(getPosition(), CELL_SIZE * 0.75)){
 		p_tmp_targets_->pop_front();
 //		ROS_WARN("near pop target(%d)",p_tmp_targets_->size());
 	}

@@ -68,7 +68,7 @@ ACleanMode::~ACleanMode() {
 	}
 
 	auto cleaned_count = clean_map_.getCleanedArea();
-	auto map_area = cleaned_count * (CELL_SIZE * 0.001) * (CELL_SIZE * 0.001);
+	auto map_area = cleaned_count * CELL_SIZE * CELL_SIZE;
 	ROS_INFO("%s %d: Cleaned area = \033[32m%.2fm2\033[0m, cleaning time: \033[32m%d(s) %.2f(min)\033[0m, cleaning speed: \033[32m%.2f(m2/min)\033[0m.",
 			 __FUNCTION__, __LINE__, map_area, robot_timer.getWorkTime(),
 			 static_cast<float>(robot_timer.getWorkTime()) / 60, map_area / (static_cast<float>(robot_timer.getWorkTime()) / 60));
@@ -238,7 +238,7 @@ void ACleanMode::genNextAction()
 	INFO_GREEN(after genNextAction);
 }
 
-void ACleanMode::setRconPos(Point32_t pos)
+void ACleanMode::setRconPos(Point_t pos)
 {
 		charger_pos_ = pos;
 }
@@ -463,7 +463,7 @@ Cells ACleanMode::pointsGenerateCells(Points &targets)
 {
 //	displayCellPath(targets);
 	Cells path{};
-	for(const Point32_t& point : targets) {
+	for(const Point_t& point : targets) {
 		path.push_back(point.toCell());
 	}
 	return path;

@@ -54,7 +54,7 @@ bool CleanModeFollowWall::mapMark(bool isMarkRobot) {
 		clean_map_.setBlocks();
 		ROS_ERROR("-------------------------------------------------------");
 		auto start = *passed_path_.begin();
-		passed_path_.erase(std::remove_if(passed_path_.begin(),passed_path_.end(),[&start](Point32_t& it){
+		passed_path_.erase(std::remove_if(passed_path_.begin(),passed_path_.end(),[&start](Point_t& it){
 			return it.toCell() == start.toCell();
 		}),passed_path_.end());
 		clean_path_algorithm_->displayCellPath(pointsGenerateCells(passed_path_));
@@ -208,7 +208,7 @@ void CleanModeFollowWall::switchInStateClean() {
 	genNextAction();
 }
 
-bool CleanModeFollowWall::generatePath(GridMap &map, const Point32_t &curr, const int &last_dir, Points &targets)
+bool CleanModeFollowWall::generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &targets)
 {
 	if (targets.empty()) {//fw ->linear
 		auto curr = getPosition();

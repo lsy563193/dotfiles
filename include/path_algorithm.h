@@ -14,7 +14,7 @@ typedef std::deque<Cells> PathList;
 class APathAlgorithm
 {
 public:
-	virtual bool generatePath(GridMap &map, const Point32_t &curr, const int &last_dir, Points &plan_path) = 0;
+	virtual bool generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &plan_path) = 0;
 
 	virtual bool checkTrapped(GridMap &map, const Cell_t &curr_cell) {};
 
@@ -75,7 +75,7 @@ public:
 	Cells findShortestPath(GridMap &map, const Cell_t &start,
 							  const Cell_t &target, const int &last_dir, bool use_unknown,bool bound,Cell_t min_corner ,Cell_t max_corner);
 
-	bool generateShortestPath(GridMap &map, const Point32_t &curr,const Point32_t &target, const int &last_dir, Points &plan_path);
+	bool generateShortestPath(GridMap &map, const Point_t &curr,const Point_t &target, const int &last_dir, Points &plan_path);
 
 	/*
 	 * @author Lin Shao Yue
@@ -128,13 +128,13 @@ class NavCleanPathAlgorithm: public APathAlgorithm
 	 * This function is for finding path to unclean area.
 	 *
 	 * @param: GridMap map, it will use it's CLEAN_MAP data.
-	 * @param: Point32_t curr, the current cell of robot.
+	 * @param: Point_t curr, the current cell of robot.
 	 * @param: int last_dir, the direction of last movement.
 	 *
 	 * @return: Points path, the path to unclean area.
 	 * @return: bool, true if generating succeeds.
 	 */
-	bool generatePath(GridMap &map, const Point32_t &curr, const int &last_dir, Points &plan_path) override;
+	bool generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &plan_path) override;
 
 private:
 	/*
@@ -220,7 +220,7 @@ private:
 class WFCleanPathAlgorithm: public APathAlgorithm
 {
 public:
-	bool generatePath(GridMap &map, const Point32_t &curr, const int &last_dir, Points &targets) override;
+	bool generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &targets) override;
 };
 
 class SpotCleanPathAlgorithm: public APathAlgorithm
@@ -231,7 +231,7 @@ public:
 
 	~SpotCleanPathAlgorithm();
 
-	bool generatePath(GridMap &map, const Point32_t &curr, const int &last_dir, Points &targets) override;
+	bool generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &targets) override;
 	bool checkTrapped(GridMap &map, const Cell_t &curr_cell) override;
 
 	void genTargets(uint8_t type,float radius, Cells *targets,const Cell_t begincell);
@@ -256,9 +256,9 @@ public:
 	 *
 	 * @param: GridMap map, it will be copied to go_home_map_.
 	 * @param: Points home_points, stored home points, size should be limited in 3.
-	 * @param: Point32_t start_point, the start point of this cleaning.
+	 * @param: Point_t start_point, the start point of this cleaning.
 	 */
-	GoHomePathAlgorithm(GridMap &map, Points &home_points, Point32_t start_point);
+	GoHomePathAlgorithm(GridMap &map, Points &home_points, Point_t start_point);
 	~GoHomePathAlgorithm() = default;
 
 	/*
@@ -268,13 +268,13 @@ public:
 	 * This function is for selecting the home point and finding path to this home point.
 	 *
 	 * @param: GridMap map, it will use it's CLEAN_MAP data.
-	 * @param: Point32_t curr, the current cell of robot.
+	 * @param: Point_t curr, the current cell of robot.
 	 * @param: int last_dir, the direction of last movement.
 	 *
 	 * @return: Points plan_path, the path to selected home point.
 	 * @return: bool, true if generating succeeds.
 	 */
-	bool generatePath(GridMap &map, const Point32_t &curr, const int &last_dir, Points &plan_path) override;
+	bool generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &plan_path) override;
 
 	/*
 	 * @author Austin Liu
@@ -305,20 +305,20 @@ private:
 	 *
 	 * This function is for getting current home point.
 	 *
-	 * @return: Point32_t, current home point.
+	 * @return: Point_t, current home point.
 	 */
-	Point32_t getCurrentHomePoint();
+	Point_t getCurrentHomePoint();
 
 	/*
 	 * @author Austin Liu
 	 *
 	 * This function is for erasing the target home point from the home point list.
 	 *
-	 * @param: Point32_t target_home_point, home point to be erased.
+	 * @param: Point_t target_home_point, home point to be erased.
 	 *
 	 * @return: bool, true if operation succeeds.
 	 */
-	bool eraseHomePoint(Point32_t target_home_point);
+	bool eraseHomePoint(Point_t target_home_point);
 
 	/*
 	 * @author Austin Liu
@@ -332,7 +332,7 @@ private:
 	 * @return: Cells path, the path to unclean area.
 	 * @return: bool, true if operation succeeds.
 	 */
-	bool generatePathThroughCleanedArea(GridMap &map, const Point32_t &curr, const int &last_dir, Points &plan_path);
+	bool generatePathThroughCleanedArea(GridMap &map, const Point_t &curr, const int &last_dir, Points &plan_path);
 
 	/*
 	 * @author Austin Liu
@@ -347,7 +347,7 @@ private:
 	 * @return: Cells path, the path to unclean area.
 	 * @return: bool, true if operation succeeds.
 	 */
-	bool generatePathThroughSlamMapReachableArea(GridMap &map, const Point32_t &curr, const int &last_dir, Points &plan_path);
+	bool generatePathThroughSlamMapReachableArea(GridMap &map, const Point_t &curr, const int &last_dir, Points &plan_path);
 
 	/*
 	 * @author Austin Liu
@@ -361,7 +361,7 @@ private:
 	 * @return: Cells path, the path to unclean area.
 	 * @return: bool, true if operation succeeds.
 	 */
-	bool generatePathThroughUnknownArea(GridMap &map, const Point32_t &curr, const int &last_dir, Points &plan_path);
+	bool generatePathThroughUnknownArea(GridMap &map, const Point_t &curr, const int &last_dir, Points &plan_path);
 
 typedef enum {
 	THROUGH_CLEANED_AREA = 0,
@@ -373,8 +373,8 @@ typedef enum {
 	GoHomeWay_t home_way_index_{THROUGH_CLEANED_AREA};
 	int home_point_index_[GO_HOME_WAY_NUM]{};
 	Points home_points_;
-	Point32_t start_point_;
+	Point_t start_point_;
 	// current_home_point_ is initialized as an unreachable point because state go home point will check if reach home point first.
-	Point32_t current_home_point_{CELL_COUNT_MUL * (MAP_SIZE + 1), CELL_COUNT_MUL * (MAP_SIZE + 1), 0};
+	Point_t current_home_point_{CELL_SIZE * (MAP_SIZE + 1), CELL_SIZE * (MAP_SIZE + 1), 0};
 };
 #endif //PP_PATH_ALGORITHM_H

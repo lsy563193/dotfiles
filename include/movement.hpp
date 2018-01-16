@@ -25,8 +25,8 @@ public:
 //	static ACleanMode* sp_mode_;
 //	static boost::shared_ptr<IMoveType> sp_mt_;
 	static IMoveType* sp_mt_;
-//	static Point32_t s_target_p;
-//	static Point32_t s_start_p;
+//	static Point_t s_target_p;
+//	static Point_t s_start_p;
 protected:
 	uint32_t tick_{};
 	uint32_t tick_limit_{};
@@ -38,7 +38,7 @@ protected:
 class AMovementFollowPoint:public IMovement{
 public:
 	virtual bool is_near()=0;
-	virtual Point32_t calcTmpTarget()=0;
+	virtual Point_t calcTmpTarget()=0;
 	bool isFinish() override ;
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed) override ;
 	int16_t angle_diff{};
@@ -47,9 +47,9 @@ protected:
 
 	int32_t min_speed_;
 	int32_t max_speed_;
-//	static Point32_t tmp_target_;
+//	static Point_t tmp_target_;
 //	boost::thread* path_thread_{};
-//	Point32_t tmp_target_{};
+//	Point_t tmp_target_{};
 	uint8_t integration_cycle_{};
 	int32_t integrated_{};
 	int32_t base_speed_{};
@@ -96,7 +96,7 @@ private:
 class MovementFollowPointLinear:public AMovementFollowPoint
 {
 public:
-//	MovementFollowPointLinear(Point32_t);
+//	MovementFollowPointLinear(Point_t);
 	MovementFollowPointLinear();
 //	~MovementFollowPointLinear(){ };
 	bool isFinish() override;
@@ -104,11 +104,11 @@ public:
 	bool is_near() override;
 //	void setTarget();
 
-	Point32_t calcTmpTarget() override ;
-	Point32_t _calcTmpTarget();
+	Point_t calcTmpTarget() override ;
+	Point_t _calcTmpTarget();
 //	bool calcTmpTarget() override ;
-//	Point32_t _calcTmpTargetNoneRealTime();
-//	Point32_t _calcTmpTargetRealTime();
+//	Point_t _calcTmpTargetNoneRealTime();
+//	Point_t _calcTmpTargetRealTime();
 
 private:
 };
@@ -166,7 +166,7 @@ class MovementFollowWallLidar:public AMovementFollowPoint, public IFollowWall
 public:
 	explicit MovementFollowWallLidar(bool is_left);
 
-	Point32_t calcTmpTarget() override ;
+	Point_t calcTmpTarget() override ;
 	Points _calcTmpTarget();
 
 	bool isFinish() override ;

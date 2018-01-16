@@ -50,7 +50,7 @@ public:
 	void pubFitLineMarker(visualization_msgs::Marker fit_line_marker);
 	void pubPointMarkers(const std::deque<Vector2<double>> *point, std::string frame_id);
 //	void pubTmpTarget(const Points &points,bool is_virtual=false);
-	void pubTmpTarget(const Point32_t &point,bool is_virtual=false);
+	void pubTmpTarget(const Point_t &point,bool is_virtual=false);
 	void setCleanMapMarkers(int16_t x, int16_t y, CellState type);
 	void pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path);
 	void robotbase_routine_cb();
@@ -330,11 +330,11 @@ public:
 	boost::shared_ptr<Mode> p_mode{};
 };
 
-int32_t cellToCount(int16_t distance);
+float cellToCount(int16_t distance);
 
 int16_t countToCell(int32_t count);
 
-Point32_t getPosition(void);
+Point_t getPosition(void);
 
 bool isPos(int dir);
 
@@ -345,5 +345,5 @@ bool isYAxis(int dir);
 void updatePosition();
 
 Mode *getNextMode(int next_mode_i_);
-void setPosition(int32_t x, int32_t y);
+void setPosition(float x, float y);
 #endif

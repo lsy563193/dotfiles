@@ -42,9 +42,9 @@ public:
 	static Mode *sp_mode_;
 	static int movement_i_;
 	void resetTriggeredValue();
-	Point32_t start_point_;
+	Point_t start_point_;
 	bool state_turn{};
-//	Point32_t target_point_;
+//	Point_t target_point_;
 	int dir_;
 protected:
 //	Cells passed_path_;

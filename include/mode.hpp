@@ -264,7 +264,7 @@ public:
 	bool isRemoteGoHomePoint();
 	void setHomePoint();
 	bool estimateChargerPos(uint32_t rcon_value);
-	void setRconPos(Point32_t pos);
+	void setRconPos(Point_t pos);
 
 	Cells pointsGenerateCells(Points &targets);
 
@@ -399,7 +399,7 @@ public:
 	int reach_cleaned_count_{};
 	Points passed_path_{};
 	Points plan_path_{};
-	Point32_t last_{};
+	Point_t last_{};
 	bool found_temp_charger_{};
 	bool in_rcon_signal_range_{};
 	bool should_mark_charger_{};
@@ -412,7 +412,7 @@ public:
 	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
 	boost::shared_ptr<GoHomePathAlgorithm> go_home_path_algorithm_{};
 	GridMap clean_map_{};
-	Point32_t charger_pos_{};//charger postion
+	Point_t charger_pos_{};//charger postion
 
 protected:
 	std::vector<State*> sp_saved_states;
@@ -427,7 +427,7 @@ protected:
 	bool low_battery_charge_{};
 	bool moved_during_pause_{};
 	Points home_points_{};
-	Point32_t start_point_{0, 0, 0};
+	Point_t start_point_{0, 0, 0};
 	bool should_go_to_charger_{false};
 	bool remote_go_home_point{false};
 };
@@ -513,7 +513,7 @@ private:
 
 	bool has_aligned_and_open_slam_{false};
 	float paused_odom_angle_{0};
-	Point32_t continue_point_{};
+	Point_t continue_point_{};
 	bool go_home_for_low_battery_{false};
 
 protected:
@@ -564,7 +564,7 @@ public:
 
 	void remoteClean(bool state_now, bool state_last) override;
 	void switchInStateClean() override;
-	bool generatePath(GridMap &map, const Point32_t &curr, const int &last_dir, Points &targets);
+	bool generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &targets);
 
 	bool moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) override ;
 

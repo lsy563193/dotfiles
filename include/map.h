@@ -17,7 +17,7 @@
 #define BLOCK_FRONT			((uint8_t) 0x04)
 #define BLOCK_ALL			((uint8_t) 0x07)
 
-typedef std::deque<Point32_t> Points;
+typedef std::deque<Point_t> Points;
 
 typedef enum {
 	// The sequence of CLEAN_MAP value must be UNCLEAN < CLEANED < MAP_BLOCKED < SLAM_MAP_BLOCKED
@@ -101,7 +101,7 @@ public:
 
 	void indexToCells(int size_x_, unsigned int index, unsigned int &mx, unsigned int &my);
 
-	bool worldToCount(double &wx, double &wy, int32_t &cx, int32_t &cy);
+//	bool worldToCount(double &wx, double &wy, int32_t &cx, int32_t &cy);
 
 	void cellToWorld(double &worldX, double &worldY, int16_t &cellX, int16_t &cellY);
 

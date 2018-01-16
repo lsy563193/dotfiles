@@ -44,7 +44,7 @@ bool CleanModeNav::mapMark(bool isMarkRobot)
 	{
 //		ROS_ERROR("-------------------------------------------------------");
 		auto start = *passed_path_.begin();
-		passed_path_.erase(std::remove_if(passed_path_.begin(),passed_path_.end(),[&start](Point32_t& it){
+		passed_path_.erase(std::remove_if(passed_path_.begin(),passed_path_.end(),[&start](Point_t& it){
 			return it.toCell() == start.toCell();
 		}),passed_path_.end());
 		clean_path_algorithm_->displayCellPath(pointsGenerateCells(passed_path_));

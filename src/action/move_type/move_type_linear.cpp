@@ -80,8 +80,8 @@ bool MoveTypeLinear::isCellReach()
 	auto s_curr_p = getPosition();
 	auto p_clean_mode = dynamic_cast<ACleanMode*> (sp_mode_);
 	auto target_point_ = p_clean_mode->plan_path_.front();
-	if (std::abs(s_curr_p.x - target_point_.x) < CELL_COUNT_MUL_1_2 &&
-		std::abs(s_curr_p.y - target_point_.y) < CELL_COUNT_MUL_1_2)
+	if (std::abs(s_curr_p.x - target_point_.x) < CELL_SIZE/2 &&
+		std::abs(s_curr_p.y - target_point_.y) < CELL_SIZE/2)
 	{
 		ROS_INFO("%s, %d: MoveTypeLinear, reach the target cell (%d,%d), current angle(%d), target angle(%d).", __FUNCTION__, __LINE__,
 						 target_point_.toCell().x, target_point_.toCell().y, s_curr_p.th, target_point_.th);
@@ -114,8 +114,8 @@ bool MoveTypeLinear::isPassTargetStop(int &dir)
 	auto curr = (isXAxis(dir)) ? s_curr_p.x : s_curr_p.y;
 	auto target_point_ = dynamic_cast<ACleanMode*>(sp_mode_)->plan_path_.front();
 	auto target = (isXAxis(dir)) ? target_point_.x : target_point_.y;
-	if ((isPos(dir) && (curr > target + CELL_COUNT_MUL / 4)) ||
-		(!isPos(dir) && (curr < target - CELL_COUNT_MUL / 4)))
+	if ((isPos(dir) && (curr > target + CELL_SIZE / 4)) ||
+		(!isPos(dir) && (curr < target - CELL_SIZE / 4)))
 	{
 		ROS_WARN("%s, %d: MoveTypeLinear, pass target: dir(\033[32m%d\033[0m),is_x_axis(\033[32m%d\033[0m),is_pos(\033[32m%d\033[0m),curr(\033[32m%d\033[0m),target(\033[32m%d\033[0m)",
 				 __FUNCTION__, __LINE__, dir, isXAxis(dir), isPos(dir), curr, target);

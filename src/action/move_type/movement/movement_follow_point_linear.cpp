@@ -21,7 +21,7 @@ MovementFollowPointLinear::MovementFollowPointLinear()
 //	sp_mt_->target_point_ = p_clean_mode->plan_path_.front();
 }
 
-Point32_t MovementFollowPointLinear::_calcTmpTarget()
+Point_t MovementFollowPointLinear::_calcTmpTarget()
 {
 	auto p_mode = dynamic_cast<ACleanMode*> (sp_mt_->sp_mode_);
 	auto curr = getPosition();
@@ -29,7 +29,7 @@ Point32_t MovementFollowPointLinear::_calcTmpTarget()
 	auto &tmp_target_xy = (isXAxis(p_mode->new_dir_)) ? tmp_target_.x : tmp_target_.y;
 	auto curr_xy = (isXAxis(p_mode->new_dir_)) ? getPosition().x : getPosition().y;
 //	ROS_INFO("curr_xy(%d), target_xy(%d)", curr_xy, tmp_target_xy);
-	auto dis = std::min(std::abs(curr_xy - tmp_target_xy),  (CELL_COUNT_MUL*2 /*+ CELL_COUNT_MUL*/));
+	auto dis = std::min(std::abs(curr_xy - tmp_target_xy),  (CELL_SIZE*2 /*+ CELL_COUNT_MUL*/));
 	if (!isPos(p_mode->new_dir_))
 		dis *= -1;
 	tmp_target_xy = curr_xy + dis;
@@ -40,7 +40,7 @@ Point32_t MovementFollowPointLinear::_calcTmpTarget()
 //	ROS_WARN("dis(%d),dir(%d), curr(%d, %d), tmp_target(%d, %d)", dis, tmp_target_.th, curr.x, curr.y, tmp_target.x, tmp_target.y);
 }
 
-Point32_t MovementFollowPointLinear::calcTmpTarget()
+Point_t MovementFollowPointLinear::calcTmpTarget()
 {
 //	auto curr_xy = (isXAxis(tmp_target_.th)) ? getPosition().x : getPosition().y;
 //	auto tmp_target_xy = (isXAxis(tmp_target_.th)) ? tmp_target_.x :tmp_target_.y;
@@ -67,7 +67,7 @@ bool MovementFollowPointLinear::is_near()
 	return obs.getStatus() > 0 || /*(distance < SLOW_DOWN_DISTANCE) ||*/  (obstacle_distance_front < 0.25) || is_decrease_blocked;
 }
 
-//Point32_t MovementFollowPointLinear::_calcTmpTargetRealTime()
+//Point_t MovementFollowPointLinear::_calcTmpTargetRealTime()
 //{
 //	auto tmp_target_ = sp_mt_->target_point_;
 //	auto target_xy = (isXAxis(tmp_target_.th)) ? sp_mt_->target_point_.x : sp_mt_->target_point_.y;

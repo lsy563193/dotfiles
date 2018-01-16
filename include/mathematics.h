@@ -325,26 +325,26 @@ double rad_2_deg(double rad, int8_t scale);
 typedef Vector2<int16_t> Cell_t;
 typedef std::deque<Cell_t> Cells;
 
-class Point32_t:public Vector2<int32_t> {
+class Point_t:public Vector2<float> {
 public:
-  Point32_t() {
+  Point_t() {
     x = 0;
     y = 0;
     th = 0;
   }
 
-  Point32_t(int32_t _x, int32_t _y, int16_t _th) {
+  Point_t(float _x, float _y, int16_t _th) {
     x = _x;
     y = _y;
     th = _th;
   }
 
-	Point32_t addAngle(int16_t diff) const {
+	Point_t addAngle(int16_t diff) const {
 		return {this->x, this->y, ranged_angle(this->th + diff)};
 	}
-  Point32_t getRelative(int32_t dx, int32_t dy) const {
-		Point32_t point;
-		double relative_sin, relative_cos;
+  Point_t getRelative(float dx, float dy) const {
+		Point_t point;
+		float relative_sin=0, relative_cos=1;
 		if (th != 3600) {
 			if (th == 0) {
 				relative_sin = 0;
@@ -367,27 +367,23 @@ public:
 				relative_cos = cos(deg_to_rad(th, 10));
 			}
 		}
-		point.x = x + (int32_t) (
-						(((double) dx * relative_cos * CELL_COUNT_MUL) - ((double) dy * relative_sin * CELL_COUNT_MUL)) /
-						CELL_SIZE);
-		point.y = y + (int32_t) (
-						(((double) dx * relative_sin * CELL_COUNT_MUL) + ((double) dy * relative_cos * CELL_COUNT_MUL)) /
-						CELL_SIZE);
+		point.x = x +  dx * relative_cos -  dy * relative_sin ;
+		point.y = y + dx * relative_sin +  dy * relative_cos ;
 		point.th = th;
 		return point;
 	}
 
-	Point32_t getCenterRelative(int16_t dx, int16_t dy) const {
-		auto Cell = this->toCell();
-		Point32_t point{cellToCount(Cell.x),cellToCount(Cell.y),th};
-		return point.getRelative(dx,dy);
-	}
+//	Point_t getRelative(float dx, float dy) const {
+//		auto Cell = this->toCell();
+//		Point_t point{cellToCount(Cell.x),cellToCount(Cell.y),th};
+//		return point.getRelative(dx,dy);
+//	}
 
-	bool isNearTo(Point32_t other, int32_t count) const {
+	bool isNearTo(Point_t other, float count) const {
 		return std::abs(this->x - other.x) <count && std::abs(this->y - other.y) < count;
 	};
 
-	int16_t angleDiffPoint(Point32_t other) const {
+	int16_t angleDiffPoint(Point_t other) const {
 			int16_t alpha = 0;
 			if (this->x == other.x) {
 				if (other.y > this->y) {
@@ -420,35 +416,30 @@ public:
     return {countToCell(x), countToCell(y)};
   }
 
-	bool isCellEqual(const Point32_t &r) const
+	bool isCellEqual(const Point_t &r) const
 	{
 		return  toCell() == r.toCell();
 	}
 
-	bool isAngleNear(const Point32_t &r) const
+	bool isAngleNear(const Point_t &r) const
 	{
 		return  std::abs(ranged_angle(th - r.th)) < 200;
 	}
 
-	bool isCellAndAngleEqual(const Point32_t &r) const
+	bool isCellAndAngleEqual(const Point_t &r) const
 	{
 		return  isCellEqual(r) && isAngleNear(r);
 	}
 
   int16_t th{};
 private:
-  int16_t countToCell(int32_t count) const {
-    if (count < -CELL_COUNT_MUL_1_2) {
-      return (count + CELL_COUNT_MUL_1_2) / CELL_COUNT_MUL - 1;
-    }
-    else {
-      return (count + CELL_COUNT_MUL_1_2) / CELL_COUNT_MUL;
-    }
+  int16_t countToCell(float count) const {
+		return static_cast<int16_t>(round(count / CELL_SIZE));
   }
 
-	int32_t cellToCount(int16_t i) const {
-		return i * CELL_COUNT_MUL;
-	}
+//	int32_t cellToCount(int16_t i) const {
+//		return i * CELL_COUNT_MUL;
+//	}
 
 };
 

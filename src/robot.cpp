@@ -671,8 +671,8 @@ void robot::visualizeMarkerInit()
 
 void robot::setCleanMapMarkers(int16_t x, int16_t y, CellState type)
 {
-	m_points_.x = x * (float)CELL_SIZE / 1000;
-	m_points_.y = y * (float)CELL_SIZE / 1000;
+	m_points_.x = x * CELL_SIZE ;
+	m_points_.y = y * CELL_SIZE ;
 	m_points_.z = 0;
 	if (type == CLEANED)
 	{
@@ -954,7 +954,7 @@ void robot::pubPointMarkers(const std::deque<Vector2<double>> *points, std::stri
 	}
 }
 
-void robot::pubTmpTarget(const Point32_t &point, bool is_virtual) {
+void robot::pubTmpTarget(const Point_t &point, bool is_virtual) {
 	visualization_msgs::Marker point_markers;
 	point_markers.ns = "tmp_target";
 	point_markers.id = 0;
@@ -982,8 +982,8 @@ void robot::pubTmpTarget(const Point32_t &point, bool is_virtual) {
 //	for(const auto & point : points)
 	{
 		geometry_msgs::Point point_marker;
-		point_marker.x = (static_cast<double>(point.x * CELL_SIZE)) /CELL_COUNT_MUL / 1000;
-		point_marker.y = (static_cast<double>(point.y * CELL_SIZE)) /CELL_COUNT_MUL / 1000;
+		point_marker.x = point.x;
+		point_marker.y = point.y;
 		point_marker.z = 0;
 		point_markers.points.push_back(point_marker);
 	}
@@ -1098,18 +1098,18 @@ PathHead robot::getTempTarget() const
 }
 
 //--------------------
-static int32_t xCount{}, yCount{};
+static float xCount{}, yCount{};
 
-Point32_t getPosition()
+Point_t getPosition()
 {
-	return {(int32_t)round(xCount), (int32_t)round(yCount), robot::instance()->getWorldPoseAngle()};
+	return {xCount, yCount, robot::instance()->getWorldPoseAngle()};
 }
 
-int32_t cellToCount(int16_t i) {
-	return i * CELL_COUNT_MUL;
+float cellToCount(int16_t i) {
+	return i * CELL_SIZE;
 }
 
-void setPosition(int32_t x, int32_t y) {
+void setPosition(float x, float y) {
 	xCount = x;
 	yCount = y;
 }
@@ -1131,8 +1131,8 @@ bool isYAxis(int dir)
 
 void updatePosition()
 {
-	auto pos_x = robot::instance()->getWorldPoseX() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
-	auto pos_y = robot::instance()->getWorldPoseY() * 1000 * CELL_COUNT_MUL / CELL_SIZE;
+	auto pos_x = robot::instance()->getWorldPoseX()/* * 1000 * CELL_COUNT_MUL / CELL_SIZE*/;
+	auto pos_y = robot::instance()->getWorldPoseY()/* * 1000 * CELL_COUNT_MUL / CELL_SIZE*/;
 	setPosition(pos_x, pos_y);
 //	ROS_INFO("%s %d:", __FUNCTION__, __LINE__);
 }

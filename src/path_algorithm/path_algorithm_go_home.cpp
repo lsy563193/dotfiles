@@ -8,7 +8,7 @@
 #include "path_algorithm.h"
 
 //----------
-GoHomePathAlgorithm::GoHomePathAlgorithm(GridMap &map, Points &home_points, Point32_t start_point)
+GoHomePathAlgorithm::GoHomePathAlgorithm(GridMap &map, Points &home_points, Point_t start_point)
 {
 	// Save the home_points to local.
 	home_points_ = home_points;
@@ -39,7 +39,7 @@ GoHomePathAlgorithm::GoHomePathAlgorithm(GridMap &map, Points &home_points, Poin
 	ROS_INFO("%s %d: %s", __FUNCTION__, __LINE__, msg.c_str());
 }
 
-bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, const int &last_dir, Points &plan_path)
+bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &plan_path)
 {
 	bool generate_finish = false;
 	while (!generate_finish && ros::ok())
@@ -62,7 +62,7 @@ bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, cons
 
 }
 
-bool GoHomePathAlgorithm::generatePathThroughCleanedArea(GridMap &map, const Point32_t &curr, const int &last_dir,
+bool GoHomePathAlgorithm::generatePathThroughCleanedArea(GridMap &map, const Point_t &curr, const int &last_dir,
 														 Points &plan_path)
 {
 	Cells plan_path_cells{};
@@ -137,7 +137,7 @@ bool GoHomePathAlgorithm::generatePathThroughCleanedArea(GridMap &map, const Poi
 }
 
 bool
-GoHomePathAlgorithm::generatePathThroughSlamMapReachableArea(GridMap &map, const Point32_t &curr, const int &last_dir,
+GoHomePathAlgorithm::generatePathThroughSlamMapReachableArea(GridMap &map, const Point_t &curr, const int &last_dir,
 															 Points &plan_path)
 {
 	Cells plan_path_cells{};
@@ -205,7 +205,7 @@ GoHomePathAlgorithm::generatePathThroughSlamMapReachableArea(GridMap &map, const
 	}
 }
 
-bool GoHomePathAlgorithm::generatePathThroughUnknownArea(GridMap &map, const Point32_t &curr, const int &last_dir,
+bool GoHomePathAlgorithm::generatePathThroughUnknownArea(GridMap &map, const Point_t &curr, const int &last_dir,
 														 Points &plan_path)
 {
 	Cells plan_path_cells{};
@@ -244,7 +244,7 @@ bool GoHomePathAlgorithm::generatePathThroughUnknownArea(GridMap &map, const Poi
 
 			if (home_points_.empty()) // No more home points, go back to start point.
 			{
-				current_home_point_ = {CELL_COUNT_MUL * (MAP_SIZE + 1), CELL_COUNT_MUL * (MAP_SIZE + 1), 0};
+				current_home_point_ = {CELL_SIZE * (MAP_SIZE + 1), CELL_SIZE * (MAP_SIZE + 1), 0};
 				home_way_index_ = THROUGH_CLEANED_AREA;
 				ROS_INFO("%s %d: No more reachable home points, just go back to start point.", __FUNCTION__, __LINE__);
 			}
@@ -289,7 +289,7 @@ bool GoHomePathAlgorithm::reachTarget(bool &should_go_to_charger)
 			// Erase home point but do NOT change the index.
 			eraseHomePoint(getCurrentHomePoint());
 			// Reset current home point.
-			current_home_point_ = {CELL_COUNT_MUL * (MAP_SIZE + 1), CELL_COUNT_MUL * (MAP_SIZE + 1), 0};
+			current_home_point_ = {CELL_SIZE * (MAP_SIZE + 1), CELL_SIZE * (MAP_SIZE + 1), 0};
 
 			std::string msg = "Home_points_: ";
 			for (auto it : home_points_)
@@ -314,7 +314,7 @@ bool GoHomePathAlgorithm::reachTarget(bool &should_go_to_charger)
 	return ret;
 }
 
-Point32_t GoHomePathAlgorithm::getCurrentHomePoint()
+Point_t GoHomePathAlgorithm::getCurrentHomePoint()
 {
 	return current_home_point_;
 }
@@ -324,7 +324,7 @@ Points GoHomePathAlgorithm::getRestHomePoints()
 	return home_points_;
 }
 
-bool GoHomePathAlgorithm::eraseHomePoint(Point32_t target_home_point)
+bool GoHomePathAlgorithm::eraseHomePoint(Point_t target_home_point)
 {
 	bool ret = false;
 	Points::iterator home_point_it = home_points_.begin();

@@ -7,7 +7,7 @@
 #include "dev.h"
 #include "robot.hpp"
 
-//Point32_t AMovementFollowPoint::tmp_target_{};
+//Point_t AMovementFollowPoint::tmp_target_{};
 
 void AMovementFollowPoint::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 {
