@@ -41,7 +41,7 @@ robot::robot()/*:offset_angle_(0),saved_offset_angle_(0)*/
 	ROS_INFO("waiting robotbase awake ");
 	auto serial_receive_routine = new boost::thread(boost::bind(&Serial::receive_routine_cb, &serial));
 	auto robotbase_routine = new boost::thread(robotbase_routine_cb);
-	auto serial_send_routine = new boost::thread(serial_send_routine_cb);
+	auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
 	auto speaker_play_routine = new boost::thread(boost::bind(&Speaker::playRoutine, &speaker));
 	is_robotbase_init = true;
 	// Subscribers.

@@ -6,6 +6,7 @@
 
 #include "config.h"
 
+#define  _RATE 50
 #define POWER_ACTIVE 1
 #define POWER_DOWN 7
 extern bool g_is_tilt;
@@ -18,7 +19,9 @@ extern bool robotbase_beep_update_flag;
 extern int robotbase_beeper_sound_loop_count;
 extern uint8_t robotbase_sound_code;
 extern int robotbase_beeper_sound_time_count;
+extern int temp_beeper_sound_time_count;
 extern int robotbase_beeper_silence_time_count;
+extern int temp_beeper_silence_time_count;
 // For led control.
 extern uint8_t robotbase_led_type;
 extern bool robotbase_led_update_flag;

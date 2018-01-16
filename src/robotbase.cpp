@@ -5,7 +5,6 @@
 #include <tf/transform_broadcaster.h>
 #include "robotbase.h"
 
-#define  _RATE 50
 
 bool is_robotbase_init = false;
 bool robotbase_thread_stop = false;
@@ -330,49 +329,6 @@ void robotbase_routine_cb()
 
 	}//end while
 	ROS_INFO("\033[32m%s\033[0m,%d,robotbase thread exit",__FUNCTION__,__LINE__);
-}
-
-void serial_send_routine_cb()
-{
-	ROS_INFO("robotbase,\033[32m%s\033[0m,%d is up.",__FUNCTION__,__LINE__);
-	ros::Rate r(_RATE);
-	uint8_t buf[SEND_LEN];
-	int sl = SEND_LEN-3;
-	while(send_stream_thread){
-		r.sleep();
-		if(serial.isSleep()){
-			continue;
-		}
-		/*-------------------Process for beeper.play and led -----------------------*/
-		// Force reset the beeper action when beeper() function is called, especially when last beeper action is not over. It can stop last beeper action and directly start the updated beeper.play action.
-		if (robotbase_beep_update_flag){
-			temp_beeper_sound_time_count = -1;
-			temp_beeper_silence_time_count = 0;
-			robotbase_beep_update_flag = false;
-		}
-		//ROS_INFO("%s %d: tmp_sound_count: %d, tmp_silence_count: %d, sound_loop_count: %d.", __FUNCTION__, __LINE__, temp_beeper_sound_time_count, temp_beeper_silence_time_count, robotbase_beeper_sound_loop_count);
-		// If count > 0, it is processing for different alarm.
-		if (robotbase_beeper_sound_loop_count != 0){
-			process_beep();
-		}
-
-		if (robotbase_led_update_flag)
-			process_led();
-
-		//if(!is_flag_set()){
-			/*---pid for wheels---*/
-		wheel.pidAdjustSpeed();
-		brush.updatePWM();
-
-		g_send_stream_mutex.lock();
-		memcpy(buf,serial.send_stream,sizeof(uint8_t)*SEND_LEN);
-		g_send_stream_mutex.unlock();
-		buf[CTL_CRC] = serial.calc_buf_crc8(buf, sl);
-//		debug_send_stream(&buf[0]);
-		serial.write(SEND_LEN, buf);
-	}
-	ROS_INFO("\033[32m%s\033[0m,%d pthread exit",__FUNCTION__,__LINE__);
-	//pthread_exit(NULL);
 }
 
 void process_beep()
