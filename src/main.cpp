@@ -34,8 +34,6 @@ int main(int argc, char **argv)
 	if (bumper.lidarBumperInit(lidar_bumper_dev.c_str()) == -1)
 		ROS_ERROR(" lidar bumper open fail!");
 
-	robotbase_init();
-
 	robot_instance = new robot();
 
 	ros::spin();

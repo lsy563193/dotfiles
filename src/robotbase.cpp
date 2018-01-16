@@ -41,45 +41,6 @@ uint16_t live_led_cnt_for_switch = 0;
 // Lock for odom coordinate
 boost::mutex odom_mutex;
 
-int robotbase_init(void)
-{
-	int	serr_ret;
-	int base_ret;
-	int sers_ret;
-	int speaker_ret;
-
-	robotbase_thread_stop = false;
-	send_stream_thread = true;
-	
-	while (!serial.is_ready()) {
-		ROS_ERROR("serial not ready\n");
-	}
-
-	robotbase_reset_send_stream();
-
-	ROS_INFO("waiting robotbase awake ");
-	auto serial_receive_routine = new boost::thread(serial_receive_routine_cb);
-	serial_receive_routine->detach();
-	auto robotbase_routine = new boost::thread(robotbase_routine_cb);
-	robotbase_routine->detach();
-	auto serial_send_routine = new boost::thread(serial_send_routine_cb);
-	serial_send_routine->detach();
-	auto speaker_play_routine = new boost::thread(speaker_play_routine_cb);
-	speaker_play_routine->detach();
-	if (base_ret < 0 || serr_ret < 0 || sers_ret < 0 || speaker_ret < 0) {
-		is_robotbase_init = false;
-		robotbase_thread_stop = true;
-		send_stream_thread = false;
-		if (base_ret < 0) {ROS_INFO("%s,%d, fail to create robotbase thread!! %s ", __FUNCTION__,__LINE__,strerror(base_ret));}
-		if (serr_ret < 0) {ROS_INFO("%s,%d, fail to create serial receive thread!! %s ",__FUNCTION__,__LINE__, strerror(serr_ret));}
-		if (sers_ret < 0){ROS_INFO("%s,%d, fail to create serial send thread!! %s ",__FUNCTION__,__LINE__,strerror(sers_ret));}
-		if (speaker_ret < 0){ROS_INFO("%s,%d, fail to create speaker paly thread!! %s ",__FUNCTION__,__LINE__,strerror(speaker_ret));}
-		return -1;
-	}
-	is_robotbase_init = true;
-	return 0;
-}
-
 void debug_received_stream()
 {
 	ROS_INFO("%s %d: Received stream:", __FUNCTION__, __LINE__);

@@ -28,6 +28,23 @@ int OBS_adjust_count = 50;
 //extern pp::x900sensor sensor;
 robot::robot()/*:offset_angle_(0),saved_offset_angle_(0)*/
 {
+
+	robotbase_thread_stop = false;
+	send_stream_thread = true;
+
+	while (!serial.is_ready()) {
+		ROS_ERROR("serial not ready\n");
+	}
+
+	robotbase_reset_send_stream();
+
+	ROS_INFO("waiting robotbase awake ");
+	auto serial_receive_routine = new boost::thread(serial_receive_routine_cb);
+	auto robotbase_routine = new boost::thread(robotbase_routine_cb);
+	auto serial_send_routine = new boost::thread(serial_send_routine_cb);
+	auto speaker_play_routine = new boost::thread(speaker_play_routine_cb);
+	is_robotbase_init = true;
+
 	// Subscribers.
 	sensor_sub_ = robot_nh_.subscribe("/robot_sensor", 10, &robot::sensorCb, this);
 	odom_sub_ = robot_nh_.subscribe("/odom", 1, &robot::robotOdomCb, this);

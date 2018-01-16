@@ -10,6 +10,9 @@
 #define POWER_DOWN 7
 extern bool g_is_tilt;
 
+extern bool is_robotbase_init;
+extern bool robotbase_thread_stop;
+extern bool send_stream_thread;
 extern bool robotbase_beep_update_flag;
 extern int robotbase_beeper_sound_loop_count;
 extern uint8_t robotbase_sound_code;
@@ -23,7 +26,6 @@ extern uint16_t robotbase_led_cnt_for_switch;
 extern uint16_t live_led_cnt_for_switch;
 
 extern bool key_or_clean_button_detected;
-int robotbase_init();
 void robotbase_deinit(void);
 void robotbase_reset_send_stream(void);
 bool is_robotbase_stop(void);
