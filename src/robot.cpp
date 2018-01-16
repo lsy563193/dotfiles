@@ -59,7 +59,6 @@ robot::robot()/*:offset_angle_(0),saved_offset_angle_(0)*/
 	scan_ctrl_pub_ = robot_nh_.advertise<pp::scan_ctrl>("scan_ctrl", 1);
 	point_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("point_marker", 1);
 	tmp_target_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("tmp_target", 1);
-	fit_line_marker_pub_ = robot_nh_.advertise<visualization_msgs::Marker>("fit_line_marker", 1);
 
 	resetCorrection();
 
@@ -602,11 +601,6 @@ void robot::scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr& scan)
 		calcLidarPath(scan, p_mode->action_i_ == p_mode->ac_follow_wall_left, points);
 		setTempTarget(points, scan->header.seq);
 	}
-}
-
-void robot::pubFitLineMarker(visualization_msgs::Marker fit_line_marker)
-{
-	fit_line_marker_pub_.publish(fit_line_marker);
 }
 
 void robot::pubPointMarkers(const std::deque<Vector2<double>> *points, std::string frame_id)

@@ -434,6 +434,8 @@ protected:
 	bool should_go_to_charger_{false};
 	bool remote_go_home_point{false};
 public:
+
+	void pubFitLineMarker(visualization_msgs::Marker fit_line_marker);
 	void visualizeMarkerInit();
 	void setCleanMapMarkers(int16_t x, int16_t y, CellState type);
 	void pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path);
@@ -449,6 +451,7 @@ private:
 	ros::Publisher send_clean_map_marker_pub_;
 	ros::Publisher line_marker_pub_;
 	ros::Publisher line_marker_pub2_;
+	ros::Publisher fit_line_marker_pub_;
 
 };
 

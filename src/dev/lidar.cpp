@@ -748,13 +748,13 @@ bool Lidar::fitLineGroup(std::vector<std::vector<Vector2<double>> > *groups, dou
 				continue;
 			}
 			fit_line.push_back(new_fit_line);
-			pubFitLineMarker(a, b, c, iter->begin()->y, (iter->end() - 1)->y);
+//			pubFitLineMarker(a, b, c, iter->begin()->y, (iter->end() - 1)->y);
 			ROS_DEBUG("%s %d: line_angle%d = %lf", __FUNCTION__, __LINE__, loop_count, line_angle);
 			loop_count++;
 		}
 	} else {
 		fit_line_marker.points.clear();
-		robot::instance()->pubFitLineMarker(fit_line_marker);
+//		robot::instance()->pubFitLineMarker(fit_line_marker);
 	}
 	fit_line_marker.points.clear();
 
@@ -791,7 +791,7 @@ void Lidar::pubFitLineMarker(double a, double b, double c, double y1, double y2)
 	lidar_points_.x = x2;
 	lidar_points_.y = y2;
 	fit_line_marker.points.push_back(lidar_points_);
-	robot::instance()->pubFitLineMarker(fit_line_marker);
+//	robot::instance()->pubFitLineMarker(fit_line_marker);
 }
 
 /*

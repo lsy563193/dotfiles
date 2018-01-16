@@ -44,12 +44,9 @@ public:
 	tf::TransformListener		*robot_tf_;
 
 	// Publisher functions.
-	void pubFitLineMarker(visualization_msgs::Marker fit_line_marker);
 	void pubPointMarkers(const std::deque<Vector2<double>> *point, std::string frame_id);
 //	void pubTmpTarget(const Points &points,bool is_virtual=false);
 	void pubTmpTarget(const Point_t &point,bool is_virtual=false);
-	void setCleanMapMarkers(int16_t x, int16_t y, CellState type);
-	void pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path);
 	void robotbase_routine_cb();
 	void core_thread_cb();
 	// Service caller functions.
@@ -194,7 +191,6 @@ private:
 	ros::Publisher scan_ctrl_pub_;
 	ros::Publisher point_marker_pub_;
 	ros::Publisher tmp_target_pub_;
-	ros::Publisher fit_line_marker_pub_;
 
 	ros::ServiceClient lidar_motor_cli_;
 	ros::ServiceClient start_slam_cli_;

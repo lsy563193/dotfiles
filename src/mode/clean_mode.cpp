@@ -18,6 +18,7 @@ ACleanMode::ACleanMode()
 	scanLinear_sub_ = clean_nh_.subscribe("scanLinear", 1, &Lidar::scanLinearCb, &lidar);
 	scanCompensate_sub_ = clean_nh_.subscribe("scanCompensate", 1, &Lidar::scanCompensateCb, &lidar);
 	lidarPoint_sub_ = clean_nh_.subscribe("lidarPoint", 1, &Lidar::lidarPointCb, &lidar);
+	fit_line_marker_pub_ = clean_nh_.advertise<visualization_msgs::Marker>("fit_line_marker", 1);
 
 	send_clean_map_marker_pub_ = clean_nh_.advertise<visualization_msgs::Marker>("clean_map_markers", 1);
 	line_marker_pub_ = clean_nh_.advertise<visualization_msgs::Marker>("line_marker", 1);
@@ -47,6 +48,7 @@ ACleanMode::~ACleanMode() {
 	send_clean_map_marker_pub_.shutdown();
 	line_marker_pub_.shutdown();
 	line_marker_pub2_.shutdown();
+	fit_line_marker_pub_.shutdown();
 	clean_nh_.shutdown();
 
 	IMoveType::sp_mode_ = nullptr;
@@ -88,6 +90,11 @@ ACleanMode::~ACleanMode() {
 	ROS_INFO("%s %d: Cleaned area = \033[32m%.2fm2\033[0m, cleaning time: \033[32m%d(s) %.2f(min)\033[0m, cleaning speed: \033[32m%.2f(m2/min)\033[0m.",
 			 __FUNCTION__, __LINE__, map_area, robot_timer.getWorkTime(),
 			 static_cast<float>(robot_timer.getWorkTime()) / 60, map_area / (static_cast<float>(robot_timer.getWorkTime()) / 60));
+}
+
+void ACleanMode::pubFitLineMarker(visualization_msgs::Marker fit_line_marker)
+{
+	fit_line_marker_pub_.publish(fit_line_marker);
 }
 
 void ACleanMode::visualizeMarkerInit()
