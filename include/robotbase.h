@@ -11,6 +11,7 @@
 #define POWER_DOWN 7
 extern bool g_is_tilt;
 
+extern pthread_mutex_t recev_lock;
 extern pthread_cond_t  recev_cond;
 extern bool is_robotbase_init;
 extern bool robotbase_thread_stop;
@@ -34,7 +35,6 @@ void robotbase_deinit(void);
 void robotbase_reset_send_stream(void);
 bool is_robotbase_stop(void);
 void serial_receive_routine_cb();
-void robotbase_routine_cb();
 void serial_send_routine_cb();
 void process_beep();
 void process_led();

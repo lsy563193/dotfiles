@@ -53,7 +53,7 @@ public:
 	void pubTmpTarget(const Point32_t &point,bool is_virtual=false);
 	void setCleanMapMarkers(int16_t x, int16_t y, CellState type);
 	void pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path);
-
+	void robotbase_routine_cb();
 	void core_thread_cb();
 	// Service caller functions.
 	bool lidarMotorCtrl(bool switch_);
