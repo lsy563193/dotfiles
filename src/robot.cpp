@@ -41,14 +41,8 @@ robot::robot()/*:offset_angle_(0),saved_offset_angle_(0)*/
 
 	robotbase_reset_send_stream();
 
-	ROS_INFO("waiting robotbase awake ");
-	auto serial_receive_routine = new boost::thread(boost::bind(&Serial::receive_routine_cb, &serial));
-	auto robotbase_routine = new boost::thread(boost::bind(&robot::robotbase_routine_cb, this));
-	auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
-	auto speaker_play_routine = new boost::thread(boost::bind(&Speaker::playRoutine, &speaker));
-	is_robotbase_init = true;
+
 	// Subscribers.
-	sensor_sub_ = robot_nh_.subscribe("/robot_sensor", 10, &robot::sensorCb, this);
 	odom_sub_ = robot_nh_.subscribe("/odom", 1, &robot::robotOdomCb, this);
 	map_sub_ = robot_nh_.subscribe("/map", 1, &robot::mapCb, this);
 	scanLinear_sub_ = robot_nh_.subscribe("scanLinear", 1, &robot::scanLinearCb, this);
@@ -94,6 +88,12 @@ robot::robot()/*:offset_angle_(0),saved_offset_angle_(0)*/
 #endif
 
 	// Init for event manager.
+	ROS_INFO("waiting robotbase awake ");
+	auto serial_receive_routine = new boost::thread(boost::bind(&Serial::receive_routine_cb, &serial));
+	auto robotbase_routine = new boost::thread(boost::bind(&robot::robotbase_routine_cb, this));
+	auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
+	auto speaker_play_routine = new boost::thread(boost::bind(&Speaker::playRoutine, &speaker));
+	is_robotbase_init = true;
 	event_manager_init();
 	auto event_manager_thread = new boost::thread(event_manager_thread_cb);
 	auto event_handler_thread = new boost::thread(event_handler_thread_cb);
@@ -214,10 +214,11 @@ void robot::robotbase_routine_cb()
 		sensor.left_cliff = cliff.getLeft();
 
 		// For remote device.
-		remote.set(serial.receive_stream[REC_REMOTE]);
+		auto remote_signal = serial.receive_stream[REC_REMOTE];
+		remote.set(remote_signal);
 		sensor.remote = remote.get();
-		if (remote.get() > 0)
-			ROS_INFO("%s %d: Remote received:%d", __FUNCTION__, __LINE__, remote.get());
+		if (remote_signal > 0)
+			ROS_INFO("%s %d: Remote received:%d", __FUNCTION__, __LINE__, remote_signal);
 
 		// For rcon device.
 		c_rcon.setStatus((serial.receive_stream[REC_RCON_CHARGER_4] << 24) | (serial.receive_stream[REC_RCON_CHARGER_3] << 16)
@@ -311,6 +312,29 @@ void robot::robotbase_routine_cb()
 		odom_trans.transform.translation.z = 0.0;
 		odom_trans.transform.rotation = odom_quat;
 		odom_broad.sendTransform(odom_trans);
+			is_sensor_ready_ = true;
+
+	// Dynamic adjust obs
+	obs.DynamicAdjust(OBS_adjust_count);
+
+	// Check for whether robot should publish this frame of scan.
+	if (p_mode != nullptr)
+	{
+		if (p_mode->sp_action_ != nullptr && p_mode->isInitState())
+			scan_ctrl_.allow_publishing = 1;
+		else
+			scan_ctrl_.allow_publishing =
+					!(fabs(wheel.getLeftWheelActualSpeed() - wheel.getRightWheelActualSpeed()) > 0.1
+					  || (wheel.getLeftWheelActualSpeed() * wheel.getRightWheelActualSpeed() < 0)
+					  || bumper.getStatus()
+					  || gyro.getTiltCheckingStatus()
+					  || abs(wheel.getLeftSpeedAfterPid() - wheel.getRightSpeedAfterPid()) > 100
+					  || wheel.getLeftSpeedAfterPid() * wheel.getRightSpeedAfterPid() < 0);
+	}
+	else
+		scan_ctrl_.allow_publishing = 1;
+
+	scan_ctrl_pub_.publish(scan_ctrl_);
 		/*------publish end -----------*/
 
 	}//end while
@@ -360,33 +384,6 @@ robot *robot::instance()
 	return robot_instance;
 }
 
-void robot::sensorCb(const pp::x900sensor::ConstPtr &msg)
-{
-	is_sensor_ready_ = true;
-
-	// Dynamic adjust obs
-	obs.DynamicAdjust(OBS_adjust_count);
-
-	// Check for whether robot should publish this frame of scan.
-	if (p_mode != nullptr)
-	{
-		if (p_mode->sp_action_ != nullptr && p_mode->isInitState())
-			scan_ctrl_.allow_publishing = 1;
-		else
-			scan_ctrl_.allow_publishing =
-					!(fabs(wheel.getLeftWheelActualSpeed() - wheel.getRightWheelActualSpeed()) > 0.1
-					  || (wheel.getLeftWheelActualSpeed() * wheel.getRightWheelActualSpeed() < 0)
-					  || bumper.getStatus()
-					  || gyro.getTiltCheckingStatus()
-					  || abs(wheel.getLeftSpeedAfterPid() - wheel.getRightSpeedAfterPid()) > 100
-					  || wheel.getLeftSpeedAfterPid() * wheel.getRightSpeedAfterPid() < 0);
-	}
-	else
-		scan_ctrl_.allow_publishing = 1;
-
-	scan_ctrl_pub_.publish(scan_ctrl_);
-}
-
 void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 {
 	tf::StampedTransform		transform;
@@ -397,16 +394,20 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	float	odom_pose_y_;
 	double	odom_pose_yaw_;
 
-	if (getBaselinkFrameType() == SLAM_POSITION_SLAM_ANGLE)
+	if (getBaselinkFrameType() == SLAM_POSITION_SLAM_ANGLE || getBaselinkFrameType() == SLAM_POSITION_ODOM_ANGLE)
 	{
-		if(slam.isMapReady()/* && !ev.slam_error*/)
+		if(slam.isMapReady())
 		{
 			try {
 				robot_tf_->lookupTransform("/map", "/base_link", ros::Time(0), transform);
 				tmp_x = transform.getOrigin().x();
 				tmp_y = transform.getOrigin().y();
 				tmp_yaw = tf::getYaw(transform.getRotation());
+
 				robot_tf_->lookupTransform("/odom", "/base_link", ros::Time(0), transform);
+				if(getBaselinkFrameType() == SLAM_POSITION_ODOM_ANGLE)
+					tmp_yaw = tf::getYaw(transform.getRotation());
+
 				odom_pose_x_ = transform.getOrigin().x();
 				odom_pose_y_ = transform.getOrigin().y();
 				odom_pose_yaw_ = tf::getYaw(transform.getRotation());
@@ -432,78 +433,10 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 		odom_pose_y_ = odom.getY();
 		odom_pose_yaw_ = odom.getAngle() * M_PI / 180;
 	}
-	else if (getBaselinkFrameType() == SLAM_POSITION_ODOM_ANGLE)
-	{//Wall_Follow_Mode
-		//ROS_INFO("SLAM = 2");
-		if(slam.isMapReady()/* && !ev.slam_error*/)
-		{
-			tf::Stamped<tf::Pose> ident;
-			ident.setIdentity();
-			ident.frame_id_ = "base_link";
-			ident.stamp_ = msg->header.stamp;
-			try {
-				robot_tf_->lookupTransform("/map", "/base_link", ros::Time(0), transform);
-				//robot_tf_->waitForTransform("/map", ros::Time::now(), ident.frame_id_, msg->header.stamp, ident.frame_id_, ros::Duration(0.5));
-				//robot_tf_->lookupTransform("/map", "/base_link", ros::Time(0), transform);
-				tmp_x = transform.getOrigin().x();
-				tmp_y = transform.getOrigin().y();
-				//robot_tf_->waitForTransform("/odom", ros::Time::now(), ident.frame_id_, msg->header.stamp, ident.frame_id_, ros::Duration(0.5));
-				robot_tf_->lookupTransform("/odom", "/base_link", ros::Time(0), transform);
-				tmp_yaw = tf::getYaw(transform.getRotation());
-				odom_pose_x_ = transform.getOrigin().x();
-				odom_pose_y_ = transform.getOrigin().y();
-				odom_pose_yaw_ = tf::getYaw(transform.getRotation());
-				slam_correction_x_ = tmp_x - odom_pose_x_;
-				slam_correction_y_ = tmp_y - odom_pose_y_;
-				slam_correction_yaw_ = tmp_yaw - odom_pose_yaw_;
-			} catch(tf::TransformException e)
-			{
-				ROS_WARN("%s %d: Failed to compute map transform, skipping scan (%s)", __FUNCTION__, __LINE__, e.what());
-			}
-
-
-			if (!isTfReady())
-			{
-				ROS_INFO("%s %d: TF ready.", __FUNCTION__, __LINE__);
-				setTfReady(true);
-			}
-		}
-	}
 
 #if USE_ROBOT_TF
-	updateRobotPose(odom_pose_x_, odom_pose_y_, odom_pose_yaw_,
-					slam_correction_x_, slam_correction_y_, slam_correction_yaw_,
-					robot_correction_x_, robot_correction_y_, robot_correction_yaw_,
-					robot_x_, robot_y_, robot_yaw_);
-	//robot_x = (tmp_x + robot_x) / 2;
-	//robot_y = (tmp_y + robot_y) / 2;
-	//robot_yaw = tmp_yaw;
-
-	// Publish the robot tf.
-	ros::Time cur_time;
-	//robot_trans.header.stamp = cur_time;
-	//robot_trans.header.frame_id = "map";
-	//robot_trans.child_frame_id = "robot";
-	//geometry_msgs::Quaternion	robot_quat;
-	//robot_trans.transform.translation.x = robot_x_;
-	//robot_trans.transform.translation.y = robot_y_;
-	//robot_trans.transform.translation.z = 0.0;
-	//robot_quat = tf::createQuaternionMsgFromYaw(robot_yaw_);
-	//robot_trans.transform.rotation = robot_quat;
-	//robot_broad.sendTransform(robot_trans);
-	//ROS_WARN("%s %d: World position (%f, %f), yaw: %f.", __FUNCTION__, __LINE__, tmp_x, tmp_y, tmp_yaw);
-	nav_msgs::Odometry robot_pose;
-	robot_pose.header.stamp = cur_time;
-	robot_pose.header.frame_id = "map";
-	robot_pose.child_frame_id = "robot";
-	robot_pose.pose.pose.position.x = robot_x_;
-	robot_pose.pose.pose.position.y = robot_y_;
-	robot_pose.pose.pose.position.z = 0.0;
-	robot_pose.pose.pose.orientation = tf::createQuaternionMsgFromYaw(robot_yaw_);
-	robot_pose.twist.twist.linear.x = 0.0;
-	robot_pose.twist.twist.linear.y = 0.0;
-	robot_pose.twist.twist.angular.z = 0.0;
-	odom_pub_.publish(robot_pose);
+	updateRobotPose(odom_pose_x_, odom_pose_y_, odom_pose_yaw_);
+	odomPublish();
 	//printf("Map->base(%f, %f, %f). Map->robot (%f, %f, %f)\n", tmp_x, tmp_y, RAD2DEG(tmp_yaw), robot_x_, robot_y_, RAD2DEG(robot_yaw_));
 	world_pose_.setX(robot_x_);
 	world_pose_.setY(robot_y_);
@@ -518,6 +451,23 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	//ROS_WARN("%s %d: Position diff(%f, %f), yaw diff: %f.", __FUNCTION__, __LINE__, tmp_x - odom_pose_x_, tmp_y - odom_pose_y_, tmp_yaw - odom_pose_yaw_);
 	//ROS_WARN("%s %d: Odom diff(%f, %f).", __FUNCTION__, __LINE__, odom_pose_x_ - msg->pose.pose.position.x, odom_pose_y_ - msg->pose.pose.position.y);
 	//ROS_WARN("%s %d: Correct  diff(%f, %f), yaw diff: %f.", __FUNCTION__, __LINE__, correct_x, correct_y, correct_yaw);
+}
+
+void robot::odomPublish()
+{
+	ros::Time cur_time;
+	nav_msgs::Odometry robot_pose;
+	robot_pose.header.stamp = cur_time;
+	robot_pose.header.frame_id = "map";
+	robot_pose.child_frame_id = "robot";
+	robot_pose.pose.pose.position.x = robot_x_;
+	robot_pose.pose.pose.position.y = robot_y_;
+	robot_pose.pose.pose.position.z = 0.0;
+	robot_pose.pose.pose.orientation = tf::createQuaternionMsgFromYaw(robot_yaw_);
+	robot_pose.twist.twist.linear.x = 0.0;
+	robot_pose.twist.twist.linear.y = 0.0;
+	robot_pose.twist.twist.angular.z = 0.0;
+	odom_pub_.publish(robot_pose);
 }
 
 void robot::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
@@ -1086,34 +1036,31 @@ void robot::initOdomPosition()
 	visualizeMarkerInit();
 }
 
-void robot::updateRobotPose(const float& odom_x, const float& odom_y, const double& odom_yaw,
-					const float& slam_correction_x, const float& slam_correction_y, const double& slam_correction_yaw,
-					float& robot_correction_x, float& robot_correction_y, double& robot_correction_yaw,
-					float& robot_x, float& robot_y, double& robot_yaw)
+void robot::updateRobotPose(float odom_x, float odom_y, double odom_yaw)
 {
 	if (wheel.getLeftSpeedAfterPid() * wheel.getRightSpeedAfterPid() > 0)
 	{
 		float scale;
-		scale = fabs(slam_correction_x - robot_correction_x) > 0.05 ? 0.1 * fabs(slam_correction_x - robot_correction_x) / 0.05 : 0.03;
+		scale = fabs(slam_correction_x_ - robot_correction_x_) > 0.05 ? 0.1 * fabs(slam_correction_x_ - robot_correction_x_) / 0.05 : 0.03;
 		scale = scale > 1.0 ? 1.0 : scale;
-		robot_correction_x += (slam_correction_x - robot_correction_x) * scale;
-		scale = fabs(slam_correction_y - robot_correction_y) > 0.05 ? 0.1 * fabs(slam_correction_y - robot_correction_y) / 0.05 : 0.03;
+		robot_correction_x_ += (slam_correction_x_ - robot_correction_x_) * scale;
+		scale = fabs(slam_correction_y_ - robot_correction_y_) > 0.05 ? 0.1 * fabs(slam_correction_y_ - robot_correction_y_) / 0.05 : 0.03;
 		scale = scale > 1.0 ? 1.0 : scale;
-		robot_correction_y += (slam_correction_y - robot_correction_y) * scale;
-		double yaw = slam_correction_yaw - robot_correction_yaw;
+		robot_correction_y_ += (slam_correction_y_ - robot_correction_y_) * scale;
+		double yaw = slam_correction_yaw_ - robot_correction_yaw_;
 		while (yaw < -3.141592)
 			yaw += 6.283184;
 		while (yaw > 3.141592)
 			yaw -= 6.283184;
-		robot_correction_yaw += (yaw) * 0.8;
+		robot_correction_yaw_ += (yaw) * 0.8;
 //		printf("Slam (%f, %f, %f). Adjust (%f, %f, %f)\n", slam_correction_x, slam_correction_y,
 //			   rad_2_deg(slam_correction_yaw, 1), robot_correction_x,
 //			   robot_correction_y, rad_2_deg(robot_correction_yaw, 1));
 	}
 
-	robot_x = odom_x + robot_correction_x;
-	robot_y = odom_y + robot_correction_y;
-	robot_yaw = odom_yaw + robot_correction_yaw;
+	robot_x_ = odom_x + robot_correction_x_;
+	robot_y_ = odom_y + robot_correction_y_;
+	robot_yaw_ = odom_yaw + robot_correction_yaw_;
 }
 
 void robot::resetCorrection()

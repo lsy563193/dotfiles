@@ -63,10 +63,7 @@ public:
 	void initOdomPosition();
 
 	// The scale should be between 0 to 1.
-	void updateRobotPose(const float& odom_x, const float& odom_y, const double& odom_yaw,
-						const float& slam_correction_x, const float& slam_correction_y, const double& slam_correction_yaw,
-						float& robot_correction_x, float& robot_correction_y, double& robot_correction_yaw,
-						float& robot_x, float& robot_y, double& robot_yaw);
+	void updateRobotPose(float odom_x, float odom_y, double odom_yaw);
 
 	void resetCorrection();
 
@@ -193,7 +190,6 @@ private:
 
 	ros::NodeHandle robot_nh_;
 
-	ros::Subscriber sensor_sub_;
 	ros::Subscriber map_sub_;
 	ros::Subscriber odom_sub_;
 	ros::Subscriber	scanLinear_sub_;
@@ -233,8 +229,8 @@ private:
 
 	Vector2<double> polar_to_cartesian(double polar,int i);
 	//callback function
-	void sensorCb(const pp::x900sensor::ConstPtr &msg);
 	void robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg);
+	void odomPublish();
 //	void robot_map_metadata_cb(const nav_msgs::MapMetaData::ConstPtr& msg);
 	void mapCb(const nav_msgs::OccupancyGrid::ConstPtr &msg);
 	void scanLinearCb(const sensor_msgs::LaserScan::ConstPtr &msg);
