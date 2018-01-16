@@ -6,6 +6,7 @@
 #include <move_type.hpp>
 #include "dev.h"
 #include "robot.hpp"
+#include "mode.hpp"
 
 //Point32_t AMovementFollowPoint::tmp_target_{};
 
@@ -53,7 +54,17 @@ bool AMovementFollowPoint::isFinish() {
 	angle_diff = getPosition().angleDiffPoint(calcTmpTarget());
 	if(std::abs(angle_diff) > angle_forward_to_turn_)
 	{
-		ROS_INFO("angle_diff(%d)", angle_diff);
+		ROS_INFO_FL();
+		ROS_WARN("angle_diff(%d)", angle_diff);
+#if DEBUG_ENABLE
+		if (std::abs(angle_diff) > 1400) {
+			ROS_ERROR("LASER WALL FOLLOW ERROR! PLEASE CALL ALVIN AND RESTART THE ROBOT.");
+			while(ros::ok()){
+				beeper.play_for_command(VALID);
+				wheel.setPidTargetSpeed(0, 0);
+			}
+		}
+#endif
 		sp_mt_->state_turn = true;
 		return true;
 	}

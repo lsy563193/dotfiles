@@ -4,7 +4,9 @@
 
 #include <movement.hpp>
 #include <move_type.hpp>
+#include <mode.hpp>
 #include "robot.hpp"
+#include "beep.h"
 
 #define WF_SCAN_TYPE						(2)
 
@@ -21,21 +23,23 @@ MovementFollowWallLidar::MovementFollowWallLidar(bool is_left)
 	lidar_targets_.empty();
 	virtual_targets_.empty();
 	p_tmp_targets_ = &virtual_targets_;
-
+	corner_time = ros::Time::now();
+	is_first_cal_vir = false;
 //	path_thread_ = new boost::thread(boost::bind(&MovementFollowWallLidar::calcTmpTarget));
 //	path_thread_->detach();
 }
 
 typedef struct{
 	int32_t r;
-	Points getPoints(int precision);
+	Points getPoints(int precision, bool is_inclue_zero);
 }Circle;
 
-Points Circle::getPoints(int precision)
+Points Circle::getPoints(int precision, bool is_inclue_zero)
 {
 	Points points1;
 	Points points2;
-	for(auto i=0; i<=precision; i++)
+	auto init_i = is_inclue_zero ? 0 : 1;
+	for(auto i=init_i; i<=precision; i++)
 	{
 		auto y = (this->r*2)/precision*i;
 		auto x = static_cast<int32_t>(sqrt(pow(this->r, 2) - pow(y - this->r, 2)));
@@ -50,14 +54,34 @@ Points Circle::getPoints(int precision)
 
 Points MovementFollowWallLidar::_calcTmpTarget() {
 	Circle circle{CELL_SIZE_3/2};
-
 	Points tmp_targets{};
-	auto d_points = circle.getPoints(10);
+	bool is_corner_beginning;
+	if (is_first_cal_vir){
+		is_corner_beginning = true;
+		is_first_cal_vir = false;
+	} else {
+		if ((ros::Time().now() - corner_time).toSec() < 3){
+			is_corner_beginning = false;
+			ROS_WARN("(corner_time - ros::Time().now()).toSec() < 2");
+#if DEBUG_ENABLE
+			beeper.play_for_command(INVALID);
+#endif
+		} else {
+			is_corner_beginning = true;
+			ROS_WARN("(corner_time - ros::Time().now()).toSec() > 2");
+#if DEBUG_ENABLE
+			beeper.play_for_command(VALID);
+#endif
+		}
+		corner_time = ros::Time::now();
+	}
+	auto offset_x = is_corner_beginning ? CELL_SIZE * 0.7 : 0;
+	auto d_points = circle.getPoints(10,is_corner_beginning);
 	for(auto& point:d_points)
 	{
 		if(!is_left_)
 			point.y = -point.y;
-		tmp_targets.push_back(getPosition().getRelative(point.x + CELL_SIZE, point.y));
+		tmp_targets.push_back(getPosition().getRelative(point.x + offset_x, point.y));
 	}
 	return tmp_targets;
 }
@@ -70,24 +94,36 @@ Point32_t MovementFollowWallLidar::calcTmpTarget() {
 	if (path_head.seq != seq_) {
 		seq_ = path_head.seq;
 		lidar_targets_ = path_head.tmp_plan_path_;
-		if(!lidar_targets_.empty())
+		if(!lidar_targets_.empty()) {
 			virtual_targets_.clear();
-		p_tmp_targets_ = lidar_targets_.empty() ? &virtual_targets_ : &lidar_targets_;
-//		ROS_WARN("get_lidar_target(%d)", lidar_targets_.size());
+			p_tmp_targets_ = &lidar_targets_;
+		} else {
+			INFO_PURPLE("p_tmp_targets_ = &virtual_targets_");
+			p_tmp_targets_ = &virtual_targets_;
+		}
+//		ROS_WARN("lidar_targets_.size() = %d", lidar_targets_.size());
 	}
 
-	if(p_tmp_targets_->empty()) {
+//	ROS_WARN("p_tmp_targets_.size() = %d", p_tmp_targets_->size());
+
+	if(!p_tmp_targets_->empty()) {
+		if (p_tmp_targets_->front().isNearTo(getPosition(), CELL_COUNT_MUL * 0.75)) {
+			p_tmp_targets_->pop_front();
+			ROS_WARN("near pop target(%d)", p_tmp_targets_->size());
+			if (p_tmp_targets_->empty()){
+				virtual_targets_ = _calcTmpTarget();
+				p_tmp_targets_ = &virtual_targets_;
+				INFO_PURPLE("p_tmp_targets_->empty(), use virtual target");
+			}
+		}
+	} else {
 		virtual_targets_ = _calcTmpTarget();
 		p_tmp_targets_ = &virtual_targets_;
-//		INFO_PURPLE("p_tmp_targets_->empty(), use virtual target");
-	}
-
-	if (p_tmp_targets_->front().isNearTo(getPosition(), CELL_COUNT_MUL * 0.75)){
-		p_tmp_targets_->pop_front();
-//		ROS_WARN("near pop target(%d)",p_tmp_targets_->size());
+		INFO_PURPLE("p_tmp_targets_->empty(), use virtual target");
 	}
 //	ROS_WARN("is_virtual_target(%d,%d)", lidar_targets_.empty(),lidar_targets_.size());
 	robot::instance()->pubTmpTarget(p_tmp_targets_->front(), p_tmp_targets_ == &virtual_targets_ );
+//	ROS_INFO("p_tmp_targets_(%d,%d,%d)", p_tmp_targets_->front().x, p_tmp_targets_->front().y, p_tmp_targets_->front().th);
 	return p_tmp_targets_->front();
 }
 

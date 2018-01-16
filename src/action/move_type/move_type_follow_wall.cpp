@@ -358,7 +358,7 @@ int16_t MoveTypeFollowWall::getTurnAngle(bool use_target_angle)
 		auto ev_turn_angle = getTurnAngleByEvent();
 		if(use_target_angle) {
 			auto target_point_ = dynamic_cast<ACleanMode*> (sp_mode_)->plan_path_.front();
-			auto tg_turn_angle = getPosition().angleDiffPoint(target_point_);;
+			auto tg_turn_angle = getPosition().angleDiffPoint(target_point_);
 			turn_angle = (std::abs(ev_turn_angle) > std::abs(tg_turn_angle)) ? ev_turn_angle : tg_turn_angle;
 			ROS_INFO("%s %d: target_turn_angle(%d), event_turn_angle(%d), choose the big one(%d)",
 					 __FUNCTION__, __LINE__, tg_turn_angle, ev_turn_angle, turn_angle);
