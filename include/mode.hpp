@@ -82,9 +82,16 @@ public:
 	}
 
 	bool inTargetRange(const Vector2<double> &target) {
-		return (target.x > 0 && target.y > 0.4) ||
-					 (target.x > CHASE_X && std::abs(target.y) < ROBOT_RADIUS) ||
-					 (target.y < -ROBOT_RADIUS);
+		if (is_left_) {
+			return (target.x > 0 && target.y > 0.4) ||
+						 (target.x > CHASE_X && std::abs(target.y) < ROBOT_RADIUS) ||
+						 (target.y < -ROBOT_RADIUS);
+		} else{
+			return (target.x > 0 && target.y < -0.4) ||
+						 (target.x > CHASE_X && std::abs(target.y) < ROBOT_RADIUS) ||
+						 (target.y > ROBOT_RADIUS);
+
+		}
 	}
 
 	bool inForwardRange(const Vector2<double> &point) const {
