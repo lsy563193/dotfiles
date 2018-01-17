@@ -437,9 +437,9 @@ private:
 		return static_cast<int16_t>(round(count / CELL_SIZE));
   }
 
-//	int32_t cellToCount(int16_t i) const {
-//		return i * CELL_COUNT_MUL;
-//	}
+	float cellToCount(int16_t i) const {
+		return i * CELL_SIZE;
+	}
 
 };
 

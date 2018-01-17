@@ -320,7 +320,7 @@ uint8_t Gyro::checkTilt()
 			if (tilt_right_count_ > 0)
 				tilt_right_count_--;
 		}
-		if (abs(getZAcc() - getInitZAcc()) > DIF_TILT_Z_VAL)
+		if (std::abs(getZAcc() - getInitZAcc()) > DIF_TILT_Z_VAL)
 		{
 			tilt_z_count_++;
 			//ROS_WARN("%s %d: z(%d)\tzi(%d).", __FUNCTION__, __LINE__, getZAcc(), getInitZAcc());

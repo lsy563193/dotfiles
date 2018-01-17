@@ -41,7 +41,6 @@ public:
 
 	// Publisher functions.
 //	void pubTmpTarget(const Points &points,bool is_virtual=false);
-	void pubTmpTarget(const Point_t &point,bool is_virtual=false);
 	void robotbase_routine_cb();
 	void core_thread_cb();
 	// Service caller functions.
@@ -180,7 +179,6 @@ private:
 
 	ros::Publisher odom_pub_;
 	ros::Publisher scan_ctrl_pub_;
-	ros::Publisher tmp_target_pub_;
 
 	ros::ServiceClient lidar_motor_cli_;
 	ros::ServiceClient start_slam_cli_;

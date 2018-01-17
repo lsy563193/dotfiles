@@ -23,6 +23,7 @@ ACleanMode::ACleanMode()
 	map_sub_ = clean_nh_.subscribe("/map", 1, &Slam::mapCb, &slam);
 
 
+	tmp_target_pub_ = clean_nh_.advertise<visualization_msgs::Marker>("tmp_target", 1);
 	point_marker_pub_ = clean_nh_.advertise<visualization_msgs::Marker>("point_marker", 1);
 	send_clean_map_marker_pub_ = clean_nh_.advertise<visualization_msgs::Marker>("clean_map_markers", 1);
 	fit_line_marker_pub_ = clean_nh_.advertise<visualization_msgs::Marker>("fit_line_marker", 1);
@@ -47,6 +48,7 @@ ACleanMode::ACleanMode()
 }
 
 ACleanMode::~ACleanMode() {
+	tmp_target_pub_.shutdown();
 	scanLinear_sub_.shutdown();
 	scanCompensate_sub_.shutdown();
 	scanOriginal_sub_.shutdown();
@@ -99,6 +101,44 @@ ACleanMode::~ACleanMode() {
 	ROS_INFO("%s %d: Cleaned area = \033[32m%.2fm2\033[0m, cleaning time: \033[32m%d(s) %.2f(min)\033[0m, cleaning speed: \033[32m%.2f(m2/min)\033[0m.",
 			 __FUNCTION__, __LINE__, map_area, robot_timer.getWorkTime(),
 			 static_cast<float>(robot_timer.getWorkTime()) / 60, map_area / (static_cast<float>(robot_timer.getWorkTime()) / 60));
+}
+void ACleanMode::pubTmpTarget(const Point_t &point, bool is_virtual) {
+	visualization_msgs::Marker point_markers;
+	point_markers.ns = "tmp_target";
+	point_markers.id = 0;
+	point_markers.type = visualization_msgs::Marker::SPHERE_LIST;
+	point_markers.action = 0;//add
+	point_markers.lifetime = ros::Duration(0), "base_link";
+	point_markers.scale.x = 0.07;
+	point_markers.scale.y = 0.07;
+	point_markers.scale.z = 0.10;
+	if(!is_virtual)
+	{
+		point_markers.color.r = 1.0;
+		point_markers.color.g = 0.5;
+		point_markers.color.b = 0.5;
+	}else{
+		point_markers.color.r = 0.3;
+		point_markers.color.g = 0.3;
+		point_markers.color.b = 0.4;
+	}
+
+	point_markers.color.a = 1.0;
+	point_markers.header.frame_id = "/map";
+	point_markers.header.stamp = ros::Time::now();
+
+//	for(const auto & point : points)
+	{
+		geometry_msgs::Point point_marker;
+		point_marker.x = point.x;
+		point_marker.y = point.y;
+		point_marker.z = 0;
+		point_markers.points.push_back(point_marker);
+	}
+	tmp_target_pub_.publish(point_markers);
+	//ROS_INFO("%s,%d,points size:%u,points %s",__FUNCTION__,__LINE__,points->size(),msg.c_str());
+	point_markers.points.clear();
+	//ROS_INFO("pub points!!");
 }
 
 void ACleanMode::pubPointMarkers(const std::deque<Vector2<double>> *points, std::string frame_id)
@@ -315,9 +355,6 @@ void ACleanMode::visualizeMarkerInit()
 void ACleanMode::setCleanMapMarkers(int16_t x, int16_t y, CellState type)
 {
 	geometry_msgs::Point m_points_;
-	m_points_.x = 0.0;
-	m_points_.y = 0.0;
-	m_points_.z = 0.0;
 	std_msgs::ColorRGBA color_;
 	color_.a = 0.7;
 	m_points_.x = x * CELL_SIZE ;
@@ -453,13 +490,20 @@ void ACleanMode::pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path
 	}
 	if (!path.empty())
 	{
-		for (auto it = path.begin(); it->x != path.back().x || it->y != path.back().y; it++)
-			setCleanMapMarkers(it->x, it->y, TARGET);
+//		for (const auto& it : path)
+//		{
+//			ROS_ERROR("it(%d,%d)",it.x, it.y);
+//		}
 
 		setCleanMapMarkers(path.back().x, path.back().y, TARGET_CLEAN);
 	}
 
 	clean_map_markers_.header.stamp = ros::Time::now();
+//	for (const auto& it : clean_map_markers_.points)
+//	{
+//		ROS_WARN("it(%f,%f)",it.x, it.y);
+//	}
+
 	send_clean_map_marker_pub_.publish(clean_map_markers_);
 	clean_map_markers_.points.clear();
 	clean_map_markers_.colors.clear();

@@ -550,6 +550,7 @@ public:
 	bool calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,bool is_left ,std::deque<Vector2<double>>& points);
 	Vector2<double> polar_to_cartesian(double polar,int i);
 	void setTempTarget(std::deque<Vector2<double>>& points, uint32_t  seq);
+	void pubTmpTarget(const Point_t &point,bool is_virtual=false);
 
 	PathHead getTempTarget()const;
 
@@ -563,6 +564,7 @@ private:
 	ros::Subscriber lidarPoint_sub_;
 	ros::Subscriber	scanOriginal_sub_;
 
+	ros::Publisher tmp_target_pub_;
 	ros::Publisher point_marker_pub_;
 	ros::Publisher send_clean_map_marker_pub_;
 	ros::Publisher line_marker_pub_;
