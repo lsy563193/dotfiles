@@ -28,7 +28,7 @@ void Ooops(int sig)
 			ROS_ERROR("Oops!!! pp receive SIGINT signal,ctrl+c press");
 			beeper.play(3,50,50,5);
 			if(robot_instance != nullptr){
-				speaker.play(VOICE_CLEANING_STOP);
+				speaker.play(VOICE_CLEANING_STOP,false);
 				delete robot_instance;
 			}
 			break;
