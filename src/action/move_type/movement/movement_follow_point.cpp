@@ -42,7 +42,7 @@ void AMovementFollowPoint::adjustSpeed(int32_t &left_speed, int32_t &right_speed
 
 	check_limit(left_speed, 0, max_speed_);
 	check_limit(right_speed, 0, max_speed_);
-	ROS_INFO("speed(%d,%d),base(%d) speed_diff(%d)", left_speed, right_speed,base_speed_, speed_diff);
+//	ROS_INFO("speed(%d,%d),base(%d) speed_diff(%d)", left_speed, right_speed,base_speed_, speed_diff);
 
 	base_speed_ = (left_speed + right_speed) / 2;
 

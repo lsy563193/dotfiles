@@ -105,7 +105,7 @@ private:
 	bool _lidarTurnAngle(bool is_left, double &turn_angle, double lidar_min, double lidar_max, double angle_min, double angle_max,
 						 double dis_limit = 0.217);
 	bool lidarTurnAngle(double &turn_angle);
-	int16_t getTurnAngleByEvent();
+	double getTurnAngleByEvent();
 	double getTurnAngle(bool);
 	double robot_to_wall_distance = 0.8;
 	float g_back_distance = 0.01;

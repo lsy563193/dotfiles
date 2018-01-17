@@ -124,11 +124,11 @@ bool IMoveType::isFinish() {
 		});
 		auto distance = std::distance(loc, p_mode->passed_path_.end());
 		if (distance == 0) {
-			ROS_INFO("curr(%d,%d,%d)",curr.toCell().x, curr.toCell().y, curr.th);
+//			ROS_INFO("curr(%d,%d,%f)",curr.toCell().x, curr.toCell().y, curr.th);
 			p_mode->passed_path_.push_back(curr);
 		}
 		if (distance > 5) {
-			ROS_INFO("reach_cleaned_count_(%d)",p_mode->reach_cleaned_count_);
+//			ROS_INFO("reach_cleaned_count_(%d)",p_mode->reach_cleaned_count_);
 			p_mode->reach_cleaned_count_++;
 		}
 		p_mode->markRealTime();//real time mark to exploration

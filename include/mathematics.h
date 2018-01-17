@@ -399,7 +399,7 @@ public:
 
 	bool isAngleNear(const Point_t &r) const
 	{
-		return  std::abs(ranged_angle(th - r.th)) < 20/PI/180;
+		return  std::abs(ranged_angle(th - r.th)) < 2/PI/180;
 	}
 
 	bool isCellAndAngleEqual(const Point_t &r) const

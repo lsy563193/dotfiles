@@ -17,7 +17,7 @@ MoveTypeFollowWall::MoveTypeFollowWall(bool is_left)
 //	if(! p_clean_mode->plan_path_.empty())
 //		p_clean_mode.target_point_ = p_clean_mode->plan_path_.front();
 	is_left_ = is_left;
-	double turn_angle = getTurnAngle(!p_mode->plan_path_.empty());
+	auto turn_angle = getTurnAngle(!p_mode->plan_path_.empty());
 	turn_target_angle_ = getPosition().addAngle(turn_angle).th;
 	movement_i_ = mm_turn;
 	sp_movement_.reset(new MovementTurn(turn_target_angle_, ROTATE_TOP_SPEED));
@@ -84,7 +84,7 @@ bool MoveTypeFollowWall::isFinish()
 			if (!handleMoveBackEvent(p_clean_mode))
 			{
 				p_clean_mode->moveTypeFollowWallSaveBlocks();
-				int16_t turn_angle = getTurnAngle(false);
+				auto turn_angle = getTurnAngle(false);
 				turn_target_angle_ = getPosition().addAngle(turn_angle).th;
 				movement_i_ = mm_turn;
 				sp_movement_.reset(new MovementTurn(turn_target_angle_, ROTATE_TOP_SPEED));
@@ -93,7 +93,7 @@ bool MoveTypeFollowWall::isFinish()
 		}
 		else if (movement_i_ == mm_back) {
 			movement_i_ = mm_turn;
-			int16_t turn_angle = getTurnAngle(false);
+			auto turn_angle = getTurnAngle(false);
 			turn_target_angle_ = getPosition().addAngle(turn_angle).th;
 			sp_movement_.reset(new MovementTurn(turn_target_angle_, ROTATE_TOP_SPEED));
 			resetTriggeredValue();
@@ -115,19 +115,19 @@ int16_t MoveTypeFollowWall::bumperTurnAngle()
 
 	if (status == BLOCK_ALL)
 	{
-		turn_angle = -600;
+		turn_angle = -60;
 //		bumper_jam_cnt_ = (wheel.*get_wheel_step)() < 2000 ? ++bumper_jam_cnt_ : 0;
 //		g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
 	} else if (status == diff_side)
 	{
-		turn_angle = -850;
+		turn_angle = -85;
 //		g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
 	} else if (status == same_side)
 	{
 //		g_wall_distance = bumper_turn_factor * g_wall_distance;
 //		if(g_wall_distance < 330)
 //			g_wall_distance = WALL_DISTANCE_LOW_LIMIT;
-		turn_angle = -300;
+		turn_angle = -30;
 //		if (!cs.is_trapped()) {
 //			turn_angle = (bumper_jam_cnt_ >= 3 || (obs.*get_obs)() <= (obs.*get_obs_value)()) ? -180 : -280;
 //		} else {
@@ -146,7 +146,7 @@ int16_t MoveTypeFollowWall::bumperTurnAngle()
 
 int16_t MoveTypeFollowWall::cliffTurnAngle()
 {
-	int16_t turn_angle = -750;
+	int16_t turn_angle = -75;
 	if(!is_left_)
 		turn_angle = -turn_angle;
 	return turn_angle;
@@ -159,20 +159,20 @@ int16_t MoveTypeFollowWall::tiltTurnAngle()
 	if (is_left_)
 	{
 		if (tmp_status | TILT_LEFT)
-			turn_angle = -600;
+			turn_angle = -60;
 		if (tmp_status | TILT_FRONT)
-			turn_angle = -850;
+			turn_angle = -85;
 		if (tmp_status | TILT_RIGHT)
-			turn_angle = -1100;
+			turn_angle = -110;
 	}
 	else
 	{
 		if (tmp_status | TILT_RIGHT)
-			turn_angle = 600;
+			turn_angle = 60;
 		if (tmp_status | TILT_FRONT)
-			turn_angle = 850;
+			turn_angle = 85;
 		if (tmp_status | TILT_LEFT)
-			turn_angle = 1100;
+			turn_angle = 110;
 	}
 	return turn_angle;
 }
@@ -184,11 +184,11 @@ int16_t MoveTypeFollowWall::obsTurnAngle()
 	auto diff_side = (is_left_) ? BLOCK_RIGHT : BLOCK_LEFT;
 	auto same_side = (is_left_) ? BLOCK_LEFT : BLOCK_RIGHT;
 	if(ev.obs_triggered == BLOCK_FRONT)
-		turn_angle = -850;
+		turn_angle = -85;
 	else if(ev.obs_triggered == diff_side)
-		turn_angle = -920;
+		turn_angle = -92;
 	else if(ev.obs_triggered == same_side)
-		turn_angle = -300;
+		turn_angle = -30;
 
 	if(!is_left_)
 		turn_angle = -turn_angle;
@@ -200,24 +200,14 @@ int16_t MoveTypeFollowWall::rconTurnAngle()
 {
 	int16_t turn_angle{};
 	enum {left,fl2,fl,fr,fr2,right};
-	int16_t left_angle[] =   {-300,-600,-850,-850,-950,-1100};
-	int16_t right_angle[] =  {1100, 950, 850, 850, 600, 300};
+	int16_t left_angle[] =   {-30,-60,-85,-85,-95,-110};
+	int16_t right_angle[] =  {110, 95, 85, 85, 60, 30};
 	if(is_left_)
 		turn_angle = left_angle[ev.rcon_triggered-1];
 	else if(!is_left_)
 		turn_angle = right_angle[ev.rcon_triggered-1];
 
 	return turn_angle;
-}
-
-int16_t MoveTypeFollowWall::double_scale_10(double line_angle)
-{
-	int16_t angle;
-	if (line_angle > 0)
-		angle = static_cast<int16_t>((180 - line_angle) * 10);
-	else
-		angle = static_cast<int16_t>(std::abs(line_angle) * 10);
-	return angle;
 }
 
 bool MoveTypeFollowWall::_lidarTurnAngle(bool is_left, double &turn_angle, double lidar_min, double lidar_max, double angle_min,
@@ -297,7 +287,7 @@ bool MoveTypeFollowWall::lidarTurnAngle(double &turn_angle)
 	return false;
 }
 
-int16_t MoveTypeFollowWall::getTurnAngleByEvent()
+double MoveTypeFollowWall::getTurnAngleByEvent()
 {
 	int16_t turn_angle{};
 	if (ev.bumper_triggered) {
@@ -336,7 +326,7 @@ int16_t MoveTypeFollowWall::getTurnAngleByEvent()
 		turn_angle = obsTurnAngle();
 		ROS_INFO("%s %d: slip triggered, turn_angle: %d.", __FUNCTION__, __LINE__, turn_angle);
 	}
-	return turn_angle;
+	return turn_angle*PI/180;
 }
 
 double MoveTypeFollowWall::getTurnAngle(bool use_target_angle)
@@ -355,15 +345,15 @@ double MoveTypeFollowWall::getTurnAngle(bool use_target_angle)
 		auto ev_turn_angle = getTurnAngleByEvent();
 		if(use_target_angle) {
 			auto target_point_ = dynamic_cast<ACleanMode*> (sp_mode_)->plan_path_.front();
-			auto tg_turn_angle = getPosition().angleDiff(target_point_.th);
-			turn_angle = std::abs(ev_turn_angle) > std::abs(tg_turn_angle) ? ev_turn_angle : tg_turn_angle;
+			auto target_turn_angle = getPosition().angleDiff(target_point_.th);
+			turn_angle = std::abs(ev_turn_angle) > std::abs(target_turn_angle) ? ev_turn_angle : target_turn_angle;
 			ROS_INFO("%s %d: target_turn_angle(%f), event_turn_angle(%f), choose the big one(%f)",
-					 __FUNCTION__, __LINE__, tg_turn_angle, ev_turn_angle, turn_angle);
+					 __FUNCTION__, __LINE__, target_turn_angle, ev_turn_angle, turn_angle);
 		}
 		else
 		{
 			turn_angle = ev_turn_angle;
-			ROS_INFO("%s %d: Use event_turn_angle(%f)", __FUNCTION__, __LINE__, turn_angle);
+			ROS_INFO("%s %d: Use event_turn_angle(%d)", __FUNCTION__, __LINE__, turn_angle*180/PI);
 		}
 	}
 	resetTriggeredValue();

@@ -28,7 +28,7 @@ bool MovementTurn::isReach()
 void MovementTurn::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
 	auto diff = getPosition().angleDiff(target_angle_);
-	ROS_INFO("%s %d: MovementTurn diff: %f, cm_target_p_.th: %f, current angle: %f.", __FUNCTION__, __LINE__, diff, target_angle_, robot::instance()->getWorldPoseYaw());
+//	ROS_INFO("%s %d: MovementTurn diff: %f, cm_target_p_.th: %f, current angle: %f.", __FUNCTION__, __LINE__, diff, target_angle_, robot::instance()->getWorldPoseYaw());
 	(diff >= 0) ? wheel.setDirectionLeft() : wheel.setDirectionRight();
 
 //	ROS_INFO("MovementTurn::adjustSpeed");
