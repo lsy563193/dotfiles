@@ -63,13 +63,13 @@ Points MovementFollowWallLidar::_calcTmpTarget() {
 			is_corner_beginning = false;
 			ROS_WARN("(corner_time - ros::Time().now()).toSec() < 2");
 #if DEBUG_ENABLE
-			beeper.play_for_command(INVALID);
+//			beeper.play_for_command(INVALID);
 #endif
 		} else {
 			is_corner_beginning = true;
 			ROS_WARN("(corner_time - ros::Time().now()).toSec() > 2");
 #if DEBUG_ENABLE
-			beeper.play_for_command(VALID);
+//			beeper.play_for_command(VALID);
 #endif
 		}
 		corner_time = ros::Time::now();
