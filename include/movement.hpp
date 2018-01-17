@@ -87,7 +87,7 @@ public:
 
 private:
 	uint8_t max_speed_;
-	uint16_t accurate_;
+	double accurate_;
 	uint8_t speed_;
 	double target_angle_;
 };

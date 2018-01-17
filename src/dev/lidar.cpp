@@ -162,7 +162,7 @@ static bool lineCombine(std::vector<LineABC> *lines_before,std::vector<LineABC> 
 	std::vector<LineABC>::iterator it;
 	for(it = lines_before->begin(); it != lines_before->end(); it++){
 		if( (it+1)!=lines_before->end() ){
-			if(abs(it->K - (it+1)->K) <= MIN_COMBINE_ANGLE){
+			if(std::abs(it->K - (it+1)->K) <= MIN_COMBINE_ANGLE){
 				if(two_points_distance_double(it->x2,it->y2,(it+1)->x1,(it+1)->y1) < MIN_COMBINE_DIST){
 					line_tmp.x1 = it->x1;
 					line_tmp.y1 = it->y1;
