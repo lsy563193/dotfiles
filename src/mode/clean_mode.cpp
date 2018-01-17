@@ -19,7 +19,7 @@ ACleanMode::ACleanMode()
 	scanLinear_sub_ = clean_nh_.subscribe("scanLinear", 1, &Lidar::scanLinearCb, &lidar);
 	scanCompensate_sub_ = clean_nh_.subscribe("scanCompensate", 1, &Lidar::scanCompensateCb, &lidar);
 	scanOriginal_sub_ = clean_nh_.subscribe("scanOriginal", 1, &ACleanMode::scanOriginalCb, this);
-	lidarPoint_sub_ = clean_nh_.subscribe("lidarPoint", 1, &Lidar::lidarPointCb, &lidar);
+	lidarPoint_sub_ = clean_nh_.subscribe("lidarPoint", 1, &Lidar::lidarXYPointCb, &lidar);
 	map_sub_ = clean_nh_.subscribe("/map", 1, &Slam::mapCb, &slam);
 
 
