@@ -40,8 +40,8 @@ Points Circle::getPoints(int precision, bool is_inclue_zero)
 	auto init_i = is_inclue_zero ? 0 : 1;
 	for(auto i=init_i; i<=precision; i++)
 	{
-		auto y = (this->r*2)/precision*i;
-		auto x = sqrt(pow(this->r, 2) - pow(y - this->r, 2));
+		float y = (this->r*2)/precision*i;
+		float x = sqrt(pow(this->r, 2) - pow(y - this->r, 2));
 		printf("x,y(%d,%d) ",x, y);
 		points1.push_back({x,y,0});
 		points2.push_front({-x,y,0});
@@ -63,13 +63,13 @@ Points MovementFollowWallLidar::_calcTmpTarget() {
 			is_corner_beginning = false;
 			ROS_WARN("(corner_time - ros::Time().now()).toSec() < 2");
 #if DEBUG_ENABLE
-			beeper.play_for_command(INVALID);
+//			beeper.play_for_command(INVALID);
 #endif
 		} else {
 			is_corner_beginning = true;
 			ROS_WARN("(corner_time - ros::Time().now()).toSec() > 2");
 #if DEBUG_ENABLE
-			beeper.play_for_command(VALID);
+//			beeper.play_for_command(VALID);
 #endif
 		}
 		corner_time = ros::Time::now();
