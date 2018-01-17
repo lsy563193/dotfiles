@@ -413,13 +413,10 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	updateRobotPose(odom_pose, odom_pose_yaw_);
 	odomPublish();
 	//printf("Map->base(%f, %f, %f). Map->robot (%f, %f, %f)\n", tmp_x, tmp_y, RAD2DEG(tmp_yaw), robot_x_, robot_y_, RAD2DEG(robot_yaw_));
-	world_pose_.setX(robot_pos.x());
-	world_pose_.setY(robot_pos.y());
-	world_pose_.setAngle(ranged_angle(robot_yaw_ * 1800 / M_PI));
-//	ROS_WARN("Position (%f, %f), angle: %f.", world_pose_.getX(), world_pose_.getY(), world_pose_.getAngle());
+//	ROS_WARN("Position (%f, %f), angle: %f.", robot_pos.getX(), robot_pos.getY(), robot_pos.getAngle());
 #else
 	pose.setX(tmp_x_);
-	pose.setY(tmp_y_);
+std::	pose.setY(tmp_y_);
 	pose.setAngle(tmp_yaw_);
 #endif
 	//ROS_WARN("%s %d: Position (%f, %f), yaw: %f. Odom position(%f, %f), yaw: %f.", __FUNCTION__, __LINE__, tmp_x, tmp_y, tmp_yaw, odom_pose_x_, odom_pose_y_, odom_pose_yaw_);
@@ -506,6 +503,7 @@ void robot::updateRobotPose(tf::Vector3& odom, double odom_yaw)
 
 	robot_pos = odom + robot_correction_pos;
 	robot_yaw_ = odom_yaw + robot_correction_yaw_;
+	world_yaw_ = (ranged_angle(robot_yaw_ * 1800 / M_PI));
 }
 
 void robot::resetCorrection()
