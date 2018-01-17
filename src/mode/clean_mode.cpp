@@ -355,9 +355,6 @@ void ACleanMode::visualizeMarkerInit()
 void ACleanMode::setCleanMapMarkers(int16_t x, int16_t y, CellState type)
 {
 	geometry_msgs::Point m_points_;
-	m_points_.x = 0.0;
-	m_points_.y = 0.0;
-	m_points_.z = 0.0;
 	std_msgs::ColorRGBA color_;
 	color_.a = 0.7;
 	m_points_.x = x * CELL_SIZE ;
@@ -486,6 +483,7 @@ void ACleanMode::pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path
 			else
 			{
 				cell_state = map.getCell(CLEAN_MAP, x, y);
+				ROS_ERROR("cell(%d,%d),cell_state(%d)",x, y, cell_state);
 				if (cell_state > UNCLEAN && cell_state < BLOCKED_BOUNDARY )
 					setCleanMapMarkers(x, y, cell_state);
 			}
@@ -493,13 +491,20 @@ void ACleanMode::pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path
 	}
 	if (!path.empty())
 	{
-		for (auto it = path.begin(); it->x != path.back().x || it->y != path.back().y; it++)
-			setCleanMapMarkers(it->x, it->y, TARGET);
+		for (const auto& it : path)
+		{
+			ROS_ERROR("it(%d,%d)",it.x, it.y);
+		}
 
 		setCleanMapMarkers(path.back().x, path.back().y, TARGET_CLEAN);
 	}
 
 	clean_map_markers_.header.stamp = ros::Time::now();
+	for (const auto& it : clean_map_markers_.points)
+	{
+		ROS_WARN("it(%f,%f)",it.x, it.y);
+	}
+
 	send_clean_map_marker_pub_.publish(clean_map_markers_);
 	clean_map_markers_.points.clear();
 	clean_map_markers_.colors.clear();

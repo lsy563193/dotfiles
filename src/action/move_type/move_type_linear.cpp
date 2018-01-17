@@ -144,8 +144,8 @@ void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 			p_clean_mode->plan_path_.pop_front();
 //			target_point_ = p_clean_mode->plan_path_.front();
 
-//			ROS_INFO("%s,%d,next target_point(%d,%d), dir(%d)",
-//					 __FUNCTION__,__LINE__,target_point_.toCell().x,target_point_.toCell().y, p_clean_mode->new_dir_);
+			ROS_INFO("%s,%d,next target_point(%d,%d), dir(%d)",
+					 __FUNCTION__,__LINE__,target_point_.toCell().x,target_point_.toCell().y, p_clean_mode->new_dir_);
 		}
 	}
 }
