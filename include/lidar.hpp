@@ -84,7 +84,7 @@ public:
 	void scanLinearCb(const sensor_msgs::LaserScan::ConstPtr &msg);
 	void scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr &msg);
 	void scanCompensateCb(const sensor_msgs::LaserScan::ConstPtr &msg);
-	void lidarPointCb(const visualization_msgs::Marker &point_marker);
+	void lidarXYPointCb(const visualization_msgs::Marker &point_marker);
 	static void setLidarScanDataOriginal(const sensor_msgs::LaserScan::ConstPtr &scan);
 	static sensor_msgs::LaserScan getLidarScanDataOriginal(void);
 private:
@@ -96,12 +96,11 @@ private:
 	uint8_t is_scanLinear_ready_;
 	uint8_t is_scanOriginal_ready_;
 	uint8_t is_scanCompensate_ready_;
-	std::vector<geometry_msgs::Point> lidarXY_points;
 
-	boost::mutex scan2_mutex_;
 	sensor_msgs::LaserScan lidarScanData_linear_;
 	static sensor_msgs::LaserScan lidarScanData_original_;
 	sensor_msgs::LaserScan lidarScanData_compensate_;
+	std::vector<geometry_msgs::Point> lidarXY_points;
 	double scanLinear_update_time;
 	double scanOriginal_update_time;
 
