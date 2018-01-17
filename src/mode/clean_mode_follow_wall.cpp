@@ -176,6 +176,7 @@ bool CleanModeFollowWall::updateActionInStateClean()
 	if (plan_path_.empty()) {
 		ROS_WARN("%s,%d: mt_follow_wall_left", __FUNCTION__, __LINE__);
 		action_i_ = ac_follow_wall_left;
+//		action_i_ = ac_follow_wall_right;
 		genNextAction();
 		ROS_WARN("%s,%d: mt_follow_wall_left", __FUNCTION__, __LINE__);
 	}
