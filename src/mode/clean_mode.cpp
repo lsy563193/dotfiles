@@ -483,7 +483,6 @@ void ACleanMode::pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path
 			else
 			{
 				cell_state = map.getCell(CLEAN_MAP, x, y);
-				ROS_ERROR("cell(%d,%d),cell_state(%d)",x, y, cell_state);
 				if (cell_state > UNCLEAN && cell_state < BLOCKED_BOUNDARY )
 					setCleanMapMarkers(x, y, cell_state);
 			}
@@ -491,19 +490,19 @@ void ACleanMode::pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path
 	}
 	if (!path.empty())
 	{
-		for (const auto& it : path)
-		{
-			ROS_ERROR("it(%d,%d)",it.x, it.y);
-		}
+//		for (const auto& it : path)
+//		{
+//			ROS_ERROR("it(%d,%d)",it.x, it.y);
+//		}
 
 		setCleanMapMarkers(path.back().x, path.back().y, TARGET_CLEAN);
 	}
 
 	clean_map_markers_.header.stamp = ros::Time::now();
-	for (const auto& it : clean_map_markers_.points)
-	{
-		ROS_WARN("it(%f,%f)",it.x, it.y);
-	}
+//	for (const auto& it : clean_map_markers_.points)
+//	{
+//		ROS_WARN("it(%f,%f)",it.x, it.y);
+//	}
 
 	send_clean_map_marker_pub_.publish(clean_map_markers_);
 	clean_map_markers_.points.clear();
