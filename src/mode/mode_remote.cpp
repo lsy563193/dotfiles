@@ -110,13 +110,13 @@ IAction* ModeRemote::getNextAction()
 		{
 			action_i_ = ac_turn;
 			ev.remote_direction_left = false;
-			return new MovementTurn(static_cast<int16_t>(robot::instance()->getWorldPoseAngle() + 300), ROTATE_TOP_SPEED);
+			return new MovementTurn(robot::instance()->getWorldPoseYaw() + 300*PI/180.0, ROTATE_TOP_SPEED);
 		}
 		else if (ev.remote_direction_right)
 		{
 			action_i_ = ac_turn;
 			ev.remote_direction_right = false;
-			return new MovementTurn(static_cast<int16_t>(robot::instance()->getWorldPoseAngle() - 300), ROTATE_TOP_SPEED);
+			return new MovementTurn(robot::instance()->getWorldPoseYaw() - 300*PI/180.0, ROTATE_TOP_SPEED);
 		}
 	}
 

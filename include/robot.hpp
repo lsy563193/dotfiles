@@ -68,7 +68,7 @@ public:
 		return is_tf_ready_;
 	}
 
-	int16_t getWorldPoseAngle()
+	double getWorldPoseYaw()
 	{
 		// It is 10x degrees.
 		return world_yaw_;
@@ -164,7 +164,7 @@ private:
 	bool	is_align_active_;
 
 	tf::Vector3	robot_pos;
-	int16_t	world_yaw_;
+	double	world_yaw_;
 	double	robot_yaw_;
 
 	// This is for the slam correction variables.
@@ -208,11 +208,11 @@ int16_t countToCell(int32_t count);
 
 Point_t getPosition(void);
 
-bool isPos(int dir);
+bool isPos(double dir);
 
-bool isXAxis(int dir);
+bool isXAxis(double dir);
 
-bool isYAxis(int dir);
+bool isYAxis(double dir);
 
 void updatePosition();
 

@@ -504,8 +504,8 @@ public:
 	bool should_mark_temp_charger_{};
 	bool found_charger_{};
 
-	int old_dir_{};
-	int new_dir_{};
+	double old_dir_{};
+	double new_dir_{};
 
 	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
 	boost::shared_ptr<GoHomePathAlgorithm> go_home_path_algorithm_{};

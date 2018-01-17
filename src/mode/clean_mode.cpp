@@ -743,7 +743,7 @@ void ACleanMode::moveTypeLinearSaveBlocks()
 
 void ACleanMode::setRconPos(float cd,float dist)
 {
-//	float yaw = robot::instance()->getWorldPoseAngle()/10.0;
+//	float yaw = robot::instance()->getWorldPoseYaw()/10.0;
 //	float wpx = cosf( (float)ranged_angle((yaw+cd)*10)/10.0 * PI/180.0 )*dist+ robot::instance()->getWorldPoseX();
 //	float wpy = sinf( (float)ranged_angle((yaw+cd)*10)/10.0 * PI/180.0 )*dist+ robot::instance()->getWorldPoseY();
 //	charger_pos_ = {(int32_t)(wpx*1000/CELL_SIZE), (int32_t)(wpy*1000/CELL_SIZE),(int16_t)0};

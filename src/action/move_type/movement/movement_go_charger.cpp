@@ -21,7 +21,7 @@ void MovementGoToCharger::resetGoToChargerVariables()
 	move_away_from_charger_time_stamp_ = ros::Time::now().toSec();
 	receive_code = 0;
 	current_angle = 0;
-	last_angle = robot::instance()->getWorldPoseAngle();
+	last_angle = robot::instance()->getWorldPoseYaw();
 	angle_offset = 0;
 	gyro_step = 0;
 	around_charger_stub_dir = 0;
@@ -126,8 +126,8 @@ bool MovementGoToCharger::isSwitch()
 		if(gyro_step < 3600)
 		{
 			// Handle for angle
-			current_angle = static_cast<float>(getPosition().th);
-			angle_offset = static_cast<float>(getPosition().angleDiff(static_cast<int16_t>(last_angle)));
+			current_angle = getPosition().th;
+			angle_offset = getPosition().angleDiff(last_angle);
 			ROS_DEBUG("%s %d: Current_Angle = %f, Last_Angle = %f, Angle_Offset = %f, Gyro_Step = %f.", __FUNCTION__, __LINE__, current_angle, last_angle, angle_offset, gyro_step);
 			if (angle_offset > 0)
 				gyro_step += angle_offset;
@@ -831,9 +831,9 @@ bool MovementGoToCharger::_isStop()
 	return false;
 }
 
-void MovementGoToCharger::getTurnBackInfo(int16_t &turn_angle, float &back_distance)
+void MovementGoToCharger::getTurnBackInfo(double &turn_angle, float &back_distance)
 {
-	turn_angle = turn_angle_;
+	turn_angle = turn_angle_/10*PI/180;
 	back_distance = back_distance_;
 }
 

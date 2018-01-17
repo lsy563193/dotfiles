@@ -39,13 +39,13 @@ bool MoveTypeGoToCharger::isFinish()
 	}
 	else if (p_gtc_movement_->isSwitch())
 	{
-		int16_t turn_angle;
+		double turn_angle;
 		p_gtc_movement_->getTurnBackInfo(turn_angle, back_distance_);
 		if (back_distance_ != 0)
 			p_back_movement_.reset(new MovementBack(back_distance_, BACK_MAX_SPEED));
 		if (turn_angle != 0)
 		{
-			turn_target_angle_ = robot::instance()->getWorldPoseAngle() + turn_angle;
+			turn_target_angle_ = ranged_angle(robot::instance()->getWorldPoseYaw() + turn_angle);
 			p_turn_movement_.reset(new MovementTurn(turn_target_angle_, ROTATE_TOP_SPEED));
 		}
 	}

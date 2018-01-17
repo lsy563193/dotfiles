@@ -31,9 +31,9 @@ typedef struct Pose16_t_{
 	}
 } Pose16_t;*/
 
-int16_t ranged_angle(int16_t angle);
+double ranged_angle(double angle);
 double deg_to_rad(double deg, int8_t scale = 1);
-double rad_2_deg(double rad, int8_t scale);
+//double rad_2_deg(double rad, int8_t scale);
 
   /**
    * Represents a 2-dimensional vector (x, y)
@@ -333,43 +333,18 @@ public:
     th = 0;
   }
 
-  Point_t(float _x, float _y, int16_t _th) {
+  Point_t(float _x, float _y, double _th) {
     x = _x;
     y = _y;
     th = _th;
   }
 
-	Point_t addAngle(int16_t diff) const {
+	Point_t addAngle(double diff) const {
 		return {this->x, this->y, ranged_angle(this->th + diff)};
 	}
   Point_t getRelative(float dx, float dy) const {
-		Point_t point;
-		float relative_sin=0, relative_cos=1;
-		if (th != 3600) {
-			if (th == 0) {
-				relative_sin = 0;
-				relative_cos = 1;
-			}
-			else if (th == 900) {
-				relative_sin = 1;
-				relative_cos = 0;
-			}
-			else if (th == 1800) {
-				relative_sin = 0;
-				relative_cos = -1;
-			}
-			else if (th == -900) {
-				relative_sin = -1;
-				relative_cos = 0;
-			}
-			else {
-				relative_sin = sin(deg_to_rad(th, 10));
-				relative_cos = cos(deg_to_rad(th, 10));
-			}
-		}
-		point.x = x +  dx * relative_cos -  dy * relative_sin ;
-		point.y = y + dx * relative_sin +  dy * relative_cos ;
-		point.th = th;
+		Point_t point{static_cast<float>(x + dx * cos(th) - dy * sin(th)), static_cast<float>(y + dx * sin(th) + dy * cos(th)), th};
+//		return *this + point;
 		return point;
 	}
 
@@ -382,7 +357,7 @@ public:
 	bool isNearTo(Point_t other, float count) const {
 		return std::abs(this->x - other.x) <count && std::abs(this->y - other.y) < count;
 	};
-
+/*
 	int16_t angleDiffPoint(Point_t other) const {
 			int16_t alpha = 0;
 			if (this->x == other.x) {
@@ -394,7 +369,7 @@ public:
 					alpha = 0;
 				}
 			} else {
-				alpha = round(rad_2_deg(atan(((double) (other.y - this->y) / (other.x - this->x))), 10));
+				alpha = round(rad_2_deg(atan(((other.y - this->y) / (other.x - this->x))), 10));
 
 				if (other.x < this->x) {
 					alpha += 1800;
@@ -407,8 +382,9 @@ public:
 //			ROS_INFO("alpha = %d, th = %d", alpha, this->th);
 			return ranged_angle(alpha - this->th);
 	}
+*/
 
-	int16_t angleDiff(int16_t other_angle) const {
+	double angleDiff(double other_angle) const {
 		return ranged_angle(other_angle - this->th);
 	}
 
@@ -423,7 +399,7 @@ public:
 
 	bool isAngleNear(const Point_t &r) const
 	{
-		return  std::abs(ranged_angle(th - r.th)) < 200;
+		return  std::abs(ranged_angle(th - r.th)) < 20/PI/180;
 	}
 
 	bool isCellAndAngleEqual(const Point_t &r) const
@@ -431,7 +407,7 @@ public:
 		return  isCellEqual(r) && isAngleNear(r);
 	}
 
-  int16_t th{};
+  double th{};
 private:
   int16_t countToCell(float count) const {
 		return static_cast<int16_t>(round(count / CELL_SIZE));
@@ -456,7 +432,7 @@ typedef struct
   double y2;
   double K; //gradient in degree
   double dist_2_this_line(Vector2<double> p){
-	  return fabs(A*p.x+B*p.y+C)/sqrt(A*A+B*B);
+	  return std::abs(A*p.x+B*p.y+C)/sqrt(A*A+B*B);
   }
 } LineABC;
 

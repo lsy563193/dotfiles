@@ -263,11 +263,11 @@ void robot::robotbase_routine_cb()
 
 		/*------------setting for odom and publish odom topic --------*/
 		odom.setMovingSpeed(static_cast<float>((wheel.getLeftWheelActualSpeed() + wheel.getRightWheelActualSpeed()) / 2.0));
-		odom.setAngle(gyro.getAngle());
+		odom.setAngle(gyro.getAngle()*PI/180);
 		odom.setAngleSpeed(gyro.getAngleV());
 		cur_time = ros::Time::now();
 		double angle_rad, dt;
-		angle_rad = deg_to_rad(odom.getAngle());
+		angle_rad = odom.getAngle();
 		dt = (cur_time - last_time).toSec();
 		last_time = cur_time;
 		odom.setX(static_cast<float>(odom.getX() + (odom.getMovingSpeed() * cos(angle_rad)) * dt));
@@ -503,7 +503,8 @@ void robot::updateRobotPose(tf::Vector3& odom, double odom_yaw)
 
 	robot_pos = odom + robot_correction_pos;
 	robot_yaw_ = odom_yaw + robot_correction_yaw_;
-	world_yaw_ = (ranged_angle(robot_yaw_ * 1800 / M_PI));
+//	world_yaw_ = (ranged_angle(robot_yaw_ * 1800 / M_PI));
+	world_yaw_ = robot_yaw_;
 }
 
 void robot::resetCorrection()
@@ -528,7 +529,7 @@ static float xCount{}, yCount{};
 
 Point_t getPosition()
 {
-	return {xCount, yCount, robot::instance()->getWorldPoseAngle()};
+	return {xCount, yCount, robot::instance()->getWorldPoseYaw()};
 }
 
 float cellToCount(int16_t i) {
@@ -540,16 +541,16 @@ void setPosition(float x, float y) {
 	yCount = y;
 }
 
-bool isPos(int dir)
+bool isPos(double dir)
 {
 	return (dir == MAP_POS_X || dir == MAP_POS_Y || dir == MAP_NONE);
 }
 
-bool isXAxis(int dir)
+bool isXAxis(double dir)
 {
 	return dir == MAP_POS_X || dir == MAP_NEG_X || dir == MAP_NONE;
 }
-bool isYAxis(int dir)
+bool isYAxis(double dir)
 {
 	return dir == MAP_POS_Y || dir == MAP_NEG_Y || dir == MAP_NONE;
 }

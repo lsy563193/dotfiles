@@ -153,7 +153,7 @@ bool MovementExceptionResume::isFinish()
 		else if (robot_stuck_resume_cnt_ < 5)
 		{
 			float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getX(), odom.getY());
-			if (fabsf(distance) > 0.05f)
+			if (std::abs(distance) > 0.05f)
 			{
 				wheel.stop();
 				robot_stuck_resume_cnt_++;
@@ -181,7 +181,7 @@ bool MovementExceptionResume::isFinish()
 		else if (cliff_resume_cnt_ < 5)
 		{
 			float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getX(), odom.getY());
-			if (fabsf(distance) > 0.02f)
+			if (std::abs(distance) > 0.02f)
 			{
 				wheel.stop();
 				cliff_resume_cnt_++;
@@ -215,7 +215,7 @@ bool MovementExceptionResume::isFinish()
 				case 3: // Move back for the third time.
 				{
 					float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getX(), odom.getY());
-					if (fabsf(distance) > 0.05f)
+					if (std::abs(distance) > 0.05f)
 					{
 						wheel.stop();
 						// If cliff jam during bumper self resume.
@@ -239,8 +239,8 @@ bool MovementExceptionResume::isFinish()
 				case 4:
 				case 5:
 				{
-//					ROS_DEBUG("%s %d: robot::instance()->getWorldPoseAngle(): %d", __FUNCTION__, __LINE__,
-//							  robot::instance()->getWorldPoseAngle());
+//					ROS_DEBUG("%s %d: robot::instance()->getWorldPoseYaw(): %d", __FUNCTION__, __LINE__,
+//							  robot::instance()->getWorldPoseYaw());
 					// If cliff jam during bumper self resume.
 					if (cliff.getStatus() && ++g_cliff_cnt > 2)
 					{

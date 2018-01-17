@@ -14,7 +14,7 @@ MovementFollowWallLidar::MovementFollowWallLidar(bool is_left)
 {
 
 	ROS_INFO("%s %d: Enter movement follow wall %s.", __FUNCTION__, __LINE__, is_left ? "left" : "right");
-	angle_forward_to_turn_ = 600;
+	angle_forward_to_turn_ = 60*PI/180;
 	min_speed_ = FALL_WALL_MIN_SPEED;
 	max_speed_ = FALL_WALL_MAX_SPEED;
 	base_speed_ = min_speed_;
@@ -41,7 +41,7 @@ Points Circle::getPoints(int precision, bool is_inclue_zero)
 	for(auto i=init_i; i<=precision; i++)
 	{
 		float y = (this->r*2)/precision*i;
-		float x = sqrt(pow(this->r, 2) - pow(y - this->r, 2));
+		double x = sqrt(pow(this->r, 2) - pow(y - this->r, 2));
 		printf("x,y(%d,%d) ",x, y);
 		points1.push_back({x,y,0});
 		points2.push_front({-x,y,0});
