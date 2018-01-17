@@ -7,6 +7,7 @@
 boost::mutex scanLinear_mutex_;
 boost::mutex scanOriginal_mutex_;
 boost::mutex scanCompensate_mutex_;
+boost::mutex lidarXYPoint_mutex_;
 //float* Lidar::last_ranges_ = NULL;
 
 sensor_msgs::LaserScan Lidar::lidarScanData_original_;
@@ -81,12 +82,12 @@ void Lidar::scanCompensateCb(const sensor_msgs::LaserScan::ConstPtr &scan)
 	}
 }
 
-void Lidar::lidarPointCb(const visualization_msgs::Marker &point_marker) {
-	if (isScanOriginalReady())
+void Lidar::lidarXYPointCb(const visualization_msgs::Marker &point_marker) {
+	if (isScanCompensateReady())
 	{
-		scanCompensate_mutex_.lock();
+		lidarXYPoint_mutex_.lock();
 		lidarXY_points = point_marker.points;
-		scanCompensate_mutex_.unlock();
+		lidarXYPoint_mutex_.unlock();
 	}
 }
 
@@ -867,9 +868,9 @@ uint8_t Lidar::lidarMarker(double X_MAX)
 	if(!lidarCheckFresh(0.6,1))
 		return 0;
 
-	scanCompensate_mutex_.lock();
+	lidarXYPoint_mutex_.lock();
 	auto tmp_lidarXY_points = lidarXY_points;
-	scanCompensate_mutex_.unlock();
+	lidarXYPoint_mutex_.unlock();
 	double x, y;
 	int dx, dy;
 	const	double Y_MAX = 0.20;//0.279
@@ -1231,9 +1232,9 @@ double Lidar::getObstacleDistance(uint8_t dir, double range)
 	if(!lidarCheckFresh(0.6,1))
 		return DBL_MAX;
 
-	scanCompensate_mutex_.lock();
+	lidarXYPoint_mutex_.lock();
 	auto tmp_lidarXY_points = lidarXY_points;
-	scanCompensate_mutex_.unlock();
+	lidarXYPoint_mutex_.unlock();
 	double x,y;
 	double x_to_robot,y_to_robot;
 	double min_dis = DBL_MAX;
@@ -1347,12 +1348,12 @@ bool Lidar::lidarCheckFresh(float duration, uint8_t type)
 //}
 
 void Lidar::setLidarScanDataOriginal(const sensor_msgs::LaserScan::ConstPtr &scan) {
-	boost::mutex::scoped_lock(scan2_mutex_);
+	boost::mutex::scoped_lock(scanOriginal_mutex_);
 	lidarScanData_original_ = *scan;
 }
 
 sensor_msgs::LaserScan Lidar::getLidarScanDataOriginal() {
-	boost::mutex::scoped_lock(scan2_mutex_);
+	boost::mutex::scoped_lock(scanOriginal_mutex_);
 	return lidarScanData_original_;
 }
 
