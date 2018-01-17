@@ -40,8 +40,8 @@ Points Circle::getPoints(int precision, bool is_inclue_zero)
 	auto init_i = is_inclue_zero ? 0 : 1;
 	for(auto i=init_i; i<=precision; i++)
 	{
-		auto y = (this->r*2)/precision*i;
-		auto x = sqrt(pow(this->r, 2) - pow(y - this->r, 2));
+		float y = (this->r*2)/precision*i;
+		float x = sqrt(pow(this->r, 2) - pow(y - this->r, 2));
 		printf("x,y(%d,%d) ",x, y);
 		points1.push_back({x,y,0});
 		points2.push_front({-x,y,0});
