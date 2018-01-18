@@ -10,7 +10,7 @@
 #endif
 
 robot* robot_instance = nullptr;
-/*
+
 void Ooops(int sig)
 {
 	switch(sig){
@@ -34,9 +34,9 @@ void Ooops(int sig)
 			break;
 		}
 		case SIGTERM:
-		{	
+		{
 			ROS_ERROR("Ouch!!! pp receive SIGTERM signal,being kill!");
-			if(robot_instance != nullptr){ 
+			if(robot_instance != nullptr){
 				speaker.play(VOICE_CLEANING_STOP,false);
 				delete robot_instance;
 			}
@@ -46,7 +46,7 @@ void Ooops(int sig)
 			ROS_ERROR("Oops!! pp receive %d signal",sig);
 	}
 }
-*/
+
 
 int main(int argc, char **argv)
 {
@@ -54,7 +54,6 @@ int main(int argc, char **argv)
 	ros::init(argc, argv, "pp");
 	ros::NodeHandle	nh_dev("~");
 
-	/*
 	struct sigaction act;
 	act.sa_handler = Ooops;
 	sigemptyset(&act.sa_mask);
@@ -63,7 +62,6 @@ int main(int argc, char **argv)
 	sigaction(SIGSEGV,&act,NULL);
 	sigaction(SIGINT,&act,NULL);
 	ROS_INFO("set signal action done!");
-	*/
 	std::string	serial_port;
 	nh_dev.param<std::string>("serial_port", serial_port, "/dev/ttyS2");
 

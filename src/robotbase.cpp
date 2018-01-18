@@ -93,7 +93,6 @@ void robotbase_deinit(void)
 
 void robotbase_reset_send_stream(void)
 {
-	boost::mutex::scoped_lock(g_send_stream_mutex);
 	for (int i = 0; i < SEND_LEN; i++) {
 		if (i != CTL_LED_GREEN)
 			serial.setSendData(i, 0x00);
@@ -107,7 +106,10 @@ void robotbase_reset_send_stream(void)
 
 	serial.setCleanMode(POWER_ACTIVE);
 	uint8_t buf[SEND_LEN];
-	memcpy(buf, serial.send_stream, sizeof(uint8_t) * SEND_LEN);
+	{
+		boost::mutex::scoped_lock lock(g_send_stream_mutex);
+		memcpy(buf, serial.send_stream, sizeof(uint8_t) * SEND_LEN);
+	}
 	uint8_t crc;
 	crc = serial.calc_buf_crc8(buf, SEND_LEN - 3);
 	serial.setSendData(SEND_LEN - 3, crc);
@@ -202,7 +204,7 @@ void process_led()
 void robotbase_reset_odom_pose(void)
 {
 	// Reset the odom pose to (0, 0)
-	boost::mutex::scoped_lock(odom_mutex);
+	boost::mutex::scoped_lock lock(odom_mutex);
 	odom.setX(0);
 	odom.setY(0);
 }
