@@ -384,8 +384,8 @@ public:
 	}
 */
 
-	double angleDiff(double other_angle) const {
-		return ranged_angle(other_angle - this->th);
+	double angleDiff(const Point_t& other) const {
+		return ranged_angle(this->th - other.th);
 	}
 
   Cell_t toCell() const {
@@ -399,7 +399,7 @@ public:
 
 	bool isAngleNear(const Point_t &r) const
 	{
-		return  std::abs(ranged_angle(th - r.th)) < 2/PI/180;
+		return  std::abs(ranged_angle(th - r.th)) < 20*PI/180;
 	}
 
 	bool isCellAndAngleEqual(const Point_t &r) const

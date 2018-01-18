@@ -334,8 +334,8 @@ double MoveTypeFollowWall::getTurnAngle(bool use_target_angle)
 	double  turn_angle{};
 	if(state_turn){
 		state_turn = false;
-		auto diff = boost::dynamic_pointer_cast<AMovementFollowPoint>(sp_movement_)->angle_diff;
-		ROS_INFO("%s %d: Use angle_diff(%f)", __FUNCTION__, __LINE__, diff);
+		auto diff = boost::dynamic_pointer_cast<AMovementFollowPoint>(sp_movement_)->yaw_diff;
+		ROS_INFO("%s %d: Use yaw_diff(%f)", __FUNCTION__, __LINE__, diff);
 		return diff;
 	}
 	if (LIDAR_FOLLOW_WALL && lidarTurnAngle(turn_angle)) {
@@ -345,7 +345,7 @@ double MoveTypeFollowWall::getTurnAngle(bool use_target_angle)
 		auto ev_turn_angle = getTurnAngleByEvent();
 		if(use_target_angle) {
 			auto target_point_ = dynamic_cast<ACleanMode*> (sp_mode_)->plan_path_.front();
-			auto target_turn_angle = getPosition().angleDiff(target_point_.th);
+			auto target_turn_angle = getPosition().angleDiff(target_point_);
 			turn_angle = std::abs(ev_turn_angle) > std::abs(target_turn_angle) ? ev_turn_angle : target_turn_angle;
 			ROS_INFO("%s %d: target_turn_angle(%f), event_turn_angle(%f), choose the big one(%f)",
 					 __FUNCTION__, __LINE__, target_turn_angle, ev_turn_angle, turn_angle);

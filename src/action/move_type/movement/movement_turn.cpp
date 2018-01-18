@@ -17,7 +17,7 @@ MovementTurn::MovementTurn(double angle, uint8_t max_speed) : speed_(ROTATE_LOW_
 
 bool MovementTurn::isReach()
 {
-	if (std::abs(getPosition().angleDiff(target_angle_)) < accurate_){
+	if (std::abs(getPosition().th - target_angle_) < accurate_){
 			ROS_INFO("%s, %d: MovementTurn finish, target_angle_: \033[32m%f\033[0m, current angle: \033[32m%f\033[0m."
 					, __FUNCTION__, __LINE__, target_angle_, robot::instance()->getWorldPoseYaw());
 		return true;
@@ -27,7 +27,7 @@ bool MovementTurn::isReach()
 
 void MovementTurn::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
-	auto diff = getPosition().angleDiff(target_angle_);
+	auto diff = target_angle_ - getPosition().th;
 //	ROS_INFO("%s %d: MovementTurn diff: %f, cm_target_p_.th: %f, current angle: %f.", __FUNCTION__, __LINE__, diff, target_angle_, robot::instance()->getWorldPoseYaw());
 	(diff >= 0) ? wheel.setDirectionLeft() : wheel.setDirectionRight();
 

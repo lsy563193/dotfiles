@@ -70,7 +70,6 @@ public:
 
 	double getWorldPoseYaw()
 	{
-		// It is 10x degrees.
 		return world_yaw_;
 	}
 
@@ -192,7 +191,6 @@ private:
 
 	pp::scan_ctrl scan_ctrl_;
 
-	boost::mutex temp_target_mutex_;
 
 	//callback function
 	void robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg);

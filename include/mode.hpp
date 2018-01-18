@@ -535,6 +535,9 @@ protected:
 	Point_t start_point_{0, 0, 0};
 	bool should_go_to_charger_{false};
 	bool remote_go_home_point{false};
+
+	boost::mutex temp_target_mutex_;
+//	boost::mutex mut;
 public:
 
 	void pubPointMarkers(const std::deque<Vector2<double>> *point, std::string frame_id);
@@ -552,7 +555,7 @@ public:
 	void setTempTarget(std::deque<Vector2<double>>& points, uint32_t  seq);
 	void pubTmpTarget(const Point_t &point,bool is_virtual=false);
 
-	PathHead getTempTarget()const;
+	PathHead getTempTarget();
 
 private:
 	PathHead path_head_{};

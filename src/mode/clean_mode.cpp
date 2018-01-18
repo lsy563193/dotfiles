@@ -1350,7 +1350,8 @@ void ACleanMode::switchInStateTrapped()
 }
 
 void ACleanMode::setTempTarget(std::deque<Vector2<double>>& points, uint32_t  seq) {
-	boost::mutex::scoped_lock(temp_target_mutex_);
+	boost::mutex::scoped_lock lock(temp_target_mutex_);
+//	boost::mutex::scoped_lock lock(mut);
 	path_head_ = {};
 	path_head_.tmp_plan_path_.clear();
 
@@ -1363,9 +1364,9 @@ void ACleanMode::setTempTarget(std::deque<Vector2<double>>& points, uint32_t  se
 	path_head_.seq = seq;
 }
 
-PathHead ACleanMode::getTempTarget() const
+PathHead ACleanMode::getTempTarget()
 {
-	boost::mutex::scoped_lock(temp_target_mutex_);
+	boost::mutex::scoped_lock lock(temp_target_mutex_);
 
 //	auto tmp = tmp_plan_path_;
 //	tmp_plan_path_.clear();

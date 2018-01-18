@@ -41,7 +41,7 @@ public:
 	virtual Point_t calcTmpTarget()=0;
 	bool isFinish() override ;
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed) override ;
-	double angle_diff{};
+	double yaw_diff{};
 
 protected:
 
@@ -54,7 +54,7 @@ protected:
 	int32_t integrated_{};
 	int32_t base_speed_{};
 	double angle_forward_to_turn_{};
-	int kp_{20};
+	int kp_{2};
 //	const double TIME_STRAIGHT{0.2};
 };
 

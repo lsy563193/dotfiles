@@ -127,10 +127,10 @@ bool MovementGoToCharger::isSwitch()
 		{
 			// Handle for angle
 			current_angle = getPosition().th;
-			angle_offset = getPosition().angleDiff(last_angle);
+			angle_offset = ranged_angle(current_angle - last_angle);
 			ROS_DEBUG("%s %d: Current_Angle = %f, Last_Angle = %f, Angle_Offset = %f, Gyro_Step = %f.", __FUNCTION__, __LINE__, current_angle, last_angle, angle_offset, gyro_step);
-			if (angle_offset > 0)
-				gyro_step += angle_offset;
+			if (angle_offset < 0)
+				gyro_step -= angle_offset;
 			last_angle = current_angle;
 
 			// Handle for bumper and cliff
@@ -489,7 +489,7 @@ bool MovementGoToCharger::isSwitch()
 		if(gyro_step < 3600)
 		{
 			current_angle = getPosition().th;
-			angle_offset = static_cast<float>(getPosition().angleDiff(static_cast<int16_t>(last_angle)));
+			angle_offset = last_angle - current_angle;
 			ROS_DEBUG("%s %d: Current_Angle = %f, Last_Angle = %f, Angle_Offset = %f, Gyro_Step = %f.", __FUNCTION__, __LINE__, current_angle, last_angle, angle_offset, gyro_step);
 			if (check_position_dir == gtc_check_position_left && angle_offset < 0)
 				gyro_step += (-angle_offset);
