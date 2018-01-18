@@ -560,7 +560,7 @@ void ACleanMode::setNextModeDefault()
 	}
 	else {
 		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
-		Mode::setNextMode(cm_navigation);
+		Mode::setNextMode(md_idle);
 	}
 }
 
