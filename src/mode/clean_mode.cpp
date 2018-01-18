@@ -560,7 +560,7 @@ void ACleanMode::setNextModeDefault()
 	}
 	else {
 		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
-		Mode::setNextMode(md_idle);
+		Mode::setNextMode(cm_navigation);
 	}
 }
 
@@ -1350,7 +1350,7 @@ void ACleanMode::switchInStateTrapped()
 }
 
 void ACleanMode::setTempTarget(std::deque<Vector2<double>>& points, uint32_t  seq) {
-	boost::mutex::scoped_lock(temp_target_mutex_);
+	boost::mutex::scoped_lock lock(temp_target_mutex_);
 	path_head_ = {};
 	path_head_.tmp_plan_path_.clear();
 
@@ -1365,7 +1365,7 @@ void ACleanMode::setTempTarget(std::deque<Vector2<double>>& points, uint32_t  se
 
 PathHead ACleanMode::getTempTarget()
 {
-	boost::mutex::scoped_lock(temp_target_mutex_);
+	boost::mutex::scoped_lock lock(temp_target_mutex_);
 
 //	auto tmp = tmp_plan_path_;
 //	tmp_plan_path_.clear();
