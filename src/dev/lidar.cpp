@@ -1349,12 +1349,12 @@ bool Lidar::lidarCheckFresh(float duration, uint8_t type)
 //}
 
 void Lidar::setLidarScanDataOriginal(const sensor_msgs::LaserScan::ConstPtr &scan) {
-	boost::mutex::scoped_lock lock(scanOriginal_mutex_);
+	boost::mutex::scoped_lock(scanOriginal_mutex_);
 	lidarScanData_original_ = *scan;
 }
 
 sensor_msgs::LaserScan Lidar::getLidarScanDataOriginal() {
-	boost::mutex::scoped_lock lock(scanOriginal_mutex_);
+	boost::mutex::scoped_lock(scanOriginal_mutex_);
 	return lidarScanData_original_;
 }
 

@@ -208,7 +208,7 @@ int Serial::read(int len,uint8_t *buf)
 
 void Serial::setSendData(uint8_t seq, uint8_t val)
 {
-	boost::mutex::scoped_lock lock(g_send_stream_mutex);
+	boost::mutex::scoped_lock(g_send_stream_mutex);
 	if (seq >= CTL_WHEEL_LEFT_HIGH && seq <= CTL_GYRO) {
 		send_stream[seq] = val;
 	}

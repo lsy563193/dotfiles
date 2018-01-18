@@ -85,7 +85,7 @@ DirectionType Wheel::getDirection(void)
 
 void Wheel::setPidParam(uint8_t reg_type, float Kp, float Ki, float Kd)
 {
-	boost::mutex::scoped_lock lock(pid_lock);
+	boost::mutex::scoped_lock(pid_lock);
 	argu_for_pid.reg_type = reg_type;
 	argu_for_pid.Kp = Kp;
 	argu_for_pid.Ki = Ki;
@@ -94,7 +94,7 @@ void Wheel::setPidParam(uint8_t reg_type, float Kp, float Ki, float Kd)
 
 void Wheel::pidAdjustSpeed(void)
 {
-	boost::mutex::scoped_lock lock(pid_lock);
+	boost::mutex::scoped_lock(pid_lock);
 #if 0
 	left_pid.delta = left_pid.target_speed - left_pid.actual_speed;
 	/*---target speed changed, reset err_sum---*/
