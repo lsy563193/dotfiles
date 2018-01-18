@@ -143,7 +143,7 @@ public:
 
 	bool isInitState() const{
 			return action_i_ == ac_open_gyro || action_i_ == ac_back_form_charger ||
-		action_i_ == ac_open_lidar || action_i_	== ac_align || ac_align == ac_open_slam;
+		action_i_ == ac_open_lidar || action_i_	== ac_align || action_i_ == ac_open_slam;
 	};
 	int getNextMode();
 
@@ -536,7 +536,6 @@ protected:
 	bool should_go_to_charger_{false};
 	bool remote_go_home_point{false};
 
-	boost::mutex temp_target_mutex_;
 //	boost::mutex mut;
 public:
 

@@ -42,6 +42,7 @@ ACleanMode::ACleanMode()
 	robot_timer.initWorkTimer();
 	key.resetPressStatus();
 
+	resetPosition();
 	c_rcon.resetStatus();
 	robot::instance()->initOdomPosition();
 
