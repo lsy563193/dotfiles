@@ -542,6 +542,11 @@ void setPosition(float x, float y) {
 	yCount = y;
 }
 
+void resetPosition() {
+	xCount = 0;
+	yCount = 0;
+}
+
 bool isPos(int dir)
 {
 	return (dir == MAP_POS_X || dir == MAP_POS_Y || dir == MAP_NONE);

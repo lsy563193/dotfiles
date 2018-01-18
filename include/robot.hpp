@@ -216,5 +216,7 @@ bool isYAxis(int dir);
 void updatePosition();
 
 Mode *getNextMode(int next_mode_i_);
+
 void setPosition(float x, float y);
+void resetPosition();
 #endif
