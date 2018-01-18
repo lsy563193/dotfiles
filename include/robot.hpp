@@ -126,13 +126,13 @@ public:
 
 	Baselink_Frame_Type getBaselinkFrameType(void)
 	{
-		boost::mutex::scoped_lock(baselink_frame_type_mutex_);
+		boost::mutex::scoped_lock lock(baselink_frame_type_mutex_);
 		return baselink_frame_type_;
 	}
 
 	void setBaselinkFrameType(Baselink_Frame_Type frame)
 	{
-		boost::mutex::scoped_lock(baselink_frame_type_mutex_);
+		boost::mutex::scoped_lock lock(baselink_frame_type_mutex_);
 		baselink_frame_type_ = frame;
 		ROS_DEBUG("%s %d: Base link frame type has been reset to %d.", __FUNCTION__, __LINE__, getBaselinkFrameType());
 	}
@@ -192,7 +192,6 @@ private:
 
 	pp::scan_ctrl scan_ctrl_;
 
-	boost::mutex temp_target_mutex_;
 
 	//callback function
 	void robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg);

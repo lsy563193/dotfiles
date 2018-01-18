@@ -552,7 +552,7 @@ public:
 	void setTempTarget(std::deque<Vector2<double>>& points, uint32_t  seq);
 	void pubTmpTarget(const Point_t &point,bool is_virtual=false);
 
-	PathHead getTempTarget()const;
+	PathHead getTempTarget();
 
 private:
 	PathHead path_head_{};
@@ -570,7 +570,7 @@ private:
 	ros::Publisher line_marker_pub_;
 	ros::Publisher line_marker_pub2_;
 	ros::Publisher fit_line_marker_pub_;
-
+	boost::mutex temp_target_mutex_;
 };
 
 class CleanModeNav:public ACleanMode
