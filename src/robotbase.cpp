@@ -37,6 +37,8 @@ uint8_t robotbase_led_color = LED_GREEN;
 uint16_t robotbase_led_cnt_for_switch = 0;
 uint16_t live_led_cnt_for_switch = 0;
 
+extern boost::mutex odom_mutex;
+
 void debug_received_stream()
 {
 	ROS_INFO("%s %d: Received stream:", __FUNCTION__, __LINE__);
@@ -91,7 +93,7 @@ void robotbase_deinit(void)
 
 void robotbase_reset_send_stream(void)
 {
-	boost::mutex::scoped_lock(g_send_stream_mutex);
+	boost::mutex::scoped_lock lock(g_send_stream_mutex);
 	for (int i = 0; i < SEND_LEN; i++) {
 		if (i != CTL_LED_GREEN)
 			serial.setSendData(i, 0x00);
@@ -200,7 +202,7 @@ void process_led()
 void robotbase_reset_odom_pose(void)
 {
 	// Reset the odom pose to (0, 0)
-	boost::mutex::scoped_lock(odom_mutex);
+	boost::mutex::scoped_lock lock(odom_mutex);
 	odom.setX(0);
 	odom.setY(0);
 }
