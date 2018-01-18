@@ -205,7 +205,7 @@ void CleanModeFollowWall::switchInStateClean() {
 	go_home_path_algorithm_.reset();
 	go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_, start_point_));
 	sp_state->init();
-	action_i_ = ac_null;
+	action_i_ = ac_go_to_charger;
 	genNextAction();
 }
 
