@@ -258,7 +258,7 @@ bool ACleanMode::check_is_valid(const Vector2<double>& point, Paras& para, const
 
 bool ACleanMode::calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,bool is_left, std::deque<Vector2<double>>& points) {
 	Paras para{is_left};
-//	ROS_INFO("is_left(%d)",is_left);
+	ROS_INFO("is_left(%d)",is_left);
 	auto is_corner = check_corner(scan, para);
 	if(is_corner)
 	{
@@ -1351,7 +1351,6 @@ void ACleanMode::switchInStateTrapped()
 
 void ACleanMode::setTempTarget(std::deque<Vector2<double>>& points, uint32_t  seq) {
 	boost::mutex::scoped_lock lock(temp_target_mutex_);
-//	boost::mutex::scoped_lock lock(mut);
 	path_head_ = {};
 	path_head_.tmp_plan_path_.clear();
 

@@ -177,6 +177,7 @@ private:
 	// These variables are used for calculate wheel step.
 	ros::Time left_wheel_step_reset_time_;
 	ros::Time right_wheel_step_reset_time_;
+	boost::mutex pid_lock;
 };
 
 extern Wheel wheel;

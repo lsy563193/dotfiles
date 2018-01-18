@@ -573,7 +573,7 @@ private:
 	ros::Publisher line_marker_pub_;
 	ros::Publisher line_marker_pub2_;
 	ros::Publisher fit_line_marker_pub_;
-
+	boost::mutex temp_target_mutex_;
 };
 
 class CleanModeNav:public ACleanMode

@@ -117,7 +117,7 @@ void robot::robotbase_routine_cb()
 		if(pthread_mutex_unlock(&recev_lock)!=0)ROS_WARN("robotbase pthread receive unlock fail");
 		//ros::spinOnce();
 
-		boost::mutex::scoped_lock(odom_mutex);
+		boost::mutex::scoped_lock lock(odom_mutex);
 
 		pp::x900sensor sensor;
 
