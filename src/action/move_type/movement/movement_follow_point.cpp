@@ -39,21 +39,21 @@ void AMovementFollowPoint::adjustSpeed(int32_t &left_speed, int32_t &right_speed
 		auto angle_diff = static_cast<int32_t>(yaw_diff * 180 / PI );
 		auto speed_diff = angle_diff / kp_;
 //		auto speed_diff = static_cast<int32_t>(yaw_diff * 180 / PI ) / kp_;
-		left_speed = (base_speed_ + speed_diff - integrated_ / 150); // - Delta / 20; // - Delta * 10 ; // - integrated_ / 2500;
-		right_speed = base_speed_ - speed_diff + integrated_ / 150; // + Delta / 20;// + Delta * 10 ; // + integrated_ / 2500;
+		left_speed = (base_speed_ - speed_diff - integrated_ / 150); // - Delta / 20; // - Delta * 10 ; // - integrated_ / 2500;
+		right_speed = base_speed_ + speed_diff + integrated_ / 150; // + Delta / 20;// + Delta * 10 ; // + integrated_ / 2500;
 
 	check_limit(left_speed, 0, max_speed_);
 	check_limit(right_speed, 0, max_speed_);
-	ROS_INFO("speed(%d,%d),base(%d),angle_diff(%d), speed_diff(%d)", left_speed, right_speed,base_speed_,angle_diff, speed_diff);
+//	ROS_INFO("speed(%d,%d),base(%d),angle_diff(%d), speed_diff(%d)", left_speed, right_speed,base_speed_,angle_diff, speed_diff);
 
 	base_speed_ = (left_speed + right_speed) / 2;
 
 }
 
 bool AMovementFollowPoint::isFinish() {
-	ROS_WARN("curr target th(%f,%f)", getPosition().th, calcTmpTarget().th);
-	yaw_diff = getPosition().angleDiff(calcTmpTarget());
-	ROS_WARN("yaw_diff(%f)", yaw_diff);
+//	ROS_WARN("curr target th(%f,%f)", getPosition().th, calcTmpTarget().th);
+	yaw_diff = getPosition().courseToDest(calcTmpTarget());
+//	ROS_WARN("yaw_diff(%f)", yaw_diff);
 	if(std::abs(yaw_diff) > angle_forward_to_turn_)
 	{
 		ROS_INFO_FL();

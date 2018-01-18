@@ -503,8 +503,9 @@ void robot::updateRobotPose(tf::Vector3& odom, double odom_yaw)
 
 	robot_pos = odom + robot_correction_pos;
 	robot_yaw_ = odom_yaw + robot_correction_yaw_;
-//	world_yaw_ = (ranged_angle(robot_yaw_ * 1800 / M_PI));
-	world_yaw_ = robot_yaw_;
+//	world_yaw_ = (ranged_angle(robot_yaw_ /** 1800 / M_PI*/));
+	world_yaw_ = (ranged_angle(robot_yaw_ /** 1800 / M_PI*/));
+//	world_yaw_ = robot_yaw_;
 }
 
 void robot::resetCorrection()

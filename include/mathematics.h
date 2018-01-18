@@ -357,32 +357,31 @@ public:
 	bool isNearTo(Point_t other, float count) const {
 		return std::abs(this->x - other.x) <count && std::abs(this->y - other.y) < count;
 	};
-/*
-	int16_t angleDiffPoint(Point_t other) const {
-			int16_t alpha = 0;
+
+	double courseToDest(Point_t other) const {
+			double alpha = 0;
 			if (this->x == other.x) {
 				if (other.y > this->y) {
-					alpha = 900;
+					alpha = PI;
 				} else if (other.y < this->y) {
-					alpha = 2700;
+					alpha = 3*PI/2;
 				} else {
 					alpha = 0;
 				}
 			} else {
-				alpha = round(rad_2_deg(atan(((other.y - this->y) / (other.x - this->x))), 10));
+				alpha = atan((other.y - this->y) / (other.x - this->x));
 
 				if (other.x < this->x) {
-					alpha += 1800;
+					alpha += PI;
 				}
 
 				if (alpha < 0) {
-					alpha += 3600;
+					alpha += PI*2;
 				}
 			}
 //			ROS_INFO("alpha = %d, th = %d", alpha, this->th);
 			return ranged_angle(alpha - this->th);
 	}
-*/
 
 	double angleDiff(const Point_t& other) const {
 		return ranged_angle(this->th - other.th);
