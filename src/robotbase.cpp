@@ -37,6 +37,8 @@ uint8_t robotbase_led_color = LED_GREEN;
 uint16_t robotbase_led_cnt_for_switch = 0;
 uint16_t live_led_cnt_for_switch = 0;
 
+extern boost::mutex odom_mutex;
+
 void debug_received_stream()
 {
 	ROS_INFO("%s %d: Received stream:", __FUNCTION__, __LINE__);
