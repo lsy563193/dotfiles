@@ -716,11 +716,20 @@ bool Lidar::mergeLine(std::vector<std::vector<Vector2<double>> > *groups, double
 		}
 	}
 	if(is_align){
+		//sort from long to short
 		std::sort((*groups).begin(),(*groups).end(),[](std::vector<Vector2<double>> a,std::vector<Vector2<double>> b){
 			auto a_dis = pow((a.begin()->x - (a.end()-1)->x),2) + pow((a.begin()->y - (a.end()-1)->y),2);
 			auto b_dis = pow((b.begin()->x - (b.end()-1)->x),2) + pow((b.begin()->y - (b.end()-1)->y),2);
 			return a_dis > b_dis;
 		});
+		//filter line which is shorter than 0.5m
+		auto loc = std::find_if((*groups).begin(),(*groups).end(),[](std::vector<Vector2<double>> ite){
+			auto dis = sqrtf(powf(static_cast<float>(ite.begin()->x - (ite.end() - 1)->x), 2) + powf(
+								static_cast<float>(ite.begin()->y - (ite.end() - 1)->y), 2));
+			return dis < 0.3;
+		});
+		auto dis = std::distance((*groups).begin(),loc);
+		(*groups).resize(dis);
 	}
 	ROS_DEBUG("pub line marker");
 //	robot::instance()->pubLineMarker(&Lidar_Group,"merge");
