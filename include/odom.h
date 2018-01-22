@@ -19,10 +19,10 @@ public:
 	float getY();
 	void setZ(float z);
 	float getZ();
-	void setAngle(float angle);
-	float getAngle();
-	void setAngleOffset(float angle);
-	float getAngleOffset();
+	void setYaw(double yaw);
+	double getYaw();
+	void setYawOffset(double yaw);
+	double getYawOffset();
 
 	void setMovingSpeed(float speed);
 	float getMovingSpeed(void);
@@ -33,8 +33,7 @@ private:
 
 	Pose pose;
 
-	// For handling navigation pause case.
-	float angle_offset_;
+	double yaw_offset_;
 
 	// In meters.
 	float moving_speed_;

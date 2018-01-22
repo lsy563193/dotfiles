@@ -14,7 +14,7 @@ class Slam
 public:
 	Slam();
 	~Slam();
-	//todo
+
 	bool isMapReady(void)
 	{
 		return is_map_ready_;

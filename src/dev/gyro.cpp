@@ -283,7 +283,6 @@ void Gyro::setAccInitData()
 
 uint8_t Gyro::checkTilt()
 {
-	//todo Change the method of getting the acc data, now data is from gyro instance.
 	uint8_t tmp_status = 0;
 
 	if (tilt_checking_enable_)

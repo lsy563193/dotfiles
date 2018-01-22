@@ -268,11 +268,11 @@ void robot::robotbase_routine_cb()
 
 		/*------------setting for odom and publish odom topic --------*/
 		odom.setMovingSpeed(static_cast<float>((wheel.getLeftWheelActualSpeed() + wheel.getRightWheelActualSpeed()) / 2.0));
-		odom.setAngle(gyro.getAngle()*PI/180);
+		odom.setYaw(gyro.getAngle() * PI / 180);
 		odom.setAngleSpeed(gyro.getAngleV());
 		cur_time = ros::Time::now();
 		double angle_rad, dt;
-		angle_rad = odom.getAngle();
+		angle_rad = odom.getYaw();
 		dt = (cur_time - last_time).toSec();
 		last_time = cur_time;
 		odom.setX(static_cast<float>(odom.getX() + (odom.getMovingSpeed() * cos(angle_rad)) * dt));
@@ -423,14 +423,14 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 		//ROS_INFO("SLAM = 0");
 		odom_pose.setX(odom.getX());
 		odom_pose.setY(odom.getY());
-		odom_pose_yaw_ = odom.getAngle() * M_PI / 180;
+		odom_pose_yaw_ = odom.getYaw();
 	}
 
 #if 1
 	updateRobotPose(odom_pose, odom_pose_yaw_);
 	odomPublish();
 	//printf("Map->base(%f, %f, %f). Map->robot (%f, %f, %f)\n", tmp_x, tmp_y, RAD2DEG(tmp_yaw), robot_x_, robot_y_, RAD2DEG(robot_yaw_));
-//	ROS_WARN("Position (%f, %f), angle: %f.", robot_pos.getX(), robot_pos.getY(), robot_pos.getAngle());
+//	ROS_WARN("Position (%f, %f), angle: %f.", robot_pos.getX(), robot_pos.getY(), robot_pos.getYaw());
 #else
 	pose.setX(tmp_x_);
 std::	pose.setY(tmp_y_);
@@ -510,6 +510,7 @@ void robot::updateRobotPose(tf::Vector3& odom, double odom_yaw)
 		double yaw = ranged_angle(slam_correction_yaw_ - robot_correction_yaw_);
 		robot_correction_yaw_ += (yaw) * 0.8;
 	}
+//	ROS_INFO("%s %d: Odom_yaw:%f, robot_correction_yaw:%f.", __FUNCTION__, __LINE__, odom_yaw, robot_correction_yaw_);
 	robot_pos = odom + robot_correction_pos;
 	robot_yaw_ = (ranged_angle(odom_yaw + robot_correction_yaw_));
 }

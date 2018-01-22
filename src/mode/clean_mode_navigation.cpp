@@ -334,7 +334,7 @@ bool CleanModeNav::updateActionInStateInit() {
 	else if (action_i_ == ac_open_gyro)
 	{
 		// If it is the starting of navigation mode, paused_odom_angle_ will be zero.
-		odom.setAngleOffset(paused_odom_angle_);
+		odom.setYawOffset(paused_odom_angle_);
 
 		vacuum.setLastMode();
 		brush.normalOperate();
@@ -481,7 +481,7 @@ void CleanModeNav::switchInStateGoToCharger()
 			ROS_INFO("%s %d: Enter low battery charge.", __FUNCTION__, __LINE__);
 			sp_state = state_charge;
 			sp_state->init();
-			paused_odom_angle_ = odom.getAngle();
+			paused_odom_angle_ = odom.getYaw();
 			go_home_for_low_battery_ = false;
 			go_home_path_algorithm_.reset();
 		} else
@@ -547,7 +547,7 @@ bool CleanModeNav::checkEnterPause()
 		ev.key_clean_pressed = false;
 		speaker.play(VOICE_CLEANING_PAUSE);
 		ROS_INFO("%s %d: Key clean pressed, pause cleaning.", __FUNCTION__, __LINE__);
-		paused_odom_angle_ = odom.getAngle();
+		paused_odom_angle_ = odom.getYaw();
 		sp_action_.reset();
 		sp_saved_states.push_back(sp_state);
 		sp_state = state_pause;

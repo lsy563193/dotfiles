@@ -2,12 +2,13 @@
 // Created by austin on 17-11-24.
 //
 
+#include <mathematics.h>
 #include "odom.h"
 #include "ros/ros.h"
 
 Odom odom;
 
-Odom::Odom():moving_speed_(0), angle_speed_(0), angle_offset_(0)
+Odom::Odom():moving_speed_(0), angle_speed_(0), yaw_offset_(0)
 {
 }
 
@@ -45,25 +46,25 @@ float Odom::getZ(void)
 	return pose.getZ();
 }
 
-void Odom::setAngle(float angle)
+void Odom::setYaw(double yaw)
 {
-	pose.setAngle(angle + getAngleOffset());
+	pose.setYaw(yaw + getYawOffset());
 }
 
-float Odom::getAngle(void)
+double Odom::getYaw(void)
 {
-	return pose.getAngle();
+	return pose.getYaw();
 }
 
-void Odom::setAngleOffset(float angle)
+void Odom::setYawOffset(double yaw)
 {
-	angle_offset_ = angle;
-	ROS_INFO("%s %d: Set odom angle offset to %f.", __FUNCTION__, __LINE__, angle_offset_);
+	yaw_offset_ = yaw;
+	ROS_INFO("%s %d: Set odom yaw offset to %f(%f degrees).", __FUNCTION__, __LINE__, yaw_offset_, yaw_offset_*180/PI);
 }
 
-float Odom::getAngleOffset(void)
+double Odom::getYawOffset(void)
 {
-	return angle_offset_;
+	return yaw_offset_;
 }
 
 void Odom::setMovingSpeed(float speed)

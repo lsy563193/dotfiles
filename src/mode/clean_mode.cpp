@@ -77,7 +77,7 @@ ACleanMode::~ACleanMode()
 
 	robot::instance()->setBaselinkFrameType(ODOM_POSITION_ODOM_ANGLE);
 	slam.stop();
-	odom.setAngleOffset(0);
+	odom.setYawOffset(0);
 
 	if (moved_during_pause_)
 	{

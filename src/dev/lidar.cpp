@@ -19,7 +19,6 @@ Lidar lidar;
 
 Lidar::Lidar():angle_n_(0)
 {
-	//todo: lidar should add a status for setting ScanReady in case lidar still get a scan after shutting down.
 	setScanLinearReady(0);
 	setScanOriginalReady(0);
 	setScanCompensateReady(0);

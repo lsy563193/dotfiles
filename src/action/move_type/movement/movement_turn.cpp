@@ -7,20 +7,21 @@
 #include "dev.h"
 #include "robot.hpp"
 
+
 MovementTurn::MovementTurn(double angle, uint8_t max_speed) : speed_(ROTATE_LOW_SPEED)
 {
 	accurate_ = ROTATE_TOP_SPEED > 30 ? 3.0*PI/180 : 1.5*PI/180;
 	target_angle_ = angle;
 	max_speed_ = max_speed;
 	ROS_INFO("%s, %d: MovementTurn init, target_angle_: \033[32m%d\033[0m, current angle: \033[32m%d\033[0m."
-			, __FUNCTION__, __LINE__, static_cast<int>(target_angle_*180/PI), static_cast<int>(getPosition().th*180/PI));
+			, __FUNCTION__, __LINE__, static_cast<int>(ranged_angle(target_angle_)*180/PI), static_cast<int>(getPosition().th*180/PI));
 }
 
 bool MovementTurn::isReach()
 {
 	if (std::abs(ranged_angle(getPosition().th - target_angle_)) < accurate_){
 			ROS_INFO("%s, %d: MovementTurn finish, target_angle_: \033[32m%d\033[0m, current angle: \033[32m%d\033[0m."
-					, __FUNCTION__, __LINE__, static_cast<int>(target_angle_*180/PI), static_cast<int>(getPosition().th*180/PI));
+					, __FUNCTION__, __LINE__, static_cast<int>(ranged_angle(target_angle_)*180/PI), static_cast<int>(getPosition().th*180/PI));
 		return true;
 	}
 	return false;
