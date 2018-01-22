@@ -405,7 +405,7 @@ public:
 				}
 			}
 #if DEBUG_ENABLE
-			ROS_INFO("alpha = %d, th = %d (%f, %f)", alpha, this->th, this->x, this->y);
+			//ROS_INFO("alpha = %d, th = %d (%f, %f)", alpha, this->th, this->x, this->y);
 #endif
 			return ranged_angle(alpha - this->th);
 	}

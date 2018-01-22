@@ -914,46 +914,40 @@ void GridMap::setCleaned(std::deque<Cell_t> cells)
 {
 	if(cells.empty())
 		return;
-/*
-	auto x_offset = (cells.front().x < cells.back().x) ? 1 : -1;//X_POS
-	Cell_t cell_front = {int16_t(cells.front().x - x_offset),cells.front().y};
-	Cell_t cell_back = {int16_t(cells.back().x + x_offset),cells.back().y};
+
+	//while robot turn finish and going to a new diretion
+	//may cost location change and cover the block cells
+	//so we append a cell in front of the cell list
+	//to avoid robot clean in the same line again. 
+	auto is_x_pos = cells.front().x > cells.back().x ? false: true;
+	auto x_offset = is_x_pos? -1 : 1;
+	Cell_t cell_front = {int16_t(cells.front().x + x_offset),cells.front().y};
 	cells.push_front(cell_front);
-	cells.push_back(cell_back);
-*/
+
 	std::string msg = "Cell:";
-	for (const auto& cell :  cells)
+
+	//in the first cell of cells ,we just mark 6 cells
+	for (uint32_t i = 0; i< cells.size(); i++)
 	{
-		msg += "(" + std::to_string(cell.x) + "," + std::to_string(cell.y)   + "),";
-		for (int dy = -(int)ROBOT_SIZE_1_2; dy <= (int)ROBOT_SIZE_1_2; dy++)
+		Cell_t cell = cells.at(i);
+		msg += "(" + std::to_string(cell.x) + "," + std::to_string(cell.y)   + "),";	
+		for( int dx = -(int)ROBOT_SIZE_1_2;dx <=(int)ROBOT_SIZE_1_2;dx++)
 		{
-			for(int dx = -(int)ROBOT_SIZE_1_2; dx <= (int)ROBOT_SIZE_1_2;dx++){
+			if( i == 0)
+				if(is_x_pos && dx == -(int)ROBOT_SIZE_1_2)
+					continue;
+				else if(!is_x_pos && dx == (int)ROBOT_SIZE_1_2)
+					continue;
+			for(int dy = -(int)ROBOT_SIZE_1_2; dy <= (int)ROBOT_SIZE_1_2; dy++)
+			{
 				CellState status = getCell(CLEAN_MAP, cell.x+dx, cell.y+dy);
-				//if (status != BLOCKED_TILT && status != BLOCKED_SLIP/* && status != BLOCKED_RCON*/)
-				if (status == UNCLEAN)
-				{
+				if (status != BLOCKED_TILT && status != BLOCKED_SLIP && status != BLOCKED_RCON)
 					setCell(CLEAN_MAP,cell.x+dx,cell.y+dy, CLEANED);
-				}
 			}
 		}
 	}
-/*
-	//int32_t x, y;
-	msg += "Robot it self:";
-	for (int dy = -(int)ROBOT_SIZE_1_2; dy <= (int)ROBOT_SIZE_1_2; ++dy)
-	{
-		for (int dx = -(int)ROBOT_SIZE_1_2; dx <= (int)ROBOT_SIZE_1_2; ++dx)
-		{
-			//robot_to_point(robot::instance()->getWorldPoseAngle(), CELL_SIZE * dy, CELL_SIZE * dx, &x, &y);
-			auto status = getCell(CLEAN_MAP, getPosition().toCell().x + dx, getPosition().toCell().y + dy);
-			if (status == UNCLEAN){
-				setCell(CLEAN_MAP,getPosition().toCell().x + dx,getPosition().toCell().y + dy, CLEANED);
-				msg += "(" + std::to_string(getPosition().toCell().x + dx) + "," + std::to_string(getPosition().toCell().y + dy) + "),";
-			}
-		}
-	}
-	ROS_INFO("%s,%d:""\033[32m %s\033[0m",__FUNCTION__, __LINE__, msg.c_str());
-	*/
+
+
 }
 
 bool GridMap::markRobot(uint8_t id)
