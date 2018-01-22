@@ -536,7 +536,7 @@ protected:
 //	boost::mutex mut;
 public:
 
-	static void pubPointMarkers(const std::deque<Vector2<double>> *point, std::string frame_id);
+	static void pubPointMarkers(const std::deque<Vector2<double>> *point, std::string frame_id,std::string name);
 	void pubFitLineMarker(visualization_msgs::Marker fit_line_marker);
 	void visualizeMarkerInit();
 	void scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr& scan);

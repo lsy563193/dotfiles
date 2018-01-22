@@ -144,10 +144,10 @@ void ACleanMode::pubTmpTarget(const Point_t &point, bool is_virtual) {
 	//ROS_INFO("pub points!!");
 }
 
-void ACleanMode::pubPointMarkers(const std::deque<Vector2<double>> *points, std::string frame_id)
+void ACleanMode::pubPointMarkers(const std::deque<Vector2<double>> *points, std::string frame_id, std::string name)
 {
 	visualization_msgs::Marker point_marker;
-	point_marker.ns = frame_id;
+	point_marker.ns = name;
 	point_marker.id = 0;
 	point_marker.type = visualization_msgs::Marker::SPHERE_LIST;
 	point_marker.action= 0;//add
@@ -159,7 +159,7 @@ void ACleanMode::pubPointMarkers(const std::deque<Vector2<double>> *points, std:
 	point_marker.color.g = 1.0;
 	point_marker.color.b = 0.0;
 	point_marker.color.a = 1.0;
-	point_marker.header.frame_id = "base_link";
+	point_marker.header.frame_id = frame_id;
 	point_marker.header.stamp = ros::Time::now();
 
 	geometry_msgs::Point lidar_points;
@@ -315,7 +315,7 @@ bool ACleanMode::calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,boo
 //	for (const auto &target :points)
 //			ROS_WARN("points(%d):target(%lf,%lf),dis(%f)", points.size(), target.x, target.y, target.Distance({CHASE_X, 0}));
 	ROS_WARN("points(%d):target(%lf,%lf)", points.size(), points.front().x, points.front().y);
-	pubPointMarkers(&points, "base_link");
+	pubPointMarkers(&points, "base_link", "point marker");
 
 	return true;
 }
@@ -522,9 +522,9 @@ void ACleanMode::pubLineMarker(const std::vector<LineABC> *lines)
 	line_marker.scale.x = 0.05;
 	//line_marker.scale.y = 0.05;
 	//line_marker.scale.z = 0.05;
-	line_marker.color.r = 0.5;
-	line_marker.color.g = 1.0;
-	line_marker.color.b = 0.2;
+	line_marker.color.r = 0.0;
+	line_marker.color.g = 0.0;
+	line_marker.color.b = 1.0;
 	line_marker.color.a = 1.0;
 	line_marker.header.frame_id = "/base_link";
 	line_marker.header.stamp = ros::Time::now();
