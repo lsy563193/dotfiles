@@ -32,7 +32,7 @@ typedef struct Pose16_t_{
 } Pose16_t;*/
 
 double ranged_angle(double angle);
-double deg_to_rad(double deg, int8_t scale = 1);
+//double deg_to_rad(double deg, int8_t scale = 1);
 //double rad_2_deg(double rad, int8_t scale);
 
   /**

@@ -18,8 +18,8 @@ MovementTurn::MovementTurn(double angle, uint8_t max_speed) : speed_(ROTATE_LOW_
 bool MovementTurn::isReach()
 {
 	if (std::abs(ranged_angle(getPosition().th - target_angle_)) < accurate_){
-			ROS_INFO("%s, %d: MovementTurn finish, target_angle_: \033[32m%f\033[0m, current angle: \033[32m%f\033[0m."
-					, __FUNCTION__, __LINE__, target_angle_, getPosition().th);
+			ROS_INFO("%s, %d: MovementTurn finish, target_angle_: \033[32m%f\033[0m, current angle: \033[32m%d\033[0m."
+					, __FUNCTION__, __LINE__, target_angle_, static_cast<int>(getPosition().th*PI/180));
 		return true;
 	}
 	return false;

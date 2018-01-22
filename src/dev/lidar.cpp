@@ -421,8 +421,8 @@ bool Lidar::lidarGetFitLine(double begin, double end, double range, double dis_l
 	scanLinear_mutex_.unlock();
 	begin = static_cast<int>(atan2(ROBOT_RADIUS * sin(begin), LIDAR_OFFSET_X + ROBOT_RADIUS * cos(begin)) * 180 / PI);
 	end = static_cast<int>(atan2(ROBOT_RADIUS * sin(end), LIDAR_OFFSET_X + ROBOT_RADIUS * cos(end)) * 180 / PI);
-	begin -= LIDAR_THETA / 10;
-	end -= LIDAR_THETA / 10;
+	begin -= LIDAR_THETA *180/PI;
+	end -= LIDAR_THETA *180/PI;
 	if(begin < 0)
 		begin += 360;
 	if(end < 0)
@@ -1201,7 +1201,7 @@ int Lidar::compLaneDistance()
 			x = cos(th * PI / 180.0) * tmp_scan_data.ranges[i];
 			y = sin(th * PI / 180.0) * tmp_scan_data.ranges[i];
 			coordinate_transform(&x, &y, LIDAR_THETA, LIDAR_OFFSET_X, LIDAR_OFFSET_Y);
-			coordinate_transform(&x, &y, cur_angle * 10, 0, 0);
+			coordinate_transform(&x, &y, cur_angle * PI/180, 0, 0);
 			//ROS_INFO("x = %lf, y = %lf", x, y);
 			if (std::abs(y) < ROBOT_RADIUS) {
 				if (x >= 0){

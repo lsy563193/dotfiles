@@ -339,7 +339,7 @@ double MoveTypeFollowWall::getTurnAngle(bool use_target_angle)
 		return diff;
 	}
 	if (LIDAR_FOLLOW_WALL && lidarTurnAngle(turn_angle)) {
-		ROS_INFO("%s %d: Use lidarTurnAngle(%f)", __FUNCTION__, __LINE__, turn_angle);
+		ROS_INFO("%s %d: Use lidarTurnAngle(%f)", __FUNCTION__, __LINE__, turn_angle*180/PI);
 	}
 	else {
 		auto ev_turn_angle = getTurnAngleByEvent();
@@ -348,7 +348,7 @@ double MoveTypeFollowWall::getTurnAngle(bool use_target_angle)
 			auto target_turn_angle = getPosition().courseToDest(target_point_);
 			turn_angle = std::abs(ev_turn_angle) > std::abs(target_turn_angle) ? ev_turn_angle : target_turn_angle;
 			ROS_INFO("%s %d: target_turn_angle(%f), event_turn_angle(%f), choose the big one(%f)",
-					 __FUNCTION__, __LINE__, target_turn_angle, ev_turn_angle, turn_angle);
+					 __FUNCTION__, __LINE__, target_turn_angle*180/PI, ev_turn_angle*180/PI, turn_angle*180/PI);
 		}
 		else
 		{

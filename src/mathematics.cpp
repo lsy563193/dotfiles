@@ -17,10 +17,12 @@ double ranged_angle(double angle)
 	}
 	return angle;
 }
+/*
 double deg_to_rad(double deg, int8_t scale)
 {
 	return (deg * PI / (180 * scale));
 }
+*/
 
 /*
 double rad_2_deg(double rad, int8_t scale)
@@ -52,7 +54,7 @@ void matrix_rotate(double *x, double *y, double theta)
 {
 	double d, e;
 
-	theta = deg_to_rad(theta, 10);
+//	theta = deg_to_rad(theta, 10);
 
 	d = (*x) * cos(theta) - (*y) * sin(theta);
 	e = (*x) * sin(theta) + (*y) * cos(theta);
