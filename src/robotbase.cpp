@@ -109,7 +109,7 @@ void robotbase_reset_send_stream(void)
 		memcpy(buf, serial.send_stream, sizeof(uint8_t) * SEND_LEN);
 	}
 	uint8_t crc;
-	crc = serial.calc_buf_crc8(buf, SEND_LEN - 3);
+	crc = serial.calBufCrc8(buf, SEND_LEN - 3);
 	serial.setSendData(SEND_LEN - 3, crc);
 }
 

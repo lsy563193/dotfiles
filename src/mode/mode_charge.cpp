@@ -47,7 +47,7 @@ bool ModeCharge::isFinish()
 	if (sp_action_->isFinish())
 	{
 		// todo: Temperary not quit charging if full.
-		if (charger.isOnStub() && battery.isFull())
+		if (battery.isFull())
 		{
 			led.set_mode(LED_STEADY, LED_GREEN);
 			return false;

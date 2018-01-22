@@ -22,8 +22,8 @@ Lidar::Lidar():angle_n_(0)
 	setScanCompensateReady(0);
 //	setScanLinearReady(0);
 //	setScanOriginalReady(0);
-//	scanLinear_update_time = ros::Time::now().toSec();
-//	scanOriginal_update_time = ros::Time::now().toSec();
+//	scanLinear_update_time_ = ros::Time::now().toSec();
+//	scanOriginal_update_time_ = ros::Time::now().toSec();
 	//last_ranges_ = new float[360];
 	//memset(last_ranges_,0.0,360*sizeof(float));
 }
@@ -45,7 +45,7 @@ void Lidar::scanLinearCb(const sensor_msgs::LaserScan::ConstPtr &scan)
 		scanLinear_mutex_.unlock();
 		angle_n_ = (int)((scan->angle_max - scan->angle_min) / scan->angle_increment);
 		setScanLinearReady(1);
-		scanLinear_update_time = ros::Time::now().toSec();
+		scanLinear_update_time_ = ros::Time::now().toSec();
 	}
 }
 
@@ -65,7 +65,7 @@ void Lidar::scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr &scan)
 		if (scan2_valid_cnt > 30) {
 			// lidar not been covered.
 			setLidarScanDataOriginal(scan);
-			scanOriginal_update_time = ros::Time::now().toSec();
+			scanOriginal_update_time_ = ros::Time::now().toSec();
 			setScanOriginalReady(1);
 		}
 	}
@@ -79,6 +79,7 @@ void Lidar::scanCompensateCb(const sensor_msgs::LaserScan::ConstPtr &scan)
 		lidarScanData_compensate_ = *scan;
 		scanCompensate_mutex_.unlock();
 		setScanCompensateReady(1);
+		scanCompensate_update_time_ = ros::Time::now().toSec();
 	}
 }
 
@@ -88,6 +89,7 @@ void Lidar::lidarXYPointCb(const visualization_msgs::Marker &point_marker) {
 		lidarXYPoint_mutex_.lock();
 		lidarXY_points = point_marker.points;
 		lidarXYPoint_mutex_.unlock();
+		scanXYPoint_update_time_ = ros::Time::now().toSec();
 	}
 }
 
@@ -125,8 +127,8 @@ void Lidar::motorCtrl(bool new_switch_)
 {
 	switch_ = new_switch_;
 	if(switch_){
-		scanLinear_update_time = ros::Time::now().toSec();
-		scanOriginal_update_time = ros::Time::now().toSec();
+		scanLinear_update_time_ = ros::Time::now().toSec();
+		scanOriginal_update_time_ = ros::Time::now().toSec();
 		ROS_INFO("\033[35m" "%s %d: Open lidar." "\033[0m", __FUNCTION__, __LINE__);
 	}
 	else
@@ -867,7 +869,7 @@ static uint8_t setLidarMarkerAcr2Dir(double X_MIN,double X_MAX,int angle_from,in
 
 uint8_t Lidar::lidarMarker(double X_MAX)
 {
-	if(!lidarCheckFresh(0.6,1))
+	if(!lidarCheckFresh(0.6,4))
 		return 0;
 
 	lidarXYPoint_mutex_.lock();
@@ -1058,9 +1060,9 @@ void Lidar::checkRobotSlip()
 //	ROS_WARN("%s %d: Speed left:%d, right:%d", __FUNCTION__, __LINE__,
 //			 wheel.getLeftSpeedAfterPid(), wheel.getRightSpeedAfterPid());
 	if ((std::abs(wheel.getLeftSpeedAfterPid()) >= speed_limit || std::abs(wheel.getRightSpeedAfterPid()) >= speed_limit)
-		&& current_frame_time_stamp_ != scanOriginal_update_time)
+		&& current_frame_time_stamp_ != scanOriginal_update_time_)
 	{
-		current_frame_time_stamp_ = scanOriginal_update_time;
+		current_frame_time_stamp_ = scanOriginal_update_time_;
 		auto tmp_scan_data = getLidarScanDataOriginal();
 
 		if (last_frame_ranges_.empty())
@@ -1230,7 +1232,7 @@ int Lidar::compLaneDistance()
 
 double Lidar::getObstacleDistance(uint8_t dir, double range)
 {
-	if(!lidarCheckFresh(0.6,1))
+	if(!lidarCheckFresh(0.6,4))
 		return DBL_MAX;
 
 	lidarXYPoint_mutex_.lock();
@@ -1243,7 +1245,7 @@ double Lidar::getObstacleDistance(uint8_t dir, double range)
 	if(range < 0.056)
 	{
 		ROS_ERROR("range should be higher than 0.056");
-		return 0;
+		return DBL_MAX;
 	}
 
 	for(const auto& point:tmp_lidarXY_points){
@@ -1297,9 +1299,13 @@ bool Lidar::lidarCheckFresh(float duration, uint8_t type)
 {
 	double time_gap;
 	if (type == 1)
-		time_gap = ros::Time::now().toSec() - scanLinear_update_time;
+		time_gap = ros::Time::now().toSec() - scanLinear_update_time_;
 	if (type == 2)
-		time_gap = ros::Time::now().toSec() - scanOriginal_update_time;
+		time_gap = ros::Time::now().toSec() - scanOriginal_update_time_;
+	if (type == 3)
+		time_gap = ros::Time::now().toSec() - scanCompensate_update_time_;
+	if (type == 4)
+		time_gap = ros::Time::now().toSec() - scanXYPoint_update_time_;
 
 	if (time_gap < duration)
 	{
