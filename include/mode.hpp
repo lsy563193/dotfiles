@@ -266,8 +266,6 @@ public:
 	bool isExit() override ;
 	bool isFinish() override ;
 
-	IAction* getNextAction();
-
 	// For exit event handling.
 	void remoteClean(bool state_now, bool state_last) override;
 	void keyClean(bool state_now, bool state_last) override;

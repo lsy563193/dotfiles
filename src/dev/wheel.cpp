@@ -285,6 +285,7 @@ void Wheel::pidSetLeftSpeed(float speed)
 		speed = speed > RUN_TOP_SPEED ? RUN_TOP_SPEED : speed;
 	else
 		speed = fabs(speed) > RUN_TOP_SPEED ? -1 * RUN_TOP_SPEED : speed;
+	speed = 0;
 	stream_speed = static_cast<int16_t>(speed * SPEED_ALF);
 
 	serial.setSendData(CTL_WHEEL_LEFT_HIGH, (stream_speed >> 8) & 0xff);
@@ -299,6 +300,7 @@ void Wheel::pidSetRightSpeed(float speed)
 		speed = speed > RUN_TOP_SPEED ? RUN_TOP_SPEED : speed;
 	else
 		speed = fabs(speed) > RUN_TOP_SPEED ? -1 * RUN_TOP_SPEED : speed;
+	speed = 0;
 	stream_speed = static_cast<int16_t>(speed * SPEED_ALF);
 
 	serial.setSendData(CTL_WHEEL_RIGHT_HIGH, (stream_speed >> 8) & 0xff);
