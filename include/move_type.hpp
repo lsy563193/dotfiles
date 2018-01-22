@@ -49,7 +49,7 @@ public:
 protected:
 //	Cells passed_path_;
 //	Cells tmp_plan_path_;
-	int16_t turn_target_angle_{};
+	double turn_target_angle_{};
 	float back_distance_;
 	enum{//movement
 		mm_null,
@@ -68,7 +68,7 @@ public:
 	bool isFinish() override;
 //	IAction* setNextAction();
 
-	bool isPassTargetStop(int &dir);
+	bool isPassTargetStop(double &dir);
 	bool isCellReach();
 	bool isPoseReach();
 
@@ -102,11 +102,11 @@ private:
 	int16_t tiltTurnAngle();
 	int16_t obsTurnAngle();
 	int16_t double_scale_10(double line_angle);
-	bool _lidarTurnAngle(bool is_left, int16_t &turn_angle, int lidar_min, int lidar_max, int angle_min, int angle_max,
+	bool _lidarTurnAngle(bool is_left, double &turn_angle, double lidar_min, double lidar_max, double angle_min, double angle_max,
 						 double dis_limit = 0.217);
-	bool lidarTurnAngle(int16_t &turn_angle);
-	int16_t getTurnAngleByEvent();
-	int16_t getTurnAngle(bool);
+	bool lidarTurnAngle(double &turn_angle);
+	double getTurnAngleByEvent();
+	double getTurnAngle(bool);
 	double robot_to_wall_distance = 0.8;
 	float g_back_distance = 0.01;
 };

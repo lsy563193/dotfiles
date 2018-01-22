@@ -261,7 +261,7 @@ bool ACleanMode::check_is_valid(const Vector2<double>& point, Paras& para, const
 
 bool ACleanMode::calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,bool is_left, std::deque<Vector2<double>>& points) {
 	Paras para{is_left};
-	ROS_INFO("is_left(%d)",is_left);
+//	ROS_INFO("is_left(%d)",is_left);
 	auto is_corner = check_corner(scan, para);
 	if(is_corner)
 	{
@@ -746,7 +746,7 @@ void ACleanMode::moveTypeLinearSaveBlocks()
 
 void ACleanMode::setRconPos(float cd,float dist)
 {
-//	float yaw = robot::instance()->getWorldPoseAngle()/10.0;
+//	float yaw = robot::instance()->getWorldPoseYaw()/10.0;
 //	float wpx = cosf( (float)ranged_angle((yaw+cd)*10)/10.0 * PI/180.0 )*dist+ robot::instance()->getWorldPoseX();
 //	float wpy = sinf( (float)ranged_angle((yaw+cd)*10)/10.0 * PI/180.0 )*dist+ robot::instance()->getWorldPoseY();
 //	charger_pos_ = {(int32_t)(wpx*1000/CELL_SIZE), (int32_t)(wpy*1000/CELL_SIZE),(int16_t)0};

@@ -9,13 +9,18 @@
 #define  _RATE 50
 #define POWER_ACTIVE 1
 #define POWER_DOWN 7
-extern bool g_is_tilt;
 
+extern bool g_bye_bye;
 extern pthread_mutex_t recev_lock;
 extern pthread_cond_t  recev_cond;
-extern bool is_robotbase_init;
+
 extern bool robotbase_thread_stop;
-extern bool send_stream_thread;
+extern bool recei_thread_stop;
+extern bool send_thread_stop;
+extern bool event_manager_thread_stop;
+extern bool event_handle_thread_stop;
+extern bool core_thread_stop;
+
 extern bool robotbase_beep_update_flag;
 extern int robotbase_beeper_sound_loop_count;
 extern uint8_t robotbase_sound_code;
@@ -35,7 +40,6 @@ void debug_received_stream();
 void debug_send_stream(uint8_t *buf);
 void robotbase_deinit(void);
 void robotbase_reset_send_stream(void);
-bool is_robotbase_stop(void);
 void serial_receive_routine_cb();
 void serial_send_routine_cb();
 void process_beep();

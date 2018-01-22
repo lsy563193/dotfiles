@@ -41,7 +41,7 @@ public:
 	virtual Point_t calcTmpTarget()=0;
 	bool isFinish() override ;
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed) override ;
-	int16_t angle_diff{};
+	double yaw_diff{};
 
 protected:
 
@@ -53,9 +53,8 @@ protected:
 	uint8_t integration_cycle_{};
 	int32_t integrated_{};
 	int32_t base_speed_{};
-	int16_t angle_forward_to_turn_{};
-	int16_t angle_turn_to_forward_{};
-	int kp_{20};
+	double angle_forward_to_turn_{};
+	int kp_{2};
 //	const double TIME_STRAIGHT{0.2};
 };
 
@@ -81,16 +80,16 @@ private:
 class MovementTurn: public IMovement{
 public:
 
-	explicit MovementTurn(int16_t target_angle, uint8_t max_speed);
+	explicit MovementTurn(double target_angle, uint8_t max_speed);
 	void adjustSpeed(int32_t&, int32_t&) override;
 	bool isReach();
 	bool isFinish() override;
 
 private:
 	uint8_t max_speed_;
-	uint16_t accurate_;
+	double accurate_;
 	uint8_t speed_;
-	int16_t target_angle_;
+	double target_angle_;
 };
 
 class MovementFollowPointLinear:public AMovementFollowPoint
@@ -189,7 +188,7 @@ public:
 	bool _isStop();
 	bool isSwitch();
 	void adjustSpeed(int32_t&, int32_t&) override ;
-	void getTurnBackInfo(int16_t &turn_angle, float &back_distance);
+	void getTurnBackInfo(double &turn_angle, float &back_distance);
 	bool isFinish() override ;
 
 private:
@@ -214,15 +213,15 @@ private:
 		gtc_check_position_right
 
 	};
-	int16_t turn_angle_;
+	double turn_angle_;
 	float back_distance_;
 	uint16_t no_signal_cnt;
 	double move_away_from_charger_time_stamp_;
 	uint32_t receive_code;
 	// This variables is for robot turning.
-	float current_angle;
-	float last_angle;
-	float angle_offset;
+	double current_angle;
+	double last_angle;
+	double angle_offset;
 	float gyro_step;
 	uint8_t around_charger_stub_dir;
 	uint8_t go_home_bumper_cnt;

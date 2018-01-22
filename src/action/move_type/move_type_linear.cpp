@@ -14,8 +14,8 @@ MoveTypeLinear::MoveTypeLinear() {
 	auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
 	auto target_point_ = p_mode->plan_path_.front();
 	turn_target_angle_ = p_mode->new_dir_;
-	ROS_INFO("%s,%d: Enter move type linear, turn target angle(%d), first target(%d, %d).",
-			 __FUNCTION__, __LINE__, turn_target_angle_, target_point_.toCell().x, target_point_.toCell().y);
+	ROS_INFO("%s,%d: Enter move type linear, turn target angle(%f), first target(%f, %f).",
+			 __FUNCTION__, __LINE__, turn_target_angle_, target_point_.x, target_point_.y);
 	movement_i_ = mm_turn;
 	sp_movement_.reset(new MovementTurn(turn_target_angle_, ROTATE_TOP_SPEED));
 //	ROS_INFO("%s,%d: mt_is_linear,turn(%d)", __FUNCTION__, __LINE__, turn_target_angle_);
@@ -85,7 +85,7 @@ bool MoveTypeLinear::isCellReach()
 	{
 		ROS_INFO("%s, %d: MoveTypeLinear, reach the target cell (%d,%d), current angle(%d), target angle(%d).", __FUNCTION__, __LINE__,
 						 target_point_.toCell().x, target_point_.toCell().y, s_curr_p.th, target_point_.th);
-//		g_turn_angle = ranged_angle(new_dir - robot::instance()->getWorldPoseAngle());
+//		g_turn_angle = ranged_angle(new_dir - robot::instance()->getWorldPoseYaw());
 		return true;
 	}
 
@@ -97,7 +97,7 @@ bool MoveTypeLinear::isPoseReach()
 	// Checking if robot has reached target cell and target angle.
 //	PP_INFO();
 	auto target_point_ = dynamic_cast<ACleanMode*>(sp_mode_)->plan_path_.front();
-	if (isCellReach() && std::abs(getPosition().th -target_point_.th) < 200)
+	if (isCellReach() && std::abs(getPosition().angleDiff(target_point_)) < 20*PI/180)
 	{
 		ROS_INFO("\033[1m""%s, %d: MoveTypeLinear, reach the target cell and pose(%d,%d,%d)""\033[0m", __FUNCTION__, __LINE__,
 				 target_point_.toCell().x, target_point_.toCell().y, target_point_.th);
@@ -106,7 +106,7 @@ bool MoveTypeLinear::isPoseReach()
 	return false;
 }
 
-bool MoveTypeLinear::isPassTargetStop(int &dir)
+bool MoveTypeLinear::isPassTargetStop(double &dir)
 {
 //	PP_INFO();
 	// Checking if robot has reached target cell.

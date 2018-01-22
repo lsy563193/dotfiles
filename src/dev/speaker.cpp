@@ -3,13 +3,12 @@
 #include <string.h>
 #include <alsa/asoundlib.h>
 #include <boost/thread/mutex.hpp>
-
 #include <ros/ros.h>
-
 #include <string>
-#include <dev.h>
 
+#include "dev.h"
 #include "speaker.h"
+#include "robotbase.h"
 
 using namespace std;
 
@@ -24,7 +23,7 @@ Speaker::Speaker(void)
 void Speaker::playRoutine()
 {
 	ROS_INFO("robotbase,\033[32m%s\033[0m,%d is up.",__FUNCTION__,__LINE__);
-	while(ros::ok())
+	while(ros::ok() && !g_bye_bye)
 	{
 		if(!finish_playing_)
 		{
@@ -59,6 +58,7 @@ void Speaker::playRoutine()
 		else
 			usleep(1000);
 	}
+	ROS_ERROR("%s,%d exit",__FUNCTION__,__LINE__);
 	return;
 }
 

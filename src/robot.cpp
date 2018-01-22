@@ -32,7 +32,11 @@ robot::robot()/*:offset_angle_(0),saved_offset_angle_(0)*/
 {
 
 	robotbase_thread_stop = false;
-	send_stream_thread = true;
+	send_thread_stop = false;
+	recei_thread_stop = false;
+	core_thread_stop = false;
+	event_manager_thread_stop = false;
+	event_handle_thread_stop = false;
 
 	while (!serial.isReady()) {
 		ROS_ERROR("serial not ready\n");
@@ -74,7 +78,6 @@ robot::robot()/*:offset_angle_(0),saved_offset_angle_(0)*/
 	auto robotbase_routine = new boost::thread(boost::bind(&robot::robotbase_routine_cb, this));
 	auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
 	auto speaker_play_routine = new boost::thread(boost::bind(&Speaker::playRoutine, &speaker));
-	is_robotbase_init = true;
 	event_manager_init();
 	auto event_manager_thread = new boost::thread(event_manager_thread_cb);
 	auto event_handler_thread = new boost::thread(event_handler_thread_cb);
@@ -260,18 +263,16 @@ void robot::robotbase_routine_cb()
 #endif
 		/*---------extrict end-------*/
 
-		pthread_mutex_lock(&serial_data_ready_mtx);
 		pthread_cond_broadcast(&serial_data_ready_cond);
-		pthread_mutex_unlock(&serial_data_ready_mtx);
 		sensor_pub.publish(sensor);
 
 		/*------------setting for odom and publish odom topic --------*/
 		odom.setMovingSpeed(static_cast<float>((wheel.getLeftWheelActualSpeed() + wheel.getRightWheelActualSpeed()) / 2.0));
-		odom.setAngle(gyro.getAngle());
+		odom.setAngle(gyro.getAngle()*PI/180);
 		odom.setAngleSpeed(gyro.getAngleV());
 		cur_time = ros::Time::now();
 		double angle_rad, dt;
-		angle_rad = deg_to_rad(odom.getAngle());
+		angle_rad = odom.getAngle();
 		dt = (cur_time - last_time).toSec();
 		last_time = cur_time;
 		odom.setX(static_cast<float>(odom.getX() + (odom.getMovingSpeed() * cos(angle_rad)) * dt));
@@ -323,7 +324,9 @@ void robot::robotbase_routine_cb()
 		/*------publish end -----------*/
 
 	}//end while
-	ROS_INFO("\033[32m%s\033[0m,%d,robotbase thread exit",__FUNCTION__,__LINE__);
+	pthread_cond_broadcast(&serial_data_ready_cond);
+	event_manager_thread_stop = true;
+	ROS_ERROR("%s,%d,exit",__FUNCTION__,__LINE__);
 }
 
 void robot::core_thread_cb()
@@ -348,19 +351,29 @@ void robot::core_thread_cb()
 	{
 //		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
 		p_mode->run();
+		if(core_thread_stop) break;
 		auto next_mode = p_mode->getNextMode();
 		p_mode.reset();
 //		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
 		p_mode.reset(getNextMode(next_mode));
 //		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
 	}
+	g_bye_bye = true;
+	ROS_ERROR("%s,%d,exit",__FUNCTION__,__LINE__);
 }
 
 robot::~robot()
 {
-	bumper.lidarBumperDeinit();
+
 	robotbase_deinit();
+
+	pthread_mutex_destroy(&new_event_mtx);
+	pthread_mutex_destroy(&event_handler_mtx);
+	pthread_cond_destroy(&new_event_cond);
+	pthread_cond_destroy(&event_handler_cond);
+
 	delete robot_tf_;
+	ROS_INFO("GOOD BYE!");
 }
 
 robot *robot::instance()
@@ -417,13 +430,10 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	updateRobotPose(odom_pose, odom_pose_yaw_);
 	odomPublish();
 	//printf("Map->base(%f, %f, %f). Map->robot (%f, %f, %f)\n", tmp_x, tmp_y, RAD2DEG(tmp_yaw), robot_x_, robot_y_, RAD2DEG(robot_yaw_));
-	world_pose_.setX(robot_pos.x());
-	world_pose_.setY(robot_pos.y());
-	world_pose_.setAngle(ranged_angle(robot_yaw_ * 1800 / M_PI));
-//	ROS_WARN("Position (%f, %f), angle: %f.", world_pose_.getX(), world_pose_.getY(), world_pose_.getAngle());
+//	ROS_WARN("Position (%f, %f), angle: %f.", robot_pos.getX(), robot_pos.getY(), robot_pos.getAngle());
 #else
 	pose.setX(tmp_x_);
-	pose.setY(tmp_y_);
+std::	pose.setY(tmp_y_);
 	pose.setAngle(tmp_yaw_);
 #endif
 	//ROS_WARN("%s %d: Position (%f, %f), yaw: %f. Odom position(%f, %f), yaw: %f.", __FUNCTION__, __LINE__, tmp_x, tmp_y, tmp_yaw, odom_pose_x_, odom_pose_y_, odom_pose_yaw_);
@@ -510,6 +520,9 @@ void robot::updateRobotPose(tf::Vector3& odom, double odom_yaw)
 
 	robot_pos = odom + robot_correction_pos;
 	robot_yaw_ = odom_yaw + robot_correction_yaw_;
+//	world_yaw_ = (ranged_angle(robot_yaw_ /** 1800 / M_PI*/));
+	world_yaw_ = (ranged_angle(robot_yaw_ /** 1800 / M_PI*/));
+//	world_yaw_ = robot_yaw_;
 }
 
 void robot::resetCorrection()
@@ -534,7 +547,7 @@ static float xCount{}, yCount{};
 
 Point_t getPosition()
 {
-	return {xCount, yCount, robot::instance()->getWorldPoseAngle()};
+	return {xCount, yCount, robot::instance()->getWorldPoseYaw()};
 }
 
 float cellToCount(int16_t i) {
@@ -551,16 +564,16 @@ void resetPosition() {
 	yCount = 0;
 }
 
-bool isPos(int dir)
+bool isPos(double dir)
 {
 	return (dir == MAP_POS_X || dir == MAP_POS_Y || dir == MAP_NONE);
 }
 
-bool isXAxis(int dir)
+bool isXAxis(double dir)
 {
 	return dir == MAP_POS_X || dir == MAP_NEG_X || dir == MAP_NONE;
 }
-bool isYAxis(int dir)
+bool isYAxis(double dir)
 {
 	return dir == MAP_POS_Y || dir == MAP_NEG_Y || dir == MAP_NONE;
 }

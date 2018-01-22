@@ -9,7 +9,6 @@
 #include "path_algorithm.h"
 #include "event_manager.h"
 #include "boost/shared_ptr.hpp"
-
 #include <visualization_msgs/Marker.h>
 //#include "move_type.hpp"
 
@@ -509,8 +508,8 @@ public:
 	bool should_mark_temp_charger_{};
 	bool found_charger_{};
 
-	int old_dir_{};
-	int new_dir_{};
+	double old_dir_{};
+	double new_dir_{};
 
 	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
 	boost::shared_ptr<GoHomePathAlgorithm> go_home_path_algorithm_{};
@@ -533,6 +532,8 @@ protected:
 	Point_t start_point_{0, 0, 0};
 	bool should_go_to_charger_{false};
 	bool remote_go_home_point{false};
+
+//	boost::mutex mut;
 public:
 
 	static void pubPointMarkers(const std::deque<Vector2<double>> *point, std::string frame_id);

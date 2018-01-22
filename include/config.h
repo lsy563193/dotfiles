@@ -181,7 +181,7 @@
 
 #define LIDAR_MARKER						(1)
 
-#define LIDAR_THETA							(2050)//2050
+#define LIDAR_THETA							(205*PI/180)//2050
 #define LIDAR_OFFSET_X						(0.031)//0.031
 #define LIDAR_OFFSET_Y						(0)//0
 #define ROBOT_RADIUS						(0.167)

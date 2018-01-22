@@ -410,8 +410,8 @@ bool CleanModeNav::updateActionInStateClean(){
 
 		auto start = getPosition().toCell();
 		auto delta_y = plan_path_.back().toCell().y - start.y;
-		ROS_INFO("%s,%d: path size(%u), old_dir_(%d), new_dir_(%d), bumper(%d), cliff(%d), lidar(%d), delta_y(%d)",
-						 __FUNCTION__, __LINE__, plan_path_.size(), old_dir_, new_dir_, ev.bumper_triggered,
+		ROS_INFO("%s,%d: path size(%u), old_dir_(%f), new_dir_(%f), bumper(%d), cliff(%d), lidar(%d), delta_y(%f)",
+						 __FUNCTION__, __LINE__, plan_path_.size(), old_dir_*180/PI, new_dir_*180/PI, ev.bumper_triggered,
 						 ev.cliff_triggered, ev.lidar_triggered, delta_y);
 		if (!isXAxis(old_dir_) // If last movement is not x axis linear movement, should not follow wall.
 				|| plan_path_.size() > 2 ||

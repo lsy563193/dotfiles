@@ -13,6 +13,7 @@ Wheel wheel;
 void Wheel::stop(void)
 {
 	setPidTargetSpeed(0, 0);
+	ROS_INFO("%s,%d,wheel set stop",__FUNCTION__,__LINE__);
 }
 
 uint32_t Wheel::getRightStep(void)
@@ -189,14 +190,14 @@ void Wheel::pidAdjustSpeed(void)
 		left_pid.actual_speed += left_pid.variation;
 		right_pid.actual_speed += right_pid.variation;
 	#endif
-		if(fabsf(left_pid.actual_speed) <= 6)
+		if(std::abs(left_pid.actual_speed) <= 6)
 		{
 			if(left_pid.target_speed > 0)
 				left_pid.actual_speed = (left_pid.target_speed > 7) ? 7 : left_pid.target_speed;
 			else
 				left_pid.actual_speed = (left_pid.target_speed < -7) ? -7 : left_pid.target_speed;
 		}
-		else if(fabsf(left_pid.actual_speed) <= 15)
+		else if(std::abs(left_pid.actual_speed) <= 15)
 		{
 			// For low actual speed cases.
 			left_pid.delta = left_pid.target_speed - left_pid.actual_speed;
@@ -205,7 +206,7 @@ void Wheel::pidAdjustSpeed(void)
 			else if(left_pid.delta < 0)
 				left_pid.actual_speed -= left_pid.actual_speed < 0 ? 1 : 0.5;
 		}
-		else if (fabsf(left_pid.target_speed) <= 10)
+		else if (std::abs(left_pid.target_speed) <= 10)
 		{
 			// For high actual speed cases.
 			left_pid.delta = left_pid.target_speed - left_pid.actual_speed;
@@ -217,14 +218,14 @@ void Wheel::pidAdjustSpeed(void)
 		else
 			left_pid.actual_speed = left_pid.target_speed;
 
-		if(fabsf(right_pid.actual_speed) <= 6)
+		if(std::abs(right_pid.actual_speed) <= 6)
 		{
 			if(right_pid.target_speed > 0)
 				right_pid.actual_speed = (right_pid.target_speed > 7) ? 7 : right_pid.target_speed;
 			else
 				right_pid.actual_speed = (right_pid.target_speed < -7) ? -7 : right_pid.target_speed;
 		}
-		else if(fabsf(right_pid.actual_speed) <= 15)
+		else if(std::abs(right_pid.actual_speed) <= 15)
 		{
 			// For low actual speed cases.
 			right_pid.delta = right_pid.target_speed - right_pid.actual_speed;
@@ -233,7 +234,7 @@ void Wheel::pidAdjustSpeed(void)
 			else if(right_pid.delta < 0)
 				right_pid.actual_speed -= right_pid.actual_speed < 0 ? 1 : 0.5;
 		}
-		else if (fabsf(right_pid.target_speed) <= 10)
+		else if (std::abs(right_pid.target_speed) <= 10)
 		{
 			// For high actual speed cases.
 			right_pid.delta = right_pid.target_speed - right_pid.actual_speed;
@@ -284,7 +285,7 @@ void Wheel::pidSetLeftSpeed(float speed)
 	if (speed >= 0)
 		speed = speed > RUN_TOP_SPEED ? RUN_TOP_SPEED : speed;
 	else
-		speed = fabs(speed) > RUN_TOP_SPEED ? -1 * RUN_TOP_SPEED : speed;
+		speed = std::abs(speed) > RUN_TOP_SPEED ? -1 * RUN_TOP_SPEED : speed;
 	stream_speed = static_cast<int16_t>(speed * SPEED_ALF);
 
 	serial.setSendData(CTL_WHEEL_LEFT_HIGH, (stream_speed >> 8) & 0xff);
@@ -298,7 +299,7 @@ void Wheel::pidSetRightSpeed(float speed)
 	if (speed >= 0)
 		speed = speed > RUN_TOP_SPEED ? RUN_TOP_SPEED : speed;
 	else
-		speed = fabs(speed) > RUN_TOP_SPEED ? -1 * RUN_TOP_SPEED : speed;
+		speed = std::abs(speed) > RUN_TOP_SPEED ? -1 * RUN_TOP_SPEED : speed;
 	stream_speed = static_cast<int16_t>(speed * SPEED_ALF);
 
 	serial.setSendData(CTL_WHEEL_RIGHT_HIGH, (stream_speed >> 8) & 0xff);
