@@ -20,10 +20,10 @@ ActionSleep::ActionSleep()
 	usleep(100000);
 	led.set_mode(LED_STEADY, LED_OFF);
 	serial.setCleanMode(POWER_DOWN);
-//	system("/bin/echo standby > /sys/power/state");
-//	sleep(1);
-	usleep(25000);
 	ROS_INFO("%s %d: Finish beeping.", __FUNCTION__, __LINE__);
+	system("/bin/echo standby > /sys/power/state");
+//	sleep(1);
+//	usleep(25000);
 }
 
 ActionSleep::~ActionSleep()

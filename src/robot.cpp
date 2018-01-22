@@ -34,7 +34,7 @@ robot::robot()/*:offset_angle_(0),saved_offset_angle_(0)*/
 	robotbase_thread_stop = false;
 	send_stream_thread = true;
 
-	while (!serial.is_ready()) {
+	while (!serial.isReady()) {
 		ROS_ERROR("serial not ready\n");
 	}
 
@@ -138,7 +138,7 @@ void robot::robotbase_routine_cb()
 
 		gyro.setAngle(static_cast<float>(static_cast<int16_t>((serial.receive_stream[REC_ANGLE_H] << 8) | serial.receive_stream[REC_ANGLE_L]) / 100.0 * -1));
 		sensor.angle = gyro.getAngle();
-		gyro.setAngleV(static_cast<float>(static_cast<int16_t>((serial.receive_stream[REC_ANGLE_V_H] << 8) | serial.receive_stream[REC_ANGLE_V_H]) / 100.0 * -1));
+		gyro.setAngleV(static_cast<float>(static_cast<int16_t>((serial.receive_stream[REC_ANGLE_V_H] << 8) | serial.receive_stream[REC_ANGLE_V_L]) / 100.0 * -1));
 		sensor.angle_v = gyro.getAngleV();
 
 		if (gyro.getXAcc() == -1000)
@@ -223,6 +223,10 @@ void robot::robotbase_routine_cb()
 		// For charger device.
 		charger.setChargeStatus((serial.receive_stream[REC_MIX_BYTE] >> 4) & 0x07);
 		sensor.charge_status = charger.getChargeStatus();
+
+		// For sleep status.
+		serial.isSleep((serial.receive_stream[REC_MIX_BYTE] & 0x80) == 0);
+		sensor.sleep_status = serial.isSleep();
 
 		// For battery device.
 		battery.setVoltage(serial.receive_stream[REC_BATTERY] * 10);

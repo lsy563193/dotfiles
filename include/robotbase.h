@@ -31,6 +31,8 @@ extern uint16_t robotbase_led_cnt_for_switch;
 extern uint16_t live_led_cnt_for_switch;
 
 extern bool key_or_clean_button_detected;
+void debug_received_stream();
+void debug_send_stream(uint8_t *buf);
 void robotbase_deinit(void);
 void robotbase_reset_send_stream(void);
 bool is_robotbase_stop(void);
