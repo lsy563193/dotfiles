@@ -94,36 +94,35 @@ Point_t MovementFollowWallLidar::calcTmpTarget() {
 		seq_ = path_head.seq;
 		lidar_targets_ = path_head.tmp_plan_path_;
 		if(!lidar_targets_.empty()) {
+//			INFO_PURPLE("p_tmp_targets_ = &lidar_targets_");
 			virtual_targets_.clear();
 			p_tmp_targets_ = &lidar_targets_;
 		} else {
-			INFO_PURPLE("p_tmp_targets_ = &virtual_targets_");
+//			INFO_PURPLE("p_tmp_targets_ = &virtual_targets_");
 			p_tmp_targets_ = &virtual_targets_;
 		}
-		ROS_WARN("lidar_targets_.size() = %d", lidar_targets_.size());
+//		ROS_WARN("lidar_targets_.size() = %d", lidar_targets_.size());
 	}
-	ROS_WARN_COND(DEBUG_ENABLE, "p_tmp_targets_.size() = %d", p_tmp_targets_->size());
+//	ROS_WARN_COND(DEBUG_ENABLE, "p_tmp_targets_.size() = %d", p_tmp_targets_->size());
 
 	if(!p_tmp_targets_->empty()) {
 		if (p_tmp_targets_->front().isNearTo(getPosition(), CELL_SIZE * 0.75)) {
 			p_tmp_targets_->pop_front();
-			ROS_WARN("near pop target(%d)", p_tmp_targets_->size());
+//			ROS_WARN("near pop target(%d)", p_tmp_targets_->size());
 			if (p_tmp_targets_->empty()){
 				virtual_targets_ = _calcTmpTarget();
 				p_tmp_targets_ = &virtual_targets_;
-				INFO_PURPLE("p_tmp_targets_->empty(), use virtual target");
+//				INFO_PURPLE("p_tmp_targets_->empty(), use virtual target");
 			}
 		}
 	} else {
 		virtual_targets_ = _calcTmpTarget();
 		p_tmp_targets_ = &virtual_targets_;
-		INFO_PURPLE("p_tmp_targets_->empty(), use virtual target");
+//		INFO_PURPLE("p_tmp_targets_->empty(), use virtual target");
 	}
 //	ROS_WARN("is_virtual_target(%d,%d)", lidar_targets_.empty(),lidar_targets_.size());
 	dynamic_cast<ACleanMode*>(sp_mt_->sp_mode_)->pubTmpTarget(p_tmp_targets_->front(), p_tmp_targets_ == &virtual_targets_ );
-#if DEBUG_ENABLE
-	ROS_ERROR("p_tmp_targets_(%f,%f,%d)", p_tmp_targets_->front().x, p_tmp_targets_->front().y, p_tmp_targets_->front().th);
-#endif
+//	ROS_ERROR_COND(DEBUG_ENABLE,"p_tmp_targets_(%f,%f,%d)", p_tmp_targets_->front().x, p_tmp_targets_->front().y, p_tmp_targets_->front().th);
 	return p_tmp_targets_->front();
 }
 

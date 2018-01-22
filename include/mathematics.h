@@ -379,7 +379,7 @@ public:
 					alpha += PI*2;
 				}
 			}
-			ROS_INFO_COND(DEBUG_ENABLE,"alpha = %d, th = %d (%f, %f)", alpha, this->th, this->x, this->y);
+//			ROS_INFO_COND(DEBUG_ENABLE,"alpha = %d, th = %f (%f, %f)", alpha, this->th, this->x, this->y);
 			return ranged_angle(alpha - this->th);
 	}
 
