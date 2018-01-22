@@ -5,6 +5,7 @@
 #include <dev.h>
 #include <event_manager.h>
 #include "mode.hpp"
+#include "robotbase.h"
 boost::shared_ptr<IAction> Mode::sp_action_ = nullptr;
 //IAction* Mode::sp_action_ = nullptr;
 
@@ -13,7 +14,7 @@ void Mode::run()
 //	ROS_INFO("%s %d: Mode start running.", __FUNCTION__, __LINE__);
 	bool eh_status_now = false, eh_status_last = false;
 
-	while (ros::ok())
+	while (ros::ok() && !core_thread_stop)
 	{
 //		PP_INFO();
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {

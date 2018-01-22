@@ -1,9 +1,11 @@
 #include <event_manager.h>
 #include <error.h>
-#include "serial.h"
-#include "ros/ros.h"
+#include <ros/ros.h>
 #include "dev.h"
 #include "map.h"
+#include "robotbase.h"
+#include "serial.h"
+
 int g_bumper_cnt = 0;
 /* OBS */
 uint8_t g_cliff_all_cnt = 0;
@@ -31,11 +33,11 @@ Ev_t ev;
 
 pthread_mutex_t	new_event_mtx;
 pthread_cond_t new_event_cond = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t	event_handler_mtx;
+pthread_cond_t event_handler_cond = PTHREAD_COND_INITIALIZER;
 
 bool g_event_manager_enabled = false;
 bool g_event_handler_status = false;
-pthread_mutex_t	event_handler_mtx;
-pthread_cond_t event_handler_cond = PTHREAD_COND_INITIALIZER;
 
 static bool g_new_event_status[EVT_MAX];
 
@@ -140,7 +142,7 @@ void event_manager_thread_cb()
 
 	pthread_detach(pthread_self());
 
-	while (ros::ok()) {
+	while (ros::ok() && !event_manager_thread_stop) {
 		if (g_event_manager_enabled == false) {
 			usleep(10000);
 			continue;
@@ -349,15 +351,15 @@ void event_manager_thread_cb()
 		if (set) {
 			//ROS_INFO("%s %d: going to broadcase new event", __FUNCTION__, __LINE__);
 			pthread_mutex_lock(&new_event_mtx);
-
 			memcpy(g_new_event_status, status, sizeof(bool) * EVT_MAX);
-			pthread_cond_broadcast(&new_event_cond);
-
 			pthread_mutex_unlock(&new_event_mtx);
+
+			pthread_cond_broadcast(&new_event_cond);
 		}
 	}
-
-	ROS_ERROR("%s %d: exit\n", __FUNCTION__, __LINE__);
+	pthread_cond_broadcast(&new_event_cond);
+	event_handle_thread_stop = true;
+	ROS_ERROR("%s %d: exit!", __FUNCTION__, __LINE__);
 }
 
 void event_handler_thread_cb()
@@ -384,7 +386,8 @@ void event_handler_thread_cb()
 
 	pthread_detach(pthread_self());
 
-	while (ros::ok()) {
+	while (ros::ok() && !event_handle_thread_stop) {
+
 		pthread_mutex_lock(&new_event_mtx);
 		pthread_cond_wait(&new_event_cond, &new_event_mtx);
 
@@ -398,8 +401,8 @@ void event_handler_thread_cb()
 
 		pthread_mutex_lock(&event_handler_mtx);
 		g_event_handler_status = true;
-		pthread_cond_broadcast(&event_handler_cond);
 		pthread_mutex_unlock(&event_handler_mtx);
+		pthread_cond_broadcast(&event_handler_cond);
 
 		//ROS_DEBUG("%s %d: handler thread is up, new event to handle", __FUNCTION__, __LINE__);
 
@@ -495,10 +498,12 @@ void event_handler_thread_cb()
 
 		pthread_mutex_lock(&event_handler_mtx);
 		g_event_handler_status = false;
-		pthread_cond_broadcast(&event_handler_cond);
 		pthread_mutex_unlock(&event_handler_mtx);
+		pthread_cond_broadcast(&event_handler_cond);
 	}
-	ROS_ERROR("%s %d: exit\n", __FUNCTION__, __LINE__);
+	pthread_cond_broadcast(&event_handler_cond);
+	send_thread_stop = true;
+	ROS_ERROR("%s %d: exit!", __FUNCTION__, __LINE__);
 }
 
 //void event_manager_set_current_mode(EventModeType mode_)

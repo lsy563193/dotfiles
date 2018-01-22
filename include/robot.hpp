@@ -70,7 +70,7 @@ public:
 
 	double getWorldPoseYaw()
 	{
-		return world_yaw_;
+		return robot_yaw_;
 	}
 
 	float getWorldPoseX()
@@ -147,9 +147,8 @@ private:
 	Baselink_Frame_Type baselink_frame_type_;
 	boost::mutex baselink_frame_type_mutex_;
 
-	bool	is_sensor_ready_{};
-
-	bool	is_tf_ready_{};
+	bool is_sensor_ready_{};
+	bool is_tf_ready_{};
 
 	bool temp_spot_set_{};
 /*
@@ -163,7 +162,6 @@ private:
 	bool	is_align_active_;
 
 	tf::Vector3	robot_pos;
-	double	world_yaw_;
 	double	robot_yaw_;
 
 	// This is for the slam correction variables.

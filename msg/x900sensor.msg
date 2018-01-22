@@ -85,6 +85,9 @@ uint8 plan
 # 4: Direct connect to charge line and charging.
 uint8 charge_status
 
+# sleep_status: Robot STM32 sleep status.
+bool sleep_status
+
 # water_tank: Water tank status.
 bool water_tank
 

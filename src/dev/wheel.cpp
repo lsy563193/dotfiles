@@ -13,6 +13,7 @@ Wheel wheel;
 void Wheel::stop(void)
 {
 	setPidTargetSpeed(0, 0);
+	ROS_INFO("%s,%d,wheel set stop",__FUNCTION__,__LINE__);
 }
 
 uint32_t Wheel::getRightStep(void)

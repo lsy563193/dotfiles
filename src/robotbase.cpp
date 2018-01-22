@@ -6,9 +6,14 @@
 #include "robotbase.h"
 
 
-bool is_robotbase_init = false;
+bool g_bye_bye = false;
+
 bool robotbase_thread_stop = false;
-bool send_stream_thread = false;
+bool send_thread_stop = false;
+bool recei_thread_stop = false;
+bool event_manager_thread_stop = false;
+bool event_handle_thread_stop = false;
+bool core_thread_stop = false;
 
 pthread_t robotbaseThread_id;
 pthread_t receiPortThread_id;
@@ -59,36 +64,29 @@ void debug_send_stream(uint8_t *buf)
 	printf("\n");
 }
 
-bool is_robotbase_stop(void)
-{
-	return robotbase_thread_stop ? true : false;
-}
-
 void robotbase_deinit(void)
 {
-	if (is_robotbase_init) {
-		is_robotbase_init = false;
-		robotbase_thread_stop = true;
-		ROS_INFO("%s,%d,shutdown robotbase power",__FUNCTION__,__LINE__);
-		led.set_mode(LED_STEADY, LED_OFF);
-		serial.setSendData(CTL_BEEPER, 0x00);
-		gyro.setOff();
-		wheel.stop();
-		brush.stop();
-		vacuum.stop();
-		serial.setCleanMode(POWER_DOWN);
-		usleep(40000);
-		send_stream_thread = false;
-		usleep(40000);
-		serial.close();
-		ROS_INFO("%s,%d, Stop OK",__FUNCTION__,__LINE__);
-		int mutex_ret = pthread_mutex_destroy(&recev_lock);
-		if(mutex_ret<0)
-			ROS_ERROR("_%s,%d, pthread mutex destroy fail",__FUNCTION__,__LINE__);
-		int cond_ret = pthread_cond_destroy(&recev_cond);
-		if(cond_ret<0)
-			ROS_ERROR("%s,%d,pthread cond destroy fail",__FUNCTION__,__LINE__);
+
+	bumper.lidarBumperDeinit();
+	recei_thread_stop = true;
+	led.set_mode(LED_STEADY, LED_OFF);
+	serial.setSendData(CTL_BEEPER, 0x00);
+	gyro.setOff();
+	wheel.stop();
+	brush.stop();
+	vacuum.stop();
+	serial.setCleanMode(POWER_DOWN);
+	usleep(40000);
+	while(ros::ok() && !g_bye_bye){
+		usleep(2000);
 	}
+	serial.close();
+	pthread_mutex_destroy(&recev_lock);
+	pthread_mutex_destroy(&serial_data_ready_mtx);
+	
+	pthread_cond_destroy(&recev_cond);
+	pthread_cond_destroy(&serial_data_ready_cond);
+	
 }
 
 void robotbase_reset_send_stream(void)
@@ -111,7 +109,7 @@ void robotbase_reset_send_stream(void)
 		memcpy(buf, serial.send_stream, sizeof(uint8_t) * SEND_LEN);
 	}
 	uint8_t crc;
-	crc = serial.calc_buf_crc8(buf, SEND_LEN - 3);
+	crc = serial.calBufCrc8(buf, SEND_LEN - 3);
 	serial.setSendData(SEND_LEN - 3, crc);
 }
 
