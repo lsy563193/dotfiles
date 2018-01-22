@@ -45,16 +45,16 @@ public:
 
 	double getLidarDistance(uint16_t angle);
 
-	bool lineFit(const std::vector<Vector2<double>> &points, double &a, double &b, double &c);
+	bool lineFit(const std::deque<Vector2<double>> &points, double &a, double &b, double &c);
 
 	bool splitLine(const std::vector<Vector2<double>> &points, double consecutive_lim, int points_count_lim);
 
 	//bool splitLine2nd(const std::vector<std::vector<Vector2<double>> >	&groups, double t_max, int points_count_lim);
-	bool splitLine2nd(std::vector<std::vector<Vector2<double>> > *groups, double t_max, int points_count_lim);
+	bool splitLine2nd(std::vector<std::deque<Vector2<double>> > *groups, double t_max, int points_count_lim);
 
-	bool mergeLine(std::vector<std::vector<Vector2<double>> > *groups, double t_lim , bool is_align);
+	bool mergeLine(std::vector<std::deque<Vector2<double>> > *groups, double t_lim , bool is_align);
 
-	bool fitLineGroup(std::vector<std::vector<Vector2<double>> > *groups, double dis_lim , bool is_align);
+	bool fitLineGroup(std::vector<std::deque<Vector2<double>> > *groups, double dis_lim , bool is_align);
 
 	void pubFitLineMarker(double a, double b, double c, double y1, double y2);
 
@@ -107,8 +107,8 @@ private:
 	double scanXYPoint_update_time_;
 
 	std::vector<Vector2<double>>	Lidar_Point;
-	std::vector<std::vector<Vector2<double>> >	Lidar_Group;
-	std::vector<std::vector<Vector2<double>> >	Lidar_Group_2nd;
+	std::vector<std::deque<Vector2<double>> >	Lidar_Group;
+	std::vector<std::deque<Vector2<double>> >	Lidar_Group_2nd;
 	std::vector<LineABC>	fit_line;
 	//static float *last_ranges_;
 
