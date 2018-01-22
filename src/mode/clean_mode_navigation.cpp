@@ -301,8 +301,8 @@ void CleanModeNav::chargeDetect(bool state_now, bool state_last)
 	{
 		ROS_WARN("%s %d: Charge detect!.", __FUNCTION__, __LINE__);
 		ev.charge_detect = charger.getChargeStatus();
+		ev.fatal_quit = true;
 	}
-
 }
 
 // End event handlers.
