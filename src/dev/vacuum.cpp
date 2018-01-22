@@ -89,6 +89,7 @@ void Vacuum::setSpeedByMode(uint8_t mode)
 
 void Vacuum::stop(){
 	bldcSpeed(0);
+	ROS_INFO("%s,%d,vacuum set to stop",__FUNCTION__,__LINE__);
 }
 
 void Vacuum::startExceptionResume(void) {

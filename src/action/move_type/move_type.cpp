@@ -53,7 +53,7 @@ bool IMoveType::isOBSStop()
 bool IMoveType::isLidarStop()
 {
 //	PP_INFO();
-	ev.lidar_triggered = lidar.getObstacleDistance(0, 0.1) < 0.02 ? BLOCK_FRONT : 0;
+	ev.lidar_triggered = lidar.getObstacleDistance(0,0.056) < 0.04 ? BLOCK_FRONT : 0;
 	if (ev.lidar_triggered)
 	{
 		// Temporary use OBS to get angle.

@@ -9,7 +9,6 @@
 #include "path_algorithm.h"
 #include "event_manager.h"
 #include "boost/shared_ptr.hpp"
-
 #include <visualization_msgs/Marker.h>
 //#include "move_type.hpp"
 
@@ -265,8 +264,6 @@ public:
 
 	bool isExit() override ;
 	bool isFinish() override ;
-
-	IAction* getNextAction();
 
 	// For exit event handling.
 	void remoteClean(bool state_now, bool state_last) override;

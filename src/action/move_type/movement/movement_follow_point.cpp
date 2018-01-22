@@ -61,9 +61,9 @@ bool AMovementFollowPoint::isFinish() {
 #if DEBUG_ENABLE
 		if (std::abs(yaw_diff) > 140*PI/180) {
 			ROS_ERROR_COND(DEBUG_ENABLE, "LASER WALL FOLLOW ERROR! PLEASE CALL ALVIN AND RESTART THE ROBOT.");
-			while(ros::ok()){
-				beeper.play_for_command(VALID);
-				wheel.setPidTargetSpeed(0, 0);
+//			while(ros::ok()){
+//				beeper.play_for_command(VALID);
+//				wheel.setPidTargetSpeed(0, 0);
 			}
 		}
 #endif
