@@ -734,7 +734,8 @@ bool Lidar::mergeLine(std::vector<std::deque<Vector2<double>> > *groups, double 
 	}
 	ROS_DEBUG("pub line marker");
 	for(auto &ite:(*groups)) {
-		ACleanMode::pubPointMarkers(&ite,"merge");
+		ACleanMode::pubPointMarkers(&ite,"base_link","merge");
+		usleep(300000);
 	}
 	return true;
 }
@@ -812,7 +813,6 @@ void Lidar::pubFitLineMarker(double a, double b, double c, double y1, double y2)
 	fit_line_marker.points.push_back(lidar_points_);
 //	robot::instance()->pubFitLineMarker(fit_line_marker);
 }
-
 /*
  * @author mengshige1988@qq.com
  * @brief according giveing angle return lidar range data
