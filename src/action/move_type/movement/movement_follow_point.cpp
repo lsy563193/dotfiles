@@ -24,7 +24,7 @@ void AMovementFollowPoint::adjustSpeed(int32_t &left_speed, int32_t &right_speed
 
 //	ROS_INFO("diff(%f), angle_forward_to_turn_(%f)",yaw_diff, angle_forward_to_turn_);
 
-		if (is_near()) {
+		if (isNear()) {
 			if (base_speed_ > (int32_t) min_speed_) {
 				base_speed_--;
 			}

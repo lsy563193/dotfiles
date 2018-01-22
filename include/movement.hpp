@@ -37,7 +37,7 @@ protected:
 
 class AMovementFollowPoint:public IMovement{
 public:
-	virtual bool is_near()=0;
+	virtual bool isNear()=0;
 	virtual Point_t calcTmpTarget()=0;
 	bool isFinish() override ;
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed) override ;
@@ -100,7 +100,7 @@ public:
 //	~MovementFollowPointLinear(){ };
 	bool isFinish() override;
 
-	bool is_near() override;
+	bool isNear() override;
 //	void setTarget();
 
 	Point_t calcTmpTarget() override ;
@@ -169,7 +169,7 @@ public:
 	Points _calcTmpTarget();
 
 	bool isFinish() override ;
-	bool is_near() override ;
+	bool isNear() override ;
 private:
 	Points virtual_targets_{};
 	Points lidar_targets_{};
