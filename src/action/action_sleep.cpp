@@ -7,6 +7,8 @@
 #include <error.h>
 #include "action.hpp"
 
+#define ENABLE_LOW_POWER_CONSUMPTION 1
+
 ActionSleep::ActionSleep()
 {
 	ROS_INFO("%s %d: Start sleep action.", __FUNCTION__, __LINE__);
@@ -21,9 +23,12 @@ ActionSleep::ActionSleep()
 	led.set_mode(LED_STEADY, LED_OFF);
 	serial.setCleanMode(POWER_DOWN);
 	ROS_INFO("%s %d: Finish beeping.", __FUNCTION__, __LINE__);
+#if ENABLE_LOW_POWER_CONSUMPTION
 	system("/bin/echo standby > /sys/power/state");
 //	sleep(1);
-//	usleep(25000);
+#else
+	usleep(25000);
+#endif
 }
 
 ActionSleep::~ActionSleep()
