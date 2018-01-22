@@ -14,7 +14,7 @@ ActionAlign::ActionAlign() {
 
 bool ActionAlign::isFinish()
 {
-	if (isTimeUp())
+/*	if (isTimeUp())
 		return true;
 
 	if (lidar.alignFinish())
@@ -23,7 +23,7 @@ bool ActionAlign::isFinish()
 		odom.setAngleOffset(-align_angle);
 		ROS_INFO("%s %d: align_angle angle (%f).", __FUNCTION__, __LINE__, align_angle);
 		return true;
-	}
+	}*/
 	return false;
 }
 

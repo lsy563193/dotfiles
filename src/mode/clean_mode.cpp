@@ -13,6 +13,8 @@
 #include "error.h"
 
 const double CHASE_X = 0.107;
+static ros::Publisher ACleanMode::point_marker_pub_;
+static ros::Publisher ACleanMode::line_marker_pub2_;
 ACleanMode::ACleanMode()
 {
 
@@ -145,11 +147,11 @@ void ACleanMode::pubTmpTarget(const Point_t &point, bool is_virtual) {
 void ACleanMode::pubPointMarkers(const std::deque<Vector2<double>> *points, std::string frame_id)
 {
 	visualization_msgs::Marker point_marker;
-	point_marker.ns = "point_marker";
+	point_marker.ns = frame_id;
 	point_marker.id = 0;
 	point_marker.type = visualization_msgs::Marker::SPHERE_LIST;
 	point_marker.action= 0;//add
-	point_marker.lifetime=ros::Duration(0),"base_link";
+	point_marker.lifetime=ros::Duration(0);
 	point_marker.scale.x = 0.05;
 	point_marker.scale.y = 0.05;
 	point_marker.scale.z = 0.05;
@@ -157,7 +159,7 @@ void ACleanMode::pubPointMarkers(const std::deque<Vector2<double>> *points, std:
 	point_marker.color.g = 1.0;
 	point_marker.color.b = 0.0;
 	point_marker.color.a = 1.0;
-	point_marker.header.frame_id = frame_id;
+	point_marker.header.frame_id = "base_link";
 	point_marker.header.stamp = ros::Time::now();
 
 	geometry_msgs::Point lidar_points;
@@ -524,7 +526,7 @@ void ACleanMode::pubLineMarker(const std::vector<LineABC> *lines)
 	line_marker.color.g = 1.0;
 	line_marker.color.b = 0.2;
 	line_marker.color.a = 1.0;
-	line_marker.header.frame_id = "/map";
+	line_marker.header.frame_id = "/base_link";
 	line_marker.header.stamp = ros::Time::now();
 	geometry_msgs::Point point1;
 	point1.z = 0.0;
@@ -532,7 +534,7 @@ void ACleanMode::pubLineMarker(const std::vector<LineABC> *lines)
 	point2.z = 0.0;
 	line_marker.points.clear();
 	std::vector<LineABC>::const_iterator it;
-	if(!lines->empty() && lines->size() >= 2){
+	if(!lines->empty() && lines->size() >= 1){
 		for(it = lines->cbegin(); it != lines->cend();it++){
 			point1.x = it->x1;
 			point1.y = it->y1;

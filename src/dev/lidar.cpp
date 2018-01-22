@@ -4,6 +4,9 @@
 #include <std_srvs/SetBool.h>
 //#include <pp/SetLidar.h>
 #include <wheel.hpp>
+#include <mode.hpp>
+#include <mathematics.h>
+
 boost::mutex scanLinear_mutex_;
 boost::mutex scanOriginal_mutex_;
 boost::mutex scanCompensate_mutex_;
@@ -473,7 +476,7 @@ bool Lidar::lidarGetFitLine(double begin, double end, double range, double dis_l
 	}
 }
 
-bool Lidar::lineFit(const std::vector<Vector2<double>> &points, double &a, double &b, double &c)
+bool Lidar::lineFit(const std::deque<Vector2<double>> &points, double &a, double &b, double &c)
 {
 	int size = points.size();
 	if(size < 2) {
@@ -525,7 +528,7 @@ bool Lidar::lineFit(const std::vector<Vector2<double>> &points, double &a, doubl
 bool Lidar::splitLine(const std::vector<Vector2<double>> &points, double consec_lim, int points_count_lim) {
 	int points_size = points.size();
 	double distance;
-	std::vector<Vector2<double>> new_line;
+	std::deque<Vector2<double>> new_line;
 	new_line.push_back(points[0]);
 	for(int i = 1; i < (points_size - 1); i++) {
 		distance = sqrt((points[i].x - points[i-1].x) * (points[i].x - points[i-1].x) + (points[i].y - points[i-1].y) * (points[i].y - points[i-1].y));
@@ -541,7 +544,7 @@ bool Lidar::splitLine(const std::vector<Vector2<double>> &points, double consec_
 			new_line.push_back(points[i]);
 		}
 	}
-	for (std::vector<std::vector<Vector2<double>> >::iterator iter = Lidar_Group.begin(); iter != Lidar_Group.end();){
+	for (std::vector<std::deque<Vector2<double>> >::iterator iter = Lidar_Group.begin(); iter != Lidar_Group.end();){
 		if (iter->size() < points_count_lim) {
 			iter = Lidar_Group.erase(iter);
 		} else {
@@ -553,7 +556,7 @@ bool Lidar::splitLine(const std::vector<Vector2<double>> &points, double consec_
 	return true;
 }
 
-bool Lidar::splitLine2nd(std::vector<std::vector<Vector2<double>> > *groups, double t_lim, int points_count_lim) {
+bool Lidar::splitLine2nd(std::vector<std::deque<Vector2<double>> > *groups, double t_lim, int points_count_lim) {
 	int points_size;
 	int erased_size;
 	double a, b, c;
@@ -562,8 +565,8 @@ bool Lidar::splitLine2nd(std::vector<std::vector<Vector2<double>> > *groups, dou
 	int	points_index_max;
 	bool end_iterate_flag = true;
 	std::vector<int> groups_erased_index;
-	std::vector<Vector2<double>> new_line;
-	std::vector<std::vector<Vector2<double>> > new_group;
+	std::deque<Vector2<double>> new_line;
+	std::vector<std::deque<Vector2<double>> > new_group;
 
 	ROS_DEBUG("Lidar::splitLine2nd");
 	groups_erased_index.clear();
@@ -571,7 +574,7 @@ bool Lidar::splitLine2nd(std::vector<std::vector<Vector2<double>> > *groups, dou
 	new_group.clear();
 
 	/*loop for lines in groups*/
-	for (std::vector<std::vector<Vector2<double>> >::iterator iter = (*groups).begin(); iter != (*groups).end(); ++iter) {
+	for (std::vector<std::deque<Vector2<double>> >::iterator iter = (*groups).begin(); iter != (*groups).end(); ++iter) {
 		x1 = iter->begin()->x;
 		y1 = iter->begin()->y;
 		x2 = (iter->end() - 1)->x;
@@ -621,7 +624,7 @@ bool Lidar::splitLine2nd(std::vector<std::vector<Vector2<double>> > *groups, dou
 	erased_size = static_cast<int>(groups_erased_index.size());
 	if (!groups_erased_index.empty()) {
 		for (int i = 0; i < erased_size; i++) {
-			std::vector<std::vector<Vector2<double>> >::iterator iter = (*groups).begin() + (groups_erased_index[i] + i);
+			std::vector<std::deque<Vector2<double>> >::iterator iter = (*groups).begin() + (groups_erased_index[i] + i);
 			(*groups).erase(iter);
 			for (int j = 0; j < 2; j++) {
 				(*groups).insert((*groups).begin() + (groups_erased_index[i] + j), *(new_group.begin() + j));
@@ -633,7 +636,7 @@ bool Lidar::splitLine2nd(std::vector<std::vector<Vector2<double>> > *groups, dou
 
 	/*loop for erasing the line which size is less than points_count_lim*/
 	ROS_DEBUG("loop for erasing the line which size is less than points_count_lim");
-	for (std::vector<std::vector<Vector2<double>> >::iterator iter = (*groups).begin(); iter != (*groups).end();) {
+	for (std::vector<std::deque<Vector2<double>> >::iterator iter = (*groups).begin(); iter != (*groups).end();) {
 		if (iter->size() < points_count_lim) {
 			iter = (*groups).erase(iter);
 		} else {
@@ -650,18 +653,18 @@ bool Lidar::splitLine2nd(std::vector<std::vector<Vector2<double>> > *groups, dou
 	return true;
 }
 
-bool Lidar::mergeLine(std::vector<std::vector<Vector2<double>> > *groups, double t_lim , bool is_align) {
+bool Lidar::mergeLine(std::vector<std::deque<Vector2<double>> > *groups, double t_lim , bool is_align) {
 	double a, b, c;
 	double x1, y1, x2, y2;
 	int points_size, points_size_2nd;
 	double t, t_max = 0;
 	std::vector<int> merge_index;
-	std::vector<Vector2<double>> new_line;
-	std::vector<std::vector<Vector2<double>> > new_group;
+	std::deque<Vector2<double>> new_line;
+	std::vector<std::deque<Vector2<double>> > new_group;
 	new_line.clear();
 	new_group.clear();
 	if (!(*groups).empty()) {
-		for (std::vector<std::vector<Vector2<double>> >::iterator iter = (*groups).begin(); iter != (*groups).end() - 1; ++iter) {
+		for (std::vector<std::deque<Vector2<double>> >::iterator iter = (*groups).begin(); iter != (*groups).end() - 1; ++iter) {
 			x1 = iter->begin()->x;
 			y1 = iter->begin()->y;
 			x2 = ((iter + 1)->end() - 1)->x;
@@ -698,7 +701,7 @@ bool Lidar::mergeLine(std::vector<std::vector<Vector2<double>> > *groups, double
 	if (!merge_index.empty()) {
 		int loop_count = 0;
 		for (std::vector<int>::iterator m_iter = merge_index.begin(); m_iter != merge_index.end(); ++m_iter) {
-			std::vector<std::vector<Vector2<double>> >::iterator iter = (*groups).begin() + (*m_iter);
+			std::vector<std::deque<Vector2<double>> >::iterator iter = (*groups).begin() + (*m_iter);
 			points_size = static_cast<int>(iter->size());
 			points_size_2nd = static_cast<int>((iter + 1)->size());
 			for (int j = 0; j < points_size; j++) {
@@ -715,13 +718,13 @@ bool Lidar::mergeLine(std::vector<std::vector<Vector2<double>> > *groups, double
 	}
 	if(is_align){
 		//sort from long to short
-		std::sort((*groups).begin(),(*groups).end(),[](std::vector<Vector2<double>> a,std::vector<Vector2<double>> b){
+		std::sort((*groups).begin(),(*groups).end(),[](std::deque<Vector2<double>> a,std::deque<Vector2<double>> b){
 			auto a_dis = pow((a.begin()->x - (a.end()-1)->x),2) + pow((a.begin()->y - (a.end()-1)->y),2);
 			auto b_dis = pow((b.begin()->x - (b.end()-1)->x),2) + pow((b.begin()->y - (b.end()-1)->y),2);
 			return a_dis > b_dis;
 		});
 		//filter line which is shorter than 0.5m
-		auto loc = std::find_if((*groups).begin(),(*groups).end(),[](std::vector<Vector2<double>> ite){
+		auto loc = std::find_if((*groups).begin(),(*groups).end(),[](std::deque<Vector2<double>> ite){
 			auto dis = sqrtf(powf(static_cast<float>(ite.begin()->x - (ite.end() - 1)->x), 2) + powf(
 								static_cast<float>(ite.begin()->y - (ite.end() - 1)->y), 2));
 			return dis < 0.3;
@@ -730,22 +733,28 @@ bool Lidar::mergeLine(std::vector<std::vector<Vector2<double>> > *groups, double
 		(*groups).resize(dis);
 	}
 	ROS_DEBUG("pub line marker");
-//	robot::instance()->pubLineMarker(&Lidar_Group,"merge");
+	for(auto &ite:(*groups)) {
+		ACleanMode::pubPointMarkers(&ite,"merge");
+	}
 	return true;
 }
 
-bool Lidar::fitLineGroup(std::vector<std::vector<Vector2<double>> > *groups, double dis_lim, bool is_align) {
+bool Lidar::fitLineGroup(std::vector<std::deque<Vector2<double>> > *groups, double dis_lim, bool is_align) {
 	double 	a, b, c;
 	double	x_0;
 	int	loop_count = 0;
 	LineABC	new_fit_line;
 	fit_line.clear();
 	if (!(*groups).empty()) {
-		for (std::vector<std::vector<Vector2<double>> >::iterator iter = (*groups).begin(); iter != (*groups).end(); ++iter) {
+		for (std::vector<std::deque<Vector2<double>> >::iterator iter = (*groups).begin(); iter != (*groups).end(); ++iter) {
 			lineFit((*iter), a, b, c);
 			new_fit_line.A = a;
 			new_fit_line.B = b;
 			new_fit_line.C = c;
+			new_fit_line.x1 = iter->begin()->x;
+			new_fit_line.x2 = (iter->end()-1)->x;
+			new_fit_line.y1 = iter->begin()->y;
+			new_fit_line.y2 = (iter->end()-1)->y;
 			new_fit_line.len = static_cast<int>(iter->size());
 			x_0 = 0 - c / a;
 			ROS_DEBUG("a = %lf, b = %lf, c = %lf", a, b, c);
@@ -758,10 +767,10 @@ bool Lidar::fitLineGroup(std::vector<std::vector<Vector2<double>> > *groups, dou
 				continue;
 			}
 			fit_line.push_back(new_fit_line);
-//			pubFitLineMarker(a, b, c, iter->begin()->y, (iter->end() - 1)->y);
 			ROS_DEBUG("%s %d: line_angle%d = %lf", __FUNCTION__, __LINE__, loop_count, line_angle);
 			loop_count++;
 		}
+		ACleanMode::pubLineMarker(&fit_line);
 	} else {
 		fit_line_marker.points.clear();
 //		robot::instance()->pubFitLineMarker(fit_line_marker);
