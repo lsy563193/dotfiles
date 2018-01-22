@@ -50,7 +50,8 @@ ACleanMode::ACleanMode()
 
 }
 
-ACleanMode::~ACleanMode() {
+ACleanMode::~ACleanMode()
+{
 	tmp_target_pub_.shutdown();
 	scanLinear_sub_.shutdown();
 	scanCompensate_sub_.shutdown();
@@ -105,6 +106,7 @@ ACleanMode::~ACleanMode() {
 			 __FUNCTION__, __LINE__, map_area, robot_timer.getWorkTime(),
 			 static_cast<float>(robot_timer.getWorkTime()) / 60, map_area / (static_cast<float>(robot_timer.getWorkTime()) / 60));
 }
+
 void ACleanMode::pubTmpTarget(const Point_t &point, bool is_virtual) {
 	visualization_msgs::Marker point_markers;
 	point_markers.ns = "tmp_target";
