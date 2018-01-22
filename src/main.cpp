@@ -21,16 +21,18 @@ void Ooops(int sig)
 				speaker.play(VOICE_CLEANING_STOP,false);
 				delete robot_instance;
 			}
+			ROS_INFO(" after SIGSEGV");
 			break;
 		}
 		case SIGINT:
 		{
 			ROS_ERROR("Oops!!! pp receive SIGINT signal,ctrl+c press");
-			beeper.play(3,50,50,5);
 			if(robot_instance != nullptr){
+				beeper.play(3,50,50,5);
 				speaker.play(VOICE_CLEANING_STOP,false);
 				delete robot_instance;
 			}
+			ROS_INFO(" after SIGINT");
 			break;
 		}
 		case SIGTERM:
@@ -40,13 +42,15 @@ void Ooops(int sig)
 				speaker.play(VOICE_CLEANING_STOP,false);
 				delete robot_instance;
 			}
+			ROS_INFO(" after SIGTERM");
 			break;
 		}
 		default:
 			ROS_ERROR("Oops!! pp receive %d signal",sig);
 	}
+	robot_instance = nullptr;
+	ros::shutdown();
 }
-
 
 int main(int argc, char **argv)
 {
@@ -83,7 +87,6 @@ int main(int argc, char **argv)
 	robot_instance = new robot();
 
 	ros::spin();
-	delete robot_instance;
-
+	printf("AFTER SPIN");
 	return 0;
 }

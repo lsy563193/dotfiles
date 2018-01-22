@@ -501,7 +501,7 @@ void Serial::receive_routine_cb()
 	wht_len = wh_len - 2; //length without header and tail bytes
 	whtc_len = wht_len - 1; //length without header and tail and crc bytes
 
-	while (ros::ok() && (!robotbase_thread_stop)) {
+	while (ros::ok() && (!recei_thread_stop)) {
 		ret = serial.read(1, &header1);
 		if (ret <= 0 ){
 			ROS_WARN("%s, %d, serial read return %d ,  requst %d byte",__FUNCTION__,__LINE__,ret,1);
@@ -549,7 +549,9 @@ void Serial::receive_routine_cb()
 			ROS_ERROR("%s,%d,in serial read ,data crc error\n",__FUNCTION__,__LINE__);
 		}
 	}
-	ROS_INFO("\033[32m%s\033[0m,%d,exit!",__FUNCTION__,__LINE__);
+	pthread_cond_signal(&recev_cond);
+	robotbase_thread_stop = true;
+	ROS_ERROR("%s,%d,exit!",__FUNCTION__,__LINE__);
 }
 
 void Serial::send_routine_cb()
@@ -558,7 +560,7 @@ void Serial::send_routine_cb()
 	ros::Rate r(_RATE);
 	uint8_t buf[SEND_LEN];
 	int sl = SEND_LEN-3;
-	while(send_stream_thread){
+	while(ros::ok() && !send_thread_stop){
 		r.sleep();
 		if(serial.isSleep()){
 			continue;
@@ -590,6 +592,7 @@ void Serial::send_routine_cb()
 //		debug_send_stream(&buf[0]);
 		serial.write(SEND_LEN, buf);
 	}
-	ROS_INFO("\033[32m%s\033[0m,%d pthread exit",__FUNCTION__,__LINE__);
+	core_thread_stop = true;
+	ROS_ERROR("%s,%d exit",__FUNCTION__,__LINE__);
 	//pthread_exit(NULL);
 }
