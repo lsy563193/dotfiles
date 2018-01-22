@@ -102,9 +102,7 @@ Point_t MovementFollowWallLidar::calcTmpTarget() {
 		}
 		ROS_WARN("lidar_targets_.size() = %d", lidar_targets_.size());
 	}
-#if DEBUG_ENABLE
-	ROS_WARN("p_tmp_targets_.size() = %d", p_tmp_targets_->size());
-#endif
+	ROS_WARN_COND(DEBUG_ENABLE, "p_tmp_targets_.size() = %d", p_tmp_targets_->size());
 
 	if(!p_tmp_targets_->empty()) {
 		if (p_tmp_targets_->front().isNearTo(getPosition(), CELL_SIZE * 0.75)) {
