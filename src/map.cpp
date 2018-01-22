@@ -692,9 +692,9 @@ uint8_t GridMap::saveLidar()
 
 	std::vector<Cell_t> d_cells;
 	if (lidar_trig & BLOCK_FRONT){
-		d_cells.push_back({2,-1});
+//		d_cells.push_back({2,-1});
 		d_cells.push_back({2, 0});
-		d_cells.push_back({2, 1});
+//		d_cells.push_back({2, 1});
 	}
 	if (lidar_trig & BLOCK_LEFT){
 		d_cells.push_back({2, 1});
