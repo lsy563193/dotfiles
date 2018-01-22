@@ -28,7 +28,6 @@ void Ooops(int sig)
 		{
 			ROS_ERROR("Oops!!! pp receive SIGINT signal,ctrl+c press");
 			if(robot_instance != nullptr){
-				beeper.play(3,50,50,5);
 				speaker.play(VOICE_CLEANING_STOP,false);
 				delete robot_instance;
 			}
@@ -87,6 +86,5 @@ int main(int argc, char **argv)
 	robot_instance = new robot();
 
 	ros::spin();
-	printf("AFTER SPIN");
 	return 0;
 }
