@@ -14,6 +14,8 @@ ActionIdle::ActionIdle()
 		led.set_mode(LED_FLASH, LED_RED);
 	else
 		led.set_mode(LED_BREATH, LED_GREEN);
+
+	timeout_interval_ = IDLE_TIMEOUT;
 }
 
 ActionIdle::~ActionIdle()
@@ -29,4 +31,14 @@ bool ActionIdle::isFinish()
 void ActionIdle::run()
 {
 	// Just wait...
+}
+
+bool ActionIdle::isTimeUp()
+{
+	if (IAction::isTimeUp())
+	{
+		ROS_INFO("%s %d: Timeout(%ds).", __FUNCTION__, __LINE__, timeout_interval_);
+		return true;
+	}
+	return false;
 }

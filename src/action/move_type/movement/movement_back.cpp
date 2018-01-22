@@ -51,7 +51,7 @@ bool MovementBack::isFinish()
 	float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getX(), odom.getY());
 //	ROS_INFO("%s, %d: MovementBack distance %f", __FUNCTION__, __LINE__, distance);
 
-	if (fabsf(distance) >= back_distance_ || isLidarStop())
+	if (std::abs(distance) >= back_distance_ || isLidarStop())
 	{
 
 		bumper_jam_cnt_ = bumper.getStatus() == 0 ? 0 : bumper_jam_cnt_+1 ;

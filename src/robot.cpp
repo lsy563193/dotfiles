@@ -115,9 +115,9 @@ void robot::robotbase_routine_cb()
 	while (ros::ok() && !robotbase_thread_stop)
 	{
 		/*--------data extrict from serial com--------*/
-		if(pthread_mutex_lock(&recev_lock)!=0)ROS_ERROR("robotbase pthread receive lock fail");
-		if(pthread_cond_wait(&recev_cond,&recev_lock)!=0)ROS_ERROR("robotbase pthread receive cond wait fail");
-		if(pthread_mutex_unlock(&recev_lock)!=0)ROS_WARN("robotbase pthread receive unlock fail");
+		ROS_ERROR_COND(pthread_mutex_lock(&recev_lock)!=0, "robotbase pthread receive lock fail");
+		ROS_ERROR_COND(pthread_cond_wait(&recev_cond,&recev_lock)!=0, "robotbase pthread receive cond wait fail");
+		ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock)!=0, "robotbase pthread receive unlock fail");
 		//ros::spinOnce();
 
 		boost::mutex::scoped_lock lock(odom_mutex);
@@ -268,11 +268,11 @@ void robot::robotbase_routine_cb()
 
 		/*------------setting for odom and publish odom topic --------*/
 		odom.setMovingSpeed(static_cast<float>((wheel.getLeftWheelActualSpeed() + wheel.getRightWheelActualSpeed()) / 2.0));
-		odom.setAngle(gyro.getAngle());
+		odom.setAngle(gyro.getAngle()*PI/180);
 		odom.setAngleSpeed(gyro.getAngleV());
 		cur_time = ros::Time::now();
 		double angle_rad, dt;
-		angle_rad = deg_to_rad(odom.getAngle());
+		angle_rad = odom.getAngle();
 		dt = (cur_time - last_time).toSec();
 		last_time = cur_time;
 		odom.setX(static_cast<float>(odom.getX() + (odom.getMovingSpeed() * cos(angle_rad)) * dt));
@@ -430,13 +430,10 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	updateRobotPose(odom_pose, odom_pose_yaw_);
 	odomPublish();
 	//printf("Map->base(%f, %f, %f). Map->robot (%f, %f, %f)\n", tmp_x, tmp_y, RAD2DEG(tmp_yaw), robot_x_, robot_y_, RAD2DEG(robot_yaw_));
-	world_pose_.setX(robot_pos.x());
-	world_pose_.setY(robot_pos.y());
-	world_pose_.setAngle(ranged_angle(robot_yaw_ * 1800 / M_PI));
-//	ROS_WARN("Position (%f, %f), angle: %f.", world_pose_.getX(), world_pose_.getY(), world_pose_.getAngle());
+//	ROS_WARN("Position (%f, %f), angle: %f.", robot_pos.getX(), robot_pos.getY(), robot_pos.getAngle());
 #else
 	pose.setX(tmp_x_);
-	pose.setY(tmp_y_);
+std::	pose.setY(tmp_y_);
 	pose.setAngle(tmp_yaw_);
 #endif
 	//ROS_WARN("%s %d: Position (%f, %f), yaw: %f. Odom position(%f, %f), yaw: %f.", __FUNCTION__, __LINE__, tmp_x, tmp_y, tmp_yaw, odom_pose_x_, odom_pose_y_, odom_pose_yaw_);
@@ -510,19 +507,11 @@ void robot::updateRobotPose(tf::Vector3& odom, double odom_yaw)
 	{
 		auto diff = slam_correction_pos - robot_correction_pos;
 		robot_correction_pos += {cal_scale(diff.x()) * diff.x(), cal_scale(diff.y()) * diff.y(), 0};
-		double yaw = slam_correction_yaw_ - robot_correction_yaw_;
-		while (yaw < -3.141592)
-			yaw += 6.283184;
-		while (yaw > 3.141592)
-			yaw -= 6.283184;
+		double yaw = ranged_angle(slam_correction_yaw_ - robot_correction_yaw_);
 		robot_correction_yaw_ += (yaw) * 0.8;
-//		printf("Slam (%f, %f, %f). Adjust (%f, %f, %f)\n", slam_correction_x, slam_correction_y,
-//			   rad_2_deg(slam_correction_yaw, 1), robot_correction_x,
-//			   robot_correction_y, rad_2_deg(robot_correction_yaw, 1));
 	}
-
 	robot_pos = odom + robot_correction_pos;
-	robot_yaw_ = odom_yaw + robot_correction_yaw_;
+	robot_yaw_ = (ranged_angle(odom_yaw + robot_correction_yaw_));
 }
 
 void robot::resetCorrection()
@@ -547,7 +536,7 @@ static float xCount{}, yCount{};
 
 Point_t getPosition()
 {
-	return {xCount, yCount, robot::instance()->getWorldPoseAngle()};
+	return {xCount, yCount, robot::instance()->getWorldPoseYaw()};
 }
 
 float cellToCount(int16_t i) {
@@ -564,16 +553,16 @@ void resetPosition() {
 	yCount = 0;
 }
 
-bool isPos(int dir)
+bool isPos(double dir)
 {
 	return (dir == MAP_POS_X || dir == MAP_POS_Y || dir == MAP_NONE);
 }
 
-bool isXAxis(int dir)
+bool isXAxis(double dir)
 {
 	return dir == MAP_POS_X || dir == MAP_NEG_X || dir == MAP_NONE;
 }
-bool isYAxis(int dir)
+bool isYAxis(double dir)
 {
 	return dir == MAP_POS_Y || dir == MAP_NEG_Y || dir == MAP_NONE;
 }

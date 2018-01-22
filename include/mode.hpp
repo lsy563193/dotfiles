@@ -508,8 +508,8 @@ public:
 	bool should_mark_temp_charger_{};
 	bool found_charger_{};
 
-	int old_dir_{};
-	int new_dir_{};
+	double old_dir_{};
+	double new_dir_{};
 
 	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
 	boost::shared_ptr<GoHomePathAlgorithm> go_home_path_algorithm_{};
@@ -532,15 +532,17 @@ protected:
 	Point_t start_point_{0, 0, 0};
 	bool should_go_to_charger_{false};
 	bool remote_go_home_point{false};
+
+//	boost::mutex mut;
 public:
 
-	void pubPointMarkers(const std::deque<Vector2<double>> *point, std::string frame_id);
+	static void pubPointMarkers(const std::deque<Vector2<double>> *point, std::string frame_id,std::string name);
 	void pubFitLineMarker(visualization_msgs::Marker fit_line_marker);
 	void visualizeMarkerInit();
 	void scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr& scan);
 	void setCleanMapMarkers(int16_t x, int16_t y, CellState type);
 	void pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path);
-	void pubLineMarker(const std::vector<LineABC> *lines);
+	static void pubLineMarker(const std::vector<LineABC> *lines);
 	Vector2<double> get_middle_point(const Vector2<double>& p1,const Vector2<double>& p2,const Paras& para);
 	bool check_is_valid(const Vector2<double>& point, Paras& para, const sensor_msgs::LaserScan::ConstPtr & scan);
 	bool check_corner(const sensor_msgs::LaserScan::ConstPtr & scan, const Paras& para);
@@ -562,10 +564,10 @@ private:
 	ros::Subscriber	scanOriginal_sub_;
 
 	ros::Publisher tmp_target_pub_;
-	ros::Publisher point_marker_pub_;
+	static ros::Publisher point_marker_pub_;
 	ros::Publisher send_clean_map_marker_pub_;
 	ros::Publisher line_marker_pub_;
-	ros::Publisher line_marker_pub2_;
+	static ros::Publisher line_marker_pub2_;
 	ros::Publisher fit_line_marker_pub_;
 	boost::mutex temp_target_mutex_;
 };

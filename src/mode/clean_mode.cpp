@@ -13,6 +13,8 @@
 #include "error.h"
 
 const double CHASE_X = 0.107;
+static ros::Publisher ACleanMode::point_marker_pub_;
+static ros::Publisher ACleanMode::line_marker_pub2_;
 ACleanMode::ACleanMode()
 {
 
@@ -48,7 +50,8 @@ ACleanMode::ACleanMode()
 
 }
 
-ACleanMode::~ACleanMode() {
+ACleanMode::~ACleanMode()
+{
 	tmp_target_pub_.shutdown();
 	scanLinear_sub_.shutdown();
 	scanCompensate_sub_.shutdown();
@@ -103,6 +106,7 @@ ACleanMode::~ACleanMode() {
 			 __FUNCTION__, __LINE__, map_area, robot_timer.getWorkTime(),
 			 static_cast<float>(robot_timer.getWorkTime()) / 60, map_area / (static_cast<float>(robot_timer.getWorkTime()) / 60));
 }
+
 void ACleanMode::pubTmpTarget(const Point_t &point, bool is_virtual) {
 	visualization_msgs::Marker point_markers;
 	point_markers.ns = "tmp_target";
@@ -142,14 +146,14 @@ void ACleanMode::pubTmpTarget(const Point_t &point, bool is_virtual) {
 	//ROS_INFO("pub points!!");
 }
 
-void ACleanMode::pubPointMarkers(const std::deque<Vector2<double>> *points, std::string frame_id)
+void ACleanMode::pubPointMarkers(const std::deque<Vector2<double>> *points, std::string frame_id, std::string name)
 {
 	visualization_msgs::Marker point_marker;
-	point_marker.ns = "point_marker";
+	point_marker.ns = name;
 	point_marker.id = 0;
 	point_marker.type = visualization_msgs::Marker::SPHERE_LIST;
 	point_marker.action= 0;//add
-	point_marker.lifetime=ros::Duration(0),"base_link";
+	point_marker.lifetime=ros::Duration(0);
 	point_marker.scale.x = 0.05;
 	point_marker.scale.y = 0.05;
 	point_marker.scale.z = 0.05;
@@ -259,7 +263,7 @@ bool ACleanMode::check_is_valid(const Vector2<double>& point, Paras& para, const
 
 bool ACleanMode::calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,bool is_left, std::deque<Vector2<double>>& points) {
 	Paras para{is_left};
-	ROS_INFO("is_left(%d)",is_left);
+//	ROS_INFO("is_left(%d)",is_left);
 	auto is_corner = check_corner(scan, para);
 	if(is_corner)
 	{
@@ -313,7 +317,7 @@ bool ACleanMode::calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,boo
 //	for (const auto &target :points)
 //			ROS_WARN("points(%d):target(%lf,%lf),dis(%f)", points.size(), target.x, target.y, target.Distance({CHASE_X, 0}));
 	ROS_WARN("points(%d):target(%lf,%lf)", points.size(), points.front().x, points.front().y);
-	pubPointMarkers(&points, "base_link");
+	pubPointMarkers(&points, "base_link", "point marker");
 
 	return true;
 }
@@ -520,11 +524,11 @@ void ACleanMode::pubLineMarker(const std::vector<LineABC> *lines)
 	line_marker.scale.x = 0.05;
 	//line_marker.scale.y = 0.05;
 	//line_marker.scale.z = 0.05;
-	line_marker.color.r = 0.5;
-	line_marker.color.g = 1.0;
-	line_marker.color.b = 0.2;
+	line_marker.color.r = 0.0;
+	line_marker.color.g = 0.0;
+	line_marker.color.b = 1.0;
 	line_marker.color.a = 1.0;
-	line_marker.header.frame_id = "/map";
+	line_marker.header.frame_id = "/base_link";
 	line_marker.header.stamp = ros::Time::now();
 	geometry_msgs::Point point1;
 	point1.z = 0.0;
@@ -532,7 +536,7 @@ void ACleanMode::pubLineMarker(const std::vector<LineABC> *lines)
 	point2.z = 0.0;
 	line_marker.points.clear();
 	std::vector<LineABC>::const_iterator it;
-	if(!lines->empty() && lines->size() >= 2){
+	if(!lines->empty() && lines->size() >= 1){
 		for(it = lines->cbegin(); it != lines->cend();it++){
 			point1.x = it->x1;
 			point1.y = it->y1;
@@ -744,7 +748,7 @@ void ACleanMode::moveTypeLinearSaveBlocks()
 
 void ACleanMode::setRconPos(float cd,float dist)
 {
-//	float yaw = robot::instance()->getWorldPoseAngle()/10.0;
+//	float yaw = robot::instance()->getWorldPoseYaw()/10.0;
 //	float wpx = cosf( (float)ranged_angle((yaw+cd)*10)/10.0 * PI/180.0 )*dist+ robot::instance()->getWorldPoseX();
 //	float wpy = sinf( (float)ranged_angle((yaw+cd)*10)/10.0 * PI/180.0 )*dist+ robot::instance()->getWorldPoseY();
 //	charger_pos_ = {(int32_t)(wpx*1000/CELL_SIZE), (int32_t)(wpy*1000/CELL_SIZE),(int16_t)0};

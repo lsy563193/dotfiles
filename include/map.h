@@ -47,17 +47,17 @@ typedef enum {
   COST_HIGH = 7,
 } CellState;
 
-enum {
-  MAP_POS_X = 0,
-  MAP_PX_PY = 450,
-  MAP_POS_Y = 900,
-  MAP_NS_PY = 1350,
-  MAP_NEG_X = 1800,
-  MAP_NX_NY =-1350,
-  MAP_NEG_Y =-900,
-  MAP_PX_NY =-450,
-  MAP_NONE = 0,
-} ;
+//enum {
+  const double MAP_POS_X = 0;
+  const double MAP_PX_PY = PI/4;
+  const double MAP_POS_Y = PI/2;
+  const double MAP_NS_PY = PI*3/4;
+  const double MAP_NEG_X = PI;
+  const double MAP_NX_NY =-PI*3/4;
+  const double MAP_NEG_Y =-PI/2;
+  const double MAP_PX_NY =-PI/4;
+  const double MAP_NONE = 2*PI;
+//} DIR;
 
 class GridMap {
 public:
@@ -292,6 +292,5 @@ private:
 /*wf_map is to record the wall follow path to caculate the isolate islands*/
 extern GridMap fw_map;
 extern GridMap slam_grid_map;
-extern GridMap decrease_map;
 
 #endif /* __MAP_H */

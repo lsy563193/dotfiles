@@ -68,25 +68,24 @@ public:
 		return is_tf_ready_;
 	}
 
-	int16_t getWorldPoseAngle()
+	double getWorldPoseYaw()
 	{
-		// It is 10x degrees.
-		return static_cast<int16_t>(world_pose_.getAngle());
+		return robot_yaw_;
 	}
 
 	float getWorldPoseX()
 	{
-		return world_pose_.getX();
+		return robot_pos.x();
 	}
 
 	float getWorldPoseY()
 	{
-		return world_pose_.getY();
+		return robot_pos.y();
 	}
 
 	float getWorldPoseZ()
 	{
-		return world_pose_.getZ();
+		return robot_pos.z();
 	}
 /*
 
@@ -162,15 +161,14 @@ private:
 
 	bool	is_align_active_;
 
-	Pose world_pose_;
+	tf::Vector3	robot_pos;
+	double	robot_yaw_;
 
 	// This is for the slam correction variables.
 	tf::Vector3	robot_correction_pos;
 	double	robot_correction_yaw_;
 	tf::Vector3	slam_correction_pos;
 	double	slam_correction_yaw_;
-	tf::Vector3	robot_pos;
-	double	robot_yaw_;
 
 	ros::NodeHandle robot_nh_;
 
@@ -206,11 +204,11 @@ int16_t countToCell(int32_t count);
 
 Point_t getPosition(void);
 
-bool isPos(int dir);
+bool isPos(double dir);
 
-bool isXAxis(int dir);
+bool isXAxis(double dir);
 
-bool isYAxis(int dir);
+bool isYAxis(double dir);
 
 void updatePosition();
 
