@@ -102,8 +102,9 @@ Point_t MovementFollowWallLidar::calcTmpTarget() {
 		}
 		ROS_WARN("lidar_targets_.size() = %d", lidar_targets_.size());
 	}
-
+#if DEBUG_ENABLE
 	ROS_WARN("p_tmp_targets_.size() = %d", p_tmp_targets_->size());
+#endif
 
 	if(!p_tmp_targets_->empty()) {
 		if (p_tmp_targets_->front().isNearTo(getPosition(), CELL_SIZE * 0.75)) {
@@ -122,7 +123,9 @@ Point_t MovementFollowWallLidar::calcTmpTarget() {
 	}
 //	ROS_WARN("is_virtual_target(%d,%d)", lidar_targets_.empty(),lidar_targets_.size());
 	dynamic_cast<ACleanMode*>(sp_mt_->sp_mode_)->pubTmpTarget(p_tmp_targets_->front(), p_tmp_targets_ == &virtual_targets_ );
+#if DEBUG_ENABLE
 	ROS_ERROR("p_tmp_targets_(%f,%f,%d)", p_tmp_targets_->front().x, p_tmp_targets_->front().y, p_tmp_targets_->front().th);
+#endif
 	return p_tmp_targets_->front();
 }
 
