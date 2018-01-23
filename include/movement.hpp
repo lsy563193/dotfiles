@@ -273,20 +273,6 @@ private:
 	uint8_t robot_stuck_resume_cnt_;
 };
 
-class SpeedGovernorRcon: public IMovement
-{
-public:
-	SpeedGovernorRcon();
-
-	void adjustSpeed(int32_t &left_speed, int32_t &right_speed) override ;
-
-private:
-	int32_t left_speed_;
-	int32_t right_speed_;
-	uint8_t seen_charger_counter_;
-	bool	is_left_;
-};
-
 class MovementCharge :public IMovement
 {
 public:
