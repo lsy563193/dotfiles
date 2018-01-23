@@ -18,6 +18,7 @@ CleanModeFollowWall::CleanModeFollowWall()
 	speaker.play(VOICE_CLEANING_WALL_FOLLOW, false);
 	clean_path_algorithm_.reset(new WFCleanPathAlgorithm);
 	go_home_path_algorithm_.reset();
+	closed_count_limit_ = 1;
 }
 
 CleanModeFollowWall::~CleanModeFollowWall()
@@ -95,6 +96,7 @@ void CleanModeFollowWall::keyClean(bool state_now, bool state_last)
 
 	key.resetTriggerStatus();
 }
+
 //
 //void CleanModeFollowWall::overCurrentWheelLeft(bool state_now, bool state_last)
 //{
@@ -108,6 +110,7 @@ void CleanModeFollowWall::keyClean(bool state_now, bool state_last)
 //	ev.oc_wheel_right = true;
 //}
 //
+
 void CleanModeFollowWall::remoteMax(bool state_now, bool state_last)
 {
 
@@ -125,33 +128,43 @@ void CleanModeFollowWall::remoteClean(bool state_now, bool state_last)
 	remote.reset();
 }
 
-bool CleanModeFollowWall::updateActionInStateClean()
+bool CleanModeFollowWall::isIsolate() {
+	BoundingBox2 bound{};
+
+	clean_map_.getMapRange(CLEAN_MAP, &bound.min.x, &bound.max.x, &bound.min.y, &bound.max.y);
+
+	auto target = bound.max + Cell_t{1, 1};
+	bound.SetMinimum(bound.min - Cell_t{8, 8});
+	bound.SetMaximum(bound.max + Cell_t{8, 8});
+
+	auto path = clean_path_algorithm_->findShortestPath(clean_map_, getPosition().toCell(), target, 0, true, true,
+																											bound.min, bound.max);
+	return path.empty();
+}
+
+void CleanModeFollowWall::switchInStateInit() {
+	PP_INFO();
+	action_i_ = ac_null;
+	sp_action_ = nullptr;
+	sp_state = state_trapped;
+	sp_state->init();
+	led.set_mode(LED_STEADY, LED_GREEN);
+}
+
+bool CleanModeFollowWall::updateActionInStateTrapped()
 {
 	ROS_INFO_FL();
 	sp_action_.reset();// to mark in destructor
 	old_dir_ = new_dir_;
-	if (reach_cleaned_count_ == 0) {
+	if (closed_count_ == 0) {
 		if (generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
 			new_dir_ = plan_path_.front().th;
 			plan_path_.pop_front();
 			pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 		}
 	}
-	else if (reach_cleaned_count_ <= 3) {
-
-		BoundingBox2 bound{};
-
-		clean_map_.getMapRange(CLEAN_MAP, &bound.min.x, &bound.max.x, &bound.min.y, &bound.max.y);
-
-//		ROS_ERROR("bound(%d,%d,%d,%d)", bound.min.x, bound.max.x, bound.min.y, bound.max.y);
-		auto target = bound.max + Cell_t{1,1};
-//		ROS_ERROR("target(%d,%d)", target.x, target.y);
-		bound.SetMinimum(bound.min - Cell_t{8,8});
-		bound.SetMaximum(bound.max + Cell_t{8,8});
-
-		auto path = clean_path_algorithm_->findShortestPath(clean_map_, getPosition().toCell(), target, 0, true, true, bound.min, bound.max);
-
-		if (!path.empty()) {
+	else if (closed_count_ <= 3) {
+		if (!isIsolate()) {
 			if (generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
 				new_dir_ = plan_path_.front().th;
 				plan_path_.pop_front();
@@ -160,17 +173,11 @@ bool CleanModeFollowWall::updateActionInStateClean()
 		}
 		else {
 			ROS_WARN("%s,%d:follow clean finish", __func__, __LINE__);
-/*			ROS_WARN("%s,%d:follow clean finish,did not find charge", __func__, __LINE__);
-			sp_state = state_go_home_point;
-			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_));
-			sp_state->init();
-			action_i_ = ac_null;*/
 			return false;
 		}
-	}else{
+	}else {
 		return false;
 	}
-
 
 	PP_INFO();
 	if (plan_path_.empty()) {
@@ -189,16 +196,16 @@ bool CleanModeFollowWall::updateActionInStateClean()
 }
 
 bool CleanModeFollowWall::moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) {
-//	ROS_INFO("reach_cleaned_count_ = %d, reach_cleaned_count_save = %d", reach_cleaned_count_, reach_cleaned_count_save);
-	if(reach_cleaned_count_ > reach_cleaned_count_save)
+	if (ACleanMode::moveTypeFollowWallIsFinish(p_mt))
 	{
-		reach_cleaned_count_save = reach_cleaned_count_;
+		ROS_WARN("moveTypeFollowWallIsFinish close!!!");
 		return true;
 	}
+
 	return false;
 }
 
-void CleanModeFollowWall::switchInStateClean() {
+void CleanModeFollowWall::switchInStateTrapped() {
 	sp_state = state_go_home_point;
 	ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_points_.size());
 	speaker.play(VOICE_BACK_TO_CHARGER, true);
@@ -214,7 +221,7 @@ bool CleanModeFollowWall::generatePath(GridMap &map, const Point_t &curr, const 
 	if (targets.empty()) {//fw ->linear
 		auto curr = getPosition();
 		fw_map.reset(CLEAN_MAP);
-		auto angle = (reach_cleaned_count_ != 0 && reach_cleaned_count_ <= 3) ? -900 : 0;
+		auto angle = (closed_count_ != 0 && closed_count_ <= 3) ? -900 : 0;
 		auto point = getPosition().addAngle(angle);
 		targets.push_back(point);
 		ROS_WARN("curr.th = %d, angle = %d,point.th(%d)", curr.th, angle,point.th);

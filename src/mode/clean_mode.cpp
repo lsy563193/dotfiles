@@ -726,7 +726,7 @@ void ACleanMode::setRconPos(Point_t pos)
 
 bool ACleanMode::moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt)
 {
-	return false;
+	return closed_count_ >= closed_count_limit_;
 }
 
 void ACleanMode::moveTypeFollowWallSaveBlocks()
@@ -1314,22 +1314,24 @@ bool ACleanMode::updateActionInStateTrapped()
 {
 	PP_INFO();
 
-	sp_action_.reset();// to mark in destructor
-	action_i_ = ac_follow_wall_left;
-	genNextAction();
-
-	if (robot_timer.trapTimeout(ESCAPE_TRAPPED_TIME)) {
-		action_i_ = ac_null;
+	if(closed_count_ == 0)
+	{
+		sp_action_.reset();// to mark in destructor
+		action_i_ = ac_follow_wall_left;
 		genNextAction();
-		trapped_time_out_ = true;
-		return false;
 	}
-	else if (!clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell())) {
-		action_i_ = ac_null;
-		genNextAction();
-		return false;
+	else if(closed_count_ <= 3) {
+		if (robot_timer.trapTimeout(ESCAPE_TRAPPED_TIME)) {
+			action_i_ = ac_null;
+			genNextAction();
+			trapped_time_out_ = true;
+		}
+		else if (!clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell())) {
+			action_i_ = ac_null;
+			genNextAction();
+			return false;
+		}
 	}
-
 	return true;
 }
 
@@ -1339,12 +1341,12 @@ void ACleanMode::switchInStateTrapped()
 	if (trapped_time_out_) {
 		trapped_time_out_ = false;
 		ROS_WARN("%s %d: Escape trapped timeout!(%d)", __FUNCTION__, __LINE__, ESCAPE_TRAPPED_TIME);
-		reach_cleaned_count_ = 0;
+		closed_count_ = 0;
 		sp_state = nullptr;
 	}
 	else/* if (escape_trapped_)*/ {
 		ROS_WARN("%s %d: Escape trapped !", __FUNCTION__, __LINE__);
-		reach_cleaned_count_ = 0;
+		closed_count_ = 0;
 //		sp_state = (sp_tmp_state == state_clean) ? state_clean : state_exploration;
 		sp_state = sp_saved_states.back();
 		sp_saved_states.pop_back();

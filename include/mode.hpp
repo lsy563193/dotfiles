@@ -484,7 +484,8 @@ public:
 	virtual bool isSwitchByEventInStatePause(){return false;};
 	virtual bool updateActionInStatePause(){};
 	virtual void switchInStatePause(){};
-
+	int closed_count_{};
+	int closed_count_limit_{2};
 	State *sp_state{};
 	State* getState() const {
 		return sp_state;
@@ -498,7 +499,6 @@ public:
 	State *state_exception_resume = new ExceptionResume();
 	State *state_exploration = new StateExploration();
 
-	int reach_cleaned_count_{};
 	Points passed_path_{};
 	Points plan_path_{};
 	Point_t last_{};
@@ -511,6 +511,7 @@ public:
 	double old_dir_{};
 	double new_dir_{};
 
+//	boost::shared_ptr<APathAlgorithm> follow_wall_path_algorithm_{};
 	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
 	boost::shared_ptr<GoHomePathAlgorithm> go_home_path_algorithm_{};
 	GridMap clean_map_{};
@@ -701,14 +702,15 @@ public:
 
 	void keyClean(bool state_now, bool state_last) override;
 	void remoteMax(bool state_now, bool state_last) override;
-
+	bool isIsolate();
 	void remoteClean(bool state_now, bool state_last) override;
-	void switchInStateClean() override;
+	void switchInStateTrapped() override;
 	bool generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &targets);
 
 	bool moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) override ;
+	void switchInStateInit();
 
-	bool updateActionInStateClean()override ;
+	bool updateActionInStateTrapped()override ;
 
 private:
  int reach_cleaned_count_save{};
