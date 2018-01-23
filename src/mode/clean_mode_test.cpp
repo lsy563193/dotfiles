@@ -65,7 +65,7 @@ bool CleanModeTest::isFinish()
 	}
 	else if (action_i_ == ac_check_bumper)
 	{
-		led.set_mode(LED_STEADY, LED_GREEN);
+		led.setMode(LED_STEADY, LED_GREEN);
 		wheel.stop();
 		brush.stop();
 		vacuum.stop();

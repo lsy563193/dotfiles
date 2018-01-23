@@ -14,7 +14,7 @@ ModeRemote::ModeRemote()
 	event_manager_register_handler(this);
 	event_manager_set_enable(true);
 
-	led.set_mode(LED_STEADY, LED_GREEN);
+	led.setMode(LED_STEADY, LED_GREEN);
 	if (gyro.isOn())
 	{
 		sp_action_.reset(new MovementStay());
