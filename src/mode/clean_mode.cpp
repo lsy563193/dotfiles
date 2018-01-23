@@ -47,7 +47,6 @@ ACleanMode::ACleanMode()
 	resetPosition();
 	c_rcon.resetStatus();
 	robot::instance()->initOdomPosition();
-
 }
 
 ACleanMode::~ACleanMode()

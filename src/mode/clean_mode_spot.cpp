@@ -29,6 +29,25 @@ CleanModeSpot::~CleanModeSpot()
 	speaker.play(VOICE_CLEANING_STOP,false);*/
 }
 
+bool CleanModeSpot::isExit()
+{
+	if(ev.remote_home)
+	{
+		ev.remote_home = false;
+		INFO_YELLOW("in spot mode enter exploration");
+		setNextMode(cm_exploration);
+		return true;
+	}
+	else if(ev.remote_follow_wall)
+	{
+		ev.remote_follow_wall = false;
+		INFO_YELLOW("in spot mode enter follow_wall");
+		setNextMode(cm_wall_follow);
+		return true;
+	}
+	return ACleanMode::isExit();
+}
+
 bool CleanModeSpot::mapMark(bool isMarkRobot)
 {
 	ROS_INFO("%s,%d,passed_path",__FUNCTION__,__LINE__);
@@ -57,20 +76,18 @@ void CleanModeSpot::remoteClean(bool state_now, bool state_last)
 	remote.reset();
 }
 
-void CleanModeSpot::switchInStateInit()
+void CleanModeSpot::remoteHome(bool state_now, bool state_last)
 {
-	action_i_ = ac_null;
-	sp_action_ = nullptr;
-	sp_state = state_spot;
-	sp_state->init();
+	ev.remote_home = true;
+	INFO_YELLOW("REMOTE HOME PRESS");
+	remote.reset();
 }
 
-void CleanModeSpot::switchInStateSpot()
+void CleanModeSpot::remoteWallFollow(bool state_now, bool state_last)
 {
-	action_i_ = ac_null;
-	sp_action_ = nullptr;
-	sp_state = nullptr;
-//	sp_state->init();
+	ev.remote_follow_wall = true;
+	INFO_YELLOW("REMOTE FOLLOW_WALL PRESS");
+	remote.reset();
 }
 
 void CleanModeSpot::keyClean(bool state_now,bool state_last)
@@ -118,6 +135,22 @@ void CleanModeSpot::remoteDirectionForward(bool state_now, bool state_last)
 	ev.remote_direction_right = true;
 
 	remote.reset();
+}
+
+void CleanModeSpot::switchInStateInit()
+{
+	action_i_ = ac_null;
+	sp_action_ = nullptr;
+	sp_state = state_spot;
+	sp_state->init();
+}
+
+void CleanModeSpot::switchInStateSpot()
+{
+	action_i_ = ac_null;
+	sp_action_ = nullptr;
+	sp_state = nullptr;
+//	sp_state->init();
 }
 
 bool CleanModeSpot::isSwitchByEventInStateSpot()

@@ -721,9 +721,11 @@ public:
 	~CleanModeSpot();
 
 	bool mapMark(bool isMarkRobot = true) override;
-//	bool isExit() override;
+	bool isExit() override;
 //	void cliffAll(bool state_now, bool state_last) override;
 	void remoteClean(bool state_now, bool state_last) override;
+	void remoteHome(bool  state_now, bool state_last) override;
+	void remoteWallFollow(bool state_now, bool state_last) override;
 	void keyClean(bool state_now, bool state_last) override;
 	void switchInStateInit() override ;
 	void switchInStateSpot() override ;

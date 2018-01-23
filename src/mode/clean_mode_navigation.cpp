@@ -297,6 +297,7 @@ void CleanModeNav::remoteMax(bool state_now, bool state_last)
 		beeper.play_for_command(INVALID);
 	remote.reset();
 }
+
 void CleanModeNav::batteryHome(bool state_now, bool state_last)
 {
 	if (sp_state == state_clean)
@@ -526,26 +527,27 @@ bool CleanModeNav::checkEnterTempSpotState()
 	return false;
 }
 
-bool CleanModeNav::checkOutOfSpot()
-{
-	if (ev.remote_spot || ev.remote_direction_forward || ev.remote_direction_left || ev.remote_direction_right)
+bool CleanModeNav::isSwitchByEventInStateSpot() {
+	if (ev.key_clean_pressed || ev.remote_spot || ev.remote_direction_forward || ev.remote_direction_left || ev.remote_direction_right)
 	{
+		if(sp_state == state_spot && ev.key_clean_pressed )
+			sp_state = nullptr;
+		else{
+			sp_state = state_clean;
+			sp_state->init();
+			action_i_ = ac_null;
+			sp_action_.reset();
+			clean_path_algorithm_.reset(new NavCleanPathAlgorithm);
+		}
 		ev.remote_direction_forward = false;
 		ev.remote_direction_left = false;
 		ev.remote_direction_right = false;
 		ev.remote_spot = false;
-		sp_state = state_clean;
-		sp_state->init();
-		action_i_ = ac_null;
-		sp_action_.reset();
-		clean_path_algorithm_.reset(new NavCleanPathAlgorithm);
+		ev.key_clean_pressed = false;
+
 		return true;
 	}
 	return false;
-}
-
-bool CleanModeNav::isSwitchByEventInStateSpot() {
-	return checkEnterPause() || checkOutOfSpot();
 }
 
 void CleanModeNav::switchInStateSpot() {
