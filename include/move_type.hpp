@@ -50,7 +50,7 @@ public:
 protected:
 //	Cells passed_path_;
 //	Cells tmp_plan_path_;
-	double turn_target_angle_{};
+	double turn_target_radian_{};
 	float back_distance_;
 	enum{//movement
 		mm_null,
@@ -105,11 +105,12 @@ private:
 	int16_t tiltTurnAngle();
 	int16_t obsTurnAngle();
 	int16_t double_scale_10(double line_angle);
-	bool _lidarTurnAngle(bool is_left, double &turn_angle, double lidar_min, double lidar_max, double angle_min, double angle_max,
-						 double dis_limit = 0.217);
-	bool lidarTurnAngle(double &turn_angle);
-	double getTurnAngleByEvent();
-	double getTurnAngle(bool);
+	bool _lidarTurnRadian(bool is_left, double &turn_radian, double lidar_min, double lidar_max, double radian_min,
+						  double radian_max,
+						  double dis_limit = 0.217);
+	bool lidarTurnRadian(double &turn_radian);
+	double getTurnRadianByEvent();
+	double getTurnRadian(bool);
 	double robot_to_wall_distance = 0.8;
 	float g_back_distance = 0.01;
 };

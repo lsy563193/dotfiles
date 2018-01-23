@@ -93,9 +93,10 @@ class ActionIdle :public IAction
 {
 public:
 	ActionIdle();
-	~ActionIdle();
-	bool isFinish();
-	void run();
+	~ActionIdle() override;
+	bool isFinish() override;
+	bool isTimeUp() override;
+	void run() override;
 private:
 
 };

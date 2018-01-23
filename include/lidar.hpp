@@ -18,7 +18,7 @@ public:
 	Lidar();
 	~Lidar();
 
-	bool lidarGetFitLine(double begin, double end, double range, double dis_lim, double *hine_angle, double *distance, bool is_left, bool is_align = false);
+	bool lidarGetFitLine(double begin, double end, double range, double dis_lim, double *line_radian, double *distance, bool is_left, bool is_align = false);
 
 	/*
 	 * @author Alvin Xie

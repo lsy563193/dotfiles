@@ -25,7 +25,7 @@ CleanModeSpot::~CleanModeSpot()
 
 	robot::instance()->setBaselinkFrameType( ODOM_POSITION_ODOM_ANGLE);
 	slam.stop();
-	odom.setAngleOffset(0);
+	odom.setRadianOffset(0);
 	speaker.play(VOICE_CLEANING_STOP,false);*/
 }
 

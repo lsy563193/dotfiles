@@ -8,13 +8,7 @@
 #include <ros/ros.h>
 #include "config.h"
 
-#define PI  3.141592653589793
-
-#ifndef M_PI
-
-#define M_PI	3.141592653589793
-
-#endif
+#define PI M_PI
 
 /*
 typedef struct Pose16_t_{
@@ -31,9 +25,9 @@ typedef struct Pose16_t_{
 	}
 } Pose16_t;*/
 
-double ranged_angle(double angle);
-//double deg_to_rad(double deg, int8_t scale = 1);
-//double rad_2_deg(double rad, int8_t scale);
+double ranged_radian(double radian);
+double degree_to_radian(double deg);
+double radian_to_degree(double rad);
 
   /**
    * Represents a 2-dimensional vector (x, y)
@@ -339,8 +333,8 @@ public:
     th = _th;
   }
 
-	Point_t addAngle(double diff) const {
-		return {this->x, this->y, ranged_angle(this->th + diff)};
+	Point_t addRadian(double diff) const {
+		return {this->x, this->y, ranged_radian(this->th + diff)};
 	}
   Point_t getRelative(float dx, float dy) const {
 		Point_t point{static_cast<float>(x + dx * cos(th) - dy * sin(th)), static_cast<float>(y + dx * sin(th) + dy * cos(th)), th};
@@ -380,14 +374,14 @@ public:
 				}
 			}
 //			ROS_INFO_COND(DEBUG_ENABLE,"alpha = %d, th = %f (%f, %f)", alpha, this->th, this->x, this->y);
-			return ranged_angle(alpha - this->th);
+			return ranged_radian(alpha - this->th);
 	}
 
-	double angleDiff(const Point_t& other) const {
-		return ranged_angle(this->th - other.th);
+	double radianDiff(const Point_t &other) const {
+		return ranged_radian(this->th - other.th);
 	}
 
-  Cell_t toCell() const {
+	Cell_t toCell() const {
     return {countToCell(x), countToCell(y)};
   }
 
@@ -396,19 +390,20 @@ public:
 		return  toCell() == r.toCell();
 	}
 
-	bool isAngleNear(const Point_t &r) const
+	bool isRadianNear(const Point_t &r) const
 	{
-		return  std::abs(ranged_angle(th - r.th)) < 20*PI/180;
+		return  std::abs(ranged_radian(th - r.th)) < degree_to_radian(20);
 	}
 
 	bool isCellAndAngleEqual(const Point_t &r) const
 	{
-		return  isCellEqual(r) && isAngleNear(r);
+		return  isCellEqual(r) && isRadianNear(r);
 	}
 
-  double th{};
+	// in radian.
+	double th{};
 private:
-  int16_t countToCell(float count) const {
+	int16_t countToCell(float count) const {
 		return static_cast<int16_t>(round(count / CELL_SIZE));
   }
 

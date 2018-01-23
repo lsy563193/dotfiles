@@ -69,7 +69,7 @@ void robotbase_deinit(void)
 
 	bumper.lidarBumperDeinit();
 	recei_thread_stop = true;
-	led.set_mode(LED_STEADY, LED_OFF);
+	led.setMode(LED_STEADY, LED_OFF);
 	serial.setSendData(CTL_BEEPER, 0x00);
 	gyro.setOff();
 	wheel.stop();

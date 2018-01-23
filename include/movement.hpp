@@ -37,11 +37,11 @@ protected:
 
 class AMovementFollowPoint:public IMovement{
 public:
-	virtual bool is_near()=0;
+	virtual bool isNear()=0;
 	virtual Point_t calcTmpTarget()=0;
 	bool isFinish() override ;
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed) override ;
-	double yaw_diff{};
+	double radian_diff{};
 
 protected:
 
@@ -96,7 +96,7 @@ private:
 class MovementTurn: public IMovement{
 public:
 
-	explicit MovementTurn(double target_angle, uint8_t max_speed);
+	explicit MovementTurn(double radian, uint8_t max_speed);
 	void adjustSpeed(int32_t&, int32_t&) override;
 	bool isReach();
 	bool isFinish() override;
@@ -105,7 +105,7 @@ private:
 	uint8_t max_speed_;
 	double accurate_;
 	uint8_t speed_;
-	double target_angle_;
+	double target_radian_;
 };
 
 class MovementFollowPointLinear:public AMovementFollowPoint
@@ -116,7 +116,7 @@ public:
 //	~MovementFollowPointLinear(){ };
 	bool isFinish() override;
 
-	bool is_near() override;
+	bool isNear() override;
 //	void setTarget();
 
 	Point_t calcTmpTarget() override ;
@@ -185,7 +185,7 @@ public:
 	Points _calcTmpTarget();
 
 	bool isFinish() override ;
-	bool is_near() override ;
+	bool isNear() override ;
 private:
 	Points virtual_targets_{};
 	Points lidar_targets_{};
@@ -328,6 +328,7 @@ public:
 	bool isFinish() override;
 
 private:
+	int16_t speed_{LINEAR_MIN_SPEED};
 	double direct_go_time_stamp_;
 };
 

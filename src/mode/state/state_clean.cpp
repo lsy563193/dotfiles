@@ -9,7 +9,7 @@
 
 void StateClean::init() {
 
-	led.set_mode(LED_STEADY, LED_GREEN);
+	led.setMode(LED_STEADY, LED_GREEN);
 	vacuum.setLastMode();
 	brush.normalOperate();
 }

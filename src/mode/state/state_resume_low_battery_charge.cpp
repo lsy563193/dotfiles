@@ -6,7 +6,7 @@
 #include "key_led.h"
 
 void StateResumeLowBatteryCharge::init() {
-	led.set_mode(LED_STEADY, LED_GREEN);
+	led.setMode(LED_STEADY, LED_GREEN);
 }
 
 //bool StateTrapped::isFinish() {

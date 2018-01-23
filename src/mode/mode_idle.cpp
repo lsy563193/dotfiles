@@ -38,60 +38,67 @@ bool ModeIdle::isExit()
 	{
 		if (ev.key_clean_pressed && bumper.getLeft())
 		{
-			ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Idle mode change to test mode(Left bumper triggered).", __FUNCTION__, __LINE__);
 			setNextMode(cm_test);
 			return true;
 		}
-		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Idle mode receives remote clean or clean key, change to navigation mode.", __FUNCTION__, __LINE__);
 		setNextMode(cm_navigation);
 		return true;
 	}
 
 	if(ev.remote_follow_wall)
 	{
-		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Idle mode receives remote follow wall key, change to follow wall mode.", __FUNCTION__, __LINE__);
 		setNextMode(cm_wall_follow);
 		return true;
 	}
 
 	if(ev.remote_spot)
 	{
-		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Idle mode receives remote spot key, change to spot mode.", __FUNCTION__, __LINE__);
 		setNextMode(cm_spot);
 		return true;
 	}
 
 	if(ev.remote_home)
 	{
-		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Idle mode receives remote home key, change to exploration mode.", __FUNCTION__, __LINE__);
 		setNextMode(cm_exploration);
 		return true;
 	}
 	if (ev.key_long_pressed)
 	{
-		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Idle mode detects long press key, change to sleep mode.", __FUNCTION__, __LINE__);
 		setNextMode(md_sleep);
 		return true;
 	}
 
 	if (ev.charge_detect)
 	{
-		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Idle mode detects charger, change to charge mode.", __FUNCTION__, __LINE__);
 		setNextMode(md_charge);
 		return true;
 	}
 
 	if (ev.remote_direction_forward || ev.remote_direction_left || ev.remote_direction_right)
 	{
-		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Idle mode receives remote direction key, change to remote mode.", __FUNCTION__, __LINE__);
 		setNextMode(md_remote);
 		return true;
 	}
 
 	if (ev.rcon_triggered)
 	{
-		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Idle mode receives rcon for over %ds, change to go to charger mode.", __FUNCTION__, __LINE__);
 		setNextMode(md_go_to_charger);
+		return true;
+	}
+
+	if (sp_action_->isTimeUp())
+	{
+		ROS_WARN("%s %d: Idle mode time up, change to sleep mode.", __FUNCTION__, __LINE__);
+		setNextMode(md_sleep);
 		return true;
 	}
 
@@ -117,9 +124,9 @@ void ModeIdle::remoteKeyHandler(bool state_now, bool state_last)
 				ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
 				beeper.play_for_command(VALID);
 				if (battery_low_)
-					led.set_mode(LED_BREATH, LED_ORANGE);
+					led.setMode(LED_BREATH, LED_ORANGE);
 				else
-					led.set_mode(LED_BREATH, LED_GREEN);
+					led.setMode(LED_BREATH, LED_GREEN);
 				speaker.play(VOICE_CLEAR_ERROR);
 			}
 			else
@@ -146,7 +153,7 @@ void ModeIdle::remoteKeyHandler(bool state_now, bool state_last)
 			  && battery_low_)
 	{
 		ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, battery.getVoltage(), (int)BATTERY_READY_TO_CLEAN_VOLTAGE);
-		led.set_mode(LED_BREATH, LED_ORANGE);
+		led.setMode(LED_BREATH, LED_ORANGE);
 		beeper.play_for_command(INVALID);
 		speaker.play(VOICE_BATTERY_LOW);
 	}
@@ -289,9 +296,9 @@ void ModeIdle::keyClean(bool state_now, bool state_last)
 			{
 				ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
 				if (battery_low_)
-					led.set_mode(LED_BREATH, LED_ORANGE);
+					led.setMode(LED_BREATH, LED_ORANGE);
 				else
-					led.set_mode(LED_BREATH, LED_GREEN);
+					led.setMode(LED_BREATH, LED_GREEN);
 				speaker.play(VOICE_CLEAR_ERROR);
 			}
 			else
@@ -307,7 +314,7 @@ void ModeIdle::keyClean(bool state_now, bool state_last)
 		{
 			ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, battery.getVoltage(),
 					 (int) BATTERY_READY_TO_CLEAN_VOLTAGE);
-			led.set_mode(LED_BREATH, LED_ORANGE);
+			led.setMode(LED_BREATH, LED_ORANGE);
 			speaker.play(VOICE_BATTERY_LOW);
 		}
 		else
@@ -339,7 +346,7 @@ bool ModeIdle::isFinish()
 {
 	if (!battery_low_ && !battery.isReadyToClean())
 	{
-		led.set_mode(LED_BREATH, LED_ORANGE);
+		led.setMode(LED_BREATH, LED_ORANGE);
 		battery_low_ = true;
 	}
 	return false;

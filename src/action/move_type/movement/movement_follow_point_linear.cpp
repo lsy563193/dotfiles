@@ -10,7 +10,7 @@
 //CELL_COUNT_MUL*1.5
 MovementFollowPointLinear::MovementFollowPointLinear()
 {
-	angle_forward_to_turn_ = 150*PI/180;
+	angle_forward_to_turn_ = degree_to_radian(150);
 	min_speed_ = LINEAR_MIN_SPEED;
 	max_speed_ = LINEAR_MAX_SPEED;
 	base_speed_ = LINEAR_MIN_SPEED;
@@ -57,14 +57,16 @@ bool MovementFollowPointLinear::isFinish()
 	return AMovementFollowPoint::isFinish() || sp_mt_->shouldMoveBack() || sp_mt_->isLidarStop();
 }
 
-bool MovementFollowPointLinear::is_near()
+bool MovementFollowPointLinear::isNear()
 {
-	bool is_decrease_blocked = decrease_map.isFrontBlocked();
+	bool near_blocked_in_slam_map = slam_grid_map.isFrontBlocked();
+//	if (near_blocked_in_slam_map)
+//		ROS_ERROR("%s %d: Near blocks in slam_map, slow down.", __FUNCTION__, __LINE__);
 //	auto curr_p = getPosition();
 //	auto distance = two_points_distance(curr_p.x, curr_p.y, s_target_p.x, s_target_p.y);
 	auto obstacle_distance_front = lidar.getObstacleDistance(0,ROBOT_RADIUS);
 //	ROS_INFO("dis(%lf)", obstacle_distance_front);
-	return obs.getStatus() > 0 || /*(distance < SLOW_DOWN_DISTANCE) ||*/  (obstacle_distance_front < 0.25) || is_decrease_blocked;
+	return obs.getStatus() > 0 || /*(distance < SLOW_DOWN_DISTANCE) ||*/  (obstacle_distance_front < 0.25) || near_blocked_in_slam_map;
 }
 
 //Point_t MovementFollowPointLinear::_calcTmpTargetRealTime()

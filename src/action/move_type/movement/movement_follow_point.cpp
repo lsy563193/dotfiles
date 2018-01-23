@@ -18,13 +18,13 @@ void AMovementFollowPoint::adjustSpeed(int32_t &left_speed, int32_t &right_speed
 
 	if (integration_cycle_++ > 10) {
 		integration_cycle_ = 0;
-		integrated_ += yaw_diff;
+		integrated_ += radian_to_degree(radian_diff);
 		check_limit(integrated_, -150, 150);
 	}
 
-//	ROS_INFO("diff(%f), angle_forward_to_turn_(%f)",yaw_diff, angle_forward_to_turn_);
+//	ROS_INFO("diff(%f), angle_forward_to_turn_(%f)",radian_diff, angle_forward_to_turn_);
 
-		if (is_near()) {
+		if (isNear()) {
 			if (base_speed_ > (int32_t) min_speed_) {
 				base_speed_--;
 			}
@@ -36,9 +36,9 @@ void AMovementFollowPoint::adjustSpeed(int32_t &left_speed, int32_t &right_speed
 			}
 			integrated_ = 0;
 		}
-		auto angle_diff = static_cast<int32_t>(yaw_diff * 180 / PI );
+		auto angle_diff = static_cast<int32_t>(radian_to_degree(radian_diff));
 		auto speed_diff = angle_diff / kp_;
-//		auto speed_diff = static_cast<int32_t>(yaw_diff * 180 / PI ) / kp_;
+//		auto speed_diff = static_cast<int32_t>(radian_to_degree(radian_diff)) / kp_;
 		left_speed = (base_speed_ - speed_diff - integrated_ / 150); // - Delta / 20; // - Delta * 10 ; // - integrated_ / 2500;
 		right_speed = base_speed_ + speed_diff + integrated_ / 150; // + Delta / 20;// + Delta * 10 ; // + integrated_ / 2500;
 
@@ -52,14 +52,14 @@ void AMovementFollowPoint::adjustSpeed(int32_t &left_speed, int32_t &right_speed
 
 bool AMovementFollowPoint::isFinish() {
 //	ROS_WARN("curr target th(%f,%f)", getPosition().th, calcTmpTarget().th);
-	yaw_diff = getPosition().courseToDest(calcTmpTarget());
-//	ROS_WARN("yaw_diff(%f)", yaw_diff);
-	if(std::abs(yaw_diff) > angle_forward_to_turn_)
+	radian_diff = getPosition().courseToDest(calcTmpTarget());
+//	ROS_WARN("radian_diff(%f)", radian_diff);
+	if(std::abs(radian_diff) > angle_forward_to_turn_)
 	{
 		ROS_INFO_FL();
-		ROS_WARN("yaw_diff(%f)", yaw_diff);
+		ROS_WARN("radian_diff(%f)", radian_diff);
 #if DEBUG_ENABLE
-		if (std::abs(yaw_diff) > 140*PI/180) {
+		if (std::abs(radian_diff) > degree_to_radian(140)) {
 			ROS_ERROR_COND(DEBUG_ENABLE, "LASER WALL FOLLOW ERROR! PLEASE CALL ALVIN AND RESTART THE ROBOT.");
 //			while(ros::ok()){
 //				beeper.play_for_command(VALID);

@@ -7,6 +7,6 @@
 #include "key_led.h"
 
 void StateInit::init() {
-	led.set_mode(LED_FLASH, LED_GREEN, 1000);
+	led.setMode(LED_FLASH, LED_GREEN, 600);
 }
 
