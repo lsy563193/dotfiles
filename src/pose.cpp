@@ -4,7 +4,7 @@
 
 #include "pose.h"
 
-Pose::Pose():x_(0), y_(0), z_(0), yaw_(0)
+Pose::Pose():x_(0), y_(0), z_(0), radian_(0)
 {
 };
 
@@ -42,12 +42,12 @@ float Pose::getZ(void)
 	return z_;
 }
 
-void Pose::setYaw(double yaw)
+void Pose::setRadian(double radian)
 {
-	yaw_ = yaw;
+	radian_ = radian;
 }
 
-double Pose::getYaw(void)
+double Pose::getRadian(void)
 {
-	return yaw_;
+	return radian_;
 }

@@ -68,9 +68,9 @@ public:
 		return is_tf_ready_;
 	}
 
-	double getWorldPoseYaw()
+	double getWorldPoseRadian()
 	{
-		return robot_yaw_;
+		return robot_radian_;
 	}
 
 	float getWorldPoseX()
@@ -100,7 +100,7 @@ public:
 	}
 */
 
-	double getRobotCorrectionYaw() const
+	double getRobotCorrectionRadian() const
 	{
 		return robot_correction_yaw_;
 	}
@@ -153,7 +153,7 @@ private:
 	bool temp_spot_set_{};
 
 	tf::Vector3	robot_pos;
-	double	robot_yaw_;
+	double	robot_radian_;
 
 	// This is for the slam correction variables.
 	tf::Vector3	robot_correction_pos;

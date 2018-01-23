@@ -334,7 +334,7 @@ bool CleanModeNav::updateActionInStateInit() {
 	else if (action_i_ == ac_open_gyro)
 	{
 		// If it is the starting of navigation mode, paused_odom_angle_ will be zero.
-		odom.setYawOffset(paused_odom_angle_);
+		odom.setRadianOffset(paused_odom_angle_);
 
 		vacuum.setLastMode();
 		brush.normalOperate();
@@ -411,7 +411,7 @@ bool CleanModeNav::updateActionInStateClean(){
 		auto start = getPosition().toCell();
 		auto delta_y = plan_path_.back().toCell().y - start.y;
 		ROS_INFO("%s,%d: path size(%u), old_dir_(%f), new_dir_(%f), bumper(%d), cliff(%d), lidar(%d), delta_y(%f)",
-						 __FUNCTION__, __LINE__, plan_path_.size(), old_dir_*180/PI, new_dir_*180/PI, ev.bumper_triggered,
+						 __FUNCTION__, __LINE__, plan_path_.size(), radian_to_degree(old_dir_), radian_to_degree(new_dir_), ev.bumper_triggered,
 						 ev.cliff_triggered, ev.lidar_triggered, delta_y);
 		if (!isXAxis(old_dir_) // If last movement is not x axis linear movement, should not follow wall.
 				|| plan_path_.size() > 2 ||
@@ -481,7 +481,7 @@ void CleanModeNav::switchInStateGoToCharger()
 			ROS_INFO("%s %d: Enter low battery charge.", __FUNCTION__, __LINE__);
 			sp_state = state_charge;
 			sp_state->init();
-			paused_odom_angle_ = odom.getYaw();
+			paused_odom_angle_ = odom.getRadian();
 			go_home_for_low_battery_ = false;
 			go_home_path_algorithm_.reset();
 		} else
@@ -547,7 +547,7 @@ bool CleanModeNav::checkEnterPause()
 		ev.key_clean_pressed = false;
 		speaker.play(VOICE_CLEANING_PAUSE);
 		ROS_INFO("%s %d: Key clean pressed, pause cleaning.", __FUNCTION__, __LINE__);
-		paused_odom_angle_ = odom.getYaw();
+		paused_odom_angle_ = odom.getRadian();
 		sp_action_.reset();
 		sp_saved_states.push_back(sp_state);
 		sp_state = state_pause;

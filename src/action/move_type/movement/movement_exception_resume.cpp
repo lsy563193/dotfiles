@@ -239,8 +239,8 @@ bool MovementExceptionResume::isFinish()
 				case 4:
 				case 5:
 				{
-//					ROS_DEBUG("%s %d: robot::instance()->getWorldPoseYaw(): %d", __FUNCTION__, __LINE__,
-//							  robot::instance()->getWorldPoseYaw());
+//					ROS_DEBUG("%s %d: robot::instance()->getWorldPoseRadian(): %d", __FUNCTION__, __LINE__,
+//							  robot::instance()->getWorldPoseRadian());
 					// If cliff jam during bumper self resume.
 					if (cliff.getStatus() && ++g_cliff_cnt > 2)
 					{

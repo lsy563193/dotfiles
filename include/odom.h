@@ -19,10 +19,10 @@ public:
 	float getY();
 	void setZ(float z);
 	float getZ();
-	void setYaw(double yaw);
-	double getYaw();
-	void setYawOffset(double yaw);
-	double getYawOffset();
+	void setRadian(double radian);
+	double getRadian();
+	void setRadianOffset(double radian);
+	double getRadianOffset();
 
 	void setMovingSpeed(float speed);
 	float getMovingSpeed(void);
@@ -33,7 +33,7 @@ private:
 
 	Pose pose;
 
-	double yaw_offset_;
+	double radian_offset_;
 
 	// In meters.
 	float moving_speed_;

@@ -41,7 +41,7 @@ public:
 	virtual Point_t calcTmpTarget()=0;
 	bool isFinish() override ;
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed) override ;
-	double yaw_diff{};
+	double radian_diff{};
 
 protected:
 
@@ -80,7 +80,7 @@ private:
 class MovementTurn: public IMovement{
 public:
 
-	explicit MovementTurn(double target_angle, uint8_t max_speed);
+	explicit MovementTurn(double radian, uint8_t max_speed);
 	void adjustSpeed(int32_t&, int32_t&) override;
 	bool isReach();
 	bool isFinish() override;
@@ -89,7 +89,7 @@ private:
 	uint8_t max_speed_;
 	double accurate_;
 	uint8_t speed_;
-	double target_angle_;
+	double target_radian_;
 };
 
 class MovementFollowPointLinear:public AMovementFollowPoint

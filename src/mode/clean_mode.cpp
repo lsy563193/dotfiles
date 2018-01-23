@@ -77,7 +77,7 @@ ACleanMode::~ACleanMode()
 
 	robot::instance()->setBaselinkFrameType(ODOM_POSITION_ODOM_ANGLE);
 	slam.stop();
-	odom.setYawOffset(0);
+	odom.setRadianOffset(0);
 
 	if (moved_during_pause_)
 	{
@@ -208,8 +208,8 @@ bool ACleanMode::check_corner(const sensor_msgs::LaserScan::ConstPtr & scan, con
 
 Vector2<double> ACleanMode::polar_to_cartesian(double polar,int i)
 {
-	Vector2<double> point{cos((i * 1.0 + 180.0) * PI / 180.0) * polar,
-					sin((i * 1.0 + 180.0) * PI / 180.0) * polar };
+	Vector2<double> point{cos(degree_to_radian(i * 1.0 + 180.0)) * polar,
+					sin(degree_to_radian(i * 1.0 + 180.0)) * polar };
 
 	coordinate_transform(&point.x, &point.y, LIDAR_THETA, LIDAR_OFFSET_X, LIDAR_OFFSET_Y);
 	return point;
@@ -748,9 +748,9 @@ void ACleanMode::moveTypeLinearSaveBlocks()
 
 void ACleanMode::setRconPos(float cd,float dist)
 {
-//	float yaw = robot::instance()->getWorldPoseYaw()/10.0;
-//	float wpx = cosf( (float)ranged_angle((yaw+cd)*10)/10.0 * PI/180.0 )*dist+ robot::instance()->getWorldPoseX();
-//	float wpy = sinf( (float)ranged_angle((yaw+cd)*10)/10.0 * PI/180.0 )*dist+ robot::instance()->getWorldPoseY();
+//	float yaw = robot::instance()->getWorldPoseRadian()/10.0;
+//	float wpx = cosf( (float)ranged_radian((yaw+cd)*10)/10.0 * PI/180.0 )*dist+ robot::instance()->getWorldPoseX();
+//	float wpy = sinf( (float)ranged_radian((yaw+cd)*10)/10.0 * PI/180.0 )*dist+ robot::instance()->getWorldPoseY();
 //	charger_pos_ = {(int32_t)(wpx*1000/CELL_SIZE), (int32_t)(wpy*1000/CELL_SIZE),(int16_t)0};
 //	if(found_charger_)
 //		g_homes.push_back(charger_pos_);

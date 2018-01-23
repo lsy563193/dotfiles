@@ -10,7 +10,7 @@
 //CELL_COUNT_MUL*1.5
 MovementFollowPointLinear::MovementFollowPointLinear()
 {
-	angle_forward_to_turn_ = 150*PI/180;
+	angle_forward_to_turn_ = degree_to_radian(150);
 	min_speed_ = LINEAR_MIN_SPEED;
 	max_speed_ = LINEAR_MAX_SPEED;
 	base_speed_ = LINEAR_MIN_SPEED;

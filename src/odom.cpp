@@ -8,7 +8,7 @@
 
 Odom odom;
 
-Odom::Odom():moving_speed_(0), angle_speed_(0), yaw_offset_(0)
+Odom::Odom():moving_speed_(0), angle_speed_(0), radian_offset_(0)
 {
 }
 
@@ -46,25 +46,25 @@ float Odom::getZ(void)
 	return pose.getZ();
 }
 
-void Odom::setYaw(double yaw)
+void Odom::setRadian(double radian)
 {
-	pose.setYaw(yaw + getYawOffset());
+	pose.setRadian(radian + getRadianOffset());
 }
 
-double Odom::getYaw(void)
+double Odom::getRadian(void)
 {
-	return pose.getYaw();
+	return pose.getRadian();
 }
 
-void Odom::setYawOffset(double yaw)
+void Odom::setRadianOffset(double radian)
 {
-	yaw_offset_ = yaw;
-	ROS_INFO("%s %d: Set odom yaw offset to %f(%f degrees).", __FUNCTION__, __LINE__, yaw_offset_, yaw_offset_*180/PI);
+	radian_offset_ = radian;
+	ROS_INFO("%s %d: Set odom radian offset to %f(%f degrees).", __FUNCTION__, __LINE__, radian_offset_, radian_to_degree(radian_offset_));
 }
 
-double Odom::getYawOffset(void)
+double Odom::getRadianOffset(void)
 {
-	return yaw_offset_;
+	return radian_offset_;
 }
 
 void Odom::setMovingSpeed(float speed)
