@@ -298,6 +298,7 @@ public:
 	bool isFinish() override;
 
 private:
+	int16_t speed_{LINEAR_MIN_SPEED};
 	double direct_go_time_stamp_;
 };
 
