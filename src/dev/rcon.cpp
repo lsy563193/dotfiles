@@ -60,3 +60,10 @@ uint32_t Rcon::getForwardTop()
 	return rcon_status;
 }
 
+uint32_t Rcon::getWFRcon()
+{
+	uint32_t rcon_status = getStatus() & (RconFL2_HomeT|RconFR_HomeT|RconFL_HomeT|RconFR2_HomeT);
+	resetStatus();
+	return rcon_status;
+}
+

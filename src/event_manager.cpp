@@ -545,6 +545,7 @@ uint8_t event_manager_check_event(bool *p_eh_status_now, bool *p_eh_status_last)
 
 void event_manager_reset_status(void)
 {
+	ROS_INFO("event_manager_reset_status");
 	ev.fatal_quit = false;
 	/* Bumper */
 	ev.bumper_triggered = 0;

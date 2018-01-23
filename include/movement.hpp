@@ -77,6 +77,22 @@ private:
 	float lidar_detect_distance;
 };
 
+class MovementRcon: public IMovement
+{
+public:
+	MovementRcon(bool is_left);
+	~MovementRcon();
+	void adjustSpeed(int32_t &left_speed, int32_t &right_speed) override ;
+	bool isFinish() override;
+
+private:
+	uint32_t rcon_status;
+	int32_t left_speed_{};
+	int32_t right_speed_{};
+	uint8_t seen_charger_counter_{};
+	bool	is_left_;
+};
+
 class MovementTurn: public IMovement{
 public:
 
@@ -255,6 +271,20 @@ private:
 	uint8_t bumper_jam_state_;
 	uint8_t cliff_resume_cnt_;
 	uint8_t robot_stuck_resume_cnt_;
+};
+
+class SpeedGovernorRcon: public IMovement
+{
+public:
+	SpeedGovernorRcon();
+
+	void adjustSpeed(int32_t &left_speed, int32_t &right_speed) override ;
+
+private:
+	int32_t left_speed_;
+	int32_t right_speed_;
+	uint8_t seen_charger_counter_;
+	bool	is_left_;
 };
 
 class MovementCharge :public IMovement

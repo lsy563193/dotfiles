@@ -89,6 +89,16 @@ bool IMoveType::shouldTurn()
 	return false;
 }
 
+bool IMoveType::RconTrigger()
+{
+	ev.rcon_triggered = c_rcon.getWFRcon();
+	if (ev.rcon_triggered) {
+		ROS_WARN("%s, %d: ev.rcon_triggered(%d).", __FUNCTION__, __LINE__, ev.lidar_triggered);
+		return true;
+	}
+	return false;
+}
+
 IMoveType::IMoveType() {
 //	resetTriggeredValue();
 	start_point_ = getPosition();
@@ -99,7 +109,7 @@ IMoveType::IMoveType() {
 void IMoveType::resetTriggeredValue()
 {
 	ev.lidar_triggered = 0;
-	ev.rcon_triggered = 0;
+//	ev.rcon_triggered = 0;
 	ev.bumper_triggered = 0;
 	ev.obs_triggered = 0;
 	ev.cliff_triggered = 0;

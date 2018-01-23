@@ -129,7 +129,7 @@ Point_t MovementFollowWallLidar::calcTmpTarget() {
 bool MovementFollowWallLidar::isFinish() {
 	if(AMovementFollowPoint::isFinish())
 		return true;
-	return sp_mt_->shouldMoveBack() || sp_mt_->shouldTurn();
+	return sp_mt_->shouldMoveBack() || sp_mt_->shouldTurn() || sp_mt_->RconTrigger();
 }
 
 bool MovementFollowWallLidar::is_near() {

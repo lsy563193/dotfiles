@@ -81,7 +81,7 @@ FILE(GLOB PP_SRC
 	src/action/move_type/movement/movement.cpp
 	src/action/move_type/movement/movement.cpp
 	src/action/move_type/movement/movement_back.cpp
-	src/action/move_type/movement/movement_back.cpp
+	src/action/move_type/movement/movement_rcon.cpp
 	src/action/move_type/movement/movement_follow_wall_infrared.cpp
 	src/action/move_type/movement/movement_follow_wall_lidar.cpp
 	src/action/move_type/movement/movement_follow_point_linear.cpp
