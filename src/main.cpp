@@ -21,7 +21,6 @@ void Ooops(int sig)
 				speaker.play(VOICE_CLEANING_STOP,false);
 				delete robot_instance;
 			}
-			ROS_INFO(" after SIGSEGV");
 			break;
 		}
 		case SIGINT:
@@ -31,7 +30,6 @@ void Ooops(int sig)
 				speaker.play(VOICE_CLEANING_STOP,false);
 				delete robot_instance;
 			}
-			ROS_INFO(" after SIGINT");
 			break;
 		}
 		case SIGTERM:
@@ -41,7 +39,6 @@ void Ooops(int sig)
 				speaker.play(VOICE_CLEANING_STOP,false);
 				delete robot_instance;
 			}
-			ROS_INFO(" after SIGTERM");
 			break;
 		}
 		default:

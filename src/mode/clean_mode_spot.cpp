@@ -59,7 +59,6 @@ void CleanModeSpot::remoteClean(bool state_now, bool state_last)
 
 void CleanModeSpot::switchInStateInit()
 {
-//	if(action_i_ == ac_open_slam)
 	action_i_ = ac_null;
 	sp_action_ = nullptr;
 	sp_state = state_spot;
@@ -95,4 +94,45 @@ void CleanModeSpot::overCurrentWheelRight(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Right wheel oc.", __FUNCTION__, __LINE__);
 	ev.oc_wheel_right = true;
 }
+
+void CleanModeSpot::remoteDirectionLeft(bool state_now, bool state_last)
+{
+	beeper.play_for_command(VALID);
+	ev.remote_direction_left = true;
+	ROS_INFO("%s %d: Remote Left.", __FUNCTION__, __LINE__);
+	remote.reset();
+}
+
+void CleanModeSpot::remoteDirectionRight(bool state_now, bool state_last)
+{
+	beeper.play_for_command(VALID);
+	ev.remote_direction_right = true;
+	ROS_INFO("%s %d: Remote Right.", __FUNCTION__, __LINE__);
+	remote.reset();
+}
+
+void CleanModeSpot::remoteDirectionForward(bool state_now, bool state_last)
+{
+	beeper.play_for_command(VALID);
+	ROS_INFO("%s %d: Remote Forward.", __FUNCTION__, __LINE__);
+	ev.remote_direction_right = true;
+
+	remote.reset();
+}
+
+bool CleanModeSpot::isSwitchByEventInStateSpot()
+{
+
+	if(ev.remote_direction_forward || ev.remote_direction_left || ev.remote_direction_right)
+	{
+		ev.remote_direction_forward = false;
+		ev.remote_direction_left = false;
+		ev.remote_direction_right = false;
+		sp_state = nullptr;
+		return true;
+	}
+	else
+		return false;
+}
+
 

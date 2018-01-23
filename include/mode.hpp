@@ -729,6 +729,10 @@ public:
 	void switchInStateSpot() override ;
 	void overCurrentWheelLeft(bool state_now, bool state_last) override;
 	void overCurrentWheelRight(bool state_now, bool state_last) override;
+	void remoteDirectionLeft(bool state_now, bool state_last) override;
+	void remoteDirectionRight(bool state_now, bool state_last) override;
+	void remoteDirectionForward(bool state_now, bool state_last) override;
+	bool isSwitchByEventInStateSpot() override;
 private:
 
 };

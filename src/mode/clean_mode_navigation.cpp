@@ -202,8 +202,14 @@ void CleanModeNav::remoteDirectionLeft(bool state_now, bool state_last)
 		ev.battery_home = true;
 		go_home_for_low_battery_ = true;
 	}
+	else if(sp_state == state_spot){
+		ev.remote_direction_left = true;
+		beeper.play_for_command(VALID);
+	}
 	else
 		beeper.play_for_command(INVALID);
+
+
 
 	/*if (sp_state == state_pause)
 	{
@@ -225,6 +231,10 @@ void CleanModeNav::remoteDirectionRight(bool state_now, bool state_last)
 		ROS_INFO("%s %d: Remote right.", __FUNCTION__, __LINE__);
 		ev.remote_direction_right = true;
 	}
+	else if(sp_state == state_spot){
+		ev.remote_direction_right = true;
+		beeper.play_for_command(VALID);
+	}
 	else
 		beeper.play_for_command(INVALID);
 
@@ -238,6 +248,10 @@ void CleanModeNav::remoteDirectionForward(bool state_now, bool state_last)
 		beeper.play_for_command(VALID);
 		ROS_INFO("%s %d: Remote forward.", __FUNCTION__, __LINE__);
 		ev.remote_direction_right = true;
+	}
+	else if(sp_state == state_spot){
+		ev.remote_direction_left = true;
+		beeper.play_for_command(VALID);
 	}
 	else
 		beeper.play_for_command(INVALID);
@@ -514,7 +528,11 @@ bool CleanModeNav::checkEnterTempSpotState()
 
 bool CleanModeNav::checkOutOfSpot()
 {
-	if (ev.remote_spot) {
+	if (ev.remote_spot || ev.remote_direction_forward || ev.remote_direction_left || ev.remote_direction_right)
+	{
+		ev.remote_direction_forward = false;
+		ev.remote_direction_left = false;
+		ev.remote_direction_right = false;
 		ev.remote_spot = false;
 		sp_state = state_clean;
 		sp_state->init();
