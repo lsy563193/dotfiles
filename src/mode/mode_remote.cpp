@@ -9,11 +9,11 @@
 
 ModeRemote::ModeRemote()
 {//use dynamic then you can limit using derived class member
-	// TODO: Remote mode after nav is acting weird.
 	ROS_INFO("%s %d: Entering remote mode\n=========================" , __FUNCTION__, __LINE__);
 	event_manager_register_handler(this);
 	event_manager_set_enable(true);
 
+	serial.setMainBoardMode(WORK_MODE);
 	led.setMode(LED_STEADY, LED_GREEN);
 	if (gyro.isOn())
 	{

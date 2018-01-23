@@ -206,6 +206,11 @@ uint8_t Serial::getSendData(uint8_t seq)
 	return tmp_data;
 }
 
+void Serial::setMainBoardMode(uint8_t val)
+{
+	setSendData(CTL_MAIN_BOARD_MODE, val);
+}
+
 /*
 int Serial::get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequence_number)
 {
@@ -408,11 +413,6 @@ int Serial::get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequen
 	return -1;
 }
 */
-
-void Serial::setCleanMode(uint8_t val)
-{
-	setSendData(CTL_CLEAN_MODE, val & 0xff);
-}
 
 void Serial::initCrc8(void)
 {

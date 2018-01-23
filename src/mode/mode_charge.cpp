@@ -18,8 +18,7 @@ ModeCharge::ModeCharge()
 	event_manager_set_enable(true);
 	sp_action_.reset(new MovementCharge);
 	action_i_ = ac_charge;
-//	serial.setCleanMode(Clean_Mode_Charging);
-
+	serial.setMainBoardMode(CHARGE_MODE);
 	plan_activated_status_ = false;
 }
 
@@ -44,14 +43,25 @@ bool ModeCharge::isExit()
 
 bool ModeCharge::isFinish()
 {
-	if (sp_action_->isFinish())
+	if (charger.getChargeStatus() && battery.isFull())
 	{
-		if (battery.isFull())
+		led.setMode(LED_STEADY, LED_GREEN);
+		if (battery_full_start_time_ == 0)
 		{
-			led.setMode(LED_STEADY, LED_GREEN);
-			return false;
+			speaker.play(VOICE_BATTERY_CHARGE_DONE);
+			battery_full_start_time_ = ros::Time::now().toSec();
 		}
 
+		// Show green led for 60s before going to sleep mode.
+		if (ros::Time::now().toSec() - battery_full_start_time_ >= 60)
+		{
+			setNextMode(md_sleep);
+			return true;
+		}
+	}
+
+	if (sp_action_->isFinish())
+	{
 		setNextMode(md_idle);
 		return true;
 	}

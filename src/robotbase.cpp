@@ -75,7 +75,7 @@ void robotbase_deinit(void)
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
-	serial.setCleanMode(POWER_DOWN);
+	serial.setMainBoardMode(NORMAL_SLEEP_MODE);
 	usleep(40000);
 	while(ros::ok() && !g_bye_bye){
 		usleep(2000);
@@ -102,7 +102,7 @@ void robotbase_reset_send_stream(void)
 	serial.setSendData(SEND_LEN - 2, 0xcc);
 	serial.setSendData(SEND_LEN - 1, 0x33);
 
-	serial.setCleanMode(POWER_ACTIVE);
+	serial.setMainBoardMode(IDLE_MODE);
 	uint8_t buf[SEND_LEN];
 	{
 		boost::mutex::scoped_lock lock(g_send_stream_mutex);

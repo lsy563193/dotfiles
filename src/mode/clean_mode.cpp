@@ -24,7 +24,6 @@ ACleanMode::ACleanMode()
 	lidarPoint_sub_ = clean_nh_.subscribe("lidarPoint", 1, &Lidar::lidarXYPointCb, &lidar);
 	map_sub_ = clean_nh_.subscribe("/map", 1, &Slam::mapCb, &slam);
 
-
 	tmp_target_pub_ = clean_nh_.advertise<visualization_msgs::Marker>("tmp_target", 1);
 	point_marker_pub_ = clean_nh_.advertise<visualization_msgs::Marker>("point_marker", 1);
 	send_clean_map_marker_pub_ = clean_nh_.advertise<visualization_msgs::Marker>("clean_map_markers", 1);
@@ -34,6 +33,7 @@ ACleanMode::ACleanMode()
 
 	event_manager_register_handler(this);
 	event_manager_set_enable(true);
+	serial.setMainBoardMode(WORK_MODE);
 	IMoveType::sp_mode_ = this;
 	sp_state->setMode(this);
 	ev.key_clean_pressed = false;

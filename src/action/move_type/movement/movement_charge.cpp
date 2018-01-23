@@ -8,7 +8,6 @@
 MovementCharge::MovementCharge()
 {
 	ROS_INFO("%s %d: Start charge action. Battery voltage \033[32m%5.2f V\033[0m.", __FUNCTION__, __LINE__, (float)battery.getVoltage()/100.0);
-	led.setMode(LED_BREATH, LED_ORANGE);
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
@@ -25,6 +24,7 @@ MovementCharge::MovementCharge()
 	show_battery_info_time_stamp_ = time(NULL);
 
 	speaker.play(VOICE_BATTERY_CHARGE);
+	led.setMode(LED_BREATH, LED_ORANGE);
 
 }
 
@@ -37,10 +37,6 @@ MovementCharge::~MovementCharge()
 
 bool MovementCharge::isFinish()
 {
-
-	if (battery.isFull())
-		return true;
-
 	if (!turn_for_charger_)
 	{
 		// Check for charger connection.

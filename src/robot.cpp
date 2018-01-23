@@ -228,8 +228,8 @@ void robot::robotbase_routine_cb()
 		sensor.charge_status = charger.getChargeStatus();
 
 		// For sleep status.
-		serial.isSleep((serial.receive_stream[REC_MIX_BYTE] & 0x80) == 0);
-		sensor.sleep_status = serial.isSleep();
+		serial.isMainBoardSleep((serial.receive_stream[REC_MIX_BYTE] & 0x80) == 0);
+		sensor.main_board_sleep_status = serial.isMainBoardSleep();
 
 		// For battery device.
 		battery.setVoltage(serial.receive_stream[REC_BATTERY] * 10);
@@ -252,6 +252,12 @@ void robot::robotbase_routine_cb()
 		sensor.right_wheel_oc = wheel.getRightWheelOc();
 		wheel.setLeftWheelOc((serial.receive_stream[REC_OC] & 0x20) != 0);
 		sensor.left_wheel_oc = wheel.getLeftWheelOc();
+
+		// For debug.
+//		printf("%d: REC_MIX_BYTE:(%2x), REC_VACUUM_EXCEPTION_RESUME:(%2x).\n.",
+//			   __LINE__, serial.receive_stream[REC_MIX_BYTE], serial.receive_stream[REC_VACUUM_EXCEPTION_RESUME]);
+//		printf("%d: charge:(%d), remote:(%d), key:(%d), rcon(%d).\n.",
+//			   __LINE__, charger.getChargeStatus(), remote.get(), key.getTriggerStatus(), c_rcon.getStatus());
 
 //		debug_received_stream();
 #if GYRO_DYNAMIC_ADJUSTMENT

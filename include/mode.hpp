@@ -291,6 +291,7 @@ public:
 	void remotePlan(bool state_now, bool state_last) override ;
 
 private:
+	double battery_full_start_time_{0};
 	bool plan_activated_status_;
 };
 
