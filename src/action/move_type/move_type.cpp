@@ -126,7 +126,7 @@ bool IMoveType::isFinish() {
 		if (distance == 0) {
 			p_cm->passed_path_.push_back(curr);
 			ROS_INFO("curr(%d,%d,%d)",curr.toCell().x, curr.toCell().y, static_cast<int>(radian_to_degree(curr.th)));
-			p_mode->passed_path_.push_back(curr);
+			p_cm->passed_path_.push_back(curr);
 		}
 
 		p_cm->markRealTime();//real time mark to exploration
