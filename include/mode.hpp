@@ -371,7 +371,7 @@ public:
 	Cells pointsGenerateCells(Points &targets);
 
 	// For move types
-	virtual bool moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt);
+	virtual bool moveTypeFollowWallIsFinish(IMoveType *p_mt, bool is_new_cell);
 	virtual void moveTypeFollowWallSaveBlocks();
 	virtual bool moveTypeLinearIsFinish(MoveTypeLinear *p_mt);
 	virtual void moveTypeLinearSaveBlocks();
@@ -448,6 +448,7 @@ public:
 	virtual bool updateActionInStateTrapped();
 	virtual void switchInStateTrapped();
 	bool trapped_time_out_{};
+	bool trapped_closed{};
 
 	// State exploration
 	bool isStateExploration() const
@@ -484,7 +485,6 @@ public:
 	virtual bool isSwitchByEventInStatePause(){return false;};
 	virtual bool updateActionInStatePause(){};
 	virtual void switchInStatePause(){};
-	int closed_count_{};
 	int closed_count_limit_{2};
 	State *sp_state{};
 	State* getState() const {
@@ -649,7 +649,7 @@ public:
 	bool isSwitchByEventInStateExceptionResume() override;
 
 private:
-	bool moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
+	bool moveTypeFollowWallIsFinish(IMoveType *p_mt, bool is_new_cell) override;
 	bool moveTypeLinearIsFinish(MoveTypeLinear *p_mt) override;
 
 	bool has_aligned_and_open_slam_{false};
@@ -689,7 +689,7 @@ public:
 	void switchInStateGoHomePoint() override;
 	void switchInStateGoToCharger() override;
 
-	bool moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
+	bool moveTypeFollowWallIsFinish(IMoveType *p_mt, bool is_new_cell) override;
 };
 
 class CleanModeFollowWall:public ACleanMode {
@@ -707,7 +707,7 @@ public:
 	void switchInStateTrapped() override;
 	bool generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &targets);
 
-	bool moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) override ;
+	bool moveTypeFollowWallIsFinish(IMoveType *p_mt, bool is_new_cell) override ;
 	void switchInStateInit();
 
 	bool updateActionInStateTrapped()override ;

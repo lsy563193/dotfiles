@@ -20,6 +20,7 @@ public:
 	bool shouldTurn();
 //	~IMoveType() = default;
 
+	int closed_count_{};
 	void setMode(Mode* cm)
 	{sp_mode_ = cm;}
 	Mode* getMode()
@@ -50,6 +51,7 @@ protected:
 //	Cells passed_path_;
 //	Cells tmp_plan_path_;
 	double turn_target_radian_{};
+
 	float back_distance_;
 	enum{//movement
 		mm_null,

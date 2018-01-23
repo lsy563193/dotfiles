@@ -156,14 +156,16 @@ bool CleanModeFollowWall::updateActionInStateTrapped()
 	ROS_INFO_FL();
 	sp_action_.reset();// to mark in destructor
 	old_dir_ = new_dir_;
-	if (closed_count_ == 0) {
+	auto p_mt = boost::dynamic_pointer_cast<IMoveType>(sp_action_);
+	ROS_INFO("closed_count_(%d), limit(%d)",p_mt->closed_count_, closed_count_limit_);
+	if (p_mt->closed_count_ == 0) {
 		if (generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
 			new_dir_ = plan_path_.front().th;
 			plan_path_.pop_front();
 			pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 		}
 	}
-	else if (closed_count_ <= 3) {
+	else if (p_mt->closed_count_ <= 3) {
 		if (!isIsolate()) {
 			if (generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
 				new_dir_ = plan_path_.front().th;
@@ -195,9 +197,10 @@ bool CleanModeFollowWall::updateActionInStateTrapped()
 	return true;
 }
 
-bool CleanModeFollowWall::moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) {
-	if (ACleanMode::moveTypeFollowWallIsFinish(p_mt))
+bool CleanModeFollowWall::moveTypeFollowWallIsFinish(IMoveType *p_mt,bool is_new_cell) {
+	if (ACleanMode::moveTypeFollowWallIsFinish(p_mt, is_new_cell))
 	{
+		ROS_INFO("closed_count_(%d), limit(%d)",p_mt->closed_count_, closed_count_limit_);
 		ROS_WARN("moveTypeFollowWallIsFinish close!!!");
 		return true;
 	}
@@ -221,7 +224,9 @@ bool CleanModeFollowWall::generatePath(GridMap &map, const Point_t &curr, const 
 	if (targets.empty()) {//fw ->linear
 		auto curr = getPosition();
 		fw_map.reset(CLEAN_MAP);
-		auto angle = (closed_count_ != 0 && closed_count_ <= 3) ? -900 : 0;
+		auto p_mt = boost::dynamic_pointer_cast<IMoveType>(sp_action_);
+		ROS_INFO("closed_count_(%d), limit(%d)",p_mt->closed_count_, closed_count_limit_);
+		auto angle = (p_mt->closed_count_ != 0 && p_mt->closed_count_ <= 3) ? -900 : 0;
 		auto point = getPosition().addRadian(angle);
 		targets.push_back(point);
 		ROS_WARN("curr.th = %d, angle = %d,point.th(%d)", curr.th, angle,point.th);

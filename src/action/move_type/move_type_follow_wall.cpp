@@ -55,15 +55,12 @@ bool MoveTypeFollowWall::isFinish()
 		return true;
 	}
 
-	auto p_clean_mode = dynamic_cast<ACleanMode*> (sp_mode_);
-
-	if(p_clean_mode->moveTypeFollowWallIsFinish(this))
-		return true;
+	auto p_cm = dynamic_cast<ACleanMode*> (sp_mode_);
 
 	if (sp_movement_->isFinish()) {
 		if (movement_i_ == mm_turn)
 		{
-			if (!handleMoveBackEvent(p_clean_mode))
+			if (!handleMoveBackEvent(p_cm))
 			{
 				resetTriggeredValue();// is it necessary?
 				movement_i_ = mm_straight;
@@ -72,7 +69,7 @@ bool MoveTypeFollowWall::isFinish()
 		}
 		else if (movement_i_ == mm_straight)
 		{
-			if (!handleMoveBackEvent(p_clean_mode))
+			if (!handleMoveBackEvent(p_cm))
 			{
 				resetTriggeredValue();// is it necessary?
 				movement_i_ = mm_forward;
@@ -81,9 +78,9 @@ bool MoveTypeFollowWall::isFinish()
 		}
 		else if (movement_i_ == mm_forward)
 		{
-			if (!handleMoveBackEvent(p_clean_mode))
+			if (!handleMoveBackEvent(p_cm))
 			{
-				p_clean_mode->moveTypeFollowWallSaveBlocks();
+				p_cm->moveTypeFollowWallSaveBlocks();
 				auto turn_angle = getTurnRadian(false);
 				turn_target_radian_ = getPosition().addRadian(turn_angle).th;
 				movement_i_ = mm_turn;

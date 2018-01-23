@@ -307,35 +307,44 @@ void CleanModeNav::chargeDetect(bool state_now, bool state_last)
 
 // End event handlers.
 
-bool CleanModeNav::moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt)
+bool CleanModeNav::moveTypeFollowWallIsFinish(IMoveType *p_move_type, bool is_new_cell)
 {
-	if(ACleanMode::moveTypeFollowWallIsFinish(p_mt))
-	{
-		ROS_WARN("moveTypeFollowWallIsFinish close!!!");
-		return true;
-	}
-
-
-	if (sp_state == state_trapped) {
-		if (p_mt->isBlockCleared(clean_map_, passed_path_)) {
-			ROS_INFO("\n\n\nhas BlockCleared ");
-			if(!clean_path_algorithm_->checkTrapped(clean_map_,
-																					 getPosition().toCell()))
-			{
-				ROS_WARN("has exit Trapped!!");
-				return true;
-			}else{
-				ROS_INFO("not exit Trapped!!");
-				return false;
+//	ROS_INFO_FL();
+//	ROS_INFO("CleanModeNav");
+	if(action_i_ == ac_follow_wall_right || action_i_ == ac_follow_wall_left) {
+		auto p_mt = dynamic_cast<MoveTypeFollowWall *>(p_move_type);
+		if (ACleanMode::moveTypeFollowWallIsFinish(p_mt, is_new_cell)) {
+			ROS_INFO("closed_count_(%d), limit(%d)",p_mt->closed_count_, closed_count_limit_);
+			ROS_WARN("moveTypeFollowWallIsFinish close!!!");
+			return true;
+		}
+		if (sp_state == state_trapped) {
+			if (is_new_cell) {
+//				ROS_WARN("curr(%d,%d)", getPosition().x, getPosition().y);
+				if (p_mt->isBlockCleared(clean_map_, passed_path_)) {
+					ROS_INFO("\n\n\nhas BlockCleared ");
+					if (!clean_path_algorithm_->checkTrapped(clean_map_,
+																									 getPosition().toCell())) {
+						ROS_WARN("has exit Trapped!!");
+						return true;
+					}
+					else {
+						ROS_INFO("not exit Trapped!!");
+						return false;
+					}
+				}
+				else {
+					ROS_INFO("\n\n\n not BlockCleared ");
+					return false;
+				}
 			}
 		}
-		else{
-			ROS_INFO("not BlockCleared ");
-			return false;
+		else//rounding
+		{
+			return p_mt->isNewLineReach(clean_map_) || p_mt->isOverOriginLine(clean_map_);
 		}
 	}
-	else
-		return p_mt->isNewLineReach(clean_map_) || p_mt->isOverOriginLine(clean_map_);
+	return false;
 }
 
 bool CleanModeNav::moveTypeLinearIsFinish(MoveTypeLinear *p_mt)

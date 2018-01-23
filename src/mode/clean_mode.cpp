@@ -726,9 +726,10 @@ void ACleanMode::setRconPos(Point_t pos)
 		charger_pos_ = pos;
 }
 
-bool ACleanMode::moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt)
+bool ACleanMode::moveTypeFollowWallIsFinish(IMoveType *p_mt, bool is_new_cell)
 {
-	return closed_count_ >= closed_count_limit_;
+	ROS_ERROR("closed_count_(%d), limit(%d)",p_mt->closed_count_, closed_count_limit_);
+	return p_mt->closed_count_ >= closed_count_limit_;
 }
 
 void ACleanMode::moveTypeFollowWallSaveBlocks()
@@ -1314,25 +1315,23 @@ bool ACleanMode::isSwitchByEventInStateTrapped()
 
 bool ACleanMode::updateActionInStateTrapped()
 {
-	PP_INFO();
-
-	if(closed_count_ == 0)
+	auto p_mt = boost::dynamic_pointer_cast<MoveTypeFollowWall>(sp_action_);
+	if(sp_action_ == nullptr)
 	{
 		sp_action_.reset();// to mark in destructor
 		action_i_ = ac_follow_wall_left;
 		genNextAction();
 	}
-	else if(closed_count_ <= 3) {
-		if (robot_timer.trapTimeout(ESCAPE_TRAPPED_TIME)) {
+	else if(p_mt->closed_count_ >= closed_count_limit_) {
+		trapped_closed = true;
+		action_i_ = ac_null;
+		genNextAction();
+		return false;
+	}
+	else if (robot_timer.trapTimeout(ESCAPE_TRAPPED_TIME)) {
 			action_i_ = ac_null;
 			genNextAction();
 			trapped_time_out_ = true;
-		}
-		else if (!clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell())) {
-			action_i_ = ac_null;
-			genNextAction();
-			return false;
-		}
 	}
 	return true;
 }
@@ -1340,15 +1339,20 @@ bool ACleanMode::updateActionInStateTrapped()
 void ACleanMode::switchInStateTrapped()
 {
 	PP_INFO();
-	if (trapped_time_out_) {
+
+	if(trapped_closed)
+	{
+		trapped_closed = false;
+		ROS_WARN("%s %d: closed_count_ >= closed_count_limit_!", __FUNCTION__, __LINE__);
+		sp_state = nullptr;
+	}
+	else if (trapped_time_out_) {
 		trapped_time_out_ = false;
 		ROS_WARN("%s %d: Escape trapped timeout!(%d)", __FUNCTION__, __LINE__, ESCAPE_TRAPPED_TIME);
-		closed_count_ = 0;
 		sp_state = nullptr;
 	}
 	else/* if (escape_trapped_)*/ {
 		ROS_WARN("%s %d: Escape trapped !", __FUNCTION__, __LINE__);
-		closed_count_ = 0;
 //		sp_state = (sp_tmp_state == state_clean) ? state_clean : state_exploration;
 		sp_state = sp_saved_states.back();
 		sp_saved_states.pop_back();

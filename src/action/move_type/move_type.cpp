@@ -132,12 +132,17 @@ bool IMoveType::isFinish() {
 		p_cm->markRealTime();//real time mark to exploration
 
 		if (distance > 5) {// closed
-			p_cm->closed_count_ ++;
-			ROS_INFO("closed_count_(%d), limit(%d)",p_cm->closed_count_, p_cm->closed_count_limit_);
+			closed_count_++;
 //			return p_cm->closed_count_ > p_cm->closed_count_limit_;
 		}
+		if(p_cm->moveTypeFollowWallIsFinish(this, true))
+			return true;
 //		displayPath(passed_path_);
 	}
+
+	if(p_cm->moveTypeFollowWallIsFinish(this, false))
+		return true;
+
 	return sp_mode_->isExceptionTriggered();
 }
 

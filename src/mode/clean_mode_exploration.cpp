@@ -125,8 +125,13 @@ void CleanModeExploration::switchInStateGoHomePoint() {
 	sp_state = nullptr;
 }
 
-bool CleanModeExploration::moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) {
-	return p_mt->isBlockCleared(clean_map_, passed_path_);
+bool CleanModeExploration::moveTypeFollowWallIsFinish(IMoveType *p_move_type, bool is_new_cell) {
+	if(action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
+	{
+		auto p_mt = dynamic_cast<MoveTypeFollowWall *>(p_move_type);
+		return p_mt->isBlockCleared(clean_map_, passed_path_);
+	}
+	return false;
 }
 
 bool CleanModeExploration::markRealTime() {
