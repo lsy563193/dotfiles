@@ -20,7 +20,7 @@ ActionSleep::ActionSleep()
 	usleep(100000);
 	beeper.play(4, 80, 0, 1);
 	usleep(100000);
-	led.set_mode(LED_STEADY, LED_OFF);
+	led.setMode(LED_STEADY, LED_OFF);
 	serial.setCleanMode(POWER_DOWN);
 	ROS_INFO("%s %d: Finish beeping.", __FUNCTION__, __LINE__);
 #if ENABLE_LOW_POWER_CONSUMPTION

@@ -39,5 +39,16 @@ bool MovementDirectGo::isFinish()
 void MovementDirectGo::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 {
 	wheel.setDirectionForward();
-	left_speed = right_speed = LINEAR_MAX_SPEED;
+	if (obs.getStatus() > 0)
+	{
+		speed_--;
+		check_limit(speed_, LINEAR_MIN_SPEED, LINEAR_MAX_SPEED);
+		left_speed = right_speed = speed_;
+	}
+	else
+	{
+		speed_++;
+		check_limit(speed_, LINEAR_MIN_SPEED, LINEAR_MAX_SPEED);
+		left_speed = right_speed = speed_;
+	}
 }

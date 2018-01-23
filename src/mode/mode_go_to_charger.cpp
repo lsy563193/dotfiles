@@ -14,7 +14,7 @@ ModeGoToCharger::ModeGoToCharger()
 	event_manager_set_enable(true);
 
 	speaker.play(VOICE_BACK_TO_CHARGER, false);
-	led.set_mode(LED_STEADY, LED_ORANGE);
+	led.setMode(LED_STEADY, LED_ORANGE);
 	sp_action_.reset(new ActionOpenGyro);
 	action_i_ = ac_open_gyro;
 }
@@ -66,7 +66,7 @@ IAction* ModeGoToCharger::getNextAction()
 	if(action_i_ == ac_open_gyro)
 	{
 		action_i_ = ac_go_to_charger;
-		led.set_mode(LED_STEADY, LED_ORANGE);
+		led.setMode(LED_STEADY, LED_ORANGE);
 		brush.normalOperate();
 		vacuum.setTmpMode(Vac_Speed_NormalL);
 		return new MoveTypeGoToCharger();

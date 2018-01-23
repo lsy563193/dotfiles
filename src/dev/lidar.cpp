@@ -19,7 +19,6 @@ Lidar lidar;
 
 Lidar::Lidar():angle_n_(0)
 {
-	//todo: lidar should add a status for setting ScanReady in case lidar still get a scan after shutting down.
 	setScanLinearReady(0);
 	setScanOriginalReady(0);
 	setScanCompensateReady(0);
@@ -178,7 +177,7 @@ static bool lineCombine(std::vector<LineABC> *lines_before,std::vector<LineABC> 
 					line_tmp.B = line_tmp.x1 - line_tmp.x2;
 					line_tmp.C = line_tmp.x2 * line_tmp.y1 - line_tmp.x1 * line_tmp.y2;
 					line_tmp.len = two_points_distance_double(line_tmp.x1,line_tmp.y1,line_tmp.x2,line_tmp.y2);
-					line_tmp.K = atan(-1*(line_tmp.A / line_tmp.B))*180/PI;
+					line_tmp.K = radian_to_degree(atan(-1*(line_tmp.A / line_tmp.B)));
 					lines_after->push_back(line_tmp);
 					it++;
 					ret = true;
@@ -221,13 +220,13 @@ bool Lidar::findLines(std::vector<LineABC> *lines,bool combine)
 	std::vector<Vector2<double>> point_set;
 	for(i=0;i<n_angle;i++){
 		if(scan_data.ranges[i] <= MAX_LIDAR_DIST){
-			auto cor_yaw = robot::instance()->getWorldPoseYaw();
-			auto cor_p_x = robot::instance()->getWorldPoseX();
-			auto cor_p_y = robot::instance()->getWorldPoseY();
+			auto cur_radian = robot::instance()->getWorldPoseRadian();
+			auto cur_p_x = robot::instance()->getWorldPoseX();
+			auto cur_p_y = robot::instance()->getWorldPoseY();
 
 			double ranges = scan_data.ranges[i];
-			lidar_point_pos.x = cos(cor_yaw + i*PI/180.0 + PI) *ranges + cor_p_x;//in meters
-			lidar_point_pos.y = sin(cor_yaw + i*PI/180.0 + PI) *ranges + cor_p_y;//in meters
+			lidar_point_pos.x = cos(cur_radian + degree_to_radian(i) + PI) *ranges + cur_p_x;//in meters
+			lidar_point_pos.y = sin(cur_radian + degree_to_radian(i) + PI) *ranges + cur_p_y;//in meters
 			coordinate_transform(&lidar_point_pos.x, &lidar_point_pos.y, LIDAR_THETA, LIDAR_OFFSET_X, LIDAR_OFFSET_Y);
 			point_set.push_back(lidar_point_pos);
 			lidar_point_pos.x = 0.0;
@@ -263,7 +262,7 @@ bool Lidar::findLines(std::vector<LineABC> *lines,bool combine)
 			line.A = y2-y1;
 			line.B = x1-x2;
 			line.C = x2*y1-x1*y2;
-			line.K = atan((-1)*line.A/line.B)*180/PI;
+			line.K = radian_to_degree(atan((-1)*line.A/line.B));
 			line.x1 = x1;
 			line.y1 = y1;
 			line.x2 = x2;
@@ -291,7 +290,7 @@ bool Lidar::findLines(std::vector<LineABC> *lines,bool combine)
 				last_line->A = yn_2 - line.y1;
 				last_line->B = line.x1 - xn_2;
 				last_line->C = xn_2*line.y1-line.x1*yn_2;
-				last_line->K= atan(-1*(last_line->A / last_line->B))*180/PI;
+				last_line->K= radian_to_degree(atan(-1*(last_line->A / last_line->B)));
 				last_line->x2 = xn_2;
 				last_line->y2 = yn_2;
 				last_line->len = two_points_distance_double(line.x1,line.y1,xn_2,yn_2);
@@ -401,7 +400,7 @@ bool Lidar::getAlignAngle(const std::vector<LineABC> *lines ,float *align_angle)
 }
 
 
-bool Lidar::lidarGetFitLine(double begin, double end, double range, double dis_lim, double *line_angle, double *distance,bool is_left,bool is_align)
+bool Lidar::lidarGetFitLine(double begin, double end, double range, double dis_lim, double *line_radian, double *distance,bool is_left,bool is_align)
 {
 	if(isScanCompensateReady() == 0)
 		return false;
@@ -424,30 +423,30 @@ bool Lidar::lidarGetFitLine(double begin, double end, double range, double dis_l
 	scanLinear_mutex_.lock();
 	auto tmp_scan_data = lidarScanData_compensate_;
 	scanLinear_mutex_.unlock();
-	begin = static_cast<int>(atan2(ROBOT_RADIUS * sin(begin), LIDAR_OFFSET_X + ROBOT_RADIUS * cos(begin)) * 180 / PI);
-	end = static_cast<int>(atan2(ROBOT_RADIUS * sin(end), LIDAR_OFFSET_X + ROBOT_RADIUS * cos(end)) * 180 / PI);
-	begin -= LIDAR_THETA *180/PI;
-	end -= LIDAR_THETA *180/PI;
+	begin = radian_to_degree(atan2(ROBOT_RADIUS * sin(begin), LIDAR_OFFSET_X + ROBOT_RADIUS * cos(begin)));
+	end = radian_to_degree(atan2(ROBOT_RADIUS * sin(end), LIDAR_OFFSET_X + ROBOT_RADIUS * cos(end)));
+	begin -= radian_to_degree(LIDAR_THETA);
+	end -= radian_to_degree(LIDAR_THETA);
 	if(begin < 0)
 		begin += 360;
 	if(end < 0)
 		end += 360;
 	if(begin >= end)
 		isReverse = true;
-	for (int i = begin; (i < end || isReverse);) {
+	for (auto i = static_cast<int>(begin); (i < static_cast<int>(end) || isReverse);) {
 		if(i > 359)
 			i = i - 360;
 //		ROS_INFO("i = %d", i);
 		if (tmp_scan_data.ranges[i] < 4) {
 			th = i * 1.0;
 			th = th + 180.0;
-			New_Lidar_Point.x = cos(th * PI / 180.0) * tmp_scan_data.ranges[i];
-			New_Lidar_Point.y = sin(th * PI / 180.0) * tmp_scan_data.ranges[i];
+			New_Lidar_Point.x = cos(degree_to_radian(th)) * tmp_scan_data.ranges[i];
+			New_Lidar_Point.y = sin(degree_to_radian(th)) * tmp_scan_data.ranges[i];
 			coordinate_transform(&New_Lidar_Point.x, &New_Lidar_Point.y, LIDAR_THETA, LIDAR_OFFSET_X, LIDAR_OFFSET_Y);
 			Lidar_Point.push_back(New_Lidar_Point);
 		}
 		i++;
-		if(i == end)
+		if(i == static_cast<int>(end))
 			isReverse = false;
 	}
 
@@ -455,19 +454,19 @@ bool Lidar::lidarGetFitLine(double begin, double end, double range, double dis_l
 	splitLine2nd(&Lidar_Group, t_lim_split,points_count_lim);
 	mergeLine(&Lidar_Group, t_lim_merge, is_align);
 	fitLineGroup(&Lidar_Group,dis_lim , is_align);
-	//*line_angle = atan2(-a, b) * 180 / PI;
+	//*line_radian = atan2(-a, b);
 	Lidar_Group.clear();
 	if (!fit_line.empty()) {
 		//todo mt
 		if (is_left) {
-			*line_angle = atan2(0 - fit_line.begin()->A, fit_line.begin()->B) * 180 / PI;
+			*line_radian = atan2(0 - fit_line.begin()->A, fit_line.begin()->B);
 			*distance = std::abs(fit_line.begin()->C / (sqrt(fit_line.begin()->A * fit_line.begin()->A + fit_line.begin()->B * fit_line.begin()->B)));
 		} else {
-			*line_angle = atan2(0 - fit_line.back().A, fit_line.back().B) * 180 / PI;
+			*line_radian = atan2(0 - fit_line.back().A, fit_line.back().B);
 			*distance = std::abs(fit_line.back().C / (sqrt(fit_line.back().A * fit_line.back().A + fit_line.back().B * fit_line.back().B)));
 		}
 		//ROS_INFO("a = %lf, b = %lf, c = %lf", a, b, c);
-//		ROS_ERROR("line_angle = %lf", *line_angle);
+//		ROS_ERROR("line_radian = %lf", *line_radian);
 		align_finish_ = true;
 		return true;
 	} else {
@@ -767,7 +766,7 @@ bool Lidar::fitLineGroup(std::vector<std::deque<Vector2<double>> > *groups, doub
 				continue;
 			}
 			fit_line.push_back(new_fit_line);
-			ROS_DEBUG("%s %d: line_angle%d = %lf", __FUNCTION__, __LINE__, loop_count, line_angle);
+			//ROS_DEBUG("%s %d: line_angle%d = %lf", __FUNCTION__, __LINE__, loop_count, line_angle);
 			loop_count++;
 		}
 		ACleanMode::pubLineMarker(&fit_line);
@@ -845,29 +844,29 @@ static uint8_t setLidarMarkerAcr2Dir(double X_MIN,double X_MAX,int angle_from,in
 		if (scan_range->ranges[i] < 4) {
 			th = i*1.0 + 180.0;
 			if(j >= 314 && j < 404){//314~44
-				x = -cos(th * PI / 180.0) * scan_range->ranges[i];
-				//y = -sin(th * PI / 180.0) * scan_range->ranges[i];
+				x = -cos(degree_to_radian(th)) * scan_range->ranges[i];
+				//y = -sin(degree_to_radian(th)) * scan_range->ranges[i];
 				if (x > X_MIN && x < X_MAX ) {
 					count++;
 				}
 			}
 			else if( j >= 44 && j < 134){
-				//x = cos(th * PI / 180.0) * scan_range->ranges[i];
-				y = -sin(th * PI / 180.0) * scan_range->ranges[i];
+				//x = cos(degree_to_radian(th)) * scan_range->ranges[i];
+				y = -sin(degree_to_radian(th)) * scan_range->ranges[i];
 				if (y > Y_MIN && y < Y_MAX ) {
 					count++;
 				}
 			}
 			else if( j >= 134 && j < 224){
-				x = cos(th * PI / 180.0) * scan_range->ranges[i];
-				//y = sin(th * PI / 180.0) * scan_range->ranges[i];
+				x = cos(degree_to_radian(th)) * scan_range->ranges[i];
+				//y = sin(degree_to_radian(th)) * scan_range->ranges[i];
 				if (x > X_MIN && x < X_MAX ) {
 					count++;
 				}
 			}
 			else if( j >= 224 && j < 314){
-				//x = cos(th * PI / 180.0) * scan_range->ranges[i];
-				y = sin(th * PI / 180.0) * scan_range->ranges[i];
+				//x = cos(degree_to_radian(th)) * scan_range->ranges[i];
+				y = sin(degree_to_radian(th)) * scan_range->ranges[i];
 				if (y > Y_MIN && y < Y_MAX ) {
 					count++;
 				}
@@ -1169,19 +1168,19 @@ int Lidar::compLaneDistance()
 	}
 	ROS_INFO("compLaneDistance");
 	seq = tmp_scan_data.header.seq;
-//	int cur_angle = robot::instance()->getWorldPoseYaw() / 10;
-	auto cur_angle = robot::instance()->getWorldPoseYaw();
+//	int cur_radian = robot::instance()->getWorldPoseRadian() / 10;
+	auto cur_radian = robot::instance()->getWorldPoseRadian();
 #if 0
-	angle_from = 149 - cur_angle;
-	angle_to = 210 - cur_angle;
-	ROS_INFO("cur_angle = %d", cur_angle);
+	angle_from = 149 - cur_radian;
+	angle_to = 210 - cur_radian;
+	ROS_INFO("cur_radian = %d", cur_radian);
 	for (int j = angle_from; j < angle_to; j++) {
 		int i = j>359? j-360:j;
 		if (tmp_scan_data.ranges[i] < 4) {
 			th = i*1.0 + 180.0;
 			x = cos(th * PI / 180.0) * tmp_scan_data.ranges[i];
 			y = sin(th * PI / 180.0) * tmp_scan_data.ranges[i];
-			x1 = x * cos(0 - cur_angle * PI / 180.0) + y * sin(0 - cur_angle * PI / 180.0);
+			x1 = x * cos(0 - cur_radian * PI / 180.0) + y * sin(0 - cur_radian * PI / 180.0);
 			//ROS_INFO("x = %lf, y = %lf, x1 = %lf, y1 = %lf", x, y, x1, y1);
 			if (std::abs(y1) < ROBOT_RADIUS) {
 				if (std::abs(x1) <= x_front_min) {
@@ -1192,16 +1191,16 @@ int Lidar::compLaneDistance()
 		}
 	}
 
-	angle_from = 329 - cur_angle;
-	angle_to = 400 - cur_angle;
+	angle_from = 329 - cur_radian;
+	angle_to = 400 - cur_radian;
 	for (int j = angle_from; j < angle_to; j++) {
 		int i = j>359? j-360:j;
 		if (tmp_scan_data.ranges[i] < 4) {
 			th = i*1.0 + 180.0;
 			x = cos(th * PI / 180.0) * tmp_scan_data.ranges[i];
 			y = sin(th * PI / 180.0) * tmp_scan_data.ranges[i];
-			x1 = x * cos(0 - cur_angle * PI / 180.0) + y * sin(0 - cur_angle * PI / 180.0);
-			y1 = y * cos(0 - cur_angle * PI / 180.0) - x * sin(0 - cur_angle * PI / 180.0);
+			x1 = x * cos(0 - cur_radian * PI / 180.0) + y * sin(0 - cur_radian * PI / 180.0);
+			y1 = y * cos(0 - cur_radian * PI / 180.0) - x * sin(0 - cur_radian * PI / 180.0);
 			//ROS_INFO("x = %lf, y = %lf, x1 = %lf, y1 = %lf", x, y, x1, y1);
 			if (std::abs(y1) < ROBOT_RADIUS) {
 				if (std::abs(x1) <= x_back_min) {
@@ -1217,10 +1216,10 @@ int Lidar::compLaneDistance()
 	for (int i = 0; i < 360; i++) {
 		if (tmp_scan_data.ranges[i] < 4) {
 			th = i*1.0 + 180.0;
-			x = cos(th * PI / 180.0) * tmp_scan_data.ranges[i];
-			y = sin(th * PI / 180.0) * tmp_scan_data.ranges[i];
+			x = cos(degree_to_radian(th)) * tmp_scan_data.ranges[i];
+			y = sin(degree_to_radian(th)) * tmp_scan_data.ranges[i];
 			coordinate_transform(&x, &y, LIDAR_THETA, LIDAR_OFFSET_X, LIDAR_OFFSET_Y);
-			coordinate_transform(&x, &y, cur_angle * PI/180, 0, 0);
+			coordinate_transform(&x, &y, cur_radian, 0, 0);
 			//ROS_INFO("x = %lf, y = %lf", x, y);
 			if (std::abs(y) < ROBOT_RADIUS) {
 				if (x >= 0){

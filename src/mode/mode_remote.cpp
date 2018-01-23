@@ -14,7 +14,7 @@ ModeRemote::ModeRemote()
 	event_manager_register_handler(this);
 	event_manager_set_enable(true);
 
-	led.set_mode(LED_STEADY, LED_GREEN);
+	led.setMode(LED_STEADY, LED_GREEN);
 	if (gyro.isOn())
 	{
 		sp_action_.reset(new MovementStay());
@@ -110,13 +110,13 @@ IAction* ModeRemote::getNextAction()
 		{
 			action_i_ = ac_turn;
 			ev.remote_direction_left = false;
-			return new MovementTurn(robot::instance()->getWorldPoseYaw() + 300*PI/180.0, ROTATE_TOP_SPEED);
+			return new MovementTurn(robot::instance()->getWorldPoseRadian() + degree_to_radian(30), ROTATE_TOP_SPEED);
 		}
 		else if (ev.remote_direction_right)
 		{
 			action_i_ = ac_turn;
 			ev.remote_direction_right = false;
-			return new MovementTurn(robot::instance()->getWorldPoseYaw() - 300*PI/180.0, ROTATE_TOP_SPEED);
+			return new MovementTurn(robot::instance()->getWorldPoseRadian() - degree_to_radian(30), ROTATE_TOP_SPEED);
 		}
 	}
 

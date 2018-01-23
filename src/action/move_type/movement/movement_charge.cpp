@@ -8,7 +8,7 @@
 MovementCharge::MovementCharge()
 {
 	ROS_INFO("%s %d: Start charge action. Battery voltage \033[32m%5.2f V\033[0m.", __FUNCTION__, __LINE__, (float)battery.getVoltage()/100.0);
-	led.set_mode(LED_BREATH, LED_ORANGE);
+	led.setMode(LED_BREATH, LED_ORANGE);
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
@@ -58,7 +58,7 @@ bool MovementCharge::isFinish()
 			}
 			else
 			{
-				led.set_mode(LED_STEADY, LED_ORANGE);
+				led.setMode(LED_STEADY, LED_ORANGE);
 				turn_for_charger_ = true;
 				start_turning_time_stamp_ = ros::Time::now().toSec();
 				turn_right_finish_ = false;

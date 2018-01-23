@@ -124,7 +124,7 @@ bool IMoveType::isFinish() {
 		});
 		auto distance = std::distance(loc, p_mode->passed_path_.end());
 		if (distance == 0) {
-			ROS_INFO("curr(%d,%d,%d)",curr.toCell().x, curr.toCell().y, static_cast<int>(curr.th*180/PI));
+			ROS_INFO("curr(%d,%d,%d)",curr.toCell().x, curr.toCell().y, static_cast<int>(radian_to_degree(curr.th)));
 			p_mode->passed_path_.push_back(curr);
 		}
 		if (distance > 5) {

@@ -14,7 +14,7 @@ MovementFollowWallLidar::MovementFollowWallLidar(bool is_left)
 {
 
 	ROS_INFO("%s %d: Enter movement follow wall %s.", __FUNCTION__, __LINE__, is_left ? "left" : "right");
-	angle_forward_to_turn_ = 60*PI/180;
+	angle_forward_to_turn_ = degree_to_radian(60);
 	min_speed_ = FALL_WALL_MIN_SPEED;
 	max_speed_ = FALL_WALL_MAX_SPEED;
 	base_speed_ = min_speed_;

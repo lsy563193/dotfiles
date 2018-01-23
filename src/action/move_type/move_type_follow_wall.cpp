@@ -17,10 +17,10 @@ MoveTypeFollowWall::MoveTypeFollowWall(bool is_left)
 //	if(! p_clean_mode->plan_path_.empty())
 //		p_clean_mode.target_point_ = p_clean_mode->plan_path_.front();
 	is_left_ = is_left;
-	auto turn_angle = getTurnAngle(!p_mode->plan_path_.empty());
-	turn_target_angle_ = getPosition().addAngle(turn_angle).th;
+	auto turn_radian = getTurnRadian(!p_mode->plan_path_.empty());
+	turn_target_radian_ = getPosition().addRadian(turn_radian).th;
 	movement_i_ = mm_turn;
-	sp_movement_.reset(new MovementTurn(turn_target_angle_, ROTATE_TOP_SPEED));
+	sp_movement_.reset(new MovementTurn(turn_target_radian_, ROTATE_TOP_SPEED));
 	IMovement::sp_mt_ = this;
 
 	resetTriggeredValue();
@@ -84,18 +84,18 @@ bool MoveTypeFollowWall::isFinish()
 			if (!handleMoveBackEvent(p_clean_mode))
 			{
 				p_clean_mode->moveTypeFollowWallSaveBlocks();
-				auto turn_angle = getTurnAngle(false);
-				turn_target_angle_ = getPosition().addAngle(turn_angle).th;
+				auto turn_angle = getTurnRadian(false);
+				turn_target_radian_ = getPosition().addRadian(turn_angle).th;
 				movement_i_ = mm_turn;
-				sp_movement_.reset(new MovementTurn(turn_target_angle_, ROTATE_TOP_SPEED));
+				sp_movement_.reset(new MovementTurn(turn_target_radian_, ROTATE_TOP_SPEED));
 				resetTriggeredValue();
 			}
 		}
 		else if (movement_i_ == mm_back) {
 			movement_i_ = mm_turn;
-			auto turn_angle = getTurnAngle(false);
-			turn_target_angle_ = getPosition().addAngle(turn_angle).th;
-			sp_movement_.reset(new MovementTurn(turn_target_angle_, ROTATE_TOP_SPEED));
+			auto turn_angle = getTurnRadian(false);
+			turn_target_radian_ = getPosition().addRadian(turn_angle).th;
+			sp_movement_.reset(new MovementTurn(turn_target_radian_, ROTATE_TOP_SPEED));
 			resetTriggeredValue();
 		}
 	}
@@ -210,84 +210,90 @@ int16_t MoveTypeFollowWall::rconTurnAngle()
 	return turn_angle;
 }
 
-bool MoveTypeFollowWall::_lidarTurnAngle(bool is_left, double &turn_angle, double lidar_min, double lidar_max, double angle_min,
-										 double angle_max, double dis_limit)
+bool MoveTypeFollowWall::_lidarTurnRadian(bool is_left, double &turn_radian, double lidar_min, double lidar_max,
+										  double radian_min,
+										  double radian_max, double dis_limit)
 {
 //	ROS_INFO("%s,%d,bumper (\033[32m%d\033[0m)!",__FUNCTION__,__LINE__,bumper.getStatus());
-	double line_angle;
+	double line_radian;
 	double distance;
 //	auto RESET_WALL_DIS = 100;
-	auto line_is_found = lidar.lidarGetFitLine(lidar_min, lidar_max, -1.0, dis_limit, &line_angle, &distance,is_left_);
+	auto line_is_found = lidar.lidarGetFitLine(lidar_min, lidar_max, -1.0, dis_limit, &line_radian, &distance,is_left_);
 //	RESET_WALL_DIS = int(distance * 1000);
 
 //	ROS_INFO("line_distance = %lf", distance);
-//	ROS_INFO("line_angle_raw = %lf", line_angle);
-	auto angle = line_angle;
+//	ROS_INFO("line_angle_raw = %lf", line_radian);
+	auto radian = line_radian;
 
 	if (is_left_)
-		angle  = PI - line_angle;
+		radian  = PI - line_radian;
 
-//	ROS_INFO("line_angle = %d", angle);
-	if (line_is_found && angle >= angle_min && angle < angle_max)
+//	ROS_INFO("line_radian = %d", radian);
+	if (line_is_found && radian >= radian_min && radian < radian_max)
 	{
 //		ROS_ERROR("distance: %f",(distance*100.0-16.7));
-		line_angle=std::abs(line_angle);
-		if(line_angle < PI/4)
-			robot_to_wall_distance=g_back_distance*100*sin(line_angle);
+		line_radian=std::abs(line_radian);
+		if(line_radian < PI/4)
+			robot_to_wall_distance=g_back_distance*100*sin(line_radian);
 		else
-			robot_to_wall_distance=g_back_distance*100*sin(PI-line_angle);
-//		ROS_ERROR("left_x= %f  left_angle= %lf",x,line_angle);
-		turn_angle = !is_left ? angle : -angle;
-//		ROS_INFO("lidar generate turn angle(%d)!",turn_angle);
+			robot_to_wall_distance=g_back_distance*100*sin(PI-line_radian);
+//		ROS_ERROR("left_x= %f  left_angle= %lf",x,line_radian);
+		turn_radian = !is_left ? radian : -radian;
+//		ROS_INFO("lidar generate turn radian(%d)!",turn_radian);
 		return true;
 	}
 	return false;
 }
 
-bool MoveTypeFollowWall::lidarTurnAngle(double &turn_angle)
+bool MoveTypeFollowWall::lidarTurnRadian(double &turn_radian)
 {
-//	ROS_INFO("%s,%d: mt.is_fw",__FUNCTION__, __LINE__);
 	wheel.stop();
 
 	if (ev.obs_triggered)
 	{
 //		ROS_INFO("%s %d: \033[32mfront obs trigger.\033[0m", __FUNCTION__, __LINE__);
-		return _lidarTurnAngle(is_left_, turn_angle, PI/4, 270*PI/180, 45*PI/180, PI, 0.25);
+		return _lidarTurnRadian(is_left_, turn_radian, degree_to_radian(45),
+								degree_to_radian(270), degree_to_radian(45), degree_to_radian(180), 0.25);
+//		return _lidarTurnRadian(is_left_, turn_radian, PI/4, 270*PI/180, 45*PI/180, PI, 0.25);
 	}
 	else if(ev.bumper_triggered)
 	{
-		int angle_min, angle_max;
+		double radian_min, radian_max;
 		if (is_left_ ^ (ev.bumper_triggered == BLOCK_LEFT))
 		{
-			angle_min = 600;
-			angle_max = 1800;
+			radian_min = degree_to_radian(60);
+			radian_max = degree_to_radian(180);
 		}
 		else
 		{
-			angle_min = 180;
-			angle_max = 900;
+			radian_min = degree_to_radian(180);
+			radian_max = degree_to_radian(90);
 		}
 
 		if (ev.bumper_triggered == BLOCK_ALL) {
 //			ROS_INFO("%s %d: AllBumper trigger.", __FUNCTION__, __LINE__);
-			return _lidarTurnAngle(is_left_, turn_angle, PI/4, 270*PI/180, PI/4, PI);
+			return _lidarTurnRadian(is_left_, turn_radian, degree_to_radian(45), degree_to_radian(270), degree_to_radian(45), degree_to_radian(180));
+//			return _lidarTurnRadian(is_left_, turn_radian, PI / 4, 270 * PI / 180, PI / 4, PI);
 		}
 		else if (ev.bumper_triggered == BLOCK_RIGHT) {
 //			ROS_INFO("%s %d: RightBumper trigger.", __FUNCTION__, __LINE__);
-			return _lidarTurnAngle(is_left_, turn_angle, PI/4, PI, angle_min, angle_max);
+			return _lidarTurnRadian(is_left_, turn_radian, degree_to_radian(45), degree_to_radian(180), radian_min, radian_max);
+//			return _lidarTurnRadian(is_left_, turn_radian, PI / 4, PI, radian_min, radian_max);
 		}
 		else if (ev.bumper_triggered == BLOCK_LEFT) {
 //			ROS_INFO("%s %d: LeftBumper trigger.", __FUNCTION__, __LINE__);
-			return _lidarTurnAngle(is_left_, turn_angle, PI, 270/PI*180, angle_min, angle_max);
+			return _lidarTurnRadian(is_left_, turn_radian, degree_to_radian(180), degree_to_radian(270), radian_min, radian_max);
+//			return _lidarTurnRadian(is_left_, turn_radian, PI, 270 / PI * 180, radian_min, radian_max);
 		}
 	}
 	else if (ev.lidar_triggered)
-		return _lidarTurnAngle(is_left_, turn_angle, PI/4, 270*PI/180, PI/2, PI);
+		return _lidarTurnRadian(is_left_, turn_radian, degree_to_radian(45), degree_to_radian(270), degree_to_radian(90), degree_to_radian(180));
+//		return _lidarTurnRadian(is_left_, turn_radian, PI / 4, 270 * PI / 180, PI / 2, PI);
 
 	return false;
 }
 
-double MoveTypeFollowWall::getTurnAngleByEvent()
+double MoveTypeFollowWall::getTurnRadianByEvent()
 {
 	int16_t turn_angle{};
 	if (ev.bumper_triggered) {
@@ -326,38 +332,39 @@ double MoveTypeFollowWall::getTurnAngleByEvent()
 		turn_angle = obsTurnAngle();
 		ROS_INFO("%s %d: slip triggered, turn_angle: %d.", __FUNCTION__, __LINE__, turn_angle);
 	}
-	return turn_angle*PI/180;
+	return degree_to_radian(turn_angle);
 }
 
-double MoveTypeFollowWall::getTurnAngle(bool use_target_angle)
+double MoveTypeFollowWall::getTurnRadian(bool use_target_radian)
 {
-	double  turn_angle{};
+	double  turn_radian{};
 	if(state_turn){
 		state_turn = false;
-		auto diff = boost::dynamic_pointer_cast<AMovementFollowPoint>(sp_movement_)->yaw_diff;
-		ROS_INFO("%s %d: Use yaw_diff(%f)", __FUNCTION__, __LINE__, diff);
+		auto diff = boost::dynamic_pointer_cast<AMovementFollowPoint>(sp_movement_)->radian_diff;
+		ROS_INFO("%s %d: Use radian_diff(%f)", __FUNCTION__, __LINE__, diff);
 		return diff;
 	}
-	if (LIDAR_FOLLOW_WALL && lidarTurnAngle(turn_angle)) {
-		ROS_INFO("%s %d: Use lidarTurnAngle(%f)", __FUNCTION__, __LINE__, turn_angle*180/PI);
+	if (LIDAR_FOLLOW_WALL && lidarTurnRadian(turn_radian)) {
+		ROS_INFO("%s %d: Use lidarTurnRadian(%f in degree)", __FUNCTION__, __LINE__, radian_to_degree(turn_radian));
 	}
 	else {
-		auto ev_turn_angle = getTurnAngleByEvent();
-		if(use_target_angle) {
+		auto ev_turn_radian = getTurnRadianByEvent();
+		if(use_target_radian) {
 			auto target_point_ = dynamic_cast<ACleanMode*> (sp_mode_)->plan_path_.front();
-			auto target_turn_angle = getPosition().courseToDest(target_point_);
-			turn_angle = std::abs(ev_turn_angle) > std::abs(target_turn_angle) ? ev_turn_angle : target_turn_angle;
-			ROS_INFO("%s %d: target_turn_angle(%f), event_turn_angle(%f), choose the big one(%f)",
-					 __FUNCTION__, __LINE__, target_turn_angle*180/PI, ev_turn_angle*180/PI, turn_angle*180/PI);
+			auto target_turn_radian = getPosition().courseToDest(target_point_);
+			turn_radian = std::abs(ev_turn_radian) > std::abs(target_turn_radian) ? ev_turn_radian : target_turn_radian;
+			ROS_INFO("%s %d: target_turn_radian(%f in degree), event_turn_radian(%f in degree), choose the big one(%f in degree)",
+					 __FUNCTION__, __LINE__, radian_to_degree(target_turn_radian),
+					 radian_to_degree(ev_turn_radian), radian_to_degree(turn_radian));
 		}
 		else
 		{
-			turn_angle = ev_turn_angle;
-			ROS_INFO("%s %d: Use event_turn_angle(%d)", __FUNCTION__, __LINE__, turn_angle*180/PI);
+			turn_radian = ev_turn_radian;
+			ROS_INFO("%s %d: Use event_turn_radian(%f in degree)", __FUNCTION__, __LINE__, radian_to_degree(turn_radian));
 		}
 	}
 	resetTriggeredValue();
-	return turn_angle;
+	return turn_radian;
 }
 
 bool MoveTypeFollowWall::isOverOriginLine(GridMap &map)
@@ -369,10 +376,10 @@ bool MoveTypeFollowWall::isOverOriginLine(GridMap &map)
 	{
 //		ROS_WARN("origin(%d,%d) curr_p(%d, %d), target_point__(%d, %d)",start_point_.x, start_point_.y,  curr.x, curr.y, target_point_.x, target_point_.y);
 //		auto target_angle = (target_point_.y > start_point_.y) ? -900 : 900;
-//		if (std::abs(ranged_angle(robot::instance()->getWorldPoseYaw() - target_angle)) < 50) // If robot is directly heading to the opposite side of target line, stop.
+//		if (std::abs(ranged_radian(robot::instance()->getWorldPoseRadian() - target_angle)) < 50) // If robot is directly heading to the opposite side of target line, stop.
 //		{
 //			ROS_WARN("%s %d: Opposite to target angle. curr(%d, %d), target_point_(%d, %d), gyro(%d), target_angle(%d)", __FUNCTION__, __LINE__, curr.x, curr.y, target_point_.x, target_point_.y,
-//					 robot::instance()->getWorldPoseYaw(), target_angle);
+//					 robot::instance()->getWorldPoseRadian(), target_angle);
 //			return true;
 //		}
 //		else if (map.isBlockCleaned(curr.toCell().x, curr.toCell().y)) // If robot covers a big block, stop.

@@ -7,20 +7,21 @@
 #include "dev.h"
 #include "robot.hpp"
 
-MovementTurn::MovementTurn(double angle, uint8_t max_speed) : speed_(ROTATE_LOW_SPEED)
+
+MovementTurn::MovementTurn(double radian, uint8_t max_speed) : speed_(ROTATE_LOW_SPEED)
 {
-	accurate_ = ROTATE_TOP_SPEED > 30 ? 3.0*PI/180 : 1.5*PI/180;
-	target_angle_ = angle;
+	accurate_ = ROTATE_TOP_SPEED > 30 ? degree_to_radian(3) : degree_to_radian(1.5);
+	target_radian_ = radian;
 	max_speed_ = max_speed;
-	ROS_INFO("%s, %d: MovementTurn init, target_angle_: \033[32m%d\033[0m, current angle: \033[32m%d\033[0m."
-			, __FUNCTION__, __LINE__, static_cast<int>(target_angle_*180/PI), static_cast<int>(getPosition().th*180/PI));
+	ROS_INFO("%s, %d: MovementTurn init, target_radian_: \033[32m%f (in degree)\033[0m, current radian: \033[32m%f (in degree)\033[0m."
+			, __FUNCTION__, __LINE__, radian_to_degree(ranged_radian(target_radian_)), radian_to_degree(getPosition().th));
 }
 
 bool MovementTurn::isReach()
 {
-	if (std::abs(ranged_angle(getPosition().th - target_angle_)) < accurate_){
-			ROS_INFO("%s, %d: MovementTurn finish, target_angle_: \033[32m%d\033[0m, current angle: \033[32m%d\033[0m."
-					, __FUNCTION__, __LINE__, static_cast<int>(target_angle_*180/PI), static_cast<int>(getPosition().th*180/PI));
+	if (std::abs(ranged_radian(getPosition().th - target_radian_)) < accurate_){
+		ROS_INFO("%s, %d: MovementTurn finish, target_radian_: \033[32m%f (in degree)\033[0m, current radian: \033[32m%f (in degree)\033[0m."
+		, __FUNCTION__, __LINE__, radian_to_degree(ranged_radian(target_radian_)), radian_to_degree(getPosition().th));
 		return true;
 	}
 	return false;
@@ -28,16 +29,16 @@ bool MovementTurn::isReach()
 
 void MovementTurn::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
-	auto diff = ranged_angle(target_angle_ - getPosition().th);
-//	ROS_INFO("%s %d: MovementTurn diff: %f, cm_target_p_.th: %f, current angle: %f.", __FUNCTION__, __LINE__, diff, target_angle_, robot::instance()->getWorldPoseYaw());
+	auto diff = ranged_radian(target_radian_ - getPosition().th);
+//	ROS_INFO("%s %d: MovementTurn diff: %f, cm_target_p_.th: %f, current angle: %f.", __FUNCTION__, __LINE__, diff, target_radian_, robot::instance()->getWorldPoseRadian());
 	(diff >= 0) ? wheel.setDirectionLeft() : wheel.setDirectionRight();
 
 //	ROS_INFO("MovementTurn::adjustSpeed");
-	if (std::abs(diff) > 20*PI/180){
+	if (std::abs(diff) > degree_to_radian(20)){
 		speed_ += 1;
 		speed_ = std::min(speed_, max_speed_);
 	}
-	else if (std::abs(diff) > 10*PI/180){
+	else if (std::abs(diff) > degree_to_radian(10)){
 		speed_ -= 2;
 		uint8_t low_speed = ROTATE_LOW_SPEED + 5;
 		speed_ = std::max(speed_, low_speed);

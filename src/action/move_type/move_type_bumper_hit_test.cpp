@@ -45,9 +45,9 @@ bool MoveTypeBumperHitTest::isFinish()
 		float back_distance = 0.08;
 		p_back_movement_.reset(new MovementBack(back_distance, 40));
 		if (turn_left_)
-			turn_target_angle_ = getPosition().addAngle(900).th;
+			turn_target_angle_ = getPosition().addRadian(900).th;
 		else
-			turn_target_angle_ = getPosition().addAngle(-900).th;
+			turn_target_angle_ = getPosition().addRadian(-900).th;
 		p_turn_movement_.reset(new MovementTurn(turn_target_angle_, 40));
 		turn_left_ = !turn_left_;
 	}

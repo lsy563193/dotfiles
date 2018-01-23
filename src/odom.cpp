@@ -2,12 +2,13 @@
 // Created by austin on 17-11-24.
 //
 
+#include <mathematics.h>
 #include "odom.h"
 #include "ros/ros.h"
 
 Odom odom;
 
-Odom::Odom():moving_speed_(0), angle_speed_(0), angle_offset_(0)
+Odom::Odom():moving_speed_(0), angle_speed_(0), radian_offset_(0)
 {
 }
 
@@ -45,25 +46,25 @@ float Odom::getZ(void)
 	return pose.getZ();
 }
 
-void Odom::setAngle(float angle)
+void Odom::setRadian(double radian)
 {
-	pose.setAngle(angle + getAngleOffset());
+	pose.setRadian(radian + getRadianOffset());
 }
 
-float Odom::getAngle(void)
+double Odom::getRadian(void)
 {
-	return pose.getAngle();
+	return pose.getRadian();
 }
 
-void Odom::setAngleOffset(float angle)
+void Odom::setRadianOffset(double radian)
 {
-	angle_offset_ = angle;
-	ROS_INFO("%s %d: Set odom angle offset to %f.", __FUNCTION__, __LINE__, angle_offset_);
+	radian_offset_ = radian;
+	ROS_INFO("%s %d: Set odom radian offset to %f(%f degrees).", __FUNCTION__, __LINE__, radian_offset_, radian_to_degree(radian_offset_));
 }
 
-float Odom::getAngleOffset(void)
+double Odom::getRadianOffset(void)
 {
-	return angle_offset_;
+	return radian_offset_;
 }
 
 void Odom::setMovingSpeed(float speed)

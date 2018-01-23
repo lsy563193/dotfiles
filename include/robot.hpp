@@ -68,24 +68,24 @@ public:
 		return is_tf_ready_;
 	}
 
-	double getWorldPoseYaw()
+	double getWorldPoseRadian()
 	{
-		return robot_yaw_;
+		return robot_radian_;
 	}
 
 	float getWorldPoseX()
 	{
-		return robot_pos.x();
+		return static_cast<float>(robot_pos.x());
 	}
 
 	float getWorldPoseY()
 	{
-		return robot_pos.y();
+		return static_cast<float>(robot_pos.y());
 	}
 
 	float getWorldPoseZ()
 	{
-		return robot_pos.z();
+		return static_cast<float>(robot_pos.z());
 	}
 /*
 
@@ -100,7 +100,7 @@ public:
 	}
 */
 
-	double getRobotCorrectionYaw() const
+	double getRobotCorrectionRadian() const
 	{
 		return robot_correction_yaw_;
 	}
@@ -151,18 +151,9 @@ private:
 	bool is_tf_ready_{};
 
 	bool temp_spot_set_{};
-/*
-	// TODO: Delete these offset variables.
-	boost::mutex offset_angle_metux_;
-	float offset_angle_;
-	float start_angle_;
-	float saved_offset_angle_;
-*/
-
-	bool	is_align_active_;
 
 	tf::Vector3	robot_pos;
-	double	robot_yaw_;
+	double	robot_radian_;
 
 	// This is for the slam correction variables.
 	tf::Vector3	robot_correction_pos;

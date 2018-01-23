@@ -7,7 +7,7 @@
 #include "key_led.h"
 
 void StateExploration::init() {
-	led.set_mode(LED_STEADY, LED_ORANGE);
+	led.setMode(LED_STEADY, LED_ORANGE);
 }
 
 

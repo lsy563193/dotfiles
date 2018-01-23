@@ -17,8 +17,8 @@ public:
 	float getY(void);
 	void setZ(float z);
 	float getZ(void);
-	void setAngle(float angle);
-	float getAngle(void);
+	void setRadian(double radian);
+	double getRadian(void);
 
 private:
 	// In meters.
@@ -26,8 +26,8 @@ private:
 	float y_;
 	float z_;
 
-	// In degrees.
-	float angle_;
+	// In radian.
+	double radian_;
 };
 
 #endif //PP_POSE_H

@@ -4,32 +4,28 @@
 #include "mathematics.h"
 #include "ros/ros.h"
 
-double ranged_angle(double angle)
+double ranged_radian(double radian)
 {
-	while (angle > PI || angle <= -PI)
+	while (radian > PI || radian <= -PI)
 	{
-		if (angle > PI) {
-			angle -= PI*2;
+		if (radian > PI) {
+			radian -= PI*2;
 		} else
-		if (angle <= -PI) {
-			angle += PI*2;
+		if (radian <= -PI) {
+			radian += PI*2;
 		}
 	}
-	return angle;
+	return radian;
 }
-/*
-double deg_to_rad(double deg, int8_t scale)
+double degree_to_radian(double deg)
 {
-	return (deg * PI / (180 * scale));
+	return (deg * PI / 180);
 }
-*/
 
-/*
-double rad_2_deg(double rad, int8_t scale)
+double radian_to_degree(double rad)
 {
-	return (scale * rad * 180 / PI);
+	return (rad * 180 / PI);
 }
-*/
 
 float two_points_distance_double(float startx,float starty,float destx,float desty)
 {
@@ -53,8 +49,6 @@ void matrix_translate(double *x, double *y, double offset_x, double offset_y)
 void matrix_rotate(double *x, double *y, double theta)
 {
 	double d, e;
-
-//	theta = deg_to_rad(theta, 10);
 
 	d = (*x) * cos(theta) - (*y) * sin(theta);
 	e = (*x) * sin(theta) + (*y) * cos(theta);
