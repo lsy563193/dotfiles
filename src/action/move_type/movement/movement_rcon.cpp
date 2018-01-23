@@ -10,12 +10,12 @@
 
 void MovementRcon::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
-	ROS_INFO("rcon_status = %x ev.rcon_triggered = %x", rcon_status, ev.rcon_triggered);
+//	ROS_INFO("rcon_status = %x ev.rcon_triggered = %x", rcon_status, ev.rcon_triggered);
 	rcon_status = ev.rcon_triggered;
-	ROS_INFO("rcon_status = %x", rcon_status);
+//	ROS_INFO("rcon_status = %x", rcon_status);
 	/*---only use a part of the Rcon signal---*/
 	rcon_status &= (RconFL2_HomeT|RconFR_HomeT|RconFL_HomeT|RconFR2_HomeT);
-	ROS_INFO("rcon_status = %x", rcon_status);
+//	ROS_INFO("rcon_status = %x", rcon_status);
 	if(rcon_status) {
 		seen_charger_counter_ = 40;
 //		g_rcon_triggered = get_rcon_trig();
@@ -46,12 +46,12 @@ void MovementRcon::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 			r_speed = is_left_ ? linear_speed - angular_speed : linear_speed + angular_speed;
 			left_speed_ = l_speed;
 			right_speed_ = r_speed;
-			ROS_INFO("speed(%d, %d)", l_speed, r_speed);
+//			ROS_INFO("speed(%d, %d)", l_speed, r_speed);
 			return;
 		} else {
 			l_speed = left_speed_;
 			r_speed = right_speed_;
-			ROS_WARN("speed(%d, %d)", l_speed, r_speed);
+//			ROS_WARN("speed(%d, %d)", l_speed, r_speed);
 			return;
 		}
 	}
@@ -59,9 +59,9 @@ void MovementRcon::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		seen_charger_counter_--;
 		l_speed = left_speed_;
 		r_speed = right_speed_;
-		ROS_WARN("speed(%d, %d)", l_speed, r_speed);
+//		ROS_WARN("speed(%d, %d)", l_speed, r_speed);
 	}
-	ROS_INFO("seen_charger_counter_ = %d", seen_charger_counter_);
+//	ROS_INFO("seen_charger_counter_ = %d", seen_charger_counter_);
 }
 
 bool MovementRcon::isFinish() {
@@ -72,7 +72,7 @@ bool MovementRcon::isFinish() {
 MovementRcon::MovementRcon(bool is_left) {
 	is_left_ = is_left;
 	rcon_status = ev.rcon_triggered;
-	ROS_INFO("ev.rcon_triggered = %x", ev.rcon_triggered);
+//	ROS_INFO("ev.rcon_triggered = %x", ev.rcon_triggered);
 }
 
 MovementRcon::~MovementRcon() {
