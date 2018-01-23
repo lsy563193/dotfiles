@@ -110,28 +110,32 @@ void IMoveType::resetTriggeredValue()
 bool IMoveType::isFinish() {
 	updatePosition();
 	auto curr = getPosition();
-	auto p_mode = dynamic_cast<ACleanMode*> (sp_mode_);
-	if (p_mode->passed_path_.empty())
+	auto p_cm = dynamic_cast<ACleanMode*> (sp_mode_);
+	if (p_cm->passed_path_.empty())
 	{
-		p_mode->passed_path_.push_back(curr);
-		p_mode->last_ = curr;
+		p_cm->passed_path_.push_back(curr);
+		p_cm->last_ = curr;
 	}
-	else if (!curr.isCellAndAngleEqual(p_mode->last_))
+	else if (!curr.isCellAndAngleEqual(p_cm->last_))
 	{
-		p_mode->last_ = curr;
-		auto loc = std::find_if(p_mode->passed_path_.begin(), p_mode->passed_path_.end(), [&](Point_t it) {
+		p_cm->last_ = curr;
+		auto loc = std::find_if(p_cm->passed_path_.begin(), p_cm->passed_path_.end(), [&](Point_t it) {
 			return curr.isCellAndAngleEqual(it);
 		});
-		auto distance = std::distance(loc, p_mode->passed_path_.end());
+		auto distance = std::distance(loc, p_cm->passed_path_.end());
 		if (distance == 0) {
+			p_cm->passed_path_.push_back(curr);
 			ROS_INFO("curr(%d,%d,%d)",curr.toCell().x, curr.toCell().y, static_cast<int>(radian_to_degree(curr.th)));
 			p_mode->passed_path_.push_back(curr);
 		}
-		if (distance > 5) {
-			ROS_INFO("reach_cleaned_count_(%d)",p_mode->reach_cleaned_count_);
-			p_mode->reach_cleaned_count_++;
+
+		p_cm->markRealTime();//real time mark to exploration
+
+		if (distance > 5) {// closed
+			p_cm->closed_count_ ++;
+			ROS_INFO("closed_count_(%d), limit(%d)",p_cm->closed_count_, p_cm->closed_count_limit_);
+//			return p_cm->closed_count_ > p_cm->closed_count_limit_;
 		}
-		p_mode->markRealTime();//real time mark to exploration
 //		displayPath(passed_path_);
 	}
 	return sp_mode_->isExceptionTriggered();
