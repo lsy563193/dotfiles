@@ -83,12 +83,30 @@ bool MoveTypeFollowWall::isFinish()
 		{
 			if (!handleMoveBackEvent(p_clean_mode))
 			{
-				p_clean_mode->moveTypeFollowWallSaveBlocks();
-				auto turn_angle = getTurnRadian(false);
-				turn_target_radian_ = getPosition().addRadian(turn_angle).th;
-				movement_i_ = mm_turn;
-				sp_movement_.reset(new MovementTurn(turn_target_radian_, ROTATE_TOP_SPEED));
+				if(ev.rcon_triggered) {
+
+					ROS_ERROR("mm_rcon!!!");
+					p_clean_mode->moveTypeFollowWallSaveBlocks();
+					movement_i_ = mm_rcon;
+					sp_movement_.reset(new MovementRcon(is_left_));
+				}
+				else{
+					p_clean_mode->moveTypeFollowWallSaveBlocks();
+					auto turn_angle = getTurnRadian(false);
+					turn_target_radian_ = getPosition().addRadian(turn_angle).th;
+					movement_i_ = mm_turn;
+					sp_movement_.reset(new MovementTurn(turn_target_radian_, ROTATE_TOP_SPEED));
+				}
 				resetTriggeredValue();
+			}
+		}
+		else if (movement_i_ == mm_rcon)
+		{
+			if (!handleMoveBackEvent(p_clean_mode))
+			{
+				resetTriggeredValue();// is it necessary?
+				movement_i_ = mm_straight;
+				sp_movement_.reset(new MovementStraight());
 			}
 		}
 		else if (movement_i_ == mm_back) {
