@@ -91,7 +91,7 @@ ACleanMode::~ACleanMode()
 	else if (ev.fatal_quit)
 	{
 		speaker.play(VOICE_CLEANING_STOP, false);
-		error.alarm();
+		ROS_WARN("%s %d: fatal_quit is true. Stop cleaning.", __FUNCTION__, __LINE__);
 	}
 	else
 	{
