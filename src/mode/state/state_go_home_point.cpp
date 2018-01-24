@@ -9,6 +9,7 @@
 void StateGoHomePoint::init(){
 	vacuum.setTmpMode(Vac_Normal);
 	wheel.stop();
+	brush.normalOperate();
 
 	wheel.setPidTargetSpeed(0, 0, REG_TYPE_LINEAR);
 	if (sp_cm_->isRemoteGoHomePoint())

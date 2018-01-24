@@ -135,7 +135,6 @@ bool CleanModeNav::isExit()
 		setNextMode(md_charge);
 		return true;
 	}
-
 	return false;
 }
 
@@ -308,6 +307,20 @@ void CleanModeNav::batteryHome(bool state_now, bool state_last)
 		ev.battery_home = true;
 		go_home_for_low_battery_ = true;
 	}
+}
+
+void CleanModeNav::remoteHome(bool state_now, bool state_last)
+{
+
+	INFO_YELLOW("Remote home is pressed.");
+	if( sp_state == state_spot)
+	{
+		ev.remote_home = true;
+		beeper.play_for_command(VALID);
+	}
+	else
+		beeper.play_for_command(INVALID);
+	remote.reset();
 }
 
 void CleanModeNav::chargeDetect(bool state_now, bool state_last)
@@ -527,7 +540,8 @@ bool CleanModeNav::checkEnterTempSpotState()
 	return false;
 }
 
-bool CleanModeNav::isSwitchByEventInStateSpot() {
+bool CleanModeNav::isSwitchByEventInStateSpot()
+{
 	if (ev.key_clean_pressed || ev.remote_spot || ev.remote_direction_forward || ev.remote_direction_left || ev.remote_direction_right)
 	{
 		if(sp_state == state_spot && ev.key_clean_pressed )
@@ -547,10 +561,16 @@ bool CleanModeNav::isSwitchByEventInStateSpot() {
 
 		return true;
 	}
+	else if(ACleanMode::checkEnterGoHomePointState())
+	{
+		return true;
+	}
+
 	return false;
 }
 
-void CleanModeNav::switchInStateSpot() {
+void CleanModeNav::switchInStateSpot()
+{
 	action_i_ = ac_null;
 	sp_action_.reset();
 	sp_state = state_clean;

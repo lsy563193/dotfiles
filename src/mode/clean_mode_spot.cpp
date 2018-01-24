@@ -15,32 +15,21 @@ CleanModeSpot::CleanModeSpot()
 
 CleanModeSpot::~CleanModeSpot()
 {
-/*	IMoveType::sp_mode_ = nullptr;
-	event_manager_set_enable(false);
-	wheel.stop();
-	brush.stop();
-	vacuum.stop();
-	lidar.motorCtrl(OFF);
-	lidar.setScanOriginalReady(0);
 
-	robot::instance()->setBaselinkFrameType( ODOM_POSITION_ODOM_ANGLE);
-	slam.stop();
-	odom.setRadianOffset(0);
-	speaker.play(VOICE_CLEANING_STOP,false);*/
 }
 
 bool CleanModeSpot::isExit()
 {
 	if(ev.remote_home)
 	{
-		ev.remote_home = false;
+		//ev.remote_home = false;
 		INFO_YELLOW("in spot mode enter exploration");
 		setNextMode(cm_exploration);
 		return true;
 	}
 	else if(ev.remote_follow_wall)
 	{
-		ev.remote_follow_wall = false;
+		//ev.remote_follow_wall = false;
 		INFO_YELLOW("in spot mode enter follow_wall");
 		setNextMode(cm_wall_follow);
 		return true;
@@ -79,6 +68,7 @@ void CleanModeSpot::remoteClean(bool state_now, bool state_last)
 void CleanModeSpot::remoteHome(bool state_now, bool state_last)
 {
 	ev.remote_home = true;
+	beeper.play_for_command(true);
 	INFO_YELLOW("REMOTE HOME PRESS");
 	remote.reset();
 }
@@ -86,6 +76,7 @@ void CleanModeSpot::remoteHome(bool state_now, bool state_last)
 void CleanModeSpot::remoteWallFollow(bool state_now, bool state_last)
 {
 	ev.remote_follow_wall = true;
+	beeper.play_for_command(true);
 	INFO_YELLOW("REMOTE FOLLOW_WALL PRESS");
 	remote.reset();
 }

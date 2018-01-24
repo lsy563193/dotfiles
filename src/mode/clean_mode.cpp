@@ -67,6 +67,7 @@ ACleanMode::~ACleanMode()
 
 	IMoveType::sp_mode_ = nullptr;
 	sp_state = nullptr;
+	sp_action_.reset();
 	event_manager_set_enable(false);
 	wheel.stop();
 	brush.stop();
@@ -648,7 +649,7 @@ bool ACleanMode::isFinish()
 
 void ACleanMode::genNextAction()
 {
-	INFO_GREEN(before genNextAction);
+	INFO_GREEN("before genNextAction");
 
 	switch (action_i_) {
 		case ac_null :
@@ -717,7 +718,7 @@ void ACleanMode::genNextAction()
 			sp_action_.reset(new MovementDirectGo);
 			break;
 	}
-	INFO_GREEN(after genNextAction);
+	INFO_GREEN("after genNextAction");
 }
 
 void ACleanMode::setRconPos(Point_t pos)
