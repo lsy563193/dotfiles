@@ -534,6 +534,7 @@ protected:
 	Point_t start_point_{0, 0, 0};
 	bool should_go_to_charger_{false};
 	bool remote_go_home_point{false};
+	bool switch_is_off_{false};
 
 public:
 

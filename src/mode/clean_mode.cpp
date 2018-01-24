@@ -92,6 +92,11 @@ ACleanMode::~ACleanMode()
 			speaker.play(VOICE_ERROR_LIFT_UP_CLEANING_STOP, false);
 			ROS_WARN("%s %d: Cliff all triggered. Stop cleaning.", __FUNCTION__, __LINE__);
 		}
+		else if (switch_is_off_)
+		{
+			speaker.play(VOICE_CHECK_SWITCH, false);
+			ROS_WARN("%s %d: Switch is not on. Stop cleaning.", __FUNCTION__, __LINE__);
+		}
 		else
 		{
 			speaker.play(VOICE_CLEANING_STOP, false);
@@ -998,7 +1003,7 @@ void ACleanMode::remoteHome(bool state_now, bool state_last)
 
 void ACleanMode::cliffAll(bool state_now, bool state_last)
 {
-	if (!ev.cliff_all_triggered)
+	if (!charger.getChargeStatus() && !ev.cliff_all_triggered)
 	{
 		ROS_WARN("%s %d: Cliff all.", __FUNCTION__, __LINE__);
 		ev.cliff_all_triggered = true;

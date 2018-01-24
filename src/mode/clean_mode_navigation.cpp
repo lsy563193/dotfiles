@@ -117,6 +117,7 @@ bool CleanModeNav::isExit()
 			setNextMode(cm_wall_follow);
 			return true;
 		}
+		// todo: Open this option
 //		else if (ev.remote_spot)
 //		{
 //			ROS_WARN("%s %d: Exit for pause and remote spot.", __FUNCTION__, __LINE__);
@@ -333,11 +334,21 @@ void CleanModeNav::remoteHome(bool state_now, bool state_last)
 
 void CleanModeNav::chargeDetect(bool state_now, bool state_last)
 {
-	if (!ev.charge_detect && charger.isDirected())
+	if (!ev.charge_detect)
 	{
-		ROS_WARN("%s %d: Charge detect!.", __FUNCTION__, __LINE__);
-		ev.charge_detect = charger.getChargeStatus();
-		ev.fatal_quit = true;
+		if (isStateInit() && action_i_ == ac_back_form_charger && sp_action_->isTimeUp())
+		{
+			ROS_WARN("%s %d: Switch is not on!.", __FUNCTION__, __LINE__);
+			ev.charge_detect = charger.getChargeStatus();
+			ev.fatal_quit = true;
+			switch_is_off_ = true;
+		}
+		else if (charger.isDirected())
+		{
+			ROS_WARN("%s %d: Charge detect!.", __FUNCTION__, __LINE__);
+			ev.charge_detect = charger.getChargeStatus();
+			ev.fatal_quit = true;
+		}
 	}
 }
 

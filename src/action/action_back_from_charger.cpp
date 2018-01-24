@@ -8,13 +8,15 @@ Odom charger_pose;
 ActionBackFromCharger::ActionBackFromCharger()
 {
 	ROS_INFO("%s %d, Init action back from charger.", __FUNCTION__, __LINE__);
-//	path_set_home(nav_map.getCurrCell());
 
 	vacuum.setTmpMode(Vac_Normal);
 	brush.normalOperate();
 	wheel.setDirectionBackward();
 	charger_pose.setX(odom.getX());
 	charger_pose.setY(odom.getY());
+
+	// This time out interval is just for checking whether the switch is on.
+	timeout_interval_ = 1;
 };
 
 ActionBackFromCharger::~ActionBackFromCharger()
@@ -29,7 +31,3 @@ bool ActionBackFromCharger::isFinish() {
 void ActionBackFromCharger::run() {
 	wheel.setPidTargetSpeed(20, 20);
 }
-
-//IAction* ActionBackFromCharger::setNextAction() {
-//	return new ActionOpenLidar;
-//}
