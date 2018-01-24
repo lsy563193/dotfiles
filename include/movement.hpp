@@ -204,7 +204,7 @@ public:
 	bool _isStop();
 	bool isSwitch();
 	void adjustSpeed(int32_t&, int32_t&) override ;
-	void getTurnBackInfo(double &turn_angle, float &back_distance);
+	void getTurnBackInfo(double &turn_radian, float &back_distance);
 	bool isFinish() override ;
 
 private:
@@ -235,10 +235,10 @@ private:
 	double move_away_from_charger_time_stamp_;
 	uint32_t receive_code;
 	// This variables is for robot turning.
-	double current_angle;
-	double last_angle;
-	double angle_offset;
-	float gyro_step;
+	double current_radian_;
+	double last_radian_;
+	double radian_offset_;
+	float gyro_radian_step_;
 	uint8_t around_charger_stub_dir;
 	uint8_t go_home_bumper_cnt;
 	uint8_t check_position_dir;

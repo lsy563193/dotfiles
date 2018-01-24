@@ -20,10 +20,10 @@ void MovementGoToCharger::resetGoToChargerVariables()
 	no_signal_cnt = 0;
 	move_away_from_charger_time_stamp_ = ros::Time::now().toSec();
 	receive_code = 0;
-	current_angle = 0;
-	last_angle = robot::instance()->getWorldPoseRadian();
-	angle_offset = 0;
-	gyro_step = 0;
+	current_radian_ = 0;
+	last_radian_ = robot::instance()->getWorldPoseRadian();
+	radian_offset_ = 0;
+	gyro_radian_step_ = 0;
 	around_charger_stub_dir = 0;
 	go_home_bumper_cnt = 0;
 	around_move_cnt = 0;
@@ -122,16 +122,18 @@ bool MovementGoToCharger::isSwitch()
 	}
 	if (gtc_state_now_ == gtc_turn_for_charger_signal)
 	{
-//		ROS_INFO("%s %d: Current_Angle = %f, Last_Angle = %f, Angle_Offset = %f, Gyro_Step = %f.", __FUNCTION__, __LINE__, current_angle, last_angle, angle_offset, gyro_step);
-		if(gyro_step < 3600)
+//		ROS_DEBUG("%s %d: current_radian_ = %f, last_radian_ = %f, radian_offset_ = %f, gyro_radian_step_ = %f.",
+//				  __FUNCTION__, __LINE__, current_radian_, last_radian_, radian_offset_, gyro_radian_step_);
+		if(gyro_radian_step_ < 2 * PI)
 		{
 			// Handle for angle
-			current_angle = getPosition().th;
-			angle_offset = ranged_radian(current_angle - last_angle);
-			ROS_DEBUG("%s %d: Current_Angle = %f, Last_Angle = %f, Angle_Offset = %f, Gyro_Step = %f.", __FUNCTION__, __LINE__, current_angle, last_angle, angle_offset, gyro_step);
-			if (angle_offset < 0)
-				gyro_step -= angle_offset;
-			last_angle = current_angle;
+			current_radian_ = getPosition().th;
+			radian_offset_ = ranged_radian(current_radian_ - last_radian_);
+			ROS_DEBUG("%s %d: current_radian_ = %f, last_radian_ = %f, radian_offset_ = %f, gyro_radian_step_ = %f.",
+					  __FUNCTION__, __LINE__, current_radian_, last_radian_, radian_offset_, gyro_radian_step_);
+			if (radian_offset_ < 0)
+				gyro_radian_step_ += fabs(radian_offset_);
+			last_radian_ = current_radian_;
 
 			// Handle for bumper and cliff
 			if(bumper.getStatus())
@@ -309,7 +311,7 @@ bool MovementGoToCharger::isSwitch()
 				return true;
 			}
 		}
-		// gyro_step >= 3600 is handled in MovementGoToCharger::_isStop()
+		// gyro_radian_step_ >= 2 * PI is handled in MovementGoToCharger::_isStop()
 	}
 	if (gtc_state_now_ == gtc_around_charger_station_init)
 	{
@@ -486,16 +488,17 @@ bool MovementGoToCharger::isSwitch()
 			return true;
 		}
 
-		if(gyro_step < 3600)
+		if(gyro_radian_step_ < 2 * PI)
 		{
-			current_angle = getPosition().th;
-			angle_offset = last_angle - current_angle;
-			ROS_DEBUG("%s %d: Current_Angle = %f, Last_Angle = %f, Angle_Offset = %f, Gyro_Step = %f.", __FUNCTION__, __LINE__, current_angle, last_angle, angle_offset, gyro_step);
-			if (check_position_dir == gtc_check_position_left && angle_offset < 0)
-				gyro_step += (-angle_offset);
-			if (check_position_dir == gtc_check_position_right && angle_offset > 0)
-				gyro_step += angle_offset;
-			last_angle = current_angle;
+			current_radian_ = getPosition().th;
+			radian_offset_ = last_radian_ - current_radian_;
+			ROS_DEBUG("%s %d: current_radian_ = %f, last_radian_ = %f, radian_offset_ = %f, gyro_radian_step_ = %f.",
+					  __FUNCTION__, __LINE__, current_radian_, last_radian_, radian_offset_, gyro_radian_step_);
+			if (check_position_dir == gtc_check_position_left && radian_offset_ < 0)
+				gyro_radian_step_ += fabs(radian_offset_);
+			if (check_position_dir == gtc_check_position_right && radian_offset_ > 0)
+				gyro_radian_step_ += radian_offset_;
+			last_radian_ = current_radian_;
 
 			receive_code = (c_rcon.getAll()&RconFrontAll_Home_LR);
 			ROS_DEBUG("%s %d: Check_Position receive_code == %8x, R... == %8x.", __FUNCTION__, __LINE__,
@@ -522,7 +525,7 @@ bool MovementGoToCharger::isSwitch()
 			if(receive_code & (RconFL_HomeL|RconFL_HomeR) && check_position_dir == gtc_check_position_right)
 				gtc_state_now_ = gtc_by_path_init;
 		}
-		if(gyro_step >= 3600)
+		if(gyro_radian_step_ >= 2 * PI)
 		{
 			ROS_INFO("%s, %d: Robot can't see charger, restart go to charger process.", __FUNCTION__, __LINE__);
 			turn_angle_ = 1000;
@@ -823,7 +826,7 @@ bool MovementGoToCharger::isSwitch()
 
 bool MovementGoToCharger::_isStop()
 {
-	if (gtc_state_now_ == gtc_turn_for_charger_signal && gyro_step >= 3600)
+	if (gtc_state_now_ == gtc_turn_for_charger_signal && gyro_radian_step_ >= 2 * PI)
 	{
 		ROS_WARN("%s %d: Turn for charger signal failed, no charger signal received.", __FUNCTION__, __LINE__);
 		return true;
@@ -831,9 +834,9 @@ bool MovementGoToCharger::_isStop()
 	return false;
 }
 
-void MovementGoToCharger::getTurnBackInfo(double &turn_angle, float &back_distance)
+void MovementGoToCharger::getTurnBackInfo(double &turn_radian, float &back_distance)
 {
-	turn_angle = degree_to_radian(turn_angle_/10);
+	turn_radian = degree_to_radian(turn_angle_/10);
 	back_distance = back_distance_;
 }
 
