@@ -15,9 +15,10 @@
 const double CHASE_X = 0.107;
 static ros::Publisher ACleanMode::point_marker_pub_;
 static ros::Publisher ACleanMode::line_marker_pub2_;
+bool ACleanMode::plan_activation_ = false;
+
 ACleanMode::ACleanMode()
 {
-
 	scanLinear_sub_ = clean_nh_.subscribe("scanLinear", 1, &Lidar::scanLinearCb, &lidar);
 	scanCompensate_sub_ = clean_nh_.subscribe("scanCompensate", 1, &Lidar::scanCompensateCb, &lidar);
 	scanOriginal_sub_ = clean_nh_.subscribe("scanOriginal", 1, &ACleanMode::scanOriginalCb, this);

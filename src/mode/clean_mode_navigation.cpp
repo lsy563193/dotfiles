@@ -15,8 +15,11 @@ CleanModeNav::CleanModeNav()
 	setNavMode(true);
 	ROS_INFO("%s %d: Entering Navigation mode\n=========================" , __FUNCTION__, __LINE__);
 
-	if(g_plan_activated)
-		g_plan_activated = false;
+	if(plan_activation_)
+	{
+		plan_activation_ = false;
+		speaker.play(VOICE_APPOINTMENT_START, false);
+	}
 	else
 		speaker.play(VOICE_CLEANING_START, false);
 
@@ -235,10 +238,10 @@ void CleanModeNav::remoteDirectionRight(bool state_now, bool state_last)
 	else
 	{
 		beeper.play_for_command(INVALID);
-		/*//todo: Just for testing.
+		//todo: Just for testing.
 		ROS_INFO("%s %d: Remote right.", __FUNCTION__, __LINE__);
 		error.set(ERROR_CODE_BUMPER);
-		ev.fatal_quit = true;*/
+		ev.fatal_quit = true;
 	}
 
 	remote.reset();

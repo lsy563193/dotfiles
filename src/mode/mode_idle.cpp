@@ -37,15 +37,56 @@ bool ModeIdle::isExit()
 {
 	if(ev.key_clean_pressed || plan_activated_status_)
 	{
-		if (ev.key_clean_pressed && bumper.getLeft())
+		if (plan_activated_status_)
+		{
+			if (error.get() != ERROR_CODE_NONE)
+			{
+				if (error.clear(error.get()))
+				{
+					ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
+					if (battery_low_)
+						led.setMode(LED_BREATH, LED_ORANGE);
+					else
+						led.setMode(LED_BREATH, LED_GREEN);
+					speaker.play(VOICE_CLEAR_ERROR, false);
+				} else
+				{
+					speaker.play(VOICE_CANCEL_APPOINTMENT, false);
+					// Reset action idle for playing the error alarm.
+					sp_action_.reset(new ActionIdle);
+				}
+			}
+
+			if (error.get() != ERROR_CODE_NONE)
+				ROS_INFO("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
+			else if (cliff.getStatus() & (BLOCK_LEFT | BLOCK_FRONT | BLOCK_RIGHT))
+			{
+				ROS_WARN("%s %d: Plan not activated not valid because of robot lifted up.", __FUNCTION__, __LINE__);
+				speaker.play(VOICE_ERROR_LIFT_UP_CANCEL_APPOINTMENT);
+			} else if (!battery.isReadyToClean())
+			{
+				ROS_WARN("%s %d: Plan not activated not valid because of battery not ready to clean.", __FUNCTION__, __LINE__);
+				speaker.play(VOICE_BATTERY_LOW_CANCEL_APPOINTMENT);
+			} else{
+				ROS_WARN("%s %d: Idle mode receives plan, change to navigation mode.", __FUNCTION__, __LINE__);
+				setNextMode(cm_navigation);
+				ACleanMode::plan_activation_ = true;
+				return true;
+			}
+			plan_activated_status_ = false;
+		}
+		else if (ev.key_clean_pressed && bumper.getLeft())
 		{
 			ROS_WARN("%s %d: Idle mode change to test mode(Left bumper triggered).", __FUNCTION__, __LINE__);
 			setNextMode(cm_test);
 			return true;
 		}
-		ROS_WARN("%s %d: Idle mode receives remote clean or clean key, change to navigation mode.", __FUNCTION__, __LINE__);
-		setNextMode(cm_navigation);
-		return true;
+		else
+		{
+			ROS_WARN("%s %d: Idle mode receives remote clean or clean key, change to navigation mode.", __FUNCTION__, __LINE__);
+			setNextMode(cm_navigation);
+			return true;
+		}
 	}
 
 	if(ev.remote_follow_wall)
@@ -216,50 +257,23 @@ void ModeIdle::remotePlan(bool state_now, bool state_last)
 	if (robot_timer.getPlanStatus() == 1)
 	{
 		beeper.play_for_command(VALID);
-		speaker.play(VOICE_APPOINTMENT_DONE);
+		speaker.play(VOICE_APPOINTMENT_DONE, false);
 		ROS_WARN("%s %d: Plan received.", __FUNCTION__, __LINE__);
-		robot_timer.resetPlanStatus();
 	}
 	else if (robot_timer.getPlanStatus() == 2)
 	{
 		beeper.play_for_command(VALID);
-		speaker.play(VOICE_CANCEL_APPOINTMENT);
+		speaker.play(VOICE_CANCEL_APPOINTMENT, false);
 		ROS_WARN("%s %d: Plan cancel received.", __FUNCTION__, __LINE__);
-		robot_timer.resetPlanStatus();
 	}
 	else if (robot_timer.getPlanStatus() == 3)
 	{
 		ROS_WARN("%s %d: Plan activated.", __FUNCTION__, __LINE__);
-		if (error.get() != ERROR_CODE_NONE)
-		{
-			ROS_INFO("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
-			error.alarm();
-			speaker.play(VOICE_CANCEL_APPOINTMENT);
-		}
-		else if(cliff.getStatus() & (BLOCK_LEFT|BLOCK_FRONT|BLOCK_RIGHT))
-		{
-			ROS_WARN("%s %d: Plan not activated not valid because of robot lifted up.", __FUNCTION__, __LINE__);
-			speaker.play(VOICE_ERROR_LIFT_UP_CANCEL_APPOINTMENT);
-		}
-		else if (!battery.isReadyToClean())
-		{
-			ROS_WARN("%s %d: Plan not activated not valid because of battery not ready to clean.", __FUNCTION__, __LINE__);
-			speaker.play(VOICE_BATTERY_LOW_CANCEL_APPOINTMENT);
-		}
-		else if (charger.getChargeStatus() == 4)
-		{
-			ROS_WARN("%s %d: Plan not activated not valid because of charging with adapter.", __FUNCTION__, __LINE__);
-			//speaker.play(???);
-			speaker.play(VOICE_CANCEL_APPOINTMENT);
-		}
-		else
-		{
-			// Sleep for 50ms cause the status 3 will be sent for 3 times.
-			usleep(50000);
-			plan_activated_status_ = true;
-		}
-		robot_timer.resetPlanStatus();
+		// Sleep for 50ms cause the status 3 will be sent for 3 times.
+		usleep(50000);
+		plan_activated_status_ = true;
 	}
+	robot_timer.resetPlanStatus();
 }
 
 void ModeIdle::chargeDetect(bool state_now, bool state_last)
@@ -327,20 +341,22 @@ void ModeIdle::keyClean(bool state_now, bool state_last)
 
 void ModeIdle::rcon(bool state_now, bool state_last)
 {
-	auto time_for_now_ = ros::Time::now().toSec();
+	if (error.get() != ERROR_CODE_NONE)
+	{
+		auto time_for_now_ = ros::Time::now().toSec();
 //	ROS_WARN("%s %d: rcon signal. first: %lf, last: %lf, now: %lf", __FUNCTION__, __LINE__, first_time_seen_charger, last_time_seen_charger, time_for_now);
-	if(time_for_now_ - last_time_seen_charger_ > 60)
-	{
-		/*---more than 1 min haven't seen charger, reset first_time_seen_charger---*/
-		first_time_seen_charger_ = time_for_now_;
+		if (time_for_now_ - last_time_seen_charger_ > 60)
+		{
+			/*---more than 1 min haven't seen charger, reset first_time_seen_charger---*/
+			first_time_seen_charger_ = time_for_now_;
+		} else
+		{
+			/*---received charger signal continuously, check if more than 3 mins---*/
+			if (time_for_now_ - first_time_seen_charger_ > 180)
+				ev.rcon_triggered = c_rcon.getAll();
+		}
+		last_time_seen_charger_ = time_for_now_;
 	}
-	else
-	{
-		/*---received charger signal continuously, check if more than 3 mins---*/
-		if(time_for_now_ - first_time_seen_charger_ > 180)
-			ev.rcon_triggered = c_rcon.getAll();
-	}
-	last_time_seen_charger_ = time_for_now_;
 }
 
 bool ModeIdle::isFinish()
