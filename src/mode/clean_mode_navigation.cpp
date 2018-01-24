@@ -318,20 +318,6 @@ void CleanModeNav::batteryHome(bool state_now, bool state_last)
 	}
 }
 
-void CleanModeNav::remoteHome(bool state_now, bool state_last)
-{
-
-	INFO_YELLOW("Remote home is pressed.");
-	if( sp_state == state_spot)
-	{
-		ev.remote_home = true;
-		beeper.play_for_command(VALID);
-	}
-	else
-		beeper.play_for_command(INVALID);
-	remote.reset();
-}
-
 void CleanModeNav::chargeDetect(bool state_now, bool state_last)
 {
 	if (!ev.charge_detect)

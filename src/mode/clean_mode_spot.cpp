@@ -65,14 +65,6 @@ void CleanModeSpot::remoteClean(bool state_now, bool state_last)
 	remote.reset();
 }
 
-void CleanModeSpot::remoteHome(bool state_now, bool state_last)
-{
-	ev.remote_home = true;
-	beeper.play_for_command(true);
-	INFO_YELLOW("REMOTE HOME PRESS");
-	remote.reset();
-}
-
 void CleanModeSpot::remoteWallFollow(bool state_now, bool state_last)
 {
 	ev.remote_follow_wall = true;
