@@ -117,13 +117,12 @@ bool CleanModeNav::isExit()
 			setNextMode(cm_wall_follow);
 			return true;
 		}
-		// todo: Open this option
-//		else if (ev.remote_spot)
-//		{
-//			ROS_WARN("%s %d: Exit for pause and remote spot.", __FUNCTION__, __LINE__);
-//			setNextMode(cm_spot);
-//			return true;
-//		}
+		else if (ev.remote_spot)
+		{
+			ROS_WARN("%s %d: Exit for pause and remote spot.", __FUNCTION__, __LINE__);
+			setNextMode(cm_spot);
+			return true;
+		}
 	}
 
 	if (ev.fatal_quit || ev.key_long_pressed || sp_action_->isExit())
@@ -283,7 +282,7 @@ void CleanModeNav::remoteWallFollow(bool state_now, bool state_last)
 
 void CleanModeNav::remoteSpot(bool state_now, bool state_last)
 {
-	if (sp_state == state_clean || sp_state == state_spot /*|| sp_state == state_pause*/)
+	if (sp_state == state_clean || sp_state == state_spot || sp_state == state_pause)
 	{
 		ev.remote_spot = true;
 		beeper.play_for_command(VALID);
