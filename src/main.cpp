@@ -16,7 +16,7 @@ void Ooops(int sig)
 	switch(sig){
 		case SIGSEGV:
 		{
-			ROS_ERROR("Oops!!! pp receive SIGSEGV signal,which means out of memery!");
+			ROS_ERROR("Oops!!! pp receive SIGSEGV signal,segment fault!");
 			if(robot_instance != nullptr){
 				speaker.play(VOICE_CLEANING_STOP,false);
 				delete robot_instance;

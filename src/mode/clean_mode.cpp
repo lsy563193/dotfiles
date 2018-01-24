@@ -16,7 +16,7 @@ const double CHASE_X = 0.107;
 static ros::Publisher ACleanMode::point_marker_pub_;
 static ros::Publisher ACleanMode::line_marker_pub2_;
 bool ACleanMode::plan_activation_ = false;
-
+extern bool g_bye_bye;
 ACleanMode::ACleanMode()
 {
 	scanLinear_sub_ = clean_nh_.subscribe("scanLinear", 1, &Lidar::scanLinearCb, &lidar);
@@ -70,38 +70,40 @@ ACleanMode::~ACleanMode()
 	sp_state = nullptr;
 	sp_action_.reset();
 	event_manager_set_enable(false);
-	wheel.stop();
-	brush.stop();
-	vacuum.stop();
-	lidar.motorCtrl(OFF);
-	lidar.setScanOriginalReady(0);
+	if(!g_bye_bye){
+		wheel.stop();
+		brush.stop();
+		vacuum.stop();
+		lidar.motorCtrl(OFF);
+		lidar.setScanOriginalReady(0);
 
-	robot::instance()->setBaselinkFrameType(ODOM_POSITION_ODOM_ANGLE);
-	slam.stop();
-	odom.setRadianOffset(0);
+		robot::instance()->setBaselinkFrameType(ODOM_POSITION_ODOM_ANGLE);
+		slam.stop();
+		odom.setRadianOffset(0);
 
-	if (moved_during_pause_)
-	{
-		speaker.play(VOICE_CLEANING_STOP, false);
-		ROS_WARN("%s %d: Moved during pause. Stop cleaning.", __FUNCTION__, __LINE__);
-	}
-	else if (ev.fatal_quit)
-	{
-		if (ev.cliff_all_triggered)
+		if (moved_during_pause_)
 		{
-			speaker.play(VOICE_ERROR_LIFT_UP_CLEANING_STOP, false);
-			ROS_WARN("%s %d: Cliff all triggered. Stop cleaning.", __FUNCTION__, __LINE__);
+			speaker.play(VOICE_CLEANING_STOP, false);
+			ROS_WARN("%s %d: Moved during pause. Stop cleaning.", __FUNCTION__, __LINE__);
+		}
+		else if (ev.fatal_quit)
+		{
+			if (ev.cliff_all_triggered)
+			{
+				speaker.play(VOICE_ERROR_LIFT_UP_CLEANING_STOP, false);
+				ROS_WARN("%s %d: Cliff all triggered. Stop cleaning.", __FUNCTION__, __LINE__);
+			}
+			else
+			{
+				speaker.play(VOICE_CLEANING_STOP, false);
+				ROS_WARN("%s %d: fatal_quit is true. Stop cleaning.", __FUNCTION__, __LINE__);
+			}
 		}
 		else
 		{
-			speaker.play(VOICE_CLEANING_STOP, false);
-			ROS_WARN("%s %d: fatal_quit is true. Stop cleaning.", __FUNCTION__, __LINE__);
+			speaker.play(VOICE_CLEANING_FINISHED, false);
+			ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
 		}
-	}
-	else
-	{
-		speaker.play(VOICE_CLEANING_FINISHED, false);
-		ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
 	}
 
 	auto cleaned_count = clean_map_.getCleanedArea();
@@ -1003,6 +1005,13 @@ void ACleanMode::cliffAll(bool state_now, bool state_last)
 		ROS_WARN("%s %d: Cliff all.", __FUNCTION__, __LINE__);
 		ev.cliff_all_triggered = true;
 	}
+}
+
+void ACleanMode::overCurrentBrushMain(bool state_now, bool state_last)
+{
+	INFO_YELLOW("MAIN BRUSH OVER CURRENT");
+	ev.oc_brush_main = true;
+	brush.stop();
 }
 // ------------------Handlers end--------------------------
 

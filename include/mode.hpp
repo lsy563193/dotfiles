@@ -380,6 +380,7 @@ public:
 	// Handlers
 	void remoteHome(bool state_now, bool state_last) override ;
 	void cliffAll(bool state_now, bool state_last) override ;
+	void overCurrentBrushMain(bool state_now, bool state_last);
 
 	// State null
 	bool checkEnterNullState();

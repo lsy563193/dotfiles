@@ -37,11 +37,19 @@ void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_sp
 		left_speed = 30;
 		right_speed = 30;
 	}
-	else if (ev.robot_stuck || ev.cliff_jam || ev.cliff_all_triggered)
+	else if (ev.robot_stuck || ev.cliff_jam || ev.cliff_all_triggered )
 	{
 		wheel.setDirectionBackward();
 		left_speed = right_speed = RUN_TOP_SPEED;
 	}
+	else if(ev.oc_brush_main)
+	{
+		if(oc_main_brush_cnt_ <= 0){
+			wheel.setDirectionBackward();
+			left_speed = right_speed = RUN_TOP_SPEED;
+		}
+	}
+
 	else if (ev.bumper_jam)
 	{
 		switch (bumper_jam_state_)
@@ -82,7 +90,7 @@ void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_sp
 bool MovementExceptionResume::isFinish()
 {
 	if (!(ev.bumper_jam || ev.cliff_jam || ev.cliff_all_triggered || ev.oc_wheel_left || ev.oc_wheel_right
-		  || ev.oc_suction || ev.lidar_stuck || ev.robot_stuck))
+		  || ev.oc_suction || ev.lidar_stuck || ev.robot_stuck || ev.oc_brush_main))
 	{
 		ROS_INFO("%s %d: All exception cleared.", __FUNCTION__, __LINE__);
 		return true;
@@ -137,6 +145,35 @@ bool MovementExceptionResume::isFinish()
 			}
 		}
 	}
+
+	else if (ev.oc_brush_main){
+		if(!brush.getMainOc())
+		{
+			ROS_INFO("%s %d: main brush overcurrent resume succeeded!", __FUNCTION__, __LINE__);
+			ev.oc_brush_main = false;
+		}
+
+		float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getX(), odom.getY());
+		ROS_INFO("distance = %f, 3*cell_size = %f",std::abs(distance),CELL_SIZE*3);
+		if(oc_main_brush_cnt_ <= 0){
+			if( std::abs(distance) >= (CELL_SIZE*3) ){
+				wheel.stop();
+				brush.normalOperate();
+				oc_main_brush_cnt_++;
+			}
+			else{
+				resume_wheel_start_time_ = ros::Time::now().toSec();
+				brush.stop();
+			}
+		}
+	 
+		if((ros::Time::now().toSec() - resume_wheel_start_time_) >=3 ){
+			ev.oc_brush_main = false;
+			ev.fatal_quit = true;
+			error.set(ERROR_CODE_MAINBRUSH);
+		}
+	}
+
 	else if (ev.robot_stuck)
 	{
 		if (!lidar.isRobotSlip())

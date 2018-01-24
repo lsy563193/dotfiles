@@ -194,18 +194,18 @@ void CleanModeNav::remoteClean(bool state_now, bool state_last)
 
 void CleanModeNav::remoteDirectionLeft(bool state_now, bool state_last)
 {
+	INFO_YELLOW("LEFT REMOTE PRESS FOR TEST");
 	if (sp_state == state_pause)
 	{
 		beeper.play_for_command(VALID);
-		ROS_INFO("%s %d: Remote left.", __FUNCTION__, __LINE__);
 		ev.remote_direction_left = true;
 	}
 	else if(sp_state == state_spot){
 		ev.remote_direction_left = true;
-		ROS_INFO("%s %d: Remote left.", __FUNCTION__, __LINE__);
 		beeper.play_for_command(VALID);
 	}
-	/*else if (sp_state == state_clean)
+	/*
+	else if (sp_state == state_clean)
 	{
 		//todo: Just for testing.
 		beeper.play_for_command(VALID);
@@ -214,7 +214,8 @@ void CleanModeNav::remoteDirectionLeft(bool state_now, bool state_last)
 				 battery.getVoltage(), continue_point_.x, continue_point_.y);
 		ev.battery_home = true;
 		go_home_for_low_battery_ = true;
-	}*/
+	}
+	*/
 	else
 		beeper.play_for_command(INVALID);
 
