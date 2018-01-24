@@ -23,6 +23,8 @@ MovementCharge::MovementCharge()
 
 	show_battery_info_time_stamp_ = time(NULL);
 
+	directly_charge_ = charger.isDirected();
+
 	speaker.play(VOICE_BATTERY_CHARGE);
 	led.setMode(LED_BREATH, LED_ORANGE);
 

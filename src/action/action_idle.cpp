@@ -7,11 +7,14 @@
 #include <error.h>
 #include "dev.h"
 
+#define ERROR_ALARM_TIMES 5
+#define ERROR_ALARM_INTERVAL 10
+
 ActionIdle::ActionIdle()
 {
 	ROS_INFO("%s %d: Start action idle.", __FUNCTION__, __LINE__);
 	if (error.get())
-		led.setMode(LED_FLASH, LED_RED);
+		led.setMode(LED_STEADY, LED_RED);
 	else
 		led.setMode(LED_BREATH, LED_GREEN);
 
@@ -31,6 +34,14 @@ bool ActionIdle::isFinish()
 void ActionIdle::run()
 {
 	// Just wait...
+	if (error.get() && error_alarm_cnt_ < ERROR_ALARM_TIMES
+		&& ros::Time::now().toSec() - error_alarm_time_ > ERROR_ALARM_INTERVAL)
+	{
+		error.alarm();
+		error_alarm_time_ = ros::Time::now().toSec();
+		error_alarm_cnt_++;
+	}
+
 }
 
 bool ActionIdle::isTimeUp()

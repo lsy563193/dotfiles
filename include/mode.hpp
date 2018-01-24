@@ -516,6 +516,7 @@ public:
 	boost::shared_ptr<GoHomePathAlgorithm> go_home_path_algorithm_{};
 	GridMap clean_map_{};
 	Point_t charger_pos_{};//charger postion
+	static bool plan_activation_;
 
 protected:
 	std::vector<State*> sp_saved_states;
@@ -534,7 +535,6 @@ protected:
 	bool should_go_to_charger_{false};
 	bool remote_go_home_point{false};
 
-//	boost::mutex mut;
 public:
 
 	static void pubPointMarkers(const std::deque<Vector2<double>> *point, std::string frame_id,std::string name);
