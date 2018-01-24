@@ -23,12 +23,12 @@ CleanModeExploration::~CleanModeExploration()
 {
 }
 
-bool CleanModeExploration::mapMark(bool isMarkRobot)
+bool CleanModeExploration::mapMark()
 {
-	clean_map_.mergeFromSlamGridMap(slam_grid_map,true,true);
+	clean_map_.mergeFromSlamGridMap(slam_grid_map, true, true, false, false, false, false);
 	clean_map_.setExplorationCleaned();
 	clean_map_.setBlocks();
-	if(isMarkRobot)
+	if(mark_robot_)
 		clean_map_.markRobot(CLEAN_MAP);
 	passed_path_.clear();
 	return false;
@@ -132,7 +132,9 @@ bool CleanModeExploration::moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) 
 bool CleanModeExploration::markRealTime() {
 	if(sp_state == state_trapped)
 	{
-		mapMark(false);
+		mark_robot_ = false;
+		mapMark();
+		mark_robot_ = true;
 	}
 	else
 		mapMark();

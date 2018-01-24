@@ -37,7 +37,7 @@ CleanModeNav::~CleanModeNav()
 	setNavMode(false);
 }
 
-bool CleanModeNav::mapMark(bool isMarkRobot)
+bool CleanModeNav::mapMark()
 {
 	ROS_INFO("%s %d: Start updating map.", __FUNCTION__, __LINE__);
 	clean_path_algorithm_->displayCellPath(pointsGenerateCells(passed_path_));

@@ -37,7 +37,7 @@ bool CleanModeSpot::isExit()
 	return ACleanMode::isExit();
 }
 
-bool CleanModeSpot::mapMark(bool isMarkRobot)
+bool CleanModeSpot::mapMark()
 {
 	ROS_INFO("%s,%d,passed_path",__FUNCTION__,__LINE__);
 	auto passed_path_cells = pointsGenerateCells(passed_path_);
