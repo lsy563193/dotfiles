@@ -84,15 +84,18 @@ ACleanMode::~ACleanMode()
 		speaker.play(VOICE_CLEANING_STOP, false);
 		ROS_WARN("%s %d: Moved during pause. Stop cleaning.", __FUNCTION__, __LINE__);
 	}
-	else if (ev.cliff_all_triggered)
-	{
-		speaker.play(VOICE_ERROR_LIFT_UP_CLEANING_STOP, false);
-		ROS_WARN("%s %d: Cliff all triggered. Stop cleaning.", __FUNCTION__, __LINE__);
-	}
 	else if (ev.fatal_quit)
 	{
-		speaker.play(VOICE_CLEANING_STOP, false);
-		ROS_WARN("%s %d: fatal_quit is true. Stop cleaning.", __FUNCTION__, __LINE__);
+		if (ev.cliff_all_triggered)
+		{
+			speaker.play(VOICE_ERROR_LIFT_UP_CLEANING_STOP, false);
+			ROS_WARN("%s %d: Cliff all triggered. Stop cleaning.", __FUNCTION__, __LINE__);
+		}
+		else
+		{
+			speaker.play(VOICE_CLEANING_STOP, false);
+			ROS_WARN("%s %d: fatal_quit is true. Stop cleaning.", __FUNCTION__, __LINE__);
+		}
 	}
 	else
 	{
@@ -596,13 +599,6 @@ bool ACleanMode::isExit()
 		return true;
 	}
 
-	if(ev.cliff_all_triggered) {
-		ev.cliff_all_triggered = false;
-		ROS_WARN("%s %d: Exit for cliff all.", __FUNCTION__, __LINE__);
-		setNextMode(md_idle);
-		return true;
-	}
-
 	if (charger.isDirected())
 	{
 		ROS_WARN("%s %d: Exit for directly charge.", __FUNCTION__, __LINE__);
@@ -999,25 +995,15 @@ void ACleanMode::remoteHome(bool state_now, bool state_last)
 	remote.reset();
 }
 
-void ACleanMode::cliffAll(bool state_now, bool state_last) {
-	ROS_WARN("%s %d: Cliff all.", __FUNCTION__, __LINE__);
-	ev.cliff_all_triggered = true;
+void ACleanMode::cliffAll(bool state_now, bool state_last)
+{
+	if (!ev.cliff_all_triggered)
+	{
+		ROS_WARN("%s %d: Cliff all.", __FUNCTION__, __LINE__);
+		ev.cliff_all_triggered = true;
+	}
 }
 // ------------------Handlers end--------------------------
-
-bool ACleanMode::checkEnterExceptionResumeState()
-{
-	if (isExceptionTriggered()) {
-		ROS_WARN("%s %d: Exception triggered!", __FUNCTION__, __LINE__);
-		sp_action_.reset();
-		sp_saved_states.push_back(sp_state);
-		sp_state = state_exception_resume;
-		sp_state->init();
-		return true;
-	}
-
-	return false;
-}
 
 bool ACleanMode::checkEnterNullState()
 {
@@ -1035,7 +1021,7 @@ bool ACleanMode::checkEnterNullState()
 
 // ------------------State init--------------------
 bool ACleanMode::isSwitchByEventInStateInit() {
-	return checkEnterNullState();
+	return checkEnterNullState() || checkEnterExceptionResumeState();
 }
 
 bool ACleanMode::updateActionInStateInit() {
@@ -1229,6 +1215,20 @@ bool ACleanMode::isSwitchByEventInStateSpot()
 }
 
 // ------------------State exception resume--------------
+bool ACleanMode::checkEnterExceptionResumeState()
+{
+	if (isExceptionTriggered()) {
+		ROS_WARN("%s %d: Exception triggered!", __FUNCTION__, __LINE__);
+		sp_action_.reset();
+		sp_saved_states.push_back(sp_state);
+		sp_state = state_exception_resume;
+		sp_state->init();
+		return true;
+	}
+
+	return false;
+}
+
 bool ACleanMode::isSwitchByEventInStateExceptionResume()
 {
 	return checkEnterNullState();
@@ -1251,10 +1251,13 @@ void ACleanMode::switchInStateExceptionResume()
 	if (!isExceptionTriggered())
 	{
 		ROS_INFO("%s %d: Resume to previous state", __FUNCTION__, __LINE__);
-		sp_action_.reset();
+		action_i_ = ac_null;
+		genNextAction();
 		sp_state = sp_saved_states.back();
 		sp_saved_states.pop_back();
 	}
+	else
+		sp_state = nullptr;
 }
 
 // ------------------State exploration--------------

@@ -125,9 +125,9 @@ bool CleanModeNav::isExit()
 //		}
 	}
 
-	if (ev.fatal_quit || ev.key_long_pressed || ev.cliff_all_triggered || sp_action_->isExit())
+	if (ev.fatal_quit || ev.key_long_pressed || sp_action_->isExit())
 	{
-		ROS_WARN("%s %d: Exit for ev.fatal_quit || ev.key_long_pressed || ev.cliff_all_triggered || sp_action_->isExit().", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Exit for ev.fatal_quit || ev.key_long_pressed || sp_action_->isExit().", __FUNCTION__, __LINE__);
 		setNextMode(md_idle);
 		return true;
 	}
@@ -348,7 +348,7 @@ bool CleanModeNav::moveTypeLinearIsFinish(MoveTypeLinear *p_mt)
 }
 // ------------------State init--------------------
 bool CleanModeNav::isSwitchByEventInStateInit() {
-	return checkEnterPause();
+	return checkEnterPause() || checkEnterExceptionResumeState();
 }
 
 bool CleanModeNav::updateActionInStateInit() {

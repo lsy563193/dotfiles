@@ -265,12 +265,13 @@ public:
 
 private:
 	double resume_wheel_start_time_;
-	float wheel_current_sum_;
-	uint8_t wheel_current_sum_cnt_;
-	uint8_t wheel_resume_cnt_;
-	uint8_t bumper_jam_state_;
-	uint8_t cliff_resume_cnt_;
-	uint8_t robot_stuck_resume_cnt_;
+	float wheel_current_sum_{0};
+	uint8_t wheel_current_sum_cnt_{0};
+	uint8_t wheel_resume_cnt_{0};
+	uint8_t bumper_jam_state_{1};
+	uint8_t cliff_resume_cnt_{0};
+	uint8_t cliff_all_resume_cnt_{0};
+	uint8_t robot_stuck_resume_cnt_{0};
 };
 
 class MovementCharge :public IMovement
