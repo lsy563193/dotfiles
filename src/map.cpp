@@ -960,7 +960,7 @@ bool GridMap::markRobot(uint8_t id)
 			x = getPosition().toCell().x + dx;
 			y = getPosition().toCell().y + dy;
 			auto status = getCell(id, x, y);
-			if (status > CLEANED && status < BLOCKED_BOUNDARY && (status != BLOCKED_RCON)){
+			if (/*status > CLEANED && */status < BLOCKED_BOUNDARY && (status != BLOCKED_RCON)){
 //				ROS_INFO("\033[1;33m" "%s,%d: (%d,%d)" "\033[0m", __FUNCTION__, __LINE__,x, y);
 				setCell(id, x, y, CLEANED);
 				ret = true;
