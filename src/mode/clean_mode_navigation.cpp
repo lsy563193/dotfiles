@@ -194,16 +194,11 @@ void CleanModeNav::remoteClean(bool state_now, bool state_last)
 
 void CleanModeNav::remoteDirectionLeft(bool state_now, bool state_last)
 {
-	if (sp_state == state_pause)
+	if (sp_state == state_pause || sp_state == state_spot)
 	{
 		beeper.play_for_command(VALID);
 		ROS_INFO("%s %d: Remote left.", __FUNCTION__, __LINE__);
 		ev.remote_direction_left = true;
-	}
-	else if(sp_state == state_spot){
-		ev.remote_direction_left = true;
-		ROS_INFO("%s %d: Remote left.", __FUNCTION__, __LINE__);
-		beeper.play_for_command(VALID);
 	}
 	/*else if (sp_state == state_clean)
 	{
@@ -223,42 +218,25 @@ void CleanModeNav::remoteDirectionLeft(bool state_now, bool state_last)
 
 void CleanModeNav::remoteDirectionRight(bool state_now, bool state_last)
 {
-	if (sp_state == state_pause)
+	if (sp_state == state_pause || sp_state == state_spot)
 	{
 		beeper.play_for_command(VALID);
 		ROS_INFO("%s %d: Remote right.", __FUNCTION__, __LINE__);
 		ev.remote_direction_right = true;
-	}
-	else if(sp_state == state_spot){
-		ROS_INFO("%s %d: Remote right.", __FUNCTION__, __LINE__);
-		ev.remote_direction_right = true;
-		beeper.play_for_command(VALID);
 	}
 	else
-	{
 		beeper.play_for_command(INVALID);
-		//todo: Just for testing.
-		ROS_INFO("%s %d: Remote right.", __FUNCTION__, __LINE__);
-		error.set(ERROR_CODE_BUMPER);
-		ev.fatal_quit = true;
-	}
 
 	remote.reset();
 }
 
 void CleanModeNav::remoteDirectionForward(bool state_now, bool state_last)
 {
-	if (sp_state == state_pause)
+	if (sp_state == state_pause || sp_state == state_spot)
 	{
 		beeper.play_for_command(VALID);
 		ROS_INFO("%s %d: Remote forward.", __FUNCTION__, __LINE__);
-		ev.remote_direction_right = true;
-	}
-	else if(sp_state == state_spot){
-		ev.remote_direction_left = true;
-		ROS_INFO("%s %d: Remote forward.", __FUNCTION__, __LINE__);
-		ev.remote_direction_right = true;
-		beeper.play_for_command(VALID);
+		ev.remote_direction_forward = true;
 	}
 	else
 		beeper.play_for_command(INVALID);
