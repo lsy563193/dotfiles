@@ -534,7 +534,6 @@ bool Lidar::splitLine(const std::vector<Vector2<double>> &points, double consec_
 	int points_size = points.size();
 	double distance;
 	std::deque<Vector2<double>> new_line;
-	ROS_INFO("%s %d: point size: %d", __FUNCTION__, __LINE__, points_size);
 	new_line.push_back(points[0]);
 	for(int i = 1; i < (points_size - 1); i++) {
 		distance = sqrt((points[i].x - points[i-1].x) * (points[i].x - points[i-1].x) + (points[i].y - points[i-1].y) * (points[i].y - points[i-1].y));
