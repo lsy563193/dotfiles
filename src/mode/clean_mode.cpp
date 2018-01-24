@@ -13,8 +13,8 @@
 #include "error.h"
 
 const double CHASE_X = 0.107;
-static ros::Publisher ACleanMode::point_marker_pub_;
-static ros::Publisher ACleanMode::line_marker_pub2_;
+ros::Publisher ACleanMode::point_marker_pub_;
+ros::Publisher ACleanMode::line_marker_pub2_;
 bool ACleanMode::plan_activation_ = false;
 extern bool g_bye_bye;
 ACleanMode::ACleanMode()
@@ -98,6 +98,11 @@ ACleanMode::~ACleanMode()
 				speaker.play(VOICE_CLEANING_STOP, false);
 				ROS_WARN("%s %d: fatal_quit is true. Stop cleaning.", __FUNCTION__, __LINE__);
 			}
+		}
+		else if (switch_is_off_)
+		{
+			speaker.play(VOICE_CHECK_SWITCH, false);
+			ROS_WARN("%s %d: Switch is not on. Stop cleaning.", __FUNCTION__, __LINE__);
 		}
 		else
 		{
@@ -984,7 +989,7 @@ bool ACleanMode::isRemoteGoHomePoint()
 // ------------------Handlers--------------------------
 void ACleanMode::remoteHome(bool state_now, bool state_last)
 {
-	if (sp_state == state_clean || sp_state == state_pause)
+	if (sp_state == state_clean || sp_state == state_pause || sp_state == state_spot)
 	{
 		ROS_WARN("%s %d: remote home.", __FUNCTION__, __LINE__);
 		beeper.play_for_command(VALID);
@@ -1000,7 +1005,7 @@ void ACleanMode::remoteHome(bool state_now, bool state_last)
 
 void ACleanMode::cliffAll(bool state_now, bool state_last)
 {
-	if (!ev.cliff_all_triggered)
+	if (!charger.getChargeStatus() && !ev.cliff_all_triggered)
 	{
 		ROS_WARN("%s %d: Cliff all.", __FUNCTION__, __LINE__);
 		ev.cliff_all_triggered = true;

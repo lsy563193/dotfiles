@@ -37,7 +37,7 @@ bool CleanModeSpot::isExit()
 	return ACleanMode::isExit();
 }
 
-bool CleanModeSpot::mapMark(bool isMarkRobot)
+bool CleanModeSpot::mapMark()
 {
 	ROS_INFO("%s,%d,passed_path",__FUNCTION__,__LINE__);
 	auto passed_path_cells = pointsGenerateCells(passed_path_);
@@ -62,14 +62,6 @@ void CleanModeSpot::remoteClean(bool state_now, bool state_last)
 {
 	ev.key_clean_pressed = true;
 	beeper.play_for_command(true);
-	remote.reset();
-}
-
-void CleanModeSpot::remoteHome(bool state_now, bool state_last)
-{
-	ev.remote_home = true;
-	beeper.play_for_command(true);
-	INFO_YELLOW("REMOTE HOME PRESS");
 	remote.reset();
 }
 

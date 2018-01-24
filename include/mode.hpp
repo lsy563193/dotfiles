@@ -201,15 +201,15 @@ public:
 	static boost::shared_ptr<IAction> sp_action_;
 	bool isNavMode()
 	{
-		return isNavMode_;
+		return is_clean_mode_navigation_;
 	}
 	void setNavMode(bool set)
 	{
-		isNavMode_ = set;
+		is_clean_mode_navigation_ = set;
 	}
 
 protected:
-	bool isNavMode_{false};
+	bool is_clean_mode_navigation_{false};
 	int mode_i_{ac_null};
 private:
 
@@ -361,7 +361,7 @@ public:
 
 	void setRconPos(float cd,float dist);
 
-	virtual bool mapMark(bool isMarkRobot = true) = 0;
+	virtual bool mapMark() = 0;
 	virtual bool markRealTime(){return false;};
 
 	bool isRemoteGoHomePoint();
@@ -535,6 +535,7 @@ protected:
 	Point_t start_point_{0, 0, 0};
 	bool should_go_to_charger_{false};
 	bool remote_go_home_point{false};
+	bool switch_is_off_{false};
 
 public:
 
@@ -580,7 +581,7 @@ public:
 	CleanModeNav();
 	~CleanModeNav();
 
-	bool mapMark(bool isMarkRobot = true) override ;
+	bool mapMark() override;
 	bool isExit() override;
 
 	void keyClean(bool state_now, bool state_last) override ;
@@ -591,7 +592,6 @@ public:
 	void remoteWallFollow(bool state_now, bool state_last) override ;
 	void remoteSpot(bool state_now, bool state_last) override;
 	void remoteMax(bool state_now, bool state_last) override;
-	void remoteHome(bool state_now, bool state_last) override;
 //	void cliffAll(bool state_now, bool state_last) override ;
 	void chargeDetect(bool state_now, bool state_last) override ;
 	void batteryHome(bool state_now, bool state_last) override ;
@@ -671,7 +671,7 @@ public:
 	CleanModeExploration();
 	~CleanModeExploration();
 
-	bool mapMark(bool isMarkRobot = true) override;
+	bool mapMark() override;
 	bool markRealTime() override;
 //	bool isExit() override;
 	void keyClean(bool state_now, bool state_last) override ;
@@ -692,6 +692,9 @@ public:
 	void switchInStateGoToCharger() override;
 
 	bool moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
+
+private:
+	bool mark_robot_{true};
 };
 
 class CleanModeFollowWall:public ACleanMode {
@@ -700,7 +703,7 @@ public:
 
 	~CleanModeFollowWall() override;
 
-	bool mapMark(bool isMarkRobot = true) override;
+	bool mapMark() override;
 
 	void keyClean(bool state_now, bool state_last) override;
 	void remoteMax(bool state_now, bool state_last) override;
@@ -723,11 +726,10 @@ public:
 	CleanModeSpot();
 	~CleanModeSpot();
 
-	bool mapMark(bool isMarkRobot = true) override;
+	bool mapMark() override;
 	bool isExit() override;
 //	void cliffAll(bool state_now, bool state_last) override;
 	void remoteClean(bool state_now, bool state_last) override;
-	void remoteHome(bool  state_now, bool state_last) override;
 	void remoteWallFollow(bool state_now, bool state_last) override;
 	void keyClean(bool state_now, bool state_last) override;
 	void switchInStateInit() override ;
@@ -748,7 +750,8 @@ public:
 	CleanModeTest();
 	~CleanModeTest();
 
-	bool mapMark(bool isMarkRobot = true) override;
+	bool mapMark() override
+	{return false;}
 
 	bool isFinish() override;
 

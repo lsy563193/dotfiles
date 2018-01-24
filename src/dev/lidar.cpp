@@ -433,10 +433,11 @@ bool Lidar::lidarGetFitLine(double begin, double end, double range, double dis_l
 		end += 360;
 	if(begin >= end)
 		isReverse = true;
+//	ROS_INFO("%s %d: begin(%d), end(%d).", __FUNCTION__, __LINE__, static_cast<int>(begin), static_cast<int>(end));
 	for (auto i = static_cast<int>(begin); (i < static_cast<int>(end) || isReverse);) {
 		if(i > 359)
 			i = i - 360;
-//		ROS_INFO("i = %d", i);
+//		ROS_INFO("i = %d, range = %f", i, tmp_scan_data.ranges[i]);
 		if (tmp_scan_data.ranges[i] < 4) {
 			th = i * 1.0;
 			th = th + 180.0;
@@ -450,6 +451,11 @@ bool Lidar::lidarGetFitLine(double begin, double end, double range, double dis_l
 			isReverse = false;
 	}
 
+	if (Lidar_Point.empty())
+	{
+		ROS_DEBUG("%s %d: No lidar point available.", __FUNCTION__, __LINE__);
+		return false;
+	}
 	splitLine(Lidar_Point, consec_lim,points_count_lim);
 	splitLine2nd(&Lidar_Group, t_lim_split,points_count_lim);
 	mergeLine(&Lidar_Group, t_lim_merge, is_align);

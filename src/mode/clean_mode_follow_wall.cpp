@@ -45,7 +45,7 @@ CleanModeFollowWall::~CleanModeFollowWall()
 */
 }
 
-bool CleanModeFollowWall::mapMark(bool isMarkRobot) {
+bool CleanModeFollowWall::mapMark() {
 	clean_path_algorithm_->displayCellPath(pointsGenerateCells(passed_path_));
 	PP_WARN();
 	if (isStateGoHomePoint())

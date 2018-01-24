@@ -37,7 +37,7 @@ CleanModeNav::~CleanModeNav()
 	setNavMode(false);
 }
 
-bool CleanModeNav::mapMark(bool isMarkRobot)
+bool CleanModeNav::mapMark()
 {
 	ROS_INFO("%s %d: Start updating map.", __FUNCTION__, __LINE__);
 	clean_path_algorithm_->displayCellPath(pointsGenerateCells(passed_path_));
@@ -117,12 +117,12 @@ bool CleanModeNav::isExit()
 			setNextMode(cm_wall_follow);
 			return true;
 		}
-//		else if (ev.remote_spot)
-//		{
-//			ROS_WARN("%s %d: Exit for pause and remote spot.", __FUNCTION__, __LINE__);
-//			setNextMode(cm_spot);
-//			return true;
-//		}
+		else if (ev.remote_spot)
+		{
+			ROS_WARN("%s %d: Exit for pause and remote spot.", __FUNCTION__, __LINE__);
+			setNextMode(cm_spot);
+			return true;
+		}
 	}
 
 	if (ev.fatal_quit || ev.key_long_pressed || sp_action_->isExit())
@@ -195,17 +195,12 @@ void CleanModeNav::remoteClean(bool state_now, bool state_last)
 void CleanModeNav::remoteDirectionLeft(bool state_now, bool state_last)
 {
 	INFO_YELLOW("LEFT REMOTE PRESS FOR TEST");
-	if (sp_state == state_pause)
+	if (sp_state == state_pause || sp_state == state_spot)
 	{
 		beeper.play_for_command(VALID);
 		ev.remote_direction_left = true;
 	}
-	else if(sp_state == state_spot){
-		ev.remote_direction_left = true;
-		beeper.play_for_command(VALID);
-	}
-	/*
-	else if (sp_state == state_clean)
+	/*else if (sp_state == state_clean)
 	{
 		//todo: Just for testing.
 		beeper.play_for_command(VALID);
@@ -224,42 +219,25 @@ void CleanModeNav::remoteDirectionLeft(bool state_now, bool state_last)
 
 void CleanModeNav::remoteDirectionRight(bool state_now, bool state_last)
 {
-	if (sp_state == state_pause)
+	if (sp_state == state_pause || sp_state == state_spot)
 	{
 		beeper.play_for_command(VALID);
 		ROS_INFO("%s %d: Remote right.", __FUNCTION__, __LINE__);
 		ev.remote_direction_right = true;
-	}
-	else if(sp_state == state_spot){
-		ROS_INFO("%s %d: Remote right.", __FUNCTION__, __LINE__);
-		ev.remote_direction_right = true;
-		beeper.play_for_command(VALID);
 	}
 	else
-	{
 		beeper.play_for_command(INVALID);
-		//todo: Just for testing.
-		ROS_INFO("%s %d: Remote right.", __FUNCTION__, __LINE__);
-		error.set(ERROR_CODE_BUMPER);
-		ev.fatal_quit = true;
-	}
 
 	remote.reset();
 }
 
 void CleanModeNav::remoteDirectionForward(bool state_now, bool state_last)
 {
-	if (sp_state == state_pause)
+	if (sp_state == state_pause || sp_state == state_spot)
 	{
 		beeper.play_for_command(VALID);
 		ROS_INFO("%s %d: Remote forward.", __FUNCTION__, __LINE__);
-		ev.remote_direction_right = true;
-	}
-	else if(sp_state == state_spot){
-		ev.remote_direction_left = true;
-		ROS_INFO("%s %d: Remote forward.", __FUNCTION__, __LINE__);
-		ev.remote_direction_right = true;
-		beeper.play_for_command(VALID);
+		ev.remote_direction_forward = true;
 	}
 	else
 		beeper.play_for_command(INVALID);
@@ -283,7 +261,7 @@ void CleanModeNav::remoteWallFollow(bool state_now, bool state_last)
 
 void CleanModeNav::remoteSpot(bool state_now, bool state_last)
 {
-	if (sp_state == state_clean || sp_state == state_spot /*|| sp_state == state_pause*/)
+	if (sp_state == state_clean || sp_state == state_spot || sp_state == state_pause)
 	{
 		ev.remote_spot = true;
 		beeper.play_for_command(VALID);
@@ -318,27 +296,23 @@ void CleanModeNav::batteryHome(bool state_now, bool state_last)
 	}
 }
 
-void CleanModeNav::remoteHome(bool state_now, bool state_last)
-{
-
-	INFO_YELLOW("Remote home is pressed.");
-	if( sp_state == state_spot)
-	{
-		ev.remote_home = true;
-		beeper.play_for_command(VALID);
-	}
-	else
-		beeper.play_for_command(INVALID);
-	remote.reset();
-}
-
 void CleanModeNav::chargeDetect(bool state_now, bool state_last)
 {
-	if (!ev.charge_detect && charger.isDirected())
+	if (!ev.charge_detect)
 	{
-		ROS_WARN("%s %d: Charge detect!.", __FUNCTION__, __LINE__);
-		ev.charge_detect = charger.getChargeStatus();
-		ev.fatal_quit = true;
+		if (isStateInit() && action_i_ == ac_back_form_charger && sp_action_->isTimeUp())
+		{
+			ROS_WARN("%s %d: Switch is not on!.", __FUNCTION__, __LINE__);
+			ev.charge_detect = charger.getChargeStatus();
+			ev.fatal_quit = true;
+			switch_is_off_ = true;
+		}
+		else if (charger.isDirected())
+		{
+			ROS_WARN("%s %d: Charge detect!.", __FUNCTION__, __LINE__);
+			ev.charge_detect = charger.getChargeStatus();
+			ev.fatal_quit = true;
+		}
 	}
 }
 
