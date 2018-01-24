@@ -361,7 +361,7 @@ public:
 	void setRconPos(float cd,float dist);
 
 	virtual bool mapMark(bool isMarkRobot = true) = 0;
-	virtual bool markRealTime(){return false;};
+	virtual bool markMapInNewCell(){return false;};
 
 	bool isRemoteGoHomePoint();
 	void setHomePoint();
@@ -371,9 +371,9 @@ public:
 	Cells pointsGenerateCells(Points &targets);
 
 	// For move types
-	virtual bool moveTypeFollowWallIsFinish(IMoveType *p_mt, bool is_new_cell);
+	bool moveTypeNewCellIsFinish(IMoveType *p_move_type);
+	bool moveTypeRealTimeIsFinish(IMoveType *p_mt);
 	virtual void moveTypeFollowWallSaveBlocks();
-	virtual bool moveTypeLinearIsFinish(MoveTypeLinear *p_mt);
 	virtual void moveTypeLinearSaveBlocks();
 
 	// Handlers
@@ -449,6 +449,7 @@ public:
 	virtual void switchInStateTrapped();
 	bool trapped_time_out_{};
 	bool trapped_closed{};
+	bool out_of_trapped{};
 
 	// State exploration
 	bool isStateExploration() const
@@ -501,7 +502,6 @@ public:
 
 	Points passed_path_{};
 	Points plan_path_{};
-	Point_t last_{};
 	bool found_temp_charger_{};
 	bool in_rcon_signal_range_{};
 	bool should_mark_charger_{};
@@ -649,8 +649,6 @@ public:
 	bool isSwitchByEventInStateExceptionResume() override;
 
 private:
-	bool moveTypeFollowWallIsFinish(IMoveType *p_mt, bool is_new_cell) override;
-	bool moveTypeLinearIsFinish(MoveTypeLinear *p_mt) override;
 
 	bool has_aligned_and_open_slam_{false};
 	float paused_odom_angle_{0};
@@ -670,7 +668,7 @@ public:
 	~CleanModeExploration();
 
 	bool mapMark(bool isMarkRobot = true) override;
-	bool markRealTime() override;
+	bool markMapInNewCell() override;
 //	bool isExit() override;
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteClean(bool state_now, bool state_last) override ;
@@ -689,7 +687,6 @@ public:
 	void switchInStateGoHomePoint() override;
 	void switchInStateGoToCharger() override;
 
-	bool moveTypeFollowWallIsFinish(IMoveType *p_mt, bool is_new_cell) override;
 };
 
 class CleanModeFollowWall:public ACleanMode {
@@ -707,7 +704,6 @@ public:
 	void switchInStateTrapped() override;
 	bool generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &targets);
 
-	bool moveTypeFollowWallIsFinish(IMoveType *p_mt, bool is_new_cell) override ;
 	void switchInStateInit();
 
 	bool updateActionInStateTrapped()override ;

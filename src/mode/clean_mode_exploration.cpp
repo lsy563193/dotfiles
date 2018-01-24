@@ -124,6 +124,7 @@ void CleanModeExploration::switchInStateGoHomePoint() {
 	PP_INFO();
 	sp_state = nullptr;
 }
+/*
 
 bool CleanModeExploration::moveTypeFollowWallIsFinish(IMoveType *p_move_type, bool is_new_cell) {
 	if(action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
@@ -133,8 +134,9 @@ bool CleanModeExploration::moveTypeFollowWallIsFinish(IMoveType *p_move_type, bo
 	}
 	return false;
 }
+*/
 
-bool CleanModeExploration::markRealTime() {
+bool CleanModeExploration::markMapInNewCell() {
 	if(sp_state == state_trapped)
 	{
 		mapMark(false);

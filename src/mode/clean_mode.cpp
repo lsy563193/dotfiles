@@ -13,8 +13,8 @@
 #include "error.h"
 
 const double CHASE_X = 0.107;
-static ros::Publisher ACleanMode::point_marker_pub_;
-static ros::Publisher ACleanMode::line_marker_pub2_;
+ros::Publisher ACleanMode::point_marker_pub_{};
+ros::Publisher ACleanMode::line_marker_pub2_{};
 ACleanMode::ACleanMode()
 {
 
@@ -316,7 +316,7 @@ bool ACleanMode::calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,boo
 	points.resize(size);
 //	for (const auto &target :points)
 //			ROS_WARN("points(%d):target(%lf,%lf),dis(%f)", points.size(), target.x, target.y, target.Distance({CHASE_X, 0}));
-	ROS_WARN("points(%d):target(%lf,%lf)", points.size(), points.front().x, points.front().y);
+//	ROS_WARN("points(%d):target(%lf,%lf)", points.size(), points.front().x, points.front().y);
 	pubPointMarkers(&points, "base_link", "point marker");
 
 	return true;
@@ -726,20 +726,9 @@ void ACleanMode::setRconPos(Point_t pos)
 		charger_pos_ = pos;
 }
 
-bool ACleanMode::moveTypeFollowWallIsFinish(IMoveType *p_mt, bool is_new_cell)
-{
-	ROS_ERROR("closed_count_(%d), limit(%d)",p_mt->closed_count_, closed_count_limit_);
-	return p_mt->closed_count_ >= closed_count_limit_;
-}
-
 void ACleanMode::moveTypeFollowWallSaveBlocks()
 {
 	clean_map_.saveBlocks(action_i_ == ac_linear, isStateClean());
-}
-
-bool ACleanMode::moveTypeLinearIsFinish(MoveTypeLinear *p_mt)
-{
-	return p_mt->isPoseReach() || p_mt->isPassTargetStop(new_dir_);
 }
 
 void ACleanMode::moveTypeLinearSaveBlocks()
@@ -1323,7 +1312,15 @@ bool ACleanMode::updateActionInStateTrapped()
 		genNextAction();
 	}
 	else if(p_mt->closed_count_ >= closed_count_limit_) {
+		ROS_ERROR("p_mt->closed_count_ >= closed_count_limit_");
 		trapped_closed = true;
+		action_i_ = ac_null;
+		genNextAction();
+		return false;
+	}
+	else if(out_of_trapped) {
+//		out_of_trapped = false;
+		ROS_ERROR("out_of_trapped");
 		action_i_ = ac_null;
 		genNextAction();
 		return false;
@@ -1351,8 +1348,13 @@ void ACleanMode::switchInStateTrapped()
 		ROS_WARN("%s %d: Escape trapped timeout!(%d)", __FUNCTION__, __LINE__, ESCAPE_TRAPPED_TIME);
 		sp_state = nullptr;
 	}
-	else/* if (escape_trapped_)*/ {
-		ROS_WARN("%s %d: Escape trapped !", __FUNCTION__, __LINE__);
+//	else if (out_of_trapped) {
+//		out_of_trapped = false;
+//		ROS_WARN("%s %d: Escape trapped out!(%d)", __FUNCTION__, __LINE__, ESCAPE_TRAPPED_TIME);
+//		sp_state = st_clean;
+//	}
+	else/* if (escape_trapped_)*/ {//out_of_trapped = false
+		ROS_WARN("%s %d: restore Escape trapped !", __FUNCTION__, __LINE__);
 //		sp_state = (sp_tmp_state == state_clean) ? state_clean : state_exploration;
 		sp_state = sp_saved_states.back();
 		sp_saved_states.pop_back();
@@ -1384,3 +1386,64 @@ PathHead ACleanMode::getTempTarget()
 	return path_head_;
 }
 
+bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_move_type) {
+	auto curr = getPosition();
+	auto loc = std::find_if(passed_path_.begin(), passed_path_.end(), [&](Point_t it) {
+		return curr.isCellAndAngleEqual(it);
+	});
+	auto distance = std::distance(loc, passed_path_.end());
+	if (distance == 0) {
+		passed_path_.push_back(curr);
+		ROS_INFO("curr(%d,%d,%d)", curr.toCell().x, curr.toCell().y, static_cast<int>(radian_to_degree(curr.th)));
+		passed_path_.push_back(curr);
+	}
+
+	markMapInNewCell();//real time mark to exploration
+
+	if (sp_state == state_trapped) {
+		if (action_i_ == ac_follow_wall_right || action_i_ == ac_follow_wall_left) {
+			auto p_mt = dynamic_cast<MoveTypeFollowWall *>(p_move_type);
+			if(p_mt->isBlockCleared(clean_map_, passed_path_))
+			if(!clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell()))
+			{
+				out_of_trapped = true;
+				ROS_ERROR("OUT OF TRAPPED");
+				return true;
+			}
+		}
+	}
+
+	if (distance > 5) {// closed
+		passed_path_.clear();
+		p_move_type->closed_count_++;
+		ROS_ERROR("distance > 5");
+		if (p_move_type->closed_count_ >= closed_count_limit_)
+		{
+			ROS_INFO("closed_count_limit_(%d), closed_count_(%d)", closed_count_limit_, p_move_type->closed_count_);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
+{
+	if(action_i_ == ac_linear) {
+		auto p_mt = dynamic_cast<MoveTypeLinear *>(p_move_type);
+		if(p_mt->isPoseReach() || p_mt->isPassTargetStop(new_dir_))
+			return true;
+
+		if (p_mt->isLinearForward())
+			return p_mt->isRconStop();
+	}
+	else//rounding
+	{
+		if(sp_state != state_trapped)
+		{
+			auto p_mt = dynamic_cast<MoveTypeFollowWall *>(p_move_type);
+			return p_mt->isNewLineReach(clean_map_) || p_mt->isOverOriginLine(clean_map_);
+		}
+	}
+	return false;
+}

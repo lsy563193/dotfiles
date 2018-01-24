@@ -114,33 +114,15 @@ bool IMoveType::isFinish() {
 	if (p_cm->passed_path_.empty())
 	{
 		p_cm->passed_path_.push_back(curr);
-		p_cm->last_ = curr;
+		last_ = curr;
 	}
-	else if (!curr.isCellAndAngleEqual(p_cm->last_))
+	else if (!curr.isCellAndAngleEqual(last_))
 	{
-		p_cm->last_ = curr;
-		auto loc = std::find_if(p_cm->passed_path_.begin(), p_cm->passed_path_.end(), [&](Point_t it) {
-			return curr.isCellAndAngleEqual(it);
-		});
-		auto distance = std::distance(loc, p_cm->passed_path_.end());
-		if (distance == 0) {
-			p_cm->passed_path_.push_back(curr);
-			ROS_INFO("curr(%d,%d,%d)",curr.toCell().x, curr.toCell().y, static_cast<int>(radian_to_degree(curr.th)));
-			p_cm->passed_path_.push_back(curr);
-		}
-
-		p_cm->markRealTime();//real time mark to exploration
-
-		if (distance > 5) {// closed
-			closed_count_++;
-//			return p_cm->closed_count_ > p_cm->closed_count_limit_;
-		}
-		if(p_cm->moveTypeFollowWallIsFinish(this, true))
+		last_ = curr;
+		if(p_cm->moveTypeNewCellIsFinish(this))
 			return true;
-//		displayPath(passed_path_);
 	}
-
-	if(p_cm->moveTypeFollowWallIsFinish(this, false))
+	if(p_cm->moveTypeRealTimeIsFinish(this))
 		return true;
 
 	return sp_mode_->isExceptionTriggered();

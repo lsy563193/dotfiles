@@ -20,6 +20,7 @@ public:
 	bool shouldTurn();
 //	~IMoveType() = default;
 
+	Point_t last_{};
 	int closed_count_{};
 	void setMode(Mode* cm)
 	{sp_mode_ = cm;}

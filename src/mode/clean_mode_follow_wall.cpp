@@ -197,16 +197,16 @@ bool CleanModeFollowWall::updateActionInStateTrapped()
 	return true;
 }
 
-bool CleanModeFollowWall::moveTypeFollowWallIsFinish(IMoveType *p_mt,bool is_new_cell) {
-	if (ACleanMode::moveTypeFollowWallIsFinish(p_mt, is_new_cell))
-	{
-		ROS_INFO("closed_count_(%d), limit(%d)",p_mt->closed_count_, closed_count_limit_);
-		ROS_WARN("moveTypeFollowWallIsFinish close!!!");
-		return true;
-	}
+//bool CleanModeFollowWall::moveTypeFollowWallIsFinish(IMoveType *p_mt,bool is_new_cell) {
+//	if (ACleanMode::moveTypeFollowWallIsFinish(p_mt, is_new_cell))
+//	{
+//		ROS_INFO("closed_count_(%d), limit(%d)",p_mt->closed_count_, closed_count_limit_);
+//		ROS_WARN("moveTypeFollowWallIsFinish close!!!");
+//		return true;
+//	}
 
-	return false;
-}
+//	return false;
+//}
 
 void CleanModeFollowWall::switchInStateTrapped() {
 	sp_state = state_go_home_point;

@@ -44,9 +44,6 @@ bool MoveTypeLinear::isFinish()
 
 	auto p_clean_mode = dynamic_cast<ACleanMode*> (sp_mode_);
 
-	if (p_clean_mode->moveTypeLinearIsFinish(this))
-		return true;
-
 	if (isLinearForward())
 		switchLinearTarget(p_clean_mode);
 
