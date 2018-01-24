@@ -91,7 +91,7 @@ bool IMoveType::shouldTurn()
 
 IMoveType::IMoveType() {
 //	resetTriggeredValue();
-	start_point_ = getPosition();
+	last_ = start_point_ = getPosition();
 	c_rcon.resetStatus();
 	robot::instance()->obsAdjustCount(20);
 }
@@ -111,12 +111,7 @@ bool IMoveType::isFinish() {
 	updatePosition();
 	auto curr = getPosition();
 	auto p_cm = dynamic_cast<ACleanMode*> (sp_mode_);
-	if (p_cm->passed_path_.empty())
-	{
-		p_cm->passed_path_.push_back(curr);
-		last_ = curr;
-	}
-	else if (!curr.isCellAndAngleEqual(last_))
+	if (!curr.isCellAndAngleEqual(last_))
 	{
 		last_ = curr;
 		if(p_cm->moveTypeNewCellIsFinish(this))
