@@ -364,7 +364,7 @@ void robot::core_thread_cb()
 		p_mode.reset(getNextMode(next_mode));
 //		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
 	}
-	g_bye_bye = true;
+	g_pp_shutdown = true;
 	ROS_ERROR("%s,%d,exit",__FUNCTION__,__LINE__);
 }
 
@@ -379,7 +379,7 @@ robot::~robot()
 	pthread_cond_destroy(&event_handler_cond);
 
 	delete robot_tf_;
-	ROS_INFO("GOOD BYE!");
+	ROS_INFO("pp shutdown!");
 }
 
 robot *robot::instance()

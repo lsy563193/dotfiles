@@ -16,7 +16,7 @@ const double CHASE_X = 0.107;
 ros::Publisher ACleanMode::point_marker_pub_;
 ros::Publisher ACleanMode::line_marker_pub2_;
 bool ACleanMode::plan_activation_ = false;
-extern bool g_bye_bye;
+extern bool g_pp_shutdown;
 ACleanMode::ACleanMode()
 {
 	scanLinear_sub_ = clean_nh_.subscribe("scanLinear", 1, &Lidar::scanLinearCb, &lidar);
@@ -70,7 +70,7 @@ ACleanMode::~ACleanMode()
 	sp_state = nullptr;
 	sp_action_.reset();
 	event_manager_set_enable(false);
-	if(!g_bye_bye){
+	if(!g_pp_shutdown){
 		wheel.stop();
 		brush.stop();
 		vacuum.stop();
