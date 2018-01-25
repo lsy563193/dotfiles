@@ -364,7 +364,7 @@ void robot::core_thread_cb()
 		p_mode.reset(getNextMode(next_mode));
 //		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
 	}
-	g_bye_bye = true;
+	g_core_thread_exit = true;
 	ROS_ERROR("%s,%d,exit",__FUNCTION__,__LINE__);
 }
 

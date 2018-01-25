@@ -6,7 +6,7 @@
 #include "robotbase.h"
 
 
-bool g_bye_bye = false;
+bool g_core_thread_exit = false;
 
 bool robotbase_thread_stop = false;
 bool send_thread_stop = false;
@@ -77,7 +77,7 @@ void robotbase_deinit(void)
 	vacuum.stop();
 	serial.setMainBoardMode(NORMAL_SLEEP_MODE);
 	usleep(40000);
-	while(ros::ok() && !g_bye_bye){
+	while(ros::ok() && !g_core_thread_exit){
 		usleep(2000);
 	}
 	serial.close();
