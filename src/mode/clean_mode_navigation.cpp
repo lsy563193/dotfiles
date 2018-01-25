@@ -121,6 +121,13 @@ bool CleanModeNav::isExit()
 			setNextMode(cm_spot);
 			return true;
 		}
+		else if (ev.cliff_all_triggered)
+		{
+			ev.fatal_quit = true;
+			ROS_WARN("%s %d: Exit for pause and robot lifted up.", __FUNCTION__, __LINE__);
+			setNextMode(md_idle);
+			return true;
+		}
 	}
 
 	if (ev.fatal_quit || ev.key_long_pressed || sp_action_->isExit())
