@@ -139,7 +139,7 @@ bool CleanModeNav::isExit()
 	return false;
 }
 
-bool CleanModeNav::moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt)
+/*bool CleanModeNav::moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt)
 {
 	if (sp_state == state_trapped)
 		return p_mt->isBlockCleared(clean_map_, passed_path_);
@@ -153,7 +153,7 @@ bool CleanModeNav::moveTypeLinearIsFinish(MoveTypeLinear *p_mt)
 		return p_mt->isRconStop() || ACleanMode::moveTypeLinearIsFinish(p_mt);
 	else
 		return ACleanMode::moveTypeLinearIsFinish(p_mt);
-}
+}*/
 
 // Event handlers.
 void CleanModeNav::keyClean(bool state_now, bool state_last)

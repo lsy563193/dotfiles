@@ -17,6 +17,7 @@ const double CHASE_X = 0.107;
 ros::Publisher ACleanMode::point_marker_pub_={};
 ros::Publisher ACleanMode::line_marker_pub2_={};
 bool ACleanMode::plan_activation_={};
+
 ACleanMode::ACleanMode()
 {
 	scanLinear_sub_ = clean_nh_.subscribe("scanLinear", 1, &Lidar::scanLinearCb, &lidar);
@@ -48,7 +49,7 @@ ACleanMode::ACleanMode()
 	resetPosition();
 	c_rcon.resetStatus();
 	robot::instance()->initOdomPosition();
-	fw_map.reset(CLEAN_MAP);
+//	fw_map.reset(CLEAN_MAP);
 }
 
 ACleanMode::~ACleanMode()
@@ -1318,7 +1319,7 @@ bool ACleanMode::updateActionInStateTrapped()
 			action_i_ = ac_linear;
 		}
 
-		if (closed_count_ >= closed_count_limit_ || isolate_count_ >= ISOLATE_COUNT_LIMIT_) {
+		if (closed_count_ >= closed_count_limit_ || isolate_count_ >= isolate_count_limit_) {
 			ROS_ERROR("p_mt->closed_count_ >= closed_count_limit_");
 			trapped_closed_or_isolate = true;
 			action_i_ = ac_null;

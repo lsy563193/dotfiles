@@ -495,7 +495,7 @@ public:
 	int closed_count_{};
 	int closed_count_limit_{2};
 	int isolate_count_{};
-	const int ISOLATE_COUNT_LIMIT_{3};
+	int isolate_count_limit_{3};
 	State *sp_state{};
 	State* getState() const {
 		return sp_state;
