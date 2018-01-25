@@ -4,13 +4,6 @@
 
 #include <event_manager.h>
 #include <dev.h>
-
-
-
-#include "action.hpp"
-#include "movement.hpp"
-#include "move_type.hpp"
-#include "state.hpp"
 #include "mode.hpp"
 
 ModeGoToCharger::ModeGoToCharger()
@@ -20,8 +13,9 @@ ModeGoToCharger::ModeGoToCharger()
 	event_manager_reset_status();
 	event_manager_set_enable(true);
 
+	serial.setMainBoardMode(WORK_MODE);
 	speaker.play(VOICE_BACK_TO_CHARGER, false);
-	led.set_mode(LED_STEADY, LED_ORANGE);
+	led.setMode(LED_STEADY, LED_ORANGE);
 	sp_action_.reset(new ActionOpenGyro);
 	action_i_ = ac_open_gyro;
 }
@@ -73,9 +67,9 @@ IAction* ModeGoToCharger::getNextAction()
 	if(action_i_ == ac_open_gyro)
 	{
 		action_i_ = ac_go_to_charger;
-		led.set_mode(LED_STEADY, LED_ORANGE);
+		led.setMode(LED_STEADY, LED_ORANGE);
 		brush.normalOperate();
-		vacuum.setTmpMode(Vac_Speed_NormalL);
+		vacuum.setTmpMode(Vac_Normal);
 		return new MoveTypeGoToCharger();
 	}
 	return nullptr;

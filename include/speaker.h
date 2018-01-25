@@ -48,7 +48,7 @@ typedef enum {
 	VOICE_CLEANING_PAUSE				= 40,
 	VOICE_CLEAR_ERROR					= 41,
 	VOICE_CANCEL_APPOINTMENT			= 42,
-	VOICE_PLAN_CLEANING_START			= 43,
+	VOICE_APPOINTMENT_START			= 43,
 	VOICE_CLEANING_STOP				= 44,
 	VOICE_CHECK_SWITCH				= 45,
 	VOICE_ROBOT_STUCK					= 46,
@@ -87,7 +87,7 @@ public:
 
 	void play(VoiceType voice_type, bool can_be_interrputed = true);
 
-	void playRoutine(void);
+	void playRoutine();
 
 private:
 	bool openVoiceFile(Voice voice);

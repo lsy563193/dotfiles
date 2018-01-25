@@ -93,11 +93,13 @@ class ActionIdle :public IAction
 {
 public:
 	ActionIdle();
-	~ActionIdle();
-	bool isFinish();
-	void run();
+	~ActionIdle() override;
+	bool isFinish() override;
+	bool isTimeUp() override;
+	void run() override;
 private:
-
+	int error_alarm_cnt_{0};
+	double error_alarm_time_{0};
 };
 
 class ActionPause :public IAction

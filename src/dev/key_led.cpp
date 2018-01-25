@@ -15,7 +15,7 @@ void KeyLed::set(uint16_t green, uint16_t red)
 	serial.setSendData(CTL_LED_GREEN, green & 0xff);
 }
 
-void KeyLed::set_mode(uint8_t type, uint8_t color, uint16_t time_ms)
+void KeyLed::setMode(uint8_t type, uint8_t color, uint16_t time_ms)
 {
 	robotbase_led_type = type;
 	robotbase_led_color = color;

@@ -3,9 +3,7 @@
 //
 
 #include <event_manager.h>
-#include <action.hpp>
 #include <movement.hpp>
-#include <move_type.hpp>
 
 #include "dev.h"
 
@@ -53,7 +51,7 @@ bool MovementBack::isFinish()
 	float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getX(), odom.getY());
 //	ROS_INFO("%s, %d: MovementBack distance %f", __FUNCTION__, __LINE__, distance);
 
-	if(fabsf(distance) >= back_distance_)
+	if (std::abs(distance) >= back_distance_ || isLidarStop())
 	{
 
 		bumper_jam_cnt_ = bumper.getStatus() == 0 ? 0 : bumper_jam_cnt_+1 ;
@@ -96,3 +94,18 @@ bool MovementBack::isFinish()
 	}
 	return false;
 }
+
+bool MovementBack::isLidarStop()
+{
+	if (bumper.getStatus() || cliff.getStatus() || lidar.isRobotSlip())
+		return false;
+
+	if (lidar.getObstacleDistance(1, 0.15) < 0.02)
+	{
+		ROS_INFO("%s %d: Stop by lidar.", __FUNCTION__, __LINE__);
+		return true;
+	}
+
+	return false;
+}
+

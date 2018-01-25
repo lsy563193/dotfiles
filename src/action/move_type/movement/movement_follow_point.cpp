@@ -2,13 +2,13 @@
 // Created by lsy563193 on 12/25/17.
 //
 
-#include <action.hpp>
 #include <movement.hpp>
 #include <move_type.hpp>
 #include "dev.h"
 #include "robot.hpp"
+#include "mode.hpp"
 
-//Point32_t AMovementFollowPoint::tmp_target_{};
+//Point_t AMovementFollowPoint::tmp_target_{};
 
 void AMovementFollowPoint::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 {
@@ -18,13 +18,13 @@ void AMovementFollowPoint::adjustSpeed(int32_t &left_speed, int32_t &right_speed
 
 	if (integration_cycle_++ > 10) {
 		integration_cycle_ = 0;
-		integrated_ += angle_diff;
+		integrated_ += radian_to_degree(radian_diff);
 		check_limit(integrated_, -150, 150);
 	}
 
-//	ROS_INFO("diff(%d), angle_forward_to_turn_(%d)",angle_diff, angle_forward_to_turn_);
+//	ROS_INFO("diff(%f), angle_forward_to_turn_(%f)",radian_diff, angle_forward_to_turn_);
 
-		if (is_near()) {
+		if (isNear()) {
 			if (base_speed_ > (int32_t) min_speed_) {
 				base_speed_--;
 			}
@@ -36,25 +36,37 @@ void AMovementFollowPoint::adjustSpeed(int32_t &left_speed, int32_t &right_speed
 			}
 			integrated_ = 0;
 		}
-
-		left_speed = base_speed_ - angle_diff / kp_ -
-								 integrated_ / 150; // - Delta / 20; // - Delta * 10 ; // - integrated_ / 2500;
-		right_speed = base_speed_ + angle_diff / kp_ +
-									integrated_ / 150; // + Delta / 20;// + Delta * 10 ; // + integrated_ / 2500;
+		auto angle_diff = static_cast<int32_t>(radian_to_degree(radian_diff));
+		auto speed_diff = angle_diff / kp_;
+//		auto speed_diff = static_cast<int32_t>(radian_to_degree(radian_diff)) / kp_;
+		left_speed = (base_speed_ - speed_diff - integrated_ / 150); // - Delta / 20; // - Delta * 10 ; // - integrated_ / 2500;
+		right_speed = base_speed_ + speed_diff + integrated_ / 150; // + Delta / 20;// + Delta * 10 ; // + integrated_ / 2500;
 
 	check_limit(left_speed, 0, max_speed_);
 	check_limit(right_speed, 0, max_speed_);
-//	ROS_INFO("speed(%d,%d)", left_speed, right_speed);
+//	ROS_INFO("speed(%d,%d),base(%d),angle_diff(%d), speed_diff(%d)", left_speed, right_speed,base_speed_,angle_diff, speed_diff);
 
 	base_speed_ = (left_speed + right_speed) / 2;
 
 }
 
 bool AMovementFollowPoint::isFinish() {
-	angle_diff = getPosition().angleDiffPoint(calcTmpTarget());
-	if(std::abs(angle_diff) > angle_forward_to_turn_)
+//	ROS_WARN("curr target th(%f,%f)", getPosition().th, calcTmpTarget().th);
+	radian_diff = getPosition().courseToDest(calcTmpTarget());
+//	ROS_WARN("radian_diff(%f)", radian_diff);
+	if(std::abs(radian_diff) > angle_forward_to_turn_)
 	{
-		ROS_INFO("angle_diff(%d)", angle_diff);
+		ROS_INFO_FL();
+		ROS_WARN("radian_diff(%f)", radian_diff);
+#if DEBUG_ENABLE
+		if (std::abs(radian_diff) > degree_to_radian(140)) {
+			ROS_ERROR_COND(DEBUG_ENABLE, "LASER WALL FOLLOW ERROR! PLEASE CALL ALVIN AND RESTART THE ROBOT.");
+//			while(ros::ok()){
+//				beeper.play_for_command(VALID);
+//				wheel.setPidTargetSpeed(0, 0);
+//			}
+		}
+#endif
 		sp_mt_->state_turn = true;
 		return true;
 	}

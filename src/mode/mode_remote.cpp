@@ -5,23 +5,16 @@
 #include <event_manager.h>
 #include <robot.hpp>
 #include "dev.h"
-
-
-
-#include "action.hpp"
-#include "movement.hpp"
-#include "move_type.hpp"
-#include "state.hpp"
 #include "mode.hpp"
 
 ModeRemote::ModeRemote()
 {//use dynamic then you can limit using derived class member
-	// TODO: Remote mode after nav is acting weird.
 	ROS_INFO("%s %d: Entering remote mode\n=========================" , __FUNCTION__, __LINE__);
 	event_manager_register_handler(this);
 	event_manager_set_enable(true);
 
-	led.set_mode(LED_STEADY, LED_GREEN);
+	serial.setMainBoardMode(WORK_MODE);
+	led.setMode(LED_STEADY, LED_GREEN);
 	if (gyro.isOn())
 	{
 		sp_action_.reset(new MovementStay());
@@ -74,7 +67,11 @@ bool ModeRemote::isExit()
 
 bool ModeRemote::isFinish()
 {
-	if (sp_action_->isFinish())
+	if (sp_action_->isFinish() ||
+			(action_i_ == ac_turn &&
+				(ev.remote_direction_forward || ev.remote_direction_left || ev.remote_direction_right)
+			)
+		)
 	{
 		PP_INFO();
 		sp_action_.reset(getNextAction());
@@ -113,21 +110,52 @@ IAction* ModeRemote::getNextAction()
 		{
 			action_i_ = ac_turn;
 			ev.remote_direction_left = false;
-			return new MovementTurn(static_cast<int16_t>(robot::instance()->getWorldPoseAngle() + 300), ROTATE_TOP_SPEED);
+			return new MovementTurn(robot::instance()->getWorldPoseRadian() + degree_to_radian(30), ROTATE_TOP_SPEED);
 		}
 		else if (ev.remote_direction_right)
 		{
 			action_i_ = ac_turn;
 			ev.remote_direction_right = false;
-			return new MovementTurn(static_cast<int16_t>(robot::instance()->getWorldPoseAngle() - 300), ROTATE_TOP_SPEED);
+			return new MovementTurn(robot::instance()->getWorldPoseRadian() - degree_to_radian(30), ROTATE_TOP_SPEED);
 		}
 	}
 
-	if (action_i_ == ac_movement_direct_go || action_i_ == ac_turn)
+	else if (action_i_ == ac_movement_direct_go)
 	{
-		if (bumper.getStatus() || cliff.getStatus())
+		if (ev.bumper_triggered || ev.cliff_triggered)
 		{
-			PP_INFO();
+			ROS_INFO("%s %d: ev.bumper_triggered(%d), ev.cliff_triggered(%d).",
+					 __FUNCTION__, __LINE__, ev.bumper_triggered, ev.cliff_triggered);
+			ev.bumper_triggered = 0;
+			ev.cliff_triggered = 0;
+			action_i_ = ac_back;
+			return new MovementBack(0.01, BACK_MAX_SPEED);
+		}
+		else if (ev.rcon_triggered)
+		{
+			ROS_INFO("%s %d: ev.rcon_triggered(%d).",
+					 __FUNCTION__, __LINE__, ev.rcon_triggered);
+			ev.rcon_triggered = 0;
+			action_i_ = ac_back;
+			return new MovementBack(0.05, BACK_MAX_SPEED);
+		}
+		else
+		{
+			ev.remote_direction_forward = false;
+			ev.remote_direction_left = false;
+			ev.remote_direction_right = false;
+			action_i_ = ac_movement_stay;
+			return new MovementStay();
+		}
+	}
+	else if (action_i_ == ac_turn)
+	{
+		if (ev.bumper_triggered || ev.cliff_triggered)
+		{
+			ROS_INFO("%s %d: ev.bumper_triggered(%d), ev.cliff_triggered(%d).",
+					 __FUNCTION__, __LINE__, ev.bumper_triggered, ev.cliff_triggered);
+			ev.bumper_triggered = 0;
+			ev.cliff_triggered = 0;
 			action_i_ = ac_back;
 			return new MovementBack(0.01, BACK_MAX_SPEED);
 		}
@@ -140,8 +168,7 @@ IAction* ModeRemote::getNextAction()
 			return new MovementStay();
 		}
 	}
-
-	if (action_i_ == ac_back)
+	else if (action_i_ == ac_back)
 	{
 		if (bumper.getStatus() || cliff.getStatus())
 		{

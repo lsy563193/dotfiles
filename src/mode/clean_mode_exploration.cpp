@@ -6,16 +6,12 @@
 #include <error.h>
 #include <map.h>
 
-#include "action.hpp"
-#include "movement.hpp"
-#include "move_type.hpp"
-#include "state.hpp"
 #include "mode.hpp"
 
 CleanModeExploration::CleanModeExploration()
 {
+	ROS_INFO("%s %d: Entering Exploration mode\n=========================" , __FUNCTION__, __LINE__);
 	speaker.play(VOICE_EXPLORATION_START, false);
-	action_i_ = ac_open_gyro;
 	mode_i_ = cm_exploration;
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
 	IMoveType::sp_mode_ = this;
@@ -29,11 +25,12 @@ CleanModeExploration::~CleanModeExploration()
 
 bool CleanModeExploration::mapMark()
 {
-	clean_map_.mergeFromSlamGridMap(slam_grid_map,true,true);
+	clean_map_.mergeFromSlamGridMap(slam_grid_map, true, true, false, false, false, false);
 	clean_map_.setExplorationCleaned();
 	clean_map_.setBlocks();
-	clean_map_.markRobot(CLEAN_MAP);
-	passed_path_.clear();
+	if(mark_robot_)
+		clean_map_.markRobot(CLEAN_MAP);
+//	passed_path_.clear();
 	return false;
 }
 
@@ -107,9 +104,7 @@ void CleanModeExploration::switchInStateGoToCharger() {
 		return;
 	}
 	else
-	{
 		sp_state = state_exploration;
-	}
 	sp_state->init();
 }
 
@@ -127,13 +122,27 @@ void CleanModeExploration::switchInStateGoHomePoint() {
 	PP_INFO();
 	sp_state = nullptr;
 }
+/*
 
-bool CleanModeExploration::moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) {
-	return p_mt->isBlockCleared(clean_map_, passed_path_);
+bool CleanModeExploration::moveTypeFollowWallIsFinish(IMoveType *p_move_type, bool is_new_cell) {
+	if(action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
+	{
+		auto p_mt = dynamic_cast<MoveTypeFollowWall *>(p_move_type);
+		return p_mt->isBlockCleared(clean_map_, passed_path_);
+	}
+	return false;
 }
+*/
 
-bool CleanModeExploration::markRealTime() {
-	mapMark();
+bool CleanModeExploration::markMapInNewCell() {
+	if(sp_state == state_trapped)
+	{
+		mark_robot_ = false;
+		mapMark();
+		mark_robot_ = true;
+	}
+	else
+		mapMark();
 	return true;
 }
 

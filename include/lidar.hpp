@@ -18,11 +18,23 @@ public:
 	Lidar();
 	~Lidar();
 
-	bool lidarObstcalDetected(double distance, int angle, double range);
+	bool lidarGetFitLine(double begin, double end, double range, double dis_lim, double *line_radian, double *distance, bool is_left, bool is_align = false);
 
-	bool lidarGetFitLine(int begin, int end, double range, double dis_lim, double *hine_angle, double *distance, bool is_left, bool is_align = false);
-
+	/*
+	 * @author Alvin Xie
+	 * @brief make use of lidar to judge x+ or x- is more closer to the wall
+	 * @return the closer direction of x to the wall
+	 * if x+ is closer, return 1, else return 0
+	 * */
 	int compLaneDistance();
+
+	/*
+	 * @author Alvin Xie
+	 * @brief make use of lidar to get the obstacle distance
+	 * @param dir:0-front 1-back 2-left 3-right
+	 *        range: detect range for one side in meters, it will detect both side.
+	 * @return the distance to the obstacle
+	 * */
 	double getObstacleDistance(uint8_t dir, double range);
 	void setScanLinearReady(uint8_t val);
 	void setScanOriginalReady(uint8_t val);
@@ -33,22 +45,20 @@ public:
 
 	double getLidarDistance(uint16_t angle);
 
-	bool lineFit(const std::vector<Vector2<double>> &points, double &a, double &b, double &c);
+	bool lineFit(const std::deque<Vector2<double>> &points, double &a, double &b, double &c);
 
 	bool splitLine(const std::vector<Vector2<double>> &points, double consecutive_lim, int points_count_lim);
 
 	//bool splitLine2nd(const std::vector<std::vector<Vector2<double>> >	&groups, double t_max, int points_count_lim);
-	bool splitLine2nd(std::vector<std::vector<Vector2<double>> > *groups, double t_max, int points_count_lim);
+	bool splitLine2nd(std::vector<std::deque<Vector2<double>> > *groups, double t_max, int points_count_lim);
 
-	bool mergeLine(std::vector<std::vector<Vector2<double>> > *groups, double t_lim);
+	bool mergeLine(std::vector<std::deque<Vector2<double>> > *groups, double t_lim , bool is_align);
 
-	bool fitLineGroup(std::vector<std::vector<Vector2<double>> > *groups, double dis_lim, bool is_align);
+	bool fitLineGroup(std::vector<std::deque<Vector2<double>> > *groups, double dis_lim , bool is_align);
 
 	void pubFitLineMarker(double a, double b, double c, double y1, double y2);
 
 	void motorCtrl(bool new_switch_);
-	void pubPointMarker(std::vector<Vector2<double>> *point);
-	bool getLidarWfTarget2(std::vector<Vector2<double>> &points);
 	void startAlign();
 	bool alignFinish();
 	float alignAngle(void)
@@ -74,7 +84,7 @@ public:
 	void scanLinearCb(const sensor_msgs::LaserScan::ConstPtr &msg);
 	void scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr &msg);
 	void scanCompensateCb(const sensor_msgs::LaserScan::ConstPtr &msg);
-	void lidarPointCb(const visualization_msgs::Marker &point_marker);
+	void lidarXYPointCb(const visualization_msgs::Marker &point_marker);
 	static void setLidarScanDataOriginal(const sensor_msgs::LaserScan::ConstPtr &scan);
 	static sensor_msgs::LaserScan getLidarScanDataOriginal(void);
 private:
@@ -86,18 +96,19 @@ private:
 	uint8_t is_scanLinear_ready_;
 	uint8_t is_scanOriginal_ready_;
 	uint8_t is_scanCompensate_ready_;
-	std::vector<geometry_msgs::Point> lidarXY_points;
 
-	boost::mutex scan2_mutex_;
 	sensor_msgs::LaserScan lidarScanData_linear_;
 	static sensor_msgs::LaserScan lidarScanData_original_;
 	sensor_msgs::LaserScan lidarScanData_compensate_;
-	double scanLinear_update_time;
-	double scanOriginal_update_time;
+	std::vector<geometry_msgs::Point> lidarXY_points;
+	double scanLinear_update_time_;
+	double scanOriginal_update_time_;
+	double scanCompensate_update_time_;
+	double scanXYPoint_update_time_;
 
 	std::vector<Vector2<double>>	Lidar_Point;
-	std::vector<std::vector<Vector2<double>> >	Lidar_Group;
-	std::vector<std::vector<Vector2<double>> >	Lidar_Group_2nd;
+	std::vector<std::deque<Vector2<double>> >	Lidar_Group;
+	std::vector<std::deque<Vector2<double>> >	Lidar_Group_2nd;
 	std::vector<LineABC>	fit_line;
 	//static float *last_ranges_;
 
@@ -123,7 +134,6 @@ private:
 };
 
 bool lidar_is_stuck();
-uint8_t lidar_get_status();
 
 extern Lidar lidar;
 #endif

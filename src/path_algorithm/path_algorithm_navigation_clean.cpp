@@ -6,7 +6,7 @@
 #include "robot.hpp"
 #include "path_algorithm.h"
 
-bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point32_t &curr, const int &last_dir, Points &plan_path)
+bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &plan_path)
 {
 
 	plan_path.clear();

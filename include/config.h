@@ -20,24 +20,27 @@
 /* ------------------------------------- Speaker config ------------------------------------- */
 #define SPEAKER_VOLUME						(55)
 
+/* ------------------------------------- DEBUG config ------------------------------------- */
+#define DEBUG_ENABLE						(1)
 /* ------------------------------------- Grid Map config ------------------------------------- */
 
 /*
  * Definition of the grid map.
  */
 #define MAP_DIMENSION			(200 * CELL_SIZE)//CELL_SIZE * 190 //9225//7925  // 14250
-#define MAP_SIZE			(MAP_DIMENSION / CELL_SIZE)
+//#define MAP_SIZE			(MAP_DIMENSION / CELL_SIZE)
+#define MAP_SIZE			(200)
 #define COLOR_DEBUG_MAP		(1)
 
 /*
  * Definition relates to a grid cell.
  */
 #define SPEED_ALF    (7.83)
-#define CELL_SIZE			(112) // 65 // in mm
+#define CELL_SIZE			(0.112f) // 65 // in mm
 #define CELL_SIZE_2			(2 * CELL_SIZE) // 65
 #define CELL_SIZE_3			(3 * CELL_SIZE) // 65
-#define CELL_COUNT_MUL			(573) // 375  // 207 // wheel encoder count
-#define CELL_COUNT_MUL_1_2		(286) // 187  // 103
+//#define CELL_COUNT_MUL			(573) // 375  // 207 // wheel encoder count
+//#define CELL_COUNT_MUL_1_2		(286) // 187  // 103
 
 /*
  * If ROBOT_SIZE equals to 5, robot is defined as occupying 25(5x5) cells.
@@ -100,7 +103,7 @@
 #define BATTERY_READY_TO_CLEAN_VOLTAGE	(1400)
 
 /* Fully charged battery voltage value */
-#define BATTERY_FULL_VOLTAGE	(1600)
+#define BATTERY_FULL_VOLTAGE	(1640)
 
 /* Continue cleaning voltage value */
 #define RESUME_CLEANING_VOLTAGE	(1530)
@@ -168,7 +171,7 @@
 #define ROTATE_LOW_SPEED				((uint8_t) 5)
 #define RUN_TOP_SPEED					((int32_t) 40) // 45)
 
-#define LINEAR_NEAR_DISTANCE			CELL_COUNT_MUL*1.5
+#define LINEAR_NEAR_DISTANCE			(CELL_SIZE*1.5)
 
 /* ------------------------------------- Slam config ------------------------------------- */
 #define USE_ROBOT_TF						(1)
@@ -178,7 +181,7 @@
 
 #define LIDAR_MARKER						(1)
 
-#define LIDAR_THETA							(2050)//2050
+#define LIDAR_THETA							(205*PI/180)//2050
 #define LIDAR_OFFSET_X						(0.031)//0.031
 #define LIDAR_OFFSET_Y						(0)//0
 #define ROBOT_RADIUS						(0.167)

@@ -4,22 +4,17 @@
 
 #include <dev.h>
 #include <event_manager.h>
-
-
-#include "action.hpp"
-#include "movement.hpp"
-#include "move_type.hpp"
-#include "state.hpp"
 #include "mode.hpp"
+#include "robotbase.h"
 boost::shared_ptr<IAction> Mode::sp_action_ = nullptr;
 //IAction* Mode::sp_action_ = nullptr;
 
 void Mode::run()
 {
-	ROS_INFO("%s %d: Mode start running.", __FUNCTION__, __LINE__);
+//	ROS_INFO("%s %d: Mode start running.", __FUNCTION__, __LINE__);
 	bool eh_status_now = false, eh_status_last = false;
 
-	while (ros::ok())
+	while (ros::ok() && !core_thread_stop)
 	{
 //		PP_INFO();
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
@@ -30,7 +25,7 @@ void Mode::run()
 //		PP_INFO();
 		if (isExit())
 		{
-			PP_INFO();
+//			PP_INFO();
 			return;
 		}
 //		PP_INFO();
@@ -66,7 +61,65 @@ int Mode::getNextMode()
 
 bool Mode::isExceptionTriggered()
 {
-	return ev.bumper_jam || ev.cliff_jam || ev.oc_wheel_left || ev.oc_wheel_right
-		   || ev.oc_suction || ev.lidar_stuck || ev.robot_stuck;
+	return ev.bumper_jam || ev.cliff_jam || ev.cliff_all_triggered || ev.oc_wheel_left || ev.oc_wheel_right
+		   || ev.oc_suction || ev.lidar_stuck || ev.robot_stuck || ev.oc_brush_main;
+}
+
+void Mode::genNextAction()
+{
+	INFO_GREEN("before genNextAction");
+
+	switch (action_i_) {
+		case ac_null :
+			sp_action_.reset();
+			break;
+		case ac_open_gyro :
+			sp_action_.reset(new ActionOpenGyro);
+			break;
+		case ac_back_form_charger :
+			sp_action_.reset(new ActionBackFromCharger);
+			break;
+		case ac_open_lidar :
+			sp_action_.reset(new ActionOpenLidar);
+			break;
+		case ac_align :
+			sp_action_.reset(new ActionAlign);
+			break;
+		case ac_open_slam :
+			sp_action_.reset(new ActionOpenSlam);
+			break;
+		case ac_pause :
+			sp_action_.reset(new ActionPause);
+			break;
+		case ac_linear :
+			sp_action_.reset(new MoveTypeLinear);
+			break;
+		case ac_follow_wall_left  :
+		case ac_follow_wall_right :
+			sp_action_.reset(new MoveTypeFollowWall(action_i_ == ac_follow_wall_left));
+			break;
+		case ac_go_to_charger :
+			sp_action_.reset(new MoveTypeGoToCharger);
+			break;
+		case ac_exception_resume :
+			sp_action_.reset(new MovementExceptionResume);
+			break;
+		case ac_charge :
+			sp_action_.reset(new MovementCharge);
+			break;
+		case ac_check_bumper :
+			sp_action_.reset(new ActionCheckBumper);
+			break;
+		case ac_bumper_hit_test :
+			sp_action_.reset(new MoveTypeBumperHitTest);
+			break;
+		case ac_check_vacuum :
+			sp_action_.reset(new ActionCheckVacuum);
+			break;
+		case ac_movement_direct_go :
+			sp_action_.reset(new MovementDirectGo);
+			break;
+	}
+	INFO_GREEN("after genNextAction");
 }
 

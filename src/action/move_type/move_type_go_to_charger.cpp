@@ -4,8 +4,6 @@
 #include <event_manager.h>
 #include "dev.h"
 #include "robot.hpp"
-#include <action.hpp>
-#include <movement.hpp>
 #include <move_type.hpp>
 //#include <state.hpp>
 //#include <mode.hpp>
@@ -41,14 +39,14 @@ bool MoveTypeGoToCharger::isFinish()
 	}
 	else if (p_gtc_movement_->isSwitch())
 	{
-		int16_t turn_angle;
-		p_gtc_movement_->getTurnBackInfo(turn_angle, back_distance_);
+		double turn_radian;
+		p_gtc_movement_->getTurnBackInfo(turn_radian, back_distance_);
 		if (back_distance_ != 0)
 			p_back_movement_.reset(new MovementBack(back_distance_, BACK_MAX_SPEED));
-		if (turn_angle != 0)
+		if (turn_radian != 0)
 		{
-			turn_target_angle_ = robot::instance()->getWorldPoseAngle() + turn_angle;
-			p_turn_movement_.reset(new MovementTurn(turn_target_angle_, ROTATE_TOP_SPEED));
+			turn_target_radian_ = ranged_radian(robot::instance()->getWorldPoseRadian() + turn_radian);
+			p_turn_movement_.reset(new MovementTurn(turn_target_radian_, ROTATE_TOP_SPEED));
 		}
 	}
 

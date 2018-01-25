@@ -11,7 +11,7 @@ class ISpeedGovernor{
 public:
 	virtual void adjustSpeed(int32_t&, int32_t&)=0;
 };
-
+/*
 class SpeedGovernorBack: public ISpeedGovernor
 {
 public:
@@ -33,6 +33,6 @@ public:
 private:
 	int16_t target_angle_;
 	int32_t speed_;
-};
+};*/
 
 #endif //PP_SPEED_GOVERNOR_HPP

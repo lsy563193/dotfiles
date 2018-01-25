@@ -234,6 +234,13 @@ extern bool g_tilt_triggered;
 
 extern bool g_wf_is_reach;
 
+
+extern pthread_mutex_t	new_event_mtx;
+extern pthread_cond_t new_event_cond;
+
+extern pthread_mutex_t	event_handler_mtx;
+extern pthread_cond_t event_handler_cond;
+
 typedef enum {
 	EVT_BUMPER_ALL = 0,
 	EVT_BUMPER_LEFT,

@@ -34,7 +34,8 @@ void APathAlgorithm::displayPointPath(const Points &point_path)
 	std::string     msg = __FUNCTION__;
 	msg += " " + std::to_string(__LINE__) + ": Targers(" + std::to_string(point_path.size()) + "):";
 	for (auto it = point_path.begin(); it != point_path.end(); ++it) {
-		msg += "(" + std::to_string(it->x) + ", " + std::to_string(it->y) + ", " + std::to_string(it->th) + "),";
+		msg += "(" + std::to_string((it->toCell().x)) + ", " + std::to_string(it->toCell().y) + ", " + std::to_string(
+						static_cast<int>(radian_to_degree(it->th))) + "),";
 	}
 	//msg += "\n";
 	ROS_INFO("%s",msg.c_str());
@@ -144,7 +145,7 @@ Points APathAlgorithm::cells_generate_points(Cells &path)
 	Points targets{};
 	if(!path.empty()){
 		for(auto it = path.begin(); it < path.end(); ++it) {
-			Point32_t target {cellToCount((*it).x),cellToCount((*it).y),0};
+			Point_t target {cellToCount((*it).x),cellToCount((*it).y),0};
 			auto it_next = it+1;
 			if (it->x == it_next->x)
 				target.th = it->y > it_next->y ? MAP_NEG_Y : MAP_POS_Y;
@@ -161,7 +162,7 @@ Points APathAlgorithm::cells_generate_points(Cells &path)
 	return targets;
 }
 
-bool APathAlgorithm::generateShortestPath(GridMap &map, const Point32_t &curr,const Point32_t &target, const int &last_dir, Points &plan_path) {
+bool APathAlgorithm::generateShortestPath(GridMap &map, const Point_t &curr,const Point_t &target, const int &last_dir, Points &plan_path) {
 	Cell_t corner1 ,corner2;
 	auto path_cell = findShortestPath(map, curr.toCell(), target.toCell(),last_dir, false,false,corner1,corner2);
 

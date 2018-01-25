@@ -5,9 +5,11 @@
 #ifndef PP_MODE_H_H
 #define PP_MODE_H_H
 
+#include "state.hpp"
 #include "path_algorithm.h"
 #include "event_manager.h"
 #include "boost/shared_ptr.hpp"
+#include <visualization_msgs/Marker.h>
 //#include "move_type.hpp"
 
 
@@ -24,6 +26,108 @@
 #define INFO_WHITE(X)	ROS_INFO("%s,%d,\033[1;40;37m"#X"\033[0m",__FUNCTION__,__LINE__)
 #define INFO_BLACK(X)	ROS_INFO("%s,%d,\033[1;40;30m"#X"\033[0m",__FUNCTION__,__LINE__)
 
+typedef struct{
+		uint32_t seq{};
+		Points tmp_plan_path_{};
+	} PathHead;
+
+class Paras{
+public:
+	Paras(bool is_left):is_left_(is_left)
+{
+		narrow = is_left ? 0.187 : 0.197;
+
+		y_min = 0.0;
+		y_max = is_left ? 0.3 : 0.25;
+
+		x_min_forward = LIDAR_OFFSET_X;
+		x_max_forward = is_left ? 0.3 : 0.25;
+		auto y_start_forward = is_left ? 0.06: -0.06;
+		auto y_end_forward = is_left ? -ROBOT_RADIUS: ROBOT_RADIUS;
+		y_min_forward = std::min(y_start_forward, y_end_forward);
+		y_max_forward = std::max(y_start_forward, y_end_forward);
+
+		auto x_side_start = 0.0;
+		auto x_side_end = ROBOT_RADIUS;
+		x_min_side = std::min(x_side_start, x_side_end);
+		x_max_side = std::max(x_side_start, x_side_end);
+
+		auto y_side_start = 0.0;
+		auto y_side_end = is_left ? narrow + 0.01 : -narrow + 0.01;
+		y_min_side = std::min(y_side_start, y_side_end);
+		y_max_side = std::max(y_side_start, y_side_end);
+
+		auto y_point1_start_corner = is_left ? 0.3 : -0.3;
+		auto y_point1_end_corner = is_left ? -4.0 : 4.0;
+		y_min_point1_corner = std::min(y_point1_start_corner, y_point1_end_corner);
+		y_max_point1_corner = std::max(y_point1_start_corner, y_point1_end_corner);
+
+	 	auto y_point1_start = 0.0;
+		auto y_point1_end = is_left ? 4.0 : -4.0;
+		y_min_point1 = std::min(y_point1_start, y_point1_end);
+		y_max_point1 = std::max(y_point1_start, y_point1_end);
+
+		auto y_target_start = is_left ? ROBOT_RADIUS : -ROBOT_RADIUS;
+		auto y_target_end = is_left ? 0.4 : -0.4;
+		y_min_target = std::min(y_target_start, y_target_end);
+		y_max_target = std::max(y_target_start, y_target_end);
+	};
+
+	bool inPoint1Range(const Vector2<double> &point, bool is_corner) const {
+		if(is_corner)
+			return (point.x > 0 && point.x < 4 && point.y > y_min_point1_corner && point.y < y_max_point1_corner);
+		else
+			return (point.x > 0 && point.x < 0.3 && point.y > y_min_point1 && point.y < y_max_point1);
+	}
+
+	bool inTargetRange(const Vector2<double> &target) {
+		if (is_left_) {
+			return (target.x > 0 && target.y > 0.4) ||
+						 (target.x > CHASE_X && std::abs(target.y) < ROBOT_RADIUS) ||
+						 (target.y < -ROBOT_RADIUS);
+		} else{
+			return (target.x > 0 && target.y < -0.4) ||
+						 (target.x > CHASE_X && std::abs(target.y) < ROBOT_RADIUS) ||
+						 (target.y > ROBOT_RADIUS);
+
+		}
+	}
+
+	bool inForwardRange(const Vector2<double> &point) const {
+		return point.x > x_min_forward && point.x < x_max_forward && point.y > y_min_forward && point.y < y_max_forward;
+	}
+
+	bool inSidedRange(const Vector2<double> &point) const {
+		return point.x > x_min_side && point.x < x_max_side && point.y > y_min_side && point.y < y_max_side;
+	}
+
+	double narrow;
+	bool is_left_;
+	double x_min_forward;
+	double x_max_forward;
+	double x_min_side;
+	double x_max_side;
+
+	double y_min;
+	double y_max;
+
+	double y_min_forward;
+	double y_max_forward;
+
+	double y_min_side;
+	double y_max_side;
+
+	double y_min_point1_corner;
+	double y_max_point1_corner;
+	double y_min_point1;
+	double y_max_point1;
+
+	double y_min_target;
+	double y_max_target;
+
+	const double CHASE_X = 0.107;
+};
+
 class Mode:public EventHandle
 {
 public:
@@ -38,7 +142,7 @@ public:
 
 	bool isInitState() const{
 			return action_i_ == ac_open_gyro || action_i_ == ac_back_form_charger ||
-		action_i_ == ac_open_lidar || action_i_	== ac_align || ac_align == ac_open_slam;
+		action_i_ == ac_open_lidar || action_i_	== ac_align || action_i_ == ac_open_slam;
 	};
 	int getNextMode();
 
@@ -92,10 +196,22 @@ public:
 		ac_bumper_hit_test,
 	};
 
+	void genNextAction();
+
 	bool isExceptionTriggered();
 
 	static boost::shared_ptr<IAction> sp_action_;
+	bool isNavMode()
+	{
+		return is_clean_mode_navigation_;
+	}
+	void setNavMode(bool set)
+	{
+		is_clean_mode_navigation_ = set;
+	}
+
 protected:
+	bool is_clean_mode_navigation_{false};
 	int mode_i_{ac_null};
 private:
 
@@ -151,8 +267,6 @@ public:
 	bool isExit() override ;
 	bool isFinish() override ;
 
-	IAction* getNextAction();
-
 	// For exit event handling.
 	void remoteClean(bool state_now, bool state_last) override;
 	void keyClean(bool state_now, bool state_last) override;
@@ -179,6 +293,7 @@ public:
 	void remotePlan(bool state_now, bool state_last) override ;
 
 private:
+	double battery_full_start_time_{0};
 	bool plan_activated_status_;
 };
 
@@ -237,38 +352,40 @@ class ACleanMode:public Mode
 public:
 	ACleanMode();
 	~ACleanMode();
+
 	State* updateState();
 	bool isFinish() override ;
 	bool isExit() override;
 	bool isUpdateFinish();
 
 	void setNextModeDefault();
-	void genNextAction();
 
+	bool isIsolate();
+	bool generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &targets);
 	void setRconPos(float cd,float dist);
 
 	virtual bool mapMark() = 0;
 	virtual bool markRealTime(){return false;};
+	virtual bool markMapInNewCell(){return false;};
 
 	bool isRemoteGoHomePoint();
 	void setHomePoint();
 	bool estimateChargerPos(uint32_t rcon_value);
-	void setRconPos(Point32_t pos);
+	void setRconPos(Point_t pos);
 
 	Cells pointsGenerateCells(Points &targets);
 
 	// For move types
-	virtual bool moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt);
+	bool moveTypeNewCellIsFinish(IMoveType *p_move_type);
+	bool moveTypeRealTimeIsFinish(IMoveType *p_mt);
 	virtual void moveTypeFollowWallSaveBlocks();
-	virtual bool moveTypeLinearIsFinish(MoveTypeLinear *p_mt);
 	virtual void moveTypeLinearSaveBlocks();
 
 	// Handlers
 	void remoteHome(bool state_now, bool state_last) override ;
 	void cliffAll(bool state_now, bool state_last) override ;
+	void overCurrentBrushMain(bool state_now, bool state_last);
 
-	// State null
-	bool checkEnterNullState();
 	// State init
 	bool isStateInit() const
 	{
@@ -298,12 +415,12 @@ public:
 	virtual void switchInStateGoHomePoint();
 
 	// State go to charger
-	bool isStateGoCharger() const
+	bool isStateGoToCharger() const
 	{
 		return sp_state == state_go_to_charger;
 	}
-	bool checkEnterGoCharger();
-	virtual bool isSwitchByEventInStateGoToCharger(){return false;};
+	bool checkEnterGoToCharger();
+	virtual bool isSwitchByEventInStateGoToCharger();
 	virtual bool updateActionInStateGoToCharger();
 	virtual void switchInStateGoToCharger();
 
@@ -317,8 +434,8 @@ public:
 	virtual bool updateActionInStateExceptionResume();
 	virtual void switchInStateExceptionResume();
 
-	// State temp spot
-	bool isStateTmpSpot() const
+	// State spot
+	bool isStateSpot() const
 	{
 		return sp_state == state_spot;
 	}
@@ -335,6 +452,8 @@ public:
 	virtual bool updateActionInStateTrapped();
 	virtual void switchInStateTrapped();
 	bool trapped_time_out_{};
+	bool trapped_closed_or_isolate{};
+	bool out_of_trapped{};
 
 	// State exploration
 	bool isStateExploration() const
@@ -350,7 +469,7 @@ public:
 	{
 		return sp_state == state_resume_low_battery_charge;
 	}
-	virtual bool isSwitchByEventInStateResumeLowBatteryCharge(){return false;};
+	virtual bool isSwitchByEventInStateResumeLowBatteryCharge();
 	virtual bool updateActionInStateResumeLowBatteryCharge(){};
 	virtual void switchInStateResumeLowBatteryCharge(){};
 
@@ -371,7 +490,12 @@ public:
 	virtual bool isSwitchByEventInStatePause(){return false;};
 	virtual bool updateActionInStatePause(){};
 	virtual void switchInStatePause(){};
-
+	bool is_closed{true};
+	bool is_isolate{true};
+	int closed_count_{};
+	int closed_count_limit_{2};
+	int isolate_count_{};
+	int isolate_count_limit_{3};
 	State *sp_state{};
 	State* getState() const {
 		return sp_state;
@@ -385,23 +509,23 @@ public:
 	State *state_exception_resume = new ExceptionResume();
 	State *state_exploration = new StateExploration();
 
-	int reach_cleaned_count_{};
 	Points passed_path_{};
 	Points plan_path_{};
-	Point32_t last_{};
 	bool found_temp_charger_{};
 	bool in_rcon_signal_range_{};
 	bool should_mark_charger_{};
 	bool should_mark_temp_charger_{};
 	bool found_charger_{};
 
-	int old_dir_{};
-	int new_dir_{};
+	double old_dir_{};
+	double new_dir_{};
 
+//	boost::shared_ptr<APathAlgorithm> follow_wall_path_algorithm_{};
 	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
 	boost::shared_ptr<GoHomePathAlgorithm> go_home_path_algorithm_{};
 	GridMap clean_map_{};
-	Point32_t charger_pos_{};//charger postion
+	Point_t charger_pos_{};//charger postion
+	static bool plan_activation_;
 
 protected:
 	std::vector<State*> sp_saved_states;
@@ -416,9 +540,47 @@ protected:
 	bool low_battery_charge_{};
 	bool moved_during_pause_{};
 	Points home_points_{};
-	Point32_t start_point_{0, 0, 0};
+	Point_t start_point_{0, 0, 0};
 	bool should_go_to_charger_{false};
 	bool remote_go_home_point{false};
+	bool switch_is_off_{false};
+
+public:
+
+	static void pubPointMarkers(const std::deque<Vector2<double>> *point, std::string frame_id,std::string name);
+	void pubFitLineMarker(visualization_msgs::Marker fit_line_marker);
+	void visualizeMarkerInit();
+	void scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr& scan);
+	void setCleanMapMarkers(int16_t x, int16_t y, CellState type);
+	void pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path);
+	static void pubLineMarker(const std::vector<LineABC> *lines);
+	Vector2<double> get_middle_point(const Vector2<double>& p1,const Vector2<double>& p2,const Paras& para);
+	bool check_is_valid(const Vector2<double>& point, Paras& para, const sensor_msgs::LaserScan::ConstPtr & scan);
+	bool check_corner(const sensor_msgs::LaserScan::ConstPtr & scan, const Paras& para);
+	bool calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,bool is_left ,std::deque<Vector2<double>>& points);
+	Vector2<double> polar_to_cartesian(double polar,int i);
+	void setTempTarget(std::deque<Vector2<double>>& points, uint32_t  seq);
+	void pubTmpTarget(const Point_t &point,bool is_virtual=false);
+
+	PathHead getTempTarget();
+
+private:
+	PathHead path_head_{};
+	visualization_msgs::Marker clean_markers_,bumper_markers_, clean_map_markers_;
+	ros::NodeHandle clean_nh_;
+	ros::Subscriber map_sub_;
+	ros::Subscriber	scanLinear_sub_;
+	ros::Subscriber	scanCompensate_sub_;
+	ros::Subscriber lidarPoint_sub_;
+	ros::Subscriber	scanOriginal_sub_;
+
+	ros::Publisher tmp_target_pub_;
+	static ros::Publisher point_marker_pub_;
+	ros::Publisher send_clean_map_marker_pub_;
+	ros::Publisher line_marker_pub_;
+	static ros::Publisher line_marker_pub2_;
+	ros::Publisher fit_line_marker_pub_;
+	boost::mutex temp_target_mutex_;
 };
 
 class CleanModeNav:public ACleanMode
@@ -427,7 +589,7 @@ public:
 	CleanModeNav();
 	~CleanModeNav();
 
-	bool mapMark() override ;
+	bool mapMark() override;
 	bool isExit() override;
 
 	void keyClean(bool state_now, bool state_last) override ;
@@ -467,9 +629,8 @@ public:
 	bool isSwitchByEventInStateGoToCharger() override;
 	void switchInStateGoToCharger() override;
 
-	// State tmp spot
+	// State spot
 	bool checkEnterTempSpotState();
-	bool checkOutOfSpot();
 	bool isSwitchByEventInStateSpot() override;
 	void switchInStateSpot() override;
 
@@ -497,12 +658,10 @@ public:
 	bool isSwitchByEventInStateExceptionResume() override;
 
 private:
-	bool moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
-	bool moveTypeLinearIsFinish(MoveTypeLinear *p_mt) override;
 
 	bool has_aligned_and_open_slam_{false};
 	float paused_odom_angle_{0};
-	Point32_t continue_point_{};
+	Point_t continue_point_{};
 	bool go_home_for_low_battery_{false};
 
 protected:
@@ -517,8 +676,8 @@ public:
 	CleanModeExploration();
 	~CleanModeExploration();
 
+	bool markMapInNewCell() override;
 	bool mapMark() override;
-	bool markRealTime() override;
 //	bool isExit() override;
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteClean(bool state_now, bool state_last) override ;
@@ -537,7 +696,10 @@ public:
 	void switchInStateGoHomePoint() override;
 	void switchInStateGoToCharger() override;
 
-	bool moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
+//	bool moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
+
+private:
+	bool mark_robot_{true};
 };
 
 class CleanModeFollowWall:public ACleanMode {
@@ -550,14 +712,10 @@ public:
 
 	void keyClean(bool state_now, bool state_last) override;
 	void remoteMax(bool state_now, bool state_last) override;
-
 	void remoteClean(bool state_now, bool state_last) override;
-	void switchInStateClean() override;
-	bool generatePath(GridMap &map, const Point32_t &curr, const int &last_dir, Points &targets);
+	void switchInStateTrapped() override;
 
-	bool moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) override ;
-
-	bool updateActionInStateClean()override ;
+	void switchInStateInit() override;
 
 private:
  int reach_cleaned_count_save{};
@@ -570,14 +728,18 @@ public:
 	~CleanModeSpot();
 
 	bool mapMark() override;
-//	bool isExit() override;
+	bool isExit() override;
 //	void cliffAll(bool state_now, bool state_last) override;
 	void remoteClean(bool state_now, bool state_last) override;
+	void remoteWallFollow(bool state_now, bool state_last) override;
 	void keyClean(bool state_now, bool state_last) override;
 	void switchInStateInit() override ;
 	void switchInStateSpot() override ;
 	void overCurrentWheelLeft(bool state_now, bool state_last) override;
 	void overCurrentWheelRight(bool state_now, bool state_last) override;
+	void remoteDirectionLeft(bool state_now, bool state_last) override;
+	void remoteDirectionRight(bool state_now, bool state_last) override;
+	void remoteDirectionForward(bool state_now, bool state_last) override;
 private:
 
 };
@@ -588,7 +750,8 @@ public:
 	CleanModeTest();
 	~CleanModeTest();
 
-	bool mapMark() override;
+	bool mapMark() override
+	{return false;}
 
 	bool isFinish() override;
 

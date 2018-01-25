@@ -13,20 +13,20 @@
 #include "path_algorithm.h"
 #include "boost/shared_ptr.hpp"
 
-
+#include "action.hpp"
 
 class IMoveType;
 class IMovement: public IAction,public ISpeedGovernor
 {
 public:
 //	virtual void adjustSpeed(int32_t&, int32_t&)=0;
-	virtual void run();
+	void run() override;
 	virtual bool isFinish()=0;
 //	static ACleanMode* sp_mode_;
 //	static boost::shared_ptr<IMoveType> sp_mt_;
 	static IMoveType* sp_mt_;
-//	static Point32_t s_target_p;
-//	static Point32_t s_start_p;
+//	static Point_t s_target_p;
+//	static Point_t s_start_p;
 protected:
 	uint32_t tick_{};
 	uint32_t tick_limit_{};
@@ -37,38 +37,35 @@ protected:
 
 class AMovementFollowPoint:public IMovement{
 public:
-	virtual bool is_near()=0;
-	virtual Point32_t calcTmpTarget()=0;
+	virtual bool isNear()=0;
+	virtual Point_t calcTmpTarget()=0;
 	bool isFinish() override ;
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed) override ;
-	int16_t angle_diff{};
+	double radian_diff{};
 
 protected:
 
 	int32_t min_speed_;
 	int32_t max_speed_;
-//	static Point32_t tmp_target_;
+//	static Point_t tmp_target_;
 //	boost::thread* path_thread_{};
-//	Point32_t tmp_target_{};
+//	Point_t tmp_target_{};
 	uint8_t integration_cycle_{};
 	int32_t integrated_{};
 	int32_t base_speed_{};
-	int16_t angle_forward_to_turn_{};
-	int16_t angle_turn_to_forward_{};
-	int kp_{20};
+	double angle_forward_to_turn_{};
+	int kp_{2};
 //	const double TIME_STRAIGHT{0.2};
 };
 
 class MovementBack: public IMovement{
 public:
 	explicit MovementBack(float back_distance, uint8_t max_speed);
-	~MovementBack(){
-		//set_wheel.speed(1, 1);
-	}
-	void adjustSpeed(int32_t&, int32_t&);
+
+	void adjustSpeed(int32_t&, int32_t&) override;
 	bool isLidarStop();
 	void updateStartPose();
-	bool isFinish();
+	bool isFinish() override;
 
 private:
 	uint8_t max_speed_;
@@ -80,37 +77,53 @@ private:
 	float lidar_detect_distance;
 };
 
+class MovementRcon: public IMovement
+{
+public:
+	MovementRcon(bool is_left);
+	~MovementRcon();
+	void adjustSpeed(int32_t &left_speed, int32_t &right_speed) override ;
+	bool isFinish() override;
+
+private:
+	uint32_t rcon_status;
+	int32_t left_speed_{};
+	int32_t right_speed_{};
+	uint8_t seen_charger_counter_{};
+	bool	is_left_;
+};
+
 class MovementTurn: public IMovement{
 public:
 
-	explicit MovementTurn(int16_t target_angle, uint8_t max_speed);
+	explicit MovementTurn(double radian, uint8_t max_speed);
 	void adjustSpeed(int32_t&, int32_t&) override;
 	bool isReach();
 	bool isFinish() override;
 
 private:
 	uint8_t max_speed_;
-	uint16_t accurate_;
+	double accurate_;
 	uint8_t speed_;
-	int16_t target_angle_;
+	double target_radian_;
 };
 
 class MovementFollowPointLinear:public AMovementFollowPoint
 {
 public:
-//	MovementFollowPointLinear(Point32_t);
+//	MovementFollowPointLinear(Point_t);
 	MovementFollowPointLinear();
 //	~MovementFollowPointLinear(){ };
 	bool isFinish() override;
 
-	bool is_near() override;
+	bool isNear() override;
 //	void setTarget();
 
-	Point32_t calcTmpTarget() override ;
-	Point32_t _calcTmpTarget();
+	Point_t calcTmpTarget() override ;
+	Point_t _calcTmpTarget();
 //	bool calcTmpTarget() override ;
-//	Point32_t _calcTmpTargetNoneRealTime();
-//	Point32_t _calcTmpTargetRealTime();
+//	Point_t _calcTmpTargetNoneRealTime();
+//	Point_t _calcTmpTargetRealTime();
 
 private:
 };
@@ -120,7 +133,6 @@ class IFollowWall{
 public:
 	explicit IFollowWall(bool is_left);
 
-	~IFollowWall() { /*set_wheel.speed(0,0);*/ };
 //	bool isFinish();
 	void reset_sp_turn_count() {
 		turn_count = 0;
@@ -169,18 +181,19 @@ class MovementFollowWallLidar:public AMovementFollowPoint, public IFollowWall
 public:
 	explicit MovementFollowWallLidar(bool is_left);
 
-	Point32_t calcTmpTarget() override ;
+	Point_t calcTmpTarget() override ;
 	Points _calcTmpTarget();
 
 	bool isFinish() override ;
-	bool is_near() override ;
+	bool isNear() override ;
 private:
 	Points virtual_targets_{};
 	Points lidar_targets_{};
 	Points* p_tmp_targets_{};
 
-	bool is_sp_turn{};
+	bool is_first_cal_vir;
 	uint32_t seq_{0};
+	ros::Time corner_time;
 };
 
 class MovementGoToCharger: public IMovement
@@ -191,7 +204,7 @@ public:
 	bool _isStop();
 	bool isSwitch();
 	void adjustSpeed(int32_t&, int32_t&) override ;
-	void getTurnBackInfo(int16_t &turn_angle, float &back_distance);
+	void getTurnBackInfo(double &turn_radian, float &back_distance);
 	bool isFinish() override ;
 
 private:
@@ -216,16 +229,16 @@ private:
 		gtc_check_position_right
 
 	};
-	int16_t turn_angle_;
+	double turn_angle_;
 	float back_distance_;
 	uint16_t no_signal_cnt;
 	double move_away_from_charger_time_stamp_;
 	uint32_t receive_code;
 	// This variables is for robot turning.
-	float current_angle;
-	float last_angle;
-	float angle_offset;
-	float gyro_step;
+	double current_radian_;
+	double last_radian_;
+	double radian_offset_;
+	float gyro_radian_step_;
 	uint8_t around_charger_stub_dir;
 	uint8_t go_home_bumper_cnt;
 	uint8_t check_position_dir;
@@ -252,12 +265,15 @@ public:
 
 private:
 	double resume_wheel_start_time_;
-	float wheel_current_sum_;
-	uint8_t wheel_current_sum_cnt_;
-	uint8_t wheel_resume_cnt_;
-	uint8_t bumper_jam_state_;
-	uint8_t cliff_resume_cnt_;
-	uint8_t robot_stuck_resume_cnt_;
+	float wheel_current_sum_{0};
+	uint8_t oc_main_brush_cnt_{0};
+	double resume_main_bursh_start_time_;
+	uint8_t wheel_current_sum_cnt_{0};
+	uint8_t wheel_resume_cnt_{0};
+	uint8_t bumper_jam_state_{1};
+	uint8_t cliff_resume_cnt_{0};
+	uint8_t cliff_all_resume_cnt_{0};
+	uint8_t robot_stuck_resume_cnt_{0};
 };
 
 class MovementCharge :public IMovement
@@ -301,6 +317,7 @@ public:
 	bool isFinish() override;
 
 private:
+	int16_t speed_{LINEAR_MIN_SPEED};
 	double direct_go_time_stamp_;
 };
 

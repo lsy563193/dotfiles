@@ -37,8 +37,8 @@
 // One byte for controlling beeper.
 #define	CTL_BEEPER 10
 
-// One byte for sending clean mode.
-#define	CTL_CLEAN_MODE 11
+// One byte for sending main board mode.
+#define	CTL_MAIN_BOARD_MODE 11
 
 // One byte for controlling charge status.
 #define	CTL_CHARGER 12
@@ -238,6 +238,12 @@
 #define REC_TRAILER_1 42
 #define REC_TRAILER_2 43
 
+// Main board mode
+#define NORMAL_SLEEP_MODE 		0
+#define BATTERY_FULL_SLEEP_MODE 1
+#define WORK_MODE 				2
+#define IDLE_MODE 				3
+#define CHARGE_MODE 			4
 
 #define DUMMY_DOWNLINK_OFFSET		2
 #define KEY_DOWNLINK_OFFSET			9
@@ -266,13 +272,12 @@ extern pthread_mutex_t serial_data_ready_mtx;
 extern pthread_cond_t serial_data_ready_cond;
 
 extern boost::mutex g_send_stream_mutex;
-extern boost::mutex g_receive_stream_mutex;
 
 class Serial
 {
 public:
 	Serial();
-	~Serial(){};
+	~Serial() = default;
 
 	bool init(const char* port,int baudrate);
 
@@ -280,13 +285,17 @@ public:
 
 	int flush();
 
-	void sleep(void);
+	bool isReady();
 
-	void wakeUp(void);
+	void isMainBoardSleep(bool val)
+	{
+		is_sleep_ = val;
+	}
 
-	bool isSleep(void);
-
-	bool is_ready();
+	bool isMainBoardSleep() const
+	{
+		return is_sleep_;
+	}
 
 	int write(uint8_t len, uint8_t *buf);
 
@@ -296,21 +305,15 @@ public:
 
 	uint8_t getSendData(uint8_t seq);
 
-	uint8_t getReceiveData(uint8_t seq);
+	//int get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequence_number);
 
-	void setReceiveData(uint8_t (&buf)[RECEI_LEN]);
+	void setMainBoardMode(uint8_t val);
 
-	int get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequence_number);
-
-	void setCleanMode(uint8_t val);
-
-	uint8_t getCleanMode();
-
-	void init_crc8(void);
+	void initCrc8(void);
 
 	void crc8(uint8_t *crc, const uint8_t m);
 
-	uint8_t calc_buf_crc8(const uint8_t *inBuf, uint32_t inBufSz);
+	uint8_t calBufCrc8(const uint8_t *inBuf, uint32_t inBufSz);
 
 	//										   1    2    3    4    5    6    7    8    9   10
 	uint8_t receive_stream[RECEI_LEN]={		0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
@@ -320,9 +323,12 @@ public:
 											0x00,0x00,0xcc,0x33};
 	uint8_t send_stream[SEND_LEN]={0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x64,0x00,0x02,0x00,0x00,0xcc,0x33};
 
+	void receive_routine_cb();
+	void send_routine_cb();
+
 private:
 
-	bool sleep_status_;
+	bool is_sleep_{};
 
 	int	crport_fd_;
 	bool serial_init_done_;

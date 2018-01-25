@@ -2,10 +2,6 @@
 // Created by lsy563193 on 17-12-3.
 //
 
-#include <state.hpp>
-#include <action.hpp>
-#include <movement.hpp>
-#include <move_type.hpp>
 #include <mode.hpp>
 #include <mathematics.h>
 #include <event_manager.h>
@@ -14,13 +10,32 @@
 #include <robot_timer.h>
 #include <robot.hpp>
 #include <slam.h>
+#include <robotbase.h>
 #include "error.h"
+
+const double CHASE_X = 0.107;
+ros::Publisher ACleanMode::point_marker_pub_={};
+ros::Publisher ACleanMode::line_marker_pub2_={};
+bool ACleanMode::plan_activation_={};
 
 ACleanMode::ACleanMode()
 {
+	scanLinear_sub_ = clean_nh_.subscribe("scanLinear", 1, &Lidar::scanLinearCb, &lidar);
+	scanCompensate_sub_ = clean_nh_.subscribe("scanCompensate", 1, &Lidar::scanCompensateCb, &lidar);
+	scanOriginal_sub_ = clean_nh_.subscribe("scanOriginal", 1, &ACleanMode::scanOriginalCb, this);
+	lidarPoint_sub_ = clean_nh_.subscribe("lidarPoint", 1, &Lidar::lidarXYPointCb, &lidar);
+	map_sub_ = clean_nh_.subscribe("/map", 1, &Slam::mapCb, &slam);
+
+	tmp_target_pub_ = clean_nh_.advertise<visualization_msgs::Marker>("tmp_target", 1);
+	point_marker_pub_ = clean_nh_.advertise<visualization_msgs::Marker>("point_marker", 1);
+	send_clean_map_marker_pub_ = clean_nh_.advertise<visualization_msgs::Marker>("clean_map_markers", 1);
+	fit_line_marker_pub_ = clean_nh_.advertise<visualization_msgs::Marker>("fit_line_marker", 1);
+	line_marker_pub_ = clean_nh_.advertise<visualization_msgs::Marker>("line_marker", 1);
+	line_marker_pub2_ = clean_nh_.advertise<visualization_msgs::Marker>("line_marker2", 1);
 
 	event_manager_register_handler(this);
 	event_manager_set_enable(true);
+	serial.setMainBoardMode(WORK_MODE);
 	IMoveType::sp_mode_ = this;
 	sp_state->setMode(this);
 	ev.key_clean_pressed = false;
@@ -31,51 +46,528 @@ ACleanMode::ACleanMode()
 	robot_timer.initWorkTimer();
 	key.resetPressStatus();
 
+	resetPosition();
 	c_rcon.resetStatus();
 	robot::instance()->initOdomPosition();
-
+//	fw_map.reset(CLEAN_MAP);
 }
 
-ACleanMode::~ACleanMode() {
+ACleanMode::~ACleanMode()
+{
+	tmp_target_pub_.shutdown();
+	scanLinear_sub_.shutdown();
+	scanCompensate_sub_.shutdown();
+	scanOriginal_sub_.shutdown();
+	lidarPoint_sub_.shutdown();
+	map_sub_.shutdown();
+
+	send_clean_map_marker_pub_.shutdown();
+	point_marker_pub_.shutdown();
+	fit_line_marker_pub_.shutdown();
+	line_marker_pub_.shutdown();
+	line_marker_pub2_.shutdown();
+	clean_nh_.shutdown();
+
 	IMoveType::sp_mode_ = nullptr;
 	sp_state = nullptr;
+	sp_action_.reset();
 	event_manager_set_enable(false);
-	wheel.stop();
-	brush.stop();
-	vacuum.stop();
-	lidar.motorCtrl(OFF);
-	lidar.setScanOriginalReady(0);
+	if(!g_pp_shutdown){
+		wheel.stop();
+		brush.stop();
+		vacuum.stop();
+		lidar.motorCtrl(OFF);
+		lidar.setScanOriginalReady(0);
 
-	robot::instance()->setBaselinkFrameType(ODOM_POSITION_ODOM_ANGLE);
-	slam.stop();
-	odom.setAngleOffset(0);
+		robot::instance()->setBaselinkFrameType(ODOM_POSITION_ODOM_ANGLE);
+		slam.stop();
+		odom.setRadianOffset(0);
 
-	if (moved_during_pause_)
-	{
-		speaker.play(VOICE_CLEANING_STOP, false);
-		ROS_WARN("%s %d: Moved during pause. Stop cleaning.", __FUNCTION__, __LINE__);
-	}
-	else if (ev.cliff_all_triggered)
-	{
-		speaker.play(VOICE_ERROR_LIFT_UP_CLEANING_STOP, false);
-		ROS_WARN("%s %d: Cliff all triggered. Stop cleaning.", __FUNCTION__, __LINE__);
-	}
-	else if (ev.fatal_quit)
-	{
-		speaker.play(VOICE_CLEANING_STOP, false);
-		error.alarm();
-	}
-	else
-	{
-		speaker.play(VOICE_CLEANING_FINISHED, false);
-		ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
+		if (moved_during_pause_)
+		{
+			speaker.play(VOICE_CLEANING_STOP, false);
+			ROS_WARN("%s %d: Moved during pause. Stop cleaning.", __FUNCTION__, __LINE__);
+		}
+		else if (ev.fatal_quit)
+		{
+			if (ev.cliff_all_triggered)
+			{
+				speaker.play(VOICE_ERROR_LIFT_UP_CLEANING_STOP, false);
+				ROS_WARN("%s %d: Cliff all triggered. Stop cleaning.", __FUNCTION__, __LINE__);
+			}
+			else
+			{
+				speaker.play(VOICE_CLEANING_STOP, false);
+				ROS_WARN("%s %d: fatal_quit is true. Stop cleaning.", __FUNCTION__, __LINE__);
+			}
+		}
+		else if (switch_is_off_)
+		{
+			speaker.play(VOICE_CHECK_SWITCH, false);
+			ROS_WARN("%s %d: Switch is not on. Stop cleaning.", __FUNCTION__, __LINE__);
+		}
+		else
+		{
+			speaker.play(VOICE_CLEANING_FINISHED, false);
+			ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
+		}
 	}
 
 	auto cleaned_count = clean_map_.getCleanedArea();
-	auto map_area = cleaned_count * (CELL_SIZE * 0.001) * (CELL_SIZE * 0.001);
+	auto map_area = cleaned_count * CELL_SIZE * CELL_SIZE;
 	ROS_INFO("%s %d: Cleaned area = \033[32m%.2fm2\033[0m, cleaning time: \033[32m%d(s) %.2f(min)\033[0m, cleaning speed: \033[32m%.2f(m2/min)\033[0m.",
 			 __FUNCTION__, __LINE__, map_area, robot_timer.getWorkTime(),
 			 static_cast<float>(robot_timer.getWorkTime()) / 60, map_area / (static_cast<float>(robot_timer.getWorkTime()) / 60));
+}
+
+void ACleanMode::pubTmpTarget(const Point_t &point, bool is_virtual) {
+	visualization_msgs::Marker point_markers;
+	point_markers.ns = "tmp_target";
+	point_markers.id = 0;
+	point_markers.type = visualization_msgs::Marker::SPHERE_LIST;
+	point_markers.action = 0;//add
+	point_markers.lifetime = ros::Duration(0), "base_link";
+	point_markers.scale.x = 0.07;
+	point_markers.scale.y = 0.07;
+	point_markers.scale.z = 0.10;
+	if(!is_virtual)
+	{
+		point_markers.color.r = 1.0;
+		point_markers.color.g = 0.5;
+		point_markers.color.b = 0.5;
+	}else{
+		point_markers.color.r = 0.3;
+		point_markers.color.g = 0.3;
+		point_markers.color.b = 0.4;
+	}
+
+	point_markers.color.a = 1.0;
+	point_markers.header.frame_id = "/map";
+	point_markers.header.stamp = ros::Time::now();
+
+//	for(const auto & point : points)
+	{
+		geometry_msgs::Point point_marker;
+		point_marker.x = point.x;
+		point_marker.y = point.y;
+		point_marker.z = 0;
+		point_markers.points.push_back(point_marker);
+	}
+	tmp_target_pub_.publish(point_markers);
+	//ROS_INFO("%s,%d,points size:%u,points %s",__FUNCTION__,__LINE__,points->size(),msg.c_str());
+	point_markers.points.clear();
+	//ROS_INFO("pub points!!");
+}
+
+void ACleanMode::pubPointMarkers(const std::deque<Vector2<double>> *points, std::string frame_id, std::string name)
+{
+	visualization_msgs::Marker point_marker;
+	point_marker.ns = name;
+	point_marker.id = 0;
+	point_marker.type = visualization_msgs::Marker::SPHERE_LIST;
+	point_marker.action= 0;//add
+	point_marker.lifetime=ros::Duration(0);
+	point_marker.scale.x = 0.05;
+	point_marker.scale.y = 0.05;
+	point_marker.scale.z = 0.05;
+	point_marker.color.r = 0.0;
+	point_marker.color.g = 1.0;
+	point_marker.color.b = 0.0;
+	point_marker.color.a = 1.0;
+	point_marker.header.frame_id = frame_id;
+	point_marker.header.stamp = ros::Time::now();
+
+	geometry_msgs::Point lidar_points;
+	lidar_points.z = 0;
+	if (!points->empty()) {
+		std::string msg("");
+		for (auto iter = points->cbegin(); iter != points->cend(); ++iter) {
+			lidar_points.x = iter->x;
+			lidar_points.y = iter->y;
+			point_marker.points.push_back(lidar_points);
+			msg+="("+std::to_string(iter->x)+","+std::to_string(iter->y)+"),";
+		}
+		point_marker_pub_.publish(point_marker);
+		//ROS_INFO("%s,%d,points size:%u,points %s",__FUNCTION__,__LINE__,points->size(),msg.c_str());
+		point_marker.points.clear();
+		//ROS_INFO("pub point!!");
+	}
+	else {
+		point_marker.points.clear();
+		point_marker_pub_.publish(point_marker);
+	}
+}
+
+bool ACleanMode::check_corner(const sensor_msgs::LaserScan::ConstPtr & scan, const Paras &para) {
+	int forward_wall_count = 0;
+	int side_wall_count = 0;
+	for (int i = 359; i > 0; i--) {
+		if (scan->ranges[i] < 4) {
+			auto point = polar_to_cartesian(scan->ranges[i], i);
+			if (para.inForwardRange(point)) {
+				forward_wall_count++;
+//			ROS_INFO("point(%f,%f)",point.x,point.y);
+//				ROS_INFO("forward_wall_count(%d)",forward_wall_count);
+			}
+			if (para.inSidedRange(point)) {
+				side_wall_count++;
+//			ROS_INFO("point(%f,%f)",point.x,point.y);
+//				ROS_INFO("side_wall_count(%d)",side_wall_count);
+			}
+		}
+	}
+	return forward_wall_count > 10 && side_wall_count > 20;
+}
+
+Vector2<double> ACleanMode::polar_to_cartesian(double polar,int i)
+{
+	Vector2<double> point{cos(degree_to_radian(i * 1.0 + 180.0)) * polar,
+					sin(degree_to_radian(i * 1.0 + 180.0)) * polar };
+
+	coordinate_transform(&point.x, &point.y, LIDAR_THETA, LIDAR_OFFSET_X, LIDAR_OFFSET_Y);
+	return point;
+
+}
+
+Vector2<double> ACleanMode::get_middle_point(const Vector2<double>& p1,const Vector2<double>& p2,const Paras& para) {
+	auto p3 = (p1 + p2) / 2;
+	Vector2<double> target{};
+
+//	ROS_INFO("p1(%f,%f)", p1.x, p1.y);
+//	ROS_INFO("p2(%f,%f)", p2.x, p2.y);
+//	ROS_INFO("p3 (%f,%f)", p3.x, p3.y);
+
+//	auto x4 = para.narrow / (sqrt(1 + p1.SquaredDistance(p2))) + p3.x;
+//	auto y4 = ((x4 - p3.x) * (p1.x - p2.x) / (p2.y - p1.y)) + p3.y;
+	auto dx = para.narrow / (sqrt(1 + ((p1.x - p2.x) / (p2.y - p1.y)) * ((p1.x - p2.x) / (p2.y - p1.y))));
+	auto x4 = dx + p3.x;
+
+	auto dy = (x4 - p3.x) * (p1.x - p2.x) / (p2.y - p1.y);
+	auto y4 = dy + p3.y;
+
+//	ROS_INFO("x4,y4(%f,%f)", x4, y4);
+
+	if (((p1.x - x4) * (p2.y - y4) - (p1.y - y4) * (p2.x - x4)) < 0) {
+		target = {x4,y4};
+//		ROS_INFO_FL();
+//		ROS_INFO("target(%f,%f)", target.x, target.y);
+	}
+	else {
+		x4 =  -dx + p3.x;
+		y4 = (x4 - p3.x) * (p1.x - p2.x) / (p2.y - p1.y) + p3.y;
+		target = {x4,y4};
+//		ROS_INFO_FL();
+//		ROS_INFO("target(%f,%f)", target.x, target.y);
+	}
+	return target;
+}
+
+bool ACleanMode::check_is_valid(const Vector2<double>& point, Paras& para, const sensor_msgs::LaserScan::ConstPtr & scan) {
+	for (int i = 359; i >= 0; i--) {
+		auto tmp_point = polar_to_cartesian(scan->ranges[i], i);
+		auto distance = point.Distance(tmp_point);
+		//ROS_INFO("distance =  %lf", distance);
+		if (distance < para.narrow - 0.03) {
+			return false;
+		}
+	}
+	return true;
+}
+
+bool ACleanMode::calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,bool is_left, std::deque<Vector2<double>>& points) {
+	Paras para{is_left};
+//	ROS_INFO("is_left(%d)",is_left);
+	auto is_corner = check_corner(scan, para);
+	if(is_corner)
+	{
+//		beeper.play_for_command(VALID);
+		ROS_WARN("is_corner = %d", is_corner);
+	}
+	for (int i = 359; i >= 0; i--) {
+		//ROS_INFO("i = %d", i);
+		if (scan->ranges[i] < 4 && scan->ranges[i - 1] < 4) {
+			auto point1 = polar_to_cartesian(scan->ranges[i], i);
+
+			if (!para.inPoint1Range(point1, is_corner))
+				continue;
+
+			auto point2 = polar_to_cartesian(scan->ranges[i - 1], i - 1);
+
+			if (point2.Distance(point1) > 0.05) {
+				//ROS_INFO("two points distance is too large");
+				continue;
+			}
+			auto target = get_middle_point(point1, point2, para);
+
+			if (!para.inTargetRange(target))
+				continue;
+
+			if (target.Distance({0, 0}) > 0.4)
+				continue;
+
+			if (!check_is_valid(target, para, scan))
+				continue;
+
+//			ROS_INFO("points(%d):target(%lf,%lf),dis(%f)", points.size(), target.x, target.y, target.Distance({CHASE_X, 0}));
+			points.push_back(target);
+		}
+	}
+
+	if (points.empty()) {
+		return false;
+	}
+	if (!is_left) {
+		std::reverse(points.begin(), points.end());//for the right wall follow
+	}
+	auto min = std::min_element(points.rbegin(), points.rend(), [](Vector2<double>& a, Vector2<double>& b) {
+		return a.Distance({CHASE_X, 0}) < b.Distance({CHASE_X, 0});
+	});
+//	ROS_INFO("min(%f,%f)",min->x, min->y);
+
+	auto size = points.size();
+	std::copy(points.rbegin(), min+1, std::front_inserter(points));
+	points.resize(size);
+//	for (const auto &target :points)
+//			ROS_WARN("points(%d):target(%lf,%lf),dis(%f)", points.size(), target.x, target.y, target.Distance({CHASE_X, 0}));
+//	ROS_WARN("points(%d):target(%lf,%lf)", points.size(), points.front().x, points.front().y);
+	pubPointMarkers(&points, "base_link", "point marker");
+
+	return true;
+}
+
+void ACleanMode::scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr& scan)
+{
+	lidar.scanOriginalCb(scan);
+	lidar.checkRobotSlip();
+	if (lidar.isScanOriginalReady() && (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)) {
+		std::deque<Vector2<double>> points{};
+		calcLidarPath(scan, action_i_ == ac_follow_wall_left, points);
+		setTempTarget(points, scan->header.seq);
+	}
+}
+
+void ACleanMode::pubFitLineMarker(visualization_msgs::Marker fit_line_marker)
+{
+	fit_line_marker_pub_.publish(fit_line_marker);
+}
+
+void ACleanMode::visualizeMarkerInit()
+{
+	clean_markers_.points.clear();
+
+	geometry_msgs::Point m_points_{};
+	clean_markers_.points.push_back(m_points_);
+
+	clean_map_markers_.ns = "cleaning_grid_map";
+	clean_map_markers_.id = 1;
+	clean_map_markers_.type = visualization_msgs::Marker::POINTS;
+	clean_map_markers_.action= visualization_msgs::Marker::ADD;
+	clean_map_markers_.lifetime=ros::Duration(0);
+	clean_map_markers_.scale.x = 0.1;
+	clean_map_markers_.scale.y = 0.1;
+	clean_map_markers_.header.frame_id = "/map";
+	clean_map_markers_.points.clear();
+	clean_map_markers_.colors.clear();
+}
+
+void ACleanMode::setCleanMapMarkers(int16_t x, int16_t y, CellState type)
+{
+	geometry_msgs::Point m_points_;
+	std_msgs::ColorRGBA color_;
+	color_.a = 0.7;
+	m_points_.x = x * CELL_SIZE ;
+	m_points_.y = y * CELL_SIZE ;
+	m_points_.z = 0;
+	if (type == CLEANED)
+	{
+		// Green
+		if(y%2==0)
+		{
+			color_.r = 0.0;
+			color_.g = 0.5;
+			color_.b = 0.0;
+		}
+		else{
+			color_.r = 0.0;
+			color_.g = 1.0;
+			color_.b = 0.0;
+		}
+	}
+	else if (type == BLOCKED_FW)
+	{
+		color_.r = 0.2;
+		color_.g = 0.1;
+		color_.b = 0.5;
+	}
+	else if (type == BLOCKED_BUMPER)
+	{
+		// Red
+		color_.r = 1.0;
+		color_.g = 0.0;
+		color_.b = 0.0;
+	}
+	else if (type == BLOCKED_CLIFF)
+	{
+		// Magenta
+		color_.r = 1.0;
+		color_.g = 0.0;
+		color_.b = 1.0;
+	}
+	else if (type == BLOCKED_RCON)
+	{
+		// White
+		color_.r = 1.0;
+		color_.g = 1.0;
+		color_.b = 1.0;
+	}
+	else if (type == BLOCKED_LIDAR)
+	{
+		//Blue
+		color_.r = 0.0;
+		color_.g = 0.0;
+		color_.b = 1.0;
+	}
+	else if (type == BLOCKED_TILT)
+	{
+		// Gray
+		color_.r = 0.5;
+		color_.g = 0.5;
+		color_.b = 0.5;
+	}
+	else if (type == SLAM_MAP_BLOCKED)
+	{
+		color_.r = 0.75;
+		color_.g = 0.33;
+		color_.b = 0.50;
+	}
+	else if (type == TARGET)// Next point
+	{
+		// Yellow
+		color_.r = 1.0;
+		color_.g = 1.0;
+		color_.b = 0.0;
+	}
+	else if (type == TARGET_CLEAN)// Target point
+	{
+		// Cyan
+		color_.r = 0.0;
+		color_.g = 1.0;
+		color_.b = 1.0;
+	}
+	else if (type == BLOCKED_TILT)
+	{
+		// Gray
+		color_.r = 0.5;
+		color_.g = 0.5;
+		color_.b = 0.5;
+	}
+	else if (type == BLOCKED_SLIP)
+	{
+		// i dont know what color it is..
+		color_.r = 0.7;
+		color_.g = 0.7;
+		color_.b = 0.2;
+	}
+	clean_map_markers_.points.push_back(m_points_);
+	clean_map_markers_.colors.push_back(color_);
+}
+
+void ACleanMode::pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path)
+{
+
+	if (path.empty())
+		return;
+
+	visualizeMarkerInit();
+	int16_t x, y, x_min, x_max, y_min, y_max;
+	CellState cell_state;
+	Cell_t next = path.front();
+	Cell_t target = path.back();
+	map.getMapRange(CLEAN_MAP, &x_min, &x_max, &y_min, &y_max);
+
+	if (next.x == SHRT_MIN )
+		next.x = x_min;
+	else if (next.x == SHRT_MAX)
+		next.x = x_max;
+
+	for (x = x_min; x <= x_max; x++)
+	{
+		for (y = y_min; y <= y_max; y++)
+		{
+			if (x == target.x && y == target.y)
+				setCleanMapMarkers(x, y, TARGET_CLEAN);
+			else if (x == next.x && y == next.y)
+				setCleanMapMarkers(x, y, TARGET);
+			else
+			{
+				cell_state = map.getCell(CLEAN_MAP, x, y);
+				if (cell_state > UNCLEAN && cell_state < BLOCKED_BOUNDARY )
+					setCleanMapMarkers(x, y, cell_state);
+			}
+		}
+	}
+	if (!path.empty())
+	{
+//		for (const auto& it : path)
+//		{
+//			ROS_ERROR("it(%d,%d)",it.x, it.y);
+//		}
+
+		setCleanMapMarkers(path.back().x, path.back().y, TARGET_CLEAN);
+	}
+
+	clean_map_markers_.header.stamp = ros::Time::now();
+//	for (const auto& it : clean_map_markers_.points)
+//	{
+//		ROS_WARN("it(%f,%f)",it.x, it.y);
+//	}
+
+	send_clean_map_marker_pub_.publish(clean_map_markers_);
+	clean_map_markers_.points.clear();
+	clean_map_markers_.colors.clear();
+}
+void ACleanMode::pubLineMarker(const std::vector<LineABC> *lines)
+{
+	visualization_msgs::Marker line_marker;
+	line_marker.ns = "line_marker_2";
+	line_marker.id = 0;
+	line_marker.type = visualization_msgs::Marker::LINE_LIST;
+	line_marker.action= 0;//add
+	line_marker.lifetime=ros::Duration(0);
+	line_marker.scale.x = 0.05;
+	//line_marker.scale.y = 0.05;
+	//line_marker.scale.z = 0.05;
+	line_marker.color.r = 0.0;
+	line_marker.color.g = 0.0;
+	line_marker.color.b = 1.0;
+	line_marker.color.a = 1.0;
+	line_marker.header.frame_id = "/base_link";
+	line_marker.header.stamp = ros::Time::now();
+	geometry_msgs::Point point1;
+	point1.z = 0.0;
+	geometry_msgs::Point point2;
+	point2.z = 0.0;
+	line_marker.points.clear();
+	std::vector<LineABC>::const_iterator it;
+	if(!lines->empty() && lines->size() >= 1){
+		for(it = lines->cbegin(); it != lines->cend();it++){
+			point1.x = it->x1;
+			point1.y = it->y1;
+			point2.x = it->x2;
+			point2.y = it->y2;
+			line_marker.points.push_back(point1);
+			line_marker.points.push_back(point2);
+		}
+		line_marker_pub2_.publish(line_marker);
+		line_marker.points.clear();
+	}
+	/*
+	else{
+		line_marker.points.clear();
+		line_marker_pub2.publish(line_marker);
+	}
+	*/
+
 }
 
 void ACleanMode::setNextModeDefault()
@@ -117,13 +609,6 @@ bool ACleanMode::isExit()
 		return true;
 	}
 
-	if(ev.cliff_all_triggered) {
-		ev.cliff_all_triggered = false;
-		ROS_WARN("%s %d: Exit for cliff all.", __FUNCTION__, __LINE__);
-		setNextMode(md_idle);
-		return true;
-	}
-
 	if (charger.isDirected())
 	{
 		ROS_WARN("%s %d: Exit for directly charge.", __FUNCTION__, __LINE__);
@@ -131,6 +616,70 @@ bool ACleanMode::isExit()
 		return true;
 	}
 
+	return false;
+}
+
+bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_move_type) {
+	auto curr = getPosition();
+	auto loc = std::find_if(passed_path_.begin(), passed_path_.end(), [&](Point_t it) {
+		return curr.isCellAndAngleEqual(it);
+	});
+	auto distance = std::distance(loc, passed_path_.end());
+	if (distance == 0) {
+		ROS_INFO("curr(%d,%d,%d)", curr.toCell().x, curr.toCell().y, static_cast<int>(radian_to_degree(curr.th)));
+		passed_path_.push_back(curr);
+	}
+
+	markMapInNewCell();//real time mark to exploration
+
+	if (sp_state == state_trapped) {
+//			auto p_mt = dynamic_cast<MoveTypeFollowWall *>(p_move_type);
+		if (p_move_type->isBlockCleared(clean_map_, passed_path_))
+			if (!clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell())) {
+				out_of_trapped = true;
+				ROS_ERROR("OUT OF TRAPPED");
+				return true;
+			}
+	}
+
+	if (distance > 5) {// closed
+		is_closed = true;
+		is_isolate = isIsolate();
+		if(is_isolate)
+			isolate_count_++;
+		else
+		{
+			passed_path_.clear();
+			closed_count_++;
+			if(closed_count_<closed_count_limit_)
+				return false;
+		}
+		ROS_ERROR("distance > 5,limit %d, closed %d",closed_count_limit_,is_closed);
+		return true;
+
+	}
+
+	return false;
+}
+
+bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
+{
+	if(action_i_ == ac_linear) {
+		auto p_mt = dynamic_cast<MoveTypeLinear *>(p_move_type);
+		if(p_mt->isPoseReach() || p_mt->isPassTargetStop(new_dir_))
+			return true;
+
+		if (p_mt->isLinearForward())
+			return p_mt->isRconStop();
+	}
+	else//rounding
+	{
+		if(sp_state != state_trapped)
+		{
+			auto p_mt = dynamic_cast<MoveTypeFollowWall *>(p_move_type);
+			return p_mt->isNewLineReach(clean_map_) || p_mt->isOverOriginLine(clean_map_);
+		}
+	}
 	return false;
 }
 
@@ -168,98 +717,14 @@ bool ACleanMode::isFinish()
 	return false;
 }
 
-void ACleanMode::genNextAction()
-{
-	ROS_WARN("before genNextAction");
-
-	switch (action_i_) {
-		case ac_null :
-//			ROS_INFO_FL();
-			sp_action_.reset();
-			break;
-		case ac_open_gyro :
-//			ROS_INFO_FL();
-			sp_action_.reset(new ActionOpenGyro);
-			break;
-		case ac_back_form_charger :
-//			ROS_INFO_FL();
-			sp_action_.reset(new ActionBackFromCharger);
-			break;
-		case ac_open_lidar :
-//			ROS_INFO_FL();
-			sp_action_.reset(new ActionOpenLidar);
-			break;
-		case ac_align :
-//			ROS_INFO_FL();
-			sp_action_.reset(new ActionAlign);
-			break;
-		case ac_open_slam :
-//			ROS_INFO_FL();
-			sp_action_.reset(new ActionOpenSlam);
-			break;
-		case ac_pause :
-//			ROS_INFO_FL();
-			sp_action_.reset(new ActionPause);
-			break;
-		case ac_linear :
-//			ROS_INFO_FL();
-			sp_action_.reset(new MoveTypeLinear);
-			break;
-		case ac_follow_wall_left  :
-		case ac_follow_wall_right :
-			ROS_INFO_FL();
-			sp_action_.reset(new MoveTypeFollowWall(action_i_ == ac_follow_wall_left));
-			break;
-		case ac_go_to_charger :
-//			ROS_INFO_FL();
-			sp_action_.reset(new MoveTypeGoToCharger);
-			break;
-		case ac_exception_resume :
-//			ROS_INFO_FL();
-			sp_action_.reset(new MovementExceptionResume);
-			break;
-		case ac_charge :
-//			ROS_INFO_FL();
-			sp_action_.reset(new MovementCharge);
-			break;
-		case ac_check_bumper :
-//			ROS_INFO_FL();
-			sp_action_.reset(new ActionCheckBumper);
-			break;
-		case ac_bumper_hit_test :
-//			ROS_INFO_FL();
-			sp_action_.reset(new MoveTypeBumperHitTest);
-			break;
-		case ac_check_vacuum :
-//			ROS_INFO_FL();
-			sp_action_.reset(new ActionCheckVacuum);
-			break;
-		case ac_movement_direct_go :
-//			ROS_INFO_FL();
-			sp_action_.reset(new MovementDirectGo);
-			break;
-	}
-	INFO_GREEN("after genNextAction");
-}
-
-void ACleanMode::setRconPos(Point32_t pos)
+void ACleanMode::setRconPos(Point_t pos)
 {
 		charger_pos_ = pos;
-}
-
-bool ACleanMode::moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt)
-{
-	return false;
 }
 
 void ACleanMode::moveTypeFollowWallSaveBlocks()
 {
 	clean_map_.saveBlocks(action_i_ == ac_linear, isStateClean());
-}
-
-bool ACleanMode::moveTypeLinearIsFinish(MoveTypeLinear *p_mt)
-{
-	return p_mt->isPoseReach() || p_mt->isPassTargetStop(new_dir_);
 }
 
 void ACleanMode::moveTypeLinearSaveBlocks()
@@ -269,9 +734,9 @@ void ACleanMode::moveTypeLinearSaveBlocks()
 
 void ACleanMode::setRconPos(float cd,float dist)
 {
-//	float yaw = robot::instance()->getWorldPoseAngle()/10.0;
-//	float wpx = cosf( (float)ranged_angle((yaw+cd)*10)/10.0 * PI/180.0 )*dist+ robot::instance()->getWorldPoseX();
-//	float wpy = sinf( (float)ranged_angle((yaw+cd)*10)/10.0 * PI/180.0 )*dist+ robot::instance()->getWorldPoseY();
+//	float yaw = robot::instance()->getWorldPoseRadian()/10.0;
+//	float wpx = cosf( (float)ranged_radian((yaw+cd)*10)/10.0 * PI/180.0 )*dist+ robot::instance()->getWorldPoseX();
+//	float wpy = sinf( (float)ranged_radian((yaw+cd)*10)/10.0 * PI/180.0 )*dist+ robot::instance()->getWorldPoseY();
 //	charger_pos_ = {(int32_t)(wpx*1000/CELL_SIZE), (int32_t)(wpy*1000/CELL_SIZE),(int16_t)0};
 //	if(found_charger_)
 //		g_homes.push_back(charger_pos_);
@@ -467,7 +932,7 @@ Cells ACleanMode::pointsGenerateCells(Points &targets)
 {
 //	displayCellPath(targets);
 	Cells path{};
-	for(const Point32_t& point : targets) {
+	for(const Point_t& point : targets) {
 		path.push_back(point.toCell());
 	}
 	return path;
@@ -506,7 +971,7 @@ bool ACleanMode::isRemoteGoHomePoint()
 // ------------------Handlers--------------------------
 void ACleanMode::remoteHome(bool state_now, bool state_last)
 {
-	if (sp_state == state_clean || sp_state == state_pause)
+	if (sp_state == state_clean || sp_state == state_pause || sp_state == state_spot)
 	{
 		ROS_WARN("%s %d: remote home.", __FUNCTION__, __LINE__);
 		beeper.play_for_command(VALID);
@@ -520,43 +985,26 @@ void ACleanMode::remoteHome(bool state_now, bool state_last)
 	remote.reset();
 }
 
-void ACleanMode::cliffAll(bool state_now, bool state_last) {
-	ROS_WARN("%s %d: Cliff all.", __FUNCTION__, __LINE__);
-	ev.cliff_all_triggered = true;
+void ACleanMode::cliffAll(bool state_now, bool state_last)
+{
+	if (!charger.getChargeStatus() && !ev.cliff_all_triggered)
+	{
+		ROS_WARN("%s %d: Cliff all.", __FUNCTION__, __LINE__);
+		ev.cliff_all_triggered = true;
+	}
+}
+
+void ACleanMode::overCurrentBrushMain(bool state_now, bool state_last)
+{
+	INFO_YELLOW("MAIN BRUSH OVER CURRENT");
+	ev.oc_brush_main = true;
+	brush.stop();
 }
 // ------------------Handlers end--------------------------
 
-bool ACleanMode::checkEnterExceptionResumeState()
-{
-	if (isExceptionTriggered()) {
-		ROS_WARN("%s %d: Exception triggered!", __FUNCTION__, __LINE__);
-		sp_action_.reset();
-		sp_saved_states.push_back(sp_state);
-		sp_state = state_exception_resume;
-		sp_state->init();
-		return true;
-	}
-
-	return false;
-}
-
-bool ACleanMode::checkEnterNullState()
-{
-	if (ev.key_clean_pressed)
-	{
-		ev.key_clean_pressed = false;
-		action_i_ = ac_null;
-		sp_action_.reset();
-		sp_state = nullptr;
-		return true;
-	}
-
-	return false;
-}
-
 // ------------------State init--------------------
 bool ACleanMode::isSwitchByEventInStateInit() {
-	return checkEnterNullState();
+	return checkEnterExceptionResumeState();
 }
 
 bool ACleanMode::updateActionInStateInit() {
@@ -586,13 +1034,10 @@ void ACleanMode::switchInStateInit() {
 
 // ------------------State clean--------------------
 bool ACleanMode::isSwitchByEventInStateClean() {
-	return checkEnterNullState() || checkEnterGoHomePointState();
+	return checkEnterGoHomePointState() || checkEnterExceptionResumeState();
 }
 
-
 void ACleanMode::switchInStateClean() {
-//    checkEnterNullState()
-//	if(action_i_ == ac_open_slam)
 	action_i_ = ac_null;
 	sp_action_.reset();
 	sp_state = nullptr;
@@ -651,7 +1096,7 @@ bool ACleanMode::updateActionInStateGoHomePoint()
 		new_dir_ = plan_path_.front().th;
 		plan_path_.pop_front();
 		go_home_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
-		robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
+		pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 		should_go_to_charger_ = false;
 		action_i_ = ac_linear;
 		genNextAction();
@@ -682,7 +1127,7 @@ void ACleanMode::switchInStateGoHomePoint()
 }
 
 // ------------------State go to charger--------------------
-bool ACleanMode::checkEnterGoCharger()
+bool ACleanMode::checkEnterGoToCharger()
 {
 	ev.rcon_triggered = c_rcon.getForwardTop();
 	if (ev.rcon_triggered) {
@@ -695,6 +1140,11 @@ bool ACleanMode::checkEnterGoCharger()
 		return true;
 	}
 	return false;
+}
+
+bool ACleanMode::isSwitchByEventInStateGoToCharger()
+{
+	return checkEnterExceptionResumeState();
 }
 
 bool ACleanMode::updateActionInStateGoToCharger()
@@ -746,18 +1196,32 @@ bool ACleanMode::updateActionInStateSpot() {
 
 bool ACleanMode::isSwitchByEventInStateSpot()
 {
-	return false;
+	return checkEnterExceptionResumeState();
 }
 
 // ------------------State exception resume--------------
+bool ACleanMode::checkEnterExceptionResumeState()
+{
+	if (isExceptionTriggered()) {
+		ROS_WARN("%s %d: Exception triggered!", __FUNCTION__, __LINE__);
+		sp_action_.reset();
+		sp_saved_states.push_back(sp_state);
+		sp_state = state_exception_resume;
+		sp_state->init();
+		return true;
+	}
+
+	return false;
+}
+
 bool ACleanMode::isSwitchByEventInStateExceptionResume()
 {
-	return checkEnterNullState();
+	return false;
 }
 
 bool ACleanMode::updateActionInStateExceptionResume()
 {
-	if (isExceptionTriggered())
+	if (!ev.fatal_quit && isExceptionTriggered())
 	{
 		sp_action_.reset();
 		action_i_ = ac_exception_resume;
@@ -769,18 +1233,21 @@ bool ACleanMode::updateActionInStateExceptionResume()
 
 void ACleanMode::switchInStateExceptionResume()
 {
-	if (!isExceptionTriggered())
+	if (!ev.fatal_quit)
 	{
 		ROS_INFO("%s %d: Resume to previous state", __FUNCTION__, __LINE__);
-		sp_action_.reset();
+		action_i_ = ac_null;
+		genNextAction();
 		sp_state = sp_saved_states.back();
 		sp_saved_states.pop_back();
 	}
+	else
+		sp_state = nullptr;
 }
 
 // ------------------State exploration--------------
 bool ACleanMode::isSwitchByEventInStateExploration() {
-	return checkEnterGoCharger();
+	return checkEnterGoToCharger() || checkEnterExceptionResumeState();
 }
 
 bool ACleanMode::updateActionInStateExploration() {
@@ -795,7 +1262,7 @@ bool ACleanMode::updateActionInStateExploration() {
 		ROS_WARN("new_dir_(%d)", new_dir_);
 		plan_path_.pop_front();
 		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
-		robot::instance()->pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
+		pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 		genNextAction();
 		return true;
 	}
@@ -812,9 +1279,13 @@ void ACleanMode::switchInStateExploration() {
 		ROS_WARN("%s,%d: enter state trapped",__FUNCTION__,__LINE__);
 		sp_saved_states.push_back(sp_state);
 		sp_state = state_trapped;
+		is_isolate = true;
+		is_closed = true;
+		closed_count_ = 0;
+		isolate_count_ = 0;
 	}
 	else{
-		auto curr = updatePosition();
+		auto curr = getPosition();
 		start_point_.th = curr.th;
 		sp_state = state_go_home_point;
 		speaker.play(VOICE_BACK_TO_CHARGER, true);
@@ -835,43 +1306,142 @@ bool ACleanMode::isSwitchByEventInStateTrapped()
 
 bool ACleanMode::updateActionInStateTrapped()
 {
-	PP_INFO();
+	passed_path_.clear();
+	auto ret = true;
+	if(is_closed) {
+		is_closed = false;
+		if (is_isolate) {
+			ROS_INFO_FL();
+			ROS_ERROR("is_isolate");
+			is_isolate = false;
+			auto angle = (isolate_count_ == 0) ? 0 : -900;
+			auto point = getPosition().addRadian(angle);
+			point = point.getRelative(8, 0);
+			plan_path_.clear();
+			plan_path_.push_back(point);
+			new_dir_ = point.th;
+			clean_path_algorithm_->displayPointPath(plan_path_);
+			action_i_ = ac_linear;
+		}
 
-	sp_action_.reset();// to mark in destructor
-	action_i_ = ac_follow_wall_left;
+		if (closed_count_ >= closed_count_limit_ || isolate_count_ >= isolate_count_limit_) {
+			ROS_INFO("cc(%d),ccl(%d),ic(%d),icl(%d)",closed_count_, closed_count_limit_, isolate_count_, isolate_count_limit_);
+			ROS_ERROR("p_mt->closed_count_ >= closed_count_limit_");
+			trapped_closed_or_isolate = true;
+			action_i_ = ac_null;
+			genNextAction();
+			ROS_WARN("%s,%d:follow clean finish", __func__, __LINE__);
+		}
+	}
+	else if(out_of_trapped) {
+//		out_of_trapped = false;
+		ROS_ERROR("out_of_trapped");
+		action_i_ = ac_null;
+		genNextAction();
+	}
+	else if (robot_timer.trapTimeout(ESCAPE_TRAPPED_TIME)) {
+			action_i_ = ac_null;
+			trapped_time_out_ = false;
+	}else{
+		action_i_ = ac_follow_wall_left;
+		ROS_WARN("%s,%d: mt_follow_wall_left", __FUNCTION__, __LINE__);
+	}
+
+	if(action_i_ == ac_null)
+		ret = false;
+
 	genNextAction();
-
-	if (robot_timer.trapTimeout(ESCAPE_TRAPPED_TIME)) {
-		action_i_ = ac_null;
-		genNextAction();
-		trapped_time_out_ = true;
-		return false;
-	}
-	else if (!clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell())) {
-		action_i_ = ac_null;
-		genNextAction();
-		return false;
-	}
-
-	return true;
+	return ret;
 }
 
 void ACleanMode::switchInStateTrapped()
 {
 	PP_INFO();
-	if (trapped_time_out_) {
-		trapped_time_out_ = false;
-		ROS_WARN("%s %d: Escape trapped timeout!(%d)", __FUNCTION__, __LINE__, ESCAPE_TRAPPED_TIME);
-		reach_cleaned_count_ = 0;
+
+	if(trapped_closed_or_isolate)
+	{
+		trapped_closed_or_isolate = false;
+		ROS_WARN("%s %d: closed_count_ >= closed_count_limit_!", __FUNCTION__, __LINE__);
 		sp_state = nullptr;
 	}
-	else/* if (escape_trapped_)*/ {
-		ROS_WARN("%s %d: Escape trapped !", __FUNCTION__, __LINE__);
-		reach_cleaned_count_ = 0;
+	else if (trapped_time_out_) {
+		trapped_time_out_ = false;
+		ROS_WARN("%s %d: Escape trapped timeout!(%d)", __FUNCTION__, __LINE__, ESCAPE_TRAPPED_TIME);
+		sp_state = nullptr;
+	}
+	else/* if (escape_trapped_)*/ {//out_of_trapped = false
+		ROS_WARN("%s %d:escape_trapped_ restore state from trapped !", __FUNCTION__, __LINE__);
 //		sp_state = (sp_tmp_state == state_clean) ? state_clean : state_exploration;
+		out_of_trapped = false;
 		sp_state = sp_saved_states.back();
 		sp_saved_states.pop_back();
 		sp_state->init();
 	}
 }
 
+// ------------------State resume low battery charge------------------
+bool ACleanMode::isSwitchByEventInStateResumeLowBatteryCharge()
+{
+	return checkEnterExceptionResumeState();
+}
+
+void ACleanMode::setTempTarget(std::deque<Vector2<double>>& points, uint32_t  seq) {
+	boost::mutex::scoped_lock lock(temp_target_mutex_);
+	path_head_ = {};
+	path_head_.tmp_plan_path_.clear();
+
+//	ROS_ERROR("curr_point(%d,%d)",getPosition().x,getPosition().y);
+	for (const auto &iter : points) {
+		auto target = getPosition().getRelative(int(iter.x * 1000), int(iter.y * 1000));
+		path_head_.tmp_plan_path_.push_back(target);
+//		ROS_INFO("temp_target(%d,%d)",target.x,target.y);
+	}
+	path_head_.seq = seq;
+}
+
+PathHead ACleanMode::getTempTarget()
+{
+	boost::mutex::scoped_lock lock(temp_target_mutex_);
+
+//	auto tmp = tmp_plan_path_;
+//	tmp_plan_path_.clear();
+//	return tmp;
+	return path_head_;
+}
+
+bool ACleanMode::isIsolate() {
+	BoundingBox2 bound{};
+	GridMap fw_tmp_map;
+	fw_tmp_map.setFollowWall(action_i_ == ac_follow_wall_left,passed_path_);
+
+	fw_tmp_map.getMapRange(CLEAN_MAP, &bound.min.x, &bound.max.x, &bound.min.y, &bound.max.y);
+
+	auto target = bound.max + Cell_t{1, 1};
+	bound.SetMinimum(bound.min - Cell_t{8, 8});
+	bound.SetMaximum(bound.max + Cell_t{8, 8});
+	ROS_ERROR("ISOLATE MAP");
+	fw_tmp_map.print(CLEAN_MAP,target.x,target.y);
+	ROS_ERROR("ISOLATE MAP");
+	ROS_ERROR("minx(%d),miny(%d),maxx(%d),maxy(%d)",bound.min.x, bound.min.y,bound.max.x, bound.max.y);
+
+	auto path = clean_path_algorithm_->findShortestPath(fw_tmp_map, getPosition().toCell(), target, 0, true, true,
+																											bound.min, bound.max);
+
+	return !path.empty();
+}
+
+bool ACleanMode::generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &targets)
+{
+	if (targets.empty()) {//fw ->linear
+		auto curr = getPosition();
+
+		ROS_WARN("%s,%d: empty! point(%d, %d, %d)", __FUNCTION__, __LINE__,targets.back().x, targets.back().y, targets.back().th);
+	}
+	else//linear->fw
+	{
+		targets.clear();
+		targets.push_back(getPosition());
+		ROS_WARN("%s,%d: not empty! point(%d, %d, %d)", __FUNCTION__, __LINE__,targets.back().x, targets.back().y, targets.back().th);
+	}
+	return true;
+}

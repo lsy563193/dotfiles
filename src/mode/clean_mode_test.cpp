@@ -5,12 +5,6 @@
 #include <event_manager.h>
 #include "dev.h"
 #include <error.h>
-
-
-#include "action.hpp"
-#include "movement.hpp"
-#include "move_type.hpp"
-#include "state.hpp"
 #include "mode.hpp"
 CleanModeTest::CleanModeTest()
 {
@@ -26,11 +20,6 @@ CleanModeTest::~CleanModeTest()
 {
 	IMoveType::sp_mode_ = nullptr;
 	event_manager_set_enable(false);
-}
-
-bool CleanModeTest::mapMark()
-{
-	return false;
 }
 
 bool CleanModeTest::isFinish()
@@ -71,7 +60,7 @@ bool CleanModeTest::isFinish()
 	}
 	else if (action_i_ == ac_check_bumper)
 	{
-		led.set_mode(LED_STEADY, LED_GREEN);
+		led.setMode(LED_STEADY, LED_GREEN);
 		wheel.stop();
 		brush.stop();
 		vacuum.stop();

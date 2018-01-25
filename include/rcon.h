@@ -114,6 +114,7 @@ public:
 	 */
 	uint32_t getForwardTop();
 
+	uint32_t getWFRcon();
 
 	/*
 	 * @author

@@ -17,7 +17,7 @@
 #define BLOCK_FRONT			((uint8_t) 0x04)
 #define BLOCK_ALL			((uint8_t) 0x07)
 
-typedef std::deque<Point32_t> Points;
+typedef std::deque<Point_t> Points;
 
 typedef enum {
 	// The sequence of CLEAN_MAP value must be UNCLEAN < CLEANED < MAP_BLOCKED < SLAM_MAP_BLOCKED
@@ -47,17 +47,17 @@ typedef enum {
   COST_HIGH = 7,
 } CellState;
 
-enum {
-  MAP_POS_X = 0,
-  MAP_PX_PY = 450,
-  MAP_POS_Y = 900,
-  MAP_NS_PY = 1350,
-  MAP_NEG_X = 1800,
-  MAP_NX_NY =-1350,
-  MAP_NEG_Y =-900,
-  MAP_PX_NY =-450,
-  MAP_NONE = 0,
-} ;
+//enum {
+  const double MAP_POS_X = 0;
+  const double MAP_PX_PY = PI/4;
+  const double MAP_POS_Y = PI/2;
+  const double MAP_NS_PY = PI*3/4;
+  const double MAP_NEG_X = PI;
+  const double MAP_NX_NY =-PI*3/4;
+  const double MAP_NEG_Y =-PI/2;
+  const double MAP_PX_NY =-PI/4;
+  const double MAP_NONE = 2*PI;
+//} DIR;
 
 class GridMap {
 public:
@@ -101,11 +101,13 @@ public:
 
 	void indexToCells(int size_x_, unsigned int index, unsigned int &mx, unsigned int &my);
 
-	bool worldToCount(double &wx, double &wy, int32_t &cx, int32_t &cy);
+//	bool worldToCount(double &wx, double &wy, int32_t &cx, int32_t &cy);
 
 	void cellToWorld(double &worldX, double &worldY, int16_t &cellX, int16_t &cellY);
 
 	bool markRobot(uint8_t id);
+
+	bool trapMarkRobot(uint8_t id);
 
 	uint8_t setLidar();
 
@@ -121,10 +123,9 @@ public:
 
 	uint8_t setSlip();
 
-	uint8_t saveChargerArea(const Cell_t homepoint);
-
 	uint8_t setFollowWall(bool is_left, const Points&);
 
+	uint8_t setBlocks();
 
 	uint8_t saveLidar();
 
@@ -140,10 +141,9 @@ public:
 
 	uint8_t saveSlip();
 
+	uint8_t saveChargerArea(const Cell_t homepoint);
+
 	uint8_t saveBlocks(bool is_linear, bool is_save_rcon);
-
-	uint8_t setBlocks();
-
 
 	void setCleaned(std::deque<Cell_t> cells);
 	void setExplorationCleaned();
@@ -285,14 +285,13 @@ private:
 	std::vector<Cell_t> temp_tilt_cells;
 	std::vector<Cell_t> temp_slip_cells;
 	std::vector<Cell_t> temp_cliff_cells;
+	std::vector<Cell_t> temp_lidar_cells;
 	std::vector<Cell_t> temp_fw_cells;
 	std::vector<Cell_t> temp_WFMAP_follow_wall_cells;
 
 };
 
 /*wf_map is to record the wall follow path to caculate the isolate islands*/
-extern GridMap fw_map;
 extern GridMap slam_grid_map;
-extern GridMap decrease_map;
 
 #endif /* __MAP_H */

@@ -11,6 +11,7 @@
 #
 # By default this script does nothing.
 
+exit 0
 export HOME=/tmp
 
 #roslaunch pp mybot.launch 2>/dev/null &

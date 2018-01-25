@@ -7,8 +7,6 @@
 #include "dev.h"
 #include "robot.hpp"
 
-#include <action.hpp>
-#include <movement.hpp>
 #include <move_type.hpp>
 #include <state.hpp>
 #include <mode.hpp>
@@ -16,6 +14,13 @@
 boost::shared_ptr<IMovement> IMoveType::sp_movement_ = nullptr;
 Mode* IMoveType::sp_mode_ = nullptr;
 int IMoveType::movement_i_ = mm_null;
+
+IMoveType::IMoveType() {
+//	resetTriggeredValue();
+	last_ = start_point_ = getPosition();
+	c_rcon.resetStatus();
+	robot::instance()->obsAdjustCount(20);
+}
 
 bool IMoveType::shouldMoveBack()
 {
@@ -55,13 +60,11 @@ bool IMoveType::isOBSStop()
 bool IMoveType::isLidarStop()
 {
 //	PP_INFO();
-	ev.lidar_triggered = lidar_get_status();
+	ev.lidar_triggered = lidar.getObstacleDistance(0,0.056) < 0.04 ? BLOCK_FRONT : 0;
 	if (ev.lidar_triggered)
 	{
 		// Temporary use OBS to get angle.
-//		ev.obs_triggered = ev.lidar_triggered;
-//		g_turn_angle = obsTurnAngle();
-//		ROS_WARN("%s, %d: ev.lidar_triggered(%d), turn for (%d).", __FUNCTION__, __LINE__, ev.lidar_triggered, g_turn_angle);
+		ROS_WARN("%s, %d: ev.lidar_triggered(%d).", __FUNCTION__, __LINE__, ev.lidar_triggered);
 		return true;
 	}
 
@@ -93,17 +96,20 @@ bool IMoveType::shouldTurn()
 	return false;
 }
 
-IMoveType::IMoveType() {
-//	resetTriggeredValue();
-	start_point_ = getPosition();
-	c_rcon.resetStatus();
-	robot::instance()->obsAdjustCount(20);
+bool IMoveType::RconTrigger()
+{
+	ev.rcon_triggered = c_rcon.getWFRcon();
+	if (ev.rcon_triggered) {
+		ROS_WARN("%s, %d: ev.rcon_triggered(%d).", __FUNCTION__, __LINE__, ev.lidar_triggered);
+		return true;
+	}
+	return false;
 }
 
 void IMoveType::resetTriggeredValue()
 {
 	ev.lidar_triggered = 0;
-	ev.rcon_triggered = 0;
+//	ev.rcon_triggered = 0;
 	ev.bumper_triggered = 0;
 	ev.obs_triggered = 0;
 	ev.cliff_triggered = 0;
@@ -112,46 +118,22 @@ void IMoveType::resetTriggeredValue()
 }
 
 bool IMoveType::isFinish() {
+	updatePosition();
+	auto curr = getPosition();
+	auto p_cm = dynamic_cast<ACleanMode*> (sp_mode_);
+	if (!curr.isCellAndAngleEqual(last_))
+	{
+		last_ = curr;
+		if(p_cm->moveTypeNewCellIsFinish(this))
+			return true;
+	}
+	if(p_cm->moveTypeRealTimeIsFinish(this))
+		return true;
+
 	return sp_mode_->isExceptionTriggered();
 }
 
-void IMoveType::updatePath()
-{
-	auto curr = updatePosition();
-//	auto point = getPosition();
-//	robot::instance()->pubCleanMapMarkers(nav_map, tmp_plan_path_);
-//	PP_INFO();
-//	ROS_INFO("point(%d,%d,%d)",point.x, point.y,point.th);
-//	ROS_INFO("last(%d,%d,%d)",last_.x, last_.y, last_.th);
-	auto p_mode = dynamic_cast<ACleanMode*> (sp_mode_);
-	if (p_mode->passed_path_.empty())
-	{
-		p_mode->passed_path_.push_back(curr);
-		p_mode->last_ = curr;
-	}
-	else if (!curr.isCellAndAngleEqual(p_mode->last_))
-	{
-		p_mode->last_ = curr;
-		auto loc = std::find_if(p_mode->passed_path_.begin(), p_mode->passed_path_.end(), [&](Point32_t it) {
-			return curr.isCellAndAngleEqual(it);
-		});
-		auto distance = std::distance(loc, p_mode->passed_path_.end());
-		if (distance == 0) {
-			ROS_INFO("curr(%d,%d,%d)",curr.toCell().x, curr.toCell().y, curr.th);
-			p_mode->passed_path_.push_back(curr);
-		}
-		if (distance > 5) {
-			ROS_INFO("reach_cleaned_count_(%d)",p_mode->reach_cleaned_count_);
-			p_mode->reach_cleaned_count_++;
-		}
-		p_mode->clean_map_.saveBlocks(p_mode->action_i_ == p_mode->ac_linear,
-					(p_mode->isStateClean() || p_mode->isStateExploration()));
-		p_mode->markRealTime();//real time mark to exploration
-//		displayPath(passed_path_);
-	}
-}
 void IMoveType::run() {
-	updatePath();
 	sp_movement_->run();
 }
 
@@ -195,5 +177,16 @@ bool IMoveType::isRconStop()
 	}
 
 	return ret;
+}
+
+bool IMoveType::isBlockCleared(GridMap &map, Points &passed_path)
+{
+	if (!passed_path.empty())
+	{
+//		ROS_INFO("%s %d: passed_path.back(%d %d)", __FUNCTION__, __LINE__, passed_path.back().x, passed_path.back().y);
+		return !map.isBlockAccessible(passed_path.back().toCell().x, passed_path.back().toCell().y);
+	}
+
+	return false;
 }
 

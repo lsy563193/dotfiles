@@ -5,11 +5,15 @@
 #include <tf/transform_broadcaster.h>
 #include "robotbase.h"
 
-#define  _RATE 50
 
-bool is_robotbase_init = false;
+bool g_pp_shutdown = false;
+
 bool robotbase_thread_stop = false;
-bool send_stream_thread = false;
+bool send_thread_stop = false;
+bool recei_thread_stop = false;
+bool event_manager_thread_stop = false;
+bool event_handle_thread_stop = false;
+bool core_thread_stop = false;
 
 pthread_t robotbaseThread_id;
 pthread_t receiPortThread_id;
@@ -38,47 +42,7 @@ uint8_t robotbase_led_color = LED_GREEN;
 uint16_t robotbase_led_cnt_for_switch = 0;
 uint16_t live_led_cnt_for_switch = 0;
 
-// Lock for odom coordinate
-boost::mutex odom_mutex;
-
-int robotbase_init(void)
-{
-	int	serr_ret;
-	int base_ret;
-	int sers_ret;
-	int speaker_ret;
-
-	robotbase_thread_stop = false;
-	send_stream_thread = true;
-	
-	while (!serial.is_ready()) {
-		ROS_ERROR("serial not ready\n");
-	}
-
-	robotbase_reset_send_stream();
-
-	ROS_INFO("waiting robotbase awake ");
-	auto serial_receive_routine = new boost::thread(serial_receive_routine_cb);
-	serial_receive_routine->detach();
-	auto robotbase_routine = new boost::thread(robotbase_routine_cb);
-	robotbase_routine->detach();
-	auto serial_send_routine = new boost::thread(serial_send_routine_cb);
-	serial_send_routine->detach();
-	auto speaker_play_routine = new boost::thread(speaker_play_routine_cb);
-	speaker_play_routine->detach();
-	if (base_ret < 0 || serr_ret < 0 || sers_ret < 0 || speaker_ret < 0) {
-		is_robotbase_init = false;
-		robotbase_thread_stop = true;
-		send_stream_thread = false;
-		if (base_ret < 0) {ROS_INFO("%s,%d, fail to create robotbase thread!! %s ", __FUNCTION__,__LINE__,strerror(base_ret));}
-		if (serr_ret < 0) {ROS_INFO("%s,%d, fail to create serial receive thread!! %s ",__FUNCTION__,__LINE__, strerror(serr_ret));}
-		if (sers_ret < 0){ROS_INFO("%s,%d, fail to create serial send thread!! %s ",__FUNCTION__,__LINE__,strerror(sers_ret));}
-		if (speaker_ret < 0){ROS_INFO("%s,%d, fail to create speaker paly thread!! %s ",__FUNCTION__,__LINE__,strerror(speaker_ret));}
-		return -1;
-	}
-	is_robotbase_init = true;
-	return 0;
-}
+extern boost::mutex odom_mutex;
 
 void debug_received_stream()
 {
@@ -100,41 +64,33 @@ void debug_send_stream(uint8_t *buf)
 	printf("\n");
 }
 
-bool is_robotbase_stop(void)
-{
-	return robotbase_thread_stop ? true : false;
-}
-
 void robotbase_deinit(void)
 {
-	if (is_robotbase_init) {
-		is_robotbase_init = false;
-		robotbase_thread_stop = true;
-		ROS_INFO("%s,%d,shutdown robotbase power",__FUNCTION__,__LINE__);
-		led.set_mode(LED_STEADY, LED_OFF);
-		serial.setSendData(CTL_BEEPER, 0x00);
-		gyro.setOff();
-		wheel.stop();
-		brush.stop();
-		vacuum.stop();
-		serial.setCleanMode(POWER_DOWN);
-		usleep(40000);
-		send_stream_thread = false;
-		usleep(40000);
-		serial.close();
-		ROS_INFO("%s,%d, Stop OK",__FUNCTION__,__LINE__);
-		int mutex_ret = pthread_mutex_destroy(&recev_lock);
-		if(mutex_ret<0)
-			ROS_ERROR("_%s,%d, pthread mutex destroy fail",__FUNCTION__,__LINE__);
-		int cond_ret = pthread_cond_destroy(&recev_cond);
-		if(cond_ret<0)
-			ROS_ERROR("%s,%d,pthread cond destroy fail",__FUNCTION__,__LINE__);
+
+	bumper.lidarBumperDeinit();
+	recei_thread_stop = true;
+	led.setMode(LED_STEADY, LED_OFF);
+	serial.setSendData(CTL_BEEPER, 0x00);
+	gyro.setOff();
+	wheel.stop();
+	brush.stop();
+	vacuum.stop();
+	serial.setMainBoardMode(NORMAL_SLEEP_MODE);
+	usleep(40000);
+	while(ros::ok() && !g_pp_shutdown){
+		usleep(2000);
 	}
+	serial.close();
+	pthread_mutex_destroy(&recev_lock);
+	pthread_mutex_destroy(&serial_data_ready_mtx);
+	
+	pthread_cond_destroy(&recev_cond);
+	pthread_cond_destroy(&serial_data_ready_cond);
+	
 }
 
 void robotbase_reset_send_stream(void)
 {
-	boost::mutex::scoped_lock(g_send_stream_mutex);
 	for (int i = 0; i < SEND_LEN; i++) {
 		if (i != CTL_LED_GREEN)
 			serial.setSendData(i, 0x00);
@@ -146,340 +102,17 @@ void robotbase_reset_send_stream(void)
 	serial.setSendData(SEND_LEN - 2, 0xcc);
 	serial.setSendData(SEND_LEN - 1, 0x33);
 
-	serial.setCleanMode(POWER_ACTIVE);
+	serial.setMainBoardMode(IDLE_MODE);
 	uint8_t buf[SEND_LEN];
-	memcpy(buf, serial.send_stream, sizeof(uint8_t) * SEND_LEN);
+	{
+		boost::mutex::scoped_lock lock(g_send_stream_mutex);
+		memcpy(buf, serial.send_stream, sizeof(uint8_t) * SEND_LEN);
+	}
 	uint8_t crc;
-	crc = serial.calc_buf_crc8(buf, SEND_LEN - 3);
+	crc = serial.calBufCrc8(buf, SEND_LEN - 3);
 	serial.setSendData(SEND_LEN - 3, crc);
 }
 
-void serial_receive_routine_cb()
-{
-	ROS_INFO("robotbase,\033[32m%s\033[0m,%d is up.",__FUNCTION__,__LINE__);
-	int i, j, ret, wh_len, wht_len, whtc_len;
-
-	uint8_t r_crc, c_crc;
-	uint8_t h1 = 0xaa, h2 = 0x55, header[2], t1 = 0xcc, t2 = 0x33;
-	uint8_t header1 = 0x00;
-	uint8_t header2 = 0x00;
-	uint8_t tempData[RECEI_LEN], receiData[RECEI_LEN];
-	tempData[0] = h1;
-	tempData[1] = h2;
-
-	wh_len = RECEI_LEN - 2; //length without header bytes
-	wht_len = wh_len - 2; //length without header and tail bytes
-	whtc_len = wht_len - 1; //length without header and tail and crc bytes
-
-	while (ros::ok() && (!robotbase_thread_stop)) {
-		ret = serial.read(1, &header1);
-		if (ret <= 0 ){
-			ROS_WARN("%s, %d, serial read return %d ,  requst %d byte",__FUNCTION__,__LINE__,ret,1);
-			continue;
-		}
-		if(header1 != h1)
-			continue;
-		ret= serial.read(1,&header2);
-		if (ret <= 0 ){
-			ROS_WARN("%s,%d,serial read return %d , requst %d byte",__FUNCTION__,__LINE__,ret,1);
-			continue;
-		}
-		if(header2 != h2){
-			continue;
-		}
-		ret = serial.read(wh_len, receiData);
-		if(ret < wh_len){
-			ROS_WARN("%s,%d,serial read %d bytes, requst %d bytes",__FUNCTION__,__LINE__,ret,wh_len);
-		}
-		if(ret<= 0){
-			ROS_WARN("%s,%d,serial read return %d",__FUNCTION__,__LINE__,ret);
-			continue;
-		}
-
-		for (i = 0; i < whtc_len; i++){
-			tempData[i + 2] = receiData[i];
-		}
-
-		c_crc = serial.calc_buf_crc8(tempData, wh_len - 1);//calculate crc8 with header bytes
-		r_crc = receiData[whtc_len];
-
-		if (r_crc == c_crc){
-			if (receiData[wh_len - 1] == t2 && receiData[wh_len - 2] == t1) {
-				for (j = 0; j < wht_len; j++) {
-					serial.receive_stream[j + 2] = receiData[j];
-				}
-				if(pthread_cond_signal(&recev_cond)<0)//if receive data corret than send signal
-					ROS_ERROR(" in serial read, pthread signal fail !");
-			}
-			else {
-				ROS_WARN(" in serial read ,data tail error\n");
-			}
-		}
-		else {
-			ROS_ERROR("%s,%d,in serial read ,data crc error\n",__FUNCTION__,__LINE__);
-		}
-	}
-	ROS_INFO("\033[32m%s\033[0m,%d,exit!",__FUNCTION__,__LINE__);
-}
-
-void robotbase_routine_cb()
-{
-	ROS_INFO("robotbase,\033[32m%s\033[0m,%d is up.",__FUNCTION__,__LINE__);
-
-	ros::Rate	r(_RATE);
-	ros::Time	cur_time, last_time;
-
-	//Debug
-	uint16_t error_count = 0;
-
-	nav_msgs::Odometry			odom_msg;
-	tf::TransformBroadcaster	odom_broad;
-	geometry_msgs::Quaternion	odom_quat;
-
-	geometry_msgs::TransformStamped	odom_trans;
-
-	ros::Publisher	odom_pub, sensor_pub;
-	ros::NodeHandle	robotsensor_node;
-	ros::NodeHandle	odom_node;
-
-	sensor_pub = robotsensor_node.advertise<pp::x900sensor>("/robot_sensor",1);
-	odom_pub = odom_node.advertise<nav_msgs::Odometry>("/odom",1);
-
-	cur_time = ros::Time::now();
-	last_time  = cur_time;
-	int16_t last_rcliff = 0, last_fcliff = 0, last_lcliff = 0;
-	int16_t last_x_acc = -1000, last_y_acc = -1000, last_z_acc = -1000;
-	while (ros::ok() && !robotbase_thread_stop)
-	{
-		/*--------data extrict from serial com--------*/
-		if(pthread_mutex_lock(&recev_lock)!=0)ROS_ERROR("robotbase pthread receive lock fail");
-		if(pthread_cond_wait(&recev_cond,&recev_lock)!=0)ROS_ERROR("robotbase pthread receive cond wait fail");
-		if(pthread_mutex_unlock(&recev_lock)!=0)ROS_WARN("robotbase pthread receive unlock fail");
-		//ros::spinOnce();
-
-		boost::mutex::scoped_lock(odom_mutex);
-
-		pp::x900sensor sensor;
-
-		// For wheel device.
-		wheel.setLeftWheelActualSpeed(static_cast<float>(static_cast<int16_t>((serial.receive_stream[REC_WHEEL_L_SPEED_H] << 8) | serial.receive_stream[REC_WHEEL_L_SPEED_L]) / 1000.0));
-		wheel.setRightWheelActualSpeed(static_cast<float>(static_cast<int16_t>((serial.receive_stream[REC_WHEEL_R_SPEED_H] << 8) | serial.receive_stream[REC_WHEEL_R_SPEED_L]) / 1000.0));
-		sensor.left_wheel_speed = wheel.getLeftWheelActualSpeed();
-		sensor.right_wheel_speed = wheel.getRightWheelActualSpeed();
-
-		wheel.setLeftWheelCliffStatus((serial.receive_stream[REC_WHEEL_CLIFF] & 0x02) != 0);
-		wheel.setRightWheelCliffStatus((serial.receive_stream[REC_WHEEL_CLIFF] & 0x01) != 0);
-		sensor.left_wheel_cliff = wheel.getLeftWheelCliffStatus();
-		sensor.right_wheel_cliff = wheel.getRightWheelCliffStatus();
-
-		// For gyro device.
-		gyro.setCalibration(serial.receive_stream[REC_GYRO_CALIBRATION] != 0);
-		sensor.gyro_calibration = gyro.getCalibration();
-
-		gyro.setAngle(static_cast<float>(static_cast<int16_t>((serial.receive_stream[REC_ANGLE_H] << 8) | serial.receive_stream[REC_ANGLE_L]) / 100.0 * -1));
-		sensor.angle = gyro.getAngle();
-		gyro.setAngleV(static_cast<float>(static_cast<int16_t>((serial.receive_stream[REC_ANGLE_V_H] << 8) | serial.receive_stream[REC_ANGLE_V_H]) / 100.0 * -1));
-		sensor.angle_v = gyro.getAngleV();
-
-		if (gyro.getXAcc() == -1000)
-			gyro.setXAcc(static_cast<int16_t>((serial.receive_stream[REC_XACC_H] << 8) | serial.receive_stream[REC_XACC_L]));
-		else
-			gyro.setXAcc(static_cast<int16_t>((static_cast<int16_t>((serial.receive_stream[REC_XACC_H] << 8)|serial.receive_stream[REC_XACC_L]) + gyro.getXAcc()) / 2));
-		if (gyro.getYAcc() == -1000)
-			gyro.setYAcc(static_cast<int16_t>((serial.receive_stream[REC_YACC_H] << 8) | serial.receive_stream[REC_YACC_L]));
-		else
-			gyro.setYAcc(static_cast<int16_t>((static_cast<int16_t>((serial.receive_stream[REC_YACC_H] << 8)|serial.receive_stream[REC_YACC_L]) + gyro.getYAcc()) / 2));
-		if (gyro.getZAcc() == -1000)
-			gyro.setZAcc(static_cast<int16_t>((serial.receive_stream[REC_ZACC_H] << 8) | serial.receive_stream[REC_ZACC_L]));
-		else
-			gyro.setZAcc(static_cast<int16_t>((static_cast<int16_t>((serial.receive_stream[REC_ZACC_H] << 8)|serial.receive_stream[REC_ZACC_L]) + gyro.getZAcc()) / 2));
-
-		sensor.x_acc = gyro.getXAcc();//in mG
-		sensor.y_acc = gyro.getYAcc();//in mG
-		sensor.z_acc = gyro.getZAcc();//in mG
-
-		// For wall sensor device.
-		wall.setLeft((serial.receive_stream[REC_L_WALL_H] << 8)| serial.receive_stream[REC_L_WALL_L]);
-		sensor.left_wall = wall.getLeft();
-		wall.setRight((serial.receive_stream[REC_R_WALL_H] << 8)| serial.receive_stream[REC_R_WALL_L]);
-		sensor.right_wall = wall.getRight();
-
-		// For obs sensor device.
-		obs.setLeft((serial.receive_stream[REC_L_OBS_H] << 8) | serial.receive_stream[REC_L_OBS_L]);
-		sensor.left_obs = obs.getLeft();
-		obs.setFront((serial.receive_stream[REC_F_OBS_H] << 8) | serial.receive_stream[REC_F_OBS_L]);
-		sensor.front_obs = obs.getFront();
-		obs.setRight((serial.receive_stream[REC_R_OBS_H] << 8) | serial.receive_stream[REC_R_OBS_L]);
-		sensor.right_obs = obs.getRight();
-
-		// For bumper device.
-		bumper.setLeft((serial.receive_stream[REC_BUMPER_AND_CLIFF] & 0x20) != 0);
-		bumper.setRight((serial.receive_stream[REC_BUMPER_AND_CLIFF] & 0x10) != 0);
-		sensor.left_bumper = bumper.getLeft();
-		sensor.right_bumper = bumper.getRight();
-
-		bumper.setLidarBumperStatus();
-		sensor.lidar_bumper = bumper.getLidarBumperStatus();
-		if (bumper.getLidarBumperStatus())
-		{
-			bumper.setLeft(true);
-			bumper.setRight(true);
-		}
-
-		// For cliff device.
-		cliff.setLeft((serial.receive_stream[REC_BUMPER_AND_CLIFF] & 0x04) != 0);
-		cliff.setFront((serial.receive_stream[REC_BUMPER_AND_CLIFF] & 0x02) != 0);
-		cliff.setRight((serial.receive_stream[REC_BUMPER_AND_CLIFF] & 0x01) != 0);
-		sensor.right_cliff = cliff.getRight();
-		sensor.front_cliff = cliff.getFront();
-		sensor.left_cliff = cliff.getLeft();
-
-		// For remote device.
-		remote.set(serial.receive_stream[REC_REMOTE]);
-		sensor.remote = remote.get();
-		if (remote.get() > 0)
-			ROS_INFO("%s %d: Remote received:%d", __FUNCTION__, __LINE__, remote.get());
-
-		// For rcon device.
-		c_rcon.setStatus((serial.receive_stream[REC_RCON_CHARGER_4] << 24) | (serial.receive_stream[REC_RCON_CHARGER_3] << 16)
-						 | (serial.receive_stream[REC_RCON_CHARGER_2] << 8) | serial.receive_stream[REC_RCON_CHARGER_1]);
-		sensor.rcon = c_rcon.getStatus();
-
-		// For virtual wall.
-		sensor.virtual_wall = (serial.receive_stream[REC_VISUAL_WALL_H] << 8)| serial.receive_stream[REC_VISUAL_WALL_L];
-
-		// For key device.
-		key.eliminate_jitter((serial.receive_stream[REC_MIX_BYTE] & 0x01) != 0);
-		sensor.key = key.getTriggerStatus();
-
-		// For timer device.
-		robot_timer.setPlanStatus(static_cast<uint8_t>((serial.receive_stream[REC_MIX_BYTE] >> 1) & 0x03));
-		sensor.plan = robot_timer.getPlanStatus();
-
-		// For water tank device.
-		sensor.water_tank = (serial.receive_stream[REC_MIX_BYTE] & 0x08) != 0;
-
-		// For charger device.
-		charger.setChargeStatus((serial.receive_stream[REC_MIX_BYTE] >> 4) & 0x07);
-		sensor.charge_status = charger.getChargeStatus();
-
-		// For battery device.
-		battery.setVoltage(serial.receive_stream[REC_BATTERY] * 10);
-		sensor.battery = static_cast<float>(battery.getVoltage() / 100.0);
-
-		// For vacuum device.
-		vacuum.setExceptionResumeStatus(serial.receive_stream[REC_VACUUM_EXCEPTION_RESUME]);
-		sensor.vacuum_exception_resume = vacuum.getExceptionResumeStatus();
-
-		// For over current checking.
-		vacuum.setOc((serial.receive_stream[REC_OC] & 0x01) != 0);
-		sensor.vacuum_oc = vacuum.getOc();
-		brush.setRightOc((serial.receive_stream[REC_OC] & 0x02) != 0);
-		sensor.right_brush_oc = brush.getRightOc();
-		brush.setMainOc((serial.receive_stream[REC_OC] & 0x04) != 0);
-		sensor.main_brush_oc = brush.getMainOc();
-		brush.setLeftOc((serial.receive_stream[REC_OC] & 0x08) != 0);
-		sensor.left_brush_oc = brush.getLeftOc();
-		wheel.setRightWheelOc((serial.receive_stream[REC_OC] & 0x10) != 0);
-		sensor.right_wheel_oc = wheel.getRightWheelOc();
-		wheel.setLeftWheelOc((serial.receive_stream[REC_OC] & 0x20) != 0);
-		sensor.left_wheel_oc = wheel.getLeftWheelOc();
-
-//		debug_received_stream();
-#if GYRO_DYNAMIC_ADJUSTMENT
-		if (wheel.getLeftWheelActualSpeed() < 0.01 && wheel.getRightWheelActualSpeed() < 0.01)
-			gyro.setDynamicOn();
-		else
-			gyro.setDynamicOff();
-		gyro.checkTilt();
-#endif
-		/*---------extrict end-------*/
-
-		pthread_mutex_lock(&serial_data_ready_mtx);
-		pthread_cond_broadcast(&serial_data_ready_cond);
-		pthread_mutex_unlock(&serial_data_ready_mtx);
-		sensor_pub.publish(sensor);
-
-		/*------------setting for odom and publish odom topic --------*/
-		odom.setMovingSpeed(static_cast<float>((wheel.getLeftWheelActualSpeed() + wheel.getRightWheelActualSpeed()) / 2.0));
-		odom.setAngle(gyro.getAngle());
-		odom.setAngleSpeed(gyro.getAngleV());
-		cur_time = ros::Time::now();
-		double angle_rad, dt;
-		angle_rad = deg_to_rad(odom.getAngle());
-		dt = (cur_time - last_time).toSec();
-		last_time = cur_time;
-		odom.setX(static_cast<float>(odom.getX() + (odom.getMovingSpeed() * cos(angle_rad)) * dt));
-		odom.setY(static_cast<float>(odom.getY() + (odom.getMovingSpeed() * sin(angle_rad)) * dt));
-		odom_quat = tf::createQuaternionMsgFromYaw(angle_rad);
-		odom_msg.header.stamp = cur_time;
-		odom_msg.header.frame_id = "odom";
-		odom_msg.child_frame_id = "base_link";
-		odom_msg.pose.pose.position.x = odom.getX();
-		odom_msg.pose.pose.position.y = odom.getY();
-		odom_msg.pose.pose.position.z = 0.0;
-		odom_msg.pose.pose.orientation = odom_quat;
-		odom_msg.twist.twist.linear.x = odom.getMovingSpeed();
-		odom_msg.twist.twist.linear.y = 0.0;
-		odom_msg.twist.twist.angular.z = odom.getAngleSpeed();
-		odom_pub.publish(odom_msg);
-
-		odom_trans.header.stamp = cur_time;
-		odom_trans.header.frame_id = "odom";
-		odom_trans.child_frame_id = "base_link";
-		odom_trans.transform.translation.x = odom.getX();
-		odom_trans.transform.translation.y = odom.getY();
-		odom_trans.transform.translation.z = 0.0;
-		odom_trans.transform.rotation = odom_quat;
-		odom_broad.sendTransform(odom_trans);
-		/*------publish end -----------*/
-
-	}//end while
-	ROS_INFO("\033[32m%s\033[0m,%d,robotbase thread exit",__FUNCTION__,__LINE__);
-}
-
-void serial_send_routine_cb()
-{
-	ROS_INFO("robotbase,\033[32m%s\033[0m,%d is up.",__FUNCTION__,__LINE__);
-	ros::Rate r(_RATE);
-	uint8_t buf[SEND_LEN];
-	int sl = SEND_LEN-3;
-	while(send_stream_thread){
-		r.sleep();
-		if(serial.isSleep()){
-			continue;
-		}
-		/*-------------------Process for beeper.play and led -----------------------*/
-		// Force reset the beeper action when beeper() function is called, especially when last beeper action is not over. It can stop last beeper action and directly start the updated beeper.play action.
-		if (robotbase_beep_update_flag){
-			temp_beeper_sound_time_count = -1;
-			temp_beeper_silence_time_count = 0;
-			robotbase_beep_update_flag = false;
-		}
-		//ROS_INFO("%s %d: tmp_sound_count: %d, tmp_silence_count: %d, sound_loop_count: %d.", __FUNCTION__, __LINE__, temp_beeper_sound_time_count, temp_beeper_silence_time_count, robotbase_beeper_sound_loop_count);
-		// If count > 0, it is processing for different alarm.
-		if (robotbase_beeper_sound_loop_count != 0){
-			process_beep();
-		}
-
-		if (robotbase_led_update_flag)
-			process_led();
-
-		//if(!is_flag_set()){
-			/*---pid for wheels---*/
-		wheel.pidAdjustSpeed();
-		brush.updatePWM();
-
-		g_send_stream_mutex.lock();
-		memcpy(buf,serial.send_stream,sizeof(uint8_t)*SEND_LEN);
-		g_send_stream_mutex.unlock();
-		buf[CTL_CRC] = serial.calc_buf_crc8(buf, sl);
-//		debug_send_stream(&buf[0]);
-		serial.write(SEND_LEN, buf);
-	}
-	ROS_INFO("\033[32m%s\033[0m,%d pthread exit",__FUNCTION__,__LINE__);
-	//pthread_exit(NULL);
-}
 
 void process_beep()
 {
@@ -569,14 +202,9 @@ void process_led()
 void robotbase_reset_odom_pose(void)
 {
 	// Reset the odom pose to (0, 0)
-	boost::mutex::scoped_lock(odom_mutex);
+	boost::mutex::scoped_lock lock(odom_mutex);
 	odom.setX(0);
 	odom.setY(0);
 }
 
-void speaker_play_routine_cb()
-{
-	ROS_INFO("robotbase,\033[32m%s\033[0m,%d is up.",__FUNCTION__,__LINE__);
-	speaker.playRoutine();
-}
 

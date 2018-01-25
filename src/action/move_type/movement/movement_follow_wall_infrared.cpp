@@ -6,9 +6,7 @@
 // Created by lsy563193 on 11/29/17.
 //
 
-#include <action.hpp>
 #include <movement.hpp>
-#include <move_type.hpp>
 #include "dev.h"
 
 
@@ -18,13 +16,13 @@ IFollowWall::IFollowWall(bool is_left) : previous_(0), seen_charger_counter(0), 
 //	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mt_->sp_mode_);
 //	s_target_p = GridMap::cellToPoint(p_clean_mode->plan_path_.front());
 //	start_timer_ = ros::Time::now().toSec();
-	fw_map.reset(CLEAN_MAP);
+//	fw_tmp_map.reset(CLEAN_MAP);
 }
 
 //bool IFollowWall::isClosure(uint8_t closure_cnt)
 //{
-//	if (reach_cleaned_count_ >= closure_cnt) {
-//		ROS_WARN("%s %d: Trapped wall follow is loop closed. reach_count(%d) ", __FUNCTION__, __LINE__, reach_cleaned_count_);
+//	if (closed_count_ >= closure_cnt) {
+//		ROS_WARN("%s %d: Trapped wall follow is loop closed. reach_count(%d) ", __FUNCTION__, __LINE__, closed_count_);
 //		return true;
 //	}
 //	return false;
@@ -83,7 +81,7 @@ void IFollowWall::setTarget()
 //		 * less than 0 means move close to wall		*/
 //		int32_t angular_speed = 0;
 //
-//		seen_charger_counter = 30;
+//		seen_charger_counter_ = 30;
 //		if(rcon_status & (RconFR_HomeT|RconFL_HomeT))
 //		{
 //			angular_speed = 12;
@@ -104,7 +102,7 @@ void IFollowWall::setTarget()
 //		}
 //		c_rcon.resetStatus();
 //		/*---check if should aloud the charger---*/
-//		if(seen_charger_counter)
+//		if(seen_charger_counter_)
 //		{
 //			same_speed = linear_speed + angular_speed;
 //			diff_speed = linear_speed - angular_speed;
@@ -114,9 +112,9 @@ void IFollowWall::setTarget()
 //		}
 //	}
 ////	ROS_INFO("%s,%d, speed(%d,%d)", __FUNCTION__, __LINE__, diff_speed,same_speed);
-//	if(seen_charger_counter)
+//	if(seen_charger_counter_)
 //	{
-//		seen_charger_counter--;
+//		seen_charger_counter_--;
 //		same_speed = same_speed_;
 //		diff_speed = diff_speed_;
 //		return ;
