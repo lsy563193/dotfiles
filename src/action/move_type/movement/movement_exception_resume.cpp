@@ -151,6 +151,7 @@ bool MovementExceptionResume::isFinish()
 		if(!brush.getMainOc())
 		{
 			ROS_INFO("%s %d: main brush over current resume succeeded!", __FUNCTION__, __LINE__);
+			brush.normalOperate();
 			ev.oc_brush_main = false;
 		}
 
@@ -162,7 +163,7 @@ bool MovementExceptionResume::isFinish()
 			if(std::abs(distance) >= CELL_SIZE * 3)
 			{
 				wheel.stop();
-				brush.normalOperate();
+				brush.mainBrushResume();
 				oc_main_brush_cnt_++;
 				resume_main_bursh_start_time_ = ros::Time::now().toSec();
 			}
