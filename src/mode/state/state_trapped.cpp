@@ -5,6 +5,7 @@
 #include <mode.hpp>
 
 #include <robot_timer.h>
+#include <robot.hpp>
 #include "key_led.h"
 
 void StateTrapped::init() {

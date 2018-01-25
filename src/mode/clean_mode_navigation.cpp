@@ -51,8 +51,6 @@ bool CleanModeNav::mapMark(bool isMarkRobot)
 //		ROS_ERROR("-------------------------------------------------------");
 		clean_map_.setFollowWall(action_i_ == ac_follow_wall_left, passed_path_);
 	}
-	if (sp_state == state_trapped)
-		fw_map.setFollowWall(action_i_ == ac_follow_wall_left,plan_path_);
 	else if (sp_state == state_clean)
 	{
 		// Set home cell.
@@ -422,6 +420,9 @@ void CleanModeNav::switchInStateClean() {
 		ROS_WARN("%s,%d: enter state trapped",__FUNCTION__,__LINE__);
 		sp_saved_states.push_back(sp_state);
 		sp_state = state_trapped;
+		is_isolate = true;
+		is_closed = true;
+		closed_count_ = 0;
 	}
 	else {
 		sp_state = state_go_home_point;

@@ -358,6 +358,8 @@ public:
 	void setNextModeDefault();
 	void genNextAction();
 
+	bool isIsolate();
+	bool generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &targets);
 	void setRconPos(float cd,float dist);
 
 	virtual bool mapMark(bool isMarkRobot = true) = 0;
@@ -486,6 +488,9 @@ public:
 	virtual bool isSwitchByEventInStatePause(){return false;};
 	virtual bool updateActionInStatePause(){};
 	virtual void switchInStatePause(){};
+	bool is_closed{true};
+	bool is_isolate{true};
+	int closed_count_{};
 	int closed_count_limit_{2};
 	State *sp_state{};
 	State* getState() const {
@@ -699,14 +704,10 @@ public:
 
 	void keyClean(bool state_now, bool state_last) override;
 	void remoteMax(bool state_now, bool state_last) override;
-	bool isIsolate();
 	void remoteClean(bool state_now, bool state_last) override;
 	void switchInStateTrapped() override;
-	bool generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &targets);
 
-	void switchInStateInit();
-
-	bool updateActionInStateTrapped()override ;
+	void switchInStateInit() override;
 
 private:
  int reach_cleaned_count_save{};

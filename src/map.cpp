@@ -4,7 +4,6 @@
 #include "robot.hpp"
 #include "event_manager.h"
 
-GridMap fw_map;
 GridMap slam_grid_map;
 GridMap decrease_map;
 
@@ -528,7 +527,6 @@ uint8_t GridMap::setRcon()
 
 uint8_t GridMap::setFollowWall(bool is_left,const Points& passed_path)
 {
-
 	uint8_t block_count = 0;
 	if (!passed_path.empty())
 	{
