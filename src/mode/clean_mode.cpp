@@ -643,13 +643,14 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_move_type) {
 	}
 
 	if (distance > 5) {// closed
-		ROS_ERROR("distance > 5");
 		is_closed = true;
 		is_isolate = isIsolate();
 		if(is_isolate)
 			isolate_count_++;
 		else
 			closed_count_++;
+
+		ROS_ERROR("distance > 5,limit %d, closed %d",closed_count_limit_,is_closed);
 
 		return true;
 
@@ -1302,6 +1303,7 @@ bool ACleanMode::isSwitchByEventInStateTrapped()
 
 bool ACleanMode::updateActionInStateTrapped()
 {
+	passed_path_.clear();
 	auto ret = true;
 	if(is_closed) {
 		is_closed = false;
@@ -1320,6 +1322,7 @@ bool ACleanMode::updateActionInStateTrapped()
 		}
 
 		if (closed_count_ >= closed_count_limit_ || isolate_count_ >= isolate_count_limit_) {
+			ROS_INFO("cc(%d),ccl(%d),ic(%d),icl(%d)",closed_count_, closed_count_limit_, isolate_count_, isolate_count_limit_);
 			ROS_ERROR("p_mt->closed_count_ >= closed_count_limit_");
 			trapped_closed_or_isolate = true;
 			action_i_ = ac_null;

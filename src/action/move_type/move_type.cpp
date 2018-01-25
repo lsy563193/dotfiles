@@ -15,6 +15,13 @@ boost::shared_ptr<IMovement> IMoveType::sp_movement_ = nullptr;
 Mode* IMoveType::sp_mode_ = nullptr;
 int IMoveType::movement_i_ = mm_null;
 
+IMoveType::IMoveType() {
+//	resetTriggeredValue();
+	last_ = start_point_ = getPosition();
+	c_rcon.resetStatus();
+	robot::instance()->obsAdjustCount(20);
+}
+
 bool IMoveType::shouldMoveBack()
 {
 	// Robot should move back for these cases.
@@ -97,13 +104,6 @@ bool IMoveType::RconTrigger()
 		return true;
 	}
 	return false;
-}
-
-IMoveType::IMoveType() {
-//	resetTriggeredValue();
-	last_ = start_point_ = getPosition();
-	c_rcon.resetStatus();
-	robot::instance()->obsAdjustCount(20);
 }
 
 void IMoveType::resetTriggeredValue()

@@ -30,7 +30,7 @@ bool CleanModeExploration::mapMark()
 	clean_map_.setBlocks();
 	if(mark_robot_)
 		clean_map_.markRobot(CLEAN_MAP);
-	passed_path_.clear();
+//	passed_path_.clear();
 	return false;
 }
 
