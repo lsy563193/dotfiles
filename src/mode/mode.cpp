@@ -65,3 +65,61 @@ bool Mode::isExceptionTriggered()
 		   || ev.oc_suction || ev.lidar_stuck || ev.robot_stuck || ev.oc_brush_main;
 }
 
+void Mode::genNextAction()
+{
+	INFO_GREEN("before genNextAction");
+
+	switch (action_i_) {
+		case ac_null :
+			sp_action_.reset();
+			break;
+		case ac_open_gyro :
+			sp_action_.reset(new ActionOpenGyro);
+			break;
+		case ac_back_form_charger :
+			sp_action_.reset(new ActionBackFromCharger);
+			break;
+		case ac_open_lidar :
+			sp_action_.reset(new ActionOpenLidar);
+			break;
+		case ac_align :
+			sp_action_.reset(new ActionAlign);
+			break;
+		case ac_open_slam :
+			sp_action_.reset(new ActionOpenSlam);
+			break;
+		case ac_pause :
+			sp_action_.reset(new ActionPause);
+			break;
+		case ac_linear :
+			sp_action_.reset(new MoveTypeLinear);
+			break;
+		case ac_follow_wall_left  :
+		case ac_follow_wall_right :
+			sp_action_.reset(new MoveTypeFollowWall(action_i_ == ac_follow_wall_left));
+			break;
+		case ac_go_to_charger :
+			sp_action_.reset(new MoveTypeGoToCharger);
+			break;
+		case ac_exception_resume :
+			sp_action_.reset(new MovementExceptionResume);
+			break;
+		case ac_charge :
+			sp_action_.reset(new MovementCharge);
+			break;
+		case ac_check_bumper :
+			sp_action_.reset(new ActionCheckBumper);
+			break;
+		case ac_bumper_hit_test :
+			sp_action_.reset(new MoveTypeBumperHitTest);
+			break;
+		case ac_check_vacuum :
+			sp_action_.reset(new ActionCheckVacuum);
+			break;
+		case ac_movement_direct_go :
+			sp_action_.reset(new MovementDirectGo);
+			break;
+	}
+	INFO_GREEN("after genNextAction");
+}
+

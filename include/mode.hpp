@@ -196,6 +196,8 @@ public:
 		ac_bumper_hit_test,
 	};
 
+	void genNextAction();
+
 	bool isExceptionTriggered();
 
 	static boost::shared_ptr<IAction> sp_action_;
@@ -357,7 +359,6 @@ public:
 	bool isUpdateFinish();
 
 	void setNextModeDefault();
-	void genNextAction();
 
 	void setRconPos(float cd,float dist);
 
