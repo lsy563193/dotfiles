@@ -285,9 +285,11 @@ bool MovementExceptionResume::isFinish()
 						// If cliff jam during bumper self resume.
 						if (cliff.getStatus() && ++g_cliff_cnt > 2)
 						{
+							ROS_WARN("%s %d: Triggered cliff jam during resuming bumper.", __FUNCTION__, __LINE__);
 							ev.cliff_jam = true;
 							bumper_jam_state_ = 1;
 							wheel_resume_cnt_ = 0;
+							g_cliff_cnt = 0;
 						} else
 						{
 							bumper_jam_state_++;
@@ -308,9 +310,11 @@ bool MovementExceptionResume::isFinish()
 					// If cliff jam during bumper self resume.
 					if (cliff.getStatus() && ++g_cliff_cnt > 2)
 					{
+						ROS_WARN("%s %d: Triggered cliff jam during resuming bumper.", __FUNCTION__, __LINE__);
 						ev.cliff_jam = true;
 						bumper_jam_state_ = 1;
 						wheel_resume_cnt_ = 0;
+						g_cliff_cnt = 0;
 					} else if (ros::Time::now().toSec() - resume_wheel_start_time_ >= 2)
 					{
 						bumper_jam_state_++;

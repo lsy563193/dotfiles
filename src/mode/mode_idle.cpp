@@ -126,7 +126,9 @@ bool ModeIdle::isExit()
 	if (ev.remote_direction_forward || ev.remote_direction_left || ev.remote_direction_right)
 	{
 		ROS_WARN("%s %d: Idle mode receives remote direction key, change to remote mode.", __FUNCTION__, __LINE__);
-		setNextMode(md_remote);
+//		setNextMode(md_remote);
+		// todo: Just for debug.
+		setNextMode(md_go_to_charger);
 		return true;
 	}
 

@@ -329,7 +329,7 @@ public:
 	bool isExit() override;
 	bool isFinish() override;
 
-	IAction* getNextAction();
+	int getNextAction();
 
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteClean(bool state_now, bool state_last) override ;
