@@ -267,6 +267,7 @@ private:
 	double resume_wheel_start_time_;
 	float wheel_current_sum_{0};
 	uint8_t oc_main_brush_cnt_{0};
+	double resume_main_bursh_start_time_;
 	uint8_t wheel_current_sum_cnt_{0};
 	uint8_t wheel_resume_cnt_{0};
 	uint8_t bumper_jam_state_{1};

@@ -12,6 +12,7 @@ public:
 	void normalOperate(void);
 	void fullOperate(void);
 	void stop(void);
+	void mainBrushResume();
 
 	void setPWM(uint8_t L, uint8_t R, uint8_t M);
 

@@ -59,7 +59,6 @@ void Speaker::playRoutine()
 			usleep(1000);
 	}
 	ROS_ERROR("%s,%d exit",__FUNCTION__,__LINE__);
-	return;
 }
 
 void Speaker::play(VoiceType voice_type, bool can_be_interrupted)

@@ -17,6 +17,7 @@ MovementExceptionResume::MovementExceptionResume()
 	s_pos_y = odom.getY();
 
 	resume_wheel_start_time_ = ros::Time::now().toSec();
+	resume_main_bursh_start_time_ = ros::Time::now().toSec();
 }
 
 MovementExceptionResume::~MovementExceptionResume()
@@ -149,25 +150,25 @@ bool MovementExceptionResume::isFinish()
 	else if (ev.oc_brush_main){
 		if(!brush.getMainOc())
 		{
-			ROS_INFO("%s %d: main brush overcurrent resume succeeded!", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: main brush over current resume succeeded!", __FUNCTION__, __LINE__);
+			brush.normalOperate();
 			ev.oc_brush_main = false;
 		}
 
 		float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getX(), odom.getY());
-		ROS_INFO("distance = %f, 3*cell_size = %f",std::abs(distance),CELL_SIZE*3);
-		if(oc_main_brush_cnt_ <= 0){
-			if( std::abs(distance) >= (CELL_SIZE*3) ){
+		if (oc_main_brush_cnt_ < 1)
+		{
+			brush.stop();
+			if(std::abs(distance) >= CELL_SIZE * 3)
+			{
 				wheel.stop();
-				brush.normalOperate();
+				brush.mainBrushResume();
 				oc_main_brush_cnt_++;
-			}
-			else{
-				resume_wheel_start_time_ = ros::Time::now().toSec();
-				brush.stop();
+				resume_main_bursh_start_time_ = ros::Time::now().toSec();
 			}
 		}
-	 
-		if((ros::Time::now().toSec() - resume_wheel_start_time_) >=3 ){
+		else if((ros::Time::now().toSec() - resume_main_bursh_start_time_) >=3 )
+		{
 			ev.oc_brush_main = false;
 			ev.fatal_quit = true;
 			error.set(ERROR_CODE_MAINBRUSH);
