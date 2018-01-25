@@ -48,6 +48,7 @@ ACleanMode::ACleanMode()
 	resetPosition();
 	c_rcon.resetStatus();
 	robot::instance()->initOdomPosition();
+	fw_map.reset(CLEAN_MAP);
 }
 
 ACleanMode::~ACleanMode()
@@ -711,80 +712,6 @@ bool ACleanMode::isFinish()
 	return false;
 }
 
-void ACleanMode::genNextAction()
-{
-	INFO_GREEN("before genNextAction");
-
-	switch (action_i_) {
-		case ac_null :
-//			ROS_INFO_FL();
-			sp_action_.reset();
-			break;
-		case ac_open_gyro :
-//			ROS_INFO_FL();
-			sp_action_.reset(new ActionOpenGyro);
-			break;
-		case ac_back_form_charger :
-//			ROS_INFO_FL();
-			sp_action_.reset(new ActionBackFromCharger);
-			break;
-		case ac_open_lidar :
-//			ROS_INFO_FL();
-			sp_action_.reset(new ActionOpenLidar);
-			break;
-		case ac_align :
-//			ROS_INFO_FL();
-			sp_action_.reset(new ActionAlign);
-			break;
-		case ac_open_slam :
-//			ROS_INFO_FL();
-			sp_action_.reset(new ActionOpenSlam);
-			break;
-		case ac_pause :
-//			ROS_INFO_FL();
-			sp_action_.reset(new ActionPause);
-			break;
-		case ac_linear :
-//			ROS_INFO_FL();
-			sp_action_.reset(new MoveTypeLinear);
-			break;
-		case ac_follow_wall_left  :
-		case ac_follow_wall_right :
-			ROS_INFO_FL();
-			sp_action_.reset(new MoveTypeFollowWall(action_i_ == ac_follow_wall_left));
-			break;
-		case ac_go_to_charger :
-//			ROS_INFO_FL();
-			sp_action_.reset(new MoveTypeGoToCharger);
-			break;
-		case ac_exception_resume :
-//			ROS_INFO_FL();
-			sp_action_.reset(new MovementExceptionResume);
-			break;
-		case ac_charge :
-//			ROS_INFO_FL();
-			sp_action_.reset(new MovementCharge);
-			break;
-		case ac_check_bumper :
-//			ROS_INFO_FL();
-			sp_action_.reset(new ActionCheckBumper);
-			break;
-		case ac_bumper_hit_test :
-//			ROS_INFO_FL();
-			sp_action_.reset(new MoveTypeBumperHitTest);
-			break;
-		case ac_check_vacuum :
-//			ROS_INFO_FL();
-			sp_action_.reset(new ActionCheckVacuum);
-			break;
-		case ac_movement_direct_go :
-//			ROS_INFO_FL();
-			sp_action_.reset(new MovementDirectGo);
-			break;
-	}
-	INFO_GREEN("after genNextAction");
-}
-
 void ACleanMode::setRconPos(Point_t pos)
 {
 		charger_pos_ = pos;
@@ -1070,23 +997,9 @@ void ACleanMode::overCurrentBrushMain(bool state_now, bool state_last)
 }
 // ------------------Handlers end--------------------------
 
-bool ACleanMode::checkEnterNullState()
-{
-	if (ev.key_clean_pressed)
-	{
-		ev.key_clean_pressed = false;
-		action_i_ = ac_null;
-		sp_action_.reset();
-		sp_state = nullptr;
-		return true;
-	}
-
-	return false;
-}
-
 // ------------------State init--------------------
 bool ACleanMode::isSwitchByEventInStateInit() {
-	return checkEnterNullState() || checkEnterExceptionResumeState();
+	return checkEnterExceptionResumeState();
 }
 
 bool ACleanMode::updateActionInStateInit() {
@@ -1116,13 +1029,10 @@ void ACleanMode::switchInStateInit() {
 
 // ------------------State clean--------------------
 bool ACleanMode::isSwitchByEventInStateClean() {
-	return checkEnterNullState() || checkEnterGoHomePointState();
+	return checkEnterGoHomePointState() || checkEnterExceptionResumeState();
 }
 
-
 void ACleanMode::switchInStateClean() {
-//    checkEnterNullState()
-//	if(action_i_ == ac_open_slam)
 	action_i_ = ac_null;
 	sp_action_.reset();
 	sp_state = nullptr;
@@ -1227,6 +1137,11 @@ bool ACleanMode::checkEnterGoToCharger()
 	return false;
 }
 
+bool ACleanMode::isSwitchByEventInStateGoToCharger()
+{
+	return checkEnterExceptionResumeState();
+}
+
 bool ACleanMode::updateActionInStateGoToCharger()
 {
 	if (sp_action_ == nullptr)
@@ -1276,7 +1191,7 @@ bool ACleanMode::updateActionInStateSpot() {
 
 bool ACleanMode::isSwitchByEventInStateSpot()
 {
-	return false;
+	return checkEnterExceptionResumeState();
 }
 
 // ------------------State exception resume--------------
@@ -1296,12 +1211,12 @@ bool ACleanMode::checkEnterExceptionResumeState()
 
 bool ACleanMode::isSwitchByEventInStateExceptionResume()
 {
-	return checkEnterNullState();
+	return false;
 }
 
 bool ACleanMode::updateActionInStateExceptionResume()
 {
-	if (isExceptionTriggered())
+	if (!ev.fatal_quit && isExceptionTriggered())
 	{
 		sp_action_.reset();
 		action_i_ = ac_exception_resume;
@@ -1313,7 +1228,7 @@ bool ACleanMode::updateActionInStateExceptionResume()
 
 void ACleanMode::switchInStateExceptionResume()
 {
-	if (!isExceptionTriggered())
+	if (!ev.fatal_quit)
 	{
 		ROS_INFO("%s %d: Resume to previous state", __FUNCTION__, __LINE__);
 		action_i_ = ac_null;
@@ -1327,7 +1242,7 @@ void ACleanMode::switchInStateExceptionResume()
 
 // ------------------State exploration--------------
 bool ACleanMode::isSwitchByEventInStateExploration() {
-	return checkEnterGoToCharger();
+	return checkEnterGoToCharger() || checkEnterExceptionResumeState();
 }
 
 bool ACleanMode::updateActionInStateExploration() {
@@ -1455,6 +1370,12 @@ void ACleanMode::switchInStateTrapped()
 		sp_saved_states.pop_back();
 		sp_state->init();
 	}
+}
+
+// ------------------State resume low battery charge------------------
+bool ACleanMode::isSwitchByEventInStateResumeLowBatteryCharge()
+{
+	return checkEnterExceptionResumeState();
 }
 
 void ACleanMode::setTempTarget(std::deque<Vector2<double>>& points, uint32_t  seq) {

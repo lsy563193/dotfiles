@@ -107,6 +107,8 @@ public:
 
 	bool markRobot(uint8_t id);
 
+	bool trapMarkRobot(uint8_t id);
+
 	uint8_t setLidar();
 
 	uint8_t setObs();

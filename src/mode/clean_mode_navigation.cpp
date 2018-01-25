@@ -139,6 +139,23 @@ bool CleanModeNav::isExit()
 	return false;
 }
 
+bool CleanModeNav::moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt)
+{
+	if (sp_state == state_trapped)
+		return p_mt->isBlockCleared(clean_map_, passed_path_);
+	else
+		return p_mt->isNewLineReach(clean_map_) || p_mt->isOverOriginLine(clean_map_);
+}
+
+bool CleanModeNav::moveTypeLinearIsFinish(MoveTypeLinear *p_mt)
+{
+	if (p_mt->isLinearForward())
+		return p_mt->isRconStop() || ACleanMode::moveTypeLinearIsFinish(p_mt);
+	else
+		return ACleanMode::moveTypeLinearIsFinish(p_mt);
+}
+
+// Event handlers.
 void CleanModeNav::keyClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: key clean.", __FUNCTION__, __LINE__);
@@ -320,12 +337,11 @@ void CleanModeNav::chargeDetect(bool state_now, bool state_last)
 		}
 	}
 }
-
 // End event handlers.
 
 // ------------------State init--------------------
 bool CleanModeNav::isSwitchByEventInStateInit() {
-	return checkEnterPause() || checkEnterExceptionResumeState();
+	return checkEnterPause() || ACleanMode::isSwitchByEventInStateInit();
 }
 
 bool CleanModeNav::updateActionInStateInit() {
@@ -390,10 +406,7 @@ void CleanModeNav::switchInStateInit() {
 
 // ------------------State clean--------------------
 bool CleanModeNav::isSwitchByEventInStateClean() {
-	return checkEnterPause() ||
-					checkEnterGoHomePointState() ||
-					checkEnterExceptionResumeState() ||
-					checkEnterTempSpotState();
+	return checkEnterPause() || checkEnterTempSpotState() || ACleanMode::isSwitchByEventInStateClean();
 }
 
 bool CleanModeNav::updateActionInStateClean(){
@@ -472,7 +485,7 @@ bool CleanModeNav::isSwitchByEventInStateGoHomePoint()
 // ------------------State go to charger--------------------
 bool CleanModeNav::isSwitchByEventInStateGoToCharger()
 {
-	return checkEnterPause();
+	return checkEnterPause() || ACleanMode::isSwitchByEventInStateGoToCharger();
 }
 
 void CleanModeNav::switchInStateGoToCharger()
@@ -500,7 +513,6 @@ void CleanModeNav::switchInStateGoToCharger()
 }
 
 // ------------------State tmp spot--------------------
-
 bool CleanModeNav::checkEnterTempSpotState()
 {
 	if (ev.remote_spot)
@@ -518,31 +530,22 @@ bool CleanModeNav::checkEnterTempSpotState()
 
 bool CleanModeNav::isSwitchByEventInStateSpot()
 {
-	if (ev.key_clean_pressed || ev.remote_spot || ev.remote_direction_forward || ev.remote_direction_left || ev.remote_direction_right)
+	if (ev.remote_spot || ev.remote_direction_forward || ev.remote_direction_left || ev.remote_direction_right)
 	{
-		if(sp_state == state_spot && ev.key_clean_pressed )
-			sp_state = nullptr;
-		else{
-			sp_state = state_clean;
-			sp_state->init();
-			action_i_ = ac_null;
-			sp_action_.reset();
-			clean_path_algorithm_.reset(new NavCleanPathAlgorithm);
-		}
+		sp_state = state_clean;
+		sp_state->init();
+		action_i_ = ac_null;
+		sp_action_.reset();
+		clean_path_algorithm_.reset(new NavCleanPathAlgorithm);
 		ev.remote_direction_forward = false;
 		ev.remote_direction_left = false;
 		ev.remote_direction_right = false;
 		ev.remote_spot = false;
-		ev.key_clean_pressed = false;
 
 		return true;
 	}
-	else if(ACleanMode::checkEnterGoHomePointState())
-	{
-		return true;
-	}
 
-	return false;
+	return ACleanMode::checkEnterGoHomePointState() || ACleanMode::isSwitchByEventInStateSpot();
 }
 
 void CleanModeNav::switchInStateSpot()
@@ -672,7 +675,7 @@ bool CleanModeNav::isSwitchByEventInStateResumeLowBatteryCharge()
 {
 	return checkEnterPause() ||
 			checkEnterGoHomePointState() ||
-			checkEnterExceptionResumeState();
+			ACleanMode::isSwitchByEventInStateResumeLowBatteryCharge();
 }
 
 bool CleanModeNav::updateActionInStateResumeLowBatteryCharge()
@@ -711,6 +714,7 @@ void CleanModeNav::switchInStateResumeLowBatteryCharge()
 	sp_state->init();
 	sp_action_.reset();
 }
+
 // ------------------State Exception Resume--------------------
 bool CleanModeNav::isSwitchByEventInStateExceptionResume() {
 	return checkEnterPause();
