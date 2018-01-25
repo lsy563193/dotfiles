@@ -156,7 +156,6 @@ bool MovementExceptionResume::isFinish()
 		}
 
 		float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getX(), odom.getY());
-		ROS_DEBUG("%s %d: distance = %f, 3*cell_size = %f", __FUNCTION__, __LINE__, distance, CELL_SIZE*3);
 		if (oc_main_brush_cnt_ < 1)
 		{
 			brush.stop();

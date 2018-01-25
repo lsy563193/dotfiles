@@ -11,7 +11,7 @@
 
 robot* robot_instance = nullptr;
 
-void Ooops(int sig)
+void signal_catch(int sig)
 {
 	switch(sig){
 		case SIGSEGV:
@@ -55,7 +55,7 @@ int main(int argc, char **argv)
 	ros::NodeHandle	nh_dev("~");
 
 	struct sigaction act;
-	act.sa_handler = Ooops;
+	act.sa_handler = signal_catch;
 	sigemptyset(&act.sa_mask);
 	act.sa_flags = SA_RESETHAND;
 	sigaction(SIGTERM,&act,NULL);

@@ -8,7 +8,7 @@
 
 #define  _RATE 50
 
-extern bool g_core_thread_exit;
+extern bool g_pp_shutdown;
 extern pthread_mutex_t recev_lock;
 extern pthread_cond_t  recev_cond;
 
