@@ -139,9 +139,10 @@ void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 			p_clean_mode->old_dir_ = p_clean_mode->new_dir_;
 			p_clean_mode->new_dir_ = p_clean_mode->plan_path_.front().th;
 			p_clean_mode->plan_path_.pop_front();
-			ROS_ERROR("target_xy(%f), curr_xy(%f),dis(%f)",target_xy, curr_xy, LINEAR_NEAR_DISTANCE);
-			ROS_ERROR("%s,%d,curr(%f,%f), next target_point(%f,%f), dir(%d)",
-					 __FUNCTION__,__LINE__,getPosition().x, getPosition().y, target_point_.x,target_point_.y, p_clean_mode->new_dir_);
+//			ROS_("target_xy(%f), curr_xy(%f),dis(%f)",target_xy, curr_xy, LINEAR_NEAR_DISTANCE);
+			ROS_ERROR("%s,%d,curr(%d,%d), next target_point(%d,%d), dir(%d)",
+					 __FUNCTION__,__LINE__,getPosition().toCell().x, getPosition().toCell().y, target_point_.toCell().x,target_point_.toCell().y,
+								static_cast<int>(radian_to_degree(p_clean_mode->new_dir_)));
 		}
 	}
 }

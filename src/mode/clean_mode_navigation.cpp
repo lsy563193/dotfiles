@@ -40,7 +40,7 @@ CleanModeNav::~CleanModeNav()
 bool CleanModeNav::mapMark()
 {
 	ROS_INFO("%s %d: Start updating map.", __FUNCTION__, __LINE__);
-	clean_path_algorithm_->displayCellPath(pointsGenerateCells(passed_path_));
+	clean_path_algorithm_->displayPointPath((passed_path_));
 	clean_map_.setCleaned(pointsGenerateCells(passed_path_));
 
 	if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
@@ -50,7 +50,7 @@ bool CleanModeNav::mapMark()
 		passed_path_.erase(std::remove_if(passed_path_.begin(),passed_path_.end(),[&start](Point_t& it){
 			return it.toCell() == start.toCell();
 		}),passed_path_.end());
-		clean_path_algorithm_->displayCellPath(pointsGenerateCells(passed_path_));
+		clean_path_algorithm_->displayPointPath(passed_path_);
 //		ROS_ERROR("-------------------------------------------------------");
 		clean_map_.setFollowWall(action_i_ == ac_follow_wall_left, passed_path_);
 	}
@@ -441,6 +441,7 @@ void CleanModeNav::switchInStateClean() {
 		is_isolate = true;
 		is_closed = true;
 		closed_count_ = 0;
+		isolate_count_ = 0;
 	}
 	else {
 		sp_state = state_go_home_point;

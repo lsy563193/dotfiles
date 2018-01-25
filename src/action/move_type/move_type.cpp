@@ -179,3 +179,14 @@ bool IMoveType::isRconStop()
 	return ret;
 }
 
+bool IMoveType::isBlockCleared(GridMap &map, Points &passed_path)
+{
+	if (!passed_path.empty())
+	{
+//		ROS_INFO("%s %d: passed_path.back(%d %d)", __FUNCTION__, __LINE__, passed_path.back().x, passed_path.back().y);
+		return !map.isBlockAccessible(passed_path.back().toCell().x, passed_path.back().toCell().y);
+	}
+
+	return false;
+}
+

@@ -10,11 +10,13 @@
 #include <robot_timer.h>
 #include <robot.hpp>
 #include <slam.h>
+#include <robotbase.h>
 #include "error.h"
 
 const double CHASE_X = 0.107;
-static ros::Publisher ACleanMode::point_marker_pub_;
-static ros::Publisher ACleanMode::line_marker_pub2_;
+ros::Publisher ACleanMode::point_marker_pub_={};
+ros::Publisher ACleanMode::line_marker_pub2_={};
+bool ACleanMode::plan_activation_={};
 ACleanMode::ACleanMode()
 {
 	scanLinear_sub_ = clean_nh_.subscribe("scanLinear", 1, &Lidar::scanLinearCb, &lidar);
@@ -622,7 +624,6 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_move_type) {
 	});
 	auto distance = std::distance(loc, passed_path_.end());
 	if (distance == 0) {
-		passed_path_.push_back(curr);
 		ROS_INFO("curr(%d,%d,%d)", curr.toCell().x, curr.toCell().y, static_cast<int>(radian_to_degree(curr.th)));
 		passed_path_.push_back(curr);
 	}
@@ -630,23 +631,24 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_move_type) {
 	markMapInNewCell();//real time mark to exploration
 
 	if (sp_state == state_trapped) {
-		if (action_i_ == ac_follow_wall_right || action_i_ == ac_follow_wall_left) {
-			auto p_mt = dynamic_cast<MoveTypeFollowWall *>(p_move_type);
-			if(p_mt->isBlockCleared(clean_map_, passed_path_))
-			if(!clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell()))
-			{
+//			auto p_mt = dynamic_cast<MoveTypeFollowWall *>(p_move_type);
+		if (p_move_type->isBlockCleared(clean_map_, passed_path_))
+			if (!clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell())) {
 				out_of_trapped = true;
 				ROS_ERROR("OUT OF TRAPPED");
 				return true;
 			}
-		}
 	}
 
 	if (distance > 5) {// closed
 		ROS_ERROR("distance > 5");
 		is_closed = true;
-		closed_count_++;
 		is_isolate = isIsolate();
+		if(is_isolate)
+			isolate_count_++;
+		else
+			closed_count_++;
+
 		return true;
 
 	}
@@ -1360,6 +1362,7 @@ void ACleanMode::switchInStateExploration() {
 		is_isolate = true;
 		is_closed = true;
 		closed_count_ = 0;
+		isolate_count_ = 0;
 	}
 	else{
 		auto curr = getPosition();
@@ -1387,18 +1390,22 @@ bool ACleanMode::updateActionInStateTrapped()
 	if(is_closed) {
 		is_closed = false;
 		if (is_isolate) {
+			ROS_INFO_FL();
+			ROS_ERROR("is_isolate");
 			is_isolate = false;
-			auto angle = (closed_count_ == 0) ? 0 : -900;
+			auto angle = (isolate_count_ == 0) ? 0 : -900;
 			auto point = getPosition().addRadian(angle);
-//			ROS_WARN("curr.th = %d, angle = %d,point.th(%d)", curr.th, angle, point.th);
-			point = point.getRelative(8 * 1000, 0);
+			point = point.getRelative(8, 0);
+			plan_path_.clear();
 			plan_path_.push_back(point);
+			new_dir_ = point.th;
+			clean_path_algorithm_->displayPointPath(plan_path_);
 			action_i_ = ac_linear;
 		}
 
-		if (closed_count_ >= closed_count_limit_) {
+		if (closed_count_ >= closed_count_limit_ || isolate_count_ >= ISOLATE_COUNT_LIMIT_) {
 			ROS_ERROR("p_mt->closed_count_ >= closed_count_limit_");
-			trapped_closed = true;
+			trapped_closed_or_isolate = true;
 			action_i_ = ac_null;
 			genNextAction();
 			ROS_WARN("%s,%d:follow clean finish", __func__, __LINE__);
@@ -1429,9 +1436,9 @@ void ACleanMode::switchInStateTrapped()
 {
 	PP_INFO();
 
-	if(trapped_closed)
+	if(trapped_closed_or_isolate)
 	{
-		trapped_closed = false;
+		trapped_closed_or_isolate = false;
 		ROS_WARN("%s %d: closed_count_ >= closed_count_limit_!", __FUNCTION__, __LINE__);
 		sp_state = nullptr;
 	}
@@ -1440,14 +1447,10 @@ void ACleanMode::switchInStateTrapped()
 		ROS_WARN("%s %d: Escape trapped timeout!(%d)", __FUNCTION__, __LINE__, ESCAPE_TRAPPED_TIME);
 		sp_state = nullptr;
 	}
-//	else if (out_of_trapped) {
-//		out_of_trapped = false;
-//		ROS_WARN("%s %d: Escape trapped out!(%d)", __FUNCTION__, __LINE__, ESCAPE_TRAPPED_TIME);
-//		sp_state = st_clean;
-//	}
 	else/* if (escape_trapped_)*/ {//out_of_trapped = false
-		ROS_WARN("%s %d: restore Escape trapped !", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d:escape_trapped_ restore state from trapped !", __FUNCTION__, __LINE__);
 //		sp_state = (sp_tmp_state == state_clean) ? state_clean : state_exploration;
+		out_of_trapped = false;
 		sp_state = sp_saved_states.back();
 		sp_saved_states.pop_back();
 		sp_state->init();
@@ -1482,15 +1485,21 @@ bool ACleanMode::isIsolate() {
 	BoundingBox2 bound{};
 	GridMap fw_tmp_map;
 	fw_tmp_map.setFollowWall(action_i_ == ac_follow_wall_left,passed_path_);
+
 	fw_tmp_map.getMapRange(CLEAN_MAP, &bound.min.x, &bound.max.x, &bound.min.y, &bound.max.y);
 
 	auto target = bound.max + Cell_t{1, 1};
 	bound.SetMinimum(bound.min - Cell_t{8, 8});
 	bound.SetMaximum(bound.max + Cell_t{8, 8});
+	ROS_ERROR("ISOLATE MAP");
+	fw_tmp_map.print(CLEAN_MAP,target.x,target.y);
+	ROS_ERROR("ISOLATE MAP");
+	ROS_ERROR("minx(%d),miny(%d),maxx(%d),maxy(%d)",bound.min.x, bound.min.y,bound.max.x, bound.max.y);
 
 	auto path = clean_path_algorithm_->findShortestPath(fw_tmp_map, getPosition().toCell(), target, 0, true, true,
 																											bound.min, bound.max);
-	return path.empty();
+
+	return !path.empty();
 }
 
 bool ACleanMode::generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &targets)

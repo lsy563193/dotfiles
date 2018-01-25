@@ -453,7 +453,7 @@ public:
 	virtual bool updateActionInStateTrapped();
 	virtual void switchInStateTrapped();
 	bool trapped_time_out_{};
-	bool trapped_closed{};
+	bool trapped_closed_or_isolate{};
 	bool out_of_trapped{};
 
 	// State exploration
@@ -495,6 +495,8 @@ public:
 	bool is_isolate{true};
 	int closed_count_{};
 	int closed_count_limit_{2};
+	int isolate_count_{};
+	const int ISOLATE_COUNT_LIMIT_{3};
 	State *sp_state{};
 	State* getState() const {
 		return sp_state;

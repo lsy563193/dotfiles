@@ -21,6 +21,7 @@ public:
 	bool RconTrigger();
 //	~IMoveType() = default;
 
+	bool isBlockCleared(GridMap &map, Points &passed_path);
 	Point_t last_{};
 //	bool closed_count_{};
 	void setMode(Mode* cm)
@@ -97,7 +98,6 @@ public:
 
 	bool isNewLineReach(GridMap &map);
 	bool isOverOriginLine(GridMap &map);
-	bool isBlockCleared(GridMap &map, Points &passed_path);
 
 private:
 	bool handleMoveBackEvent(ACleanMode* p_clean_mode);
