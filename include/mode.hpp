@@ -382,8 +382,6 @@ public:
 	void cliffAll(bool state_now, bool state_last) override ;
 	void overCurrentBrushMain(bool state_now, bool state_last);
 
-	// State null
-	bool checkEnterNullState();
 	// State init
 	bool isStateInit() const
 	{
@@ -418,7 +416,7 @@ public:
 		return sp_state == state_go_to_charger;
 	}
 	bool checkEnterGoToCharger();
-	virtual bool isSwitchByEventInStateGoToCharger(){return false;};
+	virtual bool isSwitchByEventInStateGoToCharger();
 	virtual bool updateActionInStateGoToCharger();
 	virtual void switchInStateGoToCharger();
 
@@ -465,7 +463,7 @@ public:
 	{
 		return sp_state == state_resume_low_battery_charge;
 	}
-	virtual bool isSwitchByEventInStateResumeLowBatteryCharge(){return false;};
+	virtual bool isSwitchByEventInStateResumeLowBatteryCharge();
 	virtual bool updateActionInStateResumeLowBatteryCharge(){};
 	virtual void switchInStateResumeLowBatteryCharge(){};
 
@@ -621,9 +619,8 @@ public:
 	bool isSwitchByEventInStateGoToCharger() override;
 	void switchInStateGoToCharger() override;
 
-	// State tmp spot
+	// State spot
 	bool checkEnterTempSpotState();
-	bool checkOutOfSpot();
 	bool isSwitchByEventInStateSpot() override;
 	void switchInStateSpot() override;
 
@@ -739,7 +736,6 @@ public:
 	void remoteDirectionLeft(bool state_now, bool state_last) override;
 	void remoteDirectionRight(bool state_now, bool state_last) override;
 	void remoteDirectionForward(bool state_now, bool state_last) override;
-	bool isSwitchByEventInStateSpot() override;
 private:
 
 };

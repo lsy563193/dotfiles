@@ -104,9 +104,7 @@ void CleanModeExploration::switchInStateGoToCharger() {
 		return;
 	}
 	else
-	{
 		sp_state = state_exploration;
-	}
 	sp_state->init();
 }
 

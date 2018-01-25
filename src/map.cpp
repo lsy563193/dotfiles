@@ -970,6 +970,28 @@ bool GridMap::markRobot(uint8_t id)
 	return ret;
 }
 
+bool GridMap::trapMarkRobot(uint8_t id)
+{
+	int16_t x, y;
+	bool ret = false;
+	for (auto dy = -ROBOT_SIZE_1_2; dy <= ROBOT_SIZE_1_2; ++dy)
+	{
+		for (auto dx = -ROBOT_SIZE_1_2; dx <= ROBOT_SIZE_1_2; ++dx)
+		{
+//			robotToCell(getPosition(), CELL_SIZE * dy, CELL_SIZE * dx, x, y);
+			x = getPosition().toCell().x + dx;
+			y = getPosition().toCell().y + dy;
+			auto status = getCell(id, x, y);
+			if (/*status > CLEANED && */status < BLOCKED_BOUNDARY/* && (status != BLOCKED_RCON)*/){
+//				ROS_INFO("\033[1;33m" "%s,%d: (%d,%d)" "\033[0m", __FUNCTION__, __LINE__,x, y);
+				setCell(id, x, y, CLEANED);
+				ret = true;
+			}
+		}
+	}
+	return ret;
+}
+
 uint32_t GridMap::getCleanedArea(void)
 {
 	uint32_t cleaned_count = 0;
