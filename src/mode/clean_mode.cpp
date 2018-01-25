@@ -1163,7 +1163,7 @@ void ACleanMode::switchInStateGoHomePoint()
 }
 
 // ------------------State go to charger--------------------
-bool ACleanMode::checkEnterGoCharger()
+bool ACleanMode::checkEnterGoToCharger()
 {
 	ev.rcon_triggered = c_rcon.getForwardTop();
 	if (ev.rcon_triggered) {
@@ -1278,7 +1278,7 @@ void ACleanMode::switchInStateExceptionResume()
 
 // ------------------State exploration--------------
 bool ACleanMode::isSwitchByEventInStateExploration() {
-	return checkEnterGoCharger();
+	return checkEnterGoToCharger();
 }
 
 bool ACleanMode::updateActionInStateExploration() {

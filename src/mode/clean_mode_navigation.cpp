@@ -275,11 +275,18 @@ void CleanModeNav::remoteSpot(bool state_now, bool state_last)
 void CleanModeNav::remoteMax(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
-	if(isStateClean())
+	if(isStateClean() || isStateResumeLowBatteryCharge())
 	{
 		beeper.play_for_command(VALID);
 		vacuum.switchToNext();
-	}else
+	}
+	else if (isStateGoHomePoint() || isStateGoToCharger())
+	{
+		beeper.play_for_command(VALID);
+		vacuum.switchToNext();
+		vacuum.setTmpMode(Vac_Normal);
+	}
+	else
 		beeper.play_for_command(INVALID);
 	remote.reset();
 }

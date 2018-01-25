@@ -413,11 +413,11 @@ public:
 	virtual void switchInStateGoHomePoint();
 
 	// State go to charger
-	bool isStateGoCharger() const
+	bool isStateGoToCharger() const
 	{
 		return sp_state == state_go_to_charger;
 	}
-	bool checkEnterGoCharger();
+	bool checkEnterGoToCharger();
 	virtual bool isSwitchByEventInStateGoToCharger(){return false;};
 	virtual bool updateActionInStateGoToCharger();
 	virtual void switchInStateGoToCharger();
@@ -432,8 +432,8 @@ public:
 	virtual bool updateActionInStateExceptionResume();
 	virtual void switchInStateExceptionResume();
 
-	// State temp spot
-	bool isStateTmpSpot() const
+	// State spot
+	bool isStateSpot() const
 	{
 		return sp_state == state_spot;
 	}
