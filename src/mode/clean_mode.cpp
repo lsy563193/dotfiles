@@ -648,10 +648,13 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_move_type) {
 		if(is_isolate)
 			isolate_count_++;
 		else
+		{
+			passed_path_.clear();
 			closed_count_++;
-
+			if(closed_count_<closed_count_limit_)
+				return false;
+		}
 		ROS_ERROR("distance > 5,limit %d, closed %d",closed_count_limit_,is_closed);
-
 		return true;
 
 	}
