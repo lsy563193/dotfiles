@@ -20,10 +20,20 @@ ActionSleep::ActionSleep()
 	usleep(100000);
 	beeper.play(4, 80, 0, 1);
 	usleep(100000);
-	led.set_mode(LED_STEADY, LED_OFF);
-	serial.setCleanMode(POWER_DOWN);
-	ROS_INFO("%s %d: Finish beeping.", __FUNCTION__, __LINE__);
+	led.setMode(LED_STEADY, LED_OFF);
+	if (charger.getChargeStatus())
+	{
+		ROS_INFO("%s %d: Finish beeping, enter from charge mode.", __FUNCTION__, __LINE__);
+		serial.setMainBoardMode(BATTERY_FULL_SLEEP_MODE);
+	}
+	else
+	{
+		ROS_INFO("%s %d: Finish beeping.", __FUNCTION__, __LINE__);
+		serial.setMainBoardMode(NORMAL_SLEEP_MODE);
+	}
 #if ENABLE_LOW_POWER_CONSUMPTION
+	// Sleep for 30ms to make sure the power byte has been sent.
+	usleep(30000);
 	system("/bin/echo standby > /sys/power/state");
 //	sleep(1);
 #else

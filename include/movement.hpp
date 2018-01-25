@@ -77,6 +77,22 @@ private:
 	float lidar_detect_distance;
 };
 
+class MovementRcon: public IMovement
+{
+public:
+	MovementRcon(bool is_left);
+	~MovementRcon();
+	void adjustSpeed(int32_t &left_speed, int32_t &right_speed) override ;
+	bool isFinish() override;
+
+private:
+	uint32_t rcon_status;
+	int32_t left_speed_{};
+	int32_t right_speed_{};
+	uint8_t seen_charger_counter_{};
+	bool	is_left_;
+};
+
 class MovementTurn: public IMovement{
 public:
 
@@ -188,7 +204,7 @@ public:
 	bool _isStop();
 	bool isSwitch();
 	void adjustSpeed(int32_t&, int32_t&) override ;
-	void getTurnBackInfo(double &turn_angle, float &back_distance);
+	void getTurnBackInfo(double &turn_radian, float &back_distance);
 	bool isFinish() override ;
 
 private:
@@ -219,10 +235,10 @@ private:
 	double move_away_from_charger_time_stamp_;
 	uint32_t receive_code;
 	// This variables is for robot turning.
-	double current_angle;
-	double last_angle;
-	double angle_offset;
-	float gyro_step;
+	double current_radian_;
+	double last_radian_;
+	double radian_offset_;
+	float gyro_radian_step_;
 	uint8_t around_charger_stub_dir;
 	uint8_t go_home_bumper_cnt;
 	uint8_t check_position_dir;
@@ -249,12 +265,15 @@ public:
 
 private:
 	double resume_wheel_start_time_;
-	float wheel_current_sum_;
-	uint8_t wheel_current_sum_cnt_;
-	uint8_t wheel_resume_cnt_;
-	uint8_t bumper_jam_state_;
-	uint8_t cliff_resume_cnt_;
-	uint8_t robot_stuck_resume_cnt_;
+	float wheel_current_sum_{0};
+	uint8_t oc_main_brush_cnt_{0};
+	double resume_main_bursh_start_time_;
+	uint8_t wheel_current_sum_cnt_{0};
+	uint8_t wheel_resume_cnt_{0};
+	uint8_t bumper_jam_state_{1};
+	uint8_t cliff_resume_cnt_{0};
+	uint8_t cliff_all_resume_cnt_{0};
+	uint8_t robot_stuck_resume_cnt_{0};
 };
 
 class MovementCharge :public IMovement
@@ -298,6 +317,7 @@ public:
 	bool isFinish() override;
 
 private:
+	int16_t speed_{LINEAR_MIN_SPEED};
 	double direct_go_time_stamp_;
 };
 

@@ -201,15 +201,15 @@ public:
 	static boost::shared_ptr<IAction> sp_action_;
 	bool isNavMode()
 	{
-		return isNavMode_;
+		return is_clean_mode_navigation_;
 	}
 	void setNavMode(bool set)
 	{
-		isNavMode_ = set;
+		is_clean_mode_navigation_ = set;
 	}
 
 protected:
-	bool isNavMode_{false};
+	bool is_clean_mode_navigation_{false};
 	int mode_i_{ac_null};
 private:
 
@@ -291,6 +291,7 @@ public:
 	void remotePlan(bool state_now, bool state_last) override ;
 
 private:
+	double battery_full_start_time_{0};
 	bool plan_activated_status_;
 };
 
@@ -362,7 +363,8 @@ public:
 	bool generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &targets);
 	void setRconPos(float cd,float dist);
 
-	virtual bool mapMark(bool isMarkRobot = true) = 0;
+	virtual bool mapMark() = 0;
+	virtual bool markRealTime(){return false;};
 	virtual bool markMapInNewCell(){return false;};
 
 	bool isRemoteGoHomePoint();
@@ -381,6 +383,7 @@ public:
 	// Handlers
 	void remoteHome(bool state_now, bool state_last) override ;
 	void cliffAll(bool state_now, bool state_last) override ;
+	void overCurrentBrushMain(bool state_now, bool state_last);
 
 	// State null
 	bool checkEnterNullState();
@@ -413,11 +416,11 @@ public:
 	virtual void switchInStateGoHomePoint();
 
 	// State go to charger
-	bool isStateGoCharger() const
+	bool isStateGoToCharger() const
 	{
 		return sp_state == state_go_to_charger;
 	}
-	bool checkEnterGoCharger();
+	bool checkEnterGoToCharger();
 	virtual bool isSwitchByEventInStateGoToCharger(){return false;};
 	virtual bool updateActionInStateGoToCharger();
 	virtual void switchInStateGoToCharger();
@@ -432,8 +435,8 @@ public:
 	virtual bool updateActionInStateExceptionResume();
 	virtual void switchInStateExceptionResume();
 
-	// State temp spot
-	bool isStateTmpSpot() const
+	// State spot
+	bool isStateSpot() const
 	{
 		return sp_state == state_spot;
 	}
@@ -521,6 +524,7 @@ public:
 	boost::shared_ptr<GoHomePathAlgorithm> go_home_path_algorithm_{};
 	GridMap clean_map_{};
 	Point_t charger_pos_{};//charger postion
+	static bool plan_activation_;
 
 protected:
 	std::vector<State*> sp_saved_states;
@@ -538,8 +542,8 @@ protected:
 	Point_t start_point_{0, 0, 0};
 	bool should_go_to_charger_{false};
 	bool remote_go_home_point{false};
+	bool switch_is_off_{false};
 
-//	boost::mutex mut;
 public:
 
 	static void pubPointMarkers(const std::deque<Vector2<double>> *point, std::string frame_id,std::string name);
@@ -584,7 +588,7 @@ public:
 	CleanModeNav();
 	~CleanModeNav();
 
-	bool mapMark(bool isMarkRobot = true) override ;
+	bool mapMark() override;
 	bool isExit() override;
 
 	void keyClean(bool state_now, bool state_last) override ;
@@ -672,8 +676,8 @@ public:
 	CleanModeExploration();
 	~CleanModeExploration();
 
-	bool mapMark(bool isMarkRobot = true) override;
 	bool markMapInNewCell() override;
+	bool mapMark() override;
 //	bool isExit() override;
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteClean(bool state_now, bool state_last) override ;
@@ -692,6 +696,10 @@ public:
 	void switchInStateGoHomePoint() override;
 	void switchInStateGoToCharger() override;
 
+//	bool moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
+
+private:
+	bool mark_robot_{true};
 };
 
 class CleanModeFollowWall:public ACleanMode {
@@ -700,7 +708,7 @@ public:
 
 	~CleanModeFollowWall() override;
 
-	bool mapMark(bool isMarkRobot = true) override;
+	bool mapMark() override;
 
 	void keyClean(bool state_now, bool state_last) override;
 	void remoteMax(bool state_now, bool state_last) override;
@@ -719,15 +727,20 @@ public:
 	CleanModeSpot();
 	~CleanModeSpot();
 
-	bool mapMark(bool isMarkRobot = true) override;
-//	bool isExit() override;
+	bool mapMark() override;
+	bool isExit() override;
 //	void cliffAll(bool state_now, bool state_last) override;
 	void remoteClean(bool state_now, bool state_last) override;
+	void remoteWallFollow(bool state_now, bool state_last) override;
 	void keyClean(bool state_now, bool state_last) override;
 	void switchInStateInit() override ;
 	void switchInStateSpot() override ;
 	void overCurrentWheelLeft(bool state_now, bool state_last) override;
 	void overCurrentWheelRight(bool state_now, bool state_last) override;
+	void remoteDirectionLeft(bool state_now, bool state_last) override;
+	void remoteDirectionRight(bool state_now, bool state_last) override;
+	void remoteDirectionForward(bool state_now, bool state_last) override;
+	bool isSwitchByEventInStateSpot() override;
 private:
 
 };
@@ -738,7 +751,8 @@ public:
 	CleanModeTest();
 	~CleanModeTest();
 
-	bool mapMark(bool isMarkRobot = true) override;
+	bool mapMark() override
+	{return false;}
 
 	bool isFinish() override;
 

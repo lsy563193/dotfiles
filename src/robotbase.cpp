@@ -6,7 +6,7 @@
 #include "robotbase.h"
 
 
-bool g_bye_bye = false;
+bool g_pp_shutdown = false;
 
 bool robotbase_thread_stop = false;
 bool send_thread_stop = false;
@@ -69,15 +69,15 @@ void robotbase_deinit(void)
 
 	bumper.lidarBumperDeinit();
 	recei_thread_stop = true;
-	led.set_mode(LED_STEADY, LED_OFF);
+	led.setMode(LED_STEADY, LED_OFF);
 	serial.setSendData(CTL_BEEPER, 0x00);
 	gyro.setOff();
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
-	serial.setCleanMode(POWER_DOWN);
+	serial.setMainBoardMode(NORMAL_SLEEP_MODE);
 	usleep(40000);
-	while(ros::ok() && !g_bye_bye){
+	while(ros::ok() && !g_pp_shutdown){
 		usleep(2000);
 	}
 	serial.close();
@@ -102,7 +102,7 @@ void robotbase_reset_send_stream(void)
 	serial.setSendData(SEND_LEN - 2, 0xcc);
 	serial.setSendData(SEND_LEN - 1, 0x33);
 
-	serial.setCleanMode(POWER_ACTIVE);
+	serial.setMainBoardMode(IDLE_MODE);
 	uint8_t buf[SEND_LEN];
 	{
 		boost::mutex::scoped_lock lock(g_send_stream_mutex);

@@ -18,6 +18,7 @@ public:
 	IMoveType();
 	bool shouldMoveBack();
 	bool shouldTurn();
+	bool RconTrigger();
 //	~IMoveType() = default;
 
 	Point_t last_{};
@@ -58,9 +59,11 @@ protected:
 		mm_null,
 		mm_back,
 		mm_turn,
+		mm_rcon,
 		mm_forward,
 		mm_straight,
 	};
+
 };
 
 class MoveTypeLinear:public IMoveType

@@ -23,7 +23,7 @@ class KeyLed{
 public:
 void set(uint16_t green, uint16_t red);
 // time_ms is used for both LED_FLASH type and LED_BREATH type, the default value is for LED_BREATH.
-void set_mode(uint8_t type, uint8_t color, uint16_t time_ms = 3000);
+void setMode(uint8_t type, uint8_t color, uint16_t time_ms = 3000);
 
 };
 

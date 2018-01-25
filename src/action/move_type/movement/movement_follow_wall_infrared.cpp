@@ -81,7 +81,7 @@ void IFollowWall::setTarget()
 //		 * less than 0 means move close to wall		*/
 //		int32_t angular_speed = 0;
 //
-//		seen_charger_counter = 30;
+//		seen_charger_counter_ = 30;
 //		if(rcon_status & (RconFR_HomeT|RconFL_HomeT))
 //		{
 //			angular_speed = 12;
@@ -102,7 +102,7 @@ void IFollowWall::setTarget()
 //		}
 //		c_rcon.resetStatus();
 //		/*---check if should aloud the charger---*/
-//		if(seen_charger_counter)
+//		if(seen_charger_counter_)
 //		{
 //			same_speed = linear_speed + angular_speed;
 //			diff_speed = linear_speed - angular_speed;
@@ -112,9 +112,9 @@ void IFollowWall::setTarget()
 //		}
 //	}
 ////	ROS_INFO("%s,%d, speed(%d,%d)", __FUNCTION__, __LINE__, diff_speed,same_speed);
-//	if(seen_charger_counter)
+//	if(seen_charger_counter_)
 //	{
-//		seen_charger_counter--;
+//		seen_charger_counter_--;
 //		same_speed = same_speed_;
 //		diff_speed = diff_speed_;
 //		return ;

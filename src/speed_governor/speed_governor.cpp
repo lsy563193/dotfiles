@@ -7,6 +7,7 @@
 #include "speed_governor.hpp"
 #include "dev.h"
 #include "mathematics.h"
+/*
 
 SpeedGovernorBack::SpeedGovernorBack()
 {
@@ -54,3 +55,59 @@ void SpeedGovernorTurn::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 
 	left_speed = right_speed = speed_;
 }
+*/
+
+//void SpeedGovernorRcon::adjustSpeed(int32_t &left_speed, int32_t &right_speed) {
+//	auto rcon_status = c_rcon.getAll();
+//	/*---only use a part of the Rcon signal---*/
+//	rcon_status &= (RconFL2_HomeT|RconFR_HomeT|RconFL_HomeT|RconFR2_HomeT);
+//	if(rcon_status)
+//	{
+////		g_rcon_triggered = get_rcon_trig();
+////		map_set_rcon();
+//		int32_t linear_speed = 24;
+//		/* angular speed notes						*
+//		 * larger than 0 means move away from wall	*
+//		 * less than 0 means move close to wall		*/
+//		int32_t angular_speed = 0;
+//
+//		seen_charger_counter_ = 30;
+//		if(rcon_status & (RconFR_HomeT|RconFL_HomeT))
+//		{
+//			angular_speed = 12;
+//		}
+//		else if(rcon_status & RconFR2_HomeT)
+//		{
+//			if(is_left_)
+//				angular_speed = 15;
+//			else
+//				angular_speed = 10;
+//		}
+//		else if(rcon_status & RconFL2_HomeT)
+//		{
+//			if(is_left_)
+//				angular_speed = 10;
+//			else
+//				angular_speed = 15;
+//		}
+//		/*---check if should eloud the charger---*/
+//		if(seen_charger_counter_)
+//		{
+////			same_speed = linear_speed + angular_speed;
+////			diff_speed = linear_speed - angular_speed;
+//			left_speed = is_left_ ? linear_speed + angular_speed : linear_speed - angular_speed;
+//			right_speed = is_left_ ? linear_speed - angular_speed : linear_speed + angular_speed;
+//			left_speed_ = left_speed;
+//			right_speed_ = right_speed;
+//			return ;
+//		}
+//	}
+//	if(seen_charger_counter_)
+//	{
+//		seen_charger_counter_--;
+//		left_speed = left_speed_;
+//		right_speed = right_speed_;
+//		return ;
+//	}
+//}
+

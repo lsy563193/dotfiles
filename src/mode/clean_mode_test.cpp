@@ -22,11 +22,6 @@ CleanModeTest::~CleanModeTest()
 	event_manager_set_enable(false);
 }
 
-bool CleanModeTest::mapMark(bool isMarkRobot)
-{
-	return false;
-}
-
 bool CleanModeTest::isFinish()
 {
 	if (!sp_action_->isFinish() && !ev.remote_direction_back && !ev.remote_direction_forward)
@@ -65,7 +60,7 @@ bool CleanModeTest::isFinish()
 	}
 	else if (action_i_ == ac_check_bumper)
 	{
-		led.set_mode(LED_STEADY, LED_GREEN);
+		led.setMode(LED_STEADY, LED_GREEN);
 		wheel.stop();
 		brush.stop();
 		vacuum.stop();

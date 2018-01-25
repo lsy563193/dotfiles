@@ -15,21 +15,29 @@ CleanModeSpot::CleanModeSpot()
 
 CleanModeSpot::~CleanModeSpot()
 {
-/*	IMoveType::sp_mode_ = nullptr;
-	event_manager_set_enable(false);
-	wheel.stop();
-	brush.stop();
-	vacuum.stop();
-	lidar.motorCtrl(OFF);
-	lidar.setScanOriginalReady(0);
 
-	robot::instance()->setBaselinkFrameType( ODOM_POSITION_ODOM_ANGLE);
-	slam.stop();
-	odom.setRadianOffset(0);
-	speaker.play(VOICE_CLEANING_STOP,false);*/
 }
 
-bool CleanModeSpot::mapMark(bool isMarkRobot)
+bool CleanModeSpot::isExit()
+{
+	if(ev.remote_home)
+	{
+		//ev.remote_home = false;
+		INFO_YELLOW("in spot mode enter exploration");
+		setNextMode(cm_exploration);
+		return true;
+	}
+	else if(ev.remote_follow_wall)
+	{
+		//ev.remote_follow_wall = false;
+		INFO_YELLOW("in spot mode enter follow_wall");
+		setNextMode(cm_wall_follow);
+		return true;
+	}
+	return ACleanMode::isExit();
+}
+
+bool CleanModeSpot::mapMark()
 {
 	ROS_INFO("%s,%d,passed_path",__FUNCTION__,__LINE__);
 	auto passed_path_cells = pointsGenerateCells(passed_path_);
@@ -57,21 +65,12 @@ void CleanModeSpot::remoteClean(bool state_now, bool state_last)
 	remote.reset();
 }
 
-void CleanModeSpot::switchInStateInit()
+void CleanModeSpot::remoteWallFollow(bool state_now, bool state_last)
 {
-//	if(action_i_ == ac_open_slam)
-	action_i_ = ac_null;
-	sp_action_ = nullptr;
-	sp_state = state_spot;
-	sp_state->init();
-}
-
-void CleanModeSpot::switchInStateSpot()
-{
-	action_i_ = ac_null;
-	sp_action_ = nullptr;
-	sp_state = nullptr;
-//	sp_state->init();
+	ev.remote_follow_wall = true;
+	beeper.play_for_command(true);
+	INFO_YELLOW("REMOTE FOLLOW_WALL PRESS");
+	remote.reset();
 }
 
 void CleanModeSpot::keyClean(bool state_now,bool state_last)
@@ -95,4 +94,61 @@ void CleanModeSpot::overCurrentWheelRight(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Right wheel oc.", __FUNCTION__, __LINE__);
 	ev.oc_wheel_right = true;
 }
+
+void CleanModeSpot::remoteDirectionLeft(bool state_now, bool state_last)
+{
+	beeper.play_for_command(VALID);
+	ev.remote_direction_left = true;
+	ROS_INFO("%s %d: Remote Left.", __FUNCTION__, __LINE__);
+	remote.reset();
+}
+
+void CleanModeSpot::remoteDirectionRight(bool state_now, bool state_last)
+{
+	beeper.play_for_command(VALID);
+	ev.remote_direction_right = true;
+	ROS_INFO("%s %d: Remote Right.", __FUNCTION__, __LINE__);
+	remote.reset();
+}
+
+void CleanModeSpot::remoteDirectionForward(bool state_now, bool state_last)
+{
+	beeper.play_for_command(VALID);
+	ROS_INFO("%s %d: Remote Forward.", __FUNCTION__, __LINE__);
+	ev.remote_direction_right = true;
+
+	remote.reset();
+}
+
+void CleanModeSpot::switchInStateInit()
+{
+	action_i_ = ac_null;
+	sp_action_ = nullptr;
+	sp_state = state_spot;
+	sp_state->init();
+}
+
+void CleanModeSpot::switchInStateSpot()
+{
+	action_i_ = ac_null;
+	sp_action_ = nullptr;
+	sp_state = nullptr;
+//	sp_state->init();
+}
+
+bool CleanModeSpot::isSwitchByEventInStateSpot()
+{
+
+	if(ev.remote_direction_forward || ev.remote_direction_left || ev.remote_direction_right)
+	{
+		ev.remote_direction_forward = false;
+		ev.remote_direction_left = false;
+		ev.remote_direction_right = false;
+		sp_state = nullptr;
+		return true;
+	}
+	else
+		return false;
+}
+
 

@@ -46,10 +46,15 @@ CleanModeFollowWall::~CleanModeFollowWall()
 */
 }
 
-bool CleanModeFollowWall::mapMark(bool isMarkRobot) {
+bool CleanModeFollowWall::mapMark() {
 	clean_path_algorithm_->displayCellPath(pointsGenerateCells(passed_path_));
 	PP_WARN();
-	if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
+	if (isStateGoHomePoint())
+	{
+		clean_map_.setCleaned(pointsGenerateCells(passed_path_));
+		clean_map_.setBlocks();
+	}
+	else if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
 	{
 		clean_map_.setCleaned(pointsGenerateCells(passed_path_));
 		clean_map_.setBlocks();
@@ -113,9 +118,20 @@ void CleanModeFollowWall::keyClean(bool state_now, bool state_last)
 
 void CleanModeFollowWall::remoteMax(bool state_now, bool state_last)
 {
-
-	beeper.play_for_command(VALID);
-	vacuum.switchToNext();
+	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
+	if(isStateClean())
+	{
+		beeper.play_for_command(VALID);
+		vacuum.switchToNext();
+	}
+	else if (isStateGoHomePoint() || isStateGoToCharger())
+	{
+		beeper.play_for_command(VALID);
+		vacuum.switchToNext();
+		vacuum.setTmpMode(Vac_Normal);
+	}
+	else
+		beeper.play_for_command(INVALID);
 	remote.reset();
 }
 void CleanModeFollowWall::remoteClean(bool state_now, bool state_last)

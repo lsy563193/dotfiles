@@ -16,13 +16,8 @@ MovementExceptionResume::MovementExceptionResume()
 	s_pos_x = odom.getX();
 	s_pos_y = odom.getY();
 
-	wheel_current_sum_ = 0;
-	wheel_current_sum_cnt_ = 0;
-	wheel_resume_cnt_ = 0;
 	resume_wheel_start_time_ = ros::Time::now().toSec();
-	bumper_jam_state_ = 1;
-	cliff_resume_cnt_ = 0;
-	robot_stuck_resume_cnt_ = 0;
+	resume_main_bursh_start_time_ = ros::Time::now().toSec();
 }
 
 MovementExceptionResume::~MovementExceptionResume()
@@ -43,11 +38,19 @@ void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_sp
 		left_speed = 30;
 		right_speed = 30;
 	}
-	else if (ev.robot_stuck || ev.cliff_jam)
+	else if (ev.robot_stuck || ev.cliff_jam || ev.cliff_all_triggered )
 	{
 		wheel.setDirectionBackward();
-		left_speed = right_speed = 18;
+		left_speed = right_speed = RUN_TOP_SPEED;
 	}
+	else if(ev.oc_brush_main)
+	{
+		if(oc_main_brush_cnt_ <= 0){
+			wheel.setDirectionBackward();
+			left_speed = right_speed = RUN_TOP_SPEED;
+		}
+	}
+
 	else if (ev.bumper_jam)
 	{
 		switch (bumper_jam_state_)
@@ -87,7 +90,8 @@ void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_sp
 
 bool MovementExceptionResume::isFinish()
 {
-	if (!(ev.bumper_jam || ev.cliff_jam || ev.oc_wheel_left || ev.oc_wheel_right || ev.oc_suction || ev.lidar_stuck || ev.robot_stuck))
+	if (!(ev.bumper_jam || ev.cliff_jam || ev.cliff_all_triggered || ev.oc_wheel_left || ev.oc_wheel_right
+		  || ev.oc_suction || ev.lidar_stuck || ev.robot_stuck || ev.oc_brush_main))
 	{
 		ROS_INFO("%s %d: All exception cleared.", __FUNCTION__, __LINE__);
 		return true;
@@ -142,6 +146,35 @@ bool MovementExceptionResume::isFinish()
 			}
 		}
 	}
+
+	else if (ev.oc_brush_main){
+		if(!brush.getMainOc())
+		{
+			ROS_INFO("%s %d: main brush over current resume succeeded!", __FUNCTION__, __LINE__);
+			brush.normalOperate();
+			ev.oc_brush_main = false;
+		}
+
+		float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getX(), odom.getY());
+		if (oc_main_brush_cnt_ < 1)
+		{
+			brush.stop();
+			if(std::abs(distance) >= CELL_SIZE * 3)
+			{
+				wheel.stop();
+				brush.mainBrushResume();
+				oc_main_brush_cnt_++;
+				resume_main_bursh_start_time_ = ros::Time::now().toSec();
+			}
+		}
+		else if((ros::Time::now().toSec() - resume_main_bursh_start_time_) >=3 )
+		{
+			ev.oc_brush_main = false;
+			ev.fatal_quit = true;
+			error.set(ERROR_CODE_MAINBRUSH);
+		}
+	}
+
 	else if (ev.robot_stuck)
 	{
 		if (!lidar.isRobotSlip())
@@ -169,6 +202,35 @@ bool MovementExceptionResume::isFinish()
 			error.set(ERROR_CODE_STUCK);
 		}
 	}
+	else if (ev.cliff_all_triggered)
+	{
+		if (cliff.getStatus() != BLOCK_ALL)
+		{
+			ROS_INFO("%s %d: Cliff all resume succeeded.", __FUNCTION__, __LINE__);
+			ev.cliff_all_triggered = false;
+			ev.cliff_triggered = 0;
+			g_cliff_cnt = 0;
+		}
+		else if (cliff_all_resume_cnt_ < 2)
+		{
+			float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getX(), odom.getY());
+			if (std::abs(distance) > 0.02f)
+			{
+				wheel.stop();
+				cliff_all_resume_cnt_++;
+				if (cliff_all_resume_cnt_ < 2)
+					ROS_WARN("%s %d: Resume failed, try cliff all resume for the %d time.",
+							 __FUNCTION__, __LINE__, cliff_all_resume_cnt_ + 1);
+				s_pos_x = odom.getX();
+				s_pos_y = odom.getY();
+			}
+		}
+		else
+		{
+			ROS_WARN("%s %d: Cliff all triggered.", __FUNCTION__, __LINE__);
+			ev.fatal_quit = true;
+		}
+	}
 	else if (ev.cliff_jam)
 	{
 		if (!cliff.getStatus())
@@ -185,7 +247,9 @@ bool MovementExceptionResume::isFinish()
 			{
 				wheel.stop();
 				cliff_resume_cnt_++;
-				ROS_WARN("%s %d: Try cliff resume for the %d time.", __FUNCTION__, __LINE__, cliff_resume_cnt_);
+				if (cliff_resume_cnt_ < 5)
+					ROS_WARN("%s %d: Resume failed, try cliff resume for the %d time.",
+							 __FUNCTION__, __LINE__, cliff_resume_cnt_ + 1);
 				s_pos_x = odom.getX();
 				s_pos_y = odom.getY();
 			}
@@ -266,7 +330,7 @@ bool MovementExceptionResume::isFinish()
 		}
 	}
 
-	if (ev.fatal_quit)
-		ROS_INFO("%s %d: fatal:%d", __FUNCTION__, __LINE__, ev.fatal_quit);
+//	if (ev.fatal_quit)
+//		ROS_INFO("%s %d: ev.fatal_quit is set to %d.", __FUNCTION__, __LINE__, ev.fatal_quit);
 	return ev.fatal_quit;
 }

@@ -15,8 +15,11 @@ CleanModeNav::CleanModeNav()
 	setNavMode(true);
 	ROS_INFO("%s %d: Entering Navigation mode\n=========================" , __FUNCTION__, __LINE__);
 
-	if(g_plan_activated)
-		g_plan_activated = false;
+	if(plan_activation_)
+	{
+		plan_activation_ = false;
+		speaker.play(VOICE_APPOINTMENT_START, false);
+	}
 	else
 		speaker.play(VOICE_CLEANING_START, false);
 
@@ -34,7 +37,7 @@ CleanModeNav::~CleanModeNav()
 	setNavMode(false);
 }
 
-bool CleanModeNav::mapMark(bool isMarkRobot)
+bool CleanModeNav::mapMark()
 {
 	ROS_INFO("%s %d: Start updating map.", __FUNCTION__, __LINE__);
 	clean_path_algorithm_->displayCellPath(pointsGenerateCells(passed_path_));
@@ -112,17 +115,17 @@ bool CleanModeNav::isExit()
 			setNextMode(cm_wall_follow);
 			return true;
 		}
-//		else if (ev.remote_spot)
-//		{
-//			ROS_WARN("%s %d: Exit for pause and remote spot.", __FUNCTION__, __LINE__);
-//			setNextMode(cm_spot);
-//			return true;
-//		}
+		else if (ev.remote_spot)
+		{
+			ROS_WARN("%s %d: Exit for pause and remote spot.", __FUNCTION__, __LINE__);
+			setNextMode(cm_spot);
+			return true;
+		}
 	}
 
-	if (ev.fatal_quit || ev.key_long_pressed || ev.cliff_all_triggered || sp_action_->isExit())
+	if (ev.fatal_quit || ev.key_long_pressed || sp_action_->isExit())
 	{
-		ROS_WARN("%s %d: Exit for ev.fatal_quit || ev.key_long_pressed || ev.cliff_all_triggered || sp_action_->isExit().", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Exit for ev.fatal_quit || ev.key_long_pressed || sp_action_->isExit().", __FUNCTION__, __LINE__);
 		setNextMode(md_idle);
 		return true;
 	}
@@ -133,7 +136,6 @@ bool CleanModeNav::isExit()
 		setNextMode(md_charge);
 		return true;
 	}
-
 	return false;
 }
 
@@ -190,9 +192,15 @@ void CleanModeNav::remoteClean(bool state_now, bool state_last)
 
 void CleanModeNav::remoteDirectionLeft(bool state_now, bool state_last)
 {
-	//todo: Just for debug
-	if (sp_state == state_clean)
+	if (sp_state == state_pause || sp_state == state_spot)
 	{
+		beeper.play_for_command(VALID);
+		ROS_INFO("%s %d: Remote right.", __FUNCTION__, __LINE__);
+		ev.remote_direction_left = true;
+	}
+	/*else if (sp_state == state_clean)
+	{
+		//todo: Just for testing.
 		beeper.play_for_command(VALID);
 		continue_point_ = getPosition();
 		ROS_INFO("%s %d: low battery, battery =\033[33m %dmv \033[0m, continue cell(%d, %d)", __FUNCTION__, __LINE__,
@@ -200,24 +208,16 @@ void CleanModeNav::remoteDirectionLeft(bool state_now, bool state_last)
 		ev.battery_home = true;
 		go_home_for_low_battery_ = true;
 	}
+	*/
 	else
 		beeper.play_for_command(INVALID);
-
-	/*if (sp_state == state_pause)
-	{
-		beeper.play_for_command(VALID);
-		ROS_INFO("%s %d: Remote left.", __FUNCTION__, __LINE__);
-		ev.remote_direction_right = true;
-	}
-	else
-		beeper.play_for_command(INVALID);*/
 
 	remote.reset();
 }
 
 void CleanModeNav::remoteDirectionRight(bool state_now, bool state_last)
 {
-	if (sp_state == state_pause)
+	if (sp_state == state_pause || sp_state == state_spot)
 	{
 		beeper.play_for_command(VALID);
 		ROS_INFO("%s %d: Remote right.", __FUNCTION__, __LINE__);
@@ -231,11 +231,11 @@ void CleanModeNav::remoteDirectionRight(bool state_now, bool state_last)
 
 void CleanModeNav::remoteDirectionForward(bool state_now, bool state_last)
 {
-	if (sp_state == state_pause)
+	if (sp_state == state_pause || sp_state == state_spot)
 	{
 		beeper.play_for_command(VALID);
 		ROS_INFO("%s %d: Remote forward.", __FUNCTION__, __LINE__);
-		ev.remote_direction_right = true;
+		ev.remote_direction_forward = true;
 	}
 	else
 		beeper.play_for_command(INVALID);
@@ -259,7 +259,7 @@ void CleanModeNav::remoteWallFollow(bool state_now, bool state_last)
 
 void CleanModeNav::remoteSpot(bool state_now, bool state_last)
 {
-	if (sp_state == state_clean || sp_state == state_spot /*|| sp_state == state_pause*/)
+	if (sp_state == state_clean || sp_state == state_spot || sp_state == state_pause)
 	{
 		ev.remote_spot = true;
 		beeper.play_for_command(VALID);
@@ -273,14 +273,22 @@ void CleanModeNav::remoteSpot(bool state_now, bool state_last)
 void CleanModeNav::remoteMax(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
-	if(isStateClean())
+	if(isStateClean() || isStateResumeLowBatteryCharge())
 	{
 		beeper.play_for_command(VALID);
 		vacuum.switchToNext();
-	}else
+	}
+	else if (isStateGoHomePoint() || isStateGoToCharger())
+	{
+		beeper.play_for_command(VALID);
+		vacuum.switchToNext();
+		vacuum.setTmpMode(Vac_Normal);
+	}
+	else
 		beeper.play_for_command(INVALID);
 	remote.reset();
 }
+
 void CleanModeNav::batteryHome(bool state_now, bool state_last)
 {
 	if (sp_state == state_clean)
@@ -295,11 +303,21 @@ void CleanModeNav::batteryHome(bool state_now, bool state_last)
 
 void CleanModeNav::chargeDetect(bool state_now, bool state_last)
 {
-	if (!ev.charge_detect && charger.isDirected())
+	if (!ev.charge_detect)
 	{
-		ROS_WARN("%s %d: Charge detect!.", __FUNCTION__, __LINE__);
-		ev.charge_detect = charger.getChargeStatus();
-		ev.fatal_quit = true;
+		if (isStateInit() && action_i_ == ac_back_form_charger && sp_action_->isTimeUp())
+		{
+			ROS_WARN("%s %d: Switch is not on!.", __FUNCTION__, __LINE__);
+			ev.charge_detect = charger.getChargeStatus();
+			ev.fatal_quit = true;
+			switch_is_off_ = true;
+		}
+		else if (charger.isDirected())
+		{
+			ROS_WARN("%s %d: Charge detect!.", __FUNCTION__, __LINE__);
+			ev.charge_detect = charger.getChargeStatus();
+			ev.fatal_quit = true;
+		}
 	}
 }
 
@@ -307,7 +325,7 @@ void CleanModeNav::chargeDetect(bool state_now, bool state_last)
 
 // ------------------State init--------------------
 bool CleanModeNav::isSwitchByEventInStateInit() {
-	return checkEnterPause();
+	return checkEnterPause() || checkEnterExceptionResumeState();
 }
 
 bool CleanModeNav::updateActionInStateInit() {
@@ -497,25 +515,37 @@ bool CleanModeNav::checkEnterTempSpotState()
 	return false;
 }
 
-bool CleanModeNav::checkOutOfSpot()
+bool CleanModeNav::isSwitchByEventInStateSpot()
 {
-	if (ev.remote_spot) {
+	if (ev.key_clean_pressed || ev.remote_spot || ev.remote_direction_forward || ev.remote_direction_left || ev.remote_direction_right)
+	{
+		if(sp_state == state_spot && ev.key_clean_pressed )
+			sp_state = nullptr;
+		else{
+			sp_state = state_clean;
+			sp_state->init();
+			action_i_ = ac_null;
+			sp_action_.reset();
+			clean_path_algorithm_.reset(new NavCleanPathAlgorithm);
+		}
+		ev.remote_direction_forward = false;
+		ev.remote_direction_left = false;
+		ev.remote_direction_right = false;
 		ev.remote_spot = false;
-		sp_state = state_clean;
-		sp_state->init();
-		action_i_ = ac_null;
-		sp_action_.reset();
-		clean_path_algorithm_.reset(new NavCleanPathAlgorithm);
+		ev.key_clean_pressed = false;
+
 		return true;
 	}
+	else if(ACleanMode::checkEnterGoHomePointState())
+	{
+		return true;
+	}
+
 	return false;
 }
 
-bool CleanModeNav::isSwitchByEventInStateSpot() {
-	return checkEnterPause() || checkOutOfSpot();
-}
-
-void CleanModeNav::switchInStateSpot() {
+void CleanModeNav::switchInStateSpot()
+{
 	action_i_ = ac_null;
 	sp_action_.reset();
 	sp_state = state_clean;

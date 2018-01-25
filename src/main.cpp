@@ -11,17 +11,16 @@
 
 robot* robot_instance = nullptr;
 
-void Ooops(int sig)
+void signal_catch(int sig)
 {
 	switch(sig){
 		case SIGSEGV:
 		{
-			ROS_ERROR("Oops!!! pp receive SIGSEGV signal,which means out of memery!");
+			ROS_ERROR("Oops!!! pp receive SIGSEGV signal,segment fault!");
 			if(robot_instance != nullptr){
 				speaker.play(VOICE_CLEANING_STOP,false);
 				delete robot_instance;
 			}
-			ROS_INFO(" after SIGSEGV");
 			break;
 		}
 		case SIGINT:
@@ -31,7 +30,6 @@ void Ooops(int sig)
 				speaker.play(VOICE_CLEANING_STOP,false);
 				delete robot_instance;
 			}
-			ROS_INFO(" after SIGINT");
 			break;
 		}
 		case SIGTERM:
@@ -41,7 +39,6 @@ void Ooops(int sig)
 				speaker.play(VOICE_CLEANING_STOP,false);
 				delete robot_instance;
 			}
-			ROS_INFO(" after SIGTERM");
 			break;
 		}
 		default:
@@ -58,7 +55,7 @@ int main(int argc, char **argv)
 	ros::NodeHandle	nh_dev("~");
 
 	struct sigaction act;
-	act.sa_handler = Ooops;
+	act.sa_handler = signal_catch;
 	sigemptyset(&act.sa_mask);
 	act.sa_flags = SA_RESETHAND;
 	sigaction(SIGTERM,&act,NULL);

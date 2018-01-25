@@ -10,8 +10,8 @@
 
 CleanModeExploration::CleanModeExploration()
 {
+	ROS_INFO("%s %d: Entering Exploration mode\n=========================" , __FUNCTION__, __LINE__);
 	speaker.play(VOICE_EXPLORATION_START, false);
-	action_i_ = ac_open_gyro;
 	mode_i_ = cm_exploration;
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
 	IMoveType::sp_mode_ = this;
@@ -23,12 +23,12 @@ CleanModeExploration::~CleanModeExploration()
 {
 }
 
-bool CleanModeExploration::mapMark(bool isMarkRobot)
+bool CleanModeExploration::mapMark()
 {
-	clean_map_.mergeFromSlamGridMap(slam_grid_map,true,true);
+	clean_map_.mergeFromSlamGridMap(slam_grid_map, true, true, false, false, false, false);
 	clean_map_.setExplorationCleaned();
 	clean_map_.setBlocks();
-	if(isMarkRobot)
+	if(mark_robot_)
 		clean_map_.markRobot(CLEAN_MAP);
 	passed_path_.clear();
 	return false;
@@ -139,7 +139,9 @@ bool CleanModeExploration::moveTypeFollowWallIsFinish(IMoveType *p_move_type, bo
 bool CleanModeExploration::markMapInNewCell() {
 	if(sp_state == state_trapped)
 	{
-		mapMark(false);
+		mark_robot_ = false;
+		mapMark();
+		mark_robot_ = true;
 	}
 	else
 		mapMark();

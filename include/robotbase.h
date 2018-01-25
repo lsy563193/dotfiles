@@ -7,10 +7,8 @@
 #include "config.h"
 
 #define  _RATE 50
-#define POWER_ACTIVE 1
-#define POWER_DOWN 7
 
-extern bool g_bye_bye;
+extern bool g_pp_shutdown;
 extern pthread_mutex_t recev_lock;
 extern pthread_cond_t  recev_cond;
 

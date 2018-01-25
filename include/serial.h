@@ -37,8 +37,8 @@
 // One byte for controlling beeper.
 #define	CTL_BEEPER 10
 
-// One byte for sending clean mode.
-#define	CTL_CLEAN_MODE 11
+// One byte for sending main board mode.
+#define	CTL_MAIN_BOARD_MODE 11
 
 // One byte for controlling charge status.
 #define	CTL_CHARGER 12
@@ -238,6 +238,12 @@
 #define REC_TRAILER_1 42
 #define REC_TRAILER_2 43
 
+// Main board mode
+#define NORMAL_SLEEP_MODE 		0
+#define BATTERY_FULL_SLEEP_MODE 1
+#define WORK_MODE 				2
+#define IDLE_MODE 				3
+#define CHARGE_MODE 			4
 
 #define DUMMY_DOWNLINK_OFFSET		2
 #define KEY_DOWNLINK_OFFSET			9
@@ -281,12 +287,12 @@ public:
 
 	bool isReady();
 
-	void isSleep(bool val)
+	void isMainBoardSleep(bool val)
 	{
 		is_sleep_ = val;
 	}
 
-	bool isSleep() const
+	bool isMainBoardSleep() const
 	{
 		return is_sleep_;
 	}
@@ -301,7 +307,7 @@ public:
 
 	//int get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequence_number);
 
-	void setCleanMode(uint8_t val);
+	void setMainBoardMode(uint8_t val);
 
 	void initCrc8(void);
 

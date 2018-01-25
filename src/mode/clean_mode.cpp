@@ -13,17 +13,15 @@
 #include "error.h"
 
 const double CHASE_X = 0.107;
-ros::Publisher ACleanMode::point_marker_pub_{};
-ros::Publisher ACleanMode::line_marker_pub2_{};
+static ros::Publisher ACleanMode::point_marker_pub_;
+static ros::Publisher ACleanMode::line_marker_pub2_;
 ACleanMode::ACleanMode()
 {
-
 	scanLinear_sub_ = clean_nh_.subscribe("scanLinear", 1, &Lidar::scanLinearCb, &lidar);
 	scanCompensate_sub_ = clean_nh_.subscribe("scanCompensate", 1, &Lidar::scanCompensateCb, &lidar);
 	scanOriginal_sub_ = clean_nh_.subscribe("scanOriginal", 1, &ACleanMode::scanOriginalCb, this);
 	lidarPoint_sub_ = clean_nh_.subscribe("lidarPoint", 1, &Lidar::lidarXYPointCb, &lidar);
 	map_sub_ = clean_nh_.subscribe("/map", 1, &Slam::mapCb, &slam);
-
 
 	tmp_target_pub_ = clean_nh_.advertise<visualization_msgs::Marker>("tmp_target", 1);
 	point_marker_pub_ = clean_nh_.advertise<visualization_msgs::Marker>("point_marker", 1);
@@ -34,6 +32,7 @@ ACleanMode::ACleanMode()
 
 	event_manager_register_handler(this);
 	event_manager_set_enable(true);
+	serial.setMainBoardMode(WORK_MODE);
 	IMoveType::sp_mode_ = this;
 	sp_state->setMode(this);
 	ev.key_clean_pressed = false;
@@ -47,7 +46,6 @@ ACleanMode::ACleanMode()
 	resetPosition();
 	c_rcon.resetStatus();
 	robot::instance()->initOdomPosition();
-
 }
 
 ACleanMode::~ACleanMode()
@@ -68,36 +66,47 @@ ACleanMode::~ACleanMode()
 
 	IMoveType::sp_mode_ = nullptr;
 	sp_state = nullptr;
+	sp_action_.reset();
 	event_manager_set_enable(false);
-	wheel.stop();
-	brush.stop();
-	vacuum.stop();
-	lidar.motorCtrl(OFF);
-	lidar.setScanOriginalReady(0);
+	if(!g_pp_shutdown){
+		wheel.stop();
+		brush.stop();
+		vacuum.stop();
+		lidar.motorCtrl(OFF);
+		lidar.setScanOriginalReady(0);
 
-	robot::instance()->setBaselinkFrameType(ODOM_POSITION_ODOM_ANGLE);
-	slam.stop();
-	odom.setRadianOffset(0);
+		robot::instance()->setBaselinkFrameType(ODOM_POSITION_ODOM_ANGLE);
+		slam.stop();
+		odom.setRadianOffset(0);
 
-	if (moved_during_pause_)
-	{
-		speaker.play(VOICE_CLEANING_STOP, false);
-		ROS_WARN("%s %d: Moved during pause. Stop cleaning.", __FUNCTION__, __LINE__);
-	}
-	else if (ev.cliff_all_triggered)
-	{
-		speaker.play(VOICE_ERROR_LIFT_UP_CLEANING_STOP, false);
-		ROS_WARN("%s %d: Cliff all triggered. Stop cleaning.", __FUNCTION__, __LINE__);
-	}
-	else if (ev.fatal_quit)
-	{
-		speaker.play(VOICE_CLEANING_STOP, false);
-		error.alarm();
-	}
-	else
-	{
-		speaker.play(VOICE_CLEANING_FINISHED, false);
-		ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
+		if (moved_during_pause_)
+		{
+			speaker.play(VOICE_CLEANING_STOP, false);
+			ROS_WARN("%s %d: Moved during pause. Stop cleaning.", __FUNCTION__, __LINE__);
+		}
+		else if (ev.fatal_quit)
+		{
+			if (ev.cliff_all_triggered)
+			{
+				speaker.play(VOICE_ERROR_LIFT_UP_CLEANING_STOP, false);
+				ROS_WARN("%s %d: Cliff all triggered. Stop cleaning.", __FUNCTION__, __LINE__);
+			}
+			else
+			{
+				speaker.play(VOICE_CLEANING_STOP, false);
+				ROS_WARN("%s %d: fatal_quit is true. Stop cleaning.", __FUNCTION__, __LINE__);
+			}
+		}
+		else if (switch_is_off_)
+		{
+			speaker.play(VOICE_CHECK_SWITCH, false);
+			ROS_WARN("%s %d: Switch is not on. Stop cleaning.", __FUNCTION__, __LINE__);
+		}
+		else
+		{
+			speaker.play(VOICE_CLEANING_FINISHED, false);
+			ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
+		}
 	}
 
 	auto cleaned_count = clean_map_.getCleanedArea();
@@ -596,13 +605,6 @@ bool ACleanMode::isExit()
 		return true;
 	}
 
-	if(ev.cliff_all_triggered) {
-		ev.cliff_all_triggered = false;
-		ROS_WARN("%s %d: Exit for cliff all.", __FUNCTION__, __LINE__);
-		setNextMode(md_idle);
-		return true;
-	}
-
 	if (charger.isDirected())
 	{
 		ROS_WARN("%s %d: Exit for directly charge.", __FUNCTION__, __LINE__);
@@ -709,7 +711,7 @@ bool ACleanMode::isFinish()
 
 void ACleanMode::genNextAction()
 {
-	INFO_GREEN(before genNextAction);
+	INFO_GREEN("before genNextAction");
 
 	switch (action_i_) {
 		case ac_null :
@@ -778,7 +780,7 @@ void ACleanMode::genNextAction()
 			sp_action_.reset(new MovementDirectGo);
 			break;
 	}
-	INFO_GREEN(after genNextAction);
+	INFO_GREEN("after genNextAction");
 }
 
 void ACleanMode::setRconPos(Point_t pos)
@@ -1035,7 +1037,7 @@ bool ACleanMode::isRemoteGoHomePoint()
 // ------------------Handlers--------------------------
 void ACleanMode::remoteHome(bool state_now, bool state_last)
 {
-	if (sp_state == state_clean || sp_state == state_pause)
+	if (sp_state == state_clean || sp_state == state_pause || sp_state == state_spot)
 	{
 		ROS_WARN("%s %d: remote home.", __FUNCTION__, __LINE__);
 		beeper.play_for_command(VALID);
@@ -1049,25 +1051,22 @@ void ACleanMode::remoteHome(bool state_now, bool state_last)
 	remote.reset();
 }
 
-void ACleanMode::cliffAll(bool state_now, bool state_last) {
-	ROS_WARN("%s %d: Cliff all.", __FUNCTION__, __LINE__);
-	ev.cliff_all_triggered = true;
+void ACleanMode::cliffAll(bool state_now, bool state_last)
+{
+	if (!charger.getChargeStatus() && !ev.cliff_all_triggered)
+	{
+		ROS_WARN("%s %d: Cliff all.", __FUNCTION__, __LINE__);
+		ev.cliff_all_triggered = true;
+	}
+}
+
+void ACleanMode::overCurrentBrushMain(bool state_now, bool state_last)
+{
+	INFO_YELLOW("MAIN BRUSH OVER CURRENT");
+	ev.oc_brush_main = true;
+	brush.stop();
 }
 // ------------------Handlers end--------------------------
-
-bool ACleanMode::checkEnterExceptionResumeState()
-{
-	if (isExceptionTriggered()) {
-		ROS_WARN("%s %d: Exception triggered!", __FUNCTION__, __LINE__);
-		sp_action_.reset();
-		sp_saved_states.push_back(sp_state);
-		sp_state = state_exception_resume;
-		sp_state->init();
-		return true;
-	}
-
-	return false;
-}
 
 bool ACleanMode::checkEnterNullState()
 {
@@ -1085,7 +1084,7 @@ bool ACleanMode::checkEnterNullState()
 
 // ------------------State init--------------------
 bool ACleanMode::isSwitchByEventInStateInit() {
-	return checkEnterNullState();
+	return checkEnterNullState() || checkEnterExceptionResumeState();
 }
 
 bool ACleanMode::updateActionInStateInit() {
@@ -1211,7 +1210,7 @@ void ACleanMode::switchInStateGoHomePoint()
 }
 
 // ------------------State go to charger--------------------
-bool ACleanMode::checkEnterGoCharger()
+bool ACleanMode::checkEnterGoToCharger()
 {
 	ev.rcon_triggered = c_rcon.getForwardTop();
 	if (ev.rcon_triggered) {
@@ -1279,6 +1278,20 @@ bool ACleanMode::isSwitchByEventInStateSpot()
 }
 
 // ------------------State exception resume--------------
+bool ACleanMode::checkEnterExceptionResumeState()
+{
+	if (isExceptionTriggered()) {
+		ROS_WARN("%s %d: Exception triggered!", __FUNCTION__, __LINE__);
+		sp_action_.reset();
+		sp_saved_states.push_back(sp_state);
+		sp_state = state_exception_resume;
+		sp_state->init();
+		return true;
+	}
+
+	return false;
+}
+
 bool ACleanMode::isSwitchByEventInStateExceptionResume()
 {
 	return checkEnterNullState();
@@ -1301,15 +1314,18 @@ void ACleanMode::switchInStateExceptionResume()
 	if (!isExceptionTriggered())
 	{
 		ROS_INFO("%s %d: Resume to previous state", __FUNCTION__, __LINE__);
-		sp_action_.reset();
+		action_i_ = ac_null;
+		genNextAction();
 		sp_state = sp_saved_states.back();
 		sp_saved_states.pop_back();
 	}
+	else
+		sp_state = nullptr;
 }
 
 // ------------------State exploration--------------
 bool ACleanMode::isSwitchByEventInStateExploration() {
-	return checkEnterGoCharger();
+	return checkEnterGoToCharger();
 }
 
 bool ACleanMode::updateActionInStateExploration() {
