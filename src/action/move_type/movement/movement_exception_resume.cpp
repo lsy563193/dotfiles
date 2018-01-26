@@ -295,7 +295,7 @@ bool MovementExceptionResume::isFinish()
 							bumper_jam_state_++;
 							ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state_);
 							if (bumper_jam_state_ == 4)
-								resume_wheel_start_time_ = ros::Time::now().toSec();
+								bumper_resume_start_radian_ = odom.getRadian();
 						}
 						s_pos_x = odom.getX();
 						s_pos_y = odom.getY();
@@ -315,10 +315,10 @@ bool MovementExceptionResume::isFinish()
 						bumper_jam_state_ = 1;
 						wheel_resume_cnt_ = 0;
 						g_cliff_cnt = 0;
-					} else if (ros::Time::now().toSec() - resume_wheel_start_time_ >= 2)
+					} else if (fabs(ranged_radian(odom.getRadian() - bumper_resume_start_radian_)) > degree_to_radian(90))
 					{
 						bumper_jam_state_++;
-						resume_wheel_start_time_ = ros::Time::now().toSec();
+						bumper_resume_start_radian_ = odom.getRadian();
 						ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state_);
 					}
 					break;
