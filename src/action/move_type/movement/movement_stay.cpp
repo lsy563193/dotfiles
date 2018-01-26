@@ -29,7 +29,7 @@ bool MovementStay::isFinish()
 		   ev.remote_direction_left ||
 		   ev.remote_direction_right ||
 		   ev.bumper_triggered ||
-		   ev.cliff_triggered;
+		   ev.cliff_triggered ||
 		   isTimeUp();
 }
 
