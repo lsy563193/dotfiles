@@ -75,7 +75,7 @@ bool MoveTypeRemote::isFinish()
 			{
 				ev.rcon_triggered = 0;
 				movement_i_ = mm_back;
-				p_movement_.reset(new MovementBack(0.01, BACK_MAX_SPEED));
+				p_movement_.reset(new MovementBack(0.05, BACK_MAX_SPEED));
 			}
 			else
 			{

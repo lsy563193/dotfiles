@@ -17,6 +17,9 @@
 #define VERIFY_CPU_ID						(0)
 #define VERIFY_KEY							(0)
 
+/* R16 board test setting. */
+#define R16_BOARD_TEST						(0)
+
 /* ------------------------------------- Speaker config ------------------------------------- */
 #define SPEAKER_VOLUME						(55)
 
