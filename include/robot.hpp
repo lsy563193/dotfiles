@@ -195,11 +195,11 @@ int16_t countToCell(int32_t count);
 
 Point_t getPosition(void);
 
-bool isPos(double dir);
+bool isAny(Dir_t dir);
 
-bool isXAxis(double dir);
+bool isPos(Dir_t dir);
 
-bool isYAxis(double dir);
+bool isXAxis(Dir_t dir);
 
 void updatePosition();
 

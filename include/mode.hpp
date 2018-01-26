@@ -517,8 +517,8 @@ public:
 	bool should_mark_temp_charger_{};
 	bool found_charger_{};
 
-	double old_dir_{};
-	double new_dir_{};
+	Dir_t old_dir_{};
+	Point_t start_point_{};
 
 //	boost::shared_ptr<APathAlgorithm> follow_wall_path_algorithm_{};
 	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
@@ -540,7 +540,6 @@ protected:
 	bool low_battery_charge_{};
 	bool moved_during_pause_{};
 	Points home_points_{};
-	Point_t start_point_{0, 0, 0};
 	bool should_go_to_charger_{false};
 	bool remote_go_home_point{false};
 	bool switch_is_off_{false};

@@ -13,7 +13,7 @@ MoveTypeLinear::MoveTypeLinear() {
 	resetTriggeredValue();
 	auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
 	auto target_point_ = p_mode->plan_path_.front();
-	turn_target_radian_ = p_mode->new_dir_;
+	turn_target_radian_ = p_mode->start_point_.th;
 	ROS_INFO("%s,%d: Enter move type linear, turn target angle(%f), first target(%f, %f).",
 			 __FUNCTION__, __LINE__, turn_target_radian_, target_point_.x, target_point_.y);
 	movement_i_ = mm_turn;
@@ -103,10 +103,13 @@ bool MoveTypeLinear::isPoseReach()
 	return false;
 }
 
-bool MoveTypeLinear::isPassTargetStop(double &dir)
+bool MoveTypeLinear::isPassTargetStop(Dir_t &dir)
 {
 //	PP_INFO();
 	// Checking if robot has reached target cell.
+	if(isAny(dir))
+		return false;
+
 	auto s_curr_p = getPosition();
 	auto curr = (isXAxis(dir)) ? s_curr_p.x : s_curr_p.y;
 	auto target_point_ = dynamic_cast<ACleanMode*>(sp_mode_)->plan_path_.front();
@@ -132,17 +135,17 @@ void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 	if (p_clean_mode->plan_path_.size() > 1)
 	{
 		auto target_point_ = p_clean_mode->plan_path_.front();
-		auto &target_xy = (isXAxis(p_clean_mode->new_dir_)) ? target_point_.x : target_point_.y;
-		auto curr_xy = (isXAxis(p_clean_mode->new_dir_)) ? getPosition().x : getPosition().y;
+		auto &target_xy = (isXAxis(p_clean_mode->start_point_.dir)) ? target_point_.x : target_point_.y;
+		auto curr_xy = (isXAxis(p_clean_mode->start_point_.dir)) ? getPosition().x : getPosition().y;
 
 		if (std::abs(target_xy - curr_xy) < LINEAR_NEAR_DISTANCE) {
-			p_clean_mode->old_dir_ = p_clean_mode->new_dir_;
-			p_clean_mode->new_dir_ = p_clean_mode->plan_path_.front().th;
+			p_clean_mode->old_dir_ = p_clean_mode->start_point_.dir;
+			p_clean_mode->start_point_ = p_clean_mode->plan_path_.front();
 			p_clean_mode->plan_path_.pop_front();
 //			ROS_("target_xy(%f), curr_xy(%f),dis(%f)",target_xy, curr_xy, LINEAR_NEAR_DISTANCE);
 			ROS_ERROR("%s,%d,curr(%d,%d), next target_point(%d,%d), dir(%d)",
 					 __FUNCTION__,__LINE__,getPosition().toCell().x, getPosition().toCell().y, target_point_.toCell().x,target_point_.toCell().y,
-								static_cast<int>(radian_to_degree(p_clean_mode->new_dir_)));
+								p_clean_mode->start_point_.dir);
 		}
 	}
 }

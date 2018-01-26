@@ -7,6 +7,7 @@
 #include <deque>
 #include <ros/ros.h>
 #include "config.h"
+//#include "map.h"
 
 #define PI M_PI
 
@@ -319,6 +320,18 @@ double radian_to_degree(double rad);
 typedef Vector2<int16_t> Cell_t;
 typedef std::deque<Cell_t> Cells;
 
+typedef enum {
+	MAP_POS_X = 0,
+//  const double MAP_PX_PY = PI/4;
+					MAP_POS_Y,
+//  const double MAP_NS_PY = PI*3/4;
+					MAP_NEG_X,
+//  const double MAP_NX_NY =-PI*3/4;
+					MAP_NEG_Y,
+//MAP_PX_NY =-PI/4;
+					MAP_ANY,
+} Dir_t;
+
 class Point_t:public Vector2<float> {
 public:
   Point_t() {
@@ -402,6 +415,7 @@ public:
 
 	// in radian.
 	double th{};
+	Dir_t dir{};
 private:
 	int16_t countToCell(float count) const {
 		return static_cast<int16_t>(round(count / CELL_SIZE));

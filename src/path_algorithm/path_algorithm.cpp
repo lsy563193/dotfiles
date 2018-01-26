@@ -148,14 +148,20 @@ Points APathAlgorithm::cells_generate_points(Cells &path)
 			Point_t target {cellToCount((*it).x),cellToCount((*it).y),0};
 			auto it_next = it+1;
 			if (it->x == it_next->x)
-				target.th = it->y > it_next->y ? MAP_NEG_Y : MAP_POS_Y;
+			{
+				target.dir = it->y > it_next->y ? MAP_NEG_Y : MAP_POS_Y;
+				target.th = isPos(target.dir) ? PI/2 : -PI/2;
+			}
 			else
-				target.th = it->x > it_next->x ? MAP_NEG_X : MAP_POS_X;
+			{
+				target.dir = it->x > it_next->x ? MAP_NEG_X : MAP_POS_X;
+				target.th = isPos(target.dir) ? 0 : PI;
+			}
 			targets.push_back(target);
 		}
 	//		ROS_INFO("path.back(%d,%d,%d)",path.back().n, path.back().y, path.back().TH);
 
-		targets.back().th = (targets.end()-2)->th;
+		targets.back().dir = (targets.end()-2)->dir;
 //	ROS_INFO("%s %d: path.back(%d,%d,%d), path.front(%d,%d,%d)", __FUNCTION__, __LINE__,
 //					 path.back().x, path.back().y, path.back().TH, path.front().x, path.front().y, path.front().TH);
 	}
