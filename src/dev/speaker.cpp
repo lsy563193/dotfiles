@@ -18,12 +18,13 @@ Speaker speaker;
 
 Speaker::Speaker(void)
 {
+	speak_thread_stop_ = false;
 }
 
 void Speaker::playRoutine()
 {
 	ROS_INFO("robotbase,\033[32m%s\033[0m,%d is up.",__FUNCTION__,__LINE__);
-	while(ros::ok() && !g_pp_shutdown)
+	while(ros::ok() && !speak_thread_stop_)
 	{
 		if(!finish_playing_)
 		{
@@ -328,3 +329,7 @@ void Speaker::_play(void)
 
 }
 
+void Speaker::stop()
+{
+	speak_thread_stop_ = true;
+}

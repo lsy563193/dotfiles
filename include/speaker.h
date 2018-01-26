@@ -89,6 +89,8 @@ public:
 
 	void playRoutine();
 
+	void stop();
+
 private:
 	bool openVoiceFile(Voice voice);
 
@@ -125,6 +127,8 @@ private:
 	bool can_be_interrupted_{true};
 
 	bool break_playing_{false};
+
+	bool speak_thread_stop_;
 };
 
 extern Speaker speaker;

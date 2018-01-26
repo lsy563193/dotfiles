@@ -560,10 +560,10 @@ uint8_t GridMap::setBlocks()
 	return block_count;
 }
 
-uint8_t GridMap::saveChargerArea(const Cell_t home_point)
+uint8_t GridMap::setChargerArea(const Cell_t charger_point)
 {
-	//before set BLOCKED_RCON, clean BLOCKED_RCON in first.
-	temp_rcon_cells.clear();
+	//before set BLOCKED_RCON, clean BLOCKED_RCON first.
+	/*
 	int16_t x_min,x_max,y_min,y_max;
 	getMapRange(CLEAN_MAP, &x_min, &x_max, &y_min, &y_max);
 	for(int16_t i = x_min;i<=x_max;i++){
@@ -572,6 +572,8 @@ uint8_t GridMap::saveChargerArea(const Cell_t home_point)
 				setCell(CLEAN_MAP,i,j, UNCLEAN);
 		}
 	}
+	*/
+
 	uint8_t block_count = 0;
 	const int WIDTH = 5;//cells
 	const int HIGHT = 5;//cells
@@ -581,9 +583,9 @@ uint8_t GridMap::saveChargerArea(const Cell_t home_point)
 	std::string print_msg("");
 	for(int i=0; i<HIGHT; i++){ 
 		for(int j = 0; j<WIDTH; j++){
-			y = lty+j+home_point.y;
-			x = ltx+i+home_point.x;
-			temp_rcon_cells.push_back({x,y});
+			y = lty+j+charger_point.y;
+			x = ltx+i+charger_point.x;
+			setCell(CLEAN_MAP,x,y, BLOCKED_RCON);
 			print_msg+="("+std::to_string(x)+","+std::to_string(y)+"),";
 			block_count++;
 		}
@@ -797,19 +799,6 @@ uint8_t GridMap::saveBumper(bool is_linear)
 
 uint8_t GridMap::saveRcon()
 {
-/*
-	uint8_t block_count;
-	if(c_rcon.should_mark_charger_ ){
-		c_rcon.should_mark_charger_ = false;
-		block_count += saveChargerArea(c_rcon.getRconPos());
-	}
-	else if(c_rcon.should_mark_temp_charger_ ){
-		c_rcon.should_mark_temp_charger_ = false;
-		block_count += saveChargerArea(c_rcon.getRconPos());
-	}
-	return block_count;
-*/
-
 	auto rcon_trig = ev.rcon_triggered/*rcon_get_trig()*/;
 	if(! rcon_trig)
 		return 0;

@@ -367,8 +367,6 @@ public:
 	bool isRemoteGoHomePoint();
 	void setHomePoint();
 	bool estimateChargerPos(uint32_t rcon_value);
-	void setRconPos(Point_t pos);
-
 	Cells pointsGenerateCells(Points &targets);
 
 	// For move types
@@ -516,7 +514,6 @@ public:
 	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
 	boost::shared_ptr<GoHomePathAlgorithm> go_home_path_algorithm_{};
 	GridMap clean_map_{};
-	Point_t charger_pos_{};//charger postion
 	static bool plan_activation_;
 
 protected:
@@ -536,6 +533,7 @@ protected:
 	bool should_go_to_charger_{false};
 	bool remote_go_home_point{false};
 	bool switch_is_off_{false};
+
 
 public:
 
@@ -573,6 +571,7 @@ private:
 	static ros::Publisher line_marker_pub2_;
 	ros::Publisher fit_line_marker_pub_;
 	boost::mutex temp_target_mutex_;
+
 };
 
 class CleanModeNav:public ACleanMode
@@ -659,6 +658,9 @@ private:
 	Point_t continue_point_{};
 	bool go_home_for_low_battery_{false};
 
+	bool back_from_charger_{false};
+
+	Cell_t charger_pose;
 protected:
 //	Cells home_point_{};
 public:

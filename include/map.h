@@ -139,7 +139,7 @@ public:
 
 	uint8_t saveSlip();
 
-	uint8_t saveChargerArea(const Cell_t homepoint);
+	uint8_t setChargerArea(const Cell_t homepoint);
 
 	uint8_t saveBlocks(bool is_linear, bool is_save_rcon);
 

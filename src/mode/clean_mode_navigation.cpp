@@ -35,6 +35,7 @@ CleanModeNav::CleanModeNav()
 CleanModeNav::~CleanModeNav()
 {
 	setNavMode(false);
+	back_from_charger_ = false;
 }
 
 bool CleanModeNav::mapMark()
@@ -330,7 +331,7 @@ bool CleanModeNav::moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt)
 bool CleanModeNav::moveTypeLinearIsFinish(MoveTypeLinear *p_mt)
 {
 	if (p_mt->isLinearForward())
-		return p_mt->isRconStop() || ACleanMode::moveTypeLinearIsFinish(p_mt);
+		return p_mt->isRconStop(back_from_charger_, charger_pose) || ACleanMode::moveTypeLinearIsFinish(p_mt);
 	else
 		return ACleanMode::moveTypeLinearIsFinish(p_mt);
 }
@@ -347,19 +348,24 @@ bool CleanModeNav::updateActionInStateInit() {
 		// If it is the starting of navigation mode, paused_odom_angle_ will be zero.
 		odom.setRadianOffset(paused_odom_angle_);
 
-		vacuum.setLastMode();
-		brush.normalOperate();
-
-		if (charger.isOnStub())
+		if (charger.isOnStub()){
 			action_i_ = ac_back_form_charger;
-		else
+			back_from_charger_ = true;
+		}
+		else{
 			action_i_ = ac_open_lidar;
+			vacuum.setLastMode();
+			brush.normalOperate();
+		}
 	} else if (action_i_ == ac_back_form_charger)
 	{
 		if (!has_aligned_and_open_slam_)
 			// Init odom position here.
 			robot::instance()->initOdomPosition();
+
 		action_i_ = ac_open_lidar;
+		vacuum.setLastMode();
+		brush.normalOperate();
 		setHomePoint();
 	} else if (action_i_ == ac_open_lidar)
 	{
@@ -367,8 +373,16 @@ bool CleanModeNav::updateActionInStateInit() {
 			action_i_ = ac_align;
 		else
 			return false;
-	} else if (action_i_ == ac_align)
+	} else if (action_i_ == ac_align){
 		action_i_ = ac_open_slam;
+
+		if(back_from_charger_){
+			charger_pose.SetX( (int16_t)((odom.getX() + 0.6) / CELL_SIZE) );
+			charger_pose.SetY( (int16_t)((odom.getY() /CELL_SIZE)) );
+			ROS_INFO("%s,%d,charger pose (%d,%d)",__FUNCTION__,__LINE__,charger_pose.GetX(),charger_pose.GetY());
+			clean_map_.setChargerArea( charger_pose );
+		}
+	}
 	else if (action_i_ == ac_open_slam)
 		return false;
 	genNextAction();

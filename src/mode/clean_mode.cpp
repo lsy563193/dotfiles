@@ -17,6 +17,7 @@ ros::Publisher ACleanMode::point_marker_pub_;
 ros::Publisher ACleanMode::line_marker_pub2_;
 bool ACleanMode::plan_activation_ = false;
 extern bool g_pp_shutdown;
+
 ACleanMode::ACleanMode()
 {
 	scanLinear_sub_ = clean_nh_.subscribe("scanLinear", 1, &Lidar::scanLinearCb, &lidar);
@@ -110,7 +111,9 @@ ACleanMode::~ACleanMode()
 			ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
 		}
 	}
-
+	else{
+		speaker.stop();
+	}
 	auto cleaned_count = clean_map_.getCleanedArea();
 	auto map_area = cleaned_count * CELL_SIZE * CELL_SIZE;
 	ROS_INFO("%s %d: Cleaned area = \033[32m%.2fm2\033[0m, cleaning time: \033[32m%d(s) %.2f(min)\033[0m, cleaning speed: \033[32m%.2f(m2/min)\033[0m.",
@@ -725,11 +728,6 @@ void ACleanMode::genNextAction()
 	INFO_GREEN("after genNextAction");
 }
 
-void ACleanMode::setRconPos(Point_t pos)
-{
-		charger_pos_ = pos;
-}
-
 bool ACleanMode::moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt)
 {
 	return false;
@@ -966,11 +964,12 @@ void ACleanMode::setHomePoint()
 		{
 			ROS_INFO("%s %d: Home point(%d, %d) exists.",
 					 __FUNCTION__, __LINE__, home_point_it->toCell().x, home_point_it->toCell().y);
+
 			return;
 		}
 	}
 
-	if (home_points_.size() >= HOME_POINTS_SIZE)
+	while(ros::ok() && home_points_.size() >= (uint32_t)HOME_POINTS_SIZE && (home_points_.size() >= 1))
 		// Drop the oldest home point to keep the home_points_.size() is within HOME_POINTS_SIZE.
 		home_points_.pop_back();
 
@@ -1164,7 +1163,8 @@ void ACleanMode::switchInStateGoHomePoint()
 // ------------------State go to charger--------------------
 bool ACleanMode::checkEnterGoCharger()
 {
-	ev.rcon_triggered = c_rcon.getForwardTop();
+	ev.rcon_triggered = c_rcon.getStatus();
+	c_rcon.resetStatus();
 	if (ev.rcon_triggered) {
 		ev.rcon_triggered= false;
 		ROS_WARN("%s,%d:find charge success,convert to go to charge state", __func__, __LINE__);

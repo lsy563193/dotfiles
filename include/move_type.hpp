@@ -35,7 +35,7 @@ public:
 	};
 	int8_t rcon_cnt[6]{};
 	int countRconTriggered(uint32_t rcon_value);
-	bool isRconStop();
+	bool isRconStop(bool back_from_charger,Cell_t charge_pose);
 	bool isOBSStop();
 	bool isLidarStop();
 
