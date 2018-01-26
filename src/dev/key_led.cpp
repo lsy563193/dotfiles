@@ -19,7 +19,7 @@ void KeyLed::setMode(uint8_t type, uint8_t color, uint16_t time_ms)
 {
 	robotbase_led_type = type;
 	robotbase_led_color = color;
-	robotbase_led_cnt_for_switch = time_ms / 20;
+	robotbase_led_cnt_for_one_cycle = time_ms / 20;
 	live_led_cnt_for_switch = 0;
 	robotbase_led_update_flag = true;
 }

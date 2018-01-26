@@ -39,7 +39,7 @@ int temp_beeper_silence_time_count = 0;
 uint8_t robotbase_led_type = LED_STEADY;
 bool robotbase_led_update_flag = false;
 uint8_t robotbase_led_color = LED_GREEN;
-uint16_t robotbase_led_cnt_for_switch = 0;
+uint16_t robotbase_led_cnt_for_one_cycle = 0;
 uint16_t live_led_cnt_for_switch = 0;
 
 extern boost::mutex odom_mutex;
@@ -156,21 +156,21 @@ void process_led()
 		}
 		case LED_FLASH:
 		{
-			if (live_led_cnt_for_switch > robotbase_led_cnt_for_switch / 2)
+			if (live_led_cnt_for_switch > robotbase_led_cnt_for_one_cycle / 2)
 				led_brightness = 0;
 			break;
 		}
 		case LED_BREATH:
 		{
-			if (live_led_cnt_for_switch > robotbase_led_cnt_for_switch / 2)
-				led_brightness = led_brightness * (2 * (float)live_led_cnt_for_switch / (float)robotbase_led_cnt_for_switch - 1.0);
+			if (live_led_cnt_for_switch > robotbase_led_cnt_for_one_cycle / 2)
+				led_brightness = led_brightness * (2 * (float)live_led_cnt_for_switch / (float)robotbase_led_cnt_for_one_cycle - 1.0);
 			else
-				led_brightness = led_brightness * (1.0 - 2 * (float)live_led_cnt_for_switch / (float)robotbase_led_cnt_for_switch);
+				led_brightness = led_brightness * (1.0 - 2 * (float)live_led_cnt_for_switch / (float)robotbase_led_cnt_for_one_cycle);
 			break;
 		}
 	}
 
-	if (live_led_cnt_for_switch++ > robotbase_led_cnt_for_switch)
+	if (live_led_cnt_for_switch++ > robotbase_led_cnt_for_one_cycle)
 		live_led_cnt_for_switch = 0;
 
 	switch (robotbase_led_color)

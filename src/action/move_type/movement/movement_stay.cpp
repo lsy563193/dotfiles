@@ -4,12 +4,11 @@
 
 #include <movement.hpp>
 #include <move_type.hpp>
+#include <event_manager.h>
 #include "dev.h"
 
 MovementStay::MovementStay()
 {
-	vacuum.setLastMode();
-	brush.normalOperate();
 	ROS_INFO("%s %d: Start movement stay.", __FUNCTION__, __LINE__);
 	start_timer_ = ros::Time::now().toSec();
 	timeout_interval_ = 15;
@@ -23,8 +22,15 @@ MovementStay::~MovementStay()
 
 bool MovementStay::isFinish()
 {
-	return ev.remote_direction_forward || ev.remote_direction_left ||
-		   ev.remote_direction_right;
+	ev.bumper_triggered = bumper.getStatus();
+	ev.cliff_triggered = cliff.getStatus();
+
+	return ev.remote_direction_forward ||
+		   ev.remote_direction_left ||
+		   ev.remote_direction_right ||
+		   ev.bumper_triggered ||
+		   ev.cliff_triggered;
+		   isTimeUp();
 }
 
 void MovementStay::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
