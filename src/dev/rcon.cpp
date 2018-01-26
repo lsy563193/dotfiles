@@ -62,7 +62,7 @@ uint32_t Rcon::getForwardTop()
 uint32_t Rcon::getNavRcon()
 {
 
-	uint32_t rcon_status = getStatus() & (RconFL_HomeT | RconFR_HomeT | RconFR2_HomeT | RconFL2_HomeT);
+	uint32_t rcon_status = getStatus() & (RconL_HomeT | RconR_HomeT| RconFL_HomeT | RconFR_HomeT | RconFR2_HomeT | RconFL2_HomeT);
 	resetStatus();
 	return rcon_status;
 }

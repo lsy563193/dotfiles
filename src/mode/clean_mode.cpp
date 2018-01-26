@@ -1130,7 +1130,7 @@ void ACleanMode::switchInStateGoHomePoint()
 // ------------------State go to charger--------------------
 bool ACleanMode::checkEnterGoToCharger()
 {
-	ev.rcon_triggered = c_rcon.getStatus();
+	ev.rcon_triggered = c_rcon.getStatus() & (RconAll_Home_T);
 	c_rcon.resetStatus();
 	if (ev.rcon_triggered) {
 		ev.rcon_triggered= false;
