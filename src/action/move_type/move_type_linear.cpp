@@ -13,7 +13,7 @@ MoveTypeLinear::MoveTypeLinear() {
 	resetTriggeredValue();
 	auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
 	auto target_point_ = p_mode->plan_path_.front();
-	turn_target_radian_ = p_mode->start_point_.th;
+	turn_target_radian_ = p_mode->iterate_point_.th;
 	ROS_INFO("%s,%d: Enter move type linear, turn target angle(%f), first target(%f, %f).",
 			 __FUNCTION__, __LINE__, turn_target_radian_, target_point_.x, target_point_.y);
 	movement_i_ = mm_turn;
@@ -132,17 +132,17 @@ void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 	if (p_clean_mode->plan_path_.size() > 1)
 	{
 		auto target_point_ = p_clean_mode->plan_path_.front();
-		auto &target_xy = (isXAxis(p_clean_mode->start_point_.dir)) ? target_point_.x : target_point_.y;
-		auto curr_xy = (isXAxis(p_clean_mode->start_point_.dir)) ? getPosition().x : getPosition().y;
+		auto &target_xy = (isXAxis(p_clean_mode->iterate_point_.dir)) ? target_point_.x : target_point_.y;
+		auto curr_xy = (isXAxis(p_clean_mode->iterate_point_.dir)) ? getPosition().x : getPosition().y;
 
 		if (std::abs(target_xy - curr_xy) < LINEAR_NEAR_DISTANCE) {
-			p_clean_mode->old_dir_ = p_clean_mode->start_point_.dir;
-			p_clean_mode->start_point_ = p_clean_mode->plan_path_.front();
+			p_clean_mode->old_dir_ = p_clean_mode->iterate_point_.dir;
+			p_clean_mode->iterate_point_ = p_clean_mode->plan_path_.front();
 			p_clean_mode->plan_path_.pop_front();
 //			ROS_("target_xy(%f), curr_xy(%f),dis(%f)",target_xy, curr_xy, LINEAR_NEAR_DISTANCE);
 			ROS_ERROR("%s,%d,curr(%d,%d), next target_point(%d,%d), dir(%d)",
 					 __FUNCTION__,__LINE__,getPosition().toCell().x, getPosition().toCell().y, target_point_.toCell().x,target_point_.toCell().y,
-								p_clean_mode->start_point_.dir);
+								p_clean_mode->iterate_point_.dir);
 		}
 	}
 }

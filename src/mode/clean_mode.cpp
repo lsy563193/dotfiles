@@ -666,7 +666,7 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 {
 	if(action_i_ == ac_linear) {
 		auto p_mt = dynamic_cast<MoveTypeLinear *>(p_move_type);
-		if(p_mt->isPoseReach() || p_mt->isPassTargetStop(start_point_.dir))
+		if(p_mt->isPoseReach() || p_mt->isPassTargetStop(iterate_point_.dir))
 			return true;
 
 		if (p_mt->isLinearForward())
@@ -1071,12 +1071,12 @@ bool ACleanMode::updateActionInStateGoHomePoint()
 {
 	bool update_finish;
 	sp_action_.reset();//to mark in destructor
-	old_dir_ = start_point_.dir;
+	old_dir_ = iterate_point_.dir;
 
-//	ROS_INFO("%s %d: curr(%d, %d), current home point(%d, %d).", __FUNCTION__, __LINE__,
-//			 getPosition().toCell().x, getPosition().toCell().y,
-//			 go_home_path_algorithm_->getCurrentHomePoint().toCell().x,
-//			 go_home_path_algorithm_->getCurrentHomePoint().toCell().y);
+	ROS_INFO("%s %d: curr(%d, %d), current home point(%d, %d).", __FUNCTION__, __LINE__,
+			 getPosition().toCell().x, getPosition().toCell().y,
+			 go_home_path_algorithm_->getCurrentHomePoint().toCell().x,
+			 go_home_path_algorithm_->getCurrentHomePoint().toCell().y);
 	if (ev.rcon_triggered)
 	{
 		// Directly switch to state go to charger.
@@ -1093,7 +1093,7 @@ bool ACleanMode::updateActionInStateGoHomePoint()
 	else if (go_home_path_algorithm_->generatePath(clean_map_, getPosition(),old_dir_, plan_path_))
 	{
 		// New path to home cell is generated.
-		start_point_ = plan_path_.front();
+		iterate_point_ = plan_path_.front();
 		plan_path_.pop_front();
 		go_home_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
 		pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
@@ -1173,15 +1173,15 @@ void ACleanMode::switchInStateGoToCharger() {
 
 // ------------------State spot--------------------
 bool ACleanMode::updateActionInStateSpot() {
-	old_dir_ = start_point_.dir;
+	old_dir_ = iterate_point_.dir;
 	ROS_ERROR("old_dir_(%d)", old_dir_);
 	auto cur_point = getPosition();
 	ROS_INFO("\033[32m plan_path size(%d), front (%d,%d),cur point:(%d,%d)\033[0m",plan_path_.size(),
 				plan_path_.front().toCell().x,plan_path_.front().toCell().y,cur_point.toCell().x,cur_point.toCell().y);
 	sp_action_.reset();// to mark in destructor
 	if (clean_path_algorithm_->generatePath(clean_map_, cur_point, old_dir_, plan_path_)) {
-		start_point_ = plan_path_.front();
-		ROS_ERROR("start_point_.dir(%d)", start_point_.dir);
+		iterate_point_ = plan_path_.front();
+		ROS_ERROR("iterate_point_.dir(%d)", iterate_point_.dir);
 //		PP_INFO();
 		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
 		plan_path_.pop_front();
@@ -1252,14 +1252,14 @@ bool ACleanMode::isSwitchByEventInStateExploration() {
 
 bool ACleanMode::updateActionInStateExploration() {
 	PP_INFO();
-	old_dir_ = start_point_.dir;
+	old_dir_ = iterate_point_.dir;
 	ROS_WARN("old_dir_(%d)", old_dir_);
 	plan_path_.clear();
 	sp_action_.reset();//to mark in constructor
 	if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
 		action_i_ = ac_linear;
-		start_point_ = plan_path_.front();
-		ROS_WARN("start_point_.dir(%d)", start_point_.dir);
+		iterate_point_ = plan_path_.front();
+		ROS_WARN("start_point_.dir(%d)", iterate_point_.dir);
 		plan_path_.pop_front();
 		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
 		pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
@@ -1319,8 +1319,8 @@ bool ACleanMode::updateActionInStateTrapped()
 			point = point.getRelative(8, 0);
 			plan_path_.clear();
 			plan_path_.push_back(point);
-			start_point_ = plan_path_.front();
-			start_point_.dir = MAP_ANY;
+			iterate_point_ = plan_path_.front();
+			iterate_point_.dir = MAP_ANY;
 			clean_path_algorithm_->displayPointPath(plan_path_);
 			action_i_ = ac_linear;
 		}

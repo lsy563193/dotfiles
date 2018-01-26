@@ -416,7 +416,7 @@ void CleanModeNav::switchInStateInit() {
 
 		auto curr = getPosition();
 		passed_path_.push_back(curr);
-		start_point_.th = curr.th;
+		iterate_point_.th = curr.th;
 		sp_state = state_clean;
 	}
 	sp_state->init();
@@ -432,11 +432,11 @@ bool CleanModeNav::isSwitchByEventInStateClean() {
 bool CleanModeNav::updateActionInStateClean(){
 	sp_action_.reset();//to mark in destructor
 	pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
-	old_dir_ = start_point_.dir;
+	old_dir_ = iterate_point_.dir;
 	if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
 
 //		ROS_ERROR("old_dir_(%d)", old_dir_);
-		start_point_ = plan_path_.front();
+		iterate_point_ = plan_path_.front();
 //		ROS_ERROR("start_point_.dir(%d)", start_point_.dir);
 		plan_path_.pop_front();
 		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
@@ -444,7 +444,7 @@ bool CleanModeNav::updateActionInStateClean(){
 		auto start = getPosition().toCell();
 		auto delta_y = plan_path_.back().toCell().y - start.y;
 		ROS_INFO("%s,%d: path size(%u), old_dir_(%f), start_point_.dir(%f), bumper(%d), cliff(%d), lidar(%d), delta_y(%f)",
-						 __FUNCTION__, __LINE__, plan_path_.size(), old_dir_, start_point_.dir, ev.bumper_triggered,
+						 __FUNCTION__, __LINE__, plan_path_.size(), old_dir_, iterate_point_.dir, ev.bumper_triggered,
 						 ev.cliff_triggered, ev.lidar_triggered, delta_y);
 		if (!isXAxis(old_dir_) // If last movement is not x axis linear movement, should not follow wall.
 				|| plan_path_.size() > 2 ||
@@ -706,12 +706,12 @@ bool CleanModeNav::updateActionInStateResumeLowBatteryCharge()
 //		clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
 //		mapMark();
 		sp_action_.reset();
-		old_dir_ = start_point_.dir;
+		old_dir_ = iterate_point_.dir;
 		ROS_ERROR("old_dir_(%d)", old_dir_);
 		clean_path_algorithm_->generateShortestPath(clean_map_, getPosition(), continue_point_, old_dir_, plan_path_);
 		if (!plan_path_.empty()) {
-			start_point_ = plan_path_.front();
-			ROS_ERROR("start_point_.dir(%d)", start_point_.dir);
+			iterate_point_ = plan_path_.front();
+			ROS_ERROR("start_point_.dir(%d)", iterate_point_.dir);
 			plan_path_.pop_front();
 			clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
 			action_i_ = ac_linear;

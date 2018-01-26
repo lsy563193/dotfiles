@@ -168,7 +168,7 @@ Points APathAlgorithm::cells_generate_points(Cells &path)
 	return targets;
 }
 
-bool APathAlgorithm::generateShortestPath(GridMap &map, const Point_t &curr,const Point_t &target, const int &last_dir, Points &plan_path) {
+bool APathAlgorithm::generateShortestPath(GridMap &map, const Point_t &curr,const Point_t &target, const Dir_t &last_dir, Points &plan_path) {
 	Cell_t corner1 ,corner2;
 	auto path_cell = findShortestPath(map, curr.toCell(), target.toCell(),last_dir, false,false,corner1,corner2);
 
@@ -176,7 +176,7 @@ bool APathAlgorithm::generateShortestPath(GridMap &map, const Point_t &curr,cons
 }
 
 Cells APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const Cell_t &target,
-										const int &last_dir, bool use_unknown,bool bound ,Cell_t min_corner,Cell_t max_corner)
+										const Dir_t &last_dir, bool use_unknown,bool bound ,Cell_t min_corner,Cell_t max_corner)
 {
 	Cells path_{};
 	// limit cost map range or get the total map range.

@@ -518,6 +518,7 @@ public:
 
 	Dir_t old_dir_{};
 	Point_t start_point_{};
+	Point_t iterate_point_{};
 
 //	boost::shared_ptr<APathAlgorithm> follow_wall_path_algorithm_{};
 	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
