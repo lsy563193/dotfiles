@@ -1425,7 +1425,7 @@ bool ACleanMode::isIsolate() {
 	ROS_ERROR("ISOLATE MAP");
 	ROS_ERROR("minx(%d),miny(%d),maxx(%d),maxy(%d)",bound.min.x, bound.min.y,bound.max.x, bound.max.y);
 
-	auto path = clean_path_algorithm_->findShortestPath(fw_tmp_map, getPosition().toCell(), target, 0, true, true,
+	auto path = clean_path_algorithm_->findShortestPath(fw_tmp_map, getPosition().toCell(), target, MAP_POS_X, true, true,
 																											bound.min, bound.max);
 
 	return !path.empty();
