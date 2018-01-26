@@ -117,7 +117,8 @@ void IMoveType::resetTriggeredValue()
 	ev.robot_slip = false;
 }
 
-bool IMoveType::isFinish() {
+bool IMoveType::isFinish()
+{
 	updatePosition();
 	auto curr = getPosition();
 	auto p_cm = dynamic_cast<ACleanMode*> (sp_mode_);
@@ -130,10 +131,11 @@ bool IMoveType::isFinish() {
 	if(p_cm->moveTypeRealTimeIsFinish(this))
 		return true;
 
-	return sp_mode_->isExceptionTriggered();
+	return false;
 }
 
-void IMoveType::run() {
+void IMoveType::run()
+{
 	sp_movement_->run();
 }
 

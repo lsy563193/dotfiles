@@ -70,9 +70,6 @@ void Mode::genNextAction()
 	INFO_GREEN("before genNextAction");
 
 	switch (action_i_) {
-		case ac_null :
-			sp_action_.reset();
-			break;
 		case ac_open_gyro :
 			sp_action_.reset(new ActionOpenGyro);
 			break;
@@ -116,8 +113,11 @@ void Mode::genNextAction()
 		case ac_check_vacuum :
 			sp_action_.reset(new ActionCheckVacuum);
 			break;
-		case ac_movement_direct_go :
-			sp_action_.reset(new MovementDirectGo);
+		case ac_remote :
+			sp_action_.reset(new MoveTypeRemote());
+			break;
+		default : //case ac_null :
+			sp_action_.reset();
 			break;
 	}
 	INFO_GREEN("after genNextAction");

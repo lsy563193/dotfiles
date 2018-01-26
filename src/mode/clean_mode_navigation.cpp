@@ -121,6 +121,13 @@ bool CleanModeNav::isExit()
 			setNextMode(cm_spot);
 			return true;
 		}
+		else if (ev.cliff_all_triggered)
+		{
+			ev.fatal_quit = true;
+			ROS_WARN("%s %d: Exit for pause and robot lifted up.", __FUNCTION__, __LINE__);
+			setNextMode(md_idle);
+			return true;
+		}
 	}
 
 	if (ev.fatal_quit || ev.key_long_pressed || sp_action_->isExit())
@@ -322,12 +329,25 @@ void CleanModeNav::chargeDetect(bool state_now, bool state_last)
 {
 	if (!ev.charge_detect)
 	{
-		if (isStateInit() && action_i_ == ac_back_form_charger && sp_action_->isTimeUp())
+		if (isStateInit() && action_i_ == ac_back_form_charger)
 		{
-			ROS_WARN("%s %d: Switch is not on!.", __FUNCTION__, __LINE__);
-			ev.charge_detect = charger.getChargeStatus();
-			ev.fatal_quit = true;
-			switch_is_off_ = true;
+			if (sp_action_->isTimeUp())
+			{
+				if (cliff.getStatus() == BLOCK_ALL)
+				{
+					// If switch is not on, the cliff value should be around 0.
+					ROS_WARN("%s %d: Switch is not on!.", __FUNCTION__, __LINE__);
+					ev.charge_detect = charger.getChargeStatus();
+					ev.fatal_quit = true;
+					switch_is_off_ = true;
+				}
+				else
+				{
+					ROS_WARN("%s %d: Charge detect!.", __FUNCTION__, __LINE__);
+					ev.charge_detect = charger.getChargeStatus();
+					ev.fatal_quit = true;
+				}
+			}
 		}
 		else if (charger.isDirected())
 		{

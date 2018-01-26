@@ -186,12 +186,11 @@ public:
 		ac_sleep,
 		//15
 		ac_charge,
-		ac_movement_stay,
-		ac_movement_direct_go,
 		ac_pause,
-		//20
+		ac_remote,
 		ac_exception_resume,
 		ac_check_bumper,
+		//20
 		ac_check_vacuum,
 		ac_bumper_hit_test,
 	};
@@ -306,7 +305,7 @@ public:
 	bool isExit() override ;
 	bool isFinish() override ;
 
-	IAction* getNextAction();
+	int getNextAction();
 
 	// For exit event handling.
 	void remoteClean(bool state_now, bool state_last) override ;
@@ -329,7 +328,7 @@ public:
 	bool isExit() override;
 	bool isFinish() override;
 
-	IAction* getNextAction();
+	int getNextAction();
 
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteClean(bool state_now, bool state_last) override ;

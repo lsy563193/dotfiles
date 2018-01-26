@@ -1,10 +1,8 @@
 //
 // Created by lsy563193 on 12/4/17.
 //
-#include <event_manager.h>
-#include "dev.h"
-#include "robot.hpp"
 #include <move_type.hpp>
+#include <robot.hpp>
 //#include <state.hpp>
 //#include <mode.hpp>
 //bool MoveTypeGoToCharger::isFinish() {

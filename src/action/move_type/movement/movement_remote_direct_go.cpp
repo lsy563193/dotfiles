@@ -3,25 +3,23 @@
 //
 
 #include <movement.hpp>
-#include <move_type.hpp>
-#include <event_manager.h>
 #include "dev.h"
 
-MovementDirectGo::MovementDirectGo()
+MovementRemoteDirectGo::MovementRemoteDirectGo()
 {
-	direct_go_time_stamp_ = ros::Time::now().toSec();
+	timeout_interval_ = 5;
 	c_rcon.resetStatus();
 	ROS_INFO("%s %d: Start movement direct go.", __FUNCTION__, __LINE__);
 }
 
-MovementDirectGo::~MovementDirectGo()
+MovementRemoteDirectGo::~MovementRemoteDirectGo()
 {
 	wheel.stop();
 	ROS_INFO("%s %d: End movement direct go.", __FUNCTION__, __LINE__);
 }
 
 
-bool MovementDirectGo::isFinish()
+bool MovementRemoteDirectGo::isFinish()
 {
 	ev.bumper_triggered = bumper.getStatus();
 	ev.cliff_triggered = cliff.getStatus();
@@ -33,10 +31,10 @@ bool MovementDirectGo::isFinish()
 		   ev.bumper_triggered ||
 		   ev.cliff_triggered ||
 		   ev.rcon_triggered ||
-		   ros::Time::now().toSec() - direct_go_time_stamp_ > 5;
+		   isTimeUp();
 }
 
-void MovementDirectGo::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
+void MovementRemoteDirectGo::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 {
 	wheel.setDirectionForward();
 	if (obs.getStatus() > 0)

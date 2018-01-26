@@ -60,6 +60,7 @@ protected:
 		mm_null,
 		mm_back,
 		mm_turn,
+		mm_stay,
 		mm_rcon,
 		mm_forward,
 		mm_straight,
@@ -150,5 +151,19 @@ private:
 	boost::shared_ptr<IMovement> p_direct_go_movement_;
 	boost::shared_ptr<IMovement> p_turn_movement_;
 	boost::shared_ptr<IMovement> p_back_movement_;
+};
+
+class MoveTypeRemote: public IMoveType
+{
+public:
+	MoveTypeRemote();
+	~MoveTypeRemote() override;
+
+	bool isFinish() override;
+
+	void run() override ;
+
+private:
+	boost::shared_ptr<IMovement> p_movement_;
 };
 #endif //PP_MOVE_TYPE_HPP

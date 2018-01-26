@@ -307,18 +307,17 @@ public:
 private:
 };
 
-class MovementDirectGo :public IMovement
+class MovementRemoteDirectGo :public IMovement
 {
 public:
-	MovementDirectGo();
-	~MovementDirectGo();
+	MovementRemoteDirectGo();
+	~MovementRemoteDirectGo();
 
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed) override;
 	bool isFinish() override;
 
 private:
 	int16_t speed_{LINEAR_MIN_SPEED};
-	double direct_go_time_stamp_;
 };
 
 class MovementStraight :public IMovement

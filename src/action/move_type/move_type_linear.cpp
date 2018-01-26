@@ -18,10 +18,7 @@ MoveTypeLinear::MoveTypeLinear() {
 			 __FUNCTION__, __LINE__, turn_target_radian_, target_point_.x, target_point_.y);
 	movement_i_ = mm_turn;
 	sp_movement_.reset(new MovementTurn(turn_target_radian_, ROTATE_TOP_SPEED));
-//	ROS_INFO("%s,%d: mt_is_linear,turn(%d)", __FUNCTION__, __LINE__, turn_target_radian_);
-//	ROS_ERROR("%s,%d: mt_is_linear,turn(%d)", __FUNCTION__, __LINE__, turn_target_radian_);
 	IMovement::sp_mt_ = this;
-//	ROS_WARN("%s,%d: mt_is_linear,turn(%d)", __FUNCTION__, __LINE__, turn_target_radian_);
 }
 
 MoveTypeLinear::~MoveTypeLinear()
