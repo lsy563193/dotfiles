@@ -55,7 +55,20 @@ void signal_catch(int sig)
 #if R16_BOARD_TEST
 int main(int argc, char **argv)
 {
+	ros::init(argc, argv, "pp");
+	ros::NodeHandle	nh_dev("~");
+
+	// Create speaker play thread.
+	auto speaker_play_routine = new boost::thread(boost::bind(&Speaker::playRoutine, &speaker));
+
 	r16_board_test();
+
+	// Test finish.
+	while (ros::ok())
+	{
+		ROS_INFO("%s %d: Test finish.", __FUNCTION__, __LINE__);
+		sleep(1);
+	}
 }
 
 #else

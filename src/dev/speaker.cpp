@@ -120,7 +120,13 @@ bool Speaker::openVoiceFile(Voice voice)
 
 bool Speaker::openPcmDriver(void)
 {
-	launchMixer();
+	auto ret = launchMixer();
+	if (ret != 0)
+	{
+		ROS_ERROR("Launch mixer failed:");
+		return false;
+	}
+
 	adjustVolume(0);
 	ROS_DEBUG("%s %d: Open wav driver.", __FUNCTION__, __LINE__);
 	if (snd_pcm_open(&handle_, "plug:dmix", SND_PCM_STREAM_PLAYBACK, 0) < 0)
@@ -225,10 +231,9 @@ void Speaker::closePcmDriver(void)
 	snd_mixer_close(mixer_fd_);
 }
 
-void Speaker::launchMixer(void)
+int Speaker::launchMixer(void)
 {
-
-	int rc;
+	int rc = 0;
 
 	ROS_DEBUG("%s %d: Launch mixer.", __FUNCTION__, __LINE__);
 	// Open the mixer.
@@ -237,7 +242,7 @@ void Speaker::launchMixer(void)
 	{
 		ROS_ERROR("%s %d: snd_mixer_open error: %d.", __FUNCTION__, __LINE__, rc);
 		mixer_fd_ = NULL;
-		return;
+		return rc;
 	}
 
 	// Attach an HCTL to an opened mixer.
@@ -247,7 +252,7 @@ void Speaker::launchMixer(void)
 		ROS_ERROR("%s %d: snd_mixer_attach error: %d.", __FUNCTION__, __LINE__, rc);
 		snd_mixer_close(mixer_fd_);
 		mixer_fd_ = NULL;
-		return;
+		return rc;
 	}
 
 	// Register the mixer.
@@ -257,7 +262,7 @@ void Speaker::launchMixer(void)
 		ROS_ERROR("%s %d: snd_mixer_selem_register error: %d.", __FUNCTION__, __LINE__, rc);
 		snd_mixer_close(mixer_fd_);
 		mixer_fd_ = NULL;
-		return;
+		return rc;
 	}
 
 	// Load the mixer.
@@ -267,8 +272,9 @@ void Speaker::launchMixer(void)
 		ROS_ERROR("%s %d: snd_mixer_selem_register error: %d.", __FUNCTION__, __LINE__, rc);
 		snd_mixer_close(mixer_fd_);
 		mixer_fd_ = NULL;
-		return;
 	}
+
+	return rc;
 }
 
 void Speaker::adjustVolume(long volume)
@@ -309,22 +315,28 @@ void Speaker::_play(void)
 //				}
 
 		snd_pcm_sframes_t ret_vel;
-		while ((ret_vel = snd_pcm_writei(handle_, buffer_,
-										 static_cast<snd_pcm_uframes_t>(ret / voice_header_.block_align))) < 0)
+		while (ros::ok())
 		{
 			if (break_playing_)
+				break;
+
+			ret_vel = snd_pcm_writei(handle_, buffer_,
+										 static_cast<snd_pcm_uframes_t>(ret / voice_header_.block_align));
+			if (ret_vel >= 0)
 				break;
 			usleep(2000);
 			if (ret_vel == -EPIPE)
 			{
-				ROS_DEBUG("audio underrun occurred");
+				ROS_ERROR("audio underrun occurred");
 				snd_pcm_prepare(handle_);
-			} else if (ret_vel < 0)
-			{
-				ROS_DEBUG("error from writei: %s", snd_strerror(ret_vel));
-			}
+			} else
+				ROS_ERROR("error from writei: %s", snd_strerror(ret_vel));
 		}
 	}
 
 }
 
+bool Speaker::test()
+{
+	speaker.play(VOICE_TEST_MODE);
+}

@@ -10,12 +10,19 @@
 #include "config.h"
 
 #if R16_BOARD_TEST
+
+#include "dev.h"
 /*
  * Board test for r16.(Not completed)
  *
  * Current containing test items:
- *
+ * 1. Speaker.
  *
  */
 void r16_board_test();
+
+/*
+ * Dead loop for error.
+ */
+void error_loop();
 #endif
