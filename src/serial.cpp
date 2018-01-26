@@ -64,7 +64,7 @@ bool Serial::init(const char* port,int baudrate)
 	curopt_.c_cflag &= ~CSIZE;
 	curopt_.c_cflag |= CS8;
 	curopt_.c_cflag |= CREAD;
-	curopt_.c_cflag |= CLOCAL;	//disable modem statuc check
+	curopt_.c_cflag |= CLOCAL;	//disable modem status check
 
 	cfmakeraw(&curopt_);		//make raw mode_
 

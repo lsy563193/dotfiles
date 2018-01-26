@@ -91,6 +91,8 @@ public:
 
 	void stop();
 
+	bool test();
+
 private:
 	bool openVoiceFile(Voice voice);
 
@@ -100,7 +102,7 @@ private:
 
 	void closePcmDriver(void);
 
-	void launchMixer(void);
+	int launchMixer(void);
 
 	void adjustVolume(long volume);
 
@@ -123,8 +125,6 @@ private:
 	Voice curr_voice_{VOICE_NULL, true};
 
 	bool finish_playing_{true};
-
-	bool can_be_interrupted_{true};
 
 	bool break_playing_{false};
 

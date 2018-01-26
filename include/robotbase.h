@@ -30,7 +30,7 @@ extern int temp_beeper_silence_time_count;
 extern uint8_t robotbase_led_type;
 extern bool robotbase_led_update_flag;
 extern uint8_t robotbase_led_color;
-extern uint16_t robotbase_led_cnt_for_switch;
+extern uint16_t robotbase_led_cnt_for_one_cycle;
 extern uint16_t live_led_cnt_for_switch;
 
 extern bool key_or_clean_button_detected;

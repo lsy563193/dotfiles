@@ -560,20 +560,20 @@ void resetPosition() {
 	yCount = 0;
 }
 
-bool isPos(double dir)
+bool isAny(Dir_t dir)
 {
-	return (dir == MAP_POS_X || dir == MAP_POS_Y || dir == MAP_NONE);
+	return dir == MAP_ANY;
 }
 
-bool isXAxis(double dir)
+bool isPos(Dir_t dir)
 {
-	return dir == MAP_POS_X || dir == MAP_NEG_X || dir == MAP_NONE;
-}
-bool isYAxis(double dir)
-{
-	return dir == MAP_POS_Y || dir == MAP_NEG_Y || dir == MAP_NONE;
+	return dir == MAP_POS_X || dir == MAP_POS_Y;
 }
 
+bool isXAxis(Dir_t dir)
+{
+	return dir == MAP_POS_X || dir == MAP_NEG_X;
+}
 
 void updatePosition()
 {

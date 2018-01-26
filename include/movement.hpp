@@ -268,9 +268,9 @@ private:
 	float wheel_current_sum_{0};
 	uint8_t oc_main_brush_cnt_{0};
 	double resume_main_bursh_start_time_;
-	uint8_t wheel_current_sum_cnt_{0};
 	uint8_t wheel_resume_cnt_{0};
 	uint8_t bumper_jam_state_{1};
+	double bumper_resume_start_radian_{0};
 	uint8_t cliff_resume_cnt_{0};
 	uint8_t cliff_all_resume_cnt_{0};
 	uint8_t robot_stuck_resume_cnt_{0};
@@ -307,18 +307,17 @@ public:
 private:
 };
 
-class MovementDirectGo :public IMovement
+class MovementRemoteDirectGo :public IMovement
 {
 public:
-	MovementDirectGo();
-	~MovementDirectGo();
+	MovementRemoteDirectGo();
+	~MovementRemoteDirectGo();
 
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed) override;
 	bool isFinish() override;
 
 private:
 	int16_t speed_{LINEAR_MIN_SPEED};
-	double direct_go_time_stamp_;
 };
 
 class MovementStraight :public IMovement

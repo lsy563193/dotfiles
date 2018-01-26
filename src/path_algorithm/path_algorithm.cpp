@@ -34,7 +34,8 @@ void APathAlgorithm::displayPointPath(const Points &point_path)
 	std::string     msg = __FUNCTION__;
 	msg += " " + std::to_string(__LINE__) + ": Targers(" + std::to_string(point_path.size()) + "):";
 	for (auto it = point_path.begin(); it != point_path.end(); ++it) {
-		msg += "(" + std::to_string(it->x) + ", " + std::to_string(it->y) + ", " + std::to_string(it->th) + "),";
+		msg += "(" + std::to_string((it->toCell().x)) + ", " + std::to_string(it->toCell().y) + ", " + std::to_string(
+						static_cast<int>(radian_to_degree(it->th))) + "),";
 	}
 	//msg += "\n";
 	ROS_INFO("%s",msg.c_str());
@@ -147,21 +148,27 @@ Points APathAlgorithm::cells_generate_points(Cells &path)
 			Point_t target {cellToCount((*it).x),cellToCount((*it).y),0};
 			auto it_next = it+1;
 			if (it->x == it_next->x)
-				target.th = it->y > it_next->y ? MAP_NEG_Y : MAP_POS_Y;
+			{
+				target.dir = it->y > it_next->y ? MAP_NEG_Y : MAP_POS_Y;
+				target.th = isPos(target.dir) ? PI/2 : -PI/2;
+			}
 			else
-				target.th = it->x > it_next->x ? MAP_NEG_X : MAP_POS_X;
+			{
+				target.dir = it->x > it_next->x ? MAP_NEG_X : MAP_POS_X;
+				target.th = isPos(target.dir) ? 0 : PI;
+			}
 			targets.push_back(target);
 		}
 	//		ROS_INFO("path.back(%d,%d,%d)",path.back().n, path.back().y, path.back().TH);
 
-		targets.back().th = (targets.end()-2)->th;
+		targets.back().dir = (targets.end()-2)->dir;
 //	ROS_INFO("%s %d: path.back(%d,%d,%d), path.front(%d,%d,%d)", __FUNCTION__, __LINE__,
 //					 path.back().x, path.back().y, path.back().TH, path.front().x, path.front().y, path.front().TH);
 	}
 	return targets;
 }
 
-bool APathAlgorithm::generateShortestPath(GridMap &map, const Point_t &curr,const Point_t &target, const int &last_dir, Points &plan_path) {
+bool APathAlgorithm::generateShortestPath(GridMap &map, const Point_t &curr,const Point_t &target, const Dir_t &last_dir, Points &plan_path) {
 	Cell_t corner1 ,corner2;
 	auto path_cell = findShortestPath(map, curr.toCell(), target.toCell(),last_dir, false,false,corner1,corner2);
 
@@ -169,7 +176,7 @@ bool APathAlgorithm::generateShortestPath(GridMap &map, const Point_t &curr,cons
 }
 
 Cells APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const Cell_t &target,
-										const int &last_dir, bool use_unknown,bool bound ,Cell_t min_corner,Cell_t max_corner)
+										const Dir_t &last_dir, bool use_unknown,bool bound ,Cell_t min_corner,Cell_t max_corner)
 {
 	Cells path_{};
 	// limit cost map range or get the total map range.

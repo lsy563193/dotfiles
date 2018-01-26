@@ -16,10 +16,10 @@ bool State::isSwitchByEvent() {
 	else if(sp_cm_->isStateGoHomePoint())
 		return sp_cm_->isSwitchByEventInStateGoHomePoint();
 
-	else if(sp_cm_->isStateGoCharger())
+	else if(sp_cm_->isStateGoToCharger())
 		return sp_cm_->isSwitchByEventInStateGoToCharger();
 
-	else if(sp_cm_->isStateTmpSpot())
+	else if(sp_cm_->isStateSpot())
 		return sp_cm_->isSwitchByEventInStateSpot();
 
 	else if(sp_cm_->isStateTrapped())
@@ -52,10 +52,10 @@ bool State::updateAction() {
 	else if(sp_cm_->isStateGoHomePoint())
 		return sp_cm_->updateActionInStateGoHomePoint();
 
-	else if(sp_cm_->isStateGoCharger())
+	else if(sp_cm_->isStateGoToCharger())
 		return sp_cm_->updateActionInStateGoToCharger();
 
-	else if(sp_cm_->isStateTmpSpot())
+	else if(sp_cm_->isStateSpot())
 		return sp_cm_->updateActionInStateSpot();
 
 	else if(sp_cm_->isStateTrapped())
@@ -87,10 +87,10 @@ void State::switchState() {
 	else if(sp_cm_->isStateGoHomePoint())
 		sp_cm_->switchInStateGoHomePoint();
 
-	else if(sp_cm_->isStateGoCharger())
+	else if(sp_cm_->isStateGoToCharger())
 		sp_cm_->switchInStateGoToCharger();
 
-	else if(sp_cm_->isStateTmpSpot())
+	else if(sp_cm_->isStateSpot())
 		sp_cm_->switchInStateSpot();
 
 	else if(sp_cm_->isStateTrapped())

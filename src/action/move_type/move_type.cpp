@@ -15,6 +15,13 @@ boost::shared_ptr<IMovement> IMoveType::sp_movement_ = nullptr;
 Mode* IMoveType::sp_mode_ = nullptr;
 int IMoveType::movement_i_ = mm_null;
 
+IMoveType::IMoveType() {
+//	resetTriggeredValue();
+	last_ = start_point_ = getPosition();
+	c_rcon.resetStatus();
+	robot::instance()->obsAdjustCount(20);
+}
+
 bool IMoveType::shouldMoveBack()
 {
 	// Robot should move back for these cases.
@@ -99,13 +106,6 @@ bool IMoveType::RconTrigger()
 	return false;
 }
 
-IMoveType::IMoveType() {
-//	resetTriggeredValue();
-	start_point_ = getPosition();
-	c_rcon.resetStatus();
-	robot::instance()->obsAdjustCount(20);
-}
-
 void IMoveType::resetTriggeredValue()
 {
 	ev.lidar_triggered = 0;
@@ -117,37 +117,25 @@ void IMoveType::resetTriggeredValue()
 	ev.robot_slip = false;
 }
 
-bool IMoveType::isFinish() {
+bool IMoveType::isFinish()
+{
 	updatePosition();
 	auto curr = getPosition();
-	auto p_mode = dynamic_cast<ACleanMode*> (sp_mode_);
-	if (p_mode->passed_path_.empty())
+	auto p_cm = dynamic_cast<ACleanMode*> (sp_mode_);
+	if (!curr.isCellAndAngleEqual(last_))
 	{
-		p_mode->passed_path_.push_back(curr);
-		p_mode->last_ = curr;
+		last_ = curr;
+		if(p_cm->moveTypeNewCellIsFinish(this))
+			return true;
 	}
-	else if (!curr.isCellAndAngleEqual(p_mode->last_))
-	{
-		p_mode->last_ = curr;
-		auto loc = std::find_if(p_mode->passed_path_.begin(), p_mode->passed_path_.end(), [&](Point_t it) {
-			return curr.isCellAndAngleEqual(it);
-		});
-		auto distance = std::distance(loc, p_mode->passed_path_.end());
-		if (distance == 0) {
-			ROS_INFO("curr(%d,%d,%d)",curr.toCell().x, curr.toCell().y, static_cast<int>(radian_to_degree(curr.th)));
-			p_mode->passed_path_.push_back(curr);
-		}
-		if (distance > 5) {
-			ROS_INFO("reach_cleaned_count_(%d)",p_mode->reach_cleaned_count_);
-			p_mode->reach_cleaned_count_++;
-		}
-		p_mode->markRealTime();//real time mark to exploration
-//		displayPath(passed_path_);
-	}
-	return sp_mode_->isExceptionTriggered();
+	if(p_cm->moveTypeRealTimeIsFinish(this))
+		return true;
+
+	return false;
 }
 
-void IMoveType::run() {
+void IMoveType::run()
+{
 	sp_movement_->run();
 }
 
@@ -196,5 +184,16 @@ bool IMoveType::isRconStop(bool back_from_charger_,Cell_t charger_pose)
 	}
 
 	return ret;
+}
+
+bool IMoveType::isBlockCleared(GridMap &map, Points &passed_path)
+{
+	if (!passed_path.empty())
+	{
+//		ROS_INFO("%s %d: passed_path.back(%d %d)", __FUNCTION__, __LINE__, passed_path.back().x, passed_path.back().y);
+		return !map.isBlockAccessible(passed_path.back().toCell().x, passed_path.back().toCell().y);
+	}
+
+	return false;
 }
 

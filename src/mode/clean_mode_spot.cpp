@@ -34,6 +34,12 @@ bool CleanModeSpot::isExit()
 		setNextMode(cm_wall_follow);
 		return true;
 	}
+	else if(ev.remote_direction_forward || ev.remote_direction_left || ev.remote_direction_right)
+	{
+		INFO_YELLOW("in spot mode enter idle");
+		setNextMode(md_idle);
+		return true;
+	}
 	return ACleanMode::isExit();
 }
 
@@ -135,20 +141,3 @@ void CleanModeSpot::switchInStateSpot()
 	sp_state = nullptr;
 //	sp_state->init();
 }
-
-bool CleanModeSpot::isSwitchByEventInStateSpot()
-{
-
-	if(ev.remote_direction_forward || ev.remote_direction_left || ev.remote_direction_right)
-	{
-		ev.remote_direction_forward = false;
-		ev.remote_direction_left = false;
-		ev.remote_direction_right = false;
-		sp_state = nullptr;
-		return true;
-	}
-	else
-		return false;
-}
-
-

@@ -186,15 +186,16 @@ public:
 		ac_sleep,
 		//15
 		ac_charge,
-		ac_movement_stay,
-		ac_movement_direct_go,
 		ac_pause,
-		//20
+		ac_remote,
 		ac_exception_resume,
 		ac_check_bumper,
+		//20
 		ac_check_vacuum,
 		ac_bumper_hit_test,
 	};
+
+	void genNextAction();
 
 	bool isExceptionTriggered();
 
@@ -304,7 +305,7 @@ public:
 	bool isExit() override ;
 	bool isFinish() override ;
 
-	IAction* getNextAction();
+	int getNextAction();
 
 	// For exit event handling.
 	void remoteClean(bool state_now, bool state_last) override ;
@@ -327,7 +328,7 @@ public:
 	bool isExit() override;
 	bool isFinish() override;
 
-	IAction* getNextAction();
+	int getNextAction();
 
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteClean(bool state_now, bool state_last) override ;
@@ -357,12 +358,14 @@ public:
 	bool isUpdateFinish();
 
 	void setNextModeDefault();
-	void genNextAction();
 
+	bool isIsolate();
+	bool generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &targets);
 	void setRconPos(float cd,float dist);
 
 	virtual bool mapMark() = 0;
 	virtual bool markRealTime(){return false;};
+	virtual bool markMapInNewCell(){return false;};
 
 	bool isRemoteGoHomePoint();
 	void setHomePoint();
@@ -370,9 +373,9 @@ public:
 	Cells pointsGenerateCells(Points &targets);
 
 	// For move types
-	virtual bool moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt);
+	bool moveTypeNewCellIsFinish(IMoveType *p_move_type);
+	bool moveTypeRealTimeIsFinish(IMoveType *p_mt);
 	virtual void moveTypeFollowWallSaveBlocks();
-	virtual bool moveTypeLinearIsFinish(MoveTypeLinear *p_mt);
 	virtual void moveTypeLinearSaveBlocks();
 
 	// Handlers
@@ -380,8 +383,6 @@ public:
 	void cliffAll(bool state_now, bool state_last) override ;
 	void overCurrentBrushMain(bool state_now, bool state_last);
 
-	// State null
-	bool checkEnterNullState();
 	// State init
 	bool isStateInit() const
 	{
@@ -411,12 +412,12 @@ public:
 	virtual void switchInStateGoHomePoint();
 
 	// State go to charger
-	bool isStateGoCharger() const
+	bool isStateGoToCharger() const
 	{
 		return sp_state == state_go_to_charger;
 	}
-	bool checkEnterGoCharger();
-	virtual bool isSwitchByEventInStateGoToCharger(){return false;};
+	bool checkEnterGoToCharger();
+	virtual bool isSwitchByEventInStateGoToCharger();
 	virtual bool updateActionInStateGoToCharger();
 	virtual void switchInStateGoToCharger();
 
@@ -430,8 +431,8 @@ public:
 	virtual bool updateActionInStateExceptionResume();
 	virtual void switchInStateExceptionResume();
 
-	// State temp spot
-	bool isStateTmpSpot() const
+	// State spot
+	bool isStateSpot() const
 	{
 		return sp_state == state_spot;
 	}
@@ -448,6 +449,8 @@ public:
 	virtual bool updateActionInStateTrapped();
 	virtual void switchInStateTrapped();
 	bool trapped_time_out_{};
+	bool trapped_closed_or_isolate{};
+	bool out_of_trapped{};
 
 	// State exploration
 	bool isStateExploration() const
@@ -463,7 +466,7 @@ public:
 	{
 		return sp_state == state_resume_low_battery_charge;
 	}
-	virtual bool isSwitchByEventInStateResumeLowBatteryCharge(){return false;};
+	virtual bool isSwitchByEventInStateResumeLowBatteryCharge();
 	virtual bool updateActionInStateResumeLowBatteryCharge(){};
 	virtual void switchInStateResumeLowBatteryCharge(){};
 
@@ -484,7 +487,12 @@ public:
 	virtual bool isSwitchByEventInStatePause(){return false;};
 	virtual bool updateActionInStatePause(){};
 	virtual void switchInStatePause(){};
-
+	bool is_closed{true};
+	bool is_isolate{true};
+	int closed_count_{};
+	int closed_count_limit_{2};
+	int isolate_count_{};
+	int isolate_count_limit_{3};
 	State *sp_state{};
 	State* getState() const {
 		return sp_state;
@@ -498,19 +506,19 @@ public:
 	State *state_exception_resume = new ExceptionResume();
 	State *state_exploration = new StateExploration();
 
-	int reach_cleaned_count_{};
 	Points passed_path_{};
 	Points plan_path_{};
-	Point_t last_{};
 	bool found_temp_charger_{};
 	bool in_rcon_signal_range_{};
 	bool should_mark_charger_{};
 	bool should_mark_temp_charger_{};
 	bool found_charger_{};
 
-	double old_dir_{};
-	double new_dir_{};
+	Dir_t old_dir_{};
+	Point_t start_point_{};
+	Point_t iterate_point_{};
 
+//	boost::shared_ptr<APathAlgorithm> follow_wall_path_algorithm_{};
 	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
 	boost::shared_ptr<GoHomePathAlgorithm> go_home_path_algorithm_{};
 	GridMap clean_map_{};
@@ -529,10 +537,11 @@ protected:
 	bool low_battery_charge_{};
 	bool moved_during_pause_{};
 	Points home_points_{};
-	Point_t start_point_{0, 0, 0};
 	bool should_go_to_charger_{false};
 	bool remote_go_home_point{false};
 	bool switch_is_off_{false};
+	bool back_from_charger_{false};
+	Cell_t charger_pose;
 
 
 public:
@@ -571,6 +580,7 @@ private:
 	static ros::Publisher line_marker_pub2_;
 	ros::Publisher fit_line_marker_pub_;
 	boost::mutex temp_target_mutex_;
+
 
 };
 
@@ -620,9 +630,8 @@ public:
 	bool isSwitchByEventInStateGoToCharger() override;
 	void switchInStateGoToCharger() override;
 
-	// State tmp spot
+	// State spot
 	bool checkEnterTempSpotState();
-	bool checkOutOfSpot();
 	bool isSwitchByEventInStateSpot() override;
 	void switchInStateSpot() override;
 
@@ -650,17 +659,12 @@ public:
 	bool isSwitchByEventInStateExceptionResume() override;
 
 private:
-	bool moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
-	bool moveTypeLinearIsFinish(MoveTypeLinear *p_mt) override;
 
 	bool has_aligned_and_open_slam_{false};
 	float paused_odom_angle_{0};
 	Point_t continue_point_{};
 	bool go_home_for_low_battery_{false};
 
-	bool back_from_charger_{false};
-
-	Cell_t charger_pose;
 protected:
 //	Cells home_point_{};
 public:
@@ -673,8 +677,8 @@ public:
 	CleanModeExploration();
 	~CleanModeExploration();
 
+	bool markMapInNewCell() override;
 	bool mapMark() override;
-	bool markRealTime() override;
 //	bool isExit() override;
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteClean(bool state_now, bool state_last) override ;
@@ -693,7 +697,7 @@ public:
 	void switchInStateGoHomePoint() override;
 	void switchInStateGoToCharger() override;
 
-	bool moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
+//	bool moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
 
 private:
 	bool mark_robot_{true};
@@ -709,14 +713,10 @@ public:
 
 	void keyClean(bool state_now, bool state_last) override;
 	void remoteMax(bool state_now, bool state_last) override;
-
 	void remoteClean(bool state_now, bool state_last) override;
-	void switchInStateClean() override;
-	bool generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &targets);
+	void switchInStateTrapped() override;
 
-	bool moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) override ;
-
-	bool updateActionInStateClean()override ;
+	void switchInStateInit() override;
 
 private:
  int reach_cleaned_count_save{};
@@ -741,7 +741,6 @@ public:
 	void remoteDirectionLeft(bool state_now, bool state_last) override;
 	void remoteDirectionRight(bool state_now, bool state_last) override;
 	void remoteDirectionForward(bool state_now, bool state_last) override;
-	bool isSwitchByEventInStateSpot() override;
 private:
 
 };

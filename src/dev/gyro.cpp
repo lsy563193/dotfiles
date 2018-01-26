@@ -285,6 +285,9 @@ uint8_t Gyro::checkTilt()
 {
 	uint8_t tmp_status = 0;
 
+	// Temporarily block tilt checking.
+	return tmp_status;
+
 	if (tilt_checking_enable_)
 	{
 		if (getFront() - getFrontInit() > FRONT_TILT_LIMIT)

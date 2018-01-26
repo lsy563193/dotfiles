@@ -4,7 +4,11 @@
 #include <signal.h>
 #include "robot.hpp"
 #include "speaker.h"
-#include "beep.h"
+
+#if R16_BOARD_TEST
+#include "r16_board_test.hpp"
+#endif
+
 #if VERIFY_CPU_ID || VERIFY_KEY
 #include "verify.h"
 #endif
@@ -48,9 +52,28 @@ void signal_catch(int sig)
 	ros::shutdown();
 }
 
+#if R16_BOARD_TEST
 int main(int argc, char **argv)
 {
+	ros::init(argc, argv, "pp");
+	ros::NodeHandle	nh_dev("~");
 
+	// Create speaker play thread.
+	auto speaker_play_routine = new boost::thread(boost::bind(&Speaker::playRoutine, &speaker));
+
+	r16_board_test();
+
+	// Test finish.
+	while (ros::ok())
+	{
+		ROS_INFO("%s %d: Test finish.", __FUNCTION__, __LINE__);
+		sleep(1);
+	}
+}
+
+#else
+int main(int argc, char **argv)
+{
 	ros::init(argc, argv, "pp");
 	ros::NodeHandle	nh_dev("~");
 
@@ -85,3 +108,4 @@ int main(int argc, char **argv)
 	ros::spin();
 	return 0;
 }
+#endif

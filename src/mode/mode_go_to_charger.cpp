@@ -43,17 +43,24 @@ bool ModeGoToCharger::isExit()
 
 bool ModeGoToCharger::isFinish()
 {
+	if ((action_i_ != ac_exception_resume) && isExceptionTriggered())
+	{
+		ROS_WARN("%s %d: Exception triggered.", __FUNCTION__, __LINE__);
+		action_i_ = ac_exception_resume;
+		genNextAction();
+	}
+
 	if(sp_action_->isFinish())
 	{
 		PP_INFO();
-		sp_action_.reset(getNextAction());
+		action_i_ = getNextAction();
+		genNextAction();
 		if(sp_action_ == nullptr)
 		{
 			if(ev.charge_detect)
 				setNextMode(md_charge);
 			else
 				setNextMode(md_idle);
-			ev.charge_detect = 0;
 			return true;
 		}
 	}
@@ -61,18 +68,17 @@ bool ModeGoToCharger::isFinish()
 	return false;
 }
 
-IAction* ModeGoToCharger::getNextAction()
+int ModeGoToCharger::getNextAction()
 {
 	PP_INFO();
-	if(action_i_ == ac_open_gyro)
+	if(action_i_ == ac_open_gyro || (action_i_ == ac_exception_resume && !ev.fatal_quit))
 	{
-		action_i_ = ac_go_to_charger;
 		led.setMode(LED_STEADY, LED_ORANGE);
 		brush.normalOperate();
-		vacuum.setTmpMode(Vac_Speed_NormalL);
-		return new MoveTypeGoToCharger();
+		vacuum.setTmpMode(Vac_Normal);
+		return ac_go_to_charger;
 	}
-	return nullptr;
+	return ac_null;
 }
 
 void ModeGoToCharger::keyClean(bool state_now, bool state_last)
