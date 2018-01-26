@@ -506,11 +506,12 @@ void Serial::receive_routine_cb()
 
 		if (r_crc == c_crc){
 			if (receiData[wh_len - 1] == t2 && receiData[wh_len - 2] == t1) {
+				ROS_ERROR_COND(pthread_mutex_lock(&recev_lock)!=0, "serial pthread receive lock fail");
 				for (j = 0; j < wht_len; j++) {
 					serial.receive_stream[j + 2] = receiData[j];
 				}
-				if(pthread_cond_signal(&recev_cond)<0)//if receive data corret than send signal
-					ROS_ERROR(" in serial read, pthread signal fail !");
+				ROS_ERROR_COND(pthread_cond_signal(&recev_cond)<0, "in serial read, pthread signal fail !");
+				ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock)!=0, "serial pthread receive unlock fail");
 			}
 			else {
 				ROS_WARN(" in serial read ,data tail error\n");

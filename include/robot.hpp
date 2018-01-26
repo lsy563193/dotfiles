@@ -142,6 +142,8 @@ public:
 	}
 
 	void setTempTarget(std::deque<Vector2<double>>& points, uint32_t  seq);
+
+	void debugReceivedStream(const uint8_t *buf);
 private:
 
 	Baselink_Frame_Type baselink_frame_type_;

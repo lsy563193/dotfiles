@@ -91,6 +91,7 @@ void robot::robotbase_routine_cb()
 
 	ros::Rate	r(_RATE);
 	ros::Time	cur_time, last_time;
+	uint8_t buf[RECEI_LEN];
 
 	//Debug
 	uint16_t error_count = 0;
@@ -117,67 +118,66 @@ void robot::robotbase_routine_cb()
 		/*--------data extrict from serial com--------*/
 		ROS_ERROR_COND(pthread_mutex_lock(&recev_lock)!=0, "robotbase pthread receive lock fail");
 		ROS_ERROR_COND(pthread_cond_wait(&recev_cond,&recev_lock)!=0, "robotbase pthread receive cond wait fail");
+		memcpy(buf,serial.receive_stream,sizeof(uint8_t)*RECEI_LEN);
 		ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock)!=0, "robotbase pthread receive unlock fail");
-		//ros::spinOnce();
-
-		boost::mutex::scoped_lock lock(odom_mutex);
+//		debugReceivedStream(buf);
 
 		pp::x900sensor sensor;
 
 		// For wheel device.
-		wheel.setLeftWheelActualSpeed(static_cast<float>(static_cast<int16_t>((serial.receive_stream[REC_WHEEL_L_SPEED_H] << 8) | serial.receive_stream[REC_WHEEL_L_SPEED_L]) / 1000.0));
-		wheel.setRightWheelActualSpeed(static_cast<float>(static_cast<int16_t>((serial.receive_stream[REC_WHEEL_R_SPEED_H] << 8) | serial.receive_stream[REC_WHEEL_R_SPEED_L]) / 1000.0));
+		wheel.setLeftWheelActualSpeed(static_cast<float>(static_cast<int16_t>((buf[REC_WHEEL_L_SPEED_H] << 8) | buf[REC_WHEEL_L_SPEED_L]) / 1000.0));
+		wheel.setRightWheelActualSpeed(static_cast<float>(static_cast<int16_t>((buf[REC_WHEEL_R_SPEED_H] << 8) | buf[REC_WHEEL_R_SPEED_L]) / 1000.0));
 		sensor.left_wheel_speed = wheel.getLeftWheelActualSpeed();
 		sensor.right_wheel_speed = wheel.getRightWheelActualSpeed();
 
-		wheel.setLeftWheelCliffStatus((serial.receive_stream[REC_WHEEL_CLIFF] & 0x02) != 0);
-		wheel.setRightWheelCliffStatus((serial.receive_stream[REC_WHEEL_CLIFF] & 0x01) != 0);
+		wheel.setLeftWheelCliffStatus((buf[REC_WHEEL_CLIFF] & 0x02) != 0);
+		wheel.setRightWheelCliffStatus((buf[REC_WHEEL_CLIFF] & 0x01) != 0);
 		sensor.left_wheel_cliff = wheel.getLeftWheelCliffStatus();
 		sensor.right_wheel_cliff = wheel.getRightWheelCliffStatus();
 
 		// For gyro device.
-		gyro.setCalibration(serial.receive_stream[REC_GYRO_CALIBRATION] != 0);
+		gyro.setCalibration(buf[REC_GYRO_CALIBRATION] != 0);
 		sensor.gyro_calibration = gyro.getCalibration();
 
-		gyro.setAngle(static_cast<float>(static_cast<int16_t>((serial.receive_stream[REC_ANGLE_H] << 8) | serial.receive_stream[REC_ANGLE_L]) / 100.0 * -1));
+		gyro.setAngle(static_cast<float>(static_cast<int16_t>((buf[REC_ANGLE_H] << 8) | buf[REC_ANGLE_L]) / 100.0 * -1));
 		sensor.angle = gyro.getAngle();
-		gyro.setAngleV(static_cast<float>(static_cast<int16_t>((serial.receive_stream[REC_ANGLE_V_H] << 8) | serial.receive_stream[REC_ANGLE_V_L]) / 100.0 * -1));
+		gyro.setAngleV(static_cast<float>(static_cast<int16_t>((buf[REC_ANGLE_V_H] << 8) | buf[REC_ANGLE_V_L]) / 100.0 * -1));
 		sensor.angle_v = gyro.getAngleV();
 
 		if (gyro.getXAcc() == -1000)
-			gyro.setXAcc(static_cast<int16_t>((serial.receive_stream[REC_XACC_H] << 8) | serial.receive_stream[REC_XACC_L]));
+			gyro.setXAcc(static_cast<int16_t>((buf[REC_XACC_H] << 8) | buf[REC_XACC_L]));
 		else
-			gyro.setXAcc(static_cast<int16_t>((static_cast<int16_t>((serial.receive_stream[REC_XACC_H] << 8)|serial.receive_stream[REC_XACC_L]) + gyro.getXAcc()) / 2));
+			gyro.setXAcc(static_cast<int16_t>((static_cast<int16_t>((buf[REC_XACC_H] << 8)|buf[REC_XACC_L]) + gyro.getXAcc()) / 2));
 		if (gyro.getYAcc() == -1000)
-			gyro.setYAcc(static_cast<int16_t>((serial.receive_stream[REC_YACC_H] << 8) | serial.receive_stream[REC_YACC_L]));
+			gyro.setYAcc(static_cast<int16_t>((buf[REC_YACC_H] << 8) | buf[REC_YACC_L]));
 		else
-			gyro.setYAcc(static_cast<int16_t>((static_cast<int16_t>((serial.receive_stream[REC_YACC_H] << 8)|serial.receive_stream[REC_YACC_L]) + gyro.getYAcc()) / 2));
+			gyro.setYAcc(static_cast<int16_t>((static_cast<int16_t>((buf[REC_YACC_H] << 8)|buf[REC_YACC_L]) + gyro.getYAcc()) / 2));
 		if (gyro.getZAcc() == -1000)
-			gyro.setZAcc(static_cast<int16_t>((serial.receive_stream[REC_ZACC_H] << 8) | serial.receive_stream[REC_ZACC_L]));
+			gyro.setZAcc(static_cast<int16_t>((buf[REC_ZACC_H] << 8) | buf[REC_ZACC_L]));
 		else
-			gyro.setZAcc(static_cast<int16_t>((static_cast<int16_t>((serial.receive_stream[REC_ZACC_H] << 8)|serial.receive_stream[REC_ZACC_L]) + gyro.getZAcc()) / 2));
+			gyro.setZAcc(static_cast<int16_t>((static_cast<int16_t>((buf[REC_ZACC_H] << 8)|buf[REC_ZACC_L]) + gyro.getZAcc()) / 2));
 
 		sensor.x_acc = gyro.getXAcc();//in mG
 		sensor.y_acc = gyro.getYAcc();//in mG
 		sensor.z_acc = gyro.getZAcc();//in mG
 
 		// For wall sensor device.
-		wall.setLeft((serial.receive_stream[REC_L_WALL_H] << 8)| serial.receive_stream[REC_L_WALL_L]);
+		wall.setLeft((buf[REC_L_WALL_H] << 8)| buf[REC_L_WALL_L]);
 		sensor.left_wall = wall.getLeft();
-		wall.setRight((serial.receive_stream[REC_R_WALL_H] << 8)| serial.receive_stream[REC_R_WALL_L]);
+		wall.setRight((buf[REC_R_WALL_H] << 8)| buf[REC_R_WALL_L]);
 		sensor.right_wall = wall.getRight();
 
 		// For obs sensor device.
-		obs.setLeft((serial.receive_stream[REC_L_OBS_H] << 8) | serial.receive_stream[REC_L_OBS_L]);
+		obs.setLeft((buf[REC_L_OBS_H] << 8) | buf[REC_L_OBS_L]);
 		sensor.left_obs = obs.getLeft();
-		obs.setFront((serial.receive_stream[REC_F_OBS_H] << 8) | serial.receive_stream[REC_F_OBS_L]);
+		obs.setFront((buf[REC_F_OBS_H] << 8) | buf[REC_F_OBS_L]);
 		sensor.front_obs = obs.getFront();
-		obs.setRight((serial.receive_stream[REC_R_OBS_H] << 8) | serial.receive_stream[REC_R_OBS_L]);
+		obs.setRight((buf[REC_R_OBS_H] << 8) | buf[REC_R_OBS_L]);
 		sensor.right_obs = obs.getRight();
 
 		// For bumper device.
-		bumper.setLeft((serial.receive_stream[REC_BUMPER_AND_CLIFF] & 0x20) != 0);
-		bumper.setRight((serial.receive_stream[REC_BUMPER_AND_CLIFF] & 0x10) != 0);
+		bumper.setLeft((buf[REC_BUMPER_AND_CLIFF] & 0x20) != 0);
+		bumper.setRight((buf[REC_BUMPER_AND_CLIFF] & 0x10) != 0);
 		sensor.left_bumper = bumper.getLeft();
 		sensor.right_bumper = bumper.getRight();
 
@@ -190,89 +190,84 @@ void robot::robotbase_routine_cb()
 		}
 
 		// For cliff device.
-		cliff.setLeft((serial.receive_stream[REC_BUMPER_AND_CLIFF] & 0x04) != 0);
-		cliff.setFront((serial.receive_stream[REC_BUMPER_AND_CLIFF] & 0x02) != 0);
-		cliff.setRight((serial.receive_stream[REC_BUMPER_AND_CLIFF] & 0x01) != 0);
+		cliff.setLeft((buf[REC_BUMPER_AND_CLIFF] & 0x04) != 0);
+		cliff.setFront((buf[REC_BUMPER_AND_CLIFF] & 0x02) != 0);
+		cliff.setRight((buf[REC_BUMPER_AND_CLIFF] & 0x01) != 0);
 		sensor.right_cliff = cliff.getRight();
 		sensor.front_cliff = cliff.getFront();
 		sensor.left_cliff = cliff.getLeft();
 
 		// For remote device.
-		auto remote_signal = serial.receive_stream[REC_REMOTE];
+		auto remote_signal = buf[REC_REMOTE];
 		remote.set(remote_signal);
 		sensor.remote = remote.get();
 		if (remote_signal > 0)
 			ROS_INFO("%s %d: Remote received:%d", __FUNCTION__, __LINE__, remote_signal);
 
 		// For rcon device.
-		c_rcon.setStatus((serial.receive_stream[REC_RCON_CHARGER_4] << 24) | (serial.receive_stream[REC_RCON_CHARGER_3] << 16)
-						 | (serial.receive_stream[REC_RCON_CHARGER_2] << 8) | serial.receive_stream[REC_RCON_CHARGER_1]);
+		c_rcon.setStatus((buf[REC_RCON_CHARGER_4] << 24) | (buf[REC_RCON_CHARGER_3] << 16)
+						 | (buf[REC_RCON_CHARGER_2] << 8) | buf[REC_RCON_CHARGER_1]);
 		sensor.rcon = c_rcon.getStatus();
 
 		// For virtual wall.
-		sensor.virtual_wall = (serial.receive_stream[REC_VISUAL_WALL_H] << 8)| serial.receive_stream[REC_VISUAL_WALL_L];
+		sensor.virtual_wall = (buf[REC_VISUAL_WALL_H] << 8)| buf[REC_VISUAL_WALL_L];
 
 		// For key device.
-		key.eliminate_jitter((serial.receive_stream[REC_MIX_BYTE] & 0x01) != 0);
+		key.eliminate_jitter((buf[REC_MIX_BYTE] & 0x01) != 0);
 		sensor.key = key.getTriggerStatus();
 
 		// For timer device.
-		robot_timer.setPlanStatus(static_cast<uint8_t>((serial.receive_stream[REC_MIX_BYTE] >> 1) & 0x03));
+		robot_timer.setPlanStatus(static_cast<uint8_t>((buf[REC_MIX_BYTE] >> 1) & 0x03));
 		sensor.plan = robot_timer.getPlanStatus();
 
 		// For water tank device.
-		sensor.water_tank = (serial.receive_stream[REC_MIX_BYTE] & 0x08) != 0;
+		sensor.water_tank = (buf[REC_MIX_BYTE] & 0x08) != 0;
 
 		// For charger device.
-		charger.setChargeStatus((serial.receive_stream[REC_MIX_BYTE] >> 4) & 0x07);
+		charger.setChargeStatus((buf[REC_MIX_BYTE] >> 4) & 0x07);
 		sensor.charge_status = charger.getChargeStatus();
 
 		// For sleep status.
-		serial.isMainBoardSleep((serial.receive_stream[REC_MIX_BYTE] & 0x80) == 0);
+		serial.isMainBoardSleep((buf[REC_MIX_BYTE] & 0x80) == 0);
 		sensor.main_board_sleep_status = serial.isMainBoardSleep();
 
 		// For battery device.
-		battery.setVoltage(serial.receive_stream[REC_BATTERY] * 10);
+		battery.setVoltage(buf[REC_BATTERY] * 10);
 		sensor.battery = static_cast<float>(battery.getVoltage() / 100.0);
 
 		// For vacuum device.
-		vacuum.setExceptionResumeStatus(serial.receive_stream[REC_VACUUM_EXCEPTION_RESUME]);
+		vacuum.setExceptionResumeStatus(buf[REC_VACUUM_EXCEPTION_RESUME]);
 		sensor.vacuum_exception_resume = vacuum.getExceptionResumeStatus();
 
 		// For over current checking.
-		vacuum.setOc((serial.receive_stream[REC_OC] & 0x01) != 0);
+		vacuum.setOc((buf[REC_OC] & 0x01) != 0);
 		sensor.vacuum_oc = vacuum.getOc();
-		brush.setRightOc((serial.receive_stream[REC_OC] & 0x02) != 0);
+		brush.setRightOc((buf[REC_OC] & 0x02) != 0);
 		sensor.right_brush_oc = brush.getRightOc();
-		brush.setMainOc((serial.receive_stream[REC_OC] & 0x04) != 0);
+		brush.setMainOc((buf[REC_OC] & 0x04) != 0);
 		sensor.main_brush_oc = brush.getMainOc();
-		brush.setLeftOc((serial.receive_stream[REC_OC] & 0x08) != 0);
+		brush.setLeftOc((buf[REC_OC] & 0x08) != 0);
 		sensor.left_brush_oc = brush.getLeftOc();
-		wheel.setRightWheelOc((serial.receive_stream[REC_OC] & 0x10) != 0);
+		wheel.setRightWheelOc((buf[REC_OC] & 0x10) != 0);
 		sensor.right_wheel_oc = wheel.getRightWheelOc();
-		wheel.setLeftWheelOc((serial.receive_stream[REC_OC] & 0x20) != 0);
+		wheel.setLeftWheelOc((buf[REC_OC] & 0x20) != 0);
 		sensor.left_wheel_oc = wheel.getLeftWheelOc();
 
 		// For debug.
 //		printf("%d: REC_MIX_BYTE:(%2x), REC_VACUUM_EXCEPTION_RESUME:(%2x).\n.",
-//			   __LINE__, serial.receive_stream[REC_MIX_BYTE], serial.receive_stream[REC_VACUUM_EXCEPTION_RESUME]);
+//			   __LINE__, buf[REC_MIX_BYTE], buf[REC_VACUUM_EXCEPTION_RESUME]);
 //		printf("%d: charge:(%d), remote:(%d), key:(%d), rcon(%d).\n.",
 //			   __LINE__, charger.getChargeStatus(), remote.get(), key.getTriggerStatus(), c_rcon.getStatus());
 
-//		debug_received_stream();
-#if GYRO_DYNAMIC_ADJUSTMENT
-		if (wheel.getLeftWheelActualSpeed() < 0.01 && wheel.getRightWheelActualSpeed() < 0.01)
-			gyro.setDynamicOn();
-		else
-			gyro.setDynamicOff();
-		gyro.checkTilt();
-#endif
-		/*---------extrict end-------*/
-
 		pthread_cond_broadcast(&serial_data_ready_cond);
 		sensor_pub.publish(sensor);
+		is_sensor_ready_ = true;
+
+		/*---------extrict end-------*/
+
 
 		/*------------setting for odom and publish odom topic --------*/
+		boost::mutex::scoped_lock lock(odom_mutex);
 		odom.setMovingSpeed(static_cast<float>((wheel.getLeftWheelActualSpeed() + wheel.getRightWheelActualSpeed()) / 2.0));
 		odom.setRadian(degree_to_radian(gyro.getAngle()));
 		odom.setAngleSpeed(gyro.getAngleV());
@@ -304,30 +299,36 @@ void robot::robotbase_routine_cb()
 		odom_trans.transform.translation.z = 0.0;
 		odom_trans.transform.rotation = odom_quat;
 		odom_broad.sendTransform(odom_trans);
-			is_sensor_ready_ = true;
-
-	// Dynamic adjust obs
-	obs.DynamicAdjust(OBS_adjust_count);
-
-	// Check for whether robot should publish this frame of scan.
-	if (p_mode != nullptr)
-	{
-		if (p_mode->sp_action_ != nullptr && p_mode->isInitState())
-			scan_ctrl_.allow_publishing = 1;
-		else
-			scan_ctrl_.allow_publishing =
-					!(fabs(wheel.getLeftWheelActualSpeed() - wheel.getRightWheelActualSpeed()) > 0.1
-					  || (wheel.getLeftWheelActualSpeed() * wheel.getRightWheelActualSpeed() < 0)
-					  || bumper.getStatus()
-					  || gyro.getTiltCheckingStatus()
-					  || abs(wheel.getLeftSpeedAfterPid() - wheel.getRightSpeedAfterPid()) > 100
-					  || wheel.getLeftSpeedAfterPid() * wheel.getRightSpeedAfterPid() < 0);
-	}
-	else
-		scan_ctrl_.allow_publishing = 1;
-
-	scan_ctrl_pub_.publish(scan_ctrl_);
 		/*------publish end -----------*/
+
+		// Check tilt
+#if GYRO_DYNAMIC_ADJUSTMENT
+		if (wheel.getLeftWheelActualSpeed() < 0.01 && wheel.getRightWheelActualSpeed() < 0.01)
+			gyro.setDynamicOn();
+		else
+			gyro.setDynamicOff();
+		gyro.checkTilt();
+#endif
+		// Dynamic adjust obs
+		obs.DynamicAdjust(OBS_adjust_count);
+
+		// Check for whether robot should publish this frame of scan.
+		if (p_mode != nullptr)
+		{
+			if (p_mode->sp_action_ != nullptr && p_mode->isInitState())
+				scan_ctrl_.allow_publishing = 1;
+			else
+				scan_ctrl_.allow_publishing =
+						!(fabs(wheel.getLeftWheelActualSpeed() - wheel.getRightWheelActualSpeed()) > 0.1
+						  || (wheel.getLeftWheelActualSpeed() * wheel.getRightWheelActualSpeed() < 0)
+						  || bumper.getStatus()
+						  || gyro.getTiltCheckingStatus()
+						  || abs(wheel.getLeftSpeedAfterPid() - wheel.getRightSpeedAfterPid()) > 100
+						  || wheel.getLeftSpeedAfterPid() * wheel.getRightSpeedAfterPid() < 0);
+		}
+		else
+		scan_ctrl_.allow_publishing = 1;
+		scan_ctrl_pub_.publish(scan_ctrl_);
 
 	}//end while
 	pthread_cond_broadcast(&serial_data_ready_cond);
@@ -495,11 +496,10 @@ bool robot::slamStop(void)
 
 void robot::initOdomPosition()
 {
-	//is_tf_ready_ = false;
-//	position_x_=0;
-//	position_y_=0;
-//	position_z_=0;
-	robotbase_reset_odom_pose();
+	// Reset the odom pose to (0, 0)
+	boost::mutex::scoped_lock lock(odom_mutex);
+	odom.setX(0);
+	odom.setY(0);
 }
 
 void robot::updateRobotPose(tf::Vector3& odom, double odom_yaw)
@@ -536,6 +536,18 @@ void robot::obsAdjustCount(int count)
 #ifdef OBS_DYNAMIC
 	OBS_adjust_count = count;
 #endif
+}
+
+void robot::debugReceivedStream(const uint8_t *buf)
+{
+	ROS_INFO("%s %d: Received stream:", __FUNCTION__, __LINE__);
+	for (int i = 0; i < RECEI_LEN; i++)
+		printf("%02d ", i);
+	printf("\n");
+
+	for (int i = 0; i < RECEI_LEN; i++)
+		printf("%02x ", buf[i]);
+	printf("\n");
 }
 
 //--------------------
