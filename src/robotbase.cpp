@@ -44,18 +44,6 @@ uint16_t live_led_cnt_for_switch = 0;
 
 extern boost::mutex odom_mutex;
 
-void debug_received_stream()
-{
-	ROS_INFO("%s %d: Received stream:", __FUNCTION__, __LINE__);
-	for (int i = 0; i < RECEI_LEN; i++)
-		printf("%02d ", i);
-	printf("\n");
-
-	for (int i = 0; i < RECEI_LEN; i++)
-		printf("%02x ", serial.receive_stream[i]);
-	printf("\n");
-}
-
 void debug_send_stream(uint8_t *buf)
 {
 	ROS_INFO("%s %d: Send stream:", __FUNCTION__, __LINE__);
@@ -198,13 +186,3 @@ void process_led()
 	}
 	//ROS_INFO("%s %d: live_led_cnt_for_switch: %d, led_brightness: %d.", __FUNCTION__, __LINE__, live_led_cnt_for_switch, led_brightness);
 }
-
-void robotbase_reset_odom_pose(void)
-{
-	// Reset the odom pose to (0, 0)
-	boost::mutex::scoped_lock lock(odom_mutex);
-	odom.setX(0);
-	odom.setY(0);
-}
-
-
