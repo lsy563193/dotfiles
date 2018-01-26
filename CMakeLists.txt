@@ -3,10 +3,6 @@ project(pp)
 set(CMAKE_CXX_FLAGS "-std=c++11 -fpermissive ${CMAKE_CXX_FLAGS} -Wfatal-errors\ ")
 FILE(GLOB PP_SRC
 	include/*
-	include/path_algorithm.h
-	include/action.hpp
-
-	src/des.cpp
 
 	src/dev/gyro.cpp
 	src/dev/vacuum.cpp
@@ -97,6 +93,7 @@ FILE(GLOB PP_SRC
 	src/action/move_type/movement/movement_forward_turn.cpp
 	src/action/move_type/movement/movement_follow_point.cpp
 
+	src/des.cpp
 	src/error.cpp
 	src/event_manager.cpp
 	src/main.cpp
@@ -104,6 +101,7 @@ FILE(GLOB PP_SRC
 	src/mathematics.cpp
 	src/odom.cpp
 	src/pose.cpp
+	src/r16_board_test.cpp
 	src/robot.cpp
 	src/robotbase.cpp
 	src/serial.cpp
