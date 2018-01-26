@@ -416,7 +416,7 @@ void CleanModeNav::switchInStateInit() {
 
 		auto curr = getPosition();
 		passed_path_.push_back(curr);
-		iterate_point_.th = curr.th;
+		start_point_.th = curr.th;
 		sp_state = state_clean;
 	}
 	sp_state->init();
