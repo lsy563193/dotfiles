@@ -19,7 +19,7 @@
  * 1. Speaker.
  *
  */
-void r16_board_test();
+void r16_board_test(std::string serial_port, int baud_rate);
 
 /*
  * Dead loop for error.

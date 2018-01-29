@@ -325,6 +325,7 @@ public:
 	void receive_routine_cb();
 	void send_routine_cb();
 
+	bool test();
 private:
 
 	bool is_sleep_{};
@@ -337,6 +338,9 @@ private:
 	// For crc8
 	int made_table_ = 0;
 	uint8_t crc8_table_[256];	/* 8-bit table */
+
+	// For r16 board test.
+	int receive_timeout_cnt_{0};
 
 };
 

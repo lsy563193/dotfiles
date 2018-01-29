@@ -476,25 +476,41 @@ void Serial::receive_routine_cb()
 	while (ros::ok() && (!recei_thread_stop)) {
 		ret = serial.read(1, &header1);
 		if (ret <= 0 ){
-			ROS_WARN("%s, %d, serial read return %d ,  requst %d byte",__FUNCTION__,__LINE__,ret,1);
+			ROS_WARN("%s, %d, serial read return %d ,  request %d byte",__FUNCTION__,__LINE__,ret,1);
+#if R16_BOARD_TEST
+			receive_timeout_cnt_++;
+			ROS_ERROR_COND(pthread_cond_signal(&recev_cond)<0, "in serial read, pthread signal fail !");
+#endif
 			continue;
 		}
 		if(header1 != h1)
 			continue;
 		ret= serial.read(1,&header2);
 		if (ret <= 0 ){
-			ROS_WARN("%s,%d,serial read return %d , requst %d byte",__FUNCTION__,__LINE__,ret,1);
+			ROS_WARN("%s,%d,serial read return %d , request %d byte",__FUNCTION__,__LINE__,ret,1);
+#if R16_BOARD_TEST
+			receive_timeout_cnt_++;
+			ROS_ERROR_COND(pthread_cond_signal(&recev_cond)<0, "in serial read, pthread signal fail !");
+#endif
 			continue;
 		}
 		if(header2 != h2){
 			continue;
 		}
 		ret = serial.read(wh_len, receiData);
-		if(ret < wh_len){
-			ROS_WARN("%s,%d,serial read %d bytes, requst %d bytes",__FUNCTION__,__LINE__,ret,wh_len);
+		if(ret > 0 && ret < wh_len){
+			ROS_WARN("%s,%d,serial read %d bytes, request %d bytes",__FUNCTION__,__LINE__,ret,wh_len);
+#if R16_BOARD_TEST
+			receive_timeout_cnt_++;
+			ROS_ERROR_COND(pthread_cond_signal(&recev_cond)<0, "in serial read, pthread signal fail !");
+#endif
 		}
-		if(ret<= 0){
+		if(ret <= 0){
 			ROS_WARN("%s,%d,serial read return %d",__FUNCTION__,__LINE__,ret);
+#if R16_BOARD_TEST
+			receive_timeout_cnt_++;
+			ROS_ERROR_COND(pthread_cond_signal(&recev_cond)<0, "in serial read, pthread signal fail !");
+#endif
 			continue;
 		}
 
@@ -566,3 +582,35 @@ void Serial::send_routine_cb()
 	ROS_ERROR("%s,%d exit",__FUNCTION__,__LINE__);
 	//pthread_exit(NULL);
 }
+
+#if R16_BOARD_TEST
+bool Serial::test()
+{
+	uint8_t buf[RECEI_LEN];
+	uint8_t check_cnt = 0;
+	setSendData(CTL_MAIN_BOARD_MODE, 0xFF);
+	ROS_INFO("%s %d: Start serial test.", __FUNCTION__, __LINE__);
+	while (ros::ok())
+	{
+		/*--------data extrict from serial com--------*/
+		ROS_ERROR_COND(pthread_mutex_lock(&recev_lock) != 0, "robotbase pthread receive lock fail");
+		ROS_ERROR_COND(pthread_cond_wait(&recev_cond, &recev_lock) != 0, "robotbase pthread receive cond wait fail");
+		memcpy(buf, receive_stream, sizeof(uint8_t) * RECEI_LEN);
+		ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock) != 0, "robotbase pthread receive unlock fail");
+		robot::instance()->debugReceivedStream(buf);
+
+		if (buf[REC_MIX_BYTE] == 0xFF)
+		{
+			ROS_INFO("%s %d: serial test succeed.", __FUNCTION__, __LINE__);
+			return true;
+		}
+
+		// Receive timeout or send error.
+		if (receive_timeout_cnt_ > 3 || check_cnt++ > 50)
+			break;
+	}
+
+	ROS_INFO("%s %d: serial test failed.", __FUNCTION__, __LINE__);
+	return false;
+}
+#endif
