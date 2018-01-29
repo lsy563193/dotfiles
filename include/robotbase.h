@@ -7,10 +7,8 @@
 #include "config.h"
 
 #define  _RATE 50
-#define POWER_ACTIVE 1
-#define POWER_DOWN 7
 
-extern bool g_bye_bye;
+extern bool g_pp_shutdown;
 extern pthread_mutex_t recev_lock;
 extern pthread_cond_t  recev_cond;
 
@@ -32,18 +30,15 @@ extern int temp_beeper_silence_time_count;
 extern uint8_t robotbase_led_type;
 extern bool robotbase_led_update_flag;
 extern uint8_t robotbase_led_color;
-extern uint16_t robotbase_led_cnt_for_switch;
+extern uint16_t robotbase_led_cnt_for_one_cycle;
 extern uint16_t live_led_cnt_for_switch;
 
 extern bool key_or_clean_button_detected;
-void debug_received_stream();
-void debug_send_stream(uint8_t *buf);
 void robotbase_deinit(void);
 void robotbase_reset_send_stream(void);
 void serial_receive_routine_cb();
 void serial_send_routine_cb();
 void process_beep();
 void process_led();
-void robotbase_reset_odom_pose(void);
 void robotbase_restore_slam_correction(void);
 #endif

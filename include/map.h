@@ -47,18 +47,6 @@ typedef enum {
   COST_HIGH = 7,
 } CellState;
 
-//enum {
-  const double MAP_POS_X = 0;
-  const double MAP_PX_PY = PI/4;
-  const double MAP_POS_Y = PI/2;
-  const double MAP_NS_PY = PI*3/4;
-  const double MAP_NEG_X = PI;
-  const double MAP_NX_NY =-PI*3/4;
-  const double MAP_NEG_Y =-PI/2;
-  const double MAP_PX_NY =-PI/4;
-  const double MAP_NONE = 2*PI;
-//} DIR;
-
 class GridMap {
 public:
 
@@ -107,6 +95,8 @@ public:
 
 	bool markRobot(uint8_t id);
 
+	bool trapMarkRobot(uint8_t id);
+
 	uint8_t setLidar();
 
 	uint8_t setObs();
@@ -139,7 +129,7 @@ public:
 
 	uint8_t saveSlip();
 
-	uint8_t saveChargerArea(const Cell_t homepoint);
+	uint8_t setChargerArea(const Cell_t homepoint);
 
 	uint8_t saveBlocks(bool is_linear, bool is_save_rcon);
 
@@ -290,7 +280,6 @@ private:
 };
 
 /*wf_map is to record the wall follow path to caculate the isolate islands*/
-extern GridMap fw_map;
 extern GridMap slam_grid_map;
 
 #endif /* __MAP_H */

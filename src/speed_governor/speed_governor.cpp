@@ -7,6 +7,7 @@
 #include "speed_governor.hpp"
 #include "dev.h"
 #include "mathematics.h"
+/*
 
 SpeedGovernorBack::SpeedGovernorBack()
 {
@@ -54,6 +55,7 @@ void SpeedGovernorTurn::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 
 	left_speed = right_speed = speed_;
 }
+*/
 
 //void SpeedGovernorRcon::adjustSpeed(int32_t &left_speed, int32_t &right_speed) {
 //	auto rcon_status = c_rcon.getAll();

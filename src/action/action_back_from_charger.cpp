@@ -4,17 +4,13 @@
 
 #include "dev.h"
 #include "action.hpp"
-Odom charger_pose;
 ActionBackFromCharger::ActionBackFromCharger()
 {
 	ROS_INFO("%s %d, Init action back from charger.", __FUNCTION__, __LINE__);
-//	path_set_home(nav_map.getCurrCell());
 
-	vacuum.setTmpMode(Vac_Normal);
-	brush.normalOperate();
 	wheel.setDirectionBackward();
-	charger_pose.setX(odom.getX());
-	charger_pose.setY(odom.getY());
+	// This time out interval is just for checking whether the switch is on.
+	timeout_interval_ = 1;
 };
 
 ActionBackFromCharger::~ActionBackFromCharger()
@@ -23,13 +19,15 @@ ActionBackFromCharger::~ActionBackFromCharger()
 }
 
 bool ActionBackFromCharger::isFinish() {
-	return  (two_points_distance_double(charger_pose.getX(), charger_pose.getY(), odom.getX(), odom.getY()) > 0.5);
+	static Vector2<float> tmp_pose(odom.getX(),odom.getY());
+	const float BACK_DIST = 0.5f;
+	double distance = two_points_distance_double(tmp_pose.GetX(), tmp_pose.GetY(), odom.getX(), odom.getY());
+	if(distance >= BACK_DIST)
+		return true;
+	else
+		return false;
 }
 
 void ActionBackFromCharger::run() {
 	wheel.setPidTargetSpeed(20, 20);
 }
-
-//IAction* ActionBackFromCharger::setNextAction() {
-//	return new ActionOpenLidar;
-//}

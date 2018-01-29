@@ -4,24 +4,27 @@
 #include <signal.h>
 #include "robot.hpp"
 #include "speaker.h"
-#include "beep.h"
+
+#if R16_BOARD_TEST
+#include "r16_board_test.hpp"
+#endif
+
 #if VERIFY_CPU_ID || VERIFY_KEY
 #include "verify.h"
 #endif
 
 robot* robot_instance = nullptr;
 
-void Ooops(int sig)
+void signal_catch(int sig)
 {
 	switch(sig){
 		case SIGSEGV:
 		{
-			ROS_ERROR("Oops!!! pp receive SIGSEGV signal,which means out of memery!");
+			ROS_ERROR("Oops!!! pp receive SIGSEGV signal,segment fault!");
 			if(robot_instance != nullptr){
 				speaker.play(VOICE_CLEANING_STOP,false);
 				delete robot_instance;
 			}
-			ROS_INFO(" after SIGSEGV");
 			break;
 		}
 		case SIGINT:
@@ -31,7 +34,6 @@ void Ooops(int sig)
 				speaker.play(VOICE_CLEANING_STOP,false);
 				delete robot_instance;
 			}
-			ROS_INFO(" after SIGINT");
 			break;
 		}
 		case SIGTERM:
@@ -41,7 +43,6 @@ void Ooops(int sig)
 				speaker.play(VOICE_CLEANING_STOP,false);
 				delete robot_instance;
 			}
-			ROS_INFO(" after SIGTERM");
 			break;
 		}
 		default:
@@ -51,14 +52,40 @@ void Ooops(int sig)
 	ros::shutdown();
 }
 
+#if R16_BOARD_TEST
 int main(int argc, char **argv)
 {
+	ros::init(argc, argv, "pp");
+	ros::NodeHandle	nh_dev("~");
 
+	std::string	serial_port;
+	nh_dev.param<std::string>("serial_port", serial_port, "/dev/ttyS2");
+
+	int baud_rate;
+	nh_dev.param<int>("baud_rate", baud_rate, 115200);
+
+	// Create speaker play thread.
+	auto speaker_play_routine = new boost::thread(boost::bind(&Speaker::playRoutine, &speaker));
+
+	r16_board_test(serial_port, baud_rate);
+
+	// Test finish.
+	while (ros::ok())
+	{
+		speaker.play(VOICE_TEST_SUCCESS);
+		ROS_INFO("%s %d: Test finish.", __FUNCTION__, __LINE__);
+		sleep(5);
+	}
+}
+
+#else
+int main(int argc, char **argv)
+{
 	ros::init(argc, argv, "pp");
 	ros::NodeHandle	nh_dev("~");
 
 	struct sigaction act;
-	act.sa_handler = Ooops;
+	act.sa_handler = signal_catch;
 	sigemptyset(&act.sa_mask);
 	act.sa_flags = SA_RESETHAND;
 	sigaction(SIGTERM,&act,NULL);
@@ -88,3 +115,4 @@ int main(int argc, char **argv)
 	ros::spin();
 	return 0;
 }
+#endif

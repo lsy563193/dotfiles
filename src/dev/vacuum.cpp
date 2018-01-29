@@ -27,13 +27,14 @@ void Vacuum::setTmpMode(uint8_t mode)
 //	}
 
 	setSpeedByMode(mode);
-	ROS_INFO("%s %d: Set vacuum mode:%d.", __FUNCTION__, __LINE__, mode);
+	ROS_INFO("%s %d: Set vacuum temp mode:%d.", __FUNCTION__, __LINE__, mode);
 }
 
 void Vacuum::setMode(uint8_t mode)
 {
 	mode_ = mode;
-	setSpeedByMode(mode);
+	ROS_INFO("%s %d: Vacuum last mode set as:%d.", __FUNCTION__, __LINE__, mode_);
+	setSpeedByMode(mode_);
 }
 
 void Vacuum::switchToNext()
@@ -49,8 +50,10 @@ void Vacuum::switchToNext()
 	// Process the vacuum mode_
 	setSpeedByMode(mode_);
 }
+
 void Vacuum::setLastMode()
 {
+	ROS_INFO("%s %d: Vacuum mode set to last mode:%d.", __FUNCTION__, __LINE__, mode_);
 	setSpeedByMode(mode_);
 }
 
@@ -64,25 +67,19 @@ void Vacuum::bldcSpeed(uint32_t S)
 
 void Vacuum::setSpeedByMode(uint8_t mode)
 {
-	// Set the power of BLDC according to different situation
-	// Stop the BLDC if rGobot carries the water tank
-
+	// Set the BLDC power to max if robot in max mode_
+	if (mode == Vac_Max)
+		bldcSpeed(Vac_Speed_Max);
+	else
 	{
-		// Set the BLDC power to max if robot in max mode_
-		if (mode == Vac_Max)
+		// If work time less than 2 hours, the BLDC should be in normal level, but if more than 2 hours, it should slow down a little bit.
+		if (robot_timer.getWorkTime() < Two_Hours)
 		{
-			bldcSpeed(Vac_Speed_Max);
+			bldcSpeed(Vac_Speed_Normal);
 		} else
 		{
-			// If work time less than 2 hours, the BLDC should be in normal level, but if more than 2 hours, it should slow down a little bit.
-			if (robot_timer.getWorkTime() < Two_Hours)
-			{
-				bldcSpeed(Vac_Speed_Normal);
-			} else
-			{
-				//ROS_INFO("%s %d: Work time more than 2 hours.", __FUNCTION__, __LINE__);
-				bldcSpeed(Vac_Speed_NormalL);
-			}
+			//ROS_INFO("%s %d: Work time more than 2 hours.", __FUNCTION__, __LINE__);
+			bldcSpeed(Vac_Speed_NormalL);
 		}
 	}
 }
@@ -93,12 +90,15 @@ void Vacuum::stop(){
 }
 
 void Vacuum::startExceptionResume(void) {
-	uint8_t omni_reset_byte = serial.getSendData(CTL_MIX);
-	serial.setSendData(CTL_MIX, omni_reset_byte | 0x02);
+	uint8_t mix_byte = serial.getSendData(CTL_MIX);
+	serial.setSendData(CTL_MIX, mix_byte | 0x02);
+	ROS_INFO("%s %d: Start vacuum exception resume.", __FUNCTION__, __LINE__);
 }
 
-void Vacuum::resetExceptionResume(void) {
-	uint8_t omni_reset_byte = serial.getSendData(CTL_MIX);
-	serial.setSendData(CTL_MIX, omni_reset_byte & ~0x06);
+void Vacuum::resetExceptionResume(void)
+{
+	uint8_t mix_byte = serial.getSendData(CTL_MIX);
+	serial.setSendData(CTL_MIX, mix_byte & 0xFD);
+	ROS_INFO("%s %d: Stop vacuum exception resume.", __FUNCTION__, __LINE__);
 }
 

@@ -39,7 +39,7 @@ GoHomePathAlgorithm::GoHomePathAlgorithm(GridMap &map, Points &home_points, Poin
 	ROS_INFO("%s %d: %s", __FUNCTION__, __LINE__, msg.c_str());
 }
 
-bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &plan_path)
+bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &plan_path)
 {
 	bool generate_finish = false;
 	while (!generate_finish && ros::ok())
@@ -62,7 +62,7 @@ bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point_t &curr, const 
 
 }
 
-bool GoHomePathAlgorithm::generatePathThroughCleanedArea(GridMap &map, const Point_t &curr, const int &last_dir,
+bool GoHomePathAlgorithm::generatePathThroughCleanedArea(GridMap &map, const Point_t &curr, const Dir_t &last_dir,
 														 Points &plan_path)
 {
 	Cells plan_path_cells{};
@@ -137,7 +137,7 @@ bool GoHomePathAlgorithm::generatePathThroughCleanedArea(GridMap &map, const Poi
 }
 
 bool
-GoHomePathAlgorithm::generatePathThroughSlamMapReachableArea(GridMap &map, const Point_t &curr, const int &last_dir,
+GoHomePathAlgorithm::generatePathThroughSlamMapReachableArea(GridMap &map, const Point_t &curr, const Dir_t &last_dir,
 															 Points &plan_path)
 {
 	Cells plan_path_cells{};
@@ -205,7 +205,7 @@ GoHomePathAlgorithm::generatePathThroughSlamMapReachableArea(GridMap &map, const
 	}
 }
 
-bool GoHomePathAlgorithm::generatePathThroughUnknownArea(GridMap &map, const Point_t &curr, const int &last_dir,
+bool GoHomePathAlgorithm::generatePathThroughUnknownArea(GridMap &map, const Point_t &curr, const Dir_t &last_dir,
 														 Points &plan_path)
 {
 	Cells plan_path_cells{};

@@ -8,7 +8,7 @@
 #include <move_type.hpp>
 #include <state.hpp>
 #include <mode.hpp>
-
+int g_follow_last_follow_wall_dir=0;
 MoveTypeFollowWall::MoveTypeFollowWall(bool is_left)
 {
 	ROS_INFO("%s %d: Entering move type %s follow wall.", __FUNCTION__, __LINE__,
@@ -55,15 +55,12 @@ bool MoveTypeFollowWall::isFinish()
 		return true;
 	}
 
-	auto p_clean_mode = dynamic_cast<ACleanMode*> (sp_mode_);
-
-	if(p_clean_mode->moveTypeFollowWallIsFinish(this))
-		return true;
+	auto p_cm = dynamic_cast<ACleanMode*> (sp_mode_);
 
 	if (sp_movement_->isFinish()) {
 		if (movement_i_ == mm_turn)
 		{
-			if (!handleMoveBackEvent(p_clean_mode))
+			if (!handleMoveBackEvent(p_cm))
 			{
 				resetTriggeredValue();// is it necessary?
 				movement_i_ = mm_straight;
@@ -72,7 +69,7 @@ bool MoveTypeFollowWall::isFinish()
 		}
 		else if (movement_i_ == mm_straight)
 		{
-			if (!handleMoveBackEvent(p_clean_mode))
+			if (!handleMoveBackEvent(p_cm))
 			{
 				resetTriggeredValue();// is it necessary?
 				movement_i_ = mm_forward;
@@ -81,17 +78,15 @@ bool MoveTypeFollowWall::isFinish()
 		}
 		else if (movement_i_ == mm_forward)
 		{
-			if (!handleMoveBackEvent(p_clean_mode))
+			if (!handleMoveBackEvent(p_cm))
 			{
 				if(ev.rcon_triggered) {
-
-					ROS_ERROR("mm_rcon!!!");
-					p_clean_mode->moveTypeFollowWallSaveBlocks();
+					p_cm->moveTypeFollowWallSaveBlocks();
 					movement_i_ = mm_rcon;
 					sp_movement_.reset(new MovementRcon(is_left_));
 				}
 				else{
-					p_clean_mode->moveTypeFollowWallSaveBlocks();
+					p_cm->moveTypeFollowWallSaveBlocks();
 					auto turn_angle = getTurnRadian(false);
 					turn_target_radian_ = getPosition().addRadian(turn_angle).th;
 					movement_i_ = mm_turn;
@@ -102,7 +97,7 @@ bool MoveTypeFollowWall::isFinish()
 		}
 		else if (movement_i_ == mm_rcon)
 		{
-			if (!handleMoveBackEvent(p_clean_mode))
+			if (!handleMoveBackEvent(p_cm))
 			{
 				resetTriggeredValue();// is it necessary?
 				movement_i_ = mm_straight;
@@ -472,6 +467,9 @@ bool MoveTypeFollowWall::isNewLineReach(GridMap &map)
 		ROS_WARN("%s %d: Reach the target limit, start_p.y(%d), target.y(%d),curr_y(%d)",
 				 __FUNCTION__, __LINE__, start_point_.y, target_point_.y,
 				 s_curr_p.y);
+
+		g_follow_last_follow_wall_dir = (is_left_ ^ (target_point_.y<start_point_.y)) ? 1 : 2;
+		ROS_ERROR("g_follow_last_follow_wall_dir%d", g_follow_last_follow_wall_dir);
 		ret = true;
 	}
 	else if (is_pos_dir ^ s_curr_p.y < target_point_.y)
@@ -488,17 +486,6 @@ bool MoveTypeFollowWall::isNewLineReach(GridMap &map)
 	}
 
 	return ret;
-}
-
-bool MoveTypeFollowWall::isBlockCleared(GridMap &map, Points &passed_path)
-{
-	if (!passed_path.empty())
-	{
-//		ROS_INFO("%s %d: passed_path.back(%d %d)", __FUNCTION__, __LINE__, passed_path.back().x, passed_path.back().y);
-		return !map.isBlockAccessible(passed_path.back().toCell().x, passed_path.back().toCell().y);
-	}
-
-	return false;
 }
 
 bool MoveTypeFollowWall::handleMoveBackEvent(ACleanMode* p_clean_mode)

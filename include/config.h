@@ -17,6 +17,9 @@
 #define VERIFY_CPU_ID						(0)
 #define VERIFY_KEY							(0)
 
+/* R16 board test setting. */
+#define R16_BOARD_TEST						(1)
+
 /* ------------------------------------- Speaker config ------------------------------------- */
 #define SPEAKER_VOLUME						(55)
 
@@ -103,7 +106,7 @@
 #define BATTERY_READY_TO_CLEAN_VOLTAGE	(1400)
 
 /* Fully charged battery voltage value */
-#define BATTERY_FULL_VOLTAGE	(1600)
+#define BATTERY_FULL_VOLTAGE	(1640)
 
 /* Continue cleaning voltage value */
 #define RESUME_CLEANING_VOLTAGE	(1530)

@@ -142,6 +142,10 @@ public:
 	}
 
 	void setTempTarget(std::deque<Vector2<double>>& points, uint32_t  seq);
+
+	void debugReceivedStream(const uint8_t *buf);
+
+	void debugSendStream(const uint8_t *buf);
 private:
 
 	Baselink_Frame_Type baselink_frame_type_;
@@ -195,11 +199,11 @@ int16_t countToCell(int32_t count);
 
 Point_t getPosition(void);
 
-bool isPos(double dir);
+bool isAny(Dir_t dir);
 
-bool isXAxis(double dir);
+bool isPos(Dir_t dir);
 
-bool isYAxis(double dir);
+bool isXAxis(Dir_t dir);
 
 void updatePosition();
 

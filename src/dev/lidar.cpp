@@ -434,7 +434,7 @@ bool Lidar::lidarGetFitLine(double r_begin, double r_end, double range, double d
 	r_end = radian_to_degree(atan2(ROBOT_RADIUS * sin(r_end), LIDAR_OFFSET_X + ROBOT_RADIUS * cos(r_end)));
 	r_begin -= radian_to_degree(LIDAR_THETA);
 	r_end -= radian_to_degree(LIDAR_THETA);*/
-	
+
 	auto d_begin = radian_to_degree(r_begin);
 	auto d_end = radian_to_degree(r_end);
 	if (!is_align) {
@@ -463,7 +463,7 @@ bool Lidar::lidarGetFitLine(double r_begin, double r_end, double range, double d
 	for (auto i = static_cast<int>(d_begin); (i < static_cast<int>(d_end) || isReverse);) {
 		if(i > 359)
 			i = i - 360;
-//		ROS_INFO("i = %d", i);
+//		ROS_INFO("i = %d, range = %f", i, tmp_scan_data.ranges[i]);
 		if (tmp_scan_data.ranges[i] < 4) {
 			th = i * 1.0;
 			th = th + 180.0;
@@ -477,6 +477,11 @@ bool Lidar::lidarGetFitLine(double r_begin, double r_end, double range, double d
 			isReverse = false;
 	}
 
+	if (Lidar_Point.empty())
+	{
+		ROS_DEBUG("%s %d: No lidar point available.", __FUNCTION__, __LINE__);
+		return false;
+	}
 	splitLine(Lidar_Point, consec_lim,points_count_lim);
 	splitLine2nd(&Lidar_Group, t_lim_split,points_count_lim);
 	mergeLine(&Lidar_Group, t_lim_merge, is_align);

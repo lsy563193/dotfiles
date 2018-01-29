@@ -37,8 +37,8 @@
 // One byte for controlling beeper.
 #define	CTL_BEEPER 10
 
-// One byte for sending clean mode.
-#define	CTL_CLEAN_MODE 11
+// One byte for sending main board mode.
+#define	CTL_MAIN_BOARD_MODE 11
 
 // One byte for controlling charge status.
 #define	CTL_CHARGER 12
@@ -52,8 +52,7 @@
 // One byte for mix command.
 // bit 0 for wifi led controlling.
 // bit 1 for vacuum exception resume control.
-// bit 2 for vacuum exception resume status
-// bit 3-7 reserved.
+// bit 2-7 reserved.
 #define CTL_MIX 15
 
 // One byte for controlling gyro.
@@ -214,8 +213,8 @@
 // One byte for battery voltage.
 #define REC_BATTERY 37
 
-// One byte for vacuum exception resume status.
-#define REC_VACUUM_EXCEPTION_RESUME 38
+// One byte reserved.
+#define REC_RESERVED 38
 
 // One byte for over current signal.
 // bit 0 for vacuum over current.
@@ -238,6 +237,12 @@
 #define REC_TRAILER_1 42
 #define REC_TRAILER_2 43
 
+// Main board mode
+#define NORMAL_SLEEP_MODE 		0
+#define BATTERY_FULL_SLEEP_MODE 1
+#define WORK_MODE 				2
+#define IDLE_MODE 				3
+#define CHARGE_MODE 			4
 
 #define DUMMY_DOWNLINK_OFFSET		2
 #define KEY_DOWNLINK_OFFSET			9
@@ -281,12 +286,12 @@ public:
 
 	bool isReady();
 
-	void isSleep(bool val)
+	void isMainBoardSleep(bool val)
 	{
 		is_sleep_ = val;
 	}
 
-	bool isSleep() const
+	bool isMainBoardSleep() const
 	{
 		return is_sleep_;
 	}
@@ -301,7 +306,7 @@ public:
 
 	//int get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequence_number);
 
-	void setCleanMode(uint8_t val);
+	void setMainBoardMode(uint8_t val);
 
 	void initCrc8(void);
 
@@ -320,6 +325,7 @@ public:
 	void receive_routine_cb();
 	void send_routine_cb();
 
+	bool test();
 private:
 
 	bool is_sleep_{};
@@ -332,6 +338,9 @@ private:
 	// For crc8
 	int made_table_ = 0;
 	uint8_t crc8_table_[256];	/* 8-bit table */
+
+	// For r16 board test.
+	int receive_timeout_cnt_{0};
 
 };
 

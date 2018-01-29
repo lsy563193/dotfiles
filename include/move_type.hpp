@@ -21,6 +21,9 @@ public:
 	bool RconTrigger();
 //	~IMoveType() = default;
 
+	bool isBlockCleared(GridMap &map, Points &passed_path);
+	Point_t last_{};
+//	bool closed_count_{};
 	void setMode(Mode* cm)
 	{sp_mode_ = cm;}
 	Mode* getMode()
@@ -35,7 +38,7 @@ public:
 	};
 	int8_t rcon_cnt[6]{};
 	int countRconTriggered(uint32_t rcon_value);
-	bool isRconStop();
+	bool isRconStop(bool back_from_charger,Cell_t charge_pose);
 	bool isOBSStop();
 	bool isLidarStop();
 
@@ -51,11 +54,13 @@ protected:
 //	Cells passed_path_;
 //	Cells tmp_plan_path_;
 	double turn_target_radian_{};
+
 	float back_distance_;
 	enum{//movement
 		mm_null,
 		mm_back,
 		mm_turn,
+		mm_stay,
 		mm_rcon,
 		mm_forward,
 		mm_straight,
@@ -71,7 +76,7 @@ public:
 	bool isFinish() override;
 //	IAction* setNextAction();
 
-	bool isPassTargetStop(double &dir);
+	bool isPassTargetStop(Dir_t &dir);
 	bool isCellReach();
 	bool isPoseReach();
 
@@ -94,7 +99,6 @@ public:
 
 	bool isNewLineReach(GridMap &map);
 	bool isOverOriginLine(GridMap &map);
-	bool isBlockCleared(GridMap &map, Points &passed_path);
 
 private:
 	bool handleMoveBackEvent(ACleanMode* p_clean_mode);
@@ -153,5 +157,19 @@ private:
 	boost::shared_ptr<IMovement> p_direct_go_movement_;
 	boost::shared_ptr<IMovement> p_turn_movement_;
 	boost::shared_ptr<IMovement> p_back_movement_;
+};
+
+class MoveTypeRemote: public IMoveType
+{
+public:
+	MoveTypeRemote();
+	~MoveTypeRemote() override;
+
+	bool isFinish() override;
+
+	void run() override ;
+
+private:
+	boost::shared_ptr<IMovement> p_movement_;
 };
 #endif //PP_MOVE_TYPE_HPP

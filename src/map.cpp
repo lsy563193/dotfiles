@@ -4,7 +4,6 @@
 #include "robot.hpp"
 #include "event_manager.h"
 
-GridMap fw_map;
 GridMap slam_grid_map;
 GridMap decrease_map;
 
@@ -528,7 +527,6 @@ uint8_t GridMap::setRcon()
 
 uint8_t GridMap::setFollowWall(bool is_left,const Points& passed_path)
 {
-
 	uint8_t block_count = 0;
 	if (!passed_path.empty())
 	{
@@ -536,7 +534,8 @@ uint8_t GridMap::setFollowWall(bool is_left,const Points& passed_path)
 		auto dy = is_left ? 2 : -2;
 		for(auto& point : passed_path){
 			if(getCell(CLEAN_MAP,point.toCell().x,point.toCell().y) != BLOCKED_RCON){
-				auto block_cell = point.getRelative(0, dy * CELL_SIZE).toCell();
+				auto relative_cell = point.getRelative(0, dy * CELL_SIZE);
+				auto block_cell = relative_cell.toCell();
 				msg += "(" + std::to_string(block_cell.x) + "," + std::to_string(block_cell.y) + ")";
 				setCell(CLEAN_MAP,block_cell.x,block_cell.y, BLOCKED_FW);
 				block_count++;
@@ -560,10 +559,10 @@ uint8_t GridMap::setBlocks()
 	return block_count;
 }
 
-uint8_t GridMap::saveChargerArea(const Cell_t home_point)
+uint8_t GridMap::setChargerArea(const Cell_t charger_point)
 {
-	//before set BLOCKED_RCON, clean BLOCKED_RCON in first.
-	temp_rcon_cells.clear();
+	//before set BLOCKED_RCON, clean BLOCKED_RCON first.
+	/*
 	int16_t x_min,x_max,y_min,y_max;
 	getMapRange(CLEAN_MAP, &x_min, &x_max, &y_min, &y_max);
 	for(int16_t i = x_min;i<=x_max;i++){
@@ -572,6 +571,8 @@ uint8_t GridMap::saveChargerArea(const Cell_t home_point)
 				setCell(CLEAN_MAP,i,j, UNCLEAN);
 		}
 	}
+	*/
+
 	uint8_t block_count = 0;
 	const int WIDTH = 5;//cells
 	const int HIGHT = 5;//cells
@@ -581,9 +582,9 @@ uint8_t GridMap::saveChargerArea(const Cell_t home_point)
 	std::string print_msg("");
 	for(int i=0; i<HIGHT; i++){ 
 		for(int j = 0; j<WIDTH; j++){
-			y = lty+j+home_point.y;
-			x = ltx+i+home_point.x;
-			temp_rcon_cells.push_back({x,y});
+			y = lty+j+charger_point.y;
+			x = ltx+i+charger_point.x;
+			setCell(CLEAN_MAP,x,y, BLOCKED_RCON);
 			print_msg+="("+std::to_string(x)+","+std::to_string(y)+"),";
 			block_count++;
 		}
@@ -797,19 +798,6 @@ uint8_t GridMap::saveBumper(bool is_linear)
 
 uint8_t GridMap::saveRcon()
 {
-/*
-	uint8_t block_count;
-	if(c_rcon.should_mark_charger_ ){
-		c_rcon.should_mark_charger_ = false;
-		block_count += saveChargerArea(c_rcon.getRconPos());
-	}
-	else if(c_rcon.should_mark_temp_charger_ ){
-		c_rcon.should_mark_temp_charger_ = false;
-		block_count += saveChargerArea(c_rcon.getRconPos());
-	}
-	return block_count;
-*/
-
 	auto rcon_trig = ev.rcon_triggered/*rcon_get_trig()*/;
 	if(! rcon_trig)
 		return 0;
@@ -960,7 +948,29 @@ bool GridMap::markRobot(uint8_t id)
 			x = getPosition().toCell().x + dx;
 			y = getPosition().toCell().y + dy;
 			auto status = getCell(id, x, y);
-			if (status > CLEANED && status < BLOCKED_BOUNDARY && (status != BLOCKED_RCON)){
+			if (/*status > CLEANED && */status < BLOCKED_BOUNDARY && (status != BLOCKED_RCON)){
+//				ROS_INFO("\033[1;33m" "%s,%d: (%d,%d)" "\033[0m", __FUNCTION__, __LINE__,x, y);
+				setCell(id, x, y, CLEANED);
+				ret = true;
+			}
+		}
+	}
+	return ret;
+}
+
+bool GridMap::trapMarkRobot(uint8_t id)
+{
+	int16_t x, y;
+	bool ret = false;
+	for (auto dy = -ROBOT_SIZE_1_2; dy <= ROBOT_SIZE_1_2; ++dy)
+	{
+		for (auto dx = -ROBOT_SIZE_1_2; dx <= ROBOT_SIZE_1_2; ++dx)
+		{
+//			robotToCell(getPosition(), CELL_SIZE * dy, CELL_SIZE * dx, x, y);
+			x = getPosition().toCell().x + dx;
+			y = getPosition().toCell().y + dy;
+			auto status = getCell(id, x, y);
+			if (/*status > CLEANED && */status < BLOCKED_BOUNDARY/* && (status != BLOCKED_RCON)*/){
 //				ROS_INFO("\033[1;33m" "%s,%d: (%d,%d)" "\033[0m", __FUNCTION__, __LINE__,x, y);
 				setCell(id, x, y, CLEANED);
 				ret = true;

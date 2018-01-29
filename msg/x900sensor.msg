@@ -85,20 +85,14 @@ uint8 plan
 # 4: Direct connect to charge line and charging.
 uint8 charge_status
 
-# sleep_status: Robot STM32 sleep status.
-bool sleep_status
+# main_board_sleep_status: Robot STM32 main board sleep status.
+bool main_board_sleep_status
 
 # water_tank: Water tank status.
 bool water_tank
 
 # battery: Battery voltage in V.
 float32 battery
-
-# vacuum_exception_resume: Vacuum exception resume status.
-# 0: not in resume process / resume succeed
-# 1: during resume process
-# 2: resume fail
-uint8 vacuum_exception_resume
 
 # vacuum_oc: Vacuum over current status.
 bool vacuum_oc

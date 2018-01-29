@@ -89,6 +89,7 @@
 #define RconBR_Wall_T         (uint16_t)0x0000
 #endif// VIRTUAL_WALL
 
+class ACleanMode;
 class Rcon {
 public:
 	int getTrig(void);
@@ -105,7 +106,7 @@ public:
 	uint32_t getStatus()
 	{
 		return rcon_status_;
-	};
+	}
 
 	uint32_t getAll(void);
 
@@ -116,6 +117,7 @@ public:
 
 	uint32_t getWFRcon();
 
+	uint32_t getNavRcon();
 	/*
 	 * @author
 	 * @breif set rcon position

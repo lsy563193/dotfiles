@@ -26,15 +26,19 @@ Point_t MovementFollowPointLinear::_calcTmpTarget()
 {
 	auto p_mode = dynamic_cast<ACleanMode*> (sp_mt_->sp_mode_);
 	auto tmp_target_ = p_mode->plan_path_.front();
-	auto &tmp_target_xy = (isXAxis(p_mode->new_dir_)) ? tmp_target_.x : tmp_target_.y;
-	auto curr_xy = (isXAxis(p_mode->new_dir_)) ? getPosition().x : getPosition().y;
+
+	if(isAny(p_mode->iterate_point_.dir))
+		return tmp_target_;
+
+	auto &tmp_target_xy = (isXAxis(p_mode->iterate_point_.dir)) ? tmp_target_.x : tmp_target_.y;
+	auto curr_xy = (isXAxis(p_mode->iterate_point_.dir)) ? getPosition().x : getPosition().y;
 //	ROS_INFO("curr_xy(%f), target_xy(%f)", curr_xy, tmp_target_xy);
 	auto dis = std::min(std::abs(curr_xy - tmp_target_xy),  (CELL_SIZE * 1.5f /*+ CELL_COUNT_MUL*/));
-	if (!isPos(p_mode->new_dir_))
+	if (!isPos(p_mode->iterate_point_.dir))
 		dis *= -1;
 	tmp_target_xy = curr_xy + dis;
 //	ROS_INFO("dis(%d)",dis);
-//	ROS_WARN("curr(%f,%d, target(%f,%f), dir(%f) ", getPosition().x,getPosition().y, tmp_target_.x,tmp_target_.y,p_mode->new_dir_);
+//	ROS_WARN("curr(%f,%d, target(%f,%f), dir(%f) ", getPosition().x,getPosition().y, tmp_target_.x,tmp_target_.y,p_mode->start_point_.dir);
 //	ROS_WARN("tmp(%f,%f)",tmp_target_.x, tmp_target_.y);
 	return tmp_target_;
 }

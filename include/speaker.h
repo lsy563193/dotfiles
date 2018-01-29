@@ -48,7 +48,7 @@ typedef enum {
 	VOICE_CLEANING_PAUSE				= 40,
 	VOICE_CLEAR_ERROR					= 41,
 	VOICE_CANCEL_APPOINTMENT			= 42,
-	VOICE_PLAN_CLEANING_START			= 43,
+	VOICE_APPOINTMENT_START			= 43,
 	VOICE_CLEANING_STOP				= 44,
 	VOICE_CHECK_SWITCH				= 45,
 	VOICE_ROBOT_STUCK					= 46,
@@ -89,6 +89,10 @@ public:
 
 	void playRoutine();
 
+	void stop();
+
+	bool test();
+
 private:
 	bool openVoiceFile(Voice voice);
 
@@ -98,7 +102,7 @@ private:
 
 	void closePcmDriver(void);
 
-	void launchMixer(void);
+	int launchMixer(void);
 
 	void adjustVolume(long volume);
 
@@ -122,9 +126,9 @@ private:
 
 	bool finish_playing_{true};
 
-	bool can_be_interrupted_{true};
-
 	bool break_playing_{false};
+
+	bool speak_thread_stop_;
 };
 
 extern Speaker speaker;

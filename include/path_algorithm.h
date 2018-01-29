@@ -14,7 +14,7 @@ typedef std::deque<Cells> PathList;
 class APathAlgorithm
 {
 public:
-	virtual bool generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &plan_path) = 0;
+	virtual bool generatePath(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &plan_path) = 0;
 
 	virtual bool checkTrapped(GridMap &map, const Cell_t &curr_cell) {};
 
@@ -73,9 +73,9 @@ public:
 	 * @return: Cells path, the shortest path from start cell to target cell.
 	 */
 	Cells findShortestPath(GridMap &map, const Cell_t &start,
-							  const Cell_t &target, const int &last_dir, bool use_unknown,bool bound,Cell_t min_corner ,Cell_t max_corner);
+							  const Cell_t &target, const Dir_t &last_dir, bool use_unknown,bool bound,Cell_t min_corner ,Cell_t max_corner);
 
-	bool generateShortestPath(GridMap &map, const Point_t &curr,const Point_t &target, const int &last_dir, Points &plan_path);
+	bool generateShortestPath(GridMap &map, const Point_t &curr,const Point_t &target, const Dir_t &last_dir, Points &plan_path);
 
 	/*
 	 * @author Lin Shao Yue
@@ -134,7 +134,7 @@ class NavCleanPathAlgorithm: public APathAlgorithm
 	 * @return: Points path, the path to unclean area.
 	 * @return: bool, true if generating succeeds.
 	 */
-	bool generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &plan_path) override;
+	bool generatePath(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &plan_path) override;
 
 private:
 	/*
@@ -220,7 +220,7 @@ private:
 class WFCleanPathAlgorithm: public APathAlgorithm
 {
 public:
-	bool generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &targets) override;
+	bool generatePath(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &targets) override;
 };
 
 class SpotCleanPathAlgorithm: public APathAlgorithm
@@ -231,7 +231,7 @@ public:
 
 	~SpotCleanPathAlgorithm();
 
-	bool generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &targets) override;
+	bool generatePath(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &targets) override;
 	bool checkTrapped(GridMap &map, const Cell_t &curr_cell) override;
 
 	void genTargets(uint8_t type,float radius, Cells *targets,const Cell_t begincell);
@@ -274,7 +274,7 @@ public:
 	 * @return: Points plan_path, the path to selected home point.
 	 * @return: bool, true if generating succeeds.
 	 */
-	bool generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &plan_path) override;
+	bool generatePath(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &plan_path) override;
 
 	/*
 	 * @author Austin Liu
@@ -298,8 +298,6 @@ public:
 	 */
 	Points getRestHomePoints();
 
-private:
-
 	/*
 	 * @author Austin Liu
 	 *
@@ -308,6 +306,8 @@ private:
 	 * @return: Point_t, current home point.
 	 */
 	Point_t getCurrentHomePoint();
+
+private:
 
 	/*
 	 * @author Austin Liu
@@ -332,7 +332,7 @@ private:
 	 * @return: Cells path, the path to unclean area.
 	 * @return: bool, true if operation succeeds.
 	 */
-	bool generatePathThroughCleanedArea(GridMap &map, const Point_t &curr, const int &last_dir, Points &plan_path);
+	bool generatePathThroughCleanedArea(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &plan_path);
 
 	/*
 	 * @author Austin Liu
@@ -347,7 +347,7 @@ private:
 	 * @return: Cells path, the path to unclean area.
 	 * @return: bool, true if operation succeeds.
 	 */
-	bool generatePathThroughSlamMapReachableArea(GridMap &map, const Point_t &curr, const int &last_dir, Points &plan_path);
+	bool generatePathThroughSlamMapReachableArea(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &plan_path);
 
 	/*
 	 * @author Austin Liu
@@ -361,7 +361,7 @@ private:
 	 * @return: Cells path, the path to unclean area.
 	 * @return: bool, true if operation succeeds.
 	 */
-	bool generatePathThroughUnknownArea(GridMap &map, const Point_t &curr, const int &last_dir, Points &plan_path);
+	bool generatePathThroughUnknownArea(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &plan_path);
 
 typedef enum {
 	THROUGH_CLEANED_AREA = 0,

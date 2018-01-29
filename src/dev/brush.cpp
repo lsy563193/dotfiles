@@ -50,6 +50,14 @@ void Brush::stop(void)
 	ROS_INFO("%s %d: Brush set to stop.", __FUNCTION__, __LINE__);
 }
 
+void Brush::mainBrushResume()
+{
+	brush_status_ = brush_normal;
+	checkBatterySetPWM();
+	setPWM(0, 0, normal_PWM);
+	ROS_INFO("%s %d: Main Brush set to normal.", __FUNCTION__, __LINE__);
+}
+
 void Brush::updatePWM()
 {
 	if (brush_status_ == brush_normal && ros::Time::now().toSec() - check_battery_time_stamp_ > 60)

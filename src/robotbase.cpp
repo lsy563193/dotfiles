@@ -6,7 +6,7 @@
 #include "robotbase.h"
 
 
-bool g_bye_bye = false;
+bool g_pp_shutdown = false;
 
 bool robotbase_thread_stop = false;
 bool send_thread_stop = false;
@@ -39,30 +39,10 @@ int temp_beeper_silence_time_count = 0;
 uint8_t robotbase_led_type = LED_STEADY;
 bool robotbase_led_update_flag = false;
 uint8_t robotbase_led_color = LED_GREEN;
-uint16_t robotbase_led_cnt_for_switch = 0;
+uint16_t robotbase_led_cnt_for_one_cycle = 0;
 uint16_t live_led_cnt_for_switch = 0;
 
 extern boost::mutex odom_mutex;
-
-void debug_received_stream()
-{
-	ROS_INFO("%s %d: Received stream:", __FUNCTION__, __LINE__);
-	for (int i = 0; i < RECEI_LEN; i++)
-		printf("%02d ", i);
-	printf("\n");
-
-	for (int i = 0; i < RECEI_LEN; i++)
-		printf("%02x ", serial.receive_stream[i]);
-	printf("\n");
-}
-
-void debug_send_stream(uint8_t *buf)
-{
-	ROS_INFO("%s %d: Send stream:", __FUNCTION__, __LINE__);
-	for (int i = 0; i < SEND_LEN; i++)
-		printf("%02x ", *(buf + i));
-	printf("\n");
-}
 
 void robotbase_deinit(void)
 {
@@ -75,9 +55,9 @@ void robotbase_deinit(void)
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
-	serial.setCleanMode(POWER_DOWN);
+	serial.setMainBoardMode(NORMAL_SLEEP_MODE);
 	usleep(40000);
-	while(ros::ok() && !g_bye_bye){
+	while(ros::ok() && !g_pp_shutdown){
 		usleep(2000);
 	}
 	serial.close();
@@ -102,7 +82,7 @@ void robotbase_reset_send_stream(void)
 	serial.setSendData(SEND_LEN - 2, 0xcc);
 	serial.setSendData(SEND_LEN - 1, 0x33);
 
-	serial.setCleanMode(POWER_ACTIVE);
+	serial.setMainBoardMode(IDLE_MODE);
 	uint8_t buf[SEND_LEN];
 	{
 		boost::mutex::scoped_lock lock(g_send_stream_mutex);
@@ -156,21 +136,21 @@ void process_led()
 		}
 		case LED_FLASH:
 		{
-			if (live_led_cnt_for_switch > robotbase_led_cnt_for_switch / 2)
+			if (live_led_cnt_for_switch > robotbase_led_cnt_for_one_cycle / 2)
 				led_brightness = 0;
 			break;
 		}
 		case LED_BREATH:
 		{
-			if (live_led_cnt_for_switch > robotbase_led_cnt_for_switch / 2)
-				led_brightness = led_brightness * (2 * (float)live_led_cnt_for_switch / (float)robotbase_led_cnt_for_switch - 1.0);
+			if (live_led_cnt_for_switch > robotbase_led_cnt_for_one_cycle / 2)
+				led_brightness = led_brightness * (2 * (float)live_led_cnt_for_switch / (float)robotbase_led_cnt_for_one_cycle - 1.0);
 			else
-				led_brightness = led_brightness * (1.0 - 2 * (float)live_led_cnt_for_switch / (float)robotbase_led_cnt_for_switch);
+				led_brightness = led_brightness * (1.0 - 2 * (float)live_led_cnt_for_switch / (float)robotbase_led_cnt_for_one_cycle);
 			break;
 		}
 	}
 
-	if (live_led_cnt_for_switch++ > robotbase_led_cnt_for_switch)
+	if (live_led_cnt_for_switch++ > robotbase_led_cnt_for_one_cycle)
 		live_led_cnt_for_switch = 0;
 
 	switch (robotbase_led_color)
@@ -198,13 +178,3 @@ void process_led()
 	}
 	//ROS_INFO("%s %d: live_led_cnt_for_switch: %d, led_brightness: %d.", __FUNCTION__, __LINE__, live_led_cnt_for_switch, led_brightness);
 }
-
-void robotbase_reset_odom_pose(void)
-{
-	// Reset the odom pose to (0, 0)
-	boost::mutex::scoped_lock lock(odom_mutex);
-	odom.setX(0);
-	odom.setY(0);
-}
-
-

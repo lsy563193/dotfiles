@@ -22,11 +22,6 @@ CleanModeTest::~CleanModeTest()
 	event_manager_set_enable(false);
 }
 
-bool CleanModeTest::mapMark(bool isMarkRobot)
-{
-	return false;
-}
-
 bool CleanModeTest::isFinish()
 {
 	if (!sp_action_->isFinish() && !ev.remote_direction_back && !ev.remote_direction_forward)

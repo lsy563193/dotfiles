@@ -9,22 +9,24 @@
 
 ModeRemote::ModeRemote()
 {//use dynamic then you can limit using derived class member
-	// TODO: Remote mode after nav is acting weird.
 	ROS_INFO("%s %d: Entering remote mode\n=========================" , __FUNCTION__, __LINE__);
 	event_manager_register_handler(this);
 	event_manager_set_enable(true);
 
-	led.setMode(LED_STEADY, LED_GREEN);
+	serial.setMainBoardMode(WORK_MODE);
 	if (gyro.isOn())
 	{
-		sp_action_.reset(new MovementStay());
-		action_i_ = ac_movement_stay;
+		led.setMode(LED_STEADY, LED_GREEN);
+		vacuum.setLastMode();
+		brush.normalOperate();
+		action_i_ = ac_remote;
 	}
 	else
 	{
-		sp_action_.reset(new ActionOpenGyro());
+		led.setMode(LED_FLASH, LED_GREEN, 600);
 		action_i_ = ac_open_gyro;
 	}
+	genNextAction();
 	key.resetTriggerStatus();
 	c_rcon.resetStatus();
 	remote.reset();
@@ -48,17 +50,10 @@ ModeRemote::~ModeRemote()
 
 bool ModeRemote::isExit()
 {
-	if ((action_i_ == ac_movement_stay && sp_action_->isTimeUp()) || ev.key_clean_pressed)
+	if (ev.key_clean_pressed)
 	{
 		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
 		setNextMode(md_idle);
-		return true;
-	}
-
-	if (ev.key_long_pressed)
-	{
-		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
-		setNextMode(md_sleep);
 		return true;
 	}
 
@@ -67,14 +62,18 @@ bool ModeRemote::isExit()
 
 bool ModeRemote::isFinish()
 {
-	if (sp_action_->isFinish() ||
-			(action_i_ == ac_turn &&
-				(ev.remote_direction_forward || ev.remote_direction_left || ev.remote_direction_right)
-			)
-		)
+	if ((action_i_ != ac_exception_resume) && isExceptionTriggered())
+	{
+		ROS_WARN("%s %d: Exception triggered.", __FUNCTION__, __LINE__);
+		action_i_ = ac_exception_resume;
+		genNextAction();
+	}
+
+	if (sp_action_->isFinish())
 	{
 		PP_INFO();
-		sp_action_.reset(getNextAction());
+		action_i_ = getNextAction();
+		genNextAction();
 		if (sp_action_ == nullptr)
 		{
 			setNextMode(md_idle);
@@ -85,104 +84,17 @@ bool ModeRemote::isFinish()
 	return false;
 }
 
-IAction* ModeRemote::getNextAction()
+int ModeRemote::getNextAction()
 {
-	if (action_i_ == ac_open_gyro)
+	if(action_i_ == ac_open_gyro || (action_i_ == ac_exception_resume && !ev.fatal_quit))
 	{
-		action_i_ = ac_movement_stay;
-		return new MovementStay();
+		led.setMode(LED_STEADY, LED_GREEN);
+		vacuum.setLastMode();
+		brush.normalOperate();
+		return ac_remote;
 	}
 
-	if (action_i_ == ac_movement_stay)
-	{
-		if (bumper.getStatus() || cliff.getStatus())
-		{
-			action_i_ = ac_back;
-			return new MovementBack(0.01, BACK_MAX_SPEED);
-		}
-		else if (ev.remote_direction_forward)
-		{
-			action_i_ = ac_movement_direct_go;
-			ev.remote_direction_forward = false;
-			return new MovementDirectGo();
-		}
-		else if (ev.remote_direction_left)
-		{
-			action_i_ = ac_turn;
-			ev.remote_direction_left = false;
-			return new MovementTurn(robot::instance()->getWorldPoseRadian() + degree_to_radian(30), ROTATE_TOP_SPEED);
-		}
-		else if (ev.remote_direction_right)
-		{
-			action_i_ = ac_turn;
-			ev.remote_direction_right = false;
-			return new MovementTurn(robot::instance()->getWorldPoseRadian() - degree_to_radian(30), ROTATE_TOP_SPEED);
-		}
-	}
-
-	else if (action_i_ == ac_movement_direct_go)
-	{
-		if (ev.bumper_triggered || ev.cliff_triggered)
-		{
-			ROS_INFO("%s %d: ev.bumper_triggered(%d), ev.cliff_triggered(%d).",
-					 __FUNCTION__, __LINE__, ev.bumper_triggered, ev.cliff_triggered);
-			ev.bumper_triggered = 0;
-			ev.cliff_triggered = 0;
-			action_i_ = ac_back;
-			return new MovementBack(0.01, BACK_MAX_SPEED);
-		}
-		else if (ev.rcon_triggered)
-		{
-			ROS_INFO("%s %d: ev.rcon_triggered(%d).",
-					 __FUNCTION__, __LINE__, ev.rcon_triggered);
-			ev.rcon_triggered = 0;
-			action_i_ = ac_back;
-			return new MovementBack(0.05, BACK_MAX_SPEED);
-		}
-		else
-		{
-			ev.remote_direction_forward = false;
-			ev.remote_direction_left = false;
-			ev.remote_direction_right = false;
-			action_i_ = ac_movement_stay;
-			return new MovementStay();
-		}
-	}
-	else if (action_i_ == ac_turn)
-	{
-		if (ev.bumper_triggered || ev.cliff_triggered)
-		{
-			ROS_INFO("%s %d: ev.bumper_triggered(%d), ev.cliff_triggered(%d).",
-					 __FUNCTION__, __LINE__, ev.bumper_triggered, ev.cliff_triggered);
-			ev.bumper_triggered = 0;
-			ev.cliff_triggered = 0;
-			action_i_ = ac_back;
-			return new MovementBack(0.01, BACK_MAX_SPEED);
-		}
-		else
-		{
-			ev.remote_direction_forward = false;
-			ev.remote_direction_left = false;
-			ev.remote_direction_right = false;
-			action_i_ = ac_movement_stay;
-			return new MovementStay();
-		}
-	}
-	else if (action_i_ == ac_back)
-	{
-		if (bumper.getStatus() || cliff.getStatus())
-		{
-			action_i_ = ac_back;
-			return new MovementBack(0.01, BACK_MAX_SPEED);
-		}
-		else
-		{
-			action_i_ = ac_movement_stay;
-			return new MovementStay();
-		}
-	}
-
-	return nullptr;
+	return ac_null;
 }
 
 void ModeRemote::remoteClean(bool state_now, bool state_last)
@@ -224,22 +136,10 @@ void ModeRemote::keyClean(bool state_now, bool state_last)
 	beeper.play_for_command(VALID);
 
 	// Wait for key released.
-	bool long_press = false;
 	while (key.getPressStatus())
-	{
-		if (!long_press && key.getPressTime() > 3)
-		{
-			ROS_WARN("%s %d: key clean.", __FUNCTION__, __LINE__);
-			beeper.play_for_command(VALID);
-			long_press = true;
-		}
 		usleep(20000);
-	}
 
-	if (long_press)
-		ev.key_long_pressed = true;
-	else
-		ev.key_clean_pressed = true;
+	ev.key_clean_pressed = true;
 	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
 
 	key.resetTriggerStatus();
