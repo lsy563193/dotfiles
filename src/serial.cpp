@@ -597,7 +597,7 @@ bool Serial::test()
 		ROS_ERROR_COND(pthread_cond_wait(&recev_cond, &recev_lock) != 0, "robotbase pthread receive cond wait fail");
 		memcpy(buf, receive_stream, sizeof(uint8_t) * RECEI_LEN);
 		ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock) != 0, "robotbase pthread receive unlock fail");
-		robot::instance()->debugReceivedStream(buf);
+//		robot::instance()->debugReceivedStream(buf);
 
 		if (buf[REC_MIX_BYTE] == 0xFF)
 		{
