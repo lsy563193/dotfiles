@@ -58,16 +58,23 @@ int main(int argc, char **argv)
 	ros::init(argc, argv, "pp");
 	ros::NodeHandle	nh_dev("~");
 
+	std::string	serial_port;
+	nh_dev.param<std::string>("serial_port", serial_port, "/dev/ttyS2");
+
+	int baud_rate;
+	nh_dev.param<int>("baud_rate", baud_rate, 115200);
+
 	// Create speaker play thread.
 	auto speaker_play_routine = new boost::thread(boost::bind(&Speaker::playRoutine, &speaker));
 
-	r16_board_test();
+	r16_board_test(serial_port, baud_rate);
 
 	// Test finish.
 	while (ros::ok())
 	{
+		speaker.play(VOICE_TEST_SUCCESS);
 		ROS_INFO("%s %d: Test finish.", __FUNCTION__, __LINE__);
-		sleep(1);
+		sleep(5);
 	}
 }
 

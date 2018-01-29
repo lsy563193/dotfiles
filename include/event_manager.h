@@ -59,7 +59,7 @@ typedef struct {
 		bool oc_brush_main;
 		bool oc_wheel_left;
 		bool oc_wheel_right;
-		bool oc_suction;
+		bool oc_vacuum;
 		bool key_clean_pressed;
 		bool key_long_pressed;
 		bool remote_follow_wall;
@@ -155,7 +155,7 @@ virtual void overCurrentWheelLeft(bool state_now, bool state_last);
 
 virtual void overCurrentWheelRight(bool state_now, bool state_last);
 
-virtual void overCurrentSuction(bool state_now, bool state_last);
+virtual void overCurrentVacuum(bool state_now, bool state_last);
 
 /* Key */
 virtual void keyClean(bool state_now, bool state_last);
