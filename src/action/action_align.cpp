@@ -21,19 +21,22 @@ bool ActionAlign::isFinish()
 	{
 		float align_angle = lidar.alignAngle();
 		odom.setRadianOffset(-align_angle);
-		ROS_INFO("%s %d: align_angle angle (%f).", __FUNCTION__, __LINE__, align_angle);
+		ROS_INFO("%s %d: align_angle angle (%f).", __FUNCTION__, __LINE__, radian_to_degree(align_angle));
 		return true;
 	}
 	return false;
 }
 
 void ActionAlign::run() {
-	wheel.setPidTargetSpeed(0, 0);
-	if(lidar.lidarGetFitLine(degree_to_radian(0), degree_to_radian(359), -1.0, 3.0, &align_angle, &distance, isLeft, true))
-	{
-		lidar.alignAngle(static_cast<float>(align_angle));
+//	while (ros::ok()){
+//		sleep(2);
+		wheel.setPidTargetSpeed(0, 0);
+		if(lidar.lidarGetFitLine(degree_to_radian(0), degree_to_radian(359), -1.0, 3.0, &align_angle, &distance, isLeft, true))
+		{
+			lidar.alignAngle(static_cast<float>(align_angle));
+		}
 	}
-}
+//}
 
 bool ActionAlign::isTimeUp()
 {

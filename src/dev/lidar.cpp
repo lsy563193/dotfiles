@@ -112,16 +112,19 @@ int8_t Lidar::isScanCompensateReady()
 
 void Lidar::setScanLinearReady(uint8_t val)
 {
+//	ROS_ERROR("setScanLinearReady(%d)", val);
 	is_scanLinear_ready_ = val;
 }
 
 void Lidar::setScanOriginalReady(uint8_t val)
 {
+//	ROS_ERROR("setScanOriginalReady(%d)", val);
 	is_scanOriginal_ready_ = val;
 }
 
 void Lidar::setScanCompensateReady(uint8_t val)
 {
+//	ROS_ERROR("setScanCompensateReady(%d)", val);
 	is_scanCompensate_ready_ = val;
 }
 
@@ -403,7 +406,7 @@ bool Lidar::getAlignAngle(const std::vector<LineABC> *lines ,float *align_angle)
 bool Lidar::lidarGetFitLine(double r_begin, double r_end, double range, double dis_lim, double *line_radian, double *distance,bool is_left,bool is_align)
 {
 	ROS_WARN("angle_range_raw(%lf, %lf)", radian_to_degree(r_begin), radian_to_degree(r_end));
-	if(isScanCompensateReady() == 0){
+	if(isScanOriginalReady() == 0){
 		INFO_BLUE("ScanCompensateNotReady! Break!");
 		return false;
 	}
@@ -424,7 +427,8 @@ bool Lidar::lidarGetFitLine(double r_begin, double r_end, double range, double d
 	}
 	ROS_WARN("lidarGetFitLine");
 	scanLinear_mutex_.lock();
-	auto tmp_scan_data = lidarScanData_compensate_;
+//	auto tmp_scan_data = lidarScanData_compensate_;
+	auto tmp_scan_data = lidarScanData_original_;
 	scanLinear_mutex_.unlock();
 /*	r_begin = radian_to_degree(atan2(ROBOT_RADIUS * sin(r_begin), LIDAR_OFFSET_X + ROBOT_RADIUS * cos(r_begin)));
 	r_end = radian_to_degree(atan2(ROBOT_RADIUS * sin(r_end), LIDAR_OFFSET_X + ROBOT_RADIUS * cos(r_end)));
@@ -437,15 +441,15 @@ bool Lidar::lidarGetFitLine(double r_begin, double r_end, double range, double d
 		auto laser_range_offset = atan2(LIDAR_OFFSET_X, ROBOT_RADIUS);
 		if (int(d_begin)!= 180) {
 			d_begin = d_begin - radian_to_degree(laser_range_offset);
-			ROS_INFO("(d_begin) != 180");
+//			ROS_INFO("(d_begin) != 180");
 		} else {
-			ROS_INFO("(d_begin) == 180");
+//			ROS_INFO("(d_begin) == 180");
 		}
 		if (int(d_end) != 180) {
 			d_end = d_end + radian_to_degree(laser_range_offset);
-			ROS_INFO("radian_to_degree(d_begin) != 180");
+//			ROS_INFO("radian_to_degree(d_begin) != 180");
 		}
-		ROS_INFO("laser_range_offset = %d, d_begin = %lf, d_end = %lf", int(radian_to_degree(laser_range_offset)), d_begin, d_end);
+//		ROS_INFO("laser_range_offset = %d, d_begin = %lf, d_end = %lf", int(radian_to_degree(laser_range_offset)), d_begin, d_end);
 	}
 	d_begin -= radian_to_degree(LIDAR_THETA);
 	d_end -= radian_to_degree(LIDAR_THETA);
@@ -455,11 +459,11 @@ bool Lidar::lidarGetFitLine(double r_begin, double r_end, double range, double d
 		d_end += 360;
 	if(d_begin >= d_end)
 		isReverse = true;
-	ROS_WARN("angle_range_after(%lf, %lf)", d_begin, d_end);
+//	ROS_WARN("angle_range_after(%lf, %lf)", d_begin, d_end);
 	for (auto i = static_cast<int>(d_begin); (i < static_cast<int>(d_end) || isReverse);) {
 		if(i > 359)
 			i = i - 360;
-		ROS_INFO("i = %d", i);
+//		ROS_INFO("i = %d", i);
 		if (tmp_scan_data.ranges[i] < 4) {
 			th = i * 1.0;
 			th = th + 180.0;
@@ -513,6 +517,7 @@ bool Lidar::lineFit(const std::deque<Vector2<double>> &points, double &a, double
 	for(int i = 0; i < size; i++) {
 		x_mean += points[i].x;
 		y_mean += points[i].y;
+//		ROS_INFO("points(%lf, %lf)", points[i].x, points[i].y);
 	}
 	x_mean /= size;
 	y_mean /= size;
@@ -557,27 +562,27 @@ bool Lidar::splitLine(const std::vector<Vector2<double>> &points, double consecu
 	new_line.push_back(points[0]);
 	for(int i = 1; i < (points_size - 1); i++) {
 		distance = sqrt((points[i].x - points[i-1].x) * (points[i].x - points[i-1].x) + (points[i].y - points[i-1].y) * (points[i].y - points[i-1].y));
-		ROS_WARN("distance = %lf", distance);
+//		ROS_WARN("distance = %lf", distance);
 		if (distance <= consecutive_lim) {
 			new_line.push_back(points[i]);
-			ROS_INFO("i1(%d)", i);
+//			ROS_INFO("i1(%d, %lf, %lf)", i, points[i].x, points[i].y);
 			if (i == (points_size - 2)) {
 				Lidar_Group.push_back(new_line);
-				ROS_ERROR("split1!");
+//				ROS_ERROR("split1!");
 				new_line.clear();
 			}
 		} else {
 			Lidar_Group.push_back(new_line);
-			ROS_ERROR("split2!");
+//			ROS_ERROR("split2!");
 			new_line.clear();
 			new_line.push_back(points[i]);
-			ROS_INFO("i2(%d)", i);
+//			ROS_INFO("i2(%d)", i);
 		}
 	}
 	for (std::vector<std::deque<Vector2<double>> >::iterator iter = Lidar_Group.begin(); iter != Lidar_Group.end();){
 		if (iter->size() < points_count_lim) {
 			iter = Lidar_Group.erase(iter);
-			ROS_ERROR("erase!");
+//			ROS_ERROR("erase!");
 		} else {
 			++iter;
 		}
@@ -600,7 +605,8 @@ bool Lidar::splitLine2nd(std::vector<std::deque<Vector2<double>> > *groups, doub
 	std::deque<Vector2<double>> new_line;
 	std::vector<std::deque<Vector2<double>> > new_group;
 
-	ROS_DEBUG("Lidar::splitLine2nd");
+	INFO_BLUE("Lidar::splitLine2nd");
+	ROS_INFO("(*groups).size(%d)", (*groups).size());
 	groups_erased_index.clear();
 	new_line.clear();
 	new_group.clear();
@@ -679,7 +685,7 @@ bool Lidar::splitLine2nd(std::vector<std::deque<Vector2<double>> > *groups, doub
 	/*if the lines still can be splited, iterate to split it*/
 	if (end_iterate_flag == false) {
 		//ROS_INFO("iterate!");
-		splitLine2nd(&Lidar_Group, 0.01,10);
+		splitLine2nd(&Lidar_Group, t_lim,10);
 	}
 //	robot::instance()->pubLineMarker(&Lidar_Group,"splitLine2nd");
 	return true;
@@ -694,6 +700,9 @@ bool Lidar::mergeLine(std::vector<std::deque<Vector2<double>> > *groups, double 
 	std::vector<int> merge_index;
 	std::deque<Vector2<double>> new_line;
 	std::vector<std::deque<Vector2<double>> > new_group;
+	INFO_BLUE("mergeLine");
+	ROS_INFO("(*groups).size(%d)", (*groups).size());
+	merge_index.clear();
 	new_line.clear();
 	new_group.clear();
 	if (!(*groups).empty()) {
@@ -778,10 +787,14 @@ bool Lidar::fitLineGroup(std::vector<std::deque<Vector2<double>> > *groups, doub
 	double	x_0;
 	int	loop_count = 0;
 	LineABC	new_fit_line;
+	INFO_BLUE("fitLineGroup");
+	ROS_INFO("(*groups).size(%d)", (*groups).size());
 	fit_line.clear();
 	if (!(*groups).empty()) {
 		for (std::vector<std::deque<Vector2<double>> >::iterator iter = (*groups).begin(); iter != (*groups).end(); ++iter) {
+
 			lineFit((*iter), a, b, c);
+
 			new_fit_line.A = a;
 			new_fit_line.B = b;
 			new_fit_line.C = c;
@@ -790,9 +803,10 @@ bool Lidar::fitLineGroup(std::vector<std::deque<Vector2<double>> > *groups, doub
 			new_fit_line.y1 = iter->begin()->y;
 			new_fit_line.y2 = (iter->end()-1)->y;
 			new_fit_line.len = static_cast<int>(iter->size());
+
 			x_0 = 0 - c / a;
-			ROS_DEBUG("a = %lf, b = %lf, c = %lf", a, b, c);
-			ROS_DEBUG("x_0 = %lf", x_0);
+			ROS_INFO("a = %lf, b = %lf, c = %lf", a, b, c);
+			ROS_INFO("x_0 = %lf", x_0);
 			/*erase the lines which are far away from the robot*/
 			double dis = std::abs(c / (sqrt(a * a + b * b)));
 			new_fit_line.dis = dis;
@@ -801,7 +815,7 @@ bool Lidar::fitLineGroup(std::vector<std::deque<Vector2<double>> > *groups, doub
 				continue;
 			}
 			fit_line.push_back(new_fit_line);
-			//ROS_DEBUG("%s %d: line_angle%d = %lf", __FUNCTION__, __LINE__, loop_count, line_angle);
+//			ROS_INFO("%s %d: line_angle%d = %lf", __FUNCTION__, __LINE__, loop_count, line_angle);
 			loop_count++;
 		}
 		ACleanMode::pubLineMarker(&fit_line);
@@ -1413,6 +1427,50 @@ void Lidar::setLidarScanDataOriginal(const sensor_msgs::LaserScan::ConstPtr &sca
 sensor_msgs::LaserScan Lidar::getLidarScanDataOriginal() {
 	boost::mutex::scoped_lock lock(scanOriginal_mutex_);
 	return lidarScanData_original_;
+}
+
+void Lidar::init() {
+	PP_INFO();
+	switch_ = OFF;
+
+	angle_n_ = {};
+	is_scanLinear_ready_ = {};
+	is_scanOriginal_ready_ = {};
+	is_scanCompensate_ready_ = {};
+
+	lidarScanData_linear_ = {};
+	lidarScanData_original_ = {};
+	lidarScanData_compensate_ = {};
+	lidarXY_points = {};
+	scanLinear_update_time_ = {};
+	scanOriginal_update_time_ = {};
+	scanCompensate_update_time_ = {};
+	scanXYPoint_update_time_ = {};
+
+	Lidar_Point = {};
+	Lidar_Group = {};
+	Lidar_Group_2nd = {};
+	fit_line = {};
+
+	fit_line_marker = {};
+
+	lidar_points_ = {};
+
+	// For aligning.
+	align_finish_ = {};
+	align_angle_ = {};
+	laser_points_ = {};
+
+	// For slip checking
+	slip_status_ = {false};
+	slip_frame_cnt_ = {0};
+	last_frame_ranges_ = {};
+	last_frame_time_stamp_ = {};
+	current_frame_time_stamp_ = {};
+	setScanLinearReady(0);
+	setScanOriginalReady(0);
+	setScanCompensateReady(0);
+	return;
 }
 
 bool lidar_is_stuck()
