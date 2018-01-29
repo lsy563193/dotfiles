@@ -400,15 +400,19 @@ bool CleanModeNav::updateActionInStateInit() {
 	} else if (action_i_ == ac_align){
 		action_i_ = ac_open_slam;
 
+	}
+	else if (action_i_ == ac_open_slam){
+		//after back_from_charger and line alignment
+		//set charge position
 		if(back_from_charger_){
-			charger_pose.SetX( (int16_t)((odom.getX() + 0.6) / CELL_SIZE) );
-			charger_pose.SetY( (int16_t)((odom.getY() /CELL_SIZE)) );
-			ROS_INFO("%s,%d,charger pose (%d,%d)",__FUNCTION__,__LINE__,charger_pose.GetX(),charger_pose.GetY());
+			double align_offset = odom.getRadianOffset();//in radians
+			charger_pose.SetX( (int16_t)(cos(align_offset)*0.6/CELL_SIZE) +  (int16_t)(odom.getX()/CELL_SIZE) );
+			charger_pose.SetY( (int16_t)(sin(align_offset)*0.6/CELL_SIZE) +  (int16_t)(odom.getY()/CELL_SIZE) );
+			ROS_INFO("%s,%d, alignment offset angle (%f),charger pose (%d,%d)",__FUNCTION__,__LINE__, align_offset,charger_pose.GetX(),charger_pose.GetY());
 			clean_map_.setChargerArea( charger_pose );
 		}
-	}
-	else if (action_i_ == ac_open_slam)
 		return false;
+	}
 	genNextAction();
 	return true;
 }
