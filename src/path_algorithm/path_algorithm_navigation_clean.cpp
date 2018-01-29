@@ -2,10 +2,12 @@
 // Created by lsy563193 on 12/13/17.
 //
 
+#include <dev.h>
 #include "ros/ros.h"
 #include "robot.hpp"
 #include "path_algorithm.h"
 
+extern int g_follow_last_follow_wall_dir;
 bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &plan_path)
 {
 
@@ -97,15 +99,18 @@ Cells NavCleanPathAlgorithm::findTargetInSameLane(GridMap &map, const Cell_t &cu
 		}
 	}
 
-	Cell_t target = it[0];
+	Cell_t target;
 	if (it[0].x != curr_cell.x)
 	{
+		target = it[0];
 		is_found++;
-	} else if (it[1].x != curr_cell.x)
+	}
+	if (it[1].x != curr_cell.x)
 	{
 		target = it[1];
 		is_found++;
 	}
+//	ROS_WARN("%s %d: curr(%d,%d) is_found(%d),it(%d,%d)", __FUNCTION__, __LINE__, curr_cell.x, curr_cell.y,is_found,it[0],it[1]);
 	if (is_found == 2)
 	{
 		// Select the nearest side.
@@ -113,20 +118,24 @@ Cells NavCleanPathAlgorithm::findTargetInSameLane(GridMap &map, const Cell_t &cu
 			target = it[0];
 
 		//todo
-//		ROS_WARN("%s %d: nag dir(%d)", __FUNCTION__, __LINE__, (Movement::cm_target_p_.y<Movement::cm_origin_p_.y));
-//		if(mt.is_follow_wall() && cm_is_reach())
-//		{
-//			if(mt.is_left() ^ (Movement::cm_target_p_.y<Movement::cm_origin_p_.y))
-//				target = it[1];
-//		}
+//			ROS_ERROR("%s %d: 1 g_follow_last_follow_wall_dir(%d)", __FUNCTION__, __LINE__, g_follow_last_follow_wall_dir);
+		if(g_follow_last_follow_wall_dir!=0)
+		{
+			beeper.play_for_command(VALID);
+			ROS_ERROR("%s %d: g_follow_last_follow_wall_dir(%d)", __FUNCTION__, __LINE__, g_follow_last_follow_wall_dir);
+			if(g_follow_last_follow_wall_dir == 1)
+				target = it[1];
+			else//(g_follow_last_follow_wall_dir == 2)
+				target = it[0];
+		}
 	}
-
+	g_follow_last_follow_wall_dir = 0;
 	Cells path{};
 	if (is_found)
 	{
 		path.push_front(target);
 		path.push_front(getPosition().toCell());
-		ROS_INFO("%s %d: x pos:(%d,%d), x neg:(%d,%d), target:(%d,%d)", __FUNCTION__, __LINE__, it[0].x, it[0].y, it[1].x, it[1].y, target.x, target.y);
+//		ROS_INFO("%s %d:curr(%d,%d) x pos:(%d,%d), x neg:(%d,%d), target:(%d,%d),is_found(%d)", __FUNCTION__, __LINE__,curr_cell.x,curr_cell.y, it[0].x, it[0].y, it[1].x, it[1].y, target.x, target.y,is_found);
 //		map.print(CLEAN_MAP, target.x, target.y);
 	}
 	else

@@ -534,7 +534,8 @@ uint8_t GridMap::setFollowWall(bool is_left,const Points& passed_path)
 		auto dy = is_left ? 2 : -2;
 		for(auto& point : passed_path){
 			if(getCell(CLEAN_MAP,point.toCell().x,point.toCell().y) != BLOCKED_RCON){
-				auto block_cell = point.getRelative(0, dy * CELL_SIZE).toCell();
+				auto relative_cell = point.getRelative(0, dy * CELL_SIZE);
+				auto block_cell = relative_cell.toCell();
 				msg += "(" + std::to_string(block_cell.x) + "," + std::to_string(block_cell.y) + ")";
 				setCell(CLEAN_MAP,block_cell.x,block_cell.y, BLOCKED_FW);
 				block_count++;
