@@ -6,6 +6,7 @@
 #include <robotbase.h>
 #include <brush.h>
 #include <wheel.hpp>
+#include <robot.hpp>
 
 boost::mutex g_send_stream_mutex;
 
@@ -558,8 +559,8 @@ void Serial::send_routine_cb()
 		memcpy(buf,serial.send_stream,sizeof(uint8_t)*SEND_LEN);
 		g_send_stream_mutex.unlock();
 		buf[CTL_CRC] = serial.calBufCrc8(buf, sl);
-//		debug_send_stream(&buf[0]);
 		serial.write(SEND_LEN, buf);
+//		robot::instance()->debugSendStream(buf);
 	}
 	core_thread_stop = true;
 	ROS_ERROR("%s,%d exit",__FUNCTION__,__LINE__);

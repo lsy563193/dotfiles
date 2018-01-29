@@ -997,9 +997,21 @@ void ACleanMode::cliffAll(bool state_now, bool state_last)
 
 void ACleanMode::overCurrentBrushMain(bool state_now, bool state_last)
 {
-	INFO_YELLOW("MAIN BRUSH OVER CURRENT");
-	ev.oc_brush_main = true;
-	brush.stop();
+	if (!ev.oc_brush_main)
+	{
+		INFO_YELLOW("MAIN BRUSH OVER CURRENT");
+		ev.oc_brush_main = true;
+		brush.stop();
+	}
+}
+
+void ACleanMode::overCurrentVacuum(bool state_now, bool state_last)
+{
+	if (!ev.oc_vacuum)
+	{
+		ROS_WARN("%s %d: Vacuum over current.", __FUNCTION__, __LINE__);
+		ev.oc_vacuum = true;
+	}
 }
 // ------------------Handlers end--------------------------
 

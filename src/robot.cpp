@@ -235,10 +235,6 @@ void robot::robotbase_routine_cb()
 		battery.setVoltage(buf[REC_BATTERY] * 10);
 		sensor.battery = static_cast<float>(battery.getVoltage() / 100.0);
 
-		// For vacuum device.
-		vacuum.setExceptionResumeStatus(buf[REC_VACUUM_EXCEPTION_RESUME]);
-		sensor.vacuum_exception_resume = vacuum.getExceptionResumeStatus();
-
 		// For over current checking.
 		vacuum.setOc((buf[REC_OC] & 0x01) != 0);
 		sensor.vacuum_oc = vacuum.getOc();
@@ -254,8 +250,8 @@ void robot::robotbase_routine_cb()
 		sensor.left_wheel_oc = wheel.getLeftWheelOc();
 
 		// For debug.
-//		printf("%d: REC_MIX_BYTE:(%2x), REC_VACUUM_EXCEPTION_RESUME:(%2x).\n.",
-//			   __LINE__, buf[REC_MIX_BYTE], buf[REC_VACUUM_EXCEPTION_RESUME]);
+//		printf("%d: REC_MIX_BYTE:(%2x), REC_RESERVED:(%2x).\n.",
+//			   __LINE__, buf[REC_MIX_BYTE], buf[REC_RESERVED]);
 //		printf("%d: charge:(%d), remote:(%d), key:(%d), rcon(%d).\n.",
 //			   __LINE__, charger.getChargeStatus(), remote.get(), key.getTriggerStatus(), c_rcon.getStatus());
 
@@ -546,6 +542,18 @@ void robot::debugReceivedStream(const uint8_t *buf)
 	printf("\n");
 
 	for (int i = 0; i < RECEI_LEN; i++)
+		printf("%02x ", buf[i]);
+	printf("\n");
+}
+
+void robot::debugSendStream(const uint8_t *buf)
+{
+	ROS_INFO("%s %d: Send stream:", __FUNCTION__, __LINE__);
+	for (int i = 0; i < SEND_LEN; i++)
+		printf("%02d ", i);
+	printf("\n");
+
+	for (int i = 0; i < SEND_LEN; i++)
 		printf("%02x ", buf[i]);
 	printf("\n");
 }

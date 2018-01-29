@@ -6,6 +6,7 @@
 #include <move_type.hpp>
 #include <error.h>
 #include <event_manager.h>
+#include <robot.hpp>
 #include "dev.h"
 
 MovementExceptionResume::MovementExceptionResume()
@@ -18,6 +19,7 @@ MovementExceptionResume::MovementExceptionResume()
 
 	resume_wheel_start_time_ = ros::Time::now().toSec();
 	resume_main_bursh_start_time_ = ros::Time::now().toSec();
+	resume_vacuum_start_time_ = ros::Time::now().toSec();
 }
 
 MovementExceptionResume::~MovementExceptionResume()
@@ -27,7 +29,7 @@ MovementExceptionResume::~MovementExceptionResume()
 
 void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 {
-	if (ev.oc_suction)
+	if (ev.oc_vacuum)
 		left_speed = right_speed = 0;
 	else if (ev.oc_wheel_left || ev.oc_wheel_right)
 	{
@@ -91,7 +93,7 @@ void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_sp
 bool MovementExceptionResume::isFinish()
 {
 	if (!(ev.bumper_jam || ev.cliff_jam || ev.cliff_all_triggered || ev.oc_wheel_left || ev.oc_wheel_right
-		  || ev.oc_suction || ev.lidar_stuck || ev.robot_stuck || ev.oc_brush_main))
+		  || ev.oc_vacuum || ev.lidar_stuck || ev.robot_stuck || ev.oc_brush_main))
 	{
 		ROS_INFO("%s %d: All exception cleared.", __FUNCTION__, __LINE__);
 		return true;
@@ -146,8 +148,8 @@ bool MovementExceptionResume::isFinish()
 			}
 		}
 	}
-
-	else if (ev.oc_brush_main){
+	else if (ev.oc_brush_main)
+	{
 		if(!brush.getMainOc())
 		{
 			ROS_INFO("%s %d: main brush over current resume succeeded!", __FUNCTION__, __LINE__);
@@ -174,7 +176,6 @@ bool MovementExceptionResume::isFinish()
 			error.set(ERROR_CODE_MAINBRUSH);
 		}
 	}
-
 	else if (ev.robot_stuck)
 	{
 		if (!lidar.isRobotSlip())
@@ -331,6 +332,32 @@ bool MovementExceptionResume::isFinish()
 					break;
 				}
 			}
+		}
+	}
+	else if (ev.oc_vacuum)
+	{
+		if (!vacuum.getOc())
+		{
+			ROS_INFO("%s %d: Vacuum over current resume succeeded!", __FUNCTION__, __LINE__);
+			brush.normalOperate();
+			vacuum.setLastMode();
+			vacuum.resetExceptionResume();
+			ev.oc_vacuum = false;
+		}
+		else if (ros::Time::now().toSec() - resume_vacuum_start_time_ > 10)
+		{
+			ROS_WARN("%s %d: Vacuum resume failed..", __FUNCTION__, __LINE__);
+			ev.oc_vacuum = false;
+			ev.fatal_quit = true;
+			vacuum.resetExceptionResume();
+			error.set(ERROR_CODE_VACUUM);
+		}
+		else if (oc_vacuum_resume_cnt_ == 0)
+		{
+			brush.stop();
+			vacuum.stop();
+			vacuum.startExceptionResume();
+			oc_vacuum_resume_cnt_++;
 		}
 	}
 

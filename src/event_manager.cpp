@@ -81,7 +81,7 @@ void event_manager_init()
 	p_handler[EVT_OVER_CURRENT_BRUSH_RIGHT] = &EventHandle::overCurrentBrushRight;
 	p_handler[EVT_OVER_CURRENT_WHEEL_LEFT] = &EventHandle::overCurrentWheelLeft;
 	p_handler[EVT_OVER_CURRENT_WHEEL_RIGHT] = &EventHandle::overCurrentWheelRight;
-	p_handler[EVT_OVER_CURRENT_SUCTION] = &EventHandle::overCurrentSuction;
+	p_handler[EVT_OVER_CURRENT_SUCTION] = &EventHandle::overCurrentVacuum;
 
 	p_handler[EVT_KEY_CLEAN] = &EventHandle::keyClean;
 
@@ -565,7 +565,7 @@ void event_manager_reset_status(void)
 	ev.oc_brush_main = false;
 	ev.oc_wheel_left = false;
 	ev.oc_wheel_right = false;
-	ev.oc_suction = false;
+	ev.oc_vacuum = false;
 	brush.oc_left_cnt_ = 0;
 	brush.oc_main_cnt_ = 0;
 	brush.oc_right_cnt_ = 0;
@@ -821,7 +821,7 @@ void EventHandle::overCurrentWheelRight(bool state_now, bool state_last)
 //	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
-void EventHandle::overCurrentSuction(bool state_now, bool state_last)
+void EventHandle::overCurrentVacuum(bool state_now, bool state_last)
 {
 //	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
