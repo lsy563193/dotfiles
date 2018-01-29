@@ -21,8 +21,8 @@ ModeIdle::ModeIdle()
 	ROS_INFO("%s %d: Current battery voltage \033[32m%5.2f V\033[0m.", __FUNCTION__, __LINE__, (float)battery.getVoltage()/100.0);
 
 	/*---reset values for rcon handle---*/
-	first_time_seen_charger_ = 0.0;
-	last_time_seen_charger_ = 0.0;
+	first_time_seen_charger_ = ros::Time::now().toSec();
+	last_time_seen_charger_ = first_time_seen_charger_;
 
 }
 
@@ -341,18 +341,18 @@ void ModeIdle::keyClean(bool state_now, bool state_last)
 
 void ModeIdle::rcon(bool state_now, bool state_last)
 {
-	if (error.get() != ERROR_CODE_NONE)
+	if (error.get() == ERROR_CODE_NONE)
 	{
 		auto time_for_now_ = ros::Time::now().toSec();
 //	ROS_WARN("%s %d: rcon signal. first: %lf, last: %lf, now: %lf", __FUNCTION__, __LINE__, first_time_seen_charger, last_time_seen_charger, time_for_now);
-		if (time_for_now_ - last_time_seen_charger_ > 60)
+		if (time_for_now_ - last_time_seen_charger_ > 60.0)
 		{
 			/*---more than 1 min haven't seen charger, reset first_time_seen_charger---*/
 			first_time_seen_charger_ = time_for_now_;
 		} else
 		{
 			/*---received charger signal continuously, check if more than 3 mins---*/
-			if (time_for_now_ - first_time_seen_charger_ > 180)
+			if (time_for_now_ - first_time_seen_charger_ > 180.0)
 				ev.rcon_triggered = c_rcon.getAll();
 		}
 		last_time_seen_charger_ = time_for_now_;
