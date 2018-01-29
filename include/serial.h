@@ -52,8 +52,7 @@
 // One byte for mix command.
 // bit 0 for wifi led controlling.
 // bit 1 for vacuum exception resume control.
-// bit 2 for vacuum exception resume status
-// bit 3-7 reserved.
+// bit 2-7 reserved.
 #define CTL_MIX 15
 
 // One byte for controlling gyro.
@@ -214,8 +213,8 @@
 // One byte for battery voltage.
 #define REC_BATTERY 37
 
-// One byte for vacuum exception resume status.
-#define REC_VACUUM_EXCEPTION_RESUME 38
+// One byte reserved.
+#define REC_RESERVED 38
 
 // One byte for over current signal.
 // bit 0 for vacuum over current.

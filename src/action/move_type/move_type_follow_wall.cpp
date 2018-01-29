@@ -81,8 +81,6 @@ bool MoveTypeFollowWall::isFinish()
 			if (!handleMoveBackEvent(p_cm))
 			{
 				if(ev.rcon_triggered) {
-
-					ROS_ERROR("mm_rcon!!!");
 					p_cm->moveTypeFollowWallSaveBlocks();
 					movement_i_ = mm_rcon;
 					sp_movement_.reset(new MovementRcon(is_left_));

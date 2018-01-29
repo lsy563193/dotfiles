@@ -339,7 +339,7 @@ public:
 //void overCurrentBrushRight(bool state_now, bool state_last);
 	void overCurrentWheelLeft(bool state_now, bool state_last) override;
 	void overCurrentWheelRight(bool state_now, bool state_last) override;
-//	void overCurrentSuction(bool state_now, bool state_last);
+//	void overCurrentVacuum(bool state_now, bool state_last);
 
 };
 
@@ -381,7 +381,8 @@ public:
 	// Handlers
 	void remoteHome(bool state_now, bool state_last) override ;
 	void cliffAll(bool state_now, bool state_last) override ;
-	void overCurrentBrushMain(bool state_now, bool state_last);
+	void overCurrentBrushMain(bool state_now, bool state_last) override;
+	void overCurrentVacuum(bool state_now, bool state_last) override;
 
 	// State init
 	bool isStateInit() const
@@ -610,7 +611,7 @@ public:
 	void overCurrentWheelLeft(bool state_now, bool state_last) override;
 	void overCurrentWheelRight(bool state_now, bool state_last) override;
 
-//	void overCurrentSuction(bool state_now, bool state_last);
+//	void overCurrentVacuum(bool state_now, bool state_last);
 
 	// State init
 	bool isSwitchByEventInStateInit() override;
@@ -690,7 +691,7 @@ public:
 //	void overCurrentBrushRight(bool state_now, bool state_last);
 	void overCurrentWheelLeft(bool state_now, bool state_last) override;
 	void overCurrentWheelRight(bool state_now, bool state_last) override;
-//	void overCurrentSuction(bool state_now, bool state_last);
+//	void overCurrentVacuum(bool state_now, bool state_last);
 //	void printMapAndPath();
 	void switchInStateInit() override;
 

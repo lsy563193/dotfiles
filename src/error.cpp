@@ -36,7 +36,7 @@ void Error::alarm(void)
 			speaker.play(VOICE_ERROR_MAIN_BRUSH);
 			break;
 		}
-		case ERROR_CODE_FAN_H:
+		case ERROR_CODE_VACUUM:
 		{
 			speaker.play(VOICE_ERROR_SUCTION_FAN);
 			break;

@@ -44,14 +44,6 @@ uint16_t live_led_cnt_for_switch = 0;
 
 extern boost::mutex odom_mutex;
 
-void debug_send_stream(uint8_t *buf)
-{
-	ROS_INFO("%s %d: Send stream:", __FUNCTION__, __LINE__);
-	for (int i = 0; i < SEND_LEN; i++)
-		printf("%02x ", *(buf + i));
-	printf("\n");
-}
-
 void robotbase_deinit(void)
 {
 
