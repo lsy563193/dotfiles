@@ -1478,14 +1478,14 @@ void Lidar::init() {
 	return;
 }
 
-bool lidar_is_stuck()
+bool Lidar::lidar_is_stuck()
 {
 	if (lidar.isScanOriginalReady() && !lidar.lidarCheckFresh(4, 2))
 		return true;
 	return false;
 }
 
-uint8_t lidar_get_status()
+uint8_t Lidar::lidar_get_status()
 {
 	if (lidar.isScanCompensateReady())
 		return lidar.lidarMarker(0.20);
