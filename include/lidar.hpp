@@ -88,6 +88,8 @@ public:
 	void lidarXYPointCb(const visualization_msgs::Marker &point_marker);
 	static void setLidarScanDataOriginal(const sensor_msgs::LaserScan::ConstPtr &scan);
 	static sensor_msgs::LaserScan getLidarScanDataOriginal(void);
+	bool lidar_get_status();
+	bool lidar_is_stuck();
 private:
 
 	// switch_ is the target status of lidar.
@@ -134,7 +136,6 @@ private:
 
 };
 
-bool lidar_is_stuck();
 
 extern Lidar lidar;
 #endif

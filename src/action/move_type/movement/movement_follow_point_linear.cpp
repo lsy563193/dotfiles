@@ -64,13 +64,16 @@ bool MovementFollowPointLinear::isFinish()
 bool MovementFollowPointLinear::isNear()
 {
 	bool near_blocked_in_slam_map = slam_grid_map.isFrontBlocked();
-//	if (near_blocked_in_slam_map)
-//		ROS_ERROR("%s %d: Near blocks in slam_map, slow down.", __FUNCTION__, __LINE__);
-//	auto curr_p = getPosition();
-//	auto distance = two_points_distance(curr_p.x, curr_p.y, s_target_p.x, s_target_p.y);
 	auto obstacle_distance_front = lidar.getObstacleDistance(0,ROBOT_RADIUS);
-//	ROS_INFO("dis(%lf)", obstacle_distance_front);
-	return obs.getStatus() > 0 || /*(distance < SLOW_DOWN_DISTANCE) ||*/  (obstacle_distance_front < 0.25) || near_blocked_in_slam_map;
+	auto b_obs = obs.getStatus() > 0;
+	auto b_lidar = (obstacle_distance_front < 0.25);
+	auto b_map = near_blocked_in_slam_map;
+	if (b_obs || b_lidar || b_map) {
+//		ROS_WARN("slowdown: obs(%d), lidar(%d), map(%d)", b_obs, b_lidar, b_map);
+		return true;
+	} else {
+		return false;
+	}
 }
 
 //Point_t MovementFollowPointLinear::_calcTmpTargetRealTime()
