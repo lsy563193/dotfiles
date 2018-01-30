@@ -1,3 +1,4 @@
+#include <robot.hpp>
 #include "event_manager.h"
 #include "dev.h"
 #include "error.h"
@@ -44,7 +45,7 @@ bool ModeIdle::isExit()
 				if (error.clear(error.get()))
 				{
 					ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
-					if (battery_low_)
+					if (robot::instance()->isBatteryLow())
 						led.setMode(LED_BREATH, LED_ORANGE);
 					else
 						led.setMode(LED_BREATH, LED_GREEN);
@@ -165,7 +166,7 @@ void ModeIdle::remoteKeyHandler(bool state_now, bool state_last)
 			{
 				ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
 				beeper.play_for_command(VALID);
-				if (battery_low_)
+				if (robot::instance()->isBatteryLow())
 					led.setMode(LED_BREATH, LED_ORANGE);
 				else
 					led.setMode(LED_BREATH, LED_GREEN);
@@ -192,7 +193,7 @@ void ModeIdle::remoteKeyHandler(bool state_now, bool state_last)
 	}
 	else if ((!remote.isKeyTrigger(REMOTE_FORWARD) && !remote.isKeyTrigger(REMOTE_LEFT)
 			  && !remote.isKeyTrigger(REMOTE_RIGHT) && !remote.isKeyTrigger(REMOTE_HOME))
-			  && battery_low_)
+			  && robot::instance()->isBatteryLow())
 	{
 		ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, battery.getVoltage(), (int)BATTERY_READY_TO_CLEAN_VOLTAGE);
 		led.setMode(LED_BREATH, LED_ORANGE);
@@ -310,7 +311,7 @@ void ModeIdle::keyClean(bool state_now, bool state_last)
 			if (error.clear(error.get()))
 			{
 				ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
-				if (battery_low_)
+				if (robot::instance()->isBatteryLow())
 					led.setMode(LED_BREATH, LED_ORANGE);
 				else
 					led.setMode(LED_BREATH, LED_GREEN);
@@ -325,7 +326,7 @@ void ModeIdle::keyClean(bool state_now, bool state_last)
 					 remote.get());
 			speaker.play(VOICE_ERROR_LIFT_UP);
 		}
-		else if (battery_low_)
+		else if (robot::instance()->isBatteryLow())
 		{
 			ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, battery.getVoltage(),
 					 (int) BATTERY_READY_TO_CLEAN_VOLTAGE);
@@ -361,10 +362,10 @@ void ModeIdle::rcon(bool state_now, bool state_last)
 
 bool ModeIdle::isFinish()
 {
-	if (!battery_low_ && !battery.isReadyToClean())
+	if (!robot::instance()->isBatteryLow() && !battery.isReadyToClean())
 	{
 		led.setMode(LED_BREATH, LED_ORANGE);
-		battery_low_ = true;
+		robot::instance()->setBatterLow(true);
 	}
 	return false;
 }
