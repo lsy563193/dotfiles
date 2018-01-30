@@ -268,78 +268,66 @@ PathList NavCleanPathAlgorithm::tracePathsToTargets(GridMap &map, const Cells &t
 	return paths;
 }
 
-bool NavCleanPathAlgorithm::filterPathsToSelectTarget(GridMap &map, const PathList &paths, const Cell_t &curr_cell, Cell_t &best_target)
-{
-	bool match_target_found = false, is_found = false, within_range=false;
+
+class IsContinue {
+public:
+	IsContinue(int init_value) : value(init_value) {};
+
+	int operator()(const Cell_t &cell_it) {
+		if (cell_it.y - value == 0 || cell_it.y - value == 1) {
+			value = cell_it.y;
+			return false;
+		}
+		return true;
+	};
+
+private:
+	int value;
+};
+
+bool NavCleanPathAlgorithm::filterPathsToSelectTarget(GridMap &map, PathList &paths, const Cell_t &cell_curr, Cell_t &best_target) {
 	PathList filtered_paths{};
-	uint16_t final_cost = 1000;
 	ROS_INFO("%s %d: case 1, towards y+ only", __FUNCTION__, __LINE__);
-	for (auto it = paths.begin(); it != paths.end(); ++it) {
-		if (map.getCell(CLEAN_MAP, it->back().x, it->back().y - 1) != CLEANED) {
-			// If the y- cell of the target of this path is not cleaned, don't handle in this case.
-			continue;
-		}
-		if (it->back().y > curr_cell.y + 1)
-		{
-			// Filter path with target in y+ direction of current cell.
-			filtered_paths.push_front(*it);
-		}
+	std::copy_if(paths.begin(), paths.end(), std::back_inserter(filtered_paths), [&](const Cells &path) {
+		if (map.getCell(CLEAN_MAP, path.back().x, path.back().y - 1) != CLEANED && path.back().y <= cell_curr.y + 1)
+			return false;
+		return std::is_partitioned(path.begin(), path.end(), IsContinue(cell_curr.y));
+	});
+
+	if(!filtered_paths.empty()) {
+		auto min_element = std::min_element(filtered_paths.begin(), filtered_paths.end(), [](const Cells &a, const Cells &b) {
+			return (a.back().y< b.back().y);
+		});
+
+		PathList filtered_paths2{};
+		std::copy_if(filtered_paths.begin(), filtered_paths.end(),std::back_inserter(filtered_paths2), [&min_element](const Cells &path) {
+			return path.back().y == min_element->back().y;
+		});
+
+		best_target = std::min_element(filtered_paths2.begin(), filtered_paths2.end(), [](const Cells &a, const Cells &b) {
+			return a.size() < b.size();
+		})->back();
 	}
-	// Sort paths with target y ascend order.
-	std::sort(filtered_paths.begin(), filtered_paths.end(), sortPathsWithTargetYAscend);
-
-	int16_t y_max;
-	for (auto it = filtered_paths.begin(); it != filtered_paths.end(); ++it)
-	{
-		if (match_target_found && best_target.y < it->back().y) // No need to find for further targets.
-		{
-			break;
-		}
-
-		if (it->size() > final_cost)
-			continue;
-
-		y_max = it->back().y;
-		within_range = true;
-		for (auto i = it->rbegin(); within_range && i != it->rend(); ++i) {
-			if (i->y < curr_cell.y)
-				// All turning cells should be in y+ area, so quit it.
-				within_range = false;
-			if (i->y > y_max)
-				// Not allow path towards y- direction.
-				within_range = false;
-			else
-				y_max = i->y;
-		}
-		if (within_range) {
-			best_target = it->back();
-			final_cost = static_cast<uint16_t>(it->size());
-			match_target_found = true;
-		}
-	}
-
-	if (!match_target_found) {
-		ROS_INFO("%s %d: case 6, fallback to A-start the nearest target, cost: %d(%d)", __FUNCTION__, __LINE__, final_cost, match_target_found);
-		for (auto it = paths.begin(); it != paths.end(); ++it) {
-			if (it->size() < final_cost) {
-				best_target = it->back();
-				final_cost = static_cast<uint16_t>(it->size());
-				match_target_found = true;
+	else{
+		ROS_INFO("%s %d: case 6, fallback to A-start the nearest target", __FUNCTION__, __LINE__);
+		auto result = std::find_if(paths.begin(), paths.end(),[&]( const Cells& path){
+			if(path.size() < 1000)
+			{
+				best_target = path.back();
+				filtered_paths.push_back(path);
+				return true;
 			}
-		}
+			return false;
+		});
 	}
 
-	if (match_target_found)
+
+	if (!filtered_paths.empty())
 		ROS_INFO("%s %d: Found best target(%d, %d)", __FUNCTION__, __LINE__, best_target.x, best_target.y);
 	else
 		ROS_INFO("%s %d: No target selected.", __FUNCTION__, __LINE__);
 
-	return match_target_found;
-}
-
-bool NavCleanPathAlgorithm::sortPathsWithTargetYAscend(const Cells a, const Cells b)
-{
-	return a.back().y < b.back().y;
+	return !filtered_paths.empty();
 }
 
 bool NavCleanPathAlgorithm::checkTrapped(GridMap &map, const Cell_t &curr_cell)
