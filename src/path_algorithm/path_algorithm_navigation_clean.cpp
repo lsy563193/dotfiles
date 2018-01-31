@@ -269,65 +269,84 @@ PathList NavCleanPathAlgorithm::tracePathsToTargets(GridMap &map, const Cells &t
 }
 
 
-class IsContinue {
+class IsIncrease {
 public:
-	IsContinue(int init_value) : value(init_value) {};
+	IsIncrease(bool is_reverse=false):is_reverse_(is_reverse){};
 
-	int operator()(const Cell_t &cell_it) {
-		if (cell_it.y - value == 0 || cell_it.y - value == 1) {
-			value = cell_it.y;
-			return false;
-		}
-		return true;
+	int operator()(const Cell_t &a, const Cell_t &b) {
+//		printf("b(%d,%d),a(%d,%d)\n",b.x, b.y,b.x, a.y);
+		return (!is_reverse_) ? a.y < b.y : a.y > b.y ;
+//		std::cout<<"return true"<<std::endl;
 	};
-
 private:
-	int value;
+	bool is_reverse_=false;
+};
+
+class BestTargetFilter {
+public:
+	BestTargetFilter(int16_t min_y,int16_t max_y,int turn_count=0,bool is_revease=false):min_y_(min_y),max_y_(max_y),turn_count_(turn_count),is_revease_(is_revease) {};
+
+	int operator()(const Cells &path) {
+		if (path.back().y < min_y_ || path.back().y > max_y_)
+			return false;
+		if(turn_count_ ==0) {
+			return std::is_sorted(path.begin(), path.end(), IsIncrease(is_revease_));
+		}
+		else if(turn_count_ == 1){
+			auto point = std::is_sorted_until(path.begin(), path.end(), IsIncrease(!is_revease_));
+			auto is_sorted = std::is_sorted(point, path.end(), IsIncrease());
+			return point != path.end() && std::is_sorted(point, path.end(), IsIncrease(is_revease_));
+		}
+		else/* if(turn_count_ ==-1)*/{//any turn
+			return true;
+		}
+	};
+//private:
+//	bool is_reverse_=false;
+	int16_t min_y_;
+	int16_t max_y_;
+	int turn_count_;
+	bool is_revease_{};
+};
+
+class MinYAndShortestPath {
+public:
+
+	bool operator()(const Cells &path_a, const Cells &path_b) {
+		if(path_a.back().y > path_b.back().y)
+			return false;
+		if(path_a.back().y < path_b.back().y)
+			return true;
+		if(path_a.back().y == path_b.back().y)
+			return path_a.size() < path_b.size();
+	};
+private:
+//	bool is_reverse_=false;
+	int16_t min_y_{};
 };
 
 bool NavCleanPathAlgorithm::filterPathsToSelectTarget(GridMap &map, PathList &paths, const Cell_t &cell_curr, Cell_t &best_target) {
 	PathList filtered_paths{};
-	ROS_INFO("%s %d: case 1, towards y+ only", __FUNCTION__, __LINE__);
-	std::copy_if(paths.begin(), paths.end(), std::back_inserter(filtered_paths), [&](const Cells &path) {
-		if (map.getCell(CLEAN_MAP, path.back().x, path.back().y - 1) != CLEANED && path.back().y <= cell_curr.y + 1)
-			return false;
-		return std::is_partitioned(path.begin(), path.end(), IsContinue(cell_curr.y));
-	});
 
-	if(!filtered_paths.empty()) {
-		auto min_element = std::min_element(filtered_paths.begin(), filtered_paths.end(), [](const Cells &a, const Cells &b) {
-			return (a.back().y< b.back().y);
-		});
-
-		PathList filtered_paths2{};
-		std::copy_if(filtered_paths.begin(), filtered_paths.end(),std::back_inserter(filtered_paths2), [&min_element](const Cells &path) {
-			return path.back().y == min_element->back().y;
-		});
-
-		best_target = std::min_element(filtered_paths2.begin(), filtered_paths2.end(), [](const Cells &a, const Cells &b) {
-			return a.size() < b.size();
-		})->back();
+	for (auto &&path : paths) { for (auto &&cell : path) { printf("(%d,%d) ",cell.x,cell.y); } printf("\n"); }
+	std::deque<BestTargetFilter> filters{{(int16_t)(cell_curr.y+2), 200, 0, false},
+																			 {cell_curr.y,(int16_t)(cell_curr.y+1) ,0,false},
+																			 {cell_curr.y, 200,1,false},
+																			 {-200, cell_curr.y,0,true},
+																			 {-200, cell_curr.y,1,true},
+																			 {cell_curr.y, 200, -1,false},
+																			 {-200, 200, -1,false},
+	};
+	for (auto &&filter : filters) {
+		ROS_ERROR("is towards Y+(%d),y_range(%d,%d),allow turn count(%d)",!filter.is_revease_,filter.min_y_,filter.max_y_,filter.turn_count_);
+		std::copy_if(paths.begin(), paths.end(), std::back_inserter(filtered_paths), BestTargetFilter(filter));
+		if (!filtered_paths.empty()) {
+			best_target = std::min_element(filtered_paths.begin(), filtered_paths.end(), MinYAndShortestPath())->back();
+			printf("best_target(%d,%d)\n", best_target.x, best_target.y);
+			return true;
+		}
 	}
-	else{
-		ROS_INFO("%s %d: case 6, fallback to A-start the nearest target", __FUNCTION__, __LINE__);
-		auto result = std::find_if(paths.begin(), paths.end(),[&]( const Cells& path){
-			if(path.size() < 1000)
-			{
-				best_target = path.back();
-				filtered_paths.push_back(path);
-				return true;
-			}
-			return false;
-		});
-	}
-
-
-	if (!filtered_paths.empty())
-		ROS_INFO("%s %d: Found best target(%d, %d)", __FUNCTION__, __LINE__, best_target.x, best_target.y);
-	else
-		ROS_INFO("%s %d: No target selected.", __FUNCTION__, __LINE__);
-
-	return !filtered_paths.empty();
+	return false;
 }
 
 bool NavCleanPathAlgorithm::checkTrapped(GridMap &map, const Cell_t &curr_cell)
