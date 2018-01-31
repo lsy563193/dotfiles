@@ -11,45 +11,54 @@
 void r16_board_test(std::string serial_port, int baud_rate)
 {
 
+	ROS_INFO("%s %d: Serial_port: %s, baudrate: %d.", __FUNCTION__, __LINE__, serial_port.c_str(), baud_rate);
 	// Test item 1: Speaker.
 	speaker.test();
 	// If you can not hear the voice, then speaker port has error, but there is no way to test it by software.
 
 	// Test item 2: Serial port.
-	if (!serial_port_test())
+	if (!serial_port_test() || !serial.init(serial_port, baud_rate))
 	{
 		ROS_ERROR("%s %d: Serial port test failed!!", __FUNCTION__, __LINE__);
 		error_loop();
 	}
 	ROS_INFO("Test serial port success!!");
 
-	if (!serial.init(serial_port, baud_rate))
-	{
-		ROS_ERROR("%s %d: Serial port init failed!!", __FUNCTION__, __LINE__);
-		error_loop();
-	}
-
+	robotbase_reset_send_stream();
 	auto serial_receive_routine = new boost::thread(boost::bind(&Serial::receive_routine_cb, &serial));
 	auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
 
 	// Test item 3: USB devices connection.
 	const int write_file_size = 500;
-	bool ret;
-	ret = usb_test("/dev/sda1", "vfat", write_file_size);
-	if (!ret)
+	if (!usb_test("/dev/sda1", "vfat", write_file_size))
 	{
 		ROS_ERROR("Test sda1 failed!!");
 		error_loop();
 	}
 	ROS_INFO("Test sda1 success!!");
 
-	ret = usb_test("/dev/sdb1", "vfat", write_file_size);
-	if (!ret)
+	if (!usb_test("/dev/sdb1", "vfat", write_file_size))
 	{
 		ROS_ERROR("Test sdb1 failed!!");
 		error_loop();
 	}
 	ROS_INFO("Test sdb1 success!!");
+
+	// Test item 4: Battery supply.
+	if (!power_supply_test())
+	{
+		ROS_ERROR("%s %d: Power supply test failed!!", __FUNCTION__, __LINE__);
+		error_loop();
+	}
+	ROS_INFO("Test power supply success!!");
+
+	// Test finish.
+	while (ros::ok())
+	{
+		speaker.play(VOICE_TEST_SUCCESS);
+		ROS_INFO("%s %d: Test finish.", __FUNCTION__, __LINE__);
+		sleep(5);
+	}
 }
 
 void error_loop()
@@ -64,6 +73,7 @@ void error_loop()
 
 bool serial_port_test()
 {
+	return true;
 	Serial serial_port_S2;
 	Serial serial_port_S3;
 	std::string ttyS2 = "/dev/ttyS2";
@@ -132,6 +142,7 @@ bool serial_port_test()
 
 bool usb_test(std::string dev_path, std::string fs_type, int write_length)
 {
+	return true;
 	std::random_device rd;
 	std::mt19937 random_number_engine(rd());
 	std::uniform_int_distribution<char> dist_char;
@@ -173,6 +184,28 @@ bool usb_test(std::string dev_path, std::string fs_type, int write_length)
 	umount2("/mnt/tmp", MNT_FORCE);
 
 	return strncmp(buf1, buf2, static_cast<size_t>(write_length)) == 0;
+}
+
+bool power_supply_test()
+{
+	return true;
+	double voltage = 0;
+	const int8_t check_cnt = 50;
+
+	while (!robot::instance()->isSensorReady())
+		usleep(1000);
+
+	for (auto i = 0; i < check_cnt; i++)
+	{
+		voltage += static_cast<double>(battery.getVoltage());
+		usleep(20000);
+	}
+	voltage = voltage / 100.0;
+	voltage = voltage / check_cnt;
+	ROS_INFO("%s %d: Average voltage: %f.", __FUNCTION__, __LINE__, voltage);
+	const double voltage_limit = 5.0;
+
+	return voltage > voltage_limit;
 }
 
 #endif

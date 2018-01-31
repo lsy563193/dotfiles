@@ -8,6 +8,7 @@
 #include <odom.h>
 #include <event_manager.h>
 #include <robotbase.h>
+#include <r16_board_test.hpp>
 #include "lidar.hpp"
 #include "robot.hpp"
 #include "slam.h"
@@ -38,12 +39,6 @@ robot::robot()/*:offset_angle_(0),saved_offset_angle_(0)*/
 	event_manager_thread_stop = false;
 	event_handle_thread_stop = false;
 
-	while (!serial.isReady()) {
-		ROS_ERROR("serial not ready\n");
-	}
-
-	robotbase_reset_send_stream();
-
 	// Subscribers.
 	odom_sub_ = robot_nh_.subscribe("/odom", 1, &robot::robotOdomCb, this);
 	// Service clients.
@@ -72,16 +67,48 @@ robot::robot()/*:offset_angle_(0),saved_offset_angle_(0)*/
 	}
 #endif
 
-	// Init for event manager.
+	std::string serial_port;
+	robot_nh_.param<std::string>("serial_port", serial_port, "/dev/ttyS2");
+
+	int baud_rate;
+	robot_nh_.param<int>("baud_rate", baud_rate, 115200);
+
+#if !R16_BOARD_TEST
+
+	std::string lidar_bumper_dev;
+	robot_nh_.param<std::string>("lidar_bumper_file", lidar_bumper_dev, "/dev/input/event0");
+
+	if (bumper.lidarBumperInit(lidar_bumper_dev.c_str()) == -1)
+		ROS_ERROR(" lidar bumper open fail!");
+
+	// Init for serial.
+	if (!serial.init(serial_port, baud_rate))
+	{
+		ROS_ERROR("%s %d: Serial init failed!!", __FUNCTION__, __LINE__);
+	}
+
+	while (!serial.isReady()) {
+		ROS_ERROR("serial not ready\n");
+	}
+
+	robotbase_reset_send_stream();
+
 	ROS_INFO("waiting robotbase awake ");
 	auto serial_receive_routine = new boost::thread(boost::bind(&Serial::receive_routine_cb, &serial));
 	auto robotbase_routine = new boost::thread(boost::bind(&robot::robotbase_routine_cb, this));
 	auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
 	auto speaker_play_routine = new boost::thread(boost::bind(&Speaker::playRoutine, &speaker));
+	// Init for event manager.
 	event_manager_init();
 	auto event_manager_thread = new boost::thread(event_manager_thread_cb);
 	auto event_handler_thread = new boost::thread(event_handler_thread_cb);
 	auto core_thread = new boost::thread(boost::bind(&robot::core_thread_cb,this));
+#else
+	auto speaker_play_routine = new boost::thread(boost::bind(&Speaker::playRoutine, &speaker));
+	auto robotbase_routine = new boost::thread(boost::bind(&robot::robotbase_routine_cb, this));
+
+	auto test_routine = new boost::thread(boost::bind(&r16_board_test, serial_port, baud_rate));
+#endif
 	ROS_INFO("%s %d: robot init done!", __FUNCTION__, __LINE__);
 }
 
