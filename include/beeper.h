@@ -11,20 +11,20 @@
 class Beeper
 {
 public:
-	void beep(uint8_t Sound_Code, int Sound_Time_Count, int Silence_Time_Count, int Total_Time_Count);
+	void beep(uint8_t sound_code, int sound_time_count, int silence_time_count, int total_time_count);
 
 	void beepForCommand(bool valid);
 
 	void processBeep();
 private:
 
-	bool update_flag_;
-	int sound_loop_count_;
-	uint8_t sound_code_;
-	int sound_time_count_;
-	int temp_sound_time_count_;
-	int silence_time_count_;
-	int temp_silence_time_count_;
+	bool update_flag_{false};
+	int sound_loop_count_{0};
+	uint8_t sound_code_{0};
+	int sound_time_count_{0};
+	int temp_sound_time_count_{-1};
+	int silence_time_count_{0};
+	int temp_silence_time_count_{0};
 };
 
 extern Beeper beeper;

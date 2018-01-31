@@ -15,7 +15,7 @@ ModeGoToCharger::ModeGoToCharger()
 
 	serial.setMainBoardMode(WORK_MODE);
 	speaker.play(VOICE_BACK_TO_CHARGER, false);
-	led.setMode(LED_STEADY, LED_ORANGE);
+	key_led.setMode(LED_STEADY, LED_ORANGE);
 	sp_action_.reset(new ActionOpenGyro);
 	action_i_ = ac_open_gyro;
 }
@@ -73,7 +73,7 @@ int ModeGoToCharger::getNextAction()
 	PP_INFO();
 	if(action_i_ == ac_open_gyro || (action_i_ == ac_exception_resume && !ev.fatal_quit))
 	{
-		led.setMode(LED_STEADY, LED_ORANGE);
+		key_led.setMode(LED_STEADY, LED_ORANGE);
 		brush.normalOperate();
 		vacuum.setTmpMode(Vac_Normal);
 		return ac_go_to_charger;

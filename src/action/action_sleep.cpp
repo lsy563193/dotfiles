@@ -19,7 +19,7 @@ ActionSleep::ActionSleep()
 	usleep(100000);
 	beeper.beep(4, 80, 0, 1);
 	usleep(100000);
-	led.setMode(LED_STEADY, LED_OFF);
+	key_led.setMode(LED_STEADY, LED_OFF);
 	if (charger.getChargeStatus())
 	{
 		ROS_INFO("%s %d: Finish beeping, enter from charge mode.", __FUNCTION__, __LINE__);

@@ -6,17 +6,17 @@
 #include "serial.h"
 
 Beeper beeper;
-void Beeper::beep(uint8_t Sound_Code, int Sound_Time_Ms, int Silence_Time_Ms, int Total_Time_Count)
+void Beeper::beep(uint8_t sound_code, int sound_time_ms, int silence_time_ms, int total_time_count)
 {
 	// Sound_Code means the interval of the speaker sounding, higher interval makes lower sound.
-	sound_code_ = Sound_Code;
+	sound_code_ = sound_code;
 	// Total_Time_Count means how many loops of speaker sound loop will it sound.
-	sound_loop_count_ = Total_Time_Count;
+	sound_loop_count_ = total_time_count;
 	// A speaker sound loop contains one sound time and one silence time
 	// Sound_Time_Count means how many loops of g_send_stream loop will it sound in one speaker sound loop
-	sound_time_count_ = Sound_Time_Ms / 20;
+	sound_time_count_ = sound_time_ms / 20;
 	// Silence_Time_Count means how many loops of g_send_stream loop will it be silence in one speaker sound loop, -1 means consistently beeper.play.
-	silence_time_count_ = Silence_Time_Ms / 20;
+	silence_time_count_ = silence_time_ms / 20;
 	// Trigger the init flag to start the new beeper.play action
 	update_flag_ = true;
 }

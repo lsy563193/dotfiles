@@ -38,15 +38,6 @@ extern bool event_manager_thread_stop;
 extern bool event_handle_thread_stop;
 extern bool core_thread_stop;
 
-// For led control.
-extern uint8_t robotbase_led_type;
-extern bool robotbase_led_update_flag;
-extern uint8_t robotbase_led_color;
-extern uint16_t robotbase_led_cnt_for_one_cycle;
-extern uint16_t live_led_cnt_for_switch;
-
-void process_led();
-
 class Mode;
 
 typedef enum {
@@ -176,6 +167,9 @@ private:
 
 	Baselink_Frame_Type baselink_frame_type_;
 	boost::mutex baselink_frame_type_mutex_;
+// Lock for odom coordinate
+	boost::mutex odom_mutex_;
+
 
 	bool is_sensor_ready_{};
 	bool is_tf_ready_{};

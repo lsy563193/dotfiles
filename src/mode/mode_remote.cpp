@@ -16,14 +16,14 @@ ModeRemote::ModeRemote()
 	serial.setMainBoardMode(WORK_MODE);
 	if (gyro.isOn())
 	{
-		led.setMode(LED_STEADY, LED_GREEN);
+		key_led.setMode(LED_STEADY, LED_GREEN);
 		vacuum.setLastMode();
 		brush.normalOperate();
 		action_i_ = ac_remote;
 	}
 	else
 	{
-		led.setMode(LED_FLASH, LED_GREEN, 600);
+		key_led.setMode(LED_FLASH, LED_GREEN, 600);
 		action_i_ = ac_open_gyro;
 	}
 	genNextAction();
@@ -88,7 +88,7 @@ int ModeRemote::getNextAction()
 {
 	if(action_i_ == ac_open_gyro || (action_i_ == ac_exception_resume && !ev.fatal_quit))
 	{
-		led.setMode(LED_STEADY, LED_GREEN);
+		key_led.setMode(LED_STEADY, LED_GREEN);
 		vacuum.setLastMode();
 		brush.normalOperate();
 		return ac_remote;

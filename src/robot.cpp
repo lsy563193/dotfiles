@@ -30,9 +30,6 @@ pthread_cond_t serial_data_ready_cond = PTHREAD_COND_INITIALIZER;
 // For obs dynamic adjustment
 int OBS_adjust_count = 50;
 
-// Lock for odom coordinate
-boost::mutex odom_mutex;
-
 bool g_pp_shutdown = false;
 
 bool robotbase_thread_stop = false;
@@ -42,79 +39,7 @@ bool event_manager_thread_stop = false;
 bool event_handle_thread_stop = false;
 bool core_thread_stop = false;
 
-// todo: These variables and the function should be moved to Beeper class.
-bool robotbase_beep_update_flag = false;
-int robotbase_beeper_sound_loop_count = 0;
-uint8_t robotbase_sound_code = 0;
-int robotbase_beeper_sound_time_count = 0;
-int temp_beeper_sound_time_count = -1;
-int robotbase_beeper_silence_time_count = 0;
-int temp_beeper_silence_time_count = 0;
-
-// For led control.
-uint8_t robotbase_led_type = LED_STEADY;
-bool robotbase_led_update_flag = false;
-uint8_t robotbase_led_color = LED_GREEN;
-uint16_t robotbase_led_cnt_for_one_cycle = 0;
-uint16_t live_led_cnt_for_switch = 0;
-
-void process_led()
-{
-	uint16_t led_brightness = 100;
-	switch (robotbase_led_type)
-	{
-		case LED_STEADY:
-		{
-			robotbase_led_update_flag = false;
-			break;
-		}
-		case LED_FLASH:
-		{
-			if (live_led_cnt_for_switch > robotbase_led_cnt_for_one_cycle / 2)
-				led_brightness = 0;
-			break;
-		}
-		case LED_BREATH:
-		{
-			if (live_led_cnt_for_switch > robotbase_led_cnt_for_one_cycle / 2)
-				led_brightness = led_brightness * (2 * (float)live_led_cnt_for_switch / (float)robotbase_led_cnt_for_one_cycle - 1.0);
-			else
-				led_brightness = led_brightness * (1.0 - 2 * (float)live_led_cnt_for_switch / (float)robotbase_led_cnt_for_one_cycle);
-			break;
-		}
-	}
-
-	if (live_led_cnt_for_switch++ > robotbase_led_cnt_for_one_cycle)
-		live_led_cnt_for_switch = 0;
-
-	switch (robotbase_led_color)
-	{
-		case LED_GREEN:
-		{
-			led.set(led_brightness, 0);
-			break;
-		}
-		case LED_ORANGE:
-		{
-			led.set(led_brightness, led_brightness);
-			break;
-		}
-		case LED_RED:
-		{
-			led.set(0, led_brightness);
-			break;
-		}
-		case LED_OFF:
-		{
-			led.set(0, 0);
-			break;
-		}
-	}
-	//ROS_INFO("%s %d: live_led_cnt_for_switch: %d, led_brightness: %d.", __FUNCTION__, __LINE__, live_led_cnt_for_switch, led_brightness);
-}
-
-//extern pp::x900sensor sensor;
-robot::robot()/*:offset_angle_(0),saved_offset_angle_(0)*/
+robot::robot()
 {
 
 	robotbase_thread_stop = false;
@@ -375,7 +300,7 @@ void robot::robotbase_routine_cb()
 
 
 		/*------------setting for odom and publish odom topic --------*/
-		boost::mutex::scoped_lock lock(odom_mutex);
+		boost::mutex::scoped_lock lock(odom_mutex_);
 		odom.setMovingSpeed(static_cast<float>((wheel.getLeftWheelActualSpeed() + wheel.getRightWheelActualSpeed()) / 2.0));
 		odom.setRadian(degree_to_radian(gyro.getAngle()));
 		odom.setAngleSpeed(gyro.getAngleV());
@@ -481,7 +406,7 @@ robot::~robot()
 {
 	bumper.lidarBumperDeinit();
 	recei_thread_stop = true;
-	led.setMode(LED_STEADY, LED_OFF);
+	key_led.setMode(LED_STEADY, LED_OFF);
 	serial.setSendData(CTL_BEEPER, 0x00);
 	gyro.setOff();
 	wheel.stop();
@@ -622,7 +547,7 @@ bool robot::slamStop(void)
 void robot::initOdomPosition()
 {
 	// Reset the odom pose to (0, 0)
-	boost::mutex::scoped_lock lock(odom_mutex);
+	boost::mutex::scoped_lock lock(odom_mutex_);
 	odom.setX(0);
 	odom.setY(0);
 }
