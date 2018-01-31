@@ -322,17 +322,17 @@ public:
 };
 
 bool NavCleanPathAlgorithm::filterPathsToSelectTarget(GridMap &map, PathList &paths, const Cell_t &cell_curr, Cell_t &best_target) {
-	PathList filtered_paths{};
-	std::deque<BestTargetFilter> filters{{(int16_t)(cell_curr.y+2), 200, 0, false},
+	std::deque<BestTargetFilter> filters{{(int16_t)(cell_curr.y+2), MAP_SIZE, 0, false},
 																			 {cell_curr.y,(int16_t)(cell_curr.y+1) ,0,false},
-																			 {cell_curr.y, 200,1,false},
-																			 {-200, cell_curr.y,0,true},
-																			 {-200, cell_curr.y,1,true},
-																			 {cell_curr.y, 200, -1,false},
-																			 {-200, 200, -1,false},
+																			 {cell_curr.y, MAP_SIZE,1,false},
+																			 {-MAP_SIZE, cell_curr.y,0,true},
+																			 {-MAP_SIZE, cell_curr.y,1,true},
+																			 {cell_curr.y, MAP_SIZE, -1,false},
+																			 {-MAP_SIZE, MAP_SIZE, -1,false},
 	};
 	for (auto &&filter : filters) {
 		ROS_ERROR("is towards Y+(%d),y_range(%d,%d),allow turn count(%d)",!filter.is_revease_,filter.min_y_,filter.max_y_,filter.turn_count_);
+		PathList filtered_paths{};
 		std::copy_if(paths.begin(), paths.end(), std::back_inserter(filtered_paths), BestTargetFilter(filter));
 		if (!filtered_paths.empty()) {
 			best_target = std::min_element(filtered_paths.begin(), filtered_paths.end(), MinYAndShortestPath())->back();

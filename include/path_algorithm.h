@@ -210,6 +210,7 @@ private:
 	bool filterPathsToSelectTarget(GridMap &map, PathList &paths, const Cell_t &cell_curr, Cell_t &best_target);
 
 	bool checkTrapped(GridMap &map, const Cell_t &curr_cell) override ;
+
 };
 //
 class WFCleanPathAlgorithm: public APathAlgorithm
