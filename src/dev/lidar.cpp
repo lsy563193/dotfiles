@@ -952,68 +952,71 @@ uint8_t Lidar::lidarMarker(double X_MAX)
 	for(const auto& point:lidarXY_points){
 		x = point.x;
 		y = point.y;
-		//front
-		if (x > ROBOT_RADIUS && x < X_MAX) {
-			//middle
-			if (y > -0.056 && y < 0.056) {
-				count_array[0]++;
-			}
-		}
-		if (x > 0.056 && x < X_MAX) {
-			//left
-			if (y > 0.056 && y < 0.168) {
-				count_array[1]++;
-			}
-			//right
-			if (y > -0.168 && y < -0.056) {
-				count_array[2]++;
-			}
-		}
-		//back
-		if (x < -ROBOT_RADIUS && x > (-X_MAX)) {
-			//middle
-			if (y > -0.056 && y < 0.056) {
-				count_array[3]++;
-			}
-		}
-		if (x < -0.056 && x > (-X_MAX)) {
-			//left
-			if (y > 0.056 && y < 0.168) {
-				count_array[4]++;
-			}
-			//right
-			if (y > -0.168 && y < -0.056) {
-				count_array[5]++;
-			}
-		}
-		//left
-		if (y > ROBOT_RADIUS && y < Y_MAX) {
-			//middle
-			if (x > -0.056 && x < 0.056) {
-				count_array[6]++;
-			}
+		auto dis_to_robot = sqrt(pow(x, 2) + pow(y, 2));
+		if (dis_to_robot <= X_MAX) {
 			//front
-			if (x > 0.056 && x < 0.168) {
-				count_array[7]++;
-			}
-			//back
-			if (x > -0.168 && x < -0.056) {
-				count_array[8]++;
+			if (x > 0 && x < X_MAX) {
+				//middle
+				if (y > -0.056 && y < 0.056) {
+					count_array[0]++;
 				}
-		}
-			//right
-		if (y < (0 - ROBOT_RADIUS) && y >  (0 - Y_MAX)) {
-			//middle
-			if (x > -0.056 && x < 0.056) {
-				count_array[9]++;
 			}
-			//front
-			if (x > 0.056 && x < 0.168) {
-				count_array[10]++;
+			if (x > 0.056 && x < X_MAX) {
+				//left
+				if (y > 0.056 && y < 0.168) {
+					count_array[1]++;
+				}
+				//right
+				if (y > -0.168 && y < -0.056) {
+					count_array[2]++;
+				}
 			}
 			//back
-			if (x > -0.168 && x < -0.056) {
-				count_array[11]++;
+			if (x < 0 && x > (-X_MAX)) {
+				//middle
+				if (y > -0.056 && y < 0.056) {
+					count_array[3]++;
+				}
+			}
+			if (x < -0.056 && x > (-X_MAX)) {
+				//left
+				if (y > 0.056 && y < 0.168) {
+					count_array[4]++;
+				}
+				//right
+				if (y > -0.168 && y < -0.056) {
+					count_array[5]++;
+				}
+			}
+			//left
+			if (y > 0 && y < Y_MAX) {
+				//middle
+				if (x > -0.056 && x < 0.056) {
+					count_array[6]++;
+				}
+				//front
+				if (x > 0.056 && x < 0.168) {
+					count_array[7]++;
+				}
+				//back
+				if (x > -0.168 && x < -0.056) {
+					count_array[8]++;
+				}
+			}
+			//right
+			if (y < 0 && y >  (0 - Y_MAX)) {
+				//middle
+				if (x > -0.056 && x < 0.056) {
+					count_array[9]++;
+				}
+				//front
+				if (x > 0.056 && x < 0.168) {
+					count_array[10]++;
+				}
+				//back
+				if (x > -0.168 && x < -0.056) {
+					count_array[11]++;
+				}
 			}
 		}
 	}
