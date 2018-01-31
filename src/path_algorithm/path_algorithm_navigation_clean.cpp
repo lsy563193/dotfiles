@@ -311,7 +311,6 @@ public:
 
 class MinYAndShortestPath {
 public:
-
 	bool operator()(const Cells &path_a, const Cells &path_b) {
 		if(path_a.back().y > path_b.back().y)
 			return false;
@@ -320,9 +319,6 @@ public:
 		if(path_a.back().y == path_b.back().y)
 			return path_a.size() < path_b.size();
 	};
-private:
-//	bool is_reverse_=false;
-	int16_t min_y_{};
 };
 
 bool NavCleanPathAlgorithm::filterPathsToSelectTarget(GridMap &map, PathList &paths, const Cell_t &cell_curr, Cell_t &best_target) {
