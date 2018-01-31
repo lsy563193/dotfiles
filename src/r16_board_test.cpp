@@ -6,6 +6,8 @@
 
 #if R16_BOARD_TEST
 #include <sys/mount.h>
+#include <sys/sysinfo.h>
+#include <sys/vfs.h>
 #include <random>
 
 void r16_board_test(std::string serial_port, int baud_rate)
@@ -51,6 +53,9 @@ void r16_board_test(std::string serial_port, int baud_rate)
 		error_loop();
 	}
 	ROS_INFO("Test power supply success!!");
+
+	// Test item 5: Memory.
+	memory_test();
 
 	// Test finish.
 	while (ros::ok())
@@ -206,6 +211,113 @@ bool power_supply_test()
 	const double voltage_limit = 5.0;
 
 	return voltage > voltage_limit;
+}
+
+bool memory_test()
+{
+	struct sysinfo info{};
+	sysinfo(&info);
+	auto ram_size = static_cast<uint32_t>(((size_t) info.totalram * (size_t) info.mem_unit) / 1024);
+	ROS_INFO("%s %d: RAM size: %dkbytes.", __FUNCTION__, __LINE__, ram_size);
+	struct statfs fsb{};
+
+	uint32_t flash_size = 0, flash_size_temp = 0;
+
+	if (statfs("/dev/mmcblk0", &fsb) == 0)
+	{
+		flash_size_temp = static_cast<uint32_t>(((size_t) fsb.f_blocks * (size_t) fsb.f_bsize) / 1024);
+		flash_size += flash_size_temp;
+		ROS_INFO("%s %d: Got /dev/mmcblk0 size %ld.", __FUNCTION__, __LINE__, flash_size_temp);
+	}
+	if (statfs("/dev/mmcblk0p1", &fsb) == 0)
+	{
+		flash_size_temp = static_cast<uint32_t>(((size_t) fsb.f_blocks * (size_t) fsb.f_bsize) / 1024);
+		flash_size += flash_size_temp;
+		ROS_INFO("%s %d: Got /dev/mmcblk0p1 size %ld.", __FUNCTION__, __LINE__, flash_size_temp);
+	}
+	if (statfs("/dev/mmcblk0p2", &fsb) == 0)
+	{
+		flash_size_temp = static_cast<uint32_t>(((size_t) fsb.f_blocks * (size_t) fsb.f_bsize) / 1024);
+		flash_size += flash_size_temp;
+		ROS_INFO("%s %d: Got /dev/mmcblk0p2 size %ld.", __FUNCTION__, __LINE__, flash_size_temp);
+	}
+	if (statfs("/dev/mmcblk0p3", &fsb) == 0)
+	{
+		flash_size_temp = static_cast<uint32_t>(((size_t) fsb.f_blocks * (size_t) fsb.f_bsize) / 1024);
+		flash_size += flash_size_temp;
+		ROS_INFO("%s %d: Got /dev/mmcblk0p3 size %ld.", __FUNCTION__, __LINE__, flash_size_temp);
+	}
+	if (statfs("/dev/mmcblk0p4", &fsb) == 0)
+	{
+		flash_size_temp = static_cast<uint32_t>(((size_t) fsb.f_blocks * (size_t) fsb.f_bsize) / 1024);
+		flash_size += flash_size_temp;
+		ROS_INFO("%s %d: Got /dev/mmcblk0p4 size %ld.", __FUNCTION__, __LINE__, flash_size_temp);
+	}
+	if (statfs("/dev/mmcblk0p5", &fsb) == 0)
+	{
+		flash_size_temp = static_cast<uint32_t>(((size_t) fsb.f_blocks * (size_t) fsb.f_bsize) / 1024);
+		flash_size += flash_size_temp;
+		ROS_INFO("%s %d: Got /dev/mmcblk0p5 size %ld.", __FUNCTION__, __LINE__, flash_size_temp);
+	}
+	if (statfs("/dev/mmcblk0p6", &fsb) == 0)
+	{
+		flash_size_temp = static_cast<uint32_t>(((size_t) fsb.f_blocks * (size_t) fsb.f_bsize) / 1024);
+		flash_size += flash_size_temp;
+		ROS_INFO("%s %d: Got /dev/mmcblk0p6 size %ld.", __FUNCTION__, __LINE__, flash_size_temp);
+	}
+	if (statfs("/dev/mmcblk0p7", &fsb) == 0)
+	{
+		flash_size_temp = static_cast<uint32_t>(((size_t) fsb.f_blocks * (size_t) fsb.f_bsize) / 1024);
+		flash_size += flash_size_temp;
+		ROS_INFO("%s %d: Got /dev/mmcblk0p7 size %ld.", __FUNCTION__, __LINE__, flash_size_temp);
+	}
+	if (statfs("/dev/mmcblk0p8", &fsb) == 0)
+	{
+		flash_size_temp = static_cast<uint32_t>(((size_t) fsb.f_blocks * (size_t) fsb.f_bsize) / 1024);
+		flash_size += flash_size_temp;
+		ROS_INFO("%s %d: Got /dev/mmcblk0p8 size %ld.", __FUNCTION__, __LINE__, flash_size_temp);
+	}
+	if (statfs("/dev/mmcblk0p9", &fsb) == 0)
+	{
+		flash_size_temp = static_cast<uint32_t>(((size_t) fsb.f_blocks * (size_t) fsb.f_bsize) / 1024);
+		flash_size += flash_size_temp;
+		ROS_INFO("%s %d: Got /dev/mmcblk0p9 size %ld.", __FUNCTION__, __LINE__, flash_size_temp);
+	}
+	if (statfs("/dev/mmcblk0p10", &fsb) == 0)
+	{
+		flash_size_temp = static_cast<uint32_t>(((size_t) fsb.f_blocks * (size_t) fsb.f_bsize) / 1024);
+		flash_size += flash_size_temp;
+		ROS_INFO("%s %d: Got /dev/mmcblk0p10 size %ld.", __FUNCTION__, __LINE__, flash_size_temp);
+	}
+	if (statfs("/dev/mmcblk0boot0", &fsb) == 0)
+	{
+		flash_size_temp = static_cast<uint32_t>(((size_t) fsb.f_blocks * (size_t) fsb.f_bsize) / 1024);
+		flash_size += flash_size_temp;
+		ROS_INFO("%s %d: Got /dev/mmcblk0boot0 size %ld.", __FUNCTION__, __LINE__, flash_size_temp);
+	}
+	if (statfs("/dev/mmcblk0boot1", &fsb) == 0)
+	{
+		flash_size_temp = static_cast<uint32_t>(((size_t) fsb.f_blocks * (size_t) fsb.f_bsize) / 1024);
+		flash_size += flash_size_temp;
+		ROS_INFO("%s %d: Got /dev/mmcblk0boot1 size %ld.", __FUNCTION__, __LINE__, flash_size_temp);
+	}
+	if (statfs("/mnt/UDISK", &fsb) == 0)
+	{
+		flash_size_temp = static_cast<uint32_t>(((size_t) fsb.f_blocks * (size_t) fsb.f_bsize) / 1024);
+		flash_size += flash_size_temp;
+		ROS_INFO("%s %d: Got /mnt/UDISK size %ld.", __FUNCTION__, __LINE__, flash_size_temp);
+	}
+
+	ROS_INFO("%s %d: Total flash size: %ldkBytes.", __FUNCTION__, __LINE__, flash_size);
+
+	//Transform sizes into GB and send to main board.
+
+	wheel.pidSetLeftSpeed(static_cast<float>(flash_size));
+	wheel.pidSetRightSpeed(static_cast<float>(ram_size));
+
+	ROS_INFO("Send memory data....");
+
+	return true;
 }
 
 #endif

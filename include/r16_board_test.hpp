@@ -13,7 +13,6 @@
 
 #include "dev.h"
 #include "robot.hpp"
-#include "robotbase.h"
 /*
  * Board test for r16.(Not completed)
  *
@@ -22,6 +21,7 @@
  * 2. Serial port.
  * 3. USB device.
  * 4. Power supply.
+ * 5. MMC.
  *
  */
 void r16_board_test(std::string serial_port, int baud_rate);
@@ -45,4 +45,9 @@ bool usb_test(std::string dev_path, std::string fs_type, int write_length);
  * Test for power supply voltage.
  */
 bool power_supply_test();
+
+/*
+ * Test for memory device.
+ */
+bool memory_test();
 #endif
