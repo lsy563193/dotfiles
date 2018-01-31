@@ -3,7 +3,6 @@
 #include <ros/ros.h>
 #include "dev.h"
 #include "map.h"
-#include "robotbase.h"
 #include "serial.h"
 
 int g_bumper_cnt = 0;

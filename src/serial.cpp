@@ -3,12 +3,11 @@
 #include "serial.h"
 #include <sys/ioctl.h>
 #include <fcntl.h>
-#include <robotbase.h>
 #include <brush.h>
 #include <wheel.hpp>
 #include <robot.hpp>
 
-boost::mutex g_send_stream_mutex;
+boost::mutex send_stream_mutex;
 
 Serial serial;
 
@@ -215,9 +214,33 @@ int Serial::read(uint8_t *buf, int len)
 	return s_ret;
 }
 
+void Serial::resetSendStream(void)
+{
+	for (int i = 0; i < SEND_LEN; i++) {
+		if (i != CTL_LED_GREEN)
+			setSendData(i, 0x00);
+		else
+			setSendData(i, 0x64);
+	}
+	setSendData(0, 0xaa);
+	setSendData(1, 0x55);
+	setSendData(CTL_TRAILER_1, 0xcc);
+	setSendData(CTL_TRAILER_2, 0x33);
+
+	setMainBoardMode(IDLE_MODE);
+	uint8_t buf[SEND_LEN];
+	{
+		boost::mutex::scoped_lock lock(send_stream_mutex);
+		memcpy(buf, send_stream, sizeof(uint8_t) * SEND_LEN);
+	}
+	uint8_t crc;
+	crc = calBufCrc8(buf, CTL_CRC);
+	setSendData(CTL_CRC, crc);
+}
+
 void Serial::setSendData(uint8_t seq, uint8_t val)
 {
-	boost::mutex::scoped_lock lock(g_send_stream_mutex);
+	boost::mutex::scoped_lock lock(send_stream_mutex);
 	if (seq >= CTL_WHEEL_LEFT_HIGH && seq <= CTL_GYRO) {
 		send_stream[seq] = val;
 	}
@@ -226,9 +249,9 @@ void Serial::setSendData(uint8_t seq, uint8_t val)
 uint8_t Serial::getSendData(uint8_t seq)
 {
 	uint8_t tmp_data;
-	g_send_stream_mutex.lock();
+	send_stream_mutex.lock();
 	tmp_data = send_stream[seq];
-	g_send_stream_mutex.unlock();
+	send_stream_mutex.unlock();
 	return tmp_data;
 }
 
@@ -295,9 +318,9 @@ int Serial::get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequen
 		for (int i = 0; i < 40; i++) {  //200ms (round trip takes at leat 15ms)
 			int counter = 0, ret;
 
-			g_send_stream_mutex.lock();
+			send_stream_mutex.lock();
 			memcpy(buf, send_stream, sizeof(uint8_t) * SEND_LEN);
-			g_send_stream_mutex.unlock();
+			send_stream_mutex.unlock();
 			buf[CTL_CRC] = calc_buf_crc8(buf, SEND_LEN - 3);
 			write(SEND_LEN, buf);
 
@@ -412,9 +435,9 @@ int Serial::get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequen
 			//Send acknowledge back to MCU.
 			setSendData(CTL_KEY_VALIDATION, CMD_ACK);
 			for (int k = 0; k < 20; k++) {
-				g_send_stream_mutex.lock();
+				send_stream_mutex.lock();
 				memcpy(buf, send_stream, sizeof(uint8_t) * SEND_LEN);
-				g_send_stream_mutex.unlock();
+				send_stream_mutex.unlock();
 				buf[CTL_CRC] = calBufCrc8(buf, SEND_LEN - 3);
 				write(SEND_LEN, buf);
 
@@ -557,7 +580,6 @@ void Serial::send_routine_cb()
 	ROS_INFO("robotbase,\033[32m%s\033[0m,%d is up.",__FUNCTION__,__LINE__);
 	ros::Rate r(_RATE);
 	uint8_t buf[SEND_LEN];
-	int sl = SEND_LEN-3;
 	while(ros::ok() && !send_thread_stop){
 		r.sleep();
 		/*-------------------Process for beeper.play and led -----------------------*/
@@ -580,10 +602,10 @@ void Serial::send_routine_cb()
 		wheel.pidAdjustSpeed();
 		brush.updatePWM();
 
-		g_send_stream_mutex.lock();
+		send_stream_mutex.lock();
 		memcpy(buf,serial.send_stream,sizeof(uint8_t)*SEND_LEN);
-		g_send_stream_mutex.unlock();
-		buf[CTL_CRC] = serial.calBufCrc8(buf, sl);
+		send_stream_mutex.unlock();
+		buf[CTL_CRC] = serial.calBufCrc8(buf, CTL_CRC);
 		serial.write(buf, SEND_LEN);
 //		robot::instance()->debugSendStream(buf);
 	}

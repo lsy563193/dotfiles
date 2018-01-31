@@ -8,6 +8,8 @@
 #define VALID						true
 #define INVALID						false
 
+#include "robot.hpp"
+
 
 class Beep {
 public:
