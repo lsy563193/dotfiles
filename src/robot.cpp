@@ -7,7 +7,6 @@
 #include <std_srvs/SetBool.h>
 #include <odom.h>
 #include <event_manager.h>
-#include <robotbase.h>
 #include <r16_board_test.hpp>
 #include "lidar.hpp"
 #include "robot.hpp"
@@ -22,11 +21,127 @@
 #include "std_srvs/Empty.h"
 
 
+pthread_mutex_t recev_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t  recev_cond = PTHREAD_COND_INITIALIZER;
+
+pthread_mutex_t serial_data_ready_mtx = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t serial_data_ready_cond = PTHREAD_COND_INITIALIZER;
+
 // For obs dynamic adjustment
 int OBS_adjust_count = 50;
 
 // Lock for odom coordinate
 boost::mutex odom_mutex;
+
+bool g_pp_shutdown = false;
+
+bool robotbase_thread_stop = false;
+bool send_thread_stop = false;
+bool recei_thread_stop = false;
+bool event_manager_thread_stop = false;
+bool event_handle_thread_stop = false;
+bool core_thread_stop = false;
+
+// todo: These variables and the function should be moved to Beeper class.
+bool robotbase_beep_update_flag = false;
+int robotbase_beeper_sound_loop_count = 0;
+uint8_t robotbase_sound_code = 0;
+int robotbase_beeper_sound_time_count = 0;
+int temp_beeper_sound_time_count = -1;
+int robotbase_beeper_silence_time_count = 0;
+int temp_beeper_silence_time_count = 0;
+
+// For led control.
+uint8_t robotbase_led_type = LED_STEADY;
+bool robotbase_led_update_flag = false;
+uint8_t robotbase_led_color = LED_GREEN;
+uint16_t robotbase_led_cnt_for_one_cycle = 0;
+uint16_t live_led_cnt_for_switch = 0;
+
+void process_beep()
+{
+	// This routine handles the speaker sounding logic
+	// If temp_beeper_silence_time_count == 0, it is the end of loop of silence, so decrease the count and set sound in g_send_stream.
+	if (temp_beeper_silence_time_count == 0){
+		temp_beeper_silence_time_count--;
+		temp_beeper_sound_time_count = robotbase_beeper_sound_time_count;
+		serial.setSendData(CTL_BEEPER, robotbase_sound_code & 0xFF);
+	}
+	// If temp_beeper_sound_time_count == 0, it is the end of loop of sound, so decrease the count and set sound in g_send_stream.
+	if (temp_beeper_sound_time_count == 0){
+		temp_beeper_sound_time_count--;
+		temp_beeper_silence_time_count = robotbase_beeper_silence_time_count;
+		serial.setSendData(CTL_BEEPER, 0x00);
+		// Decreace the speaker sound loop count because when it turns to silence this sound loop will be over when silence end, so we can decreace the sound loop count here.
+		// If it is for constant beeper.play, the loop count will be less than 0, it will not decrease either.
+		if (robotbase_beeper_sound_loop_count > 0){
+			robotbase_beeper_sound_loop_count--;
+		}
+	}
+	// If temp_beeper_silence_time_count == -1, it is in loop of sound, so decrease the count.
+	if (temp_beeper_silence_time_count == -1){
+		temp_beeper_sound_time_count--;
+	}
+	// If temp_beeper_sound_time_count == -1, it is in loop of silence, so decrease the count.
+	if (temp_beeper_sound_time_count == -1){
+		temp_beeper_silence_time_count--;
+	}
+}
+
+void process_led()
+{
+	uint16_t led_brightness = 100;
+	switch (robotbase_led_type)
+	{
+		case LED_STEADY:
+		{
+			robotbase_led_update_flag = false;
+			break;
+		}
+		case LED_FLASH:
+		{
+			if (live_led_cnt_for_switch > robotbase_led_cnt_for_one_cycle / 2)
+				led_brightness = 0;
+			break;
+		}
+		case LED_BREATH:
+		{
+			if (live_led_cnt_for_switch > robotbase_led_cnt_for_one_cycle / 2)
+				led_brightness = led_brightness * (2 * (float)live_led_cnt_for_switch / (float)robotbase_led_cnt_for_one_cycle - 1.0);
+			else
+				led_brightness = led_brightness * (1.0 - 2 * (float)live_led_cnt_for_switch / (float)robotbase_led_cnt_for_one_cycle);
+			break;
+		}
+	}
+
+	if (live_led_cnt_for_switch++ > robotbase_led_cnt_for_one_cycle)
+		live_led_cnt_for_switch = 0;
+
+	switch (robotbase_led_color)
+	{
+		case LED_GREEN:
+		{
+			led.set(led_brightness, 0);
+			break;
+		}
+		case LED_ORANGE:
+		{
+			led.set(led_brightness, led_brightness);
+			break;
+		}
+		case LED_RED:
+		{
+			led.set(0, led_brightness);
+			break;
+		}
+		case LED_OFF:
+		{
+			led.set(0, 0);
+			break;
+		}
+	}
+	//ROS_INFO("%s %d: live_led_cnt_for_switch: %d, led_brightness: %d.", __FUNCTION__, __LINE__, live_led_cnt_for_switch, led_brightness);
+}
 
 //extern pp::x900sensor sensor;
 robot::robot()/*:offset_angle_(0),saved_offset_angle_(0)*/
@@ -91,7 +206,7 @@ robot::robot()/*:offset_angle_(0),saved_offset_angle_(0)*/
 		ROS_ERROR("serial not ready\n");
 	}
 
-	robotbase_reset_send_stream();
+	serial.resetSendStream();
 
 	ROS_INFO("waiting robotbase awake ");
 	auto serial_receive_routine = new boost::thread(boost::bind(&Serial::receive_routine_cb, &serial));
@@ -394,8 +509,25 @@ void robot::core_thread_cb()
 
 robot::~robot()
 {
+	bumper.lidarBumperDeinit();
+	recei_thread_stop = true;
+	led.setMode(LED_STEADY, LED_OFF);
+	serial.setSendData(CTL_BEEPER, 0x00);
+	gyro.setOff();
+	wheel.stop();
+	brush.stop();
+	vacuum.stop();
+	serial.setMainBoardMode(NORMAL_SLEEP_MODE);
+	usleep(40000);
+	while(ros::ok() && !g_pp_shutdown){
+		usleep(2000);
+	}
+	serial.close();
+	pthread_mutex_destroy(&recev_lock);
+	pthread_mutex_destroy(&serial_data_ready_mtx);
 
-	robotbase_deinit();
+	pthread_cond_destroy(&recev_cond);
+	pthread_cond_destroy(&serial_data_ready_cond);
 
 	pthread_mutex_destroy(&new_event_mtx);
 	pthread_mutex_destroy(&event_handler_mtx);

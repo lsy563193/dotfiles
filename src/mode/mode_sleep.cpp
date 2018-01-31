@@ -5,7 +5,6 @@
 #include <error.h>
 #include <event_manager.h>
 #include "dev.h"
-#include "robotbase.h"
 #include "mode.hpp"
 
 ModeSleep::ModeSleep()

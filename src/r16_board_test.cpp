@@ -24,7 +24,7 @@ void r16_board_test(std::string serial_port, int baud_rate)
 	}
 	ROS_INFO("Test serial port success!!");
 
-	robotbase_reset_send_stream();
+	serial.resetSendStream();
 	auto serial_receive_routine = new boost::thread(boost::bind(&Serial::receive_routine_cb, &serial));
 	auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
 

@@ -21,6 +21,40 @@
 //#include "mode.hpp"
 #include <string.h>
 
+#define  _RATE 50
+
+extern pthread_mutex_t recev_lock;
+extern pthread_cond_t  recev_cond;
+
+extern pthread_mutex_t serial_data_ready_mtx;
+extern pthread_cond_t serial_data_ready_cond;
+
+extern bool g_pp_shutdown;
+
+extern bool robotbase_thread_stop;
+extern bool recei_thread_stop;
+extern bool send_thread_stop;
+extern bool event_manager_thread_stop;
+extern bool event_handle_thread_stop;
+extern bool core_thread_stop;
+
+extern bool robotbase_beep_update_flag;
+extern int robotbase_beeper_sound_loop_count;
+extern uint8_t robotbase_sound_code;
+extern int robotbase_beeper_sound_time_count;
+extern int temp_beeper_sound_time_count;
+extern int robotbase_beeper_silence_time_count;
+extern int temp_beeper_silence_time_count;
+// For led control.
+extern uint8_t robotbase_led_type;
+extern bool robotbase_led_update_flag;
+extern uint8_t robotbase_led_color;
+extern uint16_t robotbase_led_cnt_for_one_cycle;
+extern uint16_t live_led_cnt_for_switch;
+
+void process_beep();
+void process_led();
+
 class Mode;
 
 typedef enum {

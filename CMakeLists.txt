@@ -103,7 +103,6 @@ FILE(GLOB PP_SRC
 	src/pose.cpp
 	src/r16_board_test.cpp
 	src/robot.cpp
-	src/robotbase.cpp
 	src/serial.cpp
 	src/signature.c
 	src/slam.cpp

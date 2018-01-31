@@ -267,11 +267,6 @@
 
 #define DI		0x07
 
-extern pthread_mutex_t serial_data_ready_mtx;
-extern pthread_cond_t serial_data_ready_cond;
-
-extern boost::mutex g_send_stream_mutex;
-
 class Serial
 {
 public:
@@ -299,6 +294,8 @@ public:
 	int write(uint8_t *buf, uint8_t len);
 
 	int read(uint8_t *buf, int len);
+
+	void resetSendStream(void);
 
 	void setSendData(uint8_t seq, uint8_t val);
 

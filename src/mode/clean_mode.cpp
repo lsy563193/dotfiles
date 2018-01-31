@@ -10,7 +10,6 @@
 #include <robot_timer.h>
 #include <robot.hpp>
 #include <slam.h>
-#include <robotbase.h>
 #include "error.h"
 
 const double CHASE_X = 0.107;
