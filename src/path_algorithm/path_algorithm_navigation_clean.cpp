@@ -323,8 +323,6 @@ public:
 
 bool NavCleanPathAlgorithm::filterPathsToSelectTarget(GridMap &map, PathList &paths, const Cell_t &cell_curr, Cell_t &best_target) {
 	PathList filtered_paths{};
-
-	for (auto &&path : paths) { for (auto &&cell : path) { printf("(%d,%d) ",cell.x,cell.y); } printf("\n"); }
 	std::deque<BestTargetFilter> filters{{(int16_t)(cell_curr.y+2), 200, 0, false},
 																			 {cell_curr.y,(int16_t)(cell_curr.y+1) ,0,false},
 																			 {cell_curr.y, 200,1,false},
