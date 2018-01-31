@@ -58,6 +58,15 @@ int main(int argc, char **argv)
 	ros::init(argc, argv, "pp");
 	ros::NodeHandle	nh_dev("~");
 
+	struct sigaction act;
+	act.sa_handler = signal_catch;
+	sigemptyset(&act.sa_mask);
+	act.sa_flags = SA_RESETHAND;
+	sigaction(SIGTERM,&act,NULL);
+	sigaction(SIGSEGV,&act,NULL);
+	sigaction(SIGINT,&act,NULL);
+	ROS_INFO("set signal action done!");
+
 	std::string	serial_port;
 	nh_dev.param<std::string>("serial_port", serial_port, "/dev/ttyS2");
 
@@ -99,7 +108,7 @@ int main(int argc, char **argv)
 	nh_dev.param<int>("baud_rate", baud_rate, 115200);
 
 	// Init for serial.
-	if (!serial.init(serial_port.c_str(), baud_rate))
+	if (!serial.init(serial_port, baud_rate))
 	{
 		ROS_ERROR("%s %d: Serial init failed!!", __FUNCTION__, __LINE__);
 	}
