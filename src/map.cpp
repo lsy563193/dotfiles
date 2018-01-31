@@ -918,7 +918,7 @@ void GridMap::setCleaned(std::deque<Cell_t> cells)
 	for (uint32_t i = 0; i< cells.size(); i++)
 	{
 		Cell_t cell = cells.at(i);
-		msg += "(" + std::to_string(cell.x) + "," + std::to_string(cell.y)   + "),";	
+		msg += "(" + std::to_string(cell.x) + "," + std::to_string(cell.y)   + "),";
 		for( int dx = -(int)ROBOT_SIZE_1_2;dx <=(int)ROBOT_SIZE_1_2;dx++)
 		{
 			if( i == 0)

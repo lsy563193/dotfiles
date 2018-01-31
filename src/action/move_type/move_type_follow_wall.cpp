@@ -311,37 +311,6 @@ bool MoveTypeFollowWall::lidarTurnRadian(double &turn_radian)
 	}*/
 	return _lidarTurnRadian(is_left_, turn_radian, param.lidar_min, param.lidar_max, param.radian_min,
 													param.radian_max);
-/*	if(ev.bumper_triggered)
-{
-double radian_min, radian_max;
-if (is_left_ ^ (ev.bumper_triggered == BLOCK_LEFT))
-{
-	radian_min = degree_to_radian(60);
-	radian_max = degree_to_radian(180);
-}
-else
-{
-	radian_min = degree_to_radian(18);
-	radian_max = degree_to_radian(90);
-}
-
-if (ev.bumper_triggered == BLOCK_ALL) {
-	ROS_INFO("%s %d: AllBumper trigger.", __FUNCTION__, __LINE__);
-	return _lidarTurnRadian(is_left_, turn_radian, degree_to_radian(90), degree_to_radian(270), degree_to_radian(45), degree_to_radian(180));
-}
-else if (ev.bumper_triggered == BLOCK_RIGHT) {
-	ROS_INFO("%s %d: RightBumper trigger.", __FUNCTION__, __LINE__);
-	return _lidarTurnRadian(is_left_, turn_radian, degree_to_radian(90), degree_to_radian(180), radian_min, radian_max);
-}
-else if (ev.bumper_triggered == BLOCK_LEFT) {
-	ROS_INFO("%s %d: LeftBumper trigger.", __FUNCTION__, __LINE__);
-	return _lidarTurnRadian(is_left_, turn_radian, degree_to_radian(180), degree_to_radian(270), radian_min, radian_max);
-}
-}
-else if (ev.lidar_triggered)
-return _lidarTurnRadian(is_left_, turn_radian, degree_to_radian(90), degree_to_radian(270), degree_to_radian(90), degree_to_radian(180));
-
-return false;*/
 }
 
 double MoveTypeFollowWall::getTurnRadianByEvent()

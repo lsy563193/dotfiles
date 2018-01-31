@@ -344,70 +344,70 @@ bool Lidar::alignFinish()
  * @param2 ac_align angle
  * @retrun true if found ac_align angle ,alse return false
  * */
-bool Lidar::getAlignAngle(const std::vector<LineABC> *lines ,float *align_angle)
-{
-	if(lines->empty())
-		return false;
-	const float DIF_ANG_RANGE = 10.0;//different angle ranges
-	const float LONG_ENOUGTH = 1.0;//in meters
-	std::vector<float> same_angle_count;
-	std::vector<LineABC>::const_iterator it1,it2;
-	float len = 0.0;
-	int i=0;
-	int pos = 0;
-	/*----find the longest one in lines---*/
-	for(it1 = lines->cbegin(); it1!= lines->cend(); it1++){
-		if(it1->len >= len){
-			len = it1->len;
-			pos = i;
-		}
-		i++;
-	}
-	if(lines->at(pos).len >= LONG_ENOUGTH){
-		*align_angle = lines->at(pos).K;
-		ROS_INFO("%s,%d: find long line %f ,align_angle %f",__FUNCTION__,__LINE__,lines->at(pos).len,*align_angle);
-		align_finish_ = true;
-		return true;
-	}
-
-	/*---find those most populars in lines ---*/
-	float sum = 0.0;
-	float avg = 0.0;
-	i=0;
-	if(lines->size() >1){
-		for(it2 = lines->cbegin();it2!=lines->cend();it2++){
-			if(i > lines->size()/2)
-				return false;
-			i++;
-			sum = 0.0;
-			same_angle_count.clear();
-			for(it1 = it2;it1!= lines->cend(); it1++){
-				if((it1+1) != lines->cend()){
-					if(std::abs((it1+1)->K - it1->K) < DIF_ANG_RANGE){
-						sum += it1->K;
-						same_angle_count.push_back(it1->K);
-						//printf("similar angle %f\n",it1->K);
-						if(same_angle_count.size() > lines->size()/2 ){//if number count more than 1/2 of total ,return
-							avg = sum / (1.0*same_angle_count.size());
-							*align_angle = avg;
-							align_finish_ = true;
-							ROS_INFO("%s,%d,get most popular line angle %f",__FUNCTION__,__LINE__,avg);
-							return true;
-						}
-					}
-				}
-			}
-		}
-	}
-	return false;
-}
+//bool Lidar::getAlignAngle(const std::vector<LineABC> *lines ,float *align_angle)
+//{
+//	if(lines->empty())
+//		return false;
+//	const float DIF_ANG_RANGE = 10.0;//different angle ranges
+//	const float LONG_ENOUGTH = 1.0;//in meters
+//	std::vector<float> same_angle_count;
+//	std::vector<LineABC>::const_iterator it1,it2;
+//	float len = 0.0;
+//	int i=0;
+//	int pos = 0;
+//	/*----find the longest one in lines---*/
+//	for(it1 = lines->cbegin(); it1!= lines->cend(); it1++){
+//		if(it1->len >= len){
+//			len = it1->len;
+//			pos = i;
+//		}
+//		i++;
+//	}
+//	if(lines->at(pos).len >= LONG_ENOUGTH){
+//		*align_angle = lines->at(pos).K;
+//		ROS_INFO("%s,%d: find long line %f ,align_angle %f",__FUNCTION__,__LINE__,lines->at(pos).len,*align_angle);
+//		align_finish_ = true;
+//		return true;
+//	}
+//
+//	/*---find those most populars in lines ---*/
+//	float sum = 0.0;
+//	float avg = 0.0;
+//	i=0;
+//	if(lines->size() >1){
+//		for(it2 = lines->cbegin();it2!=lines->cend();it2++){
+//			if(i > lines->size()/2)
+//				return false;
+//			i++;
+//			sum = 0.0;
+//			same_angle_count.clear();
+//			for(it1 = it2;it1!= lines->cend(); it1++){
+//				if((it1+1) != lines->cend()){
+//					if(std::abs((it1+1)->K - it1->K) < DIF_ANG_RANGE){
+//						sum += it1->K;
+//						same_angle_count.push_back(it1->K);
+//						//printf("similar angle %f\n",it1->K);
+//						if(same_angle_count.size() > lines->size()/2 ){//if number count more than 1/2 of total ,return
+//							avg = sum / (1.0*same_angle_count.size());
+//							*align_angle = avg;
+//							align_finish_ = true;
+//							ROS_INFO("%s,%d,get most popular line angle %f",__FUNCTION__,__LINE__,avg);
+//							return true;
+//						}
+//					}
+//				}
+//			}
+//		}
+//	}
+//	return false;
+//}
 
 
 bool Lidar::lidarGetFitLine(double r_begin, double r_end, double range, double dis_lim, double *line_radian, double *distance,bool is_left,bool is_align)
 {
 	ROS_WARN("angle_range_raw(%lf, %lf)", radian_to_degree(r_begin), radian_to_degree(r_end));
 	if(isScanOriginalReady() == 0){
-		INFO_BLUE("ScanCompensateNotReady! Break!");
+		INFO_BLUE("ScanOriginal NOT Ready! Break!");
 		return false;
 	}
 	bool isReverse = false;
@@ -479,7 +479,7 @@ bool Lidar::lidarGetFitLine(double r_begin, double r_end, double range, double d
 
 	if (Lidar_Point.empty())
 	{
-		ROS_DEBUG("%s %d: No lidar point available.", __FUNCTION__, __LINE__);
+		ROS_ERROR("%s %d: No lidar point available!", __FUNCTION__, __LINE__);
 		return false;
 	}
 	splitLine(Lidar_Point, consec_lim,points_count_lim);
@@ -952,68 +952,71 @@ uint8_t Lidar::lidarMarker(double X_MAX)
 	for(const auto& point:lidarXY_points){
 		x = point.x;
 		y = point.y;
-		//front
-		if (x > ROBOT_RADIUS && x < X_MAX) {
-			//middle
-			if (y > -0.056 && y < 0.056) {
-				count_array[0]++;
-			}
-		}
-		if (x > 0.056 && x < X_MAX) {
-			//left
-			if (y > 0.056 && y < 0.168) {
-				count_array[1]++;
-			}
-			//right
-			if (y > -0.168 && y < -0.056) {
-				count_array[2]++;
-			}
-		}
-		//back
-		if (x < -ROBOT_RADIUS && x > (-X_MAX)) {
-			//middle
-			if (y > -0.056 && y < 0.056) {
-				count_array[3]++;
-			}
-		}
-		if (x < -0.056 && x > (-X_MAX)) {
-			//left
-			if (y > 0.056 && y < 0.168) {
-				count_array[4]++;
-			}
-			//right
-			if (y > -0.168 && y < -0.056) {
-				count_array[5]++;
-			}
-		}
-		//left
-		if (y > ROBOT_RADIUS && y < Y_MAX) {
-			//middle
-			if (x > -0.056 && x < 0.056) {
-				count_array[6]++;
-			}
+		auto dis_to_robot = sqrt(pow(x, 2) + pow(y, 2));
+		if (dis_to_robot <= X_MAX) {
 			//front
-			if (x > 0.056 && x < 0.168) {
-				count_array[7]++;
-			}
-			//back
-			if (x > -0.168 && x < -0.056) {
-				count_array[8]++;
+			if (x > 0 && x < X_MAX) {
+				//middle
+				if (y > -0.056 && y < 0.056) {
+					count_array[0]++;
 				}
-		}
-			//right
-		if (y < (0 - ROBOT_RADIUS) && y >  (0 - Y_MAX)) {
-			//middle
-			if (x > -0.056 && x < 0.056) {
-				count_array[9]++;
 			}
-			//front
-			if (x > 0.056 && x < 0.168) {
-				count_array[10]++;
+			if (x > 0.056 && x < X_MAX) {
+				//left
+				if (y > 0.056 && y < 0.168) {
+					count_array[1]++;
+				}
+				//right
+				if (y > -0.168 && y < -0.056) {
+					count_array[2]++;
+				}
 			}
 			//back
-			if (x > -0.168 && x < -0.056) {
-				count_array[11]++;
+			if (x < 0 && x > (-X_MAX)) {
+				//middle
+				if (y > -0.056 && y < 0.056) {
+					count_array[3]++;
+				}
+			}
+			if (x < -0.056 && x > (-X_MAX)) {
+				//left
+				if (y > 0.056 && y < 0.168) {
+					count_array[4]++;
+				}
+				//right
+				if (y > -0.168 && y < -0.056) {
+					count_array[5]++;
+				}
+			}
+			//left
+			if (y > 0 && y < Y_MAX) {
+				//middle
+				if (x > -0.056 && x < 0.056) {
+					count_array[6]++;
+				}
+				//front
+				if (x > 0.056 && x < 0.168) {
+					count_array[7]++;
+				}
+				//back
+				if (x > -0.168 && x < -0.056) {
+					count_array[8]++;
+				}
+			}
+			//right
+			if (y < 0 && y >  (0 - Y_MAX)) {
+				//middle
+				if (x > -0.056 && x < 0.056) {
+					count_array[9]++;
+				}
+				//front
+				if (x > 0.056 && x < 0.168) {
+					count_array[10]++;
+				}
+				//back
+				if (x > -0.168 && x < -0.056) {
+					count_array[11]++;
+				}
 			}
 		}
 	}
@@ -1478,14 +1481,14 @@ void Lidar::init() {
 	return;
 }
 
-bool lidar_is_stuck()
+bool Lidar::lidar_is_stuck()
 {
 	if (lidar.isScanOriginalReady() && !lidar.lidarCheckFresh(4, 2))
 		return true;
 	return false;
 }
 
-uint8_t lidar_get_status()
+uint8_t Lidar::lidar_get_status()
 {
 	if (lidar.isScanCompensateReady())
 		return lidar.lidarMarker(0.20);

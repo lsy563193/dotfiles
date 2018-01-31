@@ -15,19 +15,43 @@ Serial serial;
 Serial::Serial()
 {
 	crport_fd_ = 0;
-	serial_init_done_ = false;
+	serial_port_ready_ = false;
 	made_table_ = 0;
 }
 
-bool Serial::init(const char* port,int baudrate)
+Serial::~Serial()
+{
+	bool closed = false;
+	if (isReady())
+	{
+		for (auto i = 0; i < 10; i++)
+		{
+			if (close() == 0);
+			{
+				ROS_INFO("%s %d: Close serial port %s.", __FUNCTION__, __LINE__, port_.c_str());
+				closed = true;
+				break;
+			}
+		}
+
+		if (!closed)
+			ROS_ERROR("%s %d: Close serial port %s failed.", __FUNCTION__, __LINE__, port_.c_str());
+	}
+}
+
+bool Serial::init(const std::string port,int baudrate)
 {
 	char buf[1024];
 
 	bardrate_ = baudrate;
-	sprintf(buf, "%s", port);
+	sprintf(buf, "%s", port.c_str());
+	port_ = port;
 	crport_fd_ = open(buf, O_RDWR | O_NOCTTY | O_NONBLOCK);
 	if (crport_fd_ == -1)
+	{
+		ROS_ERROR("%s %d: Open device %s, at baudrate %d failed!.", __FUNCTION__, __LINE__, buf, baudrate);
 		return false;
+	}
 
 	fcntl(crport_fd_, F_SETFL, FNDELAY);
 
@@ -72,14 +96,14 @@ bool Serial::init(const char* port,int baudrate)
 	if (tcsetattr(crport_fd_, TCSANOW, &curopt_) != 0){
 		return false;
 	}
-	serial_init_done_ = true;
-	ROS_INFO("\033[32mserial.cpp\033[0m init done...\n");
+	serial_port_ready_ = true;
+	ROS_INFO("\033[32mserial port %s\033[0m init done...", buf);
 	return true;
 }
 
 bool Serial::isReady()
 {
-	return serial_init_done_;
+	return serial_port_ready_;
 }
 
 int Serial::flush()
@@ -97,21 +121,22 @@ int Serial::close()
 	::read(crport_fd_, buf, 128);
 	tcsetattr(crport_fd_, TCSANOW, &orgopt_);
 	retval = ::close(crport_fd_);
-	if(retval==0){
+	if (retval == 0)
+	{
 		crport_fd_ = -1;
-		serial_init_done_ = false;
+		serial_port_ready_ = false;
 	}
 	return retval;
 }
 
-int Serial::write(uint8_t len, uint8_t *buf)
+int Serial::write(uint8_t *buf, uint8_t len)
 {
-	int	retval;
-	retval = ::write(crport_fd_, buf, len);
-	return retval;
+	int ret;
+	ret = static_cast<int>(::write(crport_fd_, buf, len));
+	return ret;
 }
 
-int Serial::read(int len,uint8_t *buf)
+int Serial::read(uint8_t *buf, int len)
 {
 	int r_ret=0,s_ret=0;
 	uint8_t *t_buf;
@@ -474,43 +499,27 @@ void Serial::receive_routine_cb()
 	whtc_len = wht_len - 1; //length without header and tail and crc bytes
 
 	while (ros::ok() && (!recei_thread_stop)) {
-		ret = serial.read(1, &header1);
+		ret = serial.read(&header1, 1);
 		if (ret <= 0 ){
 			ROS_WARN("%s, %d, serial read return %d ,  request %d byte",__FUNCTION__,__LINE__,ret,1);
-#if R16_BOARD_TEST
-			receive_timeout_cnt_++;
-			ROS_ERROR_COND(pthread_cond_signal(&recev_cond)<0, "in serial read, pthread signal fail !");
-#endif
 			continue;
 		}
 		if(header1 != h1)
 			continue;
-		ret= serial.read(1,&header2);
+		ret= serial.read(&header2, 1);
 		if (ret <= 0 ){
 			ROS_WARN("%s,%d,serial read return %d , request %d byte",__FUNCTION__,__LINE__,ret,1);
-#if R16_BOARD_TEST
-			receive_timeout_cnt_++;
-			ROS_ERROR_COND(pthread_cond_signal(&recev_cond)<0, "in serial read, pthread signal fail !");
-#endif
 			continue;
 		}
 		if(header2 != h2){
 			continue;
 		}
-		ret = serial.read(wh_len, receiData);
+		ret = serial.read(receiData, wh_len);
 		if(ret > 0 && ret < wh_len){
 			ROS_WARN("%s,%d,serial read %d bytes, request %d bytes",__FUNCTION__,__LINE__,ret,wh_len);
-#if R16_BOARD_TEST
-			receive_timeout_cnt_++;
-			ROS_ERROR_COND(pthread_cond_signal(&recev_cond)<0, "in serial read, pthread signal fail !");
-#endif
 		}
 		if(ret <= 0){
 			ROS_WARN("%s,%d,serial read return %d",__FUNCTION__,__LINE__,ret);
-#if R16_BOARD_TEST
-			receive_timeout_cnt_++;
-			ROS_ERROR_COND(pthread_cond_signal(&recev_cond)<0, "in serial read, pthread signal fail !");
-#endif
 			continue;
 		}
 
@@ -575,42 +584,10 @@ void Serial::send_routine_cb()
 		memcpy(buf,serial.send_stream,sizeof(uint8_t)*SEND_LEN);
 		g_send_stream_mutex.unlock();
 		buf[CTL_CRC] = serial.calBufCrc8(buf, sl);
-		serial.write(SEND_LEN, buf);
+		serial.write(buf, SEND_LEN);
 //		robot::instance()->debugSendStream(buf);
 	}
 	core_thread_stop = true;
 	ROS_ERROR("%s,%d exit",__FUNCTION__,__LINE__);
 	//pthread_exit(NULL);
 }
-
-#if R16_BOARD_TEST
-bool Serial::test()
-{
-	uint8_t buf[RECEI_LEN];
-	uint8_t check_cnt = 0;
-	setSendData(CTL_MAIN_BOARD_MODE, 0xFF);
-	ROS_INFO("%s %d: Start serial test.", __FUNCTION__, __LINE__);
-	while (ros::ok())
-	{
-		/*--------data extrict from serial com--------*/
-		ROS_ERROR_COND(pthread_mutex_lock(&recev_lock) != 0, "robotbase pthread receive lock fail");
-		ROS_ERROR_COND(pthread_cond_wait(&recev_cond, &recev_lock) != 0, "robotbase pthread receive cond wait fail");
-		memcpy(buf, receive_stream, sizeof(uint8_t) * RECEI_LEN);
-		ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock) != 0, "robotbase pthread receive unlock fail");
-//		robot::instance()->debugReceivedStream(buf);
-
-		if (buf[REC_MIX_BYTE] == 0xFF)
-		{
-			ROS_INFO("%s %d: serial test succeed.", __FUNCTION__, __LINE__);
-			return true;
-		}
-
-		// Receive timeout or send error.
-		if (receive_timeout_cnt_ > 3 || check_cnt++ > 50)
-			break;
-	}
-
-	ROS_INFO("%s %d: serial test failed.", __FUNCTION__, __LINE__);
-	return false;
-}
-#endif

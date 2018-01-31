@@ -52,33 +52,6 @@ void signal_catch(int sig)
 	ros::shutdown();
 }
 
-#if R16_BOARD_TEST
-int main(int argc, char **argv)
-{
-	ros::init(argc, argv, "pp");
-	ros::NodeHandle	nh_dev("~");
-
-	std::string	serial_port;
-	nh_dev.param<std::string>("serial_port", serial_port, "/dev/ttyS2");
-
-	int baud_rate;
-	nh_dev.param<int>("baud_rate", baud_rate, 115200);
-
-	// Create speaker play thread.
-	auto speaker_play_routine = new boost::thread(boost::bind(&Speaker::playRoutine, &speaker));
-
-	r16_board_test(serial_port, baud_rate);
-
-	// Test finish.
-	while (ros::ok())
-	{
-		speaker.play(VOICE_TEST_SUCCESS);
-		ROS_INFO("%s %d: Test finish.", __FUNCTION__, __LINE__);
-		sleep(5);
-	}
-}
-
-#else
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "pp");
@@ -92,27 +65,9 @@ int main(int argc, char **argv)
 	sigaction(SIGSEGV,&act,NULL);
 	sigaction(SIGINT,&act,NULL);
 	ROS_INFO("set signal action done!");
-	std::string	serial_port;
-	nh_dev.param<std::string>("serial_port", serial_port, "/dev/ttyS2");
-
-	int		baud_rate;
-	nh_dev.param<int>("baud_rate", baud_rate, 115200);
-
-	// Init for serial.
-	if (!serial.init(serial_port.c_str(), baud_rate))
-	{
-		ROS_ERROR("%s %d: Serial init failed!!", __FUNCTION__, __LINE__);
-	}
-
-	std::string lidar_bumper_dev;
-	nh_dev.param<std::string>("lidar_bumper_file", lidar_bumper_dev, "/dev/input/event0");
-
-	if (bumper.lidarBumperInit(lidar_bumper_dev.c_str()) == -1)
-		ROS_ERROR(" lidar bumper open fail!");
 
 	robot_instance = new robot();
 
 	ros::spin();
 	return 0;
 }
-#endif

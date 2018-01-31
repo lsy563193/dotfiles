@@ -337,7 +337,7 @@ void event_manager_thread_cb()
 		*/
 
 		// Lidar stuck
-		if (lidar_is_stuck()) {
+		if (lidar.lidar_is_stuck()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_LIDAR_STUCK);
 		}
