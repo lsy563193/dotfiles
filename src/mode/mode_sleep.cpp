@@ -116,7 +116,7 @@ void ModeSleep::remoteClean(bool state_now, bool state_last)
 		ev.key_clean_pressed = true;
 		ROS_WARN("%s %d: Waked up by remote key clean.", __FUNCTION__, __LINE__);
 		serial.setMainBoardMode(IDLE_MODE);
-//		beeper.play_for_command(VALID);
+//		beeper.beepForCommand(VALID);
 	}
 
 	remote.reset();

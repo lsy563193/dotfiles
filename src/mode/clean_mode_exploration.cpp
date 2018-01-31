@@ -38,7 +38,7 @@ bool CleanModeExploration::mapMark()
 void CleanModeExploration::keyClean(bool state_now, bool state_last) {
 	ROS_WARN("%s %d: key clean.", __FUNCTION__, __LINE__);
 
-	beeper.play_for_command(VALID);
+	beeper.beepForCommand(VALID);
 
 	// Wait for key released.
 	bool long_press = false;
@@ -47,7 +47,7 @@ void CleanModeExploration::keyClean(bool state_now, bool state_last) {
 		if (!long_press && key.getPressTime() > 3)
 		{
 			ROS_WARN("%s %d: key clean long pressed.", __FUNCTION__, __LINE__);
-			beeper.play_for_command(VALID);
+			beeper.beepForCommand(VALID);
 			long_press = true;
 		}
 		usleep(20000);
@@ -65,7 +65,7 @@ void CleanModeExploration::keyClean(bool state_now, bool state_last) {
 void CleanModeExploration::remoteClean(bool state_now, bool state_last) {
 	ROS_WARN("%s %d: remote clean.", __FUNCTION__, __LINE__);
 
-	beeper.play_for_command(VALID);
+	beeper.beepForCommand(VALID);
 	ev.key_clean_pressed = true;
 	remote.reset();
 }

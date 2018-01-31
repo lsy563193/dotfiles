@@ -11,13 +11,13 @@
 ActionSleep::ActionSleep()
 {
 	ROS_INFO("%s %d: Start sleep action.", __FUNCTION__, __LINE__);
-	beeper.play(1, 80, 0, 1);
+	beeper.beep(1, 80, 0, 1);
 	usleep(100000);
-	beeper.play(2, 80, 0, 1);
+	beeper.beep(2, 80, 0, 1);
 	usleep(100000);
-	beeper.play(3, 80, 0, 1);
+	beeper.beep(3, 80, 0, 1);
 	usleep(100000);
-	beeper.play(4, 80, 0, 1);
+	beeper.beep(4, 80, 0, 1);
 	usleep(100000);
 	led.setMode(LED_STEADY, LED_OFF);
 	if (charger.getChargeStatus())
@@ -43,13 +43,13 @@ ActionSleep::ActionSleep()
 ActionSleep::~ActionSleep()
 {
 
-	beeper.play(4, 80, 0, 1);
+	beeper.beep(4, 80, 0, 1);
 	usleep(100000);
-	beeper.play(3, 80, 0, 1);
+	beeper.beep(3, 80, 0, 1);
 	usleep(100000);
-	beeper.play(2, 80, 0, 1);
+	beeper.beep(2, 80, 0, 1);
 	usleep(100000);
-	beeper.play(1, 80, 4, 1);
+	beeper.beep(1, 80, 4, 1);
 
 	ROS_INFO("%s %d: End sleep action.", __FUNCTION__, __LINE__);
 }

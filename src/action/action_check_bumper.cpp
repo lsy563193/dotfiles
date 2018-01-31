@@ -31,22 +31,22 @@ void ActionCheckBumper::run()
 {
 	if (bumper.getLeft() && bumper.getRight())
 	{
-		beeper.play(1, 50, 0, 1);
+		beeper.beep(1, 50, 0, 1);
 		led.setMode(LED_STEADY, LED_ORANGE);
 	}
 	else if (bumper.getLeft())
 	{
-		beeper.play(3, 50, 0, 1);
+		beeper.beep(3, 50, 0, 1);
 		led.setMode(LED_STEADY, LED_GREEN);
 	}
 	else if (bumper.getRight())
 	{
-		beeper.play(7, 50, 0, 1);
+		beeper.beep(7, 50, 0, 1);
 		led.setMode(LED_STEADY, LED_RED);
 	}
 	else
 	{
-		beeper.play(1, 0, 0, 1);
+		beeper.beep(1, 0, 0, 1);
 		led.setMode(LED_STEADY, LED_OFF);
 	}
 }

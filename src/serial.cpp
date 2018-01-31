@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <brush.h>
 #include <wheel.hpp>
+#include <beeper.h>
 #include <robot.hpp>
 
 boost::mutex send_stream_mutex;
@@ -583,17 +584,7 @@ void Serial::send_routine_cb()
 	while(ros::ok() && !send_thread_stop){
 		r.sleep();
 		/*-------------------Process for beeper.play and led -----------------------*/
-		// Force reset the beeper action when beeper() function is called, especially when last beeper action is not over. It can stop last beeper action and directly start the updated beeper.play action.
-		if (robotbase_beep_update_flag){
-			temp_beeper_sound_time_count = -1;
-			temp_beeper_silence_time_count = 0;
-			robotbase_beep_update_flag = false;
-		}
-		//ROS_INFO("%s %d: tmp_sound_count: %d, tmp_silence_count: %d, sound_loop_count: %d.", __FUNCTION__, __LINE__, temp_beeper_sound_time_count, temp_beeper_silence_time_count, robotbase_beeper_sound_loop_count);
-		// If count > 0, it is processing for different alarm.
-		if (robotbase_beeper_sound_loop_count != 0){
-			process_beep();
-		}
+		beeper.processBeep();
 
 		if (robotbase_led_update_flag)
 			process_led();

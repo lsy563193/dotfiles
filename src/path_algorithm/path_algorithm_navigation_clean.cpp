@@ -121,7 +121,7 @@ Cells NavCleanPathAlgorithm::findTargetInSameLane(GridMap &map, const Cell_t &cu
 //			ROS_ERROR("%s %d: 1 g_follow_last_follow_wall_dir(%d)", __FUNCTION__, __LINE__, g_follow_last_follow_wall_dir);
 		if(g_follow_last_follow_wall_dir!=0)
 		{
-			beeper.play_for_command(VALID);
+			beeper.beepForCommand(VALID);
 			ROS_ERROR("%s %d: g_follow_last_follow_wall_dir(%d)", __FUNCTION__, __LINE__, g_follow_last_follow_wall_dir);
 			if(g_follow_last_follow_wall_dir == 1)
 				target = it[1];

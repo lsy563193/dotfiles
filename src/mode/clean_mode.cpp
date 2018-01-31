@@ -285,7 +285,7 @@ bool ACleanMode::calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,boo
 	auto is_corner = check_corner(scan, para);
 	if(is_corner)
 	{
-//		beeper.play_for_command(VALID);
+//		beeper.beepForCommand(VALID);
 		ROS_WARN("is_corner = %d", is_corner);
 	}
 	for (int i = 359; i >= 0; i--) {
@@ -975,13 +975,13 @@ void ACleanMode::remoteHome(bool state_now, bool state_last)
 	if (sp_state == state_clean || sp_state == state_pause || sp_state == state_spot)
 	{
 		ROS_WARN("%s %d: remote home.", __FUNCTION__, __LINE__);
-		beeper.play_for_command(VALID);
+		beeper.beepForCommand(VALID);
 		ev.remote_home = true;
 	}
 	else
 	{
 		ROS_WARN("%s %d: remote home but not valid.", __FUNCTION__, __LINE__);
-		beeper.play_for_command(INVALID);
+		beeper.beepForCommand(INVALID);
 	}
 	remote.reset();
 }

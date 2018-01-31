@@ -114,11 +114,11 @@ void ModeCharge::remoteClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Receive remote key clean.", __FUNCTION__, __LINE__);
 	if (charger.isDirected())
-		beeper.play_for_command(INVALID);
+		beeper.beepForCommand(INVALID);
 	else
 	{
 		ev.key_clean_pressed = true;
-		beeper.play_for_command(VALID);
+		beeper.beepForCommand(VALID);
 	}
 	remote.reset();
 }
@@ -127,11 +127,11 @@ void ModeCharge::keyClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Receive key clean.", __FUNCTION__, __LINE__);
 	if (charger.isDirected())
-		beeper.play_for_command(INVALID);
+		beeper.beepForCommand(INVALID);
 	else
 	{
 		ev.key_clean_pressed = true;
-		beeper.play_for_command(VALID);
+		beeper.beepForCommand(VALID);
 	}
 
 	// Wait for key released.
@@ -146,13 +146,13 @@ void ModeCharge::remotePlan(bool state_now, bool state_last)
 {
 	if (robot_timer.getPlanStatus() == 1)
 	{
-		beeper.play_for_command(VALID);
+		beeper.beepForCommand(VALID);
 		speaker.play(VOICE_APPOINTMENT_DONE, false);
 		ROS_WARN("%s %d: Plan received.", __FUNCTION__, __LINE__);
 	}
 	else if (robot_timer.getPlanStatus() == 2)
 	{
-		beeper.play_for_command(VALID);
+		beeper.beepForCommand(VALID);
 		speaker.play(VOICE_CANCEL_APPOINTMENT, false);
 		ROS_WARN("%s %d: Plan cancel received.", __FUNCTION__, __LINE__);
 	}

@@ -16,7 +16,7 @@ FILE(GLOB PP_SRC
 	src/dev/remote.cpp
 	src/dev/obs.cpp
 	src/dev/key_led.cpp
-	src/dev/beep.cpp
+		src/dev/beeper.cpp
 	src/dev/charger.cpp
 	src/dev/wall_follow.cpp
 	src/dev/wheel.cpp

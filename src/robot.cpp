@@ -58,36 +58,6 @@ uint8_t robotbase_led_color = LED_GREEN;
 uint16_t robotbase_led_cnt_for_one_cycle = 0;
 uint16_t live_led_cnt_for_switch = 0;
 
-void process_beep()
-{
-	// This routine handles the speaker sounding logic
-	// If temp_beeper_silence_time_count == 0, it is the end of loop of silence, so decrease the count and set sound in g_send_stream.
-	if (temp_beeper_silence_time_count == 0){
-		temp_beeper_silence_time_count--;
-		temp_beeper_sound_time_count = robotbase_beeper_sound_time_count;
-		serial.setSendData(CTL_BEEPER, robotbase_sound_code & 0xFF);
-	}
-	// If temp_beeper_sound_time_count == 0, it is the end of loop of sound, so decrease the count and set sound in g_send_stream.
-	if (temp_beeper_sound_time_count == 0){
-		temp_beeper_sound_time_count--;
-		temp_beeper_silence_time_count = robotbase_beeper_silence_time_count;
-		serial.setSendData(CTL_BEEPER, 0x00);
-		// Decreace the speaker sound loop count because when it turns to silence this sound loop will be over when silence end, so we can decreace the sound loop count here.
-		// If it is for constant beeper.play, the loop count will be less than 0, it will not decrease either.
-		if (robotbase_beeper_sound_loop_count > 0){
-			robotbase_beeper_sound_loop_count--;
-		}
-	}
-	// If temp_beeper_silence_time_count == -1, it is in loop of sound, so decrease the count.
-	if (temp_beeper_silence_time_count == -1){
-		temp_beeper_sound_time_count--;
-	}
-	// If temp_beeper_sound_time_count == -1, it is in loop of silence, so decrease the count.
-	if (temp_beeper_sound_time_count == -1){
-		temp_beeper_silence_time_count--;
-	}
-}
-
 void process_led()
 {
 	uint16_t led_brightness = 100;

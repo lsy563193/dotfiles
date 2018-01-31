@@ -77,7 +77,7 @@ void CleanModeFollowWall::keyClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: key clean.", __FUNCTION__, __LINE__);
 
-	beeper.play_for_command(VALID);
+	beeper.beepForCommand(VALID);
 	wheel.stop();
 
 	// Wait for key released.
@@ -87,7 +87,7 @@ void CleanModeFollowWall::keyClean(bool state_now, bool state_last)
 		if (!long_press && key.getPressTime() > 3)
 		{
 			ROS_WARN("%s %d: key clean long pressed.", __FUNCTION__, __LINE__);
-			beeper.play_for_command(VALID);
+			beeper.beepForCommand(VALID);
 			long_press = true;
 		}
 		usleep(20000);
@@ -121,24 +121,24 @@ void CleanModeFollowWall::remoteMax(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
 	if(isStateClean())
 	{
-		beeper.play_for_command(VALID);
+		beeper.beepForCommand(VALID);
 		vacuum.switchToNext();
 	}
 	else if (isStateGoHomePoint() || isStateGoToCharger())
 	{
-		beeper.play_for_command(VALID);
+		beeper.beepForCommand(VALID);
 		vacuum.switchToNext();
 		vacuum.setTmpMode(Vac_Normal);
 	}
 	else
-		beeper.play_for_command(INVALID);
+		beeper.beepForCommand(INVALID);
 	remote.reset();
 }
 void CleanModeFollowWall::remoteClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: remote clean.", __FUNCTION__, __LINE__);
 
-	beeper.play_for_command(VALID);
+	beeper.beepForCommand(VALID);
 	wheel.stop();
 	ev.key_clean_pressed = true;
 	remote.reset();
