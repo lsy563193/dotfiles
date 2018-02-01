@@ -464,9 +464,8 @@ bool CleanModeNav::updateActionInStateClean(){
 		ROS_INFO("%s,%d: path size(%u), old_dir_(%f), start_point_.dir(%f), bumper(%d), cliff(%d), lidar(%d), delta_y(%f)",
 						 __FUNCTION__, __LINE__, plan_path_.size(), old_dir_, iterate_point_.dir, ev.bumper_triggered,
 						 ev.cliff_triggered, ev.lidar_triggered, delta_y);
-		if (!isXAxis(old_dir_) // If last movement is not x axis linear movement, should not follow wall.
-				|| plan_path_.size() > 2 ||
-				(!ev.bumper_triggered && !ev.cliff_triggered && !ev.lidar_triggered)
+		if (isAny(old_dir_) // If last movement is not x axis linear movement, should not follow wall.
+				|| (!ev.bumper_triggered && !ev.cliff_triggered && !ev.lidar_triggered)
 				|| delta_y == 0 || std::abs(delta_y) > 2) {
 			action_i_ = ac_linear;
 		}
