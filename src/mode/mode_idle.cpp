@@ -45,9 +45,9 @@ bool ModeIdle::isExit()
 				{
 					ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
 					if (battery_low_)
-						led.setMode(LED_BREATH, LED_ORANGE);
+						key_led.setMode(LED_BREATH, LED_ORANGE);
 					else
-						led.setMode(LED_BREATH, LED_GREEN);
+						key_led.setMode(LED_BREATH, LED_GREEN);
 					speaker.play(VOICE_CLEAR_ERROR, false);
 				} else
 				{
@@ -166,9 +166,9 @@ void ModeIdle::remoteKeyHandler(bool state_now, bool state_last)
 				ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
 				beeper.beepForCommand(VALID);
 				if (battery_low_)
-					led.setMode(LED_BREATH, LED_ORANGE);
+					key_led.setMode(LED_BREATH, LED_ORANGE);
 				else
-					led.setMode(LED_BREATH, LED_GREEN);
+					key_led.setMode(LED_BREATH, LED_GREEN);
 				speaker.play(VOICE_CLEAR_ERROR);
 			}
 			else
@@ -195,7 +195,7 @@ void ModeIdle::remoteKeyHandler(bool state_now, bool state_last)
 			  && battery_low_)
 	{
 		ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, battery.getVoltage(), (int)BATTERY_READY_TO_CLEAN_VOLTAGE);
-		led.setMode(LED_BREATH, LED_ORANGE);
+		key_led.setMode(LED_BREATH, LED_ORANGE);
 		beeper.beepForCommand(INVALID);
 		speaker.play(VOICE_BATTERY_LOW);
 	}
@@ -311,9 +311,9 @@ void ModeIdle::keyClean(bool state_now, bool state_last)
 			{
 				ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
 				if (battery_low_)
-					led.setMode(LED_BREATH, LED_ORANGE);
+					key_led.setMode(LED_BREATH, LED_ORANGE);
 				else
-					led.setMode(LED_BREATH, LED_GREEN);
+					key_led.setMode(LED_BREATH, LED_GREEN);
 				speaker.play(VOICE_CLEAR_ERROR);
 			}
 			else
@@ -329,7 +329,7 @@ void ModeIdle::keyClean(bool state_now, bool state_last)
 		{
 			ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, battery.getVoltage(),
 					 (int) BATTERY_READY_TO_CLEAN_VOLTAGE);
-			led.setMode(LED_BREATH, LED_ORANGE);
+			key_led.setMode(LED_BREATH, LED_ORANGE);
 			speaker.play(VOICE_BATTERY_LOW);
 		}
 		else
@@ -363,7 +363,7 @@ bool ModeIdle::isFinish()
 {
 	if (!battery_low_ && !battery.isReadyToClean())
 	{
-		led.setMode(LED_BREATH, LED_ORANGE);
+		key_led.setMode(LED_BREATH, LED_ORANGE);
 		battery_low_ = true;
 	}
 	return false;

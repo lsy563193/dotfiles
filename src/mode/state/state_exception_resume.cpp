@@ -7,5 +7,5 @@
 #include "key_led.h"
 
 void ExceptionResume::init() {
-	led.setMode(LED_STEADY, LED_GREEN);
+	key_led.setMode(LED_STEADY, LED_GREEN);
 }

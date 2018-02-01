@@ -13,9 +13,9 @@ void StateGoHomePoint::init(){
 
 	wheel.setPidTargetSpeed(0, 0, REG_TYPE_LINEAR);
 	if (sp_cm_->isRemoteGoHomePoint())
-		led.setMode(LED_STEADY, LED_ORANGE);
+		key_led.setMode(LED_STEADY, LED_ORANGE);
 	else
-		led.setMode(LED_STEADY, LED_GREEN);
+		key_led.setMode(LED_STEADY, LED_GREEN);
 
 	ev.remote_home = false;
 	ev.battery_home = false;

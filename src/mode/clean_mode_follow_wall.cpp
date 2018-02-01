@@ -155,7 +155,7 @@ void CleanModeFollowWall::switchInStateInit() {
 	closed_count_ = 0;
 	isolate_count_ = 0;
 	sp_state->init();
-	led.setMode(LED_STEADY, LED_GREEN);
+	key_led.setMode(LED_STEADY, LED_GREEN);
 }
 
 //bool CleanModeFollowWall::moveTypeFollowWallIsFinish(IMoveType *p_mt,bool is_new_cell) {

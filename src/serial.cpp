@@ -6,6 +6,7 @@
 #include <brush.h>
 #include <wheel.hpp>
 #include <beeper.h>
+#include <key_led.h>
 #include <robot.hpp>
 
 boost::mutex send_stream_mutex;
@@ -583,11 +584,9 @@ void Serial::send_routine_cb()
 	uint8_t buf[SEND_LEN];
 	while(ros::ok() && !send_thread_stop){
 		r.sleep();
-		/*-------------------Process for beeper.play and led -----------------------*/
+		/*-------------------Process for beeper.play and key_led -----------------------*/
 		beeper.processBeep();
-
-		if (robotbase_led_update_flag)
-			process_led();
+		key_led.processLed();
 
 			/*---pid for wheels---*/
 		wheel.pidAdjustSpeed();

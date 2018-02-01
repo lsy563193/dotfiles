@@ -86,14 +86,14 @@ bool ModeCharge::isFinish()
 {
 	if (charger.getChargeStatus() && battery.isFull())
 	{
-		led.setMode(LED_STEADY, LED_GREEN);
+		key_led.setMode(LED_STEADY, LED_GREEN);
 		if (battery_full_start_time_ == 0)
 		{
 			speaker.play(VOICE_BATTERY_CHARGE_DONE);
 			battery_full_start_time_ = ros::Time::now().toSec();
 		}
 
-		// Show green led for 60s before going to sleep mode.
+		// Show green key_led for 60s before going to sleep mode.
 		if (ros::Time::now().toSec() - battery_full_start_time_ >= 60)
 		{
 			setNextMode(md_sleep);
