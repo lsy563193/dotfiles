@@ -7,7 +7,7 @@
 #include <std_srvs/SetBool.h>
 #include <odom.h>
 #include <event_manager.h>
-#include <robotbase.h>
+#include <r16_board_test.hpp>
 #include "lidar.hpp"
 #include "robot.hpp"
 #include "slam.h"
@@ -21,14 +21,25 @@
 #include "std_srvs/Empty.h"
 
 
+pthread_mutex_t recev_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t  recev_cond = PTHREAD_COND_INITIALIZER;
+
+pthread_mutex_t serial_data_ready_mtx = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t serial_data_ready_cond = PTHREAD_COND_INITIALIZER;
+
 // For obs dynamic adjustment
 int OBS_adjust_count = 50;
 
-// Lock for odom coordinate
-boost::mutex odom_mutex;
+bool g_pp_shutdown = false;
 
-//extern pp::x900sensor sensor;
-robot::robot()/*:offset_angle_(0),saved_offset_angle_(0)*/
+bool robotbase_thread_stop = false;
+bool send_thread_stop = false;
+bool recei_thread_stop = false;
+bool event_manager_thread_stop = false;
+bool event_handle_thread_stop = false;
+bool core_thread_stop = false;
+
+robot::robot()
 {
 
 	robotbase_thread_stop = false;
@@ -37,12 +48,6 @@ robot::robot()/*:offset_angle_(0),saved_offset_angle_(0)*/
 	core_thread_stop = false;
 	event_manager_thread_stop = false;
 	event_handle_thread_stop = false;
-
-	while (!serial.isReady()) {
-		ROS_ERROR("serial not ready\n");
-	}
-
-	robotbase_reset_send_stream();
 
 	// Subscribers.
 	odom_sub_ = robot_nh_.subscribe("/odom", 1, &robot::robotOdomCb, this);
@@ -72,16 +77,48 @@ robot::robot()/*:offset_angle_(0),saved_offset_angle_(0)*/
 	}
 #endif
 
-	// Init for event manager.
+	std::string serial_port;
+	robot_nh_.param<std::string>("serial_port", serial_port, "/dev/ttyS2");
+
+	int baud_rate;
+	robot_nh_.param<int>("baud_rate", baud_rate, 115200);
+
+#if !R16_BOARD_TEST
+
+	std::string lidar_bumper_dev;
+	robot_nh_.param<std::string>("lidar_bumper_file", lidar_bumper_dev, "/dev/input/event0");
+
+	if (bumper.lidarBumperInit(lidar_bumper_dev.c_str()) == -1)
+		ROS_ERROR(" lidar bumper open fail!");
+
+	// Init for serial.
+	if (!serial.init(serial_port, baud_rate))
+	{
+		ROS_ERROR("%s %d: Serial init failed!!", __FUNCTION__, __LINE__);
+	}
+
+	while (!serial.isReady()) {
+		ROS_ERROR("serial not ready\n");
+	}
+
+	serial.resetSendStream();
+
 	ROS_INFO("waiting robotbase awake ");
 	auto serial_receive_routine = new boost::thread(boost::bind(&Serial::receive_routine_cb, &serial));
 	auto robotbase_routine = new boost::thread(boost::bind(&robot::robotbase_routine_cb, this));
 	auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
 	auto speaker_play_routine = new boost::thread(boost::bind(&Speaker::playRoutine, &speaker));
+	// Init for event manager.
 	event_manager_init();
 	auto event_manager_thread = new boost::thread(event_manager_thread_cb);
 	auto event_handler_thread = new boost::thread(event_handler_thread_cb);
 	auto core_thread = new boost::thread(boost::bind(&robot::core_thread_cb,this));
+#else
+	auto speaker_play_routine = new boost::thread(boost::bind(&Speaker::playRoutine, &speaker));
+	auto robotbase_routine = new boost::thread(boost::bind(&robot::robotbase_routine_cb, this));
+
+	auto test_routine = new boost::thread(boost::bind(&r16_board_test, serial_port, baud_rate));
+#endif
 	ROS_INFO("%s %d: robot init done!", __FUNCTION__, __LINE__);
 }
 
@@ -263,7 +300,7 @@ void robot::robotbase_routine_cb()
 
 
 		/*------------setting for odom and publish odom topic --------*/
-		boost::mutex::scoped_lock lock(odom_mutex);
+		boost::mutex::scoped_lock lock(odom_mutex_);
 		odom.setMovingSpeed(static_cast<float>((wheel.getLeftWheelActualSpeed() + wheel.getRightWheelActualSpeed()) / 2.0));
 		odom.setRadian(degree_to_radian(gyro.getAngle()));
 		odom.setAngleSpeed(gyro.getAngleV());
@@ -367,8 +404,25 @@ void robot::core_thread_cb()
 
 robot::~robot()
 {
+	bumper.lidarBumperDeinit();
+	recei_thread_stop = true;
+	key_led.setMode(LED_STEADY, LED_OFF);
+	serial.setSendData(CTL_BEEPER, 0x00);
+	gyro.setOff();
+	wheel.stop();
+	brush.stop();
+	vacuum.stop();
+	serial.setMainBoardMode(NORMAL_SLEEP_MODE);
+	usleep(40000);
+	while(ros::ok() && !g_pp_shutdown){
+		usleep(2000);
+	}
+	serial.close();
+	pthread_mutex_destroy(&recev_lock);
+	pthread_mutex_destroy(&serial_data_ready_mtx);
 
-	robotbase_deinit();
+	pthread_cond_destroy(&recev_cond);
+	pthread_cond_destroy(&serial_data_ready_cond);
 
 	pthread_mutex_destroy(&new_event_mtx);
 	pthread_mutex_destroy(&event_handler_mtx);
@@ -493,7 +547,7 @@ bool robot::slamStop(void)
 void robot::initOdomPosition()
 {
 	// Reset the odom pose to (0, 0)
-	boost::mutex::scoped_lock lock(odom_mutex);
+	boost::mutex::scoped_lock lock(odom_mutex_);
 	odom.setX(0);
 	odom.setY(0);
 }

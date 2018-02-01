@@ -38,7 +38,6 @@
 /*
  * Definition relates to a grid cell.
  */
-#define SPEED_ALF    (7.83)
 #define CELL_SIZE			(0.112f) // 65 // in mm
 #define CELL_SIZE_2			(2 * CELL_SIZE) // 65
 #define CELL_SIZE_3			(3 * CELL_SIZE) // 65
@@ -164,12 +163,13 @@
  * When it is too small, it will move like shaking when robot startup.
  * When it is too large, it will fall down when reach the cliff.
  */
+#define SPEED_ALF						(7.83)
 #define BACK_MAX_SPEED					((int32_t) 11) // 15)
 #define BACK_MIN_SPEED					((int32_t) 8)
 #define LINEAR_MIN_SPEED				((int32_t) 10) // 15)
 #define LINEAR_MAX_SPEED				((int32_t) 40) // 15)
-#define FALL_WALL_MIN_SPEED			((int32_t) 5)
-#define FALL_WALL_MAX_SPEED			((int32_t) 20)
+#define FALL_WALL_MIN_SPEED				((int32_t) 5)
+#define FALL_WALL_MAX_SPEED				((int32_t) 20)
 #define ROTATE_TOP_SPEED				((uint8_t) 20) // 22)
 #define ROTATE_LOW_SPEED				((uint8_t) 5)
 #define RUN_TOP_SPEED					((int32_t) 40) // 45)

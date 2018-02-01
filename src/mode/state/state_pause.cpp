@@ -6,7 +6,7 @@
 #include "key_led.h"
 
 void StatePause::init() {
-	led.setMode(LED_BREATH, LED_GREEN);
+	key_led.setMode(LED_BREATH, LED_GREEN);
 }
 
 //bool StateTrapped::isFinish() {

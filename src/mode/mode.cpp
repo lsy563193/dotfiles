@@ -5,7 +5,6 @@
 #include <dev.h>
 #include <event_manager.h>
 #include "mode.hpp"
-#include "robotbase.h"
 boost::shared_ptr<IAction> Mode::sp_action_ = nullptr;
 //IAction* Mode::sp_action_ = nullptr;
 

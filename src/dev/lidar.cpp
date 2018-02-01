@@ -1180,7 +1180,7 @@ void Lidar::checkRobotSlip()
 				last_frame_time_stamp_ = ros::Time::now().toSec();
 				last_frame_ranges_ = tmp_scan_data.ranges;
 				// For debug
-//				beeper.play_for_command(VALID);
+//				beeper.beepForCommand(VALID);
 //				slip_status_ = true;
 			}
 		}

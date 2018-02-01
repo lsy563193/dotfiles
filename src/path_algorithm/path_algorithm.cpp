@@ -401,8 +401,7 @@ Cells APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const 
 
 	map.setCell(COST_MAP, (int32_t) target.x, (int32_t) target.y, COST_PATH);
 
-	trace_cell.x = target.x;
-	trace_cell.y = target.y;
+	trace_cell = target;
 	path_.push_back(trace_cell);
 
 	displayCellPath(path_);

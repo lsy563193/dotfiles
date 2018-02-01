@@ -35,7 +35,7 @@ bool CleanModeTest::isFinish()
 	if (ev.remote_direction_back)
 	{
 		ev.remote_direction_back = false;
-		led.set_mode(LED_STEADY, LED_OFF);
+		key_led.set_mode(LED_STEADY, LED_OFF);
 		wheel.stop();
 		brush.stop();
 		vacuum.stop();
@@ -44,7 +44,7 @@ bool CleanModeTest::isFinish()
 	else if (ev.remote_direction_forward)
 	{
 		ev.remote_direction_forward = false;
-		led.set_mode(LED_STEADY, LED_GREEN);
+		key_led.set_mode(LED_STEADY, LED_GREEN);
 		wheel.stop();
 		brush.stop();
 		vacuum.stop();
@@ -52,7 +52,7 @@ bool CleanModeTest::isFinish()
 	}
 	else if (action_i_ == ac_open_gyro || action_i_ == ac_bumper_hit_test || action_i_ == ac_check_vacuum || action_i_ == ac_movement_direct_go)
 	{
-		led.set_mode(LED_STEADY, LED_OFF);
+		key_led.set_mode(LED_STEADY, LED_OFF);
 		wheel.stop();
 		brush.stop();
 		vacuum.stop();
@@ -60,7 +60,7 @@ bool CleanModeTest::isFinish()
 	}
 	else if (action_i_ == ac_check_bumper)
 	{
-		led.setMode(LED_STEADY, LED_GREEN);
+		key_led.setMode(LED_STEADY, LED_GREEN);
 		wheel.stop();
 		brush.stop();
 		vacuum.stop();

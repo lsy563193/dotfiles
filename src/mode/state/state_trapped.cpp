@@ -10,7 +10,7 @@
 
 void StateTrapped::init() {
 	robot_timer.initTrapTimer();
-	led.setMode(LED_FLASH, LED_GREEN, 300);
+	key_led.setMode(LED_FLASH, LED_GREEN, 300);
 }
 
 //bool StateTrapped::isFinish() {

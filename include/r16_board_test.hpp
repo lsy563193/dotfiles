@@ -12,6 +12,7 @@
 #if R16_BOARD_TEST
 
 #include "dev.h"
+#include "robot.hpp"
 /*
  * Board test for r16.(Not completed)
  *
@@ -19,6 +20,8 @@
  * 1. Speaker.
  * 2. Serial port.
  * 3. USB device.
+ * 4. Power supply.
+ * 5. Flash and RAM.
  *
  */
 void r16_board_test(std::string serial_port, int baud_rate);
@@ -37,4 +40,14 @@ bool serial_port_test();
  * Test write on two usb drives (Used to test usb connection).
  */
 bool usb_test(std::string dev_path, std::string fs_type, int write_length);
+
+/*
+ * Test for power supply voltage.
+ */
+bool power_supply_test();
+
+/*
+ * Test for memory device.
+ */
+bool memory_test();
 #endif
