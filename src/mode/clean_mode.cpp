@@ -335,7 +335,7 @@ bool ACleanMode::calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,boo
 //	for (const auto &target :points)
 //			ROS_WARN("points(%d):target(%lf,%lf),dis(%f)", points.size(), target.x, target.y, target.Distance({CHASE_X, 0}));
 //	ROS_WARN("points(%d):target(%lf,%lf)", points.size(), points.front().x, points.front().y);
-	pubPointMarkers(&points, "base_link", "point marker");
+//	pubPointMarkers(&points, "base_link", "point marker");
 
 	return true;
 }
@@ -356,26 +356,8 @@ void ACleanMode::pubFitLineMarker(visualization_msgs::Marker fit_line_marker)
 	fit_line_marker_pub_.publish(fit_line_marker);
 }
 
-void ACleanMode::visualizeMarkerInit()
-{
-	clean_markers_.points.clear();
 
-	geometry_msgs::Point m_points_{};
-	clean_markers_.points.push_back(m_points_);
-
-	clean_map_markers_.ns = "cleaning_grid_map";
-	clean_map_markers_.id = 1;
-	clean_map_markers_.type = visualization_msgs::Marker::POINTS;
-	clean_map_markers_.action= visualization_msgs::Marker::ADD;
-	clean_map_markers_.lifetime=ros::Duration(0);
-	clean_map_markers_.scale.x = 0.1;
-	clean_map_markers_.scale.y = 0.1;
-	clean_map_markers_.header.frame_id = "/map";
-	clean_map_markers_.points.clear();
-	clean_map_markers_.colors.clear();
-}
-
-void ACleanMode::setCleanMapMarkers(int16_t x, int16_t y, CellState type)
+void ACleanMode::setCleanMapMarkers(int16_t x, int16_t y, CellState type, visualization_msgs::Marker& clean_map_markers_)
 {
 	geometry_msgs::Point m_points_;
 	std_msgs::ColorRGBA color_;
@@ -482,54 +464,49 @@ void ACleanMode::pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path
 
 	if (path.empty())
 		return;
-
-	visualizeMarkerInit();
+	visualization_msgs::Marker clean_markers_;
+	clean_markers_.points.clear();
+	geometry_msgs::Point m_points_{};
+	clean_markers_.points.push_back(m_points_);
+	visualization_msgs::Marker clean_map_markers_;
+	clean_map_markers_.ns = "cleaning_grid_map";
+	clean_map_markers_.id = 1;
+	clean_map_markers_.type = visualization_msgs::Marker::POINTS;
+	clean_map_markers_.action= visualization_msgs::Marker::ADD;
+	clean_map_markers_.lifetime=ros::Duration(0);
+	clean_map_markers_.scale.x = 0.1;
+	clean_map_markers_.scale.y = 0.1;
+	clean_map_markers_.header.frame_id = "/map";
+	clean_map_markers_.points.clear();
+	clean_map_markers_.colors.clear();
 	int16_t x, y, x_min, x_max, y_min, y_max;
 	CellState cell_state;
-	Cell_t next = path.front();
+//	Cell_t next = path.front();
 	Cell_t target = path.back();
 	map.getMapRange(CLEAN_MAP, &x_min, &x_max, &y_min, &y_max);
+/*
 
 	if (next.x == SHRT_MIN )
 		next.x = x_min;
 	else if (next.x == SHRT_MAX)
 		next.x = x_max;
+*/
 
-	for (x = x_min; x <= x_max; x++)
-	{
-		for (y = y_min; y <= y_max; y++)
-		{
-			if (x == target.x && y == target.y)
-				setCleanMapMarkers(x, y, TARGET_CLEAN);
-			else if (x == next.x && y == next.y)
-				setCleanMapMarkers(x, y, TARGET);
-			else
-			{
-				cell_state = map.getCell(CLEAN_MAP, x, y);
-				if (cell_state > UNCLEAN && cell_state < BLOCKED_BOUNDARY )
-					setCleanMapMarkers(x, y, cell_state);
-			}
+	for (x = x_min; x <= x_max; x++) {
+		for (y = y_min; y <= y_max; y++) {
+			cell_state = map.getCell(CLEAN_MAP, x, y);
+			if (cell_state > UNCLEAN && cell_state < BLOCKED_BOUNDARY)
+				setCleanMapMarkers(x, y, cell_state, clean_map_markers_);
 		}
 	}
-	if (!path.empty())
-	{
-//		for (const auto& it : path)
-//		{
-//			ROS_ERROR("it(%d,%d)",it.x, it.y);
-//		}
-
-		setCleanMapMarkers(path.back().x, path.back().y, TARGET_CLEAN);
+	for (auto &&cell : path) {
+		setCleanMapMarkers(cell.x, cell.y, TARGET, clean_map_markers_);
 	}
+	if (!path.empty())
+		setCleanMapMarkers(path.back().x, path.back().y, TARGET_CLEAN, clean_map_markers_);
 
 	clean_map_markers_.header.stamp = ros::Time::now();
-//	for (const auto& it : clean_map_markers_.points)
-//	{
-//		ROS_WARN("it(%f,%f)",it.x, it.y);
-//	}
-
 	send_clean_map_marker_pub_.publish(clean_map_markers_);
-	clean_map_markers_.points.clear();
-	clean_map_markers_.colors.clear();
 }
 void ACleanMode::pubLineMarker(const std::vector<LineABC> *lines)
 {

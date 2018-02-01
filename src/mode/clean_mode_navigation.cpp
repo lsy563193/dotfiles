@@ -448,10 +448,11 @@ bool CleanModeNav::isSwitchByEventInStateClean() {
 
 bool CleanModeNav::updateActionInStateClean(){
 	sp_action_.reset();//to mark in destructor
-	pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
+//	pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 	old_dir_ = iterate_point_.dir;
 	if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
 
+		pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 //		ROS_ERROR("old_dir_(%d)", old_dir_);
 		iterate_point_ = plan_path_.front();
 //		ROS_ERROR("start_point_.dir(%d)", start_point_.dir);
