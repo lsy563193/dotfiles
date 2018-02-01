@@ -263,27 +263,12 @@ Cells APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const 
 				/* Found a cell that has a pass value equal to the current pass value. */
 				if(map.getCell(COST_MAP, i, j) == cost_value) {
 					/* Set the lower cell of the cell which has the pass value equal to current pass value. */
-					if (map.getCell(COST_MAP, i - 1, j) == COST_NO) {
-						map.setCell(COST_MAP, (int32_t) (i - 1), (int32_t) j, (CellState) next_cost_value);
-						cost_updated = true;
-					}
-
-					/* Set the upper cell of the cell which has the pass value equal to current pass value. */
-					if (map.getCell(COST_MAP, i + 1, j) == COST_NO) {
-						map.setCell(COST_MAP, (int32_t) (i + 1), (int32_t) j, (CellState) next_cost_value);
-						cost_updated = true;
-					}
-
-					/* Set the cell on the right hand side of the cell which has the pass value equal to current pass value. */
-					if (map.getCell(COST_MAP, i, j - 1) == COST_NO) {
-						map.setCell(COST_MAP, (int32_t) i, (int32_t) (j - 1), (CellState) next_cost_value);
-						cost_updated = true;
-					}
-
-					/* Set the cell on the left hand side of the cell which has the pass value equal to current pass value. */
-					if (map.getCell(COST_MAP, i, j + 1) == COST_NO) {
-						map.setCell(COST_MAP, (int32_t) i, (int32_t) (j + 1), (CellState) next_cost_value);
-						cost_updated = true;
+					for(auto index = 0;index<4; index++) {
+						auto neighbor = Cell_t(i, j) - cell_direction_index_[index];
+						if (map.getCell(COST_MAP, neighbor.x, neighbor.y) == COST_NO) {
+							map.setCell(COST_MAP, neighbor.x, neighbor.y, (CellState) next_cost_value);
+							cost_updated = true;
+						}
 					}
 				}
 			}
