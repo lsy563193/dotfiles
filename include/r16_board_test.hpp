@@ -12,13 +12,16 @@
 #if R16_BOARD_TEST
 
 #include "dev.h"
+#include "robot.hpp"
 /*
  * Board test for r16.(Not completed)
  *
  * Current containing test items:
  * 1. Speaker.
- * 2. Communication with main board.
+ * 2. Serial port.
  * 3. USB device.
+ * 4. Power supply.
+ * 5. Flash and RAM.
  *
  */
 void r16_board_test(std::string serial_port, int baud_rate);
@@ -29,7 +32,22 @@ void r16_board_test(std::string serial_port, int baud_rate);
 void error_loop();
 
 /*
+ * Test serial port.
+ */
+bool serial_port_test();
+
+/*
  * Test write on two usb drives (Used to test usb connection).
  */
-bool do_mount_and_test(std::string dev_path, std::string fs_type, int write_length );
+bool usb_test(std::string dev_path, std::string fs_type, int write_length);
+
+/*
+ * Test for power supply voltage.
+ */
+bool power_supply_test();
+
+/*
+ * Test for memory device.
+ */
+bool memory_test();
 #endif

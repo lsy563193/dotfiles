@@ -26,7 +26,7 @@ MovementCharge::MovementCharge()
 	directly_charge_ = charger.isDirected();
 
 	speaker.play(VOICE_BATTERY_CHARGE);
-	led.setMode(LED_BREATH, LED_ORANGE);
+	key_led.setMode(LED_BREATH, LED_ORANGE);
 
 }
 
@@ -56,7 +56,7 @@ bool MovementCharge::isFinish()
 			}
 			else
 			{
-				led.setMode(LED_STEADY, LED_ORANGE);
+				key_led.setMode(LED_STEADY, LED_ORANGE);
 				turn_for_charger_ = true;
 				start_turning_time_stamp_ = ros::Time::now().toSec();
 				turn_right_finish_ = false;

@@ -7,7 +7,7 @@
 
 #include "serial.h"
 #include "battery.h"
-#include "beep.h"
+#include "beeper.h"
 #include "bumper.h"
 #include "brush.h"
 #include "charger.h"

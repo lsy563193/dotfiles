@@ -4,7 +4,7 @@
 
 #include <mode.hpp>
 #include "robot.hpp"
-#include "beep.h"
+#include "beeper.h"
 
 #define WF_SCAN_TYPE						(2)
 
@@ -63,13 +63,13 @@ Points MovementFollowWallLidar::_calcTmpTarget() {
 			is_corner_beginning = false;
 			ROS_WARN("(corner_time - ros::Time().now()).toSec() < 2");
 #if DEBUG_ENABLE
-//			beeper.play_for_command(INVALID);
+//			beeper.beepForCommand(INVALID);
 #endif
 		} else {
 			is_corner_beginning = true;
 			ROS_WARN("(corner_time - ros::Time().now()).toSec() > 2");
 #if DEBUG_ENABLE
-//			beeper.play_for_command(VALID);
+//			beeper.beepForCommand(VALID);
 #endif
 		}
 		corner_time = ros::Time::now();

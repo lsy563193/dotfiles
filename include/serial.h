@@ -267,18 +267,13 @@
 
 #define DI		0x07
 
-extern pthread_mutex_t serial_data_ready_mtx;
-extern pthread_cond_t serial_data_ready_cond;
-
-extern boost::mutex g_send_stream_mutex;
-
 class Serial
 {
 public:
 	Serial();
-	~Serial() = default;
+	~Serial();
 
-	bool init(const char* port,int baudrate);
+	bool init(const std::string port,int baudrate);
 
 	int close();
 
@@ -288,17 +283,19 @@ public:
 
 	void isMainBoardSleep(bool val)
 	{
-		is_sleep_ = val;
+		is_main_board_sleep_ = val;
 	}
 
 	bool isMainBoardSleep() const
 	{
-		return is_sleep_;
+		return is_main_board_sleep_;
 	}
 
-	int write(uint8_t len, uint8_t *buf);
+	int write(uint8_t *buf, uint8_t len);
 
-	int read(int len,uint8_t *buf);
+	int read(uint8_t *buf, int len);
+
+	void resetSendStream(void);
 
 	void setSendData(uint8_t seq, uint8_t val);
 
@@ -324,24 +321,19 @@ public:
 
 	void receive_routine_cb();
 	void send_routine_cb();
-
-	bool test();
 private:
 
-	bool is_sleep_{};
+	bool is_main_board_sleep_{};
 
 	int	crport_fd_;
-	bool serial_init_done_;
+	bool serial_port_ready_;
 	struct termios orgopt_, curopt_;
 	int bardrate_;
+	std::string port_{};
 
 	// For crc8
 	int made_table_ = 0;
 	uint8_t crc8_table_[256];	/* 8-bit table */
-
-	// For r16 board test.
-	int receive_timeout_cnt_{0};
-
 };
 
 extern Serial serial;

@@ -15,7 +15,7 @@ ModeGoToCharger::ModeGoToCharger()
 
 	serial.setMainBoardMode(WORK_MODE);
 	speaker.play(VOICE_BACK_TO_CHARGER, false);
-	led.setMode(LED_STEADY, LED_ORANGE);
+	key_led.setMode(LED_STEADY, LED_ORANGE);
 	sp_action_.reset(new ActionOpenGyro);
 	action_i_ = ac_open_gyro;
 }
@@ -73,7 +73,7 @@ int ModeGoToCharger::getNextAction()
 	PP_INFO();
 	if(action_i_ == ac_open_gyro || (action_i_ == ac_exception_resume && !ev.fatal_quit))
 	{
-		led.setMode(LED_STEADY, LED_ORANGE);
+		key_led.setMode(LED_STEADY, LED_ORANGE);
 		brush.normalOperate();
 		vacuum.setTmpMode(Vac_Normal);
 		return ac_go_to_charger;
@@ -85,7 +85,7 @@ void ModeGoToCharger::keyClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: key clean.", __FUNCTION__, __LINE__);
 
-	beeper.play_for_command(VALID);
+	beeper.beepForCommand(VALID);
 	wheel.stop();
 
 	// Wait for key released.
@@ -113,7 +113,7 @@ void ModeGoToCharger::remoteClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: remote clean.", __FUNCTION__, __LINE__);
 
-	beeper.play_for_command(VALID);
+	beeper.beepForCommand(VALID);
 	wheel.stop();
 	ev.key_clean_pressed = true;
 	remote.reset();

@@ -426,10 +426,10 @@ bool Lidar::lidarGetFitLine(double r_begin, double r_end, double range, double d
 		t_lim_merge = 0.06;
 	}
 	ROS_WARN("lidarGetFitLine");
-	scanLinear_mutex_.lock();
+	scanOriginal_mutex_.lock();
 //	auto tmp_scan_data = lidarScanData_compensate_;
 	auto tmp_scan_data = lidarScanData_original_;
-	scanLinear_mutex_.unlock();
+	scanOriginal_mutex_.unlock();
 /*	r_begin = radian_to_degree(atan2(ROBOT_RADIUS * sin(r_begin), LIDAR_OFFSET_X + ROBOT_RADIUS * cos(r_begin)));
 	r_end = radian_to_degree(atan2(ROBOT_RADIUS * sin(r_end), LIDAR_OFFSET_X + ROBOT_RADIUS * cos(r_end)));
 	r_begin -= radian_to_degree(LIDAR_THETA);
@@ -1270,7 +1270,7 @@ void Lidar::checkRobotSlip()
 				last_frame_time_stamp_ = ros::Time::now().toSec();
 				last_frame_ranges_ = tmp_scan_data.ranges;
 				// For debug
-//				beeper.play_for_command(VALID);
+//				beeper.beepForCommand(VALID);
 //				slip_status_ = true;
 			}
 		}

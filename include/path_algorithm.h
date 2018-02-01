@@ -207,14 +207,10 @@ private:
 	 *          false if there is no target that match the condictions.
 	 *          Cell_t best_target, the selected best target.
 	 */
-	bool filterPathsToSelectTarget(GridMap &map, const PathList &paths, const Cell_t &curr_cell, Cell_t &best_target);
-
-	/*
-	 * Sorting function, for sorting paths with their targets by y+ ascending sequence.
-	 */
-	static bool sortPathsWithTargetYAscend(const Cells a, const Cells b);
+	bool filterPathsToSelectTarget(GridMap &map, PathList &paths, const Cell_t &cell_curr, Cell_t &best_target);
 
 	bool checkTrapped(GridMap &map, const Cell_t &curr_cell) override ;
+
 };
 //
 class WFCleanPathAlgorithm: public APathAlgorithm

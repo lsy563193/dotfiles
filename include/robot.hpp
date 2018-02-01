@@ -21,6 +21,23 @@
 //#include "mode.hpp"
 #include <string.h>
 
+#define  _RATE 50
+
+extern pthread_mutex_t recev_lock;
+extern pthread_cond_t  recev_cond;
+
+extern pthread_mutex_t serial_data_ready_mtx;
+extern pthread_cond_t serial_data_ready_cond;
+
+extern bool g_pp_shutdown;
+
+extern bool robotbase_thread_stop;
+extern bool recei_thread_stop;
+extern bool send_thread_stop;
+extern bool event_manager_thread_stop;
+extern bool event_handle_thread_stop;
+extern bool core_thread_stop;
+
 class Mode;
 
 typedef enum {
@@ -99,6 +116,15 @@ public:
 		return robot_correction_y_;
 	}
 */
+	bool isBatteryLow() const
+	{
+		return battery_low_;
+	}
+
+	void setBatterLow(bool val)
+	{
+		battery_low_ = val;
+	}
 
 	double getRobotCorrectionRadian() const
 	{
@@ -150,11 +176,15 @@ private:
 
 	Baselink_Frame_Type baselink_frame_type_;
 	boost::mutex baselink_frame_type_mutex_;
+// Lock for odom coordinate
+	boost::mutex odom_mutex_;
+
 
 	bool is_sensor_ready_{};
 	bool is_tf_ready_{};
 
 	bool temp_spot_set_{};
+	bool battery_low_{};
 
 	tf::Vector3	robot_pos;
 	double	robot_radian_;
