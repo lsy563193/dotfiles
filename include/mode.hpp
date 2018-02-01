@@ -248,7 +248,6 @@ protected:
 //	std::vector<Cell_t> temp_fw_cells;
 private:
 	void register_events(void);
-	bool battery_low_{false};
 
 	bool plan_activated_status_;
 

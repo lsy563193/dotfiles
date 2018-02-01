@@ -2,6 +2,7 @@
 // Created by austin on 17-12-6.
 //
 
+#include <robot.hpp>
 #include "error.h"
 #include "dev.h"
 #include "mode.hpp"
@@ -9,6 +10,8 @@ ModeCharge::ModeCharge()
 {
 	ROS_INFO("%s %d: Entering Charge mode\n=========================" , __FUNCTION__, __LINE__);
 
+	robot::instance()->setBatterLow(false);
+	robot::instance()->setBatterLow(false);
 	key.resetTriggerStatus();
 	c_rcon.resetStatus();
 	remote.reset();

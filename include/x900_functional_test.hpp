@@ -2,29 +2,29 @@
 // Created by austin on 18-1-26.
 //
 
-#ifndef PP_R16_BOARD_TEST_HPP
-#define PP_R16_BOARD_TEST_HPP
+#ifndef PP_X900_FUNCTIONAL_TEST_HPP
+#define PP_X900_FUNCTIONAL_TEST_HPP
 
-#endif //PP_R16_BOARD_TEST_HPP
+#endif //PP_X900_FUNCTIONAL_TEST_HPP
 
 #include "config.h"
 
-#if R16_BOARD_TEST
+#if X900_FUNCTIONAL_TEST
 
 #include "dev.h"
 #include "robot.hpp"
 /*
- * Board test for r16.(Not completed)
+ * Function for x900 machine.(Not completed)
  *
  * Current containing test items:
  * 1. Speaker.
  * 2. Serial port.
  * 3. USB device.
  * 4. Power supply.
- * 5. MMC.
+ * 5. Flash and RAM.
  *
  */
-void r16_board_test(std::string serial_port, int baud_rate);
+void x900_functional_test(std::string serial_port, int baud_rate);
 
 /*
  * Dead loop for error.

@@ -101,7 +101,7 @@ FILE(GLOB PP_SRC
 	src/mathematics.cpp
 	src/odom.cpp
 	src/pose.cpp
-	src/r16_board_test.cpp
+		src/x900_functional_test.cpp
 	src/robot.cpp
 	src/serial.cpp
 	src/signature.c

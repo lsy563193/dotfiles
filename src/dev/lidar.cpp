@@ -426,10 +426,10 @@ bool Lidar::lidarGetFitLine(double r_begin, double r_end, double range, double d
 		t_lim_merge = 0.06;
 	}
 	ROS_WARN("lidarGetFitLine");
-	scanLinear_mutex_.lock();
+	scanOriginal_mutex_.lock();
 //	auto tmp_scan_data = lidarScanData_compensate_;
 	auto tmp_scan_data = lidarScanData_original_;
-	scanLinear_mutex_.unlock();
+	scanOriginal_mutex_.unlock();
 /*	r_begin = radian_to_degree(atan2(ROBOT_RADIUS * sin(r_begin), LIDAR_OFFSET_X + ROBOT_RADIUS * cos(r_begin)));
 	r_end = radian_to_degree(atan2(ROBOT_RADIUS * sin(r_end), LIDAR_OFFSET_X + ROBOT_RADIUS * cos(r_end)));
 	r_begin -= radian_to_degree(LIDAR_THETA);
@@ -701,7 +701,7 @@ bool Lidar::mergeLine(std::vector<std::deque<Vector2<double>> > *groups, double 
 	double a, b, c;
 	double x1, y1, x2, y2;
 	int points_size, points_size_2nd;
-	double t, t_max = 0;
+	double t, t_max;
 	std::vector<int> merge_index;
 	std::deque<Vector2<double>> new_line;
 	std::vector<std::deque<Vector2<double>> > new_group;
@@ -710,77 +710,167 @@ bool Lidar::mergeLine(std::vector<std::deque<Vector2<double>> > *groups, double 
 	merge_index.clear();
 	new_line.clear();
 	new_group.clear();
-	if (!(*groups).empty()) {
-		for (std::vector<std::deque<Vector2<double>> >::iterator iter = (*groups).begin(); iter != (*groups).end() - 1; ++iter) {
+	ROS_INFO("0");
+//	if (!groups->empty()) {
+	if (groups->size() > 1) {//it should not merge when the size is 0 or 1
+		for (auto iter = groups->begin(); iter != groups->end(); ++iter) {
+//			ROS_INFO("1");
+			t = 0;
+			t_max = 0;
+			//for merge the last one and the first one
+			auto it_next_line = (iter == groups->end()-1) ? groups->begin() : (iter + 1);
+/*			if (iter == groups->end()-1) {
+				ROS_ERROR("000");
+			} else {
+				ROS_ERROR("111");
+			}*/
+//			ROS_INFO("2");
 			x1 = iter->begin()->x;
 			y1 = iter->begin()->y;
-			x2 = ((iter + 1)->end() - 1)->x;
-			y2 = ((iter + 1)->end() - 1)->y;
+			x2 = (it_next_line->end() - 1)->x;
+			y2 = (it_next_line->end() - 1)->y;
 			if (x1 != x2 && y1 != y2) {
+//				ROS_INFO("3");
 				a = y2 - y1;
 				b = x1 - x2;
-				c= x2 * y1 - x1 * y2;
-				points_size = static_cast<int>(iter->size());
-				points_size_2nd = static_cast<int>((iter + 1)->size());
-				/*loop for checking the first line*/
-				for (int j = 0; j < points_size; j++) {
-					t = std::abs((a * (iter->begin() + j)->x + b * (iter->begin() +j)->y + c) / sqrt(a * a + b * b));
-					if (t >= t_max) {
-						t_max = t;
-					}
+				c = x2 * y1 - x1 * y2;
+			} else {
+				continue;
+			}
+			points_size = static_cast<int>(iter->size());
+			points_size_2nd = static_cast<int>(it_next_line->size());
+//			ROS_INFO("points_size(1:%d, 2:%d)",points_size, points_size_2nd);
+
+			/*loop for checking the first line*/
+			for (int j = 0; j < points_size; j++) {
+				t = std::abs((a * (iter->begin() + j)->x + b * (iter->begin() +j)->y + c) / sqrt(a * a + b * b));
+				if (t >= t_max) {
+					t_max = t;
 				}
-				/*loop for checking the second line*/
-				for (int j = 0; j < points_size_2nd; j++) {
-					t = std::abs((a * ((iter + 1)->begin() + j)->x + b * ((iter + 1)->begin() +j)->y + c) / sqrt(a * a + b * b));
-					if (t >= t_max) {
-						t_max = t;
-					}
+//				ROS_INFO("1st t = %lf, t_max = %lf", t, t_max);
+			}
+//			ROS_INFO("4");
+
+			/*loop for checking the second line*/
+			for (int j = 0; j < points_size_2nd; j++) {
+				t = std::abs((a * (it_next_line->begin() + j)->x + b * (it_next_line->begin() +j)->y + c) / sqrt(a * a + b * b));
+				if (t >= t_max) {
+					t_max = t;
 				}
-				if (t_max < t_lim) {
-					int index = static_cast<int>(std::distance((*groups).begin(), iter));
-					merge_index.push_back(index);
-				}
+//				ROS_INFO("2st t = %lf, t_max = %lf", t, t_max);
+			}
+
+			if (t_max < t_lim) {
+				int index = static_cast<int>(std::distance((*groups).begin(), iter));
+				merge_index.push_back(index);
+				ROS_ERROR("push_back(index) = %d", index);
 			}
 		}
+	}
+	if (groups->size() == 2 && merge_index.size() != 0) {
+		merge_index.pop_back();//for the groups size is 2, it should not merge twice
+		ROS_INFO("merge_index.pop_back()");
 	}
 
 	/*do mergeFromSlamGridMap*/
+	ROS_WARN("before do merge! (*groups).size() = %d", (*groups).size());
 	if (!merge_index.empty()) {
 		int loop_count = 0;
+		auto iter = (*groups).begin();
 		for (std::vector<int>::iterator m_iter = merge_index.begin(); m_iter != merge_index.end(); ++m_iter) {
-			std::vector<std::deque<Vector2<double>> >::iterator iter = (*groups).begin() + (*m_iter);
-			points_size = static_cast<int>(iter->size());
-			points_size_2nd = static_cast<int>((iter + 1)->size());
-			for (int j = 0; j < points_size; j++) {
-				new_line.push_back(*(iter->begin() + j));
+//			std::vector<std::deque<Vector2<double>> >::iterator iter = (*groups).begin() + (*m_iter);
+//			ROS_WARN("merging! (*groups).size() = %d", (*groups).size());
+			if (groups->size() < 2) {
+//				ROS_WARN("groups size < 2, break merge!");
+				break;
 			}
-			for (int j = 0; j < points_size_2nd; j++) {
-				new_line.push_back(*((iter + 1)->begin() + j));
+			if (m_iter != merge_index.begin()) {
+				iter += (*m_iter - *(m_iter -1) - 1);
+//				ROS_INFO("iter += %d", (*m_iter - *(m_iter -1) - 1));
+			} else {
+				iter += (*m_iter);
+//				ROS_INFO("iter += %d", (*m_iter));
 			}
-			(*groups).erase(iter - loop_count);
-			(*groups).erase(iter + 1 - loop_count);
-			(*groups).insert((*groups).begin() + (*m_iter) - loop_count, new_line);
-			loop_count++;
+//			ROS_INFO("(*m_iter) = %d", (*m_iter));
+//			ROS_INFO("5");
+			if (iter == (*groups).end()-1) {//to merge the last one and the first one
+//				ROS_INFO("6");
+				points_size = static_cast<int>(iter->size());
+				points_size_2nd = static_cast<int>(((*groups).begin())->size());
+//				ROS_INFO("points_size_2nd = %d", points_size_2nd);
+//				ROS_INFO("7");
+				for (int j = 0; j < points_size; j++) {
+					new_line.push_back(*(iter->begin() + j));
+				}
+				for (int j = 0; j < points_size_2nd; j++) {
+//					ROS_INFO("8");
+					new_line.push_back(*(((*groups).begin()->begin()) + j));
+				}
+//				ROS_INFO("8.1");
+				iter = (*groups).erase(iter);
+//				ROS_INFO("8.2");
+				iter = (*groups).erase((*groups).begin());
+//				ROS_INFO("(*groups).erase((*groups).begin())");
+				iter = (*groups).insert(iter, new_line);
+//				ROS_INFO("8.4");
+/*				(*groups).erase(iter - loop_count);
+				(*groups).erase(iter + 1 - loop_count);
+				(*groups).insert(iter - loop_count, new_line);*/
+				new_line.clear();
+				loop_count++;
+//				ROS_INFO("8.5, break!");
+				break;
+			} else {
+//				ROS_INFO("9");
+				points_size = static_cast<int>(iter->size());
+				points_size_2nd = static_cast<int>((iter + 1)->size());
+				for (int j = 0; j < points_size; j++) {
+					new_line.push_back(*(iter->begin() + j));
+				}
+				for (int j = 0; j < points_size_2nd; j++) {
+					new_line.push_back(*((iter + 1)->begin() + j));
+				}
+/*				(*groups).erase(iter - loop_count);
+				(*groups).erase(iter + 1 - loop_count);
+				(*groups).insert(iter - loop_count, new_line);*/
+
+				iter = (*groups).erase(iter);
+				iter = (*groups).erase(iter);
+				iter = (*groups).insert(iter, new_line);
+
+				new_line.clear();
+				loop_count++;
+
+			}
 		}
 	}
+	ROS_WARN("after do merge! (*groups).size() = %d", (*groups).size());
+
 	if(is_align){
 		//sort from long to short
 		std::sort((*groups).begin(),(*groups).end(),[](std::deque<Vector2<double>> a,std::deque<Vector2<double>> b){
+//			ROS_INFO("0");
 			auto a_dis = pow((a.begin()->x - (a.end()-1)->x),2) + pow((a.begin()->y - (a.end()-1)->y),2);
 			auto b_dis = pow((b.begin()->x - (b.end()-1)->x),2) + pow((b.begin()->y - (b.end()-1)->y),2);
 			return a_dis > b_dis;
 		});
 		//filter line which is shorter than 0.3m
 		auto loc = std::find_if((*groups).begin(),(*groups).end(),[](std::deque<Vector2<double>> ite){
+//			ROS_INFO("1");
 			auto dis = sqrtf(powf(static_cast<float>(ite.begin()->x - (ite.end() - 1)->x), 2) + powf(
-								static_cast<float>(ite.begin()->y - (ite.end() - 1)->y), 2));
+							static_cast<float>(ite.begin()->y - (ite.end() - 1)->y), 2));
+//			ROS_INFO("2");
 			return dis < 0.3;
 		});
+//		ROS_INFO("3");
 		auto dis = std::distance((*groups).begin(),loc);
+//		ROS_INFO("4");
 		(*groups).resize(dis);
+//		ROS_INFO("5");
 	}
 
 	for(auto &ite:(*groups)) {
+//		ROS_INFO("6");
 		ACleanMode::pubPointMarkers(&ite,"base_link","merge");
 	}
 	return true;

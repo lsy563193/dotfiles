@@ -116,6 +116,15 @@ public:
 		return robot_correction_y_;
 	}
 */
+	bool isBatteryLow() const
+	{
+		return battery_low_;
+	}
+
+	void setBatterLow(bool val)
+	{
+		battery_low_ = val;
+	}
 
 	double getRobotCorrectionRadian() const
 	{
@@ -175,6 +184,7 @@ private:
 	bool is_tf_ready_{};
 
 	bool temp_spot_set_{};
+	bool battery_low_{};
 
 	tf::Vector3	robot_pos;
 	double	robot_radian_;

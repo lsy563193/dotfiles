@@ -95,7 +95,7 @@ void Wheel::setPidParam(uint8_t reg_type, float Kp, float Ki, float Kd)
 
 void Wheel::pidAdjustSpeed(void)
 {
-#if R16_BOARD_TEST
+#if X900_FUNCTIONAL_TEST
 	return;
 #endif
 
@@ -284,7 +284,7 @@ void Wheel::setPidTargetSpeed(uint8_t Left, uint8_t Right, uint8_t reg_type, flo
 
 void Wheel::pidSetLeftSpeed(float speed)
 {
-#if R16_BOARD_TEST
+#if X900_FUNCTIONAL_TEST
 	auto numeral = static_cast<uint8_t>(static_cast<unsigned long>(speed) / (1024 * 1024));         //flash size originally in kbytes
 	auto decimal = static_cast<uint8_t>((static_cast<unsigned long>(speed) % (1024 * 1024)) / 1024 / 100);
 //	serial.setSendData(CTL_WHEEL_LEFT_HIGH, numeral);
@@ -307,7 +307,7 @@ void Wheel::pidSetLeftSpeed(float speed)
 
 void Wheel::pidSetRightSpeed(float speed)
 {
-#if R16_BOARD_TEST
+#if X900_FUNCTIONAL_TEST
 	auto numeral = static_cast<uint8_t>(static_cast<unsigned long>(speed) / (1024 * 1024));         //flash size originally in kbytes
 	auto decimal = static_cast<uint8_t>((static_cast<unsigned long>(speed) % (1024 * 1024)) / 1024 / 100);
 //	serial.setSendData(CTL_WHEEL_RIGHT_HIGH, numeral);

@@ -5,7 +5,7 @@
 #include "robot.hpp"
 #include "speaker.h"
 
-#if R16_BOARD_TEST
+#if X900_FUNCTIONAL_TEST
 #include "r16_board_test.hpp"
 #endif
 
