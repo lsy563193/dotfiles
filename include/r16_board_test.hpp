@@ -21,7 +21,7 @@
  * 2. Serial port.
  * 3. USB device.
  * 4. Power supply.
- * 5. MMC.
+ * 5. Flash and RAM.
  *
  */
 void r16_board_test(std::string serial_port, int baud_rate);
