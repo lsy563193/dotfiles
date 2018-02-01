@@ -7,7 +7,7 @@
 #include <std_srvs/SetBool.h>
 #include <odom.h>
 #include <event_manager.h>
-#include <r16_board_test.hpp>
+#include <x900_functional_test.hpp>
 #include "lidar.hpp"
 #include "robot.hpp"
 #include "slam.h"
@@ -83,7 +83,7 @@ robot::robot()
 	int baud_rate;
 	robot_nh_.param<int>("baud_rate", baud_rate, 115200);
 
-#if !R16_BOARD_TEST
+#if !X900_FUNCTIONAL_TEST
 
 	std::string lidar_bumper_dev;
 	robot_nh_.param<std::string>("lidar_bumper_file", lidar_bumper_dev, "/dev/input/event0");
@@ -117,7 +117,7 @@ robot::robot()
 	auto speaker_play_routine = new boost::thread(boost::bind(&Speaker::playRoutine, &speaker));
 	auto robotbase_routine = new boost::thread(boost::bind(&robot::robotbase_routine_cb, this));
 
-	auto test_routine = new boost::thread(boost::bind(&r16_board_test, serial_port, baud_rate));
+	auto test_routine = new boost::thread(boost::bind(&x900_functional_test, serial_port, baud_rate));
 #endif
 	ROS_INFO("%s %d: robot init done!", __FUNCTION__, __LINE__);
 }

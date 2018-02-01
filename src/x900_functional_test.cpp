@@ -2,15 +2,15 @@
 // Created by austin on 18-1-26.
 //
 
-#include "r16_board_test.hpp"
+#include "x900_functional_test.hpp"
 
-#if R16_BOARD_TEST
+#if X900_FUNCTIONAL_TEST
 #include <sys/mount.h>
 #include <sys/sysinfo.h>
 #include <sys/vfs.h>
 #include <random>
 
-void r16_board_test(std::string serial_port, int baud_rate)
+void x900_functional_test(std::string serial_port, int baud_rate)
 {
 
 	ROS_INFO("%s %d: Serial_port: %s, baudrate: %d.", __FUNCTION__, __LINE__, serial_port.c_str(), baud_rate);
