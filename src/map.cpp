@@ -1418,3 +1418,22 @@ void GridMap::setExplorationCleaned() {
 	}
 }
 
+void GridMap::setBlockWithBound(Cell_t min, Cell_t max, CellState state,bool with_block) {
+	for (auto i = min.x; i <= max.x; ++i) {
+		for (auto j = min.y; j <= max.y; ++j) {
+			setCell(CLEAN_MAP, i,j,state);
+		}
+	}
+	if(with_block) {
+		for (auto i = min.x - 1; i <= max.x + 1; ++i)
+			setCell(CLEAN_MAP, i, max.y + 1, BLOCKED);
+		for (auto i = min.x - 1; i <= max.x + 1; ++i)
+			setCell(CLEAN_MAP, i, min.y - 1, BLOCKED);
+		for (auto i = min.y - 1; i <= max.y + 1; ++i)
+			setCell(CLEAN_MAP, max.x + 1, i, BLOCKED);
+		for (auto i = min.y - 1; i <= max.y + 1; ++i)
+			setCell(CLEAN_MAP, min.x - 1, i, BLOCKED);
+	}
+
+}
+

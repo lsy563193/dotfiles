@@ -275,7 +275,7 @@ public:
 
 	int operator()(const Cell_t &a, const Cell_t &b) {
 //		printf("b(%d,%d),a(%d,%d)\n",b.x, b.y,b.x, a.y);
-		return (is_reverse_) ? a.y > b.y : a.y < b.y  ;
+		return (is_reverse_) ? a.y > b.y : a.y < b.y ;
 //		std::cout<<"return true"<<std::endl;
 	};
 private:
