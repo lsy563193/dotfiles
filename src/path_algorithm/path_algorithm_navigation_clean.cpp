@@ -275,7 +275,7 @@ public:
 
 	int operator()(const Cell_t &a, const Cell_t &b) {
 //		printf("b(%d,%d),a(%d,%d)\n",b.x, b.y,b.x, a.y);
-		return (!is_reverse_) ? a.y < b.y : a.y > b.y ;
+		return (is_reverse_) ? a.y > b.y : a.y < b.y  ;
 //		std::cout<<"return true"<<std::endl;
 	};
 private:
@@ -284,18 +284,18 @@ private:
 
 class BestTargetFilter {
 public:
-	BestTargetFilter(int16_t min_y,int16_t max_y,int turn_count=0,bool is_revease=false):min_y_(min_y),max_y_(max_y),turn_count_(turn_count),is_revease_(is_revease) {};
+	BestTargetFilter(int16_t min_y,int16_t max_y,int turn_count=0,bool is_reverse=false):min_y_(min_y),max_y_(max_y),turn_count_(turn_count),is_reverse_(is_reverse) {};
 
 	int operator()(const Cells &path) {
 		if (path.back().y < min_y_ || path.back().y > max_y_)
 			return false;
 		if(turn_count_ ==0) {
-			return std::is_sorted(path.begin(), path.end(), IsIncrease(is_revease_));
+			return std::is_sorted(path.begin(), path.end(), IsIncrease(is_reverse_));
 		}
 		else if(turn_count_ == 1){
-			auto point = std::is_sorted_until(path.begin(), path.end(), IsIncrease(!is_revease_));
+			auto point = std::is_sorted_until(path.begin(), path.end(), IsIncrease(!is_reverse_));
 			auto is_sorted = std::is_sorted(point, path.end(), IsIncrease());
-			return point != path.end() && std::is_sorted(point, path.end(), IsIncrease(is_revease_));
+			return point != path.end() && std::is_sorted(point, path.end(), IsIncrease(is_reverse_));
 		}
 		else/* if(turn_count_ ==-1)*/{//any turn
 			return true;
@@ -306,19 +306,18 @@ public:
 	int16_t min_y_;
 	int16_t max_y_;
 	int turn_count_;
-	bool is_revease_{};
+	bool is_reverse_{};
 };
 
 class MinYAndShortestPath {
 public:
+	MinYAndShortestPath(bool is_reverse):is_reverse_(is_reverse){ };
 	bool operator()(const Cells &path_a, const Cells &path_b) {
-		if(path_a.back().y > path_b.back().y)
-			return false;
-		if(path_a.back().y < path_b.back().y)
-			return true;
 		if(path_a.back().y == path_b.back().y)
 			return path_a.size() < path_b.size();
+		return (path_a.back().y < path_b.back().y) ^ is_reverse_;
 	};
+	bool is_reverse_{};
 };
 
 bool NavCleanPathAlgorithm::filterPathsToSelectTarget(GridMap &map, PathList &paths, const Cell_t &cell_curr, Cell_t &best_target) {
@@ -331,11 +330,11 @@ bool NavCleanPathAlgorithm::filterPathsToSelectTarget(GridMap &map, PathList &pa
 																			 {-MAP_SIZE, MAP_SIZE, -1,false},
 	};
 	for (auto &&filter : filters) {
-		ROS_ERROR("is towards Y+(%d),y_range(%d,%d),allow turn count(%d)",!filter.is_revease_,filter.min_y_,filter.max_y_,filter.turn_count_);
+		ROS_ERROR("is towards Y+(%d),y_range(%d,%d),allow turn count(%d)",!filter.is_reverse_,filter.min_y_,filter.max_y_,filter.turn_count_);
 		PathList filtered_paths{};
 		std::copy_if(paths.begin(), paths.end(), std::back_inserter(filtered_paths), BestTargetFilter(filter));
 		if (!filtered_paths.empty()) {
-			best_target = std::min_element(filtered_paths.begin(), filtered_paths.end(), MinYAndShortestPath())->back();
+			best_target = std::min_element(filtered_paths.begin(), filtered_paths.end(), MinYAndShortestPath(filter.is_reverse_))->back();
 			printf("best_target(%d,%d)\n", best_target.x, best_target.y);
 			return true;
 		}
