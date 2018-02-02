@@ -310,7 +310,7 @@ public:
 
 class MinYAndShortestPath {
 public:
-	MinYAndShortestPath(int16_t curr_y, bool is_reverse,int16_t turn_count):is_reverse_(is_reverse),curr_y_(curr_y),turn_count_(turn_count){ };
+	MinYAndShortestPath(int16_t curr_y, bool is_reverse,int turn_count):is_reverse_(is_reverse),curr_y_(curr_y),turn_count_(turn_count){ };
 	bool operator()(const Cells &path_a, const Cells &path_b) {
 		if(turn_count_ == 0 || turn_count_ == 1000)
 		{
@@ -342,10 +342,11 @@ bool NavCleanPathAlgorithm::filterPathsToSelectTarget(GridMap &map, PathList &pa
 	std::deque<BestTargetFilter> filters{};
 	Cell_t min_cell,max_cell;
 	map.getMapRange(CLEAN_MAP,&min_cell.x, &max_cell.x,&min_cell.y,&max_cell.y);
-	BestTargetFilter filters_case1{(int16_t)(cell_curr.y+2), max_cell.y, 0, false};
-	BestTargetFilter filters_case1_1{cell_curr.y,(int16_t)(cell_curr.y+1) ,0,false};
+	BestTargetFilter filters_case1{static_cast<int16_t>(cell_curr.y + 2), max_cell.y, 0, false};
+	BestTargetFilter filters_case1_1{cell_curr.y, static_cast<int16_t>(cell_curr.y + 1), 0, false};
 	BestTargetFilter filters_case2{min_cell.y, max_cell.y,1,false};
-	BestTargetFilter filters_case3{min_cell.y, cell_curr.y,0,true};
+	BestTargetFilter filters_case3{min_cell.y, static_cast<int16_t>(cell_curr.y - 2), 0, true};
+	BestTargetFilter filters_case3_1{static_cast<int16_t>(min_cell.y - 1), cell_curr.y, 0, true};
 	BestTargetFilter filters_case4{min_cell.y, max_cell.y,1,true};
 	BestTargetFilter filters_case5{cell_curr.y, max_cell.y, 1000,false};
 	BestTargetFilter filters_case6{min_cell.y, max_cell.y, 1000,true};
@@ -355,6 +356,7 @@ bool NavCleanPathAlgorithm::filterPathsToSelectTarget(GridMap &map, PathList &pa
 	if(!map.getCell(CLEAN_MAP,cell_curr.x,cell_curr.y-2) == UNCLEAN)
 		filters.push_back(filters_case2);
 	filters.push_back(filters_case3);
+	filters.push_back(filters_case3_1);
 	filters.push_back(filters_case4);
 	filters.push_back(filters_case5);
 	filters.push_back(filters_case6);

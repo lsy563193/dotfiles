@@ -142,7 +142,7 @@ void APathAlgorithm::optimizePath(GridMap &map, Cells& path)
 Points APathAlgorithm::cells_generate_points(Cells &path)
 {
 //	displayCellPath(path);
-	Points targets{};
+	Points point_path{};
 	if(!path.empty()){
 		for(auto it = path.begin(); it < path.end(); ++it) {
 			Point_t target {cellToCount((*it).x),cellToCount((*it).y),0};
@@ -157,15 +157,14 @@ Points APathAlgorithm::cells_generate_points(Cells &path)
 				target.dir = it->x > it_next->x ? MAP_NEG_X : MAP_POS_X;
 				target.th = isPos(target.dir) ? 0 : PI;
 			}
-			targets.push_back(target);
+			point_path.push_back(target);
 		}
 	//		ROS_INFO("path.back(%d,%d,%d)",path.back().n, path.back().y, path.back().TH);
 
-		targets.back().dir = (targets.end()-2)->dir;
-//	ROS_INFO("%s %d: path.back(%d,%d,%d), path.front(%d,%d,%d)", __FUNCTION__, __LINE__,
-//					 path.back().x, path.back().y, path.back().TH, path.front().x, path.front().y, path.front().TH);
+		point_path.back().dir = (point_path.end()-2)->dir;
+		point_path.back().th = (point_path.end()-2)->th;
 	}
-	return targets;
+	return point_path;
 }
 
 bool APathAlgorithm::generateShortestPath(GridMap &map, const Point_t &curr,const Point_t &target, const Dir_t &last_dir, Points &plan_path) {
