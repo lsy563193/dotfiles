@@ -18,7 +18,8 @@ public:
 	Lidar();
 	~Lidar();
 
-	bool lidarGetFitLine(double begin, double end, double range, double dis_lim, double *line_radian, double *distance, bool is_left, bool is_align = false);
+	void init();
+	bool lidarGetFitLine(double r_begin, double r_end, double range, double dis_lim, double *line_radian, double *distance, bool is_left, bool is_align = false);
 
 	/*
 	 * @author Alvin Xie
@@ -81,8 +82,9 @@ public:
 	void lidarXYPointCb(const visualization_msgs::Marker &point_marker);
 	static void setLidarScanDataOriginal(const sensor_msgs::LaserScan::ConstPtr &scan);
 	static sensor_msgs::LaserScan getLidarScanDataOriginal(void);
-
 	double getLidarDistance(int16_t angle);
+	uint8_t lidar_get_status();
+	bool lidar_is_stuck();
 private:
 
 	// switch_ is the target status of lidar.
@@ -129,7 +131,6 @@ private:
 
 };
 
-bool lidar_is_stuck();
 
 extern Lidar lidar;
 #endif

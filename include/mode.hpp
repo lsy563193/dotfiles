@@ -248,7 +248,6 @@ protected:
 //	std::vector<Cell_t> temp_fw_cells;
 private:
 	void register_events(void);
-	bool battery_low_{false};
 
 	bool plan_activated_status_;
 
@@ -546,9 +545,8 @@ public:
 
 	static void pubPointMarkers(const std::deque<Vector2<double>> *point, std::string frame_id,std::string name);
 	void pubFitLineMarker(visualization_msgs::Marker fit_line_marker);
-	void visualizeMarkerInit();
 	void scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr& scan);
-	void setCleanMapMarkers(int16_t x, int16_t y, CellState type);
+	void setCleanMapMarkers(int16_t x, int16_t y, CellState type,  visualization_msgs::Marker& clean_map_markers_);
 	void pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path);
 	static void pubLineMarker(const std::vector<LineABC> *lines);
 	Vector2<double> get_middle_point(const Vector2<double>& p1,const Vector2<double>& p2,const Paras& para);
@@ -563,7 +561,7 @@ public:
 
 private:
 	PathHead path_head_{};
-	visualization_msgs::Marker clean_markers_,bumper_markers_, clean_map_markers_;
+	visualization_msgs::Marker bumper_markers_;
 	ros::NodeHandle clean_nh_;
 	ros::Subscriber map_sub_;
 	ros::Subscriber	scanLinear_sub_;

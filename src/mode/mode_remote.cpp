@@ -16,14 +16,14 @@ ModeRemote::ModeRemote()
 	serial.setMainBoardMode(WORK_MODE);
 	if (gyro.isOn())
 	{
-		led.setMode(LED_STEADY, LED_GREEN);
+		key_led.setMode(LED_STEADY, LED_GREEN);
 		vacuum.setLastMode();
 		brush.normalOperate();
 		action_i_ = ac_remote;
 	}
 	else
 	{
-		led.setMode(LED_FLASH, LED_GREEN, 600);
+		key_led.setMode(LED_FLASH, LED_GREEN, 600);
 		action_i_ = ac_open_gyro;
 	}
 	genNextAction();
@@ -88,7 +88,7 @@ int ModeRemote::getNextAction()
 {
 	if(action_i_ == ac_open_gyro || (action_i_ == ac_exception_resume && !ev.fatal_quit))
 	{
-		led.setMode(LED_STEADY, LED_GREEN);
+		key_led.setMode(LED_STEADY, LED_GREEN);
 		vacuum.setLastMode();
 		brush.normalOperate();
 		return ac_remote;
@@ -100,7 +100,7 @@ int ModeRemote::getNextAction()
 void ModeRemote::remoteClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: remote clean.", __FUNCTION__, __LINE__);
-	beeper.play_for_command(VALID);
+	beeper.beepForCommand(VALID);
 	ev.key_clean_pressed = true;
 	remote.reset();
 }
@@ -108,7 +108,7 @@ void ModeRemote::remoteClean(bool state_now, bool state_last)
 void ModeRemote::remoteDirectionForward(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: remote forward.", __FUNCTION__, __LINE__);
-	beeper.play_for_command(VALID);
+	beeper.beepForCommand(VALID);
 	ev.remote_direction_forward = true;
 	remote.reset();
 }
@@ -116,7 +116,7 @@ void ModeRemote::remoteDirectionForward(bool state_now, bool state_last)
 void ModeRemote::remoteDirectionLeft(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: remote left.", __FUNCTION__, __LINE__);
-	beeper.play_for_command(VALID);
+	beeper.beepForCommand(VALID);
 	ev.remote_direction_left = true;
 	remote.reset();
 }
@@ -124,7 +124,7 @@ void ModeRemote::remoteDirectionLeft(bool state_now, bool state_last)
 void ModeRemote::remoteDirectionRight(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: remote right.", __FUNCTION__, __LINE__);
-	beeper.play_for_command(VALID);
+	beeper.beepForCommand(VALID);
 	ev.remote_direction_right = true;
 	remote.reset();
 }
@@ -133,7 +133,7 @@ void ModeRemote::keyClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: key clean.", __FUNCTION__, __LINE__);
 
-	beeper.play_for_command(VALID);
+	beeper.beepForCommand(VALID);
 
 	// Wait for key released.
 	while (key.getPressStatus())

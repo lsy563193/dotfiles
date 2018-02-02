@@ -44,10 +44,10 @@ bool ModeIdle::isExit()
 				if (error.clear(error.get()))
 				{
 					ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
-					if (battery_low_)
-						led.setMode(LED_BREATH, LED_ORANGE);
+					if (robot::instance()->isBatteryLow())
+						key_led.setMode(LED_BREATH, LED_ORANGE);
 					else
-						led.setMode(LED_BREATH, LED_GREEN);
+						key_led.setMode(LED_BREATH, LED_GREEN);
 					speaker.play(VOICE_CLEAR_ERROR, false);
 				} else
 				{
@@ -164,16 +164,16 @@ void ModeIdle::remoteKeyHandler(bool state_now, bool state_last)
 			if (error.clear(error.get()))
 			{
 				ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
-				beeper.play_for_command(VALID);
-				if (battery_low_)
-					led.setMode(LED_BREATH, LED_ORANGE);
+				beeper.beepForCommand(VALID);
+				if (robot::instance()->isBatteryLow())
+					key_led.setMode(LED_BREATH, LED_ORANGE);
 				else
-					led.setMode(LED_BREATH, LED_GREEN);
+					key_led.setMode(LED_BREATH, LED_GREEN);
 				speaker.play(VOICE_CLEAR_ERROR);
 			}
 			else
 			{
-				beeper.play_for_command(INVALID);
+				beeper.beepForCommand(INVALID);
 				error.alarm();
 			}
 		}
@@ -181,27 +181,27 @@ void ModeIdle::remoteKeyHandler(bool state_now, bool state_last)
 		{
 			ROS_WARN("%s %d: Remote key %x not valid because of error %d.", __FUNCTION__, __LINE__, remote.get(), error.get());
 			error.alarm();
-			beeper.play_for_command(INVALID);
+			beeper.beepForCommand(INVALID);
 		}
 	}
 	else if (cliff.getStatus() == BLOCK_ALL)
 	{
 		ROS_WARN("%s %d: Remote key %x not valid because of robot lifted up.", __FUNCTION__, __LINE__, remote.get());
-		beeper.play_for_command(INVALID);
+		beeper.beepForCommand(INVALID);
 		speaker.play(VOICE_ERROR_LIFT_UP);
 	}
 	else if ((!remote.isKeyTrigger(REMOTE_FORWARD) && !remote.isKeyTrigger(REMOTE_LEFT)
 			  && !remote.isKeyTrigger(REMOTE_RIGHT) && !remote.isKeyTrigger(REMOTE_HOME))
-			  && battery_low_)
+			  && robot::instance()->isBatteryLow())
 	{
 		ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, battery.getVoltage(), (int)BATTERY_READY_TO_CLEAN_VOLTAGE);
-		led.setMode(LED_BREATH, LED_ORANGE);
-		beeper.play_for_command(INVALID);
+		key_led.setMode(LED_BREATH, LED_ORANGE);
+		beeper.beepForCommand(INVALID);
 		speaker.play(VOICE_BATTERY_LOW);
 	}
 	else
 	{
-		beeper.play_for_command(VALID);
+		beeper.beepForCommand(VALID);
 		switch (remote.get())
 		{
 			case REMOTE_FORWARD:
@@ -248,7 +248,7 @@ void ModeIdle::remoteKeyHandler(bool state_now, bool state_last)
 
 void ModeIdle::remoteMax(bool state_now, bool state_last)
 {
-	beeper.play_for_command(INVALID);
+	beeper.beepForCommand(INVALID);
 	remote.reset();
 }
 
@@ -256,13 +256,13 @@ void ModeIdle::remotePlan(bool state_now, bool state_last)
 {
 	if (robot_timer.getPlanStatus() == 1)
 	{
-		beeper.play_for_command(VALID);
+		beeper.beepForCommand(VALID);
 		speaker.play(VOICE_APPOINTMENT_DONE, false);
 		ROS_WARN("%s %d: Plan received.", __FUNCTION__, __LINE__);
 	}
 	else if (robot_timer.getPlanStatus() == 2)
 	{
-		beeper.play_for_command(VALID);
+		beeper.beepForCommand(VALID);
 		speaker.play(VOICE_CANCEL_APPOINTMENT, false);
 		ROS_WARN("%s %d: Plan cancel received.", __FUNCTION__, __LINE__);
 	}
@@ -285,7 +285,7 @@ void ModeIdle::chargeDetect(bool state_now, bool state_last)
 void ModeIdle::keyClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: key clean.", __FUNCTION__, __LINE__);
-	beeper.play_for_command(VALID);
+	beeper.beepForCommand(VALID);
 
 	// Wait for key released.
 	bool long_press = false;
@@ -294,7 +294,7 @@ void ModeIdle::keyClean(bool state_now, bool state_last)
 		if (!long_press && key.getPressTime() > 3)
 		{
 			ROS_WARN("%s %d: key clean long pressed.", __FUNCTION__, __LINE__);
-			beeper.play_for_command(VALID);
+			beeper.beepForCommand(VALID);
 			long_press = true;
 		}
 		usleep(20000);
@@ -310,10 +310,10 @@ void ModeIdle::keyClean(bool state_now, bool state_last)
 			if (error.clear(error.get()))
 			{
 				ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
-				if (battery_low_)
-					led.setMode(LED_BREATH, LED_ORANGE);
+				if (robot::instance()->isBatteryLow())
+					key_led.setMode(LED_BREATH, LED_ORANGE);
 				else
-					led.setMode(LED_BREATH, LED_GREEN);
+					key_led.setMode(LED_BREATH, LED_GREEN);
 				speaker.play(VOICE_CLEAR_ERROR);
 			}
 			else
@@ -325,11 +325,11 @@ void ModeIdle::keyClean(bool state_now, bool state_last)
 					 remote.get());
 			speaker.play(VOICE_ERROR_LIFT_UP);
 		}
-		else if (battery_low_)
+		else if (robot::instance()->isBatteryLow())
 		{
 			ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, battery.getVoltage(),
 					 (int) BATTERY_READY_TO_CLEAN_VOLTAGE);
-			led.setMode(LED_BREATH, LED_ORANGE);
+			key_led.setMode(LED_BREATH, LED_ORANGE);
 			speaker.play(VOICE_BATTERY_LOW);
 		}
 		else
@@ -361,10 +361,10 @@ void ModeIdle::rcon(bool state_now, bool state_last)
 
 bool ModeIdle::isFinish()
 {
-	if (!battery_low_ && !battery.isReadyToClean())
+	if (!robot::instance()->isBatteryLow() && !battery.isReadyToClean())
 	{
-		led.setMode(LED_BREATH, LED_ORANGE);
-		battery_low_ = true;
+		key_led.setMode(LED_BREATH, LED_ORANGE);
+		robot::instance()->setBatterLow(true);
 	}
 	return false;
 }

@@ -142,7 +142,7 @@ void APathAlgorithm::optimizePath(GridMap &map, Cells& path)
 Points APathAlgorithm::cells_generate_points(Cells &path)
 {
 //	displayCellPath(path);
-	Points targets{};
+	Points point_path{};
 	if(!path.empty()){
 		for(auto it = path.begin(); it < path.end(); ++it) {
 			Point_t target {cellToCount((*it).x),cellToCount((*it).y),0};
@@ -157,15 +157,14 @@ Points APathAlgorithm::cells_generate_points(Cells &path)
 				target.dir = it->x > it_next->x ? MAP_NEG_X : MAP_POS_X;
 				target.th = isPos(target.dir) ? 0 : PI;
 			}
-			targets.push_back(target);
+			point_path.push_back(target);
 		}
 	//		ROS_INFO("path.back(%d,%d,%d)",path.back().n, path.back().y, path.back().TH);
 
-		targets.back().dir = (targets.end()-2)->dir;
-//	ROS_INFO("%s %d: path.back(%d,%d,%d), path.front(%d,%d,%d)", __FUNCTION__, __LINE__,
-//					 path.back().x, path.back().y, path.back().TH, path.front().x, path.front().y, path.front().TH);
+		point_path.back().dir = (point_path.end()-2)->dir;
+		point_path.back().th = (point_path.end()-2)->th;
 	}
-	return targets;
+	return point_path;
 }
 
 bool APathAlgorithm::generateShortestPath(GridMap &map, const Point_t &curr,const Point_t &target, const Dir_t &last_dir, Points &plan_path) {
@@ -263,27 +262,12 @@ Cells APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const 
 				/* Found a cell that has a pass value equal to the current pass value. */
 				if(map.getCell(COST_MAP, i, j) == cost_value) {
 					/* Set the lower cell of the cell which has the pass value equal to current pass value. */
-					if (map.getCell(COST_MAP, i - 1, j) == COST_NO) {
-						map.setCell(COST_MAP, (int32_t) (i - 1), (int32_t) j, (CellState) next_cost_value);
-						cost_updated = true;
-					}
-
-					/* Set the upper cell of the cell which has the pass value equal to current pass value. */
-					if (map.getCell(COST_MAP, i + 1, j) == COST_NO) {
-						map.setCell(COST_MAP, (int32_t) (i + 1), (int32_t) j, (CellState) next_cost_value);
-						cost_updated = true;
-					}
-
-					/* Set the cell on the right hand side of the cell which has the pass value equal to current pass value. */
-					if (map.getCell(COST_MAP, i, j - 1) == COST_NO) {
-						map.setCell(COST_MAP, (int32_t) i, (int32_t) (j - 1), (CellState) next_cost_value);
-						cost_updated = true;
-					}
-
-					/* Set the cell on the left hand side of the cell which has the pass value equal to current pass value. */
-					if (map.getCell(COST_MAP, i, j + 1) == COST_NO) {
-						map.setCell(COST_MAP, (int32_t) i, (int32_t) (j + 1), (CellState) next_cost_value);
-						cost_updated = true;
+					for(auto index = 0;index<4; index++) {
+						auto neighbor = Cell_t(i, j) - cell_direction_index_[index];
+						if (map.getCell(COST_MAP, neighbor.x, neighbor.y) == COST_NO) {
+							map.setCell(COST_MAP, neighbor.x, neighbor.y, (CellState) next_cost_value);
+							cost_updated = true;
+						}
 					}
 				}
 			}
@@ -401,8 +385,7 @@ Cells APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const 
 
 	map.setCell(COST_MAP, (int32_t) target.x, (int32_t) target.y, COST_PATH);
 
-	trace_cell.x = target.x;
-	trace_cell.y = target.y;
+	trace_cell = target;
 	path_.push_back(trace_cell);
 
 	displayCellPath(path_);

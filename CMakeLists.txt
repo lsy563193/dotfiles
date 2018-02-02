@@ -16,7 +16,7 @@ FILE(GLOB PP_SRC
 	src/dev/remote.cpp
 	src/dev/obs.cpp
 	src/dev/key_led.cpp
-	src/dev/beep.cpp
+		src/dev/beeper.cpp
 	src/dev/charger.cpp
 	src/dev/wall_follow.cpp
 	src/dev/wheel.cpp
@@ -101,9 +101,8 @@ FILE(GLOB PP_SRC
 	src/mathematics.cpp
 	src/odom.cpp
 	src/pose.cpp
-	src/r16_board_test.cpp
+		src/x900_functional_test.cpp
 	src/robot.cpp
-	src/robotbase.cpp
 	src/serial.cpp
 	src/signature.c
 	src/slam.cpp

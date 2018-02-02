@@ -536,7 +536,8 @@ uint8_t GridMap::setFollowWall(bool is_left,const Points& passed_path)
 		auto dy = is_left ? 2 : -2;
 		for(auto& point : passed_path){
 			if(getCell(CLEAN_MAP,point.toCell().x,point.toCell().y) != BLOCKED_RCON){
-				auto block_cell = point.getRelative(0, dy * CELL_SIZE).toCell();
+				auto relative_cell = point.getRelative(0, dy * CELL_SIZE);
+				auto block_cell = relative_cell.toCell();
 				msg += "(" + std::to_string(block_cell.x) + "," + std::to_string(block_cell.y) + ")";
 				setCell(CLEAN_MAP,block_cell.x,block_cell.y, BLOCKED_FW);
 				block_count++;
@@ -694,17 +695,13 @@ uint8_t GridMap::saveLidar()
 
 	std::vector<Cell_t> d_cells;
 	if (lidar_trig & BLOCK_FRONT){
-//		d_cells.push_back({2,-1});
 		d_cells.push_back({2, 0});
-//		d_cells.push_back({2, 1});
 	}
 	if (lidar_trig & BLOCK_LEFT){
 		d_cells.push_back({2, 1});
-		d_cells.push_back({2, 2});
 	}
 	if (lidar_trig & BLOCK_RIGHT){
 		d_cells.push_back({2,-1});
-		d_cells.push_back({2,-2});
 	}
 
 	std::string msg = "cells:";
@@ -919,7 +916,7 @@ void GridMap::setCleaned(std::deque<Cell_t> cells)
 	for (uint32_t i = 0; i< cells.size(); i++)
 	{
 		Cell_t cell = cells.at(i);
-		msg += "(" + std::to_string(cell.x) + "," + std::to_string(cell.y)   + "),";	
+		msg += "(" + std::to_string(cell.x) + "," + std::to_string(cell.y)   + "),";
 		for( int dx = -(int)ROBOT_SIZE_1_2;dx <=(int)ROBOT_SIZE_1_2;dx++)
 		{
 			if( i == 0)
@@ -1417,5 +1414,24 @@ void GridMap::setExplorationCleaned() {
 			setCell(CLEAN_MAP, cell.x, cell.y, CLEANED);
 		}
 	}
+}
+
+void GridMap::setBlockWithBound(Cell_t min, Cell_t max, CellState state,bool with_block) {
+	for (auto i = min.x; i <= max.x; ++i) {
+		for (auto j = min.y; j <= max.y; ++j) {
+			setCell(CLEAN_MAP, i,j,state);
+		}
+	}
+	if(with_block) {
+		for (auto i = min.x - 1; i <= max.x + 1; ++i)
+			setCell(CLEAN_MAP, i, max.y + 1, BLOCKED);
+		for (auto i = min.x - 1; i <= max.x + 1; ++i)
+			setCell(CLEAN_MAP, i, min.y - 1, BLOCKED);
+		for (auto i = min.y - 1; i <= max.y + 1; ++i)
+			setCell(CLEAN_MAP, max.x + 1, i, BLOCKED);
+		for (auto i = min.y - 1; i <= max.y + 1; ++i)
+			setCell(CLEAN_MAP, min.x - 1, i, BLOCKED);
+	}
+
 }
 

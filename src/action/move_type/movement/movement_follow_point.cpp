@@ -62,7 +62,7 @@ bool AMovementFollowPoint::isFinish() {
 		if (std::abs(radian_diff) > degree_to_radian(140)) {
 			ROS_ERROR_COND(DEBUG_ENABLE, "LASER WALL FOLLOW ERROR! PLEASE CALL ALVIN AND RESTART THE ROBOT.");
 //			while(ros::ok()){
-//				beeper.play_for_command(VALID);
+//				beeper.beepForCommand(VALID);
 //				wheel.setPidTargetSpeed(0, 0);
 //			}
 		}

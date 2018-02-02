@@ -13,7 +13,7 @@
 void StateSpot::init() {
     vacuum.setTmpMode(Vac_Max);
     brush.fullOperate();
-	led.setMode(LED_STEADY, LED_GREEN);
+	key_led.setMode(LED_STEADY, LED_GREEN);
 	if(getMode()->isNavMode())
 		speaker.play(VOICE_CLEANING_SPOT,false);
 	ROS_INFO(" IS NAV MODE %d ",getMode()->isNavMode());

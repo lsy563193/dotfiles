@@ -1,11 +1,11 @@
 #include <serial.h>
-#include <robotbase.h>
 #include <bumper.h>
 #include <signal.h>
+#include <path_algorithm.h>
 #include "robot.hpp"
 #include "speaker.h"
 
-#if R16_BOARD_TEST
+#if X900_FUNCTIONAL_TEST
 #include "r16_board_test.hpp"
 #endif
 
@@ -51,27 +51,16 @@ void signal_catch(int sig)
 	robot_instance = nullptr;
 	ros::shutdown();
 }
+void case_2(GridMap &map) {
+	map.setBlockWithBound({-15,-15}, {15,15}, CLEANED, 1);
+	map.setBlockWithBound({-5,-5},{5,5},CLEANED,1);
+	map.setBlockWithBound({-10,-5},{-7,5},UNCLEAN,1);
+	map.setBlockWithBound({-11,-6},{6,-6},CLEANED,0);
+//	map.setBlockWithBound({-5,-6},{6,-6},CLEANED,0);
 
-#if R16_BOARD_TEST
-int main(int argc, char **argv)
-{
-	ros::init(argc, argv, "pp");
-	ros::NodeHandle	nh_dev("~");
-
-	// Create speaker play thread.
-	auto speaker_play_routine = new boost::thread(boost::bind(&Speaker::playRoutine, &speaker));
-
-	r16_board_test();
-
-	// Test finish.
-	while (ros::ok())
-	{
-		ROS_INFO("%s %d: Test finish.", __FUNCTION__, __LINE__);
-		sleep(1);
-	}
+//	map_set_block({-2,0},{3,0},);
+//	map_set_block({-2,0},{3,0},UNCLEAN);
 }
-
-#else
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "pp");
@@ -85,27 +74,21 @@ int main(int argc, char **argv)
 	sigaction(SIGSEGV,&act,NULL);
 	sigaction(SIGINT,&act,NULL);
 	ROS_INFO("set signal action done!");
-	std::string	serial_port;
-	nh_dev.param<std::string>("serial_port", serial_port, "/dev/ttyS2");
-
-	int		baud_rate;
-	nh_dev.param<int>("baud_rate", baud_rate, 115200);
-
-	// Init for serial.
-	if (!serial.init(serial_port.c_str(), baud_rate))
-	{
-		ROS_ERROR("%s %d: Serial init failed!!", __FUNCTION__, __LINE__);
-	}
-
-	std::string lidar_bumper_dev;
-	nh_dev.param<std::string>("lidar_bumper_file", lidar_bumper_dev, "/dev/input/event0");
-
-	if (bumper.lidarBumperInit(lidar_bumper_dev.c_str()) == -1)
-		ROS_ERROR(" lidar bumper open fail!");
 
 	robot_instance = new robot();
+/*//test
+	ROS_INFO("set signal action done!");
+	GridMap map;
+	case_2(map);
+	map.print(CLEAN_MAP, 0, 0);
 
+	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
+	Dir_t old_dir_=MAP_POS_X;
+	Points plan_path_{};
+	clean_path_algorithm_.reset(new NavCleanPathAlgorithm);
+	if (clean_path_algorithm_->generatePath(map, getPosition(), old_dir_, plan_path_)) {
+
+	}*/
 	ros::spin();
 	return 0;
 }
-#endif

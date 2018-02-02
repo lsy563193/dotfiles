@@ -3,7 +3,6 @@
 #include <ros/ros.h>
 #include "dev.h"
 #include "map.h"
-#include "robotbase.h"
 #include "serial.h"
 
 int g_bumper_cnt = 0;
@@ -337,7 +336,7 @@ void event_manager_thread_cb()
 		*/
 
 		// Lidar stuck
-		if (lidar_is_stuck()) {
+		if (lidar.lidar_is_stuck()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_LIDAR_STUCK);
 		}
@@ -835,7 +834,7 @@ void EventHandle::keyClean(bool state_now, bool state_last)
 /* Remote */
 void df_remote()
 {
-	beeper.play_for_command(INVALID);
+	beeper.beepForCommand(INVALID);
 	remote.reset();
 }
 
@@ -922,7 +921,7 @@ void df_robot_slip()
 {
 /*	static int slip_cnt = 0;
 	ROS_WARN("\033[32m%s,%d,set robot slip!! \033[0m",__FUNCTION__,__LINE__);
-	beeper.play_for_command(true);
+	beeper.beepForCommand(true);
 	ev.robot_slip = true;
 	if(slip_cnt++ > 2){
 		slip_cnt = 0;
@@ -947,7 +946,7 @@ void EventHandle::lidarStuck(bool state_new, bool state_last)
 {}
 void df_lidar_stuck(bool state_new,bool state_last)
 {
-	//beeper.play_for_command(true);
+	//beeper.beepForCommand(true);
 	//ROS_WARN("\033[32m%s %d: Lidar stuck.\033[0m", __FUNCTION__, __LINE__);
 	//ev.lidarStuck = true;
 }

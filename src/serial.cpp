@@ -3,31 +3,56 @@
 #include "serial.h"
 #include <sys/ioctl.h>
 #include <fcntl.h>
-#include <robotbase.h>
 #include <brush.h>
 #include <wheel.hpp>
+#include <beeper.h>
+#include <key_led.h>
 #include <robot.hpp>
 
-boost::mutex g_send_stream_mutex;
+boost::mutex send_stream_mutex;
 
 Serial serial;
 
 Serial::Serial()
 {
 	crport_fd_ = 0;
-	serial_init_done_ = false;
+	serial_port_ready_ = false;
 	made_table_ = 0;
 }
 
-bool Serial::init(const char* port,int baudrate)
+Serial::~Serial()
+{
+	bool closed = false;
+	if (isReady())
+	{
+		for (auto i = 0; i < 10; i++)
+		{
+			if (close() == 0);
+			{
+				ROS_INFO("%s %d: Close serial port %s.", __FUNCTION__, __LINE__, port_.c_str());
+				closed = true;
+				break;
+			}
+		}
+
+		if (!closed)
+			ROS_ERROR("%s %d: Close serial port %s failed.", __FUNCTION__, __LINE__, port_.c_str());
+	}
+}
+
+bool Serial::init(const std::string port,int baudrate)
 {
 	char buf[1024];
 
 	bardrate_ = baudrate;
-	sprintf(buf, "%s", port);
+	sprintf(buf, "%s", port.c_str());
+	port_ = port;
 	crport_fd_ = open(buf, O_RDWR | O_NOCTTY | O_NONBLOCK);
 	if (crport_fd_ == -1)
+	{
+		ROS_ERROR("%s %d: Open device %s, at baudrate %d failed!.", __FUNCTION__, __LINE__, buf, baudrate);
 		return false;
+	}
 
 	fcntl(crport_fd_, F_SETFL, FNDELAY);
 
@@ -72,14 +97,14 @@ bool Serial::init(const char* port,int baudrate)
 	if (tcsetattr(crport_fd_, TCSANOW, &curopt_) != 0){
 		return false;
 	}
-	serial_init_done_ = true;
-	ROS_INFO("\033[32mserial.cpp\033[0m init done...\n");
+	serial_port_ready_ = true;
+	ROS_INFO("\033[32mserial port %s\033[0m init done...", buf);
 	return true;
 }
 
 bool Serial::isReady()
 {
-	return serial_init_done_;
+	return serial_port_ready_;
 }
 
 int Serial::flush()
@@ -97,21 +122,22 @@ int Serial::close()
 	::read(crport_fd_, buf, 128);
 	tcsetattr(crport_fd_, TCSANOW, &orgopt_);
 	retval = ::close(crport_fd_);
-	if(retval==0){
+	if (retval == 0)
+	{
 		crport_fd_ = -1;
-		serial_init_done_ = false;
+		serial_port_ready_ = false;
 	}
 	return retval;
 }
 
-int Serial::write(uint8_t len, uint8_t *buf)
+int Serial::write(uint8_t *buf, uint8_t len)
 {
-	int	retval;
-	retval = ::write(crport_fd_, buf, len);
-	return retval;
+	int ret;
+	ret = static_cast<int>(::write(crport_fd_, buf, len));
+	return ret;
 }
 
-int Serial::read(int len,uint8_t *buf)
+int Serial::read(uint8_t *buf, int len)
 {
 	int r_ret=0,s_ret=0;
 	uint8_t *t_buf;
@@ -190,9 +216,33 @@ int Serial::read(int len,uint8_t *buf)
 	return s_ret;
 }
 
+void Serial::resetSendStream(void)
+{
+	for (int i = 0; i < SEND_LEN; i++) {
+		if (i != CTL_LED_GREEN)
+			setSendData(i, 0x00);
+		else
+			setSendData(i, 0x64);
+	}
+	setSendData(0, 0xaa);
+	setSendData(1, 0x55);
+	setSendData(CTL_TRAILER_1, 0xcc);
+	setSendData(CTL_TRAILER_2, 0x33);
+
+	setMainBoardMode(IDLE_MODE);
+	uint8_t buf[SEND_LEN];
+	{
+		boost::mutex::scoped_lock lock(send_stream_mutex);
+		memcpy(buf, send_stream, sizeof(uint8_t) * SEND_LEN);
+	}
+	uint8_t crc;
+	crc = calBufCrc8(buf, CTL_CRC);
+	setSendData(CTL_CRC, crc);
+}
+
 void Serial::setSendData(uint8_t seq, uint8_t val)
 {
-	boost::mutex::scoped_lock lock(g_send_stream_mutex);
+	boost::mutex::scoped_lock lock(send_stream_mutex);
 	if (seq >= CTL_WHEEL_LEFT_HIGH && seq <= CTL_GYRO) {
 		send_stream[seq] = val;
 	}
@@ -201,9 +251,9 @@ void Serial::setSendData(uint8_t seq, uint8_t val)
 uint8_t Serial::getSendData(uint8_t seq)
 {
 	uint8_t tmp_data;
-	g_send_stream_mutex.lock();
+	send_stream_mutex.lock();
 	tmp_data = send_stream[seq];
-	g_send_stream_mutex.unlock();
+	send_stream_mutex.unlock();
 	return tmp_data;
 }
 
@@ -270,9 +320,9 @@ int Serial::get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequen
 		for (int i = 0; i < 40; i++) {  //200ms (round trip takes at leat 15ms)
 			int counter = 0, ret;
 
-			g_send_stream_mutex.lock();
+			send_stream_mutex.lock();
 			memcpy(buf, send_stream, sizeof(uint8_t) * SEND_LEN);
-			g_send_stream_mutex.unlock();
+			send_stream_mutex.unlock();
 			buf[CTL_CRC] = calc_buf_crc8(buf, SEND_LEN - 3);
 			write(SEND_LEN, buf);
 
@@ -387,9 +437,9 @@ int Serial::get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequen
 			//Send acknowledge back to MCU.
 			setSendData(CTL_KEY_VALIDATION, CMD_ACK);
 			for (int k = 0; k < 20; k++) {
-				g_send_stream_mutex.lock();
+				send_stream_mutex.lock();
 				memcpy(buf, send_stream, sizeof(uint8_t) * SEND_LEN);
-				g_send_stream_mutex.unlock();
+				send_stream_mutex.unlock();
 				buf[CTL_CRC] = calBufCrc8(buf, SEND_LEN - 3);
 				write(SEND_LEN, buf);
 
@@ -474,26 +524,26 @@ void Serial::receive_routine_cb()
 	whtc_len = wht_len - 1; //length without header and tail and crc bytes
 
 	while (ros::ok() && (!recei_thread_stop)) {
-		ret = serial.read(1, &header1);
+		ret = serial.read(&header1, 1);
 		if (ret <= 0 ){
-			ROS_WARN("%s, %d, serial read return %d ,  requst %d byte",__FUNCTION__,__LINE__,ret,1);
+			ROS_WARN("%s, %d, serial read return %d ,  request %d byte",__FUNCTION__,__LINE__,ret,1);
 			continue;
 		}
 		if(header1 != h1)
 			continue;
-		ret= serial.read(1,&header2);
+		ret= serial.read(&header2, 1);
 		if (ret <= 0 ){
-			ROS_WARN("%s,%d,serial read return %d , requst %d byte",__FUNCTION__,__LINE__,ret,1);
+			ROS_WARN("%s,%d,serial read return %d , request %d byte",__FUNCTION__,__LINE__,ret,1);
 			continue;
 		}
 		if(header2 != h2){
 			continue;
 		}
-		ret = serial.read(wh_len, receiData);
-		if(ret < wh_len){
-			ROS_WARN("%s,%d,serial read %d bytes, requst %d bytes",__FUNCTION__,__LINE__,ret,wh_len);
+		ret = serial.read(receiData, wh_len);
+		if(ret > 0 && ret < wh_len){
+			ROS_WARN("%s,%d,serial read %d bytes, request %d bytes",__FUNCTION__,__LINE__,ret,wh_len);
 		}
-		if(ret<= 0){
+		if(ret <= 0){
 			ROS_WARN("%s,%d,serial read return %d",__FUNCTION__,__LINE__,ret);
 			continue;
 		}
@@ -532,34 +582,21 @@ void Serial::send_routine_cb()
 	ROS_INFO("robotbase,\033[32m%s\033[0m,%d is up.",__FUNCTION__,__LINE__);
 	ros::Rate r(_RATE);
 	uint8_t buf[SEND_LEN];
-	int sl = SEND_LEN-3;
 	while(ros::ok() && !send_thread_stop){
 		r.sleep();
-		/*-------------------Process for beeper.play and led -----------------------*/
-		// Force reset the beeper action when beeper() function is called, especially when last beeper action is not over. It can stop last beeper action and directly start the updated beeper.play action.
-		if (robotbase_beep_update_flag){
-			temp_beeper_sound_time_count = -1;
-			temp_beeper_silence_time_count = 0;
-			robotbase_beep_update_flag = false;
-		}
-		//ROS_INFO("%s %d: tmp_sound_count: %d, tmp_silence_count: %d, sound_loop_count: %d.", __FUNCTION__, __LINE__, temp_beeper_sound_time_count, temp_beeper_silence_time_count, robotbase_beeper_sound_loop_count);
-		// If count > 0, it is processing for different alarm.
-		if (robotbase_beeper_sound_loop_count != 0){
-			process_beep();
-		}
-
-		if (robotbase_led_update_flag)
-			process_led();
+		/*-------------------Process for beeper.play and key_led -----------------------*/
+		beeper.processBeep();
+		key_led.processLed();
 
 			/*---pid for wheels---*/
 		wheel.pidAdjustSpeed();
 		brush.updatePWM();
 
-		g_send_stream_mutex.lock();
+		send_stream_mutex.lock();
 		memcpy(buf,serial.send_stream,sizeof(uint8_t)*SEND_LEN);
-		g_send_stream_mutex.unlock();
-		buf[CTL_CRC] = serial.calBufCrc8(buf, sl);
-		serial.write(SEND_LEN, buf);
+		send_stream_mutex.unlock();
+		buf[CTL_CRC] = serial.calBufCrc8(buf, CTL_CRC);
+		serial.write(buf, SEND_LEN);
 //		robot::instance()->debugSendStream(buf);
 	}
 	core_thread_stop = true;

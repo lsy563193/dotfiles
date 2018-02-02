@@ -10,7 +10,6 @@
 #include <robot_timer.h>
 #include <robot.hpp>
 #include <slam.h>
-#include <robotbase.h>
 #include "error.h"
 
 const double CHASE_X = 0.107;
@@ -22,6 +21,7 @@ bool ACleanMode::plan_activation_={};
 
 ACleanMode::ACleanMode()
 {
+	lidar.init();
 	scanLinear_sub_ = clean_nh_.subscribe("scanLinear", 1, &Lidar::scanLinearCb, &lidar);
 	scanCompensate_sub_ = clean_nh_.subscribe("scanCompensate", 1, &Lidar::scanCompensateCb, &lidar);
 	scanOriginal_sub_ = clean_nh_.subscribe("scanOriginal", 1, &ACleanMode::scanOriginalCb, this);
@@ -285,7 +285,7 @@ bool ACleanMode::calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,boo
 	auto is_corner = check_corner(scan, para);
 	if(is_corner)
 	{
-//		beeper.play_for_command(VALID);
+//		beeper.beepForCommand(VALID);
 		ROS_WARN("is_corner = %d", is_corner);
 	}
 	for (int i = 359; i >= 0; i--) {
@@ -356,26 +356,8 @@ void ACleanMode::pubFitLineMarker(visualization_msgs::Marker fit_line_marker)
 	fit_line_marker_pub_.publish(fit_line_marker);
 }
 
-void ACleanMode::visualizeMarkerInit()
-{
-	clean_markers_.points.clear();
 
-	geometry_msgs::Point m_points_{};
-	clean_markers_.points.push_back(m_points_);
-
-	clean_map_markers_.ns = "cleaning_grid_map";
-	clean_map_markers_.id = 1;
-	clean_map_markers_.type = visualization_msgs::Marker::POINTS;
-	clean_map_markers_.action= visualization_msgs::Marker::ADD;
-	clean_map_markers_.lifetime=ros::Duration(0);
-	clean_map_markers_.scale.x = 0.1;
-	clean_map_markers_.scale.y = 0.1;
-	clean_map_markers_.header.frame_id = "/map";
-	clean_map_markers_.points.clear();
-	clean_map_markers_.colors.clear();
-}
-
-void ACleanMode::setCleanMapMarkers(int16_t x, int16_t y, CellState type)
+void ACleanMode::setCleanMapMarkers(int16_t x, int16_t y, CellState type, visualization_msgs::Marker& clean_map_markers_)
 {
 	geometry_msgs::Point m_points_;
 	std_msgs::ColorRGBA color_;
@@ -482,54 +464,49 @@ void ACleanMode::pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path
 
 	if (path.empty())
 		return;
-
-	visualizeMarkerInit();
+	visualization_msgs::Marker clean_markers_;
+	clean_markers_.points.clear();
+	geometry_msgs::Point m_points_{};
+	clean_markers_.points.push_back(m_points_);
+	visualization_msgs::Marker clean_map_markers_;
+	clean_map_markers_.ns = "cleaning_grid_map";
+	clean_map_markers_.id = 1;
+	clean_map_markers_.type = visualization_msgs::Marker::POINTS;
+	clean_map_markers_.action= visualization_msgs::Marker::ADD;
+	clean_map_markers_.lifetime=ros::Duration(0);
+	clean_map_markers_.scale.x = 0.1;
+	clean_map_markers_.scale.y = 0.1;
+	clean_map_markers_.header.frame_id = "/map";
+	clean_map_markers_.points.clear();
+	clean_map_markers_.colors.clear();
 	int16_t x, y, x_min, x_max, y_min, y_max;
 	CellState cell_state;
-	Cell_t next = path.front();
+//	Cell_t next = path.front();
 	Cell_t target = path.back();
 	map.getMapRange(CLEAN_MAP, &x_min, &x_max, &y_min, &y_max);
+/*
 
 	if (next.x == SHRT_MIN )
 		next.x = x_min;
 	else if (next.x == SHRT_MAX)
 		next.x = x_max;
+*/
 
-	for (x = x_min; x <= x_max; x++)
-	{
-		for (y = y_min; y <= y_max; y++)
-		{
-			if (x == target.x && y == target.y)
-				setCleanMapMarkers(x, y, TARGET_CLEAN);
-			else if (x == next.x && y == next.y)
-				setCleanMapMarkers(x, y, TARGET);
-			else
-			{
-				cell_state = map.getCell(CLEAN_MAP, x, y);
-				if (cell_state > UNCLEAN && cell_state < BLOCKED_BOUNDARY )
-					setCleanMapMarkers(x, y, cell_state);
-			}
+	for (x = x_min; x <= x_max; x++) {
+		for (y = y_min; y <= y_max; y++) {
+			cell_state = map.getCell(CLEAN_MAP, x, y);
+			if (cell_state > UNCLEAN && cell_state < BLOCKED_BOUNDARY)
+				setCleanMapMarkers(x, y, cell_state, clean_map_markers_);
 		}
 	}
-	if (!path.empty())
-	{
-//		for (const auto& it : path)
-//		{
-//			ROS_ERROR("it(%d,%d)",it.x, it.y);
-//		}
-
-		setCleanMapMarkers(path.back().x, path.back().y, TARGET_CLEAN);
+	for (auto &&cell : path) {
+		setCleanMapMarkers(cell.x, cell.y, TARGET, clean_map_markers_);
 	}
+	if (!path.empty())
+		setCleanMapMarkers(path.back().x, path.back().y, TARGET_CLEAN, clean_map_markers_);
 
 	clean_map_markers_.header.stamp = ros::Time::now();
-//	for (const auto& it : clean_map_markers_.points)
-//	{
-//		ROS_WARN("it(%f,%f)",it.x, it.y);
-//	}
-
 	send_clean_map_marker_pub_.publish(clean_map_markers_);
-	clean_map_markers_.points.clear();
-	clean_map_markers_.colors.clear();
 }
 void ACleanMode::pubLineMarker(const std::vector<LineABC> *lines)
 {
@@ -539,12 +516,12 @@ void ACleanMode::pubLineMarker(const std::vector<LineABC> *lines)
 	line_marker.type = visualization_msgs::Marker::LINE_LIST;
 	line_marker.action= 0;//add
 	line_marker.lifetime=ros::Duration(0);
-	line_marker.scale.x = 0.05;
+	line_marker.scale.x = 0.03;
 	//line_marker.scale.y = 0.05;
 	//line_marker.scale.z = 0.05;
-	line_marker.color.r = 0.0;
+	line_marker.color.r = 1.0;
 	line_marker.color.g = 0.0;
-	line_marker.color.b = 1.0;
+	line_marker.color.b = 0.0;
 	line_marker.color.a = 1.0;
 	line_marker.header.frame_id = "/base_link";
 	line_marker.header.stamp = ros::Time::now();
@@ -992,13 +969,13 @@ void ACleanMode::remoteHome(bool state_now, bool state_last)
 	if (sp_state == state_clean || sp_state == state_pause || sp_state == state_spot)
 	{
 		ROS_WARN("%s %d: remote home.", __FUNCTION__, __LINE__);
-		beeper.play_for_command(VALID);
+		beeper.beepForCommand(VALID);
 		ev.remote_home = true;
 	}
 	else
 	{
 		ROS_WARN("%s %d: remote home but not valid.", __FUNCTION__, __LINE__);
-		beeper.play_for_command(INVALID);
+		beeper.beepForCommand(INVALID);
 	}
 	remote.reset();
 }
@@ -1361,7 +1338,7 @@ bool ACleanMode::updateActionInStateTrapped()
 			ROS_ERROR("p_mt->closed_count_ >= closed_count_limit_");
 			trapped_closed_or_isolate = true;
 			action_i_ = ac_null;
-			genNextAction();
+//			genNextAction();
 			ROS_WARN("%s,%d:follow clean finish", __func__, __LINE__);
 		}
 	}
@@ -1369,7 +1346,7 @@ bool ACleanMode::updateActionInStateTrapped()
 //		out_of_trapped = false;
 		ROS_ERROR("out_of_trapped");
 		action_i_ = ac_null;
-		genNextAction();
+//		genNextAction();
 	}
 	else if (robot_timer.trapTimeout(ESCAPE_TRAPPED_TIME)) {
 			action_i_ = ac_null;

@@ -4,7 +4,7 @@
 
 #ifndef PP_MOVE_TYPE_HPP
 #define PP_MOVE_TYPE_HPP
-
+#define TRAP_IN_SMALL_AREA_COUNT 20
 #include "action.hpp"
 #include "movement.hpp"
 #include "boost/shared_ptr.hpp"
@@ -117,6 +117,12 @@ private:
 	double getTurnRadian(bool);
 	double robot_to_wall_distance = 0.8;
 	float g_back_distance = 0.01;
+	struct lidar_angle_param{
+		double lidar_min;
+		double lidar_max;
+		double radian_min;
+		double radian_max;
+	};
 };
 
 class MoveTypeGoToCharger:public IMoveType
