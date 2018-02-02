@@ -327,8 +327,8 @@ public:
 				if (path_a.back().y == path_b.back().y)
 					return path_a.size() < path_b.size();
 				return (std::abs(path_a.back().y - top_a->y) < std::abs(path_b.back().y - top_b->y));
-			}
-			return (top_a->y < top_b->y ^ is_reverse_);
+			}else
+			return (std::abs(top_a->y - curr_y_) < std::abs(top_b->y - curr_y_));
 		}else /*if(turn_count_ == 1000)*/{
 			return path_a.size() < path_b.size();
 		}
