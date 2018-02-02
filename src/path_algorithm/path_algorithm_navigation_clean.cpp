@@ -294,7 +294,6 @@ public:
 		}
 		else if(turn_count_ == 1){
 			auto point = std::is_sorted_until(path.begin(), path.end(), IsIncrease(!is_reverse_));
-			auto is_sorted = std::is_sorted(point, path.end(), IsIncrease());
 			return point != path.end() && std::is_sorted(point, path.end(), IsIncrease(is_reverse_));
 		}
 		else/* if(turn_count_ ==-1)*/{//any turn
@@ -311,7 +310,7 @@ public:
 
 class MinYAndShortestPath {
 public:
-	MinYAndShortestPath(int16_t curr_y, bool is_reverse,int16_t turn_count):is_reverse_(is_reverse),curr_y_(curr_y),turn_count_(turn_count){ };
+	MinYAndShortestPath(int16_t curr_y, bool is_reverse,int turn_count):is_reverse_(is_reverse),curr_y_(curr_y),turn_count_(turn_count){ };
 	bool operator()(const Cells &path_a, const Cells &path_b) {
 		if(turn_count_ == 0 || turn_count_ == 1000)
 		{
@@ -322,14 +321,14 @@ public:
 		else if(turn_count_ == 1){
 			auto top_a = std::min_element(path_a.begin(), path_a.end(),IsIncrease(is_reverse_));
 			auto top_b = std::min_element(path_b.begin(), path_b.end(),IsIncrease(is_reverse_));
-			printf("top a(%d,%d)\n", top_a->x, top_a->y);
-			printf("top b(%d,%d)\n", top_b->x, top_b->y);
+//			printf("top a(%d,%d)\n", top_a->x, top_a->y);
+//			printf("top b(%d,%d)\n", top_b->x, top_b->y);
 			if(top_a->y == top_b->y) {
 				if (path_a.back().y == path_b.back().y)
 					return path_a.size() < path_b.size();
-				return (std::abs(path_a.back().y - curr_y_) < std::abs(path_b.back().y - curr_y_));
-			}
-			return (top_a->y < top_b->y ^ is_reverse_);
+				return (std::abs(path_a.back().y - top_a->y) < std::abs(path_b.back().y - top_b->y));
+			}else
+			return (std::abs(top_a->y - curr_y_) < std::abs(top_b->y - curr_y_));
 		}else /*if(turn_count_ == 1000)*/{
 			return path_a.size() < path_b.size();
 		}
@@ -340,21 +339,42 @@ public:
 };
 
 bool NavCleanPathAlgorithm::filterPathsToSelectTarget(GridMap &map, PathList &paths, const Cell_t &cell_curr, Cell_t &best_target) {
-	std::deque<BestTargetFilter> filters{{(int16_t)(cell_curr.y+2), MAP_SIZE, 0, false},
-																			 {cell_curr.y,(int16_t)(cell_curr.y+1) ,0,false},
-																			 {-MAP_SIZE, MAP_SIZE,1,false},
-																			 {-MAP_SIZE, cell_curr.y,0,true},
-																			 {-MAP_SIZE, MAP_SIZE,1,true},
-																			 {cell_curr.y, MAP_SIZE, 1000,false},
-																			 {-MAP_SIZE, MAP_SIZE, 1000,true},
-	};
+	std::deque<BestTargetFilter> filters{};
+	Cell_t min_cell,max_cell;
+	map.getMapRange(CLEAN_MAP,&min_cell.x, &max_cell.x,&min_cell.y,&max_cell.y);
+	BestTargetFilter filters_case1{static_cast<int16_t>(cell_curr.y + 2), max_cell.y, 0, false};
+	BestTargetFilter filters_case1_1{cell_curr.y, static_cast<int16_t>(cell_curr.y + 1), 0, false};
+	BestTargetFilter filters_case2{min_cell.y, max_cell.y,1,false};
+	BestTargetFilter filters_case3{min_cell.y, static_cast<int16_t>(cell_curr.y - 2), 0, true};
+	BestTargetFilter filters_case3_1{static_cast<int16_t>(min_cell.y - 1), cell_curr.y, 0, true};
+	BestTargetFilter filters_case4{min_cell.y, max_cell.y,1,true};
+	BestTargetFilter filters_case5{cell_curr.y, max_cell.y, 1000,false};
+	BestTargetFilter filters_case6{min_cell.y, max_cell.y, 1000,true};
+	filters.push_back(filters_case1);
+	filters.push_back(filters_case1_1);
+
+	if(!map.getCell(CLEAN_MAP,cell_curr.x,cell_curr.y-2) == UNCLEAN)
+		filters.push_back(filters_case2);
+	filters.push_back(filters_case3);
+	filters.push_back(filters_case3_1);
+	filters.push_back(filters_case4);
+	filters.push_back(filters_case5);
+	filters.push_back(filters_case6);
+
 	for (auto &&filter : filters) {
 		printf("is towards Y+(%d),y_range(%d,%d),allow turn count(%d)\n",!filter.is_reverse_,filter.min_y_,filter.max_y_,filter.turn_count_);
 		PathList filtered_paths{};
 		std::copy_if(paths.begin(), paths.end(), std::back_inserter(filtered_paths), BestTargetFilter(filter));
 		if (!filtered_paths.empty()) {
 //			std::sort(filtered_paths.begin(), filtered_paths.end(), );
-			best_target = std::min_element(filtered_paths.begin(), filtered_paths.end(), MinYAndShortestPath(cell_curr.y, filter.is_reverse_,filter.turn_count_))->back();
+			auto best_path = std::min_element(filtered_paths.begin(), filtered_paths.end(), MinYAndShortestPath(cell_curr.y, filter.is_reverse_,filter.turn_count_));
+			printf("cell: ");
+			printf("best_path: ");
+			for (auto &&cell : *best_path) {
+				printf("{%d,%d},",cell.x,cell.y);
+			}
+			printf("\n");
+			best_target =  best_path->back();
 			printf("best_target(%d,%d)\n", best_target.x, best_target.y);
 			return true;
 		}

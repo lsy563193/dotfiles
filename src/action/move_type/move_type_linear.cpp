@@ -77,8 +77,8 @@ bool MoveTypeLinear::isCellReach()
 	if (std::abs(s_curr_p.x - target_point_.x) < CELL_SIZE/2 &&
 		std::abs(s_curr_p.y - target_point_.y) < CELL_SIZE/2)
 	{
-		ROS_INFO("%s, %d: MoveTypeLinear, reach the target cell (%d,%d), current angle(%d), target angle(%d).", __FUNCTION__, __LINE__,
-						 target_point_.toCell().x, target_point_.toCell().y, s_curr_p.th, target_point_.th);
+		ROS_INFO("%s, %d: MoveTypeLinear, reach the target cell (%d,%d), current angle(%lf), target angle(%lf).", __FUNCTION__, __LINE__,
+						 target_point_.toCell().x, target_point_.toCell().y, radian_to_degree(s_curr_p.th), radian_to_degree(target_point_.th));
 //		g_turn_angle = ranged_radian(new_dir - robot::instance()->getWorldPoseRadian());
 		return true;
 	}
@@ -91,11 +91,13 @@ bool MoveTypeLinear::isPoseReach()
 	// Checking if robot has reached target cell and target angle.
 //	PP_INFO();
 	auto target_point_ = dynamic_cast<ACleanMode*>(sp_mode_)->plan_path_.front();
-	if (isCellReach() && std::abs(getPosition().radianDiff(target_point_)) < degree_to_radian(20))
-	{
-		ROS_INFO("\033[1m""%s, %d: MoveTypeLinear, reach the target cell and pose(%d,%d,%d)""\033[0m", __FUNCTION__, __LINE__,
-				 target_point_.toCell().x, target_point_.toCell().y, target_point_.th);
-		return true;
+	if (isCellReach()) {
+		if (std::abs(getPosition().radianDiff(target_point_)) < degree_to_radian(20)) {
+			ROS_INFO("\033[1m""%s, %d: MoveTypeLinear, reach the target cell and pose(%d,%d,%d)""\033[0m", __FUNCTION__,
+							 __LINE__,
+							 target_point_.toCell().x, target_point_.toCell().y, target_point_.th);
+			return true;
+		}
 	}
 	return false;
 }
@@ -140,8 +142,8 @@ void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 			p_clean_mode->iterate_point_ = p_clean_mode->plan_path_.front();
 			p_clean_mode->plan_path_.pop_front();
 //			ROS_("target_xy(%f), curr_xy(%f),dis(%f)",target_xy, curr_xy, LINEAR_NEAR_DISTANCE);
-			ROS_ERROR("%s,%d,curr(%d,%d), next target_point(%d,%d), dir(%d)",
-					 __FUNCTION__,__LINE__,getPosition().toCell().x, getPosition().toCell().y, target_point_.toCell().x,target_point_.toCell().y,
+			ROS_ERROR("%s,%d,curr(%d,%d), next target_point(%d,%d,%lf), dir(%d)",
+					 __FUNCTION__,__LINE__,getPosition().toCell().x, getPosition().toCell().y, target_point_.toCell().x,target_point_.toCell().y,radian_to_degree(target_point_.th),
 								p_clean_mode->iterate_point_.dir);
 		}
 	}

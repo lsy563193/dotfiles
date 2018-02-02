@@ -335,7 +335,7 @@ bool ACleanMode::calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,boo
 //	for (const auto &target :points)
 //			ROS_WARN("points(%d):target(%lf,%lf),dis(%f)", points.size(), target.x, target.y, target.Distance({CHASE_X, 0}));
 //	ROS_WARN("points(%d):target(%lf,%lf)", points.size(), points.front().x, points.front().y);
-//	pubPointMarkers(&points, "base_link", "point marker");
+	pubPointMarkers(&points, "base_link", "point marker");
 
 	return true;
 }
@@ -516,12 +516,12 @@ void ACleanMode::pubLineMarker(const std::vector<LineABC> *lines)
 	line_marker.type = visualization_msgs::Marker::LINE_LIST;
 	line_marker.action= 0;//add
 	line_marker.lifetime=ros::Duration(0);
-	line_marker.scale.x = 0.05;
+	line_marker.scale.x = 0.03;
 	//line_marker.scale.y = 0.05;
 	//line_marker.scale.z = 0.05;
-	line_marker.color.r = 0.0;
+	line_marker.color.r = 1.0;
 	line_marker.color.g = 0.0;
-	line_marker.color.b = 1.0;
+	line_marker.color.b = 0.0;
 	line_marker.color.a = 1.0;
 	line_marker.header.frame_id = "/base_link";
 	line_marker.header.stamp = ros::Time::now();
