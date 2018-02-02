@@ -868,11 +868,12 @@ bool Lidar::mergeLine(std::vector<std::deque<Vector2<double>> > *groups, double 
 		(*groups).resize(dis);
 //		ROS_INFO("5");
 	}
-
+#if 0
 	for(auto &ite:(*groups)) {
 //		ROS_INFO("6");
 		ACleanMode::pubPointMarkers(&ite,"base_link","merge");
 	}
+#endif
 	return true;
 }
 

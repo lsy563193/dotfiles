@@ -461,6 +461,7 @@ bool CleanModeNav::updateActionInStateClean(){
 
 		auto start = getPosition().toCell();
 		auto delta_y = plan_path_.back().toCell().y - start.y;
+		ROS_INFO("y(%d,%d)",start.y, plan_path_.back().toCell().y);
 		ROS_INFO("%s,%d: path size(%u), old_dir_(%f), start_point_.dir(%d), bumper(%d), cliff(%d), lidar(%d), delta_y(%d)",
 						 __FUNCTION__, __LINE__, plan_path_.size(), old_dir_, iterate_point_.dir, ev.bumper_triggered,
 						 ev.cliff_triggered, ev.lidar_triggered, delta_y);
