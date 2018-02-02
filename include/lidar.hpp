@@ -43,17 +43,11 @@ public:
 	int8_t isScanOriginalReady();
 	int8_t isScanCompensateReady();
 
-	double getLidarDistance(uint16_t angle);
-
 	bool lineFit(const std::deque<Vector2<double>> &points, double &a, double &b, double &c);
-
 	bool splitLine(const std::vector<Vector2<double>> &points, double consecutive_lim, int points_count_lim);
-
 	//bool splitLine2nd(const std::vector<std::vector<Vector2<double>> >	&groups, double t_max, int points_count_lim);
 	bool splitLine2nd(std::vector<std::deque<Vector2<double>> > *groups, double t_max, int points_count_lim);
-
 	bool mergeLine(std::vector<std::deque<Vector2<double>> > *groups, double t_lim , bool is_align);
-
 	bool fitLineGroup(std::vector<std::deque<Vector2<double>> > *groups, double dis_lim , bool is_align);
 
 	void pubFitLineMarker(double a, double b, double c, double y1, double y2);
@@ -87,6 +81,8 @@ public:
 	void lidarXYPointCb(const visualization_msgs::Marker &point_marker);
 	static void setLidarScanDataOriginal(const sensor_msgs::LaserScan::ConstPtr &scan);
 	static sensor_msgs::LaserScan getLidarScanDataOriginal(void);
+
+	double getLidarDistance(int16_t angle);
 private:
 
 	// switch_ is the target status of lidar.

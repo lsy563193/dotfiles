@@ -399,7 +399,6 @@ bool Lidar::getAlignAngle(const std::vector<LineABC> *lines ,float *align_angle)
 	return false;
 }
 
-
 bool Lidar::lidarGetFitLine(double begin, double end, double range, double dis_lim, double *line_radian, double *distance,bool is_left,bool is_align)
 {
 	if(isScanCompensateReady() == 0)
@@ -817,24 +816,6 @@ void Lidar::pubFitLineMarker(double a, double b, double c, double y1, double y2)
 	fit_line_marker.points.push_back(lidar_points_);
 //	robot::instance()->pubFitLineMarker(fit_line_marker);
 }
-/*
- * @author mengshige1988@qq.com
- * @brief according giveing angle return lidar range data
- * @angle angle from 0 to 359
- * @return distance value (meter)
- * */
-double Lidar::getLidarDistance(uint16_t angle){
-	if(angle >359 || angle < 0){
-		ROS_WARN("%s,%d,angle should be in range 0 to 359,input angle = %u",__FUNCTION__,__LINE__,angle);
-		return 0;
-	}
-	else{
-		scanLinear_mutex_.lock();
-		auto tmp_scan_data = lidarScanData_linear_;
-		scanLinear_mutex_.unlock();
-		return tmp_scan_data.ranges[angle];
-	}
-}
 
 /*----set lidar marker according to direction-----*/
 static uint8_t setLidarMarkerAcr2Dir(double X_MIN,double X_MAX,int angle_from,int angle_to,int dx,int dy,const sensor_msgs::LaserScan *scan_range,uint8_t *lidar_status,uint8_t obs_status)
@@ -1249,6 +1230,61 @@ int Lidar::compLaneDistance()
 	if(x_front_min == x_back_min)
 		ret = 0;
 	return ret;
+}
+
+/*
+ * param1 angle range(179~-179)
+ * return distance
+ */
+double Lidar::getLidarDistance(int16_t angle)
+{
+	double distance = 0.0f;
+	if(angle <= -180 || angle >= 180){
+		return distance;
+	}
+	lidarXYPoint_mutex_.lock();
+	std::vector<geometry_msgs::Point>  fixed_points = lidarXY_points;
+	lidarXYPoint_mutex_.unlock();
+	geometry_msgs::Point point = fixed_points[angle];
+	int16_t find_angle;
+	const int offset = 2;
+	for(auto& point:fixed_points){
+		if(point.x >= 0){
+			if(point.y < 0){
+				find_angle = (int16_t)radian_to_degree(atan(point.x/point.y));
+				find_angle = -90 - find_angle;
+			}
+			else if(point.y > 0){
+				find_angle = (int16_t)radian_to_degree(atan(point.x/point.y));
+				find_angle = 90 - find_angle;
+			}
+			else if(point.y == 0)
+				find_angle = 0;
+
+		}
+		else if(point.x < 0)
+		{
+			if(point.y < 0){
+				find_angle = (int16_t)radian_to_degree(atan(point.x/point.y));
+				find_angle = -90 - find_angle;
+			}
+			else if(point.y > 0){
+				find_angle = (int16_t)radian_to_degree(atan(point.x/point.y));
+				find_angle = 90 - find_angle;
+			}
+			else if(point.y == 0)
+				find_angle = -179;
+		}
+		int diff_angle = abs(find_angle - angle);
+		if(diff_angle > 179)
+			diff_angle = 359 - diff_angle; 
+		if(diff_angle <= offset){
+			distance = sqrt( pow(point.x, 2.0) + pow(point.y, 2.0) );
+			break;
+		}
+	}
+	ROS_INFO("\033[1;40;32m%s,%d,find_angle = %d, input angle %d,distance = %f\033[0m",__FUNCTION__,__LINE__,find_angle,angle,distance);
+	return 	distance;
 }
 
 double Lidar::getObstacleDistance(uint8_t dir, double range)

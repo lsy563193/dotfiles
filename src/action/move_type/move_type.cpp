@@ -167,19 +167,13 @@ int IMoveType::countRconTriggered(uint32_t rcon_value)
 	return ret;
 }
 
-bool IMoveType::isRconStop(bool back_from_charger_,Cell_t charger_pose)
+bool IMoveType::isRconStop()
 {
 	bool ret = false;
 	ev.rcon_triggered = countRconTriggered(c_rcon.getNavRcon());
-	if(back_from_charger_){
-		const int16_t NOT_DETECT_RANGE = 20;//cells
-		int16_t cell_distance = getPosition().toCell().Distance(charger_pose);
-		if( cell_distance < NOT_DETECT_RANGE)
-			return ret;
-	}
 	if(ev.rcon_triggered)
 	{
-		ROS_WARN("%s %d: Rcon triggered and stop.", __FUNCTION__, __LINE__);
+		INFO_PURPLE("Rcon triggered and stop.");
 		ret = true;
 	}
 
