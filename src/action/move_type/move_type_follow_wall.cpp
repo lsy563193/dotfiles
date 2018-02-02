@@ -118,40 +118,35 @@ bool MoveTypeFollowWall::isFinish()
 int16_t MoveTypeFollowWall::bumperTurnAngle()
 {
 	int16_t turn_angle{};
-//	static int bumper_jam_cnt_ = 0;
-	auto get_wheel_step = is_left_ ? &Wheel::getRightStep : &Wheel::getLeftStep;
-	auto get_obs = (is_left_) ? &Obs::getLeft : &Obs::getRight;
-	auto get_obs_value = (is_left_) ? &Obs::getLeftTrigValue : &Obs::getRightTrigValue;
+	auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
+	int dijkstra_cleaned_count = 0;
+	Cell_t target;
 	auto status = ev.bumper_triggered;
+	auto get_obs = (is_left_) ? obs.getLeft() : obs.getRight();
 	auto diff_side = (is_left_) ? BLOCK_RIGHT : BLOCK_LEFT;
 	auto same_side = (is_left_) ? BLOCK_LEFT : BLOCK_RIGHT;
+	p_mode->clean_path_algorithm_->findTargetUsingDijkstra(p_mode->clean_map_,getPosition().toCell(),target,dijkstra_cleaned_count);
 
 	if (status == BLOCK_ALL)
 	{
-		turn_angle = -60;
-//		bumper_jam_cnt_ = (wheel.*get_wheel_step)() < 2000 ? ++bumper_jam_cnt_ : 0;
-//		g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
+		if(p_mode->isStateTrapped())
+			turn_angle = dijkstra_cleaned_count < TRAP_IN_SMALL_AREA_COUNT ? -50 : -55;
+		else
+			turn_angle = -60;
 	} else if (status == diff_side)
 	{
-		turn_angle = -85;
-//		g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
+		if(p_mode->isStateTrapped())
+			turn_angle = dijkstra_cleaned_count < TRAP_IN_SMALL_AREA_COUNT ? -75 : -80;
+		else
+			turn_angle = -85;
 	} else if (status == same_side)
 	{
-//		g_wall_distance = bumper_turn_factor * g_wall_distance;
-//		if(g_wall_distance < 330)
-//			g_wall_distance = WALL_DISTANCE_LOW_LIMIT;
-		turn_angle = -30;
-//		if (!cs.is_trapped()) {
-//			turn_angle = (bumper_jam_cnt_ >= 3 || (obs.*get_obs)() <= (obs.*get_obs_value)()) ? -180 : -280;
-//		} else {
-//			turn_angle = (bumper_jam_cnt_ >= 3 || (obs.*get_obs)() <= (obs.*get_obs_value)()) ? -100 : -200;
-//		}
-		//ROS_INFO("%s, %d: turn_angle(%d)",__FUNCTION__,__LINE__, turn_angle);
-
-//		bumper_jam_cnt_ = (wheel.*get_wheel_step)() < 2000 ? ++bumper_jam_cnt_ : 0;
+		if(p_mode->isStateTrapped()){
+			turn_angle = get_obs > (obs.getLeftTrigValue() + 250) || dijkstra_cleaned_count < TRAP_IN_SMALL_AREA_COUNT ? -10 : -20;
+		}else{
+			turn_angle = get_obs > (obs.getLeftTrigValue() + 250) ? -18 : -28;
+		}
 	}
-	//ROS_INFO("%s %d: g_wall_distance in bumper_turn_angular: %d", __FUNCTION__, __LINE__, g_wall_distance);
-	wheel.resetStep();
 	if(!is_left_)
 		turn_angle = -turn_angle;
 	return turn_angle;
@@ -276,11 +271,11 @@ bool MoveTypeFollowWall::lidarTurnRadian(double &turn_radian)
 	wheel.stop();
 	lidar_angle_param param;
 	if (ev.bumper_triggered) {
-		if (is_left_ ^ (ev.bumper_triggered == BLOCK_LEFT)) {
+		if (is_left_ ^ (ev.bumper_triggered == BLOCK_LEFT)) {//hit the different side, turn angle limit
 			param.radian_min = degree_to_radian(45);
 			param.radian_max = degree_to_radian(180);
 		}
-		else {
+		else {//hit the same side, turn angle limit
 			param.radian_min = degree_to_radian(18);
 			param.radian_max = degree_to_radian(90);
 		}

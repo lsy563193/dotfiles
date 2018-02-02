@@ -1321,7 +1321,7 @@ bool ACleanMode::updateActionInStateTrapped()
 			ROS_ERROR("p_mt->closed_count_ >= closed_count_limit_");
 			trapped_closed_or_isolate = true;
 			action_i_ = ac_null;
-			genNextAction();
+//			genNextAction();
 			ROS_WARN("%s,%d:follow clean finish", __func__, __LINE__);
 		}
 	}
@@ -1329,7 +1329,7 @@ bool ACleanMode::updateActionInStateTrapped()
 //		out_of_trapped = false;
 		ROS_ERROR("out_of_trapped");
 		action_i_ = ac_null;
-		genNextAction();
+//		genNextAction();
 	}
 	else if (robot_timer.trapTimeout(ESCAPE_TRAPPED_TIME)) {
 			action_i_ = ac_null;
