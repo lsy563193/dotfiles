@@ -335,7 +335,7 @@ bool ACleanMode::calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,boo
 //	for (const auto &target :points)
 //			ROS_WARN("points(%d):target(%lf,%lf),dis(%f)", points.size(), target.x, target.y, target.Distance({CHASE_X, 0}));
 //	ROS_WARN("points(%d):target(%lf,%lf)", points.size(), points.front().x, points.front().y);
-//	pubPointMarkers(&points, "base_link", "point marker");
+	pubPointMarkers(&points, "base_link", "point marker");
 
 	return true;
 }
