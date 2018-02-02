@@ -340,13 +340,15 @@ public:
 
 bool NavCleanPathAlgorithm::filterPathsToSelectTarget(GridMap &map, PathList &paths, const Cell_t &cell_curr, Cell_t &best_target) {
 	std::deque<BestTargetFilter> filters{};
-	BestTargetFilter filters_case1{(int16_t)(cell_curr.y+2), MAP_SIZE, 0, false};
+	Cell_t min_cell,max_cell;
+	map.getMapRange(CLEAN_MAP,&min_cell.x, &max_cell.x,&min_cell.y,&max_cell.y);
+	BestTargetFilter filters_case1{(int16_t)(cell_curr.y+2), max_cell.y, 0, false};
 	BestTargetFilter filters_case1_1{cell_curr.y,(int16_t)(cell_curr.y+1) ,0,false};
-	BestTargetFilter filters_case2{-MAP_SIZE, MAP_SIZE,1,false};
-	BestTargetFilter filters_case3{-MAP_SIZE, cell_curr.y,0,true};
-	BestTargetFilter filters_case4{MAP_SIZE, MAP_SIZE,1,true};
-	BestTargetFilter filters_case5{cell_curr.y, MAP_SIZE, 1000,false};
-	BestTargetFilter filters_case6{MAP_SIZE, MAP_SIZE, 1000,true};
+	BestTargetFilter filters_case2{min_cell.y, max_cell.y,1,false};
+	BestTargetFilter filters_case3{min_cell.y, cell_curr.y,0,true};
+	BestTargetFilter filters_case4{min_cell.y, max_cell.y,1,true};
+	BestTargetFilter filters_case5{cell_curr.y, max_cell.y, 1000,false};
+	BestTargetFilter filters_case6{min_cell.y, max_cell.y, 1000,true};
 	filters.push_back(filters_case1);
 	filters.push_back(filters_case1_1);
 
@@ -364,6 +366,7 @@ bool NavCleanPathAlgorithm::filterPathsToSelectTarget(GridMap &map, PathList &pa
 		if (!filtered_paths.empty()) {
 //			std::sort(filtered_paths.begin(), filtered_paths.end(), );
 			auto best_path = std::min_element(filtered_paths.begin(), filtered_paths.end(), MinYAndShortestPath(cell_curr.y, filter.is_reverse_,filter.turn_count_));
+			printf("cell: ");
 			printf("best_path: ");
 			for (auto &&cell : *best_path) {
 				printf("{%d,%d},",cell.x,cell.y);
