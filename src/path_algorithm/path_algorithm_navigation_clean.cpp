@@ -37,16 +37,21 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 	Cells filtered_targets = filterAllPossibleTargets(map, curr_cell, b_map);
 
 	//Step 3: Generate the COST_MAP for map and filter plan_path that are unreachable.
-	Cells reachable_targets = getReachableTargets(map, curr_cell, filtered_targets);
-	ROS_INFO("%s %d: After generating COST_MAP, Get %lu reachable plan_path.", __FUNCTION__, __LINE__, reachable_targets.size());
-	if (reachable_targets.size() != 0)
-		displayTargetList(reachable_targets);
+	map.generateSPMAP(curr_cell, filtered_targets);
+
+	filtered_targets.erase(std::remove_if(filtered_targets.begin(), filtered_targets.end(),[&map](Cell_t it){
+		auto cost = map.getCell(COST_MAP, it.x, it.y);
+		return cost == COST_NO || cost == COST_HIGH;
+	}));
+	ROS_INFO("%s %d: After generating COST_MAP, Get %lu reachable plan_path.", __FUNCTION__, __LINE__, filtered_targets.size());
+	if (filtered_targets.size() != 0)
+		displayTargetList(filtered_targets);
 	else
 		// Now plan_path is empty.
 		return false;
 
 	//Step 4: Trace back the path of these plan_path in COST_MAP.
-	PathList paths_for_reachable_targets = tracePathsToTargets(map, reachable_targets, curr_cell);
+	PathList paths_for_reachable_targets = tracePathsToTargets(map, filtered_targets, curr_cell);
 
 	//Step 5: Filter paths to get the best target.
 	Cell_t best_target;
@@ -199,27 +204,6 @@ Cells NavCleanPathAlgorithm::filterAllPossibleTargets(GridMap &map, const Cell_t
 	displayTargetList(filtered_targets);
 
 	return filtered_targets;
-}
-
-Cells NavCleanPathAlgorithm::getReachableTargets(GridMap &map, const Cell_t &curr_cell, Cells &possible_targets)
-{
-	map.generateSPMAP(curr_cell, possible_targets);
-	Cells reachable_targets{};
-	for (auto it = possible_targets.begin(); it != possible_targets.end();)
-	{
-		CellState it_cost = map.getCell(COST_MAP, it->x, it->y);
-		if (it_cost == COST_NO || it_cost == COST_HIGH)
-		{
-			it = possible_targets.erase(it);
-			continue;
-		}
-		else
-		{
-			reachable_targets.push_back(*it);
-			it++;
-		}
-	}
-	return reachable_targets;
 }
 
 PathList NavCleanPathAlgorithm::tracePathsToTargets(GridMap &map, const Cells &target_list, const Cell_t& start)

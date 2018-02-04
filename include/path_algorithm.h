@@ -169,20 +169,6 @@ private:
 	 * @author Patrick Chow
 	 * @last modify by Austin Liu
 	 *
-	 * This function is for filtering targets with their cost in the COST_MAP.
-	 *
-	 * @param: GridMap map, it will use it's CLEAN_MAP data.
-	 * @param: Cell_t curr_cell, the current cell of robot.
-	 * @param: Cells possible_targets, input target list.
-	 *
-	 * @return: Cells, a deque of reachable targets.
-	 */
-	Cells getReachableTargets(GridMap &map, const Cell_t &curr_cell, Cells &possible_targets);
-
-	/*
-	 * @author Patrick Chow
-	 * @last modify by Austin Liu
-	 *
 	 * This function is for tracing the path from start cell to targets.
 	 *
 	 * @param: GridMap map, it will use it's CLEAN_MAP data.
