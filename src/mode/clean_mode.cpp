@@ -745,8 +745,9 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 	float dist = 0.0;
 	float len = 0.0;
 	const int MAX_CNT = 2;
-	const float DETECT_RANGE_MAX = CELL_SIZE*8;
+	const float DETECT_RANGE_MAX = CELL_SIZE*10;
 	const float DETECT_RANGE_MIN = CELL_SIZE*2;
+	const float RCON_1 = 0,RCON_2 = 22.0,RCON_3 = 45.0 ,RCON_4 = 78.0 ,RCON_5 = 130.0;
 	const int OFFSET = 1;
 	/*-- here we only detect top signal from charge stub --*/
 	//ROS_INFO("%s,%d,rcon_value 0x%x",__FUNCTION__,__LINE__,rcon_value & RconAll_Home_T);
@@ -756,46 +757,48 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 			if( (rcon_value & RconFR_HomeT) || (rcon_value & RconFL_HomeT) ){ //fl & fr sensor
 				if((cnt[flfr]++) >= MAX_CNT){
 					cnt[flfr] = 0;
-					cd = 0;
+					cd = RCON_1;
 				}
 				else{
 					return false;
 				}
 			}
-			else if( (rcon_value & RconFL_HomeT ) && (rcon_value & RconFL_HomeT)  && !(rcon_value & RconAll_R_HomeT)){//fl & fl2 sensor
+			/*
+			else if( (rcon_value & RconFL_HomeT) && (rcon_value & RconFL2_HomeT)  && !(rcon_value & RconAll_R_HomeT)){//fl & fl2 sensor
 				if((cnt[flfl2]++) >= MAX_CNT){
 					cnt[flfl2] = 0;
-					cd = 21.0;
+					cd = RCON_2;
 				}
 				else{
 					return false;
 				}
 			}
-			else if( (rcon_value & RconFR_HomeT ) && (rcon_value & RconFR2_HomeT) && !(rcon_value & RconAll_L_HomeT)){//fr & fr2 sensor
+			else if( (rcon_value & Rcon_FR_HomeT) && (rcon_value & RconFR2_HomeT) && !(rcon_value & RconAll_L_HomeT)){//fr & fr2 sensor
 				if((cnt[frfr2]++) >= MAX_CNT){
 					cnt[frfr2] = 0;
-					cd = -21.0;
+					cd = -RCON_2;
 				}
 				else{
 					return false;
 				}
 			}
-			else if( (rcon_value & RconFL2_HomeT) && !(rcon_value & RconAll_R_HomeT) //fl2 sensor
+			*/
+			else if( rcon_value & RconFL2_HomeT  && !(rcon_value & RconL_HomeT) && !(rcon_value & RconAll_R_HomeT) //fl2 sensor
 						&& !(rcon_value & RconBL_HomeT) )//to avoid charger signal reflection from other flat
 			{
 				if((cnt[fl2]++) >= MAX_CNT){
 					cnt[fl2] = 0;
-					cd = 44.0;
+					cd = RCON_3;
 				}
 				else{
 					return false;
 				}
 			}
-			else if( (rcon_value & RconFR2_HomeT) && !(rcon_value & RconAll_L_HomeT) //fr2 sensor
+			else if( (rcon_value & RconFR2_HomeT && !(rcon_value & RconR_HomeT) ) && !(rcon_value & RconAll_L_HomeT) //fr2 sensor
 						&& !(rcon_value & RconBR_HomeT) ){//to avoid charger signal reflection from other flat
 				if((cnt[fr2]++) >= MAX_CNT){
 					cnt[fr2] = 0;
-					cd = -44.0;
+					cd = -RCON_3;
 				}
 				else{
 					return false;
@@ -805,7 +808,7 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 			else if( (rcon_value & RconL_HomeT) && (rcon_value & RconFL2_HomeT) && !(rcon_value & RconAll_R_HomeT) ){//fl2 & l sensor
 				if((cnt[fl2l]++) >= MAX_CNT){
 					cnt[fl2l] = 0;
-					cd = 65;
+					cd = 60;
 				}
 				else{
 					return false;
@@ -814,26 +817,26 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 			else if( (rcon_value & RconR_HomeT) && (rcon_value & RconFR2_HomeT) && !(rcon_value & RconAll_L_HomeT) ){//fr2 & r sensor
 				if((cnt[fr2r]++) >= MAX_CNT){
 					cnt[fr2r]=0;
-					cd = -65;
+					cd = -60;
 				}
 				else{
 					return false;
 				}
 			}
 			*/
-			else if( (rcon_value & RconL_HomeT) && !(rcon_value & RconAll_R_HomeT) ){//l sensor
+			else if( (rcon_value & RconL_HomeT ) && !(rcon_value & RconFL2_HomeT) && !(rcon_value & RconAll_R_HomeT) ){//l sensor
 				if((cnt[l]++) >= MAX_CNT){
 					cnt[l] = 0;
-					cd = 79;
+					cd = RCON_4;
 				}
 				else{
 					return false;
 				}
 			}
-			else if( (rcon_value & RconR_HomeT) && !(rcon_value & RconAll_L_HomeT) ){//r sensor
+			else if( (rcon_value & RconR_HomeT ) && !(rcon_value & RconFR2_HomeT) && !(rcon_value & RconAll_L_HomeT) ){//r sensor
 				if((cnt[r]++) >= MAX_CNT){
 					cnt[r]=0;
-					cd = -79;
+					cd = -RCON_4;
 				}
 				else{
 					return false;
@@ -862,7 +865,7 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 			else if( (rcon_value & RconBL_HomeT) && !(rcon_value & RconAll_R_HomeT) ){//bl sensor
 				if((cnt[bl]++) >= MAX_CNT){
 					cnt[bl] = 0;
-					cd = 133;
+					cd = RCON_5;
 				}
 				else{
 					return false;
@@ -871,7 +874,7 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 			else if( (rcon_value & RconBR_HomeT) && !(rcon_value & RconAll_L_HomeT) ){//br sensor
 				if((cnt[br]++) >= MAX_CNT){
 					cnt[br] = 0;
-					cd = -133;
+					cd = -RCON_5;
 				}
 				else{
 					return false;
@@ -902,7 +905,7 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 				return true;
 		}
 		else{
-			ROS_INFO("\033[42;37m%s,%d,cd %f, rcon_state = 0x%x, distance too far or too near\033[0m",__FUNCTION__,__LINE__,cd,rcon_value);
+			ROS_INFO("\033[42;37m%s,%d,cd %f, rcon_state = 0x%x, distance too far or too near, dist = %f\033[0m",__FUNCTION__,__LINE__,cd,rcon_value,dist);
 			return false;
 		}
 	} else{
