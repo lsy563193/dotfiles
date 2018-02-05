@@ -132,11 +132,11 @@ bool MovementFollowWallLidar::isFinish() {
 	return sp_mt_->shouldMoveBack() || sp_mt_->shouldTurn() || sp_mt_->RconTrigger();
 }
 
-bool MovementFollowWallLidar::isNear() {
+uint8_t MovementFollowWallLidar::isNear() {
 //	if(tmp_targets.empty())
 //	auto obs_dis_front = lidar.getObstacleDistance(0,ROBOT_RADIUS);
 //	ROS_ERROR("obs_dis_front(%d)",obs_dis_front);
 //	return obs_dis_front < 0.25;
-	return false;
+	return 0;
 }
 

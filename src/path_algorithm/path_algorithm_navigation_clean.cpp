@@ -37,16 +37,21 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 	Cells filtered_targets = filterAllPossibleTargets(map, curr_cell, b_map);
 
 	//Step 3: Generate the COST_MAP for map and filter plan_path that are unreachable.
-	Cells reachable_targets = getReachableTargets(map, curr_cell, filtered_targets);
-	ROS_INFO("%s %d: After generating COST_MAP, Get %lu reachable plan_path.", __FUNCTION__, __LINE__, reachable_targets.size());
-	if (reachable_targets.size() != 0)
-		displayTargetList(reachable_targets);
+	map.generateSPMAP(curr_cell, filtered_targets);
+
+	filtered_targets.erase(std::remove_if(filtered_targets.begin(), filtered_targets.end(),[&map](Cell_t it){
+		auto cost = map.getCell(COST_MAP, it.x, it.y);
+		return cost == COST_NO || cost == COST_HIGH;
+	}),filtered_targets.end());
+	ROS_INFO("%s %d: After generating COST_MAP, Get %lu reachable plan_path.", __FUNCTION__, __LINE__, filtered_targets.size());
+	if (filtered_targets.size() != 0)
+		displayTargetList(filtered_targets);
 	else
 		// Now plan_path is empty.
 		return false;
 
 	//Step 4: Trace back the path of these plan_path in COST_MAP.
-	PathList paths_for_reachable_targets = tracePathsToTargets(map, reachable_targets, curr_cell);
+	PathList paths_for_reachable_targets = tracePathsToTargets(map, filtered_targets, curr_cell);
 
 	//Step 5: Filter paths to get the best target.
 	Cell_t best_target;
@@ -143,11 +148,40 @@ Cells NavCleanPathAlgorithm::findTargetInSameLane(GridMap &map, const Cell_t &cu
 
 	return path;
 }
+class FilterTarget{
+public:
+	FilterTarget(const Cell_t& curr){
+		curr_ = curr;
+	}
+	void operator()(const Cell_t &it)
+	{
+		if(!tmps_.empty()) {
+			if (it.y != tmps_.back().y) {
+				is_continue_ = false;
+			}
+			else if (it.x - tmps_.back().x == 1) {
+				if (is_continue_ && curr_ != it)
+					tmps_.pop_back();
+				is_continue_ = !is_continue_ && curr_ != it;
+			}
+		}
+		tmps_.push_back(it);
+	}
+	operator Cells()
+	{
+		return tmps_;
+	}
+
+private:
+	bool is_continue_{};
+	Cells tmps_{};
+	Cell_t curr_{};
+};
 
 Cells NavCleanPathAlgorithm::filterAllPossibleTargets(GridMap &map, const Cell_t &curr_cell, BoundingBox2 &b_map)
 {
 	ROS_INFO("%s %d: Find all possible targets.", __FUNCTION__, __LINE__);
-	Cells possible_target_list{};
+	Cells targets{};
 
 	auto b_map_copy = b_map;
 	b_map_copy.pos_ = b_map.min;
@@ -161,65 +195,21 @@ Cells NavCleanPathAlgorithm::filterAllPossibleTargets(GridMap &map, const Cell_t
 		for (auto i = 0; i < 4; i++) {
 			neighbor = cell + cell_direction_index_[i];
 			if (map.getCell(CLEAN_MAP, neighbor.x, neighbor.y) == UNCLEAN && map.isBlockAccessible(neighbor.x, neighbor.y))
-				possible_target_list.push_back(neighbor);
+				targets.push_back(neighbor);
 		}
 	}
 
-	std::sort(possible_target_list.begin(),possible_target_list.end(),[](Cell_t l,Cell_t r){
+	std::sort(targets.begin(),targets.end(),[](Cell_t l,Cell_t r){
 		return (l.y < r.y || (l.y == r.y && l.x < r.x));
 	});
 
-	displayTargetList(possible_target_list);
+	displayTargetList(targets);
 
-	ROS_INFO("%s %d: Filter targets in the same line.", __FUNCTION__, __LINE__);
-	Cells filtered_targets{};
-	/* Filter the targets. */
-	for(;!possible_target_list.empty();) {
-		auto y = possible_target_list.front().y;
-		Cells tmp_list{};
-		std::remove_if(possible_target_list.begin(), possible_target_list.end(), [&y, &tmp_list](Cell_t &it) {
-			if (it.y == y && (tmp_list.empty() || (it.x - tmp_list.back().x == 1))) {
-				tmp_list.push_back(it);
-				return true;
-			}
-			return false;
-		});
-		possible_target_list.resize(possible_target_list.size() - tmp_list.size());
-		if (tmp_list.size() > 2) {
-			tmp_list.erase(std::remove_if(tmp_list.begin() + 1, tmp_list.end() - 1, [&curr_cell](Cell_t &it) {
-				return it.x != curr_cell.x;
-			}), tmp_list.end() - 1);
-		}
-		for(const auto& it:tmp_list){
-			filtered_targets.push_back(it);
-		};
-//		ROS_WARN("~%s %d: Filter targets in the same line.", __FUNCTION__, __LINE__);
-	}
+	targets = std::for_each(targets.begin(), targets.end(),FilterTarget(curr_cell));
 
-	displayTargetList(filtered_targets);
+	displayTargetList(targets);
 
-	return filtered_targets;
-}
-
-Cells NavCleanPathAlgorithm::getReachableTargets(GridMap &map, const Cell_t &curr_cell, Cells &possible_targets)
-{
-	map.generateSPMAP(curr_cell, possible_targets);
-	Cells reachable_targets{};
-	for (auto it = possible_targets.begin(); it != possible_targets.end();)
-	{
-		CellState it_cost = map.getCell(COST_MAP, it->x, it->y);
-		if (it_cost == COST_NO || it_cost == COST_HIGH)
-		{
-			it = possible_targets.erase(it);
-			continue;
-		}
-		else
-		{
-			reachable_targets.push_back(*it);
-			it++;
-		}
-	}
-	return reachable_targets;
+	return targets;
 }
 
 PathList NavCleanPathAlgorithm::tracePathsToTargets(GridMap &map, const Cells &target_list, const Cell_t& start)

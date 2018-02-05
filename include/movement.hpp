@@ -37,7 +37,7 @@ protected:
 
 class AMovementFollowPoint:public IMovement{
 public:
-	virtual bool isNear()=0;
+	virtual uint8_t isNear()=0;
 	virtual Point_t calcTmpTarget()=0;
 	bool isFinish() override ;
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed) override ;
@@ -115,8 +115,15 @@ public:
 	MovementFollowPointLinear();
 //	~MovementFollowPointLinear(){ };
 	bool isFinish() override;
-
-	bool isNear() override;
+	/**
+	* @brief judge is the robot is close to the obstacle and speed down
+	*
+	* @return
+	*        -<em>0</em> no obstacle
+	*        -<em>1</em> exist obstacle, speed down level is 1, for obs and laser
+	*        -<em>2</em> exist obstacle, speed down level is 2, for slam map
+	*/
+	uint8_t isNear() override;
 //	void setTarget();
 
 	Point_t calcTmpTarget() override ;
@@ -185,7 +192,7 @@ public:
 	Points _calcTmpTarget();
 
 	bool isFinish() override ;
-	bool isNear() override ;
+	uint8_t isNear() override ;
 private:
 	Points virtual_targets_{};
 	Points lidar_targets_{};

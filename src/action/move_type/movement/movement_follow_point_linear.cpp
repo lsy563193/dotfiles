@@ -61,18 +61,20 @@ bool MovementFollowPointLinear::isFinish()
 	return AMovementFollowPoint::isFinish() || sp_mt_->shouldMoveBack() || sp_mt_->isLidarStop();
 }
 
-bool MovementFollowPointLinear::isNear()
+uint8_t MovementFollowPointLinear::isNear()
 {
 	bool near_blocked_in_slam_map = slam_grid_map.isFrontBlocked();
 	auto obstacle_distance_front = lidar.getObstacleDistance(0,ROBOT_RADIUS);
 	auto b_obs = obs.getStatus() > 0;
 	auto b_lidar = (obstacle_distance_front < 0.25);
 	auto b_map = near_blocked_in_slam_map;
-	if (b_obs || b_lidar || b_map) {
+	if (b_obs || b_lidar) {
 //		ROS_WARN("slowdown: obs(%d), lidar(%d), map(%d)", b_obs, b_lidar, b_map);
-		return true;
+		return 1;
+	} else if (b_map){
+		return 2;
 	} else {
-		return false;
+		return 0;
 	}
 }
 
