@@ -18,10 +18,15 @@
  *
  * Current containing test items:
  * 1. Speaker.
- * 2. Serial port.
- * 3. USB device.
- * 4. Power supply.
- * 5. Flash and RAM.
+ * 2. RAM.
+ * 3. Flash.
+ * 4. Serial port.
+ * 5. Power supply.
+ * 6. WIFI module.
+ * 7. Lidar.
+ * 8. Lidar bumper.
+ * (9. USB?)
+ * 10. Main board hardware.
  *
  */
 void x900_functional_test(std::string serial_port, int baud_rate);
@@ -30,6 +35,16 @@ void x900_functional_test(std::string serial_port, int baud_rate);
  * Dead loop for error.
  */
 void error_loop();
+
+/*
+ * Test RAM.
+ */
+bool RAM_test();
+
+/*
+ * Test flash.
+ */
+bool flash_test();
 
 /*
  * Test serial port.
@@ -47,7 +62,12 @@ bool usb_test(std::string dev_path, std::string fs_type, int write_length);
 bool power_supply_test();
 
 /*
+ * Test for hardware on main board.
+ */
+bool main_board_test();
+
+/*
  * Test for memory device.
  */
-bool memory_test();
+//bool memory_test();
 #endif
