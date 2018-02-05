@@ -16,7 +16,7 @@ class APathAlgorithm
 public:
 	virtual bool generatePath(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &plan_path) = 0;
 
-	virtual bool checkTrapped(GridMap &map, const Cell_t &curr_cell) {};
+	virtual bool checkTrapped(GridMap &map, const Cell_t &curr_cell) {return true;};
 
 	Points cells_generate_points(Cells &path);
 	/*
