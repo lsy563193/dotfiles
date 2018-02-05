@@ -484,7 +484,7 @@ bool CleanModeNav::updateActionInStateClean(){
 			}
 			else {//isYAxis(old_dir_)
 				if (plan_path_.size() <= 2 && delta_x != 0) {
-					bool is_left = isPos(old_dir_) ^ delta_x > 0;
+					bool is_left = isPos(old_dir_) ^ delta_x < 0;
 					action_i_ = is_left ? ac_follow_wall_left : ac_follow_wall_right;
 				}
 				else {
