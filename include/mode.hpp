@@ -492,6 +492,7 @@ public:
 	int closed_count_limit_{2};
 	int isolate_count_{};
 	int isolate_count_limit_{3};
+	bool is_trapped_{false};
 	State *sp_state{};
 	State* getState() const {
 		return sp_state;

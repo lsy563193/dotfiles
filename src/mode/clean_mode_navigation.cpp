@@ -503,6 +503,7 @@ void CleanModeNav::switchInStateClean() {
 		ROS_WARN("%s,%d: enter state trapped",__FUNCTION__,__LINE__);
 		sp_saved_states.push_back(sp_state);
 		sp_state = state_trapped;
+		is_trapped_ = true;
 		is_isolate = true;
 		is_closed = true;
 		closed_count_ = 0;
