@@ -94,6 +94,7 @@ bool MoveTypeFollowWall::isFinish()
 				}
 				resetTriggeredValue();
 			}
+			state_turn = false;
 		}
 		else if (movement_i_ == mm_rcon)
 		{
@@ -353,7 +354,7 @@ double MoveTypeFollowWall::getTurnRadianByEvent()
 double MoveTypeFollowWall::getTurnRadian(bool use_target_radian)
 {
 	double  turn_radian{};
-	if(state_turn && movement_i_ == mm_forward){
+	if(state_turn){
 		state_turn = false;
 		auto diff = boost::dynamic_pointer_cast<AMovementFollowPoint>(sp_movement_)->radian_diff;
 		ROS_INFO("%s %d: Use radian_diff(%f)", __FUNCTION__, __LINE__, diff);
