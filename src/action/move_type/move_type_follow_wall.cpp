@@ -421,7 +421,7 @@ bool MoveTypeFollowWall::isOverOriginLine(GridMap &map)
 
 bool MoveTypeFollowWall::isNewLineReach(GridMap &map)
 {
-	auto target_point_ = dynamic_cast<ACleanMode*>(sp_mode_)->plan_path_.front();
+	auto target_point_ = dynamic_cast<ACleanMode*>(sp_mode_)->plan_path_.back();
 	auto s_curr_p = getPosition();
 	auto ret = false;
 	auto is_pos_dir = target_point_.y - start_point_.y > 0;

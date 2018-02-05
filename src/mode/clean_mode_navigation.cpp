@@ -462,6 +462,7 @@ bool CleanModeNav::updateActionInStateClean(){
 		auto start = getPosition().toCell();
 		auto target = plan_path_.back().toCell();
 		auto delta_y = target.y - start.y;
+		auto delta_x = target.x - start.x;
 		ROS_INFO("y(%d,%d)",start.y, target.y);
 		ROS_INFO("%s,%d: path size(%u), old_dir_(%d), start_point_.dir(%d), bumper(%d), cliff(%d), lidar(%d), delta_y(%d)",
 						 __FUNCTION__, __LINE__, plan_path_.size(), old_dir_, iterate_point_.dir, ev.bumper_triggered,
@@ -473,11 +474,29 @@ bool CleanModeNav::updateActionInStateClean(){
 		}
 		else
 		{
-			delta_y = plan_path_.back().toCell().y - start.y;
-			bool is_left = isPos(old_dir_) ^ delta_y > 0;
-//			ROS_INFO("%s,%d: target:, 1_left_0_right(%d = %d ^ %d)",
-//							 __FUNCTION__, __LINE__, is_left, isPos(old_dir_), delta_y);
-			action_i_ = is_left ? ac_follow_wall_left : ac_follow_wall_right;
+			for (auto && cell : plan_path_) {
+				printf("(%d,%d)->", cell.toCell().x, cell.toCell().y);
+			}
+			printf("\n");
+			ROS_INFO("isXAxis(%d),isPos(%d),delta(%d,%d)",isXAxis(old_dir_),isPos(old_dir_), delta_x, delta_y);
+			if(isXAxis(old_dir_)) {
+				if (plan_path_.size() <= 2) {
+					bool is_left = isPos(old_dir_) ^delta_y > 0;
+					action_i_ = is_left ? ac_follow_wall_left : ac_follow_wall_right;
+				}
+				else {
+					action_i_ = ac_linear;
+				}
+			}
+			else {//isYAxis(old_dir_)
+				if (plan_path_.size() <= 2 && delta_x != 0) {
+					bool is_left = isPos(old_dir_) ^ delta_x > 0;
+					action_i_ = is_left ? ac_follow_wall_left : ac_follow_wall_right;
+				}
+				else {
+					action_i_ = ac_linear;
+				}
+			}
 		}
 		genNextAction();
 		return true;
