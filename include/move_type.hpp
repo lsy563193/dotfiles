@@ -4,7 +4,7 @@
 
 #ifndef PP_MOVE_TYPE_HPP
 #define PP_MOVE_TYPE_HPP
-
+#define TRAP_IN_SMALL_AREA_COUNT 20
 #include "action.hpp"
 #include "movement.hpp"
 #include "boost/shared_ptr.hpp"
@@ -38,7 +38,7 @@ public:
 	};
 	int8_t rcon_cnt[6]{};
 	int countRconTriggered(uint32_t rcon_value);
-	bool isRconStop(bool back_from_charger,Cell_t charge_pose);
+	bool isRconStop();
 	bool isOBSStop();
 	bool isLidarStop();
 

@@ -374,7 +374,7 @@ bool CleanModeNav::updateActionInStateInit() {
 
 		if (charger.isOnStub()){
 			action_i_ = ac_back_form_charger;
-			back_from_charger_ = true;
+			found_charger_ = true;
 		}
 		else{
 			action_i_ = ac_open_lidar;
@@ -404,13 +404,7 @@ bool CleanModeNav::updateActionInStateInit() {
 	else if (action_i_ == ac_open_slam){
 		//after back_from_charger and line alignment
 		//set charge position
-		if(back_from_charger_){
-			double align_offset = odom.getRadianOffset();//in radians
-			charger_pose.SetX( (int16_t)(cos(align_offset)*0.6/CELL_SIZE) +  (int16_t)(odom.getX()/CELL_SIZE) );
-			charger_pose.SetY( (int16_t)(sin(align_offset)*0.6/CELL_SIZE) +  (int16_t)(odom.getY()/CELL_SIZE) );
-			ROS_INFO("%s,%d, alignment offset angle (%f),charger pose (%d,%d)",__FUNCTION__,__LINE__, align_offset,charger_pose.GetX(),charger_pose.GetY());
-			clean_map_.setChargerArea( charger_pose );
-		}
+		ACleanMode::checkShouldMarkCharger((float)odom.getRadianOffset(),0.6);
 		return false;
 	}
 	genNextAction();
@@ -460,9 +454,10 @@ bool CleanModeNav::updateActionInStateClean(){
 		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
 
 		auto start = getPosition().toCell();
-		auto delta_y = plan_path_.back().toCell().y - start.y;
-		ROS_INFO("y(%d,%d)",start.y, plan_path_.back().toCell().y);
-		ROS_INFO("%s,%d: path size(%u), old_dir_(%f), start_point_.dir(%d), bumper(%d), cliff(%d), lidar(%d), delta_y(%d)",
+		auto target = plan_path_.back().toCell();
+		auto delta_y = target.y - start.y;
+		ROS_INFO("y(%d,%d)",start.y, target.y);
+		ROS_INFO("%s,%d: path size(%u), old_dir_(%d), start_point_.dir(%d), bumper(%d), cliff(%d), lidar(%d), delta_y(%d)",
 						 __FUNCTION__, __LINE__, plan_path_.size(), old_dir_, iterate_point_.dir, ev.bumper_triggered,
 						 ev.cliff_triggered, ev.lidar_triggered, delta_y);
 		if (isAny(old_dir_) // If last movement is not x axis linear movement, should not follow wall.
@@ -521,6 +516,7 @@ bool CleanModeNav::isSwitchByEventInStateGoHomePoint()
 }
 
 // ------------------State go to charger--------------------
+
 bool CleanModeNav::isSwitchByEventInStateGoToCharger()
 {
 	return checkEnterPause() || ACleanMode::isSwitchByEventInStateGoToCharger();

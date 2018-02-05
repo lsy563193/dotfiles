@@ -360,7 +360,6 @@ public:
 
 	bool isIsolate();
 	bool generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &targets);
-	void setRconPos(float cd,float dist);
 
 	virtual bool mapMark() = 0;
 	virtual bool markRealTime(){return false;};
@@ -512,7 +511,6 @@ public:
 	bool in_rcon_signal_range_{};
 	bool should_mark_charger_{};
 	bool should_mark_temp_charger_{};
-	bool found_charger_{};
 
 	Dir_t old_dir_{};
 	Point_t start_point_{};
@@ -540,10 +538,9 @@ protected:
 	bool should_go_to_charger_{false};
 	bool remote_go_home_point{false};
 	bool switch_is_off_{false};
-	bool back_from_charger_{false};
-	Cell_t charger_pose;
-
-
+	Cell_t charger_pose_{};
+	bool found_charger_{false};
+	bool out_range_charger_{false};
 public:
 
 	static void pubPointMarkers(const std::deque<Vector2<double>> *point, std::string frame_id,std::string name);
@@ -559,7 +556,7 @@ public:
 	Vector2<double> polar_to_cartesian(double polar,int i);
 	void setTempTarget(std::deque<Vector2<double>>& points, uint32_t  seq);
 	void pubTmpTarget(const Point_t &point,bool is_virtual=false);
-
+	void checkShouldMarkCharger(float angle_offset,float distance);
 	PathHead getTempTarget();
 
 private:

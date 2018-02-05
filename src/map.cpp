@@ -414,9 +414,11 @@ uint8_t GridMap::setLidar()
 	uint8_t block_count = 0;
 	std::string msg = "cell:";
 	for(auto& cell : temp_lidar_cells){
-		msg += "(" + std::to_string(cell.x) + "," + std::to_string(cell.y) + ")";
-		setCell(CLEAN_MAP,cell.x,cell.y, BLOCKED_LIDAR);
-		block_count++;
+		if(getCell(CLEAN_MAP,cell.x,cell.y) != BLOCKED_RCON){
+			msg += "(" + std::to_string(cell.x) + "," + std::to_string(cell.y) + ")";
+			setCell(CLEAN_MAP,cell.x,cell.y, BLOCKED_LIDAR);
+			block_count++;
+		}
 	}
 	temp_lidar_cells.clear();
 	ROS_INFO("%s,%d: Current(%d, %d), mapMark \033[32m%s\033[0m",__FUNCTION__, __LINE__, getPosition().toCell().x, getPosition().toCell().y, msg.c_str());
@@ -882,7 +884,7 @@ uint8_t GridMap::saveBlocks(bool is_linear, bool is_save_rcon)
 //	PP_INFO();
 	uint8_t block_count = 0;
 	if (is_linear && is_save_rcon)
-		block_count += saveRcon();
+		//block_count += saveRcon();
 	block_count += saveBumper(is_linear);
 	block_count += saveCliff();
 	block_count += saveObs();
