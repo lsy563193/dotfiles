@@ -1382,7 +1382,7 @@ bool GridMap::isFrontBlocked(void)
 {
 	bool retval = false;
 	std::vector<Cell_t> d_cells;
-	d_cells = {{2,1},{2,0},{2,-1},{1,2},{1,1},{1,0},{1,-1},{1,-2},{0,0}};
+	d_cells = {{2,1},{2,0},{2,-1}};
 
 	for(auto& d_cell : d_cells)
 	{
