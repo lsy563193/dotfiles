@@ -23,10 +23,22 @@ void AMovementFollowPoint::adjustSpeed(int32_t &left_speed, int32_t &right_speed
 	}
 
 //	ROS_INFO("diff(%f), angle_forward_to_turn_(%f)",radian_diff, angle_forward_to_turn_);
-
-		if (isNear()) {
-			if (base_speed_ > (int32_t) min_speed_) {
-				base_speed_--;
+	auto deceleration_level = isNear();
+	uint8_t speed_limit;
+	if (deceleration_level == 1) {
+		speed_limit = min_speed_;
+	} else if (deceleration_level == 2) {
+		speed_limit = min_speed_ + 5;
+	}
+		if (deceleration_level) {
+			if (deceleration_level == 1) {
+				if (base_speed_ > (int32_t) speed_limit) {
+					base_speed_--;
+				}
+			} else if (deceleration_level == 2) {
+				if (base_speed_ > (int32_t) speed_limit) {
+					base_speed_--;
+				}
 			}
 		}
 		else if (base_speed_ < (int32_t) max_speed_) {

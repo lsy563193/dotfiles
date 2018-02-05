@@ -42,7 +42,6 @@ void MovementBack::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 //	ROS_INFO("MovementBack::adjustSpeed");
 	wheel.setDirectionBackward();
 	speed_ = (speed_ > max_speed_) ? max_speed_ : speed_;
-	wheel.resetStep();
 	l_speed = r_speed = speed_;
 }
 
