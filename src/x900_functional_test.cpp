@@ -14,11 +14,18 @@ void x900_functional_test(std::string serial_port, int baud_rate)
 {
 
 	ROS_INFO("%s %d: Serial_port: %s, baudrate: %d.", __FUNCTION__, __LINE__, serial_port.c_str(), baud_rate);
-	// Test item 1: Speaker.
+	// Test item: Speaker.
 	speaker.test();
 	// If you can not hear the voice, then speaker port has error, but there is no way to test it by software.
 
-	// Test item 2: Serial port.
+	// Test item: RAM.
+	if (!RAM_test())
+	{
+		ROS_ERROR("%s %d: RAM test failed!!", __FUNCTION__, __LINE__);
+		error_loop();
+	}
+
+	// Test item: Serial port.
 	if (!serial_port_test() || !serial.init(serial_port, baud_rate))
 	{
 		ROS_ERROR("%s %d: Serial port test failed!!", __FUNCTION__, __LINE__);
@@ -54,8 +61,14 @@ void x900_functional_test(std::string serial_port, int baud_rate)
 	}
 	ROS_INFO("Test power supply success!!");
 
-	// Test item 5: Memory.
-	memory_test();
+	// Test hardware from main board.
+
+	if (!main_board_test())
+	{
+		ROS_ERROR("%s %d: Main board test failed!!", __FUNCTION__, __LINE__);
+		error_loop();
+	}
+	ROS_INFO("Test main board success!!");
 
 	// Test finish.
 	while (ros::ok())
@@ -76,10 +89,30 @@ void error_loop()
 	}
 }
 
-bool serial_port_test()
+bool RAM_test()
 {
 	return true;
+}
+
+bool serial_port_test()
+{
 	Serial serial_port_S2;
+	std::string ttyS2 = "/dev/ttyS2";
+	if (!serial_port_S2.init(ttyS2, 115200))
+	{
+		ROS_ERROR("%s %d: %s init failed!!", __FUNCTION__, __LINE__, ttyS2);
+		return false;
+	}
+
+	std::random_device rd;
+	std::mt19937 random_number_engine(rd());
+	std::uniform_int_distribution<uint8_t> dist_char;
+
+
+
+
+	// Test serial port /dev/ttyS2 and /dev/ttyS3 with direct connection.
+/*	Serial serial_port_S2;
 	Serial serial_port_S3;
 	std::string ttyS2 = "/dev/ttyS2";
 	std::string ttyS3 = "/dev/ttyS3";
@@ -142,7 +175,7 @@ bool serial_port_test()
 	auto char_buf1 = reinterpret_cast<char *>(buf1);
 	auto char_buf2 = reinterpret_cast<char *>(buf2);
 
-	return strncmp(char_buf1, char_buf2, write_data_length) == 0;
+	return strncmp(char_buf1, char_buf2, write_data_length) == 0;*/
 }
 
 bool usb_test(std::string dev_path, std::string fs_type, int write_length)
@@ -213,7 +246,12 @@ bool power_supply_test()
 	return voltage > voltage_limit;
 }
 
-bool memory_test()
+bool main_board_test()
+{
+	return false;
+}
+
+/*bool memory_test()
 {
 	struct sysinfo info{};
 	sysinfo(&info);
@@ -318,6 +356,6 @@ bool memory_test()
 	ROS_INFO("Send memory data....");
 
 	return true;
-}
+}*/
 
 #endif
