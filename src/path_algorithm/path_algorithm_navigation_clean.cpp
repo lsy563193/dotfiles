@@ -160,9 +160,9 @@ public:
 				is_continue_ = false;
 			}
 			else if (it.x - tmps_.back().x == 1) {
-				if (is_continue_ && curr_ != it)
+				if (is_continue_)
 					tmps_.pop_back();
-				is_continue_ = curr_ != it;
+				is_continue_ = curr_.x != it.x;
 			}
 		}
 		tmps_.push_back(it);

@@ -155,18 +155,23 @@ public:
 //	friend IMoveType;
 
 	enum {
+		//0
 		md_idle,
 		md_charge,
 		md_sleep,
 		md_go_to_charger,
 		md_remote,
 
+		//5
 		cm_navigation,
 		cm_wall_follow,
 		cm_spot,
 		cm_exploration,
-
 		cm_test,
+
+		//10
+		md_serial_test,
+		md_error,
 	};
 
 	int next_mode_i_;
@@ -498,6 +503,7 @@ public:
 	int closed_count_limit_{2};
 	int isolate_count_{};
 	int isolate_count_limit_{3};
+	bool is_trapped_{false};
 	State *sp_state{};
 	State* getState() const {
 		return sp_state;
@@ -544,7 +550,7 @@ protected:
 	bool should_go_to_charger_{false};
 	bool remote_go_home_point{false};
 	bool switch_is_off_{false};
-	Cell_t charger_pose_{};
+	Points charger_pose_;
 	bool found_charger_{false};
 	bool out_range_charger_{false};
 public:
