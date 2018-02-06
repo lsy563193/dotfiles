@@ -212,34 +212,34 @@ Cells NavCleanPathAlgorithm::filterAllPossibleTargets(GridMap &map, const Cell_t
 	return targets;
 }
 
-PathList NavCleanPathAlgorithm::tracePathsToTargets(GridMap &map, const Cells &target_list, const Cell_t& start)
+PathList NavCleanPathAlgorithm::tracePathsToTargets(GridMap &map, const Cells &targets, const Cell_t& start)
 {
 	PathList paths{};
 	int16_t cost, x_min, x_max, y_min, y_max;
 	map.getMapRange(COST_MAP, &x_min, &x_max, &y_min, &y_max);
-	for (auto& it : target_list) {
-		auto trace = it;
+	for (auto& target : targets) {
+		auto iterator = target;
 		Cells path{};
-		//Trace the path for this target 'it'.
-		while (trace != start) {
-			cost = map.getCell(COST_MAP, trace.x, trace.y) - 1;
+		//Trace the path for this target 'target'.
+		while (iterator != start) {
+			cost = map.getCell(COST_MAP, iterator.x, iterator.y) - 1;
 			if (cost == 0)
 				cost = COST_5;
 
-			path.push_front(trace);
+			path.push_front(iterator);
 			for(auto i =0; i<4 ; i++)
 			{
-				auto neighbor = trace - cell_direction_index_[i];
+				auto neighbor = iterator - cell_direction_index_[i];
 				if(!((neighbor).x >= x_min && neighbor.x <= x_max && (neighbor).y >= y_min && neighbor.y <= y_max))
 					continue;
 
 				if (map.getCell(COST_MAP, neighbor.x, neighbor.y) == cost) {
-					trace = neighbor;
+					iterator = neighbor;
 					break;
 				}
 			}
 		}
-		path.push_front(trace);
+		path.push_front(iterator);
 		paths.push_back(path);
 	}
 

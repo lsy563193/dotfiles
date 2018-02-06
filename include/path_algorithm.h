@@ -177,7 +177,7 @@ private:
 	 *
 	 * @return: PathList, a deque of paths from start cell to the input targets.
 	 */
-	PathList tracePathsToTargets(GridMap &map, const Cells &target_list, const Cell_t& start);
+	PathList tracePathsToTargets(GridMap &map, const Cells &targets, const Cell_t& start);
 
 	/*
 	 * @author Patrick Chow
