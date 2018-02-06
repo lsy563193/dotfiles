@@ -34,24 +34,24 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 			b_map.Add(cell);
 	}
 
-	Cells filtered_targets = filterAllPossibleTargets(map, curr_cell, b_map);
+	Cells targets = filterAllPossibleTargets(map, curr_cell, b_map);
 
 	//Step 3: Generate the COST_MAP for map and filter plan_path that are unreachable.
-	map.generateSPMAP(curr_cell, filtered_targets);
+	map.generateSPMAP(curr_cell, targets);
 
-	filtered_targets.erase(std::remove_if(filtered_targets.begin(), filtered_targets.end(),[&map](Cell_t it){
+	targets.erase(std::remove_if(targets.begin(), targets.end(),[&map](Cell_t it){
 		auto cost = map.getCell(COST_MAP, it.x, it.y);
 		return cost == COST_NO || cost == COST_HIGH;
-	}),filtered_targets.end());
-	ROS_INFO("%s %d: After generating COST_MAP, Get %lu reachable plan_path.", __FUNCTION__, __LINE__, filtered_targets.size());
-	if (filtered_targets.size() != 0)
-		displayTargetList(filtered_targets);
+	}),targets.end());
+	ROS_INFO("%s %d: After generating COST_MAP, Get %lu reachable plan_path.", __FUNCTION__, __LINE__, targets.size());
+	if (targets.size() != 0)
+		displayTargetList(targets);
 	else
 		// Now plan_path is empty.
 		return false;
 
 	//Step 4: Trace back the path of these plan_path in COST_MAP.
-	PathList paths_for_reachable_targets = tracePathsToTargets(map, filtered_targets, curr_cell);
+	PathList paths_for_reachable_targets = tracePathsToTargets(map, targets, curr_cell);
 
 	//Step 5: Filter paths to get the best target.
 	Cell_t best_target;
@@ -215,43 +215,42 @@ Cells NavCleanPathAlgorithm::filterAllPossibleTargets(GridMap &map, const Cell_t
 PathList NavCleanPathAlgorithm::tracePathsToTargets(GridMap &map, const Cells &target_list, const Cell_t& start)
 {
 	PathList paths{};
-	int16_t trace_cost, x_min, x_max, y_min, y_max;
+	int16_t cost, x_min, x_max, y_min, y_max;
 	map.getMapRange(COST_MAP, &x_min, &x_max, &y_min, &y_max);
 	for (auto& it : target_list) {
 		auto trace = it;
 		Cells path{};
 		//Trace the path for this target 'it'.
 		while (trace != start) {
-			trace_cost = map.getCell(COST_MAP, trace.x, trace.y) - 1;
+			cost = map.getCell(COST_MAP, trace.x, trace.y) - 1;
 
-			if (trace_cost == 0) {
-				trace_cost = COST_5;
+			if (cost == 0) {
+				cost = COST_5;
 			}
 
 			path.push_front(trace);
 
-			if ((trace.x - 1 >= x_min) && (map.getCell(COST_MAP, trace.x - 1, trace.y) == trace_cost)) {
+			if ((trace.x - 1 >= x_min) && (map.getCell(COST_MAP, trace.x - 1, trace.y) == cost)) {
 				trace.x--;
 				continue;
 			}
 
-			if ((trace.x + 1 <= x_max) && (map.getCell(COST_MAP, trace.x + 1, trace.y) == trace_cost)) {
+			if ((trace.x + 1 <= x_max) && (map.getCell(COST_MAP, trace.x + 1, trace.y) == cost)) {
 				trace.x++;
 				continue;
 			}
 
-			if ((trace.y - 1 >= y_min) && (map.getCell(COST_MAP, trace.x, trace.y - 1) == trace_cost)) {
+			if ((trace.y - 1 >= y_min) && (map.getCell(COST_MAP, trace.x, trace.y - 1) == cost)) {
 				trace.y--;
 				continue;
 			}
 
-			if ((trace.y + 1 <= y_max) && (map.getCell(COST_MAP, trace.x, trace.y + 1) == trace_cost)) {
+			if ((trace.y + 1 <= y_max) && (map.getCell(COST_MAP, trace.x, trace.y + 1) == cost)) {
 				trace.y++;
 				continue;
 			}
 		}
 		path.push_front(trace);
-
 		paths.push_back(path);
 	}
 
