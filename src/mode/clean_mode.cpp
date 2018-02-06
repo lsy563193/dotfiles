@@ -272,7 +272,7 @@ Vector2<double> ACleanMode::get_middle_point(const Vector2<double>& p1,const Vec
 bool ACleanMode::check_is_valid(const Vector2<double>& target_point, Paras& para, const sensor_msgs::LaserScan::ConstPtr & scan) {
 	for (int i = 359; i >= 0; i--) {
 		auto laser_point = polar_to_cartesian(scan->ranges[i], i);
-		Vector2 zero_point = {0, 0};
+		Vector2<double> zero_point = {0, 0};
 		if (laser_point.Distance(zero_point) <= ROBOT_RADIUS) {
 			continue;
 		}
