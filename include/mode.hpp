@@ -129,6 +129,9 @@ public:
 	const double CHASE_X = 0.107;
 
 	double corner_front_trig_lim;
+
+	const int forward_count_lim = 10;
+	const int side_count_lim = 20;
 };
 
 class Mode:public EventHandle

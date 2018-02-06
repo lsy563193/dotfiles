@@ -223,7 +223,7 @@ bool ACleanMode::check_corner(const sensor_msgs::LaserScan::ConstPtr & scan, con
 		}
 	}
 //	ROS_INFO("forward_wall_count(%d), side_wall_count(%d)",forward_wall_count, side_wall_count);
-	return forward_wall_count > 10 && side_wall_count > 20;
+	return forward_wall_count > para.forward_count_lim && side_wall_count > para.side_count_lim;
 }
 
 Vector2<double> ACleanMode::polar_to_cartesian(double polar,int i)
