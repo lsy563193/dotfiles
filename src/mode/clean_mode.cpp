@@ -614,7 +614,7 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_move_type) {
 
 	markMapInNewCell();//real time mark to exploration
 
-	if (sp_state == state_trapped) {
+	if (sp_state == state_folllow_wall) {
 //			auto p_mt = dynamic_cast<MoveTypeFollowWall *>(p_move_type);
 		if (p_move_type->isBlockCleared(clean_map_, passed_path_))
 			if (!clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell())) {
@@ -689,7 +689,7 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 	}
 	else//rounding
 	{
-		if(sp_state != state_trapped)
+		if(sp_state != state_folllow_wall)
 		{
 			auto p_mt = dynamic_cast<MoveTypeFollowWall *>(p_move_type);
 			return p_mt->isNewLineReach(clean_map_) || p_mt->isOverOriginLine(clean_map_);
@@ -981,7 +981,7 @@ bool ACleanMode::isRemoteGoHomePoint()
 // ------------------Handlers--------------------------
 void ACleanMode::remoteHome(bool state_now, bool state_last)
 {
-	if (sp_state == state_clean || sp_state == state_pause || sp_state == state_spot || sp_state == state_trapped)
+	if (sp_state == state_clean || sp_state == state_pause || sp_state == state_spot || sp_state == state_folllow_wall)
 	{
 		ROS_WARN("%s %d: remote home.", __FUNCTION__, __LINE__);
 		beeper.beepForCommand(VALID);
@@ -1302,7 +1302,7 @@ void ACleanMode::switchInStateExploration() {
 		ROS_WARN("%s,%d: enter state trapped",__FUNCTION__,__LINE__);
 		sp_saved_states.push_back(sp_state);
 		is_trapped_ = true;
-		sp_state = state_trapped;
+		sp_state = state_folllow_wall;
 		is_isolate = true;
 		is_closed = true;
 		closed_count_ = 0;
@@ -1323,12 +1323,12 @@ void ACleanMode::switchInStateExploration() {
 
 // ------------------State trapped------------------
 
-bool ACleanMode::isSwitchByEventInStateTrapped()
+bool ACleanMode::isSwitchByEventInStateFollowWall()
 {
 	return checkEnterExceptionResumeState()||checkEnterGoHomePointState();
 }
 
-bool ACleanMode::updateActionInStateTrapped()
+bool ACleanMode::updateActionInStateFollowWall()
 {
 	passed_path_.clear();
 	auto ret = true;
@@ -1379,7 +1379,7 @@ bool ACleanMode::updateActionInStateTrapped()
 	return ret;
 }
 
-void ACleanMode::switchInStateTrapped()
+void ACleanMode::switchInStateFollowWall()
 {
 	PP_INFO();
 	is_trapped_ = false;

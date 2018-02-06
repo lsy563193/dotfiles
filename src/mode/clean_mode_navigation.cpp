@@ -148,7 +148,7 @@ bool CleanModeNav::isExit()
 
 /*bool CleanModeNav::moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt)
 {
-	if (sp_state == state_trapped)
+	if (sp_state == state_folllow_wall)
 		return p_mt->isBlockCleared(clean_map_, passed_path_);
 	else
 		return p_mt->isNewLineReach(clean_map_) || p_mt->isOverOriginLine(clean_map_);
@@ -502,7 +502,7 @@ void CleanModeNav::switchInStateClean() {
 	if (clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell())) {
 		ROS_WARN("%s,%d: enter state trapped",__FUNCTION__,__LINE__);
 		sp_saved_states.push_back(sp_state);
-		sp_state = state_trapped;
+		sp_state = state_folllow_wall;
 		is_trapped_ = true;
 		is_isolate = true;
 		is_closed = true;
@@ -667,9 +667,9 @@ bool CleanModeNav::updateActionInStatePause()
 }
 
 // ------------------State trapped------------------
-bool CleanModeNav::isSwitchByEventInStateTrapped()
+bool CleanModeNav::isSwitchByEventInStateFollowWall()
 {
-	return ACleanMode::isSwitchByEventInStateTrapped() || checkEnterPause();
+	return ACleanMode::isSwitchByEventInStateFollowWall() || checkEnterPause();
 }
 
 // ------------------State charge--------------------

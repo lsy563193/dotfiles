@@ -135,7 +135,7 @@ bool CleanModeExploration::moveTypeFollowWallIsFinish(IMoveType *p_move_type, bo
 */
 
 bool CleanModeExploration::markMapInNewCell() {
-	if(sp_state == state_trapped)
+	if(sp_state == state_folllow_wall)
 	{
 		mark_robot_ = false;
 		mapMark();

@@ -9,7 +9,7 @@ void StatePause::init() {
 	key_led.setMode(LED_BREATH, LED_GREEN);
 }
 
-//bool StateTrapped::isFinish() {
+//bool StateFolllowWall::isFinish() {
 //	return false;
 //}
 
