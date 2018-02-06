@@ -223,31 +223,20 @@ PathList NavCleanPathAlgorithm::tracePathsToTargets(GridMap &map, const Cells &t
 		//Trace the path for this target 'it'.
 		while (trace != start) {
 			cost = map.getCell(COST_MAP, trace.x, trace.y) - 1;
-
-			if (cost == 0) {
+			if (cost == 0)
 				cost = COST_5;
-			}
 
 			path.push_front(trace);
+			for(auto i =0; i<4 ; i++)
+			{
+				auto neighbor = trace - cell_direction_index_[i];
+				if(!((neighbor).x >= x_min && neighbor.x <= x_max && (neighbor).y >= y_min && neighbor.y <= y_max))
+					continue;
 
-			if ((trace.x - 1 >= x_min) && (map.getCell(COST_MAP, trace.x - 1, trace.y) == cost)) {
-				trace.x--;
-				continue;
-			}
-
-			if ((trace.x + 1 <= x_max) && (map.getCell(COST_MAP, trace.x + 1, trace.y) == cost)) {
-				trace.x++;
-				continue;
-			}
-
-			if ((trace.y - 1 >= y_min) && (map.getCell(COST_MAP, trace.x, trace.y - 1) == cost)) {
-				trace.y--;
-				continue;
-			}
-
-			if ((trace.y + 1 <= y_max) && (map.getCell(COST_MAP, trace.x, trace.y + 1) == cost)) {
-				trace.y++;
-				continue;
+				if (map.getCell(COST_MAP, neighbor.x, neighbor.y) == cost) {
+					trace = neighbor;
+					break;
+				}
 			}
 		}
 		path.push_front(trace);
