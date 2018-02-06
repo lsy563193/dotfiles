@@ -39,6 +39,7 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 	//Step 3: Generate the COST_MAP for map and filter plan_path that are unreachable.
 	map.generateSPMAP(curr_cell, targets);
 
+	map.print(COST_MAP, 0,0);
 	targets.erase(std::remove_if(targets.begin(), targets.end(),[&map](Cell_t it){
 		auto cost = map.getCell(COST_MAP, it.x, it.y);
 		return cost == COST_NO || cost == COST_HIGH;

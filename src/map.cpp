@@ -62,9 +62,9 @@ CellState GridMap::getCell(int id, int16_t x, int16_t y) {
 #ifndef SHORTEST_PATH_V2
 		//val = (CellState)((id == CLEAN_MAP) ? (clean_map[x][y / 2]) : (cost_map[x][y / 2]));
 		if(id == CLEAN_MAP)
-			val = (CellState)(clean_map[x][y / 2]);
+			val = (CellState)(clean_map[x][y /*/ 2*/]);
 		else if(id == COST_MAP)
-			val = (CellState)(cost_map[x][y / 2]);
+			val = (CellState)(cost_map[x][y /*/ 2*/]);
 #else
 		//val = (CellState)(clean_map[x][y / 2]);
 		if (id == CLEAN_MAP) {
@@ -73,7 +73,7 @@ CellState GridMap::getCell(int id, int16_t x, int16_t y) {
 #endif
 
 		/* Upper 4 bits & lower 4 bits. */
-		val = (CellState) ((y % 2) == 0 ? (val >> 4) : (val & 0x0F));
+//		val = (CellState) ((y % 2) == 0 ? (val >> 4) : (val & 0x0F));
 
 	} else {
 		if(id == CLEAN_MAP) {
@@ -137,10 +137,11 @@ void GridMap::setCell(uint8_t id, int16_t x, int16_t y, CellState value) {
 			COLUMN = y + MAP_SIZE + MAP_SIZE / 2;
 			COLUMN %= MAP_SIZE;
 
-			val = (CellState) clean_map[ROW][COLUMN / 2];
-			if (((COLUMN % 2) == 0 ? (val >> 4) : (val & 0x0F)) != value) {
-				clean_map[ROW][COLUMN / 2] = ((COLUMN % 2) == 0 ? (((value << 4) & 0xF0) | (val & 0x0F)) : ((val & 0xF0) | (value & 0x0F)));
-			}
+//			val = (CellState) clean_map[ROW][COLUMN / 2];
+//			if (((COLUMN % 2) == 0 ? (val >> 4) : (val & 0x0F)) != value) {
+//				clean_map[ROW][COLUMN / 2] = ((COLUMN % 2) == 0 ? (((value << 4) & 0xF0) | (val & 0x0F)) : ((val & 0xF0) | (value & 0x0F)));
+				clean_map[ROW][COLUMN] = value;
+//			}
 		}
 	}  else if (id == COST_MAP){
 		if(x >= xRangeMin && x <= xRangeMax && y >= yRangeMin && y <= yRangeMax) {
@@ -149,10 +150,11 @@ void GridMap::setCell(uint8_t id, int16_t x, int16_t y, CellState value) {
 			y += MAP_SIZE + MAP_SIZE / 2;
 			y %= MAP_SIZE;
 
-			val = (CellState) cost_map[x][y / 2];
+//			val = (CellState) cost_map[x][y / 2];
 
 			/* Upper 4 bits and last 4 bits. */
-			cost_map[x][y / 2] = (((y % 2) == 0) ? (((value << 4) & 0xF0) | (val & 0x0F)) : ((val & 0xF0) | (value & 0x0F)));
+//			cost_map[x][y / 2] = (((y % 2) == 0) ? (((value << 4) & 0xF0) | (val & 0x0F)) : ((val & 0xF0) | (value & 0x0F)));
+			cost_map[x][y] = value;
 		}
 	}
 }
@@ -1232,7 +1234,10 @@ void GridMap::getMapRange(uint8_t id, int16_t *x_range_min, int16_t *x_range_max
 //	ROS_INFO("Get Range:\tx: %d - %d\ty: %d - %d\tx range: %d - %d\ty range: %d - %d",
 //		g_x_min, g_x_max, g_y_min, g_y_max, *x_range_min, *x_range_max, *y_range_min, *y_range_max);
 }
-
+bool GridMap::isOutOfMap(const Cell_t &cell)
+{
+	return cell.x < g_x_min && cell.y < g_y_min && cell.x > g_x_max && cell.y > g_y_max;
+}
 bool GridMap::cellIsOutOfRange(Cell_t cell)
 {
 	return std::abs(cell.x) > MAP_SIZE || std::abs(cell.y) > MAP_SIZE;
