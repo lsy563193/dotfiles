@@ -497,6 +497,7 @@ public:
 	int closed_count_limit_{2};
 	int isolate_count_{};
 	int isolate_count_limit_{3};
+	bool is_trapped_{false};
 	State *sp_state{};
 	State* getState() const {
 		return sp_state;
@@ -543,7 +544,7 @@ protected:
 	bool should_go_to_charger_{false};
 	bool remote_go_home_point{false};
 	bool switch_is_off_{false};
-	Cell_t charger_pose_{};
+	Points charger_pose_;
 	bool found_charger_{false};
 	bool out_range_charger_{false};
 public:
