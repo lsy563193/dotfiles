@@ -70,7 +70,7 @@ public:
 		y_min_target = std::min(y_target_start, y_target_end);
 		y_max_target = std::max(y_target_start, y_target_end);
 
-		corner_front_trig_lim = is_left ? 0.23 : 0.25;
+		corner_front_trig_lim = is_left ? 0.25 : 0.25;
 
 	};
 

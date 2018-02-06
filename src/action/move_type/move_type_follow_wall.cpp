@@ -128,7 +128,6 @@ int16_t MoveTypeFollowWall::bumperTurnAngle()
 	auto same_side = (is_left_) ? BLOCK_LEFT : BLOCK_RIGHT;
 	p_mode->clean_path_algorithm_->findTargetUsingDijkstra(p_mode->clean_map_,getPosition().toCell(),target,dijkstra_cleaned_count);
 
-	ROS_INFO("p_mode->isStateTrapped() = %d", p_mode->isStateTrapped());
 	if (status == BLOCK_ALL)
 	{
 		if(p_mode->isStateTrapped())

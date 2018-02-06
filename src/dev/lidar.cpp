@@ -903,11 +903,11 @@ bool Lidar::fitLineGroup(std::vector<std::deque<Vector2<double>> > *groups, doub
 			ROS_INFO("a = %lf, b = %lf, c = %lf", a, b, c);
 			ROS_INFO("x_0 = %lf", x_0);
 			/*erase the lines which are far away from the robot*/
-			double dis = std::abs(c / (sqrt(a * a + b * b)));
+			double line_to_robot_dis = std::abs(c / (sqrt(a * a + b * b)));
 			const auto DIS_MIN = ROBOT_RADIUS - 0.02;
-			new_fit_line.dis = dis;
-			if (dis > dis_lim || dis < DIS_MIN || (is_align ? 0 : x_0 < 0)) {
-				ROS_ERROR("the line is too far away from robot. dis = %lf,x_0:%lf,dis_lim:(%lf, %lf)", dis,x_0,dis_lim, DIS_MIN);
+			new_fit_line.dis = line_to_robot_dis;
+			if (line_to_robot_dis > dis_lim || line_to_robot_dis < DIS_MIN || (is_align ? 0 : x_0 < 0)) {
+				ROS_ERROR("the line is too far away from robot. line_to_robot_dis = %lf,x_0:%lf,dis_lim:(%lf, %lf)", line_to_robot_dis,x_0,dis_lim, DIS_MIN);
 				continue;
 			}
 			fit_line.push_back(new_fit_line);

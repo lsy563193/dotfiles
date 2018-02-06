@@ -290,7 +290,7 @@ bool ACleanMode::removeCrossingPoint(const Vector2<double> &target_point, Paras 
 
 bool ACleanMode::calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,bool is_left, std::deque<Vector2<double>>& points) {
 	Paras para{is_left};
-	ROS_INFO("is_left(%d)",is_left);
+//	ROS_INFO("is_left(%d)",is_left);
 	auto is_corner = check_corner(scan, para);
 	if(is_corner)
 	{
@@ -344,7 +344,7 @@ bool ACleanMode::calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,boo
 			points.push_back(target);
 		}
 	}
-	ROS_INFO("points.size(%d)", points.size());
+//	ROS_INFO("points.size(%d)", points.size());
 	if (points.empty()) {
 		ROS_WARN("no laser wf target!");
 		return false;
@@ -1380,8 +1380,8 @@ bool ACleanMode::updateActionInStateTrapped()
 			action_i_ = ac_null;
 			trapped_time_out_ = false;
 	}else{
-//		action_i_ = ac_follow_wall_left;
-		action_i_ = ac_follow_wall_right;
+		action_i_ = ac_follow_wall_left;//Set the left wall follow in the wall follow mode
+//		action_i_ = ac_follow_wall_right;
 		ROS_WARN("%s,%d: mt_follow_wall_left", __FUNCTION__, __LINE__);
 	}
 
