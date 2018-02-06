@@ -6,7 +6,7 @@
 
 GridMap slam_grid_map;
 GridMap decrease_map;
-
+extern const Cell_t cell_direction_index_[9];
 
 Cell_t g_stub_cell(0,0);
 
@@ -1210,6 +1210,42 @@ void GridMap::generateSPMAP(const Cell_t &curr, Cells &target_list)
 	}
 //	print(COST_MAP, 0,0);
 }
+void GridMap::generateSPMAP(const Cell_t& curr_cell)
+{
+	typedef std::multimap<int16_t , Cell_t> Queue;
+	typedef std::pair<int16_t , Cell_t> Entry;
+
+	markRobot(CLEAN_MAP);
+	reset(COST_MAP);
+	setCell(COST_MAP, curr_cell.x, curr_cell.y, COST_1);
+	Queue queue;
+	Entry startPoint(1, curr_cell);
+	queue.insert(startPoint);
+	bool is_found = false;
+//	map.print(CLEAN_MAP,curr.x, curr.y);
+	while (!queue.empty())
+	{
+		auto start = queue.begin();
+		auto next = start->second;
+		auto cost = start->first;
+		queue.erase(start);
+		{
+			for (auto index = 0; index < 4; index++)
+			{
+				auto neighbor = next + cell_direction_index_[index];
+				if(isOutOfMap(neighbor))
+					continue;
+				if (getCell(COST_MAP, neighbor.x, neighbor.y) == 0) {
+					if (isBlockAccessible(neighbor.x, neighbor.y)) {
+						queue.insert(Entry(cost+1, neighbor));
+						setCell(COST_MAP, neighbor.x, neighbor.y, CellState(cost+1));
+					}
+				}
+			}
+		}
+	}
+	print(COST_MAP, 0,0);
+}
 
 bool GridMap::isFrontBlockBoundary(int dx)
 {
@@ -1231,17 +1267,18 @@ void GridMap::getMapRange(uint8_t id, int16_t *x_range_min, int16_t *x_range_max
 		*y_range_min = g_y_min - (abs(g_y_min - g_y_max) <= 3? 3 : 1);
 		*y_range_max = g_y_max + (abs(g_y_min - g_y_max) <= 3 ? 3 : 1);
 	}
-//	ROS_INFO("Get Range:\tx: %d - %d\ty: %d - %d\tx range: %d - %d\ty range: %d - %d",
-//		g_x_min, g_x_max, g_y_min, g_y_max, *x_range_min, *x_range_max, *y_range_min, *y_range_max);
+//	ROS_INFO("Get Range:min(%d,%d),max(%d,%d)",
+//		g_x_min,g_y_min, g_x_max,  g_y_max, *x_range_min,*y_range_min, *x_range_max,  *y_range_max);
 }
 bool GridMap::isOutOfMap(const Cell_t &cell)
 {
-	return cell.x < g_x_min && cell.y < g_y_min && cell.x > g_x_max && cell.y > g_y_max;
+	return cell.x < g_x_min-4 || cell.y < g_y_min-4 || cell.x > g_x_max+4 || cell.y > g_y_max+4;
 }
 bool GridMap::cellIsOutOfRange(Cell_t cell)
 {
 	return std::abs(cell.x) > MAP_SIZE || std::abs(cell.y) > MAP_SIZE;
 }
+/*
 
 void GridMap::print(uint8_t id, int16_t endx, int16_t endy)
 {
@@ -1313,14 +1350,73 @@ void GridMap::print(uint8_t id, int16_t endx, int16_t endy)
 	printf("\n");
 	#endif
 }
-
-void GridMap::colorPrint(char *outString, int16_t y_min, int16_t y_max)
+*/
+void GridMap::print(uint8_t id, int16_t endx, int16_t endy)
 {
-	int16_t j = 0;
+	std::ostringstream outString;
+	int16_t		x, y, x_min, x_max, y_min, y_max;
+	CellState	cs;
+	Cell_t curr_cell = getPosition().toCell();
+//	Cell_t curr_cell = {0,0};
+	printf("max y(%d)\n",y_max);
+	getMapRange(id, &x_min, &x_max, &y_min, &y_max);
+	printf("max y(%d)\n",y_max);
+//	outString << '\t';
+	outString << '\t';
+	for (y = y_min; y <= y_max; y++) {
+		if (abs(y) % 10 == 0) {
+			outString << y;
+		} else {
+			outString << ' ';
+		}
+	}
+	outString << 0;
+
+	printf("%s\n",outString.str().c_str());
+	outString.str("");
+//	outString << '\t';
+	outString << '\t';
+	outString << ' ';
+	outString << ' ';
+	for (y = y_min; y <= y_max; y++) {
+		outString << abs(y) % 10;
+	}
+//	std::cout << std::to_string(static_cast<int>(&g_ab)) << std::endl;
+	printf("%s\n",outString.str().c_str());
+	outString.str("");
+	for (x = x_min; x <= x_max; x++) {
+		outString.width(4);
+		outString << x;
+		outString << '\t';
+		outString << ' ';
+		outString << ' ';
+		for (y = y_min; y <= y_max; y++) {
+			cs = getCell(id, x, y);
+			cs = static_cast<CellState>((static_cast<int>(cs))%10);
+			if (x == curr_cell.x && y == curr_cell.y) {
+				outString << 'x';
+			} else if (x == endx && y == endy) {
+				outString << 'e';
+			} else {
+				outString << cs;
+			}
+		}
+//		printf("%s\n",outString.str().c_str());
+//		#if COLOR_DEBUG_MAP
+		colorPrint(outString.str().c_str(), 0,outString.str().size());
+		outString.str("");
+//		#else
+//		printf("%s\n", outString.str().c_str());
+//		#endif
+	}
+//	printf("\n");
+}
+void GridMap::colorPrint(const char *outString, int16_t y_min, int16_t y_max)
+{
 	char cs;
 	bool ready_print_map = false;
-	std::string y_col("");
-	for(j =y_min; j<=y_max; j++){
+	std::string y_col;
+	for(auto j = y_min; j<=y_max; j++){
 		cs = *(outString+j);
 		if(cs =='\t' && !ready_print_map){
 			ready_print_map = true;
@@ -1384,6 +1480,7 @@ void GridMap::colorPrint(char *outString, int16_t y_min, int16_t y_max)
 	}
 	printf("%s\033[0m\n",y_col.c_str());
 }
+
 
 bool GridMap::isFrontBlocked(void)
 {

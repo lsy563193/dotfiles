@@ -13,7 +13,7 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 
 	plan_path.clear();
 	auto curr_cell = curr.toCell();
-	//Step 1: Find possible plan_path in same lane.
+	ROS_INFO("Step 1: Find possible plan_path in same lane.");
 	auto plan_path_cell = findTargetInSameLane(map, curr_cell);
 	if (!plan_path_cell.empty())
 	{
@@ -23,7 +23,7 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 		return true;
 	}
 
-	//Step 2: Find all possible plan_path at the edge of cleaned area and filter plan_path in same lane.
+	ROS_INFO("Step 2: Find all possible plan_path at the edge of cleaned area and filter plan_path in same lane.");
 
 	// Copy map to a BoundingBox2 type b_map.
 	BoundingBox2 b_map;
@@ -36,10 +36,10 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 
 	Cells targets = filterAllPossibleTargets(map, curr_cell, b_map);
 
-	//Step 3: Generate the COST_MAP for map and filter plan_path that are unreachable.
-	map.generateSPMAP(curr_cell, targets);
+	ROS_INFO("//Step 3: Generate the COST_MAP for map and filter plan_path that are unreachable.");
 
-	map.print(COST_MAP, 0,0);
+	map.generateSPMAP(curr_cell);
+
 	targets.erase(std::remove_if(targets.begin(), targets.end(),[&map](Cell_t it){
 		auto cost = map.getCell(COST_MAP, it.x, it.y);
 		return cost == COST_NO || cost == COST_HIGH;
@@ -51,27 +51,28 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 		// Now plan_path is empty.
 		return false;
 
-	//Step 4: Trace back the path of these plan_path in COST_MAP.
+	ROS_INFO("Step 4: Trace back the path of these plan_path in COST_MAP.");
 	PathList paths_for_reachable_targets = tracePathsToTargets(map, targets, curr_cell);
 
-	//Step 5: Filter paths to get the best target.
+	ROS_INFO("Step 5: Filter paths to get the best target.");
+
 	Cell_t best_target;
 	if (!filterPathsToSelectTarget(map, paths_for_reachable_targets, curr_cell, best_target))
 		// Now plan_path is empty.
 		return false;
 
-	//Step 6: Find shortest path for this best target.
+	ROS_INFO("Step 6: Find shortest path for this best target.");
 	Cell_t corner1,corner2;
 	Cells shortest_path = findShortestPath(map, curr_cell, best_target, last_dir, true,false,corner1,corner2);
 	if (shortest_path.empty())
 		// Now plan_path is empty.
 		return false;
 
-	//Step 7: Optimize path for adjusting it away from obstacles..
+	ROS_INFO("Step 7: Optimize path for adjusting it away from obstacles..");
 	optimizePath(map, shortest_path);
 	map.print(CLEAN_MAP, shortest_path.back().x, shortest_path.back().y);
 
-	//Step 8: Fill path with direction.
+	ROS_INFO("Step 8: Fill path with direction.");
 	plan_path = cells_generate_points(shortest_path);
 
 	// Congratulation!! plan_path is generated successfully!!
@@ -161,9 +162,9 @@ public:
 				is_continue_ = false;
 			}
 			else if (it.x - tmps_.back().x == 1) {
-				if (is_continue_ && curr_ != it)
+				if (is_continue_)
 					tmps_.pop_back();
-				is_continue_ = curr_ != it;
+				is_continue_ = curr_.x != it.x;
 			}
 		}
 		tmps_.push_back(it);
@@ -224,8 +225,8 @@ PathList NavCleanPathAlgorithm::tracePathsToTargets(GridMap &map, const Cells &t
 		//Trace the path for this target 'target'.
 		while (iterator != start) {
 			cost = map.getCell(COST_MAP, iterator.x, iterator.y) - 1;
-			if (cost == 0)
-				cost = COST_5;
+//			if (cost == 0)
+//				cost = COST_5;
 
 			path.push_front(iterator);
 			for(auto i =0; i<4 ; i++)

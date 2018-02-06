@@ -6,6 +6,7 @@
 #include "robot.hpp"
 #include "path_algorithm.h"
 
+const Cell_t cell_direction_index_[9]{{1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1},{0,0}};
 void APathAlgorithm::displayCellPath(const Cells &path)
 {
 	std::string     msg = __FUNCTION__;

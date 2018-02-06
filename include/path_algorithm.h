@@ -9,6 +9,8 @@
 #include <deque>
 #include <map.h>
 
+extern const Cell_t cell_direction_index_[9];
+
 typedef std::deque<Cells> PathList;
 
 class APathAlgorithm
@@ -116,7 +118,6 @@ protected:
 	 */
 	bool checkTrappedUsingDijkstra(GridMap &map, const Cell_t &curr_cell);
 
-	const Cell_t cell_direction_index_[9]{{1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1},{0,0}};
 };
 
 class NavCleanPathAlgorithm: public APathAlgorithm
