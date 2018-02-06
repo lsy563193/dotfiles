@@ -86,7 +86,7 @@ robot::robot()
 #if !X900_FUNCTIONAL_TEST
 
 	std::string lidar_bumper_dev;
-	robot_nh_.param<std::string>("lidar_bumper_file", lidar_bumper_dev, "/dev/input/event0");
+	robot_nh_.param<std::string>("lidar_bumper_file", lidar_bumper_dev, "/dev/input/event1");
 
 	if (bumper.lidarBumperInit(lidar_bumper_dev.c_str()) == -1)
 		ROS_ERROR(" lidar bumper open fail!");
