@@ -475,7 +475,7 @@ bool CleanModeNav::updateActionInStateClean(){
 			ROS_INFO("isXAxis(%d),isPos(%d),delta(%d,%d)",isXAxis(old_dir_),isPos(old_dir_), delta_x, delta_y);
 			if(isXAxis(old_dir_)) {
 				if (plan_path_.size() <= 2) {
-					bool is_left = isPos(old_dir_) ^delta_y > 0;
+					bool is_left = isPos(old_dir_) ^ delta_y > 0;
 					action_i_ = is_left ? ac_follow_wall_left : ac_follow_wall_right;
 				}
 				else {
@@ -484,7 +484,7 @@ bool CleanModeNav::updateActionInStateClean(){
 			}
 			else {//isYAxis(old_dir_)
 				if (plan_path_.size() <= 2 && delta_x != 0) {
-					bool is_left = isPos(old_dir_) ^ delta_x > 0;
+					bool is_left = isPos(old_dir_) ^ delta_x < 0;
 					action_i_ = is_left ? ac_follow_wall_left : ac_follow_wall_right;
 				}
 				else {
@@ -503,6 +503,7 @@ void CleanModeNav::switchInStateClean() {
 		ROS_WARN("%s,%d: enter state trapped",__FUNCTION__,__LINE__);
 		sp_saved_states.push_back(sp_state);
 		sp_state = state_trapped;
+		is_trapped_ = true;
 		is_isolate = true;
 		is_closed = true;
 		closed_count_ = 0;

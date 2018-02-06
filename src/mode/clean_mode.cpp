@@ -1289,6 +1289,7 @@ void ACleanMode::switchInStateExploration() {
 	if (clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell())) {
 		ROS_WARN("%s,%d: enter state trapped",__FUNCTION__,__LINE__);
 		sp_saved_states.push_back(sp_state);
+		is_trapped_ = true;
 		sp_state = state_trapped;
 		is_isolate = true;
 		is_closed = true;
@@ -1369,7 +1370,7 @@ bool ACleanMode::updateActionInStateTrapped()
 void ACleanMode::switchInStateTrapped()
 {
 	PP_INFO();
-
+	is_trapped_ = false;
 	if(trapped_closed_or_isolate)
 	{
 		trapped_closed_or_isolate = false;

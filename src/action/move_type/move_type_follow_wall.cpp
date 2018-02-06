@@ -126,23 +126,25 @@ int16_t MoveTypeFollowWall::bumperTurnAngle()
 	auto get_obs = (is_left_) ? obs.getLeft() : obs.getRight();
 	auto diff_side = (is_left_) ? BLOCK_RIGHT : BLOCK_LEFT;
 	auto same_side = (is_left_) ? BLOCK_LEFT : BLOCK_RIGHT;
-	p_mode->clean_path_algorithm_->findTargetUsingDijkstra(p_mode->clean_map_,getPosition().toCell(),target,dijkstra_cleaned_count);
+	auto is_trapped = p_mode->is_trapped_;
+	if(is_trapped)
+		p_mode->clean_path_algorithm_->findTargetUsingDijkstra(p_mode->clean_map_,getPosition().toCell(),target,dijkstra_cleaned_count);
 
 	if (status == BLOCK_ALL)
 	{
-		if(p_mode->isStateTrapped())
+		if(is_trapped)
 			turn_angle = dijkstra_cleaned_count < TRAP_IN_SMALL_AREA_COUNT ? -50 : -55;
 		else
 			turn_angle = -60;
 	} else if (status == diff_side)
 	{
-		if(p_mode->isStateTrapped())
+		if(is_trapped)
 			turn_angle = dijkstra_cleaned_count < TRAP_IN_SMALL_AREA_COUNT ? -75 : -80;
 		else
 			turn_angle = -85;
 	} else if (status == same_side)
 	{
-		if(p_mode->isStateTrapped()){
+		if(is_trapped){
 			turn_angle = get_obs > (obs.getLeftTrigValue() + 250) || dijkstra_cleaned_count < TRAP_IN_SMALL_AREA_COUNT ? -10 : -20;
 		}else{
 			turn_angle = get_obs > (obs.getLeftTrigValue() + 250) ? -18 : -28;

@@ -351,6 +351,6 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float radius,Cells *targ
 
 bool SpotCleanPathAlgorithm::checkTrapped(GridMap &map, const Cell_t &curr_cell)
 {
-	checkTrappedUsingDijkstra(map, curr_cell);
+	return checkTrappedUsingDijkstra(map, curr_cell);
 }
 
