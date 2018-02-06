@@ -92,7 +92,7 @@ void Mode::genNextAction()
 			break;
 		case ac_follow_wall_left  :
 		case ac_follow_wall_right :
-			sp_action_.reset(new MoveTypeFollowWall(action_i_ == ac_follow_wall_left));
+				sp_action_.reset(new MoveTypeFollowWall(action_i_ == ac_follow_wall_left));
 			break;
 		case ac_go_to_charger :
 			sp_action_.reset(new MoveTypeGoToCharger);

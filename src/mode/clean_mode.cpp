@@ -209,10 +209,11 @@ bool ACleanMode::check_corner(const sensor_msgs::LaserScan::ConstPtr & scan, con
 	for (int i = 359; i > 0; i--) {
 		if (scan->ranges[i] < 4) {
 			auto point = polar_to_cartesian(scan->ranges[i], i);
-			if (para.inForwardRange(point)) {
-				forward_wall_count++;
+			if (sqrt(pow(point.x, 2) + pow(point.y, 2)) <= para.corner_front_trig_lim) {
+				if (para.inForwardRange(point)) {
+					forward_wall_count++;
 //			ROS_INFO("point(%f,%f)",point.x,point.y);
-//				ROS_INFO("forward_wall_count(%d)",forward_wall_count);
+				}
 			}
 			if (para.inSidedRange(point)) {
 				side_wall_count++;
@@ -221,7 +222,8 @@ bool ACleanMode::check_corner(const sensor_msgs::LaserScan::ConstPtr & scan, con
 			}
 		}
 	}
-	return forward_wall_count > 10 && side_wall_count > 20;
+//	ROS_INFO("forward_wall_count(%d), side_wall_count(%d)",forward_wall_count, side_wall_count);
+	return forward_wall_count > para.forward_count_lim && side_wall_count > para.side_count_lim;
 }
 
 Vector2<double> ACleanMode::polar_to_cartesian(double polar,int i)
@@ -234,7 +236,7 @@ Vector2<double> ACleanMode::polar_to_cartesian(double polar,int i)
 
 }
 
-Vector2<double> ACleanMode::get_middle_point(const Vector2<double>& p1,const Vector2<double>& p2,const Paras& para) {
+Vector2<double> ACleanMode::get_target_point(const Vector2<double> &p1, const Vector2<double> &p2, const Paras &para) {
 	auto p3 = (p1 + p2) / 2;
 	Vector2<double> target{};
 
@@ -267,12 +269,19 @@ Vector2<double> ACleanMode::get_middle_point(const Vector2<double>& p1,const Vec
 	return target;
 }
 
-bool ACleanMode::check_is_valid(const Vector2<double>& point, Paras& para, const sensor_msgs::LaserScan::ConstPtr & scan) {
+bool ACleanMode::removeCrossingPoint(const Vector2<double> &target_point, Paras &para,
+																		 const sensor_msgs::LaserScan::ConstPtr &scan) {
 	for (int i = 359; i >= 0; i--) {
-		auto tmp_point = polar_to_cartesian(scan->ranges[i], i);
-		auto distance = point.Distance(tmp_point);
+		auto laser_point = polar_to_cartesian(scan->ranges[i], i);
+//		ROS_WARN("laser_point.Distance(%lf)", laser_point.Distance(zero_point));
+/*		if (laser_point.Distance({0, 0}) <= ROBOT_RADIUS) {
+			beeper.beepForCommand(VALID);
+			ROS_ERROR("laser_point.Distance(%lf)", laser_point.Distance({0, 0}));
+			continue;
+		}*/
+		auto distance = target_point.Distance(laser_point);
 		//ROS_INFO("distance =  %lf", distance);
-		if (distance < para.narrow - 0.03) {
+		if (distance < para.narrow - para.narrow_minuend) {
 			return false;
 		}
 	}
@@ -289,36 +298,55 @@ bool ACleanMode::calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,boo
 		ROS_WARN("is_corner = %d", is_corner);
 	}
 	for (int i = 359; i >= 0; i--) {
-		//ROS_INFO("i = %d", i);
+//		ROS_INFO("laser point(%d, %lf)", i, scan->ranges[i]);
 		if (scan->ranges[i] < 4 && scan->ranges[i - 1] < 4) {
 			auto point1 = polar_to_cartesian(scan->ranges[i], i);
+//			ROS_INFO("point1(%lf, %lf)", point1.x, point1.y);
 
-			if (!para.inPoint1Range(point1, is_corner))
+			if (!para.LaserPointRange(point1, is_corner)) {
+//				INFO_BLUE("1");
 				continue;
+			}
+
 
 			auto point2 = polar_to_cartesian(scan->ranges[i - 1], i - 1);
 
-			if (point2.Distance(point1) > 0.05) {
-				//ROS_INFO("two points distance is too large");
+			if (!para.LaserPointRange(point2, is_corner)) {
+//				INFO_BLUE("1");
 				continue;
 			}
-			auto target = get_middle_point(point1, point2, para);
 
-			if (!para.inTargetRange(target))
+			if (point2.Distance(point1) > 0.05) {
+				//ROS_INFO("two points distance is too large");
+//				INFO_BLUE("2");
 				continue;
+			}
+			auto target = get_target_point(point1, point2, para);
 
-			if (target.Distance({0, 0}) > 0.4)
+			if (!para.TargetPointRange(target)) {
+//				INFO_BLUE("3");
 				continue;
+			}
 
-			if (!check_is_valid(target, para, scan))
+			if (target.Distance({0, 0}) > 0.4) {
+//				INFO_BLUE("4");
 				continue;
+			}
 
-//			ROS_INFO("points(%d):target(%lf,%lf),dis(%f)", points.size(), target.x, target.y, target.Distance({CHASE_X, 0}));
+			if (is_corner) {
+				if (!removeCrossingPoint(target, para, scan)) {
+//				INFO_BLUE("5");
+					continue;
+				}
+			}
+
+//			ROS_WARN("PUSH! points(%d):target(%lf,%lf),dis(%f)", points.size(), target.x, target.y, target.Distance({CHASE_X, 0}));
 			points.push_back(target);
 		}
 	}
-
+//	ROS_INFO("points.size(%d)", points.size());
 	if (points.empty()) {
+		ROS_WARN("no laser wf target!");
 		return false;
 	}
 	if (!is_left) {
@@ -1368,7 +1396,8 @@ bool ACleanMode::updateActionInStateFollowWall()
 			action_i_ = ac_null;
 			trapped_time_out_ = false;
 	}else{
-		action_i_ = ac_follow_wall_left;
+		action_i_ = ac_follow_wall_left;//Set the left wall follow in the wall follow mode
+//		action_i_ = ac_follow_wall_right;
 		ROS_WARN("%s,%d: mt_follow_wall_left", __FUNCTION__, __LINE__);
 	}
 
