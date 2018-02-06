@@ -441,10 +441,10 @@ robot *robot::instance()
 
 void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 {
-	tf::StampedTransform		transform;
+	tf::StampedTransform transform;
 
-	tf::Vector3	odom_pose;
-	double	odom_pose_radian_;
+	tf::Vector3 odom_pose;
+	double odom_pose_radian_;
 
 	if (getBaselinkFrameType() == SLAM_POSITION_SLAM_ANGLE || getBaselinkFrameType() == SLAM_POSITION_ODOM_ANGLE)
 	{

@@ -966,7 +966,7 @@ bool ACleanMode::isRemoteGoHomePoint()
 // ------------------Handlers--------------------------
 void ACleanMode::remoteHome(bool state_now, bool state_last)
 {
-	if (sp_state == state_clean || sp_state == state_pause || sp_state == state_spot)
+	if (sp_state == state_clean || sp_state == state_pause || sp_state == state_spot || sp_state == state_trapped)
 	{
 		ROS_WARN("%s %d: remote home.", __FUNCTION__, __LINE__);
 		beeper.beepForCommand(VALID);
@@ -1310,7 +1310,7 @@ void ACleanMode::switchInStateExploration() {
 
 bool ACleanMode::isSwitchByEventInStateTrapped()
 {
-	return checkEnterExceptionResumeState();
+	return checkEnterExceptionResumeState()||checkEnterGoHomePointState();
 }
 
 bool ACleanMode::updateActionInStateTrapped()

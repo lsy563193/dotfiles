@@ -56,7 +56,6 @@ bool MoveTypeFollowWall::isFinish()
 	}
 
 	auto p_cm = dynamic_cast<ACleanMode*> (sp_mode_);
-
 	if (sp_movement_->isFinish()) {
 		if (movement_i_ == mm_turn)
 		{
