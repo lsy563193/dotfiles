@@ -86,9 +86,13 @@ public:
 
 	bool TargetPointRange(const Vector2<double> &target) {
 		if (is_left_) {
-			return (target.x > 0 && target.y < 0.4 && target.y > ROBOT_RADIUS) || (target.x > CHASE_X && std::abs(target.y) < ROBOT_RADIUS) || (target.y < -ROBOT_RADIUS || target.y > 0.4);
+			return /*(target.x > ROBOT_RADIUS && target.y < 0.4 && target.y > ROBOT_RADIUS) ||*/
+						 (target.x > CHASE_X && std::abs(target.y) < ROBOT_RADIUS) ||
+						 (target.y < -ROBOT_RADIUS);
 		} else{
-			return (target.x > 0 && target.y > -0.4 && target.y < -ROBOT_RADIUS) || (target.x > CHASE_X && std::abs(target.y) < ROBOT_RADIUS) || (target.y > ROBOT_RADIUS || target.y < -0.4);
+			return /*(target.x > ROBOT_RADIUS && target.y > -0.4 && target.y < -ROBOT_RADIUS) ||*/
+						 (target.x > CHASE_X && std::abs(target.y) < ROBOT_RADIUS) ||
+						 (target.y > ROBOT_RADIUS);
 
 		}
 	}
