@@ -709,7 +709,7 @@ bool Lidar::mergeLine(std::vector<std::deque<Vector2<double>> > *groups, double 
 	merge_index.clear();
 	new_line.clear();
 	new_group.clear();
-	ROS_INFO("0");
+//	ROS_INFO("0");
 //	if (!groups->empty()) {
 	if (groups->size() > 1) {//it should not merge when the size is 0 or 1
 		for (auto iter = groups->begin(); iter != groups->end(); ++iter) {
@@ -903,10 +903,11 @@ bool Lidar::fitLineGroup(std::vector<std::deque<Vector2<double>> > *groups, doub
 			ROS_INFO("a = %lf, b = %lf, c = %lf", a, b, c);
 			ROS_INFO("x_0 = %lf", x_0);
 			/*erase the lines which are far away from the robot*/
-			double dis = std::abs(c / (sqrt(a * a + b * b)));
-			new_fit_line.dis = dis;
-			if (dis > dis_lim || dis < ROBOT_RADIUS || (is_align ? 0 : x_0 < 0)) {
-				ROS_DEBUG("the line is too far away from robot. dis = %lf,x_0:%lf,dis_lim:%lf", dis,x_0,dis_lim);
+			double line_to_robot_dis = std::abs(c / (sqrt(a * a + b * b)));
+			const auto DIS_MIN = ROBOT_RADIUS - 0.02;
+			new_fit_line.dis = line_to_robot_dis;
+			if (line_to_robot_dis > dis_lim || line_to_robot_dis < DIS_MIN || (is_align ? 0 : x_0 < 0)) {
+				ROS_ERROR("the line is too far away from robot. line_to_robot_dis = %lf,x_0:%lf,dis_lim:(%lf, %lf)", line_to_robot_dis,x_0,dis_lim, DIS_MIN);
 				continue;
 			}
 			fit_line.push_back(new_fit_line);
@@ -1389,44 +1390,54 @@ double Lidar::getLidarDistance(int16_t angle)
 	std::vector<geometry_msgs::Point>  fixed_points = lidarXY_points;
 	lidarXYPoint_mutex_.unlock();
 	geometry_msgs::Point point = fixed_points[angle];
-	int16_t find_angle;
+	int16_t fixed_angle;
 	const int offset = 2;
+	int count = 0;
 	for(auto& point:fixed_points){
+		/*---create rcon sensor angle acorrding to current lidar point*/
 		if(point.x >= 0){
 			if(point.y < 0){
-				find_angle = (int16_t)radian_to_degree(atan(point.x/point.y));
-				find_angle = -90 - find_angle;
+				fixed_angle = (int16_t)radian_to_degree(atan(point.x/point.y));
+				fixed_angle = -90 - fixed_angle;
 			}
 			else if(point.y > 0){
-				find_angle = (int16_t)radian_to_degree(atan(point.x/point.y));
-				find_angle = 90 - find_angle;
+				fixed_angle = (int16_t)radian_to_degree(atan(point.x/point.y));
+				fixed_angle = 90 - fixed_angle;
 			}
 			else if(point.y == 0)
-				find_angle = 0;
+				fixed_angle = 0;
 
 		}
 		else if(point.x < 0)
 		{
 			if(point.y < 0){
-				find_angle = (int16_t)radian_to_degree(atan(point.x/point.y));
-				find_angle = -90 - find_angle;
+				fixed_angle = (int16_t)radian_to_degree(atan(point.x/point.y));
+				fixed_angle = -90 - fixed_angle;
 			}
 			else if(point.y > 0){
-				find_angle = (int16_t)radian_to_degree(atan(point.x/point.y));
-				find_angle = 90 - find_angle;
+				fixed_angle = (int16_t)radian_to_degree(atan(point.x/point.y));
+				fixed_angle = 90 - fixed_angle;
 			}
 			else if(point.y == 0)
-				find_angle = -179;
+				fixed_angle = -179;
 		}
-		int diff_angle = abs(find_angle - angle);
-		if(diff_angle > 179)
+		/*---- end ---*/
+
+		int diff_angle = abs(fixed_angle - angle);
+		if(diff_angle > 179)//range angle
 			diff_angle = 359 - diff_angle; 
 		if(diff_angle <= offset){
-			distance = sqrt( pow(point.x, 2.0) + pow(point.y, 2.0) );
+			distance += sqrt( pow(point.x, 2.0) + pow(point.y, 2.0) );
+			count++;
+		}
+
+		//ROS_INFO("\033[1;40;32m%s,%d,fixed_angle = %d, input angle %d,distance = %f\033[0m",__FUNCTION__,__LINE__,fixed_angle,angle,(count > 0)?distance/(count*1.0):0.0f);
+		if(count >1){
+			distance = distance /(count*1.0);
 			break;
 		}
 	}
-	ROS_INFO("\033[1;40;32m%s,%d,find_angle = %d, input angle %d,distance = %f\033[0m",__FUNCTION__,__LINE__,find_angle,angle,distance);
+	ROS_INFO("\033[1;40;32m%s,%d,fixed_angle = %d, input angle %d,distance = %f\033[0m",__FUNCTION__,__LINE__,fixed_angle,angle,distance);
 	return 	distance;
 }
 

@@ -563,7 +563,7 @@ uint8_t GridMap::setBlocks()
 	return block_count;
 }
 
-uint8_t GridMap::setChargerArea(const Cell_t charger_point)
+uint8_t GridMap::setChargerArea(const Points charger_pos_list)
 {
 	//before set BLOCKED_RCON, clean BLOCKED_RCON first.
 	/*
@@ -577,24 +577,10 @@ uint8_t GridMap::setChargerArea(const Cell_t charger_point)
 	}
 	*/
 
-	uint8_t block_count = 0;
-	const int WIDTH = 5;//cells
-	const int HIGHT = 5;//cells
-	const int ltx=-HIGHT/2;//left top x offset
-	const int lty=-WIDTH/2;//right top y offset
-	int16_t x,y;
-	std::string print_msg("");
-	for(int i=0; i<HIGHT; i++){ 
-		for(int j = 0; j<WIDTH; j++){
-			y = lty+j+charger_point.y;
-			x = ltx+i+charger_point.x;
-			setCell(CLEAN_MAP,x,y, BLOCKED_RCON);
-			print_msg+="("+std::to_string(x)+","+std::to_string(y)+"),";
-			block_count++;
-		}
+	const int RADIAN= 4;//cells
+	for(const Point_t charger_point:charger_pos_list){
+		setCircleMarkers(charger_point,RADIAN,true,BLOCKED_RCON);
 	}
-	ROS_INFO("%s,%d: set charge area:\033[32m%s\033[0m",__FUNCTION__,__LINE__,print_msg.c_str());
-	return block_count;
 }
 
 uint8_t GridMap::saveSlip()
@@ -1500,20 +1486,22 @@ bool GridMap::isFrontBlocked(void)
 	return retval;
 }
 
-void GridMap::setExplorationCleaned() {
-	Point_t cur = getPosition();
-	const int RADIUS_CELL = 10;//the radius of the robot can detect
+void GridMap::setCircleMarkers(Point_t point,int radian,bool cover_block,CellState cell_state) {
+	Point_t cur = point;
+	const int RADIUS_CELL = radian;//the radius of the robot can detect
 	for (int16_t angle_i = 0; angle_i <= 359; angle_i += 1) {
 		for (int dy = 0; dy < RADIUS_CELL; ++dy) {
-			auto cur_tmp = cur;
-			cur_tmp.th += angle_i * 10;
+			Point_t cur_tmp = cur;
+			cur_tmp.th += ranged_radian(angle_i*PI/179);
 			auto cell = cur_tmp.getRelative(0, dy * CELL_SIZE).toCell();
 			auto status = getCell(CLEAN_MAP,cell.x,cell.y);
-			if (status > CLEANED && status < BLOCKED_BOUNDARY) {
-				//ROS_ERROR("%s,%d: (%d,%d)", __FUNCTION__, __LINE__, count_to_cell(x), count_to_cell(y));
-				break;
+			if(!cover_block){
+				if (status > CLEANED && status < BLOCKED_BOUNDARY) {
+					//ROS_ERROR("%s,%d: (%d,%d)", __FUNCTION__, __LINE__, count_to_cell(x), count_to_cell(y));
+					break;
+				}
 			}
-			setCell(CLEAN_MAP, cell.x, cell.y, CLEANED);
+			setCell(CLEAN_MAP, cell.x, cell.y, cell_state);
 		}
 	}
 }

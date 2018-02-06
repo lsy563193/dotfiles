@@ -101,7 +101,7 @@ bool IMoveType::RconTrigger()
 {
 	ev.rcon_triggered = c_rcon.getWFRcon();
 	if (ev.rcon_triggered) {
-		ROS_WARN("%s, %d: ev.rcon_triggered(%d).", __FUNCTION__, __LINE__, ev.lidar_triggered);
+		ROS_WARN("%s, %d: ev.rcon_triggered(%d).", __FUNCTION__, __LINE__, ev.rcon_triggered);
 		return true;
 	}
 	return false;
