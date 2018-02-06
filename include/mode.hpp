@@ -74,14 +74,17 @@ public:
 
 	};
 
-	bool inPoint1Range(const Vector2<double> &point, bool is_corner) const {
+	bool LaserPointRange(const Vector2<double> &point, bool is_corner) const {
+/*		if (point.Distance({0, 0}) <= ROBOT_RADIUS) {
+			return false;
+		}*/
 		if(is_corner)
 			return (point.x > 0 && point.x < 4 && point.y > y_min_point1_corner && point.y < y_max_point1_corner);
 		else
 			return (point.x > 0 && point.x < 0.3 && point.y > y_min_point1 && point.y < y_max_point1);
 	}
 
-	bool inTargetRange(const Vector2<double> &target) {
+	bool TargetPointRange(const Vector2<double> &target) {
 		if (is_left_) {
 			return (target.x > 0 && target.y < 0.4 && target.y > ROBOT_RADIUS) || (target.x > CHASE_X && std::abs(target.y) < ROBOT_RADIUS) || (target.y < -ROBOT_RADIUS || target.y > 0.4);
 		} else{
@@ -549,8 +552,9 @@ public:
 	void setCleanMapMarkers(int16_t x, int16_t y, CellState type,  visualization_msgs::Marker& clean_map_markers_);
 	void pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path);
 	static void pubLineMarker(const std::vector<LineABC> *lines);
-	Vector2<double> get_middle_point(const Vector2<double>& p1,const Vector2<double>& p2,const Paras& para);
-	bool check_is_valid(const Vector2<double>& target_point, Paras& para, const sensor_msgs::LaserScan::ConstPtr & scan);
+	Vector2<double> get_target_point(const Vector2<double> &p1, const Vector2<double> &p2, const Paras &para);
+	bool removeCrossingPoint(const Vector2<double> &target_point, Paras &para,
+													 const sensor_msgs::LaserScan::ConstPtr &scan);
 	bool check_corner(const sensor_msgs::LaserScan::ConstPtr & scan, const Paras& para);
 	bool calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,bool is_left ,std::deque<Vector2<double>>& points);
 	Vector2<double> polar_to_cartesian(double polar,int i);

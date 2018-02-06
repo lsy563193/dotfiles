@@ -236,7 +236,7 @@ Vector2<double> ACleanMode::polar_to_cartesian(double polar,int i)
 
 }
 
-Vector2<double> ACleanMode::get_middle_point(const Vector2<double>& p1,const Vector2<double>& p2,const Paras& para) {
+Vector2<double> ACleanMode::get_target_point(const Vector2<double> &p1, const Vector2<double> &p2, const Paras &para) {
 	auto p3 = (p1 + p2) / 2;
 	Vector2<double> target{};
 
@@ -269,13 +269,16 @@ Vector2<double> ACleanMode::get_middle_point(const Vector2<double>& p1,const Vec
 	return target;
 }
 
-bool ACleanMode::check_is_valid(const Vector2<double>& target_point, Paras& para, const sensor_msgs::LaserScan::ConstPtr & scan) {
+bool ACleanMode::removeCrossingPoint(const Vector2<double> &target_point, Paras &para,
+																		 const sensor_msgs::LaserScan::ConstPtr &scan) {
 	for (int i = 359; i >= 0; i--) {
 		auto laser_point = polar_to_cartesian(scan->ranges[i], i);
-		Vector2<double> zero_point = {0, 0};
-		if (laser_point.Distance(zero_point) <= ROBOT_RADIUS) {
+//		ROS_WARN("laser_point.Distance(%lf)", laser_point.Distance(zero_point));
+/*		if (laser_point.Distance({0, 0}) <= ROBOT_RADIUS) {
+			beeper.beepForCommand(VALID);
+			ROS_ERROR("laser_point.Distance(%lf)", laser_point.Distance({0, 0}));
 			continue;
-		}
+		}*/
 		auto distance = target_point.Distance(laser_point);
 		//ROS_INFO("distance =  %lf", distance);
 		if (distance < para.narrow - para.narrow_minuend) {
@@ -291,8 +294,7 @@ bool ACleanMode::calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,boo
 	auto is_corner = check_corner(scan, para);
 	if(is_corner)
 	{
-
-		beeper.beepForCommand(VALID);
+//		beeper.beepForCommand(VALID);
 		ROS_WARN("is_corner = %d", is_corner);
 	}
 	for (int i = 359; i >= 0; i--) {
@@ -301,21 +303,27 @@ bool ACleanMode::calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,boo
 			auto point1 = polar_to_cartesian(scan->ranges[i], i);
 //			ROS_INFO("point1(%lf, %lf)", point1.x, point1.y);
 
-			if (!para.inPoint1Range(point1, is_corner)) {
+			if (!para.LaserPointRange(point1, is_corner)) {
 //				INFO_BLUE("1");
 				continue;
 			}
 
+
 			auto point2 = polar_to_cartesian(scan->ranges[i - 1], i - 1);
+
+			if (!para.LaserPointRange(point2, is_corner)) {
+//				INFO_BLUE("1");
+				continue;
+			}
 
 			if (point2.Distance(point1) > 0.05) {
 				//ROS_INFO("two points distance is too large");
 //				INFO_BLUE("2");
 				continue;
 			}
-			auto target = get_middle_point(point1, point2, para);
+			auto target = get_target_point(point1, point2, para);
 
-			if (!para.inTargetRange(target)) {
+			if (!para.TargetPointRange(target)) {
 //				INFO_BLUE("3");
 				continue;
 			}
@@ -325,9 +333,11 @@ bool ACleanMode::calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,boo
 				continue;
 			}
 
-			if (!check_is_valid(target, para, scan)) {
+			if (is_corner) {
+				if (!removeCrossingPoint(target, para, scan)) {
 //				INFO_BLUE("5");
-				continue;
+					continue;
+				}
 			}
 
 //			ROS_WARN("PUSH! points(%d):target(%lf,%lf),dis(%f)", points.size(), target.x, target.y, target.Distance({CHASE_X, 0}));
