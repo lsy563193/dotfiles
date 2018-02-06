@@ -129,12 +129,19 @@ public:
 
 	uint8_t saveSlip();
 
-	uint8_t setChargerArea(const Cell_t homepoint);
+	uint8_t setChargerArea(const Points homepoint);
 
 	uint8_t saveBlocks(bool is_linear, bool is_save_rcon);
 	void	setBlockWithBound(Cell_t min, Cell_t max, CellState state, bool with_block);
 	void setCleaned(std::deque<Cell_t> cells);
 	void setExplorationCleaned();
+	/*
+	 * @param1 point
+	 * @param2 radian ,in cells
+	 * @param3 cover_block
+	 * @param4 cell_state
+	 */
+	void setCircleMarkers(Point_t point,int radian,bool cover_block,CellState cell_state);
 
 	uint32_t getCleanedArea();
 
