@@ -1436,7 +1436,7 @@ double Lidar::getLidarDistance(int16_t angle)
 			break;
 		}
 	}
-	ROS_INFO("\033[1;40;32m%s,%d,fixed_angle = %d, input angle %d,distance = %f\033[0m",__FUNCTION__,__LINE__,fixed_angle,angle,(count > 0)?distance/(count*1.0):0.0f);
+	ROS_INFO("\033[1;40;32m%s,%d,fixed_angle = %d, input angle %d,distance = %f\033[0m",__FUNCTION__,__LINE__,fixed_angle,angle,distance);
 	return 	distance;
 }
 
