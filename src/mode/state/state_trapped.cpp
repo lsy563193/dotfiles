@@ -8,12 +8,12 @@
 #include <robot.hpp>
 #include "key_led.h"
 
-void StateTrapped::init() {
+void StateFolllowWall::init() {
 	robot_timer.initTrapTimer();
 	key_led.setMode(LED_FLASH, LED_GREEN, 300);
 }
 
-//bool StateTrapped::isFinish() {
+//bool StateFolllowWall::isFinish() {
 //	return false;
 //}
 

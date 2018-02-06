@@ -54,7 +54,7 @@ bool CleanModeSpot::mapMark()
 		clean_map_.setCleaned(pointsGenerateCells(passed_path_));
 	}
 
-	if (sp_state == state_trapped)
+	if (sp_state == state_folllow_wall)
 		clean_map_.markRobot(CLEAN_MAP);
 	clean_map_.setBlocks();
 	PP_INFO();
