@@ -9,6 +9,7 @@
 #include <sys/sysinfo.h>
 #include <sys/vfs.h>
 #include <random>
+#include <wait.h>
 
 void x900_functional_test(std::string serial_port, int baud_rate)
 {
@@ -91,7 +92,56 @@ void error_loop()
 
 bool RAM_test()
 {
-	return true;
+	bool test_ret = false;
+	int RAM_test_size = 10; // In Mb.
+	int RAM_test_block_cnt = 3; // Test 3 blocks of RAM and size of each block is RAM_test_size Mb.
+
+	int pid;
+	int status = 0;
+	while ((pid = fork()) < 0)
+	{
+		ROS_ERROR("%s %d: fork() failed.", __FUNCTION__, __LINE__);
+		usleep(50000);
+	}
+
+	if (pid == 0)
+	{
+		// Child process.
+		ROS_INFO("%s %d: Child process up, pid:%d.", __FUNCTION__, __LINE__, getpid());
+
+		// (Austin)Use the modified memtester.
+		int fail_code = execlp("memtester", "memtester", std::to_string(RAM_test_size).c_str(), "1",
+			   std::to_string(RAM_test_block_cnt).c_str() ,NULL);
+		ROS_ERROR("%s %d: Child process end with error: %02d, %s", __FUNCTION__, __LINE__, errno, strerror(errno));
+		_exit(fail_code);
+	} else
+	{
+		// Parent process.
+		ROS_INFO("%s %d: Parent process up, child pid:%d.", __FUNCTION__, __LINE__, pid);
+		while (ros::ok() && waitpid(pid, &status, WNOHANG) == 0)
+		{
+//			ROS_INFO("%s %d: Parent waiting for pid:%d", __FUNCTION__, __LINE__, pid);
+//			if (errno != EINTR)
+//			{
+//				status = -1;
+//				break;
+//			}
+			usleep(200000);
+		}
+		switch (status)
+		{
+			case 0:
+				ROS_INFO("%s %d: Test for RAM successed.", __FUNCTION__, __LINE__);
+				test_ret = true;
+				break;
+			default:
+				ROS_ERROR("%s %d: Test for RAM failed, failed code:%d!!", __FUNCTION__, __LINE__, status);
+				break;
+		}
+	}
+
+
+	return test_ret;
 }
 
 bool serial_port_test()

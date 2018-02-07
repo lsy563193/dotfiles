@@ -1629,7 +1629,7 @@ bool Lidar::lidar_is_stuck()
 uint8_t Lidar::lidar_get_status()
 {
 	if (lidar.isScanCompensateReady())
-		return lidar.lidarMarker(0.20);
+		return lidar.lidarMarker(0.23);
 
 	return 0;
 }

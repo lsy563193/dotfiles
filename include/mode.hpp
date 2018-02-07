@@ -86,9 +86,13 @@ public:
 
 	bool TargetPointRange(const Vector2<double> &target) {
 		if (is_left_) {
-			return (target.x > 0 && target.y < 0.4 && target.y > ROBOT_RADIUS) || (target.x > CHASE_X && std::abs(target.y) < ROBOT_RADIUS) || (target.y < -ROBOT_RADIUS || target.y > 0.4);
+			return /*(target.x > ROBOT_RADIUS && target.y < 0.4 && target.y > ROBOT_RADIUS) ||*/
+						 (target.x > CHASE_X && std::abs(target.y) < ROBOT_RADIUS) ||
+						 (target.y < -ROBOT_RADIUS);
 		} else{
-			return (target.x > 0 && target.y > -0.4 && target.y < -ROBOT_RADIUS) || (target.x > CHASE_X && std::abs(target.y) < ROBOT_RADIUS) || (target.y > ROBOT_RADIUS || target.y < -0.4);
+			return /*(target.x > ROBOT_RADIUS && target.y > -0.4 && target.y < -ROBOT_RADIUS) ||*/
+						 (target.x > CHASE_X && std::abs(target.y) < ROBOT_RADIUS) ||
+						 (target.y > ROBOT_RADIUS);
 
 		}
 	}
@@ -450,14 +454,14 @@ public:
 	virtual bool updateActionInStateSpot();
 	virtual void switchInStateSpot(){};
 
-	// State trapped
-	bool isStateTrapped() const
+	// State follow wall
+	bool isStateFollowWall() const
 	{
-		return sp_state == state_trapped;
+		return sp_state == state_folllow_wall;
 	}
-	virtual bool isSwitchByEventInStateTrapped();
-	virtual bool updateActionInStateTrapped();
-	virtual void switchInStateTrapped();
+	virtual bool isSwitchByEventInStateFollowWall();
+	virtual bool updateActionInStateFollowWall();
+	virtual void switchInStateFollowWall();
 	bool trapped_time_out_{};
 	bool trapped_closed_or_isolate{};
 	bool out_of_trapped{};
@@ -539,7 +543,7 @@ protected:
 	State *state_go_home_point = new StateGoHomePoint();
 	State *state_go_to_charger = new StateGoCharger();
 	State *state_charge = new StateCharge();
-	State *state_trapped = new StateTrapped();
+	State *state_folllow_wall = new StateFolllowWall();
 	State *state_spot =  new StateSpot();
 	State *state_resume_low_battery_charge = new StateResumeLowBatteryCharge();
 	State *state_pause = new StatePause();
@@ -650,8 +654,8 @@ public:
 	bool isSwitchByEventInStatePause() override;
 	bool updateActionInStatePause() override;
 
-	// State trapped
-	bool isSwitchByEventInStateTrapped() override;
+	// State folllow wall
+	bool isSwitchByEventInStateFollowWall() override;
 
 	// State charge
 	bool isSwitchByEventInStateCharge() override;
@@ -723,7 +727,7 @@ public:
 	void keyClean(bool state_now, bool state_last) override;
 	void remoteMax(bool state_now, bool state_last) override;
 	void remoteClean(bool state_now, bool state_last) override;
-	void switchInStateTrapped() override;
+	void switchInStateFollowWall() override;
 
 	void switchInStateInit() override;
 
