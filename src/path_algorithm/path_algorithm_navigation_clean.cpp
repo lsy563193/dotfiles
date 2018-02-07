@@ -114,9 +114,9 @@ Cells NavCleanPathAlgorithm::findTargetInSameLane(GridMap &map, const Cell_t &cu
 		it[i] = curr_cell;
 		auto unclean_cells = 0;
 
-		for (Cell_t neighbor = it[i] + cell_direction_index_[i];
-				 !map.cellIsOutOfRange(neighbor + cell_direction_index_[i]) && !map.isBlocksAtY(neighbor.x, neighbor.y);
-				 neighbor += cell_direction_index_[i])
+		for (Cell_t neighbor = it[i] + cell_direction_[i];
+				 !map.cellIsOutOfRange(neighbor + cell_direction_[i]) && !map.isBlocksAtY(neighbor.x, neighbor.y);
+				 neighbor += cell_direction_[i])
 		{
 			unclean_cells += map.isUncleanAtY(neighbor.x, neighbor.y);
 			if (unclean_cells >= 3) {
@@ -178,7 +178,7 @@ void NavCleanPathAlgorithm::tracePathsToTarget(GridMap &map, const Cell_t &targe
 	for (auto iterator = target; iterator != start;) {
 		auto cost = map.getCell(COST_MAP, iterator.x, iterator.y) - 1;
 		for (auto i = 0; i < 4; i++) {
-			auto neighbor = iterator + cell_direction_index_[(last_i + i) % 4];
+			auto neighbor = iterator + cell_direction_[(last_i + i) % 4];
 			if (map.isOutOfMap(neighbor))
 				continue;
 
@@ -318,14 +318,54 @@ void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path) {
 	}
 	printf("\n");
 	ROS_INFO("%s %d: Start optimizing Path", __FUNCTION__, __LINE__);
+
+	ROS_INFO("%s %d: step *.1, check simply last 3 cell ", __FUNCTION__, __LINE__);
 	PathList paths{};
 	Cells targets{*(path.end()-4)};
-	Cells path_end{};
-	tracePathsToTarget(map, path.back() ,*(path.end()-4),  path_end, 2);
-	if(path_end.size() == 3)
+	Cells path_simply{};
+	tracePathsToTarget(map, path.back() ,*(path.end()-4),  path_simply, 2);
+	if(path_simply.size() == 3)
 	{
 		path.erase(path.end()-3,path.end()-1);
-		path.insert((path.end()-1),*(path_end.end()-2));
+		path.insert((path.end()-1),*(path_simply.end()-2));
+		ROS_INFO("%s %d: step *.1 do success ", __FUNCTION__, __LINE__);
+//		map.print(CLEAN_MAP, path.front(),path.back().x, path.back().y);
 	}
-	map.print(CLEAN_MAP, path.back().x, path.back().y);
+	ROS_INFO("%s %d: step *.2, away from obstacles ", __FUNCTION__, __LINE__);
+//	map.print(COST_MAP, path.front(), path.back().x,path.back().y);
+	for(auto iterator = path.begin(); iterator != path.end()-3; ++iterator){
+		auto p1 = iterator;
+		auto p2 = iterator+1;
+		auto p3 = iterator+2;
+		int dir_p32 =0;
+		auto p_32 = *p3 - *p2;
+		dir_p32 = (p_32.x != 0)?(p_32.x > 0 ? 0 : 1):(p_32.y > 0 ? 2: 3);
+		int dir_21 =0;
+		auto p_21 = *p2 - *p1;
+		dir_21 = (p_21.x != 0)?(p_21.x > 0 ? 0 : 1):(p_21.y > 0 ? 2: 3);
+//		printf("p1(%d,%d),p2(%d,%d),p3(%d,%d),dir_p32(%d),\n",p1->x,p1->y, p2->x,p2->y,p3->x, p3->y,dir_p32);
+		auto p_it = *p2;
+		for(; p_it != *p3+cell_direction_[dir_p32]; p_it += cell_direction_[dir_p32])
+		{
+//			printf("{%d,%d},",p_it.x, p_it.y);
+			auto p_side = p_it + cell_direction_[dir_21];
+//			auto p_side2 = p_it + cell_index_[dir_21]*3;
+//			printf("{%d,%d},",p_side.x, p_side.y);
+//			printf("{%d,%d},",p_side2.x, p_side2.y);
+//			printf("\n");
+//			if(map.getCell(CLEAN_MAP, p_side.x,p_side.y) !=BLOCKED && )
+			if(!map.isBlockAccessible(p_side.x, p_side.y))
+				break;
+		}
+		if(p_it == *p3+cell_direction_[dir_p32])
+		{
+			*p2 += cell_direction_[dir_21];
+			*p3 += cell_direction_[dir_21];
+			ROS_INFO("%s %d: step *.2 do success ", __FUNCTION__, __LINE__);
+			printf("\n");
+		}
+//		printf("\n");
+//		printf("\n");
+//		printf("\n");
+	}
 }

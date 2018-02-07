@@ -6,7 +6,7 @@
 #include "robot.hpp"
 #include "path_algorithm.h"
 
-const Cell_t cell_direction_index_[9]{{1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1},{0,0}};
+const Cell_t cell_direction_[9]{{1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1},{0,0}};
 void APathAlgorithm::displayCellPath(const Cells &path)
 {
 	std::string     msg = __FUNCTION__;
@@ -266,7 +266,7 @@ Cells APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const 
 				if(map.getCell(COST_MAP, i, j) == cost_value) {
 					/* Set the lower cell of the cell which has the pass value equal to current pass value. */
 					for(auto index = 0;index<4; index++) {
-						auto neighbor = Cell_t(i, j) - cell_direction_index_[index];
+						auto neighbor = Cell_t(i, j) - cell_direction_[index];
 						if (map.getCell(COST_MAP, neighbor.x, neighbor.y) == COST_NO) {
 							map.setCell(COST_MAP, neighbor.x, neighbor.y, (CellState) next_cost_value);
 							cost_updated = true;
@@ -429,13 +429,13 @@ bool APathAlgorithm::findTargetUsingDijkstra(GridMap &map, const Cell_t& curr_ce
 		{
 			for (auto it1 = 0; it1 < 4; it1++)
 			{
-				auto neighbor = next + cell_direction_index_[it1];
+				auto neighbor = next + cell_direction_[it1];
 //				ROS_INFO("g_index[%d],next(%d,%d)", it1, neighbor.x,neighbor.y);
 				if (map.getCell(COST_MAP, neighbor.x, neighbor.y) != COST_1) {
 //					ROS_INFO("(%d,%d),", neighbor.x, neighbor.y);
 
 					for (auto it2 = 0; it2 < 9; it2++) {
-						auto neighbor_ = neighbor + cell_direction_index_[it2];
+						auto neighbor_ = neighbor + cell_direction_[it2];
 						if (map.getCell(CLEAN_MAP, neighbor_.x, neighbor_.y) == CLEANED &&
 								map.getCell(COST_MAP, neighbor_.x, neighbor_.y) == COST_NO)
 						{

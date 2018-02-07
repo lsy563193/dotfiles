@@ -6,7 +6,7 @@
 
 GridMap slam_grid_map;
 GridMap decrease_map;
-extern const Cell_t cell_direction_index_[9];
+extern const Cell_t cell_direction_[9];
 
 Cell_t g_stub_cell(0,0);
 
@@ -1219,7 +1219,7 @@ void GridMap::generateSPMAP(const Cell_t& curr_cell,Cells& targets)
 		{
 			for (auto index = 0; index < 4; index++)
 			{
-				auto neighbor = next + cell_direction_index_[index];
+				auto neighbor = next + cell_direction_[index];
 				if(isOutOfMap(neighbor))
 					continue;
 				if (getCell(COST_MAP, neighbor.x, neighbor.y) == 0) {
@@ -1355,7 +1355,7 @@ void GridMap::print(uint8_t id, int16_t endx, int16_t endy)
 //	Cell_t curr_cell = {0,0};
 	getMapRange(id, &x_min, &x_max, &y_min, &y_max);
 //	outString << '\t';
-	outString << '\t  ';
+	outString << "\t  ";
 	for (y = y_min; y <= y_max; y++) {
 		if (abs(y) % 10 == 0) {
 			outString << y;
@@ -1368,9 +1368,7 @@ void GridMap::print(uint8_t id, int16_t endx, int16_t endy)
 	printf("%s\n",outString.str().c_str());
 	outString.str("");
 //	outString << '\t';
-	outString << '\t';
-	outString << ' ';
-	outString << ' ';
+	outString << "\t  ";
 	for (y = y_min; y <= y_max; y++) {
 		outString << abs(y) % 10;
 	}

@@ -9,7 +9,7 @@
 #include <deque>
 #include <map.h>
 
-extern const Cell_t cell_direction_index_[9];
+extern const Cell_t cell_direction_[9];
 
 typedef std::deque<Cells> PathList;
 
