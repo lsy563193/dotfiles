@@ -322,14 +322,14 @@ typedef std::deque<Cell_t> Cells;
 
 typedef enum {
 	MAP_POS_X = 0,
-//  const double MAP_PX_PY = PI/4;
-					MAP_POS_Y,
 //  const double MAP_NS_PY = PI*3/4;
-					MAP_NEG_X,
+	MAP_NEG_X,
+//  const double MAP_PX_PY = PI/4;
+	MAP_POS_Y,
 //  const double MAP_NX_NY =-PI*3/4;
-					MAP_NEG_Y,
+	MAP_NEG_Y,
 //MAP_PX_NY =-PI/4;
-					MAP_ANY,
+	MAP_ANY,
 } Dir_t;
 
 class Point_t:public Vector2<float> {

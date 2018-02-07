@@ -42,6 +42,7 @@ private:
 bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &plan_path)
 {
 
+	map.print(CLEAN_MAP, 0, 0);
 	plan_path.clear();
 	auto curr_cell = curr.toCell();
 	ROS_INFO("Step 1: Find possible plan_path in same lane.");
@@ -62,16 +63,14 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 		return (l.y < r.y || (l.y == r.y && l.x < r.x));
 	});
 
-	displayTargetList(targets);
-
 	targets = std::for_each(targets.begin(), targets.end(),FilterTarget(curr_cell));
 
 	displayTargetList(targets);
 
-	targets.erase(std::remove_if(targets.begin(), targets.end(),[&map](Cell_t it){
-		auto cost = map.getCell(COST_MAP, it.x, it.y);
-		return cost == COST_NO || cost == COST_1;
-	}),targets.end());
+//	targets.erase(std::remove_if(targets.begin(), targets.end(),[&map](Cell_t it){
+//		auto cost = map.getCell(COST_MAP, it.x, it.y);
+//		return cost == COST_NO || cost == COST_1;
+//	}),targets.end());
 
 	displayTargetList(targets);
 
@@ -90,9 +89,10 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 	ROS_INFO("Step 4: Filter paths to get the best target.");
 
 	Cells path;
-	if (!filterPathsToSelectBestPath(map, paths, curr_cell, path))
+	if (!filterPathsToSelectBestPath(map, paths, curr_cell, path,last_dir))
 		return false;
 
+	map.print(COST_MAP, path.back().x,path.back().y);
 	ROS_INFO("Step 5: Optimize path for adjusting it away from obstacles..");
 	optimizePath(map, path);
 
@@ -179,7 +179,7 @@ void NavCleanPathAlgorithm::tracePathsToTarget(GridMap &map, const Cell_t &targe
 	auto cost = map.getCell(COST_MAP, target.x, target.y);
 	for (auto iterator = target; iterator != start;) {
 		cost -= 1;
-		if(cost == 2)
+		if(cost <= 2)
 			break;
 		for (auto i = 0; i < 4; i++) {
 			auto neighbor = iterator + cell_direction_[(last_i + i) % 4];
@@ -196,7 +196,7 @@ void NavCleanPathAlgorithm::tracePathsToTarget(GridMap &map, const Cell_t &targe
 			}
 		}
 	}
-	if(cost != 2)
+	if(cost == 3)
 	{
 		if (path.back() != target)
 			path.push_back(target);
@@ -275,28 +275,30 @@ public:
 };
 
 bool NavCleanPathAlgorithm::filterPathsToSelectBestPath(GridMap &map, PathList &paths, const Cell_t &cell_curr,
-																												Cells &best_path) {
+																												Cells &best_path,Dir_t last_dir) {
 	std::deque<BestTargetFilter> filters{};
 	Cell_t min_cell,max_cell;
 	map.getMapRange(CLEAN_MAP,&min_cell.x, &max_cell.x,&min_cell.y,&max_cell.y);
-	BestTargetFilter filters_case1{static_cast<int16_t>(cell_curr.y + 2), max_cell.y, 0, false};
-	BestTargetFilter filters_case1_1{cell_curr.y, static_cast<int16_t>(cell_curr.y + 1), 0, false};
-	BestTargetFilter filters_case2{min_cell.y, max_cell.y,1,false};
-	BestTargetFilter filters_case3{min_cell.y, static_cast<int16_t>(cell_curr.y - 2), 0, true};
-	BestTargetFilter filters_case3_1{static_cast<int16_t>(min_cell.y - 1), cell_curr.y, 0, true};
-	BestTargetFilter filters_case4{min_cell.y, max_cell.y,1,true};
-	BestTargetFilter filters_case5{cell_curr.y, max_cell.y, 1000,false};
-	BestTargetFilter filters_case6{min_cell.y, max_cell.y, 1000,true};
-	filters.push_back(filters_case1);
-	filters.push_back(filters_case1_1);
+//	BestTargetFilter filters_curr_y{static_cast<int16_t>(cell_curr.y - 2), cell_curr.y, 1, false};
+	BestTargetFilter filters_pos_2_puls{static_cast<int16_t>(cell_curr.y + 2), max_cell.y, 0, false};
+	BestTargetFilter filters_pos_0_to_1{cell_curr.y, static_cast<int16_t>(cell_curr.y + 1), 0, false};
+	BestTargetFilter filters_pos_1_turn{min_cell.y, max_cell.y,1,false};
+	BestTargetFilter filters_nag_2_puls{min_cell.y, static_cast<int16_t>(cell_curr.y - 2), 0, true};
+	BestTargetFilter filters_nag_0_to_1{static_cast<int16_t>(min_cell.y - 1), cell_curr.y, 0, true};
+	BestTargetFilter filters_nag_1_turn{min_cell.y, max_cell.y,1,true};
+	BestTargetFilter filters_pos_n_turn{cell_curr.y, max_cell.y, 1000,false};
+	BestTargetFilter filters_nag_n_turn{min_cell.y, max_cell.y, 1000,true};
+//	filters.push_back(filters_curr_y);
+	filters.push_back(filters_pos_2_puls);
+	filters.push_back(filters_pos_0_to_1);
 
 	if(!map.getCell(CLEAN_MAP,cell_curr.x,cell_curr.y-2) == UNCLEAN)
-		filters.push_back(filters_case2);
-	filters.push_back(filters_case3);
-	filters.push_back(filters_case3_1);
-	filters.push_back(filters_case4);
-	filters.push_back(filters_case5);
-	filters.push_back(filters_case6);
+		filters.push_back(filters_pos_1_turn);
+	filters.push_back(filters_nag_2_puls);
+	filters.push_back(filters_nag_0_to_1);
+	filters.push_back(filters_nag_1_turn);
+	filters.push_back(filters_pos_n_turn);
+	filters.push_back(filters_nag_n_turn);
 
 	for (auto &&filter : filters) {
 		printf("is towards Y+(%d),y_range(%d,%d),allow turn count(%d)\n",!filter.is_reverse_,filter.min_y_,filter.max_y_,filter.turn_count_);

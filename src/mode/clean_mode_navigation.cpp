@@ -63,7 +63,7 @@ bool CleanModeNav::mapMark()
 
 	clean_map_.setBlocks();
 	clean_map_.markRobot(CLEAN_MAP);
-	clean_map_.print(CLEAN_MAP, getPosition().toCell().x, getPosition().toCell().y);
+//	clean_map_.print(CLEAN_MAP, getPosition().toCell().x, getPosition().toCell().y);
 
 	passed_path_.clear();
 	return false;

@@ -1235,7 +1235,6 @@ void GridMap::generateSPMAP(const Cell_t& curr_cell,Cells& targets)
 			}
 		}
 	}
-	print(COST_MAP, 0,0);
 }
 
 bool GridMap::isFrontBlockBoundary(int dx)
@@ -1383,15 +1382,20 @@ void GridMap::print(uint8_t id, int16_t endx, int16_t endy)
 		outString << ' ';
 		for (y = y_min; y <= y_max; y++) {
 			cs = getCell(id, x, y);
-			if(cs == 1 && id == COST_MAP)
-				cs = 0;
-			cs = static_cast<CellState>((static_cast<int>(cs))%10);
-			if (x == curr_cell.x && y == curr_cell.y) {
-				outString << 'x';
-			} else if (x == endx && y == endy) {
-				outString << 'e';
-			} else {
-				outString << cs;
+			if((cs == 0 || cs == 1)&& id == COST_MAP)
+			{
+				outString << '#';
+			}else {
+				cs = static_cast<CellState>((static_cast<int>(cs)) % 10);
+				if (x == curr_cell.x && y == curr_cell.y) {
+					outString << 'x';
+				}
+				else if (x == endx && y == endy) {
+					outString << 'e';
+				}
+				else {
+					outString << cs;
+				}
 			}
 		}
 //		printf("%s\n",outString.str().c_str());
