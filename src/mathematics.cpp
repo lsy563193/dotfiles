@@ -90,3 +90,45 @@ void coordinate_transform(double *x, double *y, double theta, double offset_x, d
 	matrix_rotate(x, y, theta);
 	matrix_translate(x, y, offset_x, offset_y);
 }
+
+bool unsigned_long_to_hex_string(unsigned long number, char *str, const int len)
+{
+	if (len < 3)
+	{
+		ROS_ERROR("%s %d: Input string length is less then 3.", __FUNCTION__, __LINE__);
+		return false;
+	}
+
+	char base[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+	int i = 0, j = 0;
+	int tmp_len = len - 2; // 2 for '0x'.
+	char tmp_str[tmp_len]{};
+
+	while (number != 0 && j < tmp_len - 1)
+	{
+		tmp_str[j] = base[number % 16];
+		number /= 16;
+		j++;
+	}
+//	ROS_INFO("tmp_str: %s", tmp_str);
+
+	if (number != 0 && j == tmp_len - 1)
+	{
+		ROS_ERROR("%s %d: Input string length is too short to load the number.", __FUNCTION__, __LINE__);
+		return false;
+	}
+
+	str[i++] = '0';
+	str[i++] = 'x';
+	j--;
+	while (j >= 0)
+	{
+		str[i++] = tmp_str[j];
+		j--;
+	}
+
+	str[i] = '\0';
+//	ROS_INFO("string after convert: %s", str);
+
+	return true;
+}
