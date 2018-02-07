@@ -98,7 +98,33 @@ bool RAM_test()
 	int RAM_test_size = 2; // In Mb.
 	int RAM_test_block_cnt = 3; // Test 3 blocks of RAM and size of each block is RAM_test_size Mb.
 
-	int pid;
+	pid_t status;
+	std::string cmd = "memtester " + std::to_string(RAM_test_size) + " 1 " + std::to_string(RAM_test_block_cnt);
+	ROS_INFO("%s %d: Run command: %s", __FUNCTION__, __LINE__, cmd.c_str());
+	status = system(cmd.c_str());
+
+	if (-1 == status)
+		ROS_ERROR("system error!");
+	else
+	{
+		ROS_INFO("exit status value = [0x%x]", status);
+		if (WIFEXITED(status))
+		{
+			if (0 == WEXITSTATUS(status))
+			{
+				ROS_INFO("%s %d: Test for RAM successed.", __FUNCTION__, __LINE__);
+				test_ret = true;
+			}
+			else
+				ROS_ERROR("%s %d: Program test for RAM failed, failed code:%d!!", __FUNCTION__, __LINE__, WEXITSTATUS(status));
+		}
+		else
+			ROS_ERROR("%s %d: Test for RAM end for exception, failed code:%d!!", __FUNCTION__, __LINE__, WEXITSTATUS(status));
+	}
+
+	return test_ret;
+
+	/*int pid;
 	int status = 0;
 	while ((pid = fork()) < 0)
 	{
@@ -143,7 +169,7 @@ bool RAM_test()
 	}
 
 
-	return test_ret;
+	return test_ret;*/
 }
 
 bool serial_port_test()
