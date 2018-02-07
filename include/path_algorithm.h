@@ -41,19 +41,6 @@ public:
 
 	void displayPointPath(const Points &point_path);
 
-	/*
-	 * @author Patrick Chow
-	 * @last modify by Austin Liu
-	 *
-	 * This function is for adjusting the path away from obstacles while the cost and turning count is
-	 * still the same.
-	 *
-	 * @param: GridMap map, it will use it's CLEAN_MAP data.
-	 * @param: Cells path, the path from start cell to target cell.
-	 *
-	 * @return: Cells path, an equivalent path of input path which is most far away from the obstacles.
-	 */
-	void optimizePath(GridMap &map, Cells &path);
 	public:
 	/*
 	 * @author Patrick Chow
@@ -164,7 +151,7 @@ private:
 	 *
 	 * @return: Cells, a deque of possible targets.
 	 */
-	Cells filterAllPossibleTargets(GridMap &map, const Cell_t &curr_cell, BoundingBox2 &b_map);
+//	Cells filterAllPossibleTargets(GridMap &map, const Cell_t &curr_cell, BoundingBox2 &b_map);
 
 	/*
 	 * @author Patrick Chow
@@ -178,7 +165,21 @@ private:
 	 *
 	 * @return: PathList, a deque of paths from start cell to the input targets.
 	 */
-	PathList tracePathsToTargets(GridMap &map, const Cells &targets, const Cell_t& start);
+	void tracePathsToTarget(GridMap &map, const Cell_t &targets, const Cell_t &start, Cells &path, int last_i);
+
+	/*
+	 * @author Patrick Chow
+	 * @last modify by Austin Liu
+	 *
+	 * This function is for adjusting the path away from obstacles while the cost and turning count is
+	 * still the same.
+	 *
+	 * @param: GridMap map, it will use it's CLEAN_MAP data.
+	 * @param: Cells path, the path from start cell to target cell.
+	 *
+	 * @return: Cells path, an equivalent path of input path which is most far away from the obstacles.
+	 */
+	void optimizePath(GridMap &map, Cells &path);
 
 	/*
 	 * @author Patrick Chow
@@ -194,7 +195,7 @@ private:
 	 *          false if there is no target that match the condictions.
 	 *          Cell_t best_target, the selected best target.
 	 */
-	bool filterPathsToSelectTarget(GridMap &map, PathList &paths, const Cell_t &cell_curr, Cell_t &best_target);
+	bool filterPathsToSelectBestPath(GridMap &map, PathList &paths, const Cell_t &cell_curr, Cells &best_path);
 
 	bool checkTrapped(GridMap &map, const Cell_t &curr_cell) override ;
 

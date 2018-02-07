@@ -42,104 +42,106 @@ void APathAlgorithm::displayPointPath(const Points &point_path)
 	ROS_INFO("%s",msg.c_str());
 }
 
-void APathAlgorithm::optimizePath(GridMap &map, Cells& path)
-{
-	// Optimize only if the path have more than 3 cells.
-	if (path.size() > 3) {
-		ROS_INFO("%s %d: Start optimizing Path",__FUNCTION__,__LINE__);
-		auto it = path.begin();
-		for (uint16_t i = 0; i < path.size() - 3; i++) {
-			ROS_DEBUG("%s %d: i: %d, size: %ld.", __FUNCTION__, __LINE__, i, path.size());
-			auto it_ptr1 = it;
+//void APathAlgorithm::optimizePath(GridMap &map, Cells& path)
+//{
+//	// Optimize only if the path have more than 3 cells.
+//	if (path.size() > 3) {
+//		ROS_INFO("%s %d: Start optimizing Path",__FUNCTION__,__LINE__);
+//		auto it = path.begin();
+//		for (uint16_t i = 0; i < path.size() - 3; i++) {
+//			ROS_DEBUG("%s %d: i: %d, size: %ld.", __FUNCTION__, __LINE__, i, path.size());
+//			auto it_ptr1 = it;
+//
+//			auto it_ptr2 = it_ptr1;
+//			it_ptr2++;
+//
+//			auto it_ptr3 = it_ptr2;
+//			it_ptr3++;
+//
+//			// Just for protection, in case the iterator overflow. It should not happen under (i < path_points.size() - 3).
+//			if (it_ptr3 == path.end())
+//				break;
+//
+//			if (it_ptr2->x == it_ptr3->x) {		// x coordinates are the same for p1, p2, find a better y coordinate.
+//				int16_t x_min, x_max;
+//				x_min = x_max = it_ptr2->x;
+//
+//				int16_t	ei, ej, si, sj;
+//				sj = it_ptr1->x > it_ptr2->x ? it_ptr2->x : it_ptr1->x;
+//				ej = it_ptr1->x > it_ptr2->x ? it_ptr1->x : it_ptr2->x;
+//				si = it_ptr2->y > it_ptr3->y ? it_ptr3->y : it_ptr2->y;
+//				ei = it_ptr2->y > it_ptr3->y ? it_ptr2->y : it_ptr3->y;
+//
+//				bool blocked_min, blocked_max;
+//				blocked_min = blocked_max = false;
+//				while (!blocked_min || !blocked_max) {
+//					for (int16_t j = si; j <= ei && (!blocked_min || !blocked_max); j++) {
+//						if (!blocked_min && (x_min - 1 < sj ||
+//								map.getCell(COST_MAP, x_min - 1, j) == COST_HIGH)) {
+//							blocked_min = true;
+//						}
+//						if (!blocked_max && (x_max + 1 > ej ||
+//								map.getCell(COST_MAP, x_max + 1, j) == COST_HIGH)) {
+//							blocked_max = true;
+//						}
+//					}
+//					if (!blocked_min) {
+//						x_min--;
+//					}
+//					if (!blocked_max) {
+//						x_max++;
+//					}
+//				}
+//
+//				if ((it_ptr3->x != (x_min + x_max) / 2) && (it_ptr1->x != (x_min + x_max) / 2))
+//					it_ptr2->x = it_ptr3->x = (x_min + x_max) / 2;
+//
+//				//ROS_INFO("%s %d: Loop i:%d\tx_min_forward: %d\tx_max_forward: %d\tget x:%d", __FUNCTION__, __LINE__, i, x_min_forward, x_max_forward, (x_min_forward + x_max_forward) / 2);
+//			} else {
+//				int16_t y_min, y_max;
+//				y_min = y_max = it_ptr2->y;
+//
+//				int16_t	ei, ej, si, sj;
+//				sj = it_ptr1->y > it_ptr2->y ? it_ptr2->y : it_ptr1->y;
+//				ej = it_ptr1->y > it_ptr2->y ? it_ptr1->y : it_ptr2->y;
+//				si = it_ptr2->x > it_ptr3->x ? it_ptr3->x : it_ptr2->x;
+//				ei = it_ptr2->x > it_ptr3->x ? it_ptr2->x : it_ptr3->x;
+//
+//				bool blocked_min, blocked_max;
+//				blocked_min = blocked_max = false;
+//				while (!blocked_min || !blocked_max) {
+//					for (int16_t j = si; j <= ei && (!blocked_min || !blocked_max); j++) {
+//						if (!blocked_min && (y_min - 1 < sj ||
+//								map.getCell(COST_MAP, j, y_min - 1) == COST_HIGH)) {
+//							blocked_min = true;
+//						}
+//						if (!blocked_max && (y_max + 1 > ej ||
+//								map.getCell(COST_MAP, j, y_max + 1) == COST_HIGH)) {
+//							blocked_max = true;
+//						}
+//					}
+//					if (!blocked_min) {
+//						y_min--;
+//					}
+//					if (!blocked_max) {
+//						y_max++;
+//					}
+//				}
+//
+//				if ((it_ptr3->y != (y_min + y_max) / 2) && (it_ptr1->y != (y_min + y_max) / 2))
+//					it_ptr2->y = it_ptr3->y = (y_min + y_max) / 2;
+//				//ROS_INFO("%s %d: Loop i:%d\ty_min: %d\ty_max: %d\tget y:%d", __FUNCTION__, __LINE__, i, y_min, y_max, (y_min + y_max) / 2);
+//			}
+//
+//			it++;
+//		}
+//		displayCellPath(path);
+//	} else
+//		ROS_INFO("%s %d:Path too short(size: %ld), optimization terminated.", __FUNCTION__, __LINE__, path.size());
+//
+//}
 
-			auto it_ptr2 = it_ptr1;
-			it_ptr2++;
 
-			auto it_ptr3 = it_ptr2;
-			it_ptr3++;
-
-			// Just for protection, in case the iterator overflow. It should not happen under (i < path_points.size() - 3).
-			if (it_ptr3 == path.end())
-				break;
-
-			if (it_ptr2->x == it_ptr3->x) {		// x coordinates are the same for p1, p2, find a better y coordinate.
-				int16_t x_min, x_max;
-				x_min = x_max = it_ptr2->x;
-
-				int16_t	ei, ej, si, sj;
-				sj = it_ptr1->x > it_ptr2->x ? it_ptr2->x : it_ptr1->x;
-				ej = it_ptr1->x > it_ptr2->x ? it_ptr1->x : it_ptr2->x;
-				si = it_ptr2->y > it_ptr3->y ? it_ptr3->y : it_ptr2->y;
-				ei = it_ptr2->y > it_ptr3->y ? it_ptr2->y : it_ptr3->y;
-
-				bool blocked_min, blocked_max;
-				blocked_min = blocked_max = false;
-				while (!blocked_min || !blocked_max) {
-					for (int16_t j = si; j <= ei && (!blocked_min || !blocked_max); j++) {
-						if (!blocked_min && (x_min - 1 < sj ||
-								map.getCell(COST_MAP, x_min - 1, j) == COST_HIGH)) {
-							blocked_min = true;
-						}
-						if (!blocked_max && (x_max + 1 > ej ||
-								map.getCell(COST_MAP, x_max + 1, j) == COST_HIGH)) {
-							blocked_max = true;
-						}
-					}
-					if (!blocked_min) {
-						x_min--;
-					}
-					if (!blocked_max) {
-						x_max++;
-					}
-				}
-
-				if ((it_ptr3->x != (x_min + x_max) / 2) && (it_ptr1->x != (x_min + x_max) / 2))
-					it_ptr2->x = it_ptr3->x = (x_min + x_max) / 2;
-
-				//ROS_INFO("%s %d: Loop i:%d\tx_min_forward: %d\tx_max_forward: %d\tget x:%d", __FUNCTION__, __LINE__, i, x_min_forward, x_max_forward, (x_min_forward + x_max_forward) / 2);
-			} else {
-				int16_t y_min, y_max;
-				y_min = y_max = it_ptr2->y;
-
-				int16_t	ei, ej, si, sj;
-				sj = it_ptr1->y > it_ptr2->y ? it_ptr2->y : it_ptr1->y;
-				ej = it_ptr1->y > it_ptr2->y ? it_ptr1->y : it_ptr2->y;
-				si = it_ptr2->x > it_ptr3->x ? it_ptr3->x : it_ptr2->x;
-				ei = it_ptr2->x > it_ptr3->x ? it_ptr2->x : it_ptr3->x;
-
-				bool blocked_min, blocked_max;
-				blocked_min = blocked_max = false;
-				while (!blocked_min || !blocked_max) {
-					for (int16_t j = si; j <= ei && (!blocked_min || !blocked_max); j++) {
-						if (!blocked_min && (y_min - 1 < sj ||
-								map.getCell(COST_MAP, j, y_min - 1) == COST_HIGH)) {
-							blocked_min = true;
-						}
-						if (!blocked_max && (y_max + 1 > ej ||
-								map.getCell(COST_MAP, j, y_max + 1) == COST_HIGH)) {
-							blocked_max = true;
-						}
-					}
-					if (!blocked_min) {
-						y_min--;
-					}
-					if (!blocked_max) {
-						y_max++;
-					}
-				}
-
-				if ((it_ptr3->y != (y_min + y_max) / 2) && (it_ptr1->y != (y_min + y_max) / 2))
-					it_ptr2->y = it_ptr3->y = (y_min + y_max) / 2;
-				//ROS_INFO("%s %d: Loop i:%d\ty_min: %d\ty_max: %d\tget y:%d", __FUNCTION__, __LINE__, i, y_min, y_max, (y_min + y_max) / 2);
-			}
-
-			it++;
-		}
-		displayCellPath(path);
-	} else
-		ROS_INFO("%s %d:Path too short(size: %ld), optimization terminated.", __FUNCTION__, __LINE__, path.size());
-
-}
 Points APathAlgorithm::cells_generate_points(Cells &path)
 {
 //	displayCellPath(path);

@@ -235,7 +235,7 @@ public:
 	bool isFrontBlockBoundary(int dx);
 
 	void generateSPMAP(const Cell_t &curr, Cells &target_list);
-	void generateSPMAP(const Cell_t &curr);
+//	void generateSPMAP(const Cell_t &curr);
 /*
  * Function to find the x/y range of the Map or wfMap, if the range is to small,
  * use the offset of those value to 3.
@@ -264,6 +264,7 @@ public:
 	void getMapRange(uint8_t id, int16_t *x_range_min, int16_t *x_range_max, int16_t *y_range_min, int16_t *y_range_max);
 
 	bool isOutOfMap(const Cell_t &cell);
+	bool isOutOfTargetRange(const Cell_t &cell);
 	bool cellIsOutOfRange(Cell_t cell);
 
 	void colorPrint(const char *outString, int16_t y_min, int16_t y_max);
