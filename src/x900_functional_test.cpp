@@ -10,6 +10,7 @@
 #include <sys/vfs.h>
 #include <random>
 #include <wait.h>
+#include <mode.hpp>
 
 void x900_functional_test(std::string serial_port, int baud_rate)
 {
@@ -27,14 +28,14 @@ void x900_functional_test(std::string serial_port, int baud_rate)
 	}
 
 	// Test item: Serial port.
-	if (!serial_port_test() || !serial.init(serial_port, baud_rate))
+	if (!serial.init(serial_port, baud_rate) || !serial_port_test())
 	{
 		ROS_ERROR("%s %d: Serial port test failed!!", __FUNCTION__, __LINE__);
 		error_loop();
 	}
 	ROS_INFO("Test serial port success!!");
 
-	serial.resetSendStream();
+/*
 	auto serial_receive_routine = new boost::thread(boost::bind(&Serial::receive_routine_cb, &serial));
 	auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
 
@@ -70,6 +71,7 @@ void x900_functional_test(std::string serial_port, int baud_rate)
 		error_loop();
 	}
 	ROS_INFO("Test main board success!!");
+*/
 
 	// Test finish.
 	while (ros::ok())
@@ -93,14 +95,14 @@ void error_loop()
 bool RAM_test()
 {
 	bool test_ret = false;
-	int RAM_test_size = 10; // In Mb.
+	int RAM_test_size = 2; // In Mb.
 	int RAM_test_block_cnt = 3; // Test 3 blocks of RAM and size of each block is RAM_test_size Mb.
 
 	int pid;
 	int status = 0;
 	while ((pid = fork()) < 0)
 	{
-		ROS_ERROR("%s %d: fork() failed.", __FUNCTION__, __LINE__);
+		ROS_ERROR("%s %d: fork() failed:%d.", __FUNCTION__, __LINE__, errno);
 		usleep(50000);
 	}
 
@@ -146,20 +148,57 @@ bool RAM_test()
 
 bool serial_port_test()
 {
-	Serial serial_port_S2;
-	std::string ttyS2 = "/dev/ttyS2";
-	if (!serial_port_S2.init(ttyS2, 115200))
-	{
-		ROS_ERROR("%s %d: %s init failed!!", __FUNCTION__, __LINE__, ttyS2);
-		return false;
-	}
-
+	bool test_ret = true;
 	std::random_device rd;
 	std::mt19937 random_number_engine(rd());
 	std::uniform_int_distribution<uint8_t> dist_char;
+	std::string send_string_sum{};
+	std::string receive_string_sum{};
+	uint8_t receive_data[REC_LEN];
+	int test_frame_cnt = 50;
 
+	serial.resetSendStream();
+	ROS_INFO("%s %d: Start serial testing.", __FUNCTION__, __LINE__);
+	for (uint8_t test_cnt = 0; test_cnt < test_frame_cnt; test_cnt++)
+	{
+		// Write random numbers to send stream.
+		for (uint8_t i = CTL_WHEEL_LEFT_HIGH; i < CTL_CRC; i++)
+		{
+			if (i == CTL_MAIN_BOARD_MODE)
+				serial.setSendData(i, SERIAL_TEST_MODE);
+			else if (i == CTL_BEEPER)
+				serial.setSendData(i, static_cast<uint8_t>(test_cnt + 1));
+			else if (i == CTL_KEY_VALIDATION)
+				// Avoid 0x40/0x41/0x42/0x23.
+				serial.setSendData(i, SERIAL_TEST_MODE);
+			else
+			{
+				uint8_t random_byte = dist_char(random_number_engine);
+				serial.setSendData(i, random_byte);
+			}
+			send_string_sum += std::to_string(serial.getSendData(i));
+		}
+		serial.sendData();
+//		robot::instance()->debugSendStream(serial.send_stream);
 
+		int read_ret = serial.read(receive_data, REC_LEN);
 
+		if (read_ret != REC_LEN)
+		{
+			ROS_ERROR("%s %d: Error during read:%d.", __FUNCTION__, __LINE__, read_ret);
+			test_ret = false;
+			break;
+		}
+
+		for (uint8_t i = CTL_WHEEL_LEFT_HIGH; i < CTL_CRC; i++)
+			receive_string_sum += std::to_string(receive_data[i]);
+//		robot::instance()->debugReceivedStream(receive_data);
+	}
+
+	if (!test_ret)
+		return test_ret;
+
+	return send_string_sum.compare(receive_string_sum) == 0;
 
 	// Test serial port /dev/ttyS2 and /dev/ttyS3 with direct connection.
 /*	Serial serial_port_S2;

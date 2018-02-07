@@ -101,8 +101,6 @@ robot::robot()
 		ROS_ERROR("serial not ready\n");
 	}
 
-	serial.resetSendStream();
-
 	ROS_INFO("waiting robotbase awake ");
 	auto serial_receive_routine = new boost::thread(boost::bind(&Serial::receive_routine_cb, &serial));
 	auto robotbase_routine = new boost::thread(boost::bind(&robot::robotbase_routine_cb, this));
@@ -128,7 +126,7 @@ void robot::robotbase_routine_cb()
 
 	ros::Rate	r(_RATE);
 	ros::Time	cur_time, last_time;
-	uint8_t buf[RECEI_LEN];
+	uint8_t buf[REC_LEN];
 
 	//Debug
 	uint16_t error_count = 0;
@@ -155,7 +153,7 @@ void robot::robotbase_routine_cb()
 		/*--------data extrict from serial com--------*/
 		ROS_ERROR_COND(pthread_mutex_lock(&recev_lock)!=0, "robotbase pthread receive lock fail");
 		ROS_ERROR_COND(pthread_cond_wait(&recev_cond,&recev_lock)!=0, "robotbase pthread receive cond wait fail");
-		memcpy(buf,serial.receive_stream,sizeof(uint8_t)*RECEI_LEN);
+		memcpy(buf,serial.receive_stream,sizeof(uint8_t)*REC_LEN);
 		ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock)!=0, "robotbase pthread receive unlock fail");
 //		debugReceivedStream(buf);
 
@@ -591,11 +589,11 @@ void robot::obsAdjustCount(int count)
 void robot::debugReceivedStream(const uint8_t *buf)
 {
 	ROS_INFO("%s %d: Received stream:", __FUNCTION__, __LINE__);
-	for (int i = 0; i < RECEI_LEN; i++)
+	for (int i = 0; i < REC_LEN; i++)
 		printf("%02d ", i);
 	printf("\n");
 
-	for (int i = 0; i < RECEI_LEN; i++)
+	for (int i = 0; i < REC_LEN; i++)
 		printf("%02x ", buf[i]);
 	printf("\n");
 }
