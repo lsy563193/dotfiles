@@ -388,7 +388,7 @@ double MoveTypeFollowWall::getTurnRadian(bool use_target_radian)
 bool MoveTypeFollowWall::isOverOriginLine(GridMap &map)
 {
 	auto curr = getPosition();
-	auto target_point_ = dynamic_cast<ACleanMode*>(sp_mode_)->plan_path_.front();
+	auto target_point_ = dynamic_cast<ACleanMode*>(sp_mode_)->plan_path_.back();
 	if ((target_point_.y > start_point_.y && (start_point_.y - curr.y) > CELL_SIZE/4)
 		|| (target_point_.y < start_point_.y && (curr.y - start_point_.y) > CELL_SIZE/4))
 	{
@@ -438,19 +438,6 @@ bool MoveTypeFollowWall::isNewLineReach(GridMap &map)
 		ROS_ERROR("g_follow_last_follow_wall_dir%d", g_follow_last_follow_wall_dir);
 		ret = true;
 	}
-	else if (is_pos_dir ^ s_curr_p.y < target_point_.y)
-	{
-		// Robot has reached the target line center but still not reach target line limit.
-		// Check if the wall side has blocks on the costmap.
-		auto dx = (is_pos_dir ^ is_left_) ? +2 : -2;
-		if (map.isBlocksAtY(s_curr_p.toCell().x + dx, s_curr_p.toCell().y)) {
-			ROS_WARN("%s %d: Already has block at the wall side, start_p.y(%d), target.y(%d),curr_y(%d)",
-					 __FUNCTION__, __LINE__, start_point_.toCell().y, target_point_.toCell().y,
-					 s_curr_p.toCell().y);
-			ret = true;
-		}
-	}
-
 	return ret;
 }
 
