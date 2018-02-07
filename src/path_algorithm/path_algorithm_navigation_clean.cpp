@@ -81,9 +81,10 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 	ROS_INFO("Step 3: Trace back the path of these plan_path in COST_MAP.");
 	PathList paths{};
 	for (auto& target : targets) {
-		Cells path;
+		Cells path{};
 		tracePathsToTarget(map, target, curr_cell, path,0);
-		paths.push_back(path);
+		if(!path.empty())
+			paths.push_back(path);
 	}
 
 	ROS_INFO("Step 4: Filter paths to get the best target.");
@@ -175,8 +176,11 @@ Cells NavCleanPathAlgorithm::findTargetInSameLane(GridMap &map, const Cell_t &cu
 }
 
 void NavCleanPathAlgorithm::tracePathsToTarget(GridMap &map, const Cell_t &target, const Cell_t &start, Cells &path,int last_i) {
+	auto cost = map.getCell(COST_MAP, target.x, target.y);
 	for (auto iterator = target; iterator != start;) {
-		auto cost = map.getCell(COST_MAP, iterator.x, iterator.y) - 1;
+		cost -= 1;
+		if(cost == 2)
+			break;
 		for (auto i = 0; i < 4; i++) {
 			auto neighbor = iterator + cell_direction_[(last_i + i) % 4];
 			if (map.isOutOfMap(neighbor))
@@ -192,9 +196,12 @@ void NavCleanPathAlgorithm::tracePathsToTarget(GridMap &map, const Cell_t &targe
 			}
 		}
 	}
-	if (path.back() != target)
-		path.push_back(target);
-	path.push_front(start);
+	if(cost != 2)
+	{
+		if (path.back() != target)
+			path.push_back(target);
+		path.push_front(start);
+	}
 }
 
 

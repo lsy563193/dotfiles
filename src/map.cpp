@@ -1383,6 +1383,8 @@ void GridMap::print(uint8_t id, int16_t endx, int16_t endy)
 		outString << ' ';
 		for (y = y_min; y <= y_max; y++) {
 			cs = getCell(id, x, y);
+			if(cs == 1 && id == COST_MAP)
+				cs = 0;
 			cs = static_cast<CellState>((static_cast<int>(cs))%10);
 			if (x == curr_cell.x && y == curr_cell.y) {
 				outString << 'x';
