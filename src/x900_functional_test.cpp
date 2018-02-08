@@ -25,16 +25,25 @@ void x900_functional_test(std::string serial_port, int baud_rate)
 		ROS_ERROR("%s %d: RAM test failed!!", __FUNCTION__, __LINE__);
 		error_loop();
 	}
+	ROS_INFO("%s %d: Test for RAM successed.", __FUNCTION__, __LINE__);
 
+	// Test item: Flash.
+	if (!Flash_test())
+	{
+		ROS_ERROR("%s %d: Flash test failed!!", __FUNCTION__, __LINE__);
+		error_loop();
+	}
+	ROS_INFO("%s %d: Test for Flash successed.", __FUNCTION__, __LINE__);
+
+/*
 	// Test item: Serial port.
-	if (!serial_port_test() || !serial.init(serial_port, baud_rate))
+	if (!serial.init(serial_port, baud_rate) || !serial_port_test())
 	{
 		ROS_ERROR("%s %d: Serial port test failed!!", __FUNCTION__, __LINE__);
 		error_loop();
 	}
 	ROS_INFO("Test serial port success!!");
 
-	serial.resetSendStream();
 	auto serial_receive_routine = new boost::thread(boost::bind(&Serial::receive_routine_cb, &serial));
 	auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
 
@@ -70,6 +79,7 @@ void x900_functional_test(std::string serial_port, int baud_rate)
 		error_loop();
 	}
 	ROS_INFO("Test main board success!!");
+*/
 
 	// Test finish.
 	while (ros::ok())
@@ -92,15 +102,39 @@ void error_loop()
 
 bool RAM_test()
 {
+	return true;
 	bool test_ret = false;
-	int RAM_test_size = 10; // In Mb.
+	int RAM_test_size = 2; // In Mb.
 	int RAM_test_block_cnt = 3; // Test 3 blocks of RAM and size of each block is RAM_test_size Mb.
 
-	int pid;
+	pid_t status;
+	std::string cmd = "memtester " + std::to_string(RAM_test_size) + " 1 " + std::to_string(RAM_test_block_cnt);
+	ROS_INFO("%s %d: Run command: %s", __FUNCTION__, __LINE__, cmd.c_str());
+	status = system(cmd.c_str());
+
+	if (-1 == status)
+		ROS_ERROR("system error!");
+	else
+	{
+		ROS_INFO("exit status value = [0x%x]", status);
+		if (WIFEXITED(status))
+		{
+			if (0 == WEXITSTATUS(status))
+				test_ret = true;
+			else
+				ROS_ERROR("%s %d: Program test for RAM failed, failed code:%d!!", __FUNCTION__, __LINE__, WEXITSTATUS(status));
+		}
+		else
+			ROS_ERROR("%s %d: Test for RAM end for exception, failed code:%d!!", __FUNCTION__, __LINE__, WEXITSTATUS(status));
+	}
+
+	return test_ret;
+
+	/*int pid;
 	int status = 0;
 	while ((pid = fork()) < 0)
 	{
-		ROS_ERROR("%s %d: fork() failed.", __FUNCTION__, __LINE__);
+		ROS_ERROR("%s %d: fork() failed:%d.", __FUNCTION__, __LINE__, errno);
 		usleep(50000);
 	}
 
@@ -141,25 +175,123 @@ bool RAM_test()
 	}
 
 
-	return test_ret;
+	return test_ret;*/
+}
+
+bool Flash_test()
+{
+	ROS_INFO("%s %d: Start Flash test.", __FUNCTION__, __LINE__);
+	std::string origin_file = "/origin_random.file";
+	std::string new_file = "/random.file";
+	std::string cmd;
+	char origin_md5[32];
+	char new_md5[32];
+
+	// Check if origin file exists, if not, generate one.
+	if (access(origin_file.c_str(), F_OK) == -1)
+	{
+		ROS_WARN("%s %d: Access file errno:%s.", __FUNCTION__, __LINE__, strerror(errno));
+		size_t block_cnt = 1024 * 10; // 1 block means 1k byte.
+		ROS_INFO("%s %d: Generate random file for %fMb.", __FUNCTION__, __LINE__, static_cast<float>(block_cnt) / 1024);
+		cmd = "dd if=/dev/urandom of=" + origin_file + " count=" + std::to_string(block_cnt) + " bs=1024";
+		system(cmd.c_str());
+	}
+
+	// Get the md5sum of origin file.
+	cmd = "md5sum " + origin_file;
+	FILE *f = popen(cmd.c_str(), "r");
+	if (f)
+	{
+		fgets(origin_md5, 32, f);
+		pclose(f);
+	} else
+	{
+		ROS_ERROR("%s %d: popen file error:%s.", __FUNCTION__, __LINE__, strerror(errno));
+		return false;
+	}
+
+	// Copy a new file from origin file.
+	if (access(new_file.c_str(), F_OK) != -1)
+	{
+		ROS_WARN("%s %d: Delete existing %s.", __FUNCTION__, __LINE__, new_file.c_str());
+		cmd = "rm " + new_file;
+		system(cmd.c_str());
+	}
+	ROS_WARN("%s %d: Copy %s to %s.", __FUNCTION__, __LINE__, origin_file.c_str(), new_file.c_str());
+	cmd = "cp " + origin_file + " " + new_file;
+	system(cmd.c_str());
+
+	// Get the md5sum of new file.
+	cmd = "md5sum " + new_file;
+	f = popen(cmd.c_str(), "r");
+	if (f)
+	{
+		fgets(new_md5, 32, f);
+		ROS_INFO("%s %d: Origin random file md5 : %s.", __FUNCTION__, __LINE__, origin_md5);
+		ROS_INFO("%s %d: New random file md5    : %s.", __FUNCTION__, __LINE__, new_md5);
+		pclose(f);
+	} else
+	{
+		ROS_ERROR("%s %d: popen file error:%s.", __FUNCTION__, __LINE__, strerror(errno));
+		return false;
+	}
+
+	return strcmp(origin_md5, new_md5) == 0;
 }
 
 bool serial_port_test()
 {
-	Serial serial_port_S2;
-	std::string ttyS2 = "/dev/ttyS2";
-	if (!serial_port_S2.init(ttyS2, 115200))
-	{
-		ROS_ERROR("%s %d: %s init failed!!", __FUNCTION__, __LINE__, ttyS2);
-		return false;
-	}
-
+	bool test_ret = true;
 	std::random_device rd;
 	std::mt19937 random_number_engine(rd());
 	std::uniform_int_distribution<uint8_t> dist_char;
+	std::string send_string_sum{};
+	std::string receive_string_sum{};
+	uint8_t receive_data[REC_LEN];
+	int test_frame_cnt = 50;
 
+	serial.resetSendStream();
+	ROS_INFO("%s %d: Start serial testing.", __FUNCTION__, __LINE__);
+	for (uint8_t test_cnt = 0; test_cnt < test_frame_cnt; test_cnt++)
+	{
+		// Write random numbers to send stream.
+		for (uint8_t i = CTL_WHEEL_LEFT_HIGH; i < CTL_CRC; i++)
+		{
+			if (i == CTL_MAIN_BOARD_MODE)
+				serial.setSendData(i, SERIAL_TEST_MODE);
+			else if (i == CTL_BEEPER)
+				serial.setSendData(i, static_cast<uint8_t>(test_cnt + 1));
+			else if (i == CTL_KEY_VALIDATION)
+				// Avoid 0x40/0x41/0x42/0x23.
+				serial.setSendData(i, SERIAL_TEST_MODE);
+			else
+			{
+				uint8_t random_byte = dist_char(random_number_engine);
+				serial.setSendData(i, random_byte);
+			}
+			send_string_sum += std::to_string(serial.getSendData(i));
+		}
+		serial.sendData();
+//		robot::instance()->debugSendStream(serial.send_stream);
 
+		int read_ret = serial.read(receive_data, REC_LEN);
 
+		if (read_ret != REC_LEN)
+		{
+			ROS_ERROR("%s %d: Error during read:%d.", __FUNCTION__, __LINE__, read_ret);
+			test_ret = false;
+			break;
+		}
+
+		for (uint8_t i = CTL_WHEEL_LEFT_HIGH; i < CTL_CRC; i++)
+			receive_string_sum += std::to_string(receive_data[i]);
+//		robot::instance()->debugReceivedStream(receive_data);
+	}
+
+	if (!test_ret)
+		return test_ret;
+
+	return send_string_sum.compare(receive_string_sum) == 0;
 
 	// Test serial port /dev/ttyS2 and /dev/ttyS3 with direct connection.
 /*	Serial serial_port_S2;

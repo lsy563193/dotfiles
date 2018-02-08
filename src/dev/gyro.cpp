@@ -180,7 +180,7 @@ void Gyro::setDynamicOff(void)
 	if (isOn())
 	{
 		uint8_t byte = serial.getSendData(CTL_GYRO);
-		serial.setSendData(CTL_GYRO, byte | 0x00);
+		serial.setSendData(CTL_GYRO, byte & 0xFE);
 	}
 	//else
 	//{
