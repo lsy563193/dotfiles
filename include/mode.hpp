@@ -173,9 +173,6 @@ public:
 		cm_exploration,
 		cm_test,
 
-		//10
-		md_serial_test,
-		md_error,
 	};
 
 	int next_mode_i_;

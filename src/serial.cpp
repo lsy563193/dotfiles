@@ -266,7 +266,7 @@ void Serial::setMainBoardMode(uint8_t val)
 int Serial::get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequence_number)
 {
 	int num_send_packets = key_length / KEY_DOWNLINK_LENGTH;
-	uint8_t ptr[RECEI_LEN], buf[SEND_LEN];
+	uint8_t ptr[REC_LEN], buf[SEND_LEN];
 
 	//Set random seed.
 	//srand(time(NULL));
@@ -344,8 +344,8 @@ int Serial::get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequen
 				if (ptr[0] != 0x55)
 					continue;
 
-				ret = read(RECEI_LEN - 2, ptr);
-				if (RECEI_LEN - 2 != ret) {
+				ret = read(REC_LEN - 2, ptr);
+				if (REC_LEN - 2 != ret) {
 
 #if VERIFY_DEBUG
 					printf("%s %d: receive count error: %d\n", __FUNCTION__, __LINE__, ret);
@@ -364,7 +364,7 @@ int Serial::get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequen
 				printf("%s %d: counter: %d\tdata count: %d\treceive cmd: 0x%02x\n", __FUNCTION__, __LINE__, counter, ret, ptr[CMD_UPLINK_OFFSET]);
 
 				printf("receive from robot: %d\n");
-				for (int j = 0; j < RECEI_LEN - 2; j++) {
+				for (int j = 0; j < REC_LEN - 2; j++) {
 					printf("%02x ", ptr[j]);
 				}
 				printf("\n");
@@ -402,13 +402,13 @@ int Serial::get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequen
 			if (ptr[0] != 0x55)
 				continue;
 
-			ret = read(RECEI_LEN - 2, ptr);
+			ret = read(REC_LEN - 2, ptr);
 
 #if VERIFY_DEBUG
-			printf("%s %d: %d %d %d\n", __FUNCTION__, __LINE__, ret, RECEI_LEN - 2, counter);
+			printf("%s %d: %d %d %d\n", __FUNCTION__, __LINE__, ret, REC_LEN - 2, counter);
 #endif
 
-			if (RECEI_LEN - 2 != ret) {
+			if (REC_LEN - 2 != ret) {
 				usleep(100);
 				counter++;
 			}
@@ -418,7 +418,7 @@ int Serial::get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequen
 		}
 
 #if VERIFY_DEBUG
-		for (int j = 0; j < RECEI_LEN - 2; j++) {
+		for (int j = 0; j < REC_LEN - 2; j++) {
 			printf("%02x ", ptr[j]);
 		}
 		printf("\n");
@@ -515,11 +515,11 @@ void Serial::receive_routine_cb()
 	uint8_t h1 = 0xaa, h2 = 0x55, header[2], t1 = 0xcc, t2 = 0x33;
 	uint8_t header1 = 0x00;
 	uint8_t header2 = 0x00;
-	uint8_t tempData[RECEI_LEN], receiData[RECEI_LEN];
+	uint8_t tempData[REC_LEN], receiData[REC_LEN];
 	tempData[0] = h1;
 	tempData[1] = h2;
 
-	wh_len = RECEI_LEN - 2; //length without header bytes
+	wh_len = REC_LEN - 2; //length without header bytes
 	wht_len = wh_len - 2; //length without header and tail bytes
 	whtc_len = wht_len - 1; //length without header and tail and crc bytes
 
@@ -581,7 +581,7 @@ void Serial::send_routine_cb()
 {
 	ROS_INFO("robotbase,\033[32m%s\033[0m,%d is up.",__FUNCTION__,__LINE__);
 	ros::Rate r(_RATE);
-	uint8_t buf[SEND_LEN];
+	resetSendStream();
 	while(ros::ok() && !send_thread_stop){
 		r.sleep();
 		/*-------------------Process for beeper.play and key_led -----------------------*/
@@ -592,14 +592,20 @@ void Serial::send_routine_cb()
 		wheel.pidAdjustSpeed();
 		brush.updatePWM();
 
-		send_stream_mutex.lock();
-		memcpy(buf,serial.send_stream,sizeof(uint8_t)*SEND_LEN);
-		send_stream_mutex.unlock();
-		buf[CTL_CRC] = serial.calBufCrc8(buf, CTL_CRC);
-		serial.write(buf, SEND_LEN);
+		sendData();
 //		robot::instance()->debugSendStream(buf);
 	}
 	core_thread_stop = true;
 	ROS_ERROR("%s,%d exit",__FUNCTION__,__LINE__);
 	//pthread_exit(NULL);
+}
+
+void Serial::sendData()
+{
+	uint8_t buf[SEND_LEN];
+	send_stream_mutex.lock();
+	memcpy(buf, serial.send_stream, sizeof(uint8_t) * SEND_LEN);
+	send_stream_mutex.unlock();
+	buf[CTL_CRC] = serial.calBufCrc8(buf, CTL_CRC);
+	serial.write(buf, SEND_LEN);
 }
