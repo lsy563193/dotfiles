@@ -676,7 +676,7 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 {
 	if(action_i_ == ac_linear) {
 		auto p_mt = dynamic_cast<MoveTypeLinear *>(p_move_type);
-		if(p_mt->isPoseReach() || p_mt->isPassTargetStop(iterate_point_.dir))
+		if(p_mt->isCellReach() || p_mt->isPassTargetStop(iterate_point_.dir))
 			return true;
 
 		if (p_mt->isLinearForward()){
