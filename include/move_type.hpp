@@ -5,6 +5,7 @@
 #ifndef PP_MOVE_TYPE_HPP
 #define PP_MOVE_TYPE_HPP
 #define TRAP_IN_SMALL_AREA_COUNT 20
+
 #include "action.hpp"
 #include "movement.hpp"
 #include "boost/shared_ptr.hpp"
@@ -64,6 +65,7 @@ protected:
 		mm_rcon,
 		mm_forward,
 		mm_straight,
+		mm_dynamic,
 	};
 
 };

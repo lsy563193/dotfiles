@@ -19,21 +19,15 @@ MoveTypeFollowWall::MoveTypeFollowWall(bool is_left)
 	is_left_ = is_left;
 	auto turn_radian = getTurnRadian(!p_mode->plan_path_.empty());
 	turn_target_radian_ = getPosition().addRadian(turn_radian).th;
-	movement_i_ = mm_turn;
-	sp_movement_.reset(new MovementTurn(turn_target_radian_, ROTATE_TOP_SPEED));
+
+	movement_i_ = p_mode->isGyroDynamic() ? mm_dynamic : mm_turn;
+	if(movement_i_ == mm_dynamic)
+		sp_movement_.reset(new MovementGyroDynamic());
+	else
+		sp_movement_.reset(new MovementTurn(turn_target_radian_, ROTATE_TOP_SPEED));
 	IMovement::sp_mt_ = this;
 
 	resetTriggeredValue();
-//	if (action_i_ == ac_back) {
-//		PP_INFO();
-//		TIME_STRAIGHT = 0.2;
-//		g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
-//	}
-//	else if (action_i_ == ac_turn) {
-//		PP_INFO();
-//		TIME_STRAIGHT = 0;
-//		g_wall_distance = WALL_DISTANCE_HIGH_LIMIT;
-//	}
 }
 
 MoveTypeFollowWall::~MoveTypeFollowWall()
@@ -57,7 +51,12 @@ bool MoveTypeFollowWall::isFinish()
 
 	auto p_cm = dynamic_cast<ACleanMode*> (sp_mode_);
 	if (sp_movement_->isFinish()) {
-		if (movement_i_ == mm_turn)
+		if(movement_i_ == mm_dynamic){
+			movement_i_ = mm_turn;
+			sp_movement_.reset(new MovementTurn(turn_target_radian_, ROTATE_TOP_SPEED));
+			resetTriggeredValue();
+		}
+		else if (movement_i_ == mm_turn)
 		{
 			if (!handleMoveBackEvent(p_cm))
 			{
@@ -88,8 +87,13 @@ bool MoveTypeFollowWall::isFinish()
 					p_cm->moveTypeFollowWallSaveBlocks();
 					auto turn_angle = getTurnRadian(false);
 					turn_target_radian_ = getPosition().addRadian(turn_angle).th;
-					movement_i_ = mm_turn;
-					sp_movement_.reset(new MovementTurn(turn_target_radian_, ROTATE_TOP_SPEED));
+
+					auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
+					movement_i_ = p_mode->isGyroDynamic() ? mm_dynamic : mm_turn;
+					if(movement_i_ == mm_dynamic)
+						sp_movement_.reset(new MovementGyroDynamic());
+					else
+						sp_movement_.reset(new MovementTurn(turn_target_radian_, ROTATE_TOP_SPEED));
 				}
 				resetTriggeredValue();
 			}
@@ -105,10 +109,15 @@ bool MoveTypeFollowWall::isFinish()
 			}
 		}
 		else if (movement_i_ == mm_back) {
-			movement_i_ = mm_turn;
 			auto turn_angle = getTurnRadian(false);
 			turn_target_radian_ = getPosition().addRadian(turn_angle).th;
-			sp_movement_.reset(new MovementTurn(turn_target_radian_, ROTATE_TOP_SPEED));
+
+			auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
+			movement_i_ = p_mode->isGyroDynamic() ? mm_dynamic : mm_turn;
+			if(movement_i_ == mm_dynamic)
+				sp_movement_.reset(new MovementGyroDynamic());
+			else
+				sp_movement_.reset(new MovementTurn(turn_target_radian_, ROTATE_TOP_SPEED));
 			resetTriggeredValue();
 		}
 	}

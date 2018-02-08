@@ -13,6 +13,7 @@
 //#include "move_type.hpp"
 
 
+#define GYRO_DYNAMIC_INTERVAL_TIME 25
 #define ROS_INFO_FL() ROS_INFO("%s,%d",__FUNCTION__, __LINE__)
 #define PP_INFO() ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__)
 #define PP_WARN() ROS_WARN("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__)
@@ -287,7 +288,6 @@ public:
 private:
 	bool plan_activated_status_;
 };
-
 class ModeCharge: public Mode
 {
 public:
@@ -371,6 +371,7 @@ public:
 	void setNextModeDefault();
 
 	bool isIsolate();
+	bool isGyroDynamic();
 	bool generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &targets);
 
 	virtual bool mapMark() = 0;
@@ -534,6 +535,7 @@ public:
 	boost::shared_ptr<GoHomePathAlgorithm> go_home_path_algorithm_{};
 	GridMap clean_map_{};
 	static bool plan_activation_;
+	double time_gyro_dynamic_;
 
 protected:
 	std::vector<State*> sp_saved_states;

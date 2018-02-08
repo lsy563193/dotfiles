@@ -334,10 +334,6 @@ void robot::robotbase_routine_cb()
 
 		// Check tilt
 #if GYRO_DYNAMIC_ADJUSTMENT
-		if (wheel.getLeftWheelActualSpeed() < 0.01 && wheel.getRightWheelActualSpeed() < 0.01)
-			gyro.setDynamicOn();
-		else
-			gyro.setDynamicOff();
 		gyro.checkTilt();
 #endif
 		// Dynamic adjust obs

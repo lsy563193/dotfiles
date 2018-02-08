@@ -92,6 +92,7 @@ FILE(GLOB PP_SRC
 	src/action/move_type/movement/movement_straight.cpp
 	src/action/move_type/movement/movement_forward_turn.cpp
 	src/action/move_type/movement/movement_follow_point.cpp
+	src/action/move_type/movement/movement_gyro_dynamic.cpp
 
 	src/des.cpp
 	src/error.cpp
