@@ -5,10 +5,6 @@
 #include "robot.hpp"
 #include "speaker.h"
 
-#if X900_FUNCTIONAL_TEST
-#include "r16_board_test.hpp"
-#endif
-
 #if VERIFY_CPU_ID || VERIFY_KEY
 #include "verify.h"
 #endif
@@ -21,6 +17,7 @@ void signal_catch(int sig)
 		case SIGSEGV:
 		{
 			ROS_ERROR("Oops!!! pp receive SIGSEGV signal,segment fault!");
+			ros::shutdown();
 			if(robot_instance != nullptr){
 				speaker.play(VOICE_CLEANING_STOP,false);
 				delete robot_instance;
@@ -30,6 +27,7 @@ void signal_catch(int sig)
 		case SIGINT:
 		{
 			ROS_ERROR("Oops!!! pp receive SIGINT signal,ctrl+c press");
+			ros::shutdown();
 			if(robot_instance != nullptr){
 				speaker.play(VOICE_CLEANING_STOP,false);
 				delete robot_instance;
@@ -39,6 +37,7 @@ void signal_catch(int sig)
 		case SIGTERM:
 		{
 			ROS_ERROR("Ouch!!! pp receive SIGTERM signal,being kill!");
+			ros::shutdown();
 			if(robot_instance != nullptr){
 				speaker.play(VOICE_CLEANING_STOP,false);
 				delete robot_instance;
@@ -49,18 +48,8 @@ void signal_catch(int sig)
 			ROS_ERROR("Oops!! pp receive %d signal",sig);
 	}
 	robot_instance = nullptr;
-	ros::shutdown();
 }
-void case_2(GridMap &map) {
-	map.setBlockWithBound({-15,-15}, {15,15}, CLEANED, 1);
-	map.setBlockWithBound({-5,-5},{5,5},CLEANED,1);
-	map.setBlockWithBound({-10,-5},{-7,5},UNCLEAN,1);
-	map.setBlockWithBound({-11,-6},{6,-6},CLEANED,0);
-//	map.setBlockWithBound({-5,-6},{6,-6},CLEANED,0);
 
-//	map_set_block({-2,0},{3,0},);
-//	map_set_block({-2,0},{3,0},UNCLEAN);
-}
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "pp");
@@ -76,9 +65,9 @@ int main(int argc, char **argv)
 	ROS_INFO("set signal action done!");
 
 	robot_instance = new robot();
-/*//test
-	ROS_INFO("set signal action done!");
-	GridMap map;
+
+	//test code by lsy563193
+	/*GridMap map;
 	case_2(map);
 	map.print(CLEAN_MAP, 0, 0);
 
@@ -91,4 +80,16 @@ int main(int argc, char **argv)
 	}*/
 	ros::spin();
 	return 0;
+}
+
+// Test code by lsy563193
+void case_2(GridMap &map) {
+	map.setBlockWithBound({-15,-15}, {15,15}, CLEANED, 1);
+	map.setBlockWithBound({-5,-5},{5,5},CLEANED,1);
+	map.setBlockWithBound({-10,-5},{-7,5},UNCLEAN,1);
+	map.setBlockWithBound({-11,-6},{6,-6},CLEANED,0);
+//	map.setBlockWithBound({-5,-6},{6,-6},CLEANED,0);
+
+//	map_set_block({-2,0},{3,0},);
+//	map_set_block({-2,0},{3,0},UNCLEAN);
 }

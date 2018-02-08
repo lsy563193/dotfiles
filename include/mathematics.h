@@ -452,5 +452,10 @@ double line_angle(LineABC l, uint8_t mode);
 
 void coordinate_transform(double *x, double *y, double theta, double offset_x, double offset_y);
 
+/*
+ * Function for formatting unsigned long integer to hex string.
+ * @return: True for formatting succeeded. False for string too short to load the number.
+ */
+bool unsigned_long_to_hex_string(unsigned long number, char *str, const int len);
 
 #endif

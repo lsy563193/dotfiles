@@ -14,6 +14,11 @@
 #define CTL_HEADER_1 0
 #define CTL_HEADER_2 1
 
+#if X900_FUNCTIONAL_TEST
+#define CTL_TESTING_STAGE 2
+#define CTL_ERROR_CODE_HIGH 3
+#define CTL_ERROR_CODE_LOW 4
+#endif
 // Two bytes for controlling left wheel.
 #define	CTL_WHEEL_LEFT_HIGH 2
 #define	CTL_WHEEL_LEFT_LOW  3
@@ -72,7 +77,7 @@
 #define CTL_TRAILER_2 20
 
 // For receive stream.
-#define RECEI_LEN 44
+#define REC_LEN 44
 
 // Two bytes for stream header.
 #define REC_HEADER_1 0
@@ -243,6 +248,8 @@
 #define WORK_MODE 				2
 #define IDLE_MODE 				3
 #define CHARGE_MODE 			4
+#define SERIAL_TEST_MODE		5
+#define ALARM_ERROR_MODE		6
 
 #define DUMMY_DOWNLINK_OFFSET		2
 #define KEY_DOWNLINK_OFFSET			9
@@ -312,7 +319,7 @@ public:
 	uint8_t calBufCrc8(const uint8_t *inBuf, uint32_t inBufSz);
 
 	//										   1    2    3    4    5    6    7    8    9   10
-	uint8_t receive_stream[RECEI_LEN]={		0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+	uint8_t receive_stream[REC_LEN]={		0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 											0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 											0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 											0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
@@ -320,6 +327,9 @@ public:
 	uint8_t send_stream[SEND_LEN]={0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x64,0x00,0x02,0x00,0x00,0xcc,0x33};
 
 	void receive_routine_cb();
+
+	void sendData();
+
 	void send_routine_cb();
 private:
 

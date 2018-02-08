@@ -34,14 +34,12 @@ typedef struct{
 class Paras{
 public:
 	Paras(bool is_left):is_left_(is_left)
-{
+	{
 		narrow = is_left ? 0.187 : 0.197;
-
-		y_min = 0.0;
-		y_max = is_left ? 0.3 : 0.25;
+		narrow_minuend = is_left ? 0.03 : 0.03;
 
 		x_min_forward = LIDAR_OFFSET_X;
-		x_max_forward = is_left ? 0.3 : 0.25;
+		x_max_forward = is_left ? 0.3 : 0.3;
 		auto y_start_forward = is_left ? 0.06: -0.06;
 		auto y_end_forward = is_left ? -ROBOT_RADIUS: ROBOT_RADIUS;
 		y_min_forward = std::min(y_start_forward, y_end_forward);
@@ -53,7 +51,7 @@ public:
 		x_max_side = std::max(x_side_start, x_side_end);
 
 		auto y_side_start = 0.0;
-		auto y_side_end = is_left ? narrow + 0.01 : -narrow + 0.01;
+		auto y_side_end = is_left ? narrow + 0.01 : -narrow - 0.01;
 		y_min_side = std::min(y_side_start, y_side_end);
 		y_max_side = std::max(y_side_start, y_side_end);
 
@@ -62,7 +60,7 @@ public:
 		y_min_point1_corner = std::min(y_point1_start_corner, y_point1_end_corner);
 		y_max_point1_corner = std::max(y_point1_start_corner, y_point1_end_corner);
 
-	 	auto y_point1_start = 0.0;
+		auto y_point1_start = 0.0;
 		auto y_point1_end = is_left ? 4.0 : -4.0;
 		y_min_point1 = std::min(y_point1_start, y_point1_end);
 		y_max_point1 = std::max(y_point1_start, y_point1_end);
@@ -71,22 +69,28 @@ public:
 		auto y_target_end = is_left ? 0.4 : -0.4;
 		y_min_target = std::min(y_target_start, y_target_end);
 		y_max_target = std::max(y_target_start, y_target_end);
+
+		corner_front_trig_lim = is_left ? 0.25 : 0.25;
+
 	};
 
-	bool inPoint1Range(const Vector2<double> &point, bool is_corner) const {
+	bool LaserPointRange(const Vector2<double> &point, bool is_corner) const {
+/*		if (point.Distance({0, 0}) <= ROBOT_RADIUS) {
+			return false;
+		}*/
 		if(is_corner)
 			return (point.x > 0 && point.x < 4 && point.y > y_min_point1_corner && point.y < y_max_point1_corner);
 		else
 			return (point.x > 0 && point.x < 0.3 && point.y > y_min_point1 && point.y < y_max_point1);
 	}
 
-	bool inTargetRange(const Vector2<double> &target) {
+	bool TargetPointRange(const Vector2<double> &target) {
 		if (is_left_) {
-			return (target.x > 0 && target.y > 0.4) ||
+			return /*(target.x > ROBOT_RADIUS && target.y < 0.4 && target.y > ROBOT_RADIUS) ||*/
 						 (target.x > CHASE_X && std::abs(target.y) < ROBOT_RADIUS) ||
 						 (target.y < -ROBOT_RADIUS);
 		} else{
-			return (target.x > 0 && target.y < -0.4) ||
+			return /*(target.x > ROBOT_RADIUS && target.y > -0.4 && target.y < -ROBOT_RADIUS) ||*/
 						 (target.x > CHASE_X && std::abs(target.y) < ROBOT_RADIUS) ||
 						 (target.y > ROBOT_RADIUS);
 
@@ -102,6 +106,7 @@ public:
 	}
 
 	double narrow;
+	double narrow_minuend;
 	bool is_left_;
 	double x_min_forward;
 	double x_max_forward;
@@ -126,6 +131,11 @@ public:
 	double y_max_target;
 
 	const double CHASE_X = 0.107;
+
+	double corner_front_trig_lim;
+
+	const int forward_count_lim = 10;
+	const int side_count_lim = 20;
 };
 
 class Mode:public EventHandle
@@ -163,9 +173,6 @@ public:
 		cm_exploration,
 		cm_test,
 
-		//10
-		md_serial_test,
-		md_error,
 	};
 
 	int next_mode_i_;
@@ -444,14 +451,14 @@ public:
 	virtual bool updateActionInStateSpot();
 	virtual void switchInStateSpot(){};
 
-	// State trapped
-	bool isStateTrapped() const
+	// State follow wall
+	bool isStateFollowWall() const
 	{
-		return sp_state == state_trapped;
+		return sp_state == state_folllow_wall;
 	}
-	virtual bool isSwitchByEventInStateTrapped();
-	virtual bool updateActionInStateTrapped();
-	virtual void switchInStateTrapped();
+	virtual bool isSwitchByEventInStateFollowWall();
+	virtual bool updateActionInStateFollowWall();
+	virtual void switchInStateFollowWall();
 	bool trapped_time_out_{};
 	bool trapped_closed_or_isolate{};
 	bool out_of_trapped{};
@@ -533,7 +540,7 @@ protected:
 	State *state_go_home_point = new StateGoHomePoint();
 	State *state_go_to_charger = new StateGoCharger();
 	State *state_charge = new StateCharge();
-	State *state_trapped = new StateTrapped();
+	State *state_folllow_wall = new StateFolllowWall();
 	State *state_spot =  new StateSpot();
 	State *state_resume_low_battery_charge = new StateResumeLowBatteryCharge();
 	State *state_pause = new StatePause();
@@ -555,8 +562,9 @@ public:
 	void setCleanMapMarkers(int16_t x, int16_t y, CellState type,  visualization_msgs::Marker& clean_map_markers_);
 	void pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path);
 	static void pubLineMarker(const std::vector<LineABC> *lines);
-	Vector2<double> get_middle_point(const Vector2<double>& p1,const Vector2<double>& p2,const Paras& para);
-	bool check_is_valid(const Vector2<double>& point, Paras& para, const sensor_msgs::LaserScan::ConstPtr & scan);
+	Vector2<double> get_target_point(const Vector2<double> &p1, const Vector2<double> &p2, const Paras &para);
+	bool removeCrossingPoint(const Vector2<double> &target_point, Paras &para,
+													 const sensor_msgs::LaserScan::ConstPtr &scan);
 	bool check_corner(const sensor_msgs::LaserScan::ConstPtr & scan, const Paras& para);
 	bool calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,bool is_left ,std::deque<Vector2<double>>& points);
 	Vector2<double> polar_to_cartesian(double polar,int i);
@@ -643,8 +651,8 @@ public:
 	bool isSwitchByEventInStatePause() override;
 	bool updateActionInStatePause() override;
 
-	// State trapped
-	bool isSwitchByEventInStateTrapped() override;
+	// State folllow wall
+	bool isSwitchByEventInStateFollowWall() override;
 
 	// State charge
 	bool isSwitchByEventInStateCharge() override;
@@ -716,7 +724,7 @@ public:
 	void keyClean(bool state_now, bool state_last) override;
 	void remoteMax(bool state_now, bool state_last) override;
 	void remoteClean(bool state_now, bool state_last) override;
-	void switchInStateTrapped() override;
+	void switchInStateFollowWall() override;
 
 	void switchInStateInit() override;
 
