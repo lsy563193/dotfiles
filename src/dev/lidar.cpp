@@ -85,6 +85,33 @@ void Lidar::scanCompensateCb(const sensor_msgs::LaserScan::ConstPtr &scan)
 	}
 }
 
+#if X900_FUNCTIONAL_TEST
+void Lidar::scantestCb(const sensor_msgs::LaserScan::ConstPtr &scan)
+{
+	if (switch_)
+	{
+		setLidarScanDataOriginal(scan);
+		scanOriginal_update_time_ = ros::Time::now().toSec();
+		setScanOriginalReady(1);
+
+		// Print the range value.
+		int print_limit_in_line = 18;
+		int print_cnt_in_line = 0;
+		ROS_INFO("Scan %d ranges:", scan->header.seq);
+		for (auto i : scan->ranges)
+		{
+			if (print_cnt_in_line++ < print_limit_in_line - 1)
+				printf("%1.3f\t", i);
+			else
+			{
+				print_cnt_in_line = 0;
+				printf("%1.3f\n", i);
+			}
+		}
+	}
+}
+#endif
+
 void Lidar::lidarXYPointCb(const visualization_msgs::Marker &point_marker) {
 	if (isScanCompensateReady())
 	{

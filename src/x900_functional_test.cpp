@@ -272,7 +272,7 @@ bool Flash_test()
 
 bool serial_port_test()
 {
-	return false;
+	return true;
 	ROS_INFO("%s %d: Start serial test.", __FUNCTION__, __LINE__);
 	bool test_ret = true;
 	std::random_device rd;
@@ -394,8 +394,19 @@ bool serial_port_test()
 
 bool lidar_test()
 {
-	return true;
 	ROS_INFO("%s %d: Start lidar test.", __FUNCTION__, __LINE__);
+	ros::NodeHandle nh_;
+	ros::Subscriber scan_sub_;
+	scan_sub_ = nh_.subscribe("scanOriginal", 1, &Lidar::scantestCb, &lidar);
+	lidar.init();
+	sleep(5);
+	lidar.motorCtrl(ON);
+	while (ros::ok() && !lidar.isScanOriginalReady())
+		usleep(200000);
+	sleep(1);
+	lidar.motorCtrl(OFF);
+	scan_sub_.shutdown();
+	return true;
 }
 
 bool power_supply_test()
@@ -422,7 +433,7 @@ bool power_supply_test()
 
 bool main_board_test()
 {
-	return false;
+	return true;
 }
 
 /*bool memory_test()
