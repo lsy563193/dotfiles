@@ -519,7 +519,7 @@ uint8_t GridMap::setRcon()
 	std::string msg = "cell:";
 	for(auto& cell : temp_rcon_cells){
 		msg += "(" + std::to_string(cell.x) + "," + std::to_string(cell.y) + ")";
-		setCell(CLEAN_MAP,cell.x,cell.y, BLOCKED_RCON);
+		setCell(CLEAN_MAP,cell.x,cell.y, BLOCKED_TMP_RCON);
 		block_count++;
 	}
 	temp_rcon_cells.clear();
@@ -563,22 +563,20 @@ uint8_t GridMap::setBlocks()
 
 uint8_t GridMap::setChargerArea(const Points charger_pos_list)
 {
-	//before set BLOCKED_RCON, clean BLOCKED_RCON first.
-	/*
+	//before set BLOCKED_RCON, clean BLOCKED_TMP_RCON first.
 	int16_t x_min,x_max,y_min,y_max;
 	getMapRange(CLEAN_MAP, &x_min, &x_max, &y_min, &y_max);
 	for(int16_t i = x_min;i<=x_max;i++){
 		for(int16_t j = y_min;j<=y_max;j++){
-			if(getCell(CLEAN_MAP, i, j) == BLOCKED_RCON)
+			if(getCell(CLEAN_MAP, i, j) == BLOCKED_TMP_RCON)
 				setCell(CLEAN_MAP,i,j, UNCLEAN);
 		}
 	}
-	*/
+
 
 	const int RADIAN= 4;//cells
-	for(const Point_t charger_point:charger_pos_list){
-		setCircleMarkers(charger_point,RADIAN,true,BLOCKED_RCON);
-	}
+	setCircleMarkers(charger_pos_list.back(),true,RADIAN,BLOCKED_RCON);
+
 }
 
 uint8_t GridMap::saveSlip()
@@ -870,7 +868,7 @@ uint8_t GridMap::saveBlocks(bool is_linear, bool is_save_rcon)
 //	PP_INFO();
 	uint8_t block_count = 0;
 	if (is_linear && is_save_rcon)
-		//block_count += saveRcon();
+		block_count += saveRcon();
 	block_count += saveBumper(is_linear);
 	block_count += saveCliff();
 	block_count += saveObs();
@@ -1331,22 +1329,22 @@ void GridMap::colorPrint(char *outString, int16_t y_min, int16_t y_max)
 			else if(cs == '4'){//cliff
 				y_col+="\033[1;45;37m4\033[0m";// magenta
 			}
-			else if(cs == '5'){//rcon
+			else if(cs == '5' || cs == '6'){//rcon
 				y_col+="\033[1;47;37m5\033[0m";// white
 			}
-			else if(cs == '6'){//lidar maker
+			else if(cs == '7'){//lidar maker
 				y_col+="\033[1;44;37m6\033[0m";// blue
 			}
-			else if(cs == '7'){//tilt
+			else if(cs == '8'){//tilt
 				y_col+="\033[1;47;30m7\033[0m";// white
 			}
-			else if(cs == '8'){//slip
+			else if(cs == '9'){//slip
 				y_col+="\033[1;43;37m8\033[0m";// yellow
 			}
-			else if(cs == '9'){//slam_map_block
+			else if(cs == 'a'){//slam_map_block
 				y_col+="\033[0;41;37m9\033[0m";// red
 			}
-			else if(cs == 'a'){//bundary
+			else if(cs == 'b'){//bundary
 				y_col+="\033[1;43;37ma\033[0m";
 			}
 			else if(cs == 'e'){//end point
@@ -1384,21 +1382,20 @@ bool GridMap::isFrontBlocked(void)
 	return retval;
 }
 
-void GridMap::setCircleMarkers(Point_t point,int radian,bool cover_block,CellState cell_state) {
-	Point_t cur = point;
-	const int RADIUS_CELL = radian;//the radius of the robot can detect
-	for (int16_t angle_i = 0; angle_i <= 359; angle_i += 1) {
-		for (int dy = 0; dy < RADIUS_CELL; ++dy) {
-			Point_t cur_tmp = cur;
-			cur_tmp.th += ranged_radian(angle_i*PI/179);
-			auto cell = cur_tmp.getRelative(0, dy * CELL_SIZE).toCell();
+void GridMap::setCircleMarkers(Point_t point,bool cover_block,int radian,CellState cell_state)
+{
+	const int RADIUS_CELL = radian;
+	Point_t tmp_point = point;
+	int16_t deg_point_th = (int16_t)radian_to_degree(point.th);
+	ROS_INFO("deg_point_th = %d",deg_point_th);
+	for (int dy = 0; dy < RADIUS_CELL; ++dy) {
+		for (int16_t angle_i = 0; angle_i <360; angle_i += 1) {
+			tmp_point.th = ranged_radian(degree_to_radian(deg_point_th + angle_i));
+			Cell_t cell = tmp_point.getRelative(0, dy * CELL_SIZE).toCell();
 			auto status = getCell(CLEAN_MAP,cell.x,cell.y);
-			if(!cover_block){
-				if (status > CLEANED && status < BLOCKED_BOUNDARY) {
-					//ROS_ERROR("%s,%d: (%d,%d)", __FUNCTION__, __LINE__, count_to_cell(x), count_to_cell(y));
+			if(!cover_block)
+				if (status > CLEANED && status < BLOCKED_BOUNDARY)
 					break;
-				}
-			}
 			setCell(CLEAN_MAP, cell.x, cell.y, cell_state);
 		}
 	}
