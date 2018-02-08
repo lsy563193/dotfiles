@@ -165,7 +165,7 @@ private:
 	 *
 	 * @return: PathList, a deque of paths from start cell to the input targets.
 	 */
-	void tracePathsToTarget(GridMap &map, const Cell_t &targets, const Cell_t &start, Cells &path, int last_i);
+	void findPath(GridMap &map, const Cell_t &curr, const Cell_t &targets, Cells &path, int last_i);
 
 	/*
 	 * @author Patrick Chow

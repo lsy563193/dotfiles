@@ -46,12 +46,12 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 	plan_path.clear();
 	auto curr_cell = curr.toCell();
 	ROS_INFO("Step 1: Find possible plan_path in same lane.");
-	auto plan_path_cell = findTargetInSameLane(map, curr_cell);
-	if (!plan_path_cell.empty())
+	auto path = findTargetInSameLane(map, curr_cell);
+	if (!path.empty())
 	{
-		plan_path = cells_generate_points(plan_path_cell);
+		plan_path = cells_generate_points(path);
 		// Congratulation!! plan_path is generated successfully!!
-		map.print(CLEAN_MAP, plan_path_cell.back().x, plan_path_cell.back().y);
+		map.print(CLEAN_MAP, path.back().x, path.back().y);
 		return true;
 	}
 
@@ -65,12 +65,7 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 
 	targets = std::for_each(targets.begin(), targets.end(),FilterTarget(curr_cell));
 
-	displayTargetList(targets);
-
-//	targets.erase(std::remove_if(targets.begin(), targets.end(),[&map](Cell_t it){
-//		auto cost = map.getCell(COST_MAP, it.x, it.y);
-//		return cost == COST_NO || cost == COST_1;
-//	}),targets.end());
+//	displayTargetList(targets);
 
 	displayTargetList(targets);
 
@@ -81,18 +76,16 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 	PathList paths{};
 	for (auto& target : targets) {
 		Cells path{};
-		tracePathsToTarget(map, target, curr_cell, path,0);
+		findPath(map, curr_cell, target,  path, 0);
 		if(!path.empty())
 			paths.push_back(path);
 	}
 
 	ROS_INFO("Step 4: Filter paths to get the best target.");
 
-	Cells path;
 	if (!filterPathsToSelectBestPath(map, paths, curr_cell, path,last_dir))
 		return false;
-
-	map.print(COST_MAP, path.back().x,path.back().y);
+	displayCellPath(path);
 	ROS_INFO("Step 5: Optimize path for adjusting it away from obstacles..");
 	optimizePath(map, path);
 
@@ -100,8 +93,10 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 	plan_path = cells_generate_points(path);
 
 	// Congratulation!! plan_path is generated successfully!!
-//	plan_path_cell = shortest_path;
+//	path = shortest_path;
 
+	map.print(COST_MAP, path.back().x,path.back().y);
+	map.print(CLEAN_MAP, path.back().x, path.back().y);
 	return true;
 }
 
@@ -175,12 +170,24 @@ Cells NavCleanPathAlgorithm::findTargetInSameLane(GridMap &map, const Cell_t &cu
 	return path;
 }
 
-void NavCleanPathAlgorithm::tracePathsToTarget(GridMap &map, const Cell_t &target, const Cell_t &start, Cells &path,int last_i) {
+void NavCleanPathAlgorithm::findPath(GridMap &map, const Cell_t &start, const Cell_t &target,
+																		 Cells &path,
+																		 int last_i) {
 	auto cost = map.getCell(COST_MAP, target.x, target.y);
-	for (auto iterator = target; iterator != start;) {
+	auto iterator = target;
+	for (; iterator != start;) {
+		if(map.getCell(COST_MAP, iterator.x, iterator.y) != cost)
+		{
+			printf("start(%d,%d) iterator(%d,%d),target(%d,%d)cost(%d)\n",start.x, start.y, iterator.x, iterator.y,cost, target.x, target.y);
+			map.print(CLEAN_MAP, 0, 0);
+			map.print(COST_MAP, 0, 0);
+			ROS_ASSERT(map.getCell(COST_MAP, iterator.x, iterator.y) == cost);
+		}
 		cost -= 1;
-		if(cost <= 2)
+		if(cost < 0 || cost > 5)
 			break;
+		if(cost == 0)
+			cost = 5;
 		for (auto i = 0; i < 4; i++) {
 			auto neighbor = iterator + cell_direction_[(last_i + i) % 4];
 			if (map.isOutOfMap(neighbor))
@@ -196,7 +203,7 @@ void NavCleanPathAlgorithm::tracePathsToTarget(GridMap &map, const Cell_t &targe
 			}
 		}
 	}
-	if(cost == 3)
+	if(iterator == start)
 	{
 		if (path.back() != target)
 			path.push_back(target);
@@ -255,16 +262,17 @@ public:
 			return (std::abs(path_a.back().y - curr_y_) < std::abs(path_b.back().y - curr_y_));
 		}
 		else if(turn_count_ == 1){
-			auto top_a = std::min_element(path_a.begin(), path_a.end(),IsIncrease(is_reverse_));
-			auto top_b = std::min_element(path_b.begin(), path_b.end(),IsIncrease(is_reverse_));
+//			auto top_a = std::min_element(path_a.begin(), path_a.end(),IsIncrease(is_reverse_));
+//			auto top_b = std::min_element(path_b.begin(), path_b.end(),IsIncrease(is_reverse_));
 //			printf("top a(%d,%d)\n", top_a->x, top_a->y);
 //			printf("top b(%d,%d)\n", top_b->x, top_b->y);
-			if(top_a->y == top_b->y) {
-				if (path_a.back().y == path_b.back().y)
-					return path_a.size() < path_b.size();
-				return (std::abs(path_a.back().y - top_a->y) < std::abs(path_b.back().y - top_b->y));
-			}else
-			return (std::abs(top_a->y - curr_y_) < std::abs(top_b->y - curr_y_));
+//			if(top_a->y == top_b->y) {
+//				if (path_a.back().y == path_b.back().y)
+//					return path_a.size() < path_b.size();
+//				return (std::abs(path_a.back().y - top_a->y) < std::abs(path_b.back().y - top_b->y));
+//			}else
+//			return (std::abs(top_a->y - curr_y_) < std::abs(top_b->y - curr_y_));
+			return path_a.size() < path_b.size();
 		}else /*if(turn_count_ == 1000)*/{
 			return path_a.size() < path_b.size();
 		}
@@ -331,12 +339,11 @@ void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path) {
 	ROS_INFO("%s %d: step *.1, check simply last 3 cell ", __FUNCTION__, __LINE__);
 	PathList paths{};
 	Cells targets{*(path.end()-4)};
-	Cells path_simply{};
-	tracePathsToTarget(map, path.back() ,*(path.end()-4),  path_simply, 2);
-	if(path_simply.size() == 3)
+	Cells path2{};
+	findPath(map, path.front(), path.back(), path2, 2);
+	if(path2.size() < path.size())
 	{
-		path.erase(path.end()-3,path.end()-1);
-		path.insert((path.end()-1),*(path_simply.end()-2));
+		path.swap(path2);
 		ROS_INFO("%s %d: step *.1 do success ", __FUNCTION__, __LINE__);
 //		map.print(CLEAN_MAP, path.front(),path.back().x, path.back().y);
 	}
@@ -357,16 +364,12 @@ void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path) {
 		for(; p_it != *p3+cell_direction_[dir_p32]; p_it += cell_direction_[dir_p32])
 		{
 //			printf("{%d,%d},",p_it.x, p_it.y);
-			auto p_side = p_it + cell_direction_[dir_21];
-//			auto p_side2 = p_it + cell_index_[dir_21]*3;
-//			printf("{%d,%d},",p_side.x, p_side.y);
-//			printf("{%d,%d},",p_side2.x, p_side2.y);
-//			printf("\n");
-//			if(map.getCell(CLEAN_MAP, p_side.x,p_side.y) !=BLOCKED && )
-			if(!map.isBlockAccessible(p_side.x, p_side.y))
+			auto p_side2 = p_it + cell_direction_[dir_21]*2;
+			auto p_side3 = p_it + cell_direction_[dir_21]*3;
+			if(map.isABlock(p_side2.x,p_side2.y) || map.isABlock(p_side3.x,p_side3.y))
 				break;
 		}
-		if(p_it == *p3+cell_direction_[dir_p32])
+		if(p_it == *p3+cell_direction_[dir_p32] && map.isBlockAccessible(p_it.x, p_it.y))
 		{
 			*p2 += cell_direction_[dir_21];
 			*p3 += cell_direction_[dir_21];

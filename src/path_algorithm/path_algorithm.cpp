@@ -13,7 +13,7 @@ void APathAlgorithm::displayCellPath(const Cells &path)
 
 	msg += " " + std::to_string(__LINE__) + ": Path size(" + std::to_string(path.size()) + "):";
 	for (auto it = path.begin(); it != path.end(); ++it) {
-		msg += "(" + std::to_string(it->x) + ", " + std::to_string(it->y) + ")->";
+		msg += "{" + std::to_string(it->x) + ", " + std::to_string(it->y) + "},";
 	}
 	//msg += "\n";
 	ROS_INFO("%s",msg.c_str());

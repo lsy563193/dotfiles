@@ -62,9 +62,9 @@ CellState GridMap::getCell(int id, int16_t x, int16_t y) {
 #ifndef SHORTEST_PATH_V2
 		//val = (CellState)((id == CLEAN_MAP) ? (clean_map[x][y / 2]) : (cost_map[x][y / 2]));
 		if(id == CLEAN_MAP)
-			val = (CellState)(clean_map[x][y /*/ 2*/]);
+			val = (CellState)(clean_map[x][y / 2]);
 		else if(id == COST_MAP)
-			val = (CellState)(cost_map[x][y /*/ 2*/]);
+			val = (CellState)(cost_map[x][y / 2]);
 #else
 		//val = (CellState)(clean_map[x][y / 2]);
 		if (id == CLEAN_MAP) {
@@ -73,7 +73,7 @@ CellState GridMap::getCell(int id, int16_t x, int16_t y) {
 #endif
 
 		/* Upper 4 bits & lower 4 bits. */
-//		val = (CellState) ((y % 2) == 0 ? (val >> 4) : (val & 0x0F));
+		val = (CellState) ((y % 2) == 0 ? (val >> 4) : (val & 0x0F));
 
 	} else {
 		if(id == CLEAN_MAP) {
@@ -137,11 +137,11 @@ void GridMap::setCell(uint8_t id, int16_t x, int16_t y, CellState value) {
 			COLUMN = y + MAP_SIZE + MAP_SIZE / 2;
 			COLUMN %= MAP_SIZE;
 
-//			val = (CellState) clean_map[ROW][COLUMN / 2];
-//			if (((COLUMN % 2) == 0 ? (val >> 4) : (val & 0x0F)) != value) {
-//				clean_map[ROW][COLUMN / 2] = ((COLUMN % 2) == 0 ? (((value << 4) & 0xF0) | (val & 0x0F)) : ((val & 0xF0) | (value & 0x0F)));
-				clean_map[ROW][COLUMN] = value;
-//			}
+			val = (CellState) clean_map[ROW][COLUMN / 2];
+			if (((COLUMN % 2) == 0 ? (val >> 4) : (val & 0x0F)) != value) {
+				clean_map[ROW][COLUMN / 2] = ((COLUMN % 2) == 0 ? (((value << 4) & 0xF0) | (val & 0x0F)) : ((val & 0xF0) | (value & 0x0F)));
+//				clean_map[ROW][COLUMN] = value;
+			}
 		}
 	}  else if (id == COST_MAP){
 		if(x >= xRangeMin && x <= xRangeMax && y >= yRangeMin && y <= yRangeMax) {
@@ -150,11 +150,11 @@ void GridMap::setCell(uint8_t id, int16_t x, int16_t y, CellState value) {
 			y += MAP_SIZE + MAP_SIZE / 2;
 			y %= MAP_SIZE;
 
-//			val = (CellState) cost_map[x][y / 2];
+			val = (CellState) cost_map[x][y / 2];
 
 			/* Upper 4 bits and last 4 bits. */
-//			cost_map[x][y / 2] = (((y % 2) == 0) ? (((value << 4) & 0xF0) | (val & 0x0F)) : ((val & 0xF0) | (value & 0x0F)));
-			cost_map[x][y] = value;
+			cost_map[x][y / 2] = (((y % 2) == 0) ? (((value << 4) & 0xF0) | (val & 0x0F)) : ((val & 0xF0) | (value & 0x0F)));
+//			cost_map[x][y] = value;
 		}
 	}
 }
@@ -1201,17 +1201,26 @@ void GridMap::generateSPMAP(const Cell_t& curr_cell,Cells& targets)
 	typedef std::multimap<int16_t , Cell_t> Queue;
 	typedef std::pair<int16_t , Cell_t> Entry;
 
-	markRobot(CLEAN_MAP);
+//	markRobot(CLEAN_MAP);
 	reset(COST_MAP);
 	setCell(COST_MAP, curr_cell.x, curr_cell.y, COST_1);
 	Queue queue;
-	Entry startPoint(3, curr_cell);
-	setCell(COST_MAP, curr_cell.x, curr_cell.y, 3);
-	queue.insert(startPoint);
+	setCell(COST_MAP, curr_cell.x, curr_cell.y, 1);
+	queue.emplace(1, curr_cell);
 	bool is_found = false;
 //	map.print(CLEAN_MAP,curr.x, curr.y);
+
 	while (!queue.empty())
 	{
+//		 Get the nearest next from the queue
+		if(queue.begin()->first == 5)
+		{
+			Queue tmp_queue;
+			std::for_each(queue.begin(), queue.end(),[&](const Entry& iterators){
+				tmp_queue.emplace(0,iterators.second);
+			});
+			queue.swap(tmp_queue);
+		}
 		auto start = queue.begin();
 		auto next = start->second;
 		auto cost = start->first;
@@ -1224,17 +1233,20 @@ void GridMap::generateSPMAP(const Cell_t& curr_cell,Cells& targets)
 					continue;
 				if (getCell(COST_MAP, neighbor.x, neighbor.y) == 0) {
 					if (isBlockAccessible(neighbor.x, neighbor.y)) {
-						if(getCell(CLEAN_MAP, neighbor.x, neighbor.y) == UNCLEAN && !isOutOfTargetRange(neighbor))
+						if(getCell(CLEAN_MAP, neighbor.x, neighbor.y) == UNCLEAN)
 							targets.push_back(neighbor);
-						queue.insert(Entry(cost+1, neighbor));
+						queue.emplace(cost+1, neighbor);
 						setCell(COST_MAP, neighbor.x, neighbor.y, CellState(cost+1));
+//						print(COST_MAP, curr_cell, 0,0);
 					}
-					else
-						setCell(COST_MAP, neighbor.x, neighbor.y, 1);
+//					else
+//						setCell(COST_MAP, neighbor.x, neighbor.y, 1);
 				}
 			}
 		}
 	}
+//	print(CLEAN_MAP,curr_cell, 0,0);
+//	print(COST_MAP,curr_cell, 0,0);
 }
 
 bool GridMap::isFrontBlockBoundary(int dx)
@@ -1262,7 +1274,7 @@ void GridMap::getMapRange(uint8_t id, int16_t *x_range_min, int16_t *x_range_max
 }
 bool GridMap::isOutOfMap(const Cell_t &cell)
 {
-	return cell.x < g_x_min-4 || cell.y < g_y_min-4 || cell.x > g_x_max+4 || cell.y > g_y_max+4;
+	return cell.x < g_x_min-3 || cell.y < g_y_min-3 || cell.x > g_x_max+3 || cell.y > g_y_max+3;
 }
 bool GridMap::isOutOfTargetRange(const Cell_t &cell)
 {
@@ -1347,27 +1359,28 @@ void GridMap::print(uint8_t id, int16_t endx, int16_t endy)
 */
 void GridMap::print(uint8_t id, int16_t endx, int16_t endy)
 {
+	Cell_t curr_cell = getPosition().toCell();
 	std::ostringstream outString;
+	outString.str("");
+	#if 1
 	int16_t		x, y, x_min, x_max, y_min, y_max;
 	CellState	cs;
-	Cell_t curr_cell = getPosition().toCell();
+//	Cell_t curr_cell = getPosition().toCell();
 //	Cell_t curr_cell = {0,0};
 	getMapRange(id, &x_min, &x_max, &y_min, &y_max);
-//	outString << '\t';
-	outString << "\t  ";
+//	x_min -= 1;x_max += 1; y_min -= 1; y_max +=1;
+	outString << '\t';
 	for (y = y_min; y <= y_max; y++) {
 		if (abs(y) % 10 == 0) {
-			outString << y;
+			outString << std::abs(y/10);
 		} else {
 			outString << ' ';
 		}
 	}
-	outString << 0;
 
 	printf("%s\n",outString.str().c_str());
 	outString.str("");
-//	outString << '\t';
-	outString << "\t  ";
+	outString << '\t';
 	for (y = y_min; y <= y_max; y++) {
 		outString << abs(y) % 10;
 	}
@@ -1378,24 +1391,14 @@ void GridMap::print(uint8_t id, int16_t endx, int16_t endy)
 		outString.width(4);
 		outString << x;
 		outString << '\t';
-		outString << ' ';
-		outString << ' ';
 		for (y = y_min; y <= y_max; y++) {
 			cs = getCell(id, x, y);
-			if((cs == 0 || cs == 1)&& id == COST_MAP)
-			{
-				outString << '#';
-			}else {
-				cs = static_cast<CellState>((static_cast<int>(cs)) % 10);
-				if (x == curr_cell.x && y == curr_cell.y) {
-					outString << 'x';
-				}
-				else if (x == endx && y == endy) {
-					outString << 'e';
-				}
-				else {
-					outString << cs;
-				}
+			if (x == curr_cell.x && y == curr_cell.y) {
+				outString << 'x';
+			} else if (x == endx && y == endy) {
+				outString << 'e';
+			} else {
+				outString << cs;
 			}
 		}
 //		printf("%s\n",outString.str().c_str());
@@ -1403,10 +1406,11 @@ void GridMap::print(uint8_t id, int16_t endx, int16_t endy)
 		colorPrint(outString.str().c_str(), 0,outString.str().size());
 		outString.str("");
 //		#else
-//		printf("%s\n", outString.str().c_str());
+//		printf("%s\n", outString);
 //		#endif
 	}
 //	printf("\n");
+	#endif
 }
 void GridMap::colorPrint(const char *outString, int16_t y_min, int16_t y_max)
 {
