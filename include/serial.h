@@ -14,6 +14,11 @@
 #define CTL_HEADER_1 0
 #define CTL_HEADER_2 1
 
+#if X900_FUNCTIONAL_TEST
+#define CTL_TESTING_STAGE 2
+#define CTL_ERROR_CODE_HIGH 3
+#define CTL_ERROR_CODE_LOW 4
+#endif
 // Two bytes for controlling left wheel.
 #define	CTL_WHEEL_LEFT_HIGH 2
 #define	CTL_WHEEL_LEFT_LOW  3
@@ -244,6 +249,7 @@
 #define IDLE_MODE 				3
 #define CHARGE_MODE 			4
 #define SERIAL_TEST_MODE		5
+#define ALARM_ERROR_MODE		6
 
 #define DUMMY_DOWNLINK_OFFSET		2
 #define KEY_DOWNLINK_OFFSET			9

@@ -429,7 +429,7 @@ void ACleanMode::setCleanMapMarkers(int16_t x, int16_t y, CellState type, visual
 		color_.g = 0.0;
 		color_.b = 1.0;
 	}
-	else if (type == BLOCKED_RCON)
+	else if (type == BLOCKED_RCON || type == BLOCKED_TMP_RCON)
 	{
 		// White
 		color_.r = 1.0;
@@ -442,13 +442,6 @@ void ACleanMode::setCleanMapMarkers(int16_t x, int16_t y, CellState type, visual
 		color_.r = 0.0;
 		color_.g = 0.0;
 		color_.b = 1.0;
-	}
-	else if (type == BLOCKED_TILT)
-	{
-		// Gray
-		color_.r = 0.5;
-		color_.g = 0.5;
-		color_.b = 0.5;
 	}
 	else if (type == SLAM_MAP_BLOCKED)
 	{
@@ -479,10 +472,10 @@ void ACleanMode::setCleanMapMarkers(int16_t x, int16_t y, CellState type, visual
 	}
 	else if (type == BLOCKED_SLIP)
 	{
-		// i dont know what color it is..
-		color_.r = 0.7;
-		color_.g = 0.7;
-		color_.b = 0.2;
+		// Purple 
+		color_.r = 0.2;
+		color_.g = 0.0;
+		color_.b = 1.0;
 	}
 	clean_map_markers_.points.push_back(m_points_);
 	clean_map_markers_.colors.push_back(color_);
@@ -682,8 +675,7 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 
 		if (p_mt->isLinearForward()){
 
-			/* ---if rcon get status check charger postiion---*/
-
+			//---check charger postiion-----
 			const int16_t DETECT_RANGE = 20;//cells
 			if(!isStateGoHomePoint()){
 				if(c_rcon.getStatus()){
@@ -697,11 +689,11 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 							if(counter >= charger_size){
 								if(estimateChargerPos(c_rcon.getStatus())){
 									INFO_CYAN("FOUND CHARGER");
-									c_rcon.resetStatus();
 								}
 								break;
 							}
 						}
+						c_rcon.resetStatus();
 					}
 					else if(!found_charger_){
 						if(estimateChargerPos(c_rcon.getStatus())){
@@ -711,7 +703,7 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 					}
 				}
 			}
-			/*---check end ----*/
+			//----check end ----
 
 			return p_mt->isRconStop();
 		}
@@ -784,13 +776,14 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 	const int STABLE_CNT = 2;
 	const float DETECT_RANGE_MAX = CELL_SIZE*10;
 	const float DETECT_RANGE_MIN = CELL_SIZE*2;
-	const float RCON_1 = 0,RCON_2 = 22.0,RCON_3 = 45.0 ,RCON_4 = 78.0 ,RCON_5 = 130.0;
+	const float RCON_1 = 0,RCON_2 = 22.0,RCON_3 = 40.0 ,RCON_4 = 78.0 ,RCON_5 = 130.0;
 	const int OFFSET = 1;
 	/*-- here we only detect top signal from charge stub --*/
 	//ROS_INFO("%s,%d,rcon_value 0x%x",__FUNCTION__,__LINE__,rcon_value & RconAll_Home_T);
 	if( lidar.lidarCheckFresh(0.1,3))
 	{
 		{
+			/*
 			if( (rcon_value & RconFR_HomeT) || (rcon_value & RconFL_HomeT)  && !(rcon_value & 0x22200222) ){ //fl & fr sensor
 				if((cnt[flfr]++) >= STABLE_CNT){
 					cnt[flfr] = 0;
@@ -800,7 +793,6 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 					return false;
 				}
 			}
-			/*
 			else if( (rcon_value & RconFL_HomeT) && (rcon_value & RconFL2_HomeT)  && !(rcon_value & RconAll_R_HomeT)){//fl & fl2 sensor
 				if((cnt[flfl2]++) >= STABLE_CNT){
 					cnt[flfl2] = 0;
@@ -820,7 +812,7 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 				}
 			}
 			*/
-			else if( rcon_value & RconFL2_HomeT  && !(rcon_value & RconL_HomeT) && !(rcon_value & RconAll_R_HomeT) //fl2 sensor
+			if( rcon_value & RconFL2_HomeT  && !(rcon_value & RconL_HomeT) && !(rcon_value & RconAll_R_HomeT) //fl2 sensor
 						&& !(rcon_value & RconBL_HomeT) )//to avoid charger signal reflection from other flat
 			{
 				if((cnt[fl2]++) >= STABLE_CNT){
@@ -925,11 +917,15 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 
 		dist = lidar.getLidarDistance(cd);
 		if (dist <= DETECT_RANGE_MAX && dist >= DETECT_RANGE_MIN){
-				double angle_offset = ranged_radian(cd/179.0*M_PI+odom.getRadian());
+				double angle_offset = ranged_radian( degree_to_radian(cd) + odom.getRadian());
 				Point_t c_pose_;
 				c_pose_.SetX( cos(angle_offset)* dist  +  odom.getX() );
 				c_pose_.SetY( sin(angle_offset)* dist +  odom.getY() );
-				c_pose_.addRadian(angle_offset);
+				if(cd>=0)
+					c_pose_.th =  ranged_radian(odom.getRadian() + degree_to_radian( cd ));
+				else
+					c_pose_.th =  ranged_radian(odom.getRadian() - degree_to_radian( cd));
+
 				int16_t cell_distance = getPosition().toCell().Distance(c_pose_.toCell());
 				if(cell_distance < 3)//less than 3 cell
 				{
@@ -959,7 +955,7 @@ void ACleanMode::checkShouldMarkCharger(float angle_offset,float distance)
 		Point_t pose;
 		pose.SetX( cos(angle_offset)* distance  +  odom.getX() );
 		pose.SetY( sin(angle_offset)* distance  +  odom.getY() );
-		pose.addRadian(angle_offset);
+		pose.th = ( odom.getRadian() - (M_PI - angle_offset));
 		charger_pose_.push_back(pose);
 		ROS_INFO("%s,%d, offset angle (%f),charger pose (%d,%d)",__FUNCTION__,__LINE__, angle_offset,pose.toCell().GetX(),pose.toCell().GetY());
 		clean_map_.setChargerArea( charger_pose_ );

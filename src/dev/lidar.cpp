@@ -85,6 +85,33 @@ void Lidar::scanCompensateCb(const sensor_msgs::LaserScan::ConstPtr &scan)
 	}
 }
 
+#if X900_FUNCTIONAL_TEST
+void Lidar::scantestCb(const sensor_msgs::LaserScan::ConstPtr &scan)
+{
+	if (switch_)
+	{
+		setLidarScanDataOriginal(scan);
+		scanOriginal_update_time_ = ros::Time::now().toSec();
+		setScanOriginalReady(1);
+
+		// Print the range value.
+		int print_limit_in_line = 18;
+		int print_cnt_in_line = 0;
+		ROS_INFO("Scan %d ranges:", scan->header.seq);
+		for (auto i : scan->ranges)
+		{
+			if (print_cnt_in_line++ < print_limit_in_line - 1)
+				printf("%1.3f\t", i);
+			else
+			{
+				print_cnt_in_line = 0;
+				printf("%1.3f\n", i);
+			}
+		}
+	}
+}
+#endif
+
 void Lidar::lidarXYPointCb(const visualization_msgs::Marker &point_marker) {
 	if (isScanCompensateReady())
 	{
@@ -1387,57 +1414,56 @@ double Lidar::getLidarDistance(int16_t angle)
 		return distance;
 	}
 	lidarXYPoint_mutex_.lock();
-	std::vector<geometry_msgs::Point>  fixed_points = lidarXY_points;
+	std::vector<geometry_msgs::Point>  lidar_points = lidarXY_points;
 	lidarXYPoint_mutex_.unlock();
-	geometry_msgs::Point point = fixed_points[angle];
-	int16_t fixed_angle;
+	int16_t point_angle;
 	const int offset = 2;
 	int count = 0;
-	for(auto& point:fixed_points){
+	for(auto& point:lidar_points){
 		/*---create rcon sensor angle acorrding to current lidar point*/
 		if(point.x >= 0){
 			if(point.y < 0){
-				fixed_angle = (int16_t)radian_to_degree(atan(point.x/point.y));
-				fixed_angle = -90 - fixed_angle;
+				point_angle = (int16_t)radian_to_degree(atan(point.x/point.y));
+				point_angle = -90 - point_angle;
 			}
 			else if(point.y > 0){
-				fixed_angle = (int16_t)radian_to_degree(atan(point.x/point.y));
-				fixed_angle = 90 - fixed_angle;
+				point_angle = (int16_t)radian_to_degree(atan(point.x/point.y));
+				point_angle = 90 - point_angle;
 			}
 			else if(point.y == 0)
-				fixed_angle = 0;
+				point_angle = 0;
 
 		}
 		else if(point.x < 0)
 		{
 			if(point.y < 0){
-				fixed_angle = (int16_t)radian_to_degree(atan(point.x/point.y));
-				fixed_angle = -90 - fixed_angle;
+				point_angle = (int16_t)radian_to_degree(atan(point.x/point.y));
+				point_angle = -90 - point_angle;
 			}
 			else if(point.y > 0){
-				fixed_angle = (int16_t)radian_to_degree(atan(point.x/point.y));
-				fixed_angle = 90 - fixed_angle;
+				point_angle = (int16_t)radian_to_degree(atan(point.x/point.y));
+				point_angle = 90 - point_angle;
 			}
 			else if(point.y == 0)
-				fixed_angle = -179;
+				point_angle = -180;
 		}
 		/*---- end ---*/
 
-		int diff_angle = abs(fixed_angle - angle);
-		if(diff_angle > 179)//range angle
-			diff_angle = 359 - diff_angle; 
+		int diff_angle = abs(point_angle - angle);
+		if(diff_angle > 180)//range angle
+			diff_angle = 360 - diff_angle; 
 		if(diff_angle <= offset){
 			distance += sqrt( pow(point.x, 2.0) + pow(point.y, 2.0) );
 			count++;
 		}
 
-		//ROS_INFO("\033[1;40;32m%s,%d,fixed_angle = %d, input angle %d,distance = %f\033[0m",__FUNCTION__,__LINE__,fixed_angle,angle,(count > 0)?distance/(count*1.0):0.0f);
+		//ROS_INFO("\033[1;40;32m%s,%d,point_angle = %d, input angle %d,distance = %f\033[0m",__FUNCTION__,__LINE__,point_angle,angle,(count > 0)?distance/(count*1.0):0.0f);
 		if(count >1){
 			distance = distance /(count*1.0);
 			break;
 		}
 	}
-	ROS_INFO("\033[1;40;32m%s,%d,fixed_angle = %d, input angle %d,distance = %f\033[0m",__FUNCTION__,__LINE__,fixed_angle,angle,distance);
+	ROS_INFO("\033[1;40;32m%s,%d,point_angle = %d, input angle %d,distance = %f\033[0m",__FUNCTION__,__LINE__,point_angle,angle,distance);
 	return 	distance;
 }
 
