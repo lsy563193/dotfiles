@@ -11,6 +11,14 @@
 
 #if X900_FUNCTIONAL_TEST
 
+// Definition for error code.
+#define SERIAL_ERROR 		((uint16_t)3001)
+#define RAM_ERROR 			((uint16_t)3002)
+#define FLASH_ERROR 		((uint16_t)3003)
+#define LIDAR_ERROR 		((uint16_t)3004)
+#define LIDAR_BUMPER_ERROR 	((uint16_t)3005)
+#define MAIN_BOARD_ERROR 	((uint16_t)3006)
+
 #include "dev.h"
 #include "robot.hpp"
 /*
@@ -21,12 +29,11 @@
  * 2. RAM.
  * 3. Flash.
  * 4. Serial port.
- * 5. Power supply.
- * 6. WIFI module.
- * 7. Lidar.
- * 8. Lidar bumper.
- * (9. USB?)
- * 10. Main board hardware.
+ * 5. WIFI module.
+ * 6. Lidar.
+ * 7. Lidar bumper.
+ * (8. USB?)
+ * 9. Main board hardware.
  *
  */
 void x900_functional_test(std::string serial_port, int baud_rate);
@@ -34,7 +41,7 @@ void x900_functional_test(std::string serial_port, int baud_rate);
 /*
  * Dead loop for error.
  */
-void error_loop();
+void error_loop(uint16_t error_code);
 
 /*
  * Test RAM.
@@ -52,9 +59,9 @@ bool Flash_test();
 bool serial_port_test();
 
 /*
- * Test write on two usb drives (Used to test usb connection).
+ * Test lidar.
  */
-bool usb_test(std::string dev_path, std::string fs_type, int write_length);
+bool lidar_test();
 
 /*
  * Test for power supply voltage.

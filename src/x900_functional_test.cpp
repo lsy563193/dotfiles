@@ -19,11 +19,21 @@ void x900_functional_test(std::string serial_port, int baud_rate)
 	speaker.test();
 	// If you can not hear the voice, then speaker port has error, but there is no way to test it by software.
 
+	// Test item: Serial port.
+	if (!serial.init(serial_port, baud_rate) || !serial_port_test())
+	{
+		ROS_ERROR("%s %d: Serial port test failed!!", __FUNCTION__, __LINE__);
+		error_loop(SERIAL_ERROR);
+	}
+	ROS_INFO("Test serial port succeeded!!");
+	auto serial_receive_routine = new boost::thread(boost::bind(&Serial::receive_routine_cb, &serial));
+	auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
+
 	// Test item: RAM.
 	if (!RAM_test())
 	{
 		ROS_ERROR("%s %d: RAM test failed!!", __FUNCTION__, __LINE__);
-		error_loop();
+		error_loop(RAM_ERROR);
 	}
 	ROS_INFO("%s %d: Test for RAM successed.", __FUNCTION__, __LINE__);
 
@@ -31,78 +41,98 @@ void x900_functional_test(std::string serial_port, int baud_rate)
 	if (!Flash_test())
 	{
 		ROS_ERROR("%s %d: Flash test failed!!", __FUNCTION__, __LINE__);
-		error_loop();
+		error_loop(FLASH_ERROR);
 	}
-	ROS_INFO("%s %d: Test for Flash successed.", __FUNCTION__, __LINE__);
+	ROS_INFO("%s %d: Test for Flash succeeded.", __FUNCTION__, __LINE__);
 
-/*
-	// Test item: Serial port.
-	if (!serial.init(serial_port, baud_rate) || !serial_port_test())
+
+	// Test item: Lidar.
+	if (!lidar_test())
 	{
-		ROS_ERROR("%s %d: Serial port test failed!!", __FUNCTION__, __LINE__);
-		error_loop();
+		ROS_ERROR("%s %d: Lidar test failed!!", __FUNCTION__, __LINE__);
+		error_loop(LIDAR_ERROR);
 	}
-	ROS_INFO("Test serial port success!!");
-
-	auto serial_receive_routine = new boost::thread(boost::bind(&Serial::receive_routine_cb, &serial));
-	auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
-
-	// Test item 3: USB devices connection.
-	const int write_file_size = 500;
-	if (!usb_test("/dev/sda1", "vfat", write_file_size))
-	{
-		ROS_ERROR("Test sda1 failed!!");
-		error_loop();
-	}
-	ROS_INFO("Test sda1 success!!");
-
-	if (!usb_test("/dev/sdb1", "vfat", write_file_size))
-	{
-		ROS_ERROR("Test sdb1 failed!!");
-		error_loop();
-	}
-	ROS_INFO("Test sdb1 success!!");
-
-	// Test item 4: Battery supply.
-	if (!power_supply_test())
-	{
-		ROS_ERROR("%s %d: Power supply test failed!!", __FUNCTION__, __LINE__);
-		error_loop();
-	}
-	ROS_INFO("Test power supply success!!");
+	ROS_INFO("%s %d: Test for Lidar succeeded.", __FUNCTION__, __LINE__);
 
 	// Test hardware from main board.
 
 	if (!main_board_test())
 	{
 		ROS_ERROR("%s %d: Main board test failed!!", __FUNCTION__, __LINE__);
-		error_loop();
+		error_loop(MAIN_BOARD_ERROR);
 	}
 	ROS_INFO("Test main board success!!");
-*/
 
 	// Test finish.
+	double alarm_time = ros::Time::now().toSec();
+	speaker.play(VOICE_TEST_SUCCESS);
+	ROS_INFO("%s %d: Test finish.", __FUNCTION__, __LINE__);
 	while (ros::ok())
 	{
-		speaker.play(VOICE_TEST_SUCCESS);
-		ROS_INFO("%s %d: Test finish.", __FUNCTION__, __LINE__);
-		sleep(5);
+		if (ros::Time::now().toSec() - alarm_time > 5)
+		{
+			alarm_time = ros::Time::now().toSec();
+			speaker.play(VOICE_TEST_SUCCESS);
+			ROS_INFO("%s %d: Test finish.", __FUNCTION__, __LINE__);
+		}
 	}
 }
 
-void error_loop()
+void error_loop(uint16_t error_code)
 {
+	switch (error_code)
+	{
+		case SERIAL_ERROR:
+			break;
+		case RAM_ERROR:
+			serial.setSendData(CTL_MAIN_BOARD_MODE, ALARM_ERROR_MODE);
+			serial.setSendData(CTL_TESTING_STAGE, 1);
+			serial.setSendData(CTL_ERROR_CODE_HIGH, static_cast<uint8_t>(RAM_ERROR >> 8));
+			serial.setSendData(CTL_ERROR_CODE_LOW, static_cast<uint8_t>(RAM_ERROR));
+			break;
+		case FLASH_ERROR:
+			serial.setSendData(CTL_MAIN_BOARD_MODE, ALARM_ERROR_MODE);
+			serial.setSendData(CTL_TESTING_STAGE, 1);
+			serial.setSendData(CTL_ERROR_CODE_HIGH, static_cast<uint8_t>(FLASH_ERROR >> 8));
+			serial.setSendData(CTL_ERROR_CODE_LOW, static_cast<uint8_t>(FLASH_ERROR));
+			break;
+		case LIDAR_ERROR:
+			serial.setSendData(CTL_MAIN_BOARD_MODE, ALARM_ERROR_MODE);
+			serial.setSendData(CTL_TESTING_STAGE, 1);
+			serial.setSendData(CTL_ERROR_CODE_HIGH, static_cast<uint8_t>(LIDAR_ERROR >> 8));
+			serial.setSendData(CTL_ERROR_CODE_LOW, static_cast<uint8_t>(LIDAR_ERROR));
+			break;
+		case LIDAR_BUMPER_ERROR:
+			serial.setSendData(CTL_MAIN_BOARD_MODE, ALARM_ERROR_MODE);
+			serial.setSendData(CTL_TESTING_STAGE, 1);
+			serial.setSendData(CTL_ERROR_CODE_HIGH, static_cast<uint8_t>(LIDAR_BUMPER_ERROR >> 8));
+			serial.setSendData(CTL_ERROR_CODE_LOW, static_cast<uint8_t>(LIDAR_BUMPER_ERROR));
+			break;
+		case MAIN_BOARD_ERROR:
+			serial.setSendData(CTL_MAIN_BOARD_MODE, ALARM_ERROR_MODE);
+			serial.setSendData(CTL_TESTING_STAGE, 1);
+			break;
+		default:
+			break;
+	}
+	double alarm_time = ros::Time::now().toSec();
+	speaker.play(VOICE_TEST_FAIL);
+	ROS_ERROR("%s %d: Test ERROR.", __FUNCTION__, __LINE__);
 	while (ros::ok())
 	{
-		speaker.play(VOICE_TEST_FAIL);
-		ROS_ERROR("%s %d: Test ERROR.", __FUNCTION__, __LINE__);
-		sleep(5);
+		if (ros::Time::now().toSec() - alarm_time > 5)
+		{
+			alarm_time = ros::Time::now().toSec();
+			speaker.play(VOICE_TEST_FAIL);
+			ROS_ERROR("%s %d: Test ERROR.", __FUNCTION__, __LINE__);
+		}
 	}
 }
 
 bool RAM_test()
 {
 	return true;
+	ROS_INFO("%s %d: Start RAM test.", __FUNCTION__, __LINE__);
 	bool test_ret = false;
 	int RAM_test_size = 2; // In Mb.
 	int RAM_test_block_cnt = 3; // Test 3 blocks of RAM and size of each block is RAM_test_size Mb.
@@ -180,6 +210,7 @@ bool RAM_test()
 
 bool Flash_test()
 {
+	return true;
 	ROS_INFO("%s %d: Start Flash test.", __FUNCTION__, __LINE__);
 	std::string origin_file = "/origin_random.file";
 	std::string new_file = "/random.file";
@@ -241,6 +272,8 @@ bool Flash_test()
 
 bool serial_port_test()
 {
+	return false;
+	ROS_INFO("%s %d: Start serial test.", __FUNCTION__, __LINE__);
 	bool test_ret = true;
 	std::random_device rd;
 	std::mt19937 random_number_engine(rd());
@@ -251,7 +284,6 @@ bool serial_port_test()
 	int test_frame_cnt = 50;
 
 	serial.resetSendStream();
-	ROS_INFO("%s %d: Start serial testing.", __FUNCTION__, __LINE__);
 	for (uint8_t test_cnt = 0; test_cnt < test_frame_cnt; test_cnt++)
 	{
 		// Write random numbers to send stream.
@@ -360,50 +392,10 @@ bool serial_port_test()
 	return strncmp(char_buf1, char_buf2, write_data_length) == 0;*/
 }
 
-bool usb_test(std::string dev_path, std::string fs_type, int write_length)
+bool lidar_test()
 {
 	return true;
-	std::random_device rd;
-	std::mt19937 random_number_engine(rd());
-	std::uniform_int_distribution<char> dist_char;
-	char buf1[write_length];
-	//Write random numbers to buffer.
-	for (int i = 0; i < write_length; i++)
-		buf1[i] = dist_char(random_number_engine);
-
-	system("/bin/mkdir -p /mnt/tmp");
-	usleep(100000);
-	if (mount(dev_path.c_str(), "/mnt/tmp", fs_type.c_str(), MS_NOATIME, NULL))
-	{
-		ROS_ERROR("Mount block device failed!!");
-		return false;
-	}
-	FILE *f = fopen("/mnt/tmp/random.file", "w");
-	if (f == nullptr)
-	{
-		ROS_ERROR("Creating temporary file failed!!");
-		umount2("/mnt/tmp", MNT_FORCE);
-		return false;
-	}
-	fwrite(buf1, sizeof(char), static_cast<size_t>(write_length), f);
-	fclose(f);
-	system("/bin/sync");
-	usleep(100000);
-	f = fopen("/mnt/tmp/random.file", "r");
-	if (f == nullptr)
-	{
-		ROS_ERROR("Reading from temporary file failed!!");
-		umount2("/mnt/tmp", MNT_FORCE);
-		return false;
-	}
-	char buf2[write_length];
-	fread(buf2, sizeof(char), static_cast<size_t>(write_length), f);
-	fclose(f);
-	system("/bin/rm /mnt/tmp/random.file");
-	usleep(100000);
-	umount2("/mnt/tmp", MNT_FORCE);
-
-	return strncmp(buf1, buf2, static_cast<size_t>(write_length)) == 0;
+	ROS_INFO("%s %d: Start lidar test.", __FUNCTION__, __LINE__);
 }
 
 bool power_supply_test()
@@ -540,4 +532,49 @@ bool main_board_test()
 	return true;
 }*/
 
+/*bool usb_test(std::string dev_path, std::string fs_type, int write_length)
+{
+	return true;
+	std::random_device rd;
+	std::mt19937 random_number_engine(rd());
+	std::uniform_int_distribution<char> dist_char;
+	char buf1[write_length];
+	//Write random numbers to buffer.
+	for (int i = 0; i < write_length; i++)
+		buf1[i] = dist_char(random_number_engine);
+
+	system("/bin/mkdir -p /mnt/tmp");
+	usleep(100000);
+	if (mount(dev_path.c_str(), "/mnt/tmp", fs_type.c_str(), MS_NOATIME, NULL))
+	{
+		ROS_ERROR("Mount block device failed!!");
+		return false;
+	}
+	FILE *f = fopen("/mnt/tmp/random.file", "w");
+	if (f == nullptr)
+	{
+		ROS_ERROR("Creating temporary file failed!!");
+		umount2("/mnt/tmp", MNT_FORCE);
+		return false;
+	}
+	fwrite(buf1, sizeof(char), static_cast<size_t>(write_length), f);
+	fclose(f);
+	system("/bin/sync");
+	usleep(100000);
+	f = fopen("/mnt/tmp/random.file", "r");
+	if (f == nullptr)
+	{
+		ROS_ERROR("Reading from temporary file failed!!");
+		umount2("/mnt/tmp", MNT_FORCE);
+		return false;
+	}
+	char buf2[write_length];
+	fread(buf2, sizeof(char), static_cast<size_t>(write_length), f);
+	fclose(f);
+	system("/bin/rm /mnt/tmp/random.file");
+	usleep(100000);
+	umount2("/mnt/tmp", MNT_FORCE);
+
+	return strncmp(buf1, buf2, static_cast<size_t>(write_length)) == 0;
+}*/
 #endif
