@@ -18,7 +18,7 @@
 #define VERIFY_KEY							(0)
 
 /* Functional test setting. */
-#define X900_FUNCTIONAL_TEST						(1)
+#define X900_FUNCTIONAL_TEST						(0)
 
 /* ------------------------------------- Speaker config ------------------------------------- */
 #define SPEAKER_VOLUME						(55)
