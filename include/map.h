@@ -30,11 +30,12 @@ typedef std::deque<Point_t> Points;
   BLOCKED_BUMPER = 3,
   BLOCKED_CLIFF = 4,
   BLOCKED_RCON = 5,
-  BLOCKED_LIDAR = 6,
-  BLOCKED_TILT = 7,
-  BLOCKED_SLIP = 8,
-  SLAM_MAP_BLOCKED = 9,
-  BLOCKED_BOUNDARY = 10,
+  BLOCKED_TMP_RCON = 6,
+  BLOCKED_LIDAR = 7,
+  BLOCKED_TILT = 8,
+  BLOCKED_SLIP = 9,
+  SLAM_MAP_BLOCKED = 10,
+  BLOCKED_BOUNDARY = 11,
   TARGET_CLEAN = 13,
   TARGET = 14,
   COST_NO = 0,
@@ -136,13 +137,7 @@ public:
 	void	setBlockWithBound(Cell_t min, Cell_t max, CellState state, bool with_block);
 	void setCleaned(std::deque<Cell_t> cells);
 	void setExplorationCleaned();
-	/*
-	 * @param1 point
-	 * @param2 radian ,in cells
-	 * @param3 cover_block
-	 * @param4 cell_state
-	 */
-	void setCircleMarkers(Point_t point,int radian,bool cover_block,CellState cell_state);
+	void setCircleMarkers(Point_t point,bool cover_block,int radian,CellState cell_state);
 
 	uint32_t getCleanedArea();
 

@@ -340,6 +340,7 @@ void Speaker::stop()
 {
 	speak_thread_stop_ = true;
 }
+
 bool Speaker::test()
 {
 	speaker.play(VOICE_TEST_MODE);

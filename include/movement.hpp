@@ -198,7 +198,6 @@ private:
 	Points lidar_targets_{};
 	Points* p_tmp_targets_{};
 
-	bool is_first_cal_vir;
 	uint32_t seq_{0};
 	ros::Time corner_time;
 };

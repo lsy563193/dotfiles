@@ -17,6 +17,7 @@ void signal_catch(int sig)
 		case SIGSEGV:
 		{
 			ROS_ERROR("Oops!!! pp receive SIGSEGV signal,segment fault!");
+			ros::shutdown();
 			if(robot_instance != nullptr){
 				speaker.play(VOICE_CLEANING_STOP,false);
 				delete robot_instance;
@@ -26,6 +27,7 @@ void signal_catch(int sig)
 		case SIGINT:
 		{
 			ROS_ERROR("Oops!!! pp receive SIGINT signal,ctrl+c press");
+			ros::shutdown();
 			if(robot_instance != nullptr){
 				speaker.play(VOICE_CLEANING_STOP,false);
 				delete robot_instance;
@@ -35,6 +37,7 @@ void signal_catch(int sig)
 		case SIGTERM:
 		{
 			ROS_ERROR("Ouch!!! pp receive SIGTERM signal,being kill!");
+			ros::shutdown();
 			if(robot_instance != nullptr){
 				speaker.play(VOICE_CLEANING_STOP,false);
 				delete robot_instance;
@@ -45,7 +48,6 @@ void signal_catch(int sig)
 			ROS_ERROR("Oops!! pp receive %d signal",sig);
 	}
 	robot_instance = nullptr;
-	ros::shutdown();
 }
 
 int main(int argc, char **argv)
