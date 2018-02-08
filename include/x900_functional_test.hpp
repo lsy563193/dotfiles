@@ -44,7 +44,7 @@ bool RAM_test();
 /*
  * Test flash.
  */
-bool flash_test();
+bool Flash_test();
 
 /*
  * Test serial port.

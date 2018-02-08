@@ -10,7 +10,6 @@
 #include <sys/vfs.h>
 #include <random>
 #include <wait.h>
-#include <mode.hpp>
 
 void x900_functional_test(std::string serial_port, int baud_rate)
 {
@@ -26,7 +25,17 @@ void x900_functional_test(std::string serial_port, int baud_rate)
 		ROS_ERROR("%s %d: RAM test failed!!", __FUNCTION__, __LINE__);
 		error_loop();
 	}
+	ROS_INFO("%s %d: Test for RAM successed.", __FUNCTION__, __LINE__);
 
+	// Test item: Flash.
+	if (!Flash_test())
+	{
+		ROS_ERROR("%s %d: Flash test failed!!", __FUNCTION__, __LINE__);
+		error_loop();
+	}
+	ROS_INFO("%s %d: Test for Flash successed.", __FUNCTION__, __LINE__);
+
+/*
 	// Test item: Serial port.
 	if (!serial.init(serial_port, baud_rate) || !serial_port_test())
 	{
@@ -35,7 +44,6 @@ void x900_functional_test(std::string serial_port, int baud_rate)
 	}
 	ROS_INFO("Test serial port success!!");
 
-/*
 	auto serial_receive_routine = new boost::thread(boost::bind(&Serial::receive_routine_cb, &serial));
 	auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
 
@@ -94,6 +102,7 @@ void error_loop()
 
 bool RAM_test()
 {
+	return true;
 	bool test_ret = false;
 	int RAM_test_size = 2; // In Mb.
 	int RAM_test_block_cnt = 3; // Test 3 blocks of RAM and size of each block is RAM_test_size Mb.
@@ -111,10 +120,7 @@ bool RAM_test()
 		if (WIFEXITED(status))
 		{
 			if (0 == WEXITSTATUS(status))
-			{
-				ROS_INFO("%s %d: Test for RAM successed.", __FUNCTION__, __LINE__);
 				test_ret = true;
-			}
 			else
 				ROS_ERROR("%s %d: Program test for RAM failed, failed code:%d!!", __FUNCTION__, __LINE__, WEXITSTATUS(status));
 		}
@@ -170,6 +176,67 @@ bool RAM_test()
 
 
 	return test_ret;*/
+}
+
+bool Flash_test()
+{
+	ROS_INFO("%s %d: Start Flash test.", __FUNCTION__, __LINE__);
+	std::string origin_file = "/origin_random.file";
+	std::string new_file = "/random.file";
+	std::string cmd;
+	char origin_md5[32];
+	char new_md5[32];
+
+	// Check if origin file exists, if not, generate one.
+	if (access(origin_file.c_str(), F_OK) == -1)
+	{
+		ROS_WARN("%s %d: Access file errno:%s.", __FUNCTION__, __LINE__, strerror(errno));
+		size_t block_cnt = 1024 * 10; // 1 block means 1k byte.
+		ROS_INFO("%s %d: Generate random file for %fMb.", __FUNCTION__, __LINE__, static_cast<float>(block_cnt) / 1024);
+		cmd = "dd if=/dev/urandom of=" + origin_file + " count=" + std::to_string(block_cnt) + " bs=1024";
+		system(cmd.c_str());
+	}
+
+	// Get the md5sum of origin file.
+	cmd = "md5sum " + origin_file;
+	FILE *f = popen(cmd.c_str(), "r");
+	if (f)
+	{
+		fgets(origin_md5, 32, f);
+		pclose(f);
+	} else
+	{
+		ROS_ERROR("%s %d: popen file error:%s.", __FUNCTION__, __LINE__, strerror(errno));
+		return false;
+	}
+
+	// Copy a new file from origin file.
+	if (access(new_file.c_str(), F_OK) != -1)
+	{
+		ROS_WARN("%s %d: Delete existing %s.", __FUNCTION__, __LINE__, new_file.c_str());
+		cmd = "rm " + new_file;
+		system(cmd.c_str());
+	}
+	ROS_WARN("%s %d: Copy %s to %s.", __FUNCTION__, __LINE__, origin_file.c_str(), new_file.c_str());
+	cmd = "cp " + origin_file + " " + new_file;
+	system(cmd.c_str());
+
+	// Get the md5sum of new file.
+	cmd = "md5sum " + new_file;
+	f = popen(cmd.c_str(), "r");
+	if (f)
+	{
+		fgets(new_md5, 32, f);
+		ROS_INFO("%s %d: Origin random file md5 : %s.", __FUNCTION__, __LINE__, origin_md5);
+		ROS_INFO("%s %d: New random file md5    : %s.", __FUNCTION__, __LINE__, new_md5);
+		pclose(f);
+	} else
+	{
+		ROS_ERROR("%s %d: popen file error:%s.", __FUNCTION__, __LINE__, strerror(errno));
+		return false;
+	}
+
+	return strcmp(origin_md5, new_md5) == 0;
 }
 
 bool serial_port_test()
