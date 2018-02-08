@@ -23,7 +23,6 @@ MovementFollowWallLidar::MovementFollowWallLidar(bool is_left)
 	virtual_targets_.empty();
 	p_tmp_targets_ = &virtual_targets_;
 	corner_time = ros::Time::now();
-	is_first_cal_vir = false;
 //	path_thread_ = new boost::thread(boost::bind(&MovementFollowWallLidar::calcTmpTarget));
 //	path_thread_->detach();
 }
@@ -55,25 +54,22 @@ Points MovementFollowWallLidar::_calcTmpTarget() {
 	Circle circle{CELL_SIZE_3/2};
 	Points tmp_targets{};
 	bool is_corner_beginning;
-	if (is_first_cal_vir){
-		is_corner_beginning = true;
-		is_first_cal_vir = false;
+	const auto time_lim{1};
+	auto time_diff = (ros::Time().now() - corner_time).toSec();
+	if (time_diff < time_lim){
+		is_corner_beginning = false;
+		ROS_WARN("time_diff(%lf) < %d", time_diff, time_lim);
+#if DEBUG_ENABLE
+//		beeper.beepForCommand(INVALID);
+#endif
 	} else {
-		if ((ros::Time().now() - corner_time).toSec() < 3){
-			is_corner_beginning = false;
-			ROS_WARN("(corner_time - ros::Time().now()).toSec() < 2");
+		is_corner_beginning = true;
+		ROS_WARN("time_diff(%lf) > %d", time_diff, time_lim);
 #if DEBUG_ENABLE
-//			beeper.beepForCommand(INVALID);
+//		beeper.beepForCommand(VALID);
 #endif
-		} else {
-			is_corner_beginning = true;
-			ROS_WARN("(corner_time - ros::Time().now()).toSec() > 2");
-#if DEBUG_ENABLE
-//			beeper.beepForCommand(VALID);
-#endif
-		}
-		corner_time = ros::Time::now();
 	}
+	corner_time = ros::Time::now();
 	auto offset_x = is_corner_beginning ? CELL_SIZE * 0.7 : 0;
 	auto d_points = circle.getPoints(10,is_corner_beginning);
 	for(auto& point:d_points)
