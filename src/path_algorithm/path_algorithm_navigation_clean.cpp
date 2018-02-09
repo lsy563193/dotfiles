@@ -93,12 +93,18 @@ Cells NavCleanPathAlgorithm::findTargetInSameLane(GridMap &map, const Cell_t &cu
 				 !map.cellIsOutOfRange(neighbor + cell_direction_index_[i]) && !map.isBlocksAtY(neighbor.x, neighbor.y);
 				 neighbor += cell_direction_index_[i])
 		{
-			unclean_cells += map.isUncleanAtY(neighbor.x, neighbor.y);
-			if (unclean_cells >= 3) {
+			if (map.getCell(CLEAN_MAP, neighbor.x, neighbor.y) == UNCLEAN)
+			{
 				it[i] = neighbor;
-				unclean_cells = 0;
 //				ROS_INFO("%s %d: it[%d](%d,%d)", __FUNCTION__, __LINE__, i, it[i].x, it[i].y);
 			}
+
+		/*unclean_cells += map.isUncleanAtY(neighbor.x, neighbor.y);
+		if (unclean_cells >= 3) {
+			it[i] = neighbor;
+			unclean_cells = 0;
+//				ROS_INFO("%s %d: it[%d](%d,%d)", __FUNCTION__, __LINE__, i, it[i].x, it[i].y);
+		}*/
 //			ROS_WARN("%s %d: it[%d](%d,%d)", __FUNCTION__, __LINE__, i, it[i].x, it[i].y);
 //			ROS_WARN("%s %d: neighbor(%d,%d)", __FUNCTION__, __LINE__, neighbor.x, neighbor.y);
 		}
@@ -148,6 +154,7 @@ Cells NavCleanPathAlgorithm::findTargetInSameLane(GridMap &map, const Cell_t &cu
 
 	return path;
 }
+
 class FilterTarget{
 public:
 	FilterTarget(const Cell_t& curr){
