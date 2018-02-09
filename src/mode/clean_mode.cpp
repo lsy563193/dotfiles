@@ -47,6 +47,7 @@ ACleanMode::ACleanMode()
 	genNextAction();
 	robot_timer.initWorkTimer();
 	key.resetPressStatus();
+	time_gyro_dynamic_ = ros::Time::now().toSec();
 
 	resetPosition();
 	charger_pose_.clear();
@@ -1496,4 +1497,8 @@ bool ACleanMode::generatePath(GridMap &map, const Point_t &curr, const int &last
 		ROS_WARN("%s,%d: not empty! point(%d, %d, %d)", __FUNCTION__, __LINE__,targets.back().x, targets.back().y, targets.back().th);
 	}
 	return true;
+}
+
+bool ACleanMode::isGyroDynamic() {
+	return ros::Time::now().toSec() - time_gyro_dynamic_ > GYRO_DYNAMIC_INTERVAL_TIME;
 }

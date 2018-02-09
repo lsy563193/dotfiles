@@ -53,7 +53,7 @@ public:
 
 	void pubFitLineMarker(double a, double b, double c, double y1, double y2);
 
-	void motorCtrl(bool new_switch_);
+	bool motorCtrl(bool new_switch_);
 	void startAlign();
 	bool alignFinish();
 	float alignAngle(void)

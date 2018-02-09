@@ -2,6 +2,8 @@
 // Created by root on 12/5/17.
 //
 
+#define GYRO_DYNAMIC_RUN_TIME 0.15
+
 #ifndef PP_MOVEMENT_HPP
 #define PP_MOVEMENT_HPP
 
@@ -75,6 +77,17 @@ private:
 	uint8_t cliff_jam_cnt_;
 	uint8_t robot_stuck_cnt_;
 	float lidar_detect_distance;
+};
+
+class MovementGyroDynamic : public IMovement{
+public:
+	MovementGyroDynamic();
+	~MovementGyroDynamic();
+	void adjustSpeed(int32_t&, int32_t&) override;
+	bool isFinish() override;
+private:
+	bool is_open_dynamic_succeed_{false};
+	double start_dynamic_time_{0};
 };
 
 class MovementRcon: public IMovement
