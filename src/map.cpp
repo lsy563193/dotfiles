@@ -1387,7 +1387,7 @@ void GridMap::setCircleMarkers(Point_t point,bool cover_block,int radian,CellSta
 	const int RADIUS_CELL = radian;
 	Point_t tmp_point = point;
 	int16_t deg_point_th = (int16_t)radian_to_degree(point.th);
-	ROS_INFO("deg_point_th = %d",deg_point_th);
+	ROS_INFO("\033[1;40;32m deg_point_th = %d,charger_point(%d,%d)\033[0m",deg_point_th,point.toCell().x,point.toCell().y);
 	for (int dy = 0; dy < RADIUS_CELL; ++dy) {
 		for (int16_t angle_i = 0; angle_i <360; angle_i += 1) {
 			tmp_point.th = ranged_radian(degree_to_radian(deg_point_th + angle_i));

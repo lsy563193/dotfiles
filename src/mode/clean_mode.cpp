@@ -679,20 +679,22 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 			if(!isStateGoHomePoint()){
 				if(c_rcon.getStatus()){
 					if(found_charger_){
-						uint16_t charger_size = charger_pose_.size();
 						int counter=0;
 						for(Point_t charger_position:charger_pose_){
 							if(getPosition().toCell().Distance(charger_position.toCell()) > DETECT_RANGE ){
 								counter++;
 							}
-							if(counter >= charger_size){
+							if(counter >= charger_pose_.size()){//all charger pos > DETECT_RANGE
 								if(estimateChargerPos(c_rcon.getStatus())){
 									INFO_CYAN("FOUND CHARGER");
+									c_rcon.resetStatus();
 								}
 								break;
 							}
+							else{//not all charger pos > DETECT_RANGE
+								c_rcon.resetStatus();
+							}
 						}
-						c_rcon.resetStatus();
 					}
 					else if(!found_charger_){
 						if(estimateChargerPos(c_rcon.getStatus())){
@@ -769,15 +771,14 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 	}
 	enum {flfr,frfr2,flfl2,fl2l,fr2r,bll,brr,fl2,fr2,l,r,bl,br};
 	static int8_t cnt[13]={0,0,0,0,0,0,0,0,0,0,0,0,0};
-	float cd = 0.0;//charger direction acorrding to robot//in degrees
+	float cd = 0.0;//charger direction acorrding to robot,in degrees
 	float dist = 0.0;
 	float len = 0.0;
 	const int STABLE_CNT = 2;
-	const float DETECT_RANGE_MAX = CELL_SIZE*10;
+	const float DETECT_RANGE_MAX = CELL_SIZE*7;
 	const float DETECT_RANGE_MIN = CELL_SIZE*2;
 	const float RCON_1 = 0,RCON_2 = 22.0,RCON_3 = 40.0 ,RCON_4 = 78.0 ,RCON_5 = 130.0;
-	const int OFFSET = 1;
-	/*-- here we only detect top signal from charge stub --*/
+	//-- here we only detect top signal from charge stub ----
 	//ROS_INFO("%s,%d,rcon_value 0x%x",__FUNCTION__,__LINE__,rcon_value & RconAll_Home_T);
 	if( lidar.lidarCheckFresh(0.1,3))
 	{
@@ -913,6 +914,7 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 			}
 		}
 		memset(cnt,0,sizeof(int8_t)*13);
+		//------detect end-----
 
 		dist = lidar.getLidarDistance(cd);
 		if (dist <= DETECT_RANGE_MAX && dist >= DETECT_RANGE_MIN){
@@ -923,7 +925,7 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 				if(cd>=0)
 					c_pose_.th =  ranged_radian(odom.getRadian() + degree_to_radian( cd ));
 				else
-					c_pose_.th =  ranged_radian(odom.getRadian() - degree_to_radian( cd));
+					c_pose_.th =  ranged_radian(odom.getRadian() - degree_to_radian( cd ));
 
 				int16_t cell_distance = getPosition().toCell().Distance(c_pose_.toCell());
 				if(cell_distance < 3)//less than 3 cell
@@ -934,7 +936,7 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 				found_charger_ = true;
 				charger_pose_.push_back( c_pose_ );
 				clean_map_.setChargerArea( charger_pose_ );
-				ROS_INFO("\033[1;40;32m%s,%d,FOUND CHARGER cd %f, rcon_state = 0x%x, distance %f \033[0m",__FUNCTION__,__LINE__,cd,rcon_value,dist);
+				ROS_INFO("\033[1;40;32m%s,%d,FOUND CHARGER cd %f,cur_angle = %f, rcon_state = 0x%x, distance %f \033[0m",__FUNCTION__,__LINE__,cd,radian_to_degree(odom.getRadian()),rcon_value,dist);
 				return true;
 		}
 		else{

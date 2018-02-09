@@ -28,7 +28,8 @@ GoHomePathAlgorithm::GoHomePathAlgorithm(GridMap &map, Points &home_points, Poin
 	// set the rcon blocks to cleaned 
 	auto map_tmp = map.generateBound();
 	for (const auto &cell : map_tmp) {
-		if (map.getCell(CLEAN_MAP, cell.x, cell.y) == BLOCKED_RCON)
+		if (map.getCell(CLEAN_MAP, cell.x, cell.y) == BLOCKED_RCON ||
+				   	map.getCell(CLEAN_MAP,cell.x,cell.y) == BLOCKED_TMP_RCON)
 			map.setCell(CLEAN_MAP,cell.x,cell.y, CLEANED);
 	}
 

@@ -145,7 +145,7 @@ int IMoveType::countRconTriggered(uint32_t rcon_value)
 	if(rcon_value == 0)
 		return 0;
 
-	int MAX_CNT = 1;
+	int MAX_CNT = 3;
 	if ( rcon_value& RconL_HomeT)
 		rcon_cnt[left]++;
 	if ( rcon_value& RconFL_HomeT)
