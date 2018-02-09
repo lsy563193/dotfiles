@@ -155,7 +155,7 @@ void Lidar::setScanCompensateReady(uint8_t val)
 	is_scanCompensate_ready_ = val;
 }
 
-void Lidar::motorCtrl(bool new_switch_)
+bool Lidar::motorCtrl(bool new_switch_)
 {
 	switch_ = new_switch_;
 	if(switch_){
@@ -177,7 +177,12 @@ void Lidar::motorCtrl(bool new_switch_)
 	}
 
 	if (!robot::instance()->lidarMotorCtrl(switch_))
+	{
 		ROS_ERROR("%s %d: Lidar service not received!",__FUNCTION__,__LINE__);
+		return false;
+	}
+
+	return true;
 
 }
 

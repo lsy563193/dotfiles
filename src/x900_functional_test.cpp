@@ -399,11 +399,14 @@ bool lidar_test()
 	ros::Subscriber scan_sub_;
 	scan_sub_ = nh_.subscribe("scanOriginal", 1, &Lidar::scantestCb, &lidar);
 	lidar.init();
-	sleep(5);
-	lidar.motorCtrl(ON);
+	while (ros::ok() && !lidar.motorCtrl(ON))
+		usleep(500000);
 	while (ros::ok() && !lidar.isScanOriginalReady())
 		usleep(200000);
+
+	// Test logic(not finished).
 	sleep(1);
+
 	lidar.motorCtrl(OFF);
 	scan_sub_.shutdown();
 	return true;
