@@ -83,11 +83,11 @@ robot::robot()
 	int baud_rate;
 	robot_nh_.param<int>("baud_rate", baud_rate, 115200);
 
-#if !X900_FUNCTIONAL_TEST
 
 	std::string lidar_bumper_dev;
 	robot_nh_.param<std::string>("lidar_bumper_file", lidar_bumper_dev, "/dev/input/event1");
 
+#if !X900_FUNCTIONAL_TEST
 	if (bumper.lidarBumperInit(lidar_bumper_dev.c_str()) == -1)
 		ROS_ERROR(" lidar bumper open fail!");
 
@@ -115,7 +115,7 @@ robot::robot()
 	auto speaker_play_routine = new boost::thread(boost::bind(&Speaker::playRoutine, &speaker));
 	auto robotbase_routine = new boost::thread(boost::bind(&robot::robotbase_routine_cb, this));
 
-	auto test_routine = new boost::thread(boost::bind(&x900_functional_test, serial_port, baud_rate));
+	auto test_routine = new boost::thread(boost::bind(&x900_functional_test, serial_port, baud_rate, lidar_bumper_dev));
 #endif
 	ROS_INFO("%s %d: robot init done!", __FUNCTION__, __LINE__);
 }

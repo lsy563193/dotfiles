@@ -11,10 +11,11 @@
 #include <random>
 #include <wait.h>
 
-void x900_functional_test(std::string serial_port, int baud_rate)
+void x900_functional_test(std::string serial_port, int baud_rate, std::string lidar_bumper_dev)
 {
 
-	ROS_INFO("%s %d: Serial_port: %s, baudrate: %d.", __FUNCTION__, __LINE__, serial_port.c_str(), baud_rate);
+	ROS_INFO("%s %d: Serial_port: %s, baudrate: %d, lidar_bumper_dev: %s.",
+			 __FUNCTION__, __LINE__, serial_port.c_str(), baud_rate, lidar_bumper_dev.c_str());
 	// Test item: Speaker.
 	speaker.test();
 	// If you can not hear the voice, then speaker port has error, but there is no way to test it by software.
@@ -26,7 +27,6 @@ void x900_functional_test(std::string serial_port, int baud_rate)
 		error_loop(SERIAL_ERROR);
 	}
 	ROS_INFO("Test serial port succeeded!!");
-	auto serial_receive_routine = new boost::thread(boost::bind(&Serial::receive_routine_cb, &serial));
 	auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
 
 	// Test item: RAM.
@@ -52,10 +52,20 @@ void x900_functional_test(std::string serial_port, int baud_rate)
 		ROS_ERROR("%s %d: Lidar test failed!!", __FUNCTION__, __LINE__);
 		error_loop(LIDAR_ERROR);
 	}
-	ROS_INFO("%s %d: Test for Lidar succeeded.", __FUNCTION__, __LINE__);
+	ROS_INFO("%s %d: Test for lidar succeeded.", __FUNCTION__, __LINE__);
+
+	// Test item: Lidar bumper.
+	if (bumper.lidarBumperInit(lidar_bumper_dev.c_str()) != 1 || !lidar_bumper_test())
+	{
+
+		ROS_ERROR("%s %d: Lidar bumper test failed!!", __FUNCTION__, __LINE__);
+		error_loop(LIDAR_BUMPER_ERROR);
+	}
+	ROS_INFO("%s %d: Test for lidar bumper succeeded.", __FUNCTION__, __LINE__);
+
+	auto serial_receive_routine = new boost::thread(boost::bind(&Serial::receive_routine_cb, &serial));
 
 	// Test hardware from main board.
-
 	if (!main_board_test())
 	{
 		ROS_ERROR("%s %d: Main board test failed!!", __FUNCTION__, __LINE__);
@@ -131,7 +141,6 @@ void error_loop(uint16_t error_code)
 
 bool RAM_test()
 {
-	return true;
 	ROS_INFO("%s %d: Start RAM test.", __FUNCTION__, __LINE__);
 	bool test_ret = false;
 	int RAM_test_size = 2; // In Mb.
@@ -210,7 +219,7 @@ bool RAM_test()
 
 bool Flash_test()
 {
-	return true;
+
 	ROS_INFO("%s %d: Start Flash test.", __FUNCTION__, __LINE__);
 	std::string origin_file = "/origin_random.file";
 	std::string new_file = "/random.file";
@@ -272,7 +281,6 @@ bool Flash_test()
 
 bool serial_port_test()
 {
-	return true;
 	ROS_INFO("%s %d: Start serial test.", __FUNCTION__, __LINE__);
 	bool test_ret = true;
 	std::random_device rd;
@@ -409,6 +417,28 @@ bool lidar_test()
 
 	lidar.motorCtrl(OFF);
 	scan_sub_.shutdown();
+	return true;
+}
+
+bool lidar_bumper_test()
+{
+	ROS_INFO("%s %d: Start lidar bumper test.", __FUNCTION__, __LINE__);
+
+	int test_bumper_cnt = 5;
+	int bumper_cnt = 0;
+	bool last_bumper_status = false;
+	while (ros::ok() && bumper_cnt < test_bumper_cnt)
+	{
+		bumper.setLidarBumperStatus();
+		if (!last_bumper_status && bumper.getLidarBumperStatus())
+		{
+			bumper_cnt++;
+			ROS_INFO("%s %d: Hit lidar bumper for %d time.", __FUNCTION__, __LINE__, bumper_cnt);
+		}
+		last_bumper_status = bumper.getLidarBumperStatus();
+		usleep(20000);
+	}
+
 	return true;
 }
 
