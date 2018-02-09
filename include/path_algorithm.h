@@ -195,7 +195,7 @@ private:
 	 *          false if there is no target that match the condictions.
 	 *          Cell_t best_target, the selected best target.
 	 */
-	bool filterPathsToSelectBestPath(GridMap &map, PathList &paths, const Cell_t &cell_curr, Cells &best_path, Dir_t last_dir);
+	bool filterPathsToSelectBestPath(GridMap &map, PathList &paths, const Cell_t &cell_curr, Cells &best_path);
 
 	bool checkTrapped(GridMap &map, const Cell_t &curr_cell) override ;
 
