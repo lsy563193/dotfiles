@@ -81,6 +81,10 @@ void Speaker::play(VoiceType voice_type, bool can_be_interrupted)
 			usleep(1500);
 	}
 
+	if (voice_type == VOICE_NULL)
+		// Just for hanging up the thread until previous voice finish.
+		return;
+
 	curr_voice_.type = voice_type;
 	curr_voice_.can_be_interrupted = can_be_interrupted;
 

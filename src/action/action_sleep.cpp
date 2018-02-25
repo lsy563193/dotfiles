@@ -11,6 +11,8 @@
 ActionSleep::ActionSleep()
 {
 	ROS_INFO("%s %d: Start sleep action.", __FUNCTION__, __LINE__);
+	// Ensure the previous voice is finished before sleep.
+	speaker.play(VOICE_NULL, false);
 	beeper.beep(1, 80, 0, 1);
 	usleep(100000);
 	beeper.beep(2, 80, 0, 1);
