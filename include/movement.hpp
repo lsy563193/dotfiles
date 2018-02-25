@@ -2,7 +2,7 @@
 // Created by root on 12/5/17.
 //
 
-#define GYRO_DYNAMIC_RUN_TIME 0.15
+#define GYRO_DYNAMIC_RUN_TIME 0.5
 
 #ifndef PP_MOVEMENT_HPP
 #define PP_MOVEMENT_HPP
