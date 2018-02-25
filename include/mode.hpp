@@ -366,7 +366,7 @@ public:
 	State* updateState();
 	bool isFinish() override ;
 	bool isExit() override;
-	bool isUpdateFinish();
+	bool isStateUpdateFinish();
 
 	void setNextModeDefault();
 

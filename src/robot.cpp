@@ -65,6 +65,9 @@ robot::robot()
 
 	setBaselinkFrameType(ODOM_POSITION_ODOM_ANGLE);
 
+
+	robot_nh_.param<double>("gyro_dynamic_run_time",gyro_dynamic_run_time_,0.5);
+
 #if VERIFY_CPU_ID
 	if (verify_cpu_id() < 0) {
 		verify_ok = false;

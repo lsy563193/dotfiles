@@ -152,7 +152,7 @@ bool RAM_test()
 	status = system(cmd.c_str());
 
 	if (-1 == status)
-		ROS_ERROR("system error!");
+		ROS_ERROR("%s %d: system error!", __FUNCTION__, __LINE__);
 	else
 	{
 		ROS_INFO("exit status value = [0x%x]", status);

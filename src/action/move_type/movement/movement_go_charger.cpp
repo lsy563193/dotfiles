@@ -340,6 +340,8 @@ bool MovementGoToCharger::isSwitch()
 			back_distance_ = 0.01;
 			if(++go_home_bumper_cnt > 1)
 				gtc_state_now_ = gtc_turn_for_charger_signal_init;
+			else
+				gtc_state_now_ = gtc_around_charger_station_init;
 			return true;
 		}
 

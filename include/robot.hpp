@@ -136,6 +136,10 @@ public:
 		is_tf_ready_ = is_ready;
 	}
 
+	double getGyroDynamicRunTime(){
+		return gyro_dynamic_run_time_;
+	}
+
 	void setTempSpot(void)
 	{
 		temp_spot_set_ = true;
@@ -194,6 +198,7 @@ private:
 	double	robot_correction_yaw_;
 	tf::Vector3	slam_correction_pos;
 	double	slam_correction_yaw_;
+	double gyro_dynamic_run_time_;
 
 	ros::NodeHandle robot_nh_;
 

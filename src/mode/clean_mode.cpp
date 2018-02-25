@@ -688,6 +688,7 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 								if(estimateChargerPos(c_rcon.getStatus())){
 									INFO_CYAN("FOUND CHARGER");
 									c_rcon.resetStatus();
+									setHomePoint();
 								}
 								break;
 							}
@@ -700,6 +701,7 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 						if(estimateChargerPos(c_rcon.getStatus())){
 							INFO_CYAN("FOUND CHARGER");
 							c_rcon.resetStatus();
+							setHomePoint();
 						}
 					}
 				}
@@ -720,7 +722,7 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 	return false;
 }
 
-bool ACleanMode::isUpdateFinish() {
+bool ACleanMode::isStateUpdateFinish() {
 	if (sp_state->isSwitchByEvent())
 		return sp_state == nullptr;
 
@@ -737,7 +739,7 @@ bool ACleanMode::isUpdateFinish() {
 
 State* ACleanMode::updateState()
 {
-	while (!isUpdateFinish() && ros::ok());
+	while (!isStateUpdateFinish() && ros::ok());
 }
 
 bool ACleanMode::isFinish()
