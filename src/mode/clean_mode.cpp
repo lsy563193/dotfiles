@@ -682,9 +682,8 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 					if(found_charger_){
 						int counter=0;
 						for(Point_t charger_position:charger_pose_){
-							if(getPosition().toCell().Distance(charger_position.toCell()) > DETECT_RANGE ){
+							if(getPosition().toCell().Distance(charger_position.toCell()) > DETECT_RANGE )
 								counter++;
-							}
 							if(counter >= charger_pose_.size()){//all charger pos > DETECT_RANGE
 								if(estimateChargerPos(c_rcon.getStatus())){
 									INFO_CYAN("FOUND CHARGER");
@@ -892,7 +891,7 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 				}
 			}
 			*/
-			else if( (rcon_value & RconBL_HomeT) && !(rcon_value & RconAll_R_HomeT) ){//bl sensor
+			else if( (rcon_value & RconBL_HomeT) && !(rcon_value & RconL_HomeT) && !(rcon_value & RconAll_R_HomeT) ){//bl sensor
 				if((cnt[bl]++) >= STABLE_CNT){
 					cnt[bl] = 0;
 					cd = RCON_5;
@@ -901,7 +900,7 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 					return false;
 				}
 			}
-			else if( (rcon_value & RconBR_HomeT) && !(rcon_value & RconAll_L_HomeT) ){//br sensor
+			else if( (rcon_value & RconBR_HomeT) && !(rcon_value & RconR_HomeT) && !(rcon_value & RconAll_L_HomeT) ){//br sensor
 				if((cnt[br]++) >= STABLE_CNT){
 					cnt[br] = 0;
 					cd = -RCON_5;
@@ -919,14 +918,14 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 
 		dist = lidar.getLidarDistance(cd);
 		if (dist <= DETECT_RANGE_MAX && dist >= DETECT_RANGE_MIN){
-				double angle_offset = ranged_radian( degree_to_radian(cd) + odom.getRadian());
+				double angle_add = ranged_radian( degree_to_radian(cd) + getPosition().th);
 				Point_t c_pose_;
-				c_pose_.SetX( cos(angle_offset)* dist  +  odom.getX() );
-				c_pose_.SetY( sin(angle_offset)* dist +  odom.getY() );
+				c_pose_.SetX( cos(angle_add)* dist  +  getPosition().GetX());
+				c_pose_.SetY( sin(angle_add)* dist +  getPosition().GetY() );
 				if(cd>=0)
-					c_pose_.th =  ranged_radian(odom.getRadian() + degree_to_radian( cd ));
+					c_pose_.th =  ranged_radian(getPosition().th + degree_to_radian( cd ));
 				else
-					c_pose_.th =  ranged_radian(odom.getRadian() - degree_to_radian( cd ));
+					c_pose_.th =  ranged_radian(getPosition().th - degree_to_radian( cd ));
 
 				int16_t cell_distance = getPosition().toCell().Distance(c_pose_.toCell());
 				if(cell_distance < 3)//less than 3 cell
@@ -937,7 +936,7 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 				found_charger_ = true;
 				charger_pose_.push_back( c_pose_ );
 				clean_map_.setChargerArea( charger_pose_ );
-				ROS_INFO("\033[1;40;32m%s,%d,FOUND CHARGER cd %f,cur_angle = %f, rcon_state = 0x%x, distance %f \033[0m",__FUNCTION__,__LINE__,cd,radian_to_degree(odom.getRadian()),rcon_value,dist);
+				ROS_INFO("\033[1;40;32m%s,%d,FOUND CHARGER cd %f,cur_angle = %f,angle_add= %f, rcon_state = 0x%x, \033[0m",__FUNCTION__,__LINE__,cd,radian_to_degree(ranged_radian(getPosition().th)),radian_to_degree(angle_add),rcon_value);
 				return true;
 		}
 		else{
@@ -955,9 +954,9 @@ void ACleanMode::checkShouldMarkCharger(float angle_offset,float distance)
 {
 	if(found_charger_){
 		Point_t pose;
-		pose.SetX( cos(angle_offset)* distance  +  odom.getX() );
-		pose.SetY( sin(angle_offset)* distance  +  odom.getY() );
-		pose.th = ( odom.getRadian() - (M_PI - angle_offset));
+		pose.SetX( cos(angle_offset)* distance  +  getPosition().GetX() );
+		pose.SetY( sin(angle_offset)* distance  +  getPosition().GetY() );
+		pose.th = ( getPosition().th - (M_PI - angle_offset));
 		charger_pose_.push_back(pose);
 		ROS_INFO("%s,%d, offset angle (%f),charger pose (%d,%d)",__FUNCTION__,__LINE__, angle_offset,pose.toCell().GetX(),pose.toCell().GetY());
 		clean_map_.setChargerArea( charger_pose_ );
