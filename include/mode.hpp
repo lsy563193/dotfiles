@@ -32,112 +32,7 @@ typedef struct{
 		Points tmp_plan_path_{};
 	} PathHead;
 
-class Paras{
-public:
-	Paras(bool is_left):is_left_(is_left)
-	{
-		narrow = is_left ? 0.187 : 0.197;
-		narrow_minuend = is_left ? 0.03 : 0.03;
-
-		x_min_forward = LIDAR_OFFSET_X;
-		x_max_forward = is_left ? 0.3 : 0.3;
-		auto y_start_forward = is_left ? 0.06: -0.06;
-		auto y_end_forward = is_left ? -ROBOT_RADIUS: ROBOT_RADIUS;
-		y_min_forward = std::min(y_start_forward, y_end_forward);
-		y_max_forward = std::max(y_start_forward, y_end_forward);
-
-		auto x_side_start = 0.0;
-		auto x_side_end = ROBOT_RADIUS;
-		x_min_side = std::min(x_side_start, x_side_end);
-		x_max_side = std::max(x_side_start, x_side_end);
-
-		auto y_side_start = 0.0;
-		auto y_side_end = is_left ? narrow + 0.01 : -narrow - 0.01;
-		y_min_side = std::min(y_side_start, y_side_end);
-		y_max_side = std::max(y_side_start, y_side_end);
-
-		auto y_point1_start_corner = is_left ? 0.3 : -0.3;
-		auto y_point1_end_corner = is_left ? -4.0 : 4.0;
-		y_min_point1_corner = std::min(y_point1_start_corner, y_point1_end_corner);
-		y_max_point1_corner = std::max(y_point1_start_corner, y_point1_end_corner);
-
-		auto y_point1_start = 0.0;
-		auto y_point1_end = is_left ? 4.0 : -4.0;
-		y_min_point1 = std::min(y_point1_start, y_point1_end);
-		y_max_point1 = std::max(y_point1_start, y_point1_end);
-
-		auto y_target_start = is_left ? ROBOT_RADIUS : -ROBOT_RADIUS;
-		auto y_target_end = is_left ? 0.4 : -0.4;
-		y_min_target = std::min(y_target_start, y_target_end);
-		y_max_target = std::max(y_target_start, y_target_end);
-
-		corner_front_trig_lim = is_left ? 0.25 : 0.25;
-
-	};
-
-	bool LaserPointRange(const Vector2<double> &point, bool is_corner) const {
-/*		if (point.Distance({0, 0}) <= ROBOT_RADIUS) {
-			return false;
-		}*/
-		if(is_corner)
-			return (point.x > 0 && point.x < 4 && point.y > y_min_point1_corner && point.y < y_max_point1_corner);
-		else
-			return (point.x > 0 && point.x < 0.3 && point.y > y_min_point1 && point.y < y_max_point1);
-	}
-
-	bool TargetPointRange(const Vector2<double> &target) {
-		if (is_left_) {
-			return /*(target.x > ROBOT_RADIUS && target.y < 0.4 && target.y > ROBOT_RADIUS) ||*/
-						 (target.x > CHASE_X && std::abs(target.y) < ROBOT_RADIUS) ||
-						 (target.y < -ROBOT_RADIUS);
-		} else{
-			return /*(target.x > ROBOT_RADIUS && target.y > -0.4 && target.y < -ROBOT_RADIUS) ||*/
-						 (target.x > CHASE_X && std::abs(target.y) < ROBOT_RADIUS) ||
-						 (target.y > ROBOT_RADIUS);
-
-		}
-	}
-
-	bool inForwardRange(const Vector2<double> &point) const {
-		return point.x > x_min_forward && point.x < x_max_forward && point.y > y_min_forward && point.y < y_max_forward;
-	}
-
-	bool inSidedRange(const Vector2<double> &point) const {
-		return point.x > x_min_side && point.x < x_max_side && point.y > y_min_side && point.y < y_max_side;
-	}
-
-	double narrow;
-	double narrow_minuend;
-	bool is_left_;
-	double x_min_forward;
-	double x_max_forward;
-	double x_min_side;
-	double x_max_side;
-
-	double y_min;
-	double y_max;
-
-	double y_min_forward;
-	double y_max_forward;
-
-	double y_min_side;
-	double y_max_side;
-
-	double y_min_point1_corner;
-	double y_max_point1_corner;
-	double y_min_point1;
-	double y_max_point1;
-
-	double y_min_target;
-	double y_max_target;
-
-	const double CHASE_X = 0.107;
-
-	double corner_front_trig_lim;
-
-	const int forward_count_lim = 10;
-	const int side_count_lim = 20;
-};
+class PointSelector;
 
 class Mode:public EventHandle
 {
@@ -566,12 +461,12 @@ public:
 	void setCleanMapMarkers(int16_t x, int16_t y, CellState type,  visualization_msgs::Marker& clean_map_markers_);
 	void pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path);
 	static void pubLineMarker(const std::vector<LineABC> *lines);
-	Vector2<double> get_target_point(const Vector2<double> &p1, const Vector2<double> &p2, const Paras &para);
-	bool removeCrossingPoint(const Vector2<double> &target_point, Paras &para,
+	Vector2<double> getTargetPoint(const Vector2<double> &p1, const Vector2<double> &p2, const PointSelector &para);
+	bool removeCrossingPoint(const Vector2<double> &target_point, PointSelector &para,
 													 const sensor_msgs::LaserScan::ConstPtr &scan);
-	bool check_corner(const sensor_msgs::LaserScan::ConstPtr & scan, const Paras& para);
+	bool checkCorner(const sensor_msgs::LaserScan::ConstPtr &scan, const PointSelector &para);
 	bool calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,bool is_left ,std::deque<Vector2<double>>& points);
-	Vector2<double> polar_to_cartesian(double polar,int i);
+	Vector2<double> polarToCartesian(double polar, int i);
 	void setTempTarget(std::deque<Vector2<double>>& points, uint32_t  seq);
 	void pubTmpTarget(const Point_t &point,bool is_virtual=false);
 	void checkShouldMarkCharger(float angle_offset,float distance);
