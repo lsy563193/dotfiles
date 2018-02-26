@@ -55,7 +55,8 @@ public:
 
 	bool motorCtrl(bool new_switch_);
 	void startAlign();
-	bool alignFinish();
+	void setAlignFinish();
+	bool isAlignFinish();
 	float alignAngle(void)
 	{
 		return align_angle_;

@@ -68,6 +68,7 @@ private:
 	double align_angle = 0.0;
 	double distance;
 	bool isLeft = true;
+	double wait_laser_timer_{};
 };
 
 class ActionOpenSlam :public IAction
