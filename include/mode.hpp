@@ -325,6 +325,7 @@ public:
 	void remoteDirectionForward(bool state_now, bool state_last) override ;
 	void remoteMax(bool state_now, bool state_last) override ;
 	void keyClean(bool state_now, bool state_last) override ;
+	void chargeDetect(bool state_now, bool state_last) override ;
 
 private:
 	double remote_mode_time_stamp_;
