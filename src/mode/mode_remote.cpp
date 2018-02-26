@@ -52,8 +52,15 @@ bool ModeRemote::isExit()
 {
 	if (ev.key_clean_pressed)
 	{
-		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Exit to idle mode.", __FUNCTION__, __LINE__);
 		setNextMode(md_idle);
+		return true;
+	}
+
+	if (ev.charge_detect)
+	{
+		ROS_WARN("%s %d: Exit to charge mode.", __FUNCTION__, __LINE__);
+		setNextMode(md_charge);
 		return true;
 	}
 
@@ -129,6 +136,14 @@ void ModeRemote::remoteDirectionRight(bool state_now, bool state_last)
 	remote.reset();
 }
 
+void ModeRemote::remoteMax(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
+	beeper.beepForCommand(VALID);
+	vacuum.switchToNext();
+	remote.reset();
+}
+
 void ModeRemote::keyClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: key clean.", __FUNCTION__, __LINE__);
@@ -143,4 +158,10 @@ void ModeRemote::keyClean(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
 
 	key.resetTriggerStatus();
+}
+
+void ModeRemote::chargeDetect(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: Charge detect.", __FUNCTION__, __LINE__);
+	ev.charge_detect = charger.getChargeStatus();
 }

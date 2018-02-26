@@ -363,8 +363,12 @@ void Lidar::startAlign()
 {
 	align_finish_ = false;
 }
+void Lidar::setAlignFinish()
+{
+	align_finish_ = true;
+}
 
-bool Lidar::alignFinish()
+bool Lidar::isAlignFinish()
 {
 	return align_finish_;
 }
@@ -529,7 +533,6 @@ bool Lidar::lidarGetFitLine(double r_begin, double r_end, double range, double d
 			*distance = std::abs(fit_line.back().C / (sqrt(fit_line.back().A * fit_line.back().A + fit_line.back().B * fit_line.back().B)));
 		}
 		//ROS_INFO("a = %lf, b = %lf, c = %lf", a, b, c);
-		align_finish_ = true;
 		ROS_ERROR("fit line succeed! line_angle = %lf", radian_to_degree(*line_radian));
 		return true;
 	} else {
