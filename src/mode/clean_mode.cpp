@@ -1445,9 +1445,9 @@ void ACleanMode::setTempTarget(std::deque<Vector2<double>>& points, uint32_t  se
 
 //	ROS_ERROR("curr_point(%d,%d)",getPosition().x,getPosition().y);
 	for (const auto &iter : points) {
-		auto target = getPosition().getRelative(int(iter.x * 1000), int(iter.y * 1000));
+		auto target = getPosition().getRelative(static_cast<float>(iter.x), static_cast<float>(iter.y));
 		path_head_.tmp_plan_path_.push_back(target);
-//		ROS_INFO("temp_target(%d,%d)",target.x,target.y);
+//		printf("temp_target(%f, %f)\n",target.x,target.y);
 	}
 	path_head_.seq = seq;
 }
