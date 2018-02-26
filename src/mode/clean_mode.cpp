@@ -777,7 +777,7 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 	float dist = 0.0;
 	float len = 0.0;
 	const int STABLE_CNT = 2;
-	const float DETECT_RANGE_MAX = CELL_SIZE*7;
+	const float DETECT_RANGE_MAX = CELL_SIZE*6;
 	const float DETECT_RANGE_MIN = CELL_SIZE*2;
 	const float RCON_1 = 0,RCON_2 = 22.0,RCON_3 = 40.0 ,RCON_4 = 78.0 ,RCON_5 = 130.0;
 	//-- here we only detect top signal from charge stub ----
@@ -814,26 +814,24 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 				}
 			}
 			*/
-			if( rcon_value & RconFL2_HomeT  && !(rcon_value & RconL_HomeT) && !(rcon_value & RconAll_R_HomeT) //fl2 sensor
+			if( (rcon_value & RconFL2_HomeT) && !(rcon_value & RconL_HomeT) && !(rcon_value & RconAll_R_HomeT) //fl2 sensor
 						&& !(rcon_value & RconBL_HomeT) )//to avoid charger signal reflection from other flat
 			{
 				if((cnt[fl2]++) >= STABLE_CNT){
 					cnt[fl2] = 0;
 					cd = RCON_3;
 				}
-				else{
+				else
 					return false;
-				}
 			}
-			else if( (rcon_value & RconFR2_HomeT && !(rcon_value & RconR_HomeT) ) && !(rcon_value & RconAll_L_HomeT) //fr2 sensor
-						&& !(rcon_value & RconBR_HomeT) ){//to avoid charger signal reflection from other flat
+			else if( (rcon_value & RconFR2_HomeT) && !(rcon_value & RconR_HomeT) && !(rcon_value & RconAll_L_HomeT) //fr2 sensor
+						&& !(rcon_value & RconBR_HomeT) ){//to avoid charger signal reflection from other direction
 				if((cnt[fr2]++) >= STABLE_CNT){
 					cnt[fr2] = 0;
 					cd = -RCON_3;
 				}
-				else{
+				else
 					return false;
-				}
 			}
 			/*
 			else if( (rcon_value & RconL_HomeT) && (rcon_value & RconFL2_HomeT) && !(rcon_value & RconAll_R_HomeT) ){//fl2 & l sensor
@@ -841,37 +839,36 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 					cnt[fl2l] = 0;
 					cd = 60;
 				}
-				else{
+				else
 					return false;
-				}
 			}
 			else if( (rcon_value & RconR_HomeT) && (rcon_value & RconFR2_HomeT) && !(rcon_value & RconAll_L_HomeT) ){//fr2 & r sensor
 				if((cnt[fr2r]++) >= STABLE_CNT){
 					cnt[fr2r]=0;
 					cd = -60;
 				}
-				else{
+				else
 					return false;
-				}
 			}
 			*/
-			else if( (rcon_value & RconL_HomeT ) && !(rcon_value & RconFL2_HomeT) && !(rcon_value & RconAll_R_HomeT) ){//l sensor
+			else if( (rcon_value & RconL_HomeT) && !(rcon_value & RconFL2_HomeT) && !(rcon_value & RconAll_R_HomeT) //l sensor
+						&& !(rcon_value & RconBL_HomeT) ){//to avoid charger signal reflection from other flat
+
 				if((cnt[l]++) >= STABLE_CNT){
 					cnt[l] = 0;
 					cd = RCON_4;
 				}
-				else{
+				else
 					return false;
-				}
 			}
-			else if( (rcon_value & RconR_HomeT ) && !(rcon_value & RconFR2_HomeT) && !(rcon_value & RconAll_L_HomeT) ){//r sensor
+			else if( (rcon_value & RconR_HomeT ) && !(rcon_value & RconFR2_HomeT) && !(rcon_value & RconAll_L_HomeT) //r sensor
+						&& !(rcon_value & RconBR_HomeT) ){//to avoid charger signal reflection from other direction
 				if((cnt[r]++) >= STABLE_CNT){
 					cnt[r]=0;
 					cd = -RCON_4;
 				}
-				else{
+				else
 					return false;
-				}
 			}
 			/*
 			else if( (rcon_value & RconBL_HomeT) && (rcon_value & RconL_HomeT) && !(rcon_value & RconAll_R_HomeT)){//l & bl sensor
@@ -879,18 +876,16 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 					cnt[bll] = 0;
 					cd = 110;
 				}
-				else{
+				else
 					return false;
-				}
 			}
 			else if( (rcon_value & RconBR_HomeT) && (rcon_value & RconR_HomeT) && !(rcon_value & RconAll_L_HomeT)){//r & br sensor
 				if((cnt[brr]++) >= STABLE_CNT){
 					cnt[brr] = 0;
 					cd = -110;
 				}
-				else{
+				else
 					return false;
-				}
 			}
 			*/
 			else if( (rcon_value & RconBL_HomeT) && !(rcon_value & RconL_HomeT) && !(rcon_value & RconAll_R_HomeT) ){//bl sensor
@@ -898,36 +893,33 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 					cnt[bl] = 0;
 					cd = RCON_5;
 				}
-				else{
+				else
 					return false;
-				}
 			}
 			else if( (rcon_value & RconBR_HomeT) && !(rcon_value & RconR_HomeT) && !(rcon_value & RconAll_L_HomeT) ){//br sensor
 				if((cnt[br]++) >= STABLE_CNT){
 					cnt[br] = 0;
 					cd = -RCON_5;
 				}
-				else{
-					return false;
-				}
-			}
-			else{
-				return false;
-			}
-		}
-		memset(cnt,0,sizeof(int8_t)*13);
-		//------detect end-----
-
-		dist = lidar.getLidarDistance(cd);
-		if (dist <= DETECT_RANGE_MAX && dist >= DETECT_RANGE_MIN){
-				double angle_add = ranged_radian( degree_to_radian(cd) + getPosition().th);
-				Point_t c_pose_;
-				c_pose_.SetX( cos(angle_add)* dist  +  getPosition().GetX());
-				c_pose_.SetY( sin(angle_add)* dist +  getPosition().GetY() );
-				if(cd>=0)
-					c_pose_.th =  ranged_radian(getPosition().th + degree_to_radian( cd ));
 				else
-					c_pose_.th =  ranged_radian(getPosition().th - degree_to_radian( cd ));
+					return false;
+			}
+			else
+				return false;
+		}
+		//------detect end-----
+		memset(cnt,0,sizeof(int8_t)*13);
+
+		dist = lidar.getLidarDistance(cd,DETECT_RANGE_MAX,DETECT_RANGE_MIN);
+		if (dist <= DETECT_RANGE_MAX && dist >= DETECT_RANGE_MIN){
+				double angle_offset = ranged_radian( degree_to_radian(cd) + getPosition().th);
+				Point_t c_pose_;
+				c_pose_.SetX( cos(angle_offset)* dist  +  getPosition().GetX());//set pos x
+				c_pose_.SetY( sin(angle_offset)* dist +  getPosition().GetY() );//set pos y
+				if(cd>=0)
+					c_pose_.th =  ranged_radian(getPosition().th + degree_to_radian( cd ));//set pos th
+				else
+					c_pose_.th =  ranged_radian(getPosition().th - degree_to_radian( cd ));//set pos th
 
 				int16_t cell_distance = getPosition().toCell().Distance(c_pose_.toCell());
 				if(cell_distance < 3)//less than 3 cell
@@ -938,7 +930,7 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 				found_charger_ = true;
 				charger_pose_.push_back( c_pose_ );
 				clean_map_.setChargerArea( charger_pose_ );
-				ROS_INFO("\033[1;40;32m%s,%d,FOUND CHARGER cd %f,cur_angle = %f,angle_add= %f, rcon_state = 0x%x, \033[0m",__FUNCTION__,__LINE__,cd,radian_to_degree(ranged_radian(getPosition().th)),radian_to_degree(angle_add),rcon_value);
+				ROS_INFO("\033[1;40;32m%s,%d,FOUND CHARGER cd %f,cur_angle = %f,angle_offset= %f, rcon_state = 0x%x, \033[0m",__FUNCTION__,__LINE__,cd,radian_to_degree(ranged_radian(getPosition().th)),radian_to_degree(angle_offset),rcon_value);
 				return true;
 		}
 		else{
@@ -946,7 +938,7 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 			return false;
 		}
 	} else{
-		ROS_INFO("\033[42;37m%s,%d,  lidar not-new, cd %f, rcon_state = 0x%x\033[0m",__FUNCTION__,__LINE__,cd,rcon_value);
+		ROS_INFO("\033[42;37m%s,%d,  lidar data not update, cd %f, rcon_state = 0x%x\033[0m",__FUNCTION__,__LINE__,cd,rcon_value);
 		return false;
 	}
 	return false;

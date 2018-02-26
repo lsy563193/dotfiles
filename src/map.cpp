@@ -1333,7 +1333,7 @@ void GridMap::colorPrint(char *outString, int16_t y_min, int16_t y_max)
 				y_col+="\033[1;47;37m5\033[0m";// white
 			}
 			else if(cs == '7'){//lidar maker
-				y_col+="\033[1;44;37m6\033[0m";// blue
+				y_col+="\033[1;44;37m7\033[0m";// blue
 			}
 			else if(cs == '8'){//tilt
 				y_col+="\033[1;47;30m7\033[0m";// white
@@ -1387,7 +1387,7 @@ void GridMap::setCircleMarkers(Point_t point,bool cover_block,int radian,CellSta
 	const int RADIUS_CELL = radian;
 	Point_t tmp_point = point;
 	int16_t deg_point_th = (int16_t)radian_to_degree(point.th);
-	ROS_INFO("\033[1;40;32m deg_point_th = %d,charger_point(%d,%d)\033[0m",deg_point_th,point.toCell().x,point.toCell().y);
+	ROS_INFO("\033[1;40;32m deg_point_th = %d,point(%d,%d)\033[0m",deg_point_th,point.toCell().x,point.toCell().y);
 	for (int dy = 0; dy < RADIUS_CELL; ++dy) {
 		for (int16_t angle_i = 0; angle_i <360; angle_i += 1) {
 			tmp_point.th = ranged_radian(degree_to_radian(deg_point_th + angle_i));

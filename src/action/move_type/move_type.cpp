@@ -160,11 +160,18 @@ int IMoveType::countRconTriggered(uint32_t rcon_value)
 		rcon_cnt[right]++;
 	auto ret = 0;
 	for (int i = 0; i < 6; i++)
-		if (rcon_cnt[i] > MAX_CNT) {
+		if ( (i == fl1 || i == fr1 ) && rcon_cnt[i] > MAX_CNT) {
 			rcon_cnt[left] = rcon_cnt[fl1] = rcon_cnt[fl2] = rcon_cnt[fr2] = rcon_cnt[fr1] = rcon_cnt[right] = 0;
 			ret = i + 1;
 			break;
 		}
+		else if( (i == left || i == right || i == fl2 || i == fr2) && rcon_cnt[i] > (MAX_CNT + 2)){
+			rcon_cnt[left] = rcon_cnt[fl1] = rcon_cnt[fl2] = rcon_cnt[fr2] = rcon_cnt[fr1] = rcon_cnt[right] = 0;
+			ret = i + 1;
+			break;
+
+		}
+
 	return ret;
 }
 

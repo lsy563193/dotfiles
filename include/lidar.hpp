@@ -85,7 +85,7 @@ public:
 	void lidarXYPointCb(const visualization_msgs::Marker &point_marker);
 	static void setLidarScanDataOriginal(const sensor_msgs::LaserScan::ConstPtr &scan);
 	static sensor_msgs::LaserScan getLidarScanDataOriginal(void);
-	double getLidarDistance(int16_t angle);
+	double getLidarDistance(int16_t angle,float range_max,float range_min);
 	uint8_t lidar_get_status();
 	bool lidar_is_stuck();
 private:
