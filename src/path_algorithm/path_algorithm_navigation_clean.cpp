@@ -42,7 +42,7 @@ private:
 bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &plan_path)
 {
 
-	map.print(CLEAN_MAP, 0, 0);
+	map.print(CLEAN_MAP, curr.toCell().x, curr.toCell().y);
 	plan_path.clear();
 	auto curr_cell = curr.toCell();
 	ROS_INFO("Step 1: Find possible plan_path in same lane.");
@@ -71,22 +71,22 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 
 	if (targets.empty())
 		return false;
+//
+//	ROS_INFO("Step 3: Trace back the path of these plan_path in COST_MAP.");
+//	PathList paths{};
+//	for (auto& target : targets) {
+//		Cells path{};
+//		findPath(map, curr_cell, target,  path, 0);
+//		if(!path.empty())
+//			paths.push_back(path);
+//	}
+//
+//	for (auto &&path : paths) {
+//		displayCellPath(path);
+//	}
+//	ROS_INFO("Step 4: Filter paths to get the best target.");
 
-	ROS_INFO("Step 3: Trace back the path of these plan_path in COST_MAP.");
-	PathList paths{};
-	for (auto& target : targets) {
-		Cells path{};
-		findPath(map, curr_cell, target,  path, 0);
-		if(!path.empty())
-			paths.push_back(path);
-	}
-
-	for (auto &&path : paths) {
-		displayCellPath(path);
-	}
-	ROS_INFO("Step 4: Filter paths to get the best target.");
-
-	if (!filterPathsToSelectBestPath(map, paths, curr_cell, path))
+	if (!filterPathsToSelectBestPath(map, targets, curr_cell, path,last_dir))
 		return false;
 	displayCellPath(path);
 	ROS_INFO("Step 5: Optimize path for adjusting it away from obstacles..");
@@ -179,16 +179,14 @@ void NavCleanPathAlgorithm::findPath(GridMap &map, const Cell_t &start, const Ce
 	auto cost = map.getCell(COST_MAP, target.x, target.y);
 	auto iterator = target;
 	for (; iterator != start;) {
-		if(map.getCell(COST_MAP, iterator.x, iterator.y) != cost)
+/*		if(map.getCell(COST_MAP, iterator.x, iterator.y) != cost)
 		{
 			printf("start(%d,%d) iterator(%d,%d),target(%d,%d)cost(%d)\n",start.x, start.y, iterator.x, iterator.y,cost, target.x, target.y);
 			map.print(CLEAN_MAP, 0, 0);
 			map.print(COST_MAP, 0, 0);
 			ROS_ASSERT(map.getCell(COST_MAP, iterator.x, iterator.y) == cost);
-		}
+		}*/
 		cost -= 1;
-		if(cost < 0 || cost > 5)
-			break;
 		if(cost == 0)
 			cost = 5;
 		for (auto i = 0; i < 4; i++) {
@@ -206,47 +204,42 @@ void NavCleanPathAlgorithm::findPath(GridMap &map, const Cell_t &start, const Ce
 			}
 		}
 	}
-	if(iterator == start)
-	{
-		if (path.back() != target)
-			path.push_back(target);
-		path.push_front(start);
-	}
+	if (path.back() != target)
+		path.push_back(target);
+	path.push_front(start);
 }
 
 
 class IsIncrease {
 public:
-	IsIncrease(bool is_reverse=false):is_reverse_(is_reverse){};
+	IsIncrease(bool is_toward_pos):is_toward_pos_(is_toward_pos){};
 
 	int operator()(const Cell_t &a, const Cell_t &b) {
-		ROS_ERROR("is_reverse_(%d)", is_reverse_);
-		return is_reverse_ ? a.y > b.y : a.y < b.y ;
+		return is_toward_pos_ ? a.y < b.y : a.y > b.y ;
 	};
 private:
-	bool is_reverse_=false;
+	bool is_toward_pos_ = true;
 };
 
 class BestTargetFilter {
 public:
 	BestTargetFilter(const Cell_t& min,const Cell_t& max,int turn_count=0,bool is_toward_pos=false):min_(min),max_(max),turn_count_(turn_count),is_toward_pos_(is_toward_pos) {};
 
+//	bool find(Cells & targets, Cells &targets);
 	int operator()(const Cells &path) {
-		if (path.back().y < min_.y || path.back().y > max_.y || path.back().x < min_.x || path.back().x >max_.x)
-			return false;
 		if(turn_count_ ==0) {
 			return std::is_sorted(path.begin(), path.end(), IsIncrease(is_toward_pos_));
 		}
 		else if(turn_count_ == 1){
 			auto point = std::is_sorted_until(path.begin(), path.end(), IsIncrease(!is_toward_pos_));
-			return point != path.end() && std::is_sorted(point, path.end(), IsIncrease(is_toward_pos_));
+			return point != path.begin() && point != path.end() && std::is_sorted(point, path.end()-1, IsIncrease(is_toward_pos_));
 		}
 		else/* if(turn_count_ ==-1)*/{//any turn
 			return true;
 		}
 	};
 //private:
-//	bool is_reverse_=false;
+//	bool is_toward_pos_=false;
 	Cell_t min_;
 	Cell_t max_;
 	int turn_count_;
@@ -274,21 +267,29 @@ public:
 	int turn_count_;
 };
 
-bool NavCleanPathAlgorithm::filterPathsToSelectBestPath(GridMap &map, PathList &paths, const Cell_t &cell_curr, Cells &best_path) {
+bool NavCleanPathAlgorithm::filterPathsToSelectBestPath(GridMap &map, const Cells &targets, const Cell_t &cell_curr, Cells &best_path, const Dir_t &last_dir) {
 	std::deque<BestTargetFilter> filters{};
 	Cell_t min_cell,max_cell;
 	map.getMapRange(CLEAN_MAP,&min_cell.x, &max_cell.x,&min_cell.y,&max_cell.y);
-	BestTargetFilter filters_case0{cell_curr + Cell_t{3,0} , Cell_t{max_cell.x,cell_curr.y}, 1, true};
-
+	BestTargetFilter filters_case0{cell_curr , Cell_t{max_cell.x,cell_curr.y}, 1, true};
+	BestTargetFilter filters_case0_1{Cell_t{min_cell.x, cell_curr.y} , cell_curr, 1, false};
 	BestTargetFilter filters_case1{Cell_t{min_cell.x, cell_curr.y + 2}, max_cell, 0, true};
-	BestTargetFilter filters_case1_1{Cell_t{min_cell.x, cell_curr.y}, Cell_t{min_cell.x, cell_curr.y+1}, 0, true};
+	BestTargetFilter filters_case1_1{Cell_t{min_cell.x, cell_curr.y}, Cell_t{max_cell.x, cell_curr.y+1}, 0, true};
 	BestTargetFilter filters_case2{min_cell, max_cell,1,true};
-	BestTargetFilter filters_case3{min_cell, Cell_t{min_cell.x, cell_curr.y-2}, 0, false};
-	BestTargetFilter filters_case3_1{Cell_t{min_cell.x, cell_curr.y-2}, Cell_t{min_cell.x, cell_curr.y-1} , 0, false};
+	BestTargetFilter filters_case3{min_cell, Cell_t{max_cell.x, cell_curr.y-2}, 0, false};
+	BestTargetFilter filters_case3_1{Cell_t{min_cell.x, cell_curr.y-2}, Cell_t{max_cell.x, cell_curr.y-1} , 0, false};
 	BestTargetFilter filters_case4{min_cell, max_cell,1,false};
 	BestTargetFilter filters_case5{Cell_t{min_cell.x, cell_curr.y}, max_cell, 1000,true};
 	BestTargetFilter filters_case6{min_cell, max_cell, 1000,false};
-	filters.push_back(filters_case0);
+
+	ROS_WARN("last_dir(%d)\n",last_dir);
+	if(isXAxis(last_dir))
+	{
+		if(isPos(last_dir))
+			filters.push_back(filters_case0);
+		else
+			filters.push_back(filters_case0_1);
+	}
 	filters.push_back(filters_case1);
 	filters.push_back(filters_case1_1);
 
@@ -299,8 +300,26 @@ bool NavCleanPathAlgorithm::filterPathsToSelectBestPath(GridMap &map, PathList &
 	filters.push_back(filters_case4);
 	filters.push_back(filters_case5);
 	filters.push_back(filters_case6);
+
 	for (auto &&filter : filters) {
-		printf("is towards Y+(%d),y_range min(%d,%d)max(%d,%d),allow turn count(%d)\n",filter.is_toward_pos_,filter.min_.x,filter.min_.y,filter.max_.x,filter.max_.y,filter.turn_count_);
+		ROS_WARN("is towards Y+(%d),y_range min(%d,%d)max(%d,%d),allow turn count(%d)",filter.is_toward_pos_,filter.min_.x,filter.min_.y,filter.max_.x,filter.max_.y,filter.turn_count_);
+
+		Cells filtered_targets{};
+		std::copy_if(targets.begin(), targets.end(), std::back_inserter(filtered_targets), [&filter](Cell_t target){
+			return !(target.y < filter.min_.y || target.y > filter.max_.y || target.x < filter.min_.x || target.x > filter.max_.x);
+		});
+
+	if(filtered_targets.empty())
+		continue;
+
+		displayTargetList(filtered_targets);
+		PathList paths{};
+		for (auto& target : filtered_targets) {
+			Cells path{};
+			findPath(map, cell_curr, target,  path, (filter.turn_count_== 0 && !filter.is_toward_pos_)||(filter.turn_count_== 1 && filter.is_toward_pos_));
+			paths.push_back(path);
+		}
+
 		PathList filtered_paths{};
 		std::copy_if(paths.begin(), paths.end(), std::back_inserter(filtered_paths), BestTargetFilter(filter));
 
@@ -308,7 +327,6 @@ bool NavCleanPathAlgorithm::filterPathsToSelectBestPath(GridMap &map, PathList &
 			for (auto &&path : filtered_paths) {
 				displayCellPath(path);
 			}
-//			std::sort(filtered_paths.begin(), filtered_paths.end(), );
 			best_path = *std::min_element(filtered_paths.begin(), filtered_paths.end(), MinYAndShortestPath(cell_curr.y, filter.is_toward_pos_,filter.turn_count_));
 			return true;
 		}
@@ -333,16 +351,16 @@ void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path) {
 	ROS_INFO("%s %d: Start optimizing Path", __FUNCTION__, __LINE__);
 
 	ROS_INFO("%s %d: step *.1, check simply last 3 cell ", __FUNCTION__, __LINE__);
-	PathList paths{};
-	Cells targets{*(path.end()-4)};
-	Cells path2{};
-	findPath(map, path.front(), path.back(), path2, 2);
-	if(path2.size() < path.size())
-	{
-		path.swap(path2);
-		ROS_INFO("%s %d: step *.1 do success ", __FUNCTION__, __LINE__);
-//		map.print(CLEAN_MAP, path.front(),path.back().x, path.back().y);
-	}
+//	PathList paths{};
+//	Cells targets{*(path.end()-4)};
+//	Cells path2{};
+//	findPath(map, path.front(), path.back(), path2, 2);
+//	if(path2.size() < path.size())
+//	{
+//		path.swap(path2);
+//		ROS_INFO("%s %d: step *.1 do success ", __FUNCTION__, __LINE__);
+////		map.print(CLEAN_MAP, path.front(),path.back().x, path.back().y);
+//	}
 	ROS_INFO("%s %d: step *.2, away from obstacles ", __FUNCTION__, __LINE__);
 //	map.print(COST_MAP, path.front(), path.back().x,path.back().y);
 	for(auto iterator = path.begin(); iterator != path.end()-3; ++iterator){
