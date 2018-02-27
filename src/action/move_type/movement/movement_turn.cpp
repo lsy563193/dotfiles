@@ -39,13 +39,13 @@ void MovementTurn::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		speed_ = std::min(speed_, max_speed_);
 	}
 	else if (std::abs(diff) > degree_to_radian(10)){
-		speed_ -= 2;
-		uint8_t low_speed = ROTATE_LOW_SPEED + 5;
+		speed_ -= 1;
+		uint8_t low_speed = (ROTATE_LOW_SPEED + ROTATE_TOP_SPEED) / 2;
 		speed_ = std::max(speed_, low_speed);
 		ROS_DEBUG("%s %d: 100 - 200, speed = %d.", __FUNCTION__, __LINE__, speed_);
 	}
 	else{
-		speed_ -= 2;
+		speed_ -= 1;
 		speed_ = std::max(speed_, ROTATE_LOW_SPEED);
 		ROS_DEBUG("%s %d: 0 - 100, speed = %d.", __FUNCTION__, __LINE__, speed_);
 	}

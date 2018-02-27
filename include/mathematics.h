@@ -444,6 +444,48 @@ typedef struct
   }
 } LineABC;
 
+class PointSelector{
+public:
+	PointSelector(bool is_left);
+
+	bool LaserPointRange(const Vector2<double> &point, bool is_corner) const;
+	bool TargetPointRange(const Vector2<double> &target);
+	bool inForwardRange(const Vector2<double> &point) const;
+	bool inSidedRange(const Vector2<double> &point) const;
+
+	double narrow;
+	double narrow_minuend;
+	bool is_left_;
+	double x_min_forward;
+	double x_max_forward;
+	double x_min_side;
+	double x_max_side;
+
+	double y_min;
+	double y_max;
+
+	double y_min_forward;
+	double y_max_forward;
+
+	double y_min_side;
+	double y_max_side;
+
+	double y_min_point1_corner;
+	double y_max_point1_corner;
+	double y_min_point1;
+	double y_max_point1;
+
+	double y_min_target;
+	double y_max_target;
+
+	const double CHASE_X = 0.107;
+
+	double corner_front_trig_lim;
+
+	const int forward_count_lim = 10;
+	const int side_count_lim = 20;
+};
+
 float two_points_distance_double(float startx,float starty,float destx,float desty);
 void matrix_translate(double *x, double *y, double offset_x, double offset_y);
 void matrix_rotate(double *x, double *y, double theta);

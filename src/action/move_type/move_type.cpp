@@ -109,6 +109,7 @@ bool IMoveType::RconTrigger()
 
 void IMoveType::resetTriggeredValue()
 {
+	PP_INFO();
 	ev.lidar_triggered = 0;
 //	ev.rcon_triggered = 0;
 	ev.bumper_triggered = 0;
@@ -145,7 +146,7 @@ int IMoveType::countRconTriggered(uint32_t rcon_value)
 	if(rcon_value == 0)
 		return 0;
 
-	int MAX_CNT = 1;
+	int MAX_CNT = 3;
 	if ( rcon_value& RconL_HomeT)
 		rcon_cnt[left]++;
 	if ( rcon_value& RconFL_HomeT)
@@ -160,11 +161,18 @@ int IMoveType::countRconTriggered(uint32_t rcon_value)
 		rcon_cnt[right]++;
 	auto ret = 0;
 	for (int i = 0; i < 6; i++)
-		if (rcon_cnt[i] > MAX_CNT) {
+		if ( (i == fl1 || i == fr1 ) && rcon_cnt[i] > MAX_CNT) {
 			rcon_cnt[left] = rcon_cnt[fl1] = rcon_cnt[fl2] = rcon_cnt[fr2] = rcon_cnt[fr1] = rcon_cnt[right] = 0;
 			ret = i + 1;
 			break;
 		}
+		else if( (i == left || i == right || i == fl2 || i == fr2) && rcon_cnt[i] > (MAX_CNT + 2)){
+			rcon_cnt[left] = rcon_cnt[fl1] = rcon_cnt[fl2] = rcon_cnt[fr2] = rcon_cnt[fr1] = rcon_cnt[right] = 0;
+			ret = i + 1;
+			break;
+
+		}
+
 	return ret;
 }
 

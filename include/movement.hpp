@@ -61,7 +61,7 @@ protected:
 class MovementBack: public IMovement{
 public:
 	explicit MovementBack(float back_distance, uint8_t max_speed);
-
+	~MovementBack();
 	void adjustSpeed(int32_t&, int32_t&) override;
 	bool isLidarStop();
 	void updateStartPose();
@@ -75,6 +75,17 @@ private:
 	uint8_t cliff_jam_cnt_;
 	uint8_t robot_stuck_cnt_;
 	float lidar_detect_distance;
+};
+
+class MovementGyroDynamic : public IMovement{
+public:
+	MovementGyroDynamic();
+	~MovementGyroDynamic();
+	void adjustSpeed(int32_t&, int32_t&) override;
+	bool isFinish() override;
+private:
+	bool is_open_dynamic_succeed_{false};
+	double start_dynamic_time_{0};
 };
 
 class MovementRcon: public IMovement
@@ -305,7 +316,7 @@ private:
 class MovementStay :public IMovement
 {
 public:
-	MovementStay();
+	MovementStay(double stay_time_sec);
 	~MovementStay();
 
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed) override;
@@ -314,6 +325,12 @@ public:
 private:
 };
 
+class MovementStayRemote :public MovementStay{
+public:
+	MovementStayRemote(double stay_time_sec);
+	bool isFinish() override;
+
+};
 class MovementRemoteDirectGo :public IMovement
 {
 public:

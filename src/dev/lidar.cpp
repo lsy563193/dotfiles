@@ -155,7 +155,7 @@ void Lidar::setScanCompensateReady(uint8_t val)
 	is_scanCompensate_ready_ = val;
 }
 
-void Lidar::motorCtrl(bool new_switch_)
+bool Lidar::motorCtrl(bool new_switch_)
 {
 	switch_ = new_switch_;
 	if(switch_){
@@ -177,7 +177,12 @@ void Lidar::motorCtrl(bool new_switch_)
 	}
 
 	if (!robot::instance()->lidarMotorCtrl(switch_))
+	{
 		ROS_ERROR("%s %d: Lidar service not received!",__FUNCTION__,__LINE__);
+		return false;
+	}
+
+	return true;
 
 }
 
@@ -358,8 +363,12 @@ void Lidar::startAlign()
 {
 	align_finish_ = false;
 }
+void Lidar::setAlignFinish()
+{
+	align_finish_ = true;
+}
 
-bool Lidar::alignFinish()
+bool Lidar::isAlignFinish()
 {
 	return align_finish_;
 }
@@ -524,7 +533,6 @@ bool Lidar::lidarGetFitLine(double r_begin, double r_end, double range, double d
 			*distance = std::abs(fit_line.back().C / (sqrt(fit_line.back().A * fit_line.back().A + fit_line.back().B * fit_line.back().B)));
 		}
 		//ROS_INFO("a = %lf, b = %lf, c = %lf", a, b, c);
-		align_finish_ = true;
 		ROS_ERROR("fit line succeed! line_angle = %lf", radian_to_degree(*line_radian));
 		return true;
 	} else {
@@ -1407,7 +1415,7 @@ int Lidar::compLaneDistance()
  * param1 angle range(179~-179)
  * return distance
  */
-double Lidar::getLidarDistance(int16_t angle)
+double Lidar::getLidarDistance(int16_t angle,float  range_max,float range_min)
 {
 	double distance = 0.0f;
 	if(angle <= -180 || angle >= 180){
@@ -1417,10 +1425,10 @@ double Lidar::getLidarDistance(int16_t angle)
 	std::vector<geometry_msgs::Point>  lidar_points = lidarXY_points;
 	lidarXYPoint_mutex_.unlock();
 	int16_t point_angle;
-	const int offset = 2;
+	const int offset = 5;
 	int count = 0;
 	for(auto& point:lidar_points){
-		/*---create rcon sensor angle acorrding to current lidar point*/
+		/*---to calculate the angle base on robot position , from current lidar points*/
 		if(point.x >= 0){
 			if(point.y < 0){
 				point_angle = (int16_t)radian_to_degree(atan(point.x/point.y));
@@ -1451,19 +1459,20 @@ double Lidar::getLidarDistance(int16_t angle)
 
 		int diff_angle = abs(point_angle - angle);
 		if(diff_angle > 180)//range angle
-			diff_angle = 360 - diff_angle; 
+			diff_angle = 360 - diff_angle;
 		if(diff_angle <= offset){
-			distance += sqrt( pow(point.x, 2.0) + pow(point.y, 2.0) );
-			count++;
+			float tmp_dist = sqrt( pow(point.x, 2.0) + pow(point.y, 2.0) );
+			if(tmp_dist > range_min && tmp_dist < range_max){
+				distance += tmp_dist; 
+				count++;
+			}
 		}
-
-		//ROS_INFO("\033[1;40;32m%s,%d,point_angle = %d, input angle %d,distance = %f\033[0m",__FUNCTION__,__LINE__,point_angle,angle,(count > 0)?distance/(count*1.0):0.0f);
-		if(count >1){
-			distance = distance /(count*1.0);
+		if(count >= offset*2)
 			break;
-		}
 	}
-	ROS_INFO("\033[1;40;32m%s,%d,point_angle = %d, input angle %d,distance = %f\033[0m",__FUNCTION__,__LINE__,point_angle,angle,distance);
+	if(count >0)
+		distance = distance /(count*1.0);
+	ROS_INFO("\033[1;40;32m%s,%d,last_point_angle = %d, input angle %d,distance = %f\033[0m",__FUNCTION__,__LINE__,point_angle,angle,distance);
 	return 	distance;
 }
 
@@ -1630,7 +1639,7 @@ void Lidar::init() {
 
 	// For aligning.
 	align_finish_ = {};
-	align_angle_ = {};
+	align_radian_ = {};
 	laser_points_ = {};
 
 	// For slip checking

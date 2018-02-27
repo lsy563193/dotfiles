@@ -156,24 +156,25 @@ bool MovementExceptionResume::isFinish()
 			brush.normalOperate();
 			ev.oc_brush_main = false;
 		}
-
-		float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getX(), odom.getY());
-		if (oc_main_brush_cnt_ < 1)
+		else
 		{
-			brush.stop();
-			if(std::abs(distance) >= CELL_SIZE * 3)
+			float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getX(), odom.getY());
+			if (oc_main_brush_cnt_ < 1)
 			{
-				wheel.stop();
-				brush.mainBrushResume();
-				oc_main_brush_cnt_++;
-				resume_main_bursh_start_time_ = ros::Time::now().toSec();
+				brush.stop();
+				if (std::abs(distance) >= CELL_SIZE * 3)
+				{
+					wheel.stop();
+					brush.mainBrushResume();
+					oc_main_brush_cnt_++;
+					resume_main_bursh_start_time_ = ros::Time::now().toSec();
+				}
+			} else if ((ros::Time::now().toSec() - resume_main_bursh_start_time_) >= 3)
+			{
+				ev.oc_brush_main = false;
+				ev.fatal_quit = true;
+				error.set(ERROR_CODE_MAINBRUSH);
 			}
-		}
-		else if((ros::Time::now().toSec() - resume_main_bursh_start_time_) >=3 )
-		{
-			ev.oc_brush_main = false;
-			ev.fatal_quit = true;
-			error.set(ERROR_CODE_MAINBRUSH);
 		}
 	}
 	else if (ev.robot_stuck)

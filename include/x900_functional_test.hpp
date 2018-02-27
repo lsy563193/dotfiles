@@ -36,7 +36,7 @@
  * 9. Main board hardware.
  *
  */
-void x900_functional_test(std::string serial_port, int baud_rate);
+void x900_functional_test(std::string serial_port, int baud_rate, std::string lidar_bumper_dev);
 
 /*
  * Dead loop for error.
@@ -62,6 +62,11 @@ bool serial_port_test();
  * Test lidar.
  */
 bool lidar_test();
+
+/*
+ * Test lidar bumper.
+ */
+bool lidar_bumper_test();
 
 /*
  * Test for power supply voltage.

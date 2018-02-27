@@ -5,7 +5,8 @@
 #include "action.hpp"
 
 ActionAlign::ActionAlign() {
-	timeout_interval_ = 3;
+	timeout_interval_ = 5;
+	wait_laser_timer_ = 1.0;
 	ROS_INFO("%s %d: Start action align, timeout(%f)s.",__FUNCTION__, __LINE__, timeout_interval_);
 
 	wheel.stop();
@@ -17,26 +18,30 @@ bool ActionAlign::isFinish()
 	if (isTimeUp())
 		return true;
 
-	if (lidar.alignFinish())
+	if (lidar.isAlignFinish())
 	{
-		float align_angle = lidar.alignAngle();
-		odom.setRadianOffset(-align_angle);
-		ROS_INFO("%s %d: align_angle angle (%f).", __FUNCTION__, __LINE__, radian_to_degree(align_angle));
+		float align_radian = lidar.alignRadian();
+		odom.setRadianOffset(-align_radian);
+		ROS_INFO("%s %d: align_radian angle (%f).", __FUNCTION__, __LINE__, radian_to_degree(align_radian));
 		return true;
 	}
 	return false;
 }
 
-void ActionAlign::run() {
-//	while (ros::ok()){
-//		sleep(2);
-		wheel.setPidTargetSpeed(0, 0);
-		if(lidar.lidarGetFitLine(degree_to_radian(0), degree_to_radian(359), -1.0, 3.0, &align_angle, &distance, isLeft, true))
-		{
-			lidar.alignAngle(static_cast<float>(align_angle));
-		}
+void ActionAlign::run()
+{
+	wheel.setPidTargetSpeed(0, 0);
+	if (!((wait_laser_timer_ == 0) || (ros::Time::now().toSec() - start_timer_ > wait_laser_timer_))) {
+//		ROS_WARN("%s %d: Waiting for stable laser", __FUNCTION__, __LINE__);
+		return;
 	}
-//}
+
+	if(!lidar.isAlignFinish() && lidar.lidarGetFitLine(degree_to_radian(0), degree_to_radian(359), -1.0, 3.0, &align_radian, &distance, isLeft, true))
+	{
+		lidar.alignRadian(static_cast<float>(ranged_radian(align_radian)));
+		lidar.setAlignFinish();
+	}
+}
 
 bool ActionAlign::isTimeUp()
 {

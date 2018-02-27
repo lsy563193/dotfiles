@@ -16,8 +16,13 @@ MoveTypeLinear::MoveTypeLinear() {
 	turn_target_radian_ = p_mode->iterate_point_.th;
 	ROS_INFO("%s,%d: Enter move type linear, turn target angle(%f), first target(%f, %f).",
 			 __FUNCTION__, __LINE__, turn_target_radian_, target_point_.x, target_point_.y);
-	movement_i_ = mm_turn;
-	sp_movement_.reset(new MovementTurn(turn_target_radian_, ROTATE_TOP_SPEED));
+
+	movement_i_ = p_mode->isGyroDynamic() ? mm_dynamic : mm_turn;
+	if(movement_i_ == mm_dynamic)
+		sp_movement_.reset(new MovementGyroDynamic());
+	else
+		sp_movement_.reset(new MovementTurn(turn_target_radian_, ROTATE_TOP_SPEED));
+
 	IMovement::sp_mt_ = this;
 }
 
@@ -45,8 +50,11 @@ bool MoveTypeLinear::isFinish()
 		switchLinearTarget(p_clean_mode);
 
 	if (sp_movement_->isFinish()) {
-
-		if(movement_i_ == mm_turn)
+		if(movement_i_ == mm_dynamic){
+			movement_i_ = mm_turn;
+			sp_movement_.reset(new MovementTurn(turn_target_radian_, ROTATE_TOP_SPEED));
+		}
+		else if(movement_i_ == mm_turn)
 		{
 			if (!handleMoveBackEvent(p_clean_mode))
 			{

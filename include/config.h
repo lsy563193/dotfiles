@@ -171,7 +171,7 @@
 #define FALL_WALL_MIN_SPEED				((int32_t) 5)
 #define FALL_WALL_MAX_SPEED				((int32_t) 20)
 #define ROTATE_TOP_SPEED				((uint8_t) 20) // 22)
-#define ROTATE_LOW_SPEED				((uint8_t) 5)
+#define ROTATE_LOW_SPEED				((uint8_t) 8)
 #define RUN_TOP_SPEED					((int32_t) 40) // 45)
 
 #define LINEAR_NEAR_DISTANCE			(CELL_SIZE*1.5)
