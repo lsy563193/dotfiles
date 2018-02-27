@@ -108,7 +108,13 @@ bool MoveTypeFollowWall::isFinish()
 				sp_movement_.reset(new MovementStraight());
 			}
 		}
-		else if (movement_i_ == mm_back) {
+		else if(movement_i_ == mm_back)
+		{
+			movement_i_ = mm_stay;
+			sp_movement_.reset(new MovementStay(0.33));
+			//resetTriggeredValue();
+		}
+		else if (movement_i_ == mm_stay) {
 			auto turn_angle = getTurnRadian(false);
 			turn_target_radian_ = getPosition().addRadian(turn_angle).th;
 

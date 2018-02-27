@@ -10,7 +10,7 @@ MoveTypeRemote::MoveTypeRemote()
 {
 	ROS_INFO("%s,%d: Enter move type remote.", __FUNCTION__, __LINE__);
 	movement_i_ = mm_stay;
-	p_movement_.reset(new MovementStay());
+	p_movement_.reset(new MovementStayRemote(15));
 }
 
 MoveTypeRemote::~MoveTypeRemote()
@@ -28,7 +28,7 @@ bool MoveTypeRemote::isFinish()
 		ev.remote_direction_left = false;
 		ev.remote_direction_right = false;
 		movement_i_ = mm_stay;
-		p_movement_.reset(new MovementStay());
+		p_movement_.reset(new MovementStayRemote(15));
 	}
 
 	if (p_movement_->isFinish())
@@ -83,13 +83,13 @@ bool MoveTypeRemote::isFinish()
 				ev.remote_direction_left = false;
 				ev.remote_direction_right = false;
 				movement_i_ = mm_stay;
-				p_movement_.reset(new MovementStay());
+				p_movement_.reset(new MovementStayRemote(15));
 			}
 		}
 		else if (movement_i_ == mm_turn || movement_i_ == mm_back)
 		{
 			movement_i_ = mm_stay;
-			p_movement_.reset(new MovementStay());
+			p_movement_.reset(new MovementStayRemote(15));
 		}
 	}
 

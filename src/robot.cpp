@@ -343,12 +343,13 @@ void robot::robotbase_routine_cb()
 		obs.DynamicAdjust(OBS_adjust_count);
 
 		// Check for whether robot should publish this frame of scan.
+		bool is_pub_;
 		if (p_mode != nullptr)
 		{
 			if (p_mode->sp_action_ != nullptr && p_mode->isInitState())
-				scan_ctrl_.allow_publishing = 1;
+				is_pub_ = 1;
 			else
-				scan_ctrl_.allow_publishing =
+				is_pub_ =
 						!(fabs(wheel.getLeftWheelActualSpeed() - wheel.getRightWheelActualSpeed()) > 0.1
 						  || (wheel.getLeftWheelActualSpeed() * wheel.getRightWheelActualSpeed() < 0)
 						  || bumper.getStatus()
@@ -357,8 +358,11 @@ void robot::robotbase_routine_cb()
 						  || wheel.getLeftSpeedAfterPid() * wheel.getRightSpeedAfterPid() < 0);
 		}
 		else
-		scan_ctrl_.allow_publishing = 1;
-		scan_ctrl_pub_.publish(scan_ctrl_);
+		{
+			is_pub_ = 1;
+		}
+		pubScanCtrl(is_pub_);
+//		scan_ctrl_pub_.publish(scan_ctrl_);
 
 	}//end while
 	pthread_cond_broadcast(&serial_data_ready_cond);
@@ -607,6 +611,26 @@ void robot::debugSendStream(const uint8_t *buf)
 	for (int i = 0; i < SEND_LEN; i++)
 		printf("%02x ", buf[i]);
 	printf("\n");
+}
+
+bool robot::pubScanCtrl(bool is_pub, bool is_force_pub) {
+//	ROS_INFO("is_pub = %d", is_pub);
+	if (!is_locked_scan_ctrl_ || is_force_pub) {
+		scan_ctrl_.allow_publishing = is_pub;
+		scan_ctrl_pub_.publish(scan_ctrl_);
+		return true;
+	} else {
+//		INFO_YELLOW("scan_ctrl_ was locked, pub scan_ctrl failed!");
+		return false;
+	}
+}
+
+void robot::lockScanCtrl(void) {
+	is_locked_scan_ctrl_ = true;
+}
+
+void robot::unlockScanCtrl(void) {
+	is_locked_scan_ctrl_ = false;
 }
 
 //--------------------

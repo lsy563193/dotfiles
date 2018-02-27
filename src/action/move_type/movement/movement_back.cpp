@@ -47,6 +47,8 @@ void MovementBack::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 
 bool MovementBack::isFinish()
 {
+	robot::instance()->lockScanCtrl();
+	robot::instance()->pubScanCtrl(true, true);
 	float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getX(), odom.getY());
 //	ROS_INFO("%s, %d: MovementBack distance %f", __FUNCTION__, __LINE__, distance);
 
@@ -106,5 +108,9 @@ bool MovementBack::isLidarStop()
 	}
 
 	return false;
+}
+
+MovementBack::~MovementBack() {
+	robot::instance()->unlockScanCtrl();
 }
 

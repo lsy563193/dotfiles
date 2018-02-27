@@ -176,6 +176,12 @@ public:
 	void debugReceivedStream(const uint8_t *buf);
 
 	void debugSendStream(const uint8_t *buf);
+
+	bool pubScanCtrl(bool is_pub, bool is_force_pub = false);
+
+	void lockScanCtrl(void);
+
+	void unlockScanCtrl(void);
 private:
 
 	Baselink_Frame_Type baselink_frame_type_;
@@ -226,6 +232,8 @@ private:
 //	void robot_map_metadata_cb(const nav_msgs::MapMetaData::ConstPtr& msg);
 
 	boost::shared_ptr<Mode> p_mode{};
+
+	bool is_locked_scan_ctrl_{false};
 };
 
 float cellToCount(int16_t distance);
