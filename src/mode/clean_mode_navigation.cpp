@@ -7,6 +7,7 @@
 #include <robot.hpp>
 #include <error.h>
 #include <map.h>
+#include <path_algorithm.h>
 #include "mode.hpp"
 //#define NAV_INFO() ROS_INFO("st(%d),ac(%d)", state_i_, action_i_)
 
@@ -445,54 +446,37 @@ bool CleanModeNav::updateActionInStateClean(){
 	sp_action_.reset();//to mark in destructor
 //	pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 	old_dir_ = iterate_point_.dir;
+	if(action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
+		old_dir_ = MAP_ANY;
 	if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
-
 		pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
-//		ROS_ERROR("old_dir_(%d)", old_dir_);
 		iterate_point_ = plan_path_.front();
-//		ROS_ERROR("start_point_.dir(%d)", start_point_.dir);
 		plan_path_.pop_front();
 		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
+		auto npa = boost::dynamic_pointer_cast<NavCleanPathAlgorithm>(clean_path_algorithm_);
 
-		auto start = getPosition().toCell();
-		auto target = plan_path_.back().toCell();
-		auto delta_y = target.y - start.y;
-		auto delta_x = target.x - start.x;
-		ROS_INFO("y(%d,%d)",start.y, target.y);
-		ROS_INFO("%s,%d: path size(%u), old_dir_(%d), start_point_.dir(%d), bumper(%d), cliff(%d), lidar(%d), delta_y(%d)",
-						 __FUNCTION__, __LINE__, plan_path_.size(), old_dir_, iterate_point_.dir, ev.bumper_triggered,
-						 ev.cliff_triggered, ev.lidar_triggered, delta_y);
-		if (isAny(old_dir_) // If last movement is not x axis linear movement, should not follow wall.
-				|| (!ev.bumper_triggered && !ev.cliff_triggered && !ev.lidar_triggered)
-				|| delta_y == 0 || std::abs(delta_y) > 2) {
-			action_i_ = ac_linear;
+		if (old_dir_ != MAP_ANY && (npa->curr_filter_ == &npa->filter_p0_1t_xp
+				|| npa->curr_filter_ == &npa->filter_p0_1t_xn
+				|| npa->curr_filter_ == &npa->filter_p2
+				|| npa->curr_filter_ == &npa->filter_p1
+				|| npa->curr_filter_ == &npa->filter_n2
+				|| npa->curr_filter_ == &npa->filter_n1)
+						)
+		{
+			if(isXAxis(old_dir_))
+			{
+				ROS_INFO("set_follow_dir,x axis()");
+				bool is_left = isPos(old_dir_) ^ npa->curr_filter_->towardPos();
+				action_i_ = is_left ? ac_follow_wall_left : ac_follow_wall_right;
+			}else{
+				ROS_WARN("set_follow_dir,y axis()");
+				bool is_left = isPos(old_dir_) ^  (plan_path_.back().toCell().x - iterate_point_.toCell().x) <0;
+				action_i_ = is_left ? ac_follow_wall_left : ac_follow_wall_right;
+			}
 		}
 		else
-		{
-			for (auto && cell : plan_path_) {
-				printf("(%d,%d)->", cell.toCell().x, cell.toCell().y);
-			}
-			printf("\n");
-			ROS_INFO("isXAxis(%d),isPos(%d),delta(%d,%d)",isXAxis(old_dir_),isPos(old_dir_), delta_x, delta_y);
-			if(isXAxis(old_dir_)) {
-				if (plan_path_.size() <= 2) {
-					bool is_left = isPos(old_dir_) ^ delta_y > 0;
-					action_i_ = is_left ? ac_follow_wall_left : ac_follow_wall_right;
-				}
-				else {
-					action_i_ = ac_linear;
-				}
-			}
-			else {//isYAxis(old_dir_)
-				if (plan_path_.size() <= 2 && delta_x != 0) {
-					bool is_left = isPos(old_dir_) ^ delta_x < 0;
-					action_i_ = is_left ? ac_follow_wall_left : ac_follow_wall_right;
-				}
-				else {
-					action_i_ = ac_linear;
-				}
-			}
-		}
+			action_i_ = ac_linear;
+
 		genNextAction();
 		return true;
 	}
