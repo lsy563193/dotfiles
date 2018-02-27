@@ -395,8 +395,7 @@ bool CleanModeNav::updateActionInStateInit() {
 	} else if (action_i_ == ac_open_lidar)
 	{
 		if (!has_aligned_and_open_slam_)
-//			action_i_ = ac_align;
-		action_i_ = ac_open_slam;
+			action_i_ = ac_align;
 		else
 			return false;
 	} else if (action_i_ == ac_align){
