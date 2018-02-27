@@ -569,12 +569,13 @@ uint8_t GridMap::setChargerArea(const Points charger_pos_list)
 	for(int16_t i = x_min;i<=x_max;i++){
 		for(int16_t j = y_min;j<=y_max;j++){
 			if(getCell(CLEAN_MAP, i, j) == BLOCKED_TMP_RCON)
-				setCell(CLEAN_MAP,i,j, CLEANED);
+				setCell(CLEAN_MAP,i,j, UNCLEAN);
 		}
 	}
 
 
 	const int RADIAN= 4;//cells
+
 	setCircleMarkers(charger_pos_list.back(),true,RADIAN,BLOCKED_RCON);
 
 }
