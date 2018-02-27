@@ -1639,7 +1639,7 @@ void Lidar::init() {
 
 	// For aligning.
 	align_finish_ = {};
-	align_angle_ = {};
+	align_radian_ = {};
 	laser_points_ = {};
 
 	// For slip checking

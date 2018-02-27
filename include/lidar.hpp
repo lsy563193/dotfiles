@@ -57,13 +57,13 @@ public:
 	void startAlign();
 	void setAlignFinish();
 	bool isAlignFinish();
-	float alignAngle(void)
+	float alignRadian(void)
 	{
-		return align_angle_;
+		return align_radian_;
 	}
-	void alignAngle(float angle)
+	void alignRadian(float radian)
 	{
-		align_angle_ = angle;
+		align_radian_ = radian;
 	}
 
 	uint8_t lidarMarker(double X_MAX = 0.237);
@@ -121,7 +121,7 @@ private:
 
 	// For aligning.
 	bool align_finish_;
-	float align_angle_;
+	float align_radian_;
 	geometry_msgs::Point laser_points_;
 
 	// For slip checking
