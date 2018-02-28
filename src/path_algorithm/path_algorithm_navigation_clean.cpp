@@ -82,9 +82,7 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 	optimizePath(map, path);
 
 	if(curr_filter_ == &filter_p0_1t_xn || curr_filter_ == &filter_p0_1t_xp)
-	{
-		path.push_back(Cell_t{path.back().x, path.front().y-2});//for setting follow wall target line
-	}
+		path.push_back(Cell_t{path.back().x, static_cast<int16_t>(path.front().y - 2)});//for setting follow wall target line
 
 	ROS_INFO("Step 6: Fill path with direction.");
 	plan_path = cells_generate_points(path);
