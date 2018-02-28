@@ -69,14 +69,13 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 
 	targets = std::for_each(targets.begin(), targets.end(),FilterTarget(curr_cell));
 
-	displayTargetList(targets);
+//	displayTargetList(targets);
 
 	if (targets.empty())
 		return false;
 
 	if (!filterPathsToSelectBestPath(map, targets, curr_cell, path,last_dir))
 		return false;
-	displayCellPath(path);
 	ROS_INFO("Step 5: Optimize path for adjusting it away from obstacles..");
 	optimizePath(map, path);
 
@@ -92,6 +91,7 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 //	path = shortest_path;
 
 //	map.print(COST_MAP, path.back().x,path.back().y);
+	displayCellPath(path);
 	map.print(CLEAN_MAP, path.back().x, path.back().y);
 	return true;
 }
@@ -265,7 +265,7 @@ bool NavCleanPathAlgorithm::filterPathsToSelectBestPath(GridMap &map, const Cell
 	if(filtered_targets.empty())
 		continue;
 
-		displayTargetList(filtered_targets);
+//		displayTargetList(filtered_targets);
 		PathList paths{};
 		for (auto& target : filtered_targets) {
 			Cells path{};
@@ -279,9 +279,9 @@ bool NavCleanPathAlgorithm::filterPathsToSelectBestPath(GridMap &map, const Cell
 		PathList filtered_paths{};
 		std::copy_if(paths.begin(), paths.end(), std::back_inserter(filtered_paths), BestTargetFilter(*filter));
 		if (!filtered_paths.empty()) {
-			for (auto &&path : filtered_paths) {
-				displayCellPath(path);
-			}
+//			for (auto &&path : filtered_paths) {
+//				displayCellPath(path);
+//			}
 			best_path = *std::min_element(filtered_paths.begin(), filtered_paths.end(), MinYAndShortestPath(cell_curr.y, filter->is_toward_pos_,filter->turn_count_));
 			curr_filter_ = filter;
 			return true;
