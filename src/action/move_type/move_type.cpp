@@ -130,8 +130,10 @@ bool IMoveType::isFinish()
 		if(p_cm->moveTypeNewCellIsFinish(this))
 			return true;
 	}
-	if(p_cm->moveTypeRealTimeIsFinish(this))
+	if(p_cm->moveTypeRealTimeIsFinish(this)) {
+//		wheel.stop();
 		return true;
+	}
 
 	return false;
 }
