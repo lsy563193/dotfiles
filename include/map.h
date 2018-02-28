@@ -19,7 +19,7 @@
 
 typedef std::deque<Point_t> Points;
 
-typedef enum {
+/*typedef */enum {
 	// The sequence of CLEAN_MAP value must be UNCLEAN < CLEANED < MAP_BLOCKED < SLAM_MAP_BLOCKED
   UNCLEAN  = 0,
   SLAM_MAP_UNKNOWN = 0,
@@ -46,7 +46,8 @@ typedef enum {
   COST_5 = 5,
   COST_PATH = 6,
   COST_HIGH = 7,
-} CellState;
+};
+typedef int CellState;
 
 class GridMap {
 public:
@@ -229,6 +230,7 @@ public:
 	bool isFrontBlockBoundary(int dx);
 
 	void generateSPMAP(const Cell_t &curr, Cells &target_list);
+//	void generateSPMAP(const Cell_t &curr);
 /*
  * Function to find the x/y range of the Map or wfMap, if the range is to small,
  * use the offset of those value to 3.
@@ -256,9 +258,11 @@ public:
 	}
 	void getMapRange(uint8_t id, int16_t *x_range_min, int16_t *x_range_max, int16_t *y_range_min, int16_t *y_range_max);
 
+	bool isOutOfMap(const Cell_t &cell);
+	bool isOutOfTargetRange(const Cell_t &cell);
 	bool cellIsOutOfRange(Cell_t cell);
 
-	void colorPrint(char *outString, int16_t y_min, int16_t y_max);
+	void colorPrint(const char *outString, int16_t y_min, int16_t y_max);
 	void print(uint8_t id, int16_t endx, int16_t endy);
 
 private:

@@ -108,7 +108,13 @@ bool MoveTypeFollowWall::isFinish()
 				sp_movement_.reset(new MovementStraight());
 			}
 		}
-		else if (movement_i_ == mm_back) {
+		else if(movement_i_ == mm_back)
+		{
+			movement_i_ = mm_stay;
+			sp_movement_.reset(new MovementStay(0.33));
+			//resetTriggeredValue();
+		}
+		else if (movement_i_ == mm_stay) {
 			auto turn_angle = getTurnRadian(false);
 			turn_target_radian_ = getPosition().addRadian(turn_angle).th;
 
@@ -376,7 +382,7 @@ double MoveTypeFollowWall::getTurnRadian(bool use_target_radian)
 	else {
 		ROS_INFO("%s %d: Not use fit line angle!", __FUNCTION__, __LINE__);
 		auto ev_turn_radian = getTurnRadianByEvent();
-		if(/*use_target_radian*/ 0 ) {
+		if(ev_turn_radian == 0 && use_target_radian) { //		if(/*use_target_radian*/ 0 )
 			auto target_point_ = dynamic_cast<ACleanMode*> (sp_mode_)->plan_path_.front();
 			auto target_turn_radian = getPosition().courseToDest(target_point_);
 			turn_radian = std::abs(ev_turn_radian) > std::abs(target_turn_radian) ? ev_turn_radian : target_turn_radian;
