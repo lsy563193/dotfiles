@@ -3,7 +3,6 @@
 //
 
 #include "dev.h"
-#include "robotbase.h"
 #include <error.h>
 #include "action.hpp"
 
@@ -12,15 +11,17 @@
 ActionSleep::ActionSleep()
 {
 	ROS_INFO("%s %d: Start sleep action.", __FUNCTION__, __LINE__);
-	beeper.play(1, 80, 0, 1);
+	// Ensure the previous voice is finished before sleep.
+	speaker.play(VOICE_NULL, false);
+	beeper.beep(1, 80, 0, 1);
 	usleep(100000);
-	beeper.play(2, 80, 0, 1);
+	beeper.beep(2, 80, 0, 1);
 	usleep(100000);
-	beeper.play(3, 80, 0, 1);
+	beeper.beep(3, 80, 0, 1);
 	usleep(100000);
-	beeper.play(4, 80, 0, 1);
+	beeper.beep(4, 80, 0, 1);
 	usleep(100000);
-	led.setMode(LED_STEADY, LED_OFF);
+	key_led.setMode(LED_STEADY, LED_OFF);
 	if (charger.getChargeStatus())
 	{
 		ROS_INFO("%s %d: Finish beeping, enter from charge mode.", __FUNCTION__, __LINE__);
@@ -44,13 +45,13 @@ ActionSleep::ActionSleep()
 ActionSleep::~ActionSleep()
 {
 
-	beeper.play(4, 80, 0, 1);
+	beeper.beep(4, 80, 0, 1);
 	usleep(100000);
-	beeper.play(3, 80, 0, 1);
+	beeper.beep(3, 80, 0, 1);
 	usleep(100000);
-	beeper.play(2, 80, 0, 1);
+	beeper.beep(2, 80, 0, 1);
 	usleep(100000);
-	beeper.play(1, 80, 4, 1);
+	beeper.beep(1, 80, 4, 1);
 
 	ROS_INFO("%s %d: End sleep action.", __FUNCTION__, __LINE__);
 }

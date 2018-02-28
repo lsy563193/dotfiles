@@ -22,8 +22,8 @@ bool State::isSwitchByEvent() {
 	else if(sp_cm_->isStateSpot())
 		return sp_cm_->isSwitchByEventInStateSpot();
 
-	else if(sp_cm_->isStateTrapped())
-		return sp_cm_->isSwitchByEventInStateTrapped();
+	else if(sp_cm_->isStateFollowWall())
+		return sp_cm_->isSwitchByEventInStateFollowWall();
 
 	else if(sp_cm_->isStateExceptionResume())
 		return sp_cm_->isSwitchByEventInStateExceptionResume();
@@ -58,8 +58,8 @@ bool State::updateAction() {
 	else if(sp_cm_->isStateSpot())
 		return sp_cm_->updateActionInStateSpot();
 
-	else if(sp_cm_->isStateTrapped())
-		return sp_cm_->updateActionInStateTrapped();
+	else if(sp_cm_->isStateFollowWall())
+		return sp_cm_->updateActionInStateFollowWall();
 
 	else if(sp_cm_->isStateExceptionResume())
 		return sp_cm_->updateActionInStateExceptionResume();
@@ -93,8 +93,8 @@ void State::switchState() {
 	else if(sp_cm_->isStateSpot())
 		sp_cm_->switchInStateSpot();
 
-	else if(sp_cm_->isStateTrapped())
-		sp_cm_->switchInStateTrapped();
+	else if(sp_cm_->isStateFollowWall())
+		sp_cm_->switchInStateFollowWall();
 
 	else if(sp_cm_->isStateExceptionResume())
 		sp_cm_->switchInStateExceptionResume();

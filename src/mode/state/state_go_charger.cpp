@@ -9,5 +9,5 @@
 
 void StateGoCharger::init() {
 	gyro.TiltCheckingEnable(false); //disable tilt detect
-	led.setMode(LED_STEADY, LED_ORANGE);
+	key_led.setMode(LED_STEADY, LED_ORANGE);
 }

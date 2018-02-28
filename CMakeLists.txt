@@ -3,10 +3,6 @@ project(pp)
 set(CMAKE_CXX_FLAGS "-std=c++11 -fpermissive ${CMAKE_CXX_FLAGS} -Wfatal-errors\ ")
 FILE(GLOB PP_SRC
 	include/*
-	include/path_algorithm.h
-	include/action.hpp
-
-	src/des.cpp
 
 	src/dev/gyro.cpp
 	src/dev/vacuum.cpp
@@ -19,8 +15,8 @@ FILE(GLOB PP_SRC
 	src/dev/robot_timer.cpp
 	src/dev/remote.cpp
 	src/dev/obs.cpp
-				src/dev/key_led.cpp
-	src/dev/beep.cpp
+	src/dev/key_led.cpp
+		src/dev/beeper.cpp
 	src/dev/charger.cpp
 	src/dev/wall_follow.cpp
 	src/dev/wheel.cpp
@@ -30,14 +26,14 @@ FILE(GLOB PP_SRC
 	src/mode/state/state.cpp
 	src/mode/state/state_init.cpp
 	src/mode/state/state_resume_low_battery_charge.cpp
-				src/mode/state/state_pause.cpp
+	src/mode/state/state_pause.cpp
 	src/mode/state/state_charge.cpp
 	src/mode/state/state_clean.cpp
 	src/mode/state/state_go_home_point.cpp
 	src/mode/state/state_go_charger.cpp
-	src/mode/state/state_trapped.cpp
-				src/mode/state/state_exception_resume.cpp
-        src/mode/state/state_spot.cpp
+		src/mode/state/state_follow_wall.cpp
+	src/mode/state/state_exception_resume.cpp
+	src/mode/state/state_spot.cpp
 	src/mode/state/state_exploration.cpp
 
 	src/mode/mode.cpp
@@ -74,10 +70,11 @@ FILE(GLOB PP_SRC
 	src/action/action_check_bumper.cpp
 
 	src/action/move_type/move_type.cpp
-		src/action/move_type/move_type_linear.cpp
-        src/action/move_type/move_type_follow_wall.cpp
+	src/action/move_type/move_type_linear.cpp
+	src/action/move_type/move_type_follow_wall.cpp
 	src/action/move_type/move_type_go_to_charger.cpp
 	src/action/move_type/move_type_bumper_hit_test.cpp
+	src/action/move_type/move_type_remote.cpp
 	src/action/move_type/movement/movement.cpp
 	src/action/move_type/movement/movement.cpp
 	src/action/move_type/movement/movement_back.cpp
@@ -91,11 +88,13 @@ FILE(GLOB PP_SRC
 	src/action/move_type/movement/movement_turn.cpp
 	src/action/move_type/movement/movement_charge.cpp
 	src/action/move_type/movement/movement_stay.cpp
-	src/action/move_type/movement/movement_direct_go.cpp
+	src/action/move_type/movement/movement_remote_direct_go.cpp
 	src/action/move_type/movement/movement_straight.cpp
 	src/action/move_type/movement/movement_forward_turn.cpp
-		src/action/move_type/movement/movement_follow_point.cpp
+	src/action/move_type/movement/movement_follow_point.cpp
+	src/action/move_type/movement/movement_gyro_dynamic.cpp
 
+	src/des.cpp
 	src/error.cpp
 	src/event_manager.cpp
 	src/main.cpp
@@ -103,8 +102,8 @@ FILE(GLOB PP_SRC
 	src/mathematics.cpp
 	src/odom.cpp
 	src/pose.cpp
+		src/x900_functional_test.cpp
 	src/robot.cpp
-	src/robotbase.cpp
 	src/serial.cpp
 	src/signature.c
 	src/slam.cpp

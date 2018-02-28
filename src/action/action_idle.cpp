@@ -14,9 +14,9 @@ ActionIdle::ActionIdle()
 {
 	ROS_INFO("%s %d: Start action idle.", __FUNCTION__, __LINE__);
 	if (error.get())
-		led.setMode(LED_STEADY, LED_RED);
+		key_led.setMode(LED_STEADY, LED_RED);
 	else
-		led.setMode(LED_BREATH, LED_GREEN);
+		key_led.setMode(LED_BREATH, LED_GREEN);
 
 	timeout_interval_ = IDLE_TIMEOUT;
 }

@@ -15,18 +15,30 @@ void AMovementFollowPoint::adjustSpeed(int32_t &left_speed, int32_t &right_speed
 //	PP_INFO();
 //	ROS_WARN("%s,%d: g_p_clean_mode->plan_path_size(%d)",__FUNCTION__, __LINE__,p_clean_mode->tmp_plan_path_.size());
 	wheel.setDirectionForward();
-
+	auto angle_diff = static_cast<int32_t>(radian_to_degree(radian_diff));
 	if (integration_cycle_++ > 10) {
 		integration_cycle_ = 0;
-		integrated_ += radian_to_degree(radian_diff);
-		check_limit(integrated_, -150, 150);
+		integrated_ += angle_diff;
+		check_limit(integrated_, -15, 15);
 	}
 
 //	ROS_INFO("diff(%f), angle_forward_to_turn_(%f)",radian_diff, angle_forward_to_turn_);
-
-		if (isNear()) {
-			if (base_speed_ > (int32_t) min_speed_) {
-				base_speed_--;
+	auto deceleration_level = isNear();
+	uint8_t speed_limit;
+	if (deceleration_level == 1) {
+		speed_limit = min_speed_;
+	} else if (deceleration_level == 2) {
+		speed_limit = min_speed_ + 5;
+	}
+		if (deceleration_level) {
+			if (deceleration_level == 1) {
+				if (base_speed_ > (int32_t) speed_limit) {
+					base_speed_--;
+				}
+			} else if (deceleration_level == 2) {
+				if (base_speed_ > (int32_t) speed_limit) {
+					base_speed_--;
+				}
 			}
 		}
 		else if (base_speed_ < (int32_t) max_speed_) {
@@ -36,11 +48,9 @@ void AMovementFollowPoint::adjustSpeed(int32_t &left_speed, int32_t &right_speed
 			}
 			integrated_ = 0;
 		}
-		auto angle_diff = static_cast<int32_t>(radian_to_degree(radian_diff));
-		auto speed_diff = angle_diff / kp_;
 //		auto speed_diff = static_cast<int32_t>(radian_to_degree(radian_diff)) / kp_;
-		left_speed = (base_speed_ - speed_diff - integrated_ / 150); // - Delta / 20; // - Delta * 10 ; // - integrated_ / 2500;
-		right_speed = base_speed_ + speed_diff + integrated_ / 150; // + Delta / 20;// + Delta * 10 ; // + integrated_ / 2500;
+		left_speed = (base_speed_ - angle_diff / kp_ - integrated_ / 15); // - Delta / 20; // - Delta * 10 ; // - integrated_ / 2500;
+		right_speed = base_speed_ + angle_diff / kp_ + integrated_ / 15; // + Delta / 20;// + Delta * 10 ; // + integrated_ / 2500;
 
 	check_limit(left_speed, 0, max_speed_);
 	check_limit(right_speed, 0, max_speed_);
@@ -62,7 +72,7 @@ bool AMovementFollowPoint::isFinish() {
 		if (std::abs(radian_diff) > degree_to_radian(140)) {
 			ROS_ERROR_COND(DEBUG_ENABLE, "LASER WALL FOLLOW ERROR! PLEASE CALL ALVIN AND RESTART THE ROBOT.");
 //			while(ros::ok()){
-//				beeper.play_for_command(VALID);
+//				beeper.beepForCommand(VALID);
 //				wheel.setPidTargetSpeed(0, 0);
 //			}
 		}

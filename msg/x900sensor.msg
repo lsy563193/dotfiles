@@ -94,12 +94,6 @@ bool water_tank
 # battery: Battery voltage in V.
 float32 battery
 
-# vacuum_exception_resume: Vacuum exception resume status.
-# 0: not in resume process / resume succeed
-# 1: during resume process
-# 2: resume fail
-uint8 vacuum_exception_resume
-
 # vacuum_oc: Vacuum over current status.
 bool vacuum_oc
 

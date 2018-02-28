@@ -4,6 +4,7 @@
 
 #ifndef PP_MOVE_TYPE_HPP
 #define PP_MOVE_TYPE_HPP
+#define TRAP_IN_SMALL_AREA_COUNT 20
 
 #include "action.hpp"
 #include "movement.hpp"
@@ -60,9 +61,11 @@ protected:
 		mm_null,
 		mm_back,
 		mm_turn,
+		mm_stay,
 		mm_rcon,
 		mm_forward,
 		mm_straight,
+		mm_dynamic,
 	};
 
 };
@@ -75,7 +78,7 @@ public:
 	bool isFinish() override;
 //	IAction* setNextAction();
 
-	bool isPassTargetStop(double &dir);
+	bool isPassTargetStop(Dir_t &dir);
 	bool isCellReach();
 	bool isPoseReach();
 
@@ -110,12 +113,18 @@ private:
 	int16_t double_scale_10(double line_angle);
 	bool _lidarTurnRadian(bool is_left, double &turn_radian, double lidar_min, double lidar_max, double radian_min,
 						  double radian_max,
-						  double dis_limit = 0.217);
+						  double dis_limit = 0.3);
 	bool lidarTurnRadian(double &turn_radian);
 	double getTurnRadianByEvent();
 	double getTurnRadian(bool);
 	double robot_to_wall_distance = 0.8;
 	float g_back_distance = 0.01;
+	struct lidar_angle_param{
+		double lidar_min;
+		double lidar_max;
+		double radian_min;
+		double radian_max;
+	};
 };
 
 class MoveTypeGoToCharger:public IMoveType
@@ -150,5 +159,19 @@ private:
 	boost::shared_ptr<IMovement> p_direct_go_movement_;
 	boost::shared_ptr<IMovement> p_turn_movement_;
 	boost::shared_ptr<IMovement> p_back_movement_;
+};
+
+class MoveTypeRemote: public IMoveType
+{
+public:
+	MoveTypeRemote();
+	~MoveTypeRemote() override;
+
+	bool isFinish() override;
+
+	void run() override ;
+
+private:
+	boost::shared_ptr<IMovement> p_movement_;
 };
 #endif //PP_MOVE_TYPE_HPP

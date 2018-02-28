@@ -90,12 +90,15 @@ void Vacuum::stop(){
 }
 
 void Vacuum::startExceptionResume(void) {
-	uint8_t omni_reset_byte = serial.getSendData(CTL_MIX);
-	serial.setSendData(CTL_MIX, omni_reset_byte | 0x02);
+	uint8_t mix_byte = serial.getSendData(CTL_MIX);
+	serial.setSendData(CTL_MIX, mix_byte | 0x02);
+	ROS_INFO("%s %d: Start vacuum exception resume.", __FUNCTION__, __LINE__);
 }
 
-void Vacuum::resetExceptionResume(void) {
-	uint8_t omni_reset_byte = serial.getSendData(CTL_MIX);
-	serial.setSendData(CTL_MIX, omni_reset_byte & ~0x06);
+void Vacuum::resetExceptionResume(void)
+{
+	uint8_t mix_byte = serial.getSendData(CTL_MIX);
+	serial.setSendData(CTL_MIX, mix_byte & 0xFD);
+	ROS_INFO("%s %d: Stop vacuum exception resume.", __FUNCTION__, __LINE__);
 }
 

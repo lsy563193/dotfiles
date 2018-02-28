@@ -13,6 +13,7 @@
 //#include "move_type.hpp"
 
 
+#define GYRO_DYNAMIC_INTERVAL_TIME 25
 #define ROS_INFO_FL() ROS_INFO("%s,%d",__FUNCTION__, __LINE__)
 #define PP_INFO() ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__)
 #define PP_WARN() ROS_WARN("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__)
@@ -31,102 +32,7 @@ typedef struct{
 		Points tmp_plan_path_{};
 	} PathHead;
 
-class Paras{
-public:
-	Paras(bool is_left):is_left_(is_left)
-{
-		narrow = is_left ? 0.187 : 0.197;
-
-		y_min = 0.0;
-		y_max = is_left ? 0.3 : 0.25;
-
-		x_min_forward = LIDAR_OFFSET_X;
-		x_max_forward = is_left ? 0.3 : 0.25;
-		auto y_start_forward = is_left ? 0.06: -0.06;
-		auto y_end_forward = is_left ? -ROBOT_RADIUS: ROBOT_RADIUS;
-		y_min_forward = std::min(y_start_forward, y_end_forward);
-		y_max_forward = std::max(y_start_forward, y_end_forward);
-
-		auto x_side_start = 0.0;
-		auto x_side_end = ROBOT_RADIUS;
-		x_min_side = std::min(x_side_start, x_side_end);
-		x_max_side = std::max(x_side_start, x_side_end);
-
-		auto y_side_start = 0.0;
-		auto y_side_end = is_left ? narrow + 0.01 : -narrow + 0.01;
-		y_min_side = std::min(y_side_start, y_side_end);
-		y_max_side = std::max(y_side_start, y_side_end);
-
-		auto y_point1_start_corner = is_left ? 0.3 : -0.3;
-		auto y_point1_end_corner = is_left ? -4.0 : 4.0;
-		y_min_point1_corner = std::min(y_point1_start_corner, y_point1_end_corner);
-		y_max_point1_corner = std::max(y_point1_start_corner, y_point1_end_corner);
-
-	 	auto y_point1_start = 0.0;
-		auto y_point1_end = is_left ? 4.0 : -4.0;
-		y_min_point1 = std::min(y_point1_start, y_point1_end);
-		y_max_point1 = std::max(y_point1_start, y_point1_end);
-
-		auto y_target_start = is_left ? ROBOT_RADIUS : -ROBOT_RADIUS;
-		auto y_target_end = is_left ? 0.4 : -0.4;
-		y_min_target = std::min(y_target_start, y_target_end);
-		y_max_target = std::max(y_target_start, y_target_end);
-	};
-
-	bool inPoint1Range(const Vector2<double> &point, bool is_corner) const {
-		if(is_corner)
-			return (point.x > 0 && point.x < 4 && point.y > y_min_point1_corner && point.y < y_max_point1_corner);
-		else
-			return (point.x > 0 && point.x < 0.3 && point.y > y_min_point1 && point.y < y_max_point1);
-	}
-
-	bool inTargetRange(const Vector2<double> &target) {
-		if (is_left_) {
-			return (target.x > 0 && target.y > 0.4) ||
-						 (target.x > CHASE_X && std::abs(target.y) < ROBOT_RADIUS) ||
-						 (target.y < -ROBOT_RADIUS);
-		} else{
-			return (target.x > 0 && target.y < -0.4) ||
-						 (target.x > CHASE_X && std::abs(target.y) < ROBOT_RADIUS) ||
-						 (target.y > ROBOT_RADIUS);
-
-		}
-	}
-
-	bool inForwardRange(const Vector2<double> &point) const {
-		return point.x > x_min_forward && point.x < x_max_forward && point.y > y_min_forward && point.y < y_max_forward;
-	}
-
-	bool inSidedRange(const Vector2<double> &point) const {
-		return point.x > x_min_side && point.x < x_max_side && point.y > y_min_side && point.y < y_max_side;
-	}
-
-	double narrow;
-	bool is_left_;
-	double x_min_forward;
-	double x_max_forward;
-	double x_min_side;
-	double x_max_side;
-
-	double y_min;
-	double y_max;
-
-	double y_min_forward;
-	double y_max_forward;
-
-	double y_min_side;
-	double y_max_side;
-
-	double y_min_point1_corner;
-	double y_max_point1_corner;
-	double y_min_point1;
-	double y_max_point1;
-
-	double y_min_target;
-	double y_max_target;
-
-	const double CHASE_X = 0.107;
-};
+class PointSelector;
 
 class Mode:public EventHandle
 {
@@ -149,18 +55,20 @@ public:
 //	friend IMoveType;
 
 	enum {
+		//0
 		md_idle,
 		md_charge,
 		md_sleep,
 		md_go_to_charger,
 		md_remote,
 
+		//5
 		cm_navigation,
 		cm_wall_follow,
 		cm_spot,
 		cm_exploration,
-
 		cm_test,
+
 	};
 
 	int next_mode_i_;
@@ -186,12 +94,11 @@ public:
 		ac_sleep,
 		//15
 		ac_charge,
-		ac_movement_stay,
-		ac_movement_direct_go,
 		ac_pause,
-		//20
+		ac_remote,
 		ac_exception_resume,
 		ac_check_bumper,
+		//20
 		ac_check_vacuum,
 		ac_bumper_hit_test,
 	};
@@ -249,7 +156,6 @@ protected:
 //	std::vector<Cell_t> temp_fw_cells;
 private:
 	void register_events(void);
-	bool battery_low_{false};
 
 	bool plan_activated_status_;
 
@@ -277,7 +183,6 @@ public:
 private:
 	bool plan_activated_status_;
 };
-
 class ModeCharge: public Mode
 {
 public:
@@ -306,14 +211,16 @@ public:
 	bool isExit() override ;
 	bool isFinish() override ;
 
-	IAction* getNextAction();
+	int getNextAction();
 
 	// For exit event handling.
 	void remoteClean(bool state_now, bool state_last) override ;
 	void remoteDirectionLeft(bool state_now, bool state_last) override ;
 	void remoteDirectionRight(bool state_now, bool state_last) override ;
 	void remoteDirectionForward(bool state_now, bool state_last) override ;
+	void remoteMax(bool state_now, bool state_last) override ;
 	void keyClean(bool state_now, bool state_last) override ;
+	void chargeDetect(bool state_now, bool state_last) override ;
 
 private:
 	double remote_mode_time_stamp_;
@@ -329,7 +236,7 @@ public:
 	bool isExit() override;
 	bool isFinish() override;
 
-	IAction* getNextAction();
+	int getNextAction();
 
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteClean(bool state_now, bool state_last) override ;
@@ -340,7 +247,7 @@ public:
 //void overCurrentBrushRight(bool state_now, bool state_last);
 	void overCurrentWheelLeft(bool state_now, bool state_last) override;
 	void overCurrentWheelRight(bool state_now, bool state_last) override;
-//	void overCurrentSuction(bool state_now, bool state_last);
+//	void overCurrentVacuum(bool state_now, bool state_last);
 
 };
 
@@ -356,13 +263,13 @@ public:
 	State* updateState();
 	bool isFinish() override ;
 	bool isExit() override;
-	bool isUpdateFinish();
+	bool isStateUpdateFinish();
 
 	void setNextModeDefault();
 
 	bool isIsolate();
+	bool isGyroDynamic();
 	bool generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &targets);
-	void setRconPos(float cd,float dist);
 
 	virtual bool mapMark() = 0;
 	virtual bool markRealTime(){return false;};
@@ -371,8 +278,6 @@ public:
 	bool isRemoteGoHomePoint();
 	void setHomePoint();
 	bool estimateChargerPos(uint32_t rcon_value);
-	void setRconPos(Point_t pos);
-
 	Cells pointsGenerateCells(Points &targets);
 
 	// For move types
@@ -384,7 +289,8 @@ public:
 	// Handlers
 	void remoteHome(bool state_now, bool state_last) override ;
 	void cliffAll(bool state_now, bool state_last) override ;
-	void overCurrentBrushMain(bool state_now, bool state_last);
+	void overCurrentBrushMain(bool state_now, bool state_last) override;
+	void overCurrentVacuum(bool state_now, bool state_last) override;
 
 	// State init
 	bool isStateInit() const
@@ -443,14 +349,14 @@ public:
 	virtual bool updateActionInStateSpot();
 	virtual void switchInStateSpot(){};
 
-	// State trapped
-	bool isStateTrapped() const
+	// State follow wall
+	bool isStateFollowWall() const
 	{
-		return sp_state == state_trapped;
+		return sp_state == state_folllow_wall;
 	}
-	virtual bool isSwitchByEventInStateTrapped();
-	virtual bool updateActionInStateTrapped();
-	virtual void switchInStateTrapped();
+	virtual bool isSwitchByEventInStateFollowWall();
+	virtual bool updateActionInStateFollowWall();
+	virtual void switchInStateFollowWall();
 	bool trapped_time_out_{};
 	bool trapped_closed_or_isolate{};
 	bool out_of_trapped{};
@@ -496,6 +402,7 @@ public:
 	int closed_count_limit_{2};
 	int isolate_count_{};
 	int isolate_count_limit_{3};
+	bool is_trapped_{false};
 	State *sp_state{};
 	State* getState() const {
 		return sp_state;
@@ -506,7 +413,7 @@ public:
 
 	State *state_init = new StateInit();
 	State *state_clean = new StateClean();
-	State *state_exception_resume = new ExceptionResume();
+	State *state_exception_resume = new StateExceptionResume();
 	State *state_exploration = new StateExploration();
 
 	Points passed_path_{};
@@ -515,24 +422,24 @@ public:
 	bool in_rcon_signal_range_{};
 	bool should_mark_charger_{};
 	bool should_mark_temp_charger_{};
-	bool found_charger_{};
 
-	double old_dir_{};
-	double new_dir_{};
+	Dir_t old_dir_{};
+	Point_t start_point_{};
+	Point_t iterate_point_{};
 
 //	boost::shared_ptr<APathAlgorithm> follow_wall_path_algorithm_{};
 	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
 	boost::shared_ptr<GoHomePathAlgorithm> go_home_path_algorithm_{};
 	GridMap clean_map_{};
-	Point_t charger_pos_{};//charger postion
 	static bool plan_activation_;
+	double time_gyro_dynamic_;
 
 protected:
 	std::vector<State*> sp_saved_states;
 	State *state_go_home_point = new StateGoHomePoint();
 	State *state_go_to_charger = new StateGoCharger();
 	State *state_charge = new StateCharge();
-	State *state_trapped = new StateTrapped();
+	State *state_folllow_wall = new StateFolllowWall();
 	State *state_spot =  new StateSpot();
 	State *state_resume_low_battery_charge = new StateResumeLowBatteryCharge();
 	State *state_pause = new StatePause();
@@ -540,33 +447,34 @@ protected:
 	bool low_battery_charge_{};
 	bool moved_during_pause_{};
 	Points home_points_{};
-	Point_t start_point_{0, 0, 0};
 	bool should_go_to_charger_{false};
 	bool remote_go_home_point{false};
 	bool switch_is_off_{false};
-
+	Points charger_pose_;
+	bool found_charger_{false};
+	bool out_range_charger_{false};
 public:
 
 	static void pubPointMarkers(const std::deque<Vector2<double>> *point, std::string frame_id,std::string name);
 	void pubFitLineMarker(visualization_msgs::Marker fit_line_marker);
-	void visualizeMarkerInit();
 	void scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr& scan);
-	void setCleanMapMarkers(int16_t x, int16_t y, CellState type);
+	void setCleanMapMarkers(int16_t x, int16_t y, CellState type,  visualization_msgs::Marker& clean_map_markers_);
 	void pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path);
 	static void pubLineMarker(const std::vector<LineABC> *lines);
-	Vector2<double> get_middle_point(const Vector2<double>& p1,const Vector2<double>& p2,const Paras& para);
-	bool check_is_valid(const Vector2<double>& point, Paras& para, const sensor_msgs::LaserScan::ConstPtr & scan);
-	bool check_corner(const sensor_msgs::LaserScan::ConstPtr & scan, const Paras& para);
+	Vector2<double> getTargetPoint(const Vector2<double> &p1, const Vector2<double> &p2, const PointSelector &para);
+	bool removeCrossingPoint(const Vector2<double> &target_point, PointSelector &para,
+													 const sensor_msgs::LaserScan::ConstPtr &scan);
+	bool checkCorner(const sensor_msgs::LaserScan::ConstPtr &scan, const PointSelector &para);
 	bool calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,bool is_left ,std::deque<Vector2<double>>& points);
-	Vector2<double> polar_to_cartesian(double polar,int i);
+	Vector2<double> polarToCartesian(double polar, int i);
 	void setTempTarget(std::deque<Vector2<double>>& points, uint32_t  seq);
 	void pubTmpTarget(const Point_t &point,bool is_virtual=false);
-
+	void checkShouldMarkCharger(float angle_offset,float distance);
 	PathHead getTempTarget();
 
 private:
 	PathHead path_head_{};
-	visualization_msgs::Marker clean_markers_,bumper_markers_, clean_map_markers_;
+	visualization_msgs::Marker bumper_markers_;
 	ros::NodeHandle clean_nh_;
 	ros::Subscriber map_sub_;
 	ros::Subscriber	scanLinear_sub_;
@@ -581,6 +489,8 @@ private:
 	static ros::Publisher line_marker_pub2_;
 	ros::Publisher fit_line_marker_pub_;
 	boost::mutex temp_target_mutex_;
+
+
 };
 
 class CleanModeNav:public ACleanMode
@@ -609,7 +519,7 @@ public:
 	void overCurrentWheelLeft(bool state_now, bool state_last) override;
 	void overCurrentWheelRight(bool state_now, bool state_last) override;
 
-//	void overCurrentSuction(bool state_now, bool state_last);
+//	void overCurrentVacuum(bool state_now, bool state_last);
 
 	// State init
 	bool isSwitchByEventInStateInit() override;
@@ -640,8 +550,8 @@ public:
 	bool isSwitchByEventInStatePause() override;
 	bool updateActionInStatePause() override;
 
-	// State trapped
-	bool isSwitchByEventInStateTrapped() override;
+	// State folllow wall
+	bool isSwitchByEventInStateFollowWall() override;
 
 	// State charge
 	bool isSwitchByEventInStateCharge() override;
@@ -689,7 +599,7 @@ public:
 //	void overCurrentBrushRight(bool state_now, bool state_last);
 	void overCurrentWheelLeft(bool state_now, bool state_last) override;
 	void overCurrentWheelRight(bool state_now, bool state_last) override;
-//	void overCurrentSuction(bool state_now, bool state_last);
+//	void overCurrentVacuum(bool state_now, bool state_last);
 //	void printMapAndPath();
 	void switchInStateInit() override;
 
@@ -713,7 +623,7 @@ public:
 	void keyClean(bool state_now, bool state_last) override;
 	void remoteMax(bool state_now, bool state_last) override;
 	void remoteClean(bool state_now, bool state_last) override;
-	void switchInStateTrapped() override;
+	void switchInStateFollowWall() override;
 
 	void switchInStateInit() override;
 

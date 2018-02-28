@@ -5,7 +5,6 @@
 #include <dev.h>
 #include <event_manager.h>
 #include "mode.hpp"
-#include "robotbase.h"
 boost::shared_ptr<IAction> Mode::sp_action_ = nullptr;
 //IAction* Mode::sp_action_ = nullptr;
 
@@ -62,7 +61,7 @@ int Mode::getNextMode()
 bool Mode::isExceptionTriggered()
 {
 	return ev.bumper_jam || ev.cliff_jam || ev.cliff_all_triggered || ev.oc_wheel_left || ev.oc_wheel_right
-		   || ev.oc_suction || ev.lidar_stuck || ev.robot_stuck || ev.oc_brush_main;
+		   || ev.oc_vacuum || ev.lidar_stuck || ev.robot_stuck || ev.oc_brush_main;
 }
 
 void Mode::genNextAction()
@@ -70,9 +69,6 @@ void Mode::genNextAction()
 	INFO_GREEN("before genNextAction");
 
 	switch (action_i_) {
-		case ac_null :
-			sp_action_.reset();
-			break;
 		case ac_open_gyro :
 			sp_action_.reset(new ActionOpenGyro);
 			break;
@@ -96,7 +92,7 @@ void Mode::genNextAction()
 			break;
 		case ac_follow_wall_left  :
 		case ac_follow_wall_right :
-			sp_action_.reset(new MoveTypeFollowWall(action_i_ == ac_follow_wall_left));
+				sp_action_.reset(new MoveTypeFollowWall(action_i_ == ac_follow_wall_left));
 			break;
 		case ac_go_to_charger :
 			sp_action_.reset(new MoveTypeGoToCharger);
@@ -116,8 +112,11 @@ void Mode::genNextAction()
 		case ac_check_vacuum :
 			sp_action_.reset(new ActionCheckVacuum);
 			break;
-		case ac_movement_direct_go :
-			sp_action_.reset(new MovementDirectGo);
+		case ac_remote :
+			sp_action_.reset(new MoveTypeRemote());
+			break;
+		default : //case ac_null :
+			sp_action_.reset();
 			break;
 	}
 	INFO_GREEN("after genNextAction");

@@ -7,6 +7,7 @@
 #include <deque>
 #include <ros/ros.h>
 #include "config.h"
+//#include "map.h"
 
 #define PI M_PI
 
@@ -319,6 +320,18 @@ double radian_to_degree(double rad);
 typedef Vector2<int16_t> Cell_t;
 typedef std::deque<Cell_t> Cells;
 
+typedef enum {
+	MAP_POS_X = 0,
+//  const double MAP_NS_PY = PI*3/4;
+	MAP_NEG_X,
+//  const double MAP_PX_PY = PI/4;
+	MAP_POS_Y,
+//  const double MAP_NX_NY =-PI*3/4;
+	MAP_NEG_Y,
+//MAP_PX_NY =-PI/4;
+	MAP_ANY,
+} Dir_t;
+
 class Point_t:public Vector2<float> {
 public:
   Point_t() {
@@ -402,6 +415,7 @@ public:
 
 	// in radian.
 	double th{};
+	Dir_t dir{};
 private:
 	int16_t countToCell(float count) const {
 		return static_cast<int16_t>(round(count / CELL_SIZE));
@@ -430,6 +444,48 @@ typedef struct
   }
 } LineABC;
 
+class PointSelector{
+public:
+	PointSelector(bool is_left);
+
+	bool LaserPointRange(const Vector2<double> &point, bool is_corner) const;
+	bool TargetPointRange(const Vector2<double> &target);
+	bool inForwardRange(const Vector2<double> &point) const;
+	bool inSidedRange(const Vector2<double> &point) const;
+
+	double narrow;
+	double narrow_minuend;
+	bool is_left_;
+	double x_min_forward;
+	double x_max_forward;
+	double x_min_side;
+	double x_max_side;
+
+	double y_min;
+	double y_max;
+
+	double y_min_forward;
+	double y_max_forward;
+
+	double y_min_side;
+	double y_max_side;
+
+	double y_min_point1_corner;
+	double y_max_point1_corner;
+	double y_min_point1;
+	double y_max_point1;
+
+	double y_min_target;
+	double y_max_target;
+
+	const double CHASE_X = 0.107;
+
+	double corner_front_trig_lim;
+
+	const int forward_count_lim = 10;
+	const int side_count_lim = 20;
+};
+
 float two_points_distance_double(float startx,float starty,float destx,float desty);
 void matrix_translate(double *x, double *y, double offset_x, double offset_y);
 void matrix_rotate(double *x, double *y, double theta);
@@ -438,5 +494,10 @@ double line_angle(LineABC l, uint8_t mode);
 
 void coordinate_transform(double *x, double *y, double theta, double offset_x, double offset_y);
 
+/*
+ * Function for formatting unsigned long integer to hex string.
+ * @return: True for formatting succeeded. False for string too short to load the number.
+ */
+bool unsigned_long_to_hex_string(unsigned long number, char *str, const int len);
 
 #endif

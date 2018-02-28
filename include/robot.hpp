@@ -21,6 +21,23 @@
 //#include "mode.hpp"
 #include <string.h>
 
+#define  _RATE 50
+
+extern pthread_mutex_t recev_lock;
+extern pthread_cond_t  recev_cond;
+
+extern pthread_mutex_t serial_data_ready_mtx;
+extern pthread_cond_t serial_data_ready_cond;
+
+extern bool g_pp_shutdown;
+
+extern bool robotbase_thread_stop;
+extern bool recei_thread_stop;
+extern bool send_thread_stop;
+extern bool event_manager_thread_stop;
+extern bool event_handle_thread_stop;
+extern bool core_thread_stop;
+
 class Mode;
 
 typedef enum {
@@ -99,6 +116,15 @@ public:
 		return robot_correction_y_;
 	}
 */
+	bool isBatteryLow() const
+	{
+		return battery_low_;
+	}
+
+	void setBatterLow(bool val)
+	{
+		battery_low_ = val;
+	}
 
 	double getRobotCorrectionRadian() const
 	{
@@ -108,6 +134,10 @@ public:
 	void setTfReady(bool is_ready)
 	{
 		is_tf_ready_ = is_ready;
+	}
+
+	double getGyroDynamicRunTime(){
+		return gyro_dynamic_run_time_;
 	}
 
 	void setTempSpot(void)
@@ -142,15 +172,29 @@ public:
 	}
 
 	void setTempTarget(std::deque<Vector2<double>>& points, uint32_t  seq);
+
+	void debugReceivedStream(const uint8_t *buf);
+
+	void debugSendStream(const uint8_t *buf);
+
+	bool pubScanCtrl(bool is_pub, bool is_force_pub = false);
+
+	void lockScanCtrl(void);
+
+	void unlockScanCtrl(void);
 private:
 
 	Baselink_Frame_Type baselink_frame_type_;
 	boost::mutex baselink_frame_type_mutex_;
+// Lock for odom coordinate
+	boost::mutex odom_mutex_;
+
 
 	bool is_sensor_ready_{};
 	bool is_tf_ready_{};
 
 	bool temp_spot_set_{};
+	bool battery_low_{};
 
 	tf::Vector3	robot_pos;
 	double	robot_radian_;
@@ -160,6 +204,7 @@ private:
 	double	robot_correction_yaw_;
 	tf::Vector3	slam_correction_pos;
 	double	slam_correction_yaw_;
+	double gyro_dynamic_run_time_;
 
 	ros::NodeHandle robot_nh_;
 
@@ -187,6 +232,8 @@ private:
 //	void robot_map_metadata_cb(const nav_msgs::MapMetaData::ConstPtr& msg);
 
 	boost::shared_ptr<Mode> p_mode{};
+
+	bool is_locked_scan_ctrl_{false};
 };
 
 float cellToCount(int16_t distance);
@@ -195,11 +242,11 @@ int16_t countToCell(int32_t count);
 
 Point_t getPosition(void);
 
-bool isPos(double dir);
+bool isAny(Dir_t dir);
 
-bool isXAxis(double dir);
+bool isPos(Dir_t dir);
 
-bool isYAxis(double dir);
+bool isXAxis(Dir_t dir);
 
 void updatePosition();
 

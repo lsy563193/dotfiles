@@ -70,6 +70,7 @@ bool MovementRcon::isFinish() {
 }
 
 MovementRcon::MovementRcon(bool is_left) {
+	ROS_INFO("%s %d: Entering movement rcon.", __FUNCTION__, __LINE__);
 	is_left_ = is_left;
 	rcon_status = ev.rcon_triggered;
 //	ROS_INFO("ev.rcon_triggered = %x", ev.rcon_triggered);
@@ -77,4 +78,5 @@ MovementRcon::MovementRcon(bool is_left) {
 
 MovementRcon::~MovementRcon() {
 //	ev.rcon_triggered = 0;
+	ROS_INFO("%s %d: Exit movement rcon.", __FUNCTION__, __LINE__);
 }

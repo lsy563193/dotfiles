@@ -6,13 +6,14 @@
 #include "robot.hpp"
 #include "path_algorithm.h"
 
+const Cell_t cell_direction_[9]{{1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1},{0,0}};
 void APathAlgorithm::displayCellPath(const Cells &path)
 {
 	std::string     msg = __FUNCTION__;
 
 	msg += " " + std::to_string(__LINE__) + ": Path size(" + std::to_string(path.size()) + "):";
 	for (auto it = path.begin(); it != path.end(); ++it) {
-		msg += "(" + std::to_string(it->x) + ", " + std::to_string(it->y) + ")->";
+		msg += "{" + std::to_string(it->x) + ", " + std::to_string(it->y) + "},";
 	}
 	//msg += "\n";
 	ROS_INFO("%s",msg.c_str());
@@ -21,9 +22,9 @@ void APathAlgorithm::displayCellPath(const Cells &path)
 void APathAlgorithm::displayTargetList(const Cells &target_list)
 {
 	std::string     msg = __FUNCTION__;
-	msg += " " + std::to_string(__LINE__) + ": Targets(" + std::to_string(target_list.size()) + "):";
+	msg += " " + std::to_string(__LINE__) + ": targets = {" + std::to_string(target_list.size()) + "}:";
 	for (auto it = target_list.begin(); it != target_list.end(); ++it) {
-		msg += "(" + std::to_string(it->x) + ", " + std::to_string(it->y) + ", " + "),";
+		msg += "{" + std::to_string(it->x) + ", " + std::to_string(it->y) + ", " + "},";
 	}
 	//msg += "\n";
 	ROS_INFO("%s",msg.c_str());
@@ -41,128 +42,135 @@ void APathAlgorithm::displayPointPath(const Points &point_path)
 	ROS_INFO("%s",msg.c_str());
 }
 
-void APathAlgorithm::optimizePath(GridMap &map, Cells& path)
-{
-	// Optimize only if the path have more than 3 cells.
-	if (path.size() > 3) {
-		ROS_INFO("%s %d: Start optimizing Path",__FUNCTION__,__LINE__);
-		auto it = path.begin();
-		for (uint16_t i = 0; i < path.size() - 3; i++) {
-			ROS_DEBUG("%s %d: i: %d, size: %ld.", __FUNCTION__, __LINE__, i, path.size());
-			auto it_ptr1 = it;
+//void APathAlgorithm::optimizePath(GridMap &map, Cells& path)
+//{
+//	// Optimize only if the path have more than 3 cells.
+//	if (path.size() > 3) {
+//		ROS_INFO("%s %d: Start optimizing Path",__FUNCTION__,__LINE__);
+//		auto it = path.begin();
+//		for (uint16_t i = 0; i < path.size() - 3; i++) {
+//			ROS_DEBUG("%s %d: i: %d, size: %ld.", __FUNCTION__, __LINE__, i, path.size());
+//			auto it_ptr1 = it;
+//
+//			auto it_ptr2 = it_ptr1;
+//			it_ptr2++;
+//
+//			auto it_ptr3 = it_ptr2;
+//			it_ptr3++;
+//
+//			// Just for protection, in case the iterator overflow. It should not happen under (i < path_points.size() - 3).
+//			if (it_ptr3 == path.end())
+//				break;
+//
+//			if (it_ptr2->x == it_ptr3->x) {		// x coordinates are the same for p1, p2, find a better y coordinate.
+//				int16_t x_min, x_max;
+//				x_min = x_max = it_ptr2->x;
+//
+//				int16_t	ei, ej, si, sj;
+//				sj = it_ptr1->x > it_ptr2->x ? it_ptr2->x : it_ptr1->x;
+//				ej = it_ptr1->x > it_ptr2->x ? it_ptr1->x : it_ptr2->x;
+//				si = it_ptr2->y > it_ptr3->y ? it_ptr3->y : it_ptr2->y;
+//				ei = it_ptr2->y > it_ptr3->y ? it_ptr2->y : it_ptr3->y;
+//
+//				bool blocked_min, blocked_max;
+//				blocked_min = blocked_max = false;
+//				while (!blocked_min || !blocked_max) {
+//					for (int16_t j = si; j <= ei && (!blocked_min || !blocked_max); j++) {
+//						if (!blocked_min && (x_min - 1 < sj ||
+//								map.getCell(COST_MAP, x_min - 1, j) == COST_HIGH)) {
+//							blocked_min = true;
+//						}
+//						if (!blocked_max && (x_max + 1 > ej ||
+//								map.getCell(COST_MAP, x_max + 1, j) == COST_HIGH)) {
+//							blocked_max = true;
+//						}
+//					}
+//					if (!blocked_min) {
+//						x_min--;
+//					}
+//					if (!blocked_max) {
+//						x_max++;
+//					}
+//				}
+//
+//				if ((it_ptr3->x != (x_min + x_max) / 2) && (it_ptr1->x != (x_min + x_max) / 2))
+//					it_ptr2->x = it_ptr3->x = (x_min + x_max) / 2;
+//
+//				//ROS_INFO("%s %d: Loop i:%d\tx_min_forward: %d\tx_max_forward: %d\tget x:%d", __FUNCTION__, __LINE__, i, x_min_forward, x_max_forward, (x_min_forward + x_max_forward) / 2);
+//			} else {
+//				int16_t y_min, y_max;
+//				y_min = y_max = it_ptr2->y;
+//
+//				int16_t	ei, ej, si, sj;
+//				sj = it_ptr1->y > it_ptr2->y ? it_ptr2->y : it_ptr1->y;
+//				ej = it_ptr1->y > it_ptr2->y ? it_ptr1->y : it_ptr2->y;
+//				si = it_ptr2->x > it_ptr3->x ? it_ptr3->x : it_ptr2->x;
+//				ei = it_ptr2->x > it_ptr3->x ? it_ptr2->x : it_ptr3->x;
+//
+//				bool blocked_min, blocked_max;
+//				blocked_min = blocked_max = false;
+//				while (!blocked_min || !blocked_max) {
+//					for (int16_t j = si; j <= ei && (!blocked_min || !blocked_max); j++) {
+//						if (!blocked_min && (y_min - 1 < sj ||
+//								map.getCell(COST_MAP, j, y_min - 1) == COST_HIGH)) {
+//							blocked_min = true;
+//						}
+//						if (!blocked_max && (y_max + 1 > ej ||
+//								map.getCell(COST_MAP, j, y_max + 1) == COST_HIGH)) {
+//							blocked_max = true;
+//						}
+//					}
+//					if (!blocked_min) {
+//						y_min--;
+//					}
+//					if (!blocked_max) {
+//						y_max++;
+//					}
+//				}
+//
+//				if ((it_ptr3->y != (y_min + y_max) / 2) && (it_ptr1->y != (y_min + y_max) / 2))
+//					it_ptr2->y = it_ptr3->y = (y_min + y_max) / 2;
+//				//ROS_INFO("%s %d: Loop i:%d\ty_min: %d\ty_max: %d\tget y:%d", __FUNCTION__, __LINE__, i, y_min, y_max, (y_min + y_max) / 2);
+//			}
+//
+//			it++;
+//		}
+//		displayCellPath(path);
+//	} else
+//		ROS_INFO("%s %d:Path too short(size: %ld), optimization terminated.", __FUNCTION__, __LINE__, path.size());
+//
+//}
 
-			auto it_ptr2 = it_ptr1;
-			it_ptr2++;
 
-			auto it_ptr3 = it_ptr2;
-			it_ptr3++;
-
-			// Just for protection, in case the iterator overflow. It should not happen under (i < path_points.size() - 3).
-			if (it_ptr3 == path.end())
-				break;
-
-			if (it_ptr2->x == it_ptr3->x) {		// x coordinates are the same for p1, p2, find a better y coordinate.
-				int16_t x_min, x_max;
-				x_min = x_max = it_ptr2->x;
-
-				int16_t	ei, ej, si, sj;
-				sj = it_ptr1->x > it_ptr2->x ? it_ptr2->x : it_ptr1->x;
-				ej = it_ptr1->x > it_ptr2->x ? it_ptr1->x : it_ptr2->x;
-				si = it_ptr2->y > it_ptr3->y ? it_ptr3->y : it_ptr2->y;
-				ei = it_ptr2->y > it_ptr3->y ? it_ptr2->y : it_ptr3->y;
-
-				bool blocked_min, blocked_max;
-				blocked_min = blocked_max = false;
-				while (!blocked_min || !blocked_max) {
-					for (int16_t j = si; j <= ei && (!blocked_min || !blocked_max); j++) {
-						if (!blocked_min && (x_min - 1 < sj ||
-								map.getCell(COST_MAP, x_min - 1, j) == COST_HIGH)) {
-							blocked_min = true;
-						}
-						if (!blocked_max && (x_max + 1 > ej ||
-								map.getCell(COST_MAP, x_max + 1, j) == COST_HIGH)) {
-							blocked_max = true;
-						}
-					}
-					if (!blocked_min) {
-						x_min--;
-					}
-					if (!blocked_max) {
-						x_max++;
-					}
-				}
-
-				if ((it_ptr3->x != (x_min + x_max) / 2) && (it_ptr1->x != (x_min + x_max) / 2))
-					it_ptr2->x = it_ptr3->x = (x_min + x_max) / 2;
-
-				//ROS_INFO("%s %d: Loop i:%d\tx_min_forward: %d\tx_max_forward: %d\tget x:%d", __FUNCTION__, __LINE__, i, x_min_forward, x_max_forward, (x_min_forward + x_max_forward) / 2);
-			} else {
-				int16_t y_min, y_max;
-				y_min = y_max = it_ptr2->y;
-
-				int16_t	ei, ej, si, sj;
-				sj = it_ptr1->y > it_ptr2->y ? it_ptr2->y : it_ptr1->y;
-				ej = it_ptr1->y > it_ptr2->y ? it_ptr1->y : it_ptr2->y;
-				si = it_ptr2->x > it_ptr3->x ? it_ptr3->x : it_ptr2->x;
-				ei = it_ptr2->x > it_ptr3->x ? it_ptr2->x : it_ptr3->x;
-
-				bool blocked_min, blocked_max;
-				blocked_min = blocked_max = false;
-				while (!blocked_min || !blocked_max) {
-					for (int16_t j = si; j <= ei && (!blocked_min || !blocked_max); j++) {
-						if (!blocked_min && (y_min - 1 < sj ||
-								map.getCell(COST_MAP, j, y_min - 1) == COST_HIGH)) {
-							blocked_min = true;
-						}
-						if (!blocked_max && (y_max + 1 > ej ||
-								map.getCell(COST_MAP, j, y_max + 1) == COST_HIGH)) {
-							blocked_max = true;
-						}
-					}
-					if (!blocked_min) {
-						y_min--;
-					}
-					if (!blocked_max) {
-						y_max++;
-					}
-				}
-
-				if ((it_ptr3->y != (y_min + y_max) / 2) && (it_ptr1->y != (y_min + y_max) / 2))
-					it_ptr2->y = it_ptr3->y = (y_min + y_max) / 2;
-				//ROS_INFO("%s %d: Loop i:%d\ty_min: %d\ty_max: %d\tget y:%d", __FUNCTION__, __LINE__, i, y_min, y_max, (y_min + y_max) / 2);
-			}
-
-			it++;
-		}
-		displayCellPath(path);
-	} else
-		ROS_INFO("%s %d:Path too short(size: %ld), optimization terminated.", __FUNCTION__, __LINE__, path.size());
-
-}
 Points APathAlgorithm::cells_generate_points(Cells &path)
 {
 //	displayCellPath(path);
-	Points targets{};
+	Points point_path{};
 	if(!path.empty()){
 		for(auto it = path.begin(); it < path.end(); ++it) {
 			Point_t target {cellToCount((*it).x),cellToCount((*it).y),0};
 			auto it_next = it+1;
 			if (it->x == it_next->x)
-				target.th = it->y > it_next->y ? MAP_NEG_Y : MAP_POS_Y;
+			{
+				target.dir = it->y > it_next->y ? MAP_NEG_Y : MAP_POS_Y;
+				target.th = isPos(target.dir) ? PI/2 : -PI/2;
+			}
 			else
-				target.th = it->x > it_next->x ? MAP_NEG_X : MAP_POS_X;
-			targets.push_back(target);
+			{
+				target.dir = it->x > it_next->x ? MAP_NEG_X : MAP_POS_X;
+				target.th = isPos(target.dir) ? 0 : PI;
+			}
+			point_path.push_back(target);
 		}
 	//		ROS_INFO("path.back(%d,%d,%d)",path.back().n, path.back().y, path.back().TH);
 
-		targets.back().th = (targets.end()-2)->th;
-//	ROS_INFO("%s %d: path.back(%d,%d,%d), path.front(%d,%d,%d)", __FUNCTION__, __LINE__,
-//					 path.back().x, path.back().y, path.back().TH, path.front().x, path.front().y, path.front().TH);
+		point_path.back().dir = (point_path.end()-2)->dir;
+		point_path.back().th = (point_path.end()-2)->th;
 	}
-	return targets;
+	return point_path;
 }
 
-bool APathAlgorithm::generateShortestPath(GridMap &map, const Point_t &curr,const Point_t &target, const int &last_dir, Points &plan_path) {
+bool APathAlgorithm::generateShortestPath(GridMap &map, const Point_t &curr,const Point_t &target, const Dir_t &last_dir, Points &plan_path) {
 	Cell_t corner1 ,corner2;
 	auto path_cell = findShortestPath(map, curr.toCell(), target.toCell(),last_dir, false,false,corner1,corner2);
 
@@ -170,7 +178,7 @@ bool APathAlgorithm::generateShortestPath(GridMap &map, const Point_t &curr,cons
 }
 
 Cells APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const Cell_t &target,
-										const int &last_dir, bool use_unknown,bool bound ,Cell_t min_corner,Cell_t max_corner)
+										const Dir_t &last_dir, bool use_unknown,bool bound ,Cell_t min_corner,Cell_t max_corner)
 {
 	Cells path_{};
 	// limit cost map range or get the total map range.
@@ -257,27 +265,12 @@ Cells APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const 
 				/* Found a cell that has a pass value equal to the current pass value. */
 				if(map.getCell(COST_MAP, i, j) == cost_value) {
 					/* Set the lower cell of the cell which has the pass value equal to current pass value. */
-					if (map.getCell(COST_MAP, i - 1, j) == COST_NO) {
-						map.setCell(COST_MAP, (int32_t) (i - 1), (int32_t) j, (CellState) next_cost_value);
-						cost_updated = true;
-					}
-
-					/* Set the upper cell of the cell which has the pass value equal to current pass value. */
-					if (map.getCell(COST_MAP, i + 1, j) == COST_NO) {
-						map.setCell(COST_MAP, (int32_t) (i + 1), (int32_t) j, (CellState) next_cost_value);
-						cost_updated = true;
-					}
-
-					/* Set the cell on the right hand side of the cell which has the pass value equal to current pass value. */
-					if (map.getCell(COST_MAP, i, j - 1) == COST_NO) {
-						map.setCell(COST_MAP, (int32_t) i, (int32_t) (j - 1), (CellState) next_cost_value);
-						cost_updated = true;
-					}
-
-					/* Set the cell on the left hand side of the cell which has the pass value equal to current pass value. */
-					if (map.getCell(COST_MAP, i, j + 1) == COST_NO) {
-						map.setCell(COST_MAP, (int32_t) i, (int32_t) (j + 1), (CellState) next_cost_value);
-						cost_updated = true;
+					for(auto index = 0;index<4; index++) {
+						auto neighbor = Cell_t(i, j) - cell_direction_[index];
+						if (map.getCell(COST_MAP, neighbor.x, neighbor.y) == COST_NO) {
+							map.setCell(COST_MAP, neighbor.x, neighbor.y, (CellState) next_cost_value);
+							cost_updated = true;
+						}
 					}
 				}
 			}
@@ -395,8 +388,7 @@ Cells APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const 
 
 	map.setCell(COST_MAP, (int32_t) target.x, (int32_t) target.y, COST_PATH);
 
-	trace_cell.x = target.x;
-	trace_cell.y = target.y;
+	trace_cell = target;
 	path_.push_back(trace_cell);
 
 	displayCellPath(path_);
@@ -437,13 +429,13 @@ bool APathAlgorithm::findTargetUsingDijkstra(GridMap &map, const Cell_t& curr_ce
 		{
 			for (auto it1 = 0; it1 < 4; it1++)
 			{
-				auto neighbor = next + cell_direction_index_[it1];
+				auto neighbor = next + cell_direction_[it1];
 //				ROS_INFO("g_index[%d],next(%d,%d)", it1, neighbor.x,neighbor.y);
 				if (map.getCell(COST_MAP, neighbor.x, neighbor.y) != COST_1) {
 //					ROS_INFO("(%d,%d),", neighbor.x, neighbor.y);
 
 					for (auto it2 = 0; it2 < 9; it2++) {
-						auto neighbor_ = neighbor + cell_direction_index_[it2];
+						auto neighbor_ = neighbor + cell_direction_[it2];
 						if (map.getCell(CLEAN_MAP, neighbor_.x, neighbor_.y) == CLEANED &&
 								map.getCell(COST_MAP, neighbor_.x, neighbor_.y) == COST_NO)
 						{

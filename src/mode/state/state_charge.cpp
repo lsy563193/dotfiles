@@ -7,7 +7,7 @@
 void StateCharge::init() {
 }
 
-//bool StateTrapped::isFinish() {
+//bool StateFolllowWall::isFinish() {
 //	return false;
 //}
 

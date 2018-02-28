@@ -1,10 +1,10 @@
 #include <serial.h>
-#include <robotbase.h>
 #include <bumper.h>
 #include <signal.h>
+#include <path_algorithm.h>
 #include "robot.hpp"
 #include "speaker.h"
-#include "beep.h"
+
 #if VERIFY_CPU_ID || VERIFY_KEY
 #include "verify.h"
 #endif
@@ -17,6 +17,7 @@ void signal_catch(int sig)
 		case SIGSEGV:
 		{
 			ROS_ERROR("Oops!!! pp receive SIGSEGV signal,segment fault!");
+			ros::shutdown();
 			if(robot_instance != nullptr){
 				speaker.play(VOICE_CLEANING_STOP,false);
 				delete robot_instance;
@@ -26,6 +27,7 @@ void signal_catch(int sig)
 		case SIGINT:
 		{
 			ROS_ERROR("Oops!!! pp receive SIGINT signal,ctrl+c press");
+			ros::shutdown();
 			if(robot_instance != nullptr){
 				speaker.play(VOICE_CLEANING_STOP,false);
 				delete robot_instance;
@@ -35,6 +37,7 @@ void signal_catch(int sig)
 		case SIGTERM:
 		{
 			ROS_ERROR("Ouch!!! pp receive SIGTERM signal,being kill!");
+			ros::shutdown();
 			if(robot_instance != nullptr){
 				speaker.play(VOICE_CLEANING_STOP,false);
 				delete robot_instance;
@@ -45,12 +48,10 @@ void signal_catch(int sig)
 			ROS_ERROR("Oops!! pp receive %d signal",sig);
 	}
 	robot_instance = nullptr;
-	ros::shutdown();
 }
 
 int main(int argc, char **argv)
 {
-
 	ros::init(argc, argv, "pp");
 	ros::NodeHandle	nh_dev("~");
 
@@ -62,26 +63,41 @@ int main(int argc, char **argv)
 	sigaction(SIGSEGV,&act,NULL);
 	sigaction(SIGINT,&act,NULL);
 	ROS_INFO("set signal action done!");
-	std::string	serial_port;
-	nh_dev.param<std::string>("serial_port", serial_port, "/dev/ttyS2");
-
-	int		baud_rate;
-	nh_dev.param<int>("baud_rate", baud_rate, 115200);
-
-	// Init for serial.
-	if (!serial.init(serial_port.c_str(), baud_rate))
-	{
-		ROS_ERROR("%s %d: Serial init failed!!", __FUNCTION__, __LINE__);
-	}
-
-	std::string lidar_bumper_dev;
-	nh_dev.param<std::string>("lidar_bumper_file", lidar_bumper_dev, "/dev/input/event0");
-
-	if (bumper.lidarBumperInit(lidar_bumper_dev.c_str()) == -1)
-		ROS_ERROR(" lidar bumper open fail!");
 
 	robot_instance = new robot();
 
+	//test code by lsy563193
+	/*GridMap map;
+//test
+/*	ROS_INFO("set signal action done!");
+	GridMap map;
+	case_2(map);
+	map.print(CLEAN_MAP, 0, 0);
+
+	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
+	Dir_t old_dir_=MAP_POS_X;
+	Points plan_path_{};
+	ROS_INFO("clean_path_algorithm_!");
+	clean_path_algorithm_.reset(new NavCleanPathAlgorithm);
+	if (clean_path_algorithm_->generatePath(map, getPosition(), old_dir_, plan_path_)) {
+
+	}
+	ROS_INFO("~~~~~~~~~~~~~~~~~~~!");*/
 	ros::spin();
 	return 0;
+}
+// Test code by lsy563193
+void case_2(GridMap &map) {
+
+//	map.setBlockWithBound({-5,-1}, {5,1}, CLEANED, 0);
+//	map.setBlockWithBound({-7,0}, {-7,0}, CLEANED, 1);
+//	map.setBlockWithBound({7,0}, {7,0}, CLEANED, 1);
+	map.setBlockWithBound({-15,-15}, {15,15}, CLEANED, 0);
+	map.setBlockWithBound({-5,-5},{5,5},CLEANED,1);
+	map.setBlockWithBound({-10,-5},{-7,5},UNCLEAN,1);
+	map.setBlockWithBound({-11,-6},{6,-6},CLEANED,0);
+	map.setBlockWithBound({-5,-6},{6,-6},CLEANED,0);
+
+//	map_set_block({-2,0},{3,0},);
+//	map_set_block({-2,0},{3,0},UNCLEAN);
 }

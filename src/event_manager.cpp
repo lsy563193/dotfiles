@@ -3,7 +3,6 @@
 #include <ros/ros.h>
 #include "dev.h"
 #include "map.h"
-#include "robotbase.h"
 #include "serial.h"
 
 int g_bumper_cnt = 0;
@@ -81,7 +80,7 @@ void event_manager_init()
 	p_handler[EVT_OVER_CURRENT_BRUSH_RIGHT] = &EventHandle::overCurrentBrushRight;
 	p_handler[EVT_OVER_CURRENT_WHEEL_LEFT] = &EventHandle::overCurrentWheelLeft;
 	p_handler[EVT_OVER_CURRENT_WHEEL_RIGHT] = &EventHandle::overCurrentWheelRight;
-	p_handler[EVT_OVER_CURRENT_SUCTION] = &EventHandle::overCurrentSuction;
+	p_handler[EVT_OVER_CURRENT_SUCTION] = &EventHandle::overCurrentVacuum;
 
 	p_handler[EVT_KEY_CLEAN] = &EventHandle::keyClean;
 
@@ -337,7 +336,7 @@ void event_manager_thread_cb()
 		*/
 
 		// Lidar stuck
-		if (lidar_is_stuck()) {
+		if (lidar.lidar_is_stuck()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_LIDAR_STUCK);
 		}
@@ -565,7 +564,7 @@ void event_manager_reset_status(void)
 	ev.oc_brush_main = false;
 	ev.oc_wheel_left = false;
 	ev.oc_wheel_right = false;
-	ev.oc_suction = false;
+	ev.oc_vacuum = false;
 	brush.oc_left_cnt_ = 0;
 	brush.oc_main_cnt_ = 0;
 	brush.oc_right_cnt_ = 0;
@@ -821,7 +820,7 @@ void EventHandle::overCurrentWheelRight(bool state_now, bool state_last)
 //	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
-void EventHandle::overCurrentSuction(bool state_now, bool state_last)
+void EventHandle::overCurrentVacuum(bool state_now, bool state_last)
 {
 //	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
@@ -835,7 +834,7 @@ void EventHandle::keyClean(bool state_now, bool state_last)
 /* Remote */
 void df_remote()
 {
-	beeper.play_for_command(INVALID);
+	beeper.beepForCommand(INVALID);
 	remote.reset();
 }
 
@@ -922,7 +921,7 @@ void df_robot_slip()
 {
 /*	static int slip_cnt = 0;
 	ROS_WARN("\033[32m%s,%d,set robot slip!! \033[0m",__FUNCTION__,__LINE__);
-	beeper.play_for_command(true);
+	beeper.beepForCommand(true);
 	ev.robot_slip = true;
 	if(slip_cnt++ > 2){
 		slip_cnt = 0;
@@ -947,7 +946,7 @@ void EventHandle::lidarStuck(bool state_new, bool state_last)
 {}
 void df_lidar_stuck(bool state_new,bool state_last)
 {
-	//beeper.play_for_command(true);
+	//beeper.beepForCommand(true);
 	//ROS_WARN("\033[32m%s %d: Lidar stuck.\033[0m", __FUNCTION__, __LINE__);
 	//ev.lidarStuck = true;
 }

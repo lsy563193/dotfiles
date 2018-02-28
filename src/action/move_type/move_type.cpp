@@ -60,7 +60,8 @@ bool IMoveType::isOBSStop()
 bool IMoveType::isLidarStop()
 {
 //	PP_INFO();
-	ev.lidar_triggered = lidar.getObstacleDistance(0,0.056) < 0.04 ? BLOCK_FRONT : 0;
+//	ev.lidar_triggered = lidar.getObstacleDistance(0,0.056) < 0.04 ? BLOCK_FRONT : 0;
+	ev.lidar_triggered = lidar.lidar_get_status();
 	if (ev.lidar_triggered)
 	{
 		// Temporary use OBS to get angle.
@@ -100,7 +101,7 @@ bool IMoveType::RconTrigger()
 {
 	ev.rcon_triggered = c_rcon.getWFRcon();
 	if (ev.rcon_triggered) {
-		ROS_WARN("%s, %d: ev.rcon_triggered(%d).", __FUNCTION__, __LINE__, ev.lidar_triggered);
+		ROS_WARN("%s, %d: ev.rcon_triggered(%d).", __FUNCTION__, __LINE__, ev.rcon_triggered);
 		return true;
 	}
 	return false;
@@ -108,6 +109,7 @@ bool IMoveType::RconTrigger()
 
 void IMoveType::resetTriggeredValue()
 {
+//	PP_INFO();
 	ev.lidar_triggered = 0;
 //	ev.rcon_triggered = 0;
 	ev.bumper_triggered = 0;
@@ -117,7 +119,8 @@ void IMoveType::resetTriggeredValue()
 	ev.robot_slip = false;
 }
 
-bool IMoveType::isFinish() {
+bool IMoveType::isFinish()
+{
 	updatePosition();
 	auto curr = getPosition();
 	auto p_cm = dynamic_cast<ACleanMode*> (sp_mode_);
@@ -127,13 +130,16 @@ bool IMoveType::isFinish() {
 		if(p_cm->moveTypeNewCellIsFinish(this))
 			return true;
 	}
-	if(p_cm->moveTypeRealTimeIsFinish(this))
+	if(p_cm->moveTypeRealTimeIsFinish(this)) {
+//		wheel.stop();
 		return true;
+	}
 
-	return sp_mode_->isExceptionTriggered();
+	return false;
 }
 
-void IMoveType::run() {
+void IMoveType::run()
+{
 	sp_movement_->run();
 }
 
@@ -142,7 +148,7 @@ int IMoveType::countRconTriggered(uint32_t rcon_value)
 	if(rcon_value == 0)
 		return 0;
 
-	int MAX_CNT = 1;
+	int MAX_CNT = 3;
 	if ( rcon_value& RconL_HomeT)
 		rcon_cnt[left]++;
 	if ( rcon_value& RconFL_HomeT)
@@ -157,22 +163,28 @@ int IMoveType::countRconTriggered(uint32_t rcon_value)
 		rcon_cnt[right]++;
 	auto ret = 0;
 	for (int i = 0; i < 6; i++)
-		if (rcon_cnt[i] > MAX_CNT) {
+		if ( (i == fl1 || i == fr1 ) && rcon_cnt[i] > MAX_CNT) {
 			rcon_cnt[left] = rcon_cnt[fl1] = rcon_cnt[fl2] = rcon_cnt[fr2] = rcon_cnt[fr1] = rcon_cnt[right] = 0;
 			ret = i + 1;
 			break;
 		}
+		else if( (i == left || i == right || i == fl2 || i == fr2) && rcon_cnt[i] > (MAX_CNT + 2)){
+			rcon_cnt[left] = rcon_cnt[fl1] = rcon_cnt[fl2] = rcon_cnt[fr2] = rcon_cnt[fr1] = rcon_cnt[right] = 0;
+			ret = i + 1;
+			break;
+
+		}
+
 	return ret;
 }
 
 bool IMoveType::isRconStop()
 {
-	ev.rcon_triggered = countRconTriggered(c_rcon.getForwardTop());
-
 	bool ret = false;
+	ev.rcon_triggered = countRconTriggered(c_rcon.getNavRcon());
 	if(ev.rcon_triggered)
 	{
-		ROS_WARN("%s %d: Rcon triggered and stop.", __FUNCTION__, __LINE__);
+		INFO_PURPLE("Rcon triggered and stop.");
 		ret = true;
 	}
 

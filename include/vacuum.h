@@ -49,14 +49,6 @@ public:
 
 	void resetExceptionResume(void);
 
-	void setExceptionResumeStatus(uint8_t val)
-	{
-		exception_resume_status_ = val;
-	}
-	uint8_t getExceptionResumeStatus() const {
-		return exception_resume_status_;
-	}
-
 	void setOc(bool val)
 	{
 		oc_ = val;
@@ -70,7 +62,6 @@ private:
 
 	uint8_t mode_;
 	uint8_t mode_save_;
-	uint8_t exception_resume_status_;
 	bool oc_;
 
 };

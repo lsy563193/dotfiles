@@ -59,7 +59,7 @@ double Odom::getRadian(void)
 void Odom::setRadianOffset(double radian)
 {
 	radian_offset_ = radian;
-	ROS_INFO("%s %d: Set odom radian offset to %f(%f degrees).", __FUNCTION__, __LINE__, radian_offset_, radian_to_degree(radian_offset_));
+	ROS_INFO("%s %d: Set odom radian offset to (%f degrees).", __FUNCTION__, __LINE__, radian_to_degree(radian_offset_));
 }
 
 double Odom::getRadianOffset(void)

@@ -54,7 +54,7 @@ bool CleanModeSpot::mapMark()
 		clean_map_.setCleaned(pointsGenerateCells(passed_path_));
 	}
 
-	if (sp_state == state_trapped)
+	if (sp_state == state_folllow_wall)
 		clean_map_.markRobot(CLEAN_MAP);
 	clean_map_.setBlocks();
 	PP_INFO();
@@ -67,14 +67,14 @@ bool CleanModeSpot::mapMark()
 void CleanModeSpot::remoteClean(bool state_now, bool state_last)
 {
 	ev.key_clean_pressed = true;
-	beeper.play_for_command(true);
+	beeper.beepForCommand(true);
 	remote.reset();
 }
 
 void CleanModeSpot::remoteWallFollow(bool state_now, bool state_last)
 {
 	ev.remote_follow_wall = true;
-	beeper.play_for_command(true);
+	beeper.beepForCommand(true);
 	INFO_YELLOW("REMOTE FOLLOW_WALL PRESS");
 	remote.reset();
 }
@@ -84,7 +84,7 @@ void CleanModeSpot::keyClean(bool state_now,bool state_last)
 	INFO_GREEN("key clean press");
 	wheel.stop();
 	ev.key_clean_pressed = true;
-	beeper.play_for_command(true);
+	beeper.beepForCommand(true);
 	key.resetTriggerStatus();
 
 }
@@ -103,7 +103,7 @@ void CleanModeSpot::overCurrentWheelRight(bool state_now, bool state_last)
 
 void CleanModeSpot::remoteDirectionLeft(bool state_now, bool state_last)
 {
-	beeper.play_for_command(VALID);
+	beeper.beepForCommand(VALID);
 	ev.remote_direction_left = true;
 	ROS_INFO("%s %d: Remote Left.", __FUNCTION__, __LINE__);
 	remote.reset();
@@ -111,7 +111,7 @@ void CleanModeSpot::remoteDirectionLeft(bool state_now, bool state_last)
 
 void CleanModeSpot::remoteDirectionRight(bool state_now, bool state_last)
 {
-	beeper.play_for_command(VALID);
+	beeper.beepForCommand(VALID);
 	ev.remote_direction_right = true;
 	ROS_INFO("%s %d: Remote Right.", __FUNCTION__, __LINE__);
 	remote.reset();
@@ -119,7 +119,7 @@ void CleanModeSpot::remoteDirectionRight(bool state_now, bool state_last)
 
 void CleanModeSpot::remoteDirectionForward(bool state_now, bool state_last)
 {
-	beeper.play_for_command(VALID);
+	beeper.beepForCommand(VALID);
 	ROS_INFO("%s %d: Remote Forward.", __FUNCTION__, __LINE__);
 	ev.remote_direction_right = true;
 

@@ -66,9 +66,9 @@ public:
 //	IMoveType* setNextAction_();
 
 };
-class StateTrapped: public State {
+class StateFolllowWall: public State {
 public:
-	StateTrapped()= default;
+	StateFolllowWall()= default;
 	void init() override;
 //	IMoveType* setNextAction_();
 };
@@ -80,9 +80,9 @@ public:
 //	IMoveType* setNextAction_();
 };
 
-class ExceptionResume: public State {
+class StateExceptionResume: public State {
 public:
-	ExceptionResume()= default;
+	StateExceptionResume()= default;
 	void init() override;
 //	IMoveType* setNextAction_();
 };

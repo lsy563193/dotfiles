@@ -37,7 +37,7 @@ protected:
 
 class AMovementFollowPoint:public IMovement{
 public:
-	virtual bool isNear()=0;
+	virtual uint8_t isNear()=0;
 	virtual Point_t calcTmpTarget()=0;
 	bool isFinish() override ;
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed) override ;
@@ -61,7 +61,7 @@ protected:
 class MovementBack: public IMovement{
 public:
 	explicit MovementBack(float back_distance, uint8_t max_speed);
-
+	~MovementBack();
 	void adjustSpeed(int32_t&, int32_t&) override;
 	bool isLidarStop();
 	void updateStartPose();
@@ -75,6 +75,17 @@ private:
 	uint8_t cliff_jam_cnt_;
 	uint8_t robot_stuck_cnt_;
 	float lidar_detect_distance;
+};
+
+class MovementGyroDynamic : public IMovement{
+public:
+	MovementGyroDynamic();
+	~MovementGyroDynamic();
+	void adjustSpeed(int32_t&, int32_t&) override;
+	bool isFinish() override;
+private:
+	bool is_open_dynamic_succeed_{false};
+	double start_dynamic_time_{0};
 };
 
 class MovementRcon: public IMovement
@@ -115,8 +126,15 @@ public:
 	MovementFollowPointLinear();
 //	~MovementFollowPointLinear(){ };
 	bool isFinish() override;
-
-	bool isNear() override;
+	/**
+	* @brief judge is the robot is close to the obstacle and speed down
+	*
+	* @return
+	*        -<em>0</em> no obstacle
+	*        -<em>1</em> exist obstacle, speed down level is 1, for obs and laser
+	*        -<em>2</em> exist obstacle, speed down level is 2, for slam map
+	*/
+	uint8_t isNear() override;
 //	void setTarget();
 
 	Point_t calcTmpTarget() override ;
@@ -185,13 +203,12 @@ public:
 	Points _calcTmpTarget();
 
 	bool isFinish() override ;
-	bool isNear() override ;
+	uint8_t isNear() override ;
 private:
 	Points virtual_targets_{};
 	Points lidar_targets_{};
 	Points* p_tmp_targets_{};
 
-	bool is_first_cal_vir;
 	uint32_t seq_{0};
 	ros::Time corner_time;
 };
@@ -265,12 +282,13 @@ public:
 
 private:
 	double resume_wheel_start_time_;
-	float wheel_current_sum_{0};
 	uint8_t oc_main_brush_cnt_{0};
 	double resume_main_bursh_start_time_;
-	uint8_t wheel_current_sum_cnt_{0};
+	uint8_t oc_vacuum_resume_cnt_{0};
+	double resume_vacuum_start_time_;
 	uint8_t wheel_resume_cnt_{0};
 	uint8_t bumper_jam_state_{1};
+	double bumper_resume_start_radian_{0};
 	uint8_t cliff_resume_cnt_{0};
 	uint8_t cliff_all_resume_cnt_{0};
 	uint8_t robot_stuck_resume_cnt_{0};
@@ -298,7 +316,7 @@ private:
 class MovementStay :public IMovement
 {
 public:
-	MovementStay();
+	MovementStay(double stay_time_sec);
 	~MovementStay();
 
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed) override;
@@ -307,18 +325,23 @@ public:
 private:
 };
 
-class MovementDirectGo :public IMovement
+class MovementStayRemote :public MovementStay{
+public:
+	MovementStayRemote(double stay_time_sec);
+	bool isFinish() override;
+
+};
+class MovementRemoteDirectGo :public IMovement
 {
 public:
-	MovementDirectGo();
-	~MovementDirectGo();
+	MovementRemoteDirectGo();
+	~MovementRemoteDirectGo();
 
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed) override;
 	bool isFinish() override;
 
 private:
 	int16_t speed_{LINEAR_MIN_SPEED};
-	double direct_go_time_stamp_;
 };
 
 class MovementStraight :public IMovement

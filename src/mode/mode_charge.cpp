@@ -2,6 +2,7 @@
 // Created by austin on 17-12-6.
 //
 
+#include <robot.hpp>
 #include "error.h"
 #include "dev.h"
 #include "mode.hpp"
@@ -9,6 +10,8 @@ ModeCharge::ModeCharge()
 {
 	ROS_INFO("%s %d: Entering Charge mode\n=========================" , __FUNCTION__, __LINE__);
 
+	robot::instance()->setBatterLow(false);
+	robot::instance()->setBatterLow(false);
 	key.resetTriggerStatus();
 	c_rcon.resetStatus();
 	remote.reset();
@@ -86,14 +89,14 @@ bool ModeCharge::isFinish()
 {
 	if (charger.getChargeStatus() && battery.isFull())
 	{
-		led.setMode(LED_STEADY, LED_GREEN);
+		key_led.setMode(LED_STEADY, LED_GREEN);
 		if (battery_full_start_time_ == 0)
 		{
 			speaker.play(VOICE_BATTERY_CHARGE_DONE);
 			battery_full_start_time_ = ros::Time::now().toSec();
 		}
 
-		// Show green led for 60s before going to sleep mode.
+		// Show green key_led for 60s before going to sleep mode.
 		if (ros::Time::now().toSec() - battery_full_start_time_ >= 60)
 		{
 			setNextMode(md_sleep);
@@ -114,11 +117,11 @@ void ModeCharge::remoteClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Receive remote key clean.", __FUNCTION__, __LINE__);
 	if (charger.isDirected())
-		beeper.play_for_command(INVALID);
+		beeper.beepForCommand(INVALID);
 	else
 	{
 		ev.key_clean_pressed = true;
-		beeper.play_for_command(VALID);
+		beeper.beepForCommand(VALID);
 	}
 	remote.reset();
 }
@@ -127,11 +130,11 @@ void ModeCharge::keyClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Receive key clean.", __FUNCTION__, __LINE__);
 	if (charger.isDirected())
-		beeper.play_for_command(INVALID);
+		beeper.beepForCommand(INVALID);
 	else
 	{
 		ev.key_clean_pressed = true;
-		beeper.play_for_command(VALID);
+		beeper.beepForCommand(VALID);
 	}
 
 	// Wait for key released.
@@ -146,13 +149,13 @@ void ModeCharge::remotePlan(bool state_now, bool state_last)
 {
 	if (robot_timer.getPlanStatus() == 1)
 	{
-		beeper.play_for_command(VALID);
+		beeper.beepForCommand(VALID);
 		speaker.play(VOICE_APPOINTMENT_DONE, false);
 		ROS_WARN("%s %d: Plan received.", __FUNCTION__, __LINE__);
 	}
 	else if (robot_timer.getPlanStatus() == 2)
 	{
-		beeper.play_for_command(VALID);
+		beeper.beepForCommand(VALID);
 		speaker.play(VOICE_CANCEL_APPOINTMENT, false);
 		ROS_WARN("%s %d: Plan cancel received.", __FUNCTION__, __LINE__);
 	}

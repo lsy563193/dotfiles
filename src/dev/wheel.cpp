@@ -95,6 +95,10 @@ void Wheel::setPidParam(uint8_t reg_type, float Kp, float Ki, float Kd)
 
 void Wheel::pidAdjustSpeed(void)
 {
+#if X900_FUNCTIONAL_TEST
+	return;
+#endif
+
 	boost::mutex::scoped_lock lock(pid_lock);
 #if 0
 	left_pid.delta = left_pid.target_speed - left_pid.actual_speed;
@@ -280,6 +284,14 @@ void Wheel::setPidTargetSpeed(uint8_t Left, uint8_t Right, uint8_t reg_type, flo
 
 void Wheel::pidSetLeftSpeed(float speed)
 {
+#if X900_FUNCTIONAL_TEST
+	auto numeral = static_cast<uint8_t>(static_cast<unsigned long>(speed) / (1024 * 1024));         //flash size originally in kbytes
+	auto decimal = static_cast<uint8_t>((static_cast<unsigned long>(speed) % (1024 * 1024)) / 1024 / 100);
+//	serial.setSendData(CTL_WHEEL_LEFT_HIGH, numeral);
+//	serial.setSendData(CTL_WHEEL_LEFT_LOW, decimal);
+	ROS_INFO("%s %d: Flash size %d.%dGB transferred!! In hex: %04x.",
+			 __FUNCTION__, __LINE__, numeral, decimal, static_cast<uint16_t>((numeral << 8) | decimal));
+#else
 	left_speed_after_pid_ = static_cast<int8_t>(speed);
 	int16_t stream_speed;
 	if (speed >= 0)
@@ -288,12 +300,21 @@ void Wheel::pidSetLeftSpeed(float speed)
 		speed = std::abs(speed) > RUN_TOP_SPEED ? -1 * RUN_TOP_SPEED : speed;
 	stream_speed = static_cast<int16_t>(speed * SPEED_ALF);
 
-	serial.setSendData(CTL_WHEEL_LEFT_HIGH, (stream_speed >> 8) & 0xff);
-	serial.setSendData(CTL_WHEEL_LEFT_LOW, stream_speed & 0xff);
+	serial.setSendData(CTL_WHEEL_LEFT_HIGH, static_cast<uint8_t>(stream_speed >> 8));
+	serial.setSendData(CTL_WHEEL_LEFT_LOW, static_cast<uint8_t>(stream_speed));
+#endif
 }
 
 void Wheel::pidSetRightSpeed(float speed)
 {
+#if X900_FUNCTIONAL_TEST
+	auto numeral = static_cast<uint8_t>(static_cast<unsigned long>(speed) / (1024 * 1024));         //flash size originally in kbytes
+	auto decimal = static_cast<uint8_t>((static_cast<unsigned long>(speed) % (1024 * 1024)) / 1024 / 100);
+//	serial.setSendData(CTL_WHEEL_RIGHT_HIGH, numeral);
+//	serial.setSendData(CTL_WHEEL_RIGHT_LOW, decimal);
+	ROS_INFO("%s %d: RAM size %d.%dGB transferred!! In hex: %04x.",
+			 __FUNCTION__, __LINE__, numeral, decimal, static_cast<uint16_t>((numeral << 8) | decimal));
+#else
 	right_speed_after_pid_ = static_cast<int8_t>(speed);
 	int16_t stream_speed;
 	if (speed >= 0)
@@ -302,8 +323,9 @@ void Wheel::pidSetRightSpeed(float speed)
 		speed = std::abs(speed) > RUN_TOP_SPEED ? -1 * RUN_TOP_SPEED : speed;
 	stream_speed = static_cast<int16_t>(speed * SPEED_ALF);
 
-	serial.setSendData(CTL_WHEEL_RIGHT_HIGH, (stream_speed >> 8) & 0xff);
-	serial.setSendData(CTL_WHEEL_RIGHT_LOW, stream_speed & 0xff);
+	serial.setSendData(CTL_WHEEL_RIGHT_HIGH, static_cast<uint8_t>(stream_speed >> 8));
+	serial.setSendData(CTL_WHEEL_RIGHT_LOW, static_cast<uint8_t>(stream_speed));
+#endif
 }
 
 int8_t Wheel::getLeftSpeedAfterPid(void)

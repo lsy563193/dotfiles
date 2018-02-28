@@ -18,7 +18,8 @@ public:
 	Lidar();
 	~Lidar();
 
-	bool lidarGetFitLine(double begin, double end, double range, double dis_lim, double *line_radian, double *distance, bool is_left, bool is_align = false);
+	void init();
+	bool lidarGetFitLine(double r_begin, double r_end, double range, double dis_lim, double *line_radian, double *distance, bool is_left, bool is_align = false);
 
 	/*
 	 * @author Alvin Xie
@@ -43,31 +44,26 @@ public:
 	int8_t isScanOriginalReady();
 	int8_t isScanCompensateReady();
 
-	double getLidarDistance(uint16_t angle);
-
 	bool lineFit(const std::deque<Vector2<double>> &points, double &a, double &b, double &c);
-
 	bool splitLine(const std::vector<Vector2<double>> &points, double consecutive_lim, int points_count_lim);
-
 	//bool splitLine2nd(const std::vector<std::vector<Vector2<double>> >	&groups, double t_max, int points_count_lim);
 	bool splitLine2nd(std::vector<std::deque<Vector2<double>> > *groups, double t_max, int points_count_lim);
-
 	bool mergeLine(std::vector<std::deque<Vector2<double>> > *groups, double t_lim , bool is_align);
-
 	bool fitLineGroup(std::vector<std::deque<Vector2<double>> > *groups, double dis_lim , bool is_align);
 
 	void pubFitLineMarker(double a, double b, double c, double y1, double y2);
 
-	void motorCtrl(bool new_switch_);
+	bool motorCtrl(bool new_switch_);
 	void startAlign();
-	bool alignFinish();
-	float alignAngle(void)
+	void setAlignFinish();
+	bool isAlignFinish();
+	float alignRadian(void)
 	{
-		return align_angle_;
+		return align_radian_;
 	}
-	void alignAngle(float angle)
+	void alignRadian(float radian)
 	{
-		align_angle_ = angle;
+		align_radian_ = radian;
 	}
 
 	uint8_t lidarMarker(double X_MAX = 0.237);
@@ -84,9 +80,15 @@ public:
 	void scanLinearCb(const sensor_msgs::LaserScan::ConstPtr &msg);
 	void scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr &msg);
 	void scanCompensateCb(const sensor_msgs::LaserScan::ConstPtr &msg);
+#if X900_FUNCTIONAL_TEST
+	void scantestCb(const sensor_msgs::LaserScan::ConstPtr &msg);
+#endif
 	void lidarXYPointCb(const visualization_msgs::Marker &point_marker);
 	static void setLidarScanDataOriginal(const sensor_msgs::LaserScan::ConstPtr &scan);
 	static sensor_msgs::LaserScan getLidarScanDataOriginal(void);
+	double getLidarDistance(int16_t angle,float range_max,float range_min);
+	uint8_t lidar_get_status();
+	bool lidar_is_stuck();
 private:
 
 	// switch_ is the target status of lidar.
@@ -119,7 +121,7 @@ private:
 
 	// For aligning.
 	bool align_finish_;
-	float align_angle_;
+	float align_radian_;
 	geometry_msgs::Point laser_points_;
 
 	// For slip checking
@@ -131,9 +133,10 @@ private:
 	float slip_ranges_percent_{0.85};//85%
 	uint8_t slip_cnt_limit_{5};
 
+#if X900_FUNCTIONAL_TEST
+#endif
 };
 
-bool lidar_is_stuck();
 
 extern Lidar lidar;
 #endif

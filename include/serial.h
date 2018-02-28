@@ -14,6 +14,11 @@
 #define CTL_HEADER_1 0
 #define CTL_HEADER_2 1
 
+#if X900_FUNCTIONAL_TEST
+#define CTL_TESTING_STAGE 2
+#define CTL_ERROR_CODE_HIGH 3
+#define CTL_ERROR_CODE_LOW 4
+#endif
 // Two bytes for controlling left wheel.
 #define	CTL_WHEEL_LEFT_HIGH 2
 #define	CTL_WHEEL_LEFT_LOW  3
@@ -52,8 +57,7 @@
 // One byte for mix command.
 // bit 0 for wifi led controlling.
 // bit 1 for vacuum exception resume control.
-// bit 2 for vacuum exception resume status
-// bit 3-7 reserved.
+// bit 2-7 reserved.
 #define CTL_MIX 15
 
 // One byte for controlling gyro.
@@ -73,7 +77,7 @@
 #define CTL_TRAILER_2 20
 
 // For receive stream.
-#define RECEI_LEN 44
+#define REC_LEN 44
 
 // Two bytes for stream header.
 #define REC_HEADER_1 0
@@ -214,8 +218,8 @@
 // One byte for battery voltage.
 #define REC_BATTERY 37
 
-// One byte for vacuum exception resume status.
-#define REC_VACUUM_EXCEPTION_RESUME 38
+// One byte reserved.
+#define REC_RESERVED 38
 
 // One byte for over current signal.
 // bit 0 for vacuum over current.
@@ -244,6 +248,8 @@
 #define WORK_MODE 				2
 #define IDLE_MODE 				3
 #define CHARGE_MODE 			4
+#define SERIAL_TEST_MODE		5
+#define ALARM_ERROR_MODE		6
 
 #define DUMMY_DOWNLINK_OFFSET		2
 #define KEY_DOWNLINK_OFFSET			9
@@ -268,18 +274,13 @@
 
 #define DI		0x07
 
-extern pthread_mutex_t serial_data_ready_mtx;
-extern pthread_cond_t serial_data_ready_cond;
-
-extern boost::mutex g_send_stream_mutex;
-
 class Serial
 {
 public:
 	Serial();
-	~Serial() = default;
+	~Serial();
 
-	bool init(const char* port,int baudrate);
+	bool init(const std::string port,int baudrate);
 
 	int close();
 
@@ -289,17 +290,19 @@ public:
 
 	void isMainBoardSleep(bool val)
 	{
-		is_sleep_ = val;
+		is_main_board_sleep_ = val;
 	}
 
 	bool isMainBoardSleep() const
 	{
-		return is_sleep_;
+		return is_main_board_sleep_;
 	}
 
-	int write(uint8_t len, uint8_t *buf);
+	int write(uint8_t *buf, uint8_t len);
 
-	int read(int len,uint8_t *buf);
+	int read(uint8_t *buf, int len);
+
+	void resetSendStream(void);
 
 	void setSendData(uint8_t seq, uint8_t val);
 
@@ -316,7 +319,7 @@ public:
 	uint8_t calBufCrc8(const uint8_t *inBuf, uint32_t inBufSz);
 
 	//										   1    2    3    4    5    6    7    8    9   10
-	uint8_t receive_stream[RECEI_LEN]={		0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+	uint8_t receive_stream[REC_LEN]={		0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 											0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 											0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 											0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
@@ -324,21 +327,23 @@ public:
 	uint8_t send_stream[SEND_LEN]={0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x64,0x00,0x02,0x00,0x00,0xcc,0x33};
 
 	void receive_routine_cb();
-	void send_routine_cb();
 
+	void sendData();
+
+	void send_routine_cb();
 private:
 
-	bool is_sleep_{};
+	bool is_main_board_sleep_{};
 
 	int	crport_fd_;
-	bool serial_init_done_;
+	bool serial_port_ready_;
 	struct termios orgopt_, curopt_;
 	int bardrate_;
+	std::string port_{};
 
 	// For crc8
 	int made_table_ = 0;
 	uint8_t crc8_table_[256];	/* 8-bit table */
-
 };
 
 extern Serial serial;

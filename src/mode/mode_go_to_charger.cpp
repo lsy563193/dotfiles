@@ -15,7 +15,7 @@ ModeGoToCharger::ModeGoToCharger()
 
 	serial.setMainBoardMode(WORK_MODE);
 	speaker.play(VOICE_BACK_TO_CHARGER, false);
-	led.setMode(LED_STEADY, LED_ORANGE);
+	key_led.setMode(LED_STEADY, LED_ORANGE);
 	sp_action_.reset(new ActionOpenGyro);
 	action_i_ = ac_open_gyro;
 }
@@ -43,17 +43,24 @@ bool ModeGoToCharger::isExit()
 
 bool ModeGoToCharger::isFinish()
 {
+	if ((action_i_ != ac_exception_resume) && isExceptionTriggered())
+	{
+		ROS_WARN("%s %d: Exception triggered.", __FUNCTION__, __LINE__);
+		action_i_ = ac_exception_resume;
+		genNextAction();
+	}
+
 	if(sp_action_->isFinish())
 	{
 		PP_INFO();
-		sp_action_.reset(getNextAction());
+		action_i_ = getNextAction();
+		genNextAction();
 		if(sp_action_ == nullptr)
 		{
 			if(ev.charge_detect)
 				setNextMode(md_charge);
 			else
 				setNextMode(md_idle);
-			ev.charge_detect = 0;
 			return true;
 		}
 	}
@@ -61,25 +68,24 @@ bool ModeGoToCharger::isFinish()
 	return false;
 }
 
-IAction* ModeGoToCharger::getNextAction()
+int ModeGoToCharger::getNextAction()
 {
 	PP_INFO();
-	if(action_i_ == ac_open_gyro)
+	if(action_i_ == ac_open_gyro || (action_i_ == ac_exception_resume && !ev.fatal_quit))
 	{
-		action_i_ = ac_go_to_charger;
-		led.setMode(LED_STEADY, LED_ORANGE);
+		key_led.setMode(LED_STEADY, LED_ORANGE);
 		brush.normalOperate();
 		vacuum.setTmpMode(Vac_Normal);
-		return new MoveTypeGoToCharger();
+		return ac_go_to_charger;
 	}
-	return nullptr;
+	return ac_null;
 }
 
 void ModeGoToCharger::keyClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: key clean.", __FUNCTION__, __LINE__);
 
-	beeper.play_for_command(VALID);
+	beeper.beepForCommand(VALID);
 	wheel.stop();
 
 	// Wait for key released.
@@ -107,7 +113,7 @@ void ModeGoToCharger::remoteClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: remote clean.", __FUNCTION__, __LINE__);
 
-	beeper.play_for_command(VALID);
+	beeper.beepForCommand(VALID);
 	wheel.stop();
 	ev.key_clean_pressed = true;
 	remote.reset();

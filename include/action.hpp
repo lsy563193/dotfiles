@@ -65,9 +65,10 @@ public:
 	void run() override;
 
 private:
-	double align_angle = 0.0;
+	double align_radian = 0.0;
 	double distance;
 	bool isLeft = true;
+	double wait_laser_timer_{};
 };
 
 class ActionOpenSlam :public IAction
@@ -76,6 +77,9 @@ public:
 	ActionOpenSlam();
 	bool isFinish();
 	void run();
+private:
+	double wait_slam_timer_{1.0};
+	bool is_slam_start_{false};
 };
 
 class ActionSleep :public IAction

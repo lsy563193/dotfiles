@@ -77,7 +77,7 @@ void CleanModeFollowWall::keyClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: key clean.", __FUNCTION__, __LINE__);
 
-	beeper.play_for_command(VALID);
+	beeper.beepForCommand(VALID);
 	wheel.stop();
 
 	// Wait for key released.
@@ -87,7 +87,7 @@ void CleanModeFollowWall::keyClean(bool state_now, bool state_last)
 		if (!long_press && key.getPressTime() > 3)
 		{
 			ROS_WARN("%s %d: key clean long pressed.", __FUNCTION__, __LINE__);
-			beeper.play_for_command(VALID);
+			beeper.beepForCommand(VALID);
 			long_press = true;
 		}
 		usleep(20000);
@@ -121,24 +121,24 @@ void CleanModeFollowWall::remoteMax(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
 	if(isStateClean())
 	{
-		beeper.play_for_command(VALID);
+		beeper.beepForCommand(VALID);
 		vacuum.switchToNext();
 	}
 	else if (isStateGoHomePoint() || isStateGoToCharger())
 	{
-		beeper.play_for_command(VALID);
+		beeper.beepForCommand(VALID);
 		vacuum.switchToNext();
 		vacuum.setTmpMode(Vac_Normal);
 	}
 	else
-		beeper.play_for_command(INVALID);
+		beeper.beepForCommand(INVALID);
 	remote.reset();
 }
 void CleanModeFollowWall::remoteClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: remote clean.", __FUNCTION__, __LINE__);
 
-	beeper.play_for_command(VALID);
+	beeper.beepForCommand(VALID);
 	wheel.stop();
 	ev.key_clean_pressed = true;
 	remote.reset();
@@ -149,13 +149,13 @@ void CleanModeFollowWall::switchInStateInit() {
 	PP_INFO();
 	action_i_ = ac_null;
 	sp_action_ = nullptr;
-	sp_state = state_trapped;
+	sp_state = state_folllow_wall;
 	is_isolate = true;
 	is_closed = true;
 	closed_count_ = 0;
 	isolate_count_ = 0;
 	sp_state->init();
-	led.setMode(LED_STEADY, LED_GREEN);
+	key_led.setMode(LED_STEADY, LED_GREEN);
 }
 
 //bool CleanModeFollowWall::moveTypeFollowWallIsFinish(IMoveType *p_mt,bool is_new_cell) {
@@ -169,7 +169,7 @@ void CleanModeFollowWall::switchInStateInit() {
 //	return false;
 //}
 
-void CleanModeFollowWall::switchInStateTrapped() {
+void CleanModeFollowWall::switchInStateFollowWall() {
 	sp_state = state_go_home_point;
 	ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_points_.size());
 	speaker.play(VOICE_BACK_TO_CHARGER, true);

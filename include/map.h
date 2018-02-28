@@ -19,7 +19,7 @@
 
 typedef std::deque<Point_t> Points;
 
-typedef enum {
+/*typedef */enum {
 	// The sequence of CLEAN_MAP value must be UNCLEAN < CLEANED < MAP_BLOCKED < SLAM_MAP_BLOCKED
   UNCLEAN  = 0,
   SLAM_MAP_UNKNOWN = 0,
@@ -30,11 +30,12 @@ typedef enum {
   BLOCKED_BUMPER = 3,
   BLOCKED_CLIFF = 4,
   BLOCKED_RCON = 5,
-  BLOCKED_LIDAR = 6,
-  BLOCKED_TILT = 7,
-  BLOCKED_SLIP = 8,
-  SLAM_MAP_BLOCKED = 9,
-  BLOCKED_BOUNDARY = 10,
+  BLOCKED_TMP_RCON = 6,
+  BLOCKED_LIDAR = 7,
+  BLOCKED_TILT = 8,
+  BLOCKED_SLIP = 9,
+  SLAM_MAP_BLOCKED = 10,
+  BLOCKED_BOUNDARY = 11,
   TARGET_CLEAN = 13,
   TARGET = 14,
   COST_NO = 0,
@@ -45,19 +46,8 @@ typedef enum {
   COST_5 = 5,
   COST_PATH = 6,
   COST_HIGH = 7,
-} CellState;
-
-//enum {
-  const double MAP_POS_X = 0;
-  const double MAP_PX_PY = PI/4;
-  const double MAP_POS_Y = PI/2;
-  const double MAP_NS_PY = PI*3/4;
-  const double MAP_NEG_X = PI;
-  const double MAP_NX_NY =-PI*3/4;
-  const double MAP_NEG_Y =-PI/2;
-  const double MAP_PX_NY =-PI/4;
-  const double MAP_NONE = 2*PI;
-//} DIR;
+};
+typedef int CellState;
 
 class GridMap {
 public:
@@ -141,12 +131,13 @@ public:
 
 	uint8_t saveSlip();
 
-	uint8_t saveChargerArea(const Cell_t homepoint);
+	uint8_t setChargerArea(const Points homepoint);
 
 	uint8_t saveBlocks(bool is_linear, bool is_save_rcon);
-
+	void	setBlockWithBound(Cell_t min, Cell_t max, CellState state, bool with_block);
 	void setCleaned(std::deque<Cell_t> cells);
 	void setExplorationCleaned();
+	void setCircleMarkers(Point_t point,bool cover_block,int radian,CellState cell_state);
 
 	uint32_t getCleanedArea();
 
@@ -239,6 +230,7 @@ public:
 	bool isFrontBlockBoundary(int dx);
 
 	void generateSPMAP(const Cell_t &curr, Cells &target_list);
+//	void generateSPMAP(const Cell_t &curr);
 /*
  * Function to find the x/y range of the Map or wfMap, if the range is to small,
  * use the offset of those value to 3.
@@ -251,7 +243,8 @@ public:
  * @return
  */
 
-	bool isFrontBlocked(void);
+	bool isFrontBlocked(Dir_t dir);
+	bool isFrontSlamBlocked(void);
 
 	BoundingBox2 generateBound()
 	{
@@ -266,9 +259,11 @@ public:
 	}
 	void getMapRange(uint8_t id, int16_t *x_range_min, int16_t *x_range_max, int16_t *y_range_min, int16_t *y_range_max);
 
+	bool isOutOfMap(const Cell_t &cell);
+	bool isOutOfTargetRange(const Cell_t &cell);
 	bool cellIsOutOfRange(Cell_t cell);
 
-	void colorPrint(char *outString, int16_t y_min, int16_t y_max);
+	void colorPrint(const char *outString, int16_t y_min, int16_t y_max);
 	void print(uint8_t id, int16_t endx, int16_t endy);
 
 private:

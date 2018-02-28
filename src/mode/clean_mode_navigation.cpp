@@ -7,6 +7,7 @@
 #include <robot.hpp>
 #include <error.h>
 #include <map.h>
+#include <path_algorithm.h>
 #include "mode.hpp"
 //#define NAV_INFO() ROS_INFO("st(%d),ac(%d)", state_i_, action_i_)
 
@@ -63,7 +64,7 @@ bool CleanModeNav::mapMark()
 
 	clean_map_.setBlocks();
 	clean_map_.markRobot(CLEAN_MAP);
-	clean_map_.print(CLEAN_MAP, getPosition().toCell().x, getPosition().toCell().y);
+//	clean_map_.print(CLEAN_MAP, getPosition().toCell().x, getPosition().toCell().y);
 
 	passed_path_.clear();
 	return false;
@@ -121,6 +122,13 @@ bool CleanModeNav::isExit()
 			setNextMode(cm_spot);
 			return true;
 		}
+		else if (ev.cliff_all_triggered)
+		{
+			ev.fatal_quit = true;
+			ROS_WARN("%s %d: Exit for pause and robot lifted up.", __FUNCTION__, __LINE__);
+			setNextMode(md_idle);
+			return true;
+		}
 	}
 
 	if (ev.fatal_quit || ev.key_long_pressed || sp_action_->isExit())
@@ -141,7 +149,7 @@ bool CleanModeNav::isExit()
 
 /*bool CleanModeNav::moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt)
 {
-	if (sp_state == state_trapped)
+	if (sp_state == state_folllow_wall)
 		return p_mt->isBlockCleared(clean_map_, passed_path_);
 	else
 		return p_mt->isNewLineReach(clean_map_) || p_mt->isOverOriginLine(clean_map_);
@@ -160,7 +168,7 @@ void CleanModeNav::keyClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: key clean.", __FUNCTION__, __LINE__);
 
-	beeper.play_for_command(VALID);
+	beeper.beepForCommand(VALID);
 	wheel.stop();
 
 	// Wait for key released.
@@ -170,7 +178,7 @@ void CleanModeNav::keyClean(bool state_now, bool state_last)
 		if (!long_press && key.getPressTime() > 3)
 		{
 			ROS_WARN("%s %d: key clean long pressed.", __FUNCTION__, __LINE__);
-			beeper.play_for_command(VALID);
+			beeper.beepForCommand(VALID);
 			long_press = true;
 		}
 		usleep(20000);
@@ -201,7 +209,7 @@ void CleanModeNav::remoteClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: remote clean.", __FUNCTION__, __LINE__);
 
-	beeper.play_for_command(VALID);
+	beeper.beepForCommand(VALID);
 	wheel.stop();
 	ev.key_clean_pressed = true;
 	remote.reset();
@@ -211,14 +219,14 @@ void CleanModeNav::remoteDirectionLeft(bool state_now, bool state_last)
 {
 	if (sp_state == state_pause || sp_state == state_spot)
 	{
-		beeper.play_for_command(VALID);
+		beeper.beepForCommand(VALID);
 		ROS_INFO("%s %d: Remote right.", __FUNCTION__, __LINE__);
 		ev.remote_direction_left = true;
 	}
 	/*else if (sp_state == state_clean)
 	{
 		//todo: Just for testing.
-		beeper.play_for_command(VALID);
+		beeper.beepForCommand(VALID);
 		continue_point_ = getPosition();
 		ROS_INFO("%s %d: low battery, battery =\033[33m %dmv \033[0m, continue cell(%d, %d)", __FUNCTION__, __LINE__,
 				 battery.getVoltage(), continue_point_.x, continue_point_.y);
@@ -227,7 +235,7 @@ void CleanModeNav::remoteDirectionLeft(bool state_now, bool state_last)
 	}
 	*/
 	else
-		beeper.play_for_command(INVALID);
+		beeper.beepForCommand(INVALID);
 
 	remote.reset();
 }
@@ -236,12 +244,12 @@ void CleanModeNav::remoteDirectionRight(bool state_now, bool state_last)
 {
 	if (sp_state == state_pause || sp_state == state_spot)
 	{
-		beeper.play_for_command(VALID);
+		beeper.beepForCommand(VALID);
 		ROS_INFO("%s %d: Remote right.", __FUNCTION__, __LINE__);
 		ev.remote_direction_right = true;
 	}
 	else
-		beeper.play_for_command(INVALID);
+		beeper.beepForCommand(INVALID);
 
 	remote.reset();
 }
@@ -250,12 +258,12 @@ void CleanModeNav::remoteDirectionForward(bool state_now, bool state_last)
 {
 	if (sp_state == state_pause || sp_state == state_spot)
 	{
-		beeper.play_for_command(VALID);
+		beeper.beepForCommand(VALID);
 		ROS_INFO("%s %d: Remote forward.", __FUNCTION__, __LINE__);
 		ev.remote_direction_forward = true;
 	}
 	else
-		beeper.play_for_command(INVALID);
+		beeper.beepForCommand(INVALID);
 
 	remote.reset();
 }
@@ -264,12 +272,12 @@ void CleanModeNav::remoteWallFollow(bool state_now, bool state_last)
 {
 	if (sp_state == state_pause)
 	{
-		beeper.play_for_command(VALID);
+		beeper.beepForCommand(VALID);
 		ROS_INFO("%s %d: Remote follow wall.", __FUNCTION__, __LINE__);
 		ev.remote_follow_wall = true;
 	}
 	else
-		beeper.play_for_command(INVALID);
+		beeper.beepForCommand(INVALID);
 
 	remote.reset();
 }
@@ -279,10 +287,10 @@ void CleanModeNav::remoteSpot(bool state_now, bool state_last)
 	if (sp_state == state_clean || sp_state == state_spot || sp_state == state_pause)
 	{
 		ev.remote_spot = true;
-		beeper.play_for_command(VALID);
+		beeper.beepForCommand(VALID);
 	}
 	else
-		beeper.play_for_command(INVALID);
+		beeper.beepForCommand(INVALID);
 
 	remote.reset();
 }
@@ -292,17 +300,17 @@ void CleanModeNav::remoteMax(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
 	if(isStateClean() || isStateResumeLowBatteryCharge())
 	{
-		beeper.play_for_command(VALID);
+		beeper.beepForCommand(VALID);
 		vacuum.switchToNext();
 	}
 	else if (isStateGoHomePoint() || isStateGoToCharger())
 	{
-		beeper.play_for_command(VALID);
+		beeper.beepForCommand(VALID);
 		vacuum.switchToNext();
 		vacuum.setTmpMode(Vac_Normal);
 	}
 	else
-		beeper.play_for_command(INVALID);
+		beeper.beepForCommand(INVALID);
 	remote.reset();
 }
 
@@ -322,12 +330,25 @@ void CleanModeNav::chargeDetect(bool state_now, bool state_last)
 {
 	if (!ev.charge_detect)
 	{
-		if (isStateInit() && action_i_ == ac_back_form_charger && sp_action_->isTimeUp())
+		if (isStateInit() && action_i_ == ac_back_form_charger)
 		{
-			ROS_WARN("%s %d: Switch is not on!.", __FUNCTION__, __LINE__);
-			ev.charge_detect = charger.getChargeStatus();
-			ev.fatal_quit = true;
-			switch_is_off_ = true;
+			if (sp_action_->isTimeUp())
+			{
+				if (cliff.getStatus() == BLOCK_ALL)
+				{
+					// If switch is not on, the cliff value should be around 0.
+					ROS_WARN("%s %d: Switch is not on!.", __FUNCTION__, __LINE__);
+					ev.charge_detect = charger.getChargeStatus();
+					ev.fatal_quit = true;
+					switch_is_off_ = true;
+				}
+				else
+				{
+					ROS_WARN("%s %d: Charge detect!.", __FUNCTION__, __LINE__);
+					ev.charge_detect = charger.getChargeStatus();
+					ev.fatal_quit = true;
+				}
+			}
 		}
 		else if (charger.isDirected())
 		{
@@ -352,19 +373,24 @@ bool CleanModeNav::updateActionInStateInit() {
 		// If it is the starting of navigation mode, paused_odom_angle_ will be zero.
 		odom.setRadianOffset(paused_odom_angle_);
 
-		vacuum.setLastMode();
-		brush.normalOperate();
-
-		if (charger.isOnStub())
+		if (charger.isOnStub()){
 			action_i_ = ac_back_form_charger;
-		else
+			found_charger_ = true;
+		}
+		else{
 			action_i_ = ac_open_lidar;
+			vacuum.setLastMode();
+			brush.normalOperate();
+		}
 	} else if (action_i_ == ac_back_form_charger)
 	{
 		if (!has_aligned_and_open_slam_)
 			// Init odom position here.
 			robot::instance()->initOdomPosition();
+
 		action_i_ = ac_open_lidar;
+		vacuum.setLastMode();
+		brush.normalOperate();
 		setHomePoint();
 	} else if (action_i_ == ac_open_lidar)
 	{
@@ -372,10 +398,16 @@ bool CleanModeNav::updateActionInStateInit() {
 			action_i_ = ac_align;
 		else
 			return false;
-	} else if (action_i_ == ac_align)
+	} else if (action_i_ == ac_align){
 		action_i_ = ac_open_slam;
-	else if (action_i_ == ac_open_slam)
+
+	}
+	else if (action_i_ == ac_open_slam){
+		//after back_from_charger and line alignment
+		//set charge position
+		ACleanMode::checkShouldMarkCharger((float)odom.getRadianOffset(),0.6);
 		return false;
+	}
 	genNextAction();
 	return true;
 }
@@ -411,35 +443,33 @@ bool CleanModeNav::isSwitchByEventInStateClean() {
 
 bool CleanModeNav::updateActionInStateClean(){
 	sp_action_.reset();//to mark in destructor
-	pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
-	old_dir_ = new_dir_;
+//	pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
+	old_dir_ = iterate_point_.dir;
+	if(action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
+		old_dir_ = MAP_ANY;
 	if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
-
-//		ROS_ERROR("old_dir_(%d)", old_dir_);
-		new_dir_ = plan_path_.front().th;
-//		ROS_ERROR("new_dir_(%d)", new_dir_);
+		pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
+		iterate_point_ = plan_path_.front();
 		plan_path_.pop_front();
 		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
+		auto npa = boost::dynamic_pointer_cast<NavCleanPathAlgorithm>(clean_path_algorithm_);
 
-		auto start = getPosition().toCell();
-		auto delta_y = plan_path_.back().toCell().y - start.y;
-		ROS_INFO("%s,%d: path size(%u), old_dir_(%f), new_dir_(%f), bumper(%d), cliff(%d), lidar(%d), delta_y(%f)",
-						 __FUNCTION__, __LINE__, plan_path_.size(), radian_to_degree(old_dir_), radian_to_degree(new_dir_), ev.bumper_triggered,
-						 ev.cliff_triggered, ev.lidar_triggered, delta_y);
-		if (!isXAxis(old_dir_) // If last movement is not x axis linear movement, should not follow wall.
-				|| plan_path_.size() > 2 ||
-				(!ev.bumper_triggered && !ev.cliff_triggered && !ev.lidar_triggered)
-				|| delta_y == 0 || std::abs(delta_y) > 2) {
-			action_i_ = ac_linear;
-		}
-		else
+		if (old_dir_ != MAP_ANY && clean_map_.isFrontBlocked(old_dir_)
+				&& (npa->curr_filter_ == &npa->filter_p0_1t_xp
+						 || npa->curr_filter_ == &npa->filter_p0_1t_xn
+						 || npa->curr_filter_ == &npa->filter_p2
+						 || npa->curr_filter_ == &npa->filter_p1
+						 || npa->curr_filter_ == &npa->filter_n2
+						 || npa->curr_filter_ == &npa->filter_n1)
+				)
 		{
-			delta_y = plan_path_.back().toCell().y - start.y;
-			bool is_left = isPos(old_dir_) ^ delta_y > 0;
-//			ROS_INFO("%s,%d: target:, 1_left_0_right(%d = %d ^ %d)",
-//							 __FUNCTION__, __LINE__, is_left, isPos(old_dir_), delta_y);
+			auto toward_pos = isXAxis(old_dir_) ? npa->curr_filter_->towardPos(): (iterate_point_.toCell().x - plan_path_.back().toCell().x) > 0;
+			bool is_left = isPos(old_dir_) ^ toward_pos;
 			action_i_ = is_left ? ac_follow_wall_left : ac_follow_wall_right;
 		}
+		else
+			action_i_ = ac_linear;
+
 		genNextAction();
 		return true;
 	}
@@ -450,7 +480,8 @@ void CleanModeNav::switchInStateClean() {
 	if (clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell())) {
 		ROS_WARN("%s,%d: enter state trapped",__FUNCTION__,__LINE__);
 		sp_saved_states.push_back(sp_state);
-		sp_state = state_trapped;
+		sp_state = state_folllow_wall;
+		is_trapped_ = true;
 		is_isolate = true;
 		is_closed = true;
 		closed_count_ = 0;
@@ -483,6 +514,7 @@ bool CleanModeNav::isSwitchByEventInStateGoHomePoint()
 }
 
 // ------------------State go to charger--------------------
+
 bool CleanModeNav::isSwitchByEventInStateGoToCharger()
 {
 	return checkEnterPause() || ACleanMode::isSwitchByEventInStateGoToCharger();
@@ -613,9 +645,9 @@ bool CleanModeNav::updateActionInStatePause()
 }
 
 // ------------------State trapped------------------
-bool CleanModeNav::isSwitchByEventInStateTrapped()
+bool CleanModeNav::isSwitchByEventInStateFollowWall()
 {
-	return ACleanMode::isSwitchByEventInStateTrapped() || checkEnterPause();
+	return ACleanMode::isSwitchByEventInStateFollowWall() || checkEnterPause();
 }
 
 // ------------------State charge--------------------
@@ -686,12 +718,12 @@ bool CleanModeNav::updateActionInStateResumeLowBatteryCharge()
 //		clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
 //		mapMark();
 		sp_action_.reset();
-		old_dir_ = new_dir_;
+		old_dir_ = iterate_point_.dir;
 		ROS_ERROR("old_dir_(%d)", old_dir_);
 		clean_path_algorithm_->generateShortestPath(clean_map_, getPosition(), continue_point_, old_dir_, plan_path_);
 		if (!plan_path_.empty()) {
-			new_dir_ = plan_path_.front().th;
-			ROS_ERROR("new_dir_(%d)", new_dir_);
+			iterate_point_ = plan_path_.front();
+			ROS_ERROR("start_point_.dir(%d)", iterate_point_.dir);
 			plan_path_.pop_front();
 			clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
 			action_i_ = ac_linear;

@@ -26,15 +26,19 @@ Point_t MovementFollowPointLinear::_calcTmpTarget()
 {
 	auto p_mode = dynamic_cast<ACleanMode*> (sp_mt_->sp_mode_);
 	auto tmp_target_ = p_mode->plan_path_.front();
-	auto &tmp_target_xy = (isXAxis(p_mode->new_dir_)) ? tmp_target_.x : tmp_target_.y;
-	auto curr_xy = (isXAxis(p_mode->new_dir_)) ? getPosition().x : getPosition().y;
+
+	if(isAny(p_mode->iterate_point_.dir))
+		return tmp_target_;
+
+	auto &tmp_target_xy = (isXAxis(p_mode->iterate_point_.dir)) ? tmp_target_.x : tmp_target_.y;
+	auto curr_xy = (isXAxis(p_mode->iterate_point_.dir)) ? getPosition().x : getPosition().y;
 //	ROS_INFO("curr_xy(%f), target_xy(%f)", curr_xy, tmp_target_xy);
 	auto dis = std::min(std::abs(curr_xy - tmp_target_xy),  (CELL_SIZE * 1.5f /*+ CELL_COUNT_MUL*/));
-	if (!isPos(p_mode->new_dir_))
+	if (!isPos(p_mode->iterate_point_.dir))
 		dis *= -1;
 	tmp_target_xy = curr_xy + dis;
 //	ROS_INFO("dis(%d)",dis);
-//	ROS_WARN("curr(%f,%d, target(%f,%f), dir(%f) ", getPosition().x,getPosition().y, tmp_target_.x,tmp_target_.y,p_mode->new_dir_);
+//	ROS_WARN("curr(%f,%d, target(%f,%f), dir(%f) ", getPosition().x,getPosition().y, tmp_target_.x,tmp_target_.y,p_mode->start_point_.dir);
 //	ROS_WARN("tmp(%f,%f)",tmp_target_.x, tmp_target_.y);
 	return tmp_target_;
 }
@@ -57,16 +61,21 @@ bool MovementFollowPointLinear::isFinish()
 	return AMovementFollowPoint::isFinish() || sp_mt_->shouldMoveBack() || sp_mt_->isLidarStop();
 }
 
-bool MovementFollowPointLinear::isNear()
+uint8_t MovementFollowPointLinear::isNear()
 {
-	bool near_blocked_in_slam_map = slam_grid_map.isFrontBlocked();
-//	if (near_blocked_in_slam_map)
-//		ROS_ERROR("%s %d: Near blocks in slam_map, slow down.", __FUNCTION__, __LINE__);
-//	auto curr_p = getPosition();
-//	auto distance = two_points_distance(curr_p.x, curr_p.y, s_target_p.x, s_target_p.y);
+	bool near_blocked_in_slam_map = slam_grid_map.isFrontSlamBlocked();
 	auto obstacle_distance_front = lidar.getObstacleDistance(0,ROBOT_RADIUS);
-//	ROS_INFO("dis(%lf)", obstacle_distance_front);
-	return obs.getStatus() > 0 || /*(distance < SLOW_DOWN_DISTANCE) ||*/  (obstacle_distance_front < 0.25) || near_blocked_in_slam_map;
+	auto b_obs = obs.getStatus() > 0;
+	auto b_lidar = (obstacle_distance_front < 0.25);
+	auto b_map = near_blocked_in_slam_map;
+	if (b_obs || b_lidar) {
+//		ROS_WARN("slowdown: obs(%d), lidar(%d), map(%d)", b_obs, b_lidar, b_map);
+		return 1;
+	} else if (b_map){
+		return 2;
+	} else {
+		return 0;
+	}
 }
 
 //Point_t MovementFollowPointLinear::_calcTmpTargetRealTime()
