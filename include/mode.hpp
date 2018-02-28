@@ -413,7 +413,7 @@ public:
 
 	State *state_init = new StateInit();
 	State *state_clean = new StateClean();
-	State *state_exception_resume = new ExceptionResume();
+	State *state_exception_resume = new StateExceptionResume();
 	State *state_exploration = new StateExploration();
 
 	Points passed_path_{};

@@ -32,13 +32,13 @@ MoveTypeFollowWall::MoveTypeFollowWall(bool is_left)
 
 MoveTypeFollowWall::~MoveTypeFollowWall()
 {
+	wheel.stop();
 	if(sp_mode_ != nullptr){
 		auto p_mode = dynamic_cast<ACleanMode*> (sp_mode_);
 		p_mode->clean_map_.saveBlocks(p_mode->action_i_ == p_mode->ac_linear, p_mode->sp_state == p_mode->state_clean);
 		p_mode->mapMark();
 	}
 	ROS_INFO("%s %d: Exit move type follow wall.", __FUNCTION__, __LINE__);
-	wheel.stop();
 }
 
 bool MoveTypeFollowWall::isFinish()
@@ -404,8 +404,8 @@ bool MoveTypeFollowWall::isOverOriginLine(GridMap &map)
 {
 	auto curr = getPosition();
 	auto target_point_ = dynamic_cast<ACleanMode*>(sp_mode_)->plan_path_.back();
-	if ((target_point_.y > start_point_.y && (start_point_.y - curr.y) > CELL_SIZE/4)
-		|| (target_point_.y < start_point_.y && (curr.y - start_point_.y) > CELL_SIZE/4))
+	if ((target_point_.y > start_point_.y && (start_point_.y - curr.y) > CELL_SIZE / 6)
+		|| (target_point_.y < start_point_.y && (curr.y - start_point_.y) > CELL_SIZE / 6))
 	{
 //		ROS_WARN("origin(%d,%d) curr_p(%d, %d), target_point__(%d, %d)",start_point_.x, start_point_.y,  curr.x, curr.y, target_point_.x, target_point_.y);
 //		auto target_angle = (target_point_.y > start_point_.y) ? -900 : 900;
