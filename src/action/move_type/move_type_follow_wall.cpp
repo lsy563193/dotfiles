@@ -13,6 +13,7 @@ MoveTypeFollowWall::MoveTypeFollowWall(Points remain_path, bool is_left)
 {
 	ROS_INFO("%s %d: Entering move type %s follow wall.", __FUNCTION__, __LINE__,
 			 is_left ? "left" : "right");
+	remain_path.pop_front();
 	remain_path_ = remain_path;
 	auto p_mode = dynamic_cast<ACleanMode*> (sp_mode_);
 	is_left_ = is_left;

@@ -11,6 +11,7 @@
 
 MoveTypeLinear::MoveTypeLinear(Points remain_path){
 	resetTriggeredValue();
+	remain_path.pop_front();
 	remain_path_ = remain_path;
 	auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
 	auto target_point_ = remain_path_.front();

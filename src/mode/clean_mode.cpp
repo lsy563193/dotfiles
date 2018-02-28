@@ -1135,7 +1135,7 @@ bool ACleanMode::updateActionInStateGoHomePoint()
 	{
 		// New path to home cell is generated.
 		iterate_point_ = plan_path_.front();
-		plan_path_.pop_front();
+//		plan_path_.pop_front();
 		go_home_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
 		pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 		should_go_to_charger_ = false;
@@ -1226,7 +1226,7 @@ bool ACleanMode::updateActionInStateSpot() {
 		ROS_ERROR("iterate_point_.dir(%d)", iterate_point_.dir);
 //		PP_INFO();
 		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
-		plan_path_.pop_front();
+//		plan_path_.pop_front();
 		action_i_ = ac_linear;
 		genNextAction();
 		return true;
@@ -1303,7 +1303,7 @@ bool ACleanMode::updateActionInStateExploration() {
 		action_i_ = ac_linear;
 		iterate_point_ = plan_path_.front();
 		ROS_WARN("start_point_.dir(%d)", iterate_point_.dir);
-		plan_path_.pop_front();
+//		plan_path_.pop_front();
 		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
 		pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 		genNextAction();

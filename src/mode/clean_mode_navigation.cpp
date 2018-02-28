@@ -450,7 +450,7 @@ bool CleanModeNav::updateActionInStateClean(){
 	if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
 		pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 		iterate_point_ = plan_path_.front();
-		plan_path_.pop_front();
+//		plan_path_.pop_front();
 		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
 		auto npa = boost::dynamic_pointer_cast<NavCleanPathAlgorithm>(clean_path_algorithm_);
 
@@ -724,7 +724,7 @@ bool CleanModeNav::updateActionInStateResumeLowBatteryCharge()
 		if (!plan_path_.empty()) {
 			iterate_point_ = plan_path_.front();
 			ROS_ERROR("start_point_.dir(%d)", iterate_point_.dir);
-			plan_path_.pop_front();
+//			plan_path_.pop_front();
 			clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
 			action_i_ = ac_linear;
 			genNextAction();
