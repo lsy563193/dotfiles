@@ -532,7 +532,7 @@ uint8_t GridMap::setRcon()
 uint8_t GridMap::setFollowWall(bool is_left,const Points& passed_path)
 {
 	uint8_t block_count = 0;
-	if (!passed_path.empty())
+	if (!passed_path.empty() && (temp_bumper_cells.empty() || temp_obs_cells.empty() || temp_rcon_cells.empty() || temp_cliff_cells.empty()) || temp_lidar_cells.empty())
 	{
 		std::string msg = "cell:";
 		auto dy = is_left ? 2 : -2;

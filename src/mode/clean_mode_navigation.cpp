@@ -463,7 +463,7 @@ bool CleanModeNav::updateActionInStateClean(){
 						 || npa->curr_filter_ == &npa->filter_n1)
 				)
 		{
-			auto toward_pos = isXAxis(old_dir_) ? npa->curr_filter_->towardPos(): (iterate_point_.toCell().x - plan_path_.back().toCell().x) < 0;
+			auto toward_pos = isXAxis(old_dir_) ? npa->curr_filter_->towardPos(): (iterate_point_.toCell().x - plan_path_.back().toCell().x) > 0;
 			bool is_left = isPos(old_dir_) ^ toward_pos;
 			action_i_ = is_left ? ac_follow_wall_left : ac_follow_wall_right;
 		}
