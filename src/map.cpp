@@ -1205,8 +1205,6 @@ void GridMap::generateSPMAP(const Cell_t& curr_cell,Cells& targets)
 	Queue queue;
 	setCell(COST_MAP, curr_cell.x, curr_cell.y, 1);
 	queue.emplace(1, curr_cell);
-	bool is_found = false;
-//	map.print(CLEAN_MAP,curr.x, curr.y);
 
 	while (!queue.empty())
 	{
@@ -1231,20 +1229,15 @@ void GridMap::generateSPMAP(const Cell_t& curr_cell,Cells& targets)
 					continue;
 				if (getCell(COST_MAP, neighbor.x, neighbor.y) == 0) {
 					if (isBlockAccessible(neighbor.x, neighbor.y)) {
-						if(getCell(CLEAN_MAP, neighbor.x, neighbor.y) == UNCLEAN)
+						if(getCell(CLEAN_MAP, neighbor.x, neighbor.y) == UNCLEAN && neighbor.y % 2 == 0)
 							targets.push_back(neighbor);
 						queue.emplace(cost+1, neighbor);
-						setCell(COST_MAP, neighbor.x, neighbor.y, CellState(cost+1));
-//						print(COST_MAP, curr_cell, 0,0);
+						setCell(COST_MAP, neighbor.x, neighbor.y, cost+1);
 					}
-//					else
-//						setCell(COST_MAP, neighbor.x, neighbor.y, 1);
 				}
 			}
 		}
 	}
-//	print(CLEAN_MAP,curr_cell, 0,0);
-//	print(COST_MAP,curr_cell, 0,0);
 }
 
 bool GridMap::isFrontBlockBoundary(int dx)

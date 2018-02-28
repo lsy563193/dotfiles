@@ -49,14 +49,16 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 	plan_path.clear();
 	auto curr_cell = curr.toCell();
 	ROS_INFO("Step 1: Find possible plan_path in same lane.");
-	auto path = findTargetInSameLane(map, curr_cell);
-	if (!path.empty())
-	{
-		plan_path = cells_generate_points(path);
-		// Congratulation!! plan_path is generated successfully!!
-		map.print(CLEAN_MAP, path.back().x, path.back().y);
-		curr_filter_ = nullptr;
-		return true;
+	Cells path{};
+	if(curr_cell.y % 2==0) {
+		path = findTargetInSameLane(map, curr_cell);
+		if (!path.empty()) {
+			plan_path = cells_generate_points(path);
+			// Congratulation!! plan_path is generated successfully!!
+			map.print(CLEAN_MAP, path.back().x, path.back().y);
+			curr_filter_ = nullptr;
+			return true;
+		}
 	}
 
 	ROS_INFO("Step 2: Find all possible plan_path at the edge of cleaned area and filter plan_path in same lane.");
@@ -69,7 +71,7 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 
 	targets = std::for_each(targets.begin(), targets.end(),FilterTarget(curr_cell));
 
-//	displayTargetList(targets);
+	displayTargetList(targets);
 
 	if (targets.empty())
 		return false;
@@ -244,11 +246,11 @@ bool NavCleanPathAlgorithm::filterPathsToSelectBestPath(GridMap &map, const Cell
 	}
 	filters.push_back(&filter_p2);
 	filters.push_back(&filter_p3p);
-	filters.push_back(&filter_p1);
+//	filters.push_back(&filter_p1);
 	filters.push_back(&filter_n2);
 	filters.push_back(&filter_p_1t);
 	filters.push_back(&filter_n3n);
-	filters.push_back(&filter_n1);
+//	filters.push_back(&filter_n1);
 	filters.push_back(&filter_n_1t);
 	filters.push_back(&filter_p_1000t);
 	filters.push_back(&filter_n_1000t);
