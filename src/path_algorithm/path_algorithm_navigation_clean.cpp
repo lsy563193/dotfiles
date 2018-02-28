@@ -44,8 +44,6 @@ private:
 
 bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &plan_path)
 {
-
-//	map.print(CLEAN_MAP, curr.toCell().x, curr.toCell().y);
 	plan_path.clear();
 	auto curr_cell = curr.toCell();
 	ROS_INFO("Step 1: Find possible plan_path in same lane.");
@@ -89,10 +87,6 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 	ROS_INFO("Step 6: Fill path with direction.");
 	plan_path = cells_generate_points(path);
 
-	// Congratulation!! plan_path is generated successfully!!
-//	path = shortest_path;
-
-//	map.print(COST_MAP, path.back().x,path.back().y);
 	displayCellPath(path);
 	map.print(CLEAN_MAP, path.back().x, path.back().y);
 	return true;
