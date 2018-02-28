@@ -63,7 +63,7 @@ bool MovementFollowPointLinear::isFinish()
 
 uint8_t MovementFollowPointLinear::isNear()
 {
-	bool near_blocked_in_slam_map = slam_grid_map.isFrontBlocked();
+	bool near_blocked_in_slam_map = slam_grid_map.isFrontSlamBlocked();
 	auto obstacle_distance_front = lidar.getObstacleDistance(0,ROBOT_RADIUS);
 	auto b_obs = obs.getStatus() > 0;
 	auto b_lidar = (obstacle_distance_front < 0.25);
