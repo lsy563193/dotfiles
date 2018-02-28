@@ -454,24 +454,18 @@ bool CleanModeNav::updateActionInStateClean(){
 		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
 		auto npa = boost::dynamic_pointer_cast<NavCleanPathAlgorithm>(clean_path_algorithm_);
 
-		if (old_dir_ != MAP_ANY && (npa->curr_filter_ == &npa->filter_p0_1t_xp
-				|| npa->curr_filter_ == &npa->filter_p0_1t_xn
-				|| npa->curr_filter_ == &npa->filter_p2
-				|| npa->curr_filter_ == &npa->filter_p1
-				|| npa->curr_filter_ == &npa->filter_n2
-				|| npa->curr_filter_ == &npa->filter_n1)
-						)
+		if (old_dir_ != MAP_ANY && clean_map_.isFrontBlocked(old_dir_)
+				&& (npa->curr_filter_ == &npa->filter_p0_1t_xp
+						 || npa->curr_filter_ == &npa->filter_p0_1t_xn
+						 || npa->curr_filter_ == &npa->filter_p2
+						 || npa->curr_filter_ == &npa->filter_p1
+						 || npa->curr_filter_ == &npa->filter_n2
+						 || npa->curr_filter_ == &npa->filter_n1)
+				)
 		{
-			if(isXAxis(old_dir_))
-			{
-				ROS_INFO("set_follow_dir,x axis()");
-				bool is_left = isPos(old_dir_) ^ npa->curr_filter_->towardPos();
-				action_i_ = is_left ? ac_follow_wall_left : ac_follow_wall_right;
-			}else{
-				ROS_WARN("set_follow_dir,y axis()");
-				bool is_left = isPos(old_dir_) ^  (plan_path_.back().toCell().x - iterate_point_.toCell().x) <0;
-				action_i_ = is_left ? ac_follow_wall_left : ac_follow_wall_right;
-			}
+			auto toward_pos = isXAxis(old_dir_) ? npa->curr_filter_->towardPos(): (iterate_point_.toCell().x - plan_path_.back().toCell().x) > 0;
+			bool is_left = isPos(old_dir_) ^ toward_pos;
+			action_i_ = is_left ? ac_follow_wall_left : ac_follow_wall_right;
 		}
 		else
 			action_i_ = ac_linear;

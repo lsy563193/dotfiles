@@ -532,7 +532,7 @@ uint8_t GridMap::setRcon()
 uint8_t GridMap::setFollowWall(bool is_left,const Points& passed_path)
 {
 	uint8_t block_count = 0;
-	if (!passed_path.empty())
+	if (!passed_path.empty() && (temp_bumper_cells.empty() || temp_obs_cells.empty() || temp_rcon_cells.empty() || temp_cliff_cells.empty()) || temp_lidar_cells.empty())
 	{
 		std::string msg = "cell:";
 		auto dy = is_left ? 2 : -2;
@@ -1480,8 +1480,39 @@ void GridMap::colorPrint(const char *outString, int16_t y_min, int16_t y_max)
 	printf("%s\033[0m\n",y_col.c_str());
 }
 
+bool GridMap::isFrontBlocked(Dir_t dir)
+{
+	bool retval = false;
+	std::vector<Cell_t> d_cells;
+	if(isAny(dir) || (isXAxis(dir) && isPos(dir)))
+		d_cells = {{2,1},{2,0},{2,-1}};
+	else if(isXAxis(dir) && !isPos(dir))
+		d_cells = {{-2,1},{-2,0},{-2,-1}};
+	else if(!isXAxis(dir) && isPos(dir))
+		d_cells = {{1,2},{0,2},{-1,2}};
+	else if(!isXAxis(dir) && !isPos(dir))
+		d_cells = {{1,-2},{0,-2},{-1,-2}};
+	for(auto& d_cell : d_cells)
+	{
+		Cell_t cell;
+		if(isAny(dir))
+		{
+			cell = getPosition().getRelative(d_cell.x * CELL_SIZE, d_cell.y * CELL_SIZE).toCell();
+		}
+		else{
+				cell = getPosition().toCell() + d_cell;
+		}
 
-bool GridMap::isFrontBlocked(void)
+		if(isABlock(cell.x, cell.y))
+		{
+			retval = true;
+			break;
+		}
+	}
+	return retval;
+}
+
+bool GridMap::isFrontSlamBlocked(void)
 {
 	bool retval = false;
 	std::vector<Cell_t> d_cells;

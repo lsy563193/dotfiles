@@ -80,9 +80,9 @@ public:
 //	IMoveType* setNextAction_();
 };
 
-class ExceptionResume: public State {
+class StateExceptionResume: public State {
 public:
-	ExceptionResume()= default;
+	StateExceptionResume()= default;
 	void init() override;
 //	IMoveType* setNextAction_();
 };

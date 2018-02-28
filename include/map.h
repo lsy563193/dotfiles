@@ -243,7 +243,8 @@ public:
  * @return
  */
 
-	bool isFrontBlocked(void);
+	bool isFrontBlocked(Dir_t dir);
+	bool isFrontSlamBlocked(void);
 
 	BoundingBox2 generateBound()
 	{
