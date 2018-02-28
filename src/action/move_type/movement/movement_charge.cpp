@@ -68,7 +68,10 @@ bool MovementCharge::isFinish()
 	if (turn_for_charger_)
 	{
 		if (charger.getChargeStatus())
+		{
 			turn_for_charger_ = false;
+			key_led.setMode(LED_BREATH, LED_ORANGE);
+		}
 		if (ros::Time::now().toSec() - start_turning_time_stamp_ > 3)
 			return true;
 		if (cliff.getStatus() == BLOCK_ALL)
