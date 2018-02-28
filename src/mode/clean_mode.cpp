@@ -1282,6 +1282,7 @@ void ACleanMode::switchInStateExceptionResume()
 		genNextAction();
 		sp_state = sp_saved_states.back();
 		sp_saved_states.pop_back();
+		sp_state->init();
 	}
 	else
 		sp_state = nullptr;
