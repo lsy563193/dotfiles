@@ -11,13 +11,19 @@ ActionOpenSlam::ActionOpenSlam() {
 	ROS_INFO("%s %d: Enter action open slam.", __FUNCTION__, __LINE__);
 	robot::instance()->setTfReady(false);
 	robot::instance()->setBaselinkFrameType(SLAM_POSITION_SLAM_ANGLE);
-	// Wait for a while to make sure the scan data and odom are both updated.
-	// It is important, otherwise, align will failed and slam start with a correction just as align angle.
-	usleep(230000);
-	slam.start();
 }
 
 bool ActionOpenSlam::isFinish(){
+/*	 Wait for a while to make sure the scan data and odom are both updated.
+	 It is important, otherwise, align will failed and slam start with a correction just as align angle.*/
+	if (!((wait_slam_timer_ == 0) || (ros::Time::now().toSec() - start_timer_ > wait_slam_timer_))) {
+//		ROS_WARN("%s %d: Waiting for stable laser", __FUNCTION__, __LINE__);
+		return false;
+	}
+	if (!is_slam_start_) {
+		slam.start();
+		is_slam_start_ = true;
+	}
 	if (slam.isMapReady() && robot::instance()->isTfReady())
 	{
 		// Wait a while to make sure robot has used new base link framework.
