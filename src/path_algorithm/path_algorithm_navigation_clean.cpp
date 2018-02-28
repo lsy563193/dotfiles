@@ -45,7 +45,7 @@ private:
 bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &plan_path)
 {
 
-	map.print(CLEAN_MAP, curr.toCell().x, curr.toCell().y);
+//	map.print(CLEAN_MAP, curr.toCell().x, curr.toCell().y);
 	plan_path.clear();
 	auto curr_cell = curr.toCell();
 	ROS_INFO("Step 1: Find possible plan_path in same lane.");
@@ -91,7 +91,7 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 	// Congratulation!! plan_path is generated successfully!!
 //	path = shortest_path;
 
-	map.print(COST_MAP, path.back().x,path.back().y);
+//	map.print(COST_MAP, path.back().x,path.back().y);
 	map.print(CLEAN_MAP, path.back().x, path.back().y);
 	return true;
 }
@@ -306,20 +306,6 @@ void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path) {
 	printf("\n");
 	ROS_INFO("%s %d: Start optimizing Path", __FUNCTION__, __LINE__);
 
-	ROS_INFO("%s %d: step *.1, check simply last 3 cell ", __FUNCTION__, __LINE__);
-//	PathList paths{};
-//	Cells targets{*(path.end()-4)};
-//	Cells path2{};
-//	findPath(map, path.front(), path.back(), path2, 2);
-//	if(path2.size() < path.size())
-//	{
-//		path.swap(path2);
-//		ROS_INFO("%s %d: step *.1 do success ", __FUNCTION__, __LINE__);
-////		map.print(CLEAN_MAP, path.front(),path.back().x, path.back().y);
-//	}
-	ROS_INFO("%s %d: step *.2, away from obstacles ", __FUNCTION__, __LINE__);
-//	map.print(COST_MAP, path.front(), path.back().x,path.back().y);
-
 	for(auto iterator = path.begin(); iterator != path.end()-3; ++iterator){
 		auto p1 = iterator;
 		auto p2 = iterator+1;
@@ -337,7 +323,7 @@ void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path) {
 //			printf("{%d,%d},",p_it.x, p_it.y);
 			auto p_side2 = p_it + cell_direction_[dir_21]*2;
 			auto p_side3 = p_it + cell_direction_[dir_21]*3;
-			if(map.isABlock(p_side2.x,p_side2.y) || map.isABlock(p_side3.x,p_side3.y))
+			if(map.isABlock(p_side2.x,p_side2.y) || map.isABlock(p_side3.x,p_side3.y) || !map.isBlockCleaned(p_it.x, p_it.y))
 				break;
 		}
 		if(p_it == *p3+cell_direction_[dir_p32] && map.isBlockAccessible(p_it.x, p_it.y))
