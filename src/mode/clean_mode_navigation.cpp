@@ -443,7 +443,7 @@ bool CleanModeNav::isSwitchByEventInStateClean() {
 
 bool CleanModeNav::updateActionInStateClean(){
 	sp_action_.reset();//to mark in destructor
-//	pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
+//	pubCleanMapMarkers(clean_map_, pointsGenerateCells(remain_path_));
 	old_dir_ = iterate_point_.dir;
 	if(action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
 		old_dir_ = MAP_ANY;

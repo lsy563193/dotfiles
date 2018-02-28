@@ -1495,3 +1495,19 @@ bool ACleanMode::generatePath(GridMap &map, const Point_t &curr, const int &last
 bool ACleanMode::isGyroDynamic() {
 	return ros::Time::now().toSec() - time_gyro_dynamic_ > GYRO_DYNAMIC_INTERVAL_TIME;
 }
+
+void ACleanMode::genNextAction() {
+	if(action_i_ == ac_linear || action_i_ == ac_follow_wall_right ||action_i_ == ac_follow_wall_left) {
+		switch (action_i_) {
+			case ac_linear :
+				sp_action_.reset(new MoveTypeLinear(plan_path_));
+				break;
+			case ac_follow_wall_left  :
+			case ac_follow_wall_right :
+				sp_action_.reset(new MoveTypeFollowWall(plan_path_,action_i_ == ac_follow_wall_left));
+				break;
+		}
+	}
+	else
+		Mode::genNextAction();
+}

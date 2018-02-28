@@ -51,9 +51,8 @@ public:
 	bool state_turn{};
 //	Point_t target_point_;
 	int dir_;
+	Points remain_path_{};
 protected:
-//	Cells passed_path_;
-//	Cells tmp_plan_path_;
 	double turn_target_radian_{};
 
 	float back_distance_;
@@ -73,7 +72,7 @@ protected:
 class MoveTypeLinear:public IMoveType
 {
 public:
-	MoveTypeLinear();
+	MoveTypeLinear(Points remain_path);
 	~MoveTypeLinear() override;
 	bool isFinish() override;
 //	IAction* setNextAction();
@@ -95,7 +94,7 @@ public:
 	MoveTypeFollowWall() = delete;
 	~MoveTypeFollowWall() override;
 
-	explicit MoveTypeFollowWall(bool is_left);
+	MoveTypeFollowWall(Points remain_path, bool is_left);
 
 	bool isFinish() override;
 

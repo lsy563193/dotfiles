@@ -14,7 +14,7 @@ IFollowWall::IFollowWall(bool is_left) : previous_(0), seen_charger_counter(0), 
 {
 //	s_start_p = GridMap::getPosition();
 //	auto p_clean_mode = boost::dynamic_pointer_cast<ACleanMode>(sp_mt_->sp_mode_);
-//	s_target_p = GridMap::cellToPoint(p_clean_mode->plan_path_.front());
+//	s_target_p = GridMap::cellToPoint(p_clean_mode->remain_path_.front());
 //	start_timer_ = ros::Time::now().toSec();
 //	fw_tmp_map.reset(CLEAN_MAP);
 }

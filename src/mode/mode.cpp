@@ -87,13 +87,6 @@ void Mode::genNextAction()
 		case ac_pause :
 			sp_action_.reset(new ActionPause);
 			break;
-		case ac_linear :
-			sp_action_.reset(new MoveTypeLinear);
-			break;
-		case ac_follow_wall_left  :
-		case ac_follow_wall_right :
-				sp_action_.reset(new MoveTypeFollowWall(action_i_ == ac_follow_wall_left));
-			break;
 		case ac_go_to_charger :
 			sp_action_.reset(new MoveTypeGoToCharger);
 			break;
