@@ -51,7 +51,7 @@ bool CleanModeSpot::mapMark()
 
 	if (action_i_ == ac_linear) {
 		PP_INFO();
-		clean_map_.setCleaned(pointsGenerateCells(passed_path_));
+		setCleaned(pointsGenerateCells(passed_path_));
 	}
 
 	if (sp_state == state_folllow_wall)

@@ -273,6 +273,8 @@ public:
 
 	void genNextAction();
 	virtual bool mapMark() = 0;
+	void setCleaned(std::deque<Cell_t> cells);
+	void setLinearCleaned();
 	virtual bool markRealTime(){return false;};
 	virtual bool markMapInNewCell(){return false;};
 

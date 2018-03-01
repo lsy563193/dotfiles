@@ -882,44 +882,6 @@ uint8_t GridMap::saveBlocks(bool is_linear, bool is_save_rcon)
 	return block_count;
 }
 
-void GridMap::setCleaned(std::deque<Cell_t> cells)
-{
-	if(cells.empty())
-		return;
-
-	//while robot turn finish and going to a new diretion
-	//may cost location change and cover the block cells
-	//so we append a cell in front of the cell list
-	//to avoid robot clean in the same line again. 
-	auto is_x_pos = cells.front().x > cells.back().x ? false: true;
-	auto x_offset = is_x_pos? -1 : 1;
-	Cell_t cell_front = {int16_t(cells.front().x + x_offset),cells.front().y};
-	cells.push_front(cell_front);
-
-	std::string msg = "Cell:";
-
-	//in the first cell of cells ,we just mark 6 cells
-	for (uint32_t i = 0; i< cells.size(); i++)
-	{
-		Cell_t cell = cells.at(i);
-		msg += "(" + std::to_string(cell.x) + "," + std::to_string(cell.y)   + "),";
-		for( int dx = -(int)ROBOT_SIZE_1_2;dx <=(int)ROBOT_SIZE_1_2;dx++)
-		{
-			if( i == 0)
-				if(is_x_pos && dx == -(int)ROBOT_SIZE_1_2)
-					continue;
-				else if(!is_x_pos && dx == (int)ROBOT_SIZE_1_2)
-					continue;
-			for(int dy = -(int)ROBOT_SIZE_1_2; dy <= (int)ROBOT_SIZE_1_2; dy++)
-			{
-				CellState status = getCell(CLEAN_MAP, cell.x+dx, cell.y+dy);
-				if (status != BLOCKED_TILT && status != BLOCKED_SLIP && status != BLOCKED_RCON)
-					setCell(CLEAN_MAP,cell.x+dx,cell.y+dy, CLEANED);
-			}
-		}
-	}
-}
-
 bool GridMap::markRobot(uint8_t id)
 {
 	int16_t x, y;

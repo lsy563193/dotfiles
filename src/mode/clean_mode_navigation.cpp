@@ -42,11 +42,10 @@ bool CleanModeNav::mapMark()
 {
 	ROS_INFO("%s %d: Start updating map.", __FUNCTION__, __LINE__);
 	clean_path_algorithm_->displayPointPath((passed_path_));
-	clean_map_.setCleaned(pointsGenerateCells(passed_path_));
 
 	if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
 	{
-//		ROS_ERROR("-------------------------------------------------------");
+		setCleaned(pointsGenerateCells(passed_path_));
 		auto start = *passed_path_.begin();
 		passed_path_.erase(std::remove_if(passed_path_.begin(),passed_path_.end(),[&start](Point_t& it){
 			return it.toCell() == start.toCell();
@@ -54,16 +53,17 @@ bool CleanModeNav::mapMark()
 		clean_path_algorithm_->displayPointPath(passed_path_);
 //		ROS_ERROR("-------------------------------------------------------");
 		clean_map_.setFollowWall(action_i_ == ac_follow_wall_left, passed_path_);
+		clean_map_.markRobot(CLEAN_MAP);
 	}
 	else if (sp_state == state_clean)
 	{
+		setLinearCleaned();
 		// Set home cell.
 		if (ev.rcon_triggered)
 			setHomePoint();
 	}
 
 	clean_map_.setBlocks();
-	clean_map_.markRobot(CLEAN_MAP);
 //	clean_map_.print(CLEAN_MAP, getPosition().toCell().x, getPosition().toCell().y);
 
 	passed_path_.clear();
