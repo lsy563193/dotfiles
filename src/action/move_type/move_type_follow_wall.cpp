@@ -8,16 +8,19 @@
 #include <move_type.hpp>
 #include <state.hpp>
 #include <mode.hpp>
+
+#define STAY_SEC_AFTER_BACK (float)0.33
+
 int g_follow_last_follow_wall_dir=0;
-MoveTypeFollowWall::MoveTypeFollowWall(bool is_left)
+MoveTypeFollowWall::MoveTypeFollowWall(Points remain_path, bool is_left)
 {
 	ROS_INFO("%s %d: Entering move type %s follow wall.", __FUNCTION__, __LINE__,
 			 is_left ? "left" : "right");
+	remain_path.pop_front();
+	remain_path_ = remain_path;
 	auto p_mode = dynamic_cast<ACleanMode*> (sp_mode_);
-//	if(! p_clean_mode->plan_path_.empty())
-//		p_clean_mode.target_point_ = p_clean_mode->plan_path_.front();
 	is_left_ = is_left;
-	auto turn_radian = getTurnRadian(!p_mode->plan_path_.empty());
+	auto turn_radian = getTurnRadian(!remain_path_.empty());
 	turn_target_radian_ = getPosition().addRadian(turn_radian).th;
 
 	movement_i_ = p_mode->isGyroDynamic() ? mm_dynamic : mm_turn;
@@ -111,7 +114,7 @@ bool MoveTypeFollowWall::isFinish()
 		else if(movement_i_ == mm_back)
 		{
 			movement_i_ = mm_stay;
-			sp_movement_.reset(new MovementStay(0.33));
+			sp_movement_.reset(new MovementStay(STAY_SEC_AFTER_BACK));
 			//resetTriggeredValue();
 		}
 		else if (movement_i_ == mm_stay) {
@@ -383,7 +386,7 @@ double MoveTypeFollowWall::getTurnRadian(bool use_target_radian)
 		ROS_INFO("%s %d: Not use fit line angle!", __FUNCTION__, __LINE__);
 		auto ev_turn_radian = getTurnRadianByEvent();
 		if(ev_turn_radian == 0 && use_target_radian) { //		if(/*use_target_radian*/ 0 )
-			auto target_point_ = dynamic_cast<ACleanMode*> (sp_mode_)->plan_path_.front();
+			auto target_point_ = remain_path_.front();
 			auto target_turn_radian = getPosition().courseToDest(target_point_);
 			turn_radian = std::abs(ev_turn_radian) > std::abs(target_turn_radian) ? ev_turn_radian : target_turn_radian;
 			ROS_INFO("%s %d: target_turn_radian(%f in degree), event_turn_radian(%f in degree), choose the big one(%f in degree)",
@@ -403,7 +406,7 @@ double MoveTypeFollowWall::getTurnRadian(bool use_target_radian)
 bool MoveTypeFollowWall::isOverOriginLine(GridMap &map)
 {
 	auto curr = getPosition();
-	auto target_point_ = dynamic_cast<ACleanMode*>(sp_mode_)->plan_path_.back();
+	auto target_point_ = remain_path_.back();
 	if ((target_point_.y > start_point_.y && (start_point_.y - curr.y) > CELL_SIZE / 6)
 		|| (target_point_.y < start_point_.y && (curr.y - start_point_.y) > CELL_SIZE / 6))
 	{
@@ -433,7 +436,7 @@ bool MoveTypeFollowWall::isOverOriginLine(GridMap &map)
 
 bool MoveTypeFollowWall::isNewLineReach(GridMap &map)
 {
-	auto target_point_ = dynamic_cast<ACleanMode*>(sp_mode_)->plan_path_.back();
+	auto target_point_ = remain_path_.back();
 	auto s_curr_p = getPosition();
 	auto ret = false;
 	auto is_pos_dir = target_point_.y - start_point_.y > 0;

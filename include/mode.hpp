@@ -103,7 +103,7 @@ public:
 		ac_bumper_hit_test,
 	};
 
-	void genNextAction();
+	virtual void genNextAction();
 
 	bool isExceptionTriggered();
 
@@ -271,7 +271,10 @@ public:
 	bool isGyroDynamic();
 	bool generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &targets);
 
+	void genNextAction();
 	virtual bool mapMark() = 0;
+	void setCleaned(std::deque<Cell_t> cells);
+	void setLinearCleaned();
 	virtual bool markRealTime(){return false;};
 	virtual bool markMapInNewCell(){return false;};
 

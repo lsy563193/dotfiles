@@ -44,19 +44,19 @@ private:
 
 bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &plan_path)
 {
-
-//	map.print(CLEAN_MAP, curr.toCell().x, curr.toCell().y);
 	plan_path.clear();
 	auto curr_cell = curr.toCell();
 	ROS_INFO("Step 1: Find possible plan_path in same lane.");
-	auto path = findTargetInSameLane(map, curr_cell);
-	if (!path.empty())
-	{
-		plan_path = cells_generate_points(path);
-		// Congratulation!! plan_path is generated successfully!!
-		map.print(CLEAN_MAP, path.back().x, path.back().y);
-		curr_filter_ = nullptr;
-		return true;
+	Cells path{};
+	if(curr_cell.y % 2==0) {
+		path = findTargetInSameLane(map, curr_cell);
+		if (!path.empty()) {
+			plan_path = cells_generate_points(path);
+			// Congratulation!! plan_path is generated successfully!!
+			map.print(CLEAN_MAP, path.back().x, path.back().y);
+			curr_filter_ = nullptr;
+			return true;
+		}
 	}
 
 	ROS_INFO("Step 2: Find all possible plan_path at the edge of cleaned area and filter plan_path in same lane.");
@@ -69,7 +69,7 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 
 	targets = std::for_each(targets.begin(), targets.end(),FilterTarget(curr_cell));
 
-//	displayTargetList(targets);
+	displayTargetList(targets);
 
 	if (targets.empty())
 		return false;
@@ -80,17 +80,11 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 	optimizePath(map, path);
 
 	if(curr_filter_ == &filter_p0_1t_xn || curr_filter_ == &filter_p0_1t_xp)
-	{
-		path.push_back(Cell_t{path.back().x, path.front().y-2});//for setting follow wall target line
-	}
+		path.push_back(Cell_t{path.back().x, static_cast<int16_t>(path.front().y - 2)});//for setting follow wall target line
 
 	ROS_INFO("Step 6: Fill path with direction.");
 	plan_path = cells_generate_points(path);
 
-	// Congratulation!! plan_path is generated successfully!!
-//	path = shortest_path;
-
-//	map.print(COST_MAP, path.back().x,path.back().y);
 	displayCellPath(path);
 	map.print(CLEAN_MAP, path.back().x, path.back().y);
 	return true;
@@ -110,12 +104,18 @@ Cells NavCleanPathAlgorithm::findTargetInSameLane(GridMap &map, const Cell_t &cu
 				 !map.cellIsOutOfRange(neighbor + cell_direction_[i]) && !map.isBlocksAtY(neighbor.x, neighbor.y);
 				 neighbor += cell_direction_[i])
 		{
-			unclean_cells += map.isUncleanAtY(neighbor.x, neighbor.y);
+			if (map.getCell(CLEAN_MAP, neighbor.x, neighbor.y) == UNCLEAN)
+			{
+				it[i] = neighbor;
+//				ROS_INFO("%s %d: it[%d](%d,%d)", __FUNCTION__, __LINE__, i, it[i].x, it[i].y);
+			}
+
+			/*unclean_cells += map.isUncleanAtY(neighbor.x, neighbor.y);
 			if (unclean_cells >= 3) {
 				it[i] = neighbor;
 				unclean_cells = 0;
 //				ROS_INFO("%s %d: it[%d](%d,%d)", __FUNCTION__, __LINE__, i, it[i].x, it[i].y);
-			}
+			}*/
 //			ROS_WARN("%s %d: it[%d](%d,%d)", __FUNCTION__, __LINE__, i, it[i].x, it[i].y);
 //			ROS_WARN("%s %d: neighbor(%d,%d)", __FUNCTION__, __LINE__, neighbor.x, neighbor.y);
 		}
@@ -244,11 +244,11 @@ bool NavCleanPathAlgorithm::filterPathsToSelectBestPath(GridMap &map, const Cell
 	}
 	filters.push_back(&filter_p2);
 	filters.push_back(&filter_p3p);
-	filters.push_back(&filter_p1);
+//	filters.push_back(&filter_p1);
 	filters.push_back(&filter_n2);
 	filters.push_back(&filter_p_1t);
 	filters.push_back(&filter_n3n);
-	filters.push_back(&filter_n1);
+//	filters.push_back(&filter_n1);
 	filters.push_back(&filter_n_1t);
 	filters.push_back(&filter_p_1000t);
 	filters.push_back(&filter_n_1000t);

@@ -135,7 +135,6 @@ public:
 
 	uint8_t saveBlocks(bool is_linear, bool is_save_rcon);
 	void	setBlockWithBound(Cell_t min, Cell_t max, CellState state, bool with_block);
-	void setCleaned(std::deque<Cell_t> cells);
 	void setExplorationCleaned();
 	void setCircleMarkers(Point_t point,bool cover_block,int radian,CellState cell_state);
 

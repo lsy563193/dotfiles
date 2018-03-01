@@ -882,44 +882,6 @@ uint8_t GridMap::saveBlocks(bool is_linear, bool is_save_rcon)
 	return block_count;
 }
 
-void GridMap::setCleaned(std::deque<Cell_t> cells)
-{
-	if(cells.empty())
-		return;
-
-	//while robot turn finish and going to a new diretion
-	//may cost location change and cover the block cells
-	//so we append a cell in front of the cell list
-	//to avoid robot clean in the same line again. 
-	auto is_x_pos = cells.front().x > cells.back().x ? false: true;
-	auto x_offset = is_x_pos? -1 : 1;
-	Cell_t cell_front = {int16_t(cells.front().x + x_offset),cells.front().y};
-	cells.push_front(cell_front);
-
-	std::string msg = "Cell:";
-
-	//in the first cell of cells ,we just mark 6 cells
-	for (uint32_t i = 0; i< cells.size(); i++)
-	{
-		Cell_t cell = cells.at(i);
-		msg += "(" + std::to_string(cell.x) + "," + std::to_string(cell.y)   + "),";
-		for( int dx = -(int)ROBOT_SIZE_1_2;dx <=(int)ROBOT_SIZE_1_2;dx++)
-		{
-			if( i == 0)
-				if(is_x_pos && dx == -(int)ROBOT_SIZE_1_2)
-					continue;
-				else if(!is_x_pos && dx == (int)ROBOT_SIZE_1_2)
-					continue;
-			for(int dy = -(int)ROBOT_SIZE_1_2; dy <= (int)ROBOT_SIZE_1_2; dy++)
-			{
-				CellState status = getCell(CLEAN_MAP, cell.x+dx, cell.y+dy);
-				if (status != BLOCKED_TILT && status != BLOCKED_SLIP && status != BLOCKED_RCON)
-					setCell(CLEAN_MAP,cell.x+dx,cell.y+dy, CLEANED);
-			}
-		}
-	}
-}
-
 bool GridMap::markRobot(uint8_t id)
 {
 	int16_t x, y;
@@ -1205,8 +1167,6 @@ void GridMap::generateSPMAP(const Cell_t& curr_cell,Cells& targets)
 	Queue queue;
 	setCell(COST_MAP, curr_cell.x, curr_cell.y, 1);
 	queue.emplace(1, curr_cell);
-	bool is_found = false;
-//	map.print(CLEAN_MAP,curr.x, curr.y);
 
 	while (!queue.empty())
 	{
@@ -1231,20 +1191,15 @@ void GridMap::generateSPMAP(const Cell_t& curr_cell,Cells& targets)
 					continue;
 				if (getCell(COST_MAP, neighbor.x, neighbor.y) == 0) {
 					if (isBlockAccessible(neighbor.x, neighbor.y)) {
-						if(getCell(CLEAN_MAP, neighbor.x, neighbor.y) == UNCLEAN)
+						if(getCell(CLEAN_MAP, neighbor.x, neighbor.y) == UNCLEAN && neighbor.y % 2 == 0)
 							targets.push_back(neighbor);
 						queue.emplace(cost+1, neighbor);
-						setCell(COST_MAP, neighbor.x, neighbor.y, CellState(cost+1));
-//						print(COST_MAP, curr_cell, 0,0);
+						setCell(COST_MAP, neighbor.x, neighbor.y, cost+1);
 					}
-//					else
-//						setCell(COST_MAP, neighbor.x, neighbor.y, 1);
 				}
 			}
 		}
 	}
-//	print(CLEAN_MAP,curr_cell, 0,0);
-//	print(COST_MAP,curr_cell, 0,0);
 }
 
 bool GridMap::isFrontBlockBoundary(int dx)

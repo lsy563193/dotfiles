@@ -384,6 +384,104 @@ void ACleanMode::pubFitLineMarker(visualization_msgs::Marker fit_line_marker)
 	fit_line_marker_pub_.publish(fit_line_marker);
 }
 
+void ACleanMode::setLinearCleaned()
+{
+	if(passed_path_.empty())
+		return;
+
+	ROS_ERROR("setLinearCleaned cells:");
+	//start to end
+	auto start_p = plan_path_.front();
+	auto dir_it = start_p.dir;
+	auto c_it = start_p.toCell();
+	plan_path_.pop_front();
+	auto get_xy = [&](Cell_t cell){
+		return (isXAxis(plan_path_.front().dir))? cell.x : cell.y;
+	};
+	auto less_equal = [&](const Cell_t& l,const Cell_t& r){
+		return isPos(plan_path_.front().dir) ? get_xy(l) <= get_xy(r): get_xy(l) >= get_xy(r);
+	};
+	for(;less_equal(c_it, getPosition().toCell()); ) {
+		ROS_INFO("{%d,%d}", c_it.x, c_it.y);
+		if (c_it == plan_path_.front().toCell()) {
+			dir_it = plan_path_.front().dir;
+			plan_path_.pop_front();
+		}
+		auto c_diff = cell_direction_[(plan_path_.front().dir + 2)%4];
+		clean_map_.setCell(CLEAN_MAP, c_it.x         , c_it.y,          CLEANED);
+		clean_map_.setCell(CLEAN_MAP, (c_it+c_diff).x, (c_it+c_diff).y, CLEANED);
+		clean_map_.setCell(CLEAN_MAP, (c_it-c_diff).x, (c_it-c_diff).y, CLEANED);
+		if(plan_path_.empty())
+			return;
+		c_it += cell_direction_[dir_it];
+	}
+	// start-1 point opt
+	auto c_start = start_p.toCell() - cell_direction_[start_p.dir];
+	auto c_diff = cell_direction_[(start_p.dir + 2)%4];
+	for(auto i =-1; i<=1; i++)
+	{
+		auto dd_cell = c_start + c_diff*i;
+		auto c_val = clean_map_.getCell(CLEAN_MAP, dd_cell.x, dd_cell.y);
+		if(c_val >=BLOCKED && c_val<=BLOCKED_BOUNDARY)
+		{
+			auto ddd_cell = dd_cell - cell_direction_[start_p.dir];
+			ROS_WARN("!!!!!!start_point -1 dir is in block,move back 1 cell dd_cell(%d,%d)->ddd_cell(%d,%d)",dd_cell.x, dd_cell.y,ddd_cell.x,ddd_cell.y);
+			clean_map_.setCell(CLEAN_MAP, ddd_cell.x, ddd_cell.y, c_val);
+		}
+		clean_map_.setCell(CLEAN_MAP, dd_cell.x, dd_cell.y, CLEANED);
+	}
+	// end+1 point opt
+//	auto d_diff = cell_direction_[(getPosition().dir + 2)%4];
+	auto c_end = getPosition().toCell() + cell_direction_[dir_it];
+	auto c_diff2 = cell_direction_[(dir_it+2)%4];
+	for(auto i =-1; i<=1; i++)
+	{
+		auto dd_cell = c_end + c_diff2*i;
+		auto c_val = clean_map_.getCell(CLEAN_MAP, dd_cell.x, dd_cell.y);
+		if(c_val >=BLOCKED && c_val<=BLOCKED_BOUNDARY)
+		{
+			auto ddd_cell = dd_cell + cell_direction_[dir_it];
+			ROS_WARN("!!!!!!end_point +1 dir is in block,move front 1 cell dd_cell(%d,%d)->ddd_cell(%d,%d)",dd_cell.x, dd_cell.y,ddd_cell.x,ddd_cell.y);
+			clean_map_.setCell(CLEAN_MAP, ddd_cell.x, ddd_cell.y, c_val);
+		}
+		clean_map_.setCell(CLEAN_MAP, dd_cell.x, dd_cell.y, CLEANED);
+	}
+}
+
+void ACleanMode::setCleaned(std::deque<Cell_t> cells)
+{
+	if(cells.empty())
+		return;
+
+	//while robot turn finish and going to a new direction
+	//may cost location change and cover the block cells
+	//so we append a cell in front of the cell list
+	//to avoid robot clean in the same line again.
+	auto is_x_pos = cells.front().x <= cells.back().x;
+	auto x_offset = is_x_pos? -1 : 1;
+	Cell_t cell_front = {int16_t(cells.front().x + x_offset),cells.front().y};
+	cells.push_front(cell_front);
+
+	//in the first cell of cells ,we just mark 6 cells
+	for (uint32_t i = 0; i< cells.size(); i++)
+	{
+		Cell_t cell = cells.at(i);
+		for( int dx = -ROBOT_SIZE_1_2;dx <=ROBOT_SIZE_1_2;dx++)
+		{
+			if( i == 0)
+				if(is_x_pos && dx == -ROBOT_SIZE_1_2)
+					continue;
+				else if(!is_x_pos && dx == ROBOT_SIZE_1_2)
+					continue;
+			for(int dy = -ROBOT_SIZE_1_2; dy <= ROBOT_SIZE_1_2; dy++)
+			{
+				CellState status = clean_map_.getCell(CLEAN_MAP, cell.x+dx, cell.y+dy);
+				if (status != BLOCKED_TILT && status != BLOCKED_SLIP && status != BLOCKED_RCON)
+					clean_map_.setCell(CLEAN_MAP,cell.x+dx,cell.y+dy, CLEANED);
+			}
+		}
+	}
+}
 
 void ACleanMode::setCleanMapMarkers(int16_t x, int16_t y, CellState type, visualization_msgs::Marker& clean_map_markers_)
 {
@@ -1136,7 +1234,7 @@ bool ACleanMode::updateActionInStateGoHomePoint()
 	{
 		// New path to home cell is generated.
 		iterate_point_ = plan_path_.front();
-		plan_path_.pop_front();
+//		plan_path_.pop_front();
 		go_home_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
 		pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 		should_go_to_charger_ = false;
@@ -1227,7 +1325,7 @@ bool ACleanMode::updateActionInStateSpot() {
 		ROS_ERROR("iterate_point_.dir(%d)", iterate_point_.dir);
 //		PP_INFO();
 		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
-		plan_path_.pop_front();
+//		plan_path_.pop_front();
 		action_i_ = ac_linear;
 		genNextAction();
 		return true;
@@ -1304,7 +1402,7 @@ bool ACleanMode::updateActionInStateExploration() {
 		action_i_ = ac_linear;
 		iterate_point_ = plan_path_.front();
 		ROS_WARN("start_point_.dir(%d)", iterate_point_.dir);
-		plan_path_.pop_front();
+//		plan_path_.pop_front();
 		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
 		pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 		genNextAction();
@@ -1495,4 +1593,20 @@ bool ACleanMode::generatePath(GridMap &map, const Point_t &curr, const int &last
 
 bool ACleanMode::isGyroDynamic() {
 	return ros::Time::now().toSec() - time_gyro_dynamic_ > GYRO_DYNAMIC_INTERVAL_TIME;
+}
+
+void ACleanMode::genNextAction() {
+	if(action_i_ == ac_linear || action_i_ == ac_follow_wall_right ||action_i_ == ac_follow_wall_left) {
+		switch (action_i_) {
+			case ac_linear :
+				sp_action_.reset(new MoveTypeLinear(plan_path_));
+				break;
+			case ac_follow_wall_left  :
+			case ac_follow_wall_right :
+				sp_action_.reset(new MoveTypeFollowWall(plan_path_,action_i_ == ac_follow_wall_left));
+				break;
+		}
+	}
+	else
+		Mode::genNextAction();
 }
