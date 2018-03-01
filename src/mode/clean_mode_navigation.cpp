@@ -9,6 +9,7 @@
 #include <map.h>
 #include <path_algorithm.h>
 #include "mode.hpp"
+#include "mathematics.h"
 //#define NAV_INFO() ROS_INFO("st(%d),ac(%d)", state_i_, action_i_)
 
 CleanModeNav::CleanModeNav()
@@ -70,6 +71,24 @@ bool CleanModeNav::mapMark()
 	return false;
 }
 
+bool CleanModeNav::markRealTime()
+{
+//	while (ros::ok()) {
+//		sleep(0.2);
+//		wheel.stop();
+		std::vector<Vector2<int>> markers;
+		if (lidar.isScanCompensateReady())
+			lidar.lidarMarker(markers, 0.23);
+//		ROS_INFO("markers.size() = %d", markers.size());
+		for (const auto& marker : markers) {
+//			ROS_INFO("marker(%d, %d)", marker.x, marker.y);
+			auto cell = getPosition().getRelative(marker.x * CELL_SIZE, marker.y * CELL_SIZE).toCell();
+			clean_map_.setCell(CLEAN_MAP, cell.x, cell.y, BLOCKED_LIDAR);
+		}
+//	}
+	return true;
+
+}
 bool CleanModeNav::isExit()
 {
 	if (sp_state == state_init)

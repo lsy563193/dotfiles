@@ -500,6 +500,7 @@ public:
 	~CleanModeNav();
 
 	bool mapMark() override;
+	bool markRealTime() override;
 	bool isExit() override;
 
 	void keyClean(bool state_now, bool state_last) override ;
