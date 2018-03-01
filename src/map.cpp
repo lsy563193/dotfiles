@@ -576,8 +576,8 @@ uint8_t GridMap::setChargerArea(const Points charger_pos_list)
 	}
 
 
-	const int RADIAN= 4;//cells
-	setCircleMarkers(charger_pos_list.back(),true,RADIAN,BLOCKED_RCON);
+	const int RADIUS= 4;//cells
+	setCircleMarkers(charger_pos_list.back(),true,RADIUS,BLOCKED_RCON);
 
 }
 
@@ -1485,12 +1485,12 @@ bool GridMap::isFrontSlamBlocked(void)
 	return retval;
 }
 
-void GridMap::setCircleMarkers(Point_t point,bool cover_block,int radian,CellState cell_state)
+void GridMap::setCircleMarkers(Point_t point, bool cover_block, int radius, CellState cell_state)
 {
-	const int RADIUS_CELL = radian;
+	const int RADIUS_CELL = radius;
 	Point_t tmp_point = point;
-	int16_t deg_point_th = (int16_t)radian_to_degree(point.th);
-	ROS_INFO("\033[1;40;32m deg_point_th = %d,point(%d,%d)\033[0m",deg_point_th,point.toCell().x,point.toCell().y);
+	auto deg_point_th = static_cast<int16_t>(radian_to_degree(point.th));
+	ROS_INFO("\033[1;40;32m deg_point_th = %d, point(%d,%d)\033[0m",deg_point_th,point.toCell().x,point.toCell().y);
 	for (int dy = 0; dy < RADIUS_CELL; ++dy) {
 		for (int16_t angle_i = 0; angle_i <360; angle_i += 1) {
 			tmp_point.th = ranged_radian(degree_to_radian(deg_point_th + angle_i));
@@ -1521,5 +1521,12 @@ void GridMap::setBlockWithBound(Cell_t min, Cell_t max, CellState state,bool wit
 			setCell(CLEAN_MAP, min.x - 1, i, BLOCKED);
 	}
 
+}
+
+void GridMap::setArea(Cell_t center, CellState cell_state, uint16_t x_len, uint16_t y_len)
+{
+	for (auto dx = -x_len; dx <= x_len; dx++)
+		for (auto dy = -y_len; dy <= y_len; dy++)
+			setCell(CLEAN_MAP, static_cast<int16_t>(center.x + dx), static_cast<int16_t>(center.y + dy), cell_state);
 }
 

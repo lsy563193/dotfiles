@@ -135,8 +135,26 @@ public:
 
 	uint8_t saveBlocks(bool is_linear, bool is_save_rcon);
 	void	setBlockWithBound(Cell_t min, Cell_t max, CellState state, bool with_block);
-	void setExplorationCleaned();
-	void setCircleMarkers(Point_t point,bool cover_block,int radian,CellState cell_state);
+
+	/*
+	 * Mark a circle of radius from point with cell_state.
+	 *
+	 * @param point, center of the circle, it is POINT but not CELL.
+	 * @param cover_block, whether it should cover blocks to @param cell_state.
+	 * @param radius, the radius of the circle.
+	 * @param cell_state, target cell state of marking.
+	 */
+	void setCircleMarkers(Point_t point, bool cover_block, int radius, CellState cell_state);
+
+	/*
+	 * Mark a square of x_len * y_len from center with cell_state.
+	 *
+	 * @param center, center cell of the area.
+	 * @param cell_state, target cell state of marking.
+	 * @param x_len, the x length of the area should be (2 * x_len + 1).
+	 * @param y_len, the y length of the area should be (2 * y_len + 1).
+	 */
+	void setArea(Cell_t center, CellState cell_state, uint16_t x_len = 0, uint16_t y_len = 0);
 
 	uint32_t getCleanedArea();
 
