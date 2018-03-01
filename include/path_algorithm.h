@@ -301,14 +301,14 @@ public:
 //	BestTargetFilter filter_0_xn{range_0_xn, 1, false};
 	BestTargetFilter filter_p0_1t_xp{range_0_xp , 1, true, true};
 	BestTargetFilter filter_p0_1t_xn{range_0_xn, 1, true, true};
-	BestTargetFilter filter_p3p{range_p3p, 0, true};
+	BestTargetFilter filter_p4p{range_p3p, 0, true};
 	BestTargetFilter filter_p2{range_p2, 0, true};
 	BestTargetFilter filter_p1{range_p1, 0, true};
 	BestTargetFilter filter_p_1t{range_all,1,true};
 	BestTargetFilter filter_n0_1t_xp{range_0_xp , 1, false, true};
 	BestTargetFilter filter_n0_1t_xn{range_0_xn, 1, false, true};
 	BestTargetFilter filter_n2{range_n2 , 0, false};
-	BestTargetFilter filter_n3n{range_n3n, 0, false};
+	BestTargetFilter filter_n4n{range_n3n, 0, false};
 	BestTargetFilter filter_n1{range_n1 , 0, false};
 	BestTargetFilter filter_n_1t{range_all, 1, false};
 	BestTargetFilter filter_p_1000t{range_all, 1000,true};

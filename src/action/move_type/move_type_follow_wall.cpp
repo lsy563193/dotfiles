@@ -386,12 +386,13 @@ double MoveTypeFollowWall::getTurnRadian(bool use_target_radian)
 		ROS_INFO("%s %d: Not use fit line angle!", __FUNCTION__, __LINE__);
 		auto ev_turn_radian = getTurnRadianByEvent();
 		if(ev_turn_radian == 0 && use_target_radian) { //		if(/*use_target_radian*/ 0 )
-			auto target_point_ = remain_path_.front();
-			auto target_turn_radian = getPosition().courseToDest(target_point_);
-			turn_radian = std::abs(ev_turn_radian) > std::abs(target_turn_radian) ? ev_turn_radian : target_turn_radian;
-			ROS_INFO("%s %d: target_turn_radian(%f in degree), event_turn_radian(%f in degree), choose the big one(%f in degree)",
-					 __FUNCTION__, __LINE__, radian_to_degree(target_turn_radian),
-					 radian_to_degree(ev_turn_radian), radian_to_degree(turn_radian));
+			auto target_point_ = remain_path_.back();
+//			auto target_turn_radian = getPosition().courseToDest(target_point_);
+			turn_radian = getPosition().courseToDest(target_point_);
+//			turn_radian = std::abs(ev_turn_radian) > std::abs(target_turn_radian) ? ev_turn_radian : target_turn_radian;
+//			ROS_INFO("%s %d: target_turn_radian(%f in degree), event_turn_radian(%f in degree), choose the big one(%f in degree)",
+//					 __FUNCTION__, __LINE__, radian_to_degree(target_turn_radian),
+//					 radian_to_degree(ev_turn_radian), radian_to_degree(turn_radian));
 		}
 		else
 		{

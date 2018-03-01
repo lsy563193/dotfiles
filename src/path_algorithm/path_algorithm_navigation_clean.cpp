@@ -9,6 +9,14 @@
 
 extern int g_follow_last_follow_wall_dir;
 
+int size_of_path(const Cells &path){
+		int sum=0;
+		for (auto iterator = path.begin(); iterator != path.end()-1; ++iterator) {
+			sum += (iterator->x == (iterator+1)->x) ? std::abs(iterator->y - (iterator+1)->y) : std::abs(iterator->x - (iterator+1)->x);
+		}
+		return sum;
+}
+
 class FilterTarget{
 public:
 	FilterTarget(const Cell_t& curr){
@@ -143,7 +151,7 @@ Cells NavCleanPathAlgorithm::findTargetInSameLane(GridMap &map, const Cell_t &cu
 //			ROS_ERROR("%s %d: 1 g_follow_last_follow_wall_dir(%d)", __FUNCTION__, __LINE__, g_follow_last_follow_wall_dir);
 		if(g_follow_last_follow_wall_dir!=0)
 		{
-			beeper.beepForCommand(VALID);
+//			beeper.beepForCommand(VALID);
 			ROS_ERROR("%s %d: g_follow_last_follow_wall_dir(%d)", __FUNCTION__, __LINE__, g_follow_last_follow_wall_dir);
 			if(g_follow_last_follow_wall_dir == 1)
 				target = it[1];
@@ -210,20 +218,14 @@ public:
 		if(turn_count_ == 0 || turn_count_ == 1000)
 		{
 			if(path_a.back().y == path_b.back().y)
-				return len(path_a) < len(path_b);
+				return size_of_path(path_a) < size_of_path(path_b);
 			return (std::abs(path_a.back().y - curr_y_) < std::abs(path_b.back().y - curr_y_));
 		}
 		else {
-			return len(path_a) < len(path_b);
+			return size_of_path(path_a) < size_of_path(path_b);
 		}
 	};
-	int len(const Cells &path){
-		int sum=0;
-		for (auto iterator = path.begin(); iterator != path.end()-1; ++iterator) {
-			sum += (iterator->x == (iterator+1)->x) ? std::abs(iterator->y - (iterator+1)->y) : std::abs(iterator->x - (iterator+1)->x);
-		}
-		return sum;
-	}
+
 	bool is_reverse_{};
 	int16_t curr_y_{};
 	int turn_count_;
@@ -242,47 +244,63 @@ bool NavCleanPathAlgorithm::filterPathsToSelectBestPath(GridMap &map, const Cell
 		else
 			filters.push_back(&filter_p0_1t_xn);
 	}
-	filters.push_back(&filter_p2);
-	filters.push_back(&filter_p3p);
-//	filters.push_back(&filter_p1);
-	filters.push_back(&filter_n2);
+
+	if(cell_curr.y%2 ==0)
+		filters.push_back(&filter_p2);
+	else
+		filters.push_back(&filter_p1);
+
+	filters.push_back(&filter_p4p);
+
+	if(cell_curr.y%2 ==0)
+		filters.push_back(&filter_n2);
+	else
+		filters.push_back(&filter_n1);
+
 	filters.push_back(&filter_p_1t);
-	filters.push_back(&filter_n3n);
-//	filters.push_back(&filter_n1);
+	filters.push_back(&filter_n4n);
 	filters.push_back(&filter_n_1t);
 	filters.push_back(&filter_p_1000t);
 	filters.push_back(&filter_n_1000t);
 
 	for (auto &&filter : filters) {
 		filter->update(const_cast<Cell_t &>(cell_curr), min_cell, max_cell);
-		ROS_WARN("is towards Y+(%d),y_range min(%d,%d)max(%d,%d),allow turn count(%d)",filter->is_toward_pos_,filter->min_.x,filter->min_.y,filter->max_.x,filter->max_.y,filter->turn_count_);
+		ROS_WARN("is towards Y+(%d),y_range min(%d,%d)max(%d,%d),allow turn count(%d)", filter->is_toward_pos_,
+						 filter->min_.x, filter->min_.y, filter->max_.x, filter->max_.y, filter->turn_count_);
 
 		Cells filtered_targets{};
-		std::copy_if(targets.begin(), targets.end(), std::back_inserter(filtered_targets), [&filter](Cell_t target){
-			return !(target.y < filter->min_.y || target.y > filter->max_.y || target.x < filter->min_.x || target.x > filter->max_.x);
+		std::copy_if(targets.begin(), targets.end(), std::back_inserter(filtered_targets), [&filter](Cell_t target) {
+			return !(target.y < filter->min_.y || target.y > filter->max_.y || target.x < filter->min_.x ||
+							 target.x > filter->max_.x);
 		});
 
-	if(filtered_targets.empty())
-		continue;
+		if (filtered_targets.empty())
+			continue;
 
 //		displayTargetList(filtered_targets);
 		PathList paths{};
-		for (auto& target : filtered_targets) {
+		for (auto &target : filtered_targets) {
 			Cells path{};
-			int dir=2;
-			if(!filter->towardPos())
+			int dir = 2;
+			if (!filter->towardPos())
 				dir = 3;
-			findPath(map, cell_curr, target,  path, dir);
+			findPath(map, cell_curr, target, path, dir);
 			paths.push_back(path);
 		}
 
 		PathList filtered_paths{};
 		std::copy_if(paths.begin(), paths.end(), std::back_inserter(filtered_paths), BestTargetFilter(*filter));
 		if (!filtered_paths.empty()) {
-//			for (auto &&path : filtered_paths) {
-//				displayCellPath(path);
-//			}
-			best_path = *std::min_element(filtered_paths.begin(), filtered_paths.end(), MinYAndShortestPath(cell_curr.y, filter->is_toward_pos_,filter->turn_count_));
+			best_path = *std::min_element(filtered_paths.begin(), filtered_paths.end(),
+																		MinYAndShortestPath(cell_curr.y, filter->is_toward_pos_, filter->turn_count_));
+			ROS_INFO("path.len(%d)",size_of_path(best_path));
+			if (filter == &filter_p_1t) {
+				if(size_of_path(best_path) > 25){
+					ROS_WARN("path.len is too long to find other path(%d)",size_of_path(best_path));
+					beeper.beepForCommand(VALID);
+					continue ;
+				}
+			}
 			curr_filter_ = filter;
 			return true;
 		}

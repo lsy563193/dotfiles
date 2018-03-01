@@ -349,7 +349,7 @@ bool Lidar::findLines(std::vector<LineABC> *lines,bool combine)
 	std::vector<LineABC>::iterator it;
 	for(it = lines->begin();it!= lines->end();it++){
 		msg+= "\n[A:"+ std::to_string(it->A) +",B:" + std::to_string(it->B) +",C:" +
-			std::to_string(it->C)+",len = "+std::to_string(it->len)+",K = " +
+			std::to_string(it->C)+",len = "+std::to_string(it->size_of_path)+",K = " +
 			std::to_string(it->K)+",("+std::to_string(it->x1)+","+
 			std::to_string(it->y1)+"),("+std::to_string(it->x2)+","+std::to_string(it->y2)+")]";
 	}
@@ -388,20 +388,20 @@ bool Lidar::isAlignFinish()
 //	const float LONG_ENOUGTH = 1.0;//in meters
 //	std::vector<float> same_angle_count;
 //	std::vector<LineABC>::const_iterator it1,it2;
-//	float len = 0.0;
+//	float size_of_path = 0.0;
 //	int i=0;
 //	int pos = 0;
 //	/*----find the longest one in lines---*/
 //	for(it1 = lines->cbegin(); it1!= lines->cend(); it1++){
-//		if(it1->len >= len){
-//			len = it1->len;
+//		if(it1->len >= size_of_path){
+//			len = it1->size_of_path;
 //			pos = i;
 //		}
 //		i++;
 //	}
-//	if(lines->at(pos).len >= LONG_ENOUGTH){
+//	if(lines->at(pos).size_of_path >= LONG_ENOUGTH){
 //		*align_angle = lines->at(pos).K;
-//		ROS_INFO("%s,%d: find long line %f ,align_angle %f",__FUNCTION__,__LINE__,lines->at(pos).len,*align_angle);
+//		ROS_INFO("%s,%d: find long line %f ,align_angle %f",__FUNCTION__,__LINE__,lines->at(pos).size_of_path,*align_angle);
 //		align_finish_ = true;
 //		return true;
 //	}
