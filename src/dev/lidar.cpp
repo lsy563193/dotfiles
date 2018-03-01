@@ -1026,8 +1026,10 @@ static uint8_t setLidarMarkerAcr2Dir(double X_MIN,double X_MAX,int angle_from,in
 
 }
 
-uint8_t Lidar::lidarMarker(double X_MAX)
+uint8_t Lidar::lidarMarker(std::vector<Vector2<int>> &markers, double X_MAX)
 {
+//	markers.clear();
+
 	if(!lidarCheckFresh(0.6,4))
 		return 0;
 
@@ -1035,9 +1037,10 @@ uint8_t Lidar::lidarMarker(double X_MAX)
 	auto tmp_lidarXY_points = lidarXY_points;
 	lidarXYPoint_mutex_.unlock();
 	double x, y;
-	int dx, dy;
+	int dx{}, dy{};
 	const	double Y_MAX = 0.20;//0.279
 	int	count_array[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+	Vector2<int> marker = {dx,dy};
 
 	for(const auto& point:lidarXY_points){
 		x = point.x;
@@ -1194,9 +1197,18 @@ uint8_t Lidar::lidarMarker(double X_MAX)
 				}
 			}
 		}
+/*		if (!direction_msg.empty()) {
+			ROS_INFO("%s %d: \033[36mlidar marker: %s.\033[0m", __FUNCTION__, __LINE__, direction_msg.c_str());
+			direction_msg.clear();
+		}*/
+		marker.x = dx;
+		marker.y = dy;
+		if (!(dx == 0 && dy == 0))
+			markers.push_back(marker);
+		dx = 0;
+		dy = 0;
 	}
-//	if (!msg.empty())
-//		ROS_INFO("%s %d: \033[36mlidar marker: %s.\033[0m", __FUNCTION__, __LINE__, msg.c_str());
+
 	return block_status;
 }
 
@@ -1645,8 +1657,9 @@ bool Lidar::lidar_is_stuck()
 
 uint8_t Lidar::lidar_get_status()
 {
-	if (lidar.isScanCompensateReady())
-		return lidar.lidarMarker(0.23);
+	std::vector<Vector2<int>> markers;
+	if (isScanCompensateReady())
+		return lidarMarker(markers, 0.23);
 
 	return 0;
 }

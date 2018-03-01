@@ -19,11 +19,18 @@ GoHomePathAlgorithm::GoHomePathAlgorithm(GridMap &map, Points &home_points, Poin
 	{
 		std::string msg = "Home_points_: ";
 		for (auto it : home_points_)
+		{
 			msg += "(" + std::to_string(it.toCell().x) + ", " + std::to_string(it.toCell().y) + "),";
+			// Clear 8 cells around home points.
+			map.setArea(it.toCell(), CLEANED, 1, 1);
+		}
 		ROS_INFO("%s %d: %s", __FUNCTION__, __LINE__, msg.c_str());
 	}
 
 	start_point_ = start_point;
+	ROS_INFO("%s %d: Start point(%d, %d).", __FUNCTION__, __LINE__, start_point_.toCell().x, start_point_.toCell().y);
+	// Clear 8 cells around start point.
+	map.setArea(start_point_.toCell(), CLEANED, 1, 1);
 
 	// set the rcon blocks to cleaned 
 	auto map_tmp = map.generateBound();
@@ -75,6 +82,7 @@ bool GoHomePathAlgorithm::generatePathThroughCleanedArea(GridMap &map, const Poi
 		{
 			home_way_index_ = THROUGH_SLAM_MAP_REACHABLE_AREA;
 			ROS_INFO("%s %d: Clear blocks with slam map.", __FUNCTION__, __LINE__);
+			slam_grid_map.print(CLEAN_MAP, 0, 0);
 			map.mergeFromSlamGridMap(slam_grid_map, false, false, false, false, false, true);
 			map.print(CLEAN_MAP, curr.toCell().x, curr.toCell().y);
 			return false;
@@ -130,6 +138,7 @@ bool GoHomePathAlgorithm::generatePathThroughCleanedArea(GridMap &map, const Poi
 					 __FUNCTION__, __LINE__, start_point_.toCell().x, start_point_.toCell().y);
 			home_way_index_ = THROUGH_SLAM_MAP_REACHABLE_AREA;
 			ROS_INFO("%s %d: Clear blocks with slam map.", __FUNCTION__, __LINE__);
+			slam_grid_map.print(CLEAN_MAP, 0, 0);
 			map.mergeFromSlamGridMap(slam_grid_map, false, false, false, false, false, true);
 			map.print(CLEAN_MAP, curr.toCell().x, curr.toCell().y);
 			return false;
