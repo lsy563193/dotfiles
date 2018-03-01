@@ -109,7 +109,7 @@ bool IMoveType::RconTrigger()
 
 void IMoveType::resetTriggeredValue()
 {
-	PP_INFO();
+//	PP_INFO();
 	ev.lidar_triggered = 0;
 //	ev.rcon_triggered = 0;
 	ev.bumper_triggered = 0;

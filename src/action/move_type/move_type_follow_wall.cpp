@@ -8,6 +8,9 @@
 #include <move_type.hpp>
 #include <state.hpp>
 #include <mode.hpp>
+
+#define STAY_SEC_AFTER_BACK (float)0.33
+
 int g_follow_last_follow_wall_dir=0;
 MoveTypeFollowWall::MoveTypeFollowWall(Points remain_path, bool is_left)
 {
@@ -111,7 +114,7 @@ bool MoveTypeFollowWall::isFinish()
 		else if(movement_i_ == mm_back)
 		{
 			movement_i_ = mm_stay;
-			sp_movement_.reset(new MovementStay(0.33));
+			sp_movement_.reset(new MovementStay(STAY_SEC_AFTER_BACK));
 			//resetTriggeredValue();
 		}
 		else if (movement_i_ == mm_stay) {

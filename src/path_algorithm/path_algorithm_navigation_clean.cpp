@@ -80,9 +80,7 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 	optimizePath(map, path);
 
 	if(curr_filter_ == &filter_p0_1t_xn || curr_filter_ == &filter_p0_1t_xp)
-	{
-		path.push_back(Cell_t{path.back().x, path.front().y-2});//for setting follow wall target line
-	}
+		path.push_back(Cell_t{path.back().x, static_cast<int16_t>(path.front().y - 2)});//for setting follow wall target line
 
 	ROS_INFO("Step 6: Fill path with direction.");
 	plan_path = cells_generate_points(path);
@@ -106,12 +104,18 @@ Cells NavCleanPathAlgorithm::findTargetInSameLane(GridMap &map, const Cell_t &cu
 				 !map.cellIsOutOfRange(neighbor + cell_direction_[i]) && !map.isBlocksAtY(neighbor.x, neighbor.y);
 				 neighbor += cell_direction_[i])
 		{
-			unclean_cells += map.isUncleanAtY(neighbor.x, neighbor.y);
+			if (map.getCell(CLEAN_MAP, neighbor.x, neighbor.y) == UNCLEAN)
+			{
+				it[i] = neighbor;
+//				ROS_INFO("%s %d: it[%d](%d,%d)", __FUNCTION__, __LINE__, i, it[i].x, it[i].y);
+			}
+
+			/*unclean_cells += map.isUncleanAtY(neighbor.x, neighbor.y);
 			if (unclean_cells >= 3) {
 				it[i] = neighbor;
 				unclean_cells = 0;
 //				ROS_INFO("%s %d: it[%d](%d,%d)", __FUNCTION__, __LINE__, i, it[i].x, it[i].y);
-			}
+			}*/
 //			ROS_WARN("%s %d: it[%d](%d,%d)", __FUNCTION__, __LINE__, i, it[i].x, it[i].y);
 //			ROS_WARN("%s %d: neighbor(%d,%d)", __FUNCTION__, __LINE__, neighbor.x, neighbor.y);
 		}
