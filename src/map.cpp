@@ -319,10 +319,10 @@ void GridMap::convertFromSlamMap(float threshold)
 	}
 }
 
-void GridMap::mergeFromSlamGridMap(GridMap source_map, bool add_slam_map_blocks_to_uncleaned,
-								   bool add_slam_map_blocks_to_cleaned,
-								   bool add_slam_map_cleanable_area, bool clear_map_blocks, bool clear_slam_map_blocks,
-								   bool clear_bumper_and_lidar_blocks)
+void GridMap::merge(GridMap source_map, bool add_slam_map_blocks_to_uncleaned,
+					bool add_slam_map_blocks_to_cleaned,
+					bool add_slam_map_cleanable_area, bool clear_map_blocks, bool clear_slam_map_blocks,
+					bool clear_bumper_and_lidar_blocks)
 {
 	int16_t map_x_min, map_y_min, map_x_max, map_y_max;
 	source_map.getMapRange(CLEAN_MAP, &map_x_min, &map_x_max, &map_y_min, &map_y_max);
