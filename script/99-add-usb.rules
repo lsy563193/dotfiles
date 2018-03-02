@@ -1,0 +1,1 @@
+ACTION=="add",KERNEL=="sd[0-a][0-9]",RUN+="/opt/ros/indigo/bin/mountusb.sh %k"

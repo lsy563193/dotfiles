@@ -73,7 +73,7 @@ pp_log_size=`ls -l $pp_log2 | awk ' {print $5}'`
 echo "$pp_log2 size = $pp_log_size"
 if [ $pp_log_size -gt 1024000 ];then
 	echo "log size great then 10240, clear it!!"
-	echo -n "" > $pp_log
+	echo -n "" > $pp_log2
 fi 
 sync
 
