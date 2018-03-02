@@ -142,7 +142,7 @@ int Serial::read(uint8_t *buf, int len)
 	int r_ret=0,s_ret=0;
 	uint8_t *t_buf;
 	t_buf = (uint8_t*)calloc(len,sizeof(uint8_t));
-	//memset(t_buf,0,len);
+	//memset(t_buf,0,size_of_path);
 	fd_set read_fd_set;
 	struct timeval timeout;
 	timeout.tv_sec = 4;
@@ -161,7 +161,7 @@ int Serial::read(uint8_t *buf, int len)
 				for(int i =0;i<len;i++){
 					buf[i] = t_buf[i];
 				}
-				//memcpy(buf,t_buf,len);
+				//memcpy(buf,t_buf,size_of_path);
 			free(t_buf);
 			return r_ret;
 		}
@@ -198,7 +198,7 @@ int Serial::read(uint8_t *buf, int len)
 						for(int i =0;i<len;i++){
 							buf[i] = t_buf[i];
 						}
-						//memcpy(buf,t_buf,len);
+						//memcpy(buf,t_buf,size_of_path);
 					free(t_buf);
 					FD_CLR(crport_fd_,&read_fd_set);
 					return r_ret;

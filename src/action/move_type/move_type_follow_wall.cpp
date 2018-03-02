@@ -8,16 +8,19 @@
 #include <move_type.hpp>
 #include <state.hpp>
 #include <mode.hpp>
+
+#define STAY_SEC_AFTER_BACK (float)0.33
+
 int g_follow_last_follow_wall_dir=0;
-MoveTypeFollowWall::MoveTypeFollowWall(bool is_left)
+MoveTypeFollowWall::MoveTypeFollowWall(Points remain_path, bool is_left)
 {
 	ROS_INFO("%s %d: Entering move type %s follow wall.", __FUNCTION__, __LINE__,
 			 is_left ? "left" : "right");
+	remain_path.pop_front();
+	remain_path_ = remain_path;
 	auto p_mode = dynamic_cast<ACleanMode*> (sp_mode_);
-//	if(! p_clean_mode->plan_path_.empty())
-//		p_clean_mode.target_point_ = p_clean_mode->plan_path_.front();
 	is_left_ = is_left;
-	auto turn_radian = getTurnRadian(!p_mode->plan_path_.empty());
+	auto turn_radian = getTurnRadian(!remain_path_.empty());
 	turn_target_radian_ = getPosition().addRadian(turn_radian).th;
 
 	movement_i_ = p_mode->isGyroDynamic() ? mm_dynamic : mm_turn;
@@ -32,13 +35,13 @@ MoveTypeFollowWall::MoveTypeFollowWall(bool is_left)
 
 MoveTypeFollowWall::~MoveTypeFollowWall()
 {
+	wheel.stop();
 	if(sp_mode_ != nullptr){
 		auto p_mode = dynamic_cast<ACleanMode*> (sp_mode_);
 		p_mode->clean_map_.saveBlocks(p_mode->action_i_ == p_mode->ac_linear, p_mode->sp_state == p_mode->state_clean);
 		p_mode->mapMark();
 	}
 	ROS_INFO("%s %d: Exit move type follow wall.", __FUNCTION__, __LINE__);
-	wheel.stop();
 }
 
 bool MoveTypeFollowWall::isFinish()
@@ -78,7 +81,7 @@ bool MoveTypeFollowWall::isFinish()
 		{
 			if (!handleMoveBackEvent(p_cm))
 			{
-				if(ev.rcon_triggered) {
+				if(ev.rcon_status) {
 					p_cm->moveTypeFollowWallSaveBlocks();
 					movement_i_ = mm_rcon;
 					sp_movement_.reset(new MovementRcon(is_left_));
@@ -111,7 +114,7 @@ bool MoveTypeFollowWall::isFinish()
 		else if(movement_i_ == mm_back)
 		{
 			movement_i_ = mm_stay;
-			sp_movement_.reset(new MovementStay(0.33));
+			sp_movement_.reset(new MovementStay(STAY_SEC_AFTER_BACK));
 			//resetTriggeredValue();
 		}
 		else if (movement_i_ == mm_stay) {
@@ -218,20 +221,6 @@ int16_t MoveTypeFollowWall::obsTurnAngle()
 	if(!is_left_)
 		turn_angle = -turn_angle;
 //	ROS_WARN("turn_angle(%d)",turn_angle);
-	return turn_angle;
-}
-
-int16_t MoveTypeFollowWall::rconTurnAngle()
-{
-	int16_t turn_angle{};
-	enum {left,fl2,fl,fr,fr2,right};
-	int16_t left_angle[] =   {-30,-60,-85,-85,-95,-110};
-	int16_t right_angle[] =  {110, 95, 85, 85, 60, 30};
-	if(is_left_)
-		turn_angle = left_angle[ev.rcon_triggered-1];
-	else if(!is_left_)
-		turn_angle = right_angle[ev.rcon_triggered-1];
-
 	return turn_angle;
 }
 
@@ -351,12 +340,6 @@ double MoveTypeFollowWall::getTurnRadianByEvent()
 		turn_angle = obsTurnAngle();
 		ROS_INFO("%s %d: Lidar triggered, turn_angle: %d.", __FUNCTION__, __LINE__, turn_angle);
 	}
-	if (ev.rcon_triggered)
-	{
-		turn_angle = rconTurnAngle();
-		ROS_INFO("%s %d: Rcon triggered, turn_angle: %d.", __FUNCTION__, __LINE__, turn_angle);
-	}
-
 	if(ev.robot_slip)
 	{
 		// Temporary use obs as lidar triggered.
@@ -383,12 +366,13 @@ double MoveTypeFollowWall::getTurnRadian(bool use_target_radian)
 		ROS_INFO("%s %d: Not use fit line angle!", __FUNCTION__, __LINE__);
 		auto ev_turn_radian = getTurnRadianByEvent();
 		if(ev_turn_radian == 0 && use_target_radian) { //		if(/*use_target_radian*/ 0 )
-			auto target_point_ = dynamic_cast<ACleanMode*> (sp_mode_)->plan_path_.front();
-			auto target_turn_radian = getPosition().courseToDest(target_point_);
-			turn_radian = std::abs(ev_turn_radian) > std::abs(target_turn_radian) ? ev_turn_radian : target_turn_radian;
-			ROS_INFO("%s %d: target_turn_radian(%f in degree), event_turn_radian(%f in degree), choose the big one(%f in degree)",
-					 __FUNCTION__, __LINE__, radian_to_degree(target_turn_radian),
-					 radian_to_degree(ev_turn_radian), radian_to_degree(turn_radian));
+			auto target_point_ = remain_path_.back();
+//			auto target_turn_radian = getPosition().courseToDest(target_point_);
+			turn_radian = getPosition().courseToDest(target_point_);
+//			turn_radian = std::abs(ev_turn_radian) > std::abs(target_turn_radian) ? ev_turn_radian : target_turn_radian;
+//			ROS_INFO("%s %d: target_turn_radian(%f in degree), event_turn_radian(%f in degree), choose the big one(%f in degree)",
+//					 __FUNCTION__, __LINE__, radian_to_degree(target_turn_radian),
+//					 radian_to_degree(ev_turn_radian), radian_to_degree(turn_radian));
 		}
 		else
 		{
@@ -403,9 +387,9 @@ double MoveTypeFollowWall::getTurnRadian(bool use_target_radian)
 bool MoveTypeFollowWall::isOverOriginLine(GridMap &map)
 {
 	auto curr = getPosition();
-	auto target_point_ = dynamic_cast<ACleanMode*>(sp_mode_)->plan_path_.back();
-	if ((target_point_.y > start_point_.y && (start_point_.y - curr.y) > CELL_SIZE/4)
-		|| (target_point_.y < start_point_.y && (curr.y - start_point_.y) > CELL_SIZE/4))
+	auto target_point_ = remain_path_.back();
+	if ((target_point_.y > start_point_.y && (start_point_.y - curr.y) > CELL_SIZE / 6)
+		|| (target_point_.y < start_point_.y && (curr.y - start_point_.y) > CELL_SIZE / 6))
 	{
 //		ROS_WARN("origin(%d,%d) curr_p(%d, %d), target_point__(%d, %d)",start_point_.x, start_point_.y,  curr.x, curr.y, target_point_.x, target_point_.y);
 //		auto target_angle = (target_point_.y > start_point_.y) ? -900 : 900;
@@ -433,7 +417,7 @@ bool MoveTypeFollowWall::isOverOriginLine(GridMap &map)
 
 bool MoveTypeFollowWall::isNewLineReach(GridMap &map)
 {
-	auto target_point_ = dynamic_cast<ACleanMode*>(sp_mode_)->plan_path_.back();
+	auto target_point_ = remain_path_.back();
 	auto s_curr_p = getPosition();
 	auto ret = false;
 	auto is_pos_dir = target_point_.y - start_point_.y > 0;

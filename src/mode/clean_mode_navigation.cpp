@@ -9,6 +9,7 @@
 #include <map.h>
 #include <path_algorithm.h>
 #include "mode.hpp"
+#include "mathematics.h"
 //#define NAV_INFO() ROS_INFO("st(%d),ac(%d)", state_i_, action_i_)
 
 CleanModeNav::CleanModeNav()
@@ -42,11 +43,10 @@ bool CleanModeNav::mapMark()
 {
 	ROS_INFO("%s %d: Start updating map.", __FUNCTION__, __LINE__);
 	clean_path_algorithm_->displayPointPath((passed_path_));
-	clean_map_.setCleaned(pointsGenerateCells(passed_path_));
 
 	if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
 	{
-//		ROS_ERROR("-------------------------------------------------------");
+		setCleaned(pointsGenerateCells(passed_path_));
 		auto start = *passed_path_.begin();
 		passed_path_.erase(std::remove_if(passed_path_.begin(),passed_path_.end(),[&start](Point_t& it){
 			return it.toCell() == start.toCell();
@@ -54,22 +54,41 @@ bool CleanModeNav::mapMark()
 		clean_path_algorithm_->displayPointPath(passed_path_);
 //		ROS_ERROR("-------------------------------------------------------");
 		clean_map_.setFollowWall(action_i_ == ac_follow_wall_left, passed_path_);
+		clean_map_.markRobot(CLEAN_MAP);
 	}
 	else if (sp_state == state_clean)
 	{
+		setLinearCleaned();
 		// Set home cell.
-		if (ev.rcon_triggered)
+		if (ev.rcon_status)
 			setHomePoint();
 	}
 
 	clean_map_.setBlocks();
-	clean_map_.markRobot(CLEAN_MAP);
 //	clean_map_.print(CLEAN_MAP, getPosition().toCell().x, getPosition().toCell().y);
 
 	passed_path_.clear();
 	return false;
 }
 
+bool CleanModeNav::markRealTime()
+{
+//	while (ros::ok()) {
+//		sleep(0.2);
+//		wheel.stop();
+		std::vector<Vector2<int>> markers;
+		if (lidar.isScanCompensateReady())
+			lidar.lidarMarker(markers, 0.23);
+//		ROS_INFO("markers.size() = %d", markers.size());
+		for (const auto& marker : markers) {
+//			ROS_INFO("marker(%d, %d)", marker.x, marker.y);
+			auto cell = getPosition().getRelative(marker.x * CELL_SIZE, marker.y * CELL_SIZE).toCell();
+			clean_map_.setCell(CLEAN_MAP, cell.x, cell.y, BLOCKED_LIDAR);
+		}
+//	}
+	return true;
+
+}
 bool CleanModeNav::isExit()
 {
 	if (sp_state == state_init)
@@ -427,7 +446,8 @@ void CleanModeNav::switchInStateInit() {
 		has_aligned_and_open_slam_ = true;
 
 		auto curr = getPosition();
-		passed_path_.push_back(curr);
+//		curr.dir = iterate_point_.dir;
+//		passed_path_.push_back(curr);
 		start_point_.th = curr.th;
 		sp_state = state_clean;
 	}
@@ -443,35 +463,29 @@ bool CleanModeNav::isSwitchByEventInStateClean() {
 
 bool CleanModeNav::updateActionInStateClean(){
 	sp_action_.reset();//to mark in destructor
-//	pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
+//	pubCleanMapMarkers(clean_map_, pointsGenerateCells(remain_path_));
 	old_dir_ = iterate_point_.dir;
 	if(action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
 		old_dir_ = MAP_ANY;
 	if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
 		pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 		iterate_point_ = plan_path_.front();
-		plan_path_.pop_front();
+//		plan_path_.pop_front();
 		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
 		auto npa = boost::dynamic_pointer_cast<NavCleanPathAlgorithm>(clean_path_algorithm_);
 
-		if (old_dir_ != MAP_ANY && (npa->curr_filter_ == &npa->filter_p0_1t_xp
-				|| npa->curr_filter_ == &npa->filter_p0_1t_xn
-				|| npa->curr_filter_ == &npa->filter_p2
-				|| npa->curr_filter_ == &npa->filter_p1
-				|| npa->curr_filter_ == &npa->filter_n2
-				|| npa->curr_filter_ == &npa->filter_n1)
-						)
+		if (old_dir_ != MAP_ANY && clean_map_.isFrontBlocked(old_dir_)
+				&& (npa->curr_filter_ == &npa->filter_p0_1t_xp
+						 || npa->curr_filter_ == &npa->filter_p0_1t_xn
+						 || npa->curr_filter_ == &npa->filter_p2
+						 || npa->curr_filter_ == &npa->filter_p1
+						 || npa->curr_filter_ == &npa->filter_n2
+						 || npa->curr_filter_ == &npa->filter_n1)
+				)
 		{
-			if(isXAxis(old_dir_))
-			{
-				ROS_INFO("set_follow_dir,x axis()");
-				bool is_left = isPos(old_dir_) ^ npa->curr_filter_->towardPos();
-				action_i_ = is_left ? ac_follow_wall_left : ac_follow_wall_right;
-			}else{
-				ROS_WARN("set_follow_dir,y axis()");
-				bool is_left = isPos(old_dir_) ^  (plan_path_.back().toCell().x - iterate_point_.toCell().x) <0;
-				action_i_ = is_left ? ac_follow_wall_left : ac_follow_wall_right;
-			}
+			auto toward_pos = isXAxis(old_dir_) ? npa->curr_filter_->towardPos(): (iterate_point_.toCell().x - plan_path_.back().toCell().x) > 0;
+			bool is_left = isPos(old_dir_) ^ toward_pos;
+			action_i_ = is_left ? ac_follow_wall_left : ac_follow_wall_right;
 		}
 		else
 			action_i_ = ac_linear;
@@ -730,7 +744,7 @@ bool CleanModeNav::updateActionInStateResumeLowBatteryCharge()
 		if (!plan_path_.empty()) {
 			iterate_point_ = plan_path_.front();
 			ROS_ERROR("start_point_.dir(%d)", iterate_point_.dir);
-			plan_path_.pop_front();
+//			plan_path_.pop_front();
 			clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
 			action_i_ = ac_linear;
 			genNextAction();

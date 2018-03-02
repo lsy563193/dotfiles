@@ -10,7 +10,7 @@ int g_bumper_cnt = 0;
 uint8_t g_cliff_all_cnt = 0;
 int g_cliff_cnt = 0;
 /* RCON */
-//int ev.rcon_triggered = 0;
+//int ev.rcon_status = 0;
 /* Over Current */
 uint8_t g_oc_wheel_left_cnt = 0;
 uint8_t g_oc_wheel_right_cnt = 0;
@@ -559,7 +559,7 @@ void event_manager_reset_status(void)
 	g_cliff_all_cnt = 0;
 	g_cliff_cnt = 0;
 	/* RCON */
-	ev.rcon_triggered = 0;
+	ev.rcon_status = 0;
 	/* Over Current */
 	ev.oc_brush_main = false;
 	ev.oc_wheel_left = false;

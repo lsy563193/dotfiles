@@ -301,14 +301,14 @@ public:
 //	BestTargetFilter filter_0_xn{range_0_xn, 1, false};
 	BestTargetFilter filter_p0_1t_xp{range_0_xp , 1, true, true};
 	BestTargetFilter filter_p0_1t_xn{range_0_xn, 1, true, true};
-	BestTargetFilter filter_p3p{range_p3p, 0, true};
+	BestTargetFilter filter_p4p{range_p3p, 0, true};
 	BestTargetFilter filter_p2{range_p2, 0, true};
 	BestTargetFilter filter_p1{range_p1, 0, true};
 	BestTargetFilter filter_p_1t{range_all,1,true};
 	BestTargetFilter filter_n0_1t_xp{range_0_xp , 1, false, true};
 	BestTargetFilter filter_n0_1t_xn{range_0_xn, 1, false, true};
 	BestTargetFilter filter_n2{range_n2 , 0, false};
-	BestTargetFilter filter_n3n{range_n3n, 0, false};
+	BestTargetFilter filter_n4n{range_n3n, 0, false};
 	BestTargetFilter filter_n1{range_n1 , 0, false};
 	BestTargetFilter filter_n_1t{range_all, 1, false};
 	BestTargetFilter filter_p_1000t{range_all, 1000,true};
@@ -447,6 +447,21 @@ private:
 	 * @return: Cells path, the path to unclean area.
 	 * @return: bool, true if operation succeeds.
 	 */
+	bool generatePathWithSlamMapClearBlocks(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &plan_path);
+
+	/*
+	 * @author Austin Liu
+	 *
+	 * This function is for generating path to home point through the slam map reachable area(CLEANED in CLEAN_MAP).
+	 * This map has been covered by the slam map to clear the uncertain blocks and add the cleanable area.
+	 *
+	 * @param: GridMap map, it will use it's CLEAN_MAP data.
+	 * @param: Cell_t curr_cell, the current cell of robot.
+	 * @param: MapDirection last_dir, the direction of last movement.
+	 *
+	 * @return: Cells path, the path to unclean area.
+	 * @return: bool, true if operation succeeds.
+	 */
 	bool generatePathThroughSlamMapReachableArea(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &plan_path);
 
 	/*
@@ -465,6 +480,7 @@ private:
 
 typedef enum {
 	THROUGH_CLEANED_AREA = 0,
+	SLAM_MAP_CLEAR_BLOCKS,
 	THROUGH_SLAM_MAP_REACHABLE_AREA,
 	THROUGH_UNKNOWN_AREA,
 	GO_HOME_WAY_NUM

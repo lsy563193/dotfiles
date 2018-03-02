@@ -94,7 +94,7 @@ bool ModeSleep::isExit()
 		return true;
 	}
 
-	if (ev.rcon_triggered && !serial.isMainBoardSleep())
+	if (ev.rcon_status && !serial.isMainBoardSleep())
 	{
 		ROS_WARN("%s %d: Rcon detected, switch to go to charger mode.", __FUNCTION__, __LINE__);
 		setNextMode(md_go_to_charger);
@@ -152,7 +152,7 @@ void ModeSleep::rcon(bool state_now, bool state_last)
 	if (serial.isMainBoardSleep())
 	{
 		ROS_WARN("%s %d: Waked up by rcon signal.", __FUNCTION__, __LINE__);
-		ev.rcon_triggered = c_rcon.getAll();
+		ev.rcon_status = c_rcon.getAll();
 		serial.setMainBoardMode(WORK_MODE);
 	}
 	c_rcon.resetStatus();

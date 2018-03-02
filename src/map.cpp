@@ -3,6 +3,7 @@
 #include "map.h"
 #include "robot.hpp"
 #include "event_manager.h"
+#include "rcon.h"
 
 GridMap slam_grid_map;
 GridMap decrease_map;
@@ -319,10 +320,10 @@ void GridMap::convertFromSlamMap(float threshold)
 	}
 }
 
-void GridMap::mergeFromSlamGridMap(GridMap source_map, bool add_slam_map_blocks_to_uncleaned,
-								   bool add_slam_map_blocks_to_cleaned,
-								   bool add_slam_map_cleanable_area, bool clear_map_blocks, bool clear_slam_map_blocks,
-								   bool clear_bumper_and_lidar_blocks)
+void GridMap::merge(GridMap source_map, bool add_slam_map_blocks_to_uncleaned,
+					bool add_slam_map_blocks_to_cleaned,
+					bool add_slam_map_cleanable_area, bool clear_map_blocks, bool clear_slam_map_blocks,
+					bool clear_bumper_and_lidar_blocks)
 {
 	int16_t map_x_min, map_y_min, map_x_max, map_y_max;
 	source_map.getMapRange(CLEAN_MAP, &map_x_min, &map_x_max, &map_y_min, &map_y_max);
@@ -532,7 +533,7 @@ uint8_t GridMap::setRcon()
 uint8_t GridMap::setFollowWall(bool is_left,const Points& passed_path)
 {
 	uint8_t block_count = 0;
-	if (!passed_path.empty())
+	if (!passed_path.empty() && (temp_bumper_cells.empty() || temp_obs_cells.empty() || temp_rcon_cells.empty() || temp_cliff_cells.empty()) || temp_lidar_cells.empty())
 	{
 		std::string msg = "cell:";
 		auto dy = is_left ? 2 : -2;
@@ -577,7 +578,6 @@ uint8_t GridMap::setChargerArea(const Points charger_pos_list)
 
 
 	const int RADIAN= 4;//cells
-
 	setCircleMarkers(charger_pos_list.back(),true,RADIAN,BLOCKED_RCON);
 
 }
@@ -783,17 +783,14 @@ uint8_t GridMap::saveBumper(bool is_linear)
 
 uint8_t GridMap::saveRcon()
 {
-	auto rcon_trig = ev.rcon_triggered/*rcon_get_trig()*/;
+	auto rcon_trig = ev.rcon_status/*rcon_get_trig()*/;
 	if(! rcon_trig)
 		return 0;
 
-	enum {
-		left, fl2, fl1, fr1, fr2, right,
-	};
 	std::vector<Cell_t> d_cells;
-	switch (ev.rcon_triggered - 1)
+	switch (c_rcon.convertToEnum(rcon_trig))
 	{
-		case left:
+		case Rcon::left:
 			d_cells.push_back({1,2});
 			d_cells.push_back({1,3});
 			d_cells.push_back({1,4});
@@ -804,7 +801,7 @@ uint8_t GridMap::saveRcon()
 			d_cells.push_back({3,3});
 			d_cells.push_back({3,4});
 			break;
-		case fl2:
+		case Rcon::fl2:
 			d_cells.push_back({2,1});
 			d_cells.push_back({2,2});
 			d_cells.push_back({2,3});
@@ -817,8 +814,8 @@ uint8_t GridMap::saveRcon()
 //			dx = 1, dy = 2;
 //			dx2 = 2, dy2 = 1;
 			break;
-		case fl1:
-		case fr1:
+		case Rcon::fl:
+		case Rcon::fr:
 			d_cells.push_back({2,0});
 			d_cells.push_back({3,0});
 			d_cells.push_back({4,0});
@@ -829,7 +826,7 @@ uint8_t GridMap::saveRcon()
 			d_cells.push_back({3,1});
 			d_cells.push_back({4,1});
 			break;
-		case fr2:
+		case Rcon::fr2:
 //			dx = 1, dy = -2;
 //			dx2 = 2, dy2 = -1;
 			d_cells.push_back({2,-1});
@@ -842,7 +839,7 @@ uint8_t GridMap::saveRcon()
 			d_cells.push_back({4,-2});
 			d_cells.push_back({4,-3});
 			break;
-		case right:
+		case Rcon::right:
 			d_cells.push_back({1,-2});
 			d_cells.push_back({1,-3});
 			d_cells.push_back({1,-4});
@@ -881,44 +878,6 @@ uint8_t GridMap::saveBlocks(bool is_linear, bool is_save_rcon)
 //	block_count += save_follow_wall();
 
 	return block_count;
-}
-
-void GridMap::setCleaned(std::deque<Cell_t> cells)
-{
-	if(cells.empty())
-		return;
-
-	//while robot turn finish and going to a new diretion
-	//may cost location change and cover the block cells
-	//so we append a cell in front of the cell list
-	//to avoid robot clean in the same line again. 
-	auto is_x_pos = cells.front().x > cells.back().x ? false: true;
-	auto x_offset = is_x_pos? -1 : 1;
-	Cell_t cell_front = {int16_t(cells.front().x + x_offset),cells.front().y};
-	cells.push_front(cell_front);
-
-	std::string msg = "Cell:";
-
-	//in the first cell of cells ,we just mark 6 cells
-	for (uint32_t i = 0; i< cells.size(); i++)
-	{
-		Cell_t cell = cells.at(i);
-		msg += "(" + std::to_string(cell.x) + "," + std::to_string(cell.y)   + "),";
-		for( int dx = -(int)ROBOT_SIZE_1_2;dx <=(int)ROBOT_SIZE_1_2;dx++)
-		{
-			if( i == 0)
-				if(is_x_pos && dx == -(int)ROBOT_SIZE_1_2)
-					continue;
-				else if(!is_x_pos && dx == (int)ROBOT_SIZE_1_2)
-					continue;
-			for(int dy = -(int)ROBOT_SIZE_1_2; dy <= (int)ROBOT_SIZE_1_2; dy++)
-			{
-				CellState status = getCell(CLEAN_MAP, cell.x+dx, cell.y+dy);
-				if (status != BLOCKED_TILT && status != BLOCKED_SLIP && status != BLOCKED_RCON)
-					setCell(CLEAN_MAP,cell.x+dx,cell.y+dy, CLEANED);
-			}
-		}
-	}
 }
 
 bool GridMap::markRobot(uint8_t id)
@@ -1206,8 +1165,6 @@ void GridMap::generateSPMAP(const Cell_t& curr_cell,Cells& targets)
 	Queue queue;
 	setCell(COST_MAP, curr_cell.x, curr_cell.y, 1);
 	queue.emplace(1, curr_cell);
-	bool is_found = false;
-//	map.print(CLEAN_MAP,curr.x, curr.y);
 
 	while (!queue.empty())
 	{
@@ -1232,20 +1189,15 @@ void GridMap::generateSPMAP(const Cell_t& curr_cell,Cells& targets)
 					continue;
 				if (getCell(COST_MAP, neighbor.x, neighbor.y) == 0) {
 					if (isBlockAccessible(neighbor.x, neighbor.y)) {
-						if(getCell(CLEAN_MAP, neighbor.x, neighbor.y) == UNCLEAN)
+						if(getCell(CLEAN_MAP, neighbor.x, neighbor.y) == UNCLEAN && neighbor.y % 2 == 0)
 							targets.push_back(neighbor);
 						queue.emplace(cost+1, neighbor);
-						setCell(COST_MAP, neighbor.x, neighbor.y, CellState(cost+1));
-//						print(COST_MAP, curr_cell, 0,0);
+						setCell(COST_MAP, neighbor.x, neighbor.y, cost+1);
 					}
-//					else
-//						setCell(COST_MAP, neighbor.x, neighbor.y, 1);
 				}
 			}
 		}
 	}
-//	print(CLEAN_MAP,curr_cell, 0,0);
-//	print(COST_MAP,curr_cell, 0,0);
 }
 
 bool GridMap::isFrontBlockBoundary(int dx)
@@ -1481,8 +1433,39 @@ void GridMap::colorPrint(const char *outString, int16_t y_min, int16_t y_max)
 	printf("%s\033[0m\n",y_col.c_str());
 }
 
+bool GridMap::isFrontBlocked(Dir_t dir)
+{
+	bool retval = false;
+	std::vector<Cell_t> d_cells;
+	if(isAny(dir) || (isXAxis(dir) && isPos(dir)))
+		d_cells = {{2,1},{2,0},{2,-1}};
+	else if(isXAxis(dir) && !isPos(dir))
+		d_cells = {{-2,1},{-2,0},{-2,-1}};
+	else if(!isXAxis(dir) && isPos(dir))
+		d_cells = {{1,2},{0,2},{-1,2}};
+	else if(!isXAxis(dir) && !isPos(dir))
+		d_cells = {{1,-2},{0,-2},{-1,-2}};
+	for(auto& d_cell : d_cells)
+	{
+		Cell_t cell;
+		if(isAny(dir))
+		{
+			cell = getPosition().getRelative(d_cell.x * CELL_SIZE, d_cell.y * CELL_SIZE).toCell();
+		}
+		else{
+				cell = getPosition().toCell() + d_cell;
+		}
 
-bool GridMap::isFrontBlocked(void)
+		if(isABlock(cell.x, cell.y))
+		{
+			retval = true;
+			break;
+		}
+	}
+	return retval;
+}
+
+bool GridMap::isFrontSlamBlocked(void)
 {
 	bool retval = false;
 	std::vector<Cell_t> d_cells;
@@ -1500,12 +1483,12 @@ bool GridMap::isFrontBlocked(void)
 	return retval;
 }
 
-void GridMap::setCircleMarkers(Point_t point,bool cover_block,int radian,CellState cell_state)
+void GridMap::setCircleMarkers(Point_t point, bool cover_block, int radius, CellState cell_state)
 {
-	const int RADIUS_CELL = radian;
+	const int RADIUS_CELL = radius;
 	Point_t tmp_point = point;
-	int16_t deg_point_th = (int16_t)radian_to_degree(point.th);
-	ROS_INFO("\033[1;40;32m deg_point_th = %d,point(%d,%d)\033[0m",deg_point_th,point.toCell().x,point.toCell().y);
+	auto deg_point_th = static_cast<int16_t>(radian_to_degree(point.th));
+	ROS_INFO("\033[1;40;32m deg_point_th = %d, point(%d,%d)\033[0m",deg_point_th,point.toCell().x,point.toCell().y);
 	for (int dy = 0; dy < RADIUS_CELL; ++dy) {
 		for (int16_t angle_i = 0; angle_i <360; angle_i += 1) {
 			tmp_point.th = ranged_radian(degree_to_radian(deg_point_th + angle_i));
@@ -1536,5 +1519,12 @@ void GridMap::setBlockWithBound(Cell_t min, Cell_t max, CellState state,bool wit
 			setCell(CLEAN_MAP, min.x - 1, i, BLOCKED);
 	}
 
+}
+
+void GridMap::setArea(Cell_t center, CellState cell_state, uint16_t x_len, uint16_t y_len)
+{
+	for (auto dx = -x_len; dx <= x_len; dx++)
+		for (auto dy = -y_len; dy <= y_len; dy++)
+			setCell(CLEAN_MAP, static_cast<int16_t>(center.x + dx), static_cast<int16_t>(center.y + dy), cell_state);
 }
 

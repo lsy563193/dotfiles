@@ -99,9 +99,9 @@ bool IMoveType::shouldTurn()
 
 bool IMoveType::RconTrigger()
 {
-	ev.rcon_triggered = c_rcon.getWFRcon();
-	if (ev.rcon_triggered) {
-		ROS_WARN("%s, %d: ev.rcon_triggered(%d).", __FUNCTION__, __LINE__, ev.rcon_triggered);
+	ev.rcon_status = c_rcon.getWFRcon();
+	if (ev.rcon_status) {
+		ROS_WARN("%s, %d: ev.rcon_status(%d).", __FUNCTION__, __LINE__, ev.rcon_status);
 		return true;
 	}
 	return false;
@@ -109,9 +109,9 @@ bool IMoveType::RconTrigger()
 
 void IMoveType::resetTriggeredValue()
 {
-	PP_INFO();
+//	PP_INFO();
 	ev.lidar_triggered = 0;
-//	ev.rcon_triggered = 0;
+//	ev.rcon_status = 0;
 	ev.bumper_triggered = 0;
 	ev.obs_triggered = 0;
 	ev.cliff_triggered = 0;
@@ -130,8 +130,10 @@ bool IMoveType::isFinish()
 		if(p_cm->moveTypeNewCellIsFinish(this))
 			return true;
 	}
-	if(p_cm->moveTypeRealTimeIsFinish(this))
+	if(p_cm->moveTypeRealTimeIsFinish(this)) {
+//		wheel.stop();
 		return true;
+	}
 
 	return false;
 }
@@ -141,46 +143,43 @@ void IMoveType::run()
 	sp_movement_->run();
 }
 
-int IMoveType::countRconTriggered(uint32_t rcon_value)
+uint32_t IMoveType::countRconTriggered(uint32_t rcon_value, int max_cnt)
 {
 	if(rcon_value == 0)
 		return 0;
 
-	int MAX_CNT = 3;
-	if ( rcon_value& RconL_HomeT)
-		rcon_cnt[left]++;
-	if ( rcon_value& RconFL_HomeT)
-		rcon_cnt[fl1]++;
-	if ( rcon_value& RconFL2_HomeT)
-		rcon_cnt[fl2]++;
-	if ( rcon_value& RconFR2_HomeT)
-		rcon_cnt[fr2]++;
-	if ( rcon_value& RconFR_HomeT)
-		rcon_cnt[fr1]++;
-	if ( rcon_value& RconR_HomeT)
-		rcon_cnt[right]++;
-	auto ret = 0;
-	for (int i = 0; i < 6; i++)
-		if ( (i == fl1 || i == fr1 ) && rcon_cnt[i] > MAX_CNT) {
-			rcon_cnt[left] = rcon_cnt[fl1] = rcon_cnt[fl2] = rcon_cnt[fr2] = rcon_cnt[fr1] = rcon_cnt[right] = 0;
-			ret = i + 1;
+	if (rcon_value & RconL_HomeT)
+		rcon_cnt[Rcon::left]++;
+	if (rcon_value & RconFL_HomeT)
+		rcon_cnt[Rcon::fl]++;
+	if (rcon_value & RconFL2_HomeT)
+		rcon_cnt[Rcon::fl2]++;
+	if (rcon_value & RconFR2_HomeT)
+		rcon_cnt[Rcon::fr2]++;
+	if (rcon_value & RconFR_HomeT)
+		rcon_cnt[Rcon::fr]++;
+	if (rcon_value & RconR_HomeT)
+		rcon_cnt[Rcon::right]++;
+	uint32_t ret = 0;
+	for (int i = Rcon::enum_start; i < Rcon::enum_end; i++)
+	{
+		if (((i == Rcon::fl || i == Rcon::fr) && rcon_cnt[i] > max_cnt) ||
+				((i == Rcon::left || i == Rcon::right || i == Rcon::fl2 || i == Rcon::fr2) && rcon_cnt[i] > (max_cnt + 2)))
+		{
+			for (int j = Rcon::enum_start; j > Rcon::enum_end; j++)
+				rcon_cnt[j] = 0;
+			ret = Rcon::convertFromEnum(i);
 			break;
 		}
-		else if( (i == left || i == right || i == fl2 || i == fr2) && rcon_cnt[i] > (MAX_CNT + 2)){
-			rcon_cnt[left] = rcon_cnt[fl1] = rcon_cnt[fl2] = rcon_cnt[fr2] = rcon_cnt[fr1] = rcon_cnt[right] = 0;
-			ret = i + 1;
-			break;
-
-		}
-
+	}
 	return ret;
 }
 
 bool IMoveType::isRconStop()
 {
 	bool ret = false;
-	ev.rcon_triggered = countRconTriggered(c_rcon.getNavRcon());
-	if(ev.rcon_triggered)
+	ev.rcon_status = countRconTriggered(c_rcon.getNavRcon(), 3);
+	if(ev.rcon_status)
 	{
 		INFO_PURPLE("Rcon triggered and stop.");
 		ret = true;

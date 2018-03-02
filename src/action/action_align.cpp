@@ -31,7 +31,7 @@ bool ActionAlign::isFinish()
 void ActionAlign::run()
 {
 	wheel.setPidTargetSpeed(0, 0);
-	if (!((wait_laser_timer_ == 0) || (ros::Time::now().toSec() - start_timer_ > wait_laser_timer_))) {
+	if (ros::Time::now().toSec() - start_timer_ <= wait_laser_timer_) {
 //		ROS_WARN("%s %d: Waiting for stable laser", __FUNCTION__, __LINE__);
 		return;
 	}

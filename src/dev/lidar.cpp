@@ -349,7 +349,7 @@ bool Lidar::findLines(std::vector<LineABC> *lines,bool combine)
 	std::vector<LineABC>::iterator it;
 	for(it = lines->begin();it!= lines->end();it++){
 		msg+= "\n[A:"+ std::to_string(it->A) +",B:" + std::to_string(it->B) +",C:" +
-			std::to_string(it->C)+",len = "+std::to_string(it->len)+",K = " +
+			std::to_string(it->C)+",len = "+std::to_string(it->size_of_path)+",K = " +
 			std::to_string(it->K)+",("+std::to_string(it->x1)+","+
 			std::to_string(it->y1)+"),("+std::to_string(it->x2)+","+std::to_string(it->y2)+")]";
 	}
@@ -388,20 +388,20 @@ bool Lidar::isAlignFinish()
 //	const float LONG_ENOUGTH = 1.0;//in meters
 //	std::vector<float> same_angle_count;
 //	std::vector<LineABC>::const_iterator it1,it2;
-//	float len = 0.0;
+//	float size_of_path = 0.0;
 //	int i=0;
 //	int pos = 0;
 //	/*----find the longest one in lines---*/
 //	for(it1 = lines->cbegin(); it1!= lines->cend(); it1++){
-//		if(it1->len >= len){
-//			len = it1->len;
+//		if(it1->len >= size_of_path){
+//			len = it1->size_of_path;
 //			pos = i;
 //		}
 //		i++;
 //	}
-//	if(lines->at(pos).len >= LONG_ENOUGTH){
+//	if(lines->at(pos).size_of_path >= LONG_ENOUGTH){
 //		*align_angle = lines->at(pos).K;
-//		ROS_INFO("%s,%d: find long line %f ,align_angle %f",__FUNCTION__,__LINE__,lines->at(pos).len,*align_angle);
+//		ROS_INFO("%s,%d: find long line %f ,align_angle %f",__FUNCTION__,__LINE__,lines->at(pos).size_of_path,*align_angle);
 //		align_finish_ = true;
 //		return true;
 //	}
@@ -800,7 +800,7 @@ bool Lidar::mergeLine(std::vector<std::deque<Vector2<double>> > *groups, double 
 //		ROS_INFO("merge_index.pop_back()");
 	}
 
-	/*do mergeFromSlamGridMap*/
+	/*do merge*/
 //	ROS_WARN("before do merge! (*groups).size() = %d", (*groups).size());
 	if (!merge_index.empty()) {
 		int loop_count = 0;
@@ -1026,8 +1026,10 @@ static uint8_t setLidarMarkerAcr2Dir(double X_MIN,double X_MAX,int angle_from,in
 
 }
 
-uint8_t Lidar::lidarMarker(double X_MAX)
+uint8_t Lidar::lidarMarker(std::vector<Vector2<int>> &markers, double X_MAX)
 {
+//	markers.clear();
+
 	if(!lidarCheckFresh(0.6,4))
 		return 0;
 
@@ -1035,9 +1037,10 @@ uint8_t Lidar::lidarMarker(double X_MAX)
 	auto tmp_lidarXY_points = lidarXY_points;
 	lidarXYPoint_mutex_.unlock();
 	double x, y;
-	int dx, dy;
+	int dx{}, dy{};
 	const	double Y_MAX = 0.20;//0.279
 	int	count_array[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+	Vector2<int> marker = {dx,dy};
 
 	for(const auto& point:lidarXY_points){
 		x = point.x;
@@ -1194,9 +1197,18 @@ uint8_t Lidar::lidarMarker(double X_MAX)
 				}
 			}
 		}
+/*		if (!direction_msg.empty()) {
+			ROS_INFO("%s %d: \033[36mlidar marker: %s.\033[0m", __FUNCTION__, __LINE__, direction_msg.c_str());
+			direction_msg.clear();
+		}*/
+		marker.x = dx;
+		marker.y = dy;
+		if (!(dx == 0 && dy == 0))
+			markers.push_back(marker);
+		dx = 0;
+		dy = 0;
 	}
-//	if (!msg.empty())
-//		ROS_INFO("%s %d: \033[36mlidar marker: %s.\033[0m", __FUNCTION__, __LINE__, msg.c_str());
+
 	return block_status;
 }
 
@@ -1645,8 +1657,9 @@ bool Lidar::lidar_is_stuck()
 
 uint8_t Lidar::lidar_get_status()
 {
-	if (lidar.isScanCompensateReady())
-		return lidar.lidarMarker(0.23);
+	std::vector<Vector2<int>> markers;
+	if (isScanCompensateReady())
+		return lidarMarker(markers, 0.23);
 
 	return 0;
 }

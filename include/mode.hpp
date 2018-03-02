@@ -103,7 +103,7 @@ public:
 		ac_bumper_hit_test,
 	};
 
-	void genNextAction();
+	virtual void genNextAction();
 
 	bool isExceptionTriggered();
 
@@ -271,7 +271,10 @@ public:
 	bool isGyroDynamic();
 	bool generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &targets);
 
+	void genNextAction();
 	virtual bool mapMark() = 0;
+	void setCleaned(std::deque<Cell_t> cells);
+	void setLinearCleaned();
 	virtual bool markRealTime(){return false;};
 	virtual bool markMapInNewCell(){return false;};
 
@@ -413,7 +416,7 @@ public:
 
 	State *state_init = new StateInit();
 	State *state_clean = new StateClean();
-	State *state_exception_resume = new ExceptionResume();
+	State *state_exception_resume = new StateExceptionResume();
 	State *state_exploration = new StateExploration();
 
 	Points passed_path_{};
@@ -500,6 +503,7 @@ public:
 	~CleanModeNav();
 
 	bool mapMark() override;
+	bool markRealTime() override;
 	bool isExit() override;
 
 	void keyClean(bool state_now, bool state_last) override ;

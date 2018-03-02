@@ -10,8 +10,8 @@
 
 void MovementRcon::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
-//	ROS_INFO("rcon_status = %x ev.rcon_triggered = %x", rcon_status, ev.rcon_triggered);
-	rcon_status = ev.rcon_triggered;
+//	ROS_INFO("rcon_status = %x ev.rcon_status = %x", rcon_status, ev.rcon_status);
+	rcon_status = ev.rcon_status;
 //	ROS_INFO("rcon_status = %x", rcon_status);
 	/*---only use a part of the Rcon signal---*/
 	rcon_status &= (RconFL2_HomeT|RconFR_HomeT|RconFL_HomeT|RconFR2_HomeT);
@@ -72,11 +72,11 @@ bool MovementRcon::isFinish() {
 MovementRcon::MovementRcon(bool is_left) {
 	ROS_INFO("%s %d: Entering movement rcon.", __FUNCTION__, __LINE__);
 	is_left_ = is_left;
-	rcon_status = ev.rcon_triggered;
-//	ROS_INFO("ev.rcon_triggered = %x", ev.rcon_triggered);
+	rcon_status = ev.rcon_status;
+//	ROS_INFO("ev.rcon_status = %x", ev.rcon_status);
 }
 
 MovementRcon::~MovementRcon() {
-//	ev.rcon_triggered = 0;
+//	ev.rcon_status = 0;
 	ROS_INFO("%s %d: Exit movement rcon.", __FUNCTION__, __LINE__);
 }

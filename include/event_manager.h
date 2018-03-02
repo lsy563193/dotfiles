@@ -50,7 +50,7 @@ typedef struct {
 
 		bool fatal_quit;
 		uint8_t bumper_triggered;
-		int rcon_triggered;
+		uint32_t rcon_status;
 		uint8_t obs_triggered;
 		bool bumper_jam;
 		uint8_t cliff_triggered;

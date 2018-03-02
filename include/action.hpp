@@ -77,6 +77,9 @@ public:
 	ActionOpenSlam();
 	bool isFinish();
 	void run();
+private:
+	double wait_slam_timer_{1.0};
+	bool is_slam_start_{false};
 };
 
 class ActionSleep :public IAction

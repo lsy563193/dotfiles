@@ -76,10 +76,10 @@ int main(int argc, char **argv)
 
 	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
 	Dir_t old_dir_=MAP_POS_X;
-	Points plan_path_{};
+	Points remain_path_{};
 	ROS_INFO("clean_path_algorithm_!");
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm);
-	if (clean_path_algorithm_->generatePath(map, getPosition(), old_dir_, plan_path_)) {
+	if (clean_path_algorithm_->generatePath(map, getPosition(), old_dir_, remain_path_)) {
 
 	}
 	ROS_INFO("~~~~~~~~~~~~~~~~~~~!");*/
