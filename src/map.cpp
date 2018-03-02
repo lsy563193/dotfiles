@@ -4,6 +4,7 @@
 #include "robot.hpp"
 #include "event_manager.h"
 #include "rcon.h"
+#include "lidar.hpp"
 
 GridMap slam_grid_map;
 GridMap decrease_map;
@@ -698,7 +699,7 @@ uint8_t GridMap::saveLidar()
 		//robot_to_point(robot::instance()->getWorldPoseRadian(), d_cell.y * CELL_SIZE, d_cell.x * CELL_SIZE, &x2, &y2);
 		//ROS_WARN("%s %d: d_cell(%d, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
 		//			, __FUNCTION__, __LINE__, d_cell.x, d_cell.y, robot::instance()->getWorldPoseRadian(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
-		temp_lidar_cells.push_back(cell);
+		temp_lidar_cells.insert(cell);
 		msg += "[" + std::to_string(d_cell.x) + "," + std::to_string(d_cell.y) + "](" + std::to_string(cell.x) + "," + std::to_string(cell.y) + ")";
 	}
 	ROS_INFO("%s,%d: Current(%d, %d), save \033[32m%s\033[0m",__FUNCTION__, __LINE__, getPosition().toCell().x, getPosition().toCell().y, msg.c_str());

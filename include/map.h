@@ -283,6 +283,7 @@ public:
 	void colorPrint(const char *outString, int16_t y_min, int16_t y_max);
 	void print(uint8_t id, int16_t endx, int16_t endy);
 
+	std::set<Cell_t> temp_lidar_cells;
 private:
 	uint8_t clean_map[MAP_SIZE][(MAP_SIZE + 1) / 2];
 	uint8_t cost_map[MAP_SIZE][(MAP_SIZE + 1) / 2];
@@ -297,7 +298,6 @@ private:
 	std::vector<Cell_t> temp_tilt_cells;
 	std::vector<Cell_t> temp_slip_cells;
 	std::vector<Cell_t> temp_cliff_cells;
-	std::vector<Cell_t> temp_lidar_cells;
 	std::vector<Cell_t> temp_fw_cells;
 	std::vector<Cell_t> temp_WFMAP_follow_wall_cells;
 
