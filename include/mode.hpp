@@ -272,6 +272,7 @@ public:
 	bool generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &targets);
 
 	void genNextAction();
+	uint8_t setBlocks(Dir_t dir);
 	virtual bool mapMark() = 0;
 	void setCleaned(std::deque<Cell_t> cells);
 	void setLinearCleaned();

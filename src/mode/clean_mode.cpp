@@ -125,6 +125,57 @@ ACleanMode::~ACleanMode()
 			 __FUNCTION__, __LINE__, map_area, robot_timer.getWorkTime(),
 			 static_cast<float>(robot_timer.getWorkTime()) / 60, map_area / (static_cast<float>(robot_timer.getWorkTime()) / 60));
 }
+uint8_t ACleanMode::setBlocks(Dir_t dir)
+{
+	uint8_t block_count = 0;
+	std::vector<Cell_t> c_blocks{};
+	for(auto && set_i: clean_map_.p_sets)
+	{
+		std::vector<Cell_t> c_tmps{};
+		std::set_union(c_blocks.begin(),c_blocks.end(),set_i->begin(),set_i->end(),std::back_inserter(c_tmps),[](const Cell_t& l,const Cell_t& r){
+			return l != r;
+		});
+		c_blocks = c_tmps;
+	}
+	printf("c_blocks:\n");
+	for (auto &&block  : c_blocks) {
+		printf("{%d,%d}",block.x, block.y);
+	}
+	printf("\n");
+	if(!isAny(dir)) {
+		auto p_end = passed_path_.back();
+		auto c_end_next = p_end.toCell() + cell_direction_[dir];
+		auto dir_switch = (dir+2)%4;
+		for(auto i = -1; i<=1; i++)
+		{
+			auto c_it = c_end_next + cell_direction_[dir_switch]*i;
+			if(std::find_if(c_blocks.begin(), c_blocks.end(),[&c_it](const Cell_t cell){ return cell == c_it;}) != c_blocks.end())
+			{
+				auto c_it_next = c_it + cell_direction_[dir];
+				auto result = std::find_if(c_blocks.begin(), c_blocks.end(),[&c_it_next](const Cell_t cell){ return cell == c_it_next;});
+				if(result != c_blocks.end())
+				{
+					ROS_ERROR("remove block after block(%d,%d)",result->x,result->y);
+					c_blocks.erase(std::remove_if(c_blocks.begin(), c_blocks.end(), [&](const Cell_t& cell){
+						return cell == *result;
+					}),c_blocks.end());
+				}
+			}
+		}
+	}
+
+	for (auto &&block  : c_blocks) {
+		clean_map_.setCell(CLEAN_MAP, block.x, block.y, BLOCKED);
+	}
+	clean_map_.temp_slip_cells.clear();
+	clean_map_.temp_tilt_cells.clear();
+	clean_map_.temp_rcon_cells.clear();
+	clean_map_.temp_obs_cells.clear();
+	clean_map_.temp_lidar_cells.clear();
+	clean_map_.temp_bumper_cells.clear();
+	clean_map_.temp_cliff_cells.clear();
+	return block_count;
+}
 
 void ACleanMode::pubTmpTarget(const Point_t &point, bool is_virtual) {
 	visualization_msgs::Marker point_markers;

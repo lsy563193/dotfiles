@@ -408,127 +408,6 @@ void GridMap::cellToWorld(double &worldX, double &worldY, int16_t &cellX, int16_
 	worldY = (double)cellY * CELL_SIZE;
 }
 
-uint8_t GridMap::setLidar()
-{
-	if (temp_lidar_cells.empty())
-		return 0;
-
-	uint8_t block_count = 0;
-	std::string msg = "cell:";
-	for(auto& cell : temp_lidar_cells){
-		if(getCell(CLEAN_MAP,cell.x,cell.y) != BLOCKED_RCON){
-			msg += "(" + std::to_string(cell.x) + "," + std::to_string(cell.y) + ")";
-			setCell(CLEAN_MAP,cell.x,cell.y, BLOCKED_LIDAR);
-			block_count++;
-		}
-	}
-	temp_lidar_cells.clear();
-	ROS_INFO("%s,%d: Current(%d, %d), mapMark \033[32m%s\033[0m",__FUNCTION__, __LINE__, getPosition().toCell().x, getPosition().toCell().y, msg.c_str());
-	return block_count;
-}
-
-uint8_t GridMap::setObs()
-{
-	if (temp_obs_cells.empty())
-		return 0;
-
-	uint8_t block_count = 0;
-	std::string msg = "cell:";
-	for(auto& cell : temp_obs_cells){
-		msg += "(" + std::to_string(cell.x) + "," + std::to_string(cell.y) + ")";
-		setCell(CLEAN_MAP,cell.x,cell.y, BLOCKED_FW);
-		block_count++;
-	}
-	temp_obs_cells.clear();
-	ROS_INFO("%s,%d: Current(%d, %d), mapMark \033[32m%s\033[0m",__FUNCTION__, __LINE__, getPosition().toCell().x, getPosition().toCell().y, msg.c_str());
-	return block_count;
-}
-
-uint8_t GridMap::setBumper()
-{
-	if (temp_bumper_cells.empty())
-		return 0;
-
-	uint8_t block_count = 0;
-	std::string msg = "cell:";
-	for(auto& cell : temp_bumper_cells){
-		msg += "(" + std::to_string(cell.x) + "," + std::to_string(cell.y) + ")";
-		setCell(CLEAN_MAP,cell.x,cell.y, BLOCKED_BUMPER);
-		block_count++;
-	}
-	temp_bumper_cells.clear();
-	ROS_INFO("%s,%d: Current(%d, %d), mapMark \033[32m%s\033[0m",__FUNCTION__, __LINE__, getPosition().toCell().x, getPosition().toCell().y, msg.c_str());
-	return block_count;
-}
-
-uint8_t GridMap::setTilt()
-{
-	if (temp_tilt_cells.empty())
-		return 0;
-
-	uint8_t block_count = 0;
-	std::string msg = "cell:";
-	for(auto& cell : temp_tilt_cells){
-		msg += "(" + std::to_string(cell.x) + "," + std::to_string(cell.y) + ")";
-		setCell(CLEAN_MAP,cell.x,cell.y, BLOCKED_TILT);
-		block_count++;
-	}
-	temp_tilt_cells.clear();
-	ROS_INFO("%s,%d: Current(%d, %d), \033[32m mapMark %s\033[0m",__FUNCTION__, __LINE__, getPosition().toCell().x, getPosition().toCell().y, msg.c_str());
-	return block_count;
-}
-
-uint8_t GridMap::setSlip()
-{
-	if (temp_slip_cells.empty())
-		return 0;
-
-	uint8_t block_count = 0;
-	std::string msg = "cell:";
-	for(auto& cell : temp_slip_cells){
-		msg += "(" + std::to_string(cell.x) + "," + std::to_string(cell.y) + ")";
-		setCell(CLEAN_MAP,cell.x,cell.y, BLOCKED_SLIP);
-		block_count++;
-	}
-	temp_slip_cells.clear();
-	ROS_INFO("%s,%d: Current(%d, %d), \033[32m mapMark %s\033[0m",__FUNCTION__, __LINE__, getPosition().toCell().x, getPosition().toCell().y, msg.c_str());
-	return block_count;
-}
-
-uint8_t GridMap::setCliff()
-{
-	if (temp_cliff_cells.empty())
-		return 0;
-
-	uint8_t block_count = 0;
-	std::string msg = "cell:";
-	for(auto& cell : temp_cliff_cells){
-		msg += "(" + std::to_string(cell.x) + "," + std::to_string(cell.y) + ")";
-		setCell(CLEAN_MAP,cell.x,cell.y, BLOCKED_CLIFF);
-		block_count++;
-	}
-	temp_cliff_cells.clear();
-	ROS_INFO("%s,%d: Current(%d, %d), \033[32m mapMark %s\033[0m",__FUNCTION__, __LINE__, getPosition().toCell().x, getPosition().toCell().y, msg.c_str());
-	return block_count;
-}
-
-uint8_t GridMap::setRcon()
-{
-	if (temp_rcon_cells.empty())
-		return 0;
-
-	uint8_t block_count = 0;
-	std::string msg = "cell:";
-	for(auto& cell : temp_rcon_cells){
-		msg += "(" + std::to_string(cell.x) + "," + std::to_string(cell.y) + ")";
-		setCell(CLEAN_MAP,cell.x,cell.y, BLOCKED_TMP_RCON);
-		block_count++;
-	}
-	temp_rcon_cells.clear();
-	ROS_INFO("%s,%d: Current(%d, %d), \033[32m mapMark %s\033[0m",__FUNCTION__, __LINE__, getPosition().toCell().x, getPosition().toCell().y, msg.c_str());
-	return block_count;
-}
-
 uint8_t GridMap::setFollowWall(bool is_left,const Points& passed_path)
 {
 	uint8_t block_count = 0;
@@ -549,19 +428,6 @@ uint8_t GridMap::setFollowWall(bool is_left,const Points& passed_path)
 	}
 }
 
-uint8_t GridMap::setBlocks()
-{
-	uint8_t block_count = 0;
-	block_count += setObs();
-	block_count += setBumper();
-	block_count += setRcon();
-	block_count += setCliff();
-	block_count += setTilt();
-	block_count += setSlip();
-	block_count += setLidar();
-
-	return block_count;
-}
 
 uint8_t GridMap::setChargerArea(const Points charger_pos_list)
 {
@@ -597,7 +463,7 @@ uint8_t GridMap::saveSlip()
 		//cm_world_to_point(robot::instance()->getWorldPoseRadian(), d_cell.y * CELL_SIZE, d_cell.x * CELL_SIZE, &x2, &y2);
 		//ROS_WARN("%s %d: d_cell(%d, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
 		//			, __FUNCTION__, __LINE__, d_cell.x, d_cell.y, robot::instance()->getWorldPoseRadian(), x2, y2, count_to_cell(x2), count_to_cell(y2), cell_x, cell_y);
-		temp_slip_cells.push_back({cell.x, cell.y});
+		temp_slip_cells.insert({cell.x, cell.y});
 		msg += "[" + std::to_string(d_cell.x) + "," + std::to_string(d_cell.y) + "](" + std::to_string(cell.x) + "," + std::to_string(cell.y) + ")";
 	}
 	ROS_INFO("%s,%d: Current(%d, %d), save \033[32m%s\033[0m",__FUNCTION__, __LINE__, getPosition().toCell().x, getPosition().toCell().y, msg.c_str());
@@ -627,7 +493,7 @@ uint8_t GridMap::saveTilt()
 		//cm_world_to_point(robot::instance()->getWorldPoseRadian(), d_cell.y * CELL_SIZE, d_cell.x * CELL_SIZE, &x2, &y2);
 		//ROS_WARN("%s %d: d_cell(%d, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
 		//			, __FUNCTION__, __LINE__, d_cell.x, d_cell.y, robot::instance()->getWorldPoseRadian(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
-		temp_tilt_cells.push_back({cell.x, cell.y});
+		temp_tilt_cells.insert({cell.x, cell.y});
 		msg += "[" + std::to_string(d_cell.x) + "," + std::to_string(d_cell.y) + "](" + std::to_string(cell.x) + "," + std::to_string(cell.y) + ")";
 	}
 	ROS_INFO("%s,%d: Current(%d, %d), save \033[32m%s\033[0m",__FUNCTION__, __LINE__, getPosition().toCell().x, getPosition().toCell().y, msg.c_str());
@@ -697,7 +563,7 @@ uint8_t GridMap::saveLidar()
 		//robot_to_point(robot::instance()->getWorldPoseRadian(), d_cell.y * CELL_SIZE, d_cell.x * CELL_SIZE, &x2, &y2);
 		//ROS_WARN("%s %d: d_cell(%d, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
 		//			, __FUNCTION__, __LINE__, d_cell.x, d_cell.y, robot::instance()->getWorldPoseRadian(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
-		temp_lidar_cells.push_back(cell);
+		temp_lidar_cells.insert(cell);
 		msg += "[" + std::to_string(d_cell.x) + "," + std::to_string(d_cell.y) + "](" + std::to_string(cell.x) + "," + std::to_string(cell.y) + ")";
 	}
 	ROS_INFO("%s,%d: Current(%d, %d), save \033[32m%s\033[0m",__FUNCTION__, __LINE__, getPosition().toCell().x, getPosition().toCell().y, msg.c_str());
@@ -732,7 +598,7 @@ uint8_t GridMap::saveCliff()
 		//robot_to_point(robot::instance()->getWorldPoseRadian(), d_cell.y * CELL_SIZE, d_cell.x * CELL_SIZE, &x2, &y2);
 		//ROS_WARN("%s %d: d_cell(%d, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
 		//			, __FUNCTION__, __LINE__, d_cell.x, d_cell.y, robot::instance()->getWorldPoseRadian(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
-		temp_cliff_cells.push_back(cell);
+		temp_cliff_cells.insert(cell);
 		msg += "[" + std::to_string(d_cell.x) + "," + std::to_string(d_cell.y) + "](" + std::to_string(cell.x) + "," + std::to_string(cell.y) + ")";
 	}
 	ROS_INFO("%s,%d: Current(%d, %d), save \033[32m%s\033[0m",__FUNCTION__, __LINE__, getPosition().toCell().x, getPosition().toCell().y, msg.c_str());
@@ -773,7 +639,7 @@ uint8_t GridMap::saveBumper(bool is_linear)
 		//robot_to_point(robot::instance()->getWorldPoseRadian(), d_cell.y * CELL_SIZE, d_cell.x * CELL_SIZE, &x2, &y2);
 		//ROS_WARN("%s %d: d_cell(%d, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
 		//			, __FUNCTION__, __LINE__, d_cell.x, d_cell.y, robot::instance()->getWorldPoseRadian(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
-		temp_bumper_cells.push_back(cell);
+		temp_bumper_cells.insert(cell);
 		msg += "[" + std::to_string(d_cell.x) + "," + std::to_string(d_cell.y) + "](" + std::to_string(cell.x) + "," + std::to_string(cell.y) + ")";
 	}
 	ROS_INFO("%s,%d: Current(%d, %d) +  \033[32m%s\033[0m",__FUNCTION__, __LINE__, getPosition().toCell().x, getPosition().toCell().y, msg.c_str());
@@ -858,7 +724,7 @@ uint8_t GridMap::saveRcon()
 	for(auto& d_cell : d_cells)
 	{
 		auto cell = getPosition().getRelative(d_cell.x * CELL_SIZE, d_cell.y * CELL_SIZE).toCell();
-		temp_rcon_cells.push_back(cell);
+		temp_rcon_cells.insert(cell);
 		msg += "[" + std::to_string(d_cell.x) + "," + std::to_string(d_cell.y) + "](" + std::to_string(cell.x) + "," + std::to_string(cell.y) + ")";
 	}
 	ROS_INFO("%s,%d: Current(%d, %d), save \033[32m%s\033[0m",__FUNCTION__, __LINE__, getPosition().toCell().x, getPosition().toCell().y, msg.c_str());
@@ -1072,90 +938,6 @@ uint8_t GridMap::isBlockBlockedXAxis(int16_t curr_x, int16_t curr_y, bool is_lef
 	return retval;
 }
 
-//void GridMap::generateSPMAP(const Cell_t &curr, Cells &target_list)
-//{
-//	bool		all_set;
-//	int16_t		x, y, offset, passValue, nextPassValue, passSet, x_min, x_max, y_min, y_max;
-//	CellState	cs;
-//	reset(COST_MAP);
-//
-//	getMapRange(COST_MAP, &x_min, &x_max, &y_min, &y_max);
-//	for (auto i = x_min; i <= x_max; ++i) {
-//		for (auto j = y_min; j <= y_max; ++j) {
-//			cs = getCell(CLEAN_MAP, i, j);
-//			if (cs >= BLOCKED && cs <= BLOCKED_BOUNDARY) {
-//				for (x = ROBOT_RIGHT_OFFSET; x <= ROBOT_LEFT_OFFSET; x++) {
-//					for (y = ROBOT_RIGHT_OFFSET; y <= ROBOT_LEFT_OFFSET; y++) {
-//						setCell(COST_MAP, i + x, j + y, COST_HIGH);
-//					}
-//				}
-//			}
-//		}
-//	}
-//
-//	x = curr.x;
-//	y = curr.y;
-//
-//	/* Set the current robot position has the cost value of 1. */
-//	setCell(COST_MAP, (int32_t) x, (int32_t) y, COST_1);
-//
-//	offset = 0;
-//	passSet = 1;
-//	passValue = 1;
-//	nextPassValue = 2;
-//	while (passSet == 1) {
-//		offset++;
-//		passSet = 0;
-//		for (auto i = x - offset; i <= x + offset; i++) {
-//			if (i < x_min || i > x_max)
-//				continue;
-//
-//			for (auto j = y - offset; j <= y + offset; j++) {
-//				if (j < y_min || j > y_max)
-//					continue;
-//
-//				if(getCell(COST_MAP, i, j) == passValue) {
-//					if (i - 1 >= x_min && getCell(COST_MAP, i - 1, j) == COST_NO) {
-//						setCell(COST_MAP, (i - 1), (j), (CellState) nextPassValue);
-//						passSet = 1;
-//					}
-//
-//					if ((i + 1) <= x_max && getCell(COST_MAP, i + 1, j) == COST_NO) {
-//						setCell(COST_MAP, (i + 1), (j), (CellState) nextPassValue);
-//						passSet = 1;
-//					}
-//
-//					if (j - 1  >= y_min && getCell(COST_MAP, i, j - 1) == COST_NO) {
-//						setCell(COST_MAP, (i), (j - 1), (CellState) nextPassValue);
-//						passSet = 1;
-//					}
-//
-//					if ((j + 1) <= y_max && getCell(COST_MAP, i, j + 1) == COST_NO) {
-//						setCell(COST_MAP, (i), (j + 1), (CellState) nextPassValue);
-//						passSet = 1;
-//					}
-//				}
-//			}
-//		}
-//
-//		all_set = true;
-//		for (auto it = target_list.begin(); it != target_list.end(); ++it) {
-//			if (getCell(COST_MAP, it->x, it->y) == COST_NO) {
-//				all_set = false;
-//			}
-//		}
-//		if (all_set) {
-//			//ROS_INFO("%s %d: all possible target are checked & reachable.", __FUNCTION__, __LINE__);
-//			passSet = 0;
-//		}
-//
-//		passValue = nextPassValue;
-//		nextPassValue++;
-//		if(nextPassValue == COST_PATH)
-//			nextPassValue = 1;
-//	}
-////	print(COST_MAP, 0,0);
-//}
 void GridMap::generateSPMAP(const Cell_t& curr_cell,Cells& targets)
 {
 	typedef std::multimap<int16_t , Cell_t> Queue;

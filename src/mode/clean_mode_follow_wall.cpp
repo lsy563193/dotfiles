@@ -52,12 +52,12 @@ bool CleanModeFollowWall::mapMark() {
 	if (isStateGoHomePoint())
 	{
 		setCleaned(pointsGenerateCells(passed_path_));
-		clean_map_.setBlocks();
+		setBlocks(iterate_point_.dir);
 	}
 	else if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
 	{
 		setCleaned(pointsGenerateCells(passed_path_));
-		clean_map_.setBlocks();
+		setBlocks(iterate_point_.dir);
 		ROS_ERROR("-------------------------------------------------------");
 		auto start = *passed_path_.begin();
 		passed_path_.erase(std::remove_if(passed_path_.begin(),passed_path_.end(),[&start](Point_t& it){

@@ -64,12 +64,13 @@ bool CleanModeNav::mapMark()
 			setHomePoint();
 	}
 
-	clean_map_.setBlocks();
+	setBlocks(iterate_point_.dir);
 //	clean_map_.print(CLEAN_MAP, getPosition().toCell().x, getPosition().toCell().y);
 
 	passed_path_.clear();
 	return false;
 }
+
 
 bool CleanModeNav::markRealTime()
 {

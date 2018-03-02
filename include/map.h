@@ -99,23 +99,7 @@ public:
 
 	bool trapMarkRobot(uint8_t id);
 
-	uint8_t setLidar();
-
-	uint8_t setObs();
-
-	uint8_t setBumper();
-
-	uint8_t setRcon();
-
-	uint8_t setCliff();
-
-	uint8_t setTilt();
-
-	uint8_t setSlip();
-
 	uint8_t setFollowWall(bool is_left, const Points&);
-
-	uint8_t setBlocks();
 
 	uint8_t saveLidar();
 
@@ -282,7 +266,15 @@ public:
 
 	void colorPrint(const char *outString, int16_t y_min, int16_t y_max);
 	void print(uint8_t id, int16_t endx, int16_t endy);
-
+	std::set<Cell_t> temp_bumper_cells;
+	std::set<Cell_t> temp_obs_cells;
+	std::set<Cell_t> temp_rcon_cells;
+	std::set<Cell_t> temp_tilt_cells;
+	std::set<Cell_t> temp_slip_cells;
+	std::set<Cell_t> temp_cliff_cells;
+	std::set<Cell_t> temp_lidar_cells;
+	std::vector<std::set<Cell_t>*> p_sets{&temp_obs_cells, &temp_bumper_cells, &temp_rcon_cells,
+																				&temp_cliff_cells, &temp_lidar_cells, &temp_tilt_cells, &temp_slip_cells};
 private:
 	uint8_t clean_map[MAP_SIZE][(MAP_SIZE + 1) / 2];
 	uint8_t cost_map[MAP_SIZE][(MAP_SIZE + 1) / 2];
@@ -291,15 +283,6 @@ private:
 	int16_t xRangeMin, xRangeMax, yRangeMin, yRangeMax;
 
 	// Cells that temporary save the blocks.
-	std::vector<Cell_t> temp_bumper_cells;
-	std::vector<Cell_t> temp_obs_cells;
-	std::vector<Cell_t> temp_rcon_cells;
-	std::vector<Cell_t> temp_tilt_cells;
-	std::vector<Cell_t> temp_slip_cells;
-	std::vector<Cell_t> temp_cliff_cells;
-	std::vector<Cell_t> temp_lidar_cells;
-	std::vector<Cell_t> temp_fw_cells;
-	std::vector<Cell_t> temp_WFMAP_follow_wall_cells;
 
 };
 

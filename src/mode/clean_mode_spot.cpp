@@ -56,7 +56,7 @@ bool CleanModeSpot::mapMark()
 
 	if (sp_state == state_folllow_wall)
 		clean_map_.markRobot(CLEAN_MAP);
-	clean_map_.setBlocks();
+	setBlocks(iterate_point_.dir);
 	PP_INFO();
 	clean_map_.print(CLEAN_MAP, getPosition().toCell().x, getPosition().toCell().y);
 

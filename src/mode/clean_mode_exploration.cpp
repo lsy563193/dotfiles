@@ -27,7 +27,7 @@ bool CleanModeExploration::mapMark()
 {
 	clean_map_.merge(slam_grid_map, true, true, false, false, false, false);
 	clean_map_.setCircleMarkers(getPosition(),false,10,CLEANED);
-	clean_map_.setBlocks();
+	setBlocks(iterate_point_.dir);
 	if(mark_robot_)
 		clean_map_.markRobot(CLEAN_MAP);
 //	passed_path_.clear();
