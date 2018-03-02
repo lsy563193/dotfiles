@@ -27,7 +27,7 @@ SpotCleanPathAlgorithm::~SpotCleanPathAlgorithm()
 
 bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &plan_path)
 {
-	if(!ev.bumper_triggered && !ev.cliff_triggered && !ev.rcon_triggered){
+	if(!ev.bumper_triggered && !ev.cliff_triggered && !ev.rcon_status){
 		if(!spot_running_){
 			spot_running_ = true;
 			plan_path = cells_generate_points(targets_cells_);
@@ -45,7 +45,7 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, con
 			return false;
 		}
 	}
-	else if(ev.bumper_triggered || ev.cliff_triggered || ev.rcon_triggered)
+	else if(ev.bumper_triggered || ev.cliff_triggered || ev.rcon_status)
 	{
 		Points new_plan_path;
 		Point_t cur = curr;

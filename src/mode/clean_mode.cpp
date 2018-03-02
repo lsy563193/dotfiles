@@ -1209,12 +1209,12 @@ bool ACleanMode::updateActionInStateGoHomePoint()
 			 getPosition().toCell().x, getPosition().toCell().y,
 			 go_home_path_algorithm_->getCurrentHomePoint().toCell().x,
 			 go_home_path_algorithm_->getCurrentHomePoint().toCell().y);
-	if (ev.rcon_triggered)
+	if (ev.rcon_status)
 	{
 		// Directly switch to state go to charger.
 		ROS_INFO("%s %d: Rcon T signal triggered and switch to state go to charger.", __FUNCTION__, __LINE__);
 		should_go_to_charger_ = true;
-		ev.rcon_triggered = 0;
+		ev.rcon_status = 0;
 		update_finish = false;
 	}
 	else if (go_home_path_algorithm_->reachTarget(should_go_to_charger_))
@@ -1261,10 +1261,10 @@ void ACleanMode::switchInStateGoHomePoint()
 // ------------------State go to charger--------------------
 bool ACleanMode::checkEnterGoToCharger()
 {
-	ev.rcon_triggered = c_rcon.getStatus() & (RconAll_Home_T);
+	ev.rcon_status = c_rcon.getStatus() & (RconAll_Home_T);
 	c_rcon.resetStatus();
-	if (ev.rcon_triggered) {
-		ev.rcon_triggered= false;
+	if (ev.rcon_status) {
+		ev.rcon_status= false;
 		ROS_WARN("%s,%d:find charge success,convert to go to charge state", __func__, __LINE__);
 		sp_state = state_go_to_charger;
 		sp_state->init();

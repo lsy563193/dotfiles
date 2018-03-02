@@ -3,6 +3,7 @@
 #include "map.h"
 #include "robot.hpp"
 #include "event_manager.h"
+#include "rcon.h"
 
 GridMap slam_grid_map;
 GridMap decrease_map;
@@ -782,17 +783,14 @@ uint8_t GridMap::saveBumper(bool is_linear)
 
 uint8_t GridMap::saveRcon()
 {
-	auto rcon_trig = ev.rcon_triggered/*rcon_get_trig()*/;
+	auto rcon_trig = ev.rcon_status/*rcon_get_trig()*/;
 	if(! rcon_trig)
 		return 0;
 
-	enum {
-		left, fl2, fl1, fr1, fr2, right,
-	};
 	std::vector<Cell_t> d_cells;
-	switch (ev.rcon_triggered - 1)
+	switch (c_rcon.convertToEnum(rcon_trig))
 	{
-		case left:
+		case Rcon::left:
 			d_cells.push_back({1,2});
 			d_cells.push_back({1,3});
 			d_cells.push_back({1,4});
@@ -803,7 +801,7 @@ uint8_t GridMap::saveRcon()
 			d_cells.push_back({3,3});
 			d_cells.push_back({3,4});
 			break;
-		case fl2:
+		case Rcon::fl2:
 			d_cells.push_back({2,1});
 			d_cells.push_back({2,2});
 			d_cells.push_back({2,3});
@@ -816,8 +814,8 @@ uint8_t GridMap::saveRcon()
 //			dx = 1, dy = 2;
 //			dx2 = 2, dy2 = 1;
 			break;
-		case fl1:
-		case fr1:
+		case Rcon::fl:
+		case Rcon::fr:
 			d_cells.push_back({2,0});
 			d_cells.push_back({3,0});
 			d_cells.push_back({4,0});
@@ -828,7 +826,7 @@ uint8_t GridMap::saveRcon()
 			d_cells.push_back({3,1});
 			d_cells.push_back({4,1});
 			break;
-		case fr2:
+		case Rcon::fr2:
 //			dx = 1, dy = -2;
 //			dx2 = 2, dy2 = -1;
 			d_cells.push_back({2,-1});
@@ -841,7 +839,7 @@ uint8_t GridMap::saveRcon()
 			d_cells.push_back({4,-2});
 			d_cells.push_back({4,-3});
 			break;
-		case right:
+		case Rcon::right:
 			d_cells.push_back({1,-2});
 			d_cells.push_back({1,-3});
 			d_cells.push_back({1,-4});

@@ -71,9 +71,9 @@ bool MoveTypeRemote::isFinish()
 		}
 		else if (movement_i_ == mm_straight)
 		{
-			if (ev.rcon_triggered)
+			if (ev.rcon_status)
 			{
-				ev.rcon_triggered = 0;
+				ev.rcon_status = 0;
 				movement_i_ = mm_back;
 				p_movement_.reset(new MovementBack(0.05, BACK_MAX_SPEED));
 			}

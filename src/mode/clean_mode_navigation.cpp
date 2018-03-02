@@ -60,7 +60,7 @@ bool CleanModeNav::mapMark()
 	{
 		setLinearCleaned();
 		// Set home cell.
-		if (ev.rcon_triggered)
+		if (ev.rcon_status)
 			setHomePoint();
 	}
 

@@ -9,6 +9,7 @@
 #include "action.hpp"
 #include "movement.hpp"
 #include "boost/shared_ptr.hpp"
+#include "rcon.h"
 //#include "mode.hpp"
 
 class Mode;
@@ -34,11 +35,8 @@ public:
 //	void updatePath();
 	void run() override;
 
-	enum {
-		left, fl1, fl2, fr2, fr1, right
-	};
-	int8_t rcon_cnt[6]{};
-	int countRconTriggered(uint32_t rcon_value);
+	int8_t rcon_cnt[Rcon::enum_end + 1]{};
+	uint32_t countRconTriggered(uint32_t rcon_value, int max_cnt);
 	bool isRconStop();
 	bool isOBSStop();
 	bool isLidarStop();
@@ -106,7 +104,6 @@ private:
 	bool is_left_{};
 	int16_t bumperTurnAngle();
 	int16_t cliffTurnAngle();
-	int16_t rconTurnAngle();
 	int16_t tiltTurnAngle();
 	int16_t obsTurnAngle();
 	int16_t double_scale_10(double line_angle);

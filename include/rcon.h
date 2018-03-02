@@ -89,12 +89,8 @@
 #define RconBR_Wall_T         (uint16_t)0x0000
 #endif// VIRTUAL_WALL
 
-class ACleanMode;
 class Rcon {
 public:
-	int getTrig(void);
-	bool isTrigT();
-
 	void setStatus(uint32_t code) {
 		rcon_status_ |= code;
 	}
@@ -118,23 +114,31 @@ public:
 	uint32_t getWFRcon();
 
 	uint32_t getNavRcon();
+
+	enum {
+		enum_start = 0,
+		bl = 0,
+		left = 1,
+		fl2 = 2,
+		fl = 3,
+		fr = 4,
+		fr2 = 5,
+		right = 6,
+		br = 7,
+		enum_end = 7,
+	};
 	/*
-	 * @author
-	 * @breif set rcon position
-	 * @param1 pos ,position in cell_t
-	 * @return void
-	 * */
+	 * Convert rcon status from uint32_t to an enum.
+	 */
+	static int convertToEnum(uint32_t rcon_status);
+	/*
+	 * Convert rcon status from enum to an uint32_t.
+	 */
+	static uint32_t convertFromEnum(int _enum);
 
 private:
 	uint32_t rcon_status_{};
 
-	/*
-	 * @author
-	 * @breif set rcon position
-	 * @param1 cd ,charge direction
-	 * @param2 dist ,distance between robot and charger
-	 * @return void
-	 * */
 };
 
 extern Rcon c_rcon;
