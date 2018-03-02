@@ -800,7 +800,7 @@ bool Lidar::mergeLine(std::vector<std::deque<Vector2<double>> > *groups, double 
 //		ROS_INFO("merge_index.pop_back()");
 	}
 
-	/*do mergeFromSlamGridMap*/
+	/*do merge*/
 //	ROS_WARN("before do merge! (*groups).size() = %d", (*groups).size());
 	if (!merge_index.empty()) {
 		int loop_count = 0;

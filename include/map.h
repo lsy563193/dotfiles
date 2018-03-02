@@ -75,11 +75,11 @@ public:
  */
 	void convertFromSlamMap(float threshold);
 
-	void mergeFromSlamGridMap(GridMap source_map, bool add_slam_map_blocks_to_uncleaned = false,
-							  bool add_slam_map_blocks_to_cleaned = false,
-							  bool add_slam_map_cleanable_area = false, bool clear_map_blocks = false,
-							  bool clear_slam_map_blocks = false,
-							  bool clear_bumper_and_lidar_blocks = false);
+	void merge(GridMap source_map, bool add_slam_map_blocks_to_uncleaned = false,
+			   bool add_slam_map_blocks_to_cleaned = false,
+			   bool add_slam_map_cleanable_area = false, bool clear_map_blocks = false,
+			   bool clear_slam_map_blocks = false,
+			   bool clear_bumper_and_lidar_blocks = false);
 
 	void slamMapToWorld(double origin_x_, double origin_y_, float resolution_, int16_t slam_map_x,
 						int16_t slam_map_y, double &world_x, double &world_y);
