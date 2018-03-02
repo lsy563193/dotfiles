@@ -4,6 +4,7 @@
 #include "robot.hpp"
 #include "event_manager.h"
 #include "rcon.h"
+#include "lidar.hpp"
 
 GridMap slam_grid_map;
 GridMap decrease_map;
@@ -243,10 +244,10 @@ void GridMap::convertFromSlamMap(float threshold)
 
 	// Set resolution multi between cost map and slam map.
 	auto multi = CELL_SIZE / resolution;
-	//ROS_INFO("%s %d: resolution: %f, multi: %f.", __FUNCTION__, __LINE__, resolution, multi);
+//	ROS_INFO("%s %d: resolution: %f, multi: %f.", __FUNCTION__, __LINE__, resolution, multi);
 	// Limit count for checking block.*/
 	auto limit_count = static_cast<uint16_t>((multi * multi) * threshold);
-	//ROS_INFO("%s %d: limit_count: %d.", __FUNCTION__, __LINE__, limit_count);
+//	ROS_INFO("%s %d: limit_count: %d.", __FUNCTION__, __LINE__, limit_count);
 	// Set boundary for this cost map.
 	auto map_x_min = static_cast<int16_t>(origin_x  / CELL_SIZE);
 	if (map_x_min < -MAP_SIZE)
@@ -261,8 +262,8 @@ void GridMap::convertFromSlamMap(float threshold)
 	if (map_y_max > MAP_SIZE)
 		map_y_max = MAP_SIZE;
 
-	//ROS_INFO("%s,%d: map_x_min: %d, map_x_max: %d, map_y_min: %d, map_y_max: %d",
-	// 		   __FUNCTION__, __LINE__, map_x_min, map_x_max, map_y_min, map_y_max);
+//	ROS_INFO("%s,%d: map_x_min: %d, map_x_max: %d, map_y_min: %d, map_y_max: %d",
+//	 		   __FUNCTION__, __LINE__, map_x_min, map_x_max, map_y_min, map_y_max);
 	for (auto cell_x = map_x_min; cell_x <= map_x_max; ++cell_x)
 	{
 		for (auto cell_y = map_y_min; cell_y <= map_y_max; ++cell_y)
@@ -277,20 +278,20 @@ void GridMap::convertFromSlamMap(float threshold)
 				auto data_map_x_max = ((data_map_x + multi/2) < width) ? (data_map_x + multi/2) : width;
 				auto data_map_y_min = (data_map_y > multi/2) ? (data_map_y - multi/2) : 0;
 				auto data_map_y_max = ((data_map_y + multi/2) < height) ? (data_map_y + multi/2) : height;
-				//ROS_INFO("%s %d: data map: x_min_forward(%d), x_max_forward(%d), y_min(%d), y_max(%d)",
-				//		 __FUNCTION__, __LINE__, data_map_x_min, data_map_x_max, data_map_y_min, data_map_y_max);
+//				printf("%s %d: data map: data_map_x_min(%f), data_map_x_max(%f), data_map_y_min(%f), data_map_y_max(%f).",
+//						 __FUNCTION__, __LINE__, data_map_x_min, data_map_x_max, data_map_y_min, data_map_y_max);
 
 				// Get the slam map data s_index_ of this range.
 				std::vector<int32_t> slam_map_data_index;
-				for (uint32_t i=data_map_x_min; i<=data_map_x_max; i++)
-					for(uint32_t j=data_map_y_min; j<=data_map_y_max; j++)
+				for (uint32_t i = static_cast<uint32_t>(data_map_x_min); i <= data_map_x_max; i++)
+					for(uint32_t j = static_cast<uint32_t>(data_map_y_min); j <= data_map_y_max; j++)
 						slam_map_data_index.push_back(getIndexOfSlamMapData(width, i, j));
 
 				// Values for counting sum of difference slam map data.
 				uint32_t block_counter = 0, cleanable_counter = 0, unknown_counter = 0;
 				bool block_set = false;
 				auto size = slam_map_data_index.size();
-				//ROS_INFO("%s %d: data_index_size:%d.", __FUNCTION__, __LINE__, size);
+//				printf(" %s %d: data_index_size:%d.", __FUNCTION__, __LINE__, size);
 				for(int index = 0; index < size; index++)
 				{
 					//ROS_INFO("slam_map_data s_index_:%d, data:%d", slam_map_data_index[s_index_], slam_map_data[slam_map_data_index[s_index_]]);
@@ -311,10 +312,13 @@ void GridMap::convertFromSlamMap(float threshold)
 					setCell(CLEAN_MAP,cell_x,cell_y, SLAM_MAP_UNKNOWN);
 					block_set = true;
 				}
+
 				if(!block_set)/*---unknown cell---*/
 					setCell(CLEAN_MAP,cell_x,cell_y, SLAM_MAP_CLEANABLE);
 
-				//ROS_INFO("unknown counter: %d, block_counter: %d, cleanable_counter: %d", unknown_counter, block_counter, cleanable_counter);
+//				printf(" cell(%d, %d), unknown counter: %d, block_counter: %d, cleanable_counter: %d",
+//						 cell_x, cell_y, unknown_counter, block_counter, cleanable_counter);
+//				printf("\n");
 			}
 		}
 	}
@@ -698,7 +702,7 @@ uint8_t GridMap::saveLidar()
 		//robot_to_point(robot::instance()->getWorldPoseRadian(), d_cell.y * CELL_SIZE, d_cell.x * CELL_SIZE, &x2, &y2);
 		//ROS_WARN("%s %d: d_cell(%d, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
 		//			, __FUNCTION__, __LINE__, d_cell.x, d_cell.y, robot::instance()->getWorldPoseRadian(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
-		temp_lidar_cells.push_back(cell);
+		temp_lidar_cells.insert(cell);
 		msg += "[" + std::to_string(d_cell.x) + "," + std::to_string(d_cell.y) + "](" + std::to_string(cell.x) + "," + std::to_string(cell.y) + ")";
 	}
 	ROS_INFO("%s,%d: Current(%d, %d), save \033[32m%s\033[0m",__FUNCTION__, __LINE__, getPosition().toCell().x, getPosition().toCell().y, msg.c_str());
@@ -1344,17 +1348,18 @@ void GridMap::print(uint8_t id, int16_t endx, int16_t endy)
 		outString << '\t';
 		for (y = y_min; y <= y_max; y++) {
 			cs = getCell(id, x, y);
-			if (x == curr_cell.x && y == curr_cell.y) {
+			if (x == curr_cell.x && y == curr_cell.y)
 				outString << 'x';
-			} else if (x == endx && y == endy) {
+			else if (x == endx && y == endy)
 				outString << 'e';
-			} else {
+			else if (cs == SLAM_MAP_BLOCKED)
+				outString << 'a';
+			else
 				outString << cs;
-			}
 		}
 //		printf("%s\n",outString.str().c_str());
 //		#if COLOR_DEBUG_MAP
-		colorPrint(outString.str().c_str(), 0,outString.str().size());
+		colorPrint(outString.str().c_str(), 0, static_cast<int16_t>(outString.str().size()));
 		outString.str("");
 //		#else
 //		printf("%s\n", outString);
@@ -1411,10 +1416,10 @@ void GridMap::colorPrint(const char *outString, int16_t y_min, int16_t y_max)
 				y_col+="\033[1;43;37m8\033[0m";// yellow
 			}
 			else if(cs == 'a'){//slam_map_block
-				y_col+="\033[0;41;37m9\033[0m";// red
+				y_col+="\033[0;41;37ma\033[0m";// red
 			}
 			else if(cs == 'b'){//bundary
-				y_col+="\033[1;43;37ma\033[0m";
+				y_col+="\033[1;43;37mb\033[0m";
 			}
 			else if(cs == 'e'){//end point
 				y_col+="\033[1;43;37me\033[0m";
