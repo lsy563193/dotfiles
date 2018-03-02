@@ -728,6 +728,7 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_move_type) {
 	if (sp_state == state_folllow_wall) {
 //			auto p_mt = dynamic_cast<MoveTypeFollowWall *>(p_move_type);
 		if (p_move_type->isBlockCleared(clean_map_, passed_path_))
+			clean_map_.markRobot(CLEAN_MAP);
 			if (!clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell())) {
 				out_of_trapped = true;
 				ROS_ERROR("OUT OF TRAPPED");
