@@ -38,7 +38,7 @@
 /*
  * Definition relates to a grid cell.
  */
-#define CELL_SIZE			(0.112f) // 65 // in mm
+#define CELL_SIZE			(0.112f) // in meter
 #define CELL_SIZE_2			(2 * CELL_SIZE) // 65
 #define CELL_SIZE_3			(3 * CELL_SIZE) // 65
 //#define CELL_COUNT_MUL			(573) // 375  // 207 // wheel encoder count
