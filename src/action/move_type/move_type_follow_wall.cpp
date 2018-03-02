@@ -81,7 +81,7 @@ bool MoveTypeFollowWall::isFinish()
 		{
 			if (!handleMoveBackEvent(p_cm))
 			{
-				if(ev.rcon_triggered) {
+				if(ev.rcon_status) {
 					p_cm->moveTypeFollowWallSaveBlocks();
 					movement_i_ = mm_rcon;
 					sp_movement_.reset(new MovementRcon(is_left_));
@@ -224,20 +224,6 @@ int16_t MoveTypeFollowWall::obsTurnAngle()
 	return turn_angle;
 }
 
-int16_t MoveTypeFollowWall::rconTurnAngle()
-{
-	int16_t turn_angle{};
-	enum {left,fl2,fl,fr,fr2,right};
-	int16_t left_angle[] =   {-30,-60,-85,-85,-95,-110};
-	int16_t right_angle[] =  {110, 95, 85, 85, 60, 30};
-	if(is_left_)
-		turn_angle = left_angle[ev.rcon_triggered-1];
-	else if(!is_left_)
-		turn_angle = right_angle[ev.rcon_triggered-1];
-
-	return turn_angle;
-}
-
 bool MoveTypeFollowWall::_lidarTurnRadian(bool is_left, double &turn_radian, double lidar_min, double lidar_max,
 										  double radian_min,
 										  double radian_max, double dis_limit)
@@ -354,12 +340,6 @@ double MoveTypeFollowWall::getTurnRadianByEvent()
 		turn_angle = obsTurnAngle();
 		ROS_INFO("%s %d: Lidar triggered, turn_angle: %d.", __FUNCTION__, __LINE__, turn_angle);
 	}
-	if (ev.rcon_triggered)
-	{
-		turn_angle = rconTurnAngle();
-		ROS_INFO("%s %d: Rcon triggered, turn_angle: %d.", __FUNCTION__, __LINE__, turn_angle);
-	}
-
 	if(ev.robot_slip)
 	{
 		// Temporary use obs as lidar triggered.

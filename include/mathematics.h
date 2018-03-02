@@ -444,6 +444,37 @@ typedef struct
   }
 } LineABC;
 
+/*typedef */enum {
+	// The sequence of CLEAN_MAP value must be UNCLEAN < CLEANED < MAP_BLOCKED < SLAM_MAP_BLOCKED
+  UNCLEAN  = 0,
+  SLAM_MAP_UNKNOWN = 0,
+  CLEANED = 1,
+  SLAM_MAP_CLEANABLE = 1,
+  BLOCKED = 2,
+  BLOCKED_FW = 2,
+  BLOCKED_BUMPER = 3,
+  BLOCKED_CLIFF = 4,
+  BLOCKED_RCON = 5,
+  BLOCKED_TMP_RCON = 6,
+  BLOCKED_LIDAR = 7,
+  BLOCKED_TILT = 8,
+  BLOCKED_SLIP = 9,
+  SLAM_MAP_BLOCKED = 10,
+  BLOCKED_BOUNDARY = 11,
+  TARGET_CLEAN = 13,
+  TARGET = 14,
+  COST_NO = 0,
+  COST_1 = 1,
+  COST_2 = 2,
+  COST_3 = 3,
+  COST_4 = 4,
+  COST_5 = 5,
+  COST_PATH = 6,
+  COST_HIGH = 7,
+};
+typedef int CellState;
+
+typedef std::pair<const CellState, Cell_t> PairCell_t;
 class PointSelector{
 public:
 	PointSelector(bool is_left);

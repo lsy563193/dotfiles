@@ -19,36 +19,6 @@
 
 typedef std::deque<Point_t> Points;
 
-/*typedef */enum {
-	// The sequence of CLEAN_MAP value must be UNCLEAN < CLEANED < MAP_BLOCKED < SLAM_MAP_BLOCKED
-  UNCLEAN  = 0,
-  SLAM_MAP_UNKNOWN = 0,
-  CLEANED = 1,
-  SLAM_MAP_CLEANABLE = 1,
-  BLOCKED = 2,
-  BLOCKED_FW = 2,
-  BLOCKED_BUMPER = 3,
-  BLOCKED_CLIFF = 4,
-  BLOCKED_RCON = 5,
-  BLOCKED_TMP_RCON = 6,
-  BLOCKED_LIDAR = 7,
-  BLOCKED_TILT = 8,
-  BLOCKED_SLIP = 9,
-  SLAM_MAP_BLOCKED = 10,
-  BLOCKED_BOUNDARY = 11,
-  TARGET_CLEAN = 13,
-  TARGET = 14,
-  COST_NO = 0,
-  COST_1 = 1,
-  COST_2 = 2,
-  COST_3 = 3,
-  COST_4 = 4,
-  COST_5 = 5,
-  COST_PATH = 6,
-  COST_HIGH = 7,
-};
-typedef int CellState;
-
 class GridMap {
 public:
 
@@ -124,7 +94,7 @@ public:
 	 * Mark a circle of radius from point with cell_state.
 	 *
 	 * @param point, center of the circle, it is POINT but not CELL.
-	 * @param cover_block, whether it should cover blocks to @param cell_state.
+	 * @param cover_block, whether it should cover c_blocks to @param cell_state.
 	 * @param radius, the radius of the circle.
 	 * @param cell_state, target cell state of marking.
 	 */
@@ -266,15 +236,9 @@ public:
 
 	void colorPrint(const char *outString, int16_t y_min, int16_t y_max);
 	void print(uint8_t id, int16_t endx, int16_t endy);
-	std::set<Cell_t> temp_bumper_cells;
-	std::set<Cell_t> temp_obs_cells;
-	std::set<Cell_t> temp_rcon_cells;
-	std::set<Cell_t> temp_tilt_cells;
-	std::set<Cell_t> temp_slip_cells;
-	std::set<Cell_t> temp_cliff_cells;
-	std::set<Cell_t> temp_lidar_cells;
-	std::vector<std::set<Cell_t>*> p_sets{&temp_obs_cells, &temp_bumper_cells, &temp_rcon_cells,
-																				&temp_cliff_cells, &temp_lidar_cells, &temp_tilt_cells, &temp_slip_cells};
+	typedef std::set<PairCell_t> Blocks_t ;
+	Blocks_t c_blocks;
+
 private:
 	uint8_t clean_map[MAP_SIZE][(MAP_SIZE + 1) / 2];
 	uint8_t cost_map[MAP_SIZE][(MAP_SIZE + 1) / 2];
@@ -282,7 +246,7 @@ private:
 	int16_t g_x_min, g_x_max, g_y_min, g_y_max;
 	int16_t xRangeMin, xRangeMax, yRangeMin, yRangeMax;
 
-	// Cells that temporary save the blocks.
+	// Cells that temporary save the c_blocks.
 
 };
 

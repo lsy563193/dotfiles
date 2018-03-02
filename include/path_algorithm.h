@@ -438,7 +438,7 @@ private:
 	 * @author Austin Liu
 	 *
 	 * This function is for generating path to home point through the cleaned area(CLEANED in CLEAN_MAP).
-	 * This map has been covered by the slam map to clear the uncertain blocks.
+	 * This map has been covered by the slam map to clear the uncertain c_blocks.
 	 *
 	 * @param: GridMap map, it will use it's CLEAN_MAP data.
 	 * @param: Cell_t curr_cell, the current cell of robot.
@@ -453,7 +453,7 @@ private:
 	 * @author Austin Liu
 	 *
 	 * This function is for generating path to home point through the slam map reachable area(CLEANED in CLEAN_MAP).
-	 * This map has been covered by the slam map to clear the uncertain blocks and add the cleanable area.
+	 * This map has been covered by the slam map to clear the uncertain c_blocks and add the cleanable area.
 	 *
 	 * @param: GridMap map, it will use it's CLEAN_MAP data.
 	 * @param: Cell_t curr_cell, the current cell of robot.

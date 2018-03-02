@@ -60,7 +60,7 @@ bool CleanModeNav::mapMark()
 	{
 		setLinearCleaned();
 		// Set home cell.
-		if (ev.rcon_triggered)
+		if (ev.rcon_status)
 			setHomePoint();
 	}
 
@@ -84,7 +84,8 @@ bool CleanModeNav::markRealTime()
 		for (const auto& marker : markers) {
 //			ROS_INFO("marker(%d, %d)", marker.x, marker.y);
 			auto cell = getPosition().getRelative(marker.x * CELL_SIZE, marker.y * CELL_SIZE).toCell();
-			clean_map_.setCell(CLEAN_MAP, cell.x, cell.y, BLOCKED_LIDAR);
+//			clean_map_.setCell(CLEAN_MAP, cell.x, cell.y, BLOCKED_LIDAR);
+			clean_map_.c_blocks.insert({BLOCKED_LIDAR, cell});
 		}
 //	}
 	return true;

@@ -130,7 +130,7 @@ bool ModeIdle::isExit()
 		return true;
 	}
 
-	if (ev.rcon_triggered)
+	if (ev.rcon_status)
 	{
 		ROS_WARN("%s %d: Idle mode receives rcon for over %ds, change to go to charger mode.", __FUNCTION__, __LINE__);
 		setNextMode(md_go_to_charger);
@@ -353,7 +353,7 @@ void ModeIdle::rcon(bool state_now, bool state_last)
 		{
 			/*---received charger signal continuously, check if more than 3 mins---*/
 			if (time_for_now_ - first_time_seen_charger_ > 180.0)
-				ev.rcon_triggered = c_rcon.getAll();
+				ev.rcon_status = c_rcon.getAll();
 		}
 		last_time_seen_charger_ = time_for_now_;
 	}

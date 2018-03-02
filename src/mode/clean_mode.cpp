@@ -128,18 +128,10 @@ ACleanMode::~ACleanMode()
 uint8_t ACleanMode::setBlocks(Dir_t dir)
 {
 	uint8_t block_count = 0;
-	std::vector<Cell_t> c_blocks{};
-	for(auto && set_i: clean_map_.p_sets)
+	printf("before filter:");
+	for(auto && cost_block: clean_map_.c_blocks)
 	{
-		std::vector<Cell_t> c_tmps{};
-		std::set_union(c_blocks.begin(),c_blocks.end(),set_i->begin(),set_i->end(),std::back_inserter(c_tmps),[](const Cell_t& l,const Cell_t& r){
-			return l != r;
-		});
-		c_blocks = c_tmps;
-	}
-	printf("c_blocks:\n");
-	for (auto &&block  : c_blocks) {
-		printf("{%d,%d}",block.x, block.y);
+		printf("{%d, {%d,%d}} ",cost_block.first, cost_block.second.x, cost_block.second.y);
 	}
 	printf("\n");
 	if(!isAny(dir)) {
@@ -149,31 +141,26 @@ uint8_t ACleanMode::setBlocks(Dir_t dir)
 		for(auto i = -1; i<=1; i++)
 		{
 			auto c_it = c_end_next + cell_direction_[dir_switch]*i;
-			if(std::find_if(c_blocks.begin(), c_blocks.end(),[&c_it](const Cell_t cell){ return cell == c_it;}) != c_blocks.end())
+			if(std::find_if(clean_map_.c_blocks.begin(), clean_map_.c_blocks.end(),[&c_it](const PairCell_t& p_cell){ return p_cell.second == c_it;}) != clean_map_.c_blocks.end())
 			{
 				auto c_it_next = c_it + cell_direction_[dir];
-				auto result = std::find_if(c_blocks.begin(), c_blocks.end(),[&c_it_next](const Cell_t cell){ return cell == c_it_next;});
-				if(result != c_blocks.end())
+				auto result = std::find_if(clean_map_.c_blocks.begin(), clean_map_.c_blocks.end(),[&c_it_next](const PairCell_t& p_cell){ return p_cell.second == c_it_next;});
+				if(result != clean_map_.c_blocks.end())
 				{
-					ROS_ERROR("remove block after block(%d,%d)",result->x,result->y);
-					c_blocks.erase(std::remove_if(c_blocks.begin(), c_blocks.end(), [&](const Cell_t& cell){
-						return cell == *result;
-					}),c_blocks.end());
+					ROS_WARN("remove block(%d,%d) after block(%d,%d) in dir(%d)",result->second.x,result->second.y,c_it.x, c_it.y, dir);
+					clean_map_.c_blocks.erase(result);
 				}
 			}
 		}
 	}
 
-	for (auto &&block  : c_blocks) {
-		clean_map_.setCell(CLEAN_MAP, block.x, block.y, BLOCKED);
+	printf("after filter:");
+	for (auto &&cost_block  : clean_map_.c_blocks) {
+		printf("{%d, {%d,%d}} ",cost_block.first, cost_block.second.x, cost_block.second.y);
+		clean_map_.setCell(CLEAN_MAP, cost_block.second.x, cost_block.second.y, cost_block.first);
 	}
-	clean_map_.temp_slip_cells.clear();
-	clean_map_.temp_tilt_cells.clear();
-	clean_map_.temp_rcon_cells.clear();
-	clean_map_.temp_obs_cells.clear();
-	clean_map_.temp_lidar_cells.clear();
-	clean_map_.temp_bumper_cells.clear();
-	clean_map_.temp_cliff_cells.clear();
+	printf("\n");
+	clean_map_.c_blocks.clear();
 	return block_count;
 }
 
@@ -826,16 +813,20 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 						for(Point_t charger_position:charger_pose_){
 							if(getPosition().toCell().Distance(charger_position.toCell()) > DETECT_RANGE )
 								counter++;
-							if(counter >= charger_pose_.size()){//all charger pos > DETECT_RANGE
-								if(estimateChargerPos(c_rcon.getStatus())){
+							else
+							{
+								c_rcon.resetStatus();
+								break;
+							}
+							if(counter >= charger_pose_.size())
+							{
+								if(estimateChargerPos(c_rcon.getStatus()))
+								{
 									INFO_CYAN("FOUND CHARGER");
 									c_rcon.resetStatus();
 									setHomePoint();
 								}
 								break;
-							}
-							else{//not all charger pos > DETECT_RANGE
-								c_rcon.resetStatus();
 							}
 						}
 					}
@@ -915,7 +906,7 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 	}
 	enum {flfr,frfr2,flfl2,fl2l,fr2r,bll,brr,fl2,fr2,l,r,bl,br};
 	static int8_t cnt[13]={0,0,0,0,0,0,0,0,0,0,0,0,0};
-	float cd = 0.0;//charger direction acorrding to robot,in degrees
+	float direction = 0.0;//charger direction acorrding to robot,in degrees
 	float dist = 0.0;
 	float len = 0.0;
 	const int STABLE_CNT = 2;
@@ -931,7 +922,7 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 			if( (rcon_value & RconFR_HomeT) || (rcon_value & RconFL_HomeT)  && !(rcon_value & 0x22200222) ){ //fl & fr sensor
 				if((cnt[flfr]++) >= STABLE_CNT){
 					cnt[flfr] = 0;
-					cd = RCON_1;
+					direction = RCON_1;
 				}
 				else{
 					return false;
@@ -940,7 +931,7 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 			else if( (rcon_value & RconFL_HomeT) && (rcon_value & RconFL2_HomeT)  && !(rcon_value & RconAll_R_HomeT)){//fl & fl2 sensor
 				if((cnt[flfl2]++) >= STABLE_CNT){
 					cnt[flfl2] = 0;
-					cd = RCON_2;
+					direction = RCON_2;
 				}
 				else{
 					return false;
@@ -949,7 +940,7 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 			else if( (rcon_value & Rcon_FR_HomeT) && (rcon_value & RconFR2_HomeT) && !(rcon_value & RconAll_L_HomeT)){//fr & fr2 sensor
 				if((cnt[frfr2]++) >= STABLE_CNT){
 					cnt[frfr2] = 0;
-					cd = -RCON_2;
+					direction = -RCON_2;
 				}
 				else{
 					return false;
@@ -961,7 +952,7 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 			{
 				if((cnt[fl2]++) >= STABLE_CNT){
 					cnt[fl2] = 0;
-					cd = RCON_3;
+					direction = RCON_3;
 				}
 				else
 					return false;
@@ -970,7 +961,7 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 						&& !(rcon_value & RconBR_HomeT) ){//to avoid charger signal reflection from other direction
 				if((cnt[fr2]++) >= STABLE_CNT){
 					cnt[fr2] = 0;
-					cd = -RCON_3;
+					direction = -RCON_3;
 				}
 				else
 					return false;
@@ -979,7 +970,7 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 			else if( (rcon_value & RconL_HomeT) && (rcon_value & RconFL2_HomeT) && !(rcon_value & RconAll_R_HomeT) ){//fl2 & l sensor
 				if((cnt[fl2l]++) >= STABLE_CNT){
 					cnt[fl2l] = 0;
-					cd = 60;
+					direction = 60;
 				}
 				else
 					return false;
@@ -987,7 +978,7 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 			else if( (rcon_value & RconR_HomeT) && (rcon_value & RconFR2_HomeT) && !(rcon_value & RconAll_L_HomeT) ){//fr2 & r sensor
 				if((cnt[fr2r]++) >= STABLE_CNT){
 					cnt[fr2r]=0;
-					cd = -60;
+					direction = -60;
 				}
 				else
 					return false;
@@ -998,7 +989,7 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 
 				if((cnt[l]++) >= STABLE_CNT){
 					cnt[l] = 0;
-					cd = RCON_4;
+					direction = RCON_4;
 				}
 				else
 					return false;
@@ -1007,7 +998,7 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 						&& !(rcon_value & RconBR_HomeT) ){//to avoid charger signal reflection from other direction
 				if((cnt[r]++) >= STABLE_CNT){
 					cnt[r]=0;
-					cd = -RCON_4;
+					direction = -RCON_4;
 				}
 				else
 					return false;
@@ -1016,7 +1007,7 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 			else if( (rcon_value & RconBL_HomeT) && (rcon_value & RconL_HomeT) && !(rcon_value & RconAll_R_HomeT)){//l & bl sensor
 				if((cnt[bll]++) >= STABLE_CNT){
 					cnt[bll] = 0;
-					cd = 110;
+					direction = 110;
 				}
 				else
 					return false;
@@ -1024,7 +1015,7 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 			else if( (rcon_value & RconBR_HomeT) && (rcon_value & RconR_HomeT) && !(rcon_value & RconAll_L_HomeT)){//r & br sensor
 				if((cnt[brr]++) >= STABLE_CNT){
 					cnt[brr] = 0;
-					cd = -110;
+					direction = -110;
 				}
 				else
 					return false;
@@ -1033,7 +1024,7 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 			else if( (rcon_value & RconBL_HomeT) && !(rcon_value & RconL_HomeT) && !(rcon_value & RconAll_R_HomeT) ){//bl sensor
 				if((cnt[bl]++) >= STABLE_CNT){
 					cnt[bl] = 0;
-					cd = RCON_5;
+					direction = RCON_5;
 				}
 				else
 					return false;
@@ -1041,7 +1032,7 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 			else if( (rcon_value & RconBR_HomeT) && !(rcon_value & RconR_HomeT) && !(rcon_value & RconAll_L_HomeT) ){//br sensor
 				if((cnt[br]++) >= STABLE_CNT){
 					cnt[br] = 0;
-					cd = -RCON_5;
+					direction = -RCON_5;
 				}
 				else
 					return false;
@@ -1052,16 +1043,16 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 		//------detect end-----
 		memset(cnt,0,sizeof(int8_t)*13);
 
-		dist = lidar.getLidarDistance(cd,DETECT_RANGE_MAX,DETECT_RANGE_MIN);
+		dist = lidar.getLidarDistance(direction,DETECT_RANGE_MAX,DETECT_RANGE_MIN);
 		if (dist <= DETECT_RANGE_MAX && dist >= DETECT_RANGE_MIN){
-				double angle_offset = ranged_radian( degree_to_radian(cd) + getPosition().th);
+				double angle_offset = ranged_radian( degree_to_radian(direction) + getPosition().th);
 				Point_t c_pose_;
 				c_pose_.SetX( cos(angle_offset)* dist  +  getPosition().GetX());//set pos x
 				c_pose_.SetY( sin(angle_offset)* dist +  getPosition().GetY() );//set pos y
-				if(cd>=0)
-					c_pose_.th =  ranged_radian(getPosition().th + degree_to_radian( cd ));//set pos th
+				if(direction>=0)
+					c_pose_.th =  ranged_radian(getPosition().th + degree_to_radian( direction ));//set pos th
 				else
-					c_pose_.th =  ranged_radian(getPosition().th - degree_to_radian( cd ));//set pos th
+					c_pose_.th =  ranged_radian(getPosition().th - degree_to_radian( direction ));//set pos th
 
 				int16_t cell_distance = getPosition().toCell().Distance(c_pose_.toCell());
 				if(cell_distance < 3)//less than 3 cell
@@ -1072,15 +1063,15 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 				found_charger_ = true;
 				charger_pose_.push_back( c_pose_ );
 				clean_map_.setChargerArea( charger_pose_ );
-				ROS_INFO("\033[1;40;32m%s,%d,FOUND CHARGER cd %f,cur_angle = %f,angle_offset= %f, rcon_state = 0x%x, \033[0m",__FUNCTION__,__LINE__,cd,radian_to_degree(ranged_radian(getPosition().th)),radian_to_degree(angle_offset),rcon_value);
+				ROS_INFO("\033[1;40;32m%s,%d,FOUND CHARGER direction %f,cur_angle = %f,angle_offset= %f, rcon_state = 0x%x, \033[0m",__FUNCTION__,__LINE__,direction,radian_to_degree(ranged_radian(getPosition().th)),radian_to_degree(angle_offset),rcon_value);
 				return true;
 		}
 		else{
-			ROS_INFO("\033[42;37m%s,%d,cd %f, rcon_state = 0x%x, distance too far or too near, dist = %f\033[0m",__FUNCTION__,__LINE__,cd,rcon_value,dist);
+			ROS_INFO("\033[42;37m%s,%d,direction %f, rcon_state = 0x%x, distance too far or too near, dist = %f\033[0m",__FUNCTION__,__LINE__,direction,rcon_value,dist);
 			return false;
 		}
 	} else{
-		ROS_INFO("\033[42;37m%s,%d,  lidar data not update, cd %f, rcon_state = 0x%x\033[0m",__FUNCTION__,__LINE__,cd,rcon_value);
+		ROS_INFO("\033[42;37m%s,%d,  lidar data not update, direction %f, rcon_state = 0x%x\033[0m",__FUNCTION__,__LINE__,direction,rcon_value);
 		return false;
 	}
 	return false;
@@ -1261,12 +1252,12 @@ bool ACleanMode::updateActionInStateGoHomePoint()
 			 getPosition().toCell().x, getPosition().toCell().y,
 			 go_home_path_algorithm_->getCurrentHomePoint().toCell().x,
 			 go_home_path_algorithm_->getCurrentHomePoint().toCell().y);
-	if (ev.rcon_triggered)
+	if (ev.rcon_status)
 	{
 		// Directly switch to state go to charger.
 		ROS_INFO("%s %d: Rcon T signal triggered and switch to state go to charger.", __FUNCTION__, __LINE__);
 		should_go_to_charger_ = true;
-		ev.rcon_triggered = 0;
+		ev.rcon_status = 0;
 		update_finish = false;
 	}
 	else if (go_home_path_algorithm_->reachTarget(should_go_to_charger_))
@@ -1313,10 +1304,10 @@ void ACleanMode::switchInStateGoHomePoint()
 // ------------------State go to charger--------------------
 bool ACleanMode::checkEnterGoToCharger()
 {
-	ev.rcon_triggered = c_rcon.getStatus() & (RconAll_Home_T);
+	ev.rcon_status = c_rcon.getStatus() & (RconAll_Home_T);
 	c_rcon.resetStatus();
-	if (ev.rcon_triggered) {
-		ev.rcon_triggered= false;
+	if (ev.rcon_status) {
+		ev.rcon_status= false;
 		ROS_WARN("%s,%d:find charge success,convert to go to charge state", __func__, __LINE__);
 		sp_state = state_go_to_charger;
 		sp_state->init();
