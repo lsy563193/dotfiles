@@ -446,7 +446,8 @@ void CleanModeNav::switchInStateInit() {
 		has_aligned_and_open_slam_ = true;
 
 		auto curr = getPosition();
-		passed_path_.push_back(curr);
+//		curr.dir = iterate_point_.dir;
+//		passed_path_.push_back(curr);
 		start_point_.th = curr.th;
 		sp_state = state_clean;
 	}
