@@ -12,6 +12,7 @@
 #include <visualization_msgs/Marker.h>
 #include <sensor_msgs/LaserScan.h>
 #include <pp/x900sensor.h>
+#include <pp/x900ctrl.h>
 #include <pp/scan_ctrl.h>
 #include <rplidar_ros/SetLidar.h>
 #include <vector>
@@ -182,6 +183,8 @@ public:
 	void lockScanCtrl(void);
 
 	void unlockScanCtrl(void);
+
+	void publishCtrlStream(void);
 private:
 
 	Baselink_Frame_Type baselink_frame_type_;
@@ -212,6 +215,7 @@ private:
 
 	ros::Publisher odom_pub_;
 	ros::Publisher scan_ctrl_pub_;
+	ros::Publisher x900_ctrl_pub_;
 
 	ros::ServiceClient lidar_motor_cli_;
 	ros::ServiceClient start_slam_cli_;

@@ -243,7 +243,7 @@ void Serial::resetSendStream(void)
 void Serial::setSendData(uint8_t seq, uint8_t val)
 {
 	boost::mutex::scoped_lock lock(send_stream_mutex);
-	if (seq >= CTL_WHEEL_LEFT_HIGH && seq <= CTL_GYRO) {
+	if (seq >= CTL_WHEEL_LEFT_HIGH && seq <= CTL_CRC) {
 		send_stream[seq] = val;
 	}
 }
@@ -593,7 +593,7 @@ void Serial::send_routine_cb()
 		brush.updatePWM();
 
 		sendData();
-//		robot::instance()->debugSendStream(buf);
+		robot::instance()->publishCtrlStream();
 	}
 	core_thread_stop = true;
 	ROS_ERROR("%s,%d exit",__FUNCTION__,__LINE__);
@@ -607,5 +607,8 @@ void Serial::sendData()
 	memcpy(buf, serial.send_stream, sizeof(uint8_t) * SEND_LEN);
 	send_stream_mutex.unlock();
 	buf[CTL_CRC] = serial.calBufCrc8(buf, CTL_CRC);
+//	printf("buf[CTL_CRC] = %x\n", buf[CTL_CRC]);
 	serial.write(buf, SEND_LEN);
+//	robot::instance()->debugSendStream(buf);
+	serial.setSendData(CTL_CRC, buf[CTL_CRC]);
 }

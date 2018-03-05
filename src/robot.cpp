@@ -60,6 +60,7 @@ robot::robot()
 	// Publishers.
 	odom_pub_ = robot_nh_.advertise<nav_msgs::Odometry>("robot_odom", 1);
 	scan_ctrl_pub_ = robot_nh_.advertise<pp::scan_ctrl>("scan_ctrl", 1);
+	x900_ctrl_pub_ = robot_nh_.advertise<pp::x900ctrl>("/robot_ctrl_stream",1);
 
 	resetCorrection();
 
@@ -631,6 +632,37 @@ void robot::lockScanCtrl(void) {
 
 void robot::unlockScanCtrl(void) {
 	is_locked_scan_ctrl_ = false;
+}
+
+void robot::publishCtrlStream(void)
+{
+	pp::x900ctrl ctrl_stream;
+
+	ctrl_stream.left_wheel_speed = wheel.getLeftSpeedInStream();
+	ctrl_stream.right_wheel_speed = wheel.getRightSpeedInStream();
+
+	ctrl_stream.vacuum_PWM = serial.getSendData(CTL_VACCUM_PWR);
+	ctrl_stream.left_brush_PWM = serial.getSendData(CTL_BRUSH_LEFT);
+	ctrl_stream.right_brush_PWM = serial.getSendData(CTL_BRUSH_RIGHT);
+	ctrl_stream.main_brush_PWM = serial.getSendData(CTL_BRUSH_MAIN);
+
+	ctrl_stream.beeper_sound_code = serial.getSendData(CTL_BEEPER);
+	ctrl_stream.main_board_mode = serial.getSendData(CTL_MAIN_BOARD_MODE);
+	ctrl_stream.charge_control = serial.getSendData(CTL_CHARGER);
+
+	ctrl_stream.led_red_brightness = serial.getSendData(CTL_LED_RED);
+	ctrl_stream.led_green_brightness = serial.getSendData(CTL_LED_GREEN);
+	ctrl_stream.wifi_led = static_cast<unsigned char>(serial.getSendData(CTL_MIX) & 0x01);
+
+	ctrl_stream.vacuum_exception_ctrl = static_cast<unsigned char>((serial.getSendData(CTL_MIX) >> 1) & 0x01);
+
+	ctrl_stream.gyro_dynamic_ctrl = static_cast<unsigned char>(serial.getSendData(CTL_GYRO) & 0x01);
+	ctrl_stream.gyro_switch = static_cast<unsigned char>((serial.getSendData(CTL_GYRO) >> 1) & 0x01);
+
+	ctrl_stream.key_validation = serial.getSendData(CTL_KEY_VALIDATION);
+	ctrl_stream.crc = serial.getSendData(CTL_CRC);
+
+	x900_ctrl_pub_.publish(ctrl_stream);
 }
 
 //--------------------
