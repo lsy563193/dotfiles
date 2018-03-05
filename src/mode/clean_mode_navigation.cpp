@@ -93,10 +93,10 @@ bool CleanModeNav::mapMark()
 	if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right) {
 		if (!clean_map_.c_blocks.empty()) {
 			auto dy = action_i_ == ac_follow_wall_left ? 2 : -2;
-			for (auto &point : passed_path_) {
+			std::for_each(passed_path_.begin()+1, passed_path_.end(),[&](const Point_t& point){
 				auto cell = point.getRelative(0, dy * CELL_SIZE).toCell();
 				clean_map_.c_blocks.insert({BLOCKED_FW, cell});
-			}
+			});
 		}
 	}
 	else if (sp_state == state_clean) {
@@ -305,13 +305,13 @@ void CleanModeNav::remoteDirectionLeft(bool state_now, bool state_last)
 	{
 		//todo: Just for testing.
 		beeper.beepForCommand(VALID);
-//		continue_point_ = getPosition();
-//		ROS_INFO("%s %d: low battery, battery =\033[33m %dmv \033[0m, continue cell(%d, %d)", __FUNCTION__, __LINE__,
-//				 battery.getVoltage(), continue_point_.x, continue_point_.y);
-//		ev.battery_home = true;
-//		go_home_for_low_battery_ = true;
-		ev.oc_brush_main = true;
-	}*/
+		continue_point_ = getPosition();
+		ROS_INFO("%s %d: low battery, battery =\033[33m %dmv \033[0m, continue cell(%d, %d)", __FUNCTION__, __LINE__,
+				 battery.getVoltage(), continue_point_.x, continue_point_.y);
+		ev.battery_home = true;
+		go_home_for_low_battery_ = true;
+	}
+	*/
 	else
 		beeper.beepForCommand(INVALID);
 
