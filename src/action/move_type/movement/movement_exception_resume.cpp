@@ -47,10 +47,12 @@ void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_sp
 	}
 	else if(ev.oc_brush_main)
 	{
-		if(oc_main_brush_cnt_ <= 0){
+		if(main_brush_resume_state_ == 1){
 			wheel.setDirectionBackward();
-			left_speed = right_speed = RUN_TOP_SPEED;
+			left_speed = right_speed = BACK_MAX_SPEED;
 		}
+		else
+			left_speed = right_speed = 0;
 	}
 
 	else if (ev.bumper_jam)
@@ -150,31 +152,50 @@ bool MovementExceptionResume::isFinish()
 	}
 	else if (ev.oc_brush_main)
 	{
-		if(!brush.getMainOc())
+		if (oc_main_brush_cnt_ < 1)
 		{
-			ROS_INFO("%s %d: main brush over current resume succeeded!", __FUNCTION__, __LINE__);
-			brush.normalOperate();
-			ev.oc_brush_main = false;
+			switch (main_brush_resume_state_)
+			{
+				case 1:
+				{
+					if (brush.isOn())
+						brush.stop();
+					float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getX(), odom.getY());
+					if (std::abs(distance) >= CELL_SIZE * 2)
+					{
+						ROS_INFO("%s %d: Move back finish!", __FUNCTION__, __LINE__);
+						brush.mainBrushResume();
+						main_brush_resume_state_++;
+						resume_main_bursh_start_time_ = ros::Time::now().toSec();
+					}
+					break;
+				}
+				case 2:
+				{
+					if ((ros::Time::now().toSec() - resume_main_bursh_start_time_) >= 1 && !brush.getMainOc())
+					{
+						ROS_INFO("%s %d: main brush over current resume succeeded!", __FUNCTION__, __LINE__);
+						brush.normalOperate();
+						ev.oc_brush_main = false;
+					}
+					else if ((ros::Time::now().toSec() - resume_main_bursh_start_time_) >= 3)
+					{
+						oc_main_brush_cnt_++;
+						main_brush_resume_state_ = 1;
+					}
+					break;
+				}
+				default:
+					main_brush_resume_state_ = 1;
+					break;
+			}
 		}
 		else
 		{
-			float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getX(), odom.getY());
-			if (oc_main_brush_cnt_ < 1)
-			{
-				brush.stop();
-				if (std::abs(distance) >= CELL_SIZE * 3)
-				{
-					wheel.stop();
-					brush.mainBrushResume();
-					oc_main_brush_cnt_++;
-					resume_main_bursh_start_time_ = ros::Time::now().toSec();
-				}
-			} else if ((ros::Time::now().toSec() - resume_main_bursh_start_time_) >= 3)
-			{
-				ev.oc_brush_main = false;
-				ev.fatal_quit = true;
-				error.set(ERROR_CODE_MAINBRUSH);
-			}
+			ROS_WARN("%s %d: Main brush stuck.", __FUNCTION__, __LINE__);
+			ev.oc_brush_main = false;
+			ev.fatal_quit = true;
+			error.set(ERROR_CODE_MAINBRUSH);
 		}
 	}
 	else if (ev.robot_stuck)

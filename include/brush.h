@@ -9,10 +9,16 @@ class Brush {
 public:
 	Brush(void);
 
+	void slowOperate(void);
 	void normalOperate(void);
 	void fullOperate(void);
 	void stop(void);
 	void mainBrushResume();
+
+	bool isOn()
+	{
+		return brush_status_ != brush_stop;
+	}
 
 	void setPWM(uint8_t L, uint8_t R, uint8_t M);
 
@@ -62,6 +68,7 @@ private:
 	//Value for saving SideBrush_PWM
 	enum {
 		brush_stop,
+		brush_slow,
 		brush_normal,
 		brush_max,
 	};
