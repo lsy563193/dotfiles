@@ -272,10 +272,10 @@ public:
 	bool generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &targets);
 
 	void genNextAction();
-	uint8_t setBlocks(Dir_t dir);
+//	uint8_t setBlocks(Dir_t dir);
 	virtual bool mapMark() = 0;
 	void setCleaned(std::deque<Cell_t> cells);
-	void setLinearCleaned();
+//	void setLinearCleaned();
 	virtual bool markRealTime(){return false;};
 	virtual bool markMapInNewCell(){return false;};
 
@@ -473,6 +473,7 @@ public:
 	Vector2<double> polarToCartesian(double polar, int i);
 	void setTempTarget(std::deque<Vector2<double>>& points, uint32_t  seq);
 	void pubTmpTarget(const Point_t &point,bool is_virtual=false);
+	uint8_t setBlocks(Dir_t dir);
 	void checkShouldMarkCharger(float angle_offset,float distance);
 	PathHead getTempTarget();
 

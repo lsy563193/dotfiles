@@ -44,29 +44,86 @@ bool CleanModeNav::mapMark()
 	ROS_INFO("%s %d: Start updating map.", __FUNCTION__, __LINE__);
 	clean_path_algorithm_->displayPointPath((passed_path_));
 
-	if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
-	{
-		setCleaned(pointsGenerateCells(passed_path_));
-		auto start = *passed_path_.begin();
-		passed_path_.erase(std::remove_if(passed_path_.begin(),passed_path_.end(),[&start](Point_t& it){
-			return it.toCell() == start.toCell();
-		}),passed_path_.end());
-		clean_path_algorithm_->displayPointPath(passed_path_);
-//		ROS_ERROR("-------------------------------------------------------");
-		clean_map_.setFollowWall(action_i_ == ac_follow_wall_left, passed_path_);
-		clean_map_.markRobot(CLEAN_MAP);
+	if(passed_path_.empty())
+		passed_path_.push_back(getPosition());
+
+	std::unique(passed_path_.begin(),passed_path_.end(),[](const Point_t& l, const Point_t& r){
+		return r.toCell() == l.toCell();
+	});
+
+	GridMap map{};
+	for (auto &&p_it :passed_path_)
+		map.setCells(CLEAN_MAP, p_it.toCell().x, p_it.toCell().y, CLEANED);
+
+	auto is_cleaned_bound = [&](const Cell_t &c_it){
+		if(map.getCell(CLEAN_MAP, c_it.x, c_it.y) == CLEANED)
+		{
+			for (auto index = 0; index < 4; index++) {
+				auto neighbor = c_it + cell_direction_[index];
+				if (map.getCell(CLEAN_MAP, neighbor.x, neighbor.y) != CLEANED)
+					return true;
+			}
+			return false;
+		}
+		return false;
+	};
+	auto is_cleaned_bound2 = [&](const Cell_t &c_it){
+		if(map.getCell(CLEAN_MAP, c_it.x, c_it.y) == UNCLEAN)
+		{
+			for (auto index = 0; index < 4; index++) {
+				auto neighbor = c_it + cell_direction_[index];
+				if (map.getCell(CLEAN_MAP, neighbor.x, neighbor.y) == CLEANED)
+					return true;
+			}
+			return false;
+		}
+		return false;
+	};
+	Cells c_bound1;
+	Cells c_bound2;
+	const auto start = passed_path_.front().toCell();
+	const auto curr = passed_path_.back().toCell();
+	map.find_if(start, c_bound1,is_cleaned_bound);
+	map.find_if(start, c_bound2,is_cleaned_bound2);
+
+//	map.print(CLEAN_MAP, Cells{});
+//	map.print(CLEAN_MAP, c_bound1);
+//	map.print(CLEAN_MAP, c_bound2);
+
+	if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right) {
+		if (!clean_map_.c_blocks.empty()) {
+			auto dy = action_i_ == ac_follow_wall_left ? 2 : -2;
+			for (auto &point : passed_path_) {
+				auto cell = point.getRelative(0, dy * CELL_SIZE).toCell();
+				clean_map_.c_blocks.insert({BLOCKED_FW, cell});
+			}
+		}
 	}
-	else if (sp_state == state_clean)
-	{
-		setLinearCleaned();
+	else if (sp_state == state_clean) {
+		auto p_it = passed_path_.front();
+		auto c_it_next = p_it.toCell() - cell_direction_[p_it.dir];
+		auto c_dir_switch = cell_direction_[(p_it.dir + 2) % 4];
+		for (auto i = -1; i <= 1; i++) {
+			auto c_it = c_it_next + c_dir_switch * i;
+			auto c_val = clean_map_.getCell(CLEAN_MAP, c_it.x, c_it.y);
+			if (c_val >= BLOCKED && c_val <= BLOCKED_BOUNDARY) {
+				clean_map_.c_blocks.insert({c_val, c_it});
+			}
+		}
+//		setLinearCleaned();
 		// Set home cell.
 		if (ev.rcon_status)
 			setHomePoint();
 	}
+	for (auto &&cost_block : clean_map_.c_blocks) {
+		if(std::find_if(c_bound2.begin(), c_bound2.end(), [&](const Cell_t& c_it){ return c_it == cost_block.second; }) != c_bound2.end())
+			clean_map_.setCell(CLEAN_MAP, cost_block.second.x, cost_block.second.y, cost_block.first);
+	}
 
-	setBlocks(iterate_point_.dir);
-//	clean_map_.print(CLEAN_MAP, getPosition().toCell().x, getPosition().toCell().y);
+	for (auto &&p_it :passed_path_)
+		clean_map_.setCells(CLEAN_MAP, p_it.toCell().x, p_it.toCell().y, CLEANED);
 
+	clean_map_.c_blocks.clear();
 	passed_path_.clear();
 	return false;
 }

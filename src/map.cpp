@@ -187,8 +187,8 @@ void GridMap::setCells(int8_t count, int16_t cell_x, int16_t cell_y, CellState s
 {
 	int8_t i, j;
 
-	for ( i = -(count / 2); i <= count / 2; i++ ) {
-		for ( j = -(count / 2); j <= count / 2; j++ ) {
+	for ( i = -1; i <= 1; i++ ) {
+		for ( j = -1; j <= 1; j++ ) {
 			setCell(CLEAN_MAP,cell_x + i,cell_y + j, state);
 		}
 	}
