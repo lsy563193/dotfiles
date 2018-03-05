@@ -18,6 +18,15 @@
 #define CTL_TESTING_STAGE 2
 #define CTL_ERROR_CODE_HIGH 3
 #define CTL_ERROR_CODE_LOW 4
+// For motors test mode
+// 0 for idle mode
+// 1 for stall mode
+#define CTL_LEFT_WHEEL_TEST_MODE 6
+#define CTL_RIGHT_WHEEL_TEST_MODE 7
+#define CTL_LEFT_BRUSH_TEST_MODE 2
+#define CTL_MAIN_BRUSH_TEST_MODE 3
+#define CTL_RIGHT_BRUSH_TEST_MODE 4
+#define CTL_VACUUM_TEST_MODE 7
 #endif
 // Two bytes for controlling left wheel.
 #define	CTL_WHEEL_LEFT_HIGH 2
@@ -249,7 +258,16 @@
 #define IDLE_MODE 				3
 #define CHARGE_MODE 			4
 #define SERIAL_TEST_MODE		5
-#define ALARM_ERROR_MODE		6
+#define ELECTRICAL_AND_LED_TEST_MODE		6
+#define OBS_TEST_MODE		7
+#define BUMPER_TEST_MODE		8
+#define CLIFF_TEST_MODE		9
+#define RCON_TEST_MODE		10
+#define WHEELS_TEST_MODE	11
+#define BRUSHES_TEST_MODE		12
+#define VACUUM_TEST_MODE		13
+#define CHARGE_CURRENT_TEST_MODE		14
+#define ALARM_ERROR_MODE		15
 
 #define DUMMY_DOWNLINK_OFFSET		2
 #define KEY_DOWNLINK_OFFSET			9
