@@ -283,6 +283,7 @@ public:
 private:
 	double resume_wheel_start_time_;
 	uint8_t oc_main_brush_cnt_{0};
+	uint8_t main_brush_resume_state_{1};
 	double resume_main_bursh_start_time_;
 	uint8_t oc_vacuum_resume_cnt_{0};
 	double resume_vacuum_start_time_;

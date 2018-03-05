@@ -14,6 +14,11 @@ public:
 	void stop(void);
 	void mainBrushResume();
 
+	bool isOn()
+	{
+		return brush_status_ != brush_stop;
+	}
+
 	void setPWM(uint8_t L, uint8_t R, uint8_t M);
 
 	uint8_t leftIsStall(void);
