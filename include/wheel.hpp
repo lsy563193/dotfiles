@@ -95,6 +95,10 @@ public:
 
 	int8_t getRightSpeedAfterPid(void);
 
+	int16_t getLeftSpeedInStream(void);
+
+	int16_t getRightSpeedInStream(void);
+
 	void moveForward(uint8_t Left_Speed, uint8_t Right_Speed);
 
 	bool getLeftWheelOc() const
@@ -162,6 +166,8 @@ private:
 	DirectionType right_direction_;
 	int8_t left_speed_after_pid_;
 	int8_t right_speed_after_pid_;
+	int16_t left_speed_in_stream_;
+	int16_t right_speed_in_stream_;
 	uint32_t left_wheel_step_;
 	uint32_t right_wheel_step_;
 
