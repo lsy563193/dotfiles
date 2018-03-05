@@ -1142,20 +1142,20 @@ uint8_t Lidar::lidarMarker(std::vector<Vector2<int>> &markers, double X_MAX)
 					break;
 				}
 				case 3 : {
-					dx = -2;
-					dy = 0;
+/*					dx = -2;
+					dy = 0;*/
 					direction_msg = "back middle";
 					break;
 				}
 				case 4 : {
-					dx = -2;
-					dy = 1;
+/*					dx = -2;
+					dy = 1;*/
 					direction_msg = "back left";
 					break;
 				}
 				case 5 : {
-					dx = -2;
-					dy = -1;
+/*					dx = -2;
+					dy = -1;*/
 					direction_msg = "back right";
 					break;
 				}

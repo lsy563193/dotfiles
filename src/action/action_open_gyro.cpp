@@ -12,6 +12,8 @@
 ActionOpenGyro::ActionOpenGyro()
 {
 	ROS_INFO("%s %d: Enter action open gyro.", __FUNCTION__, __LINE__);
+	brush.stop();
+	vacuum.stop();
 	gyro.reOpen();
 }
 

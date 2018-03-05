@@ -137,7 +137,7 @@ bool unsigned_long_to_hex_string(unsigned long number, char *str, const int len)
 PointSelector::PointSelector(bool is_left)
 {
 	is_left_ = is_left;
-	narrow = is_left ? 0.187 : 0.197;
+	narrow = is_left ? 0.177 : 0.187;
 	narrow_minuend = is_left ? 0.03 : 0.03;
 
 	x_min_forward = LIDAR_OFFSET_X;

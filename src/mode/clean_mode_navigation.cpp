@@ -305,13 +305,13 @@ void CleanModeNav::remoteDirectionLeft(bool state_now, bool state_last)
 	{
 		//todo: Just for testing.
 		beeper.beepForCommand(VALID);
-		continue_point_ = getPosition();
-		ROS_INFO("%s %d: low battery, battery =\033[33m %dmv \033[0m, continue cell(%d, %d)", __FUNCTION__, __LINE__,
-				 battery.getVoltage(), continue_point_.x, continue_point_.y);
-		ev.battery_home = true;
-		go_home_for_low_battery_ = true;
-	}
-	*/
+//		continue_point_ = getPosition();
+//		ROS_INFO("%s %d: low battery, battery =\033[33m %dmv \033[0m, continue cell(%d, %d)", __FUNCTION__, __LINE__,
+//				 battery.getVoltage(), continue_point_.x, continue_point_.y);
+//		ev.battery_home = true;
+//		go_home_for_low_battery_ = true;
+		ev.oc_brush_main = true;
+	}*/
 	else
 		beeper.beepForCommand(INVALID);
 
