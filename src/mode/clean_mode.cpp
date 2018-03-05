@@ -127,6 +127,9 @@ ACleanMode::~ACleanMode()
 }
 uint8_t ACleanMode::setBlocks(Dir_t dir)
 {
+
+	if(passed_path_.empty())
+		passed_path_.push_back(getPosition());
 	uint8_t block_count = 0;
 	printf("before filter:");
 	for(auto && cost_block: clean_map_.c_blocks)
