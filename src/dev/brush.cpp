@@ -28,6 +28,13 @@ Brush::Brush(void)
 	check_battery_time_stamp_ = 0;
 }
 
+void Brush::slowOperate(void)
+{
+	brush_status_ = brush_slow;
+	setPWM(20, 20, 20);
+	ROS_INFO("%s %d: Brush set to slow.", __FUNCTION__, __LINE__);
+}
+
 void Brush::normalOperate(void)
 {
 	brush_status_ = brush_normal;

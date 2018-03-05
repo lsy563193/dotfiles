@@ -12,7 +12,7 @@ ActionOpenLidar::ActionOpenLidar()
 	lidar.motorCtrl(ON);
 	lidar.setScanOriginalReady(0);
 
-	timeout_interval_ = 10;
+	timeout_interval_ = 15;
 
 }
 

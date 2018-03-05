@@ -74,7 +74,7 @@ int ModeGoToCharger::getNextAction()
 	if(action_i_ == ac_open_gyro || (action_i_ == ac_exception_resume && !ev.fatal_quit))
 	{
 		key_led.setMode(LED_STEADY, LED_ORANGE);
-		brush.normalOperate();
+		brush.slowOperate();
 		vacuum.setTmpMode(Vac_Normal);
 		return ac_go_to_charger;
 	}

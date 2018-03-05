@@ -19,35 +19,6 @@
 
 typedef std::deque<Point_t> Points;
 
-typedef enum {
-	// The sequence of CLEAN_MAP value must be UNCLEAN < CLEANED < MAP_BLOCKED < SLAM_MAP_BLOCKED
-  UNCLEAN  = 0,
-  SLAM_MAP_UNKNOWN = 0,
-  CLEANED = 1,
-  SLAM_MAP_CLEANABLE = 1,
-  BLOCKED = 2,
-  BLOCKED_FW = 2,
-  BLOCKED_BUMPER = 3,
-  BLOCKED_CLIFF = 4,
-  BLOCKED_RCON = 5,
-  BLOCKED_TMP_RCON = 6,
-  BLOCKED_LIDAR = 7,
-  BLOCKED_TILT = 8,
-  BLOCKED_SLIP = 9,
-  SLAM_MAP_BLOCKED = 10,
-  BLOCKED_BOUNDARY = 11,
-  TARGET_CLEAN = 13,
-  TARGET = 14,
-  COST_NO = 0,
-  COST_1 = 1,
-  COST_2 = 2,
-  COST_3 = 3,
-  COST_4 = 4,
-  COST_5 = 5,
-  COST_PATH = 6,
-  COST_HIGH = 7,
-} CellState;
-
 class GridMap {
 public:
 
@@ -74,11 +45,11 @@ public:
  */
 	void convertFromSlamMap(float threshold);
 
-	void mergeFromSlamGridMap(GridMap source_map, bool add_slam_map_blocks_to_uncleaned = false,
-							  bool add_slam_map_blocks_to_cleaned = false,
-							  bool add_slam_map_cleanable_area = false, bool clear_map_blocks = false,
-							  bool clear_slam_map_blocks = false,
-							  bool clear_bumper_and_lidar_blocks = false);
+	void merge(GridMap source_map, bool add_slam_map_blocks_to_uncleaned = false,
+			   bool add_slam_map_blocks_to_cleaned = false,
+			   bool add_slam_map_cleanable_area = false, bool clear_map_blocks = false,
+			   bool clear_slam_map_blocks = false,
+			   bool clear_bumper_and_lidar_blocks = false);
 
 	void slamMapToWorld(double origin_x_, double origin_y_, float resolution_, int16_t slam_map_x,
 						int16_t slam_map_y, double &world_x, double &world_y);
@@ -98,23 +69,7 @@ public:
 
 	bool trapMarkRobot(uint8_t id);
 
-	uint8_t setLidar();
-
-	uint8_t setObs();
-
-	uint8_t setBumper();
-
-	uint8_t setRcon();
-
-	uint8_t setCliff();
-
-	uint8_t setTilt();
-
-	uint8_t setSlip();
-
 	uint8_t setFollowWall(bool is_left, const Points&);
-
-	uint8_t setBlocks();
 
 	uint8_t saveLidar();
 
@@ -134,9 +89,26 @@ public:
 
 	uint8_t saveBlocks(bool is_linear, bool is_save_rcon);
 	void	setBlockWithBound(Cell_t min, Cell_t max, CellState state, bool with_block);
-	void setCleaned(std::deque<Cell_t> cells);
-	void setExplorationCleaned();
-	void setCircleMarkers(Point_t point,bool cover_block,int radian,CellState cell_state);
+
+	/*
+	 * Mark a circle of radius from point with cell_state.
+	 *
+	 * @param point, center of the circle, it is POINT but not CELL.
+	 * @param cover_block, whether it should cover c_blocks to @param cell_state.
+	 * @param radius, the radius of the circle.
+	 * @param cell_state, target cell state of marking.
+	 */
+	void setCircleMarkers(Point_t point, bool cover_block, int radius, CellState cell_state);
+
+	/*
+	 * Mark a square of x_len * y_len from center with cell_state.
+	 *
+	 * @param center, center cell of the area.
+	 * @param cell_state, target cell state of marking.
+	 * @param x_len, the x length of the area should be (2 * x_len + 1).
+	 * @param y_len, the y length of the area should be (2 * y_len + 1).
+	 */
+	void setArea(Cell_t center, CellState cell_state, uint16_t x_len = 0, uint16_t y_len = 0);
 
 	uint32_t getCleanedArea();
 
@@ -229,6 +201,7 @@ public:
 	bool isFrontBlockBoundary(int dx);
 
 	void generateSPMAP(const Cell_t &curr, Cells &target_list);
+//	void generateSPMAP(const Cell_t &curr);
 /*
  * Function to find the x/y range of the Map or wfMap, if the range is to small,
  * use the offset of those value to 3.
@@ -241,7 +214,8 @@ public:
  * @return
  */
 
-	bool isFrontBlocked(void);
+	bool isFrontBlocked(Dir_t dir);
+	bool isFrontSlamBlocked(void);
 
 	BoundingBox2 generateBound()
 	{
@@ -256,10 +230,14 @@ public:
 	}
 	void getMapRange(uint8_t id, int16_t *x_range_min, int16_t *x_range_max, int16_t *y_range_min, int16_t *y_range_max);
 
+	bool isOutOfMap(const Cell_t &cell);
+	bool isOutOfTargetRange(const Cell_t &cell);
 	bool cellIsOutOfRange(Cell_t cell);
 
-	void colorPrint(char *outString, int16_t y_min, int16_t y_max);
+	void colorPrint(const char *outString, int16_t y_min, int16_t y_max);
 	void print(uint8_t id, int16_t endx, int16_t endy);
+	typedef std::set<PairCell_t> Blocks_t ;
+	Blocks_t c_blocks;
 
 private:
 	uint8_t clean_map[MAP_SIZE][(MAP_SIZE + 1) / 2];
@@ -268,16 +246,7 @@ private:
 	int16_t g_x_min, g_x_max, g_y_min, g_y_max;
 	int16_t xRangeMin, xRangeMax, yRangeMin, yRangeMax;
 
-	// Cells that temporary save the blocks.
-	std::vector<Cell_t> temp_bumper_cells;
-	std::vector<Cell_t> temp_obs_cells;
-	std::vector<Cell_t> temp_rcon_cells;
-	std::vector<Cell_t> temp_tilt_cells;
-	std::vector<Cell_t> temp_slip_cells;
-	std::vector<Cell_t> temp_cliff_cells;
-	std::vector<Cell_t> temp_lidar_cells;
-	std::vector<Cell_t> temp_fw_cells;
-	std::vector<Cell_t> temp_WFMAP_follow_wall_cells;
+	// Cells that temporary save the c_blocks.
 
 };
 

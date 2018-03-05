@@ -142,7 +142,7 @@ int Serial::read(uint8_t *buf, int len)
 	int r_ret=0,s_ret=0;
 	uint8_t *t_buf;
 	t_buf = (uint8_t*)calloc(len,sizeof(uint8_t));
-	//memset(t_buf,0,len);
+	//memset(t_buf,0,size_of_path);
 	fd_set read_fd_set;
 	struct timeval timeout;
 	timeout.tv_sec = 4;
@@ -161,7 +161,7 @@ int Serial::read(uint8_t *buf, int len)
 				for(int i =0;i<len;i++){
 					buf[i] = t_buf[i];
 				}
-				//memcpy(buf,t_buf,len);
+				//memcpy(buf,t_buf,size_of_path);
 			free(t_buf);
 			return r_ret;
 		}
@@ -198,7 +198,7 @@ int Serial::read(uint8_t *buf, int len)
 						for(int i =0;i<len;i++){
 							buf[i] = t_buf[i];
 						}
-						//memcpy(buf,t_buf,len);
+						//memcpy(buf,t_buf,size_of_path);
 					free(t_buf);
 					FD_CLR(crport_fd_,&read_fd_set);
 					return r_ret;
@@ -243,7 +243,7 @@ void Serial::resetSendStream(void)
 void Serial::setSendData(uint8_t seq, uint8_t val)
 {
 	boost::mutex::scoped_lock lock(send_stream_mutex);
-	if (seq >= CTL_WHEEL_LEFT_HIGH && seq <= CTL_GYRO) {
+	if (seq >= CTL_WHEEL_LEFT_HIGH && seq <= CTL_CRC) {
 		send_stream[seq] = val;
 	}
 }
@@ -593,7 +593,7 @@ void Serial::send_routine_cb()
 		brush.updatePWM();
 
 		sendData();
-//		robot::instance()->debugSendStream(buf);
+		robot::instance()->publishCtrlStream();
 	}
 	core_thread_stop = true;
 	ROS_ERROR("%s,%d exit",__FUNCTION__,__LINE__);
@@ -607,5 +607,8 @@ void Serial::sendData()
 	memcpy(buf, serial.send_stream, sizeof(uint8_t) * SEND_LEN);
 	send_stream_mutex.unlock();
 	buf[CTL_CRC] = serial.calBufCrc8(buf, CTL_CRC);
+//	printf("buf[CTL_CRC] = %x\n", buf[CTL_CRC]);
 	serial.write(buf, SEND_LEN);
+//	robot::instance()->debugSendStream(buf);
+	serial.setSendData(CTL_CRC, buf[CTL_CRC]);
 }

@@ -55,17 +55,18 @@ public:
 
 	bool motorCtrl(bool new_switch_);
 	void startAlign();
-	bool alignFinish();
-	float alignAngle(void)
+	void setAlignFinish();
+	bool isAlignFinish();
+	float alignRadian(void)
 	{
-		return align_angle_;
+		return align_radian_;
 	}
-	void alignAngle(float angle)
+	void alignRadian(float radian)
 	{
-		align_angle_ = angle;
+		align_radian_ = radian;
 	}
 
-	uint8_t lidarMarker(double X_MAX = 0.237);
+	uint8_t lidarMarker(std::vector<Vector2<int>> &markers, double X_MAX = 0.237);
 	void checkRobotSlip();
 	bool isRobotSlip();
 
@@ -85,7 +86,7 @@ public:
 	void lidarXYPointCb(const visualization_msgs::Marker &point_marker);
 	static void setLidarScanDataOriginal(const sensor_msgs::LaserScan::ConstPtr &scan);
 	static sensor_msgs::LaserScan getLidarScanDataOriginal(void);
-	double getLidarDistance(int16_t angle);
+	double getLidarDistance(int16_t angle,float range_max,float range_min);
 	uint8_t lidar_get_status();
 	bool lidar_is_stuck();
 private:
@@ -120,7 +121,7 @@ private:
 
 	// For aligning.
 	bool align_finish_;
-	float align_angle_;
+	float align_radian_;
 	geometry_msgs::Point laser_points_;
 
 	// For slip checking

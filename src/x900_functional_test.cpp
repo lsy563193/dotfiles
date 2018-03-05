@@ -117,9 +117,10 @@ bool RAM_test()
 	ROS_INFO("%s %d: Start RAM test.", __FUNCTION__, __LINE__);
 	bool test_ret = false;
 	int RAM_test_size = 2; // In Mb.
-	int RAM_test_block_cnt = 3; // Test 3 blocks of RAM and size of each block is RAM_test_size Mb.
+	int RAM_test_block_cnt = 3; // Test 3 c_blocks of RAM and size of each block is RAM_test_size Mb.
 
 	pid_t status;
+	// (Austin)Use the modified memtester.
 	std::string cmd = "memtester " + std::to_string(RAM_test_size) + " 1 " + std::to_string(RAM_test_block_cnt);
 	ROS_INFO("%s %d: Run command: %s", __FUNCTION__, __LINE__, cmd.c_str());
 	status = system(cmd.c_str());
@@ -155,7 +156,6 @@ bool RAM_test()
 		// Child process.
 		ROS_INFO("%s %d: Child process up, pid:%d.", __FUNCTION__, __LINE__, getpid());
 
-		// (Austin)Use the modified memtester.
 		int fail_code = execlp("memtester", "memtester", std::to_string(RAM_test_size).c_str(), "1",
 			   std::to_string(RAM_test_block_cnt).c_str() ,NULL);
 		ROS_ERROR("%s %d: Child process end with error: %02d, %s", __FUNCTION__, __LINE__, errno, strerror(errno));

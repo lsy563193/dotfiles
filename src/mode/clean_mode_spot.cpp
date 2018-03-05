@@ -51,12 +51,12 @@ bool CleanModeSpot::mapMark()
 
 	if (action_i_ == ac_linear) {
 		PP_INFO();
-		clean_map_.setCleaned(pointsGenerateCells(passed_path_));
+		setCleaned(pointsGenerateCells(passed_path_));
 	}
 
 	if (sp_state == state_folllow_wall)
 		clean_map_.markRobot(CLEAN_MAP);
-	clean_map_.setBlocks();
+	setBlocks(iterate_point_.dir);
 	PP_INFO();
 	clean_map_.print(CLEAN_MAP, getPosition().toCell().x, getPosition().toCell().y);
 

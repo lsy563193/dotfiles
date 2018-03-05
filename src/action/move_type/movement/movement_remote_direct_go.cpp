@@ -23,14 +23,14 @@ bool MovementRemoteDirectGo::isFinish()
 {
 	ev.bumper_triggered = bumper.getStatus();
 	ev.cliff_triggered = cliff.getStatus();
-	ev.rcon_triggered = c_rcon.getForwardTop();
+	ev.rcon_status = c_rcon.getForwardTop();
 
 	return ev.remote_direction_forward ||
 		   ev.remote_direction_left ||
 		   ev.remote_direction_right ||
 		   ev.bumper_triggered ||
 		   ev.cliff_triggered ||
-		   ev.rcon_triggered ||
+		   ev.rcon_status ||
 		   isTimeUp();
 }
 

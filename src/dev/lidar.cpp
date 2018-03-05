@@ -349,7 +349,7 @@ bool Lidar::findLines(std::vector<LineABC> *lines,bool combine)
 	std::vector<LineABC>::iterator it;
 	for(it = lines->begin();it!= lines->end();it++){
 		msg+= "\n[A:"+ std::to_string(it->A) +",B:" + std::to_string(it->B) +",C:" +
-			std::to_string(it->C)+",len = "+std::to_string(it->len)+",K = " +
+			std::to_string(it->C)+",len = "+std::to_string(it->size_of_path)+",K = " +
 			std::to_string(it->K)+",("+std::to_string(it->x1)+","+
 			std::to_string(it->y1)+"),("+std::to_string(it->x2)+","+std::to_string(it->y2)+")]";
 	}
@@ -363,8 +363,12 @@ void Lidar::startAlign()
 {
 	align_finish_ = false;
 }
+void Lidar::setAlignFinish()
+{
+	align_finish_ = true;
+}
 
-bool Lidar::alignFinish()
+bool Lidar::isAlignFinish()
 {
 	return align_finish_;
 }
@@ -384,20 +388,20 @@ bool Lidar::alignFinish()
 //	const float LONG_ENOUGTH = 1.0;//in meters
 //	std::vector<float> same_angle_count;
 //	std::vector<LineABC>::const_iterator it1,it2;
-//	float len = 0.0;
+//	float size_of_path = 0.0;
 //	int i=0;
 //	int pos = 0;
 //	/*----find the longest one in lines---*/
 //	for(it1 = lines->cbegin(); it1!= lines->cend(); it1++){
-//		if(it1->len >= len){
-//			len = it1->len;
+//		if(it1->len >= size_of_path){
+//			len = it1->size_of_path;
 //			pos = i;
 //		}
 //		i++;
 //	}
-//	if(lines->at(pos).len >= LONG_ENOUGTH){
+//	if(lines->at(pos).size_of_path >= LONG_ENOUGTH){
 //		*align_angle = lines->at(pos).K;
-//		ROS_INFO("%s,%d: find long line %f ,align_angle %f",__FUNCTION__,__LINE__,lines->at(pos).len,*align_angle);
+//		ROS_INFO("%s,%d: find long line %f ,align_angle %f",__FUNCTION__,__LINE__,lines->at(pos).size_of_path,*align_angle);
 //		align_finish_ = true;
 //		return true;
 //	}
@@ -436,9 +440,9 @@ bool Lidar::alignFinish()
 
 bool Lidar::lidarGetFitLine(double r_begin, double r_end, double range, double dis_lim, double *line_radian, double *distance,bool is_left,bool is_align)
 {
-	ROS_WARN("angle_range_raw(%lf, %lf)", radian_to_degree(r_begin), radian_to_degree(r_end));
+//	ROS_WARN("angle_range_raw(%lf, %lf)", radian_to_degree(r_begin), radian_to_degree(r_end));
 	if(isScanOriginalReady() == 0){
-		INFO_BLUE("ScanOriginal NOT Ready! Break!");
+//		INFO_BLUE("ScanOriginal NOT Ready! Break!");
 		return false;
 	}
 	bool isReverse = false;
@@ -520,7 +524,6 @@ bool Lidar::lidarGetFitLine(double r_begin, double r_end, double range, double d
 	//*line_radian = atan2(-a, b);
 	Lidar_Group.clear();
 	if (!fit_line.empty()) {
-		//todo mt
 		if (is_left) {
 			*line_radian = atan2(0 - fit_line.begin()->A, fit_line.begin()->B);
 			*distance = std::abs(fit_line.begin()->C / (sqrt(fit_line.begin()->A * fit_line.begin()->A + fit_line.begin()->B * fit_line.begin()->B)));
@@ -529,7 +532,6 @@ bool Lidar::lidarGetFitLine(double r_begin, double r_end, double range, double d
 			*distance = std::abs(fit_line.back().C / (sqrt(fit_line.back().A * fit_line.back().A + fit_line.back().B * fit_line.back().B)));
 		}
 		//ROS_INFO("a = %lf, b = %lf, c = %lf", a, b, c);
-		align_finish_ = true;
 		ROS_ERROR("fit line succeed! line_angle = %lf", radian_to_degree(*line_radian));
 		return true;
 	} else {
@@ -623,7 +625,7 @@ bool Lidar::splitLine(const std::vector<Vector2<double>> &points, double consecu
 			++iter;
 		}
 	}
-	ROS_INFO("splitLine : Lidar_Group.size = %lu", Lidar_Group.size());
+//	ROS_INFO("splitLine : Lidar_Group.size = %lu", Lidar_Group.size());
 //	robot::instance()->pubLineMarker(&Lidar_Group,"splitLine");
 	return true;
 }
@@ -641,8 +643,8 @@ bool Lidar::splitLine2nd(std::vector<std::deque<Vector2<double>> > *groups, doub
 	std::deque<Vector2<double>> new_line;
 	std::vector<std::deque<Vector2<double>> > new_group;
 
-	INFO_BLUE("Lidar::splitLine2nd");
-	ROS_INFO("(*groups).size(%d)", (*groups).size());
+//	INFO_BLUE("Lidar::splitLine2nd");
+//	ROS_INFO("(*groups).size(%d)", (*groups).size());
 	groups_erased_index.clear();
 	new_line.clear();
 	new_group.clear();
@@ -736,16 +738,14 @@ bool Lidar::mergeLine(std::vector<std::deque<Vector2<double>> > *groups, double 
 	std::vector<int> merge_index;
 	std::deque<Vector2<double>> new_line;
 	std::vector<std::deque<Vector2<double>> > new_group;
-	INFO_BLUE("mergeLine");
-	ROS_INFO("(*groups).size(%d)", (*groups).size());
+//	INFO_BLUE("mergeLine");
+//	ROS_INFO("(*groups).size(%d)", (*groups).size());
 	merge_index.clear();
 	new_line.clear();
 	new_group.clear();
-//	ROS_INFO("0");
 //	if (!groups->empty()) {
 	if (groups->size() > 1) {//it should not merge when the size is 0 or 1
 		for (auto iter = groups->begin(); iter != groups->end(); ++iter) {
-//			ROS_INFO("1");
 			t = 0;
 			t_max = 0;
 			//for merge the last one and the first one
@@ -755,13 +755,11 @@ bool Lidar::mergeLine(std::vector<std::deque<Vector2<double>> > *groups, double 
 			} else {
 				ROS_ERROR("111");
 			}*/
-//			ROS_INFO("2");
 			x1 = iter->begin()->x;
 			y1 = iter->begin()->y;
 			x2 = (it_next_line->end() - 1)->x;
 			y2 = (it_next_line->end() - 1)->y;
 			if (x1 != x2 && y1 != y2) {
-//				ROS_INFO("3");
 				a = y2 - y1;
 				b = x1 - x2;
 				c = x2 * y1 - x1 * y2;
@@ -780,7 +778,6 @@ bool Lidar::mergeLine(std::vector<std::deque<Vector2<double>> > *groups, double 
 				}
 //				ROS_INFO("1st t = %lf, t_max = %lf", t, t_max);
 			}
-//			ROS_INFO("4");
 
 			/*loop for checking the second line*/
 			for (int j = 0; j < points_size_2nd; j++) {
@@ -794,17 +791,17 @@ bool Lidar::mergeLine(std::vector<std::deque<Vector2<double>> > *groups, double 
 			if (t_max < t_lim) {
 				int index = static_cast<int>(std::distance((*groups).begin(), iter));
 				merge_index.push_back(index);
-				ROS_ERROR("push_back(index) = %d", index);
+//				ROS_ERROR("push_back(index) = %d", index);
 			}
 		}
 	}
 	if (groups->size() == 2 && merge_index.size() != 0) {
 		merge_index.pop_back();//for the groups size is 2, it should not merge twice
-		ROS_INFO("merge_index.pop_back()");
+//		ROS_INFO("merge_index.pop_back()");
 	}
 
-	/*do mergeFromSlamGridMap*/
-	ROS_WARN("before do merge! (*groups).size() = %d", (*groups).size());
+	/*do merge*/
+//	ROS_WARN("before do merge! (*groups).size() = %d", (*groups).size());
 	if (!merge_index.empty()) {
 		int loop_count = 0;
 		auto iter = (*groups).begin();
@@ -823,13 +820,10 @@ bool Lidar::mergeLine(std::vector<std::deque<Vector2<double>> > *groups, double 
 //				ROS_INFO("iter += %d", (*m_iter));
 			}
 //			ROS_INFO("(*m_iter) = %d", (*m_iter));
-//			ROS_INFO("5");
 			if (iter == (*groups).end()-1) {//to merge the last one and the first one
-//				ROS_INFO("6");
 				points_size = static_cast<int>(iter->size());
 				points_size_2nd = static_cast<int>(((*groups).begin())->size());
 //				ROS_INFO("points_size_2nd = %d", points_size_2nd);
-//				ROS_INFO("7");
 				for (int j = 0; j < points_size; j++) {
 					new_line.push_back(*(iter->begin() + j));
 				}
@@ -837,19 +831,15 @@ bool Lidar::mergeLine(std::vector<std::deque<Vector2<double>> > *groups, double 
 //					ROS_INFO("8");
 					new_line.push_back(*(((*groups).begin()->begin()) + j));
 				}
-//				ROS_INFO("8.1");
 				iter = (*groups).erase(iter);
-//				ROS_INFO("8.2");
 				iter = (*groups).erase((*groups).begin());
 //				ROS_INFO("(*groups).erase((*groups).begin())");
 				iter = (*groups).insert(iter, new_line);
-//				ROS_INFO("8.4");
 /*				(*groups).erase(iter - loop_count);
 				(*groups).erase(iter + 1 - loop_count);
 				(*groups).insert(iter - loop_count, new_line);*/
 				new_line.clear();
 				loop_count++;
-//				ROS_INFO("8.5, break!");
 				break;
 			} else {
 //				ROS_INFO("9");
@@ -875,7 +865,7 @@ bool Lidar::mergeLine(std::vector<std::deque<Vector2<double>> > *groups, double 
 			}
 		}
 	}
-	ROS_WARN("after do merge! (*groups).size() = %d", (*groups).size());
+//	ROS_WARN("after do merge! (*groups).size() = %d", (*groups).size());
 
 	if(is_align){
 		//sort from long to short
@@ -887,17 +877,12 @@ bool Lidar::mergeLine(std::vector<std::deque<Vector2<double>> > *groups, double 
 		});
 		//filter line which is shorter than 0.3m
 		auto loc = std::find_if((*groups).begin(),(*groups).end(),[](std::deque<Vector2<double>> ite){
-//			ROS_INFO("1");
 			auto dis = sqrtf(powf(static_cast<float>(ite.begin()->x - (ite.end() - 1)->x), 2) + powf(
 							static_cast<float>(ite.begin()->y - (ite.end() - 1)->y), 2));
-//			ROS_INFO("2");
 			return dis < 0.3;
 		});
-//		ROS_INFO("3");
 		auto dis = std::distance((*groups).begin(),loc);
-//		ROS_INFO("4");
 		(*groups).resize(dis);
-//		ROS_INFO("5");
 	}
 #if 0
 	for(auto &ite:(*groups)) {
@@ -914,8 +899,8 @@ bool Lidar::fitLineGroup(std::vector<std::deque<Vector2<double>> > *groups, doub
 	double	x_0;
 	int	loop_count = 0;
 	LineABC	new_fit_line;
-	INFO_BLUE("fitLineGroup");
-	ROS_INFO("(*groups).size(%d)", (*groups).size());
+//	INFO_BLUE("fitLineGroup");
+//	ROS_INFO("(*groups).size(%d)", (*groups).size());
 	fit_line.clear();
 	if (!(*groups).empty()) {
 		for (std::vector<std::deque<Vector2<double>> >::iterator iter = (*groups).begin(); iter != (*groups).end(); ++iter) {
@@ -939,7 +924,7 @@ bool Lidar::fitLineGroup(std::vector<std::deque<Vector2<double>> > *groups, doub
 			const auto DIS_MIN = ROBOT_RADIUS - 0.02;
 			new_fit_line.dis = line_to_robot_dis;
 			if (line_to_robot_dis > dis_lim || line_to_robot_dis < DIS_MIN || (is_align ? 0 : x_0 < 0)) {
-				ROS_ERROR("the line is too far away from robot. line_to_robot_dis = %lf,x_0:%lf,dis_lim:(%lf, %lf)", line_to_robot_dis,x_0,dis_lim, DIS_MIN);
+//				ROS_ERROR("the line is too far away from robot. line_to_robot_dis = %lf,x_0:%lf,dis_lim:(%lf, %lf)", line_to_robot_dis,x_0,dis_lim, DIS_MIN);
 				continue;
 			}
 			fit_line.push_back(new_fit_line);
@@ -1041,8 +1026,10 @@ static uint8_t setLidarMarkerAcr2Dir(double X_MIN,double X_MAX,int angle_from,in
 
 }
 
-uint8_t Lidar::lidarMarker(double X_MAX)
+uint8_t Lidar::lidarMarker(std::vector<Vector2<int>> &markers, double X_MAX)
 {
+//	markers.clear();
+
 	if(!lidarCheckFresh(0.6,4))
 		return 0;
 
@@ -1050,9 +1037,10 @@ uint8_t Lidar::lidarMarker(double X_MAX)
 	auto tmp_lidarXY_points = lidarXY_points;
 	lidarXYPoint_mutex_.unlock();
 	double x, y;
-	int dx, dy;
+	int dx{}, dy{};
 	const	double Y_MAX = 0.20;//0.279
 	int	count_array[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+	Vector2<int> marker = {dx,dy};
 
 	for(const auto& point:lidarXY_points){
 		x = point.x;
@@ -1154,20 +1142,20 @@ uint8_t Lidar::lidarMarker(double X_MAX)
 					break;
 				}
 				case 3 : {
-					dx = -2;
-					dy = 0;
+/*					dx = -2;
+					dy = 0;*/
 					direction_msg = "back middle";
 					break;
 				}
 				case 4 : {
-					dx = -2;
-					dy = 1;
+/*					dx = -2;
+					dy = 1;*/
 					direction_msg = "back left";
 					break;
 				}
 				case 5 : {
-					dx = -2;
-					dy = -1;
+/*					dx = -2;
+					dy = -1;*/
 					direction_msg = "back right";
 					break;
 				}
@@ -1209,9 +1197,18 @@ uint8_t Lidar::lidarMarker(double X_MAX)
 				}
 			}
 		}
+/*		if (!direction_msg.empty()) {
+			ROS_INFO("%s %d: \033[36mlidar marker: %s.\033[0m", __FUNCTION__, __LINE__, direction_msg.c_str());
+			direction_msg.clear();
+		}*/
+		marker.x = dx;
+		marker.y = dy;
+		if (!(dx == 0 && dy == 0))
+			markers.push_back(marker);
+		dx = 0;
+		dy = 0;
 	}
-//	if (!msg.empty())
-//		ROS_INFO("%s %d: \033[36mlidar marker: %s.\033[0m", __FUNCTION__, __LINE__, msg.c_str());
+
 	return block_status;
 }
 
@@ -1412,7 +1409,7 @@ int Lidar::compLaneDistance()
  * param1 angle range(179~-179)
  * return distance
  */
-double Lidar::getLidarDistance(int16_t angle)
+double Lidar::getLidarDistance(int16_t angle,float  range_max,float range_min)
 {
 	double distance = 0.0f;
 	if(angle <= -180 || angle >= 180){
@@ -1422,10 +1419,10 @@ double Lidar::getLidarDistance(int16_t angle)
 	std::vector<geometry_msgs::Point>  lidar_points = lidarXY_points;
 	lidarXYPoint_mutex_.unlock();
 	int16_t point_angle;
-	const int offset = 2;
+	const int offset = 5;
 	int count = 0;
 	for(auto& point:lidar_points){
-		/*---create rcon sensor angle acorrding to current lidar point*/
+		/*---to calculate the angle base on robot position , from current lidar points*/
 		if(point.x >= 0){
 			if(point.y < 0){
 				point_angle = (int16_t)radian_to_degree(atan(point.x/point.y));
@@ -1456,19 +1453,20 @@ double Lidar::getLidarDistance(int16_t angle)
 
 		int diff_angle = abs(point_angle - angle);
 		if(diff_angle > 180)//range angle
-			diff_angle = 360 - diff_angle; 
+			diff_angle = 360 - diff_angle;
 		if(diff_angle <= offset){
-			distance += sqrt( pow(point.x, 2.0) + pow(point.y, 2.0) );
-			count++;
+			float tmp_dist = sqrt( pow(point.x, 2.0) + pow(point.y, 2.0) );
+			if(tmp_dist > range_min && tmp_dist < range_max){
+				distance += tmp_dist; 
+				count++;
+			}
 		}
-
-		//ROS_INFO("\033[1;40;32m%s,%d,point_angle = %d, input angle %d,distance = %f\033[0m",__FUNCTION__,__LINE__,point_angle,angle,(count > 0)?distance/(count*1.0):0.0f);
-		if(count >1){
-			distance = distance /(count*1.0);
+		if(count >= offset*2)
 			break;
-		}
 	}
-	ROS_INFO("\033[1;40;32m%s,%d,point_angle = %d, input angle %d,distance = %f\033[0m",__FUNCTION__,__LINE__,point_angle,angle,distance);
+	if(count >0)
+		distance = distance /(count*1.0);
+	ROS_INFO("\033[1;40;32m%s,%d,last_point_angle = %d, input angle %d,distance = %f\033[0m",__FUNCTION__,__LINE__,point_angle,angle,distance);
 	return 	distance;
 }
 
@@ -1635,7 +1633,7 @@ void Lidar::init() {
 
 	// For aligning.
 	align_finish_ = {};
-	align_angle_ = {};
+	align_radian_ = {};
 	laser_points_ = {};
 
 	// For slip checking
@@ -1659,8 +1657,9 @@ bool Lidar::lidar_is_stuck()
 
 uint8_t Lidar::lidar_get_status()
 {
-	if (lidar.isScanCompensateReady())
-		return lidar.lidarMarker(0.23);
+	std::vector<Vector2<int>> markers;
+	if (isScanCompensateReady())
+		return lidarMarker(markers, 0.23);
 
 	return 0;
 }

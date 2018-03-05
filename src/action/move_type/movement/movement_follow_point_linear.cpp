@@ -19,13 +19,13 @@ MovementFollowPointLinear::MovementFollowPointLinear()
 //	ROS_INFO_FL();
 //	tick_limit_ = 1;
 //	auto p_clean_mode = dynamic_cast<ACleanMode*> (sp_mt_->sp_mode_);
-//	sp_mt_->target_point_ = p_clean_mode->plan_path_.front();
+//	sp_mt_->target_point_ = p_clean_mode->remain_path_.front();
 }
 
 Point_t MovementFollowPointLinear::_calcTmpTarget()
 {
 	auto p_mode = dynamic_cast<ACleanMode*> (sp_mt_->sp_mode_);
-	auto tmp_target_ = p_mode->plan_path_.front();
+	auto tmp_target_ = sp_mt_->remain_path_.front();
 
 	if(isAny(p_mode->iterate_point_.dir))
 		return tmp_target_;
@@ -63,7 +63,7 @@ bool MovementFollowPointLinear::isFinish()
 
 uint8_t MovementFollowPointLinear::isNear()
 {
-	bool near_blocked_in_slam_map = slam_grid_map.isFrontBlocked();
+	bool near_blocked_in_slam_map = slam_grid_map.isFrontSlamBlocked();
 	auto obstacle_distance_front = lidar.getObstacleDistance(0,ROBOT_RADIUS);
 	auto b_obs = obs.getStatus() > 0;
 	auto b_lidar = (obstacle_distance_front < 0.25);

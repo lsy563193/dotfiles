@@ -13,7 +13,7 @@ Wheel wheel;
 void Wheel::stop(void)
 {
 	setPidTargetSpeed(0, 0);
-	ROS_INFO("%s,%d,wheel set stop",__FUNCTION__,__LINE__);
+//	ROS_INFO("%s,%d,wheel set stop",__FUNCTION__,__LINE__);
 }
 
 uint32_t Wheel::getRightStep(void)
@@ -293,15 +293,14 @@ void Wheel::pidSetLeftSpeed(float speed)
 			 __FUNCTION__, __LINE__, numeral, decimal, static_cast<uint16_t>((numeral << 8) | decimal));
 #else
 	left_speed_after_pid_ = static_cast<int8_t>(speed);
-	int16_t stream_speed;
 	if (speed >= 0)
 		speed = speed > RUN_TOP_SPEED ? RUN_TOP_SPEED : speed;
 	else
 		speed = std::abs(speed) > RUN_TOP_SPEED ? -1 * RUN_TOP_SPEED : speed;
-	stream_speed = static_cast<int16_t>(speed * SPEED_ALF);
+	left_speed_in_stream_ = static_cast<int16_t>(speed * SPEED_ALF);
 
-	serial.setSendData(CTL_WHEEL_LEFT_HIGH, static_cast<uint8_t>(stream_speed >> 8));
-	serial.setSendData(CTL_WHEEL_LEFT_LOW, static_cast<uint8_t>(stream_speed));
+	serial.setSendData(CTL_WHEEL_LEFT_HIGH, static_cast<uint8_t>(left_speed_in_stream_ >> 8));
+	serial.setSendData(CTL_WHEEL_LEFT_LOW, static_cast<uint8_t>(left_speed_in_stream_));
 #endif
 }
 
@@ -316,15 +315,14 @@ void Wheel::pidSetRightSpeed(float speed)
 			 __FUNCTION__, __LINE__, numeral, decimal, static_cast<uint16_t>((numeral << 8) | decimal));
 #else
 	right_speed_after_pid_ = static_cast<int8_t>(speed);
-	int16_t stream_speed;
 	if (speed >= 0)
 		speed = speed > RUN_TOP_SPEED ? RUN_TOP_SPEED : speed;
 	else
 		speed = std::abs(speed) > RUN_TOP_SPEED ? -1 * RUN_TOP_SPEED : speed;
-	stream_speed = static_cast<int16_t>(speed * SPEED_ALF);
+	right_speed_in_stream_ = static_cast<int16_t>(speed * SPEED_ALF);
 
-	serial.setSendData(CTL_WHEEL_RIGHT_HIGH, static_cast<uint8_t>(stream_speed >> 8));
-	serial.setSendData(CTL_WHEEL_RIGHT_LOW, static_cast<uint8_t>(stream_speed));
+	serial.setSendData(CTL_WHEEL_RIGHT_HIGH, static_cast<uint8_t>(right_speed_in_stream_ >> 8));
+	serial.setSendData(CTL_WHEEL_RIGHT_LOW, static_cast<uint8_t>(right_speed_in_stream_));
 #endif
 }
 
@@ -342,4 +340,14 @@ void Wheel::moveForward(uint8_t Left_Speed, uint8_t Right_Speed)
 {
 	setDirectionForward();
 	setPidTargetSpeed(Left_Speed, Right_Speed);
+}
+
+int16_t Wheel::getLeftSpeedInStream(void)
+{
+	return left_speed_in_stream_;
+}
+
+int16_t Wheel::getRightSpeedInStream(void)
+{
+	return right_speed_in_stream_;
 }

@@ -9,6 +9,8 @@
 #include <deque>
 #include <map.h>
 
+extern const Cell_t cell_direction_[9];
+
 typedef std::deque<Cells> PathList;
 
 class APathAlgorithm
@@ -39,19 +41,6 @@ public:
 
 	void displayPointPath(const Points &point_path);
 
-	/*
-	 * @author Patrick Chow
-	 * @last modify by Austin Liu
-	 *
-	 * This function is for adjusting the path away from obstacles while the cost and turning count is
-	 * still the same.
-	 *
-	 * @param: GridMap map, it will use it's CLEAN_MAP data.
-	 * @param: Cells path, the path from start cell to target cell.
-	 *
-	 * @return: Cells path, an equivalent path of input path which is most far away from the obstacles.
-	 */
-	void optimizePath(GridMap &map, Cells &path);
 	public:
 	/*
 	 * @author Patrick Chow
@@ -116,7 +105,62 @@ protected:
 	 */
 	bool checkTrappedUsingDijkstra(GridMap &map, const Cell_t &curr_cell);
 
-	const Cell_t cell_direction_index_[9]{{1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1},{0,0}};
+};
+
+typedef BoundingBox2(*RangeFunction)(Cell_t&, Cell_t&, Cell_t&);
+
+class IsIncrease {
+public:
+	IsIncrease(bool is_toward_pos):is_toward_pos_(is_toward_pos){};
+
+	int operator()(const Cell_t &a, const Cell_t &b) {
+		return is_toward_pos_ ? a.y < b.y : a.y > b.y ;
+	};
+private:
+	bool is_toward_pos_ = true;
+};
+
+class BestTargetFilter {
+public:
+	BestTargetFilter(RangeFunction range_function, int turn_count, bool is_toward_pos,bool turn_top_limit=false):range_function_(range_function), turn_count_(turn_count),is_toward_pos_(is_toward_pos),turn_top_limit_(turn_top_limit) {};
+
+	void update(Cell_t& curr, Cell_t& min, Cell_t& max){
+		auto bound = range_function_(curr, min, max);
+		min_ = bound.min;
+		max_ = bound.max;
+	};
+	int operator()(const Cells &path) {
+		if(turn_count_ ==0) {
+			return std::is_sorted(path.begin(), path.end(), IsIncrease(is_toward_pos_));
+		}
+		else if(turn_count_ == 1){
+			auto point = std::is_sorted_until(path.begin(), path.end(), IsIncrease(!is_toward_pos_)) - 1;
+			if(!(point != path.begin() && point != path.end()-1 && std::is_sorted(point, path.end(), IsIncrease(is_toward_pos_))))
+				return false;
+			if(turn_top_limit_)
+			{
+				if(std::abs(point->y - path.front().y) >2)
+					return false;
+				if(std::abs(path.back().x - path.front().x) >5)
+					return false;
+			}
+			return true;
+		}
+		else/* if(turn_count_ ==-1)*/{//any turn
+			return true;
+		}
+	};
+	bool towardPos(){
+		return (turn_count_== 0 && is_toward_pos_)||(turn_count_== 1 && !is_toward_pos_);
+	};
+//private:
+//	bool is_toward_pos_=false;
+	Cell_t min_;
+	Cell_t max_;
+	int turn_count_;
+	bool is_toward_pos_{};
+	RangeFunction range_function_;
+	bool turn_top_limit_{false};
 };
 
 class NavCleanPathAlgorithm: public APathAlgorithm
@@ -163,7 +207,7 @@ private:
 	 *
 	 * @return: Cells, a deque of possible targets.
 	 */
-	Cells filterAllPossibleTargets(GridMap &map, const Cell_t &curr_cell, BoundingBox2 &b_map);
+//	Cells filterAllPossibleTargets(GridMap &map, const Cell_t &curr_cell, BoundingBox2 &b_map);
 
 	/*
 	 * @author Patrick Chow
@@ -177,7 +221,21 @@ private:
 	 *
 	 * @return: PathList, a deque of paths from start cell to the input targets.
 	 */
-	PathList tracePathsToTargets(GridMap &map, const Cells &target_list, const Cell_t& start);
+	void findPath(GridMap &map, const Cell_t &curr, const Cell_t &targets, Cells &path, int last_i);
+
+	/*
+	 * @author Patrick Chow
+	 * @last modify by Austin Liu
+	 *
+	 * This function is for adjusting the path away from obstacles while the cost and turning count is
+	 * still the same.
+	 *
+	 * @param: GridMap map, it will use it's CLEAN_MAP data.
+	 * @param: Cells path, the path from start cell to target cell.
+	 *
+	 * @return: Cells path, an equivalent path of input path which is most far away from the obstacles.
+	 */
+	void optimizePath(GridMap &map, Cells &path);
 
 	/*
 	 * @author Patrick Chow
@@ -193,9 +251,69 @@ private:
 	 *          false if there is no target that match the condictions.
 	 *          Cell_t best_target, the selected best target.
 	 */
-	bool filterPathsToSelectTarget(GridMap &map, PathList &paths, const Cell_t &cell_curr, Cell_t &best_target);
+	bool filterPathsToSelectBestPath(GridMap &map, const Cells &targets, const Cell_t &cell_curr, Cells &best_path, const Dir_t &last_dir);
 
 	bool checkTrapped(GridMap &map, const Cell_t &curr_cell) override ;
+
+//	RangeFunction range_0_xp = [](Cell_t& curr, Cell_t& min, Cell_t& max){
+//		return BoundingBox2{curr, Cell_t{max.x, curr.y}};
+//	};
+//	RangeFunction range_0_xn = [](Cell_t& curr, Cell_t& min, Cell_t& max){
+//		return BoundingBox2{Cell_t{min.x, curr.y}, curr};
+//	};
+	RangeFunction range_0_xp = [](Cell_t& curr, Cell_t& min, Cell_t& max){
+		return BoundingBox2{curr, Cell_t{max.x, curr.y}};
+	};
+	RangeFunction range_0_xn = [](Cell_t& curr, Cell_t& min, Cell_t& max){
+		return BoundingBox2{Cell_t{min.x, curr.y}, curr};
+	};
+	RangeFunction range_p2 = [](Cell_t& curr, Cell_t& min, Cell_t& max){
+		return BoundingBox2{Cell_t{min.x, (int16_t)(curr.y + 2)}, Cell_t{max.x, (int16_t)(curr.y + 2)}};
+	};
+	RangeFunction range_p3p = [](Cell_t& curr, Cell_t& min, Cell_t& max){
+		return BoundingBox2{Cell_t{min.x, (int16_t)(curr.y + 3)}, max};
+	};
+	RangeFunction range_p1 = [](Cell_t& curr, Cell_t& min, Cell_t& max){
+		return BoundingBox2{Cell_t{min.x, curr.y}, Cell_t{max.x, (int16_t)(curr.y+1)}};
+	};
+//	RangeFunction range_p_1t = [](Cell_t& curr, Cell_t& min, Cell_t& max){
+//		return BoundingBox2{Cell_t{min.x, curr.y}, max};
+//	};
+
+	RangeFunction range_n2 = [](Cell_t& curr, Cell_t& min, Cell_t& max){
+		return BoundingBox2{Cell_t{min.x, (int16_t)(curr.y-2)}, Cell_t{max.x, (int16_t)(curr.y-2)}};
+	};
+	RangeFunction range_n3n = [](Cell_t& curr, Cell_t& min, Cell_t& max){
+		return BoundingBox2{min, Cell_t{max.x, (int16_t)(curr.y-3)}};
+	};
+
+	RangeFunction range_n1 = [](Cell_t& curr, Cell_t& min, Cell_t& max){
+		return BoundingBox2{Cell_t{min.x, (int16_t)(curr.y-1)}, Cell_t{max.x, (int16_t)(curr.y-1)}};
+	};
+//	RangeFunction range_n_1t = [](Cell_t& curr, Cell_t& min, Cell_t& max){
+//		return BoundingBox2{min, Cell_t{max.x, curr.y}};
+//	};
+	RangeFunction range_all = [](Cell_t& curr, Cell_t& min, Cell_t& max){
+		return BoundingBox2{min, max};
+	};
+public:
+//	BestTargetFilter filter_0_xp{range_0_xp, 1, true};
+//	BestTargetFilter filter_0_xn{range_0_xn, 1, false};
+	BestTargetFilter filter_p0_1t_xp{range_0_xp , 1, true, true};
+	BestTargetFilter filter_p0_1t_xn{range_0_xn, 1, true, true};
+	BestTargetFilter filter_p4p{range_p3p, 0, true};
+	BestTargetFilter filter_p2{range_p2, 0, true};
+	BestTargetFilter filter_p1{range_p1, 0, true};
+	BestTargetFilter filter_p_1t{range_all,1,true};
+	BestTargetFilter filter_n0_1t_xp{range_0_xp , 1, false, true};
+	BestTargetFilter filter_n0_1t_xn{range_0_xn, 1, false, true};
+	BestTargetFilter filter_n2{range_n2 , 0, false};
+	BestTargetFilter filter_n4n{range_n3n, 0, false};
+	BestTargetFilter filter_n1{range_n1 , 0, false};
+	BestTargetFilter filter_n_1t{range_all, 1, false};
+	BestTargetFilter filter_p_1000t{range_all, 1000,true};
+	BestTargetFilter filter_n_1000t{range_all, 1000,false};
+	BestTargetFilter* curr_filter_{};
 
 };
 //
@@ -320,7 +438,22 @@ private:
 	 * @author Austin Liu
 	 *
 	 * This function is for generating path to home point through the cleaned area(CLEANED in CLEAN_MAP).
-	 * This map has been covered by the slam map to clear the uncertain blocks.
+	 * This map has been covered by the slam map to clear the uncertain c_blocks.
+	 *
+	 * @param: GridMap map, it will use it's CLEAN_MAP data.
+	 * @param: Cell_t curr_cell, the current cell of robot.
+	 * @param: MapDirection last_dir, the direction of last movement.
+	 *
+	 * @return: Cells path, the path to unclean area.
+	 * @return: bool, true if operation succeeds.
+	 */
+	bool generatePathWithSlamMapClearBlocks(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &plan_path);
+
+	/*
+	 * @author Austin Liu
+	 *
+	 * This function is for generating path to home point through the slam map reachable area(CLEANED in CLEAN_MAP).
+	 * This map has been covered by the slam map to clear the uncertain c_blocks and add the cleanable area.
 	 *
 	 * @param: GridMap map, it will use it's CLEAN_MAP data.
 	 * @param: Cell_t curr_cell, the current cell of robot.
@@ -347,6 +480,7 @@ private:
 
 typedef enum {
 	THROUGH_CLEANED_AREA = 0,
+	SLAM_MAP_CLEAR_BLOCKS,
 	THROUGH_SLAM_MAP_REACHABLE_AREA,
 	THROUGH_UNKNOWN_AREA,
 	GO_HOME_WAY_NUM

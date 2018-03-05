@@ -322,14 +322,14 @@ typedef std::deque<Cell_t> Cells;
 
 typedef enum {
 	MAP_POS_X = 0,
-//  const double MAP_PX_PY = PI/4;
-					MAP_POS_Y,
 //  const double MAP_NS_PY = PI*3/4;
-					MAP_NEG_X,
+	MAP_NEG_X,
+//  const double MAP_PX_PY = PI/4;
+	MAP_POS_Y,
 //  const double MAP_NX_NY =-PI*3/4;
-					MAP_NEG_Y,
+	MAP_NEG_Y,
 //MAP_PX_NY =-PI/4;
-					MAP_ANY,
+	MAP_ANY,
 } Dir_t;
 
 class Point_t:public Vector2<float> {
@@ -443,6 +443,79 @@ typedef struct
 	  return std::abs(A*p.x+B*p.y+C)/sqrt(A*A+B*B);
   }
 } LineABC;
+
+/*typedef */enum {
+	// The sequence of CLEAN_MAP value must be UNCLEAN < CLEANED < MAP_BLOCKED < SLAM_MAP_BLOCKED
+  UNCLEAN  = 0,
+  SLAM_MAP_UNKNOWN = 0,
+  CLEANED = 1,
+  SLAM_MAP_CLEANABLE = 1,
+  BLOCKED = 2,
+  BLOCKED_FW = 2,
+  BLOCKED_BUMPER = 3,
+  BLOCKED_CLIFF = 4,
+  BLOCKED_RCON = 5,
+  BLOCKED_TMP_RCON = 6,
+  BLOCKED_LIDAR = 7,
+  BLOCKED_TILT = 8,
+  BLOCKED_SLIP = 9,
+  SLAM_MAP_BLOCKED = 10,
+  BLOCKED_BOUNDARY = 11,
+  TARGET_CLEAN = 13,
+  TARGET = 14,
+  COST_NO = 0,
+  COST_1 = 1,
+  COST_2 = 2,
+  COST_3 = 3,
+  COST_4 = 4,
+  COST_5 = 5,
+  COST_PATH = 6,
+  COST_HIGH = 7,
+};
+typedef int CellState;
+
+typedef std::pair<const CellState, Cell_t> PairCell_t;
+class PointSelector{
+public:
+	PointSelector(bool is_left);
+
+	bool LaserPointRange(const Vector2<double> &point, bool is_corner) const;
+	bool TargetPointRange(const Vector2<double> &target);
+	bool inForwardRange(const Vector2<double> &point) const;
+	bool inSidedRange(const Vector2<double> &point) const;
+
+	double narrow;
+	double narrow_minuend;
+	bool is_left_;
+	double x_min_forward;
+	double x_max_forward;
+	double x_min_side;
+	double x_max_side;
+
+	double y_min;
+	double y_max;
+
+	double y_min_forward;
+	double y_max_forward;
+
+	double y_min_side;
+	double y_max_side;
+
+	double y_min_point1_corner;
+	double y_max_point1_corner;
+	double y_min_point1;
+	double y_max_point1;
+
+	double y_min_target;
+	double y_max_target;
+
+	const double CHASE_X = 0.107;
+
+	double corner_front_trig_lim;
+
+	const int forward_count_lim = 10;
+	const int side_count_lim = 20;
+};
 
 float two_points_distance_double(float startx,float starty,float destx,float desty);
 void matrix_translate(double *x, double *y, double offset_x, double offset_y);

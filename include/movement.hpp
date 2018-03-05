@@ -61,7 +61,7 @@ protected:
 class MovementBack: public IMovement{
 public:
 	explicit MovementBack(float back_distance, uint8_t max_speed);
-
+	~MovementBack();
 	void adjustSpeed(int32_t&, int32_t&) override;
 	bool isLidarStop();
 	void updateStartPose();
@@ -283,6 +283,7 @@ public:
 private:
 	double resume_wheel_start_time_;
 	uint8_t oc_main_brush_cnt_{0};
+	uint8_t main_brush_resume_state_{1};
 	double resume_main_bursh_start_time_;
 	uint8_t oc_vacuum_resume_cnt_{0};
 	double resume_vacuum_start_time_;
@@ -316,7 +317,7 @@ private:
 class MovementStay :public IMovement
 {
 public:
-	MovementStay();
+	MovementStay(double stay_time_sec);
 	~MovementStay();
 
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed) override;
@@ -325,6 +326,12 @@ public:
 private:
 };
 
+class MovementStayRemote :public MovementStay{
+public:
+	MovementStayRemote(double stay_time_sec);
+	bool isFinish() override;
+
+};
 class MovementRemoteDirectGo :public IMovement
 {
 public:

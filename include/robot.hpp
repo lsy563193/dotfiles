@@ -12,6 +12,7 @@
 #include <visualization_msgs/Marker.h>
 #include <sensor_msgs/LaserScan.h>
 #include <pp/x900sensor.h>
+#include <pp/x900ctrl.h>
 #include <pp/scan_ctrl.h>
 #include <rplidar_ros/SetLidar.h>
 #include <vector>
@@ -176,6 +177,14 @@ public:
 	void debugReceivedStream(const uint8_t *buf);
 
 	void debugSendStream(const uint8_t *buf);
+
+	bool pubScanCtrl(bool is_pub, bool is_force_pub = false);
+
+	void lockScanCtrl(void);
+
+	void unlockScanCtrl(void);
+
+	void publishCtrlStream(void);
 private:
 
 	Baselink_Frame_Type baselink_frame_type_;
@@ -206,6 +215,7 @@ private:
 
 	ros::Publisher odom_pub_;
 	ros::Publisher scan_ctrl_pub_;
+	ros::Publisher x900_ctrl_pub_;
 
 	ros::ServiceClient lidar_motor_cli_;
 	ros::ServiceClient start_slam_cli_;
@@ -226,6 +236,8 @@ private:
 //	void robot_map_metadata_cb(const nav_msgs::MapMetaData::ConstPtr& msg);
 
 	boost::shared_ptr<Mode> p_mode{};
+
+	bool is_locked_scan_ctrl_{false};
 };
 
 float cellToCount(int16_t distance);

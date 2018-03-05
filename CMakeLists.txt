@@ -16,7 +16,7 @@ FILE(GLOB PP_SRC
 	src/dev/remote.cpp
 	src/dev/obs.cpp
 	src/dev/key_led.cpp
-		src/dev/beeper.cpp
+	src/dev/beeper.cpp
 	src/dev/charger.cpp
 	src/dev/wall_follow.cpp
 	src/dev/wheel.cpp
@@ -31,7 +31,7 @@ FILE(GLOB PP_SRC
 	src/mode/state/state_clean.cpp
 	src/mode/state/state_go_home_point.cpp
 	src/mode/state/state_go_charger.cpp
-	src/mode/state/state_trapped.cpp
+	src/mode/state/state_follow_wall.cpp
 	src/mode/state/state_exception_resume.cpp
 	src/mode/state/state_spot.cpp
 	src/mode/state/state_exploration.cpp
@@ -102,7 +102,7 @@ FILE(GLOB PP_SRC
 	src/mathematics.cpp
 	src/odom.cpp
 	src/pose.cpp
-		src/x900_functional_test.cpp
+	src/x900_functional_test.cpp
 	src/robot.cpp
 	src/serial.cpp
 	src/signature.c
@@ -147,6 +147,7 @@ include_directories(
 add_message_files(
 	DIRECTORY msg
 	FILES
+	x900ctrl.msg
 	x900sensor.msg
 	scan_ctrl.msg
 )
