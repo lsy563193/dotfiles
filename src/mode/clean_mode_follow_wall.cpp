@@ -68,7 +68,7 @@ bool CleanModeFollowWall::mapMark() {
 		clean_map_.setFollowWall(action_i_ == ac_follow_wall_left, passed_path_);
 	}
 	clean_map_.markRobot(CLEAN_MAP);
-	clean_map_.print(CLEAN_MAP, getPosition().toCell().x, getPosition().toCell().y);
+	clean_map_.print(CLEAN_MAP, Cells{getPosition().toCell()});
 	passed_path_.clear();
 	return false;
 }

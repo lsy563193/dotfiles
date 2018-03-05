@@ -61,7 +61,7 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 		if (!path.empty()) {
 			plan_path = cells_generate_points(path);
 			// Congratulation!! plan_path is generated successfully!!
-			map.print(CLEAN_MAP, path.back().x, path.back().y);
+			map.print(CLEAN_MAP, path);
 			curr_filter_ = nullptr;
 			return true;
 		}
@@ -69,7 +69,10 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 
 	ROS_INFO("Step 2: Find all possible plan_path at the edge of cleaned area and filter plan_path in same lane.");
 	Cells targets{};
-	map.generateSPMAP(curr_cell,targets);
+//	map.generateSPMAP(curr_cell,targets);
+	map.find_if(curr_cell, targets,[&](const Cell_t &c_it){
+		return c_it.y%2 == 0 && map.getCell(CLEAN_MAP, c_it.x, c_it.y) == UNCLEAN  && map.isNeedClean(c_it.x, c_it.y);
+	});
 
 	std::sort(targets.begin(),targets.end(),[](Cell_t l,Cell_t r){
 		return (l.y < r.y || (l.y == r.y && l.x < r.x));
@@ -94,7 +97,7 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 	plan_path = cells_generate_points(path);
 
 	displayCellPath(path);
-	map.print(CLEAN_MAP, path.back().x, path.back().y);
+	map.print(CLEAN_MAP, path);
 	return true;
 }
 

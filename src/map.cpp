@@ -940,6 +940,64 @@ uint8_t GridMap::isBlockBlockedXAxis(int16_t curr_x, int16_t curr_y, bool is_lef
 	return retval;
 }
 
+int8_t GridMap::isNeedClean(int16_t x, int16_t y)
+{
+	uint8_t cleaned = 0;
+	int16_t i, j;
+
+	for (i = ROBOT_RIGHT_OFFSET; i <= ROBOT_LEFT_OFFSET; i++) {
+		for (j = ROBOT_RIGHT_OFFSET; j <= ROBOT_LEFT_OFFSET; j++) {
+			auto state = getCell(CLEAN_MAP, x + i, y + j);
+			if (state == CLEANED) {
+				cleaned ++;
+			} else if(isABlock(x, y))
+				return false;
+		}
+	}
+
+	return cleaned <= 6;
+}
+
+bool GridMap::find_if(const Cell_t &curr_cell, Cells &targets, std::function<bool(const Cell_t &next)> compare ) {
+	typedef std::multimap<int16_t, Cell_t> Queue;
+	typedef std::pair<int16_t, Cell_t> Entry;
+
+	reset(COST_MAP);
+	Queue queue;
+	setCell(COST_MAP, curr_cell.x, curr_cell.y, 1);
+	queue.emplace(1, curr_cell);
+	bool is_found = false;
+
+	while (!queue.empty()) {
+//		 Get the nearest next from the queue
+		if (queue.begin()->first == 5) {
+			Queue tmp_queue;
+			std::for_each(queue.begin(), queue.end(), [&](const Entry &iterators) {
+				tmp_queue.emplace(0, iterators.second);
+			});
+			queue.swap(tmp_queue);
+		}
+		auto start = queue.begin();
+		auto next = start->second;
+		auto cost = start->first;
+		queue.erase(start);
+
+		for (auto index = 0; index < 4; index++) {
+			auto neighbor = next + cell_direction_[index];
+
+			if(isOutOfTargetRange(next))
+				continue;
+
+			if (getCell(COST_MAP, neighbor.x, neighbor.y) == 0) {
+				if (compare(next))
+					targets.push_back(next);
+				queue.emplace(cost + 1, neighbor);
+				setCell(COST_MAP, neighbor.x, neighbor.y, cost + 1);
+			}
+		}
+	}
+}
+
 void GridMap::generateSPMAP(const Cell_t& curr_cell,Cells& targets)
 {
 	typedef std::multimap<int16_t , Cell_t> Queue;
@@ -1011,90 +1069,18 @@ void GridMap::getMapRange(uint8_t id, int16_t *x_range_min, int16_t *x_range_max
 }
 bool GridMap::isOutOfMap(const Cell_t &cell)
 {
-	return cell.x < g_x_min-2 || cell.y < g_y_min-2 || cell.x > g_x_max+2 || cell.y > g_y_max+2;
+	return cell.x < g_x_min-3 || cell.y < g_y_min-3 || cell.x > g_x_max+3 || cell.y > g_y_max+3;
 }
 bool GridMap::isOutOfTargetRange(const Cell_t &cell)
 {
-	return cell.x < g_x_min-1 || cell.y < g_y_min-1 || cell.x > g_x_max+1 || cell.y > g_y_max+1;
+	return cell.x < g_x_min-2 || cell.y < g_y_min-2 || cell.x > g_x_max+2 || cell.y > g_y_max+2;
 }
 bool GridMap::cellIsOutOfRange(Cell_t cell)
 {
 	return std::abs(cell.x) > MAP_SIZE || std::abs(cell.y) > MAP_SIZE;
 }
-/*
 
-void GridMap::print(uint8_t id, int16_t endx, int16_t endy)
-{
-	char outString[256];
-	#if ENABLE_DEBUG
-	int16_t		i, j, x_min, x_max, y_min, y_max, index;
-	CellState	cs;
-	Cell_t curr_cell = getPosition().toCell();
-
-	getMapRange(id, &x_min, &x_max, &y_min, &y_max);
-
-	if (id == CLEAN_MAP) {
-		ROS_INFO("Map: %s", "CLEAN_MAP");
-	} else if (id == COST_MAP) {
-		ROS_INFO("Map: %s", "COST_MAP");
-	}
-	index = 0;
-	outString[index++] = '\t';
-	for (j = y_min; j <= y_max; j++) {
-		if (abs(j) % 10 == 0) {
-			outString[index++] = (j < 0 ? '-' : ' ');
-			outString[index++] = (abs(j) >= 100 ? abs(j) / 100 + 48 : ' ');
-			outString[index++] = 48 + (abs(j) >= 10 ? ((abs(j) % 100) / 10) : 0);
-			j += 2;
-		} else {
-			outString[index++] = ' ';
-		}
-	}
-	outString[index++] = 0;
-
-	printf("%s\n",outString);
-	index = 0;
-	outString[index++] = '\t';
-	outString[index++] = ' ';
-	outString[index++] = ' ';
-	for (j = y_min; j <= y_max; j++) {
-		outString[index++] = abs(j) % 10 + 48;
-	}
-	outString[index++] = 0;
-	printf("%s\n",outString);
-	memset(outString,0,256);
-	for (i = x_min; i <= x_max; i++) {
-		index = 0;
-
-		outString[index++] = (i < 0 ? '-' : ' ');
-		outString[index++] = 48 + (abs(i) >= 100 ? abs(i) / 100 : 0);
-		outString[index++] = 48 + (abs(i) >= 10 ? ((abs(i) % 100) / 10) : 0);
-		outString[index++] = abs(i) % 10 + 48;
-		outString[index++] = '\t';
-		outString[index++] = ' ';
-		outString[index++] = ' ';
-
-		for (j = y_min; j <= y_max; j++) {
-			cs = getCell(id, i, j);
-			if (i == curr_cell.x && j == curr_cell.y) {
-				outString[index++] = 'x';
-			} else if (i == endx && j == endy) {
-				outString[index++] = 'e';
-			} else {
-				outString[index++] = cs + 48;
-			}
-		}
-		#if COLOR_DEBUG_MAP
-		colorPrint(outString, 0, index);
-		#else
-		printf("%s\n", outString);
-		#endif
-	}
-	printf("\n");
-	#endif
-}
-*/
-void GridMap::print(uint8_t id, int16_t endx, int16_t endy)
+void GridMap::print(uint8_t id, const Cells& targets)
 {
 	Cell_t curr_cell = getPosition().toCell();
 	std::ostringstream outString;
@@ -1132,7 +1118,7 @@ void GridMap::print(uint8_t id, int16_t endx, int16_t endy)
 			cs = getCell(id, x, y);
 			if (x == curr_cell.x && y == curr_cell.y)
 				outString << 'x';
-			else if (x == endx && y == endy)
+			else if (std::find_if(targets.begin(), targets.end(), [&](const Cell_t& c_it ){return c_it == Cell_t{x,y};}) != targets.end())
 				outString << 'e';
 			else if (cs == SLAM_MAP_BLOCKED)
 				outString << 'a';

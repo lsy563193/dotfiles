@@ -200,6 +200,8 @@ public:
 
 	bool isFrontBlockBoundary(int dx);
 
+	int8_t isNeedClean(int16_t x, int16_t y);
+	bool find_if(const Cell_t &curr_cell, Cells &targets, std::function<bool(const Cell_t &next)> compare );
 	void generateSPMAP(const Cell_t &curr, Cells &target_list);
 //	void generateSPMAP(const Cell_t &curr);
 /*
@@ -235,7 +237,7 @@ public:
 	bool cellIsOutOfRange(Cell_t cell);
 
 	void colorPrint(const char *outString, int16_t y_min, int16_t y_max);
-	void print(uint8_t id, int16_t endx, int16_t endy);
+	void print(uint8_t id, const Cells& targets);
 	typedef std::set<PairCell_t> Blocks_t ;
 	Blocks_t c_blocks;
 

@@ -228,7 +228,7 @@ Cells APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const 
 	{
 		ROS_ERROR("%s %d: Start cell has high cost(%d)! It may cause bug, please check.",
 							__FUNCTION__, __LINE__, map.getCell(COST_MAP, start.x, start.y));
-		map.print(COST_MAP, target.x, target.y);
+		map.print(COST_MAP, Cells{target});
 		map.setCell(COST_MAP, start.x, start.y, COST_NO);
 	}
 
@@ -291,7 +291,7 @@ Cells APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const 
 		ROS_WARN("%s, %d: Target (%d, %d) is not reachable for start cell(%d, %d)(%d), return empty path.",
 						 __FUNCTION__, __LINE__, target.x, target.y, start.x, start.y, start_cell_state);
 #if	DEBUG_COST_MAP
-		map.print(COST_MAP, target.x, target.y);
+		map.print(COST_MAP, Cells{target});
 #endif
 		// Now the path_ is empty.
 		return path_;
