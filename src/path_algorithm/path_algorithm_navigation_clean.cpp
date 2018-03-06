@@ -81,15 +81,18 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 	targets = std::for_each(targets.begin(), targets.end(),FilterTarget(curr_cell));
 
 	displayTargetList(targets);
-	map.print(CLEAN_MAP, targets);
+//	map.print(CLEAN_MAP, targets);
 
 	if (targets.empty())
 		return false;
 
 	if (!filterPathsToSelectBestPath(map, targets, curr_cell, path,last_dir))
 		return false;
-	ROS_INFO("Step 5: Optimize path for adjusting it away from obstacles..");
-	optimizePath(map, path);
+	if(size_of_path(path) > 15)
+	{
+		ROS_INFO("Step 5: size_of_path > 15 Optimize path for adjusting it away from obstacles..");
+		optimizePath(map, path);
+	}
 
 	if(curr_filter_ == &filter_p0_1t_xn || curr_filter_ == &filter_p0_1t_xp)
 		path.push_back(Cell_t{path.back().x, static_cast<int16_t>(path.front().y - 2)});//for setting follow wall target line
@@ -317,44 +320,56 @@ bool NavCleanPathAlgorithm::checkTrapped(GridMap &map, const Cell_t &curr_cell)
 }
 
 void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path) {
-	// Optimize only if the path have more than 3 cells.
-	if (path.size() <= 3)
-	{
-		ROS_INFO("%s %d:Path too short(size: %ld), optimization terminated.", __FUNCTION__, __LINE__, path.size());
+	if(path.size() <= 3)
 		return;
-	}
-	printf("\n");
+	// Optimize only if the path have more than 3 cells.
 	ROS_INFO("%s %d: Start optimizing Path", __FUNCTION__, __LINE__);
-
-	for(auto iterator = path.begin(); iterator != path.end()-3; ++iterator){
+	auto find_index = [&](Cell_t p1, Cell_t p2, Cell_t p3) {
+			int dir_p23 = 0;
+			auto p_23 = p3 - p2;
+			dir_p23 = (p_23.x != 0) ? (p_23.x > 0 ? 0 : 1) : (p_23.y > 0 ? 2 : 3);
+			int dir_p12 = 0;
+			auto p_12 = p2 - p1;
+			dir_p12 = (p_12.x != 0) ? (p_12.x > 0 ? 0 : 1) : (p_12.y > 0 ? 2 : 3);
+//		printf("p1(%d,%d),p2(%d,%d),p3(%d,%d),dir_p23(%d),\n",p1->x,p1->y, p2->x,p2->y,p3->x, p3->y,dir_p23);
+			auto p12_it = p2;
+			for (;; p12_it += cell_direction_[dir_p12]) {
+				auto p23_it = p12_it;
+				for (; p23_it != p3 + cell_direction_[dir_p23]; p23_it += cell_direction_[dir_p23]) {
+//					printf("{%d,%d},",p23_it.x, p23_it.y);
+					auto p_side2 = p23_it + cell_direction_[dir_p12] * 2;
+//					auto p_side3 = p23_it + cell_direction_[dir_p12] * 3;
+					if (map.isABlock(p_side2.x, p_side2.y) /*|| map.isABlock(p_side3.x, p_side3.y) */||
+							!map.isBlockCleaned(p23_it.x, p23_it.y))
+					{
+//						printf("\nbreak !!\n");
+						return (p12_it - p2)/2;
+					}
+				}
+//				printf("\n");
+				if (!(p23_it == p3 + cell_direction_[dir_p23] && map.isBlockAccessible(p23_it.x, p23_it.y))) {
+					return (p12_it - p2)/2;
+				}
+				else{
+//					p2 += cell_direction_[dir_p12];
+					p3 += cell_direction_[dir_p12];
+//					printf("opt success, +1 !\n");
+				}
+			}
+		};
+	for(auto iterator = path.begin(); iterator != path.end()-3; ++iterator) {
 		auto p1 = iterator;
-		auto p2 = iterator+1;
-		auto p3 = iterator+2;
-		int dir_p32 =0;
-		auto p_32 = *p3 - *p2;
-		dir_p32 = (p_32.x != 0)?(p_32.x > 0 ? 0 : 1):(p_32.y > 0 ? 2: 3);
-		int dir_21 =0;
-		auto p_21 = *p2 - *p1;
-		dir_21 = (p_21.x != 0)?(p_21.x > 0 ? 0 : 1):(p_21.y > 0 ? 2: 3);
-//		printf("p1(%d,%d),p2(%d,%d),p3(%d,%d),dir_p32(%d),\n",p1->x,p1->y, p2->x,p2->y,p3->x, p3->y,dir_p32);
-		auto p_it = *p2;
-		for(; p_it != *p3+cell_direction_[dir_p32]; p_it += cell_direction_[dir_p32])
-		{
-//			printf("{%d,%d},",p_it.x, p_it.y);
-			auto p_side2 = p_it + cell_direction_[dir_21]*2;
-			auto p_side3 = p_it + cell_direction_[dir_21]*3;
-			if(map.isABlock(p_side2.x,p_side2.y) || map.isABlock(p_side3.x,p_side3.y) || !map.isBlockCleaned(p_it.x, p_it.y))
-				break;
-		}
-		if(p_it == *p3+cell_direction_[dir_p32] && map.isBlockAccessible(p_it.x, p_it.y))
-		{
-			*p2 += cell_direction_[dir_21];
-			*p3 += cell_direction_[dir_21];
-			ROS_INFO("%s %d: step *.2 do success ", __FUNCTION__, __LINE__);
-			printf("\n");
-		}
-//		printf("\n");
-//		printf("\n");
-//		printf("\n");
+		auto p2 = iterator + 1;
+		auto p3 = iterator + 2;
+
+		auto shift_cell = find_index(*p1, *p2, *p3);
+//		if(shift_cell != Cell_t{0,0})
+//		{
+			*p2 += shift_cell;
+			*p3 += shift_cell;
+			ROS_INFO("%s %d: step *.2 do success shift_cell(%d,%d)\n\n", __FUNCTION__, __LINE__,shift_cell.x, shift_cell.y);
+//		}
+
 	}
+
 }
