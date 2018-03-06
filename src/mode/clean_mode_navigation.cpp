@@ -100,17 +100,7 @@ bool CleanModeNav::mapMark()
 		}
 	}
 	else if (sp_state == state_clean) {
-		auto p_it = passed_path_.front();
-		auto c_it_next = p_it.toCell() - cell_direction_[p_it.dir];
-		auto c_dir_switch = cell_direction_[(p_it.dir + 2) % 4];
-		for (auto i = -1; i <= 1; i++) {
-			auto c_it = c_it_next + c_dir_switch * i;
-			auto c_val = clean_map_.getCell(CLEAN_MAP, c_it.x, c_it.y);
-			if (c_val >= BLOCKED && c_val <= BLOCKED_BOUNDARY) {
-				clean_map_.c_blocks.insert({c_val, c_it});
-			}
-		}
-//		setLinearCleaned();
+		setLinearCleaned();
 		// Set home cell.
 		if (ev.rcon_status)
 			setHomePoint();
