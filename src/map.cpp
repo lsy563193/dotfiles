@@ -866,7 +866,7 @@ bool GridMap::isBlockCleanable(int16_t x, int16_t y)
 	return retval;
 }
 
-int8_t GridMap::isBlockCleaned(int16_t x, int16_t y)
+int8_t GridMap::isNotBlockAndCleaned(int16_t x, int16_t y)
 {
 	uint8_t cleaned = 0;
 	int16_t i, j;

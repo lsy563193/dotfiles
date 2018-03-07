@@ -399,7 +399,7 @@ bool MoveTypeFollowWall::isOverOriginLine(GridMap &map)
 //					 robot::instance()->getWorldPoseRadian(), target_angle);
 //			return true;
 //		}
-//		else if (map.isBlockCleaned(curr.toCell().x, curr.toCell().y)) // If robot covers a big block, stop.
+//		else if (map.isNotBlockAndCleaned(curr.toCell().x, curr.toCell().y)) // If robot covers a big block, stop.
 //		{
 //			ROS_WARN("%s %d: Back to cleaned place, current(%d, %d), curr(%d, %d), target_point_(%d, %d).",
 //					 __FUNCTION__, __LINE__, curr.x, curr.y, curr.x, curr.y, target_point_.x, target_point_.y);
