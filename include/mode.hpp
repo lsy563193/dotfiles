@@ -425,6 +425,7 @@ public:
 	bool found_temp_charger_{};
 	bool in_rcon_signal_range_{};
 	bool should_mark_charger_{};
+	bool should_follow_wall{};
 	bool should_mark_temp_charger_{};
 
 	Dir_t old_dir_{};

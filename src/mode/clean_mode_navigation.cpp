@@ -511,6 +511,7 @@ bool CleanModeNav::isSwitchByEventInStateClean() {
 }
 
 bool CleanModeNav::updateActionInStateClean(){
+	bool ret = false;
 	sp_action_.reset();//to mark in destructor
 //	pubCleanMapMarkers(clean_map_, pointsGenerateCells(remain_path_));
 	old_dir_ = iterate_point_.dir;
@@ -523,7 +524,7 @@ bool CleanModeNav::updateActionInStateClean(){
 		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
 		auto npa = boost::dynamic_pointer_cast<NavCleanPathAlgorithm>(clean_path_algorithm_);
 
-		if (old_dir_ != MAP_ANY && clean_map_.isFrontBlocked(old_dir_)
+		if (old_dir_ != MAP_ANY && should_follow_wall
 				&& (npa->curr_filter_ == &npa->filter_p0_1t_xp
 						 || npa->curr_filter_ == &npa->filter_p0_1t_xn
 						 || npa->curr_filter_ == &npa->filter_p2
@@ -540,9 +541,10 @@ bool CleanModeNav::updateActionInStateClean(){
 			action_i_ = ac_linear;
 
 		genNextAction();
-		return true;
+		ret = true;
 	}
-	return false;
+	should_follow_wall = false;
+	return ret;
 }
 
 void CleanModeNav::switchInStateClean() {

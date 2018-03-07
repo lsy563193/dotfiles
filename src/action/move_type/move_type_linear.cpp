@@ -70,7 +70,10 @@ bool MoveTypeLinear::isFinish()
 			if(handleMoveBackEvent(p_clean_mode)){
 				return false;
 			}else
+			{
+				p_clean_mode->should_follow_wall = true;
 				return true;
+			}
 		}
 		else
 			return true;

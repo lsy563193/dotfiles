@@ -445,6 +445,7 @@ void ACleanMode::setLinearCleaned()
 		}
 	}
 	// end+1 point opt
+
 	auto p_end = passed_path_.back();
 	auto c_end_next = p_end.toCell() + cell_direction_[p_end.dir];
 	auto c_end_diff_switch = cell_direction_[(p_end.dir + 2)%4];
