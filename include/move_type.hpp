@@ -170,4 +170,15 @@ public:
 private:
 	boost::shared_ptr<IMovement> p_movement_;
 };
+
+class MoveTypeDeskTest: public IMoveType
+{
+public:
+	MoveTypeDeskTest();
+	~MoveTypeDeskTest() override;
+
+	bool isFinish() override;
+
+	void run() override;
+};
 #endif //PP_MOVE_TYPE_HPP
