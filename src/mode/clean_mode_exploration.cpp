@@ -14,7 +14,7 @@ CleanModeExploration::CleanModeExploration()
 	speaker.play(VOICE_EXPLORATION_START, false);
 	mode_i_ = cm_exploration;
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
-	IMoveType::sp_mode_ = this;
+	IMoveType::sp_mode_ = this; // todo: is this sentence necessary? by Austin
 	go_home_path_algorithm_.reset();
 	clean_map_.mapInit();
 }

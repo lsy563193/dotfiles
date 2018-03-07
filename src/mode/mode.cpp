@@ -108,6 +108,9 @@ void Mode::genNextAction()
 		case ac_remote :
 			sp_action_.reset(new MoveTypeRemote());
 			break;
+		case ac_desk_test:
+			sp_action_.reset(new MoveTypeDeskTest());
+			break;
 		default : //case ac_null :
 			sp_action_.reset();
 			break;

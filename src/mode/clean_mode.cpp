@@ -125,6 +125,7 @@ ACleanMode::~ACleanMode()
 			 __FUNCTION__, __LINE__, map_area, robot_timer.getWorkTime(),
 			 static_cast<float>(robot_timer.getWorkTime()) / 60, map_area / (static_cast<float>(robot_timer.getWorkTime()) / 60));
 }
+
 uint8_t ACleanMode::setBlocks(Dir_t dir)
 {
 
@@ -456,8 +457,17 @@ void ACleanMode::setLinearCleaned()
 		if(c_val >=BLOCKED && c_val<=BLOCKED_BOUNDARY)
 		{
 			auto c_it_shift = c_it + cell_direction_[p_end.dir];
-			ROS_WARN("!!!!!!end_point +1 dir is in block,move front 1 cell c_it(%d,%d)->c_it_shift(%d,%d)",c_it.x, c_it.y,c_it_shift.x,c_it_shift.y);
+			ROS_WARN("!!!!!!map end_point +1 dir is in block,move front 1 cell c_it(%d,%d)->c_it_shift(%d,%d)",c_it.x, c_it.y,c_it_shift.x,c_it_shift.y);
 			clean_map_.c_blocks.insert({c_val, c_it_shift});
+		}
+		for(auto && c_block:  clean_map_.c_blocks)
+		{
+			if(c_block.second == c_it)
+			{
+				auto c_it_shift = c_it + cell_direction_[p_end.dir];
+				ROS_WARN("!!!!!!block end_point +1 dir is in block,move front 1 cell c_it(%d,%d)->c_it_shift(%d,%d)",c_it.x, c_it.y,c_it_shift.x,c_it_shift.y);
+				clean_map_.c_blocks.insert({c_val, c_it_shift});
+			}
 		}
 	}
 }
@@ -1612,7 +1622,7 @@ bool ACleanMode::generatePath(GridMap &map, const Point_t &curr, const int &last
 }
 
 bool ACleanMode::isGyroDynamic() {
-	return ros::Time::now().toSec() - time_gyro_dynamic_ > GYRO_DYNAMIC_INTERVAL_TIME;
+	return ros::Time::now().toSec() - time_gyro_dynamic_ > robot::instance()->getGyroDynamicInterval();
 }
 
 void ACleanMode::genNextAction() {

@@ -71,8 +71,9 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 	Cells targets{};
 	map.generateSPMAP(curr_cell,targets);
 //	map.find_if(curr_cell, targets,[&](const Cell_t &c_it){
-//		return c_it.y%2 == 0 && map.getCell(CLEAN_MAP, c_it.x, c_it.y) == UNCLEAN  && map.isNeedClean(c_it.x, c_it.y);
+//		return c_it.y%2 == 0 && map.getCell(CLEAN_MAP, c_it.x, c_it.y) == UNCLEAN  && map.isBlockAccessible(c_it.x, c_it.y);
 //	});
+//	map.print(COST_MAP, Cells{curr_cell});
 
 	std::sort(targets.begin(),targets.end(),[](Cell_t l,Cell_t r){
 		return (l.y < r.y || (l.y == r.y && l.x < r.x));
@@ -82,13 +83,14 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 
 	displayTargetList(targets);
 //	map.print(CLEAN_MAP, targets);
+//	map.print(CLEAN_MAP, targets);
 
 	if (targets.empty())
 		return false;
 
 	if (!filterPathsToSelectBestPath(map, targets, curr_cell, path,last_dir))
 		return false;
-	if(size_of_path(path) > 15)
+	if(curr_filter_ == &filter_p_1000t || curr_filter_ == &filter_n_1000t)
 	{
 		ROS_INFO("Step 5: size_of_path > 15 Optimize path for adjusting it away from obstacles..");
 		optimizePath(map, path);
@@ -337,10 +339,7 @@ void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path) {
 				auto p23_it = p12_it;
 				for (; p23_it != p3 + cell_direction_[dir_p23]; p23_it += cell_direction_[dir_p23]) {
 //					printf("{%d,%d},",p23_it.x, p23_it.y);
-					auto p_side2 = p23_it + cell_direction_[dir_p12] * 2;
-//					auto p_side3 = p23_it + cell_direction_[dir_p12] * 3;
-					if (map.isABlock(p_side2.x, p_side2.y) /*|| map.isABlock(p_side3.x, p_side3.y) */||
-							!map.isBlockCleaned(p23_it.x, p23_it.y))
+					if (!map.isNotBlockAndCleaned(p23_it.x, p23_it.y))
 					{
 //						printf("\nbreak !!\n");
 						return (p12_it - p2)/2;

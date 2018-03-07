@@ -26,10 +26,10 @@ CleanModeNav::CleanModeNav()
 		speaker.play(VOICE_CLEANING_START, false);
 
 	has_aligned_and_open_slam_ = false;
-	paused_odom_angle_ = 0;
+	paused_odom_radian_ = 0;
 	moved_during_pause_ = false;
 
-	IMoveType::sp_mode_ = this;
+	IMoveType::sp_mode_ = this; // todo: is this sentence necessary? by Austin
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
 	go_home_path_algorithm_.reset();
 }
@@ -41,11 +41,15 @@ CleanModeNav::~CleanModeNav()
 
 bool CleanModeNav::mapMark()
 {
-	ROS_INFO("%s %d: Start updating map.", __FUNCTION__, __LINE__);
-	clean_path_algorithm_->displayPointPath((passed_path_));
 
+	ROS_INFO("%s %d: Start updating map.", __FUNCTION__, __LINE__);
 	if(passed_path_.empty())
-		passed_path_.push_back(getPosition());
+	{
+		ROS_WARN("%s %d: pass_path is emply, add iterate_point_(%d,%d,%d,%d).", __FUNCTION__, __LINE__,iterate_point_.x, iterate_point_.y, iterate_point_.th, iterate_point_.dir);
+		passed_path_.push_back(iterate_point_);
+	}
+
+	clean_path_algorithm_->displayPointPath((passed_path_));
 
 	std::unique(passed_path_.begin(),passed_path_.end(),[](const Point_t& l, const Point_t& r){
 		return r.toCell() == l.toCell();
@@ -101,7 +105,7 @@ bool CleanModeNav::mapMark()
 	}
 	else if (sp_state == state_clean) {
 		setLinearCleaned();
-		// Set home cell.
+// Set home cell.
 		if (ev.rcon_status)
 			setHomePoint();
 	}
@@ -438,8 +442,8 @@ bool CleanModeNav::updateActionInStateInit() {
 		action_i_ = ac_open_gyro;
 	else if (action_i_ == ac_open_gyro)
 	{
-		// If it is the starting of navigation mode, paused_odom_angle_ will be zero.
-		odom.setRadianOffset(paused_odom_angle_);
+		// If it is the starting of navigation mode, paused_odom_radian_ will be zero.
+		odom.setRadianOffset(paused_odom_radian_);
 
 		if (charger.isOnStub()){
 			action_i_ = ac_back_form_charger;
@@ -511,6 +515,7 @@ bool CleanModeNav::isSwitchByEventInStateClean() {
 }
 
 bool CleanModeNav::updateActionInStateClean(){
+	bool ret = false;
 	sp_action_.reset();//to mark in destructor
 //	pubCleanMapMarkers(clean_map_, pointsGenerateCells(remain_path_));
 	old_dir_ = iterate_point_.dir;
@@ -523,7 +528,8 @@ bool CleanModeNav::updateActionInStateClean(){
 		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
 		auto npa = boost::dynamic_pointer_cast<NavCleanPathAlgorithm>(clean_path_algorithm_);
 
-		if (old_dir_ != MAP_ANY && clean_map_.isFrontBlocked(old_dir_)
+//		ROS_WARN("!!!!!!!!!!!!!!!!!!!!!!!!should_follow_wall(%d)",should_follow_wall);
+		if (old_dir_ != MAP_ANY && should_follow_wall
 				&& (npa->curr_filter_ == &npa->filter_p0_1t_xp
 						 || npa->curr_filter_ == &npa->filter_p0_1t_xn
 						 || npa->curr_filter_ == &npa->filter_p2
@@ -540,9 +546,10 @@ bool CleanModeNav::updateActionInStateClean(){
 			action_i_ = ac_linear;
 
 		genNextAction();
-		return true;
+		ret = true;
 	}
-	return false;
+	should_follow_wall = false;
+	return ret;
 }
 
 void CleanModeNav::switchInStateClean() {
@@ -599,7 +606,7 @@ void CleanModeNav::switchInStateGoToCharger()
 			ROS_INFO("%s %d: Enter low battery charge.", __FUNCTION__, __LINE__);
 			sp_state = state_charge;
 			sp_state->init();
-			paused_odom_angle_ = odom.getRadian();
+			paused_odom_radian_ = odom.getRadian();
 			go_home_for_low_battery_ = false;
 			go_home_path_algorithm_.reset();
 		} else
@@ -667,7 +674,7 @@ bool CleanModeNav::checkEnterPause()
 		ev.key_clean_pressed = false;
 		speaker.play(VOICE_CLEANING_PAUSE);
 		ROS_INFO("%s %d: Key clean pressed, pause cleaning.", __FUNCTION__, __LINE__);
-		paused_odom_angle_ = odom.getRadian();
+		paused_odom_radian_ = odom.getRadian();
 		sp_action_.reset();
 		sp_saved_states.push_back(sp_state);
 		sp_state = state_pause;

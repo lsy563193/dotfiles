@@ -162,7 +162,7 @@ public:
  * @return	0 if the block is not cleaned
  *		1 if the block is cleaned
  */
-	int8_t isBlockCleaned(int16_t x, int16_t y);
+	int8_t isNotBlockAndCleaned(int16_t x, int16_t y);
 
 /*
  * Check a block is cleanable or not, a block is defined as have the same size of brush.

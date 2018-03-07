@@ -40,6 +40,8 @@ bool State::isSwitchByEvent() {
 	else if(sp_cm_->isStatePause())
 		return sp_cm_->isSwitchByEventInStatePause();
 
+	else if(sp_cm_->isStateDeskTest())
+		return sp_cm_->isSwitchByEventInStateDeskTest();
 }
 
 bool State::updateAction() {
@@ -75,6 +77,9 @@ bool State::updateAction() {
 
 	else if(sp_cm_->isStatePause())
 		return sp_cm_->updateActionInStatePause();
+
+	else if(sp_cm_->isStateDeskTest())
+		return sp_cm_->updateActionInStateDeskTest();
 }
 
 void State::switchState() {
@@ -107,6 +112,10 @@ void State::switchState() {
 
 	else if(sp_cm_->isStateCharge())
 		sp_cm_->switchInStateCharge();
+
 	else if(sp_cm_->isStatePause())
 		sp_cm_->switchInStatePause();
+
+	else if(sp_cm_->isStateDeskTest())
+		return sp_cm_->switchInStateDeskTest();
 }
