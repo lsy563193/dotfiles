@@ -141,6 +141,10 @@ public:
 		return gyro_dynamic_run_time_;
 	}
 
+	double getGyroDynamicInterval(){
+		return gyro_dynamic_interval_;
+	}
+
 	void setTempSpot(void)
 	{
 		temp_spot_set_ = true;
@@ -207,7 +211,9 @@ private:
 	double	robot_correction_yaw_;
 	tf::Vector3	slam_correction_pos;
 	double	slam_correction_yaw_;
+
 	double gyro_dynamic_run_time_;
+	double gyro_dynamic_interval_;
 
 	ros::NodeHandle robot_nh_;
 
