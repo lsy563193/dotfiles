@@ -13,7 +13,6 @@
 //#include "move_type.hpp"
 
 
-#define GYRO_DYNAMIC_INTERVAL_TIME 25
 #define ROS_INFO_FL() ROS_INFO("%s,%d",__FUNCTION__, __LINE__)
 #define PP_INFO() ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__)
 #define PP_WARN() ROS_WARN("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__)

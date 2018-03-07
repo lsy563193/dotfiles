@@ -1612,7 +1612,7 @@ bool ACleanMode::generatePath(GridMap &map, const Point_t &curr, const int &last
 }
 
 bool ACleanMode::isGyroDynamic() {
-	return ros::Time::now().toSec() - time_gyro_dynamic_ > GYRO_DYNAMIC_INTERVAL_TIME;
+	return ros::Time::now().toSec() - time_gyro_dynamic_ > robot::instance()->getGyroDynamicInterval();
 }
 
 void ACleanMode::genNextAction() {
