@@ -101,7 +101,7 @@ bool CleanModeNav::mapMark()
 	}
 	else if (sp_state == state_clean) {
 		setLinearCleaned();
-		// Set home cell.
+// Set home cell.
 		if (ev.rcon_status)
 			setHomePoint();
 	}
@@ -524,6 +524,7 @@ bool CleanModeNav::updateActionInStateClean(){
 		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
 		auto npa = boost::dynamic_pointer_cast<NavCleanPathAlgorithm>(clean_path_algorithm_);
 
+		ROS_WARN("!!!!!!!!!!!!!!!!!!!!!!!!should_follow_wall(%d)",should_follow_wall);
 		if (old_dir_ != MAP_ANY && should_follow_wall
 				&& (npa->curr_filter_ == &npa->filter_p0_1t_xp
 						 || npa->curr_filter_ == &npa->filter_p0_1t_xn
