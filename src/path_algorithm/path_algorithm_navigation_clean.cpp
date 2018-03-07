@@ -71,8 +71,9 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 	Cells targets{};
 	map.generateSPMAP(curr_cell,targets);
 //	map.find_if(curr_cell, targets,[&](const Cell_t &c_it){
-//		return c_it.y%2 == 0 && map.getCell(CLEAN_MAP, c_it.x, c_it.y) == UNCLEAN  && map.isNeedClean(c_it.x, c_it.y);
+//		return c_it.y%2 == 0 && map.getCell(CLEAN_MAP, c_it.x, c_it.y) == UNCLEAN  && map.isBlockAccessible(c_it.x, c_it.y);
 //	});
+//	map.print(COST_MAP, Cells{curr_cell});
 
 	std::sort(targets.begin(),targets.end(),[](Cell_t l,Cell_t r){
 		return (l.y < r.y || (l.y == r.y && l.x < r.x));
@@ -81,6 +82,7 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 	targets = std::for_each(targets.begin(), targets.end(),FilterTarget(curr_cell));
 
 	displayTargetList(targets);
+	map.print(CLEAN_MAP, targets);
 //	map.print(CLEAN_MAP, targets);
 
 	if (targets.empty())

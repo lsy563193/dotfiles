@@ -445,7 +445,6 @@ void ACleanMode::setLinearCleaned()
 		}
 	}
 	// end+1 point opt
-
 	auto p_end = passed_path_.back();
 	auto c_end_next = p_end.toCell() + cell_direction_[p_end.dir];
 	auto c_end_diff_switch = cell_direction_[(p_end.dir + 2)%4];
@@ -457,8 +456,17 @@ void ACleanMode::setLinearCleaned()
 		if(c_val >=BLOCKED && c_val<=BLOCKED_BOUNDARY)
 		{
 			auto c_it_shift = c_it + cell_direction_[p_end.dir];
-			ROS_WARN("!!!!!!end_point +1 dir is in block,move front 1 cell c_it(%d,%d)->c_it_shift(%d,%d)",c_it.x, c_it.y,c_it_shift.x,c_it_shift.y);
+			ROS_WARN("!!!!!!map end_point +1 dir is in block,move front 1 cell c_it(%d,%d)->c_it_shift(%d,%d)",c_it.x, c_it.y,c_it_shift.x,c_it_shift.y);
 			clean_map_.c_blocks.insert({c_val, c_it_shift});
+		}
+		for(auto && c_block:  clean_map_.c_blocks)
+		{
+			if(c_block.second == c_it)
+			{
+				auto c_it_shift = c_it + cell_direction_[p_end.dir];
+				ROS_WARN("!!!!!!block end_point +1 dir is in block,move front 1 cell c_it(%d,%d)->c_it_shift(%d,%d)",c_it.x, c_it.y,c_it_shift.x,c_it_shift.y);
+				clean_map_.c_blocks.insert({c_val, c_it_shift});
+			}
 		}
 	}
 }

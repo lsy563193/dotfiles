@@ -68,12 +68,12 @@ bool MoveTypeLinear::isFinish()
 		else if (movement_i_ == mm_forward)
 		{
 			if(handleMoveBackEvent(p_clean_mode)){
-				ROS_WARN("should_follow_wall(%d)!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", p_clean_mode->should_follow_wall);
+//				ROS_WARN("should_follow_wall(%d)!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", p_clean_mode->should_follow_wall);
 				p_clean_mode->should_follow_wall = true;
 				return false;
 			}else {
 				if (ev.lidar_triggered || ev.rcon_status || ev.bumper_triggered || ev.cliff_triggered || ev.obs_triggered) {
-					ROS_WARN( "should_follow_wall(%d)!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", p_clean_mode->should_follow_wall);
+//					ROS_WARN( "should_follow_wall(%d)!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", p_clean_mode->should_follow_wall);
 					p_clean_mode->should_follow_wall = true;
 				}
 				return true;

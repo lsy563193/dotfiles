@@ -41,11 +41,15 @@ CleanModeNav::~CleanModeNav()
 
 bool CleanModeNav::mapMark()
 {
-	ROS_INFO("%s %d: Start updating map.", __FUNCTION__, __LINE__);
-	clean_path_algorithm_->displayPointPath((passed_path_));
 
+	ROS_INFO("%s %d: Start updating map.", __FUNCTION__, __LINE__);
 	if(passed_path_.empty())
-		passed_path_.push_back(getPosition());
+	{
+		ROS_WARN("%s %d: pass_path is emply, add iterate_point_(%d,%d,%d,%d).", __FUNCTION__, __LINE__,iterate_point_.x, iterate_point_.y, iterate_point_.th, iterate_point_.dir);
+		passed_path_.push_back(iterate_point_);
+	}
+
+	clean_path_algorithm_->displayPointPath((passed_path_));
 
 	std::unique(passed_path_.begin(),passed_path_.end(),[](const Point_t& l, const Point_t& r){
 		return r.toCell() == l.toCell();
@@ -524,7 +528,7 @@ bool CleanModeNav::updateActionInStateClean(){
 		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
 		auto npa = boost::dynamic_pointer_cast<NavCleanPathAlgorithm>(clean_path_algorithm_);
 
-		ROS_WARN("!!!!!!!!!!!!!!!!!!!!!!!!should_follow_wall(%d)",should_follow_wall);
+//		ROS_WARN("!!!!!!!!!!!!!!!!!!!!!!!!should_follow_wall(%d)",should_follow_wall);
 		if (old_dir_ != MAP_ANY && should_follow_wall
 				&& (npa->curr_filter_ == &npa->filter_p0_1t_xp
 						 || npa->curr_filter_ == &npa->filter_p0_1t_xn

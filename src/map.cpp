@@ -1029,7 +1029,7 @@ void GridMap::generateSPMAP(const Cell_t& curr_cell,Cells& targets)
 			for (auto index = 0; index < 4; index++)
 			{
 				auto neighbor = next + cell_direction_[index];
-				if(isOutOfTargetRange(neighbor))
+				if(isOutOfMap(neighbor))
 					continue;
 				if (getCell(COST_MAP, neighbor.x, neighbor.y) == 0) {
 					if (isBlockAccessible(neighbor.x, neighbor.y)) {
@@ -1069,7 +1069,7 @@ void GridMap::getMapRange(uint8_t id, int16_t *x_range_min, int16_t *x_range_max
 }
 bool GridMap::isOutOfMap(const Cell_t &cell)
 {
-	return cell.x < g_x_min-3 || cell.y < g_y_min-3 || cell.x > g_x_max+3 || cell.y > g_y_max+3;
+	return cell.x < g_x_min-1 || cell.y < g_y_min-1 || cell.x > g_x_max+1 || cell.y > g_y_max+1;
 }
 bool GridMap::isOutOfTargetRange(const Cell_t &cell)
 {
