@@ -447,6 +447,8 @@ uint16_t main_board_test()
 		switch (test_stage) {
 			case ELECTRICAL_AND_LED_TEST_MODE:/*---Main board electrical specification and LED test---*/
 				test_result = electrical_specification_and_led_test(baseline, is_fixture, test_stage);
+				/*--- For debug ---*/
+				test_stage += 4;
 				break;
 			case OBS_TEST_MODE:/*---OBS---*/
 				test_result = obs_test(test_stage, is_fixture);
@@ -735,6 +737,8 @@ uint16_t electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixt
 				if(buf[36])
 				{
 					count_key_pressed++;
+					key_led.set(0, 0);
+					serial.setSendData(CTL_MIX, 0);
 				}
 				else if(count_key_pressed)
 				{
@@ -859,7 +863,7 @@ uint16_t bumper_test(uint8_t &test_stage)
 		else {
 			test_result |= 0x02;
 		}
-		if (buf[28] & 0x01) {
+		if (buf[28] & 0x10) {
 			test_result |= 0x04;
 		}
 		else {
@@ -972,10 +976,14 @@ uint16_t obs_test(uint8_t &test_stage, bool is_fixture)
 				test_result |= 0x0200;
 			}
 		}
+		ROS_INFO("Left_OBS: %d, Front_OBS: %d, Right_OBS: %d, Left_Wall: %d, Right_Wall: %d", \
+		static_cast<uint16_t>(buf[22] << 8 | buf[23]), static_cast<uint16_t>(buf[24] << 8 | buf[25]), \
+		static_cast<uint16_t>(buf[26] << 8 | buf[27]), static_cast<uint16_t>(buf[18] << 8 | buf[19]), \
+		static_cast<uint16_t>(buf[20] << 8 | buf[21]));
 
 		if (is_fixture)  //fixture test
 		{
-			if (test_result == 0x2155)//test pass
+			if (test_result == 0x0155)//test pass
 			{
 				test_stage++;
 				return 0;
@@ -1000,7 +1008,7 @@ uint16_t obs_test(uint8_t &test_stage, bool is_fixture)
 		}
 		else   //manual mode
 		{
-			if (test_result == 0x23ff) {
+			if (test_result == 0x03ff) {
 				test_stage++;
 				return 0;
 			}
@@ -1148,8 +1156,8 @@ uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline)
 	uint8_t step=1;
 	uint8_t count=0;
 	uint8_t buf[REC_LEN];
-	uint32_t current_current;
-	uint32_t motor_current;
+	uint32_t current_current=0;
+	uint32_t motor_current=0;
 	serial.setSendData(CTL_MAIN_BOARD_MODE, WHEELS_TEST_MODE);
 	serial.setSendData(CTL_LEFT_WHEEL_TEST_MODE, 0);
 	serial.setSendData(CTL_RIGHT_WHEEL_TEST_MODE, 0);
@@ -1161,15 +1169,15 @@ uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline)
 		ROS_ERROR_COND(pthread_cond_wait(&recev_cond, &recev_lock) != 0, "robotbase pthread receive cond wait fail");
 		memcpy(buf, serial.receive_stream, sizeof(uint8_t) * REC_LEN);
 		ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock) != 0, "robotbase pthread receive unlock fail");
-		if(buf[39] != WHEELS_TEST_MODE)
+		if(buf[38] != WHEELS_TEST_MODE)
 		{
 			serial.sendData();
 			continue;
 		}
 		switch(step) {
 			case 1:
-				wheel.setDirectionForward();
-				wheel.setPidTargetSpeed(30, 0);
+				serial.setSendData(CTL_WHEEL_LEFT_HIGH, 300 >> 8);
+				serial.setSendData(CTL_WHEEL_LEFT_LOW, 300 & 0xFF);
 				count++;
 				if (count > 50) {
 					current_current = 0;
@@ -1180,20 +1188,21 @@ uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline)
 				break;
 			case 2:
 				count++;
-				if (count < 10) {
+				if (count <= 10) {
 					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
 					motor_current += static_cast<uint16_t>(buf[2] << 8 | buf[3]);
 				}
 				else {
 					count = 0;
-					current_current = (current_current / 10 * 330 / 4096 * 20) - baseline[SYSTEM_CURRENT];
-					motor_current = (motor_current / 10 - baseline[LEFT_WHEEL]) * 330 / 4096 * 10;
+					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+					motor_current = (motor_current / 10 - baseline[LEFT_WHEEL]) * 330 * 10 / 4096;
 					step++;
 				}
 				break;
 			case 3:
 				step++;
 				if (current_current < 30 || current_current > 100 || motor_current < 20 || motor_current > 100) {
+					ROS_INFO("motor_current: %d, current_current: %d", motor_current, current_current);
 					return LEFT_WHEEL_FORWARD_CURRENT_ERROR;
 				}
 				else {
@@ -1202,6 +1211,7 @@ uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline)
 				break;
 			case 4:
 				step++;
+				ROS_INFO("Left_PWN: %d", buf[4]);
 				if (buf[4] > 95 || buf[4] < 50) {
 					return LEFT_WHEEL_FORWARD_PWM_ERROR;
 				}
@@ -1222,8 +1232,8 @@ uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline)
 				}
 				break;
 			case 6:
-				wheel.setDirectionBackward();
-				wheel.setPidTargetSpeed(30, 0);
+				serial.setSendData(CTL_WHEEL_LEFT_HIGH, -300 >> 8);
+				serial.setSendData(CTL_WHEEL_LEFT_LOW, -300 & 0xFF);
 				count++;
 				if (count > 50) {
 					current_current = 0;
@@ -1234,14 +1244,14 @@ uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline)
 				break;
 			case 7:
 				count++;
-				if (count < 10) {
+				if (count <= 10) {
 					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
 					motor_current += static_cast<uint16_t>(buf[2] << 8 | buf[3]);
 				}
 				else {
 					count = 0;
-					current_current = (current_current / 10 * 330 / 4096 * 20) - baseline[SYSTEM_CURRENT];
-					motor_current = (motor_current / 10 - baseline[RIGHT_WHEEL]) * 330 / 4096 * 10;
+					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+					motor_current = (motor_current / 10 - baseline[RIGHT_WHEEL]) * 330 * 10 / 4096;
 					step++;
 				}
 				break;
@@ -1276,8 +1286,9 @@ uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline)
 				}
 				break;
 			case 11:
-				wheel.setDirectionForward();
-				wheel.setPidTargetSpeed(0, 30);
+				serial.setSendData(CTL_WHEEL_LEFT_HIGH, 400 >> 8);
+				serial.setSendData(CTL_WHEEL_LEFT_LOW, 400 & 0xFF);
+				serial.setSendData(CTL_LEFT_WHEEL_TEST_MODE, 1);
 				count++;
 				if (count > 50) {
 					current_current = 0;
@@ -1287,19 +1298,63 @@ uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline)
 				}
 				break;
 			case 12:
+				if(static_cast<uint16_t>(buf[2] << 8 | buf[3]) > baseline[LEFT_WHEEL] + 580)
+					count++;
+				else
+					count = 0;
+				if(count > 2)
+				{
+					step++;
+					count = 0;
+				}
+				if(buf[36])
+					return LEFT_WHEEL_STALL_ERROR;
+				break;
+			case 13:
 				count++;
-				if (count < 10) {
+				if (count <= 10) {
+					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+				}
+				else {
+					step++;
+					count = 0;
+					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+					if(current_current < 800)
+						return LEFT_WHEEL_STALL_ERROR;
+					else
+					{
+						test_result |= 0x0008;
+					}
+				}
+				break;
+			case 14:
+				serial.setSendData(CTL_WHEEL_LEFT_HIGH, 0);
+				serial.setSendData(CTL_WHEEL_LEFT_LOW, 0);
+				serial.setSendData(CTL_WHEEL_RIGHT_HIGH, 300 >> 8);
+				serial.setSendData(CTL_WHEEL_RIGHT_LOW, 300 & 0xFF);
+				count++;
+				if (count > 50) {
+					current_current = 0;
+					motor_current = 0;
+					step++;
+					count = 0;
+				}
+				break;
+			case 15:
+				count++;
+				if (count <= 10) {
 					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
 					motor_current += static_cast<uint16_t>(buf[5] << 8 | buf[6]);
 				}
 				else {
 					count = 0;
-					current_current = (current_current / 10 * 330 / 4096 * 20) - baseline[SYSTEM_CURRENT];
-					motor_current = (motor_current / 10 - baseline[RIGHT_WHEEL]) * 330 / 4096 * 10;
+					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+					motor_current = (motor_current / 10 - baseline[RIGHT_WHEEL]) * 330 * 10 / 4096;
 					step++;
+//					ROS_INFO("motor: %d, current: %d, baseline: %d", motor_current, current_current, baseline[RIGHT_WHEEL]);
 				}
 				break;
-			case 13:
+			case 16:
 				step++;
 				if (current_current < 30 || current_current > 100 || motor_current < 20 || motor_current > 100) {
 					return RIGHT_WHEEL_FORWARD_CURRENT_ERROR;
@@ -1308,7 +1363,7 @@ uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline)
 					test_result |= 0x0100;
 				}
 				break;
-			case 14:
+			case 17:
 				step++;
 				if (buf[7] > 95 || buf[7] < 50) {
 					return RIGHT_WHEEL_FORWARD_PWM_ERROR;
@@ -1317,7 +1372,7 @@ uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline)
 					test_result |= 0x0200;
 				}
 				break;
-			case 15:
+			case 18:
 				step++;
 				if (buf[11] == 1) {
 					return RIGHT_WHEEL_FORWARD_ENCODER_ERROR;
@@ -1329,9 +1384,9 @@ uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline)
 					test_result |= 0x0400;
 				}
 				break;
-			case 16:
-				wheel.setDirectionBackward();
-				wheel.setPidTargetSpeed(0, 30);
+			case 19:
+				serial.setSendData(CTL_WHEEL_RIGHT_HIGH, -300 >> 8);
+				serial.setSendData(CTL_WHEEL_RIGHT_LOW, -300 & 0xFF);
 				count++;
 				if (count > 50) {
 					current_current = 0;
@@ -1340,20 +1395,20 @@ uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline)
 					count = 0;
 				}
 				break;
-			case 17:
+			case 20:
 				count++;
-				if (count < 10) {
+				if (count <= 10) {
 					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
 					motor_current += static_cast<uint16_t>(buf[5] << 8 | buf[6]);
 				}
 				else {
 					count = 0;
-					current_current = (current_current / 10 * 330 / 4096 * 20) - baseline[SYSTEM_CURRENT];
-					motor_current = (motor_current / 10 - baseline[RIGHT_WHEEL]) * 330 / 4096 * 10;
+					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+					motor_current = (motor_current / 10 - baseline[RIGHT_WHEEL]) * 330 * 10 / 4096;
 					step++;
 				}
 				break;
-			case 18:
+			case 21:
 				step++;
 				if (current_current < 30 || current_current > 100 || motor_current < 20 || motor_current > 100) {
 					return RIGHT_WHEEL_BACKWARD_CURRENT_ERROR;
@@ -1362,7 +1417,7 @@ uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline)
 					test_result |= 0x1000;
 				}
 				break;
-			case 19:
+			case 22:
 				step++;
 				if (buf[7] > 95 || buf[7] < 50) {
 					return RIGHT_WHEEL_BACKWARD_PWM_ERROR;
@@ -1371,7 +1426,7 @@ uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline)
 					test_result |= 0x2000;
 				}
 				break;
-			case 20:
+			case 23:
 				step++;
 				if (buf[11] == 1) {
 					return RIGHT_WHEEL_BACKWARD_ENCODER_ERROR;
@@ -1382,49 +1437,9 @@ uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline)
 				else {
 					test_result |= 0x4000;
 				}
-				break;
-			case 21:
-				wheel.setDirectionForward();
-				wheel.setPidTargetSpeed(RUN_TOP_SPEED, 0);
-				serial.setSendData(CTL_LEFT_WHEEL_TEST_MODE, 1);
-				count++;
-				if (count > 50) {
-					current_current = 0;
-					motor_current = 0;
-					step++;
-					count = 0;
-				}
-				break;
-			case 22:
-				count++;
-				if(count < 250)
-				{
-					if(static_cast<uint16_t>(buf[2] << 8 | buf[3]) > 580)
-					{
-						count = 0;
-						step++;
-					}
-				}
-			case 23:
-				count++;
-				if (count < 10) {
-					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
-				}
-				else {
-					step++;
-					count = 0;
-					current_current = (current_current / 10 * 330 / 4096 * 20) - baseline[SYSTEM_CURRENT];
-					if(current_current < 800)
-						return LEFT_WHEEL_STALL_ERROR;
-					else
-					{
-						test_result |= 0x0008;
-					}
-				}
-				break;
 			case 24:
-				wheel.setDirectionForward();
-				wheel.setPidTargetSpeed(0, RUN_TOP_SPEED);
+				serial.setSendData(CTL_WHEEL_RIGHT_HIGH, 400 >> 8);
+				serial.setSendData(CTL_WHEEL_RIGHT_LOW, 400 & 0xFF);
 				serial.setSendData(CTL_RIGHT_WHEEL_TEST_MODE, 1);
 				count++;
 				if (count > 50) {
@@ -1435,24 +1450,27 @@ uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline)
 				}
 				break;
 			case 25:
-				count++;
-				if(count < 250)
+				if(static_cast<uint16_t>(buf[5] << 8 | buf[6]) > baseline[RIGHT_WHEEL] + 580)
+					count++;
+				else
+					count = 0;
+				if(count > 2)
 				{
-					if(static_cast<uint16_t>(buf[5] << 8 | buf[6]) > 580)
-					{
-						count = 0;
-						step++;
-					}
+					step++;
+					count = 0;
 				}
+				if(buf[36])
+					return RIGHT_WHEEL_STALL_ERROR;
+				break;
 			case 26:
 				count++;
-				if (count < 10) {
+				if (count <= 10) {
 					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
 				}
 				else {
 					step++;
 					count = 0;
-					current_current = (current_current / 10 * 330 / 4096 * 20) - baseline[SYSTEM_CURRENT];
+					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
 					if(current_current < 800)
 						return RIGHT_WHEEL_STALL_ERROR;
 					else
@@ -1510,14 +1528,14 @@ uint16_t brushes_test(uint8_t &test_stage, uint16_t *baseline)
 				break;
 			case 2:
 				count++;
-				if (count < 10) {
+				if (count <= 10) {
 					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
 					motor_current += static_cast<uint16_t>(buf[2] << 8 | buf[3]);
 				}
 				else {
 					count = 0;
-					current_current = (current_current / 10 * 330 / 4096 * 20) - baseline[SYSTEM_CURRENT];
-					motor_current = (motor_current / 10 - baseline[LEFT_BRUSH]) * 330 / 4096 * 10;
+					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+					motor_current = (motor_current / 10 - baseline[LEFT_BRUSH]) * 330 * 10 / 4096;
 					step++;
 				}
 				break;
@@ -1533,7 +1551,7 @@ uint16_t brushes_test(uint8_t &test_stage, uint16_t *baseline)
 				break;
 			case 4:
 				count++;
-				if (count < 250) {
+				if (count <= 250) {
 					if (static_cast<uint16_t>(buf[2] << 8 | buf[2]) > baseline[LEFT_BRUSH] + 360) {
 						count = 0;
 						step++;
@@ -1541,13 +1559,13 @@ uint16_t brushes_test(uint8_t &test_stage, uint16_t *baseline)
 				}
 			case 5:
 				count++;
-				if (count < 10) {
+				if (count <= 10) {
 					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
 				}
 				else {
 					step++;
 					count = 0;
-					current_current = (current_current / 10 * 330 / 4096 * 20) - baseline[SYSTEM_CURRENT];
+					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
 					if (current_current < 250)
 						return LEFT_BRUSH_STALL_ERROR;
 					else
@@ -1568,14 +1586,14 @@ uint16_t brushes_test(uint8_t &test_stage, uint16_t *baseline)
 				break;
 			case 7:
 				count++;
-				if (count < 10) {
+				if (count <= 10) {
 					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
 					motor_current += static_cast<uint16_t>(buf[4] << 8 | buf[5]);
 				}
 				else {
 					count = 0;
-					current_current = (current_current / 10 * 330 / 4096 * 20) - baseline[SYSTEM_CURRENT];
-					motor_current = (motor_current / 10 - baseline[MAIN_BRUSH]) * 330 / 4096 * 10;
+					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+					motor_current = (motor_current / 10 - baseline[MAIN_BRUSH]) * 330 * 10 / 4096;
 					step++;
 				}
 				break;
@@ -1591,7 +1609,7 @@ uint16_t brushes_test(uint8_t &test_stage, uint16_t *baseline)
 				break;
 			case 9:
 				count++;
-				if (count < 250) {
+				if (count <= 250) {
 					if (static_cast<uint16_t>(buf[2] << 8 | buf[2]) > baseline[MAIN_BRUSH] + 1150) {
 						count = 0;
 						step++;
@@ -1599,13 +1617,13 @@ uint16_t brushes_test(uint8_t &test_stage, uint16_t *baseline)
 				}
 			case 10:
 				count++;
-				if (count < 10) {
+				if (count <= 10) {
 					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
 				}
 				else {
 					step++;
 					count = 0;
-					current_current = (current_current / 10 * 330 / 4096 * 20) - baseline[SYSTEM_CURRENT];
+					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
 					if (current_current < 550)
 						return MAIN_BRUSH_STALL_ERROR;
 					else
@@ -1626,14 +1644,14 @@ uint16_t brushes_test(uint8_t &test_stage, uint16_t *baseline)
 				break;
 			case 12:
 				count++;
-				if (count < 10) {
+				if (count <= 10) {
 					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
 					motor_current += static_cast<uint16_t>(buf[6] << 8 | buf[7]);
 				}
 				else {
 					count = 0;
-					current_current = (current_current / 10 * 330 / 4096 * 20) - baseline[SYSTEM_CURRENT];
-					motor_current = (motor_current / 10 - baseline[RIGHT_BRUSH]) * 330 / 4096 * 10;
+					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+					motor_current = (motor_current / 10 - baseline[RIGHT_BRUSH]) * 330 * 10 / 4096;
 					step++;
 				}
 				break;
@@ -1649,7 +1667,7 @@ uint16_t brushes_test(uint8_t &test_stage, uint16_t *baseline)
 				break;
 			case 14:
 				count++;
-				if (count < 250) {
+				if (count <= 250) {
 					if (static_cast<uint16_t>(buf[6] << 8 | buf[7]) > baseline[RIGHT_BRUSH] + 360) {
 						count = 0;
 						step++;
@@ -1657,13 +1675,13 @@ uint16_t brushes_test(uint8_t &test_stage, uint16_t *baseline)
 				}
 			case 15:
 				count++;
-				if (count < 10) {
+				if (count <= 10) {
 					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
 				}
 				else {
 					step++;
 					count = 0;
-					current_current = (current_current / 10 * 330 / 4096 * 20) - baseline[SYSTEM_CURRENT];
+					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
 					if (current_current < 250)
 						return RIGHT_BRUSH_STALL_ERROR;
 					else
@@ -1716,14 +1734,14 @@ uint16_t vacuum_test(uint8_t &test_stage, uint16_t *baseline)
 				break;
 			case 2:
 				count++;
-				if (count < 10) {
+				if (count <= 10) {
 					current_current += (static_cast<uint16_t>(buf[4] << 8 | buf[5]) - baseline[REF_VOLTAGE_ADC]);
 					motor_current += static_cast<uint16_t>(buf[2] << 8 | buf[3]);
 				}
 				else {
 					count = 0;
-					current_current = (current_current / 10 * 330 / 4096 * 20) - baseline[SYSTEM_CURRENT];
-					motor_current = (motor_current / 10 - baseline[VACUUM]) * 330 / 4096 * 10;
+					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+					motor_current = (motor_current / 10 - baseline[VACUUM]) * 330 * 10 / 4096;
 					step++;
 				}
 				break;
@@ -1768,7 +1786,7 @@ uint16_t vacuum_test(uint8_t &test_stage, uint16_t *baseline)
 				break;
 			case 7:
 				count++;
-				if(count < 250)
+				if(count <= 250)
 				{
 					if(static_cast<uint16_t>(buf[2] << 8 | buf[3]) > 580)
 					{
@@ -1778,13 +1796,13 @@ uint16_t vacuum_test(uint8_t &test_stage, uint16_t *baseline)
 				}
 			case 9:
 				count++;
-				if (count < 10) {
+				if (count <= 10) {
 					current_current += (static_cast<uint16_t>(buf[4] << 8 | buf[5]) - baseline[REF_VOLTAGE_ADC]);
 				}
 				else {
 					step++;
 					count = 0;
-					current_current = (current_current / 10 * 330 / 4096 * 20) - baseline[SYSTEM_CURRENT];
+					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
 					if(current_current < 800)
 						return VACUUM_STALL_ERROR;
 					else
@@ -1802,115 +1820,150 @@ uint16_t vacuum_test(uint8_t &test_stage, uint16_t *baseline)
 		serial.sendData();
 	}
 }
-//uint16_t charge_current_test(uint8_t &test_stage) {
+//uint16_t charge_current_test(uint8_t &test_stage)
+//{
 //	uint16_t Temp_PWM = 0;
+//	uint32_t current_current = 0;
 //	uint8_t Charge_Time = 0;
-//	uint8_t ChargePwmLevel = 0;
-//	extern uint32_t Battery_Voltage_IT;
-//	while(1)
+//	uint8_t charge_pwm_level = 0;
+//	uint8_t buf[REC_LEN];
+//	uint8_t step = 1;
+//	uint8_t count = 0;
+//	while(ros::ok())
 //	{
-//		Current_Current=0;
-//		ChargePwmLevel = Get_ChargePwmLevel(Battery_Voltage_IT);
-//		while(1)	// Wait for charger plugin
+//		/*--------data extrict from serial com--------*/
+//		ROS_ERROR_COND(pthread_mutex_lock(&recev_lock) != 0, "robotbase pthread receive lock fail");
+//		ROS_ERROR_COND(pthread_cond_wait(&recev_cond, &recev_lock) != 0, "robotbase pthread receive cond wait fail");
+//		memcpy(buf, serial.receive_stream, sizeof(uint8_t) * REC_LEN);
+//		ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock) != 0, "robotbase pthread receive unlock fail");
+//		switch(step)
 //		{
-//			delay(500);
-//			Current_Current=Get_Charger_Voltage();
-//			if((Current_Current>1700))break;
-//		}
-//		//	Set_Clean_Mode(Clean_Mode_Charging);  //To display charge mode
-//		Timer15_Charge_Configuration();
-//		Charge_PWM = 1;
-//
-//		Temp_PWM = 300;
-//		Current_Current = 0;
-//		Charge_Time = 0;
-//		Beep(3);
-//
-//		while(1)
-//		{
-//			Charge_Time++;
-//			if(Charge_Time>30)break;
-//
-//			if(ADC_Value.System_Current < BaseLIneADCV)
-//				Current_Current = Get_Charge_Current(BaseLIneADCV);
-//			else
-//				Current_Current = 0;
-//
-//			if(Current_Current>300)//charge current over
-//			{
-//				if(Current_Current>400)
+//			case 1:/*--- wait fir charger plugin ---*/
+//				if(static_cast<uint16_t>(buf[2] << 8 | buf[3]) > 1700)
 //				{
-//					if(Temp_PWM<10)Temp_PWM=10;
-//					Temp_PWM-=20;
+//					count++;
+//					if(count > 3)
+//					{
+//						count = 0;
+//						step++;
+//						charge_pwm_level = get_charge_pwm_level(static_cast<uint16_t>(buf[4] << 8 | buf[5]));
+//					}
+//				}
+//				else
+//					count = 0;
+//				break;
+//			case 2:
+//
+//			Timer15_Charge_Configuration();
+//			Charge_PWM = 1;
+//
+//			Temp_PWM = 300;
+//			Current_Current = 0;
+//			Charge_Time = 0;
+//			Beep(3);
+//
+//			while(1)
+//			{
+//				Charge_Time++;
+//				if(Charge_Time>30)break;
+//
+//				if(ADC_Value.System_Current < BaseLIneADCV)
+//					Current_Current = Get_Charge_Current(BaseLIneADCV);
+//				else
+//					Current_Current = 0;
+//
+//				if(Current_Current>300)//charge current over
+//				{
+//					if(Current_Current>400)
+//					{
+//						if(Temp_PWM<10)Temp_PWM=10;
+//						Temp_PWM-=20;
+//					}
+//					else
+//					{
+//						if(Temp_PWM<2)Temp_PWM=2;
+//						Temp_PWM-=2;
+//					}
 //				}
 //				else
 //				{
-//					if(Temp_PWM<2)Temp_PWM=2;
-//					Temp_PWM-=2;
+//					if(Current_Current<280)
+//					{
+//						Temp_PWM+=30;
+//					}
+//					else if(Current_Current<290)
+//					{
+//						Temp_PWM+=10;
+//					}
+//					else
+//					{
+//						Temp_PWM++;
+//					}
+//					if(Temp_PWM>1000)Temp_PWM=1000;
+//				}
+//
+//				Charge_PWM = Temp_PWM;
+//
+//				delay(2500);
+//			}
+//
+//	//		USPRINTF("finish,charge current %d,pwm :%d\n",Current_Current,Temp_PWM);
+//			Charge_PWM = 0;
+//
+//			Work_Configuration();
+//
+//			if(Is_Fixture)
+//			{
+//				if((Temp_PWM < 350) || (Temp_PWM > 650))
+//				{
+//					return CHARGE_PWM_ERROR);
+//					Wait_For_Return();
 //				}
 //			}
 //			else
 //			{
-//				if(Current_Current<280)
+//				if(Temp_PWM < ((charge_pwm_level-16)*10)||Temp_PWM > ((charge_pwm_level+16)*10))
 //				{
-//					Temp_PWM+=30;
+//					return CHARGE_PWM_ERROR);
+//					Wait_For_Return();
 //				}
-//				else if(Current_Current<290)
-//				{
-//					Temp_PWM+=10;
-//				}
-//				else
-//				{
-//					Temp_PWM++;
-//				}
-//				if(Temp_PWM>1000)Temp_PWM=1000;
 //			}
 //
-//			Charge_PWM = Temp_PWM;
-//
-//			delay(2500);
-//		}
-//
-////		USPRINTF("finish,charge current %d,pwm :%d\n",Current_Current,Temp_PWM);
-//		Charge_PWM = 0;
-//
-//		Work_Configuration();
-//
-//		if(Is_Fixture)
-//		{
-//			if((Temp_PWM < 350) || (Temp_PWM > 650))
+//			if((Current_Current<280)||(Current_Current>320))
 //			{
-//				return CHARGE_PWM_ERROR);
+//				return CHARGE_CURRENT_ERROR);
 //				Wait_For_Return();
 //			}
-//		}
-//		else
-//		{
-//			if(Temp_PWM < ((ChargePwmLevel-16)*10)||Temp_PWM > ((ChargePwmLevel+16)*10))
+//
+//			while(1)  //Wait for remove charge power
 //			{
-//				return CHARGE_PWM_ERROR);
-//				Wait_For_Return();
+//				delay(500);
+//				Current_Current=Get_Charger_Voltage();
+//				if(Current_Current<1600)break;
 //			}
-//		}
 //
-//		if((Current_Current<280)||(Current_Current>320))
-//		{
-//			return CHARGE_CURRENT_ERROR);
-//			Wait_For_Return();
-//		}
-//
-//		while(1)  //Wait for remove charge power
-//		{
-//			delay(500);
-//			Current_Current=Get_Charger_Voltage();
-//			if(Current_Current<1600)break;
-//		}
-//
-//		while(1)
-//		{
-//			delay(100);
-//			if(Step_Switch())break;
+//			while(1)
+//			{
+//				delay(100);
+//				if(Step_Switch())break;
+//			}
 //		}
 //	}
-//}//
+//}
+uint8_t get_charge_pwm_level(uint16_t voltage)
+{
+	uint8_t charge_pwm_level[12] = {35, 39 ,44, 49,  52,  55,  58,  63  ,67,  70,  72,  75};
+	if(voltage<1300)return charge_pwm_level[0];
+	else if(voltage<1340)return charge_pwm_level[1];
+	else if(voltage<1380)return charge_pwm_level[2];
+	else if(voltage<1420)return charge_pwm_level[3];
+	else if(voltage<1450)return charge_pwm_level[4];
+	else if(voltage<1490)return charge_pwm_level[5];
+	else if(voltage<1520)return charge_pwm_level[6];
+	else if(voltage<1550)return charge_pwm_level[7];
+	else if(voltage<1580)return charge_pwm_level[8];
+	else if(voltage<1610)return charge_pwm_level[9];
+	else if(voltage<1640)return charge_pwm_level[10];
+	else				return charge_pwm_level[11];
+}
 #endif

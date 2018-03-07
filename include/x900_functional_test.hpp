@@ -164,7 +164,7 @@ uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline);
 uint16_t brushes_test(uint8_t &test_stage, uint16_t *baseline);
 uint16_t charge_current_test(uint8_t &test_stage);
 uint16_t vacuum_test(uint8_t &test_stage, uint16_t *baseline);
-
+uint8_t get_charge_pwm_level(uint16_t voltage);
 /*
  * Test for memory device.
  */
