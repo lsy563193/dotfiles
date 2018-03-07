@@ -457,9 +457,11 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 				auto tmp = transform.getOrigin();
 				auto tmp_yaw = tf::getYaw(transform.getRotation());
 
-				robot_tf_->lookupTransform("/odom", "/base_link", ros::Time(0), transform);
 				if(getBaselinkFrameType() == SLAM_POSITION_ODOM_ANGLE)
+				{
+					robot_tf_->lookupTransform("/odom", "/base_link", ros::Time(0), transform);
 					tmp_yaw = tf::getYaw(transform.getRotation());
+				}
 
 				odom_pose = transform.getOrigin();
 				odom_pose_radian_ = tf::getYaw(transform.getRotation());
