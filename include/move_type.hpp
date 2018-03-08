@@ -170,4 +170,22 @@ public:
 private:
 	boost::shared_ptr<IMovement> p_movement_;
 };
+
+class MoveTypeDeskTest: public IMoveType
+{
+public:
+	MoveTypeDeskTest();
+	~MoveTypeDeskTest() override;
+
+	bool isFinish() override;
+
+	void run() override;
+
+private:
+	/*
+	 * Test stage: 1 ~ 7.
+	 * Stage 1: Check for base value for currents and cliff and obs and lidar.
+	 */
+	int test_stage_{0};
+};
 #endif //PP_MOVE_TYPE_HPP

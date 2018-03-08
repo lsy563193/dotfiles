@@ -100,6 +100,7 @@ public:
 		//20
 		ac_check_vacuum,
 		ac_bumper_hit_test,
+		ac_desk_test,
 	};
 
 	virtual void genNextAction();
@@ -399,6 +400,16 @@ public:
 	virtual bool isSwitchByEventInStatePause(){return false;};
 	virtual bool updateActionInStatePause(){};
 	virtual void switchInStatePause(){};
+
+	// State desk test
+	bool isStateDeskTest() const
+	{
+		return sp_state == state_desk_test;
+	}
+	virtual bool isSwitchByEventInStateDeskTest(){return false;};
+	virtual bool updateActionInStateDeskTest(){return false;};
+	virtual void switchInStateDeskTest(){};
+
 	bool is_closed{true};
 	bool is_isolate{true};
 	int closed_count_{};
@@ -447,6 +458,7 @@ protected:
 	State *state_spot =  new StateSpot();
 	State *state_resume_low_battery_charge = new StateResumeLowBatteryCharge();
 	State *state_pause = new StatePause();
+	State *state_desk_test = new StateDeskTest();
 
 	bool low_battery_charge_{};
 	bool moved_during_pause_{};
@@ -575,16 +587,10 @@ public:
 	bool isSwitchByEventInStateExceptionResume() override;
 
 private:
-
 	bool has_aligned_and_open_slam_{false};
-	float paused_odom_angle_{0};
+	float paused_odom_radian_{0};
 	Point_t continue_point_{};
 	bool go_home_for_low_battery_{false};
-
-protected:
-//	Cells home_point_{};
-public:
-
 };
 
 class CleanModeExploration : public ACleanMode
@@ -670,11 +676,12 @@ public:
 	bool mapMark() override
 	{return false;}
 
-	bool isFinish() override;
+	bool isExit() override;
+	void switchInStateInit() override;
+	bool updateActionInStateDeskTest() override;
+	void switchInStateDeskTest() override;
 
 	void keyClean(bool state_now, bool state_last) override ;
-	void remoteMax(bool state_now, bool state_last) override ;
 	void remoteDirectionForward(bool state_now, bool state_last) override ;
-
 };
 #endif //PP_MODE_H_H

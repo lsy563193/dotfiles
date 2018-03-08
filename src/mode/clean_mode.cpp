@@ -125,6 +125,7 @@ ACleanMode::~ACleanMode()
 			 __FUNCTION__, __LINE__, map_area, robot_timer.getWorkTime(),
 			 static_cast<float>(robot_timer.getWorkTime()) / 60, map_area / (static_cast<float>(robot_timer.getWorkTime()) / 60));
 }
+
 uint8_t ACleanMode::setBlocks(Dir_t dir)
 {
 

@@ -26,10 +26,10 @@ CleanModeNav::CleanModeNav()
 		speaker.play(VOICE_CLEANING_START, false);
 
 	has_aligned_and_open_slam_ = false;
-	paused_odom_angle_ = 0;
+	paused_odom_radian_ = 0;
 	moved_during_pause_ = false;
 
-	IMoveType::sp_mode_ = this;
+	IMoveType::sp_mode_ = this; // todo: is this sentence necessary? by Austin
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
 	go_home_path_algorithm_.reset();
 }
@@ -442,8 +442,8 @@ bool CleanModeNav::updateActionInStateInit() {
 		action_i_ = ac_open_gyro;
 	else if (action_i_ == ac_open_gyro)
 	{
-		// If it is the starting of navigation mode, paused_odom_angle_ will be zero.
-		odom.setRadianOffset(paused_odom_angle_);
+		// If it is the starting of navigation mode, paused_odom_radian_ will be zero.
+		odom.setRadianOffset(paused_odom_radian_);
 
 		if (charger.isOnStub()){
 			action_i_ = ac_back_form_charger;
@@ -618,7 +618,7 @@ void CleanModeNav::switchInStateGoToCharger()
 			ROS_INFO("%s %d: Enter low battery charge.", __FUNCTION__, __LINE__);
 			sp_state = state_charge;
 			sp_state->init();
-			paused_odom_angle_ = odom.getRadian();
+			paused_odom_radian_ = odom.getRadian();
 			go_home_for_low_battery_ = false;
 			go_home_path_algorithm_.reset();
 		} else
@@ -686,7 +686,7 @@ bool CleanModeNav::checkEnterPause()
 		ev.key_clean_pressed = false;
 		speaker.play(VOICE_CLEANING_PAUSE);
 		ROS_INFO("%s %d: Key clean pressed, pause cleaning.", __FUNCTION__, __LINE__);
-		paused_odom_angle_ = odom.getRadian();
+		paused_odom_radian_ = odom.getRadian();
 		sp_action_.reset();
 		sp_saved_states.push_back(sp_state);
 		sp_state = state_pause;

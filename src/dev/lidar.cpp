@@ -6,6 +6,7 @@
 #include <wheel.hpp>
 #include <mode.hpp>
 #include <mathematics.h>
+#include <beeper.h>
 
 boost::mutex scanLinear_mutex_;
 boost::mutex scanOriginal_mutex_;
@@ -169,8 +170,6 @@ bool Lidar::motorCtrl(bool new_switch_)
 		setScanOriginalReady(0);
 		setScanCompensateReady(0);
 		slip_frame_cnt_ = 0;
-		last_frame_ranges_.clear();
-		last_frame_time_stamp_ = ros::Time::now().toSec();
 		slip_status_ = false;
 		//delete []last_ranges_;
 		ROS_INFO("\033[35m" "%s %d: Stop lidar." "\033[0m", __FUNCTION__, __LINE__);
@@ -1214,10 +1213,10 @@ uint8_t Lidar::lidarMarker(std::vector<Vector2<int>> &markers, double X_MAX)
 
 void Lidar::checkRobotSlip()
 {
-	const float acur1 = 0.08;//accuracy 1 ,in meters
-	const float acur2 = 0.06;//accuracy 2 ,in meters
-	const float acur3 = 0.04;//accuracy 3 ,in meters
-	const float acur4 = 0.01;//accuracy 4 ,in meters
+	const float acur1 = 0.095;//accuracy 1 ,in meters
+	const float acur2 = 0.075;//accuracy 2 ,in meters
+	const float acur3 = 0.055;//accuracy 3 ,in meters
+	const float acur4 = 0.015;//accuracy 4 ,in meters
 
 	const float dist1 = 3.5;//range distance 1 ,in meters
 	const float dist2 = 2.5;//range distance 2
@@ -1233,16 +1232,12 @@ void Lidar::checkRobotSlip()
 	int8_t speed_limit = 8;
 //	ROS_WARN("%s %d: Speed left:%d, right:%d", __FUNCTION__, __LINE__,
 //			 wheel.getLeftSpeedAfterPid(), wheel.getRightSpeedAfterPid());
-	if ((std::abs(wheel.getLeftSpeedAfterPid()) >= speed_limit || std::abs(wheel.getRightSpeedAfterPid()) >= speed_limit)
-		&& current_frame_time_stamp_ != scanOriginal_update_time_)
+	if ((std::abs(wheel.getLeftSpeedAfterPid()) >= speed_limit || std::abs(wheel.getRightSpeedAfterPid()) >= speed_limit))
 	{
-		current_frame_time_stamp_ = scanOriginal_update_time_;
 		auto tmp_scan_data = getLidarScanDataOriginal();
 
-		if (last_frame_ranges_.empty())
-		{
-			last_frame_time_stamp_ = ros::Time::now().toSec();
-			last_frame_ranges_ = tmp_scan_data.ranges;
+		if(last_slip_scan_frame_.d.size() < 3){
+			last_slip_scan_frame_.d.push_back(tmp_scan_data);
 			return;
 		}
 
@@ -1252,22 +1247,22 @@ void Lidar::checkRobotSlip()
 			if(tmp_scan_data.ranges[i] < dist1){
 				tol_count++;
 				if(tmp_scan_data.ranges[i] >dist2 && tmp_scan_data.ranges[i] < dist1){//
-					if(std::abs( tmp_scan_data.ranges[i] - last_frame_ranges_[i] ) <= acur1 ){
+					if(std::abs(tmp_scan_data.ranges[i] - last_slip_scan_frame_.d.at(0).ranges[i]) <= acur1 ){
 						same_count++;
 					}
 				} 
 				else if(tmp_scan_data.ranges[i] >dist3 && tmp_scan_data.ranges[i] < dist2){//
-					if(std::abs( tmp_scan_data.ranges[i] - last_frame_ranges_[i] ) <= acur2 ){
+					if(std::abs(tmp_scan_data.ranges[i] - last_slip_scan_frame_.d.at(0).ranges[i]) <= acur2 ){
 						same_count++;
 					}
 				}
 				else if(tmp_scan_data.ranges[i] >dist4 && tmp_scan_data.ranges[i] < dist3){//
-					if(std::abs( tmp_scan_data.ranges[i] - last_frame_ranges_[i] ) <= acur3 ){
+					if(std::abs(tmp_scan_data.ranges[i] - last_slip_scan_frame_.d.at(0).ranges[i]) <= acur3 ){
 						same_count++;
 					}
 				}
 				else if(tmp_scan_data.ranges[i] <= dist4){
-					if(std::abs( tmp_scan_data.ranges[i] - last_frame_ranges_[i] ) <= acur4 ){
+					if(std::abs( tmp_scan_data.ranges[i] - last_slip_scan_frame_.d.at(0).ranges[i]) <= acur4 ){
 						same_count++;
 					}
 				}
@@ -1275,31 +1270,24 @@ void Lidar::checkRobotSlip()
 		}
 
 //		ROS_WARN("%s %d: same_count: %d, total_count: %d.", __FUNCTION__, __LINE__, same_count, tol_count);
-		if((same_count*1.0)/(tol_count*1.0) >= slip_ranges_percent_){
+		if((same_count*1.0)/(tol_count*1.0) >= slip_ranges_percent_ &&
+							(tmp_scan_data.ranges[155] < 4 && tmp_scan_data.ranges[155] - last_slip_scan_frame_.d.at(0).ranges[155] < 0.03)){
 			if(++slip_frame_cnt_>= slip_cnt_limit_){
-				slip_frame_cnt_ = slip_cnt_limit_;
-//				ROS_INFO("\033[35m""%s,%d,robot slip!!""\033[0m",__FUNCTION__,__LINE__);
-				last_frame_time_stamp_ = ros::Time::now().toSec();
-				last_frame_ranges_ = tmp_scan_data.ranges;
-				// For debug
-//				beeper.beepForCommand(VALID);
-//				slip_status_ = true;
+				ROS_INFO("\033[35m""%s,%d,robot slip!!""\033[0m",__FUNCTION__,__LINE__);
+				slip_frame_cnt_ = 0;
+				slip_status_ = true;
+				beeper.beepForCommand(VALID);
+			}else{
+				slip_status_ = false;
 			}
 		}
 		else
 		{
-			if (--slip_frame_cnt_ <= 0)
-			{
-				slip_frame_cnt_ = 0;
-				slip_status_ = false;
-			}
+			slip_frame_cnt_ = 0;
+			slip_status_ = false;
 		}
 
-		if (ros::Time::now().toSec() - last_frame_time_stamp_ > 0.5)
-		{
-			last_frame_time_stamp_ = ros::Time::now().toSec();
-			last_frame_ranges_ = tmp_scan_data.ranges;
-		}
+		last_slip_scan_frame_.push_back(tmp_scan_data);
 	}
 }
 
@@ -1639,9 +1627,8 @@ void Lidar::init() {
 	// For slip checking
 	slip_status_ = {false};
 	slip_frame_cnt_ = {0};
-	last_frame_ranges_ = {};
-	last_frame_time_stamp_ = {};
-	current_frame_time_stamp_ = {};
+	slip_scan_deque last_frame_{};
+
 	setScanLinearReady(0);
 	setScanOriginalReady(0);
 	setScanCompensateReady(0);
