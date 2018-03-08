@@ -32,12 +32,16 @@ extern pthread_cond_t serial_data_ready_cond;
 
 extern bool g_pp_shutdown;
 
-extern bool robotbase_thread_stop;
-extern bool recei_thread_stop;
-extern bool send_thread_stop;
-extern bool event_manager_thread_stop;
-extern bool event_handle_thread_stop;
-extern bool core_thread_stop;
+extern bool robotbase_thread_enable;
+extern bool send_thread_enable;
+extern bool recei_thread_enable;
+
+extern bool robotbase_thread_kill;
+extern bool recei_thread_kill;
+extern bool send_thread_kill;
+extern bool event_manager_thread_kill;
+extern bool event_handle_thread_kill;
+extern bool core_thread_kill;
 
 class Mode;
 
@@ -235,6 +239,7 @@ private:
 
 	pp::scan_ctrl scan_ctrl_;
 
+	std::string lidar_bumper_dev_;
 
 	//callback function
 	void robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg);

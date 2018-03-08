@@ -523,7 +523,13 @@ void Serial::receive_routine_cb()
 	wht_len = wh_len - 2; //length without header and tail bytes
 	whtc_len = wht_len - 1; //length without header and tail and crc bytes
 
-	while (ros::ok() && (!recei_thread_stop)) {
+	while (ros::ok() && (!recei_thread_kill)) {
+		if (!recei_thread_enable)
+		{
+			usleep(10000);
+			continue;
+		}
+
 		ret = serial.read(&header1, 1);
 		if (ret <= 0 ){
 			ROS_WARN("%s, %d, serial read return %d ,  request %d byte",__FUNCTION__,__LINE__,ret,1);
@@ -573,7 +579,7 @@ void Serial::receive_routine_cb()
 		}
 	}
 	pthread_cond_signal(&recev_cond);
-	robotbase_thread_stop = true;
+	robotbase_thread_kill = true;
 	ROS_ERROR("%s,%d,exit!",__FUNCTION__,__LINE__);
 }
 
@@ -582,7 +588,13 @@ void Serial::send_routine_cb()
 	ROS_INFO("robotbase,\033[32m%s\033[0m,%d is up.",__FUNCTION__,__LINE__);
 	ros::Rate r(_RATE);
 	resetSendStream();
-	while(ros::ok() && !send_thread_stop){
+	while(ros::ok() && !send_thread_kill){
+		if (!send_thread_enable)
+		{
+			r.sleep();
+			continue;
+		}
+
 		r.sleep();
 		/*-------------------Process for beeper.play and key_led -----------------------*/
 		beeper.processBeep();
@@ -595,7 +607,7 @@ void Serial::send_routine_cb()
 		sendData();
 		robot::instance()->publishCtrlStream();
 	}
-	core_thread_stop = true;
+	core_thread_kill = true;
 	ROS_ERROR("%s,%d exit",__FUNCTION__,__LINE__);
 	//pthread_exit(NULL);
 }

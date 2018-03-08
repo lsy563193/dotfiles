@@ -15,10 +15,10 @@ CleanModeTest::CleanModeTest()
 CleanModeTest::~CleanModeTest()
 {
 	ROS_WARN("%s %d: Exit Test mode\n=========================" , __FUNCTION__, __LINE__);
-	if (test_state_ != -1)
+/*	if (test_state_ != -1)
 		speaker.play(VOICE_TEST_SUCCESS, false);
 	else
-		speaker.play(VOICE_TEST_FAIL, false);
+		speaker.play(VOICE_TEST_FAIL, false);*/
 }
 
 bool CleanModeTest::isExit()
@@ -75,15 +75,9 @@ void CleanModeTest::switchInStateInit()
 // State desk test.
 bool CleanModeTest::updateActionInStateDeskTest()
 {
-	if (test_state_ == 0)
-	{
-		action_i_ = ac_desk_test;
-		genNextAction();
-		test_state_++;
-		return true;
-	}
-	else
-		return false;
+	action_i_ = ac_desk_test;
+	genNextAction();
+	return true;
 }
 
 void CleanModeTest::switchInStateDeskTest()
