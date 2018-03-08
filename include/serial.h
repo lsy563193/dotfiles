@@ -27,6 +27,12 @@
 #define CTL_MAIN_BRUSH_TEST_MODE 3
 #define CTL_RIGHT_BRUSH_TEST_MODE 4
 #define CTL_VACUUM_TEST_MODE 7
+// For Charger Connected Status
+// 0 for no charger connected
+// 1 for already connect charger
+#define CTL_CHARGER_CINNECTED_STATUS 3
+// Is on fixture
+#define CTL_IS_FIXTURE 2
 #endif
 // Two bytes for controlling left wheel.
 #define	CTL_WHEEL_LEFT_HIGH 2

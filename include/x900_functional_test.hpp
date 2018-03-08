@@ -73,8 +73,8 @@
 #define VACUUM_ENCODER_FAIL						(uint16_t)1003
 #define VACUUM_ENCODER_ERROR					(uint16_t)1004
 #define VACUUM_STALL_ERROR						(uint16_t)1005
-//#define CHARGE_PWM_ERROR						(uint16_t)1101
-//#define CHARGE_CURRENT_ERROR				(uint16_t)1102
+#define CHARGE_PWM_ERROR						(uint16_t)1101
+#define CHARGE_CURRENT_ERROR				(uint16_t)1102
 //limit
 #define OBS_MANUAL_LIMIT_H	(uint16_t)1500
 #define OBS_MANUAL_LIMIT_L	(uint16_t)700
@@ -162,7 +162,7 @@ uint16_t obs_test(uint8_t &test_stage, bool is_fixture);
 uint16_t rcon_test(uint8_t &test_stage);
 uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline);
 uint16_t brushes_test(uint8_t &test_stage, uint16_t *baseline);
-uint16_t charge_current_test(uint8_t &test_stage);
+uint16_t charge_current_test(uint8_t &test_stage, bool is_fixture);
 uint16_t vacuum_test(uint8_t &test_stage, uint16_t *baseline);
 uint8_t get_charge_pwm_level(uint16_t voltage);
 /*
