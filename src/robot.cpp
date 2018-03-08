@@ -704,7 +704,18 @@ bool isXAxis(Dir_t dir)
 {
 	return dir == MAP_POS_X || dir == MAP_NEG_X;
 }
-
+/*
+Dir_t getReDir(Dir_t dir)
+{
+	if(isAny(dir))
+		return dir;
+	if(isPos(dir))
+	{
+		return dir+1;
+	}
+	else
+		return dir-1;
+}*/
 void updatePosition()
 {
 	auto pos_x = robot::instance()->getWorldPoseX()/* * 1000 * CELL_COUNT_MUL / CELL_SIZE*/;
