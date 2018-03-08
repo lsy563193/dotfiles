@@ -17,6 +17,11 @@ MovementExceptionResume::MovementExceptionResume()
 	s_pos_x = odom.getX();
 	s_pos_y = odom.getY();
 
+	//For slip
+	robot_slip_jam_state_ = 0;
+	is_slip_last_turn_left_ = false;
+	slip_start_turn_time = 0;
+
 	resume_wheel_start_time_ = ros::Time::now().toSec();
 	resume_main_bursh_start_time_ = ros::Time::now().toSec();
 	resume_vacuum_start_time_ = ros::Time::now().toSec();
@@ -24,7 +29,7 @@ MovementExceptionResume::MovementExceptionResume()
 
 MovementExceptionResume::~MovementExceptionResume()
 {
-
+	ROS_INFO("%s %d: Exiting movement exception resume.", __FUNCTION__, __LINE__);
 }
 
 void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
@@ -89,13 +94,35 @@ void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_sp
 		wheel.setDirectionBackward();
 		left_speed = right_speed = 2;
 	}
-
+	else if (ev.robot_slip)
+	{
+		switch(robot_slip_jam_state_){
+			case 0:
+			{
+				wheel.setDirectionBackward();
+				left_speed = right_speed = RUN_TOP_SPEED;
+				break;
+			}
+			case 1:
+			{
+				wheel.setDirectionRight();
+				left_speed = right_speed = RUN_TOP_SPEED;
+				break;
+			}
+			case 2:
+			{
+				wheel.setDirectionLeft();
+				left_speed = right_speed = RUN_TOP_SPEED;
+				break;
+			}
+		}
+	}
 }
 
 bool MovementExceptionResume::isFinish()
 {
 	if (!(ev.bumper_jam || ev.cliff_jam || ev.cliff_all_triggered || ev.oc_wheel_left || ev.oc_wheel_right
-		  || ev.oc_vacuum || ev.lidar_stuck || ev.robot_stuck || ev.oc_brush_main))
+		  || ev.oc_vacuum || ev.lidar_stuck || ev.robot_stuck || ev.oc_brush_main || ev.robot_slip))
 	{
 		ROS_INFO("%s %d: All exception cleared.", __FUNCTION__, __LINE__);
 		return true;
@@ -382,8 +409,48 @@ bool MovementExceptionResume::isFinish()
 			oc_vacuum_resume_cnt_++;
 		}
 	}
+	else if(ev.robot_slip)
+	{
+		switch(robot_slip_jam_state_){
+			case 0:{
+				float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getX(), odom.getY());
+				if (std::abs(distance) > 0.3f)
+				{
+					if(!lidar.isRobotSlip())
+					{
+						ev.robot_slip = false;
+					}
+					else{
+						robot_slip_jam_state_ = static_cast<uint8_t>(is_slip_last_turn_left_ ? 2 : 1);
+						slip_start_turn_time = ros::Time::now().toSec();
+					}
+				}
+				break;
+			}
+			case 1:{
+				if(ros::Time::now().toSec() - slip_start_turn_time > 1) {
+					s_pos_x = odom.getX();
+					s_pos_y = odom.getY();
+					is_slip_last_turn_left_ = true;
+					robot_slip_jam_state_ = 0;
+				}
+				break;
+			}
+			case 2:{
+				if(ros::Time::now().toSec() - slip_start_turn_time > 1)
+				{
+					s_pos_x = odom.getX();
+					s_pos_y = odom.getY();
+					is_slip_last_turn_left_ = false;
+					robot_slip_jam_state_ = 0;
+				}
+				break;
+			}
+		}
+	}
 
 //	if (ev.fatal_quit)
 //		ROS_INFO("%s %d: ev.fatal_quit is set to %d.", __FUNCTION__, __LINE__, ev.fatal_quit);
 	return ev.fatal_quit;
 }
+

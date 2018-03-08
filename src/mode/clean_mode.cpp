@@ -1152,6 +1152,14 @@ void ACleanMode::cliffAll(bool state_now, bool state_last)
 	}
 }
 
+void ACleanMode::robotSlip(bool state_now, bool state_last){
+	if(!ev.robot_slip)
+	{
+		ROS_WARN("%s %d: Robot slip.", __FUNCTION__, __LINE__);
+		ev.robot_slip= true;
+	}
+}
+
 void ACleanMode::overCurrentBrushMain(bool state_now, bool state_last)
 {
 	if (!ev.oc_brush_main)

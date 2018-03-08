@@ -290,6 +290,9 @@ private:
 	uint8_t wheel_resume_cnt_{0};
 	uint8_t bumper_jam_state_{1};
 	double bumper_resume_start_radian_{0};
+	uint8_t robot_slip_jam_state_{0};
+	double slip_start_turn_time{0};
+	bool is_slip_last_turn_left_{false};
 	uint8_t cliff_resume_cnt_{0};
 	uint8_t cliff_all_resume_cnt_{0};
 	uint8_t robot_stuck_resume_cnt_{0};
