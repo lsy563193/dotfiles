@@ -13,7 +13,7 @@
 
 void x900_functional_test(std::string serial_port, int baud_rate, std::string lidar_bumper_dev)
 {
-
+	uint16_t main_board_test_result=0;
 	ROS_INFO("%s %d: Serial_port: %s, baudrate: %d, lidar_bumper_dev: %s.",
 			 __FUNCTION__, __LINE__, serial_port.c_str(), baud_rate, lidar_bumper_dev.c_str());
 	// Test item: Speaker.
@@ -65,11 +65,15 @@ void x900_functional_test(std::string serial_port, int baud_rate, std::string li
 
 	auto serial_receive_routine = new boost::thread(boost::bind(&Serial::receive_routine_cb, &serial));
 
+	// Wait for the end of voice playing
+	speaker.play(VOICE_NULL, false);
+	usleep(2000);
 	// Test hardware from main board.
-	if (!main_board_test())
+	main_board_test_result = main_board_test();
+	if (main_board_test_result)
 	{
 		ROS_ERROR("%s %d: Main board test failed!!", __FUNCTION__, __LINE__);
-		error_loop(MAIN_BOARD_ERROR);
+		error_loop(main_board_test_result);
 	}
 	ROS_INFO("Test main board success!!");
 
@@ -90,41 +94,10 @@ void x900_functional_test(std::string serial_port, int baud_rate, std::string li
 
 void error_loop(uint16_t error_code)
 {
-	switch (error_code)
-	{
-		case SERIAL_ERROR:
-			break;
-		case RAM_ERROR:
-			serial.setSendData(CTL_MAIN_BOARD_MODE, ALARM_ERROR_MODE);
-			serial.setSendData(CTL_TESTING_STAGE, 1);
-			serial.setSendData(CTL_ERROR_CODE_HIGH, static_cast<uint8_t>(RAM_ERROR >> 8));
-			serial.setSendData(CTL_ERROR_CODE_LOW, static_cast<uint8_t>(RAM_ERROR));
-			break;
-		case FLASH_ERROR:
-			serial.setSendData(CTL_MAIN_BOARD_MODE, ALARM_ERROR_MODE);
-			serial.setSendData(CTL_TESTING_STAGE, 1);
-			serial.setSendData(CTL_ERROR_CODE_HIGH, static_cast<uint8_t>(FLASH_ERROR >> 8));
-			serial.setSendData(CTL_ERROR_CODE_LOW, static_cast<uint8_t>(FLASH_ERROR));
-			break;
-		case LIDAR_ERROR:
-			serial.setSendData(CTL_MAIN_BOARD_MODE, ALARM_ERROR_MODE);
-			serial.setSendData(CTL_TESTING_STAGE, 1);
-			serial.setSendData(CTL_ERROR_CODE_HIGH, static_cast<uint8_t>(LIDAR_ERROR >> 8));
-			serial.setSendData(CTL_ERROR_CODE_LOW, static_cast<uint8_t>(LIDAR_ERROR));
-			break;
-		case LIDAR_BUMPER_ERROR:
-			serial.setSendData(CTL_MAIN_BOARD_MODE, ALARM_ERROR_MODE);
-			serial.setSendData(CTL_TESTING_STAGE, 1);
-			serial.setSendData(CTL_ERROR_CODE_HIGH, static_cast<uint8_t>(LIDAR_BUMPER_ERROR >> 8));
-			serial.setSendData(CTL_ERROR_CODE_LOW, static_cast<uint8_t>(LIDAR_BUMPER_ERROR));
-			break;
-		case MAIN_BOARD_ERROR:
-			serial.setSendData(CTL_MAIN_BOARD_MODE, ALARM_ERROR_MODE);
-			serial.setSendData(CTL_TESTING_STAGE, 1);
-			break;
-		default:
-			break;
-	}
+	serial.setSendData(CTL_MAIN_BOARD_MODE, ALARM_ERROR_MODE);
+	serial.setSendData(CTL_ERROR_CODE_HIGH, static_cast<uint8_t>(error_code >> 8));
+	serial.setSendData(CTL_ERROR_CODE_LOW, static_cast<uint8_t>(error_code));
+
 	double alarm_time = ros::Time::now().toSec();
 	speaker.play(VOICE_TEST_FAIL);
 	ROS_ERROR("%s %d: Test ERROR.", __FUNCTION__, __LINE__);
@@ -134,7 +107,7 @@ void error_loop(uint16_t error_code)
 		{
 			alarm_time = ros::Time::now().toSec();
 			speaker.play(VOICE_TEST_FAIL);
-			ROS_ERROR("%s %d: Test ERROR.", __FUNCTION__, __LINE__);
+			ROS_ERROR("%s %d: Test ERROR. error:code: %d", __FUNCTION__, __LINE__, error_code);
 		}
 	}
 }
@@ -464,9 +437,45 @@ bool power_supply_test()
 	return voltage > voltage_limit;
 }
 
-bool main_board_test()
+uint16_t main_board_test()
 {
-	return true;
+	bool is_fixture = false;
+	uint16_t test_result=0;
+	uint8_t test_stage = ELECTRICAL_AND_LED_TEST_MODE;
+	uint16_t baseline[8];
+	while(ros::ok()) {
+		switch (test_stage) {
+			case ELECTRICAL_AND_LED_TEST_MODE:/*---Main board electrical specification and LED test---*/
+				test_result = electrical_specification_and_led_test(baseline, is_fixture, test_stage);
+				break;
+			case OBS_TEST_MODE:/*---OBS---*/
+				test_result = obs_test(test_stage, is_fixture);
+				break;
+			case BUMPER_TEST_MODE:/*---bumper---*/
+				test_result = bumper_test(test_stage);
+				break;
+			case CLIFF_TEST_MODE:/*---cliff---*/
+				test_result = cliff_test(test_stage);
+				break;
+			case RCON_TEST_MODE:/*---rcon---*/
+				test_result = rcon_test(test_stage);
+				break;
+			case WHEELS_TEST_MODE:/*---wheels---*/
+				test_result = wheels_test(test_stage, baseline);
+				break;
+			case BRUSHES_TEST_MODE:/*---brushes---*/
+				test_result = brushes_test(test_stage, baseline);
+				break;
+			case VACUUM_TEST_MODE:/*---vacuum---*/
+				test_result = vacuum_test(test_stage, baseline);
+				break;
+			case CHARGE_CURRENT_TEST_MODE:/*---charge current---*/
+				test_result = charge_current_test(test_stage, is_fixture);
+				break;
+		}
+		if(test_result)
+			return test_result;
+	}
 }
 
 /*bool memory_test()
@@ -621,4 +630,1250 @@ bool main_board_test()
 
 	return strncmp(buf1, buf2, static_cast<size_t>(write_length)) == 0;
 }*/
+uint16_t electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixture, uint8_t &test_stage)
+{
+	uint32_t temp_sum=0;
+	uint8_t step=0;
+	uint8_t count_20ms=0;
+	uint8_t count_key_pressed=0;
+	uint16_t baseline_voltage=0;
+	uint8_t buf[REC_LEN];
+	bool should_save_baseline = true;
+
+	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
+	serial.setSendData(CTL_MAIN_BOARD_MODE, ELECTRICAL_AND_LED_TEST_MODE);
+	while(ros::ok())
+	{
+		serial.setSendData(CTL_MAIN_BOARD_MODE, ELECTRICAL_AND_LED_TEST_MODE);
+		/*--------data extrict from serial com--------*/
+		ROS_ERROR_COND(pthread_mutex_lock(&recev_lock)!=0, "robotbase pthread receive lock fail");
+		ROS_ERROR_COND(pthread_cond_wait(&recev_cond,&recev_lock)!=0, "robotbase pthread receive cond wait fail");
+		memcpy(buf,serial.receive_stream,sizeof(uint8_t)*REC_LEN);
+		ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock)!=0, "robotbase pthread receive unlock fail");
+		if(buf[38] != ELECTRICAL_AND_LED_TEST_MODE)
+		{
+			serial.sendData();
+			continue;
+		}
+		if(should_save_baseline)
+		{
+			should_save_baseline = false;
+			baseline[LEFT_WHEEL] = ((uint16_t) buf[7] << 8) | buf[8];
+			baseline[RIGHT_WHEEL] = ((uint16_t) buf[9] << 8) | buf[10];
+			baseline[LEFT_BRUSH] = ((uint16_t) buf[11] << 8) | buf[12];
+			baseline[MAIN_BRUSH] = ((uint16_t) buf[13] << 8) | buf[14];
+			baseline[RIGHT_BRUSH] = ((uint16_t) buf[15] << 8) | buf[16];
+			baseline[VACUUM] = ((uint16_t) buf[17] << 8) | buf[18];
+			baseline[REF_VOLTAGE_ADC] = ((uint16_t) buf[19] << 8) | buf[20];
+		}
+		switch(step) {
+			case 0:
+				baseline_voltage = baseline[REF_VOLTAGE_ADC] * 330 / 4096;
+				if (baseline_voltage < 125 || baseline_voltage > 135)
+					return BASELINE_VOLTAGE_ERROR;
+				step++;
+				temp_sum = 0;
+				count_20ms = 0;
+			case 1:
+				if (count_20ms < 20) {
+					count_20ms++;
+					temp_sum += static_cast<uint16_t>((buf[2] << 8) | buf[3]);
+				}
+				else {
+					temp_sum /= 20;
+					temp_sum = temp_sum *330 /4096 *660 /100;
+					ROS_INFO("%s, %d: battery voltage: %d", __FUNCTION__, __LINE__, temp_sum);
+					if (temp_sum < 1350 || temp_sum > 1700) {
+						if (temp_sum < 1350)
+							return BATTERY_LOW;
+						else
+							return BATTERY_ERROR;
+					}
+					temp_sum = 0;
+					count_20ms = 0;
+					step++;
+				}
+				break;
+			case 2:/*---check baseline current---*/
+				if (count_20ms < 10) {
+					count_20ms++;
+					temp_sum += static_cast<uint16_t>(buf[5] << 8) | buf[6];
+				}
+				else {
+					temp_sum = (temp_sum / 10 - baseline[REF_VOLTAGE_ADC]) * 330 * 20 / 4096;
+						if(temp_sum < 100 || temp_sum > 180)
+						{
+							ROS_INFO("baseline current: %d",temp_sum);
+							if(temp_sum < 40)
+								return BASELINE_CURRENT_LOW;
+							else
+								return BASELINE_CURRENT_ERROR;
+						}
+					baseline[SYSTEM_CURRENT] = static_cast<uint16_t>(temp_sum);
+					temp_sum = 0;
+					count_20ms = 0;
+					step++;
+				}
+				break;
+			case 3:/*---LED---*/
+				count_20ms++;
+				if (count_20ms < 20)
+					key_led.set(100, 0);
+				else if (count_20ms < 40)
+					key_led.set(0, 100);
+				else if (count_20ms < 60)
+					key_led.set(100, 100);
+				else if (count_20ms < 80)
+				{
+					key_led.set(0, 0);
+					serial.setSendData(CTL_MIX, 1);
+				}
+				else
+				{
+					count_20ms = 0;
+					serial.setSendData(CTL_MIX, 0);
+				}
+				if(buf[36])
+				{
+					count_key_pressed++;
+					key_led.set(0, 0);
+					serial.setSendData(CTL_MIX, 0);
+				}
+				else if(count_key_pressed)
+				{
+					if(count_key_pressed > 200)/*---long pressed, set is_fixture---*/
+						is_fixture = true;
+					else
+						is_fixture = false;
+					test_stage++;
+				}
+				break;
+		}
+		if(test_stage != ELECTRICAL_AND_LED_TEST_MODE)
+			return 0;
+		serial.sendData();
+	}
+}
+uint16_t cliff_test(uint8_t &test_stage)
+{
+	uint16_t test_result = 0;
+	uint8_t buf[REC_LEN];
+	serial.setSendData(CTL_MAIN_BOARD_MODE, CLIFF_TEST_MODE);
+	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
+	while(ros::ok()) {
+		/*--------data extrict from serial com--------*/
+		ROS_ERROR_COND(pthread_mutex_lock(&recev_lock) != 0, "robotbase pthread receive lock fail");
+		ROS_ERROR_COND(pthread_cond_wait(&recev_cond, &recev_lock) != 0, "robotbase pthread receive cond wait fail");
+		memcpy(buf, serial.receive_stream, sizeof(uint8_t) * REC_LEN);
+		ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock) != 0, "robotbase pthread receive unlock fail");
+		if(buf[38] != CLIFF_TEST_MODE)
+		{
+			serial.sendData();
+			continue;
+		}
+		/*---Left Cliff---*/
+		if (static_cast<uint16_t>(buf[2] << 8 | buf[3]) < 80) {
+			test_result |= 0x0001;
+		}
+		if (static_cast<uint16_t>(buf[2] << 8 | buf[3]) > 1000) {
+			test_result |= 0x0002;
+		}
+		/*---Front  Cliff---*/
+		if (static_cast<uint16_t>(buf[4] << 8 | buf[5]) < 80) {
+			test_result |= 0x0010;
+		}
+		if (static_cast<uint16_t>(buf[4] << 8 | buf[5]) > 1000) {
+			test_result |= 0x0020;
+		}
+		/*---Right Cliff---*/
+		if (static_cast<uint16_t>(buf[6] << 8 | buf[7]) < 80) {
+			test_result |= 0x0100;
+		}
+		if (static_cast<uint16_t>(buf[6] << 8 | buf[7]) > 1000) {
+			test_result |= 0x0200;
+		}
+		/*---Left Wheel Switch---*/
+		if (buf[8] & 0x02) {
+			test_result |= 0x1000;
+		}
+		else {
+			test_result |= 0x2000;
+		}
+		/*---Right Wheel Switch---*/
+		if (buf[8] & 0x01) {
+			test_result |= 0x4000;
+		}
+		else {
+			test_result |= 0x8000;
+		}
+
+		if ((test_result & 0xF333) == 0xF333) {
+			test_stage++;
+			return 0;
+		}
+
+		if(buf[36])
+		{
+			if((test_result & 0x0003) != 0x0003)
+			{
+				return LEFT_CLIFF_ERROR;
+			}
+			if((test_result & 0x0030) != 0x0030)
+			{
+				return FRONT_CLIFF_ERROR;
+			}
+			if((test_result & 0x0300) != 0x0300)
+			{
+				return RIGHT_CLIFF_ERROR;
+			}
+			if((test_result & 0x3000) != 0x3000)
+			{
+				return LEFT_WHEEL_SW_ERROR;
+			}
+			if((test_result & 0xC000) != 0xC000)
+			{
+				return RIGHT_WHEEL_SW_ERROR;
+			}
+		}
+		serial.sendData();
+	}
+}
+uint16_t bumper_test(uint8_t &test_stage)
+{
+	uint8_t test_result = 0;
+	uint8_t buf[REC_LEN];
+	serial.setSendData(CTL_MAIN_BOARD_MODE, BUMPER_TEST_MODE);
+	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
+	while(ros::ok())
+	{
+		/*--------data extrict from serial com--------*/
+		ROS_ERROR_COND(pthread_mutex_lock(&recev_lock) != 0, "robotbase pthread receive lock fail");
+		ROS_ERROR_COND(pthread_cond_wait(&recev_cond, &recev_lock) != 0, "robotbase pthread receive cond wait fail");
+		memcpy(buf, serial.receive_stream, sizeof(uint8_t) * REC_LEN);
+		ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock) != 0, "robotbase pthread receive unlock fail");
+		if(buf[38] != BUMPER_TEST_MODE)
+		{
+			serial.sendData();
+			continue;
+		}
+		if (buf[28] & 0x20) {
+			test_result |= 0x01;
+		}
+		else {
+			test_result |= 0x02;
+		}
+		if (buf[28] & 0x10) {
+			test_result |= 0x04;
+		}
+		else {
+			test_result |= 0x08;
+		}
+
+		if ((test_result & 0x0f) == 0x0f) {
+			test_stage++;
+			return 0;
+		}
+		if (buf[36]) {
+			if ((test_result & 0x03) != 0x03) {
+				return LEFT_BUMPER_ERROR;
+			}
+			if ((test_result & 0x0c) != 0x0c) {
+				return RIGHT_BUMPER_ERROR;
+			}
+		}
+		serial.sendData();
+	}
+}
+uint16_t obs_test(uint8_t &test_stage, bool is_fixture)
+{
+	uint16_t test_result = 0;
+	uint8_t buf[REC_LEN];
+	serial.setSendData(CTL_MAIN_BOARD_MODE, OBS_TEST_MODE);
+	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
+	while(ros::ok()) {
+		/*--------data extrict from serial com--------*/
+		ROS_ERROR_COND(pthread_mutex_lock(&recev_lock) != 0, "robotbase pthread receive lock fail");
+		ROS_ERROR_COND(pthread_cond_wait(&recev_cond, &recev_lock) != 0, "robotbase pthread receive cond wait fail");
+		memcpy(buf, serial.receive_stream, sizeof(uint8_t) * REC_LEN);
+		ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock) != 0, "robotbase pthread receive unlock fail");
+		if(buf[38] != OBS_TEST_MODE)
+		{
+			serial.sendData();
+			continue;
+		}
+		if (!is_fixture) {
+			if (static_cast<uint16_t >(buf[22] << 8 | buf[23]) > OBS_MANUAL_LIMIT_H)  //Left Obs
+			{
+				test_result |= 0x0001;
+			}
+			else if (static_cast<uint16_t>(buf[22] << buf[23]) < OBS_MANUAL_LIMIT_L) {
+				test_result |= 0x0002;
+			}
+			if (static_cast<uint16_t>(buf[24] << 8 | buf[25]) > OBS_MANUAL_LIMIT_H)  //Front Obs
+			{
+				test_result |= 0x0004;
+			}
+			else if (static_cast<uint16_t>(buf[24] << 8 | buf[25]) < OBS_MANUAL_LIMIT_L) {
+				test_result |= 0x0008;
+			}
+			if (static_cast<uint16_t>(buf[26] << 8 | buf[27]) > OBS_MANUAL_LIMIT_H) //Right Obs
+			{
+				test_result |= 0x0010;
+			}
+			else if (static_cast<uint16_t>(buf[26] << 8 | buf[27]) < OBS_MANUAL_LIMIT_L) {
+				test_result |= 0x0020;
+			}
+			if (static_cast<uint16_t>(buf[18] << 8 | buf[19]) > WALL_MANUAL_LIMIT_H) //Left Wall
+			{
+				test_result |= 0x0040;
+			}
+			else if (static_cast<uint16_t>(buf[18] << 8 | buf[19]) < WALL_MANUAL_LIMIT_L) {
+				test_result |= 0x0080;
+			}
+			if (static_cast<uint16_t>(buf[20] << 8 | buf[21]) > WALL_MANUAL_LIMIT_H) //Right Wall
+			{
+				test_result |= 0x0100;
+			}
+			else if (static_cast<uint16_t>(buf[20] << 8 | buf[21]) < WALL_MANUAL_LIMIT_L) {
+				test_result |= 0x0200;
+			}
+		}
+		else {
+			if (static_cast<uint16_t>(buf[22] << 8 | buf[23]) > OBS_FIXTURE_LIMIT_H)  //Left Obs
+			{
+				test_result |= 0x0001;
+			}
+			else if (static_cast<uint16_t>(buf[22] << 8 | buf[23]) < OBS_FIXTURE_LIMIT_L) {
+				test_result |= 0x0002;
+			}
+			if (static_cast<uint16_t>(buf[24] << 8 | buf[25]) > OBS_FIXTURE_LIMIT_H)  //Front Obs
+			{
+				test_result |= 0x0004;
+			}
+			else if (static_cast<uint16_t>(buf[24] << 8 | buf[25]) < OBS_FIXTURE_LIMIT_L) {
+				test_result |= 0x0008;
+			}
+			if (static_cast<uint16_t>(buf[26] << 8 | buf[27]) > OBS_FIXTURE_LIMIT_H) //Right Obs
+			{
+				test_result |= 0x0010;
+			}
+			else if (static_cast<uint16_t>(buf[26] << 8 | buf[27]) < OBS_FIXTURE_LIMIT_L) {
+				test_result |= 0x0020;
+			}
+			if (static_cast<uint16_t>(buf[18] << 8 | buf[19]) > WALL_FIXTURE_LIMIT_H) //Left Wall
+			{
+				test_result |= 0x0040;
+			}
+			else if (static_cast<uint16_t>(buf[18] << 8 | buf[19]) < WALL_FIXTURE_LIMIT_L) {
+				test_result |= 0x0080;
+			}
+			if (static_cast<uint16_t>(buf[20] << 8 | buf[21]) > WALL_FIXTURE_LIMIT_H) //Right Wall
+			{
+				test_result |= 0x0100;
+			}
+			else if (static_cast<uint16_t>(buf[20] << 8 | buf[21]) < WALL_FIXTURE_LIMIT_L) {
+				test_result |= 0x0200;
+			}
+		}
+		ROS_INFO("Left_OBS: %d, Front_OBS: %d, Right_OBS: %d, Left_Wall: %d, Right_Wall: %d", \
+		static_cast<uint16_t>(buf[22] << 8 | buf[23]), static_cast<uint16_t>(buf[24] << 8 | buf[25]), \
+		static_cast<uint16_t>(buf[26] << 8 | buf[27]), static_cast<uint16_t>(buf[18] << 8 | buf[19]), \
+		static_cast<uint16_t>(buf[20] << 8 | buf[21]));
+
+		if (is_fixture)  //fixture test
+		{
+			if ((test_result & 0x0015) == 0x0015)//test pass
+			{
+				test_stage++;
+				return 0;
+			}
+			if (buf[36]) {
+				if ((test_result & 0x0001) != 0x0001) {
+					return LEFT_OBS_ERROR;
+				}
+				if ((test_result & 0x0004) != 0x0004) {
+					return FRONT_OBS_ERROR;
+				}
+				if ((test_result & 0x0010) != 0x0010) {
+					return RIGHT_OBS_ERROR;
+				}
+				if ((test_result & 0x0040) != 0x0040) {
+					return LEFT_WALL_ERROR;
+				}
+				if ((test_result & 0x0100) != 0x0100) {
+					return RIGHT_WALL_ERROR;
+				}
+			}
+		}
+		else   //manual mode
+		{
+			if ((test_result & 0x003F) == 0x003f) {
+				test_stage++;
+				return 0;
+			}
+
+			if (buf[36]) {
+				if ((test_result & 0x0003) != 0x0003) {
+					return LEFT_OBS_ERROR;
+				}
+				if ((test_result & 0x000c) != 0x000c) {
+					return FRONT_OBS_ERROR;
+				}
+				if ((test_result & 0x0030) != 0x0030) {
+					return RIGHT_OBS_ERROR;
+				}
+				if ((test_result & 0x00c0) != 0x00c0) {
+					return LEFT_WALL_ERROR;
+				}
+				if ((test_result & 0x0300) != 0x0300) {
+					return RIGHT_WALL_ERROR;
+				}
+			}
+		}
+		serial.sendData();
+	}
+}
+uint16_t rcon_test(uint8_t &test_stage)
+{
+	uint16_t test_result = 0;
+	uint32_t Temp_Rcon_Status = 0;
+	uint8_t buf[REC_LEN];
+	serial.setSendData(CTL_MAIN_BOARD_MODE, RCON_TEST_MODE);
+	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
+	while(ros::ok()) {
+		/*--------data extrict from serial com--------*/
+		ROS_ERROR_COND(pthread_mutex_lock(&recev_lock) != 0, "robotbase pthread receive lock fail");
+		ROS_ERROR_COND(pthread_cond_wait(&recev_cond, &recev_lock) != 0, "robotbase pthread receive cond wait fail");
+		memcpy(buf, serial.receive_stream, sizeof(uint8_t) * REC_LEN);
+		ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock) != 0, "robotbase pthread receive unlock fail");
+		if(buf[38] != RCON_TEST_MODE)
+		{
+			serial.sendData();
+			continue;
+		}
+		Temp_Rcon_Status = static_cast<uint32_t>((buf[30] << 24) | (buf[31] << 16) | (buf[32] << 8) | buf[33]);
+		if (Temp_Rcon_Status & (RconR_HomeL | RconR_HomeR))//right
+		{
+			test_result |= 0x0001;
+		}
+		else {
+			test_result |= 0x0002;
+		}
+
+		if (Temp_Rcon_Status & (RconFR2_HomeL | RconFR2_HomeR))//front right 45
+		{
+			test_result |= 0x1000;
+		}
+		else {
+			test_result |= 0x2000;
+		}
+
+		if (Temp_Rcon_Status & (RconFR_HomeL | RconFR_HomeR))// front right
+		{
+			test_result |= 0x0004;
+		}
+		else {
+			test_result |= 0x0008;
+		}
+
+		if (Temp_Rcon_Status & (RconFL_HomeL | RconFL_HomeR))// front Left
+		{
+			test_result |= 0x0010;
+		}
+		else {
+			test_result |= 0x0020;
+		}
+
+		if (Temp_Rcon_Status & (RconL_HomeL | RconL_HomeR))// Left
+		{
+			test_result |= 0x0040;
+		}
+		else {
+			test_result |= 0x0080;
+		}
+
+		if (Temp_Rcon_Status & (RconFL2_HomeL | RconFL2_HomeR))//front left 45
+		{
+			test_result |= 0x4000;
+		}
+		else {
+			test_result |= 0x8000;
+		}
+
+		if (Temp_Rcon_Status & (RconBL_HomeL | RconBL_HomeR))// Back Left
+		{
+			test_result |= 0x0100;
+		}
+		else {
+			test_result |= 0x0200;
+		}
+
+		if (Temp_Rcon_Status & (RconBR_HomeL | RconBR_HomeR))// Back Right
+		{
+			test_result |= 0x0400;
+		}
+		else {
+			test_result |= 0x0800;
+		}
+
+		if (test_result == 0xffff) {
+			test_stage++;
+			return 0;
+		}
+		if (buf[36]) {
+			if ((test_result & 0x0300) != 0x0300) {
+				return BLRCON_ERROR;
+			}
+			if ((test_result & 0x00c0) != 0x00c0) {
+				return LRCON_ERROR;
+			}
+			if ((test_result & 0xc000) != 0xc000) {
+				return FL2RCON_ERROR;
+			}
+			if ((test_result & 0x0030) != 0x0030) {
+				return FLRCON_ERROR;
+			}
+			if ((test_result & 0x000c) != 0x000c) {
+				return FRRCON_ERROR;
+			}
+			if ((test_result & 0x0003) != 0x0003) {
+				return FR2RCON_ERROR;
+			}
+			if ((test_result & 0x3000) != 0x3000) {
+				return RRCON_ERROR;
+			}
+			if ((test_result & 0x0c00) != 0x0c00) {
+				return BRRCON_ERROR;
+			}
+		}
+		serial.sendData();
+	}
+}
+uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline)
+{
+	uint16_t test_result=0;
+	uint8_t step=0;
+	uint8_t count=0;
+	uint8_t buf[REC_LEN];
+	uint32_t current_current=0;
+	uint32_t motor_current=0;
+	serial.setSendData(CTL_MAIN_BOARD_MODE, WHEELS_TEST_MODE);
+	serial.setSendData(CTL_LEFT_WHEEL_TEST_MODE, 0);
+	serial.setSendData(CTL_RIGHT_WHEEL_TEST_MODE, 0);
+	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
+	while(ros::ok())
+	{
+		/*--------data extrict from serial com--------*/
+		ROS_ERROR_COND(pthread_mutex_lock(&recev_lock) != 0, "robotbase pthread receive lock fail");
+		ROS_ERROR_COND(pthread_cond_wait(&recev_cond, &recev_lock) != 0, "robotbase pthread receive cond wait fail");
+		memcpy(buf, serial.receive_stream, sizeof(uint8_t) * REC_LEN);
+		ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock) != 0, "robotbase pthread receive unlock fail");
+		if(buf[38] != WHEELS_TEST_MODE)
+		{
+			serial.sendData();
+			continue;
+		}
+		switch(step) {
+			case 0:
+				if(buf[36])
+					step++;
+			case 1:
+				serial.setSendData(CTL_WHEEL_LEFT_HIGH, 300 >> 8);
+				serial.setSendData(CTL_WHEEL_LEFT_LOW, 300 & 0xFF);
+				count++;
+				if (count > 50) {
+					current_current = 0;
+					motor_current = 0;
+					step++;
+					count = 0;
+				}
+				break;
+			case 2:
+				count++;
+				if (count <= 10) {
+					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+					motor_current += static_cast<uint16_t>(buf[2] << 8 | buf[3]);
+				}
+				else {
+					count = 0;
+					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+					motor_current = (motor_current / 10 - baseline[LEFT_WHEEL]) * 330 * 10 / 4096;
+					step++;
+				}
+				break;
+			case 3:
+				step++;
+				if (current_current < 30 || current_current > 100 || motor_current < 20 || motor_current > 100) {
+					return LEFT_WHEEL_FORWARD_CURRENT_ERROR;
+				}
+				else {
+					test_result |= 0x0001;
+				}
+				break;
+			case 4:
+				step++;
+				ROS_INFO("Left_PWN: %d", buf[4]);
+				if (buf[4] > 95 || buf[4] < 50) {
+					return LEFT_WHEEL_FORWARD_PWM_ERROR;
+				}
+				else {
+					test_result |= 0x0002;
+				}
+				break;
+			case 5:
+				step++;
+				if (buf[10] == 1) {
+					return LEFT_WHEEL_FORWARD_ENCODER_ERROR;
+				}
+				else if (buf[10] == 2) {
+					return LEFT_WHEEL_FORWARD_ENCODER_FAIL;
+				}
+				else {
+					test_result |= 0x0004;
+				}
+				break;
+			case 6:
+				serial.setSendData(CTL_WHEEL_LEFT_HIGH, -300 >> 8);
+				serial.setSendData(CTL_WHEEL_LEFT_LOW, -300 & 0xFF);
+				count++;
+				if (count > 50) {
+					current_current = 0;
+					motor_current = 0;
+					step++;
+					count = 0;
+				}
+				break;
+			case 7:
+				count++;
+				if (count <= 10) {
+					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+					motor_current += static_cast<uint16_t>(buf[2] << 8 | buf[3]);
+				}
+				else {
+					count = 0;
+					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+					motor_current = (motor_current / 10 - baseline[RIGHT_WHEEL]) * 330 * 10 / 4096;
+					step++;
+				}
+				break;
+			case 8:
+				step++;
+				if (current_current < 30 || current_current > 100 || motor_current < 20 || motor_current > 100) {
+					return LEFT_WHEEL_BACKWARD_CURRENT_ERROR;
+				}
+				else {
+					test_result |= 0x0010;
+				}
+				break;
+			case 9:
+				step++;
+				if (buf[4] > 95 || buf[4] < 50) {
+					return LEFT_WHEEL_BACKWARD_PWM_ERROR;
+				}
+				else {
+					test_result |= 0x0020;
+				}
+				break;
+			case 10:
+				step++;
+				if (buf[10] == 1) {
+					return LEFT_WHEEL_BACKWARD_ENCODER_ERROR;
+				}
+				else if (buf[10] == 2) {
+					return LEFT_WHEEL_BACKWARD_ENCODER_FAIL;
+				}
+				else {
+					test_result |= 0x0040;
+				}
+				break;
+			case 11:
+				serial.setSendData(CTL_WHEEL_LEFT_HIGH, 400 >> 8);
+				serial.setSendData(CTL_WHEEL_LEFT_LOW, 400 & 0xFF);
+				serial.setSendData(CTL_LEFT_WHEEL_TEST_MODE, 1);
+				count++;
+				if (count > 50) {
+					current_current = 0;
+					motor_current = 0;
+					step++;
+					count = 0;
+				}
+				break;
+			case 12:
+				if(static_cast<uint16_t>(buf[2] << 8 | buf[3]) > baseline[LEFT_WHEEL] + 580)
+					count++;
+				else
+					count = 0;
+				if(count > 2)
+				{
+					step++;
+					count = 0;
+				}
+				if(buf[36])
+					return LEFT_WHEEL_STALL_ERROR;
+				break;
+			case 13:
+				count++;
+				if (count <= 10) {
+					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+				}
+				else {
+					step++;
+					count = 0;
+					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+					if(current_current < 800)
+						return LEFT_WHEEL_STALL_ERROR;
+					else
+					{
+						test_result |= 0x0008;
+					}
+				}
+				break;
+			case 14:
+				serial.setSendData(CTL_WHEEL_LEFT_HIGH, 0);
+				serial.setSendData(CTL_WHEEL_LEFT_LOW, 0);
+				serial.setSendData(CTL_WHEEL_RIGHT_HIGH, 300 >> 8);
+				serial.setSendData(CTL_WHEEL_RIGHT_LOW, 300 & 0xFF);
+				count++;
+				if (count > 50) {
+					current_current = 0;
+					motor_current = 0;
+					step++;
+					count = 0;
+				}
+				break;
+			case 15:
+				count++;
+				if (count <= 10) {
+					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+					motor_current += static_cast<uint16_t>(buf[5] << 8 | buf[6]);
+				}
+				else {
+					count = 0;
+					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+					motor_current = (motor_current / 10 - baseline[RIGHT_WHEEL]) * 330 * 10 / 4096;
+					step++;
+				}
+				break;
+			case 16:
+				step++;
+				if (current_current < 30 || current_current > 100 || motor_current < 20 || motor_current > 100) {
+					return RIGHT_WHEEL_FORWARD_CURRENT_ERROR;
+				}
+				else {
+					test_result |= 0x0100;
+				}
+				break;
+			case 17:
+				step++;
+				if (buf[7] > 95 || buf[7] < 50) {
+					return RIGHT_WHEEL_FORWARD_PWM_ERROR;
+				}
+				else {
+					test_result |= 0x0200;
+				}
+				break;
+			case 18:
+				step++;
+				if (buf[11] == 1) {
+					return RIGHT_WHEEL_FORWARD_ENCODER_ERROR;
+				}
+				else if (buf[11] == 2) {
+					return RIGHT_WHEEL_FORWARD_ENCODER_FAIL;
+				}
+				else {
+					test_result |= 0x0400;
+				}
+				break;
+			case 19:
+				serial.setSendData(CTL_WHEEL_RIGHT_HIGH, -300 >> 8);
+				serial.setSendData(CTL_WHEEL_RIGHT_LOW, -300 & 0xFF);
+				count++;
+				if (count > 50) {
+					current_current = 0;
+					motor_current = 0;
+					step++;
+					count = 0;
+				}
+				break;
+			case 20:
+				count++;
+				if (count <= 10) {
+					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+					motor_current += static_cast<uint16_t>(buf[5] << 8 | buf[6]);
+				}
+				else {
+					count = 0;
+					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+					motor_current = (motor_current / 10 - baseline[RIGHT_WHEEL]) * 330 * 10 / 4096;
+					step++;
+				}
+				break;
+			case 21:
+				step++;
+				if (current_current < 30 || current_current > 100 || motor_current < 20 || motor_current > 100) {
+					return RIGHT_WHEEL_BACKWARD_CURRENT_ERROR;
+				}
+				else {
+					test_result |= 0x1000;
+				}
+				break;
+			case 22:
+				step++;
+				if (buf[7] > 95 || buf[7] < 50) {
+					return RIGHT_WHEEL_BACKWARD_PWM_ERROR;
+				}
+				else {
+					test_result |= 0x2000;
+				}
+				break;
+			case 23:
+				step++;
+				if (buf[11] == 1) {
+					return RIGHT_WHEEL_BACKWARD_ENCODER_ERROR;
+				}
+				else if (buf[11] == 2) {
+					return RIGHT_WHEEL_BACKWARD_ENCODER_FAIL;
+				}
+				else {
+					test_result |= 0x4000;
+				}
+			case 24:
+				serial.setSendData(CTL_WHEEL_RIGHT_HIGH, 400 >> 8);
+				serial.setSendData(CTL_WHEEL_RIGHT_LOW, 400 & 0xFF);
+				serial.setSendData(CTL_RIGHT_WHEEL_TEST_MODE, 1);
+				count++;
+				if (count > 50) {
+					current_current = 0;
+					motor_current = 0;
+					step++;
+					count = 0;
+				}
+				break;
+			case 25:
+				if(static_cast<uint16_t>(buf[5] << 8 | buf[6]) > baseline[RIGHT_WHEEL] + 580)
+					count++;
+				else
+					count = 0;
+				if(count > 2)
+				{
+					step++;
+					count = 0;
+				}
+				if(buf[36])
+					return RIGHT_WHEEL_STALL_ERROR;
+				break;
+			case 26:
+				count++;
+				if (count <= 10) {
+					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+				}
+				else {
+					step++;
+					count = 0;
+					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+					if(current_current < 800)
+						return RIGHT_WHEEL_STALL_ERROR;
+					else
+					{
+						test_result |= 0x0800;
+					}
+				}
+				break;
+		}
+
+		if((test_result & 0x7f7f) == 0x7f7f)
+		{
+			test_stage++;
+			wheel.setPidTargetSpeed(0, 0);
+			return 0;
+		}
+		serial.sendData();
+	}
+}
+uint16_t brushes_test(uint8_t &test_stage, uint16_t *baseline)
+{
+	uint8_t test_result=0;
+	uint32_t current_current=0;
+	uint32_t motor_current=0;
+	uint8_t buf[REC_LEN];
+	uint8_t count=0;
+	uint8_t step=1;
+
+	serial.setSendData(CTL_MAIN_BOARD_MODE, BRUSHES_TEST_MODE);
+	serial.setSendData(CTL_LEFT_BRUSH_TEST_MODE, 0);
+	serial.setSendData(CTL_MAIN_BRUSH_TEST_MODE, 0);
+	serial.setSendData(CTL_RIGHT_BRUSH_TEST_MODE, 0);
+	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
+	while(ros::ok()) {
+		/*--------data extrict from serial com--------*/
+		ROS_ERROR_COND(pthread_mutex_lock(&recev_lock) != 0, "robotbase pthread receive lock fail");
+		ROS_ERROR_COND(pthread_cond_wait(&recev_cond, &recev_lock) != 0, "robotbase pthread receive cond wait fail");
+		memcpy(buf, serial.receive_stream, sizeof(uint8_t) * REC_LEN);
+		ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock) != 0, "robotbase pthread receive unlock fail");
+		if (buf[38] != BRUSHES_TEST_MODE)
+		{
+			serial.sendData();
+			continue;
+		}
+		switch (step) {
+			case 1:
+				brush.setPWM(80, 0, 0);
+				count++;
+				if (count > 20) {
+					current_current = 0;
+					motor_current = 0;
+					step++;
+					count = 0;
+				}
+				break;
+			case 2:
+				count++;
+				if (count <= 10) {
+					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+					motor_current += static_cast<uint16_t>(buf[2] << 8 | buf[3]);
+				}
+				else {
+					count = 0;
+					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+					motor_current = (motor_current / 10 - baseline[LEFT_BRUSH]) * 330 * 10 / 4096;
+					step++;
+//					ROS_INFO("current: %d, motor: %d, baseline: %d", current_current, motor_current, baseline[LEFT_BRUSH]);
+				}
+				break;
+			case 3:
+				step++;
+				if (current_current < 30 || current_current > 120 || motor_current < 20 || motor_current > 110) {
+					return LEFT_BRUSH_CURRENT_ERROR;
+				}
+				else {
+					test_result |= 0x10;
+				}
+				serial.setSendData(CTL_LEFT_BRUSH_TEST_MODE, 1);
+				break;
+			case 4:
+				if (static_cast<uint16_t>(buf[2] << 8 | buf[3]) > baseline[LEFT_BRUSH] + 360)
+					count++;
+				else
+					count = 0;
+				if(count > 2)
+				{
+					step++;
+					count = 0;
+				}
+				if(buf[36])
+					return LEFT_BRUSH_STALL_ERROR;
+				break;
+			case 5:
+				count++;
+				if (count <= 10) {
+					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+				}
+				else {
+					step++;
+					count = 0;
+					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+					if (current_current < 250)
+						return LEFT_BRUSH_STALL_ERROR;
+					else
+					{
+						test_result |= 0x20;
+					}
+				}
+				break;
+			case 6:
+				brush.setPWM(0, 80, 0);
+				count++;
+				if (count > 5) {
+					current_current = 0;
+					motor_current = 0;
+					step++;
+					count = 0;
+				}
+				break;
+			case 7:
+				count++;
+				if (count <= 10) {
+					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+					motor_current += static_cast<uint16_t>(buf[6] << 8 | buf[7]);
+				}
+				else {
+					count = 0;
+					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+					motor_current = (motor_current / 10 - baseline[RIGHT_BRUSH]) * 330 * 10 / 4096;
+					step++;
+				}
+				break;
+			case 8:
+				step++;
+				if (current_current < 30 || current_current > 120 || motor_current < 20 || motor_current > 110) {
+					return RIGHT_BRUSH_CURRENT_ERROR;
+				}
+				else {
+					test_result |= 0x01;
+				}
+				serial.setSendData(CTL_RIGHT_BRUSH_TEST_MODE, 1);
+				break;
+			case 9:
+				if (static_cast<uint16_t>(buf[6] << 8 | buf[7]) > baseline[RIGHT_BRUSH] + 360)
+					count++;
+				else
+					count = 0;
+				if(count > 2)
+				{
+					step++;
+					count = 0;
+				}
+				if(buf[36])
+					return RIGHT_BRUSH_STALL_ERROR;
+				break;
+			case 10:
+				count++;
+				if (count <= 10) {
+					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+				}
+				else {
+					step++;
+					count = 0;
+					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+					if (current_current < 250)
+						return RIGHT_BRUSH_STALL_ERROR;
+					else
+					{
+						test_result |= 0x02;
+					}
+				}
+				break;
+			case 11:
+				brush.setPWM(0, 0, 80);
+				count++;
+				if (count > 20) {
+					current_current = 0;
+					motor_current = 0;
+					step++;
+					count = 0;
+				}
+				break;
+			case 12:
+				count++;
+				if (count <= 10) {
+					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+					motor_current += static_cast<uint16_t>(buf[4] << 8 | buf[5]);
+				}
+				else {
+					count = 0;
+					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+					motor_current = (motor_current / 10 - baseline[MAIN_BRUSH]) * 330 * 10 / 4096;
+					step++;
+				}
+				break;
+			case 13:
+				step++;
+				if (current_current < 100 || current_current > 300 || motor_current < 100 || motor_current > 300) {
+					return MAIN_BRUSH_CURRENT_ERROR;
+				}
+				else {
+					test_result |= 0x04;
+				}
+				serial.setSendData(CTL_MAIN_BRUSH_TEST_MODE, 1);
+				break;
+			case 14:
+				if (static_cast<uint16_t>(buf[4] << 8 | buf[5]) > baseline[MAIN_BRUSH] + 1150)
+					count++;
+				else
+					count = 0;
+				if(count > 2)
+				{
+					count = 0;
+					step++;
+				}
+				if(buf[36])
+					return MAIN_BRUSH_STALL_ERROR;
+				break;
+			case 15:
+				count++;
+				if (count <= 10) {
+					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+				}
+				else {
+					step++;
+					count = 0;
+					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+					if (current_current < 550)
+						return MAIN_BRUSH_STALL_ERROR;
+					else
+					{
+						test_result |= 0x08;
+					}
+				}
+				break;
+		}
+		if((test_result & 0x3f) == 0x3f)
+		{
+			test_stage++;
+			return 0;
+		}
+		serial.sendData();
+	}
+}
+uint16_t vacuum_test(uint8_t &test_stage, uint16_t *baseline)
+{
+	uint16_t test_result=0;
+	uint8_t step=1;
+	uint8_t count=0;
+	uint8_t buf[REC_LEN];
+	uint32_t current_current;
+	uint32_t motor_current;
+	serial.setSendData(CTL_MAIN_BOARD_MODE, VACUUM_TEST_MODE);
+	serial.setSendData(CTL_VACUUM_TEST_MODE, 0);
+	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
+	while(ros::ok()) {
+		/*--------data extrict from serial com--------*/
+		ROS_ERROR_COND(pthread_mutex_lock(&recev_lock) != 0, "robotbase pthread receive lock fail");
+		ROS_ERROR_COND(pthread_cond_wait(&recev_cond, &recev_lock) != 0, "robotbase pthread receive cond wait fail");
+		memcpy(buf, serial.receive_stream, sizeof(uint8_t) * REC_LEN);
+		ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock) != 0, "robotbase pthread receive unlock fail");
+		if (buf[38] != VACUUM_TEST_MODE)
+		{
+			serial.sendData();
+			continue;
+		}
+		switch (step) {
+			case 1:
+				serial.setSendData(CTL_VACCUM_PWR, 60);
+				count++;
+				if (count > 50) {
+					current_current = 0;
+					motor_current = 0;
+					step++;
+					count = 0;
+				}
+				break;
+			case 2:
+				count++;
+				if (count <= 10) {
+					current_current += (static_cast<uint16_t>(buf[4] << 8 | buf[5]) - baseline[REF_VOLTAGE_ADC]);
+					motor_current += static_cast<uint16_t>(buf[2] << 8 | buf[3]);
+				}
+				else {
+					count = 0;
+					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+					motor_current = (motor_current / 10 - baseline[VACUUM]) * 330 * 10 / 4096;
+					step++;
+				}
+				break;
+			case 3:
+				step++;
+				if (current_current < 500 || current_current > 1100 || motor_current < 500 || motor_current > 1100) {
+					return VACUUM_CURRENT_ERROR;
+				}
+				else {
+					test_result |= 0x0001;
+				}
+				break;
+			case 4:
+				step++;
+				if (buf[7] > 95 || buf[7] < 50) {
+					return VACUUM_PWM_ERROR;
+				}
+				else {
+					test_result |= 0x0002;
+				}
+				break;
+			case 5:
+				step++;
+				if (buf[10] == 1) {
+					return VACUUM_ENCODER_ERROR;
+				}
+				else if (buf[10] == 2) {
+					return VACUUM_ENCODER_FAIL;
+				}
+				else {
+					test_result |= 0x0004;
+				}
+				break;
+			case 6:
+				count++;
+				if(count <= 250)
+				{
+					if(static_cast<uint16_t>(buf[2] << 8 | buf[3]) > 580)
+					{
+						count = 0;
+						step++;
+					}
+				}
+			case 7:
+				count++;
+				if (count <= 10) {
+					current_current += (static_cast<uint16_t>(buf[4] << 8 | buf[5]) - baseline[REF_VOLTAGE_ADC]);
+				}
+				else {
+					step++;
+					count = 0;
+					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+					if(current_current < 800)
+						return VACUUM_STALL_ERROR;
+					else
+					{
+						test_result |= 0x0008;
+					}
+				}
+				break;
+		}
+		if((test_result&0x000F) == 0x000F)
+		{
+			test_stage++;
+			return 0;
+		}
+		serial.sendData();
+	}
+}
+uint16_t charge_current_test(uint8_t &test_stage, bool is_fixture)
+{
+	uint32_t charge_voltage = 0;
+	uint8_t buf[REC_LEN];
+	serial.setSendData(CTL_MAIN_BOARD_MODE, CHARGE_CURRENT_TEST_MODE);
+	serial.setSendData(CTL_CHARGER_CINNECTED_STATUS, 0);
+	serial.setSendData(CTL_IS_FIXTURE, is_fixture);
+	uint8_t count = 0;
+	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
+	while(ros::ok())
+	{
+		/*--------data extrict from serial com--------*/
+		ROS_ERROR_COND(pthread_mutex_lock(&recev_lock) != 0, "robotbase pthread receive lock fail");
+		ROS_ERROR_COND(pthread_cond_wait(&recev_cond, &recev_lock) != 0, "robotbase pthread receive cond wait fail");
+		memcpy(buf, serial.receive_stream, sizeof(uint8_t) * REC_LEN);
+		ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock) != 0, "robotbase pthread receive unlock fail");
+		if(buf[38] != CHARGE_CURRENT_TEST_MODE)
+		{
+			serial.sendData();
+			continue;
+		}
+		if(count < 10)
+		{
+			count++;
+			charge_voltage += static_cast<uint16_t>(buf[2] << 8 | buf[3]);
+		}
+		else
+		{
+			count = 0;
+			charge_voltage = charge_voltage /10 *330 /4096 *835 /120;
+			if(charge_voltage > 1700)
+				serial.setSendData(CTL_CHARGER_CINNECTED_STATUS, 1);
+			else if(charge_voltage < 1600)
+				serial.setSendData(CTL_CHARGER_CINNECTED_STATUS, 0);
+			charge_voltage = 0;
+		}
+		if(buf[4] == 1)
+			return CHARGE_PWM_ERROR;
+		else if(buf[4] == 2)
+			return CHARGE_CURRENT_ERROR;
+		else if(buf[4] == 3)
+		{
+			ROS_INFO("charge test end");
+			test_stage++;
+			return 0;
+		}
+		serial.sendData();
+	}
+}
 #endif

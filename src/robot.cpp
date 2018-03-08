@@ -117,7 +117,7 @@ robot::robot()
 	auto speaker_play_routine = new boost::thread(boost::bind(&Speaker::playRoutine, &speaker));
 	auto robotbase_routine = new boost::thread(boost::bind(&robot::robotbase_routine_cb, this));
 
-	auto test_routine = new boost::thread(boost::bind(&x900_functional_test, serial_port, baud_rate, lidar_bumper_dev));
+	auto test_routine = new boost::thread(boost::bind(&x900_functional_test, serial_port, baud_rate, lidar_bumper_dev_));
 #endif
 	ROS_INFO("%s %d: robot init done!", __FUNCTION__, __LINE__);
 }
