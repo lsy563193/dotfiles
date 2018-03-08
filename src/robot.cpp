@@ -32,22 +32,26 @@ int OBS_adjust_count = 50;
 
 bool g_pp_shutdown = false;
 
-bool robotbase_thread_stop = false;
-bool send_thread_stop = false;
-bool recei_thread_stop = false;
-bool event_manager_thread_stop = false;
-bool event_handle_thread_stop = false;
-bool core_thread_stop = false;
+bool robotbase_thread_enable = false;
+bool send_thread_enable = false;
+bool recei_thread_enable = false;
+
+bool robotbase_thread_kill = false;
+bool send_thread_kill = false;
+bool recei_thread_kill = false;
+bool event_manager_thread_kill = false;
+bool event_handle_thread_kill = false;
+bool core_thread_kill = false;
 
 robot::robot()
 {
 
-	robotbase_thread_stop = false;
-	send_thread_stop = false;
-	recei_thread_stop = false;
-	core_thread_stop = false;
-	event_manager_thread_stop = false;
-	event_handle_thread_stop = false;
+	robotbase_thread_kill = false;
+	send_thread_kill = false;
+	recei_thread_kill = false;
+	core_thread_kill = false;
+	event_manager_thread_kill = false;
+	event_handle_thread_kill = false;
 
 	// Subscribers.
 	odom_sub_ = robot_nh_.subscribe("/odom", 1, &robot::robotOdomCb, this);
@@ -89,21 +93,14 @@ robot::robot()
 	robot_nh_.param<int>("baud_rate", baud_rate, 115200);
 
 
-	std::string lidar_bumper_dev;
-	robot_nh_.param<std::string>("lidar_bumper_file", lidar_bumper_dev, "/dev/input/event1");
+	robot_nh_.param<std::string>("lidar_bumper_file", lidar_bumper_dev_, "/dev/input/event1");
 
 #if !X900_FUNCTIONAL_TEST
-	if (bumper.lidarBumperInit(lidar_bumper_dev.c_str()) == -1)
-		ROS_ERROR(" lidar bumper open fail!");
-
-	// Init for serial.
-	if (!serial.init(serial_port, baud_rate))
-	{
-		ROS_ERROR("%s %d: Serial init failed!!", __FUNCTION__, __LINE__);
-	}
 
 	while (!serial.isReady()) {
-		ROS_ERROR("serial not ready\n");
+		// Init for serial.
+		if (!serial.init(serial_port, baud_rate))
+			ROS_ERROR("%s %d: Serial init failed!!", __FUNCTION__, __LINE__);
 	}
 
 	ROS_INFO("waiting robotbase awake ");
@@ -153,8 +150,14 @@ void robot::robotbase_routine_cb()
 	last_time  = cur_time;
 	int16_t last_rcliff = 0, last_fcliff = 0, last_lcliff = 0;
 	int16_t last_x_acc = -1000, last_y_acc = -1000, last_z_acc = -1000;
-	while (ros::ok() && !robotbase_thread_stop)
+	while (ros::ok() && !robotbase_thread_kill)
 	{
+		if (!robotbase_thread_enable)
+		{
+			usleep(10000);
+			continue;
+		}
+
 		/*--------data extrict from serial com--------*/
 		ROS_ERROR_COND(pthread_mutex_lock(&recev_lock)!=0, "robotbase pthread receive lock fail");
 		ROS_ERROR_COND(pthread_cond_wait(&recev_cond,&recev_lock)!=0, "robotbase pthread receive cond wait fail");
@@ -368,12 +371,19 @@ void robot::robotbase_routine_cb()
 
 	}//end while
 	pthread_cond_broadcast(&serial_data_ready_cond);
-	event_manager_thread_stop = true;
+	event_manager_thread_kill = true;
 	ROS_ERROR("%s,%d,exit",__FUNCTION__,__LINE__);
 }
 
 void robot::core_thread_cb()
 {
+	if (bumper.lidarBumperInit(lidar_bumper_dev_.c_str()) == -1)
+		ROS_ERROR(" lidar bumper open fail!");
+
+	robotbase_thread_enable = true;
+	send_thread_enable = true;
+	recei_thread_enable = true;
+
 	ROS_INFO("Waiting for robot sensor ready.");
 	while (!isSensorReady()) {
 		usleep(1000);
@@ -394,7 +404,7 @@ void robot::core_thread_cb()
 	{
 //		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
 		p_mode->run();
-		if(core_thread_stop) break;
+		if(core_thread_kill) break;
 		auto next_mode = p_mode->getNextMode();
 		p_mode.reset();
 //		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
@@ -408,7 +418,7 @@ void robot::core_thread_cb()
 robot::~robot()
 {
 	bumper.lidarBumperDeinit();
-	recei_thread_stop = true;
+	recei_thread_kill = true;
 	key_led.setMode(LED_STEADY, LED_OFF);
 	serial.setSendData(CTL_BEEPER, 0x00);
 	gyro.setOff();
