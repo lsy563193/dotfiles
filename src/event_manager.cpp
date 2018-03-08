@@ -141,7 +141,7 @@ void event_manager_thread_cb()
 
 	pthread_detach(pthread_self());
 
-	while (ros::ok() && !event_manager_thread_stop) {
+	while (ros::ok() && !event_manager_thread_kill) {
 		if (g_event_manager_enabled == false) {
 			usleep(10000);
 			continue;
@@ -357,7 +357,7 @@ void event_manager_thread_cb()
 		}
 	}
 	pthread_cond_broadcast(&new_event_cond);
-	event_handle_thread_stop = true;
+	event_handle_thread_kill = true;
 	ROS_ERROR("%s %d: exit!", __FUNCTION__, __LINE__);
 }
 
@@ -385,7 +385,7 @@ void event_handler_thread_cb()
 
 	pthread_detach(pthread_self());
 
-	while (ros::ok() && !event_handle_thread_stop) {
+	while (ros::ok() && !event_handle_thread_kill) {
 
 		pthread_mutex_lock(&new_event_mtx);
 		pthread_cond_wait(&new_event_cond, &new_event_mtx);
@@ -501,7 +501,7 @@ void event_handler_thread_cb()
 		pthread_cond_broadcast(&event_handler_cond);
 	}
 	pthread_cond_broadcast(&event_handler_cond);
-	send_thread_stop = true;
+	send_thread_kill = true;
 	ROS_ERROR("%s %d: exit!", __FUNCTION__, __LINE__);
 }
 

@@ -13,7 +13,7 @@ void Mode::run()
 //	ROS_INFO("%s %d: Mode start running.", __FUNCTION__, __LINE__);
 	bool eh_status_now = false, eh_status_last = false;
 
-	while (ros::ok() && !core_thread_stop)
+	while (ros::ok() && !core_thread_kill)
 	{
 //		PP_INFO();
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
