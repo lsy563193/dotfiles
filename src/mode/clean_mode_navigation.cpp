@@ -46,7 +46,7 @@ bool CleanModeNav::mapMark()
 	if(passed_path_.empty())
 	{
 		ROS_WARN("%s %d: pass_path is emply, add iterate_point_(%d,%d,%d,%d).", __FUNCTION__, __LINE__,iterate_point_.x, iterate_point_.y, iterate_point_.th, iterate_point_.dir);
-		passed_path_.push_back(iterate_point_);
+		passed_path_.push_back(getPosition());
 	}
 
 	clean_path_algorithm_->displayPointPath((passed_path_));
