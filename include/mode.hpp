@@ -683,8 +683,5 @@ public:
 
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteDirectionForward(bool state_now, bool state_last) override ;
-
-private:
-	int test_state_{0};
 };
 #endif //PP_MODE_H_H

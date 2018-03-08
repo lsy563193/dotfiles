@@ -249,7 +249,10 @@
 #define IDLE_MODE 				3
 #define CHARGE_MODE 			4
 #define SERIAL_TEST_MODE		5
-#define ALARM_ERROR_MODE		6
+#define ALARM_ERROR_MODE		15
+#define DESK_TEST_MODE_1		16 // For checking baselines
+#define DESK_TEST_MODE_2		17
+#define DESK_TEST_MODE_3		18
 
 #define DUMMY_DOWNLINK_OFFSET		2
 #define KEY_DOWNLINK_OFFSET			9
