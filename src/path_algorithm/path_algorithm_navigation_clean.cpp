@@ -247,9 +247,15 @@ bool NavCleanPathAlgorithm::filterPathsToSelectBestPath(GridMap &map, const Cell
 	if(isXAxis(last_dir))
 	{
 		if(isPos(last_dir))
+		{
 			filters.push_back(&filter_p0_1t_xp);
+			filters.push_back(&filter_n0_1t_xp);
+		}
 		else
+		{
 			filters.push_back(&filter_p0_1t_xn);
+			filters.push_back(&filter_n0_1t_xn);
+		}
 	}
 
 	if(cell_curr.y%2 ==0)
