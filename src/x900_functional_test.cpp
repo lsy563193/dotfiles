@@ -4,12 +4,12 @@
 
 #include "x900_functional_test.hpp"
 
-#if X900_FUNCTIONAL_TEST
 #include <sys/mount.h>
 #include <sys/sysinfo.h>
 #include <sys/vfs.h>
 #include <random>
 #include <wait.h>
+#include "robot.hpp"
 
 void x900_functional_test(std::string serial_port, int baud_rate, std::string lidar_bumper_dev)
 {
@@ -21,13 +21,13 @@ void x900_functional_test(std::string serial_port, int baud_rate, std::string li
 	// If you can not hear the voice, then speaker port has error, but there is no way to test it by software.
 
 	// Test item: Serial port.
-	if (!serial.init(serial_port, baud_rate) || !serial_port_test())
+	if (!serial_port_test())
 	{
 		ROS_ERROR("%s %d: Serial port test failed!!", __FUNCTION__, __LINE__);
 		error_loop(SERIAL_ERROR);
 	}
 	ROS_INFO("Test serial port succeeded!!");
-	auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
+	send_thread_enable = true;
 
 	// Test item: RAM.
 	if (!RAM_test())
@@ -63,7 +63,7 @@ void x900_functional_test(std::string serial_port, int baud_rate, std::string li
 	}
 	ROS_INFO("%s %d: Test for lidar bumper succeeded.", __FUNCTION__, __LINE__);
 
-	auto serial_receive_routine = new boost::thread(boost::bind(&Serial::receive_routine_cb, &serial));
+	recei_thread_enable = true;
 
 	// Wait for the end of voice playing
 	speaker.play(VOICE_NULL, false);
@@ -1876,4 +1876,3 @@ uint16_t charge_current_test(uint8_t &test_stage, bool is_fixture)
 		serial.sendData();
 	}
 }
-#endif

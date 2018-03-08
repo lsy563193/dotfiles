@@ -668,11 +668,11 @@ private:
 
 };
 
-class CleanModeTest:public ACleanMode
+class CleanModeDeskTest:public ACleanMode
 {
 public:
-	CleanModeTest();
-	~CleanModeTest();
+	CleanModeDeskTest();
+	~CleanModeDeskTest();
 
 	bool mapMark() override
 	{return false;}

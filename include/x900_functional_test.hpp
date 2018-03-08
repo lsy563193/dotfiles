@@ -9,8 +9,6 @@
 
 #include "config.h"
 
-#if X900_FUNCTIONAL_TEST
-
 // Definition for error code.
 #define SERIAL_ERROR 		((uint16_t)3001)
 #define RAM_ERROR 			((uint16_t)3002)
@@ -169,4 +167,3 @@ uint8_t get_charge_pwm_level(uint16_t voltage);
  * Test for memory device.
  */
 //bool memory_test();
-#endif

@@ -86,7 +86,6 @@ void Lidar::scanCompensateCb(const sensor_msgs::LaserScan::ConstPtr &scan)
 	}
 }
 
-#if X900_FUNCTIONAL_TEST
 void Lidar::scantestCb(const sensor_msgs::LaserScan::ConstPtr &scan)
 {
 	if (switch_)
@@ -111,7 +110,6 @@ void Lidar::scantestCb(const sensor_msgs::LaserScan::ConstPtr &scan)
 		}
 	}
 }
-#endif
 
 void Lidar::lidarXYPointCb(const visualization_msgs::Marker &point_marker) {
 	if (isScanCompensateReady())

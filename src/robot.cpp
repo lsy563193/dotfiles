@@ -86,20 +86,14 @@ robot::robot()
 	}
 #endif
 
-	std::string serial_port;
-	robot_nh_.param<std::string>("serial_port", serial_port, "/dev/ttyS2");
-
-	int baud_rate;
-	robot_nh_.param<int>("baud_rate", baud_rate, 115200);
-
+	robot_nh_.param<std::string>("serial_port", serial_port_, "/dev/ttyS2");
+	robot_nh_.param<int>("baud_rate", baud_rate_, 115200);
 
 	robot_nh_.param<std::string>("lidar_bumper_file", lidar_bumper_dev_, "/dev/input/event1");
 
-#if !X900_FUNCTIONAL_TEST
-
 	while (!serial.isReady()) {
 		// Init for serial.
-		if (!serial.init(serial_port, baud_rate))
+		if (!serial.init(serial_port_, baud_rate_))
 			ROS_ERROR("%s %d: Serial init failed!!", __FUNCTION__, __LINE__);
 	}
 
@@ -113,12 +107,7 @@ robot::robot()
 	auto event_manager_thread = new boost::thread(event_manager_thread_cb);
 	auto event_handler_thread = new boost::thread(event_handler_thread_cb);
 	auto core_thread = new boost::thread(boost::bind(&robot::core_thread_cb,this));
-#else
-	auto speaker_play_routine = new boost::thread(boost::bind(&Speaker::playRoutine, &speaker));
-	auto robotbase_routine = new boost::thread(boost::bind(&robot::robotbase_routine_cb, this));
 
-	auto test_routine = new boost::thread(boost::bind(&x900_functional_test, serial_port, baud_rate, lidar_bumper_dev_));
-#endif
 	ROS_INFO("%s %d: robot init done!", __FUNCTION__, __LINE__);
 }
 
@@ -278,6 +267,9 @@ void robot::robotbase_routine_cb()
 		battery.setVoltage(buf[REC_BATTERY] * 10);
 		sensor.battery = static_cast<float>(battery.getVoltage() / 100.0);
 
+		// For r16 work mode.
+		r16_test_mode_ = buf[REC_R16_WORK_MODE];
+
 		// For over current checking.
 		vacuum.setOc((buf[REC_OC] & 0x01) != 0);
 		sensor.vacuum_oc = vacuum.getOc();
@@ -377,9 +369,6 @@ void robot::robotbase_routine_cb()
 
 void robot::core_thread_cb()
 {
-	if (bumper.lidarBumperInit(lidar_bumper_dev_.c_str()) == -1)
-		ROS_ERROR(" lidar bumper open fail!");
-
 	robotbase_thread_enable = true;
 	send_thread_enable = true;
 	recei_thread_enable = true;
@@ -392,27 +381,58 @@ void robot::core_thread_cb()
 //	speaker.play(VOICE_WELCOME_ILIFE);
 	usleep(200000);
 
-	if (charger.isOnStub() || charger.isDirected())
-		p_mode.reset(new ModeCharge());
-	else
+	switch (r16_test_mode_)
 	{
-		speaker.play(VOICE_PLEASE_START_CLEANING, false);
-		p_mode.reset(new ModeIdle());
+		case R16_FUNCTIONAL_TEST_MODE:
+		{
+			send_thread_enable = false;
+			recei_thread_enable = false;
+			sleep(1); // Make sure recieve thread is hung up.
+			x900_functional_test(serial_port_, baud_rate_, lidar_bumper_dev_);
+			break;
+		}
+		case R16_DESK_TEST_MODE:
+		{
+			if (bumper.lidarBumperInit(lidar_bumper_dev_.c_str()) == -1)
+				ROS_ERROR(" lidar bumper open fail!");
+
+			p_mode.reset(new CleanModeDeskTest());
+			p_mode->run();
+			break;
+		}
+		default: //case R16_NORMAL_MODE:
+		{
+			if (bumper.lidarBumperInit(lidar_bumper_dev_.c_str()) == -1)
+				ROS_ERROR(" lidar bumper open fail!");
+
+			if (charger.isOnStub() || charger.isDirected())
+				p_mode.reset(new ModeCharge());
+			else
+			{
+				speaker.play(VOICE_PLEASE_START_CLEANING, false);
+				p_mode.reset(new ModeIdle());
+			}
+
+			while (ros::ok())
+			{
+//				ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
+				p_mode->run();
+
+				if (core_thread_kill)
+					break;
+
+				auto next_mode = p_mode->getNextMode();
+				p_mode.reset();
+//				ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
+				p_mode.reset(getNextMode(next_mode));
+//				ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
+			}
+			g_pp_shutdown = true;
+			ROS_ERROR("%s,%d,exit", __FUNCTION__, __LINE__);
+			break;
+		}
 	}
 
-	while(ros::ok())
-	{
-//		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
-		p_mode->run();
-		if(core_thread_kill) break;
-		auto next_mode = p_mode->getNextMode();
-		p_mode.reset();
-//		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
-		p_mode.reset(getNextMode(next_mode));
-//		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
-	}
-	g_pp_shutdown = true;
-	ROS_ERROR("%s,%d,exit",__FUNCTION__,__LINE__);
 }
 
 robot::~robot()
@@ -756,7 +776,7 @@ Mode *getNextMode(int next_mode_i_)
 		case Mode::cm_spot:
 			return new CleanModeSpot();
 		case Mode::cm_test:
-			return new CleanModeTest();
+			return new CleanModeDeskTest();
 		case Mode::cm_exploration:
 			return new CleanModeExploration();
 //		case Mode::cm_exploration:

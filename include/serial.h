@@ -14,26 +14,6 @@
 #define CTL_HEADER_1 0
 #define CTL_HEADER_2 1
 
-#if X900_FUNCTIONAL_TEST
-#define CTL_TESTING_STAGE 2
-#define CTL_ERROR_CODE_HIGH 3
-#define CTL_ERROR_CODE_LOW 4
-// For motors test mode
-// 0 for idle mode
-// 1 for stall mode
-#define CTL_LEFT_WHEEL_TEST_MODE 6
-#define CTL_RIGHT_WHEEL_TEST_MODE 7
-#define CTL_LEFT_BRUSH_TEST_MODE 2
-#define CTL_MAIN_BRUSH_TEST_MODE 3
-#define CTL_RIGHT_BRUSH_TEST_MODE 4
-#define CTL_VACUUM_TEST_MODE 7
-// For Charger Connected Status
-// 0 for no charger connected
-// 1 for already connect charger
-#define CTL_CHARGER_CINNECTED_STATUS 3
-// Is on fixture
-#define CTL_IS_FIXTURE 2
-#endif
 // Two bytes for controlling left wheel.
 #define	CTL_WHEEL_LEFT_HIGH 2
 #define	CTL_WHEEL_LEFT_LOW  3
@@ -90,6 +70,27 @@
 // Two bytes for stream trailer.
 #define CTL_TRAILER_1 19
 #define CTL_TRAILER_2 20
+
+// ------------For functional test--------------
+#define CTL_TESTING_STAGE 2
+#define CTL_ERROR_CODE_HIGH 3
+#define CTL_ERROR_CODE_LOW 4
+// For motors test mode
+// 0 for idle mode
+// 1 for stall mode
+#define CTL_LEFT_WHEEL_TEST_MODE 6
+#define CTL_RIGHT_WHEEL_TEST_MODE 7
+#define CTL_LEFT_BRUSH_TEST_MODE 2
+#define CTL_MAIN_BRUSH_TEST_MODE 3
+#define CTL_RIGHT_BRUSH_TEST_MODE 4
+#define CTL_VACUUM_TEST_MODE 7
+// For Charger Connected Status
+// 0 for no charger connected
+// 1 for already connect charger
+#define CTL_CHARGER_CINNECTED_STATUS 3
+// Is on fixture
+#define CTL_IS_FIXTURE 2
+// ------------For functional test end--------------
 
 // For receive stream.
 #define REC_LEN 44
@@ -233,8 +234,8 @@
 // One byte for battery voltage.
 #define REC_BATTERY 37
 
-// One byte reserved.
-#define REC_RESERVED 38
+// One byte for r16 work mode.
+#define REC_R16_WORK_MODE 38
 
 // One byte for over current signal.
 // bit 0 for vacuum over current.
@@ -277,6 +278,11 @@
 #define DESK_TEST_MODE_1		16 // For checking baselines
 #define DESK_TEST_MODE_2		17
 #define DESK_TEST_MODE_3		18
+
+// R16 test mode
+#define R16_NORMAL_MODE				0
+#define R16_FUNCTIONAL_TEST_MODE	1
+#define R16_DESK_TEST_MODE			2
 
 #define DUMMY_DOWNLINK_OFFSET		2
 #define KEY_DOWNLINK_OFFSET			9

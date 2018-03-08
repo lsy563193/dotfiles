@@ -145,7 +145,7 @@ int Serial::read(uint8_t *buf, int len)
 	//memset(t_buf,0,size_of_path);
 	fd_set read_fd_set;
 	struct timeval timeout;
-	timeout.tv_sec = 4;
+	timeout.tv_sec = 1;
 	timeout.tv_usec = 0;// ms
 	size_t length = 0;
 	if(isReady()){
