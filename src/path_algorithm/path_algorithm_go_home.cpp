@@ -85,9 +85,9 @@ bool GoHomePathAlgorithm::generatePathThroughCleanedArea(GridMap &map, const Poi
 		{
 			home_way_index_ = SLAM_MAP_CLEAR_BLOCKS;
 			ROS_INFO("%s %d: Clear c_blocks with slam map.", __FUNCTION__, __LINE__);
-			slam_grid_map.print(CLEAN_MAP, 0, 0);
+			slam_grid_map.print(CLEAN_MAP, Cells{{0,0}});
 			map.merge(slam_grid_map, false, false, false, false, false, true);
-			map.print(CLEAN_MAP, curr.toCell().x, curr.toCell().y);
+			map.print(CLEAN_MAP, Cells{curr.toCell()});
 			return false;
 		}
 
@@ -106,7 +106,7 @@ bool GoHomePathAlgorithm::generatePathThroughCleanedArea(GridMap &map, const Poi
 			ROS_INFO("\033[1;46;37m" "%s,%d: Index(%d), current_home_point_(%d, %d) reachable in this way." "\033[0m",
 					 __FUNCTION__, __LINE__, home_point_index,
 					 current_home_point_.toCell().x, current_home_point_.toCell().y);
-			map.print(CLEAN_MAP, plan_path_cells.back().x, plan_path_cells.back().y);
+			map.print(CLEAN_MAP, plan_path_cells);
 			return true;
 		}
 		else
@@ -131,7 +131,7 @@ bool GoHomePathAlgorithm::generatePathThroughCleanedArea(GridMap &map, const Poi
 			plan_path = cells_generate_points(plan_path_cells);
 			ROS_INFO("\033[1;46;37m" "%s,%d: start_point_(%d, %d) reachable in this way." "\033[0m",
 					 __FUNCTION__, __LINE__, start_point_.toCell().x, start_point_.toCell().y);
-			map.print(CLEAN_MAP, plan_path_cells.back().x, plan_path_cells.back().y);
+			map.print(CLEAN_MAP, plan_path_cells);
 			return true;
 		}
 		else
@@ -141,9 +141,9 @@ bool GoHomePathAlgorithm::generatePathThroughCleanedArea(GridMap &map, const Poi
 					 __FUNCTION__, __LINE__, start_point_.toCell().x, start_point_.toCell().y);
 			home_way_index_ = SLAM_MAP_CLEAR_BLOCKS;
 			ROS_INFO("%s %d: Clear c_blocks with slam map.", __FUNCTION__, __LINE__);
-			slam_grid_map.print(CLEAN_MAP, 0, 0);
+			slam_grid_map.print(CLEAN_MAP, Cells{{0, 0}});
 			map.merge(slam_grid_map, false, false, false, false, false, true);
-			map.print(CLEAN_MAP, curr.toCell().x, curr.toCell().y);
+			map.print(CLEAN_MAP, Cells{curr.toCell()});
 			return false;
 		}
 	}
@@ -179,7 +179,7 @@ bool GoHomePathAlgorithm::generatePathWithSlamMapClearBlocks(GridMap &map, const
 			ROS_INFO("\033[1;46;37m" "%s,%d: Index(%d), current_home_point_(%d, %d) reachable in this way." "\033[0m",
 					 __FUNCTION__, __LINE__, home_point_index,
 					 current_home_point_.toCell().x, current_home_point_.toCell().y);
-			map.print(CLEAN_MAP, plan_path_cells.back().x, plan_path_cells.back().y);
+			map.print(CLEAN_MAP, plan_path_cells);
 			return true;
 		}
 		else
@@ -204,7 +204,7 @@ bool GoHomePathAlgorithm::generatePathWithSlamMapClearBlocks(GridMap &map, const
 			plan_path = cells_generate_points(plan_path_cells);
 			ROS_INFO("\033[1;46;37m" "%s,%d: start_point_(%d, %d) reachable in this way." "\033[0m",
 					 __FUNCTION__, __LINE__, start_point_.toCell().x, start_point_.toCell().y);
-			map.print(CLEAN_MAP, plan_path_cells.back().x, plan_path_cells.back().y);
+			map.print(CLEAN_MAP, plan_path_cells);
 			return true;
 		}
 		else
@@ -242,7 +242,7 @@ bool GoHomePathAlgorithm::generatePathThroughSlamMapReachableArea(GridMap &map, 
 			GridMap temp_map;
 			temp_map.copy(map);
 			temp_map.merge(slam_grid_map, false, false, true, false, false, false);
-			temp_map.print(CLEAN_MAP, 0, 0);
+			temp_map.print(CLEAN_MAP, Cells{{0, 0}});
 			plan_path_cells = findShortestPath(temp_map, curr.toCell(), current_home_point_.toCell(),
 											   last_dir, false, false, min_corner, max_corner);
 		}
@@ -253,7 +253,7 @@ bool GoHomePathAlgorithm::generatePathThroughSlamMapReachableArea(GridMap &map, 
 			ROS_INFO("\033[1;46;37m" "%s,%d: Index(%d), current_home_point_(%d, %d) reachable in this way." "\033[0m",
 					 __FUNCTION__, __LINE__, home_point_index,
 					 current_home_point_.toCell().x, current_home_point_.toCell().y);
-			map.print(CLEAN_MAP, plan_path_cells.back().x, plan_path_cells.back().y);
+			map.print(CLEAN_MAP, plan_path_cells);
 			return true;
 		}
 		else
@@ -273,7 +273,7 @@ bool GoHomePathAlgorithm::generatePathThroughSlamMapReachableArea(GridMap &map, 
 		GridMap temp_map;
 		temp_map.copy(map);
 		temp_map.merge(slam_grid_map, false, false, true, false, false, false);
-		temp_map.print(CLEAN_MAP, 0, 0);
+		temp_map.print(CLEAN_MAP, Cells{{0, 0}});
 		plan_path_cells = findShortestPath(temp_map, curr.toCell(), start_point_.toCell(),
 										   last_dir, false, false, min_corner, max_corner);
 
@@ -282,7 +282,7 @@ bool GoHomePathAlgorithm::generatePathThroughSlamMapReachableArea(GridMap &map, 
 			plan_path = cells_generate_points(plan_path_cells);
 			ROS_INFO("\033[1;46;37m" "%s,%d: start_point_(%d, %d) reachable in this way." "\033[0m",
 					 __FUNCTION__, __LINE__, start_point_.toCell().x, start_point_.toCell().y);
-			map.print(CLEAN_MAP, plan_path_cells.back().x, plan_path_cells.back().y);
+			map.print(CLEAN_MAP, plan_path_cells);
 			return true;
 		}
 		else
@@ -320,7 +320,7 @@ bool GoHomePathAlgorithm::generatePathThroughUnknownArea(GridMap &map, const Poi
 			ROS_INFO("\033[1;46;37m" "%s,%d: Index(%d), current_home_point_(%d, %d) reachable in this way." "\033[0m",
 					 __FUNCTION__, __LINE__, home_point_index,
 					 current_home_point_.toCell().x, current_home_point_.toCell().y);
-			map.print(CLEAN_MAP, plan_path_cells.back().x, plan_path_cells.back().y);
+			map.print(CLEAN_MAP, plan_path_cells);
 			return true;
 		}
 		else
@@ -355,7 +355,7 @@ bool GoHomePathAlgorithm::generatePathThroughUnknownArea(GridMap &map, const Poi
 			plan_path = cells_generate_points(plan_path_cells);
 			ROS_INFO("\033[1;46;37m" "%s,%d: start_point_(%d, %d) reachable in this way." "\033[0m",
 					 __FUNCTION__, __LINE__, start_point_.toCell().x, start_point_.toCell().y);
-			map.print(CLEAN_MAP, plan_path_cells.back().x, plan_path_cells.back().y);
+			map.print(CLEAN_MAP, plan_path_cells);
 			return true;
 		}
 		else

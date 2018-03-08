@@ -106,8 +106,10 @@ public:
 	void init() override;
 //	IMoveType* setNextAction_();
 };
-//Movement *StateClean::generateMovement(PathType path, const Cell_t &curr) {
-//	return nullptr;
-//}
 
+class StateDeskTest: public State {
+public:
+	StateDeskTest()= default;
+	void init() override;
+};
 #endif //PP_STATE_HPP

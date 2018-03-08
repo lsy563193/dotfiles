@@ -32,12 +32,16 @@ extern pthread_cond_t serial_data_ready_cond;
 
 extern bool g_pp_shutdown;
 
-extern bool robotbase_thread_stop;
-extern bool recei_thread_stop;
-extern bool send_thread_stop;
-extern bool event_manager_thread_stop;
-extern bool event_handle_thread_stop;
-extern bool core_thread_stop;
+extern bool robotbase_thread_enable;
+extern bool send_thread_enable;
+extern bool recei_thread_enable;
+
+extern bool robotbase_thread_kill;
+extern bool recei_thread_kill;
+extern bool send_thread_kill;
+extern bool event_manager_thread_kill;
+extern bool event_handle_thread_kill;
+extern bool core_thread_kill;
 
 class Mode;
 
@@ -141,6 +145,10 @@ public:
 		return gyro_dynamic_run_time_;
 	}
 
+	double getGyroDynamicInterval(){
+		return gyro_dynamic_interval_;
+	}
+
 	void setTempSpot(void)
 	{
 		temp_spot_set_ = true;
@@ -207,7 +215,9 @@ private:
 	double	robot_correction_yaw_;
 	tf::Vector3	slam_correction_pos;
 	double	slam_correction_yaw_;
+
 	double gyro_dynamic_run_time_;
+	double gyro_dynamic_interval_;
 
 	ros::NodeHandle robot_nh_;
 
@@ -229,6 +239,7 @@ private:
 
 	pp::scan_ctrl scan_ctrl_;
 
+	std::string lidar_bumper_dev_;
 
 	//callback function
 	void robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg);

@@ -125,6 +125,7 @@ ACleanMode::~ACleanMode()
 			 __FUNCTION__, __LINE__, map_area, robot_timer.getWorkTime(),
 			 static_cast<float>(robot_timer.getWorkTime()) / 60, map_area / (static_cast<float>(robot_timer.getWorkTime()) / 60));
 }
+
 uint8_t ACleanMode::setBlocks(Dir_t dir)
 {
 
@@ -427,23 +428,7 @@ void ACleanMode::pubFitLineMarker(visualization_msgs::Marker fit_line_marker)
 
 void ACleanMode::setLinearCleaned()
 {
-	if(passed_path_.empty())
-		return;
 	ROS_ERROR("setLinearCleaned cells:");
-	std::unique(passed_path_.begin(),passed_path_.end(),[](const Point_t& l, const Point_t& r){
-		return r.toCell() == l.toCell();
-	});
-	//start -> end
-	auto mark_3_cell = [&](const Cell_t& c_it, Dir_t dir){
-		auto c_diff = cell_direction_[(dir + 2)%4];//switch dir ,from x to y axis ,or from y to x
-		for(auto i =-1; i<=1; i++) {
-			clean_map_.setCell(CLEAN_MAP, (c_it + c_diff*i).x, (c_it+c_diff*i).y, CLEANED);
-		}
-	};
-	for (auto &&p_it  : passed_path_) {
-		ROS_INFO("{%d,%d}",p_it.toCell().x, p_it.toCell().y);
-		mark_3_cell(p_it.toCell(),p_it.dir);
-	}
 	// start-1
 	auto p_start = passed_path_.front();
 	auto c_start_last = p_start.toCell() - cell_direction_[p_start.dir];
@@ -455,11 +440,10 @@ void ACleanMode::setLinearCleaned()
 		auto c_val = clean_map_.getCell(CLEAN_MAP, c_it.x, c_it.y);
 		if(c_val >=BLOCKED && c_val<=BLOCKED_BOUNDARY)
 		{
-			auto ddd_cell = c_it - cell_direction_[p_start.dir];
-			ROS_WARN("!!!!!!start_point -1 dir is in block,move back 1 cell c_it(%d,%d)->ddd_cell(%d,%d)",c_it.x, c_it.y,ddd_cell.x,ddd_cell.y);
-			clean_map_.setCell(CLEAN_MAP, ddd_cell.x, ddd_cell.y, c_val);
+			auto c_it_shift = c_it - cell_direction_[p_start.dir];
+			ROS_WARN("!!!!!!start_point -1 dir is in block,move back 1 cell c_it(%d,%d)->c_it_shift(%d,%d)",c_it.x, c_it.y,c_it_shift.x,c_it_shift.y);
+			clean_map_.c_blocks.insert({c_val, c_it_shift});
 		}
-		clean_map_.setCell(CLEAN_MAP, c_it.x, c_it.y, CLEANED);
 	}
 	// end+1 point opt
 	auto p_end = passed_path_.back();
@@ -473,10 +457,18 @@ void ACleanMode::setLinearCleaned()
 		if(c_val >=BLOCKED && c_val<=BLOCKED_BOUNDARY)
 		{
 			auto c_it_shift = c_it + cell_direction_[p_end.dir];
-			ROS_WARN("!!!!!!end_point +1 dir is in block,move front 1 cell c_it(%d,%d)->c_it_shift(%d,%d)",c_it.x, c_it.y,c_it_shift.x,c_it_shift.y);
-			clean_map_.setCell(CLEAN_MAP, c_it_shift.x, c_it_shift.y, c_val);
+			ROS_WARN("!!!!!!map end_point +1 dir is in block,move front 1 cell c_it(%d,%d)->c_it_shift(%d,%d)",c_it.x, c_it.y,c_it_shift.x,c_it_shift.y);
+			clean_map_.c_blocks.insert({c_val, c_it_shift});
 		}
-		clean_map_.setCell(CLEAN_MAP, c_it.x, c_it.y, CLEANED);
+		for(auto && c_block:  clean_map_.c_blocks)
+		{
+			if(c_block.second == c_it)
+			{
+				auto c_it_shift = c_it + cell_direction_[p_end.dir];
+				ROS_WARN("!!!!!!block end_point +1 dir is in block,move front 1 cell c_it(%d,%d)->c_it_shift(%d,%d)",c_it.x, c_it.y,c_it_shift.x,c_it_shift.y);
+				clean_map_.c_blocks.insert({c_val, c_it_shift});
+			}
+		}
 	}
 }
 
@@ -1603,7 +1595,7 @@ bool ACleanMode::isIsolate() {
 	bound.SetMinimum(bound.min - Cell_t{8, 8});
 	bound.SetMaximum(bound.max + Cell_t{8, 8});
 	ROS_ERROR("ISOLATE MAP");
-	fw_tmp_map.print(CLEAN_MAP,target.x,target.y);
+	fw_tmp_map.print(CLEAN_MAP,Cells{target});
 	ROS_ERROR("ISOLATE MAP");
 	ROS_ERROR("minx(%d),miny(%d),maxx(%d),maxy(%d)",bound.min.x, bound.min.y,bound.max.x, bound.max.y);
 
@@ -1630,7 +1622,7 @@ bool ACleanMode::generatePath(GridMap &map, const Point_t &curr, const int &last
 }
 
 bool ACleanMode::isGyroDynamic() {
-	return ros::Time::now().toSec() - time_gyro_dynamic_ > GYRO_DYNAMIC_INTERVAL_TIME;
+	return ros::Time::now().toSec() - time_gyro_dynamic_ > robot::instance()->getGyroDynamicInterval();
 }
 
 void ACleanMode::genNextAction() {

@@ -274,6 +274,9 @@
 #define VACUUM_TEST_MODE		13
 #define CHARGE_CURRENT_TEST_MODE		14
 #define ALARM_ERROR_MODE		15
+#define DESK_TEST_MODE_1		16 // For checking baselines
+#define DESK_TEST_MODE_2		17
+#define DESK_TEST_MODE_3		18
 
 #define DUMMY_DOWNLINK_OFFSET		2
 #define KEY_DOWNLINK_OFFSET			9

@@ -19,7 +19,8 @@
         <param name="use_scan" value="true"/>
         <param name="use_split_and_merge" value="false"/>
         <param name="discard_converted_segments" value="true"/>
-        <param name="gyro_dynamic_run_time" value="0.5"/>
+        <param name="gyro_dynamic_run_time" value="0.8"/>
+        <param name="gyro_dynamic_interval" value="25"/>
 
         <param name="max_group_distance" value="0.100"/>
         <param name="distance_proportion" value="0.006136"/>

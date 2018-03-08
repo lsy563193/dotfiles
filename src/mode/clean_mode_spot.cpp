@@ -58,7 +58,7 @@ bool CleanModeSpot::mapMark()
 		clean_map_.markRobot(CLEAN_MAP);
 	setBlocks(iterate_point_.dir);
 	PP_INFO();
-	clean_map_.print(CLEAN_MAP, getPosition().toCell().x, getPosition().toCell().y);
+	clean_map_.print(CLEAN_MAP, Cells{getPosition().toCell()});
 
 	passed_path_.clear();
 	return false;

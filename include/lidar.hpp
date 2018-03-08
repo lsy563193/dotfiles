@@ -11,7 +11,15 @@
 
 #define ON true
 #define OFF false
-
+class slip_scan_deque{
+public:
+	void push_back(sensor_msgs::LaserScan i){
+		d.push_back(i);
+		if(d.size() > 3)
+			d.pop_front();
+	}
+	std::deque<sensor_msgs::LaserScan> d;
+};
 class Lidar
 {
 public:
@@ -127,11 +135,9 @@ private:
 	// For slip checking
 	bool slip_status_{false};
 	uint8_t slip_frame_cnt_{0};
-	std::vector<float> last_frame_ranges_{};
-	double last_frame_time_stamp_{};
-	double current_frame_time_stamp_{};
-	float slip_ranges_percent_{0.85};//85%
-	uint8_t slip_cnt_limit_{5};
+	slip_scan_deque last_slip_scan_frame_{};
+	float slip_ranges_percent_{0.8};//80%
+	uint8_t slip_cnt_limit_{3};
 
 #if X900_FUNCTIONAL_TEST
 #endif

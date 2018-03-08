@@ -162,7 +162,7 @@ public:
  * @return	0 if the block is not cleaned
  *		1 if the block is cleaned
  */
-	int8_t isBlockCleaned(int16_t x, int16_t y);
+	int8_t isNotBlockAndCleaned(int16_t x, int16_t y);
 
 /*
  * Check a block is cleanable or not, a block is defined as have the same size of brush.
@@ -200,6 +200,8 @@ public:
 
 	bool isFrontBlockBoundary(int dx);
 
+	int8_t isNeedClean(int16_t x, int16_t y);
+	bool find_if(const Cell_t &curr_cell, Cells &targets, std::function<bool(const Cell_t &next)> compare );
 	void generateSPMAP(const Cell_t &curr, Cells &target_list);
 //	void generateSPMAP(const Cell_t &curr);
 /*
@@ -235,7 +237,7 @@ public:
 	bool cellIsOutOfRange(Cell_t cell);
 
 	void colorPrint(const char *outString, int16_t y_min, int16_t y_max);
-	void print(uint8_t id, int16_t endx, int16_t endy);
+	void print(uint8_t id, const Cells& targets);
 	typedef std::set<PairCell_t> Blocks_t ;
 	Blocks_t c_blocks;
 
