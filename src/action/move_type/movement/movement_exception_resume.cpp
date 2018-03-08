@@ -9,6 +9,8 @@
 #include <robot.hpp>
 #include "dev.h"
 
+double MovementExceptionResume::slip_start_turn_time_ = 0;
+bool MovementExceptionResume::is_slip_last_turn_left_ = false;
 MovementExceptionResume::MovementExceptionResume()
 {
 	ROS_INFO("%s %d: Entering movement exception resume.", __FUNCTION__, __LINE__);
@@ -18,9 +20,13 @@ MovementExceptionResume::MovementExceptionResume()
 	s_pos_y = odom.getY();
 
 	//For slip
-	robot_slip_jam_state_ = 0;
-	is_slip_last_turn_left_ = false;
-	slip_start_turn_time = 0;
+	if(ros::Time::now().toSec() - slip_start_turn_time_ < 5){
+		robot_slip_flag_ = static_cast<uint8_t>(is_slip_last_turn_left_ ? 2 : 1);
+		slip_start_turn_time_ = ros::Time::now().toSec();
+	}else{
+		robot_slip_flag_ = 0;
+		slip_start_turn_time_ = 0;
+	}
 
 	resume_wheel_start_time_ = ros::Time::now().toSec();
 	resume_main_bursh_start_time_ = ros::Time::now().toSec();
@@ -96,7 +102,7 @@ void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_sp
 	}
 	else if (ev.robot_slip)
 	{
-		switch(robot_slip_jam_state_){
+		switch(robot_slip_flag_){
 			case 0:
 			{
 				wheel.setDirectionBackward();
@@ -411,38 +417,39 @@ bool MovementExceptionResume::isFinish()
 	}
 	else if(ev.robot_slip)
 	{
-		switch(robot_slip_jam_state_){
+		switch(robot_slip_flag_){
 			case 0:{
 				float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getX(), odom.getY());
-				if (std::abs(distance) > 0.3f)
+				if (std::abs(distance) > 0.3f || lidar.getObstacleDistance(1, ROBOT_RADIUS) < 0.02)
 				{
 					if(!lidar.isRobotSlip())
 					{
 						ev.robot_slip = false;
+						slip_start_turn_time_ = ros::Time::now().toSec();//in this place,slip_start_turn_time_ record the slip end time
 					}
 					else{
-						robot_slip_jam_state_ = static_cast<uint8_t>(is_slip_last_turn_left_ ? 2 : 1);
-						slip_start_turn_time = ros::Time::now().toSec();
+						robot_slip_flag_ = static_cast<uint8_t>(is_slip_last_turn_left_ ? 2 : 1);
+						slip_start_turn_time_ = ros::Time::now().toSec();
 					}
 				}
 				break;
 			}
 			case 1:{
-				if(ros::Time::now().toSec() - slip_start_turn_time > 1) {
+				if(ros::Time::now().toSec() - slip_start_turn_time_ > 1) {
 					s_pos_x = odom.getX();
 					s_pos_y = odom.getY();
 					is_slip_last_turn_left_ = true;
-					robot_slip_jam_state_ = 0;
+					robot_slip_flag_ = 0;
 				}
 				break;
 			}
 			case 2:{
-				if(ros::Time::now().toSec() - slip_start_turn_time > 1)
+				if(ros::Time::now().toSec() - slip_start_turn_time_ > 1)
 				{
 					s_pos_x = odom.getX();
 					s_pos_y = odom.getY();
 					is_slip_last_turn_left_ = false;
-					robot_slip_jam_state_ = 0;
+					robot_slip_flag_ = 0;
 				}
 				break;
 			}
