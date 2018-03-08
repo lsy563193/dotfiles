@@ -111,19 +111,19 @@ Cells NavCleanPathAlgorithm::findTargetInSameLane(GridMap &map, const Cell_t &cu
 {
 	int8_t is_found = 0;
 	Cell_t it[2]; // it[0] means the furthest cell of x positive direction, it[1] means the furthest cell of x negative direction.
-
+	const auto OVER_CELL_SIZE = 2;
 //	map.print(CLEAN_MAP, 0, 0);
 	for (auto i = 0; i < 2; i++) {
 		it[i] = curr_cell;
 		auto unclean_cells = 0;
 
 		for (Cell_t neighbor = it[i] + cell_direction_[i];
-				 !map.cellIsOutOfRange(neighbor + cell_direction_[i]) && !map.isBlocksAtY(neighbor.x, neighbor.y);
+				 !map.cellIsOutOfRange(neighbor + cell_direction_[i]*OVER_CELL_SIZE) && !map.isBlocksAtY(neighbor.x, neighbor.y);
 				 neighbor += cell_direction_[i])
 		{
 			if (map.getCell(CLEAN_MAP, neighbor.x, neighbor.y) == UNCLEAN)
 			{
-				it[i] = neighbor + cell_direction_[i];
+				it[i] = neighbor + cell_direction_[i]*OVER_CELL_SIZE;
 //				ROS_INFO("%s %d: it[%d](%d,%d)", __FUNCTION__, __LINE__, i, it[i].x, it[i].y);
 			}
 
