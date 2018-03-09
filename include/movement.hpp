@@ -293,6 +293,7 @@ private:
 	uint8_t robot_slip_flag_{0};
 	static double slip_start_turn_time_;
 	static bool is_slip_last_turn_left_;
+	double resume_slip_start_time_;
 	uint8_t cliff_resume_cnt_{0};
 	uint8_t cliff_all_resume_cnt_{0};
 	uint8_t robot_stuck_resume_cnt_{0};

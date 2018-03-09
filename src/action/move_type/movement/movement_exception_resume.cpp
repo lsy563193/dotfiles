@@ -31,6 +31,7 @@ MovementExceptionResume::MovementExceptionResume()
 	resume_wheel_start_time_ = ros::Time::now().toSec();
 	resume_main_bursh_start_time_ = ros::Time::now().toSec();
 	resume_vacuum_start_time_ = ros::Time::now().toSec();
+	resume_slip_start_time_ = ros::Time::now().toSec();
 }
 
 MovementExceptionResume::~MovementExceptionResume()
@@ -417,6 +418,11 @@ bool MovementExceptionResume::isFinish()
 	}
 	else if(ev.robot_slip)
 	{
+		if(ros::Time::now().toSec() - resume_slip_start_time_ > 60){
+			ev.robot_slip = false;
+			ev.fatal_quit = true;
+			error.set(ERROR_CODE_STUCK);
+		}
 		switch(robot_slip_flag_){
 			case 0:{
 				float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getX(), odom.getY());
