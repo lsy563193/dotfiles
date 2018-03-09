@@ -420,7 +420,7 @@ bool MovementExceptionResume::isFinish()
 		switch(robot_slip_flag_){
 			case 0:{
 				float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getX(), odom.getY());
-				if (std::abs(distance) > 0.3f || lidar.getObstacleDistance(1, ROBOT_RADIUS) < 0.02)
+				if (std::abs(distance) > 0.3f || lidar.getObstacleDistance(1, ROBOT_RADIUS) < 0.03)
 				{
 					if(!lidar.isRobotSlip())
 					{

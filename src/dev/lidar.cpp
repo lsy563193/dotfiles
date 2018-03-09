@@ -15,6 +15,7 @@ boost::mutex lidarXYPoint_mutex_;
 //float* Lidar::last_ranges_ = NULL;
 
 sensor_msgs::LaserScan Lidar::lidarScanData_original_;
+double Lidar::wheel_cliff_trigger_time_ = 0;
 
 Lidar lidar;
 
@@ -1211,11 +1212,7 @@ uint8_t Lidar::lidarMarker(std::vector<Vector2<int>> &markers, double X_MAX)
 
 void Lidar::checkRobotSlip()
 {
-	const float acur1 = 0.095;//accuracy 1 ,in meters
-	const float acur2 = 0.075;//accuracy 2 ,in meters
-	const float acur3 = 0.055;//accuracy 3 ,in meters
-	const float acur4 = 0.015;//accuracy 4 ,in meters
-
+	float acur1,acur2,acur3,acur4;//accuracy  ,in meters
 	const float dist1 = 3.5;//range distance 1 ,in meters
 	const float dist2 = 2.5;//range distance 2
 	const float dist3 = 1.5;//range distance 3
@@ -1227,6 +1224,24 @@ void Lidar::checkRobotSlip()
 		return;
 	}
 
+	if(wheel.getLeftWheelCliffStatus() || wheel.getRightWheelCliffStatus()){
+		wheel_cliff_trigger_time_ = ros::Time::now().toSec();
+	}
+	if(ros::Time::now().toSec() - wheel_cliff_trigger_time_ < 5){
+		slip_cnt_limit_ = 2;
+		slip_ranges_percent_ = 0.7;
+		acur1 = 0.105;
+		acur2 = 0.085;
+		acur3 = 0.065;
+		acur4 = 0.025;
+	}else{
+		slip_cnt_limit_ = 5;
+		slip_ranges_percent_ = 0.8;
+		acur1 = 0.095;
+		acur2 = 0.075;
+		acur3 = 0.055;
+		acur4 = 0.015;
+	}
 	int8_t speed_limit = 8;
 //	ROS_WARN("%s %d: Speed left:%d, right:%d", __FUNCTION__, __LINE__,
 //			 wheel.getLeftSpeedAfterPid(), wheel.getRightSpeedAfterPid());
@@ -1248,7 +1263,7 @@ void Lidar::checkRobotSlip()
 					if(std::abs(tmp_scan_data.ranges[i] - last_slip_scan_frame_.d.at(0).ranges[i]) <= acur1 ){
 						same_count++;
 					}
-				} 
+				}
 				else if(tmp_scan_data.ranges[i] >dist3 && tmp_scan_data.ranges[i] < dist2){//
 					if(std::abs(tmp_scan_data.ranges[i] - last_slip_scan_frame_.d.at(0).ranges[i]) <= acur2 ){
 						same_count++;
@@ -1269,14 +1284,16 @@ void Lidar::checkRobotSlip()
 
 //		ROS_WARN("%s %d: same_count: %d, total_count: %d.", __FUNCTION__, __LINE__, same_count, tol_count);
 		if((same_count*1.0)/(tol_count*1.0) >= slip_ranges_percent_ &&
-							(tmp_scan_data.ranges[155] < 4 && tmp_scan_data.ranges[155] - last_slip_scan_frame_.d.at(0).ranges[155] < 0.03)){
-			if(++slip_frame_cnt_>= slip_cnt_limit_){
-				ROS_INFO("\033[35m""%s,%d,robot slip!!""\033[0m",__FUNCTION__,__LINE__);
-				slip_status_ = true;
-				beeper.beepForCommand(VALID);
-			}else{
-				slip_status_ = false;
-			}
+			(slip_ranges_percent_ < 0.8 || (tmp_scan_data.ranges[155] < 4 &&
+								(tmp_scan_data.ranges[155] - last_slip_scan_frame_.d.at(0).ranges[155] < 0.03)))){
+				if (++slip_frame_cnt_ >= slip_cnt_limit_) {
+					ROS_INFO("\033[35m""%s,%d,robot slip!!""\033[0m", __FUNCTION__, __LINE__);
+					slip_status_ = true;
+					slip_cnt_limit_ = 5;
+					beeper.beepForCommand(VALID);
+				} else {
+					slip_status_ = false;
+				}
 		}
 		else
 		{
@@ -1625,6 +1642,7 @@ void Lidar::init() {
 	slip_status_ = {false};
 	slip_frame_cnt_ = {0};
 	slip_scan_deque last_frame_{};
+	wheel_cliff_trigger_time_ = 0;
 
 	setScanLinearReady(0);
 	setScanOriginalReady(0);

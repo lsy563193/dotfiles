@@ -110,7 +110,8 @@ bool CleanModeNav::mapMark()
 			setHomePoint();
 	}
 	for (auto &&cost_block : clean_map_.c_blocks) {
-		if(std::find_if(c_bound2.begin(), c_bound2.end(), [&](const Cell_t& c_it){ return c_it == cost_block.second; }) != c_bound2.end())
+		if(/*cost_block.first != BLOCKED_SLIP && */std::find_if(c_bound2.begin(), c_bound2.end(), [&](const Cell_t& c_it)
+		{ return c_it == cost_block.second; }) != c_bound2.end())
 			clean_map_.setCell(CLEAN_MAP, cost_block.second.x, cost_block.second.y, cost_block.first);
 	}
 

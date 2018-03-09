@@ -433,7 +433,6 @@ uint8_t GridMap::setFollowWall(bool is_left,const Points& passed_path)
 	}
 }
 
-
 uint8_t GridMap::setChargerArea(const Points charger_pos_list)
 {
 	//before set BLOCKED_RCON, clean BLOCKED_TMP_RCON first.
@@ -1178,10 +1177,10 @@ void GridMap::colorPrint(const char *outString, int16_t y_min, int16_t y_max)
 				y_col+="\033[1;44;37m7\033[0m";// blue
 			}
 			else if(cs == '8'){//tilt
-				y_col+="\033[1;47;30m7\033[0m";// white
+				y_col+="\033[1;47;30m8\033[0m";// white
 			}
 			else if(cs == '9'){//slip
-				y_col+="\033[1;43;37m8\033[0m";// yellow
+				y_col+="\033[1;43;37m9\033[0m";// yellow
 			}
 			else if(cs == 'a'){//slam_map_block
 				y_col+="\033[0;41;37ma\033[0m";// red
