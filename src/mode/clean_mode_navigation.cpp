@@ -51,9 +51,9 @@ bool CleanModeNav::mapMark()
 
 	clean_path_algorithm_->displayPointPath((passed_path_));
 
-	std::unique(passed_path_.begin(),passed_path_.end(),[](const Point_t& l, const Point_t& r){
+/*	passed_path_.erase(std::unique(passed_path_.begin(),passed_path_.end(),[](const Point_t& l, const Point_t& r){
 		return r.toCell() == l.toCell();
-	});
+	}),passed_path_.end());*/
 
 	GridMap map{};
 	for (auto &&p_it :passed_path_)
