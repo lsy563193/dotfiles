@@ -117,6 +117,8 @@ public:
 		is_clean_mode_navigation_ = set;
 	}
 
+	double wall_distance;
+
 protected:
 	bool is_clean_mode_navigation_{false};
 	int mode_i_{ac_null};
@@ -482,7 +484,7 @@ public:
 	bool removeCrossingPoint(const Vector2<double> &target_point, PointSelector &para,
 													 const sensor_msgs::LaserScan::ConstPtr &scan);
 	bool checkCorner(const sensor_msgs::LaserScan::ConstPtr &scan, const PointSelector &para);
-	bool calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,bool is_left ,std::deque<Vector2<double>>& points);
+	bool calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,bool is_left ,std::deque<Vector2<double>>& points, double wall_distance);
 	Vector2<double> polarToCartesian(double polar, int i);
 	void setTempTarget(std::deque<Vector2<double>>& points, uint32_t  seq);
 	void pubTmpTarget(const Point_t &point,bool is_virtual=false);

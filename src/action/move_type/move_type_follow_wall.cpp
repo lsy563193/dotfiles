@@ -9,7 +9,7 @@
 #include <state.hpp>
 #include <mode.hpp>
 
-#define STAY_SEC_AFTER_BACK (float)0.33
+#define STAY_SEC_AFTER_BACK (double)0.33
 
 int g_follow_last_follow_wall_dir=0;
 MoveTypeFollowWall::MoveTypeFollowWall(Points remain_path, bool is_left)
@@ -233,8 +233,12 @@ bool MoveTypeFollowWall::_lidarTurnRadian(bool is_left, double &turn_radian, dou
 
 	auto line_is_found = lidar.lidarGetFitLine(lidar_min, lidar_max, -1.0, dis_limit, &line_radian, &distance,is_left_);
 
-	ROS_INFO("line_angle_raw = %lf, line_is_found = %d", radian_to_degree(line_radian), line_is_found);
+	auto p_mode = dynamic_cast<ACleanMode*> (sp_mode_);
+	p_mode->wall_distance = distance;
+
 	auto radian = line_radian;
+
+	ROS_INFO("line_angle_raw = %lf, line_is_found = %d, distance = %lf", radian_to_degree(line_radian), line_is_found, distance);
 
 /*	if (!is_left_)
 		radian  = PI - line_radian;*/

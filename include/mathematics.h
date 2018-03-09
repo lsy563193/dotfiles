@@ -477,7 +477,7 @@ typedef int CellState;
 typedef std::pair<const CellState, Cell_t> PairCell_t;
 class PointSelector{
 public:
-	PointSelector(bool is_left);
+	PointSelector(bool is_left, double wall_distance);
 
 	bool LaserPointRange(const Vector2<double> &point, bool is_corner) const;
 	bool TargetPointRange(const Vector2<double> &target);
