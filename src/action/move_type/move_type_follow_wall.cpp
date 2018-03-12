@@ -230,13 +230,14 @@ bool MoveTypeFollowWall::_lidarTurnRadian(bool is_left, double &turn_radian, dou
 {
 	double line_radian;
 	double distance;
-	wheel.stop();
-	sleep(0.33);
+//	wheel.stop();
+//	sleep(0.33);
 	auto line_is_found = lidar.lidarGetFitLine(lidar_min, lidar_max, -1.0, dis_limit, &line_radian, &distance,is_left_);
 
 	auto p_mode = dynamic_cast<ACleanMode*> (sp_mode_);
 
-	p_mode->wall_distance = is_moving ? distance - 0.022 : distance;
+//	p_mode->wall_distance = is_moving ? distance - 0.022 : distance;
+	p_mode->wall_distance = is_moving ? distance - 0.03 : distance;
 
 	auto radian = line_radian;
 
