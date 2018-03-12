@@ -594,7 +594,7 @@ void ACleanMode::setCleanMapMarkers(int16_t x, int16_t y, CellState type, visual
 	else if (type == BLOCKED_SLIP)
 	{
 		// Purple 
-		color_.r = 0.2;
+		color_.r = 1.0;
 		color_.g = 0.0;
 		color_.b = 1.0;
 	}
