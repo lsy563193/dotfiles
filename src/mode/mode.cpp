@@ -13,7 +13,7 @@ void Mode::run()
 //	ROS_INFO("%s %d: Mode start running.", __FUNCTION__, __LINE__);
 	bool eh_status_now = false, eh_status_last = false;
 
-	while (ros::ok() && !core_thread_stop)
+	while (ros::ok() && !core_thread_kill)
 	{
 //		PP_INFO();
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
@@ -61,7 +61,7 @@ int Mode::getNextMode()
 bool Mode::isExceptionTriggered()
 {
 	return ev.bumper_jam || ev.cliff_jam || ev.cliff_all_triggered || ev.oc_wheel_left || ev.oc_wheel_right
-		   || ev.oc_vacuum || ev.lidar_stuck || ev.robot_stuck || ev.oc_brush_main;
+		   || ev.oc_vacuum || ev.lidar_stuck || ev.robot_stuck || ev.oc_brush_main || ev.robot_slip;
 }
 
 void Mode::genNextAction()

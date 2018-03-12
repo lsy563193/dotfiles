@@ -594,7 +594,7 @@ void ACleanMode::setCleanMapMarkers(int16_t x, int16_t y, CellState type, visual
 	else if (type == BLOCKED_SLIP)
 	{
 		// Purple 
-		color_.r = 0.2;
+		color_.r = 1.0;
 		color_.g = 0.0;
 		color_.b = 1.0;
 	}
@@ -761,12 +761,14 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_move_type) {
 	if (sp_state == state_folllow_wall) {
 //			auto p_mt = dynamic_cast<MoveTypeFollowWall *>(p_move_type);
 		if (p_move_type->isBlockCleared(clean_map_, passed_path_))
+		{
 			clean_map_.markRobot(CLEAN_MAP);
 			if (!clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell())) {
 				out_of_trapped = true;
 				ROS_ERROR("OUT OF TRAPPED");
 				return true;
 			}
+		}
 	}
 
 	if (distance > 5) {// closed
@@ -1152,6 +1154,14 @@ void ACleanMode::cliffAll(bool state_now, bool state_last)
 	}
 }
 
+void ACleanMode::robotSlip(bool state_now, bool state_last){
+	if(!ev.robot_slip)
+	{
+		ROS_WARN("%s %d: Robot slip.", __FUNCTION__, __LINE__);
+		ev.robot_slip= true;
+	}
+}
+
 void ACleanMode::overCurrentBrushMain(bool state_now, bool state_last)
 {
 	if (!ev.oc_brush_main)
@@ -1491,9 +1501,10 @@ bool ACleanMode::updateActionInStateFollowWall()
 			auto point = getPosition().addRadian(angle);
 			point = point.getRelative(8, 0);
 			plan_path_.clear();
+			plan_path_.push_back(getPosition());
 			plan_path_.push_back(point);
 			iterate_point_ = plan_path_.front();
-			iterate_point_.dir = MAP_ANY;
+//			iterate_point_.dir = MAP_ANY;
 			clean_path_algorithm_->displayPointPath(plan_path_);
 			action_i_ = ac_linear;
 		}

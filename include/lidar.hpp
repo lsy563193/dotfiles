@@ -88,9 +88,7 @@ public:
 	void scanLinearCb(const sensor_msgs::LaserScan::ConstPtr &msg);
 	void scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr &msg);
 	void scanCompensateCb(const sensor_msgs::LaserScan::ConstPtr &msg);
-#if X900_FUNCTIONAL_TEST
 	void scantestCb(const sensor_msgs::LaserScan::ConstPtr &msg);
-#endif
 	void lidarXYPointCb(const visualization_msgs::Marker &point_marker);
 	static void setLidarScanDataOriginal(const sensor_msgs::LaserScan::ConstPtr &scan);
 	static sensor_msgs::LaserScan getLidarScanDataOriginal(void);
@@ -137,10 +135,9 @@ private:
 	uint8_t slip_frame_cnt_{0};
 	slip_scan_deque last_slip_scan_frame_{};
 	float slip_ranges_percent_{0.8};//80%
-	uint8_t slip_cnt_limit_{3};
+	uint8_t slip_cnt_limit_{5};
+	static double wheel_cliff_trigger_time_;
 
-#if X900_FUNCTIONAL_TEST
-#endif
 };
 
 

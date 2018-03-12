@@ -46,14 +46,14 @@ bool CleanModeNav::mapMark()
 	if(passed_path_.empty())
 	{
 		ROS_WARN("%s %d: pass_path is emply, add iterate_point_(%d,%d,%d,%d).", __FUNCTION__, __LINE__,iterate_point_.x, iterate_point_.y, iterate_point_.th, iterate_point_.dir);
-		passed_path_.push_back(iterate_point_);
+		passed_path_.push_back(getPosition());
 	}
 
 	clean_path_algorithm_->displayPointPath((passed_path_));
 
-	std::unique(passed_path_.begin(),passed_path_.end(),[](const Point_t& l, const Point_t& r){
+/*	passed_path_.erase(std::unique(passed_path_.begin(),passed_path_.end(),[](const Point_t& l, const Point_t& r){
 		return r.toCell() == l.toCell();
-	});
+	}),passed_path_.end());*/
 
 	GridMap map{};
 	for (auto &&p_it :passed_path_)
@@ -110,12 +110,19 @@ bool CleanModeNav::mapMark()
 			setHomePoint();
 	}
 	for (auto &&cost_block : clean_map_.c_blocks) {
-		if(std::find_if(c_bound2.begin(), c_bound2.end(), [&](const Cell_t& c_it){ return c_it == cost_block.second; }) != c_bound2.end())
+		if(/*cost_block.first != BLOCKED_SLIP && */std::find_if(c_bound2.begin(), c_bound2.end(), [&](const Cell_t& c_it)
+		{ return c_it == cost_block.second; }) != c_bound2.end())
 			clean_map_.setCell(CLEAN_MAP, cost_block.second.x, cost_block.second.y, cost_block.first);
 	}
 
 	for (auto &&p_it :passed_path_)
 		clean_map_.setCells(CLEAN_MAP, p_it.toCell().x, p_it.toCell().y, CLEANED);
+
+	//For slip mark
+	for(auto &&cost_block : clean_map_.c_blocks){
+		if(cost_block.first == BLOCKED_SLIP)
+			clean_map_.setCell(CLEAN_MAP,cost_block.second.x,cost_block.second.y,BLOCKED_SLIP);
+	}
 
 	clean_map_.c_blocks.clear();
 	passed_path_.clear();
@@ -520,7 +527,17 @@ bool CleanModeNav::updateActionInStateClean(){
 //	pubCleanMapMarkers(clean_map_, pointsGenerateCells(remain_path_));
 	old_dir_ = iterate_point_.dir;
 	if(action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
-		old_dir_ = MAP_ANY;
+	{
+
+		extern int g_follow_last_follow_wall_dir;
+		if(g_follow_last_follow_wall_dir != 0)
+		{
+			ROS_ERROR("g_follow_last_follow_wall_dir, old_dir_(%d)",old_dir_);
+			old_dir_ = plan_path_.back().dir;
+		}
+		else
+			old_dir_ = MAP_ANY;
+	}
 	if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
 		pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 		iterate_point_ = plan_path_.front();
@@ -529,18 +546,20 @@ bool CleanModeNav::updateActionInStateClean(){
 		auto npa = boost::dynamic_pointer_cast<NavCleanPathAlgorithm>(clean_path_algorithm_);
 
 //		ROS_WARN("!!!!!!!!!!!!!!!!!!!!!!!!should_follow_wall(%d)",should_follow_wall);
-		if (old_dir_ != MAP_ANY && should_follow_wall
-				&& (npa->curr_filter_ == &npa->filter_p0_1t_xp
-						 || npa->curr_filter_ == &npa->filter_p0_1t_xn
-						 || npa->curr_filter_ == &npa->filter_p2
-						 || npa->curr_filter_ == &npa->filter_p1
-						 || npa->curr_filter_ == &npa->filter_n2
-						 || npa->curr_filter_ == &npa->filter_n1)
+		if ( old_dir_ != MAP_ANY && should_follow_wall &&
+						(		npa->curr_filter_ == &npa->filter_p0_1t_xp
+						||	npa->curr_filter_ == &npa->filter_p0_1t_xn
+						||	npa->curr_filter_ == &npa->filter_n0_1t_xp
+						||	npa->curr_filter_ == &npa->filter_n0_1t_xn
+						||	npa->curr_filter_ == &npa->filter_p2
+						||	npa->curr_filter_ == &npa->filter_p1
+						||	npa->curr_filter_ == &npa->filter_n2
+						||	npa->curr_filter_ == &npa->filter_n1)
 				)
 		{
-			auto toward_pos = isXAxis(old_dir_) ? npa->curr_filter_->towardPos(): (iterate_point_.toCell().x - plan_path_.back().toCell().x) > 0;
-			bool is_left = isPos(old_dir_) ^ toward_pos;
-			action_i_ = is_left ? ac_follow_wall_left : ac_follow_wall_right;
+				auto toward_pos = isXAxis(old_dir_) ? npa->curr_filter_->towardPos(): (iterate_point_.toCell().x - plan_path_.back().toCell().x) > 0;
+				bool is_left = isPos(old_dir_) ^ toward_pos;
+				action_i_ = is_left ? ac_follow_wall_left : ac_follow_wall_right;
 		}
 		else
 			action_i_ = ac_linear;

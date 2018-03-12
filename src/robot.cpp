@@ -32,22 +32,26 @@ int OBS_adjust_count = 50;
 
 bool g_pp_shutdown = false;
 
-bool robotbase_thread_stop = false;
-bool send_thread_stop = false;
-bool recei_thread_stop = false;
-bool event_manager_thread_stop = false;
-bool event_handle_thread_stop = false;
-bool core_thread_stop = false;
+bool robotbase_thread_enable = false;
+bool send_thread_enable = false;
+bool recei_thread_enable = false;
+
+bool robotbase_thread_kill = false;
+bool send_thread_kill = false;
+bool recei_thread_kill = false;
+bool event_manager_thread_kill = false;
+bool event_handle_thread_kill = false;
+bool core_thread_kill = false;
 
 robot::robot()
 {
 
-	robotbase_thread_stop = false;
-	send_thread_stop = false;
-	recei_thread_stop = false;
-	core_thread_stop = false;
-	event_manager_thread_stop = false;
-	event_handle_thread_stop = false;
+	robotbase_thread_kill = false;
+	send_thread_kill = false;
+	recei_thread_kill = false;
+	core_thread_kill = false;
+	event_manager_thread_kill = false;
+	event_handle_thread_kill = false;
 
 	// Subscribers.
 	odom_sub_ = robot_nh_.subscribe("/odom", 1, &robot::robotOdomCb, this);
@@ -82,28 +86,15 @@ robot::robot()
 	}
 #endif
 
-	std::string serial_port;
-	robot_nh_.param<std::string>("serial_port", serial_port, "/dev/ttyS2");
+	robot_nh_.param<std::string>("serial_port", serial_port_, "/dev/ttyS2");
+	robot_nh_.param<int>("baud_rate", baud_rate_, 115200);
 
-	int baud_rate;
-	robot_nh_.param<int>("baud_rate", baud_rate, 115200);
-
-
-	std::string lidar_bumper_dev;
-	robot_nh_.param<std::string>("lidar_bumper_file", lidar_bumper_dev, "/dev/input/event1");
-
-#if !X900_FUNCTIONAL_TEST
-	if (bumper.lidarBumperInit(lidar_bumper_dev.c_str()) == -1)
-		ROS_ERROR(" lidar bumper open fail!");
-
-	// Init for serial.
-	if (!serial.init(serial_port, baud_rate))
-	{
-		ROS_ERROR("%s %d: Serial init failed!!", __FUNCTION__, __LINE__);
-	}
+	robot_nh_.param<std::string>("lidar_bumper_file", lidar_bumper_dev_, "/dev/input/event1");
 
 	while (!serial.isReady()) {
-		ROS_ERROR("serial not ready\n");
+		// Init for serial.
+		if (!serial.init(serial_port_, baud_rate_))
+			ROS_ERROR("%s %d: Serial init failed!!", __FUNCTION__, __LINE__);
 	}
 
 	ROS_INFO("waiting robotbase awake ");
@@ -116,12 +107,7 @@ robot::robot()
 	auto event_manager_thread = new boost::thread(event_manager_thread_cb);
 	auto event_handler_thread = new boost::thread(event_handler_thread_cb);
 	auto core_thread = new boost::thread(boost::bind(&robot::core_thread_cb,this));
-#else
-	auto speaker_play_routine = new boost::thread(boost::bind(&Speaker::playRoutine, &speaker));
-	auto robotbase_routine = new boost::thread(boost::bind(&robot::robotbase_routine_cb, this));
 
-	auto test_routine = new boost::thread(boost::bind(&x900_functional_test, serial_port, baud_rate, lidar_bumper_dev));
-#endif
 	ROS_INFO("%s %d: robot init done!", __FUNCTION__, __LINE__);
 }
 
@@ -153,8 +139,14 @@ void robot::robotbase_routine_cb()
 	last_time  = cur_time;
 	int16_t last_rcliff = 0, last_fcliff = 0, last_lcliff = 0;
 	int16_t last_x_acc = -1000, last_y_acc = -1000, last_z_acc = -1000;
-	while (ros::ok() && !robotbase_thread_stop)
+	while (ros::ok() && !robotbase_thread_kill)
 	{
+		if (!robotbase_thread_enable)
+		{
+			usleep(10000);
+			continue;
+		}
+
 		/*--------data extrict from serial com--------*/
 		ROS_ERROR_COND(pthread_mutex_lock(&recev_lock)!=0, "robotbase pthread receive lock fail");
 		ROS_ERROR_COND(pthread_cond_wait(&recev_cond,&recev_lock)!=0, "robotbase pthread receive cond wait fail");
@@ -275,6 +267,9 @@ void robot::robotbase_routine_cb()
 		battery.setVoltage(buf[REC_BATTERY] * 10);
 		sensor.battery = static_cast<float>(battery.getVoltage() / 100.0);
 
+		// For r16 work mode.
+		r16_test_mode_ = buf[REC_R16_WORK_MODE];
+
 		// For over current checking.
 		vacuum.setOc((buf[REC_OC] & 0x01) != 0);
 		sensor.vacuum_oc = vacuum.getOc();
@@ -368,12 +363,16 @@ void robot::robotbase_routine_cb()
 
 	}//end while
 	pthread_cond_broadcast(&serial_data_ready_cond);
-	event_manager_thread_stop = true;
+	event_manager_thread_kill = true;
 	ROS_ERROR("%s,%d,exit",__FUNCTION__,__LINE__);
 }
 
 void robot::core_thread_cb()
 {
+	robotbase_thread_enable = true;
+	send_thread_enable = true;
+	recei_thread_enable = true;
+
 	ROS_INFO("Waiting for robot sensor ready.");
 	while (!isSensorReady()) {
 		usleep(1000);
@@ -382,33 +381,64 @@ void robot::core_thread_cb()
 //	speaker.play(VOICE_WELCOME_ILIFE);
 	usleep(200000);
 
-	if (charger.isOnStub() || charger.isDirected())
-		p_mode.reset(new ModeCharge());
-	else
+	switch (r16_test_mode_)
 	{
-		speaker.play(VOICE_PLEASE_START_CLEANING, false);
-		p_mode.reset(new ModeIdle());
+		case R16_FUNCTIONAL_TEST_MODE:
+		{
+			send_thread_enable = false;
+			recei_thread_enable = false;
+			sleep(1); // Make sure recieve thread is hung up.
+			x900_functional_test(serial_port_, baud_rate_, lidar_bumper_dev_);
+			break;
+		}
+		case R16_DESK_TEST_MODE:
+		{
+			if (bumper.lidarBumperInit(lidar_bumper_dev_.c_str()) == -1)
+				ROS_ERROR(" lidar bumper open fail!");
+
+			p_mode.reset(new CleanModeDeskTest());
+			p_mode->run();
+			break;
+		}
+		default: //case R16_NORMAL_MODE:
+		{
+			if (bumper.lidarBumperInit(lidar_bumper_dev_.c_str()) == -1)
+				ROS_ERROR(" lidar bumper open fail!");
+
+			if (charger.isOnStub() || charger.isDirected())
+				p_mode.reset(new ModeCharge());
+			else
+			{
+				speaker.play(VOICE_PLEASE_START_CLEANING, false);
+				p_mode.reset(new ModeIdle());
+			}
+
+			while (ros::ok())
+			{
+//				ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
+				p_mode->run();
+
+				if (core_thread_kill)
+					break;
+
+				auto next_mode = p_mode->getNextMode();
+				p_mode.reset();
+//				ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
+				p_mode.reset(getNextMode(next_mode));
+//				ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
+			}
+			g_pp_shutdown = true;
+			ROS_ERROR("%s,%d,exit", __FUNCTION__, __LINE__);
+			break;
+		}
 	}
 
-	while(ros::ok())
-	{
-//		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
-		p_mode->run();
-		if(core_thread_stop) break;
-		auto next_mode = p_mode->getNextMode();
-		p_mode.reset();
-//		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
-		p_mode.reset(getNextMode(next_mode));
-//		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
-	}
-	g_pp_shutdown = true;
-	ROS_ERROR("%s,%d,exit",__FUNCTION__,__LINE__);
 }
 
 robot::~robot()
 {
 	bumper.lidarBumperDeinit();
-	recei_thread_stop = true;
+	recei_thread_kill = true;
 	key_led.setMode(LED_STEADY, LED_OFF);
 	serial.setSendData(CTL_BEEPER, 0x00);
 	gyro.setOff();
@@ -704,7 +734,18 @@ bool isXAxis(Dir_t dir)
 {
 	return dir == MAP_POS_X || dir == MAP_NEG_X;
 }
-
+/*
+Dir_t getReDir(Dir_t dir)
+{
+	if(isAny(dir))
+		return dir;
+	if(isPos(dir))
+	{
+		return dir+1;
+	}
+	else
+		return dir-1;
+}*/
 void updatePosition()
 {
 	auto pos_x = robot::instance()->getWorldPoseX()/* * 1000 * CELL_COUNT_MUL / CELL_SIZE*/;
@@ -735,7 +776,7 @@ Mode *getNextMode(int next_mode_i_)
 		case Mode::cm_spot:
 			return new CleanModeSpot();
 		case Mode::cm_test:
-			return new CleanModeTest();
+			return new CleanModeDeskTest();
 		case Mode::cm_exploration:
 			return new CleanModeExploration();
 //		case Mode::cm_exploration:

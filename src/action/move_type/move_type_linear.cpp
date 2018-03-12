@@ -181,13 +181,6 @@ bool MoveTypeLinear::handleMoveBackEvent(ACleanMode *p_clean_mode)
 		sp_movement_.reset(new MovementBack(0.3, BACK_MAX_SPEED));
 		return true;
 	}
-	else if (ev.robot_slip)
-	{
-		p_clean_mode->moveTypeLinearSaveBlocks();
-		movement_i_ = mm_back;
-		sp_movement_.reset(new MovementBack(0.3, BACK_MIN_SPEED));
-		return true;
-	}
 
 	return false;
 }
