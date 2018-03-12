@@ -118,6 +118,12 @@ bool CleanModeNav::mapMark()
 	for (auto &&p_it :passed_path_)
 		clean_map_.setCells(CLEAN_MAP, p_it.toCell().x, p_it.toCell().y, CLEANED);
 
+	//For slip mark
+	for(auto &&cost_block : clean_map_.c_blocks){
+		if(cost_block.first == BLOCKED_SLIP)
+			clean_map_.setCell(CLEAN_MAP,cost_block.second.x,cost_block.second.y,BLOCKED_SLIP);
+	}
+
 	clean_map_.c_blocks.clear();
 	passed_path_.clear();
 	return false;

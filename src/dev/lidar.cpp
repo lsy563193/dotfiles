@@ -1237,10 +1237,10 @@ void Lidar::checkRobotSlip()
 	}else{
 		slip_cnt_limit_ = 5;
 		slip_ranges_percent_ = 0.8;
-		acur1 = 0.095;
-		acur2 = 0.075;
-		acur3 = 0.055;
-		acur4 = 0.015;
+		acur1 = 0.085;
+		acur2 = 0.065;
+		acur3 = 0.045;
+		acur4 = 0.01;
 	}
 	int8_t speed_limit = 8;
 //	ROS_WARN("%s %d: Speed left:%d, right:%d", __FUNCTION__, __LINE__,
