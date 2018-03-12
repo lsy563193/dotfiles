@@ -124,6 +124,8 @@ class MovementFollowPointLinear:public AMovementFollowPoint
 public:
 //	MovementFollowPointLinear(Point_t);
 	MovementFollowPointLinear();
+
+	void scaleCorrectionPos();
 //	~MovementFollowPointLinear(){ };
 	bool isFinish() override;
 	/**
@@ -139,6 +141,7 @@ public:
 
 	Point_t calcTmpTarget() override ;
 	Point_t _calcTmpTarget();
+	Point_t tmp_pos;
 //	bool calcTmpTarget() override ;
 //	Point_t _calcTmpTargetNoneRealTime();
 //	Point_t _calcTmpTargetRealTime();

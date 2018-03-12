@@ -454,67 +454,41 @@ robot *robot::instance()
 
 void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 {
-	tf::StampedTransform transform;
-
-	tf::Vector3 odom_pose;
-	double odom_pose_radian_;
-
-	if (getBaselinkFrameType() == SLAM_POSITION_SLAM_ANGLE || getBaselinkFrameType() == SLAM_POSITION_ODOM_ANGLE)
-	{
-		if(slam.isMapReady())
-		{
+	tf::StampedTransform transform{};
+//	tf::Vector3 tmp_pos{odom.getX(),odom.getY(),0};
+	tf::Vector3 tmp_pos(robot_pos);
+	double	tmp_rad{odom.getRadian()};
+	if (getBaselinkFrameType() == SLAM_POSITION_SLAM_ANGLE || getBaselinkFrameType() == SLAM_POSITION_ODOM_ANGLE) {
+		if (slam.isMapReady()) {
 			try {
 				robot_tf_->lookupTransform("/map", "/base_link", ros::Time(0), transform);
-				auto tmp = transform.getOrigin();
-				auto tmp_yaw = tf::getYaw(transform.getRotation());
-
-				if(getBaselinkFrameType() == SLAM_POSITION_ODOM_ANGLE)
-				{
-					robot_tf_->lookupTransform("/odom", "/base_link", ros::Time(0), transform);
-					tmp_yaw = tf::getYaw(transform.getRotation());
-				}
-
-				odom_pose = transform.getOrigin();
-				odom_pose_radian_ = tf::getYaw(transform.getRotation());
-				slam_correction_pos = tmp - odom_pose;
-				slam_correction_yaw_ = tmp_yaw - odom_pose_radian_;
-			} catch(tf::TransformException e)
-			{
+//				ROS_ERROR("get transform!!!!!!!!!!!!!!!!!");
+				slam_pos = transform.getOrigin();
+				slam_rad  = (getBaselinkFrameType() == SLAM_POSITION_SLAM_ANGLE) ? tf::getYaw(transform.getRotation()) : 0;
+				tmp_pos = slam_pos;
+				tmp_rad = slam_rad;
+//				scaleCorrectionPos(tmp_pos, tmp_rad);
+//				ROS_WARN("tmp_pos(%f,%f),tmp_rad(%f)", tmp_pos.x(), tmp_pos.y(), tmp_rad);
+			} catch (tf::TransformException e) {
 				ROS_WARN("%s %d: Failed to compute map transform, skipping scan (%s)", __FUNCTION__, __LINE__, e.what());
 			}
 
-			if (!isTfReady())
-			{
+			if (!isTfReady()) {
 				ROS_INFO("%s %d: TF ready.", __FUNCTION__, __LINE__);
 				setTfReady(true);
 			}
+//			ROS_WARN("tmp_pos(%f,%f),tmp_rad(%f)", tmp_pos.x(), tmp_pos.y(), tmp_rad);
 		}
+	}else {
+		tmp_pos = {odom.getX(),odom.getY(),0};
 	}
-	else if (getBaselinkFrameType() == ODOM_POSITION_ODOM_ANGLE)
-	{
-		//ROS_INFO("SLAM = 0");
-		odom_pose.setX(odom.getX());
-		odom_pose.setY(odom.getY());
-		odom_pose_radian_ = odom.getRadian();
-	}
-
-#if 1
-	updateRobotPose(odom_pose, odom_pose_radian_);
-	odomPublish();
-	//printf("Map->base(%f, %f, %f). Map->robot (%f, %f, %f)\n", tmp_x, tmp_y, RAD2DEG(tmp_yaw), robot_x_, robot_y_, RAD2DEG(robot_radian_));
-//	ROS_WARN("Position (%f, %f), angle: %f.", robot_pos.getX(), robot_pos.getY(), robot_pos.getRadian());
-#else
-	pose.setX(tmp_x_);
-std::	pose.setY(tmp_y_);
-	pose.setAngle(tmp_yaw_);
-#endif
-	//ROS_WARN("%s %d: Position (%f, %f), yaw: %f. Odom position(%f, %f), yaw: %f.", __FUNCTION__, __LINE__, tmp_x, tmp_y, tmp_yaw, odom_pose_x_, odom_pose_y_, odom_pose_radian_);
-	//ROS_WARN("%s %d: Position diff(%f, %f), yaw diff: %f.", __FUNCTION__, __LINE__, tmp_x - odom_pose_x_, tmp_y - odom_pose_y_, tmp_yaw - odom_pose_radian_);
-	//ROS_WARN("%s %d: Odom diff(%f, %f).", __FUNCTION__, __LINE__, odom_pose_x_ - msg->pose.pose.position.x, odom_pose_y_ - msg->pose.pose.position.y);
-	//ROS_WARN("%s %d: Correct  diff(%f, %f), yaw diff: %f.", __FUNCTION__, __LINE__, correct_x, correct_y, correct_yaw);
+//	ROS_INFO("tmp_pos(%f,%f),tmp_rad(%f)", tmp_pos.x(), tmp_pos.y(), tmp_rad);
+	robot_pos = tmp_pos;
+	robot_rad = tmp_rad;
+	odomPublish(robot_pos, robot_rad);
 }
 
-void robot::odomPublish()
+void robot::odomPublish(const tf::Vector3& robot_pos, double robot_radian_)
 {
 	ros::Time cur_time;
 	nav_msgs::Odometry robot_pose;
@@ -566,34 +540,14 @@ void robot::initOdomPosition()
 	odom.setX(0);
 	odom.setY(0);
 }
-
-void robot::updateRobotPose(tf::Vector3& odom, double odom_yaw)
-{
-	auto cal_scale = [](double val){
-		double scale = fabs(val) > 0.05 ? 0.1 * fabs(val) / 0.05 : 0.03;
-		scale = scale > 1.0 ? 1.0 : scale;
-		return scale;
-	};
-	if (wheel.getLeftSpeedAfterPid() * wheel.getRightSpeedAfterPid() > 0)
-	{
-		auto diff = slam_correction_pos - robot_correction_pos;
-		robot_correction_pos += {cal_scale(diff.x()) * diff.x(), cal_scale(diff.y()) * diff.y(), 0};
-		double yaw = ranged_radian(slam_correction_yaw_ - robot_correction_yaw_);
-		robot_correction_yaw_ += (yaw) * 0.8;
-	}
-//	ROS_INFO("%s %d: Odom_yaw:%f, robot_correction_yaw:%f.", __FUNCTION__, __LINE__, odom_yaw, robot_correction_yaw_);
-	robot_pos = odom + robot_correction_pos;
-	robot_radian_ = (ranged_radian(odom_yaw + robot_correction_yaw_));
-}
+//
 
 void robot::resetCorrection()
 {
-	slam_correction_pos = {};
-	slam_correction_yaw_ = 0;
-	robot_correction_pos = {};
-	robot_correction_yaw_ = 0;
-	robot_pos = {};
-	robot_radian_ = 0;
+	slam_pos = {};
+	robot_rad = {};
+	slam_pos = {};
+	robot_rad = {};
 }
 
 void robot::obsAdjustCount(int count)

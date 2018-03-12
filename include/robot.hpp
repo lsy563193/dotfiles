@@ -73,7 +73,8 @@ public:
 	void initOdomPosition();
 
 	// The scale should be between 0 to 1.
-	void updateRobotPose(tf::Vector3 &odom, double odom_yaw);
+//	void scaleCorrectionPos(const tf::Vector3 &slam_pose, double tmp_yaw_, tf::Vector3 &odom, double &odom_yaw);
+//	void scaleCorrectionPos(tf::Vector3 &tmp_pos, double& tmp_rad);
 
 	void resetCorrection();
 
@@ -92,7 +93,7 @@ public:
 
 	double getWorldPoseRadian()
 	{
-		return robot_radian_;
+		return robot_rad;
 	}
 
 	float getWorldPoseX()
@@ -129,11 +130,6 @@ public:
 	void setBatterLow(bool val)
 	{
 		battery_low_ = val;
-	}
-
-	double getRobotCorrectionRadian() const
-	{
-		return robot_correction_yaw_;
 	}
 
 	void setTfReady(bool is_ready)
@@ -208,13 +204,18 @@ private:
 	bool battery_low_{};
 
 	tf::Vector3	robot_pos;
-	double	robot_radian_;
+	double	robot_rad;
+
+	tf::Vector3	slam_pos{};
+	double	slam_rad{};
 
 	// This is for the slam correction variables.
-	tf::Vector3	robot_correction_pos;
-	double	robot_correction_yaw_;
-	tf::Vector3	slam_correction_pos;
-	double	slam_correction_yaw_;
+//	tf::Vector3 correction_pos{};
+//	tf::Vector3	scale_correction_pos{};
+//	double correction_yaw_{};
+//	double	scale_correction_yaw_;
+//	tf::Vector3	slam_correction_pos;
+//	double	slam_correction_yaw_;
 
 	double gyro_dynamic_run_time_;
 	double gyro_dynamic_interval_;
@@ -243,7 +244,7 @@ private:
 
 	//callback function
 	void robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg);
-	void odomPublish();
+	void odomPublish(const tf::Vector3& robot_pos, double robot_radian_);
 //	void robot_map_metadata_cb(const nav_msgs::MapMetaData::ConstPtr& msg);
 
 	boost::shared_ptr<Mode> p_mode{};

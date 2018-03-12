@@ -10,6 +10,8 @@
 //CELL_COUNT_MUL*1.5
 MovementFollowPointLinear::MovementFollowPointLinear()
 {
+//	kp_ = 4;
+	tmp_pos = getPosition();
 	angle_forward_to_turn_ = degree_to_radian(150);
 	min_speed_ = LINEAR_MIN_SPEED;
 	max_speed_ = LINEAR_MAX_SPEED;
@@ -21,6 +23,34 @@ MovementFollowPointLinear::MovementFollowPointLinear()
 //	auto p_clean_mode = dynamic_cast<ACleanMode*> (sp_mt_->sp_mode_);
 //	sp_mt_->target_point_ = p_clean_mode->remain_path_.front();
 }
+void MovementFollowPointLinear::scaleCorrectionPos() {
+//	CELL_SIZE
+	auto cal_scale = [](double val) {
+//			double scale = fabs(val) > 0.05 ? 0.5 * fabs(val) : 0.03;
+		double scale = fabs(val) > 0.05 ? 0.5 * fabs(val) : 0.005;
+		scale = std::min(1.0, scale);
+		printf("scale{%f} ", scale);
+		return scale;
+	};
+
+	auto diff = getPosition() - tmp_pos;
+//	if(std::abs(diff.y) >= CELL_SIZE/3)
+//	{
+	diff.y = cal_scale(diff.y) * diff.y;
+	diff.x = cal_scale(diff.x) * diff.x;
+//		ROS_INFO("y(%f,%f)",ty, diff.y);
+//	}
+//	else
+//	{
+//		diff.y = 0;
+//		ROS_INFO("y(%f,%f)",ty, diff.y);
+//	}
+	ROS_INFO("y_pos(%f)",getPosition().y, tmp_pos.y);
+	tmp_pos += diff;
+	ROS_INFO("y_pos(%f)",getPosition().y, tmp_pos.y);
+//	printf("\n");
+	ROS_INFO("diff_y(%f)",diff.y);
+}
 
 Point_t MovementFollowPointLinear::_calcTmpTarget()
 {
@@ -29,11 +59,11 @@ Point_t MovementFollowPointLinear::_calcTmpTarget()
 
 	if(isAny(p_mode->iterate_point_.dir))
 		return tmp_target_;
-
+	scaleCorrectionPos();
 	auto &tmp_target_xy = (isXAxis(p_mode->iterate_point_.dir)) ? tmp_target_.x : tmp_target_.y;
-	auto curr_xy = (isXAxis(p_mode->iterate_point_.dir)) ? getPosition().x : getPosition().y;
+	auto curr_xy = (isXAxis(p_mode->iterate_point_.dir)) ? tmp_pos.x : tmp_pos.y;
 //	ROS_INFO("curr_xy(%f), target_xy(%f)", curr_xy, tmp_target_xy);
-	auto dis = std::min(std::abs(curr_xy - tmp_target_xy),  (CELL_SIZE * 1.5f /*+ CELL_COUNT_MUL*/));
+	auto dis = std::min(std::abs(curr_xy - tmp_target_xy),  (CELL_SIZE * 2.5f /*+ CELL_COUNT_MUL*/));
 	if (!isPos(p_mode->iterate_point_.dir))
 		dis *= -1;
 	tmp_target_xy = curr_xy + dis;
