@@ -594,7 +594,7 @@ void ACleanMode::setCleanMapMarkers(int16_t x, int16_t y, CellState type, visual
 	else if (type == BLOCKED_SLIP)
 	{
 		// Purple 
-		color_.r = 0.2;
+		color_.r = 1.0;
 		color_.g = 0.0;
 		color_.b = 1.0;
 	}
@@ -1151,6 +1151,14 @@ void ACleanMode::cliffAll(bool state_now, bool state_last)
 	{
 		ROS_WARN("%s %d: Cliff all.", __FUNCTION__, __LINE__);
 		ev.cliff_all_triggered = true;
+	}
+}
+
+void ACleanMode::robotSlip(bool state_now, bool state_last){
+	if(!ev.robot_slip)
+	{
+		ROS_WARN("%s %d: Robot slip.", __FUNCTION__, __LINE__);
+		ev.robot_slip= true;
 	}
 }
 

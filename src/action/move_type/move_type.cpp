@@ -28,12 +28,11 @@ bool IMoveType::shouldMoveBack()
 	ev.bumper_triggered = bumper.getStatus();
 	ev.cliff_triggered = cliff.getStatus();
 	ev.tilt_triggered = gyro.getTiltCheckingStatus();
-	ev.robot_slip = lidar.isRobotSlip();
 
-	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || ev.robot_slip)
+	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered)
 	{
-		ROS_WARN("%s, %d,ev.bumper_triggered(%d) ev.cliff_triggered(%d) ev.tilt_triggered(%d) ev.robot_slip(%d)."
-				, __FUNCTION__, __LINE__, ev.bumper_triggered, ev.cliff_triggered, ev.tilt_triggered, ev.robot_slip);
+		ROS_WARN("%s, %d,ev.bumper_triggered(%d) ev.cliff_triggered(%d) ev.tilt_triggered(%d)."
+				, __FUNCTION__, __LINE__, ev.bumper_triggered, ev.cliff_triggered, ev.tilt_triggered);
 		return true;
 	}
 

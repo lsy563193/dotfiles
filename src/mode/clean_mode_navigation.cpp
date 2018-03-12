@@ -51,9 +51,9 @@ bool CleanModeNav::mapMark()
 
 	clean_path_algorithm_->displayPointPath((passed_path_));
 
-	std::unique(passed_path_.begin(),passed_path_.end(),[](const Point_t& l, const Point_t& r){
+/*	passed_path_.erase(std::unique(passed_path_.begin(),passed_path_.end(),[](const Point_t& l, const Point_t& r){
 		return r.toCell() == l.toCell();
-	});
+	}),passed_path_.end());*/
 
 	GridMap map{};
 	for (auto &&p_it :passed_path_)
@@ -110,12 +110,19 @@ bool CleanModeNav::mapMark()
 			setHomePoint();
 	}
 	for (auto &&cost_block : clean_map_.c_blocks) {
-		if(std::find_if(c_bound2.begin(), c_bound2.end(), [&](const Cell_t& c_it){ return c_it == cost_block.second; }) != c_bound2.end())
+		if(/*cost_block.first != BLOCKED_SLIP && */std::find_if(c_bound2.begin(), c_bound2.end(), [&](const Cell_t& c_it)
+		{ return c_it == cost_block.second; }) != c_bound2.end())
 			clean_map_.setCell(CLEAN_MAP, cost_block.second.x, cost_block.second.y, cost_block.first);
 	}
 
 	for (auto &&p_it :passed_path_)
 		clean_map_.setCells(CLEAN_MAP, p_it.toCell().x, p_it.toCell().y, CLEANED);
+
+	//For slip mark
+	for(auto &&cost_block : clean_map_.c_blocks){
+		if(cost_block.first == BLOCKED_SLIP)
+			clean_map_.setCell(CLEAN_MAP,cost_block.second.x,cost_block.second.y,BLOCKED_SLIP);
+	}
 
 	clean_map_.c_blocks.clear();
 	passed_path_.clear();

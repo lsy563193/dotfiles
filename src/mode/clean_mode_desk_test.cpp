@@ -6,22 +6,22 @@
 #include <error.h>
 #include "dev.h"
 #include "mode.hpp"
-CleanModeTest::CleanModeTest()
+CleanModeDeskTest::CleanModeDeskTest()
 {
-	ROS_WARN("%s %d: Entering Test mode\n=========================" , __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Entering Desk Test mode\n=========================" , __FUNCTION__, __LINE__);
 	speaker.play(VOICE_TEST_MODE, false);
 }
 
-CleanModeTest::~CleanModeTest()
+CleanModeDeskTest::~CleanModeDeskTest()
 {
-	ROS_WARN("%s %d: Exit Test mode\n=========================" , __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Exit Desk Test mode\n=========================" , __FUNCTION__, __LINE__);
 /*	if (test_state_ != -1)
 		speaker.play(VOICE_TEST_SUCCESS, false);
 	else
 		speaker.play(VOICE_TEST_FAIL, false);*/
 }
 
-bool CleanModeTest::isExit()
+bool CleanModeDeskTest::isExit()
 {
 	if (sp_state == state_init)
 	{
@@ -49,14 +49,14 @@ bool CleanModeTest::isExit()
 }
 
 // For handlers.
-void CleanModeTest::keyClean(bool state_now, bool state_last)
+void CleanModeDeskTest::keyClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Key clean pressed.", __FUNCTION__, __LINE__);
 	ev.key_clean_pressed = true;
 	key.resetTriggerStatus();
 }
 
-void CleanModeTest::remoteDirectionForward(bool state_now, bool state_last)
+void CleanModeDeskTest::remoteDirectionForward(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote forward pressed.", __FUNCTION__, __LINE__);
 	ev.remote_direction_forward = true;
@@ -64,7 +64,7 @@ void CleanModeTest::remoteDirectionForward(bool state_now, bool state_last)
 }
 
 // State init.
-void CleanModeTest::switchInStateInit()
+void CleanModeDeskTest::switchInStateInit()
 {
 	action_i_ = ac_null;
 	sp_action_ = nullptr;
@@ -73,14 +73,14 @@ void CleanModeTest::switchInStateInit()
 }
 
 // State desk test.
-bool CleanModeTest::updateActionInStateDeskTest()
+bool CleanModeDeskTest::updateActionInStateDeskTest()
 {
 	action_i_ = ac_desk_test;
 	genNextAction();
 	return true;
 }
 
-void CleanModeTest::switchInStateDeskTest()
+void CleanModeDeskTest::switchInStateDeskTest()
 {
 	action_i_ = ac_null;
 	sp_action_ = nullptr;

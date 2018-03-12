@@ -293,6 +293,7 @@ public:
 	// Handlers
 	void remoteHome(bool state_now, bool state_last) override ;
 	void cliffAll(bool state_now, bool state_last) override ;
+	void robotSlip(bool state_now, bool state_last) override ;
 	void overCurrentBrushMain(bool state_now, bool state_last) override;
 	void overCurrentVacuum(bool state_now, bool state_last) override;
 
@@ -667,11 +668,11 @@ private:
 
 };
 
-class CleanModeTest:public ACleanMode
+class CleanModeDeskTest:public ACleanMode
 {
 public:
-	CleanModeTest();
-	~CleanModeTest();
+	CleanModeDeskTest();
+	~CleanModeDeskTest();
 
 	bool mapMark() override
 	{return false;}

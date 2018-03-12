@@ -17,9 +17,6 @@
 #define VERIFY_CPU_ID						(0)
 #define VERIFY_KEY							(0)
 
-/* Functional test setting. */
-#define X900_FUNCTIONAL_TEST						(0)
-
 /* ------------------------------------- Speaker config ------------------------------------- */
 #define SPEAKER_VOLUME						(55)
 
@@ -102,7 +99,7 @@
 #define LOW_BATTERY_STOP_VOLTAGE		(1250)
 
 /* Ready to clean battery voltage value */
-#define BATTERY_READY_TO_CLEAN_VOLTAGE	(1400)
+#define BATTERY_READY_TO_CLEAN_VOLTAGE	(1200)
 
 /* Fully charged battery voltage value */
 #define BATTERY_FULL_VOLTAGE	(1640)

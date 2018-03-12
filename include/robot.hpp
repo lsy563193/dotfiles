@@ -196,6 +196,7 @@ private:
 // Lock for odom coordinate
 	boost::mutex odom_mutex_;
 
+	uint8_t r16_test_mode_;
 
 	bool is_sensor_ready_{};
 	bool is_tf_ready_{};
@@ -240,6 +241,8 @@ private:
 
 	pp::scan_ctrl scan_ctrl_;
 
+	std::string serial_port_;
+	int baud_rate_;
 	std::string lidar_bumper_dev_;
 
 	//callback function
