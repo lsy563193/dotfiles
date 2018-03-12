@@ -45,9 +45,10 @@ void MovementFollowPointLinear::scaleCorrectionPos() {
 //		diff.y = 0;
 //		ROS_INFO("y(%f,%f)",ty, diff.y);
 //	}
-	ROS_INFO("y_pos(%f)",getPosition().y, tmp_pos.y);
+//	diff.y = 0;
+	ROS_INFO("y_pos(%f,%f)",getPosition().y, tmp_pos.y);
 	tmp_pos += diff;
-	ROS_INFO("y_pos(%f)",getPosition().y, tmp_pos.y);
+	ROS_INFO("y_pos(%f,%f)",getPosition().y, tmp_pos.y);
 //	printf("\n");
 	ROS_INFO("diff_y(%f)",diff.y);
 }
