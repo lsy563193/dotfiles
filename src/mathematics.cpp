@@ -149,9 +149,9 @@ PointSelector::PointSelector(bool is_left, double wall_distance)
 	narrow = is_left ? 0.167 : 0.182;
 	if (wall_distance > 0.180) {
 		narrow = narrow + 0.01;
-//		beeper.beepForCommand(VALID);
+		beeper.beepForCommand(VALID);
 	}
-	ROS_WARN("narrow = %lf", narrow);
+//	ROS_WARN("narrow = %lf", narrow);
 	narrow_minuend = is_left ? 0.03 : 0.03;
 
 	x_min_forward = LIDAR_OFFSET_X;
