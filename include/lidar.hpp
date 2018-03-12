@@ -74,7 +74,7 @@ public:
 		align_radian_ = radian;
 	}
 
-	uint8_t lidarMarker(std::vector<Vector2<int>> &markers, double X_MAX = 0.237);
+	uint8_t lidarMarker(std::vector<Vector2<int>> &markers, double X_MAX = 0.21);
 	void checkRobotSlip();
 	bool isRobotSlip();
 

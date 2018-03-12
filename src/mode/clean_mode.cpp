@@ -331,8 +331,8 @@ bool ACleanMode::removeCrossingPoint(const Vector2<double> &target_point, PointS
 	return true;
 }
 
-bool ACleanMode::calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,bool is_left, std::deque<Vector2<double>>& points) {
-	PointSelector para{is_left};
+bool ACleanMode::calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,bool is_left, std::deque<Vector2<double>>& points, double wall_distance) {
+	PointSelector para{is_left, wall_distance};
 //	ROS_INFO("is_left(%d)",is_left);
 	auto is_corner = checkCorner(scan, para);
 	if(is_corner)
@@ -416,7 +416,7 @@ void ACleanMode::scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr& scan)
 	lidar.checkRobotSlip();
 	if (lidar.isScanOriginalReady() && (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)) {
 		std::deque<Vector2<double>> points{};
-		calcLidarPath(scan, action_i_ == ac_follow_wall_left, points);
+		calcLidarPath(scan, action_i_ == ac_follow_wall_left, points, wall_distance);
 		setTempTarget(points, scan->header.seq);
 	}
 }
@@ -1634,6 +1634,7 @@ bool ACleanMode::generatePath(GridMap &map, const Point_t &curr, const int &last
 
 bool ACleanMode::isGyroDynamic() {
 	return ros::Time::now().toSec() - time_gyro_dynamic_ > robot::instance()->getGyroDynamicInterval();
+//	return true;
 }
 
 void ACleanMode::genNextAction() {

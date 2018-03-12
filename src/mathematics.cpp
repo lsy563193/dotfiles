@@ -1,5 +1,7 @@
 #include <stdint.h>
 #include <math.h>
+#include <event_manager.h>
+#include <beeper.h>
 
 #include "mathematics.h"
 #include "ros/ros.h"
@@ -134,10 +136,22 @@ bool unsigned_long_to_hex_string(unsigned long number, char *str, const int len)
 }
 
 // Functions for class PointSelector
-PointSelector::PointSelector(bool is_left)
+PointSelector::PointSelector(bool is_left, double wall_distance)
 {
 	is_left_ = is_left;
-	narrow = is_left ? 0.177 : 0.187;
+//	narrow = is_left ? 0.177 : 0.187;
+	const auto wall_dis_offset = 0.00;
+	double w_l = wall_distance - wall_dis_offset;
+	double w_r = wall_distance + 0.01 - wall_dis_offset;
+	check_limit(w_l, 0.167, 0.187);
+	check_limit(w_r, 0.177, 0.197);
+//	narrow = is_left ?  w_l : w_r;
+	narrow = is_left ? 0.167 : 0.182;
+	if (wall_distance > 0.180) {
+		narrow = narrow + 0.01;
+//		beeper.beepForCommand(VALID);
+	}
+//	ROS_WARN("narrow = %lf", narrow);
 	narrow_minuend = is_left ? 0.03 : 0.03;
 
 	x_min_forward = LIDAR_OFFSET_X;
