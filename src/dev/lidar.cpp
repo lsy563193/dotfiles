@@ -444,7 +444,7 @@ bool Lidar::lidarGetFitLine(double r_begin, double r_end, double range, double d
 		return false;
 	}
 	bool isReverse = false;
-	float consec_lim = 0.10;
+	float consecutive_lim = 0.10;
 	int points_count_lim = 10;
 	float t_lim_split = 0.10;
 	float t_lim_merge = 0.10;
@@ -453,7 +453,7 @@ bool Lidar::lidarGetFitLine(double r_begin, double r_end, double range, double d
 	Lidar_Point.clear();
 
 	if(is_align){
-		consec_lim = 0.06;
+		consecutive_lim = 0.06;
 		points_count_lim = 10;
 		t_lim_split = 0.06;
 		t_lim_merge = 0.06;
@@ -515,7 +515,7 @@ bool Lidar::lidarGetFitLine(double r_begin, double r_end, double range, double d
 		ROS_ERROR("%s %d: No lidar point available!", __FUNCTION__, __LINE__);
 		return false;
 	}
-	splitLine(Lidar_Point, consec_lim,points_count_lim);
+	splitLine(Lidar_Point, consecutive_lim,points_count_lim);
 	splitLine2nd(&Lidar_Group, t_lim_split,points_count_lim);
 	mergeLine(&Lidar_Group, t_lim_merge, is_align);
 	fitLineGroup(&Lidar_Group,dis_lim , is_align);
@@ -533,6 +533,7 @@ bool Lidar::lidarGetFitLine(double r_begin, double r_end, double range, double d
 		ROS_ERROR("fit line succeed! line_angle = %lf", radian_to_degree(*line_radian));
 		return true;
 	} else {
+		*distance = 0;
 		ROS_ERROR("no line to fit!");
 		return false;
 	}
@@ -1661,7 +1662,7 @@ uint8_t Lidar::lidar_get_status()
 {
 	std::vector<Vector2<int>> markers;
 	if (isScanCompensateReady())
-		return lidarMarker(markers, 0.23);
+		return lidarMarker(markers);
 
 	return 0;
 }
