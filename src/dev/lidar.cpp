@@ -534,6 +534,7 @@ bool Lidar::lidarGetFitLine(double r_begin, double r_end, double range, double d
 		ROS_ERROR("fit line succeed! line_angle = %lf", radian_to_degree(*line_radian));
 		return true;
 	} else {
+		*distance = 0;
 		ROS_ERROR("no line to fit!");
 		return false;
 	}
@@ -1646,7 +1647,7 @@ uint8_t Lidar::lidar_get_status()
 {
 	std::vector<Vector2<int>> markers;
 	if (isScanCompensateReady())
-		return lidarMarker(markers, 0.23);
+		return lidarMarker(markers);
 
 	return 0;
 }

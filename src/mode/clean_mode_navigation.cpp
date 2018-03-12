@@ -130,7 +130,7 @@ bool CleanModeNav::markRealTime()
 //		wheel.stop();
 		std::vector<Vector2<int>> markers;
 		if (lidar.isScanCompensateReady())
-			lidar.lidarMarker(markers, 0.23);
+			lidar.lidarMarker(markers);
 //		ROS_INFO("markers.size() = %d", markers.size());
 		for (const auto& marker : markers) {
 //			ROS_INFO("marker(%d, %d)", marker.x, marker.y);
