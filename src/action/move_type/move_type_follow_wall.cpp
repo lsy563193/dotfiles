@@ -225,8 +225,8 @@ int16_t MoveTypeFollowWall::obsTurnAngle()
 }
 
 bool MoveTypeFollowWall::_lidarTurnRadian(bool is_left, double &turn_radian, double lidar_min, double lidar_max,
-										  double radian_min,
-										  double radian_max, double dis_limit)
+										  double radian_min, double radian_max, bool is_moving,
+																					double dis_limit)
 {
 	double line_radian;
 	double distance;
@@ -235,7 +235,8 @@ bool MoveTypeFollowWall::_lidarTurnRadian(bool is_left, double &turn_radian, dou
 	auto line_is_found = lidar.lidarGetFitLine(lidar_min, lidar_max, -1.0, dis_limit, &line_radian, &distance,is_left_);
 
 	auto p_mode = dynamic_cast<ACleanMode*> (sp_mode_);
-	p_mode->wall_distance = distance;
+
+	p_mode->wall_distance = is_moving ? distance - 0.022 : distance;
 
 	auto radian = line_radian;
 
@@ -279,6 +280,7 @@ bool MoveTypeFollowWall::_lidarTurnRadian(bool is_left, double &turn_radian, dou
 
 bool MoveTypeFollowWall::lidarTurnRadian(double &turn_radian)
 {
+	bool is_moving{false};
 	wheel.stop();
 	lidar_angle_param param;
 	if (ev.bumper_triggered) {
@@ -309,6 +311,7 @@ bool MoveTypeFollowWall::lidarTurnRadian(double &turn_radian)
 		param.lidar_max = degree_to_radian(270);
 		param.radian_min = degree_to_radian(18);
 		param.radian_max = degree_to_radian(180);
+		is_moving = true;
 	}
 /*	while (ros::ok()) {
 		_lidarTurnRadian(is_left_, turn_radian, param.lidar_min, param.lidar_max, param.radian_min,
@@ -316,7 +319,7 @@ bool MoveTypeFollowWall::lidarTurnRadian(double &turn_radian)
 		sleep(2);
 	}*/
 	return _lidarTurnRadian(is_left_, turn_radian, param.lidar_min, param.lidar_max, param.radian_min,
-													param.radian_max);
+													param.radian_max, is_moving);
 }
 
 double MoveTypeFollowWall::getTurnRadianByEvent()

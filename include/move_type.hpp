@@ -108,7 +108,7 @@ private:
 	int16_t obsTurnAngle();
 	int16_t double_scale_10(double line_angle);
 	bool _lidarTurnRadian(bool is_left, double &turn_radian, double lidar_min, double lidar_max, double radian_min,
-						  double radian_max,
+						  double radian_max, bool is_moving,
 						  double dis_limit = 0.3);
 	bool lidarTurnRadian(double &turn_radian);
 	double getTurnRadianByEvent();
