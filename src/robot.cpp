@@ -307,8 +307,10 @@ void robot::robotbase_routine_cb()
 		angle_rad = odom.getRadian();
 		dt = (cur_time - last_time).toSec();
 		last_time = cur_time;
-		odom.setX(static_cast<float>(odom.getX() + (odom.getMovingSpeed() * cos(angle_rad)) * dt));
-		odom.setY(static_cast<float>(odom.getY() + (odom.getMovingSpeed() * sin(angle_rad)) * dt));
+		if(!lidar.isRobotSlip()){
+			odom.setX(static_cast<float>(odom.getX() + (odom.getMovingSpeed() * cos(angle_rad)) * dt));
+			odom.setY(static_cast<float>(odom.getY() + (odom.getMovingSpeed() * sin(angle_rad)) * dt));
+		}
 		odom_quat = tf::createQuaternionMsgFromYaw(angle_rad);
 		odom_msg.header.stamp = cur_time;
 		odom_msg.header.frame_id = "odom";
