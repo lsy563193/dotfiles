@@ -46,11 +46,11 @@ void MovementFollowPointLinear::scaleCorrectionPos() {
 //		ROS_INFO("y(%f,%f)",ty, diff.y);
 //	}
 //	diff.y = 0;
-	ROS_INFO("y_pos(%f,%f)",getPosition().y, tmp_pos.y);
+//	ROS_INFO("y_pos(%f,%f)",getPosition().y, tmp_pos.y);
 	tmp_pos += diff;
-	ROS_INFO("y_pos(%f,%f)",getPosition().y, tmp_pos.y);
+//	ROS_INFO("y_pos(%f,%f)",getPosition().y, tmp_pos.y);
 //	printf("\n");
-	ROS_INFO("diff_y(%f)",diff.y);
+//	ROS_INFO("diff_y(%f)",diff.y);
 }
 
 Point_t MovementFollowPointLinear::_calcTmpTarget()
@@ -63,11 +63,14 @@ Point_t MovementFollowPointLinear::_calcTmpTarget()
 	scaleCorrectionPos();
 	auto &tmp_target_xy = (isXAxis(p_mode->iterate_point_.dir)) ? tmp_target_.x : tmp_target_.y;
 	auto curr_xy = (isXAxis(p_mode->iterate_point_.dir)) ? tmp_pos.x : tmp_pos.y;
+	auto &other_tmp_target_xy = (isXAxis(p_mode->iterate_point_.dir)) ? tmp_target_.y : tmp_target_.x ;
+	auto &other_curr_xy = (isXAxis(p_mode->iterate_point_.dir)) ? tmp_pos.y :tmp_pos.x ;
 //	ROS_INFO("curr_xy(%f), target_xy(%f)", curr_xy, tmp_target_xy);
-	auto dis = std::min(std::abs(curr_xy - tmp_target_xy),  (CELL_SIZE * 2.5f /*+ CELL_COUNT_MUL*/));
+	auto dis = std::min(std::abs(curr_xy - tmp_target_xy),  (CELL_SIZE * 1.5f /*+ CELL_COUNT_MUL*/));
 	if (!isPos(p_mode->iterate_point_.dir))
 		dis *= -1;
 	tmp_target_xy = curr_xy + dis;
+	other_tmp_target_xy = other_curr_xy;
 //	ROS_INFO("dis(%d)",dis);
 //	ROS_WARN("curr(%f,%d, target(%f,%f), dir(%f) ", getPosition().x,getPosition().y, tmp_target_.x,tmp_target_.y,p_mode->start_point_.dir);
 //	ROS_WARN("tmp(%f,%f)",tmp_target_.x, tmp_target_.y);
@@ -84,6 +87,17 @@ Point_t MovementFollowPointLinear::calcTmpTarget()
 	auto tmp_target_ = _calcTmpTarget();
 
 	dynamic_cast<ACleanMode*>(sp_mt_->sp_mode_)->pubTmpTarget(tmp_target_);
+
+	if(std::abs(radian_diff) > degree_to_radian(50))
+		kp_ = 2;
+	else if(std::abs(radian_diff) > degree_to_radian(40))
+		kp_ = 3;
+	else if(std::abs(radian_diff) > degree_to_radian(30))
+		kp_ = 4;
+	else if(std::abs(radian_diff) > degree_to_radian(10))
+		kp_ = 5;
+	else
+		kp_ = 5;
 	return tmp_target_;
 }
 
