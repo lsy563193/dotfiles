@@ -329,7 +329,9 @@ public:
 
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed) override;
 	bool isFinish() override;
-
+	int bumper_status_in_stay_ = 0;
+	int cliff_status_in_stay_ = 0;
+	int tilt_status_in_stay_ = 0;
 private:
 };
 
@@ -337,7 +339,6 @@ class MovementStayRemote :public MovementStay{
 public:
 	MovementStayRemote(double stay_time_sec);
 	bool isFinish() override;
-
 };
 class MovementRemoteDirectGo :public IMovement
 {

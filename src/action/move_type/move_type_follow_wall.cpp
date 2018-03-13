@@ -118,16 +118,17 @@ bool MoveTypeFollowWall::isFinish()
 			//resetTriggeredValue();
 		}
 		else if (movement_i_ == mm_stay) {
-			auto turn_angle = getTurnRadian(false);
-			turn_target_radian_ = getPosition().addRadian(turn_angle).th;
-
-			auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
-			movement_i_ = p_mode->isGyroDynamic() ? mm_dynamic : mm_turn;
-			if(movement_i_ == mm_dynamic)
-				sp_movement_.reset(new MovementGyroDynamic());
-			else
-				sp_movement_.reset(new MovementTurn(turn_target_radian_, ROTATE_TOP_SPEED));
-			resetTriggeredValue();
+			if(!handleMoveBackEventRealTime(p_cm)){ //aim
+				auto turn_angle = getTurnRadian(false);
+				turn_target_radian_ = getPosition().addRadian(turn_angle).th;
+				auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
+				movement_i_ = p_mode->isGyroDynamic() ? mm_dynamic : mm_turn;
+				if(movement_i_ == mm_dynamic)
+					sp_movement_.reset(new MovementGyroDynamic());
+				else
+					sp_movement_.reset(new MovementTurn(turn_target_radian_, ROTATE_TOP_SPEED));
+				resetTriggeredValue();
+			}
 		}
 	}
 	return false;
@@ -137,13 +138,13 @@ int16_t MoveTypeFollowWall::bumperTurnAngle()
 {
 	int16_t turn_angle{};
 	auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
+	auto is_trapped = p_mode->is_trapped_;
 	int dijkstra_cleaned_count = 0;
 	Cell_t target;
 	auto status = ev.bumper_triggered;
 	auto get_obs = (is_left_) ? obs.getLeft() : obs.getRight();
 	auto diff_side = (is_left_) ? BLOCK_RIGHT : BLOCK_LEFT;
 	auto same_side = (is_left_) ? BLOCK_LEFT : BLOCK_RIGHT;
-	auto is_trapped = p_mode->is_trapped_;
 	if(is_trapped)
 		p_mode->clean_path_algorithm_->findTargetUsingDijkstra(p_mode->clean_map_,getPosition().toCell(),target,dijkstra_cleaned_count);
 
@@ -362,13 +363,16 @@ double MoveTypeFollowWall::getTurnRadianByEvent()
 double MoveTypeFollowWall::getTurnRadian(bool use_target_radian)
 {
 	double  turn_radian{};
+	auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
+	auto is_trapped = p_mode->is_trapped_;
 	if(state_turn){
 		state_turn = false;
 		auto diff = boost::dynamic_pointer_cast<AMovementFollowPoint>(sp_movement_)->radian_diff;
 		ROS_INFO("%s %d: Use radian_diff(%f)", __FUNCTION__, __LINE__, diff);
 		return diff;
 	}
-	if (lidarTurnRadian(turn_radian)) {
+
+	if (lidarTurnRadian(turn_radian) && !is_trapped) {
 		ROS_INFO("%s %d: Use fit line angle!(%f in degree)", __FUNCTION__, __LINE__, radian_to_degree(turn_radian));
 	}
 	else {
@@ -466,6 +470,25 @@ bool MoveTypeFollowWall::handleMoveBackEvent(ACleanMode* p_clean_mode)
 		return true;
 	}
 
+	return false;
+}
+
+bool MoveTypeFollowWall::handleMoveBackEventRealTime(ACleanMode *p_clean_mode) {
+	auto p_movement = boost::dynamic_pointer_cast<MovementStay>(sp_movement_);
+	if (p_movement->bumper_status_in_stay_ || p_movement->cliff_status_in_stay_)
+	{
+		p_clean_mode->moveTypeFollowWallSaveBlocks();
+		movement_i_ = mm_back;
+		sp_movement_.reset(new MovementBack(0.01, BACK_MAX_SPEED));
+		return true;
+	}
+	else if(p_movement->tilt_status_in_stay_)
+	{
+		p_clean_mode->moveTypeFollowWallSaveBlocks();
+		movement_i_ = mm_back;
+		sp_movement_.reset(new MovementBack(0.3, BACK_MAX_SPEED));
+		return true;
+	}
 	return false;
 }
 
