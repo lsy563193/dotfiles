@@ -883,6 +883,12 @@ bool Lidar::mergeLine(std::vector<std::deque<Vector2<double>> > *groups, double 
 		auto dis = std::distance((*groups).begin(),loc);
 		(*groups).resize(dis);
 	}
+	//for erase the line which line is shorter than 10 cm.
+	if (!is_align) {
+		groups->erase(std::remove_if(groups->begin(),groups->end(),[](const std::deque<Vector2<double>>& a){
+			return sqrt(pow(a.front().x - a.back().x,2) + pow(a.front().y - a.back().y,2)) < 0.10;
+		}),groups->end());
+	}
 #if 0
 	for(auto &ite:(*groups)) {
 //		ROS_INFO("6");
