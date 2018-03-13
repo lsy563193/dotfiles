@@ -284,6 +284,8 @@ public:
 	bool isRemoteGoHomePoint();
 	void setHomePoint();
 	bool estimateChargerPos(uint32_t rcon_value);
+	void setChargerArea(const Point_t charge_pos);
+	bool checkChargerPos();
 	Cells pointsGenerateCells(Points &targets);
 
 	// For move types
@@ -470,6 +472,7 @@ protected:
 	bool remote_go_home_point{false};
 	bool switch_is_off_{false};
 	Points charger_pose_;
+	Points tmp_charger_pose_;
 	bool found_charger_{false};
 	bool out_range_charger_{false};
 public:

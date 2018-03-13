@@ -433,24 +433,6 @@ uint8_t GridMap::setFollowWall(bool is_left,const Points& passed_path)
 	}
 }
 
-uint8_t GridMap::setChargerArea(const Points charger_pos_list)
-{
-	//before set BLOCKED_RCON, clean BLOCKED_TMP_RCON first.
-	int16_t x_min,x_max,y_min,y_max;
-	getMapRange(CLEAN_MAP, &x_min, &x_max, &y_min, &y_max);
-	for(int16_t i = x_min;i<=x_max;i++){
-		for(int16_t j = y_min;j<=y_max;j++){
-			if(getCell(CLEAN_MAP, i, j) == BLOCKED_TMP_RCON)
-				setCell(CLEAN_MAP,i,j, UNCLEAN);
-		}
-	}
-
-
-	const int RADIAN= 4;//cells
-	setCircleMarkers(charger_pos_list.back(),true,RADIAN,BLOCKED_RCON);
-
-}
-
 uint8_t GridMap::saveSlip()
 {
 	if (!ev.robot_slip)
@@ -483,6 +465,7 @@ uint8_t GridMap::saveTilt()
 
 	std::vector<Cell_t> d_cells;
 
+	std::string msg = "cells:";
 	if(tilt_trig & TILT_LEFT)
 		d_cells = {{2, 2}, {2, 1}, {2, 0}, {1, 2}, {1, 1}, {1, 0}, {0, 2}, {0, 1}, {0, 0}};
 	else if(tilt_trig & TILT_RIGHT)
@@ -490,7 +473,6 @@ uint8_t GridMap::saveTilt()
 	else if(tilt_trig & TILT_FRONT)
 		d_cells = {{2, 1}, {2, 0}, {2, -1}, {1, 1}, {1, 0}, {1, -1}, {0, 1}, {0, 0}, {0, -1}};
 
-	std::string msg = "cells:";
 	for(auto& d_cell : d_cells)
 	{
 		auto cell = getPosition().getRelative(d_cell.x * CELL_SIZE, d_cell.y * CELL_SIZE).toCell();
@@ -498,7 +480,7 @@ uint8_t GridMap::saveTilt()
 		//ROS_WARN("%s %d: d_cell(%d, %d), angle(%d). Old method ->point(%d, %d)(cell(%d, %d)). New method ->cell(%d, %d)."
 		//			, __FUNCTION__, __LINE__, d_cell.x, d_cell.y, robot::instance()->getWorldPoseRadian(), x2, y2, count_to_cell(x2), count_to_cell(y2), x, y);
 		c_blocks.insert({BLOCKED_TILT, cell});
-		msg += "[" + std::to_string(d_cell.x) + "," + std::to_string(d_cell.y) + "](" + std::to_string(cell.x) + "," + std::to_string(cell.y) + ")";
+		msg += /*"[" + std::to_string(d_cell.x) + "," + std::to_string(d_cell.y) + "]*/"(" + std::to_string(cell.x) + "," + std::to_string(cell.y) + ")";
 	}
 	ROS_INFO("%s,%d: Current(%d, %d), save \033[32m%s\033[0m",__FUNCTION__, __LINE__, getPosition().toCell().x, getPosition().toCell().y, msg.c_str());
 	return static_cast<uint8_t >(d_cells.size());
@@ -729,6 +711,8 @@ uint8_t GridMap::saveRcon()
 		msg += "[" + std::to_string(d_cell.x) + "," + std::to_string(d_cell.y) + "](" + std::to_string(cell.x) + "," + std::to_string(cell.y) + ")";
 	}
 	ROS_INFO("%s,%d: Current(%d, %d), save \033[32m%s\033[0m",__FUNCTION__, __LINE__, getPosition().toCell().x, getPosition().toCell().y, msg.c_str());
+	//set tmp rcon pos
+	
 	return static_cast<uint8_t>(d_cells.size());
 }
 

@@ -36,9 +36,7 @@ bool Gyro::isOn(void)
 }
 
 void Gyro::setOn(void)
-{
-	serial.setSendData(CTL_GYRO, 0x02);
-	if (isOn()){
+{ serial.setSendData(CTL_GYRO, 0x02); if (isOn()){
 		ROS_INFO("gyro on already");
 	}
 	else
@@ -191,9 +189,9 @@ void Gyro::setDynamicOff(void)
 
 int16_t Gyro::getFront() {
 #if GYRO_FRONT_X_POS
-	return -x_acc_;
-#elif GYRO_FRONT_X_NEG
 	return x_acc_;
+#elif GYRO_FRONT_X_NEG
+	return -x_acc_;
 #elif GYRO_FRONT_Y_POS
 	return -y_acc_;
 #elif GYRO_FRONT_Y_NEG
@@ -203,9 +201,9 @@ int16_t Gyro::getFront() {
 
 int16_t Gyro::getLeft() {
 #if GYRO_FRONT_X_POS
-	return -y_acc_;
-#elif GYRO_FRONT_X_NEG
 	return y_acc_;
+#elif GYRO_FRONT_X_NEG
+	return -y_acc_;
 #elif GYRO_FRONT_Y_POS
 	return x_acc_;
 #elif GYRO_FRONT_Y_NEG
@@ -215,9 +213,9 @@ int16_t Gyro::getLeft() {
 
 int16_t Gyro::getRight() {
 #if GYRO_FRONT_X_POS
-	return -y_acc_;
-#elif GYRO_FRONT_X_NEG
 	return y_acc_;
+#elif GYRO_FRONT_X_NEG
+	return -y_acc_;
 #elif GYRO_FRONT_Y_POS
 	return x_acc_;
 #elif GYRO_FRONT_Y_NEG
@@ -285,76 +283,79 @@ uint8_t Gyro::checkTilt()
 {
 	uint8_t tmp_status = 0;
 
-	// Temporarily block tilt checking.
-	return tmp_status;
-
 	if (tilt_checking_enable_)
 	{
-		if (getFront() - getFrontInit() > FRONT_TILT_LIMIT)
+		
+		//robot front tilt
+		if (fabsf(getFront() - getFrontInit()) > FRONT_TILT_LIMIT)
 		{
-			tilt_front_count_ += 2;
-			//ROS_WARN("%s %d: front(%d)\tfront init(%d), front cnt(%d).", __FUNCTION__, __LINE__, getFront(), getFrontInit(), tilt_front_count_);
+			tilt_front_count_ +=2;
+			ROS_INFO("\033[1;40;32m%s %d: front(%d)\tfront init(%d), front cnt(%d).\033[0m", __FUNCTION__, __LINE__, getFront(), getFrontInit(), tilt_front_count_);
 		}
 		else
 		{
 			if (tilt_front_count_ > 0)
 				tilt_front_count_--;
-			else
-				tilt_front_count_ = 0;
 		}
-		if (getLeft() - getLeftInit() > LEFT_TILT_LIMIT)
+
+		//robot left tilt
+		if (getYAcc() - getLeftInit() > LEFT_TILT_LIMIT)
 		{
-			tilt_left_count_++;
-			//ROS_WARN("%s %d: left(%d)\tleft init(%d), left cnt(%d).", __FUNCTION__, __LINE__, getLeft(), getLeftInit(), tilt_left_count_);
+			tilt_left_count_+=3;
+			ROS_INFO("\033[1;40;34m %s %d: left(%d)\tleft init(%d), left cnt(%d).\033[0m", __FUNCTION__, __LINE__, getLeft(), getLeftInit(), tilt_left_count_);
 		}
 		else
 		{
 			if (tilt_left_count_ > 0)
 				tilt_left_count_--;
 		}
-		if (getRight() - getRightInit() > RIGHT_TILT_LIMIT)
+		
+		//robot right tilt
+		if (getYAcc() - getRightInit() < -RIGHT_TILT_LIMIT)
 		{
-			tilt_right_count_++;
-			//ROS_WARN("%s %d: right(%d)\tright init(%d), right cnt(%d).", __FUNCTION__, __LINE__, getRight(), getRightInit(), tilt_right_count_);
+			tilt_right_count_+=3;
+			ROS_INFO("\033[1;40;35m%s %d: right(%d)\tright init(%d), right cnt(%d).\033[0m", __FUNCTION__, __LINE__, getRight(), getRightInit(), tilt_right_count_);
 		}
 		else
 		{
 			if (tilt_right_count_ > 0)
 				tilt_right_count_--;
 		}
+#if 0
+		//z axies	
 		if (std::abs(getZAcc() - getInitZAcc()) > DIF_TILT_Z_VAL)
 		{
-			tilt_z_count_++;
-			//ROS_WARN("%s %d: z(%d)\tzi(%d).", __FUNCTION__, __LINE__, getZAcc(), getInitZAcc());
+			tilt_z_count_+=1;
+			ROS_INFO("\033[1;40;36m %s %d: z(%d)\tzi(%d) zc(%d) \033[0m", __FUNCTION__, __LINE__, getZAcc(), getInitZAcc(),tilt_z_count_);
 		}
 		else
 		{
-			if (tilt_z_count_ > 1)
-				tilt_z_count_ -= 2;
-			else
-				tilt_z_count_ = 0;
+			if (tilt_z_count_ > 0)
+				tilt_z_count_ -=1;
+
 		}
+#endif		
 
 		//if (left_count > 7 || front_count > 7 || right_count > 7 || z_count > 7)
 			//ROS_WARN("%s %d: count left:%d, front:%d, right:%d, z:%d", __FUNCTION__, __LINE__, left_count, front_count, right_count, z_count);
 
-		if (tilt_front_count_ + tilt_left_count_ + tilt_right_count_ + tilt_z_count_ > TILT_COUNT_REACH)
+		if ( tilt_right_count_ >= TILT_COUNT_REACH || tilt_left_count_ >= TILT_COUNT_REACH || tilt_front_count_ >= TILT_COUNT_REACH+4 )
 		{
-			ROS_INFO("\033[47;34m" "%s,%d,robot tilt !!" "\033[0m",__FUNCTION__,__LINE__);
-			if (tilt_left_count_ > TILT_COUNT_REACH / 3)
+			if (tilt_left_count_ >= TILT_COUNT_REACH)
 				tmp_status |= TILT_LEFT;
-			if (tilt_right_count_ > TILT_COUNT_REACH / 3)
+			if (tilt_right_count_ >= TILT_COUNT_REACH)
 				tmp_status |= TILT_RIGHT;
-
-			if (tilt_front_count_ > TILT_COUNT_REACH / 3 || !tmp_status)
+			if (tilt_front_count_ >= TILT_COUNT_REACH+4)
 				tmp_status |= TILT_FRONT;
+			tilt_front_count_ = 0;
+			tilt_left_count_ = 0;
+			tilt_right_count_ = 0;
+			tilt_z_count_ = 0;
 			setTiltCheckingStatus(tmp_status);
-			tilt_front_count_ /= 3;
-			tilt_left_count_ /= 3;
-			tilt_right_count_ /= 3;
-			tilt_z_count_ /= 3;
+
+			ROS_INFO("\033[47;34m" "%s,%d,robot tilt detect!! tmp_state=%d" "\033[0m",__FUNCTION__,__LINE__,tmp_status);
 		}
-		else if (tilt_front_count_ + tilt_left_count_ + tilt_right_count_ + tilt_z_count_ < TILT_COUNT_REACH / 4)
+		else 
 			setTiltCheckingStatus(0);
 	}
 	else{
