@@ -101,6 +101,7 @@ public:
 
 private:
 	bool handleMoveBackEvent(ACleanMode* p_clean_mode);
+	bool handleMoveBackEventRealTime(ACleanMode* p_clean_mode);
 	bool is_left_{};
 	int16_t bumperTurnAngle();
 	int16_t cliffTurnAngle();
