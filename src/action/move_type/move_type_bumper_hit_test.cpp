@@ -11,7 +11,7 @@
 MoveTypeBumperHitTest::MoveTypeBumperHitTest()
 {
 	ROS_INFO("%s,%d: Move type is bumper hit test.", __FUNCTION__, __LINE__);
-	p_direct_go_movement_.reset(new MovementRemoteDirectGo());
+	p_direct_go_movement_.reset(new MovementDirectGo(false));
 	p_back_movement_.reset();
 	p_turn_movement_.reset();
 

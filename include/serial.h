@@ -52,14 +52,14 @@
 // One byte for mix command.
 // bit 0 for wifi led controlling.
 // bit 1 for vacuum exception resume control.
-// bit 2-7 reserved.
+// bit 2 for switch of dynamic adjustment.
+// bit 3 for switch of gyro.
+// bit 4-7 reserved.
 #define CTL_MIX 15
 
-// One byte for controlling gyro.
-// bit 0 for switch of dynamic adjustment.
-// bit 1 for switch of gyro.
-// bit 2-7 reserved.
-#define CTL_GYRO 16
+// One byte for controlling water tank.
+// bit 0-7 reserved.
+#define CTL_WATER_TANK 16
 
 // One byte for key validation.
 #define CTL_KEY_VALIDATION 17
@@ -275,14 +275,8 @@
 #define VACUUM_TEST_MODE		13
 #define CHARGE_CURRENT_TEST_MODE		14
 #define ALARM_ERROR_MODE		15
-#define DESK_TEST_MODE_1		16 // For checking baselines
-#define DESK_TEST_MODE_2		17
-#define DESK_TEST_MODE_3		18
-
-// R16 test mode
-#define R16_NORMAL_MODE				0
-#define R16_FUNCTIONAL_TEST_MODE	1
-#define R16_DESK_TEST_MODE			2
+#define DESK_TEST_CURRENT_MODE		17 // For checking current
+#define DESK_TEST_MOVEMENT_MODE		18
 
 #define DUMMY_DOWNLINK_OFFSET		2
 #define KEY_DOWNLINK_OFFSET			9

@@ -22,6 +22,8 @@ public:
 
 	virtual void run()=0;
 
+	// For test mode.
+	virtual void dataExtract(){};
 protected:
 	double start_timer_{};
 	double timeout_interval_{};
