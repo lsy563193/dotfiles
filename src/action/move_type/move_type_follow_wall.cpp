@@ -118,16 +118,17 @@ bool MoveTypeFollowWall::isFinish()
 			//resetTriggeredValue();
 		}
 		else if (movement_i_ == mm_stay) {
-			auto turn_angle = getTurnRadian(false);
-			turn_target_radian_ = getPosition().addRadian(turn_angle).th;
-
-			auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
-			movement_i_ = p_mode->isGyroDynamic() ? mm_dynamic : mm_turn;
-			if(movement_i_ == mm_dynamic)
-				sp_movement_.reset(new MovementGyroDynamic());
-			else
-				sp_movement_.reset(new MovementTurn(turn_target_radian_, ROTATE_TOP_SPEED));
-			resetTriggeredValue();
+			if(!handleMoveBackEventRealTime(p_cm)){ //aim
+				auto turn_angle = getTurnRadian(false);
+				turn_target_radian_ = getPosition().addRadian(turn_angle).th;
+				auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
+				movement_i_ = p_mode->isGyroDynamic() ? mm_dynamic : mm_turn;
+				if(movement_i_ == mm_dynamic)
+					sp_movement_.reset(new MovementGyroDynamic());
+				else
+					sp_movement_.reset(new MovementTurn(turn_target_radian_, ROTATE_TOP_SPEED));
+				resetTriggeredValue();
+			}
 		}
 	}
 	return false;
@@ -466,6 +467,25 @@ bool MoveTypeFollowWall::handleMoveBackEvent(ACleanMode* p_clean_mode)
 		return true;
 	}
 
+	return false;
+}
+
+bool MoveTypeFollowWall::handleMoveBackEventRealTime(ACleanMode *p_clean_mode) {
+	auto p_movement = boost::dynamic_pointer_cast<MovementStay>(sp_movement_);
+	if (p_movement->bumper_status_in_stay_ || p_movement->cliff_status_in_stay_)
+	{
+		p_clean_mode->moveTypeFollowWallSaveBlocks();
+		movement_i_ = mm_back;
+		sp_movement_.reset(new MovementBack(0.01, BACK_MAX_SPEED));
+		return true;
+	}
+	else if(p_movement->tilt_status_in_stay_)
+	{
+		p_clean_mode->moveTypeFollowWallSaveBlocks();
+		movement_i_ = mm_back;
+		sp_movement_.reset(new MovementBack(0.3, BACK_MAX_SPEED));
+		return true;
+	}
 	return false;
 }
 
