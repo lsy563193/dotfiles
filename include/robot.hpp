@@ -253,6 +253,8 @@ private:
 	boost::shared_ptr<Mode> p_mode{};
 
 	bool is_locked_scan_ctrl_{false};
+
+	bool is_first_slip{true};
 };
 
 float cellToCount(int16_t distance);
