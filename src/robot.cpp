@@ -340,8 +340,8 @@ void robot::robotbase_routine_cb()
 		/*------publish end -----------*/
 
 		// Check tilt
-#if GYRO_DYNAMIC_ADJUSTMENT
 		gyro.checkTilt();
+#if GYRO_DYNAMIC_ADJUSTMENT
 #endif
 		// Dynamic adjust obs
 		obs.DynamicAdjust(OBS_adjust_count);
@@ -357,7 +357,7 @@ void robot::robotbase_routine_cb()
 						!(fabs(wheel.getLeftWheelActualSpeed() - wheel.getRightWheelActualSpeed()) > 0.1
 						  || (wheel.getLeftWheelActualSpeed() * wheel.getRightWheelActualSpeed() < 0)
 						  || bumper.getStatus()
-						  || gyro.getTiltCheckingStatus()
+						  /*|| gyro.getTiltCheckingStatus()*/
 						  || abs(wheel.getLeftSpeedAfterPid() - wheel.getRightSpeedAfterPid()) > 100
 						  || wheel.getLeftSpeedAfterPid() * wheel.getRightSpeedAfterPid() < 0);
 		}

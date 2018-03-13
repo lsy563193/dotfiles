@@ -4,16 +4,18 @@
 //for tilt detct
 #include <cstdint>
 
-#define TILT_COUNT_REACH			50
-#define DIF_TILT_X_VAL				170
-#define DIF_TILT_Y_VAL				170
-#define DIF_TILT_Z_VAL				70
-#define FRONT_TILT_LIMIT			120
-#define LEFT_TILT_LIMIT				120
-#define RIGHT_TILT_LIMIT			120
+#define TILT_COUNT_REACH			6
+#define DIF_TILT_X_VAL				100
+#define DIF_TILT_Y_VAL				100
+#define DIF_TILT_Z_VAL				100
+#define FRONT_TILT_LIMIT			250
+#define LEFT_TILT_LIMIT				200
+#define RIGHT_TILT_LIMIT			200
+#define BACK_TILT_LIMIT				280
 #define TILT_RIGHT					0x1
 #define TILT_FRONT					0x2
-#define TILT_LEFT					0x4
+#define TILT_LEFT						0x4
+#define TILT_BACK						0x8
 
 typedef enum{
 	WAIT_FOR_OPEN = 0,
@@ -61,11 +63,12 @@ public:
 	void setDynamicOff(void);
 #endif
 
-	uint8_t checkTilt(void);
+	uint8_t checkTilt(int front_tilt_limit = FRONT_TILT_LIMIT,int back_tilt_limit = BACK_TILT_LIMIT,int right_tilt_limit = RIGHT_TILT_LIMIT,
+										int left_tilt_limit = LEFT_TILT_LIMIT, int tilt_count_reach = TILT_COUNT_REACH,bool isSetTiltStatus = true);
 
 	bool isTiltCheckingEnable(void);
 
-	void TiltCheckingEnable(bool val);
+	void setTiltCheckingEnable(bool val);
 
 	int16_t getXAcc(void)
 	{
@@ -192,6 +195,7 @@ private:
 	bool tilt_checking_enable_;
 	uint8_t tilt_checking_status_;
 	uint16_t tilt_front_count_;
+	uint16_t tilt_back_count_;
 	uint16_t tilt_left_count_;
 	uint16_t tilt_right_count_;
 	uint16_t tilt_z_count_;

@@ -17,21 +17,21 @@ void signal_catch(int sig)
 		case SIGSEGV:
 		{
 			ROS_ERROR("Oops!!! pp receive SIGSEGV signal,segment fault!");
-			ros::shutdown();
 			if(robot_instance != nullptr){
-				speaker.play(VOICE_CLEANING_STOP,false);
+				speaker.play(VOICE_PROCESS_ERROR, false);
 				delete robot_instance;
 			}
+			ros::shutdown();
 			break;
 		}
 		case SIGINT:
 		{
 			ROS_ERROR("Oops!!! pp receive SIGINT signal,ctrl+c press");
-			ros::shutdown();
 			if(robot_instance != nullptr){
-				speaker.play(VOICE_CLEANING_STOP,false);
+				speaker.play(VOICE_USER_KILL,false);
 				delete robot_instance;
 			}
+			ros::shutdown();
 			break;
 		}
 		case SIGTERM:
@@ -39,7 +39,7 @@ void signal_catch(int sig)
 			ROS_ERROR("Ouch!!! pp receive SIGTERM signal,being kill!");
 			ros::shutdown();
 			if(robot_instance != nullptr){
-				speaker.play(VOICE_CLEANING_STOP,false);
+				speaker.play(VOICE_PROCESS_ERROR,false);
 				delete robot_instance;
 			}
 			break;

@@ -23,7 +23,7 @@ bool ActionOpenGyro::isFinish()
 	{
 		ROS_INFO("%s %d: Open gyro succeeded.", __FUNCTION__, __LINE__);
 		gyro.setAccInitData();
-		gyro.TiltCheckingEnable(true);
+		gyro.setTiltCheckingEnable(true);
 		return true;
 	}
 	return false;

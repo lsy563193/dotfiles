@@ -56,6 +56,36 @@ public:
 		return is_main_oc_;
 	}
 
+	void setLeftCurrent(uint16_t current)
+	{
+		left_current_ = current;
+	}
+
+	uint16_t getLeftCurrent()
+	{
+		return left_current_;
+	}
+
+	void setRightCurrent(uint16_t current)
+	{
+		right_current_ = current;
+	}
+
+	uint16_t getRightCurrent()
+	{
+		return right_current_;
+	}
+
+	void setMainCurrent(uint16_t current)
+	{
+		main_current_ = current;
+	}
+
+	uint16_t getMainCurrent()
+	{
+		return main_current_;
+	}
+
 	void checkBatterySetPWM();
 	void updatePWM();
 
@@ -80,9 +110,9 @@ private:
 	bool is_right_oc_;
 	bool is_main_oc_;
 
-	bool reset_left_oc_;
-	bool reset_right_oc_;
-	bool reset_main_oc_;
+	uint16_t left_current_;
+	uint16_t right_current_;
+	uint16_t main_current_;
 };
 extern Brush brush;
 

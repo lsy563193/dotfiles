@@ -85,8 +85,6 @@ public:
 
 	uint8_t saveSlip();
 
-	uint8_t setChargerArea(const Points homepoint);
-
 	uint8_t saveBlocks(bool is_linear, bool is_save_rcon);
 	void	setBlockWithBound(Cell_t min, Cell_t max, CellState state, bool with_block);
 

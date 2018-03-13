@@ -34,6 +34,7 @@ MoveTypeLinear::~MoveTypeLinear()
 		auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
 		p_mode->clean_map_.saveBlocks(p_mode->action_i_ == p_mode->ac_linear, p_mode->sp_state == p_mode->state_clean);
 		p_mode->mapMark();
+		memset(IMoveType::rcon_cnt,0,sizeof(int8_t)*6);
 	}
 	ROS_INFO("%s %d: Exit move type linear.", __FUNCTION__, __LINE__);
 }
@@ -94,8 +95,8 @@ bool MoveTypeLinear::isCellReach()
 	if (std::abs(s_curr_p.x - target_point_.x) < CELL_SIZE/2 &&
 		std::abs(s_curr_p.y - target_point_.y) < CELL_SIZE/2)
 	{
-		ROS_INFO("%s, %d: MoveTypeLinear, reach the target cell (%d,%d), current angle(%lf), target angle(%lf).", __FUNCTION__, __LINE__,
-						 target_point_.toCell().x, target_point_.toCell().y, radian_to_degree(s_curr_p.th), radian_to_degree(target_point_.th));
+		ROS_INFO("%s, %d: MoveTypeLinear,current cell = (%d,%d) reach the target cell (%d,%d), current angle(%lf), target angle(%lf).", __FUNCTION__, __LINE__,
+						 s_curr_p.toCell().x,s_curr_p.toCell().y,target_point_.toCell().x, target_point_.toCell().y, radian_to_degree(s_curr_p.th), radian_to_degree(target_point_.th));
 //		g_turn_angle = ranged_radian(new_dir - robot::instance()->getWorldPoseRadian());
 		return true;
 	}

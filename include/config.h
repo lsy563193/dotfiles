@@ -127,8 +127,8 @@
 #define GYRO_DYNAMIC_ADJUSTMENT	(1)
 
 // Define the position of gyro, only one side could be chozen.
-#define GYRO_FRONT_X_POS	(0)
-#define GYRO_FRONT_X_NEG	(1)
+#define GYRO_FRONT_X_POS	(1)
+#define GYRO_FRONT_X_NEG	(0)
 #define GYRO_FRONT_Y_POS	(0)
 #define GYRO_FRONT_Y_NEG	(0)
 
