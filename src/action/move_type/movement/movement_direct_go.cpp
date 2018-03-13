@@ -5,21 +5,22 @@
 #include <movement.hpp>
 #include "dev.h"
 
-MovementRemoteDirectGo::MovementRemoteDirectGo()
+MovementDirectGo::MovementDirectGo(bool slow_down, float timeout)
 {
-	timeout_interval_ = 5;
+	timeout_interval_ = timeout;
 	c_rcon.resetStatus();
+	slow_down_ = slow_down;
 	ROS_INFO("%s %d: Start movement direct go.", __FUNCTION__, __LINE__);
 }
 
-MovementRemoteDirectGo::~MovementRemoteDirectGo()
+MovementDirectGo::~MovementDirectGo()
 {
 	wheel.stop();
 	ROS_INFO("%s %d: End movement direct go.", __FUNCTION__, __LINE__);
 }
 
 
-bool MovementRemoteDirectGo::isFinish()
+bool MovementDirectGo::isFinish()
 {
 	ev.bumper_triggered = bumper.getStatus();
 	ev.cliff_triggered = cliff.getStatus();
@@ -34,10 +35,10 @@ bool MovementRemoteDirectGo::isFinish()
 		   isTimeUp();
 }
 
-void MovementRemoteDirectGo::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
+void MovementDirectGo::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 {
 	wheel.setDirectionForward();
-	if (obs.getStatus() > 0)
+	if (slow_down_ && obs.getStatus() > 0)
 	{
 		speed_--;
 		check_limit(speed_, LINEAR_MIN_SPEED, LINEAR_MAX_SPEED);

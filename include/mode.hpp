@@ -683,7 +683,6 @@ public:
 	{return false;}
 
 	bool isExit() override;
-	void switchInStateInit() override;
 	bool updateActionInStateDeskTest() override;
 	void switchInStateDeskTest() override;
 

@@ -80,7 +80,7 @@ bool MoveTypeLinear::isFinish()
 				return true;
 			}
 		}
-		else
+		else //if (movement_i_ == mm_back)
 			return true;
 	}
 	return false;

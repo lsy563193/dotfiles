@@ -37,7 +37,9 @@ bool Gyro::isOn(void)
 }
 
 void Gyro::setOn(void)
-{ serial.setSendData(CTL_GYRO, 0x02); if (isOn()){
+{
+	serial.setSendData(CTL_MIX, static_cast<uint8_t>(serial.getSendData(CTL_MIX) | 0x08));
+	if (isOn()){
 		ROS_INFO("gyro on already");
 	}
 	else
@@ -153,7 +155,7 @@ bool Gyro::waitForOn(void)
 
 void Gyro::setOff()
 {
-	serial.setSendData(CTL_GYRO, 0x00);
+	serial.setSendData(CTL_MIX, static_cast<uint8_t>(serial.getSendData(CTL_MIX) & ~0x08));
 	if (!Gyro::isOn()){
 		ROS_INFO("gyro stop already");
 		return;
@@ -165,12 +167,12 @@ void Gyro::setDynamicOn(void)
 {
 	if (Gyro::isOn())
 	{
-		uint8_t byte = serial.getSendData(CTL_GYRO);
-		serial.setSendData(CTL_GYRO, byte | 0x01);
+		uint8_t byte = serial.getSendData(CTL_MIX);
+		serial.setSendData(CTL_MIX, static_cast<uint8_t>(byte | 0x04));
 	}
 	//else
 	//{
-	//	serial.setSendData(CTL_GYRO, 0x01);
+	//	serial.setSendData(CTL_MIX, 0x01);
 	//}
 }
 
@@ -178,12 +180,12 @@ void Gyro::setDynamicOff(void)
 {
 	if (isOn())
 	{
-		uint8_t byte = serial.getSendData(CTL_GYRO);
-		serial.setSendData(CTL_GYRO, byte & 0xFE);
+		uint8_t byte = serial.getSendData(CTL_MIX);
+		serial.setSendData(CTL_MIX, static_cast<uint8_t>(byte & ~0x04));
 	}
 	//else
 	//{
-	//	serial.setSendData(CTL_GYRO, 0x00);
+	//	serial.setSendData(CTL_MIX, 0x00);
 	//}
 }
 #endif

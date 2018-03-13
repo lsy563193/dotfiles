@@ -415,7 +415,8 @@ void ACleanMode::scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr& scan)
 {
 	lidar.scanOriginalCb(scan);
 	lidar.checkRobotSlip();
-	if (lidar.isScanOriginalReady() && (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)) {
+	if (lidar.isScanOriginalReady()
+		&& (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)) {
 		std::deque<Vector2<double>> points{};
 		calcLidarPath(scan, action_i_ == ac_follow_wall_left, points, wall_distance);
 		setTempTarget(points, scan->header.seq);
@@ -809,7 +810,7 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 	}
 	else//rounding
 	{
-		if(sp_state != state_folllow_wall)
+		if(sp_state != state_folllow_wall && sp_state != state_desk_test)
 		{
 			auto p_mt = dynamic_cast<MoveTypeFollowWall *>(p_move_type);
 			return p_mt->isNewLineReach(clean_map_) || p_mt->isOverOriginLine(clean_map_);
