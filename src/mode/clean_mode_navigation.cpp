@@ -45,7 +45,7 @@ bool CleanModeNav::mapMark()
 	ROS_INFO("%s %d: Start updating map.", __FUNCTION__, __LINE__);
 	if(passed_path_.empty())
 	{
-		ROS_WARN("%s %d: pass_path is emply, add iterate_point_(%d,%d,%d,%d).", __FUNCTION__, __LINE__,iterate_point_.x, iterate_point_.y, iterate_point_.th, iterate_point_.dir);
+		ROS_WARN("%s %d: pass_path is emply, add curr_point(%d,%d,%d,%d).", __FUNCTION__, __LINE__,getPosition().x, getPosition().y, getPosition().th, getPosition().dir);
 		passed_path_.push_back(getPosition());
 	}
 

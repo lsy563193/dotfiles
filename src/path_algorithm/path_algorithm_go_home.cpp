@@ -50,6 +50,7 @@ GoHomePathAlgorithm::GoHomePathAlgorithm(GridMap &map, Points &home_points, Poin
 bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &plan_path)
 {
 	bool generate_finish = false;
+	plan_path.clear();
 	while (!generate_finish && ros::ok())
 	{
 		switch (home_way_index_)
