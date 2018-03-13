@@ -321,7 +321,7 @@ uint8_t Gyro::checkTilt(int front_tilt_limit,int back_tilt_limit,int right_tilt_
 			if (tilt_left_count_ > 0)
 				tilt_left_count_--;
 		}
-		
+
 		//robot right tilt
 		if (getYAcc() - getRightInit() < -right_tilt_limit)
 		{
@@ -334,7 +334,7 @@ uint8_t Gyro::checkTilt(int front_tilt_limit,int back_tilt_limit,int right_tilt_
 				tilt_right_count_--;
 		}
 #if 0
-		//z axies	
+		//z axies
 		if (std::abs(getZAcc() - getInitZAcc()) > DIF_TILT_Z_VAL)
 		{
 			tilt_z_count_+=1;
@@ -346,7 +346,7 @@ uint8_t Gyro::checkTilt(int front_tilt_limit,int back_tilt_limit,int right_tilt_
 				tilt_z_count_ -=1;
 
 		}
-#endif		
+#endif
 
 		//if (left_count > 7 || front_count > 7 || right_count > 7 || z_count > 7)
 			//ROS_WARN("%s %d: count left:%d, front:%d, right:%d, z:%d", __FUNCTION__, __LINE__, left_count, front_count, right_count, z_count);
