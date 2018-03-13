@@ -310,6 +310,11 @@ void robot::robotbase_routine_cb()
 		if(!lidar.isRobotSlip()){
 			odom.setX(static_cast<float>(odom.getX() + (odom.getMovingSpeed() * cos(angle_rad)) * dt));
 			odom.setY(static_cast<float>(odom.getY() + (odom.getMovingSpeed() * sin(angle_rad)) * dt));
+			is_first_slip = true;
+		} else if (is_first_slip){
+			odom.setX(static_cast<float>(odom.getX() - (0.30 * cos(angle_rad)) * 0.8));
+			odom.setY(static_cast<float>(odom.getY() - (0.30 * sin(angle_rad)) * 0.8));
+			is_first_slip = false;
 		}
 		odom_quat = tf::createQuaternionMsgFromYaw(angle_rad);
 		odom_msg.header.stamp = cur_time;
