@@ -22,6 +22,7 @@ FILE(GLOB PP_SRC
 	src/dev/wheel.cpp
 	src/dev/speaker.cpp
 	src/dev/lidar.cpp
+	src/dev/water_tank.cpp
 
 	src/mode/state/state.cpp
 	src/mode/state/state_init.cpp
