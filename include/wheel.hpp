@@ -121,6 +121,26 @@ public:
 		is_right_wheel_over_current_ = rw_oc;
 	}
 
+	void setLeftCurrent(uint16_t current)
+	{
+		left_current_ = current;
+	}
+
+	uint16_t getLeftCurrent()
+	{
+		return left_current_;
+	}
+
+	void setRightCurrent(uint16_t current)
+	{
+		right_current_ = current;
+	}
+
+	uint16_t getRightCurrent()
+	{
+		return right_current_;
+	}
+
 	float getLeftWheelActualSpeed() const
 	{
 		return left_wheel_actual_speed_;
@@ -171,6 +191,8 @@ private:
 	uint32_t left_wheel_step_;
 	uint32_t right_wheel_step_;
 
+	uint16_t left_current_;
+	uint16_t right_current_;
 	bool is_left_wheel_over_current_;
 	bool is_right_wheel_over_current_;
 	float left_wheel_actual_speed_;

@@ -13,10 +13,6 @@ Brush::Brush(void)
 {
 	brush_status_ = brush_stop;
 
-	reset_left_oc_ = false;
-	reset_right_oc_ = false;
-	reset_main_oc_ = false;
-
 	is_left_oc_ = false;
 	is_right_oc_ = false;
 	is_main_oc_ = false;
