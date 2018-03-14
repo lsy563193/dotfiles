@@ -29,7 +29,7 @@ void MovementFollowPointLinear::scaleCorrectionPos() {
 //			double scale = fabs(val) > 0.05 ? 0.5 * fabs(val) : 0.03;
 		double scale = fabs(val) > 0.05 ? 0.5 * fabs(val) : 0.005;
 		scale = std::min(1.0, scale);
-		printf("scale{%f} ", scale);
+//		printf("scale{%f} ", scale);
 		return scale;
 	};
 
