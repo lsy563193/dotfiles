@@ -74,7 +74,7 @@ public:
 
 	// The scale should be between 0 to 1.
 //	void scaleCorrectionPos(const tf::Vector3 &slam_pose, double tmp_yaw_, tf::Vector3 &odom, double &odom_yaw);
-//	void scaleCorrectionPos(tf::Vector3 &tmp_pos, double& tmp_rad);
+	void scaleCorrectionPos(tf::Vector3 &tmp_pos, double& tmp_rad);
 
 	void resetCorrection();
 
@@ -189,6 +189,8 @@ public:
 	void unlockScanCtrl(void);
 
 	void publishCtrlStream(void);
+
+	void odomPublish(const tf::Vector3& robot_pos, double robot_radian_);
 private:
 
 	Baselink_Frame_Type baselink_frame_type_;
@@ -247,7 +249,6 @@ private:
 
 	//callback function
 	void robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg);
-	void odomPublish(const tf::Vector3& robot_pos, double robot_radian_);
 //	void robot_map_metadata_cb(const nav_msgs::MapMetaData::ConstPtr& msg);
 
 	boost::shared_ptr<Mode> p_mode{};

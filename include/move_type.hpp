@@ -22,6 +22,16 @@ public:
 	bool shouldTurn();
 	bool RconTrigger();
 //	~IMoveType() = default;
+	enum{//movement
+		mm_null,
+		mm_back,
+		mm_turn,
+		mm_stay,
+		mm_rcon,
+		mm_forward,
+		mm_straight,
+		mm_dynamic,
+	};
 
 	bool isBlockCleared(GridMap &map, Points &passed_path);
 	Point_t last_{};
@@ -50,20 +60,14 @@ public:
 //	Point_t target_point_;
 	int dir_;
 	Points remain_path_{};
-protected:
+public:
+	std::deque<double> odom_turn_target_radians_{};
+	int radian_diff_count{};
+	double odom_turn_target_radian_{};
 	double turn_target_radian_{};
+protected:
 
 	float back_distance_;
-	enum{//movement
-		mm_null,
-		mm_back,
-		mm_turn,
-		mm_stay,
-		mm_rcon,
-		mm_forward,
-		mm_straight,
-		mm_dynamic,
-	};
 
 };
 

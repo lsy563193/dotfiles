@@ -18,7 +18,7 @@ Odom::~Odom()
 
 void Odom::setX(float x)
 {
-	pose.setX(x);
+	pose.setX(x + x_offset_);
 }
 
 float Odom::getX(void)
@@ -28,7 +28,7 @@ float Odom::getX(void)
 
 void Odom::setY(float y)
 {
-	pose.setY(y);
+	pose.setY(y+y_offset_);
 }
 
 float Odom::getY(void)
@@ -59,7 +59,17 @@ double Odom::getRadian(void)
 void Odom::setRadianOffset(double radian)
 {
 	radian_offset_ = radian;
-	ROS_INFO("%s %d: Set odom radian offset to (%f degrees).", __FUNCTION__, __LINE__, radian_to_degree(radian_offset_));
+	ROS_INFO("%s %d: Set x offset to (%f degrees).", __FUNCTION__, __LINE__, radian_to_degree(radian_offset_));
+}
+void Odom::setXOffset(double x)
+{
+	x_offset_ = x;
+	ROS_INFO("%s %d: Set y offset to (%f).", __FUNCTION__, __LINE__, x_offset_);
+}
+void Odom::setYOffset(double y)
+{
+	y_offset_ = y;
+	ROS_INFO("%s %d: Set y offset to (%f).", __FUNCTION__, __LINE__, y_offset_);
 }
 
 double Odom::getRadianOffset(void)

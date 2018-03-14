@@ -135,6 +135,7 @@ bool CleanModeNav::markRealTime()
 //	while (ros::ok()) {
 //		sleep(0.2);
 //		wheel.stop();
+//	sp_action_->
 		std::vector<Vector2<int>> markers;
 		if (lidar.isScanCompensateReady())
 			lidar.lidarMarker(markers);

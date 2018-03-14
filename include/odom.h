@@ -22,6 +22,8 @@ public:
 	void setRadian(double radian);
 	double getRadian();
 	void setRadianOffset(double radian);
+	void setXOffset(double radian);
+	void setYOffset(double radian);
 	double getRadianOffset();
 
 	void setMovingSpeed(float speed);
@@ -34,6 +36,8 @@ private:
 	Pose pose;
 
 	double radian_offset_;
+	double x_offset_{};
+	double y_offset_{};
 
 	// In meters.
 	float moving_speed_;

@@ -10,7 +10,7 @@
 
 MovementTurn::MovementTurn(double radian, uint8_t max_speed) : speed_(ROTATE_LOW_SPEED)
 {
-	accurate_ = ROTATE_TOP_SPEED > 30 ? degree_to_radian(3) : degree_to_radian(1.5);
+	accurate_ = ROTATE_TOP_SPEED > 30 ? degree_to_radian(3) : degree_to_radian(1.0);
 //	auto rad_diff = getPosition().th - radian + odom.getRadian();
 	target_radian_ = radian  - getPosition().th + odom.getRadian();
 	max_speed_ = max_speed;
@@ -20,8 +20,8 @@ MovementTurn::MovementTurn(double radian, uint8_t max_speed) : speed_(ROTATE_LOW
 
 bool MovementTurn::isReach()
 {
-	ROS_WARN("%s, %d: MovementTurn finish, target_radian_: \033[32m%f (in degree)\033[0m, current radian: \033[32m%f (in degree)\033[0m."
-	, __FUNCTION__, __LINE__, radian_to_degree(ranged_radian(target_radian_)), radian_to_degree(odom.getRadian()));
+//	ROS_WARN("%s, %d: MovementTurn finish, target_radian_: \033[32m%f (in degree)\033[0m, current radian: \033[32m%f (in degree)\033[0m."
+//	, __FUNCTION__, __LINE__, radian_to_degree(ranged_radian(target_radian_)), radian_to_degree(odom.getRadian()));
 	if (std::abs(ranged_radian(odom.getRadian() - target_radian_)) < accurate_){
 		ROS_ERROR("%s, %d: MovementTurn finish, target_radian_: \033[32m%f (in degree)\033[0m, current radian: \033[32m%f (in degree)\033[0m."
 		, __FUNCTION__, __LINE__, radian_to_degree(ranged_radian(target_radian_)), radian_to_degree(odom.getRadian()));
@@ -32,7 +32,8 @@ bool MovementTurn::isReach()
 
 void MovementTurn::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
-	auto diff = ranged_radian(target_radian_ - getPosition().th);
+//	auto diff = ranged_radian(target_radian_ - getPosition().th);
+	auto diff = ranged_radian(target_radian_ - odom.getRadian());
 //	ROS_INFO("%s %d: MovementTurn diff: %f, cm_target_p_.th: %f, current angle: %f.", __FUNCTION__, __LINE__, diff, target_radian_, robot::instance()->getWorldPoseRadian());
 	(diff >= 0) ? wheel.setDirectionLeft() : wheel.setDirectionRight();
 

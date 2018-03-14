@@ -474,6 +474,25 @@ robot *robot::instance()
 	return robot_instance;
 }
 
+void robot::scaleCorrectionPos(tf::Vector3 &tmp_pos, double& tmp_rad) {
+	auto p_cm = boost::dynamic_pointer_cast<ACleanMode> (p_mode);
+	auto dir = p_cm->iterate_point_.dir;
+	if(isAny(dir))
+		return;
+
+	auto target_xy = (isXAxis(dir)) ? p_cm->iterate_point_.y : p_cm->iterate_point_.x;
+	auto slam_xy = (isXAxis(dir)) ? slam_pos.getY() : slam_pos.getX();
+	auto diff_xy = (slam_xy - target_xy)/3;
+
+	if(diff_xy > CELL_SIZE/2)
+		diff_xy = CELL_SIZE/2;
+	else if(diff_xy < -CELL_SIZE/2)
+		diff_xy = -CELL_SIZE/2;
+		(isXAxis(dir)) ? tmp_pos.setY(target_xy + diff_xy) : tmp_pos.setX(target_xy + diff_xy);
+
+	tmp_rad = robot_rad + (slam_rad - robot_rad);
+}
+
 void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 {
 	tf::StampedTransform transform{};
@@ -488,8 +507,17 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 				slam_pos = transform.getOrigin();
 				slam_rad  = (getBaselinkFrameType() == SLAM_POSITION_SLAM_ANGLE) ? tf::getYaw(transform.getRotation()) : 0;
 				tmp_pos = slam_pos;
-				tmp_rad = slam_rad;
-//				scaleCorrectionPos(tmp_pos, tmp_rad);
+				if(p_mode->action_i_ == p_mode->ac_linear) {
+					if(p_mode->sp_action_ != nullptr) {
+						auto p_mt = boost::dynamic_pointer_cast<MoveTypeLinear>(p_mode->sp_action_);
+						if (p_mt->movement_i_ == p_mt->mm_forward)
+							scaleCorrectionPos(tmp_pos, tmp_rad);
+						else {
+							tmp_pos = slam_pos;
+							tmp_rad = slam_rad;
+						}
+					}
+				}
 //				ROS_WARN("tmp_pos(%f,%f),tmp_rad(%f)", tmp_pos.x(), tmp_pos.y(), tmp_rad);
 			} catch (tf::TransformException e) {
 				ROS_WARN("%s %d: Failed to compute map transform, skipping scan (%s)", __FUNCTION__, __LINE__, e.what());
@@ -507,7 +535,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 //	ROS_INFO("tmp_pos(%f,%f),tmp_rad(%f)", tmp_pos.x(), tmp_pos.y(), tmp_rad);
 	robot_pos = tmp_pos;
 	robot_rad = tmp_rad;
-	odomPublish(robot_pos, robot_rad);
+	robot::instance()->odomPublish(robot_pos, robot_rad);
 }
 
 void robot::odomPublish(const tf::Vector3& robot_pos, double robot_radian_)

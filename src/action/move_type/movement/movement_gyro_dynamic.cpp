@@ -38,10 +38,7 @@ bool MovementGyroDynamic::isFinish() {
 	if(is_open_dynamic_succeed_ && ros::Time::now().toSec() - start_dynamic_time_ > robot::instance()->getGyroDynamicRunTime()){
 		p_mode->time_gyro_dynamic_ = ros::Time::now().toSec();
 		gyro.setDynamicOff();
-		auto offset_adjustment = 0/*robot::instance()->getRobotCorrectionRadian() / 8.0*/;
-		odom.setRadianOffset(odom.getRadianOffset() + offset_adjustment);
-		ROS_INFO("%s %d: Shutdown gyro dynamic, offset adjustment: %f.",
-				 __FUNCTION__, __LINE__, radian_to_degree(offset_adjustment));
+
 		return true;
 	}
 #else

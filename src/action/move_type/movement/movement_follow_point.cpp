@@ -30,12 +30,12 @@ void AMovementFollowPoint::adjustSpeed(int32_t &left_speed, int32_t &right_speed
 	} else if (deceleration_level == 2) {
 		speed_limit = min_speed_ + 5;
 	}
-		if (deceleration_level) {
+		if (deceleration_level /*|| sp_mt_->radian_diff_count < 10*/) {
 				if (base_speed_ > (int32_t) speed_limit) {
 					base_speed_--;
 					integrated_ = 0;
 			}
-			ROS_WARN_COND(sp_mt_->sp_mode_->action_i_ == sp_mt_->sp_mode_->ac_linear, "slow down");
+//			ROS_WARN_COND(sp_mt_->sp_mode_->action_i_ == sp_mt_->sp_mode_->ac_linear, "slow down");
 		}
 		else if (base_speed_ < (int32_t) max_speed_) {
 			if (tick_++ > tick_limit_) {
@@ -44,13 +44,15 @@ void AMovementFollowPoint::adjustSpeed(int32_t &left_speed, int32_t &right_speed
 			}
 			integrated_ = 0;
 		}
-		auto speed_diff = static_cast<int32_t>(radian_to_degree(radian_diff)) / kp_;
+//		auto speed_diff = static_cast<int32_t>(radian_to_degree(radian_diff)) / kp_;
 		left_speed = (base_speed_ - angle_diff / kp_ - integrated_ / 15); // - Delta / 20; // - Delta * 10 ; // - integrated_ / 2500;
 		right_speed = base_speed_ + angle_diff / kp_ + integrated_ / 15; // + Delta / 20;// + Delta * 10 ; // + integrated_ / 2500;
 
 	check_limit(left_speed, 0, max_speed_);
 	check_limit(right_speed, 0, max_speed_);
-	ROS_INFO_COND(sp_mt_->sp_mode_->action_i_ == sp_mt_->sp_mode_->ac_linear, "speed(%d,%d),base(%d),angle_diff(%d), speed_diff(%d)", left_speed, right_speed,base_speed_,angle_diff, speed_diff);
+	left_speed_ = left_speed;
+	right_speed_ = right_speed;
+//	ROS_INFO_COND(sp_mt_->sp_mode_->action_i_ == sp_mt_->sp_mode_->ac_linear, "speed(%d,%d),base(%d),angle_diff(%d)", left_speed, right_speed,base_speed_,angle_diff);
 
 	base_speed_ = (left_speed + right_speed) / 2;
 
@@ -58,7 +60,6 @@ void AMovementFollowPoint::adjustSpeed(int32_t &left_speed, int32_t &right_speed
 
 bool AMovementFollowPoint::isFinish() {
 //	ROS_WARN("curr target th(%f,%f)", getPosition().th, calcTmpTarget().th);
-	radian_diff = getPosition().courseToDest(calcTmpTarget());
 //	ROS_WARN("radian_diff(%f)", radian_diff);
 	if(std::abs(radian_diff) > angle_forward_to_turn_)
 	{
@@ -77,4 +78,9 @@ bool AMovementFollowPoint::isFinish() {
 		return true;
 	}
 	return false;
+}
+
+void AMovementFollowPoint::getLRSpeed(int32_t& left, int32_t& right) {
+	left = left_speed_;
+	right = right_speed_;
 }
