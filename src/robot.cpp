@@ -280,7 +280,9 @@ void robot::robotbase_routine_cb()
 		sensor.plan = robot_timer.getPlanStatus();
 
 		// For water tank device.
-		sensor.water_tank = (buf[REC_MIX_BYTE] & 0x08) != 0;
+		water_tank.setStatus((buf[REC_MIX_BYTE] & 0x08) != 0);
+//		ROS_INFO("mix:%x", buf[REC_MIX_BYTE]);
+		sensor.water_tank = water_tank.getStatus();
 
 		// For charger device.
 		charger.setChargeStatus((buf[REC_MIX_BYTE] >> 4) & 0x07);
@@ -449,6 +451,9 @@ void robot::core_thread_cb()
 
 			if (bumper.lidarBumperInit(lidar_bumper_dev_.c_str()) == -1)
 				ROS_ERROR(" lidar bumper open fail!");
+
+			if (water_tank.checkEquipment())
+				ROS_INFO("%s %d: Robot is carrying a water tank.", __FUNCTION__, __LINE__);
 
 			if (charger.isOnStub() || charger.isDirected())
 				p_mode.reset(new ModeCharge());
