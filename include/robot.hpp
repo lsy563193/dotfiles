@@ -19,6 +19,7 @@
 #include "config.h"
 #include "map.h"
 #include "pose.h"
+#include "serial.h"
 //#include "mode.hpp"
 #include <string.h>
 
@@ -199,7 +200,7 @@ private:
 // Lock for odom coordinate
 	boost::mutex odom_mutex_;
 
-	uint8_t r16_work_mode_;
+	uint8_t r16_work_mode_{WORK_MODE};
 
 	bool is_sensor_ready_{};
 	bool is_tf_ready_{};

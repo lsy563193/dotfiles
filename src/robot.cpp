@@ -19,8 +19,6 @@
 #include "state.hpp"
 #include "mode.hpp"
 #include "std_srvs/Empty.h"
-
-
 pthread_mutex_t recev_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t  recev_cond = PTHREAD_COND_INITIALIZER;
 
@@ -120,7 +118,7 @@ robot::~robot()
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
-	serial.setMainBoardMode(NORMAL_SLEEP_MODE);
+	serial.setMainBoardMode(WORK_MODE);
 	usleep(40000);
 	while(ros::ok() && !g_pp_shutdown){
 		usleep(2000);
@@ -414,18 +412,27 @@ void robot::core_thread_cb()
 			break;
 		}
 		case DESK_TEST_CURRENT_MODE:
-		case DESK_TEST_MOVEMENT_MODE:
+//		case GYRO_TEST_MODE:
+//		case WORK_MODE: // For debug
+//		case NORMAL_SLEEP_MODE: // For debug
 		{
 			auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
 			send_thread_enable = true;
+
+			if (r16_work_mode_ == NORMAL_SLEEP_MODE || r16_work_mode_ == WORK_MODE/*GYRO_TEST_MODE*/)
+			{
+				auto robotbase_routine = new boost::thread(boost::bind(&robot::robotbase_routine_cb, this));
+				robotbase_thread_enable = true;
+			}
+
 			if (bumper.lidarBumperInit(lidar_bumper_dev_.c_str()) == -1)
 				ROS_ERROR(" lidar bumper open fail!");
 
-			p_mode.reset(new CleanModeDeskTest());
+			p_mode.reset(new CleanModeTest(r16_work_mode_));
 			p_mode->run();
 			break;
 		}
-		default: //case R16_NORMAL_MODE:
+		default: //case WORK_MODE:
 		{
 			auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
 			send_thread_enable = true;
@@ -471,6 +478,7 @@ void robot::core_thread_cb()
 		}
 	}
 
+	ROS_INFO("%s %d: core thread exit.", __FUNCTION__, __LINE__);
 }
 
 robot *robot::instance()
@@ -757,8 +765,8 @@ Mode *getNextMode(int next_mode_i_)
 			return new CleanModeFollowWall();
 		case Mode::cm_spot:
 			return new CleanModeSpot();
-		case Mode::cm_test:
-			return new CleanModeDeskTest();
+//		case Mode::cm_test:
+//			return new CleanModeTest();
 		case Mode::cm_exploration:
 			return new CleanModeExploration();
 //		case Mode::cm_exploration:

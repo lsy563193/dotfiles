@@ -37,7 +37,7 @@ FILE(GLOB PP_SRC
 	src/mode/state/state_exception_resume.cpp
 	src/mode/state/state_spot.cpp
 	src/mode/state/state_exploration.cpp
-	src/mode/state/state_desk_test.cpp
+	src/mode/state/state_test.cpp
 
 	src/mode/mode.cpp
 	src/mode/mode_sleep.cpp
@@ -50,7 +50,7 @@ FILE(GLOB PP_SRC
 	src/mode/clean_mode_navigation.cpp
 	src/mode/clean_mode_follow_wall.cpp
 	src/mode/clean_mode_spot.cpp
-	src/mode/clean_mode_desk_test.cpp
+	src/mode/clean_mode_test.cpp
 
 	src/path_algorithm/path_algorithm.cpp
 	src/path_algorithm/path_algorithm_navigation_clean.cpp
@@ -79,6 +79,7 @@ FILE(GLOB PP_SRC
 	src/action/move_type/move_type_bumper_hit_test.cpp
 	src/action/move_type/move_type_remote.cpp
 	src/action/move_type/move_type_desk_test.cpp
+	src/action/move_type/move_type_gyro_test.cpp
 	src/action/move_type/movement/movement.cpp
 	src/action/move_type/movement/movement.cpp
 	src/action/move_type/movement/movement_back.cpp

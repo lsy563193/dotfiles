@@ -279,6 +279,8 @@
 #define ALARM_ERROR_MODE		16
 #define DESK_TEST_CURRENT_MODE		17 // For checking current
 #define DESK_TEST_MOVEMENT_MODE		18
+#define GYRO_TEST_MODE		19
+#define LIFE_TEST_MODE		20
 
 #define DUMMY_DOWNLINK_OFFSET		2
 #define KEY_DOWNLINK_OFFSET			9

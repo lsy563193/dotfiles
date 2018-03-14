@@ -6,18 +6,40 @@
 #include <error.h>
 #include "dev.h"
 #include "mode.hpp"
-CleanModeDeskTest::CleanModeDeskTest()
+CleanModeTest::CleanModeTest(uint8_t mode)
 {
 	ROS_WARN("%s %d: Entering Desk Test mode\n=========================" , __FUNCTION__, __LINE__);
 	speaker.play(VOICE_TEST_MODE, false);
-	serial.setMainBoardMode(DESK_TEST_CURRENT_MODE);
-	sp_state = state_desk_test;
-	sp_state->init();
-	action_i_ = ac_desk_test;
-	genNextAction();
+	event_manager_set_enable(false);
+	test_mode_ = mode;
+	switch (test_mode_)
+	{
+		case DESK_TEST_MOVEMENT_MODE:
+		case DESK_TEST_CURRENT_MODE:
+		{
+			serial.setMainBoardMode(DESK_TEST_CURRENT_MODE);
+			sp_state = state_test;
+			sp_state->init();
+			action_i_ = ac_desk_test;
+			genNextAction();
+			break;
+		}
+//		case GYRO_TEST_MODE:
+		case WORK_MODE:
+		case NORMAL_SLEEP_MODE:
+		{
+//			serial.setMainBoardMode(GYRO_TEST_MODE);
+			serial.setMainBoardMode(WORK_MODE);
+			sp_state = state_test;
+			sp_state->init();
+			action_i_ = ac_gyro_test;
+			genNextAction();
+			break;
+		}
+	}
 }
 
-CleanModeDeskTest::~CleanModeDeskTest()
+CleanModeTest::~CleanModeTest()
 {
 	ROS_WARN("%s %d: Exit Desk Test mode\n=========================" , __FUNCTION__, __LINE__);
 /*	if (test_state_ != -1)
@@ -26,9 +48,14 @@ CleanModeDeskTest::~CleanModeDeskTest()
 		speaker.play(VOICE_TEST_FAIL, false);*/
 }
 
-bool CleanModeDeskTest::isExit()
+bool CleanModeTest::isFinish()
 {
-	if (sp_state == state_init)
+	return false;
+}
+bool CleanModeTest::isExit()
+{
+	return false;
+/*	if (sp_state == state_init)
 	{
 		if (action_i_ == ac_open_lidar && sp_action_->isTimeUp())
 		{
@@ -50,18 +77,18 @@ bool CleanModeDeskTest::isExit()
 		ROS_WARN("%s %d: Exit for remote key or clean key or long press clean key.", __FUNCTION__, __LINE__);
 		setNextMode(md_idle);
 		return true;
-	}
+	}*/
 }
 
 // For handlers.
-void CleanModeDeskTest::keyClean(bool state_now, bool state_last)
+void CleanModeTest::keyClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Key clean pressed.", __FUNCTION__, __LINE__);
 	ev.key_clean_pressed = true;
 	key.resetTriggerStatus();
 }
 
-void CleanModeDeskTest::remoteDirectionForward(bool state_now, bool state_last)
+void CleanModeTest::remoteDirectionForward(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote forward pressed.", __FUNCTION__, __LINE__);
 	ev.remote_direction_forward = true;
@@ -69,16 +96,17 @@ void CleanModeDeskTest::remoteDirectionForward(bool state_now, bool state_last)
 }
 
 // State desk test.
-bool CleanModeDeskTest::updateActionInStateDeskTest()
+bool CleanModeTest::updateActionInStateDeskTest()
 {
 	action_i_ = ac_desk_test;
 	genNextAction();
 	return true;
 }
 
-void CleanModeDeskTest::switchInStateDeskTest()
+void CleanModeTest::switchInStateDeskTest()
 {
 	action_i_ = ac_null;
 	sp_action_ = nullptr;
 	sp_state = nullptr;
 }
+

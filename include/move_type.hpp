@@ -161,7 +161,7 @@ class MoveTypeRemote: public IMoveType
 {
 public:
 	MoveTypeRemote();
-	~MoveTypeRemote() override;
+	~MoveTypeRemote();
 
 	bool isFinish() override;
 
@@ -178,7 +178,6 @@ public:
 	~MoveTypeDeskTest() override;
 
 	void deskTestRoutineThread();
-	bool isFinish() override;
 
 	void run() override;
 
@@ -291,5 +290,25 @@ private:
 
 	// For stage 7.
 	bool check_stage_7_finish();
+};
+
+class MoveTypeGyroTest: public IMoveType
+{
+public:
+	MoveTypeGyroTest();
+	~MoveTypeGyroTest() override;
+
+	void run() override;
+
+private:
+	boost::shared_ptr<IAction> p_movement_;
+
+	uint16_t error_code_{0};
+
+	int test_stage_{0};
+	double last_time_stamp_{0};
+	double wheel_mileage_{0};
+	double wheel_turn_angle_{0};
+	double saved_gyro_turn_angle_{0};
 };
 #endif //PP_MOVE_TYPE_HPP

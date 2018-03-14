@@ -73,7 +73,7 @@ void Vacuum::setSpeedByMode(uint8_t mode)
 	else
 	{
 		// If work time less than 2 hours, the BLDC should be in normal level, but if more than 2 hours, it should slow down a little bit.
-		if (robot_timer.getWorkTime() < Two_Hours)
+		if (robot_timer.getWorkTime() < TWO_HOURS)
 		{
 			bldcSpeed(Vac_Speed_Normal);
 		} else

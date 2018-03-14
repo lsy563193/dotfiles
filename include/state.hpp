@@ -107,9 +107,9 @@ public:
 //	IMoveType* setNextAction_();
 };
 
-class StateDeskTest: public State {
+class StateTest: public State {
 public:
-	StateDeskTest()= default;
+	StateTest()= default;
 	void init() override;
 };
 #endif //PP_STATE_HPP

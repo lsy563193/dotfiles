@@ -8,7 +8,6 @@
 #include <vacuum.h>
 #include <key_led.h>
 #include <lidar.hpp>
-#include <wheel.hpp>
 #include <gyro.h>
 #include <bumper.h>
 #include <obs.h>
@@ -67,11 +66,6 @@ MoveTypeDeskTest::MoveTypeDeskTest()
 MoveTypeDeskTest::~MoveTypeDeskTest()
 {
 	ROS_INFO("%s,%d: Exit move type desk test.", __FUNCTION__, __LINE__);
-}
-
-bool MoveTypeDeskTest::isFinish()
-{
-	return false;
 }
 
 void MoveTypeDeskTest::run()
@@ -142,6 +136,9 @@ void MoveTypeDeskTest::run()
 				// Switch to next stage.
 				p_movement_.reset();
 				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-150), LINEAR_MAX_SPEED));
+				brush.fullOperate();
+				vacuum.setMode(Vac_Max);
+				// todo: for water tank
 				ROS_INFO("%s %d: Stage 4 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage);
 			}
 			break;
@@ -156,6 +153,9 @@ void MoveTypeDeskTest::run()
 				c_rcon.resetStatus();
 				p_movement_.reset();
 				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-179), ROTATE_TOP_SPEED * 2 / 3));
+				brush.normalOperate();
+				vacuum.setMode(Vac_Normal);
+				// todo: for water tank
 				ROS_INFO("%s %d: Stage 5 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage);
 			}
 			break;
@@ -180,7 +180,7 @@ void MoveTypeDeskTest::run()
 		{
 			if (check_stage_7_finish())
 			{
-				test_stage = 88;
+				test_stage++;
 				wheel.stop();
 				brush.stop();
 				vacuum.stop();
@@ -198,10 +198,10 @@ void MoveTypeDeskTest::run()
 			wheel.stop();
 			brush.stop();
 			vacuum.stop();
-			sleep(1);
+			sleep(5);
 			break;
 		}
-		default: // case 88: // For finish.
+		default: // For finish.
 		{
 			ROS_INFO("%s %d: Test finish.", __FUNCTION__, __LINE__);
 			key_led.setMode(LED_STEADY, LED_GREEN);
