@@ -460,6 +460,8 @@ uint16_t main_board_test()
 			case RCON_TEST_MODE:/*---rcon---*/
 				test_result = rcon_test(test_stage);
 				break;
+			case WATER_TANK_TEST_MODE:/*---water tank---*/
+				test_result = water_tank_test(test_stage);
 			case WHEELS_TEST_MODE:/*---wheels---*/
 				test_result = wheels_test(test_stage, baseline);
 				break;
@@ -1145,6 +1147,52 @@ uint16_t rcon_test(uint8_t &test_stage)
 			if ((test_result & 0x0c00) != 0x0c00) {
 				return BRRCON_ERROR;
 			}
+		}
+		serial.sendData();
+	}
+}
+uint16_t water_tank_test(uint8_t &test_stage)
+{
+	uint16_t test_result = 0;
+	uint8_t step = 0;
+	uint8_t count = 0;
+	uint8_t buf[REC_LEN];
+	serial.setSendData(CTL_MAIN_BOARD_MODE, WATER_TANK_TEST_MODE);
+	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
+	while(ros::ok()) {
+		/*--------data extrict from serial com--------*/
+		ROS_ERROR_COND(pthread_mutex_lock(&recev_lock) != 0, "robotbase pthread receive lock fail");
+		ROS_ERROR_COND(pthread_cond_wait(&recev_cond, &recev_lock) != 0, "robotbase pthread receive cond wait fail");
+		memcpy(buf, serial.receive_stream, sizeof(uint8_t) * REC_LEN);
+		ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock) != 0, "robotbase pthread receive unlock fail");
+		if(buf[38] != WATER_TANK_TEST_MODE)
+		{
+			serial.sendData();
+			continue;
+		}
+		switch(step)
+		{
+			case 0:/*--- turn on pump and swing motor ---*/
+				serial.setSendData(CTL_WATER_TANK, 0x80 | 50);
+				count++;
+				if(count > 10)
+				{
+					count = 0;
+					step++;
+				}
+				break;
+			case 1:
+				if(static_cast<uint16_t>(buf[2] << 8 | buf[3]) > SWING_CURRENT_LIMIT)
+				{
+					count++;
+					if(count > 2)
+						return 0;
+				}
+				else
+					count = 0;
+				if(buf[36])
+					return SWING_MOTOR_ERROR;
+				break;
 		}
 		serial.sendData();
 	}

@@ -58,7 +58,8 @@
 #define CTL_MIX 15
 
 // One byte for controlling water tank.
-// bit 0-7 reserved.
+// bit 0 for switch of pump.
+// bit 1-7 for controlling swing motor PWM.
 #define CTL_WATER_TANK 16
 
 // One byte for key validation.
@@ -270,11 +271,12 @@
 #define BUMPER_TEST_MODE		8
 #define CLIFF_TEST_MODE		9
 #define RCON_TEST_MODE		10
-#define WHEELS_TEST_MODE	11
-#define BRUSHES_TEST_MODE		12
-#define VACUUM_TEST_MODE		13
-#define CHARGE_CURRENT_TEST_MODE		14
-#define ALARM_ERROR_MODE		15
+#define WATER_TANK_TEST_MODE	11
+#define WHEELS_TEST_MODE	12
+#define BRUSHES_TEST_MODE		13
+#define VACUUM_TEST_MODE		14
+#define CHARGE_CURRENT_TEST_MODE		15
+#define ALARM_ERROR_MODE		16
 #define DESK_TEST_CURRENT_MODE		17 // For checking current
 #define DESK_TEST_MOVEMENT_MODE		18
 
