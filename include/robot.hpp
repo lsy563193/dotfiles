@@ -19,6 +19,7 @@
 #include "config.h"
 #include "map.h"
 #include "pose.h"
+#include "serial.h"
 //#include "mode.hpp"
 #include <string.h>
 
@@ -176,8 +177,6 @@ public:
 		return scan_ctrl_.allow_publishing?true:false;
 	}
 
-	void setTempTarget(std::deque<Vector2<double>>& points, uint32_t  seq);
-
 	void debugReceivedStream(const uint8_t *buf);
 
 	void debugSendStream(const uint8_t *buf);
@@ -190,15 +189,18 @@ public:
 
 	void publishCtrlStream(void);
 
-	void odomPublish(const tf::Vector3& robot_pos, double robot_radian_);
+	void updateRobotPositionForDeskTest();
+
 private:
+
+	uint8_t getTestMode(void);
 
 	Baselink_Frame_Type baselink_frame_type_;
 	boost::mutex baselink_frame_type_mutex_;
 // Lock for odom coordinate
 	boost::mutex odom_mutex_;
 
-	uint8_t r16_test_mode_;
+	uint8_t r16_work_mode_{WORK_MODE};
 
 	bool is_sensor_ready_{};
 	bool is_tf_ready_{};
@@ -244,16 +246,20 @@ private:
 	pp::scan_ctrl scan_ctrl_;
 
 	std::string serial_port_;
+	std::string wifi_port_;
 	int baud_rate_;
 	std::string lidar_bumper_dev_;
 
 	//callback function
 	void robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg);
+	void odomPublish(const tf::Vector3& robot_pos, double robot_radian_);
 //	void robot_map_metadata_cb(const nav_msgs::MapMetaData::ConstPtr& msg);
 
 	boost::shared_ptr<Mode> p_mode{};
 
 	bool is_locked_scan_ctrl_{false};
+
+	bool is_first_slip{true};
 };
 
 float cellToCount(int16_t distance);

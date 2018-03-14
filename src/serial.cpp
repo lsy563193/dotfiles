@@ -8,6 +8,7 @@
 #include <beeper.h>
 #include <key_led.h>
 #include <robot.hpp>
+#include "wifi.h"
 
 boost::mutex send_stream_mutex;
 
@@ -50,7 +51,7 @@ bool Serial::init(const std::string port,int baudrate)
 	crport_fd_ = open(buf, O_RDWR | O_NOCTTY | O_NONBLOCK);
 	if (crport_fd_ == -1)
 	{
-		ROS_ERROR("%s %d: Open device %s, at baudrate %d failed!.", __FUNCTION__, __LINE__, buf, baudrate);
+		ROS_ERROR("%s %d: Open device %s, on baudrate %d failed!.", __FUNCTION__, __LINE__, buf, baudrate);
 		return false;
 	}
 
@@ -588,11 +589,22 @@ void Serial::send_routine_cb()
 	ROS_INFO("robotbase,\033[32m%s\033[0m,%d is up.",__FUNCTION__,__LINE__);
 	ros::Rate r(_RATE);
 	resetSendStream();
+	//tmp test
+	uint16_t wifi_send_count = 0;
+
 	while(ros::ok() && !send_thread_kill){
 		if (!send_thread_enable)
 		{
 			r.sleep();
 			continue;
+		}
+
+		//tmp test
+		wifi_send_count++;
+		if(wifi_send_count >= 250)
+		{
+			wifi_send_count = 0;
+			s_wifi.testSend();
 		}
 
 		r.sleep();

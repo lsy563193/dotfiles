@@ -5,9 +5,8 @@
 #ifndef PP_X900_FUNCTIONAL_TEST_HPP
 #define PP_X900_FUNCTIONAL_TEST_HPP
 
-#endif //PP_X900_FUNCTIONAL_TEST_HPP
-
 #include "config.h"
+#include "error.h"
 
 // Definition for error code.
 #define SERIAL_ERROR 		((uint16_t)3001)
@@ -73,6 +72,7 @@
 #define VACUUM_STALL_ERROR						(uint16_t)1005
 #define CHARGE_PWM_ERROR						(uint16_t)1101
 #define CHARGE_CURRENT_ERROR				(uint16_t)1102
+#define SWING_MOTOR_ERROR						(uint16_t)1201
 //limit
 #define OBS_MANUAL_LIMIT_H	(uint16_t)1500
 #define OBS_MANUAL_LIMIT_L	(uint16_t)700
@@ -82,6 +82,7 @@
 #define OBS_FIXTURE_LIMIT_L	(uint16_t)700
 #define WALL_FIXTURE_LIMIT_H	(uint16_t)500
 #define WALL_FIXTURE_LIMIT_L	(uint16_t)140
+#define SWING_CURRENT_LIMIT	(uint16_t)1000
 
 //index for array "baseline"
 #define LEFT_WHEEL			0
@@ -158,12 +159,15 @@ uint16_t cliff_test(uint8_t &test_stage);
 uint16_t bumper_test(uint8_t &test_stage);
 uint16_t obs_test(uint8_t &test_stage, bool is_fixture);
 uint16_t rcon_test(uint8_t &test_stage);
+uint16_t water_tank_test(uint8_t &test_stage);
 uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline);
 uint16_t brushes_test(uint8_t &test_stage, uint16_t *baseline);
 uint16_t charge_current_test(uint8_t &test_stage, bool is_fixture);
 uint16_t vacuum_test(uint8_t &test_stage, uint16_t *baseline);
-uint8_t get_charge_pwm_level(uint16_t voltage);
 /*
  * Test for memory device.
  */
 //bool memory_test();
+
+#endif //PP_X900_FUNCTIONAL_TEST_HPP
+

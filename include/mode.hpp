@@ -101,6 +101,7 @@ public:
 		ac_check_vacuum,
 		ac_bumper_hit_test,
 		ac_desk_test,
+		ac_gyro_test,
 	};
 
 	virtual void genNextAction();
@@ -284,6 +285,8 @@ public:
 	bool isRemoteGoHomePoint();
 	void setHomePoint();
 	bool estimateChargerPos(uint32_t rcon_value);
+	void setChargerArea(const Point_t charge_pos);
+	bool checkChargerPos();
 	Cells pointsGenerateCells(Points &targets);
 
 	// For move types
@@ -407,7 +410,7 @@ public:
 	// State desk test
 	bool isStateDeskTest() const
 	{
-		return sp_state == state_desk_test;
+		return sp_state == state_test;
 	}
 	virtual bool isSwitchByEventInStateDeskTest(){return false;};
 	virtual bool updateActionInStateDeskTest(){return false;};
@@ -461,7 +464,7 @@ protected:
 	State *state_spot =  new StateSpot();
 	State *state_resume_low_battery_charge = new StateResumeLowBatteryCharge();
 	State *state_pause = new StatePause();
-	State *state_desk_test = new StateDeskTest();
+	State *state_test = new StateTest();
 
 	bool low_battery_charge_{};
 	bool moved_during_pause_{};
@@ -470,6 +473,7 @@ protected:
 	bool remote_go_home_point{false};
 	bool switch_is_off_{false};
 	Points charger_pose_;
+	Points tmp_charger_pose_;
 	bool found_charger_{false};
 	bool out_range_charger_{false};
 public:
@@ -670,21 +674,24 @@ private:
 
 };
 
-class CleanModeDeskTest:public ACleanMode
+class CleanModeTest:public ACleanMode
 {
 public:
-	CleanModeDeskTest();
-	~CleanModeDeskTest();
+	CleanModeTest(uint8_t mode);
+	~CleanModeTest();
 
 	bool mapMark() override
 	{return false;}
 
+	bool isFinish() override;
 	bool isExit() override;
-	void switchInStateInit() override;
 	bool updateActionInStateDeskTest() override;
 	void switchInStateDeskTest() override;
 
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteDirectionForward(bool state_now, bool state_last) override ;
+
+private:
+	uint8_t test_mode_{0};
 };
 #endif //PP_MODE_H_H

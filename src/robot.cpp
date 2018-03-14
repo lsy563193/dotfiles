@@ -87,6 +87,7 @@ robot::robot()
 #endif
 
 	robot_nh_.param<std::string>("serial_port", serial_port_, "/dev/ttyS2");
+	//robot_nh_.param<std::string>("wifi_port",wifi_port_,"dev/ttyS1");
 	robot_nh_.param<int>("baud_rate", baud_rate_, 115200);
 
 	robot_nh_.param<std::string>("lidar_bumper_file", lidar_bumper_dev_, "/dev/input/event1");
@@ -99,8 +100,6 @@ robot::robot()
 
 	ROS_INFO("waiting robotbase awake ");
 	auto serial_receive_routine = new boost::thread(boost::bind(&Serial::receive_routine_cb, &serial));
-	auto robotbase_routine = new boost::thread(boost::bind(&robot::robotbase_routine_cb, this));
-	auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
 	auto speaker_play_routine = new boost::thread(boost::bind(&Speaker::playRoutine, &speaker));
 	// Init for event manager.
 	event_manager_init();
@@ -111,11 +110,41 @@ robot::robot()
 	ROS_INFO("%s %d: robot init done!", __FUNCTION__, __LINE__);
 }
 
+robot::~robot()
+{
+	bumper.lidarBumperDeinit();
+	recei_thread_kill = true;
+	key_led.setMode(LED_STEADY, LED_OFF);
+	serial.setSendData(CTL_BEEPER, 0x00);
+	gyro.setOff();
+	wheel.stop();
+	brush.stop();
+	vacuum.stop();
+	serial.setMainBoardMode(WORK_MODE);
+	usleep(40000);
+	while(ros::ok() && !g_pp_shutdown){
+		usleep(2000);
+	}
+	serial.close();
+	pthread_mutex_destroy(&recev_lock);
+	pthread_mutex_destroy(&serial_data_ready_mtx);
+
+	pthread_cond_destroy(&recev_cond);
+	pthread_cond_destroy(&serial_data_ready_cond);
+
+	pthread_mutex_destroy(&new_event_mtx);
+	pthread_mutex_destroy(&event_handler_mtx);
+	pthread_cond_destroy(&new_event_cond);
+	pthread_cond_destroy(&event_handler_cond);
+
+	delete robot_tf_;
+	ROS_INFO("pp shutdown!");
+}
+
 void robot::robotbase_routine_cb()
 {
 	ROS_INFO("robotbase,\033[32m%s\033[0m,%d is up.",__FUNCTION__,__LINE__);
 
-	ros::Rate	r(_RATE);
 	ros::Time	cur_time, last_time;
 	uint8_t buf[REC_LEN];
 
@@ -253,7 +282,9 @@ void robot::robotbase_routine_cb()
 		sensor.plan = robot_timer.getPlanStatus();
 
 		// For water tank device.
-		sensor.water_tank = (buf[REC_MIX_BYTE] & 0x08) != 0;
+		water_tank.setStatus((buf[REC_MIX_BYTE] & 0x08) != 0);
+//		ROS_INFO("mix:%x", buf[REC_MIX_BYTE]);
+		sensor.water_tank = water_tank.getStatus();
 
 		// For charger device.
 		charger.setChargeStatus((buf[REC_MIX_BYTE] >> 4) & 0x07);
@@ -266,9 +297,6 @@ void robot::robotbase_routine_cb()
 		// For battery device.
 		battery.setVoltage(buf[REC_BATTERY] * 10);
 		sensor.battery = static_cast<float>(battery.getVoltage() / 100.0);
-
-		// For r16 work mode.
-		r16_test_mode_ = buf[REC_R16_WORK_MODE];
 
 		// For over current checking.
 		vacuum.setOc((buf[REC_OC] & 0x01) != 0);
@@ -310,6 +338,11 @@ void robot::robotbase_routine_cb()
 		if(!lidar.isRobotSlip()){
 			odom.setX(static_cast<float>(odom.getX() + (odom.getMovingSpeed() * cos(angle_rad)) * dt));
 			odom.setY(static_cast<float>(odom.getY() + (odom.getMovingSpeed() * sin(angle_rad)) * dt));
+			is_first_slip = true;
+		} else if (is_first_slip){
+			odom.setX(static_cast<float>(odom.getX() - (0.30 * cos(angle_rad)) * 0.8));
+			odom.setY(static_cast<float>(odom.getY() - (0.30 * sin(angle_rad)) * 0.8));
+			is_first_slip = false;
 		}
 		odom_quat = tf::createQuaternionMsgFromYaw(angle_rad);
 		odom_msg.header.stamp = cur_time;
@@ -335,9 +368,7 @@ void robot::robotbase_routine_cb()
 		/*------publish end -----------*/
 
 		// Check tilt
-#if GYRO_DYNAMIC_ADJUSTMENT
 		gyro.checkTilt();
-#endif
 		// Dynamic adjust obs
 		obs.DynamicAdjust(OBS_adjust_count);
 
@@ -352,7 +383,7 @@ void robot::robotbase_routine_cb()
 						!(fabs(wheel.getLeftWheelActualSpeed() - wheel.getRightWheelActualSpeed()) > 0.1
 						  || (wheel.getLeftWheelActualSpeed() * wheel.getRightWheelActualSpeed() < 0)
 						  || bumper.getStatus()
-						  || gyro.getTiltCheckingStatus()
+						  /*|| gyro.getTiltCheckingStatus()*/
 						  || abs(wheel.getLeftSpeedAfterPid() - wheel.getRightSpeedAfterPid()) > 100
 						  || wheel.getLeftSpeedAfterPid() * wheel.getRightSpeedAfterPid() < 0);
 		}
@@ -371,41 +402,60 @@ void robot::robotbase_routine_cb()
 
 void robot::core_thread_cb()
 {
-	robotbase_thread_enable = true;
-	send_thread_enable = true;
 	recei_thread_enable = true;
+	r16_work_mode_ = getTestMode();
+	ROS_INFO("%s %d: work mode: %d", __FUNCTION__, __LINE__, r16_work_mode_);
 
-	ROS_INFO("Waiting for robot sensor ready.");
-	while (!isSensorReady()) {
-		usleep(1000);
-	}
-	ROS_INFO("Robot sensor ready.");
-//	speaker.play(VOICE_WELCOME_ILIFE);
-	usleep(200000);
-
-	switch (r16_test_mode_)
+	switch (r16_work_mode_)
 	{
-		case R16_FUNCTIONAL_TEST_MODE:
+		case SERIAL_TEST_MODE:
 		{
-			send_thread_enable = false;
 			recei_thread_enable = false;
-			sleep(1); // Make sure recieve thread is hung up.
+			sleep(1); // Make sure recieve thread is hung up, this time interval should be the select timeout of serial.
 			x900_functional_test(serial_port_, baud_rate_, lidar_bumper_dev_);
 			break;
 		}
-		case R16_DESK_TEST_MODE:
+		case DESK_TEST_CURRENT_MODE:
+//		case GYRO_TEST_MODE:
+//		case WORK_MODE: // For debug
+//		case NORMAL_SLEEP_MODE: // For debug
 		{
+			auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
+			send_thread_enable = true;
+
+			if (r16_work_mode_ == NORMAL_SLEEP_MODE || r16_work_mode_ == WORK_MODE/*GYRO_TEST_MODE*/)
+			{
+				auto robotbase_routine = new boost::thread(boost::bind(&robot::robotbase_routine_cb, this));
+				robotbase_thread_enable = true;
+			}
+
 			if (bumper.lidarBumperInit(lidar_bumper_dev_.c_str()) == -1)
 				ROS_ERROR(" lidar bumper open fail!");
 
-			p_mode.reset(new CleanModeDeskTest());
+			p_mode.reset(new CleanModeTest(r16_work_mode_));
 			p_mode->run();
 			break;
 		}
-		default: //case R16_NORMAL_MODE:
+		default: //case WORK_MODE:
 		{
+			auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
+			send_thread_enable = true;
+
+			auto robotbase_routine = new boost::thread(boost::bind(&robot::robotbase_routine_cb, this));
+			robotbase_thread_enable = true;
+
+			ROS_INFO("Waiting for robot sensor ready.");
+			while (!isSensorReady())
+			{
+				usleep(1000);
+			}
+			ROS_INFO("Robot sensor ready.");
+
 			if (bumper.lidarBumperInit(lidar_bumper_dev_.c_str()) == -1)
 				ROS_ERROR(" lidar bumper open fail!");
+
+			if (water_tank.checkEquipment())
+				ROS_INFO("%s %d: Robot is carrying a water tank.", __FUNCTION__, __LINE__);
 
 			if (charger.isOnStub() || charger.isDirected())
 				p_mode.reset(new ModeCharge());
@@ -435,37 +485,7 @@ void robot::core_thread_cb()
 		}
 	}
 
-}
-
-robot::~robot()
-{
-	bumper.lidarBumperDeinit();
-	recei_thread_kill = true;
-	key_led.setMode(LED_STEADY, LED_OFF);
-	serial.setSendData(CTL_BEEPER, 0x00);
-	gyro.setOff();
-	wheel.stop();
-	brush.stop();
-	vacuum.stop();
-	serial.setMainBoardMode(NORMAL_SLEEP_MODE);
-	usleep(40000);
-	while(ros::ok() && !g_pp_shutdown){
-		usleep(2000);
-	}
-	serial.close();
-	pthread_mutex_destroy(&recev_lock);
-	pthread_mutex_destroy(&serial_data_ready_mtx);
-
-	pthread_cond_destroy(&recev_cond);
-	pthread_cond_destroy(&serial_data_ready_cond);
-
-	pthread_mutex_destroy(&new_event_mtx);
-	pthread_mutex_destroy(&event_handler_mtx);
-	pthread_cond_destroy(&new_event_cond);
-	pthread_cond_destroy(&event_handler_cond);
-
-	delete robot_tf_;
-	ROS_INFO("pp shutdown!");
+	ROS_INFO("%s %d: core thread exit.", __FUNCTION__, __LINE__);
 }
 
 robot *robot::instance()
@@ -474,23 +494,18 @@ robot *robot::instance()
 	return robot_instance;
 }
 
-void robot::scaleCorrectionPos(tf::Vector3 &tmp_pos, double& tmp_rad) {
-	auto p_cm = boost::dynamic_pointer_cast<ACleanMode> (p_mode);
-	auto dir = p_cm->iterate_point_.dir;
-	if(isAny(dir))
-		return;
+uint8_t robot::getTestMode(void)
+{
+	uint8_t buf[REC_LEN];
 
-	auto target_xy = (isXAxis(dir)) ? p_cm->iterate_point_.y : p_cm->iterate_point_.x;
-	auto slam_xy = (isXAxis(dir)) ? slam_pos.getY() : slam_pos.getX();
-	auto diff_xy = (slam_xy - target_xy)/3;
+	/*--------data extrict from serial com--------*/
+	ROS_ERROR_COND(pthread_mutex_lock(&recev_lock) != 0, "robotbase pthread receive lock fail");
+	ROS_ERROR_COND(pthread_cond_wait(&recev_cond, &recev_lock) != 0, "robotbase pthread receive cond wait fail");
+	memcpy(buf, serial.receive_stream, sizeof(uint8_t) * REC_LEN);
+	ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock) != 0, "robotbase pthread receive unlock fail");
+//	debugReceivedStream(buf);
 
-	if(diff_xy > CELL_SIZE/2)
-		diff_xy = CELL_SIZE/2;
-	else if(diff_xy < -CELL_SIZE/2)
-		diff_xy = -CELL_SIZE/2;
-		(isXAxis(dir)) ? tmp_pos.setY(target_xy + diff_xy) : tmp_pos.setX(target_xy + diff_xy);
-
-	tmp_rad = robot_rad + (slam_rad - robot_rad);
+	return buf[REC_R16_WORK_MODE];
 }
 
 void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
@@ -535,7 +550,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 //	ROS_INFO("tmp_pos(%f,%f),tmp_rad(%f)", tmp_pos.x(), tmp_pos.y(), tmp_rad);
 	robot_pos = tmp_pos;
 	robot_rad = tmp_rad;
-	robot::instance()->odomPublish(robot_pos, robot_rad);
+	odomPublish(robot_pos, robot_rad);
 }
 
 void robot::odomPublish(const tf::Vector3& robot_pos, double robot_radian_)
@@ -673,13 +688,20 @@ void robot::publishCtrlStream(void)
 
 	ctrl_stream.vacuum_exception_ctrl = static_cast<unsigned char>((serial.getSendData(CTL_MIX) >> 1) & 0x01);
 
-	ctrl_stream.gyro_dynamic_ctrl = static_cast<unsigned char>(serial.getSendData(CTL_GYRO) & 0x01);
-	ctrl_stream.gyro_switch = static_cast<unsigned char>((serial.getSendData(CTL_GYRO) >> 1) & 0x01);
+	ctrl_stream.gyro_dynamic_ctrl = static_cast<unsigned char>((serial.getSendData(CTL_MIX) >> 2) & 0x01);
+	ctrl_stream.gyro_switch = static_cast<unsigned char>((serial.getSendData(CTL_MIX) >> 3) & 0x01);
 
 	ctrl_stream.key_validation = serial.getSendData(CTL_KEY_VALIDATION);
 	ctrl_stream.crc = serial.getSendData(CTL_CRC);
 
 	x900_ctrl_pub_.publish(ctrl_stream);
+}
+
+void robot::updateRobotPositionForDeskTest()
+{
+	robot_pos.setX(odom.getX());
+	robot_pos.setY(odom.getY());
+	robot_rad = ranged_radian(odom.getRadian());
 }
 
 //--------------------
@@ -759,8 +781,8 @@ Mode *getNextMode(int next_mode_i_)
 			return new CleanModeFollowWall();
 		case Mode::cm_spot:
 			return new CleanModeSpot();
-		case Mode::cm_test:
-			return new CleanModeDeskTest();
+//		case Mode::cm_test:
+//			return new CleanModeTest();
 		case Mode::cm_exploration:
 			return new CleanModeExploration();
 //		case Mode::cm_exploration:

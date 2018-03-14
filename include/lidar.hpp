@@ -76,12 +76,12 @@ public:
 
 	uint8_t lidarMarker(std::vector<Vector2<int>> &markers, double X_MAX = 0.21);
 	void checkRobotSlip();
+	void checkSlipInit(float &acur1, float &acur2, float &acur3, float &acur4);
 	bool isRobotSlip();
 
 	// type 1 for linear scan data, type 2 for origin scan data.
 	bool lidarCheckFresh(float duration, uint8_t type = 1);
 	bool findLines(std::vector<LineABC> *lines,bool combine);
-	bool getAlignAngle(const std::vector<LineABC> *lines,float *align_angle);
 
 	//void stop(void);
 	//void start(void);
@@ -137,6 +137,7 @@ private:
 	float slip_ranges_percent_{0.8};//80%
 	uint8_t slip_cnt_limit_{5};
 	static double wheel_cliff_trigger_time_;
+	static double gyro_tilt_trigger_time_;
 
 };
 

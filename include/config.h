@@ -99,7 +99,7 @@
 #define LOW_BATTERY_STOP_VOLTAGE		(1250)
 
 /* Ready to clean battery voltage value */
-#define BATTERY_READY_TO_CLEAN_VOLTAGE	(1200)
+#define BATTERY_READY_TO_CLEAN_VOLTAGE	(1400)
 
 /* Fully charged battery voltage value */
 #define BATTERY_FULL_VOLTAGE	(1640)
@@ -127,8 +127,8 @@
 #define GYRO_DYNAMIC_ADJUSTMENT	(1)
 
 // Define the position of gyro, only one side could be chozen.
-#define GYRO_FRONT_X_POS	(0)
-#define GYRO_FRONT_X_NEG	(1)
+#define GYRO_FRONT_X_POS	(1)
+#define GYRO_FRONT_X_NEG	(0)
 #define GYRO_FRONT_Y_POS	(0)
 #define GYRO_FRONT_Y_NEG	(0)
 
@@ -186,6 +186,7 @@
 #define LIDAR_OFFSET_Y						(0)//0
 #define ROBOT_RADIUS						(0.167)
 
-#define Two_Hours         7200
+/* ------------------------------------- robot physical config ------------------------------------- */
+#define WHEEL_TO_CENTER_DISTANCE		(0.109f)
 #endif //__CONFIG_H__
 

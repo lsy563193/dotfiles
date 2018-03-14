@@ -21,6 +21,7 @@ ModeIdle::ModeIdle()
 	ROS_INFO("%s %d: Current battery voltage \033[32m%5.2f V\033[0m.", __FUNCTION__, __LINE__, (float)battery.getVoltage()/100.0);
 
 	/*---reset values for rcon handle---*/
+	// todo: first_time_seen_charger_ does not mean as words in reality. It is just the time that enter this mode.
 	first_time_seen_charger_ = ros::Time::now().toSec();
 	last_time_seen_charger_ = first_time_seen_charger_;
 
@@ -357,6 +358,7 @@ void ModeIdle::rcon(bool state_now, bool state_last)
 		}
 		last_time_seen_charger_ = time_for_now_;
 	}
+	c_rcon.resetStatus();
 }
 
 bool ModeIdle::isFinish()

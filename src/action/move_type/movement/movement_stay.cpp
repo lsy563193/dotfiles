@@ -13,6 +13,9 @@ MovementStay::MovementStay(double stay_time_sec)
 	wheel.stop();
 	start_timer_ = ros::Time::now().toSec();
 	timeout_interval_ = stay_time_sec;
+	bumper_status_in_stay_ = 0;
+	cliff_status_in_stay_ = 0;
+	tilt_status_in_stay_ = 0;
 }
 
 MovementStay::~MovementStay()
@@ -24,8 +27,9 @@ MovementStay::~MovementStay()
 
 bool MovementStay::isFinish()
 {
-//	ev.bumper_triggered = bumper.getStatus();
-//	ev.cliff_triggered = cliff.getStatus();
+	bumper_status_in_stay_ = bumper.getStatus();
+	cliff_status_in_stay_ = cliff.getStatus();
+	tilt_status_in_stay_ = gyro.getTiltCheckingStatus();
 
 //	return ev.remote_direction_forward ||
 //		   ev.remote_direction_left ||
@@ -34,7 +38,7 @@ bool MovementStay::isFinish()
 //		   ev.cliff_triggered ||
 	robot::instance()->lockScanCtrl();
 	robot::instance()->pubScanCtrl(true, true);
-	return isTimeUp();
+	return isTimeUp() || bumper_status_in_stay_ || cliff_status_in_stay_ || tilt_status_in_stay_;
 }
 
 void MovementStay::adjustSpeed(int32_t &left_speed, int32_t &right_speed)

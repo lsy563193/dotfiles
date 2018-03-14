@@ -11,6 +11,8 @@
 #define Vac_Speed_Normal			60 //9000rpm
 #define Vac_Speed_NormalL			50 //8000rpm
 
+#define TWO_HOURS					7200
+
 enum {
 Vac_Normal=0,
 Vac_Max,
@@ -57,6 +59,16 @@ public:
 		return oc_;
 	}
 
+	void setCurrent(uint16_t current)
+	{
+		current_ = current;
+	}
+
+	uint16_t getCurrent()
+	{
+		return current_;
+	}
+
 private:
 	void setSpeedByMode(uint8_t);
 
@@ -64,6 +76,7 @@ private:
 	uint8_t mode_save_;
 	bool oc_;
 
+	uint16_t current_;
 };
 
 extern Vacuum vacuum;

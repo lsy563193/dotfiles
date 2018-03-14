@@ -147,27 +147,31 @@ uint32_t IMoveType::countRconTriggered(uint32_t rcon_value, int max_cnt)
 	if(rcon_value == 0)
 		return 0;
 
-	if (rcon_value & RconL_HomeT)
+	if ( rcon_value& RconL_HomeT)
 		rcon_cnt[Rcon::left]++;
-	if (rcon_value & RconFL_HomeT)
+	if ( rcon_value& RconFL_HomeT)
 		rcon_cnt[Rcon::fl]++;
-	if (rcon_value & RconFL2_HomeT)
+	if ( rcon_value& RconFL2_HomeT)
 		rcon_cnt[Rcon::fl2]++;
-	if (rcon_value & RconFR2_HomeT)
+	if ( rcon_value& RconFR2_HomeT)
 		rcon_cnt[Rcon::fr2]++;
-	if (rcon_value & RconFR_HomeT)
+	if ( rcon_value& RconFR_HomeT)
 		rcon_cnt[Rcon::fr]++;
-	if (rcon_value & RconR_HomeT)
+	if ( rcon_value& RconR_HomeT)
 		rcon_cnt[Rcon::right]++;
 	uint32_t ret = 0;
-	for (int i = Rcon::enum_start; i < Rcon::enum_end; i++)
-	{
-		if (((i == Rcon::fl || i == Rcon::fr) && rcon_cnt[i] > max_cnt) ||
-				((i == Rcon::left || i == Rcon::right || i == Rcon::fl2 || i == Rcon::fr2) && rcon_cnt[i] > (max_cnt + 2)))
-		{
-			for (int j = Rcon::enum_start; j > Rcon::enum_end; j++)
-				rcon_cnt[j] = 0;
-			ret = Rcon::convertFromEnum(i);
+	for (int i = Rcon::enum_start; i < Rcon::enum_end; i++){
+		if ( (i == Rcon::fl || i == Rcon::fr ) && rcon_cnt[i] > max_cnt) {
+				
+			for (int j = Rcon::enum_start; j < Rcon::enum_end; j++)
+				rcon_cnt[j] =0;
+			ret = c_rcon.convertFromEnum(i);
+			break;
+		}
+		else if( (i == Rcon::left || i == Rcon::right || i == Rcon::fl2 || i == Rcon::fr2) && rcon_cnt[i] > (max_cnt + 2)){
+			for (int j = Rcon::enum_start; j < Rcon::enum_end; j++)
+				rcon_cnt[j] =0;
+			ret = c_rcon.convertFromEnum(i);
 			break;
 		}
 	}
@@ -180,7 +184,7 @@ bool IMoveType::isRconStop()
 	ev.rcon_status = countRconTriggered(c_rcon.getNavRcon(), 3);
 	if(ev.rcon_status)
 	{
-		INFO_PURPLE("Rcon triggered and stop.");
+		ROS_INFO("\033[1;40;35m""Rcon triggered and stop %x.""\033[0m",ev.rcon_status);
 		ret = true;
 	}
 
