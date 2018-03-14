@@ -287,7 +287,7 @@ uint8_t Gyro::checkTilt()
 	{
 		
 		//robot front tilt
-		if (fabsf(getFront() - getFrontInit()) > FRONT_TILT_LIMIT)
+		if (getFront() - getFrontInit() > FRONT_TILT_LIMIT)
 		{
 			tilt_front_count_ +=2;
 			ROS_INFO("\033[1;40;32m%s %d: front(%d)\tfront init(%d), front cnt(%d).\033[0m", __FUNCTION__, __LINE__, getFront(), getFrontInit(), tilt_front_count_);

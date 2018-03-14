@@ -242,6 +242,7 @@ private:
 	pp::scan_ctrl scan_ctrl_;
 
 	std::string serial_port_;
+	std::string wifi_port_;
 	int baud_rate_;
 	std::string lidar_bumper_dev_;
 

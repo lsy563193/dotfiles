@@ -23,6 +23,7 @@ FILE(GLOB PP_SRC
 	src/dev/speaker.cpp
 	src/dev/lidar.cpp
 	src/dev/water_tank.cpp
+	src/dev/wifi.cpp
 
 	src/mode/state/state.cpp
 	src/mode/state/state_init.cpp
@@ -112,6 +113,17 @@ FILE(GLOB PP_SRC
 	src/slam.cpp
 	src/slam_map.cpp
 	src/verify.cpp
+
+	src/wifi/dev.cpp
+	src/wifi/packet.cpp
+	src/wifi/tx.cpp
+	src/wifi/rx.cpp
+	src/wifi/msg.cpp
+	#src/wifi/util.cpp
+
+	#src/cloud/realtime_map_handler.cpp
+	#src/cloud/accumulated_work_time_handler.cpp
+	#src/cloud/consumable_handler.cpp
 )
 
 find_package(catkin REQUIRED COMPONENTS

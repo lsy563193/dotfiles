@@ -87,6 +87,7 @@ robot::robot()
 #endif
 
 	robot_nh_.param<std::string>("serial_port", serial_port_, "/dev/ttyS2");
+	//robot_nh_.param<std::string>("wifi_port",wifi_port_,"dev/ttyS1");
 	robot_nh_.param<int>("baud_rate", baud_rate_, 115200);
 
 	robot_nh_.param<std::string>("lidar_bumper_file", lidar_bumper_dev_, "/dev/input/event1");
