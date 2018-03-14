@@ -508,6 +508,25 @@ uint8_t robot::getTestMode(void)
 	return buf[REC_R16_WORK_MODE];
 }
 
+void robot::scaleCorrectionPos(tf::Vector3 &tmp_pos, double& tmp_rad) {
+	auto p_cm = boost::dynamic_pointer_cast<ACleanMode> (p_mode);
+	auto dir = p_cm->iterate_point_.dir;
+	if(isAny(dir))
+		return;
+
+	auto target_xy = (isXAxis(dir)) ? p_cm->iterate_point_.y : p_cm->iterate_point_.x;
+	auto slam_xy = (isXAxis(dir)) ? slam_pos.getY() : slam_pos.getX();
+	auto diff_xy = (slam_xy - target_xy)/3;
+
+	if(diff_xy > CELL_SIZE/2)
+		diff_xy = CELL_SIZE/2;
+	else if(diff_xy < -CELL_SIZE/2)
+		diff_xy = -CELL_SIZE/2;
+		(isXAxis(dir)) ? tmp_pos.setY(target_xy + diff_xy) : tmp_pos.setX(target_xy + diff_xy);
+
+	tmp_rad = robot_rad + (slam_rad - robot_rad);
+}
+
 void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 {
 	tf::StampedTransform transform{};
@@ -609,8 +628,6 @@ void robot::initOdomPosition()
 
 void robot::resetCorrection()
 {
-	slam_pos = {};
-	robot_rad = {};
 	slam_pos = {};
 	robot_rad = {};
 }
