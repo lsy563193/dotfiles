@@ -595,7 +595,7 @@ void event_manager_reset_status(void)
 	ev.robot_stuck = false;
 
 	/* tilt switch*/
-	gyro.TiltCheckingEnable(false);
+	gyro.setTiltCheckingEnable(false);
 	ev.tilt_triggered = false;
 	/* lidar bumper */
 	//g_lidar_bumper = false;
