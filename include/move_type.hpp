@@ -107,7 +107,6 @@ private:
 	int16_t cliffTurnAngle();
 	int16_t tiltTurnAngle();
 	int16_t obsTurnAngle();
-	int16_t double_scale_10(double line_angle);
 	bool _lidarTurnRadian(bool is_left, double &turn_radian, double lidar_min, double lidar_max, double radian_min,
 						  double radian_max, bool is_moving,
 						  double dis_limit = 0.3);
@@ -178,15 +177,119 @@ public:
 	MoveTypeDeskTest();
 	~MoveTypeDeskTest() override;
 
+	void deskTestRoutineThread();
 	bool isFinish() override;
 
 	void run() override;
 
+	bool dataExtract(const uint8_t *buf);
+
+
 private:
+	boost::shared_ptr<IAction> p_movement_;
+
+	uint16_t error_code_{0};
+
+	int current_work_mode_{0};
+
 	/*
 	 * Test stage: 1 ~ 7.
-	 * Stage 1: Check for base value for currents and cliff and obs and lidar.
+	 * Stage 1: Check for base value for currents.
+	 * Stage 2: Check lidar, then turn 180 degrees, check lidar again, turn 180 degrees, and get the baselines
+	 *          of OBS and cliff and check the rcon receivers.
+	 * Stage 3: Check for bumpers and OBS value.
+	 * Stage 4: Follow wall to cliff position and check for cliff value.
+	 * Stage 5: Move for a distance and check the max currents.
+	 * Stage 6: Turn for 360 degrees to check for rcon.
 	 */
-	int test_stage_{0};
+	int test_stage{0};
+
+	// Each stage has several steps.
+	int test_step_{0};
+
+	// For stage 1.
+	int sum_cnt_{0};
+	int32_t left_brush_current_baseline_sum_{};
+	int32_t right_brush_current_baseline_sum_{};
+	int32_t main_brush_current_baseline_sum_{};
+	int32_t left_wheel_current_baseline_sum_{};
+	int32_t right_wheel_current_baseline_sum_{};
+	int32_t vacuum_current_baseline_sum_{};
+	int32_t water_tank_current_baseline_sum_{};
+
+	int16_t left_brush_current_baseline_;
+	int16_t right_brush_current_baseline_;
+	int16_t main_brush_current_baseline_;
+	int16_t left_wheel_current_baseline_;
+	int16_t right_wheel_current_baseline_;
+	int16_t vacuum_current_baseline_;
+	int16_t water_tank_current_baseline_;
+
+	bool check_stage_1_finish();
+
+	// For stage 2.
+	uint8_t lidar_check_cnt_{0};
+	double lidar_check_seq_{0};
+
+	long left_obs_sum_{0};
+	long front_obs_sum_{0};
+	long right_obs_sum_{0};
+
+	int16_t left_obs_baseline_{0};
+	int16_t front_obs_baseline_{0};
+	int16_t right_obs_baseline_{0};
+
+	bool check_stage_2_finish();
+
+	// For stage 3.
+	int16_t obs_ref_{2000}; //todo
+	int16_t left_obs_max_{0};
+	int16_t front_obs_max_{0};
+	int16_t right_obs_max_{0};
+	bool check_stage_3_finish();
+
+	// For stage 4.
+	int16_t cliff_min_ref_{80}; //todo
+	int16_t cliff_max_ref_{200}; //todo
+
+	int16_t left_cliff_max_{0};
+	int16_t front_cliff_max_{0};
+	int16_t right_cliff_max_{0};
+
+	long left_cliff_sum_{0};
+	long front_cliff_sum_{0};
+	long right_cliff_sum_{0};
+
+	int16_t left_cliff_baseline_{0};
+	int16_t front_cliff_baseline_{0};
+	int16_t right_cliff_baseline_{0};
+
+	bool check_stage_4_finish();
+
+	// For stage 5.
+
+	uint16_t left_brush_current_max_{0};
+	uint16_t right_brush_current_max_{0};
+	uint16_t main_brush_current_max_{0};
+	uint16_t left_wheel_forward_current_max_{0};
+	uint16_t right_wheel_forward_current_max_{0};
+	uint16_t left_wheel_backward_current_max_{0};
+	uint16_t right_wheel_backward_current_max_{0};
+	uint16_t vacuum_current_max_{0};
+	uint16_t water_tank_current_max_{0};
+
+	uint16_t side_brush_current_ref_{0}; // todo:
+	uint16_t main_brush_current_ref_{0};
+	uint16_t wheel_current_ref_{0};
+	uint16_t vacuum_current_ref_{0};
+	uint16_t water_tank_current_ref_{0};
+
+	bool check_stage_5_finish();
+
+	// For stage 6.
+	bool check_stage_6_finish();
+
+	// For stage 7.
+	bool check_stage_7_finish();
 };
 #endif //PP_MOVE_TYPE_HPP

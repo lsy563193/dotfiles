@@ -91,7 +91,7 @@ FILE(GLOB PP_SRC
 	src/action/move_type/movement/movement_turn.cpp
 	src/action/move_type/movement/movement_charge.cpp
 	src/action/move_type/movement/movement_stay.cpp
-	src/action/move_type/movement/movement_remote_direct_go.cpp
+	src/action/move_type/movement/movement_direct_go.cpp
 	src/action/move_type/movement/movement_straight.cpp
 	src/action/move_type/movement/movement_forward_turn.cpp
 	src/action/move_type/movement/movement_follow_point.cpp

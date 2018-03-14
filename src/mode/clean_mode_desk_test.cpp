@@ -10,6 +10,11 @@ CleanModeDeskTest::CleanModeDeskTest()
 {
 	ROS_WARN("%s %d: Entering Desk Test mode\n=========================" , __FUNCTION__, __LINE__);
 	speaker.play(VOICE_TEST_MODE, false);
+	serial.setMainBoardMode(DESK_TEST_CURRENT_MODE);
+	sp_state = state_desk_test;
+	sp_state->init();
+	action_i_ = ac_desk_test;
+	genNextAction();
 }
 
 CleanModeDeskTest::~CleanModeDeskTest()
@@ -61,15 +66,6 @@ void CleanModeDeskTest::remoteDirectionForward(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Remote forward pressed.", __FUNCTION__, __LINE__);
 	ev.remote_direction_forward = true;
 	remote.reset();
-}
-
-// State init.
-void CleanModeDeskTest::switchInStateInit()
-{
-	action_i_ = ac_null;
-	sp_action_ = nullptr;
-	sp_state = state_desk_test;
-	sp_state->init();
 }
 
 // State desk test.

@@ -57,7 +57,7 @@
 // bit 4-7 reserved.
 #define CTL_MIX 15
 
-// One byte for controlling gyro.
+// One byte for controlling water tank.
 // bit 0 for switch of pump.
 // bit 1-7 for controlling swing motor PWM.
 #define CTL_WATER_TANK 16
@@ -277,14 +277,8 @@
 #define VACUUM_TEST_MODE		14
 #define CHARGE_CURRENT_TEST_MODE		15
 #define ALARM_ERROR_MODE		16
-#define DESK_TEST_MODE_1		17 // For checking baselines
-#define DESK_TEST_MODE_2		18
-#define DESK_TEST_MODE_3		19
-
-// R16 test mode
-#define R16_NORMAL_MODE				0
-#define R16_FUNCTIONAL_TEST_MODE	1
-#define R16_DESK_TEST_MODE			2
+#define DESK_TEST_CURRENT_MODE		17 // For checking current
+#define DESK_TEST_MOVEMENT_MODE		18
 
 #define DUMMY_DOWNLINK_OFFSET		2
 #define KEY_DOWNLINK_OFFSET			9

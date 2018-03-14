@@ -13,7 +13,8 @@ MovementTurn::MovementTurn(double radian, uint8_t max_speed) : speed_(ROTATE_LOW
 	accurate_ = ROTATE_TOP_SPEED > 30 ? degree_to_radian(3) : degree_to_radian(1.5);
 	target_radian_ = radian;
 	max_speed_ = max_speed;
-	timeout_interval_ = (fabs(radian) * 107/* distance between wheel and robot center*/) / (speed_ * SPEED_ALF);
+	auto diff = ranged_radian(target_radian_ - getPosition().th);
+	timeout_interval_ = (fabs(diff) * 107/* distance between wheel and robot center*/) / (speed_ * SPEED_ALF);
 	ROS_INFO("%s, %d: MovementTurn init, target_radian_: \033[32m%f (in degree)\033[0m, current radian: \033[32m%f (in degree)\033[0m, timeout:(%f)s."
 			, __FUNCTION__, __LINE__, radian_to_degree(ranged_radian(target_radian_)), radian_to_degree(getPosition().th), timeout_interval_);
 }

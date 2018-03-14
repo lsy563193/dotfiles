@@ -176,8 +176,6 @@ public:
 		return scan_ctrl_.allow_publishing?true:false;
 	}
 
-	void setTempTarget(std::deque<Vector2<double>>& points, uint32_t  seq);
-
 	void debugReceivedStream(const uint8_t *buf);
 
 	void debugSendStream(const uint8_t *buf);
@@ -189,14 +187,19 @@ public:
 	void unlockScanCtrl(void);
 
 	void publishCtrlStream(void);
+
+	void updateRobotPositionForDeskTest();
+
 private:
+
+	uint8_t getTestMode(void);
 
 	Baselink_Frame_Type baselink_frame_type_;
 	boost::mutex baselink_frame_type_mutex_;
 // Lock for odom coordinate
 	boost::mutex odom_mutex_;
 
-	uint8_t r16_test_mode_;
+	uint8_t r16_work_mode_;
 
 	bool is_sensor_ready_{};
 	bool is_tf_ready_{};

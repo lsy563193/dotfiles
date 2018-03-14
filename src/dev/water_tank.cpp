@@ -3,3 +3,5 @@
 //
 
 #include "water_tank.hpp"
+
+WaterTank water_tank;
