@@ -365,7 +365,7 @@ void robot::robotbase_routine_cb()
 		/*------publish end -----------*/
 
 		// Check tilt
-		gyro.checkTilt();
+//		gyro.checkTilt();
 #if GYRO_DYNAMIC_ADJUSTMENT
 #endif
 		// Dynamic adjust obs

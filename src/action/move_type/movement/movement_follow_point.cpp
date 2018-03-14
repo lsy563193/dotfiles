@@ -35,7 +35,7 @@ void AMovementFollowPoint::adjustSpeed(int32_t &left_speed, int32_t &right_speed
 					base_speed_--;
 					integrated_ = 0;
 			}
-			ROS_WARN_COND(sp_mt_->sp_mode_->action_i_ == sp_mt_->sp_mode_->ac_linear, "slow down");
+//			ROS_WARN_COND(sp_mt_->sp_mode_->action_i_ == sp_mt_->sp_mode_->ac_linear, "slow down");
 		}
 		else if (base_speed_ < (int32_t) max_speed_) {
 			if (tick_++ > tick_limit_) {
@@ -50,7 +50,7 @@ void AMovementFollowPoint::adjustSpeed(int32_t &left_speed, int32_t &right_speed
 
 	check_limit(left_speed, 0, max_speed_);
 	check_limit(right_speed, 0, max_speed_);
-	ROS_INFO_COND(sp_mt_->sp_mode_->action_i_ == sp_mt_->sp_mode_->ac_linear, "speed(%d,%d),base(%d),angle_diff(%d), speed_diff(%d)", left_speed, right_speed,base_speed_,angle_diff, speed_diff);
+//	ROS_INFO_COND(sp_mt_->sp_mode_->action_i_ == sp_mt_->sp_mode_->ac_linear, "speed(%d,%d),base(%d),angle_diff(%d), speed_diff(%d)", left_speed, right_speed,base_speed_,angle_diff, speed_diff);
 
 	base_speed_ = (left_speed + right_speed) / 2;
 
