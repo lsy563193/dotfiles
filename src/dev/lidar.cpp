@@ -7,6 +7,7 @@
 #include <mode.hpp>
 #include <mathematics.h>
 #include <beeper.h>
+#include <gyro.h>
 
 boost::mutex scanLinear_mutex_;
 boost::mutex scanOriginal_mutex_;
@@ -16,6 +17,7 @@ boost::mutex lidarXYPoint_mutex_;
 
 sensor_msgs::LaserScan Lidar::lidarScanData_original_;
 double Lidar::wheel_cliff_trigger_time_ = 0;
+double Lidar::gyro_tilt_trigger_time_ = 0;
 
 Lidar lidar;
 
@@ -1231,24 +1233,7 @@ void Lidar::checkRobotSlip()
 		return;
 	}
 
-	if(wheel.getLeftWheelCliffStatus() || wheel.getRightWheelCliffStatus()){
-		wheel_cliff_trigger_time_ = ros::Time::now().toSec();
-	}
-	if(ros::Time::now().toSec() - wheel_cliff_trigger_time_ < 5){
-		slip_cnt_limit_ = 2;
-		slip_ranges_percent_ = 0.7;
-		acur1 = 0.105;
-		acur2 = 0.085;
-		acur3 = 0.065;
-		acur4 = 0.025;
-	}else{
-		slip_cnt_limit_ = 5;
-		slip_ranges_percent_ = 0.8;
-		acur1 = 0.085;
-		acur2 = 0.065;
-		acur3 = 0.045;
-		acur4 = 0.01;
-	}
+	checkSlipInit(acur1,acur2,acur3,acur4);
 	int8_t speed_limit = 8;
 //	ROS_WARN("%s %d: Speed left:%d, right:%d", __FUNCTION__, __LINE__,
 //			 wheel.getLeftSpeedAfterPid(), wheel.getRightSpeedAfterPid());
@@ -1650,6 +1635,7 @@ void Lidar::init() {
 	slip_frame_cnt_ = {0};
 	slip_scan_deque last_frame_{};
 	wheel_cliff_trigger_time_ = 0;
+	gyro_tilt_trigger_time_ = 0;
 
 	setScanLinearReady(0);
 	setScanOriginalReady(0);
@@ -1671,4 +1657,40 @@ uint8_t Lidar::lidar_get_status()
 		return lidarMarker(markers);
 
 	return 0;
+}
+
+void Lidar::checkSlipInit(float &acur1, float &acur2, float &acur3, float &acur4) {
+	//For cliff trigger
+	if(wheel.getLeftWheelCliffStatus() || wheel.getRightWheelCliffStatus()){
+		ROS_INFO("%s,%d,robot wheel cliff detect",__FUNCTION__,__LINE__);
+		wheel_cliff_trigger_time_ = ros::Time::now().toSec();
+	}
+	//For tilt trigger
+	if(gyro.checkTilt(80,140,110,120,6,false)){
+		ROS_INFO("%s,%d,robot tilt detect",__FUNCTION__,__LINE__);
+		gyro_tilt_trigger_time_ = ros::Time::now().toSec();
+	}
+
+	if(ros::Time::now().toSec() - gyro_tilt_trigger_time_ < 2){
+		slip_cnt_limit_ = 4;
+		slip_ranges_percent_ = 0.78;
+		acur1 = 0.995;
+		acur2 = 0.075;
+		acur3 = 0.055;
+		acur4 = 0.015;
+	}	else if(ros::Time::now().toSec() - wheel_cliff_trigger_time_ < 5){
+		slip_cnt_limit_ = 2;
+		slip_ranges_percent_ = 0.7;
+		acur1 = 0.105;
+		acur2 = 0.085;
+		acur3 = 0.065;
+		acur4 = 0.025;
+	} else{
+		slip_cnt_limit_ = 5;
+		slip_ranges_percent_ = 0.8;
+		acur1 = 0.085;
+		acur2 = 0.065;
+		acur3 = 0.045;
+		acur4 = 0.01;
+	}
 }

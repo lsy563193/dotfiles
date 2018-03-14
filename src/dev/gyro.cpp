@@ -1,6 +1,7 @@
 #include <ros/ros.h>
 #include <serial.h>
 #include <speaker.h>
+#include <beeper.h>
 #include "gyro.h"
 #include "event_manager.h"
 
@@ -281,15 +282,14 @@ void Gyro::setAccInitData()
 //	ROS_INFO("x y z acceleration init val(\033[32m%d,%d,%d\033[0m)" , getInitXAcc(), getInitYAcc(), getInitZAcc());
 }
 
-uint8_t Gyro::checkTilt()
+uint8_t Gyro::checkTilt(int front_tilt_limit,int back_tilt_limit,int right_tilt_limit,int left_tilt_limit, int tilt_count_reach,bool isSetTiltStatus)
 {
 	uint8_t tmp_status = 0;
 
 	if (tilt_checking_enable_)
 	{
-		
 		//robot front tilt
-		if (fabsf(getFront() - getFrontInit()) > FRONT_TILT_LIMIT)
+		if (getFront() - getFrontInit() > front_tilt_limit)
 		{
 			tilt_front_count_ +=2;
 			ROS_INFO("\033[1;40;32m%s %d: front(%d)\tfront init(%d), front cnt(%d).\033[0m", __FUNCTION__, __LINE__, getFront(), getFrontInit(), tilt_front_count_);
@@ -300,8 +300,20 @@ uint8_t Gyro::checkTilt()
 				tilt_front_count_--;
 		}
 
+		//robot back tilt
+		if(getFront() - getFrontInit() < -back_tilt_limit)
+		{
+			tilt_back_count_ +=2;
+			ROS_INFO("\033[1;40;32m%s %d: back(%d)\tback init(%d), back cnt(%d).\033[0m", __FUNCTION__, __LINE__, getFront(), getFrontInit(), tilt_back_count_);
+		}
+		else
+		{
+			if (tilt_back_count_ > 0)
+				tilt_back_count_--;
+		}
+
 		//robot left tilt
-		if (getYAcc() - getLeftInit() > LEFT_TILT_LIMIT)
+		if (getYAcc() - getLeftInit() > left_tilt_limit)
 		{
 			tilt_left_count_+=3;
 			ROS_INFO("\033[1;40;34m %s %d: left(%d)\tleft init(%d), left cnt(%d).\033[0m", __FUNCTION__, __LINE__, getLeft(), getLeftInit(), tilt_left_count_);
@@ -311,9 +323,9 @@ uint8_t Gyro::checkTilt()
 			if (tilt_left_count_ > 0)
 				tilt_left_count_--;
 		}
-		
+
 		//robot right tilt
-		if (getYAcc() - getRightInit() < -RIGHT_TILT_LIMIT)
+		if (getYAcc() - getRightInit() < -right_tilt_limit)
 		{
 			tilt_right_count_+=3;
 			ROS_INFO("\033[1;40;35m%s %d: right(%d)\tright init(%d), right cnt(%d).\033[0m", __FUNCTION__, __LINE__, getRight(), getRightInit(), tilt_right_count_);
@@ -324,7 +336,7 @@ uint8_t Gyro::checkTilt()
 				tilt_right_count_--;
 		}
 #if 0
-		//z axies	
+		//z axies
 		if (std::abs(getZAcc() - getInitZAcc()) > DIF_TILT_Z_VAL)
 		{
 			tilt_z_count_+=1;
@@ -336,36 +348,44 @@ uint8_t Gyro::checkTilt()
 				tilt_z_count_ -=1;
 
 		}
-#endif		
+#endif
 
 		//if (left_count > 7 || front_count > 7 || right_count > 7 || z_count > 7)
 			//ROS_WARN("%s %d: count left:%d, front:%d, right:%d, z:%d", __FUNCTION__, __LINE__, left_count, front_count, right_count, z_count);
 
-		if ( tilt_right_count_ >= TILT_COUNT_REACH || tilt_left_count_ >= TILT_COUNT_REACH || tilt_front_count_ >= TILT_COUNT_REACH+4 )
+		if ( tilt_right_count_ >= tilt_count_reach || tilt_left_count_ >= tilt_count_reach || tilt_front_count_ >= tilt_count_reach + 4 || tilt_back_count_ >= tilt_count_reach + 4)
 		{
-			if (tilt_left_count_ >= TILT_COUNT_REACH)
+			if (tilt_left_count_ >= tilt_count_reach)
 				tmp_status |= TILT_LEFT;
-			if (tilt_right_count_ >= TILT_COUNT_REACH)
+			if (tilt_right_count_ >= tilt_count_reach)
 				tmp_status |= TILT_RIGHT;
-			if (tilt_front_count_ >= TILT_COUNT_REACH+4)
+			if (tilt_front_count_ >= tilt_count_reach+4)
 				tmp_status |= TILT_FRONT;
+			if (tilt_back_count_ >= tilt_count_reach+4)
+				tmp_status |= TILT_BACK;
 			tilt_front_count_ = 0;
 			tilt_left_count_ = 0;
 			tilt_right_count_ = 0;
+			tilt_back_count_ = 0;
 			tilt_z_count_ = 0;
-			setTiltCheckingStatus(tmp_status);
+//			beeper.beepForCommand(VALID);
+			if(isSetTiltStatus)
+				setTiltCheckingStatus(tmp_status);
 
 			ROS_INFO("\033[47;34m" "%s,%d,robot tilt detect!! tmp_state=%d" "\033[0m",__FUNCTION__,__LINE__,tmp_status);
 		}
-		else 
+		else
+		if(isSetTiltStatus)
 			setTiltCheckingStatus(0);
 	}
 	else{
 		tilt_front_count_ = 0;
 		tilt_left_count_ = 0;
 		tilt_right_count_ = 0;
+		tilt_back_count_ = 0;
 		tilt_z_count_ = 0;
-		setTiltCheckingStatus(0);
+		if(isSetTiltStatus)
+			setTiltCheckingStatus(0);
 	}
 
 	return tmp_status;
@@ -376,7 +396,7 @@ bool Gyro::isTiltCheckingEnable()
 	return tilt_checking_enable_;
 }
 
-void Gyro::TiltCheckingEnable(bool val)
+void Gyro::setTiltCheckingEnable(bool val)
 {
 	tilt_checking_enable_ = val;
 }
