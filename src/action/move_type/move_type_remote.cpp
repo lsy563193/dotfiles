@@ -46,7 +46,8 @@ bool MoveTypeRemote::isFinish()
 			{
 				ev.remote_direction_forward = false;
 				movement_i_ = mm_straight;
-				p_movement_.reset(new MovementRemoteDirectGo());
+				bool slow_down = true;
+				p_movement_.reset(new MovementDirectGo(slow_down));
 			}
 			else if (ev.remote_direction_left)
 			{

@@ -4,13 +4,13 @@
 //for tilt detct
 #include <cstdint>
 
-#define TILT_COUNT_REACH			50
-#define DIF_TILT_X_VAL				170
-#define DIF_TILT_Y_VAL				170
-#define DIF_TILT_Z_VAL				70
-#define FRONT_TILT_LIMIT			120
-#define LEFT_TILT_LIMIT				120
-#define RIGHT_TILT_LIMIT			120
+#define TILT_COUNT_REACH			6
+#define DIF_TILT_X_VAL				100
+#define DIF_TILT_Y_VAL				100
+#define DIF_TILT_Z_VAL				100
+#define FRONT_TILT_LIMIT			250
+#define LEFT_TILT_LIMIT				200
+#define RIGHT_TILT_LIMIT			200
 #define TILT_RIGHT					0x1
 #define TILT_FRONT					0x2
 #define TILT_LEFT					0x4

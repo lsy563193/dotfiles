@@ -81,7 +81,6 @@ public:
 	// type 1 for linear scan data, type 2 for origin scan data.
 	bool lidarCheckFresh(float duration, uint8_t type = 1);
 	bool findLines(std::vector<LineABC> *lines,bool combine);
-	bool getAlignAngle(const std::vector<LineABC> *lines,float *align_angle);
 
 	//void stop(void);
 	//void start(void);
