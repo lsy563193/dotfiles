@@ -19,6 +19,20 @@ double ranged_radian(double radian)
 	}
 	return radian;
 }
+
+double ranged_degree(double degree)
+{
+	while (degree > 180 || degree <= -180)
+	{
+		if (degree > 180) {
+			degree -= 360;
+		} else
+		if (degree <= -180) {
+			degree += 360;
+		}
+	}
+	return degree;
+}
 double degree_to_radian(double deg)
 {
 	return (deg * PI / 180);
