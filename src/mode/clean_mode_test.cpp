@@ -23,7 +23,7 @@ CleanModeTest::CleanModeTest(uint8_t mode)
 			genNextAction();
 			break;
 		}
-//		case GYRO_TEST_MODE:
+		case GYRO_TEST_MODE:
 		case WORK_MODE:
 		case NORMAL_SLEEP_MODE:
 		{

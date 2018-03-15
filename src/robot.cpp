@@ -261,7 +261,8 @@ void robot::robotbase_routine_cb()
 
 		// For remote device.
 		auto remote_signal = buf[REC_REMOTE];
-		remote.set(remote_signal);
+		if (remote_signal != 0)
+			remote.set(remote_signal);
 		sensor.remote = remote.get();
 		if (remote_signal > 0)
 			ROS_INFO("%s %d: Remote received:%d", __FUNCTION__, __LINE__, remote_signal);
@@ -313,6 +314,12 @@ void robot::robotbase_routine_cb()
 		wheel.setLeftWheelOc((buf[REC_OC] & 0x20) != 0);
 		sensor.left_wheel_oc = wheel.getLeftWheelOc();
 
+		// For wheel encoder count.
+		wheel.setLeftEncoderCnt(buf[REC_LEFT_WHEEL_ENCODER]);
+		sensor.left_wheel_encoder = wheel.getLeftEncoderCnt();
+		wheel.setRightEncoderCnt(buf[REC_RIGHT_WHEEL_ENCODER]);
+		sensor.right_wheel_encoder = wheel.getRightEncoderCnt();
+
 		// For debug.
 //		printf("%d: REC_MIX_BYTE:(%2x), REC_RESERVED:(%2x).\n.",
 //			   __LINE__, buf[REC_MIX_BYTE], buf[REC_RESERVED]);
@@ -328,7 +335,7 @@ void robot::robotbase_routine_cb()
 
 		/*------------setting for odom and publish odom topic --------*/
 		boost::mutex::scoped_lock lock(odom_mutex_);
-		odom.setMovingSpeed(static_cast<float>((wheel.getLeftWheelActualSpeed() + wheel.getRightWheelActualSpeed()) / 2.0));
+//		odom.setMovingSpeed(static_cast<float>((wheel.getLeftWheelActualSpeed() + wheel.getRightWheelActualSpeed()) / 2.0));
 		odom.setRadian(degree_to_radian(gyro.getAngle()));
 		odom.setAngleSpeed(gyro.getAngleV());
 		cur_time = ros::Time::now();
@@ -336,9 +343,15 @@ void robot::robotbase_routine_cb()
 		angle_rad = odom.getRadian();
 		dt = (cur_time - last_time).toSec();
 		last_time = cur_time;
+		odom.setMovingSpeed(static_cast<float>((wheel.getLeftEncoderCnt() + wheel.getRightEncoderCnt()) *
+											   WHEEL_ENCODER_TO_MILLIMETER / 1000 / 2.0 / dt));
 		if(!lidar.isRobotSlip()){
-			odom.setX(static_cast<float>(odom.getX() + (odom.getMovingSpeed() * cos(angle_rad)) * dt));
-			odom.setY(static_cast<float>(odom.getY() + (odom.getMovingSpeed() * sin(angle_rad)) * dt));
+//			odom.setX(static_cast<float>(odom.getX() + (odom.getMovingSpeed() * cos(angle_rad)) * dt));
+//			odom.setY(static_cast<float>(odom.getY() + (odom.getMovingSpeed() * sin(angle_rad)) * dt));
+			odom.setX(static_cast<float>(odom.getX() + ((wheel.getLeftEncoderCnt() + wheel.getRightEncoderCnt())
+														* WHEEL_ENCODER_TO_MILLIMETER * cos(angle_rad) / 1000 / 2)));
+			odom.setY(static_cast<float>(odom.getY() + ((wheel.getLeftEncoderCnt() + wheel.getRightEncoderCnt())
+														* WHEEL_ENCODER_TO_MILLIMETER * sin(angle_rad) / 1000 / 2)));
 			is_first_slip = true;
 		} else if (is_first_slip){
 			odom.setX(static_cast<float>(odom.getX() - (0.30 * cos(angle_rad)) * 0.8));
@@ -405,7 +418,7 @@ void robot::core_thread_cb()
 {
 	recei_thread_enable = true;
 	r16_work_mode_ = getTestMode();
-//	r16_work_mode_ = WATER_TANK_TEST_MODE;
+//	r16_work_mode_ = GYRO_TEST_MODE;
 	ROS_INFO("%s %d: work mode: %d", __FUNCTION__, __LINE__, r16_work_mode_);
 
 	switch (r16_work_mode_)
@@ -426,8 +439,8 @@ void robot::core_thread_cb()
 			auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
 			send_thread_enable = true;
 
-//			if (r16_work_mode_ == GYRO_TEST_MODE || r16_work_mode_ == WATER_TANK_TEST_MODE)
-			if (r16_work_mode_ == NORMAL_SLEEP_MODE || r16_work_mode_ == WORK_MODE || r16_work_mode_ == WATER_TANK_TEST_MODE) // todo: for debug
+			if (r16_work_mode_ == NORMAL_SLEEP_MODE || r16_work_mode_ == WORK_MODE ||
+					r16_work_mode_ == WATER_TANK_TEST_MODE) // todo: for debug
 			{
 				auto robotbase_routine = new boost::thread(boost::bind(&robot::robotbase_routine_cb, this));
 				robotbase_thread_enable = true;
@@ -560,7 +573,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 //	ROS_INFO("tmp_pos(%f,%f),tmp_rad(%f)", tmp_pos.x(), tmp_pos.y(), tmp_rad);
 	robot_pos = tmp_pos;
 	robot_rad = tmp_rad;
-//	odomPublish(robot_pos, robot_rad);
+	odomPublish(robot_pos, robot_rad);
 }
 
 void robot::odomPublish(const tf::Vector3& robot_pos, double robot_radian_)
@@ -630,30 +643,6 @@ void robot::obsAdjustCount(int count)
 #endif
 }
 
-void robot::debugReceivedStream(const uint8_t *buf)
-{
-	ROS_INFO("%s %d: Received stream:", __FUNCTION__, __LINE__);
-	for (int i = 0; i < REC_LEN; i++)
-		printf("%02d ", i);
-	printf("\n");
-
-	for (int i = 0; i < REC_LEN; i++)
-		printf("%02x ", buf[i]);
-	printf("\n");
-}
-
-void robot::debugSendStream(const uint8_t *buf)
-{
-	ROS_INFO("%s %d: Send stream:", __FUNCTION__, __LINE__);
-	for (int i = 0; i < SEND_LEN; i++)
-		printf("%02d ", i);
-	printf("\n");
-
-	for (int i = 0; i < SEND_LEN; i++)
-		printf("%02x ", buf[i]);
-	printf("\n");
-}
-
 bool robot::pubScanCtrl(bool is_pub, bool is_force_pub) {
 //	ROS_INFO("is_pub = %d", is_pub);
 	if (!is_locked_scan_ctrl_ || is_force_pub) {
@@ -699,13 +688,16 @@ void robot::publishCtrlStream(void)
 	ctrl_stream.gyro_dynamic_ctrl = static_cast<unsigned char>((serial.getSendData(CTL_MIX) >> 2) & 0x01);
 	ctrl_stream.gyro_switch = static_cast<unsigned char>((serial.getSendData(CTL_MIX) >> 3) & 0x01);
 
+	ctrl_stream.swing_motor_pwm = static_cast<unsigned char>(serial.getSendData(CTL_WATER_TANK) & 0x7F);
+	ctrl_stream.pump_switch = static_cast<unsigned char>((serial.getSendData(CTL_WATER_TANK) >> 7) & 0x01);
+
 	ctrl_stream.key_validation = serial.getSendData(CTL_KEY_VALIDATION);
 	ctrl_stream.crc = serial.getSendData(CTL_CRC);
 
 	x900_ctrl_pub_.publish(ctrl_stream);
 }
 
-void robot::updateRobotPositionForDeskTest()
+void robot::updateRobotPositionForTest()
 {
 	robot_pos.setX(odom.getX());
 	robot_pos.setY(odom.getY());

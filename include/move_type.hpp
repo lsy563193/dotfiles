@@ -303,6 +303,10 @@ public:
 	MoveTypeGyroTest();
 	~MoveTypeGyroTest() override;
 
+	void gyroTestRoutineThread();
+
+	bool dataExtract(const uint8_t *buf);
+
 	void run() override;
 
 private:
@@ -312,8 +316,10 @@ private:
 
 	int test_stage_{0};
 	double last_time_stamp_{0};
+	double saved_wheel_mileage_{0};
 	double wheel_mileage_{0};
 	double wheel_turn_angle_{0};
 	double saved_gyro_turn_angle_{0};
+	uint32_t count_sum{0};
 };
 #endif //PP_MOVE_TYPE_HPP

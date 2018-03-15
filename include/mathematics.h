@@ -27,6 +27,7 @@ typedef struct Pose16_t_{
 } Pose16_t;*/
 
 double ranged_radian(double radian);
+double ranged_degree(double degree);
 double degree_to_radian(double deg);
 double radian_to_degree(double rad);
 

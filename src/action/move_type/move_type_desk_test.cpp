@@ -243,7 +243,7 @@ void MoveTypeDeskTest::deskTestRoutineThread()
 			last_time = cur_time;
 			odom.setX(static_cast<float>(odom.getX() + (odom.getMovingSpeed() * cos(angle_rad)) * dt));
 			odom.setY(static_cast<float>(odom.getY() + (odom.getMovingSpeed() * sin(angle_rad)) * dt));
-			robot::instance()->updateRobotPositionForDeskTest();
+			robot::instance()->updateRobotPositionForTest();
 			updatePosition();
 		}
 	}

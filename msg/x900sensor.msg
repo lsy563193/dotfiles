@@ -111,3 +111,9 @@ bool left_wheel_oc
 
 # right_wheel_oc: Right wheel over current status.
 bool right_wheel_oc
+
+# left_wheel_encoder: Left wheel encoder count.
+int8 left_wheel_encoder
+
+# right_wheel_encoder: Right wheel encoder count.
+int8 right_wheel_encoder

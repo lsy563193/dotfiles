@@ -177,10 +177,6 @@ public:
 		return scan_ctrl_.allow_publishing?true:false;
 	}
 
-	void debugReceivedStream(const uint8_t *buf);
-
-	void debugSendStream(const uint8_t *buf);
-
 	bool pubScanCtrl(bool is_pub, bool is_force_pub = false);
 
 	void lockScanCtrl(void);
@@ -189,7 +185,7 @@ public:
 
 	void publishCtrlStream(void);
 
-	void updateRobotPositionForDeskTest();
+	void updateRobotPositionForTest();
 
 private:
 

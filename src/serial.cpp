@@ -573,10 +573,12 @@ void Serial::receive_routine_cb()
 				ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock)!=0, "serial pthread receive unlock fail");
 			}
 			else {
+				debugReceivedStream(receiData);
 				ROS_WARN(" in serial read ,data tail error\n");
 			}
 		}
 		else {
+			debugReceivedStream(receiData);
 			ROS_ERROR("%s,%d,in serial read ,data crc error\n",__FUNCTION__,__LINE__);
 		}
 	}
@@ -638,3 +640,28 @@ void Serial::sendData()
 //	robot::instance()->debugSendStream(buf);
 	serial.setSendData(CTL_CRC, buf[CTL_CRC]);
 }
+
+void Serial::debugReceivedStream(const uint8_t *buf)
+{
+	ROS_INFO("%s %d: Received stream:", __FUNCTION__, __LINE__);
+	for (int i = 0; i < REC_LEN; i++)
+		printf("%02d ", i);
+	printf("\n");
+
+	for (int i = 0; i < REC_LEN; i++)
+		printf("%02x ", buf[i]);
+	printf("\n");
+}
+
+void Serial::debugSendStream(const uint8_t *buf)
+{
+	ROS_INFO("%s %d: Send stream:", __FUNCTION__, __LINE__);
+	for (int i = 0; i < SEND_LEN; i++)
+		printf("%02d ", i);
+	printf("\n");
+
+	for (int i = 0; i < SEND_LEN; i++)
+		printf("%02x ", buf[i]);
+	printf("\n");
+}
+

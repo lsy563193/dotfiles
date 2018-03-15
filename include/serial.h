@@ -94,7 +94,7 @@
 // ------------For functional test end--------------
 
 // For receive stream.
-#define REC_LEN 44
+#define REC_LEN 46
 
 // Two bytes for stream header.
 #define REC_HEADER_1 0
@@ -252,12 +252,18 @@
 // One byte for key validation.
 #define REC_KEY_VALIDATION 40
 
+// One byte for left wheel encoder.
+#define REC_LEFT_WHEEL_ENCODER 41
+
+// One byte for right wheel encoder.
+#define REC_RIGHT_WHEEL_ENCODER 42
+
 // One byte for crc checking.
-#define REC_CRC 41
+#define REC_CRC 43
 
 // Two bytes for stream trailer.
-#define REC_TRAILER_1 42
-#define REC_TRAILER_2 43
+#define REC_TRAILER_1 44
+#define REC_TRAILER_2 45
 
 // Main board mode
 #define NORMAL_SLEEP_MODE 		0
@@ -363,6 +369,11 @@ public:
 	void sendData();
 
 	void send_routine_cb();
+
+	void debugReceivedStream(const uint8_t *buf);
+
+	void debugSendStream(const uint8_t *buf);
+
 private:
 
 	bool is_main_board_sleep_{};

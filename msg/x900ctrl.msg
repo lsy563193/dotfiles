@@ -34,16 +34,19 @@ uint8 led_green_brightness
 # One byte for mix command.
 # bit 0 for wifi led controlling.
 # bit 1 for vacuum exception resume control.
-# bit 2-7 reserved.
+# bit 2 for switch of dynamic adjustment.
+# bit 3 for switch of gyro.
+# bit 4-7 reserved.
 uint8 wifi_led
 uint8 vacuum_exception_ctrl
-
-# One byte for controlling gyro.
-# bit 0 for switch of dynamic adjustment.
-# bit 1 for switch of gyro.
-# bit 2-7 reserved.
 uint8 gyro_dynamic_ctrl
 uint8 gyro_switch
+
+# one byte for water tank.
+# bit 0-6 for swing motor PWM.
+# bit 7 for pump switch.
+uint8 swing_motor_pwm
+bool pump_switch
 
 # One byte for key validation.
 uint8 key_validation
