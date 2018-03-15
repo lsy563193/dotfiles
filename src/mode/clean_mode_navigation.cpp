@@ -135,10 +135,10 @@ bool CleanModeNav::markRealTime()
 //	while (ros::ok()) {
 //		sleep(0.2);
 //		wheel.stop();
-//	sp_action_->
+		auto p_mt = boost::dynamic_pointer_cast<IMoveType>(sp_action_);
 		std::vector<Vector2<int>> markers;
 		if (lidar.isScanCompensateReady())
-			lidar.lidarMarker(markers);
+			lidar.lidarMarker(markers, p_mt->movement_i_, action_i_);
 //		ROS_INFO("markers.size() = %d", markers.size());
 		for (const auto& marker : markers) {
 //			ROS_INFO("marker(%d, %d)", marker.x, marker.y);
@@ -541,6 +541,7 @@ bool CleanModeNav::updateActionInStateClean(){
 		else
 			old_dir_ = MAP_ANY;
 	}
+
 	if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
 		pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 		iterate_point_ = plan_path_.front();

@@ -74,7 +74,7 @@ public:
 		align_radian_ = radian;
 	}
 
-	uint8_t lidarMarker(std::vector<Vector2<int>> &markers, double X_MAX = 0.21);
+	uint8_t lidarMarker(std::vector<Vector2<int>> &markers, int movement_i, int action_i, double X_MAX = 0.21);
 	void checkRobotSlip();
 	void checkSlipInit(float &acur1, float &acur2, float &acur3, float &acur4);
 	bool isRobotSlip();
@@ -93,7 +93,7 @@ public:
 	static void setLidarScanDataOriginal(const sensor_msgs::LaserScan::ConstPtr &scan);
 	static sensor_msgs::LaserScan getLidarScanDataOriginal(void);
 	double getLidarDistance(int16_t angle,float range_max,float range_min);
-	uint8_t lidar_get_status();
+	uint8_t lidar_get_status(int movement_i, int action_i);
 	bool lidar_is_stuck();
 private:
 
@@ -138,6 +138,11 @@ private:
 	uint8_t slip_cnt_limit_{5};
 	static double wheel_cliff_trigger_time_;
 	static double gyro_tilt_trigger_time_;
+	float acur1_,acur2_,acur3_,acur4_;//accuracy  ,in meters
+	const float dist1_ = 3.5;//range distance 1 ,in meters
+	const float dist2_ = 2.5;//range distance 2
+	const float dist3_ = 1.5;//range distance 3
+	const float dist4_ = 0.5;//range distance 4
 
 };
 
