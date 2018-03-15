@@ -458,8 +458,9 @@ bool CleanModeNav::updateActionInStateInit() {
 		}
 		else{
 			action_i_ = ac_open_lidar;
-			vacuum.setLastMode();
 			brush.normalOperate();
+			if (!water_tank.checkEquipment())
+				vacuum.setLastMode();
 		}
 	} else if (action_i_ == ac_back_form_charger)
 	{
@@ -468,8 +469,9 @@ bool CleanModeNav::updateActionInStateInit() {
 			robot::instance()->initOdomPosition();
 
 		action_i_ = ac_open_lidar;
-		vacuum.setLastMode();
 		brush.normalOperate();
+		if (!water_tank.checkEquipment())
+			vacuum.setLastMode();
 		setHomePoint();
 	} else if (action_i_ == ac_open_lidar)
 	{

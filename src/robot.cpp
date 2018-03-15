@@ -118,6 +118,7 @@ robot::~robot()
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
+	water_tank.stop();
 	serial.setMainBoardMode(WORK_MODE);
 	usleep(40000);
 	while(ros::ok() && !g_pp_shutdown){
@@ -402,11 +403,12 @@ void robot::core_thread_cb()
 {
 	recei_thread_enable = true;
 	r16_work_mode_ = getTestMode();
+//	r16_work_mode_ = WATER_TANK_TEST_MODE;
 	ROS_INFO("%s %d: work mode: %d", __FUNCTION__, __LINE__, r16_work_mode_);
 
 	switch (r16_work_mode_)
 	{
-		case SERIAL_TEST_MODE:
+		case FUNC_SERIAL_TEST_MODE:
 		{
 			recei_thread_enable = false;
 			sleep(1); // Make sure recieve thread is hung up, this time interval should be the select timeout of serial.
@@ -414,14 +416,16 @@ void robot::core_thread_cb()
 			break;
 		}
 		case DESK_TEST_CURRENT_MODE:
-//		case GYRO_TEST_MODE:
+		case GYRO_TEST_MODE:
+		case WATER_TANK_TEST_MODE:
 //		case WORK_MODE: // For debug
 //		case NORMAL_SLEEP_MODE: // For debug
 		{
 			auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
 			send_thread_enable = true;
 
-			if (r16_work_mode_ == NORMAL_SLEEP_MODE || r16_work_mode_ == WORK_MODE/*GYRO_TEST_MODE*/)
+//			if (r16_work_mode_ == GYRO_TEST_MODE || r16_work_mode_ == WATER_TANK_TEST_MODE)
+			if (r16_work_mode_ == NORMAL_SLEEP_MODE || r16_work_mode_ == WORK_MODE || r16_work_mode_ == WATER_TANK_TEST_MODE) // todo: for debug
 			{
 				auto robotbase_routine = new boost::thread(boost::bind(&robot::robotbase_routine_cb, this));
 				robotbase_thread_enable = true;
@@ -451,9 +455,6 @@ void robot::core_thread_cb()
 
 			if (bumper.lidarBumperInit(lidar_bumper_dev_.c_str()) == -1)
 				ROS_ERROR(" lidar bumper open fail!");
-
-			if (water_tank.checkEquipment())
-				ROS_INFO("%s %d: Robot is carrying a water tank.", __FUNCTION__, __LINE__);
 
 			if (charger.isOnStub() || charger.isDirected())
 				p_mode.reset(new ModeCharge());

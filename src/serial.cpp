@@ -8,6 +8,7 @@
 #include <beeper.h>
 #include <key_led.h>
 #include <robot.hpp>
+#include <water_tank.hpp>
 #include "wifi.h"
 
 boost::mutex send_stream_mutex;
@@ -615,6 +616,7 @@ void Serial::send_routine_cb()
 			/*---pid for wheels---*/
 		wheel.pidAdjustSpeed();
 		brush.updatePWM();
+		water_tank.updatePWM();
 
 		sendData();
 		robot::instance()->publishCtrlStream();

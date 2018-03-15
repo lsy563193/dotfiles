@@ -102,6 +102,7 @@ public:
 		ac_bumper_hit_test,
 		ac_desk_test,
 		ac_gyro_test,
+		ac_water_tank_test,
 	};
 
 	virtual void genNextAction();

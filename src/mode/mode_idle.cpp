@@ -76,12 +76,6 @@ bool ModeIdle::isExit()
 			}
 			plan_activated_status_ = false;
 		}
-		else if (ev.key_clean_pressed && bumper.getLeft())
-		{
-			ROS_WARN("%s %d: Idle mode change to test mode(Left bumper triggered).", __FUNCTION__, __LINE__);
-			setNextMode(cm_test);
-			return true;
-		}
 		else
 		{
 			ROS_WARN("%s %d: Idle mode receives remote clean or clean key, change to navigation mode.", __FUNCTION__, __LINE__);

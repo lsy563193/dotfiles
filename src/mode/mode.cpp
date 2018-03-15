@@ -114,6 +114,9 @@ void Mode::genNextAction()
 		case ac_gyro_test:
 			sp_action_.reset(new MoveTypeGyroTest());
 			break;
+		case ac_water_tank_test:
+			sp_action_.reset(new ActionCheckWaterTank());
+			break;
 		default : //case ac_null :
 			sp_action_.reset();
 			break;

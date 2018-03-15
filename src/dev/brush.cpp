@@ -28,6 +28,7 @@ void Brush::slowOperate(void)
 {
 	brush_status_ = brush_slow;
 	setPWM(20, 20, 20);
+	check_battery_time_stamp_ = ros::Time::now().toSec();
 	ROS_INFO("%s %d: Brush set to slow.", __FUNCTION__, __LINE__);
 }
 
@@ -36,6 +37,7 @@ void Brush::normalOperate(void)
 	brush_status_ = brush_normal;
 	checkBatterySetPWM();
 	setPWM(normal_PWM, normal_PWM, normal_PWM);
+	check_battery_time_stamp_ = ros::Time::now().toSec();
 	ROS_INFO("%s %d: Brush set to normal.", __FUNCTION__, __LINE__);
 }
 
@@ -43,6 +45,7 @@ void Brush::fullOperate()
 {
 	brush_status_ = brush_max;
 	setPWM(100, 100, 100);
+	check_battery_time_stamp_ = ros::Time::now().toSec();
 	ROS_INFO("%s %d: Brush set to max.", __FUNCTION__, __LINE__);
 }
 

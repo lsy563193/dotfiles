@@ -44,6 +44,7 @@ ModeRemote::~ModeRemote()
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
+	water_tank.stop();
 
 	ROS_INFO("%s %d: Exit remote mode.", __FUNCTION__, __LINE__);
 }

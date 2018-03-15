@@ -110,6 +110,8 @@
 /* Battery voltage criterion for brush setting*/
 #define FULL_OPERATE_VOLTAGE_FOR_BRUSH	(800)
 
+/* Battery voltage criterion for water tank setting*/
+#define FULL_OPERATE_VOLTAGE_FOR_WATER_TANK	(500)
 /* ------------------------------------- Obs config ------------------------------------- */
 /* OBS setting */
 #define OBS_DYNAMIC			(1)

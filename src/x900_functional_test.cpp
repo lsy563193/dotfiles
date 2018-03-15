@@ -271,12 +271,12 @@ bool serial_port_test()
 		for (uint8_t i = CTL_WHEEL_LEFT_HIGH; i < CTL_CRC; i++)
 		{
 			if (i == CTL_MAIN_BOARD_MODE)
-				serial.setSendData(i, SERIAL_TEST_MODE);
+				serial.setSendData(i, FUNC_SERIAL_TEST_MODE);
 			else if (i == CTL_BEEPER)
 				serial.setSendData(i, static_cast<uint8_t>(test_cnt + 1));
 			else if (i == CTL_KEY_VALIDATION)
 				// Avoid 0x40/0x41/0x42/0x23.
-				serial.setSendData(i, SERIAL_TEST_MODE);
+				serial.setSendData(i, FUNC_SERIAL_TEST_MODE);
 			else
 			{
 				uint8_t random_byte = dist_char(random_number_engine);
@@ -441,37 +441,37 @@ uint16_t main_board_test()
 {
 	bool is_fixture = false;
 	uint16_t test_result=0;
-	uint8_t test_stage = ELECTRICAL_AND_LED_TEST_MODE;
+	uint8_t test_stage = FUNC_ELECTRICAL_AND_LED_TEST_MODE;
 	uint16_t baseline[8];
 	while(ros::ok()) {
 		switch (test_stage) {
-			case ELECTRICAL_AND_LED_TEST_MODE:/*---Main board electrical specification and LED test---*/
+			case FUNC_ELECTRICAL_AND_LED_TEST_MODE:/*---Main board electrical specification and LED test---*/
 				test_result = electrical_specification_and_led_test(baseline, is_fixture, test_stage);
 				break;
-			case OBS_TEST_MODE:/*---OBS---*/
+			case FUNC_OBS_TEST_MODE:/*---OBS---*/
 				test_result = obs_test(test_stage, is_fixture);
 				break;
-			case BUMPER_TEST_MODE:/*---bumper---*/
+			case FUNC_BUMPER_TEST_MODE:/*---bumper---*/
 				test_result = bumper_test(test_stage);
 				break;
-			case CLIFF_TEST_MODE:/*---cliff---*/
+			case FUNC_CLIFF_TEST_MODE:/*---cliff---*/
 				test_result = cliff_test(test_stage);
 				break;
-			case RCON_TEST_MODE:/*---rcon---*/
+			case FUNC_RCON_TEST_MODE:/*---rcon---*/
 				test_result = rcon_test(test_stage);
 				break;
-			case WATER_TANK_TEST_MODE:/*---water tank---*/
+			case FUNC_WATER_TANK_TEST_MODE:/*---water tank---*/
 				test_result = water_tank_test(test_stage);
-			case WHEELS_TEST_MODE:/*---wheels---*/
+			case FUNC_WHEELS_TEST_MODE:/*---wheels---*/
 				test_result = wheels_test(test_stage, baseline);
 				break;
-			case BRUSHES_TEST_MODE:/*---brushes---*/
+			case FUNC_BRUSHES_TEST_MODE:/*---brushes---*/
 				test_result = brushes_test(test_stage, baseline);
 				break;
-			case VACUUM_TEST_MODE:/*---vacuum---*/
+			case FUNC_VACUUM_TEST_MODE:/*---vacuum---*/
 				test_result = vacuum_test(test_stage, baseline);
 				break;
-			case CHARGE_CURRENT_TEST_MODE:/*---charge current---*/
+			case FUNC_CHARGE_CURRENT_TEST_MODE:/*---charge current---*/
 				test_result = charge_current_test(test_stage, is_fixture);
 				break;
 		}
@@ -643,16 +643,16 @@ uint16_t electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixt
 	bool should_save_baseline = true;
 
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
-	serial.setSendData(CTL_MAIN_BOARD_MODE, ELECTRICAL_AND_LED_TEST_MODE);
+	serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_ELECTRICAL_AND_LED_TEST_MODE);
 	while(ros::ok())
 	{
-		serial.setSendData(CTL_MAIN_BOARD_MODE, ELECTRICAL_AND_LED_TEST_MODE);
+		serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_ELECTRICAL_AND_LED_TEST_MODE);
 		/*--------data extrict from serial com--------*/
 		ROS_ERROR_COND(pthread_mutex_lock(&recev_lock)!=0, "robotbase pthread receive lock fail");
 		ROS_ERROR_COND(pthread_cond_wait(&recev_cond,&recev_lock)!=0, "robotbase pthread receive cond wait fail");
 		memcpy(buf,serial.receive_stream,sizeof(uint8_t)*REC_LEN);
 		ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock)!=0, "robotbase pthread receive unlock fail");
-		if(buf[38] != ELECTRICAL_AND_LED_TEST_MODE)
+		if(buf[38] != FUNC_ELECTRICAL_AND_LED_TEST_MODE)
 		{
 			serial.sendData();
 			continue;
@@ -751,7 +751,7 @@ uint16_t electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixt
 				}
 				break;
 		}
-		if(test_stage != ELECTRICAL_AND_LED_TEST_MODE)
+		if(test_stage != FUNC_ELECTRICAL_AND_LED_TEST_MODE)
 			return 0;
 		serial.sendData();
 	}
@@ -760,7 +760,7 @@ uint16_t cliff_test(uint8_t &test_stage)
 {
 	uint16_t test_result = 0;
 	uint8_t buf[REC_LEN];
-	serial.setSendData(CTL_MAIN_BOARD_MODE, CLIFF_TEST_MODE);
+	serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_CLIFF_TEST_MODE);
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
 	while(ros::ok()) {
 		/*--------data extrict from serial com--------*/
@@ -768,7 +768,7 @@ uint16_t cliff_test(uint8_t &test_stage)
 		ROS_ERROR_COND(pthread_cond_wait(&recev_cond, &recev_lock) != 0, "robotbase pthread receive cond wait fail");
 		memcpy(buf, serial.receive_stream, sizeof(uint8_t) * REC_LEN);
 		ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock) != 0, "robotbase pthread receive unlock fail");
-		if(buf[38] != CLIFF_TEST_MODE)
+		if(buf[38] != FUNC_CLIFF_TEST_MODE)
 		{
 			serial.sendData();
 			continue;
@@ -844,7 +844,7 @@ uint16_t bumper_test(uint8_t &test_stage)
 {
 	uint8_t test_result = 0;
 	uint8_t buf[REC_LEN];
-	serial.setSendData(CTL_MAIN_BOARD_MODE, BUMPER_TEST_MODE);
+	serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_BUMPER_TEST_MODE);
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
 	while(ros::ok())
 	{
@@ -853,7 +853,7 @@ uint16_t bumper_test(uint8_t &test_stage)
 		ROS_ERROR_COND(pthread_cond_wait(&recev_cond, &recev_lock) != 0, "robotbase pthread receive cond wait fail");
 		memcpy(buf, serial.receive_stream, sizeof(uint8_t) * REC_LEN);
 		ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock) != 0, "robotbase pthread receive unlock fail");
-		if(buf[38] != BUMPER_TEST_MODE)
+		if(buf[38] != FUNC_BUMPER_TEST_MODE)
 		{
 			serial.sendData();
 			continue;
@@ -890,7 +890,7 @@ uint16_t obs_test(uint8_t &test_stage, bool is_fixture)
 {
 	uint16_t test_result = 0;
 	uint8_t buf[REC_LEN];
-	serial.setSendData(CTL_MAIN_BOARD_MODE, OBS_TEST_MODE);
+	serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_OBS_TEST_MODE);
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
 	while(ros::ok()) {
 		/*--------data extrict from serial com--------*/
@@ -898,7 +898,7 @@ uint16_t obs_test(uint8_t &test_stage, bool is_fixture)
 		ROS_ERROR_COND(pthread_cond_wait(&recev_cond, &recev_lock) != 0, "robotbase pthread receive cond wait fail");
 		memcpy(buf, serial.receive_stream, sizeof(uint8_t) * REC_LEN);
 		ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock) != 0, "robotbase pthread receive unlock fail");
-		if(buf[38] != OBS_TEST_MODE)
+		if(buf[38] != FUNC_OBS_TEST_MODE)
 		{
 			serial.sendData();
 			continue;
@@ -1040,7 +1040,7 @@ uint16_t rcon_test(uint8_t &test_stage)
 	uint16_t test_result = 0;
 	uint32_t Temp_Rcon_Status = 0;
 	uint8_t buf[REC_LEN];
-	serial.setSendData(CTL_MAIN_BOARD_MODE, RCON_TEST_MODE);
+	serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_RCON_TEST_MODE);
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
 	while(ros::ok()) {
 		/*--------data extrict from serial com--------*/
@@ -1048,7 +1048,7 @@ uint16_t rcon_test(uint8_t &test_stage)
 		ROS_ERROR_COND(pthread_cond_wait(&recev_cond, &recev_lock) != 0, "robotbase pthread receive cond wait fail");
 		memcpy(buf, serial.receive_stream, sizeof(uint8_t) * REC_LEN);
 		ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock) != 0, "robotbase pthread receive unlock fail");
-		if(buf[38] != RCON_TEST_MODE)
+		if(buf[38] != FUNC_RCON_TEST_MODE)
 		{
 			serial.sendData();
 			continue;
@@ -1157,7 +1157,7 @@ uint16_t water_tank_test(uint8_t &test_stage)
 	uint8_t step = 0;
 	uint8_t count = 0;
 	uint8_t buf[REC_LEN];
-	serial.setSendData(CTL_MAIN_BOARD_MODE, WATER_TANK_TEST_MODE);
+	serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_WATER_TANK_TEST_MODE);
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
 	while(ros::ok()) {
 		/*--------data extrict from serial com--------*/
@@ -1165,7 +1165,7 @@ uint16_t water_tank_test(uint8_t &test_stage)
 		ROS_ERROR_COND(pthread_cond_wait(&recev_cond, &recev_lock) != 0, "robotbase pthread receive cond wait fail");
 		memcpy(buf, serial.receive_stream, sizeof(uint8_t) * REC_LEN);
 		ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock) != 0, "robotbase pthread receive unlock fail");
-		if(buf[38] != WATER_TANK_TEST_MODE)
+		if(buf[38] != FUNC_WATER_TANK_TEST_MODE)
 		{
 			serial.sendData();
 			continue;
@@ -1205,7 +1205,7 @@ uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline)
 	uint8_t buf[REC_LEN];
 	uint32_t current_current=0;
 	uint32_t motor_current=0;
-	serial.setSendData(CTL_MAIN_BOARD_MODE, WHEELS_TEST_MODE);
+	serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_WHEELS_TEST_MODE);
 	serial.setSendData(CTL_LEFT_WHEEL_TEST_MODE, 0);
 	serial.setSendData(CTL_RIGHT_WHEEL_TEST_MODE, 0);
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
@@ -1216,7 +1216,7 @@ uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline)
 		ROS_ERROR_COND(pthread_cond_wait(&recev_cond, &recev_lock) != 0, "robotbase pthread receive cond wait fail");
 		memcpy(buf, serial.receive_stream, sizeof(uint8_t) * REC_LEN);
 		ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock) != 0, "robotbase pthread receive unlock fail");
-		if(buf[38] != WHEELS_TEST_MODE)
+		if(buf[38] != FUNC_WHEELS_TEST_MODE)
 		{
 			serial.sendData();
 			continue;
@@ -1547,7 +1547,7 @@ uint16_t brushes_test(uint8_t &test_stage, uint16_t *baseline)
 	uint8_t count=0;
 	uint8_t step=1;
 
-	serial.setSendData(CTL_MAIN_BOARD_MODE, BRUSHES_TEST_MODE);
+	serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_BRUSHES_TEST_MODE);
 	serial.setSendData(CTL_LEFT_BRUSH_TEST_MODE, 0);
 	serial.setSendData(CTL_MAIN_BRUSH_TEST_MODE, 0);
 	serial.setSendData(CTL_RIGHT_BRUSH_TEST_MODE, 0);
@@ -1558,7 +1558,7 @@ uint16_t brushes_test(uint8_t &test_stage, uint16_t *baseline)
 		ROS_ERROR_COND(pthread_cond_wait(&recev_cond, &recev_lock) != 0, "robotbase pthread receive cond wait fail");
 		memcpy(buf, serial.receive_stream, sizeof(uint8_t) * REC_LEN);
 		ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock) != 0, "robotbase pthread receive unlock fail");
-		if (buf[38] != BRUSHES_TEST_MODE)
+		if (buf[38] != FUNC_BRUSHES_TEST_MODE)
 		{
 			serial.sendData();
 			continue;
@@ -1771,7 +1771,7 @@ uint16_t vacuum_test(uint8_t &test_stage, uint16_t *baseline)
 	uint8_t buf[REC_LEN];
 	uint32_t current_current;
 	uint32_t motor_current;
-	serial.setSendData(CTL_MAIN_BOARD_MODE, VACUUM_TEST_MODE);
+	serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_VACUUM_TEST_MODE);
 	serial.setSendData(CTL_VACUUM_TEST_MODE, 0);
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
 	while(ros::ok()) {
@@ -1780,7 +1780,7 @@ uint16_t vacuum_test(uint8_t &test_stage, uint16_t *baseline)
 		ROS_ERROR_COND(pthread_cond_wait(&recev_cond, &recev_lock) != 0, "robotbase pthread receive cond wait fail");
 		memcpy(buf, serial.receive_stream, sizeof(uint8_t) * REC_LEN);
 		ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock) != 0, "robotbase pthread receive unlock fail");
-		if (buf[38] != VACUUM_TEST_MODE)
+		if (buf[38] != FUNC_VACUUM_TEST_MODE)
 		{
 			serial.sendData();
 			continue;
@@ -1879,7 +1879,7 @@ uint16_t charge_current_test(uint8_t &test_stage, bool is_fixture)
 {
 	uint32_t charge_voltage = 0;
 	uint8_t buf[REC_LEN];
-	serial.setSendData(CTL_MAIN_BOARD_MODE, CHARGE_CURRENT_TEST_MODE);
+	serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_CHARGE_CURRENT_TEST_MODE);
 	serial.setSendData(CTL_CHARGER_CINNECTED_STATUS, 0);
 	serial.setSendData(CTL_IS_FIXTURE, is_fixture);
 	uint8_t count = 0;
@@ -1891,7 +1891,7 @@ uint16_t charge_current_test(uint8_t &test_stage, bool is_fixture)
 		ROS_ERROR_COND(pthread_cond_wait(&recev_cond, &recev_lock) != 0, "robotbase pthread receive cond wait fail");
 		memcpy(buf, serial.receive_stream, sizeof(uint8_t) * REC_LEN);
 		ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock) != 0, "robotbase pthread receive unlock fail");
-		if(buf[38] != CHARGE_CURRENT_TEST_MODE)
+		if(buf[38] != FUNC_CHARGE_CURRENT_TEST_MODE)
 		{
 			serial.sendData();
 			continue;
