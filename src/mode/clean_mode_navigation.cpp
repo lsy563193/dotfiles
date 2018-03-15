@@ -538,6 +538,7 @@ bool CleanModeNav::updateActionInStateClean(){
 		else
 			old_dir_ = MAP_ANY;
 	}
+
 	if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
 		pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 		iterate_point_ = plan_path_.front();

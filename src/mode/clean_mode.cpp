@@ -1745,7 +1745,7 @@ bool ACleanMode::updateActionInStateFollowWall()
 			plan_path_.push_back(getPosition());
 			plan_path_.push_back(point);
 			iterate_point_ = plan_path_.front();
-//			iterate_point_.dir = MAP_ANY;
+			iterate_point_.dir = MAP_ANY;// note: fix bug follow isPassPosition
 			clean_path_algorithm_->displayPointPath(plan_path_);
 			action_i_ = ac_linear;
 		}
