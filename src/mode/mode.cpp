@@ -10,7 +10,7 @@ boost::shared_ptr<IAction> Mode::sp_action_ = nullptr;
 
 void Mode::run()
 {
-//	ROS_INFO("%s %d: Mode start running.", __FUNCTION__, __LINE__);
+	ROS_INFO("%s %d: Mode start running.", __FUNCTION__, __LINE__);
 	bool eh_status_now = false, eh_status_last = false;
 
 	while (ros::ok() && !core_thread_kill)
@@ -110,6 +110,12 @@ void Mode::genNextAction()
 			break;
 		case ac_desk_test:
 			sp_action_.reset(new MoveTypeDeskTest());
+			break;
+		case ac_gyro_test:
+			sp_action_.reset(new MoveTypeGyroTest());
+			break;
+		case ac_water_tank_test:
+			sp_action_.reset(new ActionCheckWaterTank());
 			break;
 		default : //case ac_null :
 			sp_action_.reset();

@@ -11,6 +11,7 @@ MovementCharge::MovementCharge()
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
+	water_tank.stop();
 
 	if(lidar.isScanOriginalReady())
 	{

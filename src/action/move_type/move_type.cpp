@@ -60,10 +60,11 @@ bool IMoveType::isLidarStop()
 {
 //	PP_INFO();
 //	ev.lidar_triggered = lidar.getObstacleDistance(0,0.056) < 0.04 ? BLOCK_FRONT : 0;
-	ev.lidar_triggered = lidar.lidar_get_status();
+	auto p_mode = dynamic_cast<ACleanMode*> (sp_mode_);
+	auto p_mt = boost::dynamic_pointer_cast<IMoveType>(p_mode->sp_action_);
+	ev.lidar_triggered = lidar.lidar_get_status(p_mt->movement_i_, sp_mode_->action_i_);
 	if (ev.lidar_triggered)
 	{
-		// Temporary use OBS to get angle.
 		ROS_WARN("%s, %d: ev.lidar_triggered(%d).", __FUNCTION__, __LINE__, ev.lidar_triggered);
 		return true;
 	}

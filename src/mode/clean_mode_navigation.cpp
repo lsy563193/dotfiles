@@ -135,9 +135,10 @@ bool CleanModeNav::markRealTime()
 //	while (ros::ok()) {
 //		sleep(0.2);
 //		wheel.stop();
+		auto p_mt = boost::dynamic_pointer_cast<IMoveType>(sp_action_);
 		std::vector<Vector2<int>> markers;
 		if (lidar.isScanCompensateReady())
-			lidar.lidarMarker(markers);
+			lidar.lidarMarker(markers, p_mt->movement_i_, action_i_);
 //		ROS_INFO("markers.size() = %d", markers.size());
 		for (const auto& marker : markers) {
 //			ROS_INFO("marker(%d, %d)", marker.x, marker.y);
@@ -458,8 +459,9 @@ bool CleanModeNav::updateActionInStateInit() {
 		}
 		else{
 			action_i_ = ac_open_lidar;
-			vacuum.setLastMode();
 			brush.normalOperate();
+			if (!water_tank.checkEquipment())
+				vacuum.setLastMode();
 		}
 	} else if (action_i_ == ac_back_form_charger)
 	{
@@ -468,8 +470,9 @@ bool CleanModeNav::updateActionInStateInit() {
 			robot::instance()->initOdomPosition();
 
 		action_i_ = ac_open_lidar;
-		vacuum.setLastMode();
 		brush.normalOperate();
+		if (!water_tank.checkEquipment())
+			vacuum.setLastMode();
 		setHomePoint();
 	} else if (action_i_ == ac_open_lidar)
 	{

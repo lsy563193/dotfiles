@@ -6,6 +6,7 @@
     <node name="pp" pkg="pp" type="pp" output="screen">
         <!--<param name="serial_port" type="string" value="/dev/ttyUSB0" />-->
         <param name="serial_port" type="string" value="/dev/ttyS2"/>
+        <param name="wifi_port" type="string" value="/dev/ttyS1"/>
         <param name="baudrate" type="int" value="115200"/>
 
          <!--0: gmapping, 1: karto, 2: goole cartographe -->

@@ -22,6 +22,16 @@ public:
 	bool shouldTurn();
 	bool RconTrigger();
 //	~IMoveType() = default;
+	enum{//movement
+		mm_null,
+		mm_back,
+		mm_turn,
+		mm_stay,
+		mm_rcon,
+		mm_forward,
+		mm_straight,
+		mm_dynamic,
+	};
 
 	bool isBlockCleared(GridMap &map, Points &passed_path);
 	Point_t last_{};
@@ -50,20 +60,14 @@ public:
 //	Point_t target_point_;
 	int dir_;
 	Points remain_path_{};
-protected:
+public:
+	std::deque<double> odom_turn_target_radians_{};
+	int radian_diff_count{};
+	double odom_turn_target_radian_{};
 	double turn_target_radian_{};
+protected:
 
 	float back_distance_;
-	enum{//movement
-		mm_null,
-		mm_back,
-		mm_turn,
-		mm_stay,
-		mm_rcon,
-		mm_forward,
-		mm_straight,
-		mm_dynamic,
-	};
 
 };
 
@@ -161,7 +165,7 @@ class MoveTypeRemote: public IMoveType
 {
 public:
 	MoveTypeRemote();
-	~MoveTypeRemote() override;
+	~MoveTypeRemote();
 
 	bool isFinish() override;
 
@@ -178,7 +182,6 @@ public:
 	~MoveTypeDeskTest() override;
 
 	void deskTestRoutineThread();
-	bool isFinish() override;
 
 	void run() override;
 
@@ -291,5 +294,25 @@ private:
 
 	// For stage 7.
 	bool check_stage_7_finish();
+};
+
+class MoveTypeGyroTest: public IMoveType
+{
+public:
+	MoveTypeGyroTest();
+	~MoveTypeGyroTest() override;
+
+	void run() override;
+
+private:
+	boost::shared_ptr<IAction> p_movement_;
+
+	uint16_t error_code_{0};
+
+	int test_stage_{0};
+	double last_time_stamp_{0};
+	double wheel_mileage_{0};
+	double wheel_turn_angle_{0};
+	double saved_gyro_turn_angle_{0};
 };
 #endif //PP_MOVE_TYPE_HPP

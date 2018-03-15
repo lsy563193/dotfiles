@@ -23,6 +23,7 @@ FILE(GLOB PP_SRC
 	src/dev/speaker.cpp
 	src/dev/lidar.cpp
 	src/dev/water_tank.cpp
+	src/dev/wifi.cpp
 
 	src/mode/state/state.cpp
 	src/mode/state/state_init.cpp
@@ -36,7 +37,7 @@ FILE(GLOB PP_SRC
 	src/mode/state/state_exception_resume.cpp
 	src/mode/state/state_spot.cpp
 	src/mode/state/state_exploration.cpp
-	src/mode/state/state_desk_test.cpp
+	src/mode/state/state_test.cpp
 
 	src/mode/mode.cpp
 	src/mode/mode_sleep.cpp
@@ -49,7 +50,7 @@ FILE(GLOB PP_SRC
 	src/mode/clean_mode_navigation.cpp
 	src/mode/clean_mode_follow_wall.cpp
 	src/mode/clean_mode_spot.cpp
-	src/mode/clean_mode_desk_test.cpp
+	src/mode/clean_mode_test.cpp
 
 	src/path_algorithm/path_algorithm.cpp
 	src/path_algorithm/path_algorithm_navigation_clean.cpp
@@ -70,6 +71,7 @@ FILE(GLOB PP_SRC
 	src/action/action_pause.cpp
 	src/action/action_check_vacuum.cpp
 	src/action/action_check_bumper.cpp
+	src/action/action_check_water_tank.cpp
 
 	src/action/move_type/move_type.cpp
 	src/action/move_type/move_type_linear.cpp
@@ -78,6 +80,7 @@ FILE(GLOB PP_SRC
 	src/action/move_type/move_type_bumper_hit_test.cpp
 	src/action/move_type/move_type_remote.cpp
 	src/action/move_type/move_type_desk_test.cpp
+	src/action/move_type/move_type_gyro_test.cpp
 	src/action/move_type/movement/movement.cpp
 	src/action/move_type/movement/movement.cpp
 	src/action/move_type/movement/movement_back.cpp
@@ -112,6 +115,17 @@ FILE(GLOB PP_SRC
 	src/slam.cpp
 	src/slam_map.cpp
 	src/verify.cpp
+
+	src/wifi/dev.cpp
+	src/wifi/packet.cpp
+	src/wifi/tx.cpp
+	src/wifi/rx.cpp
+	src/wifi/msg.cpp
+	#src/wifi/util.cpp
+
+	#src/cloud/realtime_map_handler.cpp
+	#src/cloud/accumulated_work_time_handler.cpp
+	#src/cloud/consumable_handler.cpp
 )
 
 find_package(catkin REQUIRED COMPONENTS
