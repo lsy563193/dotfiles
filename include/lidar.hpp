@@ -138,6 +138,11 @@ private:
 	uint8_t slip_cnt_limit_{5};
 	static double wheel_cliff_trigger_time_;
 	static double gyro_tilt_trigger_time_;
+	float acur1_,acur2_,acur3_,acur4_;//accuracy  ,in meters
+	const float dist1_ = 3.5;//range distance 1 ,in meters
+	const float dist2_ = 2.5;//range distance 2
+	const float dist3_ = 1.5;//range distance 3
+	const float dist4_ = 0.5;//range distance 4
 
 };
 
