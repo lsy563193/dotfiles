@@ -95,11 +95,11 @@ bool CleanModeNav::mapMark()
 //	map.print(CLEAN_MAP, c_bound2);
 
 	if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right) {
-//		if (!clean_map_.c_blocks.empty()) {
+//		if (!c_blocks.empty()) {
 //			auto dy = action_i_ == ac_follow_wall_left ? 2 : -2;
 //			std::for_each(passed_path_.begin()+1, passed_path_.end(),[&](const Point_t& point){
 //				auto cell = point.getRelative(0, dy * CELL_SIZE).toCell();
-//				clean_map_.c_blocks.insert({BLOCKED_FW, cell});
+//				c_blocks.insert({BLOCKED_FW, cell});
 //			});
 //		}
 	}
@@ -109,7 +109,7 @@ bool CleanModeNav::mapMark()
 		if (ev.rcon_status)
 			setHomePoint();
 	}
-	for (auto &&cost_block : clean_map_.c_blocks) {
+	for (auto &&cost_block : c_blocks) {
 		if(/*cost_block.first != BLOCKED_SLIP && */std::find_if(c_bound2.begin(), c_bound2.end(), [&](const Cell_t& c_it)
 		{ return c_it == cost_block.second; }) != c_bound2.end())
 			clean_map_.setCell(CLEAN_MAP, cost_block.second.x, cost_block.second.y, cost_block.first);
@@ -119,12 +119,12 @@ bool CleanModeNav::mapMark()
 		clean_map_.setCells(CLEAN_MAP, p_it.toCell().x, p_it.toCell().y, CLEANED);
 
 	//For slip mark
-	for(auto &&cost_block : clean_map_.c_blocks){
+	for(auto &&cost_block : c_blocks){
 		if(cost_block.first == BLOCKED_SLIP)
 			clean_map_.setCell(CLEAN_MAP,cost_block.second.x,cost_block.second.y,BLOCKED_SLIP);
 	}
 
-	clean_map_.c_blocks.clear();
+	c_blocks.clear();
 	passed_path_.clear();
 	return false;
 }
@@ -144,7 +144,7 @@ bool CleanModeNav::markRealTime()
 //			ROS_INFO("marker(%d, %d)", marker.x, marker.y);
 			auto cell = getPosition().getRelative(marker.x * CELL_SIZE, marker.y * CELL_SIZE).toCell();
 //			clean_map_.setCell(CLEAN_MAP, cell.x, cell.y, BLOCKED_LIDAR);
-			clean_map_.c_blocks.insert({BLOCKED_LIDAR, cell});
+			c_blocks.insert({BLOCKED_LIDAR, cell});
 		}
 //	}
 	return true;

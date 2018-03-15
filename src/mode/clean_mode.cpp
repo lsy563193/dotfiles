@@ -128,6 +128,126 @@ ACleanMode::~ACleanMode()
 			 static_cast<float>(robot_timer.getWorkTime()) / 60, map_area / (static_cast<float>(robot_timer.getWorkTime()) / 60));
 }
 
+void ACleanMode::saveBlock(int block, int dir, std::function<Cells()> get_list)
+{
+	printf("curr(%d,%d),block(%d):", getPosition().toCell().x, getPosition().toCell().y, block);
+	for(auto& d_cell : get_list())
+	{
+		Cell_t cell;
+//		if(dir == MAP_ANY)
+			cell = getPosition().getRelative(d_cell.x * CELL_SIZE, d_cell.y * CELL_SIZE).toCell();
+		printf("{%d,%d}->{%d,%d}\n", d_cell.x, d_cell.y, cell.x, cell.y);
+//		else {
+//			auto x = d_cell * cell_direction_[dir].x;
+//			auto y = d_cell * cell_direction_[(dir+2)%4].y;
+//			cell = getPosition().toCell() +  x + y;
+//		}
+		c_blocks.insert({block, cell});
+	}
+}
+
+void ACleanMode::saveBlocks(bool is_linear, bool is_save_rcon) {
+//	PP_INFO();
+	if (is_linear && is_save_rcon)
+		saveBlock(BLOCKED_RCON, iterate_point_.dir, [&]() {
+			auto rcon_trig = ev.rcon_status/*rcon_get_trig()*/;
+			Cells d_cells;
+			switch (c_rcon.convertToEnum(rcon_trig)) {
+				case Rcon::left:
+					d_cells = {{1, 2}, {1, 3}, {1, 4}, {2, 2}, {2, 3}, {2, 4}, {3, 2}, {3, 3}, {3, 4}};
+					break;
+				case Rcon::fl2:
+					d_cells = {{2, 1}, {2, 2}, {2, 3}, {3, 1}, {3, 2}, {3, 3}, {4, 1}, {4, 2}, {4, 3}};
+					break;
+				case Rcon::fl:
+				case Rcon::fr:
+					d_cells = {{2, 0}, {3, 0}, {4, 0}, {2, -1}, {3, -1}, {4, -1}, {2, 1}, {3, 1}, {4, 1}};
+					break;
+				case Rcon::fr2:
+//			dx = 1, dy = -2;
+//			dx2 = 2, dy2 = -1;
+					d_cells = {{2, -1}, {2, -2}, {2, -3}, {3, -1}, {3, -2}, {3, -3}, {4, -1}, {4, -2}, {4, -3}};
+					break;
+				case Rcon::right:
+					d_cells = {{1, -2}, {1, -3}, {1, -4}, {2, -2}, {2, -3}, {2, -4}, {3, -2}, {3, -3}, {3, -4}};
+					break;
+			}
+			return d_cells;
+		});
+
+	saveBlock(BLOCKED_BUMPER,iterate_point_.dir, [&]() {
+		auto bumper_trig = ev.bumper_triggered/*bumper.getStatus()*/;
+		Cells d_cells; // Direction indicator cells.
+		if ((bumper_trig & BLOCK_RIGHT) && (bumper_trig & BLOCK_LEFT))
+			d_cells = {/*{2,-1},*/ {2, 0}/*, {2,1}*/};
+		else if (bumper_trig & BLOCK_LEFT) {
+			if (is_linear)
+				d_cells = {{2, 1}/*, {2,2},{1,2}*/};
+			else
+				d_cells = {/*{2, 1},*//* {2,2}, */{1, 2}};
+		}
+		else if (bumper_trig & BLOCK_RIGHT) {
+			if (is_linear)
+				d_cells = {{2, -1}/*,{2,-2},{1,-2}*/};
+			else
+				d_cells = {/*{2,-1},*//*{2,-1},*/{1, -2}};
+		}
+		return d_cells;
+	});
+
+	saveBlock(BLOCKED_CLIFF,iterate_point_.dir, [&]() {
+		auto cliff_trig = ev.cliff_triggered;
+		Cells d_cells;
+		if (cliff_trig & BLOCK_FRONT) {
+			d_cells = {{2, -1}, {2, 0}, {2, 1}};
+		}
+		if (cliff_trig & BLOCK_LEFT) {
+			d_cells = {{2, 1}, {2, 2}};
+		}
+		if (cliff_trig & BLOCK_RIGHT) {
+			d_cells = {{2, -1}, {2, -2}};
+		}
+		return d_cells;
+	});
+
+	saveBlock(BLOCKED_SLIP,iterate_point_.dir, [&]() {
+		Cells d_cells{};
+		if (ev.robot_slip)
+			d_cells = {{1,  1}, {1,  0}, {1,  -1}, {0,  1}, {0,  0}, {0,  -1}, {-1, 1}, {-1, 0}, {-1, -1}};
+		return d_cells;
+
+	});
+
+	saveBlock(BLOCKED_TILT,iterate_point_.dir, [&]() {
+		Cells d_cells;
+		auto tilt_trig = ev.tilt_triggered;
+		if (tilt_trig & TILT_LEFT)
+			d_cells = {{2, 2}, {2, 1}, {2, 0}, {1, 2}, {1, 1}, {1, 0}, {0, 2}, {0, 1}, {0, 0}};
+		else if (tilt_trig & TILT_RIGHT)
+			d_cells = {{2, -2}, {2, -1}, {2, 0}, {1, -2}, {1, -1}, {1, 0}, {0, -2}, {0, -1}, {0, 0}};
+		else if (tilt_trig & TILT_FRONT)
+			d_cells = {{2, 1}, {2, 0}, {2, -1}, {1, 1}, {1, 0}, {1, -1}, {0, 1}, {0, 0}, {0, -1}};
+
+		return d_cells;
+	});
+
+	saveBlock(BLOCKED_LIDAR,iterate_point_.dir, [&]() {
+		auto lidar_trig = ev.lidar_triggered;
+		Cells d_cells{};
+		if (lidar_trig & BLOCK_FRONT) {
+			d_cells.push_back({2, 0});
+		}
+		if (lidar_trig & BLOCK_LEFT) {
+			d_cells.push_back({2, 1});
+		}
+		if (lidar_trig & BLOCK_RIGHT) {
+			d_cells.push_back({2, -1});
+		}
+
+		return d_cells;
+	});
+}
+
 uint8_t ACleanMode::setBlocks(Dir_t dir)
 {
 
@@ -135,7 +255,7 @@ uint8_t ACleanMode::setBlocks(Dir_t dir)
 		passed_path_.push_back(getPosition());
 	uint8_t block_count = 0;
 	printf("before filter:");
-	for(auto && cost_block: clean_map_.c_blocks)
+	for(auto && cost_block: c_blocks)
 	{
 		printf("{%d, {%d,%d}} ",cost_block.first, cost_block.second.x, cost_block.second.y);
 	}
@@ -147,26 +267,26 @@ uint8_t ACleanMode::setBlocks(Dir_t dir)
 		for(auto i = -1; i<=1; i++)
 		{
 			auto c_it = c_end_next + cell_direction_[dir_switch]*i;
-			if(std::find_if(clean_map_.c_blocks.begin(), clean_map_.c_blocks.end(),[&c_it](const PairCell_t& p_cell){ return p_cell.second == c_it;}) != clean_map_.c_blocks.end())
+			if(std::find_if(c_blocks.begin(), c_blocks.end(),[&c_it](const PairCell_t& p_cell){ return p_cell.second == c_it;}) != c_blocks.end())
 			{
 				auto c_it_next = c_it + cell_direction_[dir];
-				auto result = std::find_if(clean_map_.c_blocks.begin(), clean_map_.c_blocks.end(),[&c_it_next](const PairCell_t& p_cell){ return p_cell.second == c_it_next;});
-				if(result != clean_map_.c_blocks.end())
+				auto result = std::find_if(c_blocks.begin(), c_blocks.end(),[&c_it_next](const PairCell_t& p_cell){ return p_cell.second == c_it_next;});
+				if(result != c_blocks.end())
 				{
 					ROS_WARN("remove block(%d,%d) after block(%d,%d) in dir(%d)",result->second.x,result->second.y,c_it.x, c_it.y, dir);
-					clean_map_.c_blocks.erase(result);
+					c_blocks.erase(result);
 				}
 			}
 		}
 	}
 
 	printf("after filter:");
-	for (auto &&cost_block  : clean_map_.c_blocks) {
+	for (auto &&cost_block  : c_blocks) {
 		printf("{%d, {%d,%d}} ",cost_block.first, cost_block.second.x, cost_block.second.y);
 		clean_map_.setCell(CLEAN_MAP, cost_block.second.x, cost_block.second.y, cost_block.first);
 	}
 	printf("\n");
-	clean_map_.c_blocks.clear();
+	c_blocks.clear();
 	return block_count;
 }
 
@@ -429,6 +549,26 @@ void ACleanMode::pubFitLineMarker(visualization_msgs::Marker fit_line_marker)
 	fit_line_marker_pub_.publish(fit_line_marker);
 }
 
+uint8_t ACleanMode::setFollowWall(bool is_left,const Points& passed_path)
+{
+	uint8_t block_count = 0;
+	if (!passed_path.empty() && !c_blocks.empty())
+	{
+		std::string msg = "cell:";
+		auto dy = is_left ? 2 : -2;
+		for(auto& point : passed_path){
+			if(clean_map_.getCell(CLEAN_MAP,point.toCell().x,point.toCell().y) != BLOCKED_RCON){
+				auto relative_cell = point.getRelative(0, dy * CELL_SIZE);
+				auto block_cell = relative_cell.toCell();
+				msg += "(" + std::to_string(block_cell.x) + "," + std::to_string(block_cell.y) + ")";
+				clean_map_.setCell(CLEAN_MAP,block_cell.x,block_cell.y, BLOCKED_FW);
+				block_count++;
+			}
+		}
+		ROS_INFO("%s,%d: Current(%d, %d), \033[32m mapMark CLEAN_MAP %s\033[0m",__FUNCTION__, __LINE__, getPosition().toCell().x, getPosition().toCell().y, msg.c_str());
+	}
+}
+
 void ACleanMode::setLinearCleaned()
 {
 	ROS_ERROR("setLinearCleaned cells:");
@@ -445,7 +585,7 @@ void ACleanMode::setLinearCleaned()
 		{
 			auto c_it_shift = c_it - cell_direction_[p_start.dir];
 			ROS_WARN("!!!!!!start_point -1 dir is in block,move back 1 cell c_it(%d,%d)->c_it_shift(%d,%d)",c_it.x, c_it.y,c_it_shift.x,c_it_shift.y);
-			clean_map_.c_blocks.insert({c_val, c_it_shift});
+			c_blocks.insert({c_val, c_it_shift});
 		}
 	}
 	// end+1 point opt
@@ -461,15 +601,15 @@ void ACleanMode::setLinearCleaned()
 		{
 			auto c_it_shift = c_it + cell_direction_[p_end.dir];
 			ROS_WARN("!!!!!!map end_point +1 dir is in block,move front 1 cell c_it(%d,%d)->c_it_shift(%d,%d)",c_it.x, c_it.y,c_it_shift.x,c_it_shift.y);
-			clean_map_.c_blocks.insert({c_val, c_it_shift});
+			c_blocks.insert({c_val, c_it_shift});
 		}
-		for(auto && c_block:  clean_map_.c_blocks)
+		for(auto && c_block:  c_blocks)
 		{
 			if(c_block.second == c_it)
 			{
 				auto c_it_shift = c_it + cell_direction_[p_end.dir];
 				ROS_WARN("!!!!!!block end_point +1 dir is in block,move front 1 cell c_it(%d,%d)->c_it_shift(%d,%d)",c_it.x, c_it.y,c_it_shift.x,c_it_shift.y);
-				clean_map_.c_blocks.insert({c_val, c_it_shift});
+				c_blocks.insert({c_val, c_it_shift});
 			}
 		}
 	}
@@ -856,12 +996,12 @@ bool ACleanMode::isFinish()
 
 void ACleanMode::moveTypeFollowWallSaveBlocks()
 {
-	clean_map_.saveBlocks(action_i_ == ac_linear, isStateClean());
+	saveBlocks(action_i_ == ac_linear, isStateClean());
 }
 
 void ACleanMode::moveTypeLinearSaveBlocks()
 {
-	clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
+	saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
 }
 
 bool ACleanMode::checkChargerPos()
@@ -1840,7 +1980,7 @@ PathHead ACleanMode::getTempTarget()
 bool ACleanMode::isIsolate() {
 	BoundingBox2 bound{};
 	GridMap fw_tmp_map;
-	fw_tmp_map.setFollowWall(action_i_ == ac_follow_wall_left,passed_path_);
+	setFollowWall(action_i_ == ac_follow_wall_left,passed_path_);
 
 	fw_tmp_map.getMapRange(CLEAN_MAP, &bound.min.x, &bound.max.x, &bound.min.y, &bound.max.y);
 

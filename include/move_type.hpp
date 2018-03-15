@@ -18,6 +18,7 @@ class IMoveType:public IAction
 {
 public:
 	IMoveType();
+	~IMoveType();
 	bool shouldMoveBack();
 	bool shouldTurn();
 	bool RconTrigger();
