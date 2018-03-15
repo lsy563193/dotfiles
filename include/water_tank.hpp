@@ -38,6 +38,14 @@ public:
 		return current_;
 	}
 
+	void normalOperate();
+
+	void stop();
+
+	void checkBatterySetPWM();
+
+	void updatePWM();
+
 private:
 	uint16_t current_{0};
 
@@ -46,6 +54,12 @@ private:
 
 	// Real time status for water tank.
 	bool status_{false};
+
+	bool operation_{false};
+
+	uint8_t pwm_{0};
+
+	double check_battery_time_stamp_{0};
 };
 
 extern WaterTank water_tank;

@@ -14,7 +14,6 @@ CleanModeTest::CleanModeTest(uint8_t mode)
 	test_mode_ = mode;
 	switch (test_mode_)
 	{
-		case DESK_TEST_MOVEMENT_MODE:
 		case DESK_TEST_CURRENT_MODE:
 		{
 			serial.setMainBoardMode(DESK_TEST_CURRENT_MODE);
@@ -33,6 +32,16 @@ CleanModeTest::CleanModeTest(uint8_t mode)
 			sp_state = state_test;
 			sp_state->init();
 			action_i_ = ac_gyro_test;
+			genNextAction();
+			break;
+		}
+		case WATER_TANK_TEST_MODE:
+		{
+//			serial.setMainBoardMode(WATER_TANK_TEST_MODE);
+			serial.setMainBoardMode(WORK_MODE);
+			sp_state = state_test;
+			sp_state->init();
+			action_i_ = ac_water_tank_test;
 			genNextAction();
 			break;
 		}

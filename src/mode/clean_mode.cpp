@@ -81,6 +81,7 @@ ACleanMode::~ACleanMode()
 		wheel.stop();
 		brush.stop();
 		vacuum.stop();
+		water_tank.stop();
 		lidar.motorCtrl(OFF);
 		lidar.setScanOriginalReady(0);
 
