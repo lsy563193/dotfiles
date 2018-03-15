@@ -135,9 +135,10 @@ bool CleanModeNav::markRealTime()
 //	while (ros::ok()) {
 //		sleep(0.2);
 //		wheel.stop();
+		auto p_mt = boost::dynamic_pointer_cast<IMoveType>(sp_action_);
 		std::vector<Vector2<int>> markers;
 		if (lidar.isScanCompensateReady())
-			lidar.lidarMarker(markers);
+			lidar.lidarMarker(markers, p_mt->movement_i_, action_i_);
 //		ROS_INFO("markers.size() = %d", markers.size());
 		for (const auto& marker : markers) {
 //			ROS_INFO("marker(%d, %d)", marker.x, marker.y);

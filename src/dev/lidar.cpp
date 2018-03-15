@@ -1033,7 +1033,7 @@ static uint8_t setLidarMarkerAcr2Dir(double X_MIN,double X_MAX,int angle_from,in
 
 }
 
-uint8_t Lidar::lidarMarker(std::vector<Vector2<int>> &markers, double X_MAX)
+uint8_t Lidar::lidarMarker(std::vector<Vector2<int>> &markers, int movement_i, int action_i, double X_MAX)
 {
 //	markers.clear();
 
@@ -1149,20 +1149,20 @@ uint8_t Lidar::lidarMarker(std::vector<Vector2<int>> &markers, double X_MAX)
 					break;
 				}
 				case 3 : {
-/*					dx = -2;
-					dy = 0;*/
+					dx = -2;
+					dy = 0;
 					direction_msg = "back middle";
 					break;
 				}
 				case 4 : {
-/*					dx = -2;
-					dy = 1;*/
+					dx = -2;
+					dy = 1;
 					direction_msg = "back left";
 					break;
 				}
 				case 5 : {
-/*					dx = -2;
-					dy = -1;*/
+					dx = -2;
+					dy = -1;
 					direction_msg = "back right";
 					break;
 				}
@@ -1210,8 +1210,22 @@ uint8_t Lidar::lidarMarker(std::vector<Vector2<int>> &markers, double X_MAX)
 		}*/
 		marker.x = dx;
 		marker.y = dy;
-		if (!(dx == 0 && dy == 0))
-			markers.push_back(marker);
+		auto is_left_front = (dx == 1 && dy == 2);
+		auto is_right_front = (dx == 1 && dy == -2);
+		auto is_left_back = (dx == -1 && dy == 2);
+		auto is_right_back = (dx == -1 && dy == -2);
+		if (!(dx == 0 && dy == 0)){
+			if(!(action_i == 7 && (is_left_back || is_left_front))
+						&& !(action_i == 8 && (is_right_back || is_right_front))
+//						&& !(movement_i == 2 && (is_left_back || is_right_back))
+						&& !(movement_i == 2)) {
+				markers.push_back(marker);
+//				ROS_WARN("movement_i = %d, action_i = %d", movement_i, action_i);
+			} else {
+//				ROS_ERROR("movement_i = %d, action_i = %d", movement_i, action_i);
+			}
+		}
+
 		dx = 0;
 		dy = 0;
 	}
@@ -1650,11 +1664,12 @@ bool Lidar::lidar_is_stuck()
 	return false;
 }
 
-uint8_t Lidar::lidar_get_status()
+uint8_t Lidar::lidar_get_status(int movement_i, int action_i)
 {
 	std::vector<Vector2<int>> markers;
+
 	if (isScanCompensateReady())
-		return lidarMarker(markers);
+		return lidarMarker(markers, movement_i, action_i);
 
 	return 0;
 }
