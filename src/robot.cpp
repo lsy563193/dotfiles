@@ -261,7 +261,8 @@ void robot::robotbase_routine_cb()
 
 		// For remote device.
 		auto remote_signal = buf[REC_REMOTE];
-		remote.set(remote_signal);
+		if (remote_signal != 0)
+			remote.set(remote_signal);
 		sensor.remote = remote.get();
 		if (remote_signal > 0)
 			ROS_INFO("%s %d: Remote received:%d", __FUNCTION__, __LINE__, remote_signal);
