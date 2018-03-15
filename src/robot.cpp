@@ -541,18 +541,8 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 				slam_pos = transform.getOrigin();
 				slam_rad  = (getBaselinkFrameType() == SLAM_POSITION_SLAM_ANGLE) ? tf::getYaw(transform.getRotation()) : 0;
 				tmp_pos = slam_pos;
-				if(p_mode->action_i_ == p_mode->ac_linear) {
-					if(p_mode->sp_action_ != nullptr) {
-						auto p_mt = boost::dynamic_pointer_cast<MoveTypeLinear>(p_mode->sp_action_);
-						if (p_mt->movement_i_ == p_mt->mm_forward)
-							scaleCorrectionPos(tmp_pos, tmp_rad);
-						else {
-							tmp_pos = slam_pos;
-							tmp_rad = slam_rad;
-						}
-					}
-				}
-//				ROS_WARN("tmp_pos(%f,%f),tmp_rad(%f)", tmp_pos.x(), tmp_pos.y(), tmp_rad);
+				tmp_rad = slam_rad;
+
 			} catch (tf::TransformException e) {
 				ROS_WARN("%s %d: Failed to compute map transform, skipping scan (%s)", __FUNCTION__, __LINE__, e.what());
 			}
@@ -569,7 +559,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 //	ROS_INFO("tmp_pos(%f,%f),tmp_rad(%f)", tmp_pos.x(), tmp_pos.y(), tmp_rad);
 	robot_pos = tmp_pos;
 	robot_rad = tmp_rad;
-	odomPublish(robot_pos, robot_rad);
+//	odomPublish(robot_pos, robot_rad);
 }
 
 void robot::odomPublish(const tf::Vector3& robot_pos, double robot_radian_)

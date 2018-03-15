@@ -34,6 +34,7 @@ void AMovementFollowPoint::adjustSpeed(int32_t &left_speed, int32_t &right_speed
 				if (base_speed_ > (int32_t) speed_limit) {
 					base_speed_--;
 					integrated_ = 0;
+					angle_diff = 0;
 			}
 //			ROS_WARN_COND(sp_mt_->sp_mode_->action_i_ == sp_mt_->sp_mode_->ac_linear, "slow down");
 		}

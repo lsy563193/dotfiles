@@ -142,6 +142,7 @@ public:
 	uint8_t isNear() override;
 //	void setTarget();
 
+	void scaleCorrectionPos(Point_t &tmp_pos);
 	Point_t calcTmpTarget() override ;
 	Point_t _calcTmpTarget();
 //	Point_t tmp_pos;

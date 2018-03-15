@@ -23,46 +23,26 @@ MovementFollowPointLinear::MovementFollowPointLinear()
 //	auto p_clean_mode = dynamic_cast<ACleanMode*> (sp_mt_->sp_mode_);
 //	sp_mt_->target_point_ = p_clean_mode->remain_path_.front();
 }
-//void MovementFollowPointLinear::scaleCorrectionPos() {
-////	CELL_SIZE
-//	auto cal_scale = [](double val) {
-////			double scale = fabs(val) > 0.05 ? 0.5 * fabs(val) : 0.03;
-//		double scale = fabs(val) > 0.05 ? 0.5 * fabs(val) : 0.03;
-//		scale = std::min(1.0, scale);
-////		printf("scale{%f} ", scale);
-//		return scale;
-//	};
-//
-//	auto robot_rad = robot::instance()->getWorldPoseRadian();
-////	tf::Vector3	robot_pos={robot::instance()->getWorldPoseX(), robot::instance()->getWorldPoseY(), 0.0};
-//	Point_t curr = {robot::instance()->getWorldPoseX(), robot::instance()->getWorldPoseY(),robot_rad};
-//	auto diff = /*getPosition()*/curr - tmp_pos;
-////	ROS_INFO("diff(%f,%f)", diff.x, diff.y);
-////	if(!(diff.y > CELL_SIZE/5 && left_speed_ == right_speed_))
-//	auto old_y = tmp_pos.y;
-//	{
-//		diff.y = cal_scale(diff.y) * diff.y;
-////		diff.x = cal_scale(diff.x) * diff.x;
-//		tmp_pos += diff;
-//	}
-////	if(!(radian_to_degree(diff.th) > 2 && left_speed_ == right_speed_))
-////	{
-////		diff.y = cal_scale(diff.y) * diff.y;
-////		diff.x = cal_scale(diff.x) * diff.x;
-////		tmp_pos += diff;
-////	}
-////	else{
-////		beeper.beepForCommand(VALID);
-////		ROS_ERROR("location jump!!! diff_y(%f),speed(%d,%d)",diff.y, left_speed_, right_speed_);
-////	}
-//
-//	tf::Vector3	robot_pos={tmp_pos.x, tmp_pos.y, 0.0};
-////	double	robot_rad= tmp_pos.th;
-//	ROS_INFO("diff %f",diff.y,);
-//	ROS_INFO("curr %f",curr.y);
-//	ROS_INFO("tmp_ (%f %f), rad(%d,%d)", tmp_pos.y, old_y,tmp_pos.th, curr.th);
-//	robot::instance()->odomPublish(robot_pos, robot_rad);
-//}
+
+void MovementFollowPointLinear::scaleCorrectionPos(Point_t &tmp_pos) {
+//	auto p_cm = boost::dynamic_pointer_cast<ACleanMode> (p_mode);
+	auto p_cm = dynamic_cast<ACleanMode*> (sp_mt_->sp_mode_);
+	auto dir = p_cm->iterate_point_.dir;
+	auto curr = getPosition();
+	if(isAny(dir))
+		return;
+
+	auto target_xy = (isXAxis(dir)) ? p_cm->iterate_point_.y : p_cm->iterate_point_.x;
+//	auto slam_xy = (isXAxis(dir)) ? slam_pos.getY() : slam_pos.getX();
+	auto slam_xy = (isXAxis(dir)) ? curr.y : curr.x;
+	auto diff_xy = (slam_xy - target_xy)/3;
+
+	if(diff_xy > CELL_SIZE/2)
+		diff_xy = CELL_SIZE/2;
+	else if(diff_xy < -CELL_SIZE/2)
+		diff_xy = -CELL_SIZE/2;
+		(isXAxis(dir)) ? (tmp_pos.y = (target_xy + diff_xy)) : (tmp_pos.x = (target_xy + diff_xy));
+}
 
 Point_t MovementFollowPointLinear::_calcTmpTarget()
 {
@@ -142,7 +122,11 @@ bool MovementFollowPointLinear::isFinish() {
 
 //		radian_diff = sp_mt_->odom_turn_target_radian_;
 //	radian_diff = ranged_radian(sp_mt_->turn_target_radian_ - odom.getRadian());
-	radian_diff = getPosition().courseToDest(calcTmpTarget());
+	auto tmp_pos = getPosition();
+//	double	tmp_rad{tmp_pos.th};
+	scaleCorrectionPos(tmp_pos);
+//	Point_t correct_p = Point_t{tmp_pos.getX(),tmp_pos.getY(), tmp_rad};
+	radian_diff = tmp_pos.courseToDest(calcTmpTarget());
 
 //	ROS_ERROR("count(%d), radian_diff(%f, %f,%f),",sp_mt_->radian_diff_count , radian_to_degree(sp_mt_->turn_target_radian_),
 //						radian_to_degree(radian_diff),radian_to_degree(sp_mt_->odom_turn_target_radian_));
