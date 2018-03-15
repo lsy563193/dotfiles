@@ -549,7 +549,7 @@ void ACleanMode::pubFitLineMarker(visualization_msgs::Marker fit_line_marker)
 	fit_line_marker_pub_.publish(fit_line_marker);
 }
 
-uint8_t ACleanMode::setFollowWall(bool is_left,const Points& passed_path)
+uint8_t ACleanMode::setFollowWall(GridMap& map, bool is_left,const Points& passed_path)
 {
 	uint8_t block_count = 0;
 	if (!passed_path.empty() && !c_blocks.empty())
@@ -557,11 +557,11 @@ uint8_t ACleanMode::setFollowWall(bool is_left,const Points& passed_path)
 		std::string msg = "cell:";
 		auto dy = is_left ? 2 : -2;
 		for(auto& point : passed_path){
-			if(clean_map_.getCell(CLEAN_MAP,point.toCell().x,point.toCell().y) != BLOCKED_RCON){
+			if(map.getCell(CLEAN_MAP,point.toCell().x,point.toCell().y) != BLOCKED_RCON){
 				auto relative_cell = point.getRelative(0, dy * CELL_SIZE);
 				auto block_cell = relative_cell.toCell();
 				msg += "(" + std::to_string(block_cell.x) + "," + std::to_string(block_cell.y) + ")";
-				clean_map_.setCell(CLEAN_MAP,block_cell.x,block_cell.y, BLOCKED_FW);
+				map.setCell(CLEAN_MAP,block_cell.x,block_cell.y, BLOCKED_FW);
 				block_count++;
 			}
 		}
@@ -1980,7 +1980,7 @@ PathHead ACleanMode::getTempTarget()
 bool ACleanMode::isIsolate() {
 	BoundingBox2 bound{};
 	GridMap fw_tmp_map;
-	setFollowWall(action_i_ == ac_follow_wall_left,passed_path_);
+	setFollowWall(fw_tmp_map, action_i_ == ac_follow_wall_left,passed_path_);
 
 	fw_tmp_map.getMapRange(CLEAN_MAP, &bound.min.x, &bound.max.x, &bound.min.y, &bound.max.y);
 
