@@ -87,6 +87,8 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 
 	if (targets.empty())
 	{
+		map.print(CLEAN_MAP, path);
+		map.print(COST_MAP, path);
 		Cell_t target;
 		int dijkstra_cleaned_count;
 		if(!findTargetUsingDijkstra(map,getPosition().toCell(),target,dijkstra_cleaned_count))

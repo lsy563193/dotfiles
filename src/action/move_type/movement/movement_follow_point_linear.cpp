@@ -109,11 +109,11 @@ bool MovementFollowPointLinear::isFinish() {
 		if(sp_mt_->radian_diff_count == 10) {
 			sp_mt_->radian_diff_count++;
 
-			auto offset_adjustment = getPosition().th - odom.getRadian();
-			odom.setRadianOffset(odom.getRadianOffset() + offset_adjustment);
+//			auto offset_adjustment = getPosition().th - odom.getRadian();
+//			odom.setRadianOffset(odom.getRadianOffset() + offset_adjustment);
 
-			sp_mt_->odom_turn_target_radian_ = ranged_radian(sp_mt_->turn_target_radian_ - offset_adjustment);
-			beeper.beepForCommand(VALID);
+//			sp_mt_->odom_turn_target_radian_ = ranged_radian(sp_mt_->turn_target_radian_ - offset_adjustment);
+//			beeper.beepForCommand(VALID);
 		}
 //		radian_diff = getPosition().courseToDest(calcTmpTarget());
 		radian_diff = ranged_radian(sp_mt_->turn_target_radian_ - odom.getRadian());
