@@ -116,7 +116,7 @@ void x900_functional_test(std::string serial_port, int baud_rate, std::string li
 /*
  * Dead loop for error.
  */
-void error_loop(uint16_t error_code);
+void error_loop(uint8_t test_stage, uint16_t error_code, uint16_t current_data);
 
 /*
  * Test RAM.
@@ -151,19 +151,19 @@ bool power_supply_test();
 /*
  * Test for hardware on main board.
  */
-uint16_t main_board_test();
+void main_board_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data);
 
-uint16_t electrical_specification_and_led_test(uint16_t* baseline, bool &is_fixture, uint8_t &test_stage);
+void electrical_specification_and_led_test(uint16_t* baseline, bool &is_fixture, uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data);
 
-uint16_t cliff_test(uint8_t &test_stage);
-uint16_t bumper_test(uint8_t &test_stage);
-uint16_t obs_test(uint8_t &test_stage, bool is_fixture);
-uint16_t rcon_test(uint8_t &test_stage);
-uint16_t water_tank_test(uint8_t &test_stage);
-uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline);
-uint16_t brushes_test(uint8_t &test_stage, uint16_t *baseline);
-uint16_t charge_current_test(uint8_t &test_stage, bool is_fixture);
-uint16_t vacuum_test(uint8_t &test_stage, uint16_t *baseline);
+void cliff_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data);
+void bumper_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data);
+void obs_test(bool is_fixture, uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data);
+void rcon_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data);
+void water_tank_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data);
+void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data);
+void brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data);
+void charge_current_test(bool is_fixture, uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data);
+void vacuum_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, uint16_t &current_dara);
 /*
  * Test for memory device.
  */
