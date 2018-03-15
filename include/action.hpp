@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <time.h>
 #include "odom.h"
+#include "water_tank.hpp"
 
 class IAction{
 public:
@@ -145,4 +146,20 @@ public:
 
 	void run() override;
 };
+
+class ActionCheckWaterTank: public IAction
+{
+public:
+	ActionCheckWaterTank();
+	~ActionCheckWaterTank() = default;
+
+	bool isFinish() override
+	{return false;};
+	bool isExit() override
+	{return false;};
+
+	void run() override
+	{};
+};
+
 #endif //PP_ACTION_H

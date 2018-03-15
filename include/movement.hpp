@@ -42,6 +42,7 @@ public:
 	bool isFinish() override ;
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed) override ;
 	double radian_diff{};
+	void getLRSpeed(int32_t&, int32_t&);
 
 protected:
 
@@ -53,6 +54,8 @@ protected:
 	uint8_t integration_cycle_{};
 	int32_t integrated_{};
 	int32_t base_speed_{};
+	int32_t left_speed_{};
+	int32_t right_speed_{};
 	double angle_forward_to_turn_{};
 	int kp_{2};
 //	const double TIME_STRAIGHT{0.2};
@@ -125,7 +128,7 @@ public:
 //	MovementFollowPointLinear(Point_t);
 	MovementFollowPointLinear();
 
-	void scaleCorrectionPos();
+//	void scaleCorrectionPos();
 //	~MovementFollowPointLinear(){ };
 	bool isFinish() override;
 	/**
@@ -139,9 +142,10 @@ public:
 	uint8_t isNear() override;
 //	void setTarget();
 
+	void scaleCorrectionPos(Point_t &tmp_pos);
 	Point_t calcTmpTarget() override ;
 	Point_t _calcTmpTarget();
-	Point_t tmp_pos;
+//	Point_t tmp_pos;
 //	bool calcTmpTarget() override ;
 //	Point_t _calcTmpTargetNoneRealTime();
 //	Point_t _calcTmpTargetRealTime();

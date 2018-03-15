@@ -7,6 +7,7 @@
 #include <mode.hpp>
 #include <mathematics.h>
 #include <beeper.h>
+#include <gyro.h>
 
 boost::mutex scanLinear_mutex_;
 boost::mutex scanOriginal_mutex_;
@@ -16,6 +17,7 @@ boost::mutex lidarXYPoint_mutex_;
 
 sensor_msgs::LaserScan Lidar::lidarScanData_original_;
 double Lidar::wheel_cliff_trigger_time_ = 0;
+double Lidar::gyro_tilt_trigger_time_ = 0;
 
 Lidar lidar;
 
@@ -883,6 +885,12 @@ bool Lidar::mergeLine(std::vector<std::deque<Vector2<double>> > *groups, double 
 		auto dis = std::distance((*groups).begin(),loc);
 		(*groups).resize(dis);
 	}
+	//for erase the line which line is shorter than 10 cm.
+	if (!is_align) {
+		groups->erase(std::remove_if(groups->begin(),groups->end(),[](const std::deque<Vector2<double>>& a){
+			return sqrt(pow(a.front().x - a.back().x,2) + pow(a.front().y - a.back().y,2)) < 0.10;
+		}),groups->end());
+	}
 #if 0
 	for(auto &ite:(*groups)) {
 //		ROS_INFO("6");
@@ -1025,7 +1033,7 @@ static uint8_t setLidarMarkerAcr2Dir(double X_MIN,double X_MAX,int angle_from,in
 
 }
 
-uint8_t Lidar::lidarMarker(std::vector<Vector2<int>> &markers, double X_MAX)
+uint8_t Lidar::lidarMarker(std::vector<Vector2<int>> &markers, int movement_i, int action_i, double X_MAX)
 {
 //	markers.clear();
 
@@ -1141,20 +1149,20 @@ uint8_t Lidar::lidarMarker(std::vector<Vector2<int>> &markers, double X_MAX)
 					break;
 				}
 				case 3 : {
-/*					dx = -2;
-					dy = 0;*/
+					dx = -2;
+					dy = 0;
 					direction_msg = "back middle";
 					break;
 				}
 				case 4 : {
-/*					dx = -2;
-					dy = 1;*/
+					dx = -2;
+					dy = 1;
 					direction_msg = "back left";
 					break;
 				}
 				case 5 : {
-/*					dx = -2;
-					dy = -1;*/
+					dx = -2;
+					dy = -1;
 					direction_msg = "back right";
 					break;
 				}
@@ -1202,8 +1210,22 @@ uint8_t Lidar::lidarMarker(std::vector<Vector2<int>> &markers, double X_MAX)
 		}*/
 		marker.x = dx;
 		marker.y = dy;
-		if (!(dx == 0 && dy == 0))
-			markers.push_back(marker);
+		auto is_left_front = (dx == 1 && dy == 2);
+		auto is_right_front = (dx == 1 && dy == -2);
+		auto is_left_back = (dx == -1 && dy == 2);
+		auto is_right_back = (dx == -1 && dy == -2);
+		if (!(dx == 0 && dy == 0)){
+			if(!(action_i == 7 && (is_left_back || is_left_front))
+						&& !(action_i == 8 && (is_right_back || is_right_front))
+//						&& !(movement_i == 2 && (is_left_back || is_right_back))
+						&& !(movement_i == 2)) {
+				markers.push_back(marker);
+//				ROS_WARN("movement_i = %d, action_i = %d", movement_i, action_i);
+			} else {
+//				ROS_ERROR("movement_i = %d, action_i = %d", movement_i, action_i);
+			}
+		}
+
 		dx = 0;
 		dy = 0;
 	}
@@ -1213,70 +1235,44 @@ uint8_t Lidar::lidarMarker(std::vector<Vector2<int>> &markers, double X_MAX)
 
 void Lidar::checkRobotSlip()
 {
-	float acur1,acur2,acur3,acur4;//accuracy  ,in meters
-	const float dist1 = 3.5;//range distance 1 ,in meters
-	const float dist2 = 2.5;//range distance 2
-	const float dist3 = 1.5;//range distance 3
-	const float dist4 = 0.5;//range distance 4
-
 	if (!lidar.isScanOriginalReady())
 	{
 		slip_status_ = false;
 		return;
 	}
 
-	if(wheel.getLeftWheelCliffStatus() || wheel.getRightWheelCliffStatus()){
-		wheel_cliff_trigger_time_ = ros::Time::now().toSec();
-	}
-	if(ros::Time::now().toSec() - wheel_cliff_trigger_time_ < 5){
-		slip_cnt_limit_ = 2;
-		slip_ranges_percent_ = 0.7;
-		acur1 = 0.105;
-		acur2 = 0.085;
-		acur3 = 0.065;
-		acur4 = 0.025;
-	}else{
-		slip_cnt_limit_ = 5;
-		slip_ranges_percent_ = 0.8;
-		acur1 = 0.085;
-		acur2 = 0.065;
-		acur3 = 0.045;
-		acur4 = 0.01;
-	}
-	int8_t speed_limit = 8;
-//	ROS_WARN("%s %d: Speed left:%d, right:%d", __FUNCTION__, __LINE__,
-//			 wheel.getLeftSpeedAfterPid(), wheel.getRightSpeedAfterPid());
-	if ((std::abs(wheel.getLeftSpeedAfterPid()) >= speed_limit || std::abs(wheel.getRightSpeedAfterPid()) >= speed_limit))
+	checkSlipInit(acur1_,acur2_,acur3_,acur4_);
+	if ((std::abs(wheel.getLeftSpeedAfterPid()) >= 10 || std::abs(wheel.getRightSpeedAfterPid()) >= 10))
 	{
 		auto tmp_scan_data = getLidarScanDataOriginal();
+		uint16_t same_count = 0;
+		uint16_t tol_count = 0;
 
 		if(last_slip_scan_frame_.d.size() < 3){
 			last_slip_scan_frame_.d.push_back(tmp_scan_data);
 			return;
 		}
 
-		uint16_t same_count = 0;
-		uint16_t tol_count = 0;
 		for(int i = 0; i <= 359; i++){
-			if(tmp_scan_data.ranges[i] < dist1){
+			if(tmp_scan_data.ranges[i] < dist1_){
 				tol_count++;
-				if(tmp_scan_data.ranges[i] >dist2 && tmp_scan_data.ranges[i] < dist1){//
-					if(std::abs(tmp_scan_data.ranges[i] - last_slip_scan_frame_.d.at(0).ranges[i]) <= acur1 ){
+				if(tmp_scan_data.ranges[i] >dist2_ && tmp_scan_data.ranges[i] < dist1_){//
+					if(std::abs(tmp_scan_data.ranges[i] - last_slip_scan_frame_.d.at(0).ranges[i]) <= acur1_ ){
 						same_count++;
 					}
 				}
-				else if(tmp_scan_data.ranges[i] >dist3 && tmp_scan_data.ranges[i] < dist2){//
-					if(std::abs(tmp_scan_data.ranges[i] - last_slip_scan_frame_.d.at(0).ranges[i]) <= acur2 ){
+				else if(tmp_scan_data.ranges[i] >dist3_ && tmp_scan_data.ranges[i] < dist2_){//
+					if(std::abs(tmp_scan_data.ranges[i] - last_slip_scan_frame_.d.at(0).ranges[i]) <= acur2_ ){
 						same_count++;
 					}
 				}
-				else if(tmp_scan_data.ranges[i] >dist4 && tmp_scan_data.ranges[i] < dist3){//
-					if(std::abs(tmp_scan_data.ranges[i] - last_slip_scan_frame_.d.at(0).ranges[i]) <= acur3 ){
+				else if(tmp_scan_data.ranges[i] >dist4_ && tmp_scan_data.ranges[i] < dist3_){//
+					if(std::abs(tmp_scan_data.ranges[i] - last_slip_scan_frame_.d.at(0).ranges[i]) <= acur3_ ){
 						same_count++;
 					}
 				}
-				else if(tmp_scan_data.ranges[i] <= dist4){
-					if(std::abs( tmp_scan_data.ranges[i] - last_slip_scan_frame_.d.at(0).ranges[i]) <= acur4 ){
+				else if(tmp_scan_data.ranges[i] <= dist4_){
+					if(std::abs( tmp_scan_data.ranges[i] - last_slip_scan_frame_.d.at(0).ranges[i]) <= acur4_ ){
 						same_count++;
 					}
 				}
@@ -1301,8 +1297,10 @@ void Lidar::checkRobotSlip()
 			slip_frame_cnt_ = 0;
 			slip_status_ = false;
 		}
-
 		last_slip_scan_frame_.push_back(tmp_scan_data);
+	}else{
+		slip_frame_cnt_ = 0;
+		last_slip_scan_frame_.d.clear();
 	}
 }
 
@@ -1644,6 +1642,7 @@ void Lidar::init() {
 	slip_frame_cnt_ = {0};
 	slip_scan_deque last_frame_{};
 	wheel_cliff_trigger_time_ = 0;
+	gyro_tilt_trigger_time_ = 0;
 
 	setScanLinearReady(0);
 	setScanOriginalReady(0);
@@ -1658,11 +1657,48 @@ bool Lidar::lidar_is_stuck()
 	return false;
 }
 
-uint8_t Lidar::lidar_get_status()
+uint8_t Lidar::lidar_get_status(int movement_i, int action_i)
 {
 	std::vector<Vector2<int>> markers;
+
 	if (isScanCompensateReady())
-		return lidarMarker(markers);
+		return lidarMarker(markers, movement_i, action_i);
 
 	return 0;
+}
+
+void Lidar::checkSlipInit(float &acur1, float &acur2, float &acur3, float &acur4) {
+	//For cliff trigger
+	if(wheel.getLeftWheelCliffStatus() || wheel.getRightWheelCliffStatus()){
+		ROS_INFO("%s,%d,robot wheel cliff detect",__FUNCTION__,__LINE__);
+		wheel_cliff_trigger_time_ = ros::Time::now().toSec();
+	}
+	//For tilt trigger
+	if(gyro.checkTilt(80,140,110,120,6)){
+		ROS_INFO("%s,%d,robot tilt detect",__FUNCTION__,__LINE__);
+		gyro_tilt_trigger_time_ = ros::Time::now().toSec();
+	}
+
+	if(ros::Time::now().toSec() - gyro_tilt_trigger_time_ < 2){
+		slip_cnt_limit_ = 4;
+		slip_ranges_percent_ = 0.78;
+		acur1 = 0.090;
+		acur2 = 0.075;
+		acur3 = 0.055;
+		acur4 = 0.015;
+	}	else if(ros::Time::now().toSec() - wheel_cliff_trigger_time_ < 2){
+		slip_cnt_limit_ = 3;
+		slip_ranges_percent_ = 0.75;
+		acur1 = 0.090;
+		acur2 = 0.080;
+		acur3 = 0.060;
+		acur4 = 0.020;
+	} else{
+		slip_cnt_limit_ = 5;
+		slip_ranges_percent_ = 0.8;
+		acur1 = 0.085;
+		acur2 = 0.065;
+		acur3 = 0.045;
+		acur4 = 0.01;
+	}
 }

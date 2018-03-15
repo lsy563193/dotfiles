@@ -87,6 +87,7 @@ robot::robot()
 #endif
 
 	robot_nh_.param<std::string>("serial_port", serial_port_, "/dev/ttyS2");
+	//robot_nh_.param<std::string>("wifi_port",wifi_port_,"dev/ttyS1");
 	robot_nh_.param<int>("baud_rate", baud_rate_, 115200);
 
 	robot_nh_.param<std::string>("lidar_bumper_file", lidar_bumper_dev_, "/dev/input/event1");
@@ -119,7 +120,8 @@ robot::~robot()
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
-	serial.setMainBoardMode(NORMAL_SLEEP_MODE);
+	water_tank.stop();
+	serial.setMainBoardMode(WORK_MODE);
 	usleep(40000);
 	while(ros::ok() && !g_pp_shutdown){
 		usleep(2000);
@@ -281,7 +283,9 @@ void robot::robotbase_routine_cb()
 		sensor.plan = robot_timer.getPlanStatus();
 
 		// For water tank device.
-		sensor.water_tank = (buf[REC_MIX_BYTE] & 0x08) != 0;
+		water_tank.setStatus((buf[REC_MIX_BYTE] & 0x08) != 0);
+//		ROS_INFO("mix:%x", buf[REC_MIX_BYTE]);
+		sensor.water_tank = water_tank.getStatus();
 
 		// For charger device.
 		charger.setChargeStatus((buf[REC_MIX_BYTE] >> 4) & 0x07);
@@ -365,9 +369,7 @@ void robot::robotbase_routine_cb()
 		/*------publish end -----------*/
 
 		// Check tilt
-		gyro.checkTilt();
-#if GYRO_DYNAMIC_ADJUSTMENT
-#endif
+//		gyro.checkTilt();
 		// Dynamic adjust obs
 		obs.DynamicAdjust(OBS_adjust_count);
 
@@ -403,11 +405,12 @@ void robot::core_thread_cb()
 {
 	recei_thread_enable = true;
 	r16_work_mode_ = getTestMode();
+//	r16_work_mode_ = WATER_TANK_TEST_MODE;
 	ROS_INFO("%s %d: work mode: %d", __FUNCTION__, __LINE__, r16_work_mode_);
 
 	switch (r16_work_mode_)
 	{
-		case SERIAL_TEST_MODE:
+		case FUNC_SERIAL_TEST_MODE:
 		{
 			recei_thread_enable = false;
 			sleep(1); // Make sure recieve thread is hung up, this time interval should be the select timeout of serial.
@@ -415,18 +418,29 @@ void robot::core_thread_cb()
 			break;
 		}
 		case DESK_TEST_CURRENT_MODE:
-		case DESK_TEST_MOVEMENT_MODE:
+		case GYRO_TEST_MODE:
+		case WATER_TANK_TEST_MODE:
+//		case WORK_MODE: // For debug
+//		case NORMAL_SLEEP_MODE: // For debug
 		{
 			auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
 			send_thread_enable = true;
+
+//			if (r16_work_mode_ == GYRO_TEST_MODE || r16_work_mode_ == WATER_TANK_TEST_MODE)
+			if (r16_work_mode_ == NORMAL_SLEEP_MODE || r16_work_mode_ == WORK_MODE || r16_work_mode_ == WATER_TANK_TEST_MODE) // todo: for debug
+			{
+				auto robotbase_routine = new boost::thread(boost::bind(&robot::robotbase_routine_cb, this));
+				robotbase_thread_enable = true;
+			}
+
 			if (bumper.lidarBumperInit(lidar_bumper_dev_.c_str()) == -1)
 				ROS_ERROR(" lidar bumper open fail!");
 
-			p_mode.reset(new CleanModeDeskTest());
+			p_mode.reset(new CleanModeTest(r16_work_mode_));
 			p_mode->run();
 			break;
 		}
-		default: //case R16_NORMAL_MODE:
+		default: //case WORK_MODE:
 		{
 			auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
 			send_thread_enable = true;
@@ -472,6 +486,7 @@ void robot::core_thread_cb()
 		}
 	}
 
+	ROS_INFO("%s %d: core thread exit.", __FUNCTION__, __LINE__);
 }
 
 robot *robot::instance()
@@ -494,6 +509,25 @@ uint8_t robot::getTestMode(void)
 	return buf[REC_R16_WORK_MODE];
 }
 
+void robot::scaleCorrectionPos(tf::Vector3 &tmp_pos, double& tmp_rad) {
+	auto p_cm = boost::dynamic_pointer_cast<ACleanMode> (p_mode);
+	auto dir = p_cm->iterate_point_.dir;
+	if(isAny(dir))
+		return;
+
+	auto target_xy = (isXAxis(dir)) ? p_cm->iterate_point_.y : p_cm->iterate_point_.x;
+	auto slam_xy = (isXAxis(dir)) ? slam_pos.getY() : slam_pos.getX();
+	auto diff_xy = (slam_xy - target_xy)/3;
+
+	if(diff_xy > CELL_SIZE/2)
+		diff_xy = CELL_SIZE/2;
+	else if(diff_xy < -CELL_SIZE/2)
+		diff_xy = -CELL_SIZE/2;
+		(isXAxis(dir)) ? tmp_pos.setY(target_xy + diff_xy) : tmp_pos.setX(target_xy + diff_xy);
+
+	tmp_rad = robot_rad + (slam_rad - robot_rad);
+}
+
 void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 {
 	tf::StampedTransform transform{};
@@ -509,8 +543,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 				slam_rad  = (getBaselinkFrameType() == SLAM_POSITION_SLAM_ANGLE) ? tf::getYaw(transform.getRotation()) : 0;
 				tmp_pos = slam_pos;
 				tmp_rad = slam_rad;
-//				scaleCorrectionPos(tmp_pos, tmp_rad);
-//				ROS_WARN("tmp_pos(%f,%f),tmp_rad(%f)", tmp_pos.x(), tmp_pos.y(), tmp_rad);
+
 			} catch (tf::TransformException e) {
 				ROS_WARN("%s %d: Failed to compute map transform, skipping scan (%s)", __FUNCTION__, __LINE__, e.what());
 			}
@@ -527,7 +560,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 //	ROS_INFO("tmp_pos(%f,%f),tmp_rad(%f)", tmp_pos.x(), tmp_pos.y(), tmp_rad);
 	robot_pos = tmp_pos;
 	robot_rad = tmp_rad;
-	odomPublish(robot_pos, robot_rad);
+//	odomPublish(robot_pos, robot_rad);
 }
 
 void robot::odomPublish(const tf::Vector3& robot_pos, double robot_radian_)
@@ -586,8 +619,6 @@ void robot::initOdomPosition()
 
 void robot::resetCorrection()
 {
-	slam_pos = {};
-	robot_rad = {};
 	slam_pos = {};
 	robot_rad = {};
 }
@@ -758,8 +789,8 @@ Mode *getNextMode(int next_mode_i_)
 			return new CleanModeFollowWall();
 		case Mode::cm_spot:
 			return new CleanModeSpot();
-		case Mode::cm_test:
-			return new CleanModeDeskTest();
+//		case Mode::cm_test:
+//			return new CleanModeTest();
 		case Mode::cm_exploration:
 			return new CleanModeExploration();
 //		case Mode::cm_exploration:

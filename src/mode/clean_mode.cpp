@@ -81,6 +81,7 @@ ACleanMode::~ACleanMode()
 		wheel.stop();
 		brush.stop();
 		vacuum.stop();
+		water_tank.stop();
 		lidar.motorCtrl(OFF);
 		lidar.setScanOriginalReady(0);
 
@@ -810,7 +811,7 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 	}
 	else//rounding
 	{
-		if(sp_state != state_folllow_wall && sp_state != state_desk_test)
+		if(sp_state != state_folllow_wall && sp_state != state_test)
 		{
 			auto p_mt = dynamic_cast<MoveTypeFollowWall *>(p_move_type);
 			return p_mt->isNewLineReach(clean_map_) || p_mt->isOverOriginLine(clean_map_);
@@ -1745,7 +1746,7 @@ bool ACleanMode::updateActionInStateFollowWall()
 			plan_path_.push_back(getPosition());
 			plan_path_.push_back(point);
 			iterate_point_ = plan_path_.front();
-//			iterate_point_.dir = MAP_ANY;
+			iterate_point_.dir = MAP_ANY;// note: fix bug follow isPassPosition
 			clean_path_algorithm_->displayPointPath(plan_path_);
 			action_i_ = ac_linear;
 		}

@@ -4,16 +4,20 @@
 //for tilt detct
 #include <cstdint>
 
-#define TILT_COUNT_REACH			6
 #define DIF_TILT_X_VAL				100
 #define DIF_TILT_Y_VAL				100
 #define DIF_TILT_Z_VAL				100
-#define FRONT_TILT_LIMIT			250
-#define LEFT_TILT_LIMIT				200
-#define RIGHT_TILT_LIMIT			200
+
+#define TILT_COUNT_REACH			10
+#define FRONT_TILT_LIMIT			180
+#define LEFT_TILT_LIMIT				150
+#define RIGHT_TILT_LIMIT			150
+#define BACK_TILT_LIMIT				280
+
 #define TILT_RIGHT					0x1
 #define TILT_FRONT					0x2
-#define TILT_LEFT					0x4
+#define TILT_LEFT						0x4
+#define TILT_BACK						0x8
 
 typedef enum{
 	WAIT_FOR_OPEN = 0,
@@ -61,11 +65,13 @@ public:
 	void setDynamicOff(void);
 #endif
 
-	uint8_t checkTilt(void);
+	uint8_t checkTilt(int front_tilt_limit ,int back_tilt_limit,int right_tilt_limit ,
+										int left_tilt_limit , int tilt_count_reach);
+	uint8_t checkTilt();
 
 	bool isTiltCheckingEnable(void);
 
-	void TiltCheckingEnable(bool val);
+	void setTiltCheckingEnable(bool val);
 
 	int16_t getXAcc(void)
 	{
@@ -192,9 +198,15 @@ private:
 	bool tilt_checking_enable_;
 	uint8_t tilt_checking_status_;
 	uint16_t tilt_front_count_;
+	uint16_t tilt_back_count_;
 	uint16_t tilt_left_count_;
 	uint16_t tilt_right_count_;
 	uint16_t tilt_z_count_;
+
+	uint16_t front_count_;
+	uint16_t right_count_;
+	uint16_t left_count_;
+	uint16_t back_count_;
 };
 
 extern Gyro gyro;

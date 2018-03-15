@@ -99,7 +99,7 @@
 #define LOW_BATTERY_STOP_VOLTAGE		(1250)
 
 /* Ready to clean battery voltage value */
-#define BATTERY_READY_TO_CLEAN_VOLTAGE	(1200)
+#define BATTERY_READY_TO_CLEAN_VOLTAGE	(1400)
 
 /* Fully charged battery voltage value */
 #define BATTERY_FULL_VOLTAGE	(1640)
@@ -110,6 +110,8 @@
 /* Battery voltage criterion for brush setting*/
 #define FULL_OPERATE_VOLTAGE_FOR_BRUSH	(800)
 
+/* Battery voltage criterion for water tank setting*/
+#define FULL_OPERATE_VOLTAGE_FOR_WATER_TANK	(500)
 /* ------------------------------------- Obs config ------------------------------------- */
 /* OBS setting */
 #define OBS_DYNAMIC			(1)
@@ -139,7 +141,7 @@
  * if the gyro x-axis & y-axis angle are greater than 5 degree, we will
  * confirmed that the robot is tilted.
  */
-//#define ENABLE_TILTED_DETECT		(1)
+#define ENABLE_TILTED_DETECT		(1)
 
 /*
  * Value for maximum allowed angle while the robot is tilted. If it is greater
@@ -186,6 +188,7 @@
 #define LIDAR_OFFSET_Y						(0)//0
 #define ROBOT_RADIUS						(0.167)
 
-#define Two_Hours         7200
+/* ------------------------------------- robot physical config ------------------------------------- */
+#define WHEEL_TO_CENTER_DISTANCE		(0.109f)
 #endif //__CONFIG_H__
 

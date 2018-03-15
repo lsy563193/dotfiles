@@ -95,13 +95,13 @@ bool CleanModeNav::mapMark()
 //	map.print(CLEAN_MAP, c_bound2);
 
 	if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right) {
-		if (!clean_map_.c_blocks.empty()) {
-			auto dy = action_i_ == ac_follow_wall_left ? 2 : -2;
-			std::for_each(passed_path_.begin()+1, passed_path_.end(),[&](const Point_t& point){
-				auto cell = point.getRelative(0, dy * CELL_SIZE).toCell();
-				clean_map_.c_blocks.insert({BLOCKED_FW, cell});
-			});
-		}
+//		if (!clean_map_.c_blocks.empty()) {
+//			auto dy = action_i_ == ac_follow_wall_left ? 2 : -2;
+//			std::for_each(passed_path_.begin()+1, passed_path_.end(),[&](const Point_t& point){
+//				auto cell = point.getRelative(0, dy * CELL_SIZE).toCell();
+//				clean_map_.c_blocks.insert({BLOCKED_FW, cell});
+//			});
+//		}
 	}
 	else if (sp_state == state_clean) {
 		setLinearCleaned();
@@ -135,9 +135,10 @@ bool CleanModeNav::markRealTime()
 //	while (ros::ok()) {
 //		sleep(0.2);
 //		wheel.stop();
+		auto p_mt = boost::dynamic_pointer_cast<IMoveType>(sp_action_);
 		std::vector<Vector2<int>> markers;
 		if (lidar.isScanCompensateReady())
-			lidar.lidarMarker(markers);
+			lidar.lidarMarker(markers, p_mt->movement_i_, action_i_);
 //		ROS_INFO("markers.size() = %d", markers.size());
 		for (const auto& marker : markers) {
 //			ROS_INFO("marker(%d, %d)", marker.x, marker.y);
@@ -458,8 +459,9 @@ bool CleanModeNav::updateActionInStateInit() {
 		}
 		else{
 			action_i_ = ac_open_lidar;
-			vacuum.setLastMode();
 			brush.normalOperate();
+			if (!water_tank.checkEquipment())
+				vacuum.setLastMode();
 		}
 	} else if (action_i_ == ac_back_form_charger)
 	{
@@ -468,8 +470,9 @@ bool CleanModeNav::updateActionInStateInit() {
 			robot::instance()->initOdomPosition();
 
 		action_i_ = ac_open_lidar;
-		vacuum.setLastMode();
 		brush.normalOperate();
+		if (!water_tank.checkEquipment())
+			vacuum.setLastMode();
 		setHomePoint();
 	} else if (action_i_ == ac_open_lidar)
 	{
@@ -538,6 +541,7 @@ bool CleanModeNav::updateActionInStateClean(){
 		else
 			old_dir_ = MAP_ANY;
 	}
+
 	if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
 		pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 		iterate_point_ = plan_path_.front();

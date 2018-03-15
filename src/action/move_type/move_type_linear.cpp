@@ -56,14 +56,19 @@ bool MoveTypeLinear::isFinish()
 		if(movement_i_ == mm_dynamic){
 			movement_i_ = mm_turn;
 			sp_movement_.reset(new MovementTurn(turn_target_radian_, ROTATE_TOP_SPEED));
+//			odom_turn_target_radians_ =  turn_target_radian_  - getPosition().th + odom.getRadian();
 		}
 		else if(movement_i_ == mm_turn)
 		{
-			if (!handleMoveBackEvent(p_clean_mode))
-			{
+			if (!handleMoveBackEvent(p_clean_mode)) {
 				movement_i_ = mm_forward;
 				resetTriggeredValue();
 				sp_movement_.reset(new MovementFollowPointLinear());
+				ROS_WARN("turn_target_radian_", radian_to_degree(turn_target_radian_));
+//				odom_turn_target_radians_ =  ranged_radian(turn_target_radian_  - getPosition().th + odom.getRadian());
+				odom_turn_target_radians_.push_back(odom.getRadian());
+				radian_diff_count = 0;
+
 			}
 		}
 		else if (movement_i_ == mm_forward)
@@ -163,6 +168,10 @@ void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 			ROS_ERROR("%s,%d,curr(%d,%d), next target_point(%d,%d,%lf), dir(%d)",
 					 __FUNCTION__,__LINE__,getPosition().toCell().x, getPosition().toCell().y, target_point_.toCell().x,target_point_.toCell().y,radian_to_degree(target_point_.th),
 								p_clean_mode->iterate_point_.dir);
+//			odom_turn_target_radians_ = remain_path_.front().th;
+			odom_turn_target_radians_.push_back(odom.getRadian());
+//			odom_turn_target_radian_ = .push_back(odom.getRadian());
+			radian_diff_count = 0;
 		}
 	}
 }
