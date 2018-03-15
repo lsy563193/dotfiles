@@ -1681,7 +1681,7 @@ void Lidar::checkSlipInit(float &acur1, float &acur2, float &acur3, float &acur4
 		wheel_cliff_trigger_time_ = ros::Time::now().toSec();
 	}
 	//For tilt trigger
-	if(gyro.checkTilt(80,140,110,120,6,false)){
+	if(gyro.checkTilt(80,140,110,120,6)){
 		ROS_INFO("%s,%d,robot tilt detect",__FUNCTION__,__LINE__);
 		gyro_tilt_trigger_time_ = ros::Time::now().toSec();
 	}

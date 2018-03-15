@@ -19,6 +19,7 @@
 #include "config.h"
 #include "map.h"
 #include "pose.h"
+#include "serial.h"
 //#include "mode.hpp"
 #include <string.h>
 
@@ -74,7 +75,7 @@ public:
 
 	// The scale should be between 0 to 1.
 //	void scaleCorrectionPos(const tf::Vector3 &slam_pose, double tmp_yaw_, tf::Vector3 &odom, double &odom_yaw);
-//	void scaleCorrectionPos(tf::Vector3 &tmp_pos, double& tmp_rad);
+	void scaleCorrectionPos(tf::Vector3 &tmp_pos, double& tmp_rad);
 
 	void resetCorrection();
 
@@ -199,7 +200,7 @@ private:
 // Lock for odom coordinate
 	boost::mutex odom_mutex_;
 
-	uint8_t r16_work_mode_;
+	uint8_t r16_work_mode_{WORK_MODE};
 
 	bool is_sensor_ready_{};
 	bool is_tf_ready_{};
@@ -245,6 +246,7 @@ private:
 	pp::scan_ctrl scan_ctrl_;
 
 	std::string serial_port_;
+	std::string wifi_port_;
 	int baud_rate_;
 	std::string lidar_bumper_dev_;
 

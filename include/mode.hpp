@@ -101,6 +101,8 @@ public:
 		ac_check_vacuum,
 		ac_bumper_hit_test,
 		ac_desk_test,
+		ac_gyro_test,
+		ac_water_tank_test,
 	};
 
 	virtual void genNextAction();
@@ -409,7 +411,7 @@ public:
 	// State desk test
 	bool isStateDeskTest() const
 	{
-		return sp_state == state_desk_test;
+		return sp_state == state_test;
 	}
 	virtual bool isSwitchByEventInStateDeskTest(){return false;};
 	virtual bool updateActionInStateDeskTest(){return false;};
@@ -463,7 +465,7 @@ protected:
 	State *state_spot =  new StateSpot();
 	State *state_resume_low_battery_charge = new StateResumeLowBatteryCharge();
 	State *state_pause = new StatePause();
-	State *state_desk_test = new StateDeskTest();
+	State *state_test = new StateTest();
 
 	bool low_battery_charge_{};
 	bool moved_during_pause_{};
@@ -673,20 +675,24 @@ private:
 
 };
 
-class CleanModeDeskTest:public ACleanMode
+class CleanModeTest:public ACleanMode
 {
 public:
-	CleanModeDeskTest();
-	~CleanModeDeskTest();
+	CleanModeTest(uint8_t mode);
+	~CleanModeTest();
 
 	bool mapMark() override
 	{return false;}
 
+	bool isFinish() override;
 	bool isExit() override;
 	bool updateActionInStateDeskTest() override;
 	void switchInStateDeskTest() override;
 
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteDirectionForward(bool state_now, bool state_last) override ;
+
+private:
+	uint8_t test_mode_{0};
 };
 #endif //PP_MODE_H_H

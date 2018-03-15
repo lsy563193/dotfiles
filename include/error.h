@@ -19,6 +19,7 @@
 #define BATTERY_LOW							(uint16_t)2302
 #define BASELINE_CURRENT_ERROR				(uint16_t)2401
 #define BASELINE_CURRENT_LOW				(uint16_t)2402
+#define GYRO_ERROR							(uint16_t)2501
 #define LEFT_OBS_ERROR						(uint16_t)101
 #define FRONT_OBS_ERROR						(uint16_t)102
 #define RIGHT_OBS_ERROR						(uint16_t)103

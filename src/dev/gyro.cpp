@@ -7,7 +7,7 @@
 
 Gyro gyro;
 
-Gyro::Gyro(void) {
+Gyro::Gyro(void){
 	angle_ = 0;
 	angle_v_ = 0;
 	x_acc_ = -1000;
@@ -19,6 +19,15 @@ Gyro::Gyro(void) {
 	calibration_status_ = 255;
 	status_ = 0;
 	tilt_checking_status_ = 0;
+
+	tilt_front_count_ = 0;
+	tilt_right_count_ = 0;
+	tilt_left_count_ = 0;
+
+	front_count_ = 0;
+	left_count_ = 0;
+	right_count_ = 0;
+	back_count_ = 0;
 }
 
 void Gyro::setStatus(void)
@@ -282,41 +291,29 @@ void Gyro::setAccInitData()
 //	ROS_INFO("x y z acceleration init val(\033[32m%d,%d,%d\033[0m)" , getInitXAcc(), getInitYAcc(), getInitZAcc());
 }
 
-uint8_t Gyro::checkTilt(int front_tilt_limit,int back_tilt_limit,int right_tilt_limit,int left_tilt_limit, int tilt_count_reach,bool isSetTiltStatus)
+uint8_t Gyro::checkTilt()
 {
 	uint8_t tmp_status = 0;
 
 	if (tilt_checking_enable_)
 	{
 		//robot front tilt
-		if (getFront() - getFrontInit() > front_tilt_limit)
+		if (getFront() - getInitXAcc() > FRONT_TILT_LIMIT)
 		{
 			tilt_front_count_ +=2;
-			ROS_INFO("\033[1;40;32m%s %d: front(%d)\tfront init(%d), front cnt(%d).\033[0m", __FUNCTION__, __LINE__, getFront(), getFrontInit(), tilt_front_count_);
+			ROS_INFO("\033[1;40;32m%s %d: front(%d)\tfront init(%d), front cnt(%d).\033[0m", __FUNCTION__, __LINE__, getFront(), getInitXAcc(), tilt_front_count_);
 		}
 		else
 		{
 			if (tilt_front_count_ > 0)
 				tilt_front_count_--;
 		}
-
-		//robot back tilt
-		if(getFront() - getFrontInit() < -back_tilt_limit)
-		{
-			tilt_back_count_ +=2;
-			ROS_INFO("\033[1;40;32m%s %d: back(%d)\tback init(%d), back cnt(%d).\033[0m", __FUNCTION__, __LINE__, getFront(), getFrontInit(), tilt_back_count_);
-		}
-		else
-		{
-			if (tilt_back_count_ > 0)
-				tilt_back_count_--;
-		}
-
+	
 		//robot left tilt
-		if (getYAcc() - getLeftInit() > left_tilt_limit)
+		if (getYAcc() - getInitYAcc() > LEFT_TILT_LIMIT)
 		{
 			tilt_left_count_+=3;
-			ROS_INFO("\033[1;40;34m %s %d: left(%d)\tleft init(%d), left cnt(%d).\033[0m", __FUNCTION__, __LINE__, getLeft(), getLeftInit(), tilt_left_count_);
+			ROS_INFO("\033[1;40;34m %s %d: left(%d)\tleft init(%d), left cnt(%d).\033[0m", __FUNCTION__, __LINE__, getLeft(), getInitYAcc(), tilt_left_count_);
 		}
 		else
 		{
@@ -325,57 +322,38 @@ uint8_t Gyro::checkTilt(int front_tilt_limit,int back_tilt_limit,int right_tilt_
 		}
 
 		//robot right tilt
-		if (getYAcc() - getRightInit() < -right_tilt_limit)
+		if (getYAcc() - getInitYAcc() < -RIGHT_TILT_LIMIT)
 		{
 			tilt_right_count_+=3;
-			ROS_INFO("\033[1;40;35m%s %d: right(%d)\tright init(%d), right cnt(%d).\033[0m", __FUNCTION__, __LINE__, getRight(), getRightInit(), tilt_right_count_);
+			ROS_INFO("\033[1;40;35m%s %d: right(%d)\tright init(%d), right cnt(%d).\033[0m", __FUNCTION__, __LINE__, getRight(), getInitYAcc(), tilt_right_count_);
 		}
 		else
 		{
 			if (tilt_right_count_ > 0)
 				tilt_right_count_--;
 		}
-#if 0
-		//z axies
-		if (std::abs(getZAcc() - getInitZAcc()) > DIF_TILT_Z_VAL)
-		{
-			tilt_z_count_+=1;
-			ROS_INFO("\033[1;40;36m %s %d: z(%d)\tzi(%d) zc(%d) \033[0m", __FUNCTION__, __LINE__, getZAcc(), getInitZAcc(),tilt_z_count_);
-		}
-		else
-		{
-			if (tilt_z_count_ > 0)
-				tilt_z_count_ -=1;
 
-		}
-#endif
-
-		//if (left_count > 7 || front_count > 7 || right_count > 7 || z_count > 7)
-			//ROS_WARN("%s %d: count left:%d, front:%d, right:%d, z:%d", __FUNCTION__, __LINE__, left_count, front_count, right_count, z_count);
-
-		if ( tilt_right_count_ >= tilt_count_reach || tilt_left_count_ >= tilt_count_reach || tilt_front_count_ >= tilt_count_reach + 4 || tilt_back_count_ >= tilt_count_reach + 4)
+		if ( tilt_right_count_ >= TILT_COUNT_REACH
+				   	|| tilt_left_count_ >= TILT_COUNT_REACH
+					|| tilt_front_count_ >= TILT_COUNT_REACH)
 		{
-			if (tilt_left_count_ >= tilt_count_reach)
+			if (tilt_left_count_ >= TILT_COUNT_REACH)
 				tmp_status |= TILT_LEFT;
-			if (tilt_right_count_ >= tilt_count_reach)
+			if (tilt_right_count_ >= TILT_COUNT_REACH)
 				tmp_status |= TILT_RIGHT;
-			if (tilt_front_count_ >= tilt_count_reach+4)
+			if (tilt_front_count_ >= TILT_COUNT_REACH)
 				tmp_status |= TILT_FRONT;
-			if (tilt_back_count_ >= tilt_count_reach+4)
-				tmp_status |= TILT_BACK;
 			tilt_front_count_ = 0;
 			tilt_left_count_ = 0;
 			tilt_right_count_ = 0;
 			tilt_back_count_ = 0;
 			tilt_z_count_ = 0;
 //			beeper.beepForCommand(VALID);
-			if(isSetTiltStatus)
-				setTiltCheckingStatus(tmp_status);
+			setTiltCheckingStatus(tmp_status);
 
 			ROS_INFO("\033[47;34m" "%s,%d,robot tilt detect!! tmp_state=%d" "\033[0m",__FUNCTION__,__LINE__,tmp_status);
 		}
 		else
-		if(isSetTiltStatus)
 			setTiltCheckingStatus(0);
 	}
 	else{
@@ -384,11 +362,82 @@ uint8_t Gyro::checkTilt(int front_tilt_limit,int back_tilt_limit,int right_tilt_
 		tilt_right_count_ = 0;
 		tilt_back_count_ = 0;
 		tilt_z_count_ = 0;
-		if(isSetTiltStatus)
-			setTiltCheckingStatus(0);
+		setTiltCheckingStatus(0);
 	}
 
 	return tmp_status;
+}
+
+uint8_t Gyro::checkTilt(int front_tilt_limit,int back_tilt_limit,int right_tilt_limit,int left_tilt_limit, int count_reach)
+{
+	uint8_t tmp_status = 0;
+
+	if (tilt_checking_enable_)
+	{
+		//robot front tilt
+		if (getFront() - getInitXAcc() > front_tilt_limit)
+		{
+			front_count_ +=2;
+		}
+		else
+		{
+			if (front_count_ > 0)
+				front_count_--;
+		}
+
+		//robot back tilt
+		if(getFront() - getInitXAcc() < -back_tilt_limit)
+		{
+			back_count_ +=2;
+		}
+		else
+		{
+			if (back_count_ > 0)
+				back_count_--;
+		}
+
+		//robot left tilt
+		if (getYAcc() - getInitYAcc() > left_tilt_limit)
+		{
+			left_count_+=3;
+		}
+		else
+		{
+			if (left_count_ > 0)
+				left_count_--;
+		}
+
+		//robot right tilt
+		if (getYAcc() - getInitYAcc() < -right_tilt_limit)
+		{
+			right_count_+=3;
+			ROS_INFO("\033[1;40;35m%s %d: right(%d)\tright init(%d), right cnt(%d).\033[0m", __FUNCTION__, __LINE__, getRight(), getInitYAcc(), tilt_right_count_);
+		}
+		else
+		{
+			if (right_count_ > 0)
+				right_count_--;
+		}
+
+		if ( right_count_ >= count_reach || left_count_ >= count_reach || front_count_ >= count_reach+4  || back_count_ >= count_reach +4 )
+		{
+			front_count_ = 0;
+			left_count_ = 0;
+			right_count_ = 0;
+			back_count_ = 0;
+//			beeper.beepForCommand(VALID);
+			return true;
+		}
+	}
+	else{
+		front_count_ = 0;
+		left_count_ = 0;
+		right_count_ = 0;
+		back_count_ = 0;
+		setTiltCheckingStatus(0);
+	}
+
+	return false;
 }
 
 bool Gyro::isTiltCheckingEnable()
