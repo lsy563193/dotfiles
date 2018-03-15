@@ -95,13 +95,13 @@ bool CleanModeNav::mapMark()
 //	map.print(CLEAN_MAP, c_bound2);
 
 	if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right) {
-		if (!clean_map_.c_blocks.empty()) {
-			auto dy = action_i_ == ac_follow_wall_left ? 2 : -2;
-			std::for_each(passed_path_.begin()+1, passed_path_.end(),[&](const Point_t& point){
-				auto cell = point.getRelative(0, dy * CELL_SIZE).toCell();
-				clean_map_.c_blocks.insert({BLOCKED_FW, cell});
-			});
-		}
+//		if (!clean_map_.c_blocks.empty()) {
+//			auto dy = action_i_ == ac_follow_wall_left ? 2 : -2;
+//			std::for_each(passed_path_.begin()+1, passed_path_.end(),[&](const Point_t& point){
+//				auto cell = point.getRelative(0, dy * CELL_SIZE).toCell();
+//				clean_map_.c_blocks.insert({BLOCKED_FW, cell});
+//			});
+//		}
 	}
 	else if (sp_state == state_clean) {
 		setLinearCleaned();

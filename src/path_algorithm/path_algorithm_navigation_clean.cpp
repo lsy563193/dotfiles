@@ -86,7 +86,13 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 //	map.print(CLEAN_MAP, targets);
 
 	if (targets.empty())
-		return false;
+	{
+		Cell_t target;
+		int dijkstra_cleaned_count;
+		if(!findTargetUsingDijkstra(map,getPosition().toCell(),target,dijkstra_cleaned_count))
+			return false;
+		targets.push_back(target);
+	}
 
 	if (!filterPathsToSelectBestPath(map, targets, curr_cell, path,last_dir))
 		return false;

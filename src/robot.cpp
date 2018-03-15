@@ -369,7 +369,7 @@ void robot::robotbase_routine_cb()
 		/*------publish end -----------*/
 
 		// Check tilt
-		gyro.checkTilt();
+//		gyro.checkTilt();
 		// Dynamic adjust obs
 		obs.DynamicAdjust(OBS_adjust_count);
 
