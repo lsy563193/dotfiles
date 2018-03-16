@@ -90,18 +90,26 @@ bool CleanModeNav::mapMark()
 	map.find_if(start, c_bound1,is_cleaned_bound);
 	map.find_if(start, c_bound2,is_cleaned_bound2);
 
-//	map.print(CLEAN_MAP, Cells{});
-//	map.print(CLEAN_MAP, c_bound1);
-//	map.print(CLEAN_MAP, c_bound2);
-
 	if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right) {
-//		if (!c_blocks.empty()) {
-//			auto dy = action_i_ == ac_follow_wall_left ? 2 : -2;
-//			std::for_each(passed_path_.begin()+1, passed_path_.end(),[&](const Point_t& point){
-//				auto cell = point.getRelative(0, dy * CELL_SIZE).toCell();
-//				c_blocks.insert({BLOCKED_FW, cell});
-//			});
-//		}
+		if (!c_blocks.empty()) {
+			auto dy = action_i_ == ac_follow_wall_left ? 2 : -2;
+			std::for_each(passed_path_.begin(), passed_path_.end(),[&](const Point_t& point){
+				BoundingBox<Point_t> bound;
+				bound.SetMinimum({passed_path_.front().x - CELL_SIZE/4, passed_path_.front().y - CELL_SIZE/4});
+				bound.SetMaximum({passed_path_.front().x + CELL_SIZE/4, passed_path_.front().y + CELL_SIZE/4});
+				if(!bound.Contains(point))
+				{
+//					ROS_INFO("in cfw(%d,%d),(%d,%d)", point.toCell().x, point.toCell().y, getPosition().toCell().x, getPosition().toCell().y);
+					ROS_WARN("Not Cont front(%d,%d),curr(%d,%d),point(%d,%d)", passed_path_.front().toCell().x, passed_path_.front().toCell().y,
+									 getPosition().toCell().x, getPosition().toCell().y, point.toCell().x, point.toCell().y);
+					c_blocks.insert({BLOCKED_FW, point.getRelative(0, dy * CELL_SIZE).toCell()});
+				}
+				else {
+					ROS_WARN("Contains front(%d,%d),curr(%d,%d),point(%d,%d)", passed_path_.front().toCell().x, passed_path_.front().toCell().y,
+									 getPosition().toCell().x, getPosition().toCell().y, point.toCell().x, point.toCell().y);
+				}
+			});
+		}
 	}
 	else if (sp_state == state_clean) {
 		setLinearCleaned();
@@ -112,7 +120,8 @@ bool CleanModeNav::mapMark()
 	for (auto &&cost_block : c_blocks) {
 		if(/*cost_block.first != BLOCKED_SLIP && */std::find_if(c_bound2.begin(), c_bound2.end(), [&](const Cell_t& c_it)
 		{ return c_it == cost_block.second; }) != c_bound2.end())
-			clean_map_.setCell(CLEAN_MAP, cost_block.second.x, cost_block.second.y, cost_block.first);
+			if(!(cost_block.first == BLOCKED_LIDAR && (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)))
+				clean_map_.setCell(CLEAN_MAP, cost_block.second.x, cost_block.second.y, cost_block.first);
 	}
 
 	for (auto &&p_it :passed_path_)

@@ -99,7 +99,7 @@ void x900_functional_test(std::string serial_port, int baud_rate, std::string li
 
 void error_loop(uint8_t test_stage, uint16_t error_code, uint16_t current_data)
 {
-	serial.setSendData(CTL_MAIN_BOARD_MODE, ALARM_ERROR_MODE);
+	serial.setSendData(CTL_WORK_MODE, ALARM_ERROR_MODE);
 	serial.setSendData(CTL_ERROR_CODE_HIGH, static_cast<uint8_t>(error_code >> 8));
 	serial.setSendData(CTL_ERROR_CODE_LOW, static_cast<uint8_t>(error_code));
 
@@ -276,7 +276,7 @@ bool serial_port_test()
 		// Write random numbers to send stream.
 		for (uint8_t i = CTL_WHEEL_LEFT_HIGH; i < CTL_CRC; i++)
 		{
-			if (i == CTL_MAIN_BOARD_MODE)
+			if (i == CTL_WORK_MODE)
 				serial.setSendData(i, FUNC_SERIAL_TEST_MODE);
 			else if (i == CTL_BEEPER)
 				serial.setSendData(i, static_cast<uint8_t>(test_cnt + 1));
@@ -652,14 +652,14 @@ void electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixture,
 	bool should_save_baseline = true;
 
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
-	serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_ELECTRICAL_AND_LED_TEST_MODE);
+	serial.setSendData(CTL_WORK_MODE, FUNC_ELECTRICAL_AND_LED_TEST_MODE);
 	serial.setSendData(CTL_BEEPER, 0);
 	key_led.set(0, 0);
 	serial.setSendData(CTL_MIX, 0);
 	serial.sendData();
 	while(ros::ok())
 	{
-		serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_ELECTRICAL_AND_LED_TEST_MODE);
+		serial.setSendData(CTL_WORK_MODE, FUNC_ELECTRICAL_AND_LED_TEST_MODE);
 		/*--------data extrict from serial com--------*/
 		ROS_ERROR_COND(pthread_mutex_lock(&recev_lock)!=0, "robotbase pthread receive lock fail");
 		ROS_ERROR_COND(pthread_cond_wait(&recev_cond,&recev_lock)!=0, "robotbase pthread receive cond wait fail");
@@ -764,7 +764,7 @@ void cliff_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &current_dat
 {
 	uint16_t test_result = 0;
 	uint8_t buf[REC_LEN];
-	serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_CLIFF_TEST_MODE);
+	serial.setSendData(CTL_WORK_MODE, FUNC_CLIFF_TEST_MODE);
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
 	while(ros::ok()) {
 		/*--------data extrict from serial com--------*/
@@ -840,7 +840,7 @@ void bumper_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &current_da
 {
 	uint8_t test_result = 0;
 	uint8_t buf[REC_LEN];
-	serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_BUMPER_TEST_MODE);
+	serial.setSendData(CTL_WORK_MODE, FUNC_BUMPER_TEST_MODE);
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
 	while(ros::ok())
 	{
@@ -885,7 +885,7 @@ void obs_test(bool is_fixture, uint8_t &test_stage, uint16_t &error_code, uint16
 {
 	uint16_t test_result = 0;
 	uint8_t buf[REC_LEN];
-	serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_OBS_TEST_MODE);
+	serial.setSendData(CTL_WORK_MODE, FUNC_OBS_TEST_MODE);
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
 	while(ros::ok()) {
 		/*--------data extrict from serial com--------*/
@@ -1025,7 +1025,7 @@ void rcon_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data
 	uint16_t test_result = 0;
 	uint32_t Temp_Rcon_Status = 0;
 	uint8_t buf[REC_LEN];
-	serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_RCON_TEST_MODE);
+	serial.setSendData(CTL_WORK_MODE, FUNC_RCON_TEST_MODE);
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
 	while(ros::ok()) {
 		/*--------data extrict from serial com--------*/
@@ -1136,7 +1136,7 @@ void water_tank_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &curren
 	uint8_t step = 0;
 	uint8_t count = 0;
 	uint8_t buf[REC_LEN];
-	serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_WATER_TANK_TEST_MODE);
+	serial.setSendData(CTL_WORK_MODE, FUNC_WATER_TANK_TEST_MODE);
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
 	while(ros::ok()) {
 		/*--------data extrict from serial com--------*/
@@ -1188,7 +1188,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 	uint8_t buf[REC_LEN];
 	uint32_t current_current=0;
 	uint32_t motor_current=0;
-	serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_WHEELS_TEST_MODE);
+	serial.setSendData(CTL_WORK_MODE, FUNC_WHEELS_TEST_MODE);
 	serial.setSendData(CTL_LEFT_WHEEL_TEST_MODE, 0);
 	serial.setSendData(CTL_RIGHT_WHEEL_TEST_MODE, 0);
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
@@ -1575,7 +1575,7 @@ void brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code,
 	uint8_t count=0;
 	uint8_t step=1;
 
-	serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_BRUSHES_TEST_MODE);
+	serial.setSendData(CTL_WORK_MODE, FUNC_BRUSHES_TEST_MODE);
 	serial.setSendData(CTL_LEFT_BRUSH_TEST_MODE, 0);
 	serial.setSendData(CTL_MAIN_BRUSH_TEST_MODE, 0);
 	serial.setSendData(CTL_RIGHT_BRUSH_TEST_MODE, 0);
@@ -1829,7 +1829,7 @@ void vacuum_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 	uint8_t buf[REC_LEN];
 	uint32_t current_current=0;
 	uint32_t motor_current=0;
-	serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_VACUUM_TEST_MODE);
+	serial.setSendData(CTL_WORK_MODE, FUNC_VACUUM_TEST_MODE);
 	serial.setSendData(CTL_VACUUM_TEST_MODE, 0);
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
 	while(ros::ok()) {
@@ -1949,7 +1949,7 @@ void charge_current_test(bool is_fixture, uint8_t &test_stage, uint16_t &error_c
 {
 	uint32_t charge_voltage = 0;
 	uint8_t buf[REC_LEN];
-	serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_CHARGE_CURRENT_TEST_MODE);
+	serial.setSendData(CTL_WORK_MODE, FUNC_CHARGE_CURRENT_TEST_MODE);
 	serial.setSendData(CTL_CHARGER_CINNECTED_STATUS, 0);
 	serial.setSendData(CTL_IS_FIXTURE, is_fixture);
 	uint8_t count = 0;

@@ -121,7 +121,7 @@ robot::~robot()
 	brush.stop();
 	vacuum.stop();
 	water_tank.stop();
-	serial.setMainBoardMode(WORK_MODE);
+	serial.setWorkMode(WORK_MODE);
 	usleep(40000);
 	while(ros::ok() && !g_pp_shutdown){
 		usleep(2000);
@@ -418,7 +418,7 @@ void robot::core_thread_cb()
 {
 	recei_thread_enable = true;
 	r16_work_mode_ = getTestMode();
-//	r16_work_mode_ = GYRO_TEST_MODE;
+//	r16_work_mode_ = LIFE_TEST_MODE;
 	ROS_INFO("%s %d: work mode: %d", __FUNCTION__, __LINE__, r16_work_mode_);
 
 	switch (r16_work_mode_)
@@ -432,6 +432,7 @@ void robot::core_thread_cb()
 		}
 		case DESK_TEST_CURRENT_MODE:
 		case GYRO_TEST_MODE:
+		case LIFE_TEST_MODE:
 		case WATER_TANK_TEST_MODE:
 //		case WORK_MODE: // For debug
 //		case NORMAL_SLEEP_MODE: // For debug
@@ -519,7 +520,7 @@ uint8_t robot::getTestMode(void)
 	ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock) != 0, "robotbase pthread receive unlock fail");
 //	debugReceivedStream(buf);
 
-	return buf[REC_R16_WORK_MODE];
+	return buf[REC_WORK_MODE];
 }
 
 void robot::scaleCorrectionPos(tf::Vector3 &tmp_pos, double& tmp_rad) {
@@ -676,7 +677,7 @@ void robot::publishCtrlStream(void)
 	ctrl_stream.main_brush_PWM = serial.getSendData(CTL_BRUSH_MAIN);
 
 	ctrl_stream.beeper_sound_code = serial.getSendData(CTL_BEEPER);
-	ctrl_stream.main_board_mode = serial.getSendData(CTL_MAIN_BOARD_MODE);
+	ctrl_stream.main_board_mode = serial.getSendData(CTL_WORK_MODE);
 	ctrl_stream.charge_control = serial.getSendData(CTL_CHARGER);
 
 	ctrl_stream.led_red_brightness = serial.getSendData(CTL_LED_RED);
