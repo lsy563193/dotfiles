@@ -10,6 +10,7 @@
 #include <robot_timer.h>
 #include <robot.hpp>
 #include <slam.h>
+#include <infrared_display.hpp>
 #include "error.h"
 
 const double CHASE_X = 0.107;
@@ -55,6 +56,9 @@ ACleanMode::ACleanMode()
 	c_rcon.resetStatus();
 	robot::instance()->initOdomPosition();
 //	fw_map.reset(CLEAN_MAP);
+
+//	// todo:debug
+//	infrared_display.displayNormalMsg(8, 5555);
 }
 
 ACleanMode::~ACleanMode()

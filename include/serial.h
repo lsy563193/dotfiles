@@ -8,7 +8,7 @@
 #include "termios.h"
 
 // For control stream.
-#define SEND_LEN 21
+#define SEND_LEN 26
 
 // Two bytes for stream header.
 #define CTL_HEADER_1 0
@@ -62,36 +62,28 @@
 // bit 1-7 for controlling swing motor PWM.
 #define CTL_WATER_TANK 16
 
+// One byte for IR control and test step.
+// bit 0-5 for test step.
+// bit 6-7 for IR control.
+#define CTL_IR_CTRL 17
+
+// Two bytes for IR error code display.
+#define CTL_IR_ERROR_CODE_H 18
+#define CTL_IR_ERROR_CODE_L 19
+
+// Two bytes for IR content display.
+#define CTL_IR_CONTENT_H 20
+#define CTL_IR_CONTENT_L 21
+
 // One byte for key validation.
-#define CTL_KEY_VALIDATION 17
+#define CTL_KEY_VALIDATION 22
 
 // One byte for crc checking.
-#define CTL_CRC 18
+#define CTL_CRC 23
 
 // Two bytes for stream trailer.
-#define CTL_TRAILER_1 19
-#define CTL_TRAILER_2 20
-
-// ------------For functional test--------------
-#define CTL_TESTING_STAGE 2
-#define CTL_ERROR_CODE_HIGH 3
-#define CTL_ERROR_CODE_LOW 4
-// For motors test mode
-// 0 for idle mode
-// 1 for stall mode
-#define CTL_LEFT_WHEEL_TEST_MODE 6
-#define CTL_RIGHT_WHEEL_TEST_MODE 7
-#define CTL_LEFT_BRUSH_TEST_MODE 2
-#define CTL_MAIN_BRUSH_TEST_MODE 3
-#define CTL_RIGHT_BRUSH_TEST_MODE 4
-#define CTL_VACUUM_TEST_MODE 7
-// For Charger Connected Status
-// 0 for no charger connected
-// 1 for already connect charger
-#define CTL_CHARGER_CINNECTED_STATUS 3
-// Is on fixture
-#define CTL_IS_FIXTURE 2
-// ------------For functional test end--------------
+#define CTL_TRAILER_1 24
+#define CTL_TRAILER_2 25
 
 // For receive stream.
 #define REC_LEN 46
@@ -249,14 +241,14 @@
 // bit 7 reserved.
 #define REC_OC 39
 
-// One byte for key validation.
-#define REC_KEY_VALIDATION 40
-
 // One byte for left wheel encoder.
-#define REC_LEFT_WHEEL_ENCODER 41
+#define REC_LEFT_WHEEL_ENCODER 40
 
 // One byte for right wheel encoder.
-#define REC_RIGHT_WHEEL_ENCODER 42
+#define REC_RIGHT_WHEEL_ENCODER 41
+
+// One byte for key validation.
+#define REC_KEY_VALIDATION 42
 
 // One byte for crc checking.
 #define REC_CRC 43
@@ -282,12 +274,11 @@
 #define FUNC_BRUSHES_TEST_MODE		13
 #define FUNC_VACUUM_TEST_MODE		14
 #define FUNC_CHARGE_CURRENT_TEST_MODE		15
-#define ALARM_ERROR_MODE		16
-#define DESK_TEST_CURRENT_MODE		17 // For checking current
-#define DESK_TEST_MOVEMENT_MODE		18
-#define GYRO_TEST_MODE		19
-#define LIFE_TEST_MODE		20
-#define WATER_TANK_TEST_MODE	21
+#define DESK_TEST_CURRENT_MODE		16 // For checking current
+#define DESK_TEST_MOVEMENT_MODE		17
+#define GYRO_TEST_MODE		18
+#define LIFE_TEST_MODE		19
+#define WATER_TANK_TEST_MODE	20
 // ------------------------------work mode end--------------------------------------
 
 // -----------------------------For DESK_TEST_CURRENT_MODE and LIFE_TEST_MODE ------------------------------------
@@ -396,8 +387,11 @@ public:
 											0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 											0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 											0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-											0x00,0x00,0xcc,0x33};
-	uint8_t send_stream[SEND_LEN]={0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x64,0x00,0x02,0x00,0x00,0xcc,0x33};
+											0x00,0x00,0x00,0x00,0xcc,0x33};
+	//										   1    2    3    4    5    6    7    8    9   10
+	uint8_t send_stream[SEND_LEN]={			0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+											0x00,0x00,0x00,0x00,0x64,0x00,0x02,0x00,0x00,0x00,
+											0x00,0x00,0x00,0x00,0xcc,0x33};
 
 	void receive_routine_cb();
 

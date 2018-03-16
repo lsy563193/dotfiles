@@ -10,6 +10,7 @@
 #include <random>
 #include <wait.h>
 #include "robot.hpp"
+#include "infrared_display.hpp"
 
 void x900_functional_test(std::string serial_port, int baud_rate, std::string lidar_bumper_dev)
 {
@@ -99,9 +100,7 @@ void x900_functional_test(std::string serial_port, int baud_rate, std::string li
 
 void error_loop(uint8_t test_stage, uint16_t error_code, uint16_t current_data)
 {
-	serial.setSendData(CTL_WORK_MODE, ALARM_ERROR_MODE);
-	serial.setSendData(CTL_ERROR_CODE_HIGH, static_cast<uint8_t>(error_code >> 8));
-	serial.setSendData(CTL_ERROR_CODE_LOW, static_cast<uint8_t>(error_code));
+	infrared_display.displayErrorMsg(test_stage, current_data, error_code);
 
 	double alarm_time = ros::Time::now().toSec();
 	speaker.play(VOICE_TEST_FAIL);

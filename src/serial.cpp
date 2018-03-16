@@ -9,7 +9,7 @@
 #include <key_led.h>
 #include <robot.hpp>
 #include <water_tank.hpp>
-#include "wifi.h"
+#include "wifi/wifi.h"
 
 boost::mutex send_stream_mutex;
 
@@ -637,7 +637,7 @@ void Serial::sendData()
 	buf[CTL_CRC] = serial.calBufCrc8(buf, CTL_CRC);
 //	printf("buf[CTL_CRC] = %x\n", buf[CTL_CRC]);
 	serial.write(buf, SEND_LEN);
-//	robot::instance()->debugSendStream(buf);
+//	debugSendStream(buf);
 	serial.setSendData(CTL_CRC, buf[CTL_CRC]);
 }
 

@@ -23,7 +23,8 @@ FILE(GLOB PP_SRC
 	src/dev/speaker.cpp
 	src/dev/lidar.cpp
 	src/dev/water_tank.cpp
-	src/dev/wifi.cpp
+	src/dev/wifi/wifi.cpp
+	src/dev/infrared_display.cpp
 
 	src/mode/state/state.cpp
 	src/mode/state/state_init.cpp
@@ -117,11 +118,11 @@ FILE(GLOB PP_SRC
 	src/slam_map.cpp
 	src/verify.cpp
 
-	src/wifi/dev.cpp
-	src/wifi/packet.cpp
-	src/wifi/tx.cpp
-	src/wifi/rx.cpp
-	src/wifi/msg.cpp
+	src/dev/wifi/dev.cpp
+	src/dev/wifi/packet.cpp
+	src/dev/wifi/tx.cpp
+	src/dev/wifi/rx.cpp
+	src/dev/wifi/msg.cpp
 	#src/wifi/util.cpp
 
 	#src/cloud/realtime_map_handler.cpp

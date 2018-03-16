@@ -66,6 +66,8 @@ public:
 //	void pubTmpTarget(const Points &points,bool is_virtual=false);
 	void robotbase_routine_cb();
 	void core_thread_cb();
+	void runWorkMode();
+	void runTestMode();
 	// Service caller functions.
 	bool lidarMotorCtrl(bool switch_);
 	bool slamStart(void);

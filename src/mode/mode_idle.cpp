@@ -1,3 +1,4 @@
+#include <infrared_display.hpp>
 #include "event_manager.h"
 #include "dev.h"
 #include "error.h"
@@ -25,6 +26,8 @@ ModeIdle::ModeIdle()
 	first_time_seen_charger_ = ros::Time::now().toSec();
 	last_time_seen_charger_ = first_time_seen_charger_;
 
+//	// todo:debug
+//	infrared_display.displayErrorMsg(9, 1234, 101);
 }
 
 ModeIdle::~ModeIdle()

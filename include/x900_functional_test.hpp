@@ -8,6 +8,26 @@
 #include "config.h"
 #include "error.h"
 
+// ------------For functional test--------------
+#define CTL_TESTING_STAGE 2
+#define CTL_ERROR_CODE_HIGH 3
+#define CTL_ERROR_CODE_LOW 4
+// For motors test mode
+// 0 for idle mode
+// 1 for stall mode
+#define CTL_LEFT_WHEEL_TEST_MODE 6
+#define CTL_RIGHT_WHEEL_TEST_MODE 7
+#define CTL_LEFT_BRUSH_TEST_MODE 2
+#define CTL_MAIN_BRUSH_TEST_MODE 3
+#define CTL_RIGHT_BRUSH_TEST_MODE 4
+#define CTL_VACUUM_TEST_MODE 7
+// For Charger Connected Status
+// 0 for no charger connected
+// 1 for already connect charger
+#define CTL_CHARGER_CINNECTED_STATUS 3
+// Is on fixture
+#define CTL_IS_FIXTURE 2
+// ------------For functional test end--------------
 
 //limit
 #define OBS_MANUAL_LIMIT_H	(uint16_t)1500
