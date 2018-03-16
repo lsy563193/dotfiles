@@ -279,6 +279,8 @@
 #define GYRO_TEST_MODE		18
 #define LIFE_TEST_MODE		19
 #define WATER_TANK_TEST_MODE	20
+#define R16_AND_LIDAR_TEST_MODE	21
+
 // ------------------------------work mode end--------------------------------------
 
 // -----------------------------For DESK_TEST_CURRENT_MODE and LIFE_TEST_MODE ------------------------------------

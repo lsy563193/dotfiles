@@ -189,6 +189,10 @@ public:
 
 	void updateRobotPositionForTest();
 
+	std::string getLidarBumperDev()
+	{
+		return lidar_bumper_dev_;
+	}
 private:
 
 	uint8_t getTestMode(void);

@@ -75,29 +75,9 @@ void x900_functional_test(std::string serial_port, int baud_rate, std::string li
 void error_loop(uint8_t test_stage, uint16_t error_code, uint16_t current_data);
 
 /*
- * Test RAM.
- */
-bool RAM_test();
-
-/*
- * Test flash.
- */
-bool Flash_test();
-
-/*
  * Test serial port.
  */
 bool serial_port_test();
-
-/*
- * Test lidar.
- */
-bool lidar_test();
-
-/*
- * Test lidar bumper.
- */
-bool lidar_bumper_test();
 
 /*
  * Test for power supply voltage.

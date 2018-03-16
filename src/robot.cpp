@@ -440,6 +440,7 @@ void robot::core_thread_cb()
 		case GYRO_TEST_MODE:
 		case LIFE_TEST_MODE:
 		case WATER_TANK_TEST_MODE:
+		case R16_AND_LIDAR_TEST_MODE:
 //		case WORK_MODE: // For debug
 //		case NORMAL_SLEEP_MODE: // For debug
 		{
@@ -468,8 +469,11 @@ void robot::runTestMode()
 		robotbase_thread_enable = true;
 	}
 
-	if (bumper.lidarBumperInit(lidar_bumper_dev_.c_str()) == -1)
-		ROS_ERROR(" lidar bumper open fail!");
+	if (r16_work_mode_ != R16_AND_LIDAR_TEST_MODE)
+	{
+		if (bumper.lidarBumperInit(lidar_bumper_dev_.c_str()) == -1)
+			ROS_ERROR(" lidar bumper open fail!");
+	}
 
 	p_mode.reset(new CleanModeTest(r16_work_mode_));
 	p_mode->run();
