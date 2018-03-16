@@ -98,7 +98,7 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 
 	if (!filterPathsToSelectBestPath(map, targets, curr_cell, path,last_dir))
 		return false;
-	if(curr_filter_ == &filter_p_1000t || curr_filter_ == &filter_n_1000t)
+	if(path.size() > 4 )
 	{
 		ROS_INFO("Step 5: size_of_path > 15 Optimize path for adjusting it away from obstacles..");
 		optimizePath(map, path);

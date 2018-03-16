@@ -340,7 +340,10 @@ public:
     y = 0;
     th = 0;
   }
-
+	Point_t(float _x, float _y) {
+    x = _x;
+    y = _y;
+  }
   Point_t(float _x, float _y, double _th) {
     x = _x;
     y = _y;
