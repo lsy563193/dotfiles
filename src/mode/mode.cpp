@@ -117,6 +117,9 @@ void Mode::genNextAction()
 		case ac_water_tank_test:
 			sp_action_.reset(new ActionCheckWaterTank());
 			break;
+		case ac_life_test:
+			sp_action_.reset(new ActionLifeCheck());
+			break;
 		default : //case ac_null :
 			sp_action_.reset();
 			break;

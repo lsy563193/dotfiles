@@ -12,6 +12,7 @@
 #include <beeper.h>
 #include <gyro.h>
 #include "move_type.hpp"
+#include "error.h"
 
 MoveTypeGyroTest::MoveTypeGyroTest()
 {

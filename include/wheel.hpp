@@ -83,7 +83,7 @@ public:
 
 	void pidAdjustSpeed(void);
 
-	void setPidTargetSpeed(uint8_t Left, uint8_t Right, uint8_t reg_type = REG_TYPE_NONE, float PID_p = 1,
+	void setPidTargetSpeed(int8_t left, int8_t right, uint8_t reg_type = REG_TYPE_NONE, float PID_p = 1,
 						   float PID_i = 0,
 						   float PID_d = 0);
 

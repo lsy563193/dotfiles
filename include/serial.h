@@ -37,8 +37,8 @@
 // One byte for controlling beeper.
 #define	CTL_BEEPER 10
 
-// One byte for sending main board mode.
-#define	CTL_MAIN_BOARD_MODE 11
+// One byte for work mode.
+#define	CTL_WORK_MODE 11
 
 // One byte for controlling charge status.
 #define	CTL_CHARGER 12
@@ -235,8 +235,8 @@
 // One byte for battery voltage.
 #define REC_BATTERY 37
 
-// One byte for r16 work mode.
-#define REC_R16_WORK_MODE 38
+// One byte for work mode.
+#define REC_WORK_MODE 38
 
 // One byte for over current signal.
 // bit 0 for vacuum over current.
@@ -265,7 +265,7 @@
 #define REC_TRAILER_1 44
 #define REC_TRAILER_2 45
 
-// Main board mode
+// ------------------------------work mode--------------------------------------
 #define NORMAL_SLEEP_MODE 		0
 #define BATTERY_FULL_SLEEP_MODE 1
 #define WORK_MODE 				2
@@ -288,6 +288,41 @@
 #define GYRO_TEST_MODE		19
 #define LIFE_TEST_MODE		20
 #define WATER_TANK_TEST_MODE	21
+// ------------------------------work mode end--------------------------------------
+
+// -----------------------------For DESK_TEST_CURRENT_MODE and LIFE_TEST_MODE ------------------------------------
+// Two bytes for left brush current.
+#define REC_L_BRUSH_CUNT_H 12
+#define REC_L_BRUSH_CUNT_L 13
+// Two bytes for right brush current.
+#define REC_R_BRUSH_CUNT_H 14
+#define REC_R_BRUSH_CUNT_L 15
+// Two bytes for right brush current.
+#define REC_M_BRUSH_CUNT_H 16
+#define REC_M_BRUSH_CUNT_L 17
+// Two bytes for left wheel current.
+#define REC_L_WHEEL_CUNT_H 18
+#define REC_L_WHEEL_CUNT_L 19
+// Two bytes for right wheel current.
+#define REC_R_WHEEL_CUNT_H 20
+#define REC_R_WHEEL_CUNT_L 21
+// Two bytes for vacuum current.
+#define REC_VACUUM_CURRENT_H 30
+#define REC_VACUUM_CURRENT_L 31
+// Two bytes for water pump current.
+#define REC_WATER_PUMP_CURRENT_H 32
+#define REC_WATER_PUMP_CURRENT_L 33
+
+// Two bytes for left cliff value.
+#define REC_L_CLIFF_H 12
+#define REC_L_CLIFF_L 13
+// Two bytes for front cliff value.
+#define REC_F_CLIFF_H 14
+#define REC_F_CLIFF_L 15
+// Two bytes for right cliff value.
+#define REC_R_CLIFF_H 16
+#define REC_R_CLIFF_L 17
+// -----------------------------For DESK_TEST_CURRENT_MODE and LIFE_TEST_MODE end------------------------------------
 
 #define DUMMY_DOWNLINK_OFFSET		2
 #define KEY_DOWNLINK_OFFSET			9
@@ -348,7 +383,7 @@ public:
 
 	//int get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequence_number);
 
-	void setMainBoardMode(uint8_t val);
+	void setWorkMode(uint8_t val);
 
 	void initCrc8(void);
 

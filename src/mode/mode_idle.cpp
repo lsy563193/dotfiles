@@ -7,7 +7,7 @@ ModeIdle::ModeIdle()
 {
 	ROS_INFO("%s %d: Entering Idle mode\n=========================" , __FUNCTION__, __LINE__);
 	register_events();
-	serial.setMainBoardMode(IDLE_MODE);
+	serial.setWorkMode(IDLE_MODE);
 	sp_action_.reset(new ActionIdle);
 	action_i_ = ac_idle;
 

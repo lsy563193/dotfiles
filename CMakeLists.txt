@@ -72,6 +72,7 @@ FILE(GLOB PP_SRC
 	src/action/action_check_vacuum.cpp
 	src/action/action_check_bumper.cpp
 	src/action/action_check_water_tank.cpp
+	src/action/action_life_check.cpp
 
 	src/action/move_type/move_type.cpp
 	src/action/move_type/move_type_linear.cpp

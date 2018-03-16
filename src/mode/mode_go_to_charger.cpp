@@ -13,7 +13,7 @@ ModeGoToCharger::ModeGoToCharger()
 	event_manager_reset_status();
 	event_manager_set_enable(true);
 
-	serial.setMainBoardMode(WORK_MODE);
+	serial.setWorkMode(WORK_MODE);
 	speaker.play(VOICE_BACK_TO_CHARGER, false);
 	key_led.setMode(LED_STEADY, LED_ORANGE);
 	sp_action_.reset(new ActionOpenGyro);

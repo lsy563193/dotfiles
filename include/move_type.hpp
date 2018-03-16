@@ -182,6 +182,11 @@ public:
 	MoveTypeDeskTest();
 	~MoveTypeDeskTest() override;
 
+	bool isFinish() override
+	{
+		return false;
+	}
+
 	void deskTestRoutineThread();
 
 	void run() override;
@@ -193,8 +198,6 @@ private:
 	boost::shared_ptr<IAction> p_movement_;
 
 	uint16_t error_code_{0};
-
-	int current_work_mode_{0};
 
 	/*
 	 * Test stage: 1 ~ 7.
@@ -281,12 +284,6 @@ private:
 	uint16_t right_wheel_backward_current_max_{0};
 	uint16_t vacuum_current_max_{0};
 	uint16_t water_tank_current_max_{0};
-
-	uint16_t side_brush_current_ref_{0}; // todo:
-	uint16_t main_brush_current_ref_{0};
-	uint16_t wheel_current_ref_{0};
-	uint16_t vacuum_current_ref_{0};
-	uint16_t water_tank_current_ref_{0};
 
 	bool check_stage_5_finish();
 

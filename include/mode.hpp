@@ -103,6 +103,8 @@ public:
 		ac_desk_test,
 		ac_gyro_test,
 		ac_water_tank_test,
+		//25
+		ac_life_test,
 	};
 
 	virtual void genNextAction();
