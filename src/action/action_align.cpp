@@ -22,7 +22,8 @@ bool ActionAlign::isFinish()
 	{
 		float align_radian = lidar.alignRadian();
 		odom.setRadianOffset(-align_radian);
-		ROS_INFO("%s %d: align_radian angle (%f).", __FUNCTION__, __LINE__, radian_to_degree(align_radian));
+//		ROS_ERROR("!!!!!!!!!!!!!!!!!odom rad offset: %f", odom.getRadianOffset());
+//		ROS_INFO("%s %d: align_radian angle (%f).", __FUNCTION__, __LINE__, radian_to_degree(align_radian));
 		return true;
 	}
 	return false;

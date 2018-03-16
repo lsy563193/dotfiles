@@ -601,10 +601,12 @@ public:
 	bool isSwitchByEventInStateExceptionResume() override;
 
 private:
-	bool has_aligned_and_open_slam_{false};
-	float paused_odom_radian_{0};
+	bool has_aligned_and_open_slam_{};
+	float paused_odom_radian_{};
+	float start_odom_radian_{};
 	Point_t continue_point_{};
-	bool go_home_for_low_battery_{false};
+	bool go_home_for_low_battery_{};
+	static int align_count_;
 };
 
 class CleanModeExploration : public ACleanMode

@@ -1,4 +1,4 @@
-//
+#include <mode.hpp>//
 // Created by austin on 17-12-3.
 //
 
@@ -12,6 +12,7 @@
 #include "mathematics.h"
 //#define NAV_INFO() ROS_INFO("st(%d),ac(%d)", state_i_, action_i_)
 
+int CleanModeNav::align_count_ = 0;
 CleanModeNav::CleanModeNav()
 {
 	setNavMode(true);
@@ -486,11 +487,26 @@ bool CleanModeNav::updateActionInStateInit() {
 	} else if (action_i_ == ac_open_lidar)
 	{
 		if (!has_aligned_and_open_slam_)
+		{
 			action_i_ = ac_align;
+			beeper.beepForCommand(VALID);
+		}
 		else
 			return false;
 	} else if (action_i_ == ac_align){
-		action_i_ = ac_open_slam;
+		{
+			action_i_ = ac_open_slam;
+			align_count_ ++;
+			start_odom_radian_ = odom.getRadianOffset();
+			if(align_count_%2 == 0)
+			{
+				start_odom_radian_= ranged_radian(start_odom_radian_ -PI/2);
+				odom.setRadianOffset(start_odom_radian_);
+//				ROS_INFO("rad %f",start_odom_radian_);
+			}
+			ROS_INFO("odom rad, align_count : %f, %d", odom.getRadian(), align_count_);
+			beeper.beepForCommand(INVALID);
+		}
 
 	}
 	else if (action_i_ == ac_open_slam){
