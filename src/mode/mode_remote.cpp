@@ -13,7 +13,7 @@ ModeRemote::ModeRemote()
 	event_manager_register_handler(this);
 	event_manager_set_enable(true);
 
-	serial.setMainBoardMode(WORK_MODE);
+	serial.setWorkMode(WORK_MODE);
 	if (gyro.isOn())
 	{
 		key_led.setMode(LED_STEADY, LED_GREEN);

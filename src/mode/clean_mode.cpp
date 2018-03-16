@@ -37,7 +37,7 @@ ACleanMode::ACleanMode()
 
 	event_manager_register_handler(this);
 	event_manager_set_enable(true);
-	serial.setMainBoardMode(WORK_MODE);
+	serial.setWorkMode(WORK_MODE);
 	IMoveType::sp_mode_ = this;
 	sp_state->setMode(this);
 	ev.key_clean_pressed = false;

@@ -25,12 +25,12 @@ ActionSleep::ActionSleep()
 	if (charger.getChargeStatus())
 	{
 		ROS_INFO("%s %d: Finish beeping, enter from charge mode.", __FUNCTION__, __LINE__);
-		serial.setMainBoardMode(BATTERY_FULL_SLEEP_MODE);
+		serial.setWorkMode(BATTERY_FULL_SLEEP_MODE);
 	}
 	else
 	{
 		ROS_INFO("%s %d: Finish beeping.", __FUNCTION__, __LINE__);
-		serial.setMainBoardMode(NORMAL_SLEEP_MODE);
+		serial.setWorkMode(NORMAL_SLEEP_MODE);
 	}
 #if ENABLE_LOW_POWER_CONSUMPTION
 	// Sleep for 30ms to make sure the power byte has been sent.

@@ -231,7 +231,7 @@ void Serial::resetSendStream(void)
 	setSendData(CTL_TRAILER_1, 0xcc);
 	setSendData(CTL_TRAILER_2, 0x33);
 
-	setMainBoardMode(IDLE_MODE);
+	setWorkMode(IDLE_MODE);
 	uint8_t buf[SEND_LEN];
 	{
 		boost::mutex::scoped_lock lock(send_stream_mutex);
@@ -259,9 +259,9 @@ uint8_t Serial::getSendData(uint8_t seq)
 	return tmp_data;
 }
 
-void Serial::setMainBoardMode(uint8_t val)
+void Serial::setWorkMode(uint8_t val)
 {
-	setSendData(CTL_MAIN_BOARD_MODE, val);
+	setSendData(CTL_WORK_MODE, val);
 }
 
 /*
