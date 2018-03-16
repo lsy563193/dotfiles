@@ -462,6 +462,7 @@ bool CleanModeNav::updateActionInStateInit() {
 	{
 		// If it is the starting of navigation mode, paused_odom_radian_ will be zero.
 		odom.setRadianOffset(paused_odom_radian_);
+		ROS_INFO("%s,%d,angle offset:%f",__FUNCTION__,__LINE__,radian_to_degree(paused_odom_radian_));
 
 		if (charger.isOnStub()){
 			action_i_ = ac_back_form_charger;
@@ -721,8 +722,8 @@ bool CleanModeNav::checkEnterPause()
 	{
 		ev.key_clean_pressed = false;
 		speaker.play(VOICE_CLEANING_PAUSE);
-		ROS_INFO("%s %d: Key clean pressed, pause cleaning.", __FUNCTION__, __LINE__);
 		paused_odom_radian_ = odom.getRadian();
+		ROS_INFO("%s %d: Key clean pressed, pause cleaning.Robot pose(%f)", __FUNCTION__, __LINE__,radian_to_degree(paused_odom_radian_));
 		sp_action_.reset();
 		sp_saved_states.push_back(sp_state);
 		sp_state = state_pause;
