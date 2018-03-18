@@ -184,15 +184,21 @@ private:
 	bool checkCurrent();
 
 	double start_time_stamp_{0};
+	double check_wheel_time_{0};
 	uint16_t error_code_{0};
 	int test_stage_{0};
+	bool wheel_forward_{true};
+
 	int sum_cnt_{0};
+	uint16_t wheel_forward_current_cnt_{0};
+	uint16_t wheel_backward_current_cnt_{0};
 
 	uint16_t side_brush_current_ref_{0};
 	uint16_t main_brush_current_ref_{0};
 	uint16_t wheel_current_ref_{0};
 	uint16_t vacuum_current_ref_{0};
 	uint16_t water_tank_current_ref_{0};
+	uint16_t robot_current_ref_{0};
 
 	uint32_t left_brush_current_baseline_{0};
 	uint32_t right_brush_current_baseline_{0};
@@ -201,16 +207,29 @@ private:
 	uint32_t right_wheel_current_baseline_{0};
 	uint32_t vacuum_current_baseline_{0};
 	uint32_t water_tank_current_baseline_{0};
+	uint32_t robot_current_baseline_{0};
 
-	uint16_t left_brush_current_max_{0};
-	uint16_t right_brush_current_max_{0};
-	uint16_t main_brush_current_max_{0};
-	uint16_t left_wheel_forward_current_max_{0};
-	uint16_t right_wheel_forward_current_max_{0};
-	uint16_t left_wheel_backward_current_max_{0};
-	uint16_t right_wheel_backward_current_max_{0};
-	uint16_t vacuum_current_max_{0};
-	uint16_t water_tank_current_max_{0};
+	uint32_t left_brush_current_{0};
+	uint32_t right_brush_current_{0};
+	uint32_t main_brush_current_{0};
+	uint32_t left_wheel_forward_current_{0};
+	uint32_t right_wheel_forward_current_{0};
+	uint32_t left_wheel_backward_current_{0};
+	uint32_t right_wheel_backward_current_{0};
+	uint32_t vacuum_current_{0};
+	uint32_t water_tank_current_{0};
+	uint32_t robot_current_{0};
+
+	/*uint32_t left_brush_current_max_{0};
+	uint32_t right_brush_current_max_{0};
+	uint32_t main_brush_current_max_{0};
+	uint32_t left_wheel_forward_current_max_{0};
+	uint32_t right_wheel_forward_current_max_{0};
+	uint32_t left_wheel_backward_current_max_{0};
+	uint32_t right_wheel_backward_current_max_{0};
+	uint32_t vacuum_current_max_{0};
+	uint32_t water_tank_current_max_{0};
+	uint32_t robot_current_max_{0};*/
 };
 
 class ActionR16Test: public IAction

@@ -299,6 +299,9 @@
 // Two bytes for right wheel current.
 #define REC_R_WHEEL_CUNT_H 20
 #define REC_R_WHEEL_CUNT_L 21
+// Two bytes for robot total current.
+#define REC_ROBOT_CUNT_H 22
+#define REC_ROBOT_CUNT_L 23
 // Two bytes for vacuum current.
 #define REC_VACUUM_CURRENT_H 30
 #define REC_VACUUM_CURRENT_L 31

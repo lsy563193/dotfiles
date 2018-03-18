@@ -193,6 +193,17 @@ public:
 	{
 		return lidar_bumper_dev_;
 	}
+
+	void setCurrent(uint16_t current)
+	{
+		robot_current_ = current;
+	}
+
+	uint16_t getCurrent()
+	{
+		return robot_current_;
+	}
+
 private:
 
 	uint8_t getTestMode(void);
@@ -262,6 +273,8 @@ private:
 	bool is_locked_scan_ctrl_{false};
 
 	bool is_first_slip{true};
+
+	uint16_t robot_current_{0};
 };
 
 float cellToCount(int16_t distance);
