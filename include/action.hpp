@@ -193,13 +193,6 @@ private:
 	uint16_t wheel_forward_current_cnt_{0};
 	uint16_t wheel_backward_current_cnt_{0};
 
-	uint16_t side_brush_current_ref_{0};
-	uint16_t main_brush_current_ref_{0};
-	uint16_t wheel_current_ref_{0};
-	uint16_t vacuum_current_ref_{0};
-	uint16_t water_tank_current_ref_{0};
-	uint16_t robot_current_ref_{0};
-
 	uint32_t left_brush_current_baseline_{0};
 	uint32_t right_brush_current_baseline_{0};
 	uint32_t main_brush_current_baseline_{0};
