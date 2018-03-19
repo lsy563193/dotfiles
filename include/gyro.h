@@ -231,8 +231,7 @@ private:
 	float kalman_angle, angle_dot;
 	float P[2][2]={{1,0},{0,1}};
 	float Pdot[4]={0,0,0,0};
-	float Q_angle=0.05,Q_gyro=0.005;//角度数据置信度，角速度数据置信度
-//	float Q_angle=0.001,Q_gyro=0.001;//角度数据置信度，角速度数据置信度
+	float Q_angle=0.05,Q_gyro=0.005;
 	float R_angle=0.5,C_0=1;
 	float q_bias,angle_err,PCt_0,PCt_1,E,K_0,K_1,t_0,t_1;
 };

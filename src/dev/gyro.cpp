@@ -469,7 +469,7 @@ float Gyro::calAngleRKalmanFilter(double dt)
 	auto acc_angle = getAccAngleR();
 	auto angle_kalman = KalmanFilter(acc_angle, angle_v_, dt);
 
-	ROS_INFO("angle_kalman = %f, acc_angle= %f, angle_v_= %f", angle_kalman,acc_angle,angle_v_);
+//	ROS_INFO("angle_kalman = %f, acc_angle= %f, angle_v_= %f", angle_kalman,acc_angle,angle_v_);
 //	printf("%f,%lf.", acc_angle,angle_v_);
 
 	return angle_kalman;
