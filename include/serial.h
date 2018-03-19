@@ -284,21 +284,34 @@
 // ------------------------------work mode end--------------------------------------
 
 // -----------------------------For DESK_TEST_CURRENT_MODE and LIFE_TEST_MODE ------------------------------------
-// Two bytes for left brush current.
-#define REC_L_BRUSH_CUNT_H 12
-#define REC_L_BRUSH_CUNT_L 13
+
 // Two bytes for right brush current.
-#define REC_R_BRUSH_CUNT_H 14
-#define REC_R_BRUSH_CUNT_L 15
-// Two bytes for right brush current.
-#define REC_M_BRUSH_CUNT_H 16
-#define REC_M_BRUSH_CUNT_L 17
+#define REC_M_BRUSH_CUNT_H 6
+#define REC_M_BRUSH_CUNT_L 7
+// Two bytes for left cliff value.
+#define REC_L_CLIFF_H 12
+#define REC_L_CLIFF_L 13
+// Two bytes for front cliff value.
+#define REC_F_CLIFF_H 14
+#define REC_F_CLIFF_L 15
+// Two bytes for right cliff value
+#define REC_R_CLIFF_H 16
+#define REC_R_CLIFF_L 17
 // Two bytes for left wheel current.
 #define REC_L_WHEEL_CUNT_H 18
 #define REC_L_WHEEL_CUNT_L 19
 // Two bytes for right wheel current.
 #define REC_R_WHEEL_CUNT_H 20
 #define REC_R_WHEEL_CUNT_L 21
+// Two bytes for robot total current.
+#define REC_ROBOT_CUNT_H 22
+#define REC_ROBOT_CUNT_L 23
+// Two bytes for left brush current.
+#define REC_L_BRUSH_CUNT_H 24
+#define REC_L_BRUSH_CUNT_L 25
+// Two bytes for right brush current.
+#define REC_R_BRUSH_CUNT_H 26
+#define REC_R_BRUSH_CUNT_L 27
 // Two bytes for vacuum current.
 #define REC_VACUUM_CURRENT_H 30
 #define REC_VACUUM_CURRENT_L 31
@@ -306,15 +319,6 @@
 #define REC_WATER_PUMP_CURRENT_H 32
 #define REC_WATER_PUMP_CURRENT_L 33
 
-// Two bytes for left cliff value.
-#define REC_L_CLIFF_H 12
-#define REC_L_CLIFF_L 13
-// Two bytes for front cliff value.
-#define REC_F_CLIFF_H 14
-#define REC_F_CLIFF_L 15
-// Two bytes for right cliff value.
-#define REC_R_CLIFF_H 16
-#define REC_R_CLIFF_L 17
 // -----------------------------For DESK_TEST_CURRENT_MODE and LIFE_TEST_MODE end------------------------------------
 
 #define DUMMY_DOWNLINK_OFFSET		2

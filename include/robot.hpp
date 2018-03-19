@@ -196,6 +196,17 @@ public:
 
 	bool checkTilt();
 
+
+	void setCurrent(uint16_t current)
+	{
+		robot_current_ = current;
+	}
+
+	uint16_t getCurrent()
+	{
+		return robot_current_;
+	}
+
 private:
 
 	uint8_t getTestMode(void);
@@ -273,6 +284,8 @@ private:
 	const double TIME_LIMIT{1};
 	double tilt_time = 0;
 	bool is_first_tilt{true};
+
+	uint16_t robot_current_{0};
 };
 
 float cellToCount(int16_t distance);
