@@ -121,7 +121,7 @@ bool CleanModeNav::mapMark()
 	for (auto &&cost_block : c_blocks) {
 		if(/*cost_block.first != BLOCKED_SLIP && */std::find_if(c_bound2.begin(), c_bound2.end(), [&](const Cell_t& c_it)
 		{ return c_it == cost_block.second; }) != c_bound2.end())
-			if(!(cost_block.first == BLOCKED_LIDAR && (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)))
+//			if(!(cost_block.first == BLOCKED_LIDAR && (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)))
 				clean_map_.setCell(CLEAN_MAP, cost_block.second.x, cost_block.second.y, cost_block.first);
 	}
 
@@ -490,7 +490,7 @@ bool CleanModeNav::updateActionInStateInit() {
 		if (!has_aligned_and_open_slam_)
 		{
 			action_i_ = ac_align;
-			beeper.beepForCommand(VALID);
+//			beeper.beepForCommand(VALID);
 		}
 		else
 			return false;
@@ -498,15 +498,15 @@ bool CleanModeNav::updateActionInStateInit() {
 		{
 			action_i_ = ac_open_slam;
 			align_count_ ++;
-			start_odom_radian_ = odom.getRadianOffset();
+			start_align_radian_ = odom.getRadianOffset();
 			if(align_count_%2 == 0)
 			{
-				start_odom_radian_= ranged_radian(start_odom_radian_ -PI/2);
-				odom.setRadianOffset(start_odom_radian_);
-//				ROS_INFO("rad %f",start_odom_radian_);
+				start_align_radian_= ranged_radian(start_align_radian_ -PI/2);
+				odom.setRadianOffset(start_align_radian_);
+//				ROS_INFO("rad %f",start_align_radian_);
 			}
 			ROS_INFO("odom rad, align_count : %f, %d", odom.getRadian(), align_count_);
-			beeper.beepForCommand(INVALID);
+//			beeper.beepForCommand(INVALID);
 		}
 
 	}

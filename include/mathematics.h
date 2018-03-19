@@ -414,6 +414,7 @@ public:
 
 	bool isCellAndAngleEqual(const Point_t &r) const
 	{
+//		ROS_ERROR("isCellEqual(%d),isRadianNear(%d) ", isCellEqual(r), isRadianNear(r));
 		return  isCellEqual(r) && isRadianNear(r);
 	}
 

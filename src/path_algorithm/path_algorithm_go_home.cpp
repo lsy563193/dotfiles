@@ -375,6 +375,7 @@ bool GoHomePathAlgorithm::reachTarget(bool &should_go_to_charger)
 
 	if (!home_points_.empty())
 	{
+//		ROS_ERROR("!!!!!!!!!!!!!home_points_(%d)", home_points_.size());
 		if (getPosition().toCell() == getCurrentHomePoint().toCell())
 		{
 			ROS_INFO("%s %d: Reach home point(%d, %d).",
@@ -393,12 +394,17 @@ bool GoHomePathAlgorithm::reachTarget(bool &should_go_to_charger)
 			should_go_to_charger = true;
 		}
 	}
-	else
-	{
-		if (getPosition().toCell() == start_point_.toCell())
-		{
+	else {
+		ROS_INFO("!!home_points_ empty curr (%d,%d,%f), start(%d,%d,%f)",
+							getPosition().toCell().x,
+							getPosition().toCell().y,
+							radian_to_degree(getPosition().th),
+							start_point_.toCell().x,
+							start_point_.toCell().y,
+							radian_to_degree(start_point_.th));
+		if (getPosition().isCellAndAngleEqual(start_point_)) {
 			ROS_INFO("%s %d: Reach start point(%d, %d).",
-					 __FUNCTION__, __LINE__, start_point_.toCell().x, start_point_.toCell().y);
+							 __FUNCTION__, __LINE__, start_point_.toCell().x, start_point_.toCell().y);
 			ret = true;
 			should_go_to_charger = false;
 		}
