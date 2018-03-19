@@ -42,11 +42,17 @@ uint8 vacuum_exception_ctrl
 uint8 gyro_dynamic_ctrl
 uint8 gyro_switch
 
-# one byte for water tank.
+# One byte for water tank.
 # bit 0-6 for swing motor PWM.
 # bit 7 for pump switch.
 uint8 swing_motor_pwm
 bool pump_switch
+
+# Infrared display.
+uint8 infrared_display_switch
+uint8 infrared_display_step
+uint16 infrared_display_content
+uint16 infrared_display_error_code
 
 # One byte for key validation.
 uint8 key_validation

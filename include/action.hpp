@@ -213,4 +213,45 @@ private:
 	uint16_t water_tank_current_max_{0};
 };
 
+class ActionR16Test: public IAction
+{
+public:
+	ActionR16Test();
+
+	~ActionR16Test() override = default;
+
+	bool isFinish() override
+	{ return false; };
+
+	bool isExit() override
+	{ return false; };
+
+	void run() override;
+
+private:
+
+	int test_stage_{0};
+
+/*
+ * Test RAM.
+ */
+	bool RAM_test();
+
+/*
+ * Test flash.
+ */
+	bool Flash_test();
+
+/*
+ * Test lidar.
+ */
+	bool lidar_test();
+
+/*
+ * Test lidar bumper.
+ */
+	bool lidar_bumper_test();
+
+	void error_loop(uint8_t step, uint16_t content, uint16_t error_code);
+};
 #endif //PP_ACTION_H

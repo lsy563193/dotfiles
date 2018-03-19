@@ -8,6 +8,26 @@
 #include "config.h"
 #include "error.h"
 
+// ------------For functional test--------------
+#define CTL_TESTING_STAGE 2
+#define CTL_ERROR_CODE_HIGH 3
+#define CTL_ERROR_CODE_LOW 4
+// For motors test mode
+// 0 for idle mode
+// 1 for stall mode
+#define CTL_LEFT_WHEEL_TEST_MODE 6
+#define CTL_RIGHT_WHEEL_TEST_MODE 7
+#define CTL_LEFT_BRUSH_TEST_MODE 2
+#define CTL_MAIN_BRUSH_TEST_MODE 3
+#define CTL_RIGHT_BRUSH_TEST_MODE 4
+#define CTL_VACUUM_TEST_MODE 7
+// For Charger Connected Status
+// 0 for no charger connected
+// 1 for already connect charger
+#define CTL_CHARGER_CINNECTED_STATUS 3
+// Is on fixture
+#define CTL_IS_FIXTURE 2
+// ------------For functional test end--------------
 
 //limit
 #define OBS_MANUAL_LIMIT_H	(uint16_t)1500
@@ -55,29 +75,9 @@ void x900_functional_test(std::string serial_port, int baud_rate, std::string li
 void error_loop(uint8_t test_stage, uint16_t error_code, uint16_t current_data);
 
 /*
- * Test RAM.
- */
-bool RAM_test();
-
-/*
- * Test flash.
- */
-bool Flash_test();
-
-/*
  * Test serial port.
  */
 bool serial_port_test();
-
-/*
- * Test lidar.
- */
-bool lidar_test();
-
-/*
- * Test lidar bumper.
- */
-bool lidar_bumper_test();
 
 /*
  * Test for power supply voltage.

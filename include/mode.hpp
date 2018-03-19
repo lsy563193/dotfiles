@@ -105,6 +105,7 @@ public:
 		ac_water_tank_test,
 		//25
 		ac_life_test,
+		ac_r16_test,
 	};
 
 	virtual void genNextAction();

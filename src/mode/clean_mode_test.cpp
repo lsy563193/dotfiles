@@ -52,6 +52,15 @@ CleanModeTest::CleanModeTest(uint8_t mode)
 			genNextAction();
 			break;
 		}
+		case R16_AND_LIDAR_TEST_MODE:
+		{
+			serial.setWorkMode(R16_AND_LIDAR_TEST_MODE);
+			sp_state = state_test;
+			sp_state->init();
+			action_i_ = ac_r16_test;
+			genNextAction();
+			break;
+		}
 	}
 }
 
