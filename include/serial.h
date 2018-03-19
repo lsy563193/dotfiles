@@ -76,6 +76,12 @@
 #define CTL_TESTING_STAGE 2
 #define CTL_ERROR_CODE_HIGH 3
 #define CTL_ERROR_CODE_LOW 4
+#define CTL_CURRENT_DATA_HIGH 5
+#define CTL_CURRENT_DATA_LOW 6
+// For message type
+// 0 for normal message
+// 1 for error message
+#define CTL_MESSAGE_TYPE 7
 // For motors test mode
 // 0 for idle mode
 // 1 for stall mode

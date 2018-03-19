@@ -100,8 +100,12 @@ void x900_functional_test(std::string serial_port, int baud_rate, std::string li
 void error_loop(uint8_t test_stage, uint16_t error_code, uint16_t current_data)
 {
 	serial.setSendData(CTL_MAIN_BOARD_MODE, ALARM_ERROR_MODE);
+	serial.setSendData(CTL_TESTING_STAGE, test_stage);
 	serial.setSendData(CTL_ERROR_CODE_HIGH, static_cast<uint8_t>(error_code >> 8));
-	serial.setSendData(CTL_ERROR_CODE_LOW, static_cast<uint8_t>(error_code));
+	serial.setSendData(CTL_ERROR_CODE_LOW, static_cast<uint8_t>(error_code & 0xFF));
+	serial.setSendData(CTL_CURRENT_DATA_HIGH, static_cast<uint8_t>(current_data >> 8));
+	serial.setSendData(CTL_CURRENT_DATA_LOW, static_cast<uint8_t>(current_data & 0xFF));
+	serial.setSendData(CTL_MESSAGE_TYPE, 1);
 
 	double alarm_time = ros::Time::now().toSec();
 	speaker.play(VOICE_TEST_FAIL);
