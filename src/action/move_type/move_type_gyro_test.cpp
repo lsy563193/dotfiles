@@ -38,7 +38,7 @@ void MoveTypeGyroTest::run()
 				test_stage_++;
 				p_movement_.reset();
 				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(90), 10));
-				saved_gyro_turn_angle_ = gyro.getAngle();
+				saved_gyro_turn_angle_ = gyro.getAngleY();
 				wheel_mileage_ = 0;
 				brush.slowOperate();
 			}
@@ -57,7 +57,7 @@ void MoveTypeGyroTest::run()
 			ROS_INFO("%s %d: Turn for %d times, wheel_turn_angle_:%f(%f in angle).",
 					 __FUNCTION__, __LINE__, test_stage_, degree_to_radian(wheel_turn_angle_), wheel_turn_angle_);
 
-			auto current_angle = gyro.getAngle();
+			auto current_angle = gyro.getAngleY();
 			auto gyro_diff = current_angle - saved_gyro_turn_angle_;
 			ROS_INFO("%s %d: gyro_diff:%f(%f in angle).", __FUNCTION__, __LINE__, degree_to_radian(gyro_diff),
 					 gyro_diff);
@@ -73,7 +73,7 @@ void MoveTypeGyroTest::run()
 				ROS_INFO("%s %d: Turn for %d times, wheel_turn_angle_:%f(%f in angle).",
 						 __FUNCTION__, __LINE__, test_stage_, degree_to_radian(wheel_turn_angle_), wheel_turn_angle_);
 
-				auto current_angle = gyro.getAngle();
+				auto current_angle = gyro.getAngleY();
 				auto gyro_diff =  current_angle - saved_gyro_turn_angle_;
 				ROS_INFO("%s %d: gyro_diff:%f(%f in angle).", __FUNCTION__, __LINE__, degree_to_radian(gyro_diff), gyro_diff);
 
@@ -91,7 +91,7 @@ void MoveTypeGyroTest::run()
 					else
 						p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(90), 10));
 					test_stage_++;
-					current_angle = gyro.getAngle();
+					current_angle = gyro.getAngleY();
 					saved_gyro_turn_angle_ = current_angle;
 				}
 			}

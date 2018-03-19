@@ -24,6 +24,9 @@ bool ActionOpenGyro::isFinish()
 	{
 		ROS_INFO("%s %d: Open gyro succeeded.", __FUNCTION__, __LINE__);
 		gyro.setAccInitData();
+		gyro.setAngleVOffset();
+		gyro.setAngleROffset();
+		gyro.resetKalmanParam();
 		gyro.setTiltCheckingEnable(true);
 		return true;
 	}

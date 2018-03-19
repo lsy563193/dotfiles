@@ -260,6 +260,8 @@ private:
 	bool is_locked_scan_ctrl_{false};
 
 	bool is_first_slip{true};
+
+	bool is_set_anglev_offset{false};
 };
 
 float cellToCount(int16_t distance);

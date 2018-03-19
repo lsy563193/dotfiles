@@ -9,6 +9,7 @@
 #include <key_led.h>
 #include <robot.hpp>
 #include <water_tank.hpp>
+#include <vacuum.h>
 #include "wifi.h"
 
 boost::mutex send_stream_mutex;
@@ -617,6 +618,9 @@ void Serial::send_routine_cb()
 		wheel.pidAdjustSpeed();
 		brush.updatePWM();
 		water_tank.updatePWM();
+
+//		brush.stop();
+//		vacuum.stop();
 
 		sendData();
 		robot::instance()->publishCtrlStream();

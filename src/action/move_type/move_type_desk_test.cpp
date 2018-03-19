@@ -234,7 +234,7 @@ void MoveTypeDeskTest::deskTestRoutineThread()
 		{
 			odom.setMovingSpeed(
 					static_cast<float>((wheel.getLeftWheelActualSpeed() + wheel.getRightWheelActualSpeed()) / 2.0));
-			odom.setRadian(degree_to_radian(gyro.getAngle()));
+			odom.setRadian(degree_to_radian(gyro.getAngleY()));
 			odom.setAngleSpeed(gyro.getAngleV());
 			cur_time = ros::Time::now();
 			double angle_rad, dt;
@@ -269,7 +269,7 @@ bool MoveTypeDeskTest::dataExtract(const uint8_t *buf)
 	// For gyro device.
 	gyro.setCalibration(buf[REC_GYRO_CALIBRATION] != 0);
 
-	gyro.setAngle(static_cast<float>(static_cast<int16_t>((buf[REC_ANGLE_H] << 8) | buf[REC_ANGLE_L]) / 100.0 * -1));
+	gyro.setAngleY(static_cast<float>(static_cast<int16_t>((buf[REC_ANGLE_H] << 8) | buf[REC_ANGLE_L]) / 100.0 * -1));
 	gyro.setAngleV(
 			static_cast<float>(static_cast<int16_t>((buf[REC_ANGLE_V_H] << 8) | buf[REC_ANGLE_V_L]) / 100.0 * -1));
 
@@ -390,7 +390,7 @@ bool MoveTypeDeskTest::check_stage_2_finish()
 			else
 				p_movement_->run();
 
-//			ROS_INFO("%s %d: angle:%f", __FUNCTION__, __LINE__, gyro.getAngle());
+//			ROS_INFO("%s %d: angle:%f", __FUNCTION__, __LINE__, gyro.getAngleY());
 			break;
 		}
 		case 2:

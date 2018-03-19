@@ -201,10 +201,15 @@ void robot::robotbase_routine_cb()
 		gyro.setCalibration(buf[REC_GYRO_CALIBRATION] != 0);
 		sensor.gyro_calibration = gyro.getCalibration();
 
-		gyro.setAngle(static_cast<float>(static_cast<int16_t>((buf[REC_ANGLE_H] << 8) | buf[REC_ANGLE_L]) / 100.0 * -1));
-		sensor.angle = gyro.getAngle();
+		gyro.setAngleY(static_cast<float>(static_cast<int16_t>((buf[REC_ANGLE_H] << 8) | buf[REC_ANGLE_L]) / 100.0 * -1));
+		sensor.angle = gyro.getAngleY();
 		gyro.setAngleV(static_cast<float>(static_cast<int16_t>((buf[REC_ANGLE_V_H] << 8) | buf[REC_ANGLE_V_L]) / 100.0 * -1));
 		sensor.angle_v = gyro.getAngleV();
+/*		if (!is_set_anglev_offset) {
+			gyro.setAngleVOffset(sensor.angle_v);
+			is_set_anglev_offset = true;
+			ROS_ERROR("setAngleVOffset = %f", sensor.angle_v);
+		}*/
 
 		if (gyro.getXAcc() == -1000)
 			gyro.setXAcc(static_cast<int16_t>((buf[REC_XACC_H] << 8) | buf[REC_XACC_L]));
@@ -329,13 +334,16 @@ void robot::robotbase_routine_cb()
 		/*------------setting for odom and publish odom topic --------*/
 		boost::mutex::scoped_lock lock(odom_mutex_);
 		odom.setMovingSpeed(static_cast<float>((wheel.getLeftWheelActualSpeed() + wheel.getRightWheelActualSpeed()) / 2.0));
-		odom.setRadian(degree_to_radian(gyro.getAngle()));
+		odom.setRadian(degree_to_radian(gyro.getAngleY()));
 		odom.setAngleSpeed(gyro.getAngleV());
 		cur_time = ros::Time::now();
 		double angle_rad, dt;
 		angle_rad = odom.getRadian();
 		dt = (cur_time - last_time).toSec();
 		last_time = cur_time;
+		gyro.calAngleR(0.5, dt);
+		gyro.getAngleR();
+		gyro.getAngleRKalmanFilter(dt);
 		if(!lidar.isRobotSlip()){
 			odom.setX(static_cast<float>(odom.getX() + (odom.getMovingSpeed() * cos(angle_rad)) * dt));
 			odom.setY(static_cast<float>(odom.getY() + (odom.getMovingSpeed() * sin(angle_rad)) * dt));
@@ -369,7 +377,7 @@ void robot::robotbase_routine_cb()
 		/*------publish end -----------*/
 
 		// Check tilt
-		gyro.checkTilt();
+//		gyro.checkTilt();
 		// Dynamic adjust obs
 		obs.DynamicAdjust(OBS_adjust_count);
 
