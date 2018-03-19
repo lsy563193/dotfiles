@@ -83,7 +83,7 @@ public:
 
 	void pidAdjustSpeed(void);
 
-	void setPidTargetSpeed(uint8_t Left, uint8_t Right, uint8_t reg_type = REG_TYPE_NONE, float PID_p = 1,
+	void setPidTargetSpeed(int8_t left, int8_t right, uint8_t reg_type = REG_TYPE_NONE, float PID_p = 1,
 						   float PID_i = 0,
 						   float PID_d = 0);
 
@@ -181,6 +181,26 @@ public:
 		right_wheel_cliff_ = val;
 	}
 
+	int8_t getLeftEncoderCnt()
+	{
+		return left_encoder_cnt_;
+	}
+
+	void setLeftEncoderCnt(int8_t val)
+	{
+		left_encoder_cnt_ = val;
+	}
+
+	int8_t getRightEncoderCnt()
+	{
+		return right_encoder_cnt_;
+	}
+
+	void setRightEncoderCnt(int8_t val)
+	{
+		right_encoder_cnt_ = val;
+	}
+
 private:
 	DirectionType left_direction_;
 	DirectionType right_direction_;
@@ -197,6 +217,8 @@ private:
 	bool is_right_wheel_over_current_;
 	float left_wheel_actual_speed_;
 	float right_wheel_actual_speed_;
+	int8_t left_encoder_cnt_{0};
+	int8_t right_encoder_cnt_{0};
 
 	bool left_wheel_cliff_;
 	bool right_wheel_cliff_;

@@ -8,7 +8,7 @@
 #include "mode.hpp"
 CleanModeTest::CleanModeTest(uint8_t mode)
 {
-	ROS_WARN("%s %d: Entering Desk Test mode\n=========================" , __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Entering Test mode\n=========================" , __FUNCTION__, __LINE__);
 	speaker.play(VOICE_TEST_MODE, false);
 	event_manager_set_enable(false);
 	test_mode_ = mode;
@@ -16,19 +16,17 @@ CleanModeTest::CleanModeTest(uint8_t mode)
 	{
 		case DESK_TEST_CURRENT_MODE:
 		{
-			serial.setMainBoardMode(DESK_TEST_CURRENT_MODE);
+			serial.setWorkMode(DESK_TEST_CURRENT_MODE);
 			sp_state = state_test;
 			sp_state->init();
 			action_i_ = ac_desk_test;
 			genNextAction();
 			break;
 		}
-//		case GYRO_TEST_MODE:
-		case WORK_MODE:
-		case NORMAL_SLEEP_MODE:
+		case GYRO_TEST_MODE:
 		{
-//			serial.setMainBoardMode(GYRO_TEST_MODE);
-			serial.setMainBoardMode(WORK_MODE);
+//			serial.setWorkMode(GYRO_TEST_MODE);
+			serial.setWorkMode(WORK_MODE);
 			sp_state = state_test;
 			sp_state->init();
 			action_i_ = ac_gyro_test;
@@ -37,11 +35,29 @@ CleanModeTest::CleanModeTest(uint8_t mode)
 		}
 		case WATER_TANK_TEST_MODE:
 		{
-//			serial.setMainBoardMode(WATER_TANK_TEST_MODE);
-			serial.setMainBoardMode(WORK_MODE);
+//			serial.setWorkMode(WATER_TANK_TEST_MODE);
+			serial.setWorkMode(WORK_MODE);
 			sp_state = state_test;
 			sp_state->init();
 			action_i_ = ac_water_tank_test;
+			genNextAction();
+			break;
+		}
+		case LIFE_TEST_MODE:
+		{
+			serial.setWorkMode(LIFE_TEST_MODE);
+			sp_state = state_test;
+			sp_state->init();
+			action_i_ = ac_life_test;
+			genNextAction();
+			break;
+		}
+		case R16_AND_LIDAR_TEST_MODE:
+		{
+			serial.setWorkMode(R16_AND_LIDAR_TEST_MODE);
+			sp_state = state_test;
+			sp_state->init();
+			action_i_ = ac_r16_test;
 			genNextAction();
 			break;
 		}

@@ -141,7 +141,7 @@
  * if the gyro x-axis & y-axis angle are greater than 5 degree, we will
  * confirmed that the robot is tilted.
  */
-//#define ENABLE_TILTED_DETECT		(1)
+#define ENABLE_TILTED_DETECT		(1)
 
 /*
  * Value for maximum allowed angle while the robot is tilted. If it is greater
@@ -190,5 +190,7 @@
 
 /* ------------------------------------- robot physical config ------------------------------------- */
 #define WHEEL_TO_CENTER_DISTANCE		(0.109f)
+
+#define WHEEL_ENCODER_TO_MILLIMETER			(0.1955f)
 #endif //__CONFIG_H__
 

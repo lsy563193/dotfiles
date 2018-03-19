@@ -10,7 +10,7 @@
 #include <robot.hpp>
 #include <water_tank.hpp>
 #include <vacuum.h>
-#include "wifi.h"
+#include "wifi/wifi.h"
 
 boost::mutex send_stream_mutex;
 
@@ -232,7 +232,7 @@ void Serial::resetSendStream(void)
 	setSendData(CTL_TRAILER_1, 0xcc);
 	setSendData(CTL_TRAILER_2, 0x33);
 
-	setMainBoardMode(IDLE_MODE);
+	setWorkMode(IDLE_MODE);
 	uint8_t buf[SEND_LEN];
 	{
 		boost::mutex::scoped_lock lock(send_stream_mutex);
@@ -260,9 +260,9 @@ uint8_t Serial::getSendData(uint8_t seq)
 	return tmp_data;
 }
 
-void Serial::setMainBoardMode(uint8_t val)
+void Serial::setWorkMode(uint8_t val)
 {
-	setSendData(CTL_MAIN_BOARD_MODE, val);
+	setSendData(CTL_WORK_MODE, val);
 }
 
 /*
@@ -574,10 +574,12 @@ void Serial::receive_routine_cb()
 				ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock)!=0, "serial pthread receive unlock fail");
 			}
 			else {
+				debugReceivedStream(receiData);
 				ROS_WARN(" in serial read ,data tail error\n");
 			}
 		}
 		else {
+			debugReceivedStream(receiData);
 			ROS_ERROR("%s,%d,in serial read ,data crc error\n",__FUNCTION__,__LINE__);
 		}
 	}
@@ -619,9 +621,6 @@ void Serial::send_routine_cb()
 		brush.updatePWM();
 		water_tank.updatePWM();
 
-//		brush.stop();
-//		vacuum.stop();
-
 		sendData();
 		robot::instance()->publishCtrlStream();
 	}
@@ -639,6 +638,31 @@ void Serial::sendData()
 	buf[CTL_CRC] = serial.calBufCrc8(buf, CTL_CRC);
 //	printf("buf[CTL_CRC] = %x\n", buf[CTL_CRC]);
 	serial.write(buf, SEND_LEN);
-//	robot::instance()->debugSendStream(buf);
+//	debugSendStream(buf);
 	serial.setSendData(CTL_CRC, buf[CTL_CRC]);
 }
+
+void Serial::debugReceivedStream(const uint8_t *buf)
+{
+	ROS_INFO("%s %d: Received stream:", __FUNCTION__, __LINE__);
+	for (int i = 0; i < REC_LEN; i++)
+		printf("%02d ", i);
+	printf("\n");
+
+	for (int i = 0; i < REC_LEN; i++)
+		printf("%02x ", buf[i]);
+	printf("\n");
+}
+
+void Serial::debugSendStream(const uint8_t *buf)
+{
+	ROS_INFO("%s %d: Send stream:", __FUNCTION__, __LINE__);
+	for (int i = 0; i < SEND_LEN; i++)
+		printf("%02d ", i);
+	printf("\n");
+
+	for (int i = 0; i < SEND_LEN; i++)
+		printf("%02x ", buf[i]);
+	printf("\n");
+}
+

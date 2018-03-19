@@ -21,7 +21,10 @@ IMoveType::IMoveType() {
 	c_rcon.resetStatus();
 	robot::instance()->obsAdjustCount(20);
 }
-
+IMoveType::~IMoveType() {
+//	resetTriggeredValue();
+	wheel.stop();
+}
 bool IMoveType::shouldMoveBack()
 {
 	// Robot should move back for these cases.

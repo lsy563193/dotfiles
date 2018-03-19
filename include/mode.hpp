@@ -103,6 +103,9 @@ public:
 		ac_desk_test,
 		ac_gyro_test,
 		ac_water_tank_test,
+		//25
+		ac_life_test,
+		ac_r16_test,
 	};
 
 	virtual void genNextAction();
@@ -276,7 +279,6 @@ public:
 	bool generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &targets);
 
 	void genNextAction();
-//	uint8_t setBlocks(Dir_t dir);
 	virtual bool mapMark() = 0;
 	void setCleaned(std::deque<Cell_t> cells);
 //	void setLinearCleaned();
@@ -438,6 +440,8 @@ public:
 	State *state_exploration = new StateExploration();
 
 	Points passed_path_{};
+	typedef std::set<PairCell_t> Blocks_t ;
+	Blocks_t c_blocks;
 	Points plan_path_{};
 	bool found_temp_charger_{};
 	bool in_rcon_signal_range_{};
@@ -482,6 +486,7 @@ public:
 	static void pubPointMarkers(const std::deque<Vector2<double>> *point, std::string frame_id,std::string name);
 	void pubFitLineMarker(visualization_msgs::Marker fit_line_marker);
 	void setLinearCleaned();
+	uint8_t setFollowWall(GridMap&, bool is_left, const Points&);
 	void scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr& scan);
 	void setCleanMapMarkers(int16_t x, int16_t y, CellState type,  visualization_msgs::Marker& clean_map_markers_);
 	void pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path);
@@ -495,6 +500,8 @@ public:
 	void setTempTarget(std::deque<Vector2<double>>& points, uint32_t  seq);
 	void pubTmpTarget(const Point_t &point,bool is_virtual=false);
 	uint8_t setBlocks(Dir_t dir);
+	void saveBlocks(bool is_linear, bool is_save_rcon);
+	void saveBlock(int block, int , std::function<Cells()>);
 	void checkShouldMarkCharger(float angle_offset,float distance);
 	PathHead getTempTarget();
 
@@ -595,10 +602,12 @@ public:
 	bool isSwitchByEventInStateExceptionResume() override;
 
 private:
-	bool has_aligned_and_open_slam_{false};
-	float paused_odom_radian_{0};
+	bool has_aligned_and_open_slam_{};
+	float paused_odom_radian_{};
+	float start_align_radian_{};
 	Point_t continue_point_{};
-	bool go_home_for_low_battery_{false};
+	bool go_home_for_low_battery_{};
+	static int align_count_;
 };
 
 class CleanModeExploration : public ACleanMode

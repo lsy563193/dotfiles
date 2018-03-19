@@ -72,6 +72,7 @@
 #define VACUUM_STALL_ERROR						(uint16_t)1005
 #define CHARGE_PWM_ERROR						(uint16_t)1101
 #define CHARGE_CURRENT_ERROR				(uint16_t)1102
+#define SWING_MOTOR_ERROR						(uint16_t)1201
 
 typedef enum {
 	ERROR_CODE_NONE,

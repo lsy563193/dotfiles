@@ -262,20 +262,18 @@ void Wheel::pidAdjustSpeed(void)
 #endif
 }
 
-void Wheel::setPidTargetSpeed(uint8_t Left, uint8_t Right, uint8_t reg_type, float PID_p, float PID_i, float PID_d)
+void Wheel::setPidTargetSpeed(int8_t left, int8_t right, uint8_t reg_type, float PID_p, float PID_i, float PID_d)
 {
-	int8_t signed_left_speed_after_pid_ = (int8_t)Left;
-	int8_t signed_right_speed_after_pid_ = (int8_t)Right;
 	setPidParam(reg_type, PID_p, PID_i, PID_d);
 	//ROS_INFO("%s %d: Signed speed: left(%d), right(%d), dir left(%d), dir right(%d).",
 	//		 __FUNCTION__, __LINE__, signed_left_speed_after_pid_, signed_right_speed_after_pid_, left_direction_, right_direction_);
 
 	if(left_direction_ == DIRECTION_BACKWARD)
-		signed_left_speed_after_pid_ *= -1;
+		left *= -1;
 	if(right_direction_ == DIRECTION_BACKWARD)
-		signed_right_speed_after_pid_ *= -1;
-	left_pid.target_speed = (float)signed_left_speed_after_pid_;
-	right_pid.target_speed = (float)signed_right_speed_after_pid_;
+		right *= -1;
+	left_pid.target_speed = (float)left;
+	right_pid.target_speed = (float)right;
 	//ROS_INFO("%s %d: PID Target speed: left(%f), right(%f).", __FUNCTION__, __LINE__, left_pid.target_speed, right_pid.target_speed);
 }
 

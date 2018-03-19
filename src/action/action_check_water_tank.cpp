@@ -2,6 +2,7 @@
 // Created by austin on 18-3-14.
 //
 
+#include <water_tank.hpp>
 #include "ros/ros.h"
 #include "action.hpp"
 

@@ -86,11 +86,19 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 //	map.print(CLEAN_MAP, targets);
 
 	if (targets.empty())
-		return false;
+	{
+		map.print(CLEAN_MAP, path);
+		map.print(COST_MAP, path);
+		Cell_t target;
+		int dijkstra_cleaned_count;
+		if(!findTargetUsingDijkstra(map,getPosition().toCell(),target,dijkstra_cleaned_count))
+			return false;
+		targets.push_back(target);
+	}
 
 	if (!filterPathsToSelectBestPath(map, targets, curr_cell, path,last_dir))
 		return false;
-	if(curr_filter_ == &filter_p_1000t || curr_filter_ == &filter_n_1000t)
+	if(path.size() > 4 )
 	{
 		ROS_INFO("Step 5: size_of_path > 15 Optimize path for adjusting it away from obstacles..");
 		optimizePath(map, path);
@@ -189,13 +197,13 @@ void NavCleanPathAlgorithm::findPath(GridMap &map, const Cell_t &start, const Ce
 	auto cost = map.getCell(COST_MAP, target.x, target.y);
 	auto iterator = target;
 	for (; iterator != start;) {
-/*		if(map.getCell(COST_MAP, iterator.x, iterator.y) != cost)
+		if(map.getCell(COST_MAP, iterator.x, iterator.y) != cost)
 		{
 			printf("start(%d,%d) iterator(%d,%d),target(%d,%d)cost(%d)\n",start.x, start.y, iterator.x, iterator.y,cost, target.x, target.y);
-			map.print(CLEAN_MAP, 0, 0);
-			map.print(COST_MAP, 0, 0);
+//			map.print(CLEAN_MAP, 0, 0);
+//			map.print(COST_MAP, 0, 0);
 			ROS_ASSERT(map.getCell(COST_MAP, iterator.x, iterator.y) == cost);
-		}*/
+		}
 		cost -= 1;
 		if(cost == 0)
 			cost = 5;

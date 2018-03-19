@@ -10,10 +10,16 @@
 #include <random>
 #include <wait.h>
 #include "robot.hpp"
+#include "infrared_display.hpp"
 
 void x900_functional_test(std::string serial_port, int baud_rate, std::string lidar_bumper_dev)
 {
-	uint16_t main_board_test_result=0;
+	uint8_t test_stage=0;
+	uint16_t error_code=0;
+	uint16_t current_data=0;
+	/*--- disable serial send and robotbase thread ---*/
+	send_thread_enable = false;
+	robotbase_thread_enable = false;
 	ROS_INFO("%s %d: Serial_port: %s, baudrate: %d, lidar_bumper_dev: %s.",
 			 __FUNCTION__, __LINE__, serial_port.c_str(), baud_rate, lidar_bumper_dev.c_str());
 	// Test item: Speaker.
@@ -24,56 +30,22 @@ void x900_functional_test(std::string serial_port, int baud_rate, std::string li
 	if (!serial_port_test())
 	{
 		ROS_ERROR("%s %d: Serial port test failed!!", __FUNCTION__, __LINE__);
-		error_loop(SERIAL_ERROR);
+		error_loop(FUNC_SERIAL_TEST_MODE, SERIAL_ERROR, 0);
 	}
 	ROS_INFO("Test serial port succeeded!!");
+
 	send_thread_enable = true;
-
-	// Test item: RAM.
-	if (!RAM_test())
-	{
-		ROS_ERROR("%s %d: RAM test failed!!", __FUNCTION__, __LINE__);
-		error_loop(RAM_ERROR);
-	}
-	ROS_INFO("%s %d: Test for RAM successed.", __FUNCTION__, __LINE__);
-
-	// Test item: Flash.
-	if (!Flash_test())
-	{
-		ROS_ERROR("%s %d: Flash test failed!!", __FUNCTION__, __LINE__);
-		error_loop(FLASH_ERROR);
-	}
-	ROS_INFO("%s %d: Test for Flash succeeded.", __FUNCTION__, __LINE__);
-
-
-	// Test item: Lidar.
-	if (!lidar_test())
-	{
-		ROS_ERROR("%s %d: Lidar test failed!!", __FUNCTION__, __LINE__);
-		error_loop(LIDAR_ERROR);
-	}
-	ROS_INFO("%s %d: Test for lidar succeeded.", __FUNCTION__, __LINE__);
-
-	// Test item: Lidar bumper.
-	if (bumper.lidarBumperInit(lidar_bumper_dev.c_str()) != 1 || !lidar_bumper_test())
-	{
-
-		ROS_ERROR("%s %d: Lidar bumper test failed!!", __FUNCTION__, __LINE__);
-		error_loop(LIDAR_BUMPER_ERROR);
-	}
-	ROS_INFO("%s %d: Test for lidar bumper succeeded.", __FUNCTION__, __LINE__);
-
 	recei_thread_enable = true;
 
 	// Wait for the end of voice playing
 	speaker.play(VOICE_NULL, false);
 	usleep(2000);
 	// Test hardware from main board.
-	main_board_test_result = main_board_test();
-	if (main_board_test_result)
+	main_board_test(test_stage, error_code, current_data);
+	if (error_code)
 	{
 		ROS_ERROR("%s %d: Main board test failed!!", __FUNCTION__, __LINE__);
-		error_loop(main_board_test_result);
+		error_loop(test_stage, error_code, current_data);
 	}
 	ROS_INFO("Test main board success!!");
 
@@ -92,11 +64,9 @@ void x900_functional_test(std::string serial_port, int baud_rate, std::string li
 	}
 }
 
-void error_loop(uint16_t error_code)
+void error_loop(uint8_t test_stage, uint16_t error_code, uint16_t current_data)
 {
-	serial.setSendData(CTL_MAIN_BOARD_MODE, ALARM_ERROR_MODE);
-	serial.setSendData(CTL_ERROR_CODE_HIGH, static_cast<uint8_t>(error_code >> 8));
-	serial.setSendData(CTL_ERROR_CODE_LOW, static_cast<uint8_t>(error_code));
+	infrared_display.displayErrorMsg(test_stage, current_data, error_code);
 
 	double alarm_time = ros::Time::now().toSec();
 	speaker.play(VOICE_TEST_FAIL);
@@ -107,149 +77,9 @@ void error_loop(uint16_t error_code)
 		{
 			alarm_time = ros::Time::now().toSec();
 			speaker.play(VOICE_TEST_FAIL);
-			ROS_ERROR("%s %d: Test ERROR. error:code: %d", __FUNCTION__, __LINE__, error_code);
+			ROS_ERROR("%s %d: Test ERROR. test_stage: %d. error_code: %d, current_data: %d", __FUNCTION__, __LINE__, test_stage, error_code, current_data);
 		}
 	}
-}
-
-bool RAM_test()
-{
-	ROS_INFO("%s %d: Start RAM test.", __FUNCTION__, __LINE__);
-	bool test_ret = false;
-	int RAM_test_size = 2; // In Mb.
-	int RAM_test_block_cnt = 3; // Test 3 c_blocks of RAM and size of each block is RAM_test_size Mb.
-
-	pid_t status;
-	// (Austin)Use the modified memtester.
-	std::string cmd = "memtester " + std::to_string(RAM_test_size) + " 1 " + std::to_string(RAM_test_block_cnt);
-	ROS_INFO("%s %d: Run command: %s", __FUNCTION__, __LINE__, cmd.c_str());
-	status = system(cmd.c_str());
-
-	if (-1 == status)
-		ROS_ERROR("%s %d: system error!", __FUNCTION__, __LINE__);
-	else
-	{
-		ROS_INFO("exit status value = [0x%x]", status);
-		if (WIFEXITED(status))
-		{
-			if (0 == WEXITSTATUS(status))
-				test_ret = true;
-			else
-				ROS_ERROR("%s %d: Program test for RAM failed, failed code:%d!!", __FUNCTION__, __LINE__, WEXITSTATUS(status));
-		}
-		else
-			ROS_ERROR("%s %d: Test for RAM end for exception, failed code:%d!!", __FUNCTION__, __LINE__, WEXITSTATUS(status));
-	}
-
-	return test_ret;
-
-	/*int pid;
-	int status = 0;
-	while ((pid = fork()) < 0)
-	{
-		ROS_ERROR("%s %d: fork() failed:%d.", __FUNCTION__, __LINE__, errno);
-		usleep(50000);
-	}
-
-	if (pid == 0)
-	{
-		// Child process.
-		ROS_INFO("%s %d: Child process up, pid:%d.", __FUNCTION__, __LINE__, getpid());
-
-		int fail_code = execlp("memtester", "memtester", std::to_string(RAM_test_size).c_str(), "1",
-			   std::to_string(RAM_test_block_cnt).c_str() ,NULL);
-		ROS_ERROR("%s %d: Child process end with error: %02d, %s", __FUNCTION__, __LINE__, errno, strerror(errno));
-		_exit(fail_code);
-	} else
-	{
-		// Parent process.
-		ROS_INFO("%s %d: Parent process up, child pid:%d.", __FUNCTION__, __LINE__, pid);
-		while (ros::ok() && waitpid(pid, &status, WNOHANG) == 0)
-		{
-//			ROS_INFO("%s %d: Parent waiting for pid:%d", __FUNCTION__, __LINE__, pid);
-//			if (errno != EINTR)
-//			{
-//				status = -1;
-//				break;
-//			}
-			usleep(200000);
-		}
-		switch (status)
-		{
-			case 0:
-				ROS_INFO("%s %d: Test for RAM successed.", __FUNCTION__, __LINE__);
-				test_ret = true;
-				break;
-			default:
-				ROS_ERROR("%s %d: Test for RAM failed, failed code:%d!!", __FUNCTION__, __LINE__, status);
-				break;
-		}
-	}
-
-
-	return test_ret;*/
-}
-
-bool Flash_test()
-{
-
-	ROS_INFO("%s %d: Start Flash test.", __FUNCTION__, __LINE__);
-	std::string origin_file = "/origin_random.file";
-	std::string new_file = "/random.file";
-	std::string cmd;
-	char origin_md5[32];
-	char new_md5[32];
-
-	// Check if origin file exists, if not, generate one.
-	if (access(origin_file.c_str(), F_OK) == -1)
-	{
-		ROS_WARN("%s %d: Access file errno:%s.", __FUNCTION__, __LINE__, strerror(errno));
-		size_t block_cnt = 1024 * 10; // 1 block means 1k byte.
-		ROS_INFO("%s %d: Generate random file for %fMb.", __FUNCTION__, __LINE__, static_cast<float>(block_cnt) / 1024);
-		cmd = "dd if=/dev/urandom of=" + origin_file + " count=" + std::to_string(block_cnt) + " bs=1024";
-		system(cmd.c_str());
-	}
-
-	// Get the md5sum of origin file.
-	cmd = "md5sum " + origin_file;
-	FILE *f = popen(cmd.c_str(), "r");
-	if (f)
-	{
-		fgets(origin_md5, 32, f);
-		pclose(f);
-	} else
-	{
-		ROS_ERROR("%s %d: popen file error:%s.", __FUNCTION__, __LINE__, strerror(errno));
-		return false;
-	}
-
-	// Copy a new file from origin file.
-	if (access(new_file.c_str(), F_OK) != -1)
-	{
-		ROS_WARN("%s %d: Delete existing %s.", __FUNCTION__, __LINE__, new_file.c_str());
-		cmd = "rm " + new_file;
-		system(cmd.c_str());
-	}
-	ROS_WARN("%s %d: Copy %s to %s.", __FUNCTION__, __LINE__, origin_file.c_str(), new_file.c_str());
-	cmd = "cp " + origin_file + " " + new_file;
-	system(cmd.c_str());
-
-	// Get the md5sum of new file.
-	cmd = "md5sum " + new_file;
-	f = popen(cmd.c_str(), "r");
-	if (f)
-	{
-		fgets(new_md5, 32, f);
-		ROS_INFO("%s %d: Origin random file md5 : %s.", __FUNCTION__, __LINE__, origin_md5);
-		ROS_INFO("%s %d: New random file md5    : %s.", __FUNCTION__, __LINE__, new_md5);
-		pclose(f);
-	} else
-	{
-		ROS_ERROR("%s %d: popen file error:%s.", __FUNCTION__, __LINE__, strerror(errno));
-		return false;
-	}
-
-	return strcmp(origin_md5, new_md5) == 0;
 }
 
 bool serial_port_test()
@@ -265,12 +95,13 @@ bool serial_port_test()
 	int test_frame_cnt = 50;
 
 	serial.resetSendStream();
+	serial.flush();
 	for (uint8_t test_cnt = 0; test_cnt < test_frame_cnt; test_cnt++)
 	{
 		// Write random numbers to send stream.
 		for (uint8_t i = CTL_WHEEL_LEFT_HIGH; i < CTL_CRC; i++)
 		{
-			if (i == CTL_MAIN_BOARD_MODE)
+			if (i == CTL_WORK_MODE)
 				serial.setSendData(i, FUNC_SERIAL_TEST_MODE);
 			else if (i == CTL_BEEPER)
 				serial.setSendData(i, static_cast<uint8_t>(test_cnt + 1));
@@ -373,48 +204,6 @@ bool serial_port_test()
 	return strncmp(char_buf1, char_buf2, write_data_length) == 0;*/
 }
 
-bool lidar_test()
-{
-	ROS_INFO("%s %d: Start lidar test.", __FUNCTION__, __LINE__);
-	ros::NodeHandle nh_;
-	ros::Subscriber scan_sub_;
-	scan_sub_ = nh_.subscribe("scanOriginal", 1, &Lidar::scantestCb, &lidar);
-	lidar.init();
-	while (ros::ok() && !lidar.motorCtrl(ON))
-		usleep(500000);
-	while (ros::ok() && !lidar.isScanOriginalReady())
-		usleep(200000);
-
-	// Test logic(not finished).
-	sleep(1);
-
-	lidar.motorCtrl(OFF);
-	scan_sub_.shutdown();
-	return true;
-}
-
-bool lidar_bumper_test()
-{
-	ROS_INFO("%s %d: Start lidar bumper test.", __FUNCTION__, __LINE__);
-
-	int test_bumper_cnt = 5;
-	int bumper_cnt = 0;
-	bool last_bumper_status = false;
-	while (ros::ok() && bumper_cnt < test_bumper_cnt)
-	{
-		bumper.setLidarBumperStatus();
-		if (!last_bumper_status && bumper.getLidarBumperStatus())
-		{
-			bumper_cnt++;
-			ROS_INFO("%s %d: Hit lidar bumper for %d time.", __FUNCTION__, __LINE__, bumper_cnt);
-		}
-		last_bumper_status = bumper.getLidarBumperStatus();
-		usleep(20000);
-	}
-
-	return true;
-}
-
 bool power_supply_test()
 {
 	return true;
@@ -437,46 +226,49 @@ bool power_supply_test()
 	return voltage > voltage_limit;
 }
 
-uint16_t main_board_test()
+void main_board_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data)
 {
 	bool is_fixture = false;
 	uint16_t test_result=0;
-	uint8_t test_stage = FUNC_ELECTRICAL_AND_LED_TEST_MODE;
 	uint16_t baseline[8];
+	test_stage = FUNC_ELECTRICAL_AND_LED_TEST_MODE;
 	while(ros::ok()) {
+		key_led.set(100, 100);
+		serial.setSendData(CTL_MIX, 1);
 		switch (test_stage) {
 			case FUNC_ELECTRICAL_AND_LED_TEST_MODE:/*---Main board electrical specification and LED test---*/
-				test_result = electrical_specification_and_led_test(baseline, is_fixture, test_stage);
+				electrical_specification_and_led_test(baseline, is_fixture, test_stage, error_code, current_data);
 				break;
 			case FUNC_OBS_TEST_MODE:/*---OBS---*/
-				test_result = obs_test(test_stage, is_fixture);
+				obs_test(is_fixture, test_stage, error_code, current_data);
 				break;
 			case FUNC_BUMPER_TEST_MODE:/*---bumper---*/
-				test_result = bumper_test(test_stage);
+				bumper_test(test_stage, error_code, current_data);
 				break;
 			case FUNC_CLIFF_TEST_MODE:/*---cliff---*/
-				test_result = cliff_test(test_stage);
+				cliff_test(test_stage, error_code, current_data);
 				break;
 			case FUNC_RCON_TEST_MODE:/*---rcon---*/
-				test_result = rcon_test(test_stage);
+				rcon_test(test_stage, error_code, current_data);
 				break;
 			case FUNC_WATER_TANK_TEST_MODE:/*---water tank---*/
-				test_result = water_tank_test(test_stage);
+				water_tank_test(test_stage, error_code, current_data);
+				break;
 			case FUNC_WHEELS_TEST_MODE:/*---wheels---*/
-				test_result = wheels_test(test_stage, baseline);
+				wheels_test(baseline, test_stage, error_code, current_data);
 				break;
 			case FUNC_BRUSHES_TEST_MODE:/*---brushes---*/
-				test_result = brushes_test(test_stage, baseline);
+				brushes_test(baseline, test_stage, error_code, current_data);
 				break;
 			case FUNC_VACUUM_TEST_MODE:/*---vacuum---*/
-				test_result = vacuum_test(test_stage, baseline);
+				vacuum_test(baseline, test_stage, error_code, current_data);
 				break;
 			case FUNC_CHARGE_CURRENT_TEST_MODE:/*---charge current---*/
-				test_result = charge_current_test(test_stage, is_fixture);
+				charge_current_test(is_fixture, test_stage, error_code, current_data);
 				break;
 		}
-		if(test_result)
-			return test_result;
+		if(error_code)
+			return ;
 	}
 }
 
@@ -632,7 +424,7 @@ uint16_t main_board_test()
 
 	return strncmp(buf1, buf2, static_cast<size_t>(write_length)) == 0;
 }*/
-uint16_t electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixture, uint8_t &test_stage)
+void electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixture, uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data)
 {
 	uint32_t temp_sum=0;
 	uint8_t step=0;
@@ -643,10 +435,14 @@ uint16_t electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixt
 	bool should_save_baseline = true;
 
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
-	serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_ELECTRICAL_AND_LED_TEST_MODE);
+	serial.setSendData(CTL_WORK_MODE, FUNC_ELECTRICAL_AND_LED_TEST_MODE);
+	serial.setSendData(CTL_BEEPER, 0);
+	key_led.set(0, 0);
+	serial.setSendData(CTL_MIX, 0);
+	serial.sendData();
 	while(ros::ok())
 	{
-		serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_ELECTRICAL_AND_LED_TEST_MODE);
+		serial.setSendData(CTL_WORK_MODE, FUNC_ELECTRICAL_AND_LED_TEST_MODE);
 		/*--------data extrict from serial com--------*/
 		ROS_ERROR_COND(pthread_mutex_lock(&recev_lock)!=0, "robotbase pthread receive lock fail");
 		ROS_ERROR_COND(pthread_cond_wait(&recev_cond,&recev_lock)!=0, "robotbase pthread receive cond wait fail");
@@ -672,7 +468,11 @@ uint16_t electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixt
 			case 0:
 				baseline_voltage = baseline[REF_VOLTAGE_ADC] * 330 / 4096;
 				if (baseline_voltage < 125 || baseline_voltage > 135)
-					return BASELINE_VOLTAGE_ERROR;
+				{
+					error_code = BASELINE_CURRENT_ERROR;
+					current_data = baseline_voltage;
+					return ;
+				}
 				step++;
 				temp_sum = 0;
 				count_20ms = 0;
@@ -687,9 +487,11 @@ uint16_t electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixt
 					ROS_INFO("%s, %d: battery voltage: %d", __FUNCTION__, __LINE__, temp_sum);
 					if (temp_sum < 1350 || temp_sum > 1700) {
 						if (temp_sum < 1350)
-							return BATTERY_LOW;
+							error_code = BATTERY_LOW;
 						else
-							return BATTERY_ERROR;
+							error_code = BATTERY_ERROR;
+						current_data = static_cast<uint16_t>(temp_sum);
+						return ;
 					}
 					temp_sum = 0;
 					count_20ms = 0;
@@ -707,9 +509,11 @@ uint16_t electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixt
 						{
 							ROS_INFO("baseline current: %d",temp_sum);
 							if(temp_sum < 40)
-								return BASELINE_CURRENT_LOW;
+								error_code = BASELINE_CURRENT_LOW;
 							else
-								return BASELINE_CURRENT_ERROR;
+								error_code = BASELINE_CURRENT_ERROR;
+							current_data = static_cast<uint16_t>(temp_sum);
+							return ;
 						}
 					baseline[SYSTEM_CURRENT] = static_cast<uint16_t>(temp_sum);
 					temp_sum = 0;
@@ -718,28 +522,11 @@ uint16_t electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixt
 				}
 				break;
 			case 3:/*---LED---*/
-				count_20ms++;
-				if (count_20ms < 20)
-					key_led.set(100, 0);
-				else if (count_20ms < 40)
-					key_led.set(0, 100);
-				else if (count_20ms < 60)
 					key_led.set(100, 100);
-				else if (count_20ms < 80)
-				{
-					key_led.set(0, 0);
 					serial.setSendData(CTL_MIX, 1);
-				}
-				else
-				{
-					count_20ms = 0;
-					serial.setSendData(CTL_MIX, 0);
-				}
 				if(buf[36])
 				{
 					count_key_pressed++;
-					key_led.set(0, 0);
-					serial.setSendData(CTL_MIX, 0);
 				}
 				else if(count_key_pressed)
 				{
@@ -752,15 +539,15 @@ uint16_t electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixt
 				break;
 		}
 		if(test_stage != FUNC_ELECTRICAL_AND_LED_TEST_MODE)
-			return 0;
+			return ;
 		serial.sendData();
 	}
 }
-uint16_t cliff_test(uint8_t &test_stage)
+void cliff_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data)
 {
 	uint16_t test_result = 0;
 	uint8_t buf[REC_LEN];
-	serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_CLIFF_TEST_MODE);
+	serial.setSendData(CTL_WORK_MODE, FUNC_CLIFF_TEST_MODE);
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
 	while(ros::ok()) {
 		/*--------data extrict from serial com--------*/
@@ -811,40 +598,32 @@ uint16_t cliff_test(uint8_t &test_stage)
 
 		if ((test_result & 0xF333) == 0xF333) {
 			test_stage++;
-			return 0;
+			return ;
 		}
 
 		if(buf[36])
 		{
 			if((test_result & 0x0003) != 0x0003)
-			{
-				return LEFT_CLIFF_ERROR;
-			}
+				error_code = LEFT_CLIFF_ERROR;
 			if((test_result & 0x0030) != 0x0030)
-			{
-				return FRONT_CLIFF_ERROR;
-			}
+				error_code = FRONT_CLIFF_ERROR;
 			if((test_result & 0x0300) != 0x0300)
-			{
-				return RIGHT_CLIFF_ERROR;
-			}
+				error_code = RIGHT_CLIFF_ERROR;
 			if((test_result & 0x3000) != 0x3000)
-			{
-				return LEFT_WHEEL_SW_ERROR;
-			}
+				error_code = LEFT_WHEEL_SW_ERROR;
 			if((test_result & 0xC000) != 0xC000)
-			{
-				return RIGHT_WHEEL_SW_ERROR;
-			}
+				error_code = RIGHT_WHEEL_SW_ERROR;
+			current_data = test_result;
+			return ;
 		}
 		serial.sendData();
 	}
 }
-uint16_t bumper_test(uint8_t &test_stage)
+void bumper_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data)
 {
 	uint8_t test_result = 0;
 	uint8_t buf[REC_LEN];
-	serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_BUMPER_TEST_MODE);
+	serial.setSendData(CTL_WORK_MODE, FUNC_BUMPER_TEST_MODE);
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
 	while(ros::ok())
 	{
@@ -873,24 +652,23 @@ uint16_t bumper_test(uint8_t &test_stage)
 
 		if ((test_result & 0x0f) == 0x0f) {
 			test_stage++;
-			return 0;
+			return ;
 		}
 		if (buf[36]) {
-			if ((test_result & 0x03) != 0x03) {
-				return LEFT_BUMPER_ERROR;
-			}
-			if ((test_result & 0x0c) != 0x0c) {
-				return RIGHT_BUMPER_ERROR;
-			}
+			if ((test_result & 0x03) != 0x03)
+				error_code = LEFT_BUMPER_ERROR;
+			if ((test_result & 0x0c) != 0x0c)
+				error_code = RIGHT_BUMPER_ERROR;
+			current_data = test_result;
 		}
 		serial.sendData();
 	}
 }
-uint16_t obs_test(uint8_t &test_stage, bool is_fixture)
+void obs_test(bool is_fixture, uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data)
 {
 	uint16_t test_result = 0;
 	uint8_t buf[REC_LEN];
-	serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_OBS_TEST_MODE);
+	serial.setSendData(CTL_WORK_MODE, FUNC_OBS_TEST_MODE);
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
 	while(ros::ok()) {
 		/*--------data extrict from serial com--------*/
@@ -977,70 +755,60 @@ uint16_t obs_test(uint8_t &test_stage, bool is_fixture)
 				test_result |= 0x0200;
 			}
 		}
-		ROS_INFO("Left_OBS: %d, Front_OBS: %d, Right_OBS: %d, Left_Wall: %d, Right_Wall: %d", \
-		static_cast<uint16_t>(buf[22] << 8 | buf[23]), static_cast<uint16_t>(buf[24] << 8 | buf[25]), \
-		static_cast<uint16_t>(buf[26] << 8 | buf[27]), static_cast<uint16_t>(buf[18] << 8 | buf[19]), \
-		static_cast<uint16_t>(buf[20] << 8 | buf[21]));
 
 		if (is_fixture)  //fixture test
 		{
 			if ((test_result & 0x0015) == 0x0015)//test pass
 			{
 				test_stage++;
-				return 0;
+				return ;
 			}
 			if (buf[36]) {
-				if ((test_result & 0x0001) != 0x0001) {
-					return LEFT_OBS_ERROR;
-				}
-				if ((test_result & 0x0004) != 0x0004) {
-					return FRONT_OBS_ERROR;
-				}
-				if ((test_result & 0x0010) != 0x0010) {
-					return RIGHT_OBS_ERROR;
-				}
-				if ((test_result & 0x0040) != 0x0040) {
-					return LEFT_WALL_ERROR;
-				}
-				if ((test_result & 0x0100) != 0x0100) {
-					return RIGHT_WALL_ERROR;
-				}
+				if ((test_result & 0x0001) != 0x0001)
+					error_code = LEFT_OBS_ERROR;
+				if ((test_result & 0x0004) != 0x0004)
+					error_code = FRONT_OBS_ERROR;
+				if ((test_result & 0x0010) != 0x0010)
+					error_code = RIGHT_OBS_ERROR;
+				if ((test_result & 0x0040) != 0x0040)
+					error_code = LEFT_WALL_ERROR;
+				if ((test_result & 0x0100) != 0x0100)
+					error_code = RIGHT_WALL_ERROR;
+				current_data = test_result;
+				return ;
 			}
 		}
 		else   //manual mode
 		{
 			if ((test_result & 0x003F) == 0x003f) {
 				test_stage++;
-				return 0;
+				return ;
 			}
 
 			if (buf[36]) {
-				if ((test_result & 0x0003) != 0x0003) {
-					return LEFT_OBS_ERROR;
-				}
-				if ((test_result & 0x000c) != 0x000c) {
-					return FRONT_OBS_ERROR;
-				}
-				if ((test_result & 0x0030) != 0x0030) {
-					return RIGHT_OBS_ERROR;
-				}
-				if ((test_result & 0x00c0) != 0x00c0) {
-					return LEFT_WALL_ERROR;
-				}
-				if ((test_result & 0x0300) != 0x0300) {
-					return RIGHT_WALL_ERROR;
-				}
+				if ((test_result & 0x0003) != 0x0003)
+					error_code = LEFT_OBS_ERROR;
+				if ((test_result & 0x000c) != 0x000c)
+					error_code = FRONT_OBS_ERROR;
+				if ((test_result & 0x0030) != 0x0030)
+					error_code = RIGHT_OBS_ERROR;
+				if ((test_result & 0x00c0) != 0x00c0)
+					error_code = LEFT_WALL_ERROR;
+				if ((test_result & 0x0300) != 0x0300)
+					error_code = RIGHT_WALL_ERROR;
+				current_data = test_result;
+				return ;
 			}
 		}
 		serial.sendData();
 	}
 }
-uint16_t rcon_test(uint8_t &test_stage)
+void rcon_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data)
 {
 	uint16_t test_result = 0;
 	uint32_t Temp_Rcon_Status = 0;
 	uint8_t buf[REC_LEN];
-	serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_RCON_TEST_MODE);
+	serial.setSendData(CTL_WORK_MODE, FUNC_RCON_TEST_MODE);
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
 	while(ros::ok()) {
 		/*--------data extrict from serial com--------*/
@@ -1120,44 +888,38 @@ uint16_t rcon_test(uint8_t &test_stage)
 
 		if (test_result == 0xffff) {
 			test_stage++;
-			return 0;
+			return ;
 		}
 		if (buf[36]) {
-			if ((test_result & 0x0300) != 0x0300) {
-				return BLRCON_ERROR;
-			}
-			if ((test_result & 0x00c0) != 0x00c0) {
-				return LRCON_ERROR;
-			}
-			if ((test_result & 0xc000) != 0xc000) {
-				return FL2RCON_ERROR;
-			}
-			if ((test_result & 0x0030) != 0x0030) {
-				return FLRCON_ERROR;
-			}
-			if ((test_result & 0x000c) != 0x000c) {
-				return FRRCON_ERROR;
-			}
-			if ((test_result & 0x0003) != 0x0003) {
-				return FR2RCON_ERROR;
-			}
-			if ((test_result & 0x3000) != 0x3000) {
-				return RRCON_ERROR;
-			}
-			if ((test_result & 0x0c00) != 0x0c00) {
-				return BRRCON_ERROR;
-			}
+			if ((test_result & 0x0300) != 0x0300)
+				error_code = BLRCON_ERROR;
+			if ((test_result & 0x00c0) != 0x00c0)
+				error_code = LRCON_ERROR;
+			if ((test_result & 0xc000) != 0xc000)
+				error_code = FL2RCON_ERROR;
+			if ((test_result & 0x0030) != 0x0030)
+				error_code = FLRCON_ERROR;
+			if ((test_result & 0x000c) != 0x000c)
+				error_code = FRRCON_ERROR;
+			if ((test_result & 0x0003) != 0x0003)
+				error_code = FR2RCON_ERROR;
+			if ((test_result & 0x3000) != 0x3000)
+				error_code = RRCON_ERROR;
+			if ((test_result & 0x0c00) != 0x0c00)
+				error_code = BRRCON_ERROR;
+			current_data = test_result;
+			return ;
 		}
 		serial.sendData();
 	}
 }
-uint16_t water_tank_test(uint8_t &test_stage)
+void water_tank_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data)
 {
 	uint16_t test_result = 0;
 	uint8_t step = 0;
 	uint8_t count = 0;
 	uint8_t buf[REC_LEN];
-	serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_WATER_TANK_TEST_MODE);
+	serial.setSendData(CTL_WORK_MODE, FUNC_WATER_TANK_TEST_MODE);
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
 	while(ros::ok()) {
 		/*--------data extrict from serial com--------*/
@@ -1173,7 +935,7 @@ uint16_t water_tank_test(uint8_t &test_stage)
 		switch(step)
 		{
 			case 0:/*--- turn on pump and swing motor ---*/
-				serial.setSendData(CTL_WATER_TANK, 0x80 | 50);
+				serial.setSendData(CTL_WATER_TANK, 0x80 | 40);
 				count++;
 				if(count > 10)
 				{
@@ -1186,18 +948,22 @@ uint16_t water_tank_test(uint8_t &test_stage)
 				{
 					count++;
 					if(count > 2)
-						return 0;
+						return ;
 				}
 				else
 					count = 0;
 				if(buf[36])
-					return SWING_MOTOR_ERROR;
+				{
+					error_code = SWING_MOTOR_ERROR;
+					current_data = static_cast<uint16_t>((buf[2] << 8) | buf[3]);
+					return ;
+				}
 				break;
 		}
 		serial.sendData();
 	}
 }
-uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline)
+void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data)
 {
 	uint16_t test_result=0;
 	uint8_t step=0;
@@ -1205,7 +971,7 @@ uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline)
 	uint8_t buf[REC_LEN];
 	uint32_t current_current=0;
 	uint32_t motor_current=0;
-	serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_WHEELS_TEST_MODE);
+	serial.setSendData(CTL_WORK_MODE, FUNC_WHEELS_TEST_MODE);
 	serial.setSendData(CTL_LEFT_WHEEL_TEST_MODE, 0);
 	serial.setSendData(CTL_RIGHT_WHEEL_TEST_MODE, 0);
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
@@ -1252,7 +1018,9 @@ uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline)
 			case 3:
 				step++;
 				if (current_current < 30 || current_current > 100 || motor_current < 20 || motor_current > 100) {
-					return LEFT_WHEEL_FORWARD_CURRENT_ERROR;
+					error_code = LEFT_WHEEL_FORWARD_CURRENT_ERROR;
+					current_data = static_cast<uint16_t>(motor_current);
+					return ;
 				}
 				else {
 					test_result |= 0x0001;
@@ -1260,9 +1028,10 @@ uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline)
 				break;
 			case 4:
 				step++;
-				ROS_INFO("Left_PWN: %d", buf[4]);
 				if (buf[4] > 95 || buf[4] < 50) {
-					return LEFT_WHEEL_FORWARD_PWM_ERROR;
+					error_code = LEFT_WHEEL_FORWARD_PWM_ERROR;
+					current_data = buf[4];
+					return ;
 				}
 				else {
 					test_result |= 0x0002;
@@ -1271,10 +1040,14 @@ uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline)
 			case 5:
 				step++;
 				if (buf[10] == 1) {
-					return LEFT_WHEEL_FORWARD_ENCODER_ERROR;
+					error_code = LEFT_WHEEL_FORWARD_ENCODER_ERROR;
+					current_data = 0;
+					return ;
 				}
 				else if (buf[10] == 2) {
-					return LEFT_WHEEL_FORWARD_ENCODER_FAIL;
+					error_code = LEFT_WHEEL_FORWARD_ENCODER_FAIL;
+					current_data = 0;
+					return ;
 				}
 				else {
 					test_result |= 0x0004;
@@ -1307,7 +1080,9 @@ uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline)
 			case 8:
 				step++;
 				if (current_current < 30 || current_current > 100 || motor_current < 20 || motor_current > 100) {
-					return LEFT_WHEEL_BACKWARD_CURRENT_ERROR;
+					error_code = LEFT_WHEEL_BACKWARD_CURRENT_ERROR;
+					current_data = static_cast<uint16_t>(motor_current);
+					return ;
 				}
 				else {
 					test_result |= 0x0010;
@@ -1316,7 +1091,9 @@ uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline)
 			case 9:
 				step++;
 				if (buf[4] > 95 || buf[4] < 50) {
-					return LEFT_WHEEL_BACKWARD_PWM_ERROR;
+					error_code = LEFT_WHEEL_BACKWARD_PWM_ERROR;
+					current_data = buf[4];
+					return ;
 				}
 				else {
 					test_result |= 0x0020;
@@ -1325,10 +1102,14 @@ uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline)
 			case 10:
 				step++;
 				if (buf[10] == 1) {
-					return LEFT_WHEEL_BACKWARD_ENCODER_ERROR;
+					error_code = LEFT_WHEEL_BACKWARD_ENCODER_ERROR;
+					current_data = 0;
+					return ;
 				}
 				else if (buf[10] == 2) {
-					return LEFT_WHEEL_BACKWARD_ENCODER_FAIL;
+					error_code = LEFT_WHEEL_BACKWARD_ENCODER_FAIL;
+					current_data = 0;
+					return ;
 				}
 				else {
 					test_result |= 0x0040;
@@ -1356,8 +1137,11 @@ uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline)
 					step++;
 					count = 0;
 				}
-				if(buf[36])
-					return LEFT_WHEEL_STALL_ERROR;
+				if(buf[36]) {
+					error_code = LEFT_WHEEL_STALL_ERROR;
+					current_data = 0;
+					return;
+				}
 				break;
 			case 13:
 				count++;
@@ -1368,8 +1152,11 @@ uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline)
 					step++;
 					count = 0;
 					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
-					if(current_current < 800)
-						return LEFT_WHEEL_STALL_ERROR;
+					if(current_current < 800) {
+						error_code = LEFT_WHEEL_STALL_ERROR;
+						current_data = 0;
+						return ;
+					}
 					else
 					{
 						test_result |= 0x0008;
@@ -1405,7 +1192,9 @@ uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline)
 			case 16:
 				step++;
 				if (current_current < 30 || current_current > 100 || motor_current < 20 || motor_current > 100) {
-					return RIGHT_WHEEL_FORWARD_CURRENT_ERROR;
+					error_code = RIGHT_WHEEL_FORWARD_CURRENT_ERROR;
+					current_data = motor_current;
+					return ;
 				}
 				else {
 					test_result |= 0x0100;
@@ -1414,7 +1203,9 @@ uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline)
 			case 17:
 				step++;
 				if (buf[7] > 95 || buf[7] < 50) {
-					return RIGHT_WHEEL_FORWARD_PWM_ERROR;
+					error_code = RIGHT_WHEEL_FORWARD_PWM_ERROR;
+					current_data = buf[7];
+					return ;
 				}
 				else {
 					test_result |= 0x0200;
@@ -1423,10 +1214,14 @@ uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline)
 			case 18:
 				step++;
 				if (buf[11] == 1) {
-					return RIGHT_WHEEL_FORWARD_ENCODER_ERROR;
+					error_code = RIGHT_WHEEL_FORWARD_ENCODER_ERROR;
+					current_data = 0;
+					return ;
 				}
 				else if (buf[11] == 2) {
-					return RIGHT_WHEEL_FORWARD_ENCODER_FAIL;
+					error_code = RIGHT_WHEEL_FORWARD_ENCODER_FAIL;
+					current_data = 0;
+					return ;
 				}
 				else {
 					test_result |= 0x0400;
@@ -1459,7 +1254,9 @@ uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline)
 			case 21:
 				step++;
 				if (current_current < 30 || current_current > 100 || motor_current < 20 || motor_current > 100) {
-					return RIGHT_WHEEL_BACKWARD_CURRENT_ERROR;
+					error_code = RIGHT_WHEEL_BACKWARD_CURRENT_ERROR;
+					current_data = motor_current;
+					return ;
 				}
 				else {
 					test_result |= 0x1000;
@@ -1468,7 +1265,9 @@ uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline)
 			case 22:
 				step++;
 				if (buf[7] > 95 || buf[7] < 50) {
-					return RIGHT_WHEEL_BACKWARD_PWM_ERROR;
+					error_code = RIGHT_WHEEL_BACKWARD_PWM_ERROR;
+					current_data = buf[7];
+					return ;
 				}
 				else {
 					test_result |= 0x2000;
@@ -1477,10 +1276,14 @@ uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline)
 			case 23:
 				step++;
 				if (buf[11] == 1) {
-					return RIGHT_WHEEL_BACKWARD_ENCODER_ERROR;
+					error_code = RIGHT_WHEEL_BACKWARD_ENCODER_ERROR;
+					current_data = 0;
+					return ;
 				}
 				else if (buf[11] == 2) {
-					return RIGHT_WHEEL_BACKWARD_ENCODER_FAIL;
+					error_code = RIGHT_WHEEL_BACKWARD_ENCODER_FAIL;
+					current_data = 0;
+					return ;
 				}
 				else {
 					test_result |= 0x4000;
@@ -1508,7 +1311,11 @@ uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline)
 					count = 0;
 				}
 				if(buf[36])
-					return RIGHT_WHEEL_STALL_ERROR;
+				{
+					error_code = RIGHT_WHEEL_STALL_ERROR;
+					current_data = 0;
+					return ;
+				}
 				break;
 			case 26:
 				count++;
@@ -1520,7 +1327,11 @@ uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline)
 					count = 0;
 					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
 					if(current_current < 800)
-						return RIGHT_WHEEL_STALL_ERROR;
+					{
+						error_code = RIGHT_WHEEL_STALL_ERROR;
+						current_data = 0;
+						return ;
+					}
 					else
 					{
 						test_result |= 0x0800;
@@ -1533,12 +1344,12 @@ uint16_t wheels_test(uint8_t &test_stage, uint16_t *baseline)
 		{
 			test_stage++;
 			wheel.setPidTargetSpeed(0, 0);
-			return 0;
+			return ;
 		}
 		serial.sendData();
 	}
 }
-uint16_t brushes_test(uint8_t &test_stage, uint16_t *baseline)
+void brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data)
 {
 	uint8_t test_result=0;
 	uint32_t current_current=0;
@@ -1547,7 +1358,7 @@ uint16_t brushes_test(uint8_t &test_stage, uint16_t *baseline)
 	uint8_t count=0;
 	uint8_t step=1;
 
-	serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_BRUSHES_TEST_MODE);
+	serial.setSendData(CTL_WORK_MODE, FUNC_BRUSHES_TEST_MODE);
 	serial.setSendData(CTL_LEFT_BRUSH_TEST_MODE, 0);
 	serial.setSendData(CTL_MAIN_BRUSH_TEST_MODE, 0);
 	serial.setSendData(CTL_RIGHT_BRUSH_TEST_MODE, 0);
@@ -1591,7 +1402,9 @@ uint16_t brushes_test(uint8_t &test_stage, uint16_t *baseline)
 			case 3:
 				step++;
 				if (current_current < 30 || current_current > 120 || motor_current < 20 || motor_current > 110) {
-					return LEFT_BRUSH_CURRENT_ERROR;
+					error_code = LEFT_BRUSH_CURRENT_ERROR;
+					current_data = static_cast<uint16_t>(motor_current);
+					return ;
 				}
 				else {
 					test_result |= 0x10;
@@ -1609,7 +1422,11 @@ uint16_t brushes_test(uint8_t &test_stage, uint16_t *baseline)
 					count = 0;
 				}
 				if(buf[36])
-					return LEFT_BRUSH_STALL_ERROR;
+				{
+					error_code = LEFT_BRUSH_STALL_ERROR;
+					current_data = 0;
+					return ;
+				}
 				break;
 			case 5:
 				count++;
@@ -1621,7 +1438,11 @@ uint16_t brushes_test(uint8_t &test_stage, uint16_t *baseline)
 					count = 0;
 					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
 					if (current_current < 250)
-						return LEFT_BRUSH_STALL_ERROR;
+					{
+						error_code = LEFT_BRUSH_STALL_ERROR;
+						current_data = 0;
+						return ;
+					}
 					else
 					{
 						test_result |= 0x20;
@@ -1654,7 +1475,9 @@ uint16_t brushes_test(uint8_t &test_stage, uint16_t *baseline)
 			case 8:
 				step++;
 				if (current_current < 30 || current_current > 120 || motor_current < 20 || motor_current > 110) {
-					return RIGHT_BRUSH_CURRENT_ERROR;
+					error_code = RIGHT_BRUSH_CURRENT_ERROR;
+					current_data = static_cast<uint16_t>(motor_current);
+					return ;
 				}
 				else {
 					test_result |= 0x01;
@@ -1672,7 +1495,11 @@ uint16_t brushes_test(uint8_t &test_stage, uint16_t *baseline)
 					count = 0;
 				}
 				if(buf[36])
-					return RIGHT_BRUSH_STALL_ERROR;
+				{
+					error_code = RIGHT_BRUSH_STALL_ERROR;
+					current_data = 0;
+					return ;
+				}
 				break;
 			case 10:
 				count++;
@@ -1684,7 +1511,11 @@ uint16_t brushes_test(uint8_t &test_stage, uint16_t *baseline)
 					count = 0;
 					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
 					if (current_current < 250)
-						return RIGHT_BRUSH_STALL_ERROR;
+					{
+						error_code = RIGHT_BRUSH_STALL_ERROR;
+						current_data = 0;
+						return ;
+					}
 					else
 					{
 						test_result |= 0x02;
@@ -1717,7 +1548,9 @@ uint16_t brushes_test(uint8_t &test_stage, uint16_t *baseline)
 			case 13:
 				step++;
 				if (current_current < 100 || current_current > 300 || motor_current < 100 || motor_current > 300) {
-					return MAIN_BRUSH_CURRENT_ERROR;
+					error_code = MAIN_BRUSH_CURRENT_ERROR;
+					current_data = static_cast<uint16_t>(motor_current);
+					return ;
 				}
 				else {
 					test_result |= 0x04;
@@ -1735,7 +1568,11 @@ uint16_t brushes_test(uint8_t &test_stage, uint16_t *baseline)
 					step++;
 				}
 				if(buf[36])
-					return MAIN_BRUSH_STALL_ERROR;
+				{
+					error_code = MAIN_BRUSH_STALL_ERROR;
+					current_data = 0;
+					return ;
+				}
 				break;
 			case 15:
 				count++;
@@ -1747,7 +1584,11 @@ uint16_t brushes_test(uint8_t &test_stage, uint16_t *baseline)
 					count = 0;
 					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
 					if (current_current < 550)
-						return MAIN_BRUSH_STALL_ERROR;
+					{
+						error_code = MAIN_BRUSH_STALL_ERROR;
+						current_data = 0;
+						return ;
+					}
 					else
 					{
 						test_result |= 0x08;
@@ -1758,20 +1599,20 @@ uint16_t brushes_test(uint8_t &test_stage, uint16_t *baseline)
 		if((test_result & 0x3f) == 0x3f)
 		{
 			test_stage++;
-			return 0;
+			return ;
 		}
 		serial.sendData();
 	}
 }
-uint16_t vacuum_test(uint8_t &test_stage, uint16_t *baseline)
+void vacuum_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data)
 {
 	uint16_t test_result=0;
 	uint8_t step=1;
 	uint8_t count=0;
 	uint8_t buf[REC_LEN];
-	uint32_t current_current;
-	uint32_t motor_current;
-	serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_VACUUM_TEST_MODE);
+	uint32_t current_current=0;
+	uint32_t motor_current=0;
+	serial.setSendData(CTL_WORK_MODE, FUNC_VACUUM_TEST_MODE);
 	serial.setSendData(CTL_VACUUM_TEST_MODE, 0);
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
 	while(ros::ok()) {
@@ -1812,7 +1653,9 @@ uint16_t vacuum_test(uint8_t &test_stage, uint16_t *baseline)
 			case 3:
 				step++;
 				if (current_current < 500 || current_current > 1100 || motor_current < 500 || motor_current > 1100) {
-					return VACUUM_CURRENT_ERROR;
+					error_code = VACUUM_CURRENT_ERROR;
+					current_data = static_cast<uint16_t>(motor_current);
+					return ;
 				}
 				else {
 					test_result |= 0x0001;
@@ -1821,7 +1664,9 @@ uint16_t vacuum_test(uint8_t &test_stage, uint16_t *baseline)
 			case 4:
 				step++;
 				if (buf[7] > 95 || buf[7] < 50) {
-					return VACUUM_PWM_ERROR;
+					error_code = VACUUM_PWM_ERROR;
+					current_data = buf[7];
+					return ;
 				}
 				else {
 					test_result |= 0x0002;
@@ -1830,10 +1675,14 @@ uint16_t vacuum_test(uint8_t &test_stage, uint16_t *baseline)
 			case 5:
 				step++;
 				if (buf[10] == 1) {
-					return VACUUM_ENCODER_ERROR;
+					error_code = VACUUM_ENCODER_ERROR;
+					current_data = buf[10];
+					return ;
 				}
 				else if (buf[10] == 2) {
-					return VACUUM_ENCODER_FAIL;
+					error_code = VACUUM_ENCODER_FAIL;
+					current_data =  buf[10];
+					return ;
 				}
 				else {
 					test_result |= 0x0004;
@@ -1859,7 +1708,11 @@ uint16_t vacuum_test(uint8_t &test_stage, uint16_t *baseline)
 					count = 0;
 					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
 					if(current_current < 800)
-						return VACUUM_STALL_ERROR;
+					{
+						error_code = VACUUM_STALL_ERROR;
+						current_data = 0;
+						return ;
+					}
 					else
 					{
 						test_result |= 0x0008;
@@ -1870,16 +1723,16 @@ uint16_t vacuum_test(uint8_t &test_stage, uint16_t *baseline)
 		if((test_result&0x000F) == 0x000F)
 		{
 			test_stage++;
-			return 0;
+			return ;
 		}
 		serial.sendData();
 	}
 }
-uint16_t charge_current_test(uint8_t &test_stage, bool is_fixture)
+void charge_current_test(bool is_fixture, uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data)
 {
 	uint32_t charge_voltage = 0;
 	uint8_t buf[REC_LEN];
-	serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_CHARGE_CURRENT_TEST_MODE);
+	serial.setSendData(CTL_WORK_MODE, FUNC_CHARGE_CURRENT_TEST_MODE);
 	serial.setSendData(CTL_CHARGER_CINNECTED_STATUS, 0);
 	serial.setSendData(CTL_IS_FIXTURE, is_fixture);
 	uint8_t count = 0;
@@ -1911,15 +1764,20 @@ uint16_t charge_current_test(uint8_t &test_stage, bool is_fixture)
 				serial.setSendData(CTL_CHARGER_CINNECTED_STATUS, 0);
 			charge_voltage = 0;
 		}
-		if(buf[4] == 1)
-			return CHARGE_PWM_ERROR;
-		else if(buf[4] == 2)
-			return CHARGE_CURRENT_ERROR;
+		if(buf[4] == 1) {
+			error_code = CHARGE_PWM_ERROR;
+			current_data = 0;
+			return ;
+		}
+		else if(buf[4] == 2) {
+			error_code = CHARGE_CURRENT_ERROR;
+			current_data = 0;
+			return ;
+		}
 		else if(buf[4] == 3)
 		{
-			ROS_INFO("charge test end");
 			test_stage++;
-			return 0;
+			return ;
 		}
 		serial.sendData();
 	}

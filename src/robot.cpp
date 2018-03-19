@@ -121,7 +121,7 @@ robot::~robot()
 	brush.stop();
 	vacuum.stop();
 	water_tank.stop();
-	serial.setMainBoardMode(WORK_MODE);
+	serial.setWorkMode(WORK_MODE);
 	usleep(40000);
 	while(ros::ok() && !g_pp_shutdown){
 		usleep(2000);
@@ -140,6 +140,12 @@ robot::~robot()
 
 	delete robot_tf_;
 	ROS_INFO("pp shutdown!");
+}
+
+robot *robot::instance()
+{
+	extern robot* robot_instance;
+	return robot_instance;
 }
 
 void robot::robotbase_routine_cb()
@@ -205,11 +211,6 @@ void robot::robotbase_routine_cb()
 		sensor.angle = gyro.getAngleY();
 		gyro.setAngleV(static_cast<float>(static_cast<int16_t>((buf[REC_ANGLE_V_H] << 8) | buf[REC_ANGLE_V_L]) / 100.0 * -1));
 		sensor.angle_v = gyro.getAngleV();
-/*		if (!is_set_anglev_offset) {
-			gyro.setAngleVOffset(sensor.angle_v);
-			is_set_anglev_offset = true;
-			ROS_ERROR("setAngleVOffset = %f", sensor.angle_v);
-		}*/
 
 		if (gyro.getXAcc() == -1000)
 			gyro.setXAcc(static_cast<int16_t>((buf[REC_XACC_H] << 8) | buf[REC_XACC_L]));
@@ -266,7 +267,8 @@ void robot::robotbase_routine_cb()
 
 		// For remote device.
 		auto remote_signal = buf[REC_REMOTE];
-		remote.set(remote_signal);
+		if (remote_signal != 0)
+			remote.set(remote_signal);
 		sensor.remote = remote.get();
 		if (remote_signal > 0)
 			ROS_INFO("%s %d: Remote received:%d", __FUNCTION__, __LINE__, remote_signal);
@@ -318,6 +320,12 @@ void robot::robotbase_routine_cb()
 		wheel.setLeftWheelOc((buf[REC_OC] & 0x20) != 0);
 		sensor.left_wheel_oc = wheel.getLeftWheelOc();
 
+		// For wheel encoder count.
+		wheel.setLeftEncoderCnt(buf[REC_LEFT_WHEEL_ENCODER]);
+		sensor.left_wheel_encoder = wheel.getLeftEncoderCnt();
+		wheel.setRightEncoderCnt(buf[REC_RIGHT_WHEEL_ENCODER]);
+		sensor.right_wheel_encoder = wheel.getRightEncoderCnt();
+
 		// For debug.
 //		printf("%d: REC_MIX_BYTE:(%2x), REC_RESERVED:(%2x).\n.",
 //			   __LINE__, buf[REC_MIX_BYTE], buf[REC_RESERVED]);
@@ -333,7 +341,7 @@ void robot::robotbase_routine_cb()
 
 		/*------------setting for odom and publish odom topic --------*/
 		boost::mutex::scoped_lock lock(odom_mutex_);
-		odom.setMovingSpeed(static_cast<float>((wheel.getLeftWheelActualSpeed() + wheel.getRightWheelActualSpeed()) / 2.0));
+//		odom.setMovingSpeed(static_cast<float>((wheel.getLeftWheelActualSpeed() + wheel.getRightWheelActualSpeed()) / 2.0));
 		odom.setRadian(degree_to_radian(gyro.getAngleY()));
 		odom.setAngleSpeed(gyro.getAngleV());
 		cur_time = ros::Time::now();
@@ -343,9 +351,15 @@ void robot::robotbase_routine_cb()
 		last_time = cur_time;
 //		gyro.setAngleR(gyro.calAngleR1OrderFilter(0.5, dt));//fusion of 1 order filter
 		gyro.setAngleR(gyro.calAngleRKalmanFilter(dt));//fusion of kalman filter
+		odom.setMovingSpeed(static_cast<float>((wheel.getLeftEncoderCnt() + wheel.getRightEncoderCnt()) *
+											   WHEEL_ENCODER_TO_MILLIMETER / 1000 / 2.0 / dt));
 		if(!lidar.isRobotSlip()){
-			odom.setX(static_cast<float>(odom.getX() + (odom.getMovingSpeed() * cos(angle_rad)) * dt));
-			odom.setY(static_cast<float>(odom.getY() + (odom.getMovingSpeed() * sin(angle_rad)) * dt));
+//			odom.setX(static_cast<float>(odom.getX() + (odom.getMovingSpeed() * cos(angle_rad)) * dt));
+//			odom.setY(static_cast<float>(odom.getY() + (odom.getMovingSpeed() * sin(angle_rad)) * dt));
+			odom.setX(static_cast<float>(odom.getX() + ((wheel.getLeftEncoderCnt() + wheel.getRightEncoderCnt())
+														* WHEEL_ENCODER_TO_MILLIMETER * cos(angle_rad) / 1000 / 2)));
+			odom.setY(static_cast<float>(odom.getY() + ((wheel.getLeftEncoderCnt() + wheel.getRightEncoderCnt())
+														* WHEEL_ENCODER_TO_MILLIMETER * sin(angle_rad) / 1000 / 2)));
 			is_first_slip = true;
 		} else if (is_first_slip){
 			odom.setX(static_cast<float>(odom.getX() - (0.30 * cos(angle_rad)) * 0.8));
@@ -417,7 +431,7 @@ void robot::core_thread_cb()
 {
 	recei_thread_enable = true;
 	r16_work_mode_ = getTestMode();
-//	r16_work_mode_ = WATER_TANK_TEST_MODE;
+//	r16_work_mode_ = LIFE_TEST_MODE;
 	ROS_INFO("%s %d: work mode: %d", __FUNCTION__, __LINE__, r16_work_mode_);
 
 	switch (r16_work_mode_)
@@ -431,69 +445,18 @@ void robot::core_thread_cb()
 		}
 		case DESK_TEST_CURRENT_MODE:
 		case GYRO_TEST_MODE:
+		case LIFE_TEST_MODE:
 		case WATER_TANK_TEST_MODE:
+		case R16_AND_LIDAR_TEST_MODE:
 //		case WORK_MODE: // For debug
 //		case NORMAL_SLEEP_MODE: // For debug
 		{
-			auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
-			send_thread_enable = true;
-
-//			if (r16_work_mode_ == GYRO_TEST_MODE || r16_work_mode_ == WATER_TANK_TEST_MODE)
-			if (r16_work_mode_ == NORMAL_SLEEP_MODE || r16_work_mode_ == WORK_MODE || r16_work_mode_ == WATER_TANK_TEST_MODE) // todo: for debug
-			{
-				auto robotbase_routine = new boost::thread(boost::bind(&robot::robotbase_routine_cb, this));
-				robotbase_thread_enable = true;
-			}
-
-			if (bumper.lidarBumperInit(lidar_bumper_dev_.c_str()) == -1)
-				ROS_ERROR(" lidar bumper open fail!");
-
-			p_mode.reset(new CleanModeTest(r16_work_mode_));
-			p_mode->run();
+			runTestMode();
 			break;
 		}
 		default: //case WORK_MODE:
 		{
-			auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
-			send_thread_enable = true;
-
-			auto robotbase_routine = new boost::thread(boost::bind(&robot::robotbase_routine_cb, this));
-			robotbase_thread_enable = true;
-
-			ROS_INFO("Waiting for robot sensor ready.");
-			while (!isSensorReady())
-			{
-				usleep(1000);
-			}
-			ROS_INFO("Robot sensor ready.");
-
-			if (bumper.lidarBumperInit(lidar_bumper_dev_.c_str()) == -1)
-				ROS_ERROR(" lidar bumper open fail!");
-
-			if (charger.isOnStub() || charger.isDirected())
-				p_mode.reset(new ModeCharge());
-			else
-			{
-				speaker.play(VOICE_PLEASE_START_CLEANING, false);
-				p_mode.reset(new ModeIdle());
-			}
-
-			while (ros::ok())
-			{
-//				ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
-				p_mode->run();
-
-				if (core_thread_kill)
-					break;
-
-				auto next_mode = p_mode->getNextMode();
-				p_mode.reset();
-//				ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
-				p_mode.reset(getNextMode(next_mode));
-//				ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
-			}
-			g_pp_shutdown = true;
-			ROS_ERROR("%s,%d,exit", __FUNCTION__, __LINE__);
+			runWorkMode();
 			break;
 		}
 	}
@@ -501,10 +464,69 @@ void robot::core_thread_cb()
 	ROS_INFO("%s %d: core thread exit.", __FUNCTION__, __LINE__);
 }
 
-robot *robot::instance()
+void robot::runTestMode()
 {
-	extern robot* robot_instance;
-	return robot_instance;
+	auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
+	send_thread_enable = true;
+
+	if (r16_work_mode_ == NORMAL_SLEEP_MODE || r16_work_mode_ == WORK_MODE ||
+		r16_work_mode_ == WATER_TANK_TEST_MODE) // todo: for debug
+	{
+		auto robotbase_routine = new boost::thread(boost::bind(&robot::robotbase_routine_cb, this));
+		robotbase_thread_enable = true;
+	}
+
+	if (r16_work_mode_ != R16_AND_LIDAR_TEST_MODE)
+	{
+		if (bumper.lidarBumperInit(lidar_bumper_dev_.c_str()) == -1)
+			ROS_ERROR(" lidar bumper open fail!");
+	}
+
+	p_mode.reset(new CleanModeTest(r16_work_mode_));
+	p_mode->run();
+}
+
+void robot::runWorkMode()
+{
+	auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
+	send_thread_enable = true;
+
+	auto robotbase_routine = new boost::thread(boost::bind(&robot::robotbase_routine_cb, this));
+	robotbase_thread_enable = true;
+
+	ROS_INFO("Waiting for robot sensor ready.");
+	while (!isSensorReady())
+		usleep(1000);
+
+	ROS_INFO("Robot sensor ready.");
+
+	if (bumper.lidarBumperInit(lidar_bumper_dev_.c_str()) == -1)
+		ROS_ERROR(" lidar bumper open fail!");
+
+	if (charger.isOnStub() || charger.isDirected())
+		p_mode.reset(new ModeCharge());
+	else
+	{
+		speaker.play(VOICE_PLEASE_START_CLEANING, false);
+		p_mode.reset(new ModeIdle());
+	}
+
+	while (ros::ok())
+	{
+//				ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
+		p_mode->run();
+
+		if (core_thread_kill)
+			break;
+
+		auto next_mode = p_mode->getNextMode();
+		p_mode.reset();
+//				ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
+		p_mode.reset(getNextMode(next_mode));
+//				ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
+	}
+	g_pp_shutdown = true;
+	ROS_ERROR("%s,%d,exit", __FUNCTION__, __LINE__);
 }
 
 uint8_t robot::getTestMode(void)
@@ -518,7 +540,7 @@ uint8_t robot::getTestMode(void)
 	ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock) != 0, "robotbase pthread receive unlock fail");
 //	debugReceivedStream(buf);
 
-	return buf[REC_R16_WORK_MODE];
+	return buf[REC_WORK_MODE];
 }
 
 void robot::scaleCorrectionPos(tf::Vector3 &tmp_pos, double& tmp_rad) {
@@ -572,7 +594,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 //	ROS_INFO("tmp_pos(%f,%f),tmp_rad(%f)", tmp_pos.x(), tmp_pos.y(), tmp_rad);
 	robot_pos = tmp_pos;
 	robot_rad = tmp_rad;
-//	odomPublish(robot_pos, robot_rad);
+	odomPublish(robot_pos, robot_rad);
 }
 
 void robot::odomPublish(const tf::Vector3& robot_pos, double robot_radian_)
@@ -642,30 +664,6 @@ void robot::obsAdjustCount(int count)
 #endif
 }
 
-void robot::debugReceivedStream(const uint8_t *buf)
-{
-	ROS_INFO("%s %d: Received stream:", __FUNCTION__, __LINE__);
-	for (int i = 0; i < REC_LEN; i++)
-		printf("%02d ", i);
-	printf("\n");
-
-	for (int i = 0; i < REC_LEN; i++)
-		printf("%02x ", buf[i]);
-	printf("\n");
-}
-
-void robot::debugSendStream(const uint8_t *buf)
-{
-	ROS_INFO("%s %d: Send stream:", __FUNCTION__, __LINE__);
-	for (int i = 0; i < SEND_LEN; i++)
-		printf("%02d ", i);
-	printf("\n");
-
-	for (int i = 0; i < SEND_LEN; i++)
-		printf("%02x ", buf[i]);
-	printf("\n");
-}
-
 bool robot::pubScanCtrl(bool is_pub, bool is_force_pub) {
 //	ROS_INFO("is_pub = %d", is_pub);
 	if (!is_locked_scan_ctrl_ || is_force_pub) {
@@ -699,7 +697,7 @@ void robot::publishCtrlStream(void)
 	ctrl_stream.main_brush_PWM = serial.getSendData(CTL_BRUSH_MAIN);
 
 	ctrl_stream.beeper_sound_code = serial.getSendData(CTL_BEEPER);
-	ctrl_stream.main_board_mode = serial.getSendData(CTL_MAIN_BOARD_MODE);
+	ctrl_stream.main_board_mode = serial.getSendData(CTL_WORK_MODE);
 	ctrl_stream.charge_control = serial.getSendData(CTL_CHARGER);
 
 	ctrl_stream.led_red_brightness = serial.getSendData(CTL_LED_RED);
@@ -711,13 +709,21 @@ void robot::publishCtrlStream(void)
 	ctrl_stream.gyro_dynamic_ctrl = static_cast<unsigned char>((serial.getSendData(CTL_MIX) >> 2) & 0x01);
 	ctrl_stream.gyro_switch = static_cast<unsigned char>((serial.getSendData(CTL_MIX) >> 3) & 0x01);
 
+	ctrl_stream.swing_motor_pwm = static_cast<unsigned char>(serial.getSendData(CTL_WATER_TANK) & 0x7F);
+	ctrl_stream.pump_switch = static_cast<unsigned char>((serial.getSendData(CTL_WATER_TANK) >> 7) & 0x01);
+
+	ctrl_stream.infrared_display_switch = serial.getSendData(CTL_IR_CTRL) >> 6;
+	ctrl_stream.infrared_display_step = static_cast<unsigned char>(serial.getSendData(CTL_IR_CTRL) & 0x3F);
+	ctrl_stream.infrared_display_content = serial.getSendData(CTL_IR_CONTENT_H) << 8 | serial.getSendData(CTL_IR_CONTENT_L);
+	ctrl_stream.infrared_display_error_code = serial.getSendData(CTL_IR_ERROR_CODE_H) << 8 | serial.getSendData(CTL_IR_ERROR_CODE_L);
+
 	ctrl_stream.key_validation = serial.getSendData(CTL_KEY_VALIDATION);
 	ctrl_stream.crc = serial.getSendData(CTL_CRC);
 
 	x900_ctrl_pub_.publish(ctrl_stream);
 }
 
-void robot::updateRobotPositionForDeskTest()
+void robot::updateRobotPositionForTest()
 {
 	robot_pos.setX(odom.getX());
 	robot_pos.setY(odom.getY());

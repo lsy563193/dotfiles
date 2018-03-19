@@ -1,3 +1,4 @@
+#include <infrared_display.hpp>
 #include "event_manager.h"
 #include "dev.h"
 #include "error.h"
@@ -7,7 +8,7 @@ ModeIdle::ModeIdle()
 {
 	ROS_INFO("%s %d: Entering Idle mode\n=========================" , __FUNCTION__, __LINE__);
 	register_events();
-	serial.setMainBoardMode(IDLE_MODE);
+	serial.setWorkMode(IDLE_MODE);
 	sp_action_.reset(new ActionIdle);
 	action_i_ = ac_idle;
 
@@ -25,6 +26,8 @@ ModeIdle::ModeIdle()
 	first_time_seen_charger_ = ros::Time::now().toSec();
 	last_time_seen_charger_ = first_time_seen_charger_;
 
+//	// todo:debug
+//	infrared_display.displayErrorMsg(9, 1234, 101);
 }
 
 ModeIdle::~ModeIdle()
