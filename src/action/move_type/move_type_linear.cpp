@@ -13,11 +13,13 @@ MoveTypeLinear::MoveTypeLinear(Points remain_path){
 	resetTriggeredValue();
 	remain_path.pop_front();
 	remain_path_ = remain_path;
+
 	auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
 	auto target_point_ = remain_path_.front();
 	turn_target_radian_ = p_mode->iterate_point_.th;
-	ROS_INFO("%s,%d: Enter move type linear, turn target angle(%f), first target(%f, %f).",
-			 __FUNCTION__, __LINE__, turn_target_radian_, target_point_.x, target_point_.y);
+
+	ROS_INFO("%s,%d: Enter move type linear, angle(%f,%f, %f),  target(%f, %f).",
+			 __FUNCTION__, __LINE__, getPosition().th, radian_to_degree(target_point_.th), radian_to_degree(turn_target_radian_), target_point_.x, target_point_.y);
 
 	movement_i_ = p_mode->isGyroDynamic() ? mm_dynamic : mm_turn;
 	if(movement_i_ == mm_dynamic)
@@ -100,8 +102,8 @@ bool MoveTypeLinear::isCellReach()
 	if (std::abs(s_curr_p.x - target_point_.x) < CELL_SIZE/2 &&
 		std::abs(s_curr_p.y - target_point_.y) < CELL_SIZE/2)
 	{
-		ROS_INFO("%s, %d: MoveTypeLinear,current cell = (%d,%d) reach the target cell (%d,%d), current angle(%lf), target angle(%lf).", __FUNCTION__, __LINE__,
-						 s_curr_p.toCell().x,s_curr_p.toCell().y,target_point_.toCell().x, target_point_.toCell().y, radian_to_degree(s_curr_p.th), radian_to_degree(target_point_.th));
+//		ROS_INFO("%s, %d: MoveTypeLinear,current cell = (%d,%d) reach the target cell (%d,%d), current angle(%lf), target angle(%lf).", __FUNCTION__, __LINE__,
+//						 s_curr_p.toCell().x,s_curr_p.toCell().y,target_point_.toCell().x, target_point_.toCell().y, radian_to_degree(s_curr_p.th), radian_to_degree(target_point_.th));
 //		g_turn_angle = ranged_radian(new_dir - robot::instance()->getWorldPoseRadian());
 		return true;
 	}
@@ -114,11 +116,11 @@ bool MoveTypeLinear::isPoseReach()
 	// Checking if robot has reached target cell and target angle.
 //	PP_INFO();
 	auto target_point_ = remain_path_.front();
-	if (isCellReach()) {
-		if (std::abs(getPosition().radianDiff(target_point_)) < degree_to_radian(20)) {
-			ROS_INFO("\033[1m""%s, %d: MoveTypeLinear, reach the target cell and pose(%d,%d,%d)""\033[0m", __FUNCTION__,
+	if (isCellReach() ) {
+		if (std::abs(getPosition().isRadianNear(target_point_))) {
+			ROS_INFO("\033[1m""%s, %d: MoveTypeLinear, reach the target cell and pose(%d,%d,%f,%d)""\033[0m", __FUNCTION__,
 							 __LINE__,
-							 target_point_.toCell().x, target_point_.toCell().y, target_point_.th);
+							 target_point_.toCell().x, target_point_.toCell().y, target_point_.th,target_point_.dir);
 			return true;
 		}
 	}
