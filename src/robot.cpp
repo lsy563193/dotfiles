@@ -733,7 +733,7 @@ void robot::updateRobotPositionForTest()
 bool robot::checkTilt() {
 //	ROS_WARN("is_first_tilt = %d", is_first_tilt);
 	auto angle = std::fabs(gyro.getAngleR());
-//	ROS_WARN("angle = %f", angle);
+	ROS_WARN("angle = %f", angle);
 	if (angle < ANGLE_LIMIT) {
 		is_first_tilt = true;
 		return false;
