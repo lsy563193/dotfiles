@@ -390,12 +390,14 @@ void robot::robotbase_routine_cb()
 		/*------publish end -----------*/
 
 		// Check tilt
+#if 0
 		if (checkTilt()){
 			gyro.setTiltCheckingStatus(1);
 			beeper.beepForCommand(VALID);
 		} else {
 			gyro.setTiltCheckingStatus(0);
 		}
+#endif
 		// Dynamic adjust obs
 		obs.DynamicAdjust(OBS_adjust_count);
 
