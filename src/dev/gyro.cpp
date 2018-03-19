@@ -451,25 +451,25 @@ void Gyro::setTiltCheckingEnable(bool val)
 	tilt_checking_enable_ = val;
 }
 
-float Gyro::calAngleR(double k, double dt)
+float Gyro::calAngleR1OrderFilter(double k, double dt)
 {
 	auto acc_angle = getAccAngleR();
-	angle_r_ = k * acc_angle + (1 - k) * (angle_r_ + angle_v_ * dt);
-	ROS_INFO("angle_r_ = %f, acc_angle= %f, angle_v_= %f", angle_r_,acc_angle,angle_v_);
-	return angle_r_ - ANGLE_R_OFFSET_;
+	auto angle = k * acc_angle + (1 - k) * (angle_r_ + angle_v_ * dt);
+//	ROS_INFO("angle_r_ = %f, acc_angle= %f, angle_v_= %f", angle_r_,acc_angle,angle_v_);
+	return angle;
 }
 float Gyro::getAngleR(void)
 {
-	ROS_INFO("angle_r_(with ofset) = %f", angle_r_ - ANGLE_R_OFFSET_);
+//	ROS_INFO("angle_r_(with ofset) = %f", angle_r_ - ANGLE_R_OFFSET_);
 	return angle_r_ - ANGLE_R_OFFSET_;
 }
 
-float Gyro::getAngleRKalmanFilter(double dt)
+float Gyro::calAngleRKalmanFilter(double dt)
 {
 	auto acc_angle = getAccAngleR();
 	auto angle_kalman = KalmanFilter(acc_angle, angle_v_, dt);
 
-	ROS_INFO("angle_kalman = %f, acc_angle= %f, angle_v_= %f", angle_kalman,acc_angle,angle_v_);
+//	ROS_INFO("angle_kalman = %f, acc_angle= %f, angle_v_= %f", angle_kalman,acc_angle,angle_v_);
 //	printf("%f,%lf.", acc_angle,angle_v_);
 
 	return angle_kalman;

@@ -191,6 +191,8 @@ public:
 
 	void updateRobotPositionForDeskTest();
 
+	bool checkTilt();
+
 private:
 
 	uint8_t getTestMode(void);
@@ -262,6 +264,12 @@ private:
 	bool is_first_slip{true};
 
 	bool is_set_anglev_offset{false};
+
+	//for check tilit
+	const double ANGLE_LIMIT{5};
+	const double TIME_LIMIT{1};
+	double tilt_time = 0;
+	bool is_first_tilt{true};
 };
 
 float cellToCount(int16_t distance);

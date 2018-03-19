@@ -173,8 +173,8 @@ public:
 		return tilt_checking_status_;
 	}
 
-	float calAngleR(double k, double dt);
-	float getAngleRKalmanFilter(double dt);
+	float calAngleR1OrderFilter(double k, double dt);
+	float calAngleRKalmanFilter(double dt);
 	void setAngleR(float angle);
 	float getAngleR(void);
 	float getAccAngleR(void);

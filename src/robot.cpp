@@ -341,9 +341,8 @@ void robot::robotbase_routine_cb()
 		angle_rad = odom.getRadian();
 		dt = (cur_time - last_time).toSec();
 		last_time = cur_time;
-		gyro.calAngleR(0.5, dt);
-		gyro.getAngleR();
-		gyro.getAngleRKalmanFilter(dt);
+//		gyro.setAngleR(gyro.calAngleR1OrderFilter(0.5, dt));//fusion of 1 order filter
+		gyro.setAngleR(gyro.calAngleRKalmanFilter(dt));//fusion of kalman filter
 		if(!lidar.isRobotSlip()){
 			odom.setX(static_cast<float>(odom.getX() + (odom.getMovingSpeed() * cos(angle_rad)) * dt));
 			odom.setY(static_cast<float>(odom.getY() + (odom.getMovingSpeed() * sin(angle_rad)) * dt));
@@ -377,7 +376,12 @@ void robot::robotbase_routine_cb()
 		/*------publish end -----------*/
 
 		// Check tilt
-//		gyro.checkTilt();
+		if (checkTilt()){
+			gyro.setTiltCheckingStatus(1);
+			beeper.beepForCommand(VALID);
+		} else {
+			gyro.setTiltCheckingStatus(0);
+		}
 		// Dynamic adjust obs
 		obs.DynamicAdjust(OBS_adjust_count);
 
@@ -718,6 +722,36 @@ void robot::updateRobotPositionForDeskTest()
 	robot_pos.setX(odom.getX());
 	robot_pos.setY(odom.getY());
 	robot_rad = ranged_radian(odom.getRadian());
+}
+
+bool robot::checkTilt() {
+//	ROS_WARN("is_first_tilt = %d", is_first_tilt);
+	auto angle = std::fabs(gyro.getAngleR());
+//	ROS_WARN("angle = %f", angle);
+	if (angle < ANGLE_LIMIT) {
+		is_first_tilt = true;
+		return false;
+	}
+
+	if (is_first_tilt) {
+		is_first_tilt = false;
+		tilt_time = ros::Time::now().toSec();
+	}
+
+	if ((ros::Time::now().toSec() - tilt_time) > TIME_LIMIT) {
+		return true;
+	} else {
+		return false;
+	}
+
+/*	if (gyro.getAngleR() > ANGLE_LIMIT) {
+		tilt_time = ros::Time::now().toSec();
+		if ((ros::Time::now().toSec() - tilt_time) > TIME_LIMIT) {
+			return true;
+		} else {
+			return false;
+		}
+	}*/
 }
 
 //--------------------
