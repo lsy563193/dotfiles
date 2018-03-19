@@ -357,13 +357,17 @@ void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path) {
 //					printf("{%d,%d},",p23_it.x, p23_it.y);
 					if (!map.isNotBlockAndCleaned(p23_it.x, p23_it.y))
 					{
-//						printf("\nbreak !!\n");
-						return (p12_it - p2)/2;
+						printf("\n1 break it(%d,%d)!!\n", p12_it.x, p12_it.y);
+						return (p12_it - cell_direction_[dir_p12]- p2)/2;
 					}
 				}
 //				printf("\n");
 				if (!(p23_it == p3 + cell_direction_[dir_p23] && map.isBlockAccessible(p23_it.x, p23_it.y))) {
-					return (p12_it - p2)/2;
+					{
+
+						printf("\n1 break it(%d,%d)!!\n", p12_it.x, p12_it.y);
+						return (p12_it - cell_direction_[dir_p12] - p2)/2;
+					}
 				}
 				else{
 //					p2 += cell_direction_[dir_p12];

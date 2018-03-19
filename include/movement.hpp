@@ -87,8 +87,9 @@ public:
 	void adjustSpeed(int32_t&, int32_t&) override;
 	bool isFinish() override;
 private:
-	bool is_open_dynamic_succeed_{false};
-	double start_dynamic_time_{0};
+	bool is_open_dynamic_succeed_{};
+	double start_dynamic_time_{};
+	double start_dynamic_count_{};
 };
 
 class MovementRcon: public IMovement
