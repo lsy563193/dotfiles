@@ -113,13 +113,14 @@ public:
 		calibration_status_ = val;
 	}
 
-	float getAngle(void)
+	float getAngleY(void)
 	{
-		return angle_; 
+		return angle_y_;
 	}
-	void setAngle(float angle)
+
+	void setAngleY(float angle)
 	{
-		angle_ = angle;
+		angle_y_ = angle;
 	}
 
 	float getAngleV()
@@ -129,7 +130,7 @@ public:
 
 	void setAngleV(float angle_v)
 	{
-		angle_v_ = angle_v;
+		angle_v_ = angle_v - ANGLE_V_OFFSET_;
 	}
 
 	int16_t getInitXAcc() const
@@ -172,9 +173,22 @@ public:
 		return tilt_checking_status_;
 	}
 
+	float calAngleR1OrderFilter(double k, double dt);
+	float calAngleRKalmanFilter(double dt);
+	void setAngleR(float angle);
+	float getAngleR(void);
+	float getAccAngleR(void);
+	float getGyroAngleR(double dt);
+	void resetGyroAngleR(void);
+	float KalmanFilter(float angle_m, float gyro_m, double dt);
+	void setAngleVOffset(void);
+	void setAngleROffset(void);
+	void resetKalmanParam(void);
 private:
 
-	float angle_;
+	float angle_y_;//yaw
+	float angle_r_{0};//roll
+	float angle_p_;//pitch
 	float angle_v_;
 	float x_acc_;
 	float y_acc_;
@@ -182,6 +196,11 @@ private:
 	float init_x_acc_;
 	float init_y_acc_;
 	float init_z_acc_;
+
+	float acc_angle_r_{0};
+	float gyro_angle_r_{0};
+	float ANGLE_V_OFFSET_{0};
+	float ANGLE_R_OFFSET_{0};
 
 	bool calibration_status_;
 
@@ -207,6 +226,14 @@ private:
 	uint16_t right_count_;
 	uint16_t left_count_;
 	uint16_t back_count_;
+
+	//for kalman
+	float kalman_angle, angle_dot;
+	float P[2][2]={{1,0},{0,1}};
+	float Pdot[4]={0,0,0,0};
+	float Q_angle=0.05,Q_gyro=0.005;
+	float R_angle=0.5,C_0=1;
+	float q_bias,angle_err,PCt_0,PCt_1,E,K_0,K_1,t_0,t_1;
 };
 
 extern Gyro gyro;

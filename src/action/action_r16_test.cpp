@@ -257,14 +257,14 @@ void ActionR16Test::error_loop(uint8_t test_stage, uint16_t content, uint16_t er
 
 	double alarm_time = ros::Time::now().toSec();
 	speaker.play(VOICE_TEST_FAIL);
-	ROS_ERROR("%s %d: Test ERROR. test_stage: %d. error_code: %d, content: %d", __FUNCTION__, __LINE__, test_stage, error_code, content);
+	ROS_ERROR("%s %d: Test ERROR. test_stage_: %d. error_code: %d, content: %d", __FUNCTION__, __LINE__, test_stage, error_code, content);
 	while (ros::ok())
 	{
 		if (ros::Time::now().toSec() - alarm_time > 5)
 		{
 			alarm_time = ros::Time::now().toSec();
 			speaker.play(VOICE_TEST_FAIL);
-			ROS_ERROR("%s %d: Test ERROR. test_stage: %d. error_code: %d, content: %d", __FUNCTION__, __LINE__, test_stage, error_code, content);
+			ROS_ERROR("%s %d: Test ERROR. test_stage_: %d. error_code: %d, content: %d", __FUNCTION__, __LINE__, test_stage, error_code, content);
 		}
 	}
 

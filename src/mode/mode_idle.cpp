@@ -339,6 +339,7 @@ void ModeIdle::keyClean(bool state_now, bool state_last)
 
 void ModeIdle::rcon(bool state_now, bool state_last)
 {
+//	ROS_INFO("%s %d: rcon status: %8x.", __FUNCTION__, __LINE__, c_rcon.getStatus());
 	if (error.get() == ERROR_CODE_NONE)
 	{
 		auto time_for_now_ = ros::Time::now().toSec();

@@ -95,6 +95,11 @@ public:
 	double getLidarDistance(int16_t angle,float range_max,float range_min);
 	uint8_t lidar_get_status(int movement_i, int action_i);
 	bool lidar_is_stuck();
+
+	void slipCheckingCtrl(bool enable)
+	{
+		slip_enable_ = enable;
+	}
 private:
 
 	// switch_ is the target status of lidar.
@@ -131,6 +136,7 @@ private:
 	geometry_msgs::Point laser_points_;
 
 	// For slip checking
+	bool slip_enable_{false};
 	bool slip_status_{false};
 	uint8_t slip_frame_cnt_{0};
 	slip_scan_deque last_slip_scan_frame_{};

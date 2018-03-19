@@ -17,7 +17,8 @@ ModeRemote::ModeRemote()
 	if (gyro.isOn())
 	{
 		key_led.setMode(LED_STEADY, LED_GREEN);
-		vacuum.setLastMode();
+		if (!water_tank.checkEquipment())
+			vacuum.setLastMode();
 		brush.normalOperate();
 		action_i_ = ac_remote;
 	}
@@ -97,7 +98,8 @@ int ModeRemote::getNextAction()
 	if(action_i_ == ac_open_gyro || (action_i_ == ac_exception_resume && !ev.fatal_quit))
 	{
 		key_led.setMode(LED_STEADY, LED_GREEN);
-		vacuum.setLastMode();
+		if (!water_tank.checkEquipment())
+			vacuum.setLastMode();
 		brush.normalOperate();
 		return ac_remote;
 	}
