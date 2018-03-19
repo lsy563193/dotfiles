@@ -10,6 +10,7 @@
 #include <robot.hpp>
 #include <beeper.h>
 
+int MovementGyroDynamic::start_dynamic_count_{};
 
 MovementGyroDynamic::MovementGyroDynamic()
 {
@@ -48,9 +49,8 @@ bool MovementGyroDynamic::isFinish() {
 			auto offset_adjustment = getPosition().th - odom.getRadian();
 			odom.setRadianOffset(ranged_radian(odom.getRadianOffset() + offset_adjustment));
 			beeper.beepForCommand(VALID);
-			ROS_INFO("%s %d: Shutdown gyro dynamic, offset adjustment: %f.",
-							 __FUNCTION__, __LINE__, radian_to_degree(offset_adjustment));
 		}
+		ROS_INFO("%s %d: Shutdown gyro dynamic. start_dynamic_count_(%d)", __FUNCTION__, __LINE__, start_dynamic_count_);
 		return true;
 	}
 //#else
