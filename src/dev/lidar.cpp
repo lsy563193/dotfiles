@@ -1235,7 +1235,7 @@ uint8_t Lidar::lidarMarker(std::vector<Vector2<int>> &markers, int movement_i, i
 
 void Lidar::checkRobotSlip()
 {
-	if (!lidar.isScanOriginalReady())
+	if (!slip_enable_ || !lidar.isScanOriginalReady())
 	{
 		slip_status_ = false;
 		return;

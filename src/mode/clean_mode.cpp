@@ -36,6 +36,7 @@ ACleanMode::ACleanMode()
 	line_marker_pub_ = clean_nh_.advertise<visualization_msgs::Marker>("line_marker", 1);
 	line_marker_pub2_ = clean_nh_.advertise<visualization_msgs::Marker>("line_marker2", 1);
 
+	lidar.slipCheckingCtrl(ON);
 	event_manager_register_handler(this);
 	event_manager_set_enable(true);
 	serial.setWorkMode(WORK_MODE);
@@ -88,6 +89,7 @@ ACleanMode::~ACleanMode()
 		water_tank.stop();
 		lidar.motorCtrl(OFF);
 		lidar.setScanOriginalReady(0);
+		lidar.slipCheckingCtrl(OFF);
 
 		robot::instance()->setBaselinkFrameType(ODOM_POSITION_ODOM_ANGLE);
 		slam.stop();

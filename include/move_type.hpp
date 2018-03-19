@@ -217,14 +217,14 @@ private:
 	// For stage 1.
 	int sum_cnt_{0};
 
-	uint32_t left_brush_current_baseline_;
-	uint32_t right_brush_current_baseline_;
-	uint32_t main_brush_current_baseline_;
-	uint32_t left_wheel_current_baseline_;
-	uint32_t right_wheel_current_baseline_;
-	uint32_t vacuum_current_baseline_;
-	uint32_t water_tank_current_baseline_;
-	uint32_t robot_current_baseline_;
+	uint32_t left_brush_current_baseline_{0};
+	uint32_t right_brush_current_baseline_{0};
+	uint32_t main_brush_current_baseline_{0};
+	uint32_t left_wheel_current_baseline_{0};
+	uint32_t right_wheel_current_baseline_{0};
+	uint32_t vacuum_current_baseline_{0};
+	uint32_t water_tank_current_baseline_{0};
+	uint32_t robot_current_baseline_{0};
 
 	bool checkStage1Finish();
 

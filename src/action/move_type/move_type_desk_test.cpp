@@ -24,11 +24,16 @@
 
 #include "error.h"
 
+#define RCON_ROTATE_SPEED (ROTATE_TOP_SPEED / 2)
+
 MoveTypeDeskTest::MoveTypeDeskTest()
 {
 	ROS_INFO("%s,%d: Enter move type desk test.", __FUNCTION__, __LINE__);
 
 	auto desk_test_routine = new boost::thread(boost::bind(&MoveTypeDeskTest::deskTestRoutineThread, this));
+
+	// Make sure lidar has been inited and stopped, and the voice has finished playing.
+	usleep(5000000);
 }
 
 MoveTypeDeskTest::~MoveTypeDeskTest()
@@ -107,9 +112,9 @@ void MoveTypeDeskTest::run()
 				test_step_ = 0;
 				// Switch to next stage.
 				p_movement_.reset();
-				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-150), LINEAR_MAX_SPEED));
-				brush.fullOperate();
-				vacuum.setMode(Vac_Max);
+				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-90), ROTATE_TOP_SPEED));
+				/*brush.fullOperate();
+				vacuum.setMode(Vac_Max);*/
 				// todo: for water tank
 				ROS_INFO("%s %d: Stage 4 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
 			}
@@ -170,6 +175,7 @@ void MoveTypeDeskTest::run()
 			wheel.stop();
 			brush.stop();
 			vacuum.stop();
+			lidar.motorCtrl(OFF);
 			sleep(5);
 			break;
 		}
@@ -181,6 +187,7 @@ void MoveTypeDeskTest::run()
 			wheel.stop();
 			brush.stop();
 			vacuum.stop();
+			lidar.motorCtrl(OFF);
 			sleep(5);
 			break;
 		}
@@ -283,9 +290,15 @@ bool MoveTypeDeskTest::dataExtract(const uint8_t *buf)
 
 		vacuum.setCurrent((buf[REC_VACUUM_CURRENT_H] << 8) | buf[REC_VACUUM_CURRENT_L]);
 
-		water_tank.setCurrent((buf[REC_WATER_PUMP_CURRENT_H] << 8) | buf[REC_WATER_PUMP_CURRENT_L]);
+//		water_tank.setCurrent((buf[REC_WATER_PUMP_CURRENT_H] << 8) | buf[REC_WATER_PUMP_CURRENT_L]);
+		water_tank.setCurrent(0);
 
 		robot::instance()->setCurrent((buf[REC_ROBOT_CUNT_H] << 8) | buf[REC_ROBOT_CUNT_L]);
+
+//		printf("brush(l%d, r%d, m%d), wheel(l%d, r%d), vacuum(%d), robot(%d).\n",
+//			   brush.getLeftCurrent(), brush.getRightCurrent(), brush.getMainCurrent(),
+//			   wheel.getLeftCurrent(), wheel.getRightCurrent(), vacuum.getCurrent(),
+//			   robot::instance()->getCurrent());
 
 	} else if (current_work_mode == DESK_TEST_MOVEMENT_MODE)
 	{
@@ -319,12 +332,12 @@ bool MoveTypeDeskTest::checkStage1Finish()
 		robot_current_baseline_ /= sum_cnt_;
 		ROS_INFO("%s %d: robot_current_baseline_:%d.", __FUNCTION__, __LINE__, robot_current_baseline_);
 
-		int32_t side_brush_current_baseline_ref_{0};
-		int32_t main_brush_current_baseline_ref_{0};
-		int32_t wheel_current_baseline_ref_{0};
-		int32_t vacuum_current_baseline_ref_{0};
+		int32_t side_brush_current_baseline_ref_{1620};
+		int32_t main_brush_current_baseline_ref_{1620};
+		int32_t wheel_current_baseline_ref_{1620};
+		int32_t vacuum_current_baseline_ref_{1620};
 		int32_t water_tank_current_baseline_ref_{0};
-		int32_t robot_current_baseline_ref_{0}; // todo:
+		int32_t robot_current_baseline_ref_{1775}; // todo:
 
 		if (left_brush_current_baseline_ > side_brush_current_baseline_ref_ * 1.2 ||
 			left_brush_current_baseline_ < side_brush_current_baseline_ref_ * 0.8)
@@ -336,10 +349,10 @@ bool MoveTypeDeskTest::checkStage1Finish()
 				 main_brush_current_baseline_ < main_brush_current_baseline_ref_ * 0.8)
 			error_code_ = MAIN_BRUSH_CURRENT_ERROR;
 		else if (vacuum_current_baseline_ > vacuum_current_baseline_ref_ * 1.2 ||
-				 vacuum_current_baseline_ > vacuum_current_baseline_ref_ * 0.8)
+				 vacuum_current_baseline_ < vacuum_current_baseline_ref_ * 0.8)
 			error_code_ = VACUUM_CURRENT_ERROR;
 		else if (water_tank_current_baseline_ > water_tank_current_baseline_ref_ * 1.2 ||
-				 water_tank_current_baseline_ > water_tank_current_baseline_ref_ * 0.8)
+				 water_tank_current_baseline_ < water_tank_current_baseline_ref_ * 0.8)
 			error_code_ = VACUUM_CURRENT_ERROR; // todo:
 		else if (left_wheel_current_baseline_ > wheel_current_baseline_ref_ * 1.2 ||
 				 left_wheel_current_baseline_ < wheel_current_baseline_ref_ * 0.8)
@@ -348,7 +361,7 @@ bool MoveTypeDeskTest::checkStage1Finish()
 				 right_wheel_current_baseline_ < wheel_current_baseline_ref_ * 0.8)
 			error_code_ = RIGHT_WHEEL_FORWARD_CURRENT_ERROR;
 		else if (robot_current_baseline_ > robot_current_baseline_ref_ * 1.2 ||
-				 robot_current_baseline_ > robot_current_baseline_ref_ * 0.8)
+				 robot_current_baseline_ < robot_current_baseline_ref_ * 0.8)
 			error_code_ = BASELINE_CURRENT_ERROR;
 
 		if (error_code_ == 0)
@@ -426,7 +439,7 @@ bool MoveTypeDeskTest::checkStage2Finish()
 			test_step_++;
 			lidar_check_cnt_ = 0;
 			p_movement_.reset();
-			p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-179), ROTATE_TOP_SPEED * 2 / 3));
+			p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-179), RCON_ROTATE_SPEED));
 			ROS_INFO("%s %d: Enter rcon turning 1.", __FUNCTION__, __LINE__);
 			break;
 		}
@@ -447,7 +460,7 @@ bool MoveTypeDeskTest::checkStage2Finish()
 			}
 			test_step_++;
 			p_movement_.reset();
-			p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-179), ROTATE_TOP_SPEED * 2 / 3));
+			p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-179), RCON_ROTATE_SPEED));
 			break;
 		}
 		default://case 6:
@@ -455,19 +468,19 @@ bool MoveTypeDeskTest::checkStage2Finish()
 			// Check for rcon.
 			if (!(c_rcon.getStatus() & (RconBL_HomeT)))
 				error_code_ = BLRCON_ERROR;
-			if (error_code_ == 0 && (!(c_rcon.getStatus() & (RconL_HomeT))))
+			else if (!(c_rcon.getStatus() & (RconL_HomeT)))
 				error_code_ = LRCON_ERROR;
-			if (error_code_ == 0 && (!(c_rcon.getStatus() & (RconFL2_HomeT))))
+			else if (!(c_rcon.getStatus() & (RconFL2_HomeT)))
 				error_code_ = FL2RCON_ERROR;
-			if (error_code_ == 0 && (!(c_rcon.getStatus() & (RconFL_HomeT))))
+			else if (!(c_rcon.getStatus() & (RconFL_HomeT)))
 				error_code_ = FLRCON_ERROR;
-			if (error_code_ == 0 && (!(c_rcon.getStatus() & (RconFR_HomeT))))
+			else if (!(c_rcon.getStatus() & (RconFR_HomeT)))
 				error_code_ = FRRCON_ERROR;
-			if (error_code_ == 0 && (!(c_rcon.getStatus() & (RconFR2_HomeT))))
+			else if (!(c_rcon.getStatus() & (RconFR2_HomeT)))
 				error_code_ = FR2RCON_ERROR;
-			if (error_code_ == 0 && (!(c_rcon.getStatus() & (RconR_HomeT))))
+			else if (!(c_rcon.getStatus() & (RconR_HomeT)))
 				error_code_ = RRCON_ERROR;
-			if (error_code_ == 0 && (!(c_rcon.getStatus() & (RconBR_HomeT))))
+			else if (!(c_rcon.getStatus() & (RconBR_HomeT)))
 				error_code_ = BRRCON_ERROR;
 
 			if (error_code_ == 0)
@@ -481,7 +494,10 @@ bool MoveTypeDeskTest::checkStage2Finish()
 				sum_cnt_ = 0;
 				return true;
 			} else
+			{
 				test_stage_ = 99;
+				ROS_ERROR("%s %d: rcon status:%x.", __FUNCTION__, __LINE__, c_rcon.getStatus());
+			}
 		}
 	}
 	return false;
@@ -561,7 +577,7 @@ bool MoveTypeDeskTest::checkStage3Finish()
 			{
 				test_step_++;
 				p_movement_.reset();
-				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-100), ROTATE_TOP_SPEED));
+				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-120), ROTATE_TOP_SPEED));
 			}
 			else
 				p_movement_->run();
@@ -604,13 +620,10 @@ bool MoveTypeDeskTest::checkStage4Finish()
 	{
 		case 0: // Follow wall to the cliff.
 		{
-			if (ros::Time::now().toSec() - check_current_start_time_ > 4)
+			if (ros::Time::now().toSec() - check_current_start_time_ > 3)
 			{
 				if (!checkCurrent())
-				{
 					test_stage_ = 99;
-					return true;
-				}
 				else
 				{
 					check_current_start_time_ = ros::Time::now().toSec();
@@ -648,8 +661,6 @@ bool MoveTypeDeskTest::checkStage4Finish()
 					error_code_ = FRONT_CLIFF_ERROR;
 				if (error_code_ != 0 && right_cliff_max_ < cliff_max_ref_)
 					error_code_ = RIGHT_CLIFF_ERROR;
-
-				checkCurrent();
 
 				if (error_code_ != 0)
 					test_stage_ = 99;
@@ -803,12 +814,13 @@ bool MoveTypeDeskTest::checkCurrent()
 	robot_current_ /= sum_cnt_;
 	ROS_INFO("%s %d: Robot current: %d.", __FUNCTION__, __LINE__, robot_current_);
 
-	uint16_t side_brush_current_ref_{0};
-	uint16_t main_brush_current_ref_{0};
-	uint16_t wheel_current_ref_{0};
-	uint16_t vacuum_current_ref_{0};
+	// During follow wall
+	uint16_t side_brush_current_ref_{1670 - 1620};
+	uint16_t main_brush_current_ref_{1785 - 1620};
+	uint16_t wheel_current_ref_{1670 - 1620};
+	uint16_t vacuum_current_ref_{1970 - 1620};
 	uint16_t water_tank_current_ref_{0};
-	uint16_t robot_current_ref_{0};// todo:
+	uint16_t robot_current_ref_{2170 - 1775};// todo:
 
 	if (left_brush_current_ - left_brush_current_baseline_ > side_brush_current_ref_ * 1.2 ||
 		left_brush_current_ - left_brush_current_baseline_ < side_brush_current_ref_ * 0.8)
@@ -820,24 +832,24 @@ bool MoveTypeDeskTest::checkCurrent()
 			 main_brush_current_ - main_brush_current_baseline_ < main_brush_current_ref_ * 0.8)
 		error_code_ = MAIN_BRUSH_CURRENT_ERROR;
 	else if (vacuum_current_ - vacuum_current_baseline_ > vacuum_current_ref_ * 1.2 ||
-			 vacuum_current_ - vacuum_current_baseline_ > vacuum_current_ref_ * 0.8)
+			 vacuum_current_ - vacuum_current_baseline_ < vacuum_current_ref_ * 0.8)
 		error_code_ = VACUUM_CURRENT_ERROR;
 	else if (water_tank_current_ - water_tank_current_baseline_ > water_tank_current_ref_ * 1.2 ||
-			 water_tank_current_ - water_tank_current_baseline_ > water_tank_current_ref_ * 0.8)
+			 water_tank_current_ - water_tank_current_baseline_ < water_tank_current_ref_ * 0.8)
 		error_code_ = VACUUM_CURRENT_ERROR; // todo:
 	else if (left_wheel_current_ - left_wheel_current_baseline_ > wheel_current_ref_ * 1.2 ||
-			 left_wheel_current_ - left_wheel_current_baseline_ < wheel_current_ref_ * 0.8)
+			 left_wheel_current_ - left_wheel_current_baseline_ < wheel_current_ref_ * 0.7)
 		error_code_ = LEFT_WHEEL_FORWARD_CURRENT_ERROR;
 	else if (right_wheel_current_ - right_wheel_current_baseline_ > wheel_current_ref_ * 1.2 ||
-			 right_wheel_current_ - right_wheel_current_baseline_ < wheel_current_ref_ * 0.8)
+			 right_wheel_current_ - right_wheel_current_baseline_ < wheel_current_ref_ * 0.7)
 		error_code_ = RIGHT_WHEEL_FORWARD_CURRENT_ERROR;
 	else if (robot_current_ - robot_current_baseline_ > robot_current_ref_ * 1.2 ||
-			 robot_current_ - robot_current_baseline_ > robot_current_ref_ * 0.8)
+			 robot_current_ - robot_current_baseline_ < robot_current_ref_ * 0.8)
 		error_code_ = BASELINE_CURRENT_ERROR;
 
 	sum_cnt_ = 0;
 
-	return error_code_ != 0;
+	return error_code_ == 0;
 }
 
 bool MoveTypeDeskTest::checkStage5Finish()
@@ -859,8 +871,8 @@ bool MoveTypeDeskTest::checkStage5Finish()
 		{
 			if (p_movement_->isFinish())
 			{
-				p_movement_.reset();
-				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(60), LINEAR_MAX_SPEED));
+//				p_movement_.reset();
+//				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(60), ROTATE_TOP_SPEED));
 				test_step_++;
 			} else
 			{
@@ -960,19 +972,19 @@ bool MoveTypeDeskTest::checkStage6Finish()
 				// Check for rcon.
 				if (!(c_rcon.getStatus() & (RconBL_HomeL | RconBL_HomeR)))
 					error_code_ = BLRCON_ERROR;
-				if (error_code_ == 0 && (!(c_rcon.getStatus() & (RconL_HomeL | RconL_HomeR))))
+				else if (!(c_rcon.getStatus() & (RconL_HomeL | RconL_HomeR)))
 					error_code_ = LRCON_ERROR;
-				if (error_code_ == 0 && (!(c_rcon.getStatus() & (RconFL2_HomeL | RconFL2_HomeR))))
+				else if (!(c_rcon.getStatus() & (RconFL2_HomeL | RconFL2_HomeR)))
 					error_code_ = FL2RCON_ERROR;
-				if (error_code_ == 0 && (!(c_rcon.getStatus() & (RconFL_HomeL | RconFL_HomeR))))
+				else if (!(c_rcon.getStatus() & (RconFL_HomeL | RconFL_HomeR)))
 					error_code_ = FLRCON_ERROR;
-				if (error_code_ == 0 && (!(c_rcon.getStatus() & (RconFR_HomeL | RconFR_HomeR))))
+				else if (!(c_rcon.getStatus() & (RconFR_HomeL | RconFR_HomeR)))
 					error_code_ = FRRCON_ERROR;
-				if (error_code_ == 0 && (!(c_rcon.getStatus() & (RconFR2_HomeL | RconFR2_HomeR))))
+				else if (!(c_rcon.getStatus() & (RconFR2_HomeL | RconFR2_HomeR)))
 					error_code_ = FR2RCON_ERROR;
-				if (error_code_ == 0 && (!(c_rcon.getStatus() & (RconR_HomeL | RconR_HomeR))))
+				else if (!(c_rcon.getStatus() & (RconR_HomeL | RconR_HomeR)))
 					error_code_ = RRCON_ERROR;
-				if (error_code_ == 0 && (!(c_rcon.getStatus() & (RconBR_HomeL | RconBR_HomeR))))
+				else if (!(c_rcon.getStatus() & (RconBR_HomeL | RconBR_HomeR)))
 					error_code_ = BRRCON_ERROR;
 
 				if (error_code_ != 0)

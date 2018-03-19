@@ -437,6 +437,7 @@ void robot::core_thread_cb()
 			break;
 		}
 		case DESK_TEST_CURRENT_MODE:
+		case DESK_TEST_MOVEMENT_MODE:
 		case GYRO_TEST_MODE:
 		case LIFE_TEST_MODE:
 		case WATER_TANK_TEST_MODE:
