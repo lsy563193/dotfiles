@@ -10,15 +10,16 @@
    * Defines a 2-dimensional bounding box.
    */
 
-class BoundingBox2 {
+template <class T>
+class BoundingBox {
   class iterator {
   public:
-    iterator(Cell_t *pos,int16_t min, int16_t max): pos_(pos),min_(min),max_(max)
+    iterator(T *pos,int16_t min, int16_t max): pos_(pos),min_(min),max_(max)
     {
 //      ROS_INFO("pos %d ", pos_);
     }
 
-    Cell_t operator*() const
+    T operator*() const
     {
       return *pos_;
     }
@@ -40,7 +41,7 @@ class BoundingBox2 {
     }
 
   private:
-    Cell_t *pos_;
+    T *pos_;
     int16_t min_;
     int16_t max_;
   };
@@ -49,7 +50,7 @@ public:
   /*
 	 * Bounding box of maximal size
 	 */
-  BoundingBox2()
+  BoundingBox()
           : min(INT16_MAX, INT16_MAX), max(INT16_MIN, INT16_MIN)
   {pos_ = min; };
 
@@ -58,7 +59,7 @@ public:
 	 * @param rMinimum minimum value
 	 * @param rMaximum maximum value
 	 */
-  BoundingBox2(const Cell_t &rMinimum, const Cell_t &rMaximum)
+  BoundingBox(const T &rMinimum, const T &rMaximum)
           : min(rMinimum), max(rMaximum)
   {pos_ = min;};
 
@@ -67,7 +68,7 @@ public:
 	 * Get bounding box minimum
 	 * @return bounding box minimum
 	 */
-  inline const Cell_t &GetMinimum() const
+  inline const T &GetMinimum() const
   {
     return min;
   }
@@ -76,7 +77,7 @@ public:
 	 * Set bounding box minimum
 	 * @param rMinimum bounding box minimum
 	 */
-  inline void SetMinimum(const Cell_t &rMinimum)
+  inline void SetMinimum(const T &rMinimum)
   {
     min = rMinimum;
   }
@@ -85,7 +86,7 @@ public:
 	 * Get bounding box maximum
 	 * @return bounding box maximum
 	 */
-  inline const Cell_t &GetMaximum() const
+  inline const T &GetMaximum() const
   {
     return max;
   }
@@ -94,7 +95,7 @@ public:
 	 * Set bounding box maximum
 	 * @param rMaximum bounding box maximum
 	 */
-  inline void SetMaximum(const Cell_t &rMaximum)
+  inline void SetMaximum(const T &rMaximum)
   {
     max = rMaximum;
   }
@@ -105,7 +106,7 @@ public:
 	 */
   /* inline Size2 <int16_t> GetSize() const
 	 {
-		 Cell_t size = max - min;
+		 T size = max - min;
 
 		 return Size2<int16_t>(size.GetX(), size.GetY());
 	 }*/
@@ -114,7 +115,7 @@ public:
 	 * Add vector to bounding box
 	 * @param rPoint point
 	 */
-  inline void Add(const Cell_t &rPoint)
+  inline void Add(const T &rPoint)
   {
     min.MakeFloor(rPoint);
     max.MakeCeil(rPoint);
@@ -124,7 +125,7 @@ public:
 	 * Add given bounding box to this bounding box
 	 * @param rBoundingBox bounding box
 	 */
-  inline void Add(const BoundingBox2 &rBoundingBox)
+  inline void Add(const BoundingBox &rBoundingBox)
   {
     Add(rBoundingBox.GetMinimum());
     Add(rBoundingBox.GetMaximum());
@@ -135,18 +136,21 @@ public:
 	 * @param rPoint point
 	 * @return whether the given point is in the bounds of this box
 	 */
-/*  inline  Contains(const Cell_t &rPoint) const
+  inline  bool Contains(const T &rPoint) const
   {
-    return (math::InRange(rPoint.GetX(), min.GetX(), max.GetX()) &&
-            math::InRange(rPoint.GetY(), min.GetY(), max.GetY()));
-  }*/
+    return (rPoint.GetX() >= min.GetX()) && (rPoint.GetX() <= max.GetX()) &&
+           (rPoint.GetY() >= min.GetY()) && (rPoint.GetY() <= max.GetY());
+
+    //    return (math::InRange(rPoint.GetX(), min.GetX(), max.GetX()) &&
+//            math::InRange(rPoint.GetY(), min.GetY(), max.GetY()));
+  }
 
   /**
 	 * Checks if this bounding box intersects with the given bounding box
 	 * @param rOther bounding box
 	 * @return true if this bounding box intersects with the given bounding box
 	 */
-  inline bool Intersects(const BoundingBox2 &rOther) const
+  inline bool Intersects(const BoundingBox &rOther) const
   {
     if ((max.GetX() < rOther.min.GetX()) || (min.GetX() > rOther.max.GetX()))
     {
@@ -166,7 +170,7 @@ public:
 	 * @param rOther bounding box
 	 * @return true if this bounding box contains the given bounding box
 	 */
-  inline bool Contains(const BoundingBox2 &rOther) const
+  /*inline bool Contains(const BoundingBox &rOther) const
   {
     if ((max.GetX() < rOther.min.GetX()) || (min.GetX() > rOther.max.GetX()))
     {
@@ -185,7 +189,7 @@ public:
     }
 
     return false;
-  }
+  }*/
 
   iterator begin()
   {
@@ -204,10 +208,11 @@ public:
   }
 
 public:
-  Cell_t min;
-  Cell_t max;
-  Cell_t end_;
-  Cell_t pos_;
-}; // class BoundingBox2
+  T min;
+  T max;
+  T end_;
+  T pos_;
+}; // class BoundingBox
 
+typedef BoundingBox<Cell_t> BoundingBox2;
 #endif //PP_BOUNDINGBOX_H

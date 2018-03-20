@@ -419,7 +419,7 @@ bool APathAlgorithm::findTargetUsingDijkstra(GridMap &map, const Cell_t& curr_ce
 		queue.erase(start);
 
 //		ROS_WARN("adjacent cell(%d,%d)", next.x, next.y);
-		if (map.getCell(CLEAN_MAP, next.x, next.y) == UNCLEAN && map.isBlockAccessible(next.x, next.y))
+		if (map.getCell(CLEAN_MAP, next.x, next.y) == UNCLEAN && map.isBlockAccessible(next.x, next.y) && next.y%2 == 0)
 		{
 			ROS_WARN("We find the Unclean next(%d,%d)", next.x, next.y);
 			is_found = true;

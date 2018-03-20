@@ -27,6 +27,7 @@ typedef struct Pose16_t_{
 } Pose16_t;*/
 
 double ranged_radian(double radian);
+double ranged_degree(double degree);
 double degree_to_radian(double deg);
 double radian_to_degree(double rad);
 
@@ -339,7 +340,10 @@ public:
     y = 0;
     th = 0;
   }
-
+	Point_t(float _x, float _y) {
+    x = _x;
+    y = _y;
+  }
   Point_t(float _x, float _y, double _th) {
     x = _x;
     y = _y;

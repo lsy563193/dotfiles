@@ -32,7 +32,7 @@ MoveTypeLinear::~MoveTypeLinear()
 {
 	if(sp_mode_ != nullptr){
 		auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
-		p_mode->clean_map_.saveBlocks(p_mode->action_i_ == p_mode->ac_linear, p_mode->sp_state == p_mode->state_clean);
+		p_mode->saveBlocks(p_mode->action_i_ == p_mode->ac_linear, p_mode->sp_state == p_mode->state_clean);
 		p_mode->mapMark();
 		memset(IMoveType::rcon_cnt,0,sizeof(int8_t)*6);
 	}

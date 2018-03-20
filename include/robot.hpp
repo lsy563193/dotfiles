@@ -66,6 +66,8 @@ public:
 //	void pubTmpTarget(const Points &points,bool is_virtual=false);
 	void robotbase_routine_cb();
 	void core_thread_cb();
+	void runWorkMode();
+	void runTestMode();
 	// Service caller functions.
 	bool lidarMotorCtrl(bool switch_);
 	bool slamStart(void);
@@ -177,10 +179,6 @@ public:
 		return scan_ctrl_.allow_publishing?true:false;
 	}
 
-	void debugReceivedStream(const uint8_t *buf);
-
-	void debugSendStream(const uint8_t *buf);
-
 	bool pubScanCtrl(bool is_pub, bool is_force_pub = false);
 
 	void lockScanCtrl(void);
@@ -189,8 +187,12 @@ public:
 
 	void publishCtrlStream(void);
 
-	void updateRobotPositionForDeskTest();
+	void updateRobotPositionForTest();
 
+	std::string getLidarBumperDev()
+	{
+		return lidar_bumper_dev_;
+	}
 private:
 
 	uint8_t getTestMode(void);

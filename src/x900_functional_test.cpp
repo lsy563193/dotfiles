@@ -10,6 +10,7 @@
 #include <random>
 #include <wait.h>
 #include "robot.hpp"
+#include "infrared_display.hpp"
 
 void x900_functional_test(std::string serial_port, int baud_rate, std::string lidar_bumper_dev)
 {
@@ -32,41 +33,6 @@ void x900_functional_test(std::string serial_port, int baud_rate, std::string li
 		error_loop(FUNC_SERIAL_TEST_MODE, SERIAL_ERROR, 0);
 	}
 	ROS_INFO("Test serial port succeeded!!");
-	send_thread_enable = true;
-
-	// Test item: RAM.
-	if (!RAM_test())
-	{
-		ROS_ERROR("%s %d: RAM test failed!!", __FUNCTION__, __LINE__);
-		error_loop(0, RAM_ERROR, 0);
-	}
-	ROS_INFO("%s %d: Test for RAM successed.", __FUNCTION__, __LINE__);
-
-	// Test item: Flash.
-	if (!Flash_test())
-	{
-		ROS_ERROR("%s %d: Flash test failed!!", __FUNCTION__, __LINE__);
-		error_loop(0, FLASH_ERROR, 0);
-	}
-	ROS_INFO("%s %d: Test for Flash succeeded.", __FUNCTION__, __LINE__);
-
-
-	// Test item: Lidar.
-	if (!lidar_test())
-	{
-		ROS_ERROR("%s %d: Lidar test failed!!", __FUNCTION__, __LINE__);
-		error_loop(0, LIDAR_ERROR, 0);
-	}
-	ROS_INFO("%s %d: Test for lidar succeeded.", __FUNCTION__, __LINE__);
-
-	// Test item: Lidar bumper.
-	if (bumper.lidarBumperInit(lidar_bumper_dev.c_str()) != 1 || !lidar_bumper_test())
-	{
-
-		ROS_ERROR("%s %d: Lidar bumper test failed!!", __FUNCTION__, __LINE__);
-		error_loop(0, LIDAR_BUMPER_ERROR, 0);
-	}
-	ROS_INFO("%s %d: Test for lidar bumper succeeded.", __FUNCTION__, __LINE__);
 
 	recei_thread_enable = true;
 
@@ -99,14 +65,7 @@ void x900_functional_test(std::string serial_port, int baud_rate, std::string li
 
 void error_loop(uint8_t test_stage, uint16_t error_code, uint16_t current_data)
 {
-	serial.setSendData(CTL_MAIN_BOARD_MODE, ALARM_ERROR_MODE);
-	serial.setSendData(CTL_TESTING_STAGE, test_stage);
-	serial.setSendData(CTL_ERROR_CODE_HIGH, static_cast<uint8_t>(error_code >> 8));
-	serial.setSendData(CTL_ERROR_CODE_LOW, static_cast<uint8_t>(error_code & 0xFF));
-	serial.setSendData(CTL_CURRENT_DATA_HIGH, static_cast<uint8_t>(current_data >> 8));
-	serial.setSendData(CTL_CURRENT_DATA_LOW, static_cast<uint8_t>(current_data & 0xFF));
-	serial.setSendData(CTL_MESSAGE_TYPE, 1);
-
+	infrared_display.displayErrorMsg(test_stage, current_data, error_code);
 	double alarm_time = ros::Time::now().toSec();
 	speaker.play(VOICE_TEST_FAIL);
 	ROS_ERROR("%s %d: Test ERROR.", __FUNCTION__, __LINE__);
@@ -121,146 +80,6 @@ void error_loop(uint8_t test_stage, uint16_t error_code, uint16_t current_data)
 	}
 }
 
-bool RAM_test()
-{
-	ROS_INFO("%s %d: Start RAM test.", __FUNCTION__, __LINE__);
-	bool test_ret = false;
-	int RAM_test_size = 2; // In Mb.
-	int RAM_test_block_cnt = 3; // Test 3 c_blocks of RAM and size of each block is RAM_test_size Mb.
-
-	pid_t status;
-	// (Austin)Use the modified memtester.
-	std::string cmd = "memtester " + std::to_string(RAM_test_size) + " 1 " + std::to_string(RAM_test_block_cnt);
-	ROS_INFO("%s %d: Run command: %s", __FUNCTION__, __LINE__, cmd.c_str());
-	status = system(cmd.c_str());
-
-	if (-1 == status)
-		ROS_ERROR("%s %d: system error!", __FUNCTION__, __LINE__);
-	else
-	{
-		ROS_INFO("exit status value = [0x%x]", status);
-		if (WIFEXITED(status))
-		{
-			if (0 == WEXITSTATUS(status))
-				test_ret = true;
-			else
-				ROS_ERROR("%s %d: Program test for RAM failed, failed code:%d!!", __FUNCTION__, __LINE__, WEXITSTATUS(status));
-		}
-		else
-			ROS_ERROR("%s %d: Test for RAM end for exception, failed code:%d!!", __FUNCTION__, __LINE__, WEXITSTATUS(status));
-	}
-
-	return test_ret;
-
-	/*int pid;
-	int status = 0;
-	while ((pid = fork()) < 0)
-	{
-		ROS_ERROR("%s %d: fork() failed:%d.", __FUNCTION__, __LINE__, errno);
-		usleep(50000);
-	}
-
-	if (pid == 0)
-	{
-		// Child process.
-		ROS_INFO("%s %d: Child process up, pid:%d.", __FUNCTION__, __LINE__, getpid());
-
-		int fail_code = execlp("memtester", "memtester", std::to_string(RAM_test_size).c_str(), "1",
-			   std::to_string(RAM_test_block_cnt).c_str() ,NULL);
-		ROS_ERROR("%s %d: Child process end with error: %02d, %s", __FUNCTION__, __LINE__, errno, strerror(errno));
-		_exit(fail_code);
-	} else
-	{
-		// Parent process.
-		ROS_INFO("%s %d: Parent process up, child pid:%d.", __FUNCTION__, __LINE__, pid);
-		while (ros::ok() && waitpid(pid, &status, WNOHANG) == 0)
-		{
-//			ROS_INFO("%s %d: Parent waiting for pid:%d", __FUNCTION__, __LINE__, pid);
-//			if (errno != EINTR)
-//			{
-//				status = -1;
-//				break;
-//			}
-			usleep(200000);
-		}
-		switch (status)
-		{
-			case 0:
-				ROS_INFO("%s %d: Test for RAM successed.", __FUNCTION__, __LINE__);
-				test_ret = true;
-				break;
-			default:
-				ROS_ERROR("%s %d: Test for RAM failed, failed code:%d!!", __FUNCTION__, __LINE__, status);
-				break;
-		}
-	}
-
-
-	return test_ret;*/
-}
-
-bool Flash_test()
-{
-
-	ROS_INFO("%s %d: Start Flash test.", __FUNCTION__, __LINE__);
-	std::string origin_file = "/origin_random.file";
-	std::string new_file = "/random.file";
-	std::string cmd;
-	char origin_md5[32];
-	char new_md5[32];
-
-	// Check if origin file exists, if not, generate one.
-	if (access(origin_file.c_str(), F_OK) == -1)
-	{
-		ROS_WARN("%s %d: Access file errno:%s.", __FUNCTION__, __LINE__, strerror(errno));
-		size_t block_cnt = 1024 * 10; // 1 block means 1k byte.
-		ROS_INFO("%s %d: Generate random file for %fMb.", __FUNCTION__, __LINE__, static_cast<float>(block_cnt) / 1024);
-		cmd = "dd if=/dev/urandom of=" + origin_file + " count=" + std::to_string(block_cnt) + " bs=1024";
-		system(cmd.c_str());
-	}
-
-	// Get the md5sum of origin file.
-	cmd = "md5sum " + origin_file;
-	FILE *f = popen(cmd.c_str(), "r");
-	if (f)
-	{
-		fgets(origin_md5, 32, f);
-		pclose(f);
-	} else
-	{
-		ROS_ERROR("%s %d: popen file error:%s.", __FUNCTION__, __LINE__, strerror(errno));
-		return false;
-	}
-
-	// Copy a new file from origin file.
-	if (access(new_file.c_str(), F_OK) != -1)
-	{
-		ROS_WARN("%s %d: Delete existing %s.", __FUNCTION__, __LINE__, new_file.c_str());
-		cmd = "rm " + new_file;
-		system(cmd.c_str());
-	}
-	ROS_WARN("%s %d: Copy %s to %s.", __FUNCTION__, __LINE__, origin_file.c_str(), new_file.c_str());
-	cmd = "cp " + origin_file + " " + new_file;
-	system(cmd.c_str());
-
-	// Get the md5sum of new file.
-	cmd = "md5sum " + new_file;
-	f = popen(cmd.c_str(), "r");
-	if (f)
-	{
-		fgets(new_md5, 32, f);
-		ROS_INFO("%s %d: Origin random file md5 : %s.", __FUNCTION__, __LINE__, origin_md5);
-		ROS_INFO("%s %d: New random file md5    : %s.", __FUNCTION__, __LINE__, new_md5);
-		pclose(f);
-	} else
-	{
-		ROS_ERROR("%s %d: popen file error:%s.", __FUNCTION__, __LINE__, strerror(errno));
-		return false;
-	}
-
-	return strcmp(origin_md5, new_md5) == 0;
-}
-
 bool serial_port_test()
 {
 	ROS_INFO("%s %d: Start serial test.", __FUNCTION__, __LINE__);
@@ -273,6 +92,7 @@ bool serial_port_test()
 	uint8_t receive_data[REC_LEN];
 	int test_frame_cnt = 50;
 
+	infrared_display.displayNormalMsg(1, 0);
 	serial.resetSendStream();
 	serial.flush();
 	for (uint8_t test_cnt = 0; test_cnt < test_frame_cnt; test_cnt++)
@@ -280,7 +100,7 @@ bool serial_port_test()
 		// Write random numbers to send stream.
 		for (uint8_t i = CTL_WHEEL_LEFT_HIGH; i < CTL_CRC; i++)
 		{
-			if (i == CTL_MAIN_BOARD_MODE)
+			if (i == CTL_WORK_MODE)
 				serial.setSendData(i, FUNC_SERIAL_TEST_MODE);
 			else if (i == CTL_BEEPER)
 				serial.setSendData(i, static_cast<uint8_t>(test_cnt + 1));
@@ -295,7 +115,7 @@ bool serial_port_test()
 			send_string_sum += std::to_string(serial.getSendData(i));
 		}
 		serial.sendData();
-//		robot::instance()->debugSendStream(serial.send_stream);
+//		serial.debugSendStream(serial.send_stream);
 
 		int read_ret = serial.read(receive_data, REC_LEN);
 
@@ -308,7 +128,7 @@ bool serial_port_test()
 
 		for (uint8_t i = CTL_WHEEL_LEFT_HIGH; i < CTL_CRC; i++)
 			receive_string_sum += std::to_string(receive_data[i]);
-//		robot::instance()->debugReceivedStream(receive_data);
+//		serial.debugReceivedStream(receive_data);
 	}
 
 	if (!test_ret)
@@ -383,48 +203,6 @@ bool serial_port_test()
 	return strncmp(char_buf1, char_buf2, write_data_length) == 0;*/
 }
 
-bool lidar_test()
-{
-	ROS_INFO("%s %d: Start lidar test.", __FUNCTION__, __LINE__);
-	ros::NodeHandle nh_;
-	ros::Subscriber scan_sub_;
-	scan_sub_ = nh_.subscribe("scanOriginal", 1, &Lidar::scantestCb, &lidar);
-	lidar.init();
-	while (ros::ok() && !lidar.motorCtrl(ON))
-		usleep(500000);
-	while (ros::ok() && !lidar.isScanOriginalReady())
-		usleep(200000);
-
-	// Test logic(not finished).
-	sleep(1);
-
-	lidar.motorCtrl(OFF);
-	scan_sub_.shutdown();
-	return true;
-}
-
-bool lidar_bumper_test()
-{
-	ROS_INFO("%s %d: Start lidar bumper test.", __FUNCTION__, __LINE__);
-
-	int test_bumper_cnt = 5;
-	int bumper_cnt = 0;
-	bool last_bumper_status = false;
-	while (ros::ok() && bumper_cnt < test_bumper_cnt)
-	{
-		bumper.setLidarBumperStatus();
-		if (!last_bumper_status && bumper.getLidarBumperStatus())
-		{
-			bumper_cnt++;
-			ROS_INFO("%s %d: Hit lidar bumper for %d time.", __FUNCTION__, __LINE__, bumper_cnt);
-		}
-		last_bumper_status = bumper.getLidarBumperStatus();
-		usleep(20000);
-	}
-
-	return true;
-}
-
 bool power_supply_test()
 {
 	return true;
@@ -456,6 +234,7 @@ void main_board_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &curren
 	while(ros::ok()) {
 		key_led.set(100, 100);
 		serial.setSendData(CTL_MIX, 1);
+		infrared_display.displayNormalMsg(test_stage-4, 0);
 		switch (test_stage) {
 			case FUNC_ELECTRICAL_AND_LED_TEST_MODE:/*---Main board electrical specification and LED test---*/
 				electrical_specification_and_led_test(baseline, is_fixture, test_stage, error_code, current_data);
@@ -656,14 +435,14 @@ void electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixture,
 	bool should_save_baseline = true;
 
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
-	serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_ELECTRICAL_AND_LED_TEST_MODE);
+	serial.setSendData(CTL_WORK_MODE, FUNC_ELECTRICAL_AND_LED_TEST_MODE);
 	serial.setSendData(CTL_BEEPER, 0);
 	key_led.set(0, 0);
 	serial.setSendData(CTL_MIX, 0);
 	serial.sendData();
 	while(ros::ok())
 	{
-		serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_ELECTRICAL_AND_LED_TEST_MODE);
+		serial.setSendData(CTL_WORK_MODE, FUNC_ELECTRICAL_AND_LED_TEST_MODE);
 		/*--------data extrict from serial com--------*/
 		ROS_ERROR_COND(pthread_mutex_lock(&recev_lock)!=0, "robotbase pthread receive lock fail");
 		ROS_ERROR_COND(pthread_cond_wait(&recev_cond,&recev_lock)!=0, "robotbase pthread receive cond wait fail");
@@ -677,8 +456,8 @@ void electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixture,
 		if(should_save_baseline)
 		{
 			should_save_baseline = false;
-			baseline[LEFT_WHEEL] = ((uint16_t) buf[7] << 8) | buf[8];
-			baseline[RIGHT_WHEEL] = ((uint16_t) buf[9] << 8) | buf[10];
+			baseline[LEFT_WHEEL] = ((uint16_t) buf[4] << 8) | buf[5];
+			baseline[RIGHT_WHEEL] = ((uint16_t) buf[6] << 8) | buf[7];
 			baseline[LEFT_BRUSH] = ((uint16_t) buf[11] << 8) | buf[12];
 			baseline[MAIN_BRUSH] = ((uint16_t) buf[13] << 8) | buf[14];
 			baseline[RIGHT_BRUSH] = ((uint16_t) buf[15] << 8) | buf[16];
@@ -690,7 +469,7 @@ void electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixture,
 				baseline_voltage = baseline[REF_VOLTAGE_ADC] * 330 / 4096;
 				if (baseline_voltage < 125 || baseline_voltage > 135)
 				{
-					error_code = BASELINE_CURRENT_ERROR;
+					error_code = BASELINE_VOLTAGE_ERROR;
 					current_data = baseline_voltage;
 					return ;
 				}
@@ -722,7 +501,7 @@ void electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixture,
 			case 2:/*---check baseline current---*/
 				if (count_20ms < 10) {
 					count_20ms++;
-					temp_sum += static_cast<uint16_t>(buf[5] << 8) | buf[6];
+					temp_sum += static_cast<uint16_t>(buf[8] << 8) | buf[9];
 				}
 				else {
 					temp_sum = (temp_sum / 10 - baseline[REF_VOLTAGE_ADC]) * 330 * 20 / 4096;
@@ -768,7 +547,7 @@ void cliff_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &current_dat
 {
 	uint16_t test_result = 0;
 	uint8_t buf[REC_LEN];
-	serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_CLIFF_TEST_MODE);
+	serial.setSendData(CTL_WORK_MODE, FUNC_CLIFF_TEST_MODE);
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
 	while(ros::ok()) {
 		/*--------data extrict from serial com--------*/
@@ -844,7 +623,7 @@ void bumper_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &current_da
 {
 	uint8_t test_result = 0;
 	uint8_t buf[REC_LEN];
-	serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_BUMPER_TEST_MODE);
+	serial.setSendData(CTL_WORK_MODE, FUNC_BUMPER_TEST_MODE);
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
 	while(ros::ok())
 	{
@@ -889,7 +668,7 @@ void obs_test(bool is_fixture, uint8_t &test_stage, uint16_t &error_code, uint16
 {
 	uint16_t test_result = 0;
 	uint8_t buf[REC_LEN];
-	serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_OBS_TEST_MODE);
+	serial.setSendData(CTL_WORK_MODE, FUNC_OBS_TEST_MODE);
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
 	while(ros::ok()) {
 		/*--------data extrict from serial com--------*/
@@ -1029,7 +808,7 @@ void rcon_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data
 	uint16_t test_result = 0;
 	uint32_t Temp_Rcon_Status = 0;
 	uint8_t buf[REC_LEN];
-	serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_RCON_TEST_MODE);
+	serial.setSendData(CTL_WORK_MODE, FUNC_RCON_TEST_MODE);
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
 	while(ros::ok()) {
 		/*--------data extrict from serial com--------*/
@@ -1136,11 +915,11 @@ void rcon_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data
 }
 void water_tank_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data)
 {
-	uint16_t test_result = 0;
 	uint8_t step = 0;
 	uint8_t count = 0;
+	uint8_t test_result = 0;
 	uint8_t buf[REC_LEN];
-	serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_WATER_TANK_TEST_MODE);
+	serial.setSendData(CTL_WORK_MODE, FUNC_WATER_TANK_TEST_MODE);
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
 	while(ros::ok()) {
 		/*--------data extrict from serial com--------*/
@@ -1167,16 +946,19 @@ void water_tank_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &curren
 			case 1:
 				if(static_cast<uint16_t>(buf[2] << 8 | buf[3]) > SWING_CURRENT_LIMIT)
 				{
-					count++;
-					if(count > 2)
-						return ;
+					if(count < 200)count++;
 				}
-				else
-					count = 0;
+				if(count > 20)
+					test_result |= 0x01;
 				if(buf[36])
 				{
-					error_code = SWING_MOTOR_ERROR;
-					current_data = static_cast<uint16_t>((buf[2] << 8) | buf[3]);
+					if((test_result & 0x01) != 0x01)
+					{
+						error_code = SWING_MOTOR_ERROR;
+						current_data = static_cast<uint16_t>((buf[2] << 8) | buf[3]);
+					}
+					else
+						test_stage++;
 					return ;
 				}
 				break;
@@ -1192,7 +974,11 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 	uint8_t buf[REC_LEN];
 	uint32_t current_current=0;
 	uint32_t motor_current=0;
-	serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_WHEELS_TEST_MODE);
+	serial.setSendData(CTL_WORK_MODE, FUNC_WHEELS_TEST_MODE);
+	serial.setSendData(CTL_WHEEL_LEFT_HIGH, 0);
+	serial.setSendData(CTL_WHEEL_LEFT_LOW, 0);
+	serial.setSendData(CTL_WHEEL_RIGHT_HIGH, 0);
+	serial.setSendData(CTL_WHEEL_RIGHT_LOW, 0);
 	serial.setSendData(CTL_LEFT_WHEEL_TEST_MODE, 0);
 	serial.setSendData(CTL_RIGHT_WHEEL_TEST_MODE, 0);
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
@@ -1390,7 +1176,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				serial.setSendData(CTL_WHEEL_RIGHT_HIGH, 300 >> 8);
 				serial.setSendData(CTL_WHEEL_RIGHT_LOW, 300 & 0xFF);
 				count++;
-				if (count > 50) {
+				if (count > 100) {
 					current_current = 0;
 					motor_current = 0;
 					step++;
@@ -1579,7 +1365,7 @@ void brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code,
 	uint8_t count=0;
 	uint8_t step=1;
 
-	serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_BRUSHES_TEST_MODE);
+	serial.setSendData(CTL_WORK_MODE, FUNC_BRUSHES_TEST_MODE);
 	serial.setSendData(CTL_LEFT_BRUSH_TEST_MODE, 0);
 	serial.setSendData(CTL_MAIN_BRUSH_TEST_MODE, 0);
 	serial.setSendData(CTL_RIGHT_BRUSH_TEST_MODE, 0);
@@ -1833,10 +1619,11 @@ void vacuum_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 	uint8_t buf[REC_LEN];
 	uint32_t current_current=0;
 	uint32_t motor_current=0;
-	serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_VACUUM_TEST_MODE);
+	serial.setSendData(CTL_WORK_MODE, FUNC_VACUUM_TEST_MODE);
 	serial.setSendData(CTL_VACUUM_TEST_MODE, 0);
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
 	while(ros::ok()) {
+		serial.debugSendStream(serial.send_stream);
 		/*--------data extrict from serial com--------*/
 		ROS_ERROR_COND(pthread_mutex_lock(&recev_lock) != 0, "robotbase pthread receive lock fail");
 		ROS_ERROR_COND(pthread_cond_wait(&recev_cond, &recev_lock) != 0, "robotbase pthread receive cond wait fail");
@@ -1849,9 +1636,9 @@ void vacuum_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 		}
 		switch (step) {
 			case 1:
-				serial.setSendData(CTL_VACCUM_PWR, 60);
+				serial.setSendData(CTL_VACCUM_PWR, 80);
 				count++;
-				if (count > 50) {
+				if (count > 100) {
 					current_current = 0;
 					motor_current = 0;
 					step++;
@@ -1861,7 +1648,7 @@ void vacuum_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 			case 2:
 				count++;
 				if (count <= 10) {
-					current_current += (static_cast<uint16_t>(buf[4] << 8 | buf[5]) - baseline[REF_VOLTAGE_ADC]);
+					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
 					motor_current += static_cast<uint16_t>(buf[2] << 8 | buf[3]);
 				}
 				else {
@@ -1876,6 +1663,7 @@ void vacuum_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				if (current_current < 500 || current_current > 1100 || motor_current < 500 || motor_current > 1100) {
 					error_code = VACUUM_CURRENT_ERROR;
 					current_data = static_cast<uint16_t>(motor_current);
+					ROS_INFO("motor: %d, current: %d", motor_current,current_current);
 					return ;
 				}
 				else {
@@ -1922,7 +1710,7 @@ void vacuum_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 			case 7:
 				count++;
 				if (count <= 10) {
-					current_current += (static_cast<uint16_t>(buf[4] << 8 | buf[5]) - baseline[REF_VOLTAGE_ADC]);
+					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
 				}
 				else {
 					step++;
@@ -1953,7 +1741,7 @@ void charge_current_test(bool is_fixture, uint8_t &test_stage, uint16_t &error_c
 {
 	uint32_t charge_voltage = 0;
 	uint8_t buf[REC_LEN];
-	serial.setSendData(CTL_MAIN_BOARD_MODE, FUNC_CHARGE_CURRENT_TEST_MODE);
+	serial.setSendData(CTL_WORK_MODE, FUNC_CHARGE_CURRENT_TEST_MODE);
 	serial.setSendData(CTL_CHARGER_CINNECTED_STATUS, 0);
 	serial.setSendData(CTL_IS_FIXTURE, is_fixture);
 	uint8_t count = 0;

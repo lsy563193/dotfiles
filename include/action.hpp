@@ -8,7 +8,6 @@
 #include <cstdint>
 #include <time.h>
 #include "odom.h"
-#include "water_tank.hpp"
 
 class IAction{
 public:
@@ -113,7 +112,7 @@ class ActionPause :public IAction
 {
 public:
 	ActionPause();
-	~ActionPause();
+	~ActionPause() override;
 	bool isFinish() override;
 	bool isExit() override;
 	void run() override;
@@ -127,7 +126,7 @@ class ActionCheckVacuum: public IAction
 {
 public:
 	ActionCheckVacuum();
-	~ActionCheckVacuum() = default;
+	~ActionCheckVacuum() override = default;
 
 	bool isFinish() override;
 	bool isExit() override;
@@ -139,7 +138,7 @@ class ActionCheckBumper: public IAction
 {
 public:
 	ActionCheckBumper();
-	~ActionCheckBumper() = default;
+	~ActionCheckBumper() override = default;
 
 	bool isFinish() override;
 	bool isExit() override;
@@ -151,7 +150,7 @@ class ActionCheckWaterTank: public IAction
 {
 public:
 	ActionCheckWaterTank();
-	~ActionCheckWaterTank() = default;
+	~ActionCheckWaterTank() override = default;
 
 	bool isFinish() override
 	{return false;};
@@ -162,4 +161,97 @@ public:
 	{};
 };
 
+class ActionLifeCheck: public IAction
+{
+public:
+	ActionLifeCheck();
+	~ActionLifeCheck() override = default;
+
+	bool isFinish() override
+	{return false;};
+
+	bool isExit() override
+	{return false;};
+
+	void lifeTestRoutineThread();
+
+	void run() override;
+
+	bool dataExtract(const uint8_t *buf);
+
+private:
+
+	bool checkCurrent();
+
+	double start_time_stamp_{0};
+	uint16_t error_code_{0};
+	int test_stage_{0};
+	int sum_cnt_{0};
+
+	uint16_t side_brush_current_ref_{0};
+	uint16_t main_brush_current_ref_{0};
+	uint16_t wheel_current_ref_{0};
+	uint16_t vacuum_current_ref_{0};
+	uint16_t water_tank_current_ref_{0};
+
+	uint32_t left_brush_current_baseline_{0};
+	uint32_t right_brush_current_baseline_{0};
+	uint32_t main_brush_current_baseline_{0};
+	uint32_t left_wheel_current_baseline_{0};
+	uint32_t right_wheel_current_baseline_{0};
+	uint32_t vacuum_current_baseline_{0};
+	uint32_t water_tank_current_baseline_{0};
+
+	uint16_t left_brush_current_max_{0};
+	uint16_t right_brush_current_max_{0};
+	uint16_t main_brush_current_max_{0};
+	uint16_t left_wheel_forward_current_max_{0};
+	uint16_t right_wheel_forward_current_max_{0};
+	uint16_t left_wheel_backward_current_max_{0};
+	uint16_t right_wheel_backward_current_max_{0};
+	uint16_t vacuum_current_max_{0};
+	uint16_t water_tank_current_max_{0};
+};
+
+class ActionR16Test: public IAction
+{
+public:
+	ActionR16Test();
+
+	~ActionR16Test() override = default;
+
+	bool isFinish() override
+	{ return false; };
+
+	bool isExit() override
+	{ return false; };
+
+	void run() override;
+
+private:
+
+	int test_stage_{0};
+
+/*
+ * Test RAM.
+ */
+	bool RAM_test();
+
+/*
+ * Test flash.
+ */
+	bool Flash_test();
+
+/*
+ * Test lidar.
+ */
+	bool lidar_test();
+
+/*
+ * Test lidar bumper.
+ */
+	bool lidar_bumper_test();
+
+	void error_loop(uint8_t step, uint16_t content, uint16_t error_code);
+};
 #endif //PP_ACTION_H

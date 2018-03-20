@@ -10,13 +10,11 @@
 
 MovementTurn::MovementTurn(double radian, uint8_t max_speed) : speed_(ROTATE_LOW_SPEED)
 {
-	accurate_ = ROTATE_TOP_SPEED > 30 ? degree_to_radian(3) : degree_to_radian(1.0);
 //	auto rad_diff = getPosition().th - radian + odom.getRadian();
-	target_radian_ = radian  - getPosition().th + odom.getRadian();
+	target_radian_ = ranged_radian(radian  - getPosition().th + odom.getRadian());
 	max_speed_ = max_speed;
 	accurate_ = max_speed_ > ROTATE_TOP_SPEED ? degree_to_radian(3) : degree_to_radian(1);
-	target_radian_ = radian;
-	auto diff = ranged_radian(target_radian_ - getPosition().th);
+	auto diff = ranged_radian(target_radian_ - odom.getRadian());
 	timeout_interval_ = (fabs(diff) * WHEEL_TO_CENTER_DISTANCE * 1000) / (speed_ * SPEED_ALF);
 	ROS_INFO("%s, %d: MovementTurn init, target_radian_: \033[32m%.1f (in degree)\033[0m, current radian: \033[32m%.1f (in degree)\033[0m, timeout:(%.2f)s."
 			, __FUNCTION__, __LINE__, radian_to_degree(ranged_radian(target_radian_)), radian_to_degree(getPosition().th), timeout_interval_);

@@ -69,23 +69,9 @@ public:
 
 	bool trapMarkRobot(uint8_t id);
 
-	uint8_t setFollowWall(bool is_left, const Points&);
-
-	uint8_t saveLidar();
-
-	uint8_t saveObs();
-
-	uint8_t saveBumper(bool is_linear);
-
-	uint8_t saveRcon();
-
-	uint8_t saveCliff();
-
-	uint8_t saveTilt();
 
 	uint8_t saveSlip();
 
-	uint8_t saveBlocks(bool is_linear, bool is_save_rcon);
 	void	setBlockWithBound(Cell_t min, Cell_t max, CellState state, bool with_block);
 
 	/*
@@ -236,8 +222,6 @@ public:
 
 	void colorPrint(const char *outString, int16_t y_min, int16_t y_max);
 	void print(uint8_t id, const Cells& targets);
-	typedef std::set<PairCell_t> Blocks_t ;
-	Blocks_t c_blocks;
 
 private:
 	uint8_t clean_map[MAP_SIZE][(MAP_SIZE + 1) / 2];

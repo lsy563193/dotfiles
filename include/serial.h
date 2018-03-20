@@ -8,7 +8,7 @@
 #include "termios.h"
 
 // For control stream.
-#define SEND_LEN 21
+#define SEND_LEN 26
 
 // Two bytes for stream header.
 #define CTL_HEADER_1 0
@@ -37,8 +37,8 @@
 // One byte for controlling beeper.
 #define	CTL_BEEPER 10
 
-// One byte for sending main board mode.
-#define	CTL_MAIN_BOARD_MODE 11
+// One byte for work mode.
+#define	CTL_WORK_MODE 11
 
 // One byte for controlling charge status.
 #define	CTL_CHARGER 12
@@ -62,15 +62,28 @@
 // bit 1-7 for controlling swing motor PWM.
 #define CTL_WATER_TANK 16
 
+// One byte for IR control and test step.
+// bit 0-5 for test step.
+// bit 6-7 for IR control.
+#define CTL_IR_CTRL 17
+
+// Two bytes for IR error code display.
+#define CTL_IR_ERROR_CODE_H 18
+#define CTL_IR_ERROR_CODE_L 19
+
+// Two bytes for IR content display.
+#define CTL_IR_CONTENT_H 20
+#define CTL_IR_CONTENT_L 21
+
 // One byte for key validation.
-#define CTL_KEY_VALIDATION 17
+#define CTL_KEY_VALIDATION 22
 
 // One byte for crc checking.
-#define CTL_CRC 18
+#define CTL_CRC 23
 
 // Two bytes for stream trailer.
-#define CTL_TRAILER_1 19
-#define CTL_TRAILER_2 20
+#define CTL_TRAILER_1 24
+#define CTL_TRAILER_2 25
 
 // ------------For functional test--------------
 #define CTL_TESTING_STAGE 2
@@ -100,7 +113,7 @@
 // ------------For functional test end--------------
 
 // For receive stream.
-#define REC_LEN 44
+#define REC_LEN 46
 
 // Two bytes for stream header.
 #define REC_HEADER_1 0
@@ -241,8 +254,8 @@
 // One byte for battery voltage.
 #define REC_BATTERY 37
 
-// One byte for r16 work mode.
-#define REC_R16_WORK_MODE 38
+// One byte for work mode.
+#define REC_WORK_MODE 38
 
 // One byte for over current signal.
 // bit 0 for vacuum over current.
@@ -255,17 +268,23 @@
 // bit 7 reserved.
 #define REC_OC 39
 
+// One byte for left wheel encoder.
+#define REC_LEFT_WHEEL_ENCODER 40
+
+// One byte for right wheel encoder.
+#define REC_RIGHT_WHEEL_ENCODER 41
+
 // One byte for key validation.
-#define REC_KEY_VALIDATION 40
+#define REC_KEY_VALIDATION 42
 
 // One byte for crc checking.
-#define REC_CRC 41
+#define REC_CRC 43
 
 // Two bytes for stream trailer.
-#define REC_TRAILER_1 42
-#define REC_TRAILER_2 43
+#define REC_TRAILER_1 44
+#define REC_TRAILER_2 45
 
-// Main board mode
+// ------------------------------work mode--------------------------------------
 #define NORMAL_SLEEP_MODE 		0
 #define BATTERY_FULL_SLEEP_MODE 1
 #define WORK_MODE 				2
@@ -282,12 +301,48 @@
 #define FUNC_BRUSHES_TEST_MODE		13
 #define FUNC_VACUUM_TEST_MODE		14
 #define FUNC_CHARGE_CURRENT_TEST_MODE		15
-#define ALARM_ERROR_MODE		16
-#define DESK_TEST_CURRENT_MODE		17 // For checking current
-#define DESK_TEST_MOVEMENT_MODE		18
-#define GYRO_TEST_MODE		19
-#define LIFE_TEST_MODE		20
-#define WATER_TANK_TEST_MODE	21
+#define DESK_TEST_CURRENT_MODE		16 // For checking current
+#define DESK_TEST_MOVEMENT_MODE		17
+#define GYRO_TEST_MODE		18
+#define LIFE_TEST_MODE		19
+#define WATER_TANK_TEST_MODE	20
+#define R16_AND_LIDAR_TEST_MODE	21
+
+// ------------------------------work mode end--------------------------------------
+
+// -----------------------------For DESK_TEST_CURRENT_MODE and LIFE_TEST_MODE ------------------------------------
+// Two bytes for left brush current.
+#define REC_L_BRUSH_CUNT_H 12
+#define REC_L_BRUSH_CUNT_L 13
+// Two bytes for right brush current.
+#define REC_R_BRUSH_CUNT_H 14
+#define REC_R_BRUSH_CUNT_L 15
+// Two bytes for right brush current.
+#define REC_M_BRUSH_CUNT_H 16
+#define REC_M_BRUSH_CUNT_L 17
+// Two bytes for left wheel current.
+#define REC_L_WHEEL_CUNT_H 18
+#define REC_L_WHEEL_CUNT_L 19
+// Two bytes for right wheel current.
+#define REC_R_WHEEL_CUNT_H 20
+#define REC_R_WHEEL_CUNT_L 21
+// Two bytes for vacuum current.
+#define REC_VACUUM_CURRENT_H 30
+#define REC_VACUUM_CURRENT_L 31
+// Two bytes for water pump current.
+#define REC_WATER_PUMP_CURRENT_H 32
+#define REC_WATER_PUMP_CURRENT_L 33
+
+// Two bytes for left cliff value.
+#define REC_L_CLIFF_H 12
+#define REC_L_CLIFF_L 13
+// Two bytes for front cliff value.
+#define REC_F_CLIFF_H 14
+#define REC_F_CLIFF_L 15
+// Two bytes for right cliff value.
+#define REC_R_CLIFF_H 16
+#define REC_R_CLIFF_L 17
+// -----------------------------For DESK_TEST_CURRENT_MODE and LIFE_TEST_MODE end------------------------------------
 
 #define DUMMY_DOWNLINK_OFFSET		2
 #define KEY_DOWNLINK_OFFSET			9
@@ -348,7 +403,7 @@ public:
 
 	//int get_sign(uint8_t *key, uint8_t *sign, uint8_t key_length, int sequence_number);
 
-	void setMainBoardMode(uint8_t val);
+	void setWorkMode(uint8_t val);
 
 	void initCrc8(void);
 
@@ -361,14 +416,22 @@ public:
 											0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 											0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 											0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-											0x00,0x00,0xcc,0x33};
-	uint8_t send_stream[SEND_LEN]={0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x64,0x00,0x02,0x00,0x00,0xcc,0x33};
+											0x00,0x00,0x00,0x00,0xcc,0x33};
+	//										   1    2    3    4    5    6    7    8    9   10
+	uint8_t send_stream[SEND_LEN]={			0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+											0x00,0x00,0x00,0x00,0x64,0x00,0x02,0x00,0x00,0x00,
+											0x00,0x00,0x00,0x00,0xcc,0x33};
 
 	void receive_routine_cb();
 
 	void sendData();
 
 	void send_routine_cb();
+
+	void debugReceivedStream(const uint8_t *buf);
+
+	void debugSendStream(const uint8_t *buf);
+
 private:
 
 	bool is_main_board_sleep_{};

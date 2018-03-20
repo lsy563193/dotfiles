@@ -190,5 +190,7 @@
 
 /* ------------------------------------- robot physical config ------------------------------------- */
 #define WHEEL_TO_CENTER_DISTANCE		(0.109f)
+
+#define WHEEL_ENCODER_TO_MILLIMETER			(0.1955f)
 #endif //__CONFIG_H__
 

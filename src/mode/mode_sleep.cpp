@@ -115,7 +115,7 @@ void ModeSleep::remoteClean(bool state_now, bool state_last)
 	{
 		ev.key_clean_pressed = true;
 		ROS_WARN("%s %d: Waked up by remote key clean.", __FUNCTION__, __LINE__);
-		serial.setMainBoardMode(IDLE_MODE);
+		serial.setWorkMode(IDLE_MODE);
 //		beeper.beepForCommand(VALID);
 	}
 
@@ -128,7 +128,7 @@ void ModeSleep::keyClean(bool state_now, bool state_last)
 	{
 		ROS_WARN("%s %d: Waked up by key clean.", __FUNCTION__, __LINE__);
 		// Wake up main board.
-		serial.setMainBoardMode(IDLE_MODE);
+		serial.setWorkMode(IDLE_MODE);
 
 		ev.key_clean_pressed = true;
 		ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
@@ -143,7 +143,7 @@ void ModeSleep::chargeDetect(bool state_now, bool state_last)
 	{
 		ROS_WARN("%s %d: Waked up by detect charge.", __FUNCTION__, __LINE__);
 		ev.charge_detect = charger.getChargeStatus();
-		serial.setMainBoardMode(CHARGE_MODE);
+		serial.setWorkMode(CHARGE_MODE);
 	}
 }
 
@@ -153,7 +153,7 @@ void ModeSleep::rcon(bool state_now, bool state_last)
 	{
 		ROS_WARN("%s %d: Waked up by rcon signal.", __FUNCTION__, __LINE__);
 		ev.rcon_status = c_rcon.getAll();
-		serial.setMainBoardMode(WORK_MODE);
+		serial.setWorkMode(WORK_MODE);
 	}
 	c_rcon.resetStatus();
 }
@@ -164,7 +164,7 @@ void ModeSleep::remotePlan(bool state_now, bool state_last)
 	{
 		ROS_WARN("%s %d: Waked up by plan.", __FUNCTION__, __LINE__);
 		plan_activated_status_ = true;
-		serial.setMainBoardMode(WORK_MODE);
+		serial.setWorkMode(WORK_MODE);
 	}
 	robot_timer.resetPlanStatus();
 }

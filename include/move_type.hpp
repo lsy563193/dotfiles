@@ -18,6 +18,7 @@ class IMoveType:public IAction
 {
 public:
 	IMoveType();
+	~IMoveType();
 	bool shouldMoveBack();
 	bool shouldTurn();
 	bool RconTrigger();
@@ -181,6 +182,11 @@ public:
 	MoveTypeDeskTest();
 	~MoveTypeDeskTest() override;
 
+	bool isFinish() override
+	{
+		return false;
+	}
+
 	void deskTestRoutineThread();
 
 	void run() override;
@@ -192,8 +198,6 @@ private:
 	boost::shared_ptr<IAction> p_movement_;
 
 	uint16_t error_code_{0};
-
-	int current_work_mode_{0};
 
 	/*
 	 * Test stage: 1 ~ 7.
@@ -281,12 +285,6 @@ private:
 	uint16_t vacuum_current_max_{0};
 	uint16_t water_tank_current_max_{0};
 
-	uint16_t side_brush_current_ref_{0}; // todo:
-	uint16_t main_brush_current_ref_{0};
-	uint16_t wheel_current_ref_{0};
-	uint16_t vacuum_current_ref_{0};
-	uint16_t water_tank_current_ref_{0};
-
 	bool check_stage_5_finish();
 
 	// For stage 6.
@@ -302,6 +300,10 @@ public:
 	MoveTypeGyroTest();
 	~MoveTypeGyroTest() override;
 
+	void gyroTestRoutineThread();
+
+	bool dataExtract(const uint8_t *buf);
+
 	void run() override;
 
 private:
@@ -311,8 +313,10 @@ private:
 
 	int test_stage_{0};
 	double last_time_stamp_{0};
+	double saved_wheel_mileage_{0};
 	double wheel_mileage_{0};
 	double wheel_turn_angle_{0};
 	double saved_gyro_turn_angle_{0};
+	uint32_t count_sum{0};
 };
 #endif //PP_MOVE_TYPE_HPP

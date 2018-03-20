@@ -24,38 +24,6 @@
 
 #include "error.h"
 
-// Two bytes for left brush current.
-#define REC_L_BRUSH_CUNT_H 12
-#define REC_L_BRUSH_CUNT_L 13
-// Two bytes for right brush current.
-#define REC_R_BRUSH_CUNT_H 14
-#define REC_R_BRUSH_CUNT_L 15
-// Two bytes for right brush current.
-#define REC_M_BRUSH_CUNT_H 16
-#define REC_M_BRUSH_CUNT_L 17
-// Two bytes for left wheel current.
-#define REC_L_WHEEL_CUNT_H 18
-#define REC_L_WHEEL_CUNT_L 19
-// Two bytes for right wheel current.
-#define REC_R_WHEEL_CUNT_H 20
-#define REC_R_WHEEL_CUNT_L 21
-// Two bytes for vacuum current.
-#define REC_VACUUM_CURRENT_H 30
-#define REC_VACUUM_CURRENT_L 31
-// Two bytes for water pump current.
-#define REC_WATER_PUMP_CURRENT_H 32
-#define REC_WATER_PUMP_CURRENT_L 33
-
-// Two bytes for left cliff value.
-#define REC_L_CLIFF_H 12
-#define REC_L_CLIFF_L 13
-// Two bytes for front cliff value.
-#define REC_F_CLIFF_H 14
-#define REC_F_CLIFF_L 15
-// Two bytes for right cliff value.
-#define REC_R_CLIFF_H 16
-#define REC_R_CLIFF_L 17
-
 MoveTypeDeskTest::MoveTypeDeskTest()
 {
 	ROS_INFO("%s,%d: Enter move type desk test.", __FUNCTION__, __LINE__);
@@ -74,7 +42,7 @@ void MoveTypeDeskTest::run()
 	{
 		case 0:
 		{
-			serial.setSendData(CTL_MAIN_BOARD_MODE, DESK_TEST_CURRENT_MODE);
+			serial.setSendData(CTL_WORK_MODE, DESK_TEST_CURRENT_MODE);
 			test_stage++;
 			wheel.stop();
 			brush.stop();
@@ -89,7 +57,7 @@ void MoveTypeDeskTest::run()
 				test_stage++;
 				test_step_ = 0;
 				// Switch to next stage.
-				serial.setSendData(CTL_MAIN_BOARD_MODE, DESK_TEST_MOVEMENT_MODE);
+				serial.setSendData(CTL_WORK_MODE, DESK_TEST_MOVEMENT_MODE);
 				p_movement_.reset();
 				p_movement_.reset(new ActionOpenGyro());
 				ROS_INFO("%s %d: Stage 1 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage);
@@ -243,7 +211,7 @@ void MoveTypeDeskTest::deskTestRoutineThread()
 			last_time = cur_time;
 			odom.setX(static_cast<float>(odom.getX() + (odom.getMovingSpeed() * cos(angle_rad)) * dt));
 			odom.setY(static_cast<float>(odom.getY() + (odom.getMovingSpeed() * sin(angle_rad)) * dt));
-			robot::instance()->updateRobotPositionForDeskTest();
+			robot::instance()->updateRobotPositionForTest();
 			updatePosition();
 		}
 	}
@@ -254,8 +222,8 @@ bool MoveTypeDeskTest::dataExtract(const uint8_t *buf)
 //	robot::instance()->debugReceivedStream(buf);
 
 	// work mode
-	current_work_mode_ = buf[REC_R16_WORK_MODE];
-	if (current_work_mode_ != serial.getSendData(CTL_MAIN_BOARD_MODE))
+	auto current_work_mode = buf[REC_WORK_MODE];
+	if (current_work_mode != serial.getSendData(CTL_WORK_MODE))
 		return false;
 
 	// For wheel device.
@@ -294,7 +262,7 @@ bool MoveTypeDeskTest::dataExtract(const uint8_t *buf)
 	// For charger device.
 	charger.setChargeStatus(static_cast<uint8_t>((buf[REC_MIX_BYTE] >> 4) & 0x07));
 
-	if (current_work_mode_ == DESK_TEST_CURRENT_MODE)
+	if (current_work_mode == DESK_TEST_CURRENT_MODE)
 	{
 		brush.setLeftCurrent((buf[REC_L_BRUSH_CUNT_H] << 8) | buf[REC_L_BRUSH_CUNT_L]);
 		brush.setRightCurrent((buf[REC_R_BRUSH_CUNT_H] << 8) | buf[REC_R_BRUSH_CUNT_L]);
@@ -306,7 +274,7 @@ bool MoveTypeDeskTest::dataExtract(const uint8_t *buf)
 		vacuum.setCurrent((buf[REC_VACUUM_CURRENT_H] << 8) | buf[REC_VACUUM_CURRENT_L]);
 
 		water_tank.setCurrent((buf[REC_WATER_PUMP_CURRENT_H] << 8) | buf[REC_WATER_PUMP_CURRENT_L]);
-	} else if (current_work_mode_ == DESK_TEST_MOVEMENT_MODE)
+	} else if (current_work_mode == DESK_TEST_MOVEMENT_MODE)
 	{
 		// For cliff device.
 		cliff.setLeftValue((buf[REC_L_CLIFF_H] << 8) | buf[REC_L_CLIFF_L]);
@@ -789,23 +757,29 @@ bool MoveTypeDeskTest::check_stage_5_finish()
 		{
 			if (p_movement_->isFinish())
 			{
-				/*if (left_brush_current_max_ > side_brush_current_ref_)
+				/*uint16_t side_brush_current_ref_{0}; // todo:
+				uint16_t main_brush_current_ref_{0};
+				uint16_t wheel_current_ref_{0};
+				uint16_t vacuum_current_ref_{0};
+				uint16_t water_tank_current_ref_{0};
+
+				if (left_brush_current_max_ - left_brush_current_baseline_ > side_brush_current_ref_)
 					error_code_ = LEFT_BRUSH_CURRENT_ERROR;
-				if (error_code_ != 0 && right_brush_current_max_ > side_brush_current_ref_)
+				else if (right_brush_current_max_ - right_brush_current_baseline_ > side_brush_current_ref_)
 					error_code_ = RIGHT_BRUSH_CURRENT_ERROR;
-				if (error_code_ != 0 && main_brush_current_max_ > main_brush_current_ref_)
+				else if (main_brush_current_max_ - main_brush_current_baseline_ > main_brush_current_ref_)
 					error_code_ = MAIN_BRUSH_CURRENT_ERROR;
-				if (error_code_ != 0 && left_wheel_forward_current_max_ > wheel_current_ref_)
+				else if (left_wheel_forward_current_max_ - left_wheel_current_baseline_ > wheel_current_ref_)
 					error_code_ = LEFT_WHEEL_FORWARD_CURRENT_ERROR;
-				if (error_code_ != 0 && left_wheel_backward_current_max_ > wheel_current_ref_)
+				else if (left_wheel_backward_current_max_ - left_wheel_current_baseline_ > wheel_current_ref_)
 					error_code_ = LEFT_WHEEL_BACKWARD_CURRENT_ERROR;
-				if (error_code_ != 0 && right_wheel_forward_current_max_ > wheel_current_ref_)
+				else if (right_wheel_forward_current_max_ - right_wheel_current_baseline_ > wheel_current_ref_)
 					error_code_ = RIGHT_WHEEL_FORWARD_CURRENT_ERROR;
-				if (error_code_ != 0 && right_wheel_backward_current_max_ > wheel_current_ref_)
+				else if (right_wheel_backward_current_max_ - right_wheel_current_baseline_ > wheel_current_ref_)
 					error_code_ = RIGHT_WHEEL_BACKWARD_CURRENT_ERROR;
-				if (error_code_ != 0 && vacuum_current_max_ > vacuum_current_ref_)
+				else if (vacuum_current_max_ - vacuum_current_baseline_ > vacuum_current_ref_)
 					error_code_ = VACUUM_CURRENT_ERROR;
-				if (error_code_ != 0 && water_tank_current_max_ > water_tank_current_ref_)
+				else if (water_tank_current_max_ - water_tank_current_baseline_ > water_tank_current_ref_)
 					error_code_ = VACUUM_CURRENT_ERROR; // todo:*/
 
 				if (error_code_ == 0)
