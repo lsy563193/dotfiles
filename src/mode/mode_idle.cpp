@@ -255,13 +255,13 @@ void ModeIdle::remotePlan(bool state_now, bool state_last)
 	if (robot_timer.getPlanStatus() == 1)
 	{
 		beeper.beepForCommand(VALID);
-		speaker.play(VOICE_APPOINTMENT_DONE, false);
+		speaker.play(VOICE_APPOINTMENT_DONE);
 		ROS_WARN("%s %d: Plan received.", __FUNCTION__, __LINE__);
 	}
 	else if (robot_timer.getPlanStatus() == 2)
 	{
 		beeper.beepForCommand(VALID);
-		speaker.play(VOICE_CANCEL_APPOINTMENT, false);
+		speaker.play(VOICE_CANCEL_APPOINTMENT);
 		ROS_WARN("%s %d: Plan cancel received.", __FUNCTION__, __LINE__);
 	}
 	else if (robot_timer.getPlanStatus() == 3)
