@@ -613,13 +613,16 @@ void Serial::send_routine_cb()
 
 		r.sleep();
 		/*-------------------Process for beeper.play and key_led -----------------------*/
-		beeper.processBeep();
 		key_led.processLed();
+		if (getSendData(CTL_WORK_MODE) != DESK_TEST_WRITE_BASELINE_MODE)
+		{
+			beeper.processBeep();
 
 			/*---pid for wheels---*/
-		wheel.pidAdjustSpeed();
-		brush.updatePWM();
-		water_tank.updatePWM();
+			wheel.pidAdjustSpeed();
+			brush.updatePWM();
+			water_tank.updatePWM();
+		}
 
 		sendData();
 		robot::instance()->publishCtrlStream();

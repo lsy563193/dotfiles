@@ -197,6 +197,8 @@ public:
 private:
 	boost::shared_ptr<IAction> p_movement_;
 
+	uint8_t error_step_{0}; // Marking the error stage.
+	uint16_t error_content_{0}; // Marking the current value of checking item.
 	uint16_t error_code_{0};
 
 	/*
@@ -209,13 +211,13 @@ private:
 	 * Stage 5: Move for a distance and check the max currents.
 	 * Stage 6: Turn for 360 degrees to check for rcon.
 	 */
-	int test_stage_{0};
+	uint8_t test_stage_{1};
 
 	// Each stage has several steps.
-	int test_step_{0};
+	uint8_t test_step_{0};
 
 	// For stage 1.
-	int sum_cnt_{0};
+	uint16_t sum_cnt_{0};
 
 	uint32_t left_brush_current_baseline_{0};
 	uint32_t right_brush_current_baseline_{0};
@@ -250,6 +252,11 @@ private:
 	bool checkStage3Finish();
 
 	// For stage 4.
+	bool lidar_bumper_valid_{false};
+
+	int left_wheel_current_cnt_{0};
+	int right_wheel_current_cnt_{0};
+
 	int16_t cliff_min_ref_{80}; //todo
 	int16_t cliff_max_ref_{200}; //todo
 
@@ -318,7 +325,7 @@ private:
 
 	uint16_t error_code_{0};
 
-	int test_stage_{0};
+	uint8_t test_stage_{1};
 	double last_time_stamp_{0};
 	double saved_wheel_mileage_{0};
 	double wheel_mileage_{0};

@@ -16,49 +16,76 @@ Odom::~Odom()
 {
 }
 
-void Odom::setX(float x)
+void Odom::setOriginX(float x)
 {
-	pose.setX(x + x_offset_);
+//	pose.setOriginX(x + x_offset_);
+	x_ = x;
+}
+
+float Odom::getOriginX(void)
+{
+//	return pose.getOriginX();
+	return x_;
+}
+
+void Odom::setOriginY(float y)
+{
+//	pose.setOriginY(y+y_offset_);
+	y_ = y;
+}
+
+float Odom::getOriginY(void)
+{
+//	return pose.getOriginY();
+	return y_;
 }
 
 float Odom::getX(void)
 {
-	return pose.getX();
-}
-
-void Odom::setY(float y)
-{
-	pose.setY(y+y_offset_);
+//	return pose.getOriginY();
+	return x_ + x_offset_;
 }
 
 float Odom::getY(void)
 {
-	return pose.getY();
+//	return pose.getOriginY();
+	return y_ + y_offset_;
 }
+/*
 
 void Odom::setZ(float z)
 {
-	pose.setZ(z);
+//	pose.setZ(z);
+
 }
 
 float Odom::getZ(void)
 {
 	return pose.getZ();
 }
+*/
 
-void Odom::setRadian(double radian)
+void Odom::setOriginRadian(double radian)
 {
-	pose.setRadian(radian + getRadianOffset());
+//	pose.setRadian(radian + getRadianOffset());
+	rad_origin_ = radian;
+}
+
+double Odom::getOriginRadian()
+{
+//	pose.setRadian(radian + getRadianOffset());
+	return rad_origin_;
 }
 
 double Odom::getRadian(void)
 {
-	return pose.getRadian();
+//	return pose.getRadian();
+	return ranged_radian(rad_origin_ + radian_offset_);
 }
 
 void Odom::setRadianOffset(double radian)
 {
-	radian_offset_ = radian;
+	radian_offset_ = ranged_radian(radian);
 	ROS_INFO("%s %d: Set x offset to (%f degrees).", __FUNCTION__, __LINE__, radian_to_degree(radian_offset_));
 }
 void Odom::setXOffset(double x)

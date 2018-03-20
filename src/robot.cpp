@@ -342,7 +342,7 @@ void robot::robotbase_routine_cb()
 		/*------------setting for odom and publish odom topic --------*/
 		boost::mutex::scoped_lock lock(odom_mutex_);
 //		odom.setMovingSpeed(static_cast<float>((wheel.getLeftWheelActualSpeed() + wheel.getRightWheelActualSpeed()) / 2.0));
-		odom.setRadian(degree_to_radian(gyro.getAngleY()));
+		odom.setOriginRadian(degree_to_radian(gyro.getAngleY()));
 		odom.setAngleSpeed(gyro.getAngleV());
 		cur_time = ros::Time::now();
 		double angle_rad, dt;
@@ -354,16 +354,16 @@ void robot::robotbase_routine_cb()
 		odom.setMovingSpeed(static_cast<float>((wheel.getLeftEncoderCnt() + wheel.getRightEncoderCnt()) *
 											   WHEEL_ENCODER_TO_MILLIMETER / 1000 / 2.0 / dt));
 		if(!lidar.isRobotSlip()){
-//			odom.setX(static_cast<float>(odom.getX() + (odom.getMovingSpeed() * cos(angle_rad)) * dt));
-//			odom.setY(static_cast<float>(odom.getY() + (odom.getMovingSpeed() * sin(angle_rad)) * dt));
-			odom.setX(static_cast<float>(odom.getX() + ((wheel.getLeftEncoderCnt() + wheel.getRightEncoderCnt())
-														* WHEEL_ENCODER_TO_MILLIMETER * cos(angle_rad) / 1000 / 2)));
-			odom.setY(static_cast<float>(odom.getY() + ((wheel.getLeftEncoderCnt() + wheel.getRightEncoderCnt())
-														* WHEEL_ENCODER_TO_MILLIMETER * sin(angle_rad) / 1000 / 2)));
+//			odom.setOriginX(static_cast<float>(odom.getOriginX() + (odom.getMovingSpeed() * cos(angle_rad)) * dt));
+//			odom.setOriginY(static_cast<float>(odom.getOriginY() + (odom.getMovingSpeed() * sin(angle_rad)) * dt));
+			odom.setOriginX(static_cast<float>(odom.getOriginX() + ((wheel.getLeftEncoderCnt() + wheel.getRightEncoderCnt())
+																												* WHEEL_ENCODER_TO_MILLIMETER * cos(angle_rad) / 1000 / 2)));
+			odom.setOriginY(static_cast<float>(odom.getOriginY() + ((wheel.getLeftEncoderCnt() + wheel.getRightEncoderCnt())
+																												* WHEEL_ENCODER_TO_MILLIMETER * sin(angle_rad) / 1000 / 2)));
 			is_first_slip = true;
 		} else if (is_first_slip){
-			odom.setX(static_cast<float>(odom.getX() - (0.30 * cos(angle_rad)) * 0.8));
-			odom.setY(static_cast<float>(odom.getY() - (0.30 * sin(angle_rad)) * 0.8));
+			odom.setOriginX(static_cast<float>(odom.getOriginX() - (0.30 * cos(angle_rad)) * 0.8));
+			odom.setOriginY(static_cast<float>(odom.getOriginY() - (0.30 * sin(angle_rad)) * 0.8));
 			is_first_slip = false;
 		}
 		odom_quat = tf::createQuaternionMsgFromYaw(angle_rad);
@@ -447,6 +447,7 @@ void robot::core_thread_cb()
 		}
 		case DESK_TEST_CURRENT_MODE:
 		case DESK_TEST_MOVEMENT_MODE:
+		case DESK_TEST_WRITE_BASELINE_MODE:
 		case GYRO_TEST_MODE:
 		case LIFE_TEST_MODE:
 		case WATER_TANK_TEST_MODE:
@@ -487,6 +488,7 @@ void robot::runTestMode()
 
 	p_mode.reset(new CleanModeTest(r16_work_mode_));
 	p_mode->run();
+	g_pp_shutdown = true;
 }
 
 void robot::runWorkMode()
@@ -568,7 +570,7 @@ void robot::scaleCorrectionPos(tf::Vector3 &tmp_pos, double& tmp_rad) {
 void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 {
 	tf::StampedTransform transform{};
-//	tf::Vector3 tmp_pos{odom.getX(),odom.getY(),0};
+//	tf::Vector3 tmp_pos{odom.getOriginX(),odom.getOriginY(),0};
 	tf::Vector3 tmp_pos(robot_pos);
 	double	tmp_rad{odom.getRadian()};
 	if (getBaselinkFrameType() == SLAM_POSITION_SLAM_ANGLE || getBaselinkFrameType() == SLAM_POSITION_ODOM_ANGLE) {
@@ -577,7 +579,18 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 				robot_tf_->lookupTransform("/map", "/base_link", ros::Time(0), transform);
 //				ROS_ERROR("get transform!!!!!!!!!!!!!!!!!");
 				slam_pos = transform.getOrigin();
-				slam_rad  = (getBaselinkFrameType() == SLAM_POSITION_SLAM_ANGLE) ? tf::getYaw(transform.getRotation()) : 0;
+				if(getBaselinkFrameType() == SLAM_POSITION_SLAM_ANGLE)
+				{
+					slam_rad  = tf::getYaw(transform.getRotation()) ;
+//					auto diff = slam_rad - odom.getRadian();
+//					if(diff > degree_to_radian(1))
+//					{
+//						odom.setRadianOffset(slam_rad - odom.getOriginRadian());
+//						beeper.beepForCommand(VALID);
+//					}
+				}
+				else
+					slam_rad = odom.getRadian();
 				tmp_pos = slam_pos;
 				tmp_rad = slam_rad;
 
@@ -592,7 +605,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 //			ROS_WARN("tmp_pos(%f,%f),tmp_rad(%f)", tmp_pos.x(), tmp_pos.y(), tmp_rad);
 		}
 	}else {
-		tmp_pos = {odom.getX(),odom.getY(),0};
+		tmp_pos = {odom.getX(), odom.getY(),0};
 	}
 //	ROS_INFO("tmp_pos(%f,%f),tmp_rad(%f)", tmp_pos.x(), tmp_pos.y(), tmp_rad);
 	robot_pos = tmp_pos;
@@ -649,8 +662,8 @@ void robot::initOdomPosition()
 {
 	// Reset the odom pose to (0, 0)
 	boost::mutex::scoped_lock lock(odom_mutex_);
-	odom.setX(0);
-	odom.setY(0);
+	odom.setOriginX(0);
+	odom.setOriginY(0);
 }
 //
 

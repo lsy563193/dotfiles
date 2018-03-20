@@ -16,8 +16,8 @@ MovementExceptionResume::MovementExceptionResume()
 	ROS_INFO("%s %d: Entering movement exception resume.", __FUNCTION__, __LINE__);
 
 	// Save current position for moving back detection.
-	s_pos_x = odom.getX();
-	s_pos_y = odom.getY();
+	s_pos_x = odom.getOriginX();
+	s_pos_y = odom.getOriginY();
 
 	//For slip
 	if(ros::Time::now().toSec() - slip_start_turn_time_ < 5){
@@ -194,7 +194,7 @@ bool MovementExceptionResume::isFinish()
 				{
 					if (brush.isOn())
 						brush.stop();
-					float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getX(), odom.getY());
+					float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getOriginX(), odom.getOriginY());
 					if (std::abs(distance) >= CELL_SIZE * 2)
 					{
 						ROS_INFO("%s %d: Move back finish!", __FUNCTION__, __LINE__);
@@ -242,14 +242,14 @@ bool MovementExceptionResume::isFinish()
 		}
 		else if (robot_stuck_resume_cnt_ < 5)
 		{
-			float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getX(), odom.getY());
+			float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getOriginX(), odom.getOriginY());
 			if (std::abs(distance) > 0.05f)
 			{
 				wheel.stop();
 				robot_stuck_resume_cnt_++;
 				ROS_WARN("%s %d: Try robot stuck resume for the %d time.", __FUNCTION__, __LINE__, robot_stuck_resume_cnt_);
-				s_pos_x = odom.getX();
-				s_pos_y = odom.getY();
+				s_pos_x = odom.getOriginX();
+				s_pos_y = odom.getOriginY();
 			}
 		}
 		else
@@ -270,7 +270,7 @@ bool MovementExceptionResume::isFinish()
 		}
 		else if (cliff_all_resume_cnt_ < 2)
 		{
-			float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getX(), odom.getY());
+			float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getOriginX(), odom.getOriginY());
 			if (std::abs(distance) > 0.02f)
 			{
 				wheel.stop();
@@ -278,8 +278,8 @@ bool MovementExceptionResume::isFinish()
 				if (cliff_all_resume_cnt_ < 2)
 					ROS_WARN("%s %d: Resume failed, try cliff all resume for the %d time.",
 							 __FUNCTION__, __LINE__, cliff_all_resume_cnt_ + 1);
-				s_pos_x = odom.getX();
-				s_pos_y = odom.getY();
+				s_pos_x = odom.getOriginX();
+				s_pos_y = odom.getOriginY();
 			}
 		}
 		else
@@ -299,7 +299,7 @@ bool MovementExceptionResume::isFinish()
 		}
 		else if (cliff_resume_cnt_ < 5)
 		{
-			float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getX(), odom.getY());
+			float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getOriginX(), odom.getOriginY());
 			if (std::abs(distance) > 0.02f)
 			{
 				wheel.stop();
@@ -307,8 +307,8 @@ bool MovementExceptionResume::isFinish()
 				if (cliff_resume_cnt_ < 5)
 					ROS_WARN("%s %d: Resume failed, try cliff resume for the %d time.",
 							 __FUNCTION__, __LINE__, cliff_resume_cnt_ + 1);
-				s_pos_x = odom.getX();
-				s_pos_y = odom.getY();
+				s_pos_x = odom.getOriginX();
+				s_pos_y = odom.getOriginY();
 			}
 		}
 		else
@@ -335,7 +335,7 @@ bool MovementExceptionResume::isFinish()
 				case 2: // Move back for the second time.
 				case 3: // Move back for the third time.
 				{
-					float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getX(), odom.getY());
+					float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getOriginX(), odom.getOriginY());
 					if (std::abs(distance) > 0.05f)
 					{
 						wheel.stop();
@@ -354,8 +354,8 @@ bool MovementExceptionResume::isFinish()
 							if (bumper_jam_state_ == 4)
 								bumper_resume_start_radian_ = odom.getRadian();
 						}
-						s_pos_x = odom.getX();
-						s_pos_y = odom.getY();
+						s_pos_x = odom.getOriginX();
+						s_pos_y = odom.getOriginY();
 					}
 					break;
 				}
@@ -426,7 +426,7 @@ bool MovementExceptionResume::isFinish()
 		switch(robot_slip_flag_){
 			case 0:{
 				float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getX(), odom.getY());
-				if (std::abs(distance) > 0.15f || lidar.getObstacleDistance(1, ROBOT_RADIUS) < 0.06)
+				if (std::abs(distance) > 0.3f || lidar.getObstacleDistance(1, ROBOT_RADIUS) < 0.06)
 				{
 					if(!lidar.isRobotSlip())
 					{
@@ -442,8 +442,8 @@ bool MovementExceptionResume::isFinish()
 			}
 			case 1:{
 				if(ros::Time::now().toSec() - slip_start_turn_time_ > 1) {
-					s_pos_x = odom.getX();
-					s_pos_y = odom.getY();
+					s_pos_x = odom.getOriginX();
+					s_pos_y = odom.getOriginY();
 					is_slip_last_turn_left_ = true;
 					robot_slip_flag_ = 0;
 				}
@@ -452,8 +452,8 @@ bool MovementExceptionResume::isFinish()
 			case 2:{
 				if(ros::Time::now().toSec() - slip_start_turn_time_ > 1)
 				{
-					s_pos_x = odom.getX();
-					s_pos_y = odom.getY();
+					s_pos_x = odom.getOriginX();
+					s_pos_y = odom.getOriginY();
 					is_slip_last_turn_left_ = false;
 					robot_slip_flag_ = 0;
 				}

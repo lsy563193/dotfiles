@@ -20,9 +20,9 @@ ActionBackFromCharger::~ActionBackFromCharger()
 }
 
 bool ActionBackFromCharger::isFinish() {
-	static Vector2<float> tmp_pose(odom.getX(),odom.getY());
+	static Vector2<float> tmp_pose(odom.getOriginX(), odom.getOriginY());
 	const float BACK_DIST = 0.5f;
-	double distance = two_points_distance_double(tmp_pose.GetX(), tmp_pose.GetY(), odom.getX(), odom.getY());
+	double distance = two_points_distance_double(tmp_pose.GetX(), tmp_pose.GetY(), odom.getOriginX(), odom.getOriginY());
 	if(distance >= BACK_DIST)
 		return true;
 	else
