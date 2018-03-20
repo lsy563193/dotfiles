@@ -193,6 +193,20 @@ public:
 	{
 		return lidar_bumper_dev_;
 	}
+
+	bool checkTilt();
+
+
+	void setCurrent(uint16_t current)
+	{
+		robot_current_ = current;
+	}
+
+	uint16_t getCurrent()
+	{
+		return robot_current_;
+	}
+
 private:
 
 	uint8_t getTestMode(void);
@@ -262,6 +276,16 @@ private:
 	bool is_locked_scan_ctrl_{false};
 
 	bool is_first_slip{true};
+
+	bool is_set_anglev_offset{false};
+
+	//for check tilit
+	const double ANGLE_LIMIT{5};
+	const double TIME_LIMIT{1};
+	double tilt_time = 0;
+	bool is_first_tilt{true};
+
+	uint16_t robot_current_{0};
 };
 
 float cellToCount(int16_t distance);

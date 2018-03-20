@@ -20,14 +20,12 @@ ActionLifeCheck::ActionLifeCheck()
 
 	auto life_test_routine = new boost::thread(boost::bind(&ActionLifeCheck::lifeTestRoutineThread, this));
 
+	timeout_interval_ = 120;
+
+	// Make sure lidar has been inited and stopped, and the voice has finished playing.
+	usleep(5000000);
+
 	start_time_stamp_ = ros::Time::now().toSec();
-
-	wheel_current_ref_ = static_cast<uint16_t>(100.0 /*mA*/ / (330.0 /*3.3v reference voltage*/ / 0.1 /*Sampling resistance*/ / 4096.0 /*Accuracy*/));
-	side_brush_current_ref_ = static_cast<uint16_t>(110.0 /*mA*/ / (330.0 /*3.3v reference voltage*/ / 0.1 /*Sampling resistance*/ / 4096.0 /*Accuracy*/));
-	main_brush_current_ref_ = static_cast<uint16_t>(300.0 /*mA*/ / (330.0 /*3.3v reference voltage*/ / 0.1 /*Sampling resistance*/ / 4096.0 /*Accuracy*/));
-	vacuum_current_ref_ = static_cast<uint16_t>(1100.0 /*mA*/ / (330.0 /*3.3v reference voltage*/ / 0.1 /*Sampling resistance*/ / 4096.0 /*Accuracy*/));
-	water_tank_current_ref_ = static_cast<uint16_t>(1100.0 /*mA*/ / (330.0 /*3.3v reference voltage*/ / 0.1 /*Sampling resistance*/ / 4096.0 /*Accuracy*/));
-
 }
 
 void ActionLifeCheck::lifeTestRoutineThread()
@@ -105,6 +103,12 @@ bool ActionLifeCheck::dataExtract(const uint8_t *buf)
 
 	water_tank.setCurrent((buf[REC_WATER_PUMP_CURRENT_H] << 8) | buf[REC_WATER_PUMP_CURRENT_L]);
 
+	robot::instance()->setCurrent((buf[REC_ROBOT_CUNT_H] << 8) | buf[REC_ROBOT_CUNT_L]);
+//	printf("brush(l%d, r%d, m%d), wheel(l%d, r%d), vacuum(%d), robot(%d).\n",
+//		   brush.getLeftCurrent(), brush.getRightCurrent(), brush.getMainCurrent(),
+//		   wheel.getLeftCurrent(), wheel.getRightCurrent(), vacuum.getCurrent(),
+//		   robot::instance()->getCurrent());
+
 	return true;
 }
 
@@ -114,32 +118,85 @@ void ActionLifeCheck::run()
 	{
 		case 0:
 		{
-			if (ros::Time::now().toSec() - start_time_stamp_ > 0.2)
+			if (ros::Time::now().toSec() - start_time_stamp_ > 0.3)
 			{
 				brush.normalOperate();
 				vacuum.setMode(Vac_Normal);
+				water_tank.normalOperate();
 				wheel.setPidTargetSpeed(LINEAR_MAX_SPEED, LINEAR_MAX_SPEED);
 				key_led.setMode(LED_FLASH, LED_ORANGE, 600);
-				test_stage_++;
 				left_brush_current_baseline_ /= sum_cnt_;
-				right_brush_current_baseline_ /= sum_cnt_;
-				main_brush_current_baseline_ /= sum_cnt_;
-				left_wheel_current_baseline_ /= sum_cnt_;
-				right_wheel_current_baseline_ /= sum_cnt_;
 				ROS_INFO("%s %d: left_brush_current_baseline_:%d.", __FUNCTION__, __LINE__,
 						 left_brush_current_baseline_);
+				right_brush_current_baseline_ /= sum_cnt_;
 				ROS_INFO("%s %d: right_brush_current_baseline_:%d.", __FUNCTION__, __LINE__,
 						 right_brush_current_baseline_);
+				main_brush_current_baseline_ /= sum_cnt_;
 				ROS_INFO("%s %d: main_brush_current_baseline_:%d.", __FUNCTION__, __LINE__,
 						 main_brush_current_baseline_);
+				left_wheel_current_baseline_ /= sum_cnt_;
 				ROS_INFO("%s %d: left_wheel_current_baseline_:%d.", __FUNCTION__, __LINE__,
 						 left_wheel_current_baseline_);
+				right_wheel_current_baseline_ /= sum_cnt_;
 				ROS_INFO("%s %d: right_wheel_current_baseline_:%d.", __FUNCTION__, __LINE__,
 						 right_wheel_current_baseline_);
+				vacuum_current_baseline_ /= sum_cnt_;
 				ROS_INFO("%s %d: vacuum_current_baseline_:%d.", __FUNCTION__, __LINE__, vacuum_current_baseline_);
+				water_tank_current_baseline_ /= sum_cnt_;
 				ROS_INFO("%s %d: water_tank_current_baseline_:%d.", __FUNCTION__, __LINE__,
 						 water_tank_current_baseline_);
+				robot_current_baseline_ /= sum_cnt_;
+				ROS_INFO("%s %d: robot_current_baseline_:%d.", __FUNCTION__, __LINE__, robot_current_baseline_);
+				sum_cnt_ = 0;
 
+				int32_t side_brush_current_baseline_ref_{1620};
+				int32_t main_brush_current_baseline_ref_{1620};
+				int32_t wheel_current_baseline_ref_{1620};
+				int32_t vacuum_current_baseline_ref_{1620};
+				int32_t water_tank_current_baseline_ref_{0};
+				int32_t robot_current_baseline_ref_{1775}; // todo:
+
+
+				if (left_brush_current_baseline_ > side_brush_current_baseline_ref_ * 1.2 ||
+					left_brush_current_baseline_ < side_brush_current_baseline_ref_ * 0.8)
+					error_code_ = LEFT_BRUSH_CURRENT_ERROR;
+				else if (right_brush_current_baseline_ > side_brush_current_baseline_ref_ * 1.2 ||
+						 right_brush_current_baseline_ < side_brush_current_baseline_ref_ * 0.8)
+					error_code_ = RIGHT_BRUSH_CURRENT_ERROR;
+				else if (main_brush_current_baseline_ > main_brush_current_baseline_ref_ * 1.2 ||
+						 main_brush_current_baseline_ < main_brush_current_baseline_ref_ * 0.8)
+					error_code_ = MAIN_BRUSH_CURRENT_ERROR;
+				else if (vacuum_current_baseline_ > vacuum_current_baseline_ref_ * 1.2 ||
+						 vacuum_current_baseline_ < vacuum_current_baseline_ref_ * 0.8)
+					error_code_ = VACUUM_CURRENT_ERROR;
+				else if (water_tank_current_baseline_ > water_tank_current_baseline_ref_ * 1.2 ||
+						 water_tank_current_baseline_ < water_tank_current_baseline_ref_ * 0.8)
+					error_code_ = VACUUM_CURRENT_ERROR; // todo:
+				else if (left_wheel_current_baseline_ > wheel_current_baseline_ref_ * 1.2 ||
+						 left_wheel_current_baseline_ < wheel_current_baseline_ref_ * 0.8)
+					error_code_ = LEFT_WHEEL_FORWARD_CURRENT_ERROR;
+				else if (right_wheel_current_baseline_ > wheel_current_baseline_ref_ * 1.2 ||
+						 right_wheel_current_baseline_ < wheel_current_baseline_ref_ * 0.8)
+					error_code_ = RIGHT_WHEEL_FORWARD_CURRENT_ERROR;
+				else if (robot_current_baseline_ > robot_current_baseline_ref_ * 1.2 ||
+						 robot_current_baseline_ < robot_current_baseline_ref_ * 0.8)
+					error_code_ = BASELINE_CURRENT_ERROR;
+
+				if (error_code_ != 0)
+					test_stage_ = 99;
+				else
+				{
+					check_wheel_time_ = ros::Time::now().toSec();
+					test_stage_++;
+				}
+				/*start_time_stamp_ = ros::Time::now().toSec();
+				left_brush_current_baseline_ = 0;
+				right_brush_current_baseline_ = 0;
+				main_brush_current_baseline_ = 0;
+				left_wheel_current_baseline_ = 0;
+				right_wheel_current_baseline_ = 0;
+				vacuum_current_baseline_ = 0;
+				robot_current_baseline_ = 0;*/
 			}
 			else
 			{
@@ -149,58 +206,108 @@ void ActionLifeCheck::run()
 				left_wheel_current_baseline_ += wheel.getLeftCurrent();
 				right_wheel_current_baseline_ += wheel.getRightCurrent();
 				vacuum_current_baseline_ += vacuum.getCurrent();
+				robot_current_baseline_ += robot::instance()->getCurrent();
+
+//					printf("brush(l%d, r%d, m%d), wheel(l%d, r%d), vacuum(%d), robot(%d).\n",
+//						   brush.getLeftCurrent(), brush.getRightCurrent(), brush.getMainCurrent(),
+//						   wheel.getLeftCurrent(), wheel.getRightCurrent(), vacuum.getCurrent(),
+//						   robot::instance()->getCurrent());
 				sum_cnt_++;
 			}
 			break;
 		}
 		case 1:
-		case 2:
-		case 3:
-		case 4:
-		case 5:
-		case 6:
-		case 7:
-		case 8:
-		case 9:
 		{
-			left_brush_current_max_ = (brush.getLeftCurrent() > left_brush_current_max_) ? brush.getLeftCurrent()
+			if (ros::Time::now().toSec() - start_time_stamp_ > timeout_interval_ - 60)
+			{
+				// Last one minute will check for current. For wheels, check the forward current first.
+				ROS_INFO("Check the wheel forward current.");
+				test_stage_++;
+				brush.normalOperate(); // Update for battery.
+				wheel.setPidTargetSpeed(LINEAR_MAX_SPEED, LINEAR_MAX_SPEED);
+				check_wheel_time_ = ros::Time::now().toSec();
+				wheel_forward_ = true;
+			}
+			else if (wheel_forward_ && ros::Time::now().toSec() - check_wheel_time_ > 30)
+			{
+				brush.normalOperate(); // Update for battery.
+				wheel.setPidTargetSpeed(-LINEAR_MAX_SPEED, -LINEAR_MAX_SPEED);
+				ROS_INFO("%s %d: Switch to backward.", __FUNCTION__, __LINE__);
+				check_wheel_time_ = ros::Time::now().toSec();
+				wheel_forward_ = false;
+			} else if (!wheel_forward_ && ros::Time::now().toSec() - check_wheel_time_ > 30)
+			{
+				brush.normalOperate(); // Update for battery.
+				wheel.setPidTargetSpeed(LINEAR_MAX_SPEED, LINEAR_MAX_SPEED);
+				ROS_INFO("%s %d: Switch to forward.", __FUNCTION__, __LINE__);
+				check_wheel_time_ = ros::Time::now().toSec();
+				wheel_forward_ = true;
+			}
+			break;
+		}
+		case 2:
+		{
+			/*left_brush_current_max_ = (brush.getLeftCurrent() > left_brush_current_max_) ? brush.getLeftCurrent()
 																						 : left_brush_current_max_;
 			right_brush_current_max_ = (brush.getRightCurrent() > right_brush_current_max_) ? brush.getRightCurrent()
 																							: right_brush_current_max_;
 			main_brush_current_max_ = (brush.getMainCurrent() > main_brush_current_max_) ? brush.getMainCurrent()
 																						 : main_brush_current_max_;
 			vacuum_current_max_ = (vacuum.getCurrent() > vacuum_current_max_) ? vacuum.getCurrent() :
-								  vacuum_current_max_;
-			if (test_stage_ % 2 == 1)
+								  vacuum_current_max_;*/
+			left_brush_current_ += brush.getLeftCurrent();
+			right_brush_current_ += brush.getRightCurrent();
+			main_brush_current_ += brush.getMainCurrent();
+			vacuum_current_ += vacuum.getCurrent();
+			robot_current_ += robot::instance()->getCurrent();
+			sum_cnt_++;
+			if (wheel_forward_)
 			{
-				left_wheel_forward_current_max_ = (wheel.getLeftCurrent() > left_wheel_forward_current_max_) ?
+				/*left_wheel_forward_current_max_ = (wheel.getLeftCurrent() > left_wheel_forward_current_max_) ?
 												  wheel.getLeftCurrent() : left_wheel_forward_current_max_;
 				right_wheel_forward_current_max_ = (wheel.getRightCurrent() > right_wheel_forward_current_max_) ?
-												   wheel.getRightCurrent() : right_wheel_forward_current_max_;
+												   wheel.getRightCurrent() : right_wheel_forward_current_max_;*/
+				left_wheel_forward_current_ += wheel.getLeftCurrent();
+				right_wheel_forward_current_ += wheel.getRightCurrent();
+				wheel_forward_current_cnt_++;
 			} else
 			{
-				left_wheel_backward_current_max_ = (wheel.getLeftCurrent() > left_wheel_backward_current_max_) ?
+				/*left_wheel_backward_current_max_ = (wheel.getLeftCurrent() > left_wheel_backward_current_max_) ?
 												  wheel.getLeftCurrent() : left_wheel_backward_current_max_;
 				right_wheel_backward_current_max_ = (wheel.getRightCurrent() > right_wheel_backward_current_max_) ?
-												   wheel.getRightCurrent() : right_wheel_backward_current_max_;
+												   wheel.getRightCurrent() : right_wheel_backward_current_max_;*/
+				left_wheel_backward_current_ += wheel.getLeftCurrent();
+				right_wheel_backward_current_ += wheel.getRightCurrent();
+				wheel_backward_current_cnt_++;
 			}
 
-			if (!checkCurrent())
-				test_stage_ = 99;
-			else if ((test_stage_ % 2 == 1) && ros::Time::now().toSec() - start_time_stamp_ > 5)
+			if (wheel_forward_ && ros::Time::now().toSec() - check_wheel_time_ > 30)
 			{
-				test_stage_++;
+				// Change to check the wheel backward current.
+				ROS_INFO("Change to check the wheel backward current.");
+				brush.normalOperate(); // Update for battery.
 				wheel.setPidTargetSpeed(-LINEAR_MAX_SPEED, -LINEAR_MAX_SPEED);
-				ROS_INFO("%s %d: Switch to backward, switch stage to %d.", __FUNCTION__, __LINE__, test_stage_);
-				start_time_stamp_ = ros::Time::now().toSec();
+				wheel_forward_ = false;
 			}
-			else if ((test_stage_ % 2 == 0) && ros::Time::now().toSec() - start_time_stamp_ > 5)
+			else if (!wheel_forward_ && ros::Time::now().toSec() - start_time_stamp_ > timeout_interval_)
 			{
-				test_stage_++;
-				wheel.setPidTargetSpeed(LINEAR_MAX_SPEED, LINEAR_MAX_SPEED);
-				ROS_INFO("%s %d: Switch to backward, switch stage to %d.", __FUNCTION__, __LINE__, test_stage_);
-				start_time_stamp_ = ros::Time::now().toSec();
+				if (!checkCurrent())
+					test_stage_ = 99;
+				else
+				{
+					/*start_time_stamp_ = ros::Time::now().toSec();
+					left_brush_current_baseline_ = 0;
+					right_brush_current_baseline_ = 0;
+					main_brush_current_baseline_ = 0;
+					left_wheel_current_baseline_ = 0;
+					right_wheel_current_baseline_ = 0;
+					vacuum_current_baseline_ = 0;
+					robot_current_baseline_ = 0;
+					start_time_stamp_ += 5;*/
+					test_stage_++;
+				}
 			}
+
 			break;
 		}
 		case 99: // For error.
@@ -210,6 +317,7 @@ void ActionLifeCheck::run()
 			wheel.stop();
 			brush.stop();
 			vacuum.stop();
+			water_tank.stop();
 			sleep(5);
 			break;
 		}
@@ -221,6 +329,7 @@ void ActionLifeCheck::run()
 			wheel.stop();
 			brush.stop();
 			vacuum.stop();
+			water_tank.stop();
 			sleep(5);
 			break;
 		}
@@ -231,7 +340,7 @@ void ActionLifeCheck::run()
 bool ActionLifeCheck::checkCurrent()
 {
 
-	if (left_brush_current_max_ - left_brush_current_baseline_ > side_brush_current_ref_)
+	/*if (left_brush_current_max_ - left_brush_current_baseline_ > side_brush_current_ref_)
 		error_code_ = LEFT_BRUSH_CURRENT_ERROR;
 	else if (right_brush_current_max_ - right_brush_current_baseline_> side_brush_current_ref_)
 		error_code_ = RIGHT_BRUSH_CURRENT_ERROR;
@@ -248,7 +357,79 @@ bool ActionLifeCheck::checkCurrent()
 	else if (vacuum_current_max_ - vacuum_current_baseline_ > vacuum_current_ref_)
 		error_code_ = VACUUM_CURRENT_ERROR;
 	else if (water_tank_current_max_ - water_tank_current_baseline_ > water_tank_current_ref_)
+		error_code_ = VACUUM_CURRENT_ERROR; // todo:*/
+
+	uint16_t side_brush_current_ref_{1670 - 1620};
+	uint16_t main_brush_current_ref_{1785 - 1620};
+	uint16_t wheel_current_ref_{1680 - 1620};
+	uint16_t vacuum_current_ref_{1970 - 1620};
+	uint16_t water_tank_current_ref_{0};
+	uint16_t robot_current_ref_{2170 - 1775};// todo:
+
+//	wheel_current_ref_ = static_cast<uint16_t>(100.0 /*mA*/ / (330.0 /*3.3v reference voltage*/ / 0.1 /*Sampling resistance*/ / 4096.0 /*Accuracy*/));
+	ROS_INFO("%s %d: Wheel current reference: %d.", __FUNCTION__, __LINE__, wheel_current_ref_);
+//	side_brush_current_ref_ = static_cast<uint16_t>(110.0 /*mA*/ / (330.0 /*3.3v reference voltage*/ / 0.1 /*Sampling resistance*/ / 4096.0 /*Accuracy*/));
+	ROS_INFO("%s %d: Side brush current reference: %d.", __FUNCTION__, __LINE__, side_brush_current_ref_);
+//	main_brush_current_ref_ = static_cast<uint16_t>(300.0 /*mA*/ / (330.0 /*3.3v reference voltage*/ / 0.1 /*Sampling resistance*/ / 4096.0 /*Accuracy*/));
+	ROS_INFO("%s %d: Main brush current reference: %d.", __FUNCTION__, __LINE__, main_brush_current_ref_);
+//	vacuum_current_ref_ = static_cast<uint16_t>(1100.0 /*mA*/ / (330.0 /*3.3v reference voltage*/ / 0.1 /*Sampling resistance*/ / 4096.0 /*Accuracy*/));
+	ROS_INFO("%s %d: Vacuum current reference: %d.", __FUNCTION__, __LINE__, vacuum_current_ref_);
+//	water_tank_current_ref_ = static_cast<uint16_t>(1100.0 /*mA*/ / (330.0 /*3.3v reference voltage*/ / 0.1 /*Sampling resistance*/ / 4096.0 /*Accuracy*/));
+	ROS_INFO("%s %d: Water tank current reference: %d.", __FUNCTION__, __LINE__, water_tank_current_ref_);
+//	robot_current_ref_ = static_cast<uint16_t>(1100.0 /*mA*/ / (330.0 /*3.3v reference voltage*/ / 0.1 /*Sampling resistance*/ / 4096.0 /*Accuracy*/));
+	ROS_INFO("%s %d: Robot current reference: %d.", __FUNCTION__, __LINE__, robot_current_ref_);
+
+	left_brush_current_ /= sum_cnt_;
+	ROS_INFO("%s %d: Left brush current: %d.", __FUNCTION__, __LINE__, left_brush_current_);
+	right_brush_current_ /= sum_cnt_;
+	ROS_INFO("%s %d: Right brush current: %d.", __FUNCTION__, __LINE__, right_brush_current_);
+	main_brush_current_ /= sum_cnt_;
+	ROS_INFO("%s %d: Main brush current: %d.", __FUNCTION__, __LINE__, main_brush_current_);
+	left_wheel_forward_current_ /= wheel_forward_current_cnt_;
+	ROS_INFO("%s %d: Left wheel forward current: %d.", __FUNCTION__, __LINE__, left_wheel_forward_current_);
+	right_wheel_forward_current_ /= wheel_forward_current_cnt_;
+	ROS_INFO("%s %d: Right wheel forward current: %d.", __FUNCTION__, __LINE__, right_wheel_forward_current_);
+	left_wheel_backward_current_ /= wheel_backward_current_cnt_;
+	ROS_INFO("%s %d: Left wheel backward current: %d.", __FUNCTION__, __LINE__, left_wheel_backward_current_);
+	right_wheel_backward_current_ /= wheel_backward_current_cnt_;
+	ROS_INFO("%s %d: Right wheel backward current: %d.", __FUNCTION__, __LINE__, right_wheel_backward_current_);
+	vacuum_current_ /= sum_cnt_;
+	ROS_INFO("%s %d: Vacuum current: %d.", __FUNCTION__, __LINE__, vacuum_current_);
+	water_tank_current_ /= sum_cnt_;
+	ROS_INFO("%s %d: Water tank current: %d.", __FUNCTION__, __LINE__, water_tank_current_);
+	robot_current_ /= sum_cnt_;
+	ROS_INFO("%s %d: Robot current: %d.", __FUNCTION__, __LINE__, robot_current_);
+
+	if (left_brush_current_ - left_brush_current_baseline_ > side_brush_current_ref_ * 1.2 ||
+			 left_brush_current_ - left_brush_current_baseline_ < side_brush_current_ref_ * 0.8)
+		error_code_ = LEFT_BRUSH_CURRENT_ERROR;
+	else if (right_brush_current_ - right_brush_current_baseline_ > side_brush_current_ref_ * 1.2 ||
+		right_brush_current_ - right_brush_current_baseline_ < side_brush_current_ref_ * 0.8)
+		error_code_ = RIGHT_BRUSH_CURRENT_ERROR;
+	else if (main_brush_current_ - main_brush_current_baseline_ > main_brush_current_ref_ * 1.2 ||
+			 main_brush_current_ - main_brush_current_baseline_ < main_brush_current_ref_ * 0.8)
+		error_code_ = MAIN_BRUSH_CURRENT_ERROR;
+	else if (vacuum_current_ - vacuum_current_baseline_ > vacuum_current_ref_ * 1.2 ||
+			 vacuum_current_ - vacuum_current_baseline_ < vacuum_current_ref_ * 0.8)
+		error_code_ = VACUUM_CURRENT_ERROR;
+	else if (water_tank_current_ - water_tank_current_baseline_ > water_tank_current_ref_ * 1.2 ||
+			 water_tank_current_ - water_tank_current_baseline_ < water_tank_current_ref_ * 0.8)
 		error_code_ = VACUUM_CURRENT_ERROR; // todo:
+	else if (left_wheel_forward_current_ - left_wheel_current_baseline_ > wheel_current_ref_ * 1.2 ||
+		left_wheel_forward_current_ - left_wheel_current_baseline_ < wheel_current_ref_ * 0.8)
+		error_code_ = LEFT_WHEEL_FORWARD_CURRENT_ERROR;
+	else if (right_wheel_forward_current_ - right_wheel_current_baseline_ > wheel_current_ref_ * 1.2 ||
+			 right_wheel_forward_current_ - right_wheel_current_baseline_ < wheel_current_ref_ * 0.8)
+		error_code_ = RIGHT_WHEEL_FORWARD_CURRENT_ERROR;
+	else if (left_wheel_backward_current_ - left_wheel_current_baseline_ > wheel_current_ref_ * 1.2 ||
+		left_wheel_backward_current_ - left_wheel_current_baseline_ < wheel_current_ref_ * 0.8)
+		error_code_ = LEFT_WHEEL_BACKWARD_CURRENT_ERROR;
+	else if (right_wheel_backward_current_ - right_wheel_current_baseline_ > wheel_current_ref_ * 1.2 ||
+			 right_wheel_backward_current_ - right_wheel_current_baseline_ < wheel_current_ref_ * 0.8)
+		error_code_ = RIGHT_WHEEL_BACKWARD_CURRENT_ERROR;
+	else if (robot_current_ - robot_current_baseline_ > robot_current_ref_ * 1.2 ||
+			robot_current_ - robot_current_baseline_ < robot_current_ref_ * 0.8)
+		error_code_ = BASELINE_CURRENT_ERROR;
 
 	return error_code_ == 0;
 }

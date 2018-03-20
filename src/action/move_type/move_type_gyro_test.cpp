@@ -54,7 +54,7 @@ void MoveTypeGyroTest::gyroTestRoutineThread()
 						WHEEL_ENCODER_TO_MILLIMETER / 1000;
 				count_sum += std::abs(wheel.getLeftEncoderCnt());
 			}
-			odom.setRadian(degree_to_radian(gyro.getAngle()));
+			odom.setRadian(degree_to_radian(gyro.getAngleY()));
 			odom.setAngleSpeed(gyro.getAngleV());
 			cur_time = ros::Time::now();
 			double angle_rad, dt;
@@ -94,7 +94,7 @@ bool MoveTypeGyroTest::dataExtract(const uint8_t *buf)
 	// For gyro device.
 	gyro.setCalibration(buf[REC_GYRO_CALIBRATION] != 0);
 
-	gyro.setAngle(static_cast<float>(static_cast<int16_t>((buf[REC_ANGLE_H] << 8) | buf[REC_ANGLE_L]) / 100.0 * -1));
+	gyro.setAngleY(static_cast<float>(static_cast<int16_t>((buf[REC_ANGLE_H] << 8) | buf[REC_ANGLE_L]) / 100.0 * -1));
 	gyro.setAngleV(
 			static_cast<float>(static_cast<int16_t>((buf[REC_ANGLE_V_H] << 8) | buf[REC_ANGLE_V_L]) / 100.0 * -1));
 
@@ -111,8 +111,8 @@ void MoveTypeGyroTest::run()
 			{
 				test_stage_++;
 				p_movement_.reset();
-				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-90), 10));
-				saved_gyro_turn_angle_ = gyro.getAngle();
+				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(90), 10));
+				saved_gyro_turn_angle_ = gyro.getAngleY();
 				saved_wheel_mileage_ = wheel_mileage_;
 				brush.slowOperate();
 			}
@@ -131,7 +131,7 @@ void MoveTypeGyroTest::run()
 			ROS_INFO("%s %d: Turn for %d times, wheel_turn_angle_:%f(%f in angle).",
 					 __FUNCTION__, __LINE__, test_stage_, degree_to_radian(wheel_turn_angle_), wheel_turn_angle_);
 
-			auto current_angle = gyro.getAngle();
+			auto current_angle = gyro.getAngleY();
 			auto gyro_diff = current_angle - saved_gyro_turn_angle_;
 			ROS_INFO("%s %d: gyro_diff:%f(%f in angle).", __FUNCTION__, __LINE__, degree_to_radian(gyro_diff),
 					 gyro_diff);
@@ -149,7 +149,7 @@ void MoveTypeGyroTest::run()
 				ROS_INFO("%s %d: Turn for %d times, wheel_turn_angle_:%f(%f in angle).",
 						 __FUNCTION__, __LINE__, test_stage_, degree_to_radian(wheel_turn_angle_), wheel_turn_angle_);
 
-				auto current_angle = gyro.getAngle();
+				auto current_angle = gyro.getAngleY();
 				auto gyro_diff = fabs(ranged_degree(current_angle - saved_gyro_turn_angle_));
 				ROS_INFO("%s %d: gyro_diff:%f(%f in angle).", __FUNCTION__, __LINE__, degree_to_radian(gyro_diff), gyro_diff);
 
@@ -168,7 +168,7 @@ void MoveTypeGyroTest::run()
 					else
 						p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-90), 10));
 					test_stage_++;
-					current_angle = gyro.getAngle();
+					current_angle = gyro.getAngleY();
 					saved_gyro_turn_angle_ = current_angle;
 				}
 			}

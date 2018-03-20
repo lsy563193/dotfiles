@@ -9,6 +9,7 @@
 #include <key_led.h>
 #include <robot.hpp>
 #include <water_tank.hpp>
+#include <vacuum.h>
 #include "wifi/wifi.h"
 
 boost::mutex send_stream_mutex;

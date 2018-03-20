@@ -75,7 +75,7 @@ void error_loop(uint8_t test_stage, uint16_t error_code, uint16_t current_data)
 		{
 			alarm_time = ros::Time::now().toSec();
 			speaker.play(VOICE_TEST_FAIL);
-			ROS_ERROR("%s %d: Test ERROR. test_stage: %d. error_code: %d, current_data: %d", __FUNCTION__, __LINE__, test_stage, error_code, current_data);
+			ROS_ERROR("%s %d: Test ERROR. test_stage_: %d. error_code: %d, current_data: %d", __FUNCTION__, __LINE__, test_stage, error_code, current_data);
 		}
 	}
 }

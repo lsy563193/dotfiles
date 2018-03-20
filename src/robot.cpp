@@ -207,8 +207,8 @@ void robot::robotbase_routine_cb()
 		gyro.setCalibration(buf[REC_GYRO_CALIBRATION] != 0);
 		sensor.gyro_calibration = gyro.getCalibration();
 
-		gyro.setAngle(static_cast<float>(static_cast<int16_t>((buf[REC_ANGLE_H] << 8) | buf[REC_ANGLE_L]) / 100.0 * -1));
-		sensor.angle = gyro.getAngle();
+		gyro.setAngleY(static_cast<float>(static_cast<int16_t>((buf[REC_ANGLE_H] << 8) | buf[REC_ANGLE_L]) / 100.0 * -1));
+		sensor.angle = gyro.getAngleY();
 		gyro.setAngleV(static_cast<float>(static_cast<int16_t>((buf[REC_ANGLE_V_H] << 8) | buf[REC_ANGLE_V_L]) / 100.0 * -1));
 		sensor.angle_v = gyro.getAngleV();
 
@@ -342,13 +342,15 @@ void robot::robotbase_routine_cb()
 		/*------------setting for odom and publish odom topic --------*/
 		boost::mutex::scoped_lock lock(odom_mutex_);
 //		odom.setMovingSpeed(static_cast<float>((wheel.getLeftWheelActualSpeed() + wheel.getRightWheelActualSpeed()) / 2.0));
-		odom.setRadian(degree_to_radian(gyro.getAngle()));
+		odom.setRadian(degree_to_radian(gyro.getAngleY()));
 		odom.setAngleSpeed(gyro.getAngleV());
 		cur_time = ros::Time::now();
 		double angle_rad, dt;
 		angle_rad = odom.getRadian();
 		dt = (cur_time - last_time).toSec();
 		last_time = cur_time;
+//		gyro.setAngleR(gyro.calAngleR1OrderFilter(0.5, dt));//fusion of 1 order filter
+		gyro.setAngleR(gyro.calAngleRKalmanFilter(dt));//fusion of kalman filter
 		odom.setMovingSpeed(static_cast<float>((wheel.getLeftEncoderCnt() + wheel.getRightEncoderCnt()) *
 											   WHEEL_ENCODER_TO_MILLIMETER / 1000 / 2.0 / dt));
 		if(!lidar.isRobotSlip()){
@@ -388,7 +390,14 @@ void robot::robotbase_routine_cb()
 		/*------publish end -----------*/
 
 		// Check tilt
-//		gyro.checkTilt();
+#if 0
+		if (checkTilt()){
+			gyro.setTiltCheckingStatus(1);
+			beeper.beepForCommand(VALID);
+		} else {
+			gyro.setTiltCheckingStatus(0);
+		}
+#endif
 		// Dynamic adjust obs
 		obs.DynamicAdjust(OBS_adjust_count);
 
@@ -437,6 +446,7 @@ void robot::core_thread_cb()
 			break;
 		}
 		case DESK_TEST_CURRENT_MODE:
+		case DESK_TEST_MOVEMENT_MODE:
 		case GYRO_TEST_MODE:
 		case LIFE_TEST_MODE:
 		case WATER_TANK_TEST_MODE:
@@ -721,6 +731,36 @@ void robot::updateRobotPositionForTest()
 	robot_pos.setX(odom.getX());
 	robot_pos.setY(odom.getY());
 	robot_rad = ranged_radian(odom.getRadian());
+}
+
+bool robot::checkTilt() {
+//	ROS_WARN("is_first_tilt = %d", is_first_tilt);
+	auto angle = std::fabs(gyro.getAngleR());
+	ROS_WARN("angle = %f", angle);
+	if (angle < ANGLE_LIMIT) {
+		is_first_tilt = true;
+		return false;
+	}
+
+	if (is_first_tilt) {
+		is_first_tilt = false;
+		tilt_time = ros::Time::now().toSec();
+	}
+
+	if ((ros::Time::now().toSec() - tilt_time) > TIME_LIMIT) {
+		return true;
+	} else {
+		return false;
+	}
+
+/*	if (gyro.getAngleR() > ANGLE_LIMIT) {
+		tilt_time = ros::Time::now().toSec();
+		if ((ros::Time::now().toSec() - tilt_time) > TIME_LIMIT) {
+			return true;
+		} else {
+			return false;
+		}
+	}*/
 }
 
 //--------------------

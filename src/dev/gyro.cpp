@@ -2,13 +2,14 @@
 #include <serial.h>
 #include <speaker.h>
 #include <beeper.h>
+#include <mathematics.h>
 #include "gyro.h"
 #include "event_manager.h"
 
 Gyro gyro;
 
 Gyro::Gyro(void){
-	angle_ = 0;
+	angle_y_ = 0;
 	angle_v_ = 0;
 	x_acc_ = -1000;
 	y_acc_ = -1000;
@@ -113,7 +114,7 @@ bool Gyro::waitForOn(void)
 	{
 		if (getAngleV() != 0)
 			success_count_++;
-		ROS_DEBUG("Opening%d, angle_v_ = %f.angle = %f.", success_count_, getAngleV(), getAngle());
+		ROS_DEBUG("Opening%d, angle_v_ = %f.angle = %f.", success_count_, getAngleV(), getAngleY());
 		if (success_count_ == 5)
 		{
 			success_count_ = 0;
@@ -124,7 +125,7 @@ bool Gyro::waitForOn(void)
 	{
 		if (check_stable_count_ < 50)
 		{
-			auto current_angle_ = getAngle();
+			auto current_angle_ = getAngleY();
 			ROS_DEBUG("Checking%d, angle_v_ = %f.angle = %f, average_angle = %f.",
 					  check_stable_count_, getAngleV(), current_angle_, average_angle_);
 			if (current_angle_ > 0.02 || current_angle_ < -0.02)
@@ -450,3 +451,107 @@ void Gyro::setTiltCheckingEnable(bool val)
 	tilt_checking_enable_ = val;
 }
 
+float Gyro::calAngleR1OrderFilter(double k, double dt)
+{
+	auto acc_angle = getAccAngleR();
+	auto angle = k * acc_angle + (1 - k) * (angle_r_ + angle_v_ * dt);
+//	ROS_INFO("angle_r_ = %f, acc_angle= %f, angle_v_= %f", angle_r_,acc_angle,angle_v_);
+	return angle;
+}
+float Gyro::getAngleR(void)
+{
+//	ROS_INFO("angle_r_(with ofset) = %f", angle_r_ - ANGLE_R_OFFSET_);
+	return angle_r_ - ANGLE_R_OFFSET_;
+}
+
+float Gyro::calAngleRKalmanFilter(double dt)
+{
+	auto acc_angle = getAccAngleR();
+	auto angle_kalman = KalmanFilter(acc_angle, angle_v_, dt);
+
+//	ROS_INFO("angle_kalman = %f, acc_angle= %f, angle_v_= %f", angle_kalman,acc_angle,angle_v_);
+//	printf("%f,%lf.", acc_angle,angle_v_);
+
+	return angle_kalman;
+}
+
+//KalmanFilter
+float Gyro::KalmanFilter(float angle_m, float gyro_m, double dt)//angleAx和gyroGy
+{
+	kalman_angle += (gyro_m - q_bias) * dt;
+	angle_err = angle_m - kalman_angle;
+	Pdot[0] = Q_angle - P[0][1] - P[1][0];
+	Pdot[1] = -P[1][1];
+	Pdot[2] = -P[1][1];
+	Pdot[3] = Q_gyro;
+	P[0][0] += Pdot[0] * dt;
+	P[0][1] += Pdot[1] * dt;
+	P[1][0] += Pdot[2] * dt;
+	P[1][1] += Pdot[3] * dt;
+	PCt_0 = C_0 * P[0][0];
+	PCt_1 = C_0 * P[1][0];
+	E = R_angle + C_0 * PCt_0;
+	K_0 = PCt_0 / E;
+	K_1 = PCt_1 / E;
+	t_0 = PCt_0;
+	t_1 = C_0 * P[0][1];
+	P[0][0] -= K_0 * t_0;
+	P[0][1] -= K_0 * t_1;
+	P[1][0] -= K_1 * t_0;
+	P[1][1] -= K_1 * t_1;
+	kalman_angle += K_0 * angle_err;//best angle
+	q_bias += K_1 * angle_err;
+	angle_dot = gyro_m - q_bias;//best angular speed
+	return kalman_angle;
+}
+
+void Gyro::resetKalmanParam(void)
+{
+	kalman_angle = angle_dot = 0;
+//	float temp_P[2][2]={{1,0},{0,1}};
+	float temp_P[2][2]={{1,0},{0,1}};
+	memcpy(P, temp_P, sizeof(P));
+	float temp_Pdot[4]={0,0,0,0};
+	memcpy(Pdot, temp_Pdot, sizeof(Pdot));
+//	Q_angle=0.001,Q_gyro=0.005;//
+//	R_angle=0.5;
+	Q_angle=0.03,Q_gyro=0.00009;//0.05
+	R_angle=0.0001;//0.5
+	C_0=1;
+	q_bias=angle_err=PCt_0=PCt_1=E=K_0=K_1=t_0=t_1=0;
+}
+
+void Gyro::setAngleR(float angle)
+{
+	angle_r_ = angle;
+}
+
+float Gyro::getAccAngleR(void)
+{
+	acc_angle_r_ = radian_to_degree(atan2(x_acc_, z_acc_));
+//	ROS_WARN("acc(%f, %f, %f)", x_acc_, y_acc_, z_acc_);
+	return acc_angle_r_;
+}
+
+float Gyro::getGyroAngleR(double dt)
+{
+	gyro_angle_r_ += angle_v_ * dt;
+	return gyro_angle_r_;
+}
+
+void Gyro::resetGyroAngleR(void)
+{
+	gyro_angle_r_ = 0;
+}
+
+void Gyro::setAngleVOffset(void)
+{
+	ANGLE_V_OFFSET_ = angle_v_;
+	ROS_ERROR("setAngleVOffset = %f", ANGLE_V_OFFSET_);
+}
+
+void Gyro::setAngleROffset(void)
+{
+	ANGLE_R_OFFSET_ = angle_r_;
+	ROS_ERROR("ANGLE_R_OFFSET_ = %f", ANGLE_R_OFFSET_);
+}

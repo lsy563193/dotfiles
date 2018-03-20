@@ -36,6 +36,7 @@ ACleanMode::ACleanMode()
 	line_marker_pub_ = clean_nh_.advertise<visualization_msgs::Marker>("line_marker", 1);
 	line_marker_pub2_ = clean_nh_.advertise<visualization_msgs::Marker>("line_marker2", 1);
 
+	lidar.slipCheckingCtrl(ON);
 	event_manager_register_handler(this);
 	event_manager_set_enable(true);
 	serial.setWorkMode(WORK_MODE);
@@ -88,6 +89,7 @@ ACleanMode::~ACleanMode()
 		water_tank.stop();
 		lidar.motorCtrl(OFF);
 		lidar.setScanOriginalReady(0);
+		lidar.slipCheckingCtrl(OFF);
 
 		robot::instance()->setBaselinkFrameType(ODOM_POSITION_ODOM_ANGLE);
 		slam.stop();
@@ -943,7 +945,7 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 	markRealTime();
 	if(action_i_ == ac_linear) {
 		auto p_mt = dynamic_cast<MoveTypeLinear *>(p_move_type);
-		if(p_mt->isCellReach() || p_mt->isPassTargetStop(iterate_point_.dir))
+		if(p_mt->isPoseReach() || p_mt->isPassTargetStop(iterate_point_.dir))
 			return true;
 
 		if (p_mt->isLinearForward()){
@@ -1654,6 +1656,20 @@ bool ACleanMode::updateActionInStateGoHomePoint()
 	else if (go_home_path_algorithm_->reachTarget(should_go_to_charger_))
 	{
 		update_finish = false;
+		home_points_ = go_home_path_algorithm_->getRestHomePoints();
+	}
+	else if (getPosition().toCell() == start_point_.toCell())
+	{
+		ROS_INFO("Reach start point but angle not equal,start_point_(%d,%d,%f,%d)",start_point_.toCell().x, start_point_.toCell().y, radian_to_degree(start_point_.th), start_point_.dir);
+		beeper.beepForCommand(VALID);
+		update_finish = true;
+		iterate_point_ = getPosition();
+		iterate_point_.th = start_point_.th;
+		plan_path_.clear();
+		plan_path_.push_back(iterate_point_) ;
+		plan_path_.push_back(start_point_) ;
+		genNextAction();
+		update_finish = true;
 		home_points_ = go_home_path_algorithm_->getRestHomePoints();
 	}
 	else if (go_home_path_algorithm_->generatePath(clean_map_, getPosition(),old_dir_, plan_path_))

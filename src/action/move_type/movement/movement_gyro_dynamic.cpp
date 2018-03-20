@@ -8,7 +8,9 @@
 #include <gyro.h>
 #include <mode.hpp>
 #include <robot.hpp>
+#include <beeper.h>
 
+int MovementGyroDynamic::start_dynamic_count_{};
 
 MovementGyroDynamic::MovementGyroDynamic()
 {
@@ -33,16 +35,26 @@ void MovementGyroDynamic::adjustSpeed(int32_t &l_speed, int32_t &r_speed) {
 }
 
 bool MovementGyroDynamic::isFinish() {
-#if GYRO_DYNAMIC_ADJUSTMENT
+//#if GYRO_DYNAMIC_ADJUSTMENT
 	auto p_mode = dynamic_cast<ACleanMode*> (sp_mt_->sp_mode_);
 	if(is_open_dynamic_succeed_ && ros::Time::now().toSec() - start_dynamic_time_ > robot::instance()->getGyroDynamicRunTime()){
 		p_mode->time_gyro_dynamic_ = ros::Time::now().toSec();
 		gyro.setDynamicOff();
-
+//		auto offset_adjustment = getPosition().th - odom.odom.getRadian()/*robot::instance()->getRobotCorrectionRadian() / 8.0*/;
+//		odom.setRadianOffset(offset_adjustment);
+		start_dynamic_count_ ++;
+		if(start_dynamic_count_ == 5)
+		{
+			start_dynamic_count_ = 0;
+			auto offset_adjustment = getPosition().th - odom.getRadian();
+			odom.setRadianOffset(ranged_radian(odom.getRadianOffset() + offset_adjustment));
+			beeper.beepForCommand(VALID);
+		}
+		ROS_INFO("%s %d: Shutdown gyro dynamic. start_dynamic_count_(%d)", __FUNCTION__, __LINE__, start_dynamic_count_);
 		return true;
 	}
-#else
-	return true;
-#endif
+//#else
+//	return true;
+//#endif
 	return false;
 }

@@ -209,30 +209,24 @@ private:
 	 * Stage 5: Move for a distance and check the max currents.
 	 * Stage 6: Turn for 360 degrees to check for rcon.
 	 */
-	int test_stage{0};
+	int test_stage_{0};
 
 	// Each stage has several steps.
 	int test_step_{0};
 
 	// For stage 1.
 	int sum_cnt_{0};
-	int32_t left_brush_current_baseline_sum_{};
-	int32_t right_brush_current_baseline_sum_{};
-	int32_t main_brush_current_baseline_sum_{};
-	int32_t left_wheel_current_baseline_sum_{};
-	int32_t right_wheel_current_baseline_sum_{};
-	int32_t vacuum_current_baseline_sum_{};
-	int32_t water_tank_current_baseline_sum_{};
 
-	int16_t left_brush_current_baseline_;
-	int16_t right_brush_current_baseline_;
-	int16_t main_brush_current_baseline_;
-	int16_t left_wheel_current_baseline_;
-	int16_t right_wheel_current_baseline_;
-	int16_t vacuum_current_baseline_;
-	int16_t water_tank_current_baseline_;
+	uint32_t left_brush_current_baseline_{0};
+	uint32_t right_brush_current_baseline_{0};
+	uint32_t main_brush_current_baseline_{0};
+	uint32_t left_wheel_current_baseline_{0};
+	uint32_t right_wheel_current_baseline_{0};
+	uint32_t vacuum_current_baseline_{0};
+	uint32_t water_tank_current_baseline_{0};
+	uint32_t robot_current_baseline_{0};
 
-	bool check_stage_1_finish();
+	bool checkStage1Finish();
 
 	// For stage 2.
 	uint8_t lidar_check_cnt_{0};
@@ -246,14 +240,14 @@ private:
 	int16_t front_obs_baseline_{0};
 	int16_t right_obs_baseline_{0};
 
-	bool check_stage_2_finish();
+	bool checkStage2Finish();
 
 	// For stage 3.
 	int16_t obs_ref_{2000}; //todo
 	int16_t left_obs_max_{0};
 	int16_t front_obs_max_{0};
 	int16_t right_obs_max_{0};
-	bool check_stage_3_finish();
+	bool checkStage3Finish();
 
 	// For stage 4.
 	int16_t cliff_min_ref_{80}; //todo
@@ -271,11 +265,24 @@ private:
 	int16_t front_cliff_baseline_{0};
 	int16_t right_cliff_baseline_{0};
 
-	bool check_stage_4_finish();
+	double check_current_start_time_{0};
+
+	uint32_t left_brush_current_{0};
+	uint32_t right_brush_current_{0};
+	uint32_t main_brush_current_{0};
+	uint32_t left_wheel_current_{0};
+	uint32_t right_wheel_current_{0};
+	uint32_t vacuum_current_{0};
+	uint32_t water_tank_current_{0};
+	uint32_t robot_current_{0};
+
+	bool checkCurrent();
+
+	bool checkStage4Finish();
 
 	// For stage 5.
 
-	uint16_t left_brush_current_max_{0};
+	/*uint16_t left_brush_current_max_{0};
 	uint16_t right_brush_current_max_{0};
 	uint16_t main_brush_current_max_{0};
 	uint16_t left_wheel_forward_current_max_{0};
@@ -283,15 +290,15 @@ private:
 	uint16_t left_wheel_backward_current_max_{0};
 	uint16_t right_wheel_backward_current_max_{0};
 	uint16_t vacuum_current_max_{0};
-	uint16_t water_tank_current_max_{0};
+	uint16_t water_tank_current_max_{0};*/
 
-	bool check_stage_5_finish();
+	bool checkStage5Finish();
 
 	// For stage 6.
-	bool check_stage_6_finish();
+	bool checkStage6Finish();
 
 	// For stage 7.
-	bool check_stage_7_finish();
+	bool checkStage7Finish();
 };
 
 class MoveTypeGyroTest: public IMoveType
