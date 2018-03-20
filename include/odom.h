@@ -17,9 +17,10 @@ public:
 	float getX();
 	void setY(float y);
 	float getY();
-	void setZ(float z);
-	float getZ();
-	void setRadian(double radian);
+//	void setZ(float z);
+//	float getZ();
+	void setOriginRadian(double radian);
+	double getOriginRadian();
 	double getRadian();
 	void setRadianOffset(double radian);
 	void setXOffset(double radian);
@@ -33,9 +34,13 @@ public:
 
 private:
 
-	Pose pose;
+//	Pose pose;
 
+	double rad_origin_;
 	double radian_offset_;
+
+	float x_;
+	float y_;
 	double x_offset_{};
 	double y_offset_{};
 

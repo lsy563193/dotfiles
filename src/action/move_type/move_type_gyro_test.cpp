@@ -54,7 +54,7 @@ void MoveTypeGyroTest::gyroTestRoutineThread()
 						WHEEL_ENCODER_TO_MILLIMETER / 1000;
 				count_sum += std::abs(wheel.getLeftEncoderCnt());
 			}
-			odom.setRadian(degree_to_radian(gyro.getAngleY()));
+			odom.setOriginRadian(degree_to_radian(gyro.getAngleY()));
 			odom.setAngleSpeed(gyro.getAngleV());
 			cur_time = ros::Time::now();
 			double angle_rad, dt;

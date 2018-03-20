@@ -213,7 +213,7 @@ void MoveTypeDeskTest::deskTestRoutineThread()
 		{
 			odom.setMovingSpeed(
 					static_cast<float>((wheel.getLeftWheelActualSpeed() + wheel.getRightWheelActualSpeed()) / 2.0));
-			odom.setRadian(degree_to_radian(gyro.getAngleY()));
+			odom.setOriginRadian(degree_to_radian(gyro.getAngleY()));
 			odom.setAngleSpeed(gyro.getAngleV());
 			cur_time = ros::Time::now();
 			double angle_rad, dt;

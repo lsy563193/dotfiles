@@ -342,7 +342,7 @@ void robot::robotbase_routine_cb()
 		/*------------setting for odom and publish odom topic --------*/
 		boost::mutex::scoped_lock lock(odom_mutex_);
 //		odom.setMovingSpeed(static_cast<float>((wheel.getLeftWheelActualSpeed() + wheel.getRightWheelActualSpeed()) / 2.0));
-		odom.setRadian(degree_to_radian(gyro.getAngleY()));
+		odom.setOriginRadian(degree_to_radian(gyro.getAngleY()));
 		odom.setAngleSpeed(gyro.getAngleV());
 		cur_time = ros::Time::now();
 		double angle_rad, dt;
@@ -577,7 +577,18 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 				robot_tf_->lookupTransform("/map", "/base_link", ros::Time(0), transform);
 //				ROS_ERROR("get transform!!!!!!!!!!!!!!!!!");
 				slam_pos = transform.getOrigin();
-				slam_rad  = (getBaselinkFrameType() == SLAM_POSITION_SLAM_ANGLE) ? tf::getYaw(transform.getRotation()) : 0;
+				if(getBaselinkFrameType() == SLAM_POSITION_SLAM_ANGLE)
+				{
+					slam_rad  = tf::getYaw(transform.getRotation()) ;
+//					auto diff = slam_rad - odom.getRadian();
+//					if(diff > degree_to_radian(1))
+//					{
+//						odom.setRadianOffset(slam_rad - odom.getOriginRadian());
+//						beeper.beepForCommand(VALID);
+//					}
+				}
+				else
+					slam_rad = odom.getRadian();
 				tmp_pos = slam_pos;
 				tmp_rad = slam_rad;
 

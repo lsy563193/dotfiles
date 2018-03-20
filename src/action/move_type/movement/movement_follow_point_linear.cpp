@@ -108,12 +108,16 @@ bool MovementFollowPointLinear::isFinish() {
 	{
 		if(sp_mt_->radian_diff_count == 10) {
 			sp_mt_->radian_diff_count++;
-
-//			auto offset_adjustment = getPosition().th - odom.getRadian();
-//			odom.setRadianOffset(odom.getRadianOffset() + offset_adjustment);
-
-//			sp_mt_->odom_turn_target_radian_ = ranged_radian(sp_mt_->turn_target_radian_ - offset_adjustment);
-//			beeper.beepForCommand(VALID);
+			auto offset_adjustment = ranged_radian(getPosition().th - odom.getRadian());
+			if(std::abs(offset_adjustment) > degree_to_radian(4))
+			{
+//				odom.setRadianOffset(getPosition().th - odom.getOriginRadian());
+				ROS_INFO("offset_adjustment");
+				beeper.beepForCommand(VALID);
+			}
+//		}
+		beeper.beepForCommand(INVALID);
+		ROS_ERROR("%s %d: Shutdown gyro dynamic. offset_adjustment(%f),rad diff(%f),rad(%f)", __FUNCTION__, __LINE__, radian_to_degree(offset_adjustment), ranged_radian(getPosition().th - odom.getRadian()), odom.getRadian());
 		}
 //		radian_diff = getPosition().courseToDest(calcTmpTarget());
 		radian_diff = ranged_radian(sp_mt_->turn_target_radian_ - odom.getRadian());
