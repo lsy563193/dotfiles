@@ -1,5 +1,6 @@
 #include <gyro.h>
 #include <event_manager.h>
+#include <mode.hpp>
 #include "map.h"
 #include "robot.hpp"
 #include "event_manager.h"
@@ -333,7 +334,7 @@ void GridMap::merge(GridMap source_map, bool add_slam_map_blocks_to_uncleaned,
 	source_map.getMapRange(CLEAN_MAP, &map_x_min, &map_x_max, &map_y_min, &map_y_max);
 	for (int16_t x = map_x_min; x <= map_x_max; x++)
 	{
-		for (int16_t y = map_x_min; y <= map_x_max; y++)
+		for (int16_t y = map_y_min; y <= map_y_max; y++)
 		{
 			CellState map_cell_state, source_map_cell_state;
 			map_cell_state = getCell(CLEAN_MAP, x, y);
@@ -352,7 +353,6 @@ void GridMap::merge(GridMap source_map, bool add_slam_map_blocks_to_uncleaned,
 
 			if (add_slam_map_blocks_to_uncleaned && map_cell_state == UNCLEAN && source_map_cell_state == SLAM_MAP_BLOCKED)
 				setCell(CLEAN_MAP,x,y, SLAM_MAP_BLOCKED);
-
 			if (add_slam_map_blocks_to_cleaned && map_cell_state == CLEANED && source_map_cell_state == SLAM_MAP_BLOCKED)
 				setCell(CLEAN_MAP,x,y, SLAM_MAP_BLOCKED);
 
@@ -360,7 +360,6 @@ void GridMap::merge(GridMap source_map, bool add_slam_map_blocks_to_uncleaned,
 				setCell(CLEAN_MAP,x,y, CLEANED);
 		}
 	}
-
 }
 
 void GridMap::slamMapToWorld(double origin_x_, double origin_y_, float resolution_, int16_t slam_map_x,
@@ -925,8 +924,8 @@ void GridMap::setCircleMarkers(Point_t point, bool cover_block, int radius, Cell
 	Point_t tmp_point = point;
 	auto deg_point_th = static_cast<int16_t>(radian_to_degree(point.th));
 	ROS_INFO("\033[1;40;32m deg_point_th = %d, point(%d,%d)\033[0m",deg_point_th,point.toCell().x,point.toCell().y);
-	for (int dy = 0; dy < RADIUS_CELL; ++dy) {
-		for (int16_t angle_i = 0; angle_i <360; angle_i += 1) {
+	for (int16_t angle_i = 0; angle_i <360; angle_i += 1) {
+		for (int dy = 0; dy < RADIUS_CELL; ++dy) {
 			tmp_point.th = ranged_radian(degree_to_radian(deg_point_th + angle_i));
 			Cell_t cell = tmp_point.getRelative(0, dy * CELL_SIZE).toCell();
 			auto status = getCell(CLEAN_MAP,cell.x,cell.y);
