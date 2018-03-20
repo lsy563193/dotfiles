@@ -38,7 +38,7 @@
 #define OBS_FIXTURE_LIMIT_L	(uint16_t)700
 #define WALL_FIXTURE_LIMIT_H	(uint16_t)500
 #define WALL_FIXTURE_LIMIT_L	(uint16_t)140
-#define SWING_CURRENT_LIMIT	(uint16_t)1000
+#define SWING_CURRENT_LIMIT	(uint16_t)2500
 
 //index for array "baseline"
 #define LEFT_WHEEL			0
