@@ -190,7 +190,7 @@ bool MoveTypeLinear::handleMoveBackEvent(ACleanMode *p_clean_mode)
 	else if(ev.tilt_triggered){
 		p_clean_mode->moveTypeLinearSaveBlocks();
 		movement_i_ = mm_back;
-		sp_movement_.reset(new MovementBack(0.3, BACK_MAX_SPEED));
+		sp_movement_.reset(new MovementBack(0.15, BACK_MAX_SPEED));
 		return true;
 	}
 

@@ -281,7 +281,7 @@ private:
 
 	//for check tilit
 	const double ANGLE_LIMIT{5};
-	const double TIME_LIMIT{1};
+	const double TIME_LIMIT{0.5};
 	double tilt_time = 0;
 	bool is_first_tilt{true};
 
