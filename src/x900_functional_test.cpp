@@ -34,7 +34,6 @@ void x900_functional_test(std::string serial_port, int baud_rate, std::string li
 	}
 	ROS_INFO("Test serial port succeeded!!");
 
-	send_thread_enable = true;
 	recei_thread_enable = true;
 
 	// Wait for the end of voice playing
@@ -67,7 +66,6 @@ void x900_functional_test(std::string serial_port, int baud_rate, std::string li
 void error_loop(uint8_t test_stage, uint16_t error_code, uint16_t current_data)
 {
 	infrared_display.displayErrorMsg(test_stage, current_data, error_code);
-
 	double alarm_time = ros::Time::now().toSec();
 	speaker.play(VOICE_TEST_FAIL);
 	ROS_ERROR("%s %d: Test ERROR.", __FUNCTION__, __LINE__);
@@ -94,6 +92,7 @@ bool serial_port_test()
 	uint8_t receive_data[REC_LEN];
 	int test_frame_cnt = 50;
 
+	infrared_display.displayNormalMsg(1, 0);
 	serial.resetSendStream();
 	serial.flush();
 	for (uint8_t test_cnt = 0; test_cnt < test_frame_cnt; test_cnt++)
@@ -116,7 +115,7 @@ bool serial_port_test()
 			send_string_sum += std::to_string(serial.getSendData(i));
 		}
 		serial.sendData();
-//		robot::instance()->debugSendStream(serial.send_stream);
+//		serial.debugSendStream(serial.send_stream);
 
 		int read_ret = serial.read(receive_data, REC_LEN);
 
@@ -129,7 +128,7 @@ bool serial_port_test()
 
 		for (uint8_t i = CTL_WHEEL_LEFT_HIGH; i < CTL_CRC; i++)
 			receive_string_sum += std::to_string(receive_data[i]);
-//		robot::instance()->debugReceivedStream(receive_data);
+//		serial.debugReceivedStream(receive_data);
 	}
 
 	if (!test_ret)
@@ -235,6 +234,7 @@ void main_board_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &curren
 	while(ros::ok()) {
 		key_led.set(100, 100);
 		serial.setSendData(CTL_MIX, 1);
+		infrared_display.displayNormalMsg(test_stage-4, 0);
 		switch (test_stage) {
 			case FUNC_ELECTRICAL_AND_LED_TEST_MODE:/*---Main board electrical specification and LED test---*/
 				electrical_specification_and_led_test(baseline, is_fixture, test_stage, error_code, current_data);
@@ -456,8 +456,8 @@ void electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixture,
 		if(should_save_baseline)
 		{
 			should_save_baseline = false;
-			baseline[LEFT_WHEEL] = ((uint16_t) buf[7] << 8) | buf[8];
-			baseline[RIGHT_WHEEL] = ((uint16_t) buf[9] << 8) | buf[10];
+			baseline[LEFT_WHEEL] = ((uint16_t) buf[4] << 8) | buf[5];
+			baseline[RIGHT_WHEEL] = ((uint16_t) buf[6] << 8) | buf[7];
 			baseline[LEFT_BRUSH] = ((uint16_t) buf[11] << 8) | buf[12];
 			baseline[MAIN_BRUSH] = ((uint16_t) buf[13] << 8) | buf[14];
 			baseline[RIGHT_BRUSH] = ((uint16_t) buf[15] << 8) | buf[16];
@@ -469,7 +469,7 @@ void electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixture,
 				baseline_voltage = baseline[REF_VOLTAGE_ADC] * 330 / 4096;
 				if (baseline_voltage < 125 || baseline_voltage > 135)
 				{
-					error_code = BASELINE_CURRENT_ERROR;
+					error_code = BASELINE_VOLTAGE_ERROR;
 					current_data = baseline_voltage;
 					return ;
 				}
@@ -501,7 +501,7 @@ void electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixture,
 			case 2:/*---check baseline current---*/
 				if (count_20ms < 10) {
 					count_20ms++;
-					temp_sum += static_cast<uint16_t>(buf[5] << 8) | buf[6];
+					temp_sum += static_cast<uint16_t>(buf[8] << 8) | buf[9];
 				}
 				else {
 					temp_sum = (temp_sum / 10 - baseline[REF_VOLTAGE_ADC]) * 330 * 20 / 4096;
@@ -915,9 +915,9 @@ void rcon_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data
 }
 void water_tank_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data)
 {
-	uint16_t test_result = 0;
 	uint8_t step = 0;
 	uint8_t count = 0;
+	uint8_t test_result = 0;
 	uint8_t buf[REC_LEN];
 	serial.setSendData(CTL_WORK_MODE, FUNC_WATER_TANK_TEST_MODE);
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
@@ -946,16 +946,19 @@ void water_tank_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &curren
 			case 1:
 				if(static_cast<uint16_t>(buf[2] << 8 | buf[3]) > SWING_CURRENT_LIMIT)
 				{
-					count++;
-					if(count > 2)
-						return ;
+					if(count < 200)count++;
 				}
-				else
-					count = 0;
+				if(count > 20)
+					test_result |= 0x01;
 				if(buf[36])
 				{
-					error_code = SWING_MOTOR_ERROR;
-					current_data = static_cast<uint16_t>((buf[2] << 8) | buf[3]);
+					if((test_result & 0x01) != 0x01)
+					{
+						error_code = SWING_MOTOR_ERROR;
+						current_data = static_cast<uint16_t>((buf[2] << 8) | buf[3]);
+					}
+					else
+						test_stage++;
 					return ;
 				}
 				break;
@@ -972,6 +975,10 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 	uint32_t current_current=0;
 	uint32_t motor_current=0;
 	serial.setSendData(CTL_WORK_MODE, FUNC_WHEELS_TEST_MODE);
+	serial.setSendData(CTL_WHEEL_LEFT_HIGH, 0);
+	serial.setSendData(CTL_WHEEL_LEFT_LOW, 0);
+	serial.setSendData(CTL_WHEEL_RIGHT_HIGH, 0);
+	serial.setSendData(CTL_WHEEL_RIGHT_LOW, 0);
 	serial.setSendData(CTL_LEFT_WHEEL_TEST_MODE, 0);
 	serial.setSendData(CTL_RIGHT_WHEEL_TEST_MODE, 0);
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
@@ -1169,7 +1176,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				serial.setSendData(CTL_WHEEL_RIGHT_HIGH, 300 >> 8);
 				serial.setSendData(CTL_WHEEL_RIGHT_LOW, 300 & 0xFF);
 				count++;
-				if (count > 50) {
+				if (count > 100) {
 					current_current = 0;
 					motor_current = 0;
 					step++;
@@ -1616,6 +1623,7 @@ void vacuum_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 	serial.setSendData(CTL_VACUUM_TEST_MODE, 0);
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
 	while(ros::ok()) {
+		serial.debugSendStream(serial.send_stream);
 		/*--------data extrict from serial com--------*/
 		ROS_ERROR_COND(pthread_mutex_lock(&recev_lock) != 0, "robotbase pthread receive lock fail");
 		ROS_ERROR_COND(pthread_cond_wait(&recev_cond, &recev_lock) != 0, "robotbase pthread receive cond wait fail");
@@ -1628,9 +1636,9 @@ void vacuum_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 		}
 		switch (step) {
 			case 1:
-				serial.setSendData(CTL_VACCUM_PWR, 60);
+				serial.setSendData(CTL_VACCUM_PWR, 80);
 				count++;
-				if (count > 50) {
+				if (count > 100) {
 					current_current = 0;
 					motor_current = 0;
 					step++;
@@ -1640,7 +1648,7 @@ void vacuum_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 			case 2:
 				count++;
 				if (count <= 10) {
-					current_current += (static_cast<uint16_t>(buf[4] << 8 | buf[5]) - baseline[REF_VOLTAGE_ADC]);
+					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
 					motor_current += static_cast<uint16_t>(buf[2] << 8 | buf[3]);
 				}
 				else {
@@ -1655,6 +1663,7 @@ void vacuum_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				if (current_current < 500 || current_current > 1100 || motor_current < 500 || motor_current > 1100) {
 					error_code = VACUUM_CURRENT_ERROR;
 					current_data = static_cast<uint16_t>(motor_current);
+					ROS_INFO("motor: %d, current: %d", motor_current,current_current);
 					return ;
 				}
 				else {
@@ -1701,7 +1710,7 @@ void vacuum_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 			case 7:
 				count++;
 				if (count <= 10) {
-					current_current += (static_cast<uint16_t>(buf[4] << 8 | buf[5]) - baseline[REF_VOLTAGE_ADC]);
+					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
 				}
 				else {
 					step++;
