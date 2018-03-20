@@ -10,6 +10,8 @@
 class WaterTank
 {
 public:
+	WaterTank();
+
 	// For checking whether robot is carrying a water tank.
 	bool checkEquipment();
 
@@ -46,6 +48,14 @@ public:
 
 	void updatePWM();
 
+	void setMode(uint8_t mode);
+
+	enum{
+		PUMP_LOW,
+		PUMP_MID,
+		PUMP_HIGH,
+	};
+
 private:
 	uint16_t current_{0};
 
@@ -60,6 +70,11 @@ private:
 	uint8_t pwm_{0};
 
 	double check_battery_time_stamp_{0};
+	double last_pump_time_stamp_{0};
+	double pump_time_interval_;
+	uint8_t pump_cnt_{0};
+	uint8_t pump_max_cnt_{3};
+	uint8_t pump_switch_{0x00};
 };
 
 extern WaterTank water_tank;
