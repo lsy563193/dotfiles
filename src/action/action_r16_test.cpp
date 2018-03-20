@@ -31,7 +31,7 @@ void ActionR16Test::run()
 	if (!Flash_test())
 	{
 		ROS_ERROR("%s %d: Flash test failed!!", __FUNCTION__, __LINE__);
-		error_loop(2, 0, FLASH_ERROR);
+		error_loop(2, 0, R16_FLASH_ERROR);
 	}
 	ROS_INFO("%s %d: Test for Flash succeeded.", __FUNCTION__, __LINE__);
 
