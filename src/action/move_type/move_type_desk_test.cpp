@@ -220,8 +220,8 @@ void MoveTypeDeskTest::deskTestRoutineThread()
 			angle_rad = odom.getRadian();
 			dt = (cur_time - last_time).toSec();
 			last_time = cur_time;
-			odom.setX(static_cast<float>(odom.getX() + (odom.getMovingSpeed() * cos(angle_rad)) * dt));
-			odom.setY(static_cast<float>(odom.getY() + (odom.getMovingSpeed() * sin(angle_rad)) * dt));
+			odom.setOriginX(static_cast<float>(odom.getOriginX() + (odom.getMovingSpeed() * cos(angle_rad)) * dt));
+			odom.setOriginY(static_cast<float>(odom.getOriginY() + (odom.getMovingSpeed() * sin(angle_rad)) * dt));
 			robot::instance()->updateRobotPositionForTest();
 			updatePosition();
 		}

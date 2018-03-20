@@ -16,28 +16,40 @@ Odom::~Odom()
 {
 }
 
-void Odom::setX(float x)
+void Odom::setOriginX(float x)
 {
-//	pose.setX(x + x_offset_);
+//	pose.setOriginX(x + x_offset_);
 	x_ = x;
+}
+
+float Odom::getOriginX(void)
+{
+//	return pose.getOriginX();
+	return x_;
+}
+
+void Odom::setOriginY(float y)
+{
+//	pose.setOriginY(y+y_offset_);
+	y_ = y;
+}
+
+float Odom::getOriginY(void)
+{
+//	return pose.getOriginY();
+	return y_;
 }
 
 float Odom::getX(void)
 {
-//	return pose.getX();
-	return x_;
-}
-
-void Odom::setY(float y)
-{
-//	pose.setY(y+y_offset_);
-	y_ = y;
+//	return pose.getOriginY();
+	return x_ + x_offset_;
 }
 
 float Odom::getY(void)
 {
-//	return pose.getY();
-	return y_;
+//	return pose.getOriginY();
+	return y_ + y_offset_;
 }
 /*
 

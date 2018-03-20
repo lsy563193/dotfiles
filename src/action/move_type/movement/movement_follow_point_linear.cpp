@@ -33,7 +33,7 @@ void MovementFollowPointLinear::scaleCorrectionPos(Point_t &tmp_pos) {
 		return;
 
 	auto target_xy = (isXAxis(dir)) ? p_cm->iterate_point_.y : p_cm->iterate_point_.x;
-//	auto slam_xy = (isXAxis(dir)) ? slam_pos.getY() : slam_pos.getX();
+//	auto slam_xy = (isXAxis(dir)) ? slam_pos.getOriginY() : slam_pos.getOriginX();
 	auto slam_xy = (isXAxis(dir)) ? curr.y : curr.x;
 	auto diff_xy = (slam_xy - target_xy)/3;
 
@@ -108,16 +108,32 @@ bool MovementFollowPointLinear::isFinish() {
 	{
 		if(sp_mt_->radian_diff_count == 10) {
 			sp_mt_->radian_diff_count++;
-			auto offset_adjustment = ranged_radian(getPosition().th - odom.getRadian());
-			if(std::abs(offset_adjustment) > degree_to_radian(4))
+			auto offset_rad = ranged_radian(getPosition().th - odom.getRadian());
+			auto offset_x = getPosition().x - odom.getX();
+			auto offset_y = getPosition().y - odom.getY();
+			if(std::abs(offset_rad) > degree_to_radian(4))
 			{
-//				odom.setRadianOffset(getPosition().th - odom.getOriginRadian());
-				ROS_INFO("offset_adjustment");
-				beeper.beepForCommand(VALID);
+				odom.setRadianOffset(getPosition().th - odom.getOriginRadian());
+				ROS_INFO("offset_rad");
+//				beeper.beepForCommand(VALID);
 			}
+
+
 //		}
-		beeper.beepForCommand(INVALID);
-		ROS_ERROR("%s %d: Shutdown gyro dynamic. offset_adjustment(%f),rad diff(%f),rad(%f)", __FUNCTION__, __LINE__, radian_to_degree(offset_adjustment), ranged_radian(getPosition().th - odom.getRadian()), odom.getRadian());
+/*	if(getPosition().x - odom.getX()>= CELL_SIZE/2)
+			{
+				odom.setXOffset(getPosition().x - odom.getOriginX());
+				beeper.beepForCommand(INVALID);
+			}
+			if(getPosition().y - odom.getY()>= CELL_SIZE/2)
+			{
+				odom.setYOffset(getPosition().y - odom.getOriginY());
+				beeper.beepForCommand(VALID);
+			}*/
+//		beeper.beepForCommand(INVALID);
+		ROS_ERROR("offset_rad(%f),rad diff(%f),rad(%f)", radian_to_degree(offset_rad), ranged_radian(getPosition().th - odom.getRadian()), odom.getRadian());
+		ROS_ERROR("offset_rad(%f),x_diff(%f),x(%f)", offset_x, getPosition().x - odom.getX(), odom.getX());
+		ROS_ERROR("offset_rad(%f),y_diff(%f),y(%f)", offset_y, getPosition().y - odom.getY(), odom.getY());
 		}
 //		radian_diff = getPosition().courseToDest(calcTmpTarget());
 		radian_diff = ranged_radian(sp_mt_->turn_target_radian_ - odom.getRadian());
@@ -129,7 +145,7 @@ bool MovementFollowPointLinear::isFinish() {
 	auto tmp_pos = getPosition();
 //	double	tmp_rad{tmp_pos.th};
 	scaleCorrectionPos(tmp_pos);
-//	Point_t correct_p = Point_t{tmp_pos.getX(),tmp_pos.getY(), tmp_rad};
+//	Point_t correct_p = Point_t{tmp_pos.getOriginX(),tmp_pos.getOriginY(), tmp_rad};
 	radian_diff = tmp_pos.courseToDest(calcTmpTarget());
 
 //	ROS_ERROR("count(%d), radian_diff(%f, %f,%f),",sp_mt_->radian_diff_count , radian_to_degree(sp_mt_->turn_target_radian_),

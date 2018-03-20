@@ -13,9 +13,11 @@ public:
 	Odom();
 	~Odom();
 
-	void setX(float x);
+	void setOriginX(float x);
+	float getOriginX();
+	void setOriginY(float y);
+	float getOriginY();
 	float getX();
-	void setY(float y);
 	float getY();
 //	void setZ(float z);
 //	float getZ();

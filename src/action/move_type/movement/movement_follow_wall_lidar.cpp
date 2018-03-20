@@ -126,7 +126,7 @@ Point_t MovementFollowWallLidar::calcTmpTarget() {
 
 bool MovementFollowWallLidar::isFinish() {
 	radian_diff = getPosition().courseToDest(calcTmpTarget());
-//	Point_t odom_p = {odom.getX(),odom.getY(),odom.getRadian()};
+//	Point_t odom_p = {odom.getOriginX(),odom.getOriginY(),odom.getRadian()};
 //	radian_diff = odom_p.courseToDest(calcTmpTarget());
 	if(AMovementFollowPoint::isFinish())
 		return true;

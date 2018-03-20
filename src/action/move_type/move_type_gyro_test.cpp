@@ -63,12 +63,12 @@ void MoveTypeGyroTest::gyroTestRoutineThread()
 			last_time = cur_time;
 			odom.setMovingSpeed(static_cast<float>((wheel.getLeftEncoderCnt() + wheel.getRightEncoderCnt()) *
 												   WHEEL_ENCODER_TO_MILLIMETER / 1000 / 2.0 / dt));
-			odom.setX(static_cast<float>(odom.getX() + ((wheel.getLeftEncoderCnt() + wheel.getRightEncoderCnt())
-														* WHEEL_ENCODER_TO_MILLIMETER * cos(angle_rad) / 1000 / 2)));
-			odom.setY(static_cast<float>(odom.getY() + ((wheel.getLeftEncoderCnt() + wheel.getRightEncoderCnt())
-														* WHEEL_ENCODER_TO_MILLIMETER * sin(angle_rad) / 1000 / 2)));
-//			odom.setX(static_cast<float>(odom.getX() + (odom.getMovingSpeed() * cos(angle_rad)) * dt));
-//			odom.setY(static_cast<float>(odom.getY() + (odom.getMovingSpeed() * sin(angle_rad)) * dt));
+			odom.setOriginX(static_cast<float>(odom.getOriginX() + ((wheel.getLeftEncoderCnt() + wheel.getRightEncoderCnt())
+																												* WHEEL_ENCODER_TO_MILLIMETER * cos(angle_rad) / 1000 / 2)));
+			odom.setOriginY(static_cast<float>(odom.getOriginY() + ((wheel.getLeftEncoderCnt() + wheel.getRightEncoderCnt())
+																												* WHEEL_ENCODER_TO_MILLIMETER * sin(angle_rad) / 1000 / 2)));
+//			odom.setOriginX(static_cast<float>(odom.getOriginX() + (odom.getMovingSpeed() * cos(angle_rad)) * dt));
+//			odom.setOriginY(static_cast<float>(odom.getOriginY() + (odom.getMovingSpeed() * sin(angle_rad)) * dt));
 			robot::instance()->updateRobotPositionForTest();
 			updatePosition();
 		}
