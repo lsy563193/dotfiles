@@ -26,7 +26,7 @@
 
 #include "error.h"
 
-#define RCON_ROTATE_SPEED (ROTATE_TOP_SPEED / 3)
+#define RCON_ROTATE_SPEED (ROTATE_TOP_SPEED * 2 / 3)
 
 // Sequence for baseline setting.
 #define CTL_L_OBS_BL_H 2
@@ -264,6 +264,7 @@ void MoveTypeDeskTest::deskTestRoutineThread()
 			updatePosition();
 		}
 	}
+	pthread_cond_broadcast(&serial_data_ready_cond);
 	event_manager_thread_kill = true;
 	ROS_ERROR("%s,%d,exit",__FUNCTION__,__LINE__);
 }
@@ -480,6 +481,8 @@ bool MoveTypeDeskTest::checkStage2Finish()
 					brush.normalOperate();
 					vacuum.setMode(Vac_Normal);
 				}
+				else if (test_step_ == 1)
+					c_rcon.resetStatus();
 				test_step_++;
 			}
 			else
@@ -506,7 +509,7 @@ bool MoveTypeDeskTest::checkStage2Finish()
 			test_step_++;
 			lidar_check_cnt_ = 0;
 			p_movement_.reset();
-			p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-179), RCON_ROTATE_SPEED));
+			p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-178), RCON_ROTATE_SPEED));
 			ROS_INFO("%s %d: Enter rcon turning 1.", __FUNCTION__, __LINE__);
 			break;
 		}
@@ -527,7 +530,7 @@ bool MoveTypeDeskTest::checkStage2Finish()
 			}
 			test_step_++;
 			p_movement_.reset();
-			p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-179), RCON_ROTATE_SPEED));
+			p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-178), RCON_ROTATE_SPEED));
 			break;
 		}
 		default://case 6:
@@ -602,7 +605,40 @@ bool MoveTypeDeskTest::checkStage3Finish()
 	right_obs_max_ = (obs.getRight() > right_obs_max_) ? obs.getRight() : right_obs_max_;
 	switch (test_step_)
 	{
-		case 0: // For going towards the wall and test for left bumper.
+		case 0: // For going near the wall.
+		{
+			if (bumper.getStatus())
+			{
+				p_movement_.reset();
+				p_movement_.reset(new MovementBack(0.01, BACK_MAX_SPEED));
+				test_step_++;
+			} else
+				p_movement_->run();
+			break;
+		}
+		case 1:
+		{
+			if (p_movement_->isFinish())
+			{
+				p_movement_.reset();
+				p_movement_.reset(new MovementTurn(getPosition().th - degree_to_radian(45), ROTATE_TOP_SPEED));
+				test_step_++;
+			} else
+				p_movement_->run();
+			break;
+		}
+		case 2:
+		{
+			if (p_movement_->isFinish())
+			{
+				p_movement_.reset();
+				p_movement_.reset(new MovementDirectGo(false, 1));
+				test_step_++;
+			} else
+				p_movement_->run();
+			break;
+		}
+		case 3: // For going towards the wall and test for left bumper.
 		{
 			if (bumper.getStatus() & BLOCK_LEFT)
 			{
@@ -621,19 +657,19 @@ bool MoveTypeDeskTest::checkStage3Finish()
 				p_movement_->run();
 			break;
 		}
-		case 1: // For moving back.
+		case 4: // For moving back.
 		{
 			if (p_movement_->isFinish())
 			{
 				test_step_++;
 				p_movement_.reset();
-				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(70), ROTATE_TOP_SPEED));
+				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(90), ROTATE_TOP_SPEED));
 			}
 			else
 				p_movement_->run();
 			break;
 		}
-		case 2: // For turning.
+		case 5: // For turning.
 		{
 			if (p_movement_->isFinish())
 			{
@@ -646,7 +682,7 @@ bool MoveTypeDeskTest::checkStage3Finish()
 				p_movement_->run();
 			break;
 		}
-		case 3: // For going towards the wall and test for right bumper.
+		case 6: // For going towards the wall and test for right bumper.
 		{
 			if (p_movement_->isFinish())
 			{
@@ -665,19 +701,19 @@ bool MoveTypeDeskTest::checkStage3Finish()
 				p_movement_->run();
 			break;
 		}
-		case 4: // For moving back.
+		case 7: // For moving back.
 		{
 			if (p_movement_->isFinish())
 			{
 				test_step_++;
 				p_movement_.reset();
-				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-120), ROTATE_TOP_SPEED));
+				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-130), ROTATE_TOP_SPEED));
 			}
 			else
 				p_movement_->run();
 			break;
 		}
-		case 5: // For turning to follow wall and check for OBS.
+		case 8: // For turning to follow wall and check for OBS.
 		{
 			if (p_movement_->isFinish())
 			{
@@ -1183,8 +1219,21 @@ bool MoveTypeDeskTest::checkStage6Finish()
 					test_stage_ = 99;
 				}
 				else
-					return true;
+				{
+					p_movement_.reset();
+					p_movement_.reset(
+							new MovementTurn(getPosition().th + degree_to_radian(45), ROTATE_TOP_SPEED * 2 / 3));
+					test_step_++;
+				}
 			} else
+				p_movement_->run();
+			break;
+		}
+		case 2:
+		{
+			if (p_movement_->isFinish())
+				return true;
+			else
 				p_movement_->run();
 			break;
 		}

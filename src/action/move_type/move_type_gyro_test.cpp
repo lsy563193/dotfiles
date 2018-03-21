@@ -75,6 +75,7 @@ void MoveTypeGyroTest::gyroTestRoutineThread()
 			updatePosition();
 		}
 	}
+	pthread_cond_broadcast(&serial_data_ready_cond);
 	event_manager_thread_kill = true;
 	ROS_ERROR("%s,%d,exit",__FUNCTION__,__LINE__);
 }
