@@ -26,6 +26,7 @@ bool ActionAlign::isFinish()
 //		ROS_INFO("%s %d: align_radian angle (%f).", __FUNCTION__, __LINE__, radian_to_degree(align_radian));
 		return true;
 	}
+
 	return false;
 }
 
