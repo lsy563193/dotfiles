@@ -16,6 +16,7 @@ CleanModeExploration::CleanModeExploration()
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
 	IMoveType::sp_mode_ = this; // todo: is this sentence necessary? by Austin
 	go_home_path_algorithm_.reset();
+	error_marker_.clear();
 	clean_map_.mapInit();
 }
 
@@ -26,7 +27,9 @@ CleanModeExploration::~CleanModeExploration()
 bool CleanModeExploration::mapMark()
 {
 	clean_map_.merge(slam_grid_map, true, true, false, false, false, false);
-	clean_map_.setCircleMarkers(getPosition(),false,10,CLEANED);
+	clean_map_.setCircleMarkers(getPosition(),10,CLEANED,error_marker_);
+	resetErrorMarker();
+
 	setBlocks(iterate_point_.dir);
 	if(mark_robot_)
 		clean_map_.markRobot(CLEAN_MAP);
@@ -117,6 +120,24 @@ void CleanModeExploration::switchInStateInit() {
 	sp_state->init();
 }
 
+bool CleanModeExploration::updateActionInStateInit() {
+	if (action_i_ == ac_null)
+		action_i_ = ac_open_gyro;
+	else if (action_i_ == ac_open_gyro) {
+		vacuum.setLastMode();
+		brush.normalOperate();
+		action_i_ = ac_open_lidar;
+	}
+	else if (action_i_ == ac_open_lidar)
+		action_i_ = ac_align;
+	else if(action_i_ == ac_align)
+		action_i_ = ac_open_slam;
+	else // action_open_slam
+		return false;
+
+	ACleanMode::genNextAction();
+	return true;
+}
 //state GoHomePoint
 void CleanModeExploration::switchInStateGoHomePoint() {
 	PP_INFO();
@@ -145,4 +166,21 @@ bool CleanModeExploration::markMapInNewCell() {
 		mapMark();
 	return true;
 }
+
+void CleanModeExploration::resetErrorMarker() {
+	//set unclean to map
+	auto time = ros::Time::now().toSec();
+	for(auto ite = error_marker_.begin();ite != error_marker_.end();ite++){
+		if(time - ite->time > 20){
+			if(clean_map_.getCell(CLEAN_MAP,ite->x,ite->y) == CLEANED &&
+					slam_grid_map.getCell(CLEAN_MAP,ite->x,ite->y) != SLAM_MAP_CLEANABLE)
+				clean_map_.setCell(CLEAN_MAP,ite->x,ite->y,UNCLEAN);
+			if(error_marker_.empty())
+				break;
+			error_marker_.erase(ite);
+		}
+	}
+}
+
+
 
