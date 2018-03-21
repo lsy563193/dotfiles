@@ -47,7 +47,6 @@ bool Dev::tx( const std::vector<uint8_t> &data ) const
 	}
 
 	size_t offset = 0;
-	ROS_INFO("\033[1;40;34m tx data = \033[0m");
 	do
 	{
 		const int len = ::write( dev_, data.data() + offset, data.size() );
@@ -56,16 +55,20 @@ bool Dev::tx( const std::vector<uint8_t> &data ) const
 			ROS_WARN( "wifi::Dev::tx,Failed while write: %d", errno );
 			return false;
 		}
-	//for tmp test
+		//for tmp test
+		std::string msg("\033[1;40;34m tx data = \033[0m");
+		char buf[30] = {0};
 		for(int i=0;i<len;i++){
 			if(i == 5)
-				printf("\033[35m0x%x\033[0m,",data[i]);
+				sprintf(buf,"\033[35m0x%x\033[0m,",data[i]);
 			else
-				printf("0x%x,",data[i]);
+				sprintf(buf,"0x%x,",data[i]);
+			msg+=buf;
 		}
+		ROS_INFO("%s",msg.c_str());
+
 		offset += len;
 	} while ( offset < data.size() );
-	std::cout<<'\n';
 	return true;
 }
 
@@ -84,15 +87,17 @@ std::vector<uint8_t> Dev::rx() const
 		return {};
 	}
 	//for tmp test
-	ROS_INFO("\033[1;40;35m rx data =\033[0m");
+	std::string msg("\033[1;40;35m rx data =\033[0m");
+	char bff[30];
 	for(int i=0;i<len;i++){
 		if(i == 5)
-			printf("\033[35m0x%x\033[0m,",buf[i]);
+			sprintf(bff,"\033[35m0x%x\033[0m,",buf[i]);
 		else
-			printf("0x%x,",buf[i]);
+			sprintf(bff,"0x%x,",buf[i]);
+		msg+=bff;
 	}
+	ROS_INFO("%s",msg.c_str());
 
-	printf("\n");
 	return std::vector<uint8_t>(buf, buf + len);
 }
 

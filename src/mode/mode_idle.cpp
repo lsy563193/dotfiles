@@ -295,9 +295,9 @@ void ModeIdle::remote_wifi(bool state_now,bool state_last)
 {
 	ROS_INFO("%s,%d,wifi state = %d ",__FUNCTION__,__LINE__,S_Wifi::is_wifi_connected_);
 	remote.reset();
-	//if(S_Wifi::is_wifi_connected_)
+	if(S_Wifi::is_wifi_connected_)
 		s_wifi.rebind();
-	//else
+	else
 		s_wifi.smartLink();
 
 }
@@ -419,16 +419,6 @@ bool ModeIdle::isFinish()
 		robot::instance()->setBatterLow(true);
 	}
 	MutexLock lock(&bind_lock_);
-	/*
-	if(remote.get() == REMOTE_WIFI)//
-	{
-		if(s_wifi.is_wifi_connected_)
-			s_wifi.rebind();
-		else
-			s_wifi.smartLink();
-	}
-	else
-	*/
 	if(trigger_wifi_rebind_)
 	{
 		trigger_wifi_rebind_ = false;
