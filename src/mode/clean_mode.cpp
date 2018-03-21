@@ -579,7 +579,7 @@ uint8_t ACleanMode::setFollowWall(GridMap& map, bool is_left,const Points& passe
 
 void ACleanMode::setLinearCleaned()
 {
-	ROS_ERROR("setLinearCleaned cells:");
+	ROS_INFO("setLinearCleaned cells:");
 	// start-1
 	auto p_start = passed_path_.front();
 	auto c_start_last = p_start.toCell() - cell_direction_[p_start.dir];
@@ -617,7 +617,7 @@ void ACleanMode::setLinearCleaned()
 			{
 				auto c_it_shift = c_it + cell_direction_[p_end.dir];
 				ROS_WARN("!!!!!!block end_point +1 dir is in block,move front 1 cell c_it(%d,%d)->c_it_shift(%d,%d)",c_it.x, c_it.y,c_it_shift.x,c_it_shift.y);
-				c_blocks.insert({c_val, c_it_shift});
+				c_blocks.insert({c_block.first, c_it_shift});
 			}
 		}
 	}
