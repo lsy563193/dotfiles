@@ -16,13 +16,12 @@ class WifiLed
 public:
 	void set(bool _switch);
 
-// time_ms is used for both LED_FLASH type and LED_BREATH type, the default value is for LED_BREATH.
 	void setMode(uint8_t type, bool _switch, uint16_t time_ms = 3000);
 
 	void processLed();
 private:
 
-// For key_led control.
+// For wifi_led control.
 	uint8_t led_type_{LED_STEADY};
 	bool led_update_flag_{false};
 	bool led_switch_{OFF};

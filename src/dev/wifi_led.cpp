@@ -60,5 +60,4 @@ void WifiLed::processLed()
 			break;
 		}
 	}
-	//ROS_INFO("%s %d: live_led_cnt_for_switch_: %d, led_brightness: %d.", __FUNCTION__, __LINE__, live_led_cnt_for_switch_, led_brightness);
 }
