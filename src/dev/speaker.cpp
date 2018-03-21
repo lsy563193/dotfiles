@@ -52,7 +52,7 @@ void Speaker::playRoutine()
 				break_playing_ = false;
 
 			closePcmDriver();
-			ROS_INFO("%s %d: Finish playing voice:%d", __FUNCTION__, __LINE__, curr_voice_.type);
+			//ROS_INFO("%s %d: Finish playing voice:%d", __FUNCTION__, __LINE__, curr_voice_.type);
 			finish_playing_ = true;
 		}
 		else
@@ -65,13 +65,13 @@ void Speaker::play(VoiceType voice_type, bool can_be_interrupted)
 {
 	if (!finish_playing_ && !curr_voice_.can_be_interrupted)
 	{
-		ROS_INFO("%s %d: Wait for previous voice finish.", __FUNCTION__, __LINE__);
+		//ROS_INFO("%s %d: Wait for previous voice finish.", __FUNCTION__, __LINE__);
 		while (!finish_playing_)
 			usleep(1500);
 	}
 
-	ROS_INFO("%s %d: Ask play_routine to play voice:%d.(%sallowed to be interrupted)",
-			 __FUNCTION__, __LINE__, voice_type, can_be_interrupted ? "" : "not ");
+	//ROS_INFO("%s %d: Ask play_routine to play voice:%d.(%sallowed to be interrupted)",
+			 //__FUNCTION__, __LINE__, voice_type, can_be_interrupted ? "" : "not ");
 
 	if (!finish_playing_)
 	{
@@ -348,4 +348,5 @@ void Speaker::stop()
 bool Speaker::test()
 {
 	speaker.play(VOICE_TEST_MODE, false);
+	speaker.play(VOICE_SOFTWARE_VERSION, false);
 }

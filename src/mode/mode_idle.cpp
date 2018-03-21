@@ -3,12 +3,15 @@
 #include "dev.h"
 #include "error.h"
 #include "mode.hpp"
+#include "wifi/wifi.h"
 
-ModeIdle::ModeIdle()
+ModeIdle::ModeIdle():
+	bind_lock_(PTHREAD_MUTEX_INITIALIZER)
 {
 	ROS_INFO("%s %d: Entering Idle mode\n=========================" , __FUNCTION__, __LINE__);
 	register_events();
 	serial.setWorkMode(IDLE_MODE);
+	setNextMode(md_idle);
 	sp_action_.reset(new ActionIdle);
 	action_i_ = ac_idle;
 
@@ -20,7 +23,9 @@ ModeIdle::ModeIdle()
 
 	plan_activated_status_ = false;
 	ROS_INFO("%s %d: Current battery voltage \033[32m%5.2f V\033[0m.", __FUNCTION__, __LINE__, (float)battery.getVoltage()/100.0);
-
+	trigger_wifi_rebind_ = false;
+	trigger_wifi_smart_link_ = false;
+	trigger_wifi_smart_ap_link_ = false;
 	/*---reset values for rcon handle---*/
 	// todo: first_time_seen_charger_ does not mean as words in reality. It is just the time that enter this mode.
 	first_time_seen_charger_ = ros::Time::now().toSec();
@@ -250,18 +255,65 @@ void ModeIdle::remoteMax(bool state_now, bool state_last)
 	remote.reset();
 }
 
+void ModeIdle::lidar_bumper(bool state_now, bool state_last)
+{
+	static uint16_t lidar_bumper_cnt = 0;
+	if( ! s_wifi.is_wifi_connected_){
+		MutexLock lock(&bind_lock_);
+		lidar_bumper_cnt++;
+		if(lidar_bumper_cnt >=250 && !trigger_wifi_smart_link_){
+			lidar_bumper_cnt = 0;
+			beeper.beepForCommand(VALID);
+			trigger_wifi_smart_link_ = true;
+			ROS_INFO("%s,%d smart link",__FUNCTION__,__LINE__);
+		}
+		else if(lidar_bumper_cnt >= 150 && trigger_wifi_smart_link_ ){
+			lidar_bumper_cnt = 0;
+			beeper.beepForCommand(VALID);
+			trigger_wifi_smart_link_ = false;
+			trigger_wifi_smart_ap_link_ = true;
+			ROS_INFO("%s,%d,smart link ap",__FUNCTION__,__LINE__);
+		}
+	}
+	else if(!trigger_wifi_rebind_ && s_wifi.is_wifi_connected_)
+	{
+		MutexLock lock(&bind_lock_);
+		lidar_bumper_cnt++;
+		if(lidar_bumper_cnt >= 250){
+			lidar_bumper_cnt = 0;
+			beeper.beepForCommand(VALID);
+			trigger_wifi_rebind_ = true;
+			ROS_INFO("%s,%d, rebind",__FUNCTION__,__LINE__);
+		}
+	}
+
+
+
+}
+
+void ModeIdle::remote_wifi(bool state_now,bool state_last)
+{
+	ROS_INFO("%s,%d,wifi state = %d ",__FUNCTION__,__LINE__,S_Wifi::is_wifi_connected_);
+	remote.reset();
+	if(S_Wifi::is_wifi_connected_)
+		s_wifi.rebind();
+	else
+		s_wifi.smartLink();
+
+}
+
 void ModeIdle::remotePlan(bool state_now, bool state_last)
 {
 	if (robot_timer.getPlanStatus() == 1)
 	{
 		beeper.beepForCommand(VALID);
-		speaker.play(VOICE_APPOINTMENT_DONE, false);
+		speaker.play(VOICE_APPOINTMENT_DONE);
 		ROS_WARN("%s %d: Plan received.", __FUNCTION__, __LINE__);
 	}
 	else if (robot_timer.getPlanStatus() == 2)
 	{
 		beeper.beepForCommand(VALID);
-		speaker.play(VOICE_CANCEL_APPOINTMENT, false);
+		speaker.play(VOICE_CANCEL_APPOINTMENT);
 		ROS_WARN("%s %d: Plan cancel received.", __FUNCTION__, __LINE__);
 	}
 	else if (robot_timer.getPlanStatus() == 3)
@@ -366,5 +418,22 @@ bool ModeIdle::isFinish()
 		key_led.setMode(LED_BREATH, LED_ORANGE);
 		robot::instance()->setBatterLow(true);
 	}
+	MutexLock lock(&bind_lock_);
+	if(trigger_wifi_rebind_)
+	{
+		trigger_wifi_rebind_ = false;
+		s_wifi.rebind();
+	}
+	else if(trigger_wifi_smart_link_ && !bumper.getLidarBumperStatus())
+	{
+		trigger_wifi_smart_link_ = false;
+		s_wifi.smartLink();
+	}
+	else if(trigger_wifi_smart_ap_link_)
+	{
+		trigger_wifi_smart_ap_link_ = false;
+		s_wifi.smartApLink();
+	}
+
 	return false;
 }

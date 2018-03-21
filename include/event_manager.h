@@ -67,12 +67,14 @@ typedef struct {
 		bool remote_direction_right;
 		bool remote_direction_forward;
 		bool remote_direction_back;
+		bool remote_wifi;
 		bool slam_error;
 		bool tilt_triggered;
 		uint8_t charge_detect;
 		bool robot_stuck;
 		bool robot_slip;
 		bool lidar_stuck = false;
+		bool lidar_bumper;
 		uint8_t lidar_triggered;
 		bool cliff_all_triggered;
 }Ev_t;
@@ -187,15 +189,15 @@ virtual void batteryLow(bool state_now, bool state_last);
 virtual void chargeDetect(bool state_now, bool state_last);
 
 virtual void robotSlip(bool state_new, bool state_last);
-/*
-void lidar_bumper(bool state_new,bool state_last)
-{
-	g_lidar_bumper = robot::instance()->getLidarBumper();
-}
-*/
+
+virtual void lidar_bumper(bool state_new,bool state_last);
 
 // Lidar stuck
 virtual void lidarStuck(bool state_new, bool state_last);
+
+// remote wifi
+virtual void remote_wifi(bool state_new,bool state_last);
+
 /* Default: empty hanlder */
 //void empty(bool state_now, bool state_last);
 
@@ -294,6 +296,8 @@ typedef enum {
 	EVT_REMOTE_SPOT,
 
 	EVT_REMOTE_MAX,
+
+	EVT_REMOTE_WIFI,
 
 	EVT_BATTERY_HOME,
 	EVT_BATTERY_LOW,

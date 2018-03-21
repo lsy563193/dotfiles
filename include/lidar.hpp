@@ -8,9 +8,8 @@
 #include <visualization_msgs/Marker.h>
 #include <sensor_msgs/LaserScan.h>
 #include "mathematics.h"
+#include "robot.hpp"
 
-#define ON true
-#define OFF false
 class slip_scan_deque{
 public:
 	void push_back(sensor_msgs::LaserScan i){

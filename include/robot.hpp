@@ -23,6 +23,9 @@
 //#include "mode.hpp"
 #include <string.h>
 
+#define ON true
+#define OFF false
+
 #define  _RATE 50
 
 extern pthread_mutex_t recev_lock;
@@ -207,6 +210,12 @@ public:
 		return robot_current_;
 	}
 
+	boost::shared_ptr<Mode> p_mode{};
+	uint8_t getWorkMode()
+	{
+		return r16_work_mode_;
+	}
+
 private:
 
 	uint8_t getTestMode(void);
@@ -271,7 +280,6 @@ private:
 	void odomPublish(const tf::Vector3& robot_pos, double robot_radian_);
 //	void robot_map_metadata_cb(const nav_msgs::MapMetaData::ConstPtr& msg);
 
-	boost::shared_ptr<Mode> p_mode{};
 
 	bool is_locked_scan_ctrl_{false};
 

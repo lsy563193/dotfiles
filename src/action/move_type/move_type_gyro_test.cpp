@@ -12,6 +12,7 @@
 #include <beeper.h>
 #include <gyro.h>
 #include <infrared_display.hpp>
+#include <speaker.h>
 #include "move_type.hpp"
 #include "error.h"
 
@@ -21,7 +22,6 @@ MoveTypeGyroTest::MoveTypeGyroTest()
 
 	auto gyro_test_routine = new boost::thread(boost::bind(&MoveTypeGyroTest::gyroTestRoutineThread, this));
 
-	key_led.setMode(LED_FLASH, LED_ORANGE, 600);
 	p_movement_.reset(new ActionOpenGyro());
 	last_time_stamp_ = ros::Time::now().toSec();
 	infrared_display.displayNormalMsg(test_stage_, 0);
@@ -75,6 +75,7 @@ void MoveTypeGyroTest::gyroTestRoutineThread()
 			updatePosition();
 		}
 	}
+	pthread_cond_broadcast(&serial_data_ready_cond);
 	event_manager_thread_kill = true;
 	ROS_ERROR("%s,%d,exit",__FUNCTION__,__LINE__);
 }
@@ -163,6 +164,8 @@ void MoveTypeGyroTest::run()
 				if (diff > 4)
 				{
 					error_code_ = GYRO_ERROR;
+					error_stage_ = test_stage_;
+					error_content_ = static_cast<uint16_t>(diff * 10);
 					test_stage_ = 99;
 				}
 				else
@@ -198,7 +201,8 @@ void MoveTypeGyroTest::run()
 		{
 			ROS_ERROR("%s %d: error code:%d", __FUNCTION__, __LINE__, error_code_);
 			key_led.setMode(LED_STEADY, LED_RED);
-			infrared_display.displayErrorMsg(test_stage_, 0, error_code_);
+			speaker.play(VOICE_TEST_FAIL);
+			infrared_display.displayErrorMsg(error_stage_, error_content_, error_code_);
 			wheel.stop();
 			brush.stop();
 			vacuum.stop();
@@ -210,7 +214,8 @@ void MoveTypeGyroTest::run()
 			ROS_INFO("%s %d: Test finish.", __FUNCTION__, __LINE__);
 			key_led.setMode(LED_STEADY, LED_GREEN);
 			infrared_display.displayNormalMsg(0, 0);
-			beeper.beep(2, 40, 40, 3);
+			speaker.play(VOICE_TEST_SUCCESS);
+//			beeper.beep(2, 40, 40, 3);
 			wheel.stop();
 			brush.stop();
 			vacuum.stop();

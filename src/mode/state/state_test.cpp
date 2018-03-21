@@ -6,5 +6,5 @@
 #include "key_led.h"
 
 void StateTest::init() {
-	key_led.setMode(LED_STEADY, LED_GREEN);
+	key_led.setMode(LED_STEADY, LED_ORANGE);
 }

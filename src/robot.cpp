@@ -120,6 +120,7 @@ robot::~robot()
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
+	s_wifi.sleep();
 	water_tank.stop();
 	serial.setWorkMode(WORK_MODE);
 	usleep(40000);
@@ -390,7 +391,7 @@ void robot::robotbase_routine_cb()
 		/*------publish end -----------*/
 
 		// Check tilt
-#if 0
+#if 1
 		if (checkTilt()){
 			gyro.setTiltCheckingStatus(1);
 			beeper.beepForCommand(VALID);
@@ -486,6 +487,7 @@ void robot::runTestMode()
 			ROS_ERROR(" lidar bumper open fail!");
 	}
 
+	key_led.setMode(LED_STEADY, LED_ORANGE);
 	p_mode.reset(new CleanModeTest(r16_work_mode_));
 	p_mode->run();
 	g_pp_shutdown = true;
@@ -493,6 +495,7 @@ void robot::runTestMode()
 
 void robot::runWorkMode()
 {
+	s_wifi.resume();
 	auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
 	send_thread_enable = true;
 
@@ -852,6 +855,7 @@ Mode *getNextMode(int next_mode_i_)
 		case Mode::cm_wall_follow:
 			return new CleanModeFollowWall();
 		case Mode::cm_spot:
+			ROS_ERROR("!!!!!!!!!!!!!!cm_spot(%d)", Mode::cm_spot);
 			return new CleanModeSpot();
 //		case Mode::cm_test:
 //			return new CleanModeTest();

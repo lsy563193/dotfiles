@@ -918,21 +918,29 @@ bool GridMap::isFrontSlamBlocked(void)
 	return retval;
 }
 
-void GridMap::setCircleMarkers(Point_t point, bool cover_block, int radius, CellState cell_state)
+void GridMap::setCircleMarkers(Point_t point, int radius, CellState cell_state,Marks& error_maker)
 {
 	const int RADIUS_CELL = radius;
 	Point_t tmp_point = point;
 	auto deg_point_th = static_cast<int16_t>(radian_to_degree(point.th));
+	double time = ros::Time::now().toSec();
 	ROS_INFO("\033[1;40;32m deg_point_th = %d, point(%d,%d)\033[0m",deg_point_th,point.toCell().x,point.toCell().y);
-	for (int16_t angle_i = 0; angle_i <360; angle_i += 1) {
+
+	for (int16_t angle_i = 0; angle_i <360; angle_i += 2) {
 		for (int dy = 0; dy < RADIUS_CELL; ++dy) {
 			tmp_point.th = ranged_radian(degree_to_radian(deg_point_th + angle_i));
 			Cell_t cell = tmp_point.getRelative(0, dy * CELL_SIZE).toCell();
 			auto status = getCell(CLEAN_MAP,cell.x,cell.y);
-			if(!cover_block)
-				if (status > CLEANED && status < BLOCKED_BOUNDARY)
-					break;
+			if (status > CLEANED && status < BLOCKED_BOUNDARY)
+				break;
 			setCell(CLEAN_MAP, cell.x, cell.y, cell_state);
+
+			auto source_map_cell_state = slam_grid_map.getCell(CLEAN_MAP, cell.x, cell.y);
+			if(source_map_cell_state != SLAM_MAP_CLEANABLE)
+			{
+				Mark_t tmp = {cell.x,cell.y,time};
+				error_maker.push_back(tmp);
+			}
 		}
 	}
 }

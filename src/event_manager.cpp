@@ -22,10 +22,6 @@ bool g_plan_activated = false;
 
 
 Ev_t ev;
-/* lidar bumper */
-//bool g_lidar_bumper = false;
-//bool g_lidar_bumper_jam =false;
-//int g_lidar_bumper_cnt = 0;
 
 // lidar stuck
 
@@ -107,9 +103,10 @@ void event_manager_init()
 
 	p_handler[EVT_ROBOT_SLIP] = &EventHandle::robotSlip;
 
-//	handler[EVT_LIDAR_BUMPER]=handler_lidar_stuck;
+	p_handler[EVT_LIDAR_BUMPER]=&EventHandle::lidar_bumper;
 	p_handler[EVT_LIDAR_STUCK] = &EventHandle::lidarStuck;
 	p_handler[EVT_ROBOT_TILT] = &EventHandle::tilt;
+	p_handler[EVT_REMOTE_WIFI] = &EventHandle::remote_wifi;
 	p_eh = &default_eh;
 }
 
@@ -306,7 +303,10 @@ void event_manager_thread_cb()
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_WALL_FOLLOW);
 		}
-
+		if (remote.get() == REMOTE_WIFI){
+			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
+			evt_set_status_x(EVT_REMOTE_WIFI);
+		}
 		/* Battery */
 		if (battery.shouldGoHome()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
@@ -328,12 +328,11 @@ void event_manager_thread_cb()
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_ROBOT_SLIP);
 		}
-		/*
-		if(robot::instance()->getLidarBumper()){
-			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
-			evt_set_status_x(EVT_LIDAR_BUMPER)
+		
+		if(bumper.getLidarBumperStatus()){
+			ROS_DEBUG("%s %d: setting lidar bumper event:", __FUNCTION__, __LINE__);
+			evt_set_status_x(EVT_LIDAR_BUMPER);
 		}
-		*/
 
 		// Lidar stuck
 		if (lidar.lidar_is_stuck()) {
@@ -475,7 +474,7 @@ void event_handler_thread_cb()
 		evt_handle_check_event(EVT_REMOTE_SPOT);
 		evt_handle_check_event(EVT_REMOTE_MAX);
 		evt_handle_check_event(EVT_REMOTE_WALL_FOLLOW);
-
+		evt_handle_check_event(EVT_REMOTE_WIFI);
 		/* Battery */
 		evt_handle_check_event(EVT_BATTERY_HOME);
 		evt_handle_check_event(EVT_BATTERY_LOW);
@@ -487,7 +486,7 @@ void event_handler_thread_cb()
 		evt_handle_check_event(EVT_ROBOT_SLIP);
 
 		/* lidar bumper*/
-		//evt_handle_check_event(EVT_LIDAR_BUMPER,lidar_bumper)
+		evt_handle_check_event(EVT_LIDAR_BUMPER);
 
 		// Lidar stuck
 		evt_handle_check_event(EVT_LIDAR_STUCK);
@@ -598,11 +597,10 @@ void event_manager_reset_status(void)
 	gyro.setTiltCheckingEnable(false);
 	ev.tilt_triggered = false;
 	/* lidar bumper */
-	//g_lidar_bumper = false;
-	//g_lidar_bumper_cnt =0;
-	//g_lidar_bumper_jam = false;
+	ev.lidar_bumper = false;
 	// lidar stuck
 	ev.lidar_stuck = false;
+	ev.remote_wifi = false;
 }
 
 /* Below are the internal functions. */
@@ -733,6 +731,11 @@ void EventHandle::cliffRight(bool state_now, bool state_last)
 //	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
+void EventHandle::remote_wifi(bool state_now,bool state_last)
+{
+	ROS_INFO("%s,%d",__FUNCTION__,__LINE__);
+	remote.reset();
+}
 /* RCON */
 void EventHandle::rcon(bool state_now, bool state_last)
 {
@@ -934,12 +937,12 @@ void EventHandle::robotSlip(bool state_new, bool state_last)
 	df_robot_slip();
 }
 
-/*
+
 void EventHandle::lidar_bumper(bool state_new,bool state_last)
 {
-	g_lidar_bumper = robot::instance()->getLidarBumper();
+	ev.lidar_bumper = true;
+	//g_lidar_bumper = robot::instance()->getLidarBumper();
 }
-*/
 
 // Lidar stuck
 void EventHandle::lidarStuck(bool state_new, bool state_last)
@@ -960,4 +963,4 @@ void EventHandle::tilt(bool state_new, bool state_last)
 //void EventHandle::empty(bool state_now, bool state_last)
 //{
 ////	ROS_INFO("%s %d: is called", __FUNCTION__, __LINE__);
-//}
+

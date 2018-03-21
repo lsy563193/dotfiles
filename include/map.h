@@ -82,7 +82,7 @@ public:
 	 * @param radius, the radius of the circle.
 	 * @param cell_state, target cell state of marking.
 	 */
-	void setCircleMarkers(Point_t point, bool cover_block, int radius, CellState cell_state);
+	void setCircleMarkers(Point_t point, int radius, CellState cell_state,Marks& error_marker);
 
 	/*
 	 * Mark a square of x_len * y_len from center with cell_state.

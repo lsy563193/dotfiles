@@ -65,7 +65,9 @@ void x900_functional_test(std::string serial_port, int baud_rate, std::string li
 
 void error_loop(uint8_t test_stage, uint16_t error_code, uint16_t current_data)
 {
-	infrared_display.displayErrorMsg(test_stage, current_data, error_code);
+//	send_thread_enable = true;
+	infrared_display.displayErrorMsg(test_stage-4, current_data, error_code);
+	serial.sendData();
 	double alarm_time = ros::Time::now().toSec();
 	speaker.play(VOICE_TEST_FAIL);
 	ROS_ERROR("%s %d: Test ERROR.", __FUNCTION__, __LINE__);
@@ -76,6 +78,7 @@ void error_loop(uint8_t test_stage, uint16_t error_code, uint16_t current_data)
 			alarm_time = ros::Time::now().toSec();
 			speaker.play(VOICE_TEST_FAIL);
 			ROS_ERROR("%s %d: Test ERROR. test_stage_: %d. error_code: %d, current_data: %d", __FUNCTION__, __LINE__, test_stage, error_code, current_data);
+			serial.sendData();
 		}
 	}
 }
@@ -130,11 +133,16 @@ bool serial_port_test()
 			receive_string_sum += std::to_string(receive_data[i]);
 //		serial.debugReceivedStream(receive_data);
 	}
+	if(send_string_sum.compare(receive_string_sum) == 0)
+	{
+		if(receive_data[M0_VERSION_H] << 8 | receive_data[M0_VERSION_L] != 0)
+			test_ret = false;
+	}
+	else
+		test_ret = false;
 
-	if (!test_ret)
-		return test_ret;
+	return test_ret;
 
-	return send_string_sum.compare(receive_string_sum) == 0;
 
 	// Test serial port /dev/ttyS2 and /dev/ttyS3 with direct connection.
 /*	Serial serial_port_S2;
@@ -148,6 +156,7 @@ bool serial_port_test()
 		ROS_ERROR("%s %d: %s init failed!!", __FUNCTION__, __LINE__, ttyS2);
 		return false;
 	}
+
 	if (!serial_port_S3.init(ttyS3, 115200))
 	{
 		ROS_ERROR("%s %d: %s init failed!!", __FUNCTION__, __LINE__, ttyS3);

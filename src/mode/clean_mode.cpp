@@ -42,12 +42,15 @@ ACleanMode::ACleanMode()
 	event_manager_set_enable(true);
 	serial.setWorkMode(WORK_MODE);
 	IMoveType::sp_mode_ = this;
+	APathAlgorithm::p_cm_ = this;
 	sp_state->setMode(this);
-	ev.key_clean_pressed = false;
-	sp_state = state_init;
-	sp_state->init();
-	action_i_ = ac_open_gyro;
-	genNextAction();
+	if (robot::instance()->getWorkMode() == WORK_MODE)
+	{
+		sp_state = state_init;
+		sp_state->init();
+		action_i_ = ac_open_gyro;
+		genNextAction();
+	}
 	robot_timer.initWorkTimer();
 	key.resetPressStatus();
 	time_gyro_dynamic_ = ros::Time::now().toSec();
@@ -578,7 +581,7 @@ uint8_t ACleanMode::setFollowWall(GridMap& map, bool is_left,const Points& passe
 
 void ACleanMode::setLinearCleaned()
 {
-	ROS_ERROR("setLinearCleaned cells:");
+	ROS_INFO("setLinearCleaned cells:");
 	// start-1
 	auto p_start = passed_path_.front();
 	auto c_start_last = p_start.toCell() - cell_direction_[p_start.dir];
@@ -616,7 +619,7 @@ void ACleanMode::setLinearCleaned()
 			{
 				auto c_it_shift = c_it + cell_direction_[p_end.dir];
 				ROS_WARN("!!!!!!block end_point +1 dir is in block,move front 1 cell c_it(%d,%d)->c_it_shift(%d,%d)",c_it.x, c_it.y,c_it_shift.x,c_it_shift.y);
-				c_blocks.insert({c_val, c_it_shift});
+				c_blocks.insert({c_block.first, c_it_shift});
 			}
 		}
 	}
@@ -921,7 +924,9 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_move_type) {
 		}
 	}
 
-	if (distance > 5) {// closed
+	if (distance > 5 && getNextMode() != cm_spot) {// closed
+		ROS_INFO("next_mode_i_(%d)",getNextMode());
+		ROS_INFO("mode_i_(%d)",mode_i_);
 		is_closed = true;
 		is_isolate = isIsolate();
 		if(is_isolate)
@@ -1757,6 +1762,14 @@ void ACleanMode::switchInStateGoToCharger() {
 // ------------------State spot--------------------
 bool ACleanMode::updateActionInStateSpot() {
 	old_dir_ = iterate_point_.dir;
+	if(!plan_path_.empty())
+	{
+		auto result = std::find_if(plan_path_.begin(), plan_path_.end(), [&](const Point_t& c_it){
+			return c_it.toCell() == iterate_point_.toCell();
+		});
+		if(result != plan_path_.end())
+			plan_path_.erase(plan_path_.begin(), result+1);
+	}
 	ROS_ERROR("old_dir_(%d)", old_dir_);
 	auto cur_point = getPosition();
 	ROS_INFO("\033[32m plan_path size(%d), front (%d,%d),cur point:(%d,%d)\033[0m",plan_path_.size(),

@@ -9,6 +9,8 @@
 
 class Battery {
 public:
+	const uint16_t BATTERY_VOL_MAX = 1660;
+	const uint16_t BATTERY_VOL_MIN = 1260;
 	bool isFull(void);
 
 	bool isReadyToClean(void);
@@ -23,7 +25,7 @@ public:
 	{
 		return voltage_;
 	}
-
+	uint8_t getPercent();
 	void setVoltage(uint16_t val)
 	{
 		voltage_ = val;

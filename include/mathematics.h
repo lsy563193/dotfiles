@@ -432,6 +432,21 @@ private:
 
 };
 
+class Mark_t : public Vector2<int>{
+public:
+	Mark_t(){
+		x = 0;
+		y = 0;
+		time = 0;
+	}
+	Mark_t(int _x,int _y,double _time){
+		x = _x;
+		y = _y;
+		time = _time;
+	}
+	double time{};
+};
+typedef std::deque<Mark_t> Marks;
 typedef struct
 {
   double A;

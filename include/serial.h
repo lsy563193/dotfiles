@@ -110,6 +110,9 @@
 #define CTL_CHARGER_CINNECTED_STATUS 3
 // Is on fixture
 #define CTL_IS_FIXTURE 2
+// M0 version
+#define M0_VERSION_H 30
+#define M0_VERSION_L 31
 // ------------For functional test end--------------
 
 // For receive stream.
