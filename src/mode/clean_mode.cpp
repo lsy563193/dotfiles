@@ -1758,6 +1758,13 @@ void ACleanMode::switchInStateGoToCharger() {
 // ------------------State spot--------------------
 bool ACleanMode::updateActionInStateSpot() {
 	old_dir_ = iterate_point_.dir;
+	if(!plan_path_.empty())
+	{
+		auto result = std::find_if(plan_path_.begin(), plan_path_.end(), [&](const Point_t& c_it){
+			return c_it.toCell() == iterate_point_.toCell();
+		});
+		plan_path_.erase(plan_path_.begin(), result+1);
+	}
 	ROS_ERROR("old_dir_(%d)", old_dir_);
 	auto cur_point = getPosition();
 	ROS_INFO("\033[32m plan_path size(%d), front (%d,%d),cur point:(%d,%d)\033[0m",plan_path_.size(),
