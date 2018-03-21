@@ -3,6 +3,7 @@
 //
 
 #include <map.h>
+#include <mode.hpp>
 #include "robot.hpp"
 #include "ros/ros.h"
 #include "path_algorithm.h"
@@ -27,10 +28,10 @@ GoHomePathAlgorithm::GoHomePathAlgorithm(GridMap &map, Points &home_points, Poin
 		ROS_INFO("%s %d: %s", __FUNCTION__, __LINE__, msg.c_str());
 	}
 
-	start_point_ = start_point;
-	ROS_INFO("%s %d: Start point(%d, %d).", __FUNCTION__, __LINE__, start_point_.toCell().x, start_point_.toCell().y);
+//	start_point_ = start_point;
+	ROS_INFO("%s %d: Start point(%d, %d).", __FUNCTION__, __LINE__, p_cm_->start_point_.toCell().x, p_cm_->start_point_.toCell().y);
 	// Clear 8 cells around start point.
-	map.setArea(start_point_.toCell(), CLEANED, 1, 1);
+	map.setArea(p_cm_->start_point_.toCell(), CLEANED, 1, 1);
 
 	// set the rcon c_blocks to cleaned
 	auto map_tmp = map.generateBound();
@@ -124,14 +125,14 @@ bool GoHomePathAlgorithm::generatePathThroughCleanedArea(GridMap &map, const Poi
 	else // For going back to start point.
 	{
 		Cell_t min_corner, max_corner;
-		plan_path_cells = findShortestPath(map, curr.toCell(), start_point_.toCell(),
+		plan_path_cells = findShortestPath(map, curr.toCell(), p_cm_->start_point_.toCell(),
 										   last_dir, false, false, min_corner, max_corner);
 
 		if (!plan_path_cells.empty())
 		{
 			plan_path = cells_generate_points(plan_path_cells);
 			ROS_INFO("\033[1;46;37m" "%s,%d: start_point_(%d, %d) reachable in this way." "\033[0m",
-					 __FUNCTION__, __LINE__, start_point_.toCell().x, start_point_.toCell().y);
+					 __FUNCTION__, __LINE__, p_cm_->start_point_.toCell().x, p_cm_->start_point_.toCell().y);
 			map.print(CLEAN_MAP, plan_path_cells);
 			return true;
 		}
@@ -139,7 +140,7 @@ bool GoHomePathAlgorithm::generatePathThroughCleanedArea(GridMap &map, const Poi
 		{
 			// In this way, start point is not reachable.
 			ROS_INFO("\033[1;46;37m" "%s,%d: start_point_(%d, %d) NOT reachable in this way." "\033[0m",
-					 __FUNCTION__, __LINE__, start_point_.toCell().x, start_point_.toCell().y);
+					 __FUNCTION__, __LINE__, p_cm_->start_point_.toCell().x, p_cm_->start_point_.toCell().y);
 			home_way_index_ = SLAM_MAP_CLEAR_BLOCKS;
 			ROS_INFO("%s %d: Clear c_blocks with slam map.", __FUNCTION__, __LINE__);
 			slam_grid_map.print(CLEAN_MAP, Cells{{0, 0}});
@@ -197,14 +198,14 @@ bool GoHomePathAlgorithm::generatePathWithSlamMapClearBlocks(GridMap &map, const
 	else // For going back to start point.
 	{
 		Cell_t min_corner, max_corner;
-		plan_path_cells = findShortestPath(map, curr.toCell(), start_point_.toCell(),
+		plan_path_cells = findShortestPath(map, curr.toCell(), p_cm_->start_point_.toCell(),
 										   last_dir, false, false, min_corner, max_corner);
 
 		if (!plan_path_cells.empty())
 		{
 			plan_path = cells_generate_points(plan_path_cells);
 			ROS_INFO("\033[1;46;37m" "%s,%d: start_point_(%d, %d) reachable in this way." "\033[0m",
-					 __FUNCTION__, __LINE__, start_point_.toCell().x, start_point_.toCell().y);
+					 __FUNCTION__, __LINE__, p_cm_->start_point_.toCell().x, p_cm_->start_point_.toCell().y);
 			map.print(CLEAN_MAP, plan_path_cells);
 			return true;
 		}
@@ -212,7 +213,7 @@ bool GoHomePathAlgorithm::generatePathWithSlamMapClearBlocks(GridMap &map, const
 		{
 			// In this way, start point is not reachable.
 			ROS_INFO("\033[1;46;37m" "%s,%d: start_point_(%d, %d) NOT reachable in this way." "\033[0m",
-					 __FUNCTION__, __LINE__, start_point_.toCell().x, start_point_.toCell().y);
+					 __FUNCTION__, __LINE__, p_cm_->start_point_.toCell().x, p_cm_->start_point_.toCell().y);
 			ROS_INFO("%s %d: Use slam map reachable area.", __FUNCTION__, __LINE__);
 			home_way_index_ = THROUGH_SLAM_MAP_REACHABLE_AREA;
 			return false;
@@ -275,14 +276,14 @@ bool GoHomePathAlgorithm::generatePathThroughSlamMapReachableArea(GridMap &map, 
 		temp_map.copy(map);
 		temp_map.merge(slam_grid_map, false, false, true, false, false, false);
 		temp_map.print(CLEAN_MAP, Cells{{0, 0}});
-		plan_path_cells = findShortestPath(temp_map, curr.toCell(), start_point_.toCell(),
+		plan_path_cells = findShortestPath(temp_map, curr.toCell(), p_cm_->start_point_.toCell(),
 										   last_dir, false, false, min_corner, max_corner);
 
 		if (!plan_path_cells.empty())
 		{
 			plan_path = cells_generate_points(plan_path_cells);
 			ROS_INFO("\033[1;46;37m" "%s,%d: start_point_(%d, %d) reachable in this way." "\033[0m",
-					 __FUNCTION__, __LINE__, start_point_.toCell().x, start_point_.toCell().y);
+					 __FUNCTION__, __LINE__, p_cm_->start_point_.toCell().x, p_cm_->start_point_.toCell().y);
 			map.print(CLEAN_MAP, plan_path_cells);
 			return true;
 		}
@@ -290,7 +291,7 @@ bool GoHomePathAlgorithm::generatePathThroughSlamMapReachableArea(GridMap &map, 
 		{
 			// In this way, start point is not reachable.
 			ROS_INFO("\033[1;46;37m" "%s,%d: start_point_(%d, %d) NOT reachable in this way." "\033[0m",
-					 __FUNCTION__, __LINE__, start_point_.toCell().x, start_point_.toCell().y);
+					 __FUNCTION__, __LINE__, p_cm_->start_point_.toCell().x, p_cm_->start_point_.toCell().y);
 			ROS_INFO("%s %d: Use unknown area.", __FUNCTION__, __LINE__);
 			home_way_index_ = THROUGH_UNKNOWN_AREA;
 			return false;
@@ -348,14 +349,14 @@ bool GoHomePathAlgorithm::generatePathThroughUnknownArea(GridMap &map, const Poi
 	else // For going back to start point.
 	{
 		Cell_t min_corner, max_corner;
-		plan_path_cells = findShortestPath(map, curr.toCell(), start_point_.toCell(),
+		plan_path_cells = findShortestPath(map, curr.toCell(), p_cm_->start_point_.toCell(),
 										   last_dir, true, false, min_corner, max_corner);
 
 		if (!plan_path_cells.empty())
 		{
 			plan_path = cells_generate_points(plan_path_cells);
 			ROS_INFO("\033[1;46;37m" "%s,%d: start_point_(%d, %d) reachable in this way." "\033[0m",
-					 __FUNCTION__, __LINE__, start_point_.toCell().x, start_point_.toCell().y);
+					 __FUNCTION__, __LINE__, p_cm_->start_point_.toCell().x, p_cm_->start_point_.toCell().y);
 			map.print(CLEAN_MAP, plan_path_cells);
 			return true;
 		}
@@ -363,7 +364,7 @@ bool GoHomePathAlgorithm::generatePathThroughUnknownArea(GridMap &map, const Poi
 		{
 			// In this way, start point is not reachable.
 			ROS_INFO("\033[1;46;37m" "%s,%d: start_point_(%d, %d) NOT reachable in this way, exit state go home point." "\033[0m",
-					 __FUNCTION__, __LINE__, start_point_.toCell().x, start_point_.toCell().y);
+					 __FUNCTION__, __LINE__, p_cm_->start_point_.toCell().x, p_cm_->start_point_.toCell().y);
 			return true;
 		}
 	}
@@ -399,12 +400,12 @@ bool GoHomePathAlgorithm::reachTarget(bool &should_go_to_charger)
 							getPosition().toCell().x,
 							getPosition().toCell().y,
 							radian_to_degree(getPosition().th),
-							start_point_.toCell().x,
-							start_point_.toCell().y,
-							radian_to_degree(start_point_.th));
-		if (getPosition().isCellAndAngleEqual(start_point_)) {
+							p_cm_->start_point_.toCell().x,
+							p_cm_->start_point_.toCell().y,
+							radian_to_degree(p_cm_->start_point_.th));
+		if (getPosition().isCellAndAngleEqual(p_cm_->start_point_)) {
 			ROS_INFO("%s %d: Reach start point(%d, %d).",
-							 __FUNCTION__, __LINE__, start_point_.toCell().x, start_point_.toCell().y);
+							 __FUNCTION__, __LINE__, p_cm_->start_point_.toCell().x, p_cm_->start_point_.toCell().y);
 			ret = true;
 			should_go_to_charger = false;
 		}

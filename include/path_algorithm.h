@@ -13,6 +13,7 @@ extern const Cell_t cell_direction_[9];
 
 typedef std::deque<Cells> PathList;
 
+class ACleanMode;
 class APathAlgorithm
 {
 public:
@@ -88,6 +89,8 @@ public:
 	 *
 	 */
 	bool isTargetReachable(GridMap map,Cell_t target);
+
+	static ACleanMode* p_cm_;
 protected:
 
 	/*
@@ -104,7 +107,6 @@ protected:
 	 *          false, robot is not trapped.
 	 */
 	bool checkTrappedUsingDijkstra(GridMap &map, const Cell_t &curr_cell);
-
 };
 
 typedef BoundingBox2(*RangeFunction)(Cell_t&, Cell_t&, Cell_t&);
@@ -489,7 +491,7 @@ typedef enum {
 	GoHomeWay_t home_way_index_{THROUGH_CLEANED_AREA};
 	int home_point_index_[GO_HOME_WAY_NUM]{};
 	Points home_points_;
-	Point_t start_point_;
+//	Point_t start_point_;
 	// current_home_point_ is initialized as an unreachable point because state go home point will check if reach home point first.
 	Point_t current_home_point_{CELL_SIZE * (MAP_SIZE + 1), CELL_SIZE * (MAP_SIZE + 1), 0};
 };
