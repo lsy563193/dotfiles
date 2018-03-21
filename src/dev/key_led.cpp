@@ -60,22 +60,22 @@ void KeyLed::processLed()
 	{
 		case LED_GREEN:
 		{
-			key_led.set(led_brightness, 0);
+			set(led_brightness, 0);
 			break;
 		}
 		case LED_ORANGE:
 		{
-			key_led.set(led_brightness, led_brightness);
+			set(led_brightness, led_brightness);
 			break;
 		}
 		case LED_RED:
 		{
-			key_led.set(0, led_brightness);
+			set(0, led_brightness);
 			break;
 		}
 		default: //case: LED_OFF:
 		{
-			key_led.set(0, 0);
+			set(0, 0);
 			break;
 		}
 	}

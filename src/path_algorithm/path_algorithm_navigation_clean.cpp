@@ -177,6 +177,13 @@ Cells NavCleanPathAlgorithm::findTargetInSameLane(GridMap &map, const Cell_t &cu
 			else//(g_follow_last_follow_wall_dir == 2)
 				target = it[0];
 		}
+		auto dir = lidar.compLaneDistance();
+		if(dir != -1)
+		{
+			target = it[0];
+			if( dir == 1)
+				target = it[1];
+		}
 	}
 	g_follow_last_follow_wall_dir = 0;
 	Cells path{};

@@ -390,7 +390,7 @@ void robot::robotbase_routine_cb()
 		/*------publish end -----------*/
 
 		// Check tilt
-#if 0
+#if 1
 		if (checkTilt()){
 			gyro.setTiltCheckingStatus(1);
 			beeper.beepForCommand(VALID);
