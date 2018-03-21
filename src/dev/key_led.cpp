@@ -82,3 +82,11 @@ void KeyLed::processLed()
 	//ROS_INFO("%s %d: live_led_cnt_for_switch_: %d, led_brightness: %d.", __FUNCTION__, __LINE__, live_led_cnt_for_switch_, led_brightness);
 }
 
+void KeyLed::wifi_led(KeyLed::state state)
+{
+	if (state == KeyLed::state::off)
+		serial.setSendData(CTL_MIX,serial.getSendData(CTL_MIX) & 0XFE);//reset wifi led
+	else if (state == KeyLed::state::on)
+		serial.setSendData(CTL_MIX,serial.getSendData(CTL_MIX) & 0X01);//reset wifi led
+}
+

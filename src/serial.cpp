@@ -30,7 +30,7 @@ Serial::~Serial()
 	{
 		for (auto i = 0; i < 10; i++)
 		{
-			if (close() == 0);
+			if (close() == 0)
 			{
 				ROS_INFO("%s %d: Close serial port %s.", __FUNCTION__, __LINE__, port_.c_str());
 				closed = true;
@@ -594,24 +594,46 @@ void Serial::send_routine_cb()
 	ros::Rate r(_RATE);
 	resetSendStream();
 	//tmp test
-	uint16_t wifi_send_count = 0;
-
+	uint16_t wifi_send_state_cnt = 0;
+	uint16_t wifi_send_map_cnt = 0;
+	clock_t t = clock();
+	float period;
 	while(ros::ok() && !send_thread_kill){
 		if (!send_thread_enable)
 		{
 			r.sleep();
 			continue;
 		}
-
-		//tmp test
-		wifi_send_count++;
-		if(wifi_send_count >= 250)
+		period = ((float)(clock() - t))/CLOCKS_PER_SEC;
+		if((uint32_t)period*1000000 < 20000)
 		{
-			wifi_send_count = 0;
-			s_wifi.testSend();
+			uint32_t sleep_time = 20000-(uint32_t)(period*1000000);
+			usleep(sleep_time);
+		}
+		else
+			usleep(20000);
+		t = clock();
+		//serial wifi send
+		wifi_send_state_cnt++;
+		wifi_send_map_cnt++;
+		if(wifi_send_state_cnt>= 250 && wifi_send_map_cnt < 500)//5s
+		{
+			wifi_send_state_cnt= 0;
+			if(S_Wifi::is_wifi_connected_
+						&& s_wifi.isStatusRequest_
+						&& s_wifi.is_cloud_connected_)
+				s_wifi.replyRobotStatus(0xc8,0x00);
+		}
+		if(wifi_send_map_cnt >=500){
+			wifi_send_map_cnt = 0;
+			if(S_Wifi::is_wifi_connected_
+						 && s_wifi.is_cloud_connected_
+						 && s_wifi.isStatusRequest_
+						 && s_wifi.getWorkMode() == wifi::WorkMode::PLAN1)
+				s_wifi.replyRealtimeMap();
 		}
 
-		r.sleep();
+		//r.sleep();
 		/*-------------------Process for beeper.play and key_led -----------------------*/
 		key_led.processLed();
 		if (getSendData(CTL_WORK_MODE) != DESK_TEST_WRITE_BASELINE_MODE)

@@ -36,3 +36,9 @@ bool Battery::shouldGoHome()
 	return (getVoltage() < LOW_BATTERY_GO_HOME_VOLTAGE);
 }
 
+uint8_t Battery::getPercent()
+{
+	if(getVoltage() >= BATTERY_VOL_MIN && getVoltage() <= BATTERY_VOL_MAX)
+	  return (uint8_t)((getVoltage() - BATTERY_VOL_MIN) *100 /(BATTERY_VOL_MAX - BATTERY_VOL_MIN));
+}
+

@@ -26,5 +26,5 @@
 #include "wall_follow.h"
 #include "wheel.hpp"
 #include "water_tank.hpp"
-
+#include "wifi/wifi.h"
 #endif //PP_DEV_H

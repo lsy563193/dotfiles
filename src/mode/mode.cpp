@@ -5,9 +5,12 @@
 #include <dev.h>
 #include <event_manager.h>
 #include "mode.hpp"
+#include <wifi/wifi.h>
+
 boost::shared_ptr<IAction> Mode::sp_action_ = nullptr;
 //IAction* Mode::sp_action_ = nullptr;
 
+class S_WIFI;
 void Mode::run()
 {
 	ROS_INFO("%s %d: Mode start running.", __FUNCTION__, __LINE__);
@@ -51,6 +54,42 @@ bool Mode::isFinish()
 void Mode::setNextMode(int next_mode)
 {
 	next_mode_i_ = next_mode;
+	
+	switch (next_mode)
+	{
+		case Mode::md_idle:
+			s_wifi.setWorkMode(wifi::WorkMode::IDLE);
+			break;
+		case Mode::md_charge:
+			s_wifi.setWorkMode(wifi::WorkMode::CHARGE);
+			break;
+		case Mode::md_sleep:
+			s_wifi.setWorkMode(wifi::WorkMode::SLEEP);
+			break;
+
+		case Mode::md_remote:
+			s_wifi.setWorkMode(wifi::WorkMode::REMOTE);
+			break;
+
+		case Mode::cm_navigation:
+			s_wifi.setWorkMode(wifi::WorkMode::PLAN1);
+			break;
+
+		case Mode::cm_wall_follow:
+			s_wifi.setWorkMode(wifi::WorkMode::WALL_FOLLOW);
+			break;
+
+		case Mode::cm_spot:
+			s_wifi.setWorkMode(wifi::WorkMode::SPOT);
+			break;
+
+		case Mode::cm_exploration:
+			s_wifi.setWorkMode(wifi::WorkMode::FIND);
+			break;
+		default:
+			s_wifi.setWorkMode(wifi::WorkMode::SHUTDOWN);
+			break;
+	}
 }
 
 int Mode::getNextMode()

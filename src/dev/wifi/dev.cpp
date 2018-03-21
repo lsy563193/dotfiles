@@ -47,7 +47,7 @@ bool Dev::tx( const std::vector<uint8_t> &data ) const
 	}
 
 	size_t offset = 0;
-	//ROS_INFO("tx output on (%s,115200) data = ",TTY_PORT);
+	ROS_INFO("\033[1;40;34m tx data = \033[0m");
 	do
 	{
 		const int len = ::write( dev_, data.data() + offset, data.size() );
@@ -57,11 +57,15 @@ bool Dev::tx( const std::vector<uint8_t> &data ) const
 			return false;
 		}
 	//for tmp test
-	//	for(int i=0;i<len;i++)
-	//		printf("0x%x,",data[i]);
+		for(int i=0;i<len;i++){
+			if(i == 5)
+				printf("\033[35m0x%x\033[0m,",data[i]);
+			else
+				printf("0x%x,",data[i]);
+		}
 		offset += len;
 	} while ( offset < data.size() );
-	//std::cout<<'\n';
+	std::cout<<'\n';
 	return true;
 }
 
@@ -79,6 +83,16 @@ std::vector<uint8_t> Dev::rx() const
 		ROS_WARN( "wifi::Dev::rx,Failed while read: %d", errno );
 		return {};
 	}
+	//for tmp test
+	ROS_INFO("\033[1;40;35m rx data =\033[0m");
+	for(int i=0;i<len;i++){
+		if(i == 5)
+			printf("\033[35m0x%x\033[0m,",buf[i]);
+		else
+			printf("0x%x,",buf[i]);
+	}
+
+	printf("\n");
 	return std::vector<uint8_t>(buf, buf + len);
 }
 

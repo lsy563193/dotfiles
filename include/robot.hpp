@@ -207,6 +207,8 @@ public:
 		return robot_current_;
 	}
 
+	boost::shared_ptr<Mode> p_mode{};
+
 private:
 
 	uint8_t getTestMode(void);
@@ -271,7 +273,6 @@ private:
 	void odomPublish(const tf::Vector3& robot_pos, double robot_radian_);
 //	void robot_map_metadata_cb(const nav_msgs::MapMetaData::ConstPtr& msg);
 
-	boost::shared_ptr<Mode> p_mode{};
 
 	bool is_locked_scan_ctrl_{false};
 
