@@ -5,6 +5,7 @@
 #include "ros/ros.h"
 #include "robot.hpp"
 #include "path_algorithm.h"
+ACleanMode* APathAlgorithm::p_cm_ = nullptr;
 
 const Cell_t cell_direction_[9]{{1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1},{0,0}};
 void APathAlgorithm::displayCellPath(const Cells &path)
