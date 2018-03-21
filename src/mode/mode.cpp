@@ -8,6 +8,8 @@
 #include <wifi/wifi.h>
 
 boost::shared_ptr<IAction> Mode::sp_action_ = nullptr;
+
+int Mode::next_mode_i_{};
 //IAction* Mode::sp_action_ = nullptr;
 
 class S_WIFI;

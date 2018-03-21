@@ -71,7 +71,7 @@ public:
 
 	};
 
-	int next_mode_i_;
+	static int next_mode_i_;
 
 	int action_i_{ac_null};
 	enum {
@@ -127,7 +127,7 @@ public:
 
 protected:
 	bool is_clean_mode_navigation_{false};
-	int mode_i_{ac_null};
+	int mode_i_{};
 private:
 
 };
@@ -627,6 +627,7 @@ public:
 
 	bool markMapInNewCell() override;
 	bool mapMark() override;
+	void resetErrorMarker();
 //	bool isExit() override;
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteClean(bool state_now, bool state_last) override ;
@@ -641,6 +642,7 @@ public:
 //	void overCurrentVacuum(bool state_now, bool state_last);
 //	void printMapAndPath();
 	void switchInStateInit() override;
+	bool updateActionInStateInit() override;
 
 	void switchInStateGoHomePoint() override;
 	void switchInStateGoToCharger() override;
@@ -649,6 +651,7 @@ public:
 
 private:
 	bool mark_robot_{true};
+	Marks error_marker_;
 };
 
 class CleanModeFollowWall:public ACleanMode {
