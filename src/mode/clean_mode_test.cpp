@@ -12,7 +12,6 @@ CleanModeTest::CleanModeTest(uint8_t mode)
 	speaker.play(VOICE_TEST_MODE, false);
 	speaker.play(VOICE_SOFTWARE_VERSION, false);
 	lidar.slipCheckingCtrl(OFF);
-//	key_led.setMode(LED_STEADY, LED_GREEN);
 	event_manager_set_enable(false);
 	test_mode_ = mode;
 	switch (test_mode_)

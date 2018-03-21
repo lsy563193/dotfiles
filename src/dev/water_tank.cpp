@@ -31,6 +31,7 @@ void WaterTank::normalOperate()
 	operation_ = true;
 	checkBatterySetPWM();
 	pump_switch_ = 0x80;
+	last_pump_time_stamp_ = 0;
 	serial.setSendData(CTL_WATER_TANK, static_cast<uint8_t>(pump_switch_ | pwm_));
 	check_battery_time_stamp_ = ros::Time::now().toSec();
 }
@@ -51,14 +52,14 @@ void WaterTank::checkBatterySetPWM()
 
 void WaterTank::updatePWM()
 {
-	if (status_ && ros::Time::now().toSec() - check_battery_time_stamp_ > 60)
+	if (operation_ && status_ && ros::Time::now().toSec() - check_battery_time_stamp_ > 60)
 	{
 		checkBatterySetPWM();
 		serial.setSendData(CTL_WATER_TANK, static_cast<uint8_t>(pump_switch_ | pwm_));
 		check_battery_time_stamp_ = ros::Time::now().toSec();
 	}
 
-	if (status_ && ros::Time::now().toSec() - last_pump_time_stamp_ > pump_time_interval_)
+	if (operation_ && status_ && ros::Time::now().toSec() - last_pump_time_stamp_ > pump_time_interval_)
 	{
 		pump_switch_ = 0x80;
 		pump_cnt_++;

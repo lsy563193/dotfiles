@@ -487,6 +487,7 @@ void robot::runTestMode()
 			ROS_ERROR(" lidar bumper open fail!");
 	}
 
+	key_led.setMode(LED_STEADY, LED_ORANGE);
 	p_mode.reset(new CleanModeTest(r16_work_mode_));
 	p_mode->run();
 	g_pp_shutdown = true;

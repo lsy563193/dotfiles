@@ -211,6 +211,10 @@ public:
 	}
 
 	boost::shared_ptr<Mode> p_mode{};
+	uint8_t getWorkMode()
+	{
+		return r16_work_mode_;
+	}
 
 private:
 

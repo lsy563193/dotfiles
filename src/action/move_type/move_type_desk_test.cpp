@@ -20,12 +20,13 @@
 #include <charger.h>
 #include <key.h>
 #include <infrared_display.hpp>
+#include <speaker.h>
 
 #include "move_type.hpp"
 
 #include "error.h"
 
-#define RCON_ROTATE_SPEED (ROTATE_TOP_SPEED / 3)
+#define RCON_ROTATE_SPEED (ROTATE_TOP_SPEED * 2 / 3)
 
 // Sequence for baseline setting.
 #define CTL_L_OBS_BL_H 2
@@ -165,7 +166,6 @@ void MoveTypeDeskTest::run()
 				p_movement_.reset();
 				p_movement_.reset(new MoveTypeGoToCharger());
 				brush.slowOperate();
-				key_led.setMode(LED_ORANGE, LED_BREATH);
 				ROS_INFO("%s %d: Stage 6 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
 			}
 			break;
@@ -200,6 +200,7 @@ void MoveTypeDeskTest::run()
 			lidar.motorCtrl(OFF);
 			infrared_display.displayErrorMsg(error_step_, error_content_, error_code_);
 			serial.debugSendStream(serial.send_stream);
+			speaker.play(VOICE_TEST_FAIL);
 			sleep(5);
 			break;
 		}
@@ -223,6 +224,7 @@ void MoveTypeDeskTest::run()
 			serial.setSendData(CTL_R_CLIFF_BL_H, static_cast<uint8_t>(right_cliff_baseline_ >> 8));
 			serial.setSendData(CTL_R_CLIFF_BL_L, static_cast<uint8_t>(right_cliff_baseline_));
 			serial.debugSendStream(serial.send_stream);
+			speaker.play(VOICE_TEST_SUCCESS);
 			sleep(5);
 			serial.debugReceivedStream(serial.receive_stream);
 			break;
@@ -262,6 +264,7 @@ void MoveTypeDeskTest::deskTestRoutineThread()
 			updatePosition();
 		}
 	}
+	pthread_cond_broadcast(&serial_data_ready_cond);
 	event_manager_thread_kill = true;
 	ROS_ERROR("%s,%d,exit",__FUNCTION__,__LINE__);
 }
@@ -375,7 +378,7 @@ bool MoveTypeDeskTest::checkStage1Finish()
 		int32_t wheel_current_baseline_ref_{1620};
 		int32_t vacuum_current_baseline_ref_{1620};
 		int32_t water_tank_current_baseline_ref_{0};
-		int32_t robot_current_baseline_ref_{1775}; // todo:
+		int32_t robot_current_baseline_ref_{1775};
 
 		if (left_brush_current_baseline_ > side_brush_current_baseline_ref_ * 1.2 ||
 			left_brush_current_baseline_ < side_brush_current_baseline_ref_ * 0.8)
@@ -478,6 +481,8 @@ bool MoveTypeDeskTest::checkStage2Finish()
 					brush.normalOperate();
 					vacuum.setMode(Vac_Normal);
 				}
+				else if (test_step_ == 1)
+					c_rcon.resetStatus();
 				test_step_++;
 			}
 			else
@@ -504,7 +509,7 @@ bool MoveTypeDeskTest::checkStage2Finish()
 			test_step_++;
 			lidar_check_cnt_ = 0;
 			p_movement_.reset();
-			p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-179), RCON_ROTATE_SPEED));
+			p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-178), RCON_ROTATE_SPEED));
 			ROS_INFO("%s %d: Enter rcon turning 1.", __FUNCTION__, __LINE__);
 			break;
 		}
@@ -525,7 +530,7 @@ bool MoveTypeDeskTest::checkStage2Finish()
 			}
 			test_step_++;
 			p_movement_.reset();
-			p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-179), RCON_ROTATE_SPEED));
+			p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-178), RCON_ROTATE_SPEED));
 			break;
 		}
 		default://case 6:
@@ -600,7 +605,40 @@ bool MoveTypeDeskTest::checkStage3Finish()
 	right_obs_max_ = (obs.getRight() > right_obs_max_) ? obs.getRight() : right_obs_max_;
 	switch (test_step_)
 	{
-		case 0: // For going towards the wall and test for left bumper.
+		case 0: // For going near the wall.
+		{
+			if (bumper.getStatus())
+			{
+				p_movement_.reset();
+				p_movement_.reset(new MovementBack(0.01, BACK_MAX_SPEED));
+				test_step_++;
+			} else
+				p_movement_->run();
+			break;
+		}
+		case 1:
+		{
+			if (p_movement_->isFinish())
+			{
+				p_movement_.reset();
+				p_movement_.reset(new MovementTurn(getPosition().th - degree_to_radian(45), ROTATE_TOP_SPEED));
+				test_step_++;
+			} else
+				p_movement_->run();
+			break;
+		}
+		case 2:
+		{
+			if (p_movement_->isFinish())
+			{
+				p_movement_.reset();
+				p_movement_.reset(new MovementDirectGo(false, 1));
+				test_step_++;
+			} else
+				p_movement_->run();
+			break;
+		}
+		case 3: // For going towards the wall and test for left bumper.
 		{
 			if (bumper.getStatus() & BLOCK_LEFT)
 			{
@@ -619,19 +657,19 @@ bool MoveTypeDeskTest::checkStage3Finish()
 				p_movement_->run();
 			break;
 		}
-		case 1: // For moving back.
+		case 4: // For moving back.
 		{
 			if (p_movement_->isFinish())
 			{
 				test_step_++;
 				p_movement_.reset();
-				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(70), ROTATE_TOP_SPEED));
+				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(90), ROTATE_TOP_SPEED));
 			}
 			else
 				p_movement_->run();
 			break;
 		}
-		case 2: // For turning.
+		case 5: // For turning.
 		{
 			if (p_movement_->isFinish())
 			{
@@ -644,7 +682,7 @@ bool MoveTypeDeskTest::checkStage3Finish()
 				p_movement_->run();
 			break;
 		}
-		case 3: // For going towards the wall and test for right bumper.
+		case 6: // For going towards the wall and test for right bumper.
 		{
 			if (p_movement_->isFinish())
 			{
@@ -663,19 +701,19 @@ bool MoveTypeDeskTest::checkStage3Finish()
 				p_movement_->run();
 			break;
 		}
-		case 4: // For moving back.
+		case 7: // For moving back.
 		{
 			if (p_movement_->isFinish())
 			{
 				test_step_++;
 				p_movement_.reset();
-				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-120), ROTATE_TOP_SPEED));
+				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-130), ROTATE_TOP_SPEED));
 			}
 			else
 				p_movement_->run();
 			break;
 		}
-		case 5: // For turning to follow wall and check for OBS.
+		case 8: // For turning to follow wall and check for OBS.
 		{
 			if (p_movement_->isFinish())
 			{
@@ -751,12 +789,12 @@ bool MoveTypeDeskTest::checkStage4Finish()
 				right_brush_current_ += brush.getRightCurrent();
 				main_brush_current_ += brush.getMainCurrent();
 				vacuum_current_ += vacuum.getCurrent();
-				if (wheel.getLeftWheelActualSpeed() > 0.1)
+				if (wheel.getLeftWheelActualSpeed() > 0.15)
 				{
 					left_wheel_current_ += wheel.getLeftCurrent();
 					left_wheel_current_cnt_++;
 				}
-				if (wheel.getRightWheelActualSpeed() > 0.1)
+				if (wheel.getRightWheelActualSpeed() > 0.15)
 				{
 					right_wheel_current_ += wheel.getRightCurrent();
 					right_wheel_current_cnt_++;
@@ -851,7 +889,7 @@ bool MoveTypeDeskTest::checkStage4Finish()
 			if (p_movement_->isFinish())
 			{
 				p_movement_.reset();
-				p_movement_.reset(new MovementBack(0.05, BACK_MAX_SPEED));
+				p_movement_.reset(new MovementBack(0.1, BACK_MAX_SPEED));
 				movement_i_= mm_back;
 				right_cliff_baseline_ = static_cast<uint16_t>(right_cliff_sum_ / sum_cnt_);
 				ROS_INFO("%s %d: right_cliff_baseline_:%d.", __FUNCTION__, __LINE__, right_cliff_baseline_);
@@ -950,21 +988,21 @@ bool MoveTypeDeskTest::checkCurrent()
 	ROS_INFO("%s %d: Robot current: %d.", __FUNCTION__, __LINE__, robot_current_ - robot_current_baseline_);
 
 	// During follow wall
-	uint16_t side_brush_current_ref_{1675 - 1620};
-	uint16_t main_brush_current_ref_{1785 - 1620};
-	uint16_t wheel_current_ref_{1675 - 1620};
-	uint16_t vacuum_current_ref_{1970 - 1620};
+	uint16_t side_brush_current_ref_{1675 - 1620}; // 55
+	uint16_t main_brush_current_ref_{1785 - 1620}; // 165
+	uint16_t wheel_current_ref_{1685 - 1620}; // 65
+	uint16_t vacuum_current_ref_{1970 - 1620}; // 350
 	uint16_t water_tank_current_ref_{0};
-	uint16_t robot_current_ref_{2250 - 1775};// todo:
+	uint16_t robot_current_ref_{2250 - 1775}; // 475
 
-	if (left_brush_current_ - left_brush_current_baseline_ > side_brush_current_ref_ * 1.2 ||
-		left_brush_current_ - left_brush_current_baseline_ < side_brush_current_ref_ * 0.7)
+	if (left_brush_current_ - left_brush_current_baseline_ > side_brush_current_ref_ * 1.4 /* 77 */||
+		left_brush_current_ - left_brush_current_baseline_ < side_brush_current_ref_ * 0.6 /* 33 */)
 	{
 		error_code_ = LEFT_BRUSH_CURRENT_ERROR;
 		error_content_ = static_cast<uint16_t>(left_brush_current_ - left_brush_current_baseline_);
 	}
-	else if (right_brush_current_ - right_brush_current_baseline_ > side_brush_current_ref_ * 1.2 ||
-			 right_brush_current_ - right_brush_current_baseline_ < side_brush_current_ref_ * 0.8)
+	else if (right_brush_current_ - right_brush_current_baseline_ > side_brush_current_ref_ * 1.4 /* 77 */||
+			 right_brush_current_ - right_brush_current_baseline_ < side_brush_current_ref_ * 0.6 /* 33 */)
 	{
 		error_code_ = RIGHT_BRUSH_CURRENT_ERROR;
 		error_content_ = static_cast<uint16_t>(right_brush_current_ - right_brush_current_baseline_);
@@ -987,14 +1025,14 @@ bool MoveTypeDeskTest::checkCurrent()
 		error_code_ = VACUUM_CURRENT_ERROR; // todo:
 		error_content_ = static_cast<uint16_t>(water_tank_current_ - water_tank_current_baseline_);
 	}*/
-	else if (left_wheel_current_ - left_wheel_current_baseline_ > wheel_current_ref_ * 1.3 ||
-			 left_wheel_current_ - left_wheel_current_baseline_ < wheel_current_ref_ * 0.6)
+	else if (left_wheel_current_cnt_ != 0 && (left_wheel_current_ - left_wheel_current_baseline_ > wheel_current_ref_ * 1.3 ||
+			 left_wheel_current_ - left_wheel_current_baseline_ < wheel_current_ref_ * 0.6))
 	{
 		error_code_ = LEFT_WHEEL_FORWARD_CURRENT_ERROR;
 		error_content_ = static_cast<uint16_t>(left_wheel_current_ - left_wheel_current_baseline_);
 	}
-	else if (right_wheel_current_ - right_wheel_current_baseline_ > wheel_current_ref_ * 1.3 ||
-			 right_wheel_current_ - right_wheel_current_baseline_ < wheel_current_ref_ * 0.6)
+	else if (right_wheel_current_cnt_ != 0 && (right_wheel_current_ - right_wheel_current_baseline_ > wheel_current_ref_ * 1.3 ||
+			 right_wheel_current_ - right_wheel_current_baseline_ < wheel_current_ref_ * 0.6))
 	{
 		error_code_ = RIGHT_WHEEL_FORWARD_CURRENT_ERROR;
 		error_content_ = static_cast<uint16_t>(right_wheel_current_ - right_wheel_current_baseline_);
@@ -1181,8 +1219,21 @@ bool MoveTypeDeskTest::checkStage6Finish()
 					test_stage_ = 99;
 				}
 				else
-					return true;
+				{
+					p_movement_.reset();
+					p_movement_.reset(
+							new MovementTurn(getPosition().th + degree_to_radian(45), ROTATE_TOP_SPEED * 2 / 3));
+					test_step_++;
+				}
 			} else
+				p_movement_->run();
+			break;
+		}
+		case 2:
+		{
+			if (p_movement_->isFinish())
+				return true;
+			else
 				p_movement_->run();
 			break;
 		}
@@ -1206,6 +1257,7 @@ bool MoveTypeDeskTest::checkStage7Finish()
 				brush.stop();
 				lidar.motorCtrl(OFF);
 				p_movement_.reset(new ActionIdle());
+				key_led.setMode(LED_STEADY, LED_ORANGE);
 				test_step_++;
 			} else
 				p_movement_->run();
