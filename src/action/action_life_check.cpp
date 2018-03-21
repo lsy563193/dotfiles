@@ -12,6 +12,7 @@
 #include <key_led.h>
 #include <beeper.h>
 #include <error.h>
+#include <infrared_display.hpp>
 #include "action.hpp"
 
 ActionLifeCheck::ActionLifeCheck()
@@ -23,9 +24,10 @@ ActionLifeCheck::ActionLifeCheck()
 	timeout_interval_ = 120;
 
 	// Make sure lidar has been inited and stopped, and the voice has finished playing.
-	usleep(5000000);
+	usleep(3500000);
 
 	start_time_stamp_ = ros::Time::now().toSec();
+	infrared_display.displayNormalMsg(test_stage_, 0);
 }
 
 void ActionLifeCheck::lifeTestRoutineThread()
@@ -35,7 +37,7 @@ void ActionLifeCheck::lifeTestRoutineThread()
 	uint8_t buf[REC_LEN];
 	ros::Time cur_time, last_time;
 
-	while (ros::ok())
+	while (ros::ok() && !recei_thread_kill)
 	{
 		/*--------data extrict from serial com--------*/
 		ROS_ERROR_COND(pthread_mutex_lock(&recev_lock) != 0, "robotbase pthread receive lock fail");
@@ -45,6 +47,9 @@ void ActionLifeCheck::lifeTestRoutineThread()
 //		robot::instance()->debugReceivedStream(buf);
 		dataExtract(buf);
 	}
+
+	event_manager_thread_kill = true;
+	ROS_ERROR("%s,%d,exit",__FUNCTION__,__LINE__);
 }
 
 bool ActionLifeCheck::dataExtract(const uint8_t *buf)
@@ -116,7 +121,7 @@ void ActionLifeCheck::run()
 {
 	switch (test_stage_)
 	{
-		case 0:
+		case 1:
 		{
 			if (ros::Time::now().toSec() - start_time_stamp_ > 0.3)
 			{
@@ -159,35 +164,63 @@ void ActionLifeCheck::run()
 
 				if (left_brush_current_baseline_ > side_brush_current_baseline_ref_ * 1.2 ||
 					left_brush_current_baseline_ < side_brush_current_baseline_ref_ * 0.8)
+				{
 					error_code_ = LEFT_BRUSH_CURRENT_ERROR;
+					error_content_ = static_cast<uint16_t>(left_brush_current_baseline_);
+				}
 				else if (right_brush_current_baseline_ > side_brush_current_baseline_ref_ * 1.2 ||
 						 right_brush_current_baseline_ < side_brush_current_baseline_ref_ * 0.8)
+				{
 					error_code_ = RIGHT_BRUSH_CURRENT_ERROR;
+					error_content_ = static_cast<uint16_t>(right_brush_current_baseline_);
+				}
 				else if (main_brush_current_baseline_ > main_brush_current_baseline_ref_ * 1.2 ||
 						 main_brush_current_baseline_ < main_brush_current_baseline_ref_ * 0.8)
+				{
 					error_code_ = MAIN_BRUSH_CURRENT_ERROR;
+					error_content_ = static_cast<uint16_t>(main_brush_current_baseline_);
+				}
 				else if (vacuum_current_baseline_ > vacuum_current_baseline_ref_ * 1.2 ||
 						 vacuum_current_baseline_ < vacuum_current_baseline_ref_ * 0.8)
+				{
 					error_code_ = VACUUM_CURRENT_ERROR;
-				else if (water_tank_current_baseline_ > water_tank_current_baseline_ref_ * 1.2 ||
+					error_content_ = static_cast<uint16_t>(vacuum_current_baseline_);
+				}
+				/*else if (water_tank_current_baseline_ > water_tank_current_baseline_ref_ * 1.2 ||
 						 water_tank_current_baseline_ < water_tank_current_baseline_ref_ * 0.8)
+				{
 					error_code_ = VACUUM_CURRENT_ERROR; // todo:
+					error_content_ = static_cast<uint16_t>(water_tank_current_baseline_);
+				}*/
 				else if (left_wheel_current_baseline_ > wheel_current_baseline_ref_ * 1.2 ||
 						 left_wheel_current_baseline_ < wheel_current_baseline_ref_ * 0.8)
+				{
 					error_code_ = LEFT_WHEEL_FORWARD_CURRENT_ERROR;
+					error_content_ = static_cast<uint16_t>(left_wheel_current_baseline_);
+				}
 				else if (right_wheel_current_baseline_ > wheel_current_baseline_ref_ * 1.2 ||
 						 right_wheel_current_baseline_ < wheel_current_baseline_ref_ * 0.8)
+				{
 					error_code_ = RIGHT_WHEEL_FORWARD_CURRENT_ERROR;
+					error_content_ = static_cast<uint16_t>(right_wheel_current_baseline_);
+				}
 				else if (robot_current_baseline_ > robot_current_baseline_ref_ * 1.2 ||
 						 robot_current_baseline_ < robot_current_baseline_ref_ * 0.8)
+				{
 					error_code_ = BASELINE_CURRENT_ERROR;
+					error_content_ = static_cast<uint16_t>(robot_current_baseline_);
+				}
 
 				if (error_code_ != 0)
+				{
+					error_step_ = test_stage_;
 					test_stage_ = 99;
+				}
 				else
 				{
 					check_wheel_time_ = ros::Time::now().toSec();
 					test_stage_++;
+					infrared_display.displayNormalMsg(test_stage_, 0);
 				}
 				/*start_time_stamp_ = ros::Time::now().toSec();
 				left_brush_current_baseline_ = 0;
@@ -216,13 +249,14 @@ void ActionLifeCheck::run()
 			}
 			break;
 		}
-		case 1:
+		case 2:
 		{
 			if (ros::Time::now().toSec() - start_time_stamp_ > timeout_interval_ - 60)
 			{
 				// Last one minute will check for current. For wheels, check the forward current first.
-				ROS_INFO("Check the wheel forward current.");
+				ROS_INFO("Start checking.");
 				test_stage_++;
+				infrared_display.displayNormalMsg(test_stage_, 0);
 				brush.normalOperate(); // Update for battery.
 				wheel.setPidTargetSpeed(LINEAR_MAX_SPEED, LINEAR_MAX_SPEED);
 				check_wheel_time_ = ros::Time::now().toSec();
@@ -245,7 +279,7 @@ void ActionLifeCheck::run()
 			}
 			break;
 		}
-		case 2:
+		case 3:
 		{
 			/*left_brush_current_max_ = (brush.getLeftCurrent() > left_brush_current_max_) ? brush.getLeftCurrent()
 																						 : left_brush_current_max_;
@@ -292,7 +326,10 @@ void ActionLifeCheck::run()
 			else if (!wheel_forward_ && ros::Time::now().toSec() - start_time_stamp_ > timeout_interval_)
 			{
 				if (!checkCurrent())
+				{
+					error_step_ = test_stage_;
 					test_stage_ = 99;
+				}
 				else
 				{
 					/*start_time_stamp_ = ros::Time::now().toSec();
@@ -313,6 +350,7 @@ void ActionLifeCheck::run()
 		case 99: // For error.
 		{
 			ROS_ERROR("%s %d: error code:%d", __FUNCTION__, __LINE__, error_code_);
+			infrared_display.displayErrorMsg(error_step_, error_content_, error_code_);
 			key_led.setMode(LED_STEADY, LED_RED);
 			wheel.stop();
 			brush.stop();
@@ -321,9 +359,10 @@ void ActionLifeCheck::run()
 			sleep(5);
 			break;
 		}
-		default: // case 10:
+		default: // case 4:
 		{
 			ROS_INFO("%s %d: Test finish.", __FUNCTION__, __LINE__);
+			infrared_display.displayNormalMsg(0, 0);
 			key_led.setMode(LED_STEADY, LED_GREEN);
 			beeper.beep(2, 40, 40, 3);
 			wheel.stop();
@@ -402,34 +441,64 @@ bool ActionLifeCheck::checkCurrent()
 
 	if (left_brush_current_ - left_brush_current_baseline_ > side_brush_current_ref_ * 1.2 ||
 			 left_brush_current_ - left_brush_current_baseline_ < side_brush_current_ref_ * 0.8)
+	{
 		error_code_ = LEFT_BRUSH_CURRENT_ERROR;
+		error_content_ = static_cast<uint16_t>(left_brush_current_ - left_brush_current_baseline_);
+	}
 	else if (right_brush_current_ - right_brush_current_baseline_ > side_brush_current_ref_ * 1.2 ||
 		right_brush_current_ - right_brush_current_baseline_ < side_brush_current_ref_ * 0.8)
+	{
 		error_code_ = RIGHT_BRUSH_CURRENT_ERROR;
+		error_content_ = static_cast<uint16_t>(right_brush_current_ - right_brush_current_baseline_);
+	}
 	else if (main_brush_current_ - main_brush_current_baseline_ > main_brush_current_ref_ * 1.2 ||
 			 main_brush_current_ - main_brush_current_baseline_ < main_brush_current_ref_ * 0.8)
+	{
 		error_code_ = MAIN_BRUSH_CURRENT_ERROR;
+		error_content_ = static_cast<uint16_t>(main_brush_current_ - main_brush_current_baseline_);
+	}
 	else if (vacuum_current_ - vacuum_current_baseline_ > vacuum_current_ref_ * 1.2 ||
 			 vacuum_current_ - vacuum_current_baseline_ < vacuum_current_ref_ * 0.8)
+	{
 		error_code_ = VACUUM_CURRENT_ERROR;
-	else if (water_tank_current_ - water_tank_current_baseline_ > water_tank_current_ref_ * 1.2 ||
+		error_content_ = static_cast<uint16_t>(vacuum_current_ - vacuum_current_baseline_);
+	}
+	/*else if (water_tank_current_ - water_tank_current_baseline_ > water_tank_current_ref_ * 1.2 ||
 			 water_tank_current_ - water_tank_current_baseline_ < water_tank_current_ref_ * 0.8)
+	{
 		error_code_ = VACUUM_CURRENT_ERROR; // todo:
+		error_content_ = static_cast<uint16_t>(water_tank_current_ - water_tank_current_baseline_);
+	}*/
 	else if (left_wheel_forward_current_ - left_wheel_current_baseline_ > wheel_current_ref_ * 1.2 ||
 		left_wheel_forward_current_ - left_wheel_current_baseline_ < wheel_current_ref_ * 0.8)
+	{
 		error_code_ = LEFT_WHEEL_FORWARD_CURRENT_ERROR;
+		error_content_ = static_cast<uint16_t>(left_wheel_forward_current_ - left_wheel_current_baseline_);
+	}
 	else if (right_wheel_forward_current_ - right_wheel_current_baseline_ > wheel_current_ref_ * 1.2 ||
 			 right_wheel_forward_current_ - right_wheel_current_baseline_ < wheel_current_ref_ * 0.8)
+	{
 		error_code_ = RIGHT_WHEEL_FORWARD_CURRENT_ERROR;
+		error_content_ = static_cast<uint16_t>(right_wheel_forward_current_ - right_wheel_current_baseline_);
+	}
 	else if (left_wheel_backward_current_ - left_wheel_current_baseline_ > wheel_current_ref_ * 1.2 ||
 		left_wheel_backward_current_ - left_wheel_current_baseline_ < wheel_current_ref_ * 0.8)
+	{
 		error_code_ = LEFT_WHEEL_BACKWARD_CURRENT_ERROR;
+		error_content_ = static_cast<uint16_t>(left_wheel_backward_current_ - left_wheel_current_baseline_);
+	}
 	else if (right_wheel_backward_current_ - right_wheel_current_baseline_ > wheel_current_ref_ * 1.2 ||
 			 right_wheel_backward_current_ - right_wheel_current_baseline_ < wheel_current_ref_ * 0.8)
+	{
 		error_code_ = RIGHT_WHEEL_BACKWARD_CURRENT_ERROR;
+		error_content_ = static_cast<uint16_t>(right_wheel_backward_current_ - right_wheel_current_baseline_);
+	}
 	else if (robot_current_ - robot_current_baseline_ > robot_current_ref_ * 1.2 ||
 			robot_current_ - robot_current_baseline_ < robot_current_ref_ * 0.8)
+	{
 		error_code_ = BASELINE_CURRENT_ERROR;
+		error_content_ = static_cast<uint16_t>(robot_current_ - robot_current_baseline_);
+	}
 
 	return error_code_ == 0;
 }

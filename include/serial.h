@@ -303,10 +303,11 @@
 #define FUNC_CHARGE_CURRENT_TEST_MODE		15
 #define DESK_TEST_CURRENT_MODE		16 // For checking current
 #define DESK_TEST_MOVEMENT_MODE		17
-#define GYRO_TEST_MODE		18
-#define LIFE_TEST_MODE		19
-#define WATER_TANK_TEST_MODE	20
-#define R16_AND_LIDAR_TEST_MODE	21
+#define DESK_TEST_WRITE_BASELINE_MODE	18
+#define GYRO_TEST_MODE		19
+#define LIFE_TEST_MODE		20
+#define WATER_TANK_TEST_MODE	21
+#define R16_AND_LIDAR_TEST_MODE	22
 
 // ------------------------------work mode end--------------------------------------
 

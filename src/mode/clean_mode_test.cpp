@@ -10,6 +10,7 @@ CleanModeTest::CleanModeTest(uint8_t mode)
 {
 	ROS_WARN("%s %d: Entering Test mode\n=========================" , __FUNCTION__, __LINE__);
 	speaker.play(VOICE_TEST_MODE, false);
+	speaker.play(VOICE_SOFTWARE_VERSION, false);
 	lidar.slipCheckingCtrl(OFF);
 //	key_led.setMode(LED_STEADY, LED_GREEN);
 	event_manager_set_enable(false);
@@ -18,6 +19,7 @@ CleanModeTest::CleanModeTest(uint8_t mode)
 	{
 		case DESK_TEST_CURRENT_MODE:
 		case DESK_TEST_MOVEMENT_MODE:
+		case DESK_TEST_WRITE_BASELINE_MODE:
 		{
 			serial.setWorkMode(DESK_TEST_CURRENT_MODE);
 			sp_state = state_test;
@@ -69,7 +71,7 @@ CleanModeTest::CleanModeTest(uint8_t mode)
 
 CleanModeTest::~CleanModeTest()
 {
-	ROS_WARN("%s %d: Exit Desk Test mode\n=========================" , __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Exit Test mode\n=========================" , __FUNCTION__, __LINE__);
 /*	if (test_state_ != -1)
 		speaker.play(VOICE_TEST_SUCCESS, false);
 	else

@@ -447,6 +447,7 @@ void robot::core_thread_cb()
 		}
 		case DESK_TEST_CURRENT_MODE:
 		case DESK_TEST_MOVEMENT_MODE:
+		case DESK_TEST_WRITE_BASELINE_MODE:
 		case GYRO_TEST_MODE:
 		case LIFE_TEST_MODE:
 		case WATER_TANK_TEST_MODE:
@@ -487,6 +488,7 @@ void robot::runTestMode()
 
 	p_mode.reset(new CleanModeTest(r16_work_mode_));
 	p_mode->run();
+	g_pp_shutdown = true;
 }
 
 void robot::runWorkMode()
