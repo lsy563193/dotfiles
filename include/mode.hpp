@@ -55,7 +55,7 @@ public:
 
 	enum {
 		//0
-		md_idle,
+		md_idle=0,
 		md_charge,
 		md_sleep,
 		md_go_to_charger,
@@ -70,7 +70,7 @@ public:
 
 	};
 
-	int next_mode_i_;
+	static int next_mode_i_;
 
 	int action_i_{ac_null};
 	enum {
@@ -126,7 +126,7 @@ public:
 
 protected:
 	bool is_clean_mode_navigation_{false};
-	int mode_i_{ac_null};
+	int mode_i_{};
 private:
 
 };

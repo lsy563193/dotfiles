@@ -6,6 +6,8 @@
 #include <event_manager.h>
 #include "mode.hpp"
 boost::shared_ptr<IAction> Mode::sp_action_ = nullptr;
+
+int Mode::next_mode_i_{};
 //IAction* Mode::sp_action_ = nullptr;
 
 void Mode::run()

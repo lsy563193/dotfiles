@@ -922,7 +922,9 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_move_type) {
 		}
 	}
 
-	if (distance > 5) {// closed
+	if (distance > 5 && getNextMode() != cm_spot) {// closed
+		ROS_INFO("next_mode_i_(%d)",getNextMode());
+		ROS_INFO("mode_i_(%d)",mode_i_);
 		is_closed = true;
 		is_isolate = isIsolate();
 		if(is_isolate)
@@ -1763,7 +1765,8 @@ bool ACleanMode::updateActionInStateSpot() {
 		auto result = std::find_if(plan_path_.begin(), plan_path_.end(), [&](const Point_t& c_it){
 			return c_it.toCell() == iterate_point_.toCell();
 		});
-		plan_path_.erase(plan_path_.begin(), result+1);
+		if(result != plan_path_.end())
+			plan_path_.erase(plan_path_.begin(), result+1);
 	}
 	ROS_ERROR("old_dir_(%d)", old_dir_);
 	auto cur_point = getPosition();

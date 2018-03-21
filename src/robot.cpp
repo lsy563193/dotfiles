@@ -852,6 +852,7 @@ Mode *getNextMode(int next_mode_i_)
 		case Mode::cm_wall_follow:
 			return new CleanModeFollowWall();
 		case Mode::cm_spot:
+			ROS_ERROR("!!!!!!!!!!!!!!cm_spot(%d)", Mode::cm_spot);
 			return new CleanModeSpot();
 //		case Mode::cm_test:
 //			return new CleanModeTest();
