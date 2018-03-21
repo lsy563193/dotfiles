@@ -324,6 +324,8 @@ private:
 	boost::shared_ptr<IAction> p_movement_;
 
 	uint16_t error_code_{0};
+	uint8_t error_stage_{0};
+	uint16_t error_content_{0};
 
 	uint8_t test_stage_{1};
 	double last_time_stamp_{0};

@@ -56,6 +56,8 @@ void ActionR16Test::run()
 	// Test finish.
 	double alarm_time = ros::Time::now().toSec();
 	speaker.play(VOICE_TEST_SUCCESS);
+	infrared_display.displayNormalMsg(0, 0);
+	key_led.setMode(LED_STEADY, LED_GREEN);
 	ROS_INFO("%s %d: Test finish.", __FUNCTION__, __LINE__);
 	while (ros::ok())
 	{
@@ -71,9 +73,10 @@ void ActionR16Test::run()
 bool ActionR16Test::RAM_test()
 {
 	ROS_INFO("%s %d: Start RAM test.", __FUNCTION__, __LINE__);
+	infrared_display.displayNormalMsg(1, 0);
 	bool test_ret = false;
 	int RAM_test_size = 2; // In Mb.
-	int RAM_test_block_cnt = 3; // Test 3 c_blocks of RAM and size of each block is RAM_test_size Mb.
+	int RAM_test_block_cnt = 3; // Test RAM_test_block_cnt blocks of RAM sizing RAM_test_size Mb.
 
 	pid_t status;
 	// (Austin)Use the modified memtester.
@@ -150,6 +153,7 @@ bool ActionR16Test::Flash_test()
 {
 
 	ROS_INFO("%s %d: Start Flash test.", __FUNCTION__, __LINE__);
+	infrared_display.displayNormalMsg(2, 0);
 	std::string origin_file = "/origin_random.file";
 	std::string new_file = "/random.file";
 	std::string cmd;
@@ -211,6 +215,7 @@ bool ActionR16Test::Flash_test()
 bool ActionR16Test::lidar_test()
 {
 	ROS_INFO("%s %d: Start lidar test.", __FUNCTION__, __LINE__);
+	infrared_display.displayNormalMsg(3, 0);
 	ros::NodeHandle nh_;
 	ros::Subscriber scan_sub_;
 	scan_sub_ = nh_.subscribe("scanOriginal", 1, &Lidar::scantestCb, &lidar);
@@ -231,6 +236,7 @@ bool ActionR16Test::lidar_test()
 bool ActionR16Test::lidar_bumper_test()
 {
 	ROS_INFO("%s %d: Start lidar bumper test.", __FUNCTION__, __LINE__);
+	infrared_display.displayNormalMsg(4, 0);
 
 	int test_bumper_cnt = 5;
 	int bumper_cnt = 0;
@@ -241,6 +247,7 @@ bool ActionR16Test::lidar_bumper_test()
 		if (!last_bumper_status && bumper.getLidarBumperStatus())
 		{
 			bumper_cnt++;
+			infrared_display.displayNormalMsg(4, static_cast<uint16_t>(bumper_cnt));
 			ROS_INFO("%s %d: Hit lidar bumper for %d time.", __FUNCTION__, __LINE__, bumper_cnt);
 		}
 		last_bumper_status = bumper.getLidarBumperStatus();
@@ -267,7 +274,5 @@ void ActionR16Test::error_loop(uint8_t test_stage, uint16_t content, uint16_t er
 			ROS_ERROR("%s %d: Test ERROR. test_stage_: %d. error_code: %d, content: %d", __FUNCTION__, __LINE__, test_stage, error_code, content);
 		}
 	}
-
-
 }
 

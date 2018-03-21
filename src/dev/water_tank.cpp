@@ -31,6 +31,7 @@ void WaterTank::normalOperate()
 	operation_ = true;
 	checkBatterySetPWM();
 	pump_switch_ = 0x80;
+	last_pump_time_stamp_ = 0;
 	serial.setSendData(CTL_WATER_TANK, static_cast<uint8_t>(pump_switch_ | pwm_));
 	check_battery_time_stamp_ = ros::Time::now().toSec();
 }

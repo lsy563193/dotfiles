@@ -210,6 +210,11 @@ public:
 		return robot_current_;
 	}
 
+	uint8_t getWorkMode()
+	{
+		return r16_work_mode_;
+	}
+
 private:
 
 	uint8_t getTestMode(void);

@@ -44,11 +44,13 @@ ACleanMode::ACleanMode()
 	IMoveType::sp_mode_ = this;
 	APathAlgorithm::p_cm_ = this;
 	sp_state->setMode(this);
-	ev.key_clean_pressed = false;
-	sp_state = state_init;
-	sp_state->init();
-	action_i_ = ac_open_gyro;
-	genNextAction();
+	if (robot::instance()->getWorkMode() == WORK_MODE)
+	{
+		sp_state = state_init;
+		sp_state->init();
+		action_i_ = ac_open_gyro;
+		genNextAction();
+	}
 	robot_timer.initWorkTimer();
 	key.resetPressStatus();
 	time_gyro_dynamic_ = ros::Time::now().toSec();

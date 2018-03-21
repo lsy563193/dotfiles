@@ -13,6 +13,7 @@
 #include <beeper.h>
 #include <error.h>
 #include <infrared_display.hpp>
+#include <speaker.h>
 #include "action.hpp"
 
 ActionLifeCheck::ActionLifeCheck()
@@ -21,7 +22,7 @@ ActionLifeCheck::ActionLifeCheck()
 
 	auto life_test_routine = new boost::thread(boost::bind(&ActionLifeCheck::lifeTestRoutineThread, this));
 
-	timeout_interval_ = 120;
+	timeout_interval_ = 300;
 
 	// Make sure lidar has been inited and stopped, and the voice has finished playing.
 	usleep(3500000);
@@ -129,7 +130,6 @@ void ActionLifeCheck::run()
 				vacuum.setMode(Vac_Normal);
 				water_tank.normalOperate();
 				wheel.setPidTargetSpeed(LINEAR_MAX_SPEED, LINEAR_MAX_SPEED);
-				key_led.setMode(LED_FLASH, LED_ORANGE, 600);
 				left_brush_current_baseline_ /= sum_cnt_;
 				ROS_INFO("%s %d: left_brush_current_baseline_:%d.", __FUNCTION__, __LINE__,
 						 left_brush_current_baseline_);
@@ -251,6 +251,8 @@ void ActionLifeCheck::run()
 		}
 		case 2:
 		{
+			infrared_display.displayNormalMsg(test_stage_,
+											  static_cast<uint16_t>(ros::Time::now().toSec() - start_time_stamp_));
 			if (ros::Time::now().toSec() - start_time_stamp_ > timeout_interval_ - 60)
 			{
 				// Last one minute will check for current. For wheels, check the forward current first.
@@ -289,6 +291,8 @@ void ActionLifeCheck::run()
 																						 : main_brush_current_max_;
 			vacuum_current_max_ = (vacuum.getCurrent() > vacuum_current_max_) ? vacuum.getCurrent() :
 								  vacuum_current_max_;*/
+			infrared_display.displayNormalMsg(test_stage_,
+											  static_cast<uint16_t>(ros::Time::now().toSec() - start_time_stamp_));
 			left_brush_current_ += brush.getLeftCurrent();
 			right_brush_current_ += brush.getRightCurrent();
 			main_brush_current_ += brush.getMainCurrent();
@@ -351,6 +355,7 @@ void ActionLifeCheck::run()
 		{
 			ROS_ERROR("%s %d: error code:%d", __FUNCTION__, __LINE__, error_code_);
 			infrared_display.displayErrorMsg(error_step_, error_content_, error_code_);
+			speaker.play(VOICE_TEST_FAIL);
 			key_led.setMode(LED_STEADY, LED_RED);
 			wheel.stop();
 			brush.stop();
@@ -363,8 +368,9 @@ void ActionLifeCheck::run()
 		{
 			ROS_INFO("%s %d: Test finish.", __FUNCTION__, __LINE__);
 			infrared_display.displayNormalMsg(0, 0);
+			speaker.play(VOICE_TEST_SUCCESS);
 			key_led.setMode(LED_STEADY, LED_GREEN);
-			beeper.beep(2, 40, 40, 3);
+//			beeper.beep(2, 40, 40, 3);
 			wheel.stop();
 			brush.stop();
 			vacuum.stop();
