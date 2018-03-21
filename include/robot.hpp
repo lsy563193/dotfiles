@@ -23,6 +23,9 @@
 //#include "mode.hpp"
 #include <string.h>
 
+#define ON true
+#define OFF false
+
 #define  _RATE 50
 
 extern pthread_mutex_t recev_lock;

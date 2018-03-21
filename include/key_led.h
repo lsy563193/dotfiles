@@ -8,7 +8,6 @@
 // For LED control
 // LED type
 #include <cstdint>
-#include "robot.hpp"
 
 #define LED_STEADY					0
 #define LED_FLASH					1

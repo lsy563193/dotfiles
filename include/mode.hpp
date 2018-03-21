@@ -6,7 +6,7 @@
 #define PP_MODE_H_H
 
 #include "state.hpp"
-#include "path_algorithm.h"
+//#include "path_algorithm.h"
 #include "event_manager.h"
 #include "boost/shared_ptr.hpp"
 #include <pthread.h>

@@ -21,6 +21,40 @@ CleanModeExploration::CleanModeExploration()
 
 CleanModeExploration::~CleanModeExploration()
 {
+#if 0
+	//	system("rm /var/volatile/tmp/map");
+	FILE *f = fopen("/var/volatile/tmp/map", "w");
+	if (f == nullptr)
+		ROS_ERROR("%s %d: Open /var/volatile/tmp/map error.", __FUNCTION__, __LINE__);
+	else
+	{
+		ROS_INFO("%s %d: Start writing data.", __FUNCTION__, __LINE__);
+		fprintf(f, "Width: %d\n", slam_map.getWidth());
+		fprintf(f, "Height: %d\n", slam_map.getHeight());
+		fprintf(f, "Resolution: %f\n", slam_map.getResolution());
+		fprintf(f, "Origin: x(%f), y(%f)\n", slam_map.getOriginX(), slam_map.getOriginY());
+		auto size = slam_map.getData().size();
+//		printf(" %s %d: data_index_size:%d.", __FUNCTION__, __LINE__, size);
+		for (int index = 0; index < size; index++)
+		{
+			//ROS_INFO("slam_map_data s_index_:%d, data:%d", slam_map_data_index[s_index_], slam_map_data[slam_map_data_index[s_index_]]);
+			if (slam_map.getData()[index] == 100) fprintf(f, "@");
+			else if (slam_map.getData()[index] == -1) fprintf(f, ".");
+			else if (slam_map.getData()[index] == 0) fprintf(f, "1");
+
+			if (index % slam_map.getWidth() == 0)
+				fprintf(f, "\n");
+
+			if ((100 * index / size) % 10 == 0)
+			{
+				printf("\r %d0%%.", static_cast<int>(100 * index / size / 10));
+			}
+		}
+		printf("\n");
+		fclose(f);
+		ROS_INFO("%s %d: Write data succeeded.", __FUNCTION__, __LINE__);
+	}
+#endif
 }
 
 bool CleanModeExploration::mapMark()
