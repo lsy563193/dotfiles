@@ -67,6 +67,9 @@ void error_loop(uint8_t test_stage, uint16_t error_code, uint16_t current_data)
 {
 //	send_thread_enable = true;
 	infrared_display.displayErrorMsg(test_stage-4, current_data, error_code);
+	serial.setSendData(CTL_LED_RED, 100);
+	serial.setSendData(CTL_LED_GREEN, 0);
+	serial.setSendData(CTL_MIX, 0);
 	serial.sendData();
 	double alarm_time = ros::Time::now().toSec();
 	speaker.play(VOICE_TEST_FAIL);
