@@ -40,7 +40,7 @@ public:
 
 	uint8_t uploadLastCleanData();
 
-	bool setWorkMode(wifi::WorkMode workmode);
+	bool setWorkMode(int workmode);
 
 	wifi::WorkMode getWorkMode()
 	{

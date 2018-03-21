@@ -143,7 +143,7 @@ void RxManager::handleMsg( Packet &&a_packet )
 		handleMsg( wifiResumeAckMsg( std::move( a_packet )) );
 		break;
 	case wifiSuspendAckMsg::MSG_CODE:
-		handleMsg( wifiResumeAckMsg( std::move( a_packet )) );
+		handleMsg( wifiSuspendAckMsg( std::move( a_packet )) );
 		break;
 	default:
 		ROS_WARN( "wifi::RxManager::handleMsg ,Unknown msg_code: %u", a_packet.msg_code() );

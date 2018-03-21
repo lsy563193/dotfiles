@@ -611,13 +611,16 @@ void Serial::send_routine_cb()
 			uint32_t sleep_time = 20000-(uint32_t)(period*1000000);
 			usleep(sleep_time);
 		}
-		else
+		else{
 			usleep(20000);
+			//ROS_WARN("SLEEP_TIME %d",sleep_time);
+		}
 		t = clock();
 		//serial wifi send
+
 		wifi_send_state_cnt++;
 		wifi_send_map_cnt++;
-		if(wifi_send_state_cnt>= 250 && wifi_send_map_cnt < 500)//5s
+		if(wifi_send_state_cnt>= 150 && wifi_send_map_cnt < 300)//
 		{
 			wifi_send_state_cnt= 0;
 			if(S_Wifi::is_wifi_connected_
@@ -625,15 +628,17 @@ void Serial::send_routine_cb()
 						&& s_wifi.is_cloud_connected_)
 				s_wifi.replyRobotStatus(0xc8,0x00);
 		}
-		if(wifi_send_map_cnt >=500){
+		/*
+		if(wifi_send_map_cnt >=300)
+		{
 			wifi_send_map_cnt = 0;
 			if(S_Wifi::is_wifi_connected_
 						 && s_wifi.is_cloud_connected_
 						 && s_wifi.isStatusRequest_
-						 && s_wifi.getWorkMode() == wifi::WorkMode::PLAN1)
+						 )
 				s_wifi.replyRealtimeMap();
 		}
-
+		*/
 		//r.sleep();
 		/*-------------------Process for beeper.play and key_led -----------------------*/
 		key_led.processLed();

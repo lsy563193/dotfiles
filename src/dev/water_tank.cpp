@@ -21,7 +21,7 @@ bool WaterTank::checkEquipment()
 		is_equipped_ = true;
 
 //	printf("watertank%d\n", is_equipped_);
-	ROS_INFO("%s %d: Robot is %scarrying a water tank.", __FUNCTION__, __LINE__, is_equipped_ ? "" : "not ");
+	//ROS_INFO("%s %d: Robot is %scarrying a water tank.", __FUNCTION__, __LINE__, is_equipped_ ? "" : "not ");
 
 	return is_equipped_;
 }
