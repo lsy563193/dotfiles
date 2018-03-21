@@ -44,7 +44,7 @@ ACleanMode::ACleanMode()
 	IMoveType::sp_mode_ = this;
 	APathAlgorithm::p_cm_ = this;
 	sp_state->setMode(this);
-	if (robot::instance()->getWorkMode() == WORK_MODE)
+	if (robot::instance()->getWorkMode() == WORK_MODE ||robot::instance()->getWorkMode() == IDLE_MODE || robot::instance()->getWorkMode() == CHARGE_MODE)
 	{
 		sp_state = state_init;
 		sp_state->init();
