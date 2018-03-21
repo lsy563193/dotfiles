@@ -11,6 +11,7 @@
 #include <vacuum.h>
 #include <beeper.h>
 #include <gyro.h>
+#include <infrared_display.hpp>
 #include "move_type.hpp"
 #include "error.h"
 
@@ -20,9 +21,10 @@ MoveTypeGyroTest::MoveTypeGyroTest()
 
 	auto gyro_test_routine = new boost::thread(boost::bind(&MoveTypeGyroTest::gyroTestRoutineThread, this));
 
-	key_led.setMode(LED_FLASH, LED_GREEN);
+	key_led.setMode(LED_FLASH, LED_ORANGE, 600);
 	p_movement_.reset(new ActionOpenGyro());
 	last_time_stamp_ = ros::Time::now().toSec();
+	infrared_display.displayNormalMsg(test_stage_, 0);
 }
 
 MoveTypeGyroTest::~MoveTypeGyroTest()
@@ -37,7 +39,7 @@ void MoveTypeGyroTest::gyroTestRoutineThread()
 	uint8_t buf[REC_LEN];
 	ros::Time cur_time, last_time;
 
-	while (ros::ok())
+	while (ros::ok() && !recei_thread_kill)
 	{
 		/*--------data extrict from serial com--------*/
 		ROS_ERROR_COND(pthread_mutex_lock(&recev_lock) != 0, "robotbase pthread receive lock fail");
@@ -54,7 +56,7 @@ void MoveTypeGyroTest::gyroTestRoutineThread()
 						WHEEL_ENCODER_TO_MILLIMETER / 1000;
 				count_sum += std::abs(wheel.getLeftEncoderCnt());
 			}
-			odom.setRadian(degree_to_radian(gyro.getAngleY()));
+			odom.setOriginRadian(degree_to_radian(gyro.getAngleY()));
 			odom.setAngleSpeed(gyro.getAngleV());
 			cur_time = ros::Time::now();
 			double angle_rad, dt;
@@ -63,16 +65,18 @@ void MoveTypeGyroTest::gyroTestRoutineThread()
 			last_time = cur_time;
 			odom.setMovingSpeed(static_cast<float>((wheel.getLeftEncoderCnt() + wheel.getRightEncoderCnt()) *
 												   WHEEL_ENCODER_TO_MILLIMETER / 1000 / 2.0 / dt));
-			odom.setX(static_cast<float>(odom.getX() + ((wheel.getLeftEncoderCnt() + wheel.getRightEncoderCnt())
-														* WHEEL_ENCODER_TO_MILLIMETER * cos(angle_rad) / 1000 / 2)));
-			odom.setY(static_cast<float>(odom.getY() + ((wheel.getLeftEncoderCnt() + wheel.getRightEncoderCnt())
-														* WHEEL_ENCODER_TO_MILLIMETER * sin(angle_rad) / 1000 / 2)));
-//			odom.setX(static_cast<float>(odom.getX() + (odom.getMovingSpeed() * cos(angle_rad)) * dt));
-//			odom.setY(static_cast<float>(odom.getY() + (odom.getMovingSpeed() * sin(angle_rad)) * dt));
+			odom.setOriginX(static_cast<float>(odom.getOriginX() + ((wheel.getLeftEncoderCnt() + wheel.getRightEncoderCnt())
+																												* WHEEL_ENCODER_TO_MILLIMETER * cos(angle_rad) / 1000 / 2)));
+			odom.setOriginY(static_cast<float>(odom.getOriginY() + ((wheel.getLeftEncoderCnt() + wheel.getRightEncoderCnt())
+																												* WHEEL_ENCODER_TO_MILLIMETER * sin(angle_rad) / 1000 / 2)));
+//			odom.setOriginX(static_cast<float>(odom.getOriginX() + (odom.getMovingSpeed() * cos(angle_rad)) * dt));
+//			odom.setOriginY(static_cast<float>(odom.getOriginY() + (odom.getMovingSpeed() * sin(angle_rad)) * dt));
 			robot::instance()->updateRobotPositionForTest();
 			updatePosition();
 		}
 	}
+	event_manager_thread_kill = true;
+	ROS_ERROR("%s,%d,exit",__FUNCTION__,__LINE__);
 }
 
 bool MoveTypeGyroTest::dataExtract(const uint8_t *buf)
@@ -105,13 +109,14 @@ void MoveTypeGyroTest::run()
 {
 	switch (test_stage_)
 	{
-		case 0:
+		case 1:
 		{
 			if (p_movement_->isFinish())
 			{
 				test_stage_++;
+				infrared_display.displayNormalMsg(test_stage_, 0);
 				p_movement_.reset();
-				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(90), 10));
+				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-90), 10));
 				saved_gyro_turn_angle_ = gyro.getAngleY();
 				saved_wheel_mileage_ = wheel_mileage_;
 				brush.slowOperate();
@@ -120,10 +125,10 @@ void MoveTypeGyroTest::run()
 				p_movement_->run();
 			break;
 		}
-		case 1:
 		case 2:
 		case 3:
 		case 4:
+		case 5:
 		{
 			/*wheel.pidSetLeftSpeed(-5);
 			wheel.pidSetRightSpeed(5);
@@ -163,11 +168,12 @@ void MoveTypeGyroTest::run()
 				else
 				{
 					p_movement_.reset();
-					if (test_stage_ == 4)
+					if (test_stage_ == 5)
 						p_movement_.reset();
 					else
 						p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-90), 10));
 					test_stage_++;
+					infrared_display.displayNormalMsg(test_stage_, 0);
 					current_angle = gyro.getAngleY();
 					saved_gyro_turn_angle_ = current_angle;
 				}
@@ -192,6 +198,7 @@ void MoveTypeGyroTest::run()
 		{
 			ROS_ERROR("%s %d: error code:%d", __FUNCTION__, __LINE__, error_code_);
 			key_led.setMode(LED_STEADY, LED_RED);
+			infrared_display.displayErrorMsg(test_stage_, 0, error_code_);
 			wheel.stop();
 			brush.stop();
 			vacuum.stop();
@@ -202,6 +209,7 @@ void MoveTypeGyroTest::run()
 		{
 			ROS_INFO("%s %d: Test finish.", __FUNCTION__, __LINE__);
 			key_led.setMode(LED_STEADY, LED_GREEN);
+			infrared_display.displayNormalMsg(0, 0);
 			beeper.beep(2, 40, 40, 3);
 			wheel.stop();
 			brush.stop();

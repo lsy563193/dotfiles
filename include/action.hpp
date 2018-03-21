@@ -186,7 +186,9 @@ private:
 	double start_time_stamp_{0};
 	double check_wheel_time_{0};
 	uint16_t error_code_{0};
-	int test_stage_{0};
+	uint16_t error_content_{0};
+	uint8_t error_step_{0};
+	uint8_t test_stage_{1};
 	bool wheel_forward_{true};
 
 	int sum_cnt_{0};

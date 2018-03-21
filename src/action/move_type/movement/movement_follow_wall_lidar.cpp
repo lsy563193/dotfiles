@@ -17,7 +17,7 @@ MovementFollowWallLidar::MovementFollowWallLidar(bool is_left)
 	angle_forward_to_turn_ = degree_to_radian(60);
 	min_speed_ = FALL_WALL_MIN_SPEED;
 	max_speed_ = FALL_WALL_MAX_SPEED;
-	base_speed_ = min_speed_;
+	base_speed_ = FALL_WALL_MAX_SPEED;
 	tick_limit_ = 0;
 	lidar_targets_.empty();
 	virtual_targets_.empty();
@@ -126,7 +126,7 @@ Point_t MovementFollowWallLidar::calcTmpTarget() {
 
 bool MovementFollowWallLidar::isFinish() {
 	radian_diff = getPosition().courseToDest(calcTmpTarget());
-//	Point_t odom_p = {odom.getX(),odom.getY(),odom.getRadian()};
+//	Point_t odom_p = {odom.getOriginX(),odom.getOriginY(),odom.getRadian()};
 //	radian_diff = odom_p.courseToDest(calcTmpTarget());
 	if(AMovementFollowPoint::isFinish())
 		return true;

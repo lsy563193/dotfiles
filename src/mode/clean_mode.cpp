@@ -38,6 +38,7 @@ ACleanMode::ACleanMode()
 
 	lidar.slipCheckingCtrl(ON);
 	event_manager_register_handler(this);
+	event_manager_reset_status();
 	event_manager_set_enable(true);
 	serial.setWorkMode(WORK_MODE);
 	IMoveType::sp_mode_ = this;
@@ -1613,8 +1614,7 @@ void ACleanMode::switchInStateClean() {
 
 // ------------------State go home point--------------------
 bool ACleanMode::checkEnterGoHomePointState()
-{
-	if (ev.remote_home || ev.battery_home)
+{ if (ev.remote_home || ev.battery_home)
 	{
 		if (ev.remote_home)
 			remote_go_home_point = true;

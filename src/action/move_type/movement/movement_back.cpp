@@ -21,8 +21,8 @@ MovementBack::MovementBack(float back_distance, uint8_t max_speed)
 
 void MovementBack::updateStartPose()
 {
-	s_pos_x = odom.getX();
-	s_pos_y = odom.getY();
+	s_pos_x = odom.getOriginX();
+	s_pos_y = odom.getOriginY();
 }
 //
 //bool MovementBack::isLidarStop()
@@ -49,7 +49,7 @@ bool MovementBack::isFinish()
 {
 	robot::instance()->lockScanCtrl();
 	robot::instance()->pubScanCtrl(true, true);
-	float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getX(), odom.getY());
+	float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getOriginX(), odom.getOriginY());
 //	ROS_INFO("%s, %d: MovementBack distance %f", __FUNCTION__, __LINE__, distance);
 
 	if (std::abs(distance) >= back_distance_ || isLidarStop())

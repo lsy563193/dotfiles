@@ -466,7 +466,7 @@ bool MoveTypeFollowWall::handleMoveBackEvent(ACleanMode* p_clean_mode)
 	{
 		p_clean_mode->moveTypeFollowWallSaveBlocks();
 		movement_i_ = mm_back;
-		sp_movement_.reset(new MovementBack(0.3, BACK_MAX_SPEED));
+		sp_movement_.reset(new MovementBack(0.15, BACK_MAX_SPEED));
 		return true;
 	}
 

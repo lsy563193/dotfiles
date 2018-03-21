@@ -58,6 +58,7 @@ typedef enum {
 	VOICE_ERROR_LIFT_UP_CLEANING_STOP	=	50,
 	VOICE_PROCESS_ERROR				= 54,
 	VOICE_USER_KILL					= 55,
+	VOICE_SOFTWARE_VERSION			= 56,
 }VoiceType;
 
 typedef struct

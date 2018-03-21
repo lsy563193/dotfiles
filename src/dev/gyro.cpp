@@ -460,7 +460,7 @@ float Gyro::calAngleR1OrderFilter(double k, double dt)
 }
 float Gyro::getAngleR(void)
 {
-//	ROS_INFO("angle_r_(with ofset) = %f", angle_r_ - ANGLE_R_OFFSET_);
+//	ROS_WARN("angle_r_(with ofset) = %f", angle_r_ - ANGLE_R_OFFSET_);
 	return angle_r_ - ANGLE_R_OFFSET_;
 }
 
@@ -471,12 +471,14 @@ float Gyro::calAngleRKalmanFilter(double dt)
 
 //	ROS_INFO("angle_kalman = %f, acc_angle= %f, angle_v_= %f", angle_kalman,acc_angle,angle_v_);
 //	printf("%f,%lf.", acc_angle,angle_v_);
+//	printf("%f,", acc_angle);
+//	printf("%lf,", angle_v_);
 
 	return angle_kalman;
 }
 
 //KalmanFilter
-float Gyro::KalmanFilter(float angle_m, float gyro_m, double dt)//angleAx和gyroGy
+float Gyro::KalmanFilter(float angle_m, float gyro_m, double dt)
 {
 	kalman_angle += (gyro_m - q_bias) * dt;
 	angle_err = angle_m - kalman_angle;
@@ -515,8 +517,8 @@ void Gyro::resetKalmanParam(void)
 	memcpy(Pdot, temp_Pdot, sizeof(Pdot));
 //	Q_angle=0.001,Q_gyro=0.005;//
 //	R_angle=0.5;
-	Q_angle=0.03,Q_gyro=0.00009;//0.05
-	R_angle=0.0001;//0.5
+	Q_angle=0.179,Q_gyro=0.00019;//0.05
+	R_angle=0.1;//0.5
 	C_0=1;
 	q_bias=angle_err=PCt_0=PCt_1=E=K_0=K_1=t_0=t_1=0;
 }

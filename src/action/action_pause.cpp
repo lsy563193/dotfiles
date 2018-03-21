@@ -17,8 +17,8 @@ ActionPause::ActionPause()
 
 	start_timer_ = ros::Time::now().toSec();
 	timeout_interval_ = IDLE_TIMEOUT;
-	pause_pose_.setX(odom.getX());
-	pause_pose_.setY(odom.getY());
+	pause_pose_.setX(odom.getOriginX());
+	pause_pose_.setY(odom.getOriginY());
 	ROS_INFO("%s %d: Enter action pause.", __FUNCTION__, __LINE__);
 }
 
@@ -34,7 +34,7 @@ bool ActionPause::isFinish()
 
 bool ActionPause::isExit()
 {
-	if (two_points_distance_double(pause_pose_.getX(), pause_pose_.getY(), odom.getX(), odom.getY()) > 0.1)
+	if (two_points_distance_double(pause_pose_.getX(), pause_pose_.getY(), odom.getOriginX(), odom.getOriginY()) > 0.1)
 	{
 		// Robot moved too far
 		ROS_WARN("%s %d: Robot is moved during pause.", __FUNCTION__, __LINE__);
