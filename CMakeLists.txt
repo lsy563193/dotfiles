@@ -25,6 +25,7 @@ FILE(GLOB PP_SRC
 	src/dev/water_tank.cpp
 	src/dev/wifi/wifi.cpp
 	src/dev/infrared_display.cpp
+	src/dev/wifi_led.cpp
 
 	src/mode/state/state.cpp
 	src/mode/state/state_init.cpp

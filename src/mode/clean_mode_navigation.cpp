@@ -120,11 +120,11 @@ bool CleanModeNav::mapMark()
 //			if(!(cost_block.first == BLOCKED_LIDAR && (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)))
 				clean_map_.setCell(CLEAN_MAP, cost_block.second.x, cost_block.second.y, cost_block.first);
 	}
-	clean_map_.print(CLEAN_MAP, Cells{curr});
+//	clean_map_.print(CLEAN_MAP, Cells{curr});
 	for (auto &&p_it :passed_path_)
 		clean_map_.setCells(CLEAN_MAP, p_it.toCell().x, p_it.toCell().y, CLEANED);
 
-	clean_map_.print(CLEAN_MAP, Cells{curr});
+//	clean_map_.print(CLEAN_MAP, Cells{curr});
 	//For slip mark
 	for(auto &&cost_block : c_blocks){
 		if(cost_block.first == BLOCKED_SLIP)

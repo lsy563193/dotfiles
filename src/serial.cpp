@@ -10,6 +10,7 @@
 #include <robot.hpp>
 #include <water_tank.hpp>
 #include <vacuum.h>
+#include <wifi_led.hpp>
 #include "wifi/wifi.h"
 
 boost::mutex send_stream_mutex;
@@ -614,6 +615,7 @@ void Serial::send_routine_cb()
 		r.sleep();
 		/*-------------------Process for beeper.play and key_led -----------------------*/
 		key_led.processLed();
+		wifi_led.processLed();
 		if (getSendData(CTL_WORK_MODE) != DESK_TEST_WRITE_BASELINE_MODE)
 		{
 			beeper.processBeep();
