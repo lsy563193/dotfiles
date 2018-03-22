@@ -300,6 +300,7 @@ void robot::robotbase_routine_cb()
 		// For charger device.
 		charger.setChargeStatus((buf[REC_MIX_BYTE] >> 4) & 0x07);
 		sensor.charge_status = charger.getChargeStatus();
+//		ROS_INFO("Charge status:%d.", charger.getChargeStatus());
 
 		// For sleep status.
 		serial.isMainBoardSleep((buf[REC_MIX_BYTE] & 0x80) == 0);
