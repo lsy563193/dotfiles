@@ -128,7 +128,7 @@ bool serial_port_test()
 				send_string_sum += std::to_string(serial.getSendData(i));
 		}
 		serial.sendData();
-		serial.debugSendStream(serial.send_stream);
+//		serial.debugSendStream(serial.send_stream);
 
 		int read_ret = serial.read(receive_data, REC_LEN);
 
@@ -149,7 +149,7 @@ bool serial_port_test()
 			usleep(50000);
 			serial.flush();
 		}
-		serial.debugReceivedStream(receive_data);
+//		serial.debugReceivedStream(receive_data);
 		usleep(100000);
 	}
 	if(send_string_sum.compare(receive_string_sum) == 0)
@@ -266,6 +266,7 @@ void main_board_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &curren
 		switch (test_stage) {
 			case FUNC_ELECTRICAL_AND_LED_TEST_MODE:/*---Main board electrical specification and LED test---*/
 				electrical_specification_and_led_test(baseline, is_fixture, test_stage, error_code, current_data);
+				test_stage += 5;
 				break;
 			case FUNC_OBS_TEST_MODE:/*---OBS---*/
 				obs_test(is_fixture, test_stage, error_code, current_data);
@@ -999,7 +1000,7 @@ void water_tank_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &curren
 void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data)
 {
 	uint16_t test_result=0;
-	uint8_t step=0;
+	uint8_t step=1;
 	uint8_t count=0;
 	uint8_t buf[REC_LEN];
 	uint32_t current_current=0;
@@ -1025,9 +1026,6 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 			continue;
 		}
 		switch(step) {
-			case 0:
-				if(buf[36])
-					step++;
 			case 1:
 				serial.setSendData(CTL_WHEEL_LEFT_HIGH, 300 >> 8);
 				serial.setSendData(CTL_WHEEL_LEFT_LOW, 300 & 0xFF);
@@ -1580,7 +1578,6 @@ void vacuum_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 	serial.setSendData(CTL_VACUUM_TEST_MODE, 0);
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
 	while(ros::ok()) {
-		serial.debugSendStream(serial.send_stream);
 		/*--------data extrict from serial com--------*/
 		ROS_ERROR_COND(pthread_mutex_lock(&recev_lock) != 0, "robotbase pthread receive lock fail");
 		ROS_ERROR_COND(pthread_cond_wait(&recev_cond, &recev_lock) != 0, "robotbase pthread receive cond wait fail");
@@ -1640,53 +1637,22 @@ void vacuum_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				break;
 			case 5:
 				step++;
-				if (buf[10] == 1) {
+				if (buf[6] == 1) {
 					error_code = VACUUM_ENCODER_ERROR;
-					current_data = buf[10];
+					current_data = buf[6];
 					return ;
 				}
-				else if (buf[10] == 2) {
+				else if (buf[6] == 2) {
 					error_code = VACUUM_ENCODER_FAIL;
-					current_data =  buf[10];
+					current_data =  buf[6];
 					return ;
 				}
 				else {
 					test_result |= 0x0004;
 				}
 				break;
-			case 6:
-				count++;
-				if(count <= 250)
-				{
-					if(static_cast<uint16_t>(buf[2] << 8 | buf[3]) > 580)
-					{
-						count = 0;
-						step++;
-					}
-				}
-			case 7:
-				count++;
-				if (count <= 10) {
-					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
-				}
-				else {
-					step++;
-					count = 0;
-					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
-					if(current_current < 800)
-					{
-						error_code = VACUUM_STALL_ERROR;
-						current_data = 0;
-						return ;
-					}
-					else
-					{
-						test_result |= 0x0008;
-					}
-				}
-				break;
 		}
-		if((test_result&0x000F) == 0x000F)
+		if((test_result&0x0007) == 0x0007)
 		{
 			test_stage++;
 			return ;
