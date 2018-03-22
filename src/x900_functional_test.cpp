@@ -51,6 +51,9 @@ void x900_functional_test(std::string serial_port, int baud_rate, std::string li
 	// Test finish.
 	double alarm_time = ros::Time::now().toSec();
 	speaker.play(VOICE_TEST_SUCCESS);
+	serial.setSendData(CTL_LED_GREEN, 100);
+	serial.setSendData(CTL_LED_RED, 0);
+	serial.setSendData(CTL_MIX, 0);
 	ROS_INFO("%s %d: Test finish.", __FUNCTION__, __LINE__);
 	while (ros::ok())
 	{
@@ -266,7 +269,6 @@ void main_board_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &curren
 		switch (test_stage) {
 			case FUNC_ELECTRICAL_AND_LED_TEST_MODE:/*---Main board electrical specification and LED test---*/
 				electrical_specification_and_led_test(baseline, is_fixture, test_stage, error_code, current_data);
-				test_stage += 5;
 				break;
 			case FUNC_OBS_TEST_MODE:/*---OBS---*/
 				obs_test(is_fixture, test_stage, error_code, current_data);
@@ -297,6 +299,11 @@ void main_board_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &curren
 			case FUNC_CHARGE_CURRENT_TEST_MODE:/*---charge current---*/
 				charge_current_test(is_fixture, test_stage, error_code, current_data);
 				break;
+			case FUNC_FINISHED:
+				test_stage = 0;
+				error_code = 0;
+				current_data = 0;
+				return ;
 		}
 		if(error_code)
 			return ;
