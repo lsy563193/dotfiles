@@ -60,7 +60,14 @@ void RxManager::handleMsg( Packet &&a_packet )
 	case RegDeviceRequestRxMsg::MSG_CODE:
 		handleMsg( RegDeviceRequestRxMsg( std::move( a_packet )) );
 		break;
-
+/*
+	case wifiConnectedNotifRxMsg::MSG_CODE:
+		handleMsg(wifiConnectedNotifRxMsg(std::move(a_packet)));
+		break;
+*/
+	case wifiDisconnectedNotifRxMsg::MSG_CODE:
+		handleMsg(wifiDisconnectedNotifRxMsg(std::move(a_packet)));
+		break;
 	case CloudConnectedNotifRxMsg::MSG_CODE:
 		handleMsg( CloudConnectedNotifRxMsg( std::move( a_packet )) );
 		break;
@@ -132,9 +139,14 @@ void RxManager::handleMsg( Packet &&a_packet )
 	case ClearRealtimeMapAckMsg::MSG_CODE:
 		handleMsg( ClearRealtimeMapAckMsg( std::move( a_packet )) );
 		break;
-
+	case wifiResumeAckMsg::MSG_CODE:
+		handleMsg( wifiResumeAckMsg( std::move( a_packet )) );
+		break;
+	case wifiSuspendAckMsg::MSG_CODE:
+		handleMsg( wifiSuspendAckMsg( std::move( a_packet )) );
+		break;
 	default:
-		ROS_WARN( "wifi::RxManager::handleMsg", "Unknown msg_code: %u", a_packet.msg_code() );
+		ROS_WARN( "wifi::RxManager::handleMsg ,Unknown msg_code: %u", a_packet.msg_code() );
 		break;
 	}
 }
@@ -142,8 +154,7 @@ void RxManager::handleMsg( Packet &&a_packet )
 template<typename T>
 void RxManager::handleMsg( const T &a_msg )
 {
-	ROS_INFO( "%s,%d,wifi::RxManager::handleMsg", "[%d] %s",__FUNCTION__,__LINE__, a_msg.seq_num(),
-			a_msg.describe().c_str() );
+	ROS_INFO( "%s,%d,wifi::RxManager::handleMsg ,[%d] %s",__FUNCTION__,__LINE__, a_msg.seq_num(),a_msg.describe().c_str() );
 	MutexLock lock( &on_new_msg_mutex_ );
 	for ( const auto &p : on_new_msg_listeners_[typeid( a_msg )] )
 	{

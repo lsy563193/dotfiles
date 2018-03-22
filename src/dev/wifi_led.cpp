@@ -14,7 +14,7 @@ void WifiLed::set(bool _switch)
 		serial.setSendData(CTL_MIX, static_cast<uint8_t>(serial.getSendData(CTL_MIX) & ~0x01));
 }
 
-void WifiLed::setMode(uint8_t type, bool _switch, uint16_t time_ms)
+void WifiLed::setMode(uint8_t type, WifiLed::state _switch, uint16_t time_ms)
 {
 	led_type_ = type;
 	led_cnt_for_one_cycle_ = static_cast<uint16_t>(time_ms / 20);
@@ -28,16 +28,16 @@ void WifiLed::processLed()
 	if (!led_update_flag_)
 		return;
 
-	bool _switch = ON;
+	bool _switch = true;
 	switch (led_type_)
 	{
 		case LED_FLASH:
 		{
 			if (live_led_cnt_for_switch_ > led_cnt_for_one_cycle_ / 2)
-				_switch = OFF;
+				_switch = false;
 			break;
 		}
-		default: //case LED_STEADY:
+		case LED_STEADY: //case LED_STEADY:
 		{
 			led_update_flag_ = false;
 			break;
@@ -49,15 +49,18 @@ void WifiLed::processLed()
 
 	switch (led_switch_)
 	{
-		case ON:
+		case state::on:
 		{
 			set(_switch);
 			break;
 		}
-		default: //case: OFF:
+		case state::off:
 		{
-			set(OFF);
+			set(false);
 			break;
 		}
+		default:
+			set(false);
+			ROS_WARN("%s,%d,switch state input wrong,used default off state!!",__FUNCTION__,__LINE__);
 	}
 }

@@ -120,6 +120,7 @@ robot::~robot()
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
+	s_wifi.sleep();
 	water_tank.stop();
 	serial.setWorkMode(WORK_MODE);
 	usleep(40000);
@@ -494,6 +495,7 @@ void robot::runTestMode()
 
 void robot::runWorkMode()
 {
+	s_wifi.resume();
 	auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
 	send_thread_enable = true;
 

@@ -67,6 +67,31 @@ public:
 	}
 };
 
+class wifiConnectedNotifRxMsg: public RxMsg
+{
+public:
+	static constexpr int MSG_CODE = 0x02;
+
+	using RxMsg::RxMsg;
+
+	std::string describe() const override
+	{
+		return "wifi connected msg";
+	}
+};
+
+class wifiDisconnectedNotifRxMsg: public RxMsg
+{
+public:
+	static constexpr int MSG_CODE = 0x03;
+
+	using RxMsg::RxMsg;
+
+	std::string describe() const override
+	{
+		return "wifi disconnected msg";
+	}
+};
 class CloudConnectedNotifRxMsg: public RxMsg
 {
 public:
@@ -215,7 +240,17 @@ public:
 
 	std::string describe() const override;
 };
+/*
+class SchduleRxMsg: public RxMsg
+{
+public:
+	static constexpr int MSG_CODE = 0x4A;	
 
+	using RxMsg::RxMsg;	
+
+	std::string describe() const override;
+};
+*/
 class ResetConsumableStatusRxMsg: public RxMsg
 {
 public:
@@ -675,6 +710,33 @@ public:
 		return "Clear realtime map ack msg";
 	}
 };
+
+class wifiResumeAckMsg: public RxMsg
+{
+public:
+	static constexpr int MSG_CODE = ResumeTxMsg::MSG_CODE;
+
+	using RxMsg::RxMsg;
+
+	std::string describe() const override
+	{
+		return "WIFI Resume ack";
+	}
+};
+
+class wifiSuspendAckMsg: public RxMsg
+{
+public:
+	static constexpr int MSG_CODE = SuspendTxMsg::MSG_CODE;
+
+	using RxMsg::RxMsg;
+
+	std::string describe() const override
+	{
+		return "WIFI Suspend ack";
+	}
+};
+
 
 class ForceUnbindTxMsg: public Packet
 {

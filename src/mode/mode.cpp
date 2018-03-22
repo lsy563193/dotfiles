@@ -5,11 +5,14 @@
 #include <dev.h>
 #include <event_manager.h>
 #include "mode.hpp"
+#include <wifi/wifi.h>
+
 boost::shared_ptr<IAction> Mode::sp_action_ = nullptr;
 
 int Mode::next_mode_i_{};
 //IAction* Mode::sp_action_ = nullptr;
 
+class S_WIFI;
 void Mode::run()
 {
 	ROS_INFO("%s %d: Mode start running.", __FUNCTION__, __LINE__);
@@ -53,6 +56,7 @@ bool Mode::isFinish()
 void Mode::setNextMode(int next_mode)
 {
 	next_mode_i_ = next_mode;
+	
 }
 
 int Mode::getNextMode()
