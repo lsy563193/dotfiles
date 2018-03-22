@@ -4,6 +4,7 @@
 
 
 #include <mode.hpp>
+#include <water_tank.hpp>
 
 #include "vacuum.h"
 #include "brush.h"
@@ -11,8 +12,9 @@
 #include "speaker.h"
 
 void StateSpot::init() {
-    vacuum.setTmpMode(Vac_Max);
-    brush.fullOperate();
+	if (!water_tank.isEquipped())
+		vacuum.setTmpMode(Vac_Max);
+	brush.fullOperate();
 	key_led.setMode(LED_STEADY, LED_GREEN);
 	if(getMode()->isNavMode())
 		speaker.play(VOICE_CLEANING_SPOT,false);
