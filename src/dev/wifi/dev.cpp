@@ -56,16 +56,19 @@ bool Dev::tx( const std::vector<uint8_t> &data ) const
 			return false;
 		}
 		//for tmp test
-		std::string msg("\033[1;40;34m tx data = \033[0m");
-		char buf[30] = {0};
-		for(int i=0;i<len;i++){
-			if(i == 5)
-				sprintf(buf,"\033[35m0x%x\033[0m,",data[i]);
-			else
-				sprintf(buf,"0x%x,",data[i]);
-			msg+=buf;
+		if(len<30)
+		{
+			std::string msg("\033[1;40;34m tx data = \033[0m");
+			char buf[30] = {0};
+			for(int i=0;i<len;i++){
+				if(i == 5)
+					sprintf(buf,"\033[35m0x%x\033[0m,",data[i]);
+				else
+					sprintf(buf,"0x%x,",data[i]);
+				msg+=buf;
+			}
+			ROS_INFO("%s",msg.c_str());
 		}
-		ROS_INFO("%s",msg.c_str());
 
 		offset += len;
 	} while ( offset < data.size() );
