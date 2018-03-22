@@ -779,8 +779,11 @@ bool robot::checkTilt() {
 //--------------------
 static float xCount{}, yCount{};
 
-Point_t getPosition()
+Point_t getPosition(Baselink_Frame_Type type)
 {
+	if(type == ODOM_POSITION_ODOM_ANGLE)
+		return {odom.getX(),odom.getY(),odom.getRadian()};
+
 	return {xCount, yCount, robot::instance()->getWorldPoseRadian()};
 }
 

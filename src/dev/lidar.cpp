@@ -1595,17 +1595,20 @@ bool Lidar::lidarCheckFresh(float duration, uint8_t type)
 //	}
 //}
 
-void Lidar::setLidarScanDataOriginal(const sensor_msgs::LaserScan::ConstPtr &scan) {
+void Lidar::setLidarScanDataOriginal(const sensor_msgs::LaserScan::ConstPtr &scan)
+{
 	boost::mutex::scoped_lock lock(scanOriginal_mutex_);
 	lidarScanData_original_ = *scan;
 }
 
-sensor_msgs::LaserScan Lidar::getLidarScanDataOriginal() {
+sensor_msgs::LaserScan Lidar::getLidarScanDataOriginal()
+{
 	boost::mutex::scoped_lock lock(scanOriginal_mutex_);
 	return lidarScanData_original_;
 }
 
-void Lidar::init() {
+void Lidar::init()
+{
 	PP_INFO();
 	switch_ = OFF;
 
@@ -1700,5 +1703,55 @@ void Lidar::checkSlipInit(float &acur1, float &acur2, float &acur3, float &acur4
 		acur2 = 0.065;
 		acur3 = 0.045;
 		acur4 = 0.01;
+	}
+}
+
+bool Lidar::checkIsRightAngle(bool is_left) {
+	if(isScanOriginalReady() == 0){
+//		INFO_BLUE("ScanOriginal NOT Ready! Break!");
+		return false;
+	}
+
+	scanOriginal_mutex_.lock();
+	auto tmp_scan_data = lidarScanData_original_;
+	scanOriginal_mutex_.unlock();
+
+	int count{};
+
+	for (int i = 359; i >= 0; i--) {
+//		ROS_INFO("laser point(%d, %lf)", i, scan->ranges[i]);
+		if (tmp_scan_data.ranges[i] < 4) {
+			auto point = polarToCartesian(tmp_scan_data.ranges[i], i);
+//			ROS_ERROR("point(%d, %lf, %lf)", i, point.x, point.y);
+			if (is_left) {
+				if (point.y > 0.160 && point.y < 0.20) {
+					if (point.x > 0 && point.x < 0.167) {
+//						ROS_INFO("point(%d, %lf, %lf)", i, point.x, point.y);
+						count++;
+					}
+					if (point.x > -0.05 && point.x < 0) {
+//						ROS_INFO("point(%d, %lf, %lf)", i, point.x, point.y);
+						count += 10;
+					}
+				}
+			} else {
+				if (point.y < -0.160 && point.y > -0.20) {
+					if (point.x > 0 && point.x < 0.167) {
+//						ROS_INFO("point(%d, %lf, %lf)", i, point.x, point.y);
+						count++;
+					}
+					if (point.x > -0.05 && point.x < 0) {
+//						ROS_INFO("point(%d, %lf, %lf)", i, point.x, point.y);
+						count += 10;
+					}
+				}
+			}
+		}
+	}
+//	ROS_WARN("count = %d, is_left = %d", count, is_left);
+	if (count > 10) {
+		return true;
+	} else {
+		return false;
 	}
 }

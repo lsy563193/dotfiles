@@ -399,7 +399,7 @@ bool ACleanMode::checkCorner(const sensor_msgs::LaserScan::ConstPtr &scan, const
 	return forward_wall_count > para.forward_count_lim && side_wall_count > para.side_count_lim;
 }
 
-Vector2<double> ACleanMode::polarToCartesian(double polar, int i)
+/*Vector2<double> ACleanMode::polarToCartesian(double polar, int i)
 {
 	Vector2<double> point{cos(degree_to_radian(i * 1.0 + 180.0)) * polar,
 					sin(degree_to_radian(i * 1.0 + 180.0)) * polar };
@@ -407,7 +407,7 @@ Vector2<double> ACleanMode::polarToCartesian(double polar, int i)
 	coordinate_transform(&point.x, &point.y, LIDAR_THETA, LIDAR_OFFSET_X, LIDAR_OFFSET_Y);
 	return point;
 
-}
+}*/
 
 Vector2<double> ACleanMode::getTargetPoint(const Vector2<double> &p1, const Vector2<double> &p2, const PointSelector &para) {
 	auto p3 = (p1 + p2) / 2;
@@ -1981,7 +1981,7 @@ void ACleanMode::setTempTarget(std::deque<Vector2<double>>& points, uint32_t  se
 
 //	ROS_ERROR("curr_point(%d,%d)",getPosition().x,getPosition().y);
 	for (const auto &iter : points) {
-		auto target = getPosition().getRelative(static_cast<float>(iter.x), static_cast<float>(iter.y));
+		auto target = getPosition(ODOM_POSITION_ODOM_ANGLE).getRelative(static_cast<float>(iter.x), static_cast<float>(iter.y));
 		path_head_.tmp_plan_path_.push_back(target);
 //		printf("temp_target(%f, %f)\n",target.x,target.y);
 	}

@@ -238,3 +238,12 @@ bool PointSelector::inSidedRange(const Vector2<double> &point) const
 {
 	return point.x > x_min_side && point.x < x_max_side && point.y > y_min_side && point.y < y_max_side;
 }
+
+Vector2<double> polarToCartesian(double polar, int i)
+{
+	Vector2<double> point{cos(degree_to_radian(i * 1.0 + 180.0)) * polar,
+												sin(degree_to_radian(i * 1.0 + 180.0)) * polar };
+
+	coordinate_transform(&point.x, &point.y, LIDAR_THETA, LIDAR_OFFSET_X, LIDAR_OFFSET_Y);
+	return point;
+}

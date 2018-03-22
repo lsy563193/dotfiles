@@ -99,6 +99,8 @@ public:
 	{
 		slip_enable_ = enable;
 	}
+
+	bool checkIsRightAngle(bool is_left);
 private:
 
 	// switch_ is the target status of lidar.

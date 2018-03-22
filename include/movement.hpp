@@ -207,8 +207,8 @@ class MovementFollowWallLidar:public AMovementFollowPoint, public IFollowWall
 public:
 	explicit MovementFollowWallLidar(bool is_left);
 
-	Point_t calcTmpTarget() override ;
-	Points _calcTmpTarget();
+	Point_t calcTmpTarget() override ;//laser follow wall algorithm
+	Points calcVirtualTmpTarget();//generate a circle path
 
 	bool isFinish() override ;
 	uint8_t isNear() override ;

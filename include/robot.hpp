@@ -210,6 +210,7 @@ public:
 		return robot_current_;
 	}
 
+	boost::shared_ptr<Mode> p_mode{};
 private:
 
 	uint8_t getTestMode(void);
@@ -274,7 +275,6 @@ private:
 	void odomPublish(const tf::Vector3& robot_pos, double robot_radian_);
 //	void robot_map_metadata_cb(const nav_msgs::MapMetaData::ConstPtr& msg);
 
-	boost::shared_ptr<Mode> p_mode{};
 
 	bool is_locked_scan_ctrl_{false};
 
@@ -295,7 +295,7 @@ float cellToCount(int16_t distance);
 
 int16_t countToCell(int32_t count);
 
-Point_t getPosition(void);
+Point_t getPosition(Baselink_Frame_Type type = SLAM_POSITION_SLAM_ANGLE);
 
 bool isAny(Dir_t dir);
 
