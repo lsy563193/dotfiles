@@ -558,6 +558,18 @@ uint8_t GridMap::isUncleanAtY(int16_t x, int16_t y)
 	return unclean_cnt;
 }
 
+uint8_t GridMap::isBlockAtY(int block, int16_t x, int16_t y)
+{
+	uint8_t unclean_cnt = 0;
+	for (int8_t i = (y + ROBOT_RIGHT_OFFSET); i <= (y + ROBOT_LEFT_OFFSET); i++) {
+		if (getCell(CLEAN_MAP, x, i) == block) {
+			unclean_cnt++;
+		}
+	}
+//	ROS_INFO("%s, %d:unclean_cnt(%d)", __FUNCTION__, __LINE__, unclean_cnt);
+	return unclean_cnt;
+}
+
 uint8_t GridMap::isBlockBoundary(int16_t x, int16_t y)
 {
 	uint8_t retval = 0;

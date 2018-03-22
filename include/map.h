@@ -136,6 +136,7 @@ public:
  */
 	uint8_t isUncleanAtY(int16_t x, int16_t y);
 
+	uint8_t isBlockAtY(int, int16_t x, int16_t y);
 /*
  * Check a block is cleaned or not, a block is defined as have the same size of brush.
  *
