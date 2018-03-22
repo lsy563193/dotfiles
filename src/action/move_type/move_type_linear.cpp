@@ -180,17 +180,12 @@ void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 
 bool MoveTypeLinear::handleMoveBackEvent(ACleanMode *p_clean_mode)
 {
-	if (ev.bumper_triggered || ev.cliff_triggered)
+	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered)
 	{
 		p_clean_mode->moveTypeLinearSaveBlocks();
 		movement_i_ = mm_back;
-		sp_movement_.reset(new MovementBack(0.01, BACK_MAX_SPEED));
-		return true;
-	}
-	else if(ev.tilt_triggered){
-		p_clean_mode->moveTypeLinearSaveBlocks();
-		movement_i_ = mm_back;
-		sp_movement_.reset(new MovementBack(0.15, BACK_MAX_SPEED));
+		auto back_distance = ev.tilt_triggered ? 0.15 : 0.01;
+		sp_movement_.reset(new MovementBack(back_distance, BACK_MAX_SPEED));
 		return true;
 	}
 
