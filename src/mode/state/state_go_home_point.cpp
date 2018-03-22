@@ -7,7 +7,8 @@
 #include <event_manager.h>
 
 void StateGoHomePoint::init(){
-	vacuum.setTmpMode(Vac_Normal);
+	if (!water_tank.isEquipped())
+		vacuum.setTmpMode(Vac_Normal);
 	wheel.stop();
 	brush.normalOperate();
 
