@@ -213,8 +213,8 @@ bool IMoveType::handleMoveBackEvent(ACleanMode *p_clean_mode)
 		p_clean_mode->saveBlocks();
 		movement_i_ = mm_back;
 		auto back_distance = (ev.tilt_triggered || gyro.getAngleR() > 5) ? 0.15 : 0.01;
-		if(gyro.getAngleR() > 5)
-			beeper.beepForCommand(VALID);
+//		if(gyro.getAngleR() > 5)
+//			beeper.beepForCommand(VALID);
 		sp_movement_.reset(new MovementBack(back_distance, BACK_MAX_SPEED));
 		return true;
 	}
