@@ -1153,8 +1153,8 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				}
 				break;
 			case 11:
-				serial.setSendData(CTL_WHEEL_LEFT_HIGH, 400 >> 8);
-				serial.setSendData(CTL_WHEEL_LEFT_LOW, 400 & 0xFF);
+				serial.setSendData(CTL_WHEEL_LEFT_HIGH, 300 >> 8);
+				serial.setSendData(CTL_WHEEL_LEFT_LOW, 300 & 0xFF);
 				serial.setSendData(CTL_LEFT_WHEEL_TEST_MODE, 1);
 				count++;
 				if (count > 50) {
@@ -1326,8 +1326,8 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 					test_result |= 0x4000;
 				}
 			case 24:
-				serial.setSendData(CTL_WHEEL_RIGHT_HIGH, 400 >> 8);
-				serial.setSendData(CTL_WHEEL_RIGHT_LOW, 400 & 0xFF);
+				serial.setSendData(CTL_WHEEL_RIGHT_HIGH, 300 >> 8);
+				serial.setSendData(CTL_WHEEL_RIGHT_LOW, 300 & 0xFF);
 				serial.setSendData(CTL_RIGHT_WHEEL_TEST_MODE, 1);
 				count++;
 				if (count > 50) {
@@ -1413,7 +1413,7 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 		}
 		switch (step) {
 			case 1:
-				brush.setPWM(80, 0, 0);
+				brush.setPWM(60, 0, 0);
 				count++;
 				if (count > 20) {
 					current_current = 0;
@@ -1487,7 +1487,7 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 				}
 				break;
 			case 6:
-				brush.setPWM(0, 80, 0);
+				brush.setPWM(0, 60, 0);
 				count++;
 				if (count > 5) {
 					current_current = 0;
