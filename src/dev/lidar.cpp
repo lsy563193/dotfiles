@@ -1242,12 +1242,13 @@ void Lidar::checkRobotSlip()
 	}
 
 	checkSlipInit(acur1_,acur2_,acur3_,acur4_);
-	if ((std::abs(wheel.getLeftSpeedAfterPid()) >= 10 || std::abs(wheel.getRightSpeedAfterPid()) >= 10))
+	if ((std::abs(wheel.getLeftWheelActualSpeed()) >= 0.10 || std::abs(wheel.getRightWheelActualSpeed()) >= 0.10))
 	{
 		auto tmp_scan_data = getLidarScanDataOriginal();
 		uint16_t same_count = 0;
 		uint16_t tol_count = 0;
 
+//		ROS_INFO("start to check slip,leftSpeed:%f,rightSpeed:%f,lidarPoint:%lf",wheel.getLeftWheelActualSpeed(),wheel.getRightWheelActualSpeed(),tmp_scan_data.ranges[155]);
 		if(last_slip_scan_frame_.d.size() < 3){
 			last_slip_scan_frame_.d.push_back(tmp_scan_data);
 			return;
@@ -1674,18 +1675,18 @@ void Lidar::checkSlipInit(float &acur1, float &acur2, float &acur3, float &acur4
 		wheel_cliff_trigger_time_ = ros::Time::now().toSec();
 	}
 	//For tilt trigger
-	if(/*gyro.checkTilt(80,140,110,120,6)*/0){
+	if(robot::instance()->checkTiltToSlip()){
 		ROS_INFO("%s,%d,robot tilt detect",__FUNCTION__,__LINE__);
 		gyro_tilt_trigger_time_ = ros::Time::now().toSec();
 	}
 
 	if(ros::Time::now().toSec() - gyro_tilt_trigger_time_ < 2){
-		slip_cnt_limit_ = 4;
+		slip_cnt_limit_ = 5;
 		slip_ranges_percent_ = 0.78;
-		acur1 = 0.090;
-		acur2 = 0.075;
-		acur3 = 0.055;
-		acur4 = 0.015;
+		acur1 = 0.085;
+		acur2 = 0.065;
+		acur3 = 0.045;
+		acur4 = 0.01;
 	}	else if(ros::Time::now().toSec() - wheel_cliff_trigger_time_ < 2){
 		slip_cnt_limit_ = 3;
 		slip_ranges_percent_ = 0.75;

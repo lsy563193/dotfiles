@@ -119,7 +119,7 @@ void IMoveType::resetTriggeredValue()
 	ev.obs_triggered = 0;
 	ev.cliff_triggered = 0;
 	ev.tilt_triggered = 0;
-	ev.robot_slip = false;
+//	ev.robot_slip = false; // modify by pierre
 }
 
 bool IMoveType::isFinish()
