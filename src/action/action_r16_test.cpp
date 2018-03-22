@@ -49,7 +49,7 @@ void ActionR16Test::run()
 	{
 
 		ROS_ERROR("%s %d: Lidar bumper test failed!!", __FUNCTION__, __LINE__);
-		error_loop(4, 0, LIDAR_BUMPER_ERROR);
+		error_loop(4, bumper_cnt_, LIDAR_BUMPER_ERROR);
 	}
 	ROS_INFO("%s %d: Test for lidar bumper succeeded.", __FUNCTION__, __LINE__);
 
@@ -57,7 +57,7 @@ void ActionR16Test::run()
 	if (s_wifi.factoryTest())
 	{
 		ROS_ERROR("%s %d: Serial WIFI test failed!!", __FUNCTION__, __LINE__);
-		error_loop(5, 0, S_WIFI_ERROR);
+		error_loop(5, 0, SERIAL_WIFI_ERROR);
 	}
 	// Test finish.
 	double alarm_time = ros::Time::now().toSec();
@@ -245,22 +245,22 @@ bool ActionR16Test::lidar_bumper_test()
 	infrared_display.displayNormalMsg(4, 0);
 
 	int test_bumper_cnt = 5;
-	int bumper_cnt = 0;
 	bool last_bumper_status = false;
-	while (ros::ok() && bumper_cnt < test_bumper_cnt)
+	double start_time = ros::Time::now().toSec();
+	while (ros::ok() && bumper_cnt_ < test_bumper_cnt && ros::Time::now().toSec() - start_time < 10)
 	{
 		bumper.setLidarBumperStatus();
 		if (!last_bumper_status && bumper.getLidarBumperStatus())
 		{
-			bumper_cnt++;
-			infrared_display.displayNormalMsg(4, static_cast<uint16_t>(bumper_cnt));
-			ROS_INFO("%s %d: Hit lidar bumper for %d time.", __FUNCTION__, __LINE__, bumper_cnt);
+			bumper_cnt_++;
+			infrared_display.displayNormalMsg(4, static_cast<uint16_t>(bumper_cnt_));
+			ROS_INFO("%s %d: Hit lidar bumper for %d time.", __FUNCTION__, __LINE__, bumper_cnt_);
 		}
 		last_bumper_status = bumper.getLidarBumperStatus();
 		usleep(20000);
 	}
 
-	return true;
+	return bumper_cnt_ == test_bumper_cnt;
 }
 
 void ActionR16Test::error_loop(uint8_t test_stage, uint16_t content, uint16_t error_code)

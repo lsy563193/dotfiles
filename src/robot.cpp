@@ -293,6 +293,8 @@ void robot::robotbase_routine_cb()
 		// For water tank device.
 		water_tank.setStatus((buf[REC_MIX_BYTE] & 0x08) != 0);
 //		ROS_INFO("mix:%x", buf[REC_MIX_BYTE]);
+//		if (water_tank.getStatus())
+//			ROS_INFO("Water tank~~~~~~~~~~~~~~~~~~ :D");
 		sensor.water_tank = water_tank.getStatus();
 
 		// For charger device.

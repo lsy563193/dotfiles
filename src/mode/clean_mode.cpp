@@ -1665,6 +1665,7 @@ bool ACleanMode::updateActionInStateGoHomePoint()
 		plan_path_.clear();
 		plan_path_.push_back(iterate_point_) ;
 		plan_path_.push_back(start_point_) ;
+		action_i_ = ac_linear;
 		genNextAction();
 		update_finish = true;
 		home_points_ = go_home_path_algorithm_->getRestHomePoints();

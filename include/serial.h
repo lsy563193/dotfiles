@@ -312,6 +312,7 @@
 #define LIFE_TEST_MODE		21
 #define WATER_TANK_TEST_MODE	22
 #define R16_AND_LIDAR_TEST_MODE	23
+#define FUNC_FINISHED		FUNC_CHARGE_CURRENT_TEST_MODE+1
 
 // ------------------------------work mode end--------------------------------------
 
