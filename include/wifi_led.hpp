@@ -14,9 +14,13 @@
 class WifiLed
 {
 public:
+	enum state{
+		off =0,
+		on,
+	};
 	void set(bool _switch);
 
-	void setMode(uint8_t type, bool _switch, uint16_t time_ms = 3000);
+	void setMode(uint8_t type, state _switch, uint16_t time_ms = 3000);
 
 	void processLed();
 private:
@@ -24,7 +28,7 @@ private:
 // For wifi_led control.
 	uint8_t led_type_{LED_STEADY};
 	bool led_update_flag_{false};
-	bool led_switch_{OFF};
+	state led_switch_{state::off};
 	uint16_t led_cnt_for_one_cycle_{0};
 	uint16_t live_led_cnt_for_switch_{0};
 

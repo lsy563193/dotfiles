@@ -53,6 +53,12 @@ void ActionR16Test::run()
 	}
 	ROS_INFO("%s %d: Test for lidar bumper succeeded.", __FUNCTION__, __LINE__);
 
+	// Test item: serial wifi test.
+	if (s_wifi.factoryTest())
+	{
+		ROS_ERROR("%s %d: Serial WIFI test failed!!", __FUNCTION__, __LINE__);
+		error_loop(5, 0, S_WIFI_ERROR);
+	}
 	// Test finish.
 	double alarm_time = ros::Time::now().toSec();
 	speaker.play(VOICE_TEST_SUCCESS);

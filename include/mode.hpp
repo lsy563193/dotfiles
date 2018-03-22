@@ -9,6 +9,7 @@
 //#include "path_algorithm.h"
 #include "event_manager.h"
 #include "boost/shared_ptr.hpp"
+#include <pthread.h>
 #include <visualization_msgs/Marker.h>
 //#include "move_type.hpp"
 
@@ -154,6 +155,8 @@ public:
 	void remoteClean(bool state_now, bool state_last) override
 	{ remoteKeyHandler(state_now, state_last);}
 	void remoteMax(bool state_now, bool state_last) override ;
+	void lidar_bumper(bool state_now, bool state_last) override;
+	void remote_wifi(bool state_now, bool state_last) override;
 	void remotePlan(bool state_now, bool state_last) override ;
 	void keyClean(bool state_now, bool state_last) override;
 	void chargeDetect(bool state_now, bool state_last) override ;
@@ -165,6 +168,12 @@ private:
 	void register_events(void);
 
 	bool plan_activated_status_;
+
+	pthread_mutex_t bind_lock_;
+
+	bool trigger_wifi_rebind_;
+	bool trigger_wifi_smart_link_;
+	bool trigger_wifi_smart_ap_link_;
 
 	/*---values for rcon handle---*/
 	double first_time_seen_charger_;
