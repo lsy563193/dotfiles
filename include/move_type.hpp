@@ -206,8 +206,8 @@ private:
 	 * Stage 2: Check lidar, then turn 180 degrees, check lidar again, turn 180 degrees, and get the baselines
 	 *          of OBS and cliff and check the rcon receivers.
 	 * Stage 3: Check for bumpers and OBS value.
-	 * Stage 4: Follow wall to cliff position and check for cliff value.
-	 * Stage 5: Move for a distance and check the max currents.
+	 * Stage 4: Follow wall to cliff position and check for current and cliff max value.
+	 * Stage 5: Check for cliffs and move back to the front of charger stub.
 	 * Stage 6: Turn for 360 degrees to check for rcon.
 	 */
 	uint8_t test_stage_{1};
