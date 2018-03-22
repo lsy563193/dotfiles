@@ -158,7 +158,8 @@ bool CleanModeExploration::updateActionInStateInit() {
 	if (action_i_ == ac_null)
 		action_i_ = ac_open_gyro;
 	else if (action_i_ == ac_open_gyro) {
-		vacuum.setLastMode();
+		if (!water_tank.checkEquipment())
+			vacuum.setLastMode();
 		brush.normalOperate();
 		action_i_ = ac_open_lidar;
 	}

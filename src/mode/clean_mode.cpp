@@ -156,9 +156,11 @@ void ACleanMode::saveBlock(int block, int dir, std::function<Cells()> get_list)
 	}
 }
 
-void ACleanMode::saveBlocks(bool is_linear, bool is_save_rcon) {
+void ACleanMode::saveBlocks() {
 //	PP_INFO();
-	if (is_linear && is_save_rcon)
+	bool is_linear = action_i_== ac_linear;
+	auto is_save_rcon = sp_state == state_clean;
+	if (action_i_== ac_linear && is_save_rcon)
 		saveBlock(BLOCKED_RCON, iterate_point_.dir, [&]() {
 			auto rcon_trig = ev.rcon_status/*rcon_get_trig()*/;
 			Cells d_cells;
@@ -1006,16 +1008,6 @@ bool ACleanMode::isFinish()
 	return false;
 }
 
-void ACleanMode::moveTypeFollowWallSaveBlocks()
-{
-	saveBlocks(action_i_ == ac_linear, isStateClean());
-}
-
-void ACleanMode::moveTypeLinearSaveBlocks()
-{
-	saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
-}
-
 bool ACleanMode::checkChargerPos()
 {
 	const int16_t DETECT_RANGE = 20;//cells
@@ -1585,7 +1577,8 @@ bool ACleanMode::updateActionInStateInit() {
 	if (action_i_ == ac_null)
 		action_i_ = ac_open_gyro;
 	else if (action_i_ == ac_open_gyro) {
-		vacuum.setLastMode();
+		if (!water_tank.checkEquipment())
+			vacuum.setLastMode();
 		brush.normalOperate();
 		action_i_ = ac_open_lidar;
 	}
@@ -1666,13 +1659,14 @@ bool ACleanMode::updateActionInStateGoHomePoint()
 	else if (getPosition().toCell() == start_point_.toCell())
 	{
 		ROS_INFO("Reach start point but angle not equal,start_point_(%d,%d,%f,%d)",start_point_.toCell().x, start_point_.toCell().y, radian_to_degree(start_point_.th), start_point_.dir);
-		beeper.beepForCommand(VALID);
+//		beeper.beepForCommand(VALID);
 		update_finish = true;
 		iterate_point_ = getPosition();
 		iterate_point_.th = start_point_.th;
 		plan_path_.clear();
 		plan_path_.push_back(iterate_point_) ;
 		plan_path_.push_back(start_point_) ;
+		action_i_ = ac_linear;
 		genNextAction();
 		update_finish = true;
 		home_points_ = go_home_path_algorithm_->getRestHomePoints();

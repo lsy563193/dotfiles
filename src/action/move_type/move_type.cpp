@@ -206,3 +206,19 @@ bool IMoveType::isBlockCleared(GridMap &map, Points &passed_path)
 	return false;
 }
 
+bool IMoveType::handleMoveBackEvent(ACleanMode *p_clean_mode)
+{
+	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered)
+	{
+		p_clean_mode->saveBlocks();
+		movement_i_ = mm_back;
+		auto back_distance = (ev.tilt_triggered || gyro.getAngleR() > 5) ? 0.15 : 0.01;
+//		if(gyro.getAngleR() > 5)
+//			beeper.beepForCommand(VALID);
+		sp_movement_.reset(new MovementBack(back_distance, BACK_MAX_SPEED));
+		return true;
+	}
+
+	return false;
+}
+
