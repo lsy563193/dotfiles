@@ -1577,7 +1577,8 @@ bool ACleanMode::updateActionInStateInit() {
 	if (action_i_ == ac_null)
 		action_i_ = ac_open_gyro;
 	else if (action_i_ == ac_open_gyro) {
-		vacuum.setLastMode();
+		if (!water_tank.checkEquipment())
+			vacuum.setLastMode();
 		brush.normalOperate();
 		action_i_ = ac_open_lidar;
 	}
@@ -1658,7 +1659,7 @@ bool ACleanMode::updateActionInStateGoHomePoint()
 	else if (getPosition().toCell() == start_point_.toCell())
 	{
 		ROS_INFO("Reach start point but angle not equal,start_point_(%d,%d,%f,%d)",start_point_.toCell().x, start_point_.toCell().y, radian_to_degree(start_point_.th), start_point_.dir);
-		beeper.beepForCommand(VALID);
+//		beeper.beepForCommand(VALID);
 		update_finish = true;
 		iterate_point_ = getPosition();
 		iterate_point_.th = start_point_.th;

@@ -3,6 +3,7 @@
 //
 
 #include <mode.hpp>
+#include <water_tank.hpp>
 #include "key_led.h"
 #include "vacuum.h"
 #include "brush.h"
@@ -10,7 +11,8 @@
 void StateClean::init() {
 
 	key_led.setMode(LED_STEADY, LED_GREEN);
-	vacuum.setLastMode();
+	if (!water_tank.checkEquipment())
+		vacuum.setLastMode();
 	brush.normalOperate();
 }
 
