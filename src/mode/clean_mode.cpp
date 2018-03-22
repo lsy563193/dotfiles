@@ -156,9 +156,11 @@ void ACleanMode::saveBlock(int block, int dir, std::function<Cells()> get_list)
 	}
 }
 
-void ACleanMode::saveBlocks(bool is_linear, bool is_save_rcon) {
+void ACleanMode::saveBlocks() {
 //	PP_INFO();
-	if (is_linear && is_save_rcon)
+	bool is_linear = action_i_== ac_linear;
+	auto is_save_rcon = sp_state == state_clean;
+	if (action_i_== ac_linear && is_save_rcon)
 		saveBlock(BLOCKED_RCON, iterate_point_.dir, [&]() {
 			auto rcon_trig = ev.rcon_status/*rcon_get_trig()*/;
 			Cells d_cells;
@@ -1004,16 +1006,6 @@ bool ACleanMode::isFinish()
 		return true;
 	}
 	return false;
-}
-
-void ACleanMode::moveTypeFollowWallSaveBlocks()
-{
-	saveBlocks(action_i_ == ac_linear, isStateClean());
-}
-
-void ACleanMode::moveTypeLinearSaveBlocks()
-{
-	saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
 }
 
 bool ACleanMode::checkChargerPos()

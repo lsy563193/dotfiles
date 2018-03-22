@@ -22,6 +22,7 @@ public:
 	bool shouldMoveBack();
 	bool shouldTurn();
 	bool RconTrigger();
+	bool handleMoveBackEvent(ACleanMode* p_clean_mode);
 //	~IMoveType() = default;
 	enum{//movement
 		mm_null,
@@ -87,7 +88,6 @@ public:
 	bool isLinearForward();
 
 private:
-	bool handleMoveBackEvent(ACleanMode* p_clean_mode);
 	void switchLinearTarget(ACleanMode * p_clean_mode);
 };
 
@@ -105,7 +105,6 @@ public:
 	bool isOverOriginLine(GridMap &map);
 
 private:
-	bool handleMoveBackEvent(ACleanMode* p_clean_mode);
 	bool handleMoveBackEventRealTime(ACleanMode* p_clean_mode);
 	bool is_left_{};
 	int16_t bumperTurnAngle();
