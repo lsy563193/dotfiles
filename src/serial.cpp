@@ -12,6 +12,7 @@
 #include <vacuum.h>
 #include <wifi_led.hpp>
 #include "wifi/wifi.h"
+#include "mode.hpp"
 
 boost::mutex send_stream_mutex;
 
@@ -606,14 +607,15 @@ void Serial::send_routine_cb()
 			continue;
 		}
 		period = ((float)(clock() - t))/CLOCKS_PER_SEC;
-		if((uint32_t)period*1000000 < 20000)
+
+		uint32_t sleep_time = 20000-(uint32_t)(period*1000000);
+		if(sleep_time < 20000)
 		{
-			uint32_t sleep_time = 20000-(uint32_t)(period*1000000);
 			usleep(sleep_time);
 		}
 		else{
 			usleep(20000);
-			//ROS_WARN("SLEEP_TIME %d",sleep_time);
+			ROS_WARN("SLEEP_TIME %d",sleep_time);
 		}
 		t = clock();
 		//serial wifi send
@@ -623,22 +625,22 @@ void Serial::send_routine_cb()
 		if(wifi_send_state_cnt>= 150 && wifi_send_map_cnt < 300)//
 		{
 			wifi_send_state_cnt= 0;
+			INFO_YELLOW("SEND ROBOT STATUS");
 			if(S_Wifi::is_wifi_connected_
 						&& s_wifi.isStatusRequest_
 						&& s_wifi.is_cloud_connected_)
 				s_wifi.replyRobotStatus(0xc8,0x00);
 		}
-		/*
 		if(wifi_send_map_cnt >=300)
 		{
 			wifi_send_map_cnt = 0;
+			INFO_YELLOW("SEND REAL TIME MAP");
 			if(S_Wifi::is_wifi_connected_
 						 && s_wifi.is_cloud_connected_
 						 && s_wifi.isStatusRequest_
 						 )
 				s_wifi.replyRealtimeMap();
 		}
-		*/
 		//r.sleep();
 		/*-------------------Process for beeper.play and key_led -----------------------*/
 		key_led.processLed();

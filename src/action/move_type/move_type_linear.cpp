@@ -34,7 +34,7 @@ MoveTypeLinear::~MoveTypeLinear()
 {
 	if(sp_mode_ != nullptr){
 		auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
-		p_mode->saveBlocks(p_mode->action_i_ == p_mode->ac_linear, p_mode->sp_state == p_mode->state_clean);
+		p_mode->saveBlocks();
 		p_mode->mapMark();
 		memset(IMoveType::rcon_cnt,0,sizeof(int8_t)*6);
 	}
@@ -178,22 +178,4 @@ void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 	}
 }
 
-bool MoveTypeLinear::handleMoveBackEvent(ACleanMode *p_clean_mode)
-{
-	if (ev.bumper_triggered || ev.cliff_triggered)
-	{
-		p_clean_mode->moveTypeLinearSaveBlocks();
-		movement_i_ = mm_back;
-		sp_movement_.reset(new MovementBack(0.01, BACK_MAX_SPEED));
-		return true;
-	}
-	else if(ev.tilt_triggered){
-		p_clean_mode->moveTypeLinearSaveBlocks();
-		movement_i_ = mm_back;
-		sp_movement_.reset(new MovementBack(0.15, BACK_MAX_SPEED));
-		return true;
-	}
-
-	return false;
-}
 

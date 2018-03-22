@@ -56,7 +56,6 @@ bool Mode::isFinish()
 void Mode::setNextMode(int next_mode)
 {
 	next_mode_i_ = next_mode;
-	
 }
 
 int Mode::getNextMode()

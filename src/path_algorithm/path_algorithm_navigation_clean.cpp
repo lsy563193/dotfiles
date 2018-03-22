@@ -125,26 +125,15 @@ Cells NavCleanPathAlgorithm::findTargetInSameLane(GridMap &map, const Cell_t &cu
 //	map.print(CLEAN_MAP, 0, 0);
 	for (auto i = 0; i < 2; i++) {
 		it[i] = curr_cell;
-		auto unclean_cells = 0;
-
-		for (Cell_t neighbor = it[i] + cell_direction_[i];
-				 !map.cellIsOutOfRange(neighbor + cell_direction_[i]*OVER_CELL_SIZE) && !map.isBlocksAtY(neighbor.x, neighbor.y);
-				 neighbor += cell_direction_[i])
+		auto neighbor = it[i] + cell_direction_[i];
+		for (; !map.cellIsOutOfRange(neighbor) && !map.isBlocksAtY(neighbor.x, neighbor.y) ; neighbor += cell_direction_[i])
 		{
 			if (map.getCell(CLEAN_MAP, neighbor.x, neighbor.y) == UNCLEAN)
-			{
-				it[i] = neighbor + cell_direction_[i]*OVER_CELL_SIZE;
-//				ROS_INFO("%s %d: it[%d](%d,%d)", __FUNCTION__, __LINE__, i, it[i].x, it[i].y);
-			}
-
-			/*unclean_cells += map.isUncleanAtY(neighbor.x, neighbor.y);
-			if (unclean_cells >= 3) {
-				it[i] = neighbor;
-				unclean_cells = 0;
-//				ROS_INFO("%s %d: it[%d](%d,%d)", __FUNCTION__, __LINE__, i, it[i].x, it[i].y);
-			}*/
-//			ROS_WARN("%s %d: it[%d](%d,%d)", __FUNCTION__, __LINE__, i, it[i].x, it[i].y);
-//			ROS_WARN("%s %d: neighbor(%d,%d)", __FUNCTION__, __LINE__, neighbor.x, neighbor.y);
+				it[i] = neighbor ;
+		}
+		//optimizePath
+		if (!map.isBlockAtY(BLOCKED_SLIP, neighbor.x, neighbor.y) && !map.isBlockAtY(BLOCKED_TILT, neighbor.x, neighbor.y) && it[i] != curr_cell) {
+			it[i] += cell_direction_[i] * OVER_CELL_SIZE;
 		}
 	}
 
@@ -152,11 +141,15 @@ Cells NavCleanPathAlgorithm::findTargetInSameLane(GridMap &map, const Cell_t &cu
 	if (it[0].x != curr_cell.x)
 	{
 		target = it[0];
+		if(target.x >= MAP_SIZE )
+			target.x = MAP_SIZE - 1;
 		is_found++;
 	}
 	if (it[1].x != curr_cell.x)
 	{
 		target = it[1];
+		if(target.x <= MAP_SIZE )
+			target.x = -MAP_SIZE + 1;
 		is_found++;
 	}
 //	ROS_WARN("%s %d: curr(%d,%d) is_found(%d),it(%d,%d)", __FUNCTION__, __LINE__, curr_cell.x, curr_cell.y,is_found,it[0],it[1]);
