@@ -1906,11 +1906,11 @@ bool ACleanMode::updateActionInStateFollowWall()
 			ROS_INFO_FL();
 			ROS_ERROR("is_isolate");
 			is_isolate = false;
+			plan_path_.clear();
 			auto angle = (isolate_count_ == 0) ? 0 : -900;
 			auto point = getPosition().addRadian(angle);
+			plan_path_.push_back(point);
 			point = point.getRelative(8, 0);
-			plan_path_.clear();
-			plan_path_.push_back(getPosition());
 			plan_path_.push_back(point);
 			iterate_point_ = plan_path_.front();
 			iterate_point_.dir = MAP_ANY;// note: fix bug follow isPassPosition
