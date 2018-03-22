@@ -132,7 +132,10 @@ Cells NavCleanPathAlgorithm::findTargetInSameLane(GridMap &map, const Cell_t &cu
 				it[i] = neighbor ;
 		}
 		//optimizePath
-		if (!map.isBlockAtY(BLOCKED_SLIP, neighbor.x, neighbor.y) && !map.isBlockAtY(BLOCKED_TILT, neighbor.x, neighbor.y) && it[i] != curr_cell) {
+		if (!map.isBlockAtY(BLOCKED_SLIP, neighbor.x, neighbor.y) &&
+							!map.isBlockAtY(BLOCKED_TILT, neighbor.x, neighbor.y) &&
+							!map.isBlockAtY(BLOCKED_RCON,neighbor.x,neighbor.y) &&
+							it[i] != curr_cell) {
 			it[i] += cell_direction_[i] * OVER_CELL_SIZE;
 		}
 	}
