@@ -575,12 +575,12 @@ void Serial::receive_routine_cb()
 				ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock)!=0, "serial pthread receive unlock fail");
 			}
 			else {
-				debugReceivedStream(receiData);
+				debugReceivedStream(tempData);
 				ROS_WARN(" in serial read ,data tail error\n");
 			}
 		}
 		else {
-			debugReceivedStream(receiData);
+			debugReceivedStream(tempData);
 			ROS_ERROR("%s,%d,in serial read ,data crc error\n",__FUNCTION__,__LINE__);
 		}
 	}
