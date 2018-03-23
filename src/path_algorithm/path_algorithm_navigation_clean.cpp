@@ -151,7 +151,7 @@ Cells NavCleanPathAlgorithm::findTargetInSameLane(GridMap &map, const Cell_t &cu
 	if (it[1].x != curr_cell.x)
 	{
 		target = it[1];
-		if(target.x <= MAP_SIZE )
+		if(target.x <= -MAP_SIZE )
 			target.x = -MAP_SIZE + 1;
 		is_found++;
 	}

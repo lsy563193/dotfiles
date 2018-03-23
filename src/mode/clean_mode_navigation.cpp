@@ -122,7 +122,10 @@ bool CleanModeNav::mapMark()
 	}
 //	clean_map_.print(CLEAN_MAP, Cells{curr});
 	for (auto &&p_it :passed_path_)
+	{
 		clean_map_.setCells(CLEAN_MAP, p_it.toCell().x, p_it.toCell().y, CLEANED);
+	}
+
 
 //	clean_map_.print(CLEAN_MAP, Cells{curr});
 	//For slip mark
