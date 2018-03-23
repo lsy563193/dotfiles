@@ -766,11 +766,7 @@ bool robot::checkTilt() {
 		tilt_time = ros::Time::now().toSec();
 	}
 
-	if ((ros::Time::now().toSec() - tilt_time) > TIME_LIMIT) {
-		return true;
-	} else {
-		return false;
-	}
+	return  ros::Time::now().toSec() - tilt_time > TIME_LIMIT && (wheel.getLeftWheelCliffStatus() || wheel.getRightWheelCliffStatus());
 
 /*	if (gyro.getAngleR() > ANGLE_LIMIT) {
 		tilt_time = ros::Time::now().toSec();
