@@ -20,25 +20,25 @@ void Mode::run()
 
 	while (ros::ok() && !core_thread_kill)
 	{
-//		PP_INFO();
+		PP_INFO();
 		if (event_manager_check_event(&eh_status_now, &eh_status_last) == 1) {
 			usleep(100);
 			continue;
 		}
 
-//		PP_INFO();
+		PP_INFO();
 		if (isExit())
 		{
-//			PP_INFO();
+			PP_INFO();
 			return;
 		}
-//		PP_INFO();
+		PP_INFO();
 		if (isFinish())
 			return;
 
-//		PP_INFO();
+		PP_INFO();
 		sp_action_->run();
-//		PP_INFO();
+		PP_INFO();
 	}
 }
 

@@ -34,7 +34,7 @@ public:
 
 	void setMode(uint8_t mode);
 
-	void switchToNext();
+	void Switch();
 
 	void setLastMode();
 

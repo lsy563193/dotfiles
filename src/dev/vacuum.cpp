@@ -37,7 +37,7 @@ void Vacuum::setMode(uint8_t mode)
 	setSpeedByMode(mode_);
 }
 
-void Vacuum::switchToNext()
+void Vacuum::Switch()
 {
 	// Switch the vacuum mode_ between Max and Normal
 	if (mode_ == Vac_Normal)
