@@ -766,11 +766,7 @@ bool robot::checkTilt() {
 		tilt_time = ros::Time::now().toSec();
 	}
 
-	if ((ros::Time::now().toSec() - tilt_time) > TIME_LIMIT) {
-		return true;
-	} else {
-		return false;
-	}
+	return  ros::Time::now().toSec() - tilt_time > TIME_LIMIT && (wheel.getLeftWheelCliffStatus() || wheel.getRightWheelCliffStatus());
 
 /*	if (gyro.getAngleR() > ANGLE_LIMIT) {
 		tilt_time = ros::Time::now().toSec();
@@ -801,8 +797,11 @@ bool robot::checkTiltToSlip() {
 //--------------------
 static float xCount{}, yCount{};
 
-Point_t getPosition()
+Point_t getPosition(Baselink_Frame_Type type)
 {
+	if(type == ODOM_POSITION_ODOM_ANGLE)
+		return {odom.getX(),odom.getY(),odom.getRadian()};
+
 	return {xCount, yCount, robot::instance()->getWorldPoseRadian()};
 }
 

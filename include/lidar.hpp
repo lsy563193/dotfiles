@@ -26,7 +26,8 @@ public:
 	~Lidar();
 
 	void init();
-	bool lidarGetFitLine(double r_begin, double r_end, double range, double dis_lim, double *line_radian, double *distance, bool is_left, bool is_align = false);
+	bool getFitLine(double r_begin, double r_end, double range, double dis_lim, double *line_radian, double *distance,
+									bool is_left, bool is_align = false);
 
 	/*
 	 * @author Alvin Xie
@@ -99,6 +100,8 @@ public:
 	{
 		slip_enable_ = enable;
 	}
+
+	double checkIsRightAngle(bool is_left);
 private:
 
 	// switch_ is the target status of lidar.
