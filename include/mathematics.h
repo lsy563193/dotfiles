@@ -466,6 +466,7 @@ typedef struct
 
 /*typedef */enum {
 	// The sequence of CLEAN_MAP value must be UNCLEAN < CLEANED < MAP_BLOCKED < SLAM_MAP_BLOCKED
+	// Note: don't change MAP_BLOCKED order, c_block has priority by this order --linshaoyue
   UNCLEAN  = 0,
   SLAM_MAP_UNKNOWN = 0,
   CLEANED = 1,
@@ -473,10 +474,10 @@ typedef struct
   BLOCKED = 2,
   BLOCKED_FW = 2,
   BLOCKED_BUMPER = 3,
-  BLOCKED_CLIFF = 4,
-  BLOCKED_RCON = 5,
-  BLOCKED_TMP_RCON = 6,
-  BLOCKED_LIDAR = 7,
+	BLOCKED_LIDAR = 4,
+  BLOCKED_CLIFF = 5,
+  BLOCKED_RCON = 6,
+  BLOCKED_TMP_RCON = 7,
   BLOCKED_TILT = 8,
   BLOCKED_SLIP = 9,
   SLAM_MAP_BLOCKED = 10,
