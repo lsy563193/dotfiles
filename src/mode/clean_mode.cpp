@@ -700,10 +700,10 @@ void ACleanMode::setCleanMapMarkers(int16_t x, int16_t y, CellState type, visual
 	}
 	else if (type == BLOCKED_CLIFF)
 	{
-		// Magenta
-		color_.r = 1.0;
+		// Black
+		color_.r = 0.0;
 		color_.g = 0.0;
-		color_.b = 1.0;
+		color_.b = 0.0;
 	}
 	else if (type == BLOCKED_RCON || type == BLOCKED_TMP_RCON)
 	{
