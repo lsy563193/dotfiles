@@ -438,7 +438,8 @@ bool Lidar::isAlignFinish()
 //	return false;
 //}
 
-bool Lidar::lidarGetFitLine(double r_begin, double r_end, double range, double dis_lim, double *line_radian, double *distance,bool is_left,bool is_align)
+bool Lidar::getFitLine(double r_begin, double r_end, double range, double dis_lim, double *line_radian,
+											 double *distance, bool is_left, bool is_align)
 {
 //	ROS_WARN("angle_range_raw(%lf, %lf)", radian_to_degree(r_begin), radian_to_degree(r_end));
 	if(isScanOriginalReady() == 0){
@@ -460,7 +461,7 @@ bool Lidar::lidarGetFitLine(double r_begin, double r_end, double range, double d
 		t_lim_split = 0.06;
 		t_lim_merge = 0.06;
 	}
-	ROS_WARN("lidarGetFitLine");
+	ROS_WARN("getFitLine");
 	scanOriginal_mutex_.lock();
 //	auto tmp_scan_data = lidarScanData_compensate_;
 	auto tmp_scan_data = lidarScanData_original_;
