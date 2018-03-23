@@ -172,7 +172,7 @@ bool MovementFollowWallLidar::isFinish() {
 //	radian_diff = odom_p.courseToDest(calcTmpTarget());
 	if(AMovementFollowPoint::isFinish())
 		return true;
-	return sp_mt_->shouldMoveBack() || sp_mt_->shouldTurn() || sp_mt_->RconTrigger();
+	return sp_mt_->isFinishForward() || sp_mt_->RconTrigger();
 }
 
 uint8_t MovementFollowWallLidar::isNear() {

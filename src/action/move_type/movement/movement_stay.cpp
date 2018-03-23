@@ -5,6 +5,7 @@
 #include <movement.hpp>
 #include <move_type.hpp>
 #include <event_manager.h>
+#include <mode.hpp>
 #include "dev.h"
 
 MovementStay::MovementStay(double stay_time_sec)
@@ -28,8 +29,11 @@ MovementStay::~MovementStay()
 bool MovementStay::isFinish()
 {
 	bumper_status_in_stay_ = bumper.getStatus();
-	cliff_status_in_stay_ = cliff.getStatus();
-	tilt_status_in_stay_ = gyro.getTiltCheckingStatus();
+	if(sp_mt_->sp_mode_->action_i_ != sp_mt_->sp_mode_->ac_linear)
+	{
+		cliff_status_in_stay_ = cliff.getStatus();
+		tilt_status_in_stay_ = gyro.getTiltCheckingStatus();
+	}
 
 //	return ev.remote_direction_forward ||
 //		   ev.remote_direction_left ||
@@ -38,7 +42,7 @@ bool MovementStay::isFinish()
 //		   ev.cliff_triggered ||
 	robot::instance()->lockScanCtrl();
 	robot::instance()->pubScanCtrl(true, true);
-	return isTimeUp() || bumper_status_in_stay_ || cliff_status_in_stay_ || tilt_status_in_stay_;
+	return isTimeUp() || bumper_status_in_stay_ /*|| cliff_status_in_stay_ || tilt_status_in_stay_*/;
 }
 
 void MovementStay::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
