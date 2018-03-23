@@ -119,6 +119,7 @@ private:
 	double getTurnRadian(bool);
 	double robot_to_wall_distance = 0.8;
 	float g_back_distance = 0.01;
+	bool is_stop_follow_wall_after_tilt{};
 	struct lidar_angle_param{
 		double lidar_min;
 		double lidar_max;
