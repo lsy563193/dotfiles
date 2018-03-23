@@ -9,6 +9,7 @@
 //#include "path_algorithm.h"
 #include "event_manager.h"
 #include "boost/shared_ptr.hpp"
+#include <pthread.h>
 #include <visualization_msgs/Marker.h>
 //#include "move_type.hpp"
 
@@ -55,7 +56,7 @@ public:
 
 	enum {
 		//0
-		md_idle,
+		md_idle=0,
 		md_charge,
 		md_sleep,
 		md_go_to_charger,
@@ -70,7 +71,7 @@ public:
 
 	};
 
-	int next_mode_i_;
+	static int next_mode_i_;
 
 	int action_i_{ac_null};
 	enum {
@@ -126,7 +127,7 @@ public:
 
 protected:
 	bool is_clean_mode_navigation_{false};
-	int mode_i_{ac_null};
+	int mode_i_{};
 private:
 
 };
@@ -154,6 +155,8 @@ public:
 	void remoteClean(bool state_now, bool state_last) override
 	{ remoteKeyHandler(state_now, state_last);}
 	void remoteMax(bool state_now, bool state_last) override ;
+	void lidar_bumper(bool state_now, bool state_last) override;
+	void remote_wifi(bool state_now, bool state_last) override;
 	void remotePlan(bool state_now, bool state_last) override ;
 	void keyClean(bool state_now, bool state_last) override;
 	void chargeDetect(bool state_now, bool state_last) override ;
@@ -165,6 +168,12 @@ private:
 	void register_events(void);
 
 	bool plan_activated_status_;
+
+	pthread_mutex_t bind_lock_;
+
+	bool trigger_wifi_rebind_;
+	bool trigger_wifi_smart_link_;
+	bool trigger_wifi_smart_ap_link_;
 
 	/*---values for rcon handle---*/
 	double first_time_seen_charger_;
@@ -295,8 +304,6 @@ public:
 	// For move types
 	bool moveTypeNewCellIsFinish(IMoveType *p_move_type);
 	bool moveTypeRealTimeIsFinish(IMoveType *p_mt);
-	virtual void moveTypeFollowWallSaveBlocks();
-	virtual void moveTypeLinearSaveBlocks();
 
 	// Handlers
 	void remoteHome(bool state_now, bool state_last) override ;
@@ -500,7 +507,7 @@ public:
 	void setTempTarget(std::deque<Vector2<double>>& points, uint32_t  seq);
 	void pubTmpTarget(const Point_t &point,bool is_virtual=false);
 	uint8_t setBlocks(Dir_t dir);
-	void saveBlocks(bool is_linear, bool is_save_rcon);
+	void saveBlocks();
 	void saveBlock(int block, int , std::function<Cells()>);
 	void checkShouldMarkCharger(float angle_offset,float distance);
 	PathHead getTempTarget();
@@ -618,6 +625,7 @@ public:
 
 	bool markMapInNewCell() override;
 	bool mapMark() override;
+	void resetErrorMarker();
 //	bool isExit() override;
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteClean(bool state_now, bool state_last) override ;
@@ -632,6 +640,7 @@ public:
 //	void overCurrentVacuum(bool state_now, bool state_last);
 //	void printMapAndPath();
 	void switchInStateInit() override;
+	bool updateActionInStateInit() override;
 
 	void switchInStateGoHomePoint() override;
 	void switchInStateGoToCharger() override;
@@ -640,6 +649,7 @@ public:
 
 private:
 	bool mark_robot_{true};
+	Marks error_marker_;
 };
 
 class CleanModeFollowWall:public ACleanMode {

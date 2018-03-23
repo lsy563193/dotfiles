@@ -15,6 +15,8 @@ ActionIdle::ActionIdle()
 	ROS_INFO("%s %d: Start action idle.", __FUNCTION__, __LINE__);
 	if (error.get())
 		key_led.setMode(LED_STEADY, LED_RED);
+	else if (robot::instance()->isBatteryLow())
+		key_led.setMode(LED_BREATH, LED_ORANGE);
 	else
 		key_led.setMode(LED_BREATH, LED_GREEN);
 

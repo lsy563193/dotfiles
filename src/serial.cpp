@@ -12,6 +12,7 @@
 #include <vacuum.h>
 #include <wifi_led.hpp>
 #include "wifi/wifi.h"
+#include "mode.hpp"
 
 boost::mutex send_stream_mutex;
 
@@ -31,7 +32,7 @@ Serial::~Serial()
 	{
 		for (auto i = 0; i < 10; i++)
 		{
-			if (close() == 0);
+			if (close() == 0)
 			{
 				ROS_INFO("%s %d: Close serial port %s.", __FUNCTION__, __LINE__, port_.c_str());
 				closed = true;
@@ -575,12 +576,12 @@ void Serial::receive_routine_cb()
 				ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock)!=0, "serial pthread receive unlock fail");
 			}
 			else {
-				debugReceivedStream(receiData);
+				debugReceivedStream(tempData);
 				ROS_WARN(" in serial read ,data tail error\n");
 			}
 		}
 		else {
-			debugReceivedStream(receiData);
+			debugReceivedStream(tempData);
 			ROS_ERROR("%s,%d,in serial read ,data crc error\n",__FUNCTION__,__LINE__);
 		}
 	}
@@ -595,24 +596,52 @@ void Serial::send_routine_cb()
 	ros::Rate r(_RATE);
 	resetSendStream();
 	//tmp test
-	uint16_t wifi_send_count = 0;
-
+	uint16_t wifi_send_state_cnt = 0;
+	uint16_t wifi_send_map_cnt = 0;
+	clock_t t = clock();
+	float period;
 	while(ros::ok() && !send_thread_kill){
 		if (!send_thread_enable)
 		{
 			r.sleep();
 			continue;
 		}
+		period = ((float)(clock() - t))/CLOCKS_PER_SEC;
 
-		//tmp test
-		wifi_send_count++;
-		if(wifi_send_count >= 250)
+		uint32_t sleep_time = 20000-(uint32_t)(period*1000000);
+		if(sleep_time < 20000)
 		{
-			wifi_send_count = 0;
-			s_wifi.testSend();
+			usleep(sleep_time);
 		}
+		else{
+			usleep(20000);
+			ROS_WARN("SLEEP_TIME %d",sleep_time);
+		}
+		t = clock();
+		//serial wifi send
 
-		r.sleep();
+		wifi_send_state_cnt++;
+		wifi_send_map_cnt++;
+		if(wifi_send_state_cnt>= 150 && wifi_send_map_cnt < 300)//
+		{
+			wifi_send_state_cnt= 0;
+			INFO_YELLOW("SEND ROBOT STATUS");
+			if(S_Wifi::is_wifi_connected_
+						&& s_wifi.isStatusRequest_
+						&& s_wifi.is_cloud_connected_)
+				s_wifi.replyRobotStatus(0xc8,0x00);
+		}
+		if(wifi_send_map_cnt >=300)
+		{
+			wifi_send_map_cnt = 0;
+			INFO_YELLOW("SEND REAL TIME MAP");
+			if(S_Wifi::is_wifi_connected_
+						 && s_wifi.is_cloud_connected_
+						 && s_wifi.isStatusRequest_
+						 )
+				s_wifi.replyRealtimeMap();
+		}
+		//r.sleep();
 		/*-------------------Process for beeper.play and key_led -----------------------*/
 		key_led.processLed();
 		wifi_led.processLed();

@@ -8,6 +8,7 @@
 Beeper beeper;
 void Beeper::beep(uint8_t sound_code, int sound_time_ms, int silence_time_ms, int total_time_count)
 {
+#ifdef DEBUG_ENABLE
 	// Sound_Code means the interval of the speaker sounding, higher interval makes lower sound.
 	sound_code_ = sound_code;
 	// Total_Time_Count means how many loops of speaker sound loop will it sound.
@@ -19,6 +20,7 @@ void Beeper::beep(uint8_t sound_code, int sound_time_ms, int silence_time_ms, in
 	silence_time_count_ = silence_time_ms / 20;
 	// Trigger the init flag to start the new beeper.play action
 	update_flag_ = true;
+#endif
 }
 
 void Beeper::beepForCommand(bool valid)

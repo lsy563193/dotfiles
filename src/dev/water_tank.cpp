@@ -19,6 +19,12 @@ bool WaterTank::checkEquipment()
 	usleep(150000);
 	if (getStatus())
 		is_equipped_ = true;
+	else
+	{
+		stop();
+		operation_ = false;
+		is_equipped_ = false;
+	}
 
 //	printf("watertank%d\n", is_equipped_);
 	ROS_INFO("%s %d: Robot is %scarrying a water tank.", __FUNCTION__, __LINE__, is_equipped_ ? "" : "not ");
@@ -31,13 +37,16 @@ void WaterTank::normalOperate()
 	operation_ = true;
 	checkBatterySetPWM();
 	pump_switch_ = 0x80;
+	last_pump_time_stamp_ = 0;
 	serial.setSendData(CTL_WATER_TANK, static_cast<uint8_t>(pump_switch_ | pwm_));
 	check_battery_time_stamp_ = ros::Time::now().toSec();
+	ROS_INFO("%s %d: Open water tank.", __FUNCTION__, __LINE__);
 }
 
 void WaterTank::stop()
 {
 	operation_ = false;
+	is_equipped_ = false;
 	serial.setSendData(CTL_WATER_TANK, 0x00);
 }
 
@@ -51,14 +60,15 @@ void WaterTank::checkBatterySetPWM()
 
 void WaterTank::updatePWM()
 {
-	if (status_ && ros::Time::now().toSec() - check_battery_time_stamp_ > 60)
+	if (operation_ && status_ && ros::Time::now().toSec() - check_battery_time_stamp_ > 60)
 	{
 		checkBatterySetPWM();
 		serial.setSendData(CTL_WATER_TANK, static_cast<uint8_t>(pump_switch_ | pwm_));
 		check_battery_time_stamp_ = ros::Time::now().toSec();
+		ROS_INFO("%s %d: Update for water tank.", __FUNCTION__, __LINE__);
 	}
 
-	if (status_ && ros::Time::now().toSec() - last_pump_time_stamp_ > pump_time_interval_)
+	if (operation_ && status_ && ros::Time::now().toSec() - last_pump_time_stamp_ > pump_time_interval_)
 	{
 		pump_switch_ = 0x80;
 		pump_cnt_++;

@@ -198,6 +198,7 @@ public:
 	}
 
 	bool checkTilt();
+	bool checkTiltToSlip();
 
 
 	void setCurrent(uint16_t current)
@@ -211,6 +212,11 @@ public:
 	}
 
 	boost::shared_ptr<Mode> p_mode{};
+	uint8_t getWorkMode()
+	{
+		return r16_work_mode_;
+	}
+
 private:
 
 	uint8_t getTestMode(void);
@@ -287,6 +293,12 @@ private:
 	const double TIME_LIMIT{0.5};
 	double tilt_time = 0;
 	bool is_first_tilt{true};
+
+	//for check tilit
+	const double ANGLE_LIMIT_TO_SLIP{3};
+	const double TIME_LIMIT_TO_SLIP{0.4};
+	double tilt_time_to_slip_ = 0;
+	bool is_first_tilt_to_slip_{true};
 
 	uint16_t robot_current_{0};
 };

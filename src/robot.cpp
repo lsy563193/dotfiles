@@ -120,6 +120,7 @@ robot::~robot()
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
+	s_wifi.sleep();
 	water_tank.stop();
 	serial.setWorkMode(WORK_MODE);
 	usleep(40000);
@@ -292,11 +293,14 @@ void robot::robotbase_routine_cb()
 		// For water tank device.
 		water_tank.setStatus((buf[REC_MIX_BYTE] & 0x08) != 0);
 //		ROS_INFO("mix:%x", buf[REC_MIX_BYTE]);
+//		if (water_tank.getStatus())
+//			ROS_INFO("Water tank~~~~~~~~~~~~~~~~~~ :D");
 		sensor.water_tank = water_tank.getStatus();
 
 		// For charger device.
 		charger.setChargeStatus((buf[REC_MIX_BYTE] >> 4) & 0x07);
 		sensor.charge_status = charger.getChargeStatus();
+//		ROS_INFO("Charge status:%d.", charger.getChargeStatus());
 
 		// For sleep status.
 		serial.isMainBoardSleep((buf[REC_MIX_BYTE] & 0x80) == 0);
@@ -486,6 +490,7 @@ void robot::runTestMode()
 			ROS_ERROR(" lidar bumper open fail!");
 	}
 
+	key_led.setMode(LED_STEADY, LED_ORANGE);
 	p_mode.reset(new CleanModeTest(r16_work_mode_));
 	p_mode->run();
 	g_pp_shutdown = true;
@@ -493,6 +498,7 @@ void robot::runTestMode()
 
 void robot::runWorkMode()
 {
+	s_wifi.resume();
 	auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
 	send_thread_enable = true;
 
@@ -748,7 +754,7 @@ void robot::updateRobotPositionForTest()
 
 bool robot::checkTilt() {
 //	ROS_WARN("is_first_tilt = %d", is_first_tilt);
-	auto angle = std::fabs(gyro.getAngleR());
+	auto angle = gyro.getAngleR();
 //	ROS_WARN("angle = %f", angle);
 	if (angle < ANGLE_LIMIT) {
 		is_first_tilt = true;
@@ -774,6 +780,22 @@ bool robot::checkTilt() {
 			return false;
 		}
 	}*/
+}
+
+bool robot::checkTiltToSlip() {
+	auto angle = std::fabs(gyro.getAngleR());
+//	ROS_WARN("angle = %f", angle);
+	if (angle < ANGLE_LIMIT_TO_SLIP) {
+		is_first_tilt_to_slip_ = true;
+		return false;
+	}
+
+	if (is_first_tilt_to_slip_) {
+		is_first_tilt_to_slip_ = false;
+		tilt_time_to_slip_ = ros::Time::now().toSec();
+	}
+
+	return (ros::Time::now().toSec() - tilt_time_to_slip_) > TIME_LIMIT_TO_SLIP ? true : false;
 }
 
 //--------------------
@@ -855,6 +877,7 @@ Mode *getNextMode(int next_mode_i_)
 		case Mode::cm_wall_follow:
 			return new CleanModeFollowWall();
 		case Mode::cm_spot:
+			ROS_ERROR("!!!!!!!!!!!!!!cm_spot(%d)", Mode::cm_spot);
 			return new CleanModeSpot();
 //		case Mode::cm_test:
 //			return new CleanModeTest();

@@ -82,7 +82,7 @@ public:
 	 * @param radius, the radius of the circle.
 	 * @param cell_state, target cell state of marking.
 	 */
-	void setCircleMarkers(Point_t point, bool cover_block, int radius, CellState cell_state);
+	void setCircleMarkers(Point_t point, int radius, CellState cell_state,Marks& error_marker);
 
 	/*
 	 * Mark a square of x_len * y_len from center with cell_state.
@@ -136,6 +136,7 @@ public:
  */
 	uint8_t isUncleanAtY(int16_t x, int16_t y);
 
+	uint8_t isBlockAtY(int, int16_t x, int16_t y);
 /*
  * Check a block is cleaned or not, a block is defined as have the same size of brush.
  *
