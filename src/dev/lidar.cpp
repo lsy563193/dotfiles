@@ -438,7 +438,8 @@ bool Lidar::isAlignFinish()
 //	return false;
 //}
 
-bool Lidar::lidarGetFitLine(double r_begin, double r_end, double range, double dis_lim, double *line_radian, double *distance,bool is_left,bool is_align)
+bool Lidar::getFitLine(double r_begin, double r_end, double range, double dis_lim, double *line_radian,
+											 double *distance, bool is_left, bool is_align)
 {
 //	ROS_WARN("angle_range_raw(%lf, %lf)", radian_to_degree(r_begin), radian_to_degree(r_end));
 	if(isScanOriginalReady() == 0){
@@ -460,7 +461,7 @@ bool Lidar::lidarGetFitLine(double r_begin, double r_end, double range, double d
 		t_lim_split = 0.06;
 		t_lim_merge = 0.06;
 	}
-	ROS_WARN("lidarGetFitLine");
+	ROS_WARN("getFitLine");
 	scanOriginal_mutex_.lock();
 //	auto tmp_scan_data = lidarScanData_compensate_;
 	auto tmp_scan_data = lidarScanData_original_;
@@ -1596,17 +1597,20 @@ bool Lidar::lidarCheckFresh(float duration, uint8_t type)
 //	}
 //}
 
-void Lidar::setLidarScanDataOriginal(const sensor_msgs::LaserScan::ConstPtr &scan) {
+void Lidar::setLidarScanDataOriginal(const sensor_msgs::LaserScan::ConstPtr &scan)
+{
 	boost::mutex::scoped_lock lock(scanOriginal_mutex_);
 	lidarScanData_original_ = *scan;
 }
 
-sensor_msgs::LaserScan Lidar::getLidarScanDataOriginal() {
+sensor_msgs::LaserScan Lidar::getLidarScanDataOriginal()
+{
 	boost::mutex::scoped_lock lock(scanOriginal_mutex_);
 	return lidarScanData_original_;
 }
 
-void Lidar::init() {
+void Lidar::init()
+{
 	PP_INFO();
 	switch_ = OFF;
 
@@ -1704,3 +1708,57 @@ void Lidar::checkSlipInit(float &acur1, float &acur2, float &acur3, float &acur4
 	}
 }
 
+double Lidar::checkIsRightAngle(bool is_left) {
+	if(isScanOriginalReady() == 0){
+//		INFO_BLUE("ScanOriginal NOT Ready! Break!");
+		return false;
+	}
+
+	scanOriginal_mutex_.lock();
+	auto tmp_scan_data = lidarScanData_original_;
+	scanOriginal_mutex_.unlock();
+
+	int count{};
+	double wall_length{};
+
+	for (int i = 359; i >= 0; i--) {
+//		ROS_INFO("laser point(%d, %lf)", i, scan->ranges[i]);
+		if (tmp_scan_data.ranges[i] < 4) {
+			auto point = polarToCartesian(tmp_scan_data.ranges[i], i);
+//			ROS_ERROR("point(%d, %lf, %lf)", i, point.x, point.y);
+			if (is_left) {
+				if (point.y > 0.160 && point.y < 0.20) {
+					if (point.x > 0 && point.x < 0.167) {
+//						ROS_INFO("point(%d, %lf, %lf)", i, point.x, point.y);
+						count++;
+						wall_length = point.x > wall_length ? point.x : wall_length;
+					}
+					if (point.x > -0.05 && point.x < 0) {
+//						ROS_INFO("point(%d, %lf, %lf)", i, point.x, point.y);
+						count += 10;
+						wall_length = point.x > wall_length ? point.x : wall_length;
+					}
+				}
+			} else {
+				if (point.y < -0.160 && point.y > -0.20) {
+					if (point.x > 0 && point.x < 0.167) {
+//						ROS_INFO("point(%d, %lf, %lf)", i, point.x, point.y);
+						count++;
+						wall_length = point.x > wall_length ? point.x : wall_length;
+					}
+					if (point.x > -0.05 && point.x < 0) {
+//						ROS_INFO("point(%d, %lf, %lf)", i, point.x, point.y);
+						count += 10;
+						wall_length = point.x > wall_length ? point.x : wall_length;
+					}
+				}
+			}
+		}
+	}
+//	ROS_WARN("count = %d, is_left = %d", count, is_left);
+	if (count > 10) {
+		return wall_length;
+	} else {
+		return wall_length;
+	}
+}
