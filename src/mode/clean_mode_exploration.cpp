@@ -119,11 +119,8 @@ void CleanModeExploration::overCurrentWheelRight(bool state_now, bool state_last
 
 void CleanModeExploration::chargeDetect(bool state_now, bool state_last) {
 	ROS_WARN("%s %d: Charge detect!.", __FUNCTION__, __LINE__);
-	if (charger.getChargeStatus() >= 1)
-	{
-		ROS_WARN("%s %d: Set ev.chargeDetect.", __FUNCTION__, __LINE__);
-		ev.charge_detect = charger.getChargeStatus();
-	}
+
+	ev.charge_detect = charger.getChargeStatus();
 }
 
 /*void CleanModeExploration::printMapAndPath()
@@ -136,7 +133,6 @@ void CleanModeExploration::chargeDetect(bool state_now, bool state_last) {
 void CleanModeExploration::switchInStateGoToCharger() {
 	PP_INFO();
 	if (ev.charge_detect && charger.isOnStub()) {
-		ev.charge_detect = 0;
 		sp_state = nullptr;
 		return;
 	}

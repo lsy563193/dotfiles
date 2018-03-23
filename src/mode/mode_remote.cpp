@@ -143,7 +143,8 @@ void ModeRemote::remoteMax(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
 	beeper.beepForCommand(VALID);
-	vacuum.switchToNext();
+	if (!water_tank.isEquipped())
+		vacuum.switchToNext();
 	remote.reset();
 }
 
