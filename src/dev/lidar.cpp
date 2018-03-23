@@ -1706,7 +1706,7 @@ void Lidar::checkSlipInit(float &acur1, float &acur2, float &acur3, float &acur4
 	}
 }
 
-bool Lidar::checkIsRightAngle(bool is_left) {
+double Lidar::checkIsRightAngle(bool is_left) {
 	if(isScanOriginalReady() == 0){
 //		INFO_BLUE("ScanOriginal NOT Ready! Break!");
 		return false;
@@ -1717,6 +1717,7 @@ bool Lidar::checkIsRightAngle(bool is_left) {
 	scanOriginal_mutex_.unlock();
 
 	int count{};
+	double wall_length{};
 
 	for (int i = 359; i >= 0; i--) {
 //		ROS_INFO("laser point(%d, %lf)", i, scan->ranges[i]);
@@ -1728,10 +1729,12 @@ bool Lidar::checkIsRightAngle(bool is_left) {
 					if (point.x > 0 && point.x < 0.167) {
 //						ROS_INFO("point(%d, %lf, %lf)", i, point.x, point.y);
 						count++;
+						wall_length = point.x > wall_length ? point.x : wall_length;
 					}
 					if (point.x > -0.05 && point.x < 0) {
 //						ROS_INFO("point(%d, %lf, %lf)", i, point.x, point.y);
 						count += 10;
+						wall_length = point.x > wall_length ? point.x : wall_length;
 					}
 				}
 			} else {
@@ -1739,10 +1742,12 @@ bool Lidar::checkIsRightAngle(bool is_left) {
 					if (point.x > 0 && point.x < 0.167) {
 //						ROS_INFO("point(%d, %lf, %lf)", i, point.x, point.y);
 						count++;
+						wall_length = point.x > wall_length ? point.x : wall_length;
 					}
 					if (point.x > -0.05 && point.x < 0) {
 //						ROS_INFO("point(%d, %lf, %lf)", i, point.x, point.y);
 						count += 10;
+						wall_length = point.x > wall_length ? point.x : wall_length;
 					}
 				}
 			}
@@ -1750,8 +1755,8 @@ bool Lidar::checkIsRightAngle(bool is_left) {
 	}
 //	ROS_WARN("count = %d, is_left = %d", count, is_left);
 	if (count > 10) {
-		return true;
+		return wall_length;
 	} else {
-		return false;
+		return wall_length;
 	}
 }

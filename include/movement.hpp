@@ -46,6 +46,7 @@ public:
 
 protected:
 
+	bool is_out_corner{};
 	int32_t min_speed_;
 	int32_t max_speed_;
 //	static Point_t tmp_target_;
