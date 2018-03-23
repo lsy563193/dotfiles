@@ -1703,3 +1703,4 @@ void Lidar::checkSlipInit(float &acur1, float &acur2, float &acur3, float &acur4
 		acur4 = 0.01;
 	}
 }
+
