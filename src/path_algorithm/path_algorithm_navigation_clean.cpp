@@ -100,7 +100,7 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 		return false;
 	if(path.size() > 4 )
 	{
-		ROS_INFO("Step 5: size_of_path > 15 Optimize path for adjusting it away from obstacles..");
+		ROS_INFO("Step 5: size_of_path > 4 Optimize path for adjusting it away from obstacles..");
 		optimizePath(map, path);
 	}
 
@@ -379,19 +379,28 @@ void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path) {
 				}
 			}
 		};
+
+	auto check_limit = [&](Cell_t& shift_cell,const bool is_dir_x){
+		if(is_dir_x && fabs(shift_cell.x) > 3){
+			shift_cell.x = static_cast<int16_t>(shift_cell.x > 0 ? 3 : -3);
+		}
+		else if(!is_dir_x && shift_cell.y >3){
+			shift_cell.y = static_cast<int16_t>(shift_cell.y > 0 ? 3 : -3);
+		}
+	};
+
 	for(auto iterator = path.begin(); iterator != path.end()-3; ++iterator) {
 		auto p1 = iterator;
 		auto p2 = iterator + 1;
 		auto p3 = iterator + 2;
 
 		auto shift_cell = find_index(*p1, *p2, *p3);
-//		if(shift_cell != Cell_t{0,0})
-//		{
-			*p2 += shift_cell;
-			*p3 += shift_cell;
-			ROS_INFO("%s %d: step *.2 do success shift_cell(%d,%d)\n\n", __FUNCTION__, __LINE__,shift_cell.x, shift_cell.y);
-//		}
+		ROS_INFO("%s %d: step *.2 do success shift_cell(%d,%d)\n\n", __FUNCTION__, __LINE__,shift_cell.x, shift_cell.y);
+		bool is_dir_x = shift_cell.x != 0;
+		check_limit(shift_cell,is_dir_x);
 
+		*p2 += shift_cell;
+		*p3 += shift_cell;
+		ROS_INFO("%s %d: step *.2 do success shift_cell(%d,%d),is_dir_x:%d\n\n", __FUNCTION__, __LINE__,shift_cell.x, shift_cell.y,is_dir_x);
 	}
-
 }
