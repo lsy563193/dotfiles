@@ -8,7 +8,7 @@
 #include <cstdint>
 
 #define Vac_Speed_Max				100 //15500rpm
-#define Vac_Speed_Normal			60 //9000rpm
+#define Vac_Speed_Normal			80 //12000rpm
 #define Vac_Speed_NormalL			50 //8000rpm
 
 #define TWO_HOURS					7200
