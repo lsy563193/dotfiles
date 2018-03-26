@@ -520,10 +520,20 @@ bool MoveTypeDeskTest::checkStage2Finish()
 				usleep(100000);
 			}
 			ROS_INFO("%s %d: Scan valid count:%d.", __FUNCTION__, __LINE__, scan_valid_cnt);
-			test_step_++;
-			p_movement_.reset();
-			p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-178), RCON_ROTATE_SPEED));
-			ROS_INFO("%s %d: Enter rcon turning 1.", __FUNCTION__, __LINE__);
+			if (scan_valid_cnt < _cnt -1)
+			{
+				error_step_ = test_stage_;
+				error_code_ = LIDAR_ERROR;
+				error_content_ = scan_valid_cnt;
+				test_step_ = 99;
+			}
+			else
+			{
+				test_step_++;
+				p_movement_.reset();
+				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-178), RCON_ROTATE_SPEED));
+				ROS_INFO("%s %d: Enter rcon turning 1.", __FUNCTION__, __LINE__);
+			}
 			break;
 		}
 		case 4:
@@ -555,11 +565,20 @@ bool MoveTypeDeskTest::checkStage2Finish()
 				usleep(100000);
 			}
 			ROS_INFO("%s %d: Scan valid count:%d.", __FUNCTION__, __LINE__, scan_valid_cnt);
-			while (ros::ok() && !core_thread_kill)
-				usleep(200000);
-			test_step_++;
-			p_movement_.reset();
-			p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-178), RCON_ROTATE_SPEED));
+			if (scan_valid_cnt < _cnt -1)
+			{
+				error_step_ = test_stage_;
+				error_code_ = LIDAR_ERROR;
+				error_content_ = scan_valid_cnt;
+				test_step_ = 99;
+			}
+			else
+			{
+				test_step_++;
+				p_movement_.reset();
+				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-178), RCON_ROTATE_SPEED));
+				ROS_INFO("%s %d: Enter rcon turning 2.", __FUNCTION__, __LINE__);
+			}
 			break;
 		}
 		default://case 6:
