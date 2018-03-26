@@ -126,7 +126,10 @@ bool CleanModeNav::mapMark()
 	}
 //	clean_map_.print(CLEAN_MAP, Cells{curr});
 	for (auto &&p_it :passed_path_)
+	{
 		clean_map_.setCells(CLEAN_MAP, p_it.toCell().x, p_it.toCell().y, CLEANED);
+	}
+
 
 //	clean_map_.print(CLEAN_MAP, Cells{curr});
 	//For slip mark
@@ -395,13 +398,17 @@ void CleanModeNav::remoteMax(bool state_now, bool state_last)
 	if(isStateClean() || isStateResumeLowBatteryCharge())
 	{
 		beeper.beepForCommand(VALID);
-		vacuum.Switch();
+		if (!water_tank.isEquipped())
+			vacuum.Switch();
 	}
 	else if (isStateGoHomePoint() || isStateGoToCharger())
 	{
 		beeper.beepForCommand(VALID);
-		vacuum.Switch();
-		vacuum.setTmpMode(Vac_Normal);
+		if (!water_tank.isEquipped())
+		{
+			vacuum.Switch();
+			vacuum.setTmpMode(Vac_Normal);
+		}
 	}
 	else
 		beeper.beepForCommand(INVALID);

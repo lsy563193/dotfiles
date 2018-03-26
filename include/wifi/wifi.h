@@ -43,6 +43,8 @@ public:
 
 	bool setWorkMode(int workmode);
 
+	uint8_t setSchedule(const std::vector<uint8_t> data);
+
 	wifi::WorkMode getWorkMode()
 	{
 		return robot_work_mode_;

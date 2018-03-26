@@ -51,6 +51,9 @@ void x900_functional_test(std::string serial_port, int baud_rate, std::string li
 	// Test finish.
 	double alarm_time = ros::Time::now().toSec();
 	speaker.play(VOICE_TEST_SUCCESS);
+	serial.setSendData(CTL_LED_GREEN, 100);
+	serial.setSendData(CTL_LED_RED, 0);
+	serial.setSendData(CTL_MIX, 0);
 	ROS_INFO("%s %d: Test finish.", __FUNCTION__, __LINE__);
 	while (ros::ok())
 	{
@@ -67,6 +70,9 @@ void error_loop(uint8_t test_stage, uint16_t error_code, uint16_t current_data)
 {
 //	send_thread_enable = true;
 	infrared_display.displayErrorMsg(test_stage-4, current_data, error_code);
+	serial.setSendData(CTL_LED_RED, 100);
+	serial.setSendData(CTL_LED_GREEN, 0);
+	serial.setSendData(CTL_MIX, 0);
 	serial.sendData();
 	double alarm_time = ros::Time::now().toSec();
 	speaker.play(VOICE_TEST_FAIL);
@@ -101,7 +107,7 @@ bool serial_port_test()
 	for (uint8_t test_cnt = 0; test_cnt < test_frame_cnt; test_cnt++)
 	{
 		// Write random numbers to send stream.
-		for (uint8_t i = CTL_WHEEL_LEFT_HIGH; i < CTL_CRC; i++)
+		for (uint8_t i = CTL_WHEEL_LEFT_HIGH; i < CTL_IR_CTRL; i++)
 		{
 			if (i == CTL_WORK_MODE)
 				serial.setSendData(i, FUNC_SERIAL_TEST_MODE);
@@ -110,12 +116,19 @@ bool serial_port_test()
 			else if (i == CTL_KEY_VALIDATION)
 				// Avoid 0x40/0x41/0x42/0x23.
 				serial.setSendData(i, FUNC_SERIAL_TEST_MODE);
+			/*--- for orange LED breath ---*/
+			else if(i == CTL_LED_RED)
+				serial.setSendData(i, test_cnt%10*10);
+			else if(i == CTL_LED_GREEN)
+				serial.setSendData(i, test_cnt%10*10);
 			else
 			{
 				uint8_t random_byte = dist_char(random_number_engine);
 				serial.setSendData(i, random_byte);
 			}
-			send_string_sum += std::to_string(serial.getSendData(i));
+			/*--- abandon the first package ---*/
+			if(test_cnt > 0)
+				send_string_sum += std::to_string(serial.getSendData(i));
 		}
 		serial.sendData();
 //		serial.debugSendStream(serial.send_stream);
@@ -129,9 +142,18 @@ bool serial_port_test()
 			break;
 		}
 
-		for (uint8_t i = CTL_WHEEL_LEFT_HIGH; i < CTL_CRC; i++)
-			receive_string_sum += std::to_string(receive_data[i]);
+		if(test_cnt > 0) {
+			for (uint8_t i = CTL_WHEEL_LEFT_HIGH; i < CTL_IR_CTRL; i++)
+				receive_string_sum += std::to_string(receive_data[i]);
+		}
+		else
+		{
+			serial.flush();
+			usleep(50000);
+			serial.flush();
+		}
 //		serial.debugReceivedStream(receive_data);
+		usleep(100000);
 	}
 	if(send_string_sum.compare(receive_string_sum) == 0)
 	{
@@ -266,15 +288,22 @@ void main_board_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &curren
 			case FUNC_WHEELS_TEST_MODE:/*---wheels---*/
 				wheels_test(baseline, test_stage, error_code, current_data);
 				break;
-			case FUNC_BRUSHES_TEST_MODE:/*---brushes---*/
-				brushes_test(baseline, test_stage, error_code, current_data);
+			case FUNC_SIDEBRUSHES_TEST_MODE:/*---side brushes---*/
+				side_brushes_test(baseline, test_stage, error_code, current_data);
 				break;
 			case FUNC_VACUUM_TEST_MODE:/*---vacuum---*/
 				vacuum_test(baseline, test_stage, error_code, current_data);
 				break;
+			case FUNC_MAINBRUSH_TEST_MODE:/*--- main brush ---*/
+				main_brush_test(baseline, test_stage, error_code, current_data);
 			case FUNC_CHARGE_CURRENT_TEST_MODE:/*---charge current---*/
 				charge_current_test(is_fixture, test_stage, error_code, current_data);
 				break;
+			case FUNC_FINISHED:
+				test_stage = 0;
+				error_code = 0;
+				current_data = 0;
+				return ;
 		}
 		if(error_code)
 			return ;
@@ -978,7 +1007,7 @@ void water_tank_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &curren
 void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data)
 {
 	uint16_t test_result=0;
-	uint8_t step=0;
+	uint8_t step=1;
 	uint8_t count=0;
 	uint8_t buf[REC_LEN];
 	uint32_t current_current=0;
@@ -1004,9 +1033,6 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 			continue;
 		}
 		switch(step) {
-			case 0:
-				if(buf[36])
-					step++;
 			case 1:
 				serial.setSendData(CTL_WHEEL_LEFT_HIGH, 300 >> 8);
 				serial.setSendData(CTL_WHEEL_LEFT_LOW, 300 & 0xFF);
@@ -1132,8 +1158,8 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				}
 				break;
 			case 11:
-				serial.setSendData(CTL_WHEEL_LEFT_HIGH, 400 >> 8);
-				serial.setSendData(CTL_WHEEL_LEFT_LOW, 400 & 0xFF);
+				serial.setSendData(CTL_WHEEL_LEFT_HIGH, 300 >> 8);
+				serial.setSendData(CTL_WHEEL_LEFT_LOW, 300 & 0xFF);
 				serial.setSendData(CTL_LEFT_WHEEL_TEST_MODE, 1);
 				count++;
 				if (count > 50) {
@@ -1305,8 +1331,8 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 					test_result |= 0x4000;
 				}
 			case 24:
-				serial.setSendData(CTL_WHEEL_RIGHT_HIGH, 400 >> 8);
-				serial.setSendData(CTL_WHEEL_RIGHT_LOW, 400 & 0xFF);
+				serial.setSendData(CTL_WHEEL_RIGHT_HIGH, 300 >> 8);
+				serial.setSendData(CTL_WHEEL_RIGHT_LOW, 300 & 0xFF);
 				serial.setSendData(CTL_RIGHT_WHEEL_TEST_MODE, 1);
 				count++;
 				if (count > 50) {
@@ -1365,7 +1391,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 		serial.sendData();
 	}
 }
-void brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data)
+void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data)
 {
 	uint8_t test_result=0;
 	uint32_t current_current=0;
@@ -1374,7 +1400,7 @@ void brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code,
 	uint8_t count=0;
 	uint8_t step=1;
 
-	serial.setSendData(CTL_WORK_MODE, FUNC_BRUSHES_TEST_MODE);
+	serial.setSendData(CTL_WORK_MODE, FUNC_SIDEBRUSHES_TEST_MODE);
 	serial.setSendData(CTL_LEFT_BRUSH_TEST_MODE, 0);
 	serial.setSendData(CTL_MAIN_BRUSH_TEST_MODE, 0);
 	serial.setSendData(CTL_RIGHT_BRUSH_TEST_MODE, 0);
@@ -1385,14 +1411,14 @@ void brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code,
 		ROS_ERROR_COND(pthread_cond_wait(&recev_cond, &recev_lock) != 0, "robotbase pthread receive cond wait fail");
 		memcpy(buf, serial.receive_stream, sizeof(uint8_t) * REC_LEN);
 		ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock) != 0, "robotbase pthread receive unlock fail");
-		if (buf[38] != FUNC_BRUSHES_TEST_MODE)
+		if (buf[38] != FUNC_SIDEBRUSHES_TEST_MODE)
 		{
 			serial.sendData();
 			continue;
 		}
 		switch (step) {
 			case 1:
-				brush.setPWM(80, 0, 0);
+				brush.setPWM(60, 0, 0);
 				count++;
 				if (count > 20) {
 					current_current = 0;
@@ -1423,7 +1449,7 @@ void brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code,
 					return ;
 				}
 				else {
-					test_result |= 0x10;
+					test_result |= 0x04;
 				}
 				serial.setSendData(CTL_LEFT_BRUSH_TEST_MODE, 1);
 				break;
@@ -1461,12 +1487,12 @@ void brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code,
 					}
 					else
 					{
-						test_result |= 0x20;
+						test_result |= 0x08;
 					}
 				}
 				break;
 			case 6:
-				brush.setPWM(0, 80, 0);
+				brush.setPWM(0, 60, 0);
 				count++;
 				if (count > 5) {
 					current_current = 0;
@@ -1538,81 +1564,8 @@ void brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code,
 					}
 				}
 				break;
-			case 11:
-				brush.setPWM(0, 0, 80);
-				count++;
-				if (count > 20) {
-					current_current = 0;
-					motor_current = 0;
-					step++;
-					count = 0;
-				}
-				break;
-			case 12:
-				count++;
-				if (count <= 10) {
-					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
-					motor_current += static_cast<uint16_t>(buf[4] << 8 | buf[5]);
-				}
-				else {
-					count = 0;
-					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
-					motor_current = (motor_current / 10 - baseline[MAIN_BRUSH]) * 330 * 10 / 4096;
-					step++;
-				}
-				break;
-			case 13:
-				step++;
-				if (current_current < 100 || current_current > 300 || motor_current < 100 || motor_current > 300) {
-					error_code = MAIN_BRUSH_CURRENT_ERROR;
-					current_data = static_cast<uint16_t>(motor_current);
-					return ;
-				}
-				else {
-					test_result |= 0x04;
-				}
-				serial.setSendData(CTL_MAIN_BRUSH_TEST_MODE, 1);
-				break;
-			case 14:
-				if (static_cast<uint16_t>(buf[4] << 8 | buf[5]) > baseline[MAIN_BRUSH] + 1150)
-					count++;
-				else
-					count = 0;
-				if(count > 2)
-				{
-					count = 0;
-					step++;
-				}
-				if(buf[36])
-				{
-					error_code = MAIN_BRUSH_STALL_ERROR;
-					current_data = 0;
-					return ;
-				}
-				break;
-			case 15:
-				count++;
-				if (count <= 10) {
-					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
-				}
-				else {
-					step++;
-					count = 0;
-					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
-					if (current_current < 550)
-					{
-						error_code = MAIN_BRUSH_STALL_ERROR;
-						current_data = 0;
-						return ;
-					}
-					else
-					{
-						test_result |= 0x08;
-					}
-				}
-				break;
 		}
-		if((test_result & 0x3f) == 0x3f)
+		if((test_result & 0x0f) == 0x0f)
 		{
 			test_stage++;
 			return ;
@@ -1632,7 +1585,6 @@ void vacuum_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 	serial.setSendData(CTL_VACUUM_TEST_MODE, 0);
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
 	while(ros::ok()) {
-		serial.debugSendStream(serial.send_stream);
 		/*--------data extrict from serial com--------*/
 		ROS_ERROR_COND(pthread_mutex_lock(&recev_lock) != 0, "robotbase pthread receive lock fail");
 		ROS_ERROR_COND(pthread_cond_wait(&recev_cond, &recev_lock) != 0, "robotbase pthread receive cond wait fail");
@@ -1692,31 +1644,108 @@ void vacuum_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				break;
 			case 5:
 				step++;
-				if (buf[10] == 1) {
+				if (buf[6] == 1) {
 					error_code = VACUUM_ENCODER_ERROR;
-					current_data = buf[10];
+					current_data = buf[6];
 					return ;
 				}
-				else if (buf[10] == 2) {
+				else if (buf[6] == 2) {
 					error_code = VACUUM_ENCODER_FAIL;
-					current_data =  buf[10];
+					current_data =  buf[6];
 					return ;
 				}
 				else {
 					test_result |= 0x0004;
 				}
 				break;
-			case 6:
+		}
+		if((test_result&0x0007) == 0x0007)
+		{
+			test_stage++;
+			return ;
+		}
+		serial.sendData();
+	}
+}
+void main_brush_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data)
+{
+	uint8_t test_result=0;
+	uint32_t current_current=0;
+	uint32_t motor_current=0;
+	uint8_t buf[REC_LEN];
+	uint8_t count=0;
+	uint8_t step=1;
+
+	serial.setSendData(CTL_WORK_MODE, FUNC_MAINBRUSH_TEST_MODE);
+	serial.setSendData(CTL_LEFT_BRUSH_TEST_MODE, 0);
+	serial.setSendData(CTL_MAIN_BRUSH_TEST_MODE, 0);
+	serial.setSendData(CTL_RIGHT_BRUSH_TEST_MODE, 0);
+	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
+	while(ros::ok()) {
+		/*--------data extrict from serial com--------*/
+		ROS_ERROR_COND(pthread_mutex_lock(&recev_lock) != 0, "robotbase pthread receive lock fail");
+		ROS_ERROR_COND(pthread_cond_wait(&recev_cond, &recev_lock) != 0, "robotbase pthread receive cond wait fail");
+		memcpy(buf, serial.receive_stream, sizeof(uint8_t) * REC_LEN);
+		ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock) != 0, "robotbase pthread receive unlock fail");
+		if (buf[38] != FUNC_MAINBRUSH_TEST_MODE)
+		{
+			serial.sendData();
+			continue;
+		}
+		switch (step) {
+			case 1:
+				brush.setPWM(0, 0, 80);
 				count++;
-				if(count <= 250)
-				{
-					if(static_cast<uint16_t>(buf[2] << 8 | buf[3]) > 580)
-					{
-						count = 0;
-						step++;
-					}
+				if (count > 20) {
+					current_current = 0;
+					motor_current = 0;
+					step++;
+					count = 0;
 				}
-			case 7:
+				break;
+			case 2:
+				count++;
+				if (count <= 10) {
+					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+					motor_current += static_cast<uint16_t>(buf[4] << 8 | buf[5]);
+				}
+				else {
+					count = 0;
+					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+					motor_current = (motor_current / 10 - baseline[MAIN_BRUSH]) * 330 * 10 / 4096;
+					step++;
+				}
+				break;
+			case 3:
+				step++;
+				if (current_current < 100 || current_current > 300 || motor_current < 100 || motor_current > 300) {
+					error_code = MAIN_BRUSH_CURRENT_ERROR;
+					current_data = static_cast<uint16_t>(motor_current);
+					return ;
+				}
+				else {
+					test_result |= 0x01;
+				}
+				serial.setSendData(CTL_MAIN_BRUSH_TEST_MODE, 1);
+				break;
+			case 4:
+				if (static_cast<uint16_t>(buf[4] << 8 | buf[5]) > baseline[MAIN_BRUSH] + 1150)
+					count++;
+				else
+					count = 0;
+				if(count > 2)
+				{
+					count = 0;
+					step++;
+				}
+				if(buf[36])
+				{
+					error_code = MAIN_BRUSH_STALL_ERROR;
+					current_data = 0;
+					return ;
+				}
+				break;
+			case 5:
 				count++;
 				if (count <= 10) {
 					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
@@ -1725,20 +1754,20 @@ void vacuum_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 					step++;
 					count = 0;
 					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
-					if(current_current < 800)
+					if (current_current < 550)
 					{
-						error_code = VACUUM_STALL_ERROR;
+						error_code = MAIN_BRUSH_STALL_ERROR;
 						current_data = 0;
 						return ;
 					}
 					else
 					{
-						test_result |= 0x0008;
+						test_result |= 0x02;
 					}
 				}
 				break;
 		}
-		if((test_result&0x000F) == 0x000F)
+		if((test_result & 0x03) == 0x03)
 		{
 			test_stage++;
 			return ;

@@ -264,6 +264,7 @@ private:
 /*
  * Test lidar bumper.
  */
+	uint8_t bumper_cnt_{0};
 	bool lidar_bumper_test();
 
 	void error_loop(uint8_t step, uint16_t content, uint16_t error_code);

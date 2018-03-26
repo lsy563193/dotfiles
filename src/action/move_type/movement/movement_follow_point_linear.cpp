@@ -12,6 +12,7 @@ MovementFollowPointLinear::MovementFollowPointLinear()
 {
 //	kp_ = 4;
 //	tmp_pos = getPosition();
+	PP_INFO();
 	angle_forward_to_turn_ = degree_to_radian(150);
 	min_speed_ = LINEAR_MIN_SPEED;
 	max_speed_ = LINEAR_MAX_SPEED;

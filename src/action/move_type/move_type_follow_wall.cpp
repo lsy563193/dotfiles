@@ -38,7 +38,7 @@ MoveTypeFollowWall::~MoveTypeFollowWall()
 	wheel.stop();
 	if(sp_mode_ != nullptr){
 		auto p_mode = dynamic_cast<ACleanMode*> (sp_mode_);
-		p_mode->saveBlocks(p_mode->action_i_ == p_mode->ac_linear, p_mode->sp_state == p_mode->state_clean);
+		p_mode->saveBlocks();
 		p_mode->mapMark();
 	}
 	ROS_INFO("%s %d: Exit move type follow wall.", __FUNCTION__, __LINE__);
@@ -82,12 +82,12 @@ bool MoveTypeFollowWall::isFinish()
 			if (!handleMoveBackEvent(p_cm))
 			{
 				if(ev.rcon_status) {
-					p_cm->moveTypeFollowWallSaveBlocks();
+					p_cm->saveBlocks();
 					movement_i_ = mm_rcon;
 					sp_movement_.reset(new MovementRcon(is_left_));
 				}
 				else{
-					p_cm->moveTypeFollowWallSaveBlocks();
+					p_cm->saveBlocks();
 					auto turn_angle = getTurnRadian(false);
 					turn_target_radian_ = getPosition().addRadian(turn_angle).th;
 
@@ -99,6 +99,9 @@ bool MoveTypeFollowWall::isFinish()
 						sp_movement_.reset(new MovementTurn(turn_target_radian_, ROTATE_TOP_SPEED));
 				}
 				resetTriggeredValue();
+			}else{
+				if(ev.tilt_triggered)
+					is_stop_follow_wall_after_tilt = true;
 			}
 			state_turn = false;
 		}
@@ -121,13 +124,19 @@ bool MoveTypeFollowWall::isFinish()
 			if(!handleMoveBackEventRealTime(p_cm)){ //aim
 				auto turn_angle = getTurnRadian(false);
 				turn_target_radian_ = getPosition().addRadian(turn_angle).th;
+				resetTriggeredValue();
+				if(is_stop_follow_wall_after_tilt)
+				{
+					is_stop_follow_wall_after_tilt = false;
+					return true;
+				}
+
 				auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
 				movement_i_ = p_mode->isGyroDynamic() ? mm_dynamic : mm_turn;
 				if(movement_i_ == mm_dynamic)
 					sp_movement_.reset(new MovementGyroDynamic());
 				else
 					sp_movement_.reset(new MovementTurn(turn_target_radian_, ROTATE_TOP_SPEED));
-				resetTriggeredValue();
 			}
 		}
 	}
@@ -233,7 +242,7 @@ bool MoveTypeFollowWall::_lidarTurnRadian(bool is_left, double &turn_radian, dou
 	double distance;
 //	wheel.stop();
 //	sleep(0.33);
-	auto line_is_found = lidar.lidarGetFitLine(lidar_min, lidar_max, -1.0, dis_limit, &line_radian, &distance,is_left_);
+	auto line_is_found = lidar.getFitLine(lidar_min, lidar_max, -1.0, dis_limit, &line_radian, &distance, is_left_);
 
 	auto p_mode = dynamic_cast<ACleanMode*> (sp_mode_);
 
@@ -453,38 +462,18 @@ bool MoveTypeFollowWall::isNewLineReach(GridMap &map)
 	return ret;
 }
 
-bool MoveTypeFollowWall::handleMoveBackEvent(ACleanMode* p_clean_mode)
-{
-	if (ev.bumper_triggered || ev.cliff_triggered)
-	{
-		p_clean_mode->moveTypeFollowWallSaveBlocks();
-		movement_i_ = mm_back;
-		sp_movement_.reset(new MovementBack(0.01, BACK_MAX_SPEED));
-		return true;
-	}
-	else if(ev.tilt_triggered)
-	{
-		p_clean_mode->moveTypeFollowWallSaveBlocks();
-		movement_i_ = mm_back;
-		sp_movement_.reset(new MovementBack(0.15, BACK_MAX_SPEED));
-		return true;
-	}
-
-	return false;
-}
-
 bool MoveTypeFollowWall::handleMoveBackEventRealTime(ACleanMode *p_clean_mode) {
 	auto p_movement = boost::dynamic_pointer_cast<MovementStay>(sp_movement_);
 	if (p_movement->bumper_status_in_stay_ || p_movement->cliff_status_in_stay_)
 	{
-		p_clean_mode->moveTypeFollowWallSaveBlocks();
+		p_clean_mode->saveBlocks();
 		movement_i_ = mm_back;
 		sp_movement_.reset(new MovementBack(0.01, BACK_MAX_SPEED));
 		return true;
 	}
 	else if(p_movement->tilt_status_in_stay_)
 	{
-		p_clean_mode->moveTypeFollowWallSaveBlocks();
+		p_clean_mode->saveBlocks();
 		movement_i_ = mm_back;
 		sp_movement_.reset(new MovementBack(0.3, BACK_MAX_SPEED));
 		return true;

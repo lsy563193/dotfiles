@@ -97,7 +97,8 @@ void obs_test(bool is_fixture, uint8_t &test_stage, uint16_t &error_code, uint16
 void rcon_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data);
 void water_tank_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data);
 void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data);
-void brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data);
+void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data);
+void main_brush_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data);
 void charge_current_test(bool is_fixture, uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data);
 void vacuum_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, uint16_t &current_dara);
 /*

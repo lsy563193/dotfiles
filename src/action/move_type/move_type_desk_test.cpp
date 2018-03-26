@@ -128,9 +128,9 @@ void MoveTypeDeskTest::run()
 				// Switch to next stage.
 				infrared_display.displayNormalMsg(test_stage_, 0);
 				p_movement_.reset();
-				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-90), ROTATE_TOP_SPEED));
+				p_movement_.reset(new MovementStay(0.2));
 				/*brush.fullOperate();
-				vacuum.setMode(Vac_Max);*/
+				vacuum.setMode(Vac_Max,true);*/
 				// todo: for water tank
 				ROS_INFO("%s %d: Stage 4 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
 			}
@@ -148,7 +148,7 @@ void MoveTypeDeskTest::run()
 				p_movement_.reset();
 				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-179), ROTATE_TOP_SPEED * 2 / 3));
 				brush.normalOperate();
-				vacuum.setMode(Vac_Normal);
+				vacuum.setMode(Vac_Normal,true);
 				// todo: for water tank
 				ROS_INFO("%s %d: Stage 5 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
 			}
@@ -479,7 +479,7 @@ bool MoveTypeDeskTest::checkStage2Finish()
 					p_movement_.reset();
 					p_movement_.reset(new ActionOpenLidar());
 					brush.normalOperate();
-					vacuum.setMode(Vac_Normal);
+					vacuum.setMode(Vac_Normal,true);
 				}
 				else if (test_step_ == 1)
 					c_rcon.resetStatus();
@@ -493,7 +493,7 @@ bool MoveTypeDeskTest::checkStage2Finish()
 		}
 		case 2:
 		{
-			ROS_INFO("%s %d: Enter lidar checking 2.", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: Enter lidar checking 1.", __FUNCTION__, __LINE__);
 			wheel.stop();
 			// Stop for checking lidar data.
 			while (ros::ok() && lidar_check_cnt_ < 5)
@@ -809,38 +809,18 @@ bool MoveTypeDeskTest::checkStage4Finish()
 
 			if (cliff.getFrontValue() < cliff_min_ref_)
 			{
-				ROS_INFO("%s %d: cliff left:%d, front:%d, right:%d.", __FUNCTION__, __LINE__, left_cliff_max_, front_cliff_max_, right_cliff_max_);
-
-				if (left_cliff_max_ < cliff_max_ref_)
-				{
-					error_code_ = LEFT_CLIFF_ERROR;
-					error_content_ = static_cast<uint16_t>(left_cliff_max_);
-				}
-				else if (front_cliff_max_ < cliff_max_ref_)
-				{
-					error_code_ = FRONT_CLIFF_ERROR;
-					error_content_ = static_cast<uint16_t>(front_cliff_max_);
-				}
-				else if (right_cliff_max_ < cliff_max_ref_)
-				{
-					error_code_ = RIGHT_CLIFF_ERROR;
-					error_content_ = static_cast<uint16_t>(right_cliff_max_);
-				}
-				else if (!lidar_bumper_valid_)
+				if (!lidar_bumper_valid_)
 					error_code_ = LIDAR_BUMPER_ERROR;
 
 				if (error_code_ != 0)
 				{
 					error_step_ = test_stage_;
 					test_stage_ = 99;
-				}
-				else
+				} else
 				{
-					test_step_++;
-					p_movement_.reset();
-					p_movement_.reset(new MovementStay(0.2));
 					sum_cnt_ = 0;
 					sp_mode_->action_i_ = sp_mode_->ac_desk_test;
+					return true;
 				}
 			}
 			else
@@ -848,6 +828,137 @@ bool MoveTypeDeskTest::checkStage4Finish()
 				p_movement_->isFinish(); // For calculating targets.
 				p_movement_->run();
 			}
+			break;
+		}
+	}
+
+	return false;
+}
+
+bool MoveTypeDeskTest::checkCurrent()
+{
+
+	left_brush_current_ /= sum_cnt_;
+	ROS_INFO("%s %d: Left brush current: %d.", __FUNCTION__, __LINE__, left_brush_current_ - left_brush_current_baseline_);
+	right_brush_current_ /= sum_cnt_;
+	ROS_INFO("%s %d: Right brush current: %d.", __FUNCTION__, __LINE__, right_brush_current_ - right_brush_current_baseline_);
+	main_brush_current_ /= sum_cnt_;
+	ROS_INFO("%s %d: Main brush current: %d.", __FUNCTION__, __LINE__, main_brush_current_ - main_brush_current_baseline_);
+	left_wheel_current_ /= left_wheel_current_cnt_;
+	ROS_INFO("%s %d: Left wheel current: %d.", __FUNCTION__, __LINE__, left_wheel_current_ - left_wheel_current_baseline_);
+	right_wheel_current_ /= right_wheel_current_cnt_;
+	ROS_INFO("%s %d: Right wheel current: %d.", __FUNCTION__, __LINE__, right_wheel_current_ - right_wheel_current_baseline_);
+	vacuum_current_ /= sum_cnt_;
+	ROS_INFO("%s %d: Vacuum current: %d.", __FUNCTION__, __LINE__, vacuum_current_ - vacuum_current_baseline_);
+	water_tank_current_ /= sum_cnt_;
+	ROS_INFO("%s %d: Water tank current: %d.", __FUNCTION__, __LINE__, water_tank_current_ - water_tank_current_baseline_);
+	robot_current_ /= sum_cnt_;
+	ROS_INFO("%s %d: Robot current: %d.", __FUNCTION__, __LINE__, robot_current_ - robot_current_baseline_);
+
+	// During follow wall
+	uint16_t side_brush_current_ref_{1675 - 1620}; // 55
+	uint16_t main_brush_current_ref_{1785 - 1620}; // 165
+	uint16_t wheel_current_ref_{1685 - 1620}; // 65
+	uint16_t vacuum_current_ref_{1970 - 1620}; // 350
+	uint16_t water_tank_current_ref_{0};
+	uint16_t robot_current_ref_{2250 - 1775}; // 475
+
+	if (left_brush_current_ - left_brush_current_baseline_ > side_brush_current_ref_ * 1.5 /* 82 */||
+		left_brush_current_ - left_brush_current_baseline_ < side_brush_current_ref_ * 0.6 /* 33 */)
+	{
+		error_code_ = LEFT_BRUSH_CURRENT_ERROR;
+		error_content_ = static_cast<uint16_t>(left_brush_current_ - left_brush_current_baseline_);
+	}
+	else if (right_brush_current_ - right_brush_current_baseline_ > side_brush_current_ref_ * 1.4 /* 77 */||
+			 right_brush_current_ - right_brush_current_baseline_ < side_brush_current_ref_ * 0.6 /* 33 */)
+	{
+		error_code_ = RIGHT_BRUSH_CURRENT_ERROR;
+		error_content_ = static_cast<uint16_t>(right_brush_current_ - right_brush_current_baseline_);
+	}
+	else if (main_brush_current_ - main_brush_current_baseline_ > main_brush_current_ref_ * 1.2 ||
+			 main_brush_current_ - main_brush_current_baseline_ < main_brush_current_ref_ * 0.8)
+	{
+		error_code_ = MAIN_BRUSH_CURRENT_ERROR;
+		error_content_ = static_cast<uint16_t>(main_brush_current_ - main_brush_current_baseline_);
+	}
+	else if (vacuum_current_ - vacuum_current_baseline_ > vacuum_current_ref_ * 1.2 ||
+			 vacuum_current_ - vacuum_current_baseline_ < vacuum_current_ref_ * 0.8)
+	{
+		error_code_ = VACUUM_CURRENT_ERROR;
+		error_content_ = static_cast<uint16_t>(vacuum_current_ - vacuum_current_baseline_);
+	}
+	/*else if (water_tank_current_ - water_tank_current_baseline_ > water_tank_current_ref_ * 1.2 ||
+			 water_tank_current_ - water_tank_current_baseline_ < water_tank_current_ref_ * 0.8)
+	{
+		error_code_ = VACUUM_CURRENT_ERROR; // todo:
+		error_content_ = static_cast<uint16_t>(water_tank_current_ - water_tank_current_baseline_);
+	}*/
+	else if (left_wheel_current_cnt_ != 0 && (left_wheel_current_ - left_wheel_current_baseline_ > wheel_current_ref_ * 1.3 ||
+			 left_wheel_current_ - left_wheel_current_baseline_ < wheel_current_ref_ * 0.6))
+	{
+		error_code_ = LEFT_WHEEL_FORWARD_CURRENT_ERROR;
+		error_content_ = static_cast<uint16_t>(left_wheel_current_ - left_wheel_current_baseline_);
+	}
+	else if (right_wheel_current_cnt_ != 0 && (right_wheel_current_ - right_wheel_current_baseline_ > wheel_current_ref_ * 1.3 ||
+			 right_wheel_current_ - right_wheel_current_baseline_ < wheel_current_ref_ * 0.6))
+	{
+		error_code_ = RIGHT_WHEEL_FORWARD_CURRENT_ERROR;
+		error_content_ = static_cast<uint16_t>(right_wheel_current_ - right_wheel_current_baseline_);
+	}
+	else if (robot_current_ - robot_current_baseline_ > robot_current_ref_ * 1.2 ||
+			 robot_current_ - robot_current_baseline_ < robot_current_ref_ * 0.8)
+	{
+		error_code_ = BASELINE_CURRENT_ERROR;
+		error_content_ = static_cast<uint16_t>(robot_current_ - robot_current_baseline_);
+	}
+
+	sum_cnt_ = 0;
+	left_wheel_current_cnt_ = 0;
+	right_wheel_current_cnt_ = 0;
+
+	return error_code_ == 0;
+}
+
+bool MoveTypeDeskTest::checkStage5Finish()
+{
+	/*left_brush_current_max_ = (brush.getLeftCurrent() > left_brush_current_max_) ?
+							  brush.getLeftCurrent() : left_brush_current_max_;
+	right_brush_current_max_ = (brush.getRightCurrent() > right_brush_current_max_) ?
+							   brush.getRightCurrent() : right_brush_current_max_;
+	main_brush_current_max_ = (brush.getMainCurrent() > main_brush_current_max_) ?
+							  brush.getMainCurrent() : main_brush_current_max_;
+	vacuum_current_max_ = (vacuum.getCurrent() > vacuum_current_max_) ?
+						  vacuum.getCurrent() : vacuum_current_max_;
+	water_tank_current_max_ = (water_tank.getCurrent() > water_tank_current_max_) ?
+							  water_tank.getCurrent() : water_tank_current_max_;*/
+
+	switch(test_step_)
+	{
+		case 0:
+		{
+			ROS_INFO("%s %d: cliff left:%d, front:%d, right:%d.", __FUNCTION__, __LINE__, left_cliff_max_,
+					 front_cliff_max_, right_cliff_max_);
+
+			if (left_cliff_max_ < cliff_max_ref_)
+			{
+				error_code_ = LEFT_CLIFF_ERROR;
+				error_content_ = static_cast<uint16_t>(left_cliff_max_);
+			} else if (front_cliff_max_ < cliff_max_ref_)
+			{
+				error_code_ = FRONT_CLIFF_ERROR;
+				error_content_ = static_cast<uint16_t>(front_cliff_max_);
+			} else if (right_cliff_max_ < cliff_max_ref_)
+			{
+				error_code_ = RIGHT_CLIFF_ERROR;
+				error_content_ = static_cast<uint16_t>(right_cliff_max_);
+			}
+
+			if (error_code_ != 0)
+			{
+				error_step_ = test_stage_;
+				test_stage_ = 99;
+			} else
+				test_step_++;
 			break;
 		}
 		case 1: // Getting baseline for front cliff.
@@ -951,10 +1062,14 @@ bool MoveTypeDeskTest::checkStage4Finish()
 			}
 			break;
 		}
-		default: //case 7: // Moving back.
+		case 6: // Moving back.
 		{
 			if (p_movement_->isFinish())
-				return true;
+			{
+				p_movement_.reset();
+				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-90), ROTATE_TOP_SPEED));
+				test_step_++;
+			}
 			else{
 				left_cliff_sum_ += cliff.getLeftValue();
 				sum_cnt_++;
@@ -962,128 +1077,7 @@ bool MoveTypeDeskTest::checkStage4Finish()
 			}
 			break;
 		}
-	}
-
-	return false;
-}
-
-bool MoveTypeDeskTest::checkCurrent()
-{
-
-	left_brush_current_ /= sum_cnt_;
-	ROS_INFO("%s %d: Left brush current: %d.", __FUNCTION__, __LINE__, left_brush_current_ - left_brush_current_baseline_);
-	right_brush_current_ /= sum_cnt_;
-	ROS_INFO("%s %d: Right brush current: %d.", __FUNCTION__, __LINE__, right_brush_current_ - right_brush_current_baseline_);
-	main_brush_current_ /= sum_cnt_;
-	ROS_INFO("%s %d: Main brush current: %d.", __FUNCTION__, __LINE__, main_brush_current_ - main_brush_current_baseline_);
-	left_wheel_current_ /= left_wheel_current_cnt_;
-	ROS_INFO("%s %d: Left wheel current: %d.", __FUNCTION__, __LINE__, left_wheel_current_ - left_wheel_current_baseline_);
-	right_wheel_current_ /= right_wheel_current_cnt_;
-	ROS_INFO("%s %d: Right wheel current: %d.", __FUNCTION__, __LINE__, right_wheel_current_ - right_wheel_current_baseline_);
-	vacuum_current_ /= sum_cnt_;
-	ROS_INFO("%s %d: Vacuum current: %d.", __FUNCTION__, __LINE__, vacuum_current_ - vacuum_current_baseline_);
-	water_tank_current_ /= sum_cnt_;
-	ROS_INFO("%s %d: Water tank current: %d.", __FUNCTION__, __LINE__, water_tank_current_ - water_tank_current_baseline_);
-	robot_current_ /= sum_cnt_;
-	ROS_INFO("%s %d: Robot current: %d.", __FUNCTION__, __LINE__, robot_current_ - robot_current_baseline_);
-
-	// During follow wall
-	uint16_t side_brush_current_ref_{1675 - 1620}; // 55
-	uint16_t main_brush_current_ref_{1785 - 1620}; // 165
-	uint16_t wheel_current_ref_{1685 - 1620}; // 65
-	uint16_t vacuum_current_ref_{1970 - 1620}; // 350
-	uint16_t water_tank_current_ref_{0};
-	uint16_t robot_current_ref_{2250 - 1775}; // 475
-
-	if (left_brush_current_ - left_brush_current_baseline_ > side_brush_current_ref_ * 1.4 /* 77 */||
-		left_brush_current_ - left_brush_current_baseline_ < side_brush_current_ref_ * 0.6 /* 33 */)
-	{
-		error_code_ = LEFT_BRUSH_CURRENT_ERROR;
-		error_content_ = static_cast<uint16_t>(left_brush_current_ - left_brush_current_baseline_);
-	}
-	else if (right_brush_current_ - right_brush_current_baseline_ > side_brush_current_ref_ * 1.4 /* 77 */||
-			 right_brush_current_ - right_brush_current_baseline_ < side_brush_current_ref_ * 0.6 /* 33 */)
-	{
-		error_code_ = RIGHT_BRUSH_CURRENT_ERROR;
-		error_content_ = static_cast<uint16_t>(right_brush_current_ - right_brush_current_baseline_);
-	}
-	else if (main_brush_current_ - main_brush_current_baseline_ > main_brush_current_ref_ * 1.2 ||
-			 main_brush_current_ - main_brush_current_baseline_ < main_brush_current_ref_ * 0.8)
-	{
-		error_code_ = MAIN_BRUSH_CURRENT_ERROR;
-		error_content_ = static_cast<uint16_t>(main_brush_current_ - main_brush_current_baseline_);
-	}
-	else if (vacuum_current_ - vacuum_current_baseline_ > vacuum_current_ref_ * 1.2 ||
-			 vacuum_current_ - vacuum_current_baseline_ < vacuum_current_ref_ * 0.8)
-	{
-		error_code_ = VACUUM_CURRENT_ERROR;
-		error_content_ = static_cast<uint16_t>(vacuum_current_ - vacuum_current_baseline_);
-	}
-	/*else if (water_tank_current_ - water_tank_current_baseline_ > water_tank_current_ref_ * 1.2 ||
-			 water_tank_current_ - water_tank_current_baseline_ < water_tank_current_ref_ * 0.8)
-	{
-		error_code_ = VACUUM_CURRENT_ERROR; // todo:
-		error_content_ = static_cast<uint16_t>(water_tank_current_ - water_tank_current_baseline_);
-	}*/
-	else if (left_wheel_current_cnt_ != 0 && (left_wheel_current_ - left_wheel_current_baseline_ > wheel_current_ref_ * 1.3 ||
-			 left_wheel_current_ - left_wheel_current_baseline_ < wheel_current_ref_ * 0.6))
-	{
-		error_code_ = LEFT_WHEEL_FORWARD_CURRENT_ERROR;
-		error_content_ = static_cast<uint16_t>(left_wheel_current_ - left_wheel_current_baseline_);
-	}
-	else if (right_wheel_current_cnt_ != 0 && (right_wheel_current_ - right_wheel_current_baseline_ > wheel_current_ref_ * 1.3 ||
-			 right_wheel_current_ - right_wheel_current_baseline_ < wheel_current_ref_ * 0.6))
-	{
-		error_code_ = RIGHT_WHEEL_FORWARD_CURRENT_ERROR;
-		error_content_ = static_cast<uint16_t>(right_wheel_current_ - right_wheel_current_baseline_);
-	}
-	else if (robot_current_ - robot_current_baseline_ > robot_current_ref_ * 1.2 ||
-			 robot_current_ - robot_current_baseline_ < robot_current_ref_ * 0.8)
-	{
-		error_code_ = BASELINE_CURRENT_ERROR;
-		error_content_ = static_cast<uint16_t>(robot_current_ - robot_current_baseline_);
-	}
-
-	sum_cnt_ = 0;
-	left_wheel_current_cnt_ = 0;
-	right_wheel_current_cnt_ = 0;
-
-	return error_code_ == 0;
-}
-
-bool MoveTypeDeskTest::checkStage5Finish()
-{
-	/*left_brush_current_max_ = (brush.getLeftCurrent() > left_brush_current_max_) ?
-							  brush.getLeftCurrent() : left_brush_current_max_;
-	right_brush_current_max_ = (brush.getRightCurrent() > right_brush_current_max_) ?
-							   brush.getRightCurrent() : right_brush_current_max_;
-	main_brush_current_max_ = (brush.getMainCurrent() > main_brush_current_max_) ?
-							  brush.getMainCurrent() : main_brush_current_max_;
-	vacuum_current_max_ = (vacuum.getCurrent() > vacuum_current_max_) ?
-						  vacuum.getCurrent() : vacuum_current_max_;
-	water_tank_current_max_ = (water_tank.getCurrent() > water_tank_current_max_) ?
-							  water_tank.getCurrent() : water_tank_current_max_;*/
-
-	switch(test_step_)
-	{
-		case 0:
-		{
-			if (p_movement_->isFinish())
-			{
-//				p_movement_.reset();
-//				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(60), ROTATE_TOP_SPEED));
-				test_step_++;
-			} else
-			{
-				/*left_wheel_forward_current_max_ = (wheel.getLeftCurrent() > left_wheel_forward_current_max_) ?
-												  wheel.getLeftCurrent() : left_wheel_forward_current_max_;
-				right_wheel_backward_current_max_ = (wheel.getRightCurrent() > right_wheel_backward_current_max_) ?
-												   wheel.getRightCurrent() : right_wheel_backward_current_max_;*/
-				p_movement_->run();
-			}
-			break;
-		}
-		case 1:
+		case 7:
 		{
 			if (p_movement_->isFinish())
 			{
@@ -1091,61 +1085,17 @@ bool MoveTypeDeskTest::checkStage5Finish()
 				p_movement_.reset(new MovementDirectGo(false, 1));
 				test_step_++;
 			} else
-			{
-				/*left_wheel_backward_current_max_ = (wheel.getLeftCurrent() > left_wheel_backward_current_max_) ?
-												  wheel.getLeftCurrent() : left_wheel_backward_current_max_;
-				right_wheel_forward_current_max_ = (wheel.getRightCurrent() > right_wheel_forward_current_max_) ?
-												   wheel.getRightCurrent() : right_wheel_forward_current_max_;*/
 				p_movement_->run();
-			}
 			break;
 		}
-		case 2:
+		default: // case 8:
 		{
 			if (p_movement_->isFinish())
-			{
-				/*uint16_t side_brush_current_ref_{0}; // todo:
-				uint16_t main_brush_current_ref_{0};
-				uint16_t wheel_current_ref_{0};
-				uint16_t vacuum_current_ref_{0};
-				uint16_t water_tank_current_ref_{0};
-
-				if (left_brush_current_max_ - left_brush_current_baseline_ > side_brush_current_ref_)
-					error_code_ = LEFT_BRUSH_CURRENT_ERROR;
-				else if (right_brush_current_max_ - right_brush_current_baseline_ > side_brush_current_ref_)
-					error_code_ = RIGHT_BRUSH_CURRENT_ERROR;
-				else if (main_brush_current_max_ - main_brush_current_baseline_ > main_brush_current_ref_)
-					error_code_ = MAIN_BRUSH_CURRENT_ERROR;
-				else if (left_wheel_forward_current_max_ - left_wheel_current_baseline_ > wheel_current_ref_)
-					error_code_ = LEFT_WHEEL_FORWARD_CURRENT_ERROR;
-				else if (left_wheel_backward_current_max_ - left_wheel_current_baseline_ > wheel_current_ref_)
-					error_code_ = LEFT_WHEEL_BACKWARD_CURRENT_ERROR;
-				else if (right_wheel_forward_current_max_ - right_wheel_current_baseline_ > wheel_current_ref_)
-					error_code_ = RIGHT_WHEEL_FORWARD_CURRENT_ERROR;
-				else if (right_wheel_backward_current_max_ - right_wheel_current_baseline_ > wheel_current_ref_)
-					error_code_ = RIGHT_WHEEL_BACKWARD_CURRENT_ERROR;
-				else if (vacuum_current_max_ - vacuum_current_baseline_ > vacuum_current_ref_)
-					error_code_ = VACUUM_CURRENT_ERROR;
-				else if (water_tank_current_max_ - water_tank_current_baseline_ > water_tank_current_ref_)
-					error_code_ = VACUUM_CURRENT_ERROR; // todo:
-
-				if (error_code_ == 0)
-				{
-					sum_cnt_ = 0;
-					return true;
-				} else
-				{
-					error_step_ = test_stage_;
-					test_stage_ = 99;
-				}*/
-
 				return true;
-			} else
+			else
 				p_movement_->run();
 			break;
 		}
-		default:
-			break;
 	}
 
 	return false;

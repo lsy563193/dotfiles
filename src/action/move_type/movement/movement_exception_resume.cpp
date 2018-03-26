@@ -7,6 +7,7 @@
 #include <error.h>
 #include <event_manager.h>
 #include <robot.hpp>
+#include <mode.hpp>
 #include "dev.h"
 
 double MovementExceptionResume::slip_start_turn_time_ = 0;
@@ -128,6 +129,7 @@ void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_sp
 
 bool MovementExceptionResume::isFinish()
 {
+	updatePosition();
 	if (!(ev.bumper_jam || ev.cliff_jam || ev.cliff_all_triggered || ev.oc_wheel_left || ev.oc_wheel_right
 		  || ev.oc_vacuum || ev.lidar_stuck || ev.robot_stuck || ev.oc_brush_main || ev.robot_slip))
 	{
@@ -172,13 +174,15 @@ bool MovementExceptionResume::isFinish()
 				{
 					ROS_WARN("%s %d: Left wheel resume succeeded.", __FUNCTION__, __LINE__);
 					ev.oc_wheel_left = false;
-					vacuum.setLastMode();
+					if (!water_tank.isEquipped())
+						vacuum.setLastMode();
 					brush.normalOperate();
 				} else
 				{
 					ROS_WARN("%s %d: Right wheel resume succeeded.", __FUNCTION__, __LINE__);
 					ev.oc_wheel_right = false;
-					vacuum.setLastMode();
+					if (!water_tank.isEquipped())
+						vacuum.setLastMode();
 					brush.normalOperate();
 				}
 			}
@@ -396,7 +400,8 @@ bool MovementExceptionResume::isFinish()
 		{
 			ROS_INFO("%s %d: Vacuum over current resume succeeded!", __FUNCTION__, __LINE__);
 			brush.normalOperate();
-			vacuum.setLastMode();
+			if (!water_tank.isEquipped())
+				vacuum.setLastMode();
 			vacuum.resetExceptionResume();
 			ev.oc_vacuum = false;
 		}
@@ -418,6 +423,10 @@ bool MovementExceptionResume::isFinish()
 	}
 	else if(ev.robot_slip)
 	{
+		ACleanMode* p_mode = dynamic_cast<ACleanMode*>(sp_mt_->sp_mode_);
+		auto isExitSlipBlock = p_mode->clean_map_.getCell(CLEAN_MAP,getPosition().toCell().x,getPosition().toCell().y);
+		ROS_ERROR("state:%d,x:%d,y:%d",isExitSlipBlock,getPosition().toCell().x,getPosition().toCell().y);
+
 		if(ros::Time::now().toSec() - resume_slip_start_time_ > 60){
 			ev.robot_slip = false;
 			ev.fatal_quit = true;
@@ -426,7 +435,7 @@ bool MovementExceptionResume::isFinish()
 		switch(robot_slip_flag_){
 			case 0:{
 				float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getX(), odom.getY());
-				if (std::abs(distance) > 0.3f || lidar.getObstacleDistance(1, ROBOT_RADIUS) < 0.06)
+				if ((isExitSlipBlock != BLOCKED_SLIP && std::abs(distance) > 0.15f) || lidar.getObstacleDistance(1, ROBOT_RADIUS) < 0.06)
 				{
 					if(!lidar.isRobotSlip())
 					{

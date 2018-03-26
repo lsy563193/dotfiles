@@ -198,6 +198,7 @@ public:
 	}
 
 	bool checkTilt();
+	bool checkTiltToSlip();
 
 
 	void setCurrent(uint16_t current)
@@ -293,6 +294,12 @@ private:
 	double tilt_time = 0;
 	bool is_first_tilt{true};
 
+	//for check tilit
+	const double ANGLE_LIMIT_TO_SLIP{3};
+	const double TIME_LIMIT_TO_SLIP{0.4};
+	double tilt_time_to_slip_ = 0;
+	bool is_first_tilt_to_slip_{true};
+
 	uint16_t robot_current_{0};
 };
 
@@ -300,7 +307,7 @@ float cellToCount(int16_t distance);
 
 int16_t countToCell(int32_t count);
 
-Point_t getPosition(void);
+Point_t getPosition(Baselink_Frame_Type type = SLAM_POSITION_SLAM_ANGLE);
 
 bool isAny(Dir_t dir);
 

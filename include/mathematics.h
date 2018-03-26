@@ -366,7 +366,8 @@ public:
 //	}
 
 	bool isNearTo(Point_t other, float count) const {
-		return std::abs(this->x - other.x) <count && std::abs(this->y - other.y) < count;
+//		return std::abs(this->x - other.x) <count && std::abs(this->y - other.y) < count;
+		return sqrt(pow(this->x - other.x, 2) + pow(this->y - other.y, 2)) < count;
 	};
 
 	double courseToDest(Point_t other) const {
@@ -466,6 +467,7 @@ typedef struct
 
 /*typedef */enum {
 	// The sequence of CLEAN_MAP value must be UNCLEAN < CLEANED < MAP_BLOCKED < SLAM_MAP_BLOCKED
+	// Note: don't change MAP_BLOCKED order, c_block has priority by this order --linshaoyue
   UNCLEAN  = 0,
   SLAM_MAP_UNKNOWN = 0,
   CLEANED = 1,
@@ -473,10 +475,10 @@ typedef struct
   BLOCKED = 2,
   BLOCKED_FW = 2,
   BLOCKED_BUMPER = 3,
-  BLOCKED_CLIFF = 4,
-  BLOCKED_RCON = 5,
-  BLOCKED_TMP_RCON = 6,
-  BLOCKED_LIDAR = 7,
+	BLOCKED_LIDAR = 4,
+  BLOCKED_CLIFF = 5,
+  BLOCKED_RCON = 6,
+  BLOCKED_TMP_RCON = 7,
   BLOCKED_TILT = 8,
   BLOCKED_SLIP = 9,
   SLAM_MAP_BLOCKED = 10,
@@ -551,4 +553,5 @@ void coordinate_transform(double *x, double *y, double theta, double offset_x, d
  */
 bool unsigned_long_to_hex_string(unsigned long number, char *str, const int len);
 
+Vector2<double> polarToCartesian(double polar, int i);
 #endif

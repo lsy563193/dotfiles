@@ -172,11 +172,11 @@ bool S_Wifi::init()
 						water_tank.setMode(WaterTank::PUMP_MID);
 				else
 					if(msg.isVacuum())	
-						vacuum.setMode(Vac_Max);
+						vacuum.setMode(Vac_Max,false);
 					else
-						vacuum.setMode(Vac_Normal);
+						vacuum.setMode(Vac_Normal,false);
 				//ack
-				wifi::MaxCleanPowerTxMsg p(false,false);
+				wifi::MaxCleanPowerTxMsg p(vacuum.getMode() == Vac_Max,water_tank.getMode() == WaterTank::PUMP_HIGH);
 				s_wifi_tx_.push( std::move(p)).commit();
 			});
 	//remote control
@@ -194,24 +194,23 @@ bool S_Wifi::init()
 							);
 				s_wifi_tx_.push(std::move(p)).commit();
 			});
-	//todo
-	//s_wifi_rx.regOnNewMsgListener<wifi::SetScheduleRxMsg>{
-	//		[&](const wifi::RxMsg &a_msg){
-	//			const wifi::SetScheduleRxMsg &msg = static_cost<const wifi::ScheduleRxMsg&>(a_msg);
-	//			//ack
-		//		wifi::Packet p(
-		//					-1,
-		//					msg.seq_num(),
-		//					0,
-		//					msg.msg_code(),
-		//					msg.data()
-		//					);
-		//		s_wifi_tx_.push(std::move(p)).commit();
+	//schedule
+	s_wifi_rx_.regOnNewMsgListener<wifi::SetScheduleRxMsg>(
+			[&](const wifi::RxMsg &a_msg){
+				const wifi::SetScheduleRxMsg &msg = static_cast<const wifi::SetScheduleRxMsg&>(a_msg);
+				//ack
+				wifi::Packet p(
+							-1,
+							msg.seq_num(),
+							0,
+							msg.msg_code(),
+							msg.data()
+							);
+				s_wifi_tx_.push(std::move(p)).commit();
 
-	//			//todo
-	//			setSchedule(msg.seq_num());
-	//		});
-	//}
+				//todo
+				//setSchedule(std::move(msg.data()));
+			});
 	//reset consumable status
 	s_wifi_rx_.regOnNewMsgListener<wifi::ResetConsumableStatusRxMsg>(
 			[&](const wifi::RxMsg &a_msg){
@@ -696,6 +695,7 @@ uint8_t S_Wifi::syncClock(int year,int mon,int day,int hour,int minu,int sec)
 	timeinfo.tm_min = minu;
 	timeinfo.tm_sec = sec;
 	mktime(&timeinfo);
+	robot_timer.initWorkTimer();
 	struct tm *local_time;
 	time_t ltime;
 	time(&ltime);
@@ -912,3 +912,11 @@ bool S_Wifi::setWorkMode(int mode)
 	ROS_INFO("\033[1;35m %s,%d,set work mode %d\033[0m",__FUNCTION__,__LINE__,(int)robot_work_mode_);
 	return true;
 }
+
+
+uint8_t setSchedule(const std::vector<uint8_t> data)
+{
+	return 0;
+	//robot_timer.setPlanStatus();
+}
+

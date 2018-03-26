@@ -19,9 +19,15 @@ bool WaterTank::checkEquipment()
 	usleep(150000);
 	if (getStatus())
 		is_equipped_ = true;
+	else
+	{
+		stop();
+		operation_ = false;
+		is_equipped_ = false;
+	}
 
 //	printf("watertank%d\n", is_equipped_);
-	//ROS_INFO("%s %d: Robot is %scarrying a water tank.", __FUNCTION__, __LINE__, is_equipped_ ? "" : "not ");
+	ROS_INFO("%s %d: Robot is %scarrying a water tank.", __FUNCTION__, __LINE__, is_equipped_ ? "" : "not ");
 
 	return is_equipped_;
 }
@@ -34,11 +40,13 @@ void WaterTank::normalOperate()
 	last_pump_time_stamp_ = 0;
 	serial.setSendData(CTL_WATER_TANK, static_cast<uint8_t>(pump_switch_ | pwm_));
 	check_battery_time_stamp_ = ros::Time::now().toSec();
+	ROS_INFO("%s %d: Open water tank.", __FUNCTION__, __LINE__);
 }
 
 void WaterTank::stop()
 {
 	operation_ = false;
+	is_equipped_ = false;
 	serial.setSendData(CTL_WATER_TANK, 0x00);
 }
 
@@ -57,6 +65,7 @@ void WaterTank::updatePWM()
 		checkBatterySetPWM();
 		serial.setSendData(CTL_WATER_TANK, static_cast<uint8_t>(pump_switch_ | pwm_));
 		check_battery_time_stamp_ = ros::Time::now().toSec();
+		ROS_INFO("%s %d: Update for water tank.", __FUNCTION__, __LINE__);
 	}
 
 	if (operation_ && status_ && ros::Time::now().toSec() - last_pump_time_stamp_ > pump_time_interval_)
@@ -84,12 +93,15 @@ void WaterTank::setMode(uint8_t mode)
 	switch (mode)
 	{
 		case PUMP_HIGH:
+			mode_ = PUMP_HIGH;
 			pump_time_interval_ = 8 * (20 * pump_max_cnt_ / 50.0);
 			break;
 		case PUMP_MID:
+			mode_ = PUMP_MID;
 			pump_time_interval_ = 12 * (20 * pump_max_cnt_ / 50.0);
 			break;
 		default: // case PUMP_LOW:
+			mode_ = PUMP_LOW;
 			pump_time_interval_ = 15 * (20 * pump_max_cnt_ / 50.0);
 			break;
 	}

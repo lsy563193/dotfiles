@@ -44,7 +44,7 @@ ACleanMode::ACleanMode()
 	IMoveType::sp_mode_ = this;
 	APathAlgorithm::p_cm_ = this;
 	sp_state->setMode(this);
-	if (robot::instance()->getWorkMode() == WORK_MODE)
+	if (robot::instance()->getWorkMode() == WORK_MODE ||robot::instance()->getWorkMode() == IDLE_MODE || robot::instance()->getWorkMode() == CHARGE_MODE)
 	{
 		sp_state = state_init;
 		sp_state->init();
@@ -156,9 +156,11 @@ void ACleanMode::saveBlock(int block, int dir, std::function<Cells()> get_list)
 	}
 }
 
-void ACleanMode::saveBlocks(bool is_linear, bool is_save_rcon) {
+void ACleanMode::saveBlocks() {
 //	PP_INFO();
-	if (is_linear && is_save_rcon)
+	bool is_linear = action_i_== ac_linear;
+	auto is_save_rcon = sp_state == state_clean;
+	if (action_i_== ac_linear && is_save_rcon)
 		saveBlock(BLOCKED_RCON, iterate_point_.dir, [&]() {
 			auto rcon_trig = ev.rcon_status/*rcon_get_trig()*/;
 			Cells d_cells;
@@ -401,7 +403,7 @@ bool ACleanMode::checkCorner(const sensor_msgs::LaserScan::ConstPtr &scan, const
 	return forward_wall_count > para.forward_count_lim && side_wall_count > para.side_count_lim;
 }
 
-Vector2<double> ACleanMode::polarToCartesian(double polar, int i)
+/*Vector2<double> ACleanMode::polarToCartesian(double polar, int i)
 {
 	Vector2<double> point{cos(degree_to_radian(i * 1.0 + 180.0)) * polar,
 					sin(degree_to_radian(i * 1.0 + 180.0)) * polar };
@@ -409,7 +411,7 @@ Vector2<double> ACleanMode::polarToCartesian(double polar, int i)
 	coordinate_transform(&point.x, &point.y, LIDAR_THETA, LIDAR_OFFSET_X, LIDAR_OFFSET_Y);
 	return point;
 
-}
+}*/
 
 Vector2<double> ACleanMode::getTargetPoint(const Vector2<double> &p1, const Vector2<double> &p2, const PointSelector &para) {
 	auto p3 = (p1 + p2) / 2;
@@ -1006,16 +1008,6 @@ bool ACleanMode::isFinish()
 	return false;
 }
 
-void ACleanMode::moveTypeFollowWallSaveBlocks()
-{
-	saveBlocks(action_i_ == ac_linear, isStateClean());
-}
-
-void ACleanMode::moveTypeLinearSaveBlocks()
-{
-	saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
-}
-
 bool ACleanMode::checkChargerPos()
 {
 	const int16_t DETECT_RANGE = 20;//cells
@@ -1585,7 +1577,8 @@ bool ACleanMode::updateActionInStateInit() {
 	if (action_i_ == ac_null)
 		action_i_ = ac_open_gyro;
 	else if (action_i_ == ac_open_gyro) {
-		vacuum.setLastMode();
+		if (!water_tank.checkEquipment())
+			vacuum.setLastMode();
 		brush.normalOperate();
 		action_i_ = ac_open_lidar;
 	}
@@ -1666,13 +1659,14 @@ bool ACleanMode::updateActionInStateGoHomePoint()
 	else if (getPosition().toCell() == start_point_.toCell())
 	{
 		ROS_INFO("Reach start point but angle not equal,start_point_(%d,%d,%f,%d)",start_point_.toCell().x, start_point_.toCell().y, radian_to_degree(start_point_.th), start_point_.dir);
-		beeper.beepForCommand(VALID);
+//		beeper.beepForCommand(VALID);
 		update_finish = true;
 		iterate_point_ = getPosition();
 		iterate_point_.th = start_point_.th;
 		plan_path_.clear();
 		plan_path_.push_back(iterate_point_) ;
 		plan_path_.push_back(start_point_) ;
+		action_i_ = ac_linear;
 		genNextAction();
 		update_finish = true;
 		home_points_ = go_home_path_algorithm_->getRestHomePoints();
@@ -1912,11 +1906,11 @@ bool ACleanMode::updateActionInStateFollowWall()
 			ROS_INFO_FL();
 			ROS_ERROR("is_isolate");
 			is_isolate = false;
+			plan_path_.clear();
 			auto angle = (isolate_count_ == 0) ? 0 : -900;
 			auto point = getPosition().addRadian(angle);
+			plan_path_.push_back(point);
 			point = point.getRelative(8, 0);
-			plan_path_.clear();
-			plan_path_.push_back(getPosition());
 			plan_path_.push_back(point);
 			iterate_point_ = plan_path_.front();
 			iterate_point_.dir = MAP_ANY;// note: fix bug follow isPassPosition
@@ -1993,7 +1987,7 @@ void ACleanMode::setTempTarget(std::deque<Vector2<double>>& points, uint32_t  se
 
 //	ROS_ERROR("curr_point(%d,%d)",getPosition().x,getPosition().y);
 	for (const auto &iter : points) {
-		auto target = getPosition().getRelative(static_cast<float>(iter.x), static_cast<float>(iter.y));
+		auto target = getPosition(ODOM_POSITION_ODOM_ANGLE).getRelative(static_cast<float>(iter.x), static_cast<float>(iter.y));
 		path_head_.tmp_plan_path_.push_back(target);
 //		printf("temp_target(%f, %f)\n",target.x,target.y);
 	}

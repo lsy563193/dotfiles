@@ -34,7 +34,7 @@ MoveTypeLinear::~MoveTypeLinear()
 {
 	if(sp_mode_ != nullptr){
 		auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
-		p_mode->saveBlocks(p_mode->action_i_ == p_mode->ac_linear, p_mode->sp_state == p_mode->state_clean);
+		p_mode->saveBlocks();
 		p_mode->mapMark();
 		memset(IMoveType::rcon_cnt,0,sizeof(int8_t)*6);
 	}
@@ -76,14 +76,17 @@ bool MoveTypeLinear::isFinish()
 		else if (movement_i_ == mm_forward)
 		{
 			if(handleMoveBackEvent(p_clean_mode)){
-//				ROS_WARN("should_follow_wall(%d)!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", p_clean_mode->should_follow_wall);
-				p_clean_mode->should_follow_wall = true;
+//				ROS_WARN("111should_follow_wall(%d,%d)!!!", p_clean_mode->should_follow_wall, ev.tilt_triggered);
+				if(!ev.tilt_triggered)
+					p_clean_mode->should_follow_wall = true;
+//				ROS_WARN("111should_follow_wall(%d)!!!", p_clean_mode->should_follow_wall);
 				return false;
 			}else {
-				if (ev.lidar_triggered || ev.rcon_status || ev.bumper_triggered || ev.cliff_triggered || ev.obs_triggered) {
-//					ROS_WARN( "should_follow_wall(%d)!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", p_clean_mode->should_follow_wall);
+//				ROS_WARN("111should_follow_wall(%d,%d)!!!", p_clean_mode->should_follow_wall, ev.tilt_triggered);
+				if (ev.lidar_triggered || ev.rcon_status || ev.cliff_triggered || ev.obs_triggered) {
 					p_clean_mode->should_follow_wall = true;
 				}
+//				ROS_WARN("222should_follow_wall(%d)!!!", p_clean_mode->should_follow_wall);
 				return true;
 			}
 		}
@@ -178,22 +181,4 @@ void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 	}
 }
 
-bool MoveTypeLinear::handleMoveBackEvent(ACleanMode *p_clean_mode)
-{
-	if (ev.bumper_triggered || ev.cliff_triggered)
-	{
-		p_clean_mode->moveTypeLinearSaveBlocks();
-		movement_i_ = mm_back;
-		sp_movement_.reset(new MovementBack(0.01, BACK_MAX_SPEED));
-		return true;
-	}
-	else if(ev.tilt_triggered){
-		p_clean_mode->moveTypeLinearSaveBlocks();
-		movement_i_ = mm_back;
-		sp_movement_.reset(new MovementBack(0.15, BACK_MAX_SPEED));
-		return true;
-	}
-
-	return false;
-}
 
