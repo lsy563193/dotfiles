@@ -32,9 +32,9 @@ public:
 
 	void setTmpMode(uint8_t mode);
 
-	void setMode(uint8_t mode);
+	void setMode(uint8_t mode,bool run);
 
-	void switchToNext();
+	void Switch();
 
 	void setLastMode();
 

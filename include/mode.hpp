@@ -304,8 +304,6 @@ public:
 	// For move types
 	bool moveTypeNewCellIsFinish(IMoveType *p_move_type);
 	bool moveTypeRealTimeIsFinish(IMoveType *p_mt);
-	virtual void moveTypeFollowWallSaveBlocks();
-	virtual void moveTypeLinearSaveBlocks();
 
 	// Handlers
 	void remoteHome(bool state_now, bool state_last) override ;
@@ -505,11 +503,11 @@ public:
 													 const sensor_msgs::LaserScan::ConstPtr &scan);
 	bool checkCorner(const sensor_msgs::LaserScan::ConstPtr &scan, const PointSelector &para);
 	bool calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,bool is_left ,std::deque<Vector2<double>>& points, double wall_distance);
-	Vector2<double> polarToCartesian(double polar, int i);
+//	Vector2<double> polarToCartesian(double polar, int i);
 	void setTempTarget(std::deque<Vector2<double>>& points, uint32_t  seq);
 	void pubTmpTarget(const Point_t &point,bool is_virtual=false);
 	uint8_t setBlocks(Dir_t dir);
-	void saveBlocks(bool is_linear, bool is_save_rcon);
+	void saveBlocks();
 	void saveBlock(int block, int , std::function<Cells()>);
 	void checkShouldMarkCharger(float angle_offset,float distance);
 	PathHead getTempTarget();

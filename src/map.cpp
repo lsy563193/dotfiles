@@ -48,7 +48,7 @@ GridMap::~GridMap()
  * @return	CellState
  */
 CellState GridMap::getCell(int id, int16_t x, int16_t y) {
-	CellState val;
+	CellState val=0;
 	int16_t x_min, x_max, y_min, y_max;
 	if (id == CLEAN_MAP || id == COST_MAP) {
 		x_min = xRangeMin;
@@ -551,6 +551,18 @@ uint8_t GridMap::isUncleanAtY(int16_t x, int16_t y)
 	uint8_t unclean_cnt = 0;
 	for (int8_t i = (y + ROBOT_RIGHT_OFFSET); i <= (y + ROBOT_LEFT_OFFSET); i++) {
 		if (getCell(CLEAN_MAP, x, i) == UNCLEAN) {
+			unclean_cnt++;
+		}
+	}
+//	ROS_INFO("%s, %d:unclean_cnt(%d)", __FUNCTION__, __LINE__, unclean_cnt);
+	return unclean_cnt;
+}
+
+uint8_t GridMap::isBlockAtY(int block, int16_t x, int16_t y)
+{
+	uint8_t unclean_cnt = 0;
+	for (int8_t i = (y + ROBOT_RIGHT_OFFSET); i <= (y + ROBOT_LEFT_OFFSET); i++) {
+		if (getCell(CLEAN_MAP, x, i) == block) {
 			unclean_cnt++;
 		}
 	}

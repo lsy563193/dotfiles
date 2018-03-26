@@ -240,17 +240,71 @@ public:
 
 	std::string describe() const override;
 };
-/*
-class SchduleRxMsg: public RxMsg
+
+class SetScheduleRxMsg: public RxMsg
 {
 public:
+
+	enum struct week
+	{
+		NO_WEEK = 0,
+		MON,
+		TUR,
+		WED,
+		FUR,
+		FRI,
+		SAT,
+		SUN
+	};
+
 	static constexpr int MSG_CODE = 0x4A;	
 
 	using RxMsg::RxMsg;	
 
 	std::string describe() const override;
+
+	uint8_t getScheNum(uint8_t num) const
+	{
+		if(num<10)
+			return data()[num*5];
+		else 
+			return 0x00;
+	}
+	uint8_t isEnable(uint8_t num) const
+	{
+		if(num< 10)
+			return data()[num*5+1];
+		else
+			return 0x00;
+	}
+	uint8_t getWeek(uint8_t num) const
+	{
+		if(num< 10)
+		{
+			return data()[num*5+2];
+		}
+		else
+			return 0;
+	}
+
+	uint8_t getHour(uint8_t num) const
+	{
+		if(num< 10)
+			return data()[num*5+3];
+		else
+			return 0;
+	}
+
+	uint8_t getMin(uint8_t num) const
+	{
+		if(num< 10)
+			return data()[num*5+4];
+		else
+			return 0;
+	}
+
 };
-*/
+
 class ResetConsumableStatusRxMsg: public RxMsg
 {
 public:

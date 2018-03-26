@@ -4,6 +4,7 @@
 
 #include <event_manager.h>
 #include <robot.hpp>
+#include <gyro.h>
 #include "move_type.hpp"
 
 MoveTypeRemote::MoveTypeRemote()
@@ -33,12 +34,15 @@ bool MoveTypeRemote::isFinish()
 
 	if (p_movement_->isFinish())
 	{
-		if (ev.bumper_triggered || ev.cliff_triggered)
-		{
+		if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered) {
 			ev.bumper_triggered = 0;
 			ev.cliff_triggered = 0;
+			ev.tilt_triggered =0;
 			movement_i_ = mm_back;
-			p_movement_.reset(new MovementBack(0.01, BACK_MAX_SPEED));
+			auto back_distance = (ev.tilt_triggered || gyro.getAngleR() > 5) ? 0.15 : 0.01;
+//		if(gyro.getAngleR() > 5)
+//			beeper.beepForCommand(VALID);
+			p_movement_.reset(new MovementBack(back_distance, BACK_MAX_SPEED));
 		}
 		else if (movement_i_ == mm_stay)
 		{

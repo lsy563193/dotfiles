@@ -46,6 +46,7 @@ public:
 
 protected:
 
+	bool is_out_corner{};
 	int32_t min_speed_;
 	int32_t max_speed_;
 //	static Point_t tmp_target_;
@@ -207,8 +208,8 @@ class MovementFollowWallLidar:public AMovementFollowPoint, public IFollowWall
 public:
 	explicit MovementFollowWallLidar(bool is_left);
 
-	Point_t calcTmpTarget() override ;
-	Points _calcTmpTarget();
+	Point_t calcTmpTarget() override ;//laser follow wall algorithm
+	Points calcVirtualTmpTarget();//generate a circle path
 
 	bool isFinish() override ;
 	uint8_t isNear() override ;

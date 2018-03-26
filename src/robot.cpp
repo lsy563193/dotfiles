@@ -293,11 +293,14 @@ void robot::robotbase_routine_cb()
 		// For water tank device.
 		water_tank.setStatus((buf[REC_MIX_BYTE] & 0x08) != 0);
 //		ROS_INFO("mix:%x", buf[REC_MIX_BYTE]);
+//		if (water_tank.getStatus())
+//			ROS_INFO("Water tank~~~~~~~~~~~~~~~~~~ :D");
 		sensor.water_tank = water_tank.getStatus();
 
 		// For charger device.
 		charger.setChargeStatus((buf[REC_MIX_BYTE] >> 4) & 0x07);
 		sensor.charge_status = charger.getChargeStatus();
+//		ROS_INFO("Charge status:%d.", charger.getChargeStatus());
 
 		// For sleep status.
 		serial.isMainBoardSleep((buf[REC_MIX_BYTE] & 0x80) == 0);
@@ -751,7 +754,7 @@ void robot::updateRobotPositionForTest()
 
 bool robot::checkTilt() {
 //	ROS_WARN("is_first_tilt = %d", is_first_tilt);
-	auto angle = std::fabs(gyro.getAngleR());
+	auto angle = gyro.getAngleR();
 //	ROS_WARN("angle = %f", angle);
 	if (angle < ANGLE_LIMIT) {
 		is_first_tilt = true;
@@ -763,11 +766,7 @@ bool robot::checkTilt() {
 		tilt_time = ros::Time::now().toSec();
 	}
 
-	if ((ros::Time::now().toSec() - tilt_time) > TIME_LIMIT) {
-		return true;
-	} else {
-		return false;
-	}
+	return  ros::Time::now().toSec() - tilt_time > TIME_LIMIT && (wheel.getLeftWheelCliffStatus() || wheel.getRightWheelCliffStatus());
 
 /*	if (gyro.getAngleR() > ANGLE_LIMIT) {
 		tilt_time = ros::Time::now().toSec();
@@ -779,11 +778,30 @@ bool robot::checkTilt() {
 	}*/
 }
 
+bool robot::checkTiltToSlip() {
+	auto angle = std::fabs(gyro.getAngleR());
+//	ROS_WARN("angle = %f", angle);
+	if (angle < ANGLE_LIMIT_TO_SLIP) {
+		is_first_tilt_to_slip_ = true;
+		return false;
+	}
+
+	if (is_first_tilt_to_slip_) {
+		is_first_tilt_to_slip_ = false;
+		tilt_time_to_slip_ = ros::Time::now().toSec();
+	}
+
+	return (ros::Time::now().toSec() - tilt_time_to_slip_) > TIME_LIMIT_TO_SLIP ? true : false;
+}
+
 //--------------------
 static float xCount{}, yCount{};
 
-Point_t getPosition()
+Point_t getPosition(Baselink_Frame_Type type)
 {
+	if(type == ODOM_POSITION_ODOM_ANGLE)
+		return {odom.getX(),odom.getY(),odom.getRadian()};
+
 	return {xCount, yCount, robot::instance()->getWorldPoseRadian()};
 }
 

@@ -22,6 +22,7 @@ public:
 	bool shouldMoveBack();
 	bool shouldTurn();
 	bool RconTrigger();
+	bool handleMoveBackEvent(ACleanMode* p_clean_mode);
 //	~IMoveType() = default;
 	enum{//movement
 		mm_null,
@@ -87,7 +88,6 @@ public:
 	bool isLinearForward();
 
 private:
-	bool handleMoveBackEvent(ACleanMode* p_clean_mode);
 	void switchLinearTarget(ACleanMode * p_clean_mode);
 };
 
@@ -105,7 +105,6 @@ public:
 	bool isOverOriginLine(GridMap &map);
 
 private:
-	bool handleMoveBackEvent(ACleanMode* p_clean_mode);
 	bool handleMoveBackEventRealTime(ACleanMode* p_clean_mode);
 	bool is_left_{};
 	int16_t bumperTurnAngle();
@@ -120,6 +119,7 @@ private:
 	double getTurnRadian(bool);
 	double robot_to_wall_distance = 0.8;
 	float g_back_distance = 0.01;
+	bool is_stop_follow_wall_after_tilt{};
 	struct lidar_angle_param{
 		double lidar_min;
 		double lidar_max;
@@ -207,8 +207,8 @@ private:
 	 * Stage 2: Check lidar, then turn 180 degrees, check lidar again, turn 180 degrees, and get the baselines
 	 *          of OBS and cliff and check the rcon receivers.
 	 * Stage 3: Check for bumpers and OBS value.
-	 * Stage 4: Follow wall to cliff position and check for cliff value.
-	 * Stage 5: Move for a distance and check the max currents.
+	 * Stage 4: Follow wall to cliff position and check for current and cliff max value.
+	 * Stage 5: Check for cliffs and move back to the front of charger stub.
 	 * Stage 6: Turn for 360 degrees to check for rcon.
 	 */
 	uint8_t test_stage_{1};

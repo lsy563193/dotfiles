@@ -35,6 +35,8 @@ ModeRemote::ModeRemote()
 	event_manager_reset_status();
 
 	remote_mode_time_stamp_ = ros::Time::now().toSec();
+
+	s_wifi.replyRobotStatus(0xc8,0x00);
 }
 
 ModeRemote::~ModeRemote()
@@ -143,7 +145,8 @@ void ModeRemote::remoteMax(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
 	beeper.beepForCommand(VALID);
-	vacuum.switchToNext();
+	if (!water_tank.isEquipped())
+		vacuum.Switch();
 	remote.reset();
 }
 

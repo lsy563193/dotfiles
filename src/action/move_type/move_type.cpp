@@ -119,7 +119,7 @@ void IMoveType::resetTriggeredValue()
 	ev.obs_triggered = 0;
 	ev.cliff_triggered = 0;
 	ev.tilt_triggered = 0;
-	ev.robot_slip = false;
+//	ev.robot_slip = false; // modify by pierre
 }
 
 bool IMoveType::isFinish()
@@ -201,6 +201,22 @@ bool IMoveType::isBlockCleared(GridMap &map, Points &passed_path)
 	{
 //		ROS_INFO("%s %d: passed_path.back(%d %d)", __FUNCTION__, __LINE__, passed_path.back().x, passed_path.back().y);
 		return !map.isBlockAccessible(passed_path.back().toCell().x, passed_path.back().toCell().y);
+	}
+
+	return false;
+}
+
+bool IMoveType::handleMoveBackEvent(ACleanMode *p_clean_mode)
+{
+	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered)
+	{
+		p_clean_mode->saveBlocks();
+		movement_i_ = mm_back;
+		auto back_distance = (ev.tilt_triggered || gyro.getAngleR() > 5) ? 0.15 : 0.01;
+//		if(gyro.getAngleR() > 5)
+//			beeper.beepForCommand(VALID);
+		sp_movement_.reset(new MovementBack(back_distance, BACK_MAX_SPEED));
+		return true;
 	}
 
 	return false;
