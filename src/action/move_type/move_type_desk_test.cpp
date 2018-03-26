@@ -207,7 +207,7 @@ void MoveTypeDeskTest::run()
 		default: // For finish.
 		{
 			ROS_INFO("%s %d: Test finish.", __FUNCTION__, __LINE__);
-			infrared_display.displayNormalMsg(0, 0);
+			infrared_display.displayNormalMsg(0, 9999);
 			key_led.setMode(LED_STEADY, LED_GREEN);
 //			beeper.beep(2, 40, 40, 3);
 			serial.setSendData(CTL_WORK_MODE, DESK_TEST_WRITE_BASELINE_MODE);
