@@ -15,7 +15,7 @@
 
 enum {
 Vac_Normal=0,
-Vac_Max,
+Vac_Max=1,
 };
 
 class Vacuum {
@@ -32,7 +32,7 @@ public:
 
 	void setTmpMode(uint8_t mode);
 
-	void setMode(uint8_t mode,bool run);
+	void setMode(uint8_t mode);
 
 	void Switch();
 
@@ -72,7 +72,7 @@ public:
 private:
 	void setSpeedByMode(uint8_t);
 
-	uint8_t mode_;
+	uint8_t mode_ = Vac_Normal;
 	uint8_t mode_save_;
 	bool oc_;
 

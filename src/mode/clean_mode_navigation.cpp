@@ -398,17 +398,26 @@ void CleanModeNav::remoteMax(bool state_now, bool state_last)
 	if(isStateClean() || isStateResumeLowBatteryCharge())
 	{
 		beeper.beepForCommand(VALID);
+		uint8_t vac_mode = vacuum.getMode();
+		vacuum.setMode(!vac_mode);
 		if (!water_tank.isEquipped())
 			vacuum.Switch();
 	}
 	else if (isStateGoHomePoint() || isStateGoToCharger())
 	{
 		beeper.beepForCommand(VALID);
+		uint8_t vac_mode = vacuum.getMode();
+		vacuum.setMode(!vac_mode);
 		if (!water_tank.isEquipped())
 		{
 			vacuum.Switch();
 			vacuum.setTmpMode(Vac_Normal);
 		}
+	}
+	else if(isStatePause()){
+		beeper.beepForCommand(VALID);
+		uint8_t vac_mode = vacuum.getMode();
+		vacuum.setMode(!vac_mode);
 	}
 	else
 		beeper.beepForCommand(INVALID);

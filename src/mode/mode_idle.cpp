@@ -252,7 +252,9 @@ void ModeIdle::remoteKeyHandler(bool state_now, bool state_last)
 
 void ModeIdle::remoteMax(bool state_now, bool state_last)
 {
-	beeper.beepForCommand(INVALID);
+	beeper.beepForCommand(VALID);
+	uint8_t vac_mode = vacuum.getMode();
+	vacuum.setMode(!vac_mode);
 	remote.reset();
 }
 
