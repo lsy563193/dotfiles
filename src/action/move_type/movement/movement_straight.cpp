@@ -21,7 +21,7 @@ MovementStraight::~MovementStraight()
 
 bool MovementStraight::isFinish()
 {
-	return isTimeUp() || sp_mt_->shouldMoveBack();
+	return isTimeUp() || sp_mt_->isFinishForward();
 }
 
 void MovementStraight::adjustSpeed(int32_t &left_speed, int32_t &right_speed) {
