@@ -1762,3 +1762,143 @@ double Lidar::checkIsRightAngle(bool is_left) {
 		return wall_length;
 	}
 }
+
+void Lidar::saveLidarDataToFile(uint32_t seq, sensor_msgs::LaserScan scan)
+{
+	std::string file = "/var/volatile/tmp/lidar_data_";
+	file += std::to_string(seq);
+	if (access(file.c_str(), F_OK) != -1)
+		// If file exist, no need to generate a new one.
+		return;
+
+	FILE *f_write = fopen(file.c_str(), "w");
+	if (f_write == nullptr)
+		ROS_ERROR("%s %d: Open %s error.", __FUNCTION__, __LINE__, file.c_str());
+	else
+	{
+		ROS_INFO("%s %d: Start writing data to %s.", __FUNCTION__, __LINE__, file.c_str());
+		fprintf(f_write, "Seq: %02d\n", scan.header.seq);
+		for (int index = 0; index < 360; index++)
+		{
+			fprintf(f_write, "%f,", scan.ranges[index]);
+
+			if ((100 * index / 360) % 10 == 0)
+				printf("\r %d0%%.", 100 * index / 360 / 10);
+		}
+		printf("\n");
+		fprintf(f_write, "\n");
+		fclose(f_write);
+		ROS_INFO("%s %d: Write data succeeded.", __FUNCTION__, __LINE__);
+	}
+
+}
+
+//void Lidar::readLidarDataFromFile(uint32_t seq, float (&scan_data)[360])
+void Lidar::readLidarDataFromFile(bool check_front, float (&scan_data)[360])
+{
+//	std::string file = "/var/volatile/tmp/lidar_data_";
+//	file += std::to_string(seq);
+	std::string file;
+	if (check_front)
+		file = "/opt/ros/indigo/share/pp/lidar_checking/front";
+	else
+		file = "/opt/ros/indigo/share/pp/lidar_checking/back";
+
+	FILE *f_read = fopen(file.c_str(), "r");
+	if (f_read == nullptr)
+		ROS_ERROR("%s %d: Open %s error.", __FUNCTION__, __LINE__, file.c_str());
+	else
+	{
+		ROS_INFO("%s %d: Start reading data from %s.", __FUNCTION__, __LINE__, file.c_str());
+		uint8_t header_len = 8;
+		char header[header_len];
+		fgets(header, header_len, f_read);
+		ROS_INFO("%s %d: First line of file: %s.", __FUNCTION__, __LINE__, header);
+		for (int index = 0; index < 360; index++)
+		{
+			fscanf(f_read, "%f,", &scan_data[index]);
+			if ((100 * index / 360) % 10 == 0)
+				printf("\r %d0%%.", 100 * index / 360 / 10);
+			printf("scan_buf[%03d]=%f\n", index, scan_data[index]);
+		}
+		printf("\n");
+		fclose(f_read);
+		ROS_INFO("%s %d: Read data succeeded.", __FUNCTION__, __LINE__);
+	}
+}
+
+bool Lidar::scanDataChecking(bool check_front, sensor_msgs::LaserScan scan, float (&ref_scan_data)[360])
+{
+	uint16_t _valid_count{0};
+	float _accuracy{0.07};
+	if (check_front)
+	{
+		for (uint16_t data_index = 0; data_index < 360; data_index++)
+		{
+			printf("scan.ranges[%03d] = %f, ref_scan_data[%03d] = %f, fabs = %f.",
+				   data_index, scan.ranges[data_index], data_index, ref_scan_data[data_index],
+				   fabs(scan.ranges[data_index] - ref_scan_data[data_index]));
+			if (scan.ranges[data_index] != std::numeric_limits<float>::infinity() &&
+				ref_scan_data[data_index] != std::numeric_limits<float>::infinity())
+//				ref_scan_data[data_index] != 0)
+			{
+				printf(" Pass inf checking. Accuracy:%f.", ref_scan_data[data_index] * _accuracy);
+//				if (fabs(scan.ranges[data_index] - ref_scan_data[data_index]) < ref_scan_data[data_index] * _accuracy)
+				if (fabs(scan.ranges[data_index] - ref_scan_data[data_index]) < 0.2)
+				{
+					_valid_count++;
+					printf(" Pass accuracy checking.\n");
+				}
+				else
+					printf("\n");
+			}
+			else if (scan.ranges[data_index] == std::numeric_limits<float>::infinity() &&
+				ref_scan_data[data_index] == std::numeric_limits<float>::infinity())
+//				ref_scan_data[data_index] < 0.01)
+			{
+				printf(" Pass accuracy checking.\n");
+				_valid_count++;
+			}
+			else
+				printf("\n");
+
+			if (data_index == 64)
+				data_index = 244;
+		}
+	}
+	else
+	{
+		for (uint16_t data_index = 66; data_index < 244; data_index++)
+		{
+			printf("scan.ranges[%03d] = %f, ref_scan_data[%03d] = %f, fabs = %f.",
+				   data_index, scan.ranges[data_index], data_index, ref_scan_data[data_index],
+				   fabs(scan.ranges[data_index] - ref_scan_data[data_index]));
+			if (scan.ranges[data_index] != std::numeric_limits<float>::infinity() &&
+				ref_scan_data[data_index] != std::numeric_limits<float>::infinity())
+//				ref_scan_data[data_index] != 0)
+			{
+				printf(" Pass inf checking. Accuracy:%f.", ref_scan_data[data_index] * _accuracy);
+//				if (fabs(scan.ranges[data_index] - ref_scan_data[data_index]) < ref_scan_data[data_index] * _accuracy)
+				if (fabs(scan.ranges[data_index] - ref_scan_data[data_index]) < 0.2)
+				{
+					_valid_count++;
+					printf(" Pass accuracy checking.\n");
+				}
+				else
+					printf("\n");
+			}
+			else if (scan.ranges[data_index] == std::numeric_limits<float>::infinity() &&
+				ref_scan_data[data_index] == std::numeric_limits<float>::infinity())
+//				ref_scan_data[data_index] < 0.01)
+			{
+				printf(" Pass accuracy checking.\n");
+				_valid_count++;
+			}
+			else
+				printf("\n");
+		}
+	}
+
+	ROS_INFO("%s %d: Valid count is %d.", __FUNCTION__, __LINE__, _valid_count);
+	return _valid_count > 130;
+}

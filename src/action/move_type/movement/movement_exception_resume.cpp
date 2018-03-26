@@ -425,7 +425,6 @@ bool MovementExceptionResume::isFinish()
 	{
 		ACleanMode* p_mode = dynamic_cast<ACleanMode*>(sp_mt_->sp_mode_);
 		auto isExitSlipBlock = p_mode->clean_map_.getCell(CLEAN_MAP,getPosition().toCell().x,getPosition().toCell().y);
-		ROS_ERROR("state:%d,x:%d,y:%d",isExitSlipBlock,getPosition().toCell().x,getPosition().toCell().y);
 
 		if(ros::Time::now().toSec() - resume_slip_start_time_ > 60){
 			ev.robot_slip = false;

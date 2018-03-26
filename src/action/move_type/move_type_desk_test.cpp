@@ -493,44 +493,92 @@ bool MoveTypeDeskTest::checkStage2Finish()
 		}
 		case 2:
 		{
-			ROS_INFO("%s %d: Enter lidar checking 1.", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: Enter lidar checking front.", __FUNCTION__, __LINE__);
 			wheel.stop();
 			// Stop for checking lidar data.
-			while (ros::ok() && lidar_check_cnt_ < 5)
+			uint8_t _cnt{10};
+//			float scan_ref[_cnt][360];
+			float scan_ref[360];
+			lidar.readLidarDataFromFile(true, scan_ref);
+			uint8_t scan_valid_cnt{0};
+			while (ros::ok() && lidar_check_cnt_ < _cnt)
 			{
-				auto lidar_data = lidar.getLidarScanDataOriginal();
-				if (lidar_check_seq_ != lidar_data.header.seq)
+				auto scan_data = lidar.getLidarScanDataOriginal();
+				if (lidar_check_seq_ != scan_data.header.seq)
 				{
+					lidar_check_seq_ = scan_data.header.seq;
+//					lidar.saveLidarDataToFile(lidar_check_cnt_, scan_data);
+					if(lidar.scanDataChecking(true, scan_data, scan_ref))
+					{
+						ROS_INFO("Good boy, %d scan ok.", lidar_check_cnt_);
+						scan_valid_cnt++;
+					}
+					else
+						ROS_ERROR("Now something doesn't feel right about %d scan...", lidar_check_cnt_);
 					lidar_check_cnt_++;
-					// todo:handler for lidar.
 				}
 				usleep(100000);
 			}
-			test_step_++;
-			lidar_check_cnt_ = 0;
-			p_movement_.reset();
-			p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-178), RCON_ROTATE_SPEED));
-			ROS_INFO("%s %d: Enter rcon turning 1.", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: Scan valid count:%d.", __FUNCTION__, __LINE__, scan_valid_cnt);
+			if (scan_valid_cnt < _cnt -1)
+			{
+				error_step_ = test_stage_;
+				error_code_ = LIDAR_ERROR;
+				error_content_ = scan_valid_cnt;
+				test_step_ = 99;
+			}
+			else
+			{
+				test_step_++;
+				p_movement_.reset();
+				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-178), RCON_ROTATE_SPEED));
+				ROS_INFO("%s %d: Enter rcon turning 1.", __FUNCTION__, __LINE__);
+			}
 			break;
 		}
 		case 4:
 		{
-			ROS_INFO("%s %d: Enter lidar checking 2.", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: Enter lidar checking back.", __FUNCTION__, __LINE__);
 			wheel.stop();
 			// Stop for checking lidar data.
-			while (ros::ok() && lidar_check_cnt_ < 5)
+			uint8_t _cnt{10};
+//			float scan_ref[_cnt * 2][360];
+			float scan_ref[360];
+			lidar.readLidarDataFromFile(false, scan_ref);
+			uint8_t scan_valid_cnt{0};
+			while (ros::ok() && lidar_check_cnt_ < _cnt * 2)
 			{
-				auto lidar_data = lidar.getLidarScanDataOriginal();
-				if (lidar_check_seq_ != lidar_data.header.seq)
+				auto scan_data = lidar.getLidarScanDataOriginal();
+				if (lidar_check_seq_ != scan_data.header.seq)
 				{
+					lidar_check_seq_ = scan_data.header.seq;
+//					lidar.saveLidarDataToFile(lidar_check_cnt_, scan_data);
+					if(lidar.scanDataChecking(false, scan_data, scan_ref))
+					{
+						ROS_INFO("Good boy, %d scan ok.", lidar_check_cnt_);
+						scan_valid_cnt++;
+					}
+					else
+						ROS_ERROR("Now something doesn't feel right about %d scan...", lidar_check_cnt_);
 					lidar_check_cnt_++;
-					// todo:handler for lidar.
 				}
 				usleep(100000);
 			}
-			test_step_++;
-			p_movement_.reset();
-			p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-178), RCON_ROTATE_SPEED));
+			ROS_INFO("%s %d: Scan valid count:%d.", __FUNCTION__, __LINE__, scan_valid_cnt);
+			if (scan_valid_cnt < _cnt -1)
+			{
+				error_step_ = test_stage_;
+				error_code_ = LIDAR_ERROR;
+				error_content_ = scan_valid_cnt;
+				test_step_ = 99;
+			}
+			else
+			{
+				test_step_++;
+				p_movement_.reset();
+				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-178), RCON_ROTATE_SPEED));
+				ROS_INFO("%s %d: Enter rcon turning 2.", __FUNCTION__, __LINE__);
+			}
 			break;
 		}
 		default://case 6:
