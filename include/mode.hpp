@@ -156,8 +156,8 @@ public:
 	void remoteClean(bool state_now, bool state_last) override
 	{ remoteKeyHandler(state_now, state_last);}
 	void remoteMax(bool state_now, bool state_last) override ;
-	void lidar_bumper(bool state_now, bool state_last) override;
-	void remote_wifi(bool state_now, bool state_last) override;
+//	void lidarBumper(bool state_now, bool state_last) override;
+	void remoteWifi(bool state_now, bool state_last) override;
 	void remotePlan(bool state_now, bool state_last) override ;
 	void keyClean(bool state_now, bool state_last) override;
 	void chargeDetect(bool state_now, bool state_last) override ;

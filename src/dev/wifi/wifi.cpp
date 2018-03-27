@@ -311,20 +311,23 @@ bool S_Wifi::init()
 			[&](const wifi::RxMsg &a_msg){
 			}
 	);
+	//realtime map ack
 	s_wifi_rx_.regOnNewMsgListener<wifi::ClearRealtimeMapAckMsg>(
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::ClearRealtimeMapAckMsg &msg = static_cast<const wifi::ClearRealtimeMapAckMsg&>( a_msg );
 			}
-	);	
+	);
+	//resume ack
 	s_wifi_rx_.regOnNewMsgListener<wifi::wifiResumeAckMsg>(
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::wifiResumeAckMsg &msg = static_cast<const wifi::wifiResumeAckMsg&>(a_msg);	
 					if(is_wifi_active_ == false){
 						INFO_BLUE("RESUME ACK");
 						is_wifi_active_ = true;
-						this->reboot();
+//						this->reboot();
 					}
 				});
+	//suspend ack
 	s_wifi_rx_.regOnNewMsgListener<wifi::wifiSuspendAckMsg>(
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::wifiSuspendAckMsg &msg = static_cast<const wifi::wifiSuspendAckMsg&>(a_msg);
@@ -714,7 +717,7 @@ uint8_t S_Wifi::rebind()
 	s_wifi_tx_.push(std::move(p)).commit();
 	is_wifi_connected_ = false;
 	is_cloud_connected_ = false;
-	//speaker.play(VOICE_WIFI_UNBIND,false);
+	speaker.play(VOICE_WIFI_UNBIND,false);
 	return 0;
 }
 
@@ -812,16 +815,26 @@ uint8_t S_Wifi::uploadLastCleanData()
 
 bool S_Wifi::factoryTest()
 {
-	this->resume();
-	usleep(2000000);
 	int waitResp = 0;
+	this->resume();
+	while(!is_wifi_active_)
+	{
+		usleep(20000);
+		if(waitResp>= 100)//wati 2 seconds
+		{
+			ROS_INFO("%s,%d,FACTORY TEST FAIL!!",__FUNCTION__,__LINE__);
+			return false;
+		}	
+		waitResp++;
+	}
+	waitResp = 0;
 	isRegDevice_ = false;
 	wifi::FactoryTestTxMsg p(0x01);
 	s_wifi_tx_.push(std::move(p)).commit();
 	while(!inFactoryTest_ ){
 		usleep(20000);
 		waitResp++;
-		if(waitResp >= 100)//wait 2 second
+		if(waitResp >= 100)//wait 2 seconds
 		{
 			ROS_INFO("%s,%d,FACTORY TEST FAIL!!",__FUNCTION__,__LINE__);
 			return false;

@@ -181,6 +181,8 @@ virtual void remoteSpot(bool state_now, bool state_last);
 
 virtual void remoteMax(bool state_now, bool state_last);
 
+virtual void remoteWifi(bool state_new, bool state_last);
+
 /* Battery */
 virtual void batteryHome(bool state_now, bool state_last);
 
@@ -190,13 +192,10 @@ virtual void chargeDetect(bool state_now, bool state_last);
 
 virtual void robotSlip(bool state_new, bool state_last);
 
-virtual void lidar_bumper(bool state_new,bool state_last);
+virtual void lidarBumper(bool state_new, bool state_last);
 
 // Lidar stuck
 virtual void lidarStuck(bool state_new, bool state_last);
-
-// remote wifi
-virtual void remote_wifi(bool state_new,bool state_last);
 
 /* Default: empty hanlder */
 //void empty(bool state_now, bool state_last);
