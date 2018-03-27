@@ -913,7 +913,7 @@ bool MoveTypeDeskTest::checkCurrent()
 	uint16_t wheel_current_ref_{1685 - 1620}; // 65
 	uint16_t vacuum_current_ref_{2285 - 1620}; // 665
 	uint16_t water_tank_current_ref_{0};
-	uint16_t robot_current_ref_{2250 - 1775}; // 475
+	uint16_t robot_current_ref_{2385 - 1775}; // 610
 
 	if (left_brush_current_ - left_brush_current_baseline_ > side_brush_current_ref_ * 1.5 /* 82 */||
 		left_brush_current_ - left_brush_current_baseline_ < side_brush_current_ref_ * 0.6 /* 33 */)

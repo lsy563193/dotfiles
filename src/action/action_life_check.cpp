@@ -56,7 +56,7 @@ void ActionLifeCheck::lifeTestRoutineThread()
 
 bool ActionLifeCheck::dataExtract(const uint8_t *buf)
 {
-//	robot::instance()->debugReceivedStream(buf);
+//	serial.debugReceivedStream(buf);
 
 	// work mode
 	auto current_work_mode = buf[REC_WORK_MODE];
@@ -411,7 +411,7 @@ bool ActionLifeCheck::checkCurrent()
 	uint16_t wheel_current_ref_{1685 - 1620}; // 65
 	uint16_t vacuum_current_ref_{2285 - 1620}; // 665
 	uint16_t water_tank_current_ref_{0};
-	uint16_t robot_current_ref_{2250 - 1775}; // 475
+	uint16_t robot_current_ref_{2385 - 1775}; // 610
 
 //	wheel_current_ref_ = static_cast<uint16_t>(100.0 /*mA*/ / (330.0 /*3.3v reference voltage*/ / 0.1 /*Sampling resistance*/ / 4096.0 /*Accuracy*/));
 	ROS_INFO("%s %d: Wheel current reference: %d.", __FUNCTION__, __LINE__, wheel_current_ref_);
