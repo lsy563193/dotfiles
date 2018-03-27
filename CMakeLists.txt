@@ -219,7 +219,7 @@ install(TARGETS pp
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
-install(DIRECTORY launch urdf config audio
+install(DIRECTORY launch urdf config audio lidar_checking
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
   USE_SOURCE_PERMISSIONS
 )
