@@ -20,7 +20,7 @@ ActionIdle::ActionIdle()
 	else
 		key_led.setMode(LED_BREATH, LED_GREEN);
 
-	timeout_interval_ = 100000000000;
+	timeout_interval_ = IDLE_TIMEOUT;
 }
 
 ActionIdle::~ActionIdle()
