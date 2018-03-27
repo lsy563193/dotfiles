@@ -916,25 +916,25 @@ bool MoveTypeDeskTest::checkCurrent()
 	uint16_t robot_current_ref_{2385 - 1775}; // 610
 
 	if (left_brush_current_ - left_brush_current_baseline_ > side_brush_current_ref_ * 1.5 /* 82 */||
-		left_brush_current_ - left_brush_current_baseline_ < side_brush_current_ref_ * 0.6 /* 33 */)
+		left_brush_current_ - left_brush_current_baseline_ < side_brush_current_ref_ * 0.5 /* 27 */)
 	{
 		error_code_ = LEFT_BRUSH_CURRENT_ERROR;
 		error_content_ = static_cast<uint16_t>(left_brush_current_ - left_brush_current_baseline_);
 	}
-	else if (right_brush_current_ - right_brush_current_baseline_ > side_brush_current_ref_ * 1.4 /* 77 */||
-			 right_brush_current_ - right_brush_current_baseline_ < side_brush_current_ref_ * 0.6 /* 33 */)
+	else if (right_brush_current_ - right_brush_current_baseline_ > side_brush_current_ref_ * 1.5 /* 82 */||
+			 right_brush_current_ - right_brush_current_baseline_ < side_brush_current_ref_ * 0.5 /* 27 */)
 	{
 		error_code_ = RIGHT_BRUSH_CURRENT_ERROR;
 		error_content_ = static_cast<uint16_t>(right_brush_current_ - right_brush_current_baseline_);
 	}
-	else if (main_brush_current_ - main_brush_current_baseline_ > main_brush_current_ref_ * 1.2 ||
-			 main_brush_current_ - main_brush_current_baseline_ < main_brush_current_ref_ * 0.8)
+	else if (main_brush_current_ - main_brush_current_baseline_ > main_brush_current_ref_ * 1.5 ||
+			 main_brush_current_ - main_brush_current_baseline_ < main_brush_current_ref_ * 0.5)
 	{
 		error_code_ = MAIN_BRUSH_CURRENT_ERROR;
 		error_content_ = static_cast<uint16_t>(main_brush_current_ - main_brush_current_baseline_);
 	}
-	else if (vacuum_current_ - vacuum_current_baseline_ > vacuum_current_ref_ * 1.2 ||
-			 vacuum_current_ - vacuum_current_baseline_ < vacuum_current_ref_ * 0.8)
+	else if (vacuum_current_ - vacuum_current_baseline_ > vacuum_current_ref_ * 1.5 ||
+			 vacuum_current_ - vacuum_current_baseline_ < vacuum_current_ref_ * 0.5)
 	{
 		error_code_ = VACUUM_CURRENT_ERROR;
 		error_content_ = static_cast<uint16_t>(vacuum_current_ - vacuum_current_baseline_);
@@ -945,20 +945,20 @@ bool MoveTypeDeskTest::checkCurrent()
 		error_code_ = VACUUM_CURRENT_ERROR; // todo:
 		error_content_ = static_cast<uint16_t>(water_tank_current_ - water_tank_current_baseline_);
 	}*/
-	else if (left_wheel_current_cnt_ != 0 && (left_wheel_current_ - left_wheel_current_baseline_ > wheel_current_ref_ * 1.3 ||
-			 left_wheel_current_ - left_wheel_current_baseline_ < wheel_current_ref_ * 0.6))
+	else if (left_wheel_current_cnt_ != 0 && (left_wheel_current_ - left_wheel_current_baseline_ > wheel_current_ref_ * 1.5 ||
+			 left_wheel_current_ - left_wheel_current_baseline_ < wheel_current_ref_ * 0.5))
 	{
 		error_code_ = LEFT_WHEEL_FORWARD_CURRENT_ERROR;
 		error_content_ = static_cast<uint16_t>(left_wheel_current_ - left_wheel_current_baseline_);
 	}
-	else if (right_wheel_current_cnt_ != 0 && (right_wheel_current_ - right_wheel_current_baseline_ > wheel_current_ref_ * 1.3 ||
-			 right_wheel_current_ - right_wheel_current_baseline_ < wheel_current_ref_ * 0.6))
+	else if (right_wheel_current_cnt_ != 0 && (right_wheel_current_ - right_wheel_current_baseline_ > wheel_current_ref_ * 1.5 ||
+			 right_wheel_current_ - right_wheel_current_baseline_ < wheel_current_ref_ * 0.5))
 	{
 		error_code_ = RIGHT_WHEEL_FORWARD_CURRENT_ERROR;
 		error_content_ = static_cast<uint16_t>(right_wheel_current_ - right_wheel_current_baseline_);
 	}
-	else if (robot_current_ - robot_current_baseline_ > robot_current_ref_ * 1.2 ||
-			 robot_current_ - robot_current_baseline_ < robot_current_ref_ * 0.8)
+	else if (robot_current_ - robot_current_baseline_ > robot_current_ref_ * 1.5 ||
+			 robot_current_ - robot_current_baseline_ < robot_current_ref_ * 0.5)
 	{
 		error_code_ = BASELINE_CURRENT_ERROR;
 		error_content_ = static_cast<uint16_t>(robot_current_ - robot_current_baseline_);
