@@ -55,8 +55,8 @@ string SetScheduleRxMsg::describe() const
 	{
 		if(isEnable(i))
 		{
-			ss << "set schedule msg: "<< getScheNum(i)<<", weeks (" << getWeek(i)
-			<< "), hour(" << getHour(i)<< "), second(" << getMin(i) <<")";
+			ss << "set schedule msg: "<< (int)getScheNum(i)<<", weeks (" << (int)getWeek(i)
+			<< "), hour(" <<(int)getHour(i)<< "), second(" << (int)getMin(i) <<")";
 
 		}
 	}
