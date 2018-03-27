@@ -324,7 +324,7 @@ bool S_Wifi::init()
 					if(is_wifi_active_ == false){
 						INFO_BLUE("RESUME ACK");
 						is_wifi_active_ = true;
-						this->reboot();
+//						this->reboot();
 					}
 				});
 	//suspend ack
@@ -717,7 +717,7 @@ uint8_t S_Wifi::rebind()
 	s_wifi_tx_.push(std::move(p)).commit();
 	is_wifi_connected_ = false;
 	is_cloud_connected_ = false;
-	//speaker.play(VOICE_WIFI_UNBIND,false);
+	speaker.play(VOICE_WIFI_UNBIND,false);
 	return 0;
 }
 
