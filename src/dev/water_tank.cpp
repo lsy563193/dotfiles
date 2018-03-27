@@ -15,6 +15,7 @@ WaterTank::WaterTank()
 
 bool WaterTank::checkEquipment()
 {
+	return false;
 	normalOperate();
 	usleep(150000);
 	if (getStatus())

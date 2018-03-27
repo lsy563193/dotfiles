@@ -119,11 +119,12 @@ void CleanModeFollowWall::keyClean(bool state_now, bool state_last)
 void CleanModeFollowWall::remoteMax(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
-	if(isStateClean())
+	if(isStateFollowWall())
 	{
 		beeper.beepForCommand(VALID);
 		uint8_t vac_mode = vacuum.getMode();
 		vacuum.setMode(!vac_mode);
+		speaker.play(!vac_mode == Vac_Normal ? VOICE_CONVERT_TO_NORMAL_SUCTION : VOICE_CONVERT_TO_LARGE_SUCTION,false);
 
 
 		if (!water_tank.isEquipped())
@@ -134,6 +135,7 @@ void CleanModeFollowWall::remoteMax(bool state_now, bool state_last)
 		beeper.beepForCommand(VALID);
 		uint8_t vac_mode = vacuum.getMode();
 		vacuum.setMode(!vac_mode);
+		speaker.play(!vac_mode == Vac_Normal ? VOICE_CONVERT_TO_NORMAL_SUCTION : VOICE_CONVERT_TO_LARGE_SUCTION,false);
 		if (!water_tank.isEquipped())
 		{
 			vacuum.Switch();

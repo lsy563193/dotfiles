@@ -255,6 +255,7 @@ void ModeIdle::remoteMax(bool state_now, bool state_last)
 	beeper.beepForCommand(VALID);
 	uint8_t vac_mode = vacuum.getMode();
 	vacuum.setMode(!vac_mode);
+	speaker.play(!vac_mode == Vac_Normal ? VOICE_CONVERT_TO_NORMAL_SUCTION : VOICE_CONVERT_TO_LARGE_SUCTION,false);
 	remote.reset();
 }
 

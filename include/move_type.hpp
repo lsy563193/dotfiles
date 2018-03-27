@@ -5,6 +5,7 @@
 #ifndef PP_MOVE_TYPE_HPP
 #define PP_MOVE_TYPE_HPP
 #define TRAP_IN_SMALL_AREA_COUNT 20
+#define TILT_BACK_DISTANCE 0.15
 
 #include "action.hpp"
 #include "movement.hpp"
