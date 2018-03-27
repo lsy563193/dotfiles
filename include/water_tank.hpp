@@ -50,6 +50,11 @@ public:
 
 	void setMode(uint8_t mode);
 
+	uint8_t getMode()
+	{
+		return mode_;
+	}
+
 	enum{
 		PUMP_LOW,
 		PUMP_MID,
@@ -75,6 +80,8 @@ private:
 	uint8_t pump_cnt_{0};
 	uint8_t pump_max_cnt_{3};
 	uint8_t pump_switch_{0x00};
+
+	uint8_t mode_;
 };
 
 extern WaterTank water_tank;

@@ -11,6 +11,7 @@
 #include "boost/shared_ptr.hpp"
 #include <pthread.h>
 #include <visualization_msgs/Marker.h>
+#include <vacuum.h>
 //#include "move_type.hpp"
 
 

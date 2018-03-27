@@ -4,6 +4,7 @@
 
 #include <serial.h>
 #include <robot_timer.h>
+#include <speaker.h>
 #include "vacuum.h"
 
 Vacuum vacuum;
@@ -32,21 +33,13 @@ void Vacuum::setTmpMode(uint8_t mode)
 
 void Vacuum::setMode(uint8_t mode)
 {
-	mode_ = mode;
 	ROS_INFO("%s %d: Vacuum last mode set as:%d.", __FUNCTION__, __LINE__, mode_);
-	setSpeedByMode(mode_);
+	mode_ = mode;
+	speaker.play(mode_ == Vac_Normal ? VOICE_CONVERT_TO_NORMAL_SUCTION : VOICE_CONVERT_TO_LARGE_SUCTION,false);
 }
 
-void Vacuum::switchToNext()
+void Vacuum::Switch()
 {
-	// Switch the vacuum mode_ between Max and Normal
-	if (mode_ == Vac_Normal)
-	{
-		setMode(Vac_Max);
-	} else
-	{
-		setMode(Vac_Normal);
-	}
 	// Process the vacuum mode_
 	setSpeedByMode(mode_);
 }

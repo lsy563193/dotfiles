@@ -8,14 +8,14 @@
 #include <cstdint>
 
 #define Vac_Speed_Max				100 //15500rpm
-#define Vac_Speed_Normal			60 //9000rpm
+#define Vac_Speed_Normal			80 //12000rpm
 #define Vac_Speed_NormalL			50 //8000rpm
 
 #define TWO_HOURS					7200
 
 enum {
 Vac_Normal=0,
-Vac_Max,
+Vac_Max=1,
 };
 
 class Vacuum {
@@ -34,7 +34,7 @@ public:
 
 	void setMode(uint8_t mode);
 
-	void switchToNext();
+	void Switch();
 
 	void setLastMode();
 
@@ -72,7 +72,7 @@ public:
 private:
 	void setSpeedByMode(uint8_t);
 
-	uint8_t mode_;
+	uint8_t mode_ = Vac_Normal;
 	uint8_t mode_save_;
 	bool oc_;
 

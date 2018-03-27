@@ -5,6 +5,7 @@
 #include "wifi/msg.h"
 #include "wifi/dev.h"
 #include "wifi/packet.h"
+#include "map.h"
 
 class S_Wifi
 {
@@ -20,7 +21,7 @@ public:
 
 	uint8_t replyRobotStatus(int msg_code,const uint8_t seq_num);
 
-	uint8_t replyRealtimeMap();
+	uint8_t replyRealtimeMap(const Points pass_path);
 
 	uint8_t setRobotCleanMode(wifi::WorkMode work_mode);
 
@@ -41,6 +42,8 @@ public:
 	uint8_t uploadLastCleanData();
 
 	bool setWorkMode(int workmode);
+
+	uint8_t setSchedule(const std::vector<uint8_t> data);
 
 	wifi::WorkMode getWorkMode()
 	{

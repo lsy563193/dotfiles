@@ -31,6 +31,7 @@ ModeIdle::ModeIdle():
 	first_time_seen_charger_ = ros::Time::now().toSec();
 	last_time_seen_charger_ = first_time_seen_charger_;
 
+	s_wifi.replyRobotStatus(0xc8,0x00);
 //	// todo:debug
 //	infrared_display.displayErrorMsg(9, 1234, 101);
 }
@@ -251,7 +252,9 @@ void ModeIdle::remoteKeyHandler(bool state_now, bool state_last)
 
 void ModeIdle::remoteMax(bool state_now, bool state_last)
 {
-	beeper.beepForCommand(INVALID);
+	beeper.beepForCommand(VALID);
+	uint8_t vac_mode = vacuum.getMode();
+	vacuum.setMode(!vac_mode);
 	remote.reset();
 }
 

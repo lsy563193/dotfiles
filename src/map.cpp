@@ -48,7 +48,7 @@ GridMap::~GridMap()
  * @return	CellState
  */
 CellState GridMap::getCell(int id, int16_t x, int16_t y) {
-	CellState val;
+	CellState val=0;
 	int16_t x_min, x_max, y_min, y_max;
 	if (id == CLEAN_MAP || id == COST_MAP) {
 		x_min = xRangeMin;

@@ -32,7 +32,11 @@ CleanModeNav::CleanModeNav()
 
 	IMoveType::sp_mode_ = this; // todo: is this sentence necessary? by Austin
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
+
 	go_home_path_algorithm_.reset();
+
+	//clear real time map whitch store in cloud....
+	//s_wifi.clearRealtimeMap(0x00);
 }
 
 CleanModeNav::~CleanModeNav()
@@ -134,6 +138,9 @@ bool CleanModeNav::mapMark()
 			clean_map_.setCell(CLEAN_MAP,cost_block.second.x,cost_block.second.y,BLOCKED_SLIP);
 	}
 
+	//tx pass path via serial wifi
+	s_wifi.replyRealtimeMap(passed_path_);
+	s_wifi.replyRobotStatus(0xc8,0x00);
 	c_blocks.clear();
 	passed_path_.clear();
 	return false;
@@ -391,17 +398,26 @@ void CleanModeNav::remoteMax(bool state_now, bool state_last)
 	if(isStateClean() || isStateResumeLowBatteryCharge())
 	{
 		beeper.beepForCommand(VALID);
+		uint8_t vac_mode = vacuum.getMode();
+		vacuum.setMode(!vac_mode);
 		if (!water_tank.isEquipped())
-			vacuum.switchToNext();
+			vacuum.Switch();
 	}
 	else if (isStateGoHomePoint() || isStateGoToCharger())
 	{
 		beeper.beepForCommand(VALID);
+		uint8_t vac_mode = vacuum.getMode();
+		vacuum.setMode(!vac_mode);
 		if (!water_tank.isEquipped())
 		{
-			vacuum.switchToNext();
+			vacuum.Switch();
 			vacuum.setTmpMode(Vac_Normal);
 		}
+	}
+	else if(isStatePause()){
+		beeper.beepForCommand(VALID);
+		uint8_t vac_mode = vacuum.getMode();
+		vacuum.setMode(!vac_mode);
 	}
 	else
 		beeper.beepForCommand(INVALID);
@@ -622,6 +638,7 @@ void CleanModeNav::switchInStateClean() {
 		go_home_path_algorithm_.reset();
 		go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_, start_point_));
 		speaker.play(VOICE_BACK_TO_CHARGER, true);
+		s_wifi.uploadLastCleanData();
 	}
 	sp_state->init();
 	action_i_ = ac_null;
