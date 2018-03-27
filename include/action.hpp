@@ -267,6 +267,11 @@ private:
 	uint8_t bumper_cnt_{0};
 	bool lidar_bumper_test();
 
+/*
+ * Test wifi module.
+ */
+	bool wifi_test();
+
 	void error_loop(uint8_t step, uint16_t content, uint16_t error_code);
 };
 #endif //PP_ACTION_H

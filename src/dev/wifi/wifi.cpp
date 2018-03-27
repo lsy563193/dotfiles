@@ -815,7 +815,6 @@ uint8_t S_Wifi::uploadLastCleanData()
 
 bool S_Wifi::factoryTest()
 {
-
 	int waitResp = 0;
 	this->resume();
 	while(!is_wifi_active_)
