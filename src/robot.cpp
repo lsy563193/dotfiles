@@ -753,6 +753,9 @@ void robot::updateRobotPositionForTest()
 }
 
 bool robot::checkTilt() {
+	if (!gyro.isTiltCheckingEnable())
+		return false;
+
 //	ROS_WARN("is_first_tilt = %d", is_first_tilt);
 	auto angle = gyro.getAngleR();
 //	ROS_WARN("angle = %f", angle);
