@@ -270,6 +270,7 @@ public:
 		else 
 			return 0x00;
 	}
+
 	uint8_t isEnable(uint8_t num) const
 	{
 		if(num< 10)
@@ -277,6 +278,7 @@ public:
 		else
 			return 0x00;
 	}
+
 	uint8_t getWeek(uint8_t num) const
 	{
 		if(num< 10)

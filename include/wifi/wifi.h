@@ -43,7 +43,7 @@ public:
 
 	bool setWorkMode(int workmode);
 
-	uint8_t setSchedule(const std::vector<uint8_t> data);
+	uint8_t setSchedule(const wifi::SetScheduleRxMsg &sche);
 
 	wifi::WorkMode getWorkMode()
 	{

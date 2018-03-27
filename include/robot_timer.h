@@ -14,6 +14,10 @@ public:
 		work_start_time_ = time(NULL);
 		wall_follow_start_time_ = time(NULL);
 		trap_start_time_ = time(NULL);
+		weeks_= std::vector<uint8_t>(10,0);
+		hours_= std::vector<uint8_t>(10,0);
+		mints_= std::vector<uint8_t>(10,0);
+		planEnable_ = std::vector<uint8_t>(10,0);
 	}
 
 	void initWorkTimer(void);
@@ -47,6 +51,39 @@ public:
 		return plan_status_;
 	}
 
+	bool setPlan(uint8_t num,uint8_t week,uint8_t hour,uint8_t mint);
+
+	uint8_t getWeeks(uint8_t pos)
+	{
+		if(pos < 10)
+			return weeks_[pos];
+		else
+			return 0;
+	}
+
+	uint8_t getHours(uint8_t pos)
+	{
+		if(pos < 10)
+			return hours_[pos];
+		else
+			return 0;
+	}
+
+	uint8_t getMints(uint8_t pos)
+	{
+		if(pos < 10)
+			return mints_[pos];
+		else
+			return 0;
+	}
+
+	uint8_t getPlanEnable(uint8_t pos)
+	{
+		if(pos < 10)
+			return planEnable_[pos];
+		else
+			return 0;
+	}
 private:
 	// Variable for plan status
 	uint8_t plan_status_;
@@ -55,6 +92,11 @@ private:
 	uint32_t saved_work_time_;
 	time_t wall_follow_start_time_;
 	time_t trap_start_time_;
+
+	std::vector<uint8_t> planEnable_;
+	std::vector<uint8_t> weeks_;
+	std::vector<uint8_t> hours_;
+	std::vector<uint8_t> mints_;
 };
 
 extern Timer robot_timer;
