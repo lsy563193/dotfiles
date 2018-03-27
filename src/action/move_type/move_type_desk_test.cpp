@@ -332,6 +332,7 @@ bool MoveTypeDeskTest::dataExtract(const uint8_t *buf)
 		wheel.setRightCurrent((buf[REC_R_WHEEL_CUNT_H] << 8) | buf[REC_R_WHEEL_CUNT_L]);
 
 		vacuum.setCurrent((buf[REC_VACUUM_CURRENT_H] << 8) | buf[REC_VACUUM_CURRENT_L]);
+//		printf("vacuum current - baseline:%d.\n", vacuum.getCurrent() - vacuum_current_baseline_);
 
 //		water_tank.setCurrent((buf[REC_WATER_PUMP_CURRENT_H] << 8) | buf[REC_WATER_PUMP_CURRENT_L]);
 		water_tank.setCurrent(0);
@@ -910,7 +911,7 @@ bool MoveTypeDeskTest::checkCurrent()
 	uint16_t side_brush_current_ref_{1675 - 1620}; // 55
 	uint16_t main_brush_current_ref_{1785 - 1620}; // 165
 	uint16_t wheel_current_ref_{1685 - 1620}; // 65
-	uint16_t vacuum_current_ref_{1970 - 1620}; // 350
+	uint16_t vacuum_current_ref_{2285 - 1620}; // 665
 	uint16_t water_tank_current_ref_{0};
 	uint16_t robot_current_ref_{2250 - 1775}; // 475
 

@@ -406,12 +406,12 @@ bool ActionLifeCheck::checkCurrent()
 	else if (water_tank_current_max_ - water_tank_current_baseline_ > water_tank_current_ref_)
 		error_code_ = VACUUM_CURRENT_ERROR; // todo:*/
 
-	uint16_t side_brush_current_ref_{1670 - 1620};
-	uint16_t main_brush_current_ref_{1785 - 1620};
-	uint16_t wheel_current_ref_{1680 - 1620};
-	uint16_t vacuum_current_ref_{1970 - 1620};
+	uint16_t side_brush_current_ref_{1675 - 1620}; // 55
+	uint16_t main_brush_current_ref_{1785 - 1620}; // 165
+	uint16_t wheel_current_ref_{1685 - 1620}; // 65
+	uint16_t vacuum_current_ref_{2285 - 1620}; // 665
 	uint16_t water_tank_current_ref_{0};
-	uint16_t robot_current_ref_{2170 - 1775};// todo:
+	uint16_t robot_current_ref_{2250 - 1775}; // 475
 
 //	wheel_current_ref_ = static_cast<uint16_t>(100.0 /*mA*/ / (330.0 /*3.3v reference voltage*/ / 0.1 /*Sampling resistance*/ / 4096.0 /*Accuracy*/));
 	ROS_INFO("%s %d: Wheel current reference: %d.", __FUNCTION__, __LINE__, wheel_current_ref_);
