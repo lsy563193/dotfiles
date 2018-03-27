@@ -813,7 +813,7 @@ uint8_t S_Wifi::uploadLastCleanData()
 bool S_Wifi::factoryTest()
 {
 	this->resume();
-	usleep(20000);
+	usleep(2000000);
 	int waitResp = 0;
 	isRegDevice_ = false;
 	wifi::FactoryTestTxMsg p(0x01);
