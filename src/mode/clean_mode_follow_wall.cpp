@@ -122,12 +122,18 @@ void CleanModeFollowWall::remoteMax(bool state_now, bool state_last)
 	if(isStateClean())
 	{
 		beeper.beepForCommand(VALID);
+		uint8_t vac_mode = vacuum.getMode();
+		vacuum.setMode(!vac_mode);
+
+
 		if (!water_tank.isEquipped())
 			vacuum.Switch();
 	}
 	else if (isStateGoHomePoint() || isStateGoToCharger())
 	{
 		beeper.beepForCommand(VALID);
+		uint8_t vac_mode = vacuum.getMode();
+		vacuum.setMode(!vac_mode);
 		if (!water_tank.isEquipped())
 		{
 			vacuum.Switch();

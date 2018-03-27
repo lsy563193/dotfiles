@@ -128,7 +128,8 @@ void ActionLifeCheck::run()
 			if (ros::Time::now().toSec() - start_time_stamp_ > 0.3)
 			{
 				brush.normalOperate();
-				vacuum.setMode(Vac_Normal,true);
+				vacuum.setMode(Vac_Normal);
+				vacuum.Switch();
 				water_tank.normalOperate();
 				wheel.setPidTargetSpeed(LINEAR_MAX_SPEED, LINEAR_MAX_SPEED);
 				left_brush_current_baseline_ /= sum_cnt_;
@@ -368,7 +369,7 @@ void ActionLifeCheck::run()
 		default: // case 4:
 		{
 			ROS_INFO("%s %d: Test finish.", __FUNCTION__, __LINE__);
-			infrared_display.displayNormalMsg(0, 0);
+			infrared_display.displayNormalMsg(0, 9999);
 			speaker.play(VOICE_TEST_SUCCESS);
 			key_led.setMode(LED_STEADY, LED_GREEN);
 //			beeper.beep(2, 40, 40, 3);

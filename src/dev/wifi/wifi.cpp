@@ -175,9 +175,9 @@ bool S_Wifi::init()
 						water_tank.setMode(WaterTank::PUMP_MID);
 				else
 					if(msg.isVacuum())	
-						vacuum.setMode(Vac_Max,false);
+						vacuum.setMode(Vac_Max);
 					else
-						vacuum.setMode(Vac_Normal,false);
+						vacuum.setMode(Vac_Normal);
 				//ack
 				wifi::MaxCleanPowerTxMsg p(vacuum.getMode() == Vac_Max,water_tank.getMode() == WaterTank::PUMP_HIGH);
 				s_wifi_tx_.push( std::move(p)).commit();

@@ -395,7 +395,6 @@ void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path) {
 		auto p3 = iterator + 2;
 
 		auto shift_cell = find_index(*p1, *p2, *p3);
-		ROS_INFO("%s %d: step *.2 do success shift_cell(%d,%d)\n\n", __FUNCTION__, __LINE__,shift_cell.x, shift_cell.y);
 		bool is_dir_x = shift_cell.x != 0;
 		check_limit(shift_cell,is_dir_x);
 

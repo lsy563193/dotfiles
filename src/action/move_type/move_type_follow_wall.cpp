@@ -301,7 +301,7 @@ bool MoveTypeFollowWall::lidarTurnRadian(double &turn_radian)
 		}
 		else {//hit the same side, turn angle limit
 			param.radian_min = degree_to_radian(18);
-			param.radian_max = degree_to_radian(90);
+			param.radian_max = degree_to_radian(100);
 		}
 
 		if (ev.bumper_triggered == BLOCK_ALL) {
