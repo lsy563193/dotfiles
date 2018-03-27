@@ -3,7 +3,7 @@
     <env name="ROSCONSOLE_CONFIG_FILE"
          value="$(find pp)/custom_rosconsole.conf"/>
 
-    <node name="pp" pkg="pp" type="pp" output="screen">
+    <node name="pp" pkg="pp" type="pp" output="screen" >
         <!--<param name="serial_port" type="string" value="/dev/ttyUSB0" />-->
         <param name="serial_port" type="string" value="/dev/ttyS2"/>
         <param name="wifi_port" type="string" value="/dev/ttyS1"/>

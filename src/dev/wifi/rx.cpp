@@ -104,6 +104,10 @@ void RxManager::handleMsg( Packet &&a_packet )
 		handleMsg( RemoteControlRxMsg( std::move( a_packet )) );
 		break;
 
+	case SetScheduleRxMsg::MSG_CODE:
+		handleMsg(SetScheduleRxMsg(std::move(a_packet)));
+		break;
+
 	case ResetConsumableStatusRxMsg::MSG_CODE:
 		handleMsg( ResetConsumableStatusRxMsg( std::move( a_packet )) );
 		break;
@@ -139,12 +143,15 @@ void RxManager::handleMsg( Packet &&a_packet )
 	case ClearRealtimeMapAckMsg::MSG_CODE:
 		handleMsg( ClearRealtimeMapAckMsg( std::move( a_packet )) );
 		break;
+
 	case wifiResumeAckMsg::MSG_CODE:
 		handleMsg( wifiResumeAckMsg( std::move( a_packet )) );
 		break;
+
 	case wifiSuspendAckMsg::MSG_CODE:
 		handleMsg( wifiSuspendAckMsg( std::move( a_packet )) );
 		break;
+
 	default:
 		ROS_WARN( "wifi::RxManager::handleMsg ,Unknown msg_code: %u", a_packet.msg_code() );
 		break;

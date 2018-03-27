@@ -619,28 +619,28 @@ void Serial::send_routine_cb()
 		}
 		t = clock();
 		//serial wifi send
-
 		wifi_send_state_cnt++;
 		wifi_send_map_cnt++;
-		if(wifi_send_state_cnt>= 150 && wifi_send_map_cnt < 300)//
+		if(wifi_send_state_cnt == 100 )//2s
 		{
-			wifi_send_state_cnt= 0;
-			INFO_YELLOW("SEND ROBOT STATUS");
+			wifi_send_state_cnt = 0;
+			//INFO_YELLOW("SEND ROBOT STATUS");
 			if(S_Wifi::is_wifi_connected_
 						&& s_wifi.isStatusRequest_
 						&& s_wifi.is_cloud_connected_)
 				s_wifi.replyRobotStatus(0xc8,0x00);
 		}
-		if(wifi_send_map_cnt >=300)
-		{
-			wifi_send_map_cnt = 0;
-			INFO_YELLOW("SEND REAL TIME MAP");
-			if(S_Wifi::is_wifi_connected_
-						 && s_wifi.is_cloud_connected_
-						 && s_wifi.isStatusRequest_
-						 )
-				s_wifi.replyRealtimeMap();
-		}
+	//	if(wifi_send_map_cnt == 250)
+	//	{
+	//		wifi_send_map_cnt = 0;
+	//		wifi_send_state_cnt = 0;
+	//		INFO_YELLOW("SEND REAL TIME MAP");
+	//		if(S_Wifi::is_wifi_connected_
+	//					 && s_wifi.is_cloud_connected_
+	//					 && s_wifi.isStatusRequest_
+	//					 )
+	//			s_wifi.replyRealtimeMap();
+	//	}
 		//r.sleep();
 		/*-------------------Process for beeper.play and key_led -----------------------*/
 		key_led.processLed();

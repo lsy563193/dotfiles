@@ -20,11 +20,7 @@ bool WaterTank::checkEquipment()
 	if (getStatus())
 		is_equipped_ = true;
 	else
-	{
 		stop();
-		operation_ = false;
-		is_equipped_ = false;
-	}
 
 //	printf("watertank%d\n", is_equipped_);
 	ROS_INFO("%s %d: Robot is %scarrying a water tank.", __FUNCTION__, __LINE__, is_equipped_ ? "" : "not ");
@@ -93,12 +89,15 @@ void WaterTank::setMode(uint8_t mode)
 	switch (mode)
 	{
 		case PUMP_HIGH:
+			mode_ = PUMP_HIGH;
 			pump_time_interval_ = 8 * (20 * pump_max_cnt_ / 50.0);
 			break;
 		case PUMP_MID:
+			mode_ = PUMP_MID;
 			pump_time_interval_ = 12 * (20 * pump_max_cnt_ / 50.0);
 			break;
 		default: // case PUMP_LOW:
+			mode_ = PUMP_LOW;
 			pump_time_interval_ = 15 * (20 * pump_max_cnt_ / 50.0);
 			break;
 	}

@@ -48,6 +48,22 @@ string RemoteControlRxMsg::describe() const
 	return ss.str();
 }
 
+string SetScheduleRxMsg::describe() const
+{
+	std::ostringstream ss;
+	for(uint8_t i=0 ;i<10; i++)
+	{
+		if(isEnable(i))
+		{
+			ss << "set schedule msg: "<< getScheNum(i)<<", weeks (" << getWeek(i)
+			<< "), hour(" << getHour(i)<< "), second(" << getMin(i) <<")";
+
+		}
+	}
+	return ss.str();
+
+}
+
 string ResetConsumableStatusRxMsg::describe() const
 {
 	std::ostringstream ss;

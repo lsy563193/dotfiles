@@ -99,7 +99,7 @@ bool MoveTypeLinear::isFinish()
 				return false;
 			}else {
 //				ROS_WARN("111should_follow_wall(%d,%d)!!!", p_clean_mode->should_follow_wall, ev.tilt_triggered);
-				if (ev.lidar_triggered || ev.rcon_status || ev.obs_triggered) {
+				if (ev.bumper_triggered || ev.lidar_triggered || ev.rcon_status || ev.obs_triggered) {
 					p_clean_mode->should_follow_wall = true;
 				}
 //				ROS_WARN("222should_follow_wall(%d)!!!", p_clean_mode->should_follow_wall);
