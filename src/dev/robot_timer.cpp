@@ -50,3 +50,13 @@ bool Timer::trapTimeout(double duration)
 	return difftime(time(NULL), trap_start_time_) > duration;
 }
 
+bool Timer::setPlan(uint8_t num,uint8_t week,uint8_t hour,uint8_t mint)
+{
+	ROS_INFO("%s,%d,set plan num %d, %d-%d-%d",__FUNCTION__,__LINE__,num,week,hour,mint);
+	if(num <= weeks_.size())
+		weeks_.at(num)  = week;
+	if(num <= hours_.size())
+		hours_.at(num) = hour;
+	if(num <= mints_.size())
+		mints_.at(num)= mint;
+}

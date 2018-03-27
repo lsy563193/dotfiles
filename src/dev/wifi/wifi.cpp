@@ -107,7 +107,10 @@ bool S_Wifi::init()
 				//todo
 				std::vector<wifi::ScheduleStatusTxMsg::Schedule> vec_sch;
 				for(int i = 0;i<10;i++)
-					vec_sch.push_back(wifi::ScheduleStatusTxMsg::Schedule::createDisabled(i));//tmp set to disable
+				{
+					wifi::ScheduleStatusTxMsg::Schedule sche(i,robot_timer.getPlanEnable(i),robot_timer.getWeeks(i),robot_timer.getHours(i),robot_timer.getMints(i));
+					vec_sch.push_back(sche);//tmp set to disable
+				}
 				//ack
 				wifi::ScheduleStatusTxMsg p(
 							vec_sch,
@@ -198,7 +201,9 @@ bool S_Wifi::init()
 	s_wifi_rx_.regOnNewMsgListener<wifi::SetScheduleRxMsg>(
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::SetScheduleRxMsg &msg = static_cast<const wifi::SetScheduleRxMsg&>(a_msg);
-				//ack
+
+				this->setSchedule(msg);
+				//ack;
 				wifi::Packet p(
 							-1,
 							msg.seq_num(),
@@ -207,9 +212,6 @@ bool S_Wifi::init()
 							msg.data()
 							);
 				s_wifi_tx_.push(std::move(p)).commit();
-
-				//todo
-				//setSchedule(std::move(msg.data()));
 			});
 	//reset consumable status
 	s_wifi_rx_.regOnNewMsgListener<wifi::ResetConsumableStatusRxMsg>(
@@ -293,7 +295,9 @@ bool S_Wifi::init()
 				//todo
 			}
 	);
-	//factory test
+	
+	//-----ack------
+	//factory test ack
 	s_wifi_rx_.regOnNewMsgListener<wifi::FactoryTestRxMsg>(
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::FactoryTestRxMsg &msg = static_cast<const wifi::FactoryTestRxMsg&>( a_msg );
@@ -303,7 +307,6 @@ bool S_Wifi::init()
 			}
 	);
 
-	//-----ack cloud------
 	s_wifi_rx_.regOnNewMsgListener<wifi::RealtimeMapUploadAckMsg>(
 			[&](const wifi::RxMsg &a_msg){
 			}
@@ -810,7 +813,7 @@ uint8_t S_Wifi::uploadLastCleanData()
 bool S_Wifi::factoryTest()
 {
 	this->resume();
-	usleep(20000);
+	usleep(2000000);
 	int waitResp = 0;
 	isRegDevice_ = false;
 	wifi::FactoryTestTxMsg p(0x01);
@@ -828,7 +831,7 @@ bool S_Wifi::factoryTest()
 	ROS_INFO("INTO FACTORY TEST!!");
 	while(isRegDevice_ == false){
 		usleep(20000);
-		if(waitResp >= 10000){
+		if(waitResp >= 1500){//30s
 			ROS_INFO("%s,%d,FACTORY TEST FAIL!!",__FUNCTION__,__LINE__);
 			return false;
 		}
@@ -913,10 +916,25 @@ bool S_Wifi::setWorkMode(int mode)
 	return true;
 }
 
-
-uint8_t setSchedule(const std::vector<uint8_t> data)
+uint8_t S_Wifi::setSchedule(const wifi::SetScheduleRxMsg &sche)
 {
+	bool isScheSet = false;
+	for(uint8_t i = 0;i<10;i++)
+	{
+		uint8_t schenum = sche.getScheNum(i);
+		uint8_t weeks = sche.getWeek(i);
+		uint8_t hours = sche.getHour(i);
+		uint8_t mints = sche.getMin(i);
+		ROS_INFO("schedule num %d,isEnable %d,week %d,hour %d,minute %d\n",
+					schenum,sche.isEnable(i),weeks,hours,mints);
+		if(sche.isEnable(i))
+		{
+			isScheSet = true;
+			robot_timer.setPlan(schenum,weeks,hours,mints);
+		}
+	}
+	if(isScheSet)
+		speaker.play(VOICE_APPOINTMENT_DONE);
 	return 0;
 	//robot_timer.setPlanStatus();
 }
-

@@ -18,16 +18,17 @@ ActionR16Test::ActionR16Test()
 
 void ActionR16Test::run()
 {
-
 	// Test item: RAM.
-	if (!RAM_test())
+	infrared_display.displayNormalMsg(1, 0);
+	/*if (!RAM_test())
 	{
 		ROS_ERROR("%s %d: RAM test failed!!", __FUNCTION__, __LINE__);
 		error_loop(1, 0, RAM_ERROR);
-	}
+	}*/
 	ROS_INFO("%s %d: Test for RAM successed.", __FUNCTION__, __LINE__);
 
 	// Test item: Flash.
+	infrared_display.displayNormalMsg(2, 0);
 	if (!Flash_test())
 	{
 		ROS_ERROR("%s %d: Flash test failed!!", __FUNCTION__, __LINE__);
@@ -37,6 +38,7 @@ void ActionR16Test::run()
 
 
 	// Test item: Lidar.
+	infrared_display.displayNormalMsg(3, 0);
 	if (!lidar_test())
 	{
 		ROS_ERROR("%s %d: Lidar test failed!!", __FUNCTION__, __LINE__);
@@ -44,25 +46,28 @@ void ActionR16Test::run()
 	}
 	ROS_INFO("%s %d: Test for lidar succeeded.", __FUNCTION__, __LINE__);
 
+	// Test item: serial wifi test.
+	infrared_display.displayNormalMsg(4, 0);
+	if (!wifi_test())
+	{
+		ROS_ERROR("%s %d: Serial WIFI test failed!!", __FUNCTION__, __LINE__);
+		error_loop(4, 0, SERIAL_WIFI_ERROR);
+	}
+
 	// Test item: Lidar bumper.
+	infrared_display.displayNormalMsg(5, 0);
 	if (bumper.lidarBumperInit(robot::instance()->getLidarBumperDev().c_str()) != 1 || !lidar_bumper_test())
 	{
 
 		ROS_ERROR("%s %d: Lidar bumper test failed!!", __FUNCTION__, __LINE__);
-		error_loop(4, bumper_cnt_, LIDAR_BUMPER_ERROR);
+		error_loop(5, bumper_cnt_, LIDAR_BUMPER_ERROR);
 	}
 	ROS_INFO("%s %d: Test for lidar bumper succeeded.", __FUNCTION__, __LINE__);
 
-	// Test item: serial wifi test.
-	if (s_wifi.factoryTest())
-	{
-		ROS_ERROR("%s %d: Serial WIFI test failed!!", __FUNCTION__, __LINE__);
-		error_loop(5, 0, SERIAL_WIFI_ERROR);
-	}
 	// Test finish.
 	double alarm_time = ros::Time::now().toSec();
 	speaker.play(VOICE_TEST_SUCCESS);
-	infrared_display.displayNormalMsg(0, 0);
+	infrared_display.displayNormalMsg(0, 9999);
 	key_led.setMode(LED_STEADY, LED_GREEN);
 	ROS_INFO("%s %d: Test finish.", __FUNCTION__, __LINE__);
 	while (ros::ok())
@@ -79,7 +84,6 @@ void ActionR16Test::run()
 bool ActionR16Test::RAM_test()
 {
 	ROS_INFO("%s %d: Start RAM test.", __FUNCTION__, __LINE__);
-	infrared_display.displayNormalMsg(1, 0);
 	bool test_ret = false;
 	int RAM_test_size = 2; // In Mb.
 	int RAM_test_block_cnt = 3; // Test RAM_test_block_cnt blocks of RAM sizing RAM_test_size Mb.
@@ -159,7 +163,6 @@ bool ActionR16Test::Flash_test()
 {
 
 	ROS_INFO("%s %d: Start Flash test.", __FUNCTION__, __LINE__);
-	infrared_display.displayNormalMsg(2, 0);
 	std::string origin_file = "/origin_random.file";
 	std::string new_file = "/random.file";
 	std::string cmd;
@@ -221,28 +224,38 @@ bool ActionR16Test::Flash_test()
 bool ActionR16Test::lidar_test()
 {
 	ROS_INFO("%s %d: Start lidar test.", __FUNCTION__, __LINE__);
-	infrared_display.displayNormalMsg(3, 0);
 	ros::NodeHandle nh_;
 	ros::Subscriber scan_sub_;
 	scan_sub_ = nh_.subscribe("scanOriginal", 1, &Lidar::scantestCb, &lidar);
 	lidar.init();
 	while (ros::ok() && !lidar.motorCtrl(ON))
 		usleep(500000);
-	while (ros::ok() && !lidar.isScanOriginalReady())
-		usleep(200000);
 
 	// Test logic(not finished).
-	sleep(1);
+	double start_time = ros::Time::now().toSec();
+	bool receive_scan{false};
+	while (ros::ok() && ros::Time::now().toSec() - start_time < 15)
+	{
+		usleep(200000);
+		if (lidar.isScanOriginalReady())
+		{
+			ROS_INFO("%s %d: Receive scan.", __FUNCTION__, __LINE__);
+			receive_scan = true;
+			break;
+		}
+	}
+
+	if (!receive_scan)
+		ROS_ERROR("%s %d: Time out.", __FUNCTION__, __LINE__);
 
 	lidar.motorCtrl(OFF);
 	scan_sub_.shutdown();
-	return true;
+	return receive_scan;
 }
 
 bool ActionR16Test::lidar_bumper_test()
 {
 	ROS_INFO("%s %d: Start lidar bumper test.", __FUNCTION__, __LINE__);
-	infrared_display.displayNormalMsg(4, 0);
 
 	int test_bumper_cnt = 5;
 	bool last_bumper_status = false;
@@ -280,5 +293,10 @@ void ActionR16Test::error_loop(uint8_t test_stage, uint16_t content, uint16_t er
 			ROS_ERROR("%s %d: Test ERROR. test_stage_: %d. error_code: %d, content: %d", __FUNCTION__, __LINE__, test_stage, error_code, content);
 		}
 	}
+}
+
+bool ActionR16Test::wifi_test()
+{
+	return s_wifi.factoryTest();
 }
 
