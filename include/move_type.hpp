@@ -21,6 +21,7 @@ public:
 	IMoveType();
 	~IMoveType();
 	bool isFinishForward();
+	bool isNotHandleEvent();
 	bool RconTrigger();
 	bool handleMoveBackEvent(ACleanMode* p_clean_mode);
 	bool handleMoveBackEventLinear(ACleanMode *p_clean_mode);

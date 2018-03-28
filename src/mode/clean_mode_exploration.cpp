@@ -208,9 +208,8 @@ bool CleanModeExploration::markMapInNewCell() {
 
 void CleanModeExploration::resetErrorMarker() {
 	//set unclean to map
-//	ROS_ERROR("%s,%d,size:%d",__FUNCTION__,__LINE__,error_marker_.size());
+	ROS_INFO("%s,%d,size:%d",__FUNCTION__,__LINE__,error_marker_.size());
 	auto time = ros::Time::now().toSec();
-//	int i = 0;
 	for(auto ite = error_marker_.begin();ite != error_marker_.end();ite++){
 		if(error_marker_.empty())
 			break;
@@ -221,7 +220,6 @@ void CleanModeExploration::resetErrorMarker() {
 //			ROS_INFO("%s,%d,i:%d,size:%d",__FUNCTION__,__LINE__,i,error_marker_.size());
 			error_marker_.erase(ite);
 		}
-//		i++;
 	}
 }
 
