@@ -23,6 +23,11 @@ void KeyLed::setMode(uint8_t type, uint8_t color, uint16_t time_ms)
 	led_update_flag_ = true;
 }
 
+uint8_t KeyLed::getColor()
+{
+	return led_color_;
+}
+
 
 void KeyLed::processLed()
 {

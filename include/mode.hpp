@@ -303,7 +303,12 @@ public:
 	virtual bool markRealTime(){return false;};
 	virtual bool markMapInNewCell(){return false;};
 
-	bool isRemoteGoHomePoint();
+	bool isRemoteGoHomePoint(){
+		return remote_go_home_point;
+	};
+    bool isGoHomePointForLowPower(){
+		return go_home_for_low_battery_;
+	}
 	void setHomePoint();
 	bool estimateChargerPos(uint32_t rcon_value);
 	void setChargerArea(const Point_t charge_pos);
@@ -492,6 +497,7 @@ protected:
 	Points home_points_{};
 	bool should_go_to_charger_{false};
 	bool remote_go_home_point{false};
+	bool go_home_for_low_battery_{};
 	bool switch_is_off_{false};
 	Points charger_pose_;
 	Points tmp_charger_pose_;
@@ -622,7 +628,6 @@ private:
 	float paused_odom_radian_{};
 	float start_align_radian_{};
 	Point_t continue_point_{};
-	bool go_home_for_low_battery_{};
 	static int align_count_;
 };
 
