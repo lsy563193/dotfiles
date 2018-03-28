@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 #include "wifi/packet.h"
+#include <string.h>
+#include <sstream>
 
 namespace wifi
 {
@@ -732,6 +734,12 @@ private:
 			const uint16_t mixed_hour);
 };
 
+class ForceUnbindTxMsg: public Packet
+{
+public:
+	explicit ForceUnbindTxMsg( const uint8_t seq_num = 0 );
+};
+
 class AccumulatedWorkTimeUploadAckMsg: public RxMsg
 {
 public:
@@ -793,11 +801,72 @@ public:
 	}
 };
 
-
-class ForceUnbindTxMsg: public Packet
+class wifiVersionAckMsg: public RxMsg
 {
 public:
-	explicit ForceUnbindTxMsg( const uint8_t seq_num = 0 );
+	static constexpr int MSG_CODE = 0xFE;
+	using RxMsg::RxMsg;
+
+
+	uint32_t  getModuleVersion() const
+	{
+		uint32_t ver = 0;
+		for(int i =0 ;i<data().size();i++)
+		{
+			if(i<3)
+				ver |= (data().at(i) & 0x000000ff)<<((2-i)*8);	
+		}
+		return ver;
+	}
+
+	uint32_t getCloudVersion() const
+	{
+		uint32_t ver = 0;
+		for(int i =3 ;i<data().size();i++)
+		{
+			if(i>=3)
+				ver |= (data().at(i) & 0x000000ff)<<((5-i)*8);	
+		}
+		return ver;
+	}
+
+	std::string describe() const override
+	{
+		char buf[50];
+		memset(buf,0,50);
+		sprintf(buf,"wifi version %x,cloud version %x\n",getModuleVersion(),getCloudVersion());
+		std::ostringstream ss;
+		ss<<buf;
+		return ss.str();
+	}
+};
+
+class wifiMACAckMsg: public RxMsg
+{
+public:
+	static constexpr int MSG_CODE = 0xFF;
+	using RxMsg::RxMsg;	
+
+	uint64_t getMAC() const
+	{
+		uint64_t MAC_ = 0;
+		for(int i=0;i<data().size();i++)
+			MAC_|= data().at(i)<< (8*i);
+		return MAC_;
+	}
+
+	std::string describe() const override
+	{
+		std::ostringstream msg;
+		msg<<"WIFI MAC ADDRESS:";
+		char buf[20];
+		sprintf(buf,"%x %x %x %x %x %x\n",
+					data().at(0), data().at(1),
+					data().at(2), data().at(3),
+					data().at(4), data().at(5));
+		msg<<buf;
+		return msg.str();
+	}
 };
 
 }

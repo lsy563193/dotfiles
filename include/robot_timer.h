@@ -51,7 +51,7 @@ public:
 		return plan_status_;
 	}
 
-	bool setPlan(uint8_t num,uint8_t week,uint8_t hour,uint8_t mint);
+	bool setAppointment(uint8_t num,uint8_t isEnable,uint8_t week,uint8_t hour,uint8_t mint);
 
 	uint8_t getWeeks(uint8_t pos)
 	{

@@ -121,6 +121,7 @@ robot::~robot()
 	brush.stop();
 	vacuum.stop();
 	s_wifi.sleep();
+	wifi_led.set(false);
 	water_tank.stop();
 	serial.setWorkMode(WORK_MODE);
 	usleep(40000);
