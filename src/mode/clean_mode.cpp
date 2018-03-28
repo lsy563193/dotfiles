@@ -1509,11 +1509,6 @@ void ACleanMode::setHomePoint()
 	ROS_INFO("%s %d: %s", __FUNCTION__, __LINE__, msg.c_str());
 }
 
-bool ACleanMode::isRemoteGoHomePoint()
-{
-	return remote_go_home_point;
-}
-
 // ------------------Handlers--------------------------
 void ACleanMode::remoteHome(bool state_now, bool state_last)
 {
