@@ -167,6 +167,7 @@ public:
 
 class NavCleanPathAlgorithm: public APathAlgorithm
 {
+public:
 	/*
 	 * @author Patrick Chow / Lin Shao Yue
 	 * @last modify by Austin Liu
@@ -181,7 +182,19 @@ class NavCleanPathAlgorithm: public APathAlgorithm
 	 * @return: bool, true if generating succeeds.
 	 */
 	bool generatePath(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &plan_path) override;
-
+	/*
+	 * @author Patrick Chow
+	 * @last modify by Austin Liu
+	 *
+	 * This function is for tracing the path from start cell to targets.
+	 *
+	 * @param: GridMap map, it will use it's CLEAN_MAP data.
+	 * @param: Cells target_list, input target list.
+	 * @param: Cell_t start, the start cell.
+	 *
+	 * @return: PathList, a deque of paths from start cell to the input targets.
+	 */
+	void findPath(GridMap &map, const Cell_t &curr, const Cell_t &targets, Cells &path, int last_i);
 private:
 	/*
 	 * @author Patrick Chow
@@ -210,20 +223,6 @@ private:
 	 * @return: Cells, a deque of possible targets.
 	 */
 //	Cells filterAllPossibleTargets(GridMap &map, const Cell_t &curr_cell, BoundingBox2 &b_map);
-
-	/*
-	 * @author Patrick Chow
-	 * @last modify by Austin Liu
-	 *
-	 * This function is for tracing the path from start cell to targets.
-	 *
-	 * @param: GridMap map, it will use it's CLEAN_MAP data.
-	 * @param: Cells target_list, input target list.
-	 * @param: Cell_t start, the start cell.
-	 *
-	 * @return: PathList, a deque of paths from start cell to the input targets.
-	 */
-	void findPath(GridMap &map, const Cell_t &curr, const Cell_t &targets, Cells &path, int last_i);
 
 	/*
 	 * @author Patrick Chow

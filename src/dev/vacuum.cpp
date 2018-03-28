@@ -4,7 +4,6 @@
 
 #include <serial.h>
 #include <robot_timer.h>
-#include <speaker.h>
 #include "vacuum.h"
 
 Vacuum vacuum;

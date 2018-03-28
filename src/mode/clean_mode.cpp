@@ -122,7 +122,7 @@ ACleanMode::~ACleanMode()
 			speaker.play(VOICE_CHECK_SWITCH, false);
 			ROS_WARN("%s %d: Switch is not on. Stop cleaning.", __FUNCTION__, __LINE__);
 		}
-		else
+		else if(mode_i_ != cm_exploration)
 		{
 			speaker.play(VOICE_CLEANING_FINISHED, false);
 			ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);

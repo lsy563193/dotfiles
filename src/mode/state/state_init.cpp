@@ -7,6 +7,9 @@
 #include "key_led.h"
 
 void StateInit::init() {
-	key_led.setMode(LED_FLASH, LED_GREEN, 600);
+	if(sp_cm_->next_mode_i_ == sp_cm_->cm_exploration)
+		key_led.setMode(LED_FLASH, LED_ORANGE, 600);
+	else
+		key_led.setMode(LED_FLASH, LED_GREEN, 600);
 }
 

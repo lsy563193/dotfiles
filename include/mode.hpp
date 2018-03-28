@@ -124,11 +124,19 @@ public:
 		is_clean_mode_navigation_ = set;
 	}
 
+	bool isExpMode(){
+		return is_clean_mode_exploration_;
+	}
+	void setExpMode(bool set){
+		is_clean_mode_exploration_ = set;
+	}
+
 	double wall_distance;
+	int mode_i_{};
 
 protected:
 	bool is_clean_mode_navigation_{false};
-	int mode_i_{};
+	bool is_clean_mode_exploration_{false};
 private:
 
 };
