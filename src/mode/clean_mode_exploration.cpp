@@ -95,7 +95,11 @@ void CleanModeExploration::keyClean(bool state_now, bool state_last) {
 	if (long_press)
 		ev.key_long_pressed = true;
 	else
+	{
+		speaker.play(VOICE_END_TO_FIND_CHARGEER ,false);
 		ev.key_clean_pressed = true;
+	}
+
 	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
 
 	key.resetTriggerStatus();
@@ -106,6 +110,7 @@ void CleanModeExploration::remoteClean(bool state_now, bool state_last) {
 
 	beeper.beepForCommand(VALID);
 	ev.key_clean_pressed = true;
+	speaker.play(VOICE_END_TO_FIND_CHARGEER ,false);
 	remote.reset();
 }
 
@@ -175,6 +180,7 @@ bool CleanModeExploration::updateActionInStateInit() {
 void CleanModeExploration::switchInStateGoHomePoint() {
 	PP_INFO();
 	sp_state = nullptr;
+	speaker.play(VOICE_FAILED_TO_FIND_CHARGEER, false);
 }
 /*
 

@@ -21,6 +21,7 @@
 #include <key.h>
 #include <infrared_display.hpp>
 #include <speaker.h>
+#include <remote.hpp>
 
 #include "move_type.hpp"
 
@@ -91,7 +92,8 @@ void MoveTypeDeskTest::run()
 				// Switch to next stage.
 				infrared_display.displayNormalMsg(test_stage_, 0);
 				p_movement_.reset();
-				p_movement_.reset(new MovementDirectGo(false));
+//				p_movement_.reset(new MovementDirectGo(false));
+				wheel.setDirectionForward();
 				ROS_INFO("%s %d: Stage 2 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
 				ROS_INFO("%s %d: Start checking for left bumper.", __FUNCTION__, __LINE__);
 			}
@@ -300,6 +302,11 @@ bool MoveTypeDeskTest::dataExtract(const uint8_t *buf)
 	bumper.setRight((buf[REC_BUMPER_AND_CLIFF] & 0x10) != 0);
 
 	bumper.setLidarBumperStatus();
+
+	// For remote device.
+	auto remote_signal = buf[REC_REMOTE];
+	if (remote_signal != 0)
+		remote.set(remote_signal);
 
 	// For obs sensor device.
 	obs.setLeft(((buf[REC_L_OBS_H] << 8) | buf[REC_L_OBS_L]) + obs.getLeftBaseline());
@@ -665,7 +672,8 @@ bool MoveTypeDeskTest::checkStage3Finish()
 				p_movement_.reset(new MovementBack(0.01, BACK_MAX_SPEED));
 				test_step_++;
 			} else
-				p_movement_->run();
+				wheel.setPidTargetSpeed(LINEAR_MAX_SPEED / 2, LINEAR_MAX_SPEED / 2);
+//				p_movement_->run();
 			break;
 		}
 		case 1:
@@ -1267,14 +1275,18 @@ bool MoveTypeDeskTest::checkStage7Finish()
 		}
 		case 1:
 		{
-			if (key.getPressStatus())
+			if (key.getPressStatus() || remote.isKeyTrigger(REMOTE_CLEAN))
 			{
 				beeper.beepForCommand(VALID);
+				remote.reset();
 				p_movement_.reset();
 				p_movement_.reset(new ActionBackFromCharger());
 				test_step_++;
 			} else
+			{
+				remote.reset();
 				p_movement_->run();
+			}
 			break;
 		}
 		case 2:
