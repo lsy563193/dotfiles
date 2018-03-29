@@ -970,7 +970,6 @@ uint8_t S_Wifi::setSchedule(const wifi::SetScheduleRxMsg &sche)
 	bool isScheCancel = false;
 	//if(this->getWorkMode() != wifi::WorkMode::IDLE )
 	//	return 1;
-	//std::vector<wifi::ScheduleStatusTxMsg::Schedule> sche_list;
 	for(uint8_t i = 0;i<10;i++)
 	{
 		uint8_t schenum = sche.getScheNum(i);
@@ -978,44 +977,24 @@ uint8_t S_Wifi::setSchedule(const wifi::SetScheduleRxMsg &sche)
 		uint8_t hours = sche.getHour(i);
 		uint8_t mints = sche.getMin(i);
 		uint8_t isEnable = sche.isEnable(i);
-		if(isEnable)
-		{
-			ROS_INFO("schedule num %d,\033[1;42;32misEnable %d,week %d,hour %d,minute %d\033[0m",
-				schenum,isEnable,weeks,hours,mints);
-			isScheSet = true;
-			Appointment::st_appmt apmt;
-			apmt.num = schenum;
-			apmt.enable = (bool)isEnable;
-			apmt.hour = hours;
-			apmt.mint= mints;
-			apmt.week = weeks;
-			appmt_obj.set(apmt);
-		}
-		else
-		{
-			if(robot_timer.getPlanEnable(schenum))
-				isScheCancel= true;
-			Appointment::st_appmt apmt;
-			apmt.num = schenum;
-			apmt.enable = 0;
-			apmt.hour = hours;
-			apmt.mint= mints;
-			apmt.week = weeks;
-			appmt_obj.set(apmt);
-		}
 
-		robot_timer.setAppointment(schenum,isEnable,weeks,hours,mints);
-		//wifi::ScheduleStatusTxMsg::Schedule ackSche(schenum,isEnable?true:false, weeks, hours, mints);
-		//sche_list.push_back(ackSche);
+		ROS_INFO("schedule num %d,\033[1;42;32misEnable %d,week %d,hour %d,minute %d\033[0m",
+				schenum,isEnable,weeks,hours,mints);
+
+		Appointment::st_appmt apmt;
+		isScheSet = isEnable;
+
+		apmt.num = schenum;
+		apmt.enable = (bool)isEnable;
+		apmt.hour = hours;
+		apmt.mint= mints;
+		apmt.week = weeks;
+		appmt_obj.set(apmt);
 
 	}
-	//wifi::ScheduleStatusTxMsg p(sche_list);
-	//s_wifi_tx_.push(std::move(p)).commit();
 
 	if(isScheSet)
 		speaker.play(VOICE_APPOINTMENT_DONE);
-	else if(isScheCancel)
-		speaker.play(VOICE_CANCEL_APPOINTMENT);
 	return 0;
 }
 
