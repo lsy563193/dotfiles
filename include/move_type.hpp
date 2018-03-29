@@ -60,7 +60,6 @@ public:
 	static Mode *sp_mode_;
 	static int movement_i_;
 	void resetTriggeredValue();
-	Point_t start_point_;
 	bool state_turn{};
 //	Point_t target_point_;
 	int dir_;

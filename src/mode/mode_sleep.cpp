@@ -21,12 +21,7 @@ ModeSleep::ModeSleep()
 	robot_timer.resetPlanStatus();
 
 	plan_activated_status_ = false;
-	sp_action_.reset(new ActionSleep);
-
-	wifi_led.set(false);
-	s_wifi.replyRobotStatus(0xc8,0x00);
-	s_wifi.sleep();
-
+	sp_action_.reset(new ActionSleep);	
 
 }
 

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(pp)
-set(CMAKE_CXX_FLAGS "-std=c++11 -fpermissive ${CMAKE_CXX_FLAGS} -Wfatal-errors\ ")
+set(CMAKE_CXX_FLAGS "-std=c++11 -fpermissive ${CMAKE_CXX_FLAGS} -Wfatal-errors -rdynamic\ ")
 FILE(GLOB PP_SRC
 	include/*
 
@@ -26,6 +26,7 @@ FILE(GLOB PP_SRC
 	src/dev/wifi/wifi.cpp
 	src/dev/infrared_display.cpp
 	src/dev/wifi_led.cpp
+	src/dev/appointment.cpp
 
 	src/mode/state/state.cpp
 	src/mode/state/state_init.cpp

@@ -139,7 +139,7 @@ bool CleanModeNav::mapMark()
 	}
 
 	//tx pass path via serial wifi
-	s_wifi.replyRealtimeMap(passed_path_);
+	s_wifi.replyRealtimePassPath(passed_path_);
 	s_wifi.replyRobotStatus(0xc8,0x00);
 	c_blocks.clear();
 	passed_path_.clear();
