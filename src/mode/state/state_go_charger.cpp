@@ -14,5 +14,5 @@ void StateGoCharger::init() {
 	brush.slowOperate();
 	key_led.setMode(LED_STEADY, LED_ORANGE);
 	if (!water_tank.isEquipped())
-		vacuum.setTmpMode(Vac_Normal);
+		vacuum.bldcSpeed(Vac_Speed_Low);
 }

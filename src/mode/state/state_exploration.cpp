@@ -13,7 +13,7 @@ void StateExploration::init() {
 	brush.slowOperate();
     water_tank.stop();
 	vacuum.setTmpMode(Vac_Normal);
-    vacuum.bldcSpeed(Vac_Speed_NormalL);
+    vacuum.bldcSpeed(Vac_Speed_Low);
 }
 
 

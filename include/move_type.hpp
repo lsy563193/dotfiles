@@ -135,6 +135,7 @@ class MoveTypeGoToCharger:public IMoveType
 {
 public:
 	MoveTypeGoToCharger();
+	~MoveTypeGoToCharger();
 
 	bool isFinish() override ;
 
