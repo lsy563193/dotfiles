@@ -130,6 +130,21 @@ void CleanModeExploration::chargeDetect(bool state_now, bool state_last) {
 	ev.charge_detect = charger.getChargeStatus();
 }
 
+void CleanModeExploration::remoteMax(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
+	if(isInitState() || isStateFollowWall() || isStateExploration() || isStateGoHomePoint() || isStateGoToCharger())
+	{
+		beeper.beepForCommand(VALID);
+		uint8_t vac_mode = vacuum.getMode();
+		vacuum.setMode(!vac_mode);
+		speaker.play(!vac_mode == Vac_Normal ? VOICE_CONVERT_TO_NORMAL_SUCTION : VOICE_CONVERT_TO_LARGE_SUCTION,false);
+	}
+
+	else
+		beeper.beepForCommand(INVALID);
+	remote.reset();
+}
 /*void CleanModeExploration::printMapAndPath()
 {
 	clean_path_algorithm_->displayCellPath(pointsGenerateCells(passed_path_));
