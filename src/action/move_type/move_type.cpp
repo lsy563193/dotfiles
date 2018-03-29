@@ -230,3 +230,7 @@ bool IMoveType::handleMoveBackEventLinear(ACleanMode *p_clean_mode)
 	return false;
 }
 
+bool IMoveType::isNotHandleEvent() {
+	return !(ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered);
+}
+
