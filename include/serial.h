@@ -58,8 +58,8 @@
 #define CTL_MIX 15
 
 // One byte for controlling water tank.
-// bit 0 for switch of pump.
-// bit 1-7 for controlling swing motor PWM.
+// bit 0-6 for controlling swing motor PWM.
+// bit 7 for switch of pump.
 #define CTL_WATER_TANK 16
 
 // One byte for IR control and test step.

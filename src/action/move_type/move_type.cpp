@@ -17,7 +17,7 @@ int IMoveType::movement_i_ = mm_null;
 
 IMoveType::IMoveType() {
 //	resetTriggeredValue();
-	last_ = start_point_ = getPosition();
+	last_ = getPosition();
 	c_rcon.resetStatus();
 	robot::instance()->obsAdjustCount(20);
 }

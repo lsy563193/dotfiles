@@ -410,8 +410,10 @@ bool MoveTypeFollowWall::isOverOriginLine(GridMap &map)
 {
 	auto curr = getPosition();
 	auto target_point_ = remain_path_.back();
-	if ((target_point_.y > start_point_.y && (start_point_.y - curr.y) > CELL_SIZE / 6)
-		|| (target_point_.y < start_point_.y && (curr.y - start_point_.y) > CELL_SIZE / 6))
+	auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
+	auto start_point_ = p_mode->start_point_;
+	if ((target_point_.y > start_point_.y && start_point_.y - curr.y > CELL_SIZE / 6)
+		|| ((curr.y - start_point_.y > CELL_SIZE / 6) && target_point_.y < start_point_.y) )
 	{
 //		ROS_WARN("origin(%d,%d) curr_p(%d, %d), target_point__(%d, %d)",start_point_.x, start_point_.y,  curr.x, curr.y, target_point_.x, target_point_.y);
 //		auto target_angle = (target_point_.y > start_point_.y) ? -900 : 900;
@@ -442,6 +444,8 @@ bool MoveTypeFollowWall::isNewLineReach(GridMap &map)
 	auto target_point_ = remain_path_.back();
 	auto s_curr_p = getPosition();
 	auto ret = false;
+	auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
+	auto start_point_ = p_mode->start_point_;
 	auto is_pos_dir = target_point_.y - start_point_.y > 0;
 	// The limit is CELL_COUNT_MUL / 8 * 3 further than target line center.
 //	auto target_limit = target_point_.y + CELL_COUNT_MUL / 8 * 3 * is_pos_dir;
