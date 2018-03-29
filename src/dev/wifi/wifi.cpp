@@ -108,9 +108,15 @@ bool S_Wifi::init()
 				const wifi::QueryScheduleStatusRxMsg &msg = static_cast<const wifi::QueryScheduleStatusRxMsg&>( a_msg );
 				//todo
 				std::vector<wifi::ScheduleStatusTxMsg::Schedule> vec_sch;
-				for(int i = 0;i<10;i++)
+
+				std::vector<Appointment::st_appmt> appmts = appmt_obj.get();
+				for(int i = 0;i<appmts.size();i++)
 				{
-					wifi::ScheduleStatusTxMsg::Schedule sche(i,robot_timer.getPlanEnable(i),robot_timer.getWeeks(i),robot_timer.getHours(i),robot_timer.getMints(i));
+					wifi::ScheduleStatusTxMsg::Schedule sche(i,
+								appmts[i].enable,
+								appmts[i].week,
+								appmts[i].hour,
+								appmts[i].mint);
 					vec_sch.push_back(sche);
 				}
 				//ack
@@ -326,7 +332,6 @@ bool S_Wifi::init()
 					if(is_wifi_active_ == false){
 						INFO_BLUE("RESUME ACK");
 						is_wifi_active_ = true;
-
 						//if(!isFactoryTest_)
 							checkVersion();
 						//		this->reboot();
@@ -592,7 +597,7 @@ uint8_t S_Wifi::setRobotCleanMode(wifi::WorkMode work_mode)
 						|| last_mode == wifi::WorkMode::HOMING
 						|| last_mode == wifi::WorkMode::FIND
 						|| last_mode == wifi::WorkMode::RANDOM
-						|| last_mode == wifi::WorkMode::REMOTE)//get last mode
+						|| last_mode == wifi::WorkMode::REMOTE )//get last mode
 			{
 				remote.set(REMOTE_CLEAN);
 				beeper.beepForCommand(true);
@@ -840,20 +845,22 @@ bool S_Wifi::factoryTest()
 {
 	isFactoryTest_ = true;
 	int waitResp = 0;
+	//wifi resume
 	this->resume();
 	while(!is_wifi_active_)
 	{
 		usleep(20000);
-		if(waitResp>= 100)//wati 2 seconds
+		if(waitResp>= 400)//wati 8 seconds
 		{
 			ROS_INFO("%s,%d,FACTORY TEST FAIL!!",__FUNCTION__,__LINE__);
 			isFactoryTest_ = false;
 			return false;
-		}	
+		}
 		waitResp++;
 	}
 	waitResp = 0;
 	isRegDevice_ = false;
+	//wifi factory test
 	wifi::FactoryTestTxMsg p(0x01);
 	s_wifi_tx_.push(std::move(p)).commit();
 	while(!inFactoryTest_ ){
@@ -867,7 +874,7 @@ bool S_Wifi::factoryTest()
 		}
 	}
 	waitResp = 0;
-	ROS_INFO("INTO FACTORY TEST!!");
+	ROS_INFO("INTO WIFI FACTORY TESTING!!");
 	while(isRegDevice_ == false){
 		usleep(20000);
 		if(waitResp >= 1500){//30s
@@ -961,8 +968,8 @@ uint8_t S_Wifi::setSchedule(const wifi::SetScheduleRxMsg &sche)
 {
 	bool isScheSet = false;
 	bool isScheCancel = false;
-	if(this->getWorkMode() != wifi::WorkMode::IDLE )
-		return 1;
+	//if(this->getWorkMode() != wifi::WorkMode::IDLE )
+	//	return 1;
 	//std::vector<wifi::ScheduleStatusTxMsg::Schedule> sche_list;
 	for(uint8_t i = 0;i<10;i++)
 	{
@@ -976,14 +983,28 @@ uint8_t S_Wifi::setSchedule(const wifi::SetScheduleRxMsg &sche)
 			ROS_INFO("schedule num %d,\033[1;42;32misEnable %d,week %d,hour %d,minute %d\033[0m",
 				schenum,isEnable,weeks,hours,mints);
 			isScheSet = true;
-			robot_timer.setAppointment(schenum,isEnable,weeks,hours,mints);
+			Appointment::st_appmt apmt;
+			apmt.num = schenum;
+			apmt.enable = (bool)isEnable;
+			apmt.hour = hours;
+			apmt.mint= mints;
+			apmt.week = weeks;
+			appmt_obj.set(apmt);
 		}
 		else
 		{
 			if(robot_timer.getPlanEnable(schenum))
 				isScheCancel= true;
-			robot_timer.setAppointment(schenum,0,weeks,hours,mints);
+			Appointment::st_appmt apmt;
+			apmt.num = schenum;
+			apmt.enable = 0;
+			apmt.hour = hours;
+			apmt.mint= mints;
+			apmt.week = weeks;
+			appmt_obj.set(apmt);
 		}
+
+		robot_timer.setAppointment(schenum,isEnable,weeks,hours,mints);
 		//wifi::ScheduleStatusTxMsg::Schedule ackSche(schenum,isEnable?true:false, weeks, hours, mints);
 		//sche_list.push_back(ackSche);
 
@@ -1009,7 +1030,6 @@ uint8_t S_Wifi::checkVersion()
 
 	return 0;
 }
-
 
 uint8_t S_Wifi::checkMAC()
 {

@@ -4,6 +4,7 @@
 #include <path_algorithm.h>
 #include "robot.hpp"
 #include "speaker.h"
+#include "execinfo.h"
 
 #if VERIFY_CPU_ID || VERIFY_KEY
 #include "verify.h"
@@ -11,43 +12,91 @@
 
 robot* robot_instance = nullptr;
 
-void signal_catch(int sig)
+void server_backtrace(int sig)
 {
-	switch(sig){
-		case SIGSEGV:
-		{
-			ROS_ERROR("Oops!!! pp receive SIGSEGV signal,segment fault!");
-			if(robot_instance != nullptr){
-				speaker.play(VOICE_PROCESS_ERROR, false);
-				delete robot_instance;
-			}
-			ros::shutdown();
-			break;
-		}
-		case SIGINT:
-		{
-			ROS_ERROR("Oops!!! pp receive SIGINT signal,ctrl+c press");
-			if(robot_instance != nullptr){
-				speaker.play(VOICE_USER_KILL,false);
-				delete robot_instance;
-			}
-			ros::shutdown();
-			break;
-		}
-		case SIGTERM:
-		{
-			ROS_ERROR("Ouch!!! pp receive SIGTERM signal,being kill!");
-			ros::shutdown();
-			if(robot_instance != nullptr){
-				speaker.play(VOICE_PROCESS_ERROR,false);
-				delete robot_instance;
-			}
-			break;
-		}
-		default:
-			ROS_ERROR("Oops!! pp receive %d signal",sig);
+    //open file
+    time_t tSetTime;
+    time(&tSetTime);
+    struct tm* ptm = localtime(&tSetTime);
+    char fname[256] = {0};
+    sprintf(fname, "core.%d-%d-%d_%d_%d_%d",
+            ptm->tm_year+1900, ptm->tm_mon+1, ptm->tm_mday,
+            ptm->tm_hour, ptm->tm_min, ptm->tm_sec);
+    FILE* f = fopen(fname, "a");
+    if (f == NULL){
+        return;
+    }
+    int fd = fileno(f);
+
+    //lock file
+    struct flock fl;
+    fl.l_type = F_WRLCK;
+    fl.l_start = 0;
+    fl.l_whence = SEEK_SET;
+    fl.l_len = 0;
+    fl.l_pid = getpid();
+    fcntl(fd, F_SETLKW, &fl);
+
+    //output path
+    char buffer[4096];
+    memset(buffer, 0, sizeof(buffer));
+    int count = readlink("/proc/self/exe", buffer, sizeof(buffer));
+    if(count > 0){
+        buffer[count] = '\n';
+        buffer[count + 1] = 0;
+        fwrite(buffer, 1, count+1, f);
+    }
+
+    //output time 
+    memset(buffer, 0, sizeof(buffer));
+    sprintf(buffer, "Dump Time: %d-%d-%d %d:%d:%d\n",
+            ptm->tm_year+1900, ptm->tm_mon+1, ptm->tm_mday,
+            ptm->tm_hour, ptm->tm_min, ptm->tm_sec);
+    fwrite(buffer, 1, strlen(buffer), f);
+
+    //signal
+    sprintf(buffer, "Curr thread: %u, Catch signal:%d\n",
+            (int)pthread_self(), sig);
+    fwrite(buffer, 1, strlen(buffer), f);
+
+    //stack
+    void* DumpArray[256];
+    int    nSize =    backtrace(DumpArray, 256);
+    sprintf(buffer, "backtrace rank = %d\n", nSize);
+    fwrite(buffer, 1, strlen(buffer), f);
+    if (nSize > 0){
+        char** symbols = backtrace_symbols(DumpArray, nSize);
+        if (symbols != NULL){
+            for (int i=0; i<nSize; i++){
+                fwrite(symbols[i], 1, strlen(symbols[i]), f);
+                fwrite("\n", 1, 1, f);
+            }
+            free(symbols);
+        }
+    }
+
+    //file unlock and close
+    fl.l_type = F_UNLCK;
+    fcntl(fd, F_SETLK, &fl);
+    fclose(f);
+}
+
+void handle_crash(int sig)
+{
+	ROS_ERROR("Oops!!! pp receive (%d) signal,segment fault!",sig);	
+	server_backtrace(sig);
+	exit(-1);
+}
+void handle_normal(int sig)
+{
+
+	ROS_ERROR("Oops!!! pp receive SIGINT signal,ctrl+c press");
+	ros::shutdown();
+	if(robot_instance != nullptr){
+		speaker.play(VOICE_PROCESS_ERROR,false);
+		delete robot_instance;
 	}
-	robot_instance = nullptr;
+	exit(0);
 }
 
 int main(int argc, char **argv)
@@ -55,13 +104,10 @@ int main(int argc, char **argv)
 	ros::init(argc, argv, "pp");
 	ros::NodeHandle	nh_dev("~");
 
-	struct sigaction act;
-	act.sa_handler = signal_catch;
-	sigemptyset(&act.sa_mask);
-	act.sa_flags = SA_RESETHAND;
-	sigaction(SIGTERM,&act,NULL);
-	sigaction(SIGSEGV,&act,NULL);
-	sigaction(SIGINT,&act,NULL);
+	signal(SIGTERM,handle_crash);
+	signal(SIGABRT,handle_crash);
+	signal(SIGSEGV,handle_crash);
+	signal(SIGINT,handle_normal);
 	ROS_INFO("set signal action done!");
 
 	robot_instance = new robot();

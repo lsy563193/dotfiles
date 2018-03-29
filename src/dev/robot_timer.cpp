@@ -50,15 +50,15 @@ bool Timer::trapTimeout(double duration)
 	return difftime(time(NULL), trap_start_time_) > duration;
 }
 
-bool Timer::setAppointment(uint8_t num,uint8_t isEnable,uint8_t week,uint8_t hour,uint8_t mint)
+
+uint8_t Timer::setAppointment(uint8_t num,uint8_t enable,uint8_t week,uint8_t hour,uint8_t mint)
 {
-	//ROS_INFO("%s,%d,set plan num %d, week %d,hour %d,minutes %d",__FUNCTION__,__LINE__,num,week,hour,mint);
-	if(num <= planEnable_.size())
-		planEnable_.at(isEnable);
-	if(num <= weeks_.size())
-		weeks_.at(num)  = week;
-	if(num <= hours_.size())
-		hours_.at(num) = hour;
-	if(num <= mints_.size())
-		mints_.at(num)= mint;
+	if(planEnable_.size() < num)
+		planEnable_[num] = enable;
+	if(hours_.size() < num)
+		hours_[num] = hour;
+	if(mints_.size() < num)
+		mints_[num] = mint;
+	if(weeks_.size() < num)
+		weeks_[num] = week;
 }

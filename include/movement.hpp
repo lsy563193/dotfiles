@@ -90,7 +90,6 @@ public:
 private:
 	bool is_open_dynamic_succeed_{};
 	double start_dynamic_time_{};
-	static int start_dynamic_count_;
 };
 
 class MovementRcon: public IMovement

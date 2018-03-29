@@ -51,8 +51,6 @@ public:
 		return plan_status_;
 	}
 
-	bool setAppointment(uint8_t num,uint8_t isEnable,uint8_t week,uint8_t hour,uint8_t mint);
-
 	uint8_t getWeeks(uint8_t pos)
 	{
 		if(pos < 10)
@@ -84,6 +82,9 @@ public:
 		else
 			return 0;
 	}
+
+	uint8_t setAppointment(uint8_t num,uint8_t enable,uint8_t weeks,uint8_t hours,uint8_t mints);
+
 private:
 	// Variable for plan status
 	uint8_t plan_status_;

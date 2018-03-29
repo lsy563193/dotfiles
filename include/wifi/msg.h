@@ -267,7 +267,7 @@ public:
 
 	uint8_t getScheNum(uint8_t num) const
 	{
-		if(num<10)
+		if(num < data().size() )
 			return data()[num*5];
 		else 
 			return 0x00;
@@ -275,7 +275,7 @@ public:
 
 	uint8_t isEnable(uint8_t num) const
 	{
-		if(num< 10)
+		if( num < data().size() )
 			return data()[num*5+1];
 		else
 			return 0x00;
@@ -283,7 +283,7 @@ public:
 
 	uint8_t getWeek(uint8_t num) const
 	{
-		if(num< 10)
+		if( num < data().size() )
 		{
 			return data()[num*5+2];
 		}
@@ -293,7 +293,7 @@ public:
 
 	uint8_t getHour(uint8_t num) const
 	{
-		if(num< 10)
+		if(num < data().size() )
 			return data()[num*5+3];
 		else
 			return 0;
@@ -301,7 +301,7 @@ public:
 
 	uint8_t getMin(uint8_t num) const
 	{
-		if(num< 10)
+		if(num<10 && num < data().size() )
 			return data()[num*5+4];
 		else
 			return 0;

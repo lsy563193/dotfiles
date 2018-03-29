@@ -103,10 +103,10 @@ void event_manager_init()
 
 	p_handler[EVT_ROBOT_SLIP] = &EventHandle::robotSlip;
 
-	p_handler[EVT_LIDAR_BUMPER]=&EventHandle::lidar_bumper;
+	p_handler[EVT_LIDAR_BUMPER]= &EventHandle::lidarBumper;
 	p_handler[EVT_LIDAR_STUCK] = &EventHandle::lidarStuck;
 	p_handler[EVT_ROBOT_TILT] = &EventHandle::tilt;
-	p_handler[EVT_REMOTE_WIFI] = &EventHandle::remote_wifi;
+	p_handler[EVT_REMOTE_WIFI] = &EventHandle::remoteWifi;
 	p_eh = &default_eh;
 }
 
@@ -731,11 +731,6 @@ void EventHandle::cliffRight(bool state_now, bool state_last)
 //	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
-void EventHandle::remote_wifi(bool state_now,bool state_last)
-{
-	ROS_INFO("%s,%d",__FUNCTION__,__LINE__);
-	remote.reset();
-}
 /* RCON */
 void EventHandle::rcon(bool state_now, bool state_last)
 {
@@ -896,6 +891,12 @@ void EventHandle::remoteMax(bool state_now, bool state_last)
 	df_remote();
 }
 
+void EventHandle::remoteWifi(bool state_now, bool state_last)
+{
+	ROS_INFO("%s,%d",__FUNCTION__,__LINE__);
+	remote.reset();
+}
+
 /* Battery */
 void EventHandle::batteryHome(bool state_now, bool state_last)
 {
@@ -938,7 +939,7 @@ void EventHandle::robotSlip(bool state_new, bool state_last)
 }
 
 
-void EventHandle::lidar_bumper(bool state_new,bool state_last)
+void EventHandle::lidarBumper(bool state_new, bool state_last)
 {
 	ev.lidar_bumper = true;
 	//g_lidar_bumper = robot::instance()->getLidarBumper();

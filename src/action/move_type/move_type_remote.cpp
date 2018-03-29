@@ -39,7 +39,7 @@ bool MoveTypeRemote::isFinish()
 			ev.cliff_triggered = 0;
 			ev.tilt_triggered =0;
 			movement_i_ = mm_back;
-			auto back_distance = (ev.tilt_triggered || gyro.getAngleR() > 5) ? 0.15 : 0.01;
+			auto back_distance = (ev.tilt_triggered/* || gyro.getAngleR() > 5*/) ? TILT_BACK_DISTANCE : 0.01;
 //		if(gyro.getAngleR() > 5)
 //			beeper.beepForCommand(VALID);
 			p_movement_.reset(new MovementBack(back_distance, BACK_MAX_SPEED));

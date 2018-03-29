@@ -108,11 +108,11 @@ bool MovementFollowPointLinear::isFinish() {
 		if(sp_mt_->radian_diff_count == 10) {
 			sp_mt_->radian_diff_count++;
 			auto offset_rad = ranged_radian(getPosition().th - odom.getRadian());
-			if(std::abs(offset_rad) > degree_to_radian(4))
+/*			if(std::abs(offset_rad) > degree_to_radian(4))
 			{
 				odom.setRadianOffset(getPosition().th - odom.getOriginRadian());
 				ROS_INFO("offset_rad");
-			}
+			}*/
 		}
 		radian_diff = ranged_radian(sp_mt_->turn_target_radian_ - odom.getRadian());
 	}

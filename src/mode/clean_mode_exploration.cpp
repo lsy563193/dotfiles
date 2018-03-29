@@ -18,6 +18,7 @@ CleanModeExploration::CleanModeExploration()
 	go_home_path_algorithm_.reset();
 	error_marker_.clear();
 	clean_map_.mapInit();
+	setExpMode(true);
 }
 
 CleanModeExploration::~CleanModeExploration()
@@ -56,6 +57,7 @@ CleanModeExploration::~CleanModeExploration()
 		ROS_INFO("%s %d: Write data succeeded.", __FUNCTION__, __LINE__);
 	}
 #endif
+	setExpMode(false);
 }
 
 bool CleanModeExploration::mapMark()
@@ -155,8 +157,8 @@ bool CleanModeExploration::updateActionInStateInit() {
 		action_i_ = ac_open_gyro;
 	else if (action_i_ == ac_open_gyro) {
 		if (!water_tank.checkEquipment())
-			vacuum.setLastMode();
-		brush.normalOperate();
+			vacuum.bldcSpeed(Vac_Speed_NormalL);
+		brush.slowOperate();
 		action_i_ = ac_open_lidar;
 	}
 	else if (action_i_ == ac_open_lidar)
@@ -200,16 +202,20 @@ bool CleanModeExploration::markMapInNewCell() {
 
 void CleanModeExploration::resetErrorMarker() {
 	//set unclean to map
+//	ROS_ERROR("%s,%d,size:%d",__FUNCTION__,__LINE__,error_marker_.size());
 	auto time = ros::Time::now().toSec();
+//	int i = 0;
 	for(auto ite = error_marker_.begin();ite != error_marker_.end();ite++){
+		if(error_marker_.empty())
+			break;
 		if(time - ite->time > 20){
 			if(clean_map_.getCell(CLEAN_MAP,ite->x,ite->y) == CLEANED &&
 					slam_grid_map.getCell(CLEAN_MAP,ite->x,ite->y) != SLAM_MAP_CLEANABLE)
 				clean_map_.setCell(CLEAN_MAP,ite->x,ite->y,UNCLEAN);
-			if(error_marker_.empty())
-				break;
+//			ROS_INFO("%s,%d,i:%d,size:%d",__FUNCTION__,__LINE__,i,error_marker_.size());
 			error_marker_.erase(ite);
 		}
+//		i++;
 	}
 }
 

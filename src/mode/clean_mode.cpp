@@ -122,7 +122,7 @@ ACleanMode::~ACleanMode()
 			speaker.play(VOICE_CHECK_SWITCH, false);
 			ROS_WARN("%s %d: Switch is not on. Stop cleaning.", __FUNCTION__, __LINE__);
 		}
-		else
+		else if(mode_i_ != cm_exploration)
 		{
 			speaker.play(VOICE_CLEANING_FINISHED, false);
 			ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
@@ -2043,7 +2043,6 @@ bool ACleanMode::generatePath(GridMap &map, const Point_t &curr, const int &last
 
 bool ACleanMode::isGyroDynamic() {
 	return ros::Time::now().toSec() - time_gyro_dynamic_ > robot::instance()->getGyroDynamicInterval();
-//	return true;
 }
 
 void ACleanMode::genNextAction() {
