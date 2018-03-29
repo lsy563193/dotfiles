@@ -21,6 +21,7 @@
 #include <key.h>
 #include <infrared_display.hpp>
 #include <speaker.h>
+#include <remote.hpp>
 
 #include "move_type.hpp"
 
@@ -91,7 +92,8 @@ void MoveTypeDeskTest::run()
 				// Switch to next stage.
 				infrared_display.displayNormalMsg(test_stage_, 0);
 				p_movement_.reset();
-				p_movement_.reset(new MovementDirectGo(false));
+//				p_movement_.reset(new MovementDirectGo(false));
+				wheel.setDirectionForward();
 				ROS_INFO("%s %d: Stage 2 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
 				ROS_INFO("%s %d: Start checking for left bumper.", __FUNCTION__, __LINE__);
 			}
@@ -148,7 +150,9 @@ void MoveTypeDeskTest::run()
 				p_movement_.reset();
 				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-179), ROTATE_TOP_SPEED * 2 / 3));
 				brush.normalOperate();
-				vacuum.setMode(Vac_Normal,true);
+				vacuum.setMode(Vac_Normal);
+				vacuum.Switch();
+
 				// todo: for water tank
 				ROS_INFO("%s %d: Stage 5 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
 			}
@@ -207,7 +211,7 @@ void MoveTypeDeskTest::run()
 		default: // For finish.
 		{
 			ROS_INFO("%s %d: Test finish.", __FUNCTION__, __LINE__);
-			infrared_display.displayNormalMsg(0, 0);
+			infrared_display.displayNormalMsg(0, 9999);
 			key_led.setMode(LED_STEADY, LED_GREEN);
 //			beeper.beep(2, 40, 40, 3);
 			serial.setSendData(CTL_WORK_MODE, DESK_TEST_WRITE_BASELINE_MODE);
@@ -299,6 +303,11 @@ bool MoveTypeDeskTest::dataExtract(const uint8_t *buf)
 
 	bumper.setLidarBumperStatus();
 
+	// For remote device.
+	auto remote_signal = buf[REC_REMOTE];
+	if (remote_signal != 0)
+		remote.set(remote_signal);
+
 	// For obs sensor device.
 	obs.setLeft(((buf[REC_L_OBS_H] << 8) | buf[REC_L_OBS_L]) + obs.getLeftBaseline());
 	obs.setFront(((buf[REC_F_OBS_H] << 8) | buf[REC_F_OBS_L]) + obs.getFrontBaseline());
@@ -330,6 +339,7 @@ bool MoveTypeDeskTest::dataExtract(const uint8_t *buf)
 		wheel.setRightCurrent((buf[REC_R_WHEEL_CUNT_H] << 8) | buf[REC_R_WHEEL_CUNT_L]);
 
 		vacuum.setCurrent((buf[REC_VACUUM_CURRENT_H] << 8) | buf[REC_VACUUM_CURRENT_L]);
+//		printf("vacuum current - baseline:%d.\n", vacuum.getCurrent() - vacuum_current_baseline_);
 
 //		water_tank.setCurrent((buf[REC_WATER_PUMP_CURRENT_H] << 8) | buf[REC_WATER_PUMP_CURRENT_L]);
 		water_tank.setCurrent(0);
@@ -479,7 +489,8 @@ bool MoveTypeDeskTest::checkStage2Finish()
 					p_movement_.reset();
 					p_movement_.reset(new ActionOpenLidar());
 					brush.normalOperate();
-					vacuum.setMode(Vac_Normal,true);
+					vacuum.setMode(Vac_Normal);
+					vacuum.Switch();
 				}
 				else if (test_step_ == 1)
 					c_rcon.resetStatus();
@@ -493,44 +504,92 @@ bool MoveTypeDeskTest::checkStage2Finish()
 		}
 		case 2:
 		{
-			ROS_INFO("%s %d: Enter lidar checking 1.", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: Enter lidar checking front.", __FUNCTION__, __LINE__);
 			wheel.stop();
 			// Stop for checking lidar data.
-			while (ros::ok() && lidar_check_cnt_ < 5)
+			uint8_t _cnt{10};
+//			float scan_ref[_cnt][360];
+			float scan_ref[360];
+			lidar.readLidarDataFromFile(true, scan_ref);
+			uint8_t scan_valid_cnt{0};
+			while (ros::ok() && lidar_check_cnt_ < _cnt)
 			{
-				auto lidar_data = lidar.getLidarScanDataOriginal();
-				if (lidar_check_seq_ != lidar_data.header.seq)
+				auto scan_data = lidar.getLidarScanDataOriginal();
+				if (lidar_check_seq_ != scan_data.header.seq)
 				{
+					lidar_check_seq_ = scan_data.header.seq;
+//					lidar.saveLidarDataToFile(lidar_check_cnt_, scan_data);
+					if(lidar.scanDataChecking(true, scan_data, scan_ref))
+					{
+						ROS_INFO("Good boy, %d scan ok.", lidar_check_cnt_);
+						scan_valid_cnt++;
+					}
+					else
+						ROS_ERROR("Now something doesn't feel right about %d scan...", lidar_check_cnt_);
 					lidar_check_cnt_++;
-					// todo:handler for lidar.
 				}
 				usleep(100000);
 			}
-			test_step_++;
-			lidar_check_cnt_ = 0;
-			p_movement_.reset();
-			p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-178), RCON_ROTATE_SPEED));
-			ROS_INFO("%s %d: Enter rcon turning 1.", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: Scan valid count:%d.", __FUNCTION__, __LINE__, scan_valid_cnt);
+			if (scan_valid_cnt < _cnt -1)
+			{
+				error_step_ = test_stage_;
+				error_code_ = LIDAR_ERROR;
+				error_content_ = scan_valid_cnt;
+				test_step_ = 99;
+			}
+			else
+			{
+				test_step_++;
+				p_movement_.reset();
+				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-178), RCON_ROTATE_SPEED));
+				ROS_INFO("%s %d: Enter rcon turning 1.", __FUNCTION__, __LINE__);
+			}
 			break;
 		}
 		case 4:
 		{
-			ROS_INFO("%s %d: Enter lidar checking 2.", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: Enter lidar checking back.", __FUNCTION__, __LINE__);
 			wheel.stop();
 			// Stop for checking lidar data.
-			while (ros::ok() && lidar_check_cnt_ < 5)
+			uint8_t _cnt{10};
+//			float scan_ref[_cnt * 2][360];
+			float scan_ref[360];
+			lidar.readLidarDataFromFile(false, scan_ref);
+			uint8_t scan_valid_cnt{0};
+			while (ros::ok() && lidar_check_cnt_ < _cnt * 2)
 			{
-				auto lidar_data = lidar.getLidarScanDataOriginal();
-				if (lidar_check_seq_ != lidar_data.header.seq)
+				auto scan_data = lidar.getLidarScanDataOriginal();
+				if (lidar_check_seq_ != scan_data.header.seq)
 				{
+					lidar_check_seq_ = scan_data.header.seq;
+//					lidar.saveLidarDataToFile(lidar_check_cnt_, scan_data);
+					if(lidar.scanDataChecking(false, scan_data, scan_ref))
+					{
+						ROS_INFO("Good boy, %d scan ok.", lidar_check_cnt_);
+						scan_valid_cnt++;
+					}
+					else
+						ROS_ERROR("Now something doesn't feel right about %d scan...", lidar_check_cnt_);
 					lidar_check_cnt_++;
-					// todo:handler for lidar.
 				}
 				usleep(100000);
 			}
-			test_step_++;
-			p_movement_.reset();
-			p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-178), RCON_ROTATE_SPEED));
+			ROS_INFO("%s %d: Scan valid count:%d.", __FUNCTION__, __LINE__, scan_valid_cnt);
+			if (scan_valid_cnt < _cnt -1)
+			{
+				error_step_ = test_stage_;
+				error_code_ = LIDAR_ERROR;
+				error_content_ = scan_valid_cnt;
+				test_step_ = 99;
+			}
+			else
+			{
+				test_step_++;
+				p_movement_.reset();
+				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-178), RCON_ROTATE_SPEED));
+				ROS_INFO("%s %d: Enter rcon turning 2.", __FUNCTION__, __LINE__);
+			}
 			break;
 		}
 		default://case 6:
@@ -613,7 +672,8 @@ bool MoveTypeDeskTest::checkStage3Finish()
 				p_movement_.reset(new MovementBack(0.01, BACK_MAX_SPEED));
 				test_step_++;
 			} else
-				p_movement_->run();
+				wheel.setPidTargetSpeed(LINEAR_MAX_SPEED / 2, LINEAR_MAX_SPEED / 2);
+//				p_movement_->run();
 			break;
 		}
 		case 1:
@@ -859,30 +919,30 @@ bool MoveTypeDeskTest::checkCurrent()
 	uint16_t side_brush_current_ref_{1675 - 1620}; // 55
 	uint16_t main_brush_current_ref_{1785 - 1620}; // 165
 	uint16_t wheel_current_ref_{1685 - 1620}; // 65
-	uint16_t vacuum_current_ref_{1970 - 1620}; // 350
+	uint16_t vacuum_current_ref_{2285 - 1620}; // 665
 	uint16_t water_tank_current_ref_{0};
-	uint16_t robot_current_ref_{2250 - 1775}; // 475
+	uint16_t robot_current_ref_{2385 - 1775}; // 610
 
 	if (left_brush_current_ - left_brush_current_baseline_ > side_brush_current_ref_ * 1.5 /* 82 */||
-		left_brush_current_ - left_brush_current_baseline_ < side_brush_current_ref_ * 0.6 /* 33 */)
+		left_brush_current_ - left_brush_current_baseline_ < side_brush_current_ref_ * 0.5 /* 27 */)
 	{
 		error_code_ = LEFT_BRUSH_CURRENT_ERROR;
 		error_content_ = static_cast<uint16_t>(left_brush_current_ - left_brush_current_baseline_);
 	}
-	else if (right_brush_current_ - right_brush_current_baseline_ > side_brush_current_ref_ * 1.4 /* 77 */||
-			 right_brush_current_ - right_brush_current_baseline_ < side_brush_current_ref_ * 0.6 /* 33 */)
+	else if (right_brush_current_ - right_brush_current_baseline_ > side_brush_current_ref_ * 1.5 /* 82 */||
+			 right_brush_current_ - right_brush_current_baseline_ < side_brush_current_ref_ * 0.5 /* 27 */)
 	{
 		error_code_ = RIGHT_BRUSH_CURRENT_ERROR;
 		error_content_ = static_cast<uint16_t>(right_brush_current_ - right_brush_current_baseline_);
 	}
-	else if (main_brush_current_ - main_brush_current_baseline_ > main_brush_current_ref_ * 1.2 ||
-			 main_brush_current_ - main_brush_current_baseline_ < main_brush_current_ref_ * 0.8)
+	else if (main_brush_current_ - main_brush_current_baseline_ > main_brush_current_ref_ * 1.5 ||
+			 main_brush_current_ - main_brush_current_baseline_ < main_brush_current_ref_ * 0.5)
 	{
 		error_code_ = MAIN_BRUSH_CURRENT_ERROR;
 		error_content_ = static_cast<uint16_t>(main_brush_current_ - main_brush_current_baseline_);
 	}
-	else if (vacuum_current_ - vacuum_current_baseline_ > vacuum_current_ref_ * 1.2 ||
-			 vacuum_current_ - vacuum_current_baseline_ < vacuum_current_ref_ * 0.8)
+	else if (vacuum_current_ - vacuum_current_baseline_ > vacuum_current_ref_ * 1.5 ||
+			 vacuum_current_ - vacuum_current_baseline_ < vacuum_current_ref_ * 0.5)
 	{
 		error_code_ = VACUUM_CURRENT_ERROR;
 		error_content_ = static_cast<uint16_t>(vacuum_current_ - vacuum_current_baseline_);
@@ -893,20 +953,20 @@ bool MoveTypeDeskTest::checkCurrent()
 		error_code_ = VACUUM_CURRENT_ERROR; // todo:
 		error_content_ = static_cast<uint16_t>(water_tank_current_ - water_tank_current_baseline_);
 	}*/
-	else if (left_wheel_current_cnt_ != 0 && (left_wheel_current_ - left_wheel_current_baseline_ > wheel_current_ref_ * 1.3 ||
-			 left_wheel_current_ - left_wheel_current_baseline_ < wheel_current_ref_ * 0.6))
+	else if (left_wheel_current_cnt_ != 0 && (left_wheel_current_ - left_wheel_current_baseline_ > wheel_current_ref_ * 1.5 ||
+			 left_wheel_current_ - left_wheel_current_baseline_ < wheel_current_ref_ * 0.5))
 	{
 		error_code_ = LEFT_WHEEL_FORWARD_CURRENT_ERROR;
 		error_content_ = static_cast<uint16_t>(left_wheel_current_ - left_wheel_current_baseline_);
 	}
-	else if (right_wheel_current_cnt_ != 0 && (right_wheel_current_ - right_wheel_current_baseline_ > wheel_current_ref_ * 1.3 ||
-			 right_wheel_current_ - right_wheel_current_baseline_ < wheel_current_ref_ * 0.6))
+	else if (right_wheel_current_cnt_ != 0 && (right_wheel_current_ - right_wheel_current_baseline_ > wheel_current_ref_ * 1.5 ||
+			 right_wheel_current_ - right_wheel_current_baseline_ < wheel_current_ref_ * 0.5))
 	{
 		error_code_ = RIGHT_WHEEL_FORWARD_CURRENT_ERROR;
 		error_content_ = static_cast<uint16_t>(right_wheel_current_ - right_wheel_current_baseline_);
 	}
-	else if (robot_current_ - robot_current_baseline_ > robot_current_ref_ * 1.2 ||
-			 robot_current_ - robot_current_baseline_ < robot_current_ref_ * 0.8)
+	else if (robot_current_ - robot_current_baseline_ > robot_current_ref_ * 1.5 ||
+			 robot_current_ - robot_current_baseline_ < robot_current_ref_ * 0.5)
 	{
 		error_code_ = BASELINE_CURRENT_ERROR;
 		error_content_ = static_cast<uint16_t>(robot_current_ - robot_current_baseline_);
@@ -1215,14 +1275,18 @@ bool MoveTypeDeskTest::checkStage7Finish()
 		}
 		case 1:
 		{
-			if (key.getPressStatus())
+			if (key.getPressStatus() || remote.isKeyTrigger(REMOTE_CLEAN))
 			{
 				beeper.beepForCommand(VALID);
+				remote.reset();
 				p_movement_.reset();
 				p_movement_.reset(new ActionBackFromCharger());
 				test_step_++;
 			} else
+			{
+				remote.reset();
 				p_movement_->run();
+			}
 			break;
 		}
 		case 2:

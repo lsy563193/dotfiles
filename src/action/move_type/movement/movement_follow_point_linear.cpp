@@ -102,57 +102,25 @@ bool MovementFollowPointLinear::isFinish() {
 		sp_mt_->radian_diff_count++;
 	else
 		sp_mt_->radian_diff_count =0;
-
-		radian_diff = getPosition().courseToDest(calcTmpTarget());
 	}
 	else
 	{
 		if(sp_mt_->radian_diff_count == 10) {
 			sp_mt_->radian_diff_count++;
 			auto offset_rad = ranged_radian(getPosition().th - odom.getRadian());
-			auto offset_x = getPosition().x - odom.getX();
-			auto offset_y = getPosition().y - odom.getY();
-			if(std::abs(offset_rad) > degree_to_radian(4))
+/*			if(std::abs(offset_rad) > degree_to_radian(4))
 			{
 				odom.setRadianOffset(getPosition().th - odom.getOriginRadian());
 				ROS_INFO("offset_rad");
-//				beeper.beepForCommand(VALID);
-			}
-
-
-//		}
-/*	if(getPosition().x - odom.getX()>= CELL_SIZE/2)
-			{
-				odom.setXOffset(getPosition().x - odom.getOriginX());
-				beeper.beepForCommand(INVALID);
-			}
-			if(getPosition().y - odom.getY()>= CELL_SIZE/2)
-			{
-				odom.setYOffset(getPosition().y - odom.getOriginY());
-				beeper.beepForCommand(VALID);
 			}*/
-//		beeper.beepForCommand(INVALID);
-		ROS_ERROR("offset_rad(%f),rad diff(%f),rad(%f)", radian_to_degree(offset_rad), ranged_radian(getPosition().th - odom.getRadian()), odom.getRadian());
-		ROS_ERROR("offset_rad(%f),x_diff(%f),x(%f)", offset_x, getPosition().x - odom.getX(), odom.getX());
-		ROS_ERROR("offset_rad(%f),y_diff(%f),y(%f)", offset_y, getPosition().y - odom.getY(), odom.getY());
 		}
-//		radian_diff = getPosition().courseToDest(calcTmpTarget());
 		radian_diff = ranged_radian(sp_mt_->turn_target_radian_ - odom.getRadian());
 	}
 
-
-//		radian_diff = sp_mt_->odom_turn_target_radian_;
-//	radian_diff = ranged_radian(sp_mt_->turn_target_radian_ - odom.getRadian());
 	auto tmp_pos = getPosition();
-//	double	tmp_rad{tmp_pos.th};
 	scaleCorrectionPos(tmp_pos);
-//	Point_t correct_p = Point_t{tmp_pos.getOriginX(),tmp_pos.getOriginY(), tmp_rad};
 	radian_diff = tmp_pos.courseToDest(calcTmpTarget());
-
-//	ROS_ERROR("count(%d), radian_diff(%f, %f,%f),",sp_mt_->radian_diff_count , radian_to_degree(sp_mt_->turn_target_radian_),
-//						radian_to_degree(radian_diff),radian_to_degree(sp_mt_->odom_turn_target_radian_));
-
-	return AMovementFollowPoint::isFinish() || sp_mt_->shouldMoveBack() || sp_mt_->isLidarStop();
+	return AMovementFollowPoint::isFinish() || sp_mt_->isFinishForward() || sp_mt_->isLidarStop();
 }
 
 uint8_t MovementFollowPointLinear::isNear()

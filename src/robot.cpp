@@ -121,6 +121,7 @@ robot::~robot()
 	brush.stop();
 	vacuum.stop();
 	s_wifi.sleep();
+	wifi_led.set(false);
 	water_tank.stop();
 	serial.setWorkMode(WORK_MODE);
 	usleep(40000);
@@ -753,6 +754,9 @@ void robot::updateRobotPositionForTest()
 }
 
 bool robot::checkTilt() {
+	if (!gyro.isTiltCheckingEnable())
+		return false;
+
 //	ROS_WARN("is_first_tilt = %d", is_first_tilt);
 	auto angle = gyro.getAngleR();
 //	ROS_WARN("angle = %f", angle);

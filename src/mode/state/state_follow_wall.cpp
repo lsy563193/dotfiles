@@ -9,7 +9,8 @@
 
 void StateFolllowWall::init() {
 	robot_timer.initTrapTimer();
-	key_led.setMode(LED_FLASH, LED_GREEN, 300);
+	if(!getMode()->isExpMode())
+		key_led.setMode(LED_FLASH, LED_GREEN, 300);
 }
 
 //bool StateFolllowWall::isFinish() {

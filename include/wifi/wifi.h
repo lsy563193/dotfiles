@@ -21,7 +21,7 @@ public:
 
 	uint8_t replyRobotStatus(int msg_code,const uint8_t seq_num);
 
-	uint8_t replyRealtimeMap(const Points pass_path);
+	uint8_t replyRealtimePassPath(const Points pass_path);
 
 	uint8_t setRobotCleanMode(wifi::WorkMode work_mode);
 
@@ -56,6 +56,29 @@ public:
 
 	uint8_t sleep();
 
+	uint32_t getModuleVersion()
+	{
+		return moduleVersion_;
+	}
+
+	uint32_t getCloudVersion()
+	{
+		return cloudVersion_;
+	}
+
+	uint64_t getMAC()
+	{
+		return MAC_;
+	}
+
+	bool isActive()
+	{
+		return is_wifi_active_;
+	}
+
+	uint8_t checkVersion();
+	uint8_t checkMAC();
+
 	static bool is_wifi_connected_;
 
 	static bool is_cloud_connected_;
@@ -67,12 +90,17 @@ private:
 	wifi::TxManager s_wifi_tx_;	
 
 	bool inFactoryTest_;
+	bool isFactoryTest_;
 	bool isRegDevice_;
 
 	bool is_wifi_active_;
 	wifi::WorkMode robot_work_mode_;
 
 	pthread_mutex_t s_wifi_lock_;
+
+	uint64_t MAC_;
+	uint32_t moduleVersion_;
+	uint32_t cloudVersion_;
 
 };
 

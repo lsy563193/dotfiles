@@ -10,12 +10,20 @@ void StateGoHomePoint::init(){
 	if (!water_tank.isEquipped())
 		vacuum.setTmpMode(Vac_Normal);
 	wheel.stop();
-	brush.normalOperate();
+	if(!sp_cm_->isExpMode())
+		brush.normalOperate();
+
+
+	if(sp_cm_->isGoHomePointForLowPower());
+	{
+		brush.slowOperate();
+        water_tank.stop();
+	}
 
 	wheel.setPidTargetSpeed(0, 0, REG_TYPE_LINEAR);
-	if (sp_cm_->isRemoteGoHomePoint())
+	if (sp_cm_->isRemoteGoHomePoint() || sp_cm_->isExpMode())
 		key_led.setMode(LED_STEADY, LED_ORANGE);
-	else
+	else if(key_led.getColor() != LED_ORANGE)
 		key_led.setMode(LED_STEADY, LED_GREEN);
 
 	ev.remote_home = false;

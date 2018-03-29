@@ -5,6 +5,7 @@
 #ifndef PP_MOVE_TYPE_HPP
 #define PP_MOVE_TYPE_HPP
 #define TRAP_IN_SMALL_AREA_COUNT 20
+#define TILT_BACK_DISTANCE 0.15
 
 #include "action.hpp"
 #include "movement.hpp"
@@ -19,10 +20,11 @@ class IMoveType:public IAction
 public:
 	IMoveType();
 	~IMoveType();
-	bool shouldMoveBack();
-	bool shouldTurn();
+	bool isFinishForward();
+	bool isNotHandleEvent();
 	bool RconTrigger();
 	bool handleMoveBackEvent(ACleanMode* p_clean_mode);
+	bool handleMoveBackEventLinear(ACleanMode *p_clean_mode);
 //	~IMoveType() = default;
 	enum{//movement
 		mm_null,
@@ -50,7 +52,8 @@ public:
 	int8_t rcon_cnt[Rcon::enum_end + 1]{};
 	uint32_t countRconTriggered(uint32_t rcon_value, int max_cnt);
 	bool isRconStop();
-	bool isOBSStop();
+	bool isCliffStop();
+//	bool isOBSStop();
 	bool isLidarStop();
 
 	static boost::shared_ptr<IMovement> sp_movement_;
@@ -63,7 +66,7 @@ public:
 	int dir_;
 	Points remain_path_{};
 public:
-	std::deque<double> odom_turn_target_radians_{};
+//	std::deque<double> odom_turn_target_radians_{};
 	int radian_diff_count{};
 	double odom_turn_target_radian_{};
 	double turn_target_radian_{};

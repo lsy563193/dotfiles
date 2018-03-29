@@ -46,7 +46,7 @@ MoveTypeFollowWall::~MoveTypeFollowWall()
 
 bool MoveTypeFollowWall::isFinish()
 {
-	if (IMoveType::isFinish())
+	if (IMoveType::isFinish() && isNotHandleEvent())
 	{
 		ROS_INFO("%s %d: Move type aborted.", __FUNCTION__, __LINE__);
 		return true;
@@ -301,7 +301,7 @@ bool MoveTypeFollowWall::lidarTurnRadian(double &turn_radian)
 		}
 		else {//hit the same side, turn angle limit
 			param.radian_min = degree_to_radian(18);
-			param.radian_max = degree_to_radian(90);
+			param.radian_max = degree_to_radian(100);
 		}
 
 		if (ev.bumper_triggered == BLOCK_ALL) {
@@ -475,7 +475,7 @@ bool MoveTypeFollowWall::handleMoveBackEventRealTime(ACleanMode *p_clean_mode) {
 	{
 		p_clean_mode->saveBlocks();
 		movement_i_ = mm_back;
-		sp_movement_.reset(new MovementBack(0.3, BACK_MAX_SPEED));
+		sp_movement_.reset(new MovementBack(TILT_BACK_DISTANCE, BACK_MAX_SPEED));
 		return true;
 	}
 	return false;

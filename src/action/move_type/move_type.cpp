@@ -25,39 +25,38 @@ IMoveType::~IMoveType() {
 //	resetTriggeredValue();
 	wheel.stop();
 }
-bool IMoveType::shouldMoveBack()
-{
-	// Robot should move back for these cases.
-	ev.bumper_triggered = bumper.getStatus();
-	ev.cliff_triggered = cliff.getStatus();
-	ev.tilt_triggered = gyro.getTiltCheckingStatus();
 
-	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered)
+bool IMoveType::isCliffStop()
+{
+	ev.cliff_triggered = cliff.getStatus();
+	if(ev.cliff_triggered)
 	{
-		ROS_WARN("%s, %d,ev.bumper_triggered(%d) ev.cliff_triggered(%d) ev.tilt_triggered(%d)."
-				, __FUNCTION__, __LINE__, ev.bumper_triggered, ev.cliff_triggered, ev.tilt_triggered);
+//		turn_angle = obsTurnAngle();
+		ROS_INFO("%s, %d: ev.cliff_triggered(%d).", __FUNCTION__, __LINE__, ev.cliff_triggered);
 		return true;
 	}
 
 	return false;
 }
 
+/*
 bool IMoveType::isOBSStop()
 {
 	// Now OBS sensor is just for slowing down.
 //	PP_INFO();
-	return false;
-/*
-	ev.obs_triggered = obs.getStatus(200, 1700, 200);
-	if(ev.obs_triggered)
-	{
-		turn_angle = obsTurnAngle();
-		ROS_INFO("%s, %d: ev.obs_triggered(%d), turn for (%d).", __FUNCTION__, __LINE__, ev.obs_triggered, turn_angle);
-		return true;
-	}
+//	return false;
+//	ev.obs_triggered = obs.getStatus(200, 1700, 200);
+//	if(ev.obs_triggered)
+//	{
+//		turn_angle = obsTurnAngle();
+//		ROS_INFO("%s, %d: ev.obs_triggered(%d), turn for (%d).", __FUNCTION__, __LINE__, ev.obs_triggered, turn_angle);
+//		return true;
+//	}
+//
+//	return false;
 
-	return false;*/
 }
+*/
 
 bool IMoveType::isLidarStop()
 {
@@ -71,31 +70,6 @@ bool IMoveType::isLidarStop()
 		ROS_WARN("%s, %d: ev.lidar_triggered(%d).", __FUNCTION__, __LINE__, ev.lidar_triggered);
 		return true;
 	}
-
-	return false;
-}
-
-bool IMoveType::shouldTurn()
-{
-//	ev.lidar_triggered = lidar_get_status();
-//	if (ev.lidar_triggered)
-//	{
-//		// Temporary use bumper as lidar triggered.
-//		ev.bumper_triggered = ev.lidar_triggered;
-//		g_turn_angle = bumperTurnAngle();
-//		ev.bumper_triggered = 0;
-//		ROS_WARN("%s %d: Lidar triggered, turn_angle: %d.", __FUNCTION__, __LINE__, g_turn_angle);
-//		return true;
-//	}
-
-//	ev.obs_triggered = (obs.getFront() > obs.getFrontTrigValue() + 1700);
-//	if (ev.obs_triggered)
-//	{
-////		ev.obs_triggered = BLOCK_FRONT;
-////		g_turn_angle = obsTurnAngle();
-//		ROS_WARN("%s %d: OBS triggered.", __FUNCTION__, __LINE__);
-//		return true;
-//	}
 
 	return false;
 }
@@ -206,13 +180,31 @@ bool IMoveType::isBlockCleared(GridMap &map, Points &passed_path)
 	return false;
 }
 
+bool IMoveType::isFinishForward()
+{
+	// Robot should move back for these cases.
+	ev.bumper_triggered = bumper.getStatus();
+	ev.tilt_triggered = gyro.getTiltCheckingStatus();
+	ev.cliff_triggered = cliff.getStatus();
+//	ev.rcon_status = countRconTriggered(c_rcon.getNavRcon(), 3);
+
+	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered /*|| ev.rcon_status*/)
+	{
+		ROS_WARN("%s, %d,ev.bumper_triggered(%d) ev.cliff_triggered(%d) ev.tilt_triggered(%d), rcon(%d)."
+				, __FUNCTION__, __LINE__, ev.bumper_triggered, ev.cliff_triggered, ev.tilt_triggered/*,ev.rcon_status*/);
+		return true;
+	}
+
+	return false;
+}
+
 bool IMoveType::handleMoveBackEvent(ACleanMode *p_clean_mode)
 {
 	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered)
 	{
 		p_clean_mode->saveBlocks();
 		movement_i_ = mm_back;
-		auto back_distance = (ev.tilt_triggered || gyro.getAngleR() > 5) ? 0.15 : 0.01;
+		auto back_distance = (ev.tilt_triggered/* || gyro.getAngleR() > 5*/) ? TILT_BACK_DISTANCE : 0.01;
 //		if(gyro.getAngleR() > 5)
 //			beeper.beepForCommand(VALID);
 		sp_movement_.reset(new MovementBack(back_distance, BACK_MAX_SPEED));
@@ -220,5 +212,25 @@ bool IMoveType::handleMoveBackEvent(ACleanMode *p_clean_mode)
 	}
 
 	return false;
+}
+
+bool IMoveType::handleMoveBackEventLinear(ACleanMode *p_clean_mode)
+{
+	if (ev.bumper_triggered || ev.tilt_triggered)
+	{
+		p_clean_mode->saveBlocks();
+		movement_i_ = mm_back;
+		auto back_distance = (ev.tilt_triggered/* || gyro.getAngleR() > 5*/) ? TILT_BACK_DISTANCE : 0.01;
+//		if(gyro.getAngleR() > 5)
+//			beeper.beepForCommand(VALID);
+		sp_movement_.reset(new MovementBack(back_distance, BACK_MAX_SPEED));
+		return true;
+	}
+
+	return false;
+}
+
+bool IMoveType::isNotHandleEvent() {
+	return !(ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered);
 }
 

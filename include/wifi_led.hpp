@@ -20,7 +20,7 @@ public:
 	};
 	void set(bool _switch);
 
-	void setMode(uint8_t type, state _switch, uint16_t time_ms = 3000);
+	void setMode(uint8_t type, state _switch, uint16_t time_ms = 600);
 
 	void processLed();
 private:

@@ -30,24 +30,14 @@ void Vacuum::setTmpMode(uint8_t mode)
 	ROS_INFO("%s %d: Set vacuum temp mode:%d.", __FUNCTION__, __LINE__, mode);
 }
 
-void Vacuum::setMode(uint8_t mode,bool run)
+void Vacuum::setMode(uint8_t mode)
 {
 	ROS_INFO("%s %d: Vacuum last mode set as:%d.", __FUNCTION__, __LINE__, mode_);
 	mode_ = mode;
-	if(run)
-		setSpeedByMode(mode_);
 }
 
 void Vacuum::Switch()
 {
-	// Switch the vacuum mode_ between Max and Normal
-	if (mode_ == Vac_Normal)
-	{
-		setMode(Vac_Max,true);
-	} else
-	{
-		setMode(Vac_Normal,true);
-	}
 	// Process the vacuum mode_
 	setSpeedByMode(mode_);
 }

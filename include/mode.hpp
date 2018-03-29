@@ -11,6 +11,7 @@
 #include "boost/shared_ptr.hpp"
 #include <pthread.h>
 #include <visualization_msgs/Marker.h>
+#include <vacuum.h>
 //#include "move_type.hpp"
 
 
@@ -123,11 +124,19 @@ public:
 		is_clean_mode_navigation_ = set;
 	}
 
+	bool isExpMode(){
+		return is_clean_mode_exploration_;
+	}
+	void setExpMode(bool set){
+		is_clean_mode_exploration_ = set;
+	}
+
 	double wall_distance;
+	int mode_i_{};
 
 protected:
 	bool is_clean_mode_navigation_{false};
-	int mode_i_{};
+	bool is_clean_mode_exploration_{false};
 private:
 
 };
@@ -155,8 +164,8 @@ public:
 	void remoteClean(bool state_now, bool state_last) override
 	{ remoteKeyHandler(state_now, state_last);}
 	void remoteMax(bool state_now, bool state_last) override ;
-	void lidar_bumper(bool state_now, bool state_last) override;
-	void remote_wifi(bool state_now, bool state_last) override;
+//	void lidarBumper(bool state_now, bool state_last) override;
+	void remoteWifi(bool state_now, bool state_last) override;
 	void remotePlan(bool state_now, bool state_last) override ;
 	void keyClean(bool state_now, bool state_last) override;
 	void chargeDetect(bool state_now, bool state_last) override ;
@@ -294,7 +303,12 @@ public:
 	virtual bool markRealTime(){return false;};
 	virtual bool markMapInNewCell(){return false;};
 
-	bool isRemoteGoHomePoint();
+	bool isRemoteGoHomePoint(){
+		return remote_go_home_point;
+	};
+    bool isGoHomePointForLowPower(){
+		return go_home_for_low_battery_;
+	}
 	void setHomePoint();
 	bool estimateChargerPos(uint32_t rcon_value);
 	void setChargerArea(const Point_t charge_pos);
@@ -483,6 +497,7 @@ protected:
 	Points home_points_{};
 	bool should_go_to_charger_{false};
 	bool remote_go_home_point{false};
+	bool go_home_for_low_battery_{};
 	bool switch_is_off_{false};
 	Points charger_pose_;
 	Points tmp_charger_pose_;
@@ -613,7 +628,6 @@ private:
 	float paused_odom_radian_{};
 	float start_align_radian_{};
 	Point_t continue_point_{};
-	bool go_home_for_low_battery_{};
 	static int align_count_;
 };
 
@@ -631,6 +645,7 @@ public:
 	void remoteClean(bool state_now, bool state_last) override ;
 //	void cliffAll(bool state_now, bool state_last) override ;
 	void chargeDetect(bool state_now, bool state_last) override ;
+	void remoteMax(bool state_now, bool state_last) override ;
 
 //	void overCurrentBrushLeft(bool state_now, bool state_last);
 //	void overCurrentBrushMain(bool state_now, bool state_last);

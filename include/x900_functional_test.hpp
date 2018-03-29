@@ -76,8 +76,12 @@ void error_loop(uint8_t test_stage, uint16_t error_code, uint16_t current_data);
 
 /*
  * Test serial port.
+ * return value:
+ * 0: test pass
+ * 1~254: main board version error, current main board version.
+ * 255: serial error
  */
-bool serial_port_test();
+uint8_t serial_port_test();
 
 /*
  * Test for power supply voltage.

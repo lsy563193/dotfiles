@@ -18,6 +18,7 @@ CleanModeExploration::CleanModeExploration()
 	go_home_path_algorithm_.reset();
 	error_marker_.clear();
 	clean_map_.mapInit();
+	setExpMode(true);
 }
 
 CleanModeExploration::~CleanModeExploration()
@@ -56,6 +57,7 @@ CleanModeExploration::~CleanModeExploration()
 		ROS_INFO("%s %d: Write data succeeded.", __FUNCTION__, __LINE__);
 	}
 #endif
+	setExpMode(false);
 }
 
 bool CleanModeExploration::mapMark()
@@ -93,7 +95,11 @@ void CleanModeExploration::keyClean(bool state_now, bool state_last) {
 	if (long_press)
 		ev.key_long_pressed = true;
 	else
+	{
+		speaker.play(VOICE_END_TO_FIND_CHARGEER ,false);
 		ev.key_clean_pressed = true;
+	}
+
 	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
 
 	key.resetTriggerStatus();
@@ -104,6 +110,7 @@ void CleanModeExploration::remoteClean(bool state_now, bool state_last) {
 
 	beeper.beepForCommand(VALID);
 	ev.key_clean_pressed = true;
+	speaker.play(VOICE_END_TO_FIND_CHARGEER ,false);
 	remote.reset();
 }
 
@@ -123,6 +130,21 @@ void CleanModeExploration::chargeDetect(bool state_now, bool state_last) {
 	ev.charge_detect = charger.getChargeStatus();
 }
 
+void CleanModeExploration::remoteMax(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
+	if(isInitState() || isStateFollowWall() || isStateExploration() || isStateGoHomePoint() || isStateGoToCharger())
+	{
+		beeper.beepForCommand(VALID);
+		uint8_t vac_mode = vacuum.getMode();
+		vacuum.setMode(!vac_mode);
+		speaker.play(!vac_mode == Vac_Normal ? VOICE_CONVERT_TO_NORMAL_SUCTION : VOICE_CONVERT_TO_LARGE_SUCTION,false);
+	}
+
+	else
+		beeper.beepForCommand(INVALID);
+	remote.reset();
+}
 /*void CleanModeExploration::printMapAndPath()
 {
 	clean_path_algorithm_->displayCellPath(pointsGenerateCells(passed_path_));
@@ -155,8 +177,8 @@ bool CleanModeExploration::updateActionInStateInit() {
 		action_i_ = ac_open_gyro;
 	else if (action_i_ == ac_open_gyro) {
 		if (!water_tank.checkEquipment())
-			vacuum.setLastMode();
-		brush.normalOperate();
+			vacuum.bldcSpeed(Vac_Speed_NormalL);
+		brush.slowOperate();
 		action_i_ = ac_open_lidar;
 	}
 	else if (action_i_ == ac_open_lidar)
@@ -173,6 +195,7 @@ bool CleanModeExploration::updateActionInStateInit() {
 void CleanModeExploration::switchInStateGoHomePoint() {
 	PP_INFO();
 	sp_state = nullptr;
+	speaker.play(VOICE_FAILED_TO_FIND_CHARGEER, false);
 }
 /*
 
@@ -200,14 +223,16 @@ bool CleanModeExploration::markMapInNewCell() {
 
 void CleanModeExploration::resetErrorMarker() {
 	//set unclean to map
+	ROS_INFO("%s,%d,size:%d",__FUNCTION__,__LINE__,error_marker_.size());
 	auto time = ros::Time::now().toSec();
 	for(auto ite = error_marker_.begin();ite != error_marker_.end();ite++){
+		if(error_marker_.empty())
+			break;
 		if(time - ite->time > 20){
 			if(clean_map_.getCell(CLEAN_MAP,ite->x,ite->y) == CLEANED &&
 					slam_grid_map.getCell(CLEAN_MAP,ite->x,ite->y) != SLAM_MAP_CLEANABLE)
 				clean_map_.setCell(CLEAN_MAP,ite->x,ite->y,UNCLEAN);
-			if(error_marker_.empty())
-				break;
+//			ROS_INFO("%s,%d,i:%d,size:%d",__FUNCTION__,__LINE__,i,error_marker_.size());
 			error_marker_.erase(ite);
 		}
 	}

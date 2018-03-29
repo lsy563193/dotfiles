@@ -213,7 +213,7 @@ void MoveTypeGyroTest::run()
 		{
 			ROS_INFO("%s %d: Test finish.", __FUNCTION__, __LINE__);
 			key_led.setMode(LED_STEADY, LED_GREEN);
-			infrared_display.displayNormalMsg(0, 0);
+			infrared_display.displayNormalMsg(0, 9999);
 			speaker.play(VOICE_TEST_SUCCESS);
 //			beeper.beep(2, 40, 40, 3);
 			wheel.stop();

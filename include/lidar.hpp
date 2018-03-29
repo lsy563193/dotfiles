@@ -102,6 +102,13 @@ public:
 	}
 
 	double checkIsRightAngle(bool is_left);
+
+	void saveLidarDataToFile(uint32_t seq, sensor_msgs::LaserScan scan);
+
+//	void readLidarDataFromFile(uint32_t seq, float (&scan_data)[360]);
+	void readLidarDataFromFile(bool check_front, float (&scan_data)[360]);
+
+	bool scanDataChecking(bool check_front, sensor_msgs::LaserScan scan, float (&ref_scan_data)[360]);
 private:
 
 	// switch_ is the target status of lidar.

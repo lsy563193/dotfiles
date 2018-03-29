@@ -176,14 +176,15 @@ bool MovementExceptionResume::isFinish()
 					ev.oc_wheel_left = false;
 					if (!water_tank.isEquipped())
 						vacuum.setLastMode();
-					brush.normalOperate();
+//					brush.normalOperate();
+
 				} else
 				{
 					ROS_WARN("%s %d: Right wheel resume succeeded.", __FUNCTION__, __LINE__);
 					ev.oc_wheel_right = false;
 					if (!water_tank.isEquipped())
 						vacuum.setLastMode();
-					brush.normalOperate();
+//					brush.normalOperate();
 				}
 			}
 		}
@@ -425,7 +426,6 @@ bool MovementExceptionResume::isFinish()
 	{
 		ACleanMode* p_mode = dynamic_cast<ACleanMode*>(sp_mt_->sp_mode_);
 		auto isExitSlipBlock = p_mode->clean_map_.getCell(CLEAN_MAP,getPosition().toCell().x,getPosition().toCell().y);
-		ROS_ERROR("state:%d,x:%d,y:%d",isExitSlipBlock,getPosition().toCell().x,getPosition().toCell().y);
 
 		if(ros::Time::now().toSec() - resume_slip_start_time_ > 60){
 			ev.robot_slip = false;

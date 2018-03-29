@@ -122,7 +122,7 @@ ACleanMode::~ACleanMode()
 			speaker.play(VOICE_CHECK_SWITCH, false);
 			ROS_WARN("%s %d: Switch is not on. Stop cleaning.", __FUNCTION__, __LINE__);
 		}
-		else
+		else if(mode_i_ != cm_exploration)
 		{
 			speaker.play(VOICE_CLEANING_FINISHED, false);
 			ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
@@ -700,10 +700,10 @@ void ACleanMode::setCleanMapMarkers(int16_t x, int16_t y, CellState type, visual
 	}
 	else if (type == BLOCKED_CLIFF)
 	{
-		// Magenta
-		color_.r = 1.0;
+		// Black
+		color_.r = 0.0;
 		color_.g = 0.0;
-		color_.b = 1.0;
+		color_.b = 0.0;
 	}
 	else if (type == BLOCKED_RCON || type == BLOCKED_TMP_RCON)
 	{
@@ -1509,11 +1509,6 @@ void ACleanMode::setHomePoint()
 	ROS_INFO("%s %d: %s", __FUNCTION__, __LINE__, msg.c_str());
 }
 
-bool ACleanMode::isRemoteGoHomePoint()
-{
-	return remote_go_home_point;
-}
-
 // ------------------Handlers--------------------------
 void ACleanMode::remoteHome(bool state_now, bool state_last)
 {
@@ -1866,7 +1861,9 @@ bool ACleanMode::updateActionInStateExploration() {
 
 void ACleanMode::switchInStateExploration() {
 	PP_INFO();
-	if (clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell())) {
+	old_dir_ = iterate_point_.dir;
+	Cells tmp_path =  clean_path_algorithm_->findShortestPath(clean_map_,getPosition().toCell(),Cell_t{0,0},old_dir_,false,false,Cell_t{0,0},Cell_t{0,0});
+	if (tmp_path.empty()) {
 		ROS_WARN("%s,%d: enter state trapped",__FUNCTION__,__LINE__);
 		sp_saved_states.push_back(sp_state);
 		is_trapped_ = true;
@@ -1880,7 +1877,6 @@ void ACleanMode::switchInStateExploration() {
 		auto curr = getPosition();
 		start_point_.th = curr.th;
 		sp_state = state_go_home_point;
-		speaker.play(VOICE_BACK_TO_CHARGER, true);
 		if (go_home_path_algorithm_ == nullptr)
 			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_, start_point_));
 	}
@@ -2043,7 +2039,6 @@ bool ACleanMode::generatePath(GridMap &map, const Point_t &curr, const int &last
 
 bool ACleanMode::isGyroDynamic() {
 	return ros::Time::now().toSec() - time_gyro_dynamic_ > robot::instance()->getGyroDynamicInterval();
-//	return true;
 }
 
 void ACleanMode::genNextAction() {

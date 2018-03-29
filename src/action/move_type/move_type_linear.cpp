@@ -43,7 +43,7 @@ MoveTypeLinear::~MoveTypeLinear()
 
 bool MoveTypeLinear::isFinish()
 {
-	if (IMoveType::isFinish())
+	if (IMoveType::isFinish() && isNotHandleEvent())
 	{
 		ROS_INFO("%s %d: Move type aborted.", __FUNCTION__, __LINE__);
 		return true;
@@ -68,22 +68,38 @@ bool MoveTypeLinear::isFinish()
 				sp_movement_.reset(new MovementFollowPointLinear());
 				ROS_WARN("turn_target_radian_", radian_to_degree(turn_target_radian_));
 //				odom_turn_target_radians_ =  ranged_radian(turn_target_radian_  - getPosition().th + odom.getRadian());
-				odom_turn_target_radians_.push_back(odom.getRadian());
+//				odom_turn_target_radians_.push_back(odom.getRadian());
 				radian_diff_count = 0;
 
 			}
 		}
+		else if(movement_i_ == mm_stay)
+		{
+			beeper.beepForCommand(VALID);
+			ROS_ERROR("ev.cliff_triggered(%d)!!!", cliff.getStatus());
+			if(cliff.getStatus())
+				return true;
+			movement_i_ = mm_forward;
+			sp_movement_.reset(new MovementFollowPointLinear());
+			return false;
+		}
 		else if (movement_i_ == mm_forward)
 		{
-			if(handleMoveBackEvent(p_clean_mode)){
-//				ROS_WARN("111should_follow_wall(%d,%d)!!!", p_clean_mode->should_follow_wall, ev.tilt_triggered);
+			if(!handleMoveBackEventLinear(p_clean_mode)){
+				if(ev.cliff_triggered)
+				{
+					beeper.beepForCommand(VALID);
+					ROS_ERROR("ev.cliff_triggered(%d)!!!", ev.cliff_triggered);
+					movement_i_ = mm_stay;
+					sp_movement_.reset(new MovementStay(0.2));
+				}
 				if(!ev.tilt_triggered)
 					p_clean_mode->should_follow_wall = true;
 //				ROS_WARN("111should_follow_wall(%d)!!!", p_clean_mode->should_follow_wall);
 				return false;
 			}else {
 //				ROS_WARN("111should_follow_wall(%d,%d)!!!", p_clean_mode->should_follow_wall, ev.tilt_triggered);
-				if (ev.lidar_triggered || ev.rcon_status || ev.cliff_triggered || ev.obs_triggered) {
+				if (ev.bumper_triggered || ev.lidar_triggered || ev.rcon_status || ev.obs_triggered) {
 					p_clean_mode->should_follow_wall = true;
 				}
 //				ROS_WARN("222should_follow_wall(%d)!!!", p_clean_mode->should_follow_wall);
@@ -174,7 +190,7 @@ void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 					 __FUNCTION__,__LINE__,getPosition().toCell().x, getPosition().toCell().y, target_point_.toCell().x,target_point_.toCell().y,radian_to_degree(target_point_.th),
 								p_clean_mode->iterate_point_.dir);
 //			odom_turn_target_radians_ = remain_path_.front().th;
-			odom_turn_target_radians_.push_back(odom.getRadian());
+//			odom_turn_target_radians_.push_back(odom.getRadian());
 //			odom_turn_target_radian_ = .push_back(odom.getRadian());
 			radian_diff_count = 0;
 		}

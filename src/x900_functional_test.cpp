@@ -15,6 +15,7 @@
 void x900_functional_test(std::string serial_port, int baud_rate, std::string lidar_bumper_dev)
 {
 	uint8_t test_stage=0;
+	uint8_t test_result=0;
 	uint16_t error_code=0;
 	uint16_t current_data=0;
 	/*--- disable serial send and robotbase thread ---*/
@@ -27,10 +28,19 @@ void x900_functional_test(std::string serial_port, int baud_rate, std::string li
 	// If you can not hear the voice, then speaker port has error, but there is no way to test it by software.
 
 	// Test item: Serial port.
-	if (!serial_port_test())
+	test_result = serial_port_test();
+	if (test_result)
 	{
-		ROS_ERROR("%s %d: Serial port test failed!!", __FUNCTION__, __LINE__);
-		error_loop(FUNC_SERIAL_TEST_MODE, SERIAL_ERROR, 0);
+		/*--- serial error ---*/
+		if(test_result == 255) {
+			ROS_ERROR("%s %d: Serial port test failed!!", __FUNCTION__, __LINE__);
+			error_loop(FUNC_SERIAL_TEST_MODE, SERIAL_ERROR, 0);
+		}
+		else
+		{
+			ROS_ERROR("%s %d: Main board version failed!!", __FUNCTION__, __LINE__);
+			error_loop(FUNC_SERIAL_TEST_MODE, MAIN_BOARD_VERSION_ERROR, test_result);
+		}
 	}
 	ROS_INFO("Test serial port succeeded!!");
 
@@ -54,6 +64,7 @@ void x900_functional_test(std::string serial_port, int baud_rate, std::string li
 	serial.setSendData(CTL_LED_GREEN, 100);
 	serial.setSendData(CTL_LED_RED, 0);
 	serial.setSendData(CTL_MIX, 0);
+	infrared_display.displayNormalMsg(0, 9999);
 	ROS_INFO("%s %d: Test finish.", __FUNCTION__, __LINE__);
 	while (ros::ok())
 	{
@@ -89,10 +100,10 @@ void error_loop(uint8_t test_stage, uint16_t error_code, uint16_t current_data)
 	}
 }
 
-bool serial_port_test()
+uint8_t serial_port_test()
 {
 	ROS_INFO("%s %d: Start serial test.", __FUNCTION__, __LINE__);
-	bool test_ret = true;
+	uint8_t test_ret = 0;
 	std::random_device rd;
 	std::mt19937 random_number_engine(rd());
 	std::uniform_int_distribution<uint8_t> dist_char;
@@ -138,7 +149,7 @@ bool serial_port_test()
 		if (read_ret != REC_LEN)
 		{
 			ROS_ERROR("%s %d: Error during read:%d.", __FUNCTION__, __LINE__, read_ret);
-			test_ret = false;
+			test_ret = 255;
 			break;
 		}
 
@@ -158,10 +169,10 @@ bool serial_port_test()
 	if(send_string_sum.compare(receive_string_sum) == 0)
 	{
 		if(receive_data[M0_VERSION_H] << 8 | receive_data[M0_VERSION_L] != 0)
-			test_ret = false;
+			test_ret = receive_data[M0_VERSION_H] << 8 | receive_data[M0_VERSION_L];
 	}
 	else
-		test_ret = false;
+		test_ret = 255;
 
 	return test_ret;
 

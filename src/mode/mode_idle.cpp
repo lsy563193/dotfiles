@@ -252,11 +252,14 @@ void ModeIdle::remoteKeyHandler(bool state_now, bool state_last)
 
 void ModeIdle::remoteMax(bool state_now, bool state_last)
 {
-	beeper.beepForCommand(INVALID);
+	beeper.beepForCommand(VALID);
+	uint8_t vac_mode = vacuum.getMode();
+	vacuum.setMode(!vac_mode);
+	speaker.play(!vac_mode == Vac_Normal ? VOICE_CONVERT_TO_NORMAL_SUCTION : VOICE_CONVERT_TO_LARGE_SUCTION,false);
 	remote.reset();
 }
 
-void ModeIdle::lidar_bumper(bool state_now, bool state_last)
+/*void ModeIdle::lidarBumper(bool state_now, bool state_last)
 {
 	static uint16_t lidar_bumper_cnt = 0;
 	if( ! s_wifi.is_wifi_connected_){
@@ -287,12 +290,9 @@ void ModeIdle::lidar_bumper(bool state_now, bool state_last)
 			ROS_INFO("%s,%d, rebind",__FUNCTION__,__LINE__);
 		}
 	}
+}*/
 
-
-
-}
-
-void ModeIdle::remote_wifi(bool state_now,bool state_last)
+void ModeIdle::remoteWifi(bool state_now,bool state_last)
 {
 	ROS_INFO("%s,%d,wifi state = %d ",__FUNCTION__,__LINE__,S_Wifi::is_wifi_connected_);
 	remote.reset();
@@ -419,7 +419,9 @@ bool ModeIdle::isFinish()
 		key_led.setMode(LED_BREATH, LED_ORANGE);
 		robot::instance()->setBatterLow(true);
 	}
-	MutexLock lock(&bind_lock_);
+
+	// For debug
+	/*MutexLock lock(&bind_lock_);
 	if(trigger_wifi_rebind_)
 	{
 		trigger_wifi_rebind_ = false;
@@ -434,7 +436,7 @@ bool ModeIdle::isFinish()
 	{
 		trigger_wifi_smart_ap_link_ = false;
 		s_wifi.smartApLink();
-	}
+	}*/
 
 	return false;
 }

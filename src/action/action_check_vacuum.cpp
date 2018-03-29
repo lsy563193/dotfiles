@@ -9,7 +9,7 @@
 ActionCheckVacuum::ActionCheckVacuum()
 {
 	ROS_INFO("%s %d: Starting action check vacuum." , __FUNCTION__, __LINE__);
-	vacuum.bldcSpeed(80);
+	vacuum.bldcSpeed(Vac_Speed_Normal);
 }
 
 bool ActionCheckVacuum::isFinish()
@@ -31,5 +31,5 @@ bool ActionCheckVacuum::isExit()
 void ActionCheckVacuum::run()
 {
 	// Just...
-	vacuum.bldcSpeed(80);
+	vacuum.bldcSpeed(Vac_Speed_Normal);
 }
