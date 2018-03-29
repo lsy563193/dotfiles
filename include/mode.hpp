@@ -134,6 +134,16 @@ public:
 	double wall_distance;
 	int mode_i_{};
 
+	State *sp_state{};
+
+	State* getState() const {
+		return sp_state;
+	};
+
+	void setState(State* state){
+		sp_state = state;
+	}
+
 protected:
 	bool is_clean_mode_navigation_{false};
 	bool is_clean_mode_exploration_{false};
@@ -447,13 +457,6 @@ public:
 	int isolate_count_{};
 	int isolate_count_limit_{3};
 	bool is_trapped_{false};
-	State *sp_state{};
-	State* getState() const {
-		return sp_state;
-	};
-	void setState(State* state){
-		sp_state = state;
-	}
 
 	State *state_init = new StateInit();
 	State *state_clean = new StateClean();

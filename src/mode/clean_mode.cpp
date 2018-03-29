@@ -36,30 +36,53 @@ ACleanMode::ACleanMode()
 	line_marker_pub_ = clean_nh_.advertise<visualization_msgs::Marker>("line_marker", 1);
 	line_marker_pub2_ = clean_nh_.advertise<visualization_msgs::Marker>("line_marker2", 1);
 
+    PP_WARN();
 	lidar.slipCheckingCtrl(ON);
+	PP_WARN();
 	event_manager_register_handler(this);
+	PP_WARN();
 	event_manager_reset_status();
+	PP_WARN();
 	event_manager_set_enable(true);
+	PP_WARN();
 	serial.setWorkMode(WORK_MODE);
+	PP_WARN();
 	IMoveType::sp_mode_ = this;
+	PP_WARN();
 	APathAlgorithm::p_cm_ = this;
+	PP_WARN();
 	sp_state->setMode(this);
+	PP_WARN();
 	if (robot::instance()->getWorkMode() == WORK_MODE ||robot::instance()->getWorkMode() == IDLE_MODE || robot::instance()->getWorkMode() == CHARGE_MODE)
 	{
+		PP_WARN();
 		sp_state = state_init;
+		PP_WARN();
 		sp_state->init();
+		PP_WARN();
 		action_i_ = ac_open_gyro;
+		PP_WARN();
 		genNextAction();
+		PP_WARN();
 	}
+	PP_WARN();
 	robot_timer.initWorkTimer();
+	PP_WARN();
 	key.resetPressStatus();
+	PP_WARN();
 	time_gyro_dynamic_ = ros::Time::now().toSec();
+	PP_WARN();
 
 	resetPosition();
+	PP_WARN();
 	charger_pose_.clear();
+	PP_WARN();
 	tmp_charger_pose_.clear();
+	PP_WARN();
 	c_rcon.resetStatus();
+	PP_WARN();
 	robot::instance()->initOdomPosition();
+	PP_WARN();
 //	fw_map.reset(CLEAN_MAP);
 
 //	// todo:debug
