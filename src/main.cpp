@@ -81,13 +81,14 @@ void server_backtrace(int sig)
     fclose(f);
 }
 
-void handle_crash(int sig)
+void handle_crash_exit(int sig)
 {
 	ROS_ERROR("Oops!!! pp receive (%d) signal,segment fault!",sig);	
 	server_backtrace(sig);
 	exit(-1);
 }
-void handle_normal(int sig)
+
+void handle_normal_exit(int sig)
 {
 
 	ROS_ERROR("Oops!!! pp receive SIGINT signal,ctrl+c press");
@@ -104,10 +105,12 @@ int main(int argc, char **argv)
 	ros::init(argc, argv, "pp");
 	ros::NodeHandle	nh_dev("~");
 
-	signal(SIGTERM,handle_crash);
-	signal(SIGABRT,handle_crash);
-	signal(SIGSEGV,handle_crash);
-	signal(SIGINT,handle_normal);
+	signal(SIGTERM,handle_crash_exit);
+	signal(SIGABRT,handle_crash_exit);
+	signal(SIGSEGV,handle_crash_exit);
+	signal(SIGPIPE,handle_crash_exit);
+	signal(SIGFPE,handle_crash_exit);
+	signal(SIGINT,handle_normal_exit);
 	ROS_INFO("set signal action done!");
 
 	robot_instance = new robot();
