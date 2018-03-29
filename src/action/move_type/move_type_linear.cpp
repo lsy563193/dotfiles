@@ -43,7 +43,7 @@ MoveTypeLinear::~MoveTypeLinear()
 
 bool MoveTypeLinear::isFinish()
 {
-	if (IMoveType::isFinish())
+	if (IMoveType::isFinish() && isNotHandleEvent())
 	{
 		ROS_INFO("%s %d: Move type aborted.", __FUNCTION__, __LINE__);
 		return true;

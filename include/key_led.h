@@ -30,6 +30,7 @@ public:
 	void wifi_led(state );
 // time_ms is used for both LED_FLASH type and LED_BREATH type, the default value is for LED_BREATH.
 	void setMode(uint8_t type, uint8_t color, uint16_t time_ms = 3000);
+	uint8_t getColor();
 
 	void processLed();
 private:
