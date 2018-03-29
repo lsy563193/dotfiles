@@ -28,4 +28,5 @@
 #include "water_tank.hpp"
 #include "wifi/wifi.h"
 #include "wifi_led.hpp"
+#include "appointment.h"
 #endif //PP_DEV_H

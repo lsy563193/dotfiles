@@ -639,7 +639,7 @@ void Serial::send_routine_cb()
 	//					 && s_wifi.is_cloud_connected_
 	//					 && s_wifi.isStatusRequest_
 	//					 )
-	//			s_wifi.replyRealtimeMap();
+	//			s_wifi.replyRealtimePassPath();
 	//	}
 		//r.sleep();
 		/*-------------------Process for beeper.play and key_led -----------------------*/
