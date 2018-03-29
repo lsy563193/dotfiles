@@ -210,17 +210,17 @@ bool IMoveType::handleMoveBackEvent(ACleanMode *p_clean_mode)
         if(ev.cliff_triggered)
 		{
 			back_distance = 0.02;
-            if(sp_mode_->action_i_ == sp_mode_->ac_linear)
-			{
-                if(ev.cliff_triggered == BLOCK_FRONT)
-				{
-					beeper.beepForCommand(INVALID);
-					back_distance = 0.04;
-				}else{
-					beeper.beepForCommand(VALID);
-					back_distance = 0.02;
-				}
-			}
+//            if(sp_mode_->action_i_ == sp_mode_->ac_linear)
+//			{
+//                if(ev.cliff_triggered == BLOCK_FRONT)
+//				{
+//					beeper.beepForCommand(INVALID);
+//					back_distance = 0.04;
+//				}else{
+//					beeper.beepForCommand(VALID);
+//					back_distance = 0.02;
+//				}
+//			}
 		}
 		back_distance = (ev.tilt_triggered/* || gyro.getAngleR() > 5*/) ? TILT_BACK_DISTANCE : back_distance;
 //		if(gyro.getAngleR() > 5)

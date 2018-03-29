@@ -34,7 +34,7 @@ ModeIdle::ModeIdle():
 	s_wifi.replyRobotStatus(0xc8,0x00);
 //	// todo:debug
 //	infrared_display.displayErrorMsg(9, 1234, 101);
-	sp_state = new StatePause();
+	sp_state.reset(new StatePause()) ;
 	sp_state->init();
 }
 
@@ -195,6 +195,7 @@ void ModeIdle::remoteKeyHandler(bool state_now, bool state_last)
 			  && robot::instance()->isBatteryLow())
 	{
 		ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, battery.getVoltage(), (int)BATTERY_READY_TO_CLEAN_VOLTAGE);
+		key_led.setMode(LED_BREATH, LED_ORANGE);
         sp_state->init();
 		beeper.beepForCommand(INVALID);
 		speaker.play(VOICE_BATTERY_LOW);

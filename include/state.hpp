@@ -25,8 +25,8 @@ public:
 	virtual void init()=0;
 	virtual void second(){};
 
-protected:
 	static ACleanMode* sp_cm_;
+protected:
 };
 
 class StateInit: public State {

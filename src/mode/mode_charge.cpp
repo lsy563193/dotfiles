@@ -23,6 +23,7 @@ ModeCharge::ModeCharge()
 	action_i_ = ac_charge;
 	serial.setWorkMode(CHARGE_MODE);
 	plan_activated_status_ = false;
+	sp_state.reset(new StateCharge());
 }
 
 ModeCharge::~ModeCharge()

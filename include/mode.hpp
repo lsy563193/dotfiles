@@ -134,15 +134,15 @@ public:
 	double wall_distance;
 	int mode_i_{};
 
-	State *sp_state{};
+	boost::shared_ptr<State> sp_state{};
 
-	State* getState() const {
-		return sp_state;
-	};
+//	boost::shared_ptr<State> getState() const {
+//		return sp_state;
+//	};
 
-	void setState(State* state){
-		sp_state = state;
-	}
+//	void setState(State* state){
+//		sp_state = state;
+//	}
 
 protected:
 	bool is_clean_mode_navigation_{false};
@@ -458,10 +458,10 @@ public:
 	int isolate_count_limit_{3};
 	bool is_trapped_{false};
 
-	State *state_init = new StateInit();
-	State *state_clean = new StateClean();
-	State *state_exception_resume = new StateExceptionResume();
-	State *state_exploration = new StateExploration();
+	boost::shared_ptr<State> state_init{new StateInit()};
+	boost::shared_ptr<State> state_clean{new StateClean()};
+	boost::shared_ptr<State> state_exception_resume{new StateExceptionResume()};
+	boost::shared_ptr<State> state_exploration{new StateExploration()};
 
 	Points passed_path_{};
 	typedef std::set<PairCell_t> Blocks_t ;
@@ -485,15 +485,15 @@ public:
 	double time_gyro_dynamic_;
 
 protected:
-	std::vector<State*> sp_saved_states;
-	State *state_go_home_point = new StateGoHomePoint();
-	State *state_go_to_charger = new StateGoCharger();
-	State *state_charge = new StateCharge();
-	State *state_folllow_wall = new StateFolllowWall();
-	State *state_spot =  new StateSpot();
-	State *state_resume_low_battery_charge = new StateResumeLowBatteryCharge();
-	State *state_pause = new StatePause();
-	State *state_test = new StateTest();
+	std::vector<boost::shared_ptr<State>> sp_saved_states;
+	boost::shared_ptr<State> state_go_home_point{new StateGoHomePoint()};
+	boost::shared_ptr<State> state_go_to_charger{new StateGoCharger()};
+	boost::shared_ptr<State> state_charge{new StateCharge()};
+	boost::shared_ptr<State> state_folllow_wall{new StateFolllowWall()};
+	boost::shared_ptr<State> state_spot{new StateSpot()};
+	boost::shared_ptr<State> state_resume_low_battery_charge{new StateResumeLowBatteryCharge()};
+	boost::shared_ptr<State> state_pause{new StatePause()};
+	boost::shared_ptr<State> state_test{new StateTest()};
 
 	bool low_battery_charge_{};
 	bool moved_during_pause_{};
