@@ -6,6 +6,7 @@
 #define PP_MOVE_TYPE_HPP
 #define TRAP_IN_SMALL_AREA_COUNT 20
 #define TILT_BACK_DISTANCE 0.15
+//#define CLIFF_BACK_DISTANCE 0.1
 
 #include "action.hpp"
 #include "movement.hpp"
@@ -60,7 +61,6 @@ public:
 	static Mode *sp_mode_;
 	static int movement_i_;
 	void resetTriggeredValue();
-	Point_t start_point_;
 	bool state_turn{};
 //	Point_t target_point_;
 	int dir_;
@@ -135,6 +135,7 @@ class MoveTypeGoToCharger:public IMoveType
 {
 public:
 	MoveTypeGoToCharger();
+	~MoveTypeGoToCharger();
 
 	bool isFinish() override ;
 

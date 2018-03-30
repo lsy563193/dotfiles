@@ -74,7 +74,7 @@ void matrix_rotate(double *x, double *y, double theta)
 }
 
 //Line's angle, range is (-pi/2, pi/2]
-//Mode other value: easy mode_, only calculate k = A/B;
+//Mode other value: easy is_max_clean_state_, only calculate k = A/B;
 //Mode 1: Precise Mode, A or B = 1.0 needed
 double line_angle(LineABC l, uint8_t mode) {
 	double tmp;

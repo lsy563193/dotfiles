@@ -169,7 +169,7 @@ uint8_t Brush::leftIsStall(void)
 				ROS_DEBUG("%s %d: Fully operate the brush for 5s.", __FUNCTION__, __LINE__);
 				if ((time(NULL) - time_left_brush) >= 5) {
 					ROS_WARN("%s %d: Restore from fully operated.", __FUNCTION__, __LINE__);
-					*//*-----brush is in max mode_ more than 5s, turn to normal mode_ and reset error counter-----*//*
+					*//*-----brush is in max is_max_clean_state_ more than 5s, turn to normal is_max_clean_state_ and reset error counter-----*//*
 					setPWM(left_pwm_, right_pwm_, main_pwm_);
 					left_status = 1;
 					oc_left_cnt_ = 0;
@@ -255,7 +255,7 @@ uint8_t Brush::rightIsStall(void)
 				ROS_DEBUG("%s %d: Fully operate the brush for 5s.", __FUNCTION__, __LINE__);
 				if ((time(NULL) - time_right_brush) >= 5) {
 					ROS_WARN("%s %d: Restore from fully operated.", __FUNCTION__, __LINE__);
-					*//*-----brush is in max mode_ more than 5s, turn to normal mode_ and reset error counter-----*//*
+					*//*-----brush is in max is_max_clean_state_ more than 5s, turn to normal is_max_clean_state_ and reset error counter-----*//*
 					setPWM(left_pwm_, right_pwm_, main_pwm_);
 					right_status = 1;
 					oc_right_cnt_ = 0;

@@ -23,7 +23,7 @@ Speaker::Speaker(void)
 void Speaker::playRoutine()
 {
 	ROS_INFO("robotbase,\033[32m%s\033[0m,%d is up.",__FUNCTION__,__LINE__);
-	while(ros::ok() && !speak_thread_stop_)
+	while(!speak_thread_stop_)
 	{
 		if(!finish_playing_)
 		{
@@ -58,7 +58,7 @@ void Speaker::playRoutine()
 		else
 			usleep(1000);
 	}
-	ROS_ERROR("%s,%d exit",__FUNCTION__,__LINE__);
+	printf("%s,%d exit\n",__FUNCTION__,__LINE__);
 }
 
 void Speaker::play(VoiceType voice_type, bool can_be_interrupted)

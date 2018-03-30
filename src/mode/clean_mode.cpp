@@ -37,29 +37,51 @@ ACleanMode::ACleanMode()
 	line_marker_pub2_ = clean_nh_.advertise<visualization_msgs::Marker>("line_marker2", 1);
 
 	lidar.slipCheckingCtrl(ON);
+	PP_INFO();
 	event_manager_register_handler(this);
+	PP_INFO();
 	event_manager_reset_status();
+	PP_INFO();
 	event_manager_set_enable(true);
+	PP_INFO();
 	serial.setWorkMode(WORK_MODE);
+	PP_INFO();
 	IMoveType::sp_mode_ = this;
+	PP_INFO();
 	APathAlgorithm::p_cm_ = this;
-	sp_state->setMode(this);
+	PP_INFO();
+	State::sp_cm_ = this;
+    PP_INFO();
 	if (robot::instance()->getWorkMode() == WORK_MODE ||robot::instance()->getWorkMode() == IDLE_MODE || robot::instance()->getWorkMode() == CHARGE_MODE)
 	{
+		PP_INFO();
 		sp_state = state_init;
+		PP_INFO();
 		sp_state->init();
+		PP_INFO();
 		action_i_ = ac_open_gyro;
+		PP_INFO();
 		genNextAction();
+		PP_INFO();
 	}
+	PP_INFO();
 	robot_timer.initWorkTimer();
+	PP_INFO();
 	key.resetPressStatus();
+	PP_INFO();
 	time_gyro_dynamic_ = ros::Time::now().toSec();
+	PP_INFO();
 
 	resetPosition();
+	PP_INFO();
 	charger_pose_.clear();
+	PP_INFO();
 	tmp_charger_pose_.clear();
+	PP_INFO();
 	c_rcon.resetStatus();
+	PP_INFO();
 	robot::instance()->initOdomPosition();
+	PP_INFO();
 //	fw_map.reset(CLEAN_MAP);
 
 //	// todo:debug
@@ -90,7 +112,7 @@ ACleanMode::~ACleanMode()
 		wheel.stop();
 		brush.stop();
 		vacuum.stop();
-		water_tank.stop();
+		water_tank.stop(WaterTank::tank_pump);
 		lidar.motorCtrl(OFF);
 		lidar.setScanOriginalReady(0);
 		lidar.slipCheckingCtrl(OFF);
@@ -127,9 +149,6 @@ ACleanMode::~ACleanMode()
 			speaker.play(VOICE_CLEANING_FINISHED, false);
 			ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
 		}
-	}
-	else{
-		speaker.stop();
 	}
 	auto cleaned_count = clean_map_.getCleanedArea();
 	auto map_area = cleaned_count * CELL_SIZE * CELL_SIZE;
@@ -1572,8 +1591,10 @@ bool ACleanMode::updateActionInStateInit() {
 	if (action_i_ == ac_null)
 		action_i_ = ac_open_gyro;
 	else if (action_i_ == ac_open_gyro) {
-		if (!water_tank.checkEquipment())
-			vacuum.setLastMode();
+		if (water_tank.checkEquipment(false))
+			water_tank.open(WaterTank::tank_pump);
+		else
+			vacuum.setCleanState();
 		brush.normalOperate();
 		action_i_ = ac_open_lidar;
 	}

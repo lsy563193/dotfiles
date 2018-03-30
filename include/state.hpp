@@ -23,9 +23,10 @@ public:
 	{return sp_cm_;}
 
 	virtual void init()=0;
+	virtual void second(){};
 
-protected:
 	static ACleanMode* sp_cm_;
+protected:
 };
 
 class StateInit: public State {
@@ -63,7 +64,7 @@ class StateCharge: public State {
 public:
 	StateCharge() = default;
 	void init() override;
-//	IMoveType* setNextAction_();
+	void second() override ; //full_power
 
 };
 class StateFolllowWall: public State {

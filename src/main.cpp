@@ -14,88 +14,47 @@ robot* robot_instance = nullptr;
 
 void server_backtrace(int sig)
 {
-    //open file
-    time_t tSetTime;
-    time(&tSetTime);
-    struct tm* ptm = localtime(&tSetTime);
-    char fname[256] = {0};
-    sprintf(fname, "core.%d-%d-%d_%d_%d_%d",
-            ptm->tm_year+1900, ptm->tm_mon+1, ptm->tm_mday,
-            ptm->tm_hour, ptm->tm_min, ptm->tm_sec);
-    FILE* f = fopen(fname, "a");
-    if (f == NULL){
-        return;
-    }
-    int fd = fileno(f);
+	void *pTrace[256];
+    char **ppszMsg = NULL;
+    size_t uTraceSize = 0;
 
-    //lock file
-    struct flock fl;
-    fl.l_type = F_WRLCK;
-    fl.l_start = 0;
-    fl.l_whence = SEEK_SET;
-    fl.l_len = 0;
-    fl.l_pid = getpid();
-    fcntl(fd, F_SETLKW, &fl);
+    do {
 
-    //output path
-    char buffer[4096];
-    memset(buffer, 0, sizeof(buffer));
-    int count = readlink("/proc/self/exe", buffer, sizeof(buffer));
-    if(count > 0){
-        buffer[count] = '\n';
-        buffer[count + 1] = 0;
-        fwrite(buffer, 1, count+1, f);
-    }
-
-    //output time 
-    memset(buffer, 0, sizeof(buffer));
-    sprintf(buffer, "Dump Time: %d-%d-%d %d:%d:%d\n",
-            ptm->tm_year+1900, ptm->tm_mon+1, ptm->tm_mday,
-            ptm->tm_hour, ptm->tm_min, ptm->tm_sec);
-    fwrite(buffer, 1, strlen(buffer), f);
-
-    //signal
-    sprintf(buffer, "Curr thread: %u, Catch signal:%d\n",
-            (int)pthread_self(), sig);
-    fwrite(buffer, 1, strlen(buffer), f);
-
-    //stack
-    void* DumpArray[256];
-    int    nSize =    backtrace(DumpArray, 256);
-    sprintf(buffer, "backtrace rank = %d\n", nSize);
-    fwrite(buffer, 1, strlen(buffer), f);
-    if (nSize > 0){
-        char** symbols = backtrace_symbols(DumpArray, nSize);
-        if (symbols != NULL){
-            for (int i=0; i<nSize; i++){
-                fwrite(symbols[i], 1, strlen(symbols[i]), f);
-                fwrite("\n", 1, 1, f);
-            }
-            free(symbols);
+        if (0 == (uTraceSize = backtrace(pTrace, sizeof(pTrace) / sizeof(void *)))) {
+            break;
         }
-    }
+        if (NULL == (ppszMsg = backtrace_symbols(pTrace, uTraceSize))) {
+            break;
+        }
 
-    //file unlock and close
-    fl.l_type = F_UNLCK;
-    fcntl(fd, F_SETLK, &fl);
-    fclose(f);
+        printf("%d. call stack:\n", sig);
+        for (size_t i = 0; i < uTraceSize; ++i) {
+              printf("%s\n", ppszMsg[i]);
+        }
+    } while (0);
+
+    if (NULL != ppszMsg) {
+        free(ppszMsg);
+        ppszMsg = NULL;
+    }
 }
 
 void handle_crash_exit(int sig)
 {
-	ROS_ERROR("Oops!!! pp receive (%d) signal,segment fault!",sig);	
+	ROS_ERROR("Oops!!! pp receive (%d) signal",sig);
 	server_backtrace(sig);
 	exit(-1);
 }
 
 void handle_normal_exit(int sig)
 {
-
 	ROS_ERROR("Oops!!! pp receive SIGINT signal,ctrl+c press");
-	ros::shutdown();
 	if(robot_instance != nullptr){
-		speaker.play(VOICE_PROCESS_ERROR,false);
+//		speaker.play(VOICE_PROCESS_ERROR,false);
+//		speaker.play(VOICE_NULL);
+		speaker.stop();
 		delete robot_instance;
+		ros::shutdown();
 	}
 	exit(0);
 }
@@ -105,11 +64,11 @@ int main(int argc, char **argv)
 	ros::init(argc, argv, "pp");
 	ros::NodeHandle	nh_dev("~");
 
-	signal(SIGTERM,handle_crash_exit);
 	signal(SIGABRT,handle_crash_exit);
 	signal(SIGSEGV,handle_crash_exit);
 	signal(SIGPIPE,handle_crash_exit);
 	signal(SIGFPE,handle_crash_exit);
+
 	signal(SIGINT,handle_normal_exit);
 	ROS_INFO("set signal action done!");
 

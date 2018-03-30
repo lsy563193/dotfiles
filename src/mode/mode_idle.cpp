@@ -34,6 +34,8 @@ ModeIdle::ModeIdle():
 	s_wifi.replyRobotStatus(0xc8,0x00);
 //	// todo:debug
 //	infrared_display.displayErrorMsg(9, 1234, 101);
+	sp_state.reset(new StatePause()) ;
+	sp_state->init();
 }
 
 ModeIdle::~ModeIdle()
@@ -54,10 +56,7 @@ bool ModeIdle::isExit()
 				if (error.clear(error.get()))
 				{
 					ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
-					if (robot::instance()->isBatteryLow())
-						key_led.setMode(LED_BREATH, LED_ORANGE);
-					else
-						key_led.setMode(LED_BREATH, LED_GREEN);
+					sp_state->init();
 					speaker.play(VOICE_CLEAR_ERROR, false);
 				} else
 				{
@@ -169,10 +168,7 @@ void ModeIdle::remoteKeyHandler(bool state_now, bool state_last)
 			{
 				ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
 				beeper.beepForCommand(VALID);
-				if (robot::instance()->isBatteryLow())
-					key_led.setMode(LED_BREATH, LED_ORANGE);
-				else
-					key_led.setMode(LED_BREATH, LED_GREEN);
+				sp_state->init();
 				speaker.play(VOICE_CLEAR_ERROR);
 			}
 			else
@@ -200,6 +196,7 @@ void ModeIdle::remoteKeyHandler(bool state_now, bool state_last)
 	{
 		ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, battery.getVoltage(), (int)BATTERY_READY_TO_CLEAN_VOLTAGE);
 		key_led.setMode(LED_BREATH, LED_ORANGE);
+        sp_state->init();
 		beeper.beepForCommand(INVALID);
 		speaker.play(VOICE_BATTERY_LOW);
 	}
@@ -253,16 +250,15 @@ void ModeIdle::remoteKeyHandler(bool state_now, bool state_last)
 void ModeIdle::remoteMax(bool state_now, bool state_last)
 {
 	beeper.beepForCommand(VALID);
-	uint8_t vac_mode = vacuum.getMode();
-	vacuum.setMode(!vac_mode);
-	speaker.play(!vac_mode == Vac_Normal ? VOICE_CONVERT_TO_NORMAL_SUCTION : VOICE_CONVERT_TO_LARGE_SUCTION,false);
+	vacuum.isMaxInClean(!vacuum.isMaxInClean());
+	speaker.play(vacuum.isMaxInClean() ? VOICE_CONVERT_TO_LARGE_SUCTION : VOICE_CONVERT_TO_NORMAL_SUCTION,false);
 	remote.reset();
 }
 
 /*void ModeIdle::lidarBumper(bool state_now, bool state_last)
 {
 	static uint16_t lidar_bumper_cnt = 0;
-	if( ! s_wifi.is_wifi_connected_){
+	if( ! s_wifi.isConnected()){
 		MutexLock lock(&bind_lock_);
 		lidar_bumper_cnt++;
 		if(lidar_bumper_cnt >=250 && !trigger_wifi_smart_link_){
@@ -279,7 +275,7 @@ void ModeIdle::remoteMax(bool state_now, bool state_last)
 			ROS_INFO("%s,%d,smart link ap",__FUNCTION__,__LINE__);
 		}
 	}
-	else if(!trigger_wifi_rebind_ && s_wifi.is_wifi_connected_)
+	else if(!trigger_wifi_rebind_ && s_wifi.isConnected())
 	{
 		MutexLock lock(&bind_lock_);
 		lidar_bumper_cnt++;
@@ -294,12 +290,10 @@ void ModeIdle::remoteMax(bool state_now, bool state_last)
 
 void ModeIdle::remoteWifi(bool state_now,bool state_last)
 {
-	ROS_INFO("%s,%d,wifi state = %d ",__FUNCTION__,__LINE__,S_Wifi::is_wifi_connected_);
+	ROS_INFO("%s,%d,wifi state = %d ",__FUNCTION__,__LINE__,s_wifi.isConnected());
 	remote.reset();
-	if(S_Wifi::is_wifi_connected_)
-		s_wifi.rebind();
-	else
-		s_wifi.smartLink();
+	s_wifi.rebind();
+	s_wifi.smartLink();
 
 }
 
@@ -361,10 +355,7 @@ void ModeIdle::keyClean(bool state_now, bool state_last)
 			if (error.clear(error.get()))
 			{
 				ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
-				if (robot::instance()->isBatteryLow())
-					key_led.setMode(LED_BREATH, LED_ORANGE);
-				else
-					key_led.setMode(LED_BREATH, LED_GREEN);
+                sp_state->init();
 				speaker.play(VOICE_CLEAR_ERROR);
 			}
 			else
@@ -380,7 +371,7 @@ void ModeIdle::keyClean(bool state_now, bool state_last)
 		{
 			ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, battery.getVoltage(),
 					 (int) BATTERY_READY_TO_CLEAN_VOLTAGE);
-			key_led.setMode(LED_BREATH, LED_ORANGE);
+            sp_state->init();
 			speaker.play(VOICE_BATTERY_LOW);
 		}
 		else
@@ -416,7 +407,7 @@ bool ModeIdle::isFinish()
 {
 	if (!robot::instance()->isBatteryLow() && !battery.isReadyToClean())
 	{
-		key_led.setMode(LED_BREATH, LED_ORANGE);
+        sp_state->init();
 		robot::instance()->setBatterLow(true);
 	}
 

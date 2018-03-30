@@ -7,24 +7,30 @@
 #include <event_manager.h>
 
 void StateGoHomePoint::init(){
-	if (!water_tank.isEquipped())
-		vacuum.setTmpMode(Vac_Normal);
 	wheel.stop();
-	if(!sp_cm_->isExpMode())
-		brush.normalOperate();
-
+	wheel.setPidTargetSpeed(0, 0, REG_TYPE_LINEAR);
 
 	if(sp_cm_->isGoHomePointForLowPower());
 	{
 		brush.slowOperate();
-        water_tank.stop();
+		if (water_tank.checkEquipment(true))
+			water_tank.stop(WaterTank::tank_pump);
+		else
+			vacuum.setTmpLowState();
 	}
 
-	wheel.setPidTargetSpeed(0, 0, REG_TYPE_LINEAR);
 	if (sp_cm_->isRemoteGoHomePoint() || sp_cm_->isExpMode())
+	{
+		brush.slowOperate();
 		key_led.setMode(LED_STEADY, LED_ORANGE);
+		if (!water_tank.checkEquipment(true))
+			vacuum.setTmpLowState();
+	}
 	else if(key_led.getColor() != LED_ORANGE)
+	{
 		key_led.setMode(LED_STEADY, LED_GREEN);
+		brush.normalOperate();
+	}
 
 	ev.remote_home = false;
 	ev.battery_home = false;

@@ -116,7 +116,7 @@ void event_manager_set_enable(bool enable)
 	if (!enable)
 	{
 		p_eh = &default_eh;
-		//ROS_WARN("%s %d: Disable all event under manager mode_:%d", __FUNCTION__, __LINE__, evt_mgr_mode);
+		//ROS_WARN("%s %d: Disable all event under manager is_max_clean_state_:%d", __FUNCTION__, __LINE__, evt_mgr_mode);
 		for (int i = 0; i < EVT_MAX; i++) {
 //			eat.handler[i] = NULL;
 //			eat.handler_enabled[i] = false;
@@ -357,7 +357,7 @@ void event_manager_thread_cb()
 	}
 	pthread_cond_broadcast(&new_event_cond);
 	event_handle_thread_kill = true;
-	ROS_ERROR("%s %d: exit!", __FUNCTION__, __LINE__);
+	printf("%s %d: exit!\n", __FUNCTION__, __LINE__);
 }
 
 void event_handler_thread_cb()
@@ -501,12 +501,12 @@ void event_handler_thread_cb()
 	}
 	pthread_cond_broadcast(&event_handler_cond);
 	send_thread_kill = true;
-	ROS_ERROR("%s %d: exit!", __FUNCTION__, __LINE__);
+	printf("%s %d: exit!\n", __FUNCTION__, __LINE__);
 }
 
-//void event_manager_set_current_mode(EventModeType mode_)
+//void event_manager_set_current_mode(EventModeType is_max_clean_state_)
 //{
-//	evt_mgr_mode = mode_;
+//	evt_mgr_mode = is_max_clean_state_;
 //}
 
 void event_manager_register_handler(EventHandle* eh)

@@ -54,12 +54,13 @@
 // bit 1 for vacuum exception resume control.
 // bit 2 for switch of dynamic adjustment.
 // bit 3 for switch of gyro.
-// bit 4-7 reserved.
+// bit 4 for switch of obs.
+// bit 5-7 reserved.
 #define CTL_MIX 15
 
 // One byte for controlling water tank.
-// bit 0 for switch of pump.
-// bit 1-7 for controlling swing motor PWM.
+// bit 0-6 for controlling swing motor PWM.
+// bit 7 for switch of pump.
 #define CTL_WATER_TANK 16
 
 // One byte for IR control and test step.
@@ -429,7 +430,7 @@ public:
 											0x00,0x00,0x00,0x00,0xcc,0x33};
 	//										   1    2    3    4    5    6    7    8    9   10
 	uint8_t send_stream[SEND_LEN]={			0xaa,0x55,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-											0x00,0x00,0x00,0x00,0x64,0x00,0x02,0x00,0x00,0x00,
+											0x00,0x00,0x00,0x00,0x64,0x10,0x02,0x00,0x00,0x00,
 											0x00,0x00,0x00,0x00,0xcc,0x33};
 
 	void receive_routine_cb();

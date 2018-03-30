@@ -9,6 +9,19 @@
 
 Obs obs;
 
+Obs::Obs()
+{
+	left_value_ = 0;
+	front_value_ = 0;
+	right_value_ = 0;
+	left_trig_value_ = 100;
+	front_trig_value_ = 100;
+	right_trig_value_ = 100;
+	left_baseline_ = 100;
+	front_baseline_ = 100;
+	right_baseline_ = 100;
+}
+
 void Obs::setLeft(int16_t value)
 {
 	left_value_ = value - getLeftBaseline();
@@ -27,6 +40,9 @@ void Obs::setRight(int16_t value)
 uint8_t Obs::getStatus(int16_t left_offset, int16_t front_offset, int16_t right_offset)
 {
 	uint8_t status = 0;
+
+	if (!switch_)
+		return 0;
 
 	if (getLeft() > getLeftTrigValue() + left_offset)
 		status |= BLOCK_LEFT;
@@ -93,4 +109,19 @@ void Obs::DynamicAdjust(uint16_t count) {
 bool Obs::frontTriggered(void)
 {
 	return (getFront() > getFrontTrigValue());
+}
+
+void Obs::control(bool _switch)
+{
+	uint8_t data;
+
+	switch_ = _switch;
+
+	if (switch_)
+		data = static_cast<uint8_t>(serial.getSendData(CTL_MIX) | 0x10);
+	else
+		data = static_cast<uint8_t>(serial.getSendData(CTL_MIX) & ~0x10);
+
+	serial.setSendData(CTL_MIX, data);
+	ROS_INFO("%s %d: OBS set to %s.", __FUNCTION__, __LINE__, switch_ ? "ON" : "OFF");
 }

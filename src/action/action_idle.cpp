@@ -12,7 +12,9 @@
 
 ActionIdle::ActionIdle()
 {
-	ROS_INFO("%s %d: Start action idle.", __FUNCTION__, __LINE__);
+
+	timeout_interval_ = IDLE_TIMEOUT*1.0;
+	ROS_INFO("%s %d: Start action idle. timeout %f", __FUNCTION__, __LINE__,timeout_interval_);
 	if (error.get())
 		key_led.setMode(LED_STEADY, LED_RED);
 	else if (robot::instance()->isBatteryLow())
@@ -20,7 +22,6 @@ ActionIdle::ActionIdle()
 	else
 		key_led.setMode(LED_BREATH, LED_GREEN);
 
-	timeout_interval_ = IDLE_TIMEOUT;
 }
 
 ActionIdle::~ActionIdle()
@@ -50,7 +51,7 @@ bool ActionIdle::isTimeUp()
 {
 	if (IAction::isTimeUp())
 	{
-		ROS_INFO("%s %d: Timeout(%ds).", __FUNCTION__, __LINE__, timeout_interval_);
+		ROS_INFO("%s %d: Timeout(%fs).", __FUNCTION__, __LINE__, timeout_interval_);
 		return true;
 	}
 	return false;
