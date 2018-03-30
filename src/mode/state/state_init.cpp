@@ -9,8 +9,8 @@
 
 void StateInit::init() {
 	if(Mode::next_mode_i_ == Mode::cm_exploration)
-		key_led.setMode(LED_FLASH, LED_ORANGE, 600);
+		key_led.setMode(LED_STEADY, LED_ORANGE, 600);
 	else
-		key_led.setMode(LED_FLASH, LED_GREEN, 600);
+		key_led.setMode(LED_STEADY, LED_GREEN, 600);
 }
 
