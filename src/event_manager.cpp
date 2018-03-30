@@ -357,7 +357,7 @@ void event_manager_thread_cb()
 	}
 	pthread_cond_broadcast(&new_event_cond);
 	event_handle_thread_kill = true;
-	ROS_ERROR("%s %d: exit!", __FUNCTION__, __LINE__);
+	printf("%s %d: exit!\n", __FUNCTION__, __LINE__);
 }
 
 void event_handler_thread_cb()
@@ -501,7 +501,7 @@ void event_handler_thread_cb()
 	}
 	pthread_cond_broadcast(&event_handler_cond);
 	send_thread_kill = true;
-	ROS_ERROR("%s %d: exit!", __FUNCTION__, __LINE__);
+	printf("%s %d: exit!\n", __FUNCTION__, __LINE__);
 }
 
 //void event_manager_set_current_mode(EventModeType is_max_clean_state_)

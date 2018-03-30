@@ -48,12 +48,13 @@ void handle_crash_exit(int sig)
 
 void handle_normal_exit(int sig)
 {
-
 	ROS_ERROR("Oops!!! pp receive SIGINT signal,ctrl+c press");
-	ros::shutdown();
 	if(robot_instance != nullptr){
-		//speaker.play(VOICE_PROCESS_ERROR,false);
+//		speaker.play(VOICE_PROCESS_ERROR,false);
+//		speaker.play(VOICE_NULL);
+		speaker.stop();
 		delete robot_instance;
+		ros::shutdown();
 	}
 	exit(0);
 }

@@ -589,7 +589,7 @@ void Serial::receive_routine_cb()
 	}
 	pthread_cond_signal(&recev_cond);
 	robotbase_thread_kill = true;
-	ROS_ERROR("%s,%d,exit!",__FUNCTION__,__LINE__);
+	printf("%s,%d,exit!\n",__FUNCTION__,__LINE__);
 }
 
 void Serial::send_routine_cb()
@@ -656,7 +656,7 @@ void Serial::send_routine_cb()
 		robot::instance()->publishCtrlStream();
 	}
 	core_thread_kill = true;
-	ROS_ERROR("%s,%d exit",__FUNCTION__,__LINE__);
+	printf("%s,%d exit.\n",__FUNCTION__,__LINE__);
 	//pthread_exit(NULL);
 }
 
