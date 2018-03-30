@@ -9,13 +9,13 @@
 
 #define Vac_Speed_Max				100 //15500rpm
 #define Vac_Speed_Normal			80 //12000rpm
-#define Vac_Speed_NormalL			50 //8000rpm
+#define Vac_Speed_Low			50 //8000rpm
 
 #define TWO_HOURS					7200
 
 enum {
-Vac_Normal=0,
-Vac_Max=1,
+	Vac_Normal=0,
+	Vac_Max=1,
 };
 
 class Vacuum {
@@ -24,7 +24,7 @@ public:
 
 /*
  * Set the mode for vacuum.
- * The mode should be Vac_Speed_Max/Vac_Speed_Normal/Vac_Speed_NormalL/Vac_Save
+ * The mode should be Vac_Speed_Max/Vac_Speed_Normal/Vac_Speed_Low/Vac_Save
  * para
  * mode: Vac_Normal Vac_Max Vac_Save(load mode save last time)
  * save: if save is ture,save this mode,next time clean will reload at interface

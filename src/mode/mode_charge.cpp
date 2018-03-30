@@ -90,7 +90,7 @@ bool ModeCharge::isFinish()
 {
 	if (charger.getChargeStatus() && battery.isFull())
 	{
-        sp_state->second();
+		sp_state->second();
 		if (battery_full_start_time_ == 0)
 		{
 			speaker.play(VOICE_BATTERY_CHARGE_DONE);

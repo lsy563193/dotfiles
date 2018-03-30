@@ -17,7 +17,7 @@ Vacuum::Vacuum()
 void Vacuum::setTmpMode(uint8_t mode)
 {
 	// Set the mode_ for vacuum.
-	// The data should be Vac_Speed_Max/Vac_Speed_Normal/Vac_Speed_NormalL.
+	// The data should be Vac_Speed_Max/Vac_Speed_Normal/Vac_Speed_Low.
 //	mode_ = mode_save_;
 //	if (mode != Vac_Save)
 //	{
@@ -70,7 +70,7 @@ void Vacuum::setSpeedByMode(uint8_t mode)
 		} else
 		{
 			//ROS_INFO("%s %d: Work time more than 2 hours.", __FUNCTION__, __LINE__);
-			bldcSpeed(Vac_Speed_NormalL);
+			bldcSpeed(Vac_Speed_Low);
 		}
 	}
 }
