@@ -9,6 +9,10 @@ void StateCharge::init() {
     key_led.setMode(LED_STEADY, LED_ORANGE);
 }
 
+void StateCharge::second() {
+    key_led.setMode(LED_STEADY, LED_GREEN);
+}
+
 //bool StateFolllowWall::isFinish() {
 //	return false;
 //}

@@ -97,7 +97,7 @@ bool Serial::init(const std::string port,int baudrate)
 	curopt_.c_cflag |= CREAD;
 	curopt_.c_cflag |= CLOCAL;	//disable modem status check
 
-	cfmakeraw(&curopt_);		//make raw mode_
+	cfmakeraw(&curopt_);		//make raw is_max_clean_state_
 
 	if (tcsetattr(crport_fd_, TCSANOW, &curopt_) != 0){
 		return false;
@@ -224,7 +224,9 @@ int Serial::read(uint8_t *buf, int len)
 void Serial::resetSendStream(void)
 {
 	for (int i = 0; i < SEND_LEN; i++) {
-		if (i != CTL_LED_GREEN)
+		if (i == CTL_MIX)
+			setSendData(i, 0x10);
+		else if (i != CTL_LED_GREEN)
 			setSendData(i, 0x00);
 		else
 			setSendData(i, 0x64);

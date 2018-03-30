@@ -11,7 +11,7 @@ ActionPause::ActionPause()
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
-	water_tank.stop();
+	water_tank.stop(WaterTank::tank_pump);
 
 	lidar.motorCtrl(OFF);
 

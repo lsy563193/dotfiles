@@ -16,15 +16,14 @@ ModeRemote::ModeRemote()
 	serial.setWorkMode(WORK_MODE);
 	if (gyro.isOn())
 	{
-		key_led.setMode(LED_STEADY, LED_GREEN);
-		if (!water_tank.checkEquipment())
-			vacuum.setLastMode();
-		brush.normalOperate();
+		sp_state.reset(new StateClean());
+		sp_state->init();
 		action_i_ = ac_remote;
 	}
 	else
 	{
-		key_led.setMode(LED_FLASH, LED_GREEN, 600);
+		sp_state.reset(new StateInit());
+		sp_state->init();
 		action_i_ = ac_open_gyro;
 	}
 	genNextAction();
@@ -47,7 +46,7 @@ ModeRemote::~ModeRemote()
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
-	water_tank.stop();
+	water_tank.stop(WaterTank::tank_pump);
 
 	ROS_INFO("%s %d: Exit remote mode.", __FUNCTION__, __LINE__);
 }
@@ -99,10 +98,8 @@ int ModeRemote::getNextAction()
 {
 	if(action_i_ == ac_open_gyro || (action_i_ == ac_exception_resume && !ev.fatal_quit))
 	{
-		key_led.setMode(LED_STEADY, LED_GREEN);
-		if (!water_tank.checkEquipment())
-			vacuum.setLastMode();
-		brush.normalOperate();
+        sp_state.reset(new StateClean());
+        sp_state->init();
 		return ac_remote;
 	}
 
@@ -145,11 +142,10 @@ void ModeRemote::remoteMax(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
 	beeper.beepForCommand(VALID);
-	uint8_t vac_mode = vacuum.getMode();
-	vacuum.setMode(!vac_mode);
-	speaker.play(!vac_mode == Vac_Normal ? VOICE_CONVERT_TO_NORMAL_SUCTION : VOICE_CONVERT_TO_LARGE_SUCTION,false);
-	if (!water_tank.isEquipped())
-		vacuum.Switch();
+	vacuum.isMaxInClean(!vacuum.isMaxInClean());
+	speaker.play(vacuum.isMaxInClean() ? VOICE_CONVERT_TO_LARGE_SUCTION : VOICE_CONVERT_TO_NORMAL_SUCTION,false);
+	if (!water_tank.checkEquipment(true))
+		vacuum.setCleanState();
 	remote.reset();
 }
 

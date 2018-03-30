@@ -14,7 +14,7 @@ ActionOpenGyro::ActionOpenGyro()
 	ROS_INFO("%s %d: Enter action open gyro.", __FUNCTION__, __LINE__);
 	brush.stop();
 	vacuum.stop();
-	water_tank.stop();
+	water_tank.stop(WaterTank::tank_pump);
 	gyro.reOpen();
 }
 
@@ -35,6 +35,10 @@ bool ActionOpenGyro::isFinish()
 
 void ActionOpenGyro::run()
 {
+
 	wheel.setPidTargetSpeed(0, 0);
+
+	if((robot::instance()->wake_up_time_ , time(NULL)) < 1.5)
+		return;
 	gyro.waitForOn();
 }

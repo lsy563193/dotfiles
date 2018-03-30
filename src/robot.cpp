@@ -107,6 +107,7 @@ robot::robot()
 	auto event_handler_thread = new boost::thread(event_handler_thread_cb);
 	auto core_thread = new boost::thread(boost::bind(&robot::core_thread_cb,this));
 
+	obs.control(ON);
 	ROS_INFO("%s %d: robot init done!", __FUNCTION__, __LINE__);
 }
 
@@ -122,7 +123,7 @@ robot::~robot()
 	vacuum.stop();
 	s_wifi.sleep();
 	wifi_led.set(false);
-	water_tank.stop();
+	water_tank.stop(WaterTank::tank_pump);
 	serial.setWorkMode(WORK_MODE);
 	usleep(40000);
 	while(ros::ok() && !g_pp_shutdown){
@@ -190,7 +191,7 @@ void robot::robotbase_routine_cb()
 		ROS_ERROR_COND(pthread_cond_wait(&recev_cond,&recev_lock)!=0, "robotbase pthread receive cond wait fail");
 		memcpy(buf,serial.receive_stream,sizeof(uint8_t)*REC_LEN);
 		ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock)!=0, "robotbase pthread receive unlock fail");
-//		debugReceivedStream(buf);
+//		serial.debugReceivedStream(buf);
 
 		pp::x900sensor sensor;
 
@@ -244,6 +245,9 @@ void robot::robotbase_routine_cb()
 		sensor.front_obs = obs.getFront();
 		obs.setRight((buf[REC_R_OBS_H] << 8) | buf[REC_R_OBS_L]);
 		sensor.right_obs = obs.getRight();
+//		printf("%s %d: obs left:%d, front:%d, right:%d.\n", __FUNCTION__, __LINE__,
+//			   (buf[REC_L_OBS_H] << 8) | buf[REC_L_OBS_L], (buf[REC_F_OBS_H] << 8) | buf[REC_F_OBS_L],
+//			   (buf[REC_R_OBS_H] << 8) | buf[REC_R_OBS_L]);
 
 		// For bumper device.
 		bumper.setLeft((buf[REC_BUMPER_AND_CLIFF] & 0x20) != 0);
@@ -292,11 +296,11 @@ void robot::robotbase_routine_cb()
 		sensor.plan = robot_timer.getPlanStatus();
 
 		// For water tank device.
-		water_tank.setStatus((buf[REC_MIX_BYTE] & 0x08) != 0);
+		water_tank.setEquimentStatus((buf[REC_MIX_BYTE] & 0x08) != 0);
 //		ROS_INFO("mix:%x", buf[REC_MIX_BYTE]);
 //		if (water_tank.getStatus())
 //			ROS_INFO("Water tank~~~~~~~~~~~~~~~~~~ :D");
-		sensor.water_tank = water_tank.getStatus();
+		sensor.water_tank = water_tank.getEquimentStatus();
 
 		// For charger device.
 		charger.setChargeStatus((buf[REC_MIX_BYTE] >> 4) & 0x07);
@@ -732,6 +736,8 @@ void robot::publishCtrlStream(void)
 	ctrl_stream.gyro_dynamic_ctrl = static_cast<unsigned char>((serial.getSendData(CTL_MIX) >> 2) & 0x01);
 	ctrl_stream.gyro_switch = static_cast<unsigned char>((serial.getSendData(CTL_MIX) >> 3) & 0x01);
 
+	ctrl_stream.obs_switch = static_cast<unsigned char>((serial.getSendData(CTL_MIX) >> 4) & 0x01);
+
 	ctrl_stream.swing_motor_pwm = static_cast<unsigned char>(serial.getSendData(CTL_WATER_TANK) & 0x7F);
 	ctrl_stream.pump_switch = static_cast<unsigned char>((serial.getSendData(CTL_WATER_TANK) >> 7) & 0x01);
 
@@ -756,11 +762,13 @@ void robot::updateRobotPositionForTest()
 bool robot::checkTilt() {
 	if (!gyro.isTiltCheckingEnable())
 		return false;
-
-//	ROS_WARN("is_first_tilt = %d", is_first_tilt);
 	auto angle = gyro.getAngleR();
+	auto wheel_cliff_triggered = (wheel.getLeftWheelCliffStatus() || wheel.getRightWheelCliffStatus());
+	auto angle_triggered = angle > ANGLE_LIMIT;
+//	ROS_WARN("is_first_tilt = %d", is_first_tilt);
 //	ROS_WARN("angle = %f", angle);
-	if (angle < ANGLE_LIMIT) {
+//	ROS_WARN("angle_triggered(%d), wheel_cliff_triggered(%d)", angle_triggered, wheel_cliff_triggered);
+	if (!angle_triggered && !wheel_cliff_triggered) {
 		is_first_tilt = true;
 		return false;
 	}
@@ -769,17 +777,8 @@ bool robot::checkTilt() {
 		is_first_tilt = false;
 		tilt_time = ros::Time::now().toSec();
 	}
-
-	return  ros::Time::now().toSec() - tilt_time > TIME_LIMIT && (wheel.getLeftWheelCliffStatus() || wheel.getRightWheelCliffStatus());
-
-/*	if (gyro.getAngleR() > ANGLE_LIMIT) {
-		tilt_time = ros::Time::now().toSec();
-		if ((ros::Time::now().toSec() - tilt_time) > TIME_LIMIT) {
-			return true;
-		} else {
-			return false;
-		}
-	}*/
+	auto time_limit = !wheel_cliff_triggered ? ANGLE_TIME_LIMIT : WHELL_CLIFF_TIME_LIMIT;
+	return  ros::Time::now().toSec() - tilt_time > time_limit;
 }
 
 bool robot::checkTiltToSlip() {

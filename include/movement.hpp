@@ -183,7 +183,7 @@ public:
 	void setTarget();
 
 private:
-//Variable for checking spot turn in wall follow mode_
+//Variable for checking spot turn in wall follow is_max_clean_state_
 	volatile int32_t turn_count;
 	int32_t previous_;
 	uint8_t seen_charger_counter;
