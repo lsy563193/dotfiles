@@ -35,6 +35,7 @@ ModeSleep::~ModeSleep()
 		key_led.setMode(LED_STEADY, LED_GREEN);
 	// Wait 1.5s to avoid gyro can't open if switch to navigation is_max_clean_state_ too soon after waking up.
 	usleep(1500000);
+	robot::instance()->wake_up_time_ = time(NULL);
 	ROS_INFO("%s %d: Exit sleep mode.", __FUNCTION__, __LINE__);
 }
 

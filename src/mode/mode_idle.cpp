@@ -34,6 +34,8 @@ ModeIdle::ModeIdle():
 	s_wifi.replyRobotStatus(0xc8,0x00);
 //	// todo:debug
 //	infrared_display.displayErrorMsg(9, 1234, 101);
+	sp_state.reset(new StatePause()) ;
+	sp_state->init();
 }
 
 ModeIdle::~ModeIdle()
@@ -54,10 +56,7 @@ bool ModeIdle::isExit()
 				if (error.clear(error.get()))
 				{
 					ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
-					if (robot::instance()->isBatteryLow())
-						key_led.setMode(LED_BREATH, LED_ORANGE);
-					else
-						key_led.setMode(LED_BREATH, LED_GREEN);
+					sp_state->init();
 					speaker.play(VOICE_CLEAR_ERROR, false);
 				} else
 				{
@@ -169,10 +168,7 @@ void ModeIdle::remoteKeyHandler(bool state_now, bool state_last)
 			{
 				ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
 				beeper.beepForCommand(VALID);
-				if (robot::instance()->isBatteryLow())
-					key_led.setMode(LED_BREATH, LED_ORANGE);
-				else
-					key_led.setMode(LED_BREATH, LED_GREEN);
+				sp_state->init();
 				speaker.play(VOICE_CLEAR_ERROR);
 			}
 			else
@@ -200,6 +196,7 @@ void ModeIdle::remoteKeyHandler(bool state_now, bool state_last)
 	{
 		ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, battery.getVoltage(), (int)BATTERY_READY_TO_CLEAN_VOLTAGE);
 		key_led.setMode(LED_BREATH, LED_ORANGE);
+        sp_state->init();
 		beeper.beepForCommand(INVALID);
 		speaker.play(VOICE_BATTERY_LOW);
 	}
@@ -360,10 +357,7 @@ void ModeIdle::keyClean(bool state_now, bool state_last)
 			if (error.clear(error.get()))
 			{
 				ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
-				if (robot::instance()->isBatteryLow())
-					key_led.setMode(LED_BREATH, LED_ORANGE);
-				else
-					key_led.setMode(LED_BREATH, LED_GREEN);
+                sp_state->init();
 				speaker.play(VOICE_CLEAR_ERROR);
 			}
 			else
@@ -379,7 +373,7 @@ void ModeIdle::keyClean(bool state_now, bool state_last)
 		{
 			ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, battery.getVoltage(),
 					 (int) BATTERY_READY_TO_CLEAN_VOLTAGE);
-			key_led.setMode(LED_BREATH, LED_ORANGE);
+            sp_state->init();
 			speaker.play(VOICE_BATTERY_LOW);
 		}
 		else
@@ -415,7 +409,7 @@ bool ModeIdle::isFinish()
 {
 	if (!robot::instance()->isBatteryLow() && !battery.isReadyToClean())
 	{
-		key_led.setMode(LED_BREATH, LED_ORANGE);
+        sp_state->init();
 		robot::instance()->setBatterLow(true);
 	}
 

@@ -107,6 +107,7 @@ robot::robot()
 	auto event_handler_thread = new boost::thread(event_handler_thread_cb);
 	auto core_thread = new boost::thread(boost::bind(&robot::core_thread_cb,this));
 
+	obs.control(ON);
 	ROS_INFO("%s %d: robot init done!", __FUNCTION__, __LINE__);
 }
 
@@ -190,7 +191,7 @@ void robot::robotbase_routine_cb()
 		ROS_ERROR_COND(pthread_cond_wait(&recev_cond,&recev_lock)!=0, "robotbase pthread receive cond wait fail");
 		memcpy(buf,serial.receive_stream,sizeof(uint8_t)*REC_LEN);
 		ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock)!=0, "robotbase pthread receive unlock fail");
-//		debugReceivedStream(buf);
+//		serial.debugReceivedStream(buf);
 
 		pp::x900sensor sensor;
 
@@ -244,6 +245,9 @@ void robot::robotbase_routine_cb()
 		sensor.front_obs = obs.getFront();
 		obs.setRight((buf[REC_R_OBS_H] << 8) | buf[REC_R_OBS_L]);
 		sensor.right_obs = obs.getRight();
+//		printf("%s %d: obs left:%d, front:%d, right:%d.\n", __FUNCTION__, __LINE__,
+//			   (buf[REC_L_OBS_H] << 8) | buf[REC_L_OBS_L], (buf[REC_F_OBS_H] << 8) | buf[REC_F_OBS_L],
+//			   (buf[REC_R_OBS_H] << 8) | buf[REC_R_OBS_L]);
 
 		// For bumper device.
 		bumper.setLeft((buf[REC_BUMPER_AND_CLIFF] & 0x20) != 0);
@@ -731,6 +735,8 @@ void robot::publishCtrlStream(void)
 
 	ctrl_stream.gyro_dynamic_ctrl = static_cast<unsigned char>((serial.getSendData(CTL_MIX) >> 2) & 0x01);
 	ctrl_stream.gyro_switch = static_cast<unsigned char>((serial.getSendData(CTL_MIX) >> 3) & 0x01);
+
+	ctrl_stream.obs_switch = static_cast<unsigned char>((serial.getSendData(CTL_MIX) >> 4) & 0x01);
 
 	ctrl_stream.swing_motor_pwm = static_cast<unsigned char>(serial.getSendData(CTL_WATER_TANK) & 0x7F);
 	ctrl_stream.pump_switch = static_cast<unsigned char>((serial.getSendData(CTL_WATER_TANK) >> 7) & 0x01);

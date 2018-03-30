@@ -35,6 +35,10 @@ bool ActionOpenGyro::isFinish()
 
 void ActionOpenGyro::run()
 {
+
 	wheel.setPidTargetSpeed(0, 0);
+
+	if((robot::instance()->wake_up_time_ , time(NULL)) < 1.5)
+		return;
 	gyro.waitForOn();
 }

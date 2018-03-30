@@ -11,6 +11,8 @@
 #include <state.hpp>
 #include <mode.hpp>
 
+
+//#define CLIFF_BACK_DISTANCE 0.075
 boost::shared_ptr<IMovement> IMoveType::sp_movement_ = nullptr;
 Mode* IMoveType::sp_mode_ = nullptr;
 int IMoveType::movement_i_ = mm_null;
@@ -204,7 +206,23 @@ bool IMoveType::handleMoveBackEvent(ACleanMode *p_clean_mode)
 	{
 		p_clean_mode->saveBlocks();
 		movement_i_ = mm_back;
-		auto back_distance = (ev.tilt_triggered/* || gyro.getAngleR() > 5*/) ? TILT_BACK_DISTANCE : 0.01;
+        float back_distance=0.01;
+        if(ev.cliff_triggered)
+		{
+			back_distance = 0.02;
+//            if(sp_mode_->action_i_ == sp_mode_->ac_linear)
+//			{
+//                if(ev.cliff_triggered == BLOCK_FRONT)
+//				{
+//					beeper.beepForCommand(INVALID);
+//					back_distance = 0.04;
+//				}else{
+//					beeper.beepForCommand(VALID);
+//					back_distance = 0.02;
+//				}
+//			}
+		}
+		back_distance = (ev.tilt_triggered/* || gyro.getAngleR() > 5*/) ? TILT_BACK_DISTANCE : back_distance;
 //		if(gyro.getAngleR() > 5)
 //			beeper.beepForCommand(VALID);
 		sp_movement_.reset(new MovementBack(back_distance, BACK_MAX_SPEED));

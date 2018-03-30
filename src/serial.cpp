@@ -224,7 +224,9 @@ int Serial::read(uint8_t *buf, int len)
 void Serial::resetSendStream(void)
 {
 	for (int i = 0; i < SEND_LEN; i++) {
-		if (i != CTL_LED_GREEN)
+		if (i == CTL_MIX)
+			setSendData(i, 0x10);
+		else if (i != CTL_LED_GREEN)
 			setSendData(i, 0x00);
 		else
 			setSendData(i, 0x64);

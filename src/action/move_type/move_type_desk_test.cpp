@@ -77,6 +77,8 @@ void MoveTypeDeskTest::run()
 				// Switch to next stage.
 				infrared_display.displayNormalMsg(test_stage_, 0);
 				serial.setSendData(CTL_WORK_MODE, DESK_TEST_MOVEMENT_MODE);
+				usleep(30000);// Make sure infrared display has been sent.
+				obs.control(OFF); // For checking rcon signal in test_stage 2.
 				p_movement_.reset();
 				p_movement_.reset(new ActionOpenGyro());
 				ROS_INFO("%s %d: Stage 1 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
@@ -92,8 +94,12 @@ void MoveTypeDeskTest::run()
 				// Switch to next stage.
 				infrared_display.displayNormalMsg(test_stage_, 0);
 				p_movement_.reset();
+//				p_movement_.reset(new ActionOpenGyro());
+//				c_rcon.resetStatus();
+//				lidar_check_cnt_ = 0;
 //				p_movement_.reset(new MovementDirectGo(false));
 				wheel.setDirectionForward();
+				obs.control(ON);
 				ROS_INFO("%s %d: Stage 2 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
 				ROS_INFO("%s %d: Start checking for left bumper.", __FUNCTION__, __LINE__);
 			}
@@ -150,6 +156,7 @@ void MoveTypeDeskTest::run()
 				p_movement_.reset();
 				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-179), ROTATE_TOP_SPEED * 2 / 3));
 				brush.normalOperate();
+				obs.control(OFF);
 				vacuum.isMaxInClean(false);
 				vacuum.setCleanState();
 
@@ -334,6 +341,7 @@ bool MoveTypeDeskTest::dataExtract(const uint8_t *buf)
 		brush.setLeftCurrent((buf[REC_L_BRUSH_CUNT_H] << 8) | buf[REC_L_BRUSH_CUNT_L]);
 		brush.setRightCurrent((buf[REC_R_BRUSH_CUNT_H] << 8) | buf[REC_R_BRUSH_CUNT_L]);
 		brush.setMainCurrent((buf[REC_M_BRUSH_CUNT_H] << 8) | buf[REC_M_BRUSH_CUNT_L]);
+//		printf("right brush current - baseline:%d.\n", brush.getRightCurrent() - right_brush_current_baseline_);
 
 		wheel.setLeftCurrent((buf[REC_L_WHEEL_CUNT_H] << 8) | buf[REC_L_WHEEL_CUNT_L]);
 		wheel.setRightCurrent((buf[REC_R_WHEEL_CUNT_H] << 8) | buf[REC_R_WHEEL_CUNT_L]);

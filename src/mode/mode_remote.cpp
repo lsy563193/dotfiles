@@ -16,18 +16,14 @@ ModeRemote::ModeRemote()
 	serial.setWorkMode(WORK_MODE);
 	if (gyro.isOn())
 	{
-		key_led.setMode(LED_STEADY, LED_GREEN);
-		if (water_tank.checkEquipment(false))
-			water_tank.open(WaterTank::tank_pump);
-		else
-			vacuum.setCleanState();
-
-		brush.normalOperate();
+		sp_state.reset(new StateClean());
+		sp_state->init();
 		action_i_ = ac_remote;
 	}
 	else
 	{
-		key_led.setMode(LED_FLASH, LED_GREEN, 600);
+		sp_state.reset(new StateInit());
+		sp_state->init();
 		action_i_ = ac_open_gyro;
 	}
 	genNextAction();
@@ -102,12 +98,8 @@ int ModeRemote::getNextAction()
 {
 	if(action_i_ == ac_open_gyro || (action_i_ == ac_exception_resume && !ev.fatal_quit))
 	{
-		key_led.setMode(LED_STEADY, LED_GREEN);
-		if (water_tank.checkEquipment(false))
-			water_tank.open(WaterTank::tank_pump);
-		else
-			vacuum.setCleanState();
-		brush.normalOperate();
+        sp_state.reset(new StateClean());
+        sp_state->init();
 		return ac_remote;
 	}
 
