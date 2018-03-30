@@ -209,7 +209,7 @@ bool IMoveType::handleMoveBackEvent(ACleanMode *p_clean_mode)
         float back_distance=0.01;
         if(ev.cliff_triggered)
 		{
-			back_distance = 0.02;
+			back_distance = 0.05;
 //            if(sp_mode_->action_i_ == sp_mode_->ac_linear)
 //			{
 //                if(ev.cliff_triggered == BLOCK_FRONT)
