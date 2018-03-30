@@ -112,7 +112,7 @@ ACleanMode::~ACleanMode()
 		wheel.stop();
 		brush.stop();
 		vacuum.stop();
-		water_tank.stop();
+		water_tank.stop(WaterTank::tank_pump);
 		lidar.motorCtrl(OFF);
 		lidar.setScanOriginalReady(0);
 		lidar.slipCheckingCtrl(OFF);
@@ -1594,8 +1594,10 @@ bool ACleanMode::updateActionInStateInit() {
 	if (action_i_ == ac_null)
 		action_i_ = ac_open_gyro;
 	else if (action_i_ == ac_open_gyro) {
-		if (!water_tank.checkEquipment())
-			vacuum.setLastMode();
+		if (water_tank.checkEquipment(false))
+			water_tank.open(WaterTank::tank_pump);
+		else
+			vacuum.setCleanState();
 		brush.normalOperate();
 		action_i_ = ac_open_lidar;
 	}

@@ -7,20 +7,16 @@
 
 #include <cstdint>
 
-#define Vac_Speed_Max				100 //15500rpm
-#define Vac_Speed_Normal			80 //12000rpm
-#define Vac_Speed_Low			50 //8000rpm
+enum VacSpeed{
+ Vac_Speed_Max	=			100, //15500rpm
+ Vac_Speed_Normal	=		80, //12000rpm
+ Vac_Speed_Low	=	50 ,//8000rpm
+};
 
 #define TWO_HOURS					7200
 
-enum {
-	Vac_Normal=0,
-	Vac_Max=1,
-};
-
 class Vacuum {
 public:
-	Vacuum();
 
 /*
  * Set the mode for vacuum.
@@ -30,20 +26,23 @@ public:
  * save: if save is ture,save this mode,next time clean will reload at interface
  * */
 
-	void setTmpMode(uint8_t mode);
+	void setTmpSpotState();
 
-	void setMode(uint8_t mode);
+	void setTmpLowState();
 
-	void Switch();
+	bool isMaxInClean() //getter
+	{
+		return is_max_clean_state_;//getter
+	}
 
-	void setLastMode();
+	void isMaxInClean(bool is_max)
+	{
+		is_max_clean_state_ = is_max;
+	}
+
+	void setCleanState();
 
 	void stop();
-
-	uint8_t getMode(void)
-	{
-		return mode_;
-	}
 
 	void bldcSpeed(uint32_t S);
 
@@ -70,10 +69,7 @@ public:
 	}
 
 private:
-	void setSpeedByMode(uint8_t);
-
-	uint8_t mode_ = Vac_Normal;
-	uint8_t mode_save_;
+	bool is_max_clean_state_{};
 	bool oc_;
 
 	uint16_t current_;

@@ -9,5 +9,6 @@
 ActionCheckWaterTank::ActionCheckWaterTank()
 {
 	ROS_INFO("%s %d: Starting action check water tank." , __FUNCTION__, __LINE__);
-	water_tank.normalOperate();
+	if(water_tank.checkEquipment(false))
+		water_tank.open(WaterTank::tank_pump);
 }

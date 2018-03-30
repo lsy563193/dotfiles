@@ -97,7 +97,7 @@ bool Serial::init(const std::string port,int baudrate)
 	curopt_.c_cflag |= CREAD;
 	curopt_.c_cflag |= CLOCAL;	//disable modem status check
 
-	cfmakeraw(&curopt_);		//make raw mode_
+	cfmakeraw(&curopt_);		//make raw is_max_clean_state_
 
 	if (tcsetattr(crport_fd_, TCSANOW, &curopt_) != 0){
 		return false;

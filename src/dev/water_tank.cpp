@@ -13,72 +13,105 @@ WaterTank::WaterTank()
 	setMode(PUMP_LOW);
 }
 
-bool WaterTank::checkEquipment()
+bool WaterTank::checkEquipment(bool is_stop_water_tank)
 {
-	normalOperate();
+	if (getStatus(water_tank))
+		return true;
+
+	open(water_tank);//open water tank to detect if it is equipped
 	usleep(150000);
-	if (getStatus())
-		is_equipped_ = true;
-	else
-		stop();
+	auto status = getEquimentStatus();
+	if(!status || is_stop_water_tank)
+		stop(water_tank);
 
-//	printf("watertank%d\n", is_equipped_);
-	ROS_INFO("%s %d: Robot is %scarrying a water tank.", __FUNCTION__, __LINE__, is_equipped_ ? "" : "not ");
-
-	return is_equipped_;
+	ROS_INFO("%s %d: Robot is %scarrying a water tank.", __FUNCTION__, __LINE__, status? "" : "not ");
+	return status;
 }
 
-void WaterTank::normalOperate()
+void WaterTank::open(int equipment)
 {
-	operation_ = true;
-	checkBatterySetPWM();
-	pump_switch_ = 0x80;
-	last_pump_time_stamp_ = 0;
-	serial.setSendData(CTL_WATER_TANK, static_cast<uint8_t>(pump_switch_ | pwm_));
-	check_battery_time_stamp_ = ros::Time::now().toSec();
-	ROS_INFO("%s %d: Open water tank.", __FUNCTION__, __LINE__);
+	switch(equipment){
+		case water_tank:
+			setWaterTankPWM();
+			ROS_INFO("%s %d: Open water tank", __FUNCTION__, __LINE__);
+			break;
+		case pump:
+			pump_pwm_ = 0x80;
+			last_pump_time_stamp_ = 0;
+			ROS_INFO("%s %d: Open pump", __FUNCTION__, __LINE__);
+			break;
+		case tank_pump:
+			setWaterTankPWM();
+			pump_pwm_ = 0x80;
+			last_pump_time_stamp_ = 0;
+			ROS_INFO("%s %d: Open pump and water tank", __FUNCTION__, __LINE__);
+			break;
+	}
+	serial.setSendData(CTL_WATER_TANK, static_cast<uint8_t>(water_tank_pwm_|pump_pwm_));
+	if (equipment == tank_pump)
+	{
+		setStatus(water_tank,true);
+		setStatus(pump,true);
+	}
+	setStatus(equipment,true);
 }
 
-void WaterTank::stop()
+void WaterTank::stop(int equipment)
 {
-	operation_ = false;
-	is_equipped_ = false;
-	serial.setSendData(CTL_WATER_TANK, 0x00);
+	switch(equipment){
+		case water_tank:
+			serial.setSendData(CTL_WATER_TANK, static_cast<uint8_t>(pump_pwm_ & 0x80));
+			ROS_INFO("%s %d: close water tank", __FUNCTION__, __LINE__);
+			break;
+		case pump:
+			serial.setSendData(CTL_WATER_TANK, static_cast<uint8_t>(water_tank_pwm_ & 0x7f));
+			ROS_INFO("%s %d: close pump", __FUNCTION__, __LINE__);
+			break;
+		case tank_pump:
+			serial.setSendData(CTL_WATER_TANK, 0x00);
+			ROS_INFO("%s %d: close pump and water tank", __FUNCTION__, __LINE__);
+			break;
+	}
+	if (equipment == tank_pump) {
+		setStatus(water_tank, false);
+		setStatus(pump, false);
+	}
+	setStatus(equipment,false);
 }
 
-void WaterTank::checkBatterySetPWM()
+void WaterTank::setWaterTankPWM()
 {
 	auto current_battery_voltage_ = battery.getVoltage();
 	float percentage = static_cast<float>(FULL_OPERATE_VOLTAGE_FOR_WATER_TANK) /
-					   static_cast<float>(current_battery_voltage_);
-	pwm_ = static_cast<uint8_t>(percentage * 100);
+										 static_cast<float>(current_battery_voltage_);
+	water_tank_pwm_ = static_cast<uint8_t>(percentage * 100);
+	check_battery_time_stamp_ = ros::Time::now().toSec();
 }
 
 void WaterTank::updatePWM()
 {
-	if (operation_ && status_ && ros::Time::now().toSec() - check_battery_time_stamp_ > 60)
+	if (getStatus(water_tank) && ros::Time::now().toSec() - check_battery_time_stamp_ > 60)
 	{
-		checkBatterySetPWM();
-		serial.setSendData(CTL_WATER_TANK, static_cast<uint8_t>(pump_switch_ | pwm_));
-		check_battery_time_stamp_ = ros::Time::now().toSec();
+		setWaterTankPWM();
+		serial.setSendData(CTL_WATER_TANK, static_cast<uint8_t>(pump_pwm_ | water_tank_pwm_));
 		ROS_INFO("%s %d: Update for water tank.", __FUNCTION__, __LINE__);
 	}
 
-	if (operation_ && status_ && ros::Time::now().toSec() - last_pump_time_stamp_ > pump_time_interval_)
+	if (getStatus(pump) && ros::Time::now().toSec() - last_pump_time_stamp_ > pump_time_interval_)
 	{
-		pump_switch_ = 0x80;
 		pump_cnt_++;
 		if (pump_cnt_ <= pump_max_cnt_)
 		{
-			serial.setSendData(CTL_WATER_TANK, static_cast<uint8_t>(pump_switch_ | pwm_));
+			pump_pwm_ = 0x80;
+			serial.setSendData(CTL_WATER_TANK, static_cast<uint8_t>(pump_pwm_ | water_tank_pwm_));
 			ROS_INFO("%s %d: Open up pump, cnt: %d.", __FUNCTION__, __LINE__, pump_cnt_);
 		}
 		else
 		{
-			pump_switch_ = 0x00;
+			pump_pwm_ = 0x00;
 			pump_cnt_ = 0;
 			last_pump_time_stamp_ = ros::Time::now().toSec();
-			serial.setSendData(CTL_WATER_TANK, static_cast<uint8_t>(pump_switch_ | pwm_));
+			serial.setSendData(CTL_WATER_TANK, static_cast<uint8_t>(pump_pwm_ | water_tank_pwm_));
 			ROS_INFO("%s %d: Turn off pump.", __FUNCTION__, __LINE__);
 		}
 	}

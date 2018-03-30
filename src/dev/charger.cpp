@@ -27,7 +27,7 @@ void Charger::setStart() {
 }
 
 void Charger::setStop() {
-	// Set the flag to false so that it can quit charger mode_.
+	// Set the flag to false so that it can quit charger is_max_clean_state_.
 	serial.setSendData(CTL_CHARGER, 0x00);
 }
 

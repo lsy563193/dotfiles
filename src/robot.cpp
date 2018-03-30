@@ -123,7 +123,7 @@ robot::~robot()
 	vacuum.stop();
 	s_wifi.sleep();
 	wifi_led.set(false);
-	water_tank.stop();
+	water_tank.stop(WaterTank::tank_pump);
 	serial.setWorkMode(WORK_MODE);
 	usleep(40000);
 	while(ros::ok() && !g_pp_shutdown){
@@ -296,11 +296,11 @@ void robot::robotbase_routine_cb()
 		sensor.plan = robot_timer.getPlanStatus();
 
 		// For water tank device.
-		water_tank.setStatus((buf[REC_MIX_BYTE] & 0x08) != 0);
+		water_tank.setEquimentStatus((buf[REC_MIX_BYTE] & 0x08) != 0);
 //		ROS_INFO("mix:%x", buf[REC_MIX_BYTE]);
 //		if (water_tank.getStatus())
 //			ROS_INFO("Water tank~~~~~~~~~~~~~~~~~~ :D");
-		sensor.water_tank = water_tank.getStatus();
+		sensor.water_tank = water_tank.getEquimentStatus();
 
 		// For charger device.
 		charger.setChargeStatus((buf[REC_MIX_BYTE] >> 4) & 0x07);

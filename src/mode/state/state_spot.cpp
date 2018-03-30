@@ -12,8 +12,8 @@
 #include "speaker.h"
 
 void StateSpot::init() {
-	if (!water_tank.isEquipped())
-		vacuum.setTmpMode(Vac_Max);
+	if (!water_tank.checkEquipment(true))
+		vacuum.setTmpSpotState();
 	brush.fullOperate();
 	key_led.setMode(LED_STEADY, LED_GREEN);
 	if(getMode()->isNavMode())

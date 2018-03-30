@@ -601,7 +601,7 @@ bool MovementGoToCharger::isSwitch()
 						near_counter = 0;
 					if((receive_code&RconFront_Home_LR) == 0 && ++side_counter > 5)
 					{
-						ROS_INFO("%s, %d: Robot away from the front of charger stub, back to gohome mode_.", __FUNCTION__, __LINE__);
+						ROS_INFO("%s, %d: Robot away from the front of charger stub, back to gohome is_max_clean_state_.", __FUNCTION__, __LINE__);
 						gtc_state_now_ = gtc_turn_for_charger_signal_init;
 						back_distance_ = 0;
 						turn_angle_ = 0;
