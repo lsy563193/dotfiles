@@ -20,11 +20,11 @@ void ActionR16Test::run()
 {
 	// Test item: RAM.
 	infrared_display.displayNormalMsg(1, 0);
-	/*if (!RAM_test())
+	if (!RAM_test())
 	{
 		ROS_ERROR("%s %d: RAM test failed!!", __FUNCTION__, __LINE__);
 		error_loop(1, 0, RAM_ERROR);
-	}*/
+	}
 	ROS_INFO("%s %d: Test for RAM successed.", __FUNCTION__, __LINE__);
 
 	// Test item: Flash.
