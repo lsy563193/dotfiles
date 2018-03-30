@@ -132,7 +132,7 @@ void MoveTypeDeskTest::run()
 				p_movement_.reset();
 				p_movement_.reset(new MovementStay(0.2));
 				/*brush.fullOperate();
-				vacuum.setMode(Vac_Max,true);*/
+				vacuum.isMaxInClean(Vac_Max,true);*/
 				// todo: for water tank
 				ROS_INFO("%s %d: Stage 4 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
 			}
@@ -150,8 +150,8 @@ void MoveTypeDeskTest::run()
 				p_movement_.reset();
 				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-179), ROTATE_TOP_SPEED * 2 / 3));
 				brush.normalOperate();
-				vacuum.setMode(Vac_Normal);
-				vacuum.Switch();
+				vacuum.isMaxInClean(false);
+				vacuum.setCleanState();
 
 				// todo: for water tank
 				ROS_INFO("%s %d: Stage 5 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
@@ -489,8 +489,8 @@ bool MoveTypeDeskTest::checkStage2Finish()
 					p_movement_.reset();
 					p_movement_.reset(new ActionOpenLidar());
 					brush.normalOperate();
-					vacuum.setMode(Vac_Normal);
-					vacuum.Switch();
+					vacuum.isMaxInClean(false);
+					vacuum.setCleanState();
 				}
 				else if (test_step_ == 1)
 					c_rcon.resetStatus();

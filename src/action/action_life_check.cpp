@@ -128,8 +128,8 @@ void ActionLifeCheck::run()
 			if (ros::Time::now().toSec() - start_time_stamp_ > 0.3)
 			{
 				brush.normalOperate();
-				vacuum.setMode(Vac_Normal);
-				vacuum.Switch();
+				vacuum.isMaxInClean(false);
+				vacuum.setCleanState();
 				if(water_tank.checkEquipment(false))
 					water_tank.open(WaterTank::tank_pump);
 				wheel.setPidTargetSpeed(LINEAR_MAX_SPEED, LINEAR_MAX_SPEED);

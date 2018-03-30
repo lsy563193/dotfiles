@@ -175,7 +175,7 @@ bool MovementExceptionResume::isFinish()
 					ROS_WARN("%s %d: Left wheel resume succeeded.", __FUNCTION__, __LINE__);
 					ev.oc_wheel_left = false;
 					if (!water_tank.checkEquipment(true))
-						vacuum.setLastMode();
+						vacuum.setCleanState();
 //					brush.normalOperate();
 
 				} else
@@ -183,7 +183,7 @@ bool MovementExceptionResume::isFinish()
 					ROS_WARN("%s %d: Right wheel resume succeeded.", __FUNCTION__, __LINE__);
 					ev.oc_wheel_right = false;
 					if (!water_tank.checkEquipment(true))
-						vacuum.setLastMode();
+						vacuum.setCleanState();
 //					brush.normalOperate();
 				}
 			}
@@ -402,7 +402,7 @@ bool MovementExceptionResume::isFinish()
 			ROS_INFO("%s %d: Vacuum over current resume succeeded!", __FUNCTION__, __LINE__);
 			brush.normalOperate();
 			if (!water_tank.checkEquipment(true))
-				vacuum.setLastMode();
+				vacuum.setCleanState();
 			vacuum.resetExceptionResume();
 			ev.oc_vacuum = false;
 		}

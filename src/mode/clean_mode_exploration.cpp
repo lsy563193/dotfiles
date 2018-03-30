@@ -136,9 +136,8 @@ void CleanModeExploration::remoteMax(bool state_now, bool state_last)
 	if(isInitState() || isStateFollowWall() || isStateExploration() || isStateGoHomePoint() || isStateGoToCharger())
 	{
 		beeper.beepForCommand(VALID);
-		uint8_t vac_mode = vacuum.getMode();
-		vacuum.setMode(!vac_mode);
-		speaker.play(!vac_mode == Vac_Normal ? VOICE_CONVERT_TO_NORMAL_SUCTION : VOICE_CONVERT_TO_LARGE_SUCTION,false);
+		vacuum.isMaxInClean(!vacuum.isMaxInClean());
+		speaker.play(vacuum.isMaxInClean() ? VOICE_CONVERT_TO_LARGE_SUCTION : VOICE_CONVERT_TO_NORMAL_SUCTION,false);
 	}
 
 	else
@@ -176,7 +175,7 @@ bool CleanModeExploration::updateActionInStateInit() {
 	if (action_i_ == ac_null)
 		action_i_ = ac_open_gyro;
 	else if (action_i_ == ac_open_gyro) {
-		water_tank.checkEquipment(false) ? water_tank.open(WaterTank::water_tank) : vacuum.bldcSpeed(Vac_Speed_NormalL);
+		water_tank.checkEquipment(false) ? water_tank.open(WaterTank::water_tank) : vacuum.bldcSpeed(Vac_Speed_Low);
 		brush.slowOperate();
 		action_i_ = ac_open_lidar;
 	}

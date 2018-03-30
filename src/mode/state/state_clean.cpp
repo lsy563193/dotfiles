@@ -12,7 +12,7 @@ void StateClean::init() {
 
 	key_led.setMode(LED_STEADY, LED_GREEN);
 	if (!water_tank.checkEquipment(true))
-		vacuum.setLastMode();
+		vacuum.setCleanState();
 	brush.normalOperate();
 }
 

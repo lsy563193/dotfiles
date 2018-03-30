@@ -63,7 +63,7 @@ bool S_Wifi::init()
 	s_wifi_rx_.regOnNewMsgListener<wifi::wifiConnectedNotifRxMsg>(
 			[this]( const wifi::RxMsg &a_msg ) {
 				is_wifi_connected_ = true;
-				wifi_led.setMode(LED_FLASH, WifiLed::state::on);
+				wifi_led.isMaxInClean(LED_FLASH, WifiLed::state::on);
 				speaker.play( VOICE_WIFI_CONNECTED,false);
 			});
 */
@@ -183,12 +183,9 @@ bool S_Wifi::init()
 					else
 						water_tank.setMode(WaterTank::PUMP_MID);
 				else
-					if(msg.isVacuum())	
-						vacuum.setMode(Vac_Max);
-					else
-						vacuum.setMode(Vac_Normal);
+					vacuum.isMaxInClean(msg.isVacuum());
 				//ack
-				wifi::MaxCleanPowerTxMsg p(vacuum.getMode() == Vac_Max,water_tank.getMode() == WaterTank::PUMP_HIGH);
+				wifi::MaxCleanPowerTxMsg p(vacuum.isMaxInClean(),water_tank.getMode() == WaterTank::PUMP_HIGH);
 				s_wifi_tx_.push( std::move(p)).commit();
 			});
 	//remote control

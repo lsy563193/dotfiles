@@ -76,7 +76,7 @@ int ModeGoToCharger::getNextAction()
 		key_led.setMode(LED_STEADY, LED_ORANGE);
 		brush.slowOperate();
 		if (!water_tank.checkEquipment(true))
-			vacuum.setTmpMode(Vac_Normal);
+			vacuum.setTmpLowState();
 		return ac_go_to_charger;
 	}
 	return ac_null;

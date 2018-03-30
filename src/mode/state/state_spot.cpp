@@ -13,7 +13,7 @@
 
 void StateSpot::init() {
 	if (!water_tank.checkEquipment(true))
-		vacuum.setTmpMode(Vac_Max);
+		vacuum.setTmpSpotState();
 	brush.fullOperate();
 	key_led.setMode(LED_STEADY, LED_GREEN);
 	if(getMode()->isNavMode())

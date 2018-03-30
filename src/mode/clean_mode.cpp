@@ -1575,7 +1575,7 @@ bool ACleanMode::updateActionInStateInit() {
 		if (water_tank.checkEquipment(false))
 			water_tank.open(WaterTank::tank_pump);
 		else
-			vacuum.setLastMode();
+			vacuum.setCleanState();
 		brush.normalOperate();
 		action_i_ = ac_open_lidar;
 	}

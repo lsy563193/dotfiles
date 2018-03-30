@@ -398,12 +398,11 @@ void CleanModeNav::remoteMax(bool state_now, bool state_last)
 	if(isInitState() || isStateClean() || isStateResumeLowBatteryCharge() || isStateGoHomePoint() || isStateGoToCharger() || isStatePause())
 	{
 		beeper.beepForCommand(VALID);
-		uint8_t vac_mode = vacuum.getMode();
-		vacuum.setMode(!vac_mode);
-		speaker.play(!vac_mode == Vac_Normal ? VOICE_CONVERT_TO_NORMAL_SUCTION : VOICE_CONVERT_TO_LARGE_SUCTION,false);
+		vacuum.isMaxInClean(!vacuum.isMaxInClean());
+		speaker.play(vacuum.isMaxInClean() ? VOICE_CONVERT_TO_LARGE_SUCTION : VOICE_CONVERT_TO_NORMAL_SUCTION,false);
 		if(isStateClean() || isStateResumeLowBatteryCharge() || (isInitState()&& action_i_ > ac_open_gyro)) {
 			if (!water_tank.checkEquipment(true))
-				vacuum.Switch();
+				vacuum.setCleanState();
 		}
 	}
 	else
@@ -481,7 +480,7 @@ bool CleanModeNav::updateActionInStateInit() {
 			if (water_tank.checkEquipment(false))
 				water_tank.open(WaterTank::tank_pump);
 			else
-				vacuum.setLastMode();
+				vacuum.setCleanState();
 		}
 	} else if (action_i_ == ac_back_form_charger)
 	{
@@ -494,7 +493,7 @@ bool CleanModeNav::updateActionInStateInit() {
 		if (water_tank.checkEquipment(false))
 			water_tank.open(WaterTank::tank_pump);
 		else
-			vacuum.setLastMode();
+			vacuum.setCleanState();
 
 		setHomePoint();
 	} else if (action_i_ == ac_open_lidar)
