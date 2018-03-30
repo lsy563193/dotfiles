@@ -50,15 +50,12 @@ bool Timer::trapTimeout(double duration)
 	return difftime(time(NULL), trap_start_time_) > duration;
 }
 
-
-uint8_t Timer::setAppointment(uint8_t num,uint8_t enable,uint8_t week,uint8_t hour,uint8_t mint)
+void Timer::setM0Plan(uint32_t mint)
 {
-	if(planEnable_.size() < num)
-		planEnable_[num] = enable;
-	if(hours_.size() < num)
-		hours_[num] = hour;
-	if(mints_.size() < num)
-		mints_[num] = mint;
-	if(weeks_.size() < num)
-		weeks_[num] = week;
+
+}
+
+void getM0Clock(uint32_t time)
+{
+
 }

@@ -76,24 +76,31 @@ public:
 		return is_wifi_active_;
 	}
 
+	bool isConnected()
+	{
+
+		return is_wifi_connected_;
+	}
+
+	bool onRequest()
+	{
+		return isStatusRequest_;
+	}
 	uint8_t checkVersion();
 	uint8_t checkMAC();
 
-	static bool is_wifi_connected_;
-
-	static bool is_cloud_connected_;
-
-	bool isStatusRequest_;
 
 private:
 	wifi::RxManager s_wifi_rx_;
 	wifi::TxManager s_wifi_tx_;	
 
+	bool is_wifi_connected_;
 	bool inFactoryTest_;
 	bool isFactoryTest_;
 	bool isRegDevice_;
-
+	bool isStatusRequest_;
 	bool is_wifi_active_;
+
 	wifi::WorkMode robot_work_mode_;
 
 	pthread_mutex_t s_wifi_lock_;

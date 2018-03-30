@@ -14,10 +14,6 @@ public:
 		work_start_time_ = time(NULL);
 		wall_follow_start_time_ = time(NULL);
 		trap_start_time_ = time(NULL);
-		weeks_= std::vector<uint8_t>(10,0);
-		hours_= std::vector<uint8_t>(10,0);
-		mints_= std::vector<uint8_t>(10,0);
-		planEnable_ = std::vector<uint8_t>(10,0);
 	}
 
 	void initWorkTimer(void);
@@ -49,41 +45,11 @@ public:
 
 	uint8_t getPlanStatus(void) {
 		return plan_status_;
-	}
+	}	
 
-	uint8_t getWeeks(uint8_t pos)
-	{
-		if(pos < 10)
-			return weeks_[pos];
-		else
-			return 0;
-	}
+	void setM0Plan(uint32_t mint);
 
-	uint8_t getHours(uint8_t pos)
-	{
-		if(pos < 10)
-			return hours_[pos];
-		else
-			return 0;
-	}
-
-	uint8_t getMints(uint8_t pos)
-	{
-		if(pos < 10)
-			return mints_[pos];
-		else
-			return 0;
-	}
-
-	uint8_t getPlanEnable(uint8_t pos)
-	{
-		if(pos < 10)
-			return planEnable_[pos];
-		else
-			return 0;
-	}
-
-	uint8_t setAppointment(uint8_t num,uint8_t enable,uint8_t weeks,uint8_t hours,uint8_t mints);
+	void getM0Clock(uint32_t time);
 
 private:
 	// Variable for plan status
@@ -94,10 +60,6 @@ private:
 	time_t wall_follow_start_time_;
 	time_t trap_start_time_;
 
-	std::vector<uint8_t> planEnable_;
-	std::vector<uint8_t> weeks_;
-	std::vector<uint8_t> hours_;
-	std::vector<uint8_t> mints_;
 };
 
 extern Timer robot_timer;

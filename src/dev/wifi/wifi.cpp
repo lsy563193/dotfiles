@@ -17,10 +17,7 @@
 
 S_Wifi s_wifi;
 
-bool S_Wifi::is_wifi_connected_ = false;
-bool S_Wifi::is_cloud_connected_ = false;
-
-S_Wifi::S_Wifi():isStatusRequest_(false),inFactoryTest_(false),isFactoryTest_(false),isRegDevice_(false)
+S_Wifi::S_Wifi():is_wifi_connected_(false),isStatusRequest_(false),inFactoryTest_(false),isFactoryTest_(false),isRegDevice_(false)
 				 ,is_wifi_active_(false),s_wifi_lock_(PTHREAD_MUTEX_INITIALIZER)
 {
 	init();
@@ -54,9 +51,9 @@ bool S_Wifi::init()
 									a_msg.seq_num());
 			s_wifi_tx_.push(std::move( p )).commit();
 			isRegDevice_ = true;
-			is_wifi_connected_ = true;
 			wifi_led.setMode(LED_FLASH,WifiLed::state::on);
-			speaker.play( VOICE_WIFI_CONNECTED,false);
+			if(isFactoryTest_)
+				speaker.play( VOICE_WIFI_CONNECTED,false);
 		}
 	);
 /*
@@ -78,10 +75,11 @@ bool S_Wifi::init()
 	//cloud connect
 	s_wifi_rx_.regOnNewMsgListener<wifi::CloudConnectedNotifRxMsg>(
 			[&]( const wifi::RxMsg &a_msg ) {
-				is_cloud_connected_ = true;
+				is_wifi_connected_ = true;
 				wifi_led.setMode(LED_STEADY,WifiLed::state::on);
 				if(isRegDevice_){
-					speaker.play( VOICE_CLOUD_CONNECTED,false);
+					//speaker.play( VOICE_CLOUD_CONNECTED,false);
+					speaker.play( VOICE_WIFI_CONNECTED,false);
 					//uploadLastCleanData();
 					isRegDevice_ = false;
 				}
@@ -90,7 +88,7 @@ bool S_Wifi::init()
 	//cound disconnect
 	s_wifi_rx_.regOnNewMsgListener<wifi::CloudDisconnectedNotifRxMsg>(
 				[this](const wifi::RxMsg &a_msg){
-				is_cloud_connected_ = false;
+				is_wifi_connected_ = false;
 				wifi_led.setMode(LED_STEADY,WifiLed::state::off);
 				//speaker.play(VOICE_CLOUD_UNCONNECTED,false);
 				});
@@ -206,7 +204,7 @@ bool S_Wifi::init()
 							);
 				s_wifi_tx_.push(std::move(p)).commit();
 			});
-	//schedule
+	//set schedule
 	s_wifi_rx_.regOnNewMsgListener<wifi::SetScheduleRxMsg>(
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::SetScheduleRxMsg &msg = static_cast<const wifi::SetScheduleRxMsg&>(a_msg);
@@ -252,9 +250,7 @@ bool S_Wifi::init()
 							msg.data()
 							);
 				s_wifi_tx_.push(std::move(p)).commit();
-				//
 				is_wifi_connected_ = true;
-				is_cloud_connected_ = true;
 				wifi_led.setMode(LED_STEADY, WifiLed::state::on);
 			});
 	//set status requset
@@ -496,7 +492,7 @@ uint8_t S_Wifi::replyRobotStatus(int msg_code,const uint8_t seq_num)
 
 uint8_t S_Wifi::replyRealtimePassPath(const Points pass_path)
 {
-	if(!is_wifi_connected_ && !is_cloud_connected_)
+	if(!is_wifi_connected_ )
 		return 1;
 	uint32_t time  = (uint32_t)ros::Time::now().toSec();
 	std::vector<uint8_t> map_data;
@@ -582,7 +578,7 @@ uint8_t S_Wifi::replyRealtimePassPath(const Points pass_path)
 uint8_t S_Wifi::setRobotCleanMode(wifi::WorkMode work_mode)
 { 
 	static wifi::WorkMode last_mode;
-	if(!is_wifi_connected_ && !is_cloud_connected_)
+	if(!is_wifi_connected_ )
 		return 1;
 	ROS_INFO("%s,%d,work mode  = %d",__FUNCTION__,__LINE__,(int)work_mode);
 	switch(work_mode)
@@ -684,7 +680,7 @@ uint8_t S_Wifi::setRobotCleanMode(wifi::WorkMode work_mode)
 
 uint8_t S_Wifi::clearRealtimeMap(const uint8_t seq_num)
 {
-	if(!is_wifi_connected_ && !is_cloud_connected_)
+	if(!is_wifi_connected_ )
 		return 1;
 	wifi::ClearRealtimeMapTxMsg p(true,seq_num);
 	s_wifi_tx_.push(std::move( p )).commit();
@@ -693,7 +689,7 @@ uint8_t S_Wifi::clearRealtimeMap(const uint8_t seq_num)
 
 uint8_t S_Wifi::appRemoteCtl(wifi::RemoteControlRxMsg::Cmd data)
 {
-	if(!is_wifi_connected_ && !is_cloud_connected_)
+	if(!is_wifi_connected_ )
 		return 1;
 	switch(data)
 	{
@@ -720,16 +716,14 @@ uint8_t S_Wifi::appRemoteCtl(wifi::RemoteControlRxMsg::Cmd data)
 
 uint8_t S_Wifi::syncClock(int year,int mon,int day,int hour,int minu,int sec)
 {
-	ROS_INFO("%s,%d     %d,%d,%d,%d,%d,%d",__FUNCTION__,__LINE__,year,mon,day,hour,minu,sec);
-	struct tm timeinfo;
-	timeinfo.tm_year = year-1900;
-	timeinfo.tm_mon = mon-1;
-	timeinfo.tm_mday = day;
-	timeinfo.tm_hour = hour;
-	timeinfo.tm_min = minu;
-	timeinfo.tm_sec = sec;
-	mktime(&timeinfo);
+	char date_time[50];
+	sprintf(date_time,"date -s \"%02d-%02d-%02d %02d:%02d:%02d\""
+				,year,mon,day,hour,minu,sec);
+	system(date_time);
+	
 	robot_timer.initWorkTimer();
+	IAction::updateStartTime();	
+
 	struct tm *local_time;
 	time_t ltime;
 	time(&ltime);
@@ -744,7 +738,6 @@ uint8_t S_Wifi::rebind()
 	wifi::ForceUnbindTxMsg p(0x00);//no responed
 	s_wifi_tx_.push(std::move(p)).commit();
 	is_wifi_connected_ = false;
-	is_cloud_connected_ = false;
 	speaker.play(VOICE_WIFI_UNBIND,false);
 	return 0;
 }
@@ -771,12 +764,13 @@ uint8_t S_Wifi::smartApLink()
 
 uint8_t S_Wifi::uploadLastCleanData()
 {
-	if(!is_wifi_connected_ && !is_cloud_connected_)
+	if(!is_wifi_connected_ )
 		return 1;
 	INFO_BLUE("UPLOAD LAST STATE & MAP");
 	uint32_t time = ros::Time::now().toSec();
 	std::vector<uint8_t> map_data;
 	std::vector<std::vector<uint8_t>> map_pack;
+	map_pack.clear();
 	if(robot::instance()->p_mode != nullptr)
 	{
 		if( getWorkMode() == wifi::WorkMode::PLAN1)
@@ -830,12 +824,12 @@ uint8_t S_Wifi::uploadLastCleanData()
 				map_pack.push_back(map_data);
 				map_data.clear();
 			}
-			ROS_INFO("%s,%d,\033[1;41;32mmap_pack size %ld\033[0m",__FUNCTION__,__LINE__,map_pack.size());
-			for(int k=1;k<=map_pack.size();k++)
+			for(int i = 0;i<map_pack.size();i++)
 			{
-				wifi::Packet p(-1,0x01,0,0xc9,map_pack[k]);
+				wifi::Packet p(-1,0x01,0,0xc9,map_pack[i]);
 				s_wifi_tx_.push(std::move(p)).commit();
 			}
+			ROS_INFO("%s,%d,\033[1;42;31mmap_pack size %ld\033[0m",__FUNCTION__,__LINE__,map_pack.size());
 		}
 	}
 	return 0;
@@ -983,8 +977,7 @@ uint8_t S_Wifi::setSchedule(const wifi::SetScheduleRxMsg &sche)
 
 		Appointment::st_appmt apmt;
 		isScheSet = isEnable;
-
-		apmt.num = schenum;
+		apmt.num = schenum;	
 		apmt.enable = (bool)isEnable;
 		apmt.hour = hours;
 		apmt.mint= mints;
@@ -995,6 +988,8 @@ uint8_t S_Wifi::setSchedule(const wifi::SetScheduleRxMsg &sche)
 
 	if(isScheSet)
 		speaker.play(VOICE_APPOINTMENT_DONE);
+	uint32_t mint = appmt_obj.getLastAppointment();
+	robot_timer.setM0Plan(mint);
 	return 0;
 }
 
@@ -1020,3 +1015,4 @@ uint8_t S_Wifi::checkMAC()
 	s_wifi_tx_.push(std::move(pp)).commit();
 	return 0;
 }
+

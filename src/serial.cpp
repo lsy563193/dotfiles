@@ -625,9 +625,7 @@ void Serial::send_routine_cb()
 		{
 			wifi_send_state_cnt = 0;
 			//INFO_YELLOW("SEND ROBOT STATUS");
-			if(S_Wifi::is_wifi_connected_
-						&& s_wifi.isStatusRequest_
-						&& s_wifi.is_cloud_connected_)
+			if(s_wifi.isConnected() && s_wifi.onRequest())
 				s_wifi.replyRobotStatus(0xc8,0x00);
 		}
 	//	if(wifi_send_map_cnt == 250)
@@ -635,10 +633,7 @@ void Serial::send_routine_cb()
 	//		wifi_send_map_cnt = 0;
 	//		wifi_send_state_cnt = 0;
 	//		INFO_YELLOW("SEND REAL TIME MAP");
-	//		if(S_Wifi::is_wifi_connected_
-	//					 && s_wifi.is_cloud_connected_
-	//					 && s_wifi.isStatusRequest_
-	//					 )
+	//      if(s_wifi.isConnected() && s_wifi.onRequest())
 	//			s_wifi.replyRealtimePassPath();
 	//	}
 		//r.sleep();
