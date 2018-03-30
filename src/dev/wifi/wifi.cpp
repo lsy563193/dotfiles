@@ -177,7 +177,7 @@ bool S_Wifi::init()
 	s_wifi_rx_.regOnNewMsgListener<wifi::SetMaxCleanPowerRxMsg>(
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::SetMaxCleanPowerRxMsg &msg = static_cast<const wifi::SetMaxCleanPowerRxMsg&>( a_msg );
-				if(water_tank.isEquipped())
+				if (!water_tank.checkEquipment(true))
 					if(msg.isMop())
 						water_tank.setMode(WaterTank::PUMP_HIGH);
 					else
@@ -371,7 +371,8 @@ uint8_t S_Wifi::replyRobotStatus(int msg_code,const uint8_t seq_num)
 	wifi::WorkMode work_mode = robot_work_mode_;
 	uint8_t error_code = 0;
 	wifi::DeviceStatusBaseTxMsg::CleanMode box;
-	box = water_tank.isEquipped()? wifi::DeviceStatusBaseTxMsg::CleanMode::WATER_TANK: wifi::DeviceStatusBaseTxMsg::CleanMode::DUST;
+	//todo water_tank.checkEquipment is right?
+	box = water_tank.checkEquipment(true) ? wifi::DeviceStatusBaseTxMsg::CleanMode::WATER_TANK: wifi::DeviceStatusBaseTxMsg::CleanMode::DUST;
 	if(robot::instance()->p_mode != nullptr)
 	{
 		int next_mode = (int)robot::instance()->p_mode->getNextMode();

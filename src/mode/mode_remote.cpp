@@ -17,8 +17,11 @@ ModeRemote::ModeRemote()
 	if (gyro.isOn())
 	{
 		key_led.setMode(LED_STEADY, LED_GREEN);
-		if (!water_tank.checkEquipment())
+		if (water_tank.checkEquipment(false))
+			water_tank.open(WaterTank::tank_pump);
+		else
 			vacuum.setLastMode();
+
 		brush.normalOperate();
 		action_i_ = ac_remote;
 	}
@@ -47,7 +50,7 @@ ModeRemote::~ModeRemote()
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
-	water_tank.stop();
+	water_tank.stop(WaterTank::tank_pump);
 
 	ROS_INFO("%s %d: Exit remote mode.", __FUNCTION__, __LINE__);
 }
@@ -100,7 +103,9 @@ int ModeRemote::getNextAction()
 	if(action_i_ == ac_open_gyro || (action_i_ == ac_exception_resume && !ev.fatal_quit))
 	{
 		key_led.setMode(LED_STEADY, LED_GREEN);
-		if (!water_tank.checkEquipment())
+		if (water_tank.checkEquipment(false))
+			water_tank.open(WaterTank::tank_pump);
+		else
 			vacuum.setLastMode();
 		brush.normalOperate();
 		return ac_remote;
@@ -148,7 +153,7 @@ void ModeRemote::remoteMax(bool state_now, bool state_last)
 	uint8_t vac_mode = vacuum.getMode();
 	vacuum.setMode(!vac_mode);
 	speaker.play(!vac_mode == Vac_Normal ? VOICE_CONVERT_TO_NORMAL_SUCTION : VOICE_CONVERT_TO_LARGE_SUCTION,false);
-	if (!water_tank.isEquipped())
+	if (!water_tank.checkEquipment(true))
 		vacuum.Switch();
 	remote.reset();
 }

@@ -11,9 +11,7 @@
 void StateExploration::init() {
 	key_led.setMode(LED_STEADY, LED_ORANGE);
 	brush.slowOperate();
-    water_tank.stop();
-	vacuum.setTmpMode(Vac_Normal);
-    vacuum.bldcSpeed(Vac_Speed_NormalL);
+	water_tank.checkEquipment(false) ? water_tank.open(WaterTank::water_tank) : vacuum.bldcSpeed(Vac_Speed_NormalL);
 }
 
 

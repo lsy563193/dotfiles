@@ -130,7 +130,8 @@ void ActionLifeCheck::run()
 				brush.normalOperate();
 				vacuum.setMode(Vac_Normal);
 				vacuum.Switch();
-				water_tank.normalOperate();
+				if(water_tank.checkEquipment(false))
+					water_tank.open(WaterTank::tank_pump);
 				wheel.setPidTargetSpeed(LINEAR_MAX_SPEED, LINEAR_MAX_SPEED);
 				left_brush_current_baseline_ /= sum_cnt_;
 				ROS_INFO("%s %d: left_brush_current_baseline_:%d.", __FUNCTION__, __LINE__,
@@ -362,7 +363,7 @@ void ActionLifeCheck::run()
 			wheel.stop();
 			brush.stop();
 			vacuum.stop();
-			water_tank.stop();
+			water_tank.stop(WaterTank::tank_pump);
 			sleep(5);
 			break;
 		}
@@ -376,7 +377,7 @@ void ActionLifeCheck::run()
 			wheel.stop();
 			brush.stop();
 			vacuum.stop();
-			water_tank.stop();
+			water_tank.stop(WaterTank::tank_pump);
 			sleep(5);
 			break;
 		}

@@ -7,17 +7,16 @@
 #include <event_manager.h>
 
 void StateGoHomePoint::init(){
-	if (!water_tank.isEquipped())
+	if (!water_tank.checkEquipment(true))
 		vacuum.setTmpMode(Vac_Normal);
 	wheel.stop();
 	if(!sp_cm_->isExpMode())
 		brush.normalOperate();
 
-
 	if(sp_cm_->isGoHomePointForLowPower());
 	{
 		brush.slowOperate();
-        water_tank.stop();
+		water_tank.stop(WaterTank::tank_pump);
 	}
 
 	wheel.setPidTargetSpeed(0, 0, REG_TYPE_LINEAR);

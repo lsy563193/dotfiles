@@ -127,7 +127,7 @@ void CleanModeFollowWall::remoteMax(bool state_now, bool state_last)
 		speaker.play(!vac_mode == Vac_Normal ? VOICE_CONVERT_TO_NORMAL_SUCTION : VOICE_CONVERT_TO_LARGE_SUCTION,false);
 
         if(isStateFollowWall() || (isStateInit() && action_i_ > ac_open_gyro)) {
-			if (!water_tank.isEquipped())
+			if (!water_tank.checkEquipment(true))
 				vacuum.Switch();
 		}
 	}

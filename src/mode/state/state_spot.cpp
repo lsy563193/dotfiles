@@ -12,7 +12,7 @@
 #include "speaker.h"
 
 void StateSpot::init() {
-	if (!water_tank.isEquipped())
+	if (!water_tank.checkEquipment(true))
 		vacuum.setTmpMode(Vac_Max);
 	brush.fullOperate();
 	key_led.setMode(LED_STEADY, LED_GREEN);
