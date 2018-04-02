@@ -78,7 +78,6 @@ void MoveTypeDeskTest::run()
 				infrared_display.displayNormalMsg(test_stage_, 0);
 				serial.setSendData(CTL_WORK_MODE, DESK_TEST_MOVEMENT_MODE);
 				usleep(30000);// Make sure infrared display has been sent.
-				obs.control(OFF); // For checking rcon signal in test_stage 2.
 				p_movement_.reset();
 				p_movement_.reset(new ActionOpenGyro());
 				ROS_INFO("%s %d: Stage 1 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
@@ -99,7 +98,6 @@ void MoveTypeDeskTest::run()
 //				lidar_check_cnt_ = 0;
 //				p_movement_.reset(new MovementDirectGo(false));
 				wheel.setDirectionForward();
-				obs.control(ON);
 				ROS_INFO("%s %d: Stage 2 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
 				ROS_INFO("%s %d: Start checking for left bumper.", __FUNCTION__, __LINE__);
 			}
@@ -156,7 +154,7 @@ void MoveTypeDeskTest::run()
 				p_movement_.reset();
 				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-179), ROTATE_TOP_SPEED * 2 / 3));
 				brush.normalOperate();
-				obs.control(OFF);
+				obs.control(OFF); // For checking rcon signal.
 				vacuum.isMaxInClean(false);
 				vacuum.setCleanState();
 
@@ -315,7 +313,7 @@ bool MoveTypeDeskTest::dataExtract(const uint8_t *buf)
 	if (remote_signal != 0)
 		remote.set(remote_signal);
 
-	// For obs sensor device.
+	// For obs sensor device, the get functions will minus the baseline value.
 	obs.setLeft(((buf[REC_L_OBS_H] << 8) | buf[REC_L_OBS_L]) + obs.getLeftBaseline());
 	obs.setFront(((buf[REC_F_OBS_H] << 8) | buf[REC_F_OBS_L]) + obs.getFrontBaseline());
 	obs.setRight(((buf[REC_R_OBS_H] << 8) | buf[REC_R_OBS_L]) + obs.getRightBaseline());
@@ -365,6 +363,7 @@ bool MoveTypeDeskTest::dataExtract(const uint8_t *buf)
 		// For rcon device.
 		c_rcon.setStatus((buf[REC_RCON_CHARGER_4] << 24) | (buf[REC_RCON_CHARGER_3] << 16)
 						 | (buf[REC_RCON_CHARGER_2] << 8) | buf[REC_RCON_CHARGER_1]);
+//		printf("rcon status:%8x.\n", c_rcon.getStatus());
 	}
 
 	return true;
@@ -475,14 +474,6 @@ bool MoveTypeDeskTest::checkStage1Finish()
 
 bool MoveTypeDeskTest::checkStage2Finish()
 {
-	if (test_step_ <= 5)
-	{
-		left_obs_sum_ += obs.getLeft();
-		front_obs_sum_ += obs.getFront();
-		right_obs_sum_ += obs.getRight();
-		sum_cnt_++;
-	}
-
 	switch (test_step_)
 	{
 		case 0: // For opening gyro.
@@ -536,7 +527,12 @@ bool MoveTypeDeskTest::checkStage2Finish()
 						ROS_ERROR("Now something doesn't feel right about %d scan...", lidar_check_cnt_);
 					lidar_check_cnt_++;
 				}
-				usleep(100000);
+
+				left_obs_sum_ += obs.getLeft();
+				front_obs_sum_ += obs.getFront();
+				right_obs_sum_ += obs.getRight();
+				sum_cnt_++;
+				usleep(20000);
 			}
 			ROS_INFO("%s %d: Scan valid count:%d.", __FUNCTION__, __LINE__, scan_valid_cnt);
 			if (scan_valid_cnt < _cnt -1)
@@ -551,6 +547,7 @@ bool MoveTypeDeskTest::checkStage2Finish()
 				test_step_++;
 				p_movement_.reset();
 				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-178), RCON_ROTATE_SPEED));
+				obs.control(OFF); // For checking rcon signal.
 				ROS_INFO("%s %d: Enter rcon turning 1.", __FUNCTION__, __LINE__);
 			}
 			break;
@@ -559,6 +556,7 @@ bool MoveTypeDeskTest::checkStage2Finish()
 		{
 			ROS_INFO("%s %d: Enter lidar checking back.", __FUNCTION__, __LINE__);
 			wheel.stop();
+			obs.control(ON); // For checking OBS baseline.
 			// Stop for checking lidar data.
 			uint8_t _cnt{10};
 //			float scan_ref[_cnt * 2][360];
@@ -581,7 +579,12 @@ bool MoveTypeDeskTest::checkStage2Finish()
 						ROS_ERROR("Now something doesn't feel right about %d scan...", lidar_check_cnt_);
 					lidar_check_cnt_++;
 				}
-				usleep(100000);
+
+				left_obs_sum_ += obs.getLeft();
+				front_obs_sum_ += obs.getFront();
+				right_obs_sum_ += obs.getRight();
+				sum_cnt_++;
+				usleep(20000);
 			}
 			ROS_INFO("%s %d: Scan valid count:%d.", __FUNCTION__, __LINE__, scan_valid_cnt);
 			if (scan_valid_cnt < _cnt -1)
@@ -596,12 +599,14 @@ bool MoveTypeDeskTest::checkStage2Finish()
 				test_step_++;
 				p_movement_.reset();
 				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-178), RCON_ROTATE_SPEED));
+				obs.control(OFF); // For checking rcon signal.
 				ROS_INFO("%s %d: Enter rcon turning 2.", __FUNCTION__, __LINE__);
 			}
 			break;
 		}
 		default://case 6:
 		{
+			obs.control(ON); // For resuming OBS function.
 			// Check for rcon.
 			if (!(c_rcon.getStatus() & (RconBL_HomeT)))
 			{
@@ -1189,6 +1194,7 @@ bool MoveTypeDeskTest::checkStage6Finish()
 		{
 			if (p_movement_->isFinish())
 			{
+				obs.control(ON); // For resuming OBS function.
 				// Check for rcon.
 				if (!(c_rcon.getStatus() & (RconBL_HomeL | RconBL_HomeR)))
 				{
