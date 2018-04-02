@@ -21,9 +21,12 @@ ModeCharge::ModeCharge()
 	event_manager_set_enable(true);
 	sp_action_.reset(new MovementCharge);
 	action_i_ = ac_charge;
+	mode_i_ = md_charge;
 	serial.setWorkMode(CHARGE_MODE);
 	plan_activated_status_ = false;
-	state_charge.get()->init();
+	sp_state = state_charge.get();
+	sp_state->init();
+	IMoveType::sp_mode_ = this;
 }
 
 ModeCharge::~ModeCharge()

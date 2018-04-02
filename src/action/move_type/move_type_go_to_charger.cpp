@@ -21,6 +21,7 @@ MoveTypeGoToCharger::MoveTypeGoToCharger()
 	p_gtc_movement_.reset(new MovementGoToCharger());
 	p_back_movement_.reset();
 	p_turn_movement_.reset();
+	IMovement::sp_mt_ = this;
 }
 
 MoveTypeGoToCharger::~MoveTypeGoToCharger()

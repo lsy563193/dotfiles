@@ -34,6 +34,7 @@ CleanModeNav::CleanModeNav()
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
 
 	go_home_path_algorithm_.reset();
+	mode_i_ = cm_navigation;
 
 	sp_state = state_init.get();
     sp_state->init();
@@ -272,18 +273,32 @@ void CleanModeNav::keyClean(bool state_now, bool state_last)
 
 	// Wait for key released.
 	bool long_press = false;
+	bool reset_wifi = false;
 	while (key.getPressStatus())
 	{
 		if (!long_press && key.getPressTime() > 3)
 		{
-			ROS_WARN("%s %d: key clean long pressed.", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: key clean long pressed to sleep.", __FUNCTION__, __LINE__);
 			beeper.beepForCommand(VALID);
 			long_press = true;
 		}
+		if (sp_state == state_pause.get() && !reset_wifi && key.getPressTime() > 5)
+		{
+			ROS_WARN("%s %d: key clean long pressed to reset wifi.", __FUNCTION__, __LINE__);
+			beeper.beepForCommand(VALID);
+			reset_wifi = true;
+		}
 		usleep(20000);
 	}
+	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
 
-	if (long_press)
+	if (reset_wifi)
+	{
+		s_wifi.smartApLink();
+		sp_action_.reset();
+		sp_action_.reset(new ActionPause);
+	}
+	else if (long_press)
 		ev.key_long_pressed = true;
 	else
 		ev.key_clean_pressed = true;
