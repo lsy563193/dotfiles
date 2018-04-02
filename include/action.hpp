@@ -22,10 +22,14 @@ public:
 
 	virtual void run()=0;
 
+	static void updateStartTime();
+
 	// For test mode.
 	virtual void dataExtract(){};
+
+	static double start_timer_;
+
 protected:
-	double start_timer_{};
 	double timeout_interval_{};
 };
 

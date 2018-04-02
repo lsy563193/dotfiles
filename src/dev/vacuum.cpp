@@ -43,6 +43,7 @@ void Vacuum::stop(){
 	ROS_INFO("%s,%d,vacuum set to stop",__FUNCTION__,__LINE__);
 }
 
+//------------------------------
 void Vacuum::bldcSpeed(uint32_t S)
 {
 	// Set the power of BLDC, S should be in range(0, 100).

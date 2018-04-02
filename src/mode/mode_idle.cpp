@@ -264,7 +264,7 @@ void ModeIdle::remoteMax(bool state_now, bool state_last)
 /*void ModeIdle::lidarBumper(bool state_now, bool state_last)
 {
 	static uint16_t lidar_bumper_cnt = 0;
-	if( ! s_wifi.is_wifi_connected_){
+	if( ! s_wifi.isConnected()){
 		MutexLock lock(&bind_lock_);
 		lidar_bumper_cnt++;
 		if(lidar_bumper_cnt >=250 && !trigger_wifi_smart_link_){
@@ -281,7 +281,7 @@ void ModeIdle::remoteMax(bool state_now, bool state_last)
 			ROS_INFO("%s,%d,smart link ap",__FUNCTION__,__LINE__);
 		}
 	}
-	else if(!trigger_wifi_rebind_ && s_wifi.is_wifi_connected_)
+	else if(!trigger_wifi_rebind_ && s_wifi.isConnected())
 	{
 		MutexLock lock(&bind_lock_);
 		lidar_bumper_cnt++;
@@ -296,12 +296,10 @@ void ModeIdle::remoteMax(bool state_now, bool state_last)
 
 void ModeIdle::remoteWifi(bool state_now,bool state_last)
 {
-	ROS_INFO("%s,%d,wifi state = %d ",__FUNCTION__,__LINE__,S_Wifi::is_wifi_connected_);
+	ROS_INFO("%s,%d,wifi state = %d ",__FUNCTION__,__LINE__,s_wifi.isConnected());
 	remote.reset();
-	if(S_Wifi::is_wifi_connected_)
-		s_wifi.rebind();
-	else
-		s_wifi.smartLink();
+	s_wifi.rebind();
+	s_wifi.smartLink();
 
 }
 
