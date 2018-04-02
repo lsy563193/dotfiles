@@ -249,9 +249,15 @@ void ModeIdle::remoteKeyHandler(bool state_now, bool state_last)
 
 void ModeIdle::remoteMax(bool state_now, bool state_last)
 {
-	beeper.beepForCommand(VALID);
-	vacuum.isMaxInClean(!vacuum.isMaxInClean());
-	speaker.play(vacuum.isMaxInClean() ? VOICE_CONVERT_TO_LARGE_SUCTION : VOICE_CONVERT_TO_NORMAL_SUCTION,false);
+	PP_INFO();
+	if(water_tank.checkEquipment(true)){
+		beeper.beepForCommand(INVALID);
+	}
+	else{
+		beeper.beepForCommand(VALID);
+		vacuum.isMaxInClean(!vacuum.isMaxInClean());
+		speaker.play(vacuum.isMaxInClean() ? VOICE_CONVERT_TO_LARGE_SUCTION : VOICE_CONVERT_TO_NORMAL_SUCTION,false);
+	}
 	remote.reset();
 }
 

@@ -431,6 +431,7 @@ bool MovementExceptionResume::isFinish()
 			ev.robot_slip = false;
 			ev.fatal_quit = true;
 			error.set(ERROR_CODE_STUCK);
+
 		}
 		switch(robot_slip_flag_){
 			case 0:{

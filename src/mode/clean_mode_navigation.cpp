@@ -395,18 +395,17 @@ void CleanModeNav::remoteSpot(bool state_now, bool state_last)
 void CleanModeNav::remoteMax(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
-	if(isInitState() || isStateClean() || isStateResumeLowBatteryCharge() || isStateGoHomePoint() || isStateGoToCharger() || isStatePause())
+	if(water_tank.checkEquipment(true)){
+		beeper.beepForCommand(INVALID);
+	}else if(isInitState() || isStateClean() || isStateResumeLowBatteryCharge() || isStateGoHomePoint() || isStateGoToCharger() || isStatePause())
 	{
 		beeper.beepForCommand(VALID);
 		vacuum.isMaxInClean(!vacuum.isMaxInClean());
 		speaker.play(vacuum.isMaxInClean() ? VOICE_CONVERT_TO_LARGE_SUCTION : VOICE_CONVERT_TO_NORMAL_SUCTION,false);
 		if(isStateClean() || isStateResumeLowBatteryCharge() || (isInitState()&& action_i_ > ac_open_gyro)) {
-			if (!water_tank.checkEquipment(true))
-				vacuum.setCleanState();
+			vacuum.setCleanState();
 		}
 	}
-	else
-		beeper.beepForCommand(INVALID);
 	remote.reset();
 }
 

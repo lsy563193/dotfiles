@@ -7,7 +7,6 @@
 #include "serial.h"
 
 WaterTank water_tank;
-
 WaterTank::WaterTank()
 {
 	setMode(PUMP_LOW);

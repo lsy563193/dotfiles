@@ -133,15 +133,15 @@ void CleanModeExploration::chargeDetect(bool state_now, bool state_last) {
 void CleanModeExploration::remoteMax(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
-	if(isInitState() || isStateFollowWall() || isStateExploration() || isStateGoHomePoint() || isStateGoToCharger())
+	if(water_tank.checkEquipment(true)){
+		beeper.beepForCommand(INVALID);
+	}
+	else if(isInitState() || isStateFollowWall() || isStateExploration() || isStateGoHomePoint() || isStateGoToCharger())
 	{
 		beeper.beepForCommand(VALID);
 		vacuum.isMaxInClean(!vacuum.isMaxInClean());
 		speaker.play(vacuum.isMaxInClean() ? VOICE_CONVERT_TO_LARGE_SUCTION : VOICE_CONVERT_TO_NORMAL_SUCTION,false);
 	}
-
-	else
-		beeper.beepForCommand(INVALID);
 	remote.reset();
 }
 /*void CleanModeExploration::printMapAndPath()
