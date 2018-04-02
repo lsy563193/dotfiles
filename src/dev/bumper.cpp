@@ -18,9 +18,9 @@ uint8_t Bumper::getStatus(void)
 		temp_status |= BLOCK_RIGHT;
 	}
 	if (getLidarBumperStatus()) {
-		temp_status |= BLOCK_FRONT;
+		temp_status = BLOCK_LIDAR_BUMPER;
 	}
-	if (temp_status == (BLOCK_LEFT | BLOCK_RIGHT) || (temp_status & BLOCK_FRONT) != 0)
+	if (temp_status == (BLOCK_LEFT | BLOCK_RIGHT) /*|| (temp_status & BLOCK_FRONT) != 0*/)
 		temp_status = BLOCK_ALL;
 	return temp_status;
 }

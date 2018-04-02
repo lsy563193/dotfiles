@@ -209,7 +209,8 @@ void ACleanMode::saveBlocks() {
 	saveBlock(BLOCKED_BUMPER,iterate_point_.dir, [&]() {
 		auto bumper_trig = ev.bumper_triggered/*bumper.getStatus()*/;
 		Cells d_cells; // Direction indicator cells.
-		if ((bumper_trig & BLOCK_RIGHT) && (bumper_trig & BLOCK_LEFT))
+//		if ((bumper_trig & BLOCK_RIGHT) && (bumper_trig & BLOCK_LEFT))
+		if (bumper_trig == BLOCK_ALL || bumper_trig == BLOCK_LIDAR_BUMPER)
 			d_cells = {/*{2,-1},*/ {2, 0}/*, {2,1}*/};
 		else if (bumper_trig & BLOCK_LEFT) {
 			if (is_linear)

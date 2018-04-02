@@ -13,6 +13,7 @@ MovementBack::MovementBack(float back_distance, uint8_t max_speed)
 	max_speed_ = max_speed;
 	speed_ = max_speed_;
 	bumper_jam_cnt_ = 0;
+	lidar_bumper_jam_cnt_ = 0;
 	cliff_jam_cnt_ = 0;
 	robot_stuck_cnt_ = 0;
 	updateStartPose();
@@ -55,14 +56,24 @@ bool MovementBack::isFinish()
 	if (std::abs(distance) >= back_distance_ || isLidarStop())
 	{
 
-		bumper_jam_cnt_ = bumper.getStatus() == 0 ? 0 : bumper_jam_cnt_+1 ;
+		auto tmp_bumper_status = bumper.getStatus();
+		if (tmp_bumper_status == BLOCK_ALL || tmp_bumper_status == BLOCK_LEFT || tmp_bumper_status == BLOCK_RIGHT) {
+			bumper_jam_cnt_++;
+		} else if (tmp_bumper_status != BLOCK_ALL && tmp_bumper_status != BLOCK_LEFT && tmp_bumper_status != BLOCK_RIGHT) {
+			bumper_jam_cnt_ = 0;
+		}
+		if (tmp_bumper_status == BLOCK_LIDAR_BUMPER) {
+			lidar_bumper_jam_cnt_++;
+		} else if (tmp_bumper_status != BLOCK_LIDAR_BUMPER) {
+			lidar_bumper_jam_cnt_ = 0;
+		}
 		cliff_jam_cnt_ = cliff.getStatus() == 0 ? 0 : cliff_jam_cnt_+1 ;
 		robot_stuck_cnt_ = lidar.isRobotSlip() == 0 ? 0 : robot_stuck_cnt_+1 ;
 		//g_lidar_bumper_cnt = robot::instance()->getLidarBumper() == 0? 0:g_lidar_bumper_cnt+1;
 
 		ROS_INFO("%s, %d: MovementBack reach target, bumper_jam_cnt_(%d), cliff_jam_cnt_(%d), robot_stuck_cnt_(%d), tilt status(%d).",
 				 __FUNCTION__, __LINE__, bumper_jam_cnt_, cliff_jam_cnt_, robot_stuck_cnt_, gyro.getTiltCheckingStatus());
-		if (bumper_jam_cnt_ == 0 && cliff_jam_cnt_ == 0 && robot_stuck_cnt_ == 0 && !gyro.getTiltCheckingStatus())// todo need a tilt_cnt_
+		if (bumper_jam_cnt_ == 0 && lidar_bumper_jam_cnt_ == 0 && cliff_jam_cnt_ == 0 && robot_stuck_cnt_ == 0 && !gyro.getTiltCheckingStatus())// todo need a tilt_cnt_
 			return true;
 		if (cliff_jam_cnt_ >= 2)
 		{
@@ -74,6 +85,12 @@ bool MovementBack::isFinish()
 		{
 			ev.bumper_jam = true;
 			ROS_WARN("%s, %d: Bumper jam.", __FUNCTION__, __LINE__);
+			return false;
+		}
+		else if (lidar_bumper_jam_cnt_ >= 2)
+		{
+			ev.lidar_bumper_jam = true;
+			ROS_WARN("%s, %d: Lidar Bumper jam.", __FUNCTION__, __LINE__);
 			return false;
 		}
 		else if (robot_stuck_cnt_ >= 2)

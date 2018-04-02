@@ -76,6 +76,7 @@ private:
 	float back_distance_;
 	int32_t speed_;
 	uint8_t bumper_jam_cnt_;
+	uint8_t lidar_bumper_jam_cnt_;
 	uint8_t cliff_jam_cnt_;
 	uint8_t robot_stuck_cnt_;
 	float lidar_detect_distance;
@@ -297,6 +298,7 @@ private:
 	double resume_vacuum_start_time_;
 	uint8_t wheel_resume_cnt_{0};
 	uint8_t bumper_jam_state_{1};
+	uint8_t lidar_bumper_jam_state_{1};
 	double bumper_resume_start_radian_{0};
 	uint8_t robot_slip_flag_{0};
 	static double slip_start_turn_time_;
