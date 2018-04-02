@@ -141,11 +141,15 @@ void ModeRemote::remoteDirectionRight(bool state_now, bool state_last)
 void ModeRemote::remoteMax(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
-	beeper.beepForCommand(VALID);
-	vacuum.isMaxInClean(!vacuum.isMaxInClean());
-	speaker.play(vacuum.isMaxInClean() ? VOICE_CONVERT_TO_LARGE_SUCTION : VOICE_CONVERT_TO_NORMAL_SUCTION,false);
-	if (!water_tank.checkEquipment(true))
+	if(water_tank.checkEquipment(false)){
+		beeper.beepForCommand(INVALID);
+	}
+	else{
+		beeper.beepForCommand(VALID);
+		vacuum.isMaxInClean(!vacuum.isMaxInClean());
+		speaker.play(vacuum.isMaxInClean() ? VOICE_CONVERT_TO_LARGE_SUCTION : VOICE_CONVERT_TO_NORMAL_SUCTION,false);
 		vacuum.setCleanState();
+	}
 	remote.reset();
 }
 

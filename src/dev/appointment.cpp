@@ -48,16 +48,17 @@ std::vector<st_appmt> Appmt::get()
 
 }
 
-void *Appmt::rd_routine(st_appmt *apmt_v)
+int8_t Appmt::rd_routine(st_appmt *apmt_v)//read write routine
 {	
 	st_appmt *apmt_val = (struct st_appmt*)apmt_v; 
 	//open
 	const int file_len = 150;
 	const int col_len = 15;
-	int fd = open(afile,O_RDWR|O_CREAT,0X700);
+	int fd = open(afile,O_RDWR|O_CREAT,0X644);
 	if(fd < 0){
 		ROS_ERROR("%s,%d,open file %s fail",__FUNCTION__,__LINE__,afile);
 		//pthread_exit(NULL);
+		return -1;
 	}
 
 	char buf[file_len];
@@ -74,6 +75,7 @@ void *Appmt::rd_routine(st_appmt *apmt_v)
 				ROS_ERROR("%s,%d,read file %d fail",__FUNCTION__,__LINE__,len);
 				close(fd);
 				//pthread_exit(NULL);
+				return -1;
 			}
 			else
 			{
@@ -107,26 +109,42 @@ void *Appmt::rd_routine(st_appmt *apmt_v)
 		//write
 		if(apmt_val != NULL)
 		{
-			int offset = apmt_val->num;
+			char tmp_buf[col_len] = {0};
+			int offset = 0;
+			if(apmt_val->week != 0x00)
+			{
+				for(int j = 0;j<7;j++)
+				{
+					if(apmt_val->week &(0x01<<j))
+					{
+						offset = j;
+						break;
+					}
+				}
+			}
+			else
+			{
+				offset = apmt_val->num;
+			}
 
 			int pos = lseek(fd,offset*col_len,SEEK_SET);
-
+			ROS_INFO("offset %d",offset);
 			if( pos ==-1)
 			{
 				ROS_ERROR("%s,%d,lseek fail %d fail",__FUNCTION__,__LINE__,pos);
 				close(fd);
 			//	pthread_exit(NULL);
 			}
-			memset(buf,0,file_len);
-
-			sprintf(buf,"%2u %2u %2u %2u %2u ",apmt_val->num,apmt_val->enable,apmt_val->week,apmt_val->hour,apmt_val->mint);
+			memset(tmp_buf,0,col_len);
+			
+			sprintf(tmp_buf,"%2u %2u %2u %2u %2u ",apmt_val->num,apmt_val->enable,apmt_val->week,apmt_val->hour,apmt_val->mint);
 			ROS_INFO("%2d %2d %2d %2d %2d \n",(int)apmt_val->num,(int)apmt_val->enable,(int)apmt_val->week,(int)apmt_val->hour,(int)apmt_val->mint);
-			int len = write(fd,buf,col_len);
+			int len = write(fd,tmp_buf,col_len);
 			if(len == -1)
 			{
 				ROS_ERROR("%s,%d,wirte fail %d ",__FUNCTION__,__LINE__,len);
 				close(fd);
-			//	pthread_exit(NULL);
+				return -1;
 			}
 			fsync(fd);
 			ROS_INFO("%s,%d,set appointment success! %s",__FUNCTION__,__LINE__,buf);
@@ -134,5 +152,50 @@ void *Appmt::rd_routine(st_appmt *apmt_v)
 	}
 	close(fd);
 	//pthread_exit(NULL);
+	return 0;
 
+}
+
+uint32_t Appmt::getLastAppointment()
+{
+	time_t cur_sec = time(NULL);	
+	struct tm* time_info;
+	time_info = localtime(&cur_sec);
+	ROS_INFO("%s,%d,cur time %s",__FUNCTION__,__LINE__,
+				asctime(time_info));
+	int cur_wday = 	time_info->tm_wday == 0?7:time_info->tm_wday;
+	int cur_hour = 	time_info->tm_hour;
+	int cur_mint = 	time_info->tm_min;
+	//get appointment
+	this->get();
+	uint32_t mints[(int)apmt_l_.size()] = {24*60*7};
+	uint32_t min = mints[0];
+
+	std::ostringstream msg("minutes from now:");
+	for(int i=0;i<apmt_l_.size();i++)
+	{
+		if(apmt_l_[i].enable)
+		{
+			int diff_w = (i+1 - cur_wday );
+			int diff_h = (apmt_l_[i].hour - cur_hour);
+			int diff_m = (apmt_l_[i].mint - cur_mint);
+
+			if(diff_w == 0)
+				if(diff_h >=0 && diff_m >=0)
+					mints[i] = diff_h*60+ diff_m;
+				else
+					mints[i] = 7*24*60+diff_h*60+diff_m;
+			else
+				mints[i] = ( diff_w < 0? (7+ diff_w):diff_w) *24*60 
+							+ diff_h*60
+							+ diff_m;
+			if(min > mints[i])
+				min  = mints[i];
+
+		}
+		msg<<" ("<<i<<","<<(int)mints[i]<<")";
+	}
+	ROS_INFO("%s,%d,%s",__FUNCTION__,__LINE__,msg.str().c_str());
+
+	return min;
 }

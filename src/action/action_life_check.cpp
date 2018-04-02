@@ -51,7 +51,7 @@ void ActionLifeCheck::lifeTestRoutineThread()
 
 	pthread_cond_broadcast(&serial_data_ready_cond);
 	event_manager_thread_kill = true;
-	ROS_ERROR("%s,%d,exit",__FUNCTION__,__LINE__);
+	printf("%s,%d,exit\n",__FUNCTION__,__LINE__);
 }
 
 bool ActionLifeCheck::dataExtract(const uint8_t *buf)

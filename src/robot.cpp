@@ -126,9 +126,12 @@ robot::~robot()
 	water_tank.stop(WaterTank::tank_pump);
 	serial.setWorkMode(WORK_MODE);
 	usleep(40000);
-	while(ros::ok() && !g_pp_shutdown){
+//	while(ros::ok() && !g_pp_shutdown){
+	printf("pp shutdown before waiting!\n");
+	while(!g_pp_shutdown){
 		usleep(2000);
 	}
+	printf("pp shutdown after waiting!\n");
 	serial.close();
 	pthread_mutex_destroy(&recev_lock);
 	pthread_mutex_destroy(&serial_data_ready_mtx);
@@ -141,8 +144,8 @@ robot::~robot()
 	pthread_cond_destroy(&new_event_cond);
 	pthread_cond_destroy(&event_handler_cond);
 
-	delete robot_tf_;
-	ROS_INFO("pp shutdown!");
+//	delete robot_tf_;
+	printf("pp shutdown!\n");
 }
 
 robot *robot::instance()
@@ -283,6 +286,7 @@ void robot::robotbase_routine_cb()
 		c_rcon.setStatus((buf[REC_RCON_CHARGER_4] << 24) | (buf[REC_RCON_CHARGER_3] << 16)
 						 | (buf[REC_RCON_CHARGER_2] << 8) | buf[REC_RCON_CHARGER_1]);
 		sensor.rcon = c_rcon.getStatus();
+//		printf("rcon:%08x\n", c_rcon.getStatus());
 
 		// For virtual wall.
 		sensor.virtual_wall = (buf[REC_VISUAL_WALL_H] << 8)| buf[REC_VISUAL_WALL_L];
@@ -435,7 +439,7 @@ void robot::robotbase_routine_cb()
 	}//end while
 	pthread_cond_broadcast(&serial_data_ready_cond);
 	event_manager_thread_kill = true;
-	ROS_ERROR("%s,%d,exit",__FUNCTION__,__LINE__);
+	printf("%s,%d,exit\n",__FUNCTION__,__LINE__);
 }
 
 void robot::core_thread_cb()
@@ -474,7 +478,7 @@ void robot::core_thread_cb()
 		}
 	}
 
-	ROS_INFO("%s %d: core thread exit.", __FUNCTION__, __LINE__);
+	printf("%s %d: core thread exit.\n", __FUNCTION__, __LINE__);
 }
 
 void robot::runTestMode()
@@ -499,6 +503,7 @@ void robot::runTestMode()
 	p_mode.reset(new CleanModeTest(r16_work_mode_));
 	p_mode->run();
 	g_pp_shutdown = true;
+	printf("%s %d: Exit.\n", __FUNCTION__, __LINE__);
 }
 
 void robot::runWorkMode()
@@ -542,7 +547,7 @@ void robot::runWorkMode()
 //				ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
 	}
 	g_pp_shutdown = true;
-	ROS_ERROR("%s,%d,exit", __FUNCTION__, __LINE__);
+	printf("%s %d: Exit.\n", __FUNCTION__, __LINE__);
 }
 
 uint8_t robot::getTestMode(void)

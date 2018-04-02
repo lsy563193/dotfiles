@@ -150,9 +150,6 @@ ACleanMode::~ACleanMode()
 			ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
 		}
 	}
-	else{
-		speaker.stop();
-	}
 	auto cleaned_count = clean_map_.getCleanedArea();
 	auto map_area = cleaned_count * CELL_SIZE * CELL_SIZE;
 	ROS_INFO("%s %d: Cleaned area = \033[32m%.2fm2\033[0m, cleaning time: \033[32m%d(s) %.2f(min)\033[0m, cleaning speed: \033[32m%.2f(m2/min)\033[0m.",
