@@ -16,13 +16,13 @@ ModeRemote::ModeRemote()
 	serial.setWorkMode(WORK_MODE);
 	if (gyro.isOn())
 	{
-		sp_state.reset(new StateClean());
+		sp_state = st_clean.get();
 		sp_state->init();
 		action_i_ = ac_remote;
 	}
 	else
 	{
-		sp_state.reset(new StateInit());
+		sp_state = st_init.get();
 		sp_state->init();
 		action_i_ = ac_open_gyro;
 	}
@@ -98,7 +98,7 @@ int ModeRemote::getNextAction()
 {
 	if(action_i_ == ac_open_gyro || (action_i_ == ac_exception_resume && !ev.fatal_quit))
 	{
-        sp_state.reset(new StateClean());
+        sp_state = st_clean.get();;
         sp_state->init();
 		return ac_remote;
 	}
