@@ -137,7 +137,15 @@ public:
 	{
 		battery_low_ = val;
 	}
+    bool isBatteryLow2() const
+	{
+		return battery_low2_;
+	}
 
+	void setBatterLow2(bool val)
+	{
+		battery_low2_ = val;
+	}
 	void setTfReady(bool is_ready)
 	{
 		is_tf_ready_ = is_ready;
@@ -234,6 +242,7 @@ private:
 
 	bool temp_spot_set_{};
 	bool battery_low_{};
+	bool battery_low2_{};
 
 	tf::Vector3	robot_pos;
 	double	robot_rad;

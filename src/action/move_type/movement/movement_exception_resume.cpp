@@ -527,8 +527,11 @@ bool MovementExceptionResume::isFinish()
 	}
 	else if(ev.robot_slip)
 	{
-		ACleanMode* p_mode = dynamic_cast<ACleanMode*>(sp_mt_->sp_mode_);
-		auto isExitSlipBlock = p_mode->clean_map_.getCell(CLEAN_MAP,getPosition().toCell().x,getPosition().toCell().y);
+		CellState isExitSlipBlock;
+		if(sp_mt_->sp_mode_->mode_i_ != sp_mt_->sp_mode_->md_go_to_charger){
+			ACleanMode* p_mode = dynamic_cast<ACleanMode*>(sp_mt_->sp_mode_);
+			isExitSlipBlock = p_mode->clean_map_.getCell(CLEAN_MAP,getPosition().toCell().x,getPosition().toCell().y);
+		}
 
 		if(ros::Time::now().toSec() - resume_slip_start_time_ > 60){
 			ev.robot_slip = false;

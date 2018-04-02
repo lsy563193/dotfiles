@@ -11,7 +11,7 @@ ModeCharge::ModeCharge()
 	ROS_INFO("%s %d: Entering Charge mode\n=========================" , __FUNCTION__, __LINE__);
 
 	robot::instance()->setBatterLow(false);
-	robot::instance()->setBatterLow(false);
+	robot::instance()->setBatterLow2(false);
 	key.resetTriggerStatus();
 	c_rcon.resetStatus();
 	remote.reset();
@@ -21,10 +21,12 @@ ModeCharge::ModeCharge()
 	event_manager_set_enable(true);
 	sp_action_.reset(new MovementCharge);
 	action_i_ = ac_charge;
+	mode_i_ = md_charge;
 	serial.setWorkMode(CHARGE_MODE);
 	plan_activated_status_ = false;
 	sp_state = state_charge.get();
-    sp_state->init();
+	sp_state->init();
+	IMoveType::sp_mode_ = this;
 }
 
 ModeCharge::~ModeCharge()

@@ -64,10 +64,12 @@ int main(int argc, char **argv)
 	ros::init(argc, argv, "pp");
 	ros::NodeHandle	nh_dev("~");
 
+#if ENABLE_DEBUG
 	signal(SIGABRT,handle_crash_exit);
 	signal(SIGSEGV,handle_crash_exit);
 	signal(SIGPIPE,handle_crash_exit);
 	signal(SIGFPE,handle_crash_exit);
+#endif
 
 	signal(SIGINT,handle_normal_exit);
 	ROS_INFO("set signal action done!");

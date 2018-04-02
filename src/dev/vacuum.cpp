@@ -24,17 +24,8 @@ void Vacuum::setCleanState()
 {
 	if(is_max_clean_state_)
 		bldcSpeed(Vac_Speed_Max);
-	else{
-		// If work time less than 2 hours, the BLDC should be in normal level, but if more than 2 hours, it should slow down a little bit.
-		if (robot_timer.getWorkTime() < TWO_HOURS)
-		{
-			bldcSpeed(Vac_Speed_Normal);
-		} else
-		{
-			//ROS_INFO("%s %d: Work time more than 2 hours.", __FUNCTION__, __LINE__);
-			bldcSpeed(Vac_Speed_Low);
-		}
-	}
+	else
+		bldcSpeed(Vac_Speed_Normal);
 
 }
 

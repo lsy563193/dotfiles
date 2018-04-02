@@ -13,6 +13,5 @@ void StateGoCharger::init() {
 	gyro.setTiltCheckingEnable(false); //disable tilt detect
 	brush.slowOperate();
 	key_led.setMode(LED_STEADY, LED_ORANGE);
-	if (!water_tank.checkEquipment(true))
-		vacuum.bldcSpeed(Vac_Speed_Low);
+	water_tank.checkEquipment(true) ? water_tank.stop(WaterTank::pump) : vacuum.bldcSpeed(Vac_Speed_Low);
 }

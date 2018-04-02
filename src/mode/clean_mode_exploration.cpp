@@ -11,7 +11,7 @@
 CleanModeExploration::CleanModeExploration()
 {
 	ROS_INFO("%s %d: Entering Exploration mode\n=========================" , __FUNCTION__, __LINE__);
-	speaker.play(VOICE_EXPLORATION_START, false);
+	speaker.play(VOICE_BACK_TO_CHARGER, false);
 	mode_i_ = cm_exploration;
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
 	IMoveType::sp_mode_ = this; // todo: is this sentence necessary? by Austin

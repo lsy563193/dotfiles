@@ -4,6 +4,8 @@
 
 #include <mode.hpp>
 #include <robot.hpp>
+#include <water_tank.hpp>
+#include <brush.h>
 
 #include "key_led.h"
 
@@ -12,5 +14,11 @@ void StateInit::init() {
 		key_led.setMode(LED_STEADY, LED_ORANGE, 600);
 	else
 		key_led.setMode(LED_STEADY, LED_GREEN, 600);
+}
+
+void StateInit::init2() {
+	key_led.setMode(LED_STEADY, LED_GREEN);
+	water_tank.checkEquipment(false) ? water_tank.open(WaterTank::water_tank) : vacuum.setCleanState();
+	brush.normalOperate();
 }
 

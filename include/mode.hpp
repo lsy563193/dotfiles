@@ -186,18 +186,18 @@ protected:
 private:
 	void register_events(void);
 
-	bool plan_activated_status_;
+	bool plan_activated_status_{};
 
 	pthread_mutex_t bind_lock_;
 
-	bool trigger_wifi_rebind_;
-	bool trigger_wifi_smart_link_;
-	bool trigger_wifi_smart_ap_link_;
+	bool trigger_wifi_rebind_{};
+	bool trigger_wifi_smart_link_{};
+	bool trigger_wifi_smart_ap_link_{};
 
 	/*---values for rcon handle---*/
 	double first_time_seen_charger_;
 	double last_time_seen_charger_;
-    boost::shared_ptr<State> st_pause = boost::make_shared<StatePause>();
+	boost::shared_ptr<State> st_pause = boost::make_shared<StatePause>();
 };
 
 class ModeSleep: public Mode
@@ -216,6 +216,8 @@ public:
 	void rcon(bool state_now, bool state_last) override;
 	void remotePlan(bool state_now, bool state_last) override;
 
+private:
+	boost::shared_ptr<State> st_sleep = boost::make_shared<StateSleep>();
 private:
 	bool plan_activated_status_;
 };
@@ -323,7 +325,7 @@ public:
 	bool isRemoteGoHomePoint(){
 		return remote_go_home_point;
 	};
-    bool isGoHomePointForLowPower(){
+	bool isGoHomePointForLowPower(){
 		return go_home_for_low_battery_;
 	}
 	void setHomePoint();
@@ -337,7 +339,7 @@ public:
 	bool moveTypeRealTimeIsFinish(IMoveType *p_mt);
 
 	// Handlers
-	void remoteHome(bool state_now, bool state_last) override ;
+//	void remoteHome(bool state_now, bool state_last) override ;
 	void cliffAll(bool state_now, bool state_last) override ;
 	void robotSlip(bool state_now, bool state_last) override ;
 	void overCurrentBrushMain(bool state_now, bool state_last) override;
@@ -507,7 +509,7 @@ protected:
 	Points home_points_{};
 	bool should_go_to_charger_{false};
 	bool remote_go_home_point{false};
-	bool go_home_for_low_battery_{};
+	bool go_home_for_low_battery_{false};
 	bool switch_is_off_{false};
 	Points charger_pose_;
 	Points tmp_charger_pose_;
@@ -569,6 +571,7 @@ public:
 	bool isExit() override;
 
 	void keyClean(bool state_now, bool state_last) override ;
+	void remoteHome(bool state_now, bool state_last) override ;
 	void remoteClean(bool state_now, bool state_last) override ;
 	void remoteDirectionLeft(bool state_now, bool state_last) override ;
 	void remoteDirectionRight(bool state_now, bool state_last) override ;
@@ -706,15 +709,12 @@ public:
 	bool isExit() override;
 //	void cliffAll(bool state_now, bool state_last) override;
 	void remoteClean(bool state_now, bool state_last) override;
-	void remoteWallFollow(bool state_now, bool state_last) override;
 	void keyClean(bool state_now, bool state_last) override;
+	void remoteSpot(bool state_now,bool state_last) override ;
 	void switchInStateInit() override ;
 	void switchInStateSpot() override ;
 	void overCurrentWheelLeft(bool state_now, bool state_last) override;
 	void overCurrentWheelRight(bool state_now, bool state_last) override;
-	void remoteDirectionLeft(bool state_now, bool state_last) override;
-	void remoteDirectionRight(bool state_now, bool state_last) override;
-	void remoteDirectionForward(bool state_now, bool state_last) override;
 private:
 
 };
