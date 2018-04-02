@@ -323,7 +323,7 @@ public:
 	bool isRemoteGoHomePoint(){
 		return remote_go_home_point;
 	};
-    bool isGoHomePointForLowPower(){
+	bool isGoHomePointForLowPower(){
 		return go_home_for_low_battery_;
 	}
 	void setHomePoint();
@@ -507,7 +507,7 @@ protected:
 	Points home_points_{};
 	bool should_go_to_charger_{false};
 	bool remote_go_home_point{false};
-	bool go_home_for_low_battery_{};
+	bool go_home_for_low_battery_{false};
 	bool switch_is_off_{false};
 	Points charger_pose_;
 	Points tmp_charger_pose_;

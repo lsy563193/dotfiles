@@ -477,11 +477,8 @@ bool CleanModeNav::updateActionInStateInit() {
 		else{
 			action_i_ = ac_open_lidar;
 			brush.normalOperate();
-			if (water_tank.checkEquipment(false))
-				water_tank.open(WaterTank::tank_pump);
-			else
-				vacuum.setCleanState();
 		}
+		water_tank.checkEquipment(false) ? water_tank.open(WaterTank::water_tank) : vacuum.setCleanState();
 	} else if (action_i_ == ac_back_form_charger)
 	{
 		if (!has_aligned_and_open_slam_)
@@ -490,11 +487,7 @@ bool CleanModeNav::updateActionInStateInit() {
 
 		action_i_ = ac_open_lidar;
 		brush.normalOperate();
-		if (water_tank.checkEquipment(false))
-			water_tank.open(WaterTank::tank_pump);
-		else
-			vacuum.setCleanState();
-
+//		water_tank.checkEquipment(false) ? water_tank.open(WaterTank::water_tank) : vacuum.setCleanState();
 		setHomePoint();
 	} else if (action_i_ == ac_open_lidar)
 	{
