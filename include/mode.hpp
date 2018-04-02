@@ -217,6 +217,8 @@ public:
 	void remotePlan(bool state_now, bool state_last) override;
 
 private:
+	boost::shared_ptr<State> st_sleep = boost::make_shared<StateSleep>();
+private:
 	bool plan_activated_status_;
 };
 class ModeCharge: public Mode

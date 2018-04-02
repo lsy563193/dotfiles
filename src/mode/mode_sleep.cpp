@@ -21,7 +21,9 @@ ModeSleep::ModeSleep()
 	robot_timer.resetPlanStatus();
 
 	plan_activated_status_ = false;
-	sp_action_.reset(new ActionSleep);	
+	sp_action_.reset(new ActionSleep);
+    sp_state = st_sleep.get();
+    sp_state->init();
 
 }
 
