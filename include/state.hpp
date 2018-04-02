@@ -32,6 +32,7 @@ class StateInit: public State {
 public:
 	StateInit() = default;
 	void init() override;
+	void init2();
 };
 
 class StateClean: public State {

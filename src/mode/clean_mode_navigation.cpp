@@ -508,8 +508,7 @@ bool CleanModeNav::updateActionInStateInit() {
 		}
 		else{
 			action_i_ = ac_open_lidar;
-			state_clean.get()->init();
-
+			boost::dynamic_pointer_cast<StateInit>(state_init)->init2();
 		}
 	} else if (action_i_ == ac_back_form_charger)
 	{
@@ -518,7 +517,7 @@ bool CleanModeNav::updateActionInStateInit() {
 			robot::instance()->initOdomPosition();
 
 		action_i_ = ac_open_lidar;
-		state_clean.get()->init();
+//		state_clean.get()->init();
 		setHomePoint();
 	} else if (action_i_ == ac_open_lidar)
 	{

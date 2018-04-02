@@ -1576,10 +1576,7 @@ bool ACleanMode::updateActionInStateInit() {
 	if (action_i_ == ac_null)
 		action_i_ = ac_open_gyro;
 	else if (action_i_ == ac_open_gyro) {
-		if (water_tank.checkEquipment(false))
-			water_tank.open(WaterTank::tank_pump);
-		else
-			vacuum.setCleanState();
+		water_tank.checkEquipment(false) ? water_tank.open(WaterTank::water_tank) : vacuum.setCleanState();
 		brush.normalOperate();
 		action_i_ = ac_open_lidar;
 	}
