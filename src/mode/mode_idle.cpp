@@ -21,15 +21,9 @@ ModeIdle::ModeIdle():
 	robot_timer.resetPlanStatus();
 	event_manager_reset_status();
 
-	plan_activated_status_ = false;
 	ROS_INFO("%s %d: Current battery voltage \033[32m%5.2f V\033[0m.", __FUNCTION__, __LINE__, (float)battery.getVoltage()/100.0);
-	trigger_wifi_rebind_ = false;
-	trigger_wifi_smart_link_ = false;
-	trigger_wifi_smart_ap_link_ = false;
 	/*---reset values for rcon handle---*/
 	// todo: first_time_seen_charger_ does not mean as words in reality. It is just the time that enter this mode.
-	first_time_seen_charger_ = ros::Time::now().toSec();
-	last_time_seen_charger_ = first_time_seen_charger_;
 
 	s_wifi.replyRobotStatus(0xc8,0x00);
 //	// todo:debug
@@ -195,7 +189,6 @@ void ModeIdle::remoteKeyHandler(bool state_now, bool state_last)
 			  && robot::instance()->isBatteryLow())
 	{
 		ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, battery.getVoltage(), (int)BATTERY_READY_TO_CLEAN_VOLTAGE);
-		key_led.setMode(LED_BREATH, LED_ORANGE);
         sp_state->init();
 		beeper.beepForCommand(INVALID);
 		speaker.play(VOICE_BATTERY_LOW);

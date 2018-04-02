@@ -186,17 +186,17 @@ protected:
 private:
 	void register_events(void);
 
-	bool plan_activated_status_;
+	bool plan_activated_status_{};
 
 	pthread_mutex_t bind_lock_;
 
-	bool trigger_wifi_rebind_;
-	bool trigger_wifi_smart_link_;
-	bool trigger_wifi_smart_ap_link_;
+	bool trigger_wifi_rebind_{};
+	bool trigger_wifi_smart_link_{};
+	bool trigger_wifi_smart_ap_link_{};
 
 	/*---values for rcon handle---*/
-	double first_time_seen_charger_;
-	double last_time_seen_charger_;
+	double first_time_seen_charger_{ros::Time::now().toSec()};
+	double last_time_seen_charger_{first_time_seen_charger_};
     boost::shared_ptr<State> st_pause = boost::make_shared<StatePause>();
 };
 
