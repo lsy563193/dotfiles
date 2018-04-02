@@ -158,7 +158,7 @@ void CleanModeExploration::switchInStateGoToCharger() {
 		return;
 	}
 	else
-		sp_state = state_exploration;
+		sp_state = state_exploration.get();
 	sp_state->init();
 }
 
@@ -167,7 +167,7 @@ void CleanModeExploration::switchInStateInit() {
 	PP_INFO();
 	action_i_ = ac_null;
 	sp_action_ = nullptr;
-	sp_state = state_exploration;
+	sp_state = state_exploration.get();
 	sp_state->init();
 }
 
@@ -208,7 +208,7 @@ bool CleanModeExploration::moveTypeFollowWallIsFinish(IMoveType *p_move_type, bo
 */
 
 bool CleanModeExploration::markMapInNewCell() {
-	if(sp_state == state_folllow_wall)
+	if(sp_state == state_folllow_wall.get())
 	{
 		mark_robot_ = false;
 		mapMark();

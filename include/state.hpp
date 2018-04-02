@@ -23,7 +23,6 @@ public:
 	{return sp_cm_;}
 
 	virtual void init()=0;
-	virtual void second(){};
 
 	static ACleanMode* sp_cm_;
 protected:
@@ -64,7 +63,6 @@ class StateCharge: public State {
 public:
 	StateCharge() = default;
 	void init() override;
-	void second() override ; //full_power
 
 };
 class StateFolllowWall: public State {

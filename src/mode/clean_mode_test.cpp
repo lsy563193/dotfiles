@@ -21,7 +21,7 @@ CleanModeTest::CleanModeTest(uint8_t mode)
 		case DESK_TEST_WRITE_BASELINE_MODE:
 		{
 			serial.setWorkMode(DESK_TEST_CURRENT_MODE);
-			sp_state = state_test;
+			sp_state = state_test.get();
 			sp_state->init();
 			action_i_ = ac_desk_test;
 			genNextAction();
@@ -31,7 +31,7 @@ CleanModeTest::CleanModeTest(uint8_t mode)
 		{
 //			serial.setWorkMode(GYRO_TEST_MODE);
 			serial.setWorkMode(WORK_MODE);
-			sp_state = state_test;
+			sp_state = state_test.get();
 			sp_state->init();
 			action_i_ = ac_gyro_test;
 			genNextAction();
@@ -41,7 +41,7 @@ CleanModeTest::CleanModeTest(uint8_t mode)
 		{
 //			serial.setWorkMode(WATER_TANK_TEST_MODE);
 			serial.setWorkMode(WORK_MODE);
-			sp_state = state_test;
+			sp_state = state_test.get();
 			sp_state->init();
 			action_i_ = ac_water_tank_test;
 			genNextAction();
@@ -50,7 +50,7 @@ CleanModeTest::CleanModeTest(uint8_t mode)
 		case LIFE_TEST_MODE:
 		{
 			serial.setWorkMode(LIFE_TEST_MODE);
-			sp_state = state_test;
+			sp_state = state_test.get();
 			sp_state->init();
 			action_i_ = ac_life_test;
 			genNextAction();
@@ -59,7 +59,7 @@ CleanModeTest::CleanModeTest(uint8_t mode)
 		case R16_AND_LIDAR_TEST_MODE:
 		{
 			serial.setWorkMode(R16_AND_LIDAR_TEST_MODE);
-			sp_state = state_test;
+			sp_state = state_test.get();
 			sp_state->init();
 			action_i_ = ac_r16_test;
 			genNextAction();

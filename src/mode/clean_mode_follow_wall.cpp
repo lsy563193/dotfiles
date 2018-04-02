@@ -150,7 +150,7 @@ void CleanModeFollowWall::switchInStateInit() {
 	PP_INFO();
 	action_i_ = ac_null;
 	sp_action_ = nullptr;
-	sp_state = state_folllow_wall;
+	sp_state = state_folllow_wall.get();
 	is_isolate = true;
 	is_closed = true;
 	closed_count_ = 0;
@@ -170,7 +170,7 @@ void CleanModeFollowWall::switchInStateInit() {
 //}
 
 void CleanModeFollowWall::switchInStateFollowWall() {
-	sp_state = state_go_home_point;
+	sp_state = state_go_home_point.get();
 	ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_points_.size());
 	speaker.play(VOICE_BACK_TO_CHARGER, true);
 	go_home_path_algorithm_.reset();

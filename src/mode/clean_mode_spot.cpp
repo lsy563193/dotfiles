@@ -55,7 +55,7 @@ bool CleanModeSpot::mapMark()
 		setCleaned(pointsGenerateCells(passed_path_));
 	}
 
-	if (sp_state == state_folllow_wall)
+	if (sp_state == state_folllow_wall.get())
 		clean_map_.markRobot(CLEAN_MAP);
 	setBlocks(iterate_point_.dir);
 	PP_INFO();
@@ -131,7 +131,7 @@ void CleanModeSpot::switchInStateInit()
 {
 	action_i_ = ac_null;
 	sp_action_ = nullptr;
-	sp_state = state_spot;
+	sp_state = state_spot.get();
 	sp_state->init();
 }
 

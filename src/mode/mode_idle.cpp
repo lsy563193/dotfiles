@@ -34,7 +34,7 @@ ModeIdle::ModeIdle():
 	s_wifi.replyRobotStatus(0xc8,0x00);
 //	// todo:debug
 //	infrared_display.displayErrorMsg(9, 1234, 101);
-	sp_state.reset(new StatePause()) ;
+	sp_state = st_pause.get() ;
 	sp_state->init();
 	mode_i_ = md_idle;
 }

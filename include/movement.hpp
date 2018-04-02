@@ -348,7 +348,7 @@ public:
 class MovementDirectGo :public IMovement
 {
 public:
-	MovementDirectGo(bool slow_down, float timeout = 5);
+	MovementDirectGo(bool slow_down, float timeout = 17); // 17s for 5 meters straight movement.
 	~MovementDirectGo();
 
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed) override;

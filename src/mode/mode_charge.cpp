@@ -24,7 +24,8 @@ ModeCharge::ModeCharge()
 	mode_i_ = md_charge;
 	serial.setWorkMode(CHARGE_MODE);
 	plan_activated_status_ = false;
-	sp_state.reset(new StateCharge());
+	sp_state = state_charge.get();
+    sp_state->init();
 	IMoveType::sp_mode_ = this;
 }
 
@@ -92,7 +93,8 @@ bool ModeCharge::isFinish()
 {
 	if (charger.getChargeStatus() && battery.isFull())
 	{
-		sp_state->second();
+		sp_state = state_init.get();
+		sp_state->init();
 		if (battery_full_start_time_ == 0)
 		{
 			speaker.play(VOICE_BATTERY_CHARGE_DONE);
