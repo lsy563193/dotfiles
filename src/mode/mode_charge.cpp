@@ -23,8 +23,7 @@ ModeCharge::ModeCharge()
 	action_i_ = ac_charge;
 	serial.setWorkMode(CHARGE_MODE);
 	plan_activated_status_ = false;
-	sp_state = state_charge.get();
-    sp_state->init();
+	state_charge.get()->init();
 }
 
 ModeCharge::~ModeCharge()

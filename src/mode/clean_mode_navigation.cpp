@@ -35,6 +35,8 @@ CleanModeNav::CleanModeNav()
 
 	go_home_path_algorithm_.reset();
 
+	sp_state = state_init.get();
+    sp_state->init();
 	//clear real time map whitch store in cloud....
 	//s_wifi.clearRealtimeMap(0x00);
 }
@@ -314,7 +316,7 @@ void CleanModeNav::remoteClean(bool state_now, bool state_last)
 
 void CleanModeNav::remoteDirectionLeft(bool state_now, bool state_last)
 {
-	if (isStatePause() || isStateSpot())
+	if (isStatePause())
 	{
 		beeper.beepForCommand(VALID);
 		ROS_INFO("%s %d: Remote right.", __FUNCTION__, __LINE__);
@@ -339,7 +341,7 @@ void CleanModeNav::remoteDirectionLeft(bool state_now, bool state_last)
 
 void CleanModeNav::remoteDirectionRight(bool state_now, bool state_last)
 {
-	if (isStatePause() || isStateSpot())
+	if (isStatePause())
 	{
 		beeper.beepForCommand(VALID);
 		ROS_INFO("%s %d: Remote right.", __FUNCTION__, __LINE__);
@@ -353,7 +355,7 @@ void CleanModeNav::remoteDirectionRight(bool state_now, bool state_last)
 
 void CleanModeNav::remoteDirectionForward(bool state_now, bool state_last)
 {
-	if (isStatePause() || isStateSpot())
+	if (isStatePause())
 	{
 		beeper.beepForCommand(VALID);
 		ROS_INFO("%s %d: Remote forward.", __FUNCTION__, __LINE__);
@@ -475,11 +477,8 @@ bool CleanModeNav::updateActionInStateInit() {
 		}
 		else{
 			action_i_ = ac_open_lidar;
-			brush.normalOperate();
-			if (water_tank.checkEquipment(false))
-				water_tank.open(WaterTank::tank_pump);
-			else
-				vacuum.setCleanState();
+			state_clean.get()->init();
+
 		}
 	} else if (action_i_ == ac_back_form_charger)
 	{
@@ -488,19 +487,13 @@ bool CleanModeNav::updateActionInStateInit() {
 			robot::instance()->initOdomPosition();
 
 		action_i_ = ac_open_lidar;
-		brush.normalOperate();
-		if (water_tank.checkEquipment(false))
-			water_tank.open(WaterTank::tank_pump);
-		else
-			vacuum.setCleanState();
-
+		state_clean.get()->init();
 		setHomePoint();
 	} else if (action_i_ == ac_open_lidar)
 	{
 		if (!has_aligned_and_open_slam_)
 		{
 			action_i_ = ac_align;
-//			beeper.beepForCommand(VALID);
 		}
 		else
 			return false;
