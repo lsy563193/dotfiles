@@ -36,6 +36,8 @@ ModeRemote::ModeRemote()
 	remote_mode_time_stamp_ = ros::Time::now().toSec();
 
 	s_wifi.replyRobotStatus(0xc8,0x00);
+	mode_i_ = md_remote;
+	IMoveType::sp_mode_ = this;
 }
 
 ModeRemote::~ModeRemote()

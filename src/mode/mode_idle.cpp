@@ -36,6 +36,7 @@ ModeIdle::ModeIdle():
 //	infrared_display.displayErrorMsg(9, 1234, 101);
 	sp_state.reset(new StatePause()) ;
 	sp_state->init();
+	mode_i_ = md_idle;
 }
 
 ModeIdle::~ModeIdle()

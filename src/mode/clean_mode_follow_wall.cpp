@@ -19,6 +19,7 @@ CleanModeFollowWall::CleanModeFollowWall()
 	clean_path_algorithm_.reset(new WFCleanPathAlgorithm);
 	go_home_path_algorithm_.reset();
 	closed_count_limit_ = 1;
+	mode_i_ = cm_wall_follow;
 }
 
 CleanModeFollowWall::~CleanModeFollowWall()

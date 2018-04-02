@@ -34,6 +34,7 @@ CleanModeNav::CleanModeNav()
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
 
 	go_home_path_algorithm_.reset();
+	mode_i_ = cm_navigation;
 
 	//clear real time map whitch store in cloud....
 	//s_wifi.clearRealtimeMap(0x00);

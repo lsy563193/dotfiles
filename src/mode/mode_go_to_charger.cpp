@@ -15,10 +15,12 @@ ModeGoToCharger::ModeGoToCharger()
 
 	serial.setWorkMode(WORK_MODE);
 	speaker.play(VOICE_BACK_TO_CHARGER, false);
-    sp_state.reset(new StateGoCharger());
+	sp_state.reset(new StateGoCharger());
 	sp_state->init();
 	sp_action_.reset(new ActionOpenGyro);
 	action_i_ = ac_open_gyro;
+	mode_i_ = md_go_to_charger;
+	IMoveType::sp_mode_ = this;
 }
 
 ModeGoToCharger::~ModeGoToCharger()
