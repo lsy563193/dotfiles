@@ -32,6 +32,7 @@ class StateInit: public State {
 public:
 	StateInit() = default;
 	void init() override;
+	void init2();
 };
 
 class StateClean: public State {
@@ -92,6 +93,7 @@ public:
 	void init() override;
 //	IMoveType* setNextAction_();
 };
+
 class StateResumeLowBatteryCharge: public State {
 public:
 	StateResumeLowBatteryCharge()= default;
@@ -109,6 +111,11 @@ public:
 class StateTest: public State {
 public:
 	StateTest()= default;
+	void init() override;
+};
+
+class StateSleep: public State {
+public:
 	void init() override;
 };
 #endif //PP_STATE_HPP

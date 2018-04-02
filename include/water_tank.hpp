@@ -79,24 +79,24 @@ public:
 	};
 
 private:
-	uint16_t current_{0};
+	uint16_t current_{};
 
 	// This variable indicates whether robot is booted with a water tank.
 
 	// Real time status for water tank and pump.
-	bool is_water_tank_equiment_{false};
+	bool is_water_tank_equiment_{};
 
-	bool water_tank_status_{false};
-	bool pump_status_{false};
-	bool tank_pump_status_{false};
+	bool water_tank_status_{};
+	bool pump_status_{};
+	bool tank_pump_status_{};
 
-	uint8_t water_tank_pwm_{0};
-	double check_battery_time_stamp_{0};
-	double last_pump_time_stamp_{0};
+	uint8_t water_tank_pwm_{};
+	double check_battery_time_stamp_{};
+	double last_pump_time_stamp_{};
 	double pump_time_interval_;
-	uint8_t pump_cnt_{0};
+	uint8_t pump_cnt_{};
 	uint8_t pump_max_cnt_{3};
-	uint8_t pump_pwm_{0x00};
+	uint8_t pump_pwm_{};
 
 	uint8_t mode_;
 };

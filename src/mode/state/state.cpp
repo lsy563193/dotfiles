@@ -2,6 +2,7 @@
 // Created by lsy563193 on 12/4/17.
 //
 #include <mode.hpp>
+#include <key_led.h>
 
 ACleanMode* State::sp_cm_{};
 
@@ -118,4 +119,8 @@ void State::switchState() {
 
 	else if(sp_cm_->isStateDeskTest())
 		return sp_cm_->switchInStateDeskTest();
+}
+
+void StateSleep::init() {
+	key_led.setMode(LED_STEADY, LED_OFF);
 }

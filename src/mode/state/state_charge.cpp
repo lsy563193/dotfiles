@@ -6,7 +6,7 @@
 #include <key_led.h>
 
 void StateCharge::init() {
-    key_led.setMode(LED_STEADY, LED_ORANGE);
+    key_led.setMode(LED_BREATH, LED_ORANGE);
 }
 
 //bool StateFolllowWall::isFinish() {
