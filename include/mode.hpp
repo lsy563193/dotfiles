@@ -197,7 +197,7 @@ private:
 	/*---values for rcon handle---*/
 	double first_time_seen_charger_;
 	double last_time_seen_charger_;
-    boost::shared_ptr<State> st_pause = boost::make_shared<StatePause>();
+	boost::shared_ptr<State> st_pause = boost::make_shared<StatePause>();
 };
 
 class ModeSleep: public Mode
