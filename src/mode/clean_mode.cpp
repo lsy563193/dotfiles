@@ -1529,21 +1529,6 @@ void ACleanMode::setHomePoint()
 }
 
 // ------------------Handlers--------------------------
-void ACleanMode::remoteHome(bool state_now, bool state_last)
-{
-	if (isStateClean() || isStatePause() || isStateSpot() || isStateFollowWall())
-	{
-		ROS_WARN("%s %d: remote home.", __FUNCTION__, __LINE__);
-		beeper.beepForCommand(VALID);
-		ev.remote_home = true;
-	}
-	else
-	{
-		ROS_WARN("%s %d: remote home but not valid.", __FUNCTION__, __LINE__);
-		beeper.beepForCommand(INVALID);
-	}
-	remote.reset();
-}
 
 void ACleanMode::cliffAll(bool state_now, bool state_last)
 {

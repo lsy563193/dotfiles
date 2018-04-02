@@ -184,7 +184,14 @@ void ModeIdle::remoteKeyHandler(bool state_now, bool state_last)
 		beeper.beepForCommand(INVALID);
 		speaker.play(VOICE_ERROR_LIFT_UP);
 	}
-	else if ((!remote.isKeyTrigger(REMOTE_FORWARD) && !remote.isKeyTrigger(REMOTE_LEFT)
+	else if (robot::instance()->isBatteryLow2())
+	{
+		ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, battery.getVoltage(), (int)LOW_BATTERY_STOP_VOLTAGE);
+        sp_state->init();
+		beeper.beepForCommand(INVALID);
+		speaker.play(VOICE_BATTERY_LOW);
+	}
+    else if((!remote.isKeyTrigger(REMOTE_FORWARD) && !remote.isKeyTrigger(REMOTE_LEFT)
 			  && !remote.isKeyTrigger(REMOTE_RIGHT) && !remote.isKeyTrigger(REMOTE_HOME))
 			  && robot::instance()->isBatteryLow())
 	{
@@ -408,6 +415,13 @@ bool ModeIdle::isFinish()
 	{
         sp_state->init();
 		robot::instance()->setBatterLow(true);
+		ROS_WARN("11111~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~`");
+	}
+	if (!robot::instance()->isBatteryLow2() && battery.isLow())
+	{
+        sp_state->init();
+		robot::instance()->setBatterLow2(true);
+		ROS_ERROR("2222~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~`");
 	}
 
 	// For debug

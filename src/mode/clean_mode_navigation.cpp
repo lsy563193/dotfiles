@@ -292,6 +292,22 @@ void CleanModeNav::keyClean(bool state_now, bool state_last)
 	key.resetTriggerStatus();
 }
 
+void CleanModeNav::remoteHome(bool state_now, bool state_last)
+{
+	if (isStateClean() || isStatePause() || isStateSpot() || isStateFollowWall())
+	{
+		ROS_WARN("%s %d: remote home.", __FUNCTION__, __LINE__);
+		beeper.beepForCommand(VALID);
+		ev.remote_home = true;
+	}
+	else
+	{
+		ROS_WARN("%s %d: remote home but not valid.", __FUNCTION__, __LINE__);
+		beeper.beepForCommand(INVALID);
+	}
+	remote.reset();
+}
+
 void CleanModeNav::overCurrentWheelLeft(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Left wheel oc.", __FUNCTION__, __LINE__);

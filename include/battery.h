@@ -23,7 +23,8 @@ public:
 
 	uint16_t getVoltage()
 	{
-		return voltage_;
+		return 1280;
+//		return voltage_;
 	}
 	uint8_t getPercent();
 	void setVoltage(uint16_t val)

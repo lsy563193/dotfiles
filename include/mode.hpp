@@ -339,7 +339,7 @@ public:
 	bool moveTypeRealTimeIsFinish(IMoveType *p_mt);
 
 	// Handlers
-	void remoteHome(bool state_now, bool state_last) override ;
+//	void remoteHome(bool state_now, bool state_last) override ;
 	void cliffAll(bool state_now, bool state_last) override ;
 	void robotSlip(bool state_now, bool state_last) override ;
 	void overCurrentBrushMain(bool state_now, bool state_last) override;
@@ -571,6 +571,7 @@ public:
 	bool isExit() override;
 
 	void keyClean(bool state_now, bool state_last) override ;
+	void remoteHome(bool state_now, bool state_last) override ;
 	void remoteClean(bool state_now, bool state_last) override ;
 	void remoteDirectionLeft(bool state_now, bool state_last) override ;
 	void remoteDirectionRight(bool state_now, bool state_last) override ;
@@ -708,15 +709,12 @@ public:
 	bool isExit() override;
 //	void cliffAll(bool state_now, bool state_last) override;
 	void remoteClean(bool state_now, bool state_last) override;
-	void remoteWallFollow(bool state_now, bool state_last) override;
 	void keyClean(bool state_now, bool state_last) override;
+	void remoteSpot(bool state_now,bool state_last) override ;
 	void switchInStateInit() override ;
 	void switchInStateSpot() override ;
 	void overCurrentWheelLeft(bool state_now, bool state_last) override;
 	void overCurrentWheelRight(bool state_now, bool state_last) override;
-	void remoteDirectionLeft(bool state_now, bool state_last) override;
-	void remoteDirectionRight(bool state_now, bool state_last) override;
-	void remoteDirectionForward(bool state_now, bool state_last) override;
 private:
 
 };
