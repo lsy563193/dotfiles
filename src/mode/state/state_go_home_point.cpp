@@ -49,7 +49,7 @@ void StateGoHomePoint::init(){
 //	if(gh_state_ == gh_succuss) {
 //		if (g_home_point != g_zero_home || cm_turn_and_check_charger_signal()) {
 ////			curr(CS_GO_CHANGER);
-//			return new StateGoCharger;
+//			return new StateGoToCharger;
 //		}
 //	}
 //	else if(gh_state_ == gh_faile)

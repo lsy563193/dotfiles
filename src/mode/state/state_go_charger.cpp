@@ -9,7 +9,7 @@
 #include "gyro.h"
 #include "key_led.h"
 
-void StateGoCharger::init() {
+void StateGoToCharger::init() {
 	key_led.setMode(LED_STEADY, LED_ORANGE);
 	brush.slowOperate();
 	water_tank.setTankMode(WaterTank::TANK_LOW);
