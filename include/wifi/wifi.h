@@ -21,7 +21,7 @@ public:
 
 	uint8_t replyRobotStatus(int msg_code,const uint8_t seq_num);
 
-	uint8_t replyRealtimePassPath(const Points pass_path);
+	uint8_t uploadPassPath(const Points pass_path);
 
 	uint8_t setRobotCleanMode(wifi::WorkMode work_mode);
 
@@ -100,7 +100,7 @@ private:
 	bool isRegDevice_;
 	bool isStatusRequest_;
 	bool is_wifi_active_;
-
+	bool on_linking_;
 	wifi::WorkMode robot_work_mode_;
 
 	pthread_mutex_t s_wifi_lock_;
