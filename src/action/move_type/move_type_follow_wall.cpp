@@ -149,14 +149,17 @@ int16_t MoveTypeFollowWall::bumperTurnAngle()
 	auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
 	auto is_trapped = p_mode->is_trapped_;
 	int dijkstra_cleaned_count = 0;
-	Cell_t target;
 	auto status = ev.bumper_triggered;
 	auto get_obs = (is_left_) ? obs.getLeft() : obs.getRight();
 	auto diff_side = (is_left_) ? BLOCK_RIGHT : BLOCK_LEFT;
 	auto same_side = (is_left_) ? BLOCK_LEFT : BLOCK_RIGHT;
-	if(is_trapped)
-		p_mode->clean_path_algorithm_->findTargetUsingDijkstra(p_mode->clean_map_,getPosition().toCell(),target,dijkstra_cleaned_count);
+	std::set<Cell_t> c_cleans;
+	if(is_trapped) {
+		dijkstra_cleaned_count = p_mode->clean_map_.count_if(getPosition().toCell(), [&](Cell_t c_it) {
+		return (p_mode->clean_map_.getCell(CLEAN_MAP, c_it.x, c_it.y) == CLEANED);
+	});
 
+	}
 	if (status == BLOCK_ALL)
 	{
 		if(is_trapped)

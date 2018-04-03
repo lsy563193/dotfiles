@@ -632,7 +632,29 @@ int8_t GridMap::isNeedClean(int16_t x, int16_t y)
 	return cleaned <= 6;
 }
 
-bool GridMap::find_if(const Cell_t &curr_cell, Cells &targets, std::function<bool(const Cell_t &next)> compare ) {
+int GridMap::count_if(const Cell_t &curr_cell, std::function<bool(const Cell_t &next)> compare) {
+	Cells targets{};
+    std::set<Cell_t> c_cleans;
+	find_if(getPosition().toCell(), targets, [&](Cell_t c_it) {
+        for (auto c_neight = std::begin(cell_direction_); c_neight != std::end(cell_direction_); ++c_neight) {
+			auto tmp = c_it + *c_neight;
+			if (compare(tmp))
+				c_cleans.insert(tmp);
+		}
+		return false;
+	},true);
+	print(CLEAN_MAP, Cells{});
+    print(COST_MAP, targets);
+	Cells cs;
+    for(auto cell : c_cleans)
+	{
+		cs.push_back(cell);
+	}
+	print(COST_MAP, cs);
+	return c_cleans.size();
+}
+
+bool GridMap::find_if(const Cell_t &curr_cell, Cells &targets, std::function<bool(const Cell_t &next)> compare  ,bool is_count,bool is_stop) {
 	typedef std::multimap<int16_t, Cell_t> Queue;
 	typedef std::pair<int16_t, Cell_t> Entry;
 
@@ -640,7 +662,6 @@ bool GridMap::find_if(const Cell_t &curr_cell, Cells &targets, std::function<boo
 	Queue queue;
 	setCell(COST_MAP, curr_cell.x, curr_cell.y, 1);
 	queue.emplace(1, curr_cell);
-	bool is_found = false;
 
 	while (!queue.empty()) {
 //		 Get the nearest next from the queue
@@ -659,64 +680,41 @@ bool GridMap::find_if(const Cell_t &curr_cell, Cells &targets, std::function<boo
 		for (auto index = 0; index < 4; index++) {
 			auto neighbor = next + cell_direction_[index];
 
-			if(isOutOfTargetRange(next))
+			if(isOutOfMap(next))
 				continue;
 
 			if (getCell(COST_MAP, neighbor.x, neighbor.y) == 0) {
-				if (compare(next))
-					targets.push_back(next);
-				queue.emplace(cost + 1, neighbor);
-				setCell(COST_MAP, neighbor.x, neighbor.y, cost + 1);
-			}
-		}
-	}
-}
+                if(is_count)
+					compare(next);
+				if (isBlockAccessible(neighbor.x, neighbor.y))
+				{
 
-void GridMap::generateSPMAP(const Cell_t& curr_cell,Cells& targets)
-{
-	typedef std::multimap<int16_t , Cell_t> Queue;
-	typedef std::pair<int16_t , Cell_t> Entry;
-
-//	markRobot(CLEAN_MAP);
-	reset(COST_MAP);
-	setCell(COST_MAP, curr_cell.x, curr_cell.y, COST_1);
-	Queue queue;
-	setCell(COST_MAP, curr_cell.x, curr_cell.y, 1);
-	queue.emplace(1, curr_cell);
-
-	while (!queue.empty())
-	{
-//		 Get the nearest next from the queue
-		if(queue.begin()->first == 5)
-		{
-			Queue tmp_queue;
-			std::for_each(queue.begin(), queue.end(),[&](const Entry& iterators){
-				tmp_queue.emplace(0,iterators.second);
-			});
-			queue.swap(tmp_queue);
-		}
-		auto start = queue.begin();
-		auto next = start->second;
-		auto cost = start->first;
-		queue.erase(start);
-		{
-			for (auto index = 0; index < 4; index++)
-			{
-				auto neighbor = next + cell_direction_[index];
-				if(isOutOfMap(neighbor))
-					continue;
-				if (getCell(COST_MAP, neighbor.x, neighbor.y) == 0) {
-					if (isBlockAccessible(neighbor.x, neighbor.y)) {
-						if(getCell(CLEAN_MAP, neighbor.x, neighbor.y) == UNCLEAN && neighbor.y % 2 == 0)
-							targets.push_back(neighbor);
-						queue.emplace(cost+1, neighbor);
-						setCell(COST_MAP, neighbor.x, neighbor.y, cost+1);
+					if (compare(next))
+					{
+						targets.push_back(next);
+                        if(is_stop)
+							return true;
 					}
+					queue.emplace(cost + 1, neighbor);
+					setCell(COST_MAP, neighbor.x, neighbor.y, cost + 1);
 				}
 			}
 		}
 	}
+	return !targets.empty();
 }
+
+//void GridMap::generateSPMAP(const Cell_t& curr_cell,Cells& targets)
+//{
+//				if (getCell(COST_MAP, neighbor.x, neighbor.y) == 0) {
+//					if (isBlockAccessible(neighbor.x, neighbor.y)) {
+//						if(getCell(CLEAN_MAP, neighbor.x, neighbor.y) == UNCLEAN && neighbor.y % 2 == 0)
+//							targets.push_back(neighbor);
+//						queue.emplace(cost+1, neighbor);
+//						setCell(COST_MAP, neighbor.x, neighbor.y, cost+1);
+//					}
+//				}
+//}
 
 bool GridMap::isFrontBlockBoundary(int dx)
 {
