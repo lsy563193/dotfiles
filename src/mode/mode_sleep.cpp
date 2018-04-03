@@ -48,7 +48,7 @@ bool ModeSleep::isExit()
 				if (error.clear(error.get()))
 				{
 					ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
-					speaker.play(VOICE_CLEAR_ERROR, false);
+//					speaker.play(VOICE_CLEAR_ERROR, false);
 				} else
 				{
 					speaker.play(VOICE_CANCEL_APPOINTMENT, false);
