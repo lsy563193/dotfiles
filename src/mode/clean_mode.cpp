@@ -37,51 +37,29 @@ ACleanMode::ACleanMode()
 	line_marker_pub2_ = clean_nh_.advertise<visualization_msgs::Marker>("line_marker2", 1);
 
 	lidar.slipCheckingCtrl(ON);
-	PP_INFO();
 	event_manager_register_handler(this);
-	PP_INFO();
 	event_manager_reset_status();
-	PP_INFO();
 	event_manager_set_enable(true);
-	PP_INFO();
 	serial.setWorkMode(WORK_MODE);
-	PP_INFO();
 	IMoveType::sp_mode_ = this;
-	PP_INFO();
 	APathAlgorithm::p_cm_ = this;
-	PP_INFO();
 	State::sp_cm_ = this;
-    PP_INFO();
 	if (robot::instance()->getWorkMode() == WORK_MODE ||robot::instance()->getWorkMode() == IDLE_MODE || robot::instance()->getWorkMode() == CHARGE_MODE)
 	{
-		PP_INFO();
 		sp_state = state_init.get();
-		PP_INFO();
 		sp_state->init();
-		PP_INFO();
 		action_i_ = ac_open_gyro;
-		PP_INFO();
 		genNextAction();
-		PP_INFO();
 	}
-	PP_INFO();
 	robot_timer.initWorkTimer();
-	PP_INFO();
 	key.resetPressStatus();
-	PP_INFO();
 	time_gyro_dynamic_ = ros::Time::now().toSec();
-	PP_INFO();
 
 	resetPosition();
-	PP_INFO();
 	charger_pose_.clear();
-	PP_INFO();
 	tmp_charger_pose_.clear();
-	PP_INFO();
 	c_rcon.resetStatus();
-	PP_INFO();
 	robot::instance()->initOdomPosition();
-	PP_INFO();
 //	fw_map.reset(CLEAN_MAP);
 
 //	// todo:debug
@@ -973,7 +951,7 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 	markRealTime();
 	if(action_i_ == ac_linear) {
 		auto p_mt = dynamic_cast<MoveTypeLinear *>(p_move_type);
-		if(p_mt->isPoseReach() || p_mt->isPassTargetStop(iterate_point_.dir))
+		if(p_mt->movement_i_ == p_mt->mm_forward && (p_mt->isPoseReach() || p_mt->isPassTargetStop(iterate_point_.dir)))
 			return true;
 
 		if (p_mt->isLinearForward()){
