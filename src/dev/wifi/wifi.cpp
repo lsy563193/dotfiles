@@ -69,7 +69,7 @@ bool S_Wifi::init()
 			[&]( const wifi::RxMsg &a_msg ) {
 				is_wifi_connected_ = false;
 				wifi_led.setMode(LED_STEADY, WifiLed::state::off);
-				//speaker.play( VOICE_WIFI_UNCONNECTED,false);
+				//speaker.play( VOICE_WIFI_UNCONNECTED_UNOFFICIAL,false);
 			});
 
 	//cloud connect
@@ -78,7 +78,7 @@ bool S_Wifi::init()
 				is_wifi_connected_ = true;
 				wifi_led.setMode(LED_STEADY,WifiLed::state::on);
 				if(isRegDevice_ && on_linking_){
-					//speaker.play( VOICE_CLOUD_CONNECTED,false);
+					//speaker.play( VOICE_CLOUD_CONNECTED_UNOFFICIAL,false);
 					speaker.play( VOICE_WIFI_CONNECTED,false);
 					//uploadLastCleanData();
 					isRegDevice_ = false;
@@ -91,7 +91,7 @@ bool S_Wifi::init()
 				[this](const wifi::RxMsg &a_msg){
 				is_wifi_connected_ = false;
 				wifi_led.setMode(LED_STEADY,WifiLed::state::off);
-				//speaker.play(VOICE_CLOUD_UNCONNECTED,false);
+				//speaker.play(VOICE_CLOUD_UNCONNECTED_UNOFFICIAL,false);
 				});
 
 	//-----app query -----
@@ -665,7 +665,9 @@ uint8_t S_Wifi::setRobotCleanMode(wifi::WorkMode work_mode)
 			break;
 
 		case wifi::WorkMode::FIND:
-			speaker.play(VOICE_IM_HERE,false);
+#if DEBUG_ENABLE
+			speaker.play(VOICE_IM_HERE_UNOFFICIAL,false);
+#endif
 			beeper.beepForCommand(true);
 			INFO_BLUE("remote app find home mode command ");
 			break;
@@ -735,7 +737,9 @@ uint8_t S_Wifi::rebind()
 	wifi::ForceUnbindTxMsg p(0x00);//no responed
 	s_wifi_tx_.push(std::move(p)).commit();
 	is_wifi_connected_ = false;
-	speaker.play(VOICE_WIFI_UNBIND,false);
+#if DEBUG_ENABLE
+	speaker.play(VOICE_WIFI_UNBIND_UNOFFICIAL,false);
+#endif
 	return 0;
 }
 
@@ -744,7 +748,9 @@ uint8_t S_Wifi::smartLink()
 	INFO_BLUE("SMART LINK");
 	wifi::SmartLinkTxMsg p(0x00);//no responed
 	s_wifi_tx_.push( std::move(p)).commit();
-	speaker.play(VOICE_WIFI_SMART_LINK,false);
+#if DEBUG_ENABLE
+	speaker.play(VOICE_WIFI_SMART_LINK_UNOFFICIAL,false);
+#endif
 	wifi_led.setMode(LED_FLASH,WifiLed::state::on);
 	on_linking_ = true;
 	return 0;

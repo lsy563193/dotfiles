@@ -101,19 +101,19 @@ ACleanMode::~ACleanMode()
 
 		if (moved_during_pause_)
 		{
-			speaker.play(VOICE_CLEANING_STOP, false);
+			speaker.play(VOICE_CLEANING_FINISHED, false);
 			ROS_WARN("%s %d: Moved during pause. Stop cleaning.", __FUNCTION__, __LINE__);
 		}
 		else if (ev.fatal_quit)
 		{
 			if (ev.cliff_all_triggered)
 			{
-				speaker.play(VOICE_ERROR_LIFT_UP_CLEANING_STOP, false);
+				speaker.play(VOICE_ERROR_LIFT_UP, false);
 				ROS_WARN("%s %d: Cliff all triggered. Stop cleaning.", __FUNCTION__, __LINE__);
 			}
 			else
 			{
-				speaker.play(VOICE_CLEANING_STOP, false);
+				speaker.play(VOICE_CLEANING_FINISHED, false);
 				ROS_WARN("%s %d: fatal_quit is true. Stop cleaning.", __FUNCTION__, __LINE__);
 			}
 		}

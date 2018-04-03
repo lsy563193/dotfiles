@@ -21,10 +21,10 @@ CleanModeNav::CleanModeNav()
 	if(plan_activation_)
 	{
 		plan_activation_ = false;
-		speaker.play(VOICE_APPOINTMENT_START, false);
+//		speaker.play(VOICE_APPOINTMENT_START_UNOFFICIAL, false);
 	}
-	else
-		speaker.play(VOICE_CLEANING_START, false);
+//	else
+	speaker.play(VOICE_CLEANING_START, false);
 
 	has_aligned_and_open_slam_ = false;
 	paused_odom_radian_ = 0;
@@ -445,7 +445,7 @@ void CleanModeNav::remoteMax(bool state_now, bool state_last)
 	{
 		beeper.beepForCommand(VALID);
 		vacuum.isMaxInClean(!vacuum.isMaxInClean());
-		speaker.play(vacuum.isMaxInClean() ? VOICE_CONVERT_TO_LARGE_SUCTION : VOICE_CONVERT_TO_NORMAL_SUCTION,false);
+		speaker.play(vacuum.isMaxInClean() ? VOICE_VACCUM_MAX : VOICE_CLEANING_NAVIGATION,false);
 		if(isStateClean() || isStateResumeLowBatteryCharge() || (isInitState()&& action_i_ > ac_open_gyro)) {
 			vacuum.setCleanState();
 		}

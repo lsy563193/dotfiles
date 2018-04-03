@@ -350,5 +350,7 @@ void Speaker::stop()
 bool Speaker::test()
 {
 	speaker.play(VOICE_TEST_MODE, false);
-	speaker.play(VOICE_SOFTWARE_VERSION, false);
+#if DEBUG_ENABLE
+	speaker.play(VOICE_SOFTWARE_VERSION_UNOFFICIAL, false);
+#endif
 }
