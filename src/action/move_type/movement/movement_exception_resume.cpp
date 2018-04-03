@@ -528,7 +528,8 @@ bool MovementExceptionResume::isFinish()
 	else if(ev.robot_slip)
 	{
 		CellState isExitSlipBlock;
-		if(sp_mt_->sp_mode_->mode_i_ != sp_mt_->sp_mode_->md_go_to_charger){
+		if(sp_mt_->sp_mode_->mode_i_ != sp_mt_->sp_mode_->md_go_to_charger &&
+				sp_mt_->sp_mode_->mode_i_ != sp_mt_->sp_mode_->md_remote){
 			ACleanMode* p_mode = dynamic_cast<ACleanMode*>(sp_mt_->sp_mode_);
 			isExitSlipBlock = p_mode->clean_map_.getCell(CLEAN_MAP,getPosition().toCell().x,getPosition().toCell().y);
 		}
