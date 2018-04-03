@@ -183,6 +183,17 @@ bool CleanModeNav::isExit()
 		}
 	}
 
+	if (isStateGoHomePoint() || isStateGoToCharger())
+	{
+		if (ev.key_clean_pressed)
+		{
+			ROS_WARN("%s %d: Exit for ev.key_long_pressed during state %s.", __FUNCTION__, __LINE__,
+					 isStateGoHomePoint() ? "go home point" : "go to charger");
+			setNextMode(md_idle);
+			return true;
+		}
+	}
+
 	if (isStatePause())
 	{
 		if (sp_action_->isTimeUp())
@@ -677,14 +688,14 @@ bool CleanModeNav::checkEnterGoHomePointState()
 
 bool CleanModeNav::isSwitchByEventInStateGoHomePoint()
 {
-	return checkEnterPause() || ACleanMode::isSwitchByEventInStateGoHomePoint();
+	return ACleanMode::isSwitchByEventInStateGoHomePoint();
 }
 
 // ------------------State go to charger--------------------
 
 bool CleanModeNav::isSwitchByEventInStateGoToCharger()
 {
-	return checkEnterPause() || ACleanMode::isSwitchByEventInStateGoToCharger();
+	return ACleanMode::isSwitchByEventInStateGoToCharger();
 }
 
 void CleanModeNav::switchInStateGoToCharger()
@@ -729,7 +740,7 @@ bool CleanModeNav::checkEnterTempSpotState()
 
 bool CleanModeNav::isSwitchByEventInStateSpot()
 {
-	if (ev.remote_spot || ev.remote_direction_forward || ev.remote_direction_left || ev.remote_direction_right)
+	if (ev.key_clean_pressed || ev.remote_spot || ev.remote_direction_forward || ev.remote_direction_left || ev.remote_direction_right)
 	{
 		sp_state = state_clean.get();
 		sp_state->init();
@@ -744,7 +755,7 @@ bool CleanModeNav::isSwitchByEventInStateSpot()
 		return true;
 	}
 
-	return ACleanMode::checkEnterGoHomePointState() || ACleanMode::isSwitchByEventInStateSpot();
+	return checkEnterPause() || ACleanMode::checkEnterGoHomePointState() || ACleanMode::isSwitchByEventInStateSpot();
 }
 
 void CleanModeNav::switchInStateSpot()
