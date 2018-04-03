@@ -8,25 +8,12 @@
 
 Vacuum vacuum;
 
-void Vacuum::setTmpSpotState()
-{
-	bldcSpeed(Vac_Speed_Max);
-	ROS_INFO("%s %d: Set vacuum temp mode", __FUNCTION__, __LINE__);
-}
-
-void Vacuum::setTmpLowState()
-{
-	bldcSpeed(Vac_Speed_Low);
-	ROS_INFO("%s %d: Set vacuum temp mode", __FUNCTION__, __LINE__);
-}
-
 void Vacuum::setCleanState()
 {
 	if(is_max_clean_state_)
 		bldcSpeed(Vac_Speed_Max);
 	else
 		bldcSpeed(Vac_Speed_Normal);
-
 }
 
 void Vacuum::stop(){

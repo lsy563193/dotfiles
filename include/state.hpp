@@ -32,7 +32,9 @@ class StateInit: public State {
 public:
 	StateInit() = default;
 	void init() override;
-	void init2();
+	void initOpenLidar();
+	void initBackFromCharge();
+	void initForExploration();
 };
 
 class StateClean: public State {

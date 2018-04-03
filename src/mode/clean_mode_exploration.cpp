@@ -96,7 +96,6 @@ void CleanModeExploration::keyClean(bool state_now, bool state_last) {
 		ev.key_long_pressed = true;
 	else
 	{
-		speaker.play(VOICE_END_TO_FIND_CHARGEER ,false);
 		ev.key_clean_pressed = true;
 	}
 
@@ -110,7 +109,6 @@ void CleanModeExploration::remoteClean(bool state_now, bool state_last) {
 
 	beeper.beepForCommand(VALID);
 	ev.key_clean_pressed = true;
-	speaker.play(VOICE_END_TO_FIND_CHARGEER ,false);
 	remote.reset();
 }
 
@@ -175,8 +173,7 @@ bool CleanModeExploration::updateActionInStateInit() {
 	if (action_i_ == ac_null)
 		action_i_ = ac_open_gyro;
 	else if (action_i_ == ac_open_gyro) {
-		water_tank.checkEquipment(false) ? water_tank.open(WaterTank::water_tank) : vacuum.bldcSpeed(Vac_Speed_Low);
-		brush.slowOperate();
+		boost::dynamic_pointer_cast<StateInit>(state_init)->initForExploration();
 		action_i_ = ac_open_lidar;
 	}
 	else if (action_i_ == ac_open_lidar)
@@ -193,7 +190,7 @@ bool CleanModeExploration::updateActionInStateInit() {
 void CleanModeExploration::switchInStateGoHomePoint() {
 	PP_INFO();
 	sp_state = nullptr;
-	speaker.play(VOICE_FAILED_TO_FIND_CHARGEER, false);
+	speaker.play(VOICE_BACK_TO_CHARGER_FAILED, false);
 }
 /*
 

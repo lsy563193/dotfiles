@@ -9,47 +9,37 @@ using namespace Appointment;
 
 Appmt appmt_obj;
 
-bool Appmt::appointment_set_ = false;
-
-std::vector<st_appmt> Appmt::apmt_l_(10,{0,0,0,0,0});
-
 Appmt::Appmt()
 {
-	apmt_l_.clear();
+	//appointment_time_ = (uint32_t)ros::Time::now().toSec()/60;
+	setorget_ = false;
+	appointment_set_ = false;
+	for(uint8_t i=0;i<10;i++)
+	{
+		apmt_l_.push_back({i,0,0,0,0});
+	}
 }
 
 bool Appmt::set(st_appmt &apmt)
 {
 
-	appointment_set_ = true;
+	MutexLock lock(&appmt_lock_);
+	setorget_ = true;
 	rd_routine(&apmt);
-	//int th_ret = pthread_create(&th_id_,NULL,rd_routine,&apmt);
-	//if(th_ret !=0 )
-//	{
-//		ROS_ERROR("%s,%d,thread create fail %d",__FUNCTION__,__LINE__,th_ret);
-//		return false;
-//	}
 	return true;
-
 }
 
 std::vector<st_appmt> Appmt::get()
 {
-	appointment_set_ = false;
-	rd_routine(NULL);
-	//int th_ret = pthread_create(&th_id_,NULL,rd_routine,NULL);
-	//if(th_ret !=0 )
-	//{
-	//	ROS_ERROR("%s,%d,thread create fail %d",__FUNCTION__,__LINE__,th_ret);
-	//	apmt_l_.clear();
-	//	return apmt_l_;
-	//}
+	MutexLock lock(&appmt_lock_);
+	setorget_ = false;
+	rd_routine(NULL);	
 	return apmt_l_;
 
 }
 
 int8_t Appmt::rd_routine(st_appmt *apmt_v)//read write routine
-{	
+{
 	st_appmt *apmt_val = (struct st_appmt*)apmt_v; 
 	//open
 	const int file_len = 150;
@@ -57,14 +47,13 @@ int8_t Appmt::rd_routine(st_appmt *apmt_v)//read write routine
 	int fd = open(afile,O_RDWR|O_CREAT,0X644);
 	if(fd < 0){
 		ROS_ERROR("%s,%d,open file %s fail",__FUNCTION__,__LINE__,afile);
-		//pthread_exit(NULL);
 		return -1;
 	}
 
 	char buf[file_len];
-	if(!appointment_set_)//get appointment 
+	if(!setorget_)//get appointment 
 	{
-		//read	
+		//read from file
 		int offset = 0;
 		int len = 0;
 		do{
@@ -72,9 +61,8 @@ int8_t Appmt::rd_routine(st_appmt *apmt_v)//read write routine
 			len = read(fd,tmp_buf,file_len);
 			if(len == -1)
 			{ 
-				ROS_ERROR("%s,%d,read file %d fail",__FUNCTION__,__LINE__,len);
+				ROS_ERROR("%s,%d,read file,%s fail, errno %d ",__FUNCTION__,__LINE__,afile,len);
 				close(fd);
-				//pthread_exit(NULL);
 				return -1;
 			}
 			else
@@ -88,13 +76,12 @@ int8_t Appmt::rd_routine(st_appmt *apmt_v)//read write routine
 		char *p_buf = buf;
 		for(int i =0 ;i<apmt_l_.size();i++)
 		{	
-			sscanf(p_buf+col_len*i,"%d %d %d %d %d",
+			sscanf(p_buf+col_len*(i),"%2u %2u %2u %2u %2u",
 						(uint8_t*)&apmt_l_[i].num,
 						(uint8_t*)&apmt_l_[i].enable,
 						(uint8_t*)&apmt_l_[i].week,
 						(uint8_t*)&apmt_l_[i].hour,
-						(uint8_t*)&apmt_l_[i].mint
-				  );
+						(uint8_t*)&apmt_l_[i].mint);
 
 			ROS_INFO("num %u enable %u weeks %u hour %u mint %u",apmt_l_[i].num,
 						apmt_l_[i].enable,
@@ -106,39 +93,37 @@ int8_t Appmt::rd_routine(st_appmt *apmt_v)//read write routine
 	}
 	else//set appointment
 	{
-		//write
+		//write to file
 		if(apmt_val != NULL)
 		{
 			char tmp_buf[col_len] = {0};
-			int offset = 0;
+			int offset = apmt_val->num;
+			/*
 			if(apmt_val->week != 0x00)
 			{
 				for(int j = 0;j<7;j++)
 				{
 					if(apmt_val->week &(0x01<<j))
 					{
-						offset = j;
+						offset = j+1;
 						break;
 					}
 				}
-			}
+
 			else
 			{
 				offset = apmt_val->num;
 			}
-
+			*/
 			int pos = lseek(fd,offset*col_len,SEEK_SET);
 			ROS_INFO("offset %d",offset);
 			if( pos ==-1)
 			{
-				ROS_ERROR("%s,%d,lseek fail %d fail",__FUNCTION__,__LINE__,pos);
+				ROS_ERROR("%s,%d,lseek fail %d",__FUNCTION__,__LINE__,pos);
 				close(fd);
-			//	pthread_exit(NULL);
 			}
 			memset(tmp_buf,0,col_len);
-			
 			sprintf(tmp_buf,"%2u %2u %2u %2u %2u ",apmt_val->num,apmt_val->enable,apmt_val->week,apmt_val->hour,apmt_val->mint);
-			ROS_INFO("%2d %2d %2d %2d %2d \n",(int)apmt_val->num,(int)apmt_val->enable,(int)apmt_val->week,(int)apmt_val->hour,(int)apmt_val->mint);
 			int len = write(fd,tmp_buf,col_len);
 			if(len == -1)
 			{
@@ -147,18 +132,20 @@ int8_t Appmt::rd_routine(st_appmt *apmt_v)//read write routine
 				return -1;
 			}
 			fsync(fd);
-			ROS_INFO("%s,%d,set appointment success! %s",__FUNCTION__,__LINE__,buf);
+			ROS_INFO("%s,%d,set appointment success! %s",__FUNCTION__,__LINE__,tmp_buf);
+
 		}
 	}
 	close(fd);
-	//pthread_exit(NULL);
 	return 0;
 
 }
 
 uint32_t Appmt::getLastAppointment()
 {
-	time_t cur_sec = time(NULL);	
+
+	appointment_set_ = false;
+	time_t cur_sec = time(NULL);
 	struct tm* time_info;
 	time_info = localtime(&cur_sec);
 	ROS_INFO("%s,%d,cur time %s",__FUNCTION__,__LINE__,
@@ -169,7 +156,7 @@ uint32_t Appmt::getLastAppointment()
 	//get appointment
 	this->get();
 	uint32_t mints[(int)apmt_l_.size()] = {24*60*7};
-	uint32_t min = mints[0];
+	min_ = mints[0];
 
 	std::ostringstream msg("minutes from now:");
 	for(int i=0;i<apmt_l_.size();i++)
@@ -189,13 +176,16 @@ uint32_t Appmt::getLastAppointment()
 				mints[i] = ( diff_w < 0? (7+ diff_w):diff_w) *24*60 
 							+ diff_h*60
 							+ diff_m;
-			if(min > mints[i])
-				min  = mints[i];
-
+			if(min_ > mints[i])
+			{
+				min_  = mints[i];
+				appointment_time_ = (uint32_t)ros::Time::now().toSec()/60;
+				appointment_set_ = true;
+			}
 		}
 		msg<<" ("<<i<<","<<(int)mints[i]<<")";
 	}
-	ROS_INFO("%s,%d,%s",__FUNCTION__,__LINE__,msg.str().c_str());
-
-	return min;
+	ROS_INFO("%s,%d,min_=%u ,  %s",__FUNCTION__,__LINE__,min_,msg.str().c_str());
+	return min_;
 }
+
