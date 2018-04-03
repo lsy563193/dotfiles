@@ -320,6 +320,7 @@ public:
 	void run() override;
 
 private:
+	double battery_full_start_time_{0};
 	bool directly_charge_{false};
 	uint8_t disconnect_charger_count_{0};
 	time_t show_battery_info_time_stamp_;
