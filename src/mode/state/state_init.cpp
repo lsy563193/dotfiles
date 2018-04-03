@@ -16,9 +16,26 @@ void StateInit::init() {
 		key_led.setMode(LED_STEADY, LED_GREEN, 600);
 }
 
-void StateInit::init2() {
-	key_led.setMode(LED_STEADY, LED_GREEN);
+void StateInit::initBackFromCharge() {
+	key_led.setMode(LED_STEADY, LED_GREEN, 600);
+	brush.slowOperate();
+	water_tank.setTankMode(WaterTank::TANK_LOW);
 	water_tank.checkEquipment(false) ? water_tank.open(WaterTank::water_tank) : vacuum.setCleanState();
-	brush.normalOperate();
 }
+
+void StateInit::initOpenLidar() {
+	key_led.setMode(LED_STEADY, LED_GREEN, 600);
+	brush.normalOperate();
+	water_tank.setTankMode(WaterTank::TANK_HIGH);
+	water_tank.checkEquipment(false) ? water_tank.open(WaterTank::water_tank) : vacuum.setCleanState();
+}
+
+void StateInit::initForExploration() {
+	key_led.setMode(LED_STEADY, LED_ORANGE, 600);
+	brush.slowOperate();
+	water_tank.setTankMode(WaterTank::TANK_LOW);
+	water_tank.checkEquipment(false) ? water_tank.open(WaterTank::water_tank) : vacuum.bldcSpeed(Vac_Speed_Low);
+}
+
+
 

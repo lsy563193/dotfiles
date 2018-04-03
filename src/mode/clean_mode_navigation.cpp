@@ -505,19 +505,19 @@ bool CleanModeNav::updateActionInStateInit() {
 		if (charger.isOnStub()){
 			action_i_ = ac_back_form_charger;
 			found_charger_ = true;
+			boost::dynamic_pointer_cast<StateInit>(state_init)->initBackFromCharge();
 		}
 		else{
 			action_i_ = ac_open_lidar;
-			boost::dynamic_pointer_cast<StateInit>(state_init)->init2();
+			boost::dynamic_pointer_cast<StateInit>(state_init)->initOpenLidar();
 		}
 	} else if (action_i_ == ac_back_form_charger)
 	{
-		if (!has_aligned_and_open_slam_)
-			// Init odom position here.
+		if (!has_aligned_and_open_slam_) // Init odom position here.
 			robot::instance()->initOdomPosition();
 
+		boost::dynamic_pointer_cast<StateInit>(state_init)->initOpenLidar();
 		action_i_ = ac_open_lidar;
-//		state_clean.get()->init();
 		setHomePoint();
 	} else if (action_i_ == ac_open_lidar)
 	{

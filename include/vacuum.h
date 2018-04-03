@@ -26,10 +26,6 @@ public:
  * save: if save is ture,save this mode,next time clean will reload at interface
  * */
 
-	void setTmpSpotState();
-
-	void setTmpLowState();
-
 	bool isMaxInClean() //getter
 	{
 		return is_max_clean_state_;//getter

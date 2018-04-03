@@ -6,13 +6,25 @@
 
 #include <robot_timer.h>
 #include <water_tank.hpp>
+#include <brush.h>
 #include "key_led.h"
 
 void StateFolllowWall::init() {
-	if(water_tank.checkEquipment(false))
-		water_tank.open(WaterTank::tank_pump);
+	if(getMode()->isExpMode())
+	{
+		key_led.setMode(LED_STEADY,LED_ORANGE);
+		brush.slowOperate();
+		water_tank.setTankMode(WaterTank::TANK_LOW);
+		water_tank.checkEquipment(false) ? water_tank.open(WaterTank::water_tank) : vacuum.bldcSpeed(Vac_Speed_Low);
+	}
+	else
+	{
+		key_led.setMode(LED_STEADY,LED_GREEN);
+		brush.normalOperate();
+		water_tank.setTankMode(WaterTank::TANK_HIGH);
+		water_tank.checkEquipment(false) ? water_tank.open(WaterTank::tank_pump) : vacuum.setCleanState();
+	}
 	robot_timer.initTrapTimer();
-	key_led.setMode(LED_STEADY, getMode()->isExpMode() ? LED_ORANGE : LED_GREEN);
 }
 
 //bool StateFolllowWall::isFinish() {

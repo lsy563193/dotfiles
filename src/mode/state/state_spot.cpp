@@ -15,8 +15,9 @@ void StateSpot::init() {
 	if (water_tank.checkEquipment(false))
 		water_tank.open(WaterTank::tank_pump);
 	else
-		vacuum.setTmpSpotState();
+		vacuum.bldcSpeed(Vac_Speed_Max);
 	brush.fullOperate();
+	water_tank.setTankMode(WaterTank::TANK_HIGH);
 	key_led.setMode(LED_STEADY, LED_GREEN);
 	if(getMode()->isNavMode())
 		speaker.play(VOICE_CLEANING_SPOT,false);

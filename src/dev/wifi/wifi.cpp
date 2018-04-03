@@ -178,9 +178,9 @@ bool S_Wifi::init()
 				const wifi::SetMaxCleanPowerRxMsg &msg = static_cast<const wifi::SetMaxCleanPowerRxMsg&>( a_msg );
 				if (!water_tank.checkEquipment(true))
 					if(msg.isMop())
-						water_tank.setMode(WaterTank::PUMP_HIGH);
+						water_tank.setPumpMode(WaterTank::PUMP_HIGH);
 					else
-						water_tank.setMode(WaterTank::PUMP_MID);
+						water_tank.setPumpMode(WaterTank::PUMP_MID);
 				else
 					vacuum.isMaxInClean(msg.isVacuum());
 				//ack

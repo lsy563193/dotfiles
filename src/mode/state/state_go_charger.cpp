@@ -10,8 +10,15 @@
 #include "key_led.h"
 
 void StateGoCharger::init() {
-	gyro.setTiltCheckingEnable(false); //disable tilt detect
-	brush.slowOperate();
 	key_led.setMode(LED_STEADY, LED_ORANGE);
-	water_tank.checkEquipment(true) ? water_tank.stop(WaterTank::pump) : vacuum.bldcSpeed(Vac_Speed_Low);
+	brush.slowOperate();
+	water_tank.setTankMode(WaterTank::TANK_LOW);
+	if(water_tank.checkEquipment(false))
+	{
+		water_tank.open(WaterTank::water_tank);
+		water_tank.stop(WaterTank::pump);
+	} else {
+		vacuum.bldcSpeed(Vac_Speed_Low);
+	}
+	gyro.setTiltCheckingEnable(false); //disable tilt detect
 }
