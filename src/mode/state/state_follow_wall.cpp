@@ -13,6 +13,7 @@ void StateFolllowWall::init() {
 		water_tank.open(WaterTank::tank_pump);
 	robot_timer.initTrapTimer();
 	key_led.setMode(LED_STEADY, getMode()->isExpMode() ? LED_ORANGE : LED_GREEN);
+	ROS_INFO("%s %d: Enter state follow wall.", __FUNCTION__, __LINE__);
 }
 
 //bool StateFolllowWall::isFinish() {
