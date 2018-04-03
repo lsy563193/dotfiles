@@ -51,7 +51,7 @@ bool ModeSleep::isExit()
 //					speaker.play(VOICE_CLEAR_ERROR, false);
 				} else
 				{
-					speaker.play(VOICE_CANCEL_APPOINTMENT, false);
+//					speaker.play(VOICE_CANCEL_APPOINTMENT, false);
 					error.alarm();
 				}
 			}
@@ -61,16 +61,16 @@ bool ModeSleep::isExit()
 			else if (cliff.getStatus() & (BLOCK_LEFT | BLOCK_FRONT | BLOCK_RIGHT))
 			{
 				ROS_WARN("%s %d: Plan not activated not valid because of robot lifted up.", __FUNCTION__, __LINE__);
-				speaker.play(VOICE_ERROR_LIFT_UP_CANCEL_APPOINTMENT);
+				speaker.play(VOICE_ERROR_LIFT_UP);
 			} else if (!battery.isReadyToClean())
 			{
 				ROS_WARN("%s %d: Plan not activated not valid because of battery not ready to clean.", __FUNCTION__, __LINE__);
-				speaker.play(VOICE_BATTERY_LOW_CANCEL_APPOINTMENT);
+				speaker.play(VOICE_BATTERY_LOW);
 			} else if (charger.isDirected())
 			{
 				ROS_WARN("%s %d: Plan not activated not valid because of charging with adapter.", __FUNCTION__, __LINE__);
 				//speaker.play(???);
-				speaker.play(VOICE_CANCEL_APPOINTMENT);
+//				speaker.play(VOICE_CANCEL_APPOINTMENT);
 			} else{
 				ROS_WARN("%s %d: Sleep mode receives plan, change to navigation mode.", __FUNCTION__, __LINE__);
 				setNextMode(cm_navigation);
