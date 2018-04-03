@@ -214,6 +214,7 @@ void robot::robotbase_routine_cb()
 		sensor.gyro_calibration = gyro.getCalibration();
 
 		gyro.setAngleY(static_cast<float>(static_cast<int16_t>((buf[REC_ANGLE_H] << 8) | buf[REC_ANGLE_L]) / 100.0 * -1));
+//		printf("angle:%f, angle_v:%f\n", gyro.getAngleY(), gyro.getAngleV());
 		sensor.angle = gyro.getAngleY();
 		gyro.setAngleV(static_cast<float>(static_cast<int16_t>((buf[REC_ANGLE_V_H] << 8) | buf[REC_ANGLE_V_L]) / 100.0 * -1));
 		sensor.angle_v = gyro.getAngleV();

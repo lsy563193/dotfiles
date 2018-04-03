@@ -10,7 +10,7 @@
 #include "key_led.h"
 
 void StateInit::init() {
-	if(Mode::next_mode_i_ == Mode::cm_exploration)
+	if(Mode::next_mode_i_ == Mode::cm_exploration || Mode::next_mode_i_ == Mode::md_go_to_charger)
 		key_led.setMode(LED_STEADY, LED_ORANGE);
 	else if (Mode::next_mode_i_ == Mode::cm_navigation && sp_cm_->isRemoteGoHomePoint())
 		key_led.setMode(LED_STEADY, LED_ORANGE);

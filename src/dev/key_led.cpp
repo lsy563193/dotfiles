@@ -31,6 +31,7 @@ uint8_t KeyLed::getColor()
 
 void KeyLed::processLed()
 {
+//	printf("led_type:%d, ledcolor:%d.\n", led_type_, led_color_);
 	if (!led_update_flag_)
 		return;
 
@@ -84,7 +85,7 @@ void KeyLed::processLed()
 			break;
 		}
 	}
-	//ROS_INFO("%s %d: live_led_cnt_for_switch_: %d, led_brightness: %d.", __FUNCTION__, __LINE__, live_led_cnt_for_switch_, led_brightness);
+//	printf("%s %d: live_led_cnt_for_switch_: %d, led_brightness: %d.\n", __FUNCTION__, __LINE__, live_led_cnt_for_switch_, led_brightness);
 }
 
 void KeyLed::wifi_led(KeyLed::state state)
