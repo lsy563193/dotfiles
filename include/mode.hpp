@@ -134,7 +134,7 @@ public:
 	double wall_distance;
 	int mode_i_{};
 
-	boost::shared_ptr<State> sp_state{};
+	State* sp_state{};
 
 //	boost::shared_ptr<State> getState() const {
 //		return sp_state;
@@ -186,17 +186,18 @@ protected:
 private:
 	void register_events(void);
 
-	bool plan_activated_status_;
+	bool plan_activated_status_{};
 
 	pthread_mutex_t bind_lock_;
 
-	bool trigger_wifi_rebind_;
-	bool trigger_wifi_smart_link_;
-	bool trigger_wifi_smart_ap_link_;
+	bool trigger_wifi_rebind_{};
+	bool trigger_wifi_smart_link_{};
+	bool trigger_wifi_smart_ap_link_{};
 
 	/*---values for rcon handle---*/
 	double first_time_seen_charger_;
 	double last_time_seen_charger_;
+	boost::shared_ptr<State> st_pause = boost::make_shared<StatePause>();
 };
 
 class ModeSleep: public Mode
@@ -216,6 +217,8 @@ public:
 	void remotePlan(bool state_now, bool state_last) override;
 
 private:
+	boost::shared_ptr<State> st_sleep = boost::make_shared<StateSleep>();
+private:
 	bool plan_activated_status_;
 };
 class ModeCharge: public Mode
@@ -232,8 +235,10 @@ public:
 	void keyClean(bool state_now, bool state_last) override ;
 	void remotePlan(bool state_now, bool state_last) override ;
 
+	boost::shared_ptr<State> state_charge = boost::make_shared<StateCharge>();
+	boost::shared_ptr<State> state_init = boost::make_shared<StateInit>();
+
 private:
-	double battery_full_start_time_{0};
 	bool plan_activated_status_;
 };
 
@@ -259,6 +264,8 @@ public:
 
 private:
 	double remote_mode_time_stamp_;
+    boost::shared_ptr<State> st_clean = boost::make_shared<StateClean>();
+	boost::shared_ptr<State> st_init = boost::make_shared<StateInit>();
 
 };
 
@@ -283,7 +290,8 @@ public:
 	void overCurrentWheelLeft(bool state_now, bool state_last) override;
 	void overCurrentWheelRight(bool state_now, bool state_last) override;
 //	void overCurrentVacuum(bool state_now, bool state_last);
-
+private:
+	boost::shared_ptr<State> st_go_charge = boost::make_shared<StateGoCharger>();
 };
 
 class State;
@@ -316,7 +324,7 @@ public:
 	bool isRemoteGoHomePoint(){
 		return remote_go_home_point;
 	};
-    bool isGoHomePointForLowPower(){
+	bool isGoHomePointForLowPower(){
 		return go_home_for_low_battery_;
 	}
 	void setHomePoint();
@@ -330,7 +338,7 @@ public:
 	bool moveTypeRealTimeIsFinish(IMoveType *p_mt);
 
 	// Handlers
-	void remoteHome(bool state_now, bool state_last) override ;
+//	void remoteHome(bool state_now, bool state_last) override ;
 	void cliffAll(bool state_now, bool state_last) override ;
 	void robotSlip(bool state_now, bool state_last) override ;
 	void overCurrentBrushMain(bool state_now, bool state_last) override;
@@ -339,7 +347,7 @@ public:
 	// State init
 	bool isStateInit() const
 	{
-		return sp_state == state_init;
+		return sp_state == state_init.get();
 	}
 	virtual bool isSwitchByEventInStateInit();
 	virtual bool updateActionInStateInit();
@@ -348,7 +356,7 @@ public:
 	// State clean
 	bool isStateClean() const
 	{
-		return sp_state == state_clean;
+		return sp_state == state_clean.get();
 	}
 	virtual bool isSwitchByEventInStateClean();
 	virtual bool updateActionInStateClean(){ return false;};
@@ -357,7 +365,7 @@ public:
 	// State go home point
 	bool isStateGoHomePoint() const
 	{
-		return sp_state == state_go_home_point;
+		return sp_state == state_go_home_point.get();
 	}
 	virtual bool checkEnterGoHomePointState();
 	virtual bool isSwitchByEventInStateGoHomePoint();
@@ -367,7 +375,7 @@ public:
 	// State go to charger
 	bool isStateGoToCharger() const
 	{
-		return sp_state == state_go_to_charger;
+		return sp_state == state_go_to_charger.get();
 	}
 	bool checkEnterGoToCharger();
 	virtual bool isSwitchByEventInStateGoToCharger();
@@ -377,7 +385,7 @@ public:
 	// State exception resume
 	bool isStateExceptionResume() const
 	{
-		return sp_state == state_exception_resume;
+		return sp_state == state_exception_resume.get();
 	}
 	bool checkEnterExceptionResumeState();
 	virtual bool isSwitchByEventInStateExceptionResume();
@@ -387,7 +395,7 @@ public:
 	// State spot
 	bool isStateSpot() const
 	{
-		return sp_state == state_spot;
+		return sp_state == state_spot.get();
 	}
 	virtual bool isSwitchByEventInStateSpot();
 	virtual bool updateActionInStateSpot();
@@ -396,7 +404,7 @@ public:
 	// State follow wall
 	bool isStateFollowWall() const
 	{
-		return sp_state == state_folllow_wall;
+		return sp_state == state_folllow_wall.get();
 	}
 	virtual bool isSwitchByEventInStateFollowWall();
 	virtual bool updateActionInStateFollowWall();
@@ -408,7 +416,7 @@ public:
 	// State exploration
 	bool isStateExploration() const
 	{
-		return sp_state == state_exploration;
+		return sp_state == state_exploration.get();
 	}
 	virtual bool isSwitchByEventInStateExploration();
 	virtual bool updateActionInStateExploration();
@@ -417,7 +425,7 @@ public:
 	// State resume low battery charge
 	bool isStateResumeLowBatteryCharge() const
 	{
-		return sp_state == state_resume_low_battery_charge;
+		return sp_state == state_resume_low_battery_charge.get();
 	}
 	virtual bool isSwitchByEventInStateResumeLowBatteryCharge();
 	virtual bool updateActionInStateResumeLowBatteryCharge(){};
@@ -426,7 +434,7 @@ public:
 	// State charge
 	bool isStateCharge() const
 	{
-		return sp_state == state_charge;
+		return sp_state == state_charge.get();
 	}
 	virtual bool isSwitchByEventInStateCharge(){return false;};
 	virtual bool updateActionStateCharge(){};
@@ -435,7 +443,7 @@ public:
 	// State pause
 	bool isStatePause() const
 	{
-		return sp_state == state_pause;
+		return sp_state == state_pause.get();
 	}
 	virtual bool isSwitchByEventInStatePause(){return false;};
 	virtual bool updateActionInStatePause(){};
@@ -444,7 +452,7 @@ public:
 	// State desk test
 	bool isStateDeskTest() const
 	{
-		return sp_state == state_test;
+		return sp_state == state_test.get();
 	}
 	virtual bool isSwitchByEventInStateDeskTest(){return false;};
 	virtual bool updateActionInStateDeskTest(){return false;};
@@ -485,7 +493,7 @@ public:
 	double time_gyro_dynamic_;
 
 protected:
-	std::vector<boost::shared_ptr<State>> sp_saved_states;
+	std::vector<State*> sp_saved_states;
 	boost::shared_ptr<State> state_go_home_point{new StateGoHomePoint()};
 	boost::shared_ptr<State> state_go_to_charger{new StateGoCharger()};
 	boost::shared_ptr<State> state_charge{new StateCharge()};
@@ -500,7 +508,7 @@ protected:
 	Points home_points_{};
 	bool should_go_to_charger_{false};
 	bool remote_go_home_point{false};
-	bool go_home_for_low_battery_{};
+	bool go_home_for_low_battery_{false};
 	bool switch_is_off_{false};
 	Points charger_pose_;
 	Points tmp_charger_pose_;
@@ -562,6 +570,7 @@ public:
 	bool isExit() override;
 
 	void keyClean(bool state_now, bool state_last) override ;
+	void remoteHome(bool state_now, bool state_last) override ;
 	void remoteClean(bool state_now, bool state_last) override ;
 	void remoteDirectionLeft(bool state_now, bool state_last) override ;
 	void remoteDirectionRight(bool state_now, bool state_last) override ;
@@ -699,15 +708,12 @@ public:
 	bool isExit() override;
 //	void cliffAll(bool state_now, bool state_last) override;
 	void remoteClean(bool state_now, bool state_last) override;
-	void remoteWallFollow(bool state_now, bool state_last) override;
 	void keyClean(bool state_now, bool state_last) override;
+	void remoteSpot(bool state_now,bool state_last) override ;
 	void switchInStateInit() override ;
 	void switchInStateSpot() override ;
 	void overCurrentWheelLeft(bool state_now, bool state_last) override;
 	void overCurrentWheelRight(bool state_now, bool state_last) override;
-	void remoteDirectionLeft(bool state_now, bool state_last) override;
-	void remoteDirectionRight(bool state_now, bool state_last) override;
-	void remoteDirectionForward(bool state_now, bool state_last) override;
 private:
 
 };

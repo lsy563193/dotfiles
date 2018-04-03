@@ -11,7 +11,7 @@ ModeCharge::ModeCharge()
 	ROS_INFO("%s %d: Entering Charge mode\n=========================" , __FUNCTION__, __LINE__);
 
 	robot::instance()->setBatterLow(false);
-	robot::instance()->setBatterLow(false);
+	robot::instance()->setBatterLow2(false);
 	key.resetTriggerStatus();
 	c_rcon.resetStatus();
 	remote.reset();
@@ -21,9 +21,12 @@ ModeCharge::ModeCharge()
 	event_manager_set_enable(true);
 	sp_action_.reset(new MovementCharge);
 	action_i_ = ac_charge;
+	mode_i_ = md_charge;
 	serial.setWorkMode(CHARGE_MODE);
 	plan_activated_status_ = false;
-	sp_state.reset(new StateCharge());
+	sp_state = state_charge.get();
+	sp_state->init();
+	IMoveType::sp_mode_ = this;
 }
 
 ModeCharge::~ModeCharge()
@@ -88,23 +91,6 @@ bool ModeCharge::isExit()
 
 bool ModeCharge::isFinish()
 {
-	if (charger.getChargeStatus() && battery.isFull())
-	{
-		sp_state->second();
-		if (battery_full_start_time_ == 0)
-		{
-			speaker.play(VOICE_BATTERY_CHARGE_DONE);
-			battery_full_start_time_ = ros::Time::now().toSec();
-		}
-
-		// Show green key_led for 60s before going to sleep mode.
-		if (ros::Time::now().toSec() - battery_full_start_time_ >= 60)
-		{
-			setNextMode(md_sleep);
-			return true;
-		}
-	}
-
 	if (sp_action_->isFinish())
 	{
 		setNextMode(md_idle);

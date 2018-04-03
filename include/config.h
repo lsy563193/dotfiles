@@ -96,7 +96,7 @@
 #define LOW_BATTERY_GO_HOME_VOLTAGE		(1320)
 
 /* Low battery stop robot voltage value */
-#define LOW_BATTERY_STOP_VOLTAGE		(1250)
+#define LOW_BATTERY_STOP_VOLTAGE		(1300)
 
 /* Ready to clean battery voltage value */
 #define BATTERY_READY_TO_CLEAN_VOLTAGE	(1400)

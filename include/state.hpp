@@ -23,7 +23,6 @@ public:
 	{return sp_cm_;}
 
 	virtual void init()=0;
-	virtual void second(){};
 
 	static ACleanMode* sp_cm_;
 protected:
@@ -33,6 +32,7 @@ class StateInit: public State {
 public:
 	StateInit() = default;
 	void init() override;
+	void init2();
 };
 
 class StateClean: public State {
@@ -64,7 +64,6 @@ class StateCharge: public State {
 public:
 	StateCharge() = default;
 	void init() override;
-	void second() override ; //full_power
 
 };
 class StateFolllowWall: public State {
@@ -94,6 +93,7 @@ public:
 	void init() override;
 //	IMoveType* setNextAction_();
 };
+
 class StateResumeLowBatteryCharge: public State {
 public:
 	StateResumeLowBatteryCharge()= default;
@@ -111,6 +111,11 @@ public:
 class StateTest: public State {
 public:
 	StateTest()= default;
+	void init() override;
+};
+
+class StateSleep: public State {
+public:
 	void init() override;
 };
 #endif //PP_STATE_HPP

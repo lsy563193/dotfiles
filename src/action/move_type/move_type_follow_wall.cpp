@@ -157,7 +157,7 @@ int16_t MoveTypeFollowWall::bumperTurnAngle()
 	if(is_trapped)
 		p_mode->clean_path_algorithm_->findTargetUsingDijkstra(p_mode->clean_map_,getPosition().toCell(),target,dijkstra_cleaned_count);
 
-	if (status == BLOCK_ALL)
+	if (status == BLOCK_ALL || status == BLOCK_LIDAR_BUMPER)
 	{
 		if(is_trapped)
 			turn_angle = dijkstra_cleaned_count < TRAP_IN_SMALL_AREA_COUNT ? -50 : -55;
@@ -304,7 +304,7 @@ bool MoveTypeFollowWall::lidarTurnRadian(double &turn_radian)
 			param.radian_max = degree_to_radian(100);
 		}
 
-		if (ev.bumper_triggered == BLOCK_ALL) {
+		if (ev.bumper_triggered == BLOCK_ALL || ev.bumper_triggered == BLOCK_LIDAR_BUMPER) {
 			param.lidar_min = degree_to_radian(90);
 			param.lidar_max = degree_to_radian(270);
 		}

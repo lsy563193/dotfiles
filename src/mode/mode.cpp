@@ -63,7 +63,7 @@ int Mode::getNextMode()
 
 bool Mode::isExceptionTriggered()
 {
-	return ev.bumper_jam || ev.cliff_jam || ev.cliff_all_triggered || ev.oc_wheel_left || ev.oc_wheel_right
+	return ev.bumper_jam || ev.lidar_bumper_jam || ev.cliff_jam || ev.cliff_all_triggered || ev.oc_wheel_left || ev.oc_wheel_right
 		   || ev.oc_vacuum || ev.lidar_stuck || ev.robot_stuck || ev.oc_brush_main || ev.robot_slip;
 }
 

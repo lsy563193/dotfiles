@@ -23,6 +23,7 @@ public:
 
 	uint16_t getVoltage()
 	{
+//		return 1280;
 		return voltage_;
 	}
 	uint8_t getPercent();

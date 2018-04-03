@@ -11,7 +11,7 @@
 CleanModeExploration::CleanModeExploration()
 {
 	ROS_INFO("%s %d: Entering Exploration mode\n=========================" , __FUNCTION__, __LINE__);
-	speaker.play(VOICE_EXPLORATION_START, false);
+	speaker.play(VOICE_BACK_TO_CHARGER, false);
 	mode_i_ = cm_exploration;
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
 	IMoveType::sp_mode_ = this; // todo: is this sentence necessary? by Austin
@@ -133,15 +133,15 @@ void CleanModeExploration::chargeDetect(bool state_now, bool state_last) {
 void CleanModeExploration::remoteMax(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
-	if(isInitState() || isStateFollowWall() || isStateExploration() || isStateGoHomePoint() || isStateGoToCharger())
+	if(water_tank.checkEquipment(true)){
+		beeper.beepForCommand(INVALID);
+	}
+	else if(isInitState() || isStateFollowWall() || isStateExploration() || isStateGoHomePoint() || isStateGoToCharger())
 	{
 		beeper.beepForCommand(VALID);
 		vacuum.isMaxInClean(!vacuum.isMaxInClean());
 		speaker.play(vacuum.isMaxInClean() ? VOICE_CONVERT_TO_LARGE_SUCTION : VOICE_CONVERT_TO_NORMAL_SUCTION,false);
 	}
-
-	else
-		beeper.beepForCommand(INVALID);
 	remote.reset();
 }
 /*void CleanModeExploration::printMapAndPath()
@@ -158,7 +158,7 @@ void CleanModeExploration::switchInStateGoToCharger() {
 		return;
 	}
 	else
-		sp_state = state_exploration;
+		sp_state = state_exploration.get();
 	sp_state->init();
 }
 
@@ -167,7 +167,7 @@ void CleanModeExploration::switchInStateInit() {
 	PP_INFO();
 	action_i_ = ac_null;
 	sp_action_ = nullptr;
-	sp_state = state_exploration;
+	sp_state = state_exploration.get();
 	sp_state->init();
 }
 
@@ -208,7 +208,7 @@ bool CleanModeExploration::moveTypeFollowWallIsFinish(IMoveType *p_move_type, bo
 */
 
 bool CleanModeExploration::markMapInNewCell() {
-	if(sp_state == state_folllow_wall)
+	if(sp_state == state_folllow_wall.get())
 	{
 		mark_robot_ = false;
 		mapMark();

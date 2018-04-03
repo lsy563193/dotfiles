@@ -16,6 +16,7 @@
 #define BLOCK_RIGHT			((uint8_t) 0x02)
 #define BLOCK_FRONT			((uint8_t) 0x04)
 #define BLOCK_ALL			((uint8_t) 0x07)
+#define BLOCK_LIDAR_BUMPER			((uint8_t) 0x08)
 
 typedef std::deque<Point_t> Points;
 

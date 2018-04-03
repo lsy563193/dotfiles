@@ -2,6 +2,7 @@
 // Created by lsy563193 on 12/9/17.
 //
 #include <map.h>
+#include <event_manager.h>
 #include "dev.h"
 #include "path_algorithm.h"
 #include "robot.hpp"
@@ -11,6 +12,7 @@ CleanModeSpot::CleanModeSpot()
 	speaker.play(VOICE_CLEANING_SPOT,false);
 	clean_path_algorithm_.reset(new SpotCleanPathAlgorithm());
 	go_home_path_algorithm_.reset();
+	mode_i_ = cm_spot;
 }
 
 CleanModeSpot::~CleanModeSpot()
@@ -20,21 +22,7 @@ CleanModeSpot::~CleanModeSpot()
 
 bool CleanModeSpot::isExit()
 {
-	if(ev.remote_home)
-	{
-		//ev.remote_home = false;
-		INFO_YELLOW("in spot mode enter exploration");
-		setNextMode(cm_exploration);
-		return true;
-	}
-	else if(ev.remote_follow_wall)
-	{
-		//ev.remote_follow_wall = false;
-		INFO_YELLOW("in spot mode enter follow_wall");
-		setNextMode(cm_wall_follow);
-		return true;
-	}
-	else if(ev.remote_direction_forward || ev.remote_direction_left || ev.remote_direction_right)
+	if(ev.remote_spot)
 	{
 		INFO_YELLOW("in spot mode enter idle");
 		setNextMode(md_idle);
@@ -54,7 +42,7 @@ bool CleanModeSpot::mapMark()
 		setCleaned(pointsGenerateCells(passed_path_));
 	}
 
-	if (sp_state == state_folllow_wall)
+	if (sp_state == state_folllow_wall.get())
 		clean_map_.markRobot(CLEAN_MAP);
 	setBlocks(iterate_point_.dir);
 	PP_INFO();
@@ -71,19 +59,21 @@ void CleanModeSpot::remoteClean(bool state_now, bool state_last)
 	remote.reset();
 }
 
-void CleanModeSpot::remoteWallFollow(bool state_now, bool state_last)
-{
-	ev.remote_follow_wall = true;
-	beeper.beepForCommand(true);
-	INFO_YELLOW("REMOTE FOLLOW_WALL PRESS");
-	remote.reset();
-}
-
 void CleanModeSpot::keyClean(bool state_now,bool state_last)
 {
 	INFO_GREEN("key clean press");
 	wheel.stop();
 	ev.key_clean_pressed = true;
+	beeper.beepForCommand(true);
+	key.resetTriggerStatus();
+
+}
+
+void CleanModeSpot::remoteSpot(bool state_now, bool state_last)
+{
+	INFO_GREEN("key spot press");
+	wheel.stop();
+	ev.remote_spot = true;
 	beeper.beepForCommand(true);
 	key.resetTriggerStatus();
 
@@ -101,36 +91,11 @@ void CleanModeSpot::overCurrentWheelRight(bool state_now, bool state_last)
 	ev.oc_wheel_right = true;
 }
 
-void CleanModeSpot::remoteDirectionLeft(bool state_now, bool state_last)
-{
-	beeper.beepForCommand(VALID);
-	ev.remote_direction_left = true;
-	ROS_INFO("%s %d: Remote Left.", __FUNCTION__, __LINE__);
-	remote.reset();
-}
-
-void CleanModeSpot::remoteDirectionRight(bool state_now, bool state_last)
-{
-	beeper.beepForCommand(VALID);
-	ev.remote_direction_right = true;
-	ROS_INFO("%s %d: Remote Right.", __FUNCTION__, __LINE__);
-	remote.reset();
-}
-
-void CleanModeSpot::remoteDirectionForward(bool state_now, bool state_last)
-{
-	beeper.beepForCommand(VALID);
-	ROS_INFO("%s %d: Remote Forward.", __FUNCTION__, __LINE__);
-	ev.remote_direction_right = true;
-
-	remote.reset();
-}
-
 void CleanModeSpot::switchInStateInit()
 {
 	action_i_ = ac_null;
 	sp_action_ = nullptr;
-	sp_state = state_spot;
+	sp_state = state_spot.get();
 	sp_state->init();
 }
 

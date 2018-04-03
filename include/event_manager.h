@@ -53,6 +53,7 @@ typedef struct {
 		uint32_t rcon_status;
 		uint8_t obs_triggered;
 		bool bumper_jam;
+		bool lidar_bumper_jam;
 		uint8_t cliff_triggered;
 		bool cliff_jam;
 

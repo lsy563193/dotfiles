@@ -58,6 +58,7 @@ void Speaker::playRoutine()
 		else
 			usleep(1000);
 	}
+	closePcmDriver();
 	printf("%s,%d exit\n",__FUNCTION__,__LINE__);
 }
 
@@ -342,6 +343,7 @@ void Speaker::_play(void)
 
 void Speaker::stop()
 {
+	break_playing_ = true;
 	speak_thread_stop_ = true;
 }
 

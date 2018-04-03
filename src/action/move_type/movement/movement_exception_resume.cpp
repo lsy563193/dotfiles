@@ -97,6 +97,36 @@ void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_sp
 			}
 		}
 	}
+
+	else if (ev.lidar_bumper_jam)
+	{
+		switch (lidar_bumper_jam_state_)
+		{
+			case 1:
+			case 2:
+			case 3:
+			{
+				// Quickly move back for a distance.
+				wheel.setDirectionBackward();
+				left_speed = right_speed = RUN_TOP_SPEED;
+				break;
+			}
+			case 4:
+			{
+				// Quickly turn right for 90 degrees.
+				wheel.setDirectionRight();
+				left_speed = right_speed = RUN_TOP_SPEED;
+				break;
+			}
+			case 5:
+			{
+				// Quickly turn left for 180 degrees.
+				wheel.setDirectionLeft();
+				left_speed = right_speed = RUN_TOP_SPEED;
+				break;
+			}
+		}
+	}
 	else if (ev.lidar_stuck)
 	{
 		wheel.setDirectionBackward();
@@ -130,7 +160,7 @@ void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_sp
 bool MovementExceptionResume::isFinish()
 {
 	updatePosition();
-	if (!(ev.bumper_jam || ev.cliff_jam || ev.cliff_all_triggered || ev.oc_wheel_left || ev.oc_wheel_right
+	if (!(ev.bumper_jam || ev.lidar_bumper_jam || ev.cliff_jam || ev.cliff_all_triggered || ev.oc_wheel_left || ev.oc_wheel_right
 		  || ev.oc_vacuum || ev.lidar_stuck || ev.robot_stuck || ev.oc_brush_main || ev.robot_slip))
 	{
 		ROS_INFO("%s %d: All exception cleared.", __FUNCTION__, __LINE__);
@@ -325,14 +355,14 @@ bool MovementExceptionResume::isFinish()
 	}
 	else if (ev.bumper_jam)
 	{
-		if (!bumper.getStatus())
+		if (bumper.getStatus() != BLOCK_LEFT && bumper.getStatus() != BLOCK_RIGHT && bumper.getStatus() != BLOCK_ALL)
 		{
 			ROS_INFO("%s %d: Bumper resume succeeded.", __FUNCTION__, __LINE__);
 			ev.bumper_jam = false;
 			ev.bumper_triggered = 0;
 			g_bumper_cnt = 0;
 		}
-		else
+		else if(bumper.getStatus() == BLOCK_LEFT || bumper.getStatus() == BLOCK_RIGHT || bumper.getStatus() == BLOCK_ALL)
 		{
 			switch (bumper_jam_state_)
 			{
@@ -395,6 +425,79 @@ bool MovementExceptionResume::isFinish()
 			}
 		}
 	}
+
+	else if (ev.lidar_bumper_jam)
+	{
+		if (bumper.getStatus() != BLOCK_LIDAR_BUMPER)
+		{
+			ROS_INFO("%s %d: Bumper resume succeeded.", __FUNCTION__, __LINE__);
+			ev.lidar_bumper_jam = false;
+			ev.bumper_triggered = 0;
+			g_bumper_cnt = 0;
+		}
+		else if (bumper.getStatus() == BLOCK_LIDAR_BUMPER)
+		{
+			switch (lidar_bumper_jam_state_)
+			{
+				case 1: // Move back for the first time.
+				case 2: // Move back for the second time.
+				case 3: // Move back for the third time.
+				{
+					float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getOriginX(), odom.getOriginY());
+					if (std::abs(distance) > 0.05f)
+					{
+						wheel.stop();
+						// If cliff jam during bumper self resume.
+						if (cliff.getStatus() && ++g_cliff_cnt > 2)
+						{
+							ROS_WARN("%s %d: Triggered cliff jam during resuming bumper.", __FUNCTION__, __LINE__);
+							ev.cliff_jam = true;
+							lidar_bumper_jam_state_ = 1;
+							wheel_resume_cnt_ = 0;
+							g_cliff_cnt = 0;
+						} else
+						{
+							lidar_bumper_jam_state_++;
+							ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state_);
+							if (lidar_bumper_jam_state_ == 4)
+								bumper_resume_start_radian_ = odom.getRadian();
+						}
+						s_pos_x = odom.getOriginX();
+						s_pos_y = odom.getOriginY();
+					}
+					break;
+				}
+				case 4:
+				case 5:
+				{
+//					ROS_DEBUG("%s %d: robot::instance()->getWorldPoseRadian(): %d", __FUNCTION__, __LINE__,
+//							  robot::instance()->getWorldPoseRadian());
+					// If cliff jam during bumper self resume.
+					if (cliff.getStatus() && ++g_cliff_cnt > 2)
+					{
+						ROS_WARN("%s %d: Triggered cliff jam during resuming bumper.", __FUNCTION__, __LINE__);
+						ev.cliff_jam = true;
+						lidar_bumper_jam_state_ = 1;
+						wheel_resume_cnt_ = 0;
+						g_cliff_cnt = 0;
+					} else if (fabs(ranged_radian(odom.getRadian() - bumper_resume_start_radian_)) > degree_to_radian(90))
+					{
+						lidar_bumper_jam_state_++;
+						bumper_resume_start_radian_ = odom.getRadian();
+						ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state_);
+					}
+					break;
+				}
+				default: //case 6:
+				{
+					ROS_WARN("%s %d: Lidar Bumper jamed.", __FUNCTION__, __LINE__);
+					ev.fatal_quit = true;
+					error.set(ERROR_CODE_LIDAR);
+					break;
+				}
+			}
+		}
+	}
 	else if (ev.oc_vacuum)
 	{
 		if (!vacuum.getOc())
@@ -424,13 +527,17 @@ bool MovementExceptionResume::isFinish()
 	}
 	else if(ev.robot_slip)
 	{
-		ACleanMode* p_mode = dynamic_cast<ACleanMode*>(sp_mt_->sp_mode_);
-		auto isExitSlipBlock = p_mode->clean_map_.getCell(CLEAN_MAP,getPosition().toCell().x,getPosition().toCell().y);
+		CellState isExitSlipBlock;
+		if(sp_mt_->sp_mode_->mode_i_ != sp_mt_->sp_mode_->md_go_to_charger){
+			ACleanMode* p_mode = dynamic_cast<ACleanMode*>(sp_mt_->sp_mode_);
+			isExitSlipBlock = p_mode->clean_map_.getCell(CLEAN_MAP,getPosition().toCell().x,getPosition().toCell().y);
+		}
 
 		if(ros::Time::now().toSec() - resume_slip_start_time_ > 60){
 			ev.robot_slip = false;
 			ev.fatal_quit = true;
 			error.set(ERROR_CODE_STUCK);
+
 		}
 		switch(robot_slip_flag_){
 			case 0:{
