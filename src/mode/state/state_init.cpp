@@ -11,14 +11,21 @@
 
 void StateInit::init() {
 	if(Mode::next_mode_i_ == Mode::cm_exploration)
-		key_led.setMode(LED_STEADY, LED_ORANGE, 600);
+		key_led.setMode(LED_STEADY, LED_ORANGE);
+	else if (Mode::next_mode_i_ == Mode::cm_navigation && sp_cm_->isRemoteGoHomePoint())
+		key_led.setMode(LED_STEADY, LED_ORANGE);
 	else
-		key_led.setMode(LED_STEADY, LED_GREEN, 600);
+		key_led.setMode(LED_STEADY, LED_GREEN);
+	ROS_INFO("%s %d: Enter state init.", __FUNCTION__, __LINE__);
 }
 
 void StateInit::init2() {
-	key_led.setMode(LED_STEADY, LED_GREEN);
+	if (Mode::next_mode_i_ == Mode::cm_navigation && sp_cm_->isRemoteGoHomePoint())
+		key_led.setMode(LED_STEADY, LED_ORANGE);
+	else
+		key_led.setMode(LED_STEADY, LED_GREEN);
 	water_tank.checkEquipment(false) ? water_tank.open(WaterTank::water_tank) : vacuum.setCleanState();
 	brush.normalOperate();
+	ROS_INFO("%s %d: Enter state init2.", __FUNCTION__, __LINE__);
 }
 

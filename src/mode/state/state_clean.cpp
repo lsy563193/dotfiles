@@ -13,6 +13,7 @@ void StateClean::init() {
 	key_led.setMode(LED_STEADY, LED_GREEN);
 	water_tank.checkEquipment(false) ? water_tank.open(WaterTank::tank_pump) : vacuum.setCleanState();
 	brush.normalOperate();
+	ROS_INFO("%s %d: Enter state clean.", __FUNCTION__, __LINE__);
 }
 
 //bool StateClean::isFinish() {
