@@ -39,24 +39,39 @@ void server_backtrace(int sig)
     }
 }
 
-void handle_crash_exit(int sig)
+void handle_exit(int sig) 
 {
-	ROS_ERROR("Oops!!! pp receive (%d) signal",sig);
-	server_backtrace(sig);
-	exit(-1);
-}
-
-void handle_normal_exit(int sig)
-{
-	ROS_ERROR("Oops!!! pp receive SIGINT signal,ctrl+c press");
-	if(robot_instance != nullptr){
-//		speaker.play(VOICE_PROCESS_ERROR,false);
-//		speaker.play(VOICE_NULL);
-		speaker.stop();
-		delete robot_instance;
-		ros::shutdown();
+   	ROS_ERROR("Oops!!! pp receive SIGINT %d",sig);
+	if(sig == SIGINT)
+	{
+		if(robot_instance != nullptr){
+			speaker.stop();
+			delete robot_instance;
+			ros::shutdown();
+		}
+		exit(0);
 	}
-	exit(0);
+	else if(sig == SIGSEGV)
+	{	
+		server_backtrace(sig);
+		exit(-1);
+	}
+	else if(sig == SIGFPE) {	
+		server_backtrace(sig);
+		exit(-1);
+	}
+
+	else if(sig == SIGFPE)
+	{	
+		server_backtrace(sig);
+		exit(-1);
+	}
+
+	else if(sig == SIGABRT)
+	{	
+		server_backtrace(sig);
+		exit(-1);
+	}
 }
 
 int main(int argc, char **argv)
@@ -65,21 +80,26 @@ int main(int argc, char **argv)
 	ros::NodeHandle	nh_dev("~");
 
 #if ENABLE_DEBUG
-	signal(SIGABRT,handle_crash_exit);
-	signal(SIGSEGV,handle_crash_exit);
-	signal(SIGPIPE,handle_crash_exit);
-	signal(SIGFPE,handle_crash_exit);
-#endif
 
-	signal(SIGINT,handle_normal_exit);
+	struct sigaction act;
+
+	act.sa_handler = handle_exit;
+	act.sa_flags = SA_RESETHAND;
+	sigemptyset(&act.sa_mask);
+	sigaction(SIGINT,&act,NULL);
+	sigaction(SIGSEGV,&act,NULL);
+	sigaction(SIGPIPE,&act,NULL);
+	sigaction(SIGFPE,&act,NULL);
+	sigaction(SIGABRT,&act,NULL);
 	ROS_INFO("set signal action done!");
 
+#endif
 	robot_instance = new robot();
 
 	//test code by lsy563193
 	/*GridMap map;
-//test
-/*	ROS_INFO("set signal action done!");
+	//test
+	/*	ROS_INFO("set signal action done!");
 	GridMap map;
 	case_2(map);
 	map.print(CLEAN_MAP, 0, 0);

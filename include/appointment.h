@@ -6,6 +6,7 @@
 #include <vector>
 #include <string.h>
 #include "dev.h"
+#include <ros/ros.h>
 
 namespace Appointment
 {
@@ -31,12 +32,16 @@ public:
 
 	std::vector<Appointment::st_appmt> get();
 
-	static int8_t rd_routine(Appointment::st_appmt *vals);
+	int8_t rd_routine(Appointment::st_appmt *vals);
 
-	static bool appointment_set_ ;
 
-	static std::vector<Appointment::st_appmt> apmt_l_;
-
+	bool isActive()
+	{
+		if(appointment_set_) 
+			return ((uint32_t)(ros::Time::now().toSec()/60) - appointment_time_ ) >= min_;
+		else
+			return false;
+	}
 	/*
 	 * @brief get the latest appointment from now
 	 * @return miniutes 
@@ -44,7 +49,12 @@ public:
 	uint32_t getLastAppointment();
 private:
 
-	//pthread_t th_id_;
+	std::vector<Appointment::st_appmt> apmt_l_;
+	bool appointment_set_ ;
+	bool setorget_;
+	uint32_t min_;
+	uint32_t appointment_time_;
+	pthread_mutex_t appmt_lock_;
 
 
 };

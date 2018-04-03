@@ -18,7 +18,7 @@
 S_Wifi s_wifi;
 
 S_Wifi::S_Wifi():is_wifi_connected_(false),isStatusRequest_(false),inFactoryTest_(false),isFactoryTest_(false),isRegDevice_(false)
-				 ,is_wifi_active_(false),s_wifi_lock_(PTHREAD_MUTEX_INITIALIZER)
+				 ,is_wifi_active_(false),on_linking_(false),s_wifi_lock_(PTHREAD_MUTEX_INITIALIZER)
 {
 	init();
 	this->sleep();
@@ -77,11 +77,12 @@ bool S_Wifi::init()
 			[&]( const wifi::RxMsg &a_msg ) {
 				is_wifi_connected_ = true;
 				wifi_led.setMode(LED_STEADY,WifiLed::state::on);
-				if(isRegDevice_){
+				if(isRegDevice_ && on_linking_){
 					//speaker.play( VOICE_CLOUD_CONNECTED,false);
 					speaker.play( VOICE_WIFI_CONNECTED,false);
 					//uploadLastCleanData();
 					isRegDevice_ = false;
+					on_linking_ = false;
 				}
 			});
 
@@ -104,11 +105,11 @@ bool S_Wifi::init()
 	s_wifi_rx_.regOnNewMsgListener<wifi::QueryScheduleStatusRxMsg>(
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::QueryScheduleStatusRxMsg &msg = static_cast<const wifi::QueryScheduleStatusRxMsg&>( a_msg );
-				//todo
+				//
 				std::vector<wifi::ScheduleStatusTxMsg::Schedule> vec_sch;
-
+				//vec_sch.push_back(wifi::ScheduleStatusTxMsg::Schedule());
 				std::vector<Appointment::st_appmt> appmts = appmt_obj.get();
-				for(int i = 0;i<appmts.size();i++)
+				for(int i = 1;i<appmts.size();i++)
 				{
 					wifi::ScheduleStatusTxMsg::Schedule sche(i,
 								appmts[i].enable,
@@ -488,7 +489,7 @@ uint8_t S_Wifi::replyRobotStatus(int msg_code,const uint8_t seq_num)
 	return 0;
 }
 
-uint8_t S_Wifi::replyRealtimePassPath(const Points pass_path)
+uint8_t S_Wifi::uploadPassPath(const Points pass_path)
 {
 	if(!is_wifi_connected_ )
 		return 1;
@@ -621,25 +622,26 @@ uint8_t S_Wifi::setRobotCleanMode(wifi::WorkMode work_mode)
 			break;
 		case wifi::WorkMode::SPOT:
 			if(last_mode == wifi::WorkMode::SPOT)
-			{
-				beeper.beepForCommand(false);
 				remote.set(REMOTE_CLEAN);
-			}
-			else{
-				beeper.beepForCommand(false);
+			else
 				remote.set(REMOTE_SPOT);//spot
-			}
+
+			beeper.beepForCommand(true);
 			INFO_BLUE("receive mode spot");
 			break;
 		case wifi::WorkMode::PLAN1://plan 1
 			beeper.beepForCommand(true);
 			remote.set(REMOTE_CLEAN);//clean key
-			if(last_mode == wifi::WorkMode::PLAN1)
+			if(last_mode != wifi::WorkMode::PLAN1)
 				clearRealtimeMap(0x00);
 			INFO_BLUE("receive mode plan1");
 			break;
 		case wifi::WorkMode::PLAN2://plan 2
 			beeper.beepForCommand(true);
+			remote.set(REMOTE_CLEAN);//clean key
+			if(last_mode != wifi::WorkMode::PLAN2)
+				clearRealtimeMap(0x00);
+
 			remote.set(REMOTE_CLEAN);//clean key
 			INFO_BLUE("receive mode plan2");
 			break;
@@ -747,6 +749,7 @@ uint8_t S_Wifi::smartLink()
 	s_wifi_tx_.push( std::move(p)).commit();
 	speaker.play(VOICE_WIFI_SMART_LINK,false);
 	wifi_led.setMode(LED_FLASH,WifiLed::state::on);
+	on_linking_ = true;
 	return 0;
 }
 
@@ -958,7 +961,8 @@ bool S_Wifi::setWorkMode(int mode)
 
 uint8_t S_Wifi::setSchedule(const wifi::SetScheduleRxMsg &sche)
 {
-	bool isScheSet = false;
+	uint8_t isScheSet_n = 0;
+	static uint8_t last_sche_n = 0;
 	bool isScheCancel = false;
 	//if(this->getWorkMode() != wifi::WorkMode::IDLE )
 	//	return 1;
@@ -970,12 +974,10 @@ uint8_t S_Wifi::setSchedule(const wifi::SetScheduleRxMsg &sche)
 		uint8_t mints = sche.getMin(i);
 		uint8_t isEnable = sche.isEnable(i);
 
-		ROS_INFO("schedule num %d,\033[1;42;32misEnable %d,week %d,hour %d,minute %d\033[0m",
-				schenum,isEnable,weeks,hours,mints);
-
+		if(isEnable)
+			isScheSet_n++;
 		Appointment::st_appmt apmt;
-		isScheSet = isEnable;
-		apmt.num = schenum;	
+		apmt.num = schenum;
 		apmt.enable = (bool)isEnable;
 		apmt.hour = hours;
 		apmt.mint= mints;
@@ -984,10 +986,13 @@ uint8_t S_Wifi::setSchedule(const wifi::SetScheduleRxMsg &sche)
 
 	}
 
-	if(isScheSet)
-		speaker.play(VOICE_APPOINTMENT_DONE);
-	uint32_t mint = appmt_obj.getLastAppointment();
-	robot_timer.setM0Plan(mint);
+	if(isScheSet_n>0){
+		uint32_t mint = appmt_obj.getLastAppointment();
+		robot_timer.setM0Plan(mint);
+		if(last_sche_n < isScheSet_n)
+			speaker.play(VOICE_APPOINTMENT_DONE);
+		last_sche_n = isScheSet_n;
+	}
 	return 0;
 }
 
