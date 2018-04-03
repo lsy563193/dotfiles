@@ -239,7 +239,6 @@ public:
 	boost::shared_ptr<State> state_init = boost::make_shared<StateInit>();
 
 private:
-	double battery_full_start_time_{0};
 	bool plan_activated_status_;
 };
 
