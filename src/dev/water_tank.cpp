@@ -60,15 +60,15 @@ void WaterTank::stop(int equipment)
 	switch(equipment){
 		case water_tank:
 			serial.setSendData(CTL_WATER_TANK, static_cast<uint8_t>(pump_pwm_ & 0x80));
-			ROS_ERROR("%s %d: close water tank", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: close water tank", __FUNCTION__, __LINE__);
 			break;
 		case pump:
 			serial.setSendData(CTL_WATER_TANK, static_cast<uint8_t>(water_tank_pwm_ & 0x7f));
-			ROS_ERROR("%s %d: close pump", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: close pump", __FUNCTION__, __LINE__);
 			break;
 		case tank_pump:
 			serial.setSendData(CTL_WATER_TANK, 0x00);
-			ROS_ERROR("%s %d: close pump and water tank", __FUNCTION__, __LINE__);
+			ROS_INFO("%s %d: close pump and water tank", __FUNCTION__, __LINE__);
 			break;
 	}
 	if (equipment == tank_pump) {
