@@ -259,6 +259,9 @@ public:
 	void remoteDirectionRight(bool state_now, bool state_last) override ;
 	void remoteDirectionForward(bool state_now, bool state_last) override ;
 	void remoteMax(bool state_now, bool state_last) override ;
+	void remoteWallFollow(bool state_now, bool state_last) override ;
+	void remoteSpot(bool state_now, bool state_last) override;
+	void remoteHome(bool state_now, bool state_last) override ;
 	void keyClean(bool state_now, bool state_last) override ;
 	void chargeDetect(bool state_now, bool state_last) override ;
 
@@ -685,11 +688,13 @@ public:
 
 	~CleanModeFollowWall() override;
 
+	bool isExit() override;
 	bool mapMark() override;
 
 	void keyClean(bool state_now, bool state_last) override;
 	void remoteMax(bool state_now, bool state_last) override;
 	void remoteClean(bool state_now, bool state_last) override;
+	void remoteWallFollow(bool state_now, bool state_last) override;
 	void switchInStateFollowWall() override;
 
 	void switchInStateInit() override;
