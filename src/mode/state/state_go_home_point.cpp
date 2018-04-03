@@ -30,6 +30,7 @@ void StateGoHomePoint::init(){
 
 	ev.remote_home = false;
 	ev.battery_home = false;
+	ROS_INFO("%s %d: Enter state go home point.", __FUNCTION__, __LINE__);
 }
 
 //

@@ -8,4 +8,6 @@
 
 void StateTest::init() {
 	key_led.setMode(LED_STEADY, LED_ORANGE);
+
+	ROS_INFO("%s %d: Enter state test.", __FUNCTION__, __LINE__);
 }

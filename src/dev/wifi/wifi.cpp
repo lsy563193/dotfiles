@@ -845,7 +845,7 @@ bool S_Wifi::factoryTest()
 	{
 		this->resume();
 		usleep(500000);
-		if(waitResp>= 400)//wati 8 seconds
+		if(waitResp>= 15)//wait 7.5 seconds
 		{
 			ROS_INFO("%s,%d,FACTORY TEST FAIL!!",__FUNCTION__,__LINE__);
 			isFactoryTest_ = false;

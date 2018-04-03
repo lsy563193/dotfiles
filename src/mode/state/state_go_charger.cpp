@@ -14,4 +14,5 @@ void StateGoCharger::init() {
 	brush.slowOperate();
 	key_led.setMode(LED_STEADY, LED_ORANGE);
 	water_tank.checkEquipment(true) ? water_tank.stop(WaterTank::pump) : vacuum.bldcSpeed(Vac_Speed_Low);
+	ROS_INFO("%s %d: Enter state go to charger.", __FUNCTION__, __LINE__);
 }

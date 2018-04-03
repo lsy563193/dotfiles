@@ -554,7 +554,7 @@ bool CleanModeNav::updateActionInStateInit() {
 }
 
 void CleanModeNav::switchInStateInit() {
-	if (action_i_ == ac_open_lidar) {
+	if (has_aligned_and_open_slam_) {
 		if (low_battery_charge_) {
 			low_battery_charge_ = false;
 			sp_state = state_resume_low_battery_charge.get();
@@ -567,11 +567,19 @@ void CleanModeNav::switchInStateInit() {
 	else {//if (action_i_ == ac_open_slam)
 		has_aligned_and_open_slam_ = true;
 
-		auto curr = getPosition();
-//		curr.dir = iterate_point_.dir;
-//		passed_path_.push_back(curr);
-		start_point_.th = curr.th;
-		sp_state = state_clean.get();
+		if (remote_go_home_point)
+		{
+			sp_state = sp_saved_states.back();
+			sp_saved_states.pop_back();
+		}
+		else
+		{
+			auto curr = getPosition();
+//			curr.dir = iterate_point_.dir;
+//			passed_path_.push_back(curr);
+			start_point_.th = curr.th;
+			sp_state = state_clean.get();
+		}
 	}
 	sp_state->init();
 	action_i_ = ac_null;
@@ -781,10 +789,14 @@ bool CleanModeNav::checkResumePause()
 		// It will NOT change the state.
 		if (ev.remote_home && sp_saved_states.back() != state_go_home_point.get())
 		{
+			ROS_INFO("%s %d: Resume to go home point state.", __FUNCTION__, __LINE__);
 			sp_saved_states.pop_back();
 			sp_saved_states.push_back(state_go_home_point.get());
 			if (go_home_path_algorithm_ == nullptr)
 				go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_, start_point_));
+			ev.remote_home = false;
+			speaker.play(VOICE_BACK_TO_CHARGER);
+			remote_go_home_point = true;
 		}
 		sp_state = state_init.get();
 		sp_state->init();
