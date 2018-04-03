@@ -294,7 +294,8 @@ public:
 	void overCurrentWheelRight(bool state_now, bool state_last) override;
 //	void overCurrentVacuum(bool state_now, bool state_last);
 private:
-	boost::shared_ptr<State> st_go_charge = boost::make_shared<StateGoCharger>();
+	boost::shared_ptr<State> st_go_to_charger = boost::make_shared<StateGoToCharger>();
+	boost::shared_ptr<State> st_init = boost::make_shared<StateInit>();
 };
 
 class State;
@@ -498,7 +499,7 @@ public:
 protected:
 	std::vector<State*> sp_saved_states;
 	boost::shared_ptr<State> state_go_home_point{new StateGoHomePoint()};
-	boost::shared_ptr<State> state_go_to_charger{new StateGoCharger()};
+	boost::shared_ptr<State> state_go_to_charger{new StateGoToCharger()};
 	boost::shared_ptr<State> state_charge{new StateCharge()};
 	boost::shared_ptr<State> state_folllow_wall{new StateFolllowWall()};
 	boost::shared_ptr<State> state_spot{new StateSpot()};

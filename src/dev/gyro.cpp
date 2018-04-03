@@ -54,8 +54,8 @@ void Gyro::setOn(void)
 	}
 	else
 	{
-		//ROS_INFO("Set gyro on");
-		ROS_DEBUG("Set gyro on");
+		ROS_INFO("Set gyro on");
+//		ROS_DEBUG("Set gyro on");
 	}
 }
 
@@ -67,6 +67,8 @@ void Gyro::reOpen(void)
 	skip_count_ = 0;
 	average_angle_ = 0;
 	check_stable_count_ = 0;
+	ANGLE_V_OFFSET_ = 0;
+	ANGLE_R_OFFSET_ = 0;
 	setOff();
 	open_state_ = WAIT_FOR_CLOSE;
 }

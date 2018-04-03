@@ -53,9 +53,9 @@ public:
 //	IMoveType* setNextAction_();
 };
 
-class StateGoCharger: public State {
+class StateGoToCharger: public State {
 public:
-	StateGoCharger() = default;
+	StateGoToCharger() = default;
 	void init() override;
 //	IMoveType* setNextAction_();
 
