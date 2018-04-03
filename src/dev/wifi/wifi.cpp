@@ -18,7 +18,7 @@
 S_Wifi s_wifi;
 
 S_Wifi::S_Wifi():is_wifi_connected_(false),isStatusRequest_(false),inFactoryTest_(false),isFactoryTest_(false),isRegDevice_(false)
-				 ,is_wifi_active_(false),on_linking_(false),s_wifi_lock_(PTHREAD_MUTEX_INITIALIZER)
+				 ,is_active_(true),on_linking_(false),s_wifi_lock_(PTHREAD_MUTEX_INITIALIZER)
 {
 	init();
 	this->sleep();
@@ -323,19 +323,16 @@ bool S_Wifi::init()
 	s_wifi_rx_.regOnNewMsgListener<wifi::wifiResumeAckMsg>(
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::wifiResumeAckMsg &msg = static_cast<const wifi::wifiResumeAckMsg&>(a_msg);	
-					if(is_wifi_active_ == false){
-						INFO_BLUE("RESUME ACK");
-						is_wifi_active_ = true;
-						//if(!isFactoryTest_)
-							checkVersion();
-						//		this->reboot();
-					}
+				INFO_BLUE("RESUME ACK");
+				is_active_ = true;
+				if(!isFactoryTest_)
+					checkVersion();
 				});
 	//suspend ack
 	s_wifi_rx_.regOnNewMsgListener<wifi::wifiSuspendAckMsg>(
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::wifiSuspendAckMsg &msg = static_cast<const wifi::wifiSuspendAckMsg&>(a_msg);
-					is_wifi_active_ = false;
+					is_active_ = false;
 					wifi_led.setMode(LED_STEADY, WifiLed::state::off);
 				});
 	// version ack
@@ -841,19 +838,12 @@ bool S_Wifi::factoryTest()
 	isFactoryTest_ = true;
 	int waitResp = 0;
 	//wifi resume
-	while(!is_wifi_active_)
+	if(!(int)this->resume())
 	{
-		this->resume();
-		usleep(500000);
-		if(waitResp>= 15)//wait 7.5 seconds
-		{
-			ROS_INFO("%s,%d,FACTORY TEST FAIL!!",__FUNCTION__,__LINE__);
-			isFactoryTest_ = false;
-			return false;
-		}
-		waitResp++;
-	}
-	waitResp = 0;
+		ROS_INFO("%s,%d,FACTORY TEST FAIL!!",__FUNCTION__,__LINE__);
+		isFactoryTest_ = false;
+		return false;
+	}	
 	isRegDevice_ = false;
 	//wifi factory test
 	wifi::FactoryTestTxMsg p(0x01);
@@ -898,21 +888,45 @@ uint8_t S_Wifi::reboot()
 	return 0;
 }
 
-uint8_t S_Wifi::resume()
+bool S_Wifi::resume()
 {
-	ROS_INFO("SERIAL WIFI RESUME!!");
-	wifi::ResumeTxMsg p(0x00);
-	s_wifi_tx_.push(std::move(p)).commit();
-	return 0;
+	int resp_n = 0;
+	if(!is_active_)
+	{
+
+		ROS_INFO("SERIAL WIFI RESUME!!");
+		while(!is_active_)
+		{
+			wifi::ResumeTxMsg p(0x00);
+			s_wifi_tx_.push(std::move(p)).commit();
+
+			usleep(500000);
+			if(resp_n > 15)//7.5s
+				return false;
+			resp_n++;
+		}
+	}
+	
+	return true;
 }
 
-uint8_t S_Wifi::sleep()
+bool S_Wifi::sleep()
 {
-	ROS_INFO("SERIAL WIFI SLEEP!!");
-	wifi::SuspendTxMsg p(0x00);
-	s_wifi_tx_.push(std::move(p)).commit();
-	is_wifi_active_ = false;
-	return 0;
+	if(is_active_)
+	{
+		int resp_n =0;
+		ROS_INFO("SERIAL WIFI SLEEP!!");
+		while(is_active_)
+		{
+			wifi::SuspendTxMsg p(0x00);
+			s_wifi_tx_.push(std::move(p)).commit();
+			usleep(500000);
+			if(resp_n > 5)//2.5s
+				return false;
+			resp_n++;
+		}
+	}
+	return true;
 }
 
 bool S_Wifi::setWorkMode(int mode)

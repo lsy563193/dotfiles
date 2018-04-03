@@ -54,7 +54,7 @@ bool ModeIdle::isExit()
 				{
 					ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
 					sp_state->init();
-					speaker.play(VOICE_CLEAR_ERROR, false);
+//					speaker.play(VOICE_CLEAR_ERROR, false);
 				} else
 				{
 					speaker.play(VOICE_CANCEL_APPOINTMENT, false);
@@ -166,7 +166,7 @@ void ModeIdle::remoteKeyHandler(bool state_now, bool state_last)
 				ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
 				beeper.beepForCommand(VALID);
 				sp_state->init();
-				speaker.play(VOICE_CLEAR_ERROR);
+//				speaker.play(VOICE_CLEAR_ERROR);
 			}
 			else
 			{
@@ -378,7 +378,7 @@ void ModeIdle::keyClean(bool state_now, bool state_last)
 			{
 				ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
                 sp_state->init();
-				speaker.play(VOICE_CLEAR_ERROR);
+//				speaker.play(VOICE_CLEAR_ERROR);
 			}
 			else
 				error.alarm();

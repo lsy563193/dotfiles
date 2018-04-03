@@ -44,10 +44,10 @@ void handle_exit(int sig)
    	ROS_ERROR("Oops!!! pp receive SIGINT %d",sig);
 	if(sig == SIGINT)
 	{
+		ros::shutdown();
 		if(robot_instance != nullptr){
 			speaker.stop();
 			delete robot_instance;
-			ros::shutdown();
 		}
 		exit(0);
 	}
