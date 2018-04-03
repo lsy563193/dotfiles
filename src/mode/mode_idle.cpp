@@ -5,6 +5,8 @@
 #include "mode.hpp"
 #include "wifi/wifi.h"
 
+#define RCON_TRIGGER_INTERVAL 180
+
 ModeIdle::ModeIdle():
 	bind_lock_(PTHREAD_MUTEX_INITIALIZER)
 {
@@ -130,7 +132,7 @@ bool ModeIdle::isExit()
 
 	if (ev.rcon_status)
 	{
-		ROS_WARN("%s %d: Idle mode receives rcon for over %ds, change to go to charger mode.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Idle mode receives rcon for over %ds, change to go to charger mode.", __FUNCTION__, __LINE__, RCON_TRIGGER_INTERVAL);
 		setNextMode(md_go_to_charger);
 		return true;
 	}
@@ -415,7 +417,7 @@ void ModeIdle::rcon(bool state_now, bool state_last)
 		} else
 		{
 			/*---received charger signal continuously, check if more than 3 mins---*/
-			if (time_for_now_ - first_time_seen_charger_ > 180.0)
+			if (time_for_now_ - first_time_seen_charger_ > RCON_TRIGGER_INTERVAL)
 				ev.rcon_status = c_rcon.getAll();
 		}
 		last_time_seen_charger_ = time_for_now_;
