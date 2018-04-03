@@ -685,11 +685,13 @@ public:
 
 	~CleanModeFollowWall() override;
 
+	bool isExit() override;
 	bool mapMark() override;
 
 	void keyClean(bool state_now, bool state_last) override;
 	void remoteMax(bool state_now, bool state_last) override;
 	void remoteClean(bool state_now, bool state_last) override;
+	void remoteWallFollow(bool state_now, bool state_last) override;
 	void switchInStateFollowWall() override;
 
 	void switchInStateInit() override;

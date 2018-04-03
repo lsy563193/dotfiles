@@ -183,6 +183,17 @@ bool CleanModeNav::isExit()
 		}
 	}
 
+	if (isStateGoHomePoint() || isStateGoToCharger())
+	{
+		if (ev.key_clean_pressed)
+		{
+			ROS_WARN("%s %d: Exit for ev.key_long_pressed during state %s.", __FUNCTION__, __LINE__,
+					 isStateGoHomePoint() ? "go home point" : "go to charger");
+			setNextMode(md_idle);
+			return true;
+		}
+	}
+
 	if (isStatePause())
 	{
 		if (sp_action_->isTimeUp())
@@ -554,7 +565,7 @@ bool CleanModeNav::updateActionInStateInit() {
 }
 
 void CleanModeNav::switchInStateInit() {
-	if (action_i_ == ac_open_lidar) {
+	if (has_aligned_and_open_slam_) {
 		if (low_battery_charge_) {
 			low_battery_charge_ = false;
 			sp_state = state_resume_low_battery_charge.get();
@@ -567,11 +578,19 @@ void CleanModeNav::switchInStateInit() {
 	else {//if (action_i_ == ac_open_slam)
 		has_aligned_and_open_slam_ = true;
 
-		auto curr = getPosition();
-//		curr.dir = iterate_point_.dir;
-//		passed_path_.push_back(curr);
-		start_point_.th = curr.th;
-		sp_state = state_clean.get();
+		if (remote_go_home_point)
+		{
+			sp_state = sp_saved_states.back();
+			sp_saved_states.pop_back();
+		}
+		else
+		{
+			auto curr = getPosition();
+//			curr.dir = iterate_point_.dir;
+//			passed_path_.push_back(curr);
+			start_point_.th = curr.th;
+			sp_state = state_clean.get();
+		}
 	}
 	sp_state->init();
 	action_i_ = ac_null;
@@ -669,14 +688,14 @@ bool CleanModeNav::checkEnterGoHomePointState()
 
 bool CleanModeNav::isSwitchByEventInStateGoHomePoint()
 {
-	return checkEnterPause() || ACleanMode::isSwitchByEventInStateGoHomePoint();
+	return ACleanMode::isSwitchByEventInStateGoHomePoint();
 }
 
 // ------------------State go to charger--------------------
 
 bool CleanModeNav::isSwitchByEventInStateGoToCharger()
 {
-	return checkEnterPause() || ACleanMode::isSwitchByEventInStateGoToCharger();
+	return ACleanMode::isSwitchByEventInStateGoToCharger();
 }
 
 void CleanModeNav::switchInStateGoToCharger()
@@ -721,22 +740,19 @@ bool CleanModeNav::checkEnterTempSpotState()
 
 bool CleanModeNav::isSwitchByEventInStateSpot()
 {
-	if (ev.remote_spot || ev.remote_direction_forward || ev.remote_direction_left || ev.remote_direction_right)
+	if (ev.key_clean_pressed || ev.remote_spot)
 	{
 		sp_state = state_clean.get();
 		sp_state->init();
 		action_i_ = ac_null;
 		sp_action_.reset();
 		clean_path_algorithm_.reset(new NavCleanPathAlgorithm);
-		ev.remote_direction_forward = false;
-		ev.remote_direction_left = false;
-		ev.remote_direction_right = false;
 		ev.remote_spot = false;
 
 		return true;
 	}
 
-	return ACleanMode::checkEnterGoHomePointState() || ACleanMode::isSwitchByEventInStateSpot();
+	return checkEnterPause() || ACleanMode::checkEnterGoHomePointState() || ACleanMode::isSwitchByEventInStateSpot();
 }
 
 void CleanModeNav::switchInStateSpot()
@@ -781,10 +797,14 @@ bool CleanModeNav::checkResumePause()
 		// It will NOT change the state.
 		if (ev.remote_home && sp_saved_states.back() != state_go_home_point.get())
 		{
+			ROS_INFO("%s %d: Resume to go home point state.", __FUNCTION__, __LINE__);
 			sp_saved_states.pop_back();
 			sp_saved_states.push_back(state_go_home_point.get());
 			if (go_home_path_algorithm_ == nullptr)
 				go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_, start_point_));
+			ev.remote_home = false;
+			speaker.play(VOICE_BACK_TO_CHARGER);
+			remote_go_home_point = true;
 		}
 		sp_state = state_init.get();
 		sp_state->init();

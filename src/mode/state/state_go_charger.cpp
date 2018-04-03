@@ -21,4 +21,5 @@ void StateGoCharger::init() {
 		vacuum.bldcSpeed(Vac_Speed_Low);
 	}
 	gyro.setTiltCheckingEnable(false); //disable tilt detect
+	ROS_INFO("%s %d: Enter state go to charger init.", __FUNCTION__, __LINE__);
 }

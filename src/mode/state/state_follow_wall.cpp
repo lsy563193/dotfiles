@@ -25,6 +25,7 @@ void StateFolllowWall::init() {
 		water_tank.checkEquipment(false) ? water_tank.open(WaterTank::tank_pump) : vacuum.setCleanState();
 	}
 	robot_timer.initTrapTimer();
+	ROS_INFO("%s %d: Enter state follow wall init.", __FUNCTION__, __LINE__);
 }
 
 //bool StateFolllowWall::isFinish() {

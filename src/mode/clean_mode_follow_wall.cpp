@@ -3,6 +3,7 @@
 //
 
 #include <dev.h>
+#include <event_manager.h>
 #include "robot.hpp"
 #include "dev.h"
 #include "mode.hpp"
@@ -74,6 +75,18 @@ bool CleanModeFollowWall::mapMark() {
 	return false;
 }
 
+bool CleanModeFollowWall::isExit()
+{
+	if (ev.remote_follow_wall)
+	{
+		ROS_WARN("%s %d: Exit for ev.remote_follow_wall.", __FUNCTION__, __LINE__);
+		setNextMode(md_idle);
+		return true;
+	}
+
+	return ACleanMode::isExit();
+}
+
 void CleanModeFollowWall::keyClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: key clean.", __FUNCTION__, __LINE__);
@@ -123,7 +136,7 @@ void CleanModeFollowWall::remoteMax(bool state_now, bool state_last)
 	if(water_tank.checkEquipment(true)){
 		beeper.beepForCommand(INVALID);
 	}
-	else if(isStateInit() || isStateFollowWall() || isStateExploration() || isStateGoHomePoint() || isStateGoToCharger())
+	else if(isStateInit() || isStateFollowWall() || isStateGoHomePoint() || isStateGoToCharger())
 	{
 		beeper.beepForCommand(VALID);
 		vacuum.isMaxInClean(!vacuum.isMaxInClean());
@@ -142,6 +155,16 @@ void CleanModeFollowWall::remoteClean(bool state_now, bool state_last)
 	beeper.beepForCommand(VALID);
 	wheel.stop();
 	ev.key_clean_pressed = true;
+	remote.reset();
+}
+
+void CleanModeFollowWall::remoteWallFollow(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: remote wall follow.", __FUNCTION__, __LINE__);
+
+	beeper.beepForCommand(VALID);
+	wheel.stop();
+	ev.remote_follow_wall = true;
 	remote.reset();
 }
 

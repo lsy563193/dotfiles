@@ -13,6 +13,7 @@ void StateExploration::init() {
 	brush.slowOperate();
 	water_tank.setTankMode(WaterTank::TANK_LOW);
 	water_tank.checkEquipment(false) ? water_tank.open(WaterTank::water_tank) : vacuum.bldcSpeed(Vac_Speed_Low);
+	ROS_INFO("%s %d: Enter state exploration.", __FUNCTION__, __LINE__);
 }
 
 

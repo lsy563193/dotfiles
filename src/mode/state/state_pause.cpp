@@ -16,6 +16,7 @@ void StatePause::init() {
 	else
 		key_led.setMode(LED_BREATH, LED_GREEN);
 
+	ROS_INFO("%s %d: Enter state pause.", __FUNCTION__, __LINE__);
 }
 //bool StateFolllowWall::isFinish() {
 //	return false;

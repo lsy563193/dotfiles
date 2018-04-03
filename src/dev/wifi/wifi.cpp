@@ -841,11 +841,11 @@ bool S_Wifi::factoryTest()
 	isFactoryTest_ = true;
 	int waitResp = 0;
 	//wifi resume
-	this->resume();
 	while(!is_wifi_active_)
 	{
-		usleep(20000);
-		if(waitResp>= 400)//wati 8 seconds
+		this->resume();
+		usleep(500000);
+		if(waitResp>= 15)//wait 7.5 seconds
 		{
 			ROS_INFO("%s,%d,FACTORY TEST FAIL!!",__FUNCTION__,__LINE__);
 			isFactoryTest_ = false;
