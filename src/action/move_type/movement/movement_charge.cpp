@@ -13,6 +13,9 @@ MovementCharge::MovementCharge()
 	vacuum.stop();
 	water_tank.stop(WaterTank::tank_pump);
 
+	// For saving power.
+	obs.control(OFF);
+	gyro.setOff();
 
 	if(lidar.isScanOriginalReady())
 	{
@@ -36,6 +39,7 @@ MovementCharge::~MovementCharge()
 {
 	wheel.stop();
 	charger.setStop();
+	obs.control(ON);
 	ROS_INFO("%s %d: End movement charge.", __FUNCTION__, __LINE__);
 }
 

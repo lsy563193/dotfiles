@@ -195,8 +195,8 @@ private:
 	bool trigger_wifi_smart_ap_link_{};
 
 	/*---values for rcon handle---*/
-	double first_time_seen_charger_;
-	double last_time_seen_charger_;
+	double first_time_seen_charger_{ros::Time::now().toSec()};
+	double last_time_seen_charger_{first_time_seen_charger_};
 	boost::shared_ptr<State> st_pause = boost::make_shared<StatePause>();
 };
 
