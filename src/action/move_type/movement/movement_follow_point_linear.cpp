@@ -120,7 +120,9 @@ bool MovementFollowPointLinear::isFinish() {
 	auto tmp_pos = getPosition();
 	scaleCorrectionPos(tmp_pos);
 	radian_diff = tmp_pos.courseToDest(calcTmpTarget());
-	return AMovementFollowPoint::isFinish() || sp_mt_->isFinishForward() || sp_mt_->isLidarStop();
+	auto is_lidar_stop = sp_mt_->isLidarStop();
+//	ROS_ERROR("is_lidar_stop(%d)", is_lidar_stop);
+	return AMovementFollowPoint::isFinish() || sp_mt_->isFinishForward() || is_lidar_stop;
 }
 
 uint8_t MovementFollowPointLinear::isNear()
