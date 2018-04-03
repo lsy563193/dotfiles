@@ -752,20 +752,6 @@ void obs_test(bool is_fixture, uint8_t &test_stage, uint16_t &error_code, uint16
 			else if (static_cast<uint16_t>(buf[26] << 8 | buf[27]) < OBS_MANUAL_LIMIT_L) {
 				test_result |= 0x0020;
 			}
-			if (static_cast<uint16_t>(buf[18] << 8 | buf[19]) > WALL_MANUAL_LIMIT_H) //Left Wall
-			{
-				test_result |= 0x0040;
-			}
-			else if (static_cast<uint16_t>(buf[18] << 8 | buf[19]) < WALL_MANUAL_LIMIT_L) {
-				test_result |= 0x0080;
-			}
-			if (static_cast<uint16_t>(buf[20] << 8 | buf[21]) > WALL_MANUAL_LIMIT_H) //Right Wall
-			{
-				test_result |= 0x0100;
-			}
-			else if (static_cast<uint16_t>(buf[20] << 8 | buf[21]) < WALL_MANUAL_LIMIT_L) {
-				test_result |= 0x0200;
-			}
 		}
 		else {
 			if (static_cast<uint16_t>(buf[22] << 8 | buf[23]) > OBS_FIXTURE_LIMIT_H)  //Left Obs
@@ -789,20 +775,6 @@ void obs_test(bool is_fixture, uint8_t &test_stage, uint16_t &error_code, uint16
 			else if (static_cast<uint16_t>(buf[26] << 8 | buf[27]) < OBS_FIXTURE_LIMIT_L) {
 				test_result |= 0x0020;
 			}
-			if (static_cast<uint16_t>(buf[18] << 8 | buf[19]) > WALL_FIXTURE_LIMIT_H) //Left Wall
-			{
-				test_result |= 0x0040;
-			}
-			else if (static_cast<uint16_t>(buf[18] << 8 | buf[19]) < WALL_FIXTURE_LIMIT_L) {
-				test_result |= 0x0080;
-			}
-			if (static_cast<uint16_t>(buf[20] << 8 | buf[21]) > WALL_FIXTURE_LIMIT_H) //Right Wall
-			{
-				test_result |= 0x0100;
-			}
-			else if (static_cast<uint16_t>(buf[20] << 8 | buf[21]) < WALL_FIXTURE_LIMIT_L) {
-				test_result |= 0x0200;
-			}
 		}
 
 		if (is_fixture)  //fixture test
@@ -819,10 +791,6 @@ void obs_test(bool is_fixture, uint8_t &test_stage, uint16_t &error_code, uint16
 					error_code = FRONT_OBS_ERROR;
 				if ((test_result & 0x0010) != 0x0010)
 					error_code = RIGHT_OBS_ERROR;
-				if ((test_result & 0x0040) != 0x0040)
-					error_code = LEFT_WALL_ERROR;
-				if ((test_result & 0x0100) != 0x0100)
-					error_code = RIGHT_WALL_ERROR;
 				current_data = test_result;
 				return ;
 			}
@@ -841,10 +809,6 @@ void obs_test(bool is_fixture, uint8_t &test_stage, uint16_t &error_code, uint16
 					error_code = FRONT_OBS_ERROR;
 				if ((test_result & 0x0030) != 0x0030)
 					error_code = RIGHT_OBS_ERROR;
-				if ((test_result & 0x00c0) != 0x00c0)
-					error_code = LEFT_WALL_ERROR;
-				if ((test_result & 0x0300) != 0x0300)
-					error_code = RIGHT_WALL_ERROR;
 				current_data = test_result;
 				return ;
 			}
