@@ -300,7 +300,7 @@ private:
 	//for check tilt
 	const double ANGLE_LIMIT{5};
 	const double ANGLE_TIME_LIMIT{1};
-	const double WHELL_CLIFF_TIME_LIMIT{0.25};
+	const double WHELL_CLIFF_TIME_LIMIT{10};
 	double tilt_time = 0;
 	bool is_first_tilt{true};
 
