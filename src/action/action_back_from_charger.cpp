@@ -7,8 +7,6 @@
 ActionBackFromCharger::ActionBackFromCharger()
 {
 	ROS_INFO("%s %d, Init action back from charger.", __FUNCTION__, __LINE__);
-
-	brush.slowOperate();
 	wheel.setDirectionBackward();
 	// This time out interval is just for checking whether the switch is on.
 	timeout_interval_ = 1;

@@ -41,7 +41,7 @@ void server_backtrace(int sig)
 
 void handle_exit(int sig) 
 {
-   	ROS_ERROR("Oops!!! pp receive SIGINT %d",sig);
+	ROS_ERROR("Oops!!! pp receive SIGINT %d",sig);
 	if(sig == SIGINT)
 	{
 		if(robot_instance != nullptr){

@@ -6,6 +6,7 @@
 #define PP_WATER_TANK_HPP
 
 #include <cstdint>
+#include <config.h>
 
 
 
@@ -65,7 +66,8 @@ public:
 
 	void updatePWM();
 
-	void setMode(uint8_t mode);
+	void setPumpMode(uint8_t mode);
+	void setTankMode(uint8_t mode);
 
 	uint8_t getMode()
 	{
@@ -77,7 +79,10 @@ public:
 		PUMP_MID,
 		PUMP_HIGH,
 	};
-
+	enum{
+		TANK_LOW,
+		TANK_HIGH,
+	};
 private:
 	uint16_t current_{};
 
@@ -85,11 +90,13 @@ private:
 
 	// Real time status for water tank and pump.
 	bool is_water_tank_equiment_{};
+	bool is_tank_mode_change_{};
 
 	bool water_tank_status_{};
 	bool pump_status_{};
 	bool tank_pump_status_{};
 
+	int voltage_water_tank_{FULL_OPERATE_VOLTAGE_FOR_WATER_TANK};
 	uint8_t water_tank_pwm_{};
 	double check_battery_time_stamp_{};
 	double last_pump_time_stamp_{};

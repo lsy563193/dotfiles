@@ -10,7 +10,12 @@
 ActionOpenSlam::ActionOpenSlam() {
 	ROS_INFO("%s %d: Enter action open slam.", __FUNCTION__, __LINE__);
 	robot::instance()->setTfReady(false);
-	robot::instance()->setBaselinkFrameType(SLAM_POSITION_SLAM_ANGLE);
+}
+
+ActionOpenSlam::~ActionOpenSlam()
+{
+	if (!isFinish())
+		slam.stop();
 }
 
 bool ActionOpenSlam::isFinish(){
@@ -21,6 +26,7 @@ bool ActionOpenSlam::isFinish(){
 		return false;
 	}
 	if (!is_slam_start_) {
+		robot::instance()->setBaselinkFrameType(SLAM_POSITION_SLAM_ANGLE);
 		slam.start();
 		is_slam_start_ = true;
 	}

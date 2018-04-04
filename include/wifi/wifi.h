@@ -52,9 +52,9 @@ public:
 
 	uint8_t reboot();
 
-	uint8_t resume();
+	bool resume();
 
-	uint8_t sleep();
+	bool sleep();
 
 	uint32_t getModuleVersion()
 	{
@@ -73,7 +73,7 @@ public:
 
 	bool isActive()
 	{
-		return is_wifi_active_;
+		return is_active_;
 	}
 
 	bool isConnected()
@@ -99,7 +99,7 @@ private:
 	bool isFactoryTest_;
 	bool isRegDevice_;
 	bool isStatusRequest_;
-	bool is_wifi_active_;
+	bool is_active_;
 	bool on_linking_;
 	wifi::WorkMode robot_work_mode_;
 

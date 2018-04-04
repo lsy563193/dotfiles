@@ -259,6 +259,9 @@ public:
 	void remoteDirectionRight(bool state_now, bool state_last) override ;
 	void remoteDirectionForward(bool state_now, bool state_last) override ;
 	void remoteMax(bool state_now, bool state_last) override ;
+	void remoteWallFollow(bool state_now, bool state_last) override ;
+	void remoteSpot(bool state_now, bool state_last) override;
+	void remoteHome(bool state_now, bool state_last) override ;
 	void keyClean(bool state_now, bool state_last) override ;
 	void chargeDetect(bool state_now, bool state_last) override ;
 
@@ -291,7 +294,8 @@ public:
 	void overCurrentWheelRight(bool state_now, bool state_last) override;
 //	void overCurrentVacuum(bool state_now, bool state_last);
 private:
-	boost::shared_ptr<State> st_go_charge = boost::make_shared<StateGoCharger>();
+	boost::shared_ptr<State> st_go_to_charger = boost::make_shared<StateGoToCharger>();
+	boost::shared_ptr<State> st_init = boost::make_shared<StateInit>();
 };
 
 class State;
@@ -495,7 +499,7 @@ public:
 protected:
 	std::vector<State*> sp_saved_states;
 	boost::shared_ptr<State> state_go_home_point{new StateGoHomePoint()};
-	boost::shared_ptr<State> state_go_to_charger{new StateGoCharger()};
+	boost::shared_ptr<State> state_go_to_charger{new StateGoToCharger()};
 	boost::shared_ptr<State> state_charge{new StateCharge()};
 	boost::shared_ptr<State> state_folllow_wall{new StateFolllowWall()};
 	boost::shared_ptr<State> state_spot{new StateSpot()};
@@ -685,11 +689,13 @@ public:
 
 	~CleanModeFollowWall() override;
 
+	bool isExit() override;
 	bool mapMark() override;
 
 	void keyClean(bool state_now, bool state_last) override;
 	void remoteMax(bool state_now, bool state_last) override;
 	void remoteClean(bool state_now, bool state_last) override;
+	void remoteWallFollow(bool state_now, bool state_last) override;
 	void switchInStateFollowWall() override;
 
 	void switchInStateInit() override;

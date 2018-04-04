@@ -219,7 +219,6 @@ public:
 		return robot_current_;
 	}
 
-	time_t wake_up_time_= time(NULL);
 	boost::shared_ptr<Mode> p_mode{};
 	uint8_t getWorkMode()
 	{

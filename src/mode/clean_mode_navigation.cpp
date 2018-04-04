@@ -21,10 +21,10 @@ CleanModeNav::CleanModeNav()
 	if(plan_activation_)
 	{
 		plan_activation_ = false;
-		speaker.play(VOICE_APPOINTMENT_START, false);
+//		speaker.play(VOICE_APPOINTMENT_START_UNOFFICIAL, false);
 	}
-	else
-		speaker.play(VOICE_CLEANING_START, false);
+//	else
+	speaker.play(VOICE_CLEANING_START, false);
 
 	has_aligned_and_open_slam_ = false;
 	paused_odom_radian_ = 0;
@@ -179,6 +179,17 @@ bool CleanModeNav::isExit()
 			error.set(ERROR_CODE_LIDAR);
 			setNextMode(md_idle);
 			ev.fatal_quit = true;
+			return true;
+		}
+	}
+
+	if (isStateGoHomePoint() || isStateGoToCharger())
+	{
+		if (ev.key_clean_pressed)
+		{
+			ROS_WARN("%s %d: Exit for ev.key_long_pressed during state %s.", __FUNCTION__, __LINE__,
+					 isStateGoHomePoint() ? "go home point" : "go to charger");
+			setNextMode(md_idle);
 			return true;
 		}
 	}
@@ -434,7 +445,7 @@ void CleanModeNav::remoteMax(bool state_now, bool state_last)
 	{
 		beeper.beepForCommand(VALID);
 		vacuum.isMaxInClean(!vacuum.isMaxInClean());
-		speaker.play(vacuum.isMaxInClean() ? VOICE_CONVERT_TO_LARGE_SUCTION : VOICE_CONVERT_TO_NORMAL_SUCTION,false);
+		speaker.play(vacuum.isMaxInClean() ? VOICE_VACCUM_MAX : VOICE_CLEANING_NAVIGATION,false);
 		if(isStateClean() || isStateResumeLowBatteryCharge() || (isInitState()&& action_i_ > ac_open_gyro)) {
 			vacuum.setCleanState();
 		}
@@ -505,19 +516,19 @@ bool CleanModeNav::updateActionInStateInit() {
 		if (charger.isOnStub()){
 			action_i_ = ac_back_form_charger;
 			found_charger_ = true;
+			boost::dynamic_pointer_cast<StateInit>(state_init)->initBackFromCharge();
 		}
 		else{
 			action_i_ = ac_open_lidar;
-			boost::dynamic_pointer_cast<StateInit>(state_init)->init2();
+			boost::dynamic_pointer_cast<StateInit>(state_init)->initOpenLidar();
 		}
 	} else if (action_i_ == ac_back_form_charger)
 	{
-		if (!has_aligned_and_open_slam_)
-			// Init odom position here.
+		if (!has_aligned_and_open_slam_) // Init odom position here.
 			robot::instance()->initOdomPosition();
 
+		boost::dynamic_pointer_cast<StateInit>(state_init)->initOpenLidar();
 		action_i_ = ac_open_lidar;
-//		state_clean.get()->init();
 		setHomePoint();
 	} else if (action_i_ == ac_open_lidar)
 	{
@@ -677,14 +688,14 @@ bool CleanModeNav::checkEnterGoHomePointState()
 
 bool CleanModeNav::isSwitchByEventInStateGoHomePoint()
 {
-	return checkEnterPause() || ACleanMode::isSwitchByEventInStateGoHomePoint();
+	return ACleanMode::isSwitchByEventInStateGoHomePoint();
 }
 
 // ------------------State go to charger--------------------
 
 bool CleanModeNav::isSwitchByEventInStateGoToCharger()
 {
-	return checkEnterPause() || ACleanMode::isSwitchByEventInStateGoToCharger();
+	return ACleanMode::isSwitchByEventInStateGoToCharger();
 }
 
 void CleanModeNav::switchInStateGoToCharger()
@@ -729,22 +740,19 @@ bool CleanModeNav::checkEnterTempSpotState()
 
 bool CleanModeNav::isSwitchByEventInStateSpot()
 {
-	if (ev.remote_spot || ev.remote_direction_forward || ev.remote_direction_left || ev.remote_direction_right)
+	if (ev.key_clean_pressed || ev.remote_spot)
 	{
 		sp_state = state_clean.get();
 		sp_state->init();
 		action_i_ = ac_null;
 		sp_action_.reset();
 		clean_path_algorithm_.reset(new NavCleanPathAlgorithm);
-		ev.remote_direction_forward = false;
-		ev.remote_direction_left = false;
-		ev.remote_direction_right = false;
 		ev.remote_spot = false;
 
 		return true;
 	}
 
-	return ACleanMode::checkEnterGoHomePointState() || ACleanMode::isSwitchByEventInStateSpot();
+	return checkEnterPause() || ACleanMode::checkEnterGoHomePointState() || ACleanMode::isSwitchByEventInStateSpot();
 }
 
 void CleanModeNav::switchInStateSpot()

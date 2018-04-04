@@ -1243,7 +1243,7 @@ void Lidar::checkRobotSlip()
 	}
 
 	checkSlipInit(acur1_,acur2_,acur3_,acur4_);
-	if ((std::abs(wheel.getLeftWheelActualSpeed()) >= 0.10 || std::abs(wheel.getRightWheelActualSpeed()) >= 0.10))
+	if ((std::fabs(wheel.getLeftWheelActualSpeed()) >= 0.10 || std::fabs(wheel.getRightWheelActualSpeed()) >= 0.10))
 	{
 		auto tmp_scan_data = getLidarScanDataOriginal();
 		uint16_t same_count = 0;

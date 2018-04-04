@@ -82,6 +82,7 @@ class ActionOpenSlam :public IAction
 {
 public:
 	ActionOpenSlam();
+	~ActionOpenSlam();
 	bool isFinish();
 	void run();
 private:

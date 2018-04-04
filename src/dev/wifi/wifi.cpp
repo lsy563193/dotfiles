@@ -18,10 +18,10 @@
 S_Wifi s_wifi;
 
 S_Wifi::S_Wifi():is_wifi_connected_(false),isStatusRequest_(false),inFactoryTest_(false),isFactoryTest_(false),isRegDevice_(false)
-				 ,is_wifi_active_(false),on_linking_(false),s_wifi_lock_(PTHREAD_MUTEX_INITIALIZER)
+				 ,is_active_(true),on_linking_(false),s_wifi_lock_(PTHREAD_MUTEX_INITIALIZER)
 {
 	init();
-	this->sleep();
+//	this->sleep();
 }
 S_Wifi::~S_Wifi()
 {
@@ -69,7 +69,7 @@ bool S_Wifi::init()
 			[&]( const wifi::RxMsg &a_msg ) {
 				is_wifi_connected_ = false;
 				wifi_led.setMode(LED_STEADY, WifiLed::state::off);
-				//speaker.play( VOICE_WIFI_UNCONNECTED,false);
+				//speaker.play( VOICE_WIFI_UNCONNECTED_UNOFFICIAL,false);
 			});
 
 	//cloud connect
@@ -78,7 +78,7 @@ bool S_Wifi::init()
 				is_wifi_connected_ = true;
 				wifi_led.setMode(LED_STEADY,WifiLed::state::on);
 				if(isRegDevice_ && on_linking_){
-					//speaker.play( VOICE_CLOUD_CONNECTED,false);
+					//speaker.play( VOICE_CLOUD_CONNECTED_UNOFFICIAL,false);
 					speaker.play( VOICE_WIFI_CONNECTED,false);
 					//uploadLastCleanData();
 					isRegDevice_ = false;
@@ -91,7 +91,7 @@ bool S_Wifi::init()
 				[this](const wifi::RxMsg &a_msg){
 				is_wifi_connected_ = false;
 				wifi_led.setMode(LED_STEADY,WifiLed::state::off);
-				//speaker.play(VOICE_CLOUD_UNCONNECTED,false);
+				//speaker.play(VOICE_CLOUD_UNCONNECTED_UNOFFICIAL,false);
 				});
 
 	//-----app query -----
@@ -178,9 +178,9 @@ bool S_Wifi::init()
 				const wifi::SetMaxCleanPowerRxMsg &msg = static_cast<const wifi::SetMaxCleanPowerRxMsg&>( a_msg );
 				if (!water_tank.checkEquipment(true))
 					if(msg.isMop())
-						water_tank.setMode(WaterTank::PUMP_HIGH);
+						water_tank.setPumpMode(WaterTank::PUMP_HIGH);
 					else
-						water_tank.setMode(WaterTank::PUMP_MID);
+						water_tank.setPumpMode(WaterTank::PUMP_MID);
 				else
 					vacuum.isMaxInClean(msg.isVacuum());
 				//ack
@@ -323,19 +323,16 @@ bool S_Wifi::init()
 	s_wifi_rx_.regOnNewMsgListener<wifi::wifiResumeAckMsg>(
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::wifiResumeAckMsg &msg = static_cast<const wifi::wifiResumeAckMsg&>(a_msg);	
-					if(is_wifi_active_ == false){
-						INFO_BLUE("RESUME ACK");
-						is_wifi_active_ = true;
-						//if(!isFactoryTest_)
-							checkVersion();
-						//		this->reboot();
-					}
+				INFO_BLUE("RESUME ACK");
+				is_active_ = true;
+				if(!isFactoryTest_)
+					checkVersion();
 				});
 	//suspend ack
 	s_wifi_rx_.regOnNewMsgListener<wifi::wifiSuspendAckMsg>(
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::wifiSuspendAckMsg &msg = static_cast<const wifi::wifiSuspendAckMsg&>(a_msg);
-					is_wifi_active_ = false;
+					is_active_ = false;
 					wifi_led.setMode(LED_STEADY, WifiLed::state::off);
 				});
 	// version ack
@@ -668,7 +665,9 @@ uint8_t S_Wifi::setRobotCleanMode(wifi::WorkMode work_mode)
 			break;
 
 		case wifi::WorkMode::FIND:
-			speaker.play(VOICE_IM_HERE,false);
+#if DEBUG_ENABLE
+			speaker.play(VOICE_IM_HERE_UNOFFICIAL,false);
+#endif
 			beeper.beepForCommand(true);
 			INFO_BLUE("remote app find home mode command ");
 			break;
@@ -738,7 +737,9 @@ uint8_t S_Wifi::rebind()
 	wifi::ForceUnbindTxMsg p(0x00);//no responed
 	s_wifi_tx_.push(std::move(p)).commit();
 	is_wifi_connected_ = false;
-	speaker.play(VOICE_WIFI_UNBIND,false);
+#if DEBUG_ENABLE
+	speaker.play(VOICE_WIFI_UNBIND_UNOFFICIAL,false);
+#endif
 	return 0;
 }
 
@@ -747,7 +748,9 @@ uint8_t S_Wifi::smartLink()
 	INFO_BLUE("SMART LINK");
 	wifi::SmartLinkTxMsg p(0x00);//no responed
 	s_wifi_tx_.push( std::move(p)).commit();
-	speaker.play(VOICE_WIFI_SMART_LINK,false);
+#if DEBUG_ENABLE
+	speaker.play(VOICE_WIFI_SMART_LINK_UNOFFICIAL,false);
+#endif
 	wifi_led.setMode(LED_FLASH,WifiLed::state::on);
 	on_linking_ = true;
 	return 0;
@@ -841,19 +844,12 @@ bool S_Wifi::factoryTest()
 	isFactoryTest_ = true;
 	int waitResp = 0;
 	//wifi resume
-	while(!is_wifi_active_)
+	if(!(int)this->resume())
 	{
-		this->resume();
-		usleep(500000);
-		if(waitResp>= 400)//wati 8 seconds
-		{
-			ROS_INFO("%s,%d,FACTORY TEST FAIL!!",__FUNCTION__,__LINE__);
-			isFactoryTest_ = false;
-			return false;
-		}
-		waitResp++;
-	}
-	waitResp = 0;
+		ROS_INFO("%s,%d,FACTORY TEST FAIL!!",__FUNCTION__,__LINE__);
+		isFactoryTest_ = false;
+		return false;
+	}	
 	isRegDevice_ = false;
 	//wifi factory test
 	wifi::FactoryTestTxMsg p(0x01);
@@ -898,21 +894,45 @@ uint8_t S_Wifi::reboot()
 	return 0;
 }
 
-uint8_t S_Wifi::resume()
+bool S_Wifi::resume()
 {
-	ROS_INFO("SERIAL WIFI RESUME!!");
-	wifi::ResumeTxMsg p(0x00);
-	s_wifi_tx_.push(std::move(p)).commit();
-	return 0;
+	int resp_n = 0;
+	if(!is_active_)
+	{
+
+		ROS_INFO("SERIAL WIFI RESUME!!");
+		while(!is_active_)
+		{
+			wifi::ResumeTxMsg p(0x00);
+			s_wifi_tx_.push(std::move(p)).commit();
+
+			usleep(500000);
+			if(resp_n > 15)//7.5s
+				return false;
+			resp_n++;
+		}
+	}
+	
+	return true;
 }
 
-uint8_t S_Wifi::sleep()
+bool S_Wifi::sleep()
 {
-	ROS_INFO("SERIAL WIFI SLEEP!!");
-	wifi::SuspendTxMsg p(0x00);
-	s_wifi_tx_.push(std::move(p)).commit();
-	is_wifi_active_ = false;
-	return 0;
+	if(is_active_)
+	{
+		int resp_n =0;
+		ROS_INFO("SERIAL WIFI SLEEP!!");
+		while(is_active_)
+		{
+			wifi::SuspendTxMsg p(0x00);
+			s_wifi_tx_.push(std::move(p)).commit();
+			usleep(500000);
+			if(resp_n > 5)//2.5s
+				return false;
+			resp_n++;
+		}
+	}
+	return true;
 }
 
 bool S_Wifi::setWorkMode(int mode)
