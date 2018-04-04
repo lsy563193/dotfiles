@@ -12,6 +12,8 @@
 using namespace std;
 
 #define PP_PACKAGE_PATH	"/opt/ros/indigo/share/pp/audio/%02d.wav"
+#define WAV_SKIP_SIZE 25
+#define WAV_HEADER_SIZE 58
 
 Speaker speaker;
 
@@ -220,7 +222,7 @@ bool Speaker::initPcmDriver()
 	buffer_ = (char *) malloc(buffer_size_);
 
 	// Seek to audio data
-	fseek(fp_, 58, SEEK_SET);
+	fseek(fp_, WAV_SKIP_SIZE * datablock  + WAV_HEADER_SIZE, SEEK_SET);
 
 	return true;
 }
