@@ -21,7 +21,7 @@ S_Wifi::S_Wifi():is_wifi_connected_(false),isStatusRequest_(false),inFactoryTest
 				 ,is_active_(true),on_linking_(false),s_wifi_lock_(PTHREAD_MUTEX_INITIALIZER)
 {
 	init();
-	this->sleep();
+//	this->sleep();
 }
 S_Wifi::~S_Wifi()
 {
