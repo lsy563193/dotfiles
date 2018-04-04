@@ -12,10 +12,8 @@
 
 ActionIdle::ActionIdle()
 {
-
 	timeout_interval_ = IDLE_TIMEOUT*1.0;
 	ROS_INFO("%s %d: Start action idle. timeout %f", __FUNCTION__, __LINE__,timeout_interval_);
-
 }
 
 ActionIdle::~ActionIdle()

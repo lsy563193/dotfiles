@@ -112,6 +112,7 @@
 
 /* Battery voltage criterion for water tank setting*/
 #define FULL_OPERATE_VOLTAGE_FOR_WATER_TANK	(500)
+#define LOW_OPERATE_VOLTAGE_FOR_WATER_TANK	(250)
 /* ------------------------------------- Obs config ------------------------------------- */
 /* OBS setting */
 #define OBS_DYNAMIC			(1)

@@ -636,7 +636,7 @@ void Serial::send_routine_cb()
 	//		wifi_send_state_cnt = 0;
 	//		INFO_YELLOW("SEND REAL TIME MAP");
 	//      if(s_wifi.isConnected() && s_wifi.onRequest())
-	//			s_wifi.replyRealtimePassPath();
+	//			s_wifi.uploadPassPath();
 	//	}
 		//r.sleep();
 		/*-------------------Process for beeper.play and key_led -----------------------*/

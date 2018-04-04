@@ -56,7 +56,7 @@ bool Dev::tx( const std::vector<uint8_t> &data ) const
 			return false;
 		}
 		//for tmp test
-		if(len<60)
+		if(true)//len<100)
 		{
 			std::string msg("\033[1;40;34m tx data = \033[0m");
 			char buf[30] = {0};

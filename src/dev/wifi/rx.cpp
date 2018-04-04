@@ -46,7 +46,9 @@ RxManager::~RxManager()
 	{
 		pthread_join( thread_, NULL );
 	}
+	printf("%s %d: Exit.\n", __FUNCTION__, __LINE__);
 	pthread_mutex_destroy( &on_new_msg_mutex_ );
+	printf("%s %d: Exit.\n", __FUNCTION__, __LINE__);
 }
 
 void RxManager::handleMsg( Packet &&a_packet )
@@ -187,7 +189,7 @@ void* RxManager::threadMainWrapper( void *a_p_that )
 
 void RxManager::threadMain()
 {
-	while ( should_thread_run_ )
+	while ( should_thread_run_  )
 	{
 		const auto &data = rx_();
 		s_parser_.push( data );

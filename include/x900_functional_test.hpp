@@ -30,8 +30,8 @@
 // ------------For functional test end--------------
 
 //limit
-#define OBS_MANUAL_LIMIT_H	(uint16_t)1500
-#define OBS_MANUAL_LIMIT_L	(uint16_t)700
+#define OBS_MANUAL_LIMIT_H	(uint16_t)2400
+#define OBS_MANUAL_LIMIT_L	(uint16_t)1200
 #define WALL_MANUAL_LIMIT_H	(uint16_t)500
 #define WALL_MANUAL_LIMIT_L	(uint16_t)140
 #define OBS_FIXTURE_LIMIT_H	(uint16_t)1500

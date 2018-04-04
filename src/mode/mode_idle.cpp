@@ -5,6 +5,8 @@
 #include "mode.hpp"
 #include "wifi/wifi.h"
 
+#define RCON_TRIGGER_INTERVAL 180
+
 ModeIdle::ModeIdle():
 	bind_lock_(PTHREAD_MUTEX_INITIALIZER)
 {
@@ -52,10 +54,10 @@ bool ModeIdle::isExit()
 				{
 					ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
 					sp_state->init();
-					speaker.play(VOICE_CLEAR_ERROR, false);
+//					speaker.play(VOICE_CLEAR_ERROR_UNOFFICIAL, false);
 				} else
 				{
-					speaker.play(VOICE_CANCEL_APPOINTMENT, false);
+//					speaker.play(VOICE_CANCEL_APPOINTMENT_UNOFFICIAL, false);
 					// Reset action idle for playing the error alarm.
 					sp_action_.reset(new ActionIdle);
 				}
@@ -66,11 +68,11 @@ bool ModeIdle::isExit()
 			else if (cliff.getStatus() & (BLOCK_LEFT | BLOCK_FRONT | BLOCK_RIGHT))
 			{
 				ROS_WARN("%s %d: Plan not activated not valid because of robot lifted up.", __FUNCTION__, __LINE__);
-				speaker.play(VOICE_ERROR_LIFT_UP_CANCEL_APPOINTMENT);
+				speaker.play(VOICE_ERROR_LIFT_UP);
 			} else if (!battery.isReadyToClean())
 			{
 				ROS_WARN("%s %d: Plan not activated not valid because of battery not ready to clean.", __FUNCTION__, __LINE__);
-				speaker.play(VOICE_BATTERY_LOW_CANCEL_APPOINTMENT);
+				speaker.play(VOICE_BATTERY_LOW);
 			} else{
 				ROS_WARN("%s %d: Idle mode receives plan, change to navigation mode.", __FUNCTION__, __LINE__);
 				setNextMode(cm_navigation);
@@ -130,7 +132,7 @@ bool ModeIdle::isExit()
 
 	if (ev.rcon_status)
 	{
-		ROS_WARN("%s %d: Idle mode receives rcon for over %ds, change to go to charger mode.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Idle mode receives rcon for over %ds, change to go to charger mode.", __FUNCTION__, __LINE__, RCON_TRIGGER_INTERVAL);
 		setNextMode(md_go_to_charger);
 		return true;
 	}
@@ -164,7 +166,7 @@ void ModeIdle::remoteKeyHandler(bool state_now, bool state_last)
 				ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
 				beeper.beepForCommand(VALID);
 				sp_state->init();
-				speaker.play(VOICE_CLEAR_ERROR);
+//				speaker.play(VOICE_CLEAR_ERROR_UNOFFICIAL);
 			}
 			else
 			{
@@ -257,7 +259,7 @@ void ModeIdle::remoteMax(bool state_now, bool state_last)
 	else{
 		beeper.beepForCommand(VALID);
 		vacuum.isMaxInClean(!vacuum.isMaxInClean());
-		speaker.play(vacuum.isMaxInClean() ? VOICE_CONVERT_TO_LARGE_SUCTION : VOICE_CONVERT_TO_NORMAL_SUCTION,false);
+		speaker.play(vacuum.isMaxInClean() ? VOICE_VACCUM_MAX : VOICE_CLEANING_NAVIGATION,false);
 	}
 	remote.reset();
 }
@@ -315,7 +317,8 @@ void ModeIdle::remotePlan(bool state_now, bool state_last)
 	else if (robot_timer.getPlanStatus() == 2)
 	{
 		beeper.beepForCommand(VALID);
-		speaker.play(VOICE_CANCEL_APPOINTMENT);
+		speaker.play(VOICE_APPOINTMENT_DONE);
+//		speaker.play(VOICE_CANCEL_APPOINTMENT_UNOFFICIAL);
 		ROS_WARN("%s %d: Plan cancel received.", __FUNCTION__, __LINE__);
 	}
 	else if (robot_timer.getPlanStatus() == 3)
@@ -376,7 +379,7 @@ void ModeIdle::keyClean(bool state_now, bool state_last)
 			{
 				ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
                 sp_state->init();
-				speaker.play(VOICE_CLEAR_ERROR);
+//				speaker.play(VOICE_CLEAR_ERROR_UNOFFICIAL);
 			}
 			else
 				error.alarm();
@@ -415,7 +418,7 @@ void ModeIdle::rcon(bool state_now, bool state_last)
 		} else
 		{
 			/*---received charger signal continuously, check if more than 3 mins---*/
-			if (time_for_now_ - first_time_seen_charger_ > 180.0)
+			if (time_for_now_ - first_time_seen_charger_ > RCON_TRIGGER_INTERVAL)
 				ev.rcon_status = c_rcon.getAll();
 		}
 		last_time_seen_charger_ = time_for_now_;

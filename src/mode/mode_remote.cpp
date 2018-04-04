@@ -56,7 +56,7 @@ ModeRemote::~ModeRemote()
 
 bool ModeRemote::isExit()
 {
-	if (ev.key_clean_pressed)
+	if (ev.key_clean_pressed || ev.remote_spot || ev.remote_home || ev.remote_follow_wall)
 	{
 		ROS_WARN("%s %d: Exit to idle mode.", __FUNCTION__, __LINE__);
 		setNextMode(md_idle);
@@ -150,7 +150,7 @@ void ModeRemote::remoteMax(bool state_now, bool state_last)
 	else{
 		beeper.beepForCommand(VALID);
 		vacuum.isMaxInClean(!vacuum.isMaxInClean());
-		speaker.play(vacuum.isMaxInClean() ? VOICE_CONVERT_TO_LARGE_SUCTION : VOICE_CONVERT_TO_NORMAL_SUCTION,false);
+		speaker.play(vacuum.isMaxInClean() ? VOICE_VACCUM_MAX : VOICE_CLEANING_NAVIGATION,false);
 		vacuum.setCleanState();
 	}
 	remote.reset();
@@ -176,4 +176,28 @@ void ModeRemote::chargeDetect(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Charge detect.", __FUNCTION__, __LINE__);
 	ev.charge_detect = charger.getChargeStatus();
+}
+
+void ModeRemote::remoteWallFollow(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: remote wall follow.", __FUNCTION__, __LINE__);
+	beeper.beepForCommand(VALID);
+	ev.remote_follow_wall = true;
+	remote.reset();
+}
+
+void ModeRemote::remoteSpot(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: remote spot.", __FUNCTION__, __LINE__);
+	beeper.beepForCommand(VALID);
+	ev.remote_spot = true;
+	remote.reset();
+}
+
+void ModeRemote::remoteHome(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: remote home.", __FUNCTION__, __LINE__);
+	beeper.beepForCommand(VALID);
+	ev.remote_home = true;
+	remote.reset();
 }

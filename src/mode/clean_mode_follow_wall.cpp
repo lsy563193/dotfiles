@@ -3,6 +3,7 @@
 //
 
 #include <dev.h>
+#include <event_manager.h>
 #include "robot.hpp"
 #include "dev.h"
 #include "mode.hpp"
@@ -36,7 +37,7 @@ CleanModeFollowWall::~CleanModeFollowWall()
 	else if (ev.cliff_all_triggered)
 	{
 		speaker.play(VOICE_ERROR_LIFT_UP, false);
-		speaker.play(VOICE_CLEANING_STOP);
+		speaker.play(VOICE_CLEANING_STOP_UNOFFICIAL);
 		ROS_WARN("%s %d: Cliff all triggered. Finish cleaning.", __FUNCTION__, __LINE__);
 	}
 	else
@@ -72,6 +73,18 @@ bool CleanModeFollowWall::mapMark() {
 	clean_map_.print(CLEAN_MAP, Cells{getPosition().toCell()});
 	passed_path_.clear();
 	return false;
+}
+
+bool CleanModeFollowWall::isExit()
+{
+	if (ev.remote_follow_wall)
+	{
+		ROS_WARN("%s %d: Exit for ev.remote_follow_wall.", __FUNCTION__, __LINE__);
+		setNextMode(md_idle);
+		return true;
+	}
+
+	return ACleanMode::isExit();
 }
 
 void CleanModeFollowWall::keyClean(bool state_now, bool state_last)
@@ -123,11 +136,11 @@ void CleanModeFollowWall::remoteMax(bool state_now, bool state_last)
 	if(water_tank.checkEquipment(true)){
 		beeper.beepForCommand(INVALID);
 	}
-	else if(isStateInit() || isStateFollowWall() || isStateExploration() || isStateGoHomePoint() || isStateGoToCharger())
+	else if(isStateInit() || isStateFollowWall() || isStateGoHomePoint() || isStateGoToCharger())
 	{
 		beeper.beepForCommand(VALID);
 		vacuum.isMaxInClean(!vacuum.isMaxInClean());
-		speaker.play(vacuum.isMaxInClean() ? VOICE_CONVERT_TO_LARGE_SUCTION : VOICE_CONVERT_TO_NORMAL_SUCTION,false);
+		speaker.play(vacuum.isMaxInClean() ? VOICE_VACCUM_MAX : VOICE_CLEANING_NAVIGATION,false);
 		if(isStateFollowWall() || (isStateInit() && action_i_ > ac_open_gyro)) {
 			vacuum.setCleanState();
 		}
@@ -142,6 +155,16 @@ void CleanModeFollowWall::remoteClean(bool state_now, bool state_last)
 	beeper.beepForCommand(VALID);
 	wheel.stop();
 	ev.key_clean_pressed = true;
+	remote.reset();
+}
+
+void CleanModeFollowWall::remoteWallFollow(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: remote wall follow.", __FUNCTION__, __LINE__);
+
+	beeper.beepForCommand(VALID);
+	wheel.stop();
+	ev.remote_follow_wall = true;
 	remote.reset();
 }
 

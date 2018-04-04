@@ -548,6 +548,7 @@ void event_manager_reset_status(void)
 	/* Bumper */
 	ev.bumper_triggered = 0;
 	ev.bumper_jam = false;
+	ev.lidar_bumper_jam = false;
 	g_bumper_cnt = 0;
 	/* OBS */
 	ev.obs_triggered = 0;

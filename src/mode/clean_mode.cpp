@@ -37,51 +37,29 @@ ACleanMode::ACleanMode()
 	line_marker_pub2_ = clean_nh_.advertise<visualization_msgs::Marker>("line_marker2", 1);
 
 	lidar.slipCheckingCtrl(ON);
-	PP_INFO();
 	event_manager_register_handler(this);
-	PP_INFO();
 	event_manager_reset_status();
-	PP_INFO();
 	event_manager_set_enable(true);
-	PP_INFO();
 	serial.setWorkMode(WORK_MODE);
-	PP_INFO();
 	IMoveType::sp_mode_ = this;
-	PP_INFO();
 	APathAlgorithm::p_cm_ = this;
-	PP_INFO();
 	State::sp_cm_ = this;
-    PP_INFO();
 	if (robot::instance()->getWorkMode() == WORK_MODE ||robot::instance()->getWorkMode() == IDLE_MODE || robot::instance()->getWorkMode() == CHARGE_MODE)
 	{
-		PP_INFO();
 		sp_state = state_init.get();
-		PP_INFO();
 		sp_state->init();
-		PP_INFO();
 		action_i_ = ac_open_gyro;
-		PP_INFO();
 		genNextAction();
-		PP_INFO();
 	}
-	PP_INFO();
 	robot_timer.initWorkTimer();
-	PP_INFO();
 	key.resetPressStatus();
-	PP_INFO();
 	time_gyro_dynamic_ = ros::Time::now().toSec();
-	PP_INFO();
 
 	resetPosition();
-	PP_INFO();
 	charger_pose_.clear();
-	PP_INFO();
 	tmp_charger_pose_.clear();
-	PP_INFO();
 	c_rcon.resetStatus();
-	PP_INFO();
 	robot::instance()->initOdomPosition();
-	PP_INFO();
 //	fw_map.reset(CLEAN_MAP);
 
 //	// todo:debug
@@ -123,19 +101,19 @@ ACleanMode::~ACleanMode()
 
 		if (moved_during_pause_)
 		{
-			speaker.play(VOICE_CLEANING_STOP, false);
+			speaker.play(VOICE_CLEANING_FINISHED, false);
 			ROS_WARN("%s %d: Moved during pause. Stop cleaning.", __FUNCTION__, __LINE__);
 		}
 		else if (ev.fatal_quit)
 		{
 			if (ev.cliff_all_triggered)
 			{
-				speaker.play(VOICE_ERROR_LIFT_UP_CLEANING_STOP, false);
+				speaker.play(VOICE_ERROR_LIFT_UP, false);
 				ROS_WARN("%s %d: Cliff all triggered. Stop cleaning.", __FUNCTION__, __LINE__);
 			}
 			else
 			{
-				speaker.play(VOICE_CLEANING_STOP, false);
+				speaker.play(VOICE_CLEANING_FINISHED, false);
 				ROS_WARN("%s %d: fatal_quit is true. Stop cleaning.", __FUNCTION__, __LINE__);
 			}
 		}
@@ -209,7 +187,8 @@ void ACleanMode::saveBlocks() {
 	saveBlock(BLOCKED_BUMPER,iterate_point_.dir, [&]() {
 		auto bumper_trig = ev.bumper_triggered/*bumper.getStatus()*/;
 		Cells d_cells; // Direction indicator cells.
-		if ((bumper_trig & BLOCK_RIGHT) && (bumper_trig & BLOCK_LEFT))
+//		if ((bumper_trig & BLOCK_RIGHT) && (bumper_trig & BLOCK_LEFT))
+		if (bumper_trig == BLOCK_ALL || bumper_trig == BLOCK_LIDAR_BUMPER)
 			d_cells = {/*{2,-1},*/ {2, 0}/*, {2,1}*/};
 		else if (bumper_trig & BLOCK_LEFT) {
 			if (is_linear)
@@ -987,7 +966,8 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 		if(!isStateFollowWall() && !isStateDeskTest())
 		{
 			auto p_mt = dynamic_cast<MoveTypeFollowWall *>(p_move_type);
-			return p_mt->isNewLineReach(clean_map_) || p_mt->isOverOriginLine(clean_map_);
+			if(p_mt->movement_i_ == p_mt->mm_forward ||p_mt->movement_i_ == p_mt->mm_straight)
+				return p_mt->isNewLineReach(clean_map_) || p_mt->isOverOriginLine(clean_map_);
 		}
 	}
 	return false;
@@ -1576,8 +1556,7 @@ bool ACleanMode::updateActionInStateInit() {
 	if (action_i_ == ac_null)
 		action_i_ = ac_open_gyro;
 	else if (action_i_ == ac_open_gyro) {
-		water_tank.checkEquipment(false) ? water_tank.open(WaterTank::water_tank) : vacuum.setCleanState();
-		brush.normalOperate();
+		boost::dynamic_pointer_cast<StateInit>(state_init)->initOpenLidar();
 		action_i_ = ac_open_lidar;
 	}
 	else if (action_i_ == ac_open_lidar)
