@@ -632,7 +632,7 @@ int8_t GridMap::isNeedClean(int16_t x, int16_t y)
 	return cleaned <= 6;
 }
 
-int GridMap::count_if(const Cell_t &curr_cell, std::function<bool(const Cell_t &next)> compare) {
+bool GridMap::count_if(const Cell_t &curr_cell, std::function<bool(const Cell_t &next)> compare, int& count) {
 	Cells targets{};
     std::set<Cell_t> c_cleans;
 	find_if(getPosition().toCell(), targets, [&](Cell_t c_it) {
@@ -641,20 +641,14 @@ int GridMap::count_if(const Cell_t &curr_cell, std::function<bool(const Cell_t &
 			if (compare(tmp))
 				c_cleans.insert(tmp);
 		}
-		return false;
-	},true,true);
-//	print(CLEAN_MAP, Cells{});
-//    print(COST_MAP, targets);
-//	Cells cs;
-//    for(auto cell : c_cleans)
-//	{
-//		cs.push_back(cell);
-//	}
-//	print(COST_MAP, cs);
-	return c_cleans.size();
+		return c_it.y%2 == 0 && getCell(CLEAN_MAP, c_it.x, c_it.y) == UNCLEAN  && isBlockAccessible(c_it.x, c_it.y);
+	},true,true,true);
+	count = c_cleans.size();
+    ROS_ERROR("%s,is_trapped(%d),trapped_clean_count(%d)",__FUNCTION__,targets.empty(), count);
+	return targets.empty();
 }
 
-bool GridMap::find_if(const Cell_t &curr_cell, Cells &targets, std::function<bool(const Cell_t &next)> compare  ,bool is_count,bool is_stop) {
+bool GridMap::find_if(const Cell_t &curr_cell, Cells &targets, std::function<bool(const Cell_t &next)> compare  ,bool is_count,bool is_stop, bool is_target) {
 	typedef std::multimap<int16_t, Cell_t> Queue;
 	typedef std::pair<int16_t, Cell_t> Entry;
 
@@ -680,7 +674,7 @@ bool GridMap::find_if(const Cell_t &curr_cell, Cells &targets, std::function<boo
 		for (auto index = 0; index < 4; index++) {
 			auto neighbor = next + cell_direction_[index];
 
-			if(isOutOfMap(next))
+			if(is_target ? isOutOfTargetRange(next) : isOutOfMap(next))
 				continue;
 
 			if (getCell(COST_MAP, neighbor.x, neighbor.y) == 0) {

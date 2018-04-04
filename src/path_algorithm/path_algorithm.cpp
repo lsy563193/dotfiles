@@ -300,16 +300,14 @@ Cells APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const 
 bool APathAlgorithm::checkTrappedUsingDijkstra(GridMap &map, const Cell_t &curr_cell)
 {
 	Cells targets;
-	auto is_found = map.find_if(curr_cell, targets,[&](const Cell_t &c_it){
-		return c_it.y%2 == 0 && map.getCell(CLEAN_MAP, c_it.x, c_it.y) == UNCLEAN  && map.isBlockAccessible(c_it.x, c_it.y);
-	}, false, true);
-	if(is_found)
+	// Use clean area proportion to judge if it is trapped.
+    int dijkstra_cleaned_count{};
+	auto is_trapped = map.count_if(curr_cell,[&](Cell_t c_it) {
+		return (map.getCell(CLEAN_MAP, c_it.x, c_it.y) == CLEANED);
+	},dijkstra_cleaned_count);
+    if(!is_trapped)
 		return false;
 
-	// Use clean area proportion to judge if it is trapped.
-	auto dijkstra_cleaned_count = map.count_if(curr_cell,[&](Cell_t c_it) {
-		return (map.getCell(CLEAN_MAP, c_it.x, c_it.y) == CLEANED);
-	});
 	auto map_cleand_count = map.getCleanedArea();
 	double clean_proportion = static_cast<double>(dijkstra_cleaned_count) / static_cast<double>(map_cleand_count);
 	ROS_ERROR("%s %d: !!!!!!!!!!!!!!!!!!!!!!!dijkstra_cleaned_count(%d), map_cleand_count(%d), clean_proportion(%f) ,when prop < 0,8 is trapped",

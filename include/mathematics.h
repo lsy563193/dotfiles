@@ -359,11 +359,11 @@ public:
 		return point;
 	}
 
-//	Point_t getRelative(float dx, float dy) const {
-//		auto Cell = this->toCell();
-//		Point_t point{cellToCount(Cell.x),cellToCount(Cell.y),th};
-//		return point.getRelative(dx,dy);
-//	}
+	Point_t getCenterRelative(float dx, float dy) const {
+		auto Cell = this->toCell();
+		Point_t point{cellToCount(Cell.x),cellToCount(Cell.y),th};
+		return point.getRelative(dx,dy);
+	}
 
 	bool isNearTo(Point_t other, float count) const {
 //		return std::abs(this->x - other.x) <count && std::abs(this->y - other.y) < count;

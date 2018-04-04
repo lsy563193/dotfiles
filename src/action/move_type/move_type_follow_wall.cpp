@@ -157,9 +157,10 @@ int16_t MoveTypeFollowWall::bumperTurnAngle()
 	auto same_side = (is_left_) ? BLOCK_LEFT : BLOCK_RIGHT;
 	std::set<Cell_t> c_cleans;
 	if(is_trapped) {
-		dijkstra_cleaned_count = p_mode->clean_map_.count_if(getPosition().toCell(), [&](Cell_t c_it) {
+		int count;
+		count = p_mode->clean_map_.count_if(getPosition().toCell(), [&](Cell_t c_it) {
 			return (p_mode->clean_map_.getCell(CLEAN_MAP, c_it.x, c_it.y) == CLEANED);
-		});
+		},dijkstra_cleaned_count);
 	}
 
 	if (status == BLOCK_ALL || status == BLOCK_LIDAR_BUMPER)

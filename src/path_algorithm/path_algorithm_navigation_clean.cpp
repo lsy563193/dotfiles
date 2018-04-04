@@ -71,11 +71,10 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 
 	ROS_INFO("Step 2: Find all possible plan_path at the edge of cleaned area and filter plan_path in same lane.");
 	Cells targets{};
-//	map.generateSPMAP(curr_cell,targets);
 
 	map.find_if(curr_cell, targets,[&](const Cell_t &c_it){
 		return c_it.y%2 == 0 && map.getCell(CLEAN_MAP, c_it.x, c_it.y) == UNCLEAN  && map.isBlockAccessible(c_it.x, c_it.y);
-	});
+	},false, false,true);
 
 	std::sort(targets.begin(),targets.end(),[](Cell_t l,Cell_t r){
 		return (l.y < r.y || (l.y == r.y && l.x < r.x));
@@ -83,7 +82,7 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 
 	targets = std::for_each(targets.begin(), targets.end(),FilterTarget(curr_cell));
 
-	displayTargetList(targets);
+//	displayTargetList(targets);
 //	map.print(CLEAN_MAP, targets);
 //	map.print(CLEAN_MAP, targets);
 
@@ -115,7 +114,7 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 	plan_path = cells_generate_points(path);
 
 	displayCellPath(path);
-//	map.print(CLEAN_MAP, path);
+	map.print(CLEAN_MAP, path);
 	return true;
 }
 
