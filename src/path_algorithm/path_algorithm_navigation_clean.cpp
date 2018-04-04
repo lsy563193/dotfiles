@@ -56,6 +56,8 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 	auto curr_cell = curr.toCell();
 	ROS_INFO("Step 1: Find possible plan_path in same lane.");
 	Cells path{};
+	map.markRobot(CLEAN_MAP);
+
 	if(curr_cell.y % 2==0) {
 		path = findTargetInSameLane(map, curr_cell);
 		if (!path.empty()) {
@@ -70,6 +72,7 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 	ROS_INFO("Step 2: Find all possible plan_path at the edge of cleaned area and filter plan_path in same lane.");
 	Cells targets{};
 //	map.generateSPMAP(curr_cell,targets);
+
 	map.find_if(curr_cell, targets,[&](const Cell_t &c_it){
 		return c_it.y%2 == 0 && map.getCell(CLEAN_MAP, c_it.x, c_it.y) == UNCLEAN  && map.isBlockAccessible(c_it.x, c_it.y);
 	});

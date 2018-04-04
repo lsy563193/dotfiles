@@ -642,16 +642,16 @@ int GridMap::count_if(const Cell_t &curr_cell, std::function<bool(const Cell_t &
 				c_cleans.insert(tmp);
 		}
 		return false;
-	},true);
-	print(CLEAN_MAP, Cells{});
-    print(COST_MAP, targets);
-	Cells cs;
-    for(auto cell : c_cleans)
-	{
-		cs.push_back(cell);
-	}
-	print(COST_MAP, cs);
-	return c_cleans.size();
+	},true,true);
+//	print(CLEAN_MAP, Cells{});
+//    print(COST_MAP, targets);
+//	Cells cs;
+//    for(auto cell : c_cleans)
+//	{
+//		cs.push_back(cell);
+//	}
+//	print(COST_MAP, cs);
+	return targets.size();
 }
 
 bool GridMap::find_if(const Cell_t &curr_cell, Cells &targets, std::function<bool(const Cell_t &next)> compare  ,bool is_count,bool is_stop) {
