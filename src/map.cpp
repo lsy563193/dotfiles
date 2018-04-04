@@ -685,7 +685,7 @@ bool GridMap::find_if(const Cell_t &curr_cell, Cells &targets, std::function<boo
 
 			if (getCell(COST_MAP, neighbor.x, neighbor.y) == 0) {
                 if(is_count)
-					compare(next);
+					compare(neighbor);
 				if (isBlockAccessible(neighbor.x, neighbor.y))
 				{
 
