@@ -50,6 +50,7 @@ bool MovementBack::isFinish()
 {
 	robot::instance()->lockScanCtrl();
 	robot::instance()->pubScanCtrl(true, true);
+	bool ret{false};
 	float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getOriginX(), odom.getOriginY());
 //	ROS_INFO("%s, %d: MovementBack distance %f", __FUNCTION__, __LINE__, distance);
 
@@ -74,43 +75,51 @@ bool MovementBack::isFinish()
 		ROS_INFO("%s, %d: MovementBack reach target, bumper_jam_cnt_(%d), cliff_jam_cnt_(%d), robot_stuck_cnt_(%d), tilt status(%d).",
 				 __FUNCTION__, __LINE__, bumper_jam_cnt_, cliff_jam_cnt_, robot_stuck_cnt_, gyro.getTiltCheckingStatus());
 		if (bumper_jam_cnt_ == 0 && lidar_bumper_jam_cnt_ == 0 && cliff_jam_cnt_ == 0 && robot_stuck_cnt_ == 0 && !gyro.getTiltCheckingStatus())// todo need a tilt_cnt_
-			return true;
+			ret = true;
+//			return true;
 		if (cliff_jam_cnt_ >= 2)
 		{
 			ev.cliff_jam = true;
 			ROS_WARN("%s, %d: Cliff jam.", __FUNCTION__, __LINE__);
-			return false;
+			ret = false;
+//			return false;
 		}
 		else if (bumper_jam_cnt_ >= 2)
 		{
 			ev.bumper_jam = true;
 			ROS_WARN("%s, %d: Bumper jam.", __FUNCTION__, __LINE__);
-			return false;
+			ret = false;
+//			return false;
 		}
 		else if (lidar_bumper_jam_cnt_ >= 2)
 		{
 			ev.lidar_bumper_jam = true;
 			ROS_WARN("%s, %d: Lidar Bumper jam.", __FUNCTION__, __LINE__);
-			return false;
+			ret = false;
+//			return false;
 		}
 		else if (robot_stuck_cnt_ >= 2)
 		{
 			ev.robot_stuck = true;
 			ROS_WARN("%s, %d: Robot stuck.", __FUNCTION__, __LINE__);
-			return false;
+			ret = false;
+//			return false;
 		}
-		//else if (g_lidar_bumper_cnt >= 2)
-		//{
-		//	g_lidar_bumper_jam = true;
-		//	return false;
-		//}
 		else
 		{
 			updateStartPose();
+//			ret = false;
 			ROS_INFO("%s %d: Move back again.", __FUNCTION__, __LINE__);
 		}
+	} else {
+		ret = false;
 	}
-	return false;
+	if (ret) {
+		wheel.stop();
+		return true;
+	} else {
+		return false;
+	}
 }
 
 bool MovementBack::isLidarStop()

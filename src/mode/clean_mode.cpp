@@ -988,7 +988,8 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 		if(!isStateFollowWall() && !isStateDeskTest())
 		{
 			auto p_mt = dynamic_cast<MoveTypeFollowWall *>(p_move_type);
-			return p_mt->isNewLineReach(clean_map_) || p_mt->isOverOriginLine(clean_map_);
+			if(p_mt->movement_i_ == p_mt->mm_forward ||p_mt->movement_i_ == p_mt->mm_straight)
+				return p_mt->isNewLineReach(clean_map_) || p_mt->isOverOriginLine(clean_map_);
 		}
 	}
 	return false;

@@ -722,7 +722,7 @@ uint8_t S_Wifi::syncClock(int year,int mon,int day,int hour,int minu,int sec)
 	system(date_time);
 	
 	robot_timer.initWorkTimer();
-	IAction::updateStartTime();	
+//	IAction::updateStartTime();
 
 	struct tm *local_time;
 	time_t ltime;

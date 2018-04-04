@@ -70,6 +70,7 @@ bool MoveTypeFollowWall::isFinish()
 		}
 		else if (movement_i_ == mm_straight)
 		{
+			move_forward_time +=  ros::Time::now().toSec() - sp_movement_->start_timer_;
 			if (!handleMoveBackEvent(p_cm))
 			{
 				resetTriggeredValue();// is it necessary?
@@ -79,6 +80,7 @@ bool MoveTypeFollowWall::isFinish()
 		}
 		else if (movement_i_ == mm_forward)
 		{
+			move_forward_time +=  ros::Time::now().toSec() - sp_movement_->start_timer_;
 			if (!handleMoveBackEvent(p_cm))
 			{
 				if(ev.rcon_status) {
@@ -412,8 +414,12 @@ bool MoveTypeFollowWall::isOverOriginLine(GridMap &map)
 	auto target_point_ = remain_path_.back();
 	auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
 	auto start_point_ = p_mode->iterate_point_;
-	if ((target_point_.y > start_point_.y && start_point_.y - curr.y > CELL_SIZE / 6)
-		|| ((curr.y - start_point_.y > CELL_SIZE / 6) && target_point_.y < start_point_.y) )
+//	ROS_WARN("movement_i_ == mm_forward(%d), ros::Time::now().toSec() - sp_movement_->start_timer_ + move_forward_time(%lf)",
+//					 movement_i_ == mm_forward || movement_i_ == mm_straight, ros::Time::now().toSec() - sp_movement_->start_timer_ + move_forward_time);
+	double const WF_TIME_LIMIT = 1.5;//force wall follow time
+	if (((target_point_.y > start_point_.y && start_point_.y - curr.y > CELL_SIZE / 6)
+		|| ((curr.y - start_point_.y > CELL_SIZE / 6) && target_point_.y < start_point_.y)) &&
+			 ( (ros::Time::now().toSec() - sp_movement_->start_timer_ + move_forward_time) > WF_TIME_LIMIT))
 	{
 //		ROS_WARN("origin(%d,%d) curr_p(%d, %d), target_point__(%d, %d)",start_point_.x, start_point_.y,  curr.x, curr.y, target_point_.x, target_point_.y);
 //		auto target_angle = (target_point_.y > start_point_.y) ? -900 : 900;
@@ -425,8 +431,8 @@ bool MoveTypeFollowWall::isOverOriginLine(GridMap &map)
 //		}
 //		else if (map.isNotBlockAndCleaned(curr.toCell().x, curr.toCell().y)) // If robot covers a big block, stop.
 //		{
-//			ROS_WARN("%s %d: Back to cleaned place, current(%d, %d), curr(%d, %d), target_point_(%d, %d).",
-//					 __FUNCTION__, __LINE__, curr.x, curr.y, curr.x, curr.y, target_point_.x, target_point_.y);
+			ROS_WARN("%s %d: Back to cleaned place, current(%f, %f), curr(%f, %f), target_point_(%f, %f).",
+					 __FUNCTION__, __LINE__, curr.x, curr.y, curr.x, curr.y, target_point_.x, target_point_.y);
 			return true;
 //		}
 //		else{
