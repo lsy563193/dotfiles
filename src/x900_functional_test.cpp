@@ -65,6 +65,7 @@ void x900_functional_test(std::string serial_port, int baud_rate, std::string li
 	serial.setSendData(CTL_LED_RED, 0);
 	serial.setSendData(CTL_MIX, 0);
 	infrared_display.displayNormalMsg(0, 9999);
+	serial.sendData();
 	ROS_INFO("%s %d: Test finish.", __FUNCTION__, __LINE__);
 	while (ros::ok())
 	{
@@ -72,6 +73,7 @@ void x900_functional_test(std::string serial_port, int baud_rate, std::string li
 		{
 			alarm_time = ros::Time::now().toSec();
 			speaker.play(VOICE_TEST_SUCCESS);
+			serial.sendData();
 			ROS_INFO("%s %d: Test finish.", __FUNCTION__, __LINE__);
 		}
 	}
