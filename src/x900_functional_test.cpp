@@ -65,6 +65,7 @@ void x900_functional_test(std::string serial_port, int baud_rate, std::string li
 	serial.setSendData(CTL_LED_RED, 0);
 	serial.setSendData(CTL_MIX, 0);
 	infrared_display.displayNormalMsg(0, 9999);
+	serial.sendData();
 	ROS_INFO("%s %d: Test finish.", __FUNCTION__, __LINE__);
 	while (ros::ok())
 	{
@@ -72,6 +73,7 @@ void x900_functional_test(std::string serial_port, int baud_rate, std::string li
 		{
 			alarm_time = ros::Time::now().toSec();
 			speaker.play(VOICE_TEST_SUCCESS);
+			serial.sendData();
 			ROS_INFO("%s %d: Test finish.", __FUNCTION__, __LINE__);
 		}
 	}
@@ -307,6 +309,7 @@ void main_board_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &curren
 				break;
 			case FUNC_MAINBRUSH_TEST_MODE:/*--- main brush ---*/
 				main_brush_test(baseline, test_stage, error_code, current_data);
+				break;
 			case FUNC_CHARGE_CURRENT_TEST_MODE:/*---charge current---*/
 				charge_current_test(is_fixture, test_stage, error_code, current_data);
 				break;
@@ -1035,7 +1038,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				break;
 			case 3:
 				step++;
-				if (current_current < 30 || current_current > 100 || motor_current < 20 || motor_current > 100) {
+				if (current_current < 30 || current_current > 150 || motor_current < 20 || motor_current > 100) {
 					error_code = LEFT_WHEEL_FORWARD_CURRENT_ERROR;
 					current_data = static_cast<uint16_t>(motor_current);
 					return ;
@@ -1097,7 +1100,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				break;
 			case 8:
 				step++;
-				if (current_current < 30 || current_current > 100 || motor_current < 20 || motor_current > 100) {
+				if (current_current < 30 || current_current > 150 || motor_current < 20 || motor_current > 100) {
 					error_code = LEFT_WHEEL_BACKWARD_CURRENT_ERROR;
 					current_data = static_cast<uint16_t>(motor_current);
 					return ;
@@ -1209,7 +1212,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				break;
 			case 16:
 				step++;
-				if (current_current < 30 || current_current > 100 || motor_current < 20 || motor_current > 100) {
+				if (current_current < 30 || current_current > 150 || motor_current < 20 || motor_current > 100) {
 					error_code = RIGHT_WHEEL_FORWARD_CURRENT_ERROR;
 					current_data = motor_current;
 					return ;
@@ -1271,7 +1274,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				break;
 			case 21:
 				step++;
-				if (current_current < 30 || current_current > 100 || motor_current < 20 || motor_current > 100) {
+				if (current_current < 30 || current_current > 150 || motor_current < 20 || motor_current > 100) {
 					error_code = RIGHT_WHEEL_BACKWARD_CURRENT_ERROR;
 					current_data = motor_current;
 					return ;
@@ -1694,7 +1697,7 @@ void main_brush_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_co
 				break;
 			case 3:
 				step++;
-				if (current_current < 100 || current_current > 300 || motor_current < 100 || motor_current > 300) {
+				if (current_current < 130 || current_current > 350 || motor_current < 100 || motor_current > 300) {
 					error_code = MAIN_BRUSH_CURRENT_ERROR;
 					current_data = static_cast<uint16_t>(motor_current);
 					return ;
