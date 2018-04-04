@@ -12,6 +12,8 @@
 using namespace std;
 
 #define PP_PACKAGE_PATH	"/opt/ros/indigo/share/pp/audio/%02d.wav"
+#define WAV_SKIP_SIZE 25
+#define WAV_HEADER_SIZE 58
 
 Speaker speaker;
 
@@ -48,12 +50,12 @@ void Speaker::playRoutine()
 
 			_play();
 
-			if (break_playing_)
-				break_playing_ = false;
-
 			closePcmDriver();
 			ROS_INFO("%s %d: Finish playing voice:%d", __FUNCTION__, __LINE__, curr_voice_.type);
 			finish_playing_ = true;
+
+			if (break_playing_)
+				break_playing_ = false;
 		}
 		else
 			usleep(1000);
@@ -220,7 +222,7 @@ bool Speaker::initPcmDriver()
 	buffer_ = (char *) malloc(buffer_size_);
 
 	// Seek to audio data
-	fseek(fp_, 58, SEEK_SET);
+	fseek(fp_, WAV_SKIP_SIZE * datablock  + WAV_HEADER_SIZE, SEEK_SET);
 
 	return true;
 }
@@ -350,5 +352,7 @@ void Speaker::stop()
 bool Speaker::test()
 {
 	speaker.play(VOICE_TEST_MODE, false);
-	speaker.play(VOICE_SOFTWARE_VERSION, false);
+#if DEBUG_ENABLE
+	speaker.play(VOICE_SOFTWARE_VERSION_UNOFFICIAL, false);
+#endif
 }

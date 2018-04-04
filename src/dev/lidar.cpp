@@ -1242,14 +1242,14 @@ void Lidar::checkRobotSlip()
 		return;
 	}
 
+//	ROS_INFO("start to check slip,leftSpeed:%f,rightSpeed:%f",wheel.getLeftWheelActualSpeed(),wheel.getRightWheelActualSpeed());
 	checkSlipInit(acur1_,acur2_,acur3_,acur4_);
-	if ((std::fabs(wheel.getLeftWheelActualSpeed()) >= 0.10 || std::fabs(wheel.getRightWheelActualSpeed()) >= 0.10))
+	if ((std::fabs(wheel.getLeftWheelActualSpeed()) >= 0.08 || std::fabs(wheel.getRightWheelActualSpeed()) >= 0.08))
 	{
 		auto tmp_scan_data = getLidarScanDataOriginal();
 		uint16_t same_count = 0;
 		uint16_t tol_count = 0;
 
-//		ROS_INFO("start to check slip,leftSpeed:%f,rightSpeed:%f,lidarPoint:%lf",wheel.getLeftWheelActualSpeed(),wheel.getRightWheelActualSpeed(),tmp_scan_data.ranges[155]);
 		if(last_slip_scan_frame_.d.size() < 3){
 			last_slip_scan_frame_.d.push_back(tmp_scan_data);
 			return;
@@ -1281,7 +1281,8 @@ void Lidar::checkRobotSlip()
 			}
 		}
 
-//		ROS_WARN("%s %d: same_count: %d, total_count: %d.", __FUNCTION__, __LINE__, same_count, tol_count);
+//		ROS_WARN("%s %d: same_count: %d, total_count: %d. lidarPoint:%lf", __FUNCTION__, __LINE__, same_count, tol_count,tmp_scan_data.ranges[155]);
+//		ROS_WARN("percent:%lf,slip_cnt_limt:%d,slip_frame_cnt:%d,lidarPoint:%lf",slip_ranges_percent_,slip_cnt_limit_,slip_frame_cnt_,tmp_scan_data.ranges[155]);
 		if((same_count*1.0)/(tol_count*1.0) >= slip_ranges_percent_ &&
 			(slip_ranges_percent_ < 0.8 || (tmp_scan_data.ranges[155] < 4 &&
 								(tmp_scan_data.ranges[155] - last_slip_scan_frame_.d.at(0).ranges[155] < 0.03)))){

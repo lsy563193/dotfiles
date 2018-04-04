@@ -9,7 +9,7 @@
 //static uint32_t IAction::g_wf_start_timer = 0;
 //static uint32_t IAction::g_wf_diff_timer = 0;
 
-double IAction::start_timer_ = 0;
+//double IAction::start_timer_ = 0;
 
 IAction::IAction()
 {

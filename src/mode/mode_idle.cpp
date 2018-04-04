@@ -54,10 +54,10 @@ bool ModeIdle::isExit()
 				{
 					ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
 					sp_state->init();
-//					speaker.play(VOICE_CLEAR_ERROR, false);
+//					speaker.play(VOICE_CLEAR_ERROR_UNOFFICIAL, false);
 				} else
 				{
-//					speaker.play(VOICE_CANCEL_APPOINTMENT, false);
+//					speaker.play(VOICE_CANCEL_APPOINTMENT_UNOFFICIAL, false);
 					// Reset action idle for playing the error alarm.
 					sp_action_.reset(new ActionIdle);
 				}
@@ -166,7 +166,7 @@ void ModeIdle::remoteKeyHandler(bool state_now, bool state_last)
 				ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
 				beeper.beepForCommand(VALID);
 				sp_state->init();
-//				speaker.play(VOICE_CLEAR_ERROR);
+//				speaker.play(VOICE_CLEAR_ERROR_UNOFFICIAL);
 			}
 			else
 			{
@@ -259,7 +259,7 @@ void ModeIdle::remoteMax(bool state_now, bool state_last)
 	else{
 		beeper.beepForCommand(VALID);
 		vacuum.isMaxInClean(!vacuum.isMaxInClean());
-		speaker.play(vacuum.isMaxInClean() ? VOICE_CONVERT_TO_LARGE_SUCTION : VOICE_CONVERT_TO_NORMAL_SUCTION,false);
+		speaker.play(vacuum.isMaxInClean() ? VOICE_VACCUM_MAX : VOICE_CLEANING_NAVIGATION,false);
 	}
 	remote.reset();
 }
@@ -318,7 +318,7 @@ void ModeIdle::remotePlan(bool state_now, bool state_last)
 	{
 		beeper.beepForCommand(VALID);
 		speaker.play(VOICE_APPOINTMENT_DONE);
-//		speaker.play(VOICE_CANCEL_APPOINTMENT);
+//		speaker.play(VOICE_CANCEL_APPOINTMENT_UNOFFICIAL);
 		ROS_WARN("%s %d: Plan cancel received.", __FUNCTION__, __LINE__);
 	}
 	else if (robot_timer.getPlanStatus() == 3)
@@ -379,7 +379,7 @@ void ModeIdle::keyClean(bool state_now, bool state_last)
 			{
 				ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
                 sp_state->init();
-//				speaker.play(VOICE_CLEAR_ERROR);
+//				speaker.play(VOICE_CLEAR_ERROR_UNOFFICIAL);
 			}
 			else
 				error.alarm();

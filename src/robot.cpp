@@ -509,7 +509,7 @@ void robot::runTestMode()
 
 void robot::runWorkMode()
 {
-	s_wifi.resume();
+//	s_wifi.resume();
 	auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
 	send_thread_enable = true;
 
@@ -772,7 +772,6 @@ bool robot::checkTilt() {
 	auto wheel_cliff_triggered = (wheel.getLeftWheelCliffStatus() || wheel.getRightWheelCliffStatus());
 	auto angle_triggered = angle > ANGLE_LIMIT;
 //	ROS_WARN("is_first_tilt = %d", is_first_tilt);
-//	ROS_WARN("angle = %f", angle);
 //	ROS_WARN("angle_triggered(%d), wheel_cliff_triggered(%d)", angle_triggered, wheel_cliff_triggered);
 	if (!angle_triggered && !wheel_cliff_triggered) {
 		is_first_tilt = true;
@@ -784,6 +783,8 @@ bool robot::checkTilt() {
 		tilt_time = ros::Time::now().toSec();
 	}
 	auto time_limit = !wheel_cliff_triggered ? ANGLE_TIME_LIMIT : WHELL_CLIFF_TIME_LIMIT;
+	if(ros::Time::now().toSec() - tilt_time > time_limit)
+		ROS_WARN("angle = %f", angle);
 	return  ros::Time::now().toSec() - tilt_time > time_limit;
 }
 

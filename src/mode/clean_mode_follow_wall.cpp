@@ -37,7 +37,7 @@ CleanModeFollowWall::~CleanModeFollowWall()
 	else if (ev.cliff_all_triggered)
 	{
 		speaker.play(VOICE_ERROR_LIFT_UP, false);
-		speaker.play(VOICE_CLEANING_STOP);
+		speaker.play(VOICE_CLEANING_STOP_UNOFFICIAL);
 		ROS_WARN("%s %d: Cliff all triggered. Finish cleaning.", __FUNCTION__, __LINE__);
 	}
 	else
@@ -140,7 +140,7 @@ void CleanModeFollowWall::remoteMax(bool state_now, bool state_last)
 	{
 		beeper.beepForCommand(VALID);
 		vacuum.isMaxInClean(!vacuum.isMaxInClean());
-		speaker.play(vacuum.isMaxInClean() ? VOICE_CONVERT_TO_LARGE_SUCTION : VOICE_CONVERT_TO_NORMAL_SUCTION,false);
+		speaker.play(vacuum.isMaxInClean() ? VOICE_VACCUM_MAX : VOICE_CLEANING_NAVIGATION,false);
 		if(isStateFollowWall() || (isStateInit() && action_i_ > ac_open_gyro)) {
 			vacuum.setCleanState();
 		}

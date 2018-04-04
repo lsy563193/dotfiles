@@ -47,10 +47,10 @@ bool ModeCharge::isExit()
 				if (error.clear(error.get()))
 				{
 					ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
-//					speaker.play(VOICE_CLEAR_ERROR, false);
+//					speaker.play(VOICE_CLEAR_ERROR_UNOFFICIAL, false);
 				} else
 				{
-//					speaker.play(VOICE_CANCEL_APPOINTMENT, false);
+//					speaker.play(VOICE_CANCEL_APPOINTMENT_UNOFFICIAL, false);
 					error.alarm();
 				}
 			}
@@ -69,7 +69,7 @@ bool ModeCharge::isExit()
 			{
 				ROS_WARN("%s %d: Plan not activated not valid because of charging with adapter.", __FUNCTION__, __LINE__);
 				//speaker.play(???);
-//				speaker.play(VOICE_CANCEL_APPOINTMENT);
+//				speaker.play(VOICE_CANCEL_APPOINTMENT_UNOFFICIAL);
 			} else{
 				ROS_WARN("%s %d: Charge mode receives plan, change to navigation mode.", __FUNCTION__, __LINE__);
 				setNextMode(cm_navigation);
@@ -144,7 +144,7 @@ void ModeCharge::remotePlan(bool state_now, bool state_last)
 	{
 		beeper.beepForCommand(VALID);
 		speaker.play(VOICE_APPOINTMENT_DONE);
-//		speaker.play(VOICE_CANCEL_APPOINTMENT);
+//		speaker.play(VOICE_CANCEL_APPOINTMENT_UNOFFICIAL);
 		ROS_WARN("%s %d: Plan cancel received.", __FUNCTION__, __LINE__);
 	}
 	else if (robot_timer.getPlanStatus() == 3)

@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <time.h>
 #include "odom.h"
+#include "ros/ros.h"
 
 class IAction{
 public:
@@ -22,12 +23,12 @@ public:
 
 	virtual void run()=0;
 
-	static void updateStartTime();
+	void updateStartTime();
 
 	// For test mode.
 	virtual void dataExtract(){};
 
-	static double start_timer_;
+	double start_timer_ = ros::Time::now().toSec();
 
 protected:
 	double timeout_interval_{};

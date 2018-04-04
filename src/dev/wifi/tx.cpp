@@ -109,7 +109,9 @@ TxManager::~TxManager()
 		pthread_join( thread_, NULL );
 		sem_destroy( &queue_semaphore_ );
 	}
+	printf("%s %d: Exit.\n", __FUNCTION__, __LINE__);
 	pthread_mutex_destroy( &queue_lock_ );
+	printf("%s %d: Exit.\n", __FUNCTION__, __LINE__);
 }
 
 TxManager::PushOp TxManager::push( Packet &&a_packet )
