@@ -158,8 +158,9 @@ int16_t MoveTypeFollowWall::bumperTurnAngle()
 	std::set<Cell_t> c_cleans;
 	if(is_trapped) {
 		dijkstra_cleaned_count = p_mode->clean_map_.count_if(getPosition().toCell(), [&](Cell_t c_it) {
-		return (p_mode->clean_map_.getCell(CLEAN_MAP, c_it.x, c_it.y) == CLEANED);
-	});
+			return (p_mode->clean_map_.getCell(CLEAN_MAP, c_it.x, c_it.y) == CLEANED);
+		});
+	}
 
 	if (status == BLOCK_ALL || status == BLOCK_LIDAR_BUMPER)
 	{

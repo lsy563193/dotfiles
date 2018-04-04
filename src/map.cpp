@@ -651,7 +651,7 @@ int GridMap::count_if(const Cell_t &curr_cell, std::function<bool(const Cell_t &
 //		cs.push_back(cell);
 //	}
 //	print(COST_MAP, cs);
-	return targets.size();
+	return c_cleans.size();
 }
 
 bool GridMap::find_if(const Cell_t &curr_cell, Cells &targets, std::function<bool(const Cell_t &next)> compare  ,bool is_count,bool is_stop) {
