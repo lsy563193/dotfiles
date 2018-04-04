@@ -68,23 +68,6 @@ public:
 	bool generateShortestPath(GridMap &map, const Point_t &curr,const Point_t &target, const Dir_t &last_dir, Points &plan_path);
 
 	/*
-	 * @author Lin Shao Yue
-	 * @last modify by Austin Liu
-	 *
-	 * This function is for finding targets using Dijkstra algorithm.
-	 *
-	 * @param: GridMap map, it will use it's CLEAN_MAP data.
-	 * @param: Cell_t curr_cell, the current cell of robot.
-	 *
-	 * @return: true, there is reachable targets.
-	 *          false, there is no reachable targets.
-	 *          Cell_t target, the founded reachable target.
-	 *          int cleaned_count, the cleaned grid count in map.
-	 */
-	bool findTargetUsingDijkstra(GridMap &map, const Cell_t& curr_cell, Cell_t& target, int& cleaned_count);
-
-
-	/*
 	 * @
 	 *
 	 */

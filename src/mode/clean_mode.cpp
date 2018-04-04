@@ -142,7 +142,7 @@ void ACleanMode::saveBlock(int block, int dir, std::function<Cells()> get_list)
 	{
 		Cell_t cell;
 //		if(dir == MAP_ANY)
-			cell = getPosition().getRelative(d_cell.x * CELL_SIZE, d_cell.y * CELL_SIZE).toCell();
+			cell = getPosition().getCenterRelative(d_cell.x * CELL_SIZE, d_cell.y * CELL_SIZE).toCell();
 		printf("{%d,%d}->{%d,%d}\n", d_cell.x, d_cell.y, cell.x, cell.y);
 //		else {
 //			auto x = d_cell * cell_direction_[dir].x;

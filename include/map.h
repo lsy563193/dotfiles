@@ -187,8 +187,9 @@ public:
 	bool isFrontBlockBoundary(int dx);
 
 	int8_t isNeedClean(int16_t x, int16_t y);
-	bool find_if(const Cell_t &curr_cell, Cells &targets, std::function<bool(const Cell_t &next)> compare );
-	void generateSPMAP(const Cell_t &curr, Cells &target_list);
+	bool find_if(const Cell_t &curr_cell, Cells &targets, std::function<bool(const Cell_t &next)> compare, bool is_count=false, bool is_stop=false,bool is_target=false);
+	bool count_if(const Cell_t &curr_cell, std::function<bool(const Cell_t &next)> compare, int& count);
+//	void generateSPMAP(const Cell_t &curr, Cells &target_list);
 //	void generateSPMAP(const Cell_t &curr);
 /*
  * Function to find the x/y range of the Map or wfMap, if the range is to small,

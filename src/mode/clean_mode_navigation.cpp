@@ -106,7 +106,7 @@ bool CleanModeNav::mapMark()
 //					ROS_INFO("in cfw(%d,%d),(%d,%d)", point.toCell().x, point.toCell().y, getPosition().toCell().x, getPosition().toCell().y);
 					ROS_WARN("Not Cont front(%d,%d),curr(%d,%d),point(%d,%d)", passed_path_.front().toCell().x, passed_path_.front().toCell().y,
 									 getPosition().toCell().x, getPosition().toCell().y, point.toCell().x, point.toCell().y);
-					c_blocks.insert({BLOCKED_FW, point.getRelative(0, dy * CELL_SIZE).toCell()});
+					c_blocks.insert({BLOCKED_FW, point.getCenterRelative(0, dy * CELL_SIZE).toCell()});
 				}
 				else {
 					ROS_WARN("Contains front(%d,%d),curr(%d,%d),point(%d,%d)", passed_path_.front().toCell().x, passed_path_.front().toCell().y,
