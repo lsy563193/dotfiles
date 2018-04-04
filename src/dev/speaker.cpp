@@ -50,12 +50,12 @@ void Speaker::playRoutine()
 
 			_play();
 
-			if (break_playing_)
-				break_playing_ = false;
-
 			closePcmDriver();
 			ROS_INFO("%s %d: Finish playing voice:%d", __FUNCTION__, __LINE__, curr_voice_.type);
 			finish_playing_ = true;
+
+			if (break_playing_)
+				break_playing_ = false;
 		}
 		else
 			usleep(1000);
