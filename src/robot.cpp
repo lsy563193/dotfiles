@@ -768,24 +768,30 @@ void robot::updateRobotPositionForTest()
 bool robot::checkTilt() {
 	if (!gyro.isTiltCheckingEnable())
 		return false;
-	auto angle = gyro.getAngleR();
-	auto wheel_cliff_triggered = (wheel.getLeftWheelCliffStatus() || wheel.getRightWheelCliffStatus());
-	auto angle_triggered = angle > ANGLE_LIMIT;
-//	ROS_WARN("is_first_tilt = %d", is_first_tilt);
-//	ROS_WARN("angle_triggered(%d), wheel_cliff_triggered(%d)", angle_triggered, wheel_cliff_triggered);
-	if (!angle_triggered && !wheel_cliff_triggered) {
-		is_first_tilt = true;
-		return false;
-	}
+	auto angle_triggered = gyro.getAngleR() > ANGLE_LIMIT;
+	auto wheel_cliff_triggered = wheel.getLeftWheelCliffStatus() || wheel.getRightWheelCliffStatus();
 
-	if (is_first_tilt) {
-		is_first_tilt = false;
-		tilt_time = ros::Time::now().toSec();
+	if(!angle_triggered)
+		angle_tilt_time_ = 0;
+	if(!wheel_cliff_triggered)
+		wheel_tilt_time_= 0;
+	if(!angle_triggered && !wheel_cliff_triggered)
+		return false;
+
+	//For angle triggered
+	if(angle_triggered) {
+		angle_tilt_time_ = angle_tilt_time_ == 0 ? ros::Time::now().toSec() : angle_tilt_time_;
+		auto ret = ros::Time::now().toSec() - angle_tilt_time_ > ANGLE_TIME_LIMIT;
+		ROS_WARN_COND(ret,"%s,%d,time_now:%lf,angle_tilt_time_:%lf",__FUNCTION__,__LINE__,ros::Time::now().toSec(),angle_tilt_time_);
+		return ret;
 	}
-	auto time_limit = !wheel_cliff_triggered ? ANGLE_TIME_LIMIT : WHELL_CLIFF_TIME_LIMIT;
-	if(ros::Time::now().toSec() - tilt_time > time_limit)
-		ROS_WARN("angle = %f", angle);
-	return  ros::Time::now().toSec() - tilt_time > time_limit;
+	//For wheel_cliff triggered
+	if(wheel_cliff_triggered) {
+		wheel_tilt_time_ = wheel_tilt_time_ == 0 ? ros::Time::now().toSec() : wheel_tilt_time_;
+		auto ret = ros::Time::now().toSec() - wheel_tilt_time_ > WHELL_CLIFF_TIME_LIMIT;
+		ROS_WARN_COND(ret,"%s,%d,time_now:%lf,wheel_tilt_time_:%lf",__FUNCTION__,__LINE__,ros::Time::now().toSec(),wheel_tilt_time_);
+		return ret;
+	}
 }
 
 bool robot::checkTiltToSlip() {
