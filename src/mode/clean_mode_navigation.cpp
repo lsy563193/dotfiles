@@ -427,6 +427,7 @@ void CleanModeNav::remoteSpot(bool state_now, bool state_last)
 {
 	if (isStateClean() || isStateSpot() || isStatePause())
 	{
+		ROS_INFO("%s %d: Remote spot.", __FUNCTION__, __LINE__);
 		ev.remote_spot = true;
 		beeper.beepForCommand(VALID);
 	}
