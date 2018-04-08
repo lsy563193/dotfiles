@@ -240,8 +240,8 @@ private:
 	bool is_tf_ready_{};
 
 	bool temp_spot_set_{};
-	bool battery_low_{};
-	bool battery_low2_{};
+	bool battery_low_{false};
+	bool battery_low2_{false};
 
 	tf::Vector3	robot_pos;
 	double	robot_rad;
