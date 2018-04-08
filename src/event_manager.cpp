@@ -565,9 +565,6 @@ void event_manager_reset_status(void)
 	ev.oc_wheel_left = false;
 	ev.oc_wheel_right = false;
 	ev.oc_vacuum = false;
-	brush.oc_left_cnt_ = 0;
-	brush.oc_main_cnt_ = 0;
-	brush.oc_right_cnt_ = 0;
 	g_oc_wheel_left_cnt = 0;
 	g_oc_wheel_right_cnt = 0;
 	g_oc_suction_cnt = 0;
@@ -778,11 +775,8 @@ void EventHandle::rcon_right(bool state_now, bool state_last)
 void EventHandle::overCurrentBrushLeft(bool state_now, bool state_last)
 {
 
-}
-void df_over_current_brush_left(bool state_now, bool state_last)
-{
 	//ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
-	if (!ev.fatal_quit && brush.leftIsStall())
+	if (!ev.fatal_quit && brush.checkLeftBrushTwined())
 	{
 		error.set(ERROR_CODE_LEFTBRUSH);
 		ev.fatal_quit = true;
@@ -797,11 +791,9 @@ void EventHandle::overCurrentBrushMain(bool state_now, bool state_last)
 }
 
 void EventHandle::overCurrentBrushRight(bool state_now, bool state_last)
-{}
-void df_over_current_brush_right(bool state_now, bool state_last)
 {
 	//ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
-	if (!ev.fatal_quit && brush.rightIsStall())
+	if (!ev.fatal_quit && brush.checkRightBrushTwined())
 	{
 		error.set(ERROR_CODE_RIGHTBRUSH);
 		ev.fatal_quit = true;
