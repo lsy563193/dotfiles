@@ -15,7 +15,7 @@ ModeGoToCharger::ModeGoToCharger()
 
 	serial.setWorkMode(WORK_MODE);
 	speaker.play(VOICE_BACK_TO_CHARGER, false);
-    sp_state = st_go_charge.get();
+	sp_state = st_init.get();
 	sp_state->init();
 	sp_action_.reset(new ActionOpenGyro);
 	action_i_ = ac_open_gyro;
@@ -76,6 +76,7 @@ int ModeGoToCharger::getNextAction()
 	PP_INFO();
 	if(action_i_ == ac_open_gyro || (action_i_ == ac_exception_resume && !ev.fatal_quit))
 	{
+		sp_state = st_go_to_charger.get();
 		sp_state->init();
 		return ac_go_to_charger;
 	}

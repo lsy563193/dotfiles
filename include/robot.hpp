@@ -219,7 +219,6 @@ public:
 		return robot_current_;
 	}
 
-	time_t wake_up_time_= time(NULL);
 	boost::shared_ptr<Mode> p_mode{};
 	uint8_t getWorkMode()
 	{
@@ -301,9 +300,9 @@ private:
 	//for check tilt
 	const double ANGLE_LIMIT{5};
 	const double ANGLE_TIME_LIMIT{1};
-	const double WHELL_CLIFF_TIME_LIMIT{0.25};
-	double tilt_time = 0;
-	bool is_first_tilt{true};
+	const double WHELL_CLIFF_TIME_LIMIT{10};
+	double angle_tilt_time_{0};
+	double wheel_tilt_time_{0};
 
 	//for check tilt
 	const double ANGLE_LIMIT_TO_SLIP{3};

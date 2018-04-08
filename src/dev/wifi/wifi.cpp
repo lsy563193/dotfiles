@@ -79,7 +79,7 @@ bool S_Wifi::init()
 			[&]( const wifi::RxMsg &a_msg ) {
 				is_wifi_connected_ = false;
 				wifi_led.setMode(LED_STEADY, WifiLed::state::off);
-				//speaker.play( VOICE_WIFI_UNCONNECTED,false);
+				//speaker.play( VOICE_WIFI_UNCONNECTED_UNOFFICIAL,false);
 			});
 
 	//cloud connect
@@ -101,7 +101,7 @@ bool S_Wifi::init()
 				[this](const wifi::RxMsg &a_msg){
 				is_wifi_connected_ = false;
 				wifi_led.setMode(LED_STEADY,WifiLed::state::off);
-				//speaker.play(VOICE_CLOUD_UNCONNECTED,false);
+				//speaker.play(VOICE_CLOUD_UNCONNECTED_UNOFFICIAL,false);
 				});
 
 	//-----app query -----
@@ -189,9 +189,9 @@ bool S_Wifi::init()
 				const wifi::SetMaxCleanPowerRxMsg &msg = static_cast<const wifi::SetMaxCleanPowerRxMsg&>( a_msg );
 				if (!water_tank.checkEquipment(true))
 					if(msg.isMop())
-						water_tank.setMode(WaterTank::PUMP_HIGH);
+						water_tank.setPumpMode(WaterTank::PUMP_HIGH);
 					else
-						water_tank.setMode(WaterTank::PUMP_MID);
+						water_tank.setPumpMode(WaterTank::PUMP_MID);
 				else
 					vacuum.isMaxInClean(msg.isVacuum());
 				//ack
@@ -517,6 +517,9 @@ bool S_Wifi::uploadMap()
 	int byte_cnt=0;
 	//ROS_INFO("\033[1;33m realtime map send work mode = %d\033[0m", (int)getWorkMode());
 
+	if(robot::instance()->p_mode->getNextMode() != Mode::cm_navigation)
+		return false;
+
 	if(map_data_buf_->size()  == 0)
 		return false;
 
@@ -689,7 +692,9 @@ uint8_t S_Wifi::setRobotCleanMode(wifi::WorkMode work_mode)
 			break;
 
 		case wifi::WorkMode::FIND:
-			speaker.play(VOICE_IM_HERE,false);
+#if DEBUG_ENABLE
+			speaker.play(VOICE_IM_HERE_UNOFFICIAL,false);
+#endif
 			beeper.beepForCommand(true);
 			INFO_BLUE("remote app find home mode command ");
 			break;
@@ -733,7 +738,25 @@ uint8_t S_Wifi::appRemoteCtl(wifi::RemoteControlRxMsg::Cmd data)
 			break;
 	}
 	return 0;
-}	
+}
+
+uint8_t S_Wifi::syncClock(int year,int mon,int day,int hour,int minu,int sec)
+{
+	char date_time[50];
+	sprintf(date_time,"date -s \"%02d-%02d-%02d %02d:%02d:%02d\""
+				,year,mon,day,hour,minu,sec);
+	system(date_time);
+	
+	robot_timer.initWorkTimer();
+//	IAction::updateStartTime();
+
+	struct tm *local_time;
+	time_t ltime;
+	time(&ltime);
+	local_time = localtime(&ltime);
+	ROS_INFO("%s,%d,local time %s",__FUNCTION__,__LINE__,asctime(local_time));
+	return 0;
+}
 
 uint8_t S_Wifi::rebind()
 {
@@ -741,7 +764,9 @@ uint8_t S_Wifi::rebind()
 	wifi::ForceUnbindTxMsg p(0x00);//no responed
 	s_wifi_tx_.push(std::move(p)).commit();
 	is_wifi_connected_ = false;
+#if DEBUG_ENABLE
 	//speaker.play(VOICE_WIFI_UNBIND,false);
+#endif
 	return 0;
 }
 
@@ -750,7 +775,10 @@ uint8_t S_Wifi::smartLink()
 	INFO_BLUE("SMART LINK");
 	wifi::SmartLinkTxMsg p(0x00);//no responed
 	s_wifi_tx_.push( std::move(p)).commit();
-	speaker.play(VOICE_WIFI_SMART_LINK,false);
+#if DEBUG_ENABLE
+	//speaker.play(VOICE_WIFI_SMART_LINK_UNOFFICIAL,false);
+	speaker.play(VOICE_WIFI_CONNECTING,false);
+#endif
 	wifi_led.setMode(LED_FLASH,WifiLed::state::on);
 	in_linking_ = true;
 	return 0;
@@ -1007,7 +1035,7 @@ uint8_t S_Wifi::setSchedule(const wifi::SetScheduleRxMsg &sche)
 
 	if(isScheSet_n>0){
 		uint32_t mint = appmt_obj.getLastAppointment();
-		robot_timer.setPlan2Bottom(mint);
+		robot_timer.setPlan2Bottom(mint,isScheSet_n);
 		if(last_sche_n < isScheSet_n)
 			speaker.play(VOICE_APPOINTMENT_DONE);
 		last_sche_n = isScheSet_n;
@@ -1123,7 +1151,7 @@ void S_Wifi::wifi_send_routine()
 				continue;
 			upload_map_count++;
 			upload_state_count++;
-			if(upload_map_count >= (is_Status_Request_?5:20))
+			if(upload_map_count >= (is_Status_Request_?3:10))
 			{
 				this->uploadMap();
 				upload_map_count=0;

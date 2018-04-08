@@ -28,7 +28,10 @@ class Appmt
 public:
 
 	Appmt();
+
 	bool set(Appointment::st_appmt &apmt);
+
+	bool set(uint8_t appTime);
 
 	std::vector<Appointment::st_appmt> get();
 
@@ -54,6 +57,7 @@ private:
 	bool setorget_;
 	uint32_t appointment_count_;
 	uint32_t appointment_time_;
+	bool appointment_change_;
 	pthread_mutex_t appmt_lock_;
 
 

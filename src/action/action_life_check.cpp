@@ -408,7 +408,7 @@ bool ActionLifeCheck::checkCurrent()
 		error_code_ = VACUUM_CURRENT_ERROR; // todo:*/
 
 	uint16_t side_brush_current_ref_{1675 - 1620}; // 55
-	uint16_t main_brush_current_ref_{1785 - 1620}; // 165
+	uint16_t main_brush_current_ref_{1820 - 1620}; // 200
 	uint16_t wheel_current_ref_{1685 - 1620}; // 65
 	uint16_t vacuum_current_ref_{2285 - 1620}; // 665
 	uint16_t water_tank_current_ref_{0};

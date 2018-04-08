@@ -43,106 +43,6 @@ void APathAlgorithm::displayPointPath(const Points &point_path)
 	ROS_INFO("%s",msg.c_str());
 }
 
-//void APathAlgorithm::optimizePath(GridMap &map, Cells& path)
-//{
-//	// Optimize only if the path have more than 3 cells.
-//	if (path.size() > 3) {
-//		ROS_INFO("%s %d: Start optimizing Path",__FUNCTION__,__LINE__);
-//		auto it = path.begin();
-//		for (uint16_t i = 0; i < path.size() - 3; i++) {
-//			ROS_DEBUG("%s %d: i: %d, size: %ld.", __FUNCTION__, __LINE__, i, path.size());
-//			auto it_ptr1 = it;
-//
-//			auto it_ptr2 = it_ptr1;
-//			it_ptr2++;
-//
-//			auto it_ptr3 = it_ptr2;
-//			it_ptr3++;
-//
-//			// Just for protection, in case the iterator overflow. It should not happen under (i < path_points.size() - 3).
-//			if (it_ptr3 == path.end())
-//				break;
-//
-//			if (it_ptr2->x == it_ptr3->x) {		// x coordinates are the same for p1, p2, find a better y coordinate.
-//				int16_t x_min, x_max;
-//				x_min = x_max = it_ptr2->x;
-//
-//				int16_t	ei, ej, si, sj;
-//				sj = it_ptr1->x > it_ptr2->x ? it_ptr2->x : it_ptr1->x;
-//				ej = it_ptr1->x > it_ptr2->x ? it_ptr1->x : it_ptr2->x;
-//				si = it_ptr2->y > it_ptr3->y ? it_ptr3->y : it_ptr2->y;
-//				ei = it_ptr2->y > it_ptr3->y ? it_ptr2->y : it_ptr3->y;
-//
-//				bool blocked_min, blocked_max;
-//				blocked_min = blocked_max = false;
-//				while (!blocked_min || !blocked_max) {
-//					for (int16_t j = si; j <= ei && (!blocked_min || !blocked_max); j++) {
-//						if (!blocked_min && (x_min - 1 < sj ||
-//								map.getCell(COST_MAP, x_min - 1, j) == COST_HIGH)) {
-//							blocked_min = true;
-//						}
-//						if (!blocked_max && (x_max + 1 > ej ||
-//								map.getCell(COST_MAP, x_max + 1, j) == COST_HIGH)) {
-//							blocked_max = true;
-//						}
-//					}
-//					if (!blocked_min) {
-//						x_min--;
-//					}
-//					if (!blocked_max) {
-//						x_max++;
-//					}
-//				}
-//
-//				if ((it_ptr3->x != (x_min + x_max) / 2) && (it_ptr1->x != (x_min + x_max) / 2))
-//					it_ptr2->x = it_ptr3->x = (x_min + x_max) / 2;
-//
-//				//ROS_INFO("%s %d: Loop i:%d\tx_min_forward: %d\tx_max_forward: %d\tget x:%d", __FUNCTION__, __LINE__, i, x_min_forward, x_max_forward, (x_min_forward + x_max_forward) / 2);
-//			} else {
-//				int16_t y_min, y_max;
-//				y_min = y_max = it_ptr2->y;
-//
-//				int16_t	ei, ej, si, sj;
-//				sj = it_ptr1->y > it_ptr2->y ? it_ptr2->y : it_ptr1->y;
-//				ej = it_ptr1->y > it_ptr2->y ? it_ptr1->y : it_ptr2->y;
-//				si = it_ptr2->x > it_ptr3->x ? it_ptr3->x : it_ptr2->x;
-//				ei = it_ptr2->x > it_ptr3->x ? it_ptr2->x : it_ptr3->x;
-//
-//				bool blocked_min, blocked_max;
-//				blocked_min = blocked_max = false;
-//				while (!blocked_min || !blocked_max) {
-//					for (int16_t j = si; j <= ei && (!blocked_min || !blocked_max); j++) {
-//						if (!blocked_min && (y_min - 1 < sj ||
-//								map.getCell(COST_MAP, j, y_min - 1) == COST_HIGH)) {
-//							blocked_min = true;
-//						}
-//						if (!blocked_max && (y_max + 1 > ej ||
-//								map.getCell(COST_MAP, j, y_max + 1) == COST_HIGH)) {
-//							blocked_max = true;
-//						}
-//					}
-//					if (!blocked_min) {
-//						y_min--;
-//					}
-//					if (!blocked_max) {
-//						y_max++;
-//					}
-//				}
-//
-//				if ((it_ptr3->y != (y_min + y_max) / 2) && (it_ptr1->y != (y_min + y_max) / 2))
-//					it_ptr2->y = it_ptr3->y = (y_min + y_max) / 2;
-//				//ROS_INFO("%s %d: Loop i:%d\ty_min: %d\ty_max: %d\tget y:%d", __FUNCTION__, __LINE__, i, y_min, y_max, (y_min + y_max) / 2);
-//			}
-//
-//			it++;
-//		}
-//		displayCellPath(path);
-//	} else
-//		ROS_INFO("%s %d:Path too short(size: %ld), optimization terminated.", __FUNCTION__, __LINE__, path.size());
-//
-//}
-
-
 Points APathAlgorithm::cells_generate_points(Cells &path)
 {
 //	displayCellPath(path);
@@ -397,82 +297,20 @@ Cells APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const 
 	return path_;
 }
 
-bool APathAlgorithm::findTargetUsingDijkstra(GridMap &map, const Cell_t& curr_cell, Cell_t& target, int& cleaned_count)
-{
-	typedef std::multimap<double, Cell_t> Queue;
-	typedef std::pair<double, Cell_t> Entry;
-
-	map.reset(COST_MAP);
-	map.setCell(COST_MAP, curr_cell.x, curr_cell.y, COST_1);
-
-	Queue queue;
-	Entry startPoint(0.0, curr_cell);
-	cleaned_count = 1;
-	queue.insert(startPoint);
-	bool is_found = false;
-//	map.print(CLEAN_MAP,curr.x, curr.y);
-	ROS_INFO("Do full search with weightless Dijkstra-Algorithm\n");
-	while (!queue.empty())
-	{
-//		 Get the nearest next from the queue
-		auto start = queue.begin();
-		auto next = start->second;
-		queue.erase(start);
-
-//		ROS_WARN("adjacent cell(%d,%d)", next.x, next.y);
-		if (map.getCell(CLEAN_MAP, next.x, next.y) == UNCLEAN && map.isBlockAccessible(next.x, next.y) && next.y%2 == 0)
-		{
-			ROS_WARN("We find the Unclean next(%d,%d)", next.x, next.y);
-			is_found = true;
-			target = next;
-			break;
-		} else
-		{
-			for (auto it1 = 0; it1 < 4; it1++)
-			{
-				auto neighbor = next + cell_direction_[it1];
-//				ROS_INFO("g_index[%d],next(%d,%d)", it1, neighbor.x,neighbor.y);
-				if (map.getCell(COST_MAP, neighbor.x, neighbor.y) != COST_1) {
-//					ROS_INFO("(%d,%d),", neighbor.x, neighbor.y);
-
-					for (auto it2 = 0; it2 < 9; it2++) {
-						auto neighbor_ = neighbor + cell_direction_[it2];
-						if (map.getCell(CLEAN_MAP, neighbor_.x, neighbor_.y) == CLEANED &&
-								map.getCell(COST_MAP, neighbor_.x, neighbor_.y) == COST_NO)
-						{
-							cleaned_count++;
-							map.setCell(COST_MAP, neighbor_.x, neighbor_.y, COST_2);
-//							ROS_INFO("(%d,%d, cleaned_count(%d)),", neighbor_.x, neighbor_.y, cleaned_count);
-						}
-					}
-
-					if (map.isBlockAccessible(neighbor.x, neighbor.y)) {
-//						ROS_WARN("add to Queue:(%d,%d)", neighbor.x, neighbor.y);
-						queue.insert(Entry(0, neighbor));
-						map.setCell(COST_MAP, neighbor.x, neighbor.y, COST_1);
-					}
-				}
-			}
-		}
-	}
-//	cleaned_count = roscost_map.get_cleaned_area(curr);
-	return is_found;
-}
-
 bool APathAlgorithm::checkTrappedUsingDijkstra(GridMap &map, const Cell_t &curr_cell)
 {
-	int dijkstra_cleaned_count = 0;
-	Cells path{{0,0}};
-	Cell_t target;
-	// Check if there is any reachable target.
-	bool is_found = findTargetUsingDijkstra(map, curr_cell, target, dijkstra_cleaned_count);
-	if(is_found)
+	Cells targets;
+	// Use clean area proportion to judge if it is trapped.
+    int dijkstra_cleaned_count{};
+	auto is_trapped = map.count_if(curr_cell,[&](Cell_t c_it) {
+		return (map.getCell(CLEAN_MAP, c_it.x, c_it.y) == CLEANED);
+	},dijkstra_cleaned_count);
+    if(!is_trapped)
 		return false;
 
-	// Use clean area proportion to judge if it is trapped.
 	auto map_cleand_count = map.getCleanedArea();
 	double clean_proportion = static_cast<double>(dijkstra_cleaned_count) / static_cast<double>(map_cleand_count);
-	ROS_WARN("%s %d: dijkstra_cleaned_count(%d), map_cleand_count(%d), clean_proportion(%f) ,when prop < 0,8 is trapped",
+	ROS_ERROR("%s %d: !!!!!!!!!!!!!!!!!!!!!!!dijkstra_cleaned_count(%d), map_cleand_count(%d), clean_proportion(%f) ,when prop < 0,8 is trapped",
 					 __FUNCTION__, __LINE__, dijkstra_cleaned_count, map_cleand_count, clean_proportion);
 	return (clean_proportion < 0.8);
 }

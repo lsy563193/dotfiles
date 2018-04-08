@@ -16,6 +16,9 @@ ActionSleep::ActionSleep()
 	s_wifi.uploadStatus(0xc8,0x00);
 	s_wifi.sleep();
 
+	gyro.setOff();
+	gyro.resetStatus();
+
 	speaker.play(VOICE_NULL, false);
 	beeper.beep(1, 80, 0, 1);
 	usleep(100000);

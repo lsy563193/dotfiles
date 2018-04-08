@@ -10,7 +10,9 @@ CleanModeTest::CleanModeTest(uint8_t mode)
 {
 	ROS_WARN("%s %d: Entering Test mode\n=========================" , __FUNCTION__, __LINE__);
 	speaker.play(VOICE_TEST_MODE, false);
-	speaker.play(VOICE_SOFTWARE_VERSION, false);
+#if DEBUG_ENABLE
+	speaker.play(VOICE_SOFTWARE_VERSION_UNOFFICIAL, false);
+#endif
 	lidar.slipCheckingCtrl(OFF);
 	event_manager_set_enable(false);
 	test_mode_ = mode;

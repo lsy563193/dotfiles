@@ -21,10 +21,10 @@ CleanModeNav::CleanModeNav()
 	if(plan_activation_)
 	{
 		plan_activation_ = false;
-		speaker.play(VOICE_APPOINTMENT_START, false);
+//		speaker.play(VOICE_APPOINTMENT_START_UNOFFICIAL, false);
 	}
-	else
-		speaker.play(VOICE_CLEANING_START, false);
+//	else
+	speaker.play(VOICE_CLEANING_START, false);
 
 	has_aligned_and_open_slam_ = false;
 	paused_odom_radian_ = 0;
@@ -106,7 +106,7 @@ bool CleanModeNav::mapMark()
 //					ROS_INFO("in cfw(%d,%d),(%d,%d)", point.toCell().x, point.toCell().y, getPosition().toCell().x, getPosition().toCell().y);
 					ROS_WARN("Not Cont front(%d,%d),curr(%d,%d),point(%d,%d)", passed_path_.front().toCell().x, passed_path_.front().toCell().y,
 									 getPosition().toCell().x, getPosition().toCell().y, point.toCell().x, point.toCell().y);
-					c_blocks.insert({BLOCKED_FW, point.getRelative(0, dy * CELL_SIZE).toCell()});
+					c_blocks.insert({BLOCKED_FW, point.getCenterRelative(0, dy * CELL_SIZE).toCell()});
 				}
 				else {
 					ROS_WARN("Contains front(%d,%d),curr(%d,%d),point(%d,%d)", passed_path_.front().toCell().x, passed_path_.front().toCell().y,
@@ -428,6 +428,7 @@ void CleanModeNav::remoteSpot(bool state_now, bool state_last)
 {
 	if (isStateClean() || isStateSpot() || isStatePause())
 	{
+		ROS_INFO("%s %d: Remote spot.", __FUNCTION__, __LINE__);
 		ev.remote_spot = true;
 		beeper.beepForCommand(VALID);
 	}
@@ -446,7 +447,7 @@ void CleanModeNav::remoteMax(bool state_now, bool state_last)
 	{
 		beeper.beepForCommand(VALID);
 		vacuum.isMaxInClean(!vacuum.isMaxInClean());
-		speaker.play(vacuum.isMaxInClean() ? VOICE_CONVERT_TO_LARGE_SUCTION : VOICE_CONVERT_TO_NORMAL_SUCTION,false);
+		speaker.play(vacuum.isMaxInClean() ? VOICE_VACCUM_MAX : VOICE_CLEANING_NAVIGATION,false);
 		if(isStateClean() || isStateResumeLowBatteryCharge() || (isInitState()&& action_i_ > ac_open_gyro)) {
 			vacuum.setCleanState();
 		}
@@ -517,19 +518,19 @@ bool CleanModeNav::updateActionInStateInit() {
 		if (charger.isOnStub()){
 			action_i_ = ac_back_form_charger;
 			found_charger_ = true;
+			boost::dynamic_pointer_cast<StateInit>(state_init)->initBackFromCharge();
 		}
 		else{
 			action_i_ = ac_open_lidar;
-			boost::dynamic_pointer_cast<StateInit>(state_init)->init2();
+			boost::dynamic_pointer_cast<StateInit>(state_init)->initOpenLidar();
 		}
 	} else if (action_i_ == ac_back_form_charger)
 	{
-		if (!has_aligned_and_open_slam_)
-			// Init odom position here.
+		if (!has_aligned_and_open_slam_) // Init odom position here.
 			robot::instance()->initOdomPosition();
 
+		boost::dynamic_pointer_cast<StateInit>(state_init)->initOpenLidar();
 		action_i_ = ac_open_lidar;
-//		state_clean.get()->init();
 		setHomePoint();
 	} else if (action_i_ == ac_open_lidar)
 	{
@@ -671,7 +672,7 @@ void CleanModeNav::switchInStateClean() {
 		go_home_path_algorithm_.reset();
 		go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_, start_point_));
 		speaker.play(VOICE_BACK_TO_CHARGER, true);
-		s_wifi.appendTask(S_Wifi::ACT::ACT_UPLOAD_LAST_CLEANMAP);
+		//s_wifi.appendTask(S_Wifi::ACT::ACT_UPLOAD_LAST_CLEANMAP);
 	}
 	sp_state->init();
 	action_i_ = ac_null;

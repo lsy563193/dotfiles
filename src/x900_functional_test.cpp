@@ -27,6 +27,9 @@ void x900_functional_test(std::string serial_port, int baud_rate, std::string li
 	speaker.test();
 	// If you can not hear the voice, then speaker port has error, but there is no way to test it by software.
 
+	// Wait for the end of voice playing
+	speaker.play(VOICE_NULL, false);
+	usleep(200000);
 	// Test item: Serial port.
 	test_result = serial_port_test();
 	if (test_result)
@@ -46,9 +49,6 @@ void x900_functional_test(std::string serial_port, int baud_rate, std::string li
 
 	recei_thread_enable = true;
 
-	// Wait for the end of voice playing
-	speaker.play(VOICE_NULL, false);
-	usleep(2000);
 	// Test hardware from main board.
 	main_board_test(test_stage, error_code, current_data);
 	if (error_code)
@@ -65,6 +65,7 @@ void x900_functional_test(std::string serial_port, int baud_rate, std::string li
 	serial.setSendData(CTL_LED_RED, 0);
 	serial.setSendData(CTL_MIX, 0);
 	infrared_display.displayNormalMsg(0, 9999);
+	serial.sendData();
 	ROS_INFO("%s %d: Test finish.", __FUNCTION__, __LINE__);
 	while (ros::ok())
 	{
@@ -72,6 +73,7 @@ void x900_functional_test(std::string serial_port, int baud_rate, std::string li
 		{
 			alarm_time = ros::Time::now().toSec();
 			speaker.play(VOICE_TEST_SUCCESS);
+			serial.sendData();
 			ROS_INFO("%s %d: Test finish.", __FUNCTION__, __LINE__);
 		}
 	}
@@ -307,6 +309,7 @@ void main_board_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &curren
 				break;
 			case FUNC_MAINBRUSH_TEST_MODE:/*--- main brush ---*/
 				main_brush_test(baseline, test_stage, error_code, current_data);
+				break;
 			case FUNC_CHARGE_CURRENT_TEST_MODE:/*---charge current---*/
 				charge_current_test(is_fixture, test_stage, error_code, current_data);
 				break;
@@ -554,10 +557,10 @@ void electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixture,
 				}
 				else {
 					temp_sum = (temp_sum / 10 - baseline[REF_VOLTAGE_ADC]) * 330 * 20 / 4096;
-						if(temp_sum < 100 || temp_sum > 180)
+						if(temp_sum < 150 || temp_sum > 230)
 						{
 							ROS_INFO("baseline current: %d",temp_sum);
-							if(temp_sum < 40)
+							if(temp_sum < 150)
 								error_code = BASELINE_CURRENT_LOW;
 							else
 								error_code = BASELINE_CURRENT_ERROR;
@@ -1007,10 +1010,11 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 			serial.sendData();
 			continue;
 		}
+		ROS_INFO("L: %d, R: %d", buf[10], buf[11]);
 		switch(step) {
 			case 1:
-				serial.setSendData(CTL_WHEEL_LEFT_HIGH, 300 >> 8);
-				serial.setSendData(CTL_WHEEL_LEFT_LOW, 300 & 0xFF);
+				serial.setSendData(CTL_WHEEL_LEFT_HIGH, 200 >> 8);
+				serial.setSendData(CTL_WHEEL_LEFT_LOW, 200 & 0xFF);
 				count++;
 				if (count > 50) {
 					current_current = 0;
@@ -1034,7 +1038,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				break;
 			case 3:
 				step++;
-				if (current_current < 30 || current_current > 100 || motor_current < 20 || motor_current > 100) {
+				if (current_current < 30 || current_current > 150 || motor_current < 20 || motor_current > 100) {
 					error_code = LEFT_WHEEL_FORWARD_CURRENT_ERROR;
 					current_data = static_cast<uint16_t>(motor_current);
 					return ;
@@ -1045,7 +1049,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				break;
 			case 4:
 				step++;
-				if (buf[4] > 95 || buf[4] < 50) {
+				if (buf[4] > 90 || buf[4] < 40) {
 					error_code = LEFT_WHEEL_FORWARD_PWM_ERROR;
 					current_data = buf[4];
 					return ;
@@ -1071,8 +1075,8 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				}
 				break;
 			case 6:
-				serial.setSendData(CTL_WHEEL_LEFT_HIGH, -300 >> 8);
-				serial.setSendData(CTL_WHEEL_LEFT_LOW, -300 & 0xFF);
+				serial.setSendData(CTL_WHEEL_LEFT_HIGH, -200 >> 8);
+				serial.setSendData(CTL_WHEEL_LEFT_LOW, -200 & 0xFF);
 				count++;
 				if (count > 50) {
 					current_current = 0;
@@ -1096,7 +1100,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				break;
 			case 8:
 				step++;
-				if (current_current < 30 || current_current > 100 || motor_current < 20 || motor_current > 100) {
+				if (current_current < 30 || current_current > 150 || motor_current < 20 || motor_current > 100) {
 					error_code = LEFT_WHEEL_BACKWARD_CURRENT_ERROR;
 					current_data = static_cast<uint16_t>(motor_current);
 					return ;
@@ -1107,7 +1111,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				break;
 			case 9:
 				step++;
-				if (buf[4] > 95 || buf[4] < 50) {
+				if (buf[4] > 90 || buf[4] < 40) {
 					error_code = LEFT_WHEEL_BACKWARD_PWM_ERROR;
 					current_data = buf[4];
 					return ;
@@ -1133,8 +1137,8 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				}
 				break;
 			case 11:
-				serial.setSendData(CTL_WHEEL_LEFT_HIGH, 300 >> 8);
-				serial.setSendData(CTL_WHEEL_LEFT_LOW, 300 & 0xFF);
+				serial.setSendData(CTL_WHEEL_LEFT_HIGH, 200 >> 8);
+				serial.setSendData(CTL_WHEEL_LEFT_LOW, 200 & 0xFF);
 				serial.setSendData(CTL_LEFT_WHEEL_TEST_MODE, 1);
 				count++;
 				if (count > 50) {
@@ -1183,8 +1187,8 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 			case 14:
 				serial.setSendData(CTL_WHEEL_LEFT_HIGH, 0);
 				serial.setSendData(CTL_WHEEL_LEFT_LOW, 0);
-				serial.setSendData(CTL_WHEEL_RIGHT_HIGH, 300 >> 8);
-				serial.setSendData(CTL_WHEEL_RIGHT_LOW, 300 & 0xFF);
+				serial.setSendData(CTL_WHEEL_RIGHT_HIGH, 200 >> 8);
+				serial.setSendData(CTL_WHEEL_RIGHT_LOW, 200 & 0xFF);
 				count++;
 				if (count > 100) {
 					current_current = 0;
@@ -1208,7 +1212,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				break;
 			case 16:
 				step++;
-				if (current_current < 30 || current_current > 100 || motor_current < 20 || motor_current > 100) {
+				if (current_current < 30 || current_current > 150 || motor_current < 20 || motor_current > 100) {
 					error_code = RIGHT_WHEEL_FORWARD_CURRENT_ERROR;
 					current_data = motor_current;
 					return ;
@@ -1219,7 +1223,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				break;
 			case 17:
 				step++;
-				if (buf[7] > 95 || buf[7] < 50) {
+				if (buf[7] > 90 || buf[7] < 40) {
 					error_code = RIGHT_WHEEL_FORWARD_PWM_ERROR;
 					current_data = buf[7];
 					return ;
@@ -1245,8 +1249,8 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				}
 				break;
 			case 19:
-				serial.setSendData(CTL_WHEEL_RIGHT_HIGH, -300 >> 8);
-				serial.setSendData(CTL_WHEEL_RIGHT_LOW, -300 & 0xFF);
+				serial.setSendData(CTL_WHEEL_RIGHT_HIGH, -200 >> 8);
+				serial.setSendData(CTL_WHEEL_RIGHT_LOW, -200 & 0xFF);
 				count++;
 				if (count > 50) {
 					current_current = 0;
@@ -1270,7 +1274,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				break;
 			case 21:
 				step++;
-				if (current_current < 30 || current_current > 100 || motor_current < 20 || motor_current > 100) {
+				if (current_current < 30 || current_current > 150 || motor_current < 20 || motor_current > 100) {
 					error_code = RIGHT_WHEEL_BACKWARD_CURRENT_ERROR;
 					current_data = motor_current;
 					return ;
@@ -1281,7 +1285,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				break;
 			case 22:
 				step++;
-				if (buf[7] > 95 || buf[7] < 50) {
+				if (buf[7] > 90 || buf[7] < 40) {
 					error_code = RIGHT_WHEEL_BACKWARD_PWM_ERROR;
 					current_data = buf[7];
 					return ;
@@ -1306,8 +1310,8 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 					test_result |= 0x4000;
 				}
 			case 24:
-				serial.setSendData(CTL_WHEEL_RIGHT_HIGH, 300 >> 8);
-				serial.setSendData(CTL_WHEEL_RIGHT_LOW, 300 & 0xFF);
+				serial.setSendData(CTL_WHEEL_RIGHT_HIGH, 200 >> 8);
+				serial.setSendData(CTL_WHEEL_RIGHT_LOW, 200 & 0xFF);
 				serial.setSendData(CTL_RIGHT_WHEEL_TEST_MODE, 1);
 				count++;
 				if (count > 50) {
@@ -1693,7 +1697,7 @@ void main_brush_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_co
 				break;
 			case 3:
 				step++;
-				if (current_current < 100 || current_current > 300 || motor_current < 100 || motor_current > 300) {
+				if (current_current < 130 || current_current > 350 || motor_current < 100 || motor_current > 300) {
 					error_code = MAIN_BRUSH_CURRENT_ERROR;
 					current_data = static_cast<uint16_t>(motor_current);
 					return ;

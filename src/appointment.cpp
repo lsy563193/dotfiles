@@ -14,6 +14,7 @@ Appmt::Appmt()
 	//appointment_time_ = (uint32_t)ros::Time::now().toSec()/60;
 	setorget_ = false;
 	appointment_set_ = false;
+	appointment_change_ = false;
 	for(uint8_t i=0;i<10;i++)
 	{
 		apmt_l_.push_back({i,0,0,0,0});
@@ -26,6 +27,46 @@ bool Appmt::set(st_appmt &apmt)
 	MutexLock lock(&appmt_lock_);
 	setorget_ = true;
 	rd_routine(&apmt);
+	return true;
+}
+
+bool Appmt::set(uint8_t appTime)
+{
+	static bool set_appointment = false;
+	MutexLock lock(&appmt_lock_);
+	if(appTime & 0x80 && set_appointment == false)
+	{
+		set_appointment = true;
+		st_appmt apmt;
+		apmt.enable = 1;
+		apmt.hour = (appTime&0x7f)*15/60;
+		apmt.mint = (appTime&0x7f)*15/60%15;
+		setorget_ = true;
+		for(int i = 1;i<=7;i++)
+		{
+			apmt.num  = i;
+			apmt.week = i;
+			rd_routine(&apmt);
+		}
+	}
+	/*
+	else if(!(appTime & 0x80) && set_appointment == true)
+	{
+		set_appointment = false;
+		st_appmt apmt;
+		apmt.enable = 0;
+		apmt.hour = 0;
+		apmt.mint = 0;
+		setorget_ = true;
+		for(int i = 1;i<=7;i++)
+		{
+			apmt.num  = i;
+			apmt.week = i;
+			rd_routine(&apmt);
+		}
+	}
+	*/
+	
 	return true;
 }
 
@@ -54,6 +95,7 @@ int8_t Appmt::rd_routine(st_appmt *apmt_v)//read write routine
 	if(!setorget_)//get appointment 
 	{
 		//read from file
+
 		int offset = 0;
 		int len = 0;
 		do{
@@ -89,31 +131,18 @@ int8_t Appmt::rd_routine(st_appmt *apmt_v)//read write routine
 						apmt_l_[i].hour,
 						apmt_l_[i].mint);
 		}
+
+		appointment_change_ = false;
 	}
 	else//set appointment
 	{
 		//write to file
 		if(apmt_val != NULL)
 		{
+			appointment_change_ = true;
 			char tmp_buf[col_len] = {0};
 			int offset = apmt_val->num;
-			/*
-			if(apmt_val->week != 0x00)
-			{
-				for(int j = 0;j<7;j++)
-				{
-					if(apmt_val->week &(0x01<<j))
-					{
-						offset = j+1;
-						break;
-					}
-				}
-
-			else
-			{
-				offset = apmt_val->num;
-			}
-			*/
+			
 			int pos = lseek(fd,offset*col_len,SEEK_SET);
 			//ROS_INFO("offset %d",offset);
 			if( pos ==-1)
@@ -142,7 +171,6 @@ int8_t Appmt::rd_routine(st_appmt *apmt_v)//read write routine
 
 uint32_t Appmt::getLastAppointment()
 {
-
 	appointment_set_ = false;
 	struct Timer::DateTime date_time;
 	date_time = robot_timer.getRealTime();
@@ -153,7 +181,8 @@ uint32_t Appmt::getLastAppointment()
 	int cur_hour = 	date_time.hour;
 	int cur_mint = 	date_time.mint;
 	//get appointment
-	this->get();
+	if(appointment_change_)
+		this->get();
 	uint32_t mints[(int)apmt_l_.size()] = {24*60*7};
 	appointment_count_ = mints[0];
 

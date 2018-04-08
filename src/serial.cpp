@@ -14,6 +14,8 @@
 #include "wifi/wifi.h"
 #include "mode.hpp"
 
+using namespace SERIAL;
+
 boost::mutex send_stream_mutex;
 
 Serial serial;

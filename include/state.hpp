@@ -32,7 +32,9 @@ class StateInit: public State {
 public:
 	StateInit() = default;
 	void init() override;
-	void init2();
+	void initOpenLidar();
+	void initBackFromCharge();
+	void initForExploration();
 };
 
 class StateClean: public State {
@@ -51,9 +53,9 @@ public:
 //	IMoveType* setNextAction_();
 };
 
-class StateGoCharger: public State {
+class StateGoToCharger: public State {
 public:
-	StateGoCharger() = default;
+	StateGoToCharger() = default;
 	void init() override;
 //	IMoveType* setNextAction_();
 

@@ -4,7 +4,7 @@
 
 #include "ros/ros.h"
 #include "robot_timer.h"
-
+#include "serial.h"
 Timer robot_timer;
 
 void Timer::initWorkTimer(void)
@@ -50,14 +50,12 @@ bool Timer::trapTimeout(double duration)
 	return difftime(time(NULL), trap_start_time_) > duration;
 }
 
-void Timer::setPlan2Bottom(uint32_t mint)
+void Timer::setPlan2Bottom(uint32_t mint,bool appointment_set)
 {
-	mint=mint;
-}
-
-struct Timer::DateTime Timer::getClockFromBottom()
-{
-
+	uint16_t apt = appointment_set? (mint & 0x13ff):(mint & 0x23ff);
+	serial.setSendData(SERIAL::CTL_APPOINTMENT_H,apt>>8);
+	serial.setSendData(SERIAL::CTL_APPOINTMENT_L,apt&0x00ff);
+	ROS_INFO("%s,%d set minutes counter %d",__FUNCTION__,__LINE__,mint);
 }
 
 void Timer::setRealTime(Timer::DateTime date_time)
@@ -72,6 +70,23 @@ void Timer::setRealTime(Timer::DateTime date_time)
 				__FUNCTION__,__LINE__,
 				date_time_.year,date_time_.month,date_time_.day,
 				date_time_.hour,date_time.mint,date_time.sec);
+}
+
+void Timer::setRealTime(uint16_t real_time)
+{
+	time_t ltime = time(NULL);
+	struct tm *local_time = localtime(&ltime);
+
+	date_time_.year = (uint16_t)local_time->tm_year+1900;
+	date_time_.month = (uint8_t)local_time->tm_mon+1; 
+	date_time_.day = (uint8_t)local_time->tm_mday;
+	date_time_.hour = (uint8_t)real_time/60;
+	date_time_.mint = (uint8_t)real_time%60;
+	date_time_.sec = (uint8_t)local_time->tm_sec;
+	ROS_INFO("%s,%d,\033[1m %u/%u/%u %u:%u:%u\033[0m",
+				__FUNCTION__,__LINE__,
+				date_time_.year,date_time_.month,date_time_.day,
+				date_time_.hour,date_time_.mint,date_time_.sec);
 }
 
 uint32_t Timer::getRealTimeInMint()

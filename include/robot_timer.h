@@ -47,7 +47,7 @@ public:
 	}
 
 	void setPlanStatus(uint8_t Status) {
-		plan_status_ |= Status;
+		plan_status_ = Status;
 		if (plan_status_ != 0)
 			ROS_DEBUG("Plan status return %d.", plan_status_);
 	}
@@ -59,20 +59,21 @@ public:
 	/*
 	 * @brief set appointment to  bottom board
 	 * @param1 time in minutes
+	 * @param2 0b01 set appointment ,0b10 not set appointment
 	 */
-	void setPlan2Bottom(uint32_t time);
-
-	/*
-	 * @brief get clock from bottom board
-	 * @return time in struct DateTime
-	 */
-	struct DateTime getClockFromBottom();
+	void setPlan2Bottom(uint32_t time,bool appointment_set);
 
 	/*
 	 * @brief set real time to struct DataTime
 	 * @param1 date time
 	 */
 	void setRealTime(struct DateTime);
+
+	/*
+	 * @breif set time from bottom board
+	 * @param1 realtime in mints
+	 */
+	void setRealTime(uint16_t realtime);
 
 	struct DateTime getRealTime()
 	{

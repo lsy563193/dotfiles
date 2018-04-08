@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <time.h>
 #include "odom.h"
+#include "ros/ros.h"
 
 class IAction{
 public:
@@ -27,10 +28,9 @@ public:
 	// For test mode.
 	virtual void dataExtract(){};
 
+	double start_timer_;
 protected:
 	double timeout_interval_{};
-
-	double start_timer_;
 };
 
 class ActionOpenGyro :public IAction

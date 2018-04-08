@@ -12,7 +12,6 @@ FILE(GLOB PP_SRC
 	src/dev/brush.cpp
 	src/dev/bumper.cpp
 	src/dev/rcon.cpp
-	src/dev/robot_timer.cpp
 	src/dev/remote.cpp
 	src/dev/obs.cpp
 	src/dev/key_led.cpp
@@ -28,6 +27,7 @@ FILE(GLOB PP_SRC
 	src/dev/wifi_led.cpp
 
 	src/appointment.cpp
+	src/robot_timer.cpp
 
 	src/mode/state/state.cpp
 	src/mode/state/state_init.cpp
