@@ -38,7 +38,7 @@ public:
 	bool isActive()
 	{
 		if(appointment_set_) 
-			return ((uint32_t)(ros::Time::now().toSec()/60) - appointment_time_ ) >= min_;
+			return (uint32_t)(robot_timer.getRealTimeInMint() -  appointment_time_ ) >= appointment_count_;
 		else
 			return false;
 	}
@@ -52,7 +52,7 @@ private:
 	std::vector<Appointment::st_appmt> apmt_l_;
 	bool appointment_set_ ;
 	bool setorget_;
-	uint32_t min_;
+	uint32_t appointment_count_;
 	uint32_t appointment_time_;
 	pthread_mutex_t appmt_lock_;
 

@@ -16,6 +16,15 @@ public:
 		trap_start_time_ = time(NULL);
 	}
 
+	struct DateTime{
+		uint16_t year;
+		uint8_t day;
+		uint8_t month;
+		uint8_t hour;
+		uint8_t mint;
+		uint8_t sec;
+	};
+
 	void initWorkTimer(void);
 
 	uint32_t getWorkTime(void);
@@ -47,10 +56,38 @@ public:
 		return plan_status_;
 	}	
 
-	void setM0Plan(uint32_t mint);
+	/*
+	 * @brief set appointment to  bottom board
+	 * @param1 time in minutes
+	 */
+	void setPlan2Bottom(uint32_t time);
 
-	void getM0Clock(uint32_t time);
+	/*
+	 * @brief get clock from bottom board
+	 * @return time in struct DateTime
+	 */
+	struct DateTime getClockFromBottom();
 
+	/*
+	 * @brief set real time to struct DataTime
+	 * @param1 date time
+	 */
+	void setRealTime(struct DateTime);
+
+	struct DateTime getRealTime()
+	{
+		return date_time_;	
+	}
+
+	/*
+	 * @brief get real time in mintues
+	 * @return time in mintues
+	 */
+	uint32_t getRealTimeInMint();
+
+	uint32_t getRealTimeWeekDay();
+
+	char* asctime();
 private:
 	// Variable for plan status
 	uint8_t plan_status_;
@@ -59,6 +96,7 @@ private:
 	uint32_t saved_work_time_;
 	time_t wall_follow_start_time_;
 	time_t trap_start_time_;
+	struct DateTime date_time_;
 
 };
 

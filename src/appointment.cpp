@@ -83,13 +83,12 @@ int8_t Appmt::rd_routine(st_appmt *apmt_v)//read write routine
 						(uint8_t*)&apmt_l_[i].hour,
 						(uint8_t*)&apmt_l_[i].mint);
 
-			ROS_INFO("num %u enable %u weeks %u hour %u mint %u",apmt_l_[i].num,
+			ROS_INFO("get appointment num %u enable %u weeks %u hour %u mint %u",apmt_l_[i].num,
 						apmt_l_[i].enable,
 						apmt_l_[i].week,
 						apmt_l_[i].hour,
 						apmt_l_[i].mint);
 		}
-		ROS_INFO("%s,%d,get appointment success! ",__FUNCTION__,__LINE__);
 	}
 	else//set appointment
 	{
@@ -116,7 +115,7 @@ int8_t Appmt::rd_routine(st_appmt *apmt_v)//read write routine
 			}
 			*/
 			int pos = lseek(fd,offset*col_len,SEEK_SET);
-			ROS_INFO("offset %d",offset);
+			//ROS_INFO("offset %d",offset);
 			if( pos ==-1)
 			{
 				ROS_ERROR("%s,%d,lseek fail %d",__FUNCTION__,__LINE__,pos);
@@ -145,18 +144,18 @@ uint32_t Appmt::getLastAppointment()
 {
 
 	appointment_set_ = false;
-	time_t cur_sec = time(NULL);
-	struct tm* time_info;
-	time_info = localtime(&cur_sec);
+	struct Timer::DateTime date_time;
+	date_time = robot_timer.getRealTime();
 	ROS_INFO("%s,%d,cur time %s",__FUNCTION__,__LINE__,
-				asctime(time_info));
-	int cur_wday = 	time_info->tm_wday == 0?7:time_info->tm_wday;
-	int cur_hour = 	time_info->tm_hour;
-	int cur_mint = 	time_info->tm_min;
+				robot_timer.asctime());
+
+	int cur_wday = 	robot_timer.getRealTimeWeekDay();
+	int cur_hour = 	date_time.hour;
+	int cur_mint = 	date_time.mint;
 	//get appointment
 	this->get();
 	uint32_t mints[(int)apmt_l_.size()] = {24*60*7};
-	min_ = mints[0];
+	appointment_count_ = mints[0];
 
 	std::ostringstream msg("minutes from now:");
 	for(int i=0;i<apmt_l_.size();i++)
@@ -176,16 +175,16 @@ uint32_t Appmt::getLastAppointment()
 				mints[i] = ( diff_w < 0? (7+ diff_w):diff_w) *24*60 
 							+ diff_h*60
 							+ diff_m;
-			if(min_ > mints[i])
+			if(appointment_count_ > mints[i])
 			{
-				min_  = mints[i];
-				appointment_time_ = (uint32_t)ros::Time::now().toSec()/60;
+				appointment_count_  = mints[i];
+				appointment_time_ = (uint32_t)robot_timer.getRealTimeInMint();
 				appointment_set_ = true;
 			}
 		}
 		msg<<" ("<<i<<","<<(int)mints[i]<<")";
 	}
-	ROS_INFO("%s,%d,min_=%u ,  %s",__FUNCTION__,__LINE__,min_,msg.str().c_str());
-	return min_;
+	ROS_INFO("%s,%d,appointment_count_=%u ,  %s",__FUNCTION__,__LINE__,appointment_count_,msg.str().c_str());
+	return appointment_count_;
 }
 

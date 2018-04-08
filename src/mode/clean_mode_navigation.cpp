@@ -142,8 +142,9 @@ bool CleanModeNav::mapMark()
 	}
 
 	//tx pass path via serial wifi
-	s_wifi.uploadPassPath(passed_path_);
-	s_wifi.replyRobotStatus(0xc8,0x00);
+	//s_wifi.uploadPassPath(passed_path_);
+	//s_wifi.replyRobotStatus(0xc8,0x00);
+	s_wifi.cacheMapData(passed_path_);
 	c_blocks.clear();
 	passed_path_.clear();
 	return false;
@@ -305,7 +306,7 @@ void CleanModeNav::keyClean(bool state_now, bool state_last)
 
 	if (reset_wifi)
 	{
-		s_wifi.smartApLink();
+		s_wifi.appendTask(S_Wifi::ACT::ACT_SMART_AP_LINK);
 		sp_action_.reset();
 		sp_action_.reset(new ActionPause);
 	}
@@ -670,7 +671,7 @@ void CleanModeNav::switchInStateClean() {
 		go_home_path_algorithm_.reset();
 		go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_, start_point_));
 		speaker.play(VOICE_BACK_TO_CHARGER, true);
-		s_wifi.uploadLastCleanData();
+		s_wifi.appendTask(S_Wifi::ACT::ACT_UPLOAD_LAST_CLEANMAP);
 	}
 	sp_state->init();
 	action_i_ = ac_null;

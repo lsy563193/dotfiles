@@ -107,6 +107,8 @@ robot::robot()
 	auto event_handler_thread = new boost::thread(event_handler_thread_cb);
 	auto core_thread = new boost::thread(boost::bind(&robot::core_thread_cb,this));
 
+	auto wifi_send_thread = new boost::thread(boost::bind(&S_Wifi::wifi_send_routine,&s_wifi));
+
 	obs.control(ON);
 	ROS_INFO("%s %d: robot init done!", __FUNCTION__, __LINE__);
 }
@@ -508,7 +510,7 @@ void robot::runTestMode()
 
 void robot::runWorkMode()
 {
-	s_wifi.resume();
+	s_wifi.appendTask(S_Wifi::ACT::ACT_RESUME);
 	auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
 	send_thread_enable = true;
 

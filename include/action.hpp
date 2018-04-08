@@ -22,15 +22,15 @@ public:
 
 	virtual void run()=0;
 
-	static void updateStartTime();
+	void updateStartTime();
 
 	// For test mode.
 	virtual void dataExtract(){};
 
-	static double start_timer_;
-
 protected:
 	double timeout_interval_{};
+
+	double start_timer_;
 };
 
 class ActionOpenGyro :public IAction

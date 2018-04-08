@@ -26,8 +26,7 @@ ModeIdle::ModeIdle():
 	ROS_INFO("%s %d: Current battery voltage \033[32m%5.2f V\033[0m.", __FUNCTION__, __LINE__, (float)battery.getVoltage()/100.0);
 	/*---reset values for rcon handle---*/
 	// todo: first_time_seen_charger_ does not mean as words in reality. It is just the time that enter this mode.
-
-	s_wifi.replyRobotStatus(0xc8,0x00);
+	s_wifi.appendTask(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 //	// todo:debug
 //	infrared_display.displayErrorMsg(9, 1234, 101);
 	sp_state = st_pause.get() ;
@@ -301,8 +300,8 @@ void ModeIdle::remoteWifi(bool state_now,bool state_last)
 {
 	ROS_INFO("%s,%d,wifi state = %d ",__FUNCTION__,__LINE__,s_wifi.isConnected());
 	remote.reset();
-	s_wifi.rebind();
-	s_wifi.smartLink();
+	s_wifi.appendTask(S_Wifi::ACT::ACT_REBIND);
+	s_wifi.appendTask(S_Wifi::ACT::ACT_SMART_LINK);
 
 }
 

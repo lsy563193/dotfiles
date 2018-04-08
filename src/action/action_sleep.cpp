@@ -13,7 +13,7 @@ ActionSleep::ActionSleep()
 	ROS_INFO("%s %d: Start sleep action.", __FUNCTION__, __LINE__);
 	// Ensure the previous voice is finished before sleep.
 	wifi_led.set(false);
-	s_wifi.replyRobotStatus(0xc8,0x00);
+	s_wifi.uploadStatus(0xc8,0x00);
 	s_wifi.sleep();
 
 	speaker.play(VOICE_NULL, false);
