@@ -187,7 +187,7 @@ bool CleanModeNav::isExit()
 	{
 		if (ev.key_clean_pressed)
 		{
-			ROS_WARN("%s %d: Exit for ev.key_long_pressed during state %s.", __FUNCTION__, __LINE__,
+			ROS_WARN("%s %d: Exit for ev.key_clean_pressed during state %s.", __FUNCTION__, __LINE__,
 					 isStateGoHomePoint() ? "go home point" : "go to charger");
 			setNextMode(md_idle);
 			return true;
@@ -311,8 +311,7 @@ void CleanModeNav::keyClean(bool state_now, bool state_last)
 	}
 	else if (long_press)
 		ev.key_long_pressed = true;
-	else
-		ev.key_clean_pressed = true;
+	ev.key_clean_pressed = true;
 	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
 
 	key.resetTriggerStatus();
@@ -470,7 +469,7 @@ void CleanModeNav::chargeDetect(bool state_now, bool state_last)
 {
 	if (!ev.charge_detect)
 	{
-		if (isStateInit() && action_i_ == ac_back_form_charger)
+		if (isStateInit() && action_i_ == ac_back_from_charger)
 		{
 			if (sp_action_->isTimeUp())
 			{
@@ -502,7 +501,13 @@ void CleanModeNav::chargeDetect(bool state_now, bool state_last)
 
 // ------------------State init--------------------
 bool CleanModeNav::isSwitchByEventInStateInit() {
-	return checkEnterPause() || ACleanMode::isSwitchByEventInStateInit();
+	if (checkEnterPause() || ACleanMode::isSwitchByEventInStateInit())
+	{
+		if (action_i_ == ac_back_from_charger)
+			setHomePoint();
+		return true;
+	}
+	return false;
 }
 
 bool CleanModeNav::updateActionInStateInit() {
@@ -515,7 +520,7 @@ bool CleanModeNav::updateActionInStateInit() {
 		ROS_INFO("%s,%d,angle offset:%f",__FUNCTION__,__LINE__,radian_to_degree(paused_odom_radian_));
 
 		if (charger.isOnStub()){
-			action_i_ = ac_back_form_charger;
+			action_i_ = ac_back_from_charger;
 			found_charger_ = true;
 			boost::dynamic_pointer_cast<StateInit>(state_init)->initBackFromCharge();
 		}
@@ -523,7 +528,7 @@ bool CleanModeNav::updateActionInStateInit() {
 			action_i_ = ac_open_lidar;
 			boost::dynamic_pointer_cast<StateInit>(state_init)->initOpenLidar();
 		}
-	} else if (action_i_ == ac_back_form_charger)
+	} else if (action_i_ == ac_back_from_charger)
 	{
 		if (!has_aligned_and_open_slam_) // Init odom position here.
 			robot::instance()->initOdomPosition();
@@ -670,7 +675,6 @@ void CleanModeNav::switchInStateClean() {
 		ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_points_.size());
 		go_home_path_algorithm_.reset();
 		go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_, start_point_));
-		speaker.play(VOICE_BACK_TO_CHARGER, true);
 		s_wifi.uploadLastCleanData();
 	}
 	sp_state->init();
@@ -712,6 +716,7 @@ void CleanModeNav::switchInStateGoToCharger()
 			paused_odom_radian_ = odom.getRadian();
 			go_home_for_low_battery_ = false;
 			go_home_path_algorithm_.reset();
+			setFirstTimeGoHomePoint(true);
 		} else
 		{
 			// Reach charger and exit clean mode.
