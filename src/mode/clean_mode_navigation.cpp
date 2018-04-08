@@ -363,7 +363,7 @@ void CleanModeNav::remoteDirectionLeft(bool state_now, bool state_last)
 		ROS_INFO("%s %d: Remote right.", __FUNCTION__, __LINE__);
 		ev.remote_direction_left = true;
 	}
-	/*else if (sp_state == state_clean)
+	/*else if (sp_state == state_clean.get())
 	{
 		//todo: Just for testing.
 		beeper.beepForCommand(VALID);
@@ -372,8 +372,7 @@ void CleanModeNav::remoteDirectionLeft(bool state_now, bool state_last)
 				 battery.getVoltage(), continue_point_.x, continue_point_.y);
 		ev.battery_home = true;
 		go_home_for_low_battery_ = true;
-	}
-	*/
+	}*/
 	else
 		beeper.beepForCommand(INVALID);
 
@@ -574,7 +573,9 @@ void CleanModeNav::switchInStateInit() {
 	if (has_aligned_and_open_slam_) {
 		if (low_battery_charge_) {
 			low_battery_charge_ = false;
-			sp_state = state_resume_low_battery_charge.get();
+//			sp_state = state_resume_low_battery_charge.get();
+			// No need to go to continue point according to functional requirement v1.2.
+			sp_state = state_clean.get();
 		}
 		else{ // Resume from pause, because slam is not opened for the first time that open lidar action finished.
 			sp_state = sp_saved_states.back();
