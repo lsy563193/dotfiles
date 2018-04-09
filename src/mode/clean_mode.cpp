@@ -1612,7 +1612,7 @@ bool ACleanMode::checkEnterGoHomePointState()
 		sp_action_.reset();
 		sp_state = state_go_home_point.get();
 		sp_state->init();
-		speaker.play(VOICE_BACK_TO_CHARGER, true);
+		speaker.play(VOICE_GO_HOME_MODE);
 		if (go_home_path_algorithm_ == nullptr)
 			go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_, start_point_));
 		return true;

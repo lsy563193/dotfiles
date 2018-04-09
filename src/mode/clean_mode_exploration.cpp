@@ -11,7 +11,7 @@
 CleanModeExploration::CleanModeExploration()
 {
 	ROS_INFO("%s %d: Entering Exploration mode\n=========================" , __FUNCTION__, __LINE__);
-	speaker.play(VOICE_BACK_TO_CHARGER, false);
+	speaker.play(VOICE_GO_HOME_MODE, false);
 	mode_i_ = cm_exploration;
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
 	go_home_path_algorithm_.reset();
