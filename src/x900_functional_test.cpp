@@ -525,6 +525,42 @@ void electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixture,
 					current_data = baseline_voltage;
 					return ;
 				}
+				if(baseline[LEFT_WHEEL] < 1550 || baseline[LEFT_WHEEL] > 1700)
+				{
+					error_code = BASELINE_LEFT_WHEEL_CURRENT_ERROR;
+					current_data = baseline[LEFT_WHEEL];
+					return ;
+				}
+				if(baseline[RIGHT_WHEEL] < 1550 || baseline[RIGHT_WHEEL] > 1700)
+				{
+					error_code = BASELINE_RIGHT_WHEEL_CURRENT_ERROR;
+					current_data = baseline[RIGHT_WHEEL];
+					return ;
+				}
+				if(baseline[LEFT_BRUSH] < 1550 || baseline[LEFT_BRUSH] > 1700)
+				{
+					error_code = BASELINE_LEFT_BRUSH_CURRENT_ERROR;
+					current_data = baseline[LEFT_BRUSH];
+					return ;
+				}
+				if(baseline[MAIN_BRUSH] < 1550 || baseline[MAIN_BRUSH] > 1700)
+				{
+					error_code = BASELINE_MAIN_BRUSH_CURRENT_ERROR;
+					current_data = baseline[MAIN_BRUSH];
+					return ;
+				}
+				if(baseline[RIGHT_BRUSH] < 1550 || baseline[RIGHT_BRUSH] > 1700)
+				{
+					error_code = BASELINE_RIGHT_BRUSH_CURRENT_ERROR;
+					current_data = baseline[RIGHT_BRUSH];
+					return ;
+				}
+				if(baseline[VACUUM] < 1550 || baseline[VACUUM] > 1700)
+				{
+					error_code = BASELINE_VACUUM_CURRENT_ERROR;
+					current_data = baseline[VACUUM];
+					return ;
+				}
 				step++;
 				temp_sum = 0;
 				count_20ms = 0;
