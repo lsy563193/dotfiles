@@ -122,7 +122,18 @@ ACleanMode::~ACleanMode()
 			speaker.play(VOICE_CHECK_SWITCH, false);
 			ROS_WARN("%s %d: Switch is not on. Stop cleaning.", __FUNCTION__, __LINE__);
 		}
-		else if(mode_i_ != cm_exploration)
+		else if (ev.key_clean_pressed || ev.key_long_pressed)
+		{
+			if (mode_i_ != cm_exploration)
+				speaker.play(VOICE_CLEANING_FINISHED, false);
+			ROS_WARN("%s %d: Finish cleaning for key_clean_pressed or key_long_pressed.", __FUNCTION__, __LINE__);
+		}
+		else if ((seen_charger_during_cleaning_ || mode_i_ == cm_exploration) && !charger.getChargeStatus())
+		{
+			speaker.play(VOICE_BACK_TO_CHARGER_FAILED, false);
+			ROS_WARN("%s %d: Finish cleaning but failed to go to charger.", __FUNCTION__, __LINE__);
+		}
+		else if(!seen_charger_during_cleaning_ && mode_i_ != cm_exploration)
 		{
 			speaker.play(VOICE_CLEANING_FINISHED, false);
 			ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
@@ -881,7 +892,6 @@ bool ACleanMode::isExit()
 	}
 
 	if(ev.key_clean_pressed || ev.key_long_pressed){
-		ev.key_clean_pressed = false;
 		ROS_WARN("%s %d: Exit for remote key or clean key or long press clean key.", __FUNCTION__, __LINE__);
 		setNextMode(md_idle);
 		return true;
@@ -1506,6 +1516,9 @@ void ACleanMode::setHomePoint()
 	for (auto it : home_points_)
 		msg += "(" + std::to_string(it.toCell().x) + ", " + std::to_string(it.toCell().y) + "),";
 	ROS_INFO("%s %d: %s", __FUNCTION__, __LINE__, msg.c_str());
+
+	if (!seen_charger_during_cleaning_)
+		seen_charger_during_cleaning_ = true;
 }
 
 // ------------------Handlers--------------------------
@@ -1589,7 +1602,8 @@ void ACleanMode::switchInStateClean() {
 
 // ------------------State go home point--------------------
 bool ACleanMode::checkEnterGoHomePointState()
-{ if (ev.remote_home || ev.battery_home)
+{
+	if (ev.remote_home || ev.battery_home)
 	{
 		if (ev.remote_home)
 			remote_go_home_point = true;
@@ -1676,6 +1690,15 @@ void ACleanMode::switchInStateGoHomePoint()
 		sp_state = state_go_to_charger.get();
 		sp_state->init();
 		sp_action_.reset();
+		if (isFirstTimeGoHomePoint())
+		{
+			if (!isRemoteGoHomePoint() && !isGoHomePointForLowBattery())
+			{
+				if (seen_charger_during_cleaning_)
+					speaker.play(VOICE_CLEANING_FINISH_BACK_TO_CHARGER);
+			}
+			setFirstTimeGoHomePoint(false);
+		}
 	}
 	else // path is empty.
 	{

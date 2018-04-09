@@ -6,6 +6,7 @@
 #include <robot.hpp>
 #include "dev.h"
 #include "mode.hpp"
+#include "appointment.h"
 
 ModeRemote::ModeRemote()
 {//use dynamic then you can limit using derived class member
@@ -31,12 +32,12 @@ ModeRemote::ModeRemote()
 	key.resetTriggerStatus();
 	c_rcon.resetStatus();
 	remote.reset();
-	robot_timer.resetPlanStatus();
+	appmt_obj.resetPlanStatus();
 	event_manager_reset_status();
 
 	remote_mode_time_stamp_ = ros::Time::now().toSec();
 
-	s_wifi.replyRobotStatus(0xc8,0x00);
+	s_wifi.appendTask(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 	mode_i_ = md_remote;
 	IMoveType::sp_mode_ = this;
 }
@@ -67,6 +68,14 @@ bool ModeRemote::isExit()
 	{
 		ROS_WARN("%s %d: Exit to charge mode.", __FUNCTION__, __LINE__);
 		setNextMode(md_charge);
+		return true;
+	}
+
+	if (battery.isLow())
+	{
+		ROS_WARN("%s %d: Exit to idle mode for low battery(%.2fV).", __FUNCTION__, __LINE__, battery.getVoltage() / 100.0);
+		speaker.play(VOICE_BATTERY_LOW);
+		setNextMode(md_idle);
 		return true;
 	}
 

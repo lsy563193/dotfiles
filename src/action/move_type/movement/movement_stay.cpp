@@ -35,17 +35,13 @@ bool MovementStay::isFinish()
 		cliff_status_in_stay_ = cliff.getStatus();
 		tilt_status_in_stay_ = gyro.getTiltCheckingStatus();
 	}
-
-//	return ev.remote_direction_forward ||
-//		   ev.remote_direction_left ||
-//		   ev.remote_direction_right ||
-//		   ev.bumper_triggered ||
-//		   ev.cliff_triggered ||
+	ev.bumper_triggered = static_cast<uint8_t>(bumper_status_in_stay_ ? bumper_status_in_stay_ : ev.bumper_triggered);
+	ev.cliff_triggered = static_cast<uint8_t>(cliff_status_in_stay_ ? cliff_status_in_stay_: ev.cliff_triggered);
+	ev.tilt_triggered = static_cast<uint8_t>(tilt_status_in_stay_ ? tilt_status_in_stay_ : ev.tilt_triggered);
 	robot::instance()->lockScanCtrl();
 	ROS_ERROR("%s,%d, movementStay",__FUNCTION__, __LINE__);
 	robot::instance()->pubScanCtrl(true, true);
-    ROS_ERROR("%s,%d,movementStay",__FUNCTION__, __LINE__);
-	return isTimeUp() || bumper_status_in_stay_ /*|| cliff_status_in_stay_ || tilt_status_in_stay_*/;
+	return isTimeUp() || bumper_status_in_stay_ || cliff_status_in_stay_ || tilt_status_in_stay_;
 }
 
 void MovementStay::adjustSpeed(int32_t &left_speed, int32_t &right_speed)

@@ -483,21 +483,15 @@ bool MoveTypeFollowWall::isNewLineReach(GridMap &map)
 bool MoveTypeFollowWall::handleMoveBackEventRealTime(ACleanMode *p_clean_mode) {
 	ROS_ERROR("%s,%d, mt_fw",__FUNCTION__, __LINE__);
 	auto p_movement = boost::dynamic_pointer_cast<MovementStay>(sp_movement_);
-	ROS_ERROR("%s,%d, mt_fw",__FUNCTION__, __LINE__);
-	if (p_movement->bumper_status_in_stay_ || p_movement->cliff_status_in_stay_)
+    ROS_ERROR("%s,%d, mt_fw",__FUNCTION__, __LINE__);
+	if (p_movement->bumper_status_in_stay_ || p_movement->cliff_status_in_stay_ || p_movement->tilt_status_in_stay_)
 	{
+        ROS_ERROR("%s,%d, mt_fw",__FUNCTION__, __LINE__);
 		p_clean_mode->saveBlocks();
 		movement_i_ = mm_back;
-		sp_movement_.reset(new MovementBack(0.01, BACK_MAX_SPEED));
-		ROS_ERROR("%s,%d, mt_fw",__FUNCTION__, __LINE__);
-		return true;
-	}
-	else if(p_movement->tilt_status_in_stay_)
-	{
-		p_clean_mode->saveBlocks();
-		movement_i_ = mm_back;
-		sp_movement_.reset(new MovementBack(TILT_BACK_DISTANCE, BACK_MAX_SPEED));
-		ROS_ERROR("%s,%d, mt_fw",__FUNCTION__, __LINE__);
+		float back_distance= static_cast<float>(p_movement->bumper_status_in_stay_? 0.01 : 0.05);
+		back_distance = static_cast<float>(ev.tilt_triggered ? TILT_BACK_DISTANCE : back_distance);
+		sp_movement_.reset(new MovementBack(back_distance, BACK_MAX_SPEED));
 		return true;
 	}
 	return false;

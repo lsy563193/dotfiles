@@ -240,8 +240,8 @@ private:
 	bool is_tf_ready_{};
 
 	bool temp_spot_set_{};
-	bool battery_low_{};
-	bool battery_low2_{};
+	bool battery_low_{false};
+	bool battery_low2_{false};
 
 	tf::Vector3	robot_pos;
 	double	robot_rad;
@@ -301,8 +301,8 @@ private:
 	const double ANGLE_LIMIT{5};
 	const double ANGLE_TIME_LIMIT{1};
 	const double WHELL_CLIFF_TIME_LIMIT{10};
-	double tilt_time = 0;
-	bool is_first_tilt{true};
+	double angle_tilt_time_{0};
+	double wheel_tilt_time_{0};
 
 	//for check tilt
 	const double ANGLE_LIMIT_TO_SLIP{3};

@@ -6,6 +6,8 @@
 #include "error.h"
 #include "dev.h"
 #include "mode.hpp"
+#include "appointment.h"
+
 ModeCharge::ModeCharge()
 {
 	ROS_INFO("%s %d: Entering Charge mode\n=========================" , __FUNCTION__, __LINE__);
@@ -15,7 +17,7 @@ ModeCharge::ModeCharge()
 	key.resetTriggerStatus();
 	c_rcon.resetStatus();
 	remote.reset();
-	robot_timer.resetPlanStatus();
+	appmt_obj.resetPlanStatus();
 	event_manager_register_handler(this);
 	event_manager_reset_status();
 	event_manager_set_enable(true);
@@ -134,25 +136,25 @@ void ModeCharge::keyClean(bool state_now, bool state_last)
 
 void ModeCharge::remotePlan(bool state_now, bool state_last)
 {
-	if (robot_timer.getPlanStatus() == 1)
+	if (appmt_obj.getPlanStatus() == 1)
 	{
 		beeper.beepForCommand(VALID);
 		speaker.play(VOICE_APPOINTMENT_DONE);
 		ROS_WARN("%s %d: Plan received.", __FUNCTION__, __LINE__);
 	}
-	else if (robot_timer.getPlanStatus() == 2)
+	else if (appmt_obj.getPlanStatus() == 2)
 	{
 		beeper.beepForCommand(VALID);
 		speaker.play(VOICE_APPOINTMENT_DONE);
 //		speaker.play(VOICE_CANCEL_APPOINTMENT_UNOFFICIAL);
 		ROS_WARN("%s %d: Plan cancel received.", __FUNCTION__, __LINE__);
 	}
-	else if (robot_timer.getPlanStatus() == 3)
+	else if (appmt_obj.getPlanStatus() == 3)
 	{
 		ROS_WARN("%s %d: Plan activated.", __FUNCTION__, __LINE__);
 		// Sleep for 50ms cause the status 3 will be sent for 3 times.
 		usleep(50000);
 		plan_activated_status_ = true;
 	}
-	robot_timer.resetPlanStatus();
+	appmt_obj.resetPlanStatus();
 }

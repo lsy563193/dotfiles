@@ -170,6 +170,10 @@ bool MovementExceptionResume::isFinish()
 	// Check for right wheel.
 	if (ev.oc_wheel_left || ev.oc_wheel_right)
 	{
+		if (brush.isOn())
+			brush.stop();
+		vacuum.stop();
+		water_tank.stop(WaterTank::tank_pump);
 		if (ros::Time::now().toSec() - resume_wheel_start_time_ >= 1)
 		{
 			if (wheel.getLeftWheelOc() || wheel.getRightWheelOc())

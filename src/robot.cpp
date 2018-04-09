@@ -11,15 +11,15 @@
 #include "lidar.hpp"
 #include "robot.hpp"
 #include "slam.h"
-
-
 #include "action.hpp"
 #include "movement.hpp"
 #include "move_type.hpp"
 #include "state.hpp"
 #include "mode.hpp"
+#include "appointment.h"
 #include "std_srvs/Empty.h"
 
+using namespace SERIAL;
 
 pthread_mutex_t recev_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t  recev_cond = PTHREAD_COND_INITIALIZER;
@@ -106,6 +106,8 @@ robot::robot()
 	auto event_manager_thread = new boost::thread(event_manager_thread_cb);
 	auto event_handler_thread = new boost::thread(event_handler_thread_cb);
 	auto core_thread = new boost::thread(boost::bind(&robot::core_thread_cb,this));
+
+	auto wifi_send_thread = new boost::thread(boost::bind(&S_Wifi::wifi_send_routine,&s_wifi));
 
 	obs.control(ON);
 	ROS_INFO("%s %d: robot init done!", __FUNCTION__, __LINE__);
@@ -296,9 +298,9 @@ void robot::robotbase_routine_cb()
 		key.eliminate_jitter((buf[REC_MIX_BYTE] & 0x01) != 0);
 		sensor.key = key.getTriggerStatus();
 
-		// For timer device.
-		robot_timer.setPlanStatus(static_cast<uint8_t>((buf[REC_MIX_BYTE] >> 1) & 0x03));
-		sensor.plan = robot_timer.getPlanStatus();
+		// For appointment status
+		appmt_obj.setPlanStatus(static_cast<uint8_t>((buf[REC_MIX_BYTE] >> 1) & 0x03));
+		sensor.plan = appmt_obj.getPlanStatus();
 
 		// For water tank device.
 		water_tank.setEquimentStatus((buf[REC_MIX_BYTE] & 0x08) != 0);
@@ -339,6 +341,14 @@ void robot::robotbase_routine_cb()
 		sensor.left_wheel_encoder = wheel.getLeftEncoderCnt();
 		wheel.setRightEncoderCnt(buf[REC_RIGHT_WHEEL_ENCODER]);
 		sensor.right_wheel_encoder = wheel.getRightEncoderCnt();
+
+
+		// For appointment set time
+		appmt_obj.set(buf[REC_APPOINTMENT_TIME]);
+		sensor.appointment = buf[REC_APPOINTMENT_TIME];
+		if(buf[REC_APPOINTMENT_TIME] & 0x80)
+			robot_timer.setRealTime( ((buf[REC_REALTIME_H]& 0x00ff)<<8) & buf[REC_REALTIME_L]);
+		sensor.realtime =  ((buf[REC_REALTIME_H] & 0x00ff)<<8) & buf[REC_REALTIME_L];
 
 		// For debug.
 //		printf("%d: REC_MIX_BYTE:(%2x), REC_RESERVED:(%2x).\n.",
@@ -509,7 +519,7 @@ void robot::runTestMode()
 
 void robot::runWorkMode()
 {
-//	s_wifi.resume();
+	s_wifi.appendTask(S_Wifi::ACT::ACT_RESUME);
 	auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
 	send_thread_enable = true;
 
@@ -527,9 +537,14 @@ void robot::runWorkMode()
 
 	if (charger.isOnStub() || charger.isDirected())
 		p_mode.reset(new ModeCharge());
-	else
+	else if (battery.isReadyToClean())
 	{
 		speaker.play(VOICE_PLEASE_START_CLEANING, false);
+		p_mode.reset(new ModeIdle());
+	}
+	else
+	{
+		speaker.play(VOICE_BATTERY_LOW, false);
 		p_mode.reset(new ModeIdle());
 	}
 
@@ -752,6 +767,8 @@ void robot::publishCtrlStream(void)
 	ctrl_stream.infrared_display_content = serial.getSendData(CTL_IR_CONTENT_H) << 8 | serial.getSendData(CTL_IR_CONTENT_L);
 	ctrl_stream.infrared_display_error_code = serial.getSendData(CTL_IR_ERROR_CODE_H) << 8 | serial.getSendData(CTL_IR_ERROR_CODE_L);
 
+	ctrl_stream.appointment_bytes = (serial.getSendData(CTL_APPOINTMENT_H) <<8) & serial.getSendData(CTL_APPOINTMENT_L);
+
 	ctrl_stream.key_validation = serial.getSendData(CTL_KEY_VALIDATION);
 	ctrl_stream.crc = serial.getSendData(CTL_CRC);
 
@@ -768,24 +785,30 @@ void robot::updateRobotPositionForTest()
 bool robot::checkTilt() {
 	if (!gyro.isTiltCheckingEnable())
 		return false;
-	auto angle = gyro.getAngleR();
-	auto wheel_cliff_triggered = (wheel.getLeftWheelCliffStatus() || wheel.getRightWheelCliffStatus());
-	auto angle_triggered = angle > ANGLE_LIMIT;
-//	ROS_WARN("is_first_tilt = %d", is_first_tilt);
-//	ROS_WARN("angle_triggered(%d), wheel_cliff_triggered(%d)", angle_triggered, wheel_cliff_triggered);
-	if (!angle_triggered && !wheel_cliff_triggered) {
-		is_first_tilt = true;
-		return false;
-	}
+	auto angle_triggered = gyro.getAngleR() > ANGLE_LIMIT;
+	auto wheel_cliff_triggered = wheel.getLeftWheelCliffStatus() || wheel.getRightWheelCliffStatus();
 
-	if (is_first_tilt) {
-		is_first_tilt = false;
-		tilt_time = ros::Time::now().toSec();
+	if(!angle_triggered)
+		angle_tilt_time_ = 0;
+	if(!wheel_cliff_triggered)
+		wheel_tilt_time_= 0;
+	if(!angle_triggered && !wheel_cliff_triggered)
+		return false;
+
+	//For angle triggered
+	if(angle_triggered) {
+		angle_tilt_time_ = angle_tilt_time_ == 0 ? ros::Time::now().toSec() : angle_tilt_time_;
+		auto ret = ros::Time::now().toSec() - angle_tilt_time_ > ANGLE_TIME_LIMIT;
+		ROS_WARN_COND(ret,"%s,%d,time_now:%lf,angle_tilt_time_:%lf",__FUNCTION__,__LINE__,ros::Time::now().toSec(),angle_tilt_time_);
+		return ret;
 	}
-	auto time_limit = !wheel_cliff_triggered ? ANGLE_TIME_LIMIT : WHELL_CLIFF_TIME_LIMIT;
-	if(ros::Time::now().toSec() - tilt_time > time_limit)
-		ROS_WARN("angle = %f", angle);
-	return  ros::Time::now().toSec() - tilt_time > time_limit;
+	//For wheel_cliff triggered
+	if(wheel_cliff_triggered) {
+		wheel_tilt_time_ = wheel_tilt_time_ == 0 ? ros::Time::now().toSec() : wheel_tilt_time_;
+		auto ret = ros::Time::now().toSec() - wheel_tilt_time_ > WHELL_CLIFF_TIME_LIMIT;
+		ROS_WARN_COND(ret,"%s,%d,time_now:%lf,wheel_tilt_time_:%lf",__FUNCTION__,__LINE__,ros::Time::now().toSec(),wheel_tilt_time_);
+		return ret;
+	}
 }
 
 bool robot::checkTiltToSlip() {

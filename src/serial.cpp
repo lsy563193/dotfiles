@@ -14,6 +14,8 @@
 #include "wifi/wifi.h"
 #include "mode.hpp"
 
+using namespace SERIAL;
+
 boost::mutex send_stream_mutex;
 
 Serial serial;
@@ -598,8 +600,6 @@ void Serial::send_routine_cb()
 	ros::Rate r(_RATE);
 	resetSendStream();
 	//tmp test
-	uint16_t wifi_send_state_cnt = 0;
-	uint16_t wifi_send_map_cnt = 0;
 	clock_t t = clock();
 	float period;
 	while(ros::ok() && !send_thread_kill){
@@ -620,25 +620,7 @@ void Serial::send_routine_cb()
 			ROS_WARN("SLEEP_TIME %d",sleep_time);
 		}
 		t = clock();
-		//serial wifi send
-		wifi_send_state_cnt++;
-		wifi_send_map_cnt++;
-		if(wifi_send_state_cnt == 100 )//2s
-		{
-			wifi_send_state_cnt = 0;
-			//INFO_YELLOW("SEND ROBOT STATUS");
-			if(s_wifi.isConnected() && s_wifi.onRequest())
-				s_wifi.replyRobotStatus(0xc8,0x00);
-		}
-	//	if(wifi_send_map_cnt == 250)
-	//	{
-	//		wifi_send_map_cnt = 0;
-	//		wifi_send_state_cnt = 0;
-	//		INFO_YELLOW("SEND REAL TIME MAP");
-	//      if(s_wifi.isConnected() && s_wifi.onRequest())
-	//			s_wifi.uploadPassPath();
-	//	}
-		//r.sleep();
+		
 		/*-------------------Process for beeper.play and key_led -----------------------*/
 		key_led.processLed();
 		wifi_led.processLed();
