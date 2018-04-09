@@ -135,6 +135,13 @@ ACleanMode::~ACleanMode()
 			speaker.play(VOICE_BACK_TO_CHARGER_FAILED, false);
 			ROS_WARN("%s %d: Finish cleaning but failed to go to charger.", __FUNCTION__, __LINE__);
 		}
+		else if(trapped_closed_or_isolate || trapped_time_out_)
+		{
+			speaker.play(VOICE_ROBOT_TRAPPED, false);
+			trapped_closed_or_isolate = false;
+			trapped_time_out_ = false;
+			ROS_WARN("%s %d: Robot is trapped.Stop cleaning.",__FUNCTION__,__LINE__);
+		}
 		else if(!seen_charger_during_cleaning_ && mode_i_ != cm_exploration)
 		{
 			speaker.play(VOICE_CLEANING_FINISHED, false);
@@ -1938,7 +1945,7 @@ bool ACleanMode::updateActionInStateFollowWall()
 	}
 	else if (robot_timer.trapTimeout(ESCAPE_TRAPPED_TIME)) {
 			action_i_ = ac_null;
-			trapped_time_out_ = false;
+			trapped_time_out_ = true;
 	}else{
 		action_i_ = ac_follow_wall_left;//Set the left wall follow in the wall follow mode
 //		action_i_ = ac_follow_wall_right;
@@ -1958,12 +1965,10 @@ void ACleanMode::switchInStateFollowWall()
 	is_trapped_ = false;
 	if(trapped_closed_or_isolate)
 	{
-		trapped_closed_or_isolate = false;
 		ROS_WARN("%s %d: closed_count_ >= closed_count_limit_!", __FUNCTION__, __LINE__);
 		sp_state = nullptr;
 	}
 	else if (trapped_time_out_) {
-		trapped_time_out_ = false;
 		ROS_WARN("%s %d: Escape trapped timeout!(%d)", __FUNCTION__, __LINE__, ESCAPE_TRAPPED_TIME);
 		sp_state = nullptr;
 	}

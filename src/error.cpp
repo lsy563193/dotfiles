@@ -60,7 +60,7 @@ void Error::alarm(void)
 		}
 		case ERROR_CODE_STUCK:
 		{
-			speaker.play(VOICE_ROBOT_STUCK);
+			speaker.play(VOICE_ROBOT_TRAPPED);
 			break;
 		}
 		default:

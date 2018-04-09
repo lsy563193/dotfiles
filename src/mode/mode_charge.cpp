@@ -70,8 +70,7 @@ bool ModeCharge::isExit()
 			} else if (charger.isDirected())
 			{
 				ROS_WARN("%s %d: Plan not activated not valid because of charging with adapter.", __FUNCTION__, __LINE__);
-				//speaker.play(???);
-//				speaker.play(VOICE_CANCEL_APPOINTMENT_UNOFFICIAL);
+				speaker.play(VOICE_PLEASE_PULL_OUT_THE_PLUG);
 			} else{
 				ROS_WARN("%s %d: Charge mode receives plan, change to navigation mode.", __FUNCTION__, __LINE__);
 				setNextMode(cm_navigation);
@@ -87,7 +86,6 @@ bool ModeCharge::isExit()
 			return true;
 		}
 	}
-
 	return false;
 }
 
@@ -106,7 +104,11 @@ void ModeCharge::remoteClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Receive remote key clean.", __FUNCTION__, __LINE__);
 	if (charger.isDirected())
+	{
 		beeper.beepForCommand(INVALID);
+		speaker.play(VOICE_PLEASE_PULL_OUT_THE_PLUG);
+		ROS_WARN("%s %d: change charge mode to navigation mode by remote clean failed because of charging with adapter.", __FUNCTION__, __LINE__);
+	}
 	else
 	{
 		ev.key_clean_pressed = true;
@@ -119,7 +121,11 @@ void ModeCharge::keyClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Receive key clean.", __FUNCTION__, __LINE__);
 	if (charger.isDirected())
+	{
 		beeper.beepForCommand(INVALID);
+		speaker.play(VOICE_PLEASE_PULL_OUT_THE_PLUG);
+		ROS_WARN("%s %d: change charge mode to navigation mode by key clean failed because of charging with adapter.", __FUNCTION__, __LINE__);
+	}
 	else
 	{
 		ev.key_clean_pressed = true;
