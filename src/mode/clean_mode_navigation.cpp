@@ -30,7 +30,6 @@ CleanModeNav::CleanModeNav()
 	paused_odom_radian_ = 0;
 	moved_during_pause_ = false;
 
-	IMoveType::sp_mode_ = this; // todo: is this sentence necessary? by Austin
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
 
 	go_home_path_algorithm_.reset();
