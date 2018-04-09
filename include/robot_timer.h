@@ -10,15 +10,19 @@
 class Timer {
 public:
 	Timer() {
-		plan_status_ = 0;
 		work_start_time_ = time(NULL);
 		wall_follow_start_time_ = time(NULL);
 		trap_start_time_ = time(NULL);
-		weeks_= std::vector<uint8_t>(10,0);
-		hours_= std::vector<uint8_t>(10,0);
-		mints_= std::vector<uint8_t>(10,0);
-		planEnable_ = std::vector<uint8_t>(10,0);
 	}
+
+	struct DateTime{
+		uint16_t year;
+		uint8_t day;
+		uint8_t month;
+		uint8_t hour;
+		uint8_t mint;
+		uint8_t sec;
+	};
 
 	void initWorkTimer(void);
 
@@ -36,67 +40,40 @@ public:
 
 	bool trapTimeout(double duration);
 
-	void resetPlanStatus(void)
+	/*
+	 * @brief set real time to struct DataTime
+	 * @param1 date time
+	 */
+	void setRealTime(struct DateTime);
+
+	/*
+	 * @breif set time from bottom board
+	 * @param1 realtime in mints
+	 */
+	void setRealTime(uint16_t realtime);
+
+	struct DateTime getRealTime()
 	{
-		plan_status_ = 0;
+		return date_time_;	
 	}
 
-	void setPlanStatus(uint8_t Status) {
-		plan_status_ |= Status;
-		if (plan_status_ != 0)
-			ROS_DEBUG("Plan status return %d.", plan_status_);
-	}
+	/*
+	 * @brief get real time in mintues
+	 * @return time in mintues
+	 */
+	uint32_t getRealTimeInMint();
 
-	uint8_t getPlanStatus(void) {
-		return plan_status_;
-	}
+	uint32_t getRealTimeWeekDay();
 
-	bool setPlan(uint8_t num,uint8_t week,uint8_t hour,uint8_t mint);
-
-	uint8_t getWeeks(uint8_t pos)
-	{
-		if(pos < 10)
-			return weeks_[pos];
-		else
-			return 0;
-	}
-
-	uint8_t getHours(uint8_t pos)
-	{
-		if(pos < 10)
-			return hours_[pos];
-		else
-			return 0;
-	}
-
-	uint8_t getMints(uint8_t pos)
-	{
-		if(pos < 10)
-			return mints_[pos];
-		else
-			return 0;
-	}
-
-	uint8_t getPlanEnable(uint8_t pos)
-	{
-		if(pos < 10)
-			return planEnable_[pos];
-		else
-			return 0;
-	}
+	char* asctime();
 private:
-	// Variable for plan status
-	uint8_t plan_status_;
-
+	
 	time_t work_start_time_;
 	uint32_t saved_work_time_;
 	time_t wall_follow_start_time_;
 	time_t trap_start_time_;
+	struct DateTime date_time_;
 
-	std::vector<uint8_t> planEnable_;
-	std::vector<uint8_t> weeks_;
-	std::vector<uint8_t> hours_;
-	std::vector<uint8_t> mints_;
 };
 
 extern Timer robot_timer;

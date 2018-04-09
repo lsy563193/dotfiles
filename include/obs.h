@@ -6,20 +6,11 @@
 #define PP_OBS_H
 
 #include "mathematics.h"
+#include "robot.hpp"
 
 class Obs {
 public:
-	Obs() {
-		left_value_ = 0;
-		front_value_ = 0;
-		right_value_ = 0;
-		left_trig_value_ = 100;
-		front_trig_value_ = 100;
-		right_trig_value_ = 100;
-		left_baseline_ = 100;
-		front_baseline_ = 100;
-		right_baseline_ = 100;
-	};
+	Obs();
 
 //--------------------------------------Obs Dynamic adjust----------------------
 	void DynamicAdjust(uint16_t count);
@@ -70,6 +61,7 @@ public:
 
 	bool frontTriggered(void);
 
+	void control(bool _switch);
 private:
 
 	int16_t left_value_;
@@ -81,6 +73,7 @@ private:
 	int16_t left_baseline_;
 	int16_t front_baseline_;
 	int16_t right_baseline_;
+	bool switch_{ON};
 
 	typedef int16_t(Obs::*Pfunc)(void);
 	typedef int16_t(Obs::*Pdata);

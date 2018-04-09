@@ -11,13 +11,15 @@
 #include <state.hpp>
 #include <mode.hpp>
 
+
+//#define CLIFF_BACK_DISTANCE 0.075
 boost::shared_ptr<IMovement> IMoveType::sp_movement_ = nullptr;
 Mode* IMoveType::sp_mode_ = nullptr;
 int IMoveType::movement_i_ = mm_null;
 
 IMoveType::IMoveType() {
 //	resetTriggeredValue();
-	last_ = start_point_ = getPosition();
+	last_ = getPosition();
 	c_rcon.resetStatus();
 	robot::instance()->obsAdjustCount(20);
 }
@@ -204,13 +206,11 @@ bool IMoveType::handleMoveBackEvent(ACleanMode *p_clean_mode)
 	{
 		p_clean_mode->saveBlocks();
 		movement_i_ = mm_back;
-		auto back_distance = (ev.tilt_triggered/* || gyro.getAngleR() > 5*/) ? TILT_BACK_DISTANCE : 0.01;
-//		if(gyro.getAngleR() > 5)
-//			beeper.beepForCommand(VALID);
+		float back_distance= static_cast<float>(ev.cliff_triggered ? 0.05 : 0.01);
+		back_distance = static_cast<float>(ev.tilt_triggered ? TILT_BACK_DISTANCE : back_distance);
 		sp_movement_.reset(new MovementBack(back_distance, BACK_MAX_SPEED));
 		return true;
 	}
-
 	return false;
 }
 
@@ -228,5 +228,9 @@ bool IMoveType::handleMoveBackEventLinear(ACleanMode *p_clean_mode)
 	}
 
 	return false;
+}
+
+bool IMoveType::isNotHandleEvent() {
+	return !(ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered);
 }
 

@@ -4,6 +4,7 @@
 #include "dev.h"
 #include "map.h"
 #include "serial.h"
+#include "appointment.h"
 
 int g_bumper_cnt = 0;
 /* OBS */
@@ -116,7 +117,7 @@ void event_manager_set_enable(bool enable)
 	if (!enable)
 	{
 		p_eh = &default_eh;
-		//ROS_WARN("%s %d: Disable all event under manager mode_:%d", __FUNCTION__, __LINE__, evt_mgr_mode);
+		//ROS_WARN("%s %d: Disable all event under manager is_max_clean_state_:%d", __FUNCTION__, __LINE__, evt_mgr_mode);
 		for (int i = 0; i < EVT_MAX; i++) {
 //			eat.handler[i] = NULL;
 //			eat.handler_enabled[i] = false;
@@ -265,7 +266,7 @@ void event_manager_thread_cb()
 			evt_set_status_x(EVT_KEY_CLEAN);
 		}
 
-		if (robot_timer.getPlanStatus()) {
+		if (appmt_obj.getPlanStatus()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_PLAN);
 		}
@@ -357,7 +358,7 @@ void event_manager_thread_cb()
 	}
 	pthread_cond_broadcast(&new_event_cond);
 	event_handle_thread_kill = true;
-	ROS_ERROR("%s %d: exit!", __FUNCTION__, __LINE__);
+	printf("%s %d: exit!\n", __FUNCTION__, __LINE__);
 }
 
 void event_handler_thread_cb()
@@ -501,12 +502,12 @@ void event_handler_thread_cb()
 	}
 	pthread_cond_broadcast(&event_handler_cond);
 	send_thread_kill = true;
-	ROS_ERROR("%s %d: exit!", __FUNCTION__, __LINE__);
+	printf("%s %d: exit!\n", __FUNCTION__, __LINE__);
 }
 
-//void event_manager_set_current_mode(EventModeType mode_)
+//void event_manager_set_current_mode(EventModeType is_max_clean_state_)
 //{
-//	evt_mgr_mode = mode_;
+//	evt_mgr_mode = is_max_clean_state_;
 //}
 
 void event_manager_register_handler(EventHandle* eh)
@@ -548,6 +549,7 @@ void event_manager_reset_status(void)
 	/* Bumper */
 	ev.bumper_triggered = 0;
 	ev.bumper_jam = false;
+	ev.lidar_bumper_jam = false;
 	g_bumper_cnt = 0;
 	/* OBS */
 	ev.obs_triggered = 0;
@@ -564,9 +566,6 @@ void event_manager_reset_status(void)
 	ev.oc_wheel_left = false;
 	ev.oc_wheel_right = false;
 	ev.oc_vacuum = false;
-	brush.oc_left_cnt_ = 0;
-	brush.oc_main_cnt_ = 0;
-	brush.oc_right_cnt_ = 0;
 	g_oc_wheel_left_cnt = 0;
 	g_oc_wheel_right_cnt = 0;
 	g_oc_suction_cnt = 0;
@@ -777,11 +776,8 @@ void EventHandle::rcon_right(bool state_now, bool state_last)
 void EventHandle::overCurrentBrushLeft(bool state_now, bool state_last)
 {
 
-}
-void df_over_current_brush_left(bool state_now, bool state_last)
-{
 	//ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
-	if (!ev.fatal_quit && brush.leftIsStall())
+	if (!ev.fatal_quit && brush.checkLeftBrushTwined())
 	{
 		error.set(ERROR_CODE_LEFTBRUSH);
 		ev.fatal_quit = true;
@@ -796,11 +792,9 @@ void EventHandle::overCurrentBrushMain(bool state_now, bool state_last)
 }
 
 void EventHandle::overCurrentBrushRight(bool state_now, bool state_last)
-{}
-void df_over_current_brush_right(bool state_now, bool state_last)
 {
 	//ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
-	if (!ev.fatal_quit && brush.rightIsStall())
+	if (!ev.fatal_quit && brush.checkRightBrushTwined())
 	{
 		error.set(ERROR_CODE_RIGHTBRUSH);
 		ev.fatal_quit = true;
@@ -840,7 +834,7 @@ void EventHandle::remotePlan(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote plan is pressed.", __FUNCTION__, __LINE__);
 	df_remote();
-	robot_timer.resetPlanStatus();
+	appmt_obj.resetPlanStatus();
 }
 
 void EventHandle::remoteClean(bool state_now, bool state_last)

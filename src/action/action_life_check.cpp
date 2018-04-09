@@ -51,7 +51,7 @@ void ActionLifeCheck::lifeTestRoutineThread()
 
 	pthread_cond_broadcast(&serial_data_ready_cond);
 	event_manager_thread_kill = true;
-	ROS_ERROR("%s,%d,exit",__FUNCTION__,__LINE__);
+	printf("%s,%d,exit\n",__FUNCTION__,__LINE__);
 }
 
 bool ActionLifeCheck::dataExtract(const uint8_t *buf)
@@ -128,9 +128,10 @@ void ActionLifeCheck::run()
 			if (ros::Time::now().toSec() - start_time_stamp_ > 0.3)
 			{
 				brush.normalOperate();
-				vacuum.setMode(Vac_Normal);
-				vacuum.Switch();
-				water_tank.normalOperate();
+				vacuum.isMaxInClean(false);
+				vacuum.setCleanState();
+				if(water_tank.checkEquipment(false))
+					water_tank.open(WaterTank::tank_pump);
 				wheel.setPidTargetSpeed(LINEAR_MAX_SPEED, LINEAR_MAX_SPEED);
 				left_brush_current_baseline_ /= sum_cnt_;
 				ROS_INFO("%s %d: left_brush_current_baseline_:%d.", __FUNCTION__, __LINE__,
@@ -362,7 +363,7 @@ void ActionLifeCheck::run()
 			wheel.stop();
 			brush.stop();
 			vacuum.stop();
-			water_tank.stop();
+			water_tank.stop(WaterTank::tank_pump);
 			sleep(5);
 			break;
 		}
@@ -376,7 +377,7 @@ void ActionLifeCheck::run()
 			wheel.stop();
 			brush.stop();
 			vacuum.stop();
-			water_tank.stop();
+			water_tank.stop(WaterTank::tank_pump);
 			sleep(5);
 			break;
 		}
@@ -407,7 +408,7 @@ bool ActionLifeCheck::checkCurrent()
 		error_code_ = VACUUM_CURRENT_ERROR; // todo:*/
 
 	uint16_t side_brush_current_ref_{1675 - 1620}; // 55
-	uint16_t main_brush_current_ref_{1785 - 1620}; // 165
+	uint16_t main_brush_current_ref_{1820 - 1620}; // 200
 	uint16_t wheel_current_ref_{1685 - 1620}; // 65
 	uint16_t vacuum_current_ref_{2285 - 1620}; // 665
 	uint16_t water_tank_current_ref_{0};
@@ -466,7 +467,7 @@ bool ActionLifeCheck::checkCurrent()
 		error_content_ = static_cast<uint16_t>(main_brush_current_ - main_brush_current_baseline_);
 	}
 	else if (vacuum_current_ - vacuum_current_baseline_ > vacuum_current_ref_ * 1.5 ||
-			 vacuum_current_ - vacuum_current_baseline_ < vacuum_current_ref_ * 0.5)
+			 vacuum_current_ - vacuum_current_baseline_ < vacuum_current_ref_ * 0.2)
 	{
 		error_code_ = VACUUM_CURRENT_ERROR;
 		error_content_ = static_cast<uint16_t>(vacuum_current_ - vacuum_current_baseline_);

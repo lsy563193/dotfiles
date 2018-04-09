@@ -6,6 +6,7 @@
 #include <event_manager.h>
 #include "dev.h"
 #include "mode.hpp"
+#include "appointment.h"
 
 ModeSleep::ModeSleep()
 {
@@ -18,15 +19,12 @@ ModeSleep::ModeSleep()
 	key.resetTriggerStatus();
 	c_rcon.resetStatus();
 	remote.reset();
-	robot_timer.resetPlanStatus();
+	appmt_obj.resetPlanStatus();
 
+	sp_state = st_sleep.get();
+	sp_state->init();
 	plan_activated_status_ = false;
 	sp_action_.reset(new ActionSleep);
-
-	wifi_led.set(false);
-	s_wifi.replyRobotStatus(0xc8,0x00);
-	s_wifi.sleep();
-
 
 }
 
@@ -34,12 +32,6 @@ ModeSleep::~ModeSleep()
 {
 	event_manager_set_enable(false);
 	sp_action_.reset();
-	if (charger.getChargeStatus())
-		key_led.setMode(LED_STEADY, LED_ORANGE);
-	else
-		key_led.setMode(LED_STEADY, LED_GREEN);
-	// Wait 1.5s to avoid gyro can't open if switch to navigation mode_ too soon after waking up.
-	usleep(1500000);
 	ROS_INFO("%s %d: Exit sleep mode.", __FUNCTION__, __LINE__);
 }
 
@@ -54,10 +46,10 @@ bool ModeSleep::isExit()
 				if (error.clear(error.get()))
 				{
 					ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
-					speaker.play(VOICE_CLEAR_ERROR, false);
+//					speaker.play(VOICE_CLEAR_ERROR_UNOFFICIAL, false);
 				} else
 				{
-					speaker.play(VOICE_CANCEL_APPOINTMENT, false);
+//					speaker.play(VOICE_CANCEL_APPOINTMENT_UNOFFICIAL, false);
 					error.alarm();
 				}
 			}
@@ -67,16 +59,16 @@ bool ModeSleep::isExit()
 			else if (cliff.getStatus() & (BLOCK_LEFT | BLOCK_FRONT | BLOCK_RIGHT))
 			{
 				ROS_WARN("%s %d: Plan not activated not valid because of robot lifted up.", __FUNCTION__, __LINE__);
-				speaker.play(VOICE_ERROR_LIFT_UP_CANCEL_APPOINTMENT);
+				speaker.play(VOICE_ERROR_LIFT_UP);
 			} else if (!battery.isReadyToClean())
 			{
 				ROS_WARN("%s %d: Plan not activated not valid because of battery not ready to clean.", __FUNCTION__, __LINE__);
-				speaker.play(VOICE_BATTERY_LOW_CANCEL_APPOINTMENT);
+				speaker.play(VOICE_BATTERY_LOW);
 			} else if (charger.isDirected())
 			{
 				ROS_WARN("%s %d: Plan not activated not valid because of charging with adapter.", __FUNCTION__, __LINE__);
 				//speaker.play(???);
-				speaker.play(VOICE_CANCEL_APPOINTMENT);
+//				speaker.play(VOICE_CANCEL_APPOINTMENT_UNOFFICIAL);
 			} else{
 				ROS_WARN("%s %d: Sleep mode receives plan, change to navigation mode.", __FUNCTION__, __LINE__);
 				setNextMode(cm_navigation);
@@ -126,6 +118,7 @@ void ModeSleep::remoteClean(bool state_now, bool state_last)
 		ev.key_clean_pressed = true;
 		ROS_WARN("%s %d: Waked up by remote key clean.", __FUNCTION__, __LINE__);
 		serial.setWorkMode(IDLE_MODE);
+		key_led.setMode(LED_STEADY, LED_GREEN);
 //		beeper.beepForCommand(VALID);
 	}
 
@@ -142,6 +135,7 @@ void ModeSleep::keyClean(bool state_now, bool state_last)
 
 		ev.key_clean_pressed = true;
 		ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
+		key_led.setMode(LED_STEADY, LED_GREEN);
 	}
 
 	key.resetTriggerStatus();
@@ -164,18 +158,20 @@ void ModeSleep::rcon(bool state_now, bool state_last)
 		ROS_WARN("%s %d: Waked up by rcon signal.", __FUNCTION__, __LINE__);
 		ev.rcon_status = c_rcon.getAll();
 		serial.setWorkMode(WORK_MODE);
+		key_led.setMode(LED_STEADY, LED_ORANGE);
 	}
 	c_rcon.resetStatus();
 }
 
 void ModeSleep::remotePlan(bool state_now, bool state_last)
 {
-	if (serial.isMainBoardSleep() && !plan_activated_status_ && robot_timer.getPlanStatus() == 3)
+	if (serial.isMainBoardSleep() && !plan_activated_status_ && appmt_obj.getPlanStatus() == 3)
 	{
-		ROS_WARN("%s %d: Waked up by plan.", __FUNCTION__, __LINE__);
+		INFO_YELLOW("Waked up by plan.");
 		plan_activated_status_ = true;
 		serial.setWorkMode(WORK_MODE);
+		key_led.setMode(LED_FLASH, LED_GREEN);
 	}
-	robot_timer.resetPlanStatus();
+	appmt_obj.resetPlanStatus();
 }
 

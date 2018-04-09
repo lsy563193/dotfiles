@@ -303,18 +303,17 @@ double radian_to_degree(double rad);
     /**
      * Write vector onto output stream
      */
-//    friend std::ostream& operator<<(std::ostream& rStream, const Vector2& rVector)
-//    {
-//      rStream << rVector.ToString().ToCString();
-//      return rStream;
-//    }
+    friend std::ostream& operator<<(std::ostream& rStream, const Vector2& rVector)
+    {
+      rStream << "{" << rVector.GetX() << "," << rVector.GetY() << "}";
+      return rStream;
+    }
 
   public:
     T x;
     T y;
 //    int16_t	th;
 }; // class Vector2<T>
-
   /*
    * Type declaration of int16_t Vector2 as Cell_t
    */
@@ -359,11 +358,11 @@ public:
 		return point;
 	}
 
-//	Point_t getRelative(float dx, float dy) const {
-//		auto Cell = this->toCell();
-//		Point_t point{cellToCount(Cell.x),cellToCount(Cell.y),th};
-//		return point.getRelative(dx,dy);
-//	}
+	Point_t getCenterRelative(float dx, float dy) const {
+		auto Cell = this->toCell();
+		Point_t point{cellToCount(Cell.x),cellToCount(Cell.y),th};
+		return point.getRelative(dx,dy);
+	}
 
 	bool isNearTo(Point_t other, float count) const {
 //		return std::abs(this->x - other.x) <count && std::abs(this->y - other.y) < count;
@@ -495,7 +494,41 @@ typedef struct
   COST_HIGH = 7,
 };
 typedef int CellState;
+//sensor_msgs::LaserScan
+template <typename T>
+class DequeArray{
+public:
+//    DequeArray(int size):size_(size){ };
+	void push_back(T i){
+		d.push_back(i);
+		if(d.size() > 3)
+			d.pop_front();
+	}
+    typename std::deque<T>::const_iterator  begin(){
+        return d.begin();
+    }
 
+	typename std::deque<T>::const_iterator  end(){
+        return d.end();
+    }
+    size_t size()
+    {
+        return d.size();
+    }
+
+    void clear()
+    {
+        d.clear();
+    }
+    T operator [](int i)
+    {
+        return d[i];
+    }
+
+private:
+	std::deque<T> d;
+//    int size_{3};
+};
 typedef std::pair<const CellState, Cell_t> PairCell_t;
 class PointSelector{
 public:

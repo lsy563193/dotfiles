@@ -30,8 +30,8 @@
 // ------------For functional test end--------------
 
 //limit
-#define OBS_MANUAL_LIMIT_H	(uint16_t)1500
-#define OBS_MANUAL_LIMIT_L	(uint16_t)700
+#define OBS_MANUAL_LIMIT_H	(uint16_t)2400
+#define OBS_MANUAL_LIMIT_L	(uint16_t)1200
 #define WALL_MANUAL_LIMIT_H	(uint16_t)500
 #define WALL_MANUAL_LIMIT_L	(uint16_t)140
 #define OBS_FIXTURE_LIMIT_H	(uint16_t)1500
@@ -76,8 +76,12 @@ void error_loop(uint8_t test_stage, uint16_t error_code, uint16_t current_data);
 
 /*
  * Test serial port.
+ * return value:
+ * 0: test pass
+ * 1~254: main board version error, current main board version.
+ * 255: serial error
  */
-bool serial_port_test();
+uint8_t serial_port_test();
 
 /*
  * Test for power supply voltage.

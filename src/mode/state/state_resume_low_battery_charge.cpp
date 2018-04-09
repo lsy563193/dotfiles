@@ -7,6 +7,7 @@
 
 void StateResumeLowBatteryCharge::init() {
 	key_led.setMode(LED_STEADY, LED_GREEN);
+	ROS_INFO("%s %d: Enter state resume low battery charge.", __FUNCTION__, __LINE__);
 }
 
 //bool StateFolllowWall::isFinish() {

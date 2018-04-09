@@ -11,7 +11,11 @@ MovementCharge::MovementCharge()
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
-	water_tank.stop();
+	water_tank.stop(WaterTank::tank_pump);
+
+	// For saving power.
+	obs.control(OFF);
+	gyro.setOff();
 
 	if(lidar.isScanOriginalReady())
 	{
@@ -35,6 +39,7 @@ MovementCharge::~MovementCharge()
 {
 	wheel.stop();
 	charger.setStop();
+	obs.control(ON);
 	ROS_INFO("%s %d: End movement charge.", __FUNCTION__, __LINE__);
 }
 
@@ -54,8 +59,7 @@ bool MovementCharge::isFinish()
 			{
 				charger.setStop();
 				return true;
-			}
-			else
+			} else
 			{
 				key_led.setMode(LED_STEADY, LED_ORANGE);
 				turn_for_charger_ = true;
@@ -64,9 +68,23 @@ bool MovementCharge::isFinish()
 				ROS_INFO("%s %d: Start turn for charger.", __FUNCTION__, __LINE__);
 			}
 		}
-	}
 
-	if (turn_for_charger_)
+		if (charger.getChargeStatus() && battery.isFull())
+		{
+			if (battery_full_start_time_ == 0)
+			{
+				speaker.play(VOICE_BATTERY_CHARGE_DONE);
+				battery_full_start_time_ = ros::Time::now().toSec();
+			}
+
+			// Show green key_led for 60s before going to sleep mode.
+			if (ros::Time::now().toSec() - battery_full_start_time_ >= 60)
+				key_led.setMode(LED_STEADY, LED_OFF);
+			else
+				key_led.setMode(LED_STEADY, LED_GREEN);
+		}
+	}
+	else
 	{
 		if (charger.getChargeStatus())
 		{

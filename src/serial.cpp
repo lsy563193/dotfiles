@@ -14,6 +14,8 @@
 #include "wifi/wifi.h"
 #include "mode.hpp"
 
+using namespace SERIAL;
+
 boost::mutex send_stream_mutex;
 
 Serial serial;
@@ -97,7 +99,7 @@ bool Serial::init(const std::string port,int baudrate)
 	curopt_.c_cflag |= CREAD;
 	curopt_.c_cflag |= CLOCAL;	//disable modem status check
 
-	cfmakeraw(&curopt_);		//make raw mode_
+	cfmakeraw(&curopt_);		//make raw is_max_clean_state_
 
 	if (tcsetattr(crport_fd_, TCSANOW, &curopt_) != 0){
 		return false;
@@ -224,7 +226,9 @@ int Serial::read(uint8_t *buf, int len)
 void Serial::resetSendStream(void)
 {
 	for (int i = 0; i < SEND_LEN; i++) {
-		if (i != CTL_LED_GREEN)
+		if (i == CTL_MIX)
+			setSendData(i, 0x10);
+		else if (i != CTL_LED_GREEN)
 			setSendData(i, 0x00);
 		else
 			setSendData(i, 0x64);
@@ -587,7 +591,7 @@ void Serial::receive_routine_cb()
 	}
 	pthread_cond_signal(&recev_cond);
 	robotbase_thread_kill = true;
-	ROS_ERROR("%s,%d,exit!",__FUNCTION__,__LINE__);
+	printf("%s,%d,exit!\n",__FUNCTION__,__LINE__);
 }
 
 void Serial::send_routine_cb()
@@ -596,8 +600,6 @@ void Serial::send_routine_cb()
 	ros::Rate r(_RATE);
 	resetSendStream();
 	//tmp test
-	uint16_t wifi_send_state_cnt = 0;
-	uint16_t wifi_send_map_cnt = 0;
 	clock_t t = clock();
 	float period;
 	while(ros::ok() && !send_thread_kill){
@@ -618,30 +620,7 @@ void Serial::send_routine_cb()
 			ROS_WARN("SLEEP_TIME %d",sleep_time);
 		}
 		t = clock();
-		//serial wifi send
-		wifi_send_state_cnt++;
-		wifi_send_map_cnt++;
-		if(wifi_send_state_cnt == 100 )//2s
-		{
-			wifi_send_state_cnt = 0;
-			//INFO_YELLOW("SEND ROBOT STATUS");
-			if(S_Wifi::is_wifi_connected_
-						&& s_wifi.isStatusRequest_
-						&& s_wifi.is_cloud_connected_)
-				s_wifi.replyRobotStatus(0xc8,0x00);
-		}
-	//	if(wifi_send_map_cnt == 250)
-	//	{
-	//		wifi_send_map_cnt = 0;
-	//		wifi_send_state_cnt = 0;
-	//		INFO_YELLOW("SEND REAL TIME MAP");
-	//		if(S_Wifi::is_wifi_connected_
-	//					 && s_wifi.is_cloud_connected_
-	//					 && s_wifi.isStatusRequest_
-	//					 )
-	//			s_wifi.replyRealtimeMap();
-	//	}
-		//r.sleep();
+		
 		/*-------------------Process for beeper.play and key_led -----------------------*/
 		key_led.processLed();
 		wifi_led.processLed();
@@ -659,7 +638,7 @@ void Serial::send_routine_cb()
 		robot::instance()->publishCtrlStream();
 	}
 	core_thread_kill = true;
-	ROS_ERROR("%s,%d exit",__FUNCTION__,__LINE__);
+	printf("%s,%d exit.\n",__FUNCTION__,__LINE__);
 	//pthread_exit(NULL);
 }
 

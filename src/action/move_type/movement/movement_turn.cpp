@@ -5,6 +5,7 @@
 #include <movement.hpp>
 #include <move_type.hpp>
 #include <event_manager.h>
+#include <mode.hpp>
 #include "dev.h"
 #include "robot.hpp"
 
@@ -16,7 +17,8 @@ MovementTurn::MovementTurn(double radian, uint8_t max_speed) : speed_(ROTATE_LOW
 	max_speed_ = max_speed;
 	accurate_ = max_speed_ > ROTATE_TOP_SPEED ? degree_to_radian(3) : degree_to_radian(1);
 	auto diff = ranged_radian(target_radian_ - odom.getRadian());
-	timeout_interval_ = 5/* * (fabs(diff) * WHEEL_TO_CENTER_DISTANCE * 1000) / (speed_ * SPEED_ALF)*/; // 5;
+	auto isUseTimeOut = (sp_mt_->sp_mode_->mode_i_ != sp_mt_->sp_mode_->md_go_to_charger) && (sp_mt_->sp_mode_->mode_i_ != sp_mt_->sp_mode_->md_remote);
+	timeout_interval_ = isUseTimeOut ? 5 : 100;
 	ROS_INFO("%s, %d: MovementTurn init, target_radian_: \033[32m%.1f (in degree)\033[0m, current radian: \033[32m%.1f (in degree)\033[0m, timeout:(%.2f)s."
 			, __FUNCTION__, __LINE__, radian_to_degree(ranged_radian(target_radian_)), radian_to_degree(getPosition().th), timeout_interval_);
 }
@@ -31,7 +33,7 @@ bool MovementTurn::isReach()
 		return true;
 	}
 	if(isTimeUp()){
-		ROS_WARN("%s %d: Align timeout.Robot maybe slip but not detect in checkSlip", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Robot maybe slip but not detect in checkSlip", __FUNCTION__, __LINE__);
 		ev.robot_slip = true;
 		return true;
 	}
@@ -68,5 +70,11 @@ void MovementTurn::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 
 bool MovementTurn::isFinish()
 {
-	return isReach() || sp_mt_->isFinishForward();
+	auto ret = isReach() || sp_mt_->isFinishForward();
+	if (ret) {
+		wheel.stop();
+		return true;
+	} else {
+		return false;
+	}
 }

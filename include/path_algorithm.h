@@ -68,23 +68,6 @@ public:
 	bool generateShortestPath(GridMap &map, const Point_t &curr,const Point_t &target, const Dir_t &last_dir, Points &plan_path);
 
 	/*
-	 * @author Lin Shao Yue
-	 * @last modify by Austin Liu
-	 *
-	 * This function is for finding targets using Dijkstra algorithm.
-	 *
-	 * @param: GridMap map, it will use it's CLEAN_MAP data.
-	 * @param: Cell_t curr_cell, the current cell of robot.
-	 *
-	 * @return: true, there is reachable targets.
-	 *          false, there is no reachable targets.
-	 *          Cell_t target, the founded reachable target.
-	 *          int cleaned_count, the cleaned grid count in map.
-	 */
-	bool findTargetUsingDijkstra(GridMap &map, const Cell_t& curr_cell, Cell_t& target, int& cleaned_count);
-
-
-	/*
 	 * @
 	 *
 	 */
@@ -167,7 +150,6 @@ public:
 
 class NavCleanPathAlgorithm: public APathAlgorithm
 {
-public:
 	/*
 	 * @author Patrick Chow / Lin Shao Yue
 	 * @last modify by Austin Liu
@@ -182,19 +164,7 @@ public:
 	 * @return: bool, true if generating succeeds.
 	 */
 	bool generatePath(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &plan_path) override;
-	/*
-	 * @author Patrick Chow
-	 * @last modify by Austin Liu
-	 *
-	 * This function is for tracing the path from start cell to targets.
-	 *
-	 * @param: GridMap map, it will use it's CLEAN_MAP data.
-	 * @param: Cells target_list, input target list.
-	 * @param: Cell_t start, the start cell.
-	 *
-	 * @return: PathList, a deque of paths from start cell to the input targets.
-	 */
-	void findPath(GridMap &map, const Cell_t &curr, const Cell_t &targets, Cells &path, int last_i);
+
 private:
 	/*
 	 * @author Patrick Chow
@@ -223,6 +193,20 @@ private:
 	 * @return: Cells, a deque of possible targets.
 	 */
 //	Cells filterAllPossibleTargets(GridMap &map, const Cell_t &curr_cell, BoundingBox2 &b_map);
+
+	/*
+	 * @author Patrick Chow
+	 * @last modify by Austin Liu
+	 *
+	 * This function is for tracing the path from start cell to targets.
+	 *
+	 * @param: GridMap map, it will use it's CLEAN_MAP data.
+	 * @param: Cells target_list, input target list.
+	 * @param: Cell_t start, the start cell.
+	 *
+	 * @return: PathList, a deque of paths from start cell to the input targets.
+	 */
+	void findPath(GridMap &map, const Cell_t &curr, const Cell_t &targets, Cells &path, int last_i);
 
 	/*
 	 * @author Patrick Chow

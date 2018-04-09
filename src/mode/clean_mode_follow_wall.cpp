@@ -3,6 +3,7 @@
 //
 
 #include <dev.h>
+#include <event_manager.h>
 #include "robot.hpp"
 #include "dev.h"
 #include "mode.hpp"
@@ -19,6 +20,7 @@ CleanModeFollowWall::CleanModeFollowWall()
 	clean_path_algorithm_.reset(new WFCleanPathAlgorithm);
 	go_home_path_algorithm_.reset();
 	closed_count_limit_ = 1;
+	mode_i_ = cm_wall_follow;
 }
 
 CleanModeFollowWall::~CleanModeFollowWall()
@@ -35,7 +37,7 @@ CleanModeFollowWall::~CleanModeFollowWall()
 	else if (ev.cliff_all_triggered)
 	{
 		speaker.play(VOICE_ERROR_LIFT_UP, false);
-		speaker.play(VOICE_CLEANING_STOP);
+		speaker.play(VOICE_CLEANING_STOP_UNOFFICIAL);
 		ROS_WARN("%s %d: Cliff all triggered. Finish cleaning.", __FUNCTION__, __LINE__);
 	}
 	else
@@ -71,6 +73,18 @@ bool CleanModeFollowWall::mapMark() {
 	clean_map_.print(CLEAN_MAP, Cells{getPosition().toCell()});
 	passed_path_.clear();
 	return false;
+}
+
+bool CleanModeFollowWall::isExit()
+{
+	if (ev.remote_follow_wall)
+	{
+		ROS_WARN("%s %d: Exit for ev.remote_follow_wall.", __FUNCTION__, __LINE__);
+		setNextMode(md_idle);
+		return true;
+	}
+
+	return ACleanMode::isExit();
 }
 
 void CleanModeFollowWall::keyClean(bool state_now, bool state_last)
@@ -119,33 +133,21 @@ void CleanModeFollowWall::keyClean(bool state_now, bool state_last)
 void CleanModeFollowWall::remoteMax(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
-	if(isStateFollowWall())
-	{
-		beeper.beepForCommand(VALID);
-		uint8_t vac_mode = vacuum.getMode();
-		vacuum.setMode(!vac_mode);
-		speaker.play(!vac_mode == Vac_Normal ? VOICE_CONVERT_TO_NORMAL_SUCTION : VOICE_CONVERT_TO_LARGE_SUCTION,false);
-
-
-		if (!water_tank.isEquipped())
-			vacuum.Switch();
+	if(water_tank.checkEquipment(true)){
+		beeper.beepForCommand(INVALID);
 	}
-	else if (isStateGoHomePoint() || isStateGoToCharger())
+	else if(isStateInit() || isStateFollowWall() || isStateGoHomePoint() || isStateGoToCharger())
 	{
 		beeper.beepForCommand(VALID);
-		uint8_t vac_mode = vacuum.getMode();
-		vacuum.setMode(!vac_mode);
-		speaker.play(!vac_mode == Vac_Normal ? VOICE_CONVERT_TO_NORMAL_SUCTION : VOICE_CONVERT_TO_LARGE_SUCTION,false);
-		if (!water_tank.isEquipped())
-		{
-			vacuum.Switch();
-			vacuum.setTmpMode(Vac_Normal);
+		vacuum.isMaxInClean(!vacuum.isMaxInClean());
+		speaker.play(vacuum.isMaxInClean() ? VOICE_VACCUM_MAX : VOICE_CLEANING_NAVIGATION,false);
+		if(isStateFollowWall() || (isStateInit() && action_i_ > ac_open_gyro)) {
+			vacuum.setCleanState();
 		}
 	}
-	else
-		beeper.beepForCommand(INVALID);
 	remote.reset();
 }
+
 void CleanModeFollowWall::remoteClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: remote clean.", __FUNCTION__, __LINE__);
@@ -156,18 +158,27 @@ void CleanModeFollowWall::remoteClean(bool state_now, bool state_last)
 	remote.reset();
 }
 
+void CleanModeFollowWall::remoteWallFollow(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: remote wall follow.", __FUNCTION__, __LINE__);
+
+	beeper.beepForCommand(VALID);
+	wheel.stop();
+	ev.remote_follow_wall = true;
+	remote.reset();
+}
+
 
 void CleanModeFollowWall::switchInStateInit() {
 	PP_INFO();
 	action_i_ = ac_null;
 	sp_action_ = nullptr;
-	sp_state = state_folllow_wall;
+	sp_state = state_folllow_wall.get();
 	is_isolate = true;
 	is_closed = true;
 	closed_count_ = 0;
 	isolate_count_ = 0;
 	sp_state->init();
-	key_led.setMode(LED_STEADY, LED_GREEN);
 }
 
 //bool CleanModeFollowWall::moveTypeFollowWallIsFinish(IMoveType *p_mt,bool is_new_cell) {
@@ -182,13 +193,12 @@ void CleanModeFollowWall::switchInStateInit() {
 //}
 
 void CleanModeFollowWall::switchInStateFollowWall() {
-	sp_state = state_go_home_point;
+	sp_state = state_go_home_point.get();
 	ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_points_.size());
-	speaker.play(VOICE_BACK_TO_CHARGER, true);
 	go_home_path_algorithm_.reset();
 	go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_, start_point_));
 	sp_state->init();
-	action_i_ = ac_go_to_charger;
+	action_i_ = ac_null;
 	genNextAction();
 }
 

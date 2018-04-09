@@ -11,15 +11,15 @@
 #include "lidar.hpp"
 #include "robot.hpp"
 #include "slam.h"
-
-
 #include "action.hpp"
 #include "movement.hpp"
 #include "move_type.hpp"
 #include "state.hpp"
 #include "mode.hpp"
+#include "appointment.h"
 #include "std_srvs/Empty.h"
 
+using namespace SERIAL;
 
 pthread_mutex_t recev_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t  recev_cond = PTHREAD_COND_INITIALIZER;
@@ -107,7 +107,10 @@ robot::robot()
 	auto event_handler_thread = new boost::thread(event_handler_thread_cb);
 	auto core_thread = new boost::thread(boost::bind(&robot::core_thread_cb,this));
 
-	ROS_INFO("%s %d: robot init done!", __FUNCTION__, __LINE__);
+	auto wifi_send_thread = new boost::thread(boost::bind(&S_Wifi::wifi_send_routine,&s_wifi));
+
+	obs.control(ON);
+	ROS_INFO("%s %d: Robot x900(version 0000 r4) is online :)", __FUNCTION__, __LINE__);
 }
 
 robot::~robot()
@@ -121,12 +124,16 @@ robot::~robot()
 	brush.stop();
 	vacuum.stop();
 	s_wifi.sleep();
-	water_tank.stop();
+	wifi_led.set(false);
+	water_tank.stop(WaterTank::tank_pump);
 	serial.setWorkMode(WORK_MODE);
 	usleep(40000);
-	while(ros::ok() && !g_pp_shutdown){
+//	while(ros::ok() && !g_pp_shutdown){
+	printf("pp shutdown before waiting!\n");
+	while(!g_pp_shutdown){
 		usleep(2000);
 	}
+	printf("pp shutdown after waiting!\n");
 	serial.close();
 	pthread_mutex_destroy(&recev_lock);
 	pthread_mutex_destroy(&serial_data_ready_mtx);
@@ -139,8 +146,8 @@ robot::~robot()
 	pthread_cond_destroy(&new_event_cond);
 	pthread_cond_destroy(&event_handler_cond);
 
-	delete robot_tf_;
-	ROS_INFO("pp shutdown!");
+//	delete robot_tf_;
+	printf("pp shutdown!\n");
 }
 
 robot *robot::instance()
@@ -189,7 +196,7 @@ void robot::robotbase_routine_cb()
 		ROS_ERROR_COND(pthread_cond_wait(&recev_cond,&recev_lock)!=0, "robotbase pthread receive cond wait fail");
 		memcpy(buf,serial.receive_stream,sizeof(uint8_t)*REC_LEN);
 		ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock)!=0, "robotbase pthread receive unlock fail");
-//		debugReceivedStream(buf);
+//		serial.debugReceivedStream(buf);
 
 		pp::x900sensor sensor;
 
@@ -209,6 +216,7 @@ void robot::robotbase_routine_cb()
 		sensor.gyro_calibration = gyro.getCalibration();
 
 		gyro.setAngleY(static_cast<float>(static_cast<int16_t>((buf[REC_ANGLE_H] << 8) | buf[REC_ANGLE_L]) / 100.0 * -1));
+//		printf("angle:%f, angle_v:%f\n", gyro.getAngleY(), gyro.getAngleV());
 		sensor.angle = gyro.getAngleY();
 		gyro.setAngleV(static_cast<float>(static_cast<int16_t>((buf[REC_ANGLE_V_H] << 8) | buf[REC_ANGLE_V_L]) / 100.0 * -1));
 		sensor.angle_v = gyro.getAngleV();
@@ -243,6 +251,9 @@ void robot::robotbase_routine_cb()
 		sensor.front_obs = obs.getFront();
 		obs.setRight((buf[REC_R_OBS_H] << 8) | buf[REC_R_OBS_L]);
 		sensor.right_obs = obs.getRight();
+//		printf("%s %d: obs left:%d, front:%d, right:%d.\n", __FUNCTION__, __LINE__,
+//			   (buf[REC_L_OBS_H] << 8) | buf[REC_L_OBS_L], (buf[REC_F_OBS_H] << 8) | buf[REC_F_OBS_L],
+//			   (buf[REC_R_OBS_H] << 8) | buf[REC_R_OBS_L]);
 
 		// For bumper device.
 		bumper.setLeft((buf[REC_BUMPER_AND_CLIFF] & 0x20) != 0);
@@ -278,6 +289,7 @@ void robot::robotbase_routine_cb()
 		c_rcon.setStatus((buf[REC_RCON_CHARGER_4] << 24) | (buf[REC_RCON_CHARGER_3] << 16)
 						 | (buf[REC_RCON_CHARGER_2] << 8) | buf[REC_RCON_CHARGER_1]);
 		sensor.rcon = c_rcon.getStatus();
+//		printf("rcon:%08x\n", c_rcon.getStatus());
 
 		// For virtual wall.
 		sensor.virtual_wall = (buf[REC_VISUAL_WALL_H] << 8)| buf[REC_VISUAL_WALL_L];
@@ -286,16 +298,16 @@ void robot::robotbase_routine_cb()
 		key.eliminate_jitter((buf[REC_MIX_BYTE] & 0x01) != 0);
 		sensor.key = key.getTriggerStatus();
 
-		// For timer device.
-		robot_timer.setPlanStatus(static_cast<uint8_t>((buf[REC_MIX_BYTE] >> 1) & 0x03));
-		sensor.plan = robot_timer.getPlanStatus();
+		// For appointment status
+		appmt_obj.setPlanStatus(static_cast<uint8_t>((buf[REC_MIX_BYTE] >> 1) & 0x03));
+		sensor.plan = appmt_obj.getPlanStatus();
 
 		// For water tank device.
-		water_tank.setStatus((buf[REC_MIX_BYTE] & 0x08) != 0);
+		water_tank.setEquimentStatus((buf[REC_MIX_BYTE] & 0x08) != 0);
 //		ROS_INFO("mix:%x", buf[REC_MIX_BYTE]);
 //		if (water_tank.getStatus())
 //			ROS_INFO("Water tank~~~~~~~~~~~~~~~~~~ :D");
-		sensor.water_tank = water_tank.getStatus();
+		sensor.water_tank = water_tank.getEquimentStatus();
 
 		// For charger device.
 		charger.setChargeStatus((buf[REC_MIX_BYTE] >> 4) & 0x07);
@@ -329,6 +341,14 @@ void robot::robotbase_routine_cb()
 		sensor.left_wheel_encoder = wheel.getLeftEncoderCnt();
 		wheel.setRightEncoderCnt(buf[REC_RIGHT_WHEEL_ENCODER]);
 		sensor.right_wheel_encoder = wheel.getRightEncoderCnt();
+
+
+		// For appointment set time
+		appmt_obj.set(buf[REC_APPOINTMENT_TIME]);
+		sensor.appointment = buf[REC_APPOINTMENT_TIME];
+		if(buf[REC_APPOINTMENT_TIME] & 0x80)
+			robot_timer.setRealTime( ((buf[REC_REALTIME_H]& 0x00ff)<<8) & buf[REC_REALTIME_L]);
+		sensor.realtime =  ((buf[REC_REALTIME_H] & 0x00ff)<<8) & buf[REC_REALTIME_L];
 
 		// For debug.
 //		printf("%d: REC_MIX_BYTE:(%2x), REC_RESERVED:(%2x).\n.",
@@ -430,7 +450,7 @@ void robot::robotbase_routine_cb()
 	}//end while
 	pthread_cond_broadcast(&serial_data_ready_cond);
 	event_manager_thread_kill = true;
-	ROS_ERROR("%s,%d,exit",__FUNCTION__,__LINE__);
+	printf("%s,%d,exit\n",__FUNCTION__,__LINE__);
 }
 
 void robot::core_thread_cb()
@@ -469,7 +489,7 @@ void robot::core_thread_cb()
 		}
 	}
 
-	ROS_INFO("%s %d: core thread exit.", __FUNCTION__, __LINE__);
+	printf("%s %d: core thread exit.\n", __FUNCTION__, __LINE__);
 }
 
 void robot::runTestMode()
@@ -494,11 +514,12 @@ void robot::runTestMode()
 	p_mode.reset(new CleanModeTest(r16_work_mode_));
 	p_mode->run();
 	g_pp_shutdown = true;
+	printf("%s %d: Exit.\n", __FUNCTION__, __LINE__);
 }
 
 void robot::runWorkMode()
 {
-	s_wifi.resume();
+	s_wifi.appendTask(S_Wifi::ACT::ACT_RESUME);
 	auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
 	send_thread_enable = true;
 
@@ -516,9 +537,14 @@ void robot::runWorkMode()
 
 	if (charger.isOnStub() || charger.isDirected())
 		p_mode.reset(new ModeCharge());
-	else
+	else if (battery.isReadyToClean())
 	{
 		speaker.play(VOICE_PLEASE_START_CLEANING, false);
+		p_mode.reset(new ModeIdle());
+	}
+	else
+	{
+		speaker.play(VOICE_BATTERY_LOW, false);
 		p_mode.reset(new ModeIdle());
 	}
 
@@ -537,7 +563,7 @@ void robot::runWorkMode()
 //				ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
 	}
 	g_pp_shutdown = true;
-	ROS_ERROR("%s,%d,exit", __FUNCTION__, __LINE__);
+	printf("%s %d: Exit.\n", __FUNCTION__, __LINE__);
 }
 
 uint8_t robot::getTestMode(void)
@@ -731,6 +757,8 @@ void robot::publishCtrlStream(void)
 	ctrl_stream.gyro_dynamic_ctrl = static_cast<unsigned char>((serial.getSendData(CTL_MIX) >> 2) & 0x01);
 	ctrl_stream.gyro_switch = static_cast<unsigned char>((serial.getSendData(CTL_MIX) >> 3) & 0x01);
 
+	ctrl_stream.obs_switch = static_cast<unsigned char>((serial.getSendData(CTL_MIX) >> 4) & 0x01);
+
 	ctrl_stream.swing_motor_pwm = static_cast<unsigned char>(serial.getSendData(CTL_WATER_TANK) & 0x7F);
 	ctrl_stream.pump_switch = static_cast<unsigned char>((serial.getSendData(CTL_WATER_TANK) >> 7) & 0x01);
 
@@ -738,6 +766,8 @@ void robot::publishCtrlStream(void)
 	ctrl_stream.infrared_display_step = static_cast<unsigned char>(serial.getSendData(CTL_IR_CTRL) & 0x3F);
 	ctrl_stream.infrared_display_content = serial.getSendData(CTL_IR_CONTENT_H) << 8 | serial.getSendData(CTL_IR_CONTENT_L);
 	ctrl_stream.infrared_display_error_code = serial.getSendData(CTL_IR_ERROR_CODE_H) << 8 | serial.getSendData(CTL_IR_ERROR_CODE_L);
+
+	ctrl_stream.appointment_bytes = (serial.getSendData(CTL_APPOINTMENT_H) <<8) & serial.getSendData(CTL_APPOINTMENT_L);
 
 	ctrl_stream.key_validation = serial.getSendData(CTL_KEY_VALIDATION);
 	ctrl_stream.crc = serial.getSendData(CTL_CRC);
@@ -755,30 +785,30 @@ void robot::updateRobotPositionForTest()
 bool robot::checkTilt() {
 	if (!gyro.isTiltCheckingEnable())
 		return false;
+	auto angle_triggered = gyro.getAngleR() > ANGLE_LIMIT;
+	auto wheel_cliff_triggered = wheel.getLeftWheelCliffStatus() || wheel.getRightWheelCliffStatus();
 
-//	ROS_WARN("is_first_tilt = %d", is_first_tilt);
-	auto angle = gyro.getAngleR();
-//	ROS_WARN("angle = %f", angle);
-	if (angle < ANGLE_LIMIT) {
-		is_first_tilt = true;
+	if(!angle_triggered)
+		angle_tilt_time_ = 0;
+	if(!wheel_cliff_triggered)
+		wheel_tilt_time_= 0;
+	if(!angle_triggered && !wheel_cliff_triggered)
 		return false;
+
+	//For angle triggered
+	if(angle_triggered) {
+		angle_tilt_time_ = angle_tilt_time_ == 0 ? ros::Time::now().toSec() : angle_tilt_time_;
+		auto ret = ros::Time::now().toSec() - angle_tilt_time_ > ANGLE_TIME_LIMIT;
+		ROS_WARN_COND(ret,"%s,%d,time_now:%lf,angle_tilt_time_:%lf",__FUNCTION__,__LINE__,ros::Time::now().toSec(),angle_tilt_time_);
+		return ret;
 	}
-
-	if (is_first_tilt) {
-		is_first_tilt = false;
-		tilt_time = ros::Time::now().toSec();
+	//For wheel_cliff triggered
+	if(wheel_cliff_triggered) {
+		wheel_tilt_time_ = wheel_tilt_time_ == 0 ? ros::Time::now().toSec() : wheel_tilt_time_;
+		auto ret = ros::Time::now().toSec() - wheel_tilt_time_ > WHELL_CLIFF_TIME_LIMIT;
+		ROS_WARN_COND(ret,"%s,%d,time_now:%lf,wheel_tilt_time_:%lf",__FUNCTION__,__LINE__,ros::Time::now().toSec(),wheel_tilt_time_);
+		return ret;
 	}
-
-	return  ros::Time::now().toSec() - tilt_time > TIME_LIMIT && (wheel.getLeftWheelCliffStatus() || wheel.getRightWheelCliffStatus());
-
-/*	if (gyro.getAngleR() > ANGLE_LIMIT) {
-		tilt_time = ros::Time::now().toSec();
-		if ((ros::Time::now().toSec() - tilt_time) > TIME_LIMIT) {
-			return true;
-		} else {
-			return false;
-		}
-	}*/
 }
 
 bool robot::checkTiltToSlip() {

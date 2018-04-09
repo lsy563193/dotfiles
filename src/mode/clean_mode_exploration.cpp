@@ -11,14 +11,14 @@
 CleanModeExploration::CleanModeExploration()
 {
 	ROS_INFO("%s %d: Entering Exploration mode\n=========================" , __FUNCTION__, __LINE__);
-	speaker.play(VOICE_EXPLORATION_START, false);
+	speaker.play(VOICE_GO_HOME_MODE, false);
 	mode_i_ = cm_exploration;
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
-	IMoveType::sp_mode_ = this; // todo: is this sentence necessary? by Austin
 	go_home_path_algorithm_.reset();
 	error_marker_.clear();
 	clean_map_.mapInit();
 	setExpMode(true);
+	obs.control(OFF);
 }
 
 CleanModeExploration::~CleanModeExploration()
@@ -58,6 +58,7 @@ CleanModeExploration::~CleanModeExploration()
 	}
 #endif
 	setExpMode(false);
+	obs.control(ON);
 }
 
 bool CleanModeExploration::mapMark()
@@ -95,7 +96,10 @@ void CleanModeExploration::keyClean(bool state_now, bool state_last) {
 	if (long_press)
 		ev.key_long_pressed = true;
 	else
+	{
 		ev.key_clean_pressed = true;
+	}
+
 	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
 
 	key.resetTriggerStatus();
@@ -125,6 +129,20 @@ void CleanModeExploration::chargeDetect(bool state_now, bool state_last) {
 	ev.charge_detect = charger.getChargeStatus();
 }
 
+void CleanModeExploration::remoteMax(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
+	if(water_tank.checkEquipment(true)){
+		beeper.beepForCommand(INVALID);
+	}
+	else if(isInitState() || isStateFollowWall() || isStateExploration() || isStateGoHomePoint() || isStateGoToCharger())
+	{
+		beeper.beepForCommand(VALID);
+		vacuum.isMaxInClean(!vacuum.isMaxInClean());
+		speaker.play(vacuum.isMaxInClean() ? VOICE_VACCUM_MAX : VOICE_CLEANING_NAVIGATION,false);
+	}
+	remote.reset();
+}
 /*void CleanModeExploration::printMapAndPath()
 {
 	clean_path_algorithm_->displayCellPath(pointsGenerateCells(passed_path_));
@@ -139,7 +157,7 @@ void CleanModeExploration::switchInStateGoToCharger() {
 		return;
 	}
 	else
-		sp_state = state_exploration;
+		sp_state = state_exploration.get();
 	sp_state->init();
 }
 
@@ -148,7 +166,8 @@ void CleanModeExploration::switchInStateInit() {
 	PP_INFO();
 	action_i_ = ac_null;
 	sp_action_ = nullptr;
-	sp_state = state_exploration;
+	// Turn around and try receiving the rcon signal before exploration, it can increase the chance for going to charger.
+	sp_state = state_go_to_charger.get();
 	sp_state->init();
 }
 
@@ -156,9 +175,7 @@ bool CleanModeExploration::updateActionInStateInit() {
 	if (action_i_ == ac_null)
 		action_i_ = ac_open_gyro;
 	else if (action_i_ == ac_open_gyro) {
-		if (!water_tank.checkEquipment())
-			vacuum.bldcSpeed(Vac_Speed_NormalL);
-		brush.slowOperate();
+		boost::dynamic_pointer_cast<StateInit>(state_init)->initForExploration();
 		action_i_ = ac_open_lidar;
 	}
 	else if (action_i_ == ac_open_lidar)
@@ -189,7 +206,7 @@ bool CleanModeExploration::moveTypeFollowWallIsFinish(IMoveType *p_move_type, bo
 */
 
 bool CleanModeExploration::markMapInNewCell() {
-	if(sp_state == state_folllow_wall)
+	if(sp_state == state_folllow_wall.get())
 	{
 		mark_robot_ = false;
 		mapMark();
@@ -202,9 +219,8 @@ bool CleanModeExploration::markMapInNewCell() {
 
 void CleanModeExploration::resetErrorMarker() {
 	//set unclean to map
-//	ROS_ERROR("%s,%d,size:%d",__FUNCTION__,__LINE__,error_marker_.size());
+	ROS_INFO("%s,%d,size:%d",__FUNCTION__,__LINE__,error_marker_.size());
 	auto time = ros::Time::now().toSec();
-//	int i = 0;
 	for(auto ite = error_marker_.begin();ite != error_marker_.end();ite++){
 		if(error_marker_.empty())
 			break;
@@ -215,7 +231,6 @@ void CleanModeExploration::resetErrorMarker() {
 //			ROS_INFO("%s,%d,i:%d,size:%d",__FUNCTION__,__LINE__,i,error_marker_.size());
 			error_marker_.erase(ite);
 		}
-//		i++;
 	}
 }
 

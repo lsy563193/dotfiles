@@ -3,6 +3,7 @@
 //
 #include <move_type.hpp>
 #include <robot.hpp>
+#include <obs.h>
 //#include <state.hpp>
 //#include <mode.hpp>
 //bool MoveTypeGoToCharger::isFinish() {
@@ -15,10 +16,18 @@
 
 MoveTypeGoToCharger::MoveTypeGoToCharger()
 {
-	ROS_INFO("%s,%d: Move type is go to charger.", __FUNCTION__, __LINE__);
+	ROS_INFO("%s,%d: Enter move type go to charger.", __FUNCTION__, __LINE__);
+	obs.control(OFF);
 	p_gtc_movement_.reset(new MovementGoToCharger());
 	p_back_movement_.reset();
 	p_turn_movement_.reset();
+	IMovement::sp_mt_ = this;
+}
+
+MoveTypeGoToCharger::~MoveTypeGoToCharger()
+{
+	obs.control(ON);
+	ROS_INFO("%s,%d: Exit move type go to charger.", __FUNCTION__, __LINE__);
 }
 
 bool MoveTypeGoToCharger::isFinish()

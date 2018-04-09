@@ -36,11 +36,13 @@ uint8 led_green_brightness
 # bit 1 for vacuum exception resume control.
 # bit 2 for switch of dynamic adjustment.
 # bit 3 for switch of gyro.
-# bit 4-7 reserved.
+# bit 4 for switch of gyro.
+# bit 5-7 reserved.
 uint8 wifi_led
 uint8 vacuum_exception_ctrl
 uint8 gyro_dynamic_ctrl
 uint8 gyro_switch
+bool obs_switch
 
 # One byte for water tank.
 # bit 0-6 for swing motor PWM.
@@ -54,6 +56,8 @@ uint8 infrared_display_step
 uint16 infrared_display_content
 uint16 infrared_display_error_code
 
+#appointment 
+uint16 appointment_bytes
 # One byte for key validation.
 uint8 key_validation
 

@@ -14,10 +14,13 @@ ModeGoToCharger::ModeGoToCharger()
 	event_manager_set_enable(true);
 
 	serial.setWorkMode(WORK_MODE);
-	speaker.play(VOICE_BACK_TO_CHARGER, false);
-	key_led.setMode(LED_STEADY, LED_ORANGE);
+	speaker.play(VOICE_GO_HOME_MODE, false);
+	sp_state = st_init.get();
+	sp_state->init();
 	sp_action_.reset(new ActionOpenGyro);
 	action_i_ = ac_open_gyro;
+	mode_i_ = md_go_to_charger;
+	IMoveType::sp_mode_ = this;
 }
 
 ModeGoToCharger::~ModeGoToCharger()
@@ -73,10 +76,8 @@ int ModeGoToCharger::getNextAction()
 	PP_INFO();
 	if(action_i_ == ac_open_gyro || (action_i_ == ac_exception_resume && !ev.fatal_quit))
 	{
-		key_led.setMode(LED_STEADY, LED_ORANGE);
-		brush.slowOperate();
-		if (!water_tank.isEquipped())
-			vacuum.setTmpMode(Vac_Normal);
+		sp_state = st_go_to_charger.get();
+		sp_state->init();
 		return ac_go_to_charger;
 	}
 	return ac_null;

@@ -6,6 +6,7 @@
 #define PP_MOVE_TYPE_HPP
 #define TRAP_IN_SMALL_AREA_COUNT 20
 #define TILT_BACK_DISTANCE 0.15
+//#define CLIFF_BACK_DISTANCE 0.1
 
 #include "action.hpp"
 #include "movement.hpp"
@@ -21,6 +22,7 @@ public:
 	IMoveType();
 	~IMoveType();
 	bool isFinishForward();
+	bool isNotHandleEvent();
 	bool RconTrigger();
 	bool handleMoveBackEvent(ACleanMode* p_clean_mode);
 	bool handleMoveBackEventLinear(ACleanMode *p_clean_mode);
@@ -59,7 +61,6 @@ public:
 	static Mode *sp_mode_;
 	static int movement_i_;
 	void resetTriggeredValue();
-	Point_t start_point_;
 	bool state_turn{};
 //	Point_t target_point_;
 	int dir_;
@@ -109,6 +110,7 @@ public:
 private:
 	bool handleMoveBackEventRealTime(ACleanMode* p_clean_mode);
 	bool is_left_{};
+	double move_forward_time{};
 	int16_t bumperTurnAngle();
 	int16_t cliffTurnAngle();
 	int16_t tiltTurnAngle();
@@ -134,6 +136,7 @@ class MoveTypeGoToCharger:public IMoveType
 {
 public:
 	MoveTypeGoToCharger();
+	~MoveTypeGoToCharger();
 
 	bool isFinish() override ;
 

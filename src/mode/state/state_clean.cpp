@@ -9,11 +9,11 @@
 #include "brush.h"
 
 void StateClean::init() {
-
 	key_led.setMode(LED_STEADY, LED_GREEN);
-	if (!water_tank.isEquipped())
-		vacuum.setLastMode();
 	brush.normalOperate();
+	water_tank.setTankMode(WaterTank::TANK_HIGH);
+	water_tank.checkEquipment(false) ? water_tank.open(WaterTank::tank_pump) : vacuum.setCleanState();
+	ROS_INFO("%s %d: Enter state clean.", __FUNCTION__, __LINE__);
 }
 
 //bool StateClean::isFinish() {

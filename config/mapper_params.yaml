@@ -3,8 +3,8 @@ use_scan_matching: true
 use_scan_barycenter: true
 minimum_travel_distance: 0.12
 minimum_travel_heading: 0.122                  #in radians
-scan_buffer_size: 1750
-scan_buffer_maximum_scan_distance: 350.0
+scan_buffer_size: 10000
+scan_buffer_maximum_scan_distance: 1000.0
 link_match_minimum_response_fine: 0.8
 link_scan_maximum_distance: 5.0
 loop_search_maximum_distance: 3.5

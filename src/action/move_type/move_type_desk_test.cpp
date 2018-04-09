@@ -21,6 +21,7 @@
 #include <key.h>
 #include <infrared_display.hpp>
 #include <speaker.h>
+#include <remote.hpp>
 
 #include "move_type.hpp"
 
@@ -76,6 +77,7 @@ void MoveTypeDeskTest::run()
 				// Switch to next stage.
 				infrared_display.displayNormalMsg(test_stage_, 0);
 				serial.setSendData(CTL_WORK_MODE, DESK_TEST_MOVEMENT_MODE);
+				usleep(30000);// Make sure infrared display has been sent.
 				p_movement_.reset();
 				p_movement_.reset(new ActionOpenGyro());
 				ROS_INFO("%s %d: Stage 1 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
@@ -91,7 +93,11 @@ void MoveTypeDeskTest::run()
 				// Switch to next stage.
 				infrared_display.displayNormalMsg(test_stage_, 0);
 				p_movement_.reset();
-				p_movement_.reset(new MovementDirectGo(false));
+//				p_movement_.reset(new ActionOpenGyro());
+//				c_rcon.resetStatus();
+//				lidar_check_cnt_ = 0;
+//				p_movement_.reset(new MovementDirectGo(false));
+				wheel.setDirectionForward();
 				ROS_INFO("%s %d: Stage 2 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
 				ROS_INFO("%s %d: Start checking for left bumper.", __FUNCTION__, __LINE__);
 			}
@@ -130,7 +136,7 @@ void MoveTypeDeskTest::run()
 				p_movement_.reset();
 				p_movement_.reset(new MovementStay(0.2));
 				/*brush.fullOperate();
-				vacuum.setMode(Vac_Max,true);*/
+				vacuum.isMaxInClean(Vac_Max,true);*/
 				// todo: for water tank
 				ROS_INFO("%s %d: Stage 4 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
 			}
@@ -148,8 +154,9 @@ void MoveTypeDeskTest::run()
 				p_movement_.reset();
 				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-179), ROTATE_TOP_SPEED * 2 / 3));
 				brush.normalOperate();
-				vacuum.setMode(Vac_Normal);
-				vacuum.Switch();
+				obs.control(OFF); // For checking rcon signal.
+				vacuum.isMaxInClean(false);
+				vacuum.setCleanState();
 
 				// todo: for water tank
 				ROS_INFO("%s %d: Stage 5 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
@@ -268,7 +275,7 @@ void MoveTypeDeskTest::deskTestRoutineThread()
 	}
 	pthread_cond_broadcast(&serial_data_ready_cond);
 	event_manager_thread_kill = true;
-	ROS_ERROR("%s,%d,exit",__FUNCTION__,__LINE__);
+	printf("%s,%d,exit\n",__FUNCTION__,__LINE__);
 }
 
 bool MoveTypeDeskTest::dataExtract(const uint8_t *buf)
@@ -301,7 +308,12 @@ bool MoveTypeDeskTest::dataExtract(const uint8_t *buf)
 
 	bumper.setLidarBumperStatus();
 
-	// For obs sensor device.
+	// For remote device.
+	auto remote_signal = buf[REC_REMOTE];
+	if (remote_signal != 0)
+		remote.set(remote_signal);
+
+	// For obs sensor device, the get functions will minus the baseline value.
 	obs.setLeft(((buf[REC_L_OBS_H] << 8) | buf[REC_L_OBS_L]) + obs.getLeftBaseline());
 	obs.setFront(((buf[REC_F_OBS_H] << 8) | buf[REC_F_OBS_L]) + obs.getFrontBaseline());
 	obs.setRight(((buf[REC_R_OBS_H] << 8) | buf[REC_R_OBS_L]) + obs.getRightBaseline());
@@ -327,6 +339,7 @@ bool MoveTypeDeskTest::dataExtract(const uint8_t *buf)
 		brush.setLeftCurrent((buf[REC_L_BRUSH_CUNT_H] << 8) | buf[REC_L_BRUSH_CUNT_L]);
 		brush.setRightCurrent((buf[REC_R_BRUSH_CUNT_H] << 8) | buf[REC_R_BRUSH_CUNT_L]);
 		brush.setMainCurrent((buf[REC_M_BRUSH_CUNT_H] << 8) | buf[REC_M_BRUSH_CUNT_L]);
+//		printf("right brush current - baseline:%d.\n", brush.getRightCurrent() - right_brush_current_baseline_);
 
 		wheel.setLeftCurrent((buf[REC_L_WHEEL_CUNT_H] << 8) | buf[REC_L_WHEEL_CUNT_L]);
 		wheel.setRightCurrent((buf[REC_R_WHEEL_CUNT_H] << 8) | buf[REC_R_WHEEL_CUNT_L]);
@@ -350,6 +363,7 @@ bool MoveTypeDeskTest::dataExtract(const uint8_t *buf)
 		// For rcon device.
 		c_rcon.setStatus((buf[REC_RCON_CHARGER_4] << 24) | (buf[REC_RCON_CHARGER_3] << 16)
 						 | (buf[REC_RCON_CHARGER_2] << 8) | buf[REC_RCON_CHARGER_1]);
+//		printf("rcon status:%8x.\n", c_rcon.getStatus());
 	}
 
 	return true;
@@ -460,14 +474,6 @@ bool MoveTypeDeskTest::checkStage1Finish()
 
 bool MoveTypeDeskTest::checkStage2Finish()
 {
-	if (test_step_ <= 5)
-	{
-		left_obs_sum_ += obs.getLeft();
-		front_obs_sum_ += obs.getFront();
-		right_obs_sum_ += obs.getRight();
-		sum_cnt_++;
-	}
-
 	switch (test_step_)
 	{
 		case 0: // For opening gyro.
@@ -482,8 +488,8 @@ bool MoveTypeDeskTest::checkStage2Finish()
 					p_movement_.reset();
 					p_movement_.reset(new ActionOpenLidar());
 					brush.normalOperate();
-					vacuum.setMode(Vac_Normal);
-					vacuum.Switch();
+					vacuum.isMaxInClean(false);
+					vacuum.setCleanState();
 				}
 				else if (test_step_ == 1)
 					c_rcon.resetStatus();
@@ -521,7 +527,12 @@ bool MoveTypeDeskTest::checkStage2Finish()
 						ROS_ERROR("Now something doesn't feel right about %d scan...", lidar_check_cnt_);
 					lidar_check_cnt_++;
 				}
-				usleep(100000);
+
+				left_obs_sum_ += obs.getLeft();
+				front_obs_sum_ += obs.getFront();
+				right_obs_sum_ += obs.getRight();
+				sum_cnt_++;
+				usleep(20000);
 			}
 			ROS_INFO("%s %d: Scan valid count:%d.", __FUNCTION__, __LINE__, scan_valid_cnt);
 			if (scan_valid_cnt < _cnt -1)
@@ -536,6 +547,7 @@ bool MoveTypeDeskTest::checkStage2Finish()
 				test_step_++;
 				p_movement_.reset();
 				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-178), RCON_ROTATE_SPEED));
+				obs.control(OFF); // For checking rcon signal.
 				ROS_INFO("%s %d: Enter rcon turning 1.", __FUNCTION__, __LINE__);
 			}
 			break;
@@ -544,6 +556,7 @@ bool MoveTypeDeskTest::checkStage2Finish()
 		{
 			ROS_INFO("%s %d: Enter lidar checking back.", __FUNCTION__, __LINE__);
 			wheel.stop();
+			obs.control(ON); // For checking OBS baseline.
 			// Stop for checking lidar data.
 			uint8_t _cnt{10};
 //			float scan_ref[_cnt * 2][360];
@@ -566,7 +579,12 @@ bool MoveTypeDeskTest::checkStage2Finish()
 						ROS_ERROR("Now something doesn't feel right about %d scan...", lidar_check_cnt_);
 					lidar_check_cnt_++;
 				}
-				usleep(100000);
+
+				left_obs_sum_ += obs.getLeft();
+				front_obs_sum_ += obs.getFront();
+				right_obs_sum_ += obs.getRight();
+				sum_cnt_++;
+				usleep(20000);
 			}
 			ROS_INFO("%s %d: Scan valid count:%d.", __FUNCTION__, __LINE__, scan_valid_cnt);
 			if (scan_valid_cnt < _cnt -1)
@@ -581,12 +599,14 @@ bool MoveTypeDeskTest::checkStage2Finish()
 				test_step_++;
 				p_movement_.reset();
 				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-178), RCON_ROTATE_SPEED));
+				obs.control(OFF); // For checking rcon signal.
 				ROS_INFO("%s %d: Enter rcon turning 2.", __FUNCTION__, __LINE__);
 			}
 			break;
 		}
 		default://case 6:
 		{
+			obs.control(ON); // For resuming OBS function.
 			// Check for rcon.
 			if (!(c_rcon.getStatus() & (RconBL_HomeT)))
 			{
@@ -665,7 +685,8 @@ bool MoveTypeDeskTest::checkStage3Finish()
 				p_movement_.reset(new MovementBack(0.01, BACK_MAX_SPEED));
 				test_step_++;
 			} else
-				p_movement_->run();
+				wheel.setPidTargetSpeed(LINEAR_MAX_SPEED / 2, LINEAR_MAX_SPEED / 2);
+//				p_movement_->run();
 			break;
 		}
 		case 1:
@@ -909,7 +930,7 @@ bool MoveTypeDeskTest::checkCurrent()
 
 	// During follow wall
 	uint16_t side_brush_current_ref_{1675 - 1620}; // 55
-	uint16_t main_brush_current_ref_{1785 - 1620}; // 165
+	uint16_t main_brush_current_ref_{1820 - 1620}; // 200
 	uint16_t wheel_current_ref_{1685 - 1620}; // 65
 	uint16_t vacuum_current_ref_{2285 - 1620}; // 665
 	uint16_t water_tank_current_ref_{0};
@@ -934,7 +955,7 @@ bool MoveTypeDeskTest::checkCurrent()
 		error_content_ = static_cast<uint16_t>(main_brush_current_ - main_brush_current_baseline_);
 	}
 	else if (vacuum_current_ - vacuum_current_baseline_ > vacuum_current_ref_ * 1.5 ||
-			 vacuum_current_ - vacuum_current_baseline_ < vacuum_current_ref_ * 0.5)
+			 vacuum_current_ - vacuum_current_baseline_ < vacuum_current_ref_ * 0.2)
 	{
 		error_code_ = VACUUM_CURRENT_ERROR;
 		error_content_ = static_cast<uint16_t>(vacuum_current_ - vacuum_current_baseline_);
@@ -1173,6 +1194,7 @@ bool MoveTypeDeskTest::checkStage6Finish()
 		{
 			if (p_movement_->isFinish())
 			{
+				obs.control(ON); // For resuming OBS function.
 				// Check for rcon.
 				if (!(c_rcon.getStatus() & (RconBL_HomeL | RconBL_HomeR)))
 				{
@@ -1267,14 +1289,18 @@ bool MoveTypeDeskTest::checkStage7Finish()
 		}
 		case 1:
 		{
-			if (key.getPressStatus())
+			if (key.getPressStatus() || remote.isKeyTrigger(REMOTE_CLEAN))
 			{
 				beeper.beepForCommand(VALID);
+				remote.reset();
 				p_movement_.reset();
 				p_movement_.reset(new ActionBackFromCharger());
 				test_step_++;
 			} else
+			{
+				remote.reset();
 				p_movement_->run();
+			}
 			break;
 		}
 		case 2:

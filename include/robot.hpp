@@ -137,7 +137,15 @@ public:
 	{
 		battery_low_ = val;
 	}
+    bool isBatteryLow2() const
+	{
+		return battery_low2_;
+	}
 
+	void setBatterLow2(bool val)
+	{
+		battery_low2_ = val;
+	}
 	void setTfReady(bool is_ready)
 	{
 		is_tf_ready_ = is_ready;
@@ -232,7 +240,8 @@ private:
 	bool is_tf_ready_{};
 
 	bool temp_spot_set_{};
-	bool battery_low_{};
+	bool battery_low_{false};
+	bool battery_low2_{false};
 
 	tf::Vector3	robot_pos;
 	double	robot_rad;
@@ -288,13 +297,14 @@ private:
 
 	bool is_set_anglev_offset{false};
 
-	//for check tilit
+	//for check tilt
 	const double ANGLE_LIMIT{5};
-	const double TIME_LIMIT{0.5};
-	double tilt_time = 0;
-	bool is_first_tilt{true};
+	const double ANGLE_TIME_LIMIT{1};
+	const double WHELL_CLIFF_TIME_LIMIT{10};
+	double angle_tilt_time_{0};
+	double wheel_tilt_time_{0};
 
-	//for check tilit
+	//for check tilt
 	const double ANGLE_LIMIT_TO_SLIP{3};
 	const double TIME_LIMIT_TO_SLIP{0.4};
 	double tilt_time_to_slip_ = 0;

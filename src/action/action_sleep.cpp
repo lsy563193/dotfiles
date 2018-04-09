@@ -12,6 +12,13 @@ ActionSleep::ActionSleep()
 {
 	ROS_INFO("%s %d: Start sleep action.", __FUNCTION__, __LINE__);
 	// Ensure the previous voice is finished before sleep.
+	wifi_led.set(false);
+	s_wifi.uploadStatus(0xc8,0x00);
+	s_wifi.sleep();
+
+	gyro.setOff();
+	gyro.resetStatus();
+
 	speaker.play(VOICE_NULL, false);
 	beeper.beep(1, 80, 0, 1);
 	usleep(100000);
@@ -21,7 +28,6 @@ ActionSleep::ActionSleep()
 	usleep(100000);
 	beeper.beep(4, 80, 0, 1);
 	usleep(100000);
-	key_led.setMode(LED_STEADY, LED_OFF);
 	if (charger.getChargeStatus())
 	{
 		ROS_INFO("%s %d: Finish beeping, enter from charge mode.", __FUNCTION__, __LINE__);

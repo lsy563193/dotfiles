@@ -12,6 +12,8 @@
 using namespace std;
 
 #define PP_PACKAGE_PATH	"/opt/ros/indigo/share/pp/audio/%02d.wav"
+#define WAV_SKIP_SIZE 25
+#define WAV_HEADER_SIZE 58
 
 Speaker speaker;
 
@@ -23,7 +25,7 @@ Speaker::Speaker(void)
 void Speaker::playRoutine()
 {
 	ROS_INFO("robotbase,\033[32m%s\033[0m,%d is up.",__FUNCTION__,__LINE__);
-	while(ros::ok() && !speak_thread_stop_)
+	while(!speak_thread_stop_)
 	{
 		if(!finish_playing_)
 		{
@@ -48,17 +50,18 @@ void Speaker::playRoutine()
 
 			_play();
 
-			if (break_playing_)
-				break_playing_ = false;
-
 			closePcmDriver();
 			ROS_INFO("%s %d: Finish playing voice:%d", __FUNCTION__, __LINE__, curr_voice_.type);
 			finish_playing_ = true;
+
+			if (break_playing_)
+				break_playing_ = false;
 		}
 		else
 			usleep(1000);
 	}
-	ROS_ERROR("%s,%d exit",__FUNCTION__,__LINE__);
+	closePcmDriver();
+	printf("%s,%d exit\n",__FUNCTION__,__LINE__);
 }
 
 void Speaker::play(VoiceType voice_type, bool can_be_interrupted)
@@ -219,7 +222,7 @@ bool Speaker::initPcmDriver()
 	buffer_ = (char *) malloc(buffer_size_);
 
 	// Seek to audio data
-	fseek(fp_, 58, SEEK_SET);
+	fseek(fp_, WAV_SKIP_SIZE * datablock  + WAV_HEADER_SIZE, SEEK_SET);
 
 	return true;
 }
@@ -342,11 +345,12 @@ void Speaker::_play(void)
 
 void Speaker::stop()
 {
+	break_playing_ = true;
 	speak_thread_stop_ = true;
 }
 
 bool Speaker::test()
 {
 	speaker.play(VOICE_TEST_MODE, false);
-	speaker.play(VOICE_SOFTWARE_VERSION, false);
+	speaker.play(VOICE_SOFTWARE_VERSION_UNOFFICIAL, false);
 }

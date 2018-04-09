@@ -6,6 +6,7 @@
 #include <robot.hpp>
 #include "dev.h"
 #include "mode.hpp"
+#include "appointment.h"
 
 ModeRemote::ModeRemote()
 {//use dynamic then you can limit using derived class member
@@ -16,14 +17,14 @@ ModeRemote::ModeRemote()
 	serial.setWorkMode(WORK_MODE);
 	if (gyro.isOn())
 	{
-		key_led.setMode(LED_STEADY, LED_GREEN);
-		if (!water_tank.checkEquipment())
-			vacuum.setLastMode();
-		brush.normalOperate();
+		sp_state = st_clean.get();
+		sp_state->init();
 		action_i_ = ac_remote;
 	}
 	else
 	{
+		sp_state = st_init.get();
+		sp_state->init();
 		key_led.setMode(LED_FLASH, LED_GREEN, 600);
 		action_i_ = ac_open_gyro;
 	}
@@ -31,12 +32,14 @@ ModeRemote::ModeRemote()
 	key.resetTriggerStatus();
 	c_rcon.resetStatus();
 	remote.reset();
-	robot_timer.resetPlanStatus();
+	appmt_obj.resetPlanStatus();
 	event_manager_reset_status();
 
 	remote_mode_time_stamp_ = ros::Time::now().toSec();
 
-	s_wifi.replyRobotStatus(0xc8,0x00);
+	s_wifi.appendTask(S_Wifi::ACT::ACT_UPLOAD_STATUS);
+	mode_i_ = md_remote;
+	IMoveType::sp_mode_ = this;
 }
 
 ModeRemote::~ModeRemote()
@@ -47,14 +50,14 @@ ModeRemote::~ModeRemote()
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
-	water_tank.stop();
+	water_tank.stop(WaterTank::tank_pump);
 
 	ROS_INFO("%s %d: Exit remote mode.", __FUNCTION__, __LINE__);
 }
 
 bool ModeRemote::isExit()
 {
-	if (ev.key_clean_pressed)
+	if (ev.key_clean_pressed || ev.remote_spot || ev.remote_home || ev.remote_follow_wall)
 	{
 		ROS_WARN("%s %d: Exit to idle mode.", __FUNCTION__, __LINE__);
 		setNextMode(md_idle);
@@ -65,6 +68,14 @@ bool ModeRemote::isExit()
 	{
 		ROS_WARN("%s %d: Exit to charge mode.", __FUNCTION__, __LINE__);
 		setNextMode(md_charge);
+		return true;
+	}
+
+	if (battery.isLow())
+	{
+		ROS_WARN("%s %d: Exit to idle mode for low battery(%.2fV).", __FUNCTION__, __LINE__, battery.getVoltage() / 100.0);
+		speaker.play(VOICE_BATTERY_LOW);
+		setNextMode(md_idle);
 		return true;
 	}
 
@@ -99,10 +110,8 @@ int ModeRemote::getNextAction()
 {
 	if(action_i_ == ac_open_gyro || (action_i_ == ac_exception_resume && !ev.fatal_quit))
 	{
-		key_led.setMode(LED_STEADY, LED_GREEN);
-		if (!water_tank.checkEquipment())
-			vacuum.setLastMode();
-		brush.normalOperate();
+		sp_state = st_clean.get();
+		sp_state->init();
 		return ac_remote;
 	}
 
@@ -144,12 +153,15 @@ void ModeRemote::remoteDirectionRight(bool state_now, bool state_last)
 void ModeRemote::remoteMax(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
-	beeper.beepForCommand(VALID);
-	uint8_t vac_mode = vacuum.getMode();
-	vacuum.setMode(!vac_mode);
-	speaker.play(!vac_mode == Vac_Normal ? VOICE_CONVERT_TO_NORMAL_SUCTION : VOICE_CONVERT_TO_LARGE_SUCTION,false);
-	if (!water_tank.isEquipped())
-		vacuum.Switch();
+	if(water_tank.checkEquipment(false)){
+		beeper.beepForCommand(INVALID);
+	}
+	else{
+		beeper.beepForCommand(VALID);
+		vacuum.isMaxInClean(!vacuum.isMaxInClean());
+		speaker.play(vacuum.isMaxInClean() ? VOICE_VACCUM_MAX : VOICE_CLEANING_NAVIGATION,false);
+		vacuum.setCleanState();
+	}
 	remote.reset();
 }
 
@@ -173,4 +185,28 @@ void ModeRemote::chargeDetect(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Charge detect.", __FUNCTION__, __LINE__);
 	ev.charge_detect = charger.getChargeStatus();
+}
+
+void ModeRemote::remoteWallFollow(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: remote wall follow.", __FUNCTION__, __LINE__);
+	beeper.beepForCommand(VALID);
+	ev.remote_follow_wall = true;
+	remote.reset();
+}
+
+void ModeRemote::remoteSpot(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: remote spot.", __FUNCTION__, __LINE__);
+	beeper.beepForCommand(VALID);
+	ev.remote_spot = true;
+	remote.reset();
+}
+
+void ModeRemote::remoteHome(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: remote home.", __FUNCTION__, __LINE__);
+	beeper.beepForCommand(VALID);
+	ev.remote_home = true;
+	remote.reset();
 }

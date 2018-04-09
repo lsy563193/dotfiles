@@ -3,6 +3,7 @@
 //
 #include <cliff.h>
 #include <bumper.h>
+#include <map.h>
 #include "error.h"
 #include "speaker.h"
 Error error;
@@ -52,13 +53,14 @@ void Error::alarm(void)
 			break;
 		}
 		case ERROR_CODE_LIDAR:
+		case ERROR_CODE_SLAM:
 		{
 			speaker.play(VOICE_TEST_LIDAR);
 			break;
 		}
 		case ERROR_CODE_STUCK:
 		{
-			speaker.play(VOICE_ROBOT_STUCK);
+			speaker.play(VOICE_ROBOT_TRAPPED);
 			break;
 		}
 		default:
@@ -85,9 +87,18 @@ bool Error::clear(uint8_t code)
 		}
 		case ERROR_CODE_BUMPER:
 		{
-			if (bumper.getStatus())
+			if (bumper.getStatus() & (BLOCK_LEFT | BLOCK_RIGHT | BLOCK_ALL))
 			{
 				ROS_WARN("%s %d: Bumper still triggered.", __FUNCTION__, __LINE__);
+				cleared = false;
+			}
+			break;
+		}
+		case ERROR_CODE_LIDAR:
+		{
+			if (bumper.getStatus() & (BLOCK_LIDAR_BUMPER))
+			{
+				ROS_WARN("%s %d: Lidar Bumper still triggered.", __FUNCTION__, __LINE__);
 				cleared = false;
 			}
 			break;

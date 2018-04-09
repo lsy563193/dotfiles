@@ -4,6 +4,9 @@
 #include "error.h"
 #include "mode.hpp"
 #include "wifi/wifi.h"
+#include "appointment.h"
+
+#define RCON_TRIGGER_INTERVAL 180
 
 ModeIdle::ModeIdle():
 	bind_lock_(PTHREAD_MUTEX_INITIALIZER)
@@ -18,22 +21,18 @@ ModeIdle::ModeIdle():
 	key.resetTriggerStatus();
 	c_rcon.resetStatus();
 	remote.reset();
-	robot_timer.resetPlanStatus();
+	appmt_obj.resetPlanStatus();
 	event_manager_reset_status();
 
-	plan_activated_status_ = false;
 	ROS_INFO("%s %d: Current battery voltage \033[32m%5.2f V\033[0m.", __FUNCTION__, __LINE__, (float)battery.getVoltage()/100.0);
-	trigger_wifi_rebind_ = false;
-	trigger_wifi_smart_link_ = false;
-	trigger_wifi_smart_ap_link_ = false;
 	/*---reset values for rcon handle---*/
 	// todo: first_time_seen_charger_ does not mean as words in reality. It is just the time that enter this mode.
-	first_time_seen_charger_ = ros::Time::now().toSec();
-	last_time_seen_charger_ = first_time_seen_charger_;
-
-	s_wifi.replyRobotStatus(0xc8,0x00);
+	s_wifi.appendTask(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 //	// todo:debug
 //	infrared_display.displayErrorMsg(9, 1234, 101);
+	sp_state = st_pause.get() ;
+	sp_state->init();
+	mode_i_ = md_idle;
 }
 
 ModeIdle::~ModeIdle()
@@ -54,14 +53,11 @@ bool ModeIdle::isExit()
 				if (error.clear(error.get()))
 				{
 					ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
-					if (robot::instance()->isBatteryLow())
-						key_led.setMode(LED_BREATH, LED_ORANGE);
-					else
-						key_led.setMode(LED_BREATH, LED_GREEN);
-					speaker.play(VOICE_CLEAR_ERROR, false);
+					sp_state->init();
+//					speaker.play(VOICE_CLEAR_ERROR_UNOFFICIAL, false);
 				} else
 				{
-					speaker.play(VOICE_CANCEL_APPOINTMENT, false);
+//					speaker.play(VOICE_CANCEL_APPOINTMENT_UNOFFICIAL, false);
 					// Reset action idle for playing the error alarm.
 					sp_action_.reset(new ActionIdle);
 				}
@@ -72,11 +68,11 @@ bool ModeIdle::isExit()
 			else if (cliff.getStatus() & (BLOCK_LEFT | BLOCK_FRONT | BLOCK_RIGHT))
 			{
 				ROS_WARN("%s %d: Plan not activated not valid because of robot lifted up.", __FUNCTION__, __LINE__);
-				speaker.play(VOICE_ERROR_LIFT_UP_CANCEL_APPOINTMENT);
+				speaker.play(VOICE_ERROR_LIFT_UP);
 			} else if (!battery.isReadyToClean())
 			{
 				ROS_WARN("%s %d: Plan not activated not valid because of battery not ready to clean.", __FUNCTION__, __LINE__);
-				speaker.play(VOICE_BATTERY_LOW_CANCEL_APPOINTMENT);
+				speaker.play(VOICE_BATTERY_LOW);
 			} else{
 				ROS_WARN("%s %d: Idle mode receives plan, change to navigation mode.", __FUNCTION__, __LINE__);
 				setNextMode(cm_navigation);
@@ -136,7 +132,7 @@ bool ModeIdle::isExit()
 
 	if (ev.rcon_status)
 	{
-		ROS_WARN("%s %d: Idle mode receives rcon for over %ds, change to go to charger mode.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Idle mode receives rcon for over %ds, change to go to charger mode.", __FUNCTION__, __LINE__, RCON_TRIGGER_INTERVAL);
 		setNextMode(md_go_to_charger);
 		return true;
 	}
@@ -169,11 +165,8 @@ void ModeIdle::remoteKeyHandler(bool state_now, bool state_last)
 			{
 				ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
 				beeper.beepForCommand(VALID);
-				if (robot::instance()->isBatteryLow())
-					key_led.setMode(LED_BREATH, LED_ORANGE);
-				else
-					key_led.setMode(LED_BREATH, LED_GREEN);
-				speaker.play(VOICE_CLEAR_ERROR);
+				sp_state->init();
+//				speaker.play(VOICE_CLEAR_ERROR_UNOFFICIAL);
 			}
 			else
 			{
@@ -194,12 +187,19 @@ void ModeIdle::remoteKeyHandler(bool state_now, bool state_last)
 		beeper.beepForCommand(INVALID);
 		speaker.play(VOICE_ERROR_LIFT_UP);
 	}
-	else if ((!remote.isKeyTrigger(REMOTE_FORWARD) && !remote.isKeyTrigger(REMOTE_LEFT)
+	else if (robot::instance()->isBatteryLow2())
+	{
+		ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, battery.getVoltage(), (int)LOW_BATTERY_STOP_VOLTAGE);
+        sp_state->init();
+		beeper.beepForCommand(INVALID);
+		speaker.play(VOICE_BATTERY_LOW);
+	}
+    else if((!remote.isKeyTrigger(REMOTE_FORWARD) && !remote.isKeyTrigger(REMOTE_LEFT)
 			  && !remote.isKeyTrigger(REMOTE_RIGHT) && !remote.isKeyTrigger(REMOTE_HOME))
 			  && robot::instance()->isBatteryLow())
 	{
 		ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, battery.getVoltage(), (int)BATTERY_READY_TO_CLEAN_VOLTAGE);
-		key_led.setMode(LED_BREATH, LED_ORANGE);
+        sp_state->init();
 		beeper.beepForCommand(INVALID);
 		speaker.play(VOICE_BATTERY_LOW);
 	}
@@ -252,17 +252,22 @@ void ModeIdle::remoteKeyHandler(bool state_now, bool state_last)
 
 void ModeIdle::remoteMax(bool state_now, bool state_last)
 {
-	beeper.beepForCommand(VALID);
-	uint8_t vac_mode = vacuum.getMode();
-	vacuum.setMode(!vac_mode);
-	speaker.play(!vac_mode == Vac_Normal ? VOICE_CONVERT_TO_NORMAL_SUCTION : VOICE_CONVERT_TO_LARGE_SUCTION,false);
+	PP_INFO();
+	if(water_tank.checkEquipment(true)){
+		beeper.beepForCommand(INVALID);
+	}
+	else{
+		beeper.beepForCommand(VALID);
+		vacuum.isMaxInClean(!vacuum.isMaxInClean());
+		speaker.play(vacuum.isMaxInClean() ? VOICE_VACCUM_MAX : VOICE_CLEANING_NAVIGATION,false);
+	}
 	remote.reset();
 }
 
 /*void ModeIdle::lidarBumper(bool state_now, bool state_last)
 {
 	static uint16_t lidar_bumper_cnt = 0;
-	if( ! s_wifi.is_wifi_connected_){
+	if( ! s_wifi.isConnected()){
 		MutexLock lock(&bind_lock_);
 		lidar_bumper_cnt++;
 		if(lidar_bumper_cnt >=250 && !trigger_wifi_smart_link_){
@@ -279,7 +284,7 @@ void ModeIdle::remoteMax(bool state_now, bool state_last)
 			ROS_INFO("%s,%d,smart link ap",__FUNCTION__,__LINE__);
 		}
 	}
-	else if(!trigger_wifi_rebind_ && s_wifi.is_wifi_connected_)
+	else if(!trigger_wifi_rebind_ && s_wifi.isConnected())
 	{
 		MutexLock lock(&bind_lock_);
 		lidar_bumper_cnt++;
@@ -294,37 +299,36 @@ void ModeIdle::remoteMax(bool state_now, bool state_last)
 
 void ModeIdle::remoteWifi(bool state_now,bool state_last)
 {
-	ROS_INFO("%s,%d,wifi state = %d ",__FUNCTION__,__LINE__,S_Wifi::is_wifi_connected_);
+	ROS_INFO("%s,%d,wifi state = %d ",__FUNCTION__,__LINE__,s_wifi.isConnected());
 	remote.reset();
-	if(S_Wifi::is_wifi_connected_)
-		s_wifi.rebind();
-	else
-		s_wifi.smartLink();
+	s_wifi.appendTask(S_Wifi::ACT::ACT_REBIND);
+	s_wifi.appendTask(S_Wifi::ACT::ACT_SMART_LINK);
 
 }
 
 void ModeIdle::remotePlan(bool state_now, bool state_last)
 {
-	if (robot_timer.getPlanStatus() == 1)
+	if (appmt_obj.getPlanStatus() == 1)
 	{
 		beeper.beepForCommand(VALID);
 		speaker.play(VOICE_APPOINTMENT_DONE);
-		ROS_WARN("%s %d: Plan received.", __FUNCTION__, __LINE__);
+		INFO_YELLOW("Plan received.");
 	}
-	else if (robot_timer.getPlanStatus() == 2)
+	else if (appmt_obj.getPlanStatus() == 2)
 	{
 		beeper.beepForCommand(VALID);
-		speaker.play(VOICE_CANCEL_APPOINTMENT);
-		ROS_WARN("%s %d: Plan cancel received.", __FUNCTION__, __LINE__);
+		speaker.play(VOICE_APPOINTMENT_DONE);
+//		speaker.play(VOICE_CANCEL_APPOINTMENT_UNOFFICIAL);
+		INFO_YELLOW("Plan cancel received");
 	}
-	else if (robot_timer.getPlanStatus() == 3)
+	else if (appmt_obj.getPlanStatus() == 3)
 	{
-		ROS_WARN("%s %d: Plan activated.", __FUNCTION__, __LINE__);
+		INFO_YELLOW("Plan activated.");
 		// Sleep for 50ms cause the status 3 will be sent for 3 times.
 		usleep(50000);
 		plan_activated_status_ = true;
 	}
-	robot_timer.resetPlanStatus();
+	appmt_obj.resetPlanStatus();
 }
 
 void ModeIdle::chargeDetect(bool state_now, bool state_last)
@@ -340,19 +344,32 @@ void ModeIdle::keyClean(bool state_now, bool state_last)
 
 	// Wait for key released.
 	bool long_press = false;
+	bool reset_wifi = false;
 	while (key.getPressStatus())
 	{
 		if (!long_press && key.getPressTime() > 3)
 		{
-			ROS_WARN("%s %d: key clean long pressed.", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: key clean long pressed to sleep.", __FUNCTION__, __LINE__);
 			beeper.beepForCommand(VALID);
 			long_press = true;
+		}
+		if (!reset_wifi && key.getPressTime() > 5)
+		{
+			ROS_WARN("%s %d: key clean long pressed to reset wifi.", __FUNCTION__, __LINE__);
+			beeper.beepForCommand(VALID);
+			reset_wifi = true;
 		}
 		usleep(20000);
 	}
 	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
 
-	if (long_press)
+	if (reset_wifi)
+	{
+		s_wifi.smartApLink();
+		sp_action_.reset();
+		sp_action_.reset(new ActionIdle);
+	}
+	else if (long_press)
 		ev.key_long_pressed = true;
 	else
 	{
@@ -361,11 +378,8 @@ void ModeIdle::keyClean(bool state_now, bool state_last)
 			if (error.clear(error.get()))
 			{
 				ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
-				if (robot::instance()->isBatteryLow())
-					key_led.setMode(LED_BREATH, LED_ORANGE);
-				else
-					key_led.setMode(LED_BREATH, LED_GREEN);
-				speaker.play(VOICE_CLEAR_ERROR);
+                sp_state->init();
+//				speaker.play(VOICE_CLEAR_ERROR_UNOFFICIAL);
 			}
 			else
 				error.alarm();
@@ -380,7 +394,7 @@ void ModeIdle::keyClean(bool state_now, bool state_last)
 		{
 			ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, battery.getVoltage(),
 					 (int) BATTERY_READY_TO_CLEAN_VOLTAGE);
-			key_led.setMode(LED_BREATH, LED_ORANGE);
+            sp_state->init();
 			speaker.play(VOICE_BATTERY_LOW);
 		}
 		else
@@ -404,7 +418,7 @@ void ModeIdle::rcon(bool state_now, bool state_last)
 		} else
 		{
 			/*---received charger signal continuously, check if more than 3 mins---*/
-			if (time_for_now_ - first_time_seen_charger_ > 180.0)
+			if (time_for_now_ - first_time_seen_charger_ > RCON_TRIGGER_INTERVAL)
 				ev.rcon_status = c_rcon.getAll();
 		}
 		last_time_seen_charger_ = time_for_now_;
@@ -414,10 +428,18 @@ void ModeIdle::rcon(bool state_now, bool state_last)
 
 bool ModeIdle::isFinish()
 {
+//	ROS_WARN("battery low(%d), battery ready to clean(%d)", robot::instance()->isBatteryLow(), battery.isReadyToClean());
 	if (!robot::instance()->isBatteryLow() && !battery.isReadyToClean())
 	{
-		key_led.setMode(LED_BREATH, LED_ORANGE);
 		robot::instance()->setBatterLow(true);
+		sp_state->init();
+//		ROS_WARN("11111~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~`");
+	}
+	if (!robot::instance()->isBatteryLow2() && battery.isLow())
+	{
+		robot::instance()->setBatterLow2(true);
+		sp_state->init();
+//		ROS_ERROR("2222~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~`");
 	}
 
 	// For debug

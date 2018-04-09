@@ -63,7 +63,7 @@ int Mode::getNextMode()
 
 bool Mode::isExceptionTriggered()
 {
-	return ev.bumper_jam || ev.cliff_jam || ev.cliff_all_triggered || ev.oc_wheel_left || ev.oc_wheel_right
+	return ev.bumper_jam || ev.lidar_bumper_jam || ev.cliff_jam || ev.cliff_all_triggered || ev.oc_wheel_left || ev.oc_wheel_right
 		   || ev.oc_vacuum || ev.lidar_stuck || ev.robot_stuck || ev.oc_brush_main || ev.robot_slip;
 }
 
@@ -75,7 +75,7 @@ void Mode::genNextAction()
 		case ac_open_gyro :
 			sp_action_.reset(new ActionOpenGyro);
 			break;
-		case ac_back_form_charger :
+		case ac_back_from_charger :
 			sp_action_.reset(new ActionBackFromCharger);
 			break;
 		case ac_open_lidar :

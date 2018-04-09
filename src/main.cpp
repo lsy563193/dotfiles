@@ -4,6 +4,7 @@
 #include <path_algorithm.h>
 #include "robot.hpp"
 #include "speaker.h"
+#include "execinfo.h"
 
 #if VERIFY_CPU_ID || VERIFY_KEY
 #include "verify.h"
@@ -11,43 +12,66 @@
 
 robot* robot_instance = nullptr;
 
-void signal_catch(int sig)
+void server_backtrace(int sig)
 {
-	switch(sig){
-		case SIGSEGV:
-		{
-			ROS_ERROR("Oops!!! pp receive SIGSEGV signal,segment fault!");
-			if(robot_instance != nullptr){
-				speaker.play(VOICE_PROCESS_ERROR, false);
-				delete robot_instance;
-			}
+	void *pTrace[256];
+    char **ppszMsg = NULL;
+    size_t uTraceSize = 0;
+
+    do {
+
+        if (0 == (uTraceSize = backtrace(pTrace, sizeof(pTrace) / sizeof(void *)))) {
+            break;
+        }
+        if (NULL == (ppszMsg = backtrace_symbols(pTrace, uTraceSize))) {
+            break;
+        }
+
+        printf("%d. call stack:\n", sig);
+        for (size_t i = 0; i < uTraceSize; ++i) {
+              printf("%s\n", ppszMsg[i]);
+        }
+    } while (0);
+
+    if (NULL != ppszMsg) {
+        free(ppszMsg);
+        ppszMsg = NULL;
+    }
+}
+
+void handle_exit(int sig) 
+{
+	ROS_ERROR("Oops!!! pp receive signal %d",sig);
+	if(sig == SIGINT)
+	{
+		if(robot_instance != nullptr){
+			speaker.stop();
+			delete robot_instance;
 			ros::shutdown();
-			break;
 		}
-		case SIGINT:
-		{
-			ROS_ERROR("Oops!!! pp receive SIGINT signal,ctrl+c press");
-			if(robot_instance != nullptr){
-				speaker.play(VOICE_USER_KILL,false);
-				delete robot_instance;
-			}
-			ros::shutdown();
-			break;
-		}
-		case SIGTERM:
-		{
-			ROS_ERROR("Ouch!!! pp receive SIGTERM signal,being kill!");
-			ros::shutdown();
-			if(robot_instance != nullptr){
-				speaker.play(VOICE_PROCESS_ERROR,false);
-				delete robot_instance;
-			}
-			break;
-		}
-		default:
-			ROS_ERROR("Oops!! pp receive %d signal",sig);
+		exit(0);
 	}
-	robot_instance = nullptr;
+	else if(sig == SIGSEGV)
+	{	
+		server_backtrace(sig);
+		exit(-1);
+	}
+	else if(sig == SIGFPE) {	
+		server_backtrace(sig);
+		exit(-1);
+	}
+
+	else if(sig == SIGFPE)
+	{	
+		server_backtrace(sig);
+		exit(-1);
+	}
+
+	else if(sig == SIGABRT)
+	{	
+		server_backtrace(sig);
+		exit(-1);
+	}
 }
 
 int main(int argc, char **argv)
@@ -55,21 +79,27 @@ int main(int argc, char **argv)
 	ros::init(argc, argv, "pp");
 	ros::NodeHandle	nh_dev("~");
 
+#if ENABLE_DEBUG
+
 	struct sigaction act;
-	act.sa_handler = signal_catch;
-	sigemptyset(&act.sa_mask);
+
+	act.sa_handler = handle_exit;
 	act.sa_flags = SA_RESETHAND;
-	sigaction(SIGTERM,&act,NULL);
-	sigaction(SIGSEGV,&act,NULL);
+	sigemptyset(&act.sa_mask);
 	sigaction(SIGINT,&act,NULL);
+	sigaction(SIGSEGV,&act,NULL);
+	sigaction(SIGPIPE,&act,NULL);
+	sigaction(SIGFPE,&act,NULL);
+	sigaction(SIGABRT,&act,NULL);
 	ROS_INFO("set signal action done!");
 
+#endif
 	robot_instance = new robot();
 
 	//test code by lsy563193
 	/*GridMap map;
-//test
-/*	ROS_INFO("set signal action done!");
+	//test
+	/*	ROS_INFO("set signal action done!");
 	GridMap map;
 	case_2(map);
 	map.print(CLEAN_MAP, 0, 0);

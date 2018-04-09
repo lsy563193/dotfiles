@@ -96,7 +96,7 @@
 #define LOW_BATTERY_GO_HOME_VOLTAGE		(1320)
 
 /* Low battery stop robot voltage value */
-#define LOW_BATTERY_STOP_VOLTAGE		(1250)
+#define LOW_BATTERY_STOP_VOLTAGE		(1300)
 
 /* Ready to clean battery voltage value */
 #define BATTERY_READY_TO_CLEAN_VOLTAGE	(1400)
@@ -112,6 +112,7 @@
 
 /* Battery voltage criterion for water tank setting*/
 #define FULL_OPERATE_VOLTAGE_FOR_WATER_TANK	(500)
+#define LOW_OPERATE_VOLTAGE_FOR_WATER_TANK	(250)
 /* ------------------------------------- Obs config ------------------------------------- */
 /* OBS setting */
 #define OBS_DYNAMIC			(1)

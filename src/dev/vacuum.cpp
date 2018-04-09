@@ -8,76 +8,25 @@
 
 Vacuum vacuum;
 
-Vacuum::Vacuum()
+void Vacuum::setCleanState()
 {
-	mode_=0;
-//	mode_save_=0;
-}
-
-void Vacuum::setTmpMode(uint8_t mode)
-{
-	// Set the mode_ for vacuum.
-	// The data should be Vac_Speed_Max/Vac_Speed_Normal/Vac_Speed_NormalL.
-//	mode_ = mode_save_;
-//	if (mode != Vac_Save)
-//	{
-//		mode_ = mode;
-//		if (is_save)
-//			mode_save_ = mode_;
-//	}
-
-	setSpeedByMode(mode);
-	ROS_INFO("%s %d: Set vacuum temp mode:%d.", __FUNCTION__, __LINE__, mode);
-}
-
-void Vacuum::setMode(uint8_t mode)
-{
-	ROS_INFO("%s %d: Vacuum last mode set as:%d.", __FUNCTION__, __LINE__, mode_);
-	mode_ = mode;
-}
-
-void Vacuum::Switch()
-{
-	// Process the vacuum mode_
-	setSpeedByMode(mode_);
-}
-
-void Vacuum::setLastMode()
-{
-	ROS_INFO("%s %d: Vacuum mode set to last mode:%d.", __FUNCTION__, __LINE__, mode_);
-	setSpeedByMode(mode_);
-}
-
-
-void Vacuum::bldcSpeed(uint32_t S)
-{
-	// Set the power of BLDC, S should be in range(0, 100).
-	S = S < 100 ? S : 100;
-	serial.setSendData(CTL_VACCUM_PWR, S & 0xff);
-}
-
-void Vacuum::setSpeedByMode(uint8_t mode)
-{
-	// Set the BLDC power to max if robot in max mode_
-	if (mode == Vac_Max)
+	if(is_max_clean_state_)
 		bldcSpeed(Vac_Speed_Max);
 	else
-	{
-		// If work time less than 2 hours, the BLDC should be in normal level, but if more than 2 hours, it should slow down a little bit.
-		if (robot_timer.getWorkTime() < TWO_HOURS)
-		{
-			bldcSpeed(Vac_Speed_Normal);
-		} else
-		{
-			//ROS_INFO("%s %d: Work time more than 2 hours.", __FUNCTION__, __LINE__);
-			bldcSpeed(Vac_Speed_NormalL);
-		}
-	}
+		bldcSpeed(Vac_Speed_Normal);
 }
 
 void Vacuum::stop(){
 	bldcSpeed(0);
 	ROS_INFO("%s,%d,vacuum set to stop",__FUNCTION__,__LINE__);
+}
+
+//------------------------------
+void Vacuum::bldcSpeed(uint32_t S)
+{
+	// Set the power of BLDC, S should be in range(0, 100).
+	S = S < 100 ? S : 100;
+	serial.setSendData(CTL_VACCUM_PWR, S & 0xff);
 }
 
 void Vacuum::startExceptionResume(void) {

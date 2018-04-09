@@ -11,6 +11,28 @@ class S_Wifi
 {
 	
 public:
+
+	enum struct ACT{
+		ACT_NONE= 0,
+		ACT_SLEEP,
+		ACT_RESUME,
+		ACT_ROBOOT,
+		ACT_VERSION,
+		ACT_MOD_VERSION,
+		ACT_CLOUD_VERSION,
+		ACT_MAC,
+		ACT_REBIND,
+		ACT_SMART_LINK,
+		ACT_SMART_AP_LINK,
+		ACT_AP_SMART_LINK,
+		ACT_FACTORY_TEST,
+		ACT_UPLOAD_MAP,
+		ACT_CLEAR_MAP,
+		ACT_UPLOAD_STATUS,
+		ACT_UPLOAD_LAST_CLEANMAP,
+		ACT_END,
+	};
+
 	S_Wifi();
 
 	~S_Wifi();
@@ -19,9 +41,9 @@ public:
 
 	bool deinit();
 
-	uint8_t replyRobotStatus(int msg_code,const uint8_t seq_num);
+	uint8_t uploadStatus(int msg_code,const uint8_t seq_num);
 
-	uint8_t replyRealtimeMap(const Points pass_path);
+	bool uploadMap();
 
 	uint8_t setRobotCleanMode(wifi::WorkMode work_mode);
 
@@ -45,34 +67,89 @@ public:
 
 	uint8_t setSchedule(const wifi::SetScheduleRxMsg &sche);
 
+	uint8_t reboot();
+
+	bool resume();
+
+	bool sleep();
+
+	uint32_t getModuleVersion()
+	{
+		return moduleVersion_;
+	}
+
+	uint32_t getCloudVersion()
+	{
+		return cloudVersion_;
+	}
+
+	uint64_t getMAC()
+	{
+		return MAC_;
+	}
+
+	bool isActive()
+	{
+		return is_active_;
+	}
+
+	bool isConnected()
+	{
+
+		return is_wifi_connected_;
+	}
+
+	bool onRequest()
+	{
+		return is_Status_Request_;
+	}
+	uint8_t checkVersion();
+	uint8_t checkMAC();
+
+	void appendTask(S_Wifi::ACT action);	
+
+	void wifi_send_routine();
+
+	void cacheMapData(const Points map_data);
+
+	void clearMapCache();
+
+	void quit()
+	{
+		wifi_quit_ = true;
+	}
+private:
+
+	wifi::RxManager s_wifi_rx_;
+	wifi::TxManager s_wifi_tx_;	
+
+	bool is_wifi_connected_;
+	bool inFactoryTest_;
+	bool isFactoryTest_;
+	bool isRegDevice_;
+	bool is_Status_Request_;
+	bool is_active_;
+	bool in_linking_;
+	bool wifi_quit_ ;
+	wifi::WorkMode robot_work_mode_;
+
+	pthread_mutex_t task_lock_;
+	pthread_mutex_t map_data_lock_;
+
+	uint64_t MAC_;
+	uint32_t moduleVersion_;
+	uint32_t cloudVersion_;
+
+	std::deque<ACT> task_list_;
+
+	std::deque<Points> *map_data_buf_;
+protected:
+
 	wifi::WorkMode getWorkMode()
 	{
 		return robot_work_mode_;
 	}
 
-	uint8_t reboot();
-
-	uint8_t resume();
-
-	uint8_t sleep();
-
-	static bool is_wifi_connected_;
-
-	static bool is_cloud_connected_;
-
-	bool isStatusRequest_;
-
-private:
-	wifi::RxManager s_wifi_rx_;
-	wifi::TxManager s_wifi_tx_;	
-
-	bool inFactoryTest_;
-	bool isRegDevice_;
-
-	bool is_wifi_active_;
-	wifi::WorkMode robot_work_mode_;
-
-	pthread_mutex_t s_wifi_lock_;
 
 };
 

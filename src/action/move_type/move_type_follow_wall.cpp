@@ -46,7 +46,7 @@ MoveTypeFollowWall::~MoveTypeFollowWall()
 
 bool MoveTypeFollowWall::isFinish()
 {
-	if (IMoveType::isFinish())
+	if (IMoveType::isFinish() && isNotHandleEvent())
 	{
 		ROS_INFO("%s %d: Move type aborted.", __FUNCTION__, __LINE__);
 		return true;
@@ -70,6 +70,7 @@ bool MoveTypeFollowWall::isFinish()
 		}
 		else if (movement_i_ == mm_straight)
 		{
+			move_forward_time +=  ros::Time::now().toSec() - sp_movement_->start_timer_;
 			if (!handleMoveBackEvent(p_cm))
 			{
 				resetTriggeredValue();// is it necessary?
@@ -79,6 +80,7 @@ bool MoveTypeFollowWall::isFinish()
 		}
 		else if (movement_i_ == mm_forward)
 		{
+			move_forward_time +=  ros::Time::now().toSec() - sp_movement_->start_timer_;
 			if (!handleMoveBackEvent(p_cm))
 			{
 				if(ev.rcon_status) {
@@ -121,16 +123,20 @@ bool MoveTypeFollowWall::isFinish()
 			//resetTriggeredValue();
 		}
 		else if (movement_i_ == mm_stay) {
+			ROS_ERROR("%s,%d, mt_fw",__FUNCTION__, __LINE__);
 			if(!handleMoveBackEventRealTime(p_cm)){ //aim
+				ROS_ERROR("%s,%d, mt_fw",__FUNCTION__, __LINE__);
 				auto turn_angle = getTurnRadian(false);
 				turn_target_radian_ = getPosition().addRadian(turn_angle).th;
 				resetTriggeredValue();
 				if(is_stop_follow_wall_after_tilt)
 				{
+					ROS_ERROR("%s,%d, mt_fw",__FUNCTION__, __LINE__);
 					is_stop_follow_wall_after_tilt = false;
 					return true;
 				}
 
+				ROS_ERROR("%s,%d, mt_fw",__FUNCTION__, __LINE__);
 				auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
 				movement_i_ = p_mode->isGyroDynamic() ? mm_dynamic : mm_turn;
 				if(movement_i_ == mm_dynamic)
@@ -149,15 +155,19 @@ int16_t MoveTypeFollowWall::bumperTurnAngle()
 	auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
 	auto is_trapped = p_mode->is_trapped_;
 	int dijkstra_cleaned_count = 0;
-	Cell_t target;
 	auto status = ev.bumper_triggered;
 	auto get_obs = (is_left_) ? obs.getLeft() : obs.getRight();
 	auto diff_side = (is_left_) ? BLOCK_RIGHT : BLOCK_LEFT;
 	auto same_side = (is_left_) ? BLOCK_LEFT : BLOCK_RIGHT;
-	if(is_trapped)
-		p_mode->clean_path_algorithm_->findTargetUsingDijkstra(p_mode->clean_map_,getPosition().toCell(),target,dijkstra_cleaned_count);
+	std::set<Cell_t> c_cleans;
+	if(is_trapped) {
+		int count;
+		count = p_mode->clean_map_.count_if(getPosition().toCell(), [&](Cell_t c_it) {
+			return (p_mode->clean_map_.getCell(CLEAN_MAP, c_it.x, c_it.y) == CLEANED);
+		},dijkstra_cleaned_count);
+	}
 
-	if (status == BLOCK_ALL)
+	if (status == BLOCK_ALL || status == BLOCK_LIDAR_BUMPER)
 	{
 		if(is_trapped)
 			turn_angle = dijkstra_cleaned_count < TRAP_IN_SMALL_AREA_COUNT ? -50 : -55;
@@ -304,7 +314,7 @@ bool MoveTypeFollowWall::lidarTurnRadian(double &turn_radian)
 			param.radian_max = degree_to_radian(100);
 		}
 
-		if (ev.bumper_triggered == BLOCK_ALL) {
+		if (ev.bumper_triggered == BLOCK_ALL || ev.bumper_triggered == BLOCK_LIDAR_BUMPER) {
 			param.lidar_min = degree_to_radian(90);
 			param.lidar_max = degree_to_radian(270);
 		}
@@ -410,8 +420,14 @@ bool MoveTypeFollowWall::isOverOriginLine(GridMap &map)
 {
 	auto curr = getPosition();
 	auto target_point_ = remain_path_.back();
-	if ((target_point_.y > start_point_.y && (start_point_.y - curr.y) > CELL_SIZE / 6)
-		|| (target_point_.y < start_point_.y && (curr.y - start_point_.y) > CELL_SIZE / 6))
+	auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
+	auto start_point_ = p_mode->iterate_point_;
+//	ROS_WARN("movement_i_ == mm_forward(%d), ros::Time::now().toSec() - sp_movement_->start_timer_ + move_forward_time(%lf)",
+//					 movement_i_ == mm_forward || movement_i_ == mm_straight, ros::Time::now().toSec() - sp_movement_->start_timer_ + move_forward_time);
+	double const WF_TIME_LIMIT = 1.5;//force wall follow time
+	if (((target_point_.y > start_point_.y && start_point_.y - curr.y > CELL_SIZE / 6)
+		|| ((curr.y - start_point_.y > CELL_SIZE / 6) && target_point_.y < start_point_.y)) &&
+			 ( (ros::Time::now().toSec() - sp_movement_->start_timer_ + move_forward_time) > WF_TIME_LIMIT))
 	{
 //		ROS_WARN("origin(%d,%d) curr_p(%d, %d), target_point__(%d, %d)",start_point_.x, start_point_.y,  curr.x, curr.y, target_point_.x, target_point_.y);
 //		auto target_angle = (target_point_.y > start_point_.y) ? -900 : 900;
@@ -423,8 +439,8 @@ bool MoveTypeFollowWall::isOverOriginLine(GridMap &map)
 //		}
 //		else if (map.isNotBlockAndCleaned(curr.toCell().x, curr.toCell().y)) // If robot covers a big block, stop.
 //		{
-//			ROS_WARN("%s %d: Back to cleaned place, current(%d, %d), curr(%d, %d), target_point_(%d, %d).",
-//					 __FUNCTION__, __LINE__, curr.x, curr.y, curr.x, curr.y, target_point_.x, target_point_.y);
+			ROS_WARN("%s %d: Back to cleaned place, current(%f, %f), curr(%f, %f), target_point_(%f, %f).",
+					 __FUNCTION__, __LINE__, curr.x, curr.y, curr.x, curr.y, target_point_.x, target_point_.y);
 			return true;
 //		}
 //		else{
@@ -442,6 +458,8 @@ bool MoveTypeFollowWall::isNewLineReach(GridMap &map)
 	auto target_point_ = remain_path_.back();
 	auto s_curr_p = getPosition();
 	auto ret = false;
+	auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
+	auto start_point_ = p_mode->iterate_point_;
 	auto is_pos_dir = target_point_.y - start_point_.y > 0;
 	// The limit is CELL_COUNT_MUL / 8 * 3 further than target line center.
 //	auto target_limit = target_point_.y + CELL_COUNT_MUL / 8 * 3 * is_pos_dir;
@@ -463,19 +481,17 @@ bool MoveTypeFollowWall::isNewLineReach(GridMap &map)
 }
 
 bool MoveTypeFollowWall::handleMoveBackEventRealTime(ACleanMode *p_clean_mode) {
+	ROS_ERROR("%s,%d, mt_fw",__FUNCTION__, __LINE__);
 	auto p_movement = boost::dynamic_pointer_cast<MovementStay>(sp_movement_);
-	if (p_movement->bumper_status_in_stay_ || p_movement->cliff_status_in_stay_)
+    ROS_ERROR("%s,%d, mt_fw",__FUNCTION__, __LINE__);
+	if (p_movement->bumper_status_in_stay_ || p_movement->cliff_status_in_stay_ || p_movement->tilt_status_in_stay_)
 	{
+        ROS_ERROR("%s,%d, mt_fw",__FUNCTION__, __LINE__);
 		p_clean_mode->saveBlocks();
 		movement_i_ = mm_back;
-		sp_movement_.reset(new MovementBack(0.01, BACK_MAX_SPEED));
-		return true;
-	}
-	else if(p_movement->tilt_status_in_stay_)
-	{
-		p_clean_mode->saveBlocks();
-		movement_i_ = mm_back;
-		sp_movement_.reset(new MovementBack(TILT_BACK_DISTANCE, BACK_MAX_SPEED));
+		float back_distance= static_cast<float>(p_movement->bumper_status_in_stay_? 0.01 : 0.05);
+		back_distance = static_cast<float>(ev.tilt_triggered ? TILT_BACK_DISTANCE : back_distance);
+		sp_movement_.reset(new MovementBack(back_distance, BACK_MAX_SPEED));
 		return true;
 	}
 	return false;

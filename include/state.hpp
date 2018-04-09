@@ -24,14 +24,17 @@ public:
 
 	virtual void init()=0;
 
-protected:
 	static ACleanMode* sp_cm_;
+protected:
 };
 
 class StateInit: public State {
 public:
 	StateInit() = default;
 	void init() override;
+	void initOpenLidar();
+	void initBackFromCharge();
+	void initForExploration();
 };
 
 class StateClean: public State {
@@ -50,9 +53,9 @@ public:
 //	IMoveType* setNextAction_();
 };
 
-class StateGoCharger: public State {
+class StateGoToCharger: public State {
 public:
-	StateGoCharger() = default;
+	StateGoToCharger() = default;
 	void init() override;
 //	IMoveType* setNextAction_();
 
@@ -63,7 +66,6 @@ class StateCharge: public State {
 public:
 	StateCharge() = default;
 	void init() override;
-//	IMoveType* setNextAction_();
 
 };
 class StateFolllowWall: public State {
@@ -93,6 +95,7 @@ public:
 	void init() override;
 //	IMoveType* setNextAction_();
 };
+
 class StateResumeLowBatteryCharge: public State {
 public:
 	StateResumeLowBatteryCharge()= default;
@@ -110,6 +113,11 @@ public:
 class StateTest: public State {
 public:
 	StateTest()= default;
+	void init() override;
+};
+
+class StateSleep: public State {
+public:
 	void init() override;
 };
 #endif //PP_STATE_HPP
