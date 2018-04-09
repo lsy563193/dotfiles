@@ -10,7 +10,8 @@ void StateGoHomePoint::init(){
 	wheel.stop();
 	wheel.setPidTargetSpeed(0, 0, REG_TYPE_LINEAR);
 
-	if (sp_cm_->isRemoteGoHomePoint() || sp_cm_->isExpMode() || sp_cm_->isGoHomePointForLowPower())
+	if (sp_cm_->isRemoteGoHomePoint() || sp_cm_->isExpMode() || sp_cm_->isGoHomePointForLowBattery()
+		|| !sp_cm_->isFirstTimeGoHomePoint())
 	{
 		key_led.setMode(LED_STEADY, LED_ORANGE);
 		brush.slowOperate();
@@ -23,7 +24,7 @@ void StateGoHomePoint::init(){
 			vacuum.bldcSpeed(Vac_Speed_Low);
 		}
 	}
-	else if(!sp_cm_->isGoHomePointForLowPower())
+	else
 	{
 		key_led.setMode(LED_STEADY, LED_GREEN);
 		brush.normalOperate();

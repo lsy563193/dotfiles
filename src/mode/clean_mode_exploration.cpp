@@ -190,7 +190,6 @@ bool CleanModeExploration::updateActionInStateInit() {
 void CleanModeExploration::switchInStateGoHomePoint() {
 	PP_INFO();
 	sp_state = nullptr;
-	speaker.play(VOICE_BACK_TO_CHARGER_FAILED, false);
 }
 /*
 

@@ -12,6 +12,7 @@ public:
 	void slowOperate(void);
 	void normalOperate(void);
 	void fullOperate(void);
+	void operate();
 	void stop(void);
 	void mainBrushResume();
 
@@ -21,29 +22,33 @@ public:
 	}
 
 	void setPWM(uint8_t L, uint8_t R, uint8_t M);
+	void setLeftBrushPWM(uint8_t PWM);
+	void setRightBrushPWM(uint8_t PWM);
+	void setMainBrushPWM(uint8_t PWM);
 
-	uint8_t leftIsStall(void);
+	bool checkLeftBrushTwined();
+	bool checkRightBrushTwined();
 
-	uint8_t rightIsStall(void);
+	bool checkBrushTwined(uint8_t brush_indicator);
 
 	void setLeftOc(bool val)
 	{
-		is_left_oc_ = val;
+		side_brush_oc_status_[left] = val;
 	}
 
 	bool getLeftOc() const
 	{
-		return is_left_oc_;
+		return side_brush_oc_status_[left];
 	}
 
 	void setRightOc(bool val)
 	{
-		is_right_oc_ = val;
+		side_brush_oc_status_[right] = val;
 	}
 
 	bool getRightOc() const
 	{
-		return is_right_oc_;
+		return side_brush_oc_status_[right];
 	}
 
 	void setMainOc(bool val)
@@ -89,10 +94,6 @@ public:
 	void checkBatterySetPWM();
 	void updatePWM();
 
-	uint8_t oc_left_cnt_;
-	uint8_t oc_main_cnt_;
-	uint8_t oc_right_cnt_;
-
 private:
 
 	//Value for saving SideBrush_PWM
@@ -106,13 +107,20 @@ private:
 	uint8_t brush_status_;
 	uint8_t normal_PWM;
 
-	bool is_left_oc_;
-	bool is_right_oc_;
 	bool is_main_oc_;
 
 	uint16_t left_current_;
 	uint16_t right_current_;
 	uint16_t main_current_;
+
+	enum {
+		left = 0,
+		right = 1,
+	};
+	bool side_brush_oc_status_[2]{false, false};
+	uint8_t resume_stage_[2]{0, 0};
+	double resume_start_time_[2]{0, 0};
+	uint8_t resume_count_[2]{0, 0};
 };
 extern Brush brush;
 
