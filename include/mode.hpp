@@ -267,7 +267,7 @@ public:
 
 private:
 	double remote_mode_time_stamp_;
-    boost::shared_ptr<State> st_clean = boost::make_shared<StateClean>();
+	boost::shared_ptr<State> st_clean = boost::make_shared<StateClean>();
 	boost::shared_ptr<State> st_init = boost::make_shared<StateInit>();
 
 };
