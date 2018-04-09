@@ -236,7 +236,7 @@ bool MovementExceptionResume::isFinish()
 					vacuum.stop();
 					water_tank.stop(WaterTank::tank_pump);
 					float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getOriginX(), odom.getOriginY());
-					if (std::abs(distance) >= CELL_SIZE * 2)
+					if (std::abs(distance) >= CELL_SIZE * ROBOT_SIZE)
 					{
 						ROS_INFO("%s %d: Move back finish!", __FUNCTION__, __LINE__);
 						brush.mainBrushResume();
