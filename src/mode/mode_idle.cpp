@@ -428,16 +428,17 @@ void ModeIdle::rcon(bool state_now, bool state_last)
 
 bool ModeIdle::isFinish()
 {
+//	ROS_WARN("battery low(%d), battery ready to clean(%d)", robot::instance()->isBatteryLow(), battery.isReadyToClean());
 	if (!robot::instance()->isBatteryLow() && !battery.isReadyToClean())
 	{
-        sp_state->init();
 		robot::instance()->setBatterLow(true);
+		sp_state->init();
 //		ROS_WARN("11111~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~`");
 	}
 	if (!robot::instance()->isBatteryLow2() && battery.isLow())
 	{
-        sp_state->init();
 		robot::instance()->setBatterLow2(true);
+		sp_state->init();
 //		ROS_ERROR("2222~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~`");
 	}
 

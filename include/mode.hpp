@@ -48,7 +48,7 @@ public:
 	virtual void setNextMode(int next_mode);
 
 	bool isInitState() const{
-			return action_i_ == ac_open_gyro || action_i_ == ac_back_form_charger ||
+			return action_i_ == ac_open_gyro || action_i_ == ac_back_from_charger ||
 		action_i_ == ac_open_lidar || action_i_	== ac_align || action_i_ == ac_open_slam;
 	};
 	int getNextMode();
@@ -79,7 +79,7 @@ public:
 		//0
 		ac_null,
 		ac_open_gyro,
-		ac_back_form_charger,
+		ac_back_from_charger,
 		ac_open_lidar,
 		ac_align,
 		//5
@@ -325,10 +325,18 @@ public:
 	virtual bool markRealTime(){return false;};
 	virtual bool markMapInNewCell(){return false;};
 
+	bool isFirstTimeGoHomePoint()
+	{
+		return first_time_go_home_point_;
+	}
+	void setFirstTimeGoHomePoint(bool val)
+	{
+		first_time_go_home_point_ = val;
+	}
 	bool isRemoteGoHomePoint(){
 		return remote_go_home_point;
 	};
-	bool isGoHomePointForLowPower(){
+	bool isGoHomePointForLowBattery(){
 		return go_home_for_low_battery_;
 	}
 	void setHomePoint();
@@ -512,6 +520,8 @@ protected:
 	Points home_points_{};
 	bool should_go_to_charger_{false};
 	bool remote_go_home_point{false};
+	bool first_time_go_home_point_{true};
+	bool seen_charger_during_cleaning_{false};
 	bool go_home_for_low_battery_{false};
 	bool switch_is_off_{false};
 	Points charger_pose_;

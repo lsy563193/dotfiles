@@ -75,7 +75,7 @@ void Mode::genNextAction()
 		case ac_open_gyro :
 			sp_action_.reset(new ActionOpenGyro);
 			break;
-		case ac_back_form_charger :
+		case ac_back_from_charger :
 			sp_action_.reset(new ActionBackFromCharger);
 			break;
 		case ac_open_lidar :
