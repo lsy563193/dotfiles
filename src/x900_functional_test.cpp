@@ -557,10 +557,10 @@ void electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixture,
 				}
 				else {
 					temp_sum = (temp_sum / 10 - baseline[REF_VOLTAGE_ADC]) * 330 * 20 / 4096;
-						if(temp_sum < 150 || temp_sum > 230)
+						if(temp_sum < 70 || temp_sum > 300)
 						{
 							ROS_INFO("baseline current: %d",temp_sum);
-							if(temp_sum < 150)
+							if(temp_sum < 70)
 								error_code = BASELINE_CURRENT_LOW;
 							else
 								error_code = BASELINE_CURRENT_ERROR;
