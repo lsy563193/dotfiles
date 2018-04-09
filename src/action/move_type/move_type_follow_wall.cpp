@@ -478,18 +478,13 @@ bool MoveTypeFollowWall::isNewLineReach(GridMap &map)
 
 bool MoveTypeFollowWall::handleMoveBackEventRealTime(ACleanMode *p_clean_mode) {
 	auto p_movement = boost::dynamic_pointer_cast<MovementStay>(sp_movement_);
-	if (p_movement->bumper_status_in_stay_ || p_movement->cliff_status_in_stay_)
+	if (p_movement->bumper_status_in_stay_ || p_movement->cliff_status_in_stay_ || p_movement->tilt_status_in_stay_)
 	{
 		p_clean_mode->saveBlocks();
 		movement_i_ = mm_back;
-		sp_movement_.reset(new MovementBack(0.01, BACK_MAX_SPEED));
-		return true;
-	}
-	else if(p_movement->tilt_status_in_stay_)
-	{
-		p_clean_mode->saveBlocks();
-		movement_i_ = mm_back;
-		sp_movement_.reset(new MovementBack(TILT_BACK_DISTANCE, BACK_MAX_SPEED));
+		float back_distance= static_cast<float>(p_movement->bumper_status_in_stay_? 0.01 : 0.05);
+		back_distance = static_cast<float>(ev.tilt_triggered ? TILT_BACK_DISTANCE : back_distance);
+		sp_movement_.reset(new MovementBack(back_distance, BACK_MAX_SPEED));
 		return true;
 	}
 	return false;
