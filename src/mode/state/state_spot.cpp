@@ -18,7 +18,7 @@ void StateSpot::init()
 	water_tank.setTankMode(WaterTank::TANK_HIGH);
 	key_led.setMode(LED_STEADY, LED_GREEN);
 	if (getMode()->isNavMode())
-		speaker.play(VOICE_CLEANING_SPOT, false);
+		speaker.play(VOICE_CLEANING_SPOT);
 //	ROS_INFO("%s %d: Enter state resume low battery charge%s.", __FUNCTION__, __LINE__, getMode()->isNavMode() ? " in navigation" : "");
 	ROS_INFO("%s,%d:Enter state spot init",__FUNCTION__,__LINE__);
 }
