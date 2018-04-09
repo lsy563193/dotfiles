@@ -6,6 +6,7 @@
 #include <robot.hpp>
 #include "dev.h"
 #include "mode.hpp"
+#include "appointment.h"
 
 ModeRemote::ModeRemote()
 {//use dynamic then you can limit using derived class member
@@ -31,7 +32,7 @@ ModeRemote::ModeRemote()
 	key.resetTriggerStatus();
 	c_rcon.resetStatus();
 	remote.reset();
-	robot_timer.resetPlanStatus();
+	appmt_obj.resetPlanStatus();
 	event_manager_reset_status();
 
 	remote_mode_time_stamp_ = ros::Time::now().toSec();
