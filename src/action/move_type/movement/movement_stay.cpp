@@ -34,6 +34,9 @@ bool MovementStay::isFinish()
 		cliff_status_in_stay_ = cliff.getStatus();
 		tilt_status_in_stay_ = gyro.getTiltCheckingStatus();
 	}
+	ev.bumper_triggered = static_cast<uint8_t>(bumper_status_in_stay_ ? bumper_status_in_stay_ : ev.bumper_triggered);
+	ev.cliff_triggered = static_cast<uint8_t>(cliff_status_in_stay_ ? cliff_status_in_stay_: ev.cliff_triggered);
+	ev.tilt_triggered = static_cast<uint8_t>(tilt_status_in_stay_ ? tilt_status_in_stay_ : ev.tilt_triggered);
 	robot::instance()->lockScanCtrl();
 	robot::instance()->pubScanCtrl(true, true);
 	return isTimeUp() || bumper_status_in_stay_ || cliff_status_in_stay_ || tilt_status_in_stay_;

@@ -14,11 +14,11 @@ CleanModeExploration::CleanModeExploration()
 	speaker.play(VOICE_BACK_TO_CHARGER, false);
 	mode_i_ = cm_exploration;
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
-	IMoveType::sp_mode_ = this; // todo: is this sentence necessary? by Austin
 	go_home_path_algorithm_.reset();
 	error_marker_.clear();
 	clean_map_.mapInit();
 	setExpMode(true);
+	obs.control(OFF);
 }
 
 CleanModeExploration::~CleanModeExploration()
@@ -58,6 +58,7 @@ CleanModeExploration::~CleanModeExploration()
 	}
 #endif
 	setExpMode(false);
+	obs.control(ON);
 }
 
 bool CleanModeExploration::mapMark()
@@ -165,7 +166,8 @@ void CleanModeExploration::switchInStateInit() {
 	PP_INFO();
 	action_i_ = ac_null;
 	sp_action_ = nullptr;
-	sp_state = state_exploration.get();
+	// Turn around and try receiving the rcon signal before exploration, it can increase the chance for going to charger.
+	sp_state = state_go_to_charger.get();
 	sp_state->init();
 }
 

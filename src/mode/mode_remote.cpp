@@ -71,6 +71,14 @@ bool ModeRemote::isExit()
 		return true;
 	}
 
+	if (battery.isLow())
+	{
+		ROS_WARN("%s %d: Exit to idle mode for low battery(%.2fV).", __FUNCTION__, __LINE__, battery.getVoltage() / 100.0);
+		speaker.play(VOICE_BATTERY_LOW);
+		setNextMode(md_idle);
+		return true;
+	}
+
 	return false;
 }
 
