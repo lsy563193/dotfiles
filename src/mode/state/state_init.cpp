@@ -21,11 +21,17 @@ void StateInit::init() {
 
 void StateInit::initOpenLidar() {
 	if (Mode::next_mode_i_ == Mode::cm_navigation && sp_cm_->isRemoteGoHomePoint())
+	{
 		key_led.setMode(LED_STEADY, LED_ORANGE);
+		brush.slowOperate();
+		water_tank.setTankMode(WaterTank::TANK_LOW);
+	}
 	else
+	{
 		key_led.setMode(LED_STEADY, LED_GREEN);
-	brush.normalOperate();
-	water_tank.setTankMode(WaterTank::TANK_HIGH);
+		brush.normalOperate();
+		water_tank.setTankMode(WaterTank::TANK_HIGH);
+	}
 	water_tank.checkEquipment(false) ? water_tank.open(WaterTank::water_tank) : vacuum.setCleanState();
 	ROS_INFO("%s %d: Enter state initOpenLidar.", __FUNCTION__, __LINE__);
 }
