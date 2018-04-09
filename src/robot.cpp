@@ -11,15 +11,15 @@
 #include "lidar.hpp"
 #include "robot.hpp"
 #include "slam.h"
-
-
 #include "action.hpp"
 #include "movement.hpp"
 #include "move_type.hpp"
 #include "state.hpp"
 #include "mode.hpp"
+#include "appointment.h"
 #include "std_srvs/Empty.h"
 
+using namespace SERIAL;
 
 pthread_mutex_t recev_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t  recev_cond = PTHREAD_COND_INITIALIZER;
@@ -107,8 +107,10 @@ robot::robot()
 	auto event_handler_thread = new boost::thread(event_handler_thread_cb);
 	auto core_thread = new boost::thread(boost::bind(&robot::core_thread_cb,this));
 
+	auto wifi_send_thread = new boost::thread(boost::bind(&S_Wifi::wifi_send_routine,&s_wifi));
+
 	obs.control(ON);
-	ROS_INFO("%s %d: robot init done!", __FUNCTION__, __LINE__);
+	ROS_INFO("%s %d: Robot x900(version 0000 r4) is online :)", __FUNCTION__, __LINE__);
 }
 
 robot::~robot()
@@ -296,9 +298,9 @@ void robot::robotbase_routine_cb()
 		key.eliminate_jitter((buf[REC_MIX_BYTE] & 0x01) != 0);
 		sensor.key = key.getTriggerStatus();
 
-		// For timer device.
-		robot_timer.setPlanStatus(static_cast<uint8_t>((buf[REC_MIX_BYTE] >> 1) & 0x03));
-		sensor.plan = robot_timer.getPlanStatus();
+		// For appointment status
+		appmt_obj.setPlanStatus(static_cast<uint8_t>((buf[REC_MIX_BYTE] >> 1) & 0x03));
+		sensor.plan = appmt_obj.getPlanStatus();
 
 		// For water tank device.
 		water_tank.setEquimentStatus((buf[REC_MIX_BYTE] & 0x08) != 0);
@@ -339,6 +341,14 @@ void robot::robotbase_routine_cb()
 		sensor.left_wheel_encoder = wheel.getLeftEncoderCnt();
 		wheel.setRightEncoderCnt(buf[REC_RIGHT_WHEEL_ENCODER]);
 		sensor.right_wheel_encoder = wheel.getRightEncoderCnt();
+
+
+		// For appointment set time
+		appmt_obj.set(buf[REC_APPOINTMENT_TIME]);
+		sensor.appointment = buf[REC_APPOINTMENT_TIME];
+		if(buf[REC_APPOINTMENT_TIME] & 0x80)
+			robot_timer.setRealTime( ((buf[REC_REALTIME_H]& 0x00ff)<<8) & buf[REC_REALTIME_L]);
+		sensor.realtime =  ((buf[REC_REALTIME_H] & 0x00ff)<<8) & buf[REC_REALTIME_L];
 
 		// For debug.
 //		printf("%d: REC_MIX_BYTE:(%2x), REC_RESERVED:(%2x).\n.",
@@ -509,7 +519,7 @@ void robot::runTestMode()
 
 void robot::runWorkMode()
 {
-//	s_wifi.resume();
+	s_wifi.appendTask(S_Wifi::ACT::ACT_RESUME);
 	auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
 	send_thread_enable = true;
 
@@ -527,9 +537,14 @@ void robot::runWorkMode()
 
 	if (charger.isOnStub() || charger.isDirected())
 		p_mode.reset(new ModeCharge());
-	else
+	else if (battery.isReadyToClean())
 	{
 		speaker.play(VOICE_PLEASE_START_CLEANING, false);
+		p_mode.reset(new ModeIdle());
+	}
+	else
+	{
+		speaker.play(VOICE_BATTERY_LOW, false);
 		p_mode.reset(new ModeIdle());
 	}
 
@@ -751,6 +766,8 @@ void robot::publishCtrlStream(void)
 	ctrl_stream.infrared_display_step = static_cast<unsigned char>(serial.getSendData(CTL_IR_CTRL) & 0x3F);
 	ctrl_stream.infrared_display_content = serial.getSendData(CTL_IR_CONTENT_H) << 8 | serial.getSendData(CTL_IR_CONTENT_L);
 	ctrl_stream.infrared_display_error_code = serial.getSendData(CTL_IR_ERROR_CODE_H) << 8 | serial.getSendData(CTL_IR_ERROR_CODE_L);
+
+	ctrl_stream.appointment_bytes = (serial.getSendData(CTL_APPOINTMENT_H) <<8) & serial.getSendData(CTL_APPOINTMENT_L);
 
 	ctrl_stream.key_validation = serial.getSendData(CTL_KEY_VALIDATION);
 	ctrl_stream.crc = serial.getSendData(CTL_CRC);

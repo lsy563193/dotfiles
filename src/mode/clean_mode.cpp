@@ -104,6 +104,11 @@ ACleanMode::~ACleanMode()
 			speaker.play(VOICE_CLEANING_FINISHED, false);
 			ROS_WARN("%s %d: Moved during pause. Stop cleaning.", __FUNCTION__, __LINE__);
 		}
+		else if (switch_is_off_)
+		{
+			speaker.play(VOICE_CHECK_SWITCH, false);
+			ROS_WARN("%s %d: Switch is not on. Stop cleaning.", __FUNCTION__, __LINE__);
+		}
 		else if (ev.fatal_quit)
 		{
 			if (ev.cliff_all_triggered)
@@ -111,16 +116,13 @@ ACleanMode::~ACleanMode()
 				speaker.play(VOICE_ERROR_LIFT_UP, false);
 				ROS_WARN("%s %d: Cliff all triggered. Stop cleaning.", __FUNCTION__, __LINE__);
 			}
-			else
+			else if (ev.charge_detect)
 			{
 				speaker.play(VOICE_CLEANING_FINISHED, false);
-				ROS_WARN("%s %d: fatal_quit is true. Stop cleaning.", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: Charge detect. Stop cleaning.", __FUNCTION__, __LINE__);
 			}
-		}
-		else if (switch_is_off_)
-		{
-			speaker.play(VOICE_CHECK_SWITCH, false);
-			ROS_WARN("%s %d: Switch is not on. Stop cleaning.", __FUNCTION__, __LINE__);
+			else
+				ROS_WARN("%s %d: fatal_quit is true. Stop cleaning.", __FUNCTION__, __LINE__);
 		}
 		else if (ev.key_clean_pressed || ev.key_long_pressed)
 		{

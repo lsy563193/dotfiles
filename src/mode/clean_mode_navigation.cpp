@@ -30,7 +30,6 @@ CleanModeNav::CleanModeNav()
 	paused_odom_radian_ = 0;
 	moved_during_pause_ = false;
 
-	IMoveType::sp_mode_ = this; // todo: is this sentence necessary? by Austin
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
 
 	go_home_path_algorithm_.reset();
@@ -142,8 +141,9 @@ bool CleanModeNav::mapMark()
 	}
 
 	//tx pass path via serial wifi
-	s_wifi.uploadPassPath(passed_path_);
-	s_wifi.replyRobotStatus(0xc8,0x00);
+	//s_wifi.uploadPassPath(passed_path_);
+	//s_wifi.replyRobotStatus(0xc8,0x00);
+	s_wifi.cacheMapData(passed_path_);
 	c_blocks.clear();
 	passed_path_.clear();
 	return false;
@@ -305,7 +305,7 @@ void CleanModeNav::keyClean(bool state_now, bool state_last)
 
 	if (reset_wifi)
 	{
-		s_wifi.smartApLink();
+		s_wifi.appendTask(S_Wifi::ACT::ACT_SMART_AP_LINK);
 		sp_action_.reset();
 		sp_action_.reset(new ActionPause);
 	}
@@ -614,6 +614,25 @@ bool CleanModeNav::updateActionInStateClean(){
 	sp_action_.reset();//to mark in destructor
 //	pubCleanMapMarkers(clean_map_, pointsGenerateCells(remain_path_));
 	old_dir_ = iterate_point_.dir;
+//    std::equal(history_.begin(),history_.end,[](const Cell_t his){
+//	});
+    BoundingBox<Point_t> bound;
+	bound.SetMinimum({iterate_point_.x - CELL_SIZE, iterate_point_.y - CELL_SIZE});
+	bound.SetMaximum({iterate_point_.x + CELL_SIZE, iterate_point_.y + CELL_SIZE});
+    //check is always in same range;
+//	ROS_ERROR("%s,%d: iterate_point in all in history_(%d)",__FUNCTION__, __LINE__,history_.size());
+//	std::copy(history_.begin(), history_.end(),std::ostream_iterator<Point_t>(std::cout,","));
+//	ROS_ERROR("%s,%d: iterate_point in all in history_(%d)",__FUNCTION__, __LINE__,history_.size());
+//    if(history_.size() == 3 && std::all_of(std::begin(history_), std::end(history_), [&](const Point_t & p_it){ return bound.Contains(p_it); })){
+//		ROS_ERROR("%s,%d: iterate_point in all in history_",__FUNCTION__, __LINE__);
+//		std::copy(std::begin(history_), std::end(history_),std::ostream_iterator<Point_t>(std::cout,","));
+//        beeper.beepForCommand(VALID);
+//        ev.robot_slip = true;
+//		history_.clear();
+//		is_stay_in_same_postion_long_time = true;
+//		return false;
+//	};
+//    history_.push_back(iterate_point_);
 	if(action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
 	{
 
@@ -661,7 +680,10 @@ bool CleanModeNav::updateActionInStateClean(){
 }
 
 void CleanModeNav::switchInStateClean() {
-	if (clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell())) {
+    if(checkEnterPause())
+	{
+	}
+	else if (clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell())) {
 		ROS_WARN("%s,%d: enter state trapped",__FUNCTION__,__LINE__);
 		sp_saved_states.push_back(sp_state);
 		sp_state = state_folllow_wall.get();
@@ -676,7 +698,8 @@ void CleanModeNav::switchInStateClean() {
 		ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_points_.size());
 		go_home_path_algorithm_.reset();
 		go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_, start_point_));
-		s_wifi.uploadLastCleanData();
+		speaker.play(VOICE_BACK_TO_CHARGER, true);
+		//s_wifi.appendTask(S_Wifi::ACT::ACT_UPLOAD_LAST_CLEANMAP);
 	}
 	sp_state->init();
 	action_i_ = ac_null;
@@ -775,8 +798,10 @@ void CleanModeNav::switchInStateSpot()
 
 bool CleanModeNav::checkEnterPause()
 {
-	if (ev.key_clean_pressed)
+	if (ev.key_clean_pressed /*|| is_stay_in_same_postion_long_time*/)
 	{
+
+//		is_stay_in_same_postion_long_time = false;
 		ev.key_clean_pressed = false;
 		speaker.play(VOICE_CLEANING_PAUSE);
 		paused_odom_radian_ = odom.getRadian();

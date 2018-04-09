@@ -29,6 +29,7 @@ MovementStay::~MovementStay()
 bool MovementStay::isFinish()
 {
 	bumper_status_in_stay_ = bumper.getStatus();
+	ROS_ERROR("%s,%d, movementStay",__FUNCTION__, __LINE__);
 	if(sp_mt_->sp_mode_->action_i_ != sp_mt_->sp_mode_->ac_linear)
 	{
 		cliff_status_in_stay_ = cliff.getStatus();
@@ -38,6 +39,7 @@ bool MovementStay::isFinish()
 	ev.cliff_triggered = static_cast<uint8_t>(cliff_status_in_stay_ ? cliff_status_in_stay_: ev.cliff_triggered);
 	ev.tilt_triggered = static_cast<uint8_t>(tilt_status_in_stay_ ? tilt_status_in_stay_ : ev.tilt_triggered);
 	robot::instance()->lockScanCtrl();
+	ROS_ERROR("%s,%d, movementStay",__FUNCTION__, __LINE__);
 	robot::instance()->pubScanCtrl(true, true);
 	return isTimeUp() || bumper_status_in_stay_ || cliff_status_in_stay_ || tilt_status_in_stay_;
 }

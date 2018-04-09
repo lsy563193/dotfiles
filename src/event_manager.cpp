@@ -4,6 +4,7 @@
 #include "dev.h"
 #include "map.h"
 #include "serial.h"
+#include "appointment.h"
 
 int g_bumper_cnt = 0;
 /* OBS */
@@ -265,7 +266,7 @@ void event_manager_thread_cb()
 			evt_set_status_x(EVT_KEY_CLEAN);
 		}
 
-		if (robot_timer.getPlanStatus()) {
+		if (appmt_obj.getPlanStatus()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_REMOTE_PLAN);
 		}
@@ -833,7 +834,7 @@ void EventHandle::remotePlan(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote plan is pressed.", __FUNCTION__, __LINE__);
 	df_remote();
-	robot_timer.resetPlanStatus();
+	appmt_obj.resetPlanStatus();
 }
 
 void EventHandle::remoteClean(bool state_now, bool state_last)

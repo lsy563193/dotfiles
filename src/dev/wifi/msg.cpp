@@ -53,8 +53,8 @@ string SetScheduleRxMsg::describe() const
 	std::ostringstream ss;
 	for(uint8_t i=0 ;i<10; i++)
 	{
-		ss << "set schedule msg:\n num ("<< (int)getScheNum(i)<<"), enable ("<<(int)isEnable(i)<<"),weeks ("<< (int)getWeek(i)
-			<< "), hour(" <<(int)getHour(i)<< "), second(" << (int)getMin(i) <<")\n";
+		ss << "\nset schedule msg: num ("<< (int)getScheNum(i)<<"), enable ("<<(int)isEnable(i)<<"),weeks ("<< (int)getWeek(i)
+			<< "), hour(" <<(int)getHour(i)<< "), second(" << (int)getMin(i) <<")";
 
 	}
 	return ss.str();

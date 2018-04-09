@@ -117,3 +117,9 @@ int8 left_wheel_encoder
 
 # right_wheel_encoder: Right wheel encoder count.
 int8 right_wheel_encoder
+
+# appointment time from bottom
+int8 appointment
+
+#real time from bottom
+int16 realtime

@@ -56,6 +56,8 @@ uint8 infrared_display_step
 uint16 infrared_display_content
 uint16 infrared_display_error_code
 
+#appointment 
+uint16 appointment_bytes
 # One byte for key validation.
 uint8 key_validation
 

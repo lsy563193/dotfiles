@@ -28,8 +28,7 @@ public:
 	// For test mode.
 	virtual void dataExtract(){};
 
-	double start_timer_ = ros::Time::now().toSec();
-
+	double start_timer_;
 protected:
 	double timeout_interval_{};
 };
