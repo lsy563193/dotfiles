@@ -10,7 +10,6 @@
 class Timer {
 public:
 	Timer() {
-		plan_status_ = 0;
 		work_start_time_ = time(NULL);
 		wall_follow_start_time_ = time(NULL);
 		trap_start_time_ = time(NULL);
@@ -41,28 +40,6 @@ public:
 
 	bool trapTimeout(double duration);
 
-	void resetPlanStatus(void)
-	{
-		plan_status_ = 0;
-	}
-
-	void setPlanStatus(uint8_t Status) {
-		plan_status_ = Status;
-		if (plan_status_ != 0)
-			ROS_DEBUG("Plan status return %d.", plan_status_);
-	}
-
-	uint8_t getPlanStatus(void) {
-		return plan_status_;
-	}	
-
-	/*
-	 * @brief set appointment to  bottom board
-	 * @param1 time in minutes
-	 * @param2 0b01 set appointment ,0b10 not set appointment
-	 */
-	void setPlan2Bottom(uint32_t time,bool appointment_set);
-
 	/*
 	 * @brief set real time to struct DataTime
 	 * @param1 date time
@@ -90,9 +67,7 @@ public:
 
 	char* asctime();
 private:
-	// Variable for plan status
-	uint8_t plan_status_;
-
+	
 	time_t work_start_time_;
 	uint32_t saved_work_time_;
 	time_t wall_follow_start_time_;

@@ -50,14 +50,6 @@ bool Timer::trapTimeout(double duration)
 	return difftime(time(NULL), trap_start_time_) > duration;
 }
 
-void Timer::setPlan2Bottom(uint32_t mint,bool appointment_set)
-{
-	uint16_t apt = appointment_set? (mint & 0x13ff):(mint & 0x23ff);
-	serial.setSendData(SERIAL::CTL_APPOINTMENT_H,apt>>8);
-	serial.setSendData(SERIAL::CTL_APPOINTMENT_L,apt&0x00ff);
-	ROS_INFO("%s,%d set minutes counter %d",__FUNCTION__,__LINE__,mint);
-}
-
 void Timer::setRealTime(Timer::DateTime date_time)
 {
 	date_time_.year = date_time.year;

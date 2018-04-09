@@ -299,8 +299,8 @@ void robot::robotbase_routine_cb()
 		sensor.key = key.getTriggerStatus();
 
 		// For appointment status
-		robot_timer.setPlanStatus(static_cast<uint8_t>((buf[REC_MIX_BYTE] >> 1) & 0x03));
-		sensor.plan = robot_timer.getPlanStatus();
+		appmt_obj.setPlanStatus(static_cast<uint8_t>((buf[REC_MIX_BYTE] >> 1) & 0x03));
+		sensor.plan = appmt_obj.getPlanStatus();
 
 		// For water tank device.
 		water_tank.setEquimentStatus((buf[REC_MIX_BYTE] & 0x08) != 0);

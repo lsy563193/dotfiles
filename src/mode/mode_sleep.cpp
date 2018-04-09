@@ -6,6 +6,7 @@
 #include <event_manager.h>
 #include "dev.h"
 #include "mode.hpp"
+#include "appointment.h"
 
 ModeSleep::ModeSleep()
 {
@@ -18,7 +19,7 @@ ModeSleep::ModeSleep()
 	key.resetTriggerStatus();
 	c_rcon.resetStatus();
 	remote.reset();
-	robot_timer.resetPlanStatus();
+	appmt_obj.resetPlanStatus();
 
 	sp_state = st_sleep.get();
 	sp_state->init();
@@ -164,13 +165,13 @@ void ModeSleep::rcon(bool state_now, bool state_last)
 
 void ModeSleep::remotePlan(bool state_now, bool state_last)
 {
-	if (serial.isMainBoardSleep() && !plan_activated_status_ && robot_timer.getPlanStatus() == 3)
+	if (serial.isMainBoardSleep() && !plan_activated_status_ && appmt_obj.getPlanStatus() == 3)
 	{
-		ROS_WARN("%s %d: Waked up by plan.", __FUNCTION__, __LINE__);
+		INFO_YELLOW("Waked up by plan.");
 		plan_activated_status_ = true;
 		serial.setWorkMode(WORK_MODE);
 		key_led.setMode(LED_FLASH, LED_GREEN);
 	}
-	robot_timer.resetPlanStatus();
+	appmt_obj.resetPlanStatus();
 }
 

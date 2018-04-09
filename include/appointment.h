@@ -50,6 +50,29 @@ public:
 	 * @return miniutes 
 	 */
 	uint32_t getLastAppointment();
+
+	void resetPlanStatus(void)
+	{
+		plan_status_ = 0;
+	}
+
+	void setPlanStatus(uint8_t Status) {
+		plan_status_ = Status;
+		if (plan_status_ != 0)
+			ROS_DEBUG("Plan status return %d.", plan_status_);
+	}
+
+	uint8_t getPlanStatus(void) {
+		return plan_status_;
+	}	
+
+	/*
+	 * @brief set appointment to  bottom board
+	 * @param1 time in minutes
+	 * @param2 0b01 set appointment ,0b10 not set appointment
+	 */
+	void setPlan2Bottom(uint32_t time,bool appointment_set);
+
 private:
 
 	std::vector<Appointment::st_appmt> apmt_l_;
@@ -61,6 +84,8 @@ private:
 	pthread_mutex_t appmt_lock_;
 
 
+	// Variable for plan status
+	uint8_t plan_status_;
 };
 
 }

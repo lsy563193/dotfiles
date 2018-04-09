@@ -191,7 +191,7 @@ uint32_t Appmt::getLastAppointment()
 	{
 		if(apmt_l_[i].enable)
 		{
-			int diff_w = (i+1 - cur_wday );
+			int diff_w = (i - cur_wday );
 			int diff_h = (apmt_l_[i].hour - cur_hour);
 			int diff_m = (apmt_l_[i].mint - cur_mint);
 
@@ -213,7 +213,15 @@ uint32_t Appmt::getLastAppointment()
 		}
 		msg<<" ("<<i<<","<<(int)mints[i]<<")";
 	}
-	ROS_INFO("%s,%d,appointment_count_=%u ,  %s",__FUNCTION__,__LINE__,appointment_count_,msg.str().c_str());
+	ROS_INFO("%s,%d,\033[1;40;32mappointment_count_=%u minutes,\033[0m  %s",__FUNCTION__,__LINE__,appointment_count_,msg.str().c_str());
 	return appointment_count_;
+}
+
+void Appmt::setPlan2Bottom(uint32_t mint,bool appointment_set)
+{
+	uint16_t apt = appointment_set? (mint & 0x7fff):(mint | 0xbfff);
+	serial.setSendData(SERIAL::CTL_APPOINTMENT_H,apt>>8);
+	serial.setSendData(SERIAL::CTL_APPOINTMENT_L,apt&0x00ff);
+	ROS_INFO("%s,%d set minutes counter %d",__FUNCTION__,__LINE__,mint);
 }
 

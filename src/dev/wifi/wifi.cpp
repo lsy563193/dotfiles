@@ -116,9 +116,8 @@ bool S_Wifi::init()
 	s_wifi_rx_.regOnNewMsgListener<wifi::QueryScheduleStatusRxMsg>(
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::QueryScheduleStatusRxMsg &msg = static_cast<const wifi::QueryScheduleStatusRxMsg&>( a_msg );
-				//
+				//get appointment 
 				std::vector<wifi::ScheduleStatusTxMsg::Schedule> vec_sch;
-				//vec_sch.push_back(wifi::ScheduleStatusTxMsg::Schedule());
 				std::vector<Appointment::st_appmt> appmts = appmt_obj.get();
 				for(int i = 1;i<appmts.size();i++)
 				{
@@ -129,13 +128,17 @@ bool S_Wifi::init()
 								appmts[i].mint);
 					vec_sch.push_back(sche);
 				}
-				//ack
+				//ack to cloud
 				wifi::ScheduleStatusTxMsg p(
 							vec_sch,
 							msg.seq_num()
 							);
 				s_wifi_tx_.push(std::move(p)).commit();
 				INFO_BLUE("receive query schedule");
+
+				//set appointment to bottom board
+				uint32_t mint = appmt_obj.getLastAppointment();
+				appmt_obj.setPlan2Bottom(mint,true);
 			});
 	//query consumption
 	s_wifi_rx_.regOnNewMsgListener<wifi::QueryConsumableStatusRxMsg>(
@@ -1035,7 +1038,7 @@ uint8_t S_Wifi::setSchedule(const wifi::SetScheduleRxMsg &sche)
 
 	if(isScheSet_n>0){
 		uint32_t mint = appmt_obj.getLastAppointment();
-		robot_timer.setPlan2Bottom(mint,isScheSet_n);
+		appmt_obj.setPlan2Bottom(mint,isScheSet_n);
 		if(last_sche_n < isScheSet_n)
 			speaker.play(VOICE_APPOINTMENT_DONE);
 		last_sche_n = isScheSet_n;
