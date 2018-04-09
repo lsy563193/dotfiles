@@ -53,6 +53,7 @@ void Error::alarm(void)
 			break;
 		}
 		case ERROR_CODE_LIDAR:
+		case ERROR_CODE_SLAM:
 		{
 			speaker.play(VOICE_TEST_LIDAR);
 			break;
