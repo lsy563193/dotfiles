@@ -680,10 +680,7 @@ bool CleanModeNav::updateActionInStateClean(){
 }
 
 void CleanModeNav::switchInStateClean() {
-    if(checkEnterPause())
-	{
-	}
-	else if (clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell())) {
+	if (clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell())) {
 		ROS_WARN("%s,%d: enter state trapped",__FUNCTION__,__LINE__);
 		sp_saved_states.push_back(sp_state);
 		sp_state = state_folllow_wall.get();
@@ -698,7 +695,6 @@ void CleanModeNav::switchInStateClean() {
 		ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_points_.size());
 		go_home_path_algorithm_.reset();
 		go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_, start_point_));
-		speaker.play(VOICE_BACK_TO_CHARGER, true);
 		//s_wifi.appendTask(S_Wifi::ACT::ACT_UPLOAD_LAST_CLEANMAP);
 	}
 	sp_state->init();
@@ -835,7 +831,7 @@ bool CleanModeNav::checkResumePause()
 			if (go_home_path_algorithm_ == nullptr)
 				go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_, start_point_));
 			ev.remote_home = false;
-			speaker.play(VOICE_BACK_TO_CHARGER);
+			speaker.play(VOICE_GO_HOME_MODE);
 			remote_go_home_point = true;
 		}
 		sp_state = state_init.get();
