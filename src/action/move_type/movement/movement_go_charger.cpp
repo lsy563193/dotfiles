@@ -1907,5 +1907,9 @@ void MovementGoToCharger::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 
 bool MovementGoToCharger::isFinish()
 {
-	return charger.getChargeStatus() || _isStop();
+	auto ret = charger.getChargeStatus() || _isStop();
+	if(ret){
+		wheel.stop();
+	}
+	return ret;
 }

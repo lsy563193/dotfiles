@@ -116,10 +116,8 @@ bool MovementBack::isFinish()
 	}
 	if (ret) {
 		wheel.stop();
-		return true;
-	} else {
-		return false;
 	}
+	return ret;
 }
 
 bool MovementBack::isLidarStop()
