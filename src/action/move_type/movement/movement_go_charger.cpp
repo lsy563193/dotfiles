@@ -182,7 +182,7 @@ bool MovementGoToCharger::isSwitch()
 			else if(receive_code&RconFR2_HomeL)//FR2 H_L
 			{
 				ROS_INFO("Start with FR2-L.");
-				turn_angle_ = -80;
+				turn_angle_ = -85;
 				around_charger_stub_dir = 1;
 			}
 			else if(receive_code&RconL_HomeL)// L  H_L
