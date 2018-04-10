@@ -16,6 +16,8 @@
 #include "move_type.hpp"
 #include "error.h"
 
+#define ROUTATE_SPEED 20
+
 MoveTypeGyroTest::MoveTypeGyroTest()
 {
 	ROS_INFO("%s,%d: Enter move type gyro test.", __FUNCTION__, __LINE__);
@@ -117,19 +119,40 @@ void MoveTypeGyroTest::run()
 				test_stage_++;
 				infrared_display.displayNormalMsg(test_stage_, 0);
 				p_movement_.reset();
-				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-90), 10));
+				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-90), ROUTATE_SPEED));
 				saved_gyro_turn_angle_ = gyro.getAngleY();
 				saved_wheel_mileage_ = wheel_mileage_;
-				brush.slowOperate();
+				brush.normalOperate();
 			}
 			else
 				p_movement_->run();
 			break;
 		}
+		// First round.
 		case 2:
 		case 3:
 		case 4:
 		case 5:
+		// Second round.
+		case 6:
+		case 7:
+		case 8:
+		case 9:
+		// Third round.
+		case 10:
+		case 11:
+		case 12:
+		case 13:
+		// Forth round.
+		case 14:
+		case 15:
+		case 16:
+		case 17:
+		// Fifth round.
+		case 18:
+		case 19:
+		case 20:
+		case 21:
 		{
 			/*wheel.pidSetLeftSpeed(-5);
 			wheel.pidSetRightSpeed(5);
@@ -150,10 +173,9 @@ void MoveTypeGyroTest::run()
 			if (p_movement_->isFinish())
 			{
 				wheel_turn_angle_ = radian_to_degree((wheel_mileage_ - saved_wheel_mileage_) / 2 / WHEEL_TO_CENTER_DISTANCE);
-				saved_wheel_mileage_ = wheel_mileage_;
 				ROS_INFO("count sum:%d.", count_sum);
 				ROS_INFO("%s %d: Turn for %d times, wheel_turn_angle_:%f(%f in angle).",
-						 __FUNCTION__, __LINE__, test_stage_, degree_to_radian(wheel_turn_angle_), wheel_turn_angle_);
+						 __FUNCTION__, __LINE__, test_stage_ - 1, degree_to_radian(wheel_turn_angle_), wheel_turn_angle_);
 
 				auto current_angle = gyro.getAngleY();
 				auto gyro_diff = fabs(ranged_degree(current_angle - saved_gyro_turn_angle_));
@@ -161,7 +183,7 @@ void MoveTypeGyroTest::run()
 
 				auto diff = fabs(ranged_degree(wheel_turn_angle_ - gyro_diff));
 				ROS_INFO("%s %d: diff = %f", __FUNCTION__, __LINE__, diff);
-				if (diff > 4)
+				if (diff > 6)
 				{
 					error_code_ = GYRO_ERROR;
 					error_stage_ = test_stage_;
@@ -171,14 +193,17 @@ void MoveTypeGyroTest::run()
 				else
 				{
 					p_movement_.reset();
-					if (test_stage_ == 5)
+					wheel.stop();
+					usleep(500000);
+					if (test_stage_ == 21)
 						p_movement_.reset();
 					else
-						p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-90), 10));
+						p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-90), ROUTATE_SPEED));
 					test_stage_++;
 					infrared_display.displayNormalMsg(test_stage_, 0);
 					current_angle = gyro.getAngleY();
 					saved_gyro_turn_angle_ = current_angle;
+					saved_wheel_mileage_ = wheel_mileage_;
 				}
 			}
 			else
