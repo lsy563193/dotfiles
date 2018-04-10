@@ -116,7 +116,7 @@ bool CleanModeNav::mapMark()
 	}
 	else if (sp_state == state_clean.get()) {
 		setLinearCleaned();
-// Set home cell.
+		// Set home cell.
 		if (ev.rcon_status)
 			setHomePoint();
 	}

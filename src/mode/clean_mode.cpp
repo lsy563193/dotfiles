@@ -1899,7 +1899,7 @@ void ACleanMode::switchInStateExploration() {
 	genNextAction();
 }
 
-// ------------------State trapped------------------
+// ------------------State follow wall------------------
 
 bool ACleanMode::isSwitchByEventInStateFollowWall()
 {
