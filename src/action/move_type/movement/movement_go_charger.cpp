@@ -322,7 +322,7 @@ bool MovementGoToCharger::isSwitch()
 		gtc_state_now_ = gtc_around_charger_station;
 		around_move_cnt = 0;
 	}
-	else if (gtc_state_now_ == gtc_around_charger_station)
+	if (gtc_state_now_ == gtc_around_charger_station)
 	{
 		if(cliff.getStatus())
 		{
