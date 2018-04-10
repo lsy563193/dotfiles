@@ -637,6 +637,11 @@ void Serial::send_routine_cb()
 		sendData();
 		robot::instance()->publishCtrlStream();
 	}
+	brush.stop();
+	vacuum.stop();
+	wheel.stop();
+	water_tank.stop(WaterTank::tank_pump);
+	usleep(40000);
 	core_thread_kill = true;
 	printf("%s,%d exit.\n",__FUNCTION__,__LINE__);
 	//pthread_exit(NULL);
