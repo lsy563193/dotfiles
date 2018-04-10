@@ -137,8 +137,8 @@ bool S_Wifi::init()
 				INFO_BLUE("receive query schedule");
 
 				//set appointment to bottom board
-				uint32_t mint = appmt_obj.getLastAppointment();
-				appmt_obj.setPlan2Bottom(mint,true);
+				uint16_t mint = appmt_obj.getNewestAppointment();
+				appmt_obj.setPlan2Bottom(mint);
 			});
 	//query consumption
 	s_wifi_rx_.regOnNewMsgListener<wifi::QueryConsumableStatusRxMsg>(
@@ -380,7 +380,7 @@ bool S_Wifi::init()
 
 uint8_t S_Wifi::uploadStatus(int msg_code,const uint8_t seq_num)
 {
-	if(!is_wifi_connected_ || !is_Status_Request_ )
+	if(!is_wifi_connected_ )
 		return -1;
 	wifi::WorkMode work_mode = robot_work_mode_;
 	uint8_t error_code = 0;
@@ -1037,8 +1037,8 @@ uint8_t S_Wifi::setSchedule(const wifi::SetScheduleRxMsg &sche)
 	}
 
 	if(isScheSet_n>0){
-		uint32_t mint = appmt_obj.getLastAppointment();
-		appmt_obj.setPlan2Bottom(mint,isScheSet_n);
+		uint16_t mint = appmt_obj.getNewestAppointment();
+		appmt_obj.setPlan2Bottom(mint);
 		if(last_sche_n < isScheSet_n)
 			speaker.play(VOICE_APPOINTMENT_DONE);
 		last_sche_n = isScheSet_n;
@@ -1177,7 +1177,7 @@ void S_Wifi::cacheMapData(const Points pass_path)
 }
 
 void S_Wifi::clearMapCache()
-{	
+{
 	MutexLock lock(&map_data_lock_);
 	map_data_buf_->clear();	
 }

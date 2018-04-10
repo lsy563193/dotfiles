@@ -343,14 +343,14 @@ void robot::robotbase_routine_cb()
 		sensor.right_wheel_encoder = wheel.getRightEncoderCnt();
 
 
-		// For appointment set time
-		appmt_obj.set(buf[REC_APPOINTMENT_TIME]);
-		sensor.appointment = buf[REC_APPOINTMENT_TIME];
-		if(buf[REC_APPOINTMENT_TIME] & 0x80)
-			robot_timer.setRealTime( ((buf[REC_REALTIME_H]& 0x00ff)<<8) & buf[REC_REALTIME_L]);
-		sensor.realtime =  ((buf[REC_REALTIME_H] & 0x00ff)<<8) & buf[REC_REALTIME_L];
+		// For appointment and set time
 
-		// For debug.
+		if(buf[REC_APPOINTMENT_TIME] > 0x80)
+			robot_timer.setRealTime( buf[REC_REALTIME_H]<<8 | buf[REC_REALTIME_L]);
+		sensor.realtime = buf[REC_REALTIME_H]<<8 | buf[REC_REALTIME_L];
+		sensor.appointment = buf[REC_APPOINTMENT_TIME];
+		appmt_obj.set(buf[REC_APPOINTMENT_TIME]);
+			// For debug.
 //		printf("%d: REC_MIX_BYTE:(%2x), REC_RESERVED:(%2x).\n.",
 //			   __LINE__, buf[REC_MIX_BYTE], buf[REC_RESERVED]);
 //		printf("%d: charge:(%d), remote:(%d), key:(%d), rcon(%d).\n.",

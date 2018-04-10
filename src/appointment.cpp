@@ -26,47 +26,56 @@ bool Appmt::set(st_appmt &apmt)
 
 	MutexLock lock(&appmt_lock_);
 	setorget_ = true;
-	rd_routine(&apmt);
+	rw_routine(&apmt);
 	return true;
 }
 
-bool Appmt::set(uint8_t appTime)
+bool Appmt::set(uint8_t apTime)
 {
-	static bool set_appointment = false;
-	MutexLock lock(&appmt_lock_);
-	if(appTime & 0x80 && set_appointment == false)
+	static uint8_t last_atime = 0;
+	if(apTime > 0x80 && apTime != last_atime)
 	{
-		set_appointment = true;
 		st_appmt apmt;
 		apmt.enable = 1;
-		apmt.hour = (appTime&0x7f)*15/60;
-		apmt.mint = (appTime&0x7f)*15/60%15;
+		apmt.hour = ((apTime&0x7f)*15)/60;
+		apmt.mint = ((apTime&0x7f)*15)%60;
 		setorget_ = true;
 		for(int i = 1;i<=7;i++)
 		{
 			apmt.num  = i;
-			apmt.week = i;
-			rd_routine(&apmt);
+			apmt.week = 0x01<<(i-1);
+			MutexLock lock(&appmt_lock_);
+			rw_routine(&apmt);
 		}
+
+		last_atime = apTime;
+
+		//set appointment to bottom board
+		uint16_t mint = appmt_obj.getNewestAppointment();
+		appmt_obj.setPlan2Bottom(mint);
 	}
-	/*
-	else if(!(appTime & 0x80) && set_appointment == true)
+
+	else if(apTime ==  0x80 && apTime != last_atime)
 	{
-		set_appointment = false;
 		st_appmt apmt;
 		apmt.enable = 0;
 		apmt.hour = 0;
 		apmt.mint = 0;
+		apmt.week = 0;
 		setorget_ = true;
 		for(int i = 1;i<=7;i++)
 		{
 			apmt.num  = i;
-			apmt.week = i;
-			rd_routine(&apmt);
+			MutexLock lock(&appmt_lock_);
+			rw_routine(&apmt);
 		}
+
+		last_atime = apTime;
+
+		//set appointment to bottom board
+		uint16_t mint = appmt_obj.getNewestAppointment();
+		appmt_obj.setPlan2Bottom(mint);
 	}
-	*/
-	
 	return true;
 }
 
@@ -74,12 +83,12 @@ std::vector<st_appmt> Appmt::get()
 {
 	MutexLock lock(&appmt_lock_);
 	setorget_ = false;
-	rd_routine(NULL);	
+	rw_routine(NULL);	
 	return apmt_l_;
 
 }
 
-int8_t Appmt::rd_routine(st_appmt *apmt_v)//read write routine
+int8_t Appmt::rw_routine(st_appmt *apmt_v)//read write routine
 {
 	st_appmt *apmt_val = (struct st_appmt*)apmt_v; 
 	//open
@@ -125,11 +134,12 @@ int8_t Appmt::rd_routine(st_appmt *apmt_v)//read write routine
 						(uint8_t*)&apmt_l_[i].hour,
 						(uint8_t*)&apmt_l_[i].mint);
 
-			ROS_INFO("get appointment num %u enable %u weeks %u hour %u mint %u",apmt_l_[i].num,
-						apmt_l_[i].enable,
-						apmt_l_[i].week,
-						apmt_l_[i].hour,
-						apmt_l_[i].mint);
+			ROS_INFO("get appointment num %u enable %u weeks %u hour %u mint %u"
+						,apmt_l_[i].num
+						,apmt_l_[i].enable
+						,apmt_l_[i].week
+						,apmt_l_[i].hour
+						,apmt_l_[i].mint);
 		}
 
 		appointment_change_ = false;
@@ -169,59 +179,75 @@ int8_t Appmt::rd_routine(st_appmt *apmt_v)//read write routine
 
 }
 
-uint32_t Appmt::getLastAppointment()
+uint16_t Appmt::getNewestAppointment()
 {
 	appointment_set_ = false;
+	//get curtime
 	struct Timer::DateTime date_time;
 	date_time = robot_timer.getRealTime();
 	ROS_INFO("%s,%d,cur time %s",__FUNCTION__,__LINE__,
 				robot_timer.asctime());
-
 	int cur_wday = 	robot_timer.getRealTimeWeekDay();
 	int cur_hour = 	date_time.hour;
 	int cur_mint = 	date_time.mint;
 	//get appointment
 	if(appointment_change_)
 		this->get();
-	uint32_t mints[(int)apmt_l_.size()] = {24*60*7};
-	appointment_count_ = mints[0];
-
-	std::ostringstream msg("minutes from now:");
+	//calculate appointment count down
+	uint16_t mints[(int)apmt_l_.size()] = {0};//the appointments count down minutes
+	appointment_count_ = 24*60*7;
+	std::ostringstream msg("");
+	uint16_t cur_tol_mint = (cur_wday-1) * 24 * 60 + cur_hour*60 + cur_mint;//current total minutes
 	for(int i=0;i<apmt_l_.size();i++)
 	{
 		if(apmt_l_[i].enable)
 		{
-			int diff_w = (i - cur_wday );
-			int diff_h = (apmt_l_[i].hour - cur_hour);
-			int diff_m = (apmt_l_[i].mint - cur_mint);
-
-			if(diff_w == 0)
-				if(diff_h >=0 && diff_m >=0)
-					mints[i] = diff_h*60+ diff_m;
-				else
-					mints[i] = 7*24*60+diff_h*60+diff_m;
+			int16_t diff_m = (i-1)*24*60 + apmt_l_[i].hour*60+apmt_l_[i].mint - cur_tol_mint;
+			if(diff_m<=0)
+				mints[i]= 10080+diff_m;
 			else
-				mints[i] = ( diff_w < 0? (7+ diff_w):diff_w) *24*60 
-							+ diff_h*60
-							+ diff_m;
-			if(appointment_count_ > mints[i])
+				mints[i]= diff_m;
+			if(appointment_count_ >= mints[i])
 			{
 				appointment_count_  = mints[i];
-				appointment_time_ = (uint32_t)robot_timer.getRealTimeInMint();
+				appointment_time_ = (uint32_t)robot_timer.getLocalTimeInMint();
 				appointment_set_ = true;
 			}
+
 		}
 		msg<<" ("<<i<<","<<(int)mints[i]<<")";
 	}
-	ROS_INFO("%s,%d,\033[1;40;32mappointment_count_=%u minutes,\033[0m  %s",__FUNCTION__,__LINE__,appointment_count_,msg.str().c_str());
+	if(appointment_set_)
+		ROS_INFO("%s,%d,\033[1;40;32mappointment_count_=%u minutes,\033[0m  %s",__FUNCTION__,__LINE__,appointment_count_,msg.str().c_str());
 	return appointment_count_;
 }
 
-void Appmt::setPlan2Bottom(uint32_t mint,bool appointment_set)
+void Appmt::setPlan2Bottom(uint16_t mint)
 {
-	uint16_t apt = appointment_set? (mint & 0x7fff):(mint | 0xbfff);
+	uint16_t apt = appointment_set_? (mint | 0x7000):(mint | 0x8000);
 	serial.setSendData(SERIAL::CTL_APPOINTMENT_H,apt>>8);
 	serial.setSendData(SERIAL::CTL_APPOINTMENT_L,apt&0x00ff);
-	ROS_INFO("%s,%d set minutes counter %d",__FUNCTION__,__LINE__,mint);
+	ROS_INFO("%s,%d set minutes counter %d,apt = 0x%x",__FUNCTION__,__LINE__,mint,apt);
+}
+
+bool Appmt::isActive()
+{
+	if(appointment_set_)
+	{
+		if((uint32_t)(robot_timer.getLocalTimeInMint() -  appointment_time_ ) == appointment_count_)
+		{
+			//update realtime
+			struct Timer::DateTime dt = robot_timer.getRealTime();
+			robot_timer.updateTimeFromDiffMint(dt,appointment_count_);
+			robot_timer.setRealTime(dt);
+			//update appointment count
+			getNewestAppointment();
+			return true;
+		}
+		else
+			return false;
+	}
+	else
+		return false;
 }
 

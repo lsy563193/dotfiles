@@ -59,13 +59,37 @@ public:
 
 	/*
 	 * @brief get real time in mintues
+	 * from monday
 	 * @return time in mintues
 	 */
-	uint32_t getRealTimeInMint();
 
+	uint32_t getRealTimeInMint();
+	/*
+	 * @brief get real time Weekday 
+	 * @return weekdy 1~7
+	 */
 	uint32_t getRealTimeWeekDay();
 
+	/*
+	 * @brief get local time in mintues
+	 * from monday
+	 * @return time in mintues
+	 */
+	uint32_t getLocalTimeInMint();
+
+	/*
+	 * @brief update time from minutes
+	 * @param1 cur_time ,give a cur time in struct DateTime 
+	 * @param2 mins ,give time in diffrence mintus (0~10080)
+	 */
+	void updateTimeFromDiffMint(struct Timer::DateTime &cur_time,uint16_t mins);
+
+	/*
+	 * @brief return ascii time in string
+	 * @return time in string
+	 */
 	char* asctime();
+
 private:
 	
 	time_t work_start_time_;

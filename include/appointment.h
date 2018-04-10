@@ -35,21 +35,15 @@ public:
 
 	std::vector<Appointment::st_appmt> get();
 
-	int8_t rd_routine(Appointment::st_appmt *vals);
+	int8_t rw_routine(Appointment::st_appmt *vals);
 
 
-	bool isActive()
-	{
-		if(appointment_set_) 
-			return (uint32_t)(robot_timer.getRealTimeInMint() -  appointment_time_ ) >= appointment_count_;
-		else
-			return false;
-	}
+	bool isActive();
 	/*
-	 * @brief get the latest appointment from now
+	 * @brief get the newest appointment from now
 	 * @return miniutes 
 	 */
-	uint32_t getLastAppointment();
+	uint16_t getNewestAppointment();
 
 	void resetPlanStatus(void)
 	{
@@ -71,14 +65,14 @@ public:
 	 * @param1 time in minutes
 	 * @param2 0b01 set appointment ,0b10 not set appointment
 	 */
-	void setPlan2Bottom(uint32_t time,bool appointment_set);
+	void setPlan2Bottom(uint16_t time);
 
 private:
 
 	std::vector<Appointment::st_appmt> apmt_l_;
 	bool appointment_set_ ;
 	bool setorget_;
-	uint32_t appointment_count_;
+	uint16_t appointment_count_;
 	uint32_t appointment_time_;
 	bool appointment_change_;
 	pthread_mutex_t appmt_lock_;

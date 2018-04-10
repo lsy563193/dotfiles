@@ -10,6 +10,8 @@
 #include <path_algorithm.h>
 #include "mode.hpp"
 #include "mathematics.h"
+#include "wifi/wifi.h"
+
 //#define NAV_INFO() ROS_INFO("st(%d),ac(%d)", state_i_, action_i_)
 
 int CleanModeNav::align_count_ = 0;
@@ -44,6 +46,7 @@ CleanModeNav::CleanModeNav()
 CleanModeNav::~CleanModeNav()
 {
 	setNavMode(false);
+	s_wifi.clearMapCache();
 }
 
 bool CleanModeNav::mapMark()
