@@ -455,6 +455,22 @@ void CleanModeNav::remoteMax(bool state_now, bool state_last)
 	remote.reset();
 }
 
+void CleanModeNav::remotePlan(bool state_now, bool state_last)
+{
+	if (isStatePause() && appmt_obj.getPlanStatus() > 2)
+	{
+		appmt_obj.resetPlanStatus();
+		appmt_obj.timesUp();
+		// Sleep for 50ms cause the status 3 will be sent for 3 times.
+		usleep(50000);
+		// Reuse key clean triggered to activate the plan.
+		ev.key_clean_pressed = true;
+		INFO_YELLOW("Plan activated, set ev.key_clean_pressed.");
+	}
+	else
+		EventHandle::remotePlan(state_now, state_last);
+}
+
 void CleanModeNav::batteryHome(bool state_now, bool state_last)
 {
 	if (isStateClean())

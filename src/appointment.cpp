@@ -249,5 +249,5 @@ void Appmt::timesUp()
 	//--update appointment count
 	uint16_t mint = nextAppointment();
 	setPlan2Bottom(mint);
-
+	time_up_or_wifi_setting_ack_ = true;
 }

@@ -1,6 +1,7 @@
 #include <event_manager.h>
 #include <error.h>
 #include <ros/ros.h>
+#include <mode.hpp>
 #include "dev.h"
 #include "map.h"
 #include "serial.h"
@@ -832,9 +833,44 @@ void df_remote()
 
 void EventHandle::remotePlan(bool state_now, bool state_last)
 {
-	ROS_WARN("%s %d: Remote plan is pressed.", __FUNCTION__, __LINE__);
-	df_remote();
-	appmt_obj.resetPlanStatus();
+	if (appmt_obj.getPlanStatus() == 1)
+	{
+		appmt_obj.resetPlanStatus();
+		// Sleep for 30ms for M0 resetting the plan status.
+		usleep(30000);
+		if (appmt_obj.isTimeUpOrWifiSettingAck())
+		{
+			appmt_obj.resetTimeUpOrWifiSettingAck();
+			INFO_YELLOW("Plan updated.");
+		} else
+		{
+			beeper.beepForCommand(VALID);
+			speaker.play(VOICE_APPOINTMENT_DONE);
+			INFO_YELLOW("Plan received.");
+		}
+	} else if (appmt_obj.getPlanStatus() == 2)
+	{
+		appmt_obj.resetPlanStatus();
+		// Sleep for 30ms for M0 resetting the plan status.
+		usleep(30000);
+		if (appmt_obj.isTimeUpOrWifiSettingAck())
+		{
+			appmt_obj.resetTimeUpOrWifiSettingAck();
+			INFO_YELLOW("Plan updated to cancel");
+		} else
+		{
+			beeper.beepForCommand(VALID);
+			speaker.play(VOICE_APPOINTMENT_DONE);
+			INFO_YELLOW("Plan cancel received");
+		}
+	} else
+	{
+		appmt_obj.resetPlanStatus();
+		appmt_obj.timesUp();
+		// Sleep for 50ms cause the status 3 will be sent for 3 times.
+		usleep(50000);
+		ROS_WARN("%s %d: Plan activated but do not apply, set next plan.", __FUNCTION__, __LINE__);
+	}
 }
 
 void EventHandle::remoteClean(bool state_now, bool state_last)

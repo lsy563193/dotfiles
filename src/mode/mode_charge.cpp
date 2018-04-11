@@ -144,28 +144,15 @@ void ModeCharge::keyClean(bool state_now, bool state_last)
 
 void ModeCharge::remotePlan(bool state_now, bool state_last)
 {
-	if (appmt_obj.getPlanStatus() == 1)
+	if (appmt_obj.getPlanStatus() > 2)
 	{
 		appmt_obj.resetPlanStatus();
-		beeper.beepForCommand(VALID);
-		speaker.play(VOICE_APPOINTMENT_DONE);
-		ROS_WARN("%s %d: Plan received.", __FUNCTION__, __LINE__);
-	}
-	else if (appmt_obj.getPlanStatus() == 2)
-	{
-		appmt_obj.resetPlanStatus();
-		beeper.beepForCommand(VALID);
-		speaker.play(VOICE_APPOINTMENT_DONE);
-//		speaker.play(VOICE_CANCEL_APPOINTMENT_UNOFFICIAL);
-		ROS_WARN("%s %d: Plan cancel received.", __FUNCTION__, __LINE__);
-	}
-	else if (appmt_obj.getPlanStatus() == 3)
-	{
-		appmt_obj.resetPlanStatus();
-		ROS_WARN("%s %d: Plan activated.", __FUNCTION__, __LINE__);
+		appmt_obj.timesUp();
+		INFO_YELLOW("Plan activated.");
 		// Sleep for 50ms cause the status 3 will be sent for 3 times.
 		usleep(50000);
 		plan_activated_status_ = true;
-		appmt_obj.timesUp();
 	}
+	else
+		EventHandle::remotePlan(state_now, state_last);
 }

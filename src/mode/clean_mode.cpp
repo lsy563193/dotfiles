@@ -1665,7 +1665,6 @@ bool ACleanMode::updateActionInStateGoHomePoint()
 	{
 		ROS_INFO("Reach start point but angle not equal,start_point_(%d,%d,%f,%d)",start_point_.toCell().x, start_point_.toCell().y, radian_to_degree(start_point_.th), start_point_.dir);
 //		beeper.beepForCommand(VALID);
-		update_finish = true;
 		iterate_point_ = getPosition();
 		iterate_point_.th = start_point_.th;
 		plan_path_.clear();

@@ -303,6 +303,8 @@ void robot::robotbase_routine_cb()
 		// For appointment status
 		appmt_obj.setPlanStatus( buf[REC_MIX_BYTE] );
 		sensor.plan = appmt_obj.getPlanStatus();
+//		if (appmt_obj.getPlanStatus())
+//			ROS_ERROR("RECEIVE PLAN(%d).", appmt_obj.getPlanStatus());
 
 		// For water tank device.
 		water_tank.setEquimentStatus((buf[REC_MIX_BYTE] & 0x08) != 0);
@@ -352,7 +354,8 @@ void robot::robotbase_routine_cb()
 			robot_timer.setRealTime( buf[REC_REALTIME_H]<<8 | buf[REC_REALTIME_L]);
 		sensor.realtime = buf[REC_REALTIME_H]<<8 | buf[REC_REALTIME_L];
 		sensor.appointment = buf[REC_APPOINTMENT_TIME];
-		appmt_obj.set(buf[REC_APPOINTMENT_TIME]);
+		if (p_mode != nullptr && p_mode->allowRemoteUpdatePlan())
+			appmt_obj.set(buf[REC_APPOINTMENT_TIME]);
 			// For debug.
 //		printf("%d: REC_MIX_BYTE:(%2x), REC_RESERVED:(%2x).\n.",
 //			   __LINE__, buf[REC_MIX_BYTE], buf[REC_RESERVED]);

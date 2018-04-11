@@ -76,6 +76,17 @@ public:
 	void setPlan2Bottom(uint16_t time);
 
 	void timesUp();
+
+	bool isTimeUpOrWifiSettingAck()
+	{
+		return time_up_or_wifi_setting_ack_;
+	}
+
+	void resetTimeUpOrWifiSettingAck()
+	{
+		time_up_or_wifi_setting_ack_ = false;
+	}
+
 private:
 
 	std::vector<Appointment::st_appmt> apmt_l_;
@@ -85,6 +96,9 @@ private:
 	bool appointment_change_;
 	pthread_mutex_t appmt_lock_;
 
+	// This variable indicates if it is a time up situation or wifi setting situation. If it is, it will not play
+	// "appointment done" voice after update appointment time ack received.
+	bool time_up_or_wifi_setting_ack_{false};
 
 	// Variable for plan status
 	uint8_t plan_status_;
