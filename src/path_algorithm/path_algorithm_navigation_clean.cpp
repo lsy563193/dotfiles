@@ -145,15 +145,15 @@ Cells NavCleanPathAlgorithm::findTargetInSameLane(GridMap &map, const Cell_t &cu
 	if (it[0].x != curr_cell.x)
 	{
 		target = it[0];
-		if(target.x >= map.getSize() )
-			target.x = map.getSize() - 1;
+		if(target.x >= MAP_SIZE )
+			target.x = MAP_SIZE - 1;
 		is_found++;
 	}
 	if (it[1].x != curr_cell.x)
 	{
 		target = it[1];
-		if(target.x <= -map.getSize() )
-			target.x = -map.getSize() + 1;
+		if(target.x <= -MAP_SIZE )
+			target.x = -MAP_SIZE + 1;
 		is_found++;
 	}
 //	ROS_WARN("%s %d: curr(%d,%d) is_found(%d),it(%d,%d)", __FUNCTION__, __LINE__, curr_cell.x, curr_cell.y,is_found,it[0],it[1]);

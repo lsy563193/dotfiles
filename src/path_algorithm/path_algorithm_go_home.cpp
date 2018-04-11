@@ -338,7 +338,7 @@ bool GoHomePathAlgorithm::generatePathThroughUnknownArea(GridMap &map, const Poi
 
 			if (home_points_.empty()) // No more home points, go back to start point.
 			{
-				current_home_point_ = {CELL_SIZE * (map.getSize() + 1), CELL_SIZE * (map.getSize() + 1), 0};
+				current_home_point_ = {CELL_SIZE * (MAP_SIZE + 1), CELL_SIZE * (MAP_SIZE + 1), 0};
 				home_way_index_ = THROUGH_CLEANED_AREA;
 				ROS_INFO("%s %d: No more reachable home points, just go back to start point.", __FUNCTION__, __LINE__);
 			}

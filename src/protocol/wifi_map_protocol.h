@@ -12,7 +12,7 @@
 constexpr size_t WIFI_MAP_SIZE = 4;
 constexpr float WIFI_MAP_RESOLUTION = 0.05;
 constexpr uint16_t WIFI_MAP_WIDTH_HALF = (WIFI_MAP_SIZE/WIFI_MAP_RESOLUTION/2);
-constexpr size_t DATA_SIZE = (WIFI_MAP_SIZE * WIFI_MAP_SIZE / WIFI_MAP_RESOLUTION);
+constexpr size_t DATA_SIZE = ( 6 +WIFI_MAP_SIZE * WIFI_MAP_SIZE / WIFI_MAP_RESOLUTION);
 
 typedef std::pair<uint8_t, uint16_t > MapElem;
 typedef std::tuple<Cell_t, int16_t ,std::vector<MapElem>>  WifiMap;
@@ -42,7 +42,7 @@ private:
 
 //    uint8_t data[wifi_map->size()*3];
 //#define (4 * 4 * 0.05) DATA_SIZE
-    uint8_t data_[DATA_SIZE];
+    uint8_t data_[10000];
     size_t valid_size_{};
     boost::mutex data_mutex;
 //    std::vector<uint8_t> data;

@@ -24,7 +24,7 @@ class GridMap {
 public:
 
 	GridMap();
-	GridMap(uint16_t size);
+//	GridMap(uint16_t size);
 	~GridMap();
 	void mapInit();
 
@@ -205,9 +205,9 @@ public:
  */
 
 	bool isFrontBlocked(Dir_t dir);
-	int16_t getSize(){
-		return MAP_SIZE_;
-	};
+//	int16_t getSize(){
+//		return MAP_SIZE_;
+//	};
 	bool isFrontSlamBlocked(void);
 
 	BoundingBox2 generateBound()
@@ -228,7 +228,8 @@ public:
 	bool cellIsOutOfRange(Cell_t cell);
 
 	void colorPrint(const char *outString, int16_t y_min, int16_t y_max);
-	void print(const Cell_t& curr, uint8_t id, const Cells& targets,bool is_bound = false,BoundingBox2 = {});
+	void print(const Cell_t& curr, uint8_t id, const Cells& targets);
+    void printInRange(const Cell_t& curr_cell, uint8_t id, const Cells& targets,bool is_bound,BoundingBox2 bound);
 
 private:
 	uint8_t clean_map[MAP_SIZE][(MAP_SIZE + 1) / 2];
@@ -239,7 +240,7 @@ private:
 
 	// Cells that temporary save the c_blocks.
 
-    int16_t MAP_SIZE_{};
+//    int16_t MAP_SIZE_{};
 };
 
 /*wf_map is to record the wall follow path to caculate the isolate islands*/

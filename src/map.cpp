@@ -13,27 +13,27 @@ extern const Cell_t cell_direction_[9];
 
 Cell_t g_stub_cell(0,0);
 
-GridMap::GridMap():MAP_SIZE_(MAP_SIZE){
+GridMap::GridMap(){
 	mapInit();
 }
 
-GridMap::GridMap(uint16_t map_size):MAP_SIZE_(map_size){
-	mapInit();
-}
+//GridMap::GridMap(uint16_t map_size){
+//	mapInit();
+//}
 
 void GridMap::mapInit()
 {
-	for(auto c = 0; c < MAP_SIZE_; ++c) {
-		for(auto d = 0; d < (MAP_SIZE_ + 1) / 2; ++d) {
+	for(auto c = 0; c < MAP_SIZE; ++c) {
+		for(auto d = 0; d < (MAP_SIZE + 1) / 2; ++d) {
 			clean_map[c][d] = 0;
 			cost_map[c][d] = 0;
 		}
 	}
 	g_x_min = g_x_max = g_y_min = g_y_max = 0;
-	xRangeMin = static_cast<int16_t>(g_x_min - (MAP_SIZE_ - (g_x_max - g_x_min + 1)));
-	xRangeMax = static_cast<int16_t>(g_x_max + (MAP_SIZE_ - (g_x_max - g_x_min + 1)));
-	yRangeMin = static_cast<int16_t>(g_y_min - (MAP_SIZE_ - (g_y_max - g_y_min + 1)));
-	yRangeMax = static_cast<int16_t>(g_y_max + (MAP_SIZE_ - (g_y_max - g_y_min + 1)));
+	xRangeMin = static_cast<int16_t>(g_x_max - (MAP_SIZE - 1));
+	xRangeMax = static_cast<int16_t>(g_x_min + (MAP_SIZE - 1));
+	yRangeMin = static_cast<int16_t>(g_y_max - (MAP_SIZE - 1));
+	yRangeMax = static_cast<int16_t>(g_y_min + (MAP_SIZE - 1));
 
 //		xCount = 0;
 //		yCount = 0;
@@ -61,10 +61,10 @@ CellState GridMap::getCell(int id, int16_t x, int16_t y) {
 	   	y_max = yRangeMax;
 	}
 	if(x >= x_min && x <= x_max && y >= y_min && y <= y_max) {
-		x += MAP_SIZE_ + MAP_SIZE_ / 2;
-		x %= MAP_SIZE_;
-		y += MAP_SIZE_ + MAP_SIZE_ / 2;
-		y %= MAP_SIZE_;
+		x += MAP_SIZE + MAP_SIZE / 2;
+		x %= MAP_SIZE;
+		y += MAP_SIZE + MAP_SIZE / 2;
+		y %= MAP_SIZE;
 
 #ifndef SHORTEST_PATH_V2
 		//val = (CellState)((id == CLEAN_MAP) ? (clean_map[x][y / 2]) : (cost_map[x][y / 2]));
@@ -107,27 +107,27 @@ void GridMap::setCell(uint8_t id, int16_t x, int16_t y, CellState value) {
 		if(x >= xRangeMin && x <= xRangeMax && y >= yRangeMin && y <= yRangeMax) {
 			if(x < g_x_min) {
 				g_x_min = x;
-				xRangeMin = g_x_min - (MAP_SIZE_ - (g_x_max - g_x_min + 1));
-				xRangeMax = g_x_max + (MAP_SIZE_ - (g_x_max - g_x_min + 1));
+				xRangeMin = static_cast<int16_t>(g_x_max - (MAP_SIZE - 1));//40 --> 1
+				xRangeMax = static_cast<int16_t>(g_x_min + (MAP_SIZE - 1));
 			} else if(x > g_x_max) {
 				g_x_max = x;
-				xRangeMin = g_x_min - (MAP_SIZE_ - (g_x_max - g_x_min + 1));
-				xRangeMax = g_x_max + (MAP_SIZE_ - (g_x_max - g_x_min + 1));
+				xRangeMin = static_cast<int16_t>(g_x_max - (MAP_SIZE - 1));
+				xRangeMax = static_cast<int16_t>(g_x_min + (MAP_SIZE - 1));
 			}
 			if(y < g_y_min) {
 				g_y_min = y;
-				yRangeMin = g_y_min - (MAP_SIZE_ - (g_y_max - g_y_min + 1));
-				yRangeMax = g_y_max + (MAP_SIZE_ - (g_y_max - g_y_min + 1));
+				yRangeMin = static_cast<int16_t>(g_y_max - (MAP_SIZE - 1));
+				yRangeMax = static_cast<int16_t>(g_y_min + (MAP_SIZE - 1));
 			} else if(y > g_y_max) {
 				g_y_max = y;
-				yRangeMin = g_y_min - (MAP_SIZE_ - (g_y_max - g_y_min + 1));
-				yRangeMax = g_y_max + (MAP_SIZE_ - (g_y_max - g_y_min + 1));
+				yRangeMin = static_cast<int16_t>(g_y_max - (MAP_SIZE - 1));
+				yRangeMax = static_cast<int16_t>(g_y_min + (MAP_SIZE - 1));
 			}
 
-			ROW = x + MAP_SIZE_ + MAP_SIZE_ / 2;
-			ROW %= MAP_SIZE_;
-			COLUMN = y + MAP_SIZE_ + MAP_SIZE_ / 2;
-			COLUMN %= MAP_SIZE_;
+			ROW = static_cast<int16_t>(x + MAP_SIZE + MAP_SIZE / 2);
+			ROW %= MAP_SIZE;
+			COLUMN = static_cast<int16_t>(y + MAP_SIZE + MAP_SIZE / 2);
+			COLUMN %= MAP_SIZE;
 
 			val = (CellState) clean_map[ROW][COLUMN / 2];
 			if (((COLUMN % 2) == 0 ? (val >> 4) : (val & 0x0F)) != value) {
@@ -137,10 +137,10 @@ void GridMap::setCell(uint8_t id, int16_t x, int16_t y, CellState value) {
 		}
 	}  else if (id == COST_MAP){
 		if(x >= xRangeMin && x <= xRangeMax && y >= yRangeMin && y <= yRangeMax) {
-			x += MAP_SIZE_ + MAP_SIZE_ / 2;
-			x %= MAP_SIZE_;
-			y += MAP_SIZE_ + MAP_SIZE_ / 2;
-			y %= MAP_SIZE_;
+			x += MAP_SIZE + MAP_SIZE / 2;
+			x %= MAP_SIZE;
+			y += MAP_SIZE + MAP_SIZE / 2;
+			y %= MAP_SIZE;
 
 			val = (CellState) cost_map[x][y / 2];
 
@@ -189,18 +189,18 @@ void GridMap::reset(uint8_t id)
 #ifndef SHORTEST_PATH_V2
 	uint16_t idx;
 	if (id == COST_MAP) {
-		for (idx = 0; idx < MAP_SIZE_; idx++) {
-			memset((cost_map[idx]), 0, ((MAP_SIZE_ + 1) / 2) * sizeof(uint8_t));
+		for (idx = 0; idx < MAP_SIZE; idx++) {
+			memset((cost_map[idx]), 0, ((MAP_SIZE + 1) / 2) * sizeof(uint8_t));
 		}
 	} else if (id == CLEAN_MAP) {
-		for (idx = 0; idx < MAP_SIZE_; idx++) {
-			memset((clean_map[idx]), 0, ((MAP_SIZE_ + 1) / 2) * sizeof(uint8_t));
+		for (idx = 0; idx < MAP_SIZE; idx++) {
+			memset((clean_map[idx]), 0, ((MAP_SIZE + 1) / 2) * sizeof(uint8_t));
 		}
 		g_x_min = g_x_max = g_y_min = g_y_max = 0;
-		xRangeMin = static_cast<int16_t>(g_x_min - (MAP_SIZE_ - (g_x_max - g_x_min + 1)));
-		xRangeMax = static_cast<int16_t>(g_x_max + (MAP_SIZE_ - (g_x_max - g_x_min + 1)));
-		yRangeMin = static_cast<int16_t>(g_y_min - (MAP_SIZE_ - (g_y_max - g_y_min + 1)));
-		yRangeMax = static_cast<int16_t>(g_y_max + (MAP_SIZE_ - (g_y_max - g_y_min + 1)));
+		xRangeMin = static_cast<int16_t>(g_x_min - (MAP_SIZE - (g_x_max - g_x_min + 1)));
+		xRangeMax = static_cast<int16_t>(g_x_max + (MAP_SIZE - (g_x_max - g_x_min + 1)));
+		yRangeMin = static_cast<int16_t>(g_y_min - (MAP_SIZE - (g_y_max - g_y_min + 1)));
+		yRangeMax = static_cast<int16_t>(g_y_max + (MAP_SIZE - (g_y_max - g_y_min + 1)));
 	}
 #endif
 }
@@ -299,7 +299,7 @@ void GridMap::convertFromSlamMap(float resolution_target,float threshold,const B
 				{
 //					ROS_ERROR_COND(cell_x > 0 && cell_y > 0,"~~~~~~~~~~~range(%d,%d,%d,%d),size(%d)", data_map_x_min, data_map_y_min, data_map_x_max, data_map_y_max,size);
 					setCell(CLEAN_MAP,cell_x,cell_y, SLAM_MAP_CLEANABLE);
-					ROS_ERROR_COND(cell_x > 0 && cell_y > 0,"cell(%d,%d)~~~~range(%d,%d,%d,%d)",cell_x,cell_y, g_x_min, g_y_min, g_x_max, g_y_max);
+//					ROS_ERROR_COND(cell_x > 0 && cell_y > 0,"cell(%d,%d)~~~~range(%d,%d,%d,%d)",cell_x,cell_y, g_x_min, g_y_min, g_x_max, g_y_max);
 				}
 			}
 		}
@@ -718,6 +718,7 @@ void GridMap::getMapRange(uint8_t id, int16_t *x_range_min, int16_t *x_range_max
 	}
 	ROS_INFO("Get Range:min(%d,%d),max(%d,%d)", g_x_min,g_y_min, g_x_max,  g_y_max);
 }
+
 bool GridMap::isOutOfMap(const Cell_t &cell)
 {
 	return cell.x < g_x_min-1 || cell.y < g_y_min-1 || cell.x > g_x_max+1 || cell.y > g_y_max+1;
@@ -728,10 +729,10 @@ bool GridMap::isOutOfTargetRange(const Cell_t &cell)
 }
 bool GridMap::cellIsOutOfRange(Cell_t cell)
 {
-	return std::abs(cell.x) > MAP_SIZE_ || std::abs(cell.y) > MAP_SIZE_;
+	return std::abs(cell.x) > MAP_SIZE || std::abs(cell.y) > MAP_SIZE;
 }
 
-void GridMap::print(const Cell_t& curr_cell, uint8_t id, const Cells& targets,bool is_bound,BoundingBox2 bound)
+void GridMap::print(const Cell_t& curr_cell, uint8_t id, const Cells& targets)
 {
 //	Cell_t curr_cell = getPosition().toCell();
 	std::ostringstream outString;
@@ -739,18 +740,8 @@ void GridMap::print(const Cell_t& curr_cell, uint8_t id, const Cells& targets,bo
 	#if 1
 	int16_t		x, y, x_min, x_max, y_min, y_max;
 	CellState	cs;
-	if(!is_bound)
-		getMapRange(id, &x_min, &x_max, &y_min, &y_max);
-	else
-	{
-		x_min = bound.min.x-1;
-		y_min = bound.min.y-1;
-		x_max = bound.max.x+1;
-		y_max = bound.max.x+1;
 
-		ROS_ERROR("Get Range:min(%d,%d),max(%d,%d)", x_min,y_min, x_max, y_max);
-	}
-		getMapRange(id, &x_min, &x_max, &y_min, &y_max);
+	getMapRange(id, &x_min, &x_max, &y_min, &y_max);
 //	x_min -= 1;x_max += 1; y_min -= 1; y_max +=1;
 	outString << '\t';
 	for (y = y_min; y <= y_max; y++) {
@@ -801,6 +792,50 @@ void GridMap::print(const Cell_t& curr_cell, uint8_t id, const Cells& targets,bo
 	}
 //	printf("\n");
 	#endif
+}
+
+void GridMap::printInRange(const Cell_t& curr_cell, uint8_t id, const Cells& targets,bool is_bound,BoundingBox2 bound) {
+
+    ROS_INFO("range(%d,%d,%d,%d)curr(%d,%d)", bound.min.x,bound.max.x, bound.min.y, bound.max.y,curr_cell.x, curr_cell.y);
+	std::ostringstream outString;
+    outString << '\t';
+	for (auto y = bound.min.y; y <= bound.max.y; y++) {
+		if (abs(y) % 10 == 0) {
+			outString << std::abs(y/10);
+		} else {
+			outString << ' ';
+		}
+	}
+	outString << '\n';
+
+	printf("%s\n",outString.str().c_str());
+	outString.str("");
+	outString.str("");
+	outString << '\t';
+	for (auto y = bound.min.y; y <= bound.max.y; y++) {
+		outString << abs(y) % 10;
+	}
+	outString << '\n';
+	for (auto x = bound.min.x; x < bound.max.x; ++x) {
+   		outString.width(4);
+		outString << x;
+		outString << '\t';
+		for (auto y = bound.min.y; y < bound.max.y; ++y) {
+            auto val = getCell(CLEAN_MAP, x, y);
+            if(curr_cell.x == x && curr_cell.y == y)
+				outString << 'x';
+			else if (val == 0) {
+				outString << '0';
+			} else if (val == 1) {
+				outString << '1';
+			} else {
+				outString << 'a';
+			}
+		}
+		outString << '\n';
+	}
+//	printf("%s\n",outString.str().c_str());
+	colorPrint(outString.str().c_str(), 0, static_cast<int16_t>(outString.str().size()));
 }
 
 void GridMap::colorPrint(const char *outString, int16_t y_min, int16_t y_max)
