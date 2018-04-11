@@ -30,13 +30,14 @@ bool Appmt::set(std::vector<Appointment::st_appmt> apmt_list)
 	}
 	uint16_t mint = nextAppointment();
 	setPlan2Bottom(mint);
+
+	update_idle_timer_ = true;
 	return true;
 }
 
 bool Appmt::set(uint8_t apTime)
 {
-	static uint8_t last_atime = 0;
-	if(apTime > 0x80) //&& apTime != last_atime)
+	if(apTime > 0x80)
 	{
 		st_appmt apmt;
 		apmt.enable = 1;
@@ -53,14 +54,14 @@ bool Appmt::set(uint8_t apTime)
 			MutexLock lock(&appmt_lock_);
 			rw_routine(Appmt::SET);
 		}
-		last_atime = apTime;
 
 		//set appointment to bottom board
 		uint16_t mint = nextAppointment();
 		setPlan2Bottom(mint);
+		update_idle_timer_ = true;
 	}
 
-	else if(apTime ==  0x80 )//&& apTime != last_atime)
+	else if(apTime ==  0x80 )
 	{
 		st_appmt apmt;
 		apmt.enable = 0;
@@ -78,11 +79,11 @@ bool Appmt::set(uint8_t apTime)
 			MutexLock lock(&appmt_lock_);
 			rw_routine(Appmt::SET);
 		}
-		last_atime = apTime;
 
 		//set appointment to bottom board
 		uint16_t mint = nextAppointment();
 		setPlan2Bottom(mint);
+		update_idle_timer_ = true;
 	}
 	return true;
 }

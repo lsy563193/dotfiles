@@ -263,6 +263,9 @@ void ModeIdle::remoteMax(bool state_now, bool state_last)
 		vacuum.isMaxInClean(!vacuum.isMaxInClean());
 		speaker.play(vacuum.isMaxInClean() ? VOICE_VACCUM_MAX : VOICE_CLEANING_NAVIGATION,false);
 	}
+	// Reset the start timer for action.
+	sp_action_.reset();
+	sp_action_.reset(new ActionIdle);
 	remote.reset();
 }
 

@@ -296,7 +296,7 @@ void CleanModeNav::keyClean(bool state_now, bool state_last)
 			beeper.beepForCommand(VALID);
 			long_press = true;
 		}
-		if (sp_state == state_pause.get() && !reset_wifi && key.getPressTime() > 5)
+		if (isStatePause() && !reset_wifi && key.getPressTime() > 5)
 		{
 			ROS_WARN("%s %d: key clean long pressed to reset wifi.", __FUNCTION__, __LINE__);
 			beeper.beepForCommand(VALID);
@@ -451,6 +451,12 @@ void CleanModeNav::remoteMax(bool state_now, bool state_last)
 		if(isStateClean() || isStateResumeLowBatteryCharge() || (isInitState()&& action_i_ > ac_open_gyro)) {
 			vacuum.setCleanState();
 		}
+	}
+	if (isStatePause())
+	{
+		// Reset the start timer for action.
+		sp_action_.reset();
+		sp_action_.reset(new ActionPause);
 	}
 	remote.reset();
 }

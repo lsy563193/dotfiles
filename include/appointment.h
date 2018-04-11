@@ -87,6 +87,16 @@ public:
 		time_up_or_wifi_setting_ack_ = false;
 	}
 
+	bool shouldUpdateIdleTimer()
+	{
+		return update_idle_timer_;
+	}
+
+	void resetUpdateIdleTimerFlag()
+	{
+		update_idle_timer_ = false;
+	}
+
 private:
 
 	std::vector<Appointment::st_appmt> apmt_l_;
@@ -99,6 +109,9 @@ private:
 	// This variable indicates if it is a time up situation or wifi setting situation. If it is, it will not play
 	// "appointment done" voice after update appointment time ack received.
 	bool time_up_or_wifi_setting_ack_{false};
+
+	// This variable is used for updating the timer for idle mode or pause state.
+	bool update_idle_timer_{false};
 
 	// Variable for plan status
 	uint8_t plan_status_;
