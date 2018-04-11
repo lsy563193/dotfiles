@@ -70,7 +70,7 @@ void Slam::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
 	BoundingBox2 bound = {{static_cast<int16_t >(-size), static_cast<int16_t >(-size)},{size,size}};
 	slam_grid_map.convertFromSlamMap(CELL_SIZE, 0.2, bound);
 
-	slam_grid_map.print(getPosition().toCell(), CLEAN_MAP, {{0,0}});
+//	slam_grid_map.print(getPosition().toCell(), CLEAN_MAP, {{0,0}});
 
 	GridMap android_grid_map;
     Cell_t cell{static_cast<int16_t>(getPosition().x * WIFI_MAP_RESOLUTION / map->info.resolution),
