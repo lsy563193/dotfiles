@@ -621,9 +621,6 @@ void Serial::send_routine_cb()
 			ROS_WARN("SLEEP_TIME %d",sleep_time);
 		}
 		t = clock();
-
-		if(appmt_obj.isActive())
-			INFO_BLUE("active apointment");
 		/*-------------------Process for beeper.play and key_led -----------------------*/
 		key_led.processLed();
 		wifi_led.processLed();

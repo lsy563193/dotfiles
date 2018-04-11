@@ -38,7 +38,7 @@ S_Wifi::~S_Wifi()
 
 bool S_Wifi::deinit()
 {
-	appendTask(ACT::ACT_SLEEP);
+	taskPushBack(ACT::ACT_SLEEP);
 	quit();
 	delete map_data_buf_;
 	return true;
@@ -134,11 +134,7 @@ bool S_Wifi::init()
 							msg.seq_num()
 							);
 				s_wifi_tx_.push(std::move(p)).commit();
-				INFO_BLUE("receive query schedule");
-
-				//set appointment to bottom board
-				uint16_t mint = appmt_obj.getNewestAppointment();
-				appmt_obj.setPlan2Bottom(mint);
+				INFO_BLUE("receive query schedule");	
 			});
 	//query consumption
 	s_wifi_rx_.regOnNewMsgListener<wifi::QueryConsumableStatusRxMsg>(
@@ -518,7 +514,6 @@ bool S_Wifi::uploadMap()
 	std::vector<std::vector<uint8_t>> map_pack;
 	int pack_cnt=0;
 	int byte_cnt=0;
-	//ROS_INFO("\033[1;33m realtime map send work mode = %d\033[0m", (int)getWorkMode());
 
 	if(robot::instance()->p_mode->getNextMode() != Mode::cm_navigation)
 		return false;
@@ -533,6 +528,7 @@ bool S_Wifi::uploadMap()
 
 	if(!pass_path.empty())
 	{
+		INFO_BLUE("upload pass path");
 		auto mode = boost::dynamic_pointer_cast<ACleanMode>(robot::instance()->p_mode);
 		GridMap g_map = mode->clean_map_;
 		uint16_t clean_area = (uint16_t)(g_map.getCleanedArea()*CELL_SIZE*CELL_SIZE*100);
@@ -1011,12 +1007,12 @@ bool S_Wifi::setWorkMode(int mode)
 
 uint8_t S_Wifi::setSchedule(const wifi::SetScheduleRxMsg &sche)
 {
-	uint8_t isScheSet_n = 0;
 	static uint8_t last_sche_n = 0;
-	bool isScheCancel = false;
-	//if(this->getWorkMode() != wifi::WorkMode::IDLE )
-	//	return 1;
-	for(uint8_t i = 0;i<10;i++)
+	uint8_t isScheSet_n = 0;
+	bool isScheCancel = true;
+
+	std::vector<Appointment::st_appmt> apmt_list;
+	for(uint8_t i = 0;i<sche.length()/5;i++)
 	{
 		uint8_t schenum = sche.getScheNum(i);
 		uint8_t weeks = sche.getWeek(i);
@@ -1025,22 +1021,22 @@ uint8_t S_Wifi::setSchedule(const wifi::SetScheduleRxMsg &sche)
 		uint8_t isEnable = sche.isEnable(i);
 
 		if(isEnable)
-			isScheSet_n++;
+			isScheSet_n++,isScheCancel = false;
 		Appointment::st_appmt apmt;
 		apmt.num = schenum;
 		apmt.enable = (bool)isEnable;
 		apmt.hour = hours;
 		apmt.mint= mints;
 		apmt.week = weeks;
-		appmt_obj.set(apmt);
-
+		apmt_list.push_back(apmt);
 	}
 
-	if(isScheSet_n>0){
-		uint16_t mint = appmt_obj.getNewestAppointment();
-		appmt_obj.setPlan2Bottom(mint);
-		if(last_sche_n < isScheSet_n)
-			speaker.play(VOICE_APPOINTMENT_DONE);
+	if(isScheSet_n>0 && !isScheCancel){
+
+		//--set appointment
+		appmt_obj.set(apmt_list);
+		//if(last_sche_n < isScheSet_n)
+		//	speaker.play(VOICE_APPOINTMENT_DONE);
 		last_sche_n = isScheSet_n;
 	}
 	return 0;
@@ -1069,7 +1065,7 @@ uint8_t S_Wifi::checkMAC()
 	return 0;
 }
 
-void S_Wifi::appendTask(S_Wifi::ACT action)
+void S_Wifi::taskPushBack(S_Wifi::ACT action)
 {
 	if(action > ACT::ACT_NONE && action < ACT::ACT_END)
 	{

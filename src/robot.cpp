@@ -299,7 +299,7 @@ void robot::robotbase_routine_cb()
 		sensor.key = key.getTriggerStatus();
 
 		// For appointment status
-		appmt_obj.setPlanStatus(static_cast<uint8_t>((buf[REC_MIX_BYTE] >> 1) & 0x03));
+		appmt_obj.setPlanStatus( buf[REC_MIX_BYTE] );
 		sensor.plan = appmt_obj.getPlanStatus();
 
 		// For water tank device.
@@ -519,7 +519,7 @@ void robot::runTestMode()
 
 void robot::runWorkMode()
 {
-	s_wifi.appendTask(S_Wifi::ACT::ACT_RESUME);
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_RESUME);
 	auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
 	send_thread_enable = true;
 

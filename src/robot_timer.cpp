@@ -64,9 +64,9 @@ void Timer::setRealTime(Timer::DateTime date_time)
 				__FUNCTION__,__LINE__,
 				date_time_.year,date_time_.month,date_time_.day,
 				date_time_.hour,date_time.mint,date_time.sec);
-	//update appointment count down ,set appointment to bottom board
-	uint16_t mint = appmt_obj.getNewestAppointment();
-	appmt_obj.setPlan2Bottom(mint);
+	//--update appointment count down ,set appointment to bottom board
+	//uint16_t mint = appmt_obj.getNewestAppointment();
+	//appmt_obj.setPlan2Bottom(mint);
 }
 
 void Timer::setRealTime(uint16_t mints)
@@ -78,14 +78,14 @@ void Timer::setRealTime(uint16_t mints)
 	date_time_.year = (uint16_t)(local_time->tm_year+1900);
 	date_time_.hour = (uint8_t)((mints/60)%24);
 	date_time_.mint = (uint8_t)(mints%60);
-	date_time_.sec = (uint8_t)local_time->tm_sec;
+	date_time_.sec = 0;
 	ROS_INFO("%s,%d,\033[1m %u/%u/%u %u:%u:%u\033[0m",
 				__FUNCTION__,__LINE__,
 				date_time_.year,date_time_.month,date_time_.day,
 				date_time_.hour,date_time_.mint,date_time_.sec);
-	//update appointment count down ,set appointment to bottom board
-	uint16_t mint = appmt_obj.getNewestAppointment();
-	appmt_obj.setPlan2Bottom(mint);
+	//--update appointment count down ,set appointment to bottom board
+	//uint16_t mint = appmt_obj.getNewestAppointment();
+	//appmt_obj.setPlan2Bottom(mint);
 }
 
 void Timer::updateTimeFromDiffMint(struct Timer::DateTime &dt, uint16_t diff_mins)

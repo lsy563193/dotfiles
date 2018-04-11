@@ -308,7 +308,7 @@ void CleanModeNav::keyClean(bool state_now, bool state_last)
 
 	if (reset_wifi)
 	{
-		s_wifi.appendTask(S_Wifi::ACT::ACT_SMART_AP_LINK);
+		s_wifi.taskPushBack(S_Wifi::ACT::ACT_SMART_AP_LINK);
 		sp_action_.reset();
 		sp_action_.reset(new ActionPause);
 	}
@@ -680,7 +680,7 @@ void CleanModeNav::switchInStateClean() {
 		go_home_path_algorithm_.reset();
 		go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_, start_point_));
 		speaker.play(VOICE_BACK_TO_CHARGER, true);
-		//s_wifi.appendTask(S_Wifi::ACT::ACT_UPLOAD_LAST_CLEANMAP);
+		//s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_LAST_CLEANMAP);
 	}
 	sp_state->init();
 	action_i_ = ac_null;
