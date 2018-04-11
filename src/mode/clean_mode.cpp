@@ -1661,8 +1661,7 @@ bool ACleanMode::updateActionInStateGoHomePoint()
 		update_finish = false;
 		home_points_ = go_home_path_algorithm_->getRestHomePoints();
 	}
-	// todo : robot at start point but not reach target, it will cause dead loop.
-	else if (getPosition().toCell() == start_point_.toCell())
+	else if (home_points_.empty() && getPosition().toCell() == start_point_.toCell())
 	{
 		ROS_INFO("Reach start point but angle not equal,start_point_(%d,%d,%f,%d)",start_point_.toCell().x, start_point_.toCell().y, radian_to_degree(start_point_.th), start_point_.dir);
 //		beeper.beepForCommand(VALID);
