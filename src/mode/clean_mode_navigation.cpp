@@ -245,10 +245,17 @@ bool CleanModeNav::isExit()
 		}
 	}
 
-	if (ev.fatal_quit || ev.key_long_pressed || sp_action_->isExit())
+	if (ev.fatal_quit || sp_action_->isExit())
 	{
-		ROS_WARN("%s %d: Exit for ev.fatal_quit || ev.key_long_pressed || sp_action_->isExit().", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Exit for ev.fatal_quit || sp_action_->isExit().", __FUNCTION__, __LINE__);
 		setNextMode(md_idle);
+		return true;
+	}
+
+	if (ev.key_long_pressed)
+	{
+		ROS_WARN("%s %d: Exit for ev.key_long_pressed.", __FUNCTION__, __LINE__);
+		setNextMode(md_sleep);
 		return true;
 	}
 
