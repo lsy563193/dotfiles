@@ -289,6 +289,8 @@ void robot::robotbase_routine_cb()
 		c_rcon.setStatus((buf[REC_RCON_CHARGER_4] << 24) | (buf[REC_RCON_CHARGER_3] << 16)
 						 | (buf[REC_RCON_CHARGER_2] << 8) | buf[REC_RCON_CHARGER_1]);
 		sensor.rcon = c_rcon.getStatus();
+//		if (c_rcon.getStatus())
+//			printf("rcon:%08x, ", c_rcon.getStatus());
 //		printf("rcon:%08x\n", c_rcon.getStatus());
 
 		// For virtual wall.
@@ -312,6 +314,7 @@ void robot::robotbase_routine_cb()
 		// For charger device.
 		charger.setChargeStatus((buf[REC_MIX_BYTE] >> 4) & 0x07);
 		sensor.charge_status = charger.getChargeStatus();
+//		printf("Charge status:%d.\n", charger.getChargeStatus());
 //		ROS_INFO("Charge status:%d.", charger.getChargeStatus());
 
 		// For sleep status.
