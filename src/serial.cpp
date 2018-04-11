@@ -13,6 +13,7 @@
 #include <wifi_led.hpp>
 #include "wifi/wifi.h"
 #include "mode.hpp"
+#include "appointment.h"
 
 using namespace SERIAL;
 
@@ -608,8 +609,8 @@ void Serial::send_routine_cb()
 			r.sleep();
 			continue;
 		}
-		period = ((float)(clock() - t))/CLOCKS_PER_SEC;
 
+		period = ((float)(clock() - t))/CLOCKS_PER_SEC;
 		uint32_t sleep_time = 20000-(uint32_t)(period*1000000);
 		if(sleep_time < 20000)
 		{
@@ -620,7 +621,6 @@ void Serial::send_routine_cb()
 			ROS_WARN("SLEEP_TIME %d",sleep_time);
 		}
 		t = clock();
-		
 		/*-------------------Process for beeper.play and key_led -----------------------*/
 		key_led.processLed();
 		wifi_led.processLed();

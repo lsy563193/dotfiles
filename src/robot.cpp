@@ -289,6 +289,8 @@ void robot::robotbase_routine_cb()
 		c_rcon.setStatus((buf[REC_RCON_CHARGER_4] << 24) | (buf[REC_RCON_CHARGER_3] << 16)
 						 | (buf[REC_RCON_CHARGER_2] << 8) | buf[REC_RCON_CHARGER_1]);
 		sensor.rcon = c_rcon.getStatus();
+//		if (c_rcon.getStatus())
+//			printf("rcon:%08x, ", c_rcon.getStatus());
 //		printf("rcon:%08x\n", c_rcon.getStatus());
 
 		// For virtual wall.
@@ -299,7 +301,7 @@ void robot::robotbase_routine_cb()
 		sensor.key = key.getTriggerStatus();
 
 		// For appointment status
-		appmt_obj.setPlanStatus(static_cast<uint8_t>((buf[REC_MIX_BYTE] >> 1) & 0x03));
+		appmt_obj.setPlanStatus( buf[REC_MIX_BYTE] );
 		sensor.plan = appmt_obj.getPlanStatus();
 
 		// For water tank device.
@@ -312,6 +314,7 @@ void robot::robotbase_routine_cb()
 		// For charger device.
 		charger.setChargeStatus((buf[REC_MIX_BYTE] >> 4) & 0x07);
 		sensor.charge_status = charger.getChargeStatus();
+//		printf("Charge status:%d.\n", charger.getChargeStatus());
 //		ROS_INFO("Charge status:%d.", charger.getChargeStatus());
 
 		// For sleep status.
@@ -343,14 +346,14 @@ void robot::robotbase_routine_cb()
 		sensor.right_wheel_encoder = wheel.getRightEncoderCnt();
 
 
-		// For appointment set time
-		appmt_obj.set(buf[REC_APPOINTMENT_TIME]);
-		sensor.appointment = buf[REC_APPOINTMENT_TIME];
-		if(buf[REC_APPOINTMENT_TIME] & 0x80)
-			robot_timer.setRealTime( ((buf[REC_REALTIME_H]& 0x00ff)<<8) & buf[REC_REALTIME_L]);
-		sensor.realtime =  ((buf[REC_REALTIME_H] & 0x00ff)<<8) & buf[REC_REALTIME_L];
+		// For appointment and set time
 
-		// For debug.
+		if(buf[REC_APPOINTMENT_TIME] > 0x80)
+			robot_timer.setRealTime( buf[REC_REALTIME_H]<<8 | buf[REC_REALTIME_L]);
+		sensor.realtime = buf[REC_REALTIME_H]<<8 | buf[REC_REALTIME_L];
+		sensor.appointment = buf[REC_APPOINTMENT_TIME];
+		appmt_obj.set(buf[REC_APPOINTMENT_TIME]);
+			// For debug.
 //		printf("%d: REC_MIX_BYTE:(%2x), REC_RESERVED:(%2x).\n.",
 //			   __LINE__, buf[REC_MIX_BYTE], buf[REC_RESERVED]);
 //		printf("%d: charge:(%d), remote:(%d), key:(%d), rcon(%d).\n.",
@@ -519,7 +522,7 @@ void robot::runTestMode()
 
 void robot::runWorkMode()
 {
-	s_wifi.appendTask(S_Wifi::ACT::ACT_RESUME);
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_RESUME);
 	auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
 	send_thread_enable = true;
 

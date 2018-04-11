@@ -265,6 +265,11 @@ public:
 
 	std::string describe() const override;
 
+	uint8_t length() const
+	{
+		return data().size();
+	}
+
 	uint8_t getScheNum(uint8_t num) const
 	{
 		if(num < data().size() )

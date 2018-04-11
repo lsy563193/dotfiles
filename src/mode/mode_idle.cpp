@@ -24,10 +24,12 @@ ModeIdle::ModeIdle():
 	appmt_obj.resetPlanStatus();
 	event_manager_reset_status();
 
+	s_wifi.setWorkMode(Mode::md_idle);
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
+
 	ROS_INFO("%s %d: Current battery voltage \033[32m%5.2f V\033[0m.", __FUNCTION__, __LINE__, (float)battery.getVoltage()/100.0);
 	/*---reset values for rcon handle---*/
 	// todo: first_time_seen_charger_ does not mean as words in reality. It is just the time that enter this mode.
-	s_wifi.appendTask(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 //	// todo:debug
 //	infrared_display.displayErrorMsg(9, 1234, 101);
 	sp_state = st_pause.get() ;
@@ -301,8 +303,8 @@ void ModeIdle::remoteWifi(bool state_now,bool state_last)
 {
 	ROS_INFO("%s,%d,wifi state = %d ",__FUNCTION__,__LINE__,s_wifi.isConnected());
 	remote.reset();
-	s_wifi.appendTask(S_Wifi::ACT::ACT_REBIND);
-	s_wifi.appendTask(S_Wifi::ACT::ACT_SMART_LINK);
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_REBIND);
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_SMART_LINK);
 
 }
 
@@ -310,25 +312,27 @@ void ModeIdle::remotePlan(bool state_now, bool state_last)
 {
 	if (appmt_obj.getPlanStatus() == 1)
 	{
+		appmt_obj.resetPlanStatus();
 		beeper.beepForCommand(VALID);
 		speaker.play(VOICE_APPOINTMENT_DONE);
 		INFO_YELLOW("Plan received.");
 	}
 	else if (appmt_obj.getPlanStatus() == 2)
 	{
+		appmt_obj.resetPlanStatus();
 		beeper.beepForCommand(VALID);
-		speaker.play(VOICE_APPOINTMENT_DONE);
 //		speaker.play(VOICE_CANCEL_APPOINTMENT_UNOFFICIAL);
 		INFO_YELLOW("Plan cancel received");
 	}
 	else if (appmt_obj.getPlanStatus() == 3)
 	{
+		appmt_obj.resetPlanStatus();
 		INFO_YELLOW("Plan activated.");
 		// Sleep for 50ms cause the status 3 will be sent for 3 times.
 		usleep(50000);
 		plan_activated_status_ = true;
+		appmt_obj.timesUp();
 	}
-	appmt_obj.resetPlanStatus();
 }
 
 void ModeIdle::chargeDetect(bool state_now, bool state_last)
