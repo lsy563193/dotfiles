@@ -80,13 +80,17 @@ bool MoveTypeRemote::isFinish()
 				ev.remote_direction_forward = false;
 				bool slow_down = true;
 				if (movement_i_ != mm_straight)
+				{
+					movement_i_ = mm_straight;
 					p_movement_.reset(new MovementDirectGo(slow_down));
+				}
 				else
 				{
-					p_movement_->start_timer_ = ros::Time::now().toSec();
-					ROS_INFO("%s %d: Start timer is updated.", __FUNCTION__, __LINE__);
+					movement_i_ = mm_stay;
+					p_movement_.reset(new MovementStayRemote(15));
+//					p_movement_->start_timer_ = ros::Time::now().toSec();
+//					ROS_INFO("%s %d: Start timer is updated.", __FUNCTION__, __LINE__);
 				}
-				movement_i_ = mm_straight;
 
 			}
 			else if (ev.remote_direction_left)

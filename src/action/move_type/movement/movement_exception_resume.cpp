@@ -233,8 +233,10 @@ bool MovementExceptionResume::isFinish()
 				{
 					if (brush.isOn())
 						brush.stop();
+					vacuum.stop();
+					water_tank.stop(WaterTank::tank_pump);
 					float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getOriginX(), odom.getOriginY());
-					if (std::abs(distance) >= CELL_SIZE * 2)
+					if (std::abs(distance) >= CELL_SIZE * ROBOT_SIZE)
 					{
 						ROS_INFO("%s %d: Move back finish!", __FUNCTION__, __LINE__);
 						brush.mainBrushResume();
@@ -245,16 +247,21 @@ bool MovementExceptionResume::isFinish()
 				}
 				case 2:
 				{
-					if ((ros::Time::now().toSec() - resume_main_bursh_start_time_) >= 1 && !brush.getMainOc())
+					if ((ros::Time::now().toSec() - resume_main_bursh_start_time_) >= 3)
 					{
-						ROS_INFO("%s %d: main brush over current resume succeeded!", __FUNCTION__, __LINE__);
-						brush.normalOperate();
-						ev.oc_brush_main = false;
-					}
-					else if ((ros::Time::now().toSec() - resume_main_bursh_start_time_) >= 3)
-					{
-						oc_main_brush_cnt_++;
-						main_brush_resume_state_ = 1;
+						if (!brush.getMainOc())
+						{
+							ROS_INFO("%s %d: main brush over current resume succeeded!", __FUNCTION__, __LINE__);
+							brush.normalOperate();
+							ev.oc_brush_main = false;
+							if (!water_tank.checkEquipment(true))
+								vacuum.setCleanState();
+						}
+						else
+						{
+							oc_main_brush_cnt_++;
+							main_brush_resume_state_ = 1;
+						}
 					}
 					break;
 				}

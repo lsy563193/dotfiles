@@ -53,13 +53,14 @@ void Error::alarm(void)
 			break;
 		}
 		case ERROR_CODE_LIDAR:
+		case ERROR_CODE_SLAM:
 		{
 			speaker.play(VOICE_TEST_LIDAR);
 			break;
 		}
 		case ERROR_CODE_STUCK:
 		{
-			speaker.play(VOICE_ROBOT_STUCK);
+			speaker.play(VOICE_ROBOT_TRAPPED);
 			break;
 		}
 		default:

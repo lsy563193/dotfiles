@@ -10,15 +10,6 @@
 #include "mathematics.h"
 #include "robot.hpp"
 
-class slip_scan_deque{
-public:
-	void push_back(sensor_msgs::LaserScan i){
-		d.push_back(i);
-		if(d.size() > 3)
-			d.pop_front();
-	}
-	std::deque<sensor_msgs::LaserScan> d;
-};
 class Lidar
 {
 public:
@@ -148,7 +139,7 @@ private:
 	bool slip_enable_{false};
 	bool slip_status_{false};
 	uint8_t slip_frame_cnt_{0};
-	slip_scan_deque last_slip_scan_frame_{};
+	DequeArray<sensor_msgs::LaserScan> last_slip_scan_frame_{};
 	float slip_ranges_percent_{0.8};//80%
 	uint8_t slip_cnt_limit_{5};
 	static double wheel_cliff_trigger_time_;

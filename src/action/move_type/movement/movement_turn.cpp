@@ -73,8 +73,6 @@ bool MovementTurn::isFinish()
 	auto ret = isReach() || sp_mt_->isFinishForward();
 	if (ret) {
 		wheel.stop();
-		return true;
-	} else {
-		return false;
 	}
+	return ret;
 }

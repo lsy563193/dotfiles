@@ -17,7 +17,7 @@ bool WaterTank::checkEquipment(bool is_stop_water_tank)
 	if (getStatus(water_tank))
 		return true;
 
-	auto last_tank_mode_ = voltage_water_tank_ == 250 ? TANK_LOW : TANK_HIGH;
+	auto last_tank_mode_ = voltage_water_tank_ == LOW_OPERATE_VOLTAGE_FOR_WATER_TANK ? TANK_LOW : TANK_HIGH;
 	setTankMode(TANK_HIGH);
 	open(water_tank);//open water tank to detect if it is equipped
 	usleep(150000);

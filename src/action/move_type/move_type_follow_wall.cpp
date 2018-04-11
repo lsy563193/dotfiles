@@ -84,6 +84,7 @@ bool MoveTypeFollowWall::isFinish()
 			if (!handleMoveBackEvent(p_cm))
 			{
 				if(ev.rcon_status) {
+					p_cm->setHomePoint();
 					p_cm->saveBlocks();
 					movement_i_ = mm_rcon;
 					sp_movement_.reset(new MovementRcon(is_left_));
@@ -123,16 +124,20 @@ bool MoveTypeFollowWall::isFinish()
 			//resetTriggeredValue();
 		}
 		else if (movement_i_ == mm_stay) {
+			ROS_ERROR("%s,%d, mt_fw",__FUNCTION__, __LINE__);
 			if(!handleMoveBackEventRealTime(p_cm)){ //aim
+				ROS_ERROR("%s,%d, mt_fw",__FUNCTION__, __LINE__);
 				auto turn_angle = getTurnRadian(false);
 				turn_target_radian_ = getPosition().addRadian(turn_angle).th;
 				resetTriggeredValue();
 				if(is_stop_follow_wall_after_tilt)
 				{
+					ROS_ERROR("%s,%d, mt_fw",__FUNCTION__, __LINE__);
 					is_stop_follow_wall_after_tilt = false;
 					return true;
 				}
 
+				ROS_ERROR("%s,%d, mt_fw",__FUNCTION__, __LINE__);
 				auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
 				movement_i_ = p_mode->isGyroDynamic() ? mm_dynamic : mm_turn;
 				if(movement_i_ == mm_dynamic)
@@ -477,9 +482,12 @@ bool MoveTypeFollowWall::isNewLineReach(GridMap &map)
 }
 
 bool MoveTypeFollowWall::handleMoveBackEventRealTime(ACleanMode *p_clean_mode) {
+	ROS_ERROR("%s,%d, mt_fw",__FUNCTION__, __LINE__);
 	auto p_movement = boost::dynamic_pointer_cast<MovementStay>(sp_movement_);
+    ROS_ERROR("%s,%d, mt_fw",__FUNCTION__, __LINE__);
 	if (p_movement->bumper_status_in_stay_ || p_movement->cliff_status_in_stay_ || p_movement->tilt_status_in_stay_)
 	{
+        ROS_ERROR("%s,%d, mt_fw",__FUNCTION__, __LINE__);
 		p_clean_mode->saveBlocks();
 		movement_i_ = mm_back;
 		float back_distance= static_cast<float>(p_movement->bumper_status_in_stay_? 0.01 : 0.05);

@@ -14,7 +14,7 @@ ModeGoToCharger::ModeGoToCharger()
 	event_manager_set_enable(true);
 
 	serial.setWorkMode(WORK_MODE);
-	speaker.play(VOICE_BACK_TO_CHARGER, false);
+	speaker.play(VOICE_GO_HOME_MODE, false);
 	sp_state = st_init.get();
 	sp_state->init();
 	sp_action_.reset(new ActionOpenGyro);

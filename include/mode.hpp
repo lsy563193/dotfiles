@@ -267,7 +267,7 @@ public:
 
 private:
 	double remote_mode_time_stamp_;
-    boost::shared_ptr<State> st_clean = boost::make_shared<StateClean>();
+	boost::shared_ptr<State> st_clean = boost::make_shared<StateClean>();
 	boost::shared_ptr<State> st_init = boost::make_shared<StateInit>();
 
 };
@@ -495,6 +495,7 @@ public:
 
 	Dir_t old_dir_{};
 	Point_t start_point_{};
+	DequeArray<Point_t> history_{};
 	Point_t iterate_point_{};
 
 //	boost::shared_ptr<APathAlgorithm> follow_wall_path_algorithm_{};
@@ -653,6 +654,7 @@ private:
 	bool has_aligned_and_open_slam_{};
 	float paused_odom_radian_{};
 	float start_align_radian_{};
+//	bool is_stay_in_same_postion_long_time{};
 	Point_t continue_point_{};
 	static int align_count_;
 };
@@ -706,6 +708,7 @@ public:
 	void remoteMax(bool state_now, bool state_last) override;
 	void remoteClean(bool state_now, bool state_last) override;
 	void remoteWallFollow(bool state_now, bool state_last) override;
+	void chargeDetect(bool state_now, bool state_last) override;
 	void switchInStateFollowWall() override;
 
 	void switchInStateInit() override;

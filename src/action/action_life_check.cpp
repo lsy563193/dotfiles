@@ -467,7 +467,7 @@ bool ActionLifeCheck::checkCurrent()
 		error_content_ = static_cast<uint16_t>(main_brush_current_ - main_brush_current_baseline_);
 	}
 	else if (vacuum_current_ - vacuum_current_baseline_ > vacuum_current_ref_ * 1.5 ||
-			 vacuum_current_ - vacuum_current_baseline_ < vacuum_current_ref_ * 0.5)
+			 vacuum_current_ - vacuum_current_baseline_ < vacuum_current_ref_ * 0.2)
 	{
 		error_code_ = VACUUM_CURRENT_ERROR;
 		error_content_ = static_cast<uint16_t>(vacuum_current_ - vacuum_current_baseline_);
