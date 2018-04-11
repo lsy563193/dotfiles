@@ -29,7 +29,7 @@
  */
 #define MAP_DIMENSION			(200 * CELL_SIZE)//CELL_SIZE * 190 //9225//7925  // 14250
 //#define MAP_SIZE			(MAP_DIMENSION / CELL_SIZE)
-#define MAP_SIZE			(200)
+#define MAP_SIZE			(300)
 #define COLOR_DEBUG_MAP		(1)
 
 /*

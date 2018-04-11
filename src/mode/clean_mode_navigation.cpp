@@ -10,6 +10,8 @@
 #include <path_algorithm.h>
 #include "mode.hpp"
 #include "mathematics.h"
+#include "wifi/wifi.h"
+
 //#define NAV_INFO() ROS_INFO("st(%d),ac(%d)", state_i_, action_i_)
 
 int CleanModeNav::align_count_ = 0;
@@ -44,6 +46,7 @@ CleanModeNav::CleanModeNav()
 CleanModeNav::~CleanModeNav()
 {
 	setNavMode(false);
+	s_wifi.clearMapCache();
 }
 
 bool CleanModeNav::mapMark()
@@ -116,7 +119,7 @@ bool CleanModeNav::mapMark()
 	}
 	else if (sp_state == state_clean.get()) {
 		setLinearCleaned();
-// Set home cell.
+		// Set home cell.
 		if (ev.rcon_status)
 			setHomePoint();
 	}
@@ -305,7 +308,7 @@ void CleanModeNav::keyClean(bool state_now, bool state_last)
 
 	if (reset_wifi)
 	{
-		s_wifi.appendTask(S_Wifi::ACT::ACT_SMART_AP_LINK);
+		s_wifi.taskPushBack(S_Wifi::ACT::ACT_SMART_AP_LINK);
 		sp_action_.reset();
 		sp_action_.reset(new ActionPause);
 	}
@@ -452,6 +455,22 @@ void CleanModeNav::remoteMax(bool state_now, bool state_last)
 	remote.reset();
 }
 
+void CleanModeNav::remotePlan(bool state_now, bool state_last)
+{
+	if (isStatePause() && appmt_obj.getPlanStatus() > 2)
+	{
+		appmt_obj.resetPlanStatus();
+		appmt_obj.timesUp();
+		// Sleep for 50ms cause the status 3 will be sent for 3 times.
+		usleep(50000);
+		// Reuse key clean triggered to activate the plan.
+		ev.key_clean_pressed = true;
+		INFO_YELLOW("Plan activated, set ev.key_clean_pressed.");
+	}
+	else
+		EventHandle::remotePlan(state_now, state_last);
+}
+
 void CleanModeNav::batteryHome(bool state_now, bool state_last)
 {
 	if (isStateClean())
@@ -493,6 +512,11 @@ void CleanModeNav::chargeDetect(bool state_now, bool state_last)
 			ROS_WARN("%s %d: Charge detect!.", __FUNCTION__, __LINE__);
 			ev.charge_detect = charger.getChargeStatus();
 			ev.fatal_quit = true;
+		}
+		else if (isStateGoToCharger())
+		{
+			ROS_WARN("%s %d: Charge detect!.", __FUNCTION__, __LINE__);
+			ev.charge_detect = charger.getChargeStatus();
 		}
 	}
 }
@@ -695,7 +719,7 @@ void CleanModeNav::switchInStateClean() {
 		ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_points_.size());
 		go_home_path_algorithm_.reset();
 		go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_, start_point_));
-		//s_wifi.appendTask(S_Wifi::ACT::ACT_UPLOAD_LAST_CLEANMAP);
+		//s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_LAST_CLEANMAP);
 	}
 	sp_state->init();
 	action_i_ = ac_null;

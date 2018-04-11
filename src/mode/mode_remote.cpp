@@ -37,7 +37,8 @@ ModeRemote::ModeRemote()
 
 	remote_mode_time_stamp_ = ros::Time::now().toSec();
 
-	s_wifi.appendTask(S_Wifi::ACT::ACT_UPLOAD_STATUS);
+	s_wifi.setWorkMode(Mode::md_remote);
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 	mode_i_ = md_remote;
 	IMoveType::sp_mode_ = this;
 }

@@ -157,7 +157,7 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float radius,Cells *targ
 {
 	targets->clear();
 	int16_t i;
-	uint32_t mid_it;// for store the last pos in clockwise/anti clockwise outint16_t x, x_last, y, y_last;
+	uint32_t mid_it;// for store the last pos in clockwise/anti clockwise out int16_t x, x_last, y, y_last;
 	int16_t x,y;
 	int16_t x_last,y_last;
 	uint16_t spiral_count = 1;//number of spiral count

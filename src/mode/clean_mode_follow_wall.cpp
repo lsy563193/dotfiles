@@ -168,6 +168,23 @@ void CleanModeFollowWall::remoteWallFollow(bool state_now, bool state_last)
 	remote.reset();
 }
 
+void CleanModeFollowWall::chargeDetect(bool state_now, bool state_last)
+{
+	if (!ev.charge_detect)
+	{
+		if (isStateGoToCharger())
+		{
+			ROS_WARN("%s %d: Charge detect!.", __FUNCTION__, __LINE__);
+			ev.charge_detect = charger.getChargeStatus();
+		}
+		else if (charger.isDirected())
+		{
+			ROS_WARN("%s %d: Charge detect!.", __FUNCTION__, __LINE__);
+			ev.charge_detect = charger.getChargeStatus();
+			ev.fatal_quit = true;
+		}
+	}
+}
 
 void CleanModeFollowWall::switchInStateInit() {
 	PP_INFO();

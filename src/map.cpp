@@ -869,14 +869,17 @@ void GridMap::colorPrint(const char *outString, int16_t y_min, int16_t y_max)
 			else if(cs == '3'){//bumper
 				y_col+="\033[1;41;37m3\033[0m";// red
 			}
-			else if(cs == '4'){//cliff
-				y_col+="\033[1;45;37m4\033[0m";// magenta
+			else if(cs == '4'){//lidar maker
+				y_col+="\033[1;44;37m4\033[0m";// blue
 			}
-			else if(cs == '5' || cs == '6'){//rcon
-				y_col+="\033[1;47;37m5\033[0m";// white
+			else if(cs == '5'){//cliff
+				y_col+="\033[1;45;37m5\033[0m";// magenta
 			}
-			else if(cs == '7'){//lidar maker
-				y_col+="\033[1;44;37m7\033[0m";// blue
+			else if(cs == '6'){//rcon
+				y_col+="\033[1;47;37m6\033[0m";// white
+			}
+			else if(cs == '7'){//tmp rcon
+				y_col+="\033[1;47;37m7\033[0m";// white
 			}
 			else if(cs == '8'){//tilt
 				y_col+="\033[1;47;30m8\033[0m";// white

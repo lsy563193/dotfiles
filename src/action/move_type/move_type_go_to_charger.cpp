@@ -37,12 +37,18 @@ bool MoveTypeGoToCharger::isFinish()
 	else if (p_back_movement_ != nullptr)
 	{
 		if (p_back_movement_->isFinish())
+		{
 			p_back_movement_.reset();
+			c_rcon.resetStatus();
+		}
 	}
 	else if (p_turn_movement_ != nullptr)
 	{
 		if (p_turn_movement_->isFinish())
+		{
 			p_turn_movement_.reset();
+			c_rcon.resetStatus();
+		}
 	}
 	else if (p_gtc_movement_->isSwitch())
 	{

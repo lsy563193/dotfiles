@@ -106,7 +106,7 @@ public:
 	uint8_t checkVersion();
 	uint8_t checkMAC();
 
-	void appendTask(S_Wifi::ACT action);	
+	void taskPushBack(S_Wifi::ACT action);	
 
 	void wifi_send_routine();
 
