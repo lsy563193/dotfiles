@@ -810,17 +810,16 @@ void GridMap::printInRange(const Cell_t& curr_cell, uint8_t id, const Cells& tar
 
 	printf("%s\n",outString.str().c_str());
 	outString.str("");
-	outString.str("");
 	outString << '\t';
 	for (auto y = bound.min.y; y <= bound.max.y; y++) {
 		outString << abs(y) % 10;
 	}
 	outString << '\n';
-	for (auto x = bound.min.x; x < bound.max.x; ++x) {
+	for (auto x = bound.min.x; x <= bound.max.x; ++x) {
    		outString.width(4);
 		outString << x;
 		outString << '\t';
-		for (auto y = bound.min.y; y < bound.max.y; ++y) {
+		for (auto y = bound.min.y; y <= bound.max.y; ++y) {
             auto val = getCell(CLEAN_MAP, x, y);
             if(curr_cell.x == x && curr_cell.y == y)
 				outString << 'x';

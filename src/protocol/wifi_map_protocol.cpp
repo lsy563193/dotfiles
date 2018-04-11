@@ -6,11 +6,11 @@
 
 WifiMapManage wifiMapManage;
 
-void WifiMapManage::cursorCompression(GridMap& grid_map, WifiMap& wifi_map) {
-	auto bound = grid_map.generateBound();
+void WifiMapManage::cursorCompression(GridMap& grid_map, WifiMap& wifi_map,const BoundingBox2& bound) {
+//	bound = grid_map.generateBound();
 	ROS_INFO("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 	std::get<0>(wifi_map) = bound.min;
-	std::get<1>(wifi_map) = bound.max.x - bound.min.x;
+	std::get<1>(wifi_map) = bound.max.x - bound.min.x+1;
     auto& data = std::get<2>(wifi_map);
 	for(auto i= bound.min.x; i<= bound.max.x; i++)
 	{
@@ -56,15 +56,17 @@ uint8_t WifiMapManage::changeCost(int cost) {
 ////	printf("\n");
 //}
 
-void WifiMapManage::serialize(GridMap& grid_map) {
+void WifiMapManage::serialize(GridMap& grid_map, const BoundingBox2& bound) {
 
 	WifiMap wifi_map{};
-    cursorCompression(grid_map, wifi_map);
+    cursorCompression(grid_map, wifi_map,bound);
     auto left_low_conner = std::get<0>(wifi_map);
 	auto width = std::get<1>(wifi_map);
 	auto& map_data = std::get<2>(wifi_map);
+	valid_size_ = 6 + map_data.size()*3;
+	ROS_ASSERT(valid_size_<10000);
 
-	ROS_INFO("%d,%d ", 6 + map_data.size() * 3 + 2, DATA_SIZE);
+	ROS_INFO("%d,%d ", 6 + valid_size_, DATA_SIZE);
 	{
 		boost::mutex::scoped_lock lock(data_mutex);
 		memset(data_, 0, DATA_SIZE);
@@ -74,20 +76,18 @@ void WifiMapManage::serialize(GridMap& grid_map) {
 		data_[3] = static_cast<uint8_t>(left_low_conner.y >> 8);
 		data_[4] = static_cast<uint8_t>(width);
 		data_[5] = static_cast<uint8_t>(width >> 8);
-        size_t i = 0;
-		for (; i < map_data.size(); ++i) {
+		for (size_t i = 0; i <= map_data.size(); ++i) {
 			data_[6 + i * 3] = map_data[i].first;
 			data_[6 + i * 3 + 1] = static_cast<uint8_t >(map_data[i].second);
 			data_[6 + i * 3 + 2] = static_cast<uint8_t >(map_data[i].second >> 8);
 		}
-        valid_size_ = 6 + i*3+2;
-		ROS_ASSERT(valid_size_<10000);
-
-		//
-        ROS_ERROR("display wifi map : left_low_conner(%d,%d),width(%d),h(%d):",left_low_conner.x, left_low_conner.y, width,DATA_SIZE/width);
-		ROS_ERROR("display wifi map : left_low_conner(%d,%d, %d,%d),width(%d,%d),  h(%d)size(%d):",data_[0], data_[1],data_[2],data_[3],data_[4], data_[5], valid_size_);
-		std::ostringstream outString;
-        for(auto c = 6; c <= 6 + (map_data.size()-1) * 3 + 2; c++) {
+        ROS_ERROR("display wifi map : left_low_conner(%d,%d),width(%d),h(%d):",left_low_conner.x, left_low_conner.y, width,map_data.size());
+        /*
+//		std::ostringstream outString;
+		auto count =0;
+		auto line =0;
+		printf("%40d", bound.min.x);
+        for(auto c = 6; c < valid_size_; c++) {
 //			outString << data_[c];
 			printf("%d", data_[c]);
 			if ((c - 6) % 3 == 0)
@@ -97,16 +97,25 @@ void WifiMapManage::serialize(GridMap& grid_map) {
 			}
 			else if ((c - 6) % 3 == 1) {
 //				outString << ',';
+                count += data_[c];
 				printf(",");
 			}
 			else if ((c - 6) % 3 == 2)
 			{
 //				outString << '|';
-				printf("|");
+				if(count >= width)
+				{
+					line++;
+					printf("\n%4d:\t", bound.min.x+line);
+					count = 0;
+				}
+				else
+					printf("|");
 			}
 		}
 //        printf("%s", outString.str().c_str());
         printf("\n");
+         */
 	}
 }
 
