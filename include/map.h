@@ -24,6 +24,7 @@ class GridMap {
 public:
 
 	GridMap();
+	GridMap(uint16_t size);
 	~GridMap();
 	void mapInit();
 
@@ -44,7 +45,7 @@ public:
  * @brief Convert the ros map to grid map for the path algorithm.
  * @return None
  */
-	void convertFromSlamMap(float threshold);
+	void convertFromSlamMap(float resolution_target, float threshold, const BoundingBox2& bound);
 
 	void merge(GridMap source_map, bool add_slam_map_blocks_to_uncleaned = false,
 			   bool add_slam_map_blocks_to_cleaned = false,
@@ -204,6 +205,9 @@ public:
  */
 
 	bool isFrontBlocked(Dir_t dir);
+	int16_t getSize(){
+		return MAP_SIZE_;
+	};
 	bool isFrontSlamBlocked(void);
 
 	BoundingBox2 generateBound()
@@ -224,7 +228,7 @@ public:
 	bool cellIsOutOfRange(Cell_t cell);
 
 	void colorPrint(const char *outString, int16_t y_min, int16_t y_max);
-	void print(uint8_t id, const Cells& targets);
+	void print(const Cell_t& curr, uint8_t id, const Cells& targets,bool is_bound = false,BoundingBox2 = {});
 
 private:
 	uint8_t clean_map[MAP_SIZE][(MAP_SIZE + 1) / 2];
@@ -235,9 +239,11 @@ private:
 
 	// Cells that temporary save the c_blocks.
 
+    int16_t MAP_SIZE_{};
 };
 
 /*wf_map is to record the wall follow path to caculate the isolate islands*/
 extern GridMap slam_grid_map;
+//extern GridMap android_grid_map;
 
 #endif /* __MAP_H */

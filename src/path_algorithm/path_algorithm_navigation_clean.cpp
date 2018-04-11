@@ -63,7 +63,7 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 		if (!path.empty()) {
 			plan_path = cells_generate_points(path);
 			// Congratulation!! plan_path is generated successfully!!
-			map.print(CLEAN_MAP, path);
+			map.print(curr_cell, CLEAN_MAP, path);
 			curr_filter_ = nullptr;
 			return true;
 		}
@@ -88,8 +88,8 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 
 	if (targets.empty())
 	{
-		map.print(CLEAN_MAP, path);
-		map.print(COST_MAP, path);
+		map.print(curr.toCell(), CLEAN_MAP, path);
+		map.print(curr.toCell(), COST_MAP, path);
 //		Cell_t target;
 //		int dijkstra_cleaned_count;
 //		if(!findTargetUsingDijkstra(map,getPosition().toCell(),target,dijkstra_cleaned_count))
@@ -114,7 +114,7 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 	plan_path = cells_generate_points(path);
 
 	displayCellPath(path);
-	map.print(CLEAN_MAP, path);
+	map.print(curr.toCell(), CLEAN_MAP, path);
 	return true;
 }
 
@@ -145,15 +145,15 @@ Cells NavCleanPathAlgorithm::findTargetInSameLane(GridMap &map, const Cell_t &cu
 	if (it[0].x != curr_cell.x)
 	{
 		target = it[0];
-		if(target.x >= MAP_SIZE )
-			target.x = MAP_SIZE - 1;
+		if(target.x >= map.getSize() )
+			target.x = map.getSize() - 1;
 		is_found++;
 	}
 	if (it[1].x != curr_cell.x)
 	{
 		target = it[1];
-		if(target.x <= -MAP_SIZE )
-			target.x = -MAP_SIZE + 1;
+		if(target.x <= -map.getSize() )
+			target.x = -map.getSize() + 1;
 		is_found++;
 	}
 //	ROS_WARN("%s %d: curr(%d,%d) is_found(%d),it(%d,%d)", __FUNCTION__, __LINE__, curr_cell.x, curr_cell.y,is_found,it[0],it[1]);

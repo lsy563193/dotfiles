@@ -203,7 +203,7 @@ catkin_package(
 	DEPENDS Eigen3
 )
 
-add_executable(pp  ${PP_SRC})
+add_executable(pp  ${PP_SRC} src/protocol/wifi_map_protocol.cpp src/protocol/wifi_map_protocol.cpp src/protocol/wifi_map_protocol.h)
 #target_link_libraries(pp ${catkin_LIBRARIES} ${ALSA_LIBRARIES} ${Eigen3_LIBRARIES} -lm -lpthread)
 target_link_libraries(pp ${catkin_LIBRARIES} ${ALSA_LIBRARIES} ${Eigen3_LIBRARIES} -lm -lpthread "-T ../ilife_ldscript.lds ../res.o -Wl,--verbose")
 

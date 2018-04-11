@@ -70,9 +70,9 @@ public:
 		map_data_ = data;
 	}
 
-	std::vector<int8_t> getData()
+	void getData(std::vector<int8_t>& map_data)
 	{
-		return map_data_;
+		map_data = map_data_;
 	}
 
 private:

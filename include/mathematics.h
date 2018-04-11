@@ -498,7 +498,7 @@ typedef int CellState;
 template <typename T>
 class DequeArray{
 public:
-//    DequeArray(int size):size_(size){ };
+//    DequeArray(int size):valid_size_(size){ };
 	void push_back(T i){
 		d.push_back(i);
 		if(d.size() > 3)
@@ -527,7 +527,7 @@ public:
 
 private:
 	std::deque<T> d;
-//    int size_{3};
+//    int valid_size_{3};
 };
 typedef std::pair<const CellState, Cell_t> PairCell_t;
 class PointSelector{
