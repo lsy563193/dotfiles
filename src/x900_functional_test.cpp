@@ -1046,7 +1046,6 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 			serial.sendData();
 			continue;
 		}
-		ROS_INFO("L: %d, R: %d", buf[10], buf[11]);
 		switch(step) {
 			case 1:
 				serial.setSendData(CTL_WHEEL_LEFT_HIGH, 200 >> 8);
@@ -1176,7 +1175,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				serial.setSendData(CTL_WHEEL_LEFT_HIGH, 0);
 				serial.setSendData(CTL_WHEEL_LEFT_LOW, 0);
 				count++;
-				if(count > 50)
+				if(count > 10)
 				{
 					count = 0;
 					step++;
@@ -1359,7 +1358,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				serial.setSendData(CTL_WHEEL_RIGHT_HIGH, 0);
 				serial.setSendData(CTL_WHEEL_RIGHT_LOW, 0);
 				count++;
-				if(count > 50)
+				if(count > 10)
 				{
 					count = 0;
 					step++;
@@ -1439,6 +1438,7 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 	serial.setSendData(CTL_LEFT_BRUSH_TEST_MODE, 0);
 	serial.setSendData(CTL_MAIN_BRUSH_TEST_MODE, 0);
 	serial.setSendData(CTL_RIGHT_BRUSH_TEST_MODE, 0);
+	brush.setPWM(0,0,0);
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
 	while(ros::ok()) {
 		/*--------data extrict from serial com--------*/
@@ -1491,7 +1491,7 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 			case 4:
 				brush.setPWM(0,0,0);
 				count++;
-				if(count > 50)
+				if(count > 25)
 				{
 					count = 0;
 					step++;
@@ -1583,7 +1583,7 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 			case 11:
 				brush.setPWM(0,0,0);
 				count++;
-				if(count > 50)
+				if(count > 25)
 				{
 					count = 0;
 					step++;
@@ -1804,7 +1804,7 @@ void main_brush_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_co
 			case 4:
 				brush.setPWM(0,0,0);
 				count++;
-				if(count > 50)
+				if(count > 25)
 				{
 					count = 0;
 					step++;
