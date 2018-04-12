@@ -631,7 +631,8 @@ void Serial::send_routine_cb()
 			/*---pid for wheels---*/
 			wheel.pidAdjustSpeed();
 			brush.updatePWM();
-			water_tank.updatePWM();
+			if (robot::instance()->getWorkMode() != WATER_TANK_TEST_MODE)
+				water_tank.updatePWM();
 		}
 
 		sendData();
