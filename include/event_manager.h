@@ -56,6 +56,8 @@ typedef struct {
 		bool lidar_bumper_jam;
 		uint8_t cliff_triggered;
 		bool cliff_jam;
+		bool right_wheel_cliff;
+		bool left_wheel_cliff;
 
 		bool oc_brush_main;
 		bool oc_wheel_left;
@@ -112,6 +114,10 @@ virtual void cliffFront(bool state_now, bool state_last);
 virtual void cliffLeft(bool state_now, bool state_last);
 
 virtual void cliffRight(bool state_now, bool state_last);
+
+virtual void rightWheelCliff(bool state_now, bool state_last);
+
+virtual void leftWheelCliff(bool state_now, bool state_last);
 
 /* RCON */
 virtual void rcon(bool state_now, bool state_last);
@@ -262,6 +268,8 @@ typedef enum {
 	EVT_CLIFF_FRONT,
 	EVT_CLIFF_LEFT,
 	EVT_CLIFF_RIGHT,
+	EVT_RIGHT_WHEEL_CLIFF,
+	EVT_LEFT_WHEEL_CLIFF,
 
 	EVT_RCON,
 /*

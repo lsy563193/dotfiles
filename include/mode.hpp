@@ -137,6 +137,8 @@ public:
 	}
 
 	double wall_distance;
+	double wheel_cliff_triggered_time_{DBL_MAX};
+	bool is_wheel_cliff_triggered{};
 	int mode_i_{};
 
 	State* sp_state{};
@@ -224,11 +226,16 @@ public:
 	void chargeDetect(bool state_now, bool state_last) override;
 	void rcon(bool state_now, bool state_last) override;
 	void remotePlan(bool state_now, bool state_last) override;
+	bool allowRemoteUpdatePlan() override;
 
 private:
+	/*---values for rcon handle---*/
+	double first_time_seen_charger_{ros::Time::now().toSec()};
+	double last_time_seen_charger_{first_time_seen_charger_};
 	boost::shared_ptr<State> st_sleep = boost::make_shared<StateSleep>();
-private:
 	bool plan_activated_status_;
+
+	bool fake_sleep_{false};
 };
 
 class ModeCharge: public Mode

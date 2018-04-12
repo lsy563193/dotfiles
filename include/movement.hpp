@@ -292,6 +292,7 @@ public:
 
 private:
 	double resume_wheel_start_time_;
+	double wheel_cliff_start_time_;
 	uint8_t oc_main_brush_cnt_{0};
 	uint8_t main_brush_resume_state_{1};
 	double resume_main_bursh_start_time_;
@@ -307,6 +308,8 @@ private:
 	double resume_slip_start_time_;
 	uint8_t cliff_resume_cnt_{0};
 	uint8_t cliff_all_resume_cnt_{0};
+	uint8_t wheel_cliff_resume_cnt_{0};
+	uint8_t wheel_cliff_state_{1};
 	uint8_t robot_stuck_resume_cnt_{0};
 };
 

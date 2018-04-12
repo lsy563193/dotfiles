@@ -70,6 +70,8 @@ void event_manager_init()
 	p_handler[EVT_CLIFF_LEFT] = &EventHandle::cliffLeft;
 	p_handler[EVT_CLIFF_RIGHT] = &EventHandle::cliffRight;
 	p_handler[EVT_CLIFF_FRONT] = &EventHandle::cliffFront;
+	p_handler[EVT_RIGHT_WHEEL_CLIFF] = &EventHandle::rightWheelCliff;
+	p_handler[EVT_LEFT_WHEEL_CLIFF] = &EventHandle::leftWheelCliff;
 
 	p_handler[EVT_RCON] = &EventHandle::rcon;
 
@@ -208,6 +210,17 @@ void event_manager_thread_cb()
 			evt_set_status_x(EVT_CLIFF_RIGHT);
 		}*/
 
+		if(wheel.getRightWheelCliffStatus())
+		{
+			ROS_DEBUG("%s %d: setting event:right wheel cliff", __FUNCTION__, __LINE__);
+			evt_set_status_x(EVT_RIGHT_WHEEL_CLIFF);
+		}
+
+		if(wheel.getLeftWheelCliffStatus())
+		{
+			ROS_DEBUG("%s %d: setting event:left wheel cliff", __FUNCTION__, __LINE__);
+			evt_set_status_x(EVT_LEFT_WHEEL_CLIFF);
+		}
 		/* RCON */
 		if (c_rcon.getStatus()) {
 			//ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
@@ -436,7 +449,13 @@ void event_handler_thread_cb()
 		} else if (status_now[EVT_CLIFF_RIGHT]) {
             evt_handle_event_x( EVT_CLIFF_RIGHT);
 		}
-
+		/*wheel cliff*/
+		if (status_now[EVT_RIGHT_WHEEL_CLIFF]) {
+			evt_handle_event_x(EVT_RIGHT_WHEEL_CLIFF);
+		}
+		if (status_now[EVT_LEFT_WHEEL_CLIFF]) {
+			evt_handle_event_x(EVT_LEFT_WHEEL_CLIFF);
+		}
 		/* RCON */
 		evt_handle_check_event(EVT_RCON);
 /*
@@ -558,6 +577,8 @@ void event_manager_reset_status(void)
 	ev.cliff_all_triggered = false;
 	ev.cliff_triggered = 0;
 	ev.cliff_jam = false;
+	ev.right_wheel_cliff = false;
+	ev.left_wheel_cliff = false;
 	g_cliff_all_cnt = 0;
 	g_cliff_cnt = 0;
 	/* RCON */
@@ -731,6 +752,17 @@ void EventHandle::cliffRight(bool state_now, bool state_last)
 //	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
+void EventHandle::rightWheelCliff(bool state_now, bool state_last)
+{
+	ev.right_wheel_cliff = true;
+	ROS_DEBUG("%s %d: Right wheel cliff triggered", __FUNCTION__, __LINE__);
+}
+
+void EventHandle::leftWheelCliff(bool state_now, bool state_last)
+{
+	ev.left_wheel_cliff = true;
+	ROS_DEBUG("%s %d: Left wheel cliff triggered", __FUNCTION__, __LINE__);
+}
 /* RCON */
 void EventHandle::rcon(bool state_now, bool state_last)
 {

@@ -6,15 +6,13 @@
 #include <error.h>
 #include "action.hpp"
 
-#define ENABLE_LOW_POWER_CONSUMPTION 1
-
-ActionSleep::ActionSleep()
+ActionSleep::ActionSleep(bool fake_sleep)
 {
 	ROS_INFO("%s %d: Start sleep action.", __FUNCTION__, __LINE__);
 	// Ensure the previous voice is finished before sleep.
 	wifi_led.set(false);
 	s_wifi.uploadStatus(0xc8,0x00);
-	s_wifi.sleep();
+//	s_wifi.sleep();
 
 	gyro.setOff();
 	gyro.resetStatus();
@@ -28,24 +26,11 @@ ActionSleep::ActionSleep()
 	usleep(100000);
 	beeper.beep(4, 80, 0, 1);
 	usleep(100000);
-	if (charger.getChargeStatus())
-	{
-		ROS_INFO("%s %d: Finish beeping, enter from charge mode.", __FUNCTION__, __LINE__);
-		serial.setWorkMode(BATTERY_FULL_SLEEP_MODE);
-	}
+
+	if (fake_sleep)
+		ROS_INFO("%s %d: Shhhhhh.... Entering fake sleep ;)", __FUNCTION__, __LINE__);
 	else
-	{
-		ROS_INFO("%s %d: Finish beeping.", __FUNCTION__, __LINE__);
-		serial.setWorkMode(NORMAL_SLEEP_MODE);
-	}
-#if ENABLE_LOW_POWER_CONSUMPTION
-	// Sleep for 30ms to make sure the power byte has been sent.
-	usleep(30000);
-	system("/bin/echo standby > /sys/power/state");
-//	sleep(1);
-#else
-	usleep(25000);
-#endif
+		lowPowerSleep();
 }
 
 ActionSleep::~ActionSleep()
@@ -73,3 +58,16 @@ void ActionSleep::run()
 	// Just sleep...
 }
 
+void ActionSleep::lowPowerSleep()
+{
+	if (charger.getChargeStatus())
+	{
+		ROS_INFO("%s %d: Enter from charge mode.", __FUNCTION__, __LINE__);
+		serial.setWorkMode(BATTERY_FULL_SLEEP_MODE);
+	} else
+		serial.setWorkMode(NORMAL_SLEEP_MODE);
+	// Sleep for 30ms to make sure the power byte has been sent.
+	usleep(30000);
+	ROS_INFO("%s %d: Good night buddy.", __FUNCTION__, __LINE__);
+	system("/bin/echo standby > /sys/power/state");
+}
