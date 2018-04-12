@@ -99,54 +99,59 @@ ACleanMode::~ACleanMode()
 		slam.stop();
 		odom.setRadianOffset(0);
 
-		if (moved_during_pause_)
+		if (next_mode_i_ == md_idle)
 		{
-			speaker.play(VOICE_CLEANING_FINISHED, false);
-			ROS_WARN("%s %d: Moved during pause. Stop cleaning.", __FUNCTION__, __LINE__);
-		}
-		else if (switch_is_off_)
-		{
-			speaker.play(VOICE_CHECK_SWITCH, false);
-			ROS_WARN("%s %d: Switch is not on. Stop cleaning.", __FUNCTION__, __LINE__);
-		}
-		else if (ev.fatal_quit)
-		{
-			if (ev.cliff_all_triggered)
+			if (ev.fatal_quit)
 			{
-				speaker.play(VOICE_ERROR_LIFT_UP, false);
-				ROS_WARN("%s %d: Cliff all triggered. Stop cleaning.", __FUNCTION__, __LINE__);
-			}
-			else if (ev.charge_detect)
+				if (ev.cliff_all_triggered)
+				{
+					speaker.play(VOICE_ERROR_LIFT_UP, false);
+					ROS_WARN("%s %d: Cliff all triggered. Stop cleaning.", __FUNCTION__, __LINE__);
+				} else
+					ROS_WARN("%s %d: fatal_quit is true. Stop cleaning.", __FUNCTION__, __LINE__);
+			} else if (ev.key_clean_pressed || ev.key_long_pressed)
+			{
+				if (mode_i_ != cm_exploration && mode_i_ != cm_navigation)
+					speaker.play(VOICE_CLEANING_FINISHED, false);
+				ROS_WARN("%s %d: Finish cleaning for key_clean_pressed or key_long_pressed.", __FUNCTION__, __LINE__);
+			} else if (mode_i_ == cm_exploration ||
+					((mode_i_ == cm_navigation || mode_i_ == cm_wall_follow) && seen_charger_during_cleaning_))
+			{
+				speaker.play(VOICE_BACK_TO_CHARGER_FAILED, false);
+				ROS_WARN("%s %d: Finish cleaning but failed to go to charger.", __FUNCTION__, __LINE__);
+			} else if (mode_i_ == cm_navigation && trapped_closed_or_isolate || trapped_time_out_)
+			{
+				speaker.play(VOICE_ROBOT_TRAPPED, false);
+				trapped_closed_or_isolate = false;
+				trapped_time_out_ = false;
+				ROS_WARN("%s %d: Robot is trapped.Stop cleaning.", __FUNCTION__, __LINE__);
+			} else if (mode_i_ == cm_navigation && moved_during_pause_)
 			{
 				speaker.play(VOICE_CLEANING_FINISHED, false);
+				ROS_WARN("%s %d: Moved during pause. Stop cleaning.", __FUNCTION__, __LINE__);
+			} else if (mode_i_ != cm_exploration && !seen_charger_during_cleaning_)
+			{
+				speaker.play(VOICE_CLEANING_FINISHED, false);
+				ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
+			}
+		}
+		else if (next_mode_i_ == md_charge)
+		{
+			 if (switch_is_off_)
+			{
+				speaker.play(VOICE_CHECK_SWITCH, false);
+				ROS_WARN("%s %d: Switch is not on. Stop cleaning.", __FUNCTION__, __LINE__);
+			} else
 				ROS_WARN("%s %d: Charge detect. Stop cleaning.", __FUNCTION__, __LINE__);
-			}
-			else
-				ROS_WARN("%s %d: fatal_quit is true. Stop cleaning.", __FUNCTION__, __LINE__);
 		}
-		else if (ev.key_clean_pressed || ev.key_long_pressed)
+		else if (next_mode_i_ == md_sleep)
 		{
-			if (mode_i_ != cm_exploration)
-				speaker.play(VOICE_CLEANING_FINISHED, false);
-			ROS_WARN("%s %d: Finish cleaning for key_clean_pressed or key_long_pressed.", __FUNCTION__, __LINE__);
+//			speaker.play(VOICE_CLEANING_FINISHED, false);
+			ROS_WARN("%s %d: Pause timeout or long press in pause.", __FUNCTION__, __LINE__);
 		}
-		else if ((seen_charger_during_cleaning_ || mode_i_ == cm_exploration) && !charger.getChargeStatus())
-		{
-			speaker.play(VOICE_BACK_TO_CHARGER_FAILED, false);
-			ROS_WARN("%s %d: Finish cleaning but failed to go to charger.", __FUNCTION__, __LINE__);
-		}
-		else if(trapped_closed_or_isolate || trapped_time_out_)
-		{
-			speaker.play(VOICE_ROBOT_TRAPPED, false);
-			trapped_closed_or_isolate = false;
-			trapped_time_out_ = false;
-			ROS_WARN("%s %d: Robot is trapped.Stop cleaning.",__FUNCTION__,__LINE__);
-		}
-		else if(!seen_charger_during_cleaning_ && mode_i_ != cm_exploration)
-		{
-			speaker.play(VOICE_CLEANING_FINISHED, false);
-			ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
-		}
+		else
+			ROS_WARN("%s %d: Entering other clean mode(%d), so do not play the finish voice.",
+					 __FUNCTION__, __LINE__, next_mode_i_);
 	}
 	auto cleaned_count = clean_map_.getCleanedArea();
 	auto map_area = cleaned_count * CELL_SIZE * CELL_SIZE;
@@ -178,7 +183,7 @@ void ACleanMode::saveBlocks() {
 	bool is_linear = action_i_== ac_linear;
 	auto is_save_rcon = sp_state == state_clean.get();
 	if (action_i_== ac_linear && is_save_rcon)
-		saveBlock(BLOCKED_RCON, iterate_point_.dir, [&]() {
+		saveBlock(BLOCKED_TMP_RCON, iterate_point_.dir, [&]() {
 			auto rcon_trig = ev.rcon_status/*rcon_get_trig()*/;
 			Cells d_cells;
 			switch (c_rcon.convertToEnum(rcon_trig)) {
@@ -1656,11 +1661,10 @@ bool ACleanMode::updateActionInStateGoHomePoint()
 		update_finish = false;
 		home_points_ = go_home_path_algorithm_->getRestHomePoints();
 	}
-	else if (getPosition().toCell() == start_point_.toCell())
+	else if (home_points_.empty() && getPosition().toCell() == start_point_.toCell())
 	{
 		ROS_INFO("Reach start point but angle not equal,start_point_(%d,%d,%f,%d)",start_point_.toCell().x, start_point_.toCell().y, radian_to_degree(start_point_.th), start_point_.dir);
 //		beeper.beepForCommand(VALID);
-		update_finish = true;
 		iterate_point_ = getPosition();
 		iterate_point_.th = start_point_.th;
 		plan_path_.clear();
@@ -1899,7 +1903,7 @@ void ACleanMode::switchInStateExploration() {
 	genNextAction();
 }
 
-// ------------------State trapped------------------
+// ------------------State follow wall------------------
 
 bool ACleanMode::isSwitchByEventInStateFollowWall()
 {
@@ -2023,7 +2027,7 @@ bool ACleanMode::isIsolate() {
 	bound.SetMinimum(bound.min - Cell_t{8, 8});
 	bound.SetMaximum(bound.max + Cell_t{8, 8});
 	ROS_ERROR("ISOLATE MAP");
-	fw_tmp_map.print(CLEAN_MAP,Cells{target});
+	fw_tmp_map.print(getPosition().toCell(), CLEAN_MAP,Cells{target});
 	ROS_ERROR("ISOLATE MAP");
 	ROS_ERROR("minx(%d),miny(%d),maxx(%d),maxy(%d)",bound.min.x, bound.min.y,bound.max.x, bound.max.y);
 

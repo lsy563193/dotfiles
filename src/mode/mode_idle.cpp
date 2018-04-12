@@ -24,10 +24,12 @@ ModeIdle::ModeIdle():
 	appmt_obj.resetPlanStatus();
 	event_manager_reset_status();
 
+	s_wifi.setWorkMode(Mode::md_idle);
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
+
 	ROS_INFO("%s %d: Current battery voltage \033[32m%5.2f V\033[0m.", __FUNCTION__, __LINE__, (float)battery.getVoltage()/100.0);
 	/*---reset values for rcon handle---*/
 	// todo: first_time_seen_charger_ does not mean as words in reality. It is just the time that enter this mode.
-	s_wifi.appendTask(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 //	// todo:debug
 //	infrared_display.displayErrorMsg(9, 1234, 101);
 	sp_state = st_pause.get() ;
@@ -259,8 +261,11 @@ void ModeIdle::remoteMax(bool state_now, bool state_last)
 	else{
 		beeper.beepForCommand(VALID);
 		vacuum.isMaxInClean(!vacuum.isMaxInClean());
-		speaker.play(vacuum.isMaxInClean() ? VOICE_VACCUM_MAX : VOICE_CLEANING_NAVIGATION,false);
+		speaker.play(vacuum.isMaxInClean() ? VOICE_VACCUM_MAX : VOICE_CLEANING_NAVIGATION);
 	}
+	// Reset the start timer for action.
+	sp_action_.reset();
+	sp_action_.reset(new ActionIdle);
 	remote.reset();
 }
 
@@ -301,34 +306,23 @@ void ModeIdle::remoteWifi(bool state_now,bool state_last)
 {
 	ROS_INFO("%s,%d,wifi state = %d ",__FUNCTION__,__LINE__,s_wifi.isConnected());
 	remote.reset();
-	s_wifi.appendTask(S_Wifi::ACT::ACT_REBIND);
-	s_wifi.appendTask(S_Wifi::ACT::ACT_SMART_LINK);
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_REBIND);
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_SMART_LINK);
 
 }
 
 void ModeIdle::remotePlan(bool state_now, bool state_last)
 {
-	if (appmt_obj.getPlanStatus() == 1)
+	if (appmt_obj.getPlanStatus() > 2)
 	{
-		beeper.beepForCommand(VALID);
-		speaker.play(VOICE_APPOINTMENT_DONE);
-		INFO_YELLOW("Plan received.");
-	}
-	else if (appmt_obj.getPlanStatus() == 2)
-	{
-		beeper.beepForCommand(VALID);
-		speaker.play(VOICE_APPOINTMENT_DONE);
-//		speaker.play(VOICE_CANCEL_APPOINTMENT_UNOFFICIAL);
-		INFO_YELLOW("Plan cancel received");
-	}
-	else if (appmt_obj.getPlanStatus() == 3)
-	{
+		appmt_obj.resetPlanStatus();
+		appmt_obj.timesUp();
 		INFO_YELLOW("Plan activated.");
 		// Sleep for 50ms cause the status 3 will be sent for 3 times.
 		usleep(50000);
 		plan_activated_status_ = true;
-	}
-	appmt_obj.resetPlanStatus();
+	} else
+		EventHandle::remotePlan(state_now, state_last);
 }
 
 void ModeIdle::chargeDetect(bool state_now, bool state_last)

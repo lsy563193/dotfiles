@@ -1173,6 +1173,16 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				}
 				break;
 			case 11:
+				serial.setSendData(CTL_WHEEL_LEFT_HIGH, 0);
+				serial.setSendData(CTL_WHEEL_LEFT_LOW, 0);
+				count++;
+				if(count > 50)
+				{
+					count = 0;
+					step++;
+				}
+				break;
+			case 12:
 				serial.setSendData(CTL_WHEEL_LEFT_HIGH, 200 >> 8);
 				serial.setSendData(CTL_WHEEL_LEFT_LOW, 200 & 0xFF);
 				serial.setSendData(CTL_LEFT_WHEEL_TEST_MODE, 1);
@@ -1184,7 +1194,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 					count = 0;
 				}
 				break;
-			case 12:
+			case 13:
 				if(static_cast<uint16_t>(buf[2] << 8 | buf[3]) > baseline[LEFT_WHEEL] + 580)
 					count++;
 				else
@@ -1200,7 +1210,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 					return;
 				}
 				break;
-			case 13:
+			case 14:
 				count++;
 				if (count <= 10) {
 					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
@@ -1220,7 +1230,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 					}
 				}
 				break;
-			case 14:
+			case 15:
 				serial.setSendData(CTL_WHEEL_LEFT_HIGH, 0);
 				serial.setSendData(CTL_WHEEL_LEFT_LOW, 0);
 				serial.setSendData(CTL_WHEEL_RIGHT_HIGH, 200 >> 8);
@@ -1233,7 +1243,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 					count = 0;
 				}
 				break;
-			case 15:
+			case 16:
 				count++;
 				if (count <= 10) {
 					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
@@ -1246,7 +1256,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 					step++;
 				}
 				break;
-			case 16:
+			case 17:
 				step++;
 				if (current_current < 30 || current_current > 150 || motor_current < 20 || motor_current > 100) {
 					error_code = RIGHT_WHEEL_FORWARD_CURRENT_ERROR;
@@ -1257,7 +1267,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 					test_result |= 0x0100;
 				}
 				break;
-			case 17:
+			case 18:
 				step++;
 				if (buf[7] > 90 || buf[7] < 40) {
 					error_code = RIGHT_WHEEL_FORWARD_PWM_ERROR;
@@ -1268,7 +1278,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 					test_result |= 0x0200;
 				}
 				break;
-			case 18:
+			case 19:
 				step++;
 				if (buf[11] == 1) {
 					error_code = RIGHT_WHEEL_FORWARD_ENCODER_ERROR;
@@ -1284,7 +1294,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 					test_result |= 0x0400;
 				}
 				break;
-			case 19:
+			case 20:
 				serial.setSendData(CTL_WHEEL_RIGHT_HIGH, -200 >> 8);
 				serial.setSendData(CTL_WHEEL_RIGHT_LOW, -200 & 0xFF);
 				count++;
@@ -1295,7 +1305,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 					count = 0;
 				}
 				break;
-			case 20:
+			case 21:
 				count++;
 				if (count <= 10) {
 					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
@@ -1308,7 +1318,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 					step++;
 				}
 				break;
-			case 21:
+			case 22:
 				step++;
 				if (current_current < 30 || current_current > 150 || motor_current < 20 || motor_current > 100) {
 					error_code = RIGHT_WHEEL_BACKWARD_CURRENT_ERROR;
@@ -1319,7 +1329,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 					test_result |= 0x1000;
 				}
 				break;
-			case 22:
+			case 23:
 				step++;
 				if (buf[7] > 90 || buf[7] < 40) {
 					error_code = RIGHT_WHEEL_BACKWARD_PWM_ERROR;
@@ -1330,7 +1340,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 					test_result |= 0x2000;
 				}
 				break;
-			case 23:
+			case 24:
 				step++;
 				if (buf[11] == 1) {
 					error_code = RIGHT_WHEEL_BACKWARD_ENCODER_ERROR;
@@ -1345,7 +1355,17 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				else {
 					test_result |= 0x4000;
 				}
-			case 24:
+			case 25:
+				serial.setSendData(CTL_WHEEL_RIGHT_HIGH, 0);
+				serial.setSendData(CTL_WHEEL_RIGHT_LOW, 0);
+				count++;
+				if(count > 50)
+				{
+					count = 0;
+					step++;
+				}
+				break;
+			case 26:
 				serial.setSendData(CTL_WHEEL_RIGHT_HIGH, 200 >> 8);
 				serial.setSendData(CTL_WHEEL_RIGHT_LOW, 200 & 0xFF);
 				serial.setSendData(CTL_RIGHT_WHEEL_TEST_MODE, 1);
@@ -1357,7 +1377,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 					count = 0;
 				}
 				break;
-			case 25:
+			case 27:
 				if(static_cast<uint16_t>(buf[5] << 8 | buf[6]) > baseline[RIGHT_WHEEL] + 580)
 					count++;
 				else
@@ -1374,7 +1394,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 					return ;
 				}
 				break;
-			case 26:
+			case 28:
 				count++;
 				if (count <= 10) {
 					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
@@ -1469,6 +1489,25 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 				serial.setSendData(CTL_LEFT_BRUSH_TEST_MODE, 1);
 				break;
 			case 4:
+				brush.setPWM(0,0,0);
+				count++;
+				if(count > 50)
+				{
+					count = 0;
+					step++;
+				}
+				break;
+			case 5:
+				brush.setPWM(60, 0, 0);
+				count++;
+				if (count > 20) {
+					current_current = 0;
+					motor_current = 0;
+					step++;
+					count = 0;
+				}
+				break;
+			case 6:
 				if (static_cast<uint16_t>(buf[2] << 8 | buf[3]) > baseline[LEFT_BRUSH] + 360)
 					count++;
 				else
@@ -1485,7 +1524,7 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 					return ;
 				}
 				break;
-			case 5:
+			case 7:
 				count++;
 				if (count <= 10) {
 					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
@@ -1506,7 +1545,7 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 					}
 				}
 				break;
-			case 6:
+			case 8:
 				brush.setPWM(0, 60, 0);
 				count++;
 				if (count > 5) {
@@ -1516,7 +1555,7 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 					count = 0;
 				}
 				break;
-			case 7:
+			case 9:
 				count++;
 				if (count <= 10) {
 					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
@@ -1529,7 +1568,7 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 					step++;
 				}
 				break;
-			case 8:
+			case 10:
 				step++;
 				if (current_current < 30 || current_current > 120 || motor_current < 20 || motor_current > 110) {
 					error_code = RIGHT_BRUSH_CURRENT_ERROR;
@@ -1541,7 +1580,26 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 				}
 				serial.setSendData(CTL_RIGHT_BRUSH_TEST_MODE, 1);
 				break;
-			case 9:
+			case 11:
+				brush.setPWM(0,0,0);
+				count++;
+				if(count > 50)
+				{
+					count = 0;
+					step++;
+				}
+				break;
+			case 12:
+				brush.setPWM(0, 60, 0);
+				count++;
+				if (count > 20) {
+					current_current = 0;
+					motor_current = 0;
+					step++;
+					count = 0;
+				}
+				break;
+			case 13:
 				if (static_cast<uint16_t>(buf[6] << 8 | buf[7]) > baseline[RIGHT_BRUSH] + 360)
 					count++;
 				else
@@ -1558,7 +1616,7 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 					return ;
 				}
 				break;
-			case 10:
+			case 14:
 				count++;
 				if (count <= 10) {
 					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
@@ -1744,6 +1802,25 @@ void main_brush_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_co
 				serial.setSendData(CTL_MAIN_BRUSH_TEST_MODE, 1);
 				break;
 			case 4:
+				brush.setPWM(0,0,0);
+				count++;
+				if(count > 50)
+				{
+					count = 0;
+					step++;
+				}
+				break;
+			case 5:
+				brush.setPWM(0, 0, 80);
+				count++;
+				if (count > 20) {
+					current_current = 0;
+					motor_current = 0;
+					step++;
+					count = 0;
+				}
+				break;
+			case 6:
 				if (static_cast<uint16_t>(buf[4] << 8 | buf[5]) > baseline[MAIN_BRUSH] + 1150)
 					count++;
 				else
@@ -1760,7 +1837,7 @@ void main_brush_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_co
 					return ;
 				}
 				break;
-			case 5:
+			case 7:
 				count++;
 				if (count <= 10) {
 					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);

@@ -26,40 +26,42 @@ typedef struct st_appmt st_appmt;
 class Appmt
 {
 public:
-
+	enum SG{
+		GET = 0,
+		SET = 1,
+	};
 	Appmt();
 
-	bool set(Appointment::st_appmt &apmt);
+	bool set(std::vector<Appointment::st_appmt> apmt_list);
 
 	bool set(uint8_t appTime);
 
 	std::vector<Appointment::st_appmt> get();
 
-	int8_t rd_routine(Appointment::st_appmt *vals);
-
-
-	bool isActive()
-	{
-		if(appointment_set_) 
-			return (uint32_t)(robot_timer.getRealTimeInMint() -  appointment_time_ ) >= appointment_count_;
-		else
-			return false;
-	}
 	/*
-	 * @brief get the latest appointment from now
+	 * @brief read write appointment message to apmt_l_ 
+	 * @param1 SET or GET
+	 * @return error -1,ok 1
+	 */
+	int8_t rw_routine(Appmt::SG action);
+
+	/*
+	 * @brief get the next appointment count down
 	 * @return miniutes 
 	 */
-	uint32_t getLastAppointment();
+	uint16_t nextAppointment();
 
 	void resetPlanStatus(void)
 	{
 		plan_status_ = 0;
+		serial.setSendData(SERIAL::CTL_APPOINTMENT_H,0x00);
 	}
 
-	void setPlanStatus(uint8_t Status) {
-		plan_status_ = Status;
+	void setPlanStatus(uint8_t status)
+	{
+		plan_status_ = (status>>0x01) & 0x03;
 		if (plan_status_ != 0)
-			ROS_DEBUG("Plan status return %d.", plan_status_);
+			ROS_DEBUG("Plan status return 0x%x.", plan_status_);
 	}
 
 	uint8_t getPlanStatus(void) {
@@ -71,18 +73,45 @@ public:
 	 * @param1 time in minutes
 	 * @param2 0b01 set appointment ,0b10 not set appointment
 	 */
-	void setPlan2Bottom(uint32_t time,bool appointment_set);
+	void setPlan2Bottom(uint16_t time);
+
+	void timesUp();
+
+	bool isTimeUpOrWifiSettingAck()
+	{
+		return time_up_or_wifi_setting_ack_;
+	}
+
+	void resetTimeUpOrWifiSettingAck()
+	{
+		time_up_or_wifi_setting_ack_ = false;
+	}
+
+	bool shouldUpdateIdleTimer()
+	{
+		return update_idle_timer_;
+	}
+
+	void resetUpdateIdleTimerFlag()
+	{
+		update_idle_timer_ = false;
+	}
 
 private:
 
 	std::vector<Appointment::st_appmt> apmt_l_;
 	bool appointment_set_ ;
-	bool setorget_;
-	uint32_t appointment_count_;
+	uint16_t appointment_count_;
 	uint32_t appointment_time_;
 	bool appointment_change_;
 	pthread_mutex_t appmt_lock_;
 
+	// This variable indicates if it is a time up situation or wifi setting situation. If it is, it will not play
+	// "appointment done" voice after update appointment time ack received.
+	bool time_up_or_wifi_setting_ack_{false};
+
+	// This variable is used for updating the timer for idle mode or pause state.
+	bool update_idle_timer_{false};
 
 	// Variable for plan status
 	uint8_t plan_status_;

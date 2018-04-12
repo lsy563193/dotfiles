@@ -70,7 +70,7 @@ bool CleanModeFollowWall::mapMark() {
 		setFollowWall(clean_map_, action_i_ == ac_follow_wall_left, passed_path_);
 	}
 	clean_map_.markRobot(CLEAN_MAP);
-	clean_map_.print(CLEAN_MAP, Cells{getPosition().toCell()});
+	clean_map_.print(getPosition().toCell(), CLEAN_MAP, Cells{getPosition().toCell()});
 	passed_path_.clear();
 	return false;
 }
@@ -140,7 +140,7 @@ void CleanModeFollowWall::remoteMax(bool state_now, bool state_last)
 	{
 		beeper.beepForCommand(VALID);
 		vacuum.isMaxInClean(!vacuum.isMaxInClean());
-		speaker.play(vacuum.isMaxInClean() ? VOICE_VACCUM_MAX : VOICE_CLEANING_NAVIGATION,false);
+		speaker.play(vacuum.isMaxInClean() ? VOICE_VACCUM_MAX : VOICE_CLEANING_NAVIGATION);
 		if(isStateFollowWall() || (isStateInit() && action_i_ > ac_open_gyro)) {
 			vacuum.setCleanState();
 		}
@@ -168,6 +168,23 @@ void CleanModeFollowWall::remoteWallFollow(bool state_now, bool state_last)
 	remote.reset();
 }
 
+void CleanModeFollowWall::chargeDetect(bool state_now, bool state_last)
+{
+	if (!ev.charge_detect)
+	{
+		if (isStateGoToCharger())
+		{
+			ROS_WARN("%s %d: Charge detect!.", __FUNCTION__, __LINE__);
+			ev.charge_detect = charger.getChargeStatus();
+		}
+		else if (charger.isDirected())
+		{
+			ROS_WARN("%s %d: Charge detect!.", __FUNCTION__, __LINE__);
+			ev.charge_detect = charger.getChargeStatus();
+			ev.fatal_quit = true;
+		}
+	}
+}
 
 void CleanModeFollowWall::switchInStateInit() {
 	PP_INFO();
