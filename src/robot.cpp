@@ -350,12 +350,13 @@ void robot::robotbase_routine_cb()
 
 		// For appointment and set time
 
-		if(buf[REC_APPOINTMENT_TIME] > 0x80)
+		if((buf[REC_APPOINTMENT_TIME] > 0x80) && p_mode != nullptr && p_mode->allowRemoteUpdatePlan())
+		{
 			robot_timer.setRealTime( buf[REC_REALTIME_H]<<8 | buf[REC_REALTIME_L]);
+			appmt_obj.set(buf[REC_APPOINTMENT_TIME]);
+		}
 		sensor.realtime = buf[REC_REALTIME_H]<<8 | buf[REC_REALTIME_L];
 		sensor.appointment = buf[REC_APPOINTMENT_TIME];
-		if (p_mode != nullptr && p_mode->allowRemoteUpdatePlan())
-			appmt_obj.set(buf[REC_APPOINTMENT_TIME]);
 			// For debug.
 //		printf("%d: REC_MIX_BYTE:(%2x), REC_RESERVED:(%2x).\n.",
 //			   __LINE__, buf[REC_MIX_BYTE], buf[REC_RESERVED]);

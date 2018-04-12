@@ -92,10 +92,12 @@ private:
 class ActionSleep :public IAction
 {
 public:
-	ActionSleep();
+	ActionSleep(bool fake_sleep);
 	~ActionSleep() override ;
 	bool isFinish() override ;
 	void run();
+
+	void lowPowerSleep();
 private:
 };
 

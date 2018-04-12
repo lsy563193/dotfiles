@@ -322,7 +322,6 @@ void CleanModeNav::keyClean(bool state_now, bool state_last)
 	else if (long_press)
 		ev.key_long_pressed = true;
 	ev.key_clean_pressed = true;
-	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
 
 	key.resetTriggerStatus();
 }
