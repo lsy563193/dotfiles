@@ -118,6 +118,7 @@ public:
 	bool isFinish() override;
 
 private:
+	double turn_radian_;
 	uint8_t max_speed_;
 	double accurate_;
 	uint8_t speed_;
