@@ -109,6 +109,7 @@
 
 /* Battery voltage criterion for brush setting*/
 #define FULL_OPERATE_VOLTAGE_FOR_BRUSH	(800)
+#define SLOW_OPERATE_VOLTAGE_FOR_BRUSH	(400)
 
 /* Battery voltage criterion for water tank setting*/
 #define FULL_OPERATE_VOLTAGE_FOR_WATER_TANK	(500)
