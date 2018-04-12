@@ -19,14 +19,18 @@ S_Wifi s_wifi;
 
 S_Wifi::S_Wifi():is_wifi_connected_(false)
 					,is_Status_Request_(false)
-					,inFactoryTest_(false)
+					,factory_test_ack_(false)
 					,isFactoryTest_(false)
 					,isRegDevice_(false)
-					,is_active_(true)
+					,is_resume_(false)
+					,is_active_(false)
+					,is_sleep_(false)
 					,in_linking_(false)
 					,task_lock_(PTHREAD_MUTEX_INITIALIZER)
 					,map_data_lock_(PTHREAD_MUTEX_INITIALIZER)
 					,wifi_quit_(false)
+					,realtime_map_ack_(false)
+					,upload_state_ack_(false)
 {
 	init();
 	map_data_buf_ = new std::deque<Points>();
@@ -53,6 +57,7 @@ bool S_Wifi::init()
 	s_wifi_rx_.regOnNewMsgListener<wifi::RegDeviceRequestRxMsg>(
 		[&]( const wifi::RxMsg &a_msg ) 
 		{
+			is_active_ = true;
 			wifi::RegDeviceTxMsg p(	wifi::RegDeviceTxMsg::CloudEnv::MAINLAND_DEV,
 									{0, 0, 1},
 									CLOUD_DOMAIN_ID,
@@ -64,8 +69,7 @@ bool S_Wifi::init()
 			wifi_led.setMode(LED_FLASH,WifiLed::state::on);
 			if(isFactoryTest_)
 				speaker.play( VOICE_WIFI_CONNECTED,false);
-		}
-	);
+		});
 /*
 	s_wifi_rx_.regOnNewMsgListener<wifi::wifiConnectedNotifRxMsg>(
 			[this]( const wifi::RxMsg &a_msg ) {
@@ -111,6 +115,7 @@ bool S_Wifi::init()
 				const wifi::QueryDeviceStatusRxMsg &msg = static_cast<const wifi::QueryDeviceStatusRxMsg&>( a_msg );
 				uploadStatus( msg.MSG_CODE,msg.seq_num());
 				is_wifi_connected_ = true;
+				wifi_led.setMode(LED_STEADY, WifiLed::state::on);
 			});
 	//query schedule
 	s_wifi_rx_.regOnNewMsgListener<wifi::QueryScheduleStatusRxMsg>(
@@ -265,8 +270,6 @@ bool S_Wifi::init()
 							msg.data()
 							);
 				s_wifi_tx_.push(std::move(p)).commit();
-				//is_wifi_connected_ = true;
-				//wifi_led.setMode(LED_STEADY, WifiLed::state::on);
 			});
 	//set status requset
 	s_wifi_rx_.regOnNewMsgListener<wifi::RealtimeStatusRequestRxMsg>(
@@ -321,27 +324,35 @@ bool S_Wifi::init()
 	s_wifi_rx_.regOnNewMsgListener<wifi::FactoryTestRxMsg>(
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::FactoryTestRxMsg &msg = static_cast<const wifi::FactoryTestRxMsg&>( a_msg );
-				inFactoryTest_ = true;
+				factory_test_ack_= true;
 				wifi_led.setMode(LED_FLASH,WifiLed::state::on);
 			}
 	);
+	//upload status ack
+	s_wifi_rx_.regOnNewMsgListener<wifi::DeviceStatusUploadAckMsg>(
+					[&](const wifi::RxMsg & a_msg){
+				const wifi::DeviceStatusUploadAckMsg &msg = static_cast<const wifi::DeviceStatusUploadAckMsg&>(a_msg);
+				upload_state_ack_ = true;
+		});
 
+	//realtime map upload ack
 	s_wifi_rx_.regOnNewMsgListener<wifi::RealtimeMapUploadAckMsg>(
 			[&](const wifi::RxMsg &a_msg){
-			}
-	);
-	//realtime map ack
+				realtime_map_ack_ = true;
+			});
+	//claer realtime map ack
 	s_wifi_rx_.regOnNewMsgListener<wifi::ClearRealtimeMapAckMsg>(
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::ClearRealtimeMapAckMsg &msg = static_cast<const wifi::ClearRealtimeMapAckMsg&>( a_msg );
-			}
-	);
+			});
 	//resume ack
 	s_wifi_rx_.regOnNewMsgListener<wifi::wifiResumeAckMsg>(
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::wifiResumeAckMsg &msg = static_cast<const wifi::wifiResumeAckMsg&>(a_msg);	
 				INFO_BLUE("RESUME ACK");
+				is_resume_= true;
 				is_active_ = true;
+				is_sleep_ = false;
 				if(!isFactoryTest_)
 					checkVersion();
 				});
@@ -349,7 +360,8 @@ bool S_Wifi::init()
 	s_wifi_rx_.regOnNewMsgListener<wifi::wifiSuspendAckMsg>(
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::wifiSuspendAckMsg &msg = static_cast<const wifi::wifiSuspendAckMsg&>(a_msg);
-					is_active_ = false;
+					is_sleep_ = true;
+					is_resume_= false;
 					wifi_led.setMode(LED_STEADY, WifiLed::state::off);
 				});
 	// version ack
@@ -370,6 +382,7 @@ bool S_Wifi::init()
 				const wifi::wifiMACAckMsg &msg = static_cast<const wifi::wifiMACAckMsg&>(a_msg);
 				MAC_ = msg.getMAC();
 		});
+
 	INFO_BLUE("register done ");
 	return true;
 }
@@ -473,19 +486,26 @@ uint8_t S_Wifi::uploadStatus(int msg_code,const uint8_t seq_num)
 
 	if(msg_code == 0xc8)// auto upload
 	{
-		wifi::DeviceStatusUploadTxMsg p(
-				work_mode,
-				wifi::DeviceStatusBaseTxMsg::RoomMode::LARGE,//default set large
-				box,
-				serial.getSendData(CTL_VACCUM_PWR),
-				serial.getSendData(CTL_BRUSH_MAIN),
-				battery.getPercent(),
-				0x01,//notify sound wav
-				0x01,//led on/off
-				error_code,
-				seq_num);
+		int upload_state_ack_cnt=0;
+		do{
+			if(upload_state_ack_cnt++ > 10)
+				return -1;
+			wifi::DeviceStatusUploadTxMsg p(
+					work_mode,
+					wifi::DeviceStatusBaseTxMsg::RoomMode::LARGE,//default set large
+					box,
+					serial.getSendData(CTL_VACCUM_PWR),
+					serial.getSendData(CTL_BRUSH_MAIN),
+					battery.getPercent(),
+					0x01,//notify sound wav
+					0x01,//led on/off
+					error_code,
+					seq_num);
 
-		s_wifi_tx_.push(std::move( p )).commit();
+			s_wifi_tx_.push(std::move( p )).commit();
+			usleep(400000);
+		}while(ros::ok() && !upload_state_ack_);
+		upload_state_ack_ = false;
 	}
 	else if(msg_code == 0x41)//app check upload
 	{
@@ -523,12 +543,11 @@ bool S_Wifi::uploadMap()
 
 	pthread_mutex_lock(&map_data_lock_);
 	Points pass_path = map_data_buf_->front();
-	map_data_buf_->pop_front();
 	pthread_mutex_unlock(&map_data_lock_);
 
 	if(!pass_path.empty())
 	{
-		INFO_BLUE("upload pass path");
+		while(ros::ok() && robot::instance()->p_mode == nullptr);
 		auto mode = boost::dynamic_pointer_cast<ACleanMode>(robot::instance()->p_mode);
 		GridMap g_map = mode->clean_map_;
 		uint16_t clean_area = (uint16_t)(g_map.getCleanedArea()*CELL_SIZE*CELL_SIZE*100);
@@ -538,7 +557,7 @@ bool S_Wifi::uploadMap()
 		map_data.push_back((uint8_t)((robot_timer.getWorkTime()&0x0000ff00)>>8));
 		map_data.push_back((uint8_t)robot_timer.getWorkTime());
 		byte_cnt+=4;
-
+		//--pack date
 		for(auto &&p_it:pass_path)
 		{
 			int16_t i = p_it.toCell().x;
@@ -549,12 +568,10 @@ bool S_Wifi::uploadMap()
 				ROS_ERROR("%s,%d,MAP TOO BIG TO SEND",__FUNCTION__,__LINE__);
 				break;
 			}
-			//for(int16_t pos_x = i-1;pos_x<i+1;pos_x++)
-			//{
-				//for(int16_t pos_y = j-1;pos_y<j+1;pos_y++)
-				//{
-					int16_t pos_x = i;
-					int16_t pos_y = j;
+			for(int16_t pos_x = i-1;pos_x<=i+1;pos_x++)
+			{
+				for(int16_t pos_y = j-1;pos_y<=j+1;pos_y++)
+				{
 					CellState c_state = g_map.getCell(CLEAN_MAP,pos_x,pos_y);
 					if(c_state == CLEANED)
 					{
@@ -577,23 +594,34 @@ bool S_Wifi::uploadMap()
 						byte_cnt=4;
 					}
 
-				//}
-			//}
-	
+				}
+			}
+
 		}
 		if(byte_cnt >4 && byte_cnt < 480)
 				map_pack.push_back(map_data);
 		ROS_INFO("%s,%d,map_pack size %ld",__FUNCTION__,__LINE__,map_pack.size());
-		for(int k=1;k<=map_pack.size();k++)
-		{
-			wifi::RealtimeMapUploadTxMsg p(
-								time,
-								(uint8_t)k,
-								(uint8_t)map_pack.size(),
-								map_pack[k-1]
-								);
-			s_wifi_tx_.push(std::move(p)).commit();
-		}
+		//upload map and wait ack
+		int timeout_cnt = 0;
+		do{
+			if(timeout_cnt++ > 10)
+				return false;
+			for(int k=1;k<=map_pack.size();k++)
+			{
+				wifi::RealtimeMapUploadTxMsg p(
+									time,
+									(uint8_t)k,
+									(uint8_t)map_pack.size(),
+									map_pack[k-1]
+									);
+				s_wifi_tx_.push(std::move(p)).commit();
+			}
+			usleep(300000);
+		}while(ros::ok() && !realtime_map_ack_);
+		realtime_map_ack_ =false;
+		pthread_mutex_lock(&map_data_lock_);
+		map_data_buf_->pop_front();
+		pthread_mutex_unlock(&map_data_lock_);
 
 	}
 	return true;
@@ -759,6 +787,11 @@ uint8_t S_Wifi::syncClock(int year,int mon,int day,int hour,int minu,int sec)
 
 uint8_t S_Wifi::rebind()
 {
+	//if(!is_active_)
+	//{
+	//	INFO_RED("WIFI NOT ACTIVE");
+	//	return -1;
+	//}
 	INFO_BLUE("wifi rebind");
 	wifi::ForceUnbindTxMsg p(0x00);//no responed
 	s_wifi_tx_.push(std::move(p)).commit();
@@ -769,8 +802,13 @@ uint8_t S_Wifi::rebind()
 	return 0;
 }
 
-uint8_t S_Wifi::smartLink()
+int8_t S_Wifi::smartLink()
 {
+	//if(!is_active_)
+	//{
+	//	INFO_RED("WIFI NO ACTIVE");
+	//	return -1;
+	//}
 	INFO_BLUE("SMART LINK");
 	wifi::SmartLinkTxMsg p(0x00);//no responed
 	s_wifi_tx_.push( std::move(p)).commit();
@@ -810,6 +848,7 @@ uint8_t S_Wifi::uploadLastCleanData()
 		//			||robot_work_mode_ == wifi::WorkMode::HOMING
 		//			||robot_work_mode_ == wifi::WorkMode::FIND)
 		{
+			while(ros::ok() && robot::instance()->p_mode == nullptr);
 			auto mode = boost::dynamic_pointer_cast<ACleanMode>(robot::instance()->p_mode);
 			GridMap g_map = mode->clean_map_;
 			uint16_t clean_area = (uint16_t)(g_map.getCleanedArea()*CELL_SIZE*CELL_SIZE*100);
@@ -880,16 +919,17 @@ bool S_Wifi::factoryTest()
 	//wifi factory test
 	wifi::FactoryTestTxMsg p(0x01);
 	s_wifi_tx_.push(std::move(p)).commit();
-	while(!inFactoryTest_ ){
+	while(!factory_test_ack_){
 		usleep(20000);
 		waitResp++;
-		if(waitResp >= 100)//wait 2 seconds
+		if(waitResp >= 200)//wait 4 seconds
 		{
 			ROS_INFO("%s,%d,FACTORY TEST FAIL!!",__FUNCTION__,__LINE__);
 			isFactoryTest_ = false;
 			return false;
 		}
 	}
+	// wait for register responed
 	waitResp = 0;
 	ROS_INFO("INTO WIFI FACTORY TESTING!!");
 	while(isRegDevice_ == false){
@@ -903,6 +943,7 @@ bool S_Wifi::factoryTest()
 	}
 	ROS_INFO("FACTORY TEST SUCCESS!!");
 	isFactoryTest_ = false;
+	factory_test_ack_ = false;
 	return true;
 }
 
@@ -923,20 +964,16 @@ uint8_t S_Wifi::reboot()
 bool S_Wifi::resume()
 {
 	int resp_n = 0;
-	if(!is_active_)
+	ROS_INFO("SET WIFI RESUME!!");
+	while(!is_resume_)
 	{
+		wifi::ResumeTxMsg p(0x00);
+		s_wifi_tx_.push(std::move(p)).commit();
 
-		ROS_INFO("SERIAL WIFI RESUME!!");
-		while(!is_active_)
-		{
-			wifi::ResumeTxMsg p(0x00);
-			s_wifi_tx_.push(std::move(p)).commit();
-
-			usleep(500000);
-			if(resp_n > 15)//7.5s
-				return false;
-			resp_n++;
-		}
+		usleep(20000);
+		if(resp_n > 10)//200ms
+			return false;
+		resp_n++;
 	}
 	
 	return true;
@@ -944,19 +981,16 @@ bool S_Wifi::resume()
 
 bool S_Wifi::sleep()
 {
-	if(is_active_)
+	int resp_n =0;
+	ROS_INFO("SET WIFI SLEEP!!");
+	while(!is_sleep_)
 	{
-		int resp_n =0;
-		ROS_INFO("SERIAL WIFI SLEEP!!");
-		while(is_active_)
-		{
-			wifi::SuspendTxMsg p(0x00);
-			s_wifi_tx_.push(std::move(p)).commit();
-			usleep(500000);
-			if(resp_n > 5)//2.5s
-				return false;
-			resp_n++;
-		}
+		wifi::SuspendTxMsg p(0x00);
+		s_wifi_tx_.push(std::move(p)).commit();
+		usleep(500000);
+		if(resp_n > 10)//5s
+			return false;
+		resp_n++;
 	}
 	return true;
 }

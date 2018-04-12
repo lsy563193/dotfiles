@@ -156,7 +156,7 @@ void ModeCharge::remotePlan(bool state_now, bool state_last)
 		appmt_obj.resetPlanStatus();
 		beeper.beepForCommand(VALID);
 		speaker.play(VOICE_APPOINTMENT_DONE);
-//		speaker.play(VOICE_CANCEL_APPOINTMENT_UNOFFICIAL);
+		//speaker.play(VOICE_CANCEL_APPOINTMENT_UNOFFICIAL);
 		ROS_WARN("%s %d: Plan cancel received.", __FUNCTION__, __LINE__);
 	}
 	else if (appmt_obj.getPlanStatus() == 3)

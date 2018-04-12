@@ -462,7 +462,7 @@ void robot::core_thread_cb()
 	r16_work_mode_ = getTestMode();
 //	r16_work_mode_ = LIFE_TEST_MODE;
 	ROS_INFO("%s %d: work mode: %d", __FUNCTION__, __LINE__, r16_work_mode_);
-
+	//s_wifi.taskPushBack(S_Wifi::ACT::ACT_SLEEP);
 	switch (r16_work_mode_)
 	{
 		case FUNC_SERIAL_TEST_MODE:
@@ -522,7 +522,7 @@ void robot::runTestMode()
 
 void robot::runWorkMode()
 {
-	s_wifi.taskPushBack(S_Wifi::ACT::ACT_RESUME);
+	//s_wifi.taskPushBack(S_Wifi::ACT::ACT_RESUME);
 	auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
 	send_thread_enable = true;
 

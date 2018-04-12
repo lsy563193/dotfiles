@@ -30,6 +30,7 @@ ModeSleep::ModeSleep()
 
 ModeSleep::~ModeSleep()
 {
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_RESUME);
 	event_manager_set_enable(false);
 	sp_action_.reset();
 	ROS_INFO("%s %d: Exit sleep mode.", __FUNCTION__, __LINE__);

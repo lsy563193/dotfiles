@@ -55,7 +55,7 @@ public:
 
 	uint8_t syncClock(int year,int mon,int day,int hour,int min,int sec);
 
-	uint8_t smartLink();
+	int8_t smartLink();
 
 	uint8_t smartApLink();
 
@@ -124,11 +124,15 @@ private:
 	wifi::TxManager s_wifi_tx_;	
 
 	bool is_wifi_connected_;
-	bool inFactoryTest_;
+	bool factory_test_ack_;
 	bool isFactoryTest_;
 	bool isRegDevice_;
 	bool is_Status_Request_;
+	bool realtime_map_ack_;
+	bool upload_state_ack_;
 	bool is_active_;
+	bool is_resume_;
+	bool is_sleep_;
 	bool in_linking_;
 	bool wifi_quit_ ;
 	wifi::WorkMode robot_work_mode_;
