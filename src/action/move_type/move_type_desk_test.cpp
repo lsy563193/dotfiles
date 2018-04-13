@@ -27,7 +27,7 @@
 
 #include "error.h"
 
-#define RCON_ROTATE_SPEED (ROTATE_TOP_SPEED * 2 / 3)
+#define RCON_ROTATE_SPEED (14)
 
 // Sequence for baseline setting.
 #define CTL_L_OBS_BL_H 2
@@ -1199,7 +1199,7 @@ bool MoveTypeDeskTest::checkStage6Finish()
 			{
 				p_movement_.reset();
 				p_movement_.reset(
-						new MovementTurn(getPosition().th + degree_to_radian(-179), ROTATE_TOP_SPEED * 2 / 3));
+						new MovementTurn(getPosition().th + degree_to_radian(-179), RCON_ROTATE_SPEED));
 				test_step_++;
 			} else
 				p_movement_->run();
@@ -1261,7 +1261,7 @@ bool MoveTypeDeskTest::checkStage6Finish()
 				{
 					p_movement_.reset();
 					p_movement_.reset(
-							new MovementTurn(getPosition().th + degree_to_radian(45), ROTATE_TOP_SPEED * 2 / 3));
+							new MovementTurn(getPosition().th + degree_to_radian(45), RCON_ROTATE_SPEED));
 					test_step_++;
 				}
 			} else
