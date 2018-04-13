@@ -174,7 +174,10 @@ bool MoveTypeLinear::isLinearForward()
 {
 	return movement_i_ == mm_forward;
 }
-
+static bool is_opposite_dir(int l, int r)
+{
+	return (l == 0 && r==1)  || (l ==1 && r ==0) || (l ==2 && r ==3) || (l == 3 && r == 2);
+}
 void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 {
 	if (remain_path_.size() > 1)
@@ -200,13 +203,13 @@ void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 		if(stop_generate_next_target)
 			return;
 
-		if(p_clean_mode->isStateFollowWall())
+		if(p_clean_mode->isStateFollowWall() || p_clean_mode->action_i_ != p_clean_mode->ac_linear)
 			return;
 
 		auto target_point_ = remain_path_.front();
 		auto &target_xy = (isXAxis(p_clean_mode->iterate_point_.dir)) ? target_point_.x : target_point_.y;
 		auto curr_xy = (isXAxis(p_clean_mode->iterate_point_.dir)) ? getPosition().x : getPosition().y;
-		ROS_ERROR("%f,%f", std::abs(target_xy - curr_xy),LINEAR_NEAR_DISTANCE);
+//		ROS_ERROR("%f,%f", std::abs(target_xy - curr_xy),LINEAR_NEAR_DISTANCE);
 		if (std::abs(target_xy - curr_xy) < LINEAR_NEAR_DISTANCE) {
 			stop_generate_next_target = true;
 			beeper.beepForCommand(VALID);
@@ -214,15 +217,15 @@ void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 			if(sp_mode_->getNextMode() == sp_mode_->cm_navigation || sp_mode_->getNextMode() == sp_mode_->cm_exploration) {
 				auto p_algo= boost::dynamic_pointer_cast<NavCleanPathAlgorithm>(p_clean_mode->clean_path_algorithm_);
 				Points path;
-				auto is_found = p_algo->generatePath(p_clean_mode->clean_map_, remain_path_.front(), p_clean_mode->iterate_point_.dir, path);
+				auto is_found = p_algo->generatePath(p_clean_mode->clean_map_, remain_path_.back(), remain_path_.back().dir, path);
                 ROS_INFO("remain:");
 				p_algo->displayPointPath(remain_path_);
 				ROS_INFO("new:");
-				ROS_WARN("aaaa:is_found(%d),curr dir", is_found, p_clean_mode->iterate_point_.dir);
+				ROS_WARN("aaaa:is_found(%d),curr dir(%d)", is_found, p_clean_mode->iterate_point_.dir);
                 ROS_WARN_COND(is_found, "front.dir(%d)",path.front().dir);
 				p_algo->displayPointPath(path);
 				if (is_found) {
-					if (path.front().dir != (p_clean_mode->iterate_point_.dir + 2) % 4) {
+					if (!is_opposite_dir(path.front().dir, p_clean_mode->iterate_point_.dir)) {
 						ROS_WARN("1path.front().dir(%d,%d)",path.front().dir, p_clean_mode->iterate_point_.dir);
                         auto front = path.front();
 						path.pop_front();
@@ -237,7 +240,7 @@ void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 						p_clean_mode->pubCleanMapMarkers(p_clean_mode->clean_map_, p_clean_mode->pointsGenerateCells(p_clean_mode->plan_path_));
 					}
 					else{
-						ROS_ERROR("2path.front().dir(%d,%d)",path.front().dir, p_clean_mode->iterate_point_.dir);
+						ROS_ERROR("2path.front(%d).curr(,%d)",path.front().dir, p_clean_mode->iterate_point_.dir);
 					}
 				}
 			}
