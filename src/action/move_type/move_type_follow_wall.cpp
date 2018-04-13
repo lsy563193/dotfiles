@@ -207,21 +207,23 @@ int16_t MoveTypeFollowWall::tiltTurnAngle()
 	auto tmp_status = gyro.getTiltCheckingStatus();
 	if (is_left_)
 	{
-		if (tmp_status | TILT_LEFT)
+/*		if (tmp_status | TILT_LEFT)
 			turn_angle = -60;
 		if (tmp_status | TILT_FRONT)
 			turn_angle = -85;
 		if (tmp_status | TILT_RIGHT)
-			turn_angle = -110;
+			turn_angle = -110;*/
+		turn_angle = -60;
 	}
 	else
 	{
-		if (tmp_status | TILT_RIGHT)
+/*		if (tmp_status | TILT_RIGHT)
 			turn_angle = 60;
 		if (tmp_status | TILT_FRONT)
 			turn_angle = 85;
 		if (tmp_status | TILT_LEFT)
-			turn_angle = 110;
+			turn_angle = 110;*/
+		turn_angle = 60;
 	}
 	return turn_angle;
 }

@@ -812,7 +812,7 @@ bool robot::checkTilt() {
 	//For wheel_cliff triggered
 	if(wheel_cliff_triggered) {
 		wheel_tilt_time_ = wheel_tilt_time_ == 0 ? ros::Time::now().toSec() : wheel_tilt_time_;
-		auto ret = ros::Time::now().toSec() - wheel_tilt_time_ > WHELL_CLIFF_TIME_LIMIT;
+		auto ret = ros::Time::now().toSec() - wheel_tilt_time_ > WHEEL_CLIFF_TIME_LIMIT;
 		ROS_WARN_COND(ret,"%s,%d,time_now:%lf,wheel_tilt_time_:%lf",__FUNCTION__,__LINE__,ros::Time::now().toSec(),wheel_tilt_time_);
 		return ret;
 	}

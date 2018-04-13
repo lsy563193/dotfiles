@@ -390,6 +390,14 @@ bool MovementExceptionResume::isFinish()
 	else if(ev.right_wheel_cliff || ev.left_wheel_cliff)
 	{
 		bool cliff_status = ev.right_wheel_cliff ? cliff.getRight() : cliff.getLeft();
+		bool right_wheel_and_cliff{false};
+		bool left_wheel_and_cliff{false};
+		if (ev.right_wheel_cliff) {
+			right_wheel_and_cliff = cliff.getRight();
+		}
+		if (ev.left_wheel_cliff) {
+			left_wheel_and_cliff = cliff.getLeft();
+		}
 		float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getOriginX(), odom.getOriginY());
 
 		if(!wheel.getLeftWheelCliffStatus() && !wheel.getRightWheelCliffStatus())
@@ -402,7 +410,9 @@ bool MovementExceptionResume::isFinish()
 //		ROS_INFO("^:%d, cliff_status:%d, wheel_cliff_resume_cnt:%d,cliff_right:%d, cliff_left:%d, cliff_front:%d, right_wheel_cliff:%d, left_wheel_cliff:%d",
 //							ev.right_wheel_cliff ^ ev.left_wheel_cliff,cliff_status, wheel_cliff_resume_cnt_,
 //							cliff.getRight(), cliff.getLeft(), cliff.getFront(), ev.right_wheel_cliff, ev.left_wheel_cliff);
-		if((ev.right_wheel_cliff ^ ev.left_wheel_cliff) && cliff_status && wheel_cliff_resume_cnt_ < 3)
+		if((ev.right_wheel_cliff ^ ev.left_wheel_cliff)
+			 && (left_wheel_and_cliff || right_wheel_and_cliff)
+			 && wheel_cliff_resume_cnt_ < 3)
 		{
 			if(distance > 0.02f || lidar.getObstacleDistance(1, ROBOT_RADIUS) < 0.06);
 			{
@@ -413,8 +423,9 @@ bool MovementExceptionResume::isFinish()
 					ROS_WARN("%s %d: Resume failed, try wheel cliff resume for the %d time is finished.", __FUNCTION__, __LINE__,wheel_cliff_resume_cnt_);
 			}
 		}
-		else if(!cliff.getStatus() && wheel_cliff_resume_cnt_ < 3)
+		else if(cliff.getStatus() && wheel_cliff_resume_cnt_ < 3)
 		{
+			ROS_ERROR("cliff detect!!!!!!!!!");
 			switch(wheel_cliff_state_)
 			{
 				case 1:

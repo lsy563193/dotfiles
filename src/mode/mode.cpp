@@ -65,12 +65,12 @@ bool Mode::isExceptionTriggered()
 {
 	if((ev.right_wheel_cliff || ev.left_wheel_cliff) && wheel_cliff_triggered_time_ == DBL_MAX)
 		wheel_cliff_triggered_time_ = ros::Time::now().toSec();
-	if(ros::Time::now().toSec() - wheel_cliff_triggered_time_ > 0.1)
+	if(ros::Time::now().toSec() - wheel_cliff_triggered_time_ > WHEEL_CLIFF_TIME_LIMIT)
 	{
 		if(wheel.getRightWheelCliffStatus() || wheel.getLeftWheelCliffStatus())
 		{
 			is_wheel_cliff_triggered = true;
-			ROS_WARN("%s,%d,Enter exception by wheel cliff triggered over 100ms",__FUNCTION__,__LINE__);
+			ROS_WARN("%s,%d,Enter exception by wheel cliff triggered over %lfs",__FUNCTION__,__LINE__, WHEEL_CLIFF_TIME_LIMIT);
 		}
 		else
 		{

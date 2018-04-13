@@ -245,6 +245,26 @@ void ACleanMode::saveBlocks() {
 		return d_cells;
 	});
 
+	//save block for wheel cliff, but in case of incresing the map cost, it is same as the BOCKED_CLIFF, please check the log if it was triggered
+	saveBlock(BLOCKED_CLIFF,iterate_point_.dir, [&]() {
+//		auto wheel_cliff_trig = ev.left_wheel_cliff || ev.right_wheel_cliff;
+		auto wheel_cliff_trig = is_wheel_cliff_triggered;
+		Cells d_cells;
+		if (wheel_cliff_trig) {
+			d_cells = {{2, -1}, {2, 0}, {2, 1}, {2, 2}, {2, -2}};
+		}
+		return d_cells;
+	});
+
+	//save block for oc_brush_main, but in case of incresing the map cost, it is same as the BOCKED_CLIFF, please check the log if it was triggered
+	saveBlock(BLOCKED_CLIFF,iterate_point_.dir, [&]() {
+		Cells d_cells{};
+		if (ev.oc_brush_main)
+			d_cells = {{1,  1}, {1,  0}, {1,  -1}, {0,  1}, {0,  0}, {0,  -1}, {-1, 1}, {-1, 0}, {-1, -1}};
+		return d_cells;
+
+	});
+
 	saveBlock(BLOCKED_SLIP,iterate_point_.dir, [&]() {
 		Cells d_cells{};
 		if (ev.robot_slip)
@@ -256,12 +276,15 @@ void ACleanMode::saveBlocks() {
 	saveBlock(BLOCKED_TILT,iterate_point_.dir, [&]() {
 		Cells d_cells;
 		auto tilt_trig = ev.tilt_triggered;
-		if (tilt_trig & TILT_LEFT)
+/*		if (tilt_trig & TILT_LEFT)
 			d_cells = {{2, 2}, {2, 1}, {2, 0}, {1, 2}, {1, 1}, {1, 0}, {0, 2}, {0, 1}, {0, 0}};
 		else if (tilt_trig & TILT_RIGHT)
 			d_cells = {{2, -2}, {2, -1}, {2, 0}, {1, -2}, {1, -1}, {1, 0}, {0, -2}, {0, -1}, {0, 0}};
 		else if (tilt_trig & TILT_FRONT)
-			d_cells = {{2, 1}, {2, 0}, {2, -1}, {1, 1}, {1, 0}, {1, -1}, {0, 1}, {0, 0}, {0, -1}};
+			d_cells = {{2, 1}, {2, 0}, {2, -1}, {1, 1}, {1, 0}, {1, -1}, {0, 1}, {0, 0}, {0, -1}};*/
+		if (tilt_trig) {
+			d_cells = {{1,  1}, {1,  0}, {1,  -1}, {0,  1}, {0,  0}, {0,  -1}, {-1, 1}, {-1, 0}, {-1, -1}};
+		}
 
 		return d_cells;
 	});
@@ -708,7 +731,7 @@ void ACleanMode::setCleanMapMarkers(int16_t x, int16_t y, CellState type, visual
 			color_.b = 0.0;
 		}
 	}
-	else if (type == BLOCKED_FW)
+	else if (type == BLOCKED_FW)//Follow Wall
 	{
 		color_.r = 0.2;
 		color_.g = 0.1;
