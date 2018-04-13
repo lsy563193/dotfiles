@@ -163,9 +163,8 @@ class NavCleanPathAlgorithm: public APathAlgorithm
 	 * @return: Points path, the path to unclean area.
 	 * @return: bool, true if generating succeeds.
 	 */
+public:
 	bool generatePath(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &plan_path) override;
-
-private:
 	/*
 	 * @author Patrick Chow
 	 * @last modify by Austin Liu
@@ -178,6 +177,8 @@ private:
 	 * @return: Cells path, the path to unclean area in the same lane.
 	 */
 	Cells findTargetInSameLane(GridMap &map, const Cell_t &curr_cell);
+
+private:
 
 	/*
 	 * @author Lin Shao Yue
