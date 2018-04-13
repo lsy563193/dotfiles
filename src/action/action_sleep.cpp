@@ -18,14 +18,16 @@ ActionSleep::ActionSleep(bool fake_sleep)
 	gyro.resetStatus();
 
 	speaker.play(VOICE_NULL, false);
-	beeper.beep(1, 80, 0, 1);
+	speaker.play(VOICE_SLEEP_UNOFFICIAL, false);
+	speaker.play(VOICE_NULL, false);
+	/*beeper.beep(1, 80, 0, 1);
 	usleep(100000);
 	beeper.beep(2, 80, 0, 1);
 	usleep(100000);
 	beeper.beep(3, 80, 0, 1);
 	usleep(100000);
 	beeper.beep(4, 80, 0, 1);
-	usleep(100000);
+	usleep(100000);*/
 
 	if (fake_sleep)
 		ROS_INFO("%s %d: Shhhhhh.... Entering fake sleep ;)", __FUNCTION__, __LINE__);
@@ -36,13 +38,14 @@ ActionSleep::ActionSleep(bool fake_sleep)
 ActionSleep::~ActionSleep()
 {
 
-	beeper.beep(4, 80, 0, 1);
+	speaker.play(VOICE_WAKE_UP_UNOFFICIAL);
+	/*beeper.beep(4, 80, 0, 1);
 	usleep(100000);
 	beeper.beep(3, 80, 0, 1);
 	usleep(100000);
 	beeper.beep(2, 80, 0, 1);
 	usleep(100000);
-	beeper.beep(1, 80, 4, 1);
+	beeper.beep(1, 80, 4, 1);*/
 
 	ROS_INFO("%s %d: End sleep action.", __FUNCTION__, __LINE__);
 }
