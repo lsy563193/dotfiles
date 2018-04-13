@@ -146,8 +146,8 @@ ACleanMode::~ACleanMode()
 		}
 		else if (next_mode_i_ == md_sleep)
 		{
-			speaker.play(VOICE_CLEANING_FINISHED, false);
-			ROS_WARN("%s %d: Pause timeout.", __FUNCTION__, __LINE__);
+//			speaker.play(VOICE_CLEANING_FINISHED, false);
+			ROS_WARN("%s %d: Pause timeout or long press in pause.", __FUNCTION__, __LINE__);
 		}
 		else
 			ROS_WARN("%s %d: Entering other clean mode(%d), so do not play the finish voice.",

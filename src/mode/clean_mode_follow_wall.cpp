@@ -140,7 +140,7 @@ void CleanModeFollowWall::remoteMax(bool state_now, bool state_last)
 	{
 		beeper.beepForCommand(VALID);
 		vacuum.isMaxInClean(!vacuum.isMaxInClean());
-		speaker.play(vacuum.isMaxInClean() ? VOICE_VACCUM_MAX : VOICE_CLEANING_NAVIGATION,false);
+		speaker.play(vacuum.isMaxInClean() ? VOICE_VACCUM_MAX : VOICE_CLEANING_NAVIGATION);
 		if(isStateFollowWall() || (isStateInit() && action_i_ > ac_open_gyro)) {
 			vacuum.setCleanState();
 		}

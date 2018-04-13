@@ -449,13 +449,13 @@ bool ActionLifeCheck::checkCurrent()
 	ROS_INFO("%s %d: Robot current: %d.", __FUNCTION__, __LINE__, robot_current_ - robot_current_baseline_);
 
 	if (left_brush_current_ - left_brush_current_baseline_ > side_brush_current_ref_ * 1.5 ||
-			 left_brush_current_ - left_brush_current_baseline_ < side_brush_current_ref_ * 0.5)
+			 left_brush_current_ - left_brush_current_baseline_ < side_brush_current_ref_ * 0.3)
 	{
 		error_code_ = LEFT_BRUSH_CURRENT_ERROR;
 		error_content_ = static_cast<uint16_t>(left_brush_current_ - left_brush_current_baseline_);
 	}
 	else if (right_brush_current_ - right_brush_current_baseline_ > side_brush_current_ref_ * 1.5 ||
-		right_brush_current_ - right_brush_current_baseline_ < side_brush_current_ref_ * 0.5)
+		right_brush_current_ - right_brush_current_baseline_ < side_brush_current_ref_ * 0.3)
 	{
 		error_code_ = RIGHT_BRUSH_CURRENT_ERROR;
 		error_content_ = static_cast<uint16_t>(right_brush_current_ - right_brush_current_baseline_);

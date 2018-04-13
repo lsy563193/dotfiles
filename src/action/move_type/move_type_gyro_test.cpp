@@ -16,7 +16,8 @@
 #include "move_type.hpp"
 #include "error.h"
 
-#define ROUTATE_SPEED 20
+#define ROUTATE_SPEED 18
+int16_t angle_list[4] = {-86, -176, 94, 4};
 
 MoveTypeGyroTest::MoveTypeGyroTest()
 {
@@ -97,6 +98,8 @@ bool MoveTypeGyroTest::dataExtract(const uint8_t *buf)
 	wheel.setRightWheelActualSpeed(
 			static_cast<float>(static_cast<int16_t>((buf[REC_WHEEL_R_SPEED_H] << 8) | buf[REC_WHEEL_R_SPEED_L]) /
 							   1000.0));
+//	printf("left wheel speed:%f, right wheel speed:%f.\n",
+//		   wheel.getLeftWheelActualSpeed(), wheel.getRightWheelActualSpeed());
 
 	// For gyro device.
 	gyro.setCalibration(buf[REC_GYRO_CALIBRATION] != 0);
@@ -104,6 +107,7 @@ bool MoveTypeGyroTest::dataExtract(const uint8_t *buf)
 	gyro.setAngleY(static_cast<float>(static_cast<int16_t>((buf[REC_ANGLE_H] << 8) | buf[REC_ANGLE_L]) / 100.0 * -1));
 	gyro.setAngleV(
 			static_cast<float>(static_cast<int16_t>((buf[REC_ANGLE_V_H] << 8) | buf[REC_ANGLE_V_L]) / 100.0 * -1));
+//	printf("gyro angle:%f.\n", gyro.getAngleY());
 
 	return true;
 }
@@ -116,10 +120,10 @@ void MoveTypeGyroTest::run()
 		{
 			if (p_movement_->isFinish())
 			{
-				test_stage_++;
 				infrared_display.displayNormalMsg(test_stage_, 0);
 				p_movement_.reset();
-				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-90), ROUTATE_SPEED));
+				p_movement_.reset(new MovementTurn(degree_to_radian(angle_list[(test_stage_ - 1) % 4]), ROUTATE_SPEED));
+				test_stage_++;
 				saved_gyro_turn_angle_ = gyro.getAngleY();
 				saved_wheel_mileage_ = wheel_mileage_;
 				brush.normalOperate();
@@ -172,6 +176,7 @@ void MoveTypeGyroTest::run()
 
 			if (p_movement_->isFinish())
 			{
+				p_movement_.reset();
 				wheel_turn_angle_ = radian_to_degree((wheel_mileage_ - saved_wheel_mileage_) / 2 / WHEEL_TO_CENTER_DISTANCE);
 				ROS_INFO("count sum:%d.", count_sum);
 				ROS_INFO("%s %d: Turn for %d times, wheel_turn_angle_:%f(%f in angle).",
@@ -194,11 +199,15 @@ void MoveTypeGyroTest::run()
 				{
 					p_movement_.reset();
 					wheel.stop();
-					usleep(500000);
-					if (test_stage_ == 21)
-						p_movement_.reset();
-					else
-						p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-90), ROUTATE_SPEED));
+					ROS_INFO("%s %d: angle = %f", __FUNCTION__, __LINE__, radian_to_degree(getPosition().th));
+					usleep(100000);
+					gyro.setDynamicOn();
+					usleep(350000);
+					gyro.setDynamicOff();
+					usleep(50000);
+					ROS_INFO("%s %d: angle = %f", __FUNCTION__, __LINE__, radian_to_degree(getPosition().th));
+					if (test_stage_ != 21)
+						p_movement_.reset(new MovementTurn(degree_to_radian(angle_list[(test_stage_ - 1) % 4]), ROUTATE_SPEED));
 					test_stage_++;
 					infrared_display.displayNormalMsg(test_stage_, 0);
 					current_angle = gyro.getAngleY();

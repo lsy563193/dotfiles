@@ -37,6 +37,12 @@ void ActionIdle::run()
 		error_alarm_cnt_++;
 	}
 
+	if (appmt_obj.shouldUpdateIdleTimer())
+	{
+		appmt_obj.resetUpdateIdleTimerFlag();
+		start_timer_ = ros::Time::now().toSec();
+		ROS_INFO("%s %d: Action idle start timer is reset.", __FUNCTION__, __LINE__);
+	}
 }
 
 bool ActionIdle::isTimeUp()
