@@ -110,7 +110,7 @@ robot::robot()
 	auto wifi_send_thread = new boost::thread(boost::bind(&S_Wifi::wifi_send_routine,&s_wifi));
 
 	obs.control(ON);
-	ROS_INFO("%s %d: Robot x900(version 0000 r4) is online :)", __FUNCTION__, __LINE__);
+	ROS_INFO("%s %d: Robot x900(version 0000 r6) is online :)", __FUNCTION__, __LINE__);
 }
 
 robot::~robot()
@@ -350,12 +350,13 @@ void robot::robotbase_routine_cb()
 
 		// For appointment and set time
 
-		if(buf[REC_APPOINTMENT_TIME] > 0x80)
+		if((buf[REC_APPOINTMENT_TIME] >= 0x80) && p_mode != nullptr && p_mode->allowRemoteUpdatePlan())
+		{
 			robot_timer.setRealTime( buf[REC_REALTIME_H]<<8 | buf[REC_REALTIME_L]);
+			appmt_obj.set(buf[REC_APPOINTMENT_TIME]);
+		}
 		sensor.realtime = buf[REC_REALTIME_H]<<8 | buf[REC_REALTIME_L];
 		sensor.appointment = buf[REC_APPOINTMENT_TIME];
-		if (p_mode != nullptr && p_mode->allowRemoteUpdatePlan())
-			appmt_obj.set(buf[REC_APPOINTMENT_TIME]);
 			// For debug.
 //		printf("%d: REC_MIX_BYTE:(%2x), REC_RESERVED:(%2x).\n.",
 //			   __LINE__, buf[REC_MIX_BYTE], buf[REC_RESERVED]);
@@ -811,7 +812,7 @@ bool robot::checkTilt() {
 	//For wheel_cliff triggered
 	if(wheel_cliff_triggered) {
 		wheel_tilt_time_ = wheel_tilt_time_ == 0 ? ros::Time::now().toSec() : wheel_tilt_time_;
-		auto ret = ros::Time::now().toSec() - wheel_tilt_time_ > WHELL_CLIFF_TIME_LIMIT;
+		auto ret = ros::Time::now().toSec() - wheel_tilt_time_ > WHEEL_CLIFF_TIME_LIMIT;
 		ROS_WARN_COND(ret,"%s,%d,time_now:%lf,wheel_tilt_time_:%lf",__FUNCTION__,__LINE__,ros::Time::now().toSec(),wheel_tilt_time_);
 		return ret;
 	}

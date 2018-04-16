@@ -1046,7 +1046,6 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 			serial.sendData();
 			continue;
 		}
-		ROS_INFO("L: %d, R: %d", buf[10], buf[11]);
 		switch(step) {
 			case 1:
 				serial.setSendData(CTL_WHEEL_LEFT_HIGH, 200 >> 8);
@@ -1176,7 +1175,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				serial.setSendData(CTL_WHEEL_LEFT_HIGH, 0);
 				serial.setSendData(CTL_WHEEL_LEFT_LOW, 0);
 				count++;
-				if(count > 50)
+				if(count > 10)
 				{
 					count = 0;
 					step++;
@@ -1359,7 +1358,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				serial.setSendData(CTL_WHEEL_RIGHT_HIGH, 0);
 				serial.setSendData(CTL_WHEEL_RIGHT_LOW, 0);
 				count++;
-				if(count > 50)
+				if(count > 10)
 				{
 					count = 0;
 					step++;
@@ -1439,6 +1438,7 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 	serial.setSendData(CTL_LEFT_BRUSH_TEST_MODE, 0);
 	serial.setSendData(CTL_MAIN_BRUSH_TEST_MODE, 0);
 	serial.setSendData(CTL_RIGHT_BRUSH_TEST_MODE, 0);
+	brush.setPWM(0,0,0);
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
 	while(ros::ok()) {
 		/*--------data extrict from serial com--------*/
@@ -1491,7 +1491,7 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 			case 4:
 				brush.setPWM(0,0,0);
 				count++;
-				if(count > 50)
+				if(count > 25)
 				{
 					count = 0;
 					step++;
@@ -1583,7 +1583,7 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 			case 11:
 				brush.setPWM(0,0,0);
 				count++;
-				if(count > 50)
+				if(count > 25)
 				{
 					count = 0;
 					step++;
@@ -1804,7 +1804,7 @@ void main_brush_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_co
 			case 4:
 				brush.setPWM(0,0,0);
 				count++;
-				if(count > 50)
+				if(count > 25)
 				{
 					count = 0;
 					step++;
@@ -1871,10 +1871,13 @@ void charge_current_test(bool is_fixture, uint8_t &test_stage, uint16_t &error_c
 {
 	uint32_t charge_voltage = 0;
 	uint8_t buf[REC_LEN];
+	uint8_t count = 0;
+	uint8_t pwm_for_led_breath = 0;
+	bool is_led_breath_increase = true;
+	bool is_charger_connected = false;
 	serial.setSendData(CTL_WORK_MODE, FUNC_CHARGE_CURRENT_TEST_MODE);
 	serial.setSendData(CTL_CHARGER_CINNECTED_STATUS, 0);
 	serial.setSendData(CTL_IS_FIXTURE, is_fixture);
-	uint8_t count = 0;
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
 	while(ros::ok())
 	{
@@ -1898,10 +1901,29 @@ void charge_current_test(bool is_fixture, uint8_t &test_stage, uint16_t &error_c
 			count = 0;
 			charge_voltage = charge_voltage /10 *330 /4096 *835 /120;
 			if(charge_voltage > 1700)
-				serial.setSendData(CTL_CHARGER_CINNECTED_STATUS, 1);
+				is_charger_connected = true;
 			else if(charge_voltage < 1600)
-				serial.setSendData(CTL_CHARGER_CINNECTED_STATUS, 0);
+				is_charger_connected = false;
+			serial.setSendData(CTL_CHARGER_CINNECTED_STATUS, is_charger_connected?1:0);
 			charge_voltage = 0;
+		}
+		/*--- charger connected, orange led breath ---*/
+		if(is_charger_connected)
+		{
+			if(is_led_breath_increase)
+			{
+				pwm_for_led_breath += 2;
+				if(pwm_for_led_breath == 100)
+					is_led_breath_increase = false;
+			}
+			else
+			{
+				pwm_for_led_breath -= 2;
+				if(pwm_for_led_breath == 0)
+					is_led_breath_increase = true;
+			}
+			serial.setSendData(CTL_LED_RED, pwm_for_led_breath);
+			serial.setSendData(CTL_LED_GREEN, pwm_for_led_breath);
 		}
 		if(buf[4] == 1) {
 			error_code = CHARGE_PWM_ERROR;

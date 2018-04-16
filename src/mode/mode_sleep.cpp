@@ -8,6 +8,8 @@
 #include "mode.hpp"
 #include "appointment.h"
 
+#define RCON_TRIGGER_INTERVAL 180
+
 ModeSleep::ModeSleep()
 {
 	ROS_INFO("%s %d: Entering Sleep mode\n=========================" , __FUNCTION__, __LINE__);
@@ -27,8 +29,11 @@ ModeSleep::ModeSleep()
 
 	s_wifi.setWorkMode(Mode::md_sleep);
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
-	sp_action_.reset(new ActionSleep);
+	//sp_action_.reset(new ActionSleep);
+	if (!charger.getChargeStatus() && battery.isReadyToClean())
+		fake_sleep_ = true;
 
+	sp_action_.reset(new ActionSleep(fake_sleep_));
 }
 
 ModeSleep::~ModeSleep()
@@ -112,12 +117,19 @@ bool ModeSleep::isExit()
 
 bool ModeSleep::isFinish()
 {
+	if (fake_sleep_ && !battery.isReadyToClean())
+	{
+		ROS_INFO("%s %d: Battery too low, enter low power sleep.", __FUNCTION__, __LINE__);
+		auto sp_action_sleep = boost::dynamic_pointer_cast<ActionSleep>(sp_action_);
+		sp_action_sleep->lowPowerSleep();
+		fake_sleep_ = false;
+	}
 	return false;
 }
 
 void ModeSleep::remoteClean(bool state_now, bool state_last)
 {
-	if (serial.isMainBoardSleep() && !ev.key_clean_pressed)
+	if ((fake_sleep_ || serial.isMainBoardSleep()) && !ev.key_clean_pressed)
 	{
 		ev.key_clean_pressed = true;
 		ROS_WARN("%s %d: Waked up by remote key clean.", __FUNCTION__, __LINE__);
@@ -131,7 +143,7 @@ void ModeSleep::remoteClean(bool state_now, bool state_last)
 
 void ModeSleep::keyClean(bool state_now, bool state_last)
 {
-	if (serial.isMainBoardSleep() && !ev.key_clean_pressed)
+	if ((fake_sleep_ || serial.isMainBoardSleep()) && !ev.key_clean_pressed)
 	{
 		ROS_WARN("%s %d: Waked up by key clean.", __FUNCTION__, __LINE__);
 		// Wake up main board.
@@ -147,7 +159,7 @@ void ModeSleep::keyClean(bool state_now, bool state_last)
 
 void ModeSleep::chargeDetect(bool state_now, bool state_last)
 {
-	if (serial.isMainBoardSleep())
+	if (fake_sleep_ || serial.isMainBoardSleep())
 	{
 		ROS_WARN("%s %d: Waked up by detect charge.", __FUNCTION__, __LINE__);
 		ev.charge_detect = charger.getChargeStatus();
@@ -164,12 +176,31 @@ void ModeSleep::rcon(bool state_now, bool state_last)
 		serial.setWorkMode(WORK_MODE);
 		key_led.setMode(LED_STEADY, LED_ORANGE);
 	}
+	else if (fake_sleep_)
+	{
+		if (error.get() == ERROR_CODE_NONE)
+		{
+			auto time_for_now_ = ros::Time::now().toSec();
+//	ROS_WARN("%s %d: rcon signal. first: %lf, last: %lf, now: %lf", __FUNCTION__, __LINE__, first_time_seen_charger, last_time_seen_charger, time_for_now);
+			if (time_for_now_ - last_time_seen_charger_ > 60.0)
+			{
+				/*---more than 1 min haven't seen charger, reset first_time_seen_charger---*/
+				first_time_seen_charger_ = time_for_now_;
+			} else
+			{
+				/*---received charger signal continuously, check if more than 3 mins---*/
+				if (time_for_now_ - first_time_seen_charger_ > RCON_TRIGGER_INTERVAL)
+					ev.rcon_status = c_rcon.getAll();
+			}
+			last_time_seen_charger_ = time_for_now_;
+		}
+	}
 	c_rcon.resetStatus();
 }
 
 void ModeSleep::remotePlan(bool state_now, bool state_last)
 {
-	if (serial.isMainBoardSleep() && !plan_activated_status_ && appmt_obj.getPlanStatus() == 3)
+	if ((fake_sleep_ || serial.isMainBoardSleep()) && !plan_activated_status_ && appmt_obj.getPlanStatus() == 3)
 	{
 		INFO_YELLOW("Waked up by plan.");
 		plan_activated_status_ = true;
@@ -177,5 +208,10 @@ void ModeSleep::remotePlan(bool state_now, bool state_last)
 		key_led.setMode(LED_FLASH, LED_GREEN);
 	}
 	appmt_obj.resetPlanStatus();
+}
+
+bool ModeSleep::allowRemoteUpdatePlan()
+{
+	return !fake_sleep_;
 }
 

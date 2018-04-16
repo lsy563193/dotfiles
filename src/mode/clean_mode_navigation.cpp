@@ -40,6 +40,7 @@ CleanModeNav::CleanModeNav()
 	sp_state = state_init.get();
     sp_state->init();
 	//clear real time map whitch store in cloud....
+	s_wifi.setWorkMode(Mode::cm_navigation);
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_CLEAR_MAP);
 }
 
@@ -321,7 +322,6 @@ void CleanModeNav::keyClean(bool state_now, bool state_last)
 	else if (long_press)
 		ev.key_long_pressed = true;
 	ev.key_clean_pressed = true;
-	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
 
 	key.resetTriggerStatus();
 }

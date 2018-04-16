@@ -160,7 +160,8 @@ void ModeIdle::remoteKeyHandler(bool state_now, bool state_last)
 	{
 		if (remote.isKeyTrigger(REMOTE_CLEAN))
 		{
-			if (error.clear(error.get()))
+			bool force_clear = true;
+			if (error.clear(error.get(), force_clear))
 			{
 				ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
 				beeper.beepForCommand(VALID);
@@ -366,7 +367,8 @@ void ModeIdle::keyClean(bool state_now, bool state_last)
 	{
 		if (error.get())
 		{
-			if (error.clear(error.get()))
+			bool force_clear = true;
+			if (error.clear(error.get(), force_clear))
 			{
 				ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
                 sp_state->init();

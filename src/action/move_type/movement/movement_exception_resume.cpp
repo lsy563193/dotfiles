@@ -58,6 +58,26 @@ void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_sp
 		wheel.setDirectionBackward();
 		left_speed = right_speed = RUN_TOP_SPEED;
 	}
+	else if(ev.left_wheel_cliff || ev.right_wheel_cliff)
+	{
+		switch(wheel_cliff_state_)
+		{
+			case 1:
+				wheel.setDirectionBackward();
+				left_speed = right_speed = RUN_TOP_SPEED;
+				break;
+			case 2:
+				wheel.setDirectionLeft();
+				left_speed = 30;
+				right_speed = 30;
+				break;
+			case 3:
+				wheel.setDirectionRight();
+				left_speed = 30;
+				right_speed = 30;
+				break;
+		}
+	}
 	else if(ev.oc_brush_main)
 	{
 		if(main_brush_resume_state_ == 1){
@@ -67,7 +87,6 @@ void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_sp
 		else
 			left_speed = right_speed = 0;
 	}
-
 	else if (ev.bumper_jam)
 	{
 		switch (bumper_jam_state_)
@@ -97,7 +116,6 @@ void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_sp
 			}
 		}
 	}
-
 	else if (ev.lidar_bumper_jam)
 	{
 		switch (lidar_bumper_jam_state_)
@@ -161,7 +179,7 @@ bool MovementExceptionResume::isFinish()
 {
 	updatePosition();
 	if (!(ev.bumper_jam || ev.lidar_bumper_jam || ev.cliff_jam || ev.cliff_all_triggered || ev.oc_wheel_left || ev.oc_wheel_right
-		  || ev.oc_vacuum || ev.lidar_stuck || ev.robot_stuck || ev.oc_brush_main || ev.robot_slip))
+		  || ev.oc_vacuum || ev.lidar_stuck || ev.robot_stuck || ev.oc_brush_main || ev.robot_slip || ev.left_wheel_cliff || ev.right_wheel_cliff))
 	{
 		ROS_INFO("%s %d: All exception cleared.", __FUNCTION__, __LINE__);
 		return true;
@@ -369,6 +387,76 @@ bool MovementExceptionResume::isFinish()
 			error.set(ERROR_CODE_CLIFF);
 		}
 	}
+	else if(ev.right_wheel_cliff || ev.left_wheel_cliff)
+	{
+		bool cliff_status = ev.right_wheel_cliff ? cliff.getRight() : cliff.getLeft();
+		bool right_wheel_and_cliff{false};
+		bool left_wheel_and_cliff{false};
+		if (ev.right_wheel_cliff) {
+			right_wheel_and_cliff = cliff.getRight();
+		}
+		if (ev.left_wheel_cliff) {
+			left_wheel_and_cliff = cliff.getLeft();
+		}
+		float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getOriginX(), odom.getOriginY());
+
+		if(!wheel.getLeftWheelCliffStatus() && !wheel.getRightWheelCliffStatus())
+		{
+			sp_mt_->sp_mode_->is_wheel_cliff_triggered = false;
+			ev.right_wheel_cliff = false;
+			ev.left_wheel_cliff = false;
+			ROS_WARN("%s %d: Wheel cliff resume succeeded.", __FUNCTION__, __LINE__);
+		}
+//		ROS_INFO("^:%d, cliff_status:%d, wheel_cliff_resume_cnt:%d,cliff_right:%d, cliff_left:%d, cliff_front:%d, right_wheel_cliff:%d, left_wheel_cliff:%d",
+//							ev.right_wheel_cliff ^ ev.left_wheel_cliff,cliff_status, wheel_cliff_resume_cnt_,
+//							cliff.getRight(), cliff.getLeft(), cliff.getFront(), ev.right_wheel_cliff, ev.left_wheel_cliff);
+		if((ev.right_wheel_cliff ^ ev.left_wheel_cliff)
+			 && (left_wheel_and_cliff || right_wheel_and_cliff)
+			 && wheel_cliff_resume_cnt_ < 3)
+		{
+			if(distance > 0.02f || lidar.getObstacleDistance(1, ROBOT_RADIUS) < 0.06);
+			{
+				wheel_cliff_resume_cnt_++;
+				s_pos_x = odom.getOriginX();
+				s_pos_y = odom.getOriginY();
+				if(wheel_cliff_resume_cnt_ <= 3)
+					ROS_WARN("%s %d: Resume failed, try wheel cliff resume for the %d time is finished.", __FUNCTION__, __LINE__,wheel_cliff_resume_cnt_);
+			}
+		}
+		else if(cliff.getStatus() && wheel_cliff_resume_cnt_ < 3)
+		{
+			ROS_ERROR("cliff detect!!!!!!!!!");
+			switch(wheel_cliff_state_)
+			{
+				case 1:
+					if(distance > 0.25f || lidar.getObstacleDistance(1, ROBOT_RADIUS) < 0.06)
+					{
+						wheel_cliff_state_ = static_cast<uint8_t>(ev.right_wheel_cliff ? 2 : 3); // 2 is turn left, 3 is turn right
+						wheel_cliff_start_time_ = ros::Time::now().toSec();
+						s_pos_x = odom.getOriginX();
+						s_pos_y = odom.getOriginY();
+					}
+					break;
+				default:
+					if(ros::Time::now().toSec() - wheel_cliff_start_time_ > 1)
+					{
+						wheel_cliff_state_ = 1;
+						wheel_cliff_resume_cnt_++;
+						s_pos_x = odom.getOriginX();
+						s_pos_y = odom.getOriginY();
+						if(wheel_cliff_resume_cnt_ <= 3)
+							ROS_WARN("%s %d: Resume failed, try wheel cliff resume for the %d time is finished.", __FUNCTION__, __LINE__,wheel_cliff_resume_cnt_);
+					}
+					break;
+			}
+		}
+		else if(wheel_cliff_resume_cnt_ >= 3)
+		{
+			ROS_WARN("%s %d: Wheel cliff suspend,but resume failed.", __FUNCTION__, __LINE__);
+			ev.fatal_quit = true;
+			error.set(ERROR_CODE_CLIFF);
+		}
+	}
 	else if (ev.bumper_jam)
 	{
 		if (bumper.getStatus() != BLOCK_LEFT && bumper.getStatus() != BLOCK_RIGHT && bumper.getStatus() != BLOCK_ALL)
@@ -441,7 +529,6 @@ bool MovementExceptionResume::isFinish()
 			}
 		}
 	}
-
 	else if (ev.lidar_bumper_jam)
 	{
 		if (bumper.getStatus() != BLOCK_LIDAR_BUMPER)
