@@ -307,6 +307,11 @@ bool MovementExceptionResume::isFinish()
 	}
 	else if (ev.cliff_all_triggered)
 	{
+		if(wheel.getRightWheelCliffStatus() && wheel.getLeftWheelCliffStatus())
+		{
+			ev.fatal_quit = true;
+			ROS_WARN("%s %d: All cliff and wheel cliff  triggered.", __FUNCTION__, __LINE__);
+		}
 		if (cliff.getStatus() != BLOCK_ALL)
 		{
 			ROS_INFO("%s %d: Cliff all resume succeeded.", __FUNCTION__, __LINE__);
@@ -321,9 +326,9 @@ bool MovementExceptionResume::isFinish()
 			{
 				wheel.stop();
 				cliff_all_resume_cnt_++;
-				if (cliff_all_resume_cnt_ < 2)
+				if (cliff_all_resume_cnt_ <= 2)
 					ROS_WARN("%s %d: Resume failed, try cliff all resume for the %d time.",
-							 __FUNCTION__, __LINE__, cliff_all_resume_cnt_ + 1);
+							 __FUNCTION__, __LINE__, cliff_all_resume_cnt_);
 				s_pos_x = odom.getOriginX();
 				s_pos_y = odom.getOriginY();
 			}
@@ -350,9 +355,9 @@ bool MovementExceptionResume::isFinish()
 			{
 				wheel.stop();
 				cliff_resume_cnt_++;
-				if (cliff_resume_cnt_ < 5)
+				if (cliff_resume_cnt_ <= 5)
 					ROS_WARN("%s %d: Resume failed, try cliff resume for the %d time.",
-							 __FUNCTION__, __LINE__, cliff_resume_cnt_ + 1);
+							 __FUNCTION__, __LINE__, cliff_resume_cnt_);
 				s_pos_x = odom.getOriginX();
 				s_pos_y = odom.getOriginY();
 			}

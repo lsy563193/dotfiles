@@ -10,6 +10,9 @@
 CleanModeSpot::CleanModeSpot()
 {
 	speaker.play(VOICE_CLEANING_SPOT,false);
+
+	s_wifi.setWorkMode(Mode::cm_spot);
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 	clean_path_algorithm_.reset(new SpotCleanPathAlgorithm());
 	go_home_path_algorithm_.reset();
 	mode_i_ = cm_spot;
@@ -46,7 +49,7 @@ bool CleanModeSpot::mapMark()
 		clean_map_.markRobot(CLEAN_MAP);
 	setBlocks(iterate_point_.dir);
 	PP_INFO();
-	clean_map_.print(CLEAN_MAP, Cells{getPosition().toCell()});
+	clean_map_.print(getPosition().toCell(), CLEAN_MAP, Cells{getPosition().toCell()});
 
 	passed_path_.clear();
 	return false;

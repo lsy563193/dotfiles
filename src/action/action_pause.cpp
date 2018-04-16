@@ -47,5 +47,10 @@ bool ActionPause::isExit()
 
 void ActionPause::run()
 {
-	// Just do nothing...
+	if (appmt_obj.shouldUpdateIdleTimer())
+	{
+		appmt_obj.resetUpdateIdleTimerFlag();
+		start_timer_ = ros::Time::now().toSec();
+		ROS_INFO("%s %d: Action Pause start timer is reset.", __FUNCTION__, __LINE__);
+	}
 }

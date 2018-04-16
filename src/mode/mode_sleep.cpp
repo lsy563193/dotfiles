@@ -24,13 +24,16 @@ ModeSleep::ModeSleep()
 	sp_state = st_sleep.get();
 	sp_state->init();
 	plan_activated_status_ = false;
+
+	s_wifi.setWorkMode(Mode::md_sleep);
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 	sp_action_.reset(new ActionSleep);
 
 }
 
 ModeSleep::~ModeSleep()
 {
-	s_wifi.taskPushBack(S_Wifi::ACT::ACT_RESUME);
+	//s_wifi.taskPushBack(S_Wifi::ACT::ACT_RESUME);
 	event_manager_set_enable(false);
 	sp_action_.reset();
 	ROS_INFO("%s %d: Exit sleep mode.", __FUNCTION__, __LINE__);

@@ -50,7 +50,7 @@ bool S_Wifi::deinit()
 
 bool S_Wifi::init()
 {
-	robot_work_mode_ = wifi::WorkMode::SHUTDOWN;
+	robot_work_mode_ = wifi::WorkMode::IDLE;
 	INFO_BLUE(" wifi register msg... ");
 	//-----on reg device ,connect or disconnect-----
 	//regestory request
@@ -94,7 +94,6 @@ bool S_Wifi::init()
 				if(isRegDevice_ && in_linking_){
 					//speaker.play( VOICE_CLOUD_CONNECTED,false);
 					speaker.play( VOICE_WIFI_CONNECTED,false);
-					//uploadLastCleanData();
 					isRegDevice_ = false;
 					in_linking_ = false;
 				}
@@ -172,6 +171,8 @@ bool S_Wifi::init()
 				s_wifi_tx_.push(std::move(p)).commit();
 				//set mode
 				setRobotCleanMode(msg.getWorkMode());
+				robot_work_mode_ = msg.getWorkMode();
+				taskPushBack(ACT::ACT_UPLOAD_STATUS);
 			});
 	//set room mode
 	s_wifi_rx_.regOnNewMsgListener<wifi::SetRoomModeRxMsg>(
@@ -191,7 +192,7 @@ bool S_Wifi::init()
 	s_wifi_rx_.regOnNewMsgListener<wifi::SetMaxCleanPowerRxMsg>(
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::SetMaxCleanPowerRxMsg &msg = static_cast<const wifi::SetMaxCleanPowerRxMsg&>( a_msg );
-				if (!water_tank.checkEquipment(true))
+				if (water_tank.getStatus(WaterTank::water_tank))
 					if(msg.isMop())
 						water_tank.setPumpMode(WaterTank::PUMP_HIGH);
 					else
@@ -387,21 +388,17 @@ bool S_Wifi::init()
 	return true;
 }
 
-uint8_t S_Wifi::uploadStatus(int msg_code,const uint8_t seq_num)
+int8_t S_Wifi::uploadStatus(int msg_code,const uint8_t seq_num)
 {
 	if(!is_wifi_connected_ )
 		return -1;
-	wifi::WorkMode work_mode = robot_work_mode_;
 	uint8_t error_code = 0;
 	wifi::DeviceStatusBaseTxMsg::CleanMode box;
-	//todo water_tank.checkEquipment is right?
-	box = water_tank.checkEquipment(true) ? wifi::DeviceStatusBaseTxMsg::CleanMode::WATER_TANK: wifi::DeviceStatusBaseTxMsg::CleanMode::DUST;
-	if(robot::instance()->p_mode != nullptr)
-	{
-		int next_mode = (int)robot::instance()->p_mode->getNextMode();
-		setWorkMode((int)next_mode);	
-		work_mode = getWorkMode();
-	}
+	box = water_tank.getStatus(WaterTank::water_tank) ? wifi::DeviceStatusBaseTxMsg::CleanMode::WATER_TANK: wifi::DeviceStatusBaseTxMsg::CleanMode::DUST;
+
+//	while(ros::ok() && robot::instance()->p_mode == nullptr);
+//	setWorkMode((int)robot::instance()->p_mode->getNextMode());
+
 	switch (error.get())
 	{
 		case ERROR_CODE_NONE:
@@ -491,7 +488,7 @@ uint8_t S_Wifi::uploadStatus(int msg_code,const uint8_t seq_num)
 			if(upload_state_ack_cnt++ > 10)
 				return -1;
 			wifi::DeviceStatusUploadTxMsg p(
-					work_mode,
+					robot_work_mode_,
 					wifi::DeviceStatusBaseTxMsg::RoomMode::LARGE,//default set large
 					box,
 					serial.getSendData(CTL_VACCUM_PWR),
@@ -510,7 +507,7 @@ uint8_t S_Wifi::uploadStatus(int msg_code,const uint8_t seq_num)
 	else if(msg_code == 0x41)//app check upload
 	{
 		wifi::DeviceStatusReplyTxMsg p(
-				work_mode,
+				robot_work_mode_,
 				wifi::DeviceStatusBaseTxMsg::RoomMode::LARGE,//default set larger
 				box,
 				serial.getSendData(CTL_VACCUM_PWR),
@@ -535,6 +532,7 @@ bool S_Wifi::uploadMap()
 	int pack_cnt=0;
 	int byte_cnt=0;
 
+	while(ros::ok() && robot::instance()->p_mode == nullptr);
 	if(robot::instance()->p_mode->getNextMode() != Mode::cm_navigation)
 		return false;
 
@@ -603,11 +601,11 @@ bool S_Wifi::uploadMap()
 		ROS_INFO("%s,%d,map_pack size %ld",__FUNCTION__,__LINE__,map_pack.size());
 		//upload map and wait ack
 		int timeout_cnt = 0;
-		do{
-			if(timeout_cnt++ > 10)
-				return false;
-			for(int k=1;k<=map_pack.size();k++)
-			{
+		for(int k=1;k<=map_pack.size();k++)
+		{
+			do{
+				if(timeout_cnt++ > 10)
+					return false;
 				wifi::RealtimeMapUploadTxMsg p(
 									time,
 									(uint8_t)k,
@@ -615,9 +613,10 @@ bool S_Wifi::uploadMap()
 									map_pack[k-1]
 									);
 				s_wifi_tx_.push(std::move(p)).commit();
-			}
-			usleep(300000);
-		}while(ros::ok() && !realtime_map_ack_);
+				usleep(350000);
+			}while(ros::ok() && !realtime_map_ack_);
+			timeout_cnt = 0;
+		}
 		realtime_map_ack_ =false;
 		pthread_mutex_lock(&map_data_lock_);
 		map_data_buf_->pop_front();
@@ -647,6 +646,10 @@ uint8_t S_Wifi::setRobotCleanMode(wifi::WorkMode work_mode)
 			{
 				remote.set(REMOTE_CLEAN);
 				beeper.beepForCommand(true);
+				//-- tmp debug 
+
+				if(last_mode == wifi::WorkMode::PLAN1)
+					taskPushBack(ACT::ACT_UPLOAD_LAST_CLEANMAP);
 			}
 			else{
 				beeper.beepForCommand(false);
@@ -672,27 +675,17 @@ uint8_t S_Wifi::setRobotCleanMode(wifi::WorkMode work_mode)
 			INFO_BLUE("receive mode wall follow");
 			break;
 		case wifi::WorkMode::SPOT:
-			if(last_mode == wifi::WorkMode::SPOT)
-				remote.set(REMOTE_CLEAN);
-			else
-				remote.set(REMOTE_SPOT);//spot
-
+			remote.set(REMOTE_SPOT);//spot
 			beeper.beepForCommand(true);
 			INFO_BLUE("receive mode spot");
 			break;
 		case wifi::WorkMode::PLAN1://plan 1
 			beeper.beepForCommand(true);
 			remote.set(REMOTE_CLEAN);//clean key
-			if(last_mode != wifi::WorkMode::PLAN1)
-				clearRealtimeMap(0x00);
 			INFO_BLUE("receive mode plan1");
 			break;
 		case wifi::WorkMode::PLAN2://plan 2
 			beeper.beepForCommand(true);
-			remote.set(REMOTE_CLEAN);//clean key
-			if(last_mode != wifi::WorkMode::PLAN2)
-				clearRealtimeMap(0x00);
-
 			remote.set(REMOTE_CLEAN);//clean key
 			INFO_BLUE("receive mode plan2");
 			break;
@@ -744,6 +737,7 @@ uint8_t S_Wifi::appRemoteCtl(wifi::RemoteControlRxMsg::Cmd data)
 {
 	if(!is_wifi_connected_ )
 		return 1;
+	robot_work_mode_ = wifi::WorkMode::REMOTE;
 	switch(data)
 	{
 		case wifi::RemoteControlRxMsg::Cmd::FORWARD:
@@ -843,10 +837,6 @@ uint8_t S_Wifi::uploadLastCleanData()
 	if(robot::instance()->p_mode != nullptr)
 	{
 		if( getWorkMode() == wifi::WorkMode::PLAN1)
-		//			|| robot_work_mode_ == wifi::WorkMode::WALL_FOLLOW 
-		//			||robot_work_mode_ == wifi::WorkMode::SPOT
-		//			||robot_work_mode_ == wifi::WorkMode::HOMING
-		//			||robot_work_mode_ == wifi::WorkMode::FIND)
 		{
 			while(ros::ok() && robot::instance()->p_mode == nullptr);
 			auto mode = boost::dynamic_pointer_cast<ACleanMode>(robot::instance()->p_mode);
@@ -1190,7 +1180,7 @@ void S_Wifi::wifi_send_routine()
 				upload_map_count=0;
 			}
 
-			if(upload_state_count >= (is_Status_Request_?10:20))
+			if(upload_state_count >= (is_Status_Request_?15:30))
 			{
 				this->uploadStatus(0xc8,0x00);
 				upload_state_count=0;

@@ -146,8 +146,8 @@ ACleanMode::~ACleanMode()
 		}
 		else if (next_mode_i_ == md_sleep)
 		{
-			speaker.play(VOICE_CLEANING_FINISHED, false);
-			ROS_WARN("%s %d: Pause timeout.", __FUNCTION__, __LINE__);
+//			speaker.play(VOICE_CLEANING_FINISHED, false);
+			ROS_WARN("%s %d: Pause timeout or long press in pause.", __FUNCTION__, __LINE__);
 		}
 		else
 			ROS_WARN("%s %d: Entering other clean mode(%d), so do not play the finish voice.",
@@ -183,7 +183,7 @@ void ACleanMode::saveBlocks() {
 	bool is_linear = action_i_== ac_linear;
 	auto is_save_rcon = sp_state == state_clean.get();
 	if (action_i_== ac_linear && is_save_rcon)
-		saveBlock(BLOCKED_RCON, iterate_point_.dir, [&]() {
+		saveBlock(BLOCKED_TMP_RCON, iterate_point_.dir, [&]() {
 			auto rcon_trig = ev.rcon_status/*rcon_get_trig()*/;
 			Cells d_cells;
 			switch (c_rcon.convertToEnum(rcon_trig)) {
@@ -1665,7 +1665,6 @@ bool ACleanMode::updateActionInStateGoHomePoint()
 	{
 		ROS_INFO("Reach start point but angle not equal,start_point_(%d,%d,%f,%d)",start_point_.toCell().x, start_point_.toCell().y, radian_to_degree(start_point_.th), start_point_.dir);
 //		beeper.beepForCommand(VALID);
-		update_finish = true;
 		iterate_point_ = getPosition();
 		iterate_point_.th = start_point_.th;
 		plan_path_.clear();
@@ -2028,7 +2027,7 @@ bool ACleanMode::isIsolate() {
 	bound.SetMinimum(bound.min - Cell_t{8, 8});
 	bound.SetMaximum(bound.max + Cell_t{8, 8});
 	ROS_ERROR("ISOLATE MAP");
-	fw_tmp_map.print(CLEAN_MAP,Cells{target});
+	fw_tmp_map.print(getPosition().toCell(), CLEAN_MAP,Cells{target});
 	ROS_ERROR("ISOLATE MAP");
 	ROS_ERROR("minx(%d),miny(%d),maxx(%d),maxy(%d)",bound.min.x, bound.min.y,bound.max.x, bound.max.y);
 

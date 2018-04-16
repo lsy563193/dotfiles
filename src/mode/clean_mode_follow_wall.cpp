@@ -21,6 +21,9 @@ CleanModeFollowWall::CleanModeFollowWall()
 	go_home_path_algorithm_.reset();
 	closed_count_limit_ = 1;
 	mode_i_ = cm_wall_follow;
+
+	s_wifi.setWorkMode(Mode::cm_wall_follow);
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 }
 
 CleanModeFollowWall::~CleanModeFollowWall()
@@ -70,7 +73,7 @@ bool CleanModeFollowWall::mapMark() {
 		setFollowWall(clean_map_, action_i_ == ac_follow_wall_left, passed_path_);
 	}
 	clean_map_.markRobot(CLEAN_MAP);
-	clean_map_.print(CLEAN_MAP, Cells{getPosition().toCell()});
+	clean_map_.print(getPosition().toCell(), CLEAN_MAP, Cells{getPosition().toCell()});
 	passed_path_.clear();
 	return false;
 }
@@ -140,7 +143,7 @@ void CleanModeFollowWall::remoteMax(bool state_now, bool state_last)
 	{
 		beeper.beepForCommand(VALID);
 		vacuum.isMaxInClean(!vacuum.isMaxInClean());
-		speaker.play(vacuum.isMaxInClean() ? VOICE_VACCUM_MAX : VOICE_CLEANING_NAVIGATION,false);
+		speaker.play(vacuum.isMaxInClean() ? VOICE_VACCUM_MAX : VOICE_CLEANING_NAVIGATION);
 		if(isStateFollowWall() || (isStateInit() && action_i_ > ac_open_gyro)) {
 			vacuum.setCleanState();
 		}

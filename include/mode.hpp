@@ -53,6 +53,11 @@ public:
 	};
 	int getNextMode();
 
+	virtual bool allowRemoteUpdatePlan()
+	{
+		return false;
+	}
+
 //	friend IMoveType;
 
 	enum {
@@ -181,6 +186,10 @@ public:
 	void chargeDetect(bool state_now, bool state_last) override ;
 	void rcon(bool state_now, bool state_last) override ;
 
+	bool allowRemoteUpdatePlan() override
+	{
+		return true;
+	}
 protected:
 //	std::vector<Cell_t> temp_fw_cells;
 private:
@@ -221,6 +230,7 @@ private:
 private:
 	bool plan_activated_status_;
 };
+
 class ModeCharge: public Mode
 {
 public:
@@ -234,6 +244,11 @@ public:
 	void remoteClean(bool state_now, bool state_last) override ;
 	void keyClean(bool state_now, bool state_last) override ;
 	void remotePlan(bool state_now, bool state_last) override ;
+
+	bool allowRemoteUpdatePlan() override
+	{
+		return true;
+	}
 
 	boost::shared_ptr<State> state_charge = boost::make_shared<StateCharge>();
 	boost::shared_ptr<State> state_init = boost::make_shared<StateInit>();
@@ -584,6 +599,11 @@ public:
 	bool markRealTime() override;
 	bool isExit() override;
 
+	bool allowRemoteUpdatePlan() override
+	{
+		return isStatePause();
+	}
+
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteHome(bool state_now, bool state_last) override ;
 	void remoteClean(bool state_now, bool state_last) override ;
@@ -593,6 +613,7 @@ public:
 	void remoteWallFollow(bool state_now, bool state_last) override ;
 	void remoteSpot(bool state_now, bool state_last) override;
 	void remoteMax(bool state_now, bool state_last) override;
+	void remotePlan(bool state_now, bool state_last) override;
 //	void cliffAll(bool state_now, bool state_last) override ;
 	void chargeDetect(bool state_now, bool state_last) override ;
 	void batteryHome(bool state_now, bool state_last) override ;

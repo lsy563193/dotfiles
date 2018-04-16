@@ -6,6 +6,8 @@
 #include <map.h>
 #include "error.h"
 #include "speaker.h"
+#include "wifi/wifi.h"
+
 Error error;
 
 void Error::alarm(void)
@@ -68,6 +70,8 @@ void Error::alarm(void)
 			break;
 		}
 	}
+	//-- upload state
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 
 }
 

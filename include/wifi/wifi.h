@@ -41,7 +41,7 @@ public:
 
 	bool deinit();
 
-	uint8_t uploadStatus(int msg_code,const uint8_t seq_num);
+	int8_t uploadStatus(int msg_code,const uint8_t seq_num);
 
 	bool uploadMap();
 

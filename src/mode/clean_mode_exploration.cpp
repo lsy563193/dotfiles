@@ -19,6 +19,9 @@ CleanModeExploration::CleanModeExploration()
 	clean_map_.mapInit();
 	setExpMode(true);
 	obs.control(OFF);
+	s_wifi.setWorkMode(Mode::cm_exploration);
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
+
 }
 
 CleanModeExploration::~CleanModeExploration()
@@ -139,7 +142,7 @@ void CleanModeExploration::remoteMax(bool state_now, bool state_last)
 	{
 		beeper.beepForCommand(VALID);
 		vacuum.isMaxInClean(!vacuum.isMaxInClean());
-		speaker.play(vacuum.isMaxInClean() ? VOICE_VACCUM_MAX : VOICE_CLEANING_NAVIGATION,false);
+		speaker.play(vacuum.isMaxInClean() ? VOICE_VACCUM_MAX : VOICE_CLEANING_NAVIGATION);
 	}
 	remote.reset();
 }
