@@ -350,7 +350,7 @@ void robot::robotbase_routine_cb()
 
 		// For appointment and set time
 
-		if((buf[REC_APPOINTMENT_TIME] > 0x80) && p_mode != nullptr && p_mode->allowRemoteUpdatePlan())
+		if((buf[REC_APPOINTMENT_TIME] >= 0x80) && p_mode != nullptr && p_mode->allowRemoteUpdatePlan())
 		{
 			robot_timer.setRealTime( buf[REC_REALTIME_H]<<8 | buf[REC_REALTIME_L]);
 			appmt_obj.set(buf[REC_APPOINTMENT_TIME]);
@@ -466,7 +466,7 @@ void robot::core_thread_cb()
 	r16_work_mode_ = getTestMode();
 //	r16_work_mode_ = LIFE_TEST_MODE;
 	ROS_INFO("%s %d: work mode: %d", __FUNCTION__, __LINE__, r16_work_mode_);
-
+	//s_wifi.taskPushBack(S_Wifi::ACT::ACT_SLEEP);
 	switch (r16_work_mode_)
 	{
 		case FUNC_SERIAL_TEST_MODE:
@@ -526,7 +526,7 @@ void robot::runTestMode()
 
 void robot::runWorkMode()
 {
-	s_wifi.taskPushBack(S_Wifi::ACT::ACT_RESUME);
+	//s_wifi.taskPushBack(S_Wifi::ACT::ACT_RESUME);
 	auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
 	send_thread_enable = true;
 
@@ -812,7 +812,7 @@ bool robot::checkTilt() {
 	//For wheel_cliff triggered
 	if(wheel_cliff_triggered) {
 		wheel_tilt_time_ = wheel_tilt_time_ == 0 ? ros::Time::now().toSec() : wheel_tilt_time_;
-		auto ret = ros::Time::now().toSec() - wheel_tilt_time_ > WHELL_CLIFF_TIME_LIMIT;
+		auto ret = ros::Time::now().toSec() - wheel_tilt_time_ > WHEEL_CLIFF_TIME_LIMIT;
 		ROS_WARN_COND(ret,"%s,%d,time_now:%lf,wheel_tilt_time_:%lf",__FUNCTION__,__LINE__,ros::Time::now().toSec(),wheel_tilt_time_);
 		return ret;
 	}

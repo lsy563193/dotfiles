@@ -11,8 +11,8 @@ ActionSleep::ActionSleep(bool fake_sleep)
 	ROS_INFO("%s %d: Start sleep action.", __FUNCTION__, __LINE__);
 	// Ensure the previous voice is finished before sleep.
 	wifi_led.set(false);
-	s_wifi.uploadStatus(0xc8,0x00);
-//	s_wifi.sleep();
+	//s_wifi.uploadStatus(0xc8,0x00);
+	//s_wifi.sleep();
 
 	gyro.setOff();
 	gyro.resetStatus();

@@ -117,6 +117,8 @@ public:
 
 	virtual void genNextAction();
 
+	void updateWheelCliffStatus();
+
 	bool isExceptionTriggered();
 
 	static boost::shared_ptr<IAction> sp_action_;
@@ -138,6 +140,7 @@ public:
 
 	double wall_distance;
 	double wheel_cliff_triggered_time_{DBL_MAX};
+	const double WHEEL_CLIFF_TIME_LIMIT{2};
 	bool is_wheel_cliff_triggered{};
 	int mode_i_{};
 

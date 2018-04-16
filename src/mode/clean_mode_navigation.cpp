@@ -40,7 +40,8 @@ CleanModeNav::CleanModeNav()
 	sp_state = state_init.get();
     sp_state->init();
 	//clear real time map whitch store in cloud....
-	//s_wifi.clearRealtimeMap(0x00);
+	s_wifi.setWorkMode(Mode::cm_navigation);
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_CLEAR_MAP);
 }
 
 CleanModeNav::~CleanModeNav()
@@ -144,14 +145,13 @@ bool CleanModeNav::mapMark()
 	}
 
 	//tx pass path via serial wifi
-	//s_wifi.uploadPassPath(passed_path_);
-	//s_wifi.replyRobotStatus(0xc8,0x00);
+
 	s_wifi.cacheMapData(passed_path_);
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_MAP);
 	c_blocks.clear();
 	passed_path_.clear();
 	return false;
 }
-
 
 bool CleanModeNav::markRealTime()
 {

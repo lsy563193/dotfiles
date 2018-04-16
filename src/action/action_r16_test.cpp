@@ -256,6 +256,8 @@ bool ActionR16Test::lidar_test()
 bool ActionR16Test::lidar_bumper_test()
 {
 	ROS_INFO("%s %d: Start lidar bumper test.", __FUNCTION__, __LINE__);
+	// Heads up for starting lider bumper test.
+	speaker.play(VOICE_WAKE_UP_UNOFFICIAL);
 
 	int test_bumper_cnt = 5;
 	bool last_bumper_status = false;
@@ -265,6 +267,7 @@ bool ActionR16Test::lidar_bumper_test()
 		bumper.setLidarBumperStatus();
 		if (!last_bumper_status && bumper.getLidarBumperStatus())
 		{
+			beeper.beepForCommand(VALID);
 			bumper_cnt_++;
 			infrared_display.displayNormalMsg(4, static_cast<uint16_t>(bumper_cnt_));
 			ROS_INFO("%s %d: Hit lidar bumper for %d time.", __FUNCTION__, __LINE__, bumper_cnt_);
@@ -297,6 +300,9 @@ void ActionR16Test::error_loop(uint8_t test_stage, uint16_t content, uint16_t er
 
 bool ActionR16Test::wifi_test()
 {
-	return s_wifi.factoryTest();
+	bool wifi_test_result = s_wifi.factoryTest();
+	if (wifi_test_result)
+		s_wifi.rebind();
+	return wifi_test_result;
 }
 
