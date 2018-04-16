@@ -369,7 +369,7 @@ public:
 	Cells pointsGenerateCells(Points &targets);
 
 	// For move types
-	bool moveTypeNewCellIsFinish(IMoveType *p_move_type);
+	bool moveTypeNewCellIsFinish(IMoveType *p_mt);
 	bool moveTypeRealTimeIsFinish(IMoveType *p_mt);
 
 	// Handlers

@@ -122,7 +122,7 @@ Cells NavCleanPathAlgorithm::findTargetInSameLane(GridMap &map, const Cell_t &cu
 {
 	int8_t is_found = 0;
 	Cell_t it[2]; // it[0] means the furthest cell of x positive direction, it[1] means the furthest cell of x negative direction.
-	const auto OVER_CELL_SIZE = 2;
+	const auto OVER_CELL_SIZE = 4;
 //	map.print(CLEAN_MAP, 0, 0);
 	for (auto i = 0; i < 2; i++) {
 		it[i] = curr_cell;

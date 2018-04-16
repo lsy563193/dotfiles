@@ -944,7 +944,7 @@ bool ACleanMode::isExit()
 	return false;
 }
 
-bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_move_type) {
+bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_mt) {
 	auto curr = getPosition();
 	auto loc = std::find_if(passed_path_.begin(), passed_path_.end(), [&](Point_t it) {
 		return curr.isCellAndAngleEqual(it);
@@ -959,10 +959,19 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_move_type) {
 	markMapInNewCell();//real time mark to exploration
 
 	if (isStateFollowWall()) {
-//			auto p_mt = dynamic_cast<MoveTypeFollowWall *>(p_move_type);
-		if (p_move_type->isBlockCleared(clean_map_, passed_path_))
-		{
+//			auto p_mt = dynamic_cast<MoveTypeFollowWall *>(p_mt);
+		if (p_mt->isBlockCleared(clean_map_, passed_path_)) {
 			clean_map_.markRobot(CLEAN_MAP);
+			std::vector<Vector2<int>> markers;
+			if (lidar.isScanCompensateReady())
+				lidar.lidarMarker(markers, p_mt->movement_i_, action_i_);
+			ROS_ERROR("markers.size() = %d", markers.size());
+			for (const auto &marker : markers) {
+				ROS_ERROR("marker(%d, %d)", marker.x, marker.y);
+				auto cell = getPosition().getCenterRelative(marker.x * CELL_SIZE, marker.y * CELL_SIZE).toCell();
+				ROS_ERROR("cell(%d, %d)", cell.x, cell.y);
+				clean_map_.setCell(CLEAN_MAP, cell.x, cell.y, BLOCKED_LIDAR);
+			}
 			if (!clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell())) {
 				out_of_trapped = true;
 				ROS_ERROR("OUT OF TRAPPED");
