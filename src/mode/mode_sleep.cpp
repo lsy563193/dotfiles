@@ -175,7 +175,6 @@ void ModeSleep::remoteClean(bool state_now, bool state_last)
 		ROS_WARN("%s %d: Waked up by remote key clean.", __FUNCTION__, __LINE__);
 		serial.setWorkMode(IDLE_MODE);
 		key_led.setMode(LED_STEADY, LED_GREEN);
-//		beeper.beepForCommand(VALID);
 	}
 
 	remote.reset();

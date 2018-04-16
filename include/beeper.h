@@ -16,6 +16,8 @@ public:
 	void beepForCommand(bool valid);
 
 	void processBeep();
+
+	void debugBeep(bool valid);
 private:
 
 	bool update_flag_{false};

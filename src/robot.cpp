@@ -424,7 +424,7 @@ void robot::robotbase_routine_cb()
 #if 1
 		if (checkTilt()){
 			gyro.setTiltCheckingStatus(1);
-			beeper.beepForCommand(VALID);
+			beeper.debugBeep(VALID);
 		} else {
 			gyro.setTiltCheckingStatus(0);
 		}
@@ -625,7 +625,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 //					if(diff > degree_to_radian(1))
 //					{
 //						odom.setRadianOffset(slam_rad - odom.getOriginRadian());
-//						beeper.beepForCommand(VALID);
+//						beeper.debugBeep();
 //					}
 				}
 				else

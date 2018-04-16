@@ -94,7 +94,7 @@ void Slam::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
         count =0;
 		wifiMapManage.serialize(android_grid_map,bound);
 //		android_grid_map.printInRange(cell,CLEAN_MAP, Cells{cell},true,bound);
-//		beeper.beepForCommand(VALID);
+//		beeper.debugBeep();
 	}
 	isMapReady(true);
 
