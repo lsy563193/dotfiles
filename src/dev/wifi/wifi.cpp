@@ -669,7 +669,7 @@ uint8_t S_Wifi::setRobotCleanMode(wifi::WorkMode work_mode)
 			{
 //				remote.set(REMOTE_CLEAN);
 				received_work_mode_ = work_mode;
-//				beeper.beepForCommand(VALID);
+				beeper.debugBeep(VALID);
 				//-- tmp debug
 
 				if(last_work_mode_ == wifi::WorkMode::PLAN1)
@@ -677,12 +677,12 @@ uint8_t S_Wifi::setRobotCleanMode(wifi::WorkMode work_mode)
 			}
 			else{
 				ROS_INFO("%s %d: Invalid idle cmd.", __FUNCTION__, __LINE__);
-//				beeper.beepForCommand(INVALID);
+				beeper.debugBeep(VALID);
 			}
 			INFO_BLUE("receive mode idle");
 			break;
 		case wifi::WorkMode::RANDOM:
-//			beeper.beepForCommand(INVALID);
+			beeper.debugBeep(INVALID);
 //			remote.set(REMOTE_CLEAN);
 			received_work_mode_ = work_mode;
 			INFO_BLUE("receive mode random");
@@ -690,23 +690,23 @@ uint8_t S_Wifi::setRobotCleanMode(wifi::WorkMode work_mode)
 		case wifi::WorkMode::WALL_FOLLOW:
 			received_work_mode_ = work_mode;
 //			remote.set(REMOTE_WALL_FOLLOW);
-//			beeper.beepForCommand(VALID);
+			beeper.debugBeep(VALID);
 			INFO_BLUE("receive mode wall follow");
 			break;
 		case wifi::WorkMode::SPOT:
 			received_work_mode_ = work_mode;
 //			remote.set(REMOTE_SPOT);
-//			beeper.beepForCommand(VALID);
+			beeper.debugBeep(VALID);
 			INFO_BLUE("receive mode spot");
 			break;
 		case wifi::WorkMode::PLAN1://plan 1
-//			beeper.beepForCommand(VALID);
+			beeper.debugBeep(VALID);
 			received_work_mode_ = work_mode;
 //			remote.set(REMOTE_CLEAN);//clean key
 			INFO_BLUE("receive mode plan1");
 			break;
 		case wifi::WorkMode::PLAN2://plan 2
-//			beeper.beepForCommand(VALID);
+			beeper.debugBeep(VALID);
 			received_work_mode_ = work_mode;
 //			remote.set(REMOTE_CLEAN);//clean key
 			INFO_BLUE("receive mode plan2");
@@ -715,20 +715,20 @@ uint8_t S_Wifi::setRobotCleanMode(wifi::WorkMode work_mode)
 			/*if(last_work_mode_ == wifi::WorkMode::HOMING)
 			{
 				remote.set(REMOTE_CLEAN);
-				beeper.beepForCommand(INVALID);
+				beeper.debugBeep(INVALID);
 			}
 			else
 			{
 				remote.set(REMOTE_HOME);//go home
-				beeper.beepForCommand(VALID);
+				beeper.debugBeep(VALID);
 			}*/
 			received_work_mode_ = work_mode;
-//			beeper.beepForCommand(VALID);
+			beeper.debugBeep(VALID);
 			INFO_BLUE("receive mode gohome");
 			break;
 		case wifi::WorkMode::CHARGE:
 			INFO_BLUE("remote charger command ");
-//			beeper.beepForCommand(INVALID);
+			beeper.debugBeep(INVALID);
 			break;
 		case wifi::WorkMode::REMOTE:
 			received_work_mode_ = work_mode;
@@ -737,7 +737,7 @@ uint8_t S_Wifi::setRobotCleanMode(wifi::WorkMode work_mode)
 			break;
 
 		case wifi::WorkMode::FIND:
-//			beeper.beepForCommand(VALID);
+			beeper.debugBeep(VALID);
 #if DEBUG_ENABLE
 			speaker.play(VOICE_IM_HERE_UNOFFICIAL,false);
 #endif
@@ -771,7 +771,7 @@ uint8_t S_Wifi::appRemoteCtl(wifi::RemoteControlRxMsg::Cmd data)
 			remote.set(REMOTE_FORWARD);//forward control
 			break;
 		case wifi::RemoteControlRxMsg::Cmd::BACKWARD://backward control
-			beeper.beepForCommand(INVALID);
+			beeper.debugBeep(INVALID);
 			remote.reset(); //tmp set stop
 			break;
 		case wifi::RemoteControlRxMsg::Cmd::LEFT:

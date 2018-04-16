@@ -77,3 +77,13 @@ void Beeper::processBeep()
 	}
 }
 
+void Beeper::debugBeep(bool valid)
+{
+#if DEBUG_ENABLE
+	if (valid)
+		beep(2, 40, 0, 1);
+	else
+		beep(5, 40, 0, 1);
+#endif
+}
+

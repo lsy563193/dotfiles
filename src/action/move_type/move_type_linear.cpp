@@ -75,7 +75,7 @@ bool MoveTypeLinear::isFinish()
 		}
 		else if(movement_i_ == mm_stay)
 		{
-			beeper.beepForCommand(VALID);
+			beeper.debugBeep(VALID);
 			ROS_ERROR("ev.cliff_triggered(%d)!!!", cliff.getStatus());
 			if(cliff.getStatus())
 				return true;
@@ -88,7 +88,7 @@ bool MoveTypeLinear::isFinish()
 			if(!handleMoveBackEventLinear(p_clean_mode)){
 				if(ev.cliff_triggered)
 				{
-					beeper.beepForCommand(VALID);
+					beeper.debugBeep(VALID);
 					ROS_ERROR("ev.cliff_triggered(%d)!!!", ev.cliff_triggered);
 					movement_i_ = mm_stay;
 					sp_movement_.reset(new MovementStay(0.2));
@@ -212,7 +212,7 @@ void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 //		ROS_ERROR("%f,%f", std::abs(target_xy - curr_xy),LINEAR_NEAR_DISTANCE);
 		if (std::abs(target_xy - curr_xy) < LINEAR_NEAR_DISTANCE) {
 			stop_generate_next_target = true;
-			beeper.beepForCommand(VALID);
+			beeper.debugBeep(VALID);
 
 			if(sp_mode_->getNextMode() == sp_mode_->cm_navigation || sp_mode_->getNextMode() == sp_mode_->cm_exploration) {
 				auto p_algo= boost::dynamic_pointer_cast<NavCleanPathAlgorithm>(p_clean_mode->clean_path_algorithm_);

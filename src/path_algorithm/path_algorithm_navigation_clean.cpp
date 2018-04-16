@@ -324,7 +324,7 @@ bool NavCleanPathAlgorithm::filterPathsToSelectBestPath(GridMap &map, const Cell
 			if (filter == &filter_p_1t) {
 				if(size_of_path(best_path) > 25){
 					ROS_WARN("path.len is too long to find other path(%d)",size_of_path(best_path));
-					beeper.beepForCommand(VALID);
+					beeper.debugBeep(VALID);
 					continue ;
 				}
 			}
