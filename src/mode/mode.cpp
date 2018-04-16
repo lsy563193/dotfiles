@@ -61,7 +61,7 @@ int Mode::getNextMode()
 	return next_mode_i_;
 }
 
-bool Mode::isExceptionTriggered()
+void Mode::updateWheelCliffStatus()
 {
 	if((ev.right_wheel_cliff || ev.left_wheel_cliff) && wheel_cliff_triggered_time_ == DBL_MAX)
 		wheel_cliff_triggered_time_ = ros::Time::now().toSec();
@@ -79,7 +79,10 @@ bool Mode::isExceptionTriggered()
 		}
 		wheel_cliff_triggered_time_ = DBL_MAX;
 	}
-
+}
+bool Mode::isExceptionTriggered()
+{
+	//updateWheelCliffStatus();
 	return ev.bumper_jam || ev.lidar_bumper_jam || ev.cliff_jam || ev.cliff_all_triggered || ev.oc_wheel_left || ev.oc_wheel_right
 						 || ev.oc_vacuum || ev.lidar_stuck || ev.robot_stuck || ev.oc_brush_main || ev.robot_slip || is_wheel_cliff_triggered;
 }
@@ -149,4 +152,6 @@ void Mode::genNextAction()
 	}
 	INFO_GREEN("after genNextAction");
 }
+
+
 

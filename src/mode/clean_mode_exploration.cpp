@@ -19,6 +19,9 @@ CleanModeExploration::CleanModeExploration()
 	clean_map_.mapInit();
 	setExpMode(true);
 	obs.control(OFF);
+	s_wifi.setWorkMode(Mode::cm_exploration);
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
+
 }
 
 CleanModeExploration::~CleanModeExploration()

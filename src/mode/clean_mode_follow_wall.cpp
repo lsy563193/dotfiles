@@ -21,6 +21,9 @@ CleanModeFollowWall::CleanModeFollowWall()
 	go_home_path_algorithm_.reset();
 	closed_count_limit_ = 1;
 	mode_i_ = cm_wall_follow;
+
+	s_wifi.setWorkMode(Mode::cm_wall_follow);
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 }
 
 CleanModeFollowWall::~CleanModeFollowWall()

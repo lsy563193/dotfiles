@@ -117,6 +117,8 @@ public:
 
 	virtual void genNextAction();
 
+	void updateWheelCliffStatus();
+
 	bool isExceptionTriggered();
 
 	static boost::shared_ptr<IAction> sp_action_;
