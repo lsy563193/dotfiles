@@ -192,7 +192,7 @@ bool S_Wifi::init()
 	s_wifi_rx_.regOnNewMsgListener<wifi::SetMaxCleanPowerRxMsg>(
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::SetMaxCleanPowerRxMsg &msg = static_cast<const wifi::SetMaxCleanPowerRxMsg&>( a_msg );
-				if (water_tank.getStatus(WaterTank::water_tank))
+				if (water_tank.checkEquipment(true))
 					if(msg.isMop())
 						water_tank.setPumpMode(WaterTank::PUMP_HIGH);
 					else
@@ -394,7 +394,7 @@ int8_t S_Wifi::uploadStatus(int msg_code,const uint8_t seq_num)
 		return -1;
 	uint8_t error_code = 0;
 	wifi::DeviceStatusBaseTxMsg::CleanMode box;
-	box = water_tank.getStatus(WaterTank::water_tank) ? wifi::DeviceStatusBaseTxMsg::CleanMode::WATER_TANK: wifi::DeviceStatusBaseTxMsg::CleanMode::DUST;
+	box = water_tank.checkEquipment(true)? wifi::DeviceStatusBaseTxMsg::CleanMode::WATER_TANK: wifi::DeviceStatusBaseTxMsg::CleanMode::DUST;
 
 //	while(ros::ok() && robot::instance()->p_mode == nullptr);
 //	setWorkMode((int)robot::instance()->p_mode->getNextMode());
@@ -532,8 +532,9 @@ bool S_Wifi::uploadMap()
 	int pack_cnt=0;
 	int byte_cnt=0;
 
-	while(ros::ok() && robot::instance()->p_mode == nullptr);
-	if(robot::instance()->p_mode->getNextMode() != Mode::cm_navigation)
+	if(robot::instance()->p_mode == nullptr)
+		return false;
+	if(	robot::instance()->p_mode->getNextMode() != Mode::cm_navigation)
 		return false;
 
 	if(map_data_buf_->size()  == 0)
@@ -545,7 +546,8 @@ bool S_Wifi::uploadMap()
 
 	if(!pass_path.empty())
 	{
-		while(ros::ok() && robot::instance()->p_mode == nullptr);
+		if(robot::instance()->p_mode == nullptr)
+			return false;
 		auto mode = boost::dynamic_pointer_cast<ACleanMode>(robot::instance()->p_mode);
 		GridMap g_map = mode->clean_map_;
 		uint16_t clean_area = (uint16_t)(g_map.getCleanedArea()*CELL_SIZE*CELL_SIZE*100);
