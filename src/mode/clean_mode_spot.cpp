@@ -16,6 +16,8 @@ CleanModeSpot::CleanModeSpot()
 	clean_path_algorithm_.reset(new SpotCleanPathAlgorithm());
 	go_home_path_algorithm_.reset();
 	mode_i_ = cm_spot;
+	s_wifi.setWorkMode(md_idle);
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 }
 
 CleanModeSpot::~CleanModeSpot()
@@ -31,6 +33,28 @@ bool CleanModeSpot::isExit()
 		setNextMode(md_idle);
 		return true;
 	}
+
+	if (s_wifi.receiveSpot())
+	{
+		ROS_WARN("%s %d: Exit for wifi spot.", __FUNCTION__, __LINE__);
+		setNextMode(md_idle);
+		return true;
+	}
+
+	if (s_wifi.receiveIdle())
+	{
+		ROS_WARN("%s %d: Exit for wifi idle.", __FUNCTION__, __LINE__);
+		setNextMode(md_idle);
+		return true;
+	}
+
+	if (s_wifi.receivePlan1())
+	{
+		ROS_WARN("%s %d: Exit for wifi plan1.", __FUNCTION__, __LINE__);
+		setNextMode(cm_navigation);
+		return true;
+	}
+
 	return ACleanMode::isExit();
 }
 

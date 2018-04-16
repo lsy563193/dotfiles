@@ -21,8 +21,7 @@ CleanModeFollowWall::CleanModeFollowWall()
 	go_home_path_algorithm_.reset();
 	closed_count_limit_ = 1;
 	mode_i_ = cm_wall_follow;
-
-	s_wifi.setWorkMode(Mode::cm_wall_follow);
+	s_wifi.setWorkMode(cm_wall_follow);
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 }
 
@@ -83,6 +82,20 @@ bool CleanModeFollowWall::isExit()
 	if (ev.remote_follow_wall)
 	{
 		ROS_WARN("%s %d: Exit for ev.remote_follow_wall.", __FUNCTION__, __LINE__);
+		setNextMode(md_idle);
+		return true;
+	}
+
+	if (s_wifi.receiveIdle())
+	{
+		ROS_WARN("%s %d: Exit for wifi idle.", __FUNCTION__, __LINE__);
+		setNextMode(md_idle);
+		return true;
+	}
+
+	if (s_wifi.receiveFollowWall())
+	{
+		ROS_WARN("%s %d: Exit for wifi follow wall.", __FUNCTION__, __LINE__);
 		setNextMode(md_idle);
 		return true;
 	}

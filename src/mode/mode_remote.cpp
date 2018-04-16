@@ -37,8 +37,9 @@ ModeRemote::ModeRemote()
 
 	remote_mode_time_stamp_ = ros::Time::now().toSec();
 
-	s_wifi.setWorkMode(Mode::md_remote);
+	s_wifi.setWorkMode(md_remote);
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
+	s_wifi.resetReceivedWorkMode();
 	mode_i_ = md_remote;
 	IMoveType::sp_mode_ = this;
 }
@@ -77,6 +78,41 @@ bool ModeRemote::isExit()
 		ROS_WARN("%s %d: Exit to idle mode for low battery(%.2fV).", __FUNCTION__, __LINE__, battery.getVoltage() / 100.0);
 		speaker.play(VOICE_BATTERY_LOW);
 		setNextMode(md_idle);
+		return true;
+	}
+
+	if (s_wifi.receiveIdle())
+	{
+		ROS_WARN("%s %d: Exit for wifi idle.", __FUNCTION__, __LINE__);
+		setNextMode(md_idle);
+		return true;
+	}
+
+	if (s_wifi.receivePlan1())
+	{
+		ROS_WARN("%s %d: Exit for wifi plan1.", __FUNCTION__, __LINE__);
+		setNextMode(cm_navigation);
+		return true;
+	}
+
+	if (s_wifi.receiveHome())
+	{
+		ROS_WARN("%s %d: Exit for wifi home.", __FUNCTION__, __LINE__);
+		setNextMode(cm_exploration);
+		return true;
+	}
+
+	if (s_wifi.receiveSpot())
+	{
+		ROS_WARN("%s %d: Exit for wifi spot.", __FUNCTION__, __LINE__);
+		setNextMode(cm_spot);
+		return true;
+	}
+
+	if (s_wifi.receiveFollowWall())
+	{
+		ROS_WARN("%s %d: Exit for wifi follow wall.", __FUNCTION__, __LINE__);
+		setNextMode(cm_wall_follow);
 		return true;
 	}
 

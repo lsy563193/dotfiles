@@ -24,6 +24,9 @@ ModeGoToCharger::ModeGoToCharger()
 	action_i_ = ac_open_gyro;
 	mode_i_ = md_go_to_charger;
 	IMoveType::sp_mode_ = this;
+	s_wifi.setWorkMode(cm_exploration);
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
+	s_wifi.resetReceivedWorkMode();
 }
 
 ModeGoToCharger::~ModeGoToCharger()

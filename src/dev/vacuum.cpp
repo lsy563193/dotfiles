@@ -14,10 +14,12 @@ void Vacuum::setCleanState()
 		bldcSpeed(Vac_Speed_Max);
 	else
 		bldcSpeed(Vac_Speed_Normal);
+	is_on_ = true;
 }
 
 void Vacuum::stop(){
 	bldcSpeed(0);
+	is_on_ = false;
 	ROS_INFO("%s,%d,vacuum set to stop",__FUNCTION__,__LINE__);
 }
 
