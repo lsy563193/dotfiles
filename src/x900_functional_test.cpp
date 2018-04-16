@@ -606,6 +606,7 @@ void electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixture,
 					baseline[SYSTEM_CURRENT] = static_cast<uint16_t>(temp_sum);
 					temp_sum = 0;
 					count_20ms = 0;
+					beeper.beepForCommand(true);
 					step++;
 				}
 				break;
@@ -622,6 +623,7 @@ void electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixture,
 						is_fixture = true;
 					else
 						is_fixture = false;
+					beeper.beepForCommand(true);
 					test_stage++;
 				}
 				break;
@@ -686,6 +688,7 @@ void cliff_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &current_dat
 
 		if ((test_result & 0xF333) == 0xF333) {
 			test_stage++;
+			beeper.beepForCommand(true);
 			return ;
 		}
 
@@ -740,6 +743,7 @@ void bumper_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &current_da
 
 		if ((test_result & 0x0f) == 0x0f) {
 			test_stage++;
+			beeper.beepForCommand(true);
 			return ;
 		}
 		if (buf[36]) {
@@ -821,6 +825,7 @@ void obs_test(bool is_fixture, uint8_t &test_stage, uint16_t &error_code, uint16
 			if ((test_result & 0x0015) == 0x0015)//test pass
 			{
 				test_stage++;
+				beeper.beepForCommand(true);
 				return ;
 			}
 			if (buf[36]) {
@@ -838,6 +843,7 @@ void obs_test(bool is_fixture, uint8_t &test_stage, uint16_t &error_code, uint16
 		{
 			if ((test_result & 0x003F) == 0x003f) {
 				test_stage++;
+				beeper.beepForCommand(true);
 				return ;
 			}
 
@@ -940,6 +946,7 @@ void rcon_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data
 
 		if (test_result == 0xffff) {
 			test_stage++;
+			beeper.beepForCommand(true);
 			return ;
 		}
 		if (buf[36]) {
@@ -1000,8 +1007,11 @@ void water_tank_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &curren
 				{
 					if(count < 200)count++;
 				}
-				if(count > 20)
+				if((count > 20) && !(test_result & 0x01))
+				{
 					test_result |= 0x01;
+					beeper.beepForCommand(true);
+				}
 				if(buf[36])
 				{
 					if((test_result & 0x01) != 0x01)
@@ -1191,6 +1201,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 					motor_current = 0;
 					step++;
 					count = 0;
+					beeper.beepForCommand(true);
 				}
 				break;
 			case 13:
@@ -1374,6 +1385,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 					motor_current = 0;
 					step++;
 					count = 0;
+					beeper.beepForCommand(true);
 				}
 				break;
 			case 27:
@@ -1505,6 +1517,7 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 					motor_current = 0;
 					step++;
 					count = 0;
+					beeper.beepForCommand(true);
 				}
 				break;
 			case 6:
@@ -1597,6 +1610,7 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 					motor_current = 0;
 					step++;
 					count = 0;
+					beeper.beepForCommand(true);
 				}
 				break;
 			case 13:
@@ -1735,6 +1749,7 @@ void vacuum_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 		if((test_result&0x0007) == 0x0007)
 		{
 			test_stage++;
+			beeper.beepForCommand(true);
 			return ;
 		}
 		serial.sendData();
@@ -1818,6 +1833,7 @@ void main_brush_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_co
 					motor_current = 0;
 					step++;
 					count = 0;
+					beeper.beepForCommand(true);
 				}
 				break;
 			case 6:
@@ -1862,6 +1878,7 @@ void main_brush_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_co
 		if((test_result & 0x03) == 0x03)
 		{
 			test_stage++;
+			beeper.beepForCommand(true);
 			return ;
 		}
 		serial.sendData();
