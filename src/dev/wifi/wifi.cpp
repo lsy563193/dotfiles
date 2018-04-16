@@ -192,13 +192,30 @@ bool S_Wifi::init()
 	s_wifi_rx_.regOnNewMsgListener<wifi::SetMaxCleanPowerRxMsg>(
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::SetMaxCleanPowerRxMsg &msg = static_cast<const wifi::SetMaxCleanPowerRxMsg&>( a_msg );
-				if (water_tank.checkEquipment(true))
+				// todo : this setting has something wrong.
+				// Setting for pump and swing motor.
+				if(msg.isMop())
+				{
+					water_tank.setPumpMode(WaterTank::PUMP_HIGH);
+					water_tank.setTankMode(WaterTank::TANK_HIGH);
+				}
+				else
+				{
+					water_tank.setPumpMode(WaterTank::PUMP_MID);
+					water_tank.setTankMode(WaterTank::TANK_LOW);
+				}
+				// Setting for vacuum.
+				vacuum.isMaxInClean(msg.isVacuum());
+				if (vacuum.isOn())
+					vacuum.setCleanState();
+
+				/*if (!water_tank.checkEquipment(true))
 					if(msg.isMop())
 						water_tank.setPumpMode(WaterTank::PUMP_HIGH);
 					else
 						water_tank.setPumpMode(WaterTank::PUMP_MID);
 				else
-					vacuum.isMaxInClean(msg.isVacuum());
+					vacuum.isMaxInClean(msg.isVacuum());*/
 				//ack
 				wifi::MaxCleanPowerTxMsg p(vacuum.isMaxInClean(),water_tank.getMode() == WaterTank::PUMP_HIGH);
 				s_wifi_tx_.push( std::move(p)).commit();
@@ -394,7 +411,7 @@ int8_t S_Wifi::uploadStatus(int msg_code,const uint8_t seq_num)
 		return -1;
 	uint8_t error_code = 0;
 	wifi::DeviceStatusBaseTxMsg::CleanMode box;
-	box = water_tank.checkEquipment(true)? wifi::DeviceStatusBaseTxMsg::CleanMode::WATER_TANK: wifi::DeviceStatusBaseTxMsg::CleanMode::DUST;
+	box = water_tank.getEquimentStatus()? wifi::DeviceStatusBaseTxMsg::CleanMode::WATER_TANK: wifi::DeviceStatusBaseTxMsg::CleanMode::DUST;
 
 //	while(ros::ok() && robot::instance()->p_mode == nullptr);
 //	setWorkMode((int)robot::instance()->p_mode->getNextMode());
@@ -532,9 +549,10 @@ bool S_Wifi::uploadMap()
 	int pack_cnt=0;
 	int byte_cnt=0;
 
-	if(robot::instance()->p_mode == nullptr)
+	if (robot::instance()->p_mode == nullptr)
 		return false;
-	if(	robot::instance()->p_mode->getNextMode() != Mode::cm_navigation)
+
+	if(robot::instance()->p_mode->getNextMode() != Mode::cm_navigation)
 		return false;
 
 	if(map_data_buf_->size()  == 0)
@@ -546,10 +564,13 @@ bool S_Wifi::uploadMap()
 
 	if(!pass_path.empty())
 	{
-		if(robot::instance()->p_mode == nullptr)
+		if (robot::instance()->p_mode == nullptr)
 			return false;
-		auto mode = boost::dynamic_pointer_cast<ACleanMode>(robot::instance()->p_mode);
-		GridMap g_map = mode->clean_map_;
+		GridMap g_map;
+		{
+			auto mode = boost::dynamic_pointer_cast<ACleanMode>(robot::instance()->p_mode);
+			g_map = mode->clean_map_;
+		}
 		uint16_t clean_area = (uint16_t)(g_map.getCleanedArea()*CELL_SIZE*CELL_SIZE*100);
 		//push clean area and work time
 		map_data.push_back((uint8_t)((clean_area&0xff00)>>8));
@@ -629,100 +650,102 @@ bool S_Wifi::uploadMap()
 }
 
 uint8_t S_Wifi::setRobotCleanMode(wifi::WorkMode work_mode)
-{ 
-	static wifi::WorkMode last_mode;
+{
 	ROS_INFO("%s,%d,work mode  = %d",__FUNCTION__,__LINE__,(int)work_mode);
 	switch(work_mode)
 	{
 		case wifi::WorkMode::SLEEP:
-			ev.key_long_pressed = true;//set sleep mode
+//			ev.key_long_pressed = true;//set sleep mode
+			received_work_mode_ = work_mode;
 			break;
 		case wifi::WorkMode::IDLE:
-			if(last_mode == wifi::WorkMode::PLAN1 
-						|| last_mode == wifi::WorkMode::WALL_FOLLOW
-						|| last_mode == wifi::WorkMode::SPOT
-						|| last_mode == wifi::WorkMode::HOMING
-						|| last_mode == wifi::WorkMode::FIND
-						|| last_mode == wifi::WorkMode::RANDOM
-						|| last_mode == wifi::WorkMode::REMOTE )//get last mode
+			if(last_work_mode_ == wifi::WorkMode::PLAN1
+						|| last_work_mode_ == wifi::WorkMode::WALL_FOLLOW
+						|| last_work_mode_ == wifi::WorkMode::SPOT
+						|| last_work_mode_ == wifi::WorkMode::HOMING
+						|| last_work_mode_ == wifi::WorkMode::FIND
+						|| last_work_mode_ == wifi::WorkMode::RANDOM
+						|| last_work_mode_ == wifi::WorkMode::REMOTE )//get last mode
 			{
-				remote.set(REMOTE_CLEAN);
-				beeper.beepForCommand(true);
-				//-- tmp debug 
+//				remote.set(REMOTE_CLEAN);
+				received_work_mode_ = work_mode;
+//				beeper.beepForCommand(VALID);
+				//-- tmp debug
 
-				if(last_mode == wifi::WorkMode::PLAN1)
+				if(last_work_mode_ == wifi::WorkMode::PLAN1)
 					taskPushBack(ACT::ACT_UPLOAD_LAST_CLEANMAP);
 			}
 			else{
-				beeper.beepForCommand(false);
+				ROS_INFO("%s %d: Invalid idle cmd.", __FUNCTION__, __LINE__);
+//				beeper.beepForCommand(INVALID);
 			}
 			INFO_BLUE("receive mode idle");
 			break;
 		case wifi::WorkMode::RANDOM:
-			beeper.beepForCommand(false);
-			remote.set(REMOTE_CLEAN);
+//			beeper.beepForCommand(INVALID);
+//			remote.set(REMOTE_CLEAN);
+			received_work_mode_ = work_mode;
 			INFO_BLUE("receive mode random");
 			break;
 		case wifi::WorkMode::WALL_FOLLOW:
-			if(last_mode == wifi::WorkMode::WALL_FOLLOW)
-			{
-				beeper.beepForCommand(false);
-				remote.set(REMOTE_CLEAN);
-			}
-			else{
-				beeper.beepForCommand(true);
-				remote.set(REMOTE_WALL_FOLLOW);//wall follow
-			}
-
+			received_work_mode_ = work_mode;
+//			remote.set(REMOTE_WALL_FOLLOW);
+//			beeper.beepForCommand(VALID);
 			INFO_BLUE("receive mode wall follow");
 			break;
 		case wifi::WorkMode::SPOT:
-			remote.set(REMOTE_SPOT);//spot
-			beeper.beepForCommand(true);
+			received_work_mode_ = work_mode;
+//			remote.set(REMOTE_SPOT);
+//			beeper.beepForCommand(VALID);
 			INFO_BLUE("receive mode spot");
 			break;
 		case wifi::WorkMode::PLAN1://plan 1
-			beeper.beepForCommand(true);
-			remote.set(REMOTE_CLEAN);//clean key
+//			beeper.beepForCommand(VALID);
+			received_work_mode_ = work_mode;
+//			remote.set(REMOTE_CLEAN);//clean key
 			INFO_BLUE("receive mode plan1");
 			break;
 		case wifi::WorkMode::PLAN2://plan 2
-			beeper.beepForCommand(true);
-			remote.set(REMOTE_CLEAN);//clean key
+//			beeper.beepForCommand(VALID);
+			received_work_mode_ = work_mode;
+//			remote.set(REMOTE_CLEAN);//clean key
 			INFO_BLUE("receive mode plan2");
 			break;
 		case wifi::WorkMode::HOMING:
-			if(last_mode == wifi::WorkMode::HOMING)
+			/*if(last_work_mode_ == wifi::WorkMode::HOMING)
 			{
 				remote.set(REMOTE_CLEAN);
-				beeper.beepForCommand(false);
+				beeper.beepForCommand(INVALID);
 			}
 			else
 			{
 				remote.set(REMOTE_HOME);//go home
-				beeper.beepForCommand(true);
-			}
+				beeper.beepForCommand(VALID);
+			}*/
+			received_work_mode_ = work_mode;
+//			beeper.beepForCommand(VALID);
 			INFO_BLUE("receive mode gohome");
 			break;
 		case wifi::WorkMode::CHARGE:
 			INFO_BLUE("remote charger command ");
-			beeper.beepForCommand(false);
+//			beeper.beepForCommand(INVALID);
 			break;
 		case wifi::WorkMode::REMOTE:
+			received_work_mode_ = work_mode;
 			remote.set(REMOTE_FORWARD);//remote hand mode
 			INFO_BLUE("remote hand mode command ");
 			break;
 
 		case wifi::WorkMode::FIND:
+//			beeper.beepForCommand(VALID);
 #if DEBUG_ENABLE
 			speaker.play(VOICE_IM_HERE_UNOFFICIAL,false);
 #endif
-			beeper.beepForCommand(true);
 			INFO_BLUE("remote app find home mode command ");
 			break;
 
 	}
-	last_mode = work_mode;
+	last_work_mode_ = work_mode;
 	return 0;
 }
 
@@ -740,13 +763,15 @@ uint8_t S_Wifi::appRemoteCtl(wifi::RemoteControlRxMsg::Cmd data)
 	if(!is_wifi_connected_ )
 		return 1;
 	robot_work_mode_ = wifi::WorkMode::REMOTE;
+	last_work_mode_ = robot_work_mode_;
+	ROS_INFO("%s %d: Receive remote command(%d).", __FUNCTION__, __LINE__, data);
 	switch(data)
 	{
 		case wifi::RemoteControlRxMsg::Cmd::FORWARD:
 			remote.set(REMOTE_FORWARD);//forward control
 			break;
 		case wifi::RemoteControlRxMsg::Cmd::BACKWARD://backward control
-			beeper.beepForCommand(false);
+			beeper.beepForCommand(INVALID);
 			remote.reset(); //tmp set stop
 			break;
 		case wifi::RemoteControlRxMsg::Cmd::LEFT:
@@ -840,9 +865,11 @@ uint8_t S_Wifi::uploadLastCleanData()
 	{
 		if( getWorkMode() == wifi::WorkMode::PLAN1)
 		{
-			while(ros::ok() && robot::instance()->p_mode == nullptr);
-			auto mode = boost::dynamic_pointer_cast<ACleanMode>(robot::instance()->p_mode);
-			GridMap g_map = mode->clean_map_;
+			GridMap g_map;
+			{
+				auto mode = boost::dynamic_pointer_cast<ACleanMode>(robot::instance()->p_mode);
+				g_map = mode->clean_map_;
+			}
 			uint16_t clean_area = (uint16_t)(g_map.getCleanedArea()*CELL_SIZE*CELL_SIZE*100);
 
 			int16_t x_min,x_max,y_min,y_max;

@@ -11,7 +11,7 @@ void StateGoHomePoint::init(){
 	wheel.setPidTargetSpeed(0, 0, REG_TYPE_LINEAR);
 
 	if (sp_cm_->isRemoteGoHomePoint() || sp_cm_->isExpMode() || sp_cm_->isGoHomePointForLowBattery()
-		|| !sp_cm_->isFirstTimeGoHomePoint())
+		|| sp_cm_->isWifiGoHomePoint() || !sp_cm_->isFirstTimeGoHomePoint())
 	{
 		key_led.setMode(LED_STEADY, LED_ORANGE);
 		brush.slowOperate();

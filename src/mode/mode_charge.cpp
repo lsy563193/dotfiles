@@ -25,8 +25,9 @@ ModeCharge::ModeCharge()
 	action_i_ = ac_charge;
 	mode_i_ = md_charge;
 	serial.setWorkMode(CHARGE_MODE);
-	s_wifi.setWorkMode(Mode::md_charge);
+	s_wifi.setWorkMode(md_charge);
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
+	s_wifi.resetReceivedWorkMode();
 	plan_activated_status_ = false;
 	sp_state = state_charge.get();
 	sp_state->init();
@@ -88,6 +89,22 @@ bool ModeCharge::isExit()
 			return true;
 		}
 	}
+
+	if (s_wifi.receivePlan1())
+	{
+		if (!charger.isDirected())
+		{
+			ROS_WARN("%s %d: Charge mode receives wifi plan1, change to navigation mode.", __FUNCTION__, __LINE__);
+			setNextMode(cm_navigation);
+			return true;
+		}
+		else
+		{
+			ROS_WARN("%s %d: Charge mode receives wifi plan1 but cancel for direct charge.", __FUNCTION__, __LINE__);
+			s_wifi.resetReceivedWorkMode();
+		}
+	}
+
 	return false;
 }
 
@@ -149,8 +166,6 @@ void ModeCharge::remotePlan(bool state_now, bool state_last)
 		appmt_obj.resetPlanStatus();
 		appmt_obj.timesUp();
 		INFO_YELLOW("Plan activated.");
-		// Sleep for 50ms cause the status 3 will be sent for 3 times.
-		usleep(50000);
 		plan_activated_status_ = true;
 	}
 	else

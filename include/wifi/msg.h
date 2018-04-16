@@ -26,7 +26,7 @@ enum struct WorkMode
 	REMOTE,
 	// ???
 	FIND,
-	END_,
+	MODE_NULL,
 };
 
 class RxMsg: public Packet

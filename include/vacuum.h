@@ -64,11 +64,17 @@ public:
 		return current_;
 	}
 
+	bool isOn()
+	{
+		return is_on_;
+	}
 private:
 	bool is_max_clean_state_{};
 	bool oc_;
 
 	uint16_t current_;
+
+	bool is_on_{false};
 };
 
 extern Vacuum vacuum;

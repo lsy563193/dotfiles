@@ -123,7 +123,7 @@ robot::~robot()
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
-	s_wifi.sleep();
+	s_wifi.deinit();
 	wifi_led.set(false);
 	water_tank.stop(WaterTank::tank_pump);
 	serial.setWorkMode(WORK_MODE);

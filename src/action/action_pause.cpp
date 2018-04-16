@@ -4,6 +4,7 @@
 
 #include <odom.h>
 #include <dev.h>
+#include <mode.hpp>
 #include "action.hpp"
 
 ActionPause::ActionPause()
@@ -15,6 +16,9 @@ ActionPause::ActionPause()
 
 	lidar.motorCtrl(OFF);
 
+	s_wifi.setWorkMode(Mode::md_idle);
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
+
 	start_timer_ = ros::Time::now().toSec();
 	timeout_interval_ = IDLE_TIMEOUT;
 	pause_pose_.setX(odom.getOriginX());
@@ -24,7 +28,8 @@ ActionPause::ActionPause()
 
 ActionPause::~ActionPause()
 {
-
+	s_wifi.setWorkMode(Mode::cm_navigation);
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 }
 
 bool ActionPause::isFinish()

@@ -118,6 +118,72 @@ public:
 	{
 		wifi_quit_ = true;
 	}
+
+	void resetReceivedWorkMode()
+	{
+		received_work_mode_ = wifi::WorkMode::MODE_NULL;
+	}
+
+	bool receiveShutDown()
+	{
+		return received_work_mode_ == wifi::WorkMode::SHUTDOWN;
+	}
+
+	bool receiveSleep()
+	{
+		return received_work_mode_ == wifi::WorkMode::SLEEP;
+	}
+
+	bool receiveIdle()
+	{
+		return received_work_mode_ == wifi::WorkMode::IDLE;
+	}
+
+	bool receiveRandom()
+	{
+		return received_work_mode_ == wifi::WorkMode::RANDOM;
+	}
+
+	bool receiveFollowWall()
+	{
+		return received_work_mode_ == wifi::WorkMode::WALL_FOLLOW;
+	}
+
+	bool receiveSpot()
+	{
+		return received_work_mode_ == wifi::WorkMode::SPOT;
+	}
+
+	bool receivePlan1()
+	{
+		return received_work_mode_ == wifi::WorkMode::PLAN1;
+	}
+
+	bool receivePlan2()
+	{
+		return received_work_mode_ == wifi::WorkMode::PLAN2;
+	}
+
+	bool receiveHome()
+	{
+		return received_work_mode_ == wifi::WorkMode::HOMING;
+	}
+
+	bool receiveCharge()
+	{
+		return received_work_mode_ == wifi::WorkMode::CHARGE;
+	}
+
+	bool receiveRemote()
+	{
+		return received_work_mode_ == wifi::WorkMode::REMOTE;
+	}
+
+	bool receiveFind()
+	{
+		return received_work_mode_ == wifi::WorkMode::FIND;
+	}
+
 private:
 
 	wifi::RxManager s_wifi_rx_;
@@ -135,7 +201,10 @@ private:
 	bool is_sleep_;
 	bool in_linking_;
 	bool wifi_quit_ ;
+
 	wifi::WorkMode robot_work_mode_;
+	wifi::WorkMode last_work_mode_;
+	wifi::WorkMode received_work_mode_;
 
 	pthread_mutex_t task_lock_;
 	pthread_mutex_t map_data_lock_;

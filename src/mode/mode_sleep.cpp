@@ -22,6 +22,9 @@ ModeSleep::ModeSleep()
 	c_rcon.resetStatus();
 	remote.reset();
 	appmt_obj.resetPlanStatus();
+	s_wifi.setWorkMode(md_sleep);
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
+	s_wifi.resetReceivedWorkMode();
 
 	sp_state = st_sleep.get();
 	sp_state->init();
@@ -71,14 +74,17 @@ bool ModeSleep::isExit()
 				speaker.play(VOICE_ERROR_LIFT_UP);
 			} else if (!battery.isReadyToClean())
 			{
-				ROS_WARN("%s %d: Plan not activated not valid because of battery not ready to clean.", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: Plan not activated not valid because of battery not ready to clean.", __FUNCTION__,
+						 __LINE__);
 				speaker.play(VOICE_BATTERY_LOW);
 			} else if (charger.isDirected())
 			{
-				ROS_WARN("%s %d: Plan not activated not valid because of charging with adapter.", __FUNCTION__, __LINE__);
-				//speaker.play(???);
+				ROS_WARN("%s %d: Plan not activated not valid because of charging with adapter.", __FUNCTION__,
+						 __LINE__);
+				speaker.play(VOICE_PLEASE_PULL_OUT_THE_PLUG);
 //				speaker.play(VOICE_CANCEL_APPOINTMENT_UNOFFICIAL);
-			} else{
+			} else
+			{
 				ROS_WARN("%s %d: Sleep mode receives plan, change to navigation mode.", __FUNCTION__, __LINE__);
 				setNextMode(cm_navigation);
 				ACleanMode::plan_activation_ = true;
@@ -92,10 +98,44 @@ bool ModeSleep::isExit()
 		}
 		else
 		{
-			ROS_WARN("%s %d: Sleep mode receives remote clean or clean key, change to idle mode.", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Sleep mode receives remote clean or clean key, change to idle mode.", __FUNCTION__,
+					 __LINE__);
 			setNextMode(md_idle);
 			return true;
 		}
+	}
+
+	if ((s_wifi.receivePlan1() || s_wifi.receiveHome() || s_wifi.receiveSpot()) && !serial.isMainBoardSleep())
+	{
+		if (error.get() && !error.clear(error.get()))
+		{
+			ROS_WARN("%s %d: Sleep mode receives wifi plan1 but can not clear error, change to idle mode.",
+					 __FUNCTION__, __LINE__);
+			setNextMode(md_idle);
+		}
+		else
+		{
+			if (s_wifi.receivePlan1())
+			{
+				ROS_WARN("%s %d: Sleep mode receives wifi plan1, change to navigation mode.",
+						 __FUNCTION__, __LINE__);
+				setNextMode(cm_navigation);
+			}
+			else if (s_wifi.receiveHome())
+			{
+				ROS_WARN("%s %d: Sleep mode receives wifi home, change to exploration mode.",
+						 __FUNCTION__, __LINE__);
+				setNextMode(cm_exploration);
+			}
+			else if (s_wifi.receiveSpot())
+			{
+				ROS_WARN("%s %d: Sleep mode receives wifi spot, change to spot mode.",
+						 __FUNCTION__, __LINE__);
+				setNextMode(cm_spot);
+			}
+		}
+
+		return true;
 	}
 
 	if (ev.charge_detect && !serial.isMainBoardSleep())
@@ -200,18 +240,27 @@ void ModeSleep::rcon(bool state_now, bool state_last)
 
 void ModeSleep::remotePlan(bool state_now, bool state_last)
 {
-	if ((fake_sleep_ || serial.isMainBoardSleep()) && !plan_activated_status_ && appmt_obj.getPlanStatus() == 3)
+	if ((fake_sleep_ || serial.isMainBoardSleep()) && appmt_obj.getPlanStatus() > 2)
 	{
-		INFO_YELLOW("Waked up by plan.");
-		plan_activated_status_ = true;
+		appmt_obj.resetPlanStatus();
+		appmt_obj.timesUp();
+		INFO_YELLOW("Plan activated.");
 		serial.setWorkMode(WORK_MODE);
 		key_led.setMode(LED_FLASH, LED_GREEN);
+		plan_activated_status_ = true;
 	}
-	appmt_obj.resetPlanStatus();
+	else
+		EventHandle::remotePlan(state_now, state_last);
 }
 
 bool ModeSleep::allowRemoteUpdatePlan()
 {
 	return !fake_sleep_;
+}
+
+void ModeSleep::remoteKeyHandler(bool state_now, bool state_last)
+{
+	ROS_INFO("%s %d: Receive remote:%d but not valid for fake sleep.", __FUNCTION__, __LINE__, remote.get());
+	remote.reset();
 }
 

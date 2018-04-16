@@ -60,6 +60,7 @@ ACleanMode::ACleanMode()
 	tmp_charger_pose_.clear();
 	c_rcon.resetStatus();
 	robot::instance()->initOdomPosition();
+	s_wifi.resetReceivedWorkMode();
 //	fw_map.reset(CLEAN_MAP);
 
 //	// todo:debug
@@ -119,7 +120,7 @@ ACleanMode::~ACleanMode()
 			{
 				speaker.play(VOICE_BACK_TO_CHARGER_FAILED, false);
 				ROS_WARN("%s %d: Finish cleaning but failed to go to charger.", __FUNCTION__, __LINE__);
-			} else if (mode_i_ == cm_navigation && trapped_closed_or_isolate || trapped_time_out_)
+			} else if (mode_i_ == cm_navigation && (trapped_closed_or_isolate || trapped_time_out_))
 			{
 				speaker.play(VOICE_ROBOT_TRAPPED, false);
 				trapped_closed_or_isolate = false;
@@ -928,8 +929,8 @@ bool ACleanMode::isExit()
 		return true;
 	}
 
-	if(ev.key_clean_pressed || ev.key_long_pressed){
-		ROS_WARN("%s %d: Exit for remote key or clean key or long press clean key.", __FUNCTION__, __LINE__);
+	if (ev.key_clean_pressed || ev.key_long_pressed || s_wifi.receiveIdle()){
+		ROS_WARN("%s %d: Exit for remote key or clean key or long press clean key or wifi idle.", __FUNCTION__, __LINE__);
 		setNextMode(md_idle);
 		return true;
 	}
@@ -1649,10 +1650,17 @@ void ACleanMode::switchInStateClean() {
 // ------------------State go home point--------------------
 bool ACleanMode::checkEnterGoHomePointState()
 {
-	if (ev.remote_home || ev.battery_home)
+	if (ev.remote_home || ev.battery_home || s_wifi.receiveHome())
 	{
 		if (ev.remote_home)
 			remote_go_home_point = true;
+		if (s_wifi.receiveHome())
+		{
+			wifi_go_home_point = true;
+			s_wifi.resetReceivedWorkMode();
+		}
+		if (ev.battery_home)
+			go_home_for_low_battery_ = true;
 		sp_action_.reset();
 		sp_state = state_go_home_point.get();
 		sp_state->init();
@@ -1667,6 +1675,14 @@ bool ACleanMode::checkEnterGoHomePointState()
 
 bool ACleanMode::isSwitchByEventInStateGoHomePoint()
 {
+	if (s_wifi.receiveIdle())
+	{
+		s_wifi.resetReceivedWorkMode();
+		ROS_INFO("%s %d, Exit for wifi idle.", __FUNCTION__, __LINE__);
+		sp_state = nullptr;
+		return true;
+	}
+
 	return checkEnterExceptionResumeState();
 }
 
