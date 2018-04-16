@@ -61,7 +61,7 @@ public:
 
 	bool factoryTest();
 
-	uint8_t uploadLastCleanData();
+	bool uploadLastCleanData();
 
 	bool setWorkMode(int workmode);
 
