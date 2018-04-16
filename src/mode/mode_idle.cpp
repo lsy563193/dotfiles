@@ -18,6 +18,9 @@ ModeIdle::ModeIdle():
 	sp_action_.reset(new ActionIdle);
 	action_i_ = ac_idle;
 
+	s_wifi.setWorkMode(Mode::md_idle);
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
+
 	key.resetTriggerStatus();
 	c_rcon.resetStatus();
 	remote.reset();

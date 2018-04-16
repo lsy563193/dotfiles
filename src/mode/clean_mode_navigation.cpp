@@ -41,6 +41,7 @@ CleanModeNav::CleanModeNav()
     sp_state->init();
 	//clear real time map whitch store in cloud....
 	s_wifi.setWorkMode(Mode::cm_navigation);
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_CLEAR_MAP);
 }
 
