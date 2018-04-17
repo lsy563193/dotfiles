@@ -386,7 +386,8 @@ void ModeIdle::keyClean(bool state_now, bool state_last)
 
 	if (reset_wifi)
 	{
-		s_wifi.smartApLink();
+		s_wifi.taskPushBack(S_Wifi::ACT::ACT_REBIND);
+		s_wifi.taskPushBack(S_Wifi::ACT::ACT_SMART_LINK);
 		sp_action_.reset();
 		sp_action_.reset(new ActionIdle);
 	}
