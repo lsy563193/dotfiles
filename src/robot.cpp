@@ -421,14 +421,21 @@ void robot::robotbase_routine_cb()
 		/*------publish end -----------*/
 
 		// Check tilt
-#if 1
 		if (checkTilt()){
 			gyro.setTiltCheckingStatus(1);
 			beeper.debugBeep(VALID);
 		} else {
 			gyro.setTiltCheckingStatus(0);
 		}
-#endif
+
+		// Check lidar stuck
+		if (checkLidarStuck()) {
+//			ROS_INFO("lidar stuck");
+			ev.lidar_stuck = true;
+		} else {
+//			ROS_INFO("lidar good");
+			ev.lidar_stuck = false;
+		}
 		// Dynamic adjust obs
 		obs.DynamicAdjust(OBS_adjust_count);
 
@@ -838,6 +845,15 @@ bool robot::checkTiltToSlip() {
 	}
 
 	return (ros::Time::now().toSec() - tilt_time_to_slip_) > TIME_LIMIT_TO_SLIP ? true : false;
+}
+
+bool robot::checkLidarStuck() {
+	if (!lidar.getLidarStuckCheckingEnable())
+		return false;
+	if (lidar.lidarCheckFresh(3,2))
+		return false;
+	else
+		return true;
 }
 
 //--------------------

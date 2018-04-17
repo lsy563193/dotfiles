@@ -616,6 +616,7 @@ void event_manager_reset_status(void)
 
 	/* tilt switch*/
 	gyro.setTiltCheckingEnable(false);
+	lidar.setLidarStuckCheckingEnable(false);
 	ev.tilt_triggered = false;
 	/* lidar bumper */
 	ev.lidar_bumper = false;

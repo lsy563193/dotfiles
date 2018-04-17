@@ -172,6 +172,7 @@ bool Lidar::motorCtrl(bool new_switch_)
 		setScanCompensateReady(0);
 		slip_frame_cnt_ = 0;
 		slip_status_ = false;
+		setLidarStuckCheckingEnable(false);
 		//delete []last_ranges_;
 		ROS_INFO("\033[35m" "%s %d: Stop lidar." "\033[0m", __FUNCTION__, __LINE__);
 	}
@@ -1309,7 +1310,8 @@ void Lidar::checkRobotSlip()
 
 bool Lidar::isRobotSlip()
 {
-	return slip_status_;
+//	return slip_status_;
+	return false;
 }
 
 
@@ -1902,4 +1904,12 @@ bool Lidar::scanDataChecking(bool check_front, sensor_msgs::LaserScan scan, floa
 
 	ROS_INFO("%s %d: Valid count is %d.", __FUNCTION__, __LINE__, _valid_count);
 	return _valid_count > 130;
+}
+
+void Lidar::setLidarStuckCheckingEnable(bool status) {
+	lidar_stuck_checking_enable = status;
+}
+
+bool Lidar::getLidarStuckCheckingEnable() {
+	return lidar_stuck_checking_enable;
 }

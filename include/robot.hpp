@@ -208,6 +208,7 @@ public:
 	bool checkTilt();
 	bool checkTiltToSlip();
 
+	bool checkLidarStuck();
 
 	void setCurrent(uint16_t current)
 	{
