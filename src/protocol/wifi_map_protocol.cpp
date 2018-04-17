@@ -2,7 +2,7 @@
 // Created by root on 4/10/18.
 //
 
-#include "wifi_map_protocol.h"
+#include "protocol/wifi_map_protocol.h"
 
 WifiMapManage wifiMapManage;
 

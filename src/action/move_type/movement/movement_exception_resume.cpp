@@ -42,6 +42,7 @@ MovementExceptionResume::~MovementExceptionResume()
 
 void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 {
+	ROS_INFO("self rescuing!");
 	if (ev.oc_vacuum)
 		left_speed = right_speed = 0;
 	else if (ev.oc_wheel_left || ev.oc_wheel_right)
@@ -58,13 +59,51 @@ void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_sp
 		wheel.setDirectionBackward();
 		left_speed = right_speed = RUN_TOP_SPEED;
 	}
+	else if(sp_mt_->sp_mode_->is_wheel_cliff_triggered)//new wheel cliff rescue
+	{
+		switch (wheel_cliff_state_)
+		{
+			case 1:
+			case 2:
+			case 3:
+			{
+				// Quickly move back for a distance.
+				wheel.setDirectionBackward();
+				left_speed = right_speed = RUN_TOP_SPEED;
+				break;
+			}
+			case 4:
+			{
+				// Quickly move back for a distance.
+				wheel.setDirectionBackward();
+				left_speed = right_speed = BACK_MAX_SPEED;
+				break;
+			}
+			case 5:
+			{
+				// Quickly turn right for 90 degrees.
+				wheel.setDirectionRight();
+				left_speed = right_speed = RUN_TOP_SPEED;
+				break;
+			}
+			case 6:
+			{
+				// Quickly turn left for 180 degrees.
+				wheel.setDirectionLeft();
+				left_speed = right_speed = RUN_TOP_SPEED;
+				break;
+
+			}
+		}
+	}
+#if 0
 	else if(ev.left_wheel_cliff || ev.right_wheel_cliff)
 	{
 		switch(wheel_cliff_state_)
 		{
 			case 1:
 				wheel.setDirectionBackward();
-				left_speed = right_speed = RUN_TOP_SPEED;
+				left_speed = right_speed = BACK_MAX_SPEED;
 				break;
 			case 2:
 				wheel.setDirectionLeft();
@@ -78,6 +117,7 @@ void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_sp
 				break;
 		}
 	}
+#endif
 	else if(ev.oc_brush_main)
 	{
 		if(main_brush_resume_state_ == 1){
@@ -152,6 +192,7 @@ void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_sp
 	}
 	else if (ev.robot_slip)
 	{
+		ROS_INFO("slipping");
 		switch(robot_slip_flag_){
 			case 0:
 			{
@@ -173,13 +214,15 @@ void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_sp
 			}
 		}
 	}
+	ROS_INFO("speed(%d, %d)!", left_speed, right_speed);
 }
 
 bool MovementExceptionResume::isFinish()
 {
 	updatePosition();
 	if (!(ev.bumper_jam || ev.lidar_bumper_jam || ev.cliff_jam || ev.cliff_all_triggered || ev.oc_wheel_left || ev.oc_wheel_right
-		  || ev.oc_vacuum || ev.lidar_stuck || ev.robot_stuck || ev.oc_brush_main || ev.robot_slip || ev.left_wheel_cliff || ev.right_wheel_cliff))
+		  || ev.oc_vacuum || ev.lidar_stuck || ev.robot_stuck || ev.oc_brush_main || ev.robot_slip
+			|| sp_mt_->sp_mode_->is_wheel_cliff_triggered/*|| ev.left_wheel_cliff || ev.right_wheel_cliff*/))
 	{
 		ROS_INFO("%s %d: All exception cleared.", __FUNCTION__, __LINE__);
 		return true;
@@ -387,6 +430,110 @@ bool MovementExceptionResume::isFinish()
 			error.set(ERROR_CODE_CLIFF);
 		}
 	}
+	//new cliff rescue
+	else if (sp_mt_->sp_mode_->is_wheel_cliff_triggered)
+	{
+		bool right_wheel_and_cliff{false};
+		bool left_wheel_and_cliff{false};
+
+		left_wheel_and_cliff = cliff.getLeft() & ev.left_wheel_cliff;
+		right_wheel_and_cliff = cliff.getRight() & ev.right_wheel_cliff;
+
+		//bumper temporary
+		if(!wheel.getLeftWheelCliffStatus() && !wheel.getRightWheelCliffStatus())//for checking wheel cliff is still tirggered
+		{
+			ROS_INFO("%s %d: wheel cliff resume succeeded.", __FUNCTION__, __LINE__);
+			sp_mt_->sp_mode_->is_wheel_cliff_triggered = false;
+			ev.right_wheel_cliff = false;
+			ev.left_wheel_cliff = false;
+		}
+		else
+		{
+			switch (wheel_cliff_state_)
+			{
+				case 1: // Move back for the first time.
+				case 2: // Move back for the second time.
+				case 3: // Move back for the third time.
+				{
+					float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getOriginX(), odom.getOriginY());
+//					ROS_INFO("distance(%lf), pos(%lf, %lf)", distance, s_pos_x, s_pos_y);
+					if (std::abs(distance) > 0.02f)
+					{
+						wheel.stop();
+						// If cliff jam during bumper self resume.
+//						if (cliff.getStatus() && ++g_cliff_cnt > 2)
+						if (left_wheel_and_cliff || right_wheel_and_cliff)
+						{
+							wheel_cliff_state_++;
+							ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state_);
+							if (wheel_cliff_state_ == 4)
+								wheel_cliff_state_ = 7;
+						} else
+						{
+							ROS_WARN("%s %d: Triggered cliff jam during resuming wheel cliff.", __FUNCTION__, __LINE__);
+							wheel_cliff_state_ = 4;
+							wheel_resume_cnt_ = 0;
+							g_cliff_cnt = 0;
+						}
+						s_pos_x = odom.getOriginX();
+						s_pos_y = odom.getOriginY();
+					}
+					break;
+				}
+				case 4:
+				{
+					float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getOriginX(), odom.getOriginY());
+					if (std::abs(distance) > 0.25f || lidar.getObstacleDistance(1, ROBOT_RADIUS) < 0.06)
+					{
+						wheel.stop();
+						// If cliff jam during bumper self resume.
+//						if (cliff.getStatus() && ++g_cliff_cnt > 2)
+						if (left_wheel_and_cliff || right_wheel_and_cliff)
+						{
+							wheel_cliff_state_ = 1;
+							ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state_);
+						} else
+						{
+							ROS_WARN("%s %d: Triggered cliff jam during resuming wheel cliff.", __FUNCTION__, __LINE__);
+							wheel_cliff_state_ = left_wheel_and_cliff ? 5 : 6;
+							wheel_resume_cnt_ = 0;
+							wheel_cliff_resume_start_radian_ = odom.getRadian();
+						}
+						s_pos_x = odom.getOriginX();
+						s_pos_y = odom.getOriginY();
+					}
+					break;
+				}
+				case 5:
+				case 6 :
+				{
+//					ROS_DEBUG("%s %d: robot::instance()->getWorldPoseRadian(): %d", __FUNCTION__, __LINE__,
+//							  robot::instance()->getWorldPoseRadian());
+					if (fabs(ranged_radian(odom.getRadian() - wheel_cliff_resume_start_radian_)) > degree_to_radian(90)) {
+						if (left_wheel_and_cliff || right_wheel_and_cliff) {
+							wheel_cliff_state_ = 1;
+						} else {
+							wheel_cliff_resume_cnt_++;
+							if (wheel_cliff_resume_cnt_ > 3) {
+								wheel_cliff_state_ = 7;
+							} else {
+								wheel_cliff_state_ = 4;
+							}
+						}
+					}
+					break;
+				}
+				default: //case 7:
+				{
+					ROS_WARN("%s %d: Wheel cliff jamed.", __FUNCTION__, __LINE__);
+					ev.fatal_quit = true;
+					error.set(ERROR_CODE_CLIFF);
+					break;
+				}
+			}
+		}
+	}
+#if 0
 	else if(ev.right_wheel_cliff || ev.left_wheel_cliff)
 	{
 		bool cliff_status = ev.right_wheel_cliff ? cliff.getRight() : cliff.getLeft();
@@ -457,6 +604,7 @@ bool MovementExceptionResume::isFinish()
 			error.set(ERROR_CODE_CLIFF);
 		}
 	}
+#endif
 	else if (ev.bumper_jam)
 	{
 		if (bumper.getStatus() != BLOCK_LEFT && bumper.getStatus() != BLOCK_RIGHT && bumper.getStatus() != BLOCK_ALL)
