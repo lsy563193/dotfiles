@@ -267,10 +267,14 @@ void GridMap::convertFromSlamMap(float resolution_target,float threshold,const B
 				auto data_map_y_max = std::min(static_cast<uint32_t>(data_map_y + multi/2) , static_cast<uint32_t>(height));
 
 				// Get the slam map data s_index_ of this range.
-				std::vector<int32_t> slam_map_data_index;
+				std::vector<int32_t> slam_map_data_index{};
 				for (uint32_t i = data_map_x_min; i <= data_map_x_max; i++)
 					for(uint32_t j = data_map_y_min; j <= data_map_y_max; j++)
-						slam_map_data_index.push_back(getIndexOfSlamMapData(width, i, j));
+					{
+                        int32_t index = getIndexOfSlamMapData(width, i, j);
+						if(index < slam_map_data.size())
+							slam_map_data_index.push_back(index);
+					}
 
 				// Values for counting sum of difference slam map data.
 				uint32_t block_counter = 0, cleanable_counter = 0, unknown_counter = 0;
