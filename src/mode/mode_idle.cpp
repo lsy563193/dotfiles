@@ -12,7 +12,8 @@ ModeIdle::ModeIdle():
 	bind_lock_(PTHREAD_MUTEX_INITIALIZER)
 {
 	ROS_INFO("%s %d: Entering Idle mode\n=========================" , __FUNCTION__, __LINE__);
-	register_events();
+	event_manager_register_handler(this);
+	event_manager_set_enable(true);
 	serial.setWorkMode(IDLE_MODE);
 	setNextMode(md_idle);
 	sp_action_.reset(new ActionIdle);
@@ -30,7 +31,6 @@ ModeIdle::ModeIdle():
 
 	ROS_INFO("%s %d: Current battery voltage \033[32m%5.2f V\033[0m.", __FUNCTION__, __LINE__, (float)battery.getVoltage()/100.0);
 	/*---reset values for rcon handle---*/
-	// todo: first_time_seen_charger_ does not mean as words in reality. It is just the time that enter this mode.
 //	// todo:debug
 //	infrared_display.displayErrorMsg(9, 1234, 101);
 	sp_state = st_pause.get() ;
@@ -60,22 +60,14 @@ bool ModeIdle::isExit()
 			{
 //				speaker.play(VOICE_CANCEL_APPOINTMENT_UNOFFICIAL, false);
 				// Reset action idle for playing the error alarm.
+				sp_action_.reset();
 				sp_action_.reset(new ActionIdle);
 			}
 		}
 
 		if (error.get() != ERROR_CODE_NONE)
 			ROS_INFO("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
-		else if (cliff.getStatus() & (BLOCK_LEFT | BLOCK_FRONT | BLOCK_RIGHT))
-		{
-			ROS_WARN("%s %d: Plan not activated not valid because of robot lifted up.", __FUNCTION__, __LINE__);
-			speaker.play(VOICE_ERROR_LIFT_UP);
-		} else if (!battery.isReadyToClean())
-		{
-			ROS_WARN("%s %d: Plan not activated not valid because of battery not ready to clean.", __FUNCTION__,
-					 __LINE__);
-			speaker.play(VOICE_BATTERY_LOW);
-		} else
+		else if (readyToClean())
 		{
 			ROS_WARN("%s %d: Idle mode receives plan, change to navigation mode.", __FUNCTION__, __LINE__);
 			setNextMode(cm_navigation);
@@ -95,44 +87,80 @@ bool ModeIdle::isExit()
 
 	if (s_wifi.receivePlan1())
 	{
-		if (error.get())
+		if (readyToClean(true, false))
 		{
-			bool force_clear = true;
-			error.clear(error.get(), force_clear);
-			ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
-//			beeper.beepForCommand(VALID);
-			sp_state->init();
+			setNextMode(cm_navigation);
+			ROS_WARN("%s %d: Idle mode receives wifi plan1, change to navigation mode.",
+					 __FUNCTION__, __LINE__);
+			return true;
 		}
-
-		setNextMode(cm_navigation);
-		ROS_WARN("%s %d: Idle mode receives wifi plan1, change to navigation mode.",
-				 __FUNCTION__, __LINE__);
-		return true;
+		s_wifi.resetReceivedWorkMode();
+		s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 	}
 
-	if (ev.remote_follow_wall || s_wifi.receiveFollowWall())
+	if (ev.remote_follow_wall)
 	{
-		ROS_WARN("%s %d: Idle mode receives remote follow wall key or wifi follow wall, change to follow wall mode.",
+		ROS_WARN("%s %d: Idle mode receives remote follow wall key, change to follow wall mode.",
 				 __FUNCTION__, __LINE__);
 		setNextMode(cm_wall_follow);
 		return true;
 	}
 
-	if (ev.remote_spot || s_wifi.receiveSpot())
+	if (s_wifi.receiveFollowWall())
 	{
-		ROS_WARN("%s %d: Idle mode receives remote spot key or wifi spot, change to spot mode.",
+		if (readyToClean(true, false))
+		{
+			ROS_WARN("%s %d: Idle mode receives wifi follow wall, change to follow wall mode.",
+					 __FUNCTION__, __LINE__);
+			setNextMode(cm_wall_follow);
+			return true;
+		}
+		s_wifi.receiveFollowWall();
+		s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
+	}
+
+	if (ev.remote_spot)
+	{
+		ROS_WARN("%s %d: Idle mode receives remote spot key, change to spot mode.",
 				 __FUNCTION__, __LINE__);
 		setNextMode(cm_spot);
 		return true;
 	}
 
-	if (ev.remote_home || s_wifi.receiveHome())
+	if (s_wifi.receiveSpot())
 	{
-		ROS_WARN("%s %d: Idle mode receives remote home key or wifi home button, change to exploration mode.",
+		if (readyToClean(true, false))
+		{
+			ROS_WARN("%s %d: Idle mode receives wifi spot, change to spot mode.",
+					 __FUNCTION__, __LINE__);
+			setNextMode(cm_spot);
+			return true;
+		}
+		s_wifi.resetReceivedWorkMode();
+		s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
+	}
+
+	if (ev.remote_home)
+	{
+		ROS_WARN("%s %d: Idle mode receives remote home key, change to exploration mode.",
 				 __FUNCTION__, __LINE__);
 		setNextMode(cm_exploration);
 		return true;
 	}
+
+	if (s_wifi.receiveHome())
+	{
+		if (readyToClean(false, false))
+		{
+			ROS_WARN("%s %d: Idle mode receives wifi home button, change to exploration mode.",
+					 __FUNCTION__, __LINE__);
+			setNextMode(cm_exploration);
+			return true;
+		}
+		s_wifi.resetReceivedWorkMode();
+		s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
+	}
+
 	if (ev.key_long_pressed || s_wifi.receiveSleep())
 	{
 		ROS_WARN("%s %d: Idle mode detects long press key or wifi sleep button, change to sleep mode.",
@@ -148,9 +176,9 @@ bool ModeIdle::isExit()
 		return true;
 	}
 
-	if (ev.remote_direction_forward || ev.remote_direction_left || ev.remote_direction_right || s_wifi.receiveRemote())
+	if (ev.remote_direction_forward || ev.remote_direction_left || ev.remote_direction_right)
 	{
-		ROS_WARN("%s %d: Idle mode receives remote direction key or wifi remote button, change to remote mode.",
+		ROS_WARN("%s %d: Idle mode receives remote direction key, change to remote mode.",
 				 __FUNCTION__, __LINE__);
 		setNextMode(md_remote);
 		return true;
@@ -174,64 +202,32 @@ bool ModeIdle::isExit()
 	return false;
 }
 
-void ModeIdle::register_events()
-{
-	event_manager_register_handler(this);
-	event_manager_set_enable(true);
-}
-
 void ModeIdle::remoteKeyHandler(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote key %x has been pressed.", __FUNCTION__, __LINE__, remote.get());
 
+	bool valid = true;
 	if (error.get())
 	{
-		if (remote.isKeyTrigger(REMOTE_CLEAN))
-		{
-			bool force_clear = true;
-			if (error.clear(error.get(), force_clear))
-			{
-				ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
-				beeper.beepForCommand(VALID);
-				sp_state->init();
-//				speaker.play(VOICE_CLEAR_ERROR_UNOFFICIAL);
-			}
-			else
-			{
-				beeper.beepForCommand(INVALID);
-				error.alarm();
-			}
-		}
-		else
-		{
-			ROS_WARN("%s %d: Remote key %x not valid because of error %d.", __FUNCTION__, __LINE__, remote.get(), error.get());
-			error.alarm();
-			beeper.beepForCommand(INVALID);
-		}
+		bool force_clear = true;
+		error.clear(error.get(), force_clear);
 	}
-	else if (cliff.getStatus() == BLOCK_ALL)
+
+	bool check_battery = true;
+	if (remote.isKeyTrigger(REMOTE_FORWARD) || remote.isKeyTrigger(REMOTE_LEFT)
+		|| remote.isKeyTrigger(REMOTE_RIGHT) || remote.isKeyTrigger(REMOTE_HOME))
+		check_battery = false;
+
+	if (!readyToClean(check_battery))
 	{
-		ROS_WARN("%s %d: Remote key %x not valid because of robot lifted up.", __FUNCTION__, __LINE__, remote.get());
-		beeper.beepForCommand(INVALID);
-		speaker.play(VOICE_ERROR_LIFT_UP);
+		// Reset action to refresh the timeout.
+		sp_action_.reset();
+		sp_action_.reset(new ActionIdle);
+		s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
+		valid = false;
 	}
-	else if (robot::instance()->isBatteryLow2())
-	{
-		ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, battery.getVoltage(), (int)LOW_BATTERY_STOP_VOLTAGE);
-        sp_state->init();
-		beeper.beepForCommand(INVALID);
-		speaker.play(VOICE_BATTERY_LOW);
-	}
-    else if((!remote.isKeyTrigger(REMOTE_FORWARD) && !remote.isKeyTrigger(REMOTE_LEFT)
-			  && !remote.isKeyTrigger(REMOTE_RIGHT) && !remote.isKeyTrigger(REMOTE_HOME))
-			  && robot::instance()->isBatteryLow())
-	{
-		ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, battery.getVoltage(), (int)BATTERY_READY_TO_CLEAN_VOLTAGE);
-        sp_state->init();
-		beeper.beepForCommand(INVALID);
-		speaker.play(VOICE_BATTERY_LOW);
-	}
-	else
+
+	if (valid)
 	{
 		beeper.beepForCommand(VALID);
 		switch (remote.get())
@@ -481,4 +477,46 @@ bool ModeIdle::isFinish()
 	}*/
 
 	return false;
+}
+
+bool ModeIdle::readyToClean(bool check_battery, bool check_error)
+{
+//	ROS_INFO("%s %d: Check battery (%d), check error (%d).", __FUNCTION__, __LINE__, check_battery, check_error);
+	if (!check_error && error.get())
+	{
+		bool force_clear = true;
+		error.clear(error.get(), force_clear);
+		ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
+		sp_state->init();
+	}
+	if (error.get())
+	{
+		ROS_WARN("%s %d: Remote key %x not valid because of error %d.", __FUNCTION__, __LINE__, remote.get(), error.get());
+		beeper.beepForCommand(INVALID);
+		error.alarm();
+		return false;
+	}
+	else if (check_battery && !battery.isReadyToClean())
+	{
+		ROS_WARN("%s %d: Battery not ready to clean(Not reach %4dmV).", __FUNCTION__,
+				 __LINE__, BATTERY_READY_TO_CLEAN_VOLTAGE);
+		speaker.play(VOICE_BATTERY_LOW);
+		return false;
+	}
+	else if (cliff.getStatus() & (BLOCK_LEFT | BLOCK_FRONT | BLOCK_RIGHT))
+	{
+		ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
+		speaker.play(VOICE_ERROR_LIFT_UP);
+		return false;
+	}
+	else if (robot::instance()->isBatteryLow2())
+	{
+		ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, battery.getVoltage(), (int)LOW_BATTERY_STOP_VOLTAGE);
+		sp_state->init();
+		beeper.beepForCommand(INVALID);
+		speaker.play(VOICE_BATTERY_LOW);
+		return false;
+	}
+
+	return true;
 }

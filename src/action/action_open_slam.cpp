@@ -21,7 +21,7 @@ ActionOpenSlam::~ActionOpenSlam()
 bool ActionOpenSlam::isFinish(){
 /*	 Wait for a while to make sure the scan data and odom are both updated.
 	 It is important, otherwise, align will failed and slam start with a correction just as align angle.*/
-	if (!(ros::Time::now().toSec() - start_timer_ > wait_slam_timer_)) {
+	if (ros::Time::now().toSec() - start_timer_ <= wait_slam_timer_) {
 //		ROS_WARN("%s %d: Waiting for slam", __FUNCTION__, __LINE__);
 		return false;
 	}

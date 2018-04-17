@@ -172,8 +172,8 @@ bool S_Wifi::init()
 				s_wifi_tx_.push(std::move(p)).commit();
 				//set mode
 				setRobotCleanMode(msg.getWorkMode());
-				robot_work_mode_ = msg.getWorkMode();
-				taskPushBack(ACT::ACT_UPLOAD_STATUS);
+//				robot_work_mode_ = msg.getWorkMode();
+//				taskPushBack(ACT::ACT_UPLOAD_STATUS);
 			});
 	//set room mode
 	s_wifi_rx_.regOnNewMsgListener<wifi::SetRoomModeRxMsg>(
