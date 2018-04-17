@@ -261,12 +261,15 @@ public:
 
 private:
 	/*---values for rcon handle---*/
+	// todo: first_time_seen_charger_ does not mean as words in reality. It is just the time that enter this mode.
 	double first_time_seen_charger_{ros::Time::now().toSec()};
 	double last_time_seen_charger_{first_time_seen_charger_};
 	boost::shared_ptr<State> st_sleep = boost::make_shared<StateSleep>();
 	bool plan_activated_status_;
 
 	bool fake_sleep_{false};
+
+	bool readyToClean();
 };
 
 class ModeCharge: public Mode
