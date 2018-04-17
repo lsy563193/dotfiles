@@ -672,8 +672,8 @@ uint8_t S_Wifi::setRobotCleanMode(wifi::WorkMode work_mode)
 				beeper.debugBeep(VALID);
 				//-- tmp debug
 
-				if(last_work_mode_ == wifi::WorkMode::PLAN1)
-					taskPushBack(ACT::ACT_UPLOAD_LAST_CLEANMAP);
+				//if(last_work_mode_ == wifi::WorkMode::PLAN1)
+				//	taskPushBack(ACT::ACT_UPLOAD_LAST_CLEANMAP);
 			}
 			else{
 				ROS_INFO("%s %d: Invalid idle cmd.", __FUNCTION__, __LINE__);
