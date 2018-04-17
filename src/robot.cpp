@@ -557,7 +557,7 @@ void robot::runWorkMode()
 
 	while (ros::ok())
 	{
-//				ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
+//		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
 		p_mode->run();
 
 		if (core_thread_kill)
@@ -565,9 +565,15 @@ void robot::runWorkMode()
 
 		auto next_mode = p_mode->getNextMode();
 		p_mode.reset();
-//				ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
+		while (Mode::isRunning())
+		{
+			usleep(1000);
+			ROS_INFO("%s %d: Waiting for last mode destructor.", __FUNCTION__, __LINE__);
+		}
+
+//		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
 		p_mode.reset(getNextMode(next_mode));
-//				ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
+//		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
 	}
 	g_pp_shutdown = true;
 	printf("%s %d: Exit.\n", __FUNCTION__, __LINE__);
