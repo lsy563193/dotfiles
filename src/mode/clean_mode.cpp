@@ -61,6 +61,8 @@ ACleanMode::ACleanMode()
 	c_rcon.resetStatus();
 	robot::instance()->initOdomPosition();
 	s_wifi.resetReceivedWorkMode();
+	if (error.get())
+		error.clear(error.get(), true);
 //	fw_map.reset(CLEAN_MAP);
 
 //	// todo:debug
