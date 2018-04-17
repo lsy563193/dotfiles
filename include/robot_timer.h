@@ -82,7 +82,7 @@ public:
 	 * @param1 cur_time ,give a cur time in struct DateTime 
 	 * @param2 mins ,give time in diffrence mintus (0~10080)
 	 */
-	void updateTimeFromDiffMint(struct Timer::DateTime &cur_time,uint16_t mins);
+	void updateRealTimeFromMint(struct Timer::DateTime &cur_time,uint16_t mins);
 
 	/*
 	 * @brief return ascii time in string

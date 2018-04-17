@@ -38,7 +38,12 @@ class PointSelector;
 class Mode:public EventHandle
 {
 public:
-	virtual ~Mode() { };
+	Mode() {
+		running_ = true;
+	}
+	virtual ~Mode() {
+		running_ = false;
+	};
 	void run();
 
 	virtual bool isExit();
@@ -140,12 +145,17 @@ public:
 
 	double wall_distance;
 	double wheel_cliff_triggered_time_{DBL_MAX};
-	const double WHEEL_CLIFF_TIME_LIMIT{2};
+	const double WHEEL_CLIFF_TIME_LIMIT = 2;
 	bool is_wheel_cliff_triggered{};
 	int mode_i_{};
 
 	State* sp_state{};
 
+	static bool running_;
+	static bool isRunning()
+	{
+		return running_;
+	}
 //	boost::shared_ptr<State> getState() const {
 //		return sp_state;
 //	};
