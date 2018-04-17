@@ -9,7 +9,7 @@
 
 class S_Wifi
 {
-	
+
 public:
 
 	enum struct ACT{
@@ -33,6 +33,10 @@ public:
 		ACT_END,
 	};
 
+	enum MapType{
+		GRID_MAP = 0,
+		SLAM_MAP,
+	};
 	S_Wifi();
 
 	~S_Wifi();
@@ -43,7 +47,7 @@ public:
 
 	int8_t uploadStatus(int msg_code,const uint8_t seq_num);
 
-	bool uploadMap();
+	bool uploadMap(MapType map);
 
 	uint8_t setRobotCleanMode(wifi::WorkMode work_mode);
 

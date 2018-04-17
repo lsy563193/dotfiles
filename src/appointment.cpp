@@ -16,8 +16,9 @@ Appmt::Appmt()
 	appointment_change_ = false;
 	for(uint8_t i=0;i<10;i++)
 	{
-		apmt_l_.push_back({i,0,0,0,0});
+		apmt_l_.push_back({(uint8_t)(i+1),0,0,0,0});
 	}
+	//rw_routine(Appmt::SET);
 }
 
 bool Appmt::set(std::vector<Appointment::st_appmt> apmt_list)
@@ -53,7 +54,7 @@ bool Appmt::set(uint8_t apTime)
 		{
 			apmt.num  = i;
 			apmt.week = 0x01<<(i-1);
-			apmt_l_[i] = apmt;
+			apmt_l_[i-1] = apmt;
 		}
 		if(1)
 		{
@@ -77,7 +78,7 @@ bool Appmt::set(uint8_t apTime)
 		for(int i = 1;i<=7;i++)
 		{
 			apmt.num  = i;
-			apmt_l_[i] = apmt;
+			apmt_l_[i-1] = apmt;
 		}
 
 		if(1)
@@ -168,7 +169,7 @@ int8_t Appmt::rw_routine(Appmt::SG action)//read write routine
 			if(apmt_val != NULL)
 			{
 				char tmp_buf[apt_len] = {0};
-				int offset = apmt_val->num;
+				int offset = apmt_val->num-1;
 				int pos = lseek(fd,offset*apt_len,SEEK_SET);
 				//ROS_INFO("offset %d",offset);
 
@@ -176,6 +177,7 @@ int8_t Appmt::rw_routine(Appmt::SG action)//read write routine
 				{
 					ROS_ERROR("%s,%d,lseek fail %d",__FUNCTION__,__LINE__,pos);
 					close(fd);
+					return -1;
 				}
 				memset(tmp_buf,0,apt_len);
 				sprintf(tmp_buf,"%2u %2u %2u %2u %2u ",apmt_val->num,(uint8_t)apmt_val->enable,apmt_val->week,apmt_val->hour,apmt_val->mint);

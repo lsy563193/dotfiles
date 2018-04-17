@@ -43,6 +43,10 @@ CleanModeNav::CleanModeNav()
 	s_wifi.setWorkMode(Mode::cm_navigation);
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_CLEAR_MAP);
+
+	//s_wifi.cacheMapData(Points({0x7fff,0x7fff}));
+	//s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_MAP);
+
 }
 
 CleanModeNav::~CleanModeNav()
