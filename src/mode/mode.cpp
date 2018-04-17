@@ -7,6 +7,7 @@
 #include "mode.hpp"
 
 boost::shared_ptr<IAction> Mode::sp_action_ = nullptr;
+bool Mode::running_ = false;
 
 int Mode::next_mode_i_{};
 //IAction* Mode::sp_action_ = nullptr;
@@ -63,26 +64,30 @@ int Mode::getNextMode()
 
 void Mode::updateWheelCliffStatus()
 {
-	if((ev.right_wheel_cliff || ev.left_wheel_cliff) && wheel_cliff_triggered_time_ == DBL_MAX)
-		wheel_cliff_triggered_time_ = ros::Time::now().toSec();
-	if(ros::Time::now().toSec() - wheel_cliff_triggered_time_ > WHEEL_CLIFF_TIME_LIMIT)
-	{
-		if(wheel.getRightWheelCliffStatus() || wheel.getLeftWheelCliffStatus())
-		{
-			is_wheel_cliff_triggered = true;
-			ROS_WARN("%s,%d,Enter exception by wheel cliff triggered over %lfs",__FUNCTION__,__LINE__, WHEEL_CLIFF_TIME_LIMIT);
-		}
-		else
-		{
-			ev.left_wheel_cliff = false;
-			ev.right_wheel_cliff = false;
-		}
+	auto wheel_cliff_status = (ev.right_wheel_cliff | ev.left_wheel_cliff);
+	if (wheel_cliff_status) {
+//		ROS_INFO("wheel cliff short tirggered");
+		if(wheel_cliff_triggered_time_ == DBL_MAX)
+			wheel_cliff_triggered_time_ = ros::Time::now().toSec();
+	} else {
 		wheel_cliff_triggered_time_ = DBL_MAX;
+		is_wheel_cliff_triggered = false;
+		return;
+	}
+	if(ros::Time::now().toSec() - wheel_cliff_triggered_time_ > WHEEL_CLIFF_TIME_LIMIT) {
+		is_wheel_cliff_triggered = true;// the only wheel cliff value should care about
+		ROS_WARN("%s,%d,Enter exception by wheel cliff triggered over %lfs", __FUNCTION__, __LINE__,
+						 WHEEL_CLIFF_TIME_LIMIT);
+	}
+	else
+	{
+		is_wheel_cliff_triggered = false;
+		return;
 	}
 }
 bool Mode::isExceptionTriggered()
 {
-	//updateWheelCliffStatus();
+//	updateWheelCliffStatus();
 	return ev.bumper_jam || ev.lidar_bumper_jam || ev.cliff_jam || ev.cliff_all_triggered || ev.oc_wheel_left || ev.oc_wheel_right
 						 || ev.oc_vacuum || ev.lidar_stuck || ev.robot_stuck || ev.oc_brush_main || ev.robot_slip || is_wheel_cliff_triggered;
 }

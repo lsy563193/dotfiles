@@ -30,6 +30,7 @@ public:
 		ACT_CLEAR_MAP,
 		ACT_UPLOAD_STATUS,
 		ACT_UPLOAD_LAST_CLEANMAP,
+		ACT_CLEAR_APP_MAP,
 		ACT_END,
 	};
 
@@ -117,6 +118,8 @@ public:
 	void cacheMapData(const Points map_data);
 
 	void clearMapCache();
+
+	void clearAppMap();
 
 	void quit()
 	{

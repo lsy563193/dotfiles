@@ -302,6 +302,7 @@ private:
 	uint8_t bumper_jam_state_{1};
 	uint8_t lidar_bumper_jam_state_{1};
 	double bumper_resume_start_radian_{0};
+	double wheel_cliff_resume_start_radian_{0};
 	uint8_t robot_slip_flag_{0};
 	static double slip_start_turn_time_;
 	static bool is_slip_last_turn_left_;

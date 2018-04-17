@@ -239,7 +239,7 @@ void ModeSleep::rcon(bool state_now, bool state_last)
 
 void ModeSleep::remotePlan(bool state_now, bool state_last)
 {
-	if ((fake_sleep_ || serial.isMainBoardSleep()) && appmt_obj.getPlanStatus() > 2)
+	if ((fake_sleep_ || serial.isMainBoardSleep()) && !plan_activated_status_ && appmt_obj.getPlanStatus() > 2)
 	{
 		appmt_obj.resetPlanStatus();
 		appmt_obj.timesUp();

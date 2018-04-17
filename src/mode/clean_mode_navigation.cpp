@@ -44,9 +44,8 @@ CleanModeNav::CleanModeNav()
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_CLEAR_MAP);
 
-	//s_wifi.cacheMapData(Points({0x7fff,0x7fff}));
-	//s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_MAP);
-
+	// Clear the map on app.
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_CLEAR_APP_MAP);
 }
 
 CleanModeNav::~CleanModeNav()
@@ -474,7 +473,7 @@ void CleanModeNav::remoteMax(bool state_now, bool state_last)
 
 void CleanModeNav::remotePlan(bool state_now, bool state_last)
 {
-	if (isStatePause() && appmt_obj.getPlanStatus() > 2)
+	if (isStatePause() && !ev.key_clean_pressed && appmt_obj.getPlanStatus() > 2)
 	{
 		appmt_obj.resetPlanStatus();
 		appmt_obj.timesUp();
