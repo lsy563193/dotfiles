@@ -1058,8 +1058,8 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 		}
 		switch(step) {
 			case 1:
-				serial.setSendData(CTL_WHEEL_LEFT_HIGH, 200 >> 8);
-				serial.setSendData(CTL_WHEEL_LEFT_LOW, 200 & 0xFF);
+				serial.setSendData(CTL_WHEEL_LEFT_HIGH, 300 >> 8);
+				serial.setSendData(CTL_WHEEL_LEFT_LOW, 300 & 0xFF);
 				count++;
 				if (count > 50) {
 					current_current = 0;
@@ -1120,8 +1120,8 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				}
 				break;
 			case 6:
-				serial.setSendData(CTL_WHEEL_LEFT_HIGH, -200 >> 8);
-				serial.setSendData(CTL_WHEEL_LEFT_LOW, -200 & 0xFF);
+				serial.setSendData(CTL_WHEEL_LEFT_HIGH, -300 >> 8);
+				serial.setSendData(CTL_WHEEL_LEFT_LOW, -300 & 0xFF);
 				count++;
 				if (count > 50) {
 					current_current = 0;
@@ -1192,8 +1192,8 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				}
 				break;
 			case 12:
-				serial.setSendData(CTL_WHEEL_LEFT_HIGH, 200 >> 8);
-				serial.setSendData(CTL_WHEEL_LEFT_LOW, 200 & 0xFF);
+				serial.setSendData(CTL_WHEEL_LEFT_HIGH, 300 >> 8);
+				serial.setSendData(CTL_WHEEL_LEFT_LOW, 300 & 0xFF);
 				serial.setSendData(CTL_LEFT_WHEEL_TEST_MODE, 1);
 				count++;
 				if (count > 50) {
@@ -1221,30 +1221,24 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				}
 				break;
 			case 14:
-				count++;
-				if (count <= 10) {
-					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+				current_current = (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+				step++;
+				current_current = (current_current * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+				if(current_current < 800) {
+					error_code = LEFT_WHEEL_STALL_ERROR;
+					current_data = 0;
+					return ;
 				}
-				else {
-					step++;
-					count = 0;
-					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
-					if(current_current < 800) {
-						error_code = LEFT_WHEEL_STALL_ERROR;
-						current_data = 0;
-						return ;
-					}
-					else
-					{
-						test_result |= 0x0008;
-					}
+				else
+				{
+					test_result |= 0x0008;
 				}
 				break;
 			case 15:
 				serial.setSendData(CTL_WHEEL_LEFT_HIGH, 0);
 				serial.setSendData(CTL_WHEEL_LEFT_LOW, 0);
-				serial.setSendData(CTL_WHEEL_RIGHT_HIGH, 200 >> 8);
-				serial.setSendData(CTL_WHEEL_RIGHT_LOW, 200 & 0xFF);
+				serial.setSendData(CTL_WHEEL_RIGHT_HIGH, 300 >> 8);
+				serial.setSendData(CTL_WHEEL_RIGHT_LOW, 300 & 0xFF);
 				count++;
 				if (count > 100) {
 					current_current = 0;
@@ -1305,8 +1299,8 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				}
 				break;
 			case 20:
-				serial.setSendData(CTL_WHEEL_RIGHT_HIGH, -200 >> 8);
-				serial.setSendData(CTL_WHEEL_RIGHT_LOW, -200 & 0xFF);
+				serial.setSendData(CTL_WHEEL_RIGHT_HIGH, -300 >> 8);
+				serial.setSendData(CTL_WHEEL_RIGHT_LOW, -300 & 0xFF);
 				count++;
 				if (count > 50) {
 					current_current = 0;
@@ -1376,8 +1370,8 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				}
 				break;
 			case 26:
-				serial.setSendData(CTL_WHEEL_RIGHT_HIGH, 200 >> 8);
-				serial.setSendData(CTL_WHEEL_RIGHT_LOW, 200 & 0xFF);
+				serial.setSendData(CTL_WHEEL_RIGHT_HIGH, 300 >> 8);
+				serial.setSendData(CTL_WHEEL_RIGHT_LOW, 300 & 0xFF);
 				serial.setSendData(CTL_RIGHT_WHEEL_TEST_MODE, 1);
 				count++;
 				if (count > 50) {
@@ -1406,24 +1400,18 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				}
 				break;
 			case 28:
-				count++;
-				if (count <= 10) {
-					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+				current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+				step++;
+				current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+				if(current_current < 800)
+				{
+					error_code = RIGHT_WHEEL_STALL_ERROR;
+					current_data = 0;
+					return ;
 				}
-				else {
-					step++;
-					count = 0;
-					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
-					if(current_current < 800)
-					{
-						error_code = RIGHT_WHEEL_STALL_ERROR;
-						current_data = 0;
-						return ;
-					}
-					else
-					{
-						test_result |= 0x0800;
-					}
+				else
+				{
+					test_result |= 0x0800;
 				}
 				break;
 		}
@@ -1538,24 +1526,18 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 				}
 				break;
 			case 7:
-				count++;
-				if (count <= 10) {
-					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+				current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+				step++;
+				current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+				if (current_current < 250)
+				{
+					error_code = LEFT_BRUSH_STALL_ERROR;
+					current_data = 0;
+					return ;
 				}
-				else {
-					step++;
-					count = 0;
-					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
-					if (current_current < 250)
-					{
-						error_code = LEFT_BRUSH_STALL_ERROR;
-						current_data = 0;
-						return ;
-					}
-					else
-					{
-						test_result |= 0x08;
-					}
+				else
+				{
+					test_result |= 0x08;
 				}
 				break;
 			case 8:
@@ -1631,24 +1613,18 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 				}
 				break;
 			case 14:
-				count++;
-				if (count <= 10) {
-					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+				current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+				step++;
+				current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+				if (current_current < 250)
+				{
+					error_code = RIGHT_BRUSH_STALL_ERROR;
+					current_data = 0;
+					return ;
 				}
-				else {
-					step++;
-					count = 0;
-					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
-					if (current_current < 250)
-					{
-						error_code = RIGHT_BRUSH_STALL_ERROR;
-						current_data = 0;
-						return ;
-					}
-					else
-					{
-						test_result |= 0x02;
-					}
+				else
+				{
+					test_result |= 0x02;
 				}
 				break;
 		}
@@ -1854,24 +1830,18 @@ void main_brush_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_co
 				}
 				break;
 			case 7:
-				count++;
-				if (count <= 10) {
-					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+				current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+				step++;
+				current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+				if (current_current < 550)
+				{
+					error_code = MAIN_BRUSH_STALL_ERROR;
+					current_data = 0;
+					return ;
 				}
-				else {
-					step++;
-					count = 0;
-					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
-					if (current_current < 550)
-					{
-						error_code = MAIN_BRUSH_STALL_ERROR;
-						current_data = 0;
-						return ;
-					}
-					else
-					{
-						test_result |= 0x02;
-					}
+				else
+				{
+					test_result |= 0x02;
 				}
 				break;
 		}
