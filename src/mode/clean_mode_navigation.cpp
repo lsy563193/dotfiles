@@ -470,7 +470,7 @@ void CleanModeNav::remoteMax(bool state_now, bool state_last)
 
 void CleanModeNav::remotePlan(bool state_now, bool state_last)
 {
-	if (isStatePause() && appmt_obj.getPlanStatus() > 2)
+	if (isStatePause() && !ev.key_clean_pressed && appmt_obj.getPlanStatus() > 2)
 	{
 		appmt_obj.resetPlanStatus();
 		appmt_obj.timesUp();

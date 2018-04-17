@@ -161,7 +161,7 @@ void ModeCharge::keyClean(bool state_now, bool state_last)
 
 void ModeCharge::remotePlan(bool state_now, bool state_last)
 {
-	if (appmt_obj.getPlanStatus() > 2)
+	if (!plan_activated_status_ && appmt_obj.getPlanStatus() > 2)
 	{
 		appmt_obj.resetPlanStatus();
 		appmt_obj.timesUp();

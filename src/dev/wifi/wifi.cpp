@@ -669,7 +669,7 @@ uint8_t S_Wifi::setRobotCleanMode(wifi::WorkMode work_mode)
 			{
 //				remote.set(REMOTE_CLEAN);
 				received_work_mode_ = work_mode;
-				beeper.debugBeep(VALID);
+//				beeper.debugBeep(VALID);
 				//-- tmp debug
 
 				//if(last_work_mode_ == wifi::WorkMode::PLAN1)
@@ -677,7 +677,7 @@ uint8_t S_Wifi::setRobotCleanMode(wifi::WorkMode work_mode)
 			}
 			else{
 				ROS_INFO("%s %d: Invalid idle cmd.", __FUNCTION__, __LINE__);
-				beeper.debugBeep(VALID);
+//				beeper.debugBeep(VALID);
 			}
 			INFO_BLUE("receive mode idle");
 			break;

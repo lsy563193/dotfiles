@@ -18,9 +18,6 @@ ModeIdle::ModeIdle():
 	sp_action_.reset(new ActionIdle);
 	action_i_ = ac_idle;
 
-	s_wifi.setWorkMode(Mode::md_idle);
-	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
-
 	key.resetTriggerStatus();
 	c_rcon.resetStatus();
 	remote.reset();
@@ -342,7 +339,7 @@ void ModeIdle::remoteWifi(bool state_now,bool state_last)
 
 void ModeIdle::remotePlan(bool state_now, bool state_last)
 {
-	if (appmt_obj.getPlanStatus() > 2)
+	if (!plan_activated_status_ && appmt_obj.getPlanStatus() > 2)
 	{
 		appmt_obj.resetPlanStatus();
 		appmt_obj.timesUp();
