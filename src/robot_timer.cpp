@@ -88,7 +88,7 @@ void Timer::setRealTime(uint16_t mints)
 	//appmt_obj.setPlan2Bottom(mint);
 }
 
-void Timer::updateTimeFromDiffMint(struct Timer::DateTime &dt, uint16_t diff_mins)
+void Timer::updateRealTimeFromMint(struct Timer::DateTime &dt, uint16_t diff_mins)
 {
 	uint8_t mint_sum = dt.mint + (uint8_t)(diff_mins%60);
 	uint16_t hour_sum= dt.hour + diff_mins/60;

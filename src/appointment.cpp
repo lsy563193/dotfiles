@@ -251,7 +251,7 @@ void Appmt::timesUp()
 {
 	//--update realtime
 	struct Timer::DateTime dt = robot_timer.getRealTime();
-	robot_timer.updateTimeFromDiffMint(dt,appointment_count_);
+	robot_timer.updateRealTimeFromMint(dt,appointment_count_);
 	robot_timer.setRealTime(dt);
 	//--update appointment count
 	uint16_t mint = nextAppointment();
