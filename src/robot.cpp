@@ -123,7 +123,7 @@ robot::~robot()
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
-	s_wifi.sleep();
+	s_wifi.deinit();
 	wifi_led.set(false);
 	water_tank.stop(WaterTank::tank_pump);
 	serial.setWorkMode(WORK_MODE);
@@ -424,7 +424,7 @@ void robot::robotbase_routine_cb()
 #if 1
 		if (checkTilt()){
 			gyro.setTiltCheckingStatus(1);
-			beeper.beepForCommand(VALID);
+			beeper.debugBeep(VALID);
 		} else {
 			gyro.setTiltCheckingStatus(0);
 		}
@@ -466,7 +466,7 @@ void robot::core_thread_cb()
 	r16_work_mode_ = getTestMode();
 //	r16_work_mode_ = LIFE_TEST_MODE;
 	ROS_INFO("%s %d: work mode: %d", __FUNCTION__, __LINE__, r16_work_mode_);
-
+	//s_wifi.taskPushBack(S_Wifi::ACT::ACT_SLEEP);
 	switch (r16_work_mode_)
 	{
 		case FUNC_SERIAL_TEST_MODE:
@@ -526,7 +526,7 @@ void robot::runTestMode()
 
 void robot::runWorkMode()
 {
-	s_wifi.taskPushBack(S_Wifi::ACT::ACT_RESUME);
+	//s_wifi.taskPushBack(S_Wifi::ACT::ACT_RESUME);
 	auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
 	send_thread_enable = true;
 
@@ -557,7 +557,7 @@ void robot::runWorkMode()
 
 	while (ros::ok())
 	{
-//				ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
+//		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
 		p_mode->run();
 
 		if (core_thread_kill)
@@ -565,9 +565,15 @@ void robot::runWorkMode()
 
 		auto next_mode = p_mode->getNextMode();
 		p_mode.reset();
-//				ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
+		while (Mode::isRunning())
+		{
+			usleep(1000);
+			ROS_INFO("%s %d: Waiting for last mode destructor.", __FUNCTION__, __LINE__);
+		}
+
+//		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
 		p_mode.reset(getNextMode(next_mode));
-//				ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
+//		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
 	}
 	g_pp_shutdown = true;
 	printf("%s %d: Exit.\n", __FUNCTION__, __LINE__);
@@ -625,7 +631,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 //					if(diff > degree_to_radian(1))
 //					{
 //						odom.setRadianOffset(slam_rad - odom.getOriginRadian());
-//						beeper.beepForCommand(VALID);
+//						beeper.debugBeep();
 //					}
 				}
 				else

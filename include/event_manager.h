@@ -42,44 +42,45 @@
  * 	g_battery_low
  */
 
-typedef struct {
-		bool remote_home;
-		bool battery_home;
-		bool battery_low;
-		bool remote_spot;
+typedef struct
+{
+	bool remote_home;
+	bool battery_home;
+	bool battery_low;
+	bool remote_spot;
 
-		bool fatal_quit;
-		uint8_t bumper_triggered;
-		uint32_t rcon_status;
-		uint8_t obs_triggered;
-		bool bumper_jam;
-		bool lidar_bumper_jam;
-		uint8_t cliff_triggered;
-		bool cliff_jam;
-		bool right_wheel_cliff;
-		bool left_wheel_cliff;
+	bool fatal_quit;
+	uint8_t bumper_triggered;
+	uint32_t rcon_status;
+	uint8_t obs_triggered;
+	bool bumper_jam;
+	bool lidar_bumper_jam;
+	uint8_t cliff_triggered;
+	bool cliff_jam;
+	bool right_wheel_cliff;
+	bool left_wheel_cliff;
 
-		bool oc_brush_main;
-		bool oc_wheel_left;
-		bool oc_wheel_right;
-		bool oc_vacuum;
-		bool key_clean_pressed;
-		bool key_long_pressed;
-		bool remote_follow_wall;
-		bool remote_direction_left;
-		bool remote_direction_right;
-		bool remote_direction_forward;
-		bool remote_direction_back;
-		bool remote_wifi;
-		bool slam_error;
-		bool tilt_triggered;
-		uint8_t charge_detect;
-		bool robot_stuck;
-		bool robot_slip;
-		bool lidar_stuck = false;
-		bool lidar_bumper;
-		uint8_t lidar_triggered;
-		bool cliff_all_triggered;
+	bool oc_brush_main;
+	bool oc_wheel_left;
+	bool oc_wheel_right;
+	bool oc_vacuum;
+	bool key_clean_pressed;
+	bool key_long_pressed;
+	bool remote_follow_wall;
+	bool remote_direction_left;
+	bool remote_direction_right;
+	bool remote_direction_forward;
+	bool remote_direction_back;
+	bool remote_wifi;
+	bool slam_error;
+	bool tilt_triggered;
+	uint8_t charge_detect;
+	bool robot_stuck;
+	bool robot_slip;
+	bool lidar_stuck = false;
+	bool lidar_bumper;
+	uint8_t lidar_triggered;
+	bool cliff_all_triggered;
 }Ev_t;
 class EventHandle{
 public:

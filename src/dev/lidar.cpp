@@ -1290,7 +1290,7 @@ void Lidar::checkRobotSlip()
 					ROS_INFO("\033[35m""%s,%d,robot slip!!""\033[0m", __FUNCTION__, __LINE__);
 					slip_status_ = true;
 					slip_cnt_limit_ = 5;
-					beeper.beepForCommand(VALID);
+					beeper.debugBeep(VALID);
 				} else {
 					slip_status_ = false;
 				}

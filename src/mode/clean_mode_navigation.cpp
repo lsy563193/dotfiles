@@ -38,9 +38,14 @@ CleanModeNav::CleanModeNav()
 	mode_i_ = cm_navigation;
 
 	sp_state = state_init.get();
-    sp_state->init();
+	sp_state->init();
 	//clear real time map whitch store in cloud....
-	//s_wifi.clearRealtimeMap(0x00);
+	s_wifi.setWorkMode(Mode::cm_navigation);
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_CLEAR_MAP);
+	// Clear the map on app.
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_CLEAR_APP_MAP);
+
 }
 
 CleanModeNav::~CleanModeNav()
@@ -144,14 +149,13 @@ bool CleanModeNav::mapMark()
 	}
 
 	//tx pass path via serial wifi
-	//s_wifi.uploadPassPath(passed_path_);
-	//s_wifi.replyRobotStatus(0xc8,0x00);
+
 	s_wifi.cacheMapData(passed_path_);
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_MAP);
 	c_blocks.clear();
 	passed_path_.clear();
 	return false;
 }
-
 
 bool CleanModeNav::markRealTime()
 {
@@ -218,21 +222,21 @@ bool CleanModeNav::isExit()
 			setNextMode(md_charge);
 			return true;
 		}
-		else if (ev.remote_direction_left || ev.remote_direction_right || ev.remote_direction_forward)
+		else if (ev.remote_direction_left || ev.remote_direction_right || ev.remote_direction_forward || s_wifi.receiveRemote())
 		{
-			ROS_WARN("%s %d: Exit for pause and remote left/right/forward.", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Exit for pause and remote left/right/forward or wifi remote.", __FUNCTION__, __LINE__);
 			setNextMode(md_remote);
 			return true;
 		}
-		else if (ev.remote_follow_wall)
+		else if (ev.remote_follow_wall || s_wifi.receiveFollowWall())
 		{
-			ROS_WARN("%s %d: Exit for pause and remote follow wall.", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Exit for pause and remote or wifi follow wall.", __FUNCTION__, __LINE__);
 			setNextMode(cm_wall_follow);
 			return true;
 		}
-		else if (ev.remote_spot)
+		else if (ev.remote_spot || s_wifi.receiveSpot())
 		{
-			ROS_WARN("%s %d: Exit for pause and remote spot.", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Exit for pause and remote or wifi spot.", __FUNCTION__, __LINE__);
 			setNextMode(cm_spot);
 			return true;
 		}
@@ -469,7 +473,7 @@ void CleanModeNav::remoteMax(bool state_now, bool state_last)
 
 void CleanModeNav::remotePlan(bool state_now, bool state_last)
 {
-	if (isStatePause() && appmt_obj.getPlanStatus() > 2)
+	if (isStatePause() && !ev.key_clean_pressed && appmt_obj.getPlanStatus() > 2)
 	{
 		appmt_obj.resetPlanStatus();
 		appmt_obj.timesUp();
@@ -491,7 +495,6 @@ void CleanModeNav::batteryHome(bool state_now, bool state_last)
 		ROS_INFO("%s %d: low battery, battery =\033[33m %dmv \033[0m, continue cell(%d, %d)", __FUNCTION__, __LINE__,
 				 battery.getVoltage(), continue_point_.x, continue_point_.y);
 		ev.battery_home = true;
-		go_home_for_low_battery_ = true;
 	}
 }
 
@@ -787,8 +790,10 @@ void CleanModeNav::switchInStateGoToCharger()
 // ------------------State tmp spot--------------------
 bool CleanModeNav::checkEnterTempSpotState()
 {
-	if (ev.remote_spot)
+	if (ev.remote_spot || s_wifi.receiveSpot())
 	{
+		if (s_wifi.receiveSpot())
+			s_wifi.resetReceivedWorkMode();
 		ev.remote_spot= false;
 //		mapMark();
 		sp_action_.reset();
@@ -802,8 +807,10 @@ bool CleanModeNav::checkEnterTempSpotState()
 
 bool CleanModeNav::isSwitchByEventInStateSpot()
 {
-	if (ev.key_clean_pressed || ev.remote_spot)
+	if (ev.remote_spot || s_wifi.receivePlan1() || s_wifi.receiveSpot())
 	{
+		if (s_wifi.receivePlan1() || s_wifi.receiveSpot())
+			s_wifi.resetReceivedWorkMode();
 		sp_state = state_clean.get();
 		sp_state->init();
 		action_i_ = ac_null;
@@ -830,8 +837,10 @@ void CleanModeNav::switchInStateSpot()
 
 bool CleanModeNav::checkEnterPause()
 {
-	if (ev.key_clean_pressed /*|| is_stay_in_same_postion_long_time*/)
+	if (ev.key_clean_pressed || s_wifi.receiveIdle()/*|| is_stay_in_same_postion_long_time*/)
 	{
+		if (s_wifi.receiveIdle())
+			s_wifi.resetReceivedWorkMode();
 
 //		is_stay_in_same_postion_long_time = false;
 		ev.key_clean_pressed = false;
@@ -851,15 +860,17 @@ bool CleanModeNav::checkEnterPause()
 
 bool CleanModeNav::checkResumePause()
 {
-	if (ev.key_clean_pressed || ev.remote_home)
+	if (ev.key_clean_pressed || ev.remote_home || s_wifi.receivePlan1() || s_wifi.receiveHome())
 	{
+		if (s_wifi.receivePlan1())
+			s_wifi.resetReceivedWorkMode();
 		ev.key_clean_pressed = false;
 		speaker.play(VOICE_CLEANING_CONTINUE);
 		sp_action_.reset();
 		action_i_ = ac_null;
 		ROS_INFO("%s %d: Resume cleaning.", __FUNCTION__, __LINE__);
 		// It will NOT change the state.
-		if (ev.remote_home && sp_saved_states.back() != state_go_home_point.get())
+		if ((ev.remote_home || s_wifi.receiveHome()) && sp_saved_states.back() != state_go_home_point.get())
 		{
 			ROS_INFO("%s %d: Resume to go home point state.", __FUNCTION__, __LINE__);
 			sp_saved_states.pop_back();
@@ -867,6 +878,8 @@ bool CleanModeNav::checkResumePause()
 			if (go_home_path_algorithm_ == nullptr)
 				go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_, start_point_));
 			ev.remote_home = false;
+			if (s_wifi.receiveHome())
+				s_wifi.resetReceivedWorkMode();
 			speaker.play(VOICE_GO_HOME_MODE);
 			remote_go_home_point = true;
 		}

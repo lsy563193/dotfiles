@@ -122,7 +122,7 @@ Cells NavCleanPathAlgorithm::findTargetInSameLane(GridMap &map, const Cell_t &cu
 {
 	int8_t is_found = 0;
 	Cell_t it[2]; // it[0] means the furthest cell of x positive direction, it[1] means the furthest cell of x negative direction.
-	const auto OVER_CELL_SIZE = 2;
+	const auto OVER_CELL_SIZE = 4;
 //	map.print(CLEAN_MAP, 0, 0);
 	for (auto i = 0; i < 2; i++) {
 		it[i] = curr_cell;
@@ -324,7 +324,7 @@ bool NavCleanPathAlgorithm::filterPathsToSelectBestPath(GridMap &map, const Cell
 			if (filter == &filter_p_1t) {
 				if(size_of_path(best_path) > 25){
 					ROS_WARN("path.len is too long to find other path(%d)",size_of_path(best_path));
-					beeper.beepForCommand(VALID);
+					beeper.debugBeep(VALID);
 					continue ;
 				}
 			}

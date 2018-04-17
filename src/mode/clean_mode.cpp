@@ -60,6 +60,7 @@ ACleanMode::ACleanMode()
 	tmp_charger_pose_.clear();
 	c_rcon.resetStatus();
 	robot::instance()->initOdomPosition();
+	s_wifi.resetReceivedWorkMode();
 //	fw_map.reset(CLEAN_MAP);
 
 //	// todo:debug
@@ -119,7 +120,7 @@ ACleanMode::~ACleanMode()
 			{
 				speaker.play(VOICE_BACK_TO_CHARGER_FAILED, false);
 				ROS_WARN("%s %d: Finish cleaning but failed to go to charger.", __FUNCTION__, __LINE__);
-			} else if (mode_i_ == cm_navigation && trapped_closed_or_isolate || trapped_time_out_)
+			} else if (mode_i_ == cm_navigation && (trapped_closed_or_isolate || trapped_time_out_))
 			{
 				speaker.play(VOICE_ROBOT_TRAPPED, false);
 				trapped_closed_or_isolate = false;
@@ -928,8 +929,8 @@ bool ACleanMode::isExit()
 		return true;
 	}
 
-	if(ev.key_clean_pressed || ev.key_long_pressed){
-		ROS_WARN("%s %d: Exit for remote key or clean key or long press clean key.", __FUNCTION__, __LINE__);
+	if (ev.key_clean_pressed || ev.key_long_pressed || s_wifi.receiveIdle()){
+		ROS_WARN("%s %d: Exit for remote key or clean key or long press clean key or wifi idle.", __FUNCTION__, __LINE__);
 		setNextMode(md_idle);
 		return true;
 	}
@@ -944,7 +945,7 @@ bool ACleanMode::isExit()
 	return false;
 }
 
-bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_move_type) {
+bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_mt) {
 	auto curr = getPosition();
 	auto loc = std::find_if(passed_path_.begin(), passed_path_.end(), [&](Point_t it) {
 		return curr.isCellAndAngleEqual(it);
@@ -959,10 +960,19 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_move_type) {
 	markMapInNewCell();//real time mark to exploration
 
 	if (isStateFollowWall()) {
-//			auto p_mt = dynamic_cast<MoveTypeFollowWall *>(p_move_type);
-		if (p_move_type->isBlockCleared(clean_map_, passed_path_))
-		{
+//			auto p_mt = dynamic_cast<MoveTypeFollowWall *>(p_mt);
+		if (p_mt->isBlockCleared(clean_map_, passed_path_)) {
 			clean_map_.markRobot(CLEAN_MAP);
+			std::vector<Vector2<int>> markers;
+			if (lidar.isScanCompensateReady())
+				lidar.lidarMarker(markers, p_mt->movement_i_, action_i_);
+			ROS_ERROR("markers.size() = %d", markers.size());
+			for (const auto &marker : markers) {
+				ROS_ERROR("marker(%d, %d)", marker.x, marker.y);
+				auto cell = getPosition().getCenterRelative(marker.x * CELL_SIZE, marker.y * CELL_SIZE).toCell();
+				ROS_ERROR("cell(%d, %d)", cell.x, cell.y);
+				clean_map_.setCell(CLEAN_MAP, cell.x, cell.y, BLOCKED_LIDAR);
+			}
 			if (!clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell())) {
 				out_of_trapped = true;
 				ROS_ERROR("OUT OF TRAPPED");
@@ -1640,10 +1650,17 @@ void ACleanMode::switchInStateClean() {
 // ------------------State go home point--------------------
 bool ACleanMode::checkEnterGoHomePointState()
 {
-	if (ev.remote_home || ev.battery_home)
+	if (ev.remote_home || ev.battery_home || s_wifi.receiveHome())
 	{
 		if (ev.remote_home)
 			remote_go_home_point = true;
+		if (s_wifi.receiveHome())
+		{
+			wifi_go_home_point = true;
+			s_wifi.resetReceivedWorkMode();
+		}
+		if (ev.battery_home)
+			go_home_for_low_battery_ = true;
 		sp_action_.reset();
 		sp_state = state_go_home_point.get();
 		sp_state->init();
@@ -1658,6 +1675,14 @@ bool ACleanMode::checkEnterGoHomePointState()
 
 bool ACleanMode::isSwitchByEventInStateGoHomePoint()
 {
+	if (s_wifi.receiveIdle())
+	{
+		s_wifi.resetReceivedWorkMode();
+		ROS_INFO("%s %d, Exit for wifi idle.", __FUNCTION__, __LINE__);
+		sp_state = nullptr;
+		return true;
+	}
+
 	return checkEnterExceptionResumeState();
 }
 

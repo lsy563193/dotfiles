@@ -987,7 +987,7 @@ void df_robot_slip()
 {
 /*	static int slip_cnt = 0;
 	ROS_WARN("\033[32m%s,%d,set robot slip!! \033[0m",__FUNCTION__,__LINE__);
-	beeper.beepForCommand(true);
+	beeper.debugBeep();
 	ev.robot_slip = true;
 	if(slip_cnt++ > 2){
 		slip_cnt = 0;
@@ -1012,7 +1012,7 @@ void EventHandle::lidarStuck(bool state_new, bool state_last)
 {}
 void df_lidar_stuck(bool state_new,bool state_last)
 {
-	//beeper.beepForCommand(true);
+	//beeper.debugBeep();
 	//ROS_WARN("\033[32m%s %d: Lidar stuck.\033[0m", __FUNCTION__, __LINE__);
 	//ev.lidarStuck = true;
 }

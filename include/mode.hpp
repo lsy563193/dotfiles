@@ -38,7 +38,12 @@ class PointSelector;
 class Mode:public EventHandle
 {
 public:
-	virtual ~Mode() { };
+	Mode() {
+		running_ = true;
+	}
+	virtual ~Mode() {
+		running_ = false;
+	};
 	void run();
 
 	virtual bool isExit();
@@ -146,6 +151,11 @@ public:
 
 	State* sp_state{};
 
+	static bool running_;
+	static bool isRunning()
+	{
+		return running_;
+	}
 //	boost::shared_ptr<State> getState() const {
 //		return sp_state;
 //	};
@@ -224,6 +234,23 @@ public:
 	bool isFinish() override ;
 
 	// For exit event handling.
+	void remoteKeyHandler(bool state_now, bool state_last);
+	void remoteDirectionLeft(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteDirectionRight(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteDirectionForward(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteHome(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteSpot(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteWallFollow(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteMax(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteWifi(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
 	void remoteClean(bool state_now, bool state_last) override;
 	void keyClean(bool state_now, bool state_last) override;
 	void chargeDetect(bool state_now, bool state_last) override;
@@ -361,6 +388,9 @@ public:
 	bool isRemoteGoHomePoint(){
 		return remote_go_home_point;
 	};
+	bool isWifiGoHomePoint(){
+		return wifi_go_home_point;
+	};
 	bool isGoHomePointForLowBattery(){
 		return go_home_for_low_battery_;
 	}
@@ -371,7 +401,7 @@ public:
 	Cells pointsGenerateCells(Points &targets);
 
 	// For move types
-	bool moveTypeNewCellIsFinish(IMoveType *p_move_type);
+	bool moveTypeNewCellIsFinish(IMoveType *p_mt);
 	bool moveTypeRealTimeIsFinish(IMoveType *p_mt);
 
 	// Handlers
@@ -546,6 +576,7 @@ protected:
 	Points home_points_{};
 	bool should_go_to_charger_{false};
 	bool remote_go_home_point{false};
+	bool wifi_go_home_point{false};
 	bool first_time_go_home_point_{true};
 	bool seen_charger_during_cleaning_{false};
 	bool go_home_for_low_battery_{false};
@@ -695,6 +726,7 @@ class CleanModeExploration : public ACleanMode
 public:
 	CleanModeExploration();
 	~CleanModeExploration();
+	bool isExit() override;
 
 	bool markMapInNewCell() override;
 	bool mapMark() override;

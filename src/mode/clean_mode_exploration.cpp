@@ -19,6 +19,8 @@ CleanModeExploration::CleanModeExploration()
 	clean_map_.mapInit();
 	setExpMode(true);
 	obs.control(OFF);
+	s_wifi.setWorkMode(cm_exploration);
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 }
 
 CleanModeExploration::~CleanModeExploration()
@@ -60,6 +62,26 @@ CleanModeExploration::~CleanModeExploration()
 	setExpMode(false);
 	obs.control(ON);
 }
+
+bool CleanModeExploration::isExit()
+{
+	if (s_wifi.receiveHome())
+	{
+		ROS_WARN("%s %d: Exit for wifi home.", __FUNCTION__, __LINE__);
+		setNextMode(md_idle);
+		return true;
+	}
+
+	if (s_wifi.receiveIdle())
+	{
+		ROS_WARN("%s %d: Exit for wifi idle.", __FUNCTION__, __LINE__);
+		setNextMode(md_idle);
+		return true;
+	}
+
+	return ACleanMode::isExit();
+}
+
 
 bool CleanModeExploration::mapMark()
 {
@@ -233,6 +255,5 @@ void CleanModeExploration::resetErrorMarker() {
 		}
 	}
 }
-
 
 

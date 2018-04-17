@@ -25,6 +25,7 @@ ModeIdle::ModeIdle():
 	event_manager_reset_status();
 
 	s_wifi.setWorkMode(Mode::md_idle);
+	s_wifi.resetReceivedWorkMode();
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 
 	ROS_INFO("%s %d: Current battery voltage \033[32m%5.2f V\033[0m.", __FUNCTION__, __LINE__, (float)battery.getVoltage()/100.0);
@@ -46,74 +47,96 @@ ModeIdle::~ModeIdle()
 
 bool ModeIdle::isExit()
 {
-	if(ev.key_clean_pressed || plan_activated_status_)
+	if (plan_activated_status_)
 	{
-		if (plan_activated_status_)
+		if (error.get() != ERROR_CODE_NONE)
 		{
-			if (error.get() != ERROR_CODE_NONE)
+			if (error.clear(error.get()))
 			{
-				if (error.clear(error.get()))
-				{
-					ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
-					sp_state->init();
-//					speaker.play(VOICE_CLEAR_ERROR_UNOFFICIAL, false);
-				} else
-				{
-//					speaker.play(VOICE_CANCEL_APPOINTMENT_UNOFFICIAL, false);
-					// Reset action idle for playing the error alarm.
-					sp_action_.reset(new ActionIdle);
-				}
+				ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
+				sp_state->init();
+//				speaker.play(VOICE_CLEAR_ERROR_UNOFFICIAL, false);
+			} else
+			{
+//				speaker.play(VOICE_CANCEL_APPOINTMENT_UNOFFICIAL, false);
+				// Reset action idle for playing the error alarm.
+				sp_action_.reset(new ActionIdle);
 			}
-
-			if (error.get() != ERROR_CODE_NONE)
-				ROS_INFO("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
-			else if (cliff.getStatus() & (BLOCK_LEFT | BLOCK_FRONT | BLOCK_RIGHT))
-			{
-				ROS_WARN("%s %d: Plan not activated not valid because of robot lifted up.", __FUNCTION__, __LINE__);
-				speaker.play(VOICE_ERROR_LIFT_UP);
-			} else if (!battery.isReadyToClean())
-			{
-				ROS_WARN("%s %d: Plan not activated not valid because of battery not ready to clean.", __FUNCTION__, __LINE__);
-				speaker.play(VOICE_BATTERY_LOW);
-			} else{
-				ROS_WARN("%s %d: Idle mode receives plan, change to navigation mode.", __FUNCTION__, __LINE__);
-				setNextMode(cm_navigation);
-				ACleanMode::plan_activation_ = true;
-				return true;
-			}
-			plan_activated_status_ = false;
 		}
-		else
+
+		if (error.get() != ERROR_CODE_NONE)
+			ROS_INFO("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
+		else if (cliff.getStatus() & (BLOCK_LEFT | BLOCK_FRONT | BLOCK_RIGHT))
 		{
-			ROS_WARN("%s %d: Idle mode receives remote clean or clean key, change to navigation mode.", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Plan not activated not valid because of robot lifted up.", __FUNCTION__, __LINE__);
+			speaker.play(VOICE_ERROR_LIFT_UP);
+		} else if (!battery.isReadyToClean())
+		{
+			ROS_WARN("%s %d: Plan not activated not valid because of battery not ready to clean.", __FUNCTION__,
+					 __LINE__);
+			speaker.play(VOICE_BATTERY_LOW);
+		} else
+		{
+			ROS_WARN("%s %d: Idle mode receives plan, change to navigation mode.", __FUNCTION__, __LINE__);
 			setNextMode(cm_navigation);
+			ACleanMode::plan_activation_ = true;
 			return true;
 		}
+		plan_activated_status_ = false;
 	}
 
-	if(ev.remote_follow_wall)
+	if (ev.key_clean_pressed)
 	{
-		ROS_WARN("%s %d: Idle mode receives remote follow wall key, change to follow wall mode.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Idle mode receives remote clean or clean key, change to navigation mode.",
+				 __FUNCTION__, __LINE__);
+		setNextMode(cm_navigation);
+		return true;
+	}
+
+	if (s_wifi.receivePlan1())
+	{
+		if (error.get())
+		{
+			bool force_clear = true;
+			error.clear(error.get(), force_clear);
+			ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
+//			beeper.beepForCommand(VALID);
+			sp_state->init();
+		}
+
+		setNextMode(cm_navigation);
+		ROS_WARN("%s %d: Idle mode receives wifi plan1, change to navigation mode.",
+				 __FUNCTION__, __LINE__);
+		return true;
+	}
+
+	if (ev.remote_follow_wall || s_wifi.receiveFollowWall())
+	{
+		ROS_WARN("%s %d: Idle mode receives remote follow wall key or wifi follow wall, change to follow wall mode.",
+				 __FUNCTION__, __LINE__);
 		setNextMode(cm_wall_follow);
 		return true;
 	}
 
-	if(ev.remote_spot)
+	if (ev.remote_spot || s_wifi.receiveSpot())
 	{
-		ROS_WARN("%s %d: Idle mode receives remote spot key, change to spot mode.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Idle mode receives remote spot key or wifi spot, change to spot mode.",
+				 __FUNCTION__, __LINE__);
 		setNextMode(cm_spot);
 		return true;
 	}
 
-	if(ev.remote_home)
+	if (ev.remote_home || s_wifi.receiveHome())
 	{
-		ROS_WARN("%s %d: Idle mode receives remote home key, change to exploration mode.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Idle mode receives remote home key or wifi home button, change to exploration mode.",
+				 __FUNCTION__, __LINE__);
 		setNextMode(cm_exploration);
 		return true;
 	}
-	if (ev.key_long_pressed)
+	if (ev.key_long_pressed || s_wifi.receiveSleep())
 	{
-		ROS_WARN("%s %d: Idle mode detects long press key, change to sleep mode.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Idle mode detects long press key or wifi sleep button, change to sleep mode.",
+				 __FUNCTION__, __LINE__);
 		setNextMode(md_sleep);
 		return true;
 	}
@@ -125,16 +148,18 @@ bool ModeIdle::isExit()
 		return true;
 	}
 
-	if (ev.remote_direction_forward || ev.remote_direction_left || ev.remote_direction_right)
+	if (ev.remote_direction_forward || ev.remote_direction_left || ev.remote_direction_right || s_wifi.receiveRemote())
 	{
-		ROS_WARN("%s %d: Idle mode receives remote direction key, change to remote mode.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Idle mode receives remote direction key or wifi remote button, change to remote mode.",
+				 __FUNCTION__, __LINE__);
 		setNextMode(md_remote);
 		return true;
 	}
 
 	if (ev.rcon_status)
 	{
-		ROS_WARN("%s %d: Idle mode receives rcon for over %ds, change to go to charger mode.", __FUNCTION__, __LINE__, RCON_TRIGGER_INTERVAL);
+		ROS_WARN("%s %d: Idle mode receives rcon for over %ds, change to go to charger mode.", __FUNCTION__, __LINE__,
+				 RCON_TRIGGER_INTERVAL);
 		setNextMode(md_go_to_charger);
 		return true;
 	}
@@ -314,13 +339,11 @@ void ModeIdle::remoteWifi(bool state_now,bool state_last)
 
 void ModeIdle::remotePlan(bool state_now, bool state_last)
 {
-	if (appmt_obj.getPlanStatus() > 2)
+	if (!plan_activated_status_ && appmt_obj.getPlanStatus() > 2)
 	{
 		appmt_obj.resetPlanStatus();
 		appmt_obj.timesUp();
 		INFO_YELLOW("Plan activated.");
-		// Sleep for 50ms cause the status 3 will be sent for 3 times.
-		usleep(50000);
 		plan_activated_status_ = true;
 	} else
 		EventHandle::remotePlan(state_now, state_last);
@@ -360,7 +383,8 @@ void ModeIdle::keyClean(bool state_now, bool state_last)
 
 	if (reset_wifi)
 	{
-		s_wifi.smartApLink();
+		s_wifi.taskPushBack(S_Wifi::ACT::ACT_REBIND);
+		s_wifi.taskPushBack(S_Wifi::ACT::ACT_SMART_LINK);
 		sp_action_.reset();
 		sp_action_.reset(new ActionIdle);
 	}

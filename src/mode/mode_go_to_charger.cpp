@@ -14,6 +14,9 @@ ModeGoToCharger::ModeGoToCharger()
 	event_manager_set_enable(true);
 
 	serial.setWorkMode(WORK_MODE);
+
+	s_wifi.setWorkMode(Mode::cm_spot);
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 	speaker.play(VOICE_GO_HOME_MODE, false);
 	sp_state = st_init.get();
 	sp_state->init();
@@ -21,6 +24,9 @@ ModeGoToCharger::ModeGoToCharger()
 	action_i_ = ac_open_gyro;
 	mode_i_ = md_go_to_charger;
 	IMoveType::sp_mode_ = this;
+	s_wifi.setWorkMode(cm_exploration);
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
+	s_wifi.resetReceivedWorkMode();
 }
 
 ModeGoToCharger::~ModeGoToCharger()
