@@ -229,6 +229,7 @@ void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 						ROS_WARN("1path.front().dir(%d,%d)",path.front().dir, p_clean_mode->iterate_point_.dir);
                         auto front = path.front();
 						path.pop_front();
+						p_clean_mode->old_dir_ = p_clean_mode->iterate_point_.dir;
 						p_clean_mode->iterate_point_ = path.front();
                         p_clean_mode->iterate_point_.dir = front.dir;
 						std::copy(path.begin(), path.end(),std::back_inserter(p_clean_mode->plan_path_));
