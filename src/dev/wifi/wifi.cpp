@@ -1174,6 +1174,9 @@ void S_Wifi::wifi_send_routine()
 				case ACT::ACT_UPLOAD_LAST_CLEANMAP:
 					this->uploadLastCleanData();
 					break;
+				case ACT::ACT_CLEAR_APP_MAP:
+					this->clearAppMap();
+					break;
 			}
 			usleep(500000);
 		}
@@ -1217,4 +1220,26 @@ void S_Wifi::clearMapCache()
 {
 	MutexLock lock(&map_data_lock_);
 	map_data_buf_->clear();	
+}
+
+void S_Wifi::clearAppMap()
+{
+	uint32_t time  = (uint32_t)ros::Time::now().toSec();
+	std::vector<uint8_t> map_data;
+	map_data.push_back((uint8_t) 0);
+	map_data.push_back((uint8_t) 0);
+	map_data.push_back((uint8_t) ((robot_timer.getWorkTime() & 0x0000ff00) >> 8));
+	map_data.push_back((uint8_t) robot_timer.getWorkTime());
+	map_data.push_back((uint8_t) (0x7f));
+	map_data.push_back((uint8_t) (0xff));
+	map_data.push_back((uint8_t) (0x7f));
+	map_data.push_back((uint8_t) (0xff));
+	wifi::RealtimeMapUploadTxMsg p(
+			time,
+			(uint8_t) 1, // Package seq.
+			(uint8_t) map_data.size(), // Data len.
+			map_data
+	);
+	s_wifi_tx_.push(std::move(p)).commit();
+	ROS_INFO("%s %d: Clear map in android app.", __FUNCTION__, __LINE__);
 }

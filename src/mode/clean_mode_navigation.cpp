@@ -43,6 +43,9 @@ CleanModeNav::CleanModeNav()
 	s_wifi.setWorkMode(Mode::cm_navigation);
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_CLEAR_MAP);
+	// Clear the map on app.
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_CLEAR_APP_MAP);
+
 }
 
 CleanModeNav::~CleanModeNav()
