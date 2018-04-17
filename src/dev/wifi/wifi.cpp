@@ -172,8 +172,8 @@ bool S_Wifi::init()
 				s_wifi_tx_.push(std::move(p)).commit();
 				//set mode
 				setRobotCleanMode(msg.getWorkMode());
-				robot_work_mode_ = msg.getWorkMode();
-				taskPushBack(ACT::ACT_UPLOAD_STATUS);
+//				robot_work_mode_ = msg.getWorkMode();
+//				taskPushBack(ACT::ACT_UPLOAD_STATUS);
 			});
 	//set room mode
 	s_wifi_rx_.regOnNewMsgListener<wifi::SetRoomModeRxMsg>(
@@ -1128,7 +1128,7 @@ bool S_Wifi::setWorkMode(int mode)
 			robot_work_mode_ = wifi::WorkMode::SHUTDOWN;
 			break;
 	}
-	ROS_INFO("\033[1;35m %s,%d,set work mode %d\033[0m",__FUNCTION__,__LINE__,(int)robot_work_mode_);
+	ROS_INFO("\033[1;35m%s,%d,set work mode %d\033[0m",__FUNCTION__,__LINE__,(int)robot_work_mode_);
 	return true;
 }
 

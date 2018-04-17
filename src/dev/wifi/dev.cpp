@@ -58,7 +58,7 @@ bool Dev::tx( const std::vector<uint8_t> &data ) const
 		//for tmp test
 		if(true)//len<100)
 		{
-			std::string msg("\033[1;40;34m tx data = \033[0m");
+			std::string msg("\033[1;40;34mtx data = \033[0m");
 			char buf[30] = {0};
 			for(int i=0;i<len;i++){
 				if(i == 5)
@@ -90,7 +90,7 @@ std::vector<uint8_t> Dev::rx() const
 		return {};
 	}
 	//for tmp test
-	std::string msg("\033[1;40;35m rx data =\033[0m");
+	std::string msg("\033[1;40;35mrx data = \033[0m");
 	char bff[30];
 	for(int i=0;i<len;i++){
 		if(i == 5)
