@@ -205,11 +205,8 @@ public:
 	{
 		return true;
 	}
-protected:
-//	std::vector<Cell_t> temp_fw_cells;
-private:
-	void register_events(void);
 
+private:
 	bool plan_activated_status_{};
 
 	pthread_mutex_t bind_lock_;
@@ -219,9 +216,13 @@ private:
 	bool trigger_wifi_smart_ap_link_{};
 
 	/*---values for rcon handle---*/
+	// todo: first_time_seen_charger_ does not mean as words in reality. It is just the time that enter this mode.
 	double first_time_seen_charger_{ros::Time::now().toSec()};
 	double last_time_seen_charger_{first_time_seen_charger_};
 	boost::shared_ptr<State> st_pause = boost::make_shared<StatePause>();
+
+	bool readyToClean(bool check_battery = true, bool check_error = true);
+
 };
 
 class ModeSleep: public Mode

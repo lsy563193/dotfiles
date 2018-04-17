@@ -30,8 +30,6 @@ ModeSleep::ModeSleep()
 	sp_state->init();
 	plan_activated_status_ = false;
 
-	s_wifi.setWorkMode(Mode::md_sleep);
-	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 	//sp_action_.reset(new ActionSleep);
 	if (!charger.getChargeStatus() && battery.isReadyToClean())
 		fake_sleep_ = true;
