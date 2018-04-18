@@ -1272,18 +1272,18 @@ void S_Wifi::wifi_send_routine()
 			if(!is_wifi_connected_)
 				continue;
 
-			upload_map_count++;
-			if(upload_map_count >= 10)
+			pthread_mutex_lock(&map_data_lock_);
+			int pack_size = map_data_buf_->size();
+			pthread_mutex_unlock(&map_data_lock_);
+
+			if(upload_map_count++ >= pack_size>1?2:10)
 			{
 				this->uploadMap(GRID_MAP);
 				upload_map_count=0;
 			}
 			if(is_Status_Request_)
-			{
-				pthread_mutex_lock(&map_data_lock_);
-				int pack_size = map_data_buf_->size();
-				pthread_mutex_unlock(&map_data_lock_);
-				if(upload_state_count++ >= (pack_size > 5)? 2:10)
+			{	
+				if(upload_state_count++ >= 20)
 				{
 					this->uploadStatus(0xc8,0x00);
 					upload_state_count=0;
