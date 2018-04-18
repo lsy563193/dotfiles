@@ -85,7 +85,6 @@ public:
 	static sensor_msgs::LaserScan getLidarScanDataOriginal(void);
 	double getLidarDistance(int16_t angle,float range_max,float range_min);
 	uint8_t lidar_get_status(int movement_i, int action_i);
-	bool lidarIsStuck();
 
 	void slipCheckingCtrl(bool enable)
 	{

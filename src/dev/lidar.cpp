@@ -1658,11 +1658,6 @@ void Lidar::init()
 	return;
 }
 
-bool Lidar::lidarIsStuck()
-{
-	return lidar.getLidarStuckCheckingEnable() && !lidar.lidarCheckFresh(4,2);
-}
-
 uint8_t Lidar::lidar_get_status(int movement_i, int action_i)
 {
 	std::vector<Vector2<int>> markers;

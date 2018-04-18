@@ -231,6 +231,7 @@ public:
 
 	bool getCleanMap(GridMap& map);
 
+	bool checkLidarStuck();
 private:
 
 	uint8_t getTestMode(void);
