@@ -946,6 +946,12 @@ bool ACleanMode::isExit()
 		return true;
 	}
 
+	if (s_wifi.receivePlan1())
+	{
+		ROS_WARN("%s %d: Exit for wifi plan1.", __FUNCTION__, __LINE__);
+		setNextMode(cm_navigation);
+		return true;
+	}
 	return false;
 }
 
@@ -1687,14 +1693,6 @@ bool ACleanMode::checkEnterGoHomePointState()
 
 bool ACleanMode::isSwitchByEventInStateGoHomePoint()
 {
-	if (s_wifi.receiveIdle())
-	{
-		s_wifi.resetReceivedWorkMode();
-		ROS_INFO("%s %d, Exit for wifi idle.", __FUNCTION__, __LINE__);
-		sp_state = nullptr;
-		return true;
-	}
-
 	return checkEnterExceptionResumeState();
 }
 
