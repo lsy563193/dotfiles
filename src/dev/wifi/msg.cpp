@@ -36,8 +36,8 @@ string SetRoomModeRxMsg::describe() const
 string SetMaxCleanPowerRxMsg::describe() const
 {
 	std::ostringstream ss;
-	ss << "Set max clean power msg: vacuum(" << vacuum() << "), mop("
-			<< mop() << ')';
+	ss << "Set max clean power msg: vacuum(" << (int)vacuum() << "), mop("
+			<< (int)mop() << ')';
 	return ss.str();
 }
 

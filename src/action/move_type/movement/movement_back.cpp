@@ -43,7 +43,22 @@ void MovementBack::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 //	ROS_INFO("MovementBack::adjustSpeed");
 	wheel.setDirectionBackward();
 	speed_ = (speed_ > max_speed_) ? max_speed_ : speed_;
-	l_speed = r_speed = speed_;
+	cliff_status_ |= cliff.getStatus();
+//	ROS_INFO("%s %d: cliff_status:%x.", __FUNCTION__, __LINE__, cliff_status_);
+	if ((cliff_status_ & BLOCK_LEFT) && ((cliff_status_ & BLOCK_RIGHT) == 0))
+	{
+//		ROS_INFO("%s %d: Left cliff triggered while right cliff is alright.", __FUNCTION__, __LINE__);
+		l_speed = speed_;
+		r_speed = speed_ * 3 / 5;
+	}
+	else if ((cliff_status_ & BLOCK_RIGHT) && ((cliff_status_ & BLOCK_LEFT) == 0))
+	{
+//		ROS_INFO("%s %d: Right cliff triggered while left cliff is alright.", __FUNCTION__, __LINE__);
+		l_speed = speed_ * 3 / 5;
+		r_speed = speed_;
+	}
+	else
+		l_speed = r_speed = speed_;
 }
 
 bool MovementBack::isFinish()

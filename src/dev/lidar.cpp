@@ -1310,8 +1310,7 @@ void Lidar::checkRobotSlip()
 
 bool Lidar::isRobotSlip()
 {
-//	return slip_status_;
-	return false;
+	return slip_status_;
 }
 
 
