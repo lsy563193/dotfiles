@@ -786,13 +786,13 @@ uint8_t S_Wifi::setRobotCleanMode(wifi::WorkMode work_mode)
 			received_work_mode_ = work_mode;
 			break;
 		case wifi::WorkMode::IDLE:
-			if(last_work_mode_ == wifi::WorkMode::PLAN1
-						|| last_work_mode_ == wifi::WorkMode::WALL_FOLLOW
-						|| last_work_mode_ == wifi::WorkMode::SPOT
-						|| last_work_mode_ == wifi::WorkMode::HOMING
-						|| last_work_mode_ == wifi::WorkMode::FIND
-						|| last_work_mode_ == wifi::WorkMode::RANDOM
-						|| last_work_mode_ == wifi::WorkMode::REMOTE )//get last mode
+//			if(last_work_mode_ == wifi::WorkMode::PLAN1
+//						|| last_work_mode_ == wifi::WorkMode::WALL_FOLLOW
+//						|| last_work_mode_ == wifi::WorkMode::SPOT
+//						|| last_work_mode_ == wifi::WorkMode::HOMING
+//						|| last_work_mode_ == wifi::WorkMode::FIND
+//						|| last_work_mode_ == wifi::WorkMode::RANDOM
+//						|| last_work_mode_ == wifi::WorkMode::REMOTE )//get last mode
 			{
 //				remote.set(REMOTE_CLEAN);
 				received_work_mode_ = work_mode;
@@ -802,10 +802,10 @@ uint8_t S_Wifi::setRobotCleanMode(wifi::WorkMode work_mode)
 				//if(last_work_mode_ == wifi::WorkMode::PLAN1)
 				//	taskPushBack(ACT::ACT_UPLOAD_LAST_CLEANMAP);
 			}
-			else{
-				ROS_INFO("%s %d: Invalid idle cmd.", __FUNCTION__, __LINE__);
+//			else{
+//				ROS_INFO("%s %d: Invalid idle cmd.", __FUNCTION__, __LINE__);
 //				beeper.debugBeep(VALID);
-			}
+//			}
 			INFO_BLUE("receive mode idle");
 			break;
 		case wifi::WorkMode::RANDOM:
