@@ -429,8 +429,9 @@ void robot::robotbase_routine_cb()
 		}
 
 		// Check lidar stuck
-		if (checkLidarStuck()) {
-//			ROS_INFO("lidar stuck");
+		if (lidar.lidarIsStuck()) {
+			if (!ev.lidar_stuck)
+				ROS_WARN("%s %d: Lidar stuck.");
 			ev.lidar_stuck = true;
 		} else {
 //			ROS_INFO("lidar good");
@@ -847,15 +848,6 @@ bool robot::checkTiltToSlip() {
 	return (ros::Time::now().toSec() - tilt_time_to_slip_) > TIME_LIMIT_TO_SLIP ? true : false;
 }
 
-bool robot::checkLidarStuck() {
-	if (!lidar.getLidarStuckCheckingEnable())
-		return false;
-	if (lidar.lidarCheckFresh(3,2))
-		return false;
-	else
-		return true;
-}
-
 //--------------------
 static float xCount{}, yCount{};
 
@@ -935,7 +927,6 @@ Mode *getNextMode(int next_mode_i_)
 		case Mode::cm_wall_follow:
 			return new CleanModeFollowWall();
 		case Mode::cm_spot:
-			ROS_ERROR("!!!!!!!!!!!!!!cm_spot(%d)", Mode::cm_spot);
 			return new CleanModeSpot();
 //		case Mode::cm_test:
 //			return new CleanModeTest();

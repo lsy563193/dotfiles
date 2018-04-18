@@ -1658,11 +1658,9 @@ void Lidar::init()
 	return;
 }
 
-bool Lidar::lidar_is_stuck()
+bool Lidar::lidarIsStuck()
 {
-	if (lidar.isScanOriginalReady() && !lidar.lidarCheckFresh(4, 2))
-		return true;
-	return false;
+	return lidar.getLidarStuckCheckingEnable() && !lidar.lidarCheckFresh(4,2);
 }
 
 uint8_t Lidar::lidar_get_status(int movement_i, int action_i)

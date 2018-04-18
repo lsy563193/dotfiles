@@ -30,7 +30,7 @@ public:
 //    void display();
 private:
 
-    void cursorCompression(GridMap& grid_map, WifiMap& wifi_map, const BoundingBox2 &bound);
+    void runLengthEncoding(GridMap &grid_map, WifiMap &wifi_map, const BoundingBox2 &bound);
 
 
     uint8_t changeCost(int cost) ;

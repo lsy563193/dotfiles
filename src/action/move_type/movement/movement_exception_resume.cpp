@@ -43,7 +43,7 @@ MovementExceptionResume::~MovementExceptionResume()
 
 void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 {
-	ROS_INFO("self rescuing!");
+//	ROS_INFO("self rescuing!");
 	if (ev.oc_vacuum)
 		left_speed = right_speed = 0;
 	else if (ev.oc_wheel_left || ev.oc_wheel_right)
@@ -219,7 +219,7 @@ void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_sp
 			}
 		}
 	}
-	ROS_INFO("speed(%d, %d)!", left_speed, right_speed);
+//	ROS_INFO("speed(%d, %d)!", left_speed, right_speed);
 }
 
 bool MovementExceptionResume::isFinish()

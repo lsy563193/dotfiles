@@ -177,6 +177,7 @@ bool CleanModeNav::markRealTime()
 	return true;
 
 }
+
 bool CleanModeNav::isExit()
 {
 	if (isStateInit())
