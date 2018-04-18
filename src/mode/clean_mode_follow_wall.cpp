@@ -149,7 +149,7 @@ void CleanModeFollowWall::keyClean(bool state_now, bool state_last)
 void CleanModeFollowWall::remoteMax(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
-	if(water_tank.checkEquipment(true)){
+	if(water_tank.getStatus(WaterTank::operate_option::swing_motor)){
 		beeper.beepForCommand(INVALID);
 	}
 	else if(isStateInit() || isStateFollowWall() || isStateGoHomePoint() || isStateGoToCharger())

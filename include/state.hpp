@@ -33,7 +33,7 @@ public:
 	StateInit() = default;
 	void init() override;
 	void initOpenLidar();
-	void initBackFromCharge();
+	void initBackFromCharger();
 	void initForExploration();
 };
 

@@ -24,35 +24,35 @@ void StateInit::init() {
 }
 
 void StateInit::initOpenLidar() {
-	if (Mode::next_mode_i_ == Mode::cm_navigation && sp_cm_->isRemoteGoHomePoint())
+	if (robot::instance()->getRobotWorkMode() == Mode::cm_navigation && sp_cm_->isRemoteGoHomePoint())
 	{
 		key_led.setMode(LED_STEADY, LED_ORANGE);
 		brush.slowOperate();
-		water_tank.setTankMode(WaterTank::TANK_LOW);
+		water_tank.setSwingMotorMode(WaterTank::SWING_MOTOR_LOW);
 	}
 	else
 	{
 		key_led.setMode(LED_STEADY, LED_GREEN);
 		brush.normalOperate();
-		water_tank.setTankMode(WaterTank::TANK_HIGH);
+		water_tank.setSwingMotorMode(WaterTank::SWING_MOTOR_HIGH);
 	}
-	water_tank.checkEquipment(false) ? water_tank.open(WaterTank::water_tank) : vacuum.setCleanState();
+	water_tank.checkEquipment() ? water_tank.open(WaterTank::operate_option::swing_motor) : vacuum.setCleanState();
 	ROS_INFO("%s %d: Enter state initOpenLidar.", __FUNCTION__, __LINE__);
 }
 
-void StateInit::initBackFromCharge() {
+void StateInit::initBackFromCharger() {
 	key_led.setMode(LED_STEADY, LED_GREEN, 600);
 	brush.slowOperate();
-	water_tank.setTankMode(WaterTank::TANK_LOW);
-	water_tank.checkEquipment(false) ? water_tank.open(WaterTank::water_tank) : vacuum.setCleanState();
-	ROS_INFO("%s %d: Enter state initBackFromCharge.", __FUNCTION__, __LINE__);
+	water_tank.setSwingMotorMode(WaterTank::SWING_MOTOR_LOW);
+	water_tank.checkEquipment() ? water_tank.open(WaterTank::operate_option::swing_motor) : vacuum.setCleanState();
+	ROS_INFO("%s %d: Enter state initBackFromCharger.", __FUNCTION__, __LINE__);
 }
 
 void StateInit::initForExploration() {
 	key_led.setMode(LED_STEADY, LED_ORANGE, 600);
 	brush.slowOperate();
-	water_tank.setTankMode(WaterTank::TANK_LOW);
-	water_tank.checkEquipment(false) ? water_tank.open(WaterTank::water_tank) : vacuum.bldcSpeed(Vac_Speed_Low);
+	water_tank.setSwingMotorMode(WaterTank::SWING_MOTOR_LOW);
+	water_tank.checkEquipment() ? water_tank.open(WaterTank::operate_option::swing_motor) : vacuum.bldcSpeed(Vac_Speed_Low);
 	ROS_INFO("%s %d: Enter state initForExploration.", __FUNCTION__, __LINE__);
 }
 

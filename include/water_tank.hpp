@@ -8,97 +8,94 @@
 #include <cstdint>
 #include <config.h>
 
-
-
 class WaterTank
 {
 public:
 	WaterTank();
-	enum equip{
-		water_tank = 0,
+	enum operate_option{
+		swing_motor = 0,
 		pump,
-		tank_pump,
+		swing_motor_and_pump,
 	};
-	enum p_power{
+	enum pump_mode{
 		PUMP_LOW=0,
 		PUMP_MID,
 		PUMP_HIGH,
 	};
-	enum t_power{
-		TANK_LOW = 0,
-		TANK_HIGH,
+	enum swing_motor_mode{
+		SWING_MOTOR_LOW = 0,
+		SWING_MOTOR_HIGH,
 	};
 	// For checking whether robot is carrying a water tank.
-	bool checkEquipment(bool is_stop_water_tank);
+	bool checkEquipment();
 
 	void setStatus(int equiment,bool status)
 	{
-		if(equiment == water_tank)
-			water_tank_status_ = status;
+		if(equiment == swing_motor)
+			swing_motor_switch_ = status;
 		else if(equiment == pump)
-			pump_status_ = status;
-		else if(equiment == tank_pump)
-			tank_pump_status_ = status;
+			pump_switch_ = status;
 	}
 
 	bool getStatus(int equiment)
 	{
-		if(equiment == water_tank)
-			return water_tank_status_;
+		if(equiment == swing_motor)
+			return swing_motor_switch_;
 		else if(equiment == pump)
-			return pump_status_;
-		else if(equiment == tank_pump)
-			return tank_pump_status_;
+			return pump_switch_;
 	}
 
-	void setCurrent(uint16_t current)
+	void setSwingMotorCurrent(uint16_t current)
 	{
-		current_ = current;
+		swing_motor_current_ = current;
 	}
 
-	uint16_t getCurrent()
+	uint16_t getSwingMotorCurrent()
 	{
-		return current_;
+		return swing_motor_current_;
 	}
 
-	bool getEquimentStatus(){
-		return is_water_tank_equiment_;
+	void setSwingMotorEquipmentStatus(bool val){
+		is_swing_motor_equipped_ = val;
 	}
-	void setEquimentStatus(bool val){
-		is_water_tank_equiment_ = val;
+
+	bool getSwingMotorEquipmentStatus(){
+		return is_swing_motor_equipped_;
 	}
+
 	void open(int equipment);
 
-	void stop(int equipment);
+	void stop(int operate_option);
 
 	void setWaterTankPWM();
 
 	void updatePWM();
 
 	void setPumpMode(uint8_t mode);
-	void setTankMode(uint8_t mode);
+	void setSwingMotorMode(uint8_t mode);
+	int getSwingMotorMode();
 
-	uint8_t getMode()
+	uint8_t getPumpMode()
 	{
-		return mode_;
+		return pump_mode_;
 	}
 
 	
 private:
-	uint16_t current_{};
 
-	// This variable indicates whether robot is booted with a water tank.
+	uint16_t swing_motor_current_{};
 
 	// Real time status for water tank and pump.
-	bool is_water_tank_equiment_{};
-	bool is_tank_mode_change_{};
+	bool is_swing_motor_equipped_{};
+	// Indicates whether swing motor is on.
+	bool swing_motor_switch_{false};
+	// Indicates whether pump is on.
+	bool pump_switch_{false};
 
-	bool water_tank_status_{};
-	bool pump_status_{};
-	bool tank_pump_status_{};
+	bool is_swing_motor_mode_change_{};
 
-	int voltage_water_tank_{FULL_OPERATE_VOLTAGE_FOR_WATER_TANK};
-	uint8_t water_tank_pwm_{};
+	int swing_motor_operate_voltage_{FULL_OPERATE_VOLTAGE_FOR_SWING_MOTOR};
+	uint8_t swing_motor_pwm_{};
 	double check_battery_time_stamp_{};
 	double last_pump_time_stamp_{};
 	double pump_time_interval_;
@@ -106,7 +103,7 @@ private:
 	uint8_t pump_max_cnt_{3};
 	uint8_t pump_pwm_{};
 
-	uint8_t mode_;
+	uint8_t pump_mode_;
 };
 
 extern WaterTank water_tank;

@@ -108,7 +108,7 @@ bool ActionLifeCheck::dataExtract(const uint8_t *buf)
 
 	vacuum.setCurrent((buf[REC_VACUUM_CURRENT_H] << 8) | buf[REC_VACUUM_CURRENT_L]);
 
-	water_tank.setCurrent((buf[REC_WATER_PUMP_CURRENT_H] << 8) | buf[REC_WATER_PUMP_CURRENT_L]);
+	water_tank.setSwingMotorCurrent((buf[REC_WATER_PUMP_CURRENT_H] << 8) | buf[REC_WATER_PUMP_CURRENT_L]);
 
 	robot::instance()->setCurrent((buf[REC_ROBOT_CUNT_H] << 8) | buf[REC_ROBOT_CUNT_L]);
 //	printf("brush(l%d, r%d, m%d), wheel(l%d, r%d), vacuum(%d), robot(%d).\n",
@@ -130,8 +130,7 @@ void ActionLifeCheck::run()
 				brush.normalOperate();
 				vacuum.isMaxInClean(false);
 				vacuum.setCleanState();
-				if(water_tank.checkEquipment(false))
-					water_tank.open(WaterTank::tank_pump);
+				water_tank.open(WaterTank::operate_option::swing_motor_and_pump);
 				wheel.setPidTargetSpeed(LINEAR_MAX_SPEED, LINEAR_MAX_SPEED);
 				left_brush_current_baseline_ /= sum_cnt_;
 				ROS_INFO("%s %d: left_brush_current_baseline_:%d.", __FUNCTION__, __LINE__,
@@ -363,7 +362,7 @@ void ActionLifeCheck::run()
 			wheel.stop();
 			brush.stop();
 			vacuum.stop();
-			water_tank.stop(WaterTank::tank_pump);
+			water_tank.stop(WaterTank::operate_option::swing_motor_and_pump);
 			sleep(5);
 			break;
 		}
@@ -377,7 +376,7 @@ void ActionLifeCheck::run()
 			wheel.stop();
 			brush.stop();
 			vacuum.stop();
-			water_tank.stop(WaterTank::tank_pump);
+			water_tank.stop(WaterTank::operate_option::swing_motor_and_pump);
 			sleep(5);
 			break;
 		}

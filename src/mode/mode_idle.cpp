@@ -277,7 +277,7 @@ void ModeIdle::remoteKeyHandler(bool state_now, bool state_last)
 void ModeIdle::remoteMax(bool state_now, bool state_last)
 {
 	PP_INFO();
-	if(water_tank.checkEquipment(true)){
+	if(water_tank.getStatus(WaterTank::operate_option::swing_motor)){
 		beeper.beepForCommand(INVALID);
 	}
 	else{
