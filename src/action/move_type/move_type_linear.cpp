@@ -214,6 +214,8 @@ void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 			if(!(p_clean_mode->isStateExploration() && p_clean_mode->action_i_ == p_clean_mode->ac_linear))
 				return;
 		}
+		else
+			return;
 
 		auto target_point_ = remain_path_.front();
 		auto &target_xy = (isXAxis(p_clean_mode->iterate_point_.dir)) ? target_point_.x : target_point_.y;
