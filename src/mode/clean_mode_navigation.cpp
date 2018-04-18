@@ -17,7 +17,6 @@
 int CleanModeNav::align_count_ = 0;
 CleanModeNav::CleanModeNav()
 {
-	setNavMode(true);
 	ROS_INFO("%s %d: Entering Navigation mode\n=========================" , __FUNCTION__, __LINE__);
 
 	if(plan_activation_)
@@ -50,7 +49,6 @@ CleanModeNav::CleanModeNav()
 
 CleanModeNav::~CleanModeNav()
 {
-	setNavMode(false);
 	s_wifi.clearMapCache();
 }
 
@@ -197,6 +195,20 @@ bool CleanModeNav::isExit()
 		{
 			ROS_WARN("%s %d: Exit for ev.key_clean_pressed during state %s.", __FUNCTION__, __LINE__,
 					 isStateGoHomePoint() ? "go home point" : "go to charger");
+			setNextMode(md_idle);
+			return true;
+		}
+
+		if (s_wifi.receivePlan1())
+		{
+			ROS_WARN("%s %d: Exit for wifi plan1.", __FUNCTION__, __LINE__);
+			setNextMode(cm_navigation);
+			return true;
+		}
+
+		if (s_wifi.receiveIdle())
+		{
+			ROS_WARN("%s %d: Exit for wifi idle.", __FUNCTION__, __LINE__);
 			setNextMode(md_idle);
 			return true;
 		}
@@ -809,9 +821,9 @@ bool CleanModeNav::checkEnterTempSpotState()
 
 bool CleanModeNav::isSwitchByEventInStateSpot()
 {
-	if (ev.remote_spot || s_wifi.receivePlan1() || s_wifi.receiveSpot())
+	if (ev.remote_spot || s_wifi.receivePlan1() || s_wifi.receiveIdle())
 	{
-		if (s_wifi.receivePlan1() || s_wifi.receiveSpot())
+		if (s_wifi.receivePlan1() || s_wifi.receiveIdle())
 			s_wifi.resetReceivedWorkMode();
 		sp_state = state_clean.get();
 		sp_state->init();
@@ -823,7 +835,17 @@ bool CleanModeNav::isSwitchByEventInStateSpot()
 		return true;
 	}
 
-	return checkEnterPause() || ACleanMode::checkEnterGoHomePointState() || ACleanMode::isSwitchByEventInStateSpot();
+	if (checkEnterPause())
+	{
+		// Exit temp spot mode.
+		sp_saved_states.pop_back();
+		auto state = state_clean.get();
+		sp_saved_states.push_back(state);
+		clean_path_algorithm_.reset(new NavCleanPathAlgorithm);
+		return true;
+	}
+
+	return ACleanMode::checkEnterGoHomePointState() || ACleanMode::isSwitchByEventInStateSpot();
 }
 
 void CleanModeNav::switchInStateSpot()
@@ -941,11 +963,14 @@ void CleanModeNav::switchInStateCharge()
 // ------------------State resume low battery charge--------------------
 bool CleanModeNav::checkEnterResumeLowBatteryCharge()
 {
-	if (ev.key_clean_pressed || battery.isReadyToResumeCleaning())
+	if (ev.key_clean_pressed || battery.isReadyToResumeCleaning() || s_wifi.receivePlan1())
 	{
 		// For key clean force continue cleaning.
 		if (ev.key_clean_pressed)
 			ev.key_clean_pressed = false;
+
+		if (s_wifi.receivePlan1())
+			s_wifi.resetReceivedWorkMode();
 
 		// Resume from low battery charge.
 		speaker.play(VOICE_CLEANING_CONTINUE, false);

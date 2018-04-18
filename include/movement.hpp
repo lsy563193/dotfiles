@@ -79,6 +79,7 @@ private:
 	uint8_t lidar_bumper_jam_cnt_;
 	uint8_t cliff_jam_cnt_;
 	uint8_t robot_stuck_cnt_;
+	uint8_t cliff_status_{0};
 	float lidar_detect_distance;
 };
 

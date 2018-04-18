@@ -26,8 +26,6 @@ ActionPause::ActionPause()
 
 ActionPause::~ActionPause()
 {
-	s_wifi.setWorkMode(Mode::cm_navigation);
-	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 }
 
 bool ActionPause::isFinish()

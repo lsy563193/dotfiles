@@ -188,6 +188,7 @@ void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_sp
 	}
 	else if (ev.lidar_stuck)
 	{
+		ROS_INFO("lidar stucking");
 		if (lidar_resume_cnt_ >= 5) {
 			wheel.stop();
 		} else {
@@ -227,7 +228,7 @@ bool MovementExceptionResume::isFinish()
 	updatePosition();
 	if (!(ev.bumper_jam || ev.lidar_bumper_jam || ev.cliff_jam || ev.cliff_all_triggered || ev.oc_wheel_left || ev.oc_wheel_right
 		  || ev.oc_vacuum || ev.lidar_stuck || ev.robot_stuck || ev.oc_brush_main || ev.robot_slip
-			|| sp_mt_->sp_mode_->is_wheel_cliff_triggered/*|| ev.left_wheel_cliff || ev.right_wheel_cliff*/))
+			|| sp_mt_->sp_mode_->is_wheel_cliff_triggered))
 	{
 		ROS_INFO("%s %d: All exception cleared.", __FUNCTION__, __LINE__);
 		return true;

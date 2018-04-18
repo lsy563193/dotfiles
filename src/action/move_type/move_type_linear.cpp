@@ -204,16 +204,18 @@ void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 		if(stop_generate_next_target)
 			return;
 
-		if (sp_mode_->getNextMode() == sp_mode_->cm_navigation)
+		if (robot::instance()->getRobotWorkMode() == Mode::cm_navigation)
 		{
 			if(!(p_clean_mode->isStateClean() && p_clean_mode->action_i_ == p_clean_mode->ac_linear))
 				return;
 		}
-		else if (sp_mode_->getNextMode() == sp_mode_->cm_exploration)
+		else if (robot::instance()->getRobotWorkMode() == Mode::cm_exploration)
 		{
 			if(!(p_clean_mode->isStateExploration() && p_clean_mode->action_i_ == p_clean_mode->ac_linear))
 				return;
 		}
+		else
+			return;
 
 		auto target_point_ = remain_path_.front();
 		auto &target_xy = (isXAxis(p_clean_mode->iterate_point_.dir)) ? target_point_.x : target_point_.y;
@@ -224,19 +226,19 @@ void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 			stop_generate_next_target = true;
 //			beeper.debugBeep(VALID);
 
-			auto p_algo = boost::dynamic_pointer_cast<NavCleanPathAlgorithm>(p_clean_mode->clean_path_algorithm_);
 			Points path;
-			auto is_found = p_algo->generatePath(p_clean_mode->clean_map_, remain_path_.back(), remain_path_.back().dir,
-												 path);
+			auto is_found = boost::dynamic_pointer_cast<NavCleanPathAlgorithm>(
+					p_clean_mode->clean_path_algorithm_)->generatePath(p_clean_mode->clean_map_, remain_path_.back(),
+																	   remain_path_.back().dir, path);
 			ROS_INFO("%s %d: is_found:(d), remain:", __FUNCTION__, __LINE__, is_found);
-			p_algo->displayPointPath(remain_path_);
-			p_algo->displayPointPath(path);
+			p_clean_mode->clean_path_algorithm_->displayPointPath(remain_path_);
+			p_clean_mode->clean_path_algorithm_->displayPointPath(path);
 			if (is_found)
 			{
 				if (!is_opposite_dir(path.front().dir, p_clean_mode->iterate_point_.dir))
 				{
 					ROS_INFO("%s %d: Not opposite dir, path.front(%d).curr(,%d)", __FUNCTION__, __LINE__,
-							  path.front().dir, p_clean_mode->iterate_point_.dir);
+							 path.front().dir, p_clean_mode->iterate_point_.dir);
 					auto front = path.front();
 					path.pop_front();
 					p_clean_mode->old_dir_ = p_clean_mode->iterate_point_.dir;
@@ -259,7 +261,6 @@ void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 							  path.front().dir, p_clean_mode->iterate_point_.dir);
 				}
 			}
-
 		}
 	}
 }

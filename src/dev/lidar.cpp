@@ -1310,8 +1310,7 @@ void Lidar::checkRobotSlip()
 
 bool Lidar::isRobotSlip()
 {
-//	return slip_status_;
-	return false;
+	return slip_status_;
 }
 
 
@@ -1658,11 +1657,6 @@ void Lidar::init()
 	return;
 }
 
-bool Lidar::lidarIsStuck()
-{
-	return lidar.getLidarStuckCheckingEnable() && !lidar.lidarCheckFresh(4,2);
-}
-
 uint8_t Lidar::lidar_get_status(int movement_i, int action_i)
 {
 	std::vector<Vector2<int>> markers;
@@ -1910,4 +1904,28 @@ void Lidar::setLidarStuckCheckingEnable(bool status) {
 
 bool Lidar::getLidarStuckCheckingEnable() {
 	return lidar_stuck_checking_enable;
+}
+
+bool Lidar::checkLidarBeCovered() {
+	if(isScanOriginalReady() == 0) {
+//		INFO_BLUE("ScanOriginal NOT Ready! Break!");
+		return false;
+	}
+	scanOriginal_mutex_.lock();
+	auto tmp_scan_data = lidarScanData_original_;
+	scanOriginal_mutex_.unlock();
+	int covered_laser_size{0};
+	for (int i = 0; i <= 359; i++) {
+//		ROS_INFO("i = %d, range = %f", i, tmp_scan_data.ranges[i]);
+		if (/*tmp_scan_data.ranges[i] < 4 &&*/ tmp_scan_data.ranges[i] < 0.130) {
+			covered_laser_size++;
+		}
+	}
+//	ROS_INFO("covered_laser_size(%d)", covered_laser_size);
+	if (covered_laser_size > 60) {
+//		ROS_ERROR("lidar was covered");
+		return true;
+	}
+	else
+		return false;
 }
