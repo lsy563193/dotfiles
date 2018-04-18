@@ -206,8 +206,6 @@ bool S_Wifi::init()
 				// Setting for pump and swing motor.
 				water_tank.setPumpMode((uint8_t)msg.mop());
 				water_tank.setTankMode((uint8_t)msg.mop()>0?WaterTank::TANK_HIGH:WaterTank::TANK_LOW);
-				if(water_tank.getStatus(WaterTank::equip::water_tank))
-					water_tank.open(WaterTank::equip::tank_pump);	
 				// Setting for vacuum.
 				vacuum.isMaxInClean(msg.vacuum()>0?true:false);
 				if (vacuum.isOn())
@@ -425,8 +423,6 @@ int8_t S_Wifi::uploadStatus(int msg_code,const uint8_t seq_num)
 	wifi::DeviceStatusBaseTxMsg::CleanMode box;
 	box = water_tank.getEquimentStatus()? wifi::DeviceStatusBaseTxMsg::CleanMode::WATER_TANK: wifi::DeviceStatusBaseTxMsg::CleanMode::DUST;
 
-//	while(ros::ok() && robot::instance()->p_mode == nullptr);
-//	setWorkMode((int)robot::instance()->p_mode->getNextMode());
 
 	switch (error.get())
 	{
@@ -563,7 +559,6 @@ bool S_Wifi::uploadMap(MapType map)
 	std::vector<uint8_t> map_data;
 	std::vector<std::vector<uint8_t>> map_packs;
 	
-
 	//-- upload grid map
 	if(map == S_Wifi::GRID_MAP)
 	{
@@ -592,18 +587,12 @@ bool S_Wifi::uploadMap(MapType map)
 			map_data.push_back((uint8_t)((robot_timer.getWorkTime()&0x0000ff00)>>8));
 			map_data.push_back((uint8_t)robot_timer.getWorkTime());
 			byte_cnt+=4;
-			//--pack date
+			//--pack data
 
 			for(auto &&p_it : pass_path)
 			{
 				int16_t pos_x = p_it.toCell().x;
 				int16_t pos_y = p_it.toCell().y;
-				if(pack_cnt>=255)
-				{
-					pack_cnt=255;
-					ROS_ERROR("%s,%d,MAP TOO BIG TO SEND",__FUNCTION__,__LINE__);
-					break;
-				}
 				map_data.push_back((uint8_t) ((pos_x-1)>>8));
 				map_data.push_back((uint8_t) (0x00ff&(pos_x)));
 				map_data.push_back((uint8_t) ((pos_y-1)>>8));
@@ -668,7 +657,7 @@ bool S_Wifi::uploadMap(MapType map)
 
 		}
 	}
-	//--upload slam map
+	//--upload SLAM map
 	else if(map == S_Wifi::SLAM_MAP)
 	{
 		uint8_t *slam_map_d = NULL;
@@ -1291,8 +1280,10 @@ void S_Wifi::wifi_send_routine()
 			}
 			if(is_Status_Request_)
 			{
-				upload_state_count++;
-				if(upload_state_count >= 20)
+				pthread_mutex_lock(&map_data_lock_);
+				int pack_size = map_data_buf_->size();
+				pthread_mutex_unlock(&map_data_lock_);
+				if(upload_state_count++ >= (pack_size > 5)? 2:10)
 				{
 					this->uploadStatus(0xc8,0x00);
 					upload_state_count=0;
