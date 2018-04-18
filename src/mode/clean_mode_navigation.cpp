@@ -319,6 +319,7 @@ void CleanModeNav::keyClean(bool state_now, bool state_last)
 
 	if (reset_wifi)
 	{
+		s_wifi.taskPushBack(S_Wifi::ACT::ACT_REBIND);
 		s_wifi.taskPushBack(S_Wifi::ACT::ACT_SMART_AP_LINK);
 		sp_action_.reset();
 		sp_action_.reset(new ActionPause);

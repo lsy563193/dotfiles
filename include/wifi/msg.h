@@ -204,12 +204,12 @@ public:
 
 	using RxMsg::RxMsg;
 
-	bool isVacuum() const
+	uint8_t vacuum() const
 	{
 		return data().front();
 	}
 
-	bool isMop() const
+	uint8_t mop() const
 	{
 		return data()[1];
 	}
@@ -586,7 +586,7 @@ public:
 class MaxCleanPowerTxMsg: public Packet
 {
 public:
-	MaxCleanPowerTxMsg(const bool is_vacuum_max, const bool is_mop_max,
+	MaxCleanPowerTxMsg(const uint8_t _vacuum, const uint8_t _mop,
 			const uint8_t seq_num = 0);
 
 private:

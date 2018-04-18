@@ -195,30 +195,15 @@ bool S_Wifi::init()
 				const wifi::SetMaxCleanPowerRxMsg &msg = static_cast<const wifi::SetMaxCleanPowerRxMsg&>( a_msg );
 				// todo : this setting has something wrong.
 				// Setting for pump and swing motor.
-				if(msg.isMop())
-				{
-					water_tank.setPumpMode(WaterTank::PUMP_HIGH);
-					water_tank.setTankMode(WaterTank::TANK_HIGH);
-				}
-				else
-				{
-					water_tank.setPumpMode(WaterTank::PUMP_MID);
-					water_tank.setTankMode(WaterTank::TANK_LOW);
-				}
+				water_tank.setPumpMode((uint8_t)msg.mop());
+				water_tank.setTankMode((uint8_t)msg.mop()>0?WaterTank::TANK_HIGH:WaterTank::TANK_LOW);
 				// Setting for vacuum.
-				vacuum.isMaxInClean(msg.isVacuum());
+				vacuum.isMaxInClean(msg.vacuum());
 				if (vacuum.isOn())
 					vacuum.setCleanState();
 
-				/*if (!water_tank.checkEquipment(true))
-					if(msg.isMop())
-						water_tank.setPumpMode(WaterTank::PUMP_HIGH);
-					else
-						water_tank.setPumpMode(WaterTank::PUMP_MID);
-				else
-					vacuum.isMaxInClean(msg.isVacuum());*/
 				//ack
-				wifi::MaxCleanPowerTxMsg p(vacuum.isMaxInClean(),water_tank.getMode() == WaterTank::PUMP_HIGH);
+				wifi::MaxCleanPowerTxMsg p(msg.vacuum(),msg.mop());
 				s_wifi_tx_.push( std::move(p)).commit();
 			});
 	//remote control
@@ -1232,7 +1217,7 @@ void S_Wifi::wifi_send_routine()
 				case ACT::ACT_SMART_LINK:
 					this->smartLink();
 					break;
-				case ACT::ACT_AP_SMART_LINK:
+				case ACT::ACT_SMART_AP_LINK:
 					this->smartApLink();
 					break;
 				case ACT::ACT_FACTORY_TEST:
