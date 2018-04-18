@@ -20,6 +20,7 @@
 #include "map.h"
 #include "pose.h"
 #include "serial.h"
+#include "mode.hpp"
 //#include "mode.hpp"
 #include <string.h>
 
@@ -77,10 +78,6 @@ public:
 	bool slamStop(void);
 
 	void initOdomPosition();
-
-	// The scale should be between 0 to 1.
-//	void scaleCorrectionPos(const tf::Vector3 &slam_pose, double tmp_yaw_, tf::Vector3 &odom, double &odom_yaw);
-	void scaleCorrectionPos(tf::Vector3 &tmp_pos, double& tmp_rad);
 
 	void resetCorrection();
 
@@ -208,7 +205,6 @@ public:
 	bool checkTilt();
 	bool checkTiltToSlip();
 
-
 	void setCurrent(uint16_t current)
 	{
 		robot_current_ = current;
@@ -220,10 +216,20 @@ public:
 	}
 
 	boost::shared_ptr<Mode> p_mode{};
-	uint8_t getWorkMode()
+
+	// Return sync mode for R16 and M0.
+	uint8_t getR16WorkMode()
 	{
 		return r16_work_mode_;
 	}
+
+	// Return Mode enum.
+	int getRobotWorkMode()
+	{
+		return robot_work_mode_;
+	}
+
+	bool getCleanMap(GridMap& map);
 
 private:
 
@@ -233,8 +239,13 @@ private:
 	boost::mutex baselink_frame_type_mutex_;
 // Lock for odom coordinate
 	boost::mutex odom_mutex_;
+	// Lock for mode switching.
+	boost::mutex mode_mutex_;
 
+	// This indicates the sync mode for R16 and M0.
 	uint8_t r16_work_mode_{WORK_MODE};
+	// This indicates the sync mode for R16 and M0.
+	int robot_work_mode_{Mode::md_idle};
 
 	bool is_sensor_ready_{};
 	bool is_tf_ready_{};
@@ -309,6 +320,9 @@ private:
 	const double TIME_LIMIT_TO_SLIP{0.4};
 	double tilt_time_to_slip_ = 0;
 	bool is_first_tilt_to_slip_{true};
+
+	//for check lidar stuck
+	double lidar_is_covered_time_{0};
 
 	uint16_t robot_current_{0};
 };

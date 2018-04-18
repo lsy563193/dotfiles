@@ -6,7 +6,7 @@
 #include <robot.hpp>
 #include <error.h>
 #include "key_led.h"
-#include <error.h>
+#include "wifi/wifi.h"
 
 void StatePause::init() {
 	if (error.get())
@@ -16,6 +16,8 @@ void StatePause::init() {
 	else
 		key_led.setMode(LED_BREATH, LED_GREEN);
 
+	s_wifi.setWorkMode(Mode::md_idle);
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 	ROS_INFO("%s %d: Enter state pause.", __FUNCTION__, __LINE__);
 }
 //bool StateFolllowWall::isFinish() {

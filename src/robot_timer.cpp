@@ -60,7 +60,7 @@ void Timer::setRealTime(Timer::DateTime date_time)
 	date_time_.hour = date_time.hour;
 	date_time_.mint = date_time.mint;
 	date_time_.sec = date_time.sec;
-	ROS_INFO("%s,%d,\033[1m %u/%u/%u %u:%u:%u\033[0m",
+	ROS_INFO("%s,%d,\033[1;41;35m from cloud %u/%u/%u %u:%u:%u\033[0m",
 				__FUNCTION__,__LINE__,
 				date_time_.year,date_time_.month,date_time_.day,
 				date_time_.hour,date_time.mint,date_time.sec);

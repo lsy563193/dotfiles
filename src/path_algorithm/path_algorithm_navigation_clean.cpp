@@ -369,7 +369,7 @@ void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path) {
 				if (!(p23_it == p3 + cell_direction_[dir_p23] && map.isBlockAccessible(p23_it.x, p23_it.y))) {
 					{
 
-						printf("\n1 break it(%d,%d)!!\n", p12_it.x, p12_it.y);
+						printf("\n2 break it(%d,%d)!!\n", p12_it.x, p12_it.y);
 						return (p12_it - cell_direction_[dir_p12] - p2)/2;
 					}
 				}
@@ -381,7 +381,7 @@ void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path) {
 			}
 		};
 
-	auto check_limit = [&](Cell_t& shift_cell,const bool is_dir_x){
+	auto _check_limit = [&](Cell_t& shift_cell,const bool is_dir_x){
 		if(is_dir_x && fabs(shift_cell.x) > 3){
 			shift_cell.x = static_cast<int16_t>(shift_cell.x > 0 ? 3 : -3);
 		}
@@ -397,7 +397,7 @@ void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path) {
 
 		auto shift_cell = find_index(*p1, *p2, *p3);
 		bool is_dir_x = shift_cell.x != 0;
-		check_limit(shift_cell,is_dir_x);
+		_check_limit(shift_cell,is_dir_x);
 
 		*p2 += shift_cell;
 		*p3 += shift_cell;

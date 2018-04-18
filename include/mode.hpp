@@ -39,10 +39,8 @@ class Mode:public EventHandle
 {
 public:
 	Mode() {
-		running_ = true;
 	}
 	virtual ~Mode() {
-		running_ = false;
 	};
 	void run();
 
@@ -127,21 +125,6 @@ public:
 	bool isExceptionTriggered();
 
 	static boost::shared_ptr<IAction> sp_action_;
-	bool isNavMode()
-	{
-		return is_clean_mode_navigation_;
-	}
-	void setNavMode(bool set)
-	{
-		is_clean_mode_navigation_ = set;
-	}
-
-	bool isExpMode(){
-		return is_clean_mode_exploration_;
-	}
-	void setExpMode(bool set){
-		is_clean_mode_exploration_ = set;
-	}
 
 	double wall_distance;
 	double wheel_cliff_triggered_time_{DBL_MAX};
@@ -150,25 +133,6 @@ public:
 	int mode_i_{};
 
 	State* sp_state{};
-
-	static bool running_;
-	static bool isRunning()
-	{
-		return running_;
-	}
-//	boost::shared_ptr<State> getState() const {
-//		return sp_state;
-//	};
-
-//	void setState(State* state){
-//		sp_state = state;
-//	}
-
-protected:
-	bool is_clean_mode_navigation_{false};
-	bool is_clean_mode_exploration_{false};
-private:
-
 };
 
 class ModeIdle:public Mode
@@ -205,11 +169,8 @@ public:
 	{
 		return true;
 	}
-protected:
-//	std::vector<Cell_t> temp_fw_cells;
-private:
-	void register_events(void);
 
+private:
 	bool plan_activated_status_{};
 
 	pthread_mutex_t bind_lock_;
@@ -219,9 +180,13 @@ private:
 	bool trigger_wifi_smart_ap_link_{};
 
 	/*---values for rcon handle---*/
+	// todo: first_time_seen_charger_ does not mean as words in reality. It is just the time that enter this mode.
 	double first_time_seen_charger_{ros::Time::now().toSec()};
 	double last_time_seen_charger_{first_time_seen_charger_};
 	boost::shared_ptr<State> st_pause = boost::make_shared<StatePause>();
+
+	bool readyToClean(bool check_battery = true, bool check_error = true);
+
 };
 
 class ModeSleep: public Mode
@@ -260,12 +225,15 @@ public:
 
 private:
 	/*---values for rcon handle---*/
+	// todo: first_time_seen_charger_ does not mean as words in reality. It is just the time that enter this mode.
 	double first_time_seen_charger_{ros::Time::now().toSec()};
 	double last_time_seen_charger_{first_time_seen_charger_};
 	boost::shared_ptr<State> st_sleep = boost::make_shared<StateSleep>();
 	bool plan_activated_status_;
 
 	bool fake_sleep_{false};
+
+	bool readyToClean();
 };
 
 class ModeCharge: public Mode

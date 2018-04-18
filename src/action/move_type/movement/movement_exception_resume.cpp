@@ -32,6 +32,7 @@ MovementExceptionResume::MovementExceptionResume()
 	resume_wheel_start_time_ = ros::Time::now().toSec();
 	resume_main_bursh_start_time_ = ros::Time::now().toSec();
 	resume_vacuum_start_time_ = ros::Time::now().toSec();
+	resume_lidar_start_time_ = ros::Time::now().toSec();
 	resume_slip_start_time_ = ros::Time::now().toSec();
 }
 
@@ -42,7 +43,7 @@ MovementExceptionResume::~MovementExceptionResume()
 
 void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 {
-	ROS_INFO("self rescuing!");
+//	ROS_INFO("self rescuing!");
 	if (ev.oc_vacuum)
 		left_speed = right_speed = 0;
 	else if (ev.oc_wheel_left || ev.oc_wheel_right)
@@ -187,8 +188,13 @@ void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_sp
 	}
 	else if (ev.lidar_stuck)
 	{
-		wheel.setDirectionBackward();
-		left_speed = right_speed = 2;
+		ROS_INFO("lidar stucking");
+		if (lidar_resume_cnt_ >= 5) {
+			wheel.stop();
+		} else {
+			wheel.setDirectionBackward();
+			left_speed = right_speed = BACK_MAX_SPEED;
+		}
 	}
 	else if (ev.robot_slip)
 	{
@@ -214,7 +220,7 @@ void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_sp
 			}
 		}
 	}
-	ROS_INFO("speed(%d, %d)!", left_speed, right_speed);
+//	ROS_INFO("speed(%d, %d)!", left_speed, right_speed);
 }
 
 bool MovementExceptionResume::isFinish()
@@ -222,7 +228,7 @@ bool MovementExceptionResume::isFinish()
 	updatePosition();
 	if (!(ev.bumper_jam || ev.lidar_bumper_jam || ev.cliff_jam || ev.cliff_all_triggered || ev.oc_wheel_left || ev.oc_wheel_right
 		  || ev.oc_vacuum || ev.lidar_stuck || ev.robot_stuck || ev.oc_brush_main || ev.robot_slip
-			|| sp_mt_->sp_mode_->is_wheel_cliff_triggered/*|| ev.left_wheel_cliff || ev.right_wheel_cliff*/))
+			|| sp_mt_->sp_mode_->is_wheel_cliff_triggered))
 	{
 		ROS_INFO("%s %d: All exception cleared.", __FUNCTION__, __LINE__);
 		return true;
@@ -297,7 +303,7 @@ bool MovementExceptionResume::isFinish()
 					vacuum.stop();
 					water_tank.stop(WaterTank::tank_pump);
 					float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getOriginX(), odom.getOriginY());
-					if (std::abs(distance) >= CELL_SIZE * ROBOT_SIZE)
+					if (std::abs(distance) >= CELL_SIZE * ROBOT_SIZE / 2)
 					{
 						ROS_INFO("%s %d: Move back finish!", __FUNCTION__, __LINE__);
 						brush.mainBrushResume();
@@ -827,6 +833,32 @@ bool MovementExceptionResume::isFinish()
 				}
 				break;
 			}
+		}
+	}
+	else if (ev.lidar_stuck) {
+		if (lidar_resume_cnt_ < 5)
+		{
+			float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getOriginX(), odom.getOriginY());
+			if (std::abs(distance) > 0.02f)
+			{
+				wheel.stop();
+				lidar_resume_cnt_++;
+				if (lidar_resume_cnt_ <= 5)
+					ROS_WARN("%s %d: Resume failed, try lidar resume for the %d time.",
+									 __FUNCTION__, __LINE__, lidar_resume_cnt_);
+				s_pos_x = odom.getOriginX();
+				s_pos_y = odom.getOriginY();
+			}
+		} else if (lidar_resume_cnt_ == 5) {
+			if (ros::Time::now().toSec() - resume_vacuum_start_time_ > 10) {//stop for 10 seconds for rescue the lidar
+				lidar_resume_cnt_ = 6;
+			}
+		}
+		else
+		{
+			ROS_WARN("%s %d: lidar jamed.", __FUNCTION__, __LINE__);
+			ev.fatal_quit = true;
+			error.set(ERROR_CODE_LIDAR);
 		}
 	}
 

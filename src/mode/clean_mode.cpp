@@ -44,7 +44,8 @@ ACleanMode::ACleanMode()
 	IMoveType::sp_mode_ = this;
 	APathAlgorithm::p_cm_ = this;
 	State::sp_cm_ = this;
-	if (robot::instance()->getWorkMode() == WORK_MODE ||robot::instance()->getWorkMode() == IDLE_MODE || robot::instance()->getWorkMode() == CHARGE_MODE)
+	if (robot::instance()->getR16WorkMode() == WORK_MODE || robot::instance()->getR16WorkMode() == IDLE_MODE ||
+			robot::instance()->getR16WorkMode() == CHARGE_MODE)
 	{
 		sp_state = state_init.get();
 		sp_state->init();
@@ -61,6 +62,8 @@ ACleanMode::ACleanMode()
 	c_rcon.resetStatus();
 	robot::instance()->initOdomPosition();
 	s_wifi.resetReceivedWorkMode();
+	if (error.get())
+		error.clear(error.get(), true);
 //	fw_map.reset(CLEAN_MAP);
 
 //	// todo:debug
@@ -177,6 +180,7 @@ void ACleanMode::saveBlock(int block, int dir, std::function<Cells()> get_list)
 //		}
 		c_blocks.insert({block, cell});
 	}
+	printf("\n");
 }
 
 void ACleanMode::saveBlocks() {

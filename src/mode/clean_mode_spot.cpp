@@ -11,12 +11,10 @@ CleanModeSpot::CleanModeSpot()
 {
 	speaker.play(VOICE_CLEANING_SPOT,false);
 
-	s_wifi.setWorkMode(Mode::cm_spot);
-	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 	clean_path_algorithm_.reset(new SpotCleanPathAlgorithm());
 	go_home_path_algorithm_.reset();
 	mode_i_ = cm_spot;
-	s_wifi.setWorkMode(md_idle);
+	s_wifi.setWorkMode(cm_spot);
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 }
 

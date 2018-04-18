@@ -17,7 +17,6 @@
 int CleanModeNav::align_count_ = 0;
 CleanModeNav::CleanModeNav()
 {
-	setNavMode(true);
 	ROS_INFO("%s %d: Entering Navigation mode\n=========================" , __FUNCTION__, __LINE__);
 
 	if(plan_activation_)
@@ -50,7 +49,6 @@ CleanModeNav::CleanModeNav()
 
 CleanModeNav::~CleanModeNav()
 {
-	setNavMode(false);
 	s_wifi.clearMapCache();
 }
 
@@ -177,6 +175,7 @@ bool CleanModeNav::markRealTime()
 	return true;
 
 }
+
 bool CleanModeNav::isExit()
 {
 	if (isStateInit())
@@ -319,6 +318,7 @@ void CleanModeNav::keyClean(bool state_now, bool state_last)
 
 	if (reset_wifi)
 	{
+		s_wifi.taskPushBack(S_Wifi::ACT::ACT_REBIND);
 		s_wifi.taskPushBack(S_Wifi::ACT::ACT_SMART_AP_LINK);
 		sp_action_.reset();
 		sp_action_.reset(new ActionPause);
@@ -807,9 +807,9 @@ bool CleanModeNav::checkEnterTempSpotState()
 
 bool CleanModeNav::isSwitchByEventInStateSpot()
 {
-	if (ev.remote_spot || s_wifi.receivePlan1() || s_wifi.receiveSpot())
+	if (ev.remote_spot || s_wifi.receivePlan1() || s_wifi.receiveIdle())
 	{
-		if (s_wifi.receivePlan1() || s_wifi.receiveSpot())
+		if (s_wifi.receivePlan1() || s_wifi.receiveIdle())
 			s_wifi.resetReceivedWorkMode();
 		sp_state = state_clean.get();
 		sp_state->init();
@@ -821,7 +821,17 @@ bool CleanModeNav::isSwitchByEventInStateSpot()
 		return true;
 	}
 
-	return checkEnterPause() || ACleanMode::checkEnterGoHomePointState() || ACleanMode::isSwitchByEventInStateSpot();
+	if (checkEnterPause())
+	{
+		// Exit temp spot mode.
+		sp_saved_states.pop_back();
+		auto state = state_clean.get();
+		sp_saved_states.push_back(state);
+		clean_path_algorithm_.reset(new NavCleanPathAlgorithm);
+		return true;
+	}
+
+	return ACleanMode::checkEnterGoHomePointState() || ACleanMode::isSwitchByEventInStateSpot();
 }
 
 void CleanModeNav::switchInStateSpot()

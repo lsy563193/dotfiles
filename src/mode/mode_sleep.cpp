@@ -30,8 +30,6 @@ ModeSleep::ModeSleep()
 	sp_state->init();
 	plan_activated_status_ = false;
 
-	s_wifi.setWorkMode(Mode::md_sleep);
-	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 	//sp_action_.reset(new ActionSleep);
 	if (!charger.getChargeStatus() && battery.isReadyToClean())
 		fake_sleep_ = true;
@@ -107,32 +105,23 @@ bool ModeSleep::isExit()
 
 	if ((s_wifi.receivePlan1() || s_wifi.receiveHome() || s_wifi.receiveSpot()) && !serial.isMainBoardSleep())
 	{
-		if (error.get() && !error.clear(error.get()))
+		if (!readyToClean())
 		{
-			ROS_WARN("%s %d: Sleep mode receives wifi plan1 but can not clear error, change to idle mode.",
-					 __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Change to idle mode.", __FUNCTION__, __LINE__);
 			setNextMode(md_idle);
 		}
-		else
+		else if (s_wifi.receivePlan1())
 		{
-			if (s_wifi.receivePlan1())
-			{
-				ROS_WARN("%s %d: Sleep mode receives wifi plan1, change to navigation mode.",
-						 __FUNCTION__, __LINE__);
-				setNextMode(cm_navigation);
-			}
-			else if (s_wifi.receiveHome())
-			{
-				ROS_WARN("%s %d: Sleep mode receives wifi home, change to exploration mode.",
-						 __FUNCTION__, __LINE__);
-				setNextMode(cm_exploration);
-			}
-			else if (s_wifi.receiveSpot())
-			{
-				ROS_WARN("%s %d: Sleep mode receives wifi spot, change to spot mode.",
-						 __FUNCTION__, __LINE__);
-				setNextMode(cm_spot);
-			}
+			ROS_WARN("%s %d: Sleep mode receives wifi plan1, change to navigation mode.", __FUNCTION__, __LINE__);
+			setNextMode(cm_navigation);
+		} else if (s_wifi.receiveHome())
+		{
+			ROS_WARN("%s %d: Sleep mode receives wifi home, change to exploration mode.", __FUNCTION__, __LINE__);
+			setNextMode(cm_exploration);
+		} else if (s_wifi.receiveSpot())
+		{
+			ROS_WARN("%s %d: Sleep mode receives wifi spot, change to spot mode.", __FUNCTION__, __LINE__);
+			setNextMode(cm_spot);
 		}
 
 		return true;
@@ -261,5 +250,32 @@ void ModeSleep::remoteKeyHandler(bool state_now, bool state_last)
 {
 	ROS_INFO("%s %d: Receive remote:%d but not valid for fake sleep.", __FUNCTION__, __LINE__, remote.get());
 	remote.reset();
+}
+
+bool ModeSleep::readyToClean()
+{
+	if (!battery.isReadyToClean())
+	{
+		ROS_WARN("%s %d: Battery not ready to clean(Not reach %4dmV).", __FUNCTION__,
+				 __LINE__, BATTERY_READY_TO_CLEAN_VOLTAGE);
+		speaker.play(VOICE_BATTERY_LOW, false);
+		return false;
+	}
+	else if (cliff.getStatus() & (BLOCK_LEFT | BLOCK_FRONT | BLOCK_RIGHT))
+	{
+		ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
+		speaker.play(VOICE_ERROR_LIFT_UP, false);
+		return false;
+	}
+	else if (robot::instance()->isBatteryLow2())
+	{
+		ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, battery.getVoltage(), (int)LOW_BATTERY_STOP_VOLTAGE);
+		sp_state->init();
+		beeper.beepForCommand(INVALID);
+		speaker.play(VOICE_BATTERY_LOW, false);
+		return false;
+	}
+
+	return true;
 }
 

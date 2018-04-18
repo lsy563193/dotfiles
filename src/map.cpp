@@ -235,10 +235,8 @@ void GridMap::convertFromSlamMap(float resolution_target,float threshold,const B
 
 	// Set resolution multi between cost map and slam map.
 	auto multi = resolution_target / resolution;
-	ROS_INFO("%s %d: resolution: %f, multi: %f.", __FUNCTION__, __LINE__, resolution, multi);
 	// Limit count for checking block.*/
 	auto limit_count = static_cast<uint16_t>((multi * multi) * threshold);
-	ROS_INFO("%s %d: limit_count: %d.", __FUNCTION__, __LINE__, limit_count);
 	// Set boundary for this cost map.
 
 	int16_t map_x_min = std::max(static_cast<int16_t>(origin_x  / resolution_target), bound.min.x);
@@ -246,8 +244,8 @@ void GridMap::convertFromSlamMap(float resolution_target,float threshold,const B
 	int16_t map_y_min = std::max(static_cast<int16_t>(origin_y / resolution_target), bound.min.y);
 	int16_t map_y_max = std::min(static_cast<int16_t>(map_y_min + height / multi), bound.max.y);
 
-	ROS_INFO("%s,%d: map_x_min: %d, map_x_max: %d, map_y_min: %d, map_y_max: %d",
-	 		   __FUNCTION__, __LINE__, map_x_min, map_x_max, map_y_min, map_y_max);
+	ROS_INFO("%s,%d: resolution: %f, multi: %f, limit cnt:%d, map_x_min: %d, map_x_max: %d, map_y_min: %d, map_y_max: %d",
+	 		   __FUNCTION__, __LINE__, resolution, multi, limit_count, map_x_min, map_x_max, map_y_min, map_y_max);
 	for (auto cell_x = map_x_min; cell_x <= map_x_max; ++cell_x)
 	{
 //		ROS_ERROR("cell:");
@@ -720,7 +718,7 @@ void GridMap::getMapRange(uint8_t id, int16_t *x_range_min, int16_t *x_range_max
 		*y_range_min = g_y_min - (abs(g_y_min - g_y_max) <= 3? 3 : 1);
 		*y_range_max = g_y_max + (abs(g_y_min - g_y_max) <= 3 ? 3 : 1);
 	}
-	ROS_INFO("Get Range:min(%d,%d),max(%d,%d)", g_x_min,g_y_min, g_x_max,  g_y_max);
+//	ROS_INFO("Get Range:min(%d,%d),max(%d,%d)", g_x_min,g_y_min, g_x_max,  g_y_max);
 }
 
 bool GridMap::isOutOfMap(const Cell_t &cell)

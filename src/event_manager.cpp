@@ -350,10 +350,10 @@ void event_manager_thread_cb()
 		}
 
 		// Lidar stuck
-		if (lidar.lidar_is_stuck()) {
+		/*if (lidar.lidarIsStuck()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_LIDAR_STUCK);
-		}
+		}*/
 
 		/*---tilt---*/
 		if(true){
@@ -616,6 +616,7 @@ void event_manager_reset_status(void)
 
 	/* tilt switch*/
 	gyro.setTiltCheckingEnable(false);
+	lidar.setLidarStuckCheckingEnable(false);
 	ev.tilt_triggered = false;
 	/* lidar bumper */
 	ev.lidar_bumper = false;

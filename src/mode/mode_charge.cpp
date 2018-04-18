@@ -3,6 +3,7 @@
 //
 
 #include <robot.hpp>
+#include <event_manager.h>
 #include "error.h"
 #include "dev.h"
 #include "mode.hpp"
@@ -25,8 +26,6 @@ ModeCharge::ModeCharge()
 	action_i_ = ac_charge;
 	mode_i_ = md_charge;
 	serial.setWorkMode(CHARGE_MODE);
-	s_wifi.setWorkMode(md_charge);
-	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 	s_wifi.resetReceivedWorkMode();
 	plan_activated_status_ = false;
 	sp_state = state_charge.get();
@@ -43,48 +42,60 @@ ModeCharge::~ModeCharge()
 
 bool ModeCharge::isExit()
 {
-	if (ev.key_clean_pressed || plan_activated_status_)
+	if (plan_activated_status_)
 	{
-		if (plan_activated_status_)
+		if (error.get() != ERROR_CODE_NONE)
 		{
-			if (error.get() != ERROR_CODE_NONE)
+			if (error.clear(error.get()))
 			{
-				if (error.clear(error.get()))
-				{
-					ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
+				ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
 //					speaker.play(VOICE_CLEAR_ERROR_UNOFFICIAL, false);
-				} else
-				{
+			} else
+			{
 //					speaker.play(VOICE_CANCEL_APPOINTMENT_UNOFFICIAL, false);
-					error.alarm();
-				}
+				error.alarm();
 			}
-
-			if (error.get() != ERROR_CODE_NONE)
-				ROS_INFO("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
-			else if (cliff.getStatus() & (BLOCK_LEFT | BLOCK_FRONT | BLOCK_RIGHT))
-			{
-				ROS_WARN("%s %d: Plan not activated not valid because of robot lifted up.", __FUNCTION__, __LINE__);
-				speaker.play(VOICE_ERROR_LIFT_UP);
-			} else if (!battery.isReadyToClean())
-			{
-				ROS_WARN("%s %d: Plan not activated not valid because of battery not ready to clean.", __FUNCTION__, __LINE__);
-				speaker.play(VOICE_BATTERY_LOW);
-			} else if (charger.isDirected())
-			{
-				ROS_WARN("%s %d: Plan not activated not valid because of charging with adapter.", __FUNCTION__, __LINE__);
-				speaker.play(VOICE_PLEASE_PULL_OUT_THE_PLUG);
-			} else{
-				ROS_WARN("%s %d: Charge mode receives plan, change to navigation mode.", __FUNCTION__, __LINE__);
-				setNextMode(cm_navigation);
-				ACleanMode::plan_activation_ = true;
-				return true;
-			}
-			plan_activated_status_ = false;
 		}
-		else
+
+		if (error.get() != ERROR_CODE_NONE)
+			ROS_INFO("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
+		else if (cliff.getStatus() & (BLOCK_LEFT | BLOCK_FRONT | BLOCK_RIGHT))
 		{
-			ROS_WARN("%s %d: Charge mode receives remote clean or clean key, change to navigation mode.", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Plan not activated not valid because of robot lifted up.", __FUNCTION__, __LINE__);
+			speaker.play(VOICE_ERROR_LIFT_UP);
+		} else if (!battery.isReadyToClean())
+		{
+			ROS_WARN("%s %d: Plan not activated not valid because of battery not ready to clean.", __FUNCTION__,
+					 __LINE__);
+			speaker.play(VOICE_BATTERY_LOW);
+		} else if (charger.isDirected())
+		{
+			ROS_WARN("%s %d: Plan not activated not valid because of charging with adapter.", __FUNCTION__, __LINE__);
+			speaker.play(VOICE_PLEASE_PULL_OUT_THE_PLUG);
+		} else
+		{
+			ROS_WARN("%s %d: Charge mode receives plan, change to navigation mode.", __FUNCTION__, __LINE__);
+			setNextMode(cm_navigation);
+			ACleanMode::plan_activation_ = true;
+			return true;
+		}
+		plan_activated_status_ = false;
+	}
+
+	if (ev.key_clean_pressed)
+	{
+		if (!battery.isReadyToClean())
+		{
+			ROS_WARN("%s %d: Battery not ready to clean.", __FUNCTION__, __LINE__);
+			speaker.play(VOICE_BATTERY_LOW);
+		} else if (charger.isDirected())
+		{
+			ROS_WARN("%s %d: Charging with adapter.", __FUNCTION__, __LINE__);
+			speaker.play(VOICE_PLEASE_PULL_OUT_THE_PLUG);
+		} else
+		{
+			ROS_WARN("%s %d: Charge mode receives remote clean or key clean, change to navigation mode.", __FUNCTION__,
+					 __LINE__);
 			setNextMode(cm_navigation);
 			return true;
 		}
@@ -92,17 +103,22 @@ bool ModeCharge::isExit()
 
 	if (s_wifi.receivePlan1())
 	{
-		if (!charger.isDirected())
+		if (!battery.isReadyToClean())
+		{
+			ROS_WARN("%s %d: Battery not ready to clean.", __FUNCTION__, __LINE__);
+			speaker.play(VOICE_BATTERY_LOW);
+		} else if (charger.isDirected())
+		{
+			ROS_WARN("%s %d: Charging with adapter.", __FUNCTION__, __LINE__);
+			speaker.play(VOICE_PLEASE_PULL_OUT_THE_PLUG);
+		} else
 		{
 			ROS_WARN("%s %d: Charge mode receives wifi plan1, change to navigation mode.", __FUNCTION__, __LINE__);
 			setNextMode(cm_navigation);
 			return true;
 		}
-		else
-		{
-			ROS_WARN("%s %d: Charge mode receives wifi plan1 but cancel for direct charge.", __FUNCTION__, __LINE__);
-			s_wifi.resetReceivedWorkMode();
-		}
+		s_wifi.resetReceivedWorkMode();
+		s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 	}
 
 	return false;
