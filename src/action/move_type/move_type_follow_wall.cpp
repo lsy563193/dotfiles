@@ -472,12 +472,9 @@ bool MoveTypeFollowWall::isNewLineReach(GridMap &map)
 //					 countToCell(s_curr_p.y));
 	if (is_pos_dir ^ s_curr_p.y < target_limit) // Robot has reached the target line limit.
 	{
-		ROS_WARN("%s %d: Reach the target limit, start_p.y(%d), target.y(%d),curr_y(%d)",
-				 __FUNCTION__, __LINE__, start_point_.y, target_point_.y,
-				 s_curr_p.y);
-
 		g_follow_last_follow_wall_dir = (is_left_ ^ (target_point_.y<start_point_.y)) ? 1 : 2;
-		ROS_ERROR("g_follow_last_follow_wall_dir%d", g_follow_last_follow_wall_dir);
+		ROS_WARN("%s %d: Reach the target limit, start_p.y(%f), target.y(%f), curr_y(%f), last follow wall dir(%d)",
+				 __FUNCTION__, __LINE__, start_point_.y, target_point_.y, s_curr_p.y, g_follow_last_follow_wall_dir);
 		ret = true;
 	}
 	return ret;

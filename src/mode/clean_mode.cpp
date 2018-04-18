@@ -179,6 +179,7 @@ void ACleanMode::saveBlock(int block, int dir, std::function<Cells()> get_list)
 //		}
 		c_blocks.insert({block, cell});
 	}
+	printf("\n");
 }
 
 void ACleanMode::saveBlocks() {

@@ -20,6 +20,7 @@ bool ActionOpenLidar::isFinish(){
 	if (lidar.isScanOriginalReady() == 1)
 	{
 		ROS_INFO("%s %d: Action open lidar succeed.", __FUNCTION__, __LINE__);
+		lidar.setLidarStuckCheckingEnable(true);
 		return true;
 	}
 

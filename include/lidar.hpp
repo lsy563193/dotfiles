@@ -85,7 +85,7 @@ public:
 	static sensor_msgs::LaserScan getLidarScanDataOriginal(void);
 	double getLidarDistance(int16_t angle,float range_max,float range_min);
 	uint8_t lidar_get_status(int movement_i, int action_i);
-	bool lidar_is_stuck();
+	bool lidarIsStuck();
 
 	void slipCheckingCtrl(bool enable)
 	{
@@ -100,6 +100,9 @@ public:
 	void readLidarDataFromFile(bool check_front, float (&scan_data)[360]);
 
 	bool scanDataChecking(bool check_front, sensor_msgs::LaserScan scan, float (&ref_scan_data)[360]);
+
+	void setLidarStuckCheckingEnable(bool status);
+	bool getLidarStuckCheckingEnable();
 private:
 
 	// switch_ is the target status of lidar.
@@ -150,6 +153,7 @@ private:
 	const float dist3_ = 1.5;//range distance 3
 	const float dist4_ = 0.5;//range distance 4
 
+	bool lidar_stuck_checking_enable{false};
 };
 
 

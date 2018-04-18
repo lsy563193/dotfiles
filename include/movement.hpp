@@ -298,6 +298,7 @@ private:
 	double resume_main_bursh_start_time_;
 	uint8_t oc_vacuum_resume_cnt_{0};
 	double resume_vacuum_start_time_;
+	double resume_lidar_start_time_;
 	uint8_t wheel_resume_cnt_{0};
 	uint8_t bumper_jam_state_{1};
 	uint8_t lidar_bumper_jam_state_{1};
@@ -312,6 +313,7 @@ private:
 	uint8_t wheel_cliff_resume_cnt_{0};
 	uint8_t wheel_cliff_state_{1};
 	uint8_t robot_stuck_resume_cnt_{0};
+	uint8_t lidar_resume_cnt_{0};
 };
 
 class MovementCharge :public IMovement

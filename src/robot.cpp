@@ -421,14 +421,22 @@ void robot::robotbase_routine_cb()
 		/*------publish end -----------*/
 
 		// Check tilt
-#if 1
 		if (checkTilt()){
 			gyro.setTiltCheckingStatus(1);
 			beeper.debugBeep(VALID);
 		} else {
 			gyro.setTiltCheckingStatus(0);
 		}
-#endif
+
+		// Check lidar stuck
+		if (lidar.lidarIsStuck()) {
+			if (!ev.lidar_stuck)
+				ROS_WARN("%s %d: Lidar stuck.");
+			ev.lidar_stuck = true;
+		} else {
+//			ROS_INFO("lidar good");
+			ev.lidar_stuck = false;
+		}
 		// Dynamic adjust obs
 		obs.DynamicAdjust(OBS_adjust_count);
 
@@ -919,7 +927,6 @@ Mode *getNextMode(int next_mode_i_)
 		case Mode::cm_wall_follow:
 			return new CleanModeFollowWall();
 		case Mode::cm_spot:
-			ROS_ERROR("!!!!!!!!!!!!!!cm_spot(%d)", Mode::cm_spot);
 			return new CleanModeSpot();
 //		case Mode::cm_test:
 //			return new CleanModeTest();

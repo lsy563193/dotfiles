@@ -6,12 +6,12 @@
 
 WifiMapManage wifiMapManage;
 
-void WifiMapManage::cursorCompression(GridMap& grid_map, WifiMap& wifi_map,const BoundingBox2& bound) {
+void WifiMapManage::runLengthEncoding(GridMap &grid_map, WifiMap &wifi_map, const BoundingBox2 &bound){
 //	bound = grid_map.generateBound();
-	ROS_INFO("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+	ROS_INFO("%s %d: Begin run-length encoding.", __FUNCTION__, __LINE__);
 	std::get<0>(wifi_map) = bound.min;
 	std::get<1>(wifi_map) = bound.max.x - bound.min.x+1;
-    auto& data = std::get<2>(wifi_map);
+	auto& data = std::get<2>(wifi_map);
 	for(auto i= bound.min.x; i<= bound.max.x; i++)
 	{
 		int curr_cost=250;//init
@@ -24,7 +24,7 @@ void WifiMapManage::cursorCompression(GridMap& grid_map, WifiMap& wifi_map,const
 				if(size != 0)//init don't push
 				{
 					data.push_back({changeCost(curr_cost), size});
-                    size = 0;
+					size = 0;
 				}
 				curr_cost = it_cost;
 			}
@@ -32,7 +32,7 @@ void WifiMapManage::cursorCompression(GridMap& grid_map, WifiMap& wifi_map,const
 		}
 		data.push_back({changeCost(curr_cost), size});
 	}
-	ROS_INFO("data(%d)!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",data.size());
+	ROS_INFO("%s %d: End run-length encoding, data size(%d).", __FUNCTION__, __LINE__, data.size());
 }
 
 uint8_t WifiMapManage::changeCost(int cost) {
@@ -59,14 +59,14 @@ uint8_t WifiMapManage::changeCost(int cost) {
 void WifiMapManage::serialize(GridMap& grid_map, const BoundingBox2& bound) {
 
 	WifiMap wifi_map{};
-    cursorCompression(grid_map, wifi_map,bound);
+	runLengthEncoding(grid_map, wifi_map, bound);
     auto left_low_conner = std::get<0>(wifi_map);
 	auto width = std::get<1>(wifi_map);
 	auto& map_data = std::get<2>(wifi_map);
 	valid_size_ = 6 + map_data.size()*3;
 	ROS_ASSERT(valid_size_<10000);
 
-	ROS_INFO("%d,%d ", 6 + valid_size_, DATA_SIZE);
+	ROS_INFO("%s %d: valid_size_ %d, DATA_SIZE %d ", __FUNCTION__, __LINE__, 6 + valid_size_, DATA_SIZE);
 	{
 		boost::mutex::scoped_lock lock(data_mutex);
 		memset(data_, 0, DATA_SIZE);
@@ -76,18 +76,20 @@ void WifiMapManage::serialize(GridMap& grid_map, const BoundingBox2& bound) {
 		data_[3] = static_cast<uint8_t>(left_low_conner.y >> 8);
 		data_[4] = static_cast<uint8_t>(width);
 		data_[5] = static_cast<uint8_t>(width >> 8);
-		for (size_t i = 0; i <= map_data.size(); ++i) {
+		for (size_t i = 0; i <= map_data.size(); ++i)
+		{
 			data_[6 + i * 3] = map_data[i].first;
 			data_[6 + i * 3 + 1] = static_cast<uint8_t >(map_data[i].second);
 			data_[6 + i * 3 + 2] = static_cast<uint8_t >(map_data[i].second >> 8);
 		}
-        ROS_ERROR("display wifi map : left_low_conner(%d,%d),width(%d),h(%d):",left_low_conner.x, left_low_conner.y, width,map_data.size());
-        /*
+		ROS_INFO("display wifi map : left_low_conner(%d,%d),width(%d),h(%d):", left_low_conner.x, left_low_conner.y,
+				 width, map_data.size());
+		/*
 //		std::ostringstream outString;
 		auto count =0;
 		auto line =0;
 		printf("%40d", bound.min.x);
-        for(auto c = 6; c < valid_size_; c++) {
+		for(auto c = 6; c < valid_size_; c++) {
 //			outString << data_[c];
 			printf("%d", data_[c]);
 			if ((c - 6) % 3 == 0)
@@ -97,7 +99,7 @@ void WifiMapManage::serialize(GridMap& grid_map, const BoundingBox2& bound) {
 			}
 			else if ((c - 6) % 3 == 1) {
 //				outString << ',';
-                count += data_[c];
+				count += data_[c];
 				printf(",");
 			}
 			else if ((c - 6) % 3 == 2)
@@ -114,8 +116,8 @@ void WifiMapManage::serialize(GridMap& grid_map, const BoundingBox2& bound) {
 			}
 		}
 //        printf("%s", outString.str().c_str());
-        printf("\n");
-         */
+		printf("\n");
+		 */
 	}
 }
 
