@@ -488,14 +488,17 @@ bool MoveTypeFollowWall::handleMoveBackEventRealTime(ACleanMode *p_clean_mode)
 		return false;
 	}
 
+	auto bumper_status = boost::dynamic_pointer_cast<MovementStay>(sp_movement_)->bumper_status_in_stay_;
+	auto cliff_status = boost::dynamic_pointer_cast<MovementStay>(sp_movement_)->cliff_status_in_stay_;
+	auto tilt_status = boost::dynamic_pointer_cast<MovementStay>(sp_movement_)->tilt_status_in_stay_;
 	ROS_INFO("%s,%d, mt_fw", __FUNCTION__, __LINE__);
-	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered)
+	if (bumper_status || cliff_status || tilt_status)
 	{
 		ROS_INFO("%s,%d, mt_fw", __FUNCTION__, __LINE__);
 		p_clean_mode->saveBlocks();
 		movement_i_ = mm_back;
-		float back_distance = static_cast<float>(ev.bumper_triggered ? 0.01 : 0.05);
-		back_distance = static_cast<float>(ev.tilt_triggered ? TILT_BACK_DISTANCE : back_distance);
+		float back_distance = static_cast<float>(bumper_status ? 0.01 : 0.05);
+		back_distance = static_cast<float>(tilt_status ? TILT_BACK_DISTANCE : back_distance);
 		sp_movement_.reset(new MovementBack(back_distance, BACK_MAX_SPEED));
 		return true;
 	}
