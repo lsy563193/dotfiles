@@ -93,6 +93,7 @@ public:
 
 private:
 	void switchLinearTarget(ACleanMode * p_clean_mode);
+	bool switchLinearTargetByRecalc(ACleanMode *p_clean_mode);
 };
 
 class MoveTypeFollowWall:public IMoveType
