@@ -17,7 +17,6 @@ CleanModeExploration::CleanModeExploration()
 	go_home_path_algorithm_.reset();
 	error_marker_.clear();
 	clean_map_.mapInit();
-	setExpMode(true);
 	obs.control(OFF);
 	s_wifi.setWorkMode(cm_exploration);
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
@@ -59,7 +58,6 @@ CleanModeExploration::~CleanModeExploration()
 		ROS_INFO("%s %d: Write data succeeded.", __FUNCTION__, __LINE__);
 	}
 #endif
-	setExpMode(false);
 	obs.control(ON);
 }
 

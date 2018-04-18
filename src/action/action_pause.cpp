@@ -21,15 +21,11 @@ ActionPause::ActionPause()
 	pause_pose_.setX(odom.getOriginX());
 	pause_pose_.setY(odom.getOriginY());
 
-	s_wifi.setWorkMode(Mode::md_idle);
-	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 	ROS_INFO("%s %d: Enter action pause.", __FUNCTION__, __LINE__);
 }
 
 ActionPause::~ActionPause()
 {
-	s_wifi.setWorkMode(Mode::cm_navigation);
-	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 }
 
 bool ActionPause::isFinish()

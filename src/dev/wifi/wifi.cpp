@@ -67,7 +67,8 @@ bool S_Wifi::init()
 									a_msg.seq_num());
 			s_wifi_tx_.push(std::move( p )).commit();
 			isRegDevice_ = true;
-			wifi_led.setMode(LED_FLASH,WifiLed::state::on);
+			if(robot_work_mode_ != wifi::WorkMode::SLEEP)
+				wifi_led.setMode(LED_FLASH,WifiLed::state::on);
 			if(isFactoryTest_)
 				speaker.play( VOICE_WIFI_CONNECTED,false);
 		});
@@ -91,7 +92,8 @@ bool S_Wifi::init()
 	s_wifi_rx_.regOnNewMsgListener<wifi::CloudConnectedNotifRxMsg>(
 			[&]( const wifi::RxMsg &a_msg ) {
 				is_wifi_connected_ = true;
-				wifi_led.setMode(LED_STEADY,WifiLed::state::on);
+				if(robot_work_mode_ != wifi::WorkMode::SLEEP)
+					wifi_led.setMode(LED_STEADY,WifiLed::state::on);
 				if(isRegDevice_ && in_linking_){
 					//speaker.play( VOICE_CLOUD_CONNECTED,false);
 					speaker.play( VOICE_WIFI_CONNECTED,false);
@@ -115,7 +117,8 @@ bool S_Wifi::init()
 				const wifi::QueryDeviceStatusRxMsg &msg = static_cast<const wifi::QueryDeviceStatusRxMsg&>( a_msg );
 				uploadStatus( msg.MSG_CODE,msg.seq_num());
 				is_wifi_connected_ = true;
-				wifi_led.setMode(LED_STEADY, WifiLed::state::on);
+				if(robot_work_mode_ != wifi::WorkMode::SLEEP)
+					wifi_led.setMode(LED_STEADY, WifiLed::state::on);
 			});
 	//query schedule
 	s_wifi_rx_.regOnNewMsgListener<wifi::QueryScheduleStatusRxMsg>(
@@ -329,7 +332,8 @@ bool S_Wifi::init()
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::FactoryTestRxMsg &msg = static_cast<const wifi::FactoryTestRxMsg&>( a_msg );
 				factory_test_ack_= true;
-				wifi_led.setMode(LED_FLASH,WifiLed::state::on);
+				if(robot_work_mode_ != wifi::WorkMode::SLEEP)
+					wifi_led.setMode(LED_FLASH,WifiLed::state::on);
 			}
 	);
 	//upload status ack
@@ -717,7 +721,7 @@ bool S_Wifi::uploadLastCleanData()
 	{
 		GridMap g_map;
 		if (!robot::instance()->getCleanMap(g_map))
-		return false;
+			return false;
 
 		uint16_t clean_area = (uint16_t)(g_map.getCleanedArea()*CELL_SIZE*CELL_SIZE*100);
 		int16_t x_min,x_max,y_min,y_max;
@@ -782,13 +786,13 @@ uint8_t S_Wifi::setRobotCleanMode(wifi::WorkMode work_mode)
 			received_work_mode_ = work_mode;
 			break;
 		case wifi::WorkMode::IDLE:
-			if(last_work_mode_ == wifi::WorkMode::PLAN1
-						|| last_work_mode_ == wifi::WorkMode::WALL_FOLLOW
-						|| last_work_mode_ == wifi::WorkMode::SPOT
-						|| last_work_mode_ == wifi::WorkMode::HOMING
-						|| last_work_mode_ == wifi::WorkMode::FIND
-						|| last_work_mode_ == wifi::WorkMode::RANDOM
-						|| last_work_mode_ == wifi::WorkMode::REMOTE )//get last mode
+//			if(last_work_mode_ == wifi::WorkMode::PLAN1
+//						|| last_work_mode_ == wifi::WorkMode::WALL_FOLLOW
+//						|| last_work_mode_ == wifi::WorkMode::SPOT
+//						|| last_work_mode_ == wifi::WorkMode::HOMING
+//						|| last_work_mode_ == wifi::WorkMode::FIND
+//						|| last_work_mode_ == wifi::WorkMode::RANDOM
+//						|| last_work_mode_ == wifi::WorkMode::REMOTE )//get last mode
 			{
 //				remote.set(REMOTE_CLEAN);
 				received_work_mode_ = work_mode;
@@ -798,10 +802,10 @@ uint8_t S_Wifi::setRobotCleanMode(wifi::WorkMode work_mode)
 				//if(last_work_mode_ == wifi::WorkMode::PLAN1)
 				//	taskPushBack(ACT::ACT_UPLOAD_LAST_CLEANMAP);
 			}
-			else{
-				ROS_INFO("%s %d: Invalid idle cmd.", __FUNCTION__, __LINE__);
+//			else{
+//				ROS_INFO("%s %d: Invalid idle cmd.", __FUNCTION__, __LINE__);
 //				beeper.debugBeep(VALID);
-			}
+//			}
 			INFO_BLUE("receive mode idle");
 			break;
 		case wifi::WorkMode::RANDOM:
@@ -960,7 +964,8 @@ int8_t S_Wifi::smartLink()
 	//speaker.play(VOICE_WIFI_SMART_LINK_UNOFFICIAL,false);
 	speaker.play(VOICE_WIFI_CONNECTING,false);
 #endif
-	wifi_led.setMode(LED_FLASH,WifiLed::state::on);
+	if(robot_work_mode_ != wifi::WorkMode::SLEEP)
+		wifi_led.setMode(LED_FLASH,WifiLed::state::on);
 	in_linking_ = true;
 	return 0;
 }
@@ -971,7 +976,8 @@ uint8_t S_Wifi::smartApLink()
 	wifi::SmartApLinkTxMsg p(CLOUD_AP,0x00);
 	s_wifi_tx_.push(std::move(p)).commit();
 	speaker.play(VOICE_WIFI_CONNECTING,false);
-	wifi_led.setMode(LED_FLASH,WifiLed::state::on);
+	if(robot_work_mode_ != wifi::WorkMode::SLEEP)
+		wifi_led.setMode(LED_FLASH,WifiLed::state::on);
 	return 0;
 }
 

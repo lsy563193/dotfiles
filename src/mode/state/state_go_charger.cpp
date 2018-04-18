@@ -8,6 +8,7 @@
 
 #include "gyro.h"
 #include "key_led.h"
+#include "wifi/wifi.h"
 
 void StateGoToCharger::init() {
 	key_led.setMode(LED_STEADY, LED_ORANGE);
@@ -21,5 +22,7 @@ void StateGoToCharger::init() {
 		vacuum.bldcSpeed(Vac_Speed_Low);
 	}
 	gyro.setTiltCheckingEnable(false); //disable tilt detect
+	s_wifi.setWorkMode(Mode::cm_exploration);
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 	ROS_INFO("%s %d: Enter state go to charger init.", __FUNCTION__, __LINE__);
 }

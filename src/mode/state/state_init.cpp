@@ -6,6 +6,7 @@
 #include <robot.hpp>
 #include <water_tank.hpp>
 #include <brush.h>
+#include "wifi/wifi.h"
 
 #include "key_led.h"
 
@@ -16,6 +17,9 @@ void StateInit::init() {
 		key_led.setMode(LED_STEADY, LED_ORANGE);
 	else
 		key_led.setMode(LED_STEADY, LED_GREEN);
+
+	s_wifi.setWorkMode(robot::instance()->getRobotWorkMode());
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 	ROS_INFO("%s %d: Enter state init.", __FUNCTION__, __LINE__);
 }
 

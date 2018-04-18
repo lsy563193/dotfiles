@@ -10,8 +10,8 @@ void StateGoHomePoint::init(){
 	wheel.stop();
 	wheel.setPidTargetSpeed(0, 0, REG_TYPE_LINEAR);
 
-	if (sp_cm_->isRemoteGoHomePoint() || sp_cm_->isExpMode() || sp_cm_->isGoHomePointForLowBattery()
-		|| sp_cm_->isWifiGoHomePoint() || !sp_cm_->isFirstTimeGoHomePoint())
+	if (robot::instance()->getRobotWorkMode() == Mode::cm_exploration || sp_cm_->isRemoteGoHomePoint()
+		|| sp_cm_->isGoHomePointForLowBattery() || sp_cm_->isWifiGoHomePoint() || !sp_cm_->isFirstTimeGoHomePoint())
 	{
 		key_led.setMode(LED_STEADY, LED_ORANGE);
 		brush.slowOperate();
@@ -23,6 +23,8 @@ void StateGoHomePoint::init(){
 		} else {
 			vacuum.bldcSpeed(Vac_Speed_Low);
 		}
+		s_wifi.setWorkMode(Mode::cm_exploration);
+		s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 	}
 	else
 	{

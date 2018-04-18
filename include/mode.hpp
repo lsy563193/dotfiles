@@ -125,21 +125,6 @@ public:
 	bool isExceptionTriggered();
 
 	static boost::shared_ptr<IAction> sp_action_;
-	bool isNavMode()
-	{
-		return is_clean_mode_navigation_;
-	}
-	void setNavMode(bool set)
-	{
-		is_clean_mode_navigation_ = set;
-	}
-
-	bool isExpMode(){
-		return is_clean_mode_exploration_;
-	}
-	void setExpMode(bool set){
-		is_clean_mode_exploration_ = set;
-	}
 
 	double wall_distance;
 	double wheel_cliff_triggered_time_{DBL_MAX};
@@ -148,20 +133,6 @@ public:
 	int mode_i_{};
 
 	State* sp_state{};
-
-//	boost::shared_ptr<State> getState() const {
-//		return sp_state;
-//	};
-
-//	void setState(State* state){
-//		sp_state = state;
-//	}
-
-protected:
-	bool is_clean_mode_navigation_{false};
-	bool is_clean_mode_exploration_{false};
-private:
-
 };
 
 class ModeIdle:public Mode
