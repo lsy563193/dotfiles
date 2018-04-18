@@ -571,17 +571,11 @@ void robot::runWorkMode()
 		if (core_thread_kill)
 			break;
 
+		boost::mutex::scoped_lock lock(mode_mutex_);
 		auto next_mode = p_mode->getNextMode();
 		p_mode.reset();
-		while (Mode::isRunning())
-		{
-			usleep(1000);
-			ROS_INFO("%s %d: Waiting for last mode destructor.", __FUNCTION__, __LINE__);
-		}
-
-//		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
 		p_mode.reset(getNextMode(next_mode));
-//		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
+		robot_work_mode_ = next_mode;
 	}
 	g_pp_shutdown = true;
 	printf("%s %d: Exit.\n", __FUNCTION__, __LINE__);
@@ -599,25 +593,6 @@ uint8_t robot::getTestMode(void)
 //	debugReceivedStream(buf);
 
 	return buf[REC_WORK_MODE];
-}
-
-void robot::scaleCorrectionPos(tf::Vector3 &tmp_pos, double& tmp_rad) {
-	auto p_cm = boost::dynamic_pointer_cast<ACleanMode> (p_mode);
-	auto dir = p_cm->iterate_point_.dir;
-	if(isAny(dir))
-		return;
-
-	auto target_xy = (isXAxis(dir)) ? p_cm->iterate_point_.y : p_cm->iterate_point_.x;
-	auto slam_xy = (isXAxis(dir)) ? slam_pos.getY() : slam_pos.getX();
-	auto diff_xy = (slam_xy - target_xy)/3;
-
-	if(diff_xy > CELL_SIZE/2)
-		diff_xy = CELL_SIZE/2;
-	else if(diff_xy < -CELL_SIZE/2)
-		diff_xy = -CELL_SIZE/2;
-		(isXAxis(dir)) ? tmp_pos.setY(target_xy + diff_xy) : tmp_pos.setX(target_xy + diff_xy);
-
-	tmp_rad = robot_rad + (slam_rad - robot_rad);
 }
 
 void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
@@ -846,6 +821,19 @@ bool robot::checkTiltToSlip() {
 	}
 
 	return (ros::Time::now().toSec() - tilt_time_to_slip_) > TIME_LIMIT_TO_SLIP ? true : false;
+}
+
+bool robot::getCleanMap(GridMap& map)
+{
+	bool ret = false;
+	boost::mutex::scoped_lock lock(mode_mutex_);
+	if (getRobotWorkMode() == Mode::cm_navigation)
+	{
+		auto mode = boost::dynamic_pointer_cast<ACleanMode>(p_mode);
+		map = mode->clean_map_;
+		ret = true;
+	}
+	return ret;
 }
 
 //--------------------
