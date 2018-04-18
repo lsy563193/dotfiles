@@ -14,12 +14,12 @@ WaterTank::WaterTank()
 
 bool WaterTank::checkEquipment(bool is_stop_water_tank)
 {
-	if (getStatus(water_tank))
+	if ( getStatus(water_tank) == equip::water_tank)
 		return true;
 
 	auto last_tank_mode_ = voltage_water_tank_ == LOW_OPERATE_VOLTAGE_FOR_WATER_TANK ? TANK_LOW : TANK_HIGH;
 	setTankMode(TANK_HIGH);
-	open(water_tank);//open water tank to detect if it is equipped
+	open(equip::water_tank);//open water tank to detect if it is equipped
 	usleep(150000);
 	auto status = getEquimentStatus();
 	if(!status || is_stop_water_tank)
@@ -33,16 +33,16 @@ bool WaterTank::checkEquipment(bool is_stop_water_tank)
 void WaterTank::open(int equipment)
 {
 	switch(equipment){
-		case water_tank:
+		case equip::water_tank:
 			setWaterTankPWM();
 			ROS_ERROR("%s %d: Open water tank", __FUNCTION__, __LINE__);
 			break;
-		case pump:
+		case equip::pump:
 			pump_pwm_ = 0x80;
 			last_pump_time_stamp_ = 0;
 			ROS_ERROR("%s %d: Open pump", __FUNCTION__, __LINE__);
 			break;
-		case tank_pump:
+		case equip::tank_pump:
 			setWaterTankPWM();
 			pump_pwm_ = 0x80;
 			last_pump_time_stamp_ = 0;
@@ -50,10 +50,10 @@ void WaterTank::open(int equipment)
 			break;
 	}
 	serial.setSendData(CTL_WATER_TANK, static_cast<uint8_t>(water_tank_pwm_|pump_pwm_));
-	if (equipment == tank_pump)
+	if (equipment == equip::tank_pump)
 	{
-		setStatus(water_tank,true);
-		setStatus(pump,true);
+		setStatus(equip::water_tank,true);
+		setStatus(equip::pump,true);
 	}
 	setStatus(equipment,true);
 }

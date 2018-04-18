@@ -216,15 +216,17 @@ uint16_t Appmt::nextAppointment()
 	uint16_t mints[(int)apmt_l_.size()] = {0};//the appointments count down minutes
 	appointment_count_ = 24*60*7;
 	std::ostringstream msg("");
-	uint16_t cur_tol_mint = (cur_wday-1) * 24 * 60 + cur_hour*60 + cur_mint;//current total minutes
+	// -- get total minutes from now
+	uint16_t cur_tol_mint = (cur_wday-1) * 24 * 60 + cur_hour*60 + cur_mint;
 	for(int i=0;i<apmt_l_.size();i++)
 	{
 		if(apmt_l_[i].enable)
 		{
-			int16_t diff_m = (i-1)*24*60 + apmt_l_[i].hour*60+apmt_l_[i].mint - cur_tol_mint;
-			if(diff_m<=0)
+			// -- different minutest from current time to appointment
+			int16_t diff_m = (i)*24*60 + apmt_l_[i].hour*60+apmt_l_[i].mint - cur_tol_mint;
+			if(diff_m<=0)//day before 
 				mints[i]= 10080+diff_m;
-			else
+			else // -- day after
 				mints[i]= diff_m;
 			if(appointment_count_ >= mints[i])
 			{
@@ -234,7 +236,7 @@ uint16_t Appmt::nextAppointment()
 			}
 
 		}
-		msg<<" ("<<i<<","<<(int)mints[i]<<")";
+		msg<<" ("<<(i+1)<<","<<(int)mints[i]<<")";
 	}
 	if(appointment_set_)
 		ROS_INFO("%s,%d,\033[1;40;32mappointment_count_=%u minutes,\033[0m  %s",__FUNCTION__,__LINE__,appointment_count_,msg.str().c_str());

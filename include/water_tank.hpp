@@ -14,10 +14,19 @@ class WaterTank
 {
 public:
 	WaterTank();
-	enum{
+	enum equip{
 		water_tank = 0,
 		pump,
 		tank_pump,
+	};
+	enum p_power{
+		PUMP_LOW=0,
+		PUMP_MID,
+		PUMP_HIGH,
+	};
+	enum t_power{
+		TANK_LOW = 0,
+		TANK_HIGH,
 	};
 	// For checking whether robot is carrying a water tank.
 	bool checkEquipment(bool is_stop_water_tank);
@@ -74,15 +83,7 @@ public:
 		return mode_;
 	}
 
-	enum{
-		PUMP_LOW=0,
-		PUMP_MID,
-		PUMP_HIGH,
-	};
-	enum{
-		TANK_LOW = 0,
-		TANK_HIGH,
-	};
+	
 private:
 	uint16_t current_{};
 

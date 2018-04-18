@@ -113,8 +113,8 @@ bool S_Wifi::init()
 	s_wifi_rx_.regOnNewMsgListener<wifi::QueryDeviceStatusRxMsg>(
 			[&]( const wifi::RxMsg &a_msg ) {
 				const wifi::QueryDeviceStatusRxMsg &msg = static_cast<const wifi::QueryDeviceStatusRxMsg&>( a_msg );
-				uploadStatus( msg.MSG_CODE,msg.seq_num());
 				is_wifi_connected_ = true;
+				uploadStatus( msg.MSG_CODE,msg.seq_num());
 				wifi_led.setMode(LED_STEADY, WifiLed::state::on);
 			});
 	//query schedule
@@ -197,8 +197,10 @@ bool S_Wifi::init()
 				// Setting for pump and swing motor.
 				water_tank.setPumpMode((uint8_t)msg.mop());
 				water_tank.setTankMode((uint8_t)msg.mop()>0?WaterTank::TANK_HIGH:WaterTank::TANK_LOW);
+				if(water_tank.getStatus(WaterTank::equip::water_tank))
+					water_tank.open(WaterTank::equip::tank_pump);	
 				// Setting for vacuum.
-				vacuum.isMaxInClean(msg.vacuum());
+				vacuum.isMaxInClean(msg.vacuum()>0?true:false);
 				if (vacuum.isOn())
 					vacuum.setCleanState();
 
@@ -489,13 +491,17 @@ int8_t S_Wifi::uploadStatus(int msg_code,const uint8_t seq_num)
 		int upload_state_ack_cnt=0;
 		do{
 			if(upload_state_ack_cnt++ > 10)
+			{
+				is_wifi_connected_ = false;
+				wifi_led.setMode(LED_FLASH,WifiLed::state::off);
 				return -1;
+			}
 			wifi::DeviceStatusUploadTxMsg p(
 					robot_work_mode_,
 					wifi::DeviceStatusBaseTxMsg::RoomMode::LARGE,//default set large
 					box,
-					serial.getSendData(CTL_VACCUM_PWR),
-					serial.getSendData(CTL_BRUSH_MAIN),
+					vacuum.isMaxInClean()?0x01:0x00,
+					water_tank.getMode(),
 					battery.getPercent(),
 					0x01,//notify sound wav
 					0x01,//led on/off
@@ -513,8 +519,8 @@ int8_t S_Wifi::uploadStatus(int msg_code,const uint8_t seq_num)
 				robot_work_mode_,
 				wifi::DeviceStatusBaseTxMsg::RoomMode::LARGE,//default set larger
 				box,
-				serial.getSendData(CTL_VACCUM_PWR),
-				serial.getSendData(CTL_BRUSH_MAIN),
+				vacuum.isMaxInClean()?0x01:0x00,
+				water_tank.getMode(),
 				battery.getPercent(),
 				0x01,//notify sound wav
 				0x01,//led on/off
@@ -618,7 +624,11 @@ bool S_Wifi::uploadMap(MapType map)
 			{
 				do{
 					if(timeout_cnt++ > 10)
+					{
+						is_wifi_connected_ = false;
+						wifi_led.setMode(LED_FLASH,WifiLed::state::off);
 						return false;
+					}
 					wifi::RealtimeMapUploadTxMsg p(
 										time,
 										(uint8_t)k,
@@ -626,7 +636,7 @@ bool S_Wifi::uploadMap(MapType map)
 										map_packs[k-1]
 										);
 					s_wifi_tx_.push(std::move(p)).commit();
-					usleep(350000);
+					usleep(500000);
 				}while(ros::ok() && !realtime_map_ack_);
 				timeout_cnt = 0;
 			}
@@ -692,7 +702,11 @@ bool S_Wifi::uploadMap(MapType map)
 			{
 				do{
 					if(timeout_cnt++ > 10)
+					{
+						is_wifi_connected_ = false;
+						wifi_led.setMode(LED_FLASH,WifiLed::state::off);
 						return false;
+					}
 					wifi::RealtimeMapUploadTxMsg p(
 										time,
 										(uint8_t)k,
@@ -700,12 +714,11 @@ bool S_Wifi::uploadMap(MapType map)
 										map_packs[k-1]
 										);
 					s_wifi_tx_.push(std::move(p)).commit();
-					usleep(350000);
+					usleep(500000);
 				//--wait ack 
 				}while(ros::ok() && !realtime_map_ack_);
 				timeout_cnt = 0;
 			}
-
 		}
 	}
 	return true;
