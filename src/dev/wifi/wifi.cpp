@@ -717,7 +717,7 @@ bool S_Wifi::uploadLastCleanData()
 	{
 		GridMap g_map;
 		if (!robot::instance()->getCleanMap(g_map))
-		return false;
+			return false;
 
 		uint16_t clean_area = (uint16_t)(g_map.getCleanedArea()*CELL_SIZE*CELL_SIZE*100);
 		int16_t x_min,x_max,y_min,y_max;

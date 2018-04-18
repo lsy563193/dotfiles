@@ -26,8 +26,6 @@ ModeCharge::ModeCharge()
 	action_i_ = ac_charge;
 	mode_i_ = md_charge;
 	serial.setWorkMode(CHARGE_MODE);
-	s_wifi.setWorkMode(md_charge);
-	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 	s_wifi.resetReceivedWorkMode();
 	plan_activated_status_ = false;
 	sp_state = state_charge.get();

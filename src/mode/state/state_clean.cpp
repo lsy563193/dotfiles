@@ -4,15 +4,18 @@
 
 #include <mode.hpp>
 #include <water_tank.hpp>
+#include <robot.hpp>
 #include "key_led.h"
-#include "vacuum.h"
 #include "brush.h"
+#include "wifi/wifi.h"
 
 void StateClean::init() {
 	key_led.setMode(LED_STEADY, LED_GREEN);
 	brush.normalOperate();
 	water_tank.setTankMode(WaterTank::TANK_HIGH);
 	water_tank.checkEquipment(false) ? water_tank.open(WaterTank::tank_pump) : vacuum.setCleanState();
+	s_wifi.setWorkMode(robot::instance()->getRobotWorkMode());
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 	ROS_INFO("%s %d: Enter state clean.", __FUNCTION__, __LINE__);
 }
 
