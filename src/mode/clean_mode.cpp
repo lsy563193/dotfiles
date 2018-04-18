@@ -967,15 +967,23 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_mt) {
 //			auto p_mt = dynamic_cast<MoveTypeFollowWall *>(p_mt);
 		if (p_mt->isBlockCleared(clean_map_, passed_path_)) {
 			clean_map_.markRobot(CLEAN_MAP);
-			std::vector<Vector2<int>> markers;
+			std::vector<Vector2<int>> markers{};
 			if (lidar.isScanCompensateReady())
 				lidar.lidarMarker(markers, p_mt->movement_i_, action_i_);
 			ROS_ERROR("markers.size() = %d", markers.size());
+			std::vector<Vector2<int>> left_marks{{0,2}, {1,2},{-1,2}};
+//			ROS_ERROR("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 			for (const auto &marker : markers) {
-				ROS_ERROR("marker(%d, %d)", marker.x, marker.y);
-				auto cell = getPosition().getCenterRelative(marker.x * CELL_SIZE, marker.y * CELL_SIZE).toCell();
-				ROS_ERROR("cell(%d, %d)", cell.x, cell.y);
-				clean_map_.setCell(CLEAN_MAP, cell.x, cell.y, BLOCKED_LIDAR);
+//				ROS_ERROR("marker(%d, %d)", marker.x, marker.y);
+				if(std::any_of(left_marks.begin(), left_marks.end(), [&](const Vector2<int> & mark_it){
+//					ROS_ERROR("any_of:marker(%d,%d),mark_it(%d,%d)", marker.x, marker.y, mark_it.x, mark_it.y);
+					return marker == mark_it;
+				})){
+//					beeper.debugBeep(VALID);
+					auto cell = getPosition().getCenterRelative(marker.x * CELL_SIZE, marker.y * CELL_SIZE).toCell();
+					ROS_ERROR("follow wall find lidar obs(%d, %d)", cell.x, cell.y);
+					clean_map_.setCell(CLEAN_MAP, cell.x, cell.y, BLOCKED_LIDAR);
+				}
 			}
 			if (!clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell())) {
 				out_of_trapped = true;
