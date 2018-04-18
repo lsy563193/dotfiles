@@ -16,7 +16,7 @@ public:
 		right_status_ = 0;
 	};
 
-	uint8_t getStatus(void);
+	uint8_t getStatus();
 
 	// For status.
 	bool getFront(void) {

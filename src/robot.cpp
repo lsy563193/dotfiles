@@ -573,6 +573,7 @@ void robot::runWorkMode()
 		boost::mutex::scoped_lock lock(mode_mutex_);
 		auto next_mode = p_mode->getNextMode();
 		p_mode.reset();
+		ROS_INFO("%s %d: Previous mode should finish destructing now?", __FUNCTION__, __LINE__);
 		p_mode.reset(getNextMode(next_mode));
 		robot_work_mode_ = next_mode;
 	}
