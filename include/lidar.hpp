@@ -103,6 +103,8 @@ public:
 
 	void setLidarStuckCheckingEnable(bool status);
 	bool getLidarStuckCheckingEnable();
+
+	bool checkLidarBeCovered();
 private:
 
 	// switch_ is the target status of lidar.

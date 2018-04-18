@@ -311,6 +311,9 @@ private:
 	double tilt_time_to_slip_ = 0;
 	bool is_first_tilt_to_slip_{true};
 
+	//for check lidar stuck
+	double lidar_is_covered_time_{0};
+
 	uint16_t robot_current_{0};
 };
 

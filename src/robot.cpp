@@ -803,8 +803,11 @@ void robot::updateRobotPositionForTest()
 }
 
 bool robot::checkTilt() {
-	if (!gyro.isTiltCheckingEnable())
+	if (!gyro.isTiltCheckingEnable()) {
+		angle_tilt_time_ = 0;
+		wheel_tilt_time_= 0;
 		return false;
+	}
 	auto angle_triggered = gyro.getAngleR() > ANGLE_LIMIT;
 	auto wheel_cliff_triggered = wheel.getLeftWheelCliffStatus() || wheel.getRightWheelCliffStatus();
 
@@ -848,12 +851,30 @@ bool robot::checkTiltToSlip() {
 }
 
 bool robot::checkLidarStuck() {
-	if (!lidar.getLidarStuckCheckingEnable())
+	if (!lidar.getLidarStuckCheckingEnable()) {
+		lidar_is_covered_time_ = 0;
 		return false;
-	if (lidar.lidarCheckFresh(3,2))
-		return false;
-	else
+	}
+	auto is_stuck = !lidar.lidarCheckFresh(3,2);
+	auto is_covered = lidar.checkLidarBeCovered();
+//	ROS_INFO("is_stuck(%d), is_covered(%d)", is_stuck, is_covered);
+	if (is_stuck) {
+		lidar_is_covered_time_ = 0;
 		return true;
+	}
+	if (!is_covered) {
+		lidar_is_covered_time_ = 0;
+		return false;
+	}
+	if (lidar_is_covered_time_ == 0) {
+		lidar_is_covered_time_ = ros::Time::now().toSec();
+	}
+//	ROS_INFO("ros::Time::now().toSec() - lidar_is_covered_time_ = %lf", ros::Time::now().toSec() - lidar_is_covered_time_);
+	if (ros::Time::now().toSec() - lidar_is_covered_time_ > 3) {
+		return true;
+	} else {
+		return false;
+	}
 }
 
 //--------------------
