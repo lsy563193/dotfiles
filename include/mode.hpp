@@ -39,10 +39,8 @@ class Mode:public EventHandle
 {
 public:
 	Mode() {
-		running_ = true;
 	}
 	virtual ~Mode() {
-		running_ = false;
 	};
 	void run();
 
@@ -151,11 +149,6 @@ public:
 
 	State* sp_state{};
 
-	static bool running_;
-	static bool isRunning()
-	{
-		return running_;
-	}
 //	boost::shared_ptr<State> getState() const {
 //		return sp_state;
 //	};

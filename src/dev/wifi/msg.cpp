@@ -36,8 +36,8 @@ string SetRoomModeRxMsg::describe() const
 string SetMaxCleanPowerRxMsg::describe() const
 {
 	std::ostringstream ss;
-	ss << "Set max clean power msg: vacuum(" << isVacuum() << "), mop("
-			<< isMop() << ')';
+	ss << "Set max clean power msg: vacuum(" << vacuum() << "), mop("
+			<< mop() << ')';
 	return ss.str();
 }
 
@@ -275,18 +275,18 @@ SetModeTxMsg::SetModeTxMsg(const WorkMode a_work_mode, const uint8_t a_seq_num)
 		: Packet(-1, a_seq_num, 0, 0x46, {static_cast<uint8_t>(a_work_mode)})
 {}
 
-MaxCleanPowerTxMsg::MaxCleanPowerTxMsg(const bool a_is_vacuum_max,
-		const bool a_is_mop_max, const uint8_t a_seq_num)
+MaxCleanPowerTxMsg::MaxCleanPowerTxMsg(const uint8_t a_vacuum,
+		const uint8_t a_mop, const uint8_t a_seq_num)
 		: Packet(-1, a_seq_num, 0, 0x48,
-				getInitData(a_is_vacuum_max, a_is_mop_max))
+				getInitData(a_vacuum, a_mop))
 {}
 
-vector<uint8_t> MaxCleanPowerTxMsg::getInitData(const bool a_is_vacuum_max,
-		const bool a_is_mop_max)
+vector<uint8_t> MaxCleanPowerTxMsg::getInitData(const bool a_vacuum,
+		const bool a_mop)
 {
 	return {
-		static_cast<uint8_t>(a_is_vacuum_max ? 1 : 0),
-		static_cast<uint8_t>(a_is_mop_max ? 1 : 0),
+		static_cast<uint8_t>(a_vacuum ),
+		static_cast<uint8_t>(a_mop ),
 	};
 }
 

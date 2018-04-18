@@ -7,7 +7,6 @@
 #include "mode.hpp"
 
 boost::shared_ptr<IAction> Mode::sp_action_ = nullptr;
-bool Mode::running_ = false;
 
 int Mode::next_mode_i_{};
 //IAction* Mode::sp_action_ = nullptr;

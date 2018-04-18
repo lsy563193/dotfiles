@@ -75,12 +75,12 @@ public:
 	}
 
 	enum{
-		PUMP_LOW,
+		PUMP_LOW=0,
 		PUMP_MID,
 		PUMP_HIGH,
 	};
 	enum{
-		TANK_LOW,
+		TANK_LOW = 0,
 		TANK_HIGH,
 	};
 private:
