@@ -198,6 +198,20 @@ bool CleanModeNav::isExit()
 			setNextMode(md_idle);
 			return true;
 		}
+
+		if (s_wifi.receivePlan1())
+		{
+			ROS_WARN("%s %d: Exit for wifi plan1.", __FUNCTION__, __LINE__);
+			setNextMode(cm_navigation);
+			return true;
+		}
+
+		if (s_wifi.receiveIdle())
+		{
+			ROS_WARN("%s %d: Exit for wifi idle.", __FUNCTION__, __LINE__);
+			setNextMode(md_idle);
+			return true;
+		}
 	}
 
 	if (isStatePause())
@@ -949,11 +963,14 @@ void CleanModeNav::switchInStateCharge()
 // ------------------State resume low battery charge--------------------
 bool CleanModeNav::checkEnterResumeLowBatteryCharge()
 {
-	if (ev.key_clean_pressed || battery.isReadyToResumeCleaning())
+	if (ev.key_clean_pressed || battery.isReadyToResumeCleaning() || s_wifi.receivePlan1())
 	{
 		// For key clean force continue cleaning.
 		if (ev.key_clean_pressed)
 			ev.key_clean_pressed = false;
+
+		if (s_wifi.receivePlan1())
+			s_wifi.resetReceivedWorkMode();
 
 		// Resume from low battery charge.
 		speaker.play(VOICE_CLEANING_CONTINUE, false);
