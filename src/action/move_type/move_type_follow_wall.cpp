@@ -124,20 +124,20 @@ bool MoveTypeFollowWall::isFinish()
 			//resetTriggeredValue();
 		}
 		else if (movement_i_ == mm_stay) {
-			ROS_ERROR("%s,%d, mt_fw",__FUNCTION__, __LINE__);
-			if(!handleMoveBackEventRealTime(p_cm)){ //aim
-				ROS_ERROR("%s,%d, mt_fw",__FUNCTION__, __LINE__);
+			ROS_INFO("%s,%d, mt_fw",__FUNCTION__, __LINE__);
+			if(!handleMoveBackEventRealTime(p_cm)){
+				ROS_INFO("%s,%d, mt_fw",__FUNCTION__, __LINE__);
 				auto turn_angle = getTurnRadian(false);
 				turn_target_radian_ = getPosition().addRadian(turn_angle).th;
 				resetTriggeredValue();
 				if(is_stop_follow_wall_after_tilt)
 				{
-					ROS_ERROR("%s,%d, mt_fw",__FUNCTION__, __LINE__);
+					ROS_INFO("%s,%d, mt_fw",__FUNCTION__, __LINE__);
 					is_stop_follow_wall_after_tilt = false;
 					return true;
 				}
 
-				ROS_ERROR("%s,%d, mt_fw",__FUNCTION__, __LINE__);
+				ROS_INFO("%s,%d, mt_fw",__FUNCTION__, __LINE__);
 				auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
 				movement_i_ = p_mode->isGyroDynamic() ? mm_dynamic : mm_turn;
 				if(movement_i_ == mm_dynamic)
@@ -480,16 +480,21 @@ bool MoveTypeFollowWall::isNewLineReach(GridMap &map)
 	return ret;
 }
 
-bool MoveTypeFollowWall::handleMoveBackEventRealTime(ACleanMode *p_clean_mode) {
-	ROS_ERROR("%s,%d, mt_fw",__FUNCTION__, __LINE__);
-	auto p_movement = boost::dynamic_pointer_cast<MovementStay>(sp_movement_);
-    ROS_ERROR("%s,%d, mt_fw",__FUNCTION__, __LINE__);
-	if (p_movement->bumper_status_in_stay_ || p_movement->cliff_status_in_stay_ || p_movement->tilt_status_in_stay_)
+bool MoveTypeFollowWall::handleMoveBackEventRealTime(ACleanMode *p_clean_mode)
+{
+	if (movement_i_ != mm_stay)
 	{
-        ROS_ERROR("%s,%d, mt_fw",__FUNCTION__, __LINE__);
+		ROS_ERROR("%s,%d, This function is just for movement stay!!!!!", __FUNCTION__, __LINE__);
+		return false;
+	}
+
+	ROS_INFO("%s,%d, mt_fw", __FUNCTION__, __LINE__);
+	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered)
+	{
+		ROS_INFO("%s,%d, mt_fw", __FUNCTION__, __LINE__);
 		p_clean_mode->saveBlocks();
 		movement_i_ = mm_back;
-		float back_distance= static_cast<float>(p_movement->bumper_status_in_stay_? 0.01 : 0.05);
+		float back_distance = static_cast<float>(ev.bumper_triggered ? 0.01 : 0.05);
 		back_distance = static_cast<float>(ev.tilt_triggered ? TILT_BACK_DISTANCE : back_distance);
 		sp_movement_.reset(new MovementBack(back_distance, BACK_MAX_SPEED));
 		return true;

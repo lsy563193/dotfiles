@@ -533,17 +533,17 @@ bool S_Wifi::uploadMap(MapType map)
 	std::vector<uint8_t> map_data;
 	std::vector<std::vector<uint8_t>> map_packs;
 	
-	if(	robot::instance()->p_mode == nullptr ||
-			robot::instance()->p_mode->getNextMode() != Mode::cm_navigation)
-		return false;
+
 	//-- upload grid map
 	if(map == S_Wifi::GRID_MAP)
 	{
 		if(map_data_buf_->size()  == 0)
 			return false;
 
+		Points pass_path;
 		pthread_mutex_lock(&map_data_lock_);
-		Points pass_path = map_data_buf_->front();
+		if (!map_data_buf_->empty())
+			pass_path = map_data_buf_->front();
 		pthread_mutex_unlock(&map_data_lock_);
 
 		if(!pass_path.empty())
@@ -552,13 +552,9 @@ bool S_Wifi::uploadMap(MapType map)
 			int byte_cnt=0;
 
 			GridMap g_map;
-			if(robot::instance()->p_mode != nullptr)
-			{
-				auto mode = boost::dynamic_pointer_cast<ACleanMode>(robot::instance()->p_mode);
-				g_map = mode->clean_map_;
-			}
-			else
+			if (!robot::instance()->getCleanMap(g_map))
 				return false;
+
 			uint16_t clean_area = (uint16_t)(g_map.getCleanedArea()*CELL_SIZE*CELL_SIZE*100);
 			//push clean_area and work_time
 			map_data.push_back((uint8_t)((clean_area&0xff00)>>8));
@@ -594,7 +590,7 @@ bool S_Wifi::uploadMap(MapType map)
 				map_data.push_back((uint8_t) (0x00ff&pos_y));
 
 				byte_cnt+=12;
-	
+
 				if(byte_cnt>= 480)
 				{
 					map_packs.push_back(map_data);
@@ -632,7 +628,8 @@ bool S_Wifi::uploadMap(MapType map)
 			}
 			realtime_map_ack_ =false;
 			pthread_mutex_lock(&map_data_lock_);
-			map_data_buf_->pop_front();
+			if (!map_data_buf_->empty())
+				map_data_buf_->pop_front();
 			pthread_mutex_unlock(&map_data_lock_);
 
 		}
@@ -649,13 +646,9 @@ bool S_Wifi::uploadMap(MapType map)
 		{
 			//-- 
 			GridMap g_map;
-			if(robot::instance()->p_mode != nullptr)
-			{
-				auto mode = boost::dynamic_pointer_cast<ACleanMode>(robot::instance()->p_mode);
-				g_map = mode->clean_map_;
-			}
-			else
+			if (!robot::instance()->getCleanMap(g_map))
 				return false;
+
 			uint16_t clean_area = (uint16_t)(g_map.getCleanedArea()*CELL_SIZE*CELL_SIZE*100);
 			//--push clean_area and work_time
 			map_data.push_back((uint8_t)((clean_area&0xff00)>>8));
@@ -720,16 +713,11 @@ bool S_Wifi::uploadLastCleanData()
 	std::vector<uint8_t> map_data;
 	std::vector<std::vector<uint8_t>> map_pack;
 	map_pack.clear();
-	if( getWorkMode() == wifi::WorkMode::PLAN1)
+	if(robot::instance()->getRobotWorkMode() == Mode::cm_navigation && robot::instance()->p_mode != nullptr)
 	{
 		GridMap g_map;
-		if(robot::instance()->p_mode != nullptr)
-		{
-			auto mode = boost::dynamic_pointer_cast<ACleanMode>(robot::instance()->p_mode);
-			g_map = mode->clean_map_;
-		}
-		else
-			return false;
+		if (!robot::instance()->getCleanMap(g_map))
+		return false;
 
 		uint16_t clean_area = (uint16_t)(g_map.getCleanedArea()*CELL_SIZE*CELL_SIZE*100);
 		int16_t x_min,x_max,y_min,y_max;
@@ -758,7 +746,7 @@ bool S_Wifi::uploadLastCleanData()
 				{
 					tmp_byte = 0;
 					for(int bi= 0;bi<8;bi++)
-					{ 
+					{
 						CellState c_state = g_map.getCell(CLEAN_MAP, p*row_n+r+x_min, col*8+bi+y_min);
 						if(c_state == CLEANED)
 							tmp_byte |= 0x80>>bi;
@@ -779,6 +767,8 @@ bool S_Wifi::uploadLastCleanData()
 		}
 		ROS_INFO("%s,%d,\033[1;42;31mmap_pack size %ld\033[0m",__FUNCTION__,__LINE__,map_pack.size());
 	}
+	else
+		return false;
 	return true;
 }
 
@@ -1283,7 +1273,7 @@ void S_Wifi::cacheMapData(const Points pass_path)
 void S_Wifi::clearMapCache()
 {
 	MutexLock lock(&map_data_lock_);
-	map_data_buf_->clear();	
+	map_data_buf_->clear();
 }
 
 void S_Wifi::clearAppMap()
