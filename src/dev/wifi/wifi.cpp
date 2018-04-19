@@ -204,9 +204,10 @@ bool S_Wifi::init()
 				is_wifi_connected_ = true;
 				// todo : this setting has something wrong.
 				// Setting for pump and swing motor.
-				water_tank.setPumpMode((uint8_t)msg.mop());
-				water_tank.setSwingMotorMode((uint8_t)msg.mop() > 0 ? WaterTank::swing_motor_mode::SWING_MOTOR_HIGH :
-											 WaterTank::swing_motor_mode::SWING_MOTOR_LOW);
+				water_tank.setCurrentPumpMode((uint8_t) msg.mop());
+				water_tank.setCurrentSwingMotorMode(
+						(uint8_t) msg.mop() > 0 ? WaterTank::swing_motor_mode::SWING_MOTOR_HIGH :
+						WaterTank::swing_motor_mode::SWING_MOTOR_LOW);
 				// Setting for vacuum.
 				vacuum.setForMaxMode(msg.vacuum() > 0 ? true : false);
 				if (vacuum.isOn())
@@ -421,8 +422,8 @@ int8_t S_Wifi::uploadStatus(int msg_code,const uint8_t seq_num)
 	if(!is_wifi_connected_ )
 		return -1;
 	uint8_t error_code = 0;
-	wifi::DeviceStatusBaseTxMsg::CleanMode box;
-	box = water_tank.getStatus(WaterTank::swing_motor)? wifi::DeviceStatusBaseTxMsg::CleanMode::WATER_TANK: wifi::DeviceStatusBaseTxMsg::CleanMode::DUST;
+	wifi::DeviceStatusBaseTxMsg::CleanTool clean_tool;
+	clean_tool = water_tank.getStatus(WaterTank::swing_motor)? wifi::DeviceStatusBaseTxMsg::CleanTool::WATER_TANK: wifi::DeviceStatusBaseTxMsg::CleanTool::DUST_BOX;
 
 
 	switch (error.get())
@@ -520,9 +521,9 @@ int8_t S_Wifi::uploadStatus(int msg_code,const uint8_t seq_num)
 			wifi::DeviceStatusUploadTxMsg p(
 					robot_work_mode_,
 					wifi::DeviceStatusBaseTxMsg::RoomMode::LARGE,//default set large
-					box,
+					clean_tool,
 					vacuum.isMaxMode()?0x01:0x00,
-					water_tank.getPumpMode(),
+					water_tank.getUserSetPumpMode(),
 					battery.getPercent(),
 					0x01,//notify sound wav
 					0x01,//led on/off
@@ -539,9 +540,9 @@ int8_t S_Wifi::uploadStatus(int msg_code,const uint8_t seq_num)
 		wifi::DeviceStatusReplyTxMsg p(
 				robot_work_mode_,
 				wifi::DeviceStatusBaseTxMsg::RoomMode::LARGE,//default set larger
-				box,
+				clean_tool,
 				vacuum.isMaxMode()?0x01:0x00,
-				water_tank.getPumpMode(),
+				water_tank.getUserSetPumpMode(),
 				battery.getPercent(),
 				0x01,//notify sound wav
 				0x01,//led on/off

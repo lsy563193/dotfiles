@@ -28,13 +28,13 @@ void StateInit::initOpenLidar() {
 	{
 		key_led.setMode(LED_STEADY, LED_ORANGE);
 		brush.slowOperate();
-		water_tank.setSwingMotorMode(WaterTank::SWING_MOTOR_LOW);
+		water_tank.setCurrentSwingMotorMode(WaterTank::SWING_MOTOR_LOW);
 	}
 	else
 	{
 		key_led.setMode(LED_STEADY, LED_GREEN);
 		brush.normalOperate();
-		water_tank.setSwingMotorMode(WaterTank::SWING_MOTOR_HIGH);
+		water_tank.setCurrentSwingMotorMode(WaterTank::SWING_MOTOR_HIGH);
 	}
 	water_tank.checkEquipment() ? water_tank.open(WaterTank::operate_option::swing_motor) : vacuum.setSpeedByMode();
 	ROS_INFO("%s %d: Enter state initOpenLidar.", __FUNCTION__, __LINE__);
@@ -43,7 +43,7 @@ void StateInit::initOpenLidar() {
 void StateInit::initBackFromCharger() {
 	key_led.setMode(LED_STEADY, LED_GREEN, 600);
 	brush.slowOperate();
-	water_tank.setSwingMotorMode(WaterTank::SWING_MOTOR_LOW);
+	water_tank.setCurrentSwingMotorMode(WaterTank::SWING_MOTOR_LOW);
 	water_tank.checkEquipment() ? water_tank.open(WaterTank::operate_option::swing_motor) : vacuum.setSpeedByMode();
 	ROS_INFO("%s %d: Enter state initBackFromCharger.", __FUNCTION__, __LINE__);
 }
@@ -51,7 +51,7 @@ void StateInit::initBackFromCharger() {
 void StateInit::initForExploration() {
 	key_led.setMode(LED_STEADY, LED_ORANGE, 600);
 	brush.slowOperate();
-	water_tank.setSwingMotorMode(WaterTank::SWING_MOTOR_LOW);
+	water_tank.setCurrentSwingMotorMode(WaterTank::SWING_MOTOR_LOW);
 	water_tank.checkEquipment() ? water_tank.open(WaterTank::operate_option::swing_motor) : vacuum.slowOperate();
 	ROS_INFO("%s %d: Enter state initForExploration.", __FUNCTION__, __LINE__);
 }
@@ -60,7 +60,7 @@ void StateInit::initForSpot()
 {
 	key_led.setMode(LED_STEADY, LED_GREEN, 600);
 	brush.fullOperate();
-	water_tank.setSwingMotorMode(WaterTank::SWING_MOTOR_HIGH);
+	water_tank.setCurrentSwingMotorMode(WaterTank::SWING_MOTOR_HIGH);
 	water_tank.checkEquipment() ? water_tank.open(WaterTank::operate_option::swing_motor) : vacuum.fullOperate();
 	ROS_INFO("%s %d: Enter state initForSpot.", __FUNCTION__, __LINE__);
 }

@@ -15,14 +15,14 @@ void StateFolllowWall::init() {
 	{
 		key_led.setMode(LED_STEADY,LED_ORANGE);
 		brush.slowOperate();
-		water_tank.setSwingMotorMode(WaterTank::SWING_MOTOR_LOW);
+		water_tank.setCurrentSwingMotorMode(WaterTank::SWING_MOTOR_LOW);
 		water_tank.checkEquipment() ? water_tank.open(WaterTank::operate_option::swing_motor) : vacuum.slowOperate();
 	}
 	else
 	{
 		key_led.setMode(LED_STEADY,LED_GREEN);
 		brush.normalOperate();
-		water_tank.setSwingMotorMode(WaterTank::SWING_MOTOR_HIGH);
+		water_tank.setCurrentSwingMotorMode(WaterTank::SWING_MOTOR_HIGH);
 		water_tank.checkEquipment() ? water_tank.open(WaterTank::operate_option::swing_motor_and_pump) : vacuum.setSpeedByMode();
 	}
 	s_wifi.setWorkMode(robot::instance()->getRobotWorkMode());
