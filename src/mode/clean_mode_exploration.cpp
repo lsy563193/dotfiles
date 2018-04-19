@@ -158,8 +158,8 @@ void CleanModeExploration::remoteMax(bool state_now, bool state_last)
 	else if(isInitState() || isStateFollowWall() || isStateExploration() || isStateGoHomePoint() || isStateGoToCharger())
 	{
 		beeper.beepForCommand(VALID);
-		vacuum.isMaxInClean(!vacuum.isMaxInClean());
-		speaker.play(vacuum.isMaxInClean() ? VOICE_VACCUM_MAX : VOICE_CLEANING_NAVIGATION);
+		vacuum.setForMaxMode(!vacuum.isMaxMode());
+		speaker.play(vacuum.isMaxMode() ? VOICE_VACCUM_MAX : VOICE_VACUUM_NORMAL);
 	}
 	remote.reset();
 }

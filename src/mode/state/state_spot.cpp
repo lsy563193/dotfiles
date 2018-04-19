@@ -14,7 +14,7 @@
 
 void StateSpot::init()
 {
-	water_tank.checkEquipment() ? water_tank.open(WaterTank::operate_option::swing_motor_and_pump) : vacuum.bldcSpeed(Vac_Speed_Max);
+	water_tank.checkEquipment() ? water_tank.open(WaterTank::operate_option::swing_motor_and_pump) : vacuum.fullOperate();
 	brush.fullOperate();
 	water_tank.setSwingMotorMode(WaterTank::SWING_MOTOR_HIGH);
 	key_led.setMode(LED_STEADY, LED_GREEN);

@@ -759,11 +759,13 @@ public:
 //	void cliffAll(bool state_now, bool state_last) override;
 	void remoteClean(bool state_now, bool state_last) override;
 	void keyClean(bool state_now, bool state_last) override;
-	void remoteSpot(bool state_now,bool state_last) override ;
-	void switchInStateInit() override ;
-	void switchInStateSpot() override ;
+	void remoteSpot(bool state_now, bool state_last) override;
 	void overCurrentWheelLeft(bool state_now, bool state_last) override;
 	void overCurrentWheelRight(bool state_now, bool state_last) override;
+	bool updateActionInStateInit() override;
+	void switchInStateInit() override;
+	void switchInStateSpot() override;
+
 private:
 
 };

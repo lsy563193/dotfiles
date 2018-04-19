@@ -282,8 +282,8 @@ void ModeIdle::remoteMax(bool state_now, bool state_last)
 	}
 	else{
 		beeper.beepForCommand(VALID);
-		vacuum.isMaxInClean(!vacuum.isMaxInClean());
-		speaker.play(vacuum.isMaxInClean() ? VOICE_VACCUM_MAX : VOICE_CLEANING_NAVIGATION);
+		vacuum.setForMaxMode(!vacuum.isMaxMode());
+		speaker.play(vacuum.isMaxMode() ? VOICE_VACCUM_MAX : VOICE_VACUUM_NORMAL);
 	}
 	// Reset the start timer for action.
 	sp_action_.reset();

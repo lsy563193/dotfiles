@@ -35,6 +35,7 @@ public:
 	void initOpenLidar();
 	void initBackFromCharger();
 	void initForExploration();
+	void initForSpot();
 };
 
 class StateClean: public State {

@@ -13,7 +13,7 @@ void StateClean::init() {
 	key_led.setMode(LED_STEADY, LED_GREEN);
 	brush.normalOperate();
 	water_tank.setSwingMotorMode(WaterTank::SWING_MOTOR_HIGH);
-	water_tank.checkEquipment() ? water_tank.open(WaterTank::operate_option::swing_motor_and_pump) : vacuum.setCleanState();
+	water_tank.checkEquipment() ? water_tank.open(WaterTank::operate_option::swing_motor_and_pump) : vacuum.setSpeedByMode();
 	s_wifi.setWorkMode(robot::instance()->getRobotWorkMode());
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 	ROS_INFO("%s %d: Enter state clean.", __FUNCTION__, __LINE__);
