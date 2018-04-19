@@ -1670,7 +1670,7 @@ uint8_t Lidar::lidar_get_status(int movement_i, int action_i)
 void Lidar::checkSlipInit(float &acur1, float &acur2, float &acur3, float &acur4) {
 	//For cliff trigger
 	if(wheel.getLeftWheelCliffStatus() || wheel.getRightWheelCliffStatus()){
-		ROS_INFO("%s,%d,robot wheel cliff detect",__FUNCTION__,__LINE__);
+//		ROS_INFO("%s,%d,robot wheel cliff detect",__FUNCTION__,__LINE__);
 		wheel_cliff_trigger_time_ = ros::Time::now().toSec();
 	}
 	//For tilt trigger
