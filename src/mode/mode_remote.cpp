@@ -52,7 +52,7 @@ ModeRemote::~ModeRemote()
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
-	water_tank.stop(WaterTank::tank_pump);
+	water_tank.stop(WaterTank::operate_option::swing_motor_and_pump);
 
 	ROS_INFO("%s %d: Exit remote mode.", __FUNCTION__, __LINE__);
 }
@@ -190,14 +190,14 @@ void ModeRemote::remoteDirectionRight(bool state_now, bool state_last)
 void ModeRemote::remoteMax(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
-	if(water_tank.checkEquipment(false)){
+	if(water_tank.getStatus(WaterTank::operate_option::swing_motor)){
 		beeper.beepForCommand(INVALID);
 	}
 	else{
 		beeper.beepForCommand(VALID);
-		vacuum.isMaxInClean(!vacuum.isMaxInClean());
-		speaker.play(vacuum.isMaxInClean() ? VOICE_VACCUM_MAX : VOICE_CLEANING_NAVIGATION);
-		vacuum.setCleanState();
+		vacuum.setForMaxMode(!vacuum.isMaxMode());
+		speaker.play(vacuum.isMaxMode() ? VOICE_VACCUM_MAX : VOICE_VACUUM_NORMAL);
+		vacuum.setSpeedByMode();
 	}
 	remote.reset();
 }

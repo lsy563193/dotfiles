@@ -155,8 +155,8 @@ void MoveTypeDeskTest::run()
 				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-179), ROTATE_TOP_SPEED * 2 / 3));
 				brush.normalOperate();
 				obs.control(OFF); // For checking rcon signal.
-				vacuum.isMaxInClean(false);
-				vacuum.setCleanState();
+				vacuum.setForMaxMode(false);
+				vacuum.setSpeedByMode();
 
 				// todo: for water tank
 				ROS_INFO("%s %d: Stage 5 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
@@ -342,7 +342,7 @@ bool MoveTypeDeskTest::dataExtract(const uint8_t *buf)
 //		printf("vacuum current - baseline:%d.\n", vacuum.getCurrent() - vacuum_current_baseline_);
 
 //		water_tank.setCurrent((buf[REC_WATER_PUMP_CURRENT_H] << 8) | buf[REC_WATER_PUMP_CURRENT_L]);
-		water_tank.setCurrent(0);
+		water_tank.setSwingMotorCurrent(0);
 
 		robot::instance()->setCurrent((buf[REC_ROBOT_CUNT_H] << 8) | buf[REC_ROBOT_CUNT_L]);
 
@@ -471,7 +471,7 @@ bool MoveTypeDeskTest::checkStage1Finish()
 		left_wheel_current_baseline_ += wheel.getLeftCurrent();
 		right_wheel_current_baseline_ += wheel.getRightCurrent();
 		vacuum_current_baseline_ += vacuum.getCurrent();
-		water_tank_current_baseline_ += water_tank.getCurrent();
+		water_tank_current_baseline_ += water_tank.getSwingMotorCurrent();
 		robot_current_baseline_ += robot::instance()->getCurrent();
 		sum_cnt_++;
 	}
@@ -495,8 +495,8 @@ bool MoveTypeDeskTest::checkStage2Finish()
 					p_movement_.reset();
 					p_movement_.reset(new ActionOpenLidar());
 					brush.normalOperate();
-					vacuum.isMaxInClean(false);
-					vacuum.setCleanState();
+					vacuum.setForMaxMode(false);
+					vacuum.setSpeedByMode();
 				}
 				else if (test_step_ == 1)
 					c_rcon.resetStatus();

@@ -207,12 +207,14 @@ bool S_Wifi::init()
 				is_wifi_connected_ = true;
 				// todo : this setting has something wrong.
 				// Setting for pump and swing motor.
-				water_tank.setPumpMode((uint8_t)msg.mop());
-				water_tank.setTankMode((uint8_t)msg.mop()>0?WaterTank::TANK_HIGH:WaterTank::TANK_LOW);
+				water_tank.setCurrentPumpMode((uint8_t) msg.mop());
+				water_tank.setCurrentSwingMotorMode(
+						(uint8_t) msg.mop() > 0 ? WaterTank::swing_motor_mode::SWING_MOTOR_HIGH :
+						WaterTank::swing_motor_mode::SWING_MOTOR_LOW);
 				// Setting for vacuum.
-				vacuum.isMaxInClean(msg.vacuum()>0?true:false);
+				vacuum.setForMaxMode(msg.vacuum() > 0 ? true : false);
 				if (vacuum.isOn())
-					vacuum.setCleanState();
+					vacuum.setSpeedByMode();
 
 				//ack
 				wifi::MaxCleanPowerTxMsg p(msg.vacuum(),msg.mop());
@@ -421,8 +423,8 @@ int8_t S_Wifi::uploadStatus(int msg_code,const uint8_t seq_num)
 	if(!is_wifi_connected_ )
 		return -1;
 	uint8_t error_code = 0;
-	wifi::DeviceStatusBaseTxMsg::CleanMode box;
-	box = water_tank.getEquimentStatus()? wifi::DeviceStatusBaseTxMsg::CleanMode::WATER_TANK: wifi::DeviceStatusBaseTxMsg::CleanMode::DUST;
+	wifi::DeviceStatusBaseTxMsg::CleanTool clean_tool;
+	clean_tool = water_tank.getStatus(WaterTank::swing_motor)? wifi::DeviceStatusBaseTxMsg::CleanTool::WATER_TANK: wifi::DeviceStatusBaseTxMsg::CleanTool::DUST_BOX;
 
 
 	switch (error.get())
@@ -520,9 +522,9 @@ int8_t S_Wifi::uploadStatus(int msg_code,const uint8_t seq_num)
 			wifi::DeviceStatusUploadTxMsg p(
 					robot_work_mode_,
 					wifi::DeviceStatusBaseTxMsg::RoomMode::LARGE,//default set large
-					box,
-					vacuum.isMaxInClean()?0x01:0x00,
-					water_tank.getMode(),
+					clean_tool,
+					vacuum.isMaxMode()?0x01:0x00,
+					water_tank.getUserSetPumpMode(),
 					battery.getPercent(),
 					0x01,//notify sound wav
 					0x01,//led on/off
@@ -539,9 +541,9 @@ int8_t S_Wifi::uploadStatus(int msg_code,const uint8_t seq_num)
 		wifi::DeviceStatusReplyTxMsg p(
 				robot_work_mode_,
 				wifi::DeviceStatusBaseTxMsg::RoomMode::LARGE,//default set larger
-				box,
-				vacuum.isMaxInClean()?0x01:0x00,
-				water_tank.getMode(),
+				clean_tool,
+				vacuum.isMaxMode()?0x01:0x00,
+				water_tank.getUserSetPumpMode(),
 				battery.getPercent(),
 				0x01,//notify sound wav
 				0x01,//led on/off
@@ -559,7 +561,7 @@ bool S_Wifi::uploadMap(MapType map)
 	uint32_t time  = (uint32_t)ros::Time::now().toSec();
 	std::vector<uint8_t> map_data;
 	std::vector<std::vector<uint8_t>> map_packs;
-	
+
 	//-- upload grid map
 	if(map == S_Wifi::GRID_MAP)
 	{
@@ -1336,7 +1338,7 @@ void S_Wifi::wifi_send_routine()
 				upload_map_count=0;
 			}
 			if(is_Status_Request_)
-			{	
+			{
 				if(upload_state_count++ >= 20)
 				{
 					this->uploadStatus(0xc8,0x00);

@@ -641,7 +641,7 @@ void Serial::send_routine_cb()
 	brush.stop();
 	vacuum.stop();
 	wheel.stop();
-	water_tank.stop(WaterTank::tank_pump);
+	water_tank.stop(WaterTank::operate_option::swing_motor_and_pump);
 	usleep(40000);
 	core_thread_kill = true;
 	printf("%s,%d exit.\n",__FUNCTION__,__LINE__);

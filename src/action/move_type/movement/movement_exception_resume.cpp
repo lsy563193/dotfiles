@@ -240,7 +240,7 @@ bool MovementExceptionResume::isFinish()
 		if (brush.isOn())
 			brush.stop();
 		vacuum.stop();
-		water_tank.stop(WaterTank::tank_pump);
+		water_tank.stop(WaterTank::operate_option::swing_motor_and_pump);
 		if (ros::Time::now().toSec() - resume_wheel_start_time_ >= 1)
 		{
 			if (wheel.getLeftWheelOc() || wheel.getRightWheelOc())
@@ -275,17 +275,10 @@ bool MovementExceptionResume::isFinish()
 				{
 					ROS_WARN("%s %d: Left wheel resume succeeded.", __FUNCTION__, __LINE__);
 					ev.oc_wheel_left = false;
-					if (!water_tank.checkEquipment(true))
-						vacuum.setCleanState();
-//					brush.normalOperate();
-
 				} else
 				{
 					ROS_WARN("%s %d: Right wheel resume succeeded.", __FUNCTION__, __LINE__);
 					ev.oc_wheel_right = false;
-					if (!water_tank.checkEquipment(true))
-						vacuum.setCleanState();
-//					brush.normalOperate();
 				}
 			}
 		}
@@ -301,7 +294,7 @@ bool MovementExceptionResume::isFinish()
 					if (brush.isOn())
 						brush.stop();
 					vacuum.stop();
-					water_tank.stop(WaterTank::tank_pump);
+					water_tank.stop(WaterTank::operate_option::swing_motor_and_pump);
 					float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getOriginX(), odom.getOriginY());
 					if (std::abs(distance) >= CELL_SIZE * ROBOT_SIZE / 2)
 					{
@@ -321,8 +314,6 @@ bool MovementExceptionResume::isFinish()
 							ROS_INFO("%s %d: main brush over current resume succeeded!", __FUNCTION__, __LINE__);
 							brush.normalOperate();
 							ev.oc_brush_main = false;
-							if (!water_tank.checkEquipment(true))
-								vacuum.setCleanState();
 						}
 						else
 						{
@@ -760,9 +751,6 @@ bool MovementExceptionResume::isFinish()
 		if (!vacuum.getOc())
 		{
 			ROS_INFO("%s %d: Vacuum over current resume succeeded!", __FUNCTION__, __LINE__);
-			brush.normalOperate();
-			if (!water_tank.checkEquipment(true))
-				vacuum.setCleanState();
 			vacuum.resetExceptionResume();
 			ev.oc_vacuum = false;
 		}
