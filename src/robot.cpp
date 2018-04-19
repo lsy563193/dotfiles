@@ -860,8 +860,11 @@ bool robot::getCleanMap(GridMap& map)
 	if (getRobotWorkMode() == Mode::cm_navigation)
 	{
 		auto mode = boost::dynamic_pointer_cast<ACleanMode>(p_mode);
-		map = mode->clean_map_;
-		ret = true;
+		if (mode->isStateClean())
+		{
+			map = mode->clean_map_;
+			ret = true;
+		}
 	}
 	return ret;
 }
