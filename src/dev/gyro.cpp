@@ -294,6 +294,7 @@ void Gyro::setAccInitData()
 //	ROS_INFO("x y z acceleration init val(\033[32m%d,%d,%d\033[0m)" , getInitXAcc(), getInitYAcc(), getInitZAcc());
 }
 
+#if 0
 uint8_t Gyro::checkTilt()
 {
 	uint8_t tmp_status = 0;
@@ -442,6 +443,7 @@ uint8_t Gyro::checkTilt(int front_tilt_limit,int back_tilt_limit,int right_tilt_
 
 	return false;
 }
+#endif
 
 bool Gyro::isTiltCheckingEnable()
 {

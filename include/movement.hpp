@@ -79,6 +79,7 @@ private:
 	uint8_t lidar_bumper_jam_cnt_;
 	uint8_t cliff_jam_cnt_;
 	uint8_t robot_stuck_cnt_;
+	uint8_t tilt_cnt_;
 	uint8_t cliff_status_{0};
 	float lidar_detect_distance;
 };
@@ -303,7 +304,9 @@ private:
 	uint8_t wheel_resume_cnt_{0};
 	uint8_t bumper_jam_state_{1};
 	uint8_t lidar_bumper_jam_state_{1};
+	uint8_t tilt_jam_state_{1};
 	double bumper_resume_start_radian_{0};
+	double tilt_resume_start_radian_{0};
 	double wheel_cliff_resume_start_radian_{0};
 	uint8_t robot_slip_flag_{0};
 	static double slip_start_turn_time_;

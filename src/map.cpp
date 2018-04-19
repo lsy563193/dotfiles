@@ -300,7 +300,7 @@ void GridMap::convertFromSlamMap(float resolution_target,float threshold,const B
 				if(!block_set)/*---unknown cell---*/
 				{
 //					ROS_ERROR_COND(cell_x > 0 && cell_y > 0,"~~~~~~~~~~~range(%d,%d,%d,%d),size(%d)", data_map_x_min, data_map_y_min, data_map_x_max, data_map_y_max,size);
-					setCell(CLEAN_MAP,cell_x,cell_y, SLAM_MAP_CLEANABLE);
+					setCell(CLEAN_MAP,cell_x,cell_y, SLAM_MAP_REACHABLE);
 //					ROS_ERROR_COND(cell_x > 0 && cell_y > 0,"cell(%d,%d)~~~~range(%d,%d,%d,%d)",cell_x,cell_y, g_x_min, g_y_min, g_x_max, g_y_max);
 				}
 			}
@@ -330,13 +330,13 @@ void GridMap::merge(GridMap source_map, bool add_slam_map_blocks_to_uncleaned,
 
 			if (clear_bumper_and_lidar_blocks &&
 				(map_cell_state == BLOCKED_BUMPER || map_cell_state == BLOCKED_LIDAR) &&
-				source_map_cell_state == SLAM_MAP_CLEANABLE)
+				source_map_cell_state == SLAM_MAP_REACHABLE)
 				setCell(CLEAN_MAP,x,y, CLEANED);
 
-			if (clear_map_blocks && map_cell_state >= BLOCKED && map_cell_state < SLAM_MAP_BLOCKED && source_map_cell_state == SLAM_MAP_CLEANABLE)
+			if (clear_map_blocks && map_cell_state >= BLOCKED && map_cell_state < SLAM_MAP_BLOCKED && source_map_cell_state == SLAM_MAP_REACHABLE)
 				setCell(CLEAN_MAP,x,y, CLEANED);
 
-			if (clear_slam_map_blocks && map_cell_state == SLAM_MAP_BLOCKED && source_map_cell_state == SLAM_MAP_CLEANABLE)
+			if (clear_slam_map_blocks && map_cell_state == SLAM_MAP_BLOCKED && source_map_cell_state == SLAM_MAP_REACHABLE)
 				setCell(CLEAN_MAP,x,y, CLEANED);
 
 			if (add_slam_map_blocks_to_uncleaned && map_cell_state == UNCLEAN && source_map_cell_state == SLAM_MAP_BLOCKED)
@@ -344,7 +344,7 @@ void GridMap::merge(GridMap source_map, bool add_slam_map_blocks_to_uncleaned,
 			if (add_slam_map_blocks_to_cleaned && map_cell_state == CLEANED && source_map_cell_state == SLAM_MAP_BLOCKED)
 				setCell(CLEAN_MAP,x,y, SLAM_MAP_BLOCKED);
 
-			if (add_slam_map_cleanable_area && map_cell_state == UNCLEAN && source_map_cell_state == SLAM_MAP_CLEANABLE)
+			if (add_slam_map_cleanable_area && map_cell_state == UNCLEAN && source_map_cell_state == SLAM_MAP_REACHABLE)
 				setCell(CLEAN_MAP,x,y, CLEANED);
 		}
 	}
@@ -980,7 +980,7 @@ void GridMap::setCircleMarkers(Point_t point, int radius, CellState cell_state,M
 			setCell(CLEAN_MAP, cell.x, cell.y, cell_state);
 
 			auto source_map_cell_state = slam_grid_map.getCell(CLEAN_MAP, cell.x, cell.y);
-			if(source_map_cell_state != SLAM_MAP_CLEANABLE)
+			if(source_map_cell_state != SLAM_MAP_REACHABLE)
 			{
 				Mark_t tmp = {cell.x,cell.y,time};
 				error_maker.push_back(tmp);
