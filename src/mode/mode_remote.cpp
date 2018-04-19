@@ -145,7 +145,18 @@ bool ModeRemote::isFinish()
 
 int ModeRemote::getNextAction()
 {
-	if(action_i_ == ac_open_gyro || (action_i_ == ac_exception_resume && !ev.fatal_quit))
+	if (action_i_ == ac_exception_resume && !ev.fatal_quit)
+	{
+		if (gyro.isOn())
+		{
+			sp_state = st_clean.get();
+			sp_state->init();
+			return ac_remote;
+		}
+		else
+			return ac_open_gyro;
+	}
+	else if(action_i_ == ac_open_gyro)
 	{
 		sp_state = st_clean.get();
 		sp_state->init();
@@ -246,4 +257,19 @@ void ModeRemote::remoteHome(bool state_now, bool state_last)
 	beeper.beepForCommand(VALID);
 	ev.remote_home = true;
 	remote.reset();
+}
+
+void ModeRemote::setWaterTank()
+{
+	if (!water_tank.getStatus(WaterTank::operate_option::swing_motor))
+		return;
+
+	auto user_set_swing_motor_mode = water_tank.getUserSetSwingMotorMode();
+	if (water_tank.getCurrentSwingMotorMode() != user_set_swing_motor_mode)
+		water_tank.setCurrentSwingMotorMode(user_set_swing_motor_mode);
+
+	auto user_set_pump_mode = water_tank.getUserSetPumpMode();
+	if (water_tank.getStatus(WaterTank::operate_option::pump) &&
+		water_tank.getCurrentPumpMode() != user_set_pump_mode)
+		water_tank.setCurrentPumpMode(user_set_pump_mode);
 }

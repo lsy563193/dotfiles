@@ -12,7 +12,8 @@
 void StateClean::init() {
 	key_led.setMode(LED_STEADY, LED_GREEN);
 	brush.normalOperate();
-	water_tank.setCurrentSwingMotorMode(WaterTank::SWING_MOTOR_HIGH);
+	water_tank.setCurrentSwingMotorMode(water_tank.getUserSetSwingMotorMode());
+	water_tank.setCurrentPumpMode(water_tank.getUserSetPumpMode());
 	water_tank.checkEquipment() ? water_tank.open(WaterTank::operate_option::swing_motor_and_pump) : vacuum.setSpeedByMode();
 	s_wifi.setWorkMode(robot::instance()->getRobotWorkMode());
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);

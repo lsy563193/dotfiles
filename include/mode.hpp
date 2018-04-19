@@ -38,8 +38,6 @@ class PointSelector;
 class Mode:public EventHandle
 {
 public:
-	Mode() {
-	}
 	virtual ~Mode() {
 	};
 	void run();
@@ -123,6 +121,8 @@ public:
 	void updateWheelCliffStatus();
 
 	bool isExceptionTriggered();
+
+	virtual void setWaterTank();
 
 	static boost::shared_ptr<IAction> sp_action_;
 
@@ -285,6 +285,8 @@ public:
 	void keyClean(bool state_now, bool state_last) override ;
 	void chargeDetect(bool state_now, bool state_last) override ;
 
+	void setWaterTank() override ;
+
 private:
 	double remote_mode_time_stamp_;
 	boost::shared_ptr<State> st_clean = boost::make_shared<StateClean>();
@@ -313,6 +315,9 @@ public:
 	void overCurrentWheelLeft(bool state_now, bool state_last) override;
 	void overCurrentWheelRight(bool state_now, bool state_last) override;
 //	void overCurrentVacuum(bool state_now, bool state_last);
+
+	void setWaterTank() override ;
+
 private:
 	boost::shared_ptr<State> st_go_to_charger = boost::make_shared<StateGoToCharger>();
 	boost::shared_ptr<State> st_init = boost::make_shared<StateInit>();
@@ -492,6 +497,9 @@ public:
 	virtual bool isSwitchByEventInStateDeskTest(){return false;};
 	virtual bool updateActionInStateDeskTest(){return false;};
 	virtual void switchInStateDeskTest(){};
+
+	// For water tank setting.
+	void setWaterTank() override ;
 
 	bool is_closed{true};
 	bool is_isolate{true};

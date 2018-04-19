@@ -34,7 +34,7 @@ void StateInit::initOpenLidar() {
 	{
 		key_led.setMode(LED_STEADY, LED_GREEN);
 		brush.normalOperate();
-		water_tank.setCurrentSwingMotorMode(WaterTank::SWING_MOTOR_HIGH);
+		water_tank.setCurrentSwingMotorMode(water_tank.getUserSetSwingMotorMode());
 	}
 	water_tank.checkEquipment() ? water_tank.open(WaterTank::operate_option::swing_motor) : vacuum.setSpeedByMode();
 	ROS_INFO("%s %d: Enter state initOpenLidar.", __FUNCTION__, __LINE__);
@@ -64,5 +64,3 @@ void StateInit::initForSpot()
 	water_tank.checkEquipment() ? water_tank.open(WaterTank::operate_option::swing_motor) : vacuum.fullOperate();
 	ROS_INFO("%s %d: Enter state initForSpot.", __FUNCTION__, __LINE__);
 }
-
-

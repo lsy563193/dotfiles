@@ -281,12 +281,12 @@ MaxCleanPowerTxMsg::MaxCleanPowerTxMsg(const uint8_t a_vacuum,
 				getInitData(a_vacuum, a_mop))
 {}
 
-vector<uint8_t> MaxCleanPowerTxMsg::getInitData(const bool a_vacuum,
-		const bool a_mop)
+vector<uint8_t> MaxCleanPowerTxMsg::getInitData(const uint8_t a_vacuum,
+		const uint8_t a_mop)
 {
 	return {
-		static_cast<uint8_t>(a_vacuum ),
-		static_cast<uint8_t>(a_mop ),
+		a_vacuum,
+		a_mop,
 	};
 }
 
