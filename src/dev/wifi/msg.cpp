@@ -174,7 +174,7 @@ DeviceStatusBaseTxMsg::DeviceStatusBaseTxMsg(const uint8_t a_msg_code,
 		const uint8_t a_seq_num,
 		const WorkMode a_work_mode,
 		const RoomMode a_room_mode,
-		const CleanMode a_clean_mode,
+		const CleanTool clean_tool,
 		const uint8_t a_vacuum_power,
 		const uint8_t a_mop_power,
 		const uint8_t a_battery,
@@ -182,13 +182,13 @@ DeviceStatusBaseTxMsg::DeviceStatusBaseTxMsg(const uint8_t a_msg_code,
 		const uint8_t a_led_mode,
 		const uint8_t a_error_flag)
 		: Packet(17, a_seq_num, 0, a_msg_code, getInitData(a_work_mode,
-				a_room_mode, a_clean_mode, a_vacuum_power, a_mop_power,
+				a_room_mode, clean_tool, a_vacuum_power, a_mop_power,
 				a_battery, a_notif_mode, a_led_mode, a_error_flag))
 {}
 
 vector<uint8_t> DeviceStatusBaseTxMsg::getInitData(const WorkMode a_work_mode,
 		const RoomMode a_room_mode,
-		const CleanMode a_clean_mode,
+		const CleanTool a_clean_tool,
 		const uint8_t a_vacuum_power,
 		const uint8_t a_mop_power,
 		const uint8_t a_battery,
@@ -200,7 +200,7 @@ vector<uint8_t> DeviceStatusBaseTxMsg::getInitData(const WorkMode a_work_mode,
 	data.reserve(9);
 	data.push_back(static_cast<uint8_t>(a_work_mode));
 	data.push_back(static_cast<uint8_t>(a_room_mode));
-	data.push_back(static_cast<uint8_t>(a_clean_mode));
+	data.push_back(static_cast<uint8_t>(a_clean_tool));
 	data.push_back(a_vacuum_power);
 	data.push_back(a_mop_power);
 	data.push_back(a_battery);
@@ -212,7 +212,7 @@ vector<uint8_t> DeviceStatusBaseTxMsg::getInitData(const WorkMode a_work_mode,
 
 DeviceStatusReplyTxMsg::DeviceStatusReplyTxMsg(const WorkMode a_work_mode,
 		const RoomMode a_room_mode,
-		const CleanMode a_clean_mode,
+		const CleanTool a_clean_tool,
 		const uint8_t a_vacuum_power,
 		const uint8_t a_mop_power,
 		const uint8_t a_battery,
@@ -221,7 +221,7 @@ DeviceStatusReplyTxMsg::DeviceStatusReplyTxMsg(const WorkMode a_work_mode,
 		const uint8_t a_error_flag,
 		const uint8_t a_seq_num)
 		: DeviceStatusBaseTxMsg(0x41, a_seq_num, a_work_mode, a_room_mode,
-				a_clean_mode, a_vacuum_power, a_mop_power, a_battery,
+				a_clean_tool, a_vacuum_power, a_mop_power, a_battery,
 				a_notif_mode, a_led_mode, a_error_flag)
 {}
 
@@ -281,18 +281,18 @@ MaxCleanPowerTxMsg::MaxCleanPowerTxMsg(const uint8_t a_vacuum,
 				getInitData(a_vacuum, a_mop))
 {}
 
-vector<uint8_t> MaxCleanPowerTxMsg::getInitData(const bool a_vacuum,
-		const bool a_mop)
+vector<uint8_t> MaxCleanPowerTxMsg::getInitData(const uint8_t a_vacuum,
+		const uint8_t a_mop)
 {
 	return {
-		static_cast<uint8_t>(a_vacuum ),
-		static_cast<uint8_t>(a_mop ),
+		a_vacuum,
+		a_mop,
 	};
 }
 
 DeviceStatusUploadTxMsg::DeviceStatusUploadTxMsg(const WorkMode a_work_mode,
 		const RoomMode a_room_mode,
-		const CleanMode a_clean_mode,
+		const CleanTool a_clean_tool,
 		const uint8_t a_vacuum_power,
 		const uint8_t a_mop_power,
 		const uint8_t a_battery,
@@ -301,7 +301,7 @@ DeviceStatusUploadTxMsg::DeviceStatusUploadTxMsg(const WorkMode a_work_mode,
 		const uint8_t a_error_flag,
 		const uint8_t a_seq_num)
 		: DeviceStatusBaseTxMsg(MSG_CODE, a_seq_num, a_work_mode, a_room_mode,
-				a_clean_mode, a_vacuum_power, a_mop_power, a_battery,
+				a_clean_tool, a_vacuum_power, a_mop_power, a_battery,
 				a_notif_mode, a_led_mode, a_error_flag)
 {}
 

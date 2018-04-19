@@ -7,50 +7,46 @@
 
 #include <cstdint>
 
-enum VacSpeed{
- Vac_Speed_Max	=			100, //15500rpm
- Vac_Speed_Normal	=		80, //12000rpm
- Vac_Speed_Low	=	50 ,//8000rpm
-};
-
-#define TWO_HOURS					7200
-
-class Vacuum {
+class Vacuum
+{
 public:
 
-/*
- * Set the mode for vacuum.
- * The mode should be Vac_Speed_Max/Vac_Speed_Normal/Vac_Speed_Low/Vac_Save
- * para
- * mode: Vac_Normal Vac_Max Vac_Save(load mode save last time)
- * save: if save is ture,save this mode,next time clean will reload at interface
- * */
-
-	bool isMaxInClean() //getter
+	enum VacMode
 	{
-		return is_max_clean_state_;//getter
+		vac_speed_max = 100, //15500rpm
+		vac_speed_normal = 80, //12000rpm
+		vac_speed_low = 50,//8000rpm
+	};
+
+	bool isMaxMode() //getter
+	{
+		return is_max_mode_;//getter
 	}
 
-	void isMaxInClean(bool is_max)
+	void setForMaxMode(bool is_max)
 	{
-		is_max_clean_state_ = is_max;
+		is_max_mode_ = is_max;
 	}
 
-	void setCleanState();
+	void setSpeedByMode();
+
+	void slowOperate();
+
+	void fullOperate();
 
 	void stop();
 
-	void bldcSpeed(uint32_t S);
+	void startExceptionResume();
 
-	void startExceptionResume(void);
-
-	void resetExceptionResume(void);
+	void resetExceptionResume();
 
 	void setOc(bool val)
 	{
 		oc_ = val;
 	}
-	bool getOc() const {
+
+	bool getOc() const
+	{
 		return oc_;
 	}
 
@@ -59,7 +55,7 @@ public:
 		current_ = current;
 	}
 
-	uint16_t getCurrent()
+	uint16_t getCurrent() const
 	{
 		return current_;
 	}
@@ -68,13 +64,17 @@ public:
 	{
 		return is_on_;
 	}
+
 private:
-	bool is_max_clean_state_{};
+
+	bool is_max_mode_{};
 	bool oc_;
 
 	uint16_t current_;
 
 	bool is_on_{false};
+
+	void setSpeed(uint32_t S);
 };
 
 extern Vacuum vacuum;

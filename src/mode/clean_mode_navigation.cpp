@@ -149,7 +149,7 @@ bool CleanModeNav::mapMark()
 	//tx pass path via serial wifi
 
 	s_wifi.cacheMapData(passed_path_);
-	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_MAP);
+	//s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_MAP);
 	c_blocks.clear();
 	passed_path_.clear();
 	return false;
@@ -465,15 +465,15 @@ void CleanModeNav::remoteSpot(bool state_now, bool state_last)
 void CleanModeNav::remoteMax(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
-	if(water_tank.checkEquipment(true)){
+	if(water_tank.getStatus(WaterTank::operate_option::swing_motor)){
 		beeper.beepForCommand(INVALID);
 	}else if(isInitState() || isStateClean() || isStateResumeLowBatteryCharge() || isStateGoHomePoint() || isStateGoToCharger() || isStatePause())
 	{
 		beeper.beepForCommand(VALID);
-		vacuum.isMaxInClean(!vacuum.isMaxInClean());
-		speaker.play(vacuum.isMaxInClean() ? VOICE_VACCUM_MAX : VOICE_CLEANING_NAVIGATION);
+		vacuum.setForMaxMode(!vacuum.isMaxMode());
+		speaker.play(vacuum.isMaxMode() ? VOICE_VACCUM_MAX : VOICE_VACUUM_NORMAL);
 		if(isStateClean() || isStateResumeLowBatteryCharge() || (isInitState()&& action_i_ > ac_open_gyro)) {
-			vacuum.setCleanState();
+			vacuum.setSpeedByMode();
 		}
 	}
 	if (isStatePause())
@@ -574,7 +574,7 @@ bool CleanModeNav::updateActionInStateInit() {
 		if (charger.isOnStub()){
 			action_i_ = ac_back_from_charger;
 			found_charger_ = true;
-			boost::dynamic_pointer_cast<StateInit>(state_init)->initBackFromCharge();
+			boost::dynamic_pointer_cast<StateInit>(state_init)->initBackFromCharger();
 		}
 		else{
 			action_i_ = ac_open_lidar;
@@ -748,7 +748,7 @@ void CleanModeNav::switchInStateClean() {
 		ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_points_.size());
 		go_home_path_algorithm_.reset();
 		go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_, start_point_));
-		//s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_LAST_CLEANMAP);
+		s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_LAST_CLEANMAP);
 	}
 	sp_state->init();
 	action_i_ = ac_null;

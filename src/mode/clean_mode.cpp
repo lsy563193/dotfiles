@@ -94,7 +94,7 @@ ACleanMode::~ACleanMode()
 		wheel.stop();
 		brush.stop();
 		vacuum.stop();
-		water_tank.stop(WaterTank::tank_pump);
+		water_tank.stop(WaterTank::operate_option::swing_motor_and_pump);
 		lidar.motorCtrl(OFF);
 		lidar.setScanOriginalReady(0);
 		lidar.slipCheckingCtrl(OFF);
@@ -2129,4 +2129,24 @@ void ACleanMode::genNextAction() {
 	}
 	else
 		Mode::genNextAction();
+}
+
+void ACleanMode::setWaterTank()
+{
+	if (!water_tank.getStatus(WaterTank::operate_option::swing_motor))
+		return;
+
+	if ((isStateInit() && action_i_ > ac_open_gyro)
+		|| isStateClean()
+		|| isStateFollowWall())
+	{
+		auto user_set_swing_motor_mode = water_tank.getUserSetSwingMotorMode();
+		if (water_tank.getCurrentSwingMotorMode() != user_set_swing_motor_mode)
+			water_tank.setCurrentSwingMotorMode(user_set_swing_motor_mode);
+
+		auto user_set_pump_mode = water_tank.getUserSetPumpMode();
+		if (water_tank.getStatus(WaterTank::operate_option::pump) &&
+			water_tank.getCurrentPumpMode() != user_set_pump_mode)
+			water_tank.setCurrentPumpMode(user_set_pump_mode);
+	}
 }

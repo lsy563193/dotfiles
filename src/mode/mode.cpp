@@ -84,10 +84,38 @@ void Mode::updateWheelCliffStatus()
 		return;
 	}
 }
+
 bool Mode::isExceptionTriggered()
 {
 //	updateWheelCliffStatus();
-	return ev.bumper_jam || ev.lidar_bumper_jam || ev.cliff_jam || ev.cliff_all_triggered || ev.oc_wheel_left || ev.oc_wheel_right
+	if (ev.bumper_jam)
+		ROS_WARN("%s %d: Bumper jam.", __FUNCTION__, __LINE__);
+	if (ev.lidar_bumper_jam)
+		ROS_WARN("%s %d: Lidar bumper jam.", __FUNCTION__, __LINE__);
+	if (ev.cliff_jam)
+		ROS_WARN("%s %d: Cliff jam.", __FUNCTION__, __LINE__);
+	if (ev.tilt_jam)
+		ROS_WARN("%s %d: Tilt jam.", __FUNCTION__, __LINE__);
+	if (ev.cliff_all_triggered)
+		ROS_WARN("%s %d: Cliff all triggered.", __FUNCTION__, __LINE__);
+	if (ev.oc_wheel_left)
+		ROS_WARN("%s %d: Left wheel oc.", __FUNCTION__, __LINE__);
+	if (ev.oc_wheel_right)
+		ROS_WARN("%s %d: Right wheel oc.", __FUNCTION__, __LINE__);
+	if (ev.oc_vacuum)
+		ROS_WARN("%s %d: Vacuum oc.", __FUNCTION__, __LINE__);
+	if (ev.lidar_stuck)
+		ROS_WARN("%s %d: Lidar stuck.", __FUNCTION__, __LINE__);
+	if (ev.robot_stuck)
+		ROS_WARN("%s %d: Robot stuck.", __FUNCTION__, __LINE__);
+	if (ev.oc_brush_main)
+		ROS_WARN("%s %d: Main bursh oc.", __FUNCTION__, __LINE__);
+	if (ev.robot_slip)
+		ROS_WARN("%s %d: Robot slip.", __FUNCTION__, __LINE__);
+	if (is_wheel_cliff_triggered)
+		ROS_WARN("%s %d: Wheel cliff triggered.", __FUNCTION__, __LINE__);
+
+	return ev.bumper_jam || ev.lidar_bumper_jam || ev.cliff_jam || ev.tilt_jam || ev.cliff_all_triggered || ev.oc_wheel_left || ev.oc_wheel_right
 						 || ev.oc_vacuum || ev.lidar_stuck || ev.robot_stuck || ev.oc_brush_main || ev.robot_slip || is_wheel_cliff_triggered;
 }
 
@@ -157,5 +185,12 @@ void Mode::genNextAction()
 	INFO_GREEN("after genNextAction");
 }
 
-
+void Mode::setWaterTank()
+{
+	// Just for protection that water tank should not be working.
+	if (water_tank.getStatus(WaterTank::operate_option::swing_motor))
+		water_tank.stop(WaterTank::operate_option::swing_motor);
+	if (water_tank.getStatus(WaterTank::operate_option::pump))
+		water_tank.stop(WaterTank::operate_option::pump);
+}
 

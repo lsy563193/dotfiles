@@ -530,10 +530,10 @@ public:
 		LARGE,
 	};
 
-	enum struct CleanMode
+	enum struct CleanTool
 	{
 		WATER_TANK = 0,
-		DUST,
+		DUST_BOX,
 		MIXED,
 		MOP,
 	};
@@ -542,7 +542,7 @@ public:
 			const uint8_t seq_num,
 			const WorkMode work_mode,
 			const RoomMode room_mode,
-			const CleanMode clean_mode,
+			const CleanTool clean_tool,
 			const uint8_t vacuum_power,
 			const uint8_t mop_power,
 			const uint8_t battery,
@@ -553,7 +553,7 @@ public:
 private:
 	static std::vector<uint8_t> getInitData(const WorkMode work_mode,
 			const RoomMode room_mode,
-			const CleanMode clean_mode,
+			const CleanTool clean_tool,
 			const uint8_t vacuum_power,
 			const uint8_t mop_power,
 			const uint8_t battery,
@@ -567,7 +567,7 @@ class DeviceStatusReplyTxMsg: public DeviceStatusBaseTxMsg
 public:
 	DeviceStatusReplyTxMsg(const WorkMode work_mode,
 			const RoomMode room_mode,
-			const CleanMode clean_mode,
+			const CleanTool clean_tool,
 			const uint8_t vacuum_power,
 			const uint8_t mop_power,
 			const uint8_t battery,
@@ -590,8 +590,8 @@ public:
 			const uint8_t seq_num = 0);
 
 private:
-	static std::vector<uint8_t> getInitData(const bool vacuum_power,
-			const bool mop_power);
+	static std::vector<uint8_t> getInitData(const uint8_t vacuum_power,
+			const uint8_t mop_power);
 };
 
 class ScheduleStatusTxMsg: public Packet
@@ -667,7 +667,7 @@ public:
 
 	DeviceStatusUploadTxMsg(const WorkMode work_mode,
 			const RoomMode room_mode,
-			const CleanMode clean_mode,
+			const CleanTool clean_tool,
 			const uint8_t vacuum_power,
 			const uint8_t mop_power,
 			const uint8_t battery,

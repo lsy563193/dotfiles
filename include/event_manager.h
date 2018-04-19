@@ -55,6 +55,7 @@ typedef struct
 	uint8_t obs_triggered;
 	bool bumper_jam;
 	bool lidar_bumper_jam;
+	bool tilt_jam;
 	uint8_t cliff_triggered;
 	bool cliff_jam;
 	bool right_wheel_cliff;

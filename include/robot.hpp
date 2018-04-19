@@ -231,6 +231,8 @@ public:
 
 	bool getCleanMap(GridMap& map);
 
+	void setWaterTankByMode();
+
 	bool checkLidarStuck();
 private:
 

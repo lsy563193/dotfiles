@@ -52,7 +52,7 @@ ModeRemote::~ModeRemote()
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
-	water_tank.stop(WaterTank::tank_pump);
+	water_tank.stop(WaterTank::operate_option::swing_motor_and_pump);
 
 	ROS_INFO("%s %d: Exit remote mode.", __FUNCTION__, __LINE__);
 }
@@ -145,7 +145,18 @@ bool ModeRemote::isFinish()
 
 int ModeRemote::getNextAction()
 {
-	if(action_i_ == ac_open_gyro || (action_i_ == ac_exception_resume && !ev.fatal_quit))
+	if (action_i_ == ac_exception_resume && !ev.fatal_quit)
+	{
+		if (gyro.isOn())
+		{
+			sp_state = st_clean.get();
+			sp_state->init();
+			return ac_remote;
+		}
+		else
+			return ac_open_gyro;
+	}
+	else if(action_i_ == ac_open_gyro)
 	{
 		sp_state = st_clean.get();
 		sp_state->init();
@@ -190,14 +201,14 @@ void ModeRemote::remoteDirectionRight(bool state_now, bool state_last)
 void ModeRemote::remoteMax(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
-	if(water_tank.checkEquipment(false)){
+	if(water_tank.getStatus(WaterTank::operate_option::swing_motor)){
 		beeper.beepForCommand(INVALID);
 	}
 	else{
 		beeper.beepForCommand(VALID);
-		vacuum.isMaxInClean(!vacuum.isMaxInClean());
-		speaker.play(vacuum.isMaxInClean() ? VOICE_VACCUM_MAX : VOICE_CLEANING_NAVIGATION);
-		vacuum.setCleanState();
+		vacuum.setForMaxMode(!vacuum.isMaxMode());
+		speaker.play(vacuum.isMaxMode() ? VOICE_VACCUM_MAX : VOICE_VACUUM_NORMAL);
+		vacuum.setSpeedByMode();
 	}
 	remote.reset();
 }
@@ -246,4 +257,19 @@ void ModeRemote::remoteHome(bool state_now, bool state_last)
 	beeper.beepForCommand(VALID);
 	ev.remote_home = true;
 	remote.reset();
+}
+
+void ModeRemote::setWaterTank()
+{
+	if (!water_tank.getStatus(WaterTank::operate_option::swing_motor))
+		return;
+
+	auto user_set_swing_motor_mode = water_tank.getUserSetSwingMotorMode();
+	if (water_tank.getCurrentSwingMotorMode() != user_set_swing_motor_mode)
+		water_tank.setCurrentSwingMotorMode(user_set_swing_motor_mode);
+
+	auto user_set_pump_mode = water_tank.getUserSetPumpMode();
+	if (water_tank.getStatus(WaterTank::operate_option::pump) &&
+		water_tank.getCurrentPumpMode() != user_set_pump_mode)
+		water_tank.setCurrentPumpMode(user_set_pump_mode);
 }

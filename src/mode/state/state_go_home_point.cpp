@@ -15,14 +15,8 @@ void StateGoHomePoint::init(){
 	{
 		key_led.setMode(LED_STEADY, LED_ORANGE);
 		brush.slowOperate();
-		water_tank.setTankMode(WaterTank::TANK_LOW);
-		if(water_tank.checkEquipment(false))
-		{
-			water_tank.open(WaterTank::water_tank);
-			water_tank.stop(WaterTank::pump);
-		} else {
-			vacuum.bldcSpeed(Vac_Speed_Low);
-		}
+		water_tank.setCurrentSwingMotorMode(WaterTank::SWING_MOTOR_LOW);
+		water_tank.checkEquipment() ? water_tank.open(WaterTank::operate_option::swing_motor) : vacuum.slowOperate();
 		s_wifi.setWorkMode(Mode::cm_exploration);
 		s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 	}
@@ -30,8 +24,9 @@ void StateGoHomePoint::init(){
 	{
 		key_led.setMode(LED_STEADY, LED_GREEN);
 		brush.normalOperate();
-		water_tank.setTankMode(WaterTank::TANK_HIGH);
-		water_tank.checkEquipment(false) ? water_tank.open(WaterTank::tank_pump) : vacuum.setCleanState();
+		water_tank.setCurrentSwingMotorMode(water_tank.getUserSetSwingMotorMode());
+		water_tank.setCurrentPumpMode(water_tank.getUserSetPumpMode());
+		water_tank.checkEquipment() ? water_tank.open(WaterTank::operate_option::swing_motor_and_pump) : vacuum.setSpeedByMode();
 	}
 
 	ev.remote_home = false;

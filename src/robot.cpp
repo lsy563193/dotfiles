@@ -125,7 +125,7 @@ robot::~robot()
 	vacuum.stop();
 	s_wifi.deinit();
 	wifi_led.set(false);
-	water_tank.stop(WaterTank::tank_pump);
+	water_tank.stop(WaterTank::operate_option::swing_motor_and_pump);
 	serial.setWorkMode(WORK_MODE);
 	usleep(40000);
 //	while(ros::ok() && !g_pp_shutdown){
@@ -307,11 +307,11 @@ void robot::robotbase_routine_cb()
 //			ROS_ERROR("RECEIVE PLAN(%d).", appmt_obj.getPlanStatus());
 
 		// For water tank device.
-		water_tank.setEquimentStatus((buf[REC_MIX_BYTE] & 0x08) != 0);
+		water_tank.setSwingMotorEquipmentStatus((buf[REC_MIX_BYTE] & 0x08) != 0);
 //		ROS_INFO("mix:%x", buf[REC_MIX_BYTE]);
 //		if (water_tank.getStatus())
 //			ROS_INFO("Water tank~~~~~~~~~~~~~~~~~~ :D");
-		sensor.water_tank = water_tank.getEquimentStatus();
+		sensor.water_tank = water_tank.getSwingMotorEquipmentStatus();
 
 		// For charger device.
 		charger.setChargeStatus((buf[REC_MIX_BYTE] >> 4) & 0x07);
@@ -860,11 +860,21 @@ bool robot::getCleanMap(GridMap& map)
 	if (getRobotWorkMode() == Mode::cm_navigation)
 	{
 		auto mode = boost::dynamic_pointer_cast<ACleanMode>(p_mode);
-		map = mode->clean_map_;
-		ret = true;
+		if (mode->isStateClean())
+		{
+			map = mode->clean_map_;
+			ret = true;
+		}
 	}
 	return ret;
 }
+
+void robot::setWaterTankByMode()
+{
+	boost::mutex::scoped_lock lock(mode_mutex_);
+	p_mode->setWaterTank();
+}
+
 //--------------------
 static float xCount{}, yCount{};
 
