@@ -78,7 +78,18 @@ bool ModeGoToCharger::isFinish()
 int ModeGoToCharger::getNextAction()
 {
 	PP_INFO();
-	if(action_i_ == ac_open_gyro || (action_i_ == ac_exception_resume && !ev.fatal_quit))
+	if (action_i_ == ac_exception_resume && !ev.fatal_quit)
+	{
+		if (gyro.isOn())
+		{
+			sp_state = st_go_to_charger.get();
+			sp_state->init();
+			return ac_go_to_charger;
+		}
+		else
+			return ac_open_gyro;
+	}
+	else if (action_i_ == ac_open_gyro)
 	{
 		sp_state = st_go_to_charger.get();
 		sp_state->init();
@@ -141,5 +152,10 @@ void ModeGoToCharger::chargeDetect(bool state_now, bool state_last)
 		ev.charge_detect = charger.getChargeStatus();
 	}
 
+}
+
+void ModeGoToCharger::setWaterTank()
+{
+	// DO NOT CHANGE THE SWING MOTOR AND PUMP!
 }
 

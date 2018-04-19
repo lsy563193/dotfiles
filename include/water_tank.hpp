@@ -86,9 +86,14 @@ public:
 
 	void fullOperatePump();
 
-	void setCurrentPumpMode(uint8_t mode);
+	void setCurrentPumpMode(int mode);
 
-	void setUserSetPumpMode(uint8_t mode);
+	int getCurrentPumpMode()
+	{
+		return current_pump_mode_;
+	}
+
+	void setUserSetPumpMode(int mode);
 
 	int getUserSetPumpMode()
 	{
@@ -111,8 +116,8 @@ private:
 	int swing_motor_operate_voltage_{FULL_OPERATE_VOLTAGE_FOR_SWING_MOTOR};
 	uint8_t swing_motor_pwm_{0};
 	bool is_swing_motor_mode_change_{false};
-	int user_set_swing_motor_mode_{SWING_MOTOR_LOW};
-	int current_swing_motor_mode_{SWING_MOTOR_LOW};
+	int user_set_swing_motor_mode_{SWING_MOTOR_HIGH};
+	int current_swing_motor_mode_{SWING_MOTOR_HIGH};
 
 	// Pump
 	double last_pump_time_stamp_{};
@@ -120,8 +125,8 @@ private:
 	uint8_t pump_cnt_{};
 	uint8_t pump_max_cnt_{3};
 	uint8_t pump_pwm_{};
-	int user_set_pump_mode_{PUMP_LOW};
-	int current_pump_mode_{PUMP_LOW};
+	int user_set_pump_mode_{PUMP_MIDDLE};
+	int current_pump_mode_{PUMP_MIDDLE};
 
 };
 

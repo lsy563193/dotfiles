@@ -590,8 +590,8 @@ public:
 			const uint8_t seq_num = 0);
 
 private:
-	static std::vector<uint8_t> getInitData(const bool vacuum_power,
-			const bool mop_power);
+	static std::vector<uint8_t> getInitData(const uint8_t vacuum_power,
+			const uint8_t mop_power);
 };
 
 class ScheduleStatusTxMsg: public Packet

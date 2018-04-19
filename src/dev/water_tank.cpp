@@ -18,7 +18,7 @@ bool WaterTank::checkEquipment()
 	if (getStatus(swing_motor))
 		return true;
 
-	auto saved_swing_motor_mode = getUserSetSwingMotorMode();
+	auto saved_swing_motor_mode = getCurrentSwingMotorMode();
 	setCurrentSwingMotorMode(SWING_MOTOR_HIGH);
 	open(operate_option::swing_motor);//open water tank to detect if it is equipped
 	usleep(150000);
@@ -123,7 +123,7 @@ void WaterTank::updatePWM()
 	}
 }
 
-void WaterTank::setCurrentPumpMode(uint8_t mode)
+void WaterTank::setCurrentPumpMode(int mode)
 {
 	switch (mode)
 	{
@@ -145,7 +145,7 @@ void WaterTank::setCurrentPumpMode(uint8_t mode)
 	}
 }
 
-void WaterTank::setUserSetPumpMode(uint8_t mode)
+void WaterTank::setUserSetPumpMode(int mode)
 {
 	switch (mode)
 	{

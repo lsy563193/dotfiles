@@ -207,19 +207,20 @@ bool S_Wifi::init()
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::SetMaxCleanPowerRxMsg &msg = static_cast<const wifi::SetMaxCleanPowerRxMsg&>( a_msg );
 				is_wifi_connected_ = true;
-				// todo : this setting has something wrong.
 				// Setting for pump and swing motor.
-				water_tank.setCurrentPumpMode((uint8_t) msg.mop());
-				water_tank.setCurrentSwingMotorMode(
-						(uint8_t) msg.mop() > 0 ? WaterTank::swing_motor_mode::SWING_MOTOR_HIGH :
+				water_tank.setUserSetPumpMode(static_cast<int>(msg.mop()));
+				water_tank.setUserSwingMotorMode(
+						msg.mop() > 0 ? WaterTank::swing_motor_mode::SWING_MOTOR_HIGH :
 						WaterTank::swing_motor_mode::SWING_MOTOR_LOW);
+				robot::instance()->setWaterTankByMode();
+				// todo : this setting has something wrong.
 				// Setting for vacuum.
 				vacuum.setForMaxMode(msg.vacuum() > 0 ? true : false);
 				if (vacuum.isOn())
 					vacuum.setSpeedByMode();
 
 				//ack
-				wifi::MaxCleanPowerTxMsg p(msg.vacuum(),msg.mop());
+				wifi::MaxCleanPowerTxMsg p(msg.vacuum(), msg.mop(), msg.seq_num());
 				s_wifi_tx_.push( std::move(p)).commit();
 			});
 	//remote control
@@ -526,8 +527,8 @@ int8_t S_Wifi::uploadStatus(int msg_code,const uint8_t seq_num)
 					robot_work_mode_,
 					wifi::DeviceStatusBaseTxMsg::RoomMode::LARGE,//default set large
 					clean_tool,
-					vacuum.isMaxMode()?0x01:0x00,
-					water_tank.getUserSetPumpMode(),
+					static_cast<uint8_t>(vacuum.isMaxMode() ? 0x01 : 0x00),
+					static_cast<uint8_t>(water_tank.getUserSetPumpMode()),
 					battery.getPercent(),
 					0x01,//notify sound wav
 					0x01,//led on/off
@@ -545,8 +546,8 @@ int8_t S_Wifi::uploadStatus(int msg_code,const uint8_t seq_num)
 				robot_work_mode_,
 				wifi::DeviceStatusBaseTxMsg::RoomMode::LARGE,//default set larger
 				clean_tool,
-				vacuum.isMaxMode()?0x01:0x00,
-				water_tank.getUserSetPumpMode(),
+				static_cast<uint8_t>(vacuum.isMaxMode() ? 0x01 : 0x00),
+				static_cast<uint8_t>(water_tank.getUserSetPumpMode()),
 				battery.getPercent(),
 				0x01,//notify sound wav
 				0x01,//led on/off
