@@ -154,8 +154,13 @@ void ModeGoToCharger::chargeDetect(bool state_now, bool state_last)
 
 }
 
-void ModeGoToCharger::setWaterTank()
+void ModeGoToCharger::wifiSetWaterTank()
 {
 	// DO NOT CHANGE THE SWING MOTOR AND PUMP!
+}
+
+void ModeGoToCharger::setVacuum()
+{
+	// DO NOT CHANGE THE VACUUM!
 }
 

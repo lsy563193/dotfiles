@@ -470,11 +470,8 @@ void CleanModeNav::remoteMax(bool state_now, bool state_last)
 	}else if(isInitState() || isStateClean() || isStateResumeLowBatteryCharge() || isStateGoHomePoint() || isStateGoToCharger() || isStatePause())
 	{
 		beeper.beepForCommand(VALID);
-		vacuum.setForMaxMode(!vacuum.isMaxMode());
-		speaker.play(vacuum.isMaxMode() ? VOICE_VACCUM_MAX : VOICE_VACUUM_NORMAL);
-		if(isStateClean() || isStateResumeLowBatteryCharge() || (isInitState()&& action_i_ > ac_open_gyro)) {
-			vacuum.setSpeedByMode();
-		}
+		vacuum.setForUserSetMaxMode(!vacuum.isUserSetMaxMode());
+		ACleanMode::setVacuum();
 	}
 	if (isStatePause())
 	{

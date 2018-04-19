@@ -839,7 +839,7 @@ public:
 	{
 		char buf[50];
 		memset(buf,0,50);
-		sprintf(buf,"wifi version %x,cloud version %x\n",getModuleVersion(),getCloudVersion());
+		sprintf(buf,"wifi version %x,cloud version %x.",getModuleVersion(),getCloudVersion());
 		std::ostringstream ss;
 		ss<<buf;
 		return ss.str();
@@ -865,7 +865,7 @@ public:
 		std::ostringstream msg;
 		msg<<"WIFI MAC ADDRESS:";
 		char buf[20];
-		sprintf(buf,"%x %x %x %x %x %x\n",
+		sprintf(buf,"%x %x %x %x %x %x.",
 					data().at(0), data().at(1),
 					data().at(2), data().at(3),
 					data().at(4), data().at(5));

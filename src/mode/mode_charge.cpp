@@ -187,3 +187,18 @@ void ModeCharge::remotePlan(bool state_now, bool state_last)
 	else
 		EventHandle::remotePlan(state_now, state_last);
 }
+
+void ModeCharge::remoteMax(bool state_now, bool state_last)
+{
+	PP_INFO();
+	if(water_tank.getStatus(WaterTank::operate_option::swing_motor)){
+		beeper.beepForCommand(INVALID);
+	}
+	else{
+		beeper.beepForCommand(VALID);
+		vacuum.setForUserSetMaxMode(!vacuum.isUserSetMaxMode());
+		speaker.play(vacuum.isUserSetMaxMode() ? VOICE_VACCUM_MAX : VOICE_VACUUM_NORMAL);
+		setVacuum();
+	}
+	remote.reset();
+}

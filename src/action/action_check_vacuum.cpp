@@ -9,7 +9,8 @@
 ActionCheckVacuum::ActionCheckVacuum()
 {
 	ROS_INFO("%s %d: Starting action check vacuum." , __FUNCTION__, __LINE__);
-	vacuum.setForMaxMode(false);
+	vacuum.setForUserSetMaxMode(false);
+	vacuum.setSpeedByUserSetMode();
 }
 
 bool ActionCheckVacuum::isFinish()
@@ -31,5 +32,4 @@ bool ActionCheckVacuum::isExit()
 void ActionCheckVacuum::run()
 {
 	// Just...
-	vacuum.setSpeedByMode();
 }

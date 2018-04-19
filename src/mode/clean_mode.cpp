@@ -2131,7 +2131,7 @@ void ACleanMode::genNextAction() {
 		Mode::genNextAction();
 }
 
-void ACleanMode::setWaterTank()
+void ACleanMode::wifiSetWaterTank()
 {
 	if (!water_tank.getStatus(WaterTank::operate_option::swing_motor))
 		return;
@@ -2148,5 +2148,23 @@ void ACleanMode::setWaterTank()
 		if (water_tank.getStatus(WaterTank::operate_option::pump) &&
 			water_tank.getCurrentPumpMode() != user_set_pump_mode)
 			water_tank.setCurrentPumpMode(user_set_pump_mode);
+	}
+}
+
+void ACleanMode::setVacuum()
+{
+	if (water_tank.getStatus(WaterTank::operate_option::swing_motor))
+		return;
+
+	if ((isStateInit() && action_i_ > ac_open_gyro)
+		|| isStateClean()
+		|| isStateFollowWall())
+	{
+		auto user_set_max_mode = vacuum.isUserSetMaxMode();
+		if (vacuum.isCurrentMaxMode() != user_set_max_mode)
+		{
+			vacuum.setSpeedByUserSetMode();
+			speaker.play(vacuum.isCurrentMaxMode() ? VOICE_VACCUM_MAX : VOICE_VACUUM_NORMAL);
+		}
 	}
 }

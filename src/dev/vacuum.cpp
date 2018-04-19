@@ -8,12 +8,9 @@
 
 Vacuum vacuum;
 
-void Vacuum::setSpeedByMode()
+void Vacuum::setSpeedByUserSetMode()
 {
-	if(is_max_mode_)
-		setSpeed(vac_speed_max);
-	else
-		setSpeed(vac_speed_normal);
+	setForCurrentMaxMode(is_user_set_max_mode_);
 	is_on_ = true;
 }
 
@@ -48,12 +45,21 @@ void Vacuum::resetExceptionResume()
 void Vacuum::slowOperate()
 {
 	ROS_INFO("%s %d: Vacuum set to low.", __FUNCTION__, __LINE__);
-	setSpeed(vac_speed_low);
+	setSpeed(VacMode::vac_speed_low);
 }
 
 void Vacuum::fullOperate()
 {
 	ROS_INFO("%s %d: Vacuum set to max.", __FUNCTION__, __LINE__);
-	setSpeed(vac_speed_max);
+	setSpeed(VacMode::vac_speed_max);
+}
+
+void Vacuum::setForCurrentMaxMode(bool is_max)
+{
+	is_current_max_mode_ = is_max;
+	if (is_current_max_mode_)
+		fullOperate();
+	else
+		slowOperate();
 }
 

@@ -18,21 +18,25 @@ public:
 		vac_speed_low = 50,//8000rpm
 	};
 
-	bool isMaxMode() //getter
+	bool isCurrentMaxMode()
 	{
-		return is_max_mode_;//getter
+		return is_current_max_mode_;
 	}
 
-	void setForMaxMode(bool is_max)
+	void setForCurrentMaxMode(bool is_max);
+
+
+	bool isUserSetMaxMode()
 	{
-		is_max_mode_ = is_max;
+		return is_user_set_max_mode_;
 	}
 
-	void setSpeedByMode();
+	void setForUserSetMaxMode(bool is_max)
+	{
+		is_user_set_max_mode_ = is_max;
+	}
 
-	void slowOperate();
-
-	void fullOperate();
+	void setSpeedByUserSetMode();
 
 	void stop();
 
@@ -66,15 +70,20 @@ public:
 	}
 
 private:
+	void slowOperate();
 
-	bool is_max_mode_{};
+	void fullOperate();
+
+	void setSpeed(uint32_t S);
+
+	bool is_current_max_mode_{false};
+	bool is_user_set_max_mode_{false};
+
 	bool oc_;
 
 	uint16_t current_;
 
 	bool is_on_{false};
-
-	void setSpeed(uint32_t S);
 };
 
 extern Vacuum vacuum;

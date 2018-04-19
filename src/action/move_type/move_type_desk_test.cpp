@@ -155,8 +155,8 @@ void MoveTypeDeskTest::run()
 				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-179), ROTATE_TOP_SPEED * 2 / 3));
 				brush.normalOperate();
 				obs.control(OFF); // For checking rcon signal.
-				vacuum.setForMaxMode(false);
-				vacuum.setSpeedByMode();
+				vacuum.setForUserSetMaxMode(false);
+				vacuum.setSpeedByUserSetMode();
 
 				// todo: for water tank
 				ROS_INFO("%s %d: Stage 5 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
@@ -495,8 +495,8 @@ bool MoveTypeDeskTest::checkStage2Finish()
 					p_movement_.reset();
 					p_movement_.reset(new ActionOpenLidar());
 					brush.normalOperate();
-					vacuum.setForMaxMode(false);
-					vacuum.setSpeedByMode();
+					vacuum.setForUserSetMaxMode(false);
+					vacuum.setSpeedByUserSetMode();
 				}
 				else if (test_step_ == 1)
 					c_rcon.resetStatus();

@@ -212,12 +212,11 @@ bool S_Wifi::init()
 				water_tank.setUserSwingMotorMode(
 						msg.mop() > 0 ? WaterTank::swing_motor_mode::SWING_MOTOR_HIGH :
 						WaterTank::swing_motor_mode::SWING_MOTOR_LOW);
-				robot::instance()->setWaterTankByMode();
-				// todo : this setting has something wrong.
+				robot::instance()->wifiSetWaterTank();
+
 				// Setting for vacuum.
-				vacuum.setForMaxMode(msg.vacuum() > 0 ? true : false);
-				if (vacuum.isOn())
-					vacuum.setSpeedByMode();
+				vacuum.setForUserSetMaxMode(msg.vacuum() > 0);
+				robot::instance()->wifiSetVacuum();
 
 				//ack
 				wifi::MaxCleanPowerTxMsg p(msg.vacuum(), msg.mop(), msg.seq_num());
@@ -527,7 +526,7 @@ int8_t S_Wifi::uploadStatus(int msg_code,const uint8_t seq_num)
 					robot_work_mode_,
 					wifi::DeviceStatusBaseTxMsg::RoomMode::LARGE,//default set large
 					clean_tool,
-					static_cast<uint8_t>(vacuum.isMaxMode() ? 0x01 : 0x00),
+					static_cast<uint8_t>(vacuum.isUserSetMaxMode() ? 0x01 : 0x00),
 					static_cast<uint8_t>(water_tank.getUserSetPumpMode()),
 					battery.getPercent(),
 					0x01,//notify sound wav
@@ -546,7 +545,7 @@ int8_t S_Wifi::uploadStatus(int msg_code,const uint8_t seq_num)
 				robot_work_mode_,
 				wifi::DeviceStatusBaseTxMsg::RoomMode::LARGE,//default set larger
 				clean_tool,
-				static_cast<uint8_t>(vacuum.isMaxMode() ? 0x01 : 0x00),
+				static_cast<uint8_t>(vacuum.isUserSetMaxMode() ? 0x01 : 0x00),
 				static_cast<uint8_t>(water_tank.getUserSetPumpMode()),
 				battery.getPercent(),
 				0x01,//notify sound wav

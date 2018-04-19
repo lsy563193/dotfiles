@@ -158,8 +158,8 @@ void CleanModeExploration::remoteMax(bool state_now, bool state_last)
 	else if(isInitState() || isStateFollowWall() || isStateExploration() || isStateGoHomePoint() || isStateGoToCharger())
 	{
 		beeper.beepForCommand(VALID);
-		vacuum.setForMaxMode(!vacuum.isMaxMode());
-		speaker.play(vacuum.isMaxMode() ? VOICE_VACCUM_MAX : VOICE_VACUUM_NORMAL);
+		vacuum.setForUserSetMaxMode(!vacuum.isUserSetMaxMode());
+		ACleanMode::setVacuum();
 	}
 	remote.reset();
 }
@@ -252,6 +252,20 @@ void CleanModeExploration::resetErrorMarker() {
 			error_marker_.erase(ite);
 		}
 	}
+}
+
+void CleanModeExploration::wifiSetWaterTank()
+{
+	if (isStateFollowWall())
+		return;
+	ACleanMode::wifiSetWaterTank();
+}
+
+void CleanModeExploration::setVacuum()
+{
+	if (isStateFollowWall())
+		return;
+	ACleanMode::setVacuum();
 }
 
 

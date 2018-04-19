@@ -122,7 +122,9 @@ public:
 
 	bool isExceptionTriggered();
 
-	virtual void setWaterTank();
+	virtual void wifiSetWaterTank();
+
+	virtual void setVacuum();
 
 	static boost::shared_ptr<IAction> sp_action_;
 
@@ -249,6 +251,7 @@ public:
 	void remoteClean(bool state_now, bool state_last) override ;
 	void keyClean(bool state_now, bool state_last) override ;
 	void remotePlan(bool state_now, bool state_last) override ;
+	void remoteMax(bool state_now, bool state_last) override ;
 
 	bool allowRemoteUpdatePlan() override
 	{
@@ -285,7 +288,8 @@ public:
 	void keyClean(bool state_now, bool state_last) override ;
 	void chargeDetect(bool state_now, bool state_last) override ;
 
-	void setWaterTank() override ;
+	void wifiSetWaterTank() override ;
+	void setVacuum() override ;
 
 private:
 	double remote_mode_time_stamp_;
@@ -316,7 +320,8 @@ public:
 	void overCurrentWheelRight(bool state_now, bool state_last) override;
 //	void overCurrentVacuum(bool state_now, bool state_last);
 
-	void setWaterTank() override ;
+	void wifiSetWaterTank() override ;
+	void setVacuum() override ;
 
 private:
 	boost::shared_ptr<State> st_go_to_charger = boost::make_shared<StateGoToCharger>();
@@ -343,7 +348,7 @@ public:
 	bool isGyroDynamic();
 	bool generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &targets);
 
-	void genNextAction();
+	void genNextAction() override;
 	virtual bool mapMark() = 0;
 	void setCleaned(std::deque<Cell_t> cells);
 //	void setLinearCleaned();
@@ -499,7 +504,9 @@ public:
 	virtual void switchInStateDeskTest(){};
 
 	// For water tank setting.
-	void setWaterTank() override ;
+	void wifiSetWaterTank() override ;
+	// For vacuum setting.
+	void setVacuum() override ;
 
 	bool is_closed{true};
 	bool is_isolate{true};
@@ -728,6 +735,11 @@ public:
 	void switchInStateGoToCharger() override;
 
 //	bool moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
+
+	// For water tank setting.
+	void wifiSetWaterTank() override ;
+	// For vacuum setting.
+	void setVacuum() override ;
 
 private:
 	bool mark_robot_{true};

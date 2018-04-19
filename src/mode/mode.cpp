@@ -185,7 +185,7 @@ void Mode::genNextAction()
 	INFO_GREEN("after genNextAction");
 }
 
-void Mode::setWaterTank()
+void Mode::wifiSetWaterTank()
 {
 	// Just for protection that water tank should not be working.
 	if (water_tank.getStatus(WaterTank::operate_option::swing_motor))
@@ -194,3 +194,9 @@ void Mode::setWaterTank()
 		water_tank.stop(WaterTank::operate_option::pump);
 }
 
+void Mode::setVacuum()
+{
+	// Just for protection that vacuum should not be working.
+	if (vacuum.isOn())
+		vacuum.stop();
+}

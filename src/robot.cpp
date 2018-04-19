@@ -869,10 +869,16 @@ bool robot::getCleanMap(GridMap& map)
 	return ret;
 }
 
-void robot::setWaterTankByMode()
+void robot::wifiSetWaterTank()
 {
 	boost::mutex::scoped_lock lock(mode_mutex_);
-	p_mode->setWaterTank();
+	p_mode->wifiSetWaterTank();
+}
+
+void robot::wifiSetVacuum()
+{
+	boost::mutex::scoped_lock lock(mode_mutex_);
+	p_mode->setVacuum();
 }
 
 //--------------------

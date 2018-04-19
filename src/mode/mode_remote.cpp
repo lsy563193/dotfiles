@@ -206,9 +206,8 @@ void ModeRemote::remoteMax(bool state_now, bool state_last)
 	}
 	else{
 		beeper.beepForCommand(VALID);
-		vacuum.setForMaxMode(!vacuum.isMaxMode());
-		speaker.play(vacuum.isMaxMode() ? VOICE_VACCUM_MAX : VOICE_VACUUM_NORMAL);
-		vacuum.setSpeedByMode();
+		vacuum.setForUserSetMaxMode(!vacuum.isUserSetMaxMode());
+		setVacuum();
 	}
 	remote.reset();
 }
@@ -259,7 +258,7 @@ void ModeRemote::remoteHome(bool state_now, bool state_last)
 	remote.reset();
 }
 
-void ModeRemote::setWaterTank()
+void ModeRemote::wifiSetWaterTank()
 {
 	if (!water_tank.getStatus(WaterTank::operate_option::swing_motor))
 		return;
@@ -272,4 +271,17 @@ void ModeRemote::setWaterTank()
 	if (water_tank.getStatus(WaterTank::operate_option::pump) &&
 		water_tank.getCurrentPumpMode() != user_set_pump_mode)
 		water_tank.setCurrentPumpMode(user_set_pump_mode);
+}
+
+void ModeRemote::setVacuum()
+{
+	if (water_tank.getStatus(WaterTank::operate_option::swing_motor))
+		return;
+
+	auto user_set_max_mode = vacuum.isUserSetMaxMode();
+	if (vacuum.isCurrentMaxMode() != user_set_max_mode)
+	{
+		vacuum.setSpeedByUserSetMode();
+		speaker.play(vacuum.isCurrentMaxMode() ? VOICE_VACCUM_MAX : VOICE_VACUUM_NORMAL);
+	}
 }
