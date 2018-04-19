@@ -570,7 +570,9 @@ bool S_Wifi::uploadMap(MapType map)
 			return false;
 
 		uint16_t clean_area = (uint16_t)(g_map.getCleanedArea()*CELL_SIZE*CELL_SIZE*100);
-
+		Point_t cur_pos = getPosition(SLAM_POSITION_SLAM_ANGLE);
+		int16_t c_x = cur_pos.toCell().x;
+		int16_t c_y = cur_pos.toCell().y;
 		// -- push boundary
 		if(slam_grid_map.getCleanedArea()>0)
 		{
@@ -581,10 +583,7 @@ bool S_Wifi::uploadMap(MapType map)
 			map_data.push_back((uint8_t)robot_timer.getWorkTime());
 			//--pack data
 
-			//for(auto &&p_it : pass_path)
-			Point_t cur_pos = getPosition(SLAM_POSITION_SLAM_ANGLE);
-			int16_t c_x = cur_pos.toCell().x;
-			int16_t c_y = cur_pos.toCell().y;
+			//for(auto &&p_it : pass_path)	
 			for(int16_t pos_x = c_x - 20;pos_x<=c_x + 20;pos_x++)
 			{
 				for(int16_t pos_y = c_y - 20;pos_y<=c_y + 20;pos_y++)
@@ -597,7 +596,7 @@ bool S_Wifi::uploadMap(MapType map)
 						map_data.push_back((uint8_t) (0x00ff&pos_y));
 
 					}
-					
+
 					if(map_data.size()>= 250)
 					{
 						//push current position 
@@ -668,6 +667,12 @@ bool S_Wifi::uploadMap(MapType map)
 
 				if(map_data.size()>= 250)
 				{
+					//push current position 
+					map_data.push_back((uint8_t) (c_x>>8));
+					map_data.push_back((uint8_t) (0x00ff&c_x));
+					map_data.push_back((uint8_t) (c_y>>8));
+					map_data.push_back((uint8_t) (0x00ff&c_y));
+
 					map_packs.push_back(map_data);
 					map_data.clear();
 					//push clean area and work time
@@ -678,7 +683,15 @@ bool S_Wifi::uploadMap(MapType map)
 				}
 			}
 			if(map_data.size()>4)
+			{
+				//push current position 
+				map_data.push_back((uint8_t) (c_x>>8));
+				map_data.push_back((uint8_t) (0x00ff&c_x));
+				map_data.push_back((uint8_t) (c_y>>8));
+				map_data.push_back((uint8_t) (0x00ff&c_y));
+
 				map_packs.push_back(map_data);
+			}
 			pthread_mutex_lock(&map_data_lock_);
 			if (!map_data_buf_->empty())
 				map_data_buf_->pop_front();
