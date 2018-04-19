@@ -116,6 +116,22 @@ void CleanModeSpot::overCurrentWheelRight(bool state_now, bool state_last)
 	ev.oc_wheel_right = true;
 }
 
+bool CleanModeSpot::updateActionInStateInit() {
+	if (action_i_ == ac_null)
+		action_i_ = ac_open_gyro;
+	else if (action_i_ == ac_open_gyro) {
+		boost::dynamic_pointer_cast<StateInit>(state_init)->initForSpot();
+		action_i_ = ac_open_lidar;
+	}
+	else if (action_i_ == ac_open_lidar)
+		action_i_ = ac_open_slam;
+	else // action_open_slam
+		return false;
+
+	genNextAction();
+	return true;
+}
+
 void CleanModeSpot::switchInStateInit()
 {
 	action_i_ = ac_null;
