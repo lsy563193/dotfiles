@@ -600,6 +600,12 @@ bool S_Wifi::uploadMap(MapType map)
 					
 					if(map_data.size()>= 250)
 					{
+						//push current position 
+						map_data.push_back((uint8_t) (c_x>>8));
+						map_data.push_back((uint8_t) (0x00ff&c_x));
+						map_data.push_back((uint8_t) (c_y>>8));
+						map_data.push_back((uint8_t) (0x00ff&c_y));
+
 						map_packs.push_back(map_data);
 						map_data.clear();
 						//push clean area and work time
