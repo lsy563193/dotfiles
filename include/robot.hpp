@@ -246,12 +246,21 @@ public:
 		main_brush_time_ = 0;
 	}
 
+	uint32_t getSideBrushTime()
+	{
+		return side_brush_time_;
+	}
+	uint32_t getMainBrushTime()
+	{
+		return main_brush_time_;
+	}
+
+	void updateConsumableStatus();
 private:
 
 	uint8_t getTestMode(void);
 
-	void loadConsumableSituation();
-	void updateConsumableSituation();
+	void loadConsumableStatus();
 	uint32_t side_brush_time_{0};
 	uint32_t main_brush_time_{0};
 

@@ -151,16 +151,35 @@ bool S_Wifi::init()
 				s_wifi_tx_.push(std::move(p)).commit();
 				INFO_BLUE("receive query schedule");	
 			});
-	//query consumption
+	//query consumable status
 	s_wifi_rx_.regOnNewMsgListener<wifi::QueryConsumableStatusRxMsg>(
 			[&]( const wifi::RxMsg &a_msg ) {
 				const wifi::QueryConsumableStatusRxMsg &msg = static_cast<const wifi::QueryConsumableStatusRxMsg&>( a_msg );
 				is_wifi_connected_ = true;
 				uint16_t worktime = (uint16_t)(robot_timer.getWorkTime()/3600);
+
+				// For side brush.
+				auto side_brush_time = robot::instance()->getSideBrushTime();
+				uint32_t side_brush_time_hour = side_brush_time / 3600;
+				if (side_brush_time_hour > 1)
+					side_brush_time_hour -= 1;
+				if (side_brush_time_hour > 100)
+					side_brush_time_hour = 100;
+
+				// For main brush.
+				auto main_brush_time = robot::instance()->getMainBrushTime();
+				uint32_t main_brush_time_hour = main_brush_time / 3600;
+				if (main_brush_time_hour > 1)
+					main_brush_time_hour -= 1;
+				if (main_brush_time_hour > 100)
+					main_brush_time_hour = 100;
+
 				//ack
 				wifi::ConsumableStatusTxMsg p(
 							worktime,
-							0x64,0x64,0x64,0x64,0x64,//todo
+							static_cast<const uint8_t>(100 - side_brush_time_hour),
+							static_cast<const uint8_t>(100 - main_brush_time_hour),
+							0x64,0x64,0x64,//todo
 							msg.seq_num()	
 						);
 				s_wifi_tx_.push(std::move(p)).commit();
@@ -260,6 +279,21 @@ bool S_Wifi::init()
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::ResetConsumableStatusRxMsg &msg = static_cast<const wifi::ResetConsumableStatusRxMsg&>( a_msg );
 				is_wifi_connected_ = true;
+				bool update_consumable = false;
+				if (msg.isSideBrush())
+				{
+					robot::instance()->resetSideBrushTime();
+					update_consumable = true;
+				}
+				if (msg.isMainBrush())
+				{
+					robot::instance()->resetMainBrushTime();
+					update_consumable = true;
+				}
+
+				if (update_consumable)
+					robot::instance()->updateConsumableStatus();
+
 				//ack
 				wifi::Packet p(
 							-1,

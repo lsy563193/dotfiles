@@ -95,7 +95,7 @@ robot::robot()
 
 	robot_nh_.param<std::string>("lidar_bumper_file", lidar_bumper_dev_, "/dev/input/event1");
 
-	loadConsumableSituation();
+	loadConsumableStatus();
 
 	while (!serial.isReady()) {
 		// Init for serial.
@@ -584,7 +584,7 @@ void robot::runWorkMode()
 		if (1 || robot_up_hour > robot_up_hour_)
 		{
 			robot_up_hour_ = robot_up_hour;
-			updateConsumableSituation();
+			updateConsumableStatus();
 		}
 
 		p_mode.reset(getNextMode(next_mode));
@@ -892,9 +892,9 @@ void robot::wifiSetVacuum()
 	p_mode->setVacuum();
 }
 
-void robot::loadConsumableSituation()
+void robot::loadConsumableStatus()
 {
-	ROS_INFO("%s %d: Load consumable situation.", __FUNCTION__, __LINE__);
+	ROS_INFO("%s %d: Load consumable status.", __FUNCTION__, __LINE__);
 
 	if (access(consumable_file.c_str(), F_OK) == -1)
 	{
@@ -924,7 +924,7 @@ void robot::loadConsumableSituation()
 	}
 }
 
-void robot::updateConsumableSituation()
+void robot::updateConsumableStatus()
 {
 	auto additional_side_brush_time_sec = brush.getSideBrushTime();
 	ROS_INFO("%s %d: Additional side brush: %ds.", __FUNCTION__, __LINE__, additional_side_brush_time_sec);
