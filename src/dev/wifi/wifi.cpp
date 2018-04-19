@@ -35,6 +35,7 @@ S_Wifi::S_Wifi():is_wifi_connected_(false)
 {
 	init();
 	map_data_buf_ = new std::deque<Points>();
+	history_map_data_ = new Cells();
 	// -- get wifi version and MAC
 	taskPushBack(ACT::ACT_VERSION);
 	taskPushBack(ACT::ACT_MAC);
@@ -49,6 +50,7 @@ bool S_Wifi::deinit()
 	taskPushBack(ACT::ACT_SLEEP);
 	quit();
 	delete map_data_buf_;
+	delete history_map_data_;
 	return true;
 }
 
@@ -415,6 +417,7 @@ bool S_Wifi::init()
 		});
 
 	INFO_BLUE("register done ");
+
 	return true;
 }
 
@@ -553,6 +556,18 @@ int8_t S_Wifi::uploadStatus(int msg_code,const uint8_t seq_num)
 	}
 	return 0;
 }
+template <typename t>
+bool S_Wifi::find_if(std::deque<t> *list,t point)
+{
+	if(list!= nullptr){
+		for(int i =0 ;i<list->size();i++)
+		{
+			if(list->at(i) == point)
+				return true;
+		}
+	}	
+	return false;
+}
 
 bool S_Wifi::uploadMap(MapType map)
 {
@@ -588,13 +603,14 @@ bool S_Wifi::uploadMap(MapType map)
 			{
 				for(int16_t pos_y = c_y - 30;pos_y<=c_y + 30;pos_y++)
 				{
-					if(slam_grid_map.getCell(CLEAN_MAP,pos_x,pos_y) == SLAM_MAP_BLOCKED )
+					if(slam_grid_map.getCell(CLEAN_MAP,pos_x,pos_y) == SLAM_MAP_BLOCKED 
+					&& !this->find_if<Cell_t>(history_map_data_,Cell_t(pos_x,pos_y)))
 					{
 						map_data.push_back((uint8_t) (pos_x>>8));
 						map_data.push_back((uint8_t) (0x00ff&pos_x));
 						map_data.push_back((uint8_t) (pos_y>>8));
 						map_data.push_back((uint8_t) (0x00ff&pos_y));
-
+						history_map_data_->push_back(Cell_t(pos_x,pos_y));
 					}
 
 					if(map_data.size()>= 250)
@@ -714,6 +730,7 @@ bool S_Wifi::uploadMap(MapType map)
 				{
 					is_wifi_connected_ = false;
 					wifi_led.setMode(LED_FLASH,WifiLed::state::off);
+					INFO_YELLOW("MISSING MAP ACK!!");
 					return false;
 				}
 				wifi::RealtimeMapUploadTxMsg p( time
@@ -731,12 +748,12 @@ bool S_Wifi::uploadMap(MapType map)
 	//--upload SLAM map
 	else if(map == S_Wifi::SLAM_MAP)
 	{
-		uint8_t *slam_map_d = NULL;
-		size_t slam_map_s =0;
+		uint8_t *slam_map_data = NULL;
+		size_t slam_map_s =0;//size
 		WifiMapManage wmm;
-		wmm.getData(slam_map_d,&slam_map_s);
+		wmm.getData(slam_map_data,&slam_map_s);
 
-		if(slam_map_d != NULL)
+		if(slam_map_data != NULL)
 		{
 			//-- 
 			GridMap g_map;
@@ -752,7 +769,7 @@ bool S_Wifi::uploadMap(MapType map)
 
 			for(int i=0;i<slam_map_s;i++)
 			{
-				map_data.push_back(*(slam_map_d+i));
+				map_data.push_back(*(slam_map_data+i));
 				//--
 				if(i>=250)
 				{
@@ -778,6 +795,7 @@ bool S_Wifi::uploadMap(MapType map)
 					{
 						is_wifi_connected_ = false;
 						wifi_led.setMode(LED_FLASH,WifiLed::state::off);
+						INFO_YELLOW("MISSING MAP ACK!!");
 						return false;
 					}
 					wifi::RealtimeMapUploadTxMsg p( time
@@ -1304,8 +1322,9 @@ void S_Wifi::wifi_send_routine()
 			if(!is_wifi_connected_)
 				continue;
 
+			int pack_size = 0;
 			pthread_mutex_lock(&map_data_lock_);
-			int pack_size = map_data_buf_->size();
+			pack_size = map_data_buf_->size();
 			pthread_mutex_unlock(&map_data_lock_);
 
 			if(upload_map_count++ >= pack_size>1?2:10)
@@ -1336,6 +1355,7 @@ void S_Wifi::clearMapCache()
 {
 	MutexLock lock(&map_data_lock_);
 	map_data_buf_->clear();
+	history_map_data_->clear();
 }
 
 void S_Wifi::clearAppMap()

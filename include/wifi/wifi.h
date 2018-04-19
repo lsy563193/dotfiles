@@ -222,6 +222,8 @@ private:
 	std::deque<ACT> task_list_;
 
 	std::deque<Points> *map_data_buf_;
+
+	Cells *history_map_data_;
 protected:
 
 	wifi::WorkMode getWorkMode()
@@ -229,7 +231,7 @@ protected:
 		return robot_work_mode_;
 	}
 
-
+	template <typename t> bool find_if(std::deque<t>*list, t point);
 };
 
 extern S_Wifi s_wifi;
