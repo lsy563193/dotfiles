@@ -206,3 +206,29 @@ bool Brush::checkBrushTwined(uint8_t brush_indicator)
 	}
 	return false;
 }
+
+void Brush::updateSideBrushTime(uint32_t addition_time)
+{
+	side_brush_operation_time_ += addition_time;
+	ROS_INFO("%s %d: Update side brush operation time to %ds(%dh).", __FUNCTION__, __LINE__,
+			 side_brush_operation_time_, side_brush_operation_time_ / 3600);
+}
+
+void Brush::updateMainBrushTime(uint32_t addition_time)
+{
+	main_brush_operation_time_ += addition_time;
+	ROS_INFO("%s %d: Update main brush operation time to %ds(%dh).", __FUNCTION__, __LINE__,
+			 main_brush_operation_time_, main_brush_operation_time_ / 3600);
+}
+
+void Brush::resetSideBurshTime()
+{
+	side_brush_operation_time_ = 0;
+	ROS_INFO("%s %d: Reset side brush operation time to 0.", __FUNCTION__, __LINE__);
+}
+
+void Brush::resetMainBrushTime()
+{
+	main_brush_operation_time_ = 0;
+	ROS_INFO("%s %d: Reset main brush operation time to 0.", __FUNCTION__, __LINE__);
+}

@@ -162,6 +162,8 @@ ACleanMode::~ACleanMode()
 	ROS_INFO("%s %d: Cleaned area = \033[32m%.2fm2\033[0m, cleaning time: \033[32m%d(s) %.2f(min)\033[0m, cleaning speed: \033[32m%.2f(m2/min)\033[0m.",
 			 __FUNCTION__, __LINE__, map_area, robot_timer.getWorkTime(),
 			 static_cast<float>(robot_timer.getWorkTime()) / 60, map_area / (static_cast<float>(robot_timer.getWorkTime()) / 60));
+	brush.updateSideBrushTime(robot_timer.getWorkTime());
+	brush.updateMainBrushTime(robot_timer.getWorkTime());
 }
 
 void ACleanMode::saveBlock(int block, int dir, std::function<Cells()> get_list)

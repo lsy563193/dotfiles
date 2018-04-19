@@ -21,6 +21,9 @@
 
 using namespace SERIAL;
 
+std::string consumable_file = "/opt/ros/indigo/share/pp/consumable_status";
+std::string consumable_backup_file = "/opt/ros/indigo/share/pp/consumable_status_bk";
+
 pthread_mutex_t recev_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t  recev_cond = PTHREAD_COND_INITIALIZER;
 
@@ -91,6 +94,8 @@ robot::robot()
 	robot_nh_.param<int>("baud_rate", baud_rate_, 115200);
 
 	robot_nh_.param<std::string>("lidar_bumper_file", lidar_bumper_dev_, "/dev/input/event1");
+
+	loadConsumableSituation();
 
 	while (!serial.isReady()) {
 		// Init for serial.
@@ -574,6 +579,14 @@ void robot::runWorkMode()
 		auto next_mode = p_mode->getNextMode();
 		p_mode.reset();
 		ROS_INFO("%s %d: Previous mode should finish destructing now?", __FUNCTION__, __LINE__);
+
+		auto robot_up_hour = static_cast<uint16_t>(robot_timer.getRobotUpTime() / 3600);
+		if (1 || robot_up_hour > robot_up_hour_)
+		{
+			robot_up_hour_ = robot_up_hour;
+			updateConsumableSituation();
+		}
+
 		p_mode.reset(getNextMode(next_mode));
 		robot_work_mode_ = next_mode;
 	}
@@ -657,8 +670,6 @@ void robot::odomPublish(const tf::Vector3& robot_pos, double robot_radian_)
 	robot_pose.twist.twist.angular.z = 0.0;
 	odom_pub_.publish(robot_pose);
 }
-
-
 
 bool robot::lidarMotorCtrl(bool switch_)
 {
@@ -879,6 +890,75 @@ void robot::wifiSetVacuum()
 {
 	boost::mutex::scoped_lock lock(mode_mutex_);
 	p_mode->setVacuum();
+}
+
+void robot::loadConsumableSituation()
+{
+	ROS_INFO("%s %d: Load consumable situation.", __FUNCTION__, __LINE__);
+
+	if (access(consumable_file.c_str(), F_OK) == -1)
+	{
+		// If file not exist, check if back up file exist.
+		if (access(consumable_backup_file.c_str(), F_OK) == -1)
+			return;
+		else
+		{
+			//Restore from backup file.
+			std::string cmd = "cp " + consumable_backup_file + " " + consumable_file;
+			system(cmd.c_str());
+			ROS_INFO("%s %d: Resume from backup file.", __FUNCTION__, __LINE__);
+		}
+	}
+
+	FILE *f_read = fopen(consumable_file.c_str(), "r");
+	if (f_read == nullptr)
+		ROS_ERROR("%s %d: Open %s error.", __FUNCTION__, __LINE__, consumable_file.c_str());
+	else
+	{
+		fscanf(f_read, "Side brush: %d\n", &side_brush_time_);
+		ROS_INFO("%s %d: Read side brush: %d.", __FUNCTION__, __LINE__, side_brush_time_);
+		fscanf(f_read, "Main brush: %d\n", &main_brush_time_);
+		ROS_INFO("%s %d: Read main brush: %d.", __FUNCTION__, __LINE__, main_brush_time_);
+		fclose(f_read);
+		ROS_INFO("%s %d: Read data succeeded.", __FUNCTION__, __LINE__);
+	}
+}
+
+void robot::updateConsumableSituation()
+{
+	auto additional_side_brush_time_sec = brush.getSideBrushTime();
+	ROS_INFO("%s %d: Additional side brush: %ds.", __FUNCTION__, __LINE__, additional_side_brush_time_sec);
+	brush.resetSideBurshTime();
+	auto side_brush_time = additional_side_brush_time_sec + side_brush_time_;
+
+	auto additional_main_brush_time_sec = brush.getMainBrushTime();
+	ROS_INFO("%s %d: Additional main brush: %ds.", __FUNCTION__, __LINE__, additional_main_brush_time_sec);
+	brush.resetMainBrushTime();
+	auto main_brush_time = additional_main_brush_time_sec + main_brush_time_;
+
+	if (access(consumable_file.c_str(), F_OK) != -1)
+	{
+		// If file exist, make it a back up file.
+		std::string cmd = "mv " + consumable_file + " " + consumable_backup_file;
+		system(cmd.c_str());
+		ROS_INFO("%s %d: Backup for %s.", __FUNCTION__, __LINE__, consumable_file.c_str());
+	}
+
+	FILE *f_write = fopen(consumable_file.c_str(), "w");
+	if (f_write == nullptr)
+		ROS_ERROR("%s %d: Open %s error.", __FUNCTION__, __LINE__, consumable_file.c_str());
+	else
+	{
+		ROS_INFO("%s %d: Start writing data to %s.", __FUNCTION__, __LINE__, consumable_file.c_str());
+		fprintf(f_write, "Side brush: %d\n", side_brush_time);
+		ROS_INFO("%s %d: Write side brush: %d.", __FUNCTION__, __LINE__, side_brush_time);
+		side_brush_time_ = side_brush_time;
+		fprintf(f_write, "Main brush: %d\n", main_brush_time);
+		ROS_INFO("%s %d: Main brush: %d.", __FUNCTION__, __LINE__, main_brush_time);
+		main_brush_time_ = main_brush_time;
+		fclose(f_write);
+		ROS_INFO("%s %d: Write data succeeded.", __FUNCTION__, __LINE__);
+	}
 }
 
 //--------------------

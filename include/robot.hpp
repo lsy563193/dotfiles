@@ -236,10 +236,26 @@ public:
 	void wifiSetVacuum();
 
 	bool checkLidarStuck();
+
+	void resetSideBrushTime()
+	{
+		side_brush_time_ = 0;
+	}
+	void resetMainBrushTime()
+	{
+		main_brush_time_ = 0;
+	}
+
 private:
 
 	uint8_t getTestMode(void);
 
+	void loadConsumableSituation();
+	void updateConsumableSituation();
+	uint32_t side_brush_time_{0};
+	uint32_t main_brush_time_{0};
+
+	uint16_t robot_up_hour_{0};
 	Baselink_Frame_Type baselink_frame_type_;
 	boost::mutex baselink_frame_type_mutex_;
 // Lock for odom coordinate

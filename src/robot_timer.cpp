@@ -187,3 +187,9 @@ uint32_t Timer::getLocalTimeInMint()
 	uint32_t w = tm_t->tm_wday+1;
 	return (uint32_t)(w*24*60+tm_t->tm_hour*60+tm_t->tm_min);
 }
+
+uint32_t Timer::getRobotUpTime()
+{
+	auto robot_time = static_cast<uint32_t>(difftime(time(NULL), robot_start_time_));
+	return robot_time;
+}

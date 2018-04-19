@@ -171,7 +171,7 @@ void RxManager::handleMsg( Packet &&a_packet )
 template<typename T>
 void RxManager::handleMsg( const T &a_msg )
 {
-	ROS_INFO( "%s,%d,wifi::RxManager::handleMsg ,[%d] %s",__FUNCTION__,__LINE__, a_msg.seq_num(),a_msg.describe().c_str() );
+	ROS_INFO("RxManager::%s,%d [%d] %s",__FUNCTION__,__LINE__, a_msg.seq_num(),a_msg.describe().c_str() );
 	MutexLock lock( &on_new_msg_mutex_ );
 	for ( const auto &p : on_new_msg_listeners_[typeid( a_msg )] )
 	{
