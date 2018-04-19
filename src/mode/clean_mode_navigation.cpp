@@ -149,7 +149,7 @@ bool CleanModeNav::mapMark()
 	//tx pass path via serial wifi
 
 	s_wifi.cacheMapData(passed_path_);
-	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_MAP);
+	//s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_MAP);
 	c_blocks.clear();
 	passed_path_.clear();
 	return false;
@@ -748,7 +748,7 @@ void CleanModeNav::switchInStateClean() {
 		ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_points_.size());
 		go_home_path_algorithm_.reset();
 		go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_, start_point_));
-		//s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_LAST_CLEANMAP);
+		s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_LAST_CLEANMAP);
 	}
 	sp_state->init();
 	action_i_ = ac_null;
