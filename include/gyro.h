@@ -58,6 +58,9 @@ public:
 
 	void setAccInitData(void);
 
+	bool error(void);
+
+	void error(bool is_error);
 #if GYRO_DYNAMIC_ADJUSTMENT
 
 	void setDynamicOn(void);
@@ -228,6 +231,9 @@ private:
 	uint16_t right_count_;
 	uint16_t left_count_;
 	uint16_t back_count_;
+
+	//for self check
+	bool is_error_;
 
 	//for kalman
 	float kalman_angle, angle_dot;

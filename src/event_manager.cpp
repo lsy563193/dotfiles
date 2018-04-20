@@ -111,6 +111,7 @@ void event_manager_init()
 	p_handler[EVT_LIDAR_STUCK] = &EventHandle::lidarStuck;
 	p_handler[EVT_ROBOT_TILT] = &EventHandle::tilt;
 	p_handler[EVT_REMOTE_WIFI] = &EventHandle::remoteWifi;
+	p_handler[EVT_GYRO_ERROR] = &EventHandle::gyroError;
 	p_eh = &default_eh;
 }
 
@@ -361,6 +362,11 @@ void event_manager_thread_cb()
 			evt_set_status_x(EVT_ROBOT_TILT);
 		}
 
+		/*---gyro error---*/
+		if(gyro.error()){
+			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
+			evt_set_status_x(EVT_GYRO_ERROR);
+		}
 		if (set) {
 			//ROS_INFO("%s %d: going to broadcase new event", __FUNCTION__, __LINE__);
 			pthread_mutex_lock(&new_event_mtx);
@@ -514,6 +520,9 @@ void event_handler_thread_cb()
 
 		/*---tilt---*/
 		evt_handle_check_event(EVT_ROBOT_TILT);
+
+		/*---gyro error---*/
+		evt_handle_check_event(EVT_GYRO_ERROR);
 
 		pthread_mutex_lock(&event_handler_mtx);
 		g_event_handler_status = false;
@@ -1023,6 +1032,12 @@ void df_lidar_stuck(bool state_new,bool state_last)
 void EventHandle::tilt(bool state_new, bool state_last)
 {
 	ROS_DEBUG("%s %d: default tilt handle is called", __FUNCTION__, __LINE__);
+}
+
+/*---gyro error---*/
+void EventHandle::gyroError(bool state_new, bool state_last)
+{
+	ROS_DEBUG("%s %d: default gyro error handle is called", __FUNCTION__, __LINE__);
 }
 ///* Default: empty hanlder */
 //void EventHandle::empty(bool state_now, bool state_last)

@@ -243,6 +243,8 @@ void robot::robotbase_routine_cb()
 		sensor.y_acc = gyro.getYAcc();//in mG
 		sensor.z_acc = gyro.getZAcc();//in mG
 
+		gyro.error((buf[REC_OC]&0x80) ? true : false);
+
 		// For wall sensor device.
 		wall.setLeft((buf[REC_L_WALL_H] << 8)| buf[REC_L_WALL_L]);
 		sensor.left_wall = wall.getLeft();

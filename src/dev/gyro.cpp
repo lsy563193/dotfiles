@@ -561,3 +561,13 @@ void Gyro::setAngleROffset(void)
 	ANGLE_R_OFFSET_ = angle_r_;
 	ROS_ERROR("ANGLE_R_OFFSET_ = %f", ANGLE_R_OFFSET_);
 }
+
+void Gyro::error(bool is_error)
+{
+	is_error_ = is_error;
+}
+
+bool Gyro::error(void)
+{
+	return is_error_;
+}
