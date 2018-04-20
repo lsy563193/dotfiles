@@ -23,22 +23,31 @@ void StateInit::init() {
 	ROS_INFO("%s %d: Enter state init.", __FUNCTION__, __LINE__);
 }
 
-void StateInit::initOpenLidar() {
-	if (robot::instance()->getRobotWorkMode() == Mode::cm_navigation && sp_cm_->isRemoteGoHomePoint())
+void StateInit::initOpenLidar()
+{
+	key_led.setMode(LED_STEADY, LED_GREEN);
+	brush.normalOperate();
+	water_tank.setCurrentSwingMotorMode(water_tank.getUserSetSwingMotorMode());
+	water_tank.checkEquipment() ? water_tank.open(WaterTank::operate_option::swing_motor)
+								: vacuum.setSpeedByUserSetMode();
+	ROS_INFO("%s %d: Enter state initOpenLidar.", __FUNCTION__, __LINE__);
+}
+
+void StateInit::initForNavigation()
+{
+	if (sp_cm_->isRemoteGoHomePoint())
 	{
 		key_led.setMode(LED_STEADY, LED_ORANGE);
 		brush.slowOperate();
 		water_tank.setCurrentSwingMotorMode(WaterTank::SWING_MOTOR_LOW);
-	}
-	else
+		water_tank.checkEquipment() ? water_tank.open(WaterTank::operate_option::swing_motor)
+									: vacuum.setSpeedByUserSetMode();
+		ROS_INFO("%s %d: Enter state initForNavigation.", __FUNCTION__, __LINE__);
+	} else
 	{
-		key_led.setMode(LED_STEADY, LED_GREEN);
-		brush.normalOperate();
-		water_tank.setCurrentSwingMotorMode(water_tank.getUserSetSwingMotorMode());
+		ROS_INFO("%s %d: Just init for lidar.", __FUNCTION__, __LINE__);
+		initOpenLidar();
 	}
-	water_tank.checkEquipment() ? water_tank.open(WaterTank::operate_option::swing_motor)
-								: vacuum.setSpeedByUserSetMode();
-	ROS_INFO("%s %d: Enter state initOpenLidar.", __FUNCTION__, __LINE__);
 }
 
 void StateInit::initBackFromCharger() {

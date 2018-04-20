@@ -34,6 +34,7 @@ public:
 	void init() override;
 	void initOpenLidar();
 	void initBackFromCharger();
+	void initForNavigation();
 	void initForExploration();
 	void initForSpot();
 };
