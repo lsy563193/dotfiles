@@ -866,7 +866,9 @@ bool CleanModeNav::checkEnterPause()
 //		is_stay_in_same_postion_long_time = false;
 		ev.key_clean_pressed = false;
 		speaker.play(VOICE_CLEANING_PAUSE);
-		paused_odom_radian_ = odom.getRadian();
+		if (action_i_ != ac_open_gyro) {
+			paused_odom_radian_ = odom.getRadian();
+		}
 		ROS_INFO("%s %d: Key clean pressed, pause cleaning.Robot pose(%f)", __FUNCTION__, __LINE__,radian_to_degree(paused_odom_radian_));
 		sp_action_.reset();
 		sp_saved_states.push_back(sp_state);
