@@ -910,17 +910,45 @@ void robot::loadConsumableStatus()
 		}
 	}
 
+	bool file_error = false;
 	FILE *f_read = fopen(consumable_file.c_str(), "r");
 	if (f_read == nullptr)
+	{
 		ROS_ERROR("%s %d: Open %s error.", __FUNCTION__, __LINE__, consumable_file.c_str());
+		file_error = true;
+	}
 	else
 	{
-		fscanf(f_read, "Side brush: %d\n", &side_brush_time_);
+		if (fscanf(f_read, "Side brush: %d\n", &side_brush_time_) != 1)
+		{
+			ROS_ERROR("%s %d: Side brush data error! Reset to 0.", __FUNCTION__, __LINE__);
+			side_brush_time_ = 0;
+			file_error = true;
+		}
 		ROS_INFO("%s %d: Read side brush: %d.", __FUNCTION__, __LINE__, side_brush_time_);
-		fscanf(f_read, "Main brush: %d\n", &main_brush_time_);
+		if (fscanf(f_read, "Main brush: %d\n", &main_brush_time_) != 1)
+		{
+			ROS_ERROR("%s %d: Main brush data error! Reset to 0.", __FUNCTION__, __LINE__);
+			main_brush_time_ = 0;
+			file_error = true;
+		}
 		ROS_INFO("%s %d: Read main brush: %d.", __FUNCTION__, __LINE__, main_brush_time_);
+		if (fscanf(f_read, "Filter: %d\n", &filter_time_) != 1)
+		{
+			ROS_ERROR("%s %d: Filter data error! Reset to 0.", __FUNCTION__, __LINE__);
+			filter_time_ = 0;
+			file_error = true;
+		}
+		ROS_INFO("%s %d: Read main brush: %d.", __FUNCTION__, __LINE__, filter_time_);
 		fclose(f_read);
 		ROS_INFO("%s %d: Read data succeeded.", __FUNCTION__, __LINE__);
+	}
+
+	if (file_error)
+	{
+		std::string cmd = "rm -f " + consumable_file + " " + consumable_backup_file;
+		system(cmd.c_str());
+		ROS_ERROR("%s %d: Delete consumable file due to file error.", __FUNCTION__, __LINE__);
 	}
 }
 
@@ -935,6 +963,11 @@ void robot::updateConsumableStatus()
 	ROS_INFO("%s %d: Additional main brush: %ds.", __FUNCTION__, __LINE__, additional_main_brush_time_sec);
 	brush.resetMainBrushTime();
 	auto main_brush_time = additional_main_brush_time_sec + main_brush_time_;
+
+	auto additional_filter_time_sec = vacuum.getFilterTime();
+	ROS_INFO("%s %d: Additional filter: %ds.", __FUNCTION__, __LINE__, additional_filter_time_sec);
+	vacuum.resetFilterTime();
+	auto filter_time = additional_filter_time_sec + filter_time_;
 
 	if (access(consumable_file.c_str(), F_OK) != -1)
 	{
@@ -956,6 +989,9 @@ void robot::updateConsumableStatus()
 		fprintf(f_write, "Main brush: %d\n", main_brush_time);
 		ROS_INFO("%s %d: Main brush: %d.", __FUNCTION__, __LINE__, main_brush_time);
 		main_brush_time_ = main_brush_time;
+		fprintf(f_write, "Filter: %d\n", filter_time);
+		ROS_INFO("%s %d: Filter: %d.", __FUNCTION__, __LINE__, filter_time);
+		filter_time_ = filter_time;
 		fclose(f_write);
 		ROS_INFO("%s %d: Write data succeeded.", __FUNCTION__, __LINE__);
 	}

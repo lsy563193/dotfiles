@@ -30,6 +30,7 @@ void StateInit::initOpenLidar()
 	water_tank.setCurrentSwingMotorMode(water_tank.getUserSetSwingMotorMode());
 	water_tank.checkEquipment() ? water_tank.open(WaterTank::operate_option::swing_motor)
 								: vacuum.setSpeedByUserSetMode();
+	sp_cm_->isUsingDustBox(!water_tank.getStatus(WaterTank::operate_option::swing_motor));
 	ROS_INFO("%s %d: Enter state initOpenLidar.", __FUNCTION__, __LINE__);
 }
 
@@ -42,6 +43,7 @@ void StateInit::initForNavigation()
 		water_tank.setCurrentSwingMotorMode(WaterTank::SWING_MOTOR_LOW);
 		water_tank.checkEquipment() ? water_tank.open(WaterTank::operate_option::swing_motor)
 									: vacuum.setSpeedByUserSetMode();
+		sp_cm_->isUsingDustBox(!water_tank.getStatus(WaterTank::operate_option::swing_motor));
 		ROS_INFO("%s %d: Enter state initForNavigation.", __FUNCTION__, __LINE__);
 	} else
 	{
@@ -56,6 +58,7 @@ void StateInit::initBackFromCharger() {
 	water_tank.setCurrentSwingMotorMode(WaterTank::SWING_MOTOR_LOW);
 	water_tank.checkEquipment() ? water_tank.open(WaterTank::operate_option::swing_motor)
 								: vacuum.setSpeedByUserSetMode();
+	sp_cm_->isUsingDustBox(!water_tank.getStatus(WaterTank::operate_option::swing_motor));
 	ROS_INFO("%s %d: Enter state initBackFromCharger.", __FUNCTION__, __LINE__);
 }
 
@@ -65,6 +68,7 @@ void StateInit::initForExploration() {
 	water_tank.setCurrentSwingMotorMode(WaterTank::SWING_MOTOR_LOW);
 	water_tank.checkEquipment() ? water_tank.open(WaterTank::operate_option::swing_motor)
 								: vacuum.setForCurrentMaxMode(false);
+	sp_cm_->isUsingDustBox(!water_tank.getStatus(WaterTank::operate_option::swing_motor));
 	ROS_INFO("%s %d: Enter state initForExploration.", __FUNCTION__, __LINE__);
 }
 
@@ -75,5 +79,6 @@ void StateInit::initForSpot()
 	water_tank.setCurrentSwingMotorMode(WaterTank::SWING_MOTOR_HIGH);
 	water_tank.checkEquipment() ? water_tank.open(WaterTank::operate_option::swing_motor)
 								: vacuum.setForCurrentMaxMode(true);
+	sp_cm_->isUsingDustBox(!water_tank.getStatus(WaterTank::operate_option::swing_motor));
 	ROS_INFO("%s %d: Enter state initForSpot.", __FUNCTION__, __LINE__);
 }

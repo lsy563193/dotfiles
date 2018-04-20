@@ -63,3 +63,16 @@ void Vacuum::setForCurrentMaxMode(bool is_max)
 		slowOperate();
 }
 
+
+void Vacuum::updateFilterTime(uint32_t addition_time)
+{
+	filter_time_ += addition_time;
+	ROS_INFO("%s %d: Update filter operation time to %ds(%dh).", __FUNCTION__, __LINE__,
+			 filter_time_, filter_time_ / 3600);
+}
+
+void Vacuum::resetFilterTime()
+{
+	filter_time_ = 0;
+	ROS_INFO("%s %d: Reset filter operation time to 0.", __FUNCTION__, __LINE__);
+}

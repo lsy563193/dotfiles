@@ -174,12 +174,21 @@ bool S_Wifi::init()
 				if (main_brush_time_hour > 100)
 					main_brush_time_hour = 100;
 
+				// For main brush.
+				auto filter_time = robot::instance()->getFilterTime();
+				uint32_t filter_time_hour = filter_time / 3600;
+				if (filter_time_hour > 1)
+					filter_time_hour -= 1;
+				if (filter_time_hour > 100)
+					filter_time_hour = 100;
+
 				//ack
 				wifi::ConsumableStatusTxMsg p(
 							worktime,
 							static_cast<const uint8_t>(100 - side_brush_time_hour),
 							static_cast<const uint8_t>(100 - main_brush_time_hour),
-							0x64,0x64,0x64,//todo
+							static_cast<const uint8_t>(100 - filter_time_hour),
+							0x64,0x64,//todo
 							msg.seq_num()	
 						);
 				s_wifi_tx_.push(std::move(p)).commit();
@@ -288,6 +297,11 @@ bool S_Wifi::init()
 				if (msg.isMainBrush())
 				{
 					robot::instance()->resetMainBrushTime();
+					update_consumable = true;
+				}
+				if (msg.isFilter())
+				{
+					robot::instance()->resetFilterTime();
 					update_consumable = true;
 				}
 

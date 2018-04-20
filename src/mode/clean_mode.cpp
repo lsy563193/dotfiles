@@ -164,6 +164,8 @@ ACleanMode::~ACleanMode()
 			 static_cast<float>(robot_timer.getWorkTime()) / 60, map_area / (static_cast<float>(robot_timer.getWorkTime()) / 60));
 	brush.updateSideBrushTime(robot_timer.getWorkTime());
 	brush.updateMainBrushTime(robot_timer.getWorkTime());
+	if (isUsingDustBox())
+		vacuum.updateFilterTime(robot_timer.getWorkTime());
 }
 
 void ACleanMode::saveBlock(int block, int dir, std::function<Cells()> get_list)

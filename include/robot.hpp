@@ -245,6 +245,10 @@ public:
 	{
 		main_brush_time_ = 0;
 	}
+	void resetFilterTime()
+	{
+		filter_time_ = 0;
+	}
 
 	uint32_t getSideBrushTime()
 	{
@@ -253,6 +257,10 @@ public:
 	uint32_t getMainBrushTime()
 	{
 		return main_brush_time_;
+	}
+	uint32_t getFilterTime()
+	{
+		return filter_time_;
 	}
 
 	void updateConsumableStatus();
@@ -263,6 +271,7 @@ private:
 	void loadConsumableStatus();
 	uint32_t side_brush_time_{0};
 	uint32_t main_brush_time_{0};
+	uint32_t filter_time_{0};
 
 	uint16_t robot_up_hour_{0};
 	Baselink_Frame_Type baselink_frame_type_;

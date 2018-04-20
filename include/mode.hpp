@@ -508,6 +508,16 @@ public:
 	// For vacuum setting.
 	void setVacuum() override ;
 
+	// For HEPA filter.
+	void isUsingDustBox(bool val)
+	{
+		is_using_dust_box_ = val;
+	}
+	bool isUsingDustBox()
+	{
+		return is_using_dust_box_;
+	}
+
 	bool is_closed{true};
 	bool is_isolate{true};
 	int closed_count_{};
@@ -525,18 +535,12 @@ public:
 	typedef std::set<PairCell_t> Blocks_t ;
 	Blocks_t c_blocks;
 	Points plan_path_{};
-	bool found_temp_charger_{};
-	bool in_rcon_signal_range_{};
-	bool should_mark_charger_{};
 	bool should_follow_wall{};
-	bool should_mark_temp_charger_{};
 
 	Dir_t old_dir_{};
 	Point_t start_point_{};
-	DequeArray<Point_t> history_{};
 	Point_t iterate_point_{};
 
-//	boost::shared_ptr<APathAlgorithm> follow_wall_path_algorithm_{};
 	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
 	boost::shared_ptr<GoHomePathAlgorithm> go_home_path_algorithm_{};
 	GridMap clean_map_{};
@@ -567,7 +571,7 @@ protected:
 	Points charger_pose_;
 	Points tmp_charger_pose_;
 	bool found_charger_{false};
-	bool out_range_charger_{false};
+	bool is_using_dust_box_{false};
 public:
 
 	static void pubPointMarkers(const std::deque<Vector2<double>> *point, std::string frame_id,std::string name);
