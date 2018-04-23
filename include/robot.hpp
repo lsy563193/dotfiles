@@ -236,10 +236,49 @@ public:
 	void wifiSetVacuum();
 
 	bool checkLidarStuck();
+
+	void resetSideBrushTime()
+	{
+		side_brush_time_ = 0;
+	}
+	void resetMainBrushTime()
+	{
+		main_brush_time_ = 0;
+	}
+	void resetFilterTime()
+	{
+		filter_time_ = 0;
+	}
+
+	uint32_t getSideBrushTime()
+	{
+		return side_brush_time_;
+	}
+	uint32_t getMainBrushTime()
+	{
+		return main_brush_time_;
+	}
+	uint32_t getFilterTime()
+	{
+		return filter_time_;
+	}
+
+	void updateConsumableStatus();
+
+	void updateCleanRecord(const uint32_t &time, const uint16_t &clean_time, const float &clean_area,
+						   GridMap &clean_map);
+
+	void getCleanRecord(uint32_t &time, uint16_t &clean_time, uint16_t &clean_area, GridMap &clean_map);
 private:
 
 	uint8_t getTestMode(void);
 
+	void loadConsumableStatus();
+	uint32_t side_brush_time_{0};
+	uint32_t main_brush_time_{0};
+	uint32_t filter_time_{0};
+
+	uint16_t robot_up_hour_{0};
 	Baselink_Frame_Type baselink_frame_type_;
 	boost::mutex baselink_frame_type_mutex_;
 // Lock for odom coordinate
@@ -330,6 +369,15 @@ private:
 	double lidar_is_covered_time_{0};
 
 	uint16_t robot_current_{0};
+
+	struct CleanRecord{
+		uint32_t time;
+		uint16_t clean_time; // In second
+		uint16_t clean_area; // In square meter.
+		GridMap clean_map;
+	};
+	boost::mutex last_clean_record_mutex_;
+	CleanRecord last_clean_record_;
 };
 
 float cellToCount(int16_t distance);

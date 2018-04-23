@@ -690,6 +690,37 @@ public:
 	}
 };
 
+class CleanRecordUploadTxMsg: public Packet
+{
+public:
+	static constexpr int MSG_CODE = 0xC9;
+
+	CleanRecordUploadTxMsg(const uint32_t time,
+			const uint16_t clean_time,
+			const uint16_t clean_area,
+			const std::vector<uint8_t> &data,
+			const uint8_t seq_num = 0);
+
+private:
+	static std::vector<uint8_t> getInitData(const uint32_t time,
+			const uint16_t clean_time,
+			const uint16_t clean_area,
+			const std::vector<uint8_t> &data);
+};
+
+class CleanRecordUploadAckMsg: public RxMsg
+{
+	public:
+	static constexpr int MSG_CODE = CleanRecordUploadTxMsg::MSG_CODE;
+
+	using RxMsg::RxMsg;
+
+	std::string describe() const override
+	{
+		return "Upload clean record ack msg";
+	}
+};
+
 class RealtimeMapUploadTxMsg: public Packet
 {
 public:

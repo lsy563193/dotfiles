@@ -305,6 +305,34 @@ DeviceStatusUploadTxMsg::DeviceStatusUploadTxMsg(const WorkMode a_work_mode,
 				a_notif_mode, a_led_mode, a_error_flag)
 {}
 
+CleanRecordUploadTxMsg::CleanRecordUploadTxMsg(const uint32_t a_time,
+		const uint16_t a_clean_time,
+		const uint16_t a_clean_area,
+		const std::vector<uint8_t> &a_data,
+		const uint8_t a_seq_num)
+		: Packet(-1, a_seq_num, 0, MSG_CODE, getInitData(a_time, a_clean_time,
+				a_clean_area, a_data))
+{}
+
+std::vector<uint8_t> CleanRecordUploadTxMsg::getInitData(const uint32_t a_time,
+		const uint16_t a_clean_time,
+		const uint16_t a_clean_area,
+		const std::vector<uint8_t> &a_data)
+{
+	vector<uint8_t> data = {
+			static_cast<uint8_t>((a_time & 0xFF000000) >> 24),
+			static_cast<uint8_t>((a_time & 0xFF0000) >> 16),
+			static_cast<uint8_t>((a_time & 0xFF00) >> 8),
+			static_cast<uint8_t>(a_time & 0xFF),
+			static_cast<uint8_t>((a_clean_time & 0xFF00) >> 8),
+			static_cast<uint8_t>(a_clean_time & 0xFF),
+			static_cast<uint8_t>((a_clean_area & 0xFF00) >> 8),
+			static_cast<uint8_t>(a_clean_area & 0xFF),
+	};
+	data.insert(data.cend(), a_data.cbegin(), a_data.cend());
+	return data;
+}
+
 RealtimeMapUploadTxMsg::RealtimeMapUploadTxMsg(const uint32_t a_time,
 		const uint8_t a_map_seq_num,
 		const uint8_t a_map_packet_count,

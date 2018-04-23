@@ -21,6 +21,9 @@
 
 using namespace SERIAL;
 
+std::string consumable_file = "/opt/ros/indigo/share/pp/consumable_status";
+std::string consumable_backup_file = "/opt/ros/indigo/share/pp/consumable_status_bk";
+
 pthread_mutex_t recev_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t  recev_cond = PTHREAD_COND_INITIALIZER;
 
@@ -91,6 +94,8 @@ robot::robot()
 	robot_nh_.param<int>("baud_rate", baud_rate_, 115200);
 
 	robot_nh_.param<std::string>("lidar_bumper_file", lidar_bumper_dev_, "/dev/input/event1");
+
+	loadConsumableStatus();
 
 	while (!serial.isReady()) {
 		// Init for serial.
@@ -237,6 +242,8 @@ void robot::robotbase_routine_cb()
 		sensor.x_acc = gyro.getXAcc();//in mG
 		sensor.y_acc = gyro.getYAcc();//in mG
 		sensor.z_acc = gyro.getZAcc();//in mG
+
+		gyro.error((buf[REC_OC]&0x80) ? true : false);
 
 		// For wall sensor device.
 		wall.setLeft((buf[REC_L_WALL_H] << 8)| buf[REC_L_WALL_L]);
@@ -574,6 +581,14 @@ void robot::runWorkMode()
 		auto next_mode = p_mode->getNextMode();
 		p_mode.reset();
 		ROS_INFO("%s %d: Previous mode should finish destructing now?", __FUNCTION__, __LINE__);
+
+		auto robot_up_hour = static_cast<uint16_t>(robot_timer.getRobotUpTime() / 3600);
+		if (1 || robot_up_hour > robot_up_hour_)
+		{
+			robot_up_hour_ = robot_up_hour;
+			updateConsumableStatus();
+		}
+
 		p_mode.reset(getNextMode(next_mode));
 		robot_work_mode_ = next_mode;
 	}
@@ -657,8 +672,6 @@ void robot::odomPublish(const tf::Vector3& robot_pos, double robot_radian_)
 	robot_pose.twist.twist.angular.z = 0.0;
 	odom_pub_.publish(robot_pose);
 }
-
-
 
 bool robot::lidarMotorCtrl(bool switch_)
 {
@@ -880,6 +893,132 @@ void robot::wifiSetVacuum()
 	boost::mutex::scoped_lock lock(mode_mutex_);
 	p_mode->setVacuum();
 }
+
+void robot::loadConsumableStatus()
+{
+	ROS_INFO("%s %d: Load consumable status.", __FUNCTION__, __LINE__);
+
+	if (access(consumable_file.c_str(), F_OK) == -1)
+	{
+		// If file not exist, check if back up file exist.
+		if (access(consumable_backup_file.c_str(), F_OK) == -1)
+			return;
+		else
+		{
+			//Restore from backup file.
+			std::string cmd = "cp " + consumable_backup_file + " " + consumable_file;
+			system(cmd.c_str());
+			ROS_INFO("%s %d: Resume from backup file.", __FUNCTION__, __LINE__);
+		}
+	}
+
+	bool file_error = false;
+	FILE *f_read = fopen(consumable_file.c_str(), "r");
+	if (f_read == nullptr)
+	{
+		ROS_ERROR("%s %d: Open %s error.", __FUNCTION__, __LINE__, consumable_file.c_str());
+		file_error = true;
+	}
+	else
+	{
+		if (fscanf(f_read, "Side brush: %d\n", &side_brush_time_) != 1)
+		{
+			ROS_ERROR("%s %d: Side brush data error! Reset to 0.", __FUNCTION__, __LINE__);
+			side_brush_time_ = 0;
+			file_error = true;
+		}
+		ROS_INFO("%s %d: Read side brush: %d.", __FUNCTION__, __LINE__, side_brush_time_);
+		if (fscanf(f_read, "Main brush: %d\n", &main_brush_time_) != 1)
+		{
+			ROS_ERROR("%s %d: Main brush data error! Reset to 0.", __FUNCTION__, __LINE__);
+			main_brush_time_ = 0;
+			file_error = true;
+		}
+		ROS_INFO("%s %d: Read main brush: %d.", __FUNCTION__, __LINE__, main_brush_time_);
+		if (fscanf(f_read, "Filter: %d\n", &filter_time_) != 1)
+		{
+			ROS_ERROR("%s %d: Filter data error! Reset to 0.", __FUNCTION__, __LINE__);
+			filter_time_ = 0;
+			file_error = true;
+		}
+		ROS_INFO("%s %d: Read main brush: %d.", __FUNCTION__, __LINE__, filter_time_);
+		fclose(f_read);
+		ROS_INFO("%s %d: Read data succeeded.", __FUNCTION__, __LINE__);
+	}
+
+	if (file_error)
+	{
+		std::string cmd = "rm -f " + consumable_file + " " + consumable_backup_file;
+		system(cmd.c_str());
+		ROS_ERROR("%s %d: Delete consumable file due to file error.", __FUNCTION__, __LINE__);
+	}
+}
+
+void robot::updateConsumableStatus()
+{
+	auto additional_side_brush_time_sec = brush.getSideBrushTime();
+	ROS_INFO("%s %d: Additional side brush: %ds.", __FUNCTION__, __LINE__, additional_side_brush_time_sec);
+	brush.resetSideBurshTime();
+	auto side_brush_time = additional_side_brush_time_sec + side_brush_time_;
+
+	auto additional_main_brush_time_sec = brush.getMainBrushTime();
+	ROS_INFO("%s %d: Additional main brush: %ds.", __FUNCTION__, __LINE__, additional_main_brush_time_sec);
+	brush.resetMainBrushTime();
+	auto main_brush_time = additional_main_brush_time_sec + main_brush_time_;
+
+	auto additional_filter_time_sec = vacuum.getFilterTime();
+	ROS_INFO("%s %d: Additional filter: %ds.", __FUNCTION__, __LINE__, additional_filter_time_sec);
+	vacuum.resetFilterTime();
+	auto filter_time = additional_filter_time_sec + filter_time_;
+
+	if (access(consumable_file.c_str(), F_OK) != -1)
+	{
+		// If file exist, make it a back up file.
+		std::string cmd = "mv " + consumable_file + " " + consumable_backup_file;
+		system(cmd.c_str());
+		ROS_INFO("%s %d: Backup for %s.", __FUNCTION__, __LINE__, consumable_file.c_str());
+	}
+
+	FILE *f_write = fopen(consumable_file.c_str(), "w");
+	if (f_write == nullptr)
+		ROS_ERROR("%s %d: Open %s error.", __FUNCTION__, __LINE__, consumable_file.c_str());
+	else
+	{
+		ROS_INFO("%s %d: Start writing data to %s.", __FUNCTION__, __LINE__, consumable_file.c_str());
+		fprintf(f_write, "Side brush: %d\n", side_brush_time);
+		ROS_INFO("%s %d: Write side brush: %d.", __FUNCTION__, __LINE__, side_brush_time);
+		side_brush_time_ = side_brush_time;
+		fprintf(f_write, "Main brush: %d\n", main_brush_time);
+		ROS_INFO("%s %d: Main brush: %d.", __FUNCTION__, __LINE__, main_brush_time);
+		main_brush_time_ = main_brush_time;
+		fprintf(f_write, "Filter: %d\n", filter_time);
+		ROS_INFO("%s %d: Filter: %d.", __FUNCTION__, __LINE__, filter_time);
+		filter_time_ = filter_time;
+		fclose(f_write);
+		ROS_INFO("%s %d: Write data succeeded.", __FUNCTION__, __LINE__);
+	}
+}
+
+void robot::updateCleanRecord(const uint32_t &time, const uint16_t &clean_time, const float &clean_area,
+							  GridMap &clean_map)
+{
+	auto clean_area_int = static_cast<uint16_t>(clean_area + 1);
+	boost::mutex::scoped_lock lock(last_clean_record_mutex_);
+	last_clean_record_.time = time;
+	last_clean_record_.clean_time = clean_time;
+	last_clean_record_.clean_area = clean_area_int;
+	last_clean_record_.clean_map.copy(clean_map);
+}
+
+void robot::getCleanRecord(uint32_t &time, uint16_t &clean_time, uint16_t &clean_area, GridMap &clean_map)
+{
+	boost::mutex::scoped_lock lock(last_clean_record_mutex_);
+	time = last_clean_record_.time;
+	clean_time = last_clean_record_.clean_time;
+	clean_area = last_clean_record_.clean_area;
+	clean_map.copy(last_clean_record_.clean_map);
+}
+
 
 //--------------------
 static float xCount{}, yCount{};

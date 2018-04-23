@@ -575,14 +575,14 @@ bool CleanModeNav::updateActionInStateInit() {
 		}
 		else{
 			action_i_ = ac_open_lidar;
-			boost::dynamic_pointer_cast<StateInit>(state_init)->initOpenLidar();
+			boost::dynamic_pointer_cast<StateInit>(state_init)->initForNavigation();
 		}
 	} else if (action_i_ == ac_back_from_charger)
 	{
 		if (!has_aligned_and_open_slam_) // Init odom position here.
 			robot::instance()->initOdomPosition();
 
-		boost::dynamic_pointer_cast<StateInit>(state_init)->initOpenLidar();
+		boost::dynamic_pointer_cast<StateInit>(state_init)->initForNavigation();
 		action_i_ = ac_open_lidar;
 		setHomePoint();
 	} else if (action_i_ == ac_open_lidar)
@@ -745,7 +745,6 @@ void CleanModeNav::switchInStateClean() {
 		ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_points_.size());
 		go_home_path_algorithm_.reset();
 		go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_, start_point_));
-		s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_LAST_CLEANMAP);
 	}
 	sp_state->init();
 	action_i_ = ac_null;
@@ -866,7 +865,9 @@ bool CleanModeNav::checkEnterPause()
 //		is_stay_in_same_postion_long_time = false;
 		ev.key_clean_pressed = false;
 		speaker.play(VOICE_CLEANING_PAUSE);
-		paused_odom_radian_ = odom.getRadian();
+		if (action_i_ != ac_open_gyro) {
+			paused_odom_radian_ = odom.getRadian();
+		}
 		ROS_INFO("%s %d: Key clean pressed, pause cleaning.Robot pose(%f)", __FUNCTION__, __LINE__,radian_to_degree(paused_odom_radian_));
 		sp_action_.reset();
 		sp_saved_states.push_back(sp_state);

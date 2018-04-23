@@ -69,6 +69,15 @@ public:
 		return is_on_;
 	}
 
+	void updateFilterTime(uint32_t addition_time);
+
+	void resetFilterTime();
+
+	uint32_t getFilterTime()
+	{
+		return filter_time_;
+	}
+
 private:
 	void slowOperate();
 
@@ -84,6 +93,8 @@ private:
 	uint16_t current_;
 
 	bool is_on_{false};
+
+	uint32_t filter_time_{0};
 };
 
 extern Vacuum vacuum;

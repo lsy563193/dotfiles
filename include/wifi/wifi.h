@@ -201,6 +201,7 @@ private:
 	bool isRegDevice_;
 	bool is_Status_Request_;
 	bool realtime_map_ack_;
+	bool clean_record_ack_;
 	bool upload_state_ack_;
 	bool is_active_;
 	bool is_resume_;
