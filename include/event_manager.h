@@ -82,6 +82,7 @@ typedef struct
 	bool lidar_bumper;
 	uint8_t lidar_triggered;
 	bool cliff_all_triggered;
+	bool gyro_error;
 }Ev_t;
 class EventHandle{
 public:
@@ -212,6 +213,8 @@ virtual void lidarStuck(bool state_new, bool state_last);
 /*---robot tilt---*/
 virtual void tilt(bool state_new, bool state_last);
 
+/*---gyro error---*/
+virtual void gyroError(bool state_new, bool state_last);
 };
 
 /* Bumper */
@@ -321,6 +324,8 @@ typedef enum {
 	EVT_LIDAR_STUCK,
 
 	EVT_ROBOT_TILT,
+
+	EVT_GYRO_ERROR,
 
 	EVT_MAX,
 } EventType;
