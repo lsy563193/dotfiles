@@ -294,7 +294,13 @@ double radian_to_degree(double rad);
         return (y < rOther.y);
       }
     }
-
+    /*
+    * @brief cal mod
+    */
+    inline int operator%(int val)const
+    {
+        return static_cast<int>((x*y) % val);
+    } 
     inline bool operator>(const Vector2& rOther) const
     {
         Vector2 this_{x,y};

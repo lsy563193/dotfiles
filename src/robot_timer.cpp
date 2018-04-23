@@ -60,7 +60,7 @@ void Timer::setRealTime(Timer::DateTime date_time)
 	date_time_.hour = date_time.hour;
 	date_time_.mint = date_time.mint;
 	date_time_.sec = date_time.sec;
-	ROS_INFO("%s,%d,\033[1;41;35m from cloud %u/%u/%u %u:%u:%u\033[0m",
+	ROS_INFO("%s,%d,\033[1;40;35m from cloud %u/%u/%u %u:%u:%u\033[0m",
 				__FUNCTION__,__LINE__,
 				date_time_.year,date_time_.month,date_time_.day,
 				date_time_.hour,date_time.mint,date_time.sec);
@@ -107,6 +107,7 @@ void Timer::updateRealTimeFromMint(struct Timer::DateTime &dt, uint16_t diff_min
 	//month and day cal
 	uint8_t day_sum = dt.day + days_count;
 	if(dt.month == 2)
+	{
 		if(leap_year && day_sum <=29 )
 			dt.day +=days_count;
 		else if(leap_year && day_sum > 29)
@@ -115,30 +116,45 @@ void Timer::updateRealTimeFromMint(struct Timer::DateTime &dt, uint16_t diff_min
 			dt.day += days_count;
 		else if(!leap_year && day_sum >28 )
 			dt.day  = day_sum %28, dt.month += 1;
-
+	}
+		
 	else if(dt.month <= 7)
+	{
 		if(dt.month %2 == 0)
+		{
 			if(day_sum <=30 )
 				dt.day += days_count;
 			else
 				dt.day = day_sum % 30,dt.month += 1;
+
+		}
 		else if(dt.month %2 != 0 )
+		{
 			if(day_sum <= 31)
 				dt.day += days_count;
 			else
 				dt.day = day_sum % 31,dt.month +=1;
 
+		}
+	}
+		
 	else if(dt.month >= 8 )
+	{
 		if(dt.month %2 == 0 )
+		{
 			if(day_sum <=31 )
 				dt.day += days_count;
 			else
 				dt.day = day_sum % 31,dt.month += 1;
+		}
 		else if(dt.month %2 != 0 && hour_sum >= 24)
+		{
 			if(day_sum <= 30)
 				dt.day += days_count;
 			else
 				dt.day = day_sum % 30,dt.month +=1;
+		}
+	}
 	//year 
 	if(	dt.month > 12)
 		dt.year += 1,dt.month = 1;
