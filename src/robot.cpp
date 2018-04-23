@@ -997,6 +997,27 @@ void robot::updateConsumableStatus()
 	}
 }
 
+void robot::updateCleanRecord(const uint32_t &time, const uint16_t &clean_time, const float &clean_area,
+							  GridMap &clean_map)
+{
+	auto clean_area_int = static_cast<uint16_t>(clean_area + 1);
+	boost::mutex::scoped_lock lock(last_clean_record_mutex_);
+	last_clean_record_.time = time;
+	last_clean_record_.clean_time = clean_time;
+	last_clean_record_.clean_area = clean_area_int;
+	last_clean_record_.clean_map.copy(clean_map);
+}
+
+void robot::getCleanRecord(uint32_t &time, uint16_t &clean_time, uint16_t &clean_area, GridMap &clean_map)
+{
+	boost::mutex::scoped_lock lock(last_clean_record_mutex_);
+	time = last_clean_record_.time;
+	clean_time = last_clean_record_.clean_time;
+	clean_area = last_clean_record_.clean_area;
+	clean_map.copy(last_clean_record_.clean_map);
+}
+
+
 //--------------------
 static float xCount{}, yCount{};
 

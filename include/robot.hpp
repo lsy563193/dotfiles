@@ -264,6 +264,11 @@ public:
 	}
 
 	void updateConsumableStatus();
+
+	void updateCleanRecord(const uint32_t &time, const uint16_t &clean_time, const float &clean_area,
+						   GridMap &clean_map);
+
+	void getCleanRecord(uint32_t &time, uint16_t &clean_time, uint16_t &clean_area, GridMap &clean_map);
 private:
 
 	uint8_t getTestMode(void);
@@ -364,6 +369,15 @@ private:
 	double lidar_is_covered_time_{0};
 
 	uint16_t robot_current_{0};
+
+	struct CleanRecord{
+		uint32_t time;
+		uint16_t clean_time; // In second
+		uint16_t clean_area; // In square meter.
+		GridMap clean_map;
+	};
+	boost::mutex last_clean_record_mutex_;
+	CleanRecord last_clean_record_;
 };
 
 float cellToCount(int16_t distance);

@@ -138,6 +138,10 @@ void RxManager::handleMsg( Packet &&a_packet )
 		handleMsg( RealtimeMapUploadAckMsg( std::move( a_packet )) );
 		break;
 
+	case CleanRecordUploadAckMsg::MSG_CODE:
+		handleMsg( CleanRecordUploadAckMsg( std::move( a_packet )) );
+		break;
+
 	case AccumulatedWorkTimeUploadAckMsg::MSG_CODE:
 		handleMsg( AccumulatedWorkTimeUploadAckMsg( std::move( a_packet )) );
 		break;
