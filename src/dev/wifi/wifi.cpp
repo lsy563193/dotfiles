@@ -1118,13 +1118,16 @@ bool S_Wifi::factoryTest()
 {
 	isFactoryTest_ = true;
 	int waitResp = 0;
-	//wifi resume
-	if(!(int)this->resume())
+	if (is_sleep_)
 	{
-		ROS_INFO("%s,%d,FACTORY TEST FAIL!!",__FUNCTION__,__LINE__);
-		isFactoryTest_ = false;
-		return false;
-	}	
+		//wifi resume
+		if (!(int) this->resume())
+		{
+			ROS_INFO("%s,%d,FACTORY TEST FAIL!!", __FUNCTION__, __LINE__);
+			isFactoryTest_ = false;
+			return false;
+		}
+	}
 	isRegDevice_ = false;
 	//wifi factory test
 	wifi::FactoryTestTxMsg p(0x01);
