@@ -108,11 +108,12 @@
 #define RESUME_CLEANING_VOLTAGE	(1530)
 
 /* Battery voltage criterion for brush setting*/
-#define FULL_OPERATE_VOLTAGE_FOR_BRUSH	(800)
+#define FULL_OPERATE_VOLTAGE_FOR_BRUSH	(850)
+#define SLOW_OPERATE_VOLTAGE_FOR_BRUSH	(450)
 
 /* Battery voltage criterion for water tank setting*/
-#define FULL_OPERATE_VOLTAGE_FOR_WATER_TANK	(500)
-#define LOW_OPERATE_VOLTAGE_FOR_WATER_TANK	(250)
+#define FULL_OPERATE_VOLTAGE_FOR_SWING_MOTOR	(500)
+#define LOW_OPERATE_VOLTAGE_FOR_SWING_MOTOR	(250)
 /* ------------------------------------- Obs config ------------------------------------- */
 /* OBS setting */
 #define OBS_DYNAMIC			(1)

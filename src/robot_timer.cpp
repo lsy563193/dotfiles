@@ -60,7 +60,7 @@ void Timer::setRealTime(Timer::DateTime date_time)
 	date_time_.hour = date_time.hour;
 	date_time_.mint = date_time.mint;
 	date_time_.sec = date_time.sec;
-	ROS_INFO("%s,%d,\033[1m %u/%u/%u %u:%u:%u\033[0m",
+	ROS_INFO("%s,%d,\033[1;41;35m from cloud %u/%u/%u %u:%u:%u\033[0m",
 				__FUNCTION__,__LINE__,
 				date_time_.year,date_time_.month,date_time_.day,
 				date_time_.hour,date_time.mint,date_time.sec);
@@ -88,7 +88,7 @@ void Timer::setRealTime(uint16_t mints)
 	//appmt_obj.setPlan2Bottom(mint);
 }
 
-void Timer::updateTimeFromDiffMint(struct Timer::DateTime &dt, uint16_t diff_mins)
+void Timer::updateRealTimeFromMint(struct Timer::DateTime &dt, uint16_t diff_mins)
 {
 	uint8_t mint_sum = dt.mint + (uint8_t)(diff_mins%60);
 	uint16_t hour_sum= dt.hour + diff_mins/60;
@@ -186,4 +186,10 @@ uint32_t Timer::getLocalTimeInMint()
 	struct tm *tm_t = localtime(&t_t);
 	uint32_t w = tm_t->tm_wday+1;
 	return (uint32_t)(w*24*60+tm_t->tm_hour*60+tm_t->tm_min);
+}
+
+uint32_t Timer::getRobotUpTime()
+{
+	auto robot_time = static_cast<uint32_t>(difftime(time(NULL), robot_start_time_));
+	return robot_time;
 }

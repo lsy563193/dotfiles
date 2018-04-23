@@ -17,7 +17,7 @@ IAction::IAction()
 void IAction::updateStartTime()
 {
 	start_timer_ = ros::Time::now().toSec();
-	ROS_INFO("update start time,%f`",start_timer_);
+//	ROS_INFO("update start time:%f.",start_timer_);
 }
 
 bool IAction::isTimeUp()

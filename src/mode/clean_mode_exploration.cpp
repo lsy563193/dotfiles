@@ -17,8 +17,9 @@ CleanModeExploration::CleanModeExploration()
 	go_home_path_algorithm_.reset();
 	error_marker_.clear();
 	clean_map_.mapInit();
-	setExpMode(true);
 	obs.control(OFF);
+	s_wifi.setWorkMode(cm_exploration);
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 }
 
 CleanModeExploration::~CleanModeExploration()
@@ -57,9 +58,28 @@ CleanModeExploration::~CleanModeExploration()
 		ROS_INFO("%s %d: Write data succeeded.", __FUNCTION__, __LINE__);
 	}
 #endif
-	setExpMode(false);
 	obs.control(ON);
 }
+
+bool CleanModeExploration::isExit()
+{
+	if (s_wifi.receiveHome())
+	{
+		ROS_WARN("%s %d: Exit for wifi home.", __FUNCTION__, __LINE__);
+		setNextMode(md_idle);
+		return true;
+	}
+
+	if (s_wifi.receiveIdle())
+	{
+		ROS_WARN("%s %d: Exit for wifi idle.", __FUNCTION__, __LINE__);
+		setNextMode(md_idle);
+		return true;
+	}
+
+	return ACleanMode::isExit();
+}
+
 
 bool CleanModeExploration::mapMark()
 {
@@ -132,14 +152,14 @@ void CleanModeExploration::chargeDetect(bool state_now, bool state_last) {
 void CleanModeExploration::remoteMax(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
-	if(water_tank.checkEquipment(true)){
+	if(water_tank.getStatus(WaterTank::operate_option::swing_motor)){
 		beeper.beepForCommand(INVALID);
 	}
 	else if(isInitState() || isStateFollowWall() || isStateExploration() || isStateGoHomePoint() || isStateGoToCharger())
 	{
 		beeper.beepForCommand(VALID);
-		vacuum.isMaxInClean(!vacuum.isMaxInClean());
-		speaker.play(vacuum.isMaxInClean() ? VOICE_VACCUM_MAX : VOICE_CLEANING_NAVIGATION);
+		vacuum.setForUserSetMaxMode(!vacuum.isUserSetMaxMode());
+		ACleanMode::setVacuum();
 	}
 	remote.reset();
 }
@@ -226,7 +246,7 @@ void CleanModeExploration::resetErrorMarker() {
 			break;
 		if(time - ite->time > 20){
 			if(clean_map_.getCell(CLEAN_MAP,ite->x,ite->y) == CLEANED &&
-					slam_grid_map.getCell(CLEAN_MAP,ite->x,ite->y) != SLAM_MAP_CLEANABLE)
+					slam_grid_map.getCell(CLEAN_MAP,ite->x,ite->y) != SLAM_MAP_REACHABLE)
 				clean_map_.setCell(CLEAN_MAP,ite->x,ite->y,UNCLEAN);
 //			ROS_INFO("%s,%d,i:%d,size:%d",__FUNCTION__,__LINE__,i,error_marker_.size());
 			error_marker_.erase(ite);
@@ -234,5 +254,18 @@ void CleanModeExploration::resetErrorMarker() {
 	}
 }
 
+void CleanModeExploration::wifiSetWaterTank()
+{
+	if (isStateFollowWall())
+		return;
+	ACleanMode::wifiSetWaterTank();
+}
+
+void CleanModeExploration::setVacuum()
+{
+	if (isStateFollowWall())
+		return;
+	ACleanMode::setVacuum();
+}
 
 

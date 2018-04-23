@@ -27,8 +27,6 @@ void Brush::operate()
 	switch (brush_status_)
 	{
 		case brush_slow:
-			setPWM(20, 20, 20);
-			break;
 		case brush_normal:
 			checkBatterySetPWM();
 			setPWM(normal_PWM, normal_PWM, normal_PWM);
@@ -83,7 +81,8 @@ void Brush::mainBrushResume()
 
 void Brush::updatePWM()
 {
-	if (brush_status_ == brush_normal && ros::Time::now().toSec() - check_battery_time_stamp_ > 60)
+	if ((brush_status_ == brush_normal || brush_status_ == brush_slow)
+		&& ros::Time::now().toSec() - check_battery_time_stamp_ > 60)
 	{
 		operate();
 		check_battery_time_stamp_ = ros::Time::now().toSec();
@@ -94,7 +93,8 @@ void Brush::updatePWM()
 void Brush::checkBatterySetPWM()
 {
 	auto current_battery_voltage_ = battery.getVoltage();
-	float percentage = static_cast<float>(FULL_OPERATE_VOLTAGE_FOR_BRUSH) /
+	auto operate_voltage_ = brush_status_ == brush_slow ? SLOW_OPERATE_VOLTAGE_FOR_BRUSH : FULL_OPERATE_VOLTAGE_FOR_BRUSH;
+	float percentage = static_cast<float>(operate_voltage_) /
 					   static_cast<float>(current_battery_voltage_);
 	normal_PWM = static_cast<uint8_t>(percentage * 100);
 }
@@ -177,7 +177,7 @@ bool Brush::checkBrushTwined(uint8_t brush_indicator)
 			else
 				brush.setRightBrushPWM(100);
 
-			if (side_brush_oc_status_[brush_indicator])
+			if (ros::Time::now().toSec() - resume_start_time_[brush_indicator] > 1 && side_brush_oc_status_[brush_indicator])
 			{
 				if (++resume_count_[brush_indicator] > 3)
 				{
@@ -205,4 +205,30 @@ bool Brush::checkBrushTwined(uint8_t brush_indicator)
 			break;
 	}
 	return false;
+}
+
+void Brush::updateSideBrushTime(uint32_t addition_time)
+{
+	side_brush_operation_time_ += addition_time;
+	ROS_INFO("%s %d: Update side brush operation time to %ds(%dh).", __FUNCTION__, __LINE__,
+			 side_brush_operation_time_, side_brush_operation_time_ / 3600);
+}
+
+void Brush::updateMainBrushTime(uint32_t addition_time)
+{
+	main_brush_operation_time_ += addition_time;
+	ROS_INFO("%s %d: Update main brush operation time to %ds(%dh).", __FUNCTION__, __LINE__,
+			 main_brush_operation_time_, main_brush_operation_time_ / 3600);
+}
+
+void Brush::resetSideBurshTime()
+{
+	side_brush_operation_time_ = 0;
+	ROS_INFO("%s %d: Reset side brush operation time to 0.", __FUNCTION__, __LINE__);
+}
+
+void Brush::resetMainBrushTime()
+{
+	main_brush_operation_time_ = 0;
+	ROS_INFO("%s %d: Reset main brush operation time to 0.", __FUNCTION__, __LINE__);
 }

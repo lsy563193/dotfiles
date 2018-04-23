@@ -172,6 +172,7 @@ bool Lidar::motorCtrl(bool new_switch_)
 		setScanCompensateReady(0);
 		slip_frame_cnt_ = 0;
 		slip_status_ = false;
+		setLidarStuckCheckingEnable(false);
 		//delete []last_ranges_;
 		ROS_INFO("\033[35m" "%s %d: Stop lidar." "\033[0m", __FUNCTION__, __LINE__);
 	}
@@ -1290,7 +1291,7 @@ void Lidar::checkRobotSlip()
 					ROS_INFO("\033[35m""%s,%d,robot slip!!""\033[0m", __FUNCTION__, __LINE__);
 					slip_status_ = true;
 					slip_cnt_limit_ = 5;
-					beeper.beepForCommand(VALID);
+					beeper.debugBeep(VALID);
 				} else {
 					slip_status_ = false;
 				}
@@ -1656,13 +1657,6 @@ void Lidar::init()
 	return;
 }
 
-bool Lidar::lidar_is_stuck()
-{
-	if (lidar.isScanOriginalReady() && !lidar.lidarCheckFresh(4, 2))
-		return true;
-	return false;
-}
-
 uint8_t Lidar::lidar_get_status(int movement_i, int action_i)
 {
 	std::vector<Vector2<int>> markers;
@@ -1676,7 +1670,7 @@ uint8_t Lidar::lidar_get_status(int movement_i, int action_i)
 void Lidar::checkSlipInit(float &acur1, float &acur2, float &acur3, float &acur4) {
 	//For cliff trigger
 	if(wheel.getLeftWheelCliffStatus() || wheel.getRightWheelCliffStatus()){
-		ROS_INFO("%s,%d,robot wheel cliff detect",__FUNCTION__,__LINE__);
+//		ROS_INFO("%s,%d,robot wheel cliff detect",__FUNCTION__,__LINE__);
 		wheel_cliff_trigger_time_ = ros::Time::now().toSec();
 	}
 	//For tilt trigger
@@ -1902,4 +1896,36 @@ bool Lidar::scanDataChecking(bool check_front, sensor_msgs::LaserScan scan, floa
 
 	ROS_INFO("%s %d: Valid count is %d.", __FUNCTION__, __LINE__, _valid_count);
 	return _valid_count > 130;
+}
+
+void Lidar::setLidarStuckCheckingEnable(bool status) {
+	lidar_stuck_checking_enable = status;
+}
+
+bool Lidar::getLidarStuckCheckingEnable() {
+	return lidar_stuck_checking_enable;
+}
+
+bool Lidar::checkLidarBeCovered() {
+	if(isScanOriginalReady() == 0) {
+//		INFO_BLUE("ScanOriginal NOT Ready! Break!");
+		return false;
+	}
+	scanOriginal_mutex_.lock();
+	auto tmp_scan_data = lidarScanData_original_;
+	scanOriginal_mutex_.unlock();
+	int covered_laser_size{0};
+	for (int i = 0; i <= 359; i++) {
+//		ROS_INFO("i = %d, range = %f", i, tmp_scan_data.ranges[i]);
+		if (/*tmp_scan_data.ranges[i] < 4 &&*/ tmp_scan_data.ranges[i] < 0.130) {
+			covered_laser_size++;
+		}
+	}
+//	ROS_INFO("covered_laser_size(%d)", covered_laser_size);
+	if (covered_laser_size > 60) {
+//		ROS_ERROR("lidar was covered");
+		return true;
+	}
+	else
+		return false;
 }

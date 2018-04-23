@@ -14,6 +14,7 @@ ModeGoToCharger::ModeGoToCharger()
 	event_manager_set_enable(true);
 
 	serial.setWorkMode(WORK_MODE);
+
 	speaker.play(VOICE_GO_HOME_MODE, false);
 	sp_state = st_init.get();
 	sp_state->init();
@@ -21,6 +22,9 @@ ModeGoToCharger::ModeGoToCharger()
 	action_i_ = ac_open_gyro;
 	mode_i_ = md_go_to_charger;
 	IMoveType::sp_mode_ = this;
+	s_wifi.setWorkMode(cm_exploration);
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
+	s_wifi.resetReceivedWorkMode();
 }
 
 ModeGoToCharger::~ModeGoToCharger()
@@ -74,7 +78,18 @@ bool ModeGoToCharger::isFinish()
 int ModeGoToCharger::getNextAction()
 {
 	PP_INFO();
-	if(action_i_ == ac_open_gyro || (action_i_ == ac_exception_resume && !ev.fatal_quit))
+	if (action_i_ == ac_exception_resume && !ev.fatal_quit)
+	{
+		if (gyro.isOn())
+		{
+			sp_state = st_go_to_charger.get();
+			sp_state->init();
+			return ac_go_to_charger;
+		}
+		else
+			return ac_open_gyro;
+	}
+	else if (action_i_ == ac_open_gyro)
 	{
 		sp_state = st_go_to_charger.get();
 		sp_state->init();
@@ -137,5 +152,15 @@ void ModeGoToCharger::chargeDetect(bool state_now, bool state_last)
 		ev.charge_detect = charger.getChargeStatus();
 	}
 
+}
+
+void ModeGoToCharger::wifiSetWaterTank()
+{
+	// DO NOT CHANGE THE SWING MOTOR AND PUMP!
+}
+
+void ModeGoToCharger::setVacuum()
+{
+	// DO NOT CHANGE THE VACUUM!
 }
 

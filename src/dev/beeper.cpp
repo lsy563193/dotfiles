@@ -2,6 +2,7 @@
 // Created by root on 11/20/17.
 //
 #include <cstdint>
+#include <speaker.h>
 #include "beeper.h"
 #include "serial.h"
 
@@ -26,9 +27,11 @@ void Beeper::beep(uint8_t sound_code, int sound_time_ms, int silence_time_ms, in
 void Beeper::beepForCommand(bool valid)
 {
 	if (valid)
-		beep(2, 40, 0, 1);
+		speaker.play(VOICE_VALID_CMD_UNOFFICIAL);
+//		beep(2, 40, 0, 1);
 	else
-		beep(5, 40, 0, 1);
+		speaker.play(VOICE_INVALID_CMD_UNOFFICIAL);
+//		beep(5, 40, 0, 1);
 }
 
 void Beeper::processBeep()
@@ -72,5 +75,15 @@ void Beeper::processBeep()
 	if (temp_sound_time_count_ == -1){
 		temp_silence_time_count_--;
 	}
+}
+
+void Beeper::debugBeep(bool valid)
+{
+#if DEBUG_ENABLE
+	if (valid)
+		beep(2, 40, 0, 1);
+	else
+		beep(5, 40, 0, 1);
+#endif
 }
 

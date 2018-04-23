@@ -606,6 +606,7 @@ void electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixture,
 					baseline[SYSTEM_CURRENT] = static_cast<uint16_t>(temp_sum);
 					temp_sum = 0;
 					count_20ms = 0;
+					beeper.beepForCommand(true);
 					step++;
 				}
 				break;
@@ -622,6 +623,7 @@ void electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixture,
 						is_fixture = true;
 					else
 						is_fixture = false;
+					beeper.beepForCommand(true);
 					test_stage++;
 				}
 				break;
@@ -686,6 +688,7 @@ void cliff_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &current_dat
 
 		if ((test_result & 0xF333) == 0xF333) {
 			test_stage++;
+			beeper.beepForCommand(true);
 			return ;
 		}
 
@@ -740,6 +743,7 @@ void bumper_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &current_da
 
 		if ((test_result & 0x0f) == 0x0f) {
 			test_stage++;
+			beeper.beepForCommand(true);
 			return ;
 		}
 		if (buf[36]) {
@@ -821,6 +825,7 @@ void obs_test(bool is_fixture, uint8_t &test_stage, uint16_t &error_code, uint16
 			if ((test_result & 0x0015) == 0x0015)//test pass
 			{
 				test_stage++;
+				beeper.beepForCommand(true);
 				return ;
 			}
 			if (buf[36]) {
@@ -838,6 +843,7 @@ void obs_test(bool is_fixture, uint8_t &test_stage, uint16_t &error_code, uint16
 		{
 			if ((test_result & 0x003F) == 0x003f) {
 				test_stage++;
+				beeper.beepForCommand(true);
 				return ;
 			}
 
@@ -940,6 +946,7 @@ void rcon_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data
 
 		if (test_result == 0xffff) {
 			test_stage++;
+			beeper.beepForCommand(true);
 			return ;
 		}
 		if (buf[36]) {
@@ -1000,8 +1007,11 @@ void water_tank_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &curren
 				{
 					if(count < 200)count++;
 				}
-				if(count > 20)
+				if((count > 20) && !(test_result & 0x01))
+				{
 					test_result |= 0x01;
+					beeper.beepForCommand(true);
+				}
 				if(buf[36])
 				{
 					if((test_result & 0x01) != 0x01)
@@ -1046,11 +1056,10 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 			serial.sendData();
 			continue;
 		}
-		ROS_INFO("L: %d, R: %d", buf[10], buf[11]);
 		switch(step) {
 			case 1:
-				serial.setSendData(CTL_WHEEL_LEFT_HIGH, 200 >> 8);
-				serial.setSendData(CTL_WHEEL_LEFT_LOW, 200 & 0xFF);
+				serial.setSendData(CTL_WHEEL_LEFT_HIGH, 300 >> 8);
+				serial.setSendData(CTL_WHEEL_LEFT_LOW, 300 & 0xFF);
 				count++;
 				if (count > 50) {
 					current_current = 0;
@@ -1111,8 +1120,8 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				}
 				break;
 			case 6:
-				serial.setSendData(CTL_WHEEL_LEFT_HIGH, -200 >> 8);
-				serial.setSendData(CTL_WHEEL_LEFT_LOW, -200 & 0xFF);
+				serial.setSendData(CTL_WHEEL_LEFT_HIGH, -300 >> 8);
+				serial.setSendData(CTL_WHEEL_LEFT_LOW, -300 & 0xFF);
 				count++;
 				if (count > 50) {
 					current_current = 0;
@@ -1176,15 +1185,15 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				serial.setSendData(CTL_WHEEL_LEFT_HIGH, 0);
 				serial.setSendData(CTL_WHEEL_LEFT_LOW, 0);
 				count++;
-				if(count > 50)
+				if(count > 10)
 				{
 					count = 0;
 					step++;
 				}
 				break;
 			case 12:
-				serial.setSendData(CTL_WHEEL_LEFT_HIGH, 200 >> 8);
-				serial.setSendData(CTL_WHEEL_LEFT_LOW, 200 & 0xFF);
+				serial.setSendData(CTL_WHEEL_LEFT_HIGH, 300 >> 8);
+				serial.setSendData(CTL_WHEEL_LEFT_LOW, 300 & 0xFF);
 				serial.setSendData(CTL_LEFT_WHEEL_TEST_MODE, 1);
 				count++;
 				if (count > 50) {
@@ -1192,6 +1201,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 					motor_current = 0;
 					step++;
 					count = 0;
+					beeper.beepForCommand(true);
 				}
 				break;
 			case 13:
@@ -1211,30 +1221,24 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				}
 				break;
 			case 14:
-				count++;
-				if (count <= 10) {
-					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+				current_current = (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+				step++;
+				current_current = (current_current * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+				if(current_current < 800) {
+					error_code = LEFT_WHEEL_STALL_ERROR;
+					current_data = 0;
+					return ;
 				}
-				else {
-					step++;
-					count = 0;
-					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
-					if(current_current < 800) {
-						error_code = LEFT_WHEEL_STALL_ERROR;
-						current_data = 0;
-						return ;
-					}
-					else
-					{
-						test_result |= 0x0008;
-					}
+				else
+				{
+					test_result |= 0x0008;
 				}
 				break;
 			case 15:
 				serial.setSendData(CTL_WHEEL_LEFT_HIGH, 0);
 				serial.setSendData(CTL_WHEEL_LEFT_LOW, 0);
-				serial.setSendData(CTL_WHEEL_RIGHT_HIGH, 200 >> 8);
-				serial.setSendData(CTL_WHEEL_RIGHT_LOW, 200 & 0xFF);
+				serial.setSendData(CTL_WHEEL_RIGHT_HIGH, 300 >> 8);
+				serial.setSendData(CTL_WHEEL_RIGHT_LOW, 300 & 0xFF);
 				count++;
 				if (count > 100) {
 					current_current = 0;
@@ -1295,8 +1299,8 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				}
 				break;
 			case 20:
-				serial.setSendData(CTL_WHEEL_RIGHT_HIGH, -200 >> 8);
-				serial.setSendData(CTL_WHEEL_RIGHT_LOW, -200 & 0xFF);
+				serial.setSendData(CTL_WHEEL_RIGHT_HIGH, -300 >> 8);
+				serial.setSendData(CTL_WHEEL_RIGHT_LOW, -300 & 0xFF);
 				count++;
 				if (count > 50) {
 					current_current = 0;
@@ -1359,15 +1363,15 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				serial.setSendData(CTL_WHEEL_RIGHT_HIGH, 0);
 				serial.setSendData(CTL_WHEEL_RIGHT_LOW, 0);
 				count++;
-				if(count > 50)
+				if(count > 10)
 				{
 					count = 0;
 					step++;
 				}
 				break;
 			case 26:
-				serial.setSendData(CTL_WHEEL_RIGHT_HIGH, 200 >> 8);
-				serial.setSendData(CTL_WHEEL_RIGHT_LOW, 200 & 0xFF);
+				serial.setSendData(CTL_WHEEL_RIGHT_HIGH, 300 >> 8);
+				serial.setSendData(CTL_WHEEL_RIGHT_LOW, 300 & 0xFF);
 				serial.setSendData(CTL_RIGHT_WHEEL_TEST_MODE, 1);
 				count++;
 				if (count > 50) {
@@ -1375,6 +1379,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 					motor_current = 0;
 					step++;
 					count = 0;
+					beeper.beepForCommand(true);
 				}
 				break;
 			case 27:
@@ -1395,24 +1400,18 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				}
 				break;
 			case 28:
-				count++;
-				if (count <= 10) {
-					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+				current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+				step++;
+				current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+				if(current_current < 800)
+				{
+					error_code = RIGHT_WHEEL_STALL_ERROR;
+					current_data = 0;
+					return ;
 				}
-				else {
-					step++;
-					count = 0;
-					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
-					if(current_current < 800)
-					{
-						error_code = RIGHT_WHEEL_STALL_ERROR;
-						current_data = 0;
-						return ;
-					}
-					else
-					{
-						test_result |= 0x0800;
-					}
+				else
+				{
+					test_result |= 0x0800;
 				}
 				break;
 		}
@@ -1439,6 +1438,7 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 	serial.setSendData(CTL_LEFT_BRUSH_TEST_MODE, 0);
 	serial.setSendData(CTL_MAIN_BRUSH_TEST_MODE, 0);
 	serial.setSendData(CTL_RIGHT_BRUSH_TEST_MODE, 0);
+	brush.setPWM(0,0,0);
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
 	while(ros::ok()) {
 		/*--------data extrict from serial com--------*/
@@ -1491,7 +1491,7 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 			case 4:
 				brush.setPWM(0,0,0);
 				count++;
-				if(count > 50)
+				if(count > 25)
 				{
 					count = 0;
 					step++;
@@ -1505,6 +1505,7 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 					motor_current = 0;
 					step++;
 					count = 0;
+					beeper.beepForCommand(true);
 				}
 				break;
 			case 6:
@@ -1525,24 +1526,18 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 				}
 				break;
 			case 7:
-				count++;
-				if (count <= 10) {
-					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+				current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+				step++;
+				current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+				if (current_current < 250)
+				{
+					error_code = LEFT_BRUSH_STALL_ERROR;
+					current_data = 0;
+					return ;
 				}
-				else {
-					step++;
-					count = 0;
-					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
-					if (current_current < 250)
-					{
-						error_code = LEFT_BRUSH_STALL_ERROR;
-						current_data = 0;
-						return ;
-					}
-					else
-					{
-						test_result |= 0x08;
-					}
+				else
+				{
+					test_result |= 0x08;
 				}
 				break;
 			case 8:
@@ -1583,7 +1578,7 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 			case 11:
 				brush.setPWM(0,0,0);
 				count++;
-				if(count > 50)
+				if(count > 25)
 				{
 					count = 0;
 					step++;
@@ -1597,6 +1592,7 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 					motor_current = 0;
 					step++;
 					count = 0;
+					beeper.beepForCommand(true);
 				}
 				break;
 			case 13:
@@ -1617,24 +1613,18 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 				}
 				break;
 			case 14:
-				count++;
-				if (count <= 10) {
-					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+				current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+				step++;
+				current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+				if (current_current < 250)
+				{
+					error_code = RIGHT_BRUSH_STALL_ERROR;
+					current_data = 0;
+					return ;
 				}
-				else {
-					step++;
-					count = 0;
-					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
-					if (current_current < 250)
-					{
-						error_code = RIGHT_BRUSH_STALL_ERROR;
-						current_data = 0;
-						return ;
-					}
-					else
-					{
-						test_result |= 0x02;
-					}
+				else
+				{
+					test_result |= 0x02;
 				}
 				break;
 		}
@@ -1735,6 +1725,7 @@ void vacuum_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 		if((test_result&0x0007) == 0x0007)
 		{
 			test_stage++;
+			beeper.beepForCommand(true);
 			return ;
 		}
 		serial.sendData();
@@ -1804,7 +1795,7 @@ void main_brush_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_co
 			case 4:
 				brush.setPWM(0,0,0);
 				count++;
-				if(count > 50)
+				if(count > 25)
 				{
 					count = 0;
 					step++;
@@ -1818,6 +1809,7 @@ void main_brush_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_co
 					motor_current = 0;
 					step++;
 					count = 0;
+					beeper.beepForCommand(true);
 				}
 				break;
 			case 6:
@@ -1838,30 +1830,25 @@ void main_brush_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_co
 				}
 				break;
 			case 7:
-				count++;
-				if (count <= 10) {
-					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+				current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+				step++;
+				current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+				if (current_current < 550)
+				{
+					error_code = MAIN_BRUSH_STALL_ERROR;
+					current_data = 0;
+					return ;
 				}
-				else {
-					step++;
-					count = 0;
-					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
-					if (current_current < 550)
-					{
-						error_code = MAIN_BRUSH_STALL_ERROR;
-						current_data = 0;
-						return ;
-					}
-					else
-					{
-						test_result |= 0x02;
-					}
+				else
+				{
+					test_result |= 0x02;
 				}
 				break;
 		}
 		if((test_result & 0x03) == 0x03)
 		{
 			test_stage++;
+			beeper.beepForCommand(true);
 			return ;
 		}
 		serial.sendData();
@@ -1871,10 +1858,13 @@ void charge_current_test(bool is_fixture, uint8_t &test_stage, uint16_t &error_c
 {
 	uint32_t charge_voltage = 0;
 	uint8_t buf[REC_LEN];
+	uint8_t count = 0;
+	uint8_t pwm_for_led_breath = 0;
+	bool is_led_breath_increase = true;
+	bool is_charger_connected = false;
 	serial.setSendData(CTL_WORK_MODE, FUNC_CHARGE_CURRENT_TEST_MODE);
 	serial.setSendData(CTL_CHARGER_CINNECTED_STATUS, 0);
 	serial.setSendData(CTL_IS_FIXTURE, is_fixture);
-	uint8_t count = 0;
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
 	while(ros::ok())
 	{
@@ -1898,10 +1888,29 @@ void charge_current_test(bool is_fixture, uint8_t &test_stage, uint16_t &error_c
 			count = 0;
 			charge_voltage = charge_voltage /10 *330 /4096 *835 /120;
 			if(charge_voltage > 1700)
-				serial.setSendData(CTL_CHARGER_CINNECTED_STATUS, 1);
+				is_charger_connected = true;
 			else if(charge_voltage < 1600)
-				serial.setSendData(CTL_CHARGER_CINNECTED_STATUS, 0);
+				is_charger_connected = false;
+			serial.setSendData(CTL_CHARGER_CINNECTED_STATUS, is_charger_connected?1:0);
 			charge_voltage = 0;
+		}
+		/*--- charger connected, orange led breath ---*/
+		if(is_charger_connected)
+		{
+			if(is_led_breath_increase)
+			{
+				pwm_for_led_breath += 2;
+				if(pwm_for_led_breath == 100)
+					is_led_breath_increase = false;
+			}
+			else
+			{
+				pwm_for_led_breath -= 2;
+				if(pwm_for_led_breath == 0)
+					is_led_breath_increase = true;
+			}
+			serial.setSendData(CTL_LED_RED, pwm_for_led_breath);
+			serial.setSendData(CTL_LED_GREEN, pwm_for_led_breath);
 		}
 		if(buf[4] == 1) {
 			error_code = CHARGE_PWM_ERROR;

@@ -10,6 +10,7 @@
 class Timer {
 public:
 	Timer() {
+		robot_start_time_ = time(NULL);
 		work_start_time_ = time(NULL);
 		wall_follow_start_time_ = time(NULL);
 		trap_start_time_ = time(NULL);
@@ -27,6 +28,8 @@ public:
 	void initWorkTimer(void);
 
 	uint32_t getWorkTime(void);
+
+	uint32_t getRobotUpTime();
 
 	void pauseWorkTimer(void);
 
@@ -82,7 +85,7 @@ public:
 	 * @param1 cur_time ,give a cur time in struct DateTime 
 	 * @param2 mins ,give time in diffrence mintus (0~10080)
 	 */
-	void updateTimeFromDiffMint(struct Timer::DateTime &cur_time,uint16_t mins);
+	void updateRealTimeFromMint(struct Timer::DateTime &cur_time,uint16_t mins);
 
 	/*
 	 * @brief return ascii time in string
@@ -92,6 +95,7 @@ public:
 
 private:
 	
+	time_t robot_start_time_;
 	time_t work_start_time_;
 	uint32_t saved_work_time_;
 	time_t wall_follow_start_time_;

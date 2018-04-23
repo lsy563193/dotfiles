@@ -27,7 +27,7 @@
 
 #include "error.h"
 
-#define RCON_ROTATE_SPEED (ROTATE_TOP_SPEED * 2 / 3)
+#define RCON_ROTATE_SPEED (14)
 
 // Sequence for baseline setting.
 #define CTL_L_OBS_BL_H 2
@@ -155,8 +155,8 @@ void MoveTypeDeskTest::run()
 				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-179), ROTATE_TOP_SPEED * 2 / 3));
 				brush.normalOperate();
 				obs.control(OFF); // For checking rcon signal.
-				vacuum.isMaxInClean(false);
-				vacuum.setCleanState();
+				vacuum.setForUserSetMaxMode(false);
+				vacuum.setSpeedByUserSetMode();
 
 				// todo: for water tank
 				ROS_INFO("%s %d: Stage 5 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
@@ -313,12 +313,6 @@ bool MoveTypeDeskTest::dataExtract(const uint8_t *buf)
 	if (remote_signal != 0)
 		remote.set(remote_signal);
 
-	// For obs sensor device, the get functions will minus the baseline value.
-	obs.setLeft(((buf[REC_L_OBS_H] << 8) | buf[REC_L_OBS_L]) + obs.getLeftBaseline());
-	obs.setFront(((buf[REC_F_OBS_H] << 8) | buf[REC_F_OBS_L]) + obs.getFrontBaseline());
-	obs.setRight(((buf[REC_R_OBS_H] << 8) | buf[REC_R_OBS_L]) + obs.getRightBaseline());
-//	printf("obs left:%d, front:%d, right:%d.\n", obs.getLeft(), obs.getFront(), obs.getRight());
-
 	// For battery device.
 	battery.setVoltage(static_cast<uint16_t>(buf[REC_BATTERY] * 10));
 
@@ -348,7 +342,7 @@ bool MoveTypeDeskTest::dataExtract(const uint8_t *buf)
 //		printf("vacuum current - baseline:%d.\n", vacuum.getCurrent() - vacuum_current_baseline_);
 
 //		water_tank.setCurrent((buf[REC_WATER_PUMP_CURRENT_H] << 8) | buf[REC_WATER_PUMP_CURRENT_L]);
-		water_tank.setCurrent(0);
+		water_tank.setSwingMotorCurrent(0);
 
 		robot::instance()->setCurrent((buf[REC_ROBOT_CUNT_H] << 8) | buf[REC_ROBOT_CUNT_L]);
 
@@ -363,7 +357,20 @@ bool MoveTypeDeskTest::dataExtract(const uint8_t *buf)
 		// For rcon device.
 		c_rcon.setStatus((buf[REC_RCON_CHARGER_4] << 24) | (buf[REC_RCON_CHARGER_3] << 16)
 						 | (buf[REC_RCON_CHARGER_2] << 8) | buf[REC_RCON_CHARGER_1]);
-//		printf("rcon status:%8x.\n", c_rcon.getStatus());
+//		if (c_rcon.getStatus())
+//		{
+//			printf("rcon status:%8x.\n", c_rcon.getStatus());
+//			c_rcon.resetStatus();
+//		}
+
+		// For obs sensor device, the get functions will minus the baseline value.
+		obs.setLeft(((buf[REC_L_OBS_H] << 8) | buf[REC_L_OBS_L]) + obs.getLeftBaseline());
+		obs.setFront(((buf[REC_F_OBS_H] << 8) | buf[REC_F_OBS_L]) + obs.getFrontBaseline());
+		obs.setRight(((buf[REC_R_OBS_H] << 8) | buf[REC_R_OBS_L]) + obs.getRightBaseline());
+//		printf("obs left:%d, front:%d, right:%d.\n", obs.getLeft(), obs.getFront(), obs.getRight());
+//		printf("obs left:%d, front:%d, right:%d.\n", ((buf[REC_L_OBS_H] << 8) | buf[REC_L_OBS_L]),
+//			   ((buf[REC_F_OBS_H] << 8) | buf[REC_F_OBS_L]), ((buf[REC_R_OBS_H] << 8) | buf[REC_R_OBS_L]));
+
 	}
 
 	return true;
@@ -464,7 +471,7 @@ bool MoveTypeDeskTest::checkStage1Finish()
 		left_wheel_current_baseline_ += wheel.getLeftCurrent();
 		right_wheel_current_baseline_ += wheel.getRightCurrent();
 		vacuum_current_baseline_ += vacuum.getCurrent();
-		water_tank_current_baseline_ += water_tank.getCurrent();
+		water_tank_current_baseline_ += water_tank.getSwingMotorCurrent();
 		robot_current_baseline_ += robot::instance()->getCurrent();
 		sum_cnt_++;
 	}
@@ -488,8 +495,8 @@ bool MoveTypeDeskTest::checkStage2Finish()
 					p_movement_.reset();
 					p_movement_.reset(new ActionOpenLidar());
 					brush.normalOperate();
-					vacuum.isMaxInClean(false);
-					vacuum.setCleanState();
+					vacuum.setForUserSetMaxMode(false);
+					vacuum.setSpeedByUserSetMode();
 				}
 				else if (test_step_ == 1)
 					c_rcon.resetStatus();
@@ -511,6 +518,14 @@ bool MoveTypeDeskTest::checkStage2Finish()
 			float scan_ref[360];
 			lidar.readLidarDataFromFile(true, scan_ref);
 			uint8_t scan_valid_cnt{0};
+//			while (ros::ok() && !key.getPressStatus())
+//			{
+//				usleep(1000000);
+//				if (p_movement_->isFinish())
+//					p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-178), RCON_ROTATE_SPEED));
+//				p_movement_->run();
+//			}
+
 			while (ros::ok() && lidar_check_cnt_ < _cnt)
 			{
 				auto scan_data = lidar.getLidarScanDataOriginal();
@@ -937,13 +952,13 @@ bool MoveTypeDeskTest::checkCurrent()
 	uint16_t robot_current_ref_{2385 - 1775}; // 610
 
 	if (left_brush_current_ - left_brush_current_baseline_ > side_brush_current_ref_ * 1.5 /* 82 */||
-		left_brush_current_ - left_brush_current_baseline_ < side_brush_current_ref_ * 0.5 /* 27 */)
+		left_brush_current_ - left_brush_current_baseline_ < side_brush_current_ref_ * 0.3 /* 16 */)
 	{
 		error_code_ = LEFT_BRUSH_CURRENT_ERROR;
 		error_content_ = static_cast<uint16_t>(left_brush_current_ - left_brush_current_baseline_);
 	}
 	else if (right_brush_current_ - right_brush_current_baseline_ > side_brush_current_ref_ * 1.5 /* 82 */||
-			 right_brush_current_ - right_brush_current_baseline_ < side_brush_current_ref_ * 0.5 /* 27 */)
+			 right_brush_current_ - right_brush_current_baseline_ < side_brush_current_ref_ * 0.3 /* 16 */)
 	{
 		error_code_ = RIGHT_BRUSH_CURRENT_ERROR;
 		error_content_ = static_cast<uint16_t>(right_brush_current_ - right_brush_current_baseline_);
@@ -1184,7 +1199,7 @@ bool MoveTypeDeskTest::checkStage6Finish()
 			{
 				p_movement_.reset();
 				p_movement_.reset(
-						new MovementTurn(getPosition().th + degree_to_radian(-179), ROTATE_TOP_SPEED * 2 / 3));
+						new MovementTurn(getPosition().th + degree_to_radian(-179), RCON_ROTATE_SPEED));
 				test_step_++;
 			} else
 				p_movement_->run();
@@ -1246,7 +1261,7 @@ bool MoveTypeDeskTest::checkStage6Finish()
 				{
 					p_movement_.reset();
 					p_movement_.reset(
-							new MovementTurn(getPosition().th + degree_to_radian(45), ROTATE_TOP_SPEED * 2 / 3));
+							new MovementTurn(getPosition().th + degree_to_radian(45), RCON_ROTATE_SPEED));
 					test_step_++;
 				}
 			} else

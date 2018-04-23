@@ -631,7 +631,8 @@ void Serial::send_routine_cb()
 			/*---pid for wheels---*/
 			wheel.pidAdjustSpeed();
 			brush.updatePWM();
-			water_tank.updatePWM();
+			if (robot::instance()->getR16WorkMode() != WATER_TANK_TEST_MODE)
+				water_tank.updatePWM();
 		}
 
 		sendData();
@@ -640,7 +641,7 @@ void Serial::send_routine_cb()
 	brush.stop();
 	vacuum.stop();
 	wheel.stop();
-	water_tank.stop(WaterTank::tank_pump);
+	water_tank.stop(WaterTank::operate_option::swing_motor_and_pump);
 	usleep(40000);
 	core_thread_kill = true;
 	printf("%s,%d exit.\n",__FUNCTION__,__LINE__);

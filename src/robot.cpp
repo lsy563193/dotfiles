@@ -21,6 +21,9 @@
 
 using namespace SERIAL;
 
+std::string consumable_file = "/opt/ros/indigo/share/pp/consumable_status";
+std::string consumable_backup_file = "/opt/ros/indigo/share/pp/consumable_status_bk";
+
 pthread_mutex_t recev_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t  recev_cond = PTHREAD_COND_INITIALIZER;
 
@@ -92,6 +95,8 @@ robot::robot()
 
 	robot_nh_.param<std::string>("lidar_bumper_file", lidar_bumper_dev_, "/dev/input/event1");
 
+	loadConsumableStatus();
+
 	while (!serial.isReady()) {
 		// Init for serial.
 		if (!serial.init(serial_port_, baud_rate_))
@@ -110,7 +115,7 @@ robot::robot()
 	auto wifi_send_thread = new boost::thread(boost::bind(&S_Wifi::wifi_send_routine,&s_wifi));
 
 	obs.control(ON);
-	ROS_INFO("%s %d: Robot x900(version 0000 r4) is online :)", __FUNCTION__, __LINE__);
+	ROS_INFO("%s %d: Robot x900(version 0000 r6) is online :)", __FUNCTION__, __LINE__);
 }
 
 robot::~robot()
@@ -123,9 +128,9 @@ robot::~robot()
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
-	s_wifi.sleep();
+	s_wifi.deinit();
 	wifi_led.set(false);
-	water_tank.stop(WaterTank::tank_pump);
+	water_tank.stop(WaterTank::operate_option::swing_motor_and_pump);
 	serial.setWorkMode(WORK_MODE);
 	usleep(40000);
 //	while(ros::ok() && !g_pp_shutdown){
@@ -238,6 +243,8 @@ void robot::robotbase_routine_cb()
 		sensor.y_acc = gyro.getYAcc();//in mG
 		sensor.z_acc = gyro.getZAcc();//in mG
 
+		gyro.error((buf[REC_OC]&0x80) ? true : false);
+
 		// For wall sensor device.
 		wall.setLeft((buf[REC_L_WALL_H] << 8)| buf[REC_L_WALL_L]);
 		sensor.left_wall = wall.getLeft();
@@ -307,11 +314,11 @@ void robot::robotbase_routine_cb()
 //			ROS_ERROR("RECEIVE PLAN(%d).", appmt_obj.getPlanStatus());
 
 		// For water tank device.
-		water_tank.setEquimentStatus((buf[REC_MIX_BYTE] & 0x08) != 0);
+		water_tank.setSwingMotorEquipmentStatus((buf[REC_MIX_BYTE] & 0x08) != 0);
 //		ROS_INFO("mix:%x", buf[REC_MIX_BYTE]);
 //		if (water_tank.getStatus())
 //			ROS_INFO("Water tank~~~~~~~~~~~~~~~~~~ :D");
-		sensor.water_tank = water_tank.getEquimentStatus();
+		sensor.water_tank = water_tank.getSwingMotorEquipmentStatus();
 
 		// For charger device.
 		charger.setChargeStatus((buf[REC_MIX_BYTE] >> 4) & 0x07);
@@ -350,12 +357,13 @@ void robot::robotbase_routine_cb()
 
 		// For appointment and set time
 
-		if(buf[REC_APPOINTMENT_TIME] > 0x80)
+		if((buf[REC_APPOINTMENT_TIME] >= 0x80) && p_mode != nullptr && p_mode->allowRemoteUpdatePlan())
+		{
 			robot_timer.setRealTime( buf[REC_REALTIME_H]<<8 | buf[REC_REALTIME_L]);
+			appmt_obj.set(buf[REC_APPOINTMENT_TIME]);
+		}
 		sensor.realtime = buf[REC_REALTIME_H]<<8 | buf[REC_REALTIME_L];
 		sensor.appointment = buf[REC_APPOINTMENT_TIME];
-		if (p_mode != nullptr && p_mode->allowRemoteUpdatePlan())
-			appmt_obj.set(buf[REC_APPOINTMENT_TIME]);
 			// For debug.
 //		printf("%d: REC_MIX_BYTE:(%2x), REC_RESERVED:(%2x).\n.",
 //			   __LINE__, buf[REC_MIX_BYTE], buf[REC_RESERVED]);
@@ -420,14 +428,21 @@ void robot::robotbase_routine_cb()
 		/*------publish end -----------*/
 
 		// Check tilt
-#if 1
 		if (checkTilt()){
 			gyro.setTiltCheckingStatus(1);
-			beeper.beepForCommand(VALID);
+			beeper.debugBeep(VALID);
 		} else {
 			gyro.setTiltCheckingStatus(0);
 		}
-#endif
+
+		// Check lidar stuck
+		if (checkLidarStuck()) {
+//			ROS_INFO("lidar stuck");
+			ev.lidar_stuck = true;
+		} else {
+//			ROS_INFO("lidar good");
+			ev.lidar_stuck = false;
+		}
 		// Dynamic adjust obs
 		obs.DynamicAdjust(OBS_adjust_count);
 
@@ -465,7 +480,7 @@ void robot::core_thread_cb()
 	r16_work_mode_ = getTestMode();
 //	r16_work_mode_ = LIFE_TEST_MODE;
 	ROS_INFO("%s %d: work mode: %d", __FUNCTION__, __LINE__, r16_work_mode_);
-
+	//s_wifi.taskPushBack(S_Wifi::ACT::ACT_SLEEP);
 	switch (r16_work_mode_)
 	{
 		case FUNC_SERIAL_TEST_MODE:
@@ -525,7 +540,7 @@ void robot::runTestMode()
 
 void robot::runWorkMode()
 {
-	s_wifi.taskPushBack(S_Wifi::ACT::ACT_RESUME);
+	//s_wifi.taskPushBack(S_Wifi::ACT::ACT_RESUME);
 	auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
 	send_thread_enable = true;
 
@@ -556,17 +571,26 @@ void robot::runWorkMode()
 
 	while (ros::ok())
 	{
-//				ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
+//		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
 		p_mode->run();
 
 		if (core_thread_kill)
 			break;
 
+		boost::mutex::scoped_lock lock(mode_mutex_);
 		auto next_mode = p_mode->getNextMode();
 		p_mode.reset();
-//				ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
+		ROS_INFO("%s %d: Previous mode should finish destructing now?", __FUNCTION__, __LINE__);
+
+		auto robot_up_hour = static_cast<uint16_t>(robot_timer.getRobotUpTime() / 3600);
+		if (1 || robot_up_hour > robot_up_hour_)
+		{
+			robot_up_hour_ = robot_up_hour;
+			updateConsumableStatus();
+		}
+
 		p_mode.reset(getNextMode(next_mode));
-//				ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
+		robot_work_mode_ = next_mode;
 	}
 	g_pp_shutdown = true;
 	printf("%s %d: Exit.\n", __FUNCTION__, __LINE__);
@@ -584,25 +608,6 @@ uint8_t robot::getTestMode(void)
 //	debugReceivedStream(buf);
 
 	return buf[REC_WORK_MODE];
-}
-
-void robot::scaleCorrectionPos(tf::Vector3 &tmp_pos, double& tmp_rad) {
-	auto p_cm = boost::dynamic_pointer_cast<ACleanMode> (p_mode);
-	auto dir = p_cm->iterate_point_.dir;
-	if(isAny(dir))
-		return;
-
-	auto target_xy = (isXAxis(dir)) ? p_cm->iterate_point_.y : p_cm->iterate_point_.x;
-	auto slam_xy = (isXAxis(dir)) ? slam_pos.getY() : slam_pos.getX();
-	auto diff_xy = (slam_xy - target_xy)/3;
-
-	if(diff_xy > CELL_SIZE/2)
-		diff_xy = CELL_SIZE/2;
-	else if(diff_xy < -CELL_SIZE/2)
-		diff_xy = -CELL_SIZE/2;
-		(isXAxis(dir)) ? tmp_pos.setY(target_xy + diff_xy) : tmp_pos.setX(target_xy + diff_xy);
-
-	tmp_rad = robot_rad + (slam_rad - robot_rad);
 }
 
 void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
@@ -624,7 +629,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 //					if(diff > degree_to_radian(1))
 //					{
 //						odom.setRadianOffset(slam_rad - odom.getOriginRadian());
-//						beeper.beepForCommand(VALID);
+//						beeper.debugBeep();
 //					}
 				}
 				else
@@ -667,8 +672,6 @@ void robot::odomPublish(const tf::Vector3& robot_pos, double robot_radian_)
 	robot_pose.twist.twist.angular.z = 0.0;
 	odom_pub_.publish(robot_pose);
 }
-
-
 
 bool robot::lidarMotorCtrl(bool switch_)
 {
@@ -789,8 +792,11 @@ void robot::updateRobotPositionForTest()
 }
 
 bool robot::checkTilt() {
-	if (!gyro.isTiltCheckingEnable())
+	if (!gyro.isTiltCheckingEnable()) {
+		angle_tilt_time_ = 0;
+		wheel_tilt_time_= 0;
 		return false;
+	}
 	auto angle_triggered = gyro.getAngleR() > ANGLE_LIMIT;
 	auto wheel_cliff_triggered = wheel.getLeftWheelCliffStatus() || wheel.getRightWheelCliffStatus();
 
@@ -811,7 +817,7 @@ bool robot::checkTilt() {
 	//For wheel_cliff triggered
 	if(wheel_cliff_triggered) {
 		wheel_tilt_time_ = wheel_tilt_time_ == 0 ? ros::Time::now().toSec() : wheel_tilt_time_;
-		auto ret = ros::Time::now().toSec() - wheel_tilt_time_ > WHELL_CLIFF_TIME_LIMIT;
+		auto ret = ros::Time::now().toSec() - wheel_tilt_time_ > WHEEL_CLIFF_TIME_LIMIT;
 		ROS_WARN_COND(ret,"%s,%d,time_now:%lf,wheel_tilt_time_:%lf",__FUNCTION__,__LINE__,ros::Time::now().toSec(),wheel_tilt_time_);
 		return ret;
 	}
@@ -832,6 +838,187 @@ bool robot::checkTiltToSlip() {
 
 	return (ros::Time::now().toSec() - tilt_time_to_slip_) > TIME_LIMIT_TO_SLIP ? true : false;
 }
+
+bool robot::checkLidarStuck() {
+	if (!lidar.getLidarStuckCheckingEnable()) {
+		lidar_is_covered_time_ = 0;
+		return false;
+	}
+	auto is_stuck = !lidar.lidarCheckFresh(3,2);
+	auto is_covered = lidar.checkLidarBeCovered();
+//	ROS_INFO("is_stuck(%d), is_covered(%d)", is_stuck, is_covered);
+	if (is_stuck) {
+		lidar_is_covered_time_ = 0;
+		return true;
+	}
+	if (!is_covered) {
+		lidar_is_covered_time_ = 0;
+		return false;
+	}
+	if (lidar_is_covered_time_ == 0) {
+		lidar_is_covered_time_ = ros::Time::now().toSec();
+	}
+//	ROS_INFO("ros::Time::now().toSec() - lidar_is_covered_time_ = %lf", ros::Time::now().toSec() - lidar_is_covered_time_);
+	if (ros::Time::now().toSec() - lidar_is_covered_time_ > 3) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
+bool robot::getCleanMap(GridMap& map)
+{
+	bool ret = false;
+	boost::mutex::scoped_lock lock(mode_mutex_);
+	if (getRobotWorkMode() == Mode::cm_navigation)
+	{
+		auto mode = boost::dynamic_pointer_cast<ACleanMode>(p_mode);
+		if (mode->isStateClean())
+		{
+			map = mode->clean_map_;
+			ret = true;
+		}
+	}
+	return ret;
+}
+
+void robot::wifiSetWaterTank()
+{
+	boost::mutex::scoped_lock lock(mode_mutex_);
+	p_mode->wifiSetWaterTank();
+}
+
+void robot::wifiSetVacuum()
+{
+	boost::mutex::scoped_lock lock(mode_mutex_);
+	p_mode->setVacuum();
+}
+
+void robot::loadConsumableStatus()
+{
+	ROS_INFO("%s %d: Load consumable status.", __FUNCTION__, __LINE__);
+
+	if (access(consumable_file.c_str(), F_OK) == -1)
+	{
+		// If file not exist, check if back up file exist.
+		if (access(consumable_backup_file.c_str(), F_OK) == -1)
+			return;
+		else
+		{
+			//Restore from backup file.
+			std::string cmd = "cp " + consumable_backup_file + " " + consumable_file;
+			system(cmd.c_str());
+			ROS_INFO("%s %d: Resume from backup file.", __FUNCTION__, __LINE__);
+		}
+	}
+
+	bool file_error = false;
+	FILE *f_read = fopen(consumable_file.c_str(), "r");
+	if (f_read == nullptr)
+	{
+		ROS_ERROR("%s %d: Open %s error.", __FUNCTION__, __LINE__, consumable_file.c_str());
+		file_error = true;
+	}
+	else
+	{
+		if (fscanf(f_read, "Side brush: %d\n", &side_brush_time_) != 1)
+		{
+			ROS_ERROR("%s %d: Side brush data error! Reset to 0.", __FUNCTION__, __LINE__);
+			side_brush_time_ = 0;
+			file_error = true;
+		}
+		ROS_INFO("%s %d: Read side brush: %d.", __FUNCTION__, __LINE__, side_brush_time_);
+		if (fscanf(f_read, "Main brush: %d\n", &main_brush_time_) != 1)
+		{
+			ROS_ERROR("%s %d: Main brush data error! Reset to 0.", __FUNCTION__, __LINE__);
+			main_brush_time_ = 0;
+			file_error = true;
+		}
+		ROS_INFO("%s %d: Read main brush: %d.", __FUNCTION__, __LINE__, main_brush_time_);
+		if (fscanf(f_read, "Filter: %d\n", &filter_time_) != 1)
+		{
+			ROS_ERROR("%s %d: Filter data error! Reset to 0.", __FUNCTION__, __LINE__);
+			filter_time_ = 0;
+			file_error = true;
+		}
+		ROS_INFO("%s %d: Read main brush: %d.", __FUNCTION__, __LINE__, filter_time_);
+		fclose(f_read);
+		ROS_INFO("%s %d: Read data succeeded.", __FUNCTION__, __LINE__);
+	}
+
+	if (file_error)
+	{
+		std::string cmd = "rm -f " + consumable_file + " " + consumable_backup_file;
+		system(cmd.c_str());
+		ROS_ERROR("%s %d: Delete consumable file due to file error.", __FUNCTION__, __LINE__);
+	}
+}
+
+void robot::updateConsumableStatus()
+{
+	auto additional_side_brush_time_sec = brush.getSideBrushTime();
+	ROS_INFO("%s %d: Additional side brush: %ds.", __FUNCTION__, __LINE__, additional_side_brush_time_sec);
+	brush.resetSideBurshTime();
+	auto side_brush_time = additional_side_brush_time_sec + side_brush_time_;
+
+	auto additional_main_brush_time_sec = brush.getMainBrushTime();
+	ROS_INFO("%s %d: Additional main brush: %ds.", __FUNCTION__, __LINE__, additional_main_brush_time_sec);
+	brush.resetMainBrushTime();
+	auto main_brush_time = additional_main_brush_time_sec + main_brush_time_;
+
+	auto additional_filter_time_sec = vacuum.getFilterTime();
+	ROS_INFO("%s %d: Additional filter: %ds.", __FUNCTION__, __LINE__, additional_filter_time_sec);
+	vacuum.resetFilterTime();
+	auto filter_time = additional_filter_time_sec + filter_time_;
+
+	if (access(consumable_file.c_str(), F_OK) != -1)
+	{
+		// If file exist, make it a back up file.
+		std::string cmd = "mv " + consumable_file + " " + consumable_backup_file;
+		system(cmd.c_str());
+		ROS_INFO("%s %d: Backup for %s.", __FUNCTION__, __LINE__, consumable_file.c_str());
+	}
+
+	FILE *f_write = fopen(consumable_file.c_str(), "w");
+	if (f_write == nullptr)
+		ROS_ERROR("%s %d: Open %s error.", __FUNCTION__, __LINE__, consumable_file.c_str());
+	else
+	{
+		ROS_INFO("%s %d: Start writing data to %s.", __FUNCTION__, __LINE__, consumable_file.c_str());
+		fprintf(f_write, "Side brush: %d\n", side_brush_time);
+		ROS_INFO("%s %d: Write side brush: %d.", __FUNCTION__, __LINE__, side_brush_time);
+		side_brush_time_ = side_brush_time;
+		fprintf(f_write, "Main brush: %d\n", main_brush_time);
+		ROS_INFO("%s %d: Main brush: %d.", __FUNCTION__, __LINE__, main_brush_time);
+		main_brush_time_ = main_brush_time;
+		fprintf(f_write, "Filter: %d\n", filter_time);
+		ROS_INFO("%s %d: Filter: %d.", __FUNCTION__, __LINE__, filter_time);
+		filter_time_ = filter_time;
+		fclose(f_write);
+		ROS_INFO("%s %d: Write data succeeded.", __FUNCTION__, __LINE__);
+	}
+}
+
+void robot::updateCleanRecord(const uint32_t &time, const uint16_t &clean_time, const float &clean_area,
+							  GridMap &clean_map)
+{
+	auto clean_area_int = static_cast<uint16_t>(clean_area + 1);
+	boost::mutex::scoped_lock lock(last_clean_record_mutex_);
+	last_clean_record_.time = time;
+	last_clean_record_.clean_time = clean_time;
+	last_clean_record_.clean_area = clean_area_int;
+	last_clean_record_.clean_map.copy(clean_map);
+}
+
+void robot::getCleanRecord(uint32_t &time, uint16_t &clean_time, uint16_t &clean_area, GridMap &clean_map)
+{
+	boost::mutex::scoped_lock lock(last_clean_record_mutex_);
+	time = last_clean_record_.time;
+	clean_time = last_clean_record_.clean_time;
+	clean_area = last_clean_record_.clean_area;
+	clean_map.copy(last_clean_record_.clean_map);
+}
+
 
 //--------------------
 static float xCount{}, yCount{};
@@ -912,7 +1099,6 @@ Mode *getNextMode(int next_mode_i_)
 		case Mode::cm_wall_follow:
 			return new CleanModeFollowWall();
 		case Mode::cm_spot:
-			ROS_ERROR("!!!!!!!!!!!!!!cm_spot(%d)", Mode::cm_spot);
 			return new CleanModeSpot();
 //		case Mode::cm_test:
 //			return new CleanModeTest();

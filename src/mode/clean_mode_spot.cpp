@@ -10,9 +10,12 @@
 CleanModeSpot::CleanModeSpot()
 {
 	speaker.play(VOICE_CLEANING_SPOT,false);
+
 	clean_path_algorithm_.reset(new SpotCleanPathAlgorithm());
 	go_home_path_algorithm_.reset();
 	mode_i_ = cm_spot;
+	s_wifi.setWorkMode(cm_spot);
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 }
 
 CleanModeSpot::~CleanModeSpot()
@@ -28,6 +31,28 @@ bool CleanModeSpot::isExit()
 		setNextMode(md_idle);
 		return true;
 	}
+
+	if (s_wifi.receiveSpot())
+	{
+		ROS_WARN("%s %d: Exit for wifi spot.", __FUNCTION__, __LINE__);
+		setNextMode(md_idle);
+		return true;
+	}
+
+	if (s_wifi.receiveIdle())
+	{
+		ROS_WARN("%s %d: Exit for wifi idle.", __FUNCTION__, __LINE__);
+		setNextMode(md_idle);
+		return true;
+	}
+
+	if (s_wifi.receivePlan1())
+	{
+		ROS_WARN("%s %d: Exit for wifi plan1.", __FUNCTION__, __LINE__);
+		setNextMode(cm_navigation);
+		return true;
+	}
+
 	return ACleanMode::isExit();
 }
 
@@ -89,6 +114,22 @@ void CleanModeSpot::overCurrentWheelRight(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Right wheel oc.", __FUNCTION__, __LINE__);
 	ev.oc_wheel_right = true;
+}
+
+bool CleanModeSpot::updateActionInStateInit() {
+	if (action_i_ == ac_null)
+		action_i_ = ac_open_gyro;
+	else if (action_i_ == ac_open_gyro) {
+		boost::dynamic_pointer_cast<StateInit>(state_init)->initForSpot();
+		action_i_ = ac_open_lidar;
+	}
+	else if (action_i_ == ac_open_lidar)
+		action_i_ = ac_open_slam;
+	else // action_open_slam
+		return false;
+
+	genNextAction();
+	return true;
 }
 
 void CleanModeSpot::switchInStateInit()

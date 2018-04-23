@@ -122,7 +122,7 @@ Cells NavCleanPathAlgorithm::findTargetInSameLane(GridMap &map, const Cell_t &cu
 {
 	int8_t is_found = 0;
 	Cell_t it[2]; // it[0] means the furthest cell of x positive direction, it[1] means the furthest cell of x negative direction.
-	const auto OVER_CELL_SIZE = 2;
+	const auto OVER_CELL_SIZE = 4;
 //	map.print(CLEAN_MAP, 0, 0);
 	for (auto i = 0; i < 2; i++) {
 		it[i] = curr_cell;
@@ -187,7 +187,7 @@ Cells NavCleanPathAlgorithm::findTargetInSameLane(GridMap &map, const Cell_t &cu
 	if (is_found)
 	{
 		path.push_front(target);
-		path.push_front(getPosition().toCell());
+		path.push_front(curr_cell);
 	}
 	else
 		ROS_INFO("%s %d: x pos:(%d,%d), x neg:(%d,%d), target not found.", __FUNCTION__, __LINE__, it[0].x, it[0].y, it[1].x, it[1].y);
@@ -324,7 +324,7 @@ bool NavCleanPathAlgorithm::filterPathsToSelectBestPath(GridMap &map, const Cell
 			if (filter == &filter_p_1t) {
 				if(size_of_path(best_path) > 25){
 					ROS_WARN("path.len is too long to find other path(%d)",size_of_path(best_path));
-					beeper.beepForCommand(VALID);
+					beeper.debugBeep(VALID);
 					continue ;
 				}
 			}
@@ -369,7 +369,7 @@ void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path) {
 				if (!(p23_it == p3 + cell_direction_[dir_p23] && map.isBlockAccessible(p23_it.x, p23_it.y))) {
 					{
 
-						printf("\n1 break it(%d,%d)!!\n", p12_it.x, p12_it.y);
+						printf("\n2 break it(%d,%d)!!\n", p12_it.x, p12_it.y);
 						return (p12_it - cell_direction_[dir_p12] - p2)/2;
 					}
 				}
@@ -381,7 +381,7 @@ void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path) {
 			}
 		};
 
-	auto check_limit = [&](Cell_t& shift_cell,const bool is_dir_x){
+	auto _check_limit = [&](Cell_t& shift_cell,const bool is_dir_x){
 		if(is_dir_x && fabs(shift_cell.x) > 3){
 			shift_cell.x = static_cast<int16_t>(shift_cell.x > 0 ? 3 : -3);
 		}
@@ -397,7 +397,7 @@ void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path) {
 
 		auto shift_cell = find_index(*p1, *p2, *p3);
 		bool is_dir_x = shift_cell.x != 0;
-		check_limit(shift_cell,is_dir_x);
+		_check_limit(shift_cell,is_dir_x);
 
 		*p2 += shift_cell;
 		*p3 += shift_cell;

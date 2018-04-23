@@ -5,13 +5,14 @@
 #include <odom.h>
 #include <dev.h>
 #include "action.hpp"
+#include "mode.hpp"
 
 ActionPause::ActionPause()
 {
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
-	water_tank.stop(WaterTank::tank_pump);
+	water_tank.stop(WaterTank::operate_option::swing_motor_and_pump);
 
 	lidar.motorCtrl(OFF);
 
@@ -19,12 +20,12 @@ ActionPause::ActionPause()
 	timeout_interval_ = IDLE_TIMEOUT;
 	pause_pose_.setX(odom.getOriginX());
 	pause_pose_.setY(odom.getOriginY());
+
 	ROS_INFO("%s %d: Enter action pause.", __FUNCTION__, __LINE__);
 }
 
 ActionPause::~ActionPause()
 {
-
 }
 
 bool ActionPause::isFinish()

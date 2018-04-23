@@ -58,6 +58,9 @@ public:
 
 	void setAccInitData(void);
 
+	bool error(void);
+
+	void error(bool is_error);
 #if GYRO_DYNAMIC_ADJUSTMENT
 
 	void setDynamicOn(void);
@@ -65,9 +68,11 @@ public:
 	void setDynamicOff(void);
 #endif
 
+#if 0
 	uint8_t checkTilt(int front_tilt_limit ,int back_tilt_limit,int right_tilt_limit ,
 										int left_tilt_limit , int tilt_count_reach);
 	uint8_t checkTilt();
+#endif
 
 	bool isTiltCheckingEnable(void);
 
@@ -163,12 +168,12 @@ public:
 		init_z_acc_ = val;
 	}
 
-	void setTiltCheckingStatus(uint8_t status)
+	void setTiltCheckingStatus(bool status)
 	{
 		tilt_checking_status_ = status;
 	}
 
-	uint8_t getTiltCheckingStatus()
+	bool getTiltCheckingStatus()
 	{
 		return tilt_checking_status_;
 	}
@@ -226,6 +231,9 @@ private:
 	uint16_t right_count_;
 	uint16_t left_count_;
 	uint16_t back_count_;
+
+	//for self check
+	bool is_error_;
 
 	//for kalman
 	float kalman_angle, angle_dot;

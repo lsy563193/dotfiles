@@ -6,6 +6,7 @@
 #include <action.hpp>
 #include <error.h>
 #include "dev.h"
+#include "wifi/wifi.h"
 
 #define ERROR_ALARM_TIMES 5
 #define ERROR_ALARM_INTERVAL 10

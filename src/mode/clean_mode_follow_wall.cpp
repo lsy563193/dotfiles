@@ -21,6 +21,8 @@ CleanModeFollowWall::CleanModeFollowWall()
 	go_home_path_algorithm_.reset();
 	closed_count_limit_ = 1;
 	mode_i_ = cm_wall_follow;
+	s_wifi.setWorkMode(cm_wall_follow);
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 }
 
 CleanModeFollowWall::~CleanModeFollowWall()
@@ -84,6 +86,20 @@ bool CleanModeFollowWall::isExit()
 		return true;
 	}
 
+	if (s_wifi.receiveIdle())
+	{
+		ROS_WARN("%s %d: Exit for wifi idle.", __FUNCTION__, __LINE__);
+		setNextMode(md_idle);
+		return true;
+	}
+
+	if (s_wifi.receiveFollowWall())
+	{
+		ROS_WARN("%s %d: Exit for wifi follow wall.", __FUNCTION__, __LINE__);
+		setNextMode(md_idle);
+		return true;
+	}
+
 	return ACleanMode::isExit();
 }
 
@@ -133,17 +149,14 @@ void CleanModeFollowWall::keyClean(bool state_now, bool state_last)
 void CleanModeFollowWall::remoteMax(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
-	if(water_tank.checkEquipment(true)){
+	if(water_tank.getStatus(WaterTank::operate_option::swing_motor)){
 		beeper.beepForCommand(INVALID);
 	}
 	else if(isStateInit() || isStateFollowWall() || isStateGoHomePoint() || isStateGoToCharger())
 	{
 		beeper.beepForCommand(VALID);
-		vacuum.isMaxInClean(!vacuum.isMaxInClean());
-		speaker.play(vacuum.isMaxInClean() ? VOICE_VACCUM_MAX : VOICE_CLEANING_NAVIGATION);
-		if(isStateFollowWall() || (isStateInit() && action_i_ > ac_open_gyro)) {
-			vacuum.setCleanState();
-		}
+		vacuum.setForUserSetMaxMode(!vacuum.isUserSetMaxMode());
+		ACleanMode::setVacuum();
 	}
 	remote.reset();
 }

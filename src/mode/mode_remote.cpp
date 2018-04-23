@@ -37,8 +37,9 @@ ModeRemote::ModeRemote()
 
 	remote_mode_time_stamp_ = ros::Time::now().toSec();
 
-	s_wifi.setWorkMode(Mode::md_remote);
+	s_wifi.setWorkMode(md_remote);
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
+	s_wifi.resetReceivedWorkMode();
 	mode_i_ = md_remote;
 	IMoveType::sp_mode_ = this;
 }
@@ -51,7 +52,7 @@ ModeRemote::~ModeRemote()
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
-	water_tank.stop(WaterTank::tank_pump);
+	water_tank.stop(WaterTank::operate_option::swing_motor_and_pump);
 
 	ROS_INFO("%s %d: Exit remote mode.", __FUNCTION__, __LINE__);
 }
@@ -77,6 +78,41 @@ bool ModeRemote::isExit()
 		ROS_WARN("%s %d: Exit to idle mode for low battery(%.2fV).", __FUNCTION__, __LINE__, battery.getVoltage() / 100.0);
 		speaker.play(VOICE_BATTERY_LOW);
 		setNextMode(md_idle);
+		return true;
+	}
+
+	if (s_wifi.receiveIdle())
+	{
+		ROS_WARN("%s %d: Exit for wifi idle.", __FUNCTION__, __LINE__);
+		setNextMode(md_idle);
+		return true;
+	}
+
+	if (s_wifi.receivePlan1())
+	{
+		ROS_WARN("%s %d: Exit for wifi plan1.", __FUNCTION__, __LINE__);
+		setNextMode(cm_navigation);
+		return true;
+	}
+
+	if (s_wifi.receiveHome())
+	{
+		ROS_WARN("%s %d: Exit for wifi home.", __FUNCTION__, __LINE__);
+		setNextMode(cm_exploration);
+		return true;
+	}
+
+	if (s_wifi.receiveSpot())
+	{
+		ROS_WARN("%s %d: Exit for wifi spot.", __FUNCTION__, __LINE__);
+		setNextMode(cm_spot);
+		return true;
+	}
+
+	if (s_wifi.receiveFollowWall())
+	{
+		ROS_WARN("%s %d: Exit for wifi follow wall.", __FUNCTION__, __LINE__);
+		setNextMode(cm_wall_follow);
 		return true;
 	}
 
@@ -109,7 +145,18 @@ bool ModeRemote::isFinish()
 
 int ModeRemote::getNextAction()
 {
-	if(action_i_ == ac_open_gyro || (action_i_ == ac_exception_resume && !ev.fatal_quit))
+	if (action_i_ == ac_exception_resume && !ev.fatal_quit)
+	{
+		if (gyro.isOn())
+		{
+			sp_state = st_clean.get();
+			sp_state->init();
+			return ac_remote;
+		}
+		else
+			return ac_open_gyro;
+	}
+	else if(action_i_ == ac_open_gyro)
 	{
 		sp_state = st_clean.get();
 		sp_state->init();
@@ -154,14 +201,13 @@ void ModeRemote::remoteDirectionRight(bool state_now, bool state_last)
 void ModeRemote::remoteMax(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Remote max is pressed.", __FUNCTION__, __LINE__);
-	if(water_tank.checkEquipment(false)){
+	if(water_tank.getStatus(WaterTank::operate_option::swing_motor)){
 		beeper.beepForCommand(INVALID);
 	}
 	else{
 		beeper.beepForCommand(VALID);
-		vacuum.isMaxInClean(!vacuum.isMaxInClean());
-		speaker.play(vacuum.isMaxInClean() ? VOICE_VACCUM_MAX : VOICE_CLEANING_NAVIGATION);
-		vacuum.setCleanState();
+		vacuum.setForUserSetMaxMode(!vacuum.isUserSetMaxMode());
+		setVacuum();
 	}
 	remote.reset();
 }
@@ -210,4 +256,32 @@ void ModeRemote::remoteHome(bool state_now, bool state_last)
 	beeper.beepForCommand(VALID);
 	ev.remote_home = true;
 	remote.reset();
+}
+
+void ModeRemote::wifiSetWaterTank()
+{
+	if (!water_tank.getStatus(WaterTank::operate_option::swing_motor))
+		return;
+
+	auto user_set_swing_motor_mode = water_tank.getUserSetSwingMotorMode();
+	if (water_tank.getCurrentSwingMotorMode() != user_set_swing_motor_mode)
+		water_tank.setCurrentSwingMotorMode(user_set_swing_motor_mode);
+
+	auto user_set_pump_mode = water_tank.getUserSetPumpMode();
+	if (water_tank.getStatus(WaterTank::operate_option::pump) &&
+		water_tank.getCurrentPumpMode() != user_set_pump_mode)
+		water_tank.setCurrentPumpMode(user_set_pump_mode);
+}
+
+void ModeRemote::setVacuum()
+{
+	if (water_tank.getStatus(WaterTank::operate_option::swing_motor))
+		return;
+
+	auto user_set_max_mode = vacuum.isUserSetMaxMode();
+	if (vacuum.isCurrentMaxMode() != user_set_max_mode)
+	{
+		vacuum.setSpeedByUserSetMode();
+		speaker.play(vacuum.isCurrentMaxMode() ? VOICE_VACCUM_MAX : VOICE_VACUUM_NORMAL);
+	}
 }

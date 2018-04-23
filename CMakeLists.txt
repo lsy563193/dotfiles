@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(pp)
-set(CMAKE_CXX_FLAGS "-std=c++11 -fpermissive ${CMAKE_CXX_FLAGS} -Wfatal-errors -rdynamic\ ")
+set(CMAKE_CXX_FLAGS "-std=c++11 -fpermissive ${CMAKE_CXX_FLAGS} -Wfatal-errors ")
 FILE(GLOB PP_SRC
 	include/*
 
@@ -203,7 +203,7 @@ catkin_package(
 	DEPENDS Eigen3
 )
 
-add_executable(pp  ${PP_SRC} src/protocol/wifi_map_protocol.cpp src/protocol/wifi_map_protocol.cpp src/protocol/wifi_map_protocol.h)
+add_executable(pp  ${PP_SRC} src/protocol/wifi_map_protocol.cpp  )
 #target_link_libraries(pp ${catkin_LIBRARIES} ${ALSA_LIBRARIES} ${Eigen3_LIBRARIES} -lm -lpthread)
 target_link_libraries(pp ${catkin_LIBRARIES} ${ALSA_LIBRARIES} ${Eigen3_LIBRARIES} -lm -lpthread "-T ../ilife_ldscript.lds ../res.o -Wl,--verbose")
 

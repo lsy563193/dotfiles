@@ -9,6 +9,7 @@
 #include "battery.h"
 #include "event_manager.h"
 #include "dev.h"
+#include "protocol/wifi_map_protocol.h"
 
 #define CLOUD_DOMAIN_ID 5479
 #define CLOUD_SUBDOMAIN_ID 6369
@@ -19,17 +20,25 @@ S_Wifi s_wifi;
 
 S_Wifi::S_Wifi():is_wifi_connected_(false)
 					,is_Status_Request_(false)
-					,inFactoryTest_(false)
+					,factory_test_ack_(false)
 					,isFactoryTest_(false)
 					,isRegDevice_(false)
-					,is_active_(true)
+					,is_resume_(false)
+					,is_active_(false)
+					,is_sleep_(false)
 					,in_linking_(false)
 					,task_lock_(PTHREAD_MUTEX_INITIALIZER)
 					,map_data_lock_(PTHREAD_MUTEX_INITIALIZER)
 					,wifi_quit_(false)
+					,realtime_map_ack_(false)
+					,upload_state_ack_(false)
 {
 	init();
 	map_data_buf_ = new std::deque<Points>();
+	history_map_data_ = new Cells();
+	// -- get wifi version and MAC
+	taskPushBack(ACT::ACT_VERSION);
+	taskPushBack(ACT::ACT_MAC);
 }
 S_Wifi::~S_Wifi()
 {
@@ -41,18 +50,20 @@ bool S_Wifi::deinit()
 	taskPushBack(ACT::ACT_SLEEP);
 	quit();
 	delete map_data_buf_;
+	delete history_map_data_;
 	return true;
 }
 
 bool S_Wifi::init()
 {
-	robot_work_mode_ = wifi::WorkMode::SHUTDOWN;
+	robot_work_mode_ = wifi::WorkMode::IDLE;
 	INFO_BLUE(" wifi register msg... ");
 	//-----on reg device ,connect or disconnect-----
 	//regestory request
 	s_wifi_rx_.regOnNewMsgListener<wifi::RegDeviceRequestRxMsg>(
 		[&]( const wifi::RxMsg &a_msg ) 
 		{
+			is_active_ = true;
 			wifi::RegDeviceTxMsg p(	wifi::RegDeviceTxMsg::CloudEnv::MAINLAND_DEV,
 									{0, 0, 1},
 									CLOUD_DOMAIN_ID,
@@ -61,11 +72,12 @@ bool S_Wifi::init()
 									a_msg.seq_num());
 			s_wifi_tx_.push(std::move( p )).commit();
 			isRegDevice_ = true;
-			wifi_led.setMode(LED_FLASH,WifiLed::state::on);
+			is_wifi_connected_ = true;
+			if(robot_work_mode_ != wifi::WorkMode::SLEEP)
+				wifi_led.setMode(LED_FLASH,WifiLed::state::on);
 			if(isFactoryTest_)
 				speaker.play( VOICE_WIFI_CONNECTED,false);
-		}
-	);
+		});
 /*
 	s_wifi_rx_.regOnNewMsgListener<wifi::wifiConnectedNotifRxMsg>(
 			[this]( const wifi::RxMsg &a_msg ) {
@@ -86,11 +98,11 @@ bool S_Wifi::init()
 	s_wifi_rx_.regOnNewMsgListener<wifi::CloudConnectedNotifRxMsg>(
 			[&]( const wifi::RxMsg &a_msg ) {
 				is_wifi_connected_ = true;
-				wifi_led.setMode(LED_STEADY,WifiLed::state::on);
+				if(robot_work_mode_ != wifi::WorkMode::SLEEP)
+					wifi_led.setMode(LED_STEADY,WifiLed::state::on);
 				if(isRegDevice_ && in_linking_){
 					//speaker.play( VOICE_CLOUD_CONNECTED,false);
 					speaker.play( VOICE_WIFI_CONNECTED,false);
-					//uploadLastCleanData();
 					isRegDevice_ = false;
 					in_linking_ = false;
 				}
@@ -109,19 +121,22 @@ bool S_Wifi::init()
 	s_wifi_rx_.regOnNewMsgListener<wifi::QueryDeviceStatusRxMsg>(
 			[&]( const wifi::RxMsg &a_msg ) {
 				const wifi::QueryDeviceStatusRxMsg &msg = static_cast<const wifi::QueryDeviceStatusRxMsg&>( a_msg );
-				uploadStatus( msg.MSG_CODE,msg.seq_num());
 				is_wifi_connected_ = true;
+				uploadStatus( msg.MSG_CODE,msg.seq_num());
+				if(robot_work_mode_ != wifi::WorkMode::SLEEP)
+					wifi_led.setMode(LED_STEADY, WifiLed::state::on);
 			});
 	//query schedule
 	s_wifi_rx_.regOnNewMsgListener<wifi::QueryScheduleStatusRxMsg>(
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::QueryScheduleStatusRxMsg &msg = static_cast<const wifi::QueryScheduleStatusRxMsg&>( a_msg );
-				//get appointment 
+				is_wifi_connected_ = true;
+				//get appointment
 				std::vector<wifi::ScheduleStatusTxMsg::Schedule> vec_sch;
 				std::vector<Appointment::st_appmt> appmts = appmt_obj.get();
-				for(int i = 1;i<appmts.size();i++)
+				for(int i = 0;i<appmts.size();i++)
 				{
-					wifi::ScheduleStatusTxMsg::Schedule sche(i,
+					wifi::ScheduleStatusTxMsg::Schedule sche(i+1,
 								appmts[i].enable,
 								appmts[i].week,
 								appmts[i].hour,
@@ -136,15 +151,44 @@ bool S_Wifi::init()
 				s_wifi_tx_.push(std::move(p)).commit();
 				INFO_BLUE("receive query schedule");	
 			});
-	//query consumption
+	//query consumable status
 	s_wifi_rx_.regOnNewMsgListener<wifi::QueryConsumableStatusRxMsg>(
 			[&]( const wifi::RxMsg &a_msg ) {
 				const wifi::QueryConsumableStatusRxMsg &msg = static_cast<const wifi::QueryConsumableStatusRxMsg&>( a_msg );
+				is_wifi_connected_ = true;
 				uint16_t worktime = (uint16_t)(robot_timer.getWorkTime()/3600);
+
+				// For side brush.
+				auto side_brush_time = robot::instance()->getSideBrushTime();
+				uint32_t side_brush_time_hour = side_brush_time / 3600;
+				if (side_brush_time_hour > 1)
+					side_brush_time_hour -= 1;
+				if (side_brush_time_hour > 100)
+					side_brush_time_hour = 100;
+
+				// For main brush.
+				auto main_brush_time = robot::instance()->getMainBrushTime();
+				uint32_t main_brush_time_hour = main_brush_time / 3600;
+				if (main_brush_time_hour > 1)
+					main_brush_time_hour -= 1;
+				if (main_brush_time_hour > 100)
+					main_brush_time_hour = 100;
+
+				// For main brush.
+				auto filter_time = robot::instance()->getFilterTime();
+				uint32_t filter_time_hour = filter_time / 3600;
+				if (filter_time_hour > 1)
+					filter_time_hour -= 1;
+				if (filter_time_hour > 100)
+					filter_time_hour = 100;
+
 				//ack
 				wifi::ConsumableStatusTxMsg p(
 							worktime,
-							0x64,0x64,0x64,0x64,0x64,//todo
+							static_cast<const uint8_t>(100 - side_brush_time_hour),
+							static_cast<const uint8_t>(100 - main_brush_time_hour),
+							static_cast<const uint8_t>(100 - filter_time_hour),
+							0x64,0x64,//todo
 							msg.seq_num()	
 						);
 				s_wifi_tx_.push(std::move(p)).commit();
@@ -156,6 +200,7 @@ bool S_Wifi::init()
 	s_wifi_rx_.regOnNewMsgListener<wifi::SetModeRxMsg>(
 			[&]( const wifi::RxMsg &a_msg){
 				const wifi::SetModeRxMsg &msg = static_cast<const wifi::SetModeRxMsg&>( a_msg );
+				is_wifi_connected_ = true;
 				//ack
 				wifi::Packet p(
 							-1,
@@ -167,11 +212,14 @@ bool S_Wifi::init()
 				s_wifi_tx_.push(std::move(p)).commit();
 				//set mode
 				setRobotCleanMode(msg.getWorkMode());
+//				robot_work_mode_ = msg.getWorkMode();
+//				taskPushBack(ACT::ACT_UPLOAD_STATUS);
 			});
 	//set room mode
 	s_wifi_rx_.regOnNewMsgListener<wifi::SetRoomModeRxMsg>(
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::SetRoomModeRxMsg &msg = static_cast<const wifi::SetRoomModeRxMsg &>( a_msg );
+				is_wifi_connected_ = true;
 				//ack
 				wifi::Packet p(
 							-1,
@@ -186,21 +234,27 @@ bool S_Wifi::init()
 	s_wifi_rx_.regOnNewMsgListener<wifi::SetMaxCleanPowerRxMsg>(
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::SetMaxCleanPowerRxMsg &msg = static_cast<const wifi::SetMaxCleanPowerRxMsg&>( a_msg );
-				if (!water_tank.checkEquipment(true))
-					if(msg.isMop())
-						water_tank.setPumpMode(WaterTank::PUMP_HIGH);
-					else
-						water_tank.setPumpMode(WaterTank::PUMP_MID);
-				else
-					vacuum.isMaxInClean(msg.isVacuum());
+				is_wifi_connected_ = true;
+				// Setting for pump and swing motor.
+				water_tank.setUserSetPumpMode(static_cast<int>(msg.mop()));
+				water_tank.setUserSwingMotorMode(
+						msg.mop() > 0 ? WaterTank::swing_motor_mode::SWING_MOTOR_HIGH :
+						WaterTank::swing_motor_mode::SWING_MOTOR_LOW);
+				robot::instance()->wifiSetWaterTank();
+
+				// Setting for vacuum.
+				vacuum.setForUserSetMaxMode(msg.vacuum() > 0);
+				robot::instance()->wifiSetVacuum();
+
 				//ack
-				wifi::MaxCleanPowerTxMsg p(vacuum.isMaxInClean(),water_tank.getMode() == WaterTank::PUMP_HIGH);
+				wifi::MaxCleanPowerTxMsg p(msg.vacuum(), msg.mop(), msg.seq_num());
 				s_wifi_tx_.push( std::move(p)).commit();
 			});
 	//remote control
 	s_wifi_rx_.regOnNewMsgListener<wifi::RemoteControlRxMsg>(
 			[&]( const wifi::RxMsg &a_msg ) {
 				const wifi::RemoteControlRxMsg &msg = static_cast<const wifi::RemoteControlRxMsg&>( a_msg );
+				is_wifi_connected_ = true;
 				appRemoteCtl(msg.getCmd());
 				//ack
 				wifi::Packet p(
@@ -216,6 +270,7 @@ bool S_Wifi::init()
 	s_wifi_rx_.regOnNewMsgListener<wifi::SetScheduleRxMsg>(
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::SetScheduleRxMsg &msg = static_cast<const wifi::SetScheduleRxMsg&>(a_msg);
+				is_wifi_connected_ = true;
 
 				this->setSchedule(msg);
 				//ack;
@@ -232,6 +287,27 @@ bool S_Wifi::init()
 	s_wifi_rx_.regOnNewMsgListener<wifi::ResetConsumableStatusRxMsg>(
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::ResetConsumableStatusRxMsg &msg = static_cast<const wifi::ResetConsumableStatusRxMsg&>( a_msg );
+				is_wifi_connected_ = true;
+				bool update_consumable = false;
+				if (msg.isSideBrush())
+				{
+					robot::instance()->resetSideBrushTime();
+					update_consumable = true;
+				}
+				if (msg.isMainBrush())
+				{
+					robot::instance()->resetMainBrushTime();
+					update_consumable = true;
+				}
+				if (msg.isFilter())
+				{
+					robot::instance()->resetFilterTime();
+					update_consumable = true;
+				}
+
+				if (update_consumable)
+					robot::instance()->updateConsumableStatus();
+
 				//ack
 				wifi::Packet p(
 							-1,
@@ -248,6 +324,7 @@ bool S_Wifi::init()
 	s_wifi_rx_.regOnNewMsgListener<wifi::SyncClockRxMsg>(
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::SyncClockRxMsg &msg = static_cast<const wifi::SyncClockRxMsg&>( a_msg );
+				is_wifi_connected_ = true;
 				Timer::DateTime date_time;
 				date_time.year = msg.getYear();
 				date_time.month = msg.getMonth();
@@ -265,13 +342,12 @@ bool S_Wifi::init()
 							msg.data()
 							);
 				s_wifi_tx_.push(std::move(p)).commit();
-				//is_wifi_connected_ = true;
-				//wifi_led.setMode(LED_STEADY, WifiLed::state::on);
 			});
 	//set status requset
 	s_wifi_rx_.regOnNewMsgListener<wifi::RealtimeStatusRequestRxMsg>(
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::RealtimeStatusRequestRxMsg &msg = static_cast<const wifi::RealtimeStatusRequestRxMsg&>( a_msg );
+				is_wifi_connected_ = true;
 				is_Status_Request_ = msg.isEnable()?true:false;
 				//ack
 				wifi::Packet p(
@@ -287,6 +363,7 @@ bool S_Wifi::init()
 	s_wifi_rx_.regOnNewMsgListener<wifi::SetDoNotDisturbRxMsg>(
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::SetDoNotDisturbRxMsg &msg = static_cast<const wifi::SetDoNotDisturbRxMsg&>( a_msg );
+				is_wifi_connected_ = true;
 				//ack
 				wifi::Packet p(
 						-1,
@@ -303,6 +380,7 @@ bool S_Wifi::init()
 	s_wifi_rx_.regOnNewMsgListener<wifi::FactoryResetRxMsg>(
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::FactoryResetRxMsg &msg = static_cast<const wifi::FactoryResetRxMsg&>( a_msg );
+				is_wifi_connected_ = true;
 				//ack
 				wifi::Packet p(
 						-1,
@@ -321,27 +399,49 @@ bool S_Wifi::init()
 	s_wifi_rx_.regOnNewMsgListener<wifi::FactoryTestRxMsg>(
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::FactoryTestRxMsg &msg = static_cast<const wifi::FactoryTestRxMsg&>( a_msg );
-				inFactoryTest_ = true;
-				wifi_led.setMode(LED_FLASH,WifiLed::state::on);
+				factory_test_ack_= true;
+				is_wifi_connected_ = true;
+				if(robot_work_mode_ != wifi::WorkMode::SLEEP)
+					wifi_led.setMode(LED_FLASH,WifiLed::state::on);
 			}
 	);
+	//upload status ack
+	s_wifi_rx_.regOnNewMsgListener<wifi::DeviceStatusUploadAckMsg>(
+					[&](const wifi::RxMsg & a_msg){
+				const wifi::DeviceStatusUploadAckMsg &msg = static_cast<const wifi::DeviceStatusUploadAckMsg&>(a_msg);
+				upload_state_ack_ = true;
+				is_wifi_connected_ = true;
+		});
 
+	//realtime map upload ack
 	s_wifi_rx_.regOnNewMsgListener<wifi::RealtimeMapUploadAckMsg>(
 			[&](const wifi::RxMsg &a_msg){
-			}
-	);
-	//realtime map ack
+				realtime_map_ack_ = true;
+				is_wifi_connected_ = true;
+			});
+
+	//realtime map upload ack
+	s_wifi_rx_.regOnNewMsgListener<wifi::CleanRecordUploadAckMsg>(
+			[&](const wifi::RxMsg &a_msg){
+				clean_record_ack_ = true;
+				is_wifi_connected_ = true;
+			});
+
+	//claer realtime map ack
 	s_wifi_rx_.regOnNewMsgListener<wifi::ClearRealtimeMapAckMsg>(
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::ClearRealtimeMapAckMsg &msg = static_cast<const wifi::ClearRealtimeMapAckMsg&>( a_msg );
-			}
-	);
+				is_wifi_connected_ = true;
+			});
 	//resume ack
 	s_wifi_rx_.regOnNewMsgListener<wifi::wifiResumeAckMsg>(
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::wifiResumeAckMsg &msg = static_cast<const wifi::wifiResumeAckMsg&>(a_msg);	
 				INFO_BLUE("RESUME ACK");
+				is_wifi_connected_ = true;
+				is_resume_= true;
 				is_active_ = true;
+				is_sleep_ = false;
 				if(!isFactoryTest_)
 					checkVersion();
 				});
@@ -349,7 +449,8 @@ bool S_Wifi::init()
 	s_wifi_rx_.regOnNewMsgListener<wifi::wifiSuspendAckMsg>(
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::wifiSuspendAckMsg &msg = static_cast<const wifi::wifiSuspendAckMsg&>(a_msg);
-					is_active_ = false;
+					is_sleep_ = true;
+					is_resume_= false;
 					wifi_led.setMode(LED_STEADY, WifiLed::state::off);
 				});
 	// version ack
@@ -370,25 +471,21 @@ bool S_Wifi::init()
 				const wifi::wifiMACAckMsg &msg = static_cast<const wifi::wifiMACAckMsg&>(a_msg);
 				MAC_ = msg.getMAC();
 		});
+
 	INFO_BLUE("register done ");
+
 	return true;
 }
 
-uint8_t S_Wifi::uploadStatus(int msg_code,const uint8_t seq_num)
+int8_t S_Wifi::uploadStatus(int msg_code,const uint8_t seq_num)
 {
 	if(!is_wifi_connected_ )
 		return -1;
-	wifi::WorkMode work_mode = robot_work_mode_;
 	uint8_t error_code = 0;
-	wifi::DeviceStatusBaseTxMsg::CleanMode box;
-	//todo water_tank.checkEquipment is right?
-	box = water_tank.checkEquipment(true) ? wifi::DeviceStatusBaseTxMsg::CleanMode::WATER_TANK: wifi::DeviceStatusBaseTxMsg::CleanMode::DUST;
-	if(robot::instance()->p_mode != nullptr)
-	{
-		int next_mode = (int)robot::instance()->p_mode->getNextMode();
-		setWorkMode((int)next_mode);	
-		work_mode = getWorkMode();
-	}
+	wifi::DeviceStatusBaseTxMsg::CleanTool clean_tool;
+	clean_tool = water_tank.getStatus(WaterTank::swing_motor)? wifi::DeviceStatusBaseTxMsg::CleanTool::WATER_TANK: wifi::DeviceStatusBaseTxMsg::CleanTool::DUST_BOX;
+
+
 	switch (error.get())
 	{
 		case ERROR_CODE_NONE:
@@ -473,28 +570,39 @@ uint8_t S_Wifi::uploadStatus(int msg_code,const uint8_t seq_num)
 
 	if(msg_code == 0xc8)// auto upload
 	{
-		wifi::DeviceStatusUploadTxMsg p(
-				work_mode,
-				wifi::DeviceStatusBaseTxMsg::RoomMode::LARGE,//default set large
-				box,
-				serial.getSendData(CTL_VACCUM_PWR),
-				serial.getSendData(CTL_BRUSH_MAIN),
-				battery.getPercent(),
-				0x01,//notify sound wav
-				0x01,//led on/off
-				error_code,
-				seq_num);
+		int upload_state_ack_cnt=0;
+		do{
+			if(upload_state_ack_cnt++ > 10)
+			{
+				is_wifi_connected_ = false;
+				wifi_led.setMode(LED_FLASH,WifiLed::state::off);
+				return -1;
+			}
+			wifi::DeviceStatusUploadTxMsg p(
+					robot_work_mode_,
+					wifi::DeviceStatusBaseTxMsg::RoomMode::LARGE,//default set large
+					clean_tool,
+					static_cast<uint8_t>(vacuum.isUserSetMaxMode() ? 0x01 : 0x00),
+					static_cast<uint8_t>(water_tank.getUserSetPumpMode()),
+					battery.getPercent(),
+					0x01,//notify sound wav
+					0x01,//led on/off
+					error_code,
+					seq_num);
 
-		s_wifi_tx_.push(std::move( p )).commit();
+			s_wifi_tx_.push(std::move( p )).commit();
+			usleep(400000);
+		}while(ros::ok() && !upload_state_ack_);
+		upload_state_ack_ = false;
 	}
 	else if(msg_code == 0x41)//app check upload
 	{
 		wifi::DeviceStatusReplyTxMsg p(
-				work_mode,
+				robot_work_mode_,
 				wifi::DeviceStatusBaseTxMsg::RoomMode::LARGE,//default set larger
-				box,
-				serial.getSendData(CTL_VACCUM_PWR),
-				serial.getSendData(CTL_BRUSH_MAIN),
+				clean_tool,
+				static_cast<uint8_t>(vacuum.isUserSetMaxMode() ? 0x01 : 0x00),
+				static_cast<uint8_t>(water_tank.getUserSetPumpMode()),
 				battery.getPercent(),
 				0x01,//notify sound wav
 				0x01,//led on/off
@@ -504,202 +612,400 @@ uint8_t S_Wifi::uploadStatus(int msg_code,const uint8_t seq_num)
 	}
 	return 0;
 }
+template <typename t>
+bool S_Wifi::find_if(std::deque<t> *list,t point)
+{
+	if(list!= nullptr){
+		for(int i =0 ;i<list->size();i++)
+		{
+			if(list->at(i) == point)
+				return true;
+		}
+	}	
+	return false;
+}
 
-bool S_Wifi::uploadMap()
+bool S_Wifi::uploadMap(MapType map)
 {
 	if(!is_wifi_connected_ )
 		return false;
 	uint32_t time  = (uint32_t)ros::Time::now().toSec();
 	std::vector<uint8_t> map_data;
-	std::vector<std::vector<uint8_t>> map_pack;
-	int pack_cnt=0;
-	int byte_cnt=0;
+	std::vector<std::vector<uint8_t>> map_packs;
 
-	if(robot::instance()->p_mode->getNextMode() != Mode::cm_navigation)
-		return false;
-
-	if(map_data_buf_->size()  == 0)
-		return false;
-
-	pthread_mutex_lock(&map_data_lock_);
-	Points pass_path = map_data_buf_->front();
-	map_data_buf_->pop_front();
-	pthread_mutex_unlock(&map_data_lock_);
-
-	if(!pass_path.empty())
+	//-- upload grid map
+	if(map == S_Wifi::GRID_MAP)
 	{
-		INFO_BLUE("upload pass path");
-		auto mode = boost::dynamic_pointer_cast<ACleanMode>(robot::instance()->p_mode);
-		GridMap g_map = mode->clean_map_;
-		uint16_t clean_area = (uint16_t)(g_map.getCleanedArea()*CELL_SIZE*CELL_SIZE*100);
-		//push clean area and work time
-		map_data.push_back((uint8_t)((clean_area&0xff00)>>8));
-		map_data.push_back((uint8_t)clean_area);
-		map_data.push_back((uint8_t)((robot_timer.getWorkTime()&0x0000ff00)>>8));
-		map_data.push_back((uint8_t)robot_timer.getWorkTime());
-		byte_cnt+=4;
+		GridMap g_map;
+		if (!robot::instance()->getCleanMap(g_map))
+			return false;
 
-		for(auto &&p_it:pass_path)
+		uint16_t clean_area = (uint16_t)(g_map.getCleanedArea()*CELL_SIZE*CELL_SIZE*100);
+		Point_t cur_pos = getPosition(SLAM_POSITION_SLAM_ANGLE);
+		int16_t c_x = cur_pos.toCell().x;
+		int16_t c_y = cur_pos.toCell().y;
+		// -- push boundary
+		if(slam_grid_map.getCleanedArea()>0)
 		{
-			int16_t i = p_it.toCell().x;
-			int16_t j = p_it.toCell().y;
-			if(pack_cnt>=255)
+			//push clean_area and work_time
+			map_data.push_back((uint8_t)((clean_area&0xff00)>>8));
+			map_data.push_back((uint8_t)clean_area);
+			map_data.push_back((uint8_t)((robot_timer.getWorkTime()&0x0000ff00)>>8));
+			map_data.push_back((uint8_t)robot_timer.getWorkTime());
+			//--pack data
+
+			//for(auto &&p_it : pass_path)	
+			for(int16_t pos_x = c_x - 30;pos_x<=c_x + 30;pos_x++)
 			{
-				pack_cnt=255;
-				ROS_ERROR("%s,%d,MAP TOO BIG TO SEND",__FUNCTION__,__LINE__);
-				break;
-			}
-			//for(int16_t pos_x = i-1;pos_x<i+1;pos_x++)
-			//{
-				//for(int16_t pos_y = j-1;pos_y<j+1;pos_y++)
-				//{
-					int16_t pos_x = i;
-					int16_t pos_y = j;
-					CellState c_state = g_map.getCell(CLEAN_MAP,pos_x,pos_y);
-					if(c_state == CLEANED)
+				for(int16_t pos_y = c_y - 30;pos_y<=c_y + 30;pos_y++)
+				{
+					if(slam_grid_map.getCell(CLEAN_MAP,pos_x,pos_y) == SLAM_MAP_BLOCKED 
+					&& !this->find_if<Cell_t>(history_map_data_,Cell_t(pos_x,pos_y)))
 					{
 						map_data.push_back((uint8_t) (pos_x>>8));
 						map_data.push_back((uint8_t) (0x00ff&pos_x));
 						map_data.push_back((uint8_t) (pos_y>>8));
 						map_data.push_back((uint8_t) (0x00ff&pos_y));
-						byte_cnt+=4;
+						history_map_data_->push_back(Cell_t(pos_x,pos_y));
 					}
-					if(byte_cnt>= 480)
+
+					if(map_data.size()>= 250)
 					{
-						map_pack.push_back(map_data);
+						//push current position 
+						map_data.push_back((uint8_t) (c_x>>8));
+						map_data.push_back((uint8_t) (0x00ff&c_x));
+						map_data.push_back((uint8_t) (c_y>>8));
+						map_data.push_back((uint8_t) (0x00ff&c_y));
+
+						map_packs.push_back(map_data);
 						map_data.clear();
-						pack_cnt+=1;
 						//push clean area and work time
 						map_data.push_back((uint8_t)((clean_area&0xff00)>>8));
 						map_data.push_back((uint8_t)clean_area);
 						map_data.push_back((uint8_t)((robot_timer.getWorkTime()&0x0000ff00)>>8));
 						map_data.push_back((uint8_t)robot_timer.getWorkTime());
-						byte_cnt=4;
 					}
 
-				//}
-			//}
-	
+				}
+			}
+			if(map_data.size() >= 4 )
+			{
+				// -- push the current pos
+				map_data.push_back((uint8_t) (c_x>>8));
+				map_data.push_back((uint8_t) (0x00ff&c_x));
+				map_data.push_back((uint8_t) (c_y>>8));
+				map_data.push_back((uint8_t) (0x00ff&c_y));
+			}
+			else
+			{
+				//push clean area and work time
+				map_data.push_back((uint8_t)((clean_area&0xff00)>>8));
+				map_data.push_back((uint8_t)clean_area);
+				map_data.push_back((uint8_t)((robot_timer.getWorkTime()&0x0000ff00)>>8));
+				map_data.push_back((uint8_t)robot_timer.getWorkTime());
+
+				// -- push the current pos
+				map_data.push_back((uint8_t) (c_x>>8));
+				map_data.push_back((uint8_t) (0x00ff&c_x));
+				map_data.push_back((uint8_t) (c_y>>8));
+				map_data.push_back((uint8_t) (0x00ff&c_y));
+
+			}
+			map_packs.push_back(map_data);
 		}
-		if(byte_cnt >4 && byte_cnt < 480)
-				map_pack.push_back(map_data);
-		ROS_INFO("%s,%d,map_pack size %ld",__FUNCTION__,__LINE__,map_pack.size());
-		for(int k=1;k<=map_pack.size();k++)
+		// -- push pass_path
+		Points pass_path;
+		pthread_mutex_lock(&map_data_lock_);
+		if (!map_data_buf_->empty())
+			pass_path = map_data_buf_->front();
+		pthread_mutex_unlock(&map_data_lock_);
+
+		if(map_data_buf_->size()  > 0 && !pass_path.empty())
 		{
-			wifi::RealtimeMapUploadTxMsg p(
-								time,
-								(uint8_t)k,
-								(uint8_t)map_pack.size(),
-								map_pack[k-1]
-								);
-			s_wifi_tx_.push(std::move(p)).commit();
+			//push clean_area and work_time
+			map_data.push_back((uint8_t)((clean_area&0xff00)>>8));
+			map_data.push_back((uint8_t)clean_area);
+			map_data.push_back((uint8_t)((robot_timer.getWorkTime()&0x0000ff00)>>8));
+			map_data.push_back((uint8_t)robot_timer.getWorkTime());
+
+			
+			for(auto &&p_it : pass_path)
+			{
+				int16_t pos_x = p_it.toCell().x;
+				int16_t pos_y = p_it.toCell().y;
+
+				map_data.push_back((uint8_t) (pos_x>>8));
+				map_data.push_back((uint8_t) (0x00ff&pos_x));
+				map_data.push_back((uint8_t) (pos_y>>8));
+				map_data.push_back((uint8_t) (0x00ff&pos_y));
+
+				if(map_data.size()>= 250)
+				{
+					//push current position 
+					map_data.push_back((uint8_t) (c_x>>8));
+					map_data.push_back((uint8_t) (0x00ff&c_x));
+					map_data.push_back((uint8_t) (c_y>>8));
+					map_data.push_back((uint8_t) (0x00ff&c_y));
+
+					map_packs.push_back(map_data);
+					map_data.clear();
+					//push clean area and work time
+					map_data.push_back((uint8_t)((clean_area&0xff00)>>8));
+					map_data.push_back((uint8_t)clean_area);
+					map_data.push_back((uint8_t)((robot_timer.getWorkTime()&0x0000ff00)>>8));
+					map_data.push_back((uint8_t)robot_timer.getWorkTime());
+				}
+			}
+			if(map_data.size()>4)
+			{
+				//push current position 
+				map_data.push_back((uint8_t) (c_x>>8));
+				map_data.push_back((uint8_t) (0x00ff&c_x));
+				map_data.push_back((uint8_t) (c_y>>8));
+				map_data.push_back((uint8_t) (0x00ff&c_y));
+
+				map_packs.push_back(map_data);
+			}
+
+
+		}
+		pthread_mutex_lock(&map_data_lock_);
+		if (!map_data_buf_->empty())
+				map_data_buf_->pop_front();
+		pthread_mutex_unlock(&map_data_lock_);
+
+		ROS_INFO("%s,%d,map_packs size %ld",__FUNCTION__,__LINE__,map_packs.size());
+		//-- upload map and wait ack
+		int timeout_cnt = 0;
+		for(int k=1;k<=map_packs.size();k++)
+		{
+			do{
+				if(timeout_cnt>0)
+					usleep(1000000);
+				if(timeout_cnt++ >5)
+				{
+					is_wifi_connected_ = false;
+					wifi_led.setMode(LED_FLASH,WifiLed::state::off);
+					INFO_YELLOW("MISSING MAP ACK!!");
+					return false;
+				}
+				wifi::RealtimeMapUploadTxMsg p( time
+									,(uint8_t)k
+									,(uint8_t)map_packs.size()
+									,map_packs[k-1]);
+				s_wifi_tx_.push(std::move(p)).commit();
+				
+			}while(ros::ok() && !realtime_map_ack_);
+			realtime_map_ack_ = false;
+			timeout_cnt = 0;
 		}
 
+	}
+	//--upload SLAM map
+	else if(map == S_Wifi::SLAM_MAP)
+	{
+		uint8_t *slam_map_data = NULL;
+		size_t slam_map_s =0;//size
+		WifiMapManage wmm;
+		wmm.getData(slam_map_data,&slam_map_s);
+
+		if(slam_map_data != NULL)
+		{
+			//-- 
+			GridMap g_map;
+			if (!robot::instance()->getCleanMap(g_map))
+				return false;
+
+			uint16_t clean_area = (uint16_t)(g_map.getCleanedArea()*CELL_SIZE*CELL_SIZE*100);
+			//--push clean_area and work_time
+			map_data.push_back((uint8_t)((clean_area&0xff00)>>8));
+			map_data.push_back((uint8_t)clean_area);
+			map_data.push_back((uint8_t)((robot_timer.getWorkTime()&0x0000ff00)>>8));
+			map_data.push_back((uint8_t)robot_timer.getWorkTime());
+
+			for(int i=0;i<slam_map_s;i++)
+			{
+				map_data.push_back(*(slam_map_data+i));
+				//--
+				if(i>=250)
+				{
+					map_packs.push_back(map_data);
+					map_data.clear();
+					// --push clean_area and work_tima again
+					map_data.push_back((uint8_t)((clean_area&0xff00)>>8));
+					map_data.push_back((uint8_t)clean_area);
+					map_data.push_back((uint8_t)((robot_timer.getWorkTime()&0x0000ff00)>>8));
+					map_data.push_back((uint8_t)robot_timer.getWorkTime());
+				}
+			}
+			ROS_INFO("%s,%d,map_packs size %ld",__FUNCTION__,__LINE__,map_packs.size());
+
+			//--upload map and wait ack
+			int timeout_cnt = 0;
+			for(int k=1;k<=map_packs.size();k++)
+			{
+				do{
+					if(timeout_cnt>0)
+						usleep(1000000);
+					if(timeout_cnt++ > 5)
+					{
+						is_wifi_connected_ = false;
+						wifi_led.setMode(LED_FLASH,WifiLed::state::off);
+						INFO_YELLOW("MISSING MAP ACK!!");
+						return false;
+					}
+					wifi::RealtimeMapUploadTxMsg p( time
+										,(uint8_t)k
+										,(uint8_t)map_packs.size()
+										,map_packs[k-1]);
+					s_wifi_tx_.push(std::move(p)).commit();
+				//--wait ack 
+				}while(ros::ok() && !realtime_map_ack_);
+				realtime_map_ack_ = false;
+				timeout_cnt = 0;
+			}
+		}
 	}
 	return true;
 }
 
+bool S_Wifi::uploadLastCleanData()
+{
+	if(!is_wifi_connected_ )
+		return false;
+	INFO_BLUE("UPLOAD LAST STATE & MAP");
+	uint32_t time;
+	uint16_t clean_time;
+	uint16_t clean_area; // In square meter.
+	GridMap clean_map;
+	robot::instance()->getCleanRecord(time, clean_time, clean_area, clean_map);
+
+	std::vector<uint8_t> clean_record_data;
+	std::vector<std::vector<uint8_t>> clean_record_data_pack;
+	clean_record_data_pack.clear();
+	if(1/*robot::instance()->getRobotWorkMode() == Mode::cm_navigation && robot::instance()->p_mode != nullptr*/)
+	{
+//		uint16_t clean_area = (uint16_t)(clean_map.getCleanedArea()*CELL_SIZE*CELL_SIZE*100);
+		int16_t x_min,x_max,y_min,y_max;
+		clean_map.getMapRange(CLEAN_MAP,&x_min,&x_max,&y_min,&y_max);
+		int16_t col_n = (int16_t)ceilf((y_max-y_min+1)/8.0);
+		int16_t row_n = (int16_t)(480/col_n);
+		auto pack_n = static_cast<uint8_t>(ceilf((x_max-x_min+1)/(row_n*1.0)));
+		for(int p = 0;p<pack_n;p++)
+		{
+			//push clean area and work time
+			/*clean_record_data.push_back((uint8_t)(time>>24));
+			clean_record_data.push_back((uint8_t)(time>>16));
+			clean_record_data.push_back((uint8_t)(time>>8));
+			clean_record_data.push_back((uint8_t)(time));
+			clean_record_data.push_back((uint8_t)(robot_timer.getWorkTime()>>8));
+			clean_record_data.push_back((uint8_t)robot_timer.getWorkTime());
+			clean_record_data.push_back((uint8_t)(clean_area>>8));
+			clean_record_data.push_back((uint8_t)clean_area);*/
+			clean_record_data.push_back((uint8_t)p);
+			clean_record_data.push_back((uint8_t)pack_n);
+			clean_record_data.push_back((uint8_t)col_n);
+			uint8_t tmp_byte  = 0;
+			for(int r = 0;r<row_n;r++)
+			{
+				for(int col = 0;col<col_n;col++)
+				{
+					tmp_byte = 0;
+					for(int bi= 0;bi<8;bi++)
+					{
+						CellState c_state = clean_map.getCell(CLEAN_MAP, p*row_n+r+x_min, col*8+bi+y_min);
+						if(c_state == CLEANED)
+							tmp_byte |= 0x80>>bi;
+						else
+							tmp_byte &= ~(0x80>>bi);
+					}
+					clean_record_data.push_back(tmp_byte);
+				}
+
+			}
+			clean_record_data_pack.push_back(clean_record_data);
+			clean_record_data.clear();
+		}
+		for(uint8_t i = 0;i<clean_record_data_pack.size();i++)
+		{
+			wifi::CleanRecordUploadTxMsg p(time,
+										   clean_time,
+										   clean_area,
+										   clean_record_data_pack[i]);
+//			wifi::Packet p(-1,0x01,0,0xc9,clean_record_data_pack[i]);
+			s_wifi_tx_.push(std::move(p)).commit();
+		}
+		ROS_INFO("%s,%d,\033[1;42;31mclean_record_data_pack size %ld\033[0m",__FUNCTION__,__LINE__,clean_record_data_pack.size());
+	}
+	else
+		return false;
+	return true;
+}
+
 uint8_t S_Wifi::setRobotCleanMode(wifi::WorkMode work_mode)
-{ 
-	static wifi::WorkMode last_mode;
+{
 	ROS_INFO("%s,%d,work mode  = %d",__FUNCTION__,__LINE__,(int)work_mode);
 	switch(work_mode)
 	{
 		case wifi::WorkMode::SLEEP:
-			ev.key_long_pressed = true;//set sleep mode
+			received_work_mode_ = work_mode;
 			break;
 		case wifi::WorkMode::IDLE:
-			if(last_mode == wifi::WorkMode::PLAN1 
-						|| last_mode == wifi::WorkMode::WALL_FOLLOW
-						|| last_mode == wifi::WorkMode::SPOT
-						|| last_mode == wifi::WorkMode::HOMING
-						|| last_mode == wifi::WorkMode::FIND
-						|| last_mode == wifi::WorkMode::RANDOM
-						|| last_mode == wifi::WorkMode::REMOTE )//get last mode
 			{
-				remote.set(REMOTE_CLEAN);
-				beeper.beepForCommand(true);
-			}
-			else{
-				beeper.beepForCommand(false);
+				received_work_mode_ = work_mode;
 			}
 			INFO_BLUE("receive mode idle");
 			break;
 		case wifi::WorkMode::RANDOM:
-			beeper.beepForCommand(false);
-			remote.set(REMOTE_CLEAN);
+			beeper.debugBeep(INVALID);
+			received_work_mode_ = work_mode;
 			INFO_BLUE("receive mode random");
 			break;
 		case wifi::WorkMode::WALL_FOLLOW:
-			if(last_mode == wifi::WorkMode::WALL_FOLLOW)
-			{
-				beeper.beepForCommand(false);
-				remote.set(REMOTE_CLEAN);
-			}
-			else{
-				beeper.beepForCommand(true);
-				remote.set(REMOTE_WALL_FOLLOW);//wall follow
-			}
-
+			received_work_mode_ = work_mode;
+			beeper.debugBeep(VALID);
 			INFO_BLUE("receive mode wall follow");
 			break;
 		case wifi::WorkMode::SPOT:
-			if(last_mode == wifi::WorkMode::SPOT)
-				remote.set(REMOTE_CLEAN);
-			else
-				remote.set(REMOTE_SPOT);//spot
-
-			beeper.beepForCommand(true);
+			received_work_mode_ = work_mode;
+			beeper.debugBeep(VALID);
 			INFO_BLUE("receive mode spot");
 			break;
 		case wifi::WorkMode::PLAN1://plan 1
-			beeper.beepForCommand(true);
-			remote.set(REMOTE_CLEAN);//clean key
-			if(last_mode != wifi::WorkMode::PLAN1)
-				clearRealtimeMap(0x00);
+			beeper.debugBeep(VALID);
+			received_work_mode_ = work_mode;
 			INFO_BLUE("receive mode plan1");
 			break;
 		case wifi::WorkMode::PLAN2://plan 2
-			beeper.beepForCommand(true);
-			remote.set(REMOTE_CLEAN);//clean key
-			if(last_mode != wifi::WorkMode::PLAN2)
-				clearRealtimeMap(0x00);
-
-			remote.set(REMOTE_CLEAN);//clean key
+			beeper.debugBeep(VALID);
+			received_work_mode_ = work_mode;
 			INFO_BLUE("receive mode plan2");
 			break;
 		case wifi::WorkMode::HOMING:
-			if(last_mode == wifi::WorkMode::HOMING)
-			{
-				remote.set(REMOTE_CLEAN);
-				beeper.beepForCommand(false);
-			}
-			else
-			{
-				remote.set(REMOTE_HOME);//go home
-				beeper.beepForCommand(true);
-			}
+			received_work_mode_ = work_mode;
+			beeper.debugBeep(VALID);
 			INFO_BLUE("receive mode gohome");
 			break;
 		case wifi::WorkMode::CHARGE:
 			INFO_BLUE("remote charger command ");
-			beeper.beepForCommand(false);
+			beeper.debugBeep(INVALID);
 			break;
 		case wifi::WorkMode::REMOTE:
+			received_work_mode_ = work_mode;
 			remote.set(REMOTE_FORWARD);//remote hand mode
 			INFO_BLUE("remote hand mode command ");
 			break;
 
 		case wifi::WorkMode::FIND:
-#if DEBUG_ENABLE
+			beeper.debugBeep(VALID);
+			#if DEBUG_ENABLE
 			speaker.play(VOICE_IM_HERE_UNOFFICIAL,false);
-#endif
-			beeper.beepForCommand(true);
+			#endif
 			INFO_BLUE("remote app find home mode command ");
 			break;
 
 	}
-	last_mode = work_mode;
+	last_work_mode_ = work_mode;
 	return 0;
 }
 
@@ -716,13 +1022,16 @@ uint8_t S_Wifi::appRemoteCtl(wifi::RemoteControlRxMsg::Cmd data)
 {
 	if(!is_wifi_connected_ )
 		return 1;
+	robot_work_mode_ = wifi::WorkMode::REMOTE;
+	last_work_mode_ = robot_work_mode_;
+	ROS_INFO("%s %d: Receive remote command(%d).", __FUNCTION__, __LINE__, data);
 	switch(data)
 	{
 		case wifi::RemoteControlRxMsg::Cmd::FORWARD:
 			remote.set(REMOTE_FORWARD);//forward control
 			break;
 		case wifi::RemoteControlRxMsg::Cmd::BACKWARD://backward control
-			beeper.beepForCommand(false);
+			beeper.debugBeep(INVALID);
 			remote.reset(); //tmp set stop
 			break;
 		case wifi::RemoteControlRxMsg::Cmd::LEFT:
@@ -747,7 +1056,7 @@ uint8_t S_Wifi::syncClock(int year,int mon,int day,int hour,int minu,int sec)
 	system(date_time);
 	
 	robot_timer.initWorkTimer();
-//	IAction::updateStartTime();
+	//	IAction::updateStartTime();
 
 	struct tm *local_time;
 	time_t ltime;
@@ -759,26 +1068,37 @@ uint8_t S_Wifi::syncClock(int year,int mon,int day,int hour,int minu,int sec)
 
 uint8_t S_Wifi::rebind()
 {
+	//if(!is_active_)
+	//{
+	//	INFO_RED("WIFI NOT ACTIVE");
+	//	return -1;
+	//}
 	INFO_BLUE("wifi rebind");
 	wifi::ForceUnbindTxMsg p(0x00);//no responed
 	s_wifi_tx_.push(std::move(p)).commit();
 	is_wifi_connected_ = false;
-#if DEBUG_ENABLE
+	#if DEBUG_ENABLE
 	//speaker.play(VOICE_WIFI_UNBIND,false);
-#endif
+	#endif
 	return 0;
 }
 
-uint8_t S_Wifi::smartLink()
+int8_t S_Wifi::smartLink()
 {
+	//if(!is_active_)
+	//{
+	//	INFO_RED("WIFI NO ACTIVE");
+	//	return -1;
+	//}
 	INFO_BLUE("SMART LINK");
 	wifi::SmartLinkTxMsg p(0x00);//no responed
 	s_wifi_tx_.push( std::move(p)).commit();
-#if DEBUG_ENABLE
+	#if DEBUG_ENABLE
 	//speaker.play(VOICE_WIFI_SMART_LINK_UNOFFICIAL,false);
 	speaker.play(VOICE_WIFI_CONNECTING,false);
-#endif
-	wifi_led.setMode(LED_FLASH,WifiLed::state::on);
+	#endif
+	if(robot_work_mode_ != wifi::WorkMode::SLEEP)
+		wifi_led.setMode(LED_FLASH,WifiLed::state::on);
 	in_linking_ = true;
 	return 0;
 }
@@ -789,79 +1109,8 @@ uint8_t S_Wifi::smartApLink()
 	wifi::SmartApLinkTxMsg p(CLOUD_AP,0x00);
 	s_wifi_tx_.push(std::move(p)).commit();
 	speaker.play(VOICE_WIFI_CONNECTING,false);
-	wifi_led.setMode(LED_FLASH,WifiLed::state::on);
-	return 0;
-}
-
-uint8_t S_Wifi::uploadLastCleanData()
-{
-	if(!is_wifi_connected_ )
-		return 1;
-	INFO_BLUE("UPLOAD LAST STATE & MAP");
-	uint32_t time = ros::Time::now().toSec();
-	std::vector<uint8_t> map_data;
-	std::vector<std::vector<uint8_t>> map_pack;
-	map_pack.clear();
-	if(robot::instance()->p_mode != nullptr)
-	{
-		if( getWorkMode() == wifi::WorkMode::PLAN1)
-		//			|| robot_work_mode_ == wifi::WorkMode::WALL_FOLLOW 
-		//			||robot_work_mode_ == wifi::WorkMode::SPOT
-		//			||robot_work_mode_ == wifi::WorkMode::HOMING
-		//			||robot_work_mode_ == wifi::WorkMode::FIND)
-		{
-			auto mode = boost::dynamic_pointer_cast<ACleanMode>(robot::instance()->p_mode);
-			GridMap g_map = mode->clean_map_;
-			uint16_t clean_area = (uint16_t)(g_map.getCleanedArea()*CELL_SIZE*CELL_SIZE*100);
-
-			int16_t x_min,x_max,y_min,y_max;
-			g_map.getMapRange(CLEAN_MAP,&x_min,&x_max,&y_min,&y_max);
-			int16_t col_n = (int16_t)ceilf((y_max-y_min+1)/8.0);
-			int16_t row_n = (int16_t)(480/col_n);
-			int16_t pack_n = (int16_t)ceilf((x_max-x_min+1)/(row_n*1.0));
-			for(int p = 0;p<pack_n;p++)
-			{
-				//push clean area and work time
-				map_data.push_back((uint8_t)(time>>24));
-				map_data.push_back((uint8_t)(time>>16));
-				map_data.push_back((uint8_t)(time>>8));
-				map_data.push_back((uint8_t)(time));
-				map_data.push_back((uint8_t)(robot_timer.getWorkTime()>>8));
-				map_data.push_back((uint8_t)robot_timer.getWorkTime());
-				map_data.push_back((uint8_t)(clean_area>>8));
-				map_data.push_back((uint8_t)clean_area);
-				map_data.push_back((uint8_t)p);
-				map_data.push_back((uint8_t)pack_n);
-				map_data.push_back((uint8_t)col_n);
-				uint8_t tmp_byte  = 0;
-				for(int r = 0;r<row_n;r++)
-				{
-					for(int col = 0;col<col_n;col++)
-					{
-						tmp_byte = 0;
-						for(int bi= 0;bi<8;bi++)
-						{ 
-							CellState c_state = g_map.getCell(CLEAN_MAP, p*row_n+r+x_min, col*8+bi+y_min);
-							if(c_state == CLEANED)
-								tmp_byte |= 0x80>>bi;
-							else
-								tmp_byte &= ~(0x80>>bi);
-						}
-						map_data.push_back(tmp_byte);
-					}
-
-				}
-				map_pack.push_back(map_data);
-				map_data.clear();
-			}
-			for(int i = 0;i<map_pack.size();i++)
-			{
-				wifi::Packet p(-1,0x01,0,0xc9,map_pack[i]);
-				s_wifi_tx_.push(std::move(p)).commit();
-			}
-			ROS_INFO("%s,%d,\033[1;42;31mmap_pack size %ld\033[0m",__FUNCTION__,__LINE__,map_pack.size());
-		}
-	}
+	if(robot_work_mode_ != wifi::WorkMode::SLEEP)
+		wifi_led.setMode(LED_FLASH,WifiLed::state::on);
 	return 0;
 }
 
@@ -880,16 +1129,17 @@ bool S_Wifi::factoryTest()
 	//wifi factory test
 	wifi::FactoryTestTxMsg p(0x01);
 	s_wifi_tx_.push(std::move(p)).commit();
-	while(!inFactoryTest_ ){
+	while(!factory_test_ack_){
 		usleep(20000);
 		waitResp++;
-		if(waitResp >= 100)//wait 2 seconds
+		if(waitResp >= 200)//wait 4 seconds
 		{
 			ROS_INFO("%s,%d,FACTORY TEST FAIL!!",__FUNCTION__,__LINE__);
 			isFactoryTest_ = false;
 			return false;
 		}
 	}
+	// wait for register responed
 	waitResp = 0;
 	ROS_INFO("INTO WIFI FACTORY TESTING!!");
 	while(isRegDevice_ == false){
@@ -903,6 +1153,7 @@ bool S_Wifi::factoryTest()
 	}
 	ROS_INFO("FACTORY TEST SUCCESS!!");
 	isFactoryTest_ = false;
+	factory_test_ack_ = false;
 	return true;
 }
 
@@ -923,20 +1174,16 @@ uint8_t S_Wifi::reboot()
 bool S_Wifi::resume()
 {
 	int resp_n = 0;
-	if(!is_active_)
+	ROS_INFO("SET WIFI RESUME!!");
+	while(!is_resume_)
 	{
+		wifi::ResumeTxMsg p(0x00);
+		s_wifi_tx_.push(std::move(p)).commit();
 
-		ROS_INFO("SERIAL WIFI RESUME!!");
-		while(!is_active_)
-		{
-			wifi::ResumeTxMsg p(0x00);
-			s_wifi_tx_.push(std::move(p)).commit();
-
-			usleep(500000);
-			if(resp_n > 15)//7.5s
-				return false;
-			resp_n++;
-		}
+		usleep(20000);
+		if(resp_n > 10)//200ms
+			return false;
+		resp_n++;
 	}
 	
 	return true;
@@ -944,19 +1191,16 @@ bool S_Wifi::resume()
 
 bool S_Wifi::sleep()
 {
-	if(is_active_)
+	int resp_n =0;
+	ROS_INFO("SET WIFI SLEEP!!");
+	while(!is_sleep_)
 	{
-		int resp_n =0;
-		ROS_INFO("SERIAL WIFI SLEEP!!");
-		while(is_active_)
-		{
-			wifi::SuspendTxMsg p(0x00);
-			s_wifi_tx_.push(std::move(p)).commit();
-			usleep(500000);
-			if(resp_n > 5)//2.5s
-				return false;
-			resp_n++;
-		}
+		wifi::SuspendTxMsg p(0x00);
+		s_wifi_tx_.push(std::move(p)).commit();
+		usleep(500000);
+		if(resp_n > 10)//5s
+			return false;
+		resp_n++;
 	}
 	return true;
 }
@@ -1001,44 +1245,32 @@ bool S_Wifi::setWorkMode(int mode)
 			robot_work_mode_ = wifi::WorkMode::SHUTDOWN;
 			break;
 	}
-	ROS_INFO("\033[1;35m %s,%d,set work mode %d\033[0m",__FUNCTION__,__LINE__,(int)robot_work_mode_);
+	ROS_INFO("\033[1;35m%s,%d,set work mode %d\033[0m",__FUNCTION__,__LINE__,(int)robot_work_mode_);
 	return true;
 }
 
 uint8_t S_Wifi::setSchedule(const wifi::SetScheduleRxMsg &sche)
 {
-	static uint8_t last_sche_n = 0;
-	uint8_t isScheSet_n = 0;
-	bool isScheCancel = true;
 
 	std::vector<Appointment::st_appmt> apmt_list;
 	for(uint8_t i = 0;i<sche.length()/5;i++)
 	{
-		uint8_t schenum = sche.getScheNum(i);
+		//uint8_t schenum = sche.getScheNum(i);
 		uint8_t weeks = sche.getWeek(i);
 		uint8_t hours = sche.getHour(i);
 		uint8_t mints = sche.getMin(i);
 		uint8_t isEnable = sche.isEnable(i);
 
-		if(isEnable)
-			isScheSet_n++,isScheCancel = false;
 		Appointment::st_appmt apmt;
-		apmt.num = schenum;
+		apmt.num = i+1;
 		apmt.enable = (bool)isEnable;
 		apmt.hour = hours;
 		apmt.mint= mints;
 		apmt.week = weeks;
 		apmt_list.push_back(apmt);
 	}
-
-	if(isScheSet_n>0 && !isScheCancel){
-
-		//--set appointment
-		appmt_obj.set(apmt_list);
-		//if(last_sche_n < isScheSet_n)
-		//	speaker.play(VOICE_APPOINTMENT_DONE);
-		last_sche_n = isScheSet_n;
-	}
+	//--set appointment
+	appmt_obj.set(apmt_list);
 	return 0;
 }
 
@@ -1076,7 +1308,6 @@ void S_Wifi::taskPushBack(S_Wifi::ACT action)
 
 void S_Wifi::wifi_send_routine()
 {
-
 	clock_t t;
 	float period = 0;
 	uint32_t upload_state_count;
@@ -1115,14 +1346,14 @@ void S_Wifi::wifi_send_routine()
 				case ACT::ACT_SMART_LINK:
 					this->smartLink();
 					break;
-				case ACT::ACT_AP_SMART_LINK:
+				case ACT::ACT_SMART_AP_LINK:
 					this->smartApLink();
 					break;
 				case ACT::ACT_FACTORY_TEST:
 					this->factoryTest();
 					break;
 				case ACT::ACT_UPLOAD_MAP:
-					this->uploadMap();
+					this->uploadMap(GRID_MAP);
 					break;
 				case ACT::ACT_CLEAR_MAP:
 					this->clearRealtimeMap(0x00);
@@ -1132,6 +1363,9 @@ void S_Wifi::wifi_send_routine()
 					break;
 				case ACT::ACT_UPLOAD_LAST_CLEANMAP:
 					this->uploadLastCleanData();
+					break;
+				case ACT::ACT_CLEAR_APP_MAP:
+					this->clearAppMap();
 					break;
 			}
 			usleep(500000);
@@ -1148,18 +1382,24 @@ void S_Wifi::wifi_send_routine()
 				usleep(500000);
 			if(!is_wifi_connected_)
 				continue;
-			upload_map_count++;
-			upload_state_count++;
-			if(upload_map_count >= (is_Status_Request_?3:10))
+
+			int pack_size = 0;
+			pthread_mutex_lock(&map_data_lock_);
+			pack_size = map_data_buf_->size();
+			pthread_mutex_unlock(&map_data_lock_);
+
+			if(upload_map_count++ >= pack_size>1?2:10)
 			{
-				this->uploadMap();
+				this->uploadMap(GRID_MAP);
 				upload_map_count=0;
 			}
-
-			if(upload_state_count >= (is_Status_Request_?10:20))
+			if(is_Status_Request_)
 			{
-				this->uploadStatus(0xc8,0x00);
-				upload_state_count=0;
+				if(upload_state_count++ >= 20)
+				{
+					this->uploadStatus(0xc8,0x00);
+					upload_state_count=0;
+				}
 			}
 		}
 	}
@@ -1175,5 +1415,28 @@ void S_Wifi::cacheMapData(const Points pass_path)
 void S_Wifi::clearMapCache()
 {
 	MutexLock lock(&map_data_lock_);
-	map_data_buf_->clear();	
+	map_data_buf_->clear();
+	history_map_data_->clear();
+}
+
+void S_Wifi::clearAppMap()
+{
+	uint32_t time  = (uint32_t)ros::Time::now().toSec();
+	std::vector<uint8_t> map_data;
+	map_data.push_back((uint8_t) 0);
+	map_data.push_back((uint8_t) 0);
+	map_data.push_back((uint8_t) ((robot_timer.getWorkTime() & 0x0000ff00) >> 8));
+	map_data.push_back((uint8_t) robot_timer.getWorkTime());
+	map_data.push_back((uint8_t) (0x7f));
+	map_data.push_back((uint8_t) (0xff));
+	map_data.push_back((uint8_t) (0x7f));
+	map_data.push_back((uint8_t) (0xff));
+	wifi::RealtimeMapUploadTxMsg p(
+			time,
+			(uint8_t) 1, // Package seq.
+			(uint8_t) map_data.size(), // Data len.
+			map_data
+	);
+	s_wifi_tx_.push(std::move(p)).commit();
+	ROS_INFO("%s %d: Clear map in android app.", __FUNCTION__, __LINE__);
 }

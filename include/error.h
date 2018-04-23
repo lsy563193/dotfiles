@@ -155,7 +155,7 @@ public:
 
 	void alarm(void);
 
-	bool clear(uint8_t code);
+	bool clear(uint8_t code, bool force_clear = false);
 
 private:
 	ErrorType error_code_;

@@ -38,7 +38,8 @@ class PointSelector;
 class Mode:public EventHandle
 {
 public:
-	virtual ~Mode() { };
+	virtual ~Mode() {
+	};
 	void run();
 
 	virtual bool isExit();
@@ -117,43 +118,23 @@ public:
 
 	virtual void genNextAction();
 
+	void updateWheelCliffStatus();
+
 	bool isExceptionTriggered();
 
-	static boost::shared_ptr<IAction> sp_action_;
-	bool isNavMode()
-	{
-		return is_clean_mode_navigation_;
-	}
-	void setNavMode(bool set)
-	{
-		is_clean_mode_navigation_ = set;
-	}
+	virtual void wifiSetWaterTank();
 
-	bool isExpMode(){
-		return is_clean_mode_exploration_;
-	}
-	void setExpMode(bool set){
-		is_clean_mode_exploration_ = set;
-	}
+	virtual void setVacuum();
+
+	static boost::shared_ptr<IAction> sp_action_;
 
 	double wall_distance;
+	double wheel_cliff_triggered_time_{DBL_MAX};
+	const double WHEEL_CLIFF_TIME_LIMIT{2};
+	bool is_wheel_cliff_triggered{false};
 	int mode_i_{};
 
 	State* sp_state{};
-
-//	boost::shared_ptr<State> getState() const {
-//		return sp_state;
-//	};
-
-//	void setState(State* state){
-//		sp_state = state;
-//	}
-
-protected:
-	bool is_clean_mode_navigation_{false};
-	bool is_clean_mode_exploration_{false};
-private:
-
 };
 
 class ModeIdle:public Mode
@@ -190,11 +171,8 @@ public:
 	{
 		return true;
 	}
-protected:
-//	std::vector<Cell_t> temp_fw_cells;
-private:
-	void register_events(void);
 
+private:
 	bool plan_activated_status_{};
 
 	pthread_mutex_t bind_lock_;
@@ -204,9 +182,13 @@ private:
 	bool trigger_wifi_smart_ap_link_{};
 
 	/*---values for rcon handle---*/
+	// todo: first_time_seen_charger_ does not mean as words in reality. It is just the time that enter this mode.
 	double first_time_seen_charger_{ros::Time::now().toSec()};
 	double last_time_seen_charger_{first_time_seen_charger_};
 	boost::shared_ptr<State> st_pause = boost::make_shared<StatePause>();
+
+	bool readyToClean(bool check_battery = true, bool check_error = true);
+
 };
 
 class ModeSleep: public Mode
@@ -219,16 +201,41 @@ public:
 	bool isFinish() override ;
 
 	// For exit event handling.
+	void remoteKeyHandler(bool state_now, bool state_last);
+	void remoteDirectionLeft(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteDirectionRight(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteDirectionForward(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteHome(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteSpot(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteWallFollow(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteMax(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteWifi(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
 	void remoteClean(bool state_now, bool state_last) override;
 	void keyClean(bool state_now, bool state_last) override;
 	void chargeDetect(bool state_now, bool state_last) override;
 	void rcon(bool state_now, bool state_last) override;
 	void remotePlan(bool state_now, bool state_last) override;
+	bool allowRemoteUpdatePlan() override;
 
 private:
+	/*---values for rcon handle---*/
+	// todo: first_time_seen_charger_ does not mean as words in reality. It is just the time that enter this mode.
+	double first_time_seen_charger_{ros::Time::now().toSec()};
+	double last_time_seen_charger_{first_time_seen_charger_};
 	boost::shared_ptr<State> st_sleep = boost::make_shared<StateSleep>();
-private:
 	bool plan_activated_status_;
+
+	bool fake_sleep_{false};
+
+	bool readyToClean();
 };
 
 class ModeCharge: public Mode
@@ -244,6 +251,7 @@ public:
 	void remoteClean(bool state_now, bool state_last) override ;
 	void keyClean(bool state_now, bool state_last) override ;
 	void remotePlan(bool state_now, bool state_last) override ;
+	void remoteMax(bool state_now, bool state_last) override ;
 
 	bool allowRemoteUpdatePlan() override
 	{
@@ -280,6 +288,9 @@ public:
 	void keyClean(bool state_now, bool state_last) override ;
 	void chargeDetect(bool state_now, bool state_last) override ;
 
+	void wifiSetWaterTank() override ;
+	void setVacuum() override ;
+
 private:
 	double remote_mode_time_stamp_;
 	boost::shared_ptr<State> st_clean = boost::make_shared<StateClean>();
@@ -308,6 +319,10 @@ public:
 	void overCurrentWheelLeft(bool state_now, bool state_last) override;
 	void overCurrentWheelRight(bool state_now, bool state_last) override;
 //	void overCurrentVacuum(bool state_now, bool state_last);
+
+	void wifiSetWaterTank() override ;
+	void setVacuum() override ;
+
 private:
 	boost::shared_ptr<State> st_go_to_charger = boost::make_shared<StateGoToCharger>();
 	boost::shared_ptr<State> st_init = boost::make_shared<StateInit>();
@@ -333,7 +348,7 @@ public:
 	bool isGyroDynamic();
 	bool generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &targets);
 
-	void genNextAction();
+	void genNextAction() override;
 	virtual bool mapMark() = 0;
 	void setCleaned(std::deque<Cell_t> cells);
 //	void setLinearCleaned();
@@ -351,6 +366,9 @@ public:
 	bool isRemoteGoHomePoint(){
 		return remote_go_home_point;
 	};
+	bool isWifiGoHomePoint(){
+		return wifi_go_home_point;
+	};
 	bool isGoHomePointForLowBattery(){
 		return go_home_for_low_battery_;
 	}
@@ -361,7 +379,7 @@ public:
 	Cells pointsGenerateCells(Points &targets);
 
 	// For move types
-	bool moveTypeNewCellIsFinish(IMoveType *p_move_type);
+	bool moveTypeNewCellIsFinish(IMoveType *p_mt);
 	bool moveTypeRealTimeIsFinish(IMoveType *p_mt);
 
 	// Handlers
@@ -485,6 +503,21 @@ public:
 	virtual bool updateActionInStateDeskTest(){return false;};
 	virtual void switchInStateDeskTest(){};
 
+	// For water tank setting.
+	void wifiSetWaterTank() override ;
+	// For vacuum setting.
+	void setVacuum() override ;
+
+	// For HEPA filter.
+	void isUsingDustBox(bool val)
+	{
+		is_using_dust_box_ = val;
+	}
+	bool isUsingDustBox()
+	{
+		return is_using_dust_box_;
+	}
+
 	bool is_closed{true};
 	bool is_isolate{true};
 	int closed_count_{};
@@ -502,18 +535,12 @@ public:
 	typedef std::set<PairCell_t> Blocks_t ;
 	Blocks_t c_blocks;
 	Points plan_path_{};
-	bool found_temp_charger_{};
-	bool in_rcon_signal_range_{};
-	bool should_mark_charger_{};
 	bool should_follow_wall{};
-	bool should_mark_temp_charger_{};
 
 	Dir_t old_dir_{};
 	Point_t start_point_{};
-	DequeArray<Point_t> history_{};
 	Point_t iterate_point_{};
 
-//	boost::shared_ptr<APathAlgorithm> follow_wall_path_algorithm_{};
 	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
 	boost::shared_ptr<GoHomePathAlgorithm> go_home_path_algorithm_{};
 	GridMap clean_map_{};
@@ -536,6 +563,7 @@ protected:
 	Points home_points_{};
 	bool should_go_to_charger_{false};
 	bool remote_go_home_point{false};
+	bool wifi_go_home_point{false};
 	bool first_time_go_home_point_{true};
 	bool seen_charger_during_cleaning_{false};
 	bool go_home_for_low_battery_{false};
@@ -543,7 +571,7 @@ protected:
 	Points charger_pose_;
 	Points tmp_charger_pose_;
 	bool found_charger_{false};
-	bool out_range_charger_{false};
+	bool is_using_dust_box_{false};
 public:
 
 	static void pubPointMarkers(const std::deque<Vector2<double>> *point, std::string frame_id,std::string name);
@@ -685,6 +713,7 @@ class CleanModeExploration : public ACleanMode
 public:
 	CleanModeExploration();
 	~CleanModeExploration();
+	bool isExit() override;
 
 	bool markMapInNewCell() override;
 	bool mapMark() override;
@@ -710,6 +739,11 @@ public:
 	void switchInStateGoToCharger() override;
 
 //	bool moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
+
+	// For water tank setting.
+	void wifiSetWaterTank() override ;
+	// For vacuum setting.
+	void setVacuum() override ;
 
 private:
 	bool mark_robot_{true};
@@ -749,11 +783,13 @@ public:
 //	void cliffAll(bool state_now, bool state_last) override;
 	void remoteClean(bool state_now, bool state_last) override;
 	void keyClean(bool state_now, bool state_last) override;
-	void remoteSpot(bool state_now,bool state_last) override ;
-	void switchInStateInit() override ;
-	void switchInStateSpot() override ;
+	void remoteSpot(bool state_now, bool state_last) override;
 	void overCurrentWheelLeft(bool state_now, bool state_last) override;
 	void overCurrentWheelRight(bool state_now, bool state_last) override;
+	bool updateActionInStateInit() override;
+	void switchInStateInit() override;
+	void switchInStateSpot() override;
+
 private:
 
 };

@@ -9,7 +9,7 @@
 
 class S_Wifi
 {
-	
+
 public:
 
 	enum struct ACT{
@@ -24,15 +24,19 @@ public:
 		ACT_REBIND,
 		ACT_SMART_LINK,
 		ACT_SMART_AP_LINK,
-		ACT_AP_SMART_LINK,
 		ACT_FACTORY_TEST,
 		ACT_UPLOAD_MAP,
 		ACT_CLEAR_MAP,
 		ACT_UPLOAD_STATUS,
 		ACT_UPLOAD_LAST_CLEANMAP,
+		ACT_CLEAR_APP_MAP,
 		ACT_END,
 	};
 
+	enum MapType{
+		GRID_MAP = 0,
+		SLAM_MAP,
+	};
 	S_Wifi();
 
 	~S_Wifi();
@@ -41,9 +45,9 @@ public:
 
 	bool deinit();
 
-	uint8_t uploadStatus(int msg_code,const uint8_t seq_num);
+	int8_t uploadStatus(int msg_code,const uint8_t seq_num);
 
-	bool uploadMap();
+	bool uploadMap(MapType map);
 
 	uint8_t setRobotCleanMode(wifi::WorkMode work_mode);
 
@@ -55,13 +59,13 @@ public:
 
 	uint8_t syncClock(int year,int mon,int day,int hour,int min,int sec);
 
-	uint8_t smartLink();
+	int8_t smartLink();
 
 	uint8_t smartApLink();
 
 	bool factoryTest();
 
-	uint8_t uploadLastCleanData();
+	bool uploadLastCleanData();
 
 	bool setWorkMode(int workmode);
 
@@ -114,24 +118,100 @@ public:
 
 	void clearMapCache();
 
+	void clearAppMap();
+
 	void quit()
 	{
 		wifi_quit_ = true;
 	}
+
+	void resetReceivedWorkMode()
+	{
+		received_work_mode_ = wifi::WorkMode::MODE_NULL;
+	}
+
+	bool receiveShutDown()
+	{
+		return received_work_mode_ == wifi::WorkMode::SHUTDOWN;
+	}
+
+	bool receiveSleep()
+	{
+		return received_work_mode_ == wifi::WorkMode::SLEEP;
+	}
+
+	bool receiveIdle()
+	{
+		return received_work_mode_ == wifi::WorkMode::IDLE;
+	}
+
+	bool receiveRandom()
+	{
+		return received_work_mode_ == wifi::WorkMode::RANDOM;
+	}
+
+	bool receiveFollowWall()
+	{
+		return received_work_mode_ == wifi::WorkMode::WALL_FOLLOW;
+	}
+
+	bool receiveSpot()
+	{
+		return received_work_mode_ == wifi::WorkMode::SPOT;
+	}
+
+	bool receivePlan1()
+	{
+		return received_work_mode_ == wifi::WorkMode::PLAN1;
+	}
+
+	bool receivePlan2()
+	{
+		return received_work_mode_ == wifi::WorkMode::PLAN2;
+	}
+
+	bool receiveHome()
+	{
+		return received_work_mode_ == wifi::WorkMode::HOMING;
+	}
+
+	bool receiveCharge()
+	{
+		return received_work_mode_ == wifi::WorkMode::CHARGE;
+	}
+
+	bool receiveRemote()
+	{
+		return received_work_mode_ == wifi::WorkMode::REMOTE;
+	}
+
+	bool receiveFind()
+	{
+		return received_work_mode_ == wifi::WorkMode::FIND;
+	}
+
 private:
 
 	wifi::RxManager s_wifi_rx_;
 	wifi::TxManager s_wifi_tx_;	
 
 	bool is_wifi_connected_;
-	bool inFactoryTest_;
+	bool factory_test_ack_;
 	bool isFactoryTest_;
 	bool isRegDevice_;
 	bool is_Status_Request_;
+	bool realtime_map_ack_;
+	bool clean_record_ack_;
+	bool upload_state_ack_;
 	bool is_active_;
+	bool is_resume_;
+	bool is_sleep_;
 	bool in_linking_;
 	bool wifi_quit_ ;
+
 	wifi::WorkMode robot_work_mode_;
+	wifi::WorkMode last_work_mode_;
+	wifi::WorkMode received_work_mode_;
 
 	pthread_mutex_t task_lock_;
 	pthread_mutex_t map_data_lock_;
@@ -143,6 +223,8 @@ private:
 	std::deque<ACT> task_list_;
 
 	std::deque<Points> *map_data_buf_;
+
+	Cells *history_map_data_;
 protected:
 
 	wifi::WorkMode getWorkMode()
@@ -150,7 +232,7 @@ protected:
 		return robot_work_mode_;
 	}
 
-
+	template <typename t> bool find_if(std::deque<t>*list, t point);
 };
 
 extern S_Wifi s_wifi;

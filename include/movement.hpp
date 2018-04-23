@@ -79,6 +79,8 @@ private:
 	uint8_t lidar_bumper_jam_cnt_;
 	uint8_t cliff_jam_cnt_;
 	uint8_t robot_stuck_cnt_;
+	uint8_t tilt_cnt_;
+	uint8_t cliff_status_{0};
 	float lidar_detect_distance;
 };
 
@@ -118,6 +120,7 @@ public:
 	bool isFinish() override;
 
 private:
+	double turn_radian_;
 	uint8_t max_speed_;
 	double accurate_;
 	uint8_t speed_;
@@ -291,22 +294,30 @@ public:
 
 private:
 	double resume_wheel_start_time_;
+	double wheel_cliff_start_time_;
 	uint8_t oc_main_brush_cnt_{0};
 	uint8_t main_brush_resume_state_{1};
 	double resume_main_bursh_start_time_;
 	uint8_t oc_vacuum_resume_cnt_{0};
 	double resume_vacuum_start_time_;
+	double resume_lidar_start_time_;
 	uint8_t wheel_resume_cnt_{0};
 	uint8_t bumper_jam_state_{1};
 	uint8_t lidar_bumper_jam_state_{1};
+	uint8_t tilt_jam_state_{1};
 	double bumper_resume_start_radian_{0};
+	double tilt_resume_start_radian_{0};
+	double wheel_cliff_resume_start_radian_{0};
 	uint8_t robot_slip_flag_{0};
 	static double slip_start_turn_time_;
 	static bool is_slip_last_turn_left_;
 	double resume_slip_start_time_;
 	uint8_t cliff_resume_cnt_{0};
 	uint8_t cliff_all_resume_cnt_{0};
+	uint8_t wheel_cliff_resume_cnt_{0};
+	uint8_t wheel_cliff_state_{1};
 	uint8_t robot_stuck_resume_cnt_{0};
+	uint8_t lidar_resume_cnt_{0};
 };
 
 class MovementCharge :public IMovement

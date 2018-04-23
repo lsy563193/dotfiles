@@ -70,6 +70,8 @@ void event_manager_init()
 	p_handler[EVT_CLIFF_LEFT] = &EventHandle::cliffLeft;
 	p_handler[EVT_CLIFF_RIGHT] = &EventHandle::cliffRight;
 	p_handler[EVT_CLIFF_FRONT] = &EventHandle::cliffFront;
+	p_handler[EVT_RIGHT_WHEEL_CLIFF] = &EventHandle::rightWheelCliff;
+	p_handler[EVT_LEFT_WHEEL_CLIFF] = &EventHandle::leftWheelCliff;
 
 	p_handler[EVT_RCON] = &EventHandle::rcon;
 
@@ -109,6 +111,7 @@ void event_manager_init()
 	p_handler[EVT_LIDAR_STUCK] = &EventHandle::lidarStuck;
 	p_handler[EVT_ROBOT_TILT] = &EventHandle::tilt;
 	p_handler[EVT_REMOTE_WIFI] = &EventHandle::remoteWifi;
+	p_handler[EVT_GYRO_ERROR] = &EventHandle::gyroError;
 	p_eh = &default_eh;
 }
 
@@ -208,6 +211,17 @@ void event_manager_thread_cb()
 			evt_set_status_x(EVT_CLIFF_RIGHT);
 		}*/
 
+		if(wheel.getRightWheelCliffStatus())
+		{
+			ROS_DEBUG("%s %d: setting event:right wheel cliff", __FUNCTION__, __LINE__);
+			evt_set_status_x(EVT_RIGHT_WHEEL_CLIFF);
+		}
+
+		if(wheel.getLeftWheelCliffStatus())
+		{
+			ROS_DEBUG("%s %d: setting event:left wheel cliff", __FUNCTION__, __LINE__);
+			evt_set_status_x(EVT_LEFT_WHEEL_CLIFF);
+		}
 		/* RCON */
 		if (c_rcon.getStatus()) {
 			//ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
@@ -337,10 +351,10 @@ void event_manager_thread_cb()
 		}
 
 		// Lidar stuck
-		if (lidar.lidar_is_stuck()) {
+		/*if (lidar.lidarIsStuck()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_LIDAR_STUCK);
-		}
+		}*/
 
 		/*---tilt---*/
 		if(true){
@@ -348,6 +362,11 @@ void event_manager_thread_cb()
 			evt_set_status_x(EVT_ROBOT_TILT);
 		}
 
+		/*---gyro error---*/
+		if(gyro.error()){
+			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
+			evt_set_status_x(EVT_GYRO_ERROR);
+		}
 		if (set) {
 			//ROS_INFO("%s %d: going to broadcase new event", __FUNCTION__, __LINE__);
 			pthread_mutex_lock(&new_event_mtx);
@@ -436,7 +455,13 @@ void event_handler_thread_cb()
 		} else if (status_now[EVT_CLIFF_RIGHT]) {
             evt_handle_event_x( EVT_CLIFF_RIGHT);
 		}
-
+		/*wheel cliff*/
+		if (status_now[EVT_RIGHT_WHEEL_CLIFF]) {
+			evt_handle_event_x(EVT_RIGHT_WHEEL_CLIFF);
+		}
+		if (status_now[EVT_LEFT_WHEEL_CLIFF]) {
+			evt_handle_event_x(EVT_LEFT_WHEEL_CLIFF);
+		}
 		/* RCON */
 		evt_handle_check_event(EVT_RCON);
 /*
@@ -496,6 +521,9 @@ void event_handler_thread_cb()
 		/*---tilt---*/
 		evt_handle_check_event(EVT_ROBOT_TILT);
 
+		/*---gyro error---*/
+		evt_handle_check_event(EVT_GYRO_ERROR);
+
 		pthread_mutex_lock(&event_handler_mtx);
 		g_event_handler_status = false;
 		pthread_mutex_unlock(&event_handler_mtx);
@@ -551,6 +579,7 @@ void event_manager_reset_status(void)
 	ev.bumper_triggered = 0;
 	ev.bumper_jam = false;
 	ev.lidar_bumper_jam = false;
+	ev.tilt_jam = false;
 	g_bumper_cnt = 0;
 	/* OBS */
 	ev.obs_triggered = 0;
@@ -558,6 +587,8 @@ void event_manager_reset_status(void)
 	ev.cliff_all_triggered = false;
 	ev.cliff_triggered = 0;
 	ev.cliff_jam = false;
+	ev.right_wheel_cliff = false;
+	ev.left_wheel_cliff = false;
 	g_cliff_all_cnt = 0;
 	g_cliff_cnt = 0;
 	/* RCON */
@@ -595,6 +626,7 @@ void event_manager_reset_status(void)
 
 	/* tilt switch*/
 	gyro.setTiltCheckingEnable(false);
+	lidar.setLidarStuckCheckingEnable(false);
 	ev.tilt_triggered = false;
 	/* lidar bumper */
 	ev.lidar_bumper = false;
@@ -731,6 +763,17 @@ void EventHandle::cliffRight(bool state_now, bool state_last)
 //	ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 }
 
+void EventHandle::rightWheelCliff(bool state_now, bool state_last)
+{
+	ev.right_wheel_cliff = true;
+	ROS_DEBUG("%s %d: Right wheel cliff triggered", __FUNCTION__, __LINE__);
+}
+
+void EventHandle::leftWheelCliff(bool state_now, bool state_last)
+{
+	ev.left_wheel_cliff = true;
+	ROS_DEBUG("%s %d: Left wheel cliff triggered", __FUNCTION__, __LINE__);
+}
 /* RCON */
 void EventHandle::rcon(bool state_now, bool state_last)
 {
@@ -955,7 +998,7 @@ void df_robot_slip()
 {
 /*	static int slip_cnt = 0;
 	ROS_WARN("\033[32m%s,%d,set robot slip!! \033[0m",__FUNCTION__,__LINE__);
-	beeper.beepForCommand(true);
+	beeper.debugBeep();
 	ev.robot_slip = true;
 	if(slip_cnt++ > 2){
 		slip_cnt = 0;
@@ -980,7 +1023,7 @@ void EventHandle::lidarStuck(bool state_new, bool state_last)
 {}
 void df_lidar_stuck(bool state_new,bool state_last)
 {
-	//beeper.beepForCommand(true);
+	//beeper.debugBeep();
 	//ROS_WARN("\033[32m%s %d: Lidar stuck.\033[0m", __FUNCTION__, __LINE__);
 	//ev.lidarStuck = true;
 }
@@ -989,6 +1032,12 @@ void df_lidar_stuck(bool state_new,bool state_last)
 void EventHandle::tilt(bool state_new, bool state_last)
 {
 	ROS_DEBUG("%s %d: default tilt handle is called", __FUNCTION__, __LINE__);
+}
+
+/*---gyro error---*/
+void EventHandle::gyroError(bool state_new, bool state_last)
+{
+	ROS_DEBUG("%s %d: default gyro error handle is called", __FUNCTION__, __LINE__);
 }
 ///* Default: empty hanlder */
 //void EventHandle::empty(bool state_now, bool state_last)

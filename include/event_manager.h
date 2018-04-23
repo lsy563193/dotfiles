@@ -42,42 +42,47 @@
  * 	g_battery_low
  */
 
-typedef struct {
-		bool remote_home;
-		bool battery_home;
-		bool battery_low;
-		bool remote_spot;
+typedef struct
+{
+	bool remote_home;
+	bool battery_home;
+	bool battery_low;
+	bool remote_spot;
 
-		bool fatal_quit;
-		uint8_t bumper_triggered;
-		uint32_t rcon_status;
-		uint8_t obs_triggered;
-		bool bumper_jam;
-		bool lidar_bumper_jam;
-		uint8_t cliff_triggered;
-		bool cliff_jam;
+	bool fatal_quit;
+	uint8_t bumper_triggered;
+	uint32_t rcon_status;
+	uint8_t obs_triggered;
+	bool bumper_jam;
+	bool lidar_bumper_jam;
+	bool tilt_jam;
+	uint8_t cliff_triggered;
+	bool cliff_jam;
+	bool right_wheel_cliff;
+	bool left_wheel_cliff;
 
-		bool oc_brush_main;
-		bool oc_wheel_left;
-		bool oc_wheel_right;
-		bool oc_vacuum;
-		bool key_clean_pressed;
-		bool key_long_pressed;
-		bool remote_follow_wall;
-		bool remote_direction_left;
-		bool remote_direction_right;
-		bool remote_direction_forward;
-		bool remote_direction_back;
-		bool remote_wifi;
-		bool slam_error;
-		bool tilt_triggered;
-		uint8_t charge_detect;
-		bool robot_stuck;
-		bool robot_slip;
-		bool lidar_stuck = false;
-		bool lidar_bumper;
-		uint8_t lidar_triggered;
-		bool cliff_all_triggered;
+	bool oc_brush_main;
+	bool oc_wheel_left;
+	bool oc_wheel_right;
+	bool oc_vacuum;
+	bool key_clean_pressed;
+	bool key_long_pressed;
+	bool remote_follow_wall;
+	bool remote_direction_left;
+	bool remote_direction_right;
+	bool remote_direction_forward;
+	bool remote_direction_back;
+	bool remote_wifi;
+	bool slam_error;
+	bool tilt_triggered;
+	uint8_t charge_detect;
+	bool robot_stuck;
+	bool robot_slip;
+	bool lidar_stuck = false;
+	bool lidar_bumper;
+	uint8_t lidar_triggered;
+	bool cliff_all_triggered;
+	bool gyro_error;
 }Ev_t;
 class EventHandle{
 public:
@@ -112,6 +117,10 @@ virtual void cliffFront(bool state_now, bool state_last);
 virtual void cliffLeft(bool state_now, bool state_last);
 
 virtual void cliffRight(bool state_now, bool state_last);
+
+virtual void rightWheelCliff(bool state_now, bool state_last);
+
+virtual void leftWheelCliff(bool state_now, bool state_last);
 
 /* RCON */
 virtual void rcon(bool state_now, bool state_last);
@@ -204,6 +213,8 @@ virtual void lidarStuck(bool state_new, bool state_last);
 /*---robot tilt---*/
 virtual void tilt(bool state_new, bool state_last);
 
+/*---gyro error---*/
+virtual void gyroError(bool state_new, bool state_last);
 };
 
 /* Bumper */
@@ -262,6 +273,8 @@ typedef enum {
 	EVT_CLIFF_FRONT,
 	EVT_CLIFF_LEFT,
 	EVT_CLIFF_RIGHT,
+	EVT_RIGHT_WHEEL_CLIFF,
+	EVT_LEFT_WHEEL_CLIFF,
 
 	EVT_RCON,
 /*
@@ -311,6 +324,8 @@ typedef enum {
 	EVT_LIDAR_STUCK,
 
 	EVT_ROBOT_TILT,
+
+	EVT_GYRO_ERROR,
 
 	EVT_MAX,
 } EventType;

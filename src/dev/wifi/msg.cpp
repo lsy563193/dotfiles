@@ -36,8 +36,8 @@ string SetRoomModeRxMsg::describe() const
 string SetMaxCleanPowerRxMsg::describe() const
 {
 	std::ostringstream ss;
-	ss << "Set max clean power msg: vacuum(" << isVacuum() << "), mop("
-			<< isMop() << ')';
+	ss << "Set max clean power msg: vacuum(" << (int)vacuum() << "), mop("
+			<< (int)mop() << ')';
 	return ss.str();
 }
 
@@ -174,7 +174,7 @@ DeviceStatusBaseTxMsg::DeviceStatusBaseTxMsg(const uint8_t a_msg_code,
 		const uint8_t a_seq_num,
 		const WorkMode a_work_mode,
 		const RoomMode a_room_mode,
-		const CleanMode a_clean_mode,
+		const CleanTool clean_tool,
 		const uint8_t a_vacuum_power,
 		const uint8_t a_mop_power,
 		const uint8_t a_battery,
@@ -182,13 +182,13 @@ DeviceStatusBaseTxMsg::DeviceStatusBaseTxMsg(const uint8_t a_msg_code,
 		const uint8_t a_led_mode,
 		const uint8_t a_error_flag)
 		: Packet(17, a_seq_num, 0, a_msg_code, getInitData(a_work_mode,
-				a_room_mode, a_clean_mode, a_vacuum_power, a_mop_power,
+				a_room_mode, clean_tool, a_vacuum_power, a_mop_power,
 				a_battery, a_notif_mode, a_led_mode, a_error_flag))
 {}
 
 vector<uint8_t> DeviceStatusBaseTxMsg::getInitData(const WorkMode a_work_mode,
 		const RoomMode a_room_mode,
-		const CleanMode a_clean_mode,
+		const CleanTool a_clean_tool,
 		const uint8_t a_vacuum_power,
 		const uint8_t a_mop_power,
 		const uint8_t a_battery,
@@ -200,7 +200,7 @@ vector<uint8_t> DeviceStatusBaseTxMsg::getInitData(const WorkMode a_work_mode,
 	data.reserve(9);
 	data.push_back(static_cast<uint8_t>(a_work_mode));
 	data.push_back(static_cast<uint8_t>(a_room_mode));
-	data.push_back(static_cast<uint8_t>(a_clean_mode));
+	data.push_back(static_cast<uint8_t>(a_clean_tool));
 	data.push_back(a_vacuum_power);
 	data.push_back(a_mop_power);
 	data.push_back(a_battery);
@@ -212,7 +212,7 @@ vector<uint8_t> DeviceStatusBaseTxMsg::getInitData(const WorkMode a_work_mode,
 
 DeviceStatusReplyTxMsg::DeviceStatusReplyTxMsg(const WorkMode a_work_mode,
 		const RoomMode a_room_mode,
-		const CleanMode a_clean_mode,
+		const CleanTool a_clean_tool,
 		const uint8_t a_vacuum_power,
 		const uint8_t a_mop_power,
 		const uint8_t a_battery,
@@ -221,7 +221,7 @@ DeviceStatusReplyTxMsg::DeviceStatusReplyTxMsg(const WorkMode a_work_mode,
 		const uint8_t a_error_flag,
 		const uint8_t a_seq_num)
 		: DeviceStatusBaseTxMsg(0x41, a_seq_num, a_work_mode, a_room_mode,
-				a_clean_mode, a_vacuum_power, a_mop_power, a_battery,
+				a_clean_tool, a_vacuum_power, a_mop_power, a_battery,
 				a_notif_mode, a_led_mode, a_error_flag)
 {}
 
@@ -275,24 +275,24 @@ SetModeTxMsg::SetModeTxMsg(const WorkMode a_work_mode, const uint8_t a_seq_num)
 		: Packet(-1, a_seq_num, 0, 0x46, {static_cast<uint8_t>(a_work_mode)})
 {}
 
-MaxCleanPowerTxMsg::MaxCleanPowerTxMsg(const bool a_is_vacuum_max,
-		const bool a_is_mop_max, const uint8_t a_seq_num)
+MaxCleanPowerTxMsg::MaxCleanPowerTxMsg(const uint8_t a_vacuum,
+		const uint8_t a_mop, const uint8_t a_seq_num)
 		: Packet(-1, a_seq_num, 0, 0x48,
-				getInitData(a_is_vacuum_max, a_is_mop_max))
+				getInitData(a_vacuum, a_mop))
 {}
 
-vector<uint8_t> MaxCleanPowerTxMsg::getInitData(const bool a_is_vacuum_max,
-		const bool a_is_mop_max)
+vector<uint8_t> MaxCleanPowerTxMsg::getInitData(const uint8_t a_vacuum,
+		const uint8_t a_mop)
 {
 	return {
-		static_cast<uint8_t>(a_is_vacuum_max ? 1 : 0),
-		static_cast<uint8_t>(a_is_mop_max ? 1 : 0),
+		a_vacuum,
+		a_mop,
 	};
 }
 
 DeviceStatusUploadTxMsg::DeviceStatusUploadTxMsg(const WorkMode a_work_mode,
 		const RoomMode a_room_mode,
-		const CleanMode a_clean_mode,
+		const CleanTool a_clean_tool,
 		const uint8_t a_vacuum_power,
 		const uint8_t a_mop_power,
 		const uint8_t a_battery,
@@ -301,9 +301,37 @@ DeviceStatusUploadTxMsg::DeviceStatusUploadTxMsg(const WorkMode a_work_mode,
 		const uint8_t a_error_flag,
 		const uint8_t a_seq_num)
 		: DeviceStatusBaseTxMsg(MSG_CODE, a_seq_num, a_work_mode, a_room_mode,
-				a_clean_mode, a_vacuum_power, a_mop_power, a_battery,
+				a_clean_tool, a_vacuum_power, a_mop_power, a_battery,
 				a_notif_mode, a_led_mode, a_error_flag)
 {}
+
+CleanRecordUploadTxMsg::CleanRecordUploadTxMsg(const uint32_t a_time,
+		const uint16_t a_clean_time,
+		const uint16_t a_clean_area,
+		const std::vector<uint8_t> &a_data,
+		const uint8_t a_seq_num)
+		: Packet(-1, a_seq_num, 0, MSG_CODE, getInitData(a_time, a_clean_time,
+				a_clean_area, a_data))
+{}
+
+std::vector<uint8_t> CleanRecordUploadTxMsg::getInitData(const uint32_t a_time,
+		const uint16_t a_clean_time,
+		const uint16_t a_clean_area,
+		const std::vector<uint8_t> &a_data)
+{
+	vector<uint8_t> data = {
+			static_cast<uint8_t>((a_time & 0xFF000000) >> 24),
+			static_cast<uint8_t>((a_time & 0xFF0000) >> 16),
+			static_cast<uint8_t>((a_time & 0xFF00) >> 8),
+			static_cast<uint8_t>(a_time & 0xFF),
+			static_cast<uint8_t>((a_clean_time & 0xFF00) >> 8),
+			static_cast<uint8_t>(a_clean_time & 0xFF),
+			static_cast<uint8_t>((a_clean_area & 0xFF00) >> 8),
+			static_cast<uint8_t>(a_clean_area & 0xFF),
+	};
+	data.insert(data.cend(), a_data.cbegin(), a_data.cend());
+	return data;
+}
 
 RealtimeMapUploadTxMsg::RealtimeMapUploadTxMsg(const uint32_t a_time,
 		const uint8_t a_map_seq_num,

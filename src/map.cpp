@@ -235,10 +235,8 @@ void GridMap::convertFromSlamMap(float resolution_target,float threshold,const B
 
 	// Set resolution multi between cost map and slam map.
 	auto multi = resolution_target / resolution;
-	ROS_INFO("%s %d: resolution: %f, multi: %f.", __FUNCTION__, __LINE__, resolution, multi);
 	// Limit count for checking block.*/
 	auto limit_count = static_cast<uint16_t>((multi * multi) * threshold);
-	ROS_INFO("%s %d: limit_count: %d.", __FUNCTION__, __LINE__, limit_count);
 	// Set boundary for this cost map.
 
 	int16_t map_x_min = std::max(static_cast<int16_t>(origin_x  / resolution_target), bound.min.x);
@@ -246,8 +244,8 @@ void GridMap::convertFromSlamMap(float resolution_target,float threshold,const B
 	int16_t map_y_min = std::max(static_cast<int16_t>(origin_y / resolution_target), bound.min.y);
 	int16_t map_y_max = std::min(static_cast<int16_t>(map_y_min + height / multi), bound.max.y);
 
-	ROS_INFO("%s,%d: map_x_min: %d, map_x_max: %d, map_y_min: %d, map_y_max: %d",
-	 		   __FUNCTION__, __LINE__, map_x_min, map_x_max, map_y_min, map_y_max);
+	ROS_INFO("%s,%d: resolution: %f, multi: %f, limit cnt:%d, map_x_min: %d, map_x_max: %d, map_y_min: %d, map_y_max: %d",
+	 		   __FUNCTION__, __LINE__, resolution, multi, limit_count, map_x_min, map_x_max, map_y_min, map_y_max);
 	for (auto cell_x = map_x_min; cell_x <= map_x_max; ++cell_x)
 	{
 //		ROS_ERROR("cell:");
@@ -267,10 +265,14 @@ void GridMap::convertFromSlamMap(float resolution_target,float threshold,const B
 				auto data_map_y_max = std::min(static_cast<uint32_t>(data_map_y + multi/2) , static_cast<uint32_t>(height));
 
 				// Get the slam map data s_index_ of this range.
-				std::vector<int32_t> slam_map_data_index;
+				std::vector<int32_t> slam_map_data_index{};
 				for (uint32_t i = data_map_x_min; i <= data_map_x_max; i++)
 					for(uint32_t j = data_map_y_min; j <= data_map_y_max; j++)
-						slam_map_data_index.push_back(getIndexOfSlamMapData(width, i, j));
+					{
+                        int32_t index = getIndexOfSlamMapData(width, i, j);
+						if(index < slam_map_data.size())
+							slam_map_data_index.push_back(index);
+					}
 
 				// Values for counting sum of difference slam map data.
 				uint32_t block_counter = 0, cleanable_counter = 0, unknown_counter = 0;
@@ -298,7 +300,7 @@ void GridMap::convertFromSlamMap(float resolution_target,float threshold,const B
 				if(!block_set)/*---unknown cell---*/
 				{
 //					ROS_ERROR_COND(cell_x > 0 && cell_y > 0,"~~~~~~~~~~~range(%d,%d,%d,%d),size(%d)", data_map_x_min, data_map_y_min, data_map_x_max, data_map_y_max,size);
-					setCell(CLEAN_MAP,cell_x,cell_y, SLAM_MAP_CLEANABLE);
+					setCell(CLEAN_MAP,cell_x,cell_y, SLAM_MAP_REACHABLE);
 //					ROS_ERROR_COND(cell_x > 0 && cell_y > 0,"cell(%d,%d)~~~~range(%d,%d,%d,%d)",cell_x,cell_y, g_x_min, g_y_min, g_x_max, g_y_max);
 				}
 			}
@@ -328,13 +330,13 @@ void GridMap::merge(GridMap source_map, bool add_slam_map_blocks_to_uncleaned,
 
 			if (clear_bumper_and_lidar_blocks &&
 				(map_cell_state == BLOCKED_BUMPER || map_cell_state == BLOCKED_LIDAR) &&
-				source_map_cell_state == SLAM_MAP_CLEANABLE)
+				source_map_cell_state == SLAM_MAP_REACHABLE)
 				setCell(CLEAN_MAP,x,y, CLEANED);
 
-			if (clear_map_blocks && map_cell_state >= BLOCKED && map_cell_state < SLAM_MAP_BLOCKED && source_map_cell_state == SLAM_MAP_CLEANABLE)
+			if (clear_map_blocks && map_cell_state >= BLOCKED && map_cell_state < SLAM_MAP_BLOCKED && source_map_cell_state == SLAM_MAP_REACHABLE)
 				setCell(CLEAN_MAP,x,y, CLEANED);
 
-			if (clear_slam_map_blocks && map_cell_state == SLAM_MAP_BLOCKED && source_map_cell_state == SLAM_MAP_CLEANABLE)
+			if (clear_slam_map_blocks && map_cell_state == SLAM_MAP_BLOCKED && source_map_cell_state == SLAM_MAP_REACHABLE)
 				setCell(CLEAN_MAP,x,y, CLEANED);
 
 			if (add_slam_map_blocks_to_uncleaned && map_cell_state == UNCLEAN && source_map_cell_state == SLAM_MAP_BLOCKED)
@@ -342,7 +344,7 @@ void GridMap::merge(GridMap source_map, bool add_slam_map_blocks_to_uncleaned,
 			if (add_slam_map_blocks_to_cleaned && map_cell_state == CLEANED && source_map_cell_state == SLAM_MAP_BLOCKED)
 				setCell(CLEAN_MAP,x,y, SLAM_MAP_BLOCKED);
 
-			if (add_slam_map_cleanable_area && map_cell_state == UNCLEAN && source_map_cell_state == SLAM_MAP_CLEANABLE)
+			if (add_slam_map_cleanable_area && map_cell_state == UNCLEAN && source_map_cell_state == SLAM_MAP_REACHABLE)
 				setCell(CLEAN_MAP,x,y, CLEANED);
 		}
 	}
@@ -716,7 +718,7 @@ void GridMap::getMapRange(uint8_t id, int16_t *x_range_min, int16_t *x_range_max
 		*y_range_min = g_y_min - (abs(g_y_min - g_y_max) <= 3? 3 : 1);
 		*y_range_max = g_y_max + (abs(g_y_min - g_y_max) <= 3 ? 3 : 1);
 	}
-	ROS_INFO("Get Range:min(%d,%d),max(%d,%d)", g_x_min,g_y_min, g_x_max,  g_y_max);
+//	ROS_INFO("Get Range:min(%d,%d),max(%d,%d)", g_x_min,g_y_min, g_x_max,  g_y_max);
 }
 
 bool GridMap::isOutOfMap(const Cell_t &cell)
@@ -978,7 +980,7 @@ void GridMap::setCircleMarkers(Point_t point, int radius, CellState cell_state,M
 			setCell(CLEAN_MAP, cell.x, cell.y, cell_state);
 
 			auto source_map_cell_state = slam_grid_map.getCell(CLEAN_MAP, cell.x, cell.y);
-			if(source_map_cell_state != SLAM_MAP_CLEANABLE)
+			if(source_map_cell_state != SLAM_MAP_REACHABLE)
 			{
 				Mark_t tmp = {cell.x,cell.y,time};
 				error_maker.push_back(tmp);

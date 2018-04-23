@@ -576,7 +576,7 @@ bool MovementGoToCharger::isSwitch()
 
 		if (--by_path_move_cnt < 0)
 		{
-			by_path_move_cnt = 25;
+			by_path_move_cnt = 18;
 			receive_code = c_rcon.getAll();
 			if(receive_code)
 			{
@@ -979,7 +979,7 @@ void MovementGoToCharger::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		wheel.setDirectionForward();
 		auto temp_code = receive_code;
 		temp_code &= RconFrontAll_Home_LR;
-		if (by_path_move_cnt == 25 && temp_code)
+		if (by_path_move_cnt == 18 && temp_code)
 		{
 			if(position_far)
 			{

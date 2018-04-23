@@ -26,7 +26,7 @@ enum struct WorkMode
 	REMOTE,
 	// ???
 	FIND,
-	END_,
+	MODE_NULL,
 };
 
 class RxMsg: public Packet
@@ -204,12 +204,12 @@ public:
 
 	using RxMsg::RxMsg;
 
-	bool isVacuum() const
+	uint8_t vacuum() const
 	{
 		return data().front();
 	}
 
-	bool isMop() const
+	uint8_t mop() const
 	{
 		return data()[1];
 	}
@@ -530,10 +530,10 @@ public:
 		LARGE,
 	};
 
-	enum struct CleanMode
+	enum struct CleanTool
 	{
 		WATER_TANK = 0,
-		DUST,
+		DUST_BOX,
 		MIXED,
 		MOP,
 	};
@@ -542,7 +542,7 @@ public:
 			const uint8_t seq_num,
 			const WorkMode work_mode,
 			const RoomMode room_mode,
-			const CleanMode clean_mode,
+			const CleanTool clean_tool,
 			const uint8_t vacuum_power,
 			const uint8_t mop_power,
 			const uint8_t battery,
@@ -553,7 +553,7 @@ public:
 private:
 	static std::vector<uint8_t> getInitData(const WorkMode work_mode,
 			const RoomMode room_mode,
-			const CleanMode clean_mode,
+			const CleanTool clean_tool,
 			const uint8_t vacuum_power,
 			const uint8_t mop_power,
 			const uint8_t battery,
@@ -567,7 +567,7 @@ class DeviceStatusReplyTxMsg: public DeviceStatusBaseTxMsg
 public:
 	DeviceStatusReplyTxMsg(const WorkMode work_mode,
 			const RoomMode room_mode,
-			const CleanMode clean_mode,
+			const CleanTool clean_tool,
 			const uint8_t vacuum_power,
 			const uint8_t mop_power,
 			const uint8_t battery,
@@ -586,12 +586,12 @@ public:
 class MaxCleanPowerTxMsg: public Packet
 {
 public:
-	MaxCleanPowerTxMsg(const bool is_vacuum_max, const bool is_mop_max,
+	MaxCleanPowerTxMsg(const uint8_t _vacuum, const uint8_t _mop,
 			const uint8_t seq_num = 0);
 
 private:
-	static std::vector<uint8_t> getInitData(const bool vacuum_power,
-			const bool mop_power);
+	static std::vector<uint8_t> getInitData(const uint8_t vacuum_power,
+			const uint8_t mop_power);
 };
 
 class ScheduleStatusTxMsg: public Packet
@@ -667,7 +667,7 @@ public:
 
 	DeviceStatusUploadTxMsg(const WorkMode work_mode,
 			const RoomMode room_mode,
-			const CleanMode clean_mode,
+			const CleanTool clean_tool,
 			const uint8_t vacuum_power,
 			const uint8_t mop_power,
 			const uint8_t battery,
@@ -687,6 +687,37 @@ public:
 	std::string describe() const override
 	{
 		return "Device status ack msg";
+	}
+};
+
+class CleanRecordUploadTxMsg: public Packet
+{
+public:
+	static constexpr int MSG_CODE = 0xC9;
+
+	CleanRecordUploadTxMsg(const uint32_t time,
+			const uint16_t clean_time,
+			const uint16_t clean_area,
+			const std::vector<uint8_t> &data,
+			const uint8_t seq_num = 0);
+
+private:
+	static std::vector<uint8_t> getInitData(const uint32_t time,
+			const uint16_t clean_time,
+			const uint16_t clean_area,
+			const std::vector<uint8_t> &data);
+};
+
+class CleanRecordUploadAckMsg: public RxMsg
+{
+	public:
+	static constexpr int MSG_CODE = CleanRecordUploadTxMsg::MSG_CODE;
+
+	using RxMsg::RxMsg;
+
+	std::string describe() const override
+	{
+		return "Upload clean record ack msg";
 	}
 };
 
@@ -839,7 +870,7 @@ public:
 	{
 		char buf[50];
 		memset(buf,0,50);
-		sprintf(buf,"wifi version %x,cloud version %x\n",getModuleVersion(),getCloudVersion());
+		sprintf(buf,"wifi version %x,cloud version %x.",getModuleVersion(),getCloudVersion());
 		std::ostringstream ss;
 		ss<<buf;
 		return ss.str();
@@ -865,7 +896,7 @@ public:
 		std::ostringstream msg;
 		msg<<"WIFI MAC ADDRESS:";
 		char buf[20];
-		sprintf(buf,"%x %x %x %x %x %x\n",
+		sprintf(buf,"%x %x %x %x %x %x.",
 					data().at(0), data().at(1),
 					data().at(2), data().at(3),
 					data().at(4), data().at(5));

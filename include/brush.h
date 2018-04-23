@@ -94,6 +94,20 @@ public:
 	void checkBatterySetPWM();
 	void updatePWM();
 
+	// For consumable.
+	void updateSideBrushTime(uint32_t addition_time);
+	void updateMainBrushTime(uint32_t addition_time);
+	uint32_t getSideBrushTime()
+	{
+		return side_brush_operation_time_;
+	}
+	uint32_t getMainBrushTime()
+	{
+		return main_brush_operation_time_;
+	}
+	void resetSideBurshTime();
+	void resetMainBrushTime();
+
 private:
 
 	//Value for saving SideBrush_PWM
@@ -121,6 +135,11 @@ private:
 	uint8_t resume_stage_[2]{0, 0};
 	double resume_start_time_[2]{0, 0};
 	uint8_t resume_count_[2]{0, 0};
+
+	// For consumable situation.
+	uint32_t side_brush_operation_time_{0};
+	uint32_t main_brush_operation_time_{0};
+
 };
 extern Brush brush;
 

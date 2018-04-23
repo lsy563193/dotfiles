@@ -65,6 +65,7 @@ public:
 //	Point_t target_point_;
 	int dir_;
 	Points remain_path_{};
+	bool stop_generate_next_target{};
 public:
 //	std::deque<double> odom_turn_target_radians_{};
 	int radian_diff_count{};
@@ -92,6 +93,7 @@ public:
 
 private:
 	void switchLinearTarget(ACleanMode * p_clean_mode);
+	bool switchLinearTargetByRecalc(ACleanMode *p_clean_mode);
 };
 
 class MoveTypeFollowWall:public IMoveType

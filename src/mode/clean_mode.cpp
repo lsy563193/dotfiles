@@ -44,7 +44,8 @@ ACleanMode::ACleanMode()
 	IMoveType::sp_mode_ = this;
 	APathAlgorithm::p_cm_ = this;
 	State::sp_cm_ = this;
-	if (robot::instance()->getWorkMode() == WORK_MODE ||robot::instance()->getWorkMode() == IDLE_MODE || robot::instance()->getWorkMode() == CHARGE_MODE)
+	if (robot::instance()->getR16WorkMode() == WORK_MODE || robot::instance()->getR16WorkMode() == IDLE_MODE ||
+			robot::instance()->getR16WorkMode() == CHARGE_MODE)
 	{
 		sp_state = state_init.get();
 		sp_state->init();
@@ -60,6 +61,9 @@ ACleanMode::ACleanMode()
 	tmp_charger_pose_.clear();
 	c_rcon.resetStatus();
 	robot::instance()->initOdomPosition();
+	s_wifi.resetReceivedWorkMode();
+	if (error.get())
+		error.clear(error.get(), true);
 //	fw_map.reset(CLEAN_MAP);
 
 //	// todo:debug
@@ -90,7 +94,7 @@ ACleanMode::~ACleanMode()
 		wheel.stop();
 		brush.stop();
 		vacuum.stop();
-		water_tank.stop(WaterTank::tank_pump);
+		water_tank.stop(WaterTank::operate_option::swing_motor_and_pump);
 		lidar.motorCtrl(OFF);
 		lidar.setScanOriginalReady(0);
 		lidar.slipCheckingCtrl(OFF);
@@ -119,7 +123,7 @@ ACleanMode::~ACleanMode()
 			{
 				speaker.play(VOICE_BACK_TO_CHARGER_FAILED, false);
 				ROS_WARN("%s %d: Finish cleaning but failed to go to charger.", __FUNCTION__, __LINE__);
-			} else if (mode_i_ == cm_navigation && trapped_closed_or_isolate || trapped_time_out_)
+			} else if (mode_i_ == cm_navigation && (trapped_closed_or_isolate || trapped_time_out_))
 			{
 				speaker.play(VOICE_ROBOT_TRAPPED, false);
 				trapped_closed_or_isolate = false;
@@ -158,6 +162,20 @@ ACleanMode::~ACleanMode()
 	ROS_INFO("%s %d: Cleaned area = \033[32m%.2fm2\033[0m, cleaning time: \033[32m%d(s) %.2f(min)\033[0m, cleaning speed: \033[32m%.2f(m2/min)\033[0m.",
 			 __FUNCTION__, __LINE__, map_area, robot_timer.getWorkTime(),
 			 static_cast<float>(robot_timer.getWorkTime()) / 60, map_area / (static_cast<float>(robot_timer.getWorkTime()) / 60));
+	brush.updateSideBrushTime(robot_timer.getWorkTime());
+	brush.updateMainBrushTime(robot_timer.getWorkTime());
+	if (isUsingDustBox())
+		vacuum.updateFilterTime(robot_timer.getWorkTime());
+
+	if (mode_i_ == cm_navigation)
+	{
+		robot::instance()->updateCleanRecord(static_cast<const uint32_t &>(ros::Time::now().toSec()),
+											 static_cast<const uint16_t &>(robot_timer.getWorkTime()),
+											 static_cast<const uint16_t &>(map_area),
+											 clean_map_);
+		s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_LAST_CLEANMAP);
+
+	}
 }
 
 void ACleanMode::saveBlock(int block, int dir, std::function<Cells()> get_list)
@@ -176,6 +194,7 @@ void ACleanMode::saveBlock(int block, int dir, std::function<Cells()> get_list)
 //		}
 		c_blocks.insert({block, cell});
 	}
+	printf("\n");
 }
 
 void ACleanMode::saveBlocks() {
@@ -245,6 +264,26 @@ void ACleanMode::saveBlocks() {
 		return d_cells;
 	});
 
+	//save block for wheel cliff, but in case of incresing the map cost, it is same as the BOCKED_CLIFF, please check the log if it was triggered
+	saveBlock(BLOCKED_CLIFF,iterate_point_.dir, [&]() {
+//		auto wheel_cliff_trig = ev.left_wheel_cliff || ev.right_wheel_cliff;
+		auto wheel_cliff_trig = is_wheel_cliff_triggered;
+		Cells d_cells;
+		if (wheel_cliff_trig) {
+			d_cells = {{2, -1}, {2, 0}, {2, 1}, {2, 2}, {2, -2}};
+		}
+		return d_cells;
+	});
+
+	//save block for oc_brush_main, but in case of incresing the map cost, it is same as the BOCKED_CLIFF, please check the log if it was triggered
+	saveBlock(BLOCKED_CLIFF,iterate_point_.dir, [&]() {
+		Cells d_cells{};
+		if (ev.oc_brush_main)
+			d_cells = {{1,  1}, {1,  0}, {1,  -1}, {0,  1}, {0,  0}, {0,  -1}, {-1, 1}, {-1, 0}, {-1, -1}};
+		return d_cells;
+
+	});
+
 	saveBlock(BLOCKED_SLIP,iterate_point_.dir, [&]() {
 		Cells d_cells{};
 		if (ev.robot_slip)
@@ -256,12 +295,15 @@ void ACleanMode::saveBlocks() {
 	saveBlock(BLOCKED_TILT,iterate_point_.dir, [&]() {
 		Cells d_cells;
 		auto tilt_trig = ev.tilt_triggered;
-		if (tilt_trig & TILT_LEFT)
+/*		if (tilt_trig & TILT_LEFT)
 			d_cells = {{2, 2}, {2, 1}, {2, 0}, {1, 2}, {1, 1}, {1, 0}, {0, 2}, {0, 1}, {0, 0}};
 		else if (tilt_trig & TILT_RIGHT)
 			d_cells = {{2, -2}, {2, -1}, {2, 0}, {1, -2}, {1, -1}, {1, 0}, {0, -2}, {0, -1}, {0, 0}};
 		else if (tilt_trig & TILT_FRONT)
-			d_cells = {{2, 1}, {2, 0}, {2, -1}, {1, 1}, {1, 0}, {1, -1}, {0, 1}, {0, 0}, {0, -1}};
+			d_cells = {{2, 1}, {2, 0}, {2, -1}, {1, 1}, {1, 0}, {1, -1}, {0, 1}, {0, 0}, {0, -1}};*/
+		if (tilt_trig) {
+			d_cells = {{1,  1}, {1,  0}, {1,  -1}, {0,  1}, {0,  0}, {0,  -1}, {-1, 1}, {-1, 0}, {-1, -1}};
+		}
 
 		return d_cells;
 	});
@@ -708,7 +750,7 @@ void ACleanMode::setCleanMapMarkers(int16_t x, int16_t y, CellState type, visual
 			color_.b = 0.0;
 		}
 	}
-	else if (type == BLOCKED_FW)
+	else if (type == BLOCKED_FW)//Follow Wall
 	{
 		color_.r = 0.2;
 		color_.g = 0.1;
@@ -905,8 +947,8 @@ bool ACleanMode::isExit()
 		return true;
 	}
 
-	if(ev.key_clean_pressed || ev.key_long_pressed){
-		ROS_WARN("%s %d: Exit for remote key or clean key or long press clean key.", __FUNCTION__, __LINE__);
+	if (ev.key_clean_pressed || ev.key_long_pressed || s_wifi.receiveIdle()){
+		ROS_WARN("%s %d: Exit for remote key or clean key or long press clean key or wifi idle.", __FUNCTION__, __LINE__);
 		setNextMode(md_idle);
 		return true;
 	}
@@ -918,10 +960,16 @@ bool ACleanMode::isExit()
 		return true;
 	}
 
+	if (s_wifi.receivePlan1())
+	{
+		ROS_WARN("%s %d: Exit for wifi plan1.", __FUNCTION__, __LINE__);
+		setNextMode(cm_navigation);
+		return true;
+	}
 	return false;
 }
 
-bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_move_type) {
+bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_mt) {
 	auto curr = getPosition();
 	auto loc = std::find_if(passed_path_.begin(), passed_path_.end(), [&](Point_t it) {
 		return curr.isCellAndAngleEqual(it);
@@ -936,10 +984,27 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_move_type) {
 	markMapInNewCell();//real time mark to exploration
 
 	if (isStateFollowWall()) {
-//			auto p_mt = dynamic_cast<MoveTypeFollowWall *>(p_move_type);
-		if (p_move_type->isBlockCleared(clean_map_, passed_path_))
-		{
+//			auto p_mt = dynamic_cast<MoveTypeFollowWall *>(p_mt);
+		if (p_mt->isBlockCleared(clean_map_, passed_path_)) {
 			clean_map_.markRobot(CLEAN_MAP);
+			std::vector<Vector2<int>> markers{};
+			if (lidar.isScanCompensateReady())
+				lidar.lidarMarker(markers, p_mt->movement_i_, action_i_);
+			ROS_ERROR("markers.size() = %d", markers.size());
+			std::vector<Vector2<int>> left_marks{{0,2}, {1,2},{-1,2}};
+//			ROS_ERROR("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+			for (const auto &marker : markers) {
+//				ROS_ERROR("marker(%d, %d)", marker.x, marker.y);
+				if(std::any_of(left_marks.begin(), left_marks.end(), [&](const Vector2<int> & mark_it){
+//					ROS_ERROR("any_of:marker(%d,%d),mark_it(%d,%d)", marker.x, marker.y, mark_it.x, mark_it.y);
+					return marker == mark_it;
+				})){
+//					beeper.debugBeep(VALID);
+					auto cell = getPosition().getCenterRelative(marker.x * CELL_SIZE, marker.y * CELL_SIZE).toCell();
+					ROS_ERROR("follow wall find lidar obs(%d, %d)", cell.x, cell.y);
+					clean_map_.setCell(CLEAN_MAP, cell.x, cell.y, BLOCKED_LIDAR);
+				}
+			}
 			if (!clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell())) {
 				out_of_trapped = true;
 				ROS_ERROR("OUT OF TRAPPED");
@@ -1617,10 +1682,17 @@ void ACleanMode::switchInStateClean() {
 // ------------------State go home point--------------------
 bool ACleanMode::checkEnterGoHomePointState()
 {
-	if (ev.remote_home || ev.battery_home)
+	if (ev.remote_home || ev.battery_home || s_wifi.receiveHome())
 	{
 		if (ev.remote_home)
 			remote_go_home_point = true;
+		if (s_wifi.receiveHome())
+		{
+			wifi_go_home_point = true;
+			s_wifi.resetReceivedWorkMode();
+		}
+		if (ev.battery_home)
+			go_home_for_low_battery_ = true;
 		sp_action_.reset();
 		sp_state = state_go_home_point.get();
 		sp_state->init();
@@ -2071,4 +2143,42 @@ void ACleanMode::genNextAction() {
 	}
 	else
 		Mode::genNextAction();
+}
+
+void ACleanMode::wifiSetWaterTank()
+{
+	if (!water_tank.getStatus(WaterTank::operate_option::swing_motor))
+		return;
+
+	if ((isStateInit() && action_i_ > ac_open_gyro)
+		|| isStateClean()
+		|| isStateFollowWall())
+	{
+		auto user_set_swing_motor_mode = water_tank.getUserSetSwingMotorMode();
+		if (water_tank.getCurrentSwingMotorMode() != user_set_swing_motor_mode)
+			water_tank.setCurrentSwingMotorMode(user_set_swing_motor_mode);
+
+		auto user_set_pump_mode = water_tank.getUserSetPumpMode();
+		if (water_tank.getStatus(WaterTank::operate_option::pump) &&
+			water_tank.getCurrentPumpMode() != user_set_pump_mode)
+			water_tank.setCurrentPumpMode(user_set_pump_mode);
+	}
+}
+
+void ACleanMode::setVacuum()
+{
+	if (water_tank.getStatus(WaterTank::operate_option::swing_motor))
+		return;
+
+	if ((isStateInit() && action_i_ > ac_open_gyro)
+		|| isStateClean()
+		|| isStateFollowWall())
+	{
+		auto user_set_max_mode = vacuum.isUserSetMaxMode();
+		if (vacuum.isCurrentMaxMode() != user_set_max_mode)
+		{
+			vacuum.setSpeedByUserSetMode();
+			speaker.play(vacuum.isCurrentMaxMode() ? VOICE_VACCUM_MAX : VOICE_VACUUM_NORMAL);
+		}
+	}
 }

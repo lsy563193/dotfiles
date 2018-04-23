@@ -16,12 +16,14 @@ Appmt::Appmt()
 	appointment_change_ = false;
 	for(uint8_t i=0;i<10;i++)
 	{
-		apmt_l_.push_back({i,0,0,0,0});
+		apmt_l_.push_back({(uint8_t)(i+1),0,0,0,0});
 	}
+	//rw_routine(Appmt::SET);
 }
 
 bool Appmt::set(std::vector<Appointment::st_appmt> apmt_list)
 {
+	static int last_mint = 0;
 	if(1)
 	{
 		MutexLock lock(&appmt_lock_);
@@ -29,7 +31,11 @@ bool Appmt::set(std::vector<Appointment::st_appmt> apmt_list)
 		rw_routine(Appmt::SET);
 	}
 	uint16_t mint = nextAppointment();
-	setPlan2Bottom(mint);
+	if(mint != last_mint)
+	{
+		setPlan2Bottom(mint);
+		last_mint = mint;
+	}
 
 	update_idle_timer_ = true;
 	return true;
@@ -37,6 +43,7 @@ bool Appmt::set(std::vector<Appointment::st_appmt> apmt_list)
 
 bool Appmt::set(uint8_t apTime)
 {
+	// -- set appointment
 	if(apTime > 0x80)
 	{
 		st_appmt apmt;
@@ -47,7 +54,7 @@ bool Appmt::set(uint8_t apTime)
 		{
 			apmt.num  = i;
 			apmt.week = 0x01<<(i-1);
-			apmt_l_[i] = apmt;
+			apmt_l_[i-1] = apmt;
 		}
 		if(1)
 		{
@@ -60,7 +67,7 @@ bool Appmt::set(uint8_t apTime)
 		setPlan2Bottom(mint);
 		update_idle_timer_ = true;
 	}
-
+	//--cancel appointment
 	else if(apTime ==  0x80 )
 	{
 		st_appmt apmt;
@@ -71,7 +78,7 @@ bool Appmt::set(uint8_t apTime)
 		for(int i = 1;i<=7;i++)
 		{
 			apmt.num  = i;
-			apmt_l_[i] = apmt;
+			apmt_l_[i-1] = apmt;
 		}
 
 		if(1)
@@ -162,7 +169,7 @@ int8_t Appmt::rw_routine(Appmt::SG action)//read write routine
 			if(apmt_val != NULL)
 			{
 				char tmp_buf[apt_len] = {0};
-				int offset = apmt_val->num;
+				int offset = apmt_val->num-1;
 				int pos = lseek(fd,offset*apt_len,SEEK_SET);
 				//ROS_INFO("offset %d",offset);
 
@@ -170,6 +177,7 @@ int8_t Appmt::rw_routine(Appmt::SG action)//read write routine
 				{
 					ROS_ERROR("%s,%d,lseek fail %d",__FUNCTION__,__LINE__,pos);
 					close(fd);
+					return -1;
 				}
 				memset(tmp_buf,0,apt_len);
 				sprintf(tmp_buf,"%2u %2u %2u %2u %2u ",apmt_val->num,(uint8_t)apmt_val->enable,apmt_val->week,apmt_val->hour,apmt_val->mint);
@@ -208,15 +216,17 @@ uint16_t Appmt::nextAppointment()
 	uint16_t mints[(int)apmt_l_.size()] = {0};//the appointments count down minutes
 	appointment_count_ = 24*60*7;
 	std::ostringstream msg("");
-	uint16_t cur_tol_mint = (cur_wday-1) * 24 * 60 + cur_hour*60 + cur_mint;//current total minutes
+	// -- get total minutes from now
+	uint16_t cur_tol_mint = (cur_wday-1) * 24 * 60 + cur_hour*60 + cur_mint;
 	for(int i=0;i<apmt_l_.size();i++)
 	{
 		if(apmt_l_[i].enable)
 		{
-			int16_t diff_m = (i-1)*24*60 + apmt_l_[i].hour*60+apmt_l_[i].mint - cur_tol_mint;
-			if(diff_m<=0)
+			// -- different minutest from current time to appointment
+			int16_t diff_m = (i)*24*60 + apmt_l_[i].hour*60+apmt_l_[i].mint - cur_tol_mint;
+			if(diff_m<=0)//day before 
 				mints[i]= 10080+diff_m;
-			else
+			else // -- day after
 				mints[i]= diff_m;
 			if(appointment_count_ >= mints[i])
 			{
@@ -226,7 +236,7 @@ uint16_t Appmt::nextAppointment()
 			}
 
 		}
-		msg<<" ("<<i<<","<<(int)mints[i]<<")";
+		msg<<" ("<<(i+1)<<","<<(int)mints[i]<<")";
 	}
 	if(appointment_set_)
 		ROS_INFO("%s,%d,\033[1;40;32mappointment_count_=%u minutes,\033[0m  %s",__FUNCTION__,__LINE__,appointment_count_,msg.str().c_str());
@@ -245,7 +255,7 @@ void Appmt::timesUp()
 {
 	//--update realtime
 	struct Timer::DateTime dt = robot_timer.getRealTime();
-	robot_timer.updateTimeFromDiffMint(dt,appointment_count_);
+	robot_timer.updateRealTimeFromMint(dt,appointment_count_);
 	robot_timer.setRealTime(dt);
 	//--update appointment count
 	uint16_t mint = nextAppointment();
