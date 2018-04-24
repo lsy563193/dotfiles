@@ -1161,7 +1161,6 @@ int8_t S_Wifi::smartLink()
 	INFO_BLUE("SMART LINK");
 	wifi::SmartLinkTxMsg p(0x00);//no responed
 	s_wifi_tx_.push( std::move(p)).commit();
-	//speaker.play(VOICE_WIFI_SMART_LINK_UNOFFICIAL,false);
 	speaker.play(VOICE_WIFI_CONNECTING,false);
 	if(robot_work_mode_ != wifi::WorkMode::SLEEP)
 		wifi_led.setMode(LED_FLASH,WifiLed::state::on);
