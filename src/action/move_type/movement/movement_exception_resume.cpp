@@ -34,6 +34,7 @@ MovementExceptionResume::MovementExceptionResume()
 	resume_vacuum_start_time_ = ros::Time::now().toSec();
 	resume_lidar_start_time_ = ros::Time::now().toSec();
 	resume_slip_start_time_ = ros::Time::now().toSec();
+	resume_gyro_start_time_ = ros::Time::now().toSec();
 }
 
 MovementExceptionResume::~MovementExceptionResume()
@@ -227,6 +228,10 @@ void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_sp
 			}
 		}
 	}
+	else if(ev.gyro_error)
+	{
+		left_speed = right_speed = 0;
+	}
 //	ROS_INFO("speed(%d, %d)!", left_speed, right_speed);
 }
 
@@ -234,7 +239,7 @@ bool MovementExceptionResume::isFinish()
 {
 	updatePosition();
 	if (!(ev.bumper_jam || ev.lidar_bumper_jam || ev.cliff_jam || ev.tilt_jam || ev.cliff_all_triggered || ev.oc_wheel_left || ev.oc_wheel_right
-		  || ev.oc_vacuum || ev.lidar_stuck || ev.robot_stuck || ev.oc_brush_main || ev.robot_slip
+		  || ev.oc_vacuum || ev.lidar_stuck || ev.robot_stuck || ev.oc_brush_main || ev.robot_slip || ev.gyro_error
 			|| sp_mt_->sp_mode_->is_wheel_cliff_triggered))
 	{
 		ROS_INFO("%s %d: All exception cleared.", __FUNCTION__, __LINE__);
@@ -855,7 +860,39 @@ bool MovementExceptionResume::isFinish()
 			error.set(ERROR_CODE_LIDAR);
 		}
 	}
+	else if(ev.gyro_error) {
+		if(should_disable_motors_and_gyro_)
+		{
+			should_disable_motors_and_gyro_ = false;
+			if (brush.isOn())
+				brush.stop();
+			vacuum.stop();
+			water_tank.stop(WaterTank::operate_option::swing_motor_and_pump);
+			gyro.setOff();
+		}
+		if(!gyro.error())
+		{
+			if (p_action_open_gyro_ == nullptr)
+				p_action_open_gyro_ = new ActionOpenGyro();
 
+			if (p_action_open_gyro_->isFinish())
+			{
+				ROS_INFO("%s, %d: Gyro resume success", __FUNCTION__, __LINE__);
+				ev.gyro_error = false;
+				delete p_action_open_gyro_;
+				return true;
+			}
+			else
+				p_action_open_gyro_->run();
+		}
+		if(ros::Time::now().toSec() - resume_gyro_start_time_ > 30)
+		{
+			ROS_INFO("%s, %d: Gyro resume fail!", __FUNCTION__, __LINE__);
+			ev.fatal_quit = true;
+			ev.gyro_error = false;
+			error.set(ERROR_CODE_GYRO);
+		}
+	}
 //	if (ev.fatal_quit)
 //		ROS_INFO("%s %d: ev.fatal_quit is set to %d.", __FUNCTION__, __LINE__, ev.fatal_quit);
 	return ev.fatal_quit;

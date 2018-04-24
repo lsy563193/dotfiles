@@ -318,6 +318,9 @@ private:
 	uint8_t wheel_cliff_state_{1};
 	uint8_t robot_stuck_resume_cnt_{0};
 	uint8_t lidar_resume_cnt_{0};
+	double resume_gyro_start_time_;
+	bool should_disable_motors_and_gyro_{true};
+	IAction* p_action_open_gyro_ = nullptr;
 };
 
 class MovementCharge :public IMovement
