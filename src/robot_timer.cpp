@@ -52,114 +52,124 @@ bool Timer::trapTimeout(double duration)
 	return difftime(time(NULL), trap_start_time_) > duration;
 }
 
-void Timer::setRealTime(Timer::DateTime date_time)
+void Timer::setRealTime(struct tm &real_time)
 {
-	date_time_.year = date_time.year;
-	date_time_.month = date_time.month;
-	date_time_.day = date_time.day;
-	date_time_.hour = date_time.hour;
-	date_time_.mint = date_time.mint;
-	date_time_.sec = date_time.sec;
-	ROS_INFO("%s,%d,\033[1;40;35m from cloud %u/%u/%u %u:%u:%u\033[0m",
-				__FUNCTION__,__LINE__,
-				date_time_.year,date_time_.month,date_time_.day,
-				date_time_.hour,date_time.mint,date_time.sec);
-	//--update appointment count down ,set appointment to bottom board
-	//uint16_t mint = appmt_obj.getNewestAppointment();
-	//appmt_obj.setPlan2Bottom(mint);
+	time_t ltime = time(NULL);
+	time_t rtime = mktime(&real_time);
+	if(ltime <= rtime)
+		realtime_offset_ = (uint32_t)difftime(rtime,ltime);
+	else
+		realtime_offset_ = (uint32_t)difftime(ltime,rtime);
+	ROS_INFO("%s,%d,\033[1;40;35m time from cloud %s , time offset from %u\033[0m",
+				__FUNCTION__,__LINE__,asctime(&real_time),realtime_offset_);
 }
 
-void Timer::setRealTime(uint16_t mints)
+void Timer::setRealTime(uint16_t min)
 {
 	time_t ltime = time(NULL);
 	struct tm *local_time = localtime(&ltime);
-	date_time_.day = (uint8_t)local_time->tm_mday;
-	date_time_.month =(uint8_t)(local_time->tm_mon+1);
-	date_time_.year = (uint16_t)(local_time->tm_year+1900);
-	date_time_.hour = (uint8_t)((mints/60)%24);
-	date_time_.mint = (uint8_t)(mints%60);
-	date_time_.sec = 0;
-	ROS_INFO("%s,%d,\033[1m %u/%u/%u %u:%u:%u\033[0m",
-				__FUNCTION__,__LINE__,
-				date_time_.year,date_time_.month,date_time_.day,
-				date_time_.hour,date_time_.mint,date_time_.sec);
-	//--update appointment count down ,set appointment to bottom board
-	//uint16_t mint = appmt_obj.getNewestAppointment();
-	//appmt_obj.setPlan2Bottom(mint);
+	ROS_INFO("time local %s",asctime(local_time));
+	struct tm new_time;
+	new_time.tm_mday = local_time->tm_mday;
+	new_time.tm_mon =local_time->tm_mon;
+	new_time.tm_year = local_time->tm_year;
+	new_time.tm_hour = (min/60)%24;
+	new_time.tm_min = min%60;
+	new_time.tm_sec = 0;
+
+	time_t newtime = mktime(&new_time);
+	if(newtime >= ltime)
+		realtime_offset_ =(uint32_t)difftime(newtime,ltime);
+	else
+		realtime_offset_ =(uint32_t)difftime(ltime,newtime);
+	ROS_INFO("%s,%d,\033[1;40;35mtime from IR_Remote %s time offset %u\033[0m",
+				__FUNCTION__,__LINE__,asctime(&new_time),realtime_offset_);
 }
 
-void Timer::updateRealTimeFromMint(struct Timer::DateTime &dt, uint16_t diff_mins)
+void Timer::updateRealTimeFromMint(struct tm &dt, uint16_t diff_mins)
 {
-	uint8_t mint_sum = dt.mint + (uint8_t)(diff_mins%60);
-	uint16_t hour_sum= dt.hour + diff_mins/60;
-	dt.mint = mint_sum % 60;
-	dt.hour = (mint_sum >= 60)?(hour_sum+1) %24:hour_sum %24;
+	uint8_t mint_sum = dt.tm_min + (uint8_t)(diff_mins%60);
+	uint16_t hour_sum= dt.tm_hour + diff_mins/60;
+	dt.tm_min = mint_sum % 60;
+	dt.tm_hour = (mint_sum >= 60)?(hour_sum+1) %24:hour_sum %24;
 	uint8_t days_count = hour_sum / 24;
 	//leap year cal
 	bool leap_year = false;
-	if(dt.year % 4 && !(dt.year %100))
+	int year = dt.tm_year+1900;
+	if(year % 4 && !(year %100))
 	{
 		////century year
-		if(dt.year - (dt.year % 100)*100 == 0)
-			if( dt.year % 400 == 0)
+		if(year - (year % 100)*100 == 0)
+			if( year % 400 == 0)
 				leap_year = true;
 	}
+
 	//month and day cal
-	uint8_t day_sum = dt.day + days_count;
-	if(dt.month == 2)
+	uint8_t day_sum = dt.tm_mday + days_count;
+
+	// -- tm_mon (0~11)
+	// -- equal fabruray
+	int month = dt.tm_mon+1;
+	if(month== 2)
 	{
 		if(leap_year && day_sum <=29 )
-			dt.day +=days_count;
+			dt.tm_mday +=days_count;
 		else if(leap_year && day_sum > 29)
-			dt.day = day_sum %29,dt.month += 1;
+			dt.tm_mday = day_sum %29,month += 1;
 		else if(!leap_year && day_sum <= 28 )
-			dt.day += days_count;
+			dt.tm_mday += days_count;
 		else if(!leap_year && day_sum >28 )
-			dt.day  = day_sum %28, dt.month += 1;
+			dt.tm_mday  = day_sum %28, month+= 1;
+		dt.tm_mon = month-1;
 	}
-		
-	else if(dt.month <= 7)
+	// -- least than july
+	else if(month <= 7)
 	{
-		if(dt.month %2 == 0)
+		if( month %2 == 0)
 		{
 			if(day_sum <=30 )
-				dt.day += days_count;
+				dt.tm_mday += days_count;
 			else
-				dt.day = day_sum % 30,dt.month += 1;
+				dt.tm_mday = day_sum % 30,month+= 1;
 
 		}
-		else if(dt.month %2 != 0 )
+		else if(dt.tm_mon %2 != 0 )
 		{
 			if(day_sum <= 31)
-				dt.day += days_count;
+				dt.tm_mday += days_count;
 			else
-				dt.day = day_sum % 31,dt.month +=1;
-
+				dt.tm_mday = day_sum % 31,month +=1;
 		}
+		dt.tm_mon = month - 1;
 	}
-		
-	else if(dt.month >= 8 )
+	// -- begger than august
+	else if(month >= 8)
 	{
-		if(dt.month %2 == 0 )
+		if(month %2 == 0 )
 		{
 			if(day_sum <=31 )
-				dt.day += days_count;
+				dt.tm_mday += days_count;
 			else
-				dt.day = day_sum % 31,dt.month += 1;
+				dt.tm_mday = day_sum % 31,month += 1;
 		}
-		else if(dt.month %2 != 0 && hour_sum >= 24)
+		else if(month %2 != 0 && hour_sum >= 24)
 		{
 			if(day_sum <= 30)
-				dt.day += days_count;
+				dt.tm_mday += days_count;
 			else
-				dt.day = day_sum % 30,dt.month +=1;
+				dt.tm_mday = day_sum % 30,month +=1;
 		}
+		dt.tm_mon = month-1;
 	}
 	//year 
-	if(	dt.month > 12)
-		dt.year += 1,dt.month = 1;
+	if(	dt.tm_mon> 11)
+		dt.tm_year += 1,dt.tm_mon = 0;
+
+	// --set realtime offset
+	realtime_offset_ = (uint32_t)difftime(mktime(&dt),time(NULL));
 }
 
+/*
 uint32_t Timer::getRealTimeInMint()
 {
 	uint32_t w = getRealTimeWeekDay();	
@@ -186,16 +196,6 @@ uint32_t Timer::getRealTimeWeekDay()
 	return w;
 }
 
-char* Timer::asctime()
-{
-	static char buf[50];
-	sprintf(buf, "%d/%d/%d %d:%d:%d",
-				date_time_.year,date_time_.month, date_time_.day,
-				date_time_.hour,date_time_.mint,date_time_.sec);
-	return buf;
-	
-}
-
 uint32_t Timer::getLocalTimeInMint()
 {
 	time_t t_t = time(NULL);
@@ -203,9 +203,17 @@ uint32_t Timer::getLocalTimeInMint()
 	uint32_t w = tm_t->tm_wday+1;
 	return (uint32_t)(w*24*60+tm_t->tm_hour*60+tm_t->tm_min);
 }
+*/
 
 uint32_t Timer::getRobotUpTime()
 {
 	auto robot_time = static_cast<uint32_t>(difftime(time(NULL), robot_start_time_));
 	return robot_time;
+}
+
+void Timer::getRealtime(struct tm *date_time)
+{
+	time_t real_time = time(NULL)+static_cast<time_t>(realtime_offset_);
+	date_time = localtime( &real_time );
+	ROS_INFO("%s,%d current realtime: %s",__FUNCTION__,__LINE__,asctime(date_time));
 }

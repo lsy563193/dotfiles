@@ -169,10 +169,11 @@ ACleanMode::~ACleanMode()
 
 	if (mode_i_ == cm_navigation)
 	{
-		robot::instance()->updateCleanRecord(static_cast<const uint32_t &>(ros::Time::now().toSec()),
-											 static_cast<const uint16_t &>(robot_timer.getWorkTime()),
-											 static_cast<const uint16_t &>(map_area),
-											 clean_map_);
+		robot::instance()->updateCleanRecord(static_cast<const uint32_t &>(ros::Time::now().toSec()
+												+robot_timer.getRealTimeOffset())
+											 ,static_cast<const uint16_t &>(robot_timer.getWorkTime())
+											 ,static_cast<const uint16_t &>(map_area)
+											 ,clean_map_);
 		s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_LAST_CLEANMAP);
 
 	}

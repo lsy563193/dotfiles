@@ -101,8 +101,7 @@ private:
 
 	std::vector<Appointment::st_appmt> apmt_l_;
 	bool appointment_set_ ;
-	uint16_t appointment_count_;
-	uint32_t appointment_time_;
+	uint16_t count_down_;
 	bool appointment_change_;
 	pthread_mutex_t appmt_lock_;
 

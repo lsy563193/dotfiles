@@ -3,9 +3,6 @@
 #include "robot.hpp"
 #include "path_algorithm.h"
 
-#define CLOCKWISE 1
-#define ANTI_CLOCKWISE 2
-
 SpotCleanPathAlgorithm::SpotCleanPathAlgorithm()
 {
 	Cell_t  cur = getPosition().toCell();
@@ -142,7 +139,7 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, con
 
 void SpotCleanPathAlgorithm::initVariables(float radius,Cell_t cur_cell)
 {
-//	ROS_INFO();
+	//	ROS_INFO();
 	spot_running_ = false;
 	const int abit = 3;
 	int16_t half_cell_num = (int16_t)ceil(radius/CELL_SIZE);
@@ -157,20 +154,21 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float radius,Cells *targ
 {
 	targets->clear();
 	int16_t i;
-	uint32_t mid_it;// for store the last pos in clockwise/anti clockwise out int16_t x, x_last, y, y_last;
+	uint32_t mid_it; 
 	int16_t x,y;
 	int16_t x_last,y_last;
 	uint16_t spiral_count = 1;//number of spiral count
 	uint16_t cell_number = 1;//cell counter
-	uint16_t step = 1;
-	uint16_t spiral_number = (uint16_t) ceil(radius * 2  / (CELL_SIZE))/step;//number of spiral
-	ROS_INFO( "%s,%d,number of spiral" "\033[36m" " %d" "\033[0m",__FUNCTION__,__LINE__,spiral_number);
+	uint16_t step = 1;//cell step
+	uint16_t radius_cell_n = (uint16_t) ceil(radius * 2  / (CELL_SIZE))/step;//number of spiral
+	ROS_INFO( "%s,%d,number of spiral" "\033[36m" " %d" "\033[0m",__FUNCTION__,__LINE__,radius_cell_n);
+
 	if (sp_type == CLOCKWISE)
 	{
 		for(int OUT = 1;OUT>=0;OUT--)
 		{
+			// -- push first cell
 			mid_it = targets->size();
-			//reset some variables
 			x = x_last = begincell.x;
 			y = y_last = begincell.y;
 			spiral_count = 1;
@@ -178,11 +176,13 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float radius,Cells *targ
 			targets->push_back({x,y});
 			spiral_count +=step;
 			cell_number +=step;
-			while (ros::ok()) //clockwise out
+			//-- clockwise out
+			while (ros::ok())
 			{
-				if (spiral_count > spiral_number)
+				// -- push last cell
+				if (spiral_count > radius_cell_n)
 				{
-					if(spiral_number %2 == 0)
+					if(radius_cell_n %2 == 0)
 					{
 						if(OUT){
 							x = x + step ;
@@ -194,6 +194,7 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float radius,Cells *targ
 
 					break;
 				}
+				//-- push even spiral cell
 				else if ((spiral_count % 2) == 0)
 				{
 					if(OUT){
@@ -221,6 +222,7 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float radius,Cells *targ
 						targets->push_back({x,y});
 					}
 				}
+				//-- push odd spiral cell
 				else
 				{
 					if(OUT){
@@ -260,6 +262,7 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float radius,Cells *targ
 	{
 		for(int OUT = 1;OUT>=0;OUT--)
 		{
+			// -- push first cell
 			mid_it = targets->size();
 			//reset some variable
 			x = x_last = begincell.x;
@@ -269,11 +272,13 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float radius,Cells *targ
 			targets->push_back({x,y});
 			spiral_count +=1;
 			cell_number +=step;
-			while (ros::ok()) //anti clockwise out
+			//anti clockwise out
+			while (ros::ok())
 			{
-				if (spiral_count > spiral_number)
+				//-- push last cell
+				if (spiral_count > radius_cell_n)
 				{
-					if(spiral_number %2 == 0)
+					if(radius_cell_n %2 == 0)
 					{
 						if(OUT){
 							x = x - step;
@@ -284,6 +289,7 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float radius,Cells *targ
 						targets->pop_back();
 					break;
 				}
+				// -- push even spiral cell
 				else if ((spiral_count % 2) == 0)
 				{
 					if(OUT){
@@ -311,6 +317,7 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float radius,Cells *targ
 						targets->push_back({x,y});
 					}
 				}
+				// --push odd spiral cell
 				else
 				{
 					if(OUT){
@@ -348,6 +355,27 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float radius,Cells *targ
 	}
 	displayCellPath(*targets);
 }
+/*
+void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float radius,Cells *targets,const Cell_t begincell)
+{
+	Cell_t *p_path = {(0, 0),
+					(2, 0),(2, 2),(0, 2),
+					(-2, 2),(-2, 0),(-2, -2),(0, -2),
+					(2, -2),(4, -2),(4, 0),(4, 2),(4, 4),(2, 4),(0, 4),
+					(-2, 4),(-4, 4),(-4, 2),(-4, 0),(-4, -2),(-4, -4),(-2, -4),
+					(0, -4),(2, -4),(2, -2),(2, 0),(2, 2),
+					(0, 2),(-2, 2),(-2, 0),
+					(-2, -2),(0, -2),
+					(0, 0),nullptr}
+	
+	while(p_path != nullptr)
+	{
+		target->push_back(*p_path + begincell);
+		p_path  = p_path+1;
+	}
+
+}
+*/
 
 bool SpotCleanPathAlgorithm::checkTrapped(GridMap &map, const Cell_t &curr_cell)
 {

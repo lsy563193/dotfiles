@@ -327,14 +327,15 @@ bool S_Wifi::init()
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::SyncClockRxMsg &msg = static_cast<const wifi::SyncClockRxMsg&>( a_msg );
 				is_wifi_connected_ = true;
-				Timer::DateTime date_time;
-				date_time.year = msg.getYear();
-				date_time.month = msg.getMonth();
-				date_time.day = msg.getDay();
-				date_time.hour = msg.getHour();
-				date_time.mint = msg.getMin();
-				date_time.sec = msg.getSec();
-				robot_timer.setRealTime(date_time);
+				struct tm realtime;	
+				realtime.tm_year = msg.getYear()-1900;
+				realtime.tm_mon = msg.getMonth()+1;
+				realtime.tm_mday = msg.getDay();
+				realtime.tm_hour = msg.getHour();
+				realtime.tm_min = msg.getMin();
+				realtime.tm_sec = msg.getSec();
+
+				robot_timer.setRealTime(realtime);
 				//ack
 				wifi::Packet p(
 							-1,
@@ -1160,10 +1161,8 @@ int8_t S_Wifi::smartLink()
 	INFO_BLUE("SMART LINK");
 	wifi::SmartLinkTxMsg p(0x00);//no responed
 	s_wifi_tx_.push( std::move(p)).commit();
-	#if DEBUG_ENABLE
 	//speaker.play(VOICE_WIFI_SMART_LINK_UNOFFICIAL,false);
 	speaker.play(VOICE_WIFI_CONNECTING,false);
-	#endif
 	if(robot_work_mode_ != wifi::WorkMode::SLEEP)
 		wifi_led.setMode(LED_FLASH,WifiLed::state::on);
 	in_linking_ = true;
