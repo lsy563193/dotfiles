@@ -1679,14 +1679,14 @@ void Lidar::checkSlipInit(float &acur1, float &acur2, float &acur3, float &acur4
 		gyro_tilt_trigger_time_ = ros::Time::now().toSec();
 	}
 
-	if(ros::Time::now().toSec() - gyro_tilt_trigger_time_ < 2){
+	if(ros::Time::now().toSec() - gyro_tilt_trigger_time_ < 1){
 		slip_cnt_limit_ = 5;
 		slip_ranges_percent_ = 0.78;
 		acur1 = 0.085;
 		acur2 = 0.065;
 		acur3 = 0.045;
 		acur4 = 0.01;
-	}	else if(ros::Time::now().toSec() - wheel_cliff_trigger_time_ < 2){
+	}	else if(ros::Time::now().toSec() - wheel_cliff_trigger_time_ < 1){
 		slip_cnt_limit_ = 3;
 		slip_ranges_percent_ = 0.75;
 		acur1 = 0.090;
