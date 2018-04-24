@@ -1095,8 +1095,8 @@ int8_t S_Wifi::smartLink()
 	s_wifi_tx_.push( std::move(p)).commit();
 	#if DEBUG_ENABLE
 	//speaker.play(VOICE_WIFI_SMART_LINK_UNOFFICIAL,false);
-	speaker.play(VOICE_WIFI_CONNECTING,false);
 	#endif
+	speaker.play(VOICE_WIFI_CONNECTING,false);
 	if(robot_work_mode_ != wifi::WorkMode::SLEEP)
 		wifi_led.setMode(LED_FLASH,WifiLed::state::on);
 	in_linking_ = true;
