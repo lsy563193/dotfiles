@@ -861,13 +861,14 @@ bool MovementExceptionResume::isFinish()
 		}
 	}
 	else if(ev.gyro_error) {
-		if(should_disable_motors_and_gyro_)
+		if(should_init_for_gyro_exception_)
 		{
-			should_disable_motors_and_gyro_ = false;
+			should_init_for_gyro_exception_ = false;
 			if (brush.isOn())
 				brush.stop();
 			vacuum.stop();
 			water_tank.stop(WaterTank::operate_option::swing_motor_and_pump);
+			odom.setRadianOffset(odom.getRadian());
 			gyro.setOff();
 		}
 		if(!gyro.error())
