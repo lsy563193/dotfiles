@@ -1830,7 +1830,7 @@ bool Lidar::scanDataChecking(bool check_front, sensor_msgs::LaserScan scan, floa
 	{
 		for (uint16_t data_index = 0; data_index < 360; data_index++)
 		{
-			printf("scan.ranges[%03d] = %f, ref_scan_data[%03d] = %f, fabs = %f.",
+			printf("scan[%03d] = %f, ref[%03d] = %f, fabs = %f.",
 				   data_index, scan.ranges[data_index], data_index, ref_scan_data[data_index],
 				   fabs(scan.ranges[data_index] - ref_scan_data[data_index]));
 			if (scan.ranges[data_index] != std::numeric_limits<float>::infinity() &&
@@ -1842,7 +1842,7 @@ bool Lidar::scanDataChecking(bool check_front, sensor_msgs::LaserScan scan, floa
 				if (fabs(scan.ranges[data_index] - ref_scan_data[data_index]) < 0.2)
 				{
 					_valid_count++;
-					printf(" Pass accuracy checking.\n");
+					printf(" Pass.\n");
 				}
 				else
 					printf("\n");
@@ -1851,7 +1851,7 @@ bool Lidar::scanDataChecking(bool check_front, sensor_msgs::LaserScan scan, floa
 				ref_scan_data[data_index] == std::numeric_limits<float>::infinity())
 //				ref_scan_data[data_index] < 0.01)
 			{
-				printf(" Pass accuracy checking.\n");
+				printf(" Pass.\n");
 				_valid_count++;
 			}
 			else
@@ -1865,7 +1865,7 @@ bool Lidar::scanDataChecking(bool check_front, sensor_msgs::LaserScan scan, floa
 	{
 		for (uint16_t data_index = 66; data_index < 244; data_index++)
 		{
-			printf("scan.ranges[%03d] = %f, ref_scan_data[%03d] = %f, fabs = %f.",
+			printf("scan[%03d] = %f, ref[%03d] = %f, fabs = %f.",
 				   data_index, scan.ranges[data_index], data_index, ref_scan_data[data_index],
 				   fabs(scan.ranges[data_index] - ref_scan_data[data_index]));
 			if (scan.ranges[data_index] != std::numeric_limits<float>::infinity() &&
@@ -1877,7 +1877,7 @@ bool Lidar::scanDataChecking(bool check_front, sensor_msgs::LaserScan scan, floa
 				if (fabs(scan.ranges[data_index] - ref_scan_data[data_index]) < 0.2)
 				{
 					_valid_count++;
-					printf(" Pass accuracy checking.\n");
+					printf(" Pass.\n");
 				}
 				else
 					printf("\n");
@@ -1886,7 +1886,7 @@ bool Lidar::scanDataChecking(bool check_front, sensor_msgs::LaserScan scan, floa
 				ref_scan_data[data_index] == std::numeric_limits<float>::infinity())
 //				ref_scan_data[data_index] < 0.01)
 			{
-				printf(" Pass accuracy checking.\n");
+				printf(" Pass.\n");
 				_valid_count++;
 			}
 			else
