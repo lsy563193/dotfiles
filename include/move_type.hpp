@@ -12,6 +12,7 @@
 #include "movement.hpp"
 #include "boost/shared_ptr.hpp"
 #include "rcon.h"
+#include "serial.h"
 //#include "mode.hpp"
 
 class Mode;
@@ -204,6 +205,8 @@ public:
 private:
 	boost::shared_ptr<IAction> p_movement_;
 
+	uint8_t buf_[REC::REC_LEN];
+
 	uint8_t error_step_{0}; // Marking the error stage.
 	uint16_t error_content_{0}; // Marking the current value of checking item.
 	uint16_t error_code_{0};
@@ -313,6 +316,8 @@ private:
 
 	// For stage 7.
 	bool checkStage7Finish();
+
+	uint8_t charge_test_result_{0};
 };
 
 class MoveTypeGyroTest: public IMoveType

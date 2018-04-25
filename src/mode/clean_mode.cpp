@@ -169,10 +169,11 @@ ACleanMode::~ACleanMode()
 
 	if (mode_i_ == cm_navigation)
 	{
-		robot::instance()->updateCleanRecord(static_cast<const uint32_t &>(ros::Time::now().toSec()),
-											 static_cast<const uint16_t &>(robot_timer.getWorkTime()),
-											 static_cast<const uint16_t &>(map_area),
-											 clean_map_);
+		robot::instance()->updateCleanRecord(static_cast<const uint32_t &>(ros::Time::now().toSec()
+												+robot_timer.getRealTimeOffset())
+											 ,static_cast<const uint16_t &>(robot_timer.getWorkTime())
+											 ,static_cast<const uint16_t &>(map_area)
+											 ,clean_map_);
 		s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_LAST_CLEANMAP);
 
 	}
@@ -897,9 +898,14 @@ void ACleanMode::pubLineMarker(const std::vector<LineABC> *lines)
 	if(!lines->empty() && lines->size() >= 1){
 		for(it = lines->cbegin(); it != lines->cend();it++){
 			point1.x = it->x1;
-			point1.y = it->y1;
 			point2.x = it->x2;
-			point2.y = it->y2;
+			if (it->B != 0) {
+				point1.y = (-it->C - it->A * point1.x) / it->B;
+				point2.y = (-it->C - it->A * point2.x) / it->B;
+			} else {
+				point1.y = it->y1;
+				point2.y = it->y2;
+			}
 			line_marker.points.push_back(point1);
 			line_marker.points.push_back(point2);
 		}
