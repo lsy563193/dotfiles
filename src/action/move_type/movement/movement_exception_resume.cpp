@@ -844,7 +844,7 @@ bool MovementExceptionResume::isFinish()
 				s_pos_y = odom.getOriginY();
 			}
 		} else if (lidar_resume_cnt_ == 5) {
-			if (ros::Time::now().toSec() - resume_lidar_start_time_ > 10) {//stop for 10 seconds for rescue the lidar
+			if (ros::Time::now().toSec() - resume_lidar_start_time_ > 30) {//stop for 10 seconds for rescue the lidar
 				lidar_resume_cnt_ = 6;
 			}
 		}

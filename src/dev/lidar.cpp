@@ -1762,7 +1762,7 @@ bool Lidar::checkLidarBeCovered() {
 	}
 //	ROS_INFO("covered_laser_size(%d)", covered_laser_size);
 	if (covered_laser_size > 60) {
-//		ROS_ERROR("lidar was covered");
+		ROS_ERROR("lidar was covered");
 		return true;
 	}
 	else
