@@ -327,15 +327,19 @@ bool S_Wifi::init()
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::SyncClockRxMsg &msg = static_cast<const wifi::SyncClockRxMsg&>( a_msg );
 				is_wifi_connected_ = true;
-				struct tm nettime;	
-				nettime.tm_year = msg.getYear()-1900;
-				nettime.tm_mon = msg.getMonth()-1;
-				nettime.tm_mday = msg.getDay();
-				nettime.tm_hour = msg.getHour();
-				nettime.tm_min = msg.getMin();
-				nettime.tm_sec = msg.getSec();
+				struct tm s_new_calendar_time;
+				s_new_calendar_time.tm_year = msg.getYear()-1900;
+				s_new_calendar_time.tm_mon = msg.getMonth()-1;
+				s_new_calendar_time.tm_mday = msg.getDay();
+				s_new_calendar_time.tm_hour = msg.getHour();
+				s_new_calendar_time.tm_min = msg.getMin();
+				s_new_calendar_time.tm_sec = msg.getSec();
 
-				robot_timer.setRealTime(nettime);
+				// Get CST time (local time from app).
+				time_t new_calendar_time = mktime(&s_new_calendar_time);
+				robot_timer.setRealTimeOffset(new_calendar_time);
+				ROS_INFO("%s,%d,\033[1;40;35m time from cloud %s \033[0m",
+						 __FUNCTION__,__LINE__,asctime(&s_new_calendar_time));
 				//ack
 				wifi::Packet p(
 							-1,
@@ -1002,6 +1006,7 @@ bool S_Wifi::uploadLastCleanData()
 										   clean_record_data_pack[i]);
 //			wifi::Packet p(-1,0x01,0,0xc9,clean_record_data_pack[i]);
 			s_wifi_tx_.push(std::move(p)).commit();
+			usleep(1000000);
 		}
 		ROS_INFO("%s,%d,\033[1;42;31mclean_record_data_pack size %ld\033[0m",__FUNCTION__,__LINE__,clean_record_data_pack.size());
 	}
