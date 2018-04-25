@@ -327,15 +327,15 @@ bool S_Wifi::init()
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::SyncClockRxMsg &msg = static_cast<const wifi::SyncClockRxMsg&>( a_msg );
 				is_wifi_connected_ = true;
-				struct tm realtime;	
-				realtime.tm_year = msg.getYear()-1900;
-				realtime.tm_mon = msg.getMonth()+1;
-				realtime.tm_mday = msg.getDay();
-				realtime.tm_hour = msg.getHour();
-				realtime.tm_min = msg.getMin();
-				realtime.tm_sec = msg.getSec();
+				struct tm nettime;	
+				nettime.tm_year = msg.getYear()-1900;
+				nettime.tm_mon = msg.getMonth()-1;
+				nettime.tm_mday = msg.getDay();
+				nettime.tm_hour = msg.getHour();
+				nettime.tm_min = msg.getMin();
+				nettime.tm_sec = msg.getSec();
 
-				robot_timer.setRealTime(realtime);
+				robot_timer.setRealTime(nettime);
 				//ack
 				wifi::Packet p(
 							-1,
@@ -664,7 +664,7 @@ void S_Wifi::sort_push(std::deque<Cell_t> *list,Cell_t p,int sort_type)
 		list->push_back(p);
 	}
 	// --bin sort store
-	else if(sort_type = 2)
+	else if(sort_type == 2)
 	{
 		if(list->size()>0)
 		{
@@ -1376,17 +1376,13 @@ void S_Wifi::taskPushBack(S_Wifi::ACT action)
 
 void S_Wifi::wifi_send_routine()
 {
-	clock_t t;
-	float period = 0;
 	uint32_t upload_state_count;
 	uint32_t upload_map_count;
 	while( ros::ok() || wifi_quit_)
 	{
 
-		t = clock();
 		if(!task_list_.empty())
 		{
-
 			pthread_mutex_lock(&task_lock_);
 			S_Wifi::ACT act = task_list_.front();
 			task_list_.pop_front();
@@ -1440,14 +1436,7 @@ void S_Wifi::wifi_send_routine()
 		}
 		else
 		{
-			period = ((float)(clock() - t))/CLOCKS_PER_SEC;
-			uint32_t sleep_time = 500000-(uint32_t)(period*1000000);
-			if(sleep_time < 500000)
-			{
-				usleep(sleep_time);
-			}
-			else
-				usleep(500000);
+
 			if(!is_wifi_connected_)
 				continue;
 
@@ -1469,6 +1458,7 @@ void S_Wifi::wifi_send_routine()
 					upload_state_count=0;
 				}
 			}
+			usleep(500000);
 		}
 	}
 	ROS_WARN("WIFI SEND ROUTINE EXIT!");

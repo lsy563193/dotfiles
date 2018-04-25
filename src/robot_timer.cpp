@@ -60,7 +60,7 @@ void Timer::setRealTime(struct tm &real_time)
 		realtime_offset_ = (uint32_t)difftime(rtime,ltime);
 	else
 		realtime_offset_ = (uint32_t)difftime(ltime,rtime);
-	ROS_INFO("%s,%d,\033[1;40;35m time from cloud %s , time offset from %u\033[0m",
+	ROS_INFO("%s,%d,\033[1;40;35m time from cloud %s , time offset %u\033[0m",
 				__FUNCTION__,__LINE__,asctime(&real_time),realtime_offset_);
 }
 
