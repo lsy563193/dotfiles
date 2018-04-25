@@ -14,16 +14,8 @@ public:
 		work_start_time_ = time(NULL);
 		wall_follow_start_time_ = time(NULL);
 		trap_start_time_ = time(NULL);
+		realtime_offset_ = 0;
 	}
-
-	struct DateTime{
-		uint16_t year;
-		uint8_t day;
-		uint8_t month;
-		uint8_t hour;
-		uint8_t mint;
-		uint8_t sec;
-	};
 
 	void initWorkTimer(void);
 
@@ -43,55 +35,50 @@ public:
 
 	bool trapTimeout(double duration);
 
+	uint32_t getRealTimeOffset()
+	{
+		return realtime_offset_;
+	}
 	/*
-	 * @brief set real time to struct DataTime
+	 * @brief set real time from SyncClickRxMsg 
 	 * @param1 date time
 	 */
-	void setRealTime(struct DateTime);
+	void setRealTime(struct tm &realtime);
 
 	/*
 	 * @breif set time from bottom board
-	 * @param1 realtime in mints
+	 * @param1 realtime in minutes
 	 */
 	void setRealTime(uint16_t realtime);
 
-	struct DateTime getRealTime()
-	{
-		return date_time_;	
-	}
+	void getRealtime(struct tm *date_time);
 
 	/*
 	 * @brief get real time in mintues
 	 * from monday
 	 * @return time in mintues
 	 */
+	//uint32_t getRealTimeInMint();
 
-	uint32_t getRealTimeInMint();
 	/*
 	 * @brief get real time Weekday 
 	 * @return weekdy 1~7
 	 */
-	uint32_t getRealTimeWeekDay();
+	//uint32_t getRealTimeWeekDay();
 
 	/*
 	 * @brief get local time in mintues
 	 * from monday
 	 * @return time in mintues
 	 */
-	uint32_t getLocalTimeInMint();
+	//uint32_t getLocalTimeInMint();
 
 	/*
 	 * @brief update time from minutes
 	 * @param1 cur_time ,give a cur time in struct DateTime 
 	 * @param2 mins ,give time in diffrence mintus (0~10080)
 	 */
-	void updateRealTimeFromMint(struct Timer::DateTime &cur_time,uint16_t mins);
-
-	/*
-	 * @brief return ascii time in string
-	 * @return time in string
-	 */
-	char* asctime();
+	void updateRealTimeFromMint(struct tm &cur_time,uint16_t mins);
 
 private:
 	
@@ -100,7 +87,7 @@ private:
 	uint32_t saved_work_time_;
 	time_t wall_follow_start_time_;
 	time_t trap_start_time_;
-	struct DateTime date_time_;
+	uint32_t realtime_offset_;
 
 };
 
