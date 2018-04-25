@@ -187,179 +187,6 @@ bool Lidar::motorCtrl(bool new_switch_)
 
 }
 
-/*
- * @author mengshige1988@qq.com
- * @brief for combine each lines in lines
- * @param1 lines before
- * @param2 lines after
- * @return false if no more lines for combine ,else return true.
- * */
-static bool lineCombine(std::vector<LineABC> *lines_before,std::vector<LineABC> *lines_after)
-{
-	bool ret = false;
-	const float MIN_COMBINE_ANGLE=10.0;//in degrees
-	const float MIN_COMBINE_DIST=0.6;//in meters
-	LineABC line_tmp;
-	std::vector<LineABC>::iterator it;
-	for(it = lines_before->begin(); it != lines_before->end(); it++){
-		if( (it+1)!=lines_before->end() ){
-			if(std::abs(it->K - (it+1)->K) <= MIN_COMBINE_ANGLE){
-				if(two_points_distance_double(it->x2,it->y2,(it+1)->x1,(it+1)->y1) < MIN_COMBINE_DIST){
-					line_tmp.x1 = it->x1;
-					line_tmp.y1 = it->y1;
-					line_tmp.x2 = (it+1)->x2;
-					line_tmp.y2 = (it+1)->y2;
-					line_tmp.A = line_tmp.y2 - line_tmp.y1;
-					line_tmp.B = line_tmp.x1 - line_tmp.x2;
-					line_tmp.C = line_tmp.x2 * line_tmp.y1 - line_tmp.x1 * line_tmp.y2;
-					line_tmp.len = two_points_distance_double(line_tmp.x1,line_tmp.y1,line_tmp.x2,line_tmp.y2);
-					line_tmp.K = radian_to_degree(atan(-1*(line_tmp.A / line_tmp.B)));
-					lines_after->push_back(line_tmp);
-					it++;
-					ret = true;
-				}
-			}
-			else
-				lines_after->push_back(*it);
-		}
-	}
-	return ret;
-}
-
-/*
- * @author mengshige1988@qq.com
- * @brief find lines from scan data
- * @param1 lines vector
- * @return ture if found lines, alse return false
- * */
-bool Lidar::findLines(std::vector<LineABC> *lines,bool combine)
-{
-	if(!isScanLinearReady())
-		return false;
-	const float MAX_LIDAR_DIST = 4.0;
-	const float ACCR_PERSET = 0.05;//%5
-
-	sensor_msgs::LaserScan scan_data;
-	if (lidarCheckFresh(0.210,1))
-	{
-		scanLinear_mutex_.lock();
-		scan_data = lidarScanData_linear_;
-		scanLinear_mutex_.unlock();
-	}
-	else
-		return false;
-
-	/*---------translate lidar distance to point set----------*/
-	int n_angle = angle_n_;
-	int i=0;
-	Vector2<double> lidar_point_pos;
-	std::vector<Vector2<double>> point_set;
-	for(i=0;i<n_angle;i++){
-		if(scan_data.ranges[i] <= MAX_LIDAR_DIST){
-			auto cur_radian = robot::instance()->getWorldPoseRadian();
-			auto cur_p_x = robot::instance()->getWorldPoseX();
-			auto cur_p_y = robot::instance()->getWorldPoseY();
-
-			double ranges = scan_data.ranges[i];
-			lidar_point_pos.x = cos(cur_radian + degree_to_radian(i) + PI) *ranges + cur_p_x;//in meters
-			lidar_point_pos.y = sin(cur_radian + degree_to_radian(i) + PI) *ranges + cur_p_y;//in meters
-			coordinate_transform(&lidar_point_pos.x, &lidar_point_pos.y, LIDAR_THETA, LIDAR_OFFSET_X, LIDAR_OFFSET_Y);
-			point_set.push_back(lidar_point_pos);
-			lidar_point_pos.x = 0.0;
-			lidar_point_pos.y = 0.0;
-		}
-	}
-	//pubPointMarkers(&point_set);
-
-	if(point_set.size() <2)
-		return false;// not enough point to make lines , at least got 2 points
-
-	/*--------ready to find lines in point set-----------*/
-	LineABC line;
-	lines->clear();
-	const float LINE_n_P_DIST_MAX = 0.05;//max line and point distance
-	const float POINT_n_P_DIST_MAX = 0.3;//max point and point distance
-	int line_count = 0;
-	int point_count = 0;
-	bool find_next_line = true;
-	i = 0;
-	while(i < (point_set.size() -1)){
-		if(find_next_line){
-			double x1 = point_set.at(i).x;
-			double y1 = point_set.at(i).y;
-			i++;
-			double x2 = point_set.at(i).x;
-			double y2 = point_set.at(i).y;
-			double dist = two_points_distance_double(x1,y1,x2,y2);
-			if(dist > POINT_n_P_DIST_MAX)//find next line
-				continue;
-			find_next_line = false;
-			line.len = dist;
-			line.A = y2-y1;
-			line.B = x1-x2;
-			line.C = x2*y1-x1*y2;
-			line.K = radian_to_degree(atan((-1)*line.A/line.B));
-			line.x1 = x1;
-			line.y1 = y1;
-			line.x2 = x2;
-			line.y2 = y2;
-			lines->push_back(line);
-			line_count++;
-			point_count+=2;
-		}
-		else{
-			double xn = point_set.at(i).x;
-			double yn = point_set.at(i).y;
-			double dist_p2l = std::abs(line.A*xn+line.B*yn+line.C)/sqrt(line.A*line.A+line.B*line.B);//point to line distance
-			double dist_p2p = two_points_distance_double(point_set.at(i-1).x ,point_set.at(i-1).y ,xn ,yn);//current point to last point distance
-			point_count++;
-			if(dist_p2l> LINE_n_P_DIST_MAX || dist_p2p > POINT_n_P_DIST_MAX){ //find next line
-				find_next_line = true;
-				point_count = 0;
-				continue;
-			}
-			if(point_count>3){
-				double xn_2 = (point_set.at(i-1).x - point_set.at(i-2).x) /2.0 + point_set.at(i-2).x;
-				double yn_2 = (point_set.at(i-1).y - point_set.at(i-2).y) /2.0 + point_set.at(i-2).y;
-				/*---init A,B,C,x2,y2,K---*/
-				LineABC *last_line = &lines->back();
-				last_line->A = yn_2 - line.y1;
-				last_line->B = line.x1 - xn_2;
-				last_line->C = xn_2*line.y1-line.x1*yn_2;
-				last_line->K= radian_to_degree(atan(-1*(last_line->A / last_line->B)));
-				last_line->x2 = xn_2;
-				last_line->y2 = yn_2;
-				last_line->len = two_points_distance_double(line.x1,line.y1,xn_2,yn_2);
-			}
-		}
-		i++;
-	}
-
-	/*------combine short lines to long lines------*/
-	if(combine){
-		std::vector<LineABC> lines_after;
-		while(lineCombine(lines,&lines_after)){
-			lines->clear();
-			*lines = lines_after;
-			lines_after.clear();
-		}
-	}
-	/*------print line data------*/
-	/*
-	std::string msg("");
-	std::vector<LineABC>::iterator it;
-	for(it = lines->begin();it!= lines->end();it++){
-		msg+= "\n[A:"+ std::to_string(it->A) +",B:" + std::to_string(it->B) +",C:" +
-			std::to_string(it->C)+",len = "+std::to_string(it->size_of_path)+",K = " +
-			std::to_string(it->K)+",("+std::to_string(it->x1)+","+
-			std::to_string(it->y1)+"),("+std::to_string(it->x2)+","+std::to_string(it->y2)+")]";
-	}
-	ROS_INFO("%s,%d,pub line markers,lines numbers \033[35m%u\033[0m, lines:\033[32m %s \033[0m",__FUNCTION__,__LINE__,lines->size(),msg.c_str());
-	*/
-//	robot::instance()->pubLineMarker(lines);
-	return true;
-}
-
 void Lidar::startAlign()
 {
 	align_finish_ = false;
@@ -374,70 +201,80 @@ bool Lidar::isAlignFinish()
 	return align_finish_;
 }
 
-/*
- * @auther mengshige1988@qq.com
- * @breif get ac_align angle
- * @param1 liens vector
- * @param2 ac_align angle
- * @retrun true if found ac_align angle ,alse return false
- * */
-//bool Lidar::getAlignAngle(const std::vector<LineABC> *lines ,float *align_angle)
-//{
-//	if(lines->empty())
-//		return false;
-//	const float DIF_ANG_RANGE = 10.0;//different angle ranges
-//	const float LONG_ENOUGTH = 1.0;//in meters
-//	std::vector<float> same_angle_count;
-//	std::vector<LineABC>::const_iterator it1,it2;
-//	float size_of_path = 0.0;
-//	int i=0;
-//	int pos = 0;
-//	/*----find the longest one in lines---*/
-//	for(it1 = lines->cbegin(); it1!= lines->cend(); it1++){
-//		if(it1->len >= size_of_path){
-//			len = it1->size_of_path;
-//			pos = i;
-//		}
-//		i++;
-//	}
-//	if(lines->at(pos).size_of_path >= LONG_ENOUGTH){
-//		*align_angle = lines->at(pos).K;
-//		ROS_INFO("%s,%d: find long line %f ,align_angle %f",__FUNCTION__,__LINE__,lines->at(pos).size_of_path,*align_angle);
-//		align_finish_ = true;
-//		return true;
-//	}
-//
-//	/*---find those most populars in lines ---*/
-//	float sum = 0.0;
-//	float avg = 0.0;
-//	i=0;
-//	if(lines->size() >1){
-//		for(it2 = lines->cbegin();it2!=lines->cend();it2++){
-//			if(i > lines->size()/2)
-//				return false;
-//			i++;
-//			sum = 0.0;
-//			same_angle_count.clear();
-//			for(it1 = it2;it1!= lines->cend(); it1++){
-//				if((it1+1) != lines->cend()){
-//					if(std::abs((it1+1)->K - it1->K) < DIF_ANG_RANGE){
-//						sum += it1->K;
-//						same_angle_count.push_back(it1->K);
-//						//printf("similar angle %f\n",it1->K);
-//						if(same_angle_count.size() > lines->size()/2 ){//if number count more than 1/2 of total ,return
-//							avg = sum / (1.0*same_angle_count.size());
-//							*align_angle = avg;
-//							align_finish_ = true;
-//							ROS_INFO("%s,%d,get most popular line angle %f",__FUNCTION__,__LINE__,avg);
-//							return true;
-//						}
-//					}
-//				}
-//			}
-//		}
-//	}
-//	return false;
-//}
+class filter_fit_line{
+public:
+	filter_fit_line(bool is_left):is_left_(is_left) { };
+	bool operator()(const LineABC& line) {
+		LineABC vertical_line;
+		bool is_line_in_origin_left;//is vertical is on the left side of the origin(0, 0)
+		if (line.A == 0) {
+			vertical_line.A = 1;
+			vertical_line.B = 0;
+			vertical_line.C = !is_left_ ? -line.x2 : -line.x1;
+			if (0 < -vertical_line.C / vertical_line.A) {
+				is_line_in_origin_left = true;
+			}
+			else {
+				is_line_in_origin_left = false;
+			}
+		}
+		else if (line.B == 0) {
+			vertical_line.A = 0;
+			vertical_line.B = 1;
+			vertical_line.C = !is_left_ ? -line.y2 : -line.y1;
+			if (vertical_line.C > 0) {
+				is_line_in_origin_left = true;
+			}
+			else {
+				is_line_in_origin_left = false;
+			}
+		}
+		else {
+			vertical_line.A = line.B;
+			vertical_line.B = -line.A;
+			vertical_line.C = !is_left_ ? line.A * line.y2 - line.B * line.x2 : line.A * line.y1 - line.B * line.x1;
+			vertical_line.x1 = !is_left_ ? line.x2 : line.x1;
+			vertical_line.y1 = !is_left_ ? line.y2 : line.y1;
+			vertical_line.x2 = 0;
+//			vertical_line.y2 = -vertical_line.C / vertical_line.B;
+			if (0 < -vertical_line.C / vertical_line.B) {
+				is_line_in_origin_left = true;
+			}
+			else {
+				is_line_in_origin_left = false;
+			}
+		}
+//		std::vector<LineABC>	vertical_lines;
+//		vertical_lines.push_back(vertical_line);
+//		ACleanMode::pubLineMarker(&vertical_lines);
+		ROS_INFO("line.p1(%lf, %lf), line.p2(%lf, %lf)", line.x1, line.y1, line.x2, line.y2);
+		ROS_INFO("vertical_line.p1(%lf, %lf)", vertical_line.x1, vertical_line.y1);
+		double dis_to_origin = fabs(vertical_line.C / sqrt(pow(vertical_line.A, 2) + pow(vertical_line.B, 2)));
+		ROS_ERROR("is_left_(%d), is_line_in_origin_left(%d), dis_to_origin(%lf)", is_left_, is_line_in_origin_left, dis_to_origin);
+		if (is_left_) {
+			if (is_line_in_origin_left) {
+				if (dis_to_origin > 0.05) {
+//					beeper.debugBeep(VALID);
+					ROS_ERROR("filter fit line!");
+					return true;
+				}
+			}
+		} else {
+			if (!is_line_in_origin_left) {
+				if (dis_to_origin > 0.05) {
+//					beeper.debugBeep(VALID);
+					ROS_ERROR("filter fit line!");
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+private:
+	bool is_left_;
+};
+
 
 bool Lidar::getFitLine(double r_begin, double r_end, double range, double dis_lim, double *line_radian,
 											 double *distance, bool is_left, bool is_align)
@@ -523,6 +360,9 @@ bool Lidar::getFitLine(double r_begin, double r_end, double range, double dis_li
 	splitLine2nd(&Lidar_Group, t_lim_split,points_count_lim);
 	mergeLine(&Lidar_Group, t_lim_merge, is_align);
 	fitLineGroup(&Lidar_Group,dis_lim , is_align);
+	if (!is_align) {
+		fit_line.erase(std::remove_if(fit_line.begin(), fit_line.end(),filter_fit_line(is_left)),fit_line.end());
+	}
 	//*line_radian = atan2(-a, b);
 	Lidar_Group.clear();
 	if (!fit_line.empty()) {
@@ -920,8 +760,8 @@ bool Lidar::fitLineGroup(std::vector<std::deque<Vector2<double>> > *groups, doub
 			new_fit_line.B = b;
 			new_fit_line.C = c;
 			new_fit_line.x1 = iter->begin()->x;
-			new_fit_line.x2 = (iter->end()-1)->x;
 			new_fit_line.y1 = iter->begin()->y;
+			new_fit_line.x2 = (iter->end()-1)->x;
 			new_fit_line.y2 = (iter->end()-1)->y;
 			new_fit_line.len = static_cast<int>(iter->size());
 
@@ -1219,7 +1059,6 @@ uint8_t Lidar::lidarMarker(std::vector<Vector2<int>> &markers, int movement_i, i
 		if (!(dx == 0 && dy == 0)){
 			if(!(action_i == 7 && (is_left_back || is_left_front))
 						&& !(action_i == 8 && (is_right_back || is_right_front))
-//						&& !(movement_i == 2 && (is_left_back || is_right_back))
 						&& !(movement_i == 2)) {
 				markers.push_back(marker);
 //				ROS_WARN("movement_i = %d, action_i = %d", movement_i, action_i);
@@ -1929,3 +1768,4 @@ bool Lidar::checkLidarBeCovered() {
 	else
 		return false;
 }
+

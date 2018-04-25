@@ -897,9 +897,14 @@ void ACleanMode::pubLineMarker(const std::vector<LineABC> *lines)
 	if(!lines->empty() && lines->size() >= 1){
 		for(it = lines->cbegin(); it != lines->cend();it++){
 			point1.x = it->x1;
-			point1.y = it->y1;
 			point2.x = it->x2;
-			point2.y = it->y2;
+			if (it->B != 0) {
+				point1.y = (-it->C - it->A * point1.x) / it->B;
+				point2.y = (-it->C - it->A * point2.x) / it->B;
+			} else {
+				point1.y = it->y1;
+				point2.y = it->y2;
+			}
 			line_marker.points.push_back(point1);
 			line_marker.points.push_back(point2);
 		}
