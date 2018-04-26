@@ -212,6 +212,8 @@ private:
 	bool is_sleep_;
 	bool in_linking_;
 	bool wifi_quit_ ;
+	bool time_sync_;
+	double last_time_sync_time_;
 
 	wifi::WorkMode robot_work_mode_;
 	wifi::WorkMode last_work_mode_;
