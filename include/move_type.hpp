@@ -162,6 +162,7 @@ public:
 	void run() override ;
 
 private:
+	bool bumper_error{false};
 	bool turn_left_{true};
 	int16_t turn_target_angle_{0};
 	double turn_time_stamp_;

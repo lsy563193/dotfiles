@@ -67,7 +67,7 @@ void StateInit::initForExploration() {
 	brush.slowOperate();
 	water_tank.setCurrentSwingMotorMode(WaterTank::SWING_MOTOR_LOW);
 	water_tank.checkEquipment() ? water_tank.open(WaterTank::operate_option::swing_motor)
-								: vacuum.setForCurrentMaxMode(false);
+								: vacuum.setForCurrentMode(Vacuum::VacMode::vac_low_mode);
 	sp_cm_->isUsingDustBox(!water_tank.getStatus(WaterTank::operate_option::swing_motor));
 	ROS_INFO("%s %d: Enter state initForExploration.", __FUNCTION__, __LINE__);
 }
@@ -78,7 +78,7 @@ void StateInit::initForSpot()
 	brush.fullOperate();
 	water_tank.setCurrentSwingMotorMode(WaterTank::SWING_MOTOR_HIGH);
 	water_tank.checkEquipment() ? water_tank.open(WaterTank::operate_option::swing_motor)
-								: vacuum.setForCurrentMaxMode(true);
+								: vacuum.setForCurrentMode(Vacuum::VacMode::vac_max_mode);
 	sp_cm_->isUsingDustBox(!water_tank.getStatus(WaterTank::operate_option::swing_motor));
 	ROS_INFO("%s %d: Enter state initForSpot.", __FUNCTION__, __LINE__);
 }

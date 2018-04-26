@@ -15,7 +15,7 @@ void StateGoToCharger::init() {
 	brush.slowOperate();
 	water_tank.setCurrentSwingMotorMode(WaterTank::SWING_MOTOR_LOW);
 	water_tank.checkEquipment() ? water_tank.open(WaterTank::operate_option::swing_motor)
-								: vacuum.setForCurrentMaxMode(false);
+								: vacuum.setForCurrentMode(Vacuum::VacMode::vac_low_mode);
 	gyro.setTiltCheckingEnable(false); //disable tilt detect
 	s_wifi.setWorkMode(Mode::cm_exploration);
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
