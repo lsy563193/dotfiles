@@ -129,6 +129,8 @@ FILE(GLOB PP_SRC
 	src/dev/wifi/msg.cpp
 	#src/wifi/util.cpp
 
+	src/protocol/wifi_map_protocol.cpp
+
 	#src/cloud/realtime_map_handler.cpp
 	#src/cloud/accumulated_work_time_handler.cpp
 	#src/cloud/consumable_handler.cpp
@@ -203,7 +205,7 @@ catkin_package(
 	DEPENDS Eigen3
 )
 
-add_executable(pp  ${PP_SRC} src/protocol/wifi_map_protocol.cpp  )
+add_executable(pp  ${PP_SRC} )
 #target_link_libraries(pp ${catkin_LIBRARIES} ${ALSA_LIBRARIES} ${Eigen3_LIBRARIES} -lm -lpthread)
 target_link_libraries(pp ${catkin_LIBRARIES} ${ALSA_LIBRARIES} ${Eigen3_LIBRARIES} -lm -lpthread "-T ../ilife_ldscript.lds ../res.o -Wl,--verbose")
 

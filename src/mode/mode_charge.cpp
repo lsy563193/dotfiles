@@ -76,6 +76,7 @@ bool ModeCharge::isExit()
 		{
 			ROS_WARN("%s %d: Charge mode receives plan, change to navigation mode.", __FUNCTION__, __LINE__);
 			setNextMode(cm_navigation);
+			charger.enterNavFromChargeMode(true);
 			ACleanMode::plan_activation_ = true;
 			return true;
 		}
@@ -97,6 +98,7 @@ bool ModeCharge::isExit()
 			ROS_WARN("%s %d: Charge mode receives remote clean or key clean, change to navigation mode.", __FUNCTION__,
 					 __LINE__);
 			setNextMode(cm_navigation);
+			charger.enterNavFromChargeMode(true);
 			return true;
 		}
 	}
@@ -115,6 +117,7 @@ bool ModeCharge::isExit()
 		{
 			ROS_WARN("%s %d: Charge mode receives wifi plan1, change to navigation mode.", __FUNCTION__, __LINE__);
 			setNextMode(cm_navigation);
+			charger.enterNavFromChargeMode(true);
 			return true;
 		}
 		s_wifi.resetReceivedWorkMode();

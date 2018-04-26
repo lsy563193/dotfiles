@@ -576,7 +576,7 @@ int8_t S_Wifi::uploadStatus(int msg_code,const uint8_t seq_num)
 	{
 		int upload_state_ack_cnt=0;
 		do{
-			if(upload_state_ack_cnt++ > 10)
+			if(upload_state_ack_cnt++ > 8)
 			{
 				is_wifi_connected_ = false;
 				wifi_led.setMode(LED_FLASH,WifiLed::state::off);
@@ -595,7 +595,7 @@ int8_t S_Wifi::uploadStatus(int msg_code,const uint8_t seq_num)
 					seq_num);
 
 			s_wifi_tx_.push(std::move( p )).commit();
-			usleep(400000);
+			usleep(500000);
 		}while(ros::ok() && !upload_state_ack_);
 		upload_state_ack_ = false;
 	}
@@ -616,6 +616,7 @@ int8_t S_Wifi::uploadStatus(int msg_code,const uint8_t seq_num)
 	}
 	return 0;
 }
+
 uint32_t S_Wifi::find_if(std::deque<Cell_t> *list,Cell_t point,int find_type)
 {
 	// -- hash search
@@ -944,7 +945,7 @@ bool S_Wifi::uploadMap(MapType map)
 
 bool S_Wifi::uploadLastCleanData()
 {
-	if(!is_wifi_connected_ )
+	if (!is_wifi_connected_)
 		return false;
 	INFO_BLUE("UPLOAD LAST STATE & MAP");
 	uint32_t time;
@@ -956,62 +957,71 @@ bool S_Wifi::uploadLastCleanData()
 	std::vector<uint8_t> clean_record_data;
 	std::vector<std::vector<uint8_t>> clean_record_data_pack;
 	clean_record_data_pack.clear();
-	if(1/*robot::instance()->getRobotWorkMode() == Mode::cm_navigation && robot::instance()->p_mode != nullptr*/)
+
+	int16_t x_min, x_max, y_min, y_max;
+	uint16_t max_pack_len = 230;
+	clean_map.getMapRange(CLEAN_MAP, &x_min, &x_max, &y_min, &y_max);
+	int16_t col_n = (int16_t) ceilf((y_max - y_min + 1) / 8.0);
+	int16_t row_n = (int16_t) (max_pack_len / col_n);
+	auto pack_n = static_cast<uint8_t>(ceilf((x_max - x_min + 1) / (row_n * 1.0)));
+	for (int pack = 0; pack < pack_n; pack++)
 	{
-//		uint16_t clean_area = (uint16_t)(clean_map.getCleanedArea()*CELL_SIZE*CELL_SIZE*100);
-		int16_t x_min,x_max,y_min,y_max;
-		clean_map.getMapRange(CLEAN_MAP,&x_min,&x_max,&y_min,&y_max);
-		int16_t col_n = (int16_t)ceilf((y_max-y_min+1)/8.0);
-		int16_t row_n = (int16_t)(480/col_n);
-		auto pack_n = static_cast<uint8_t>(ceilf((x_max-x_min+1)/(row_n*1.0)));
-		for(int p = 0;p<pack_n;p++)
+		//push clean area and work time
+		/*clean_record_data.push_back((uint8_t)(time>>24));
+		clean_record_data.push_back((uint8_t)(time>>16));
+		clean_record_data.push_back((uint8_t)(time>>8));
+		clean_record_data.push_back((uint8_t)(time));
+		clean_record_data.push_back((uint8_t)(robot_timer.getWorkTime()>>8));
+		clean_record_data.push_back((uint8_t)robot_timer.getWorkTime());
+		clean_record_data.push_back((uint8_t)(clean_area>>8));
+		clean_record_data.push_back((uint8_t)clean_area);*/
+		clean_record_data.push_back((uint8_t) pack);
+		clean_record_data.push_back((uint8_t) pack_n);
+		clean_record_data.push_back((uint8_t) col_n);
+		uint8_t tmp_byte = 0;
+		for (int row = 0; row < row_n; row++)
 		{
-			//push clean area and work time
-			/*clean_record_data.push_back((uint8_t)(time>>24));
-			clean_record_data.push_back((uint8_t)(time>>16));
-			clean_record_data.push_back((uint8_t)(time>>8));
-			clean_record_data.push_back((uint8_t)(time));
-			clean_record_data.push_back((uint8_t)(robot_timer.getWorkTime()>>8));
-			clean_record_data.push_back((uint8_t)robot_timer.getWorkTime());
-			clean_record_data.push_back((uint8_t)(clean_area>>8));
-			clean_record_data.push_back((uint8_t)clean_area);*/
-			clean_record_data.push_back((uint8_t)p);
-			clean_record_data.push_back((uint8_t)pack_n);
-			clean_record_data.push_back((uint8_t)col_n);
-			uint8_t tmp_byte  = 0;
-			for(int r = 0;r<row_n;r++)
+			for (int col = 0; col < col_n; col++)
 			{
-				for(int col = 0;col<col_n;col++)
+				tmp_byte = 0;
+				for (int bi = 0; bi < 8; bi++)
 				{
-					tmp_byte = 0;
-					for(int bi= 0;bi<8;bi++)
-					{
-						CellState c_state = clean_map.getCell(CLEAN_MAP, p*row_n+r+x_min, col*8+bi+y_min);
-						if(c_state == CLEANED)
-							tmp_byte |= 0x80>>bi;
-						else
-							tmp_byte &= ~(0x80>>bi);
-					}
-					clean_record_data.push_back(tmp_byte);
+					CellState c_state = clean_map.getCell(CLEAN_MAP, pack * row_n + row + x_min, col * 8 + bi + y_min);
+					if (c_state == CLEANED)
+						tmp_byte |= 0x80 >> bi;
+					else
+						tmp_byte &= ~(0x80 >> bi);
 				}
+				clean_record_data.push_back(tmp_byte);
 			}
-			clean_record_data_pack.push_back(clean_record_data);
-			clean_record_data.clear();
 		}
-		for(uint8_t i = 0;i<clean_record_data_pack.size();i++)
+		clean_record_data_pack.push_back(clean_record_data);
+		clean_record_data.clear();
+	}
+	for (uint8_t i = 0; i < clean_record_data_pack.size(); i++)
+	{
+		uint8_t upload_clean_record_cnt = 0;
+		do
 		{
+			if (upload_clean_record_cnt++ > 4)
+			{
+				is_wifi_connected_ = false;
+				wifi_led.setMode(LED_STEADY, WifiLed::state::off);
+				return false;
+			}
 			wifi::CleanRecordUploadTxMsg p(time,
 										   clean_time,
 										   clean_area,
 										   clean_record_data_pack[i]);
-//			wifi::Packet p(-1,0x01,0,0xc9,clean_record_data_pack[i]);
 			s_wifi_tx_.push(std::move(p)).commit();
-			usleep(1000000);
-		}
-		ROS_INFO("%s,%d,\033[1;42;31mclean_record_data_pack size %ld\033[0m",__FUNCTION__,__LINE__,clean_record_data_pack.size());
+			auto sleep_sec = static_cast<uint32_t>(clean_record_data_pack[i].size() > 600 ?
+												   clean_record_data_pack[i].size() * 1000 : 600000);
+			usleep(static_cast<__useconds_t>(sleep_sec));
+		}while(ros::ok() && !clean_record_ack_);
+		clean_record_ack_ = false;
 	}
-	else
-		return false;
+	ROS_INFO("%s,%d,\033[1;42;31mclean_record_data_pack size %ld\033[0m", __FUNCTION__, __LINE__,
+			 clean_record_data_pack.size());
 	return true;
 }
 

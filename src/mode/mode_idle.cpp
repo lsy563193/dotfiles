@@ -15,7 +15,6 @@ ModeIdle::ModeIdle():
 	event_manager_register_handler(this);
 	event_manager_set_enable(true);
 	serial.setWorkMode(IDLE_MODE);
-	setNextMode(md_idle);
 	sp_action_.reset(new ActionIdle);
 	action_i_ = ac_idle;
 
@@ -25,9 +24,7 @@ ModeIdle::ModeIdle():
 	appmt_obj.resetPlanStatus();
 	event_manager_reset_status();
 
-	s_wifi.setWorkMode(Mode::md_idle);
 	s_wifi.resetReceivedWorkMode();
-	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 
 	ROS_INFO("%s %d: Current battery voltage \033[32m%5.2f V\033[0m.", __FUNCTION__, __LINE__, (float)battery.getVoltage()/100.0);
 	/*---reset values for rcon handle---*/

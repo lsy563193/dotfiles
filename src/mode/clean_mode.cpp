@@ -169,6 +169,10 @@ ACleanMode::~ACleanMode()
 
 	if (mode_i_ == cm_navigation)
 	{
+		// Upload clean record takes sometime, so upload the work mode first for better service on app.
+		s_wifi.setWorkMode(next_mode_i_);
+		s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
+
 		// Place here to get map_area.
 		time_t real_calendar_time;
 		robot_timer.getRealCalendarTime(real_calendar_time);
