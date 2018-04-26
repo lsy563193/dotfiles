@@ -497,6 +497,7 @@ void robot::core_thread_cb()
 		case LIFE_TEST_MODE:
 		case WATER_TANK_TEST_MODE:
 		case R16_AND_LIDAR_TEST_MODE:
+		case BUMPER_TEST_MODE:
 //		case WORK_MODE: // For debug
 //		case NORMAL_SLEEP_MODE: // For debug
 		{
@@ -519,7 +520,7 @@ void robot::runTestMode()
 	send_thread_enable = true;
 
 	if (r16_work_mode_ == NORMAL_SLEEP_MODE || r16_work_mode_ == WORK_MODE ||
-		r16_work_mode_ == WATER_TANK_TEST_MODE) // todo: for debug
+		r16_work_mode_ == WATER_TANK_TEST_MODE || r16_work_mode_ == BUMPER_TEST_MODE) // todo: for debug
 	{
 		auto robotbase_routine = new boost::thread(boost::bind(&robot::robotbase_routine_cb, this));
 		robotbase_thread_enable = true;

@@ -7,6 +7,7 @@
 #include <move_type.hpp>
 #include <state.hpp>
 #include <mode.hpp>
+#include <event_manager.h>
 
 MoveTypeBumperHitTest::MoveTypeBumperHitTest()
 {
@@ -19,58 +20,62 @@ MoveTypeBumperHitTest::MoveTypeBumperHitTest()
 
 bool MoveTypeBumperHitTest::isFinish()
 {
-	if (ev.key_clean_pressed)
+	return false;
+}
+
+void MoveTypeBumperHitTest::run()
+{
+	if (bumper_error)
 	{
-		ev.key_clean_pressed = false;
-		return true;
+		if (bumper.getStatus() == BLOCK_LEFT)
+			key_led.setMode(LED_STEADY, LED_GREEN);
+		else if (bumper.getStatus() == BLOCK_RIGHT)
+			key_led.setMode(LED_STEADY, LED_RED);
+		else if (bumper.getStatus() == BLOCK_ALL)
+			key_led.setMode(LED_STEADY, LED_ORANGE);
+		else
+			key_led.setMode(LED_FLASH, LED_OFF);
+
+		if (bumper.getStatus() == BLOCK_LIDAR_BUMPER)
+			wifi_led.setMode(LED_STEADY, WifiLed::state::on);
+		else
+			wifi_led.setMode(LED_STEADY, WifiLed::state::off);
 	}
 
-	if (p_back_movement_ != nullptr)
+	else if (p_back_movement_ != nullptr)
 	{
+		if (ev.bumper_jam || ev.lidar_bumper_jam)
+		{
+			bumper_error = true;
+			wheel.stop();
+			return;
+		}
+
 		if (p_back_movement_->isFinish())
 		{
-			if (bumper.getStatus())
-				return true;
 			p_back_movement_.reset();
 			turn_time_stamp_ = ros::Time::now().toSec();
 		}
+		else
+			p_back_movement_->run();
 	}
 	else if (p_turn_movement_ != nullptr)
 	{
 		if (ros::Time::now().toSec() - turn_time_stamp_ > 0.6)
 			p_turn_movement_.reset();
+		else
+			p_turn_movement_->run();
 	}
 	else if (bumper.getStatus())
 	{
 		float back_distance = 0.08;
 		p_back_movement_.reset(new MovementBack(back_distance, 40));
 		if (turn_left_)
-			turn_target_angle_ = getPosition().addRadian(900).th;
+			turn_target_angle_ = static_cast<int16_t>(getPosition().addRadian(degree_to_radian(90)).th);
 		else
-			turn_target_angle_ = getPosition().addRadian(-900).th;
+			turn_target_angle_ = static_cast<int16_t>(getPosition().addRadian(degree_to_radian(-90)).th);
 		p_turn_movement_.reset(new MovementTurn(turn_target_angle_, 40));
 		turn_left_ = !turn_left_;
-	}
-
-	return false;
-}
-
-void MoveTypeBumperHitTest::run()
-{
-//	PP_INFO();
-	if (p_back_movement_ != nullptr)
-	{
-//		PP_INFO();
-		p_back_movement_->run();
-	}
-	else if (p_turn_movement_ != nullptr)
-	{
-//		PP_INFO();
-		p_turn_movement_->run();
-	}
-	else
-	{
-//		PP_INFO();
+	} else
 		p_direct_go_movement_->run();
-	}
 }

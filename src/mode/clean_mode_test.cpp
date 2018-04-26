@@ -65,6 +65,15 @@ CleanModeTest::CleanModeTest(uint8_t mode)
 			genNextAction();
 			break;
 		}
+		case BUMPER_TEST_MODE:
+		{
+			serial.setWorkMode(BUMPER_TEST_MODE);
+			sp_state = state_test.get();
+			sp_state->init();
+			action_i_ = ac_bumper_hit_test;
+			genNextAction();
+			break;
+		}
 	}
 }
 
