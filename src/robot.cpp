@@ -359,7 +359,7 @@ void robot::robotbase_routine_cb()
 
 		if((buf[REC_APPOINTMENT_TIME] >= 0x80) && p_mode != nullptr && p_mode->allowRemoteUpdatePlan())
 		{
-			robot_timer.setRealTime( buf[REC_REALTIME_H]<<8 | buf[REC_REALTIME_L]);
+			robot_timer.setRealTimeOffsetByRemote(buf[REC_REALTIME_H] << 8 | buf[REC_REALTIME_L]);
 			appmt_obj.set(buf[REC_APPOINTMENT_TIME]);
 		}
 		sensor.realtime = buf[REC_REALTIME_H]<<8 | buf[REC_REALTIME_L];

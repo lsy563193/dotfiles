@@ -35,50 +35,23 @@ public:
 
 	bool trapTimeout(double duration);
 
-	uint32_t getRealTimeOffset()
+	double getRealTimeOffset()
 	{
 		return realtime_offset_;
 	}
 	/*
-	 * @brief set real time from SyncClickRxMsg 
-	 * @param1 date time
+	 * @brief: Set real time offset between robot calendar time and new calendar time.
+	 * @param: New calendar time in time_t.
 	 */
-	void setRealTime(struct tm &realtime);
+	void setRealTimeOffset(time_t new_calendar_time);
 
 	/*
-	 * @breif set time from bottom board
-	 * @param1 realtime in minutes
+	 * @breif: Set calendar time by remote controller.
+	 * @param: Time of today in minutes.
 	 */
-	void setRealTime(uint16_t realtime);
+	void setRealTimeOffsetByRemote(uint16_t minute);
 
-	void getRealtime(struct tm *date_time);
-
-	/*
-	 * @brief get real time in mintues
-	 * from monday
-	 * @return time in mintues
-	 */
-	//uint32_t getRealTimeInMint();
-
-	/*
-	 * @brief get real time Weekday 
-	 * @return weekdy 1~7
-	 */
-	//uint32_t getRealTimeWeekDay();
-
-	/*
-	 * @brief get local time in mintues
-	 * from monday
-	 * @return time in mintues
-	 */
-	//uint32_t getLocalTimeInMint();
-
-	/*
-	 * @brief update time from minutes
-	 * @param1 cur_time ,give a cur time in struct DateTime 
-	 * @param2 mins ,give time in diffrence mintus (0~10080)
-	 */
-	void updateRealTimeFromMint(struct tm &cur_time,uint16_t mins);
+	void getRealCalendarTime(time_t &real_calendar_time);
 
 private:
 	
@@ -87,7 +60,7 @@ private:
 	uint32_t saved_work_time_;
 	time_t wall_follow_start_time_;
 	time_t trap_start_time_;
-	uint32_t realtime_offset_;
+	double realtime_offset_;
 
 };
 

@@ -65,6 +65,11 @@ void Error::alarm(void)
 			speaker.play(VOICE_ROBOT_TRAPPED);
 			break;
 		}
+		case ERROR_CODE_GYRO:
+		{
+			//todo: speaker.play(VOICE_GYRO_ERROR);
+			break;
+		}
 		default:
 		{
 			break;
