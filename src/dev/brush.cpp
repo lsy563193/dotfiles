@@ -29,7 +29,7 @@ void Brush::operate()
 		case brush_slow:
 		case brush_normal:
 			checkBatterySetPWM();
-			setPWM(normal_PWM, normal_PWM, normal_PWM);
+			setPWM(normal_side_brush_PWM_, normal_side_brush_PWM_, normal_main_brush_PWM_);
 			break;
 		case brush_max:
 			setPWM(100, 100, 100);
@@ -75,7 +75,7 @@ void Brush::mainBrushResume()
 {
 	brush_status_ = brush_normal;
 	checkBatterySetPWM();
-	setPWM(0, 0, normal_PWM);
+	setPWM(0, 0, normal_main_brush_PWM_);
 	ROS_INFO("%s %d: Main Brush set to normal.", __FUNCTION__, __LINE__);
 }
 
@@ -93,10 +93,16 @@ void Brush::updatePWM()
 void Brush::checkBatterySetPWM()
 {
 	auto current_battery_voltage_ = battery.getVoltage();
-	auto operate_voltage_ = brush_status_ == brush_slow ? SLOW_OPERATE_VOLTAGE_FOR_BRUSH : FULL_OPERATE_VOLTAGE_FOR_BRUSH;
+	auto operate_voltage_ = brush_status_ == brush_slow ? SLOW_OPERATE_VOLTAGE_FOR_SIDE_BRUSH
+														: NORMAL_OPERATE_VOLTAGE_FOR_SIDE_BRUSH;
 	float percentage = static_cast<float>(operate_voltage_) /
 					   static_cast<float>(current_battery_voltage_);
-	normal_PWM = static_cast<uint8_t>(percentage * 100);
+	normal_side_brush_PWM_ = static_cast<uint8_t>(percentage * 100);
+	operate_voltage_ = brush_status_ == brush_slow ? SLOW_OPERATE_VOLTAGE_FOR_MAIN_BRUSH
+														: NORMAL_OPERATE_VOLTAGE_FOR_MAIN_BRUSH;
+	percentage = static_cast<float>(operate_voltage_) /
+					   static_cast<float>(current_battery_voltage_);
+	normal_main_brush_PWM_ = static_cast<uint8_t>(percentage * 100);
 }
 
 void Brush::setLeftBrushPWM(uint8_t PWM)
