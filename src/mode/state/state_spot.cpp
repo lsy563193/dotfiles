@@ -16,7 +16,7 @@ void StateSpot::init()
 {
 	water_tank.setCurrentSwingMotorMode(WaterTank::SWING_MOTOR_HIGH);
 	water_tank.checkEquipment() ? water_tank.open(WaterTank::operate_option::swing_motor_and_pump)
-								: vacuum.setForCurrentMaxMode(true);
+								: vacuum.setForCurrentMode(Vacuum::VacMode::vac_max_mode);
 	brush.fullOperate();
 	key_led.setMode(LED_STEADY, LED_GREEN);
 	if (robot::instance()->getRobotWorkMode() == Mode::cm_navigation)

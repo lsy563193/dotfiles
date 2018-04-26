@@ -11,19 +11,27 @@ class Vacuum
 {
 public:
 
-	enum VacMode
+	enum VacSpeed
 	{
 		vac_speed_max = 100, //15500rpm
 		vac_speed_normal = 80, //12000rpm
-		vac_speed_low = 50,//8000rpm
+		vac_speed_low = 50,//7500rpm
 	};
+
+	enum VacMode
+	{
+		vac_low_mode = 0,
+		vac_normal_mode = 1,
+		vac_max_mode = 2,
+	};
+
 
 	bool isCurrentMaxMode()
 	{
-		return is_current_max_mode_;
+		return current_mode_ == VacMode::vac_max_mode;
 	}
 
-	void setForCurrentMaxMode(bool is_max);
+	void setForCurrentMode(int mode);
 
 
 	bool isUserSetMaxMode()
@@ -81,11 +89,13 @@ public:
 private:
 	void slowOperate();
 
+	void normalOperate();
+
 	void fullOperate();
 
 	void setSpeed(uint32_t S);
 
-	bool is_current_max_mode_{false};
+	int current_mode_{vac_normal_mode};
 	bool is_user_set_max_mode_{false};
 
 	bool oc_;

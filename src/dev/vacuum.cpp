@@ -10,7 +10,10 @@ Vacuum vacuum;
 
 void Vacuum::setSpeedByUserSetMode()
 {
-	setForCurrentMaxMode(is_user_set_max_mode_);
+	if (isUserSetMaxMode())
+		setForCurrentMode(VacMode::vac_max_mode);
+	else
+		setForCurrentMode(VacMode::vac_normal_mode);
 	is_on_ = true;
 }
 
@@ -45,22 +48,30 @@ void Vacuum::resetExceptionResume()
 void Vacuum::slowOperate()
 {
 	ROS_INFO("%s %d: Vacuum set to low.", __FUNCTION__, __LINE__);
-	setSpeed(VacMode::vac_speed_low);
+	setSpeed(VacSpeed::vac_speed_low);
 }
 
 void Vacuum::fullOperate()
 {
 	ROS_INFO("%s %d: Vacuum set to max.", __FUNCTION__, __LINE__);
-	setSpeed(VacMode::vac_speed_max);
+	setSpeed(VacSpeed::vac_speed_max);
 }
 
-void Vacuum::setForCurrentMaxMode(bool is_max)
+void Vacuum::setForCurrentMode(int mode)
 {
-	is_current_max_mode_ = is_max;
-	if (is_current_max_mode_)
-		fullOperate();
-	else
-		slowOperate();
+	current_mode_ = mode;
+	switch (current_mode_)
+	{
+		case VacMode::vac_low_mode:
+			slowOperate();
+			break;
+		case VacMode::vac_normal_mode:
+			normalOperate();
+			break;
+		case VacMode::vac_max_mode:
+			fullOperate();
+			break;
+	}
 }
 
 
@@ -75,4 +86,10 @@ void Vacuum::resetFilterTime()
 {
 	filter_time_ = 0;
 	ROS_INFO("%s %d: Reset filter operation time to 0.", __FUNCTION__, __LINE__);
+}
+
+void Vacuum::normalOperate()
+{
+	ROS_INFO("%s %d: Vacuum set to normal.", __FUNCTION__, __LINE__);
+	setSpeed(VacSpeed::vac_speed_normal);
 }

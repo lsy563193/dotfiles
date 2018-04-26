@@ -33,6 +33,8 @@ S_Wifi::S_Wifi():is_wifi_connected_(false)
 					,wifi_quit_(false)
 					,realtime_map_ack_(false)
 					,upload_state_ack_(false)
+					,time_sync_(false)
+					,last_time_sync_time_(0)
 {
 	init();
 	map_data_buf_ = new std::deque<Points>();
@@ -328,6 +330,7 @@ bool S_Wifi::init()
 	s_wifi_rx_.regOnNewMsgListener<wifi::SyncClockRxMsg>(
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::SyncClockRxMsg &msg = static_cast<const wifi::SyncClockRxMsg&>( a_msg );
+				time_sync_ = true;
 				cloudConnected();
 				struct tm s_new_calendar_time;
 				s_new_calendar_time.tm_year = msg.getYear()-1900;
@@ -485,6 +488,7 @@ bool S_Wifi::init()
 	s_wifi_rx_.regOnNewMsgListener<wifi::QueryNTPAckMsg>(
 			[&](const wifi::RxMsg & a_msg){
 				const wifi::QueryNTPAckMsg &msg = static_cast<const wifi::QueryNTPAckMsg&>(a_msg);
+				time_sync_ = true;
 				if(robot_work_mode_ != wifi::WorkMode::SLEEP)
 					wifi_led.setMode(LED_STEADY,WifiLed::state::on);
 				cloudConnected();
@@ -1464,6 +1468,12 @@ void S_Wifi::wifi_send_routine()
 		}
 		else
 		{
+			// If time is not synchronized, try to query NTP for every 3 mins.
+			if (!time_sync_ && ros::Time::now().toSec() - last_time_sync_time_ > 180)
+			{
+				taskPushBack(ACT::ACT_QUERY_NTP);
+				last_time_sync_time_ = ros::Time::now().toSec();
+			}
 
 			if(!is_wifi_connected_)
 				continue;
