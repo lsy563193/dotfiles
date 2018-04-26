@@ -222,7 +222,7 @@ public:
 			vertical_line.A = 0;
 			vertical_line.B = 1;
 			vertical_line.C = !is_left_ ? -line.y2 : -line.y1;
-			if (vertical_line.C > 0) {
+			if (0 < -vertical_line.C / vertical_line.B) {
 				is_line_in_origin_left = true;
 			}
 			else {
@@ -1762,7 +1762,7 @@ bool Lidar::checkLidarBeCovered() {
 	}
 //	ROS_INFO("covered_laser_size(%d)", covered_laser_size);
 	if (covered_laser_size > 60) {
-		ROS_ERROR("lidar was covered");
+		ROS_ERROR("lidar was covered, covered_laser_size(%d)", covered_laser_size);
 		return true;
 	}
 	else
