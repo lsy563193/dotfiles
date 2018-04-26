@@ -36,11 +36,7 @@ CleanModeNav::CleanModeNav()
 	go_home_path_algorithm_.reset();
 	mode_i_ = cm_navigation;
 
-	sp_state = state_init.get();
-	sp_state->init();
-	//clear real time map whitch store in cloud....
-	s_wifi.setWorkMode(Mode::cm_navigation);
-	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
+	//clear real time map which store in cloud....
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_CLEAR_MAP);
 
 	// Clear the map on app.

@@ -18,7 +18,7 @@ void StateInit::init() {
 	else
 		key_led.setMode(LED_STEADY, LED_GREEN);
 
-	s_wifi.setWorkMode(robot::instance()->getRobotWorkMode());
+	s_wifi.setWorkMode(Mode::next_mode_i_);
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 	ROS_INFO("%s %d: Enter state init.", __FUNCTION__, __LINE__);
 }
