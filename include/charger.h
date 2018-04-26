@@ -26,6 +26,16 @@ public:
 		return status_;
 	}
 
+	bool enterNavFromChargeMode()
+	{
+		return enter_nav_from_charge_mode_;
+	}
+
+	void enterNavFromChargeMode(bool val)
+	{
+		enter_nav_from_charge_mode_ = val;
+	}
+
 private:
 	/*1 byte */
 	//0: Not on charger stub.
@@ -35,6 +45,7 @@ private:
 	//4: Direct connect to charge line and charging.
 	uint8_t status_;
 
+	bool enter_nav_from_charge_mode_{false};
 };
 
 extern Charger charger;

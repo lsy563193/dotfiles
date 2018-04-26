@@ -46,6 +46,7 @@ CleanModeNav::CleanModeNav()
 CleanModeNav::~CleanModeNav()
 {
 	s_wifi.clearMapCache();
+	charger.enterNavFromChargeMode(false);
 }
 
 bool CleanModeNav::mapMark()
@@ -564,7 +565,8 @@ bool CleanModeNav::updateActionInStateInit() {
 		odom.setRadianOffset(paused_odom_radian_);
 		ROS_INFO("%s,%d,angle offset:%f",__FUNCTION__,__LINE__,radian_to_degree(paused_odom_radian_));
 
-		if (charger.isOnStub()){
+		if (charger.enterNavFromChargeMode() || charger.isOnStub()){
+			charger.enterNavFromChargeMode(false);
 			action_i_ = ac_back_from_charger;
 			found_charger_ = true;
 			boost::dynamic_pointer_cast<StateInit>(state_init)->initBackFromCharger();
@@ -974,6 +976,7 @@ bool CleanModeNav::checkEnterResumeLowBatteryCharge()
 		sp_state = state_init.get();
 		sp_state->init();
 		low_battery_charge_ = true;
+		charger.enterNavFromChargeMode(true);
 		return true;
 	}
 
