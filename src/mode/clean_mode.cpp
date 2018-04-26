@@ -169,11 +169,12 @@ ACleanMode::~ACleanMode()
 
 	if (mode_i_ == cm_navigation)
 	{
+		// Place here to get map_area.
 		time_t real_calendar_time;
 		robot_timer.getRealCalendarTime(real_calendar_time);
 		ROS_INFO("%s %d seconds from 1970' : %d, current calendar time: %s ", __FUNCTION__, __LINE__,
 				 real_calendar_time, ctime(&real_calendar_time));
-		robot::instance()->updateCleanRecord(static_cast<const uint32_t &>(real_calendar_time)
+		robot::instance()->updateCleanRecord(static_cast<const uint32_t &>(real_calendar_time - robot_timer.getWorkTime())
 											 , static_cast<const uint16_t &>(robot_timer.getWorkTime())
 											 , static_cast<const uint16_t &>(map_area)
 											 , clean_map_);
