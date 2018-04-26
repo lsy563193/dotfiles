@@ -93,7 +93,7 @@
 
 /* ------------------------------------- Battery config ------------------------------------- */
 /* Low battery go home voltage value */
-#define LOW_BATTERY_GO_HOME_VOLTAGE		(1320)
+#define LOW_BATTERY_GO_HOME_VOLTAGE		(1350)
 
 /* Low battery stop robot voltage value */
 #define LOW_BATTERY_STOP_VOLTAGE		(1300)
