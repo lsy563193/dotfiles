@@ -993,8 +993,8 @@ void water_tank_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &curren
 		}
 		switch(step)
 		{
-			case 0:/*--- turn on pump and swing motor ---*/
-				serial.setSendData(CTL_WATER_TANK, 0x80 | 40);
+			case 0:/*--- turn on swing motor ---*/
+				serial.setSendData(CTL_WATER_TANK, 40);
 				count++;
 				if(count > 10)
 				{
@@ -1007,20 +1007,25 @@ void water_tank_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &curren
 				{
 					if(count < 200)count++;
 				}
-				if((count > 20) && !(test_result & 0x01))
+				if(count > 100)
 				{
 					test_result |= 0x01;
 					beeper.beepForCommand(true);
+					step++;
 				}
 				if(buf[36])
 				{
-					if((test_result & 0x01) != 0x01)
-					{
-						error_code = SWING_MOTOR_ERROR;
-						current_data = static_cast<uint16_t>((buf[2] << 8) | buf[3]);
-					}
-					else
-						test_stage++;
+					error_code = SWING_MOTOR_ERROR;
+					current_data = static_cast<uint16_t>((buf[2] << 8) | buf[3]);
+					return ;
+				}
+				break;
+			case 2:
+				/*--- turn off swing motor and turn on pump ---*/
+				serial.setSendData(CTL_WATER_TANK, 0x80);
+				if(buf[36])
+				{
+					test_stage++;
 					return ;
 				}
 				break;
