@@ -1407,6 +1407,7 @@ void S_Wifi::wifi_send_routine()
 {
 	uint32_t upload_state_count;
 	uint32_t upload_map_count;
+	last_time_sync_time_ = ros::Time::now().toSec();
 	while( ros::ok() || wifi_quit_)
 	{
 

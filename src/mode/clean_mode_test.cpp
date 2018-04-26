@@ -39,8 +39,8 @@ CleanModeTest::CleanModeTest(uint8_t mode)
 		}
 		case WATER_TANK_TEST_MODE:
 		{
-//			serial.setWorkMode(WATER_TANK_TEST_MODE);
-			serial.setWorkMode(WORK_MODE);
+			serial.setWorkMode(WATER_TANK_TEST_MODE);
+//			serial.setWorkMode(WORK_MODE);
 			sp_state = state_test.get();
 			sp_state->init();
 			action_i_ = ac_water_tank_test;

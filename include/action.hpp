@@ -164,8 +164,22 @@ public:
 	bool isExit() override
 	{return false;};
 
-	void run() override
-	{};
+	void waterTankTestRoutineThread();
+
+	void run() override;
+
+	bool dataExtract(const uint8_t *buf);
+
+private:
+
+	uint16_t error_code_{0};
+	uint16_t error_content_{0};
+	uint8_t error_step_{0};
+	uint8_t test_stage_{1};
+	double check_time_{0};
+	uint32_t swing_motor_current_baseline_{0};
+	uint32_t swing_motor_current_{0};
+	int sum_cnt_{0};
 };
 
 class ActionLifeCheck: public IAction
