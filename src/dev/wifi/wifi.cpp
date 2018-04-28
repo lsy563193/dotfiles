@@ -44,7 +44,6 @@ S_Wifi::S_Wifi():is_wifi_connected_(false)
 	// -- get wifi version and MAC
 	taskPushBack(ACT::ACT_VERSION);
 	taskPushBack(ACT::ACT_MAC);
-	taskPushBack(ACT::ACT_QUERY_NTP);
 }
 S_Wifi::~S_Wifi()
 {

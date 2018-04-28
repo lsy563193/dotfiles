@@ -570,6 +570,8 @@ void robot::runWorkMode()
 		p_mode.reset(new ModeIdle());
 	}
 
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_QUERY_NTP);
+
 	while (ros::ok())
 	{
 //		ROS_INFO("%s %d: %x", __FUNCTION__, __LINE__, p_mode);
