@@ -17,6 +17,7 @@ ActionCheckWaterTank::ActionCheckWaterTank()
 
 	infrared_display.displayNormalMsg(test_stage_, 0);
 	check_time_ = ros::Time::now().toSec();
+	timeout_interval_ = 66;
 }
 
 void ActionCheckWaterTank::waterTankTestRoutineThread()
@@ -69,8 +70,8 @@ void ActionCheckWaterTank::run()
 				int32_t swing_motor_current_baseline_ref_{1610};
 				auto average_current = swing_motor_current_baseline_ / sum_cnt_;
 				ROS_INFO("%s %d: Swing motor average current baseline: %d.", __FUNCTION__, __LINE__, average_current);
-				if (average_current > swing_motor_current_baseline_ref_ * 1.1
-						|| average_current < swing_motor_current_baseline_ref_ * 0.9)
+				if (average_current > swing_motor_current_baseline_ref_ * 1.3
+						|| average_current < swing_motor_current_baseline_ref_ * 0.8)
 				{
 					error_code_ = SWING_MOTOR_ERROR;
 					error_content_ = static_cast<uint16_t>(average_current);
@@ -79,7 +80,7 @@ void ActionCheckWaterTank::run()
 				}
 				else
 				{
-					water_tank.open(WaterTank::operate_option::swing_motor);
+					water_tank.open(WaterTank::operate_option::pump);
 					check_time_ = ros::Time::now().toSec();
 					sum_cnt_ = 0;
 					swing_motor_current_baseline_ = average_current;
@@ -94,6 +95,18 @@ void ActionCheckWaterTank::run()
 			break;
 		}
 		case 2:
+		{
+			if (ros::Time::now().toSec() - check_time_ > 5)
+			{
+				water_tank.stop(WaterTank::operate_option::pump);
+				water_tank.open(WaterTank::operate_option::swing_motor);
+				check_time_ = ros::Time::now().toSec();
+				test_stage_++;
+				infrared_display.displayNormalMsg(test_stage_, 0);
+			}
+			break;
+		}
+		case 3:
 		{
 			if (ros::Time::now().toSec() - check_time_ > 5)
 			{
@@ -114,10 +127,14 @@ void ActionCheckWaterTank::run()
 					swing_motor_current_ = 0;
 					sum_cnt_ = 0;
 				}
-			} else
+			}
+			else if (isTimeUp())
+				test_stage_++;
+			else
 			{
 				swing_motor_current_ += (water_tank.getSwingMotorCurrent() - swing_motor_current_baseline_);
 				sum_cnt_++;
+//				printf("swing motor current sum:%d, sum_cnt:%d.\n", swing_motor_current_, sum_cnt_);
 			}
 			break;
 		}
@@ -138,7 +155,6 @@ void ActionCheckWaterTank::run()
 			speaker.play(VOICE_TEST_SUCCESS);
 			key_led.setMode(LED_STEADY, LED_GREEN);
 //			beeper.beep(2, 40, 40, 3);
-			vacuum.stop();
 			water_tank.stop(WaterTank::operate_option::swing_motor_and_pump);
 			sleep(5);
 			break;

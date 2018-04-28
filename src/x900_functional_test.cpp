@@ -582,9 +582,9 @@ void electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixture,
 					ROS_INFO("%s, %d: battery voltage: %d", __FUNCTION__, __LINE__, temp_sum);
 					if (temp_sum < 1350 || temp_sum > 1700) {
 						if (temp_sum < 1350)
-							error_code = BATTERY_LOW;
+							error_code = BATTERY_TOO_LOW;
 						else
-							error_code = BATTERY_ERROR;
+							error_code = BATTERY_TOO_HIGH;
 						current_data = static_cast<uint16_t>(temp_sum);
 						return ;
 					}
@@ -604,9 +604,9 @@ void electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixture,
 						{
 							ROS_INFO("baseline current: %d",temp_sum);
 							if(temp_sum < 70)
-								error_code = BASELINE_CURRENT_LOW;
+								error_code = BASELINE_CURRENT_TOO_LOW;
 							else
-								error_code = BASELINE_CURRENT_ERROR;
+								error_code = BASELINE_CURRENT_TOO_HIGH;
 							current_data = static_cast<uint16_t>(temp_sum);
 							return ;
 						}
