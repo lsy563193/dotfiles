@@ -273,7 +273,7 @@ void main_board_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &curren
 {
 	bool is_fixture = false;
 	uint16_t test_result=0;
-	uint16_t baseline[8];
+	uint16_t baseline[9];
 	test_stage = FUNC_ELECTRICAL_AND_LED_TEST_MODE;
 	while(ros::ok()) {
 		key_led.set(100, 100);
@@ -515,6 +515,7 @@ void electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixture,
 			baseline[RIGHT_BRUSH] = ((uint16_t) buf[15] << 8) | buf[16];
 			baseline[VACUUM] = ((uint16_t) buf[17] << 8) | buf[18];
 			baseline[REF_VOLTAGE_ADC] = ((uint16_t) buf[19] << 8) | buf[20];
+			baseline[SWING_MOTOR] = ((uint16_t) buf[21] << 8) | buf[22];
 		}
 		switch(step) {
 			case 0:
@@ -559,6 +560,12 @@ void electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixture,
 				{
 					error_code = BASELINE_VACUUM_CURRENT_ERROR;
 					current_data = baseline[VACUUM];
+					return ;
+				}
+				if(baseline[SWING_MOTOR] < 1200 || baseline[VACUUM] > 2000)
+				{
+					error_code = BASELINE_SWING_MOTOR_CURRENT_ERROR;
+					current_data = baseline[SWING_MOTOR];
 					return ;
 				}
 				step++;

@@ -49,6 +49,7 @@
 #define VACUUM					5
 #define REF_VOLTAGE_ADC	6
 #define SYSTEM_CURRENT	7
+#define SWING_MOTOR			8
 
 #include "dev.h"
 #include "robot.hpp"
