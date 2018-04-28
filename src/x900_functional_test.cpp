@@ -296,7 +296,7 @@ void main_board_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &curren
 				rcon_test(test_stage, error_code, current_data);
 				break;
 			case FUNC_WATER_TANK_TEST_MODE:/*---water tank---*/
-				water_tank_test(test_stage, error_code, current_data);
+				water_tank_test(baseline, test_stage, error_code, current_data);
 				break;
 			case FUNC_WHEELS_TEST_MODE:/*---wheels---*/
 				wheels_test(baseline, test_stage, error_code, current_data);
@@ -979,7 +979,7 @@ void rcon_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data
 		serial.sendData();
 	}
 }
-void water_tank_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data)
+void water_tank_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data)
 {
 	uint8_t step = 0;
 	uint8_t count = 0;
@@ -1010,7 +1010,7 @@ void water_tank_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &curren
 				}
 				break;
 			case 1:
-				if(static_cast<uint16_t>(buf[2] << 8 | buf[3]) > SWING_CURRENT_LIMIT)
+				if(static_cast<uint16_t>(buf[2] << 8 | buf[3]) > baseline[SWING_MOTOR]+SWING_CURRENT_LIMIT)
 				{
 					if(count < 200)count++;
 				}
