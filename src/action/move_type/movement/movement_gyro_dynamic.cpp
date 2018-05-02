@@ -15,6 +15,9 @@ MovementGyroDynamic::MovementGyroDynamic()
 }
 
 MovementGyroDynamic::~MovementGyroDynamic() {
+	auto p_mode = dynamic_cast<ACleanMode*> (sp_mt_->sp_mode_);
+	p_mode->time_gyro_dynamic_ = ros::Time::now().toSec();
+	gyro.setDynamicOff();
 	ROS_INFO("%s,%d,delete movementGyroDynamic",__FUNCTION__,__LINE__);
 }
 
@@ -33,14 +36,8 @@ void MovementGyroDynamic::adjustSpeed(int32_t &l_speed, int32_t &r_speed) {
 
 bool MovementGyroDynamic::isFinish() {
 //#if GYRO_DYNAMIC_ADJUSTMENT
-	auto p_mode = dynamic_cast<ACleanMode*> (sp_mt_->sp_mode_);
-	if(is_open_dynamic_succeed_ && ros::Time::now().toSec() - start_dynamic_time_ > robot::instance()->getGyroDynamicRunTime() || sp_mt_->isFinishForward()){
-		p_mode->time_gyro_dynamic_ = ros::Time::now().toSec();
-		gyro.setDynamicOff();
-		return true;
-	}
+	return is_open_dynamic_succeed_ && ros::Time::now().toSec() - start_dynamic_time_ > robot::instance()->getGyroDynamicRunTime() || sp_mt_->isFinishForward();
 //#else
 //	return true;
 //#endif
-	return false;
 }

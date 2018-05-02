@@ -11,7 +11,6 @@ Appmt appmt_obj;
 
 Appmt::Appmt()
 {
-	//appointment_time_ = (uint32_t)ros::Time::now().toSec()/60;
 	appointment_set_ = false;
 	appointment_change_ = false;
 	for(uint8_t i=0;i<10;i++)
@@ -63,8 +62,7 @@ bool Appmt::set(uint8_t apTime)
 		}
 
 		//set appointment to bottom board
-		uint16_t mint = nextAppointment();
-		setPlan2Bottom(mint);
+		setPlan2Bottom(nextAppointment());
 		update_idle_timer_ = true;
 	}
 	//--cancel appointment
@@ -88,8 +86,7 @@ bool Appmt::set(uint8_t apTime)
 		}
 
 		//set appointment to bottom board
-		uint16_t mint = nextAppointment();
-		setPlan2Bottom(mint);
+		setPlan2Bottom(nextAppointment());
 		update_idle_timer_ = true;
 	}
 	return true;
@@ -202,22 +199,23 @@ int8_t Appmt::rw_routine(Appmt::SG action)//read write routine
 uint16_t Appmt::nextAppointment()
 {
 	appointment_set_ = false;
-	//get curtime
-	struct Timer::DateTime date_time;
-	date_time = robot_timer.getRealTime();
-	ROS_INFO("%s,%d,cur time %s",__FUNCTION__,__LINE__,	robot_timer.asctime());
-	int cur_wday = 	robot_timer.getRealTimeWeekDay();
-	int cur_hour = 	date_time.hour;
-	int cur_mint = 	date_time.mint;
+	//get current time
+	time_t current_time;
+	robot_timer.getRealCalendarTime(current_time);
+	struct tm *s_current_time = localtime(&current_time);
+	int cur_wday = 	s_current_time->tm_wday == 0?7:s_current_time->tm_wday;
+	int cur_hour = 	s_current_time->tm_hour;
+	int cur_mint = 	s_current_time->tm_min;
 	//get appointment
 	if(appointment_change_)
 		this->get();
 	//calculate appointment count down
 	uint16_t mints[(int)apmt_l_.size()] = {0};//the appointments count down minutes
-	appointment_count_ = 24*60*7;
+	count_down_ = 24*60*7;
 	std::ostringstream msg("");
 	// -- get total minutes from now
 	uint16_t cur_tol_mint = (cur_wday-1) * 24 * 60 + cur_hour*60 + cur_mint;
+	// -- get appointment from apmt_l
 	for(int i=0;i<apmt_l_.size();i++)
 	{
 		if(apmt_l_[i].enable)
@@ -228,10 +226,9 @@ uint16_t Appmt::nextAppointment()
 				mints[i]= 10080+diff_m;
 			else // -- day after
 				mints[i]= diff_m;
-			if(appointment_count_ >= mints[i])
+			if(count_down_ >= mints[i])
 			{
-				appointment_count_  = mints[i];
-				appointment_time_ = (uint32_t)robot_timer.getLocalTimeInMint();
+				count_down_  = mints[i];
 				appointment_set_ = true;
 			}
 
@@ -239,8 +236,8 @@ uint16_t Appmt::nextAppointment()
 		msg<<" ("<<(i+1)<<","<<(int)mints[i]<<")";
 	}
 	if(appointment_set_)
-		ROS_INFO("%s,%d,\033[1;40;32mappointment_count_=%u minutes,\033[0m  %s",__FUNCTION__,__LINE__,appointment_count_,msg.str().c_str());
-	return appointment_count_;
+		ROS_INFO("%s,%d,\033[1;40;32mcount_down=%u minutes,\033[0m  %s",__FUNCTION__,__LINE__,count_down_,msg.str().c_str());
+	return count_down_;
 }
 
 void Appmt::setPlan2Bottom(uint16_t mint)
@@ -248,17 +245,12 @@ void Appmt::setPlan2Bottom(uint16_t mint)
 	uint16_t apt = appointment_set_? (mint | 0x4000):(mint | 0x8000);
 	serial.setSendData(SERIAL::CTL_APPOINTMENT_H,apt>>8);
 	serial.setSendData(SERIAL::CTL_APPOINTMENT_L,apt&0x00ff);
-	ROS_INFO("%s,%d set minutes counter %d,apt = 0x%x",__FUNCTION__,__LINE__,mint,apt);
+	ROS_INFO("%s,%d \033[1;40;32m set minutes count down %d,apt = 0x%x\033[0m",__FUNCTION__,__LINE__,mint,apt);
 }
 
 void Appmt::timesUp()
 {
-	//--update realtime
-	struct Timer::DateTime dt = robot_timer.getRealTime();
-	robot_timer.updateRealTimeFromMint(dt,appointment_count_);
-	robot_timer.setRealTime(dt);
 	//--update appointment count
-	uint16_t mint = nextAppointment();
-	setPlan2Bottom(mint);
+	setPlan2Bottom(nextAppointment());
 	time_up_or_wifi_setting_ack_ = true;
 }

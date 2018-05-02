@@ -163,6 +163,9 @@ void TxManager::threadMain()
 
 		if ( tx_( obj.p_ ) )
 		{
+			uint32_t sleep_nsec = obj.p_.length() > 250 ? static_cast<uint32_t>(obj.p_.length() * 1000) : 250000;
+//			ROS_INFO("%s %d: Packet length:%d, usleep nsec:%d.", __FUNCTION__, __LINE__, obj.p_.length(), sleep_nsec);
+			usleep(sleep_nsec);
 			if ( obj.on_next_ )
 			{
 				obj.on_next_( obj.p_ );

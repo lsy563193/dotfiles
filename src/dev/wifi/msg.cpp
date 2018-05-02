@@ -271,10 +271,6 @@ vector<uint8_t> ConsumableStatusTxMsg::getInitData(const uint16_t a_work_hour,
 	};
 }
 
-SetModeTxMsg::SetModeTxMsg(const WorkMode a_work_mode, const uint8_t a_seq_num)
-		: Packet(-1, a_seq_num, 0, 0x46, {static_cast<uint8_t>(a_work_mode)})
-{}
-
 MaxCleanPowerTxMsg::MaxCleanPowerTxMsg(const uint8_t a_vacuum,
 		const uint8_t a_mop, const uint8_t a_seq_num)
 		: Packet(-1, a_seq_num, 0, 0x48,
@@ -392,6 +388,10 @@ ClearRealtimeMapTxMsg::ClearRealtimeMapTxMsg(const bool a_should_clear,
 
 ForceUnbindTxMsg::ForceUnbindTxMsg( const uint8_t a_seq_num )
 		: Packet(10, a_seq_num, 0, 0x24, {0xA6, 0x6A})
+{}
+
+QueryNTPTxMsg::QueryNTPTxMsg(const uint8_t a_seq_num)
+		: Packet(-1, a_seq_num, 0, MSG_CODE, {0xF0, 0x0F})
 {}
 
 }

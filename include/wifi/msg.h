@@ -577,12 +577,6 @@ public:
 			const uint8_t seq_num = 0);
 };
 
-class SetModeTxMsg: public Packet
-{
-public:
-	SetModeTxMsg(const WorkMode mode, const uint8_t seq_num = 0);
-};
-
 class MaxCleanPowerTxMsg: public Packet
 {
 public:
@@ -811,6 +805,32 @@ public:
 	}
 };
 
+class QueryNTPTxMsg: public Packet
+{
+public:
+	static constexpr int MSG_CODE = 0x0D;
+
+	QueryNTPTxMsg( const uint8_t seq_num = 0 );
+};
+
+class QueryNTPAckMsg: public RxMsg
+{
+public:
+	static constexpr int MSG_CODE = QueryNTPTxMsg::MSG_CODE;
+
+	using RxMsg::RxMsg;
+
+	int getNTPTime() const
+	{
+		return (data()[8] << 24) | (data()[9] << 16) | (data()[10] << 8) | data()[11];
+	}
+
+	std::string describe() const override
+	{
+		return "Query NTP ack msg.";
+	}
+};
+
 class wifiResumeAckMsg: public RxMsg
 {
 public:
@@ -895,11 +915,14 @@ public:
 	{
 		std::ostringstream msg;
 		msg<<"WIFI MAC ADDRESS:";
-		char buf[20];
-		sprintf(buf,"%x %x %x %x %x %x.",
-					data().at(0), data().at(1),
-					data().at(2), data().at(3),
-					data().at(4), data().at(5));
+		int size = data().size();
+		char buf[20] = {0};
+		char mac[6] = {0};
+		for(int i =0;i<size;i++)
+		{
+			mac[i] = data().at(i);
+		}
+		sprintf(buf,"%x %x %x %x %x %x.",mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]);
 		msg<<buf;
 		return msg.str();
 	}

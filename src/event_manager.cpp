@@ -633,6 +633,8 @@ void event_manager_reset_status(void)
 	// lidar stuck
 	ev.lidar_stuck = false;
 	ev.remote_wifi = false;
+	//gyro
+	ev.gyro_error = false;
 }
 
 /* Below are the internal functions. */
@@ -1038,6 +1040,7 @@ void EventHandle::tilt(bool state_new, bool state_last)
 void EventHandle::gyroError(bool state_new, bool state_last)
 {
 	ROS_DEBUG("%s %d: default gyro error handle is called", __FUNCTION__, __LINE__);
+	ev.gyro_error = true;
 }
 ///* Default: empty hanlder */
 //void EventHandle::empty(bool state_now, bool state_last)

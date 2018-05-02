@@ -38,6 +38,12 @@ bool MovementStay::isFinish()
 	ev.bumper_triggered = static_cast<uint8_t>(bumper_status_in_stay_ ? bumper_status_in_stay_ : ev.bumper_triggered);
 	ev.cliff_triggered = static_cast<uint8_t>(cliff_status_in_stay_ ? cliff_status_in_stay_: ev.cliff_triggered);
 	ev.tilt_triggered = static_cast<uint8_t>(tilt_status_in_stay_ ? tilt_status_in_stay_ : ev.tilt_triggered);
+	if(bumper_status_in_stay_)
+		ROS_INFO("%s,%d,bumper trigger",__FUNCTION__,__LINE__);
+	if(cliff_status_in_stay_)
+		ROS_INFO("%s,%d,cliff trigger",__FUNCTION__,__LINE__);
+	if(tilt_status_in_stay_)
+		ROS_INFO("%s,%d,tilt trigger",__FUNCTION__,__LINE__);
 	robot::instance()->lockScanCtrl();
 //	ROS_ERROR("%s,%d, movementStay",__FUNCTION__, __LINE__);
 	robot::instance()->pubScanCtrl(true, true);

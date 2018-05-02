@@ -52,144 +52,44 @@ bool Timer::trapTimeout(double duration)
 	return difftime(time(NULL), trap_start_time_) > duration;
 }
 
-void Timer::setRealTime(Timer::DateTime date_time)
-{
-	date_time_.year = date_time.year;
-	date_time_.month = date_time.month;
-	date_time_.day = date_time.day;
-	date_time_.hour = date_time.hour;
-	date_time_.mint = date_time.mint;
-	date_time_.sec = date_time.sec;
-	ROS_INFO("%s,%d,\033[1;41;35m from cloud %u/%u/%u %u:%u:%u\033[0m",
-				__FUNCTION__,__LINE__,
-				date_time_.year,date_time_.month,date_time_.day,
-				date_time_.hour,date_time.mint,date_time.sec);
-	//--update appointment count down ,set appointment to bottom board
-	//uint16_t mint = appmt_obj.getNewestAppointment();
-	//appmt_obj.setPlan2Bottom(mint);
-}
-
-void Timer::setRealTime(uint16_t mints)
-{
-	time_t ltime = time(NULL);
-	struct tm *local_time = localtime(&ltime);
-	date_time_.day = (uint8_t)local_time->tm_mday;
-	date_time_.month =(uint8_t)(local_time->tm_mon+1);
-	date_time_.year = (uint16_t)(local_time->tm_year+1900);
-	date_time_.hour = (uint8_t)((mints/60)%24);
-	date_time_.mint = (uint8_t)(mints%60);
-	date_time_.sec = 0;
-	ROS_INFO("%s,%d,\033[1m %u/%u/%u %u:%u:%u\033[0m",
-				__FUNCTION__,__LINE__,
-				date_time_.year,date_time_.month,date_time_.day,
-				date_time_.hour,date_time_.mint,date_time_.sec);
-	//--update appointment count down ,set appointment to bottom board
-	//uint16_t mint = appmt_obj.getNewestAppointment();
-	//appmt_obj.setPlan2Bottom(mint);
-}
-
-void Timer::updateRealTimeFromMint(struct Timer::DateTime &dt, uint16_t diff_mins)
-{
-	uint8_t mint_sum = dt.mint + (uint8_t)(diff_mins%60);
-	uint16_t hour_sum= dt.hour + diff_mins/60;
-	dt.mint = mint_sum % 60;
-	dt.hour = (mint_sum >= 60)?(hour_sum+1) %24:hour_sum %24;
-	uint8_t days_count = hour_sum / 24;
-	//leap year cal
-	bool leap_year = false;
-	if(dt.year % 4 && !(dt.year %100))
-	{
-		////century year
-		if(dt.year - (dt.year % 100)*100 == 0)
-			if( dt.year % 400 == 0)
-				leap_year = true;
-	}
-	//month and day cal
-	uint8_t day_sum = dt.day + days_count;
-	if(dt.month == 2)
-		if(leap_year && day_sum <=29 )
-			dt.day +=days_count;
-		else if(leap_year && day_sum > 29)
-			dt.day = day_sum %29,dt.month += 1;
-		else if(!leap_year && day_sum <= 28 )
-			dt.day += days_count;
-		else if(!leap_year && day_sum >28 )
-			dt.day  = day_sum %28, dt.month += 1;
-
-	else if(dt.month <= 7)
-		if(dt.month %2 == 0)
-			if(day_sum <=30 )
-				dt.day += days_count;
-			else
-				dt.day = day_sum % 30,dt.month += 1;
-		else if(dt.month %2 != 0 )
-			if(day_sum <= 31)
-				dt.day += days_count;
-			else
-				dt.day = day_sum % 31,dt.month +=1;
-
-	else if(dt.month >= 8 )
-		if(dt.month %2 == 0 )
-			if(day_sum <=31 )
-				dt.day += days_count;
-			else
-				dt.day = day_sum % 31,dt.month += 1;
-		else if(dt.month %2 != 0 && hour_sum >= 24)
-			if(day_sum <= 30)
-				dt.day += days_count;
-			else
-				dt.day = day_sum % 30,dt.month +=1;
-	//year 
-	if(	dt.month > 12)
-		dt.year += 1,dt.month = 1;
-}
-
-uint32_t Timer::getRealTimeInMint()
-{
-	uint32_t w = getRealTimeWeekDay();	
-	return (uint32_t)(w*24*60+date_time_.hour*60+date_time_.mint);
-}
-
-uint32_t Timer::getRealTimeWeekDay()
-{
-	uint32_t c = date_time_.year/100;
-	uint32_t y = date_time_.year - c*100;
-	uint32_t m = date_time_.month;
-	uint32_t d = date_time_.day;
-	if(m == 1 || m == 2)
-	{
-		if(m == 1)
-			m = 13;
-		else
-			m = 14;		  
-	}
-	uint32_t w = (uint32_t)(( c/4 - 2*c + y + y/4 + 26*(m+1)/10 + d - 1) % 7);
-
-	ROS_INFO("%s,%d,\033[1m weekday %u \033[0m",__FUNCTION__,__LINE__,w);
-
-	return w;
-}
-
-char* Timer::asctime()
-{
-	static char buf[50];
-	sprintf(buf, "%d/%d/%d %d:%d:%d",
-				date_time_.year,date_time_.month, date_time_.day,
-				date_time_.hour,date_time_.mint,date_time_.sec);
-	return buf;
-	
-}
-
-uint32_t Timer::getLocalTimeInMint()
-{
-	time_t t_t = time(NULL);
-	struct tm *tm_t = localtime(&t_t);
-	uint32_t w = tm_t->tm_wday+1;
-	return (uint32_t)(w*24*60+tm_t->tm_hour*60+tm_t->tm_min);
-}
-
 uint32_t Timer::getRobotUpTime()
 {
 	auto robot_time = static_cast<uint32_t>(difftime(time(NULL), robot_start_time_));
 	return robot_time;
+}
+
+void Timer::setRealTimeOffsetByRemote(uint16_t minute)
+{
+	time_t origin_calendar_time;
+	getRealCalendarTime(origin_calendar_time);
+	struct tm *s_origin_time = localtime(&origin_calendar_time);
+	ROS_INFO("%s %d Origin calendar time: %s ", __FUNCTION__, __LINE__, ctime(&origin_calendar_time));
+	struct tm s_new_calendar_time;
+	s_new_calendar_time.tm_mday = s_origin_time->tm_mday;
+	s_new_calendar_time.tm_mon = s_origin_time->tm_mon;
+	s_new_calendar_time.tm_year = s_origin_time->tm_year;
+	s_new_calendar_time.tm_hour = (minute/60)%24;
+	s_new_calendar_time.tm_min = minute%60;
+	s_new_calendar_time.tm_sec = 0;
+
+	time_t new_calendar_time = mktime(&s_new_calendar_time);
+	setRealTimeOffset(new_calendar_time);
+	ROS_INFO("%s %d New calendar time: %s ", __FUNCTION__, __LINE__, asctime(&s_new_calendar_time));
+}
+
+void Timer::getRealCalendarTime(time_t &real_calendar_time)
+{
+	// Robot calendar time.
+	time_t robot_calendar_time = time(NULL);
+	real_calendar_time = robot_calendar_time + static_cast<time_t>(realtime_offset_);
+//	ROS_INFO("%s,%d Real calendar time: %s",__FUNCTION__,__LINE__,ctime(&real_calendar_time));
+}
+
+void Timer::setRealTimeOffset(time_t new_calendar_time)
+{
+	// Robot calendar time.
+	time_t calendar_time = time(NULL);
+	// Time offset.
+	realtime_offset_ = difftime(new_calendar_time, calendar_time);
+	ROS_INFO("%s %d:\033[1;40;35m Set time offset %f.\033[0m", __FUNCTION__, __LINE__, realtime_offset_);
 }

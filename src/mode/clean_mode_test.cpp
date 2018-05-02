@@ -39,8 +39,8 @@ CleanModeTest::CleanModeTest(uint8_t mode)
 		}
 		case WATER_TANK_TEST_MODE:
 		{
-//			serial.setWorkMode(WATER_TANK_TEST_MODE);
-			serial.setWorkMode(WORK_MODE);
+			serial.setWorkMode(WATER_TANK_TEST_MODE);
+//			serial.setWorkMode(WORK_MODE);
 			sp_state = state_test.get();
 			sp_state->init();
 			action_i_ = ac_water_tank_test;
@@ -65,6 +65,15 @@ CleanModeTest::CleanModeTest(uint8_t mode)
 			genNextAction();
 			break;
 		}
+		case BUMPER_TEST_MODE:
+		{
+			serial.setWorkMode(BUMPER_TEST_MODE);
+			sp_state = state_test.get();
+			sp_state->init();
+			action_i_ = ac_bumper_hit_test;
+			genNextAction();
+			break;
+		}
 	}
 }
 
@@ -75,38 +84,6 @@ CleanModeTest::~CleanModeTest()
 		speaker.play(VOICE_TEST_SUCCESS, false);
 	else
 		speaker.play(VOICE_TEST_FAIL, false);*/
-}
-
-bool CleanModeTest::isFinish()
-{
-	return false;
-}
-bool CleanModeTest::isExit()
-{
-	return false;
-/*	if (sp_state == state_init)
-	{
-		if (action_i_ == ac_open_lidar && sp_action_->isTimeUp())
-		{
-			error.set(ERROR_CODE_LIDAR);
-			setNextMode(md_idle);
-			ev.fatal_quit = true;
-			return true;
-		}
-	}
-	if (ev.fatal_quit || sp_action_->isExit())
-	{
-		ROS_WARN("%s %d: Exit for ev.fatal_quit or sp_action_->isExit()", __FUNCTION__, __LINE__);
-		setNextMode(md_idle);
-		return true;
-	}
-
-	if(ev.key_clean_pressed || ev.key_long_pressed){
-		ev.key_clean_pressed = false;
-		ROS_WARN("%s %d: Exit for remote key or clean key or long press clean key.", __FUNCTION__, __LINE__);
-		setNextMode(md_idle);
-		return true;
-	}*/
 }
 
 // For handlers.
@@ -124,15 +101,15 @@ void CleanModeTest::remoteDirectionForward(bool state_now, bool state_last)
 	remote.reset();
 }
 
-// State desk test.
-bool CleanModeTest::updateActionInStateDeskTest()
+// State test.
+bool CleanModeTest::updateActionInStateTest()
 {
 	action_i_ = ac_desk_test;
 	genNextAction();
 	return true;
 }
 
-void CleanModeTest::switchInStateDeskTest()
+void CleanModeTest::switchInStateTest()
 {
 	action_i_ = ac_null;
 	sp_action_ = nullptr;

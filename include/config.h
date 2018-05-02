@@ -93,7 +93,7 @@
 
 /* ------------------------------------- Battery config ------------------------------------- */
 /* Low battery go home voltage value */
-#define LOW_BATTERY_GO_HOME_VOLTAGE		(1320)
+#define LOW_BATTERY_GO_HOME_VOLTAGE		(1350)
 
 /* Low battery stop robot voltage value */
 #define LOW_BATTERY_STOP_VOLTAGE		(1300)
@@ -108,8 +108,10 @@
 #define RESUME_CLEANING_VOLTAGE	(1530)
 
 /* Battery voltage criterion for brush setting*/
-#define FULL_OPERATE_VOLTAGE_FOR_BRUSH	(850)
-#define SLOW_OPERATE_VOLTAGE_FOR_BRUSH	(450)
+#define NORMAL_OPERATE_VOLTAGE_FOR_SIDE_BRUSH	(1050)
+#define NORMAL_OPERATE_VOLTAGE_FOR_MAIN_BRUSH	(800)
+#define SLOW_OPERATE_VOLTAGE_FOR_SIDE_BRUSH	(550)
+#define SLOW_OPERATE_VOLTAGE_FOR_MAIN_BRUSH	(450)
 
 /* Battery voltage criterion for water tank setting*/
 #define FULL_OPERATE_VOLTAGE_FOR_SWING_MOTOR	(500)
@@ -168,12 +170,12 @@
 #define BACK_MAX_SPEED					((int32_t) 11) // 15)
 #define BACK_MIN_SPEED					((int32_t) 8)
 #define LINEAR_MIN_SPEED				((int32_t) 10) // 15)
-#define LINEAR_MAX_SPEED				((int32_t) 40) // 15)
+#define LINEAR_MAX_SPEED				((int32_t) 38) // 15)
 #define FALL_WALL_MIN_SPEED				((int32_t) 5)
 #define FALL_WALL_MAX_SPEED				((int32_t) 20)
 #define ROTATE_TOP_SPEED				((uint8_t) 20) // 22)
 #define ROTATE_LOW_SPEED				((uint8_t) 8)
-#define RUN_TOP_SPEED					((int32_t) 40) // 45)
+#define RUN_TOP_SPEED					((int32_t) 38) // 45)
 
 #define LINEAR_NEAR_DISTANCE			(CELL_SIZE*1.5)
 

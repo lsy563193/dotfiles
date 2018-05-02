@@ -119,7 +119,8 @@ private:
 	};
 	double check_battery_time_stamp_;
 	uint8_t brush_status_;
-	uint8_t normal_PWM;
+	uint8_t normal_side_brush_PWM_;
+	uint8_t normal_main_brush_PWM_;
 
 	bool is_main_oc_;
 

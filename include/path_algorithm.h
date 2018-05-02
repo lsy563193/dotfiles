@@ -312,6 +312,10 @@ public:
 class SpotCleanPathAlgorithm: public APathAlgorithm
 {
 public:
+	enum{
+		CLOCKWISE =1,
+		ANTI_CLOCKWISE = 2,
+	};
 	SpotCleanPathAlgorithm();
 	SpotCleanPathAlgorithm(float radius,Cell_t cur_cell);
 

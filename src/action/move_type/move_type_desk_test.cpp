@@ -42,6 +42,7 @@
 #define CTL_F_CLIFF_BL_L 12
 #define CTL_R_CLIFF_BL_H 15
 #define CTL_R_CLIFF_BL_L 16
+#define REC_CHARGE_TEST 39
 
 MoveTypeDeskTest::MoveTypeDeskTest()
 {
@@ -218,24 +219,8 @@ void MoveTypeDeskTest::run()
 			ROS_INFO("%s %d: Test finish.", __FUNCTION__, __LINE__);
 			infrared_display.displayNormalMsg(0, 9999);
 			key_led.setMode(LED_STEADY, LED_GREEN);
-//			beeper.beep(2, 40, 40, 3);
-			serial.setSendData(CTL_WORK_MODE, DESK_TEST_WRITE_BASELINE_MODE);
-			serial.setSendData(CTL_L_OBS_BL_H, static_cast<uint8_t>(left_obs_baseline_ >> 8));
-			serial.setSendData(CTL_L_OBS_BL_L, static_cast<uint8_t>(left_obs_baseline_));
-			serial.setSendData(CTL_F_OBS_BL_H, static_cast<uint8_t>(front_obs_baseline_ >> 8));
-			serial.setSendData(CTL_F_OBS_BL_L, static_cast<uint8_t>(front_obs_baseline_));
-			serial.setSendData(CTL_R_OBS_BL_H, static_cast<uint8_t>(right_obs_baseline_ >> 8));
-			serial.setSendData(CTL_R_OBS_BL_L, static_cast<uint8_t>(right_obs_baseline_));
-			serial.setSendData(CTL_L_CLIFF_BL_H, static_cast<uint8_t>(left_cliff_baseline_ >> 8));
-			serial.setSendData(CTL_L_CLIFF_BL_L, static_cast<uint8_t>(left_cliff_baseline_));
-			serial.setSendData(CTL_F_CLIFF_BL_H, static_cast<uint8_t>(front_cliff_baseline_ >> 8));
-			serial.setSendData(CTL_F_CLIFF_BL_L, static_cast<uint8_t>(front_cliff_baseline_));
-			serial.setSendData(CTL_R_CLIFF_BL_H, static_cast<uint8_t>(right_cliff_baseline_ >> 8));
-			serial.setSendData(CTL_R_CLIFF_BL_L, static_cast<uint8_t>(right_cliff_baseline_));
-			serial.debugSendStream(serial.send_stream);
 			speaker.play(VOICE_TEST_SUCCESS);
 			sleep(5);
-			serial.debugReceivedStream(serial.receive_stream);
 			break;
 		}
 	}
@@ -245,7 +230,6 @@ void MoveTypeDeskTest::deskTestRoutineThread()
 {
 	ROS_INFO("\033[32m%s\033[0m,%d is up.",__FUNCTION__,__LINE__);
 
-	uint8_t buf[REC_LEN];
 	ros::Time cur_time, last_time;
 
 	while (ros::ok() && !recei_thread_kill)
@@ -253,10 +237,10 @@ void MoveTypeDeskTest::deskTestRoutineThread()
 		/*--------data extrict from serial com--------*/
 		ROS_ERROR_COND(pthread_mutex_lock(&recev_lock) != 0, "robotbase pthread receive lock fail");
 		ROS_ERROR_COND(pthread_cond_wait(&recev_cond, &recev_lock) != 0, "robotbase pthread receive cond wait fail");
-		memcpy(buf, serial.receive_stream, sizeof(uint8_t) * REC_LEN);
+		memcpy(buf_, serial.receive_stream, sizeof(uint8_t) * REC_LEN);
 		ROS_ERROR_COND(pthread_mutex_unlock(&recev_lock) != 0, "robotbase pthread receive unlock fail");
 //		robot::instance()->debugReceivedStream(buf);
-		if (dataExtract(buf))
+		if (dataExtract(buf_))
 		{
 			odom.setMovingSpeed(
 					static_cast<float>((wheel.getLeftWheelActualSpeed() + wheel.getRightWheelActualSpeed()) / 2.0));
@@ -346,10 +330,10 @@ bool MoveTypeDeskTest::dataExtract(const uint8_t *buf)
 
 		robot::instance()->setCurrent((buf[REC_ROBOT_CUNT_H] << 8) | buf[REC_ROBOT_CUNT_L]);
 
-//		printf("brush(l%d, r%d, m%d), wheel(l%d, r%d), vacuum(%d), robot(%d).\n",
-//			   brush.getLeftCurrent(), brush.getRightCurrent(), brush.getMainCurrent(),
-//			   wheel.getLeftCurrent(), wheel.getRightCurrent(), vacuum.getCurrent(),
-//			   robot::instance()->getCurrent());
+		printf("brush(l%d, r%d, m%d), wheel(l%d, r%d), vacuum(%d), robot(%d).\n",
+			   brush.getLeftCurrent(), brush.getRightCurrent(), brush.getMainCurrent(),
+			   wheel.getLeftCurrent(), wheel.getRightCurrent(), vacuum.getCurrent(),
+			   robot::instance()->getCurrent());
 
 	} else if (current_work_mode == DESK_TEST_MOVEMENT_MODE)
 	{
@@ -371,6 +355,8 @@ bool MoveTypeDeskTest::dataExtract(const uint8_t *buf)
 //		printf("obs left:%d, front:%d, right:%d.\n", ((buf[REC_L_OBS_H] << 8) | buf[REC_L_OBS_L]),
 //			   ((buf[REC_F_OBS_H] << 8) | buf[REC_F_OBS_L]), ((buf[REC_R_OBS_H] << 8) | buf[REC_R_OBS_L]));
 
+		charge_test_result_ = buf[REC_CHARGE_TEST];
+//		printf("Charge test result:%d.\n", charge_test_result_);
 	}
 
 	return true;
@@ -407,25 +393,25 @@ bool MoveTypeDeskTest::checkStage1Finish()
 		if (left_brush_current_baseline_ > side_brush_current_baseline_ref_ * 1.2 ||
 			left_brush_current_baseline_ < side_brush_current_baseline_ref_ * 0.8)
 		{
-			error_code_ = LEFT_BRUSH_CURRENT_ERROR;
+			error_code_ = BASELINE_LEFT_BRUSH_CURRENT_ERROR;
 			error_content_ = static_cast<uint16_t>(left_brush_current_baseline_);
 		}
 		else if (right_brush_current_baseline_ > side_brush_current_baseline_ref_ * 1.2 ||
 				 right_brush_current_baseline_ < side_brush_current_baseline_ref_ * 0.8)
 		{
-			error_code_ = RIGHT_BRUSH_CURRENT_ERROR;
+			error_code_ = BASELINE_RIGHT_BRUSH_CURRENT_ERROR;
 			error_content_ = static_cast<uint16_t>(right_brush_current_baseline_);
 		}
 		else if (main_brush_current_baseline_ > main_brush_current_baseline_ref_ * 1.2 ||
 				 main_brush_current_baseline_ < main_brush_current_baseline_ref_ * 0.8)
 		{
-			error_code_ = MAIN_BRUSH_CURRENT_ERROR;
+			error_code_ = BASELINE_MAIN_BRUSH_CURRENT_ERROR;
 			error_content_ = static_cast<uint16_t>(main_brush_current_baseline_);
 		}
 		else if (vacuum_current_baseline_ > vacuum_current_baseline_ref_ * 1.2 ||
 				 vacuum_current_baseline_ < vacuum_current_baseline_ref_ * 0.8)
 		{
-			error_code_ = VACUUM_CURRENT_ERROR;
+			error_code_ = BASELINE_VACUUM_CURRENT_ERROR;
 			error_content_ = static_cast<uint16_t>(vacuum_current_baseline_);
 		}
 		/*else if (water_tank_current_baseline_ > water_tank_current_baseline_ref_ * 1.2 ||
@@ -437,19 +423,23 @@ bool MoveTypeDeskTest::checkStage1Finish()
 		else if (left_wheel_current_baseline_ > wheel_current_baseline_ref_ * 1.2 ||
 				 left_wheel_current_baseline_ < wheel_current_baseline_ref_ * 0.8)
 		{
-			error_code_ = LEFT_WHEEL_FORWARD_CURRENT_ERROR;
+			error_code_ = BASELINE_LEFT_WHEEL_CURRENT_ERROR;
 			error_content_ = static_cast<uint16_t>(left_wheel_current_baseline_);
 		}
 		else if (right_wheel_current_baseline_ > wheel_current_baseline_ref_ * 1.2 ||
 				 right_wheel_current_baseline_ < wheel_current_baseline_ref_ * 0.8)
 		{
-			error_code_ = RIGHT_WHEEL_FORWARD_CURRENT_ERROR;
+			error_code_ = BASELINE_RIGHT_WHEEL_CURRENT_ERROR;
 			error_content_ = static_cast<uint16_t>(right_wheel_current_baseline_);
 		}
-		else if (robot_current_baseline_ > robot_current_baseline_ref_ * 1.2 ||
-				 robot_current_baseline_ < robot_current_baseline_ref_ * 0.8)
+		else if (robot_current_baseline_ > robot_current_baseline_ref_ * 1.2)
 		{
-			error_code_ = BASELINE_CURRENT_ERROR;
+			error_code_ = BASELINE_CURRENT_TOO_HIGH;
+			error_content_ = static_cast<uint16_t>(robot_current_baseline_);
+		}
+		else if (robot_current_baseline_ < robot_current_baseline_ref_ * 0.8)
+		{
+			error_code_ = BASELINE_CURRENT_TOO_LOW;
 			error_content_ = static_cast<uint16_t>(robot_current_baseline_);
 		}
 
@@ -993,10 +983,14 @@ bool MoveTypeDeskTest::checkCurrent()
 		error_code_ = RIGHT_WHEEL_FORWARD_CURRENT_ERROR;
 		error_content_ = static_cast<uint16_t>(right_wheel_current_ - right_wheel_current_baseline_);
 	}
-	else if (robot_current_ - robot_current_baseline_ > robot_current_ref_ * 1.5 ||
-			 robot_current_ - robot_current_baseline_ < robot_current_ref_ * 0.5)
+	else if (robot_current_ - robot_current_baseline_ > robot_current_ref_ * 1.5)
 	{
-		error_code_ = BASELINE_CURRENT_ERROR;
+		error_code_ = BASELINE_CURRENT_TOO_HIGH;
+		error_content_ = static_cast<uint16_t>(robot_current_ - robot_current_baseline_);
+	}
+	else if (robot_current_ - robot_current_baseline_ < robot_current_ref_ * 0.5)
+	{
+		error_code_ = BASELINE_CURRENT_TOO_LOW;
 		error_content_ = static_cast<uint16_t>(robot_current_ - robot_current_baseline_);
 	}
 
@@ -1258,21 +1252,8 @@ bool MoveTypeDeskTest::checkStage6Finish()
 					test_stage_ = 99;
 				}
 				else
-				{
-					p_movement_.reset();
-					p_movement_.reset(
-							new MovementTurn(getPosition().th + degree_to_radian(45), RCON_ROTATE_SPEED));
-					test_step_++;
-				}
+					return true;
 			} else
-				p_movement_->run();
-			break;
-		}
-		case 2:
-		{
-			if (p_movement_->isFinish())
-				return true;
-			else
 				p_movement_->run();
 			break;
 		}
@@ -1295,8 +1276,7 @@ bool MoveTypeDeskTest::checkStage7Finish()
 				vacuum.stop();
 				brush.stop();
 				lidar.motorCtrl(OFF);
-				p_movement_.reset(new ActionIdle());
-				key_led.setMode(LED_STEADY, LED_ORANGE);
+				p_movement_.reset(new MovementCharge());
 				test_step_++;
 			} else
 				p_movement_->run();
@@ -1304,26 +1284,72 @@ bool MoveTypeDeskTest::checkStage7Finish()
 		}
 		case 1:
 		{
-			if (key.getPressStatus() || remote.isKeyTrigger(REMOTE_CLEAN))
+//			serial.debugSendStream(serial.send_stream);
+			if (charge_test_result_ == 1)
 			{
-				beeper.beepForCommand(VALID);
-				remote.reset();
-				p_movement_.reset();
-				p_movement_.reset(new ActionBackFromCharger());
-				test_step_++;
-			} else
-			{
-				remote.reset();
-				p_movement_->run();
+				error_code_ = CHARGE_PWM_ERROR;
+				error_content_ = 0;
+				error_step_ = test_stage_;
+				test_stage_ = 99;
 			}
+			else if (charge_test_result_ == 2)
+			{
+				error_code_ = CHARGE_CURRENT_ERROR;
+				error_content_ = 0;
+				error_step_ = test_stage_;
+				test_stage_ = 99;
+			}
+			else if (charge_test_result_ == 3)
+			{
+				ROS_INFO("%s %d: Charge test pass.", __FUNCTION__, __LINE__);
+				test_step_++;
+				send_thread_enable = false;
+				usleep(20000);
+
+				serial.setSendData(CTL_WORK_MODE, DESK_TEST_WRITE_BASELINE_MODE);
+				serial.setSendData(CTL_L_OBS_BL_H, static_cast<uint8_t>(left_obs_baseline_ >> 8));
+				serial.setSendData(CTL_L_OBS_BL_L, static_cast<uint8_t>(left_obs_baseline_));
+				serial.setSendData(CTL_F_OBS_BL_H, static_cast<uint8_t>(front_obs_baseline_ >> 8));
+				serial.setSendData(CTL_F_OBS_BL_L, static_cast<uint8_t>(front_obs_baseline_));
+				serial.setSendData(CTL_R_OBS_BL_H, static_cast<uint8_t>(right_obs_baseline_ >> 8));
+				serial.setSendData(CTL_R_OBS_BL_L, static_cast<uint8_t>(right_obs_baseline_));
+				serial.setSendData(CTL_L_CLIFF_BL_H, static_cast<uint8_t>(left_cliff_baseline_ >> 8));
+				serial.setSendData(CTL_L_CLIFF_BL_L, static_cast<uint8_t>(left_cliff_baseline_));
+				serial.setSendData(CTL_F_CLIFF_BL_H, static_cast<uint8_t>(front_cliff_baseline_ >> 8));
+				serial.setSendData(CTL_F_CLIFF_BL_L, static_cast<uint8_t>(front_cliff_baseline_));
+				serial.setSendData(CTL_R_CLIFF_BL_H, static_cast<uint8_t>(right_cliff_baseline_ >> 8));
+				serial.setSendData(CTL_R_CLIFF_BL_L, static_cast<uint8_t>(right_cliff_baseline_));
+				serial.debugSendStream(serial.send_stream);
+				serial.sendData();
+			} /*else
+				printf("Charge test result:%d.\n", charge_test_result_);*/
 			break;
 		}
 		case 2:
 		{
-			if (p_movement_->isFinish())
-				return true;
-			else
-				p_movement_->run();
+			bool write_data_success = true;
+			if (serial.getSendData(CTL_L_OBS_BL_H) != buf_[CTL_L_OBS_BL_H]
+				|| serial.getSendData(CTL_L_OBS_BL_L) != buf_[CTL_L_OBS_BL_L]
+				|| serial.getSendData(CTL_F_OBS_BL_H) != buf_[CTL_F_OBS_BL_H]
+				|| serial.getSendData(CTL_F_OBS_BL_L) != buf_[CTL_F_OBS_BL_L]
+				|| serial.getSendData(CTL_R_OBS_BL_H) != buf_[CTL_R_OBS_BL_H]
+				|| serial.getSendData(CTL_R_OBS_BL_L) != buf_[CTL_R_OBS_BL_L]
+				|| serial.getSendData(CTL_L_CLIFF_BL_H) != buf_[CTL_L_CLIFF_BL_H]
+				|| serial.getSendData(CTL_L_CLIFF_BL_L) != buf_[CTL_L_CLIFF_BL_L]
+				|| serial.getSendData(CTL_F_CLIFF_BL_H) != buf_[CTL_F_CLIFF_BL_H]
+				|| serial.getSendData(CTL_F_CLIFF_BL_L) != buf_[CTL_F_CLIFF_BL_L]
+				|| serial.getSendData(CTL_R_CLIFF_BL_H) != buf_[CTL_R_CLIFF_BL_H]
+				|| serial.getSendData(CTL_R_CLIFF_BL_L) != buf_[CTL_R_CLIFF_BL_L])
+			{
+				ROS_INFO("%s %d: Waiting for writing baseline.", __FUNCTION__, __LINE__);
+				write_data_success = false;
+				serial.sendData();
+				serial.debugSendStream(serial.send_stream);
+			} else
+				serial.sendData();
+
+			serial.debugReceivedStream(serial.receive_stream);
+			return write_data_success;
 		}
 		default:
 			break;

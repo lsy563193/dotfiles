@@ -273,7 +273,7 @@ void main_board_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &curren
 {
 	bool is_fixture = false;
 	uint16_t test_result=0;
-	uint16_t baseline[8];
+	uint16_t baseline[9];
 	test_stage = FUNC_ELECTRICAL_AND_LED_TEST_MODE;
 	while(ros::ok()) {
 		key_led.set(100, 100);
@@ -296,7 +296,7 @@ void main_board_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &curren
 				rcon_test(test_stage, error_code, current_data);
 				break;
 			case FUNC_WATER_TANK_TEST_MODE:/*---water tank---*/
-				water_tank_test(test_stage, error_code, current_data);
+				water_tank_test(baseline, test_stage, error_code, current_data);
 				break;
 			case FUNC_WHEELS_TEST_MODE:/*---wheels---*/
 				wheels_test(baseline, test_stage, error_code, current_data);
@@ -515,6 +515,7 @@ void electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixture,
 			baseline[RIGHT_BRUSH] = ((uint16_t) buf[15] << 8) | buf[16];
 			baseline[VACUUM] = ((uint16_t) buf[17] << 8) | buf[18];
 			baseline[REF_VOLTAGE_ADC] = ((uint16_t) buf[19] << 8) | buf[20];
+			baseline[SWING_MOTOR] = ((uint16_t) buf[21] << 8) | buf[22];
 		}
 		switch(step) {
 			case 0:
@@ -561,6 +562,12 @@ void electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixture,
 					current_data = baseline[VACUUM];
 					return ;
 				}
+				if(baseline[SWING_MOTOR] < 1200 || baseline[VACUUM] > 2000)
+				{
+					error_code = BASELINE_SWING_MOTOR_CURRENT_ERROR;
+					current_data = baseline[SWING_MOTOR];
+					return ;
+				}
 				step++;
 				temp_sum = 0;
 				count_20ms = 0;
@@ -575,9 +582,9 @@ void electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixture,
 					ROS_INFO("%s, %d: battery voltage: %d", __FUNCTION__, __LINE__, temp_sum);
 					if (temp_sum < 1350 || temp_sum > 1700) {
 						if (temp_sum < 1350)
-							error_code = BATTERY_LOW;
+							error_code = BATTERY_TOO_LOW;
 						else
-							error_code = BATTERY_ERROR;
+							error_code = BATTERY_TOO_HIGH;
 						current_data = static_cast<uint16_t>(temp_sum);
 						return ;
 					}
@@ -597,9 +604,9 @@ void electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixture,
 						{
 							ROS_INFO("baseline current: %d",temp_sum);
 							if(temp_sum < 70)
-								error_code = BASELINE_CURRENT_LOW;
+								error_code = BASELINE_CURRENT_TOO_LOW;
 							else
-								error_code = BASELINE_CURRENT_ERROR;
+								error_code = BASELINE_CURRENT_TOO_HIGH;
 							current_data = static_cast<uint16_t>(temp_sum);
 							return ;
 						}
@@ -972,7 +979,7 @@ void rcon_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data
 		serial.sendData();
 	}
 }
-void water_tank_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data)
+void water_tank_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data)
 {
 	uint8_t step = 0;
 	uint8_t count = 0;
@@ -993,8 +1000,8 @@ void water_tank_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &curren
 		}
 		switch(step)
 		{
-			case 0:/*--- turn on pump and swing motor ---*/
-				serial.setSendData(CTL_WATER_TANK, 0x80 | 40);
+			case 0:/*--- turn on swing motor ---*/
+				serial.setSendData(CTL_WATER_TANK, 40);
 				count++;
 				if(count > 10)
 				{
@@ -1003,24 +1010,29 @@ void water_tank_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &curren
 				}
 				break;
 			case 1:
-				if(static_cast<uint16_t>(buf[2] << 8 | buf[3]) > SWING_CURRENT_LIMIT)
+				if(static_cast<uint16_t>(buf[2] << 8 | buf[3]) > baseline[SWING_MOTOR]+SWING_CURRENT_LIMIT)
 				{
 					if(count < 200)count++;
 				}
-				if((count > 20) && !(test_result & 0x01))
+				if(count > 100)
 				{
 					test_result |= 0x01;
 					beeper.beepForCommand(true);
+					step++;
 				}
 				if(buf[36])
 				{
-					if((test_result & 0x01) != 0x01)
-					{
-						error_code = SWING_MOTOR_ERROR;
-						current_data = static_cast<uint16_t>((buf[2] << 8) | buf[3]);
-					}
-					else
-						test_stage++;
+					error_code = SWING_MOTOR_ERROR;
+					current_data = static_cast<uint16_t>((buf[2] << 8) | buf[3]);
+					return ;
+				}
+				break;
+			case 2:
+				/*--- turn off swing motor and turn on pump ---*/
+				serial.setSendData(CTL_WATER_TANK, 0x80);
+				if(buf[36])
+				{
+					test_stage++;
 					return ;
 				}
 				break;
@@ -1526,9 +1538,9 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 				}
 				break;
 			case 7:
-				current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+				current_current = (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
 				step++;
-				current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+				current_current = (current_current * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
 				if (current_current < 250)
 				{
 					error_code = LEFT_BRUSH_STALL_ERROR;
@@ -1613,9 +1625,9 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 				}
 				break;
 			case 14:
-				current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+				current_current = (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
 				step++;
-				current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+				current_current = (current_current * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
 				if (current_current < 250)
 				{
 					error_code = RIGHT_BRUSH_STALL_ERROR;
@@ -1830,9 +1842,9 @@ void main_brush_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_co
 				}
 				break;
 			case 7:
-				current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+				current_current = (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
 				step++;
-				current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+				current_current = (current_current * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
 				if (current_current < 550)
 				{
 					error_code = MAIN_BRUSH_STALL_ERROR;
