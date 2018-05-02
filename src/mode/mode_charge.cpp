@@ -71,7 +71,8 @@ bool ModeCharge::isExit()
 		} else if (charger.isDirected())
 		{
 			ROS_WARN("%s %d: Plan not activated not valid because of charging with adapter.", __FUNCTION__, __LINE__);
-			speaker.play(VOICE_PLEASE_PULL_OUT_THE_PLUG);
+			speaker.play(VOICE_PLEASE_PULL_OUT_THE_PLUG, false);
+			speaker.play(VOICE_BATTERY_CHARGE);
 		} else
 		{
 			ROS_WARN("%s %d: Charge mode receives plan, change to navigation mode.", __FUNCTION__, __LINE__);
@@ -92,7 +93,8 @@ bool ModeCharge::isExit()
 		} else if (charger.isDirected())
 		{
 			ROS_WARN("%s %d: Charging with adapter.", __FUNCTION__, __LINE__);
-			speaker.play(VOICE_PLEASE_PULL_OUT_THE_PLUG);
+			speaker.play(VOICE_PLEASE_PULL_OUT_THE_PLUG, false);
+			speaker.play(VOICE_BATTERY_CHARGE);
 		} else
 		{
 			ROS_WARN("%s %d: Charge mode receives remote clean or key clean, change to navigation mode.", __FUNCTION__,
@@ -112,7 +114,8 @@ bool ModeCharge::isExit()
 		} else if (charger.isDirected())
 		{
 			ROS_WARN("%s %d: Charging with adapter.", __FUNCTION__, __LINE__);
-			speaker.play(VOICE_PLEASE_PULL_OUT_THE_PLUG);
+			speaker.play(VOICE_PLEASE_PULL_OUT_THE_PLUG, false);
+			speaker.play(VOICE_BATTERY_CHARGE);
 		} else
 		{
 			ROS_WARN("%s %d: Charge mode receives wifi plan1, change to navigation mode.", __FUNCTION__, __LINE__);
@@ -144,7 +147,8 @@ void ModeCharge::remoteClean(bool state_now, bool state_last)
 	if (charger.isDirected())
 	{
 		beeper.beepForCommand(INVALID);
-		speaker.play(VOICE_PLEASE_PULL_OUT_THE_PLUG);
+		speaker.play(VOICE_PLEASE_PULL_OUT_THE_PLUG, false);
+		speaker.play(VOICE_BATTERY_CHARGE);
 		ROS_WARN("%s %d: change charge mode to navigation mode by remote clean failed because of charging with adapter.", __FUNCTION__, __LINE__);
 	}
 	else
@@ -161,7 +165,8 @@ void ModeCharge::keyClean(bool state_now, bool state_last)
 	if (charger.isDirected())
 	{
 		beeper.beepForCommand(INVALID);
-		speaker.play(VOICE_PLEASE_PULL_OUT_THE_PLUG);
+		speaker.play(VOICE_PLEASE_PULL_OUT_THE_PLUG, false);
+		speaker.play(VOICE_BATTERY_CHARGE);
 		ROS_WARN("%s %d: change charge mode to navigation mode by key clean failed because of charging with adapter.", __FUNCTION__, __LINE__);
 	}
 	else
