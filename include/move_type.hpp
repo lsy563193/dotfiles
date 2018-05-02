@@ -286,10 +286,15 @@ private:
 	double check_current_start_time_{0};
 
 	uint32_t left_brush_current_{0};
+	uint8_t left_brush_current_exception_cnt_{0};
 	uint32_t right_brush_current_{0};
+	uint8_t right_brush_current_exception_cnt_{0};
 	uint32_t main_brush_current_{0};
+	uint8_t main_brush_current_exception_cnt_{0};
 	uint32_t left_wheel_current_{0};
+	uint8_t left_wheel_current_exception_cnt_{0};
 	uint32_t right_wheel_current_{0};
+	uint8_t right_wheel_current_exception_cnt_{0};
 	uint32_t vacuum_current_{0};
 	uint32_t water_tank_current_{0};
 	uint32_t robot_current_{0};

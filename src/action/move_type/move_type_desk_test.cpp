@@ -27,7 +27,7 @@
 
 #include "error.h"
 
-#define RCON_ROTATE_SPEED (14)
+#define RCON_ROTATE_SPEED (11)
 
 // Sequence for baseline setting.
 #define CTL_L_OBS_BL_H 2
@@ -935,29 +935,59 @@ bool MoveTypeDeskTest::checkCurrent()
 
 	// During follow wall
 	uint16_t side_brush_current_ref_{1675 - 1620}; // 55
-	uint16_t main_brush_current_ref_{1820 - 1620}; // 200
+	uint16_t main_brush_current_ref_{1870 - 1620}; // 250
 	uint16_t wheel_current_ref_{1685 - 1620}; // 65
 	uint16_t vacuum_current_ref_{2285 - 1620}; // 665
 	uint16_t water_tank_current_ref_{0};
 	uint16_t robot_current_ref_{2385 - 1775}; // 610
 
+	bool left_brush_pass = true;
+	bool right_brush_pass = true;
+	bool main_brush_pass = true;
+	bool left_wheel_pass = true;
+	bool right_wheel_pass = true;
+
 	if (left_brush_current_ - left_brush_current_baseline_ > side_brush_current_ref_ * 1.5 /* 82 */||
 		left_brush_current_ - left_brush_current_baseline_ < side_brush_current_ref_ * 0.3 /* 16 */)
 	{
-		error_code_ = LEFT_BRUSH_CURRENT_ERROR;
-		error_content_ = static_cast<uint16_t>(left_brush_current_ - left_brush_current_baseline_);
+		if (left_brush_current_exception_cnt_++ > 2)
+		{
+			error_code_ = LEFT_BRUSH_CURRENT_ERROR;
+			error_content_ = static_cast<uint16_t>(left_brush_current_ - left_brush_current_baseline_);
+		} else
+		{
+			ROS_WARN("%s %d: left brush current abnormal:%d, exception count:%d.", __FUNCTION__, __LINE__,
+					 left_brush_current_ - left_brush_current_baseline_, left_brush_current_exception_cnt_);
+			left_brush_pass = false;
+		}
 	}
 	else if (right_brush_current_ - right_brush_current_baseline_ > side_brush_current_ref_ * 1.5 /* 82 */||
 			 right_brush_current_ - right_brush_current_baseline_ < side_brush_current_ref_ * 0.3 /* 16 */)
 	{
-		error_code_ = RIGHT_BRUSH_CURRENT_ERROR;
-		error_content_ = static_cast<uint16_t>(right_brush_current_ - right_brush_current_baseline_);
+		if (right_brush_current_exception_cnt_++ > 2)
+		{
+			error_code_ = RIGHT_BRUSH_CURRENT_ERROR;
+			error_content_ = static_cast<uint16_t>(right_brush_current_ - right_brush_current_baseline_);
+		} else
+		{
+			ROS_WARN("%s %d: right brush current abnormal:%d, exception count:%d.", __FUNCTION__, __LINE__,
+					 right_brush_current_ - right_brush_current_baseline_, right_brush_current_exception_cnt_);
+			right_brush_pass = false;
+		}
 	}
 	else if (main_brush_current_ - main_brush_current_baseline_ > main_brush_current_ref_ * 1.5 ||
 			 main_brush_current_ - main_brush_current_baseline_ < main_brush_current_ref_ * 0.5)
 	{
-		error_code_ = MAIN_BRUSH_CURRENT_ERROR;
-		error_content_ = static_cast<uint16_t>(main_brush_current_ - main_brush_current_baseline_);
+		if (main_brush_current_exception_cnt_++ > 2)
+		{
+			error_code_ = MAIN_BRUSH_CURRENT_ERROR;
+			error_content_ = static_cast<uint16_t>(main_brush_current_ - main_brush_current_baseline_);
+		} else
+		{
+			ROS_WARN("%s %d: main brush current abnormal:%d, exception count:%d.", __FUNCTION__, __LINE__,
+					 main_brush_current_ - main_brush_current_baseline_, main_brush_current_exception_cnt_);
+			main_brush_pass = false;
+		}
 	}
 	else if (vacuum_current_ - vacuum_current_baseline_ > vacuum_current_ref_ * 1.5 ||
 			 vacuum_current_ - vacuum_current_baseline_ < vacuum_current_ref_ * 0.2)
@@ -974,14 +1004,30 @@ bool MoveTypeDeskTest::checkCurrent()
 	else if (left_wheel_current_cnt_ != 0 && (left_wheel_current_ - left_wheel_current_baseline_ > wheel_current_ref_ * 1.5 ||
 			 left_wheel_current_ - left_wheel_current_baseline_ < wheel_current_ref_ * 0.5))
 	{
-		error_code_ = LEFT_WHEEL_FORWARD_CURRENT_ERROR;
-		error_content_ = static_cast<uint16_t>(left_wheel_current_ - left_wheel_current_baseline_);
+		if (left_wheel_current_exception_cnt_++ > 2)
+		{
+			error_code_ = LEFT_WHEEL_FORWARD_CURRENT_ERROR;
+			error_content_ = static_cast<uint16_t>(left_wheel_current_ - left_wheel_current_baseline_);
+		} else
+		{
+			ROS_WARN("%s %d: left wheel current abnormal:%d, exception count:%d.", __FUNCTION__, __LINE__,
+					 left_wheel_current_ - left_wheel_current_baseline_, left_wheel_current_exception_cnt_);
+			left_wheel_pass = false;
+		}
 	}
 	else if (right_wheel_current_cnt_ != 0 && (right_wheel_current_ - right_wheel_current_baseline_ > wheel_current_ref_ * 1.5 ||
 			 right_wheel_current_ - right_wheel_current_baseline_ < wheel_current_ref_ * 0.5))
 	{
-		error_code_ = RIGHT_WHEEL_FORWARD_CURRENT_ERROR;
-		error_content_ = static_cast<uint16_t>(right_wheel_current_ - right_wheel_current_baseline_);
+		if (right_wheel_current_exception_cnt_++ > 2)
+		{
+			error_code_ = RIGHT_WHEEL_FORWARD_CURRENT_ERROR;
+			error_content_ = static_cast<uint16_t>(right_wheel_current_ - right_wheel_current_baseline_);
+		} else
+		{
+			ROS_WARN("%s %d: right wheel current abnormal:%d, exception count:%d.", __FUNCTION__, __LINE__,
+					 right_wheel_current_ - right_wheel_current_baseline_, right_wheel_current_exception_cnt_);
+			right_wheel_pass = false;
+		}
 	}
 	else if (robot_current_ - robot_current_baseline_ > robot_current_ref_ * 1.5)
 	{
@@ -992,6 +1038,20 @@ bool MoveTypeDeskTest::checkCurrent()
 	{
 		error_code_ = BASELINE_CURRENT_TOO_LOW;
 		error_content_ = static_cast<uint16_t>(robot_current_ - robot_current_baseline_);
+	}
+
+	if (error_code_ == 0)
+	{
+		if (left_brush_pass)
+			left_brush_current_exception_cnt_ = 0;
+		if (right_brush_pass)
+			right_brush_current_exception_cnt_ = 0;
+		if (main_brush_pass)
+			main_brush_current_exception_cnt_ = 0;
+		if (left_wheel_pass)
+			left_wheel_current_exception_cnt_ = 0;
+		if (right_wheel_pass)
+			right_wheel_current_exception_cnt_ = 0;
 	}
 
 	sum_cnt_ = 0;

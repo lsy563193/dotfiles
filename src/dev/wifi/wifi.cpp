@@ -52,7 +52,6 @@ S_Wifi::~S_Wifi()
 
 bool S_Wifi::deinit()
 {
-	taskPushBack(ACT::ACT_SLEEP);
 	quit();
 	delete map_data_buf_;
 	delete history_map_data_;
