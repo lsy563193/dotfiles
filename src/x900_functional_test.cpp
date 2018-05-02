@@ -1224,7 +1224,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				}
 				break;
 			case 13:
-				if(static_cast<uint16_t>(buf[2] << 8 | buf[3]) > baseline[LEFT_WHEEL] + 580)
+				if(static_cast<uint16_t>(buf[2] << 8 | buf[3]) > baseline[LEFT_WHEEL] + 880)
 					count++;
 				else
 					count = 0;
@@ -1243,7 +1243,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				current_current = (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
 				step++;
 				current_current = (current_current * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
-				if(current_current < 800) {
+				if(current_current < 600) {
 					error_code = LEFT_WHEEL_STALL_ERROR;
 					current_data = 0;
 					return ;
@@ -1402,7 +1402,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				}
 				break;
 			case 27:
-				if(static_cast<uint16_t>(buf[5] << 8 | buf[6]) > baseline[RIGHT_WHEEL] + 580)
+				if(static_cast<uint16_t>(buf[5] << 8 | buf[6]) > baseline[RIGHT_WHEEL] + 880)
 					count++;
 				else
 					count = 0;
@@ -1422,7 +1422,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
 				step++;
 				current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
-				if(current_current < 800)
+				if(current_current < 600)
 				{
 					error_code = RIGHT_WHEEL_STALL_ERROR;
 					current_data = 0;
