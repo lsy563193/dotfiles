@@ -79,7 +79,8 @@ bool ModeSleep::isExit()
 			{
 				ROS_WARN("%s %d: Plan not activated not valid because of charging with adapter.", __FUNCTION__,
 						 __LINE__);
-				speaker.play(VOICE_PLEASE_PULL_OUT_THE_PLUG);
+				speaker.play(VOICE_PLEASE_PULL_OUT_THE_PLUG, false);
+				speaker.play(VOICE_BATTERY_CHARGE);
 //				speaker.play(VOICE_CANCEL_APPOINTMENT_UNOFFICIAL);
 			} else
 			{
