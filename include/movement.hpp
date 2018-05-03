@@ -278,6 +278,7 @@ private:
 	int8_t by_path_move_cnt;
 	uint8_t turn_connect_cnt;
 	uint8_t turn_connect_dir;
+	uint8_t check_in_front_of_home;
 
 	int32_t left_speed_;
 	int32_t right_speed_;
