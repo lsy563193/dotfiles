@@ -122,17 +122,17 @@ ACleanMode::~ACleanMode()
 				if (mode_i_ != cm_exploration && mode_i_ != cm_navigation)
 					speaker.play(VOICE_CLEANING_FINISHED, false);
 				ROS_WARN("%s %d: Finish cleaning for key_clean_pressed or key_long_pressed.", __FUNCTION__, __LINE__);
-			} else if (mode_i_ == cm_exploration ||
-					((mode_i_ == cm_navigation || mode_i_ == cm_wall_follow) && seen_charger_during_cleaning_))
-			{
-				speaker.play(VOICE_BACK_TO_CHARGER_FAILED, false);
-				ROS_WARN("%s %d: Finish cleaning but failed to go to charger.", __FUNCTION__, __LINE__);
 			} else if (mode_i_ == cm_navigation && (trapped_closed_or_isolate || trapped_time_out_))
 			{
 				speaker.play(VOICE_ROBOT_TRAPPED, false);
 				trapped_closed_or_isolate = false;
 				trapped_time_out_ = false;
 				ROS_WARN("%s %d: Robot is trapped.Stop cleaning.", __FUNCTION__, __LINE__);
+			} else if (mode_i_ == cm_exploration ||
+					((mode_i_ == cm_navigation || mode_i_ == cm_wall_follow) && seen_charger_during_cleaning_))
+			{
+				speaker.play(VOICE_BACK_TO_CHARGER_FAILED, false);
+				ROS_WARN("%s %d: Finish cleaning but failed to go to charger.", __FUNCTION__, __LINE__);
 			} else if (mode_i_ == cm_navigation && moved_during_pause_)
 			{
 				speaker.play(VOICE_CLEANING_FINISHED, false);
