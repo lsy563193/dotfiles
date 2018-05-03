@@ -260,6 +260,7 @@ private:
 	int16_t left_obs_max_{0};
 	int16_t front_obs_max_{0};
 	int16_t right_obs_max_{0};
+	double check_start_time_{0};
 	bool checkStage3Finish();
 
 	// For stage 4.

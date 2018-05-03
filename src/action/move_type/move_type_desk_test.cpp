@@ -94,10 +94,7 @@ void MoveTypeDeskTest::run()
 				// Switch to next stage.
 				infrared_display.displayNormalMsg(test_stage_, 0);
 				p_movement_.reset();
-//				p_movement_.reset(new ActionOpenGyro());
-//				c_rcon.resetStatus();
-//				lidar_check_cnt_ = 0;
-//				p_movement_.reset(new MovementDirectGo(false));
+				check_start_time_ = ros::Time::now().toSec();
 				wheel.setDirectionForward();
 				ROS_INFO("%s %d: Stage 2 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
 				ROS_INFO("%s %d: Start checking for left bumper.", __FUNCTION__, __LINE__);
@@ -134,6 +131,7 @@ void MoveTypeDeskTest::run()
 				test_step_ = 0;
 				// Switch to next stage.
 				infrared_display.displayNormalMsg(test_stage_, 0);
+				lidar.motorCtrl(OFF);
 				p_movement_.reset();
 				p_movement_.reset(new MovementStay(0.2));
 				/*brush.fullOperate();
@@ -689,7 +687,14 @@ bool MoveTypeDeskTest::checkStage3Finish()
 				p_movement_.reset();
 				p_movement_.reset(new MovementBack(0.01, BACK_MAX_SPEED));
 				test_step_++;
-			} else
+				check_start_time_ = ros::Time::now().toSec();
+			} else if (ros::Time::now().toSec() - check_start_time_ > 10)
+			{
+				error_step_ = test_stage_;
+				test_stage_ = 99;
+				error_code_ = LEFT_BUMPER_ERROR;
+			}
+			else
 				wheel.setPidTargetSpeed(LINEAR_MAX_SPEED / 2, LINEAR_MAX_SPEED / 2);
 //				p_movement_->run();
 			break;
@@ -1253,7 +1258,7 @@ bool MoveTypeDeskTest::checkStage6Finish()
 			{
 				p_movement_.reset();
 				p_movement_.reset(
-						new MovementTurn(getPosition().th + degree_to_radian(-179), RCON_ROTATE_SPEED));
+						new MovementTurn(getPosition().th + degree_to_radian(-179), ROTATE_TOP_SPEED * 2 / 3));
 				test_step_++;
 			} else
 				p_movement_->run();
@@ -1381,8 +1386,12 @@ bool MoveTypeDeskTest::checkStage7Finish()
 				serial.setSendData(CTL_R_CLIFF_BL_L, static_cast<uint8_t>(right_cliff_baseline_));
 				serial.debugSendStream(serial.send_stream);
 				serial.sendData();
-			} /*else
-				printf("Charge test result:%d.\n", charge_test_result_);*/
+			} else
+			{
+				p_movement_->run();
+				printf("Charge status:%d. Charge ctrl:%d. Charge test result:%d.\n",
+						charger.getChargeStatus(), serial.getSendData(CTL_CHARGER), charge_test_result_);
+			}
 			break;
 		}
 		case 2:
@@ -1409,7 +1418,33 @@ bool MoveTypeDeskTest::checkStage7Finish()
 				serial.sendData();
 
 			serial.debugReceivedStream(serial.receive_stream);
-			return write_data_success;
+			if (write_data_success)
+			{
+				beeper.beepForCommand(VALID);
+				serial.resetSendStream();
+				serial.setSendData(CTL_WORK_MODE, DESK_TEST_MOVEMENT_MODE);
+				key_led.setMode(LED_STEADY, LED_GREEN);
+				send_thread_enable = true;
+				test_step_++;
+			}
+			break;
+		}
+		case 3:
+		{
+			if (key.getTriggerStatus() || remote.isKeyTrigger(REMOTE_CLEAN))
+			{
+				p_movement_.reset(new ActionBackFromCharger);
+				brush.slowOperate();
+				test_step_++;
+			}
+			break;
+		}
+		case 4:
+		{
+			if (p_movement_->isFinish())
+				return true;
+			else
+				p_movement_->run();
 		}
 		default:
 			break;
