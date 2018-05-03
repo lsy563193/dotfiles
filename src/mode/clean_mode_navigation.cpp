@@ -626,10 +626,7 @@ void CleanModeNav::switchInStateInit() {
 			sp_state = state_clean.get();
 		}
 		else{ // Resume from pause, because slam is not opened for the first time that open lidar action finished.
-			ROS_ERROR("before erase : sp_saved_states.size(%d)", sp_saved_states.size());
-			sp_saved_states.erase(stable_unique(sp_saved_states.begin(),sp_saved_states.end()),sp_saved_states.end());
-			ROS_ERROR("after erase : sp_saved_states.size(%d)", sp_saved_states.size());
-			sleep(20);
+//			sp_saved_states.erase(stable_unique(sp_saved_states.begin(),sp_saved_states.end()),sp_saved_states.end());
 			sp_state = sp_saved_states.back();
 			sp_saved_states.pop_back();
 		}
@@ -872,7 +869,8 @@ bool CleanModeNav::checkEnterPause()
 		}
 		ROS_INFO("%s %d: Key clean pressed, pause cleaning.Robot pose(%f)", __FUNCTION__, __LINE__,radian_to_degree(paused_odom_radian_));
 		sp_action_.reset();
-		sp_saved_states.push_back(sp_state);
+		if (!isStateInit())
+			sp_saved_states.push_back(sp_state);
 		sp_state = state_pause.get();
 		sp_state->init();
 //		mapMark();
