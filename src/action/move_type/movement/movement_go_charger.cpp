@@ -35,6 +35,7 @@ void MovementGoToCharger::resetGoToChargerVariables()
 	turn_connect_cnt = 0;
 	turn_connect_dir = gtc_check_position_right;
 	check_in_front_of_home = 0;
+	dir_wrong_cnt_ = 0;
 }
 
 bool MovementGoToCharger::isSwitch()
@@ -377,12 +378,29 @@ bool MovementGoToCharger::isSwitch()
 					ROS_INFO("%s, %d: Detect L-L, wait for L-R", __FUNCTION__, __LINE__);
 					check_in_front_of_home = 1;
 				}
-				else if((check_in_front_of_home == 1) && (receive_code&RconL_HomeR))
+				else if(receive_code&RconL_HomeR)
 				{
-					ROS_INFO("%s, %d: Detect L-R, Check position left.", __FUNCTION__, __LINE__);
-					check_position_dir = gtc_check_position_left;
-					gtc_state_now_ = gtc_check_position_init;
-					turn_angle_ = 0;
+					if(check_in_front_of_home == 1)
+					{
+						ROS_INFO("%s, %d: Detect L-R and L-L, Check position left.", __FUNCTION__, __LINE__);
+						check_position_dir = gtc_check_position_left;
+						gtc_state_now_ = gtc_check_position_init;
+						turn_angle_ = 0;
+						dir_wrong_cnt_ = 0;
+					}
+					else
+					{
+						ROS_INFO("%s, %d: Detect L-R but not detect L-L. Check if direction wrong.", __FUNCTION__, __LINE__);
+						dir_wrong_cnt_++;
+						/*--- dir wrong, change dir ---*/
+						if(dir_wrong_cnt_ > 25)
+						{
+							around_charger_stub_dir = 1 - around_charger_stub_dir;
+							check_in_front_of_home = 0;
+							turn_angle_ = 180;
+							return true;
+						}
+					}
 				}
 				else if(receive_code&(RconFL_HomeL|RconFL_HomeT))
 				{
@@ -434,12 +452,29 @@ bool MovementGoToCharger::isSwitch()
 					ROS_INFO("%s, %d: Detect R-R, wait for R-L", __FUNCTION__, __LINE__);
 					check_in_front_of_home = 1;
 				}
-				else if((check_in_front_of_home == 1) && (receive_code&RconR_HomeL))
+				else if(receive_code&RconR_HomeL)
 				{
-					ROS_INFO("%s, %d: Detect R-L, check position right.", __FUNCTION__, __LINE__);
-					check_position_dir = gtc_check_position_right;
-					gtc_state_now_ = gtc_check_position_init;
-					turn_angle_ = 0;
+					if(check_in_front_of_home == 1)
+					{
+						ROS_INFO("%s, %d: Detect R-L and R-R, Check position left.", __FUNCTION__, __LINE__);
+						check_position_dir = gtc_check_position_right;
+						gtc_state_now_ = gtc_check_position_init;
+						turn_angle_ = 0;
+						dir_wrong_cnt_ = 0;
+					}
+					else
+					{
+						ROS_INFO("%s, %d: Detect R-L but not detect R-R. Check if direction wrong.", __FUNCTION__, __LINE__);
+						dir_wrong_cnt_++;
+						/*--- dir wrong, change dir ---*/
+						if(dir_wrong_cnt_ > 25)
+						{
+							around_charger_stub_dir = 1 - around_charger_stub_dir;
+							check_in_front_of_home = 0;
+							turn_angle_ = 180;
+							return true;
+						}
+					}
 				}
 				else if(receive_code&(RconFR_HomeR|RconFR_HomeT))
 				{
