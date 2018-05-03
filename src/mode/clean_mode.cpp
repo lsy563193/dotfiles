@@ -1840,28 +1840,51 @@ void ACleanMode::switchInStateGoToCharger() {
 }
 
 // ------------------State spot--------------------
-bool ACleanMode::updateActionInStateSpot() {
+bool ACleanMode::updateActionInStateSpot()
+{
 	old_dir_ = iterate_point_.dir;
+	/*
+	//-- clear the passed cells
 	if(!plan_path_.empty())
 	{
-		auto result = std::find_if(plan_path_.begin(), plan_path_.end(), [&](const Point_t& c_it){
-			return c_it.toCell() == iterate_point_.toCell();
-		});
-		if(result != plan_path_.end())
-			plan_path_.erase(plan_path_.begin(), result+1);
+		//-- iterate for two times ,witch is in and out
+		for(int i=0;i<2;i++)
+		{
+			auto result = std::find_if(plan_path_.begin(), plan_path_.end(), [&](const Point_t& c_it){
+				return c_it.toCell() == passed_path.at(i).toCell();
+			});
+			if(result != plan_path_.end())
+				plan_path_.erase(plan_path_.begin(), result+1);
+			else
+			  break;
+		}
 	}
-	ROS_ERROR("old_dir_(%d)", old_dir_);
+	*/
+
+	if(sp_action_ != nullptr)
+	{
+		if(action_i_ == ac_linear && !IMoveType::remain_path_.empty())
+			plan_path_ = IMoveType::remain_path_;
+	}
+
+	ROS_INFO("\033[31m%s,%d,old_dir_(%d)\033[0m", __FUNCTION__,__LINE__,old_dir_);
 	auto cur_point = getPosition();
-	ROS_INFO("\033[32m plan_path size(%d), front (%d,%d),cur point:(%d,%d)\033[0m",plan_path_.size(),
-				plan_path_.front().toCell().x,plan_path_.front().toCell().y,cur_point.toCell().x,cur_point.toCell().y);
-	sp_action_.reset();// to mark in destructor
+	ROS_INFO("\033[32m plan_path size(%d), front (%d,%d),cur point:(%d,%d)\033[0m"
+				,plan_path_.size(),	plan_path_.front().toCell().x,plan_path_.front().toCell().y
+				,cur_point.toCell().x,cur_point.toCell().y);
+
+	sp_action_.reset();
+
 	if (clean_path_algorithm_->generatePath(clean_map_, cur_point, old_dir_, plan_path_)) {
 		iterate_point_ = plan_path_.front();
-		ROS_ERROR("%s,%d,iterate_point_.dir(%d)", __FUNCTION__,__LINE__,iterate_point_.dir);
-//		PP_INFO();
+		ROS_INFO("\033[31m%s,%d,iterate_point_.dir(%d)\033[0m", __FUNCTION__,__LINE__,iterate_point_.dir);
 		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
-//		plan_path_.pop_front();
-		action_i_ = ac_linear;
+		if ( old_dir_ != MAP_ANY && should_follow_wall )
+			//-- spot follow wall always on left side
+			action_i_ = ac_follow_wall_right ,should_follow_wall = false;
+		else
+			action_i_ = ac_linear;
+
 		genNextAction();
 		return true;
 	}

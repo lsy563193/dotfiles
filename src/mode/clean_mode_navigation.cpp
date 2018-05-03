@@ -712,8 +712,7 @@ bool CleanModeNav::updateActionInStateClean(){
 						||	npa->curr_filter_ == &npa->filter_p2
 						||	npa->curr_filter_ == &npa->filter_p1
 						||	npa->curr_filter_ == &npa->filter_n2
-						||	npa->curr_filter_ == &npa->filter_n1)
-				)
+						||	npa->curr_filter_ == &npa->filter_n1))
 		{
 				auto toward_pos = isXAxis(old_dir_) ? npa->curr_filter_->towardPos(): (iterate_point_.toCell().x - plan_path_.back().toCell().x) > 0;
 				bool is_left = isPos(old_dir_) ^ toward_pos;

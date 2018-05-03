@@ -49,7 +49,7 @@ S_Wifi::~S_Wifi()
 
 bool S_Wifi::deinit()
 {
-	taskPushBack(ACT::ACT_SLEEP);
+	//taskPushBack(ACT::ACT_SLEEP);
 	quit();
 	delete map_data_buf_;
 	delete history_map_data_;
@@ -617,7 +617,7 @@ uint32_t S_Wifi::find_if(std::deque<Cell_t> *list,Cell_t point,int find_type)
 	// -- hash search
 	if(find_type == 1)
 	{
-		//not yet
+		//not complete
 		return 0;
 	}
 	// -- bin search
@@ -660,7 +660,7 @@ void S_Wifi::sort_push(std::deque<Cell_t> *list,Cell_t p,int sort_type)
 	//-- hash  store
 	if(sort_type == 1)
 	{
-		// -- not yet
+		// -- not complete
 		list->push_back(p);
 	}
 	// --bin sort store

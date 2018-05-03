@@ -421,6 +421,8 @@ double MoveTypeFollowWall::getTurnRadian(bool use_target_radian)
 
 bool MoveTypeFollowWall::isOverOriginLine(GridMap &map)
 {
+	if(remain_path_.empty())
+		return true;
 	auto curr = getPosition();
 	auto target_point_ = remain_path_.back();
 	auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
@@ -458,9 +460,11 @@ bool MoveTypeFollowWall::isOverOriginLine(GridMap &map)
 
 bool MoveTypeFollowWall::isNewLineReach(GridMap &map)
 {
+	auto ret = false;
+	if(remain_path_.empty())
+		return true;
 	auto target_point_ = remain_path_.back();
 	auto s_curr_p = getPosition();
-	auto ret = false;
 	auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
 	auto start_point_ = p_mode->iterate_point_;
 	auto is_pos_dir = target_point_.y - start_point_.y > 0;

@@ -16,6 +16,7 @@
 boost::shared_ptr<IMovement> IMoveType::sp_movement_ = nullptr;
 Mode* IMoveType::sp_mode_ = nullptr;
 int IMoveType::movement_i_ = mm_null;
+Points IMoveType::remain_path_=Points();
 
 IMoveType::IMoveType() {
 //	resetTriggeredValue();
@@ -26,6 +27,7 @@ IMoveType::IMoveType() {
 IMoveType::~IMoveType() {
 //	resetTriggeredValue();
 	wheel.stop();
+	remain_path_.clear();
 }
 
 bool IMoveType::isCliffStop()
@@ -190,7 +192,8 @@ bool IMoveType::isFinishForward()
 
 	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered /*|| ev.rcon_status*/)
 	{
-		ROS_WARN("%s, %d,ev.bumper_triggered(%d) ev.cliff_triggered(%d) ev.tilt_triggered(%d), rcon(%d)."
+		//ROS_WARN("%s, %d,ev.bumper_triggered(%d) ev.cliff_triggered(%d) ev.tilt_triggered(%d), rcon(%d)."
+		ROS_WARN("%s, %d,ev.bumper_triggered(%d) ev.cliff_triggered(%d) ev.tilt_triggered(%d)"
 				, __FUNCTION__, __LINE__, ev.bumper_triggered, ev.cliff_triggered, ev.tilt_triggered/*,ev.rcon_status*/);
 		return true;
 	}
