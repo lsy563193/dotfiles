@@ -93,7 +93,7 @@ bool MovementBack::isFinish()
 
 		ROS_INFO("%s, %d: MovementBack reach target, bumper_jam_cnt_(%d), lidar_bumper_jam_cnt_(%d), cliff_jam_cnt_(%d), robot_stuck_cnt_(%d), tilt_cnt_(%d).",
 				 __FUNCTION__, __LINE__, bumper_jam_cnt_, lidar_bumper_jam_cnt_, cliff_jam_cnt_, robot_stuck_cnt_, tilt_cnt_);
-		if (bumper_jam_cnt_ == 0 && lidar_bumper_jam_cnt_ == 0 && cliff_jam_cnt_ == 0 && robot_stuck_cnt_ == 0 && tilt_cnt_ == 0)// todo need a tilt_cnt_
+		if (bumper_jam_cnt_ == 0 && lidar_bumper_jam_cnt_ == 0 && cliff_jam_cnt_ == 0 && robot_stuck_cnt_ == 0 && tilt_cnt_ == 0)
 			ret = true;
 //			return true;
 		else if (cliff_jam_cnt_ >= 2)

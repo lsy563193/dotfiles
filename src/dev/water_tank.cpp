@@ -65,14 +65,18 @@ void WaterTank::stop(int operate_option)
 	switch(operate_option){
 		case swing_motor:
 			serial.setSendData(CTL_WATER_TANK, static_cast<uint8_t>(pump_pwm_ & 0x80));
+			swing_motor_pwm_ = 0;
 			ROS_INFO("%s %d: close water tank", __FUNCTION__, __LINE__);
 			break;
 		case pump:
 			serial.setSendData(CTL_WATER_TANK, static_cast<uint8_t>(swing_motor_pwm_ & 0x7f));
+			pump_pwm_ = 0;
 			ROS_INFO("%s %d: close pump", __FUNCTION__, __LINE__);
 			break;
 		case swing_motor_and_pump:
 			serial.setSendData(CTL_WATER_TANK, 0x00);
+			pump_pwm_ = 0;
+			swing_motor_pwm_ = 0;
 			ROS_INFO("%s %d: close pump and water tank", __FUNCTION__, __LINE__);
 			break;
 	}

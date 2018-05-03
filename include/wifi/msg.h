@@ -577,12 +577,6 @@ public:
 			const uint8_t seq_num = 0);
 };
 
-class SetModeTxMsg: public Packet
-{
-public:
-	SetModeTxMsg(const WorkMode mode, const uint8_t seq_num = 0);
-};
-
 class MaxCleanPowerTxMsg: public Packet
 {
 public:
@@ -808,6 +802,32 @@ public:
 	std::string describe() const override
 	{
 		return "Clear realtime map ack msg";
+	}
+};
+
+class QueryNTPTxMsg: public Packet
+{
+public:
+	static constexpr int MSG_CODE = 0x0D;
+
+	QueryNTPTxMsg( const uint8_t seq_num = 0 );
+};
+
+class QueryNTPAckMsg: public RxMsg
+{
+public:
+	static constexpr int MSG_CODE = QueryNTPTxMsg::MSG_CODE;
+
+	using RxMsg::RxMsg;
+
+	int getNTPTime() const
+	{
+		return (data()[8] << 24) | (data()[9] << 16) | (data()[10] << 8) | data()[11];
+	}
+
+	std::string describe() const override
+	{
+		return "Query NTP ack msg.";
 	}
 };
 

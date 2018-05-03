@@ -200,13 +200,12 @@ uint16_t Appmt::nextAppointment()
 {
 	appointment_set_ = false;
 	//get current time
-	struct tm *date_time;
-	time_t real_time = time(NULL) + static_cast<time_t>(robot_timer.getRealTimeOffset());
-	date_time = localtime( &real_time );
-	ROS_INFO("%s,%d,cur time %s",__FUNCTION__,__LINE__,	asctime(date_time));
-	int cur_wday = 	date_time->tm_wday == 0?7:date_time->tm_wday;
-	int cur_hour = 	date_time->tm_hour;
-	int cur_mint = 	date_time->tm_min;
+	time_t current_time;
+	robot_timer.getRealCalendarTime(current_time);
+	struct tm *s_current_time = localtime(&current_time);
+	int cur_wday = 	s_current_time->tm_wday == 0?7:s_current_time->tm_wday;
+	int cur_hour = 	s_current_time->tm_hour;
+	int cur_mint = 	s_current_time->tm_min;
 	//get appointment
 	if(appointment_change_)
 		this->get();
@@ -251,13 +250,6 @@ void Appmt::setPlan2Bottom(uint16_t mint)
 
 void Appmt::timesUp()
 {
-	//--update realtime
-	//time_t real_time = time(NULL)+static_cast<time_t>(robot_timer.getRealTimeOffset());
-	//struct tm *dt;
-	//dt	= localtime( &real_time );
-	//ROS_INFO("%s,%d current realtime: %s",__FUNCTION__,__LINE__,asctime(dt));
-
-	//robot_timer.updateRealTimeFromMint(*dt,count_down_);
 	//--update appointment count
 	setPlan2Bottom(nextAppointment());
 	time_up_or_wifi_setting_ack_ = true;

@@ -150,6 +150,10 @@ void RxManager::handleMsg( Packet &&a_packet )
 		handleMsg( ClearRealtimeMapAckMsg( std::move( a_packet )) );
 		break;
 
+	case QueryNTPAckMsg::MSG_CODE:
+		handleMsg( QueryNTPAckMsg( std::move( a_packet )) );
+		break;
+
 	case wifiResumeAckMsg::MSG_CODE:
 		handleMsg( wifiResumeAckMsg( std::move( a_packet )) );
 		break;

@@ -323,6 +323,7 @@ enum REC{
 #define FUNC_VACUUM_TEST_MODE		14
 #define FUNC_MAINBRUSH_TEST_MODE	15
 #define FUNC_CHARGE_CURRENT_TEST_MODE		16
+#define FUNC_FINISHED		(FUNC_CHARGE_CURRENT_TEST_MODE+1)
 #define DESK_TEST_CURRENT_MODE		17 // For checking current
 #define DESK_TEST_MOVEMENT_MODE		18
 #define DESK_TEST_WRITE_BASELINE_MODE	19
@@ -330,7 +331,7 @@ enum REC{
 #define LIFE_TEST_MODE		21
 #define WATER_TANK_TEST_MODE	22
 #define R16_AND_LIDAR_TEST_MODE	23
-#define FUNC_FINISHED		FUNC_CHARGE_CURRENT_TEST_MODE+1
+#define BUMPER_TEST_MODE	24
 
 // ------------------------------work mode end--------------------------------------
 

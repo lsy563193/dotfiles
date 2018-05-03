@@ -62,14 +62,12 @@ void MovementTurn::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 			speed_ = static_cast<uint8_t>(fabs(radian_to_degree(diff) / 2));//2
 //		speed_ = static_cast<uint8_t>(fabs(angle_diff * angle_diff / 45));
 //		speed_ = static_cast<uint8_t>(fabs(sqrt(angle_diff -1) * 4));
+			speed_ = std::min(max_speed_, speed_);
 			speed_ = std::max(speed_, (uint8_t)8);
 //			ROS_INFO("%s %d: 10 - 20, speed = %d angle_diff = %lf.", __FUNCTION__, __LINE__, speed_, radian_to_degree(diff));
 		}
-		else if (std::abs(diff) > degree_to_radian(0)) {
-			speed_ = static_cast<uint8_t>(fabs(radian_to_degree(diff) / 2));//2
-			speed_ = std::max(speed_, (uint8_t)5);
-//			ROS_INFO("%s %d: 10 - 20, speed = %d angle_diff = %lf.", __FUNCTION__, __LINE__, speed_, radian_to_degree(diff));
-		}
+		else
+			speed_ = 5;
 	} else {
 		if (std::abs(diff) > degree_to_radian(20)){
 			speed_ += 1;

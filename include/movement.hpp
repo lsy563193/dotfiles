@@ -278,6 +278,7 @@ private:
 	int8_t by_path_move_cnt;
 	uint8_t turn_connect_cnt;
 	uint8_t turn_connect_dir;
+	uint8_t check_in_front_of_home;
 
 	int32_t left_speed_;
 	int32_t right_speed_;
@@ -318,6 +319,9 @@ private:
 	uint8_t wheel_cliff_state_{1};
 	uint8_t robot_stuck_resume_cnt_{0};
 	uint8_t lidar_resume_cnt_{0};
+	double resume_gyro_start_time_;
+	bool should_init_for_gyro_exception_{true};
+	IAction* p_action_open_gyro_ = nullptr;
 };
 
 class MovementCharge :public IMovement

@@ -107,7 +107,11 @@ ACleanMode::~ACleanMode()
 		{
 			if (ev.fatal_quit)
 			{
-				if (ev.cliff_all_triggered)
+				if (switch_is_off_)
+				{
+					speaker.play(VOICE_CHECK_SWITCH, false);
+					ROS_WARN("%s %d: Switch is not on. Stop cleaning.", __FUNCTION__, __LINE__);
+				} else if (ev.cliff_all_triggered)
 				{
 					speaker.play(VOICE_ERROR_LIFT_UP, false);
 					ROS_WARN("%s %d: Cliff all triggered. Stop cleaning.", __FUNCTION__, __LINE__);
@@ -118,17 +122,17 @@ ACleanMode::~ACleanMode()
 				if (mode_i_ != cm_exploration && mode_i_ != cm_navigation)
 					speaker.play(VOICE_CLEANING_FINISHED, false);
 				ROS_WARN("%s %d: Finish cleaning for key_clean_pressed or key_long_pressed.", __FUNCTION__, __LINE__);
-			} else if (mode_i_ == cm_exploration ||
-					((mode_i_ == cm_navigation || mode_i_ == cm_wall_follow) && seen_charger_during_cleaning_))
-			{
-				speaker.play(VOICE_BACK_TO_CHARGER_FAILED, false);
-				ROS_WARN("%s %d: Finish cleaning but failed to go to charger.", __FUNCTION__, __LINE__);
 			} else if (mode_i_ == cm_navigation && (trapped_closed_or_isolate || trapped_time_out_))
 			{
 				speaker.play(VOICE_ROBOT_TRAPPED, false);
 				trapped_closed_or_isolate = false;
 				trapped_time_out_ = false;
 				ROS_WARN("%s %d: Robot is trapped.Stop cleaning.", __FUNCTION__, __LINE__);
+			} else if (mode_i_ == cm_exploration ||
+					((mode_i_ == cm_navigation || mode_i_ == cm_wall_follow) && seen_charger_during_cleaning_))
+			{
+				speaker.play(VOICE_BACK_TO_CHARGER_FAILED, false);
+				ROS_WARN("%s %d: Finish cleaning but failed to go to charger.", __FUNCTION__, __LINE__);
 			} else if (mode_i_ == cm_navigation && moved_during_pause_)
 			{
 				speaker.play(VOICE_CLEANING_FINISHED, false);
@@ -140,14 +144,7 @@ ACleanMode::~ACleanMode()
 			}
 		}
 		else if (next_mode_i_ == md_charge)
-		{
-			 if (switch_is_off_)
-			{
-				speaker.play(VOICE_CHECK_SWITCH, false);
-				ROS_WARN("%s %d: Switch is not on. Stop cleaning.", __FUNCTION__, __LINE__);
-			} else
-				ROS_WARN("%s %d: Charge detect. Stop cleaning.", __FUNCTION__, __LINE__);
-		}
+			ROS_WARN("%s %d: Charge detect. Stop cleaning.", __FUNCTION__, __LINE__);
 		else if (next_mode_i_ == md_sleep)
 		{
 //			speaker.play(VOICE_CLEANING_FINISHED, false);
@@ -169,11 +166,19 @@ ACleanMode::~ACleanMode()
 
 	if (mode_i_ == cm_navigation)
 	{
-		robot::instance()->updateCleanRecord(static_cast<const uint32_t &>(ros::Time::now().toSec()
-												+robot_timer.getRealTimeOffset())
-											 ,static_cast<const uint16_t &>(robot_timer.getWorkTime())
-											 ,static_cast<const uint16_t &>(map_area)
-											 ,clean_map_);
+		// Upload clean record takes sometime, so upload the work mode first for better service on app.
+		s_wifi.setWorkMode(next_mode_i_);
+		s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
+
+		// Place here to get map_area.
+		time_t real_calendar_time;
+		robot_timer.getRealCalendarTime(real_calendar_time);
+		ROS_INFO("%s %d seconds from 1970' : %d, current calendar time: %s ", __FUNCTION__, __LINE__,
+				 real_calendar_time, ctime(&real_calendar_time));
+		robot::instance()->updateCleanRecord(static_cast<const uint32_t &>(real_calendar_time - robot_timer.getWorkTime())
+											 , static_cast<const uint16_t &>(robot_timer.getWorkTime())
+											 , static_cast<const uint16_t &>(map_area)
+											 , clean_map_);
 		s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_LAST_CLEANMAP);
 
 	}
@@ -898,9 +903,14 @@ void ACleanMode::pubLineMarker(const std::vector<LineABC> *lines)
 	if(!lines->empty() && lines->size() >= 1){
 		for(it = lines->cbegin(); it != lines->cend();it++){
 			point1.x = it->x1;
-			point1.y = it->y1;
 			point2.x = it->x2;
-			point2.y = it->y2;
+			if (it->B != 0) {
+				point1.y = (-it->C - it->A * point1.x) / it->B;
+				point2.y = (-it->C - it->A * point2.x) / it->B;
+			} else {
+				point1.y = it->y1;
+				point2.y = it->y2;
+			}
 			line_marker.points.push_back(point1);
 			line_marker.points.push_back(point2);
 		}
@@ -1053,7 +1063,7 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 	}
 	else//rounding
 	{
-		if(!isStateFollowWall() && !isStateDeskTest())
+		if(!isStateFollowWall() && !isStateTest())
 		{
 			auto p_mt = dynamic_cast<MoveTypeFollowWall *>(p_move_type);
 			if(p_mt->movement_i_ == p_mt->mm_forward ||p_mt->movement_i_ == p_mt->mm_straight)

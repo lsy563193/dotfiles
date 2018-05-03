@@ -38,7 +38,7 @@
 #define OBS_FIXTURE_LIMIT_L	(uint16_t)700
 #define WALL_FIXTURE_LIMIT_H	(uint16_t)500
 #define WALL_FIXTURE_LIMIT_L	(uint16_t)140
-#define SWING_CURRENT_LIMIT	(uint16_t)2500
+#define SWING_CURRENT_LIMIT	(uint16_t)1000
 
 //index for array "baseline"
 #define LEFT_WHEEL			0
@@ -49,6 +49,7 @@
 #define VACUUM					5
 #define REF_VOLTAGE_ADC	6
 #define SYSTEM_CURRENT	7
+#define SWING_MOTOR			8
 
 #include "dev.h"
 #include "robot.hpp"
@@ -99,7 +100,7 @@ void cliff_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &current_dat
 void bumper_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data);
 void obs_test(bool is_fixture, uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data);
 void rcon_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data);
-void water_tank_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data);
+void water_tank_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data);
 void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data);
 void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data);
 void main_brush_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data);

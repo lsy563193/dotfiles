@@ -41,8 +41,8 @@ bool State::isSwitchByEvent() {
 	else if(sp_cm_->isStatePause())
 		return sp_cm_->isSwitchByEventInStatePause();
 
-	else if(sp_cm_->isStateDeskTest())
-		return sp_cm_->isSwitchByEventInStateDeskTest();
+	else if(sp_cm_->isStateTest())
+		return sp_cm_->isSwitchByEventInStateTest();
 }
 
 bool State::updateAction() {
@@ -79,8 +79,8 @@ bool State::updateAction() {
 	else if(sp_cm_->isStatePause())
 		return sp_cm_->updateActionInStatePause();
 
-	else if(sp_cm_->isStateDeskTest())
-		return sp_cm_->updateActionInStateDeskTest();
+	else if(sp_cm_->isStateTest())
+		return sp_cm_->updateActionInStateTest();
 }
 
 void State::switchState() {
@@ -117,10 +117,18 @@ void State::switchState() {
 	else if(sp_cm_->isStatePause())
 		sp_cm_->switchInStatePause();
 
-	else if(sp_cm_->isStateDeskTest())
-		return sp_cm_->switchInStateDeskTest();
+	else if(sp_cm_->isStateTest())
+		return sp_cm_->switchInStateTest();
 }
 
 void StateSleep::init() {
 	key_led.setMode(LED_STEADY, LED_OFF);
+}
+
+std::vector<State*>::iterator stable_unique(std::vector<State*>::iterator b, std::vector<State*>::iterator e)
+{
+	auto rst_end = remove_if(b+1, e,[&](const State* i){return i == *b;});
+	if(b+1 == rst_end)
+		return rst_end;
+	stable_unique(b + 1, rst_end);
 }

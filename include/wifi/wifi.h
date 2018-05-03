@@ -30,6 +30,7 @@ public:
 		ACT_UPLOAD_STATUS,
 		ACT_UPLOAD_LAST_CLEANMAP,
 		ACT_CLEAR_APP_MAP,
+		ACT_QUERY_NTP,
 		ACT_END,
 	};
 
@@ -57,7 +58,7 @@ public:
 
 	uint8_t rebind();
 
-	uint8_t syncClock(int year,int mon,int day,int hour,int min,int sec);
+	uint8_t queryNTP();
 
 	int8_t smartLink();
 
@@ -192,10 +193,13 @@ public:
 
 private:
 
+	void cloudConnected();
+
 	wifi::RxManager s_wifi_rx_;
 	wifi::TxManager s_wifi_tx_;	
 
 	bool is_wifi_connected_;
+	bool first_time_connected_;
 	bool factory_test_ack_;
 	bool isFactoryTest_;
 	bool isRegDevice_;
@@ -208,6 +212,8 @@ private:
 	bool is_sleep_;
 	bool in_linking_;
 	bool wifi_quit_ ;
+	bool time_sync_;
+	double last_time_sync_time_;
 
 	wifi::WorkMode robot_work_mode_;
 	wifi::WorkMode last_work_mode_;

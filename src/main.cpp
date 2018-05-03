@@ -131,3 +131,25 @@ void case_2(GridMap &map) {
 //	map_set_block({-2,0},{3,0},);
 //	map_set_block({-2,0},{3,0},UNCLEAN);
 }
+
+// Test code by Austin.
+int test_time()
+{
+	time_t current_time = time(NULL);
+	time_t *p_current_time = &current_time;
+	printf("time(): %d.\n", *p_current_time);
+	printf("ctime(): %s", ctime(p_current_time));
+	struct tm *gm_p_current_time = gmtime(p_current_time);
+	printf("gmtime(): %s", asctime(gm_p_current_time));
+	struct tm *local_p_current_time = localtime(p_current_time);
+	printf("localtime(): %s", asctime(local_p_current_time));
+
+	printf("gmtime->time(): %d.\n", mktime(gmtime(p_current_time)));
+	printf("localtime->time(): %d.\n", mktime(localtime(p_current_time)));
+	time_t gm = mktime(gmtime(p_current_time));
+	time_t *p_gm = &gm;
+	printf("ctime(gmtime->time()): %s", ctime(p_gm));
+	time_t local = mktime(localtime(p_current_time));
+	time_t *p_local = &local;
+	printf("ctime(localtime->time()): %s", ctime(p_local));
+}

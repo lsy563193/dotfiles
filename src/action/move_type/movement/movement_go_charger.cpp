@@ -34,6 +34,7 @@ void MovementGoToCharger::resetGoToChargerVariables()
 	c_rcon.resetStatus();
 	turn_connect_cnt = 0;
 	turn_connect_dir = gtc_check_position_right;
+	check_in_front_of_home = 0;
 }
 
 bool MovementGoToCharger::isSwitch()
@@ -321,6 +322,7 @@ bool MovementGoToCharger::isSwitch()
 		ROS_INFO("%s, %d: Call Around_ChargerStation with dir = %d.", __FUNCTION__, __LINE__, around_charger_stub_dir);
 		gtc_state_now_ = gtc_around_charger_station;
 		around_move_cnt = 0;
+		check_in_front_of_home = 0;
 	}
 	if (gtc_state_now_ == gtc_around_charger_station)
 	{
@@ -336,6 +338,7 @@ bool MovementGoToCharger::isSwitch()
 		{
 			ROS_WARN("%s %d: Get bumper triggered.", __FUNCTION__, __LINE__);
 			around_charger_stub_dir = 1 - around_charger_stub_dir;
+			check_in_front_of_home = 0;
 			turn_angle_ = 180;
 			back_distance_ = 0.01;
 			if(++go_home_bumper_cnt > 1)
@@ -351,7 +354,7 @@ bool MovementGoToCharger::isSwitch()
 			receive_code = c_rcon.getAll();
 			if(receive_code)
 				no_signal_cnt = 0;
-			else if(++no_signal_cnt > 60)
+			else if(++no_signal_cnt > 90)
 			{
 				ROS_WARN("%s %d:No charger signal received.", __FUNCTION__, __LINE__);
 				gtc_state_now_ = gtc_turn_for_charger_signal_init;
@@ -369,7 +372,12 @@ bool MovementGoToCharger::isSwitch()
 					else if(receive_code&RconFL_HomeR)
 						ROS_INFO("%s, %d: Detect FL-R, call By_Path().", __FUNCTION__, __LINE__);
 				}
-				else if(receive_code&RconL_HomeR)
+				else if((check_in_front_of_home != 1) && (receive_code&RconL_HomeL))
+				{
+					ROS_INFO("%s, %d: Detect L-L, wait for L-R", __FUNCTION__, __LINE__);
+					check_in_front_of_home = 1;
+				}
+				else if((check_in_front_of_home == 1) && (receive_code&RconL_HomeR))
 				{
 					ROS_INFO("%s, %d: Detect L-R, Check position left.", __FUNCTION__, __LINE__);
 					check_position_dir = gtc_check_position_left;
@@ -399,6 +407,7 @@ bool MovementGoToCharger::isSwitch()
 					ROS_DEBUG("%s, %d: Detect R-T.", __FUNCTION__, __LINE__);
 					turn_angle_ = -110;
 					around_charger_stub_dir = 0;
+					check_in_front_of_home = 0;
 				}
 				else
 					turn_angle_ = 0;
@@ -420,7 +429,12 @@ bool MovementGoToCharger::isSwitch()
 					else if(receive_code&(RconFR_HomeL))
 						ROS_INFO("%s, %d: Detect FR-L, call By_Path().", __FUNCTION__, __LINE__);
 				}
-				else if(receive_code&(RconR_HomeL))
+				else if((check_in_front_of_home != 1) && (receive_code&RconR_HomeR))
+				{
+					ROS_INFO("%s, %d: Detect R-R, wait for R-L", __FUNCTION__, __LINE__);
+					check_in_front_of_home = 1;
+				}
+				else if((check_in_front_of_home == 1) && (receive_code&RconR_HomeL))
 				{
 					ROS_INFO("%s, %d: Detect R-L, check position right.", __FUNCTION__, __LINE__);
 					check_position_dir = gtc_check_position_right;
@@ -450,6 +464,7 @@ bool MovementGoToCharger::isSwitch()
 					ROS_DEBUG("%s, %d: Detect L-T.", __FUNCTION__, __LINE__);
 					turn_angle_ = 110;
 					around_charger_stub_dir = 1;
+					check_in_front_of_home = 0;
 				}
 				else
 					turn_angle_ = 0;
@@ -597,8 +612,6 @@ bool MovementGoToCharger::isSwitch()
 						position_far = false;
 						ROS_DEBUG("%s, %d: Robot near HomeT counter > 1, position_far = false.", __FUNCTION__, __LINE__);
 					}
-					else
-						near_counter = 0;
 					if((receive_code&RconFront_Home_LR) == 0 && ++side_counter > 5)
 					{
 						ROS_INFO("%s, %d: Robot away from the front of charger stub, back to gohome is_max_clean_state_.", __FUNCTION__, __LINE__);
@@ -796,7 +809,7 @@ bool MovementGoToCharger::isSwitch()
 			else
 			{
 				near_counter = 0;
-				if(++no_signal_cnt > 1)
+				if(++no_signal_cnt > 10)
 				{
 					ROS_INFO("%s %d: No signal in by path, switch to check position.", __FUNCTION__, __LINE__);
 					check_position_dir = gtc_check_position_left;

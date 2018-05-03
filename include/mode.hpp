@@ -495,13 +495,13 @@ public:
 	virtual void switchInStatePause(){};
 
 	// State desk test
-	bool isStateDeskTest() const
+	bool isStateTest() const
 	{
 		return sp_state == state_test.get();
 	}
-	virtual bool isSwitchByEventInStateDeskTest(){return false;};
-	virtual bool updateActionInStateDeskTest(){return false;};
-	virtual void switchInStateDeskTest(){};
+	virtual bool isSwitchByEventInStateTest(){return false;};
+	virtual bool updateActionInStateTest(){return false;};
+	virtual void switchInStateTest(){};
 
 	// For water tank setting.
 	void wifiSetWaterTank() override ;
@@ -803,10 +803,10 @@ public:
 	bool mapMark() override
 	{return false;}
 
-	bool isFinish() override;
-	bool isExit() override;
-	bool updateActionInStateDeskTest() override;
-	void switchInStateDeskTest() override;
+	bool isFinish() override{return false;}
+	bool isExit() override{return false;}
+	bool updateActionInStateTest() override;
+	void switchInStateTest() override;
 
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteDirectionForward(bool state_now, bool state_last) override ;
