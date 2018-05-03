@@ -2,6 +2,7 @@
 #include <event_manager.h>
 #include "robot.hpp"
 #include "path_algorithm.h"
+#include <initializer_list>
 
 SpotCleanPathAlgorithm::SpotCleanPathAlgorithm()
 {
@@ -22,6 +23,7 @@ SpotCleanPathAlgorithm::~SpotCleanPathAlgorithm()
 	initVariables(0,{0,0});
 }
 
+/*
 bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &plan_path)
 {
 	if(!ev.bumper_triggered && !ev.cliff_triggered && !ev.rcon_status){
@@ -48,7 +50,7 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, con
 		Point_t cur = curr;
 		if(plan_path.size() >= 2)
 		{
-			/*---first find shortest path---*/
+			//---first find shortest path---
 			Point_t next_point;
 			do{
 				plan_path.pop_front();
@@ -77,8 +79,8 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, con
 				break;
 			}while(ros::ok() && plan_path.size() >=1 );
 
-			/*-----second put the remaind targets into new_plan_path -----*/
-			/*-----if remaind targets in COST_HIGH find shortest path again-----*/
+			//-----second put the remaind targets into new_plan_path -----
+			//-----if remaind targets in COST_HIGH find shortest path again-----
 			ROS_INFO("\033[32m new_plan_path size %lu,the remained points size %lu\033[0m",new_plan_path.size(),plan_path.size());	
 			while(ros::ok() && plan_path.size() >=2)
 			{
@@ -136,11 +138,81 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, con
 	}
 
 }
+*/
+
+bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &plan_path)
+{
+	//curr = curr;
+	//last_dir = last_dir;
+	//map = map;
+	if(!ev.bumper_triggered && !ev.cliff_triggered && !ev.rcon_status && !ev.lidar_triggered){
+		if(!spot_running_){
+			spot_running_ = true;
+			plan_path = cells_generate_points(targets_cells_);
+			ROS_INFO("%s,%d ,targets size %lu",__FUNCTION__,__LINE__,plan_path.size());
+			return true;
+		}
+		else if(event_detect_)
+		{
+			event_detect_ = false;
+			if(plan_path_last_.size() > 1 )
+			{
+				plan_path_last_.pop_front();
+				plan_path = plan_path_last_;
+				return true;
+			}
+			else
+			{
+				INFO_RED("spot end...");
+				return false;
+			}
+		}
+		else if(plan_path.size() > 1)
+		{
+			return true;
+		}
+		else{
+			plan_path.clear();
+			INFO_RED("spot end...");
+			return false;
+		}
+	}
+	else if(ev.bumper_triggered || ev.cliff_triggered || ev.rcon_status || ev.lidar_triggered)
+	{
+		if(event_detect_ && plan_path_last_.size()>1 )
+		{
+			plan_path_last_.pop_front();
+			plan_path.clear();
+			plan_path.push_back(getPosition());
+			plan_path.push_back(plan_path_last_.front());
+			return true;
+		}
+		if(plan_path.size() > 2)
+		{
+			event_detect_  = true;
+			plan_path_last_.clear();
+			plan_path_last_ = plan_path ;
+			plan_path.clear();
+			plan_path.push_back(getPosition());
+			plan_path.push_back(plan_path_last_.front());
+			plan_path_last_.pop_front();
+			return true;
+		}
+		else
+		{
+			plan_path.clear();
+			INFO_RED("spot end...");
+			return false;
+		}
+	}
+
+}
 
 void SpotCleanPathAlgorithm::initVariables(float radius,Cell_t cur_cell)
 {
-	//	ROS_INFO();
 	spot_running_ = false;
+	event_detect_ = false;
+	plan_path_last_.clear();
 	const int abit = 3;
 	int16_t half_cell_num = (int16_t)ceil(radius/CELL_SIZE);
 	min_corner_.x = cur_cell.x - half_cell_num - abit;
@@ -150,6 +222,7 @@ void SpotCleanPathAlgorithm::initVariables(float radius,Cell_t cur_cell)
 	targets_cells_.clear();
 }
 
+/*
 void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float radius,Cells *targets,const Cell_t begincell)
 {
 	targets->clear();
@@ -355,27 +428,39 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float radius,Cells *targ
 	}
 	displayCellPath(*targets);
 }
-/*
+*/
+
 void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float radius,Cells *targets,const Cell_t begincell)
 {
-	Cell_t *p_path = {(0, 0),
-					(2, 0),(2, 2),(0, 2),
-					(-2, 2),(-2, 0),(-2, -2),(0, -2),
-					(2, -2),(4, -2),(4, 0),(4, 2),(4, 4),(2, 4),(0, 4),
-					(-2, 4),(-4, 4),(-4, 2),(-4, 0),(-4, -2),(-4, -4),(-2, -4),
-					(0, -4),(2, -4),(2, -2),(2, 0),(2, 2),
-					(0, 2),(-2, 2),(-2, 0),
-					(-2, -2),(0, -2),
-					(0, 0),nullptr}
-	
-	while(p_path != nullptr)
-	{
-		target->push_back(*p_path + begincell);
-		p_path  = p_path+1;
+	sp_type = sp_type;
+
+	//std::initializer_list<Cell_t>  p_path{
+		//			{0, 0},{1,0},{2, 0},{2,1},{2, 2},{1,2},{0, 2},
+		//			{-1,2},{-2, 2},{-2,1},{-2, 0},{-2,-1},{-2, -2},{-1,-2},{0, -2},
+		//			{1,-2},{2, -2},{3,-2},{4, -2},{4,-1},{4, 0},{4,1},{4, 2},{4,3},
+			//		{4, 4},{3,4},{2, 4},{1,4},{0, 4},{-1,4},{-2, 4},{-3,4},
+				//	{-4, 4},{-4,3},{-4, 2},{-4,1},{-4, 0},{-4,-1},{-4, -2},
+					//{-4,-3},{-4, -4},{-3,-4},{-2, -4},{-1,-4},{0, -4},{1,-4},{2, -4},{2,-3},
+				//	{2, -2},{2,-1},{2, 0},{2,1},{2, 2},{1,2},{0, 2},{-1,2},
+					//{-2, 2},{-2,1},{-2, 0},{-2,-1},{-2, -2},{-1,-2},{0, -2},{1,-2},{2,-2},{2,-1},{2,0},{1,0},{0, 0}
+					//};
+	std::initializer_list<Cell_t> p_path{
+	{0, 0},{1, 0},
+	{2, 0},{2, 1},{2, 2},{1, 2},{0, 2},{-1, 2},{-2, 2},{-2, 1},{-2, 0},{-2, -1},{-2, -2},{-1, -2},{0, -2},{1, -2},{2, -2},
+	{3, -2},{3, -1},{3, 0},{3, 1},{3, 2},{3, 3},{2, 3},{1, 3},{0, 3},{-1, 3},{-2, 3},{-3, 3},{-3, 2},{-3, 1},{-3, 0},{-3, -1},{-3, -2},{-3, -3},{-2, -3},{-1, -3},{0, -3},{1, -3},{2, -3},{3, -3},
+	{4, -3},{4, -2},{4, -1},{4, 0},{4, 1},{4, 2},{4, 3},{4, 4},{3, 4},{2, 4},{1, 4},{0, 4},{-1, 4},{-2, 4},{-3, 4},{-4, 4},{-4, 3},{-4, 2},{-4, 1},{-4, 0},{-4, -1},{-4, -2},{-4, -3},{-4, -4},{-3, -4},{-2, -4},{-1, -4},{0, -4},{1, -4},{2, -4},{3, -4},{4, -4},{4, -3},{4, -2},{4, -1},{4, 0},{4, 1},{4, 2},{4, 3},
+	{3, 3},{2, 3},{1, 3},{0, 3},{-1, 3},{-2, 3},{-3, 3},{-3, 2},{-3, 1},{-3, 0},{-3, -1},{-3, -2},{-3, -3},{-2, -3},{-1, -3},{0, -3},{1, -3},{2, -3},{3, -3},{3, -2},{3, -1},{3, 0},{3, 1},{3, 2},
+	{2, 2},{1, 2},{0, 2},{-1, 2},{-2, 2},{-2, 1},{-2, 0},{-2, -1},{-2, -2},{-1, -2},{0, -2},{1, -2},{2, -2},{2, -1},{2, 0},{2, 1},
+	{1, 1},{0, 1},{-1, 1},{-1, 0},{-1, -1},{0, -1},{1, -1},{1, 0},
+	{0, 0}
+	};
+	std::initializer_list<Cell_t>::iterator p_it = p_path.begin();
+	for(int i=0;i <p_path.size();i++){
+		targets->push_back(*(p_it+i) + begincell);
+		//ROS_INFO("%s,%d,path list (%d,%d)",__FUNCTION__,__LINE__,targets->back().GetX(),targets->back().GetY());
 	}
 
 }
-*/
 
 bool SpotCleanPathAlgorithm::checkTrapped(GridMap &map, const Cell_t &curr_cell)
 {

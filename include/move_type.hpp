@@ -65,7 +65,7 @@ public:
 	bool state_turn{};
 //	Point_t target_point_;
 	int dir_;
-	Points remain_path_{};
+	static Points remain_path_;
 	bool stop_generate_next_target{};
 public:
 //	std::deque<double> odom_turn_target_radians_{};
