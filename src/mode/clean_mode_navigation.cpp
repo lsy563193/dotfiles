@@ -626,6 +626,10 @@ void CleanModeNav::switchInStateInit() {
 			sp_state = state_clean.get();
 		}
 		else{ // Resume from pause, because slam is not opened for the first time that open lidar action finished.
+			ROS_ERROR("before erase : sp_saved_states.size(%d)", sp_saved_states.size());
+			sp_saved_states.erase(stable_unique(sp_saved_states.begin(),sp_saved_states.end()),sp_saved_states.end());
+			ROS_ERROR("after erase : sp_saved_states.size(%d)", sp_saved_states.size());
+			sleep(20);
 			sp_state = sp_saved_states.back();
 			sp_saved_states.pop_back();
 		}

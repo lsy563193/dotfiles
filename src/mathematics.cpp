@@ -247,3 +247,4 @@ Vector2<double> polarToCartesian(double polar, int i)
 	coordinate_transform(&point.x, &point.y, LIDAR_THETA, LIDAR_OFFSET_X, LIDAR_OFFSET_Y);
 	return point;
 }
+
