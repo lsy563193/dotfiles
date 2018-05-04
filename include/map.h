@@ -35,6 +35,7 @@ public:
 	void clearBlocks(void);
 
 	void setCells(int8_t count, int16_t cell_x, int16_t cell_y, CellState state);
+	void setCellsBut(int8_t count, int16_t cell_x, int16_t cell_y, CellState state,CellState but_state);
 
 	void reset(uint8_t id);
 

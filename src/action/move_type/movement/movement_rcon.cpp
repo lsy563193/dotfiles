@@ -17,7 +17,7 @@ void MovementRcon::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	rcon_status &= (RconFL2_HomeT|RconFR_HomeT|RconFL_HomeT|RconFR2_HomeT);
 //	ROS_INFO("rcon_status = %x", rcon_status);
 	if(rcon_status) {
-		seen_charger_counter_ = 40;
+		seen_charger_counter_ = 80;
 //		g_rcon_triggered = get_rcon_trig();
 //		map_set_rcon();
 		int32_t linear_speed = 20;
