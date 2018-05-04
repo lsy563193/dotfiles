@@ -10,6 +10,7 @@
 #include <mode.hpp>
 
 MoveTypeLinear::MoveTypeLinear(Points remain_path){
+	IMovement::sp_mt_ = this;
 	resetTriggeredValue();
 	remain_path.pop_front();
 	remain_path_ = remain_path;
@@ -27,7 +28,6 @@ MoveTypeLinear::MoveTypeLinear(Points remain_path){
 	else
 		sp_movement_.reset(new MovementTurn(turn_target_radian_, ROTATE_TOP_SPEED));
 
-	IMovement::sp_mt_ = this;
 }
 
 MoveTypeLinear::~MoveTypeLinear()
