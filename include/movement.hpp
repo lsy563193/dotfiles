@@ -235,7 +235,7 @@ public:
 	void adjustSpeed(int32_t&, int32_t&) override ;
 	void getTurnBackInfo(double &turn_radian, float &back_distance);
 	bool isFinish() override ;
-
+	static bool is_turn_connect_failed_;
 private:
 	void resetGoToChargerVariables();
 	int8_t gtc_state_now_;
@@ -280,6 +280,7 @@ private:
 	uint8_t turn_connect_dir;
 	uint8_t check_in_front_of_home;
 	uint8_t dir_wrong_cnt_;
+	bool should_away_from_charge_station = false;
 
 	int32_t left_speed_;
 	int32_t right_speed_;

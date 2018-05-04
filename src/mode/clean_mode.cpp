@@ -56,6 +56,7 @@ ACleanMode::ACleanMode()
 	key.resetPressStatus();
 	time_gyro_dynamic_ = ros::Time::now().toSec();
 
+	MovementGoToCharger::is_turn_connect_failed_ = false;
 	resetPosition();
 	charger_pose_.clear();
 	tmp_charger_pose_.clear();

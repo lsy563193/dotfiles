@@ -92,7 +92,10 @@ bool MovementCharge::isFinish()
 			key_led.setMode(LED_BREATH, LED_ORANGE);
 		}
 		if (ros::Time::now().toSec() - start_turning_time_stamp_ > 3)
+		{
+			MovementGoToCharger::is_turn_connect_failed_ = true;
 			return true;
+		}
 		if (cliff.getStatus() == BLOCK_ALL)
 			return true;
 	}

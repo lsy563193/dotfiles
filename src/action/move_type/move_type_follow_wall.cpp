@@ -14,6 +14,7 @@
 int g_follow_last_follow_wall_dir=0;
 MoveTypeFollowWall::MoveTypeFollowWall(Points remain_path, bool is_left)
 {
+	IMovement::sp_mt_ = this;
 	ROS_INFO("%s %d: Entering move type %s follow wall.", __FUNCTION__, __LINE__,
 			 is_left ? "left" : "right");
 	remain_path.pop_front();
@@ -28,7 +29,6 @@ MoveTypeFollowWall::MoveTypeFollowWall(Points remain_path, bool is_left)
 		sp_movement_.reset(new MovementGyroDynamic());
 	else
 		sp_movement_.reset(new MovementTurn(turn_target_radian_, ROTATE_TOP_SPEED));
-	IMovement::sp_mt_ = this;
 
 	resetTriggeredValue();
 }

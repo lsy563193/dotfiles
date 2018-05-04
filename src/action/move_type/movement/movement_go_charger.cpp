@@ -7,10 +7,13 @@
 #include <robot.hpp>
 #include <dev.h>
 
+bool MovementGoToCharger::is_turn_connect_failed_ = false;
 MovementGoToCharger::MovementGoToCharger()
 {
 	ROS_INFO("%s %d: Init", __FUNCTION__, __LINE__);
 	gtc_state_now_ = gtc_init;
+	if(is_turn_connect_failed_ && sp_mt_ != nullptr && sp_mt_->sp_mode_->mode_i_ == sp_mt_->sp_mode_->md_go_to_charger)
+		should_away_from_charge_station = true;
 }
 
 void MovementGoToCharger::resetGoToChargerVariables()
@@ -47,11 +50,10 @@ bool MovementGoToCharger::isSwitch()
 	}
 	if (gtc_state_now_ == gtc_check_near_charger_station)
 	{
-//		extern bool g_charge_turn_connect_fail;
-		if(/*g_charge_turn_connect_fail &&*/ no_signal_cnt < 10)
+		if(should_away_from_charge_station && no_signal_cnt < 10)
 		{
 			receive_code = c_rcon.getAll();
-			ROS_INFO("%s, %d: check near home, receive_code: %8x", __FUNCTION__, __LINE__, receive_code);
+			ROS_ERROR("%s, %d: check near home, receive_code: %8x", __FUNCTION__, __LINE__, receive_code);
 			if(receive_code&RconAll_Home_T)
 			{
 				ROS_INFO("receive LR");
