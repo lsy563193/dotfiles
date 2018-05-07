@@ -177,13 +177,8 @@ private:
 
 	pthread_mutex_t bind_lock_;
 
-	bool trigger_wifi_rebind_{};
-	bool trigger_wifi_smart_link_{};
-	bool trigger_wifi_smart_ap_link_{};
-
 	/*---values for rcon handle---*/
-	// todo: first_time_seen_charger_ does not mean as words in reality. It is just the time that enter this mode.
-	double first_time_seen_charger_{ros::Time::now().toSec()};
+	double first_time_seen_charger_{0};
 	double last_time_seen_charger_{first_time_seen_charger_};
 	boost::shared_ptr<State> st_pause = boost::make_shared<StatePause>();
 
@@ -227,8 +222,7 @@ public:
 
 private:
 	/*---values for rcon handle---*/
-	// todo: first_time_seen_charger_ does not mean as words in reality. It is just the time that enter this mode.
-	double first_time_seen_charger_{ros::Time::now().toSec()};
+	double first_time_seen_charger_{0};
 	double last_time_seen_charger_{first_time_seen_charger_};
 	boost::shared_ptr<State> st_sleep = boost::make_shared<StateSleep>();
 	bool plan_activated_status_;
