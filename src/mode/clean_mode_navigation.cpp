@@ -972,12 +972,17 @@ bool CleanModeNav::checkEnterResumeLowBatteryCharge()
 		// Resume from low battery charge.
 		speaker.play(VOICE_CLEANING_CONTINUE, false);
 		ROS_INFO("%s %d: Resume low battery charge.", __FUNCTION__, __LINE__);
+		if (action_i_ == ac_charge)
+		{
+			auto p_action = boost::dynamic_pointer_cast<MovementCharge>(sp_action_);
+			if (p_action->stillCharging())
+				charger.enterNavFromChargeMode(true);
+		}
 		sp_action_.reset();
 		action_i_ = ac_null;
 		sp_state = state_init.get();
 		sp_state->init();
 		low_battery_charge_ = true;
-		charger.enterNavFromChargeMode(true);
 		return true;
 	}
 

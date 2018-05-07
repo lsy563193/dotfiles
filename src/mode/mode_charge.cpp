@@ -78,7 +78,12 @@ bool ModeCharge::isExit()
 		{
 			ROS_WARN("%s %d: Charge mode receives plan, change to navigation mode.", __FUNCTION__, __LINE__);
 			setNextMode(cm_navigation);
-			charger.enterNavFromChargeMode(true);
+			if (action_i_ == ac_charge)
+			{
+				auto p_action = boost::dynamic_pointer_cast<MovementCharge>(sp_action_);
+				if (p_action->stillCharging())
+					charger.enterNavFromChargeMode(true);
+			}
 			ACleanMode::plan_activation_ = true;
 			return true;
 		}
@@ -101,7 +106,12 @@ bool ModeCharge::isExit()
 			ROS_WARN("%s %d: Charge mode receives remote clean or key clean, change to navigation mode.", __FUNCTION__,
 					 __LINE__);
 			setNextMode(cm_navigation);
-			charger.enterNavFromChargeMode(true);
+			if (action_i_ == ac_charge)
+			{
+				auto p_action = boost::dynamic_pointer_cast<MovementCharge>(sp_action_);
+				if (p_action->stillCharging())
+					charger.enterNavFromChargeMode(true);
+			}
 			return true;
 		}
 	}
@@ -121,7 +131,12 @@ bool ModeCharge::isExit()
 		{
 			ROS_WARN("%s %d: Charge mode receives wifi plan1, change to navigation mode.", __FUNCTION__, __LINE__);
 			setNextMode(cm_navigation);
-			charger.enterNavFromChargeMode(true);
+			if (action_i_ == ac_charge)
+			{
+				auto p_action = boost::dynamic_pointer_cast<MovementCharge>(sp_action_);
+				if (p_action->stillCharging())
+					charger.enterNavFromChargeMode(true);
+			}
 			return true;
 		}
 		s_wifi.resetReceivedWorkMode();
