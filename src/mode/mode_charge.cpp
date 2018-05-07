@@ -12,6 +12,7 @@
 ModeCharge::ModeCharge()
 {
 	ROS_INFO("%s %d: Entering Charge mode\n=========================" , __FUNCTION__, __LINE__);
+	system("unturbo_cpu.sh");
 
 	robot::instance()->setBatterLow(false);
 	robot::instance()->setBatterLow2(false);

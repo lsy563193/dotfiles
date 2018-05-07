@@ -63,6 +63,7 @@ void ActionSleep::run()
 
 void ActionSleep::lowPowerSleep()
 {
+	system("turbo_cpu.sh");
 	if (charger.getChargeStatus())
 	{
 		ROS_INFO("%s %d: Enter from charge mode.", __FUNCTION__, __LINE__);

@@ -12,6 +12,7 @@
 
 ModeSleep::ModeSleep()
 {
+	system("unturbo_cpu.sh");
 	ROS_INFO("%s %d: Entering Sleep mode\n=========================" , __FUNCTION__, __LINE__);
 	event_manager_register_handler(this);
 	event_manager_reset_status();

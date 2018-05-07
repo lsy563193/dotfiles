@@ -22,6 +22,7 @@ bool ACleanMode::plan_activation_={};
 
 ACleanMode::ACleanMode()
 {
+	system("turbo_cpu.sh");
 	lidar.init();
 	scanLinear_sub_ = clean_nh_.subscribe("scanLinear", 1, &Lidar::scanLinearCb, &lidar);
 	scanCompensate_sub_ = clean_nh_.subscribe("scanCompensate", 1, &Lidar::scanCompensateCb, &lidar);
