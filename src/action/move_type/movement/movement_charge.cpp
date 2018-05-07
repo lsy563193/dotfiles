@@ -53,7 +53,7 @@ bool MovementCharge::isFinish()
 		else
 			disconnect_charger_count_++;
 
-		if (disconnect_charger_count_ > 15)
+		if (disconnect_charger_count_ > 25)
 		{
 			if (directly_charge_)
 			{
@@ -61,7 +61,7 @@ bool MovementCharge::isFinish()
 				return true;
 			} else
 			{
-				key_led.setMode(LED_STEADY, LED_ORANGE);
+				key_led.setMode(LED_BREATH, LED_GREEN);
 				turn_for_charger_ = true;
 				start_turning_time_stamp_ = ros::Time::now().toSec();
 				turn_right_finish_ = false;

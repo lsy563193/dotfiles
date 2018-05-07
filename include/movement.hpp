@@ -336,6 +336,11 @@ public:
 	bool isFinish() override;
 	void run() override;
 
+	bool stillCharging()
+	{
+		return !turn_for_charger_;
+	}
+
 private:
 	double battery_full_start_time_{0};
 	bool directly_charge_{false};
