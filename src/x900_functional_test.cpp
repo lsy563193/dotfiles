@@ -1801,7 +1801,7 @@ void main_brush_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_co
 				break;
 			case 3:
 				step++;
-				if (current_current < 130 || current_current > 350 || motor_current < 100 || motor_current > 300) {
+				if (current_current < 130 || current_current > 450 || motor_current < 100 || motor_current > 400) {
 					error_code = MAIN_BRUSH_CURRENT_ERROR;
 					current_data = static_cast<uint16_t>(motor_current);
 					return ;
