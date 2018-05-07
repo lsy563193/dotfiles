@@ -27,7 +27,7 @@
 
 #include "error.h"
 
-#define RCON_ROTATE_SPEED (14)
+#define RCON_ROTATE_SPEED (11)
 
 // Sequence for baseline setting.
 #define CTL_L_OBS_BL_H 2
@@ -46,7 +46,7 @@
 
 MoveTypeDeskTest::MoveTypeDeskTest()
 {
-	ROS_INFO("%s,%d: Enter move type desk test.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s,%d: Enter move type desk test.", __FUNCTION__, __LINE__);
 
 	auto desk_test_routine = new boost::thread(boost::bind(&MoveTypeDeskTest::deskTestRoutineThread, this));
 
@@ -62,7 +62,7 @@ MoveTypeDeskTest::MoveTypeDeskTest()
 
 MoveTypeDeskTest::~MoveTypeDeskTest()
 {
-	ROS_INFO("%s,%d: Exit move type desk test.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s,%d: Exit move type desk test.", __FUNCTION__, __LINE__);
 }
 
 void MoveTypeDeskTest::run()
@@ -81,7 +81,7 @@ void MoveTypeDeskTest::run()
 				usleep(30000);// Make sure infrared display has been sent.
 				p_movement_.reset();
 				p_movement_.reset(new ActionOpenGyro());
-				ROS_INFO("%s %d: Stage 1 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
+				ROS_WARN("%s %d: Stage 1 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
 			}
 			break;
 		}
@@ -94,13 +94,9 @@ void MoveTypeDeskTest::run()
 				// Switch to next stage.
 				infrared_display.displayNormalMsg(test_stage_, 0);
 				p_movement_.reset();
-//				p_movement_.reset(new ActionOpenGyro());
-//				c_rcon.resetStatus();
-//				lidar_check_cnt_ = 0;
-//				p_movement_.reset(new MovementDirectGo(false));
+				check_start_time_ = ros::Time::now().toSec();
 				wheel.setDirectionForward();
-				ROS_INFO("%s %d: Stage 2 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
-				ROS_INFO("%s %d: Start checking for left bumper.", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: Stage 2 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
 			}
 			break;
 		}
@@ -121,7 +117,7 @@ void MoveTypeDeskTest::run()
 				p_movement_.reset();
 				p_movement_.reset(new MoveTypeFollowWall(points_, true));
 
-				ROS_INFO("%s %d: Stage 3 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
+				ROS_WARN("%s %d: Stage 3 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
 			}
 			break;
 		}
@@ -134,12 +130,10 @@ void MoveTypeDeskTest::run()
 				test_step_ = 0;
 				// Switch to next stage.
 				infrared_display.displayNormalMsg(test_stage_, 0);
+				lidar.motorCtrl(OFF);
 				p_movement_.reset();
 				p_movement_.reset(new MovementStay(0.2));
-				/*brush.fullOperate();
-				vacuum.isMaxInClean(Vac_Max,true);*/
-				// todo: for water tank
-				ROS_INFO("%s %d: Stage 4 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
+				ROS_WARN("%s %d: Stage 4 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
 			}
 			break;
 		}
@@ -159,8 +153,7 @@ void MoveTypeDeskTest::run()
 				vacuum.setForUserSetMaxMode(false);
 				vacuum.setSpeedByUserSetMode();
 
-				// todo: for water tank
-				ROS_INFO("%s %d: Stage 5 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
+				ROS_WARN("%s %d: Stage 5 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
 			}
 			break;
 		}
@@ -176,7 +169,7 @@ void MoveTypeDeskTest::run()
 				p_movement_.reset();
 				p_movement_.reset(new MoveTypeGoToCharger());
 				brush.slowOperate();
-				ROS_INFO("%s %d: Stage 6 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
+				ROS_WARN("%s %d: Stage 6 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
 			}
 			break;
 		}
@@ -196,7 +189,7 @@ void MoveTypeDeskTest::run()
 				vacuum.stop();
 				lidar.motorCtrl(OFF);
 				usleep(50000);
-				ROS_INFO("%s %d: Stage 7 finished.", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: Stage 7 finished.", __FUNCTION__, __LINE__);
 			}
 			break;
 		}
@@ -216,7 +209,7 @@ void MoveTypeDeskTest::run()
 		}
 		default: // For finish.
 		{
-			ROS_INFO("%s %d: Test finish.", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Test finish.", __FUNCTION__, __LINE__);
 			infrared_display.displayNormalMsg(0, 9999);
 			key_led.setMode(LED_STEADY, LED_GREEN);
 			speaker.play(VOICE_TEST_SUCCESS);
@@ -330,7 +323,7 @@ bool MoveTypeDeskTest::dataExtract(const uint8_t *buf)
 
 		robot::instance()->setCurrent((buf[REC_ROBOT_CUNT_H] << 8) | buf[REC_ROBOT_CUNT_L]);
 
-		printf("brush(l%d, r%d, m%d), wheel(l%d, r%d), vacuum(%d), robot(%d).\n",
+		ROS_INFO("brush(l%d, r%d, m%d), wheel(l%d, r%d), vacuum(%d), robot(%d).",
 			   brush.getLeftCurrent(), brush.getRightCurrent(), brush.getMainCurrent(),
 			   wheel.getLeftCurrent(), wheel.getRightCurrent(), vacuum.getCurrent(),
 			   robot::instance()->getCurrent());
@@ -367,21 +360,21 @@ bool MoveTypeDeskTest::checkStage1Finish()
 	if (sum_cnt_ >= 50)
 	{
 		left_brush_current_baseline_ /= sum_cnt_;
-		ROS_INFO("%s %d: left_brush_current_baseline_:%d.", __FUNCTION__, __LINE__, left_brush_current_baseline_);
+		ROS_WARN("%s %d: left_brush_current_baseline_:%d.", __FUNCTION__, __LINE__, left_brush_current_baseline_);
 		right_brush_current_baseline_ /= sum_cnt_;
-		ROS_INFO("%s %d: right_brush_current_baseline_:%d.", __FUNCTION__, __LINE__, right_brush_current_baseline_);
+		ROS_WARN("%s %d: right_brush_current_baseline_:%d.", __FUNCTION__, __LINE__, right_brush_current_baseline_);
 		main_brush_current_baseline_ /= sum_cnt_;
-		ROS_INFO("%s %d: main_brush_current_baseline_:%d.", __FUNCTION__, __LINE__, main_brush_current_baseline_);
+		ROS_WARN("%s %d: main_brush_current_baseline_:%d.", __FUNCTION__, __LINE__, main_brush_current_baseline_);
 		left_wheel_current_baseline_ /= sum_cnt_;
-		ROS_INFO("%s %d: left_wheel_current_baseline_:%d.", __FUNCTION__, __LINE__, left_wheel_current_baseline_);
+		ROS_WARN("%s %d: left_wheel_current_baseline_:%d.", __FUNCTION__, __LINE__, left_wheel_current_baseline_);
 		right_wheel_current_baseline_ /= sum_cnt_;
-		ROS_INFO("%s %d: right_wheel_current_baseline_:%d.", __FUNCTION__, __LINE__, right_wheel_current_baseline_);
+		ROS_WARN("%s %d: right_wheel_current_baseline_:%d.", __FUNCTION__, __LINE__, right_wheel_current_baseline_);
 		vacuum_current_baseline_ /= sum_cnt_;
-		ROS_INFO("%s %d: vacuum_current_baseline_:%d.", __FUNCTION__, __LINE__, vacuum_current_baseline_);
+		ROS_WARN("%s %d: vacuum_current_baseline_:%d.", __FUNCTION__, __LINE__, vacuum_current_baseline_);
 		water_tank_current_baseline_ /= sum_cnt_;
-		ROS_INFO("%s %d: water_tank_current_baseline_:%d.", __FUNCTION__, __LINE__, water_tank_current_baseline_);
+		ROS_WARN("%s %d: water_tank_current_baseline_:%d.", __FUNCTION__, __LINE__, water_tank_current_baseline_);
 		robot_current_baseline_ /= sum_cnt_;
-		ROS_INFO("%s %d: robot_current_baseline_:%d.", __FUNCTION__, __LINE__, robot_current_baseline_);
+		ROS_WARN("%s %d: robot_current_baseline_:%d.", __FUNCTION__, __LINE__, robot_current_baseline_);
 
 		int32_t side_brush_current_baseline_ref_{1620};
 		int32_t main_brush_current_baseline_ref_{1620};
@@ -500,7 +493,7 @@ bool MoveTypeDeskTest::checkStage2Finish()
 		}
 		case 2:
 		{
-			ROS_INFO("%s %d: Enter lidar checking front.", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Enter lidar checking front.", __FUNCTION__, __LINE__);
 			wheel.stop();
 			// Stop for checking lidar data.
 			uint8_t _cnt{10};
@@ -525,7 +518,7 @@ bool MoveTypeDeskTest::checkStage2Finish()
 //					lidar.saveLidarDataToFile(lidar_check_cnt_, scan_data);
 					if(lidar.scanDataChecking(true, scan_data, scan_ref))
 					{
-						ROS_INFO("Good boy, %d scan ok.", lidar_check_cnt_);
+						ROS_WARN("Good boy, %d scan ok.", lidar_check_cnt_);
 						scan_valid_cnt++;
 					}
 					else
@@ -545,7 +538,7 @@ bool MoveTypeDeskTest::checkStage2Finish()
 				error_step_ = test_stage_;
 				error_code_ = LIDAR_ERROR;
 				error_content_ = scan_valid_cnt;
-				test_step_ = 99;
+				test_stage_ = 99;
 			}
 			else
 			{
@@ -553,13 +546,13 @@ bool MoveTypeDeskTest::checkStage2Finish()
 				p_movement_.reset();
 				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-178), RCON_ROTATE_SPEED));
 				obs.control(OFF); // For checking rcon signal.
-				ROS_INFO("%s %d: Enter rcon turning 1.", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: Enter rcon turning 1.", __FUNCTION__, __LINE__);
 			}
 			break;
 		}
 		case 4:
 		{
-			ROS_INFO("%s %d: Enter lidar checking back.", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Enter lidar checking back.", __FUNCTION__, __LINE__);
 			wheel.stop();
 			obs.control(ON); // For checking OBS baseline.
 			// Stop for checking lidar data.
@@ -577,7 +570,7 @@ bool MoveTypeDeskTest::checkStage2Finish()
 //					lidar.saveLidarDataToFile(lidar_check_cnt_, scan_data);
 					if(lidar.scanDataChecking(false, scan_data, scan_ref))
 					{
-						ROS_INFO("Good boy, %d scan ok.", lidar_check_cnt_);
+						ROS_WARN("Good boy, %d scan ok.", lidar_check_cnt_);
 						scan_valid_cnt++;
 					}
 					else
@@ -597,7 +590,7 @@ bool MoveTypeDeskTest::checkStage2Finish()
 				error_step_ = test_stage_;
 				error_code_ = LIDAR_ERROR;
 				error_content_ = scan_valid_cnt;
-				test_step_ = 99;
+				test_stage_ = 99;
 			}
 			else
 			{
@@ -605,7 +598,7 @@ bool MoveTypeDeskTest::checkStage2Finish()
 				p_movement_.reset();
 				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-178), RCON_ROTATE_SPEED));
 				obs.control(OFF); // For checking rcon signal.
-				ROS_INFO("%s %d: Enter rcon turning 2.", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: Enter rcon turning 2.", __FUNCTION__, __LINE__);
 			}
 			break;
 		}
@@ -657,11 +650,11 @@ bool MoveTypeDeskTest::checkStage2Finish()
 			if (error_code_ == 0)
 			{
 				left_obs_baseline_ = static_cast<uint16_t>(left_obs_sum_ / sum_cnt_);
-				ROS_INFO("%s %d: left_obs_baseline_:%d.", __FUNCTION__, __LINE__, left_obs_baseline_);
+				ROS_WARN("%s %d: left_obs_baseline_:%d.", __FUNCTION__, __LINE__, left_obs_baseline_);
 				front_obs_baseline_ = static_cast<uint16_t>(front_obs_sum_ / sum_cnt_);
-				ROS_INFO("%s %d: front_obs_baseline_:%d.", __FUNCTION__, __LINE__, front_obs_baseline_);
+				ROS_WARN("%s %d: front_obs_baseline_:%d.", __FUNCTION__, __LINE__, front_obs_baseline_);
 				right_obs_baseline_ = static_cast<uint16_t>(right_obs_sum_ / sum_cnt_);
-				ROS_INFO("%s %d: right_obs_baseline_:%d.", __FUNCTION__, __LINE__, right_obs_baseline_);
+				ROS_WARN("%s %d: right_obs_baseline_:%d.", __FUNCTION__, __LINE__, right_obs_baseline_);
 				sum_cnt_ = 0;
 				return true;
 			} else
@@ -689,7 +682,14 @@ bool MoveTypeDeskTest::checkStage3Finish()
 				p_movement_.reset();
 				p_movement_.reset(new MovementBack(0.01, BACK_MAX_SPEED));
 				test_step_++;
-			} else
+				check_start_time_ = ros::Time::now().toSec();
+			} else if (ros::Time::now().toSec() - check_start_time_ > 10)
+			{
+				error_step_ = test_stage_;
+				test_stage_ = 99;
+				error_code_ = LEFT_BUMPER_ERROR;
+			}
+			else
 				wheel.setPidTargetSpeed(LINEAR_MAX_SPEED / 2, LINEAR_MAX_SPEED / 2);
 //				p_movement_->run();
 			break;
@@ -796,7 +796,7 @@ bool MoveTypeDeskTest::checkStage3Finish()
 			if (p_movement_->isFinish())
 			{
 				// Checking for OBS value.
-				ROS_INFO("%s %d: left_obs_max:%d, front_obs_max:%d, right_obs_max:%d.",
+				ROS_WARN("%s %d: left_obs_max:%d, front_obs_max:%d, right_obs_max:%d.",
 						 __FUNCTION__, __LINE__, left_obs_max_, front_obs_max_, right_obs_max_);
 				if (left_obs_max_ - left_obs_baseline_ < obs_ref_)
 				{
@@ -917,47 +917,77 @@ bool MoveTypeDeskTest::checkCurrent()
 {
 
 	left_brush_current_ /= sum_cnt_;
-	ROS_INFO("%s %d: Left brush current: %d.", __FUNCTION__, __LINE__, left_brush_current_ - left_brush_current_baseline_);
+	ROS_WARN("%s %d: Left brush current: %d.", __FUNCTION__, __LINE__, left_brush_current_ - left_brush_current_baseline_);
 	right_brush_current_ /= sum_cnt_;
-	ROS_INFO("%s %d: Right brush current: %d.", __FUNCTION__, __LINE__, right_brush_current_ - right_brush_current_baseline_);
+	ROS_WARN("%s %d: Right brush current: %d.", __FUNCTION__, __LINE__, right_brush_current_ - right_brush_current_baseline_);
 	main_brush_current_ /= sum_cnt_;
-	ROS_INFO("%s %d: Main brush current: %d.", __FUNCTION__, __LINE__, main_brush_current_ - main_brush_current_baseline_);
+	ROS_WARN("%s %d: Main brush current: %d.", __FUNCTION__, __LINE__, main_brush_current_ - main_brush_current_baseline_);
 	left_wheel_current_ /= left_wheel_current_cnt_;
-	ROS_INFO("%s %d: Left wheel current: %d.", __FUNCTION__, __LINE__, left_wheel_current_ - left_wheel_current_baseline_);
+	ROS_WARN("%s %d: Left wheel current: %d.", __FUNCTION__, __LINE__, left_wheel_current_ - left_wheel_current_baseline_);
 	right_wheel_current_ /= right_wheel_current_cnt_;
-	ROS_INFO("%s %d: Right wheel current: %d.", __FUNCTION__, __LINE__, right_wheel_current_ - right_wheel_current_baseline_);
+	ROS_WARN("%s %d: Right wheel current: %d.", __FUNCTION__, __LINE__, right_wheel_current_ - right_wheel_current_baseline_);
 	vacuum_current_ /= sum_cnt_;
-	ROS_INFO("%s %d: Vacuum current: %d.", __FUNCTION__, __LINE__, vacuum_current_ - vacuum_current_baseline_);
+	ROS_WARN("%s %d: Vacuum current: %d.", __FUNCTION__, __LINE__, vacuum_current_ - vacuum_current_baseline_);
 	water_tank_current_ /= sum_cnt_;
-	ROS_INFO("%s %d: Water tank current: %d.", __FUNCTION__, __LINE__, water_tank_current_ - water_tank_current_baseline_);
+	ROS_WARN("%s %d: Water tank current: %d.", __FUNCTION__, __LINE__, water_tank_current_ - water_tank_current_baseline_);
 	robot_current_ /= sum_cnt_;
-	ROS_INFO("%s %d: Robot current: %d.", __FUNCTION__, __LINE__, robot_current_ - robot_current_baseline_);
+	ROS_WARN("%s %d: Robot current: %d.", __FUNCTION__, __LINE__, robot_current_ - robot_current_baseline_);
 
 	// During follow wall
 	uint16_t side_brush_current_ref_{1675 - 1620}; // 55
-	uint16_t main_brush_current_ref_{1820 - 1620}; // 200
+	uint16_t main_brush_current_ref_{1870 - 1620}; // 250
 	uint16_t wheel_current_ref_{1685 - 1620}; // 65
 	uint16_t vacuum_current_ref_{2285 - 1620}; // 665
 	uint16_t water_tank_current_ref_{0};
 	uint16_t robot_current_ref_{2385 - 1775}; // 610
 
+	bool left_brush_pass = true;
+	bool right_brush_pass = true;
+	bool main_brush_pass = true;
+	bool left_wheel_pass = true;
+	bool right_wheel_pass = true;
+
 	if (left_brush_current_ - left_brush_current_baseline_ > side_brush_current_ref_ * 1.5 /* 82 */||
 		left_brush_current_ - left_brush_current_baseline_ < side_brush_current_ref_ * 0.3 /* 16 */)
 	{
-		error_code_ = LEFT_BRUSH_CURRENT_ERROR;
-		error_content_ = static_cast<uint16_t>(left_brush_current_ - left_brush_current_baseline_);
+		if (left_brush_current_exception_cnt_++ > 2)
+		{
+			error_code_ = LEFT_BRUSH_CURRENT_ERROR;
+			error_content_ = static_cast<uint16_t>(left_brush_current_ - left_brush_current_baseline_);
+		} else
+		{
+			ROS_WARN("%s %d: left brush current abnormal:%d, exception count:%d.", __FUNCTION__, __LINE__,
+					 left_brush_current_ - left_brush_current_baseline_, left_brush_current_exception_cnt_);
+			left_brush_pass = false;
+		}
 	}
 	else if (right_brush_current_ - right_brush_current_baseline_ > side_brush_current_ref_ * 1.5 /* 82 */||
 			 right_brush_current_ - right_brush_current_baseline_ < side_brush_current_ref_ * 0.3 /* 16 */)
 	{
-		error_code_ = RIGHT_BRUSH_CURRENT_ERROR;
-		error_content_ = static_cast<uint16_t>(right_brush_current_ - right_brush_current_baseline_);
+		if (right_brush_current_exception_cnt_++ > 2)
+		{
+			error_code_ = RIGHT_BRUSH_CURRENT_ERROR;
+			error_content_ = static_cast<uint16_t>(right_brush_current_ - right_brush_current_baseline_);
+		} else
+		{
+			ROS_WARN("%s %d: right brush current abnormal:%d, exception count:%d.", __FUNCTION__, __LINE__,
+					 right_brush_current_ - right_brush_current_baseline_, right_brush_current_exception_cnt_);
+			right_brush_pass = false;
+		}
 	}
 	else if (main_brush_current_ - main_brush_current_baseline_ > main_brush_current_ref_ * 1.5 ||
 			 main_brush_current_ - main_brush_current_baseline_ < main_brush_current_ref_ * 0.5)
 	{
-		error_code_ = MAIN_BRUSH_CURRENT_ERROR;
-		error_content_ = static_cast<uint16_t>(main_brush_current_ - main_brush_current_baseline_);
+		if (main_brush_current_exception_cnt_++ > 2)
+		{
+			error_code_ = MAIN_BRUSH_CURRENT_ERROR;
+			error_content_ = static_cast<uint16_t>(main_brush_current_ - main_brush_current_baseline_);
+		} else
+		{
+			ROS_WARN("%s %d: main brush current abnormal:%d, exception count:%d.", __FUNCTION__, __LINE__,
+					 main_brush_current_ - main_brush_current_baseline_, main_brush_current_exception_cnt_);
+			main_brush_pass = false;
+		}
 	}
 	else if (vacuum_current_ - vacuum_current_baseline_ > vacuum_current_ref_ * 1.5 ||
 			 vacuum_current_ - vacuum_current_baseline_ < vacuum_current_ref_ * 0.2)
@@ -974,14 +1004,30 @@ bool MoveTypeDeskTest::checkCurrent()
 	else if (left_wheel_current_cnt_ != 0 && (left_wheel_current_ - left_wheel_current_baseline_ > wheel_current_ref_ * 1.5 ||
 			 left_wheel_current_ - left_wheel_current_baseline_ < wheel_current_ref_ * 0.5))
 	{
-		error_code_ = LEFT_WHEEL_FORWARD_CURRENT_ERROR;
-		error_content_ = static_cast<uint16_t>(left_wheel_current_ - left_wheel_current_baseline_);
+		if (left_wheel_current_exception_cnt_++ > 2)
+		{
+			error_code_ = LEFT_WHEEL_FORWARD_CURRENT_ERROR;
+			error_content_ = static_cast<uint16_t>(left_wheel_current_ - left_wheel_current_baseline_);
+		} else
+		{
+			ROS_WARN("%s %d: left wheel current abnormal:%d, exception count:%d.", __FUNCTION__, __LINE__,
+					 left_wheel_current_ - left_wheel_current_baseline_, left_wheel_current_exception_cnt_);
+			left_wheel_pass = false;
+		}
 	}
 	else if (right_wheel_current_cnt_ != 0 && (right_wheel_current_ - right_wheel_current_baseline_ > wheel_current_ref_ * 1.5 ||
 			 right_wheel_current_ - right_wheel_current_baseline_ < wheel_current_ref_ * 0.5))
 	{
-		error_code_ = RIGHT_WHEEL_FORWARD_CURRENT_ERROR;
-		error_content_ = static_cast<uint16_t>(right_wheel_current_ - right_wheel_current_baseline_);
+		if (right_wheel_current_exception_cnt_++ > 2)
+		{
+			error_code_ = RIGHT_WHEEL_FORWARD_CURRENT_ERROR;
+			error_content_ = static_cast<uint16_t>(right_wheel_current_ - right_wheel_current_baseline_);
+		} else
+		{
+			ROS_WARN("%s %d: right wheel current abnormal:%d, exception count:%d.", __FUNCTION__, __LINE__,
+					 right_wheel_current_ - right_wheel_current_baseline_, right_wheel_current_exception_cnt_);
+			right_wheel_pass = false;
+		}
 	}
 	else if (robot_current_ - robot_current_baseline_ > robot_current_ref_ * 1.5)
 	{
@@ -992,6 +1038,20 @@ bool MoveTypeDeskTest::checkCurrent()
 	{
 		error_code_ = BASELINE_CURRENT_TOO_LOW;
 		error_content_ = static_cast<uint16_t>(robot_current_ - robot_current_baseline_);
+	}
+
+	if (error_code_ == 0)
+	{
+		if (left_brush_pass)
+			left_brush_current_exception_cnt_ = 0;
+		if (right_brush_pass)
+			right_brush_current_exception_cnt_ = 0;
+		if (main_brush_pass)
+			main_brush_current_exception_cnt_ = 0;
+		if (left_wheel_pass)
+			left_wheel_current_exception_cnt_ = 0;
+		if (right_wheel_pass)
+			right_wheel_current_exception_cnt_ = 0;
 	}
 
 	sum_cnt_ = 0;
@@ -1018,7 +1078,7 @@ bool MoveTypeDeskTest::checkStage5Finish()
 	{
 		case 0:
 		{
-			ROS_INFO("%s %d: cliff left:%d, front:%d, right:%d.", __FUNCTION__, __LINE__, left_cliff_max_,
+			ROS_WARN("%s %d: cliff left:%d, front:%d, right:%d.", __FUNCTION__, __LINE__, left_cliff_max_,
 					 front_cliff_max_, right_cliff_max_);
 
 			if (left_cliff_max_ < cliff_max_ref_)
@@ -1050,7 +1110,7 @@ bool MoveTypeDeskTest::checkStage5Finish()
 				p_movement_.reset();
 				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(90), ROTATE_TOP_SPEED));
 				front_cliff_baseline_ = static_cast<uint16_t>(front_cliff_sum_ / sum_cnt_);
-				ROS_INFO("%s %d: front_cliff_baseline_:%d.", __FUNCTION__, __LINE__, front_cliff_baseline_);
+				ROS_WARN("%s %d: front_cliff_baseline_:%d.", __FUNCTION__, __LINE__, front_cliff_baseline_);
 				test_step_++;
 			} else{
 				front_cliff_sum_ += cliff.getFrontValue();
@@ -1085,7 +1145,7 @@ bool MoveTypeDeskTest::checkStage5Finish()
 				p_movement_.reset(new MovementBack(0.1, BACK_MAX_SPEED));
 				movement_i_= mm_back;
 				right_cliff_baseline_ = static_cast<uint16_t>(right_cliff_sum_ / sum_cnt_);
-				ROS_INFO("%s %d: right_cliff_baseline_:%d.", __FUNCTION__, __LINE__, right_cliff_baseline_);
+				ROS_WARN("%s %d: right_cliff_baseline_:%d.", __FUNCTION__, __LINE__, right_cliff_baseline_);
 				test_step_++;
 			} else{
 				right_cliff_sum_ += cliff.getRightValue();
@@ -1135,7 +1195,7 @@ bool MoveTypeDeskTest::checkStage5Finish()
 				p_movement_.reset(new MovementBack(0.1, BACK_MAX_SPEED));
 				movement_i_= mm_back;
 				left_cliff_baseline_ = static_cast<uint16_t>(left_cliff_sum_ / sum_cnt_);
-				ROS_INFO("%s %d: left_cliff_baseline_:%d.", __FUNCTION__, __LINE__, left_cliff_baseline_);
+				ROS_WARN("%s %d: left_cliff_baseline_:%d.", __FUNCTION__, __LINE__, left_cliff_baseline_);
 				test_step_++;
 			} else{
 				left_cliff_sum_ += cliff.getLeftValue();
@@ -1193,7 +1253,7 @@ bool MoveTypeDeskTest::checkStage6Finish()
 			{
 				p_movement_.reset();
 				p_movement_.reset(
-						new MovementTurn(getPosition().th + degree_to_radian(-179), RCON_ROTATE_SPEED));
+						new MovementTurn(getPosition().th + degree_to_radian(-179), ROTATE_TOP_SPEED * 2 / 3));
 				test_step_++;
 			} else
 				p_movement_->run();
@@ -1301,7 +1361,7 @@ bool MoveTypeDeskTest::checkStage7Finish()
 			}
 			else if (charge_test_result_ == 3)
 			{
-				ROS_INFO("%s %d: Charge test pass.", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: Charge test pass.", __FUNCTION__, __LINE__);
 				test_step_++;
 				send_thread_enable = false;
 				usleep(20000);
@@ -1321,8 +1381,12 @@ bool MoveTypeDeskTest::checkStage7Finish()
 				serial.setSendData(CTL_R_CLIFF_BL_L, static_cast<uint8_t>(right_cliff_baseline_));
 				serial.debugSendStream(serial.send_stream);
 				serial.sendData();
-			} /*else
-				printf("Charge test result:%d.\n", charge_test_result_);*/
+			} else
+			{
+				p_movement_->run();
+				printf("Charge status:%d. Charge ctrl:%d. Charge test result:%d.\n",
+						charger.getChargeStatus(), serial.getSendData(CTL_CHARGER), charge_test_result_);
+			}
 			break;
 		}
 		case 2:
@@ -1349,7 +1413,33 @@ bool MoveTypeDeskTest::checkStage7Finish()
 				serial.sendData();
 
 			serial.debugReceivedStream(serial.receive_stream);
-			return write_data_success;
+			if (write_data_success)
+			{
+				beeper.beepForCommand(VALID);
+				serial.resetSendStream();
+				serial.setSendData(CTL_WORK_MODE, DESK_TEST_MOVEMENT_MODE);
+				key_led.setMode(LED_STEADY, LED_GREEN);
+				send_thread_enable = true;
+				test_step_++;
+			}
+			break;
+		}
+		case 3:
+		{
+			if (key.getTriggerStatus() || remote.isKeyTrigger(REMOTE_CLEAN))
+			{
+				p_movement_.reset(new ActionBackFromCharger);
+				brush.slowOperate();
+				test_step_++;
+			}
+			break;
+		}
+		case 4:
+		{
+			if (p_movement_->isFinish())
+				return true;
+			else
+				p_movement_->run();
 		}
 		default:
 			break;

@@ -184,6 +184,19 @@ void GridMap::setCells(int8_t count, int16_t cell_x, int16_t cell_y, CellState s
 	}
 }
 
+void GridMap::setCellsBut(int8_t count, int16_t cell_x, int16_t cell_y, CellState state,CellState but_state)
+{
+	int8_t i, j;
+
+	for ( i = -1; i <= 1; i++ ) {
+		for ( j = -1; j <= 1; j++ ) {
+			auto s = getCell(CLEAN_MAP,cell_x + i,cell_y + j);
+			if(s != but_state)
+				setCell(CLEAN_MAP,cell_x + i,cell_y + j, state);
+		}
+	}
+}
+
 void GridMap::reset(uint8_t id)
 {
 #ifndef SHORTEST_PATH_V2

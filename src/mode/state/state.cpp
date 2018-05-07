@@ -124,3 +124,11 @@ void State::switchState() {
 void StateSleep::init() {
 	key_led.setMode(LED_STEADY, LED_OFF);
 }
+
+std::vector<State*>::iterator stable_unique(std::vector<State*>::iterator b, std::vector<State*>::iterator e)
+{
+	auto rst_end = remove_if(b+1, e,[&](const State* i){return i == *b;});
+	if(b+1 == rst_end)
+		return rst_end;
+	stable_unique(b + 1, rst_end);
+}

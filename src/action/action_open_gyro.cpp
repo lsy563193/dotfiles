@@ -11,7 +11,7 @@
 
 ActionOpenGyro::ActionOpenGyro()
 {
-	ROS_INFO("%s %d: Enter action open gyro.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Enter action open gyro.", __FUNCTION__, __LINE__);
 	brush.stop();
 	vacuum.stop();
 	water_tank.stop(WaterTank::operate_option::swing_motor_and_pump);
@@ -22,7 +22,7 @@ bool ActionOpenGyro::isFinish()
 {
 	if (gyro.isOn())
 	{
-		ROS_INFO("%s %d: Open gyro succeeded.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Open gyro succeeded.", __FUNCTION__, __LINE__);
 		gyro.setAccInitData();
 		gyro.setAngleVOffset();
 		gyro.setAngleROffset();

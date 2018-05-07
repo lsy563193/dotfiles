@@ -15,7 +15,7 @@ MovementFollowWallLidar::MovementFollowWallLidar(bool is_left)
 				: IFollowWall(is_left)
 {
 
-	ROS_INFO("%s %d: Enter movement follow wall %s.", __FUNCTION__, __LINE__, is_left ? "left" : "right");
+	ROS_WARN("%s %d: Enter movement follow wall %s.", __FUNCTION__, __LINE__, is_left ? "left" : "right");
 	angle_forward_to_turn_ = degree_to_radian(60);
 	min_speed_ = FALL_WALL_MIN_SPEED;
 	max_speed_ = FALL_WALL_MAX_SPEED;
@@ -65,13 +65,13 @@ Points MovementFollowWallLidar::calcVirtualTmpTarget()
 	auto time_diff = (ros::Time().now() - corner_time).toSec();
 	if (time_diff < time_lim){
 		is_corner_beginning = false;
-		ROS_WARN("time_diff(%lf) < %d", time_diff, time_lim);
+		ROS_INFO("time_diff(%lf) < %d", time_diff, time_lim);
 #if DEBUG_ENABLE
 //		beeper.beepForCommand(INVALID);
 #endif
 	} else {
 		is_corner_beginning = true;
-		ROS_WARN("time_diff(%lf) > %d", time_diff, time_lim);
+		ROS_INFO("time_diff(%lf) > %d", time_diff, time_lim);
 #if DEBUG_ENABLE
 //		beeper.beepForCommand(VALID);
 #endif
@@ -148,7 +148,7 @@ Point_t MovementFollowWallLidar::calcTmpTarget() {
 		if ((p_tmp_targets_->front().isNearTo(getPosition(ODOM_POSITION_ODOM_ANGLE), CELL_SIZE * 0.3))//0.75
 			|| cond_radian_diff) {
 			p_tmp_targets_->pop_front();
-			ROS_WARN("near pop target(%d)", p_tmp_targets_->size());
+			ROS_INFO("near pop target(%d)", p_tmp_targets_->size());
 			if (p_tmp_targets_->empty()){
 				virtual_targets_ = calcVirtualTmpTarget();
 				p_tmp_targets_ = &virtual_targets_;

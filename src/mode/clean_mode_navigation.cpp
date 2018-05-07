@@ -17,7 +17,7 @@
 int CleanModeNav::align_count_ = 0;
 CleanModeNav::CleanModeNav()
 {
-	ROS_INFO("%s %d: Entering Navigation mode\n=========================" , __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Entering Navigation mode\n=========================" , __FUNCTION__, __LINE__);
 
 	if(plan_activation_)
 	{
@@ -47,6 +47,7 @@ CleanModeNav::~CleanModeNav()
 {
 	s_wifi.clearMapCache();
 	charger.enterNavFromChargeMode(false);
+	ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);
 }
 
 bool CleanModeNav::mapMark()
@@ -132,7 +133,7 @@ bool CleanModeNav::mapMark()
 //	clean_map_.print(CLEAN_MAP, Cells{curr});
 	for (auto &&p_it :passed_path_)
 	{
-		clean_map_.setCells(CLEAN_MAP, p_it.toCell().x, p_it.toCell().y, CLEANED);
+		clean_map_.setCellsBut(CLEAN_MAP, p_it.toCell().x, p_it.toCell().y, CLEANED, BLOCKED_RCON);
 	}
 
 
@@ -626,6 +627,7 @@ void CleanModeNav::switchInStateInit() {
 			sp_state = state_clean.get();
 		}
 		else{ // Resume from pause, because slam is not opened for the first time that open lidar action finished.
+//			sp_saved_states.erase(stable_unique(sp_saved_states.begin(),sp_saved_states.end()),sp_saved_states.end());
 			sp_state = sp_saved_states.back();
 			sp_saved_states.pop_back();
 		}
@@ -710,8 +712,7 @@ bool CleanModeNav::updateActionInStateClean(){
 						||	npa->curr_filter_ == &npa->filter_p2
 						||	npa->curr_filter_ == &npa->filter_p1
 						||	npa->curr_filter_ == &npa->filter_n2
-						||	npa->curr_filter_ == &npa->filter_n1)
-				)
+						||	npa->curr_filter_ == &npa->filter_n1))
 		{
 				auto toward_pos = isXAxis(old_dir_) ? npa->curr_filter_->towardPos(): (iterate_point_.toCell().x - plan_path_.back().toCell().x) > 0;
 				bool is_left = isPos(old_dir_) ^ toward_pos;
@@ -868,7 +869,8 @@ bool CleanModeNav::checkEnterPause()
 		}
 		ROS_INFO("%s %d: Key clean pressed, pause cleaning.Robot pose(%f)", __FUNCTION__, __LINE__,radian_to_degree(paused_odom_radian_));
 		sp_action_.reset();
-		sp_saved_states.push_back(sp_state);
+		if (!isStateInit())
+			sp_saved_states.push_back(sp_state);
 		sp_state = state_pause.get();
 		sp_state->init();
 //		mapMark();
@@ -971,12 +973,17 @@ bool CleanModeNav::checkEnterResumeLowBatteryCharge()
 		// Resume from low battery charge.
 		speaker.play(VOICE_CLEANING_CONTINUE, false);
 		ROS_INFO("%s %d: Resume low battery charge.", __FUNCTION__, __LINE__);
+		if (action_i_ == ac_charge)
+		{
+			auto p_action = boost::dynamic_pointer_cast<MovementCharge>(sp_action_);
+			if (p_action->stillCharging())
+				charger.enterNavFromChargeMode(true);
+		}
 		sp_action_.reset();
 		action_i_ = ac_null;
 		sp_state = state_init.get();
 		sp_state->init();
 		low_battery_charge_ = true;
-		charger.enterNavFromChargeMode(true);
 		return true;
 	}
 

@@ -83,6 +83,13 @@ void error_loop(uint8_t test_stage, uint16_t error_code, uint16_t current_data)
 {
 //	send_thread_enable = true;
 	infrared_display.displayErrorMsg(test_stage-4, current_data, error_code);
+	brush.stop();
+	vacuum.stop();
+	water_tank.stop(WaterTank::operate_option::swing_motor_and_pump);
+	serial.setSendData(CTL_WHEEL_RIGHT_HIGH, 0);
+	serial.setSendData(CTL_WHEEL_RIGHT_LOW, 0);
+	serial.setSendData(CTL_WHEEL_LEFT_HIGH, 0);
+	serial.setSendData(CTL_WHEEL_LEFT_LOW, 0);
 	serial.setSendData(CTL_LED_RED, 100);
 	serial.setSendData(CTL_LED_GREEN, 0);
 	serial.setSendData(CTL_MIX, 0);
@@ -1217,7 +1224,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				}
 				break;
 			case 13:
-				if(static_cast<uint16_t>(buf[2] << 8 | buf[3]) > baseline[LEFT_WHEEL] + 580)
+				if(static_cast<uint16_t>(buf[2] << 8 | buf[3]) > baseline[LEFT_WHEEL] + 880)
 					count++;
 				else
 					count = 0;
@@ -1236,7 +1243,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				current_current = (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
 				step++;
 				current_current = (current_current * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
-				if(current_current < 800) {
+				if(current_current < 600) {
 					error_code = LEFT_WHEEL_STALL_ERROR;
 					current_data = 0;
 					return ;
@@ -1395,7 +1402,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				}
 				break;
 			case 27:
-				if(static_cast<uint16_t>(buf[5] << 8 | buf[6]) > baseline[RIGHT_WHEEL] + 580)
+				if(static_cast<uint16_t>(buf[5] << 8 | buf[6]) > baseline[RIGHT_WHEEL] + 880)
 					count++;
 				else
 					count = 0;
@@ -1415,7 +1422,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
 				step++;
 				current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
-				if(current_current < 800)
+				if(current_current < 600)
 				{
 					error_code = RIGHT_WHEEL_STALL_ERROR;
 					current_data = 0;
@@ -1794,7 +1801,7 @@ void main_brush_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_co
 				break;
 			case 3:
 				step++;
-				if (current_current < 130 || current_current > 350 || motor_current < 100 || motor_current > 300) {
+				if (current_current < 130 || current_current > 450 || motor_current < 100 || motor_current > 400) {
 					error_code = MAIN_BRUSH_CURRENT_ERROR;
 					current_data = static_cast<uint16_t>(motor_current);
 					return ;

@@ -11,7 +11,8 @@
 
 ModeCharge::ModeCharge()
 {
-	ROS_INFO("%s %d: Entering Charge mode\n=========================" , __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Entering Charge mode\n=========================" , __FUNCTION__, __LINE__);
+	system("unturbo_cpu.sh");
 
 	robot::instance()->setBatterLow(false);
 	robot::instance()->setBatterLow2(false);
@@ -37,7 +38,7 @@ ModeCharge::~ModeCharge()
 {
 	event_manager_set_enable(false);
 	sp_action_.reset();
-	ROS_INFO("%s %d: Exit charge mode.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Exit charge mode.", __FUNCTION__, __LINE__);
 }
 
 bool ModeCharge::isExit()
@@ -71,12 +72,18 @@ bool ModeCharge::isExit()
 		} else if (charger.isDirected())
 		{
 			ROS_WARN("%s %d: Plan not activated not valid because of charging with adapter.", __FUNCTION__, __LINE__);
-			speaker.play(VOICE_PLEASE_PULL_OUT_THE_PLUG);
+			speaker.play(VOICE_PLEASE_PULL_OUT_THE_PLUG, false);
+			speaker.play(VOICE_BATTERY_CHARGE);
 		} else
 		{
 			ROS_WARN("%s %d: Charge mode receives plan, change to navigation mode.", __FUNCTION__, __LINE__);
 			setNextMode(cm_navigation);
-			charger.enterNavFromChargeMode(true);
+			if (action_i_ == ac_charge)
+			{
+				auto p_action = boost::dynamic_pointer_cast<MovementCharge>(sp_action_);
+				if (p_action->stillCharging())
+					charger.enterNavFromChargeMode(true);
+			}
 			ACleanMode::plan_activation_ = true;
 			return true;
 		}
@@ -92,13 +99,19 @@ bool ModeCharge::isExit()
 		} else if (charger.isDirected())
 		{
 			ROS_WARN("%s %d: Charging with adapter.", __FUNCTION__, __LINE__);
-			speaker.play(VOICE_PLEASE_PULL_OUT_THE_PLUG);
+			speaker.play(VOICE_PLEASE_PULL_OUT_THE_PLUG, false);
+			speaker.play(VOICE_BATTERY_CHARGE);
 		} else
 		{
 			ROS_WARN("%s %d: Charge mode receives remote clean or key clean, change to navigation mode.", __FUNCTION__,
 					 __LINE__);
 			setNextMode(cm_navigation);
-			charger.enterNavFromChargeMode(true);
+			if (action_i_ == ac_charge)
+			{
+				auto p_action = boost::dynamic_pointer_cast<MovementCharge>(sp_action_);
+				if (p_action->stillCharging())
+					charger.enterNavFromChargeMode(true);
+			}
 			return true;
 		}
 	}
@@ -112,12 +125,18 @@ bool ModeCharge::isExit()
 		} else if (charger.isDirected())
 		{
 			ROS_WARN("%s %d: Charging with adapter.", __FUNCTION__, __LINE__);
-			speaker.play(VOICE_PLEASE_PULL_OUT_THE_PLUG);
+			speaker.play(VOICE_PLEASE_PULL_OUT_THE_PLUG, false);
+			speaker.play(VOICE_BATTERY_CHARGE);
 		} else
 		{
 			ROS_WARN("%s %d: Charge mode receives wifi plan1, change to navigation mode.", __FUNCTION__, __LINE__);
 			setNextMode(cm_navigation);
-			charger.enterNavFromChargeMode(true);
+			if (action_i_ == ac_charge)
+			{
+				auto p_action = boost::dynamic_pointer_cast<MovementCharge>(sp_action_);
+				if (p_action->stillCharging())
+					charger.enterNavFromChargeMode(true);
+			}
 			return true;
 		}
 		s_wifi.resetReceivedWorkMode();
@@ -144,7 +163,8 @@ void ModeCharge::remoteClean(bool state_now, bool state_last)
 	if (charger.isDirected())
 	{
 		beeper.beepForCommand(INVALID);
-		speaker.play(VOICE_PLEASE_PULL_OUT_THE_PLUG);
+		speaker.play(VOICE_PLEASE_PULL_OUT_THE_PLUG, false);
+		speaker.play(VOICE_BATTERY_CHARGE);
 		ROS_WARN("%s %d: change charge mode to navigation mode by remote clean failed because of charging with adapter.", __FUNCTION__, __LINE__);
 	}
 	else
@@ -161,7 +181,8 @@ void ModeCharge::keyClean(bool state_now, bool state_last)
 	if (charger.isDirected())
 	{
 		beeper.beepForCommand(INVALID);
-		speaker.play(VOICE_PLEASE_PULL_OUT_THE_PLUG);
+		speaker.play(VOICE_PLEASE_PULL_OUT_THE_PLUG, false);
+		speaker.play(VOICE_BATTERY_CHARGE);
 		ROS_WARN("%s %d: change charge mode to navigation mode by key clean failed because of charging with adapter.", __FUNCTION__, __LINE__);
 	}
 	else

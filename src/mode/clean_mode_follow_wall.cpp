@@ -11,6 +11,7 @@ Cells path_points;
 
 CleanModeFollowWall::CleanModeFollowWall()
 {
+	ROS_WARN("%s %d: Entering Follow wall mode\n=========================" , __FUNCTION__, __LINE__);
 //	event_manager_register_handler(this);
 //	event_manager_set_enable(true);
 //	ROS_INFO("%s %d: Entering Follow wall mode\n=========================" , __FUNCTION__, __LINE__);
@@ -48,6 +49,7 @@ CleanModeFollowWall::~CleanModeFollowWall()
 		ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
 	}
 */
+	ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);
 }
 
 bool CleanModeFollowWall::mapMark() {

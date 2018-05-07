@@ -593,4 +593,5 @@ void coordinate_transform(double *x, double *y, double theta, double offset_x, d
 bool unsigned_long_to_hex_string(unsigned long number, char *str, const int len);
 
 Vector2<double> polarToCartesian(double polar, int i);
+
 #endif

@@ -295,7 +295,7 @@ bool IFollowWall::sp_turn_over(const Cell_t &curr) {
 		/*check if spot turn*/
 		if (get_sp_turn_count() > 400) {
 			reset_sp_turn_count();
-			ROS_WARN("  yes! sp_turn over 400");
+			ROS_INFO("  yes! sp_turn over 400");
 			return true;
 		}
 		return false;

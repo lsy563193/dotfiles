@@ -122,4 +122,6 @@ class StateSleep: public State {
 public:
 	void init() override;
 };
+
+std::vector<State*>::iterator stable_unique(std::vector<State*>::iterator b, std::vector<State*>::iterator e);
 #endif //PP_STATE_HPP
