@@ -164,7 +164,7 @@ bool IMoveType::isRconStop()
 	ev.rcon_status = countRconTriggered(c_rcon.getNavRcon(), 3);
 	if(ev.rcon_status)
 	{
-		ROS_INFO("\033[1;40;35m""Rcon triggered and stop %x.""\033[0m",ev.rcon_status);
+		ROS_WARN("\033[1;40;35m""Rcon triggered and stop %x.""\033[0m",ev.rcon_status);
 		ret = true;
 	}
 

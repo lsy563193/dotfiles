@@ -614,7 +614,7 @@ bool MovementGoToCharger::isSwitch()
 				//	turn_angle_ = -1100;
 				//else
 				//	turn_angle_ = 1100;
-				ROS_WARN("%d: quick_back in position_far", __LINE__);
+				ROS_INFO("%d: quick_back in position_far", __LINE__);
 				return true;
 			}
 		}

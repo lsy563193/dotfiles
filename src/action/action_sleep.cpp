@@ -8,7 +8,7 @@
 
 ActionSleep::ActionSleep(bool fake_sleep)
 {
-	ROS_INFO("%s %d: Start sleep action.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Start sleep action.", __FUNCTION__, __LINE__);
 	// Ensure the previous voice is finished before sleep.
 	wifi_led.set(false);
 	//s_wifi.uploadStatus(0xc8,0x00);
@@ -30,7 +30,7 @@ ActionSleep::ActionSleep(bool fake_sleep)
 	usleep(100000);*/
 
 	if (fake_sleep)
-		ROS_INFO("%s %d: Shhhhhh.... Entering fake sleep ;)", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Shhhhhh.... Entering fake sleep ;)", __FUNCTION__, __LINE__);
 	else
 		lowPowerSleep();
 }
@@ -47,7 +47,7 @@ ActionSleep::~ActionSleep()
 	usleep(100000);
 	beeper.beep(1, 80, 4, 1);*/
 
-	ROS_INFO("%s %d: End sleep action.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: End sleep action.", __FUNCTION__, __LINE__);
 }
 
 bool ActionSleep::isFinish()
@@ -66,12 +66,12 @@ void ActionSleep::lowPowerSleep()
 	system("turbo_cpu.sh");
 	if (charger.getChargeStatus())
 	{
-		ROS_INFO("%s %d: Enter from charge mode.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Enter from charge mode.", __FUNCTION__, __LINE__);
 		serial.setWorkMode(BATTERY_FULL_SLEEP_MODE);
 	} else
 		serial.setWorkMode(NORMAL_SLEEP_MODE);
 	// Sleep for 30ms to make sure the power byte has been sent.
 	usleep(30000);
-	ROS_INFO("%s %d: Good night buddy.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Good night buddy.", __FUNCTION__, __LINE__);
 	system("/bin/echo standby > /sys/power/state");
 }

@@ -115,6 +115,10 @@ class MovementTurn: public IMovement{
 public:
 
 	explicit MovementTurn(double radian, uint8_t max_speed);
+	~MovementTurn()
+	{
+		ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);
+	}
 	void adjustSpeed(int32_t&, int32_t&) override;
 	bool isReach();
 	bool isFinish() override;
@@ -210,6 +214,10 @@ class MovementFollowWallLidar:public AMovementFollowPoint, public IFollowWall
 
 public:
 	explicit MovementFollowWallLidar(bool is_left);
+	~MovementFollowWallLidar()
+	{
+		ROS_WARN("%s %d: Exit MovementFollowWallLidar.", __FUNCTION__, __LINE__);
+	}
 
 	Point_t calcTmpTarget() override ;//laser follow wall algorithm
 	Points calcVirtualTmpTarget();//generate a circle path
@@ -368,6 +376,11 @@ private:
 class MovementStayRemote :public MovementStay{
 public:
 	MovementStayRemote(double stay_time_sec);
+	~MovementStayRemote()
+	{
+		ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);
+	}
+
 	bool isFinish() override;
 };
 class MovementDirectGo :public IMovement

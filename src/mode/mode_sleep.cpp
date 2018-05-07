@@ -12,8 +12,9 @@
 
 ModeSleep::ModeSleep()
 {
+	// todo: Turbo action should be placed in state init.
 	system("unturbo_cpu.sh");
-	ROS_INFO("%s %d: Entering Sleep mode\n=========================" , __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Entering Sleep mode\n=========================" , __FUNCTION__, __LINE__);
 	event_manager_register_handler(this);
 	event_manager_reset_status();
 	event_manager_set_enable(true);
@@ -43,7 +44,7 @@ ModeSleep::~ModeSleep()
 	//s_wifi.taskPushBack(S_Wifi::ACT::ACT_RESUME);
 	event_manager_set_enable(false);
 	sp_action_.reset();
-	ROS_INFO("%s %d: Exit sleep mode.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Exit sleep mode.", __FUNCTION__, __LINE__);
 }
 
 bool ModeSleep::isExit()

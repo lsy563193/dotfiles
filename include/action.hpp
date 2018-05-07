@@ -50,8 +50,8 @@ class ActionBackFromCharger :public IAction
 public:
 	ActionBackFromCharger();
 	~ActionBackFromCharger();
-	bool isFinish();
-	void run();
+	bool isFinish() override ;
+	void run() override ;
 private:
 	enum {
 		BACK = 0,
@@ -77,7 +77,11 @@ public:
 class ActionAlign :public IAction
 {
 public:
-	ActionAlign();
+	explicit ActionAlign();
+	~ActionAlign()
+	{
+		ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);
+	}
 	bool isFinish() override;
 	bool isTimeUp() override;
 	void run() override;

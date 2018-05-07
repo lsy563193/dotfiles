@@ -8,7 +8,7 @@
 
 ModeGoToCharger::ModeGoToCharger()
 {
-	ROS_INFO("%s, %d: Entering go to charger mode\n=========================", __FUNCTION__, __LINE__);
+	ROS_WARN("%s, %d: Entering go to charger mode\n=========================", __FUNCTION__, __LINE__);
 	system("turbo_cpu.sh");
 	event_manager_register_handler(this);
 	event_manager_reset_status();
@@ -34,6 +34,7 @@ ModeGoToCharger::~ModeGoToCharger()
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
+	ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);
 }
 
 bool ModeGoToCharger::isExit()

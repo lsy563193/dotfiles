@@ -11,7 +11,8 @@
 ModeIdle::ModeIdle():
 	bind_lock_(PTHREAD_MUTEX_INITIALIZER)
 {
-	ROS_INFO("%s %d: Entering Idle mode\n=========================" , __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Entering Idle mode. Current battery voltage \033[32m%5.2f V\033[0m\n=========================" ,
+			 __FUNCTION__, __LINE__, (float)battery.getVoltage()/100.0);
 	event_manager_register_handler(this);
 	event_manager_set_enable(true);
 	serial.setWorkMode(IDLE_MODE);
@@ -27,7 +28,6 @@ ModeIdle::ModeIdle():
 
 	s_wifi.resetReceivedWorkMode();
 
-	ROS_INFO("%s %d: Current battery voltage \033[32m%5.2f V\033[0m.", __FUNCTION__, __LINE__, (float)battery.getVoltage()/100.0);
 	/*---reset values for rcon handle---*/
 //	// todo:debug
 //	infrared_display.displayErrorMsg(9, 1234, 101);
@@ -40,7 +40,7 @@ ModeIdle::~ModeIdle()
 {
 	event_manager_set_enable(false);
 	sp_action_.reset();
-	ROS_INFO("%s %d: Exit idle mode.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Exit idle mode.", __FUNCTION__, __LINE__);
 }
 
 bool ModeIdle::isExit()

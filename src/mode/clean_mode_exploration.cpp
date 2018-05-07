@@ -10,7 +10,7 @@
 
 CleanModeExploration::CleanModeExploration()
 {
-	ROS_INFO("%s %d: Entering Exploration mode\n=========================" , __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Entering Exploration mode\n=========================" , __FUNCTION__, __LINE__);
 	speaker.play(VOICE_GO_HOME_MODE, false);
 	mode_i_ = cm_exploration;
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
@@ -57,6 +57,7 @@ CleanModeExploration::~CleanModeExploration()
 	}
 #endif
 	obs.control(ON);
+	ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);
 }
 
 bool CleanModeExploration::isExit()

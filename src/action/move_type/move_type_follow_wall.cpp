@@ -15,7 +15,7 @@ int g_follow_last_follow_wall_dir=0;
 MoveTypeFollowWall::MoveTypeFollowWall(Points remain_path, bool is_left)
 {
 	IMovement::sp_mt_ = this;
-	ROS_INFO("%s %d: Entering move type %s follow wall.", __FUNCTION__, __LINE__,
+	ROS_WARN("%s %d: Entering move type %s follow wall.", __FUNCTION__, __LINE__,
 			 is_left ? "left" : "right");
 	remain_path.pop_front();
 	remain_path_ = remain_path;
@@ -41,14 +41,14 @@ MoveTypeFollowWall::~MoveTypeFollowWall()
 		p_mode->saveBlocks();
 		p_mode->mapMark();
 	}
-	ROS_INFO("%s %d: Exit move type follow wall.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Exit move type follow wall.", __FUNCTION__, __LINE__);
 }
 
 bool MoveTypeFollowWall::isFinish()
 {
 	if (IMoveType::isFinish() && isNotHandleEvent())
 	{
-		ROS_INFO("%s %d: Move type aborted.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Move type aborted.", __FUNCTION__, __LINE__);
 		return true;
 	}
 
@@ -296,11 +296,11 @@ bool MoveTypeFollowWall::_lidarTurnRadian(bool is_left, double &turn_radian, dou
 			robot_to_wall_distance=g_back_distance*100*sin(PI-line_radian);
 		ROS_ERROR("left_x= %f  left_angle= %lf",x,line_radian);*/
 		turn_radian = is_left ? -radian : radian;
-		ROS_ERROR("lidar generate turn angle(%lf)! is_left(%d)",radian_to_degree(turn_radian), is_left);
+		ROS_INFO("lidar generate turn angle(%lf)! is_left(%d)",radian_to_degree(turn_radian), is_left);
 		return true;
 	} else {
 		turn_radian = 0;
-		ROS_ERROR("lidar generate turn angle(%lf) failed! is_left(%d)",radian_to_degree(turn_radian), is_left);
+		ROS_INFO("lidar generate turn angle(%lf) failed! is_left(%d)",radian_to_degree(turn_radian), is_left);
 		return false;
 	}
 }
@@ -354,33 +354,33 @@ double MoveTypeFollowWall::getTurnRadianByEvent()
 	int16_t turn_angle{};
 	if (ev.bumper_triggered) {
 		turn_angle = bumperTurnAngle();
-		ROS_INFO("%s %d: Bumper triggered, turn_angle: %d.", __FUNCTION__, __LINE__, turn_angle);
+		ROS_WARN("%s %d: Bumper triggered, turn_angle: %d.", __FUNCTION__, __LINE__, turn_angle);
 	}
 	if (ev.cliff_triggered) {
 		turn_angle = cliffTurnAngle();
-		ROS_INFO("%s %d: Cliff triggered, turn_angle: %d.", __FUNCTION__, __LINE__, turn_angle);
+		ROS_WARN("%s %d: Cliff triggered, turn_angle: %d.", __FUNCTION__, __LINE__, turn_angle);
 	}
 	if (ev.tilt_triggered) {
 		turn_angle = tiltTurnAngle();
-		ROS_INFO("%s %d: Tilt triggered, turn_angle: %d.", __FUNCTION__, __LINE__, turn_angle);
+		ROS_WARN("%s %d: Tilt triggered, turn_angle: %d.", __FUNCTION__, __LINE__, turn_angle);
 	}
 	if (ev.obs_triggered) {
 		turn_angle = obsTurnAngle();
-		ROS_INFO("%s %d: OBS triggered, turn_angle: %d.", __FUNCTION__, __LINE__, turn_angle);
+		ROS_WARN("%s %d: OBS triggered, turn_angle: %d.", __FUNCTION__, __LINE__, turn_angle);
 	}
 	if (ev.lidar_triggered)
 	{
 		// Temporary use obs as lidar triggered.
 		ev.obs_triggered = ev.lidar_triggered;
 		turn_angle = obsTurnAngle();
-		ROS_INFO("%s %d: Lidar triggered, turn_angle: %d.", __FUNCTION__, __LINE__, turn_angle);
+		ROS_WARN("%s %d: Lidar triggered, turn_angle: %d.", __FUNCTION__, __LINE__, turn_angle);
 	}
 	if(ev.robot_slip)
 	{
 		// Temporary use obs as lidar triggered.
 		ev.obs_triggered = BLOCK_FRONT;
 		turn_angle = obsTurnAngle();
-		ROS_INFO("%s %d: slip triggered, turn_angle: %d.", __FUNCTION__, __LINE__, turn_angle);
+		ROS_WARN("%s %d: slip triggered, turn_angle: %d.", __FUNCTION__, __LINE__, turn_angle);
 	}
 	return degree_to_radian(turn_angle);
 }
@@ -398,7 +398,7 @@ double MoveTypeFollowWall::getTurnRadian(bool use_target_radian)
 	}
 
 	if (lidarTurnRadian(turn_radian) && !is_trapped) {
-		ROS_INFO("%s %d: Use fit line angle!(%f in degree)", __FUNCTION__, __LINE__, radian_to_degree(turn_radian));
+		ROS_WARN("%s %d: Use fit line angle!(%f in degree)", __FUNCTION__, __LINE__, radian_to_degree(turn_radian));
 	}
 	else {
 		ROS_INFO("%s %d: Not use fit line angle!", __FUNCTION__, __LINE__);
@@ -501,7 +501,7 @@ bool MoveTypeFollowWall::handleMoveBackEventRealTime(ACleanMode *p_clean_mode)
 	ROS_INFO("%s,%d, mt_fw", __FUNCTION__, __LINE__);
 	if (bumper_status || cliff_status || tilt_status)
 	{
-		ROS_INFO("%s,%d, bumper_status(%d), cliff_status(%d), tilt_status(%d)", __FUNCTION__, __LINE__, bumper_status, cliff_status, tilt_status);
+		ROS_WARN("%s,%d, bumper_status(%d), cliff_status(%d), tilt_status(%d)", __FUNCTION__, __LINE__, bumper_status, cliff_status, tilt_status);
 		p_clean_mode->saveBlocks();
 		movement_i_ = mm_back;
 		float back_distance = static_cast<float>(bumper_status ? 0.01 : 0.05);

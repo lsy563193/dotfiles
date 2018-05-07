@@ -11,7 +11,7 @@
 
 ModeCharge::ModeCharge()
 {
-	ROS_INFO("%s %d: Entering Charge mode\n=========================" , __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Entering Charge mode\n=========================" , __FUNCTION__, __LINE__);
 	system("unturbo_cpu.sh");
 
 	robot::instance()->setBatterLow(false);
@@ -38,7 +38,7 @@ ModeCharge::~ModeCharge()
 {
 	event_manager_set_enable(false);
 	sp_action_.reset();
-	ROS_INFO("%s %d: Exit charge mode.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Exit charge mode.", __FUNCTION__, __LINE__);
 }
 
 bool ModeCharge::isExit()

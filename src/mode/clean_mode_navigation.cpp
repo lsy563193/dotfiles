@@ -17,7 +17,7 @@
 int CleanModeNav::align_count_ = 0;
 CleanModeNav::CleanModeNav()
 {
-	ROS_INFO("%s %d: Entering Navigation mode\n=========================" , __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Entering Navigation mode\n=========================" , __FUNCTION__, __LINE__);
 
 	if(plan_activation_)
 	{
@@ -47,6 +47,7 @@ CleanModeNav::~CleanModeNav()
 {
 	s_wifi.clearMapCache();
 	charger.enterNavFromChargeMode(false);
+	ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);
 }
 
 bool CleanModeNav::mapMark()
