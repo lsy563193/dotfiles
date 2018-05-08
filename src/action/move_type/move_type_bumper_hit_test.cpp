@@ -34,7 +34,7 @@ void MoveTypeBumperHitTest::run()
 		else if (bumper.getStatus() == BLOCK_ALL)
 			key_led.setMode(LED_STEADY, LED_ORANGE);
 		else
-			key_led.setMode(LED_FLASH, LED_OFF);
+			key_led.setMode(LED_STEADY, LED_OFF);
 
 		if (bumper.getStatus() == BLOCK_LIDAR_BUMPER)
 			wifi_led.setMode(LED_STEADY, WifiLed::state::on);
