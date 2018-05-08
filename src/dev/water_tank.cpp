@@ -36,18 +36,18 @@ void WaterTank::open(int _operate_option)
 	switch(_operate_option){
 		case operate_option::swing_motor:
 			setSwingMotorPWM();
-			ROS_ERROR("%s %d: Open water tank", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Open water tank", __FUNCTION__, __LINE__);
 			break;
 		case operate_option::pump:
 			pump_pwm_ = 0x80;
 			last_pump_time_stamp_ = 0;
-			ROS_ERROR("%s %d: Open pump", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Open pump", __FUNCTION__, __LINE__);
 			break;
 		case operate_option::swing_motor_and_pump:
 			setSwingMotorPWM();
 			pump_pwm_ = 0x80;
 			last_pump_time_stamp_ = 0;
-			ROS_ERROR("%s %d: Open pump and water tank", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Open pump and water tank", __FUNCTION__, __LINE__);
 			break;
 	}
 	serial.setSendData(CTL_WATER_TANK, static_cast<uint8_t>(swing_motor_pwm_|pump_pwm_));
@@ -66,18 +66,18 @@ void WaterTank::stop(int operate_option)
 		case swing_motor:
 			serial.setSendData(CTL_WATER_TANK, static_cast<uint8_t>(pump_pwm_ & 0x80));
 			swing_motor_pwm_ = 0;
-			ROS_INFO("%s %d: close water tank", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: close water tank", __FUNCTION__, __LINE__);
 			break;
 		case pump:
 			serial.setSendData(CTL_WATER_TANK, static_cast<uint8_t>(swing_motor_pwm_ & 0x7f));
 			pump_pwm_ = 0;
-			ROS_INFO("%s %d: close pump", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: close pump", __FUNCTION__, __LINE__);
 			break;
 		case swing_motor_and_pump:
 			serial.setSendData(CTL_WATER_TANK, 0x00);
 			pump_pwm_ = 0;
 			swing_motor_pwm_ = 0;
-			ROS_INFO("%s %d: close pump and water tank", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: close pump and water tank", __FUNCTION__, __LINE__);
 			break;
 	}
 	if (operate_option == swing_motor_and_pump) {

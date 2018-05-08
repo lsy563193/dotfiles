@@ -204,7 +204,8 @@ void ACleanMode::saveBlock(int block, int dir, std::function<Cells()> get_list)
 //		}
 		c_blocks.insert({block, cell});
 	}
-	ROS_INFO("%s", debug_str.c_str());
+	if (sizeof(debug_str) != 0)
+		ROS_INFO("%s", debug_str.c_str());
 }
 
 void ACleanMode::saveBlocks() {
@@ -2239,15 +2240,14 @@ void ACleanMode::setVacuum()
 	if (water_tank.getStatus(WaterTank::operate_option::swing_motor))
 		return;
 
+	speaker.play(vacuum.isUserSetMaxMode() ? VOICE_VACCUM_MAX : VOICE_VACUUM_NORMAL);
 	if ((isStateInit() && action_i_ > ac_open_gyro)
 		|| isStateClean()
 		|| isStateFollowWall())
 	{
 		auto user_set_max_mode = vacuum.isUserSetMaxMode();
 		if (vacuum.isCurrentMaxMode() != user_set_max_mode)
-		{
 			vacuum.setSpeedByUserSetMode();
-			speaker.play(vacuum.isCurrentMaxMode() ? VOICE_VACCUM_MAX : VOICE_VACUUM_NORMAL);
 		}
 	}
 }
