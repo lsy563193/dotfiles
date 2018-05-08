@@ -50,13 +50,13 @@ bool MovementGoToCharger::isSwitch()
 	}
 	if (gtc_state_now_ == gtc_check_near_charger_station)
 	{
-		if(should_away_from_charge_station && no_signal_cnt < 10)
+		if(should_away_from_charge_station && no_signal_cnt < 50)
 		{
 			receive_code = c_rcon.getAll();
-			ROS_ERROR("%s, %d: check near home, receive_code: %8x", __FUNCTION__, __LINE__, receive_code);
+			ROS_INFO("%s, %d: check near home, receive_code: %8x", __FUNCTION__, __LINE__, receive_code);
 			if(receive_code&RconAll_Home_T)
 			{
-				ROS_INFO("receive LR");
+				ROS_INFO("receive T");
 				if(receive_code&(RconFL_HomeT|RconFR_HomeT|RconFL2_HomeT|RconFR2_HomeT))
 				{
 					ROS_INFO("%s %d: turn 180", __FUNCTION__, __LINE__);
@@ -395,8 +395,9 @@ bool MovementGoToCharger::isSwitch()
 						ROS_INFO("%s, %d: Detect L-R but not detect L-L. Check if direction wrong.", __FUNCTION__, __LINE__);
 						dir_wrong_cnt_++;
 						/*--- dir wrong, change dir ---*/
-						if(dir_wrong_cnt_ > 25)
+						if(dir_wrong_cnt_ > 10)
 						{
+							dir_wrong_cnt_ = 0;
 							around_charger_stub_dir = 1 - around_charger_stub_dir;
 							check_in_front_of_home = 0;
 							turn_angle_ = 180;
@@ -469,8 +470,9 @@ bool MovementGoToCharger::isSwitch()
 						ROS_INFO("%s, %d: Detect R-L but not detect R-R. Check if direction wrong.", __FUNCTION__, __LINE__);
 						dir_wrong_cnt_++;
 						/*--- dir wrong, change dir ---*/
-						if(dir_wrong_cnt_ > 25)
+						if(dir_wrong_cnt_ > 10)
 						{
+							dir_wrong_cnt_ = 0;
 							around_charger_stub_dir = 1 - around_charger_stub_dir;
 							check_in_front_of_home = 0;
 							turn_angle_ = 180;
@@ -628,7 +630,7 @@ bool MovementGoToCharger::isSwitch()
 
 		if (--by_path_move_cnt < 0)
 		{
-			by_path_move_cnt = 18;
+			by_path_move_cnt = 6;
 			receive_code = c_rcon.getAll();
 			if(receive_code)
 			{
@@ -1029,7 +1031,7 @@ void MovementGoToCharger::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 		wheel.setDirectionForward();
 		auto temp_code = receive_code;
 		temp_code &= RconFrontAll_Home_LR;
-		if (by_path_move_cnt == 18 && temp_code)
+		if (by_path_move_cnt == 6 && temp_code)
 		{
 			if(position_far)
 			{
