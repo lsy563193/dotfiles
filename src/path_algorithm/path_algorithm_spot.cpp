@@ -183,7 +183,7 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, con
 		if(!spot_running_)
 		{
 			spot_running_ = true;
-			plan_path = cells_generate_points(targets_cells_);
+			plan_path = *cells_generate_points(make_unique<Cells>(targets_cells_));
 			ROS_INFO("%s,%d ,targets size %lu",__FUNCTION__,__LINE__,plan_path.size());
 			return true;
 		}
