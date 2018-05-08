@@ -269,7 +269,7 @@ bool ActionR16Test::lidar_bumper_test()
 		{
 			beeper.beepForCommand(VALID);
 			bumper_cnt_++;
-			infrared_display.displayNormalMsg(4, static_cast<uint16_t>(bumper_cnt_));
+			infrared_display.displayNormalMsg(5, static_cast<uint16_t>(bumper_cnt_));
 			ROS_INFO("%s %d: Hit lidar bumper for %d time.", __FUNCTION__, __LINE__, bumper_cnt_);
 		}
 		last_bumper_status = bumper.getLidarBumperStatus();

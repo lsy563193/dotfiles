@@ -196,5 +196,7 @@
 #define WHEEL_TO_CENTER_DISTANCE		(0.109f)
 
 #define WHEEL_ENCODER_TO_MILLIMETER			(0.1955f)
+
+#define USE_NEW_PATH_PLAN 0
 #endif //__CONFIG_H__
 

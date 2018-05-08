@@ -182,6 +182,7 @@ void Mode::genNextAction()
 			break;
 		default : //case ac_null :
 			sp_action_.reset();
+			ROS_INFO("%s %d: Reset action to null.", __FUNCTION__, __LINE__);
 			break;
 	}
 	INFO_GREEN("after genNextAction");

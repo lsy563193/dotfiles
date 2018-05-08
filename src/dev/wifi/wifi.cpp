@@ -869,12 +869,19 @@ bool S_Wifi::uploadMap(MapType map)
 		
 		ROS_INFO("%s,%d,map_packs size %ld",__FUNCTION__,__LINE__,map_packs.size());
 		//-- upload map and wait ack
-		int timeout_cnt = 0;
-		for(int k=1;k<=map_packs.size();k++)
+		int k = 1;
+		while(ros::ok() && k<=map_packs.size())
 		{
+			int pushed = false;
+			int timeout_cnt = 0;
 			do{
 				if(timeout_cnt>0)
-					usleep(1000000);
+					usleep(800000);
+				if(pushed && realtime_map_ack_)
+				{
+					k++;
+					break;
+				}
 				if(timeout_cnt++ >5)
 				{
 					is_wifi_connected_ = false;
@@ -887,10 +894,9 @@ bool S_Wifi::uploadMap(MapType map)
 									,(uint8_t)map_packs.size()
 									,map_packs[k-1]);
 				s_wifi_tx_.push(std::move(p)).commit();
-				
-			}while(ros::ok() && !realtime_map_ack_);
+				pushed = true;
+			}while(ros::ok() );
 			realtime_map_ack_ = false;
-			timeout_cnt = 0;
 		}
 		pthread_mutex_lock(&map_data_lock_);
 		if (!map_data_buf_->empty() && map_buf_on_process)
@@ -908,7 +914,6 @@ bool S_Wifi::uploadMap(MapType map)
 
 		if(slam_map_data != NULL)
 		{
-			//-- 
 			GridMap g_map;
 			if (!robot::instance()->getCleanMap(g_map))
 				return false;
@@ -919,12 +924,12 @@ bool S_Wifi::uploadMap(MapType map)
 			map_data.push_back((uint8_t)clean_area);
 			map_data.push_back((uint8_t)((robot_timer.getWorkTime()&0x0000ff00)>>8));
 			map_data.push_back((uint8_t)robot_timer.getWorkTime());
-
+			map_data.push_back(0x01);//data type
 			for(int i=0;i<slam_map_s;i++)
 			{
 				map_data.push_back(*(slam_map_data+i));
 				//--
-				if(i>=250)
+				if(i>=240)
 				{
 					map_packs.push_back(map_data);
 					map_data.clear();
@@ -938,12 +943,19 @@ bool S_Wifi::uploadMap(MapType map)
 			ROS_INFO("%s,%d,map_packs size %ld",__FUNCTION__,__LINE__,map_packs.size());
 
 			//--upload map and wait ack
-			int timeout_cnt = 0;
-			for(int k=1;k<=map_packs.size();k++)
+			int k =1;
+			while(ros::ok() && k<=map_packs.size())
 			{
+				bool pushed = false;
+				int timeout_cnt = 0;
 				do{
 					if(timeout_cnt>0)
-						usleep(1000000);
+						usleep(800000);
+					if(pushed && realtime_map_ack_)
+					{
+						k++;
+						break;
+					}
 					if(timeout_cnt++ > 5)
 					{
 						is_wifi_connected_ = false;
@@ -956,10 +968,9 @@ bool S_Wifi::uploadMap(MapType map)
 										,(uint8_t)map_packs.size()
 										,map_packs[k-1]);
 					s_wifi_tx_.push(std::move(p)).commit();
-				//--wait ack 
-				}while(ros::ok() && !realtime_map_ack_);
+					pushed = true;
+				}while(ros::ok());
 				realtime_map_ack_ = false;
-				timeout_cnt = 0;
 			}
 		}
 	}
@@ -1447,7 +1458,7 @@ void S_Wifi::wifi_send_routine()
 					this->factoryTest();
 					break;
 				case ACT::ACT_UPLOAD_MAP:
-					this->uploadMap(GRID_MAP);
+					this->uploadMap(SLAM_MAP);
 					break;
 				case ACT::ACT_CLEAR_MAP:
 					this->clearRealtimeMap(0x00);
@@ -1486,7 +1497,7 @@ void S_Wifi::wifi_send_routine()
 
 			if(upload_map_count++ >= pack_size>1?2:10)
 			{
-				this->uploadMap(GRID_MAP);
+				this->uploadMap(SLAM_MAP);
 				upload_map_count=0;
 			}
 			if(is_Status_Request_)
