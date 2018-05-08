@@ -628,8 +628,16 @@ void CleanModeNav::switchInStateInit() {
 		}
 		else{ // Resume from pause, because slam is not opened for the first time that open lidar action finished.
 //			sp_saved_states.erase(stable_unique(sp_saved_states.begin(),sp_saved_states.end()),sp_saved_states.end());
-			sp_state = sp_saved_states.back();
-			sp_saved_states.pop_back();
+			if (sp_saved_states.empty())
+			{
+				ROS_ERROR("%s %d: Saved state is empty!!", __FUNCTION__, __LINE__);
+				sp_state = state_clean.get();
+			}
+			else
+			{
+				sp_state = sp_saved_states.back();
+				sp_saved_states.pop_back();
+			}
 		}
 	}
 	else {//if (action_i_ == ac_open_slam)
@@ -637,8 +645,16 @@ void CleanModeNav::switchInStateInit() {
 
 		if (remote_go_home_point)
 		{
-			sp_state = sp_saved_states.back();
-			sp_saved_states.pop_back();
+			if (sp_saved_states.empty())
+			{
+				ROS_ERROR("%s %d: Saved state is empty!!", __FUNCTION__, __LINE__);
+				sp_state = state_clean.get();
+			}
+			else
+			{
+				sp_state = sp_saved_states.back();
+				sp_saved_states.pop_back();
+			}
 		}
 		else
 		{
@@ -824,7 +840,7 @@ bool CleanModeNav::isSwitchByEventInStateSpot()
 	if (checkEnterPause())
 	{
 		// Exit temp spot mode.
-		sp_saved_states.pop_back();
+		sp_saved_states.clear();
 		auto state = state_clean.get();
 		sp_saved_states.push_back(state);
 		clean_path_algorithm_.reset(new NavCleanPathAlgorithm);
@@ -883,10 +899,14 @@ bool CleanModeNav::checkResumePause()
 		action_i_ = ac_null;
 		ROS_INFO("%s %d: Resume cleaning.", __FUNCTION__, __LINE__);
 		// It will NOT change the state.
-		if ((ev.remote_home || s_wifi.receiveHome()) && sp_saved_states.back() != state_go_home_point.get())
+		if ((ev.remote_home || s_wifi.receiveHome()))
 		{
 			ROS_INFO("%s %d: Resume to go home point state.", __FUNCTION__, __LINE__);
-			sp_saved_states.pop_back();
+			if (sp_saved_states.empty())
+				ROS_ERROR("%s %d: Saved state is empty!! Did it enter pause from init state?", __FUNCTION__, __LINE__);
+			else
+				sp_saved_states.pop_back();
+
 			sp_saved_states.push_back(state_go_home_point.get());
 			if (go_home_path_algorithm_ == nullptr)
 				go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_, start_point_));

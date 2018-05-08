@@ -130,15 +130,15 @@ ACleanMode::~ACleanMode()
 				trapped_closed_or_isolate = false;
 				trapped_time_out_ = false;
 				ROS_WARN("%s %d: Robot is trapped.Stop cleaning.", __FUNCTION__, __LINE__);
+			} else if (mode_i_ == cm_navigation && moved_during_pause_)
+			{
+				speaker.play(VOICE_CLEANING_FINISHED, false);
+				ROS_WARN("%s %d: Moved during pause. Stop cleaning.", __FUNCTION__, __LINE__);
 			} else if (mode_i_ == cm_exploration ||
 					((mode_i_ == cm_navigation || mode_i_ == cm_wall_follow) && seen_charger_during_cleaning_))
 			{
 				speaker.play(VOICE_BACK_TO_CHARGER_FAILED, false);
 				ROS_WARN("%s %d: Finish cleaning but failed to go to charger.", __FUNCTION__, __LINE__);
-			} else if (mode_i_ == cm_navigation && moved_during_pause_)
-			{
-				speaker.play(VOICE_CLEANING_FINISHED, false);
-				ROS_WARN("%s %d: Moved during pause. Stop cleaning.", __FUNCTION__, __LINE__);
 			} else if (mode_i_ != cm_exploration && !seen_charger_during_cleaning_)
 			{
 				speaker.play(VOICE_CLEANING_FINISHED, false);
@@ -1951,8 +1951,16 @@ void ACleanMode::switchInStateExceptionResume()
 		ROS_INFO("%s %d: Resume to previous state", __FUNCTION__, __LINE__);
 		action_i_ = ac_null;
 		genNextAction();
-		sp_state = sp_saved_states.back();
-		sp_saved_states.pop_back();
+		if (sp_saved_states.empty())
+		{
+			ROS_ERROR("%s %d: Saved state is empty!!", __FUNCTION__, __LINE__);
+			sp_state = state_init.get();
+		}
+		else
+		{
+			sp_state = sp_saved_states.back();
+			sp_saved_states.pop_back();
+		}
 		sp_state->init();
 	}
 	else
@@ -2090,8 +2098,15 @@ void ACleanMode::switchInStateFollowWall()
 		ROS_WARN("%s %d:escape_trapped_ restore state from trapped !", __FUNCTION__, __LINE__);
 //		sp_state = (sp_tmp_state == state_clean) ? state_clean : state_exploration;
 		out_of_trapped = false;
-		sp_state = sp_saved_states.back();
-		sp_saved_states.pop_back();
+		if (sp_saved_states.empty())
+			ROS_ERROR("%s %d: Saved state is empty!!", __FUNCTION__, __LINE__);
+		else
+			sp_saved_states.pop_back();
+
+		if (mode_i_ == cm_navigation)
+			sp_state = state_clean.get();
+		else if (mode_i_ == cm_exploration)
+			sp_state = state_exploration.get();
 		sp_state->init();
 	}
 }
