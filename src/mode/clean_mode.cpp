@@ -2248,6 +2248,5 @@ void ACleanMode::setVacuum()
 		auto user_set_max_mode = vacuum.isUserSetMaxMode();
 		if (vacuum.isCurrentMaxMode() != user_set_max_mode)
 			vacuum.setSpeedByUserSetMode();
-		}
 	}
 }
