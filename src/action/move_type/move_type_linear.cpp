@@ -196,7 +196,7 @@ void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 				{
 					if(switchLinearTargetByRecalc(p_clean_mode))
 					{
-						beeper.debugBeep(VALID);
+//						beeper.debugBeep(VALID);
 						{
 							radian_diff_count = 0;
 							return;
