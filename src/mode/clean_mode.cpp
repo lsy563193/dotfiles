@@ -1722,6 +1722,22 @@ bool ACleanMode::checkEnterGoHomePointState()
 
 bool ACleanMode::isSwitchByEventInStateGoHomePoint()
 {
+	if (isFirstTimeGoHomePoint())
+	{
+		if (ev.remote_home || s_wifi.receiveHome())
+		{
+			if (ev.remote_home)
+				remote_go_home_point = true;
+			if (s_wifi.receiveHome())
+			{
+				wifi_go_home_point = true;
+				s_wifi.resetReceivedWorkMode();
+			}
+			sp_state->init();
+			speaker.play(VOICE_GO_HOME_MODE);
+			setFirstTimeGoHomePoint(false);
+		}
+	}
 	return checkEnterExceptionResumeState();
 }
 

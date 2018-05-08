@@ -344,7 +344,8 @@ void CleanModeNav::keyClean(bool state_now, bool state_last)
 
 void CleanModeNav::remoteHome(bool state_now, bool state_last)
 {
-	if (isStateClean() || isStatePause() || isStateSpot() || isStateFollowWall())
+	if (isStateClean() || isStatePause() || isStateSpot() || isStateFollowWall()
+		|| (isStateGoHomePoint() && isFirstTimeGoHomePoint()))
 	{
 		ROS_WARN("%s %d: remote home.", __FUNCTION__, __LINE__);
 		beeper.beepForCommand(VALID);
