@@ -324,7 +324,7 @@ public:
 	bool generatePath(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &targets) override;
 	bool checkTrapped(GridMap &map, const Cell_t &curr_cell) override;
 
-	void genTargets(uint8_t type,float radius, Cells *targets,const Cell_t begincell);
+	void getTargets(uint8_t type,float radius, Cells *targets,const Cell_t begincell);
 	void initVariables(float radius,Cell_t cur_cell);
 
 private:
