@@ -247,3 +247,32 @@ Vector2<double> polarToCartesian(double polar, int i)
 	coordinate_transform(&point.x, &point.y, LIDAR_THETA, LIDAR_OFFSET_X, LIDAR_OFFSET_Y);
 	return point;
 }
+
+Dir_t get_dir(const Cells::iterator& neighbor, const Cells::iterator& curr)
+{
+    get_dir(*neighbor ,*curr);
+}
+Dir_t get_dir(const Cell_t& neighbor, const Cell_t& curr)
+{
+
+	assert(neighbor.x != curr.x || neighbor.y != curr.y);
+
+	if(neighbor.x != curr.x && neighbor.y != curr.y)
+	{
+        if(neighbor.x > curr.x && neighbor.y>curr.y)
+			return MAP_PX_PY;
+		else if(neighbor.x > curr.x && neighbor.y<curr.y)
+			return MAP_PX_NY;
+		else if(neighbor.x < curr.x && neighbor.y>curr.y)
+			return MAP_NX_PY;
+		else if(neighbor.x < curr.x && neighbor.y<curr.y)
+			return MAP_NX_NY;
+	}
+
+
+	if(neighbor.y == curr.y)
+        return neighbor.x  > curr.x ? MAP_POS_X : MAP_NEG_X;
+
+	if (neighbor.x == curr.x)
+		return neighbor.y  > curr.y ? MAP_POS_Y : MAP_NEG_Y;
+}

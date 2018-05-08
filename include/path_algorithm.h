@@ -21,7 +21,7 @@ public:
 
 	virtual bool checkTrapped(GridMap &map, const Cell_t &curr_cell) {return true;};
 
-	Points cells_generate_points(Cells &path);
+	std::unique_ptr<Points> cells_generate_points(const std::unique_ptr<Cells>& path);
 	/*
 	 * @last modify by Austin Liu
 	 *
@@ -65,6 +65,11 @@ public:
 	Cells findShortestPath(GridMap &map, const Cell_t &start,
 							  const Cell_t &target, const Dir_t &last_dir, bool use_unknown,bool bound,Cell_t min_corner ,Cell_t max_corner);
 
+	bool isAccessible(const Cell_t &c_it, const BoundingBox2& bound, GridMap& map);
+
+	using cmp_condition_t = std::function<bool(const Cell_t&)>;
+
+	std::unique_ptr<Cells> shortestPath(const Cell_t &start, const Cell_t& goal, const cmp_condition_t in_search_range, Dir_t dir);
 	bool generateShortestPath(GridMap &map, const Point_t &curr,const Point_t &target, const Dir_t &last_dir, Points &plan_path);
 
 	/*
@@ -73,6 +78,10 @@ public:
 	 */
 	bool isTargetReachable(GridMap map,Cell_t target);
 
+	using cmp_two = std::function<bool(const Cell_t& l, const Cell_t& r)>;
+	using cmp_one = std::function<bool(const Cell_t& cell)>;
+	std::unique_ptr<Cell_t> find_target(const Cell_t &start, cmp_one is_target, cmp_one is_accessible,
+														const cmp_two &cmp_lambda) ;
 	static ACleanMode* p_cm_;
 protected:
 
@@ -176,10 +185,31 @@ public:
 	 *
 	 * @return: Cells path, the path to unclean area in the same lane.
 	 */
-	Cells findTargetInSameLane(GridMap &map, const Cell_t &curr_cell);
-
+#if !USE_NEW_PATH_PLAN
+    bool should_follow_wall(){
+		return (		curr_filter_ == &filter_p0_1t_xp
+						||	curr_filter_ == &filter_p0_1t_xn
+						||	curr_filter_ == &filter_n0_1t_xp
+						||	curr_filter_ == &filter_n0_1t_xn
+						||	curr_filter_ == &filter_p2
+						||	curr_filter_ == &filter_p1
+						||	curr_filter_ == &filter_n2
+						||	curr_filter_ == &filter_n1);
+	};
+    bool is_pox_y(){
+		return curr_filter_->towardPos();
+	};
+#else
+	bool should_follow_wall(){
+		return pt_ == Y_AXIS_POS_NEXT || pt_ == Y_AXIS_NEG_NEXT || pt_ == CURR_LANE || pt_ == CURR_LANE_NEG;
+	};
+    bool is_pox_y(){
+		return pt_ == Y_AXIS_POS_NEXT;
+	};
+#endif
 private:
-
+	using pair_bb = std::tuple<BoundingBox2, BoundingBox2,Dir_t>;
+	std::unique_ptr<pair_bb> generateBounds(GridMap& map, const Cell_t& curr, int bound_i,Dir_t last_dir);
 	/*
 	 * @author Lin Shao Yue
 	 * @last modify by Austin Liu
@@ -240,7 +270,8 @@ private:
 	bool filterPathsToSelectBestPath(GridMap &map, const Cells &targets, const Cell_t &cell_curr, Cells &best_path, const Dir_t &last_dir);
 
 	bool checkTrapped(GridMap &map, const Cell_t &curr_cell) override ;
-
+#if !USE_NEW_PATH_PLAN
+	Cells findTargetInSameLane(GridMap &map, const Cell_t &curr_cell);
 //	RangeFunction range_0_xp = [](Cell_t& curr, Cell_t& min, Cell_t& max){
 //		return BoundingBox2{curr, Cell_t{max.x, curr.y}};
 //	};
@@ -301,6 +332,9 @@ public:
 	BestTargetFilter filter_n_1000t{range_all, 1000,false};
 	BestTargetFilter* curr_filter_{};
 
+#endif
+private:
+	int pt_;
 };
 //
 class WFCleanPathAlgorithm: public APathAlgorithm

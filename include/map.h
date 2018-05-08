@@ -218,8 +218,8 @@ public:
 
 	BoundingBox2 generateBound2()
 	{
-		BoundingBox2 bound{{int16_t(g_x_min - 1), int16_t(g_y_min - 1)}, {g_x_max, g_y_max}};
-		return bound;
+		return BoundingBox2{{int16_t(g_x_min - 1), int16_t(g_y_min - 1)},
+							   {static_cast<int16_t>(g_x_max + 1), static_cast<int16_t>(g_y_max + 1)}};
 	}
 	void getMapRange(uint8_t id, int16_t *x_range_min, int16_t *x_range_max, int16_t *y_range_min, int16_t *y_range_max);
 

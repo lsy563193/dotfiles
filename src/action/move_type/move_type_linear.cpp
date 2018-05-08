@@ -240,8 +240,9 @@ void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 //		ROS_ERROR("%f,%f", std::abs(target_xy - curr_xy),LINEAR_NEAR_DISTANCE);
 		if (std::abs(target_xy - curr_xy) < LINEAR_NEAR_DISTANCE)
 		{
+            beeper.debugBeep(VALID);
 			stop_generate_next_target = true;
-			if(!switchLinearTargetByRecalc(p_clean_mode))
+			if(switchLinearTargetByRecalc(p_clean_mode))
 				stop_generate_next_target = false;
 		}
 	}
@@ -274,10 +275,12 @@ bool MoveTypeLinear::switchLinearTargetByRecalc(ACleanMode *p_clean_mode) {
 					 __FUNCTION__, __LINE__, getPosition().toCell().x, getPosition().toCell().y,
 					 remain_path_.front().toCell().x,remain_path_.front().toCell().y,remain_path_.front().dir,
 					 p_clean_mode->iterate_point_.dir);
+			p_clean_mode->clean_path_algorithm_->displayPointPath(remain_path_);
+			p_clean_mode->clean_path_algorithm_->displayPointPath(p_clean_mode->plan_path_);
 			p_clean_mode->pubCleanMapMarkers(p_clean_mode->clean_map_,
 											 p_clean_mode->pointsGenerateCells(p_clean_mode->plan_path_));
 
-			ROS_ERROR("7777777777777777777777777777777777777777");
+			ROS_ERROR("~~~~~~~~~~~~remain.size(%d)",remain_path_.size());
 			val = true;
 		} else {
 			ROS_ERROR("%s %d: Opposite dir, path.front(%d).curr(,%d)", __FUNCTION__, __LINE__,

@@ -104,7 +104,7 @@ bool GoHomePathAlgorithm::generatePathThroughCleanedArea(GridMap &map, const Poi
 
 		if (!plan_path_cells.empty())
 		{
-			plan_path = cells_generate_points(plan_path_cells);
+			plan_path = *cells_generate_points(make_unique<Cells>(plan_path_cells));
 			ROS_INFO("\033[1;46;37m" "%s,%d: Index(%d), current_home_point_(%d, %d) reachable in this way." "\033[0m",
 					 __FUNCTION__, __LINE__, home_point_index,
 					 current_home_point_.toCell().x, current_home_point_.toCell().y);
@@ -130,7 +130,7 @@ bool GoHomePathAlgorithm::generatePathThroughCleanedArea(GridMap &map, const Poi
 
 		if (!plan_path_cells.empty())
 		{
-			plan_path = cells_generate_points(plan_path_cells);
+			plan_path = *cells_generate_points(make_unique<Cells>(plan_path_cells));
 			ROS_INFO("\033[1;46;37m" "%s,%d: start_point_(%d, %d) reachable in this way." "\033[0m",
 					 __FUNCTION__, __LINE__, p_cm_->start_point_.toCell().x, p_cm_->start_point_.toCell().y);
 			map.print(curr.toCell(), CLEAN_MAP, plan_path_cells);
@@ -177,7 +177,7 @@ bool GoHomePathAlgorithm::generatePathWithSlamMapClearBlocks(GridMap &map, const
 
 		if (!plan_path_cells.empty())
 		{
-			plan_path = cells_generate_points(plan_path_cells);
+			plan_path = *cells_generate_points(make_unique<Cells>(plan_path_cells));
 			ROS_INFO("\033[1;46;37m" "%s,%d: Index(%d), current_home_point_(%d, %d) reachable in this way." "\033[0m",
 					 __FUNCTION__, __LINE__, home_point_index,
 					 current_home_point_.toCell().x, current_home_point_.toCell().y);
@@ -203,7 +203,7 @@ bool GoHomePathAlgorithm::generatePathWithSlamMapClearBlocks(GridMap &map, const
 
 		if (!plan_path_cells.empty())
 		{
-			plan_path = cells_generate_points(plan_path_cells);
+			plan_path = *cells_generate_points(make_unique<Cells>(plan_path_cells));
 			ROS_INFO("\033[1;46;37m" "%s,%d: start_point_(%d, %d) reachable in this way." "\033[0m",
 					 __FUNCTION__, __LINE__, p_cm_->start_point_.toCell().x, p_cm_->start_point_.toCell().y);
 			map.print(curr.toCell(), CLEAN_MAP, plan_path_cells);
@@ -251,7 +251,7 @@ bool GoHomePathAlgorithm::generatePathThroughSlamMapReachableArea(GridMap &map, 
 
 		if (!plan_path_cells.empty())
 		{
-			plan_path = cells_generate_points(plan_path_cells);
+			plan_path = *cells_generate_points(make_unique<Cells>(plan_path_cells));
 			ROS_INFO("\033[1;46;37m" "%s,%d: Index(%d), current_home_point_(%d, %d) reachable in this way." "\033[0m",
 					 __FUNCTION__, __LINE__, home_point_index,
 					 current_home_point_.toCell().x, current_home_point_.toCell().y);
@@ -281,7 +281,7 @@ bool GoHomePathAlgorithm::generatePathThroughSlamMapReachableArea(GridMap &map, 
 
 		if (!plan_path_cells.empty())
 		{
-			plan_path = cells_generate_points(plan_path_cells);
+			plan_path = *cells_generate_points(make_unique<Cells>(plan_path_cells));
 			ROS_INFO("\033[1;46;37m" "%s,%d: start_point_(%d, %d) reachable in this way." "\033[0m",
 					 __FUNCTION__, __LINE__, p_cm_->start_point_.toCell().x, p_cm_->start_point_.toCell().y);
 			map.print(curr.toCell(), CLEAN_MAP, plan_path_cells);
@@ -318,7 +318,7 @@ bool GoHomePathAlgorithm::generatePathThroughUnknownArea(GridMap &map, const Poi
 
 		if (!plan_path_cells.empty())
 		{
-			plan_path = cells_generate_points(plan_path_cells);
+			plan_path = *cells_generate_points(make_unique<Cells>(plan_path_cells));
 			ROS_INFO("\033[1;46;37m" "%s,%d: Index(%d), current_home_point_(%d, %d) reachable in this way." "\033[0m",
 					 __FUNCTION__, __LINE__, home_point_index,
 					 current_home_point_.toCell().x, current_home_point_.toCell().y);
@@ -354,7 +354,7 @@ bool GoHomePathAlgorithm::generatePathThroughUnknownArea(GridMap &map, const Poi
 
 		if (!plan_path_cells.empty())
 		{
-			plan_path = cells_generate_points(plan_path_cells);
+			plan_path = *cells_generate_points(make_unique<Cells>(plan_path_cells));
 			ROS_INFO("\033[1;46;37m" "%s,%d: start_point_(%d, %d) reachable in this way." "\033[0m",
 					 __FUNCTION__, __LINE__, p_cm_->start_point_.toCell().x, p_cm_->start_point_.toCell().y);
 			map.print(curr.toCell(), CLEAN_MAP, plan_path_cells);
