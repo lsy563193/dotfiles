@@ -1757,9 +1757,13 @@ bool Lidar::checkLidarBeCovered() {
 			covered_laser_size++;
 		}
 	}
-//	ROS_INFO("covered_laser_size(%d)", covered_laser_size);
 	if (covered_laser_size > 60) {
 		ROS_ERROR("lidar was covered, covered_laser_size(%d)", covered_laser_size);
+		for (int i = 0; i <= 359; i++) {
+			if (/*tmp_scan_data.ranges[i] < 4 &&*/ tmp_scan_data.ranges[i] < 0.130)
+				printf("scan(%d, %f), ", i, tmp_scan_data.ranges[i]);
+		}
+		printf("\n");
 		return true;
 	}
 	else

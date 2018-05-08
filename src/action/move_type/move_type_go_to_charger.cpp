@@ -16,7 +16,7 @@
 
 MoveTypeGoToCharger::MoveTypeGoToCharger()
 {
-	ROS_INFO("%s,%d: Enter move type go to charger.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s,%d: Enter move type go to charger.", __FUNCTION__, __LINE__);
 	obs.control(OFF);
 	IMovement::sp_mt_ = this;
 	p_gtc_movement_.reset(new MovementGoToCharger());
@@ -27,7 +27,7 @@ MoveTypeGoToCharger::MoveTypeGoToCharger()
 MoveTypeGoToCharger::~MoveTypeGoToCharger()
 {
 	obs.control(ON);
-	ROS_INFO("%s,%d: Exit move type go to charger.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s,%d: Exit move type go to charger.", __FUNCTION__, __LINE__);
 }
 
 bool MoveTypeGoToCharger::isFinish()

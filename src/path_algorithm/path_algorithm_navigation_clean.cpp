@@ -9,6 +9,8 @@
 
 extern int g_follow_last_follow_wall_dir;
 
+#if !USE_NEW_PATH_PLAN
+
 int size_of_path(const Cells &path){
 		int sum=0;
 		for (auto iterator = path.begin(); iterator != path.end()-1; ++iterator) {
@@ -49,74 +51,6 @@ private:
 	Cells tmps_{};
 	Cell_t curr_{};
 };
-
-bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &plan_path)
-{
-	plan_path.clear();
-	auto curr_cell = curr.toCell();
-	ROS_INFO("Step 1: Find possible plan_path in same lane.");
-	Cells path{};
-	map.markRobot(CLEAN_MAP);
-
-	if(curr_cell.y % 2==0) {
-		path = findTargetInSameLane(map, curr_cell);
-		if (!path.empty()) {
-			plan_path = cells_generate_points(path);
-			// Congratulation!! plan_path is generated successfully!!
-			map.print(curr_cell, CLEAN_MAP, path);
-			curr_filter_ = nullptr;
-			return true;
-		}
-	}
-
-	ROS_INFO("Step 2: Find all possible plan_path at the edge of cleaned area and filter plan_path in same lane.");
-	Cells targets{};
-
-	map.find_if(curr_cell, targets,[&](const Cell_t &c_it){
-		return c_it.y%2 == 0 && map.getCell(CLEAN_MAP, c_it.x, c_it.y) == UNCLEAN  && map.isBlockAccessible(c_it.x, c_it.y);
-	},false, false,true);
-
-	std::sort(targets.begin(),targets.end(),[](Cell_t l,Cell_t r){
-		return (l.y < r.y || (l.y == r.y && l.x < r.x));
-	});
-
-	targets = std::for_each(targets.begin(), targets.end(),FilterTarget(curr_cell));
-
-//	displayTargetList(targets);
-//	map.print(CLEAN_MAP, targets);
-//	map.print(CLEAN_MAP, targets);
-
-	if (targets.empty())
-	{
-		map.print(curr.toCell(), CLEAN_MAP, path);
-		map.print(curr.toCell(), COST_MAP, path);
-//		Cell_t target;
-//		int dijkstra_cleaned_count;
-//		if(!findTargetUsingDijkstra(map,getPosition().toCell(),target,dijkstra_cleaned_count))
-		return false;
-//		targets.push_back(target);
-	}
-
-	if (!filterPathsToSelectBestPath(map, targets, curr_cell, path,last_dir))
-		return false;
-	if(path.size() > 4 )
-	{
-		ROS_INFO("Step 5: size_of_path > 4 Optimize path for adjusting it away from obstacles..");
-		optimizePath(map, path);
-	}
-
-	if(curr_filter_ == &filter_p0_1t_xn || curr_filter_ == &filter_p0_1t_xp)
-		path.push_back(Cell_t{path.back().x, static_cast<int16_t>(path.front().y - 2)});//for setting follow wall target line
-	else if(curr_filter_ == &filter_n0_1t_xn || curr_filter_ == &filter_n0_1t_xp)
-		path.push_back(Cell_t{path.back().x, static_cast<int16_t>(path.front().y + 2)});//for setting follow wall target line
-
-	ROS_INFO("Step 6: Fill path with direction.");
-	plan_path = cells_generate_points(path);
-
-	displayCellPath(path);
-	map.print(curr.toCell(), CLEAN_MAP, path);
-	return true;
-}
 
 Cells NavCleanPathAlgorithm::findTargetInSameLane(GridMap &map, const Cell_t &curr_cell)
 {
@@ -334,6 +268,339 @@ bool NavCleanPathAlgorithm::filterPathsToSelectBestPath(GridMap &map, const Cell
 	}
 	return false;
 }
+
+bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &plan_path)
+{
+	plan_path.clear();
+	auto curr_cell = curr.toCell();
+	ROS_INFO("Step 1: Find possible plan_path in same lane.");
+	Cells path{};
+	map.markRobot(CLEAN_MAP);
+
+	if(curr_cell.y % 2==0) {
+		path = findTargetInSameLane(map, curr_cell);
+		if (!path.empty()) {
+			plan_path = *cells_generate_points(make_unique<Cells>(path));
+			// Congratulation!! plan_path is generated successfully!!
+			map.print(curr_cell, CLEAN_MAP, path);
+			curr_filter_ = nullptr;
+			return true;
+		}
+	}
+
+	ROS_INFO("Step 2: Find all possible plan_path at the edge of cleaned area and filter plan_path in same lane.");
+	Cells targets{};
+
+	map.find_if(curr_cell, targets,[&](const Cell_t &c_it){
+		return c_it.y%2 == 0 && map.getCell(CLEAN_MAP, c_it.x, c_it.y) == UNCLEAN  && map.isBlockAccessible(c_it.x, c_it.y);
+	},false, false,true);
+
+	std::sort(targets.begin(),targets.end(),[](Cell_t l,Cell_t r){
+		return (l.y < r.y || (l.y == r.y && l.x < r.x));
+	});
+
+	targets = std::for_each(targets.begin(), targets.end(),FilterTarget(curr_cell));
+
+//	displayTargetList(targets);
+//	map.print(CLEAN_MAP, targets);
+//	map.print(CLEAN_MAP, targets);
+
+	if (targets.empty())
+	{
+		map.print(curr.toCell(), CLEAN_MAP, path);
+		map.print(curr.toCell(), COST_MAP, path);
+//		Cell_t target;
+//		int dijkstra_cleaned_count;
+//		if(!findTargetUsingDijkstra(map,getPosition().toCell(),target,dijkstra_cleaned_count))
+		return false;
+//		targets.push_back(target);
+	}
+
+	if (!filterPathsToSelectBestPath(map, targets, curr_cell, path,last_dir))
+		return false;
+	if(path.size() > 4 )
+	{
+		ROS_INFO("Step 5: size_of_path > 4 Optimize path for adjusting it away from obstacles..");
+		optimizePath(map, path);
+	}
+
+	if(curr_filter_ == &filter_p0_1t_xn || curr_filter_ == &filter_p0_1t_xp)
+		path.push_back(Cell_t{path.back().x, static_cast<int16_t>(path.front().y - 2)});//for setting follow wall target line
+	else if(curr_filter_ == &filter_n0_1t_xn || curr_filter_ == &filter_n0_1t_xp)
+		path.push_back(Cell_t{path.back().x, static_cast<int16_t>(path.front().y + 2)});//for setting follow wall target line
+
+	ROS_INFO("Step 6: Fill path with direction.");
+	plan_path = *cells_generate_points(make_unique<Cells>(path));
+
+	displayCellPath(path);
+	map.print(curr.toCell(), CLEAN_MAP, path);
+	return true;
+}
+#else
+
+class PathPlan{
+public:
+	PathPlan(Dir_t priority_dir,Cell_t& curr):priority_dir_(priority_dir),curr_(curr) {
+
+	};
+    bool operator()(const Cell_t& l, const Cell_t& r) {
+		if(l.y == curr_.y && r.y == curr_.y) {
+			if (isXAxis(priority_dir_)) {
+				if (isPos(priority_dir_))
+					return l.x < r.x;
+				else
+					return l.x > r.x;
+			}
+		}
+		if(l.y == curr_.y && r.y != curr_.y)
+			return false;
+		if(l.y != curr_.y && r.y == curr_.y)
+			return true;
+        else{
+			if(l.y == r.y)
+			{
+				return std::abs(l.x-curr_.x) > std::abs(r.x-curr_.x);
+			}
+            else
+			{
+                if(r.y -curr_.y > 0 && l.y - curr_.y < 0)
+					return true;
+				if(r.y -curr_.y < 0 && l.y - curr_.y > 0)
+					return false;
+				else if(r.y - curr_.y > 0 && l.y - curr_.y > 0)
+				{
+					return std::abs(r.y-curr_.y) < std::abs(l.y-curr_.y);
+				}
+                else/* if(r.y - curr_.y < 0 && l.y - curr_.y < 0)*/
+				{
+					return std::abs(r.y-curr_.y) < std::abs(l.y-curr_.y);
+				}
+			}
+		}
+	}
+
+private:
+    Dir_t priority_dir_;
+	BoundingBox2 bound_;
+	Cell_t curr_;
+//	std::deque<Line> lines;
+};
+
+class IsTarget
+{
+public:
+	IsTarget(const GridMap& map,const BoundingBox2& bound):map_(map),bound_(bound) { };
+    bool operator()(const Cell_t &c_it) {
+		return c_it.y % 2 == 0 && map_.getCell(CLEAN_MAP, c_it.x, c_it.y) == UNCLEAN &&
+			   map_.isBlockAccessible(c_it.x, c_it.y) && bound_.Contains(c_it);
+	}
+
+private:
+	GridMap map_;
+	BoundingBox2 bound_;
+};
+
+void path_crop(std::unique_ptr<Cells> &cells)
+{
+	if(cells->size() >2)
+	{
+        for(auto c_it = cells->begin()+1; c_it != cells->end()-1;)
+		{
+			c_it = (get_dir(c_it , c_it-1) == get_dir(c_it+1 , c_it)) ? cells->erase(c_it) : ++c_it;
+		}
+	}
+}
+//range_type_t path_classity(std::unique_ptr<Cells> &cells, const Cell_t curr)
+//{
+//	auto size = cells->size();
+//	auto dy = cells->back().y - curr.y;
+//	auto dx = cells->back().x - curr.x;
+//    if(size == 2)
+//	{
+//        if(dy == 0)
+//		{
+//			if(dx > 0)
+//            	return range_type_t::X_Y_LANE;
+//			if(dx < 0)
+//				return range_type_t::CURR_LANE;
+//		} else {
+//			if(std::abs(dy <= 2)) {
+//				if (dy > 0)
+//					return range_type_t::Y_AXIS_POS_NEXT;
+//				else
+//					return range_type_t::Y_AXIS_NEG_NEXT;
+//			}
+//		}
+//	}else if (size == 3){
+//        if(dy > 0)
+//		{
+//			if(std::abs(dy <= 2))
+//				return range_type_t::Y_AXIS_POS_NEXT;
+//
+//		}
+//        if(dy < 0)
+//		{
+//			if(std::abs(dy <= 2))
+//				return range_type_t::Y_AXIS_NEG_NEXT;
+//		}
+//	}else
+//	{
+//			return range_type_t::XY_AXIS_ANY;
+//	}
+//}
+
+void path_opt(std::unique_ptr<Cells> &cells, const Cell_t& curr, int pt)
+{
+	if(pt == X_Y_LANE)
+	{
+		if(cells->back().x > curr.x)
+			cells->back().x += 5;
+		else
+			cells->back().x -= 5;
+	} else
+	if(pt == CURR_LANE)
+	{
+        cells->emplace_back(cells->back()+Cell_t{0,-2});//for follow wall target
+	} else
+	if(pt == CURR_LANE_NEG)
+	{
+		cells->emplace_back(cells->back()+Cell_t{0,2});//for follow wall target
+	}
+}
+
+std::unique_ptr<std::tuple<BoundingBox2, BoundingBox2,Dir_t>> NavCleanPathAlgorithm::generateBounds(GridMap& map, const Cell_t& curr, int bound_i,Dir_t last_dir) {
+	BoundingBox2 bound_target;
+	BoundingBox2 bound_valid;
+    Dir_t priority_dir = last_dir;
+	static BoundingBox2 s_bound{};
+
+	Cell_t c_it[2];
+	if (bound_i == 0) {//same lane
+		for (auto i = 0; i < 2; i++) {
+			c_it[i] = curr;
+			for (;; c_it[i] += cell_direction_[i]) {
+                auto tmp = c_it[i] +cell_direction_[i]*2;
+				if (map.cellIsOutOfRange(tmp)  || map.isBlocksAtY(tmp.x, tmp.y))
+					break;
+				if (map.getCell(CLEAN_MAP, c_it[i].x, c_it[i].y) == UNCLEAN)
+					break;
+			}
+//			//optimizePath
+//			if (!map.isBlockAtY(BLOCKED_SLIP, c_it.c_it, c_it.y) &&
+//				!map.isBlockAtY(BLOCKED_TILT, c_it.c_it, c_it.y) &&
+//				!map.isBlockAtY(BLOCKED_RCON, c_it.c_it, c_it.y) &&
+//				c_it[i] != curr_cell) {
+//				c_it[i] += cell_direction_[i] * OVER_CELL_SIZE;
+//			}
+		}
+		s_bound = {c_it[1], c_it[0]};
+        bound_valid = bound_target = s_bound;
+
+		if(!isXAxis(last_dir)) {
+			if (g_follow_last_follow_wall_dir != 0) {
+				ROS_ERROR("%s %d: g_follow_last_follow_wall_dir(%d)", __FUNCTION__, __LINE__,
+						  g_follow_last_follow_wall_dir);
+				if (1 == g_follow_last_follow_wall_dir)
+					priority_dir = MAP_NEG_X;
+				else//(g_follow_last_follow_wall_dir == 2)
+					priority_dir = MAP_POS_X;
+			}
+			auto dir = lidar.compLaneDistance();
+			if (dir != -1) {
+				priority_dir = MAP_POS_X;
+				if (dir == 1)
+					priority_dir = MAP_NEG_X;
+			}
+			g_follow_last_follow_wall_dir = 0;
+		}
+
+	}else if (bound_i == 1) {//same lane front
+		bound_target = {curr,curr};
+		bound_valid = bound_target;
+        if(isXAxis(last_dir)) {
+			if (isPos(last_dir)
+				&& map.getCell(CLEAN_MAP, static_cast<int16_t>(curr.x + 4), static_cast<int16_t>(curr.y)) == UNCLEAN
+				&& map.getCell(CLEAN_MAP, static_cast<int16_t>(curr.x + 4), static_cast<int16_t>(curr.y - 2)) == CLEANED) {
+				bound_target = {curr + Cell_t{3, 0}, curr + Cell_t{5, 0}};
+				bound_valid = {curr - Cell_t{0, 2}, bound_target.max};
+			} else if (!isPos(last_dir)
+					   && map.getCell(CLEAN_MAP, static_cast<int16_t>(curr.x - 4), static_cast<int16_t>(curr.y)) == UNCLEAN
+					   && map.getCell(CLEAN_MAP, static_cast<int16_t>(curr.x - 4), static_cast<int16_t>(curr.y - 2)) == CLEANED) {
+				bound_target = {curr - Cell_t{5, 0}, curr - Cell_t{3, 0}};
+				bound_valid = {bound_target.min - Cell_t{0, 2}, curr};
+			}
+		}
+	} else if (bound_i == 2) {//same lane neg
+		bound_target = {curr,curr};
+		bound_valid = bound_target;
+		if(isXAxis(last_dir)) {
+			if (isPos(last_dir)
+				&& map.getCell(CLEAN_MAP, static_cast<int16_t>(curr.x + 4), static_cast<int16_t>(curr.y)) == UNCLEAN
+				&& map.getCell(CLEAN_MAP, static_cast<int16_t>(curr.x + 4), static_cast<int16_t>(curr.y + 2)) == CLEANED) {
+				bound_target = {curr + Cell_t{3, 0}, curr + Cell_t{5, 0}};
+				bound_valid = {curr, bound_target.max + Cell_t{0, 2}};
+			} else if (!isPos(last_dir)
+					   && map.getCell(CLEAN_MAP, static_cast<int16_t>(curr.x - 4), static_cast<int16_t>(curr.y)) == UNCLEAN
+					   && map.getCell(CLEAN_MAP, static_cast<int16_t>(curr.x - 4), static_cast<int16_t>(curr.y + 2)) == CLEANED) {
+				bound_target = {curr - Cell_t{5, 0}, curr - Cell_t{3, 0}};
+				bound_valid = {bound_target.min, curr + Cell_t{0, 2}};
+			}
+		}
+	}
+	else if(bound_i == 3){//1 pos
+		bound_target = {s_bound.min + Cell_t{0, 2}, s_bound.max + Cell_t{0, 2}};
+		bound_valid = {bound_target.min - Cell_t{0,2}, bound_target.max};
+	}else if (bound_i == 4) {//n pos
+		bound_target = {Cell_t{map.generateBound2().min.x ,curr.y}, map.generateBound2().max};
+		bound_valid = bound_target;
+	}else if (bound_i == 5) {//1 neg
+		bound_target = {s_bound.min + Cell_t{0, -2}, s_bound.max + Cell_t{0, -2}};
+		bound_valid = {bound_target.min, Cell_t{bound_target.max.x, curr.y}};
+	} else if (bound_i == 6) {// n neg
+		bound_target = map.generateBound2();
+		bound_valid = bound_target;
+	}
+	return make_unique<std::tuple<BoundingBox2, BoundingBox2, Dir_t>>(bound_target, bound_valid, priority_dir);
+}
+bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr_p, const Dir_t &last_dir, Points &plan_path)
+{
+	plan_path.clear();
+	auto curr = curr_p.toCell();
+	map.markRobot(CLEAN_MAP);
+	pt_ = X_Y_LANE;
+    std::unique_ptr<Cell_t> target;
+	std::unique_ptr<Cells> cells;
+
+    for(; pt_ < RANGE_END; ++pt_) {
+		BoundingBox2 b1,b2;
+		Dir_t pri_dir;
+		std::tie(b1, b2, pri_dir) = *generateBounds(map, curr, pt_,last_dir);
+		printf("pt_(%d),target bounds(%d,%d, %d,%d) ",pt_, b1.min.x, b1.min.y, b1.max.x, b1.max.y);
+		printf("valid bounds(%d,%d, %d,%d),pri_dir(%d)\n", b2.min.x, b2.min.y, b2.max.x, b2.max.y,pri_dir);
+		target = find_target(curr, IsTarget(map,b2),
+								  std::bind(&APathAlgorithm::isAccessible, this, std::placeholders::_1, b2, map),
+								  PathPlan(last_dir, curr));
+
+		if (target == nullptr)
+			continue;
+
+        printf("find target(%d,%d)!!\n",target->x, target->y);
+		cells = shortestPath(curr, *target, std::bind(&APathAlgorithm::isAccessible, this, std::placeholders::_1, b2, map), pri_dir);
+		break;
+	}
+
+    if(pt_ == RANGE_END)
+		return false;
+	path_crop(cells);
+	printf("target(%d,%d, path_type(%d))\n",target->x, target->y,Y_AXIS_NEG_NEXT);
+	path_opt(cells, curr, pt_);
+    map.print(curr_p.toCell(), CLEAN_MAP, *cells);
+	displayCellPath(*cells);
+	plan_path = *cells_generate_points(cells);
+	return true;
+}
+
+#endif
 
 
 bool NavCleanPathAlgorithm::checkTrapped(GridMap &map, const Cell_t &curr_cell)

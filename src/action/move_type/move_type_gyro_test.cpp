@@ -21,7 +21,7 @@ int16_t angle_list[4] = {-86, -176, 94, 4};
 
 MoveTypeGyroTest::MoveTypeGyroTest()
 {
-	ROS_INFO("%s,%d: Enter move type gyro test.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s,%d: Enter move type gyro test.", __FUNCTION__, __LINE__);
 
 	auto gyro_test_routine = new boost::thread(boost::bind(&MoveTypeGyroTest::gyroTestRoutineThread, this));
 
@@ -32,7 +32,7 @@ MoveTypeGyroTest::MoveTypeGyroTest()
 
 MoveTypeGyroTest::~MoveTypeGyroTest()
 {
-	ROS_INFO("%s,%d: Exit move type gyro test.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s,%d: Exit move type gyro test.", __FUNCTION__, __LINE__);
 }
 
 void MoveTypeGyroTest::gyroTestRoutineThread()
@@ -187,7 +187,7 @@ void MoveTypeGyroTest::run()
 				ROS_INFO("%s %d: gyro_diff:%f(%f in angle).", __FUNCTION__, __LINE__, degree_to_radian(gyro_diff), gyro_diff);
 
 				auto diff = fabs(ranged_degree(wheel_turn_angle_ - gyro_diff));
-				ROS_INFO("%s %d: diff = %f", __FUNCTION__, __LINE__, diff);
+				ROS_WARN("%s %d: diff = %f", __FUNCTION__, __LINE__, diff);
 				if (diff > 6)
 				{
 					error_code_ = GYRO_ERROR;
@@ -245,7 +245,7 @@ void MoveTypeGyroTest::run()
 		}
 		default: // For finish.
 		{
-			ROS_INFO("%s %d: Test finish.", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Test finish.", __FUNCTION__, __LINE__);
 			key_led.setMode(LED_STEADY, LED_GREEN);
 			infrared_display.displayNormalMsg(0, 9999);
 			speaker.play(VOICE_TEST_SUCCESS);

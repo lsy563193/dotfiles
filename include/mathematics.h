@@ -325,18 +325,27 @@ double radian_to_degree(double rad);
    */
 typedef Vector2<int16_t> Cell_t;
 typedef std::deque<Cell_t> Cells;
-
 typedef enum {
 	MAP_POS_X = 0,
-//  const double MAP_NS_PY = PI*3/4;
 	MAP_NEG_X,
-//  const double MAP_PX_PY = PI/4;
 	MAP_POS_Y,
-//  const double MAP_NX_NY =-PI*3/4;
 	MAP_NEG_Y,
-//MAP_PX_NY =-PI/4;
+    MAP_PX_PY = 4,
+    MAP_PX_NY = 5,
+    MAP_NX_PY = 6,
+    MAP_NX_NY = 7,
 	MAP_ANY,
 } Dir_t;
+enum {
+	X_Y_LANE=0,
+	CURR_LANE,
+    CURR_LANE_NEG,
+    Y_AXIS_POS_NEXT,
+    Y_AXIS_POS,
+    Y_AXIS_NEG_NEXT,
+	XY_AXIS_ANY,
+    RANGE_END,
+};
 
 class Point_t:public Vector2<float> {
 public:
@@ -594,4 +603,28 @@ bool unsigned_long_to_hex_string(unsigned long number, char *str, const int len)
 
 Vector2<double> polarToCartesian(double polar, int i);
 
+
+class CellEqual
+{
+public:
+	CellEqual(const Cell_t& cell):cell_(cell){ };
+	bool operator()(const std::pair<Cell_t, int> & c_it)
+	{
+		return cell_ == c_it.first;
+	}
+	bool operator()(const Cell_t& c_it)
+	{
+		return cell_ == c_it;
+	}
+private:
+	Cell_t cell_;
+};
+
+Dir_t get_dir(const Cells::iterator& neighbor, const Cells::iterator& curr);
+Dir_t get_dir(const Cell_t& neighbor, const Cell_t& curr);
+template<typename T, typename... Args>
+std::unique_ptr<T> make_unique(Args&&... args)
+{
+    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+}
 #endif

@@ -17,7 +17,7 @@
 int CleanModeNav::align_count_ = 0;
 CleanModeNav::CleanModeNav()
 {
-	ROS_INFO("%s %d: Entering Navigation mode\n=========================" , __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Entering Navigation mode\n=========================" , __FUNCTION__, __LINE__);
 
 	if(plan_activation_)
 	{
@@ -47,6 +47,7 @@ CleanModeNav::~CleanModeNav()
 {
 	s_wifi.clearMapCache();
 	charger.enterNavFromChargeMode(false);
+	ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);
 }
 
 bool CleanModeNav::mapMark()
@@ -702,18 +703,9 @@ bool CleanModeNav::updateActionInStateClean(){
 		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
 		auto npa = boost::dynamic_pointer_cast<NavCleanPathAlgorithm>(clean_path_algorithm_);
 
-//		ROS_WARN("!!!!!!!!!!!!!!!!!!!!!!!!should_follow_wall(%d)",should_follow_wall);
-		if ( old_dir_ != MAP_ANY && should_follow_wall &&
-						(		npa->curr_filter_ == &npa->filter_p0_1t_xp
-						||	npa->curr_filter_ == &npa->filter_p0_1t_xn
-						||	npa->curr_filter_ == &npa->filter_n0_1t_xp
-						||	npa->curr_filter_ == &npa->filter_n0_1t_xn
-						||	npa->curr_filter_ == &npa->filter_p2
-						||	npa->curr_filter_ == &npa->filter_p1
-						||	npa->curr_filter_ == &npa->filter_n2
-						||	npa->curr_filter_ == &npa->filter_n1))
+		if ( old_dir_ != MAP_ANY && should_follow_wall && npa->should_follow_wall() )
 		{
-				auto toward_pos = isXAxis(old_dir_) ? npa->curr_filter_->towardPos(): (iterate_point_.toCell().x - plan_path_.back().toCell().x) > 0;
+				auto toward_pos = isXAxis(old_dir_) ? npa->is_pox_y(): (iterate_point_.toCell().x - plan_path_.back().toCell().x) > 0;
 				bool is_left = isPos(old_dir_) ^ toward_pos;
 				action_i_ = is_left ? ac_follow_wall_left : ac_follow_wall_right;
 		}

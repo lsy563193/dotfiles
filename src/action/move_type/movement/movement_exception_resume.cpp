@@ -14,7 +14,7 @@ double MovementExceptionResume::slip_start_turn_time_ = 0;
 bool MovementExceptionResume::is_slip_last_turn_left_ = false;
 MovementExceptionResume::MovementExceptionResume()
 {
-	ROS_INFO("%s %d: Entering movement exception resume.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Entering movement exception resume.", __FUNCTION__, __LINE__);
 
 	// Save current position for moving back detection.
 	s_pos_x = odom.getOriginX();
@@ -39,7 +39,7 @@ MovementExceptionResume::MovementExceptionResume()
 
 MovementExceptionResume::~MovementExceptionResume()
 {
-	ROS_INFO("%s %d: Exiting movement exception resume.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Exiting movement exception resume.", __FUNCTION__, __LINE__);
 }
 
 void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
@@ -242,7 +242,7 @@ bool MovementExceptionResume::isFinish()
 		  || ev.oc_vacuum || ev.lidar_stuck || ev.robot_stuck || ev.oc_brush_main || ev.robot_slip || ev.gyro_error
 			|| sp_mt_->sp_mode_->is_wheel_cliff_triggered))
 	{
-		ROS_INFO("%s %d: All exception cleared.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: All exception cleared.", __FUNCTION__, __LINE__);
 		return true;
 	}
 
@@ -264,11 +264,11 @@ bool MovementExceptionResume::isFinish()
 					vacuum.stop();
 					if (ev.oc_wheel_left)
 					{
-						ROS_WARN("%s,%d Left wheel stall maybe, please check!!\n", __FUNCTION__, __LINE__);
+						ROS_ERROR("%s,%d Left wheel stall maybe, please check!!\n", __FUNCTION__, __LINE__);
 						error.set(ERROR_CODE_LEFTWHEEL);
 					} else
 					{
-						ROS_WARN("%s,%d Right wheel stall maybe, please check!!\n", __FUNCTION__, __LINE__);
+						ROS_ERROR("%s,%d Right wheel stall maybe, please check!!\n", __FUNCTION__, __LINE__);
 						error.set(ERROR_CODE_RIGHTWHEEL);
 					}
 					ev.fatal_quit = true;
@@ -278,7 +278,7 @@ bool MovementExceptionResume::isFinish()
 				{
 					resume_wheel_start_time_ = time(NULL);
 					wheel_resume_cnt_++;
-					ROS_WARN("%s %d: Failed to resume for %d times.", __FUNCTION__, __LINE__, wheel_resume_cnt_);
+					ROS_INFO("%s %d: Failed to resume for %d times.", __FUNCTION__, __LINE__, wheel_resume_cnt_);
 				}
 			}
 			else
@@ -323,7 +323,7 @@ bool MovementExceptionResume::isFinish()
 					{
 						if (!brush.getMainOc())
 						{
-							ROS_INFO("%s %d: main brush over current resume succeeded!", __FUNCTION__, __LINE__);
+							ROS_WARN("%s %d: main brush over current resume succeeded!", __FUNCTION__, __LINE__);
 							brush.normalOperate();
 							ev.oc_brush_main = false;
 						}
@@ -342,7 +342,7 @@ bool MovementExceptionResume::isFinish()
 		}
 		else
 		{
-			ROS_WARN("%s %d: Main brush stuck.", __FUNCTION__, __LINE__);
+			ROS_ERROR("%s %d: Main brush stuck.", __FUNCTION__, __LINE__);
 			ev.oc_brush_main = false;
 			ev.fatal_quit = true;
 			error.set(ERROR_CODE_MAINBRUSH);
@@ -352,7 +352,7 @@ bool MovementExceptionResume::isFinish()
 	{
 		if (!lidar.isRobotSlip())
 		{
-			ROS_INFO("%s %d: Cliff resume succeeded.", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Cliff resume succeeded.", __FUNCTION__, __LINE__);
 			ev.robot_slip = false;
 			ev.robot_stuck = false;
 		}
@@ -363,14 +363,14 @@ bool MovementExceptionResume::isFinish()
 			{
 				wheel.stop();
 				robot_stuck_resume_cnt_++;
-				ROS_WARN("%s %d: Try robot stuck resume for the %d time.", __FUNCTION__, __LINE__, robot_stuck_resume_cnt_);
+				ROS_INFO("%s %d: Try robot stuck resume for the %d time.", __FUNCTION__, __LINE__, robot_stuck_resume_cnt_);
 				s_pos_x = odom.getOriginX();
 				s_pos_y = odom.getOriginY();
 			}
 		}
 		else
 		{
-			ROS_WARN("%s %d: Robot stuck.", __FUNCTION__, __LINE__);
+			ROS_ERROR("%s %d: Robot stuck.", __FUNCTION__, __LINE__);
 			ev.fatal_quit = true;
 			error.set(ERROR_CODE_STUCK);
 		}
@@ -384,7 +384,7 @@ bool MovementExceptionResume::isFinish()
 		}
 		if (cliff.getStatus() != BLOCK_ALL)
 		{
-			ROS_INFO("%s %d: Cliff all resume succeeded.", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Cliff all resume succeeded.", __FUNCTION__, __LINE__);
 			ev.cliff_all_triggered = false;
 			ev.cliff_triggered = 0;
 			g_cliff_cnt = 0;
@@ -397,7 +397,7 @@ bool MovementExceptionResume::isFinish()
 				wheel.stop();
 				cliff_all_resume_cnt_++;
 				if (cliff_all_resume_cnt_ <= 2)
-					ROS_WARN("%s %d: Resume failed, try cliff all resume for the %d time.",
+					ROS_INFO("%s %d: Resume failed, try cliff all resume for the %d time.",
 							 __FUNCTION__, __LINE__, cliff_all_resume_cnt_);
 				s_pos_x = odom.getOriginX();
 				s_pos_y = odom.getOriginY();
@@ -405,7 +405,7 @@ bool MovementExceptionResume::isFinish()
 		}
 		else
 		{
-			ROS_WARN("%s %d: Cliff all triggered.", __FUNCTION__, __LINE__);
+			ROS_ERROR("%s %d: Cliff all triggered.", __FUNCTION__, __LINE__);
 			ev.fatal_quit = true;
 		}
 	}
@@ -413,7 +413,7 @@ bool MovementExceptionResume::isFinish()
 	{
 		if (!cliff.getStatus())
 		{
-			ROS_INFO("%s %d: Cliff resume succeeded.", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Cliff resume succeeded.", __FUNCTION__, __LINE__);
 			ev.cliff_jam = false;
 			ev.cliff_triggered = 0;
 			g_cliff_cnt = 0;
@@ -426,7 +426,7 @@ bool MovementExceptionResume::isFinish()
 				wheel.stop();
 				cliff_resume_cnt_++;
 				if (cliff_resume_cnt_ <= 5)
-					ROS_WARN("%s %d: Resume failed, try cliff resume for the %d time.",
+					ROS_INFO("%s %d: Resume failed, try cliff resume for the %d time.",
 							 __FUNCTION__, __LINE__, cliff_resume_cnt_);
 				s_pos_x = odom.getOriginX();
 				s_pos_y = odom.getOriginY();
@@ -434,7 +434,7 @@ bool MovementExceptionResume::isFinish()
 		}
 		else
 		{
-			ROS_WARN("%s %d: Cliff jamed.", __FUNCTION__, __LINE__);
+			ROS_ERROR("%s %d: Cliff jamed.", __FUNCTION__, __LINE__);
 			ev.fatal_quit = true;
 			error.set(ERROR_CODE_CLIFF);
 		}
@@ -451,7 +451,7 @@ bool MovementExceptionResume::isFinish()
 		//bumper temporary
 		if(!wheel.getLeftWheelCliffStatus() && !wheel.getRightWheelCliffStatus())//for checking wheel cliff is still tirggered
 		{
-			ROS_INFO("%s %d: wheel cliff resume succeeded.", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: wheel cliff resume succeeded.", __FUNCTION__, __LINE__);
 			sp_mt_->sp_mode_->is_wheel_cliff_triggered = false;
 			ev.right_wheel_cliff = false;
 			ev.left_wheel_cliff = false;
@@ -474,12 +474,12 @@ bool MovementExceptionResume::isFinish()
 						if (left_wheel_and_cliff || right_wheel_and_cliff)
 						{
 							wheel_cliff_state_++;
-							ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state_);
+							ROS_INFO("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state_);
 							if (wheel_cliff_state_ == 4)
 								wheel_cliff_state_ = 7;
 						} else
 						{
-							ROS_WARN("%s %d: Triggered cliff jam during resuming wheel cliff.", __FUNCTION__, __LINE__);
+							ROS_INFO("%s %d: Triggered cliff jam during resuming wheel cliff.", __FUNCTION__, __LINE__);
 							wheel_cliff_state_ = 4;
 							wheel_resume_cnt_ = 0;
 							g_cliff_cnt = 0;
@@ -500,10 +500,10 @@ bool MovementExceptionResume::isFinish()
 						if (left_wheel_and_cliff || right_wheel_and_cliff)
 						{
 							wheel_cliff_state_ = 1;
-							ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state_);
+							ROS_INFO("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state_);
 						} else
 						{
-							ROS_WARN("%s %d: Triggered cliff jam during resuming wheel cliff.", __FUNCTION__, __LINE__);
+							ROS_INFO("%s %d: Triggered cliff jam during resuming wheel cliff.", __FUNCTION__, __LINE__);
 							wheel_cliff_state_ = left_wheel_and_cliff ? 5 : 6;
 							wheel_resume_cnt_ = 0;
 							wheel_cliff_resume_start_radian_ = odom.getRadian();
@@ -534,7 +534,7 @@ bool MovementExceptionResume::isFinish()
 				}
 				default: //case 7:
 				{
-					ROS_WARN("%s %d: Wheel cliff jamed.", __FUNCTION__, __LINE__);
+					ROS_ERROR("%s %d: Wheel cliff jamed.", __FUNCTION__, __LINE__);
 					ev.fatal_quit = true;
 					error.set(ERROR_CODE_CLIFF);
 					break;
@@ -546,7 +546,7 @@ bool MovementExceptionResume::isFinish()
 	{
 		if (bumper.getStatus() != BLOCK_LEFT && bumper.getStatus() != BLOCK_RIGHT && bumper.getStatus() != BLOCK_ALL)
 		{
-			ROS_INFO("%s %d: Bumper resume succeeded.", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Bumper resume succeeded.", __FUNCTION__, __LINE__);
 			ev.bumper_jam = false;
 			ev.bumper_triggered = 0;
 			g_bumper_cnt = 0;
@@ -574,7 +574,7 @@ bool MovementExceptionResume::isFinish()
 						} else
 						{
 							bumper_jam_state_++;
-							ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state_);
+							ROS_INFO("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state_);
 							if (bumper_jam_state_ == 4)
 								bumper_resume_start_radian_ = odom.getRadian();
 						}
@@ -600,13 +600,13 @@ bool MovementExceptionResume::isFinish()
 					{
 						bumper_jam_state_++;
 						bumper_resume_start_radian_ = odom.getRadian();
-						ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state_);
+						ROS_INFO("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state_);
 					}
 					break;
 				}
 				default: //case 6:
 				{
-					ROS_WARN("%s %d: Bumper jamed.", __FUNCTION__, __LINE__);
+					ROS_ERROR("%s %d: Bumper jamed.", __FUNCTION__, __LINE__);
 					ev.fatal_quit = true;
 					error.set(ERROR_CODE_BUMPER);
 					break;
@@ -618,7 +618,7 @@ bool MovementExceptionResume::isFinish()
 	{
 		if (bumper.getStatus() != BLOCK_LIDAR_BUMPER)
 		{
-			ROS_INFO("%s %d: Bumper resume succeeded.", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Bumper resume succeeded.", __FUNCTION__, __LINE__);
 			ev.lidar_bumper_jam = false;
 			ev.bumper_triggered = 0;
 			g_bumper_cnt = 0;
@@ -646,7 +646,7 @@ bool MovementExceptionResume::isFinish()
 						} else
 						{
 							lidar_bumper_jam_state_++;
-							ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state_);
+							ROS_INFO("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state_);
 							if (lidar_bumper_jam_state_ == 4)
 								bumper_resume_start_radian_ = odom.getRadian();
 						}
@@ -672,13 +672,13 @@ bool MovementExceptionResume::isFinish()
 					{
 						lidar_bumper_jam_state_++;
 						bumper_resume_start_radian_ = odom.getRadian();
-						ROS_WARN("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state_);
+						ROS_INFO("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state_);
 					}
 					break;
 				}
 				default: //case 6:
 				{
-					ROS_WARN("%s %d: Lidar Bumper jamed.", __FUNCTION__, __LINE__);
+					ROS_ERROR("%s %d: Lidar Bumper jamed.", __FUNCTION__, __LINE__);
 					ev.fatal_quit = true;
 					error.set(ERROR_CODE_LIDAR);
 					break;
@@ -690,9 +690,9 @@ bool MovementExceptionResume::isFinish()
 	{
 		if (!gyro.getTiltCheckingStatus())
 		{
-			ROS_INFO("%s %d: Tilt resume succeeded.", __FUNCTION__, __LINE__);
+			ROS_ERROR("%s %d: Tilt resume succeeded.", __FUNCTION__, __LINE__);
 			ev.tilt_jam = false;
-			ev.tilt_triggered = 0;
+			ev.tilt_triggered = false;
 		}
 		else
 		{
@@ -717,7 +717,7 @@ bool MovementExceptionResume::isFinish()
 						} else
 						{
 							tilt_jam_state_++;
-							ROS_WARN("%s %d: Try tilt resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state_);
+							ROS_INFO("%s %d: Try tilt resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state_);
 							if (tilt_jam_state_ == 4)
 								tilt_resume_start_radian_ = odom.getRadian();
 						}
@@ -743,13 +743,13 @@ bool MovementExceptionResume::isFinish()
 					{
 						tilt_jam_state_++;
 						tilt_resume_start_radian_ = odom.getRadian();
-						ROS_WARN("%s %d: Try tilt resume state %d.", __FUNCTION__, __LINE__, tilt_jam_state_);
+						ROS_INFO("%s %d: Try tilt resume state %d.", __FUNCTION__, __LINE__, tilt_jam_state_);
 					}
 					break;
 				}
 				default: //case 6:
 				{
-					ROS_WARN("%s %d: Tilt jamed.", __FUNCTION__, __LINE__);
+					ROS_ERROR("%s %d: Tilt jamed.", __FUNCTION__, __LINE__);
 					ev.fatal_quit = true;
 					error.set(ERROR_CODE_STUCK);
 					break;
@@ -761,13 +761,13 @@ bool MovementExceptionResume::isFinish()
 	{
 		if (!vacuum.getOc())
 		{
-			ROS_INFO("%s %d: Vacuum over current resume succeeded!", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Vacuum over current resume succeeded!", __FUNCTION__, __LINE__);
 			vacuum.resetExceptionResume();
 			ev.oc_vacuum = false;
 		}
 		else if (ros::Time::now().toSec() - resume_vacuum_start_time_ > 10)
 		{
-			ROS_WARN("%s %d: Vacuum resume failed..", __FUNCTION__, __LINE__);
+			ROS_ERROR("%s %d: Vacuum resume failed..", __FUNCTION__, __LINE__);
 			ev.oc_vacuum = false;
 			ev.fatal_quit = true;
 			vacuum.resetExceptionResume();
@@ -843,7 +843,7 @@ bool MovementExceptionResume::isFinish()
 				wheel.stop();
 				lidar_resume_cnt_++;
 				if (lidar_resume_cnt_ <= 5)
-					ROS_WARN("%s %d: Resume failed, try lidar resume for the %d time.",
+					ROS_INFO("%s %d: Resume failed, try lidar resume for the %d time.",
 									 __FUNCTION__, __LINE__, lidar_resume_cnt_);
 				s_pos_x = odom.getOriginX();
 				s_pos_y = odom.getOriginY();
@@ -855,7 +855,7 @@ bool MovementExceptionResume::isFinish()
 		}
 		else
 		{
-			ROS_WARN("%s %d: lidar jamed.", __FUNCTION__, __LINE__);
+			ROS_ERROR("%s %d: lidar jamed.", __FUNCTION__, __LINE__);
 			ev.fatal_quit = true;
 			error.set(ERROR_CODE_LIDAR);
 		}
@@ -878,7 +878,7 @@ bool MovementExceptionResume::isFinish()
 
 			if (p_action_open_gyro_->isFinish())
 			{
-				ROS_INFO("%s, %d: Gyro resume success", __FUNCTION__, __LINE__);
+				ROS_WARN("%s, %d: Gyro resume success", __FUNCTION__, __LINE__);
 				ev.gyro_error = false;
 				delete p_action_open_gyro_;
 				return true;
@@ -888,7 +888,7 @@ bool MovementExceptionResume::isFinish()
 		}
 		if(ros::Time::now().toSec() - resume_gyro_start_time_ > 30)
 		{
-			ROS_INFO("%s, %d: Gyro resume fail!", __FUNCTION__, __LINE__);
+			ROS_ERROR("%s, %d: Gyro resume fail!", __FUNCTION__, __LINE__);
 			ev.fatal_quit = true;
 			ev.gyro_error = false;
 			error.set(ERROR_CODE_GYRO);

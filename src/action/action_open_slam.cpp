@@ -8,7 +8,7 @@
 #include "action.hpp"
 
 ActionOpenSlam::ActionOpenSlam() {
-	ROS_INFO("%s %d: Enter action open slam.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Enter action open slam.", __FUNCTION__, __LINE__);
 	robot::instance()->setTfReady(false);
 }
 

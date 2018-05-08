@@ -20,7 +20,7 @@ MovementTurn::MovementTurn(double radian, uint8_t max_speed) : speed_(ROTATE_LOW
 	auto diff = ranged_radian(target_radian_ - odom.getRadian());
 	auto isUseTimeOut = (sp_mt_->sp_mode_->mode_i_ != sp_mt_->sp_mode_->md_go_to_charger) && (sp_mt_->sp_mode_->mode_i_ != sp_mt_->sp_mode_->md_remote);
 	timeout_interval_ = isUseTimeOut ? 10 : 100;
-	ROS_INFO("%s, %d: MovementTurn init, target_radian_: \033[32m%.1f (in degree)\033[0m, current radian: \033[32m%.1f (in degree)\033[0m, timeout:(%.2f)s."
+	ROS_WARN("%s, %d: MovementTurn init, target_radian_: \033[32m%.1f (in degree)\033[0m, current radian: \033[32m%.1f (in degree)\033[0m, timeout:(%.2f)s."
 			, __FUNCTION__, __LINE__, radian_to_degree(ranged_radian(target_radian_)), radian_to_degree(getPosition().th), timeout_interval_);
 }
 
@@ -29,7 +29,7 @@ bool MovementTurn::isReach()
 //	ROS_WARN("%s, %d: MovementTurn finish, target_radian_: \033[32m%f (in degree)\033[0m, current radian: \033[32m%f (in degree)\033[0m."
 //	, __FUNCTION__, __LINE__, radian_to_degree(ranged_radian(target_radian_)), radian_to_degree(odom.getRadian()));
 	if (std::abs(ranged_radian(odom.getRadian() - target_radian_)) < accurate_){
-		ROS_INFO("%s, %d: MovementTurn finish, target_radian_: \033[32m%f (in degree)\033[0m, current radian: \033[32m%f (in degree)\033[0m."
+		ROS_WARN("%s, %d: MovementTurn finish, target_radian_: \033[32m%f (in degree)\033[0m, current radian: \033[32m%f (in degree)\033[0m."
 		, __FUNCTION__, __LINE__, radian_to_degree(ranged_radian(target_radian_)), radian_to_degree(odom.getRadian()));
 		return true;
 	}

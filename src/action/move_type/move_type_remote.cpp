@@ -9,14 +9,14 @@
 
 MoveTypeRemote::MoveTypeRemote()
 {
-	ROS_INFO("%s,%d: Enter move type remote.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s,%d: Enter move type remote.", __FUNCTION__, __LINE__);
 	movement_i_ = mm_stay;
 	p_movement_.reset(new MovementStayRemote(15));
 }
 
 MoveTypeRemote::~MoveTypeRemote()
 {
-	ROS_INFO("%s,%d: Exit move type remote.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s,%d: Exit move type remote.", __FUNCTION__, __LINE__);
 }
 
 bool MoveTypeRemote::isFinish()

@@ -7,7 +7,7 @@
 
 MovementCharge::MovementCharge()
 {
-	ROS_INFO("%s %d: Start charge action. Battery voltage \033[32m%5.2f V\033[0m.", __FUNCTION__, __LINE__, (float)battery.getVoltage()/100.0);
+	ROS_WARN("%s %d: Start charge action. Battery voltage \033[32m%5.2f V\033[0m.", __FUNCTION__, __LINE__, (float)battery.getVoltage()/100.0);
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
@@ -40,7 +40,7 @@ MovementCharge::~MovementCharge()
 	wheel.stop();
 	charger.setStop();
 	obs.control(ON);
-	ROS_INFO("%s %d: End movement charge.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: End movement charge.", __FUNCTION__, __LINE__);
 }
 
 bool MovementCharge::isFinish()
@@ -65,7 +65,7 @@ bool MovementCharge::isFinish()
 				turn_for_charger_ = true;
 				start_turning_time_stamp_ = ros::Time::now().toSec();
 				turn_right_finish_ = false;
-				ROS_INFO("%s %d: Start turn for charger.", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: Start turn for charger.", __FUNCTION__, __LINE__);
 			}
 		}
 
@@ -129,7 +129,7 @@ void MovementCharge::run()
 	// Debug for charge info
 	if (time(NULL) - show_battery_info_time_stamp_ > 5)
 	{
-		ROS_INFO("%s %d: battery voltage \033[32m%5.2f V\033[0m.", __FUNCTION__, __LINE__, (float)battery.getVoltage()/100.0);
+		ROS_WARN("%s %d: battery voltage \033[32m%5.2f V\033[0m.", __FUNCTION__, __LINE__, (float)battery.getVoltage()/100.0);
 		show_battery_info_time_stamp_ = time(NULL);
 	}
 

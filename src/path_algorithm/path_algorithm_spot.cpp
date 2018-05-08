@@ -29,7 +29,7 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, con
 	if(!ev.bumper_triggered && !ev.cliff_triggered && !ev.rcon_status){
 		if(!spot_running_){
 			spot_running_ = true;
-			plan_path = cells_generate_points(targets_cells_);
+			plan_path = *cells_generate_points(make_unique<Cells>(targets_cells_));
 			ROS_INFO("targets size %lu",plan_path.size());
 			return true;
 		}
@@ -60,7 +60,7 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, con
 
 					auto shortest_path_cells = findShortestPath(map,cur.toCell(),next_point.toCell(),last_dir,true,true,min_corner_,max_corner_);
 					if(!shortest_path_cells.empty())
-						shortest_path = cells_generate_points(shortest_path_cells);
+						plan_path = *cells_generate_points(make_unique<Cells>(shortest_path_cells));
 					else
 						continue;
 				}
@@ -108,7 +108,7 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, con
 						auto shortest_path_cells = findShortestPath(map, cur.toCell(), next_point.toCell(), next_dir, true, true, min_corner_, max_corner_);
 
 						if(!shortest_path_cells.empty())
-							shortest_path = cells_generate_points(shortest_path_cells);
+							shortest_path = *cells_generate_points(make_unique<Cells>(shortest_path_cells));
 						else
 							continue;
 					}
@@ -148,7 +148,7 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, con
 	if(!ev.bumper_triggered && !ev.cliff_triggered && !ev.rcon_status && !ev.lidar_triggered){
 		if(!spot_running_){
 			spot_running_ = true;
-			plan_path = cells_generate_points(targets_cells_);
+			plan_path = *cells_generate_points(make_unique<Cells>(targets_cells_));
 			ROS_INFO("%s,%d ,targets size %lu",__FUNCTION__,__LINE__,plan_path.size());
 			return true;
 		}

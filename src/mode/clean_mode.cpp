@@ -22,6 +22,7 @@ bool ACleanMode::plan_activation_={};
 
 ACleanMode::ACleanMode()
 {
+	system("turbo_cpu.sh");
 	lidar.init();
 	scanLinear_sub_ = clean_nh_.subscribe("scanLinear", 1, &Lidar::scanLinearCb, &lidar);
 	scanCompensate_sub_ = clean_nh_.subscribe("scanCompensate", 1, &Lidar::scanCompensateCb, &lidar);
@@ -157,7 +158,7 @@ ACleanMode::~ACleanMode()
 	}
 	auto cleaned_count = clean_map_.getCleanedArea();
 	auto map_area = cleaned_count * CELL_SIZE * CELL_SIZE;
-	ROS_INFO("%s %d: Cleaned area = \033[32m%.2fm2\033[0m, cleaning time: \033[32m%d(s) %.2f(min)\033[0m, cleaning speed: \033[32m%.2f(m2/min)\033[0m.",
+	ROS_WARN("%s %d: Cleaned area = \033[32m%.2fm2\033[0m, cleaning time: \033[32m%d(s) %.2f(min)\033[0m, cleaning speed: \033[32m%.2f(m2/min)\033[0m.",
 			 __FUNCTION__, __LINE__, map_area, robot_timer.getWorkTime(),
 			 static_cast<float>(robot_timer.getWorkTime()) / 60, map_area / (static_cast<float>(robot_timer.getWorkTime()) / 60));
 	brush.updateSideBrushTime(robot_timer.getWorkTime());
@@ -187,13 +188,15 @@ ACleanMode::~ACleanMode()
 
 void ACleanMode::saveBlock(int block, int dir, std::function<Cells()> get_list)
 {
-	printf("curr(%d,%d),block(%d):", getPosition().toCell().x, getPosition().toCell().y, block);
+	ROS_INFO("curr(%d,%d),block(%d):", getPosition().toCell().x, getPosition().toCell().y, block);
+	std::string debug_str;
 	for(auto& d_cell : get_list())
 	{
 		Cell_t cell;
 //		if(dir == MAP_ANY)
 			cell = getPosition().getCenterRelative(d_cell.x * CELL_SIZE, d_cell.y * CELL_SIZE).toCell();
-		printf("{%d,%d}->{%d,%d}\n", d_cell.x, d_cell.y, cell.x, cell.y);
+		debug_str += "{" + std::to_string(d_cell.x) + "," + std::to_string(d_cell.y) + "}->{" +
+				std::to_string(d_cell.x) + "," + std::to_string(d_cell.y) + "}\n";
 //		else {
 //			auto x = d_cell * cell_direction_[dir].x;
 //			auto y = d_cell * cell_direction_[(dir+2)%4].y;
@@ -201,7 +204,7 @@ void ACleanMode::saveBlock(int block, int dir, std::function<Cells()> get_list)
 //		}
 		c_blocks.insert({block, cell});
 	}
-	printf("\n");
+	ROS_INFO("%s", debug_str.c_str());
 }
 
 void ACleanMode::saveBlocks() {
