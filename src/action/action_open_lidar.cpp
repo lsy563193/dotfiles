@@ -6,7 +6,7 @@
 
 ActionOpenLidar::ActionOpenLidar()
 {
-	ROS_INFO("%s %d: Enter action open lidar.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Enter action open lidar.", __FUNCTION__, __LINE__);
 	wheel.stop();
 
 	lidar.motorCtrl(ON);
@@ -19,7 +19,7 @@ ActionOpenLidar::ActionOpenLidar()
 bool ActionOpenLidar::isFinish(){
 	if (lidar.isScanOriginalReady() == 1)
 	{
-		ROS_INFO("%s %d: Action open lidar succeed.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Action open lidar succeed.", __FUNCTION__, __LINE__);
 		lidar.setLidarStuckCheckingEnable(true);
 		return true;
 	}

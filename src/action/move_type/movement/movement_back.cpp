@@ -18,7 +18,7 @@ MovementBack::MovementBack(float back_distance, uint8_t max_speed)
 	robot_stuck_cnt_ = 0;
 	tilt_cnt_ = 0;
 	updateStartPose();
-	ROS_INFO("%s %d: Set back distance: %f.", __FUNCTION__, __LINE__, back_distance_);
+	ROS_WARN("%s %d: Set back distance: %f.", __FUNCTION__, __LINE__, back_distance_);
 }
 
 void MovementBack::updateStartPose()
@@ -86,12 +86,12 @@ bool MovementBack::isFinish()
 		}
 		cliff_jam_cnt_ = cliff.getStatus() == 0 ? 0 : cliff_jam_cnt_+ 1;
 		robot_stuck_cnt_ = lidar.isRobotSlip() == 0 ? 0 : robot_stuck_cnt_+ 1;
-		ROS_ERROR("tilt_cnt_(%d)", tilt_cnt_);
+		ROS_INFO("tilt_cnt_(%d)", tilt_cnt_);
 		tilt_cnt_ = gyro.getTiltCheckingStatus() == 0 ? 0 : tilt_cnt_+ 1;
-		ROS_ERROR("tilt_cnt_2(%d)", tilt_cnt_);
+		ROS_INFO("tilt_cnt_2(%d)", tilt_cnt_);
 		//g_lidar_bumper_cnt = robot::instance()->getLidarBumper() == 0? 0:g_lidar_bumper_cnt+1;
 
-		ROS_INFO("%s, %d: MovementBack reach target, bumper_jam_cnt_(%d), lidar_bumper_jam_cnt_(%d), cliff_jam_cnt_(%d), robot_stuck_cnt_(%d), tilt_cnt_(%d).",
+		ROS_WARN("%s, %d: MovementBack reach target, bumper_jam_cnt_(%d), lidar_bumper_jam_cnt_(%d), cliff_jam_cnt_(%d), robot_stuck_cnt_(%d), tilt_cnt_(%d).",
 				 __FUNCTION__, __LINE__, bumper_jam_cnt_, lidar_bumper_jam_cnt_, cliff_jam_cnt_, robot_stuck_cnt_, tilt_cnt_);
 		if (bumper_jam_cnt_ == 0 && lidar_bumper_jam_cnt_ == 0 && cliff_jam_cnt_ == 0 && robot_stuck_cnt_ == 0 && tilt_cnt_ == 0)
 			ret = true;
@@ -153,7 +153,7 @@ bool MovementBack::isLidarStop()
 
 	if (lidar.getObstacleDistance(1, 0.15) < 0.02)
 	{
-		ROS_INFO("%s %d: Stop by lidar.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Stop by lidar.", __FUNCTION__, __LINE__);
 		return true;
 	}
 
@@ -162,5 +162,6 @@ bool MovementBack::isLidarStop()
 
 MovementBack::~MovementBack() {
 	robot::instance()->unlockScanCtrl();
+	ROS_WARN("%s %d: Exit movement back.", __FUNCTION__, __LINE__);
 }
 

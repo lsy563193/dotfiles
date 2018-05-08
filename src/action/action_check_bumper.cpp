@@ -8,7 +8,7 @@
 
 ActionCheckBumper::ActionCheckBumper()
 {
-	ROS_INFO("%s %d: Starting action check bumper." , __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Starting action check bumper." , __FUNCTION__, __LINE__);
 }
 
 bool ActionCheckBumper::isFinish()

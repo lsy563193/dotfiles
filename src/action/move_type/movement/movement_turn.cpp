@@ -20,7 +20,7 @@ MovementTurn::MovementTurn(double radian, uint8_t max_speed) : speed_(ROTATE_LOW
 	auto diff = ranged_radian(target_radian_ - odom.getRadian());
 	auto isUseTimeOut = (sp_mt_->sp_mode_->mode_i_ != sp_mt_->sp_mode_->md_go_to_charger) && (sp_mt_->sp_mode_->mode_i_ != sp_mt_->sp_mode_->md_remote);
 	timeout_interval_ = isUseTimeOut ? 10 : 100;
-	ROS_INFO("%s, %d: MovementTurn init, target_radian_: \033[32m%.1f (in degree)\033[0m, current radian: \033[32m%.1f (in degree)\033[0m, timeout:(%.2f)s."
+	ROS_WARN("%s, %d: MovementTurn init, target_radian_: \033[32m%.1f (in degree)\033[0m, current radian: \033[32m%.1f (in degree)\033[0m, timeout:(%.2f)s."
 			, __FUNCTION__, __LINE__, radian_to_degree(ranged_radian(target_radian_)), radian_to_degree(getPosition().th), timeout_interval_);
 }
 
@@ -29,7 +29,7 @@ bool MovementTurn::isReach()
 //	ROS_WARN("%s, %d: MovementTurn finish, target_radian_: \033[32m%f (in degree)\033[0m, current radian: \033[32m%f (in degree)\033[0m."
 //	, __FUNCTION__, __LINE__, radian_to_degree(ranged_radian(target_radian_)), radian_to_degree(odom.getRadian()));
 	if (std::abs(ranged_radian(odom.getRadian() - target_radian_)) < accurate_){
-		ROS_INFO("%s, %d: MovementTurn finish, target_radian_: \033[32m%f (in degree)\033[0m, current radian: \033[32m%f (in degree)\033[0m."
+		ROS_WARN("%s, %d: MovementTurn finish, target_radian_: \033[32m%f (in degree)\033[0m, current radian: \033[32m%f (in degree)\033[0m."
 		, __FUNCTION__, __LINE__, radian_to_degree(ranged_radian(target_radian_)), radian_to_degree(odom.getRadian()));
 		return true;
 	}
@@ -62,14 +62,12 @@ void MovementTurn::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 			speed_ = static_cast<uint8_t>(fabs(radian_to_degree(diff) / 2));//2
 //		speed_ = static_cast<uint8_t>(fabs(angle_diff * angle_diff / 45));
 //		speed_ = static_cast<uint8_t>(fabs(sqrt(angle_diff -1) * 4));
+			speed_ = std::min(max_speed_, speed_);
 			speed_ = std::max(speed_, (uint8_t)8);
 //			ROS_INFO("%s %d: 10 - 20, speed = %d angle_diff = %lf.", __FUNCTION__, __LINE__, speed_, radian_to_degree(diff));
 		}
-		else if (std::abs(diff) > degree_to_radian(0)) {
-			speed_ = static_cast<uint8_t>(fabs(radian_to_degree(diff) / 2));//2
-			speed_ = std::max(speed_, (uint8_t)5);
-//			ROS_INFO("%s %d: 10 - 20, speed = %d angle_diff = %lf.", __FUNCTION__, __LINE__, speed_, radian_to_degree(diff));
-		}
+		else
+			speed_ = 5;
 	} else {
 		if (std::abs(diff) > degree_to_radian(20)){
 			speed_ += 1;

@@ -11,7 +11,7 @@
 
 ActionCheckWaterTank::ActionCheckWaterTank()
 {
-	ROS_INFO("%s %d: Starting action check water tank." , __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Starting action check water tank." , __FUNCTION__, __LINE__);
 
 	auto swing_motor_test_routine = new boost::thread(boost::bind(&ActionCheckWaterTank::waterTankTestRoutineThread, this));
 
@@ -22,7 +22,7 @@ ActionCheckWaterTank::ActionCheckWaterTank()
 
 void ActionCheckWaterTank::waterTankTestRoutineThread()
 {
-	ROS_INFO("\033[32m%s\033[0m,%d is up.",__FUNCTION__,__LINE__);
+	ROS_WARN("\033[32m%s\033[0m,%d is up.",__FUNCTION__,__LINE__);
 
 	uint8_t buf[REC_LEN];
 	ros::Time cur_time, last_time;
@@ -150,7 +150,7 @@ void ActionCheckWaterTank::run()
 		}
 		default: // case 4:
 		{
-			ROS_INFO("%s %d: Test finish.", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Test finish.", __FUNCTION__, __LINE__);
 			infrared_display.displayNormalMsg(0, 9999);
 			speaker.play(VOICE_TEST_SUCCESS);
 			key_led.setMode(LED_STEADY, LED_GREEN);

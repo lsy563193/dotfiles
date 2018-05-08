@@ -13,7 +13,7 @@
 
 ActionR16Test::ActionR16Test()
 {
-	ROS_INFO("%s %d: Starting action R16 test." , __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Starting action R16 test." , __FUNCTION__, __LINE__);
 }
 
 void ActionR16Test::run()
@@ -25,7 +25,7 @@ void ActionR16Test::run()
 		ROS_ERROR("%s %d: RAM test failed!!", __FUNCTION__, __LINE__);
 		error_loop(1, 0, RAM_ERROR);
 	}
-	ROS_INFO("%s %d: Test for RAM successed.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Test for RAM successed.", __FUNCTION__, __LINE__);
 
 	// Test item: Flash.
 	infrared_display.displayNormalMsg(2, 0);
@@ -34,7 +34,7 @@ void ActionR16Test::run()
 		ROS_ERROR("%s %d: Flash test failed!!", __FUNCTION__, __LINE__);
 		error_loop(2, 0, R16_FLASH_ERROR);
 	}
-	ROS_INFO("%s %d: Test for Flash succeeded.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Test for Flash succeeded.", __FUNCTION__, __LINE__);
 
 
 	// Test item: Lidar.
@@ -44,7 +44,7 @@ void ActionR16Test::run()
 		ROS_ERROR("%s %d: Lidar test failed!!", __FUNCTION__, __LINE__);
 		error_loop(3, 0, LIDAR_ERROR);
 	}
-	ROS_INFO("%s %d: Test for lidar succeeded.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Test for lidar succeeded.", __FUNCTION__, __LINE__);
 
 	// Test item: serial wifi test.
 	infrared_display.displayNormalMsg(4, 0);
@@ -62,14 +62,14 @@ void ActionR16Test::run()
 		ROS_ERROR("%s %d: Lidar bumper test failed!!", __FUNCTION__, __LINE__);
 		error_loop(5, bumper_cnt_, LIDAR_BUMPER_ERROR);
 	}
-	ROS_INFO("%s %d: Test for lidar bumper succeeded.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Test for lidar bumper succeeded.", __FUNCTION__, __LINE__);
 
 	// Test finish.
 	double alarm_time = ros::Time::now().toSec();
 	speaker.play(VOICE_TEST_SUCCESS);
 	infrared_display.displayNormalMsg(0, 9999);
 	key_led.setMode(LED_STEADY, LED_GREEN);
-	ROS_INFO("%s %d: Test finish.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Test finish.", __FUNCTION__, __LINE__);
 	while (ros::ok())
 	{
 		if (ros::Time::now().toSec() - alarm_time > 5)
@@ -83,7 +83,7 @@ void ActionR16Test::run()
 
 bool ActionR16Test::RAM_test()
 {
-	ROS_INFO("%s %d: Start RAM test.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Start RAM test.", __FUNCTION__, __LINE__);
 	bool test_ret = false;
 	int RAM_test_size = 2; // In Mb.
 	int RAM_test_block_cnt = 3; // Test RAM_test_block_cnt blocks of RAM sizing RAM_test_size Mb.
@@ -162,7 +162,7 @@ bool ActionR16Test::RAM_test()
 bool ActionR16Test::Flash_test()
 {
 
-	ROS_INFO("%s %d: Start Flash test.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Start Flash test.", __FUNCTION__, __LINE__);
 	std::string origin_file = "/origin_random.file";
 	std::string new_file = "/random.file";
 	std::string cmd;
@@ -223,7 +223,7 @@ bool ActionR16Test::Flash_test()
 
 bool ActionR16Test::lidar_test()
 {
-	ROS_INFO("%s %d: Start lidar test.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Start lidar test.", __FUNCTION__, __LINE__);
 	ros::NodeHandle nh_;
 	ros::Subscriber scan_sub_;
 	scan_sub_ = nh_.subscribe("scanOriginal", 1, &Lidar::scantestCb, &lidar);
@@ -255,7 +255,7 @@ bool ActionR16Test::lidar_test()
 
 bool ActionR16Test::lidar_bumper_test()
 {
-	ROS_INFO("%s %d: Start lidar bumper test.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Start lidar bumper test.", __FUNCTION__, __LINE__);
 	// Heads up for starting lider bumper test.
 	speaker.play(VOICE_WAKE_UP_UNOFFICIAL);
 

@@ -12,7 +12,9 @@
 
 ModeSleep::ModeSleep()
 {
-	ROS_INFO("%s %d: Entering Sleep mode\n=========================" , __FUNCTION__, __LINE__);
+	// todo: Turbo action should be placed in state init.
+	system("unturbo_cpu.sh");
+	ROS_WARN("%s %d: Entering Sleep mode\n=========================" , __FUNCTION__, __LINE__);
 	event_manager_register_handler(this);
 	event_manager_reset_status();
 	event_manager_set_enable(true);
@@ -42,7 +44,7 @@ ModeSleep::~ModeSleep()
 	//s_wifi.taskPushBack(S_Wifi::ACT::ACT_RESUME);
 	event_manager_set_enable(false);
 	sp_action_.reset();
-	ROS_INFO("%s %d: Exit sleep mode.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Exit sleep mode.", __FUNCTION__, __LINE__);
 }
 
 bool ModeSleep::isExit()
@@ -79,7 +81,8 @@ bool ModeSleep::isExit()
 			{
 				ROS_WARN("%s %d: Plan not activated not valid because of charging with adapter.", __FUNCTION__,
 						 __LINE__);
-				speaker.play(VOICE_PLEASE_PULL_OUT_THE_PLUG);
+				speaker.play(VOICE_PLEASE_PULL_OUT_THE_PLUG, false);
+				speaker.play(VOICE_BATTERY_CHARGE);
 //				speaker.play(VOICE_CANCEL_APPOINTMENT_UNOFFICIAL);
 			} else
 			{

@@ -18,7 +18,7 @@
 
 ActionLifeCheck::ActionLifeCheck()
 {
-	ROS_INFO("%s %d: Enter life check.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Enter life check.", __FUNCTION__, __LINE__);
 
 	auto life_test_routine = new boost::thread(boost::bind(&ActionLifeCheck::lifeTestRoutineThread, this));
 
@@ -133,27 +133,27 @@ void ActionLifeCheck::run()
 				water_tank.open(WaterTank::operate_option::swing_motor_and_pump);
 				wheel.setPidTargetSpeed(LINEAR_MAX_SPEED, LINEAR_MAX_SPEED);
 				left_brush_current_baseline_ /= sum_cnt_;
-				ROS_INFO("%s %d: left_brush_current_baseline_:%d.", __FUNCTION__, __LINE__,
+				ROS_WARN("%s %d: left_brush_current_baseline_:%d.", __FUNCTION__, __LINE__,
 						 left_brush_current_baseline_);
 				right_brush_current_baseline_ /= sum_cnt_;
-				ROS_INFO("%s %d: right_brush_current_baseline_:%d.", __FUNCTION__, __LINE__,
+				ROS_WARN("%s %d: right_brush_current_baseline_:%d.", __FUNCTION__, __LINE__,
 						 right_brush_current_baseline_);
 				main_brush_current_baseline_ /= sum_cnt_;
-				ROS_INFO("%s %d: main_brush_current_baseline_:%d.", __FUNCTION__, __LINE__,
+				ROS_WARN("%s %d: main_brush_current_baseline_:%d.", __FUNCTION__, __LINE__,
 						 main_brush_current_baseline_);
 				left_wheel_current_baseline_ /= sum_cnt_;
-				ROS_INFO("%s %d: left_wheel_current_baseline_:%d.", __FUNCTION__, __LINE__,
+				ROS_WARN("%s %d: left_wheel_current_baseline_:%d.", __FUNCTION__, __LINE__,
 						 left_wheel_current_baseline_);
 				right_wheel_current_baseline_ /= sum_cnt_;
-				ROS_INFO("%s %d: right_wheel_current_baseline_:%d.", __FUNCTION__, __LINE__,
+				ROS_WARN("%s %d: right_wheel_current_baseline_:%d.", __FUNCTION__, __LINE__,
 						 right_wheel_current_baseline_);
 				vacuum_current_baseline_ /= sum_cnt_;
-				ROS_INFO("%s %d: vacuum_current_baseline_:%d.", __FUNCTION__, __LINE__, vacuum_current_baseline_);
+				ROS_WARN("%s %d: vacuum_current_baseline_:%d.", __FUNCTION__, __LINE__, vacuum_current_baseline_);
 				water_tank_current_baseline_ /= sum_cnt_;
-				ROS_INFO("%s %d: water_tank_current_baseline_:%d.", __FUNCTION__, __LINE__,
+				ROS_WARN("%s %d: water_tank_current_baseline_:%d.", __FUNCTION__, __LINE__,
 						 water_tank_current_baseline_);
 				robot_current_baseline_ /= sum_cnt_;
-				ROS_INFO("%s %d: robot_current_baseline_:%d.", __FUNCTION__, __LINE__, robot_current_baseline_);
+				ROS_WARN("%s %d: robot_current_baseline_:%d.", __FUNCTION__, __LINE__, robot_current_baseline_);
 				sum_cnt_ = 0;
 
 				int32_t side_brush_current_baseline_ref_{1620};
@@ -262,7 +262,7 @@ void ActionLifeCheck::run()
 			if (ros::Time::now().toSec() - start_time_stamp_ > timeout_interval_ - 60)
 			{
 				// Last one minute will check for current. For wheels, check the forward current first.
-				ROS_INFO("Start checking.");
+				ROS_WARN("Start checking.");
 				test_stage_++;
 				infrared_display.displayNormalMsg(test_stage_, 0);
 				brush.normalOperate(); // Update for battery.
@@ -274,14 +274,14 @@ void ActionLifeCheck::run()
 			{
 				brush.normalOperate(); // Update for battery.
 				wheel.setPidTargetSpeed(-LINEAR_MAX_SPEED, -LINEAR_MAX_SPEED);
-				ROS_INFO("%s %d: Switch to backward.", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: Switch to backward.", __FUNCTION__, __LINE__);
 				check_wheel_time_ = ros::Time::now().toSec();
 				wheel_forward_ = false;
 			} else if (!wheel_forward_ && ros::Time::now().toSec() - check_wheel_time_ > 30)
 			{
 				brush.normalOperate(); // Update for battery.
 				wheel.setPidTargetSpeed(LINEAR_MAX_SPEED, LINEAR_MAX_SPEED);
-				ROS_INFO("%s %d: Switch to forward.", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: Switch to forward.", __FUNCTION__, __LINE__);
 				check_wheel_time_ = ros::Time::now().toSec();
 				wheel_forward_ = true;
 			}
@@ -372,7 +372,7 @@ void ActionLifeCheck::run()
 		}
 		default: // case 4:
 		{
-			ROS_INFO("%s %d: Test finish.", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Test finish.", __FUNCTION__, __LINE__);
 			infrared_display.displayNormalMsg(0, 9999);
 			speaker.play(VOICE_TEST_SUCCESS);
 			key_led.setMode(LED_STEADY, LED_GREEN);
@@ -418,38 +418,38 @@ bool ActionLifeCheck::checkCurrent()
 	uint16_t robot_current_ref_{2385 - 1775}; // 610
 
 //	wheel_current_ref_ = static_cast<uint16_t>(100.0 /*mA*/ / (330.0 /*3.3v reference voltage*/ / 0.1 /*Sampling resistance*/ / 4096.0 /*Accuracy*/));
-	ROS_INFO("%s %d: Wheel current reference: %d.", __FUNCTION__, __LINE__, wheel_current_ref_);
+	ROS_WARN("%s %d: Wheel current reference: %d.", __FUNCTION__, __LINE__, wheel_current_ref_);
 //	side_brush_current_ref_ = static_cast<uint16_t>(110.0 /*mA*/ / (330.0 /*3.3v reference voltage*/ / 0.1 /*Sampling resistance*/ / 4096.0 /*Accuracy*/));
-	ROS_INFO("%s %d: Side brush current reference: %d.", __FUNCTION__, __LINE__, side_brush_current_ref_);
+	ROS_WARN("%s %d: Side brush current reference: %d.", __FUNCTION__, __LINE__, side_brush_current_ref_);
 //	main_brush_current_ref_ = static_cast<uint16_t>(300.0 /*mA*/ / (330.0 /*3.3v reference voltage*/ / 0.1 /*Sampling resistance*/ / 4096.0 /*Accuracy*/));
-	ROS_INFO("%s %d: Main brush current reference: %d.", __FUNCTION__, __LINE__, main_brush_current_ref_);
+	ROS_WARN("%s %d: Main brush current reference: %d.", __FUNCTION__, __LINE__, main_brush_current_ref_);
 //	vacuum_current_ref_ = static_cast<uint16_t>(1100.0 /*mA*/ / (330.0 /*3.3v reference voltage*/ / 0.1 /*Sampling resistance*/ / 4096.0 /*Accuracy*/));
-	ROS_INFO("%s %d: Vacuum current reference: %d.", __FUNCTION__, __LINE__, vacuum_current_ref_);
+	ROS_WARN("%s %d: Vacuum current reference: %d.", __FUNCTION__, __LINE__, vacuum_current_ref_);
 //	water_tank_current_ref_ = static_cast<uint16_t>(1100.0 /*mA*/ / (330.0 /*3.3v reference voltage*/ / 0.1 /*Sampling resistance*/ / 4096.0 /*Accuracy*/));
-	ROS_INFO("%s %d: Water tank current reference: %d.", __FUNCTION__, __LINE__, water_tank_current_ref_);
+	ROS_WARN("%s %d: Water tank current reference: %d.", __FUNCTION__, __LINE__, water_tank_current_ref_);
 //	robot_current_ref_ = static_cast<uint16_t>(1100.0 /*mA*/ / (330.0 /*3.3v reference voltage*/ / 0.1 /*Sampling resistance*/ / 4096.0 /*Accuracy*/));
-	ROS_INFO("%s %d: Robot current reference: %d.", __FUNCTION__, __LINE__, robot_current_ref_);
+	ROS_WARN("%s %d: Robot current reference: %d.", __FUNCTION__, __LINE__, robot_current_ref_);
 
 	left_brush_current_ /= sum_cnt_;
-	ROS_INFO("%s %d: Left brush current: %d.", __FUNCTION__, __LINE__, left_brush_current_ - left_brush_current_baseline_);
+	ROS_WARN("%s %d: Left brush current: %d.", __FUNCTION__, __LINE__, left_brush_current_ - left_brush_current_baseline_);
 	right_brush_current_ /= sum_cnt_;
-	ROS_INFO("%s %d: Right brush current: %d.", __FUNCTION__, __LINE__, right_brush_current_ - right_brush_current_baseline_);
+	ROS_WARN("%s %d: Right brush current: %d.", __FUNCTION__, __LINE__, right_brush_current_ - right_brush_current_baseline_);
 	main_brush_current_ /= sum_cnt_;
-	ROS_INFO("%s %d: Main brush current: %d.", __FUNCTION__, __LINE__, main_brush_current_ - main_brush_current_baseline_);
+	ROS_WARN("%s %d: Main brush current: %d.", __FUNCTION__, __LINE__, main_brush_current_ - main_brush_current_baseline_);
 	left_wheel_forward_current_ /= wheel_forward_current_cnt_;
-	ROS_INFO("%s %d: Left wheel forward current: %d.", __FUNCTION__, __LINE__, left_wheel_forward_current_ - left_wheel_current_baseline_);
+	ROS_WARN("%s %d: Left wheel forward current: %d.", __FUNCTION__, __LINE__, left_wheel_forward_current_ - left_wheel_current_baseline_);
 	right_wheel_forward_current_ /= wheel_forward_current_cnt_;
-	ROS_INFO("%s %d: Right wheel forward current: %d.", __FUNCTION__, __LINE__, right_wheel_forward_current_ - right_wheel_current_baseline_);
+	ROS_WARN("%s %d: Right wheel forward current: %d.", __FUNCTION__, __LINE__, right_wheel_forward_current_ - right_wheel_current_baseline_);
 	left_wheel_backward_current_ /= wheel_backward_current_cnt_;
-	ROS_INFO("%s %d: Left wheel backward current: %d.", __FUNCTION__, __LINE__, left_wheel_backward_current_ - left_wheel_current_baseline_);
+	ROS_WARN("%s %d: Left wheel backward current: %d.", __FUNCTION__, __LINE__, left_wheel_backward_current_ - left_wheel_current_baseline_);
 	right_wheel_backward_current_ /= wheel_backward_current_cnt_;
-	ROS_INFO("%s %d: Right wheel backward current: %d.", __FUNCTION__, __LINE__, right_wheel_backward_current_ - right_wheel_current_baseline_);
+	ROS_WARN("%s %d: Right wheel backward current: %d.", __FUNCTION__, __LINE__, right_wheel_backward_current_ - right_wheel_current_baseline_);
 	vacuum_current_ /= sum_cnt_;
-	ROS_INFO("%s %d: Vacuum current: %d.", __FUNCTION__, __LINE__, vacuum_current_ - vacuum_current_baseline_);
+	ROS_WARN("%s %d: Vacuum current: %d.", __FUNCTION__, __LINE__, vacuum_current_ - vacuum_current_baseline_);
 	water_tank_current_ /= sum_cnt_;
-	ROS_INFO("%s %d: Water tank current: %d.", __FUNCTION__, __LINE__, water_tank_current_ - water_tank_current_baseline_);
+	ROS_WARN("%s %d: Water tank current: %d.", __FUNCTION__, __LINE__, water_tank_current_ - water_tank_current_baseline_);
 	robot_current_ /= sum_cnt_;
-	ROS_INFO("%s %d: Robot current: %d.", __FUNCTION__, __LINE__, robot_current_ - robot_current_baseline_);
+	ROS_WARN("%s %d: Robot current: %d.", __FUNCTION__, __LINE__, robot_current_ - robot_current_baseline_);
 
 	if (left_brush_current_ - left_brush_current_baseline_ > side_brush_current_ref_ * 1.5 ||
 			 left_brush_current_ - left_brush_current_baseline_ < side_brush_current_ref_ * 0.3)

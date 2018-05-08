@@ -10,7 +10,7 @@
 
 MovementStay::MovementStay(double stay_time_sec)
 {
-	ROS_INFO("%s %d: Start movement stay.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Start movement stay.", __FUNCTION__, __LINE__);
 	wheel.stop();
 	start_timer_ = ros::Time::now().toSec();
 	timeout_interval_ = stay_time_sec;
@@ -22,7 +22,7 @@ MovementStay::MovementStay(double stay_time_sec)
 MovementStay::~MovementStay()
 {
 	robot::instance()->unlockScanCtrl();
-	ROS_INFO("%s %d: End movement stay.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: End movement stay.", __FUNCTION__, __LINE__);
 }
 
 
@@ -39,11 +39,11 @@ bool MovementStay::isFinish()
 	ev.cliff_triggered = static_cast<uint8_t>(cliff_status_in_stay_ ? cliff_status_in_stay_: ev.cliff_triggered);
 	ev.tilt_triggered = static_cast<uint8_t>(tilt_status_in_stay_ ? tilt_status_in_stay_ : ev.tilt_triggered);
 	if(bumper_status_in_stay_)
-		ROS_INFO("%s,%d,bumper trigger",__FUNCTION__,__LINE__);
+		ROS_WARN("%s,%d,bumper trigger",__FUNCTION__,__LINE__);
 	if(cliff_status_in_stay_)
-		ROS_INFO("%s,%d,cliff trigger",__FUNCTION__,__LINE__);
+		ROS_WARN("%s,%d,cliff trigger",__FUNCTION__,__LINE__);
 	if(tilt_status_in_stay_)
-		ROS_INFO("%s,%d,tilt trigger",__FUNCTION__,__LINE__);
+		ROS_WARN("%s,%d,tilt trigger",__FUNCTION__,__LINE__);
 	robot::instance()->lockScanCtrl();
 //	ROS_ERROR("%s,%d, movementStay",__FUNCTION__, __LINE__);
 	robot::instance()->pubScanCtrl(true, true);
@@ -58,7 +58,7 @@ void MovementStay::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 
 MovementStayRemote::MovementStayRemote(double stay_time_sec) : MovementStay(stay_time_sec)
 {
-	ROS_INFO("%s %d: Start movement stay remote.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Start movement stay remote.", __FUNCTION__, __LINE__);
 }
 
 bool MovementStayRemote::isFinish()

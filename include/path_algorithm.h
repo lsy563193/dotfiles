@@ -364,7 +364,9 @@ public:
 private:
 
 	bool spot_running_;
+	bool event_detect_;
 	Cells targets_cells_;
+	Points plan_path_last_;
 	Cell_t min_corner_;
 	Cell_t max_corner_;
 };

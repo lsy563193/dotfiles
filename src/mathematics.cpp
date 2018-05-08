@@ -248,6 +248,7 @@ Vector2<double> polarToCartesian(double polar, int i)
 	return point;
 }
 
+
 Dir_t get_dir(const Cells::iterator& neighbor, const Cells::iterator& curr)
 {
     get_dir(*neighbor ,*curr);

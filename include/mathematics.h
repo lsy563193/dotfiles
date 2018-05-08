@@ -603,6 +603,7 @@ bool unsigned_long_to_hex_string(unsigned long number, char *str, const int len)
 
 Vector2<double> polarToCartesian(double polar, int i);
 
+
 class CellEqual
 {
 public:

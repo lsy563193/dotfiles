@@ -19,7 +19,7 @@
 S_Wifi s_wifi;
 
 S_Wifi::S_Wifi():is_wifi_connected_(false)
-					,first_time_connected_(true)
+					,first_time_connected_(false)
 					,is_Status_Request_(false)
 					,factory_test_ack_(false)
 					,isFactoryTest_(false)
@@ -52,7 +52,6 @@ S_Wifi::~S_Wifi()
 
 bool S_Wifi::deinit()
 {
-	taskPushBack(ACT::ACT_SLEEP);
 	quit();
 	delete map_data_buf_;
 	delete history_map_data_;
@@ -77,7 +76,7 @@ bool S_Wifi::init()
 									a_msg.seq_num());
 			s_wifi_tx_.push(std::move( p )).commit();
 			isRegDevice_ = true;
-			cloudConnected();
+//			cloudConnected();
 			if(robot_work_mode_ != wifi::WorkMode::SLEEP)
 				wifi_led.setMode(LED_FLASH,WifiLed::state::on);
 			if(isFactoryTest_)
@@ -646,7 +645,7 @@ uint32_t S_Wifi::find_if(std::deque<Cell_t> *list,Cell_t point,int find_type)
 	// -- hash search
 	if(find_type == 1)
 	{
-		//not yet
+		//not complete
 		return 0;
 	}
 	// -- bin search
@@ -689,7 +688,7 @@ void S_Wifi::sort_push(std::deque<Cell_t> *list,Cell_t p,int sort_type)
 	//-- hash  store
 	if(sort_type == 1)
 	{
-		// -- not yet
+		// -- not complete
 		list->push_back(p);
 	}
 	// --bin sort store
@@ -1192,6 +1191,7 @@ int8_t S_Wifi::smartLink()
 	speaker.play(VOICE_WIFI_CONNECTING,false);
 	if(robot_work_mode_ != wifi::WorkMode::SLEEP)
 		wifi_led.setMode(LED_FLASH,WifiLed::state::on);
+	first_time_connected_ = true;
 //	in_linking_ = true;
 	return 0;
 }
@@ -1204,6 +1204,7 @@ uint8_t S_Wifi::smartApLink()
 	speaker.play(VOICE_WIFI_CONNECTING,false);
 	if(robot_work_mode_ != wifi::WorkMode::SLEEP)
 		wifi_led.setMode(LED_FLASH,WifiLed::state::on);
+	first_time_connected_ = true;
 	return 0;
 }
 

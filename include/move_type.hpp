@@ -65,7 +65,7 @@ public:
 	bool state_turn{};
 //	Point_t target_point_;
 	int dir_;
-	Points remain_path_{};
+	static Points remain_path_;
 	bool stop_generate_next_target{};
 public:
 //	std::deque<double> odom_turn_target_radians_{};
@@ -260,6 +260,7 @@ private:
 	int16_t left_obs_max_{0};
 	int16_t front_obs_max_{0};
 	int16_t right_obs_max_{0};
+	double check_start_time_{0};
 	bool checkStage3Finish();
 
 	// For stage 4.
@@ -286,10 +287,15 @@ private:
 	double check_current_start_time_{0};
 
 	uint32_t left_brush_current_{0};
+	uint8_t left_brush_current_exception_cnt_{0};
 	uint32_t right_brush_current_{0};
+	uint8_t right_brush_current_exception_cnt_{0};
 	uint32_t main_brush_current_{0};
+	uint8_t main_brush_current_exception_cnt_{0};
 	uint32_t left_wheel_current_{0};
+	uint8_t left_wheel_current_exception_cnt_{0};
 	uint32_t right_wheel_current_{0};
+	uint8_t right_wheel_current_exception_cnt_{0};
 	uint32_t vacuum_current_{0};
 	uint32_t water_tank_current_{0};
 	uint32_t robot_current_{0};

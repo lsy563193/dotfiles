@@ -7,7 +7,7 @@
 ActionAlign::ActionAlign() {
 	timeout_interval_ = 5;
 	wait_laser_timer_ = 1.0;
-	ROS_INFO("%s %d: Start action align, timeout(%f)s.",__FUNCTION__, __LINE__, timeout_interval_);
+	ROS_WARN("%s %d: Start action align, timeout(%f)s.",__FUNCTION__, __LINE__, timeout_interval_);
 
 	wheel.stop();
 	lidar.startAlign();

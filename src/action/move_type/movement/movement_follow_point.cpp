@@ -76,7 +76,7 @@ bool AMovementFollowPoint::isFinish() {
 	if(std::abs(radian_diff) > angle_forward_to_turn_)
 	{
 		ROS_INFO_FL();
-		ROS_WARN("radian_diff(%f)", radian_diff);
+		ROS_INFO("radian_diff(%f)", radian_diff);
 #if DEBUG_ENABLE
 		if (std::abs(radian_diff) > degree_to_radian(140)) {
 			ROS_ERROR_COND(DEBUG_ENABLE, "LASER WALL FOLLOW ERROR! PLEASE CALL ALVIN AND RESTART THE ROBOT.");

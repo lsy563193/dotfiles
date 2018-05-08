@@ -7,7 +7,7 @@
 
 MovementCharge::MovementCharge()
 {
-	ROS_INFO("%s %d: Start charge action. Battery voltage \033[32m%5.2f V\033[0m.", __FUNCTION__, __LINE__, (float)battery.getVoltage()/100.0);
+	ROS_WARN("%s %d: Start charge action. Battery voltage \033[32m%5.2f V\033[0m.", __FUNCTION__, __LINE__, (float)battery.getVoltage()/100.0);
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
@@ -40,7 +40,7 @@ MovementCharge::~MovementCharge()
 	wheel.stop();
 	charger.setStop();
 	obs.control(ON);
-	ROS_INFO("%s %d: End movement charge.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: End movement charge.", __FUNCTION__, __LINE__);
 }
 
 bool MovementCharge::isFinish()
@@ -53,7 +53,7 @@ bool MovementCharge::isFinish()
 		else
 			disconnect_charger_count_++;
 
-		if (disconnect_charger_count_ > 15)
+		if (disconnect_charger_count_ > 25)
 		{
 			if (directly_charge_)
 			{
@@ -61,11 +61,11 @@ bool MovementCharge::isFinish()
 				return true;
 			} else
 			{
-				key_led.setMode(LED_STEADY, LED_ORANGE);
+				key_led.setMode(LED_BREATH, LED_GREEN);
 				turn_for_charger_ = true;
 				start_turning_time_stamp_ = ros::Time::now().toSec();
 				turn_right_finish_ = false;
-				ROS_INFO("%s %d: Start turn for charger.", __FUNCTION__, __LINE__);
+				ROS_WARN("%s %d: Start turn for charger.", __FUNCTION__, __LINE__);
 			}
 		}
 
@@ -92,7 +92,10 @@ bool MovementCharge::isFinish()
 			key_led.setMode(LED_BREATH, LED_ORANGE);
 		}
 		if (ros::Time::now().toSec() - start_turning_time_stamp_ > 3)
+		{
+			MovementGoToCharger::is_turn_connect_failed_ = true;
 			return true;
+		}
 		if (cliff.getStatus() == BLOCK_ALL)
 			return true;
 	}
@@ -126,7 +129,7 @@ void MovementCharge::run()
 	// Debug for charge info
 	if (time(NULL) - show_battery_info_time_stamp_ > 5)
 	{
-		ROS_INFO("%s %d: battery voltage \033[32m%5.2f V\033[0m.", __FUNCTION__, __LINE__, (float)battery.getVoltage()/100.0);
+		ROS_WARN("%s %d: battery voltage \033[32m%5.2f V\033[0m.", __FUNCTION__, __LINE__, (float)battery.getVoltage()/100.0);
 		show_battery_info_time_stamp_ = time(NULL);
 	}
 

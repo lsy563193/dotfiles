@@ -1081,7 +1081,6 @@ void Lidar::checkRobotSlip()
 		slip_status_ = false;
 		return;
 	}
-
 //	ROS_INFO("start to check slip,leftSpeed:%f,rightSpeed:%f",wheel.getLeftWheelActualSpeed(),wheel.getRightWheelActualSpeed());
 	checkSlipInit(acur1_,acur2_,acur3_,acur4_);
 	if ((std::fabs(wheel.getLeftWheelActualSpeed()) >= 0.08 || std::fabs(wheel.getRightWheelActualSpeed()) >= 0.08))
@@ -1094,7 +1093,6 @@ void Lidar::checkRobotSlip()
 			last_slip_scan_frame_.push_back(tmp_scan_data);
 			return;
 		}
-
 		for(int i = 0; i <= 359; i++){
 			if(tmp_scan_data.ranges[i] < dist1_){
 				tol_count++;
@@ -1122,10 +1120,9 @@ void Lidar::checkRobotSlip()
 		}
 
 //		ROS_WARN("%s %d: same_count: %d, total_count: %d. lidarPoint:%lf", __FUNCTION__, __LINE__, same_count, tol_count,tmp_scan_data.ranges[155]);
-//		ROS_WARN("percent:%lf,slip_cnt_limt:%d,slip_frame_cnt:%d,lidarPoint:%lf",slip_ranges_percent_,slip_cnt_limit_,slip_frame_cnt_,tmp_scan_data.ranges[155]);
-		if((same_count*1.0)/(tol_count*1.0) >= slip_ranges_percent_ &&
-			(slip_ranges_percent_ < 0.8 || (tmp_scan_data.ranges[155] < 4 &&
-								(tmp_scan_data.ranges[155] - last_slip_scan_frame_[0].ranges[155] < 0.03)))){
+//		ROS_WARN("percent:%lf,slip_cnt_limt:%d,slip_frame_cnt:%d,lidarPoint:%lf,tol_count:%d",slip_ranges_percent_,slip_cnt_limit_,slip_frame_cnt_,tmp_scan_data.ranges[155],tol_count);
+		if((same_count * 1.0) / (tol_count * 1.0) >= slip_ranges_percent_ && tol_count > 100 &&
+			tmp_scan_data.ranges[155] < 4 && (tmp_scan_data.ranges[155] - last_slip_scan_frame_[0].ranges[155] < 0.03)){
 				if (++slip_frame_cnt_ >= slip_cnt_limit_) {
 					ROS_INFO("\033[35m""%s,%d,robot slip!!""\033[0m", __FUNCTION__, __LINE__);
 					slip_status_ = true;
@@ -1760,9 +1757,13 @@ bool Lidar::checkLidarBeCovered() {
 			covered_laser_size++;
 		}
 	}
-//	ROS_INFO("covered_laser_size(%d)", covered_laser_size);
 	if (covered_laser_size > 60) {
 		ROS_ERROR("lidar was covered, covered_laser_size(%d)", covered_laser_size);
+		for (int i = 0; i <= 359; i++) {
+			if (/*tmp_scan_data.ranges[i] < 4 &&*/ tmp_scan_data.ranges[i] < 0.130)
+				printf("scan(%d, %f), ", i, tmp_scan_data.ranges[i]);
+		}
+		printf("\n");
 		return true;
 	}
 	else

@@ -115,6 +115,10 @@ class MovementTurn: public IMovement{
 public:
 
 	explicit MovementTurn(double radian, uint8_t max_speed);
+	~MovementTurn()
+	{
+		ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);
+	}
 	void adjustSpeed(int32_t&, int32_t&) override;
 	bool isReach();
 	bool isFinish() override;
@@ -210,6 +214,10 @@ class MovementFollowWallLidar:public AMovementFollowPoint, public IFollowWall
 
 public:
 	explicit MovementFollowWallLidar(bool is_left);
+	~MovementFollowWallLidar()
+	{
+		ROS_WARN("%s %d: Exit MovementFollowWallLidar.", __FUNCTION__, __LINE__);
+	}
 
 	Point_t calcTmpTarget() override ;//laser follow wall algorithm
 	Points calcVirtualTmpTarget();//generate a circle path
@@ -235,7 +243,7 @@ public:
 	void adjustSpeed(int32_t&, int32_t&) override ;
 	void getTurnBackInfo(double &turn_radian, float &back_distance);
 	bool isFinish() override ;
-
+	static bool is_turn_connect_failed_;
 private:
 	void resetGoToChargerVariables();
 	int8_t gtc_state_now_;
@@ -278,6 +286,9 @@ private:
 	int8_t by_path_move_cnt;
 	uint8_t turn_connect_cnt;
 	uint8_t turn_connect_dir;
+	uint8_t check_in_front_of_home;
+	uint8_t dir_wrong_cnt_;
+	bool should_away_from_charge_station = false;
 
 	int32_t left_speed_;
 	int32_t right_speed_;
@@ -333,6 +344,11 @@ public:
 	bool isFinish() override;
 	void run() override;
 
+	bool stillCharging()
+	{
+		return !turn_for_charger_;
+	}
+
 private:
 	double battery_full_start_time_{0};
 	bool directly_charge_{false};
@@ -360,6 +376,11 @@ private:
 class MovementStayRemote :public MovementStay{
 public:
 	MovementStayRemote(double stay_time_sec);
+	~MovementStayRemote()
+	{
+		ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);
+	}
+
 	bool isFinish() override;
 };
 class MovementDirectGo :public IMovement

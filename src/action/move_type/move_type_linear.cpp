@@ -10,6 +10,7 @@
 #include <mode.hpp>
 
 MoveTypeLinear::MoveTypeLinear(Points remain_path){
+	IMovement::sp_mt_ = this;
 	resetTriggeredValue();
 	remain_path.pop_front();
 	remain_path_ = remain_path;
@@ -18,7 +19,7 @@ MoveTypeLinear::MoveTypeLinear(Points remain_path){
 	auto target_point_ = remain_path_.front();
 	turn_target_radian_ = p_mode->iterate_point_.th;
 
-	ROS_INFO("%s,%d: Enter move type linear, angle(%f,%f, %f),  target(%f, %f).",
+	ROS_WARN("%s,%d: Enter move type linear, angle(%f,%f, %f),  target(%f, %f).",
 			 __FUNCTION__, __LINE__, getPosition().th, radian_to_degree(target_point_.th), radian_to_degree(turn_target_radian_), target_point_.x, target_point_.y);
 
 	movement_i_ = p_mode->isGyroDynamic() ? mm_dynamic : mm_turn;
@@ -27,7 +28,6 @@ MoveTypeLinear::MoveTypeLinear(Points remain_path){
 	else
 		sp_movement_.reset(new MovementTurn(turn_target_radian_, ROTATE_TOP_SPEED));
 
-	IMovement::sp_mt_ = this;
 }
 
 MoveTypeLinear::~MoveTypeLinear()
@@ -38,14 +38,14 @@ MoveTypeLinear::~MoveTypeLinear()
 		p_mode->mapMark();
 		memset(IMoveType::rcon_cnt,0,sizeof(int8_t)*6);
 	}
-	ROS_INFO("%s %d: Exit move type linear.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Exit move type linear.", __FUNCTION__, __LINE__);
 }
 
 bool MoveTypeLinear::isFinish()
 {
 	if (IMoveType::isFinish() && isNotHandleEvent())
 	{
-		ROS_INFO("%s %d: Move type aborted.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Move type aborted.", __FUNCTION__, __LINE__);
 		return true;
 	}
 
@@ -76,9 +76,11 @@ bool MoveTypeLinear::isFinish()
 		else if(movement_i_ == mm_stay)
 		{
 			beeper.debugBeep(VALID);
-			ROS_ERROR("ev.cliff_triggered(%d)!!!", cliff.getStatus());
 			if(cliff.getStatus())
+			{
+				ROS_WARN("ev.cliff_triggered(%d)!!!", cliff.getStatus());
 				return true;
+			}
 			movement_i_ = mm_forward;
 			sp_movement_.reset(new MovementFollowPointLinear());
 			return false;
@@ -89,7 +91,7 @@ bool MoveTypeLinear::isFinish()
 				if(ev.cliff_triggered)
 				{
 					beeper.debugBeep(VALID);
-					ROS_ERROR("ev.cliff_triggered(%d)!!!", ev.cliff_triggered);
+					ROS_WARN("ev.cliff_triggered(%d)!!!", ev.cliff_triggered);
 					movement_i_ = mm_stay;
 					sp_movement_.reset(new MovementStay(0.2));
 				}
@@ -207,7 +209,7 @@ void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 				p_clean_mode->iterate_point_ = remain_path_.front();
 				remain_path_.pop_front();
 //			ROS_("target_xy(%f), curr_xy(%f),dis(%f)",target_xy, curr_xy, LINEAR_NEAR_DISTANCE);
-				ROS_ERROR("%s,%d,curr(%d,%d), next target_point(%d,%d,%lf), dir(%d)",
+				ROS_INFO("%s,%d,curr(%d,%d), next target_point(%d,%d,%lf), dir(%d)",
 						  __FUNCTION__, __LINE__, getPosition().toCell().x, getPosition().toCell().y,
 						  target_point_.toCell().x, target_point_.toCell().y, radian_to_degree(target_point_.th),
 						  p_clean_mode->iterate_point_.dir);
@@ -240,7 +242,6 @@ void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 //		ROS_ERROR("%f,%f", std::abs(target_xy - curr_xy),LINEAR_NEAR_DISTANCE);
 		if (std::abs(target_xy - curr_xy) < LINEAR_NEAR_DISTANCE)
 		{
-            beeper.debugBeep(VALID);
 			stop_generate_next_target = true;
 			if(switchLinearTargetByRecalc(p_clean_mode))
 				stop_generate_next_target = false;
@@ -258,10 +259,10 @@ bool MoveTypeLinear::switchLinearTargetByRecalc(ACleanMode *p_clean_mode) {
 	p_clean_mode->clean_path_algorithm_->displayPointPath(remain_path_);
 	p_clean_mode->clean_path_algorithm_->displayPointPath(path);
 	if (is_found) {
-		ROS_ERROR("5555555555555555555555555555555555555555");
+		ROS_INFO("5555555555555555555555555555555555555555");
 		if (!is_opposite_dir(path.front().dir, p_clean_mode->iterate_point_.dir)) {
-			ROS_ERROR("6666666666666666666666666666666666666666");
-			ROS_ERROR("%s %d: Not opposite dir, path.front(%d).curr(,%d)", __FUNCTION__, __LINE__,
+			ROS_INFO("6666666666666666666666666666666666666666");
+			ROS_INFO("%s %d: Not opposite dir, path.front(%d).curr(,%d)", __FUNCTION__, __LINE__,
 					 path.front().dir, p_clean_mode->iterate_point_.dir);
 			auto front = path.front();
 			path.pop_front();
@@ -271,19 +272,17 @@ bool MoveTypeLinear::switchLinearTargetByRecalc(ACleanMode *p_clean_mode) {
 			std::copy(path.begin(), path.end(), std::back_inserter(p_clean_mode->plan_path_));
 			remain_path_.clear();
 			std::copy(path.begin(), path.end(), std::back_inserter(remain_path_));
-			ROS_WARN("%s,%d: switch ok !!!!!!!!!!!!curr(%d,%d), next target_point(%d,%d,%d), dir(%d)",
+			ROS_INFO("%s,%d: switch ok !!!!!!!!!!!!curr(%d,%d), next target_point(%d,%d,%d), dir(%d)",
 					 __FUNCTION__, __LINE__, getPosition().toCell().x, getPosition().toCell().y,
 					 remain_path_.front().toCell().x,remain_path_.front().toCell().y,remain_path_.front().dir,
 					 p_clean_mode->iterate_point_.dir);
-			p_clean_mode->clean_path_algorithm_->displayPointPath(remain_path_);
-			p_clean_mode->clean_path_algorithm_->displayPointPath(p_clean_mode->plan_path_);
 			p_clean_mode->pubCleanMapMarkers(p_clean_mode->clean_map_,
 											 p_clean_mode->pointsGenerateCells(p_clean_mode->plan_path_));
 
-			ROS_ERROR("~~~~~~~~~~~~remain.size(%d)",remain_path_.size());
+			ROS_INFO("7777777777777777777777777777777777777777");
 			val = true;
 		} else {
-			ROS_ERROR("%s %d: Opposite dir, path.front(%d).curr(,%d)", __FUNCTION__, __LINE__,
+			ROS_INFO("%s %d: Opposite dir, path.front(%d).curr(,%d)", __FUNCTION__, __LINE__,
 					  path.front().dir, p_clean_mode->iterate_point_.dir);
 		}
 	}

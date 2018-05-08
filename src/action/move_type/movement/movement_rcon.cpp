@@ -17,7 +17,7 @@ void MovementRcon::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	rcon_status &= (RconFL2_HomeT|RconFR_HomeT|RconFL_HomeT|RconFR2_HomeT);
 //	ROS_INFO("rcon_status = %x", rcon_status);
 	if(rcon_status) {
-		seen_charger_counter_ = 40;
+		seen_charger_counter_ = 80;
 //		g_rcon_triggered = get_rcon_trig();
 //		map_set_rcon();
 		int32_t linear_speed = 20;
@@ -70,7 +70,7 @@ bool MovementRcon::isFinish() {
 }
 
 MovementRcon::MovementRcon(bool is_left) {
-	ROS_INFO("%s %d: Entering movement rcon.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Entering movement rcon.", __FUNCTION__, __LINE__);
 	is_left_ = is_left;
 	rcon_status = ev.rcon_status;
 //	ROS_INFO("ev.rcon_status = %x", ev.rcon_status);
@@ -78,5 +78,5 @@ MovementRcon::MovementRcon(bool is_left) {
 
 MovementRcon::~MovementRcon() {
 //	ev.rcon_status = 0;
-	ROS_INFO("%s %d: Exit movement rcon.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Exit movement rcon.", __FUNCTION__, __LINE__);
 }

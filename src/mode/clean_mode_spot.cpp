@@ -9,6 +9,7 @@
 #include "mode.hpp"
 CleanModeSpot::CleanModeSpot()
 {
+	ROS_WARN("%s %d: Entering Spot mode\n=========================" , __FUNCTION__, __LINE__);
 	speaker.play(VOICE_CLEANING_SPOT,false);
 
 	clean_path_algorithm_.reset(new SpotCleanPathAlgorithm());
@@ -20,7 +21,7 @@ CleanModeSpot::CleanModeSpot()
 
 CleanModeSpot::~CleanModeSpot()
 {
-
+	ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);
 }
 
 bool CleanModeSpot::isExit()

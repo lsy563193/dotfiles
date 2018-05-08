@@ -9,6 +9,7 @@
 #include <time.h>
 #include "odom.h"
 #include "ros/ros.h"
+#include "mathematics.h"
 
 class IAction{
 public:
@@ -49,8 +50,19 @@ class ActionBackFromCharger :public IAction
 public:
 	ActionBackFromCharger();
 	~ActionBackFromCharger();
-	bool isFinish();
-	void run();
+	bool isFinish() override ;
+	void run() override ;
+private:
+	enum {
+		BACK = 0,
+		TURN,
+		FORWARD,
+		BUMPER_BACK,
+	};
+	Point_t start_point_{odom.getOriginX(), odom.getOriginY(), odom.getRadian()};
+	const float BACK_DIST = 0.15f;
+	const float FORWARD_DIST = 0.35f;
+	uint8_t flag_{BACK};
 };
 
 class ActionOpenLidar :public IAction
@@ -65,7 +77,11 @@ public:
 class ActionAlign :public IAction
 {
 public:
-	ActionAlign();
+	explicit ActionAlign();
+	~ActionAlign()
+	{
+		ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);
+	}
 	bool isFinish() override;
 	bool isTimeUp() override;
 	void run() override;
