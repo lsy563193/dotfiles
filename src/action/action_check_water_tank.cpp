@@ -17,7 +17,7 @@ ActionCheckWaterTank::ActionCheckWaterTank()
 
 	infrared_display.displayNormalMsg(test_stage_, 0);
 	check_time_ = ros::Time::now().toSec();
-	timeout_interval_ = 66;
+	timeout_interval_ = 16;
 }
 
 void ActionCheckWaterTank::waterTankTestRoutineThread()
@@ -85,7 +85,7 @@ void ActionCheckWaterTank::run()
 					sum_cnt_ = 0;
 					swing_motor_current_baseline_ = average_current;
 					test_stage_++;
-					infrared_display.displayNormalMsg(test_stage_, 0);
+					infrared_display.displayNormalMsg(test_stage_, static_cast<uint16_t>(average_current));
 				}
 			} else
 			{
@@ -114,7 +114,7 @@ void ActionCheckWaterTank::run()
 				auto average_current = swing_motor_current_ / sum_cnt_;
 				ROS_INFO("%s %d: Swing motor average current: %d.", __FUNCTION__, __LINE__, average_current);
 				if (average_current > swing_motor_current_ref_ * 1.3
-						|| average_current < swing_motor_current_ref_ * 0.7)
+						|| average_current < swing_motor_current_ref_ * 0.55) // 825
 				{
 					error_code_ = SWING_MOTOR_ERROR;
 					error_content_ = static_cast<uint16_t>(average_current);
