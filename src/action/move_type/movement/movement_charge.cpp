@@ -69,7 +69,7 @@ bool MovementCharge::isFinish()
 			}
 		}
 
-		if (charger.getChargeStatus() && battery.isFull())
+		if (!battery_full_ && charger.getChargeStatus() && battery.isFull())
 		{
 			if (battery_full_start_time_ == 0)
 			{
@@ -79,7 +79,12 @@ bool MovementCharge::isFinish()
 
 			// Show green key_led for 60s before going to sleep mode.
 			if (ros::Time::now().toSec() - battery_full_start_time_ >= 60)
+			{
+				wifi_led.setMode(LED_STEADY, WifiLed::state::off);
 				key_led.setMode(LED_STEADY, LED_OFF);
+				battery_full_ = true;
+				speaker.play(VOICE_SLEEP_UNOFFICIAL);
+			}
 			else
 				key_led.setMode(LED_STEADY, LED_GREEN);
 		}

@@ -349,7 +349,13 @@ public:
 		return !turn_for_charger_;
 	}
 
+	bool batteryFullAndSleep()
+	{
+		return battery_full_;
+	}
+
 private:
+	bool battery_full_{false};
 	double battery_full_start_time_{0};
 	bool directly_charge_{false};
 	uint8_t disconnect_charger_count_{0};
