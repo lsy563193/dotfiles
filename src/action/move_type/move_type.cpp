@@ -207,8 +207,18 @@ bool IMoveType::handleMoveBackEvent(ACleanMode *p_clean_mode)
 	{
 		p_clean_mode->saveBlocks();
 		movement_i_ = mm_back;
-		float back_distance= static_cast<float>(ev.cliff_triggered ? 0.05 : 0.01);
-		back_distance = static_cast<float>(ev.tilt_triggered ? TILT_BACK_DISTANCE : back_distance);
+		float back_distance;
+		if (ev.cliff_triggered == BLOCK_FRONT)
+			back_distance = 0.04;
+		else if (ev.cliff_triggered == BLOCK_ALL)
+			back_distance = 0.05;
+		else if (ev.cliff_triggered) // For side cliff triggered.
+			back_distance = 0.06;
+		else if (ev.tilt_triggered)
+			back_distance = TILT_BACK_DISTANCE;
+		else
+			back_distance = 0.01;
+
 		sp_movement_.reset(new MovementBack(back_distance, BACK_MAX_SPEED));
 		return true;
 	}
