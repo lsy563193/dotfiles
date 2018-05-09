@@ -1120,7 +1120,7 @@ void Lidar::checkRobotSlip()
 	}
 //	ROS_INFO("start to check slip,leftSpeed:%f,rightSpeed:%f",wheel.getLeftWheelActualSpeed(),wheel.getRightWheelActualSpeed());
 	checkSlipInit(acur1_,acur2_,acur3_,acur4_);
-	if ((std::fabs(wheel.getLeftWheelActualSpeed()) >= 0.08 || std::fabs(wheel.getRightWheelActualSpeed()) >= 0.08))
+	if (std::fabs(wheel.getLeftWheelActualSpeed()) >= 0.08 || std::fabs(wheel.getRightWheelActualSpeed()) >= 0.08)
 	{
 		auto tmp_scan_data = getLidarScanDataOriginal();
 		uint16_t same_count = 0;
@@ -1158,23 +1158,17 @@ void Lidar::checkRobotSlip()
 
 //		ROS_WARN("%s %d: same_count: %d, total_count: %d. lidarPoint:%lf", __FUNCTION__, __LINE__, same_count, tol_count,tmp_scan_data.ranges[155]);
 //		ROS_WARN("percent:%lf,slip_cnt_limt:%d,slip_frame_cnt:%d,lidarPoint:%lf,tol_count:%d",slip_ranges_percent_,slip_cnt_limit_,slip_frame_cnt_,tmp_scan_data.ranges[155],tol_count);
+		bool is_low_speed = robot::instance()->getRObotActualSpeed() < 0.08;
 		bool is_back_nothing = tmp_scan_data.ranges[155] >= 4;
 		bool is_back_changing = is_back_nothing ? true : tmp_scan_data.ranges[155] - last_slip_scan_frame_[0].ranges[155] >= 0.03;
 		bool is_long_hallway;
 		if (is_back_changing) {
 			is_long_hallway = false;
 		} else {
-			if (is_back_nothing) {
-				is_long_hallway = checkLongHallway();
-			} else {
-				is_long_hallway = false;
-			}
+			is_long_hallway = is_back_nothing ? checkLongHallway() : false;
 		}
-//		if (is_long_hallway)
-//			beeper.debugBeep(VALID);
-		if((same_count * 1.0) / (tol_count * 1.0) >= slip_ranges_percent_ && tol_count > 100 &&
-			!is_long_hallway){
-				if (++slip_frame_cnt_ >= slip_cnt_limit_) {
+		if((same_count * 1.0) / (tol_count * 1.0) >= slip_ranges_percent_ && tol_count > 100 && !is_long_hallway){
+				if (++slip_frame_cnt_ >= slip_cnt_limit_ && is_low_speed) {
 					ROS_INFO("\033[35m""%s,%d,robot slip!!""\033[0m", __FUNCTION__, __LINE__);
 					slip_status_ = true;
 					slip_cnt_limit_ = 5;
