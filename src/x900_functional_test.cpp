@@ -177,7 +177,7 @@ uint8_t serial_port_test()
 	}
 	if(send_string_sum.compare(receive_string_sum) == 0)
 	{
-		if(receive_data[M0_VERSION_H] << 8 | receive_data[M0_VERSION_L] != 0)
+		if(receive_data[M0_VERSION_H] << 8 | receive_data[M0_VERSION_L] != 9)
 			test_ret = receive_data[M0_VERSION_H] << 8 | receive_data[M0_VERSION_L];
 	}
 	else
