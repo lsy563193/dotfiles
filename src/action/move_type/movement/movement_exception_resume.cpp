@@ -801,6 +801,7 @@ bool MovementExceptionResume::isFinish()
 				float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getX(), odom.getY());
 				if ((isExitSlipBlock != BLOCKED_SLIP && std::abs(distance) > 0.15f) || lidar.getObstacleDistance(1, ROBOT_RADIUS) < 0.06)
 				{
+					ROS_INFO("%s,%d Robot slip to go straight finished",__FUNCTION__,__LINE__);
 					if(!lidar.isRobotSlip())
 					{
 						ev.robot_slip = false;
@@ -815,6 +816,7 @@ bool MovementExceptionResume::isFinish()
 			}
 			case 1:{
 				if(ros::Time::now().toSec() - slip_start_turn_time_ > 1) {
+					ROS_INFO("%s,%d Robot slip to turn left finished",__FUNCTION__,__LINE__);
 					s_pos_x = odom.getOriginX();
 					s_pos_y = odom.getOriginY();
 					is_slip_last_turn_left_ = true;
@@ -825,6 +827,7 @@ bool MovementExceptionResume::isFinish()
 			case 2:{
 				if(ros::Time::now().toSec() - slip_start_turn_time_ > 1)
 				{
+					ROS_INFO("%s,%d Robot slip to turn right finished",__FUNCTION__,__LINE__);
 					s_pos_x = odom.getOriginX();
 					s_pos_y = odom.getOriginY();
 					is_slip_last_turn_left_ = false;

@@ -389,7 +389,7 @@ void CleanModeNav::remoteDirectionLeft(bool state_now, bool state_last)
 		ROS_INFO("%s %d: Remote right.", __FUNCTION__, __LINE__);
 		ev.remote_direction_left = true;
 	}
-	/*else if (sp_state == state_clean.get())
+	else if (isStateClean())
 	{
 		//todo: Just for testing.
 		beeper.beepForCommand(VALID);
@@ -398,7 +398,7 @@ void CleanModeNav::remoteDirectionLeft(bool state_now, bool state_last)
 				 battery.getVoltage(), continue_point_.x, continue_point_.y);
 		ev.battery_home = true;
 		go_home_for_low_battery_ = true;
-	}*/
+	}
 	else
 		beeper.beepForCommand(INVALID);
 
@@ -961,13 +961,12 @@ bool CleanModeNav::updateActionStateCharge()
 
 void CleanModeNav::switchInStateCharge()
 {
-/*
 	// Failed for charging. Maybe manual moved away from charger.
 	ROS_WARN("%s %d: Failed for charging. Maybe manual moved away from charger.", __FUNCTION__, __LINE__);
 	sp_state = nullptr;
 	sp_action_.reset();
-*/
-
+	moved_away_from_charger_ = true;
+/*
 	// Resume from low battery charge.
 	speaker.play(VOICE_CLEANING_CONTINUE, false);
 	ROS_INFO("%s %d: Resume low battery charge.", __FUNCTION__, __LINE__);
@@ -975,13 +974,13 @@ void CleanModeNav::switchInStateCharge()
 	action_i_ = ac_null;
 	sp_state = state_init.get();
 	sp_state->init();
-	low_battery_charge_ = true;
+	low_battery_charge_ = true;*/
 }
 
 // ------------------State resume low battery charge--------------------
 bool CleanModeNav::checkEnterResumeLowBatteryCharge()
 {
-	if (ev.key_clean_pressed || battery.isReadyToResumeCleaning() || s_wifi.receivePlan1())
+	if (ev.key_clean_pressed /*|| battery.isReadyToResumeCleaning()*/ || s_wifi.receivePlan1())
 	{
 		// For key clean force continue cleaning.
 		if (ev.key_clean_pressed)

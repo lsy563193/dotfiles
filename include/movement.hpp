@@ -237,7 +237,7 @@ class MovementGoToCharger: public IMovement
 {
 public:
 	MovementGoToCharger();
-	~MovementGoToCharger() = default;
+	~MovementGoToCharger();
 	bool _isStop();
 	bool isSwitch();
 	void adjustSpeed(int32_t&, int32_t&) override ;

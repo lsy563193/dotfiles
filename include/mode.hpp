@@ -478,6 +478,7 @@ public:
 	virtual bool isSwitchByEventInStateCharge(){return false;};
 	virtual bool updateActionStateCharge(){};
 	virtual void switchInStateCharge(){};
+	bool moved_away_from_charger_{false};
 
 	// State pause
 	bool isStatePause() const

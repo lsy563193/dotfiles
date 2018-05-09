@@ -201,6 +201,11 @@ bool Lidar::isAlignFinish()
 	return align_finish_;
 }
 
+/*
+ * @author Alvin Xie
+ * @brief filter the line the in the side of the robot, in case the robot will turn a large
+ * 				angle in follow wall movement.
+ * */
 class filter_fit_line{
 public:
 	filter_fit_line(bool is_left):is_left_(is_left) { };
@@ -276,7 +281,7 @@ private:
 };
 
 
-bool Lidar::getFitLine(double r_begin, double r_end, double range, double dis_lim, double *line_radian,
+bool Lidar::getFitLine(std::vector<LineABC>	*fit_line_group, double r_begin, double r_end, double range, double dis_lim, double *line_radian,
 											 double *distance, bool is_left, double line_length_min, bool is_align)
 {
 //	ROS_WARN("angle_range_raw(%lf, %lf)", radian_to_degree(r_begin), radian_to_degree(r_end));
@@ -290,10 +295,10 @@ bool Lidar::getFitLine(double r_begin, double r_end, double range, double dis_li
 	float t_lim_split = 0.10;
 	float t_lim_merge = 0.10;
 	double th;
-	Vector2<double>	New_Lidar_Point;
-	lidar_point_.clear();
-	lidar_group_.clear();
-	fit_line_group_.clear();
+	Vector2<double>	new_lidar_point{};
+	std::vector<Vector2<double>>	lidar_point{};
+	std::vector<std::deque<Vector2<double>> >	lidar_group{};
+	(*fit_line_group).clear();
 
 	if(is_align){
 		consecutive_lim = 0.06;
@@ -343,38 +348,38 @@ bool Lidar::getFitLine(double r_begin, double r_end, double range, double dis_li
 		if (tmp_scan_data.ranges[i] < 4) {
 			th = i * 1.0;
 			th = th + 180.0;
-			New_Lidar_Point.x = cos(degree_to_radian(th)) * tmp_scan_data.ranges[i];
-			New_Lidar_Point.y = sin(degree_to_radian(th)) * tmp_scan_data.ranges[i];
-			coordinate_transform(&New_Lidar_Point.x, &New_Lidar_Point.y, LIDAR_THETA, LIDAR_OFFSET_X, LIDAR_OFFSET_Y);
-			lidar_point_.push_back(New_Lidar_Point);
+			new_lidar_point.x = cos(degree_to_radian(th)) * tmp_scan_data.ranges[i];
+			new_lidar_point.y = sin(degree_to_radian(th)) * tmp_scan_data.ranges[i];
+			coordinate_transform(&new_lidar_point.x, &new_lidar_point.y, LIDAR_THETA, LIDAR_OFFSET_X, LIDAR_OFFSET_Y);
+			lidar_point.push_back(new_lidar_point);
 		}
 		i++;
 		if(i == static_cast<int>(d_end))
 			isReverse = false;
 	}
 
-	if (lidar_point_.empty())
+	if (lidar_point.empty())
 	{
 		ROS_ERROR("%s %d: No lidar point available!", __FUNCTION__, __LINE__);
 		return false;
 	}
-	splitLine(lidar_point_, consecutive_lim,points_count_lim);
-	splitLine2nd(&lidar_group_, t_lim_split,points_count_lim);
-	mergeLine(&lidar_group_, t_lim_merge, is_align);
-	filterShortLine(&lidar_group_, is_align, line_length_min);
-	fitLineGroup(&lidar_group_,dis_lim , is_align);
+	splitLine(lidar_point, lidar_group, consecutive_lim,points_count_lim);
+	splitLine2nd(&lidar_group, t_lim_split,points_count_lim);
+	mergeLine(&lidar_group, t_lim_merge, is_align);
+	filterShortLine(&lidar_group, is_align, line_length_min);
+	fitLineGroup(&lidar_group, fit_line_group,dis_lim , is_align);
 	if (!is_align) {
-		fit_line_group_.erase(std::remove_if(fit_line_group_.begin(), fit_line_group_.end(),filter_fit_line(is_left)),fit_line_group_.end());
+		(*fit_line_group).erase(std::remove_if((*fit_line_group).begin(), (*fit_line_group).end(),filter_fit_line(is_left)),(*fit_line_group).end());
 	}
 	//*line_radian = atan2(-a, b);
-	lidar_group_.clear();
-	if (!fit_line_group_.empty()) {
+	lidar_group.clear();
+	if (!(*fit_line_group).empty()) {
 		if (is_left) {
-			*line_radian = atan2(0 - fit_line_group_.begin()->A, fit_line_group_.begin()->B);
-			*distance = std::abs(fit_line_group_.begin()->C / (sqrt(fit_line_group_.begin()->A * fit_line_group_.begin()->A + fit_line_group_.begin()->B * fit_line_group_.begin()->B)));
+			*line_radian = atan2(0 - (*fit_line_group).begin()->A, (*fit_line_group).begin()->B);
+			*distance = std::abs((*fit_line_group).begin()->C / (sqrt((*fit_line_group).begin()->A * (*fit_line_group).begin()->A + (*fit_line_group).begin()->B * (*fit_line_group).begin()->B)));
 		} else {
-			*line_radian = atan2(0 - fit_line_group_.back().A, fit_line_group_.back().B);
-			*distance = std::abs(fit_line_group_.back().C / (sqrt(fit_line_group_.back().A * fit_line_group_.back().A + fit_line_group_.back().B * fit_line_group_.back().B)));
+			*line_radian = atan2(0 - (*fit_line_group).back().A, (*fit_line_group).back().B);
+			*distance = std::abs((*fit_line_group).back().C / (sqrt((*fit_line_group).back().A * (*fit_line_group).back().A + (*fit_line_group).back().B * (*fit_line_group).back().B)));
 		}
 		//ROS_INFO("a = %lf, b = %lf, c = %lf", a, b, c);
 //		ROS_ERROR("fit line succeed! line_angle = %lf", radian_to_degree(*line_radian));
@@ -436,7 +441,7 @@ bool Lidar::lineFit(const std::deque<Vector2<double>> &points, double &a, double
 	return true;
 }
 
-bool Lidar::splitLine(const std::vector<Vector2<double>> &points, double consecutive_lim, int points_count_lim)
+bool Lidar::splitLine(const std::vector<Vector2<double>> &points, std::vector<std::deque<Vector2<double>> >	&lidar_group_, double consecutive_lim, int points_count_lim)
 {
 	int points_size = points.size();
 	double distance;
@@ -569,7 +574,7 @@ bool Lidar::splitLine2nd(std::vector<std::deque<Vector2<double>> > *groups, doub
 	/*if the lines still can be splited, iterate to split it*/
 	if (end_iterate_flag == false) {
 		//ROS_INFO("iterate!");
-		splitLine2nd(&lidar_group_, t_lim,10);
+		splitLine2nd(groups, t_lim,points_count_lim);
 	}
 //	robot::instance()->pubLineMarker(&lidar_group_,"splitLine2nd");
 	return true;
@@ -774,7 +779,7 @@ void Lidar::filterShortLine(std::vector<std::deque<Vector2<double>> > *groups, b
 	}
 }
 
-bool Lidar::fitLineGroup(std::vector<std::deque<Vector2<double>> > *groups, double dis_lim, bool is_align)
+bool Lidar::fitLineGroup(std::vector<std::deque<Vector2<double>> > *groups, std::vector<LineABC>	*fit_line_group_, double dis_lim, bool is_align)
 {
 	double 	a, b, c;
 	double	x_0;
@@ -782,7 +787,7 @@ bool Lidar::fitLineGroup(std::vector<std::deque<Vector2<double>> > *groups, doub
 	LineABC	new_fit_line;
 //	INFO_BLUE("fitLineGroup");
 //	ROS_INFO("(*groups).size(%d)", (*groups).size());
-	fit_line_group_.clear();
+	(*fit_line_group_).clear();
 	if (!(*groups).empty()) {
 		for (std::vector<std::deque<Vector2<double>> >::iterator iter = (*groups).begin(); iter != (*groups).end(); ++iter) {
 
@@ -808,11 +813,11 @@ bool Lidar::fitLineGroup(std::vector<std::deque<Vector2<double>> > *groups, doub
 //				ROS_ERROR("the line is too far away from robot. line_to_robot_dis = %lf,x_0:%lf,dis_lim:(%lf, %lf)", line_to_robot_dis,x_0,dis_lim, DIS_MIN);
 				continue;
 			}
-			fit_line_group_.push_back(new_fit_line);
+			(*fit_line_group_).push_back(new_fit_line);
 //			ROS_INFO("%s %d: line_angle%d = %lf", __FUNCTION__, __LINE__, loop_count, line_angle);
 			loop_count++;
 		}
-		ACleanMode::pubLineMarker(&fit_line_group_);
+		ACleanMode::pubLineMarker(&(*fit_line_group_));
 	} else {
 		fit_line_marker_.points.clear();
 //		robot::instance()->pubFitLineMarker(fit_line_marker_);
@@ -1115,7 +1120,7 @@ void Lidar::checkRobotSlip()
 	}
 //	ROS_INFO("start to check slip,leftSpeed:%f,rightSpeed:%f",wheel.getLeftWheelActualSpeed(),wheel.getRightWheelActualSpeed());
 	checkSlipInit(acur1_,acur2_,acur3_,acur4_);
-	if ((std::fabs(wheel.getLeftWheelActualSpeed()) >= 0.08 || std::fabs(wheel.getRightWheelActualSpeed()) >= 0.08))
+	if (std::fabs(wheel.getLeftWheelActualSpeed()) >= 0.08 || std::fabs(wheel.getRightWheelActualSpeed()) >= 0.08)
 	{
 		auto tmp_scan_data = getLidarScanDataOriginal();
 		uint16_t same_count = 0;
@@ -1153,23 +1158,17 @@ void Lidar::checkRobotSlip()
 
 //		ROS_WARN("%s %d: same_count: %d, total_count: %d. lidarPoint:%lf", __FUNCTION__, __LINE__, same_count, tol_count,tmp_scan_data.ranges[155]);
 //		ROS_WARN("percent:%lf,slip_cnt_limt:%d,slip_frame_cnt:%d,lidarPoint:%lf,tol_count:%d",slip_ranges_percent_,slip_cnt_limit_,slip_frame_cnt_,tmp_scan_data.ranges[155],tol_count);
+		bool is_low_speed = robot::instance()->getRObotActualSpeed() < 0.08;
 		bool is_back_nothing = tmp_scan_data.ranges[155] >= 4;
-		bool is_back_changing = tmp_scan_data.ranges[155] - last_slip_scan_frame_[0].ranges[155] >= 0.03;
+		bool is_back_changing = is_back_nothing ? true : tmp_scan_data.ranges[155] - last_slip_scan_frame_[0].ranges[155] >= 0.03;
 		bool is_long_hallway;
 		if (is_back_changing) {
 			is_long_hallway = false;
 		} else {
-			if (is_back_nothing) {
-				is_long_hallway = checkLongHallway();
-			} else {
-				is_long_hallway = false;
-			}
+			is_long_hallway = is_back_nothing ? checkLongHallway() : false;
 		}
-//		if (is_long_hallway)
-//			beeper.debugBeep(VALID);
-		if((same_count * 1.0) / (tol_count * 1.0) >= slip_ranges_percent_ && tol_count > 100 &&
-			!is_long_hallway){
-				if (++slip_frame_cnt_ >= slip_cnt_limit_) {
+		if((same_count * 1.0) / (tol_count * 1.0) >= slip_ranges_percent_ && tol_count > 100 && !is_long_hallway){
+				if (++slip_frame_cnt_ >= slip_cnt_limit_ && is_low_speed) {
 					ROS_INFO("\033[35m""%s,%d,robot slip!!""\033[0m", __FUNCTION__, __LINE__);
 					slip_status_ = true;
 					slip_cnt_limit_ = 5;
@@ -1512,10 +1511,10 @@ void Lidar::init()
 	scanCompensate_update_time_ = {};
 	scanXYPoint_update_time_ = {};
 
-	lidar_point_ = {};
-	lidar_group_ = {};
-	lidar_group_2nd_ = {};
-	fit_line_group_ = {};
+//	lidar_point_ = {};
+//	lidar_group_ = {};
+//	lidar_group_2nd_ = {};
+//	fit_line_group_ = {};
 
 	fit_line_marker_ = {};
 
@@ -1821,13 +1820,17 @@ bool Lidar::checkLongHallway()
 	double radian{};
 	double distance{};
 	bool isLeft{true};
-	bool is_success = getFitLine(degree_to_radian(0), degree_to_radian(359), -1.0, 3.0, &radian, &distance, isLeft, 0.30,
+	std::vector<LineABC> fit_line_group;
+	bool is_success = getFitLine(&fit_line_group, degree_to_radian(0), degree_to_radian(359), -1.0, 3.0, &radian, &distance, isLeft, 0.30,
 									 true);
 	double l_k;//slop
 	double l_b;//ordinate at the origin
 	bool is_long_hallway{false};
 	std::vector<uint8_t> side_status{};
-	for (auto &line : fit_line_group_) {
+	if (!is_success) {
+		return false;
+	}
+	for (auto &line : fit_line_group) {
 //		ROS_INFO("line : %lfx + %lfy + %lf = 0", line.A, line.B, line.C);
 		if (line.B != 0) {
 			l_k = - line.A / line.B;
@@ -1837,6 +1840,7 @@ bool Lidar::checkLongHallway()
 			l_b = 0;
 		}
 		//less than 10 degrees
+//		ROS_WARN("angle = %lf, l_b = %lf", radian_to_degree(atan2(l_k,1)), l_b);
 		if (std::fabs(l_k) < 0.17633) {
 			if (std::fabs(l_b) > ROBOT_RADIUS && std::fabs(l_b) < 1.3) {
 //				ROS_WARN("angle = %lf, l_b = %lf", radian_to_degree(atan2(l_k,1)), l_b);

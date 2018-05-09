@@ -17,7 +17,7 @@ public:
 	~Lidar();
 
 	void init();
-	bool getFitLine(double r_begin, double r_end, double range, double dis_lim, double *line_radian, double *distance,
+	bool getFitLine(std::vector<LineABC>	*fit_line_group, double r_begin, double r_end, double range, double dis_lim, double *line_radian, double *distance,
 									bool is_left, double line_length_min, bool is_align = false);
 
 	/*
@@ -44,11 +44,11 @@ public:
 	int8_t isScanCompensateReady();
 
 	bool lineFit(const std::deque<Vector2<double>> &points, double &a, double &b, double &c);
-	bool splitLine(const std::vector<Vector2<double>> &points, double consecutive_lim, int points_count_lim);
+	bool splitLine(const std::vector<Vector2<double>> &points, std::vector<std::deque<Vector2<double>> >	&lidar_group_, double consecutive_lim, int points_count_lim);
 	//bool splitLine2nd(const std::vector<std::vector<Vector2<double>> >	&groups, double t_max, int points_count_lim);
 	bool splitLine2nd(std::vector<std::deque<Vector2<double>> > *groups, double t_max, int points_count_lim);
 	bool mergeLine(std::vector<std::deque<Vector2<double>> > *groups, double t_lim , bool is_align);
-	bool fitLineGroup(std::vector<std::deque<Vector2<double>> > *groups, double dis_lim , bool is_align);
+	bool fitLineGroup(std::vector<std::deque<Vector2<double>> > *groups, std::vector<LineABC>	*fit_line_group_, double dis_lim , bool is_align);
 	void filterShortLine(std::vector<std::deque<Vector2<double>> > *groups, bool is_align, double line_length_min);
 
 	void pubFitLineMarker(double a, double b, double c, double y1, double y2);
@@ -125,10 +125,10 @@ private:
 	double scanCompensate_update_time_;
 	double scanXYPoint_update_time_;
 
-	std::vector<Vector2<double>>	lidar_point_;
-	std::vector<std::deque<Vector2<double>> >	lidar_group_;
-	std::vector<std::deque<Vector2<double>> >	lidar_group_2nd_;
-	std::vector<LineABC>	fit_line_group_;
+//	std::vector<Vector2<double>>	lidar_point_;
+//	std::vector<std::deque<Vector2<double>> >	lidar_group_;
+//	std::vector<std::deque<Vector2<double>> >	lidar_group_2nd_;
+//	std::vector<LineABC>	fit_line_group_;
 	//static float *last_ranges_;
 
 //	ros::Publisher lidar_filter_pub = nh_.advertise<sensor_msgs::LaserScan>("lidar_filter",1);

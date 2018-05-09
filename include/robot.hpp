@@ -263,6 +263,9 @@ public:
 		return filter_time_;
 	}
 
+	double getRObotActualSpeed() const{
+		return robot_actual_speed_;
+	};
 	void updateConsumableStatus();
 
 	void updateCleanRecord(const uint32_t &time, const uint16_t &clean_time, const float &clean_area,
@@ -304,6 +307,7 @@ private:
 	tf::Vector3	slam_pos{};
 	double	slam_rad{};
 
+	double robot_actual_speed_{};
 	// This is for the slam correction variables.
 //	tf::Vector3 correction_pos{};
 //	tf::Vector3	scale_correction_pos{};
@@ -343,8 +347,10 @@ private:
 	//callback function
 	void robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg);
 	void odomPublish(const tf::Vector3& robot_pos, double robot_radian_);
+
 //	void robot_map_metadata_cb(const nav_msgs::MapMetaData::ConstPtr& msg);
 
+	void setRobotActualSpeed();
 
 	bool is_locked_scan_ctrl_{false};
 
@@ -368,6 +374,7 @@ private:
 	//for check lidar stuck
 	double lidar_is_covered_time_{0};
 
+	const double ROBOT_MAX_SPEED{0.3};
 	uint16_t robot_current_{0};
 
 	struct CleanRecord{

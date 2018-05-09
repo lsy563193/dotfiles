@@ -257,7 +257,8 @@ bool MoveTypeFollowWall::_lidarTurnRadian(bool is_left, double &turn_radian, dou
 //	while (ros::ok()) {
 //		wheel.stop();
 //		sleep(1);
-		line_is_found = lidar.getFitLine(lidar_min, lidar_max, -1.0, dis_limit, &line_radian, &distance, is_left_, 0.10);
+	std::vector<LineABC> fit_line_group;
+		line_is_found = lidar.getFitLine(&fit_line_group, lidar_min, lidar_max, -1.0, dis_limit, &line_radian, &distance, is_left_, 0.10);
 //	}
 
 	auto p_mode = dynamic_cast<ACleanMode*> (sp_mode_);

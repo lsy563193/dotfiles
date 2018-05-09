@@ -115,7 +115,7 @@ robot::robot()
 	auto wifi_send_thread = new boost::thread(boost::bind(&S_Wifi::wifi_send_routine,&s_wifi));
 
 	obs.control(ON);
-	ROS_WARN("%s %d: Robot x900(version 0000 r9) is online :)", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Robot x900(version 0000 r10) is online :)", __FUNCTION__, __LINE__);
 }
 
 robot::~robot()
@@ -656,6 +656,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 //	ROS_INFO("tmp_pos(%f,%f),tmp_rad(%f)", tmp_pos.x(), tmp_pos.y(), tmp_rad);
 	robot_pos = tmp_pos;
 	robot_rad = tmp_rad;
+	setRobotActualSpeed();
 	odomPublish(robot_pos, robot_rad);
 }
 
@@ -898,8 +899,7 @@ void robot::wifiSetVacuum()
 }
 
 void robot::loadConsumableStatus()
-{
-	ROS_INFO("%s %d: Load consumable status.", __FUNCTION__, __LINE__);
+{ ROS_INFO("%s %d: Load consumable status.", __FUNCTION__, __LINE__);
 
 	if (access(consumable_file.c_str(), F_OK) == -1)
 	{
@@ -1020,6 +1020,29 @@ void robot::getCleanRecord(uint32_t &time, uint16_t &clean_time, uint16_t &clean
 	clean_time = last_clean_record_.clean_time;
 	clean_area = last_clean_record_.clean_area;
 	clean_map.copy(last_clean_record_.clean_map);
+}
+
+void robot::setRobotActualSpeed() {
+	static auto time = ros::Time::now().toSec();
+	static auto x = robot_pos.x();
+	static auto y = robot_pos.y();
+	static int invalid_count = 1;
+	auto dis = sqrt(pow(x - robot_pos.x(),2) + pow(y - robot_pos.y(),2));
+	auto speed = dis / (ros::Time::now().toSec() - time);
+	speed = speed < ROBOT_MAX_SPEED ? speed : ROBOT_MAX_SPEED;
+	auto isvalid_speed = fabs(speed - robot_actual_speed_) > 0.03 * invalid_count;
+	if(isvalid_speed)
+	{
+		invalid_count++;
+		return;
+	}
+	robot_actual_speed_ = speed;
+//	ROS_INFO("speed: %lf, dis:%lf, delta_time:%lf, invalid_count:%d",
+//	robot_actual_speed_,dis,ros::Time::now().toSec() - time,invalid_count - 1);
+	invalid_count = 1;
+	x = robot_pos.x();
+	y = robot_pos.y();
+	time = ros::Time::now().toSec();
 }
 
 
