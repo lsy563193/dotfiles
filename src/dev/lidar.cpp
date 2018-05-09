@@ -1159,7 +1159,7 @@ void Lidar::checkRobotSlip()
 //		ROS_WARN("%s %d: same_count: %d, total_count: %d. lidarPoint:%lf", __FUNCTION__, __LINE__, same_count, tol_count,tmp_scan_data.ranges[155]);
 //		ROS_WARN("percent:%lf,slip_cnt_limt:%d,slip_frame_cnt:%d,lidarPoint:%lf,tol_count:%d",slip_ranges_percent_,slip_cnt_limit_,slip_frame_cnt_,tmp_scan_data.ranges[155],tol_count);
 		bool is_back_nothing = tmp_scan_data.ranges[155] >= 4;
-		bool is_back_changing = tmp_scan_data.ranges[155] - last_slip_scan_frame_[0].ranges[155] >= 0.03;
+		bool is_back_changing = is_back_nothing ? true : tmp_scan_data.ranges[155] - last_slip_scan_frame_[0].ranges[155] >= 0.03;
 		bool is_long_hallway;
 		if (is_back_changing) {
 			is_long_hallway = false;
@@ -1846,6 +1846,7 @@ bool Lidar::checkLongHallway()
 			l_b = 0;
 		}
 		//less than 10 degrees
+//		ROS_WARN("angle = %lf, l_b = %lf", radian_to_degree(atan2(l_k,1)), l_b);
 		if (std::fabs(l_k) < 0.17633) {
 			if (std::fabs(l_b) > ROBOT_RADIUS && std::fabs(l_b) < 1.3) {
 //				ROS_WARN("angle = %lf, l_b = %lf", radian_to_degree(atan2(l_k,1)), l_b);
