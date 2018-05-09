@@ -1523,13 +1523,13 @@ void S_Wifi::wifi_send_routine()
 
 			if(!is_wifi_connected_)
 				continue;
-
+			/*
 			int pack_size = 0;
 			pthread_mutex_lock(&map_data_lock_);
 			pack_size = map_data_buf_->size();
 			pthread_mutex_unlock(&map_data_lock_);
-
-			if(upload_map_count++ >= pack_size>1?2:10)
+			*/
+			if(upload_map_count++ >= 10/*pack_size>?2:10*/)
 			{
 				this->uploadMap(SLAM_MAP);
 				upload_map_count=0;
