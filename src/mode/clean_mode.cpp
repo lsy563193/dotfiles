@@ -121,7 +121,9 @@ ACleanMode::~ACleanMode()
 					ROS_WARN("%s %d: fatal_quit is true. Stop cleaning.", __FUNCTION__, __LINE__);
 			} else if (ev.key_clean_pressed || ev.key_long_pressed)
 			{
-				if (mode_i_ != cm_exploration && mode_i_ != cm_navigation)
+				if (mode_i_ == cm_exploration)
+					speaker.play(VOICE_CLEANING_STOP, false);
+				else if (mode_i_ != cm_navigation)
 					speaker.play(VOICE_CLEANING_FINISHED, false);
 				ROS_WARN("%s %d: Finish cleaning for key_clean_pressed or key_long_pressed.", __FUNCTION__, __LINE__);
 			} else if (mode_i_ == cm_navigation && (trapped_closed_or_isolate || trapped_time_out_))

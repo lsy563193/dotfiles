@@ -92,7 +92,13 @@ bool ModeCharge::isExit()
 
 	if (ev.key_clean_pressed)
 	{
-		if (!battery.isReadyToClean())
+		auto p_movement_charge = boost::dynamic_pointer_cast<MovementCharge>(sp_action_);
+		if (p_movement_charge->batteryFullAndSleep())
+		{
+			sp_action_.reset(new MovementCharge);
+			if (s_wifi.isConnected())
+				wifi_led.setMode(LED_STEADY, WifiLed::state::on);
+		} else if (!battery.isReadyToClean())
 		{
 			ROS_WARN("%s %d: Battery not ready to clean.", __FUNCTION__, __LINE__);
 			speaker.play(VOICE_BATTERY_LOW);
@@ -114,6 +120,7 @@ bool ModeCharge::isExit()
 			}
 			return true;
 		}
+		ev.key_clean_pressed = false;
 	}
 
 	if (s_wifi.receivePlan1())
@@ -160,36 +167,16 @@ bool ModeCharge::isFinish()
 void ModeCharge::remoteClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Receive remote key clean.", __FUNCTION__, __LINE__);
-	if (charger.isDirected())
-	{
-		beeper.beepForCommand(INVALID);
-		speaker.play(VOICE_PLEASE_PULL_OUT_THE_PLUG, false);
-		speaker.play(VOICE_BATTERY_CHARGE);
-		ROS_WARN("%s %d: change charge mode to navigation mode by remote clean failed because of charging with adapter.", __FUNCTION__, __LINE__);
-	}
-	else
-	{
-		ev.key_clean_pressed = true;
-		beeper.beepForCommand(VALID);
-	}
+	ev.key_clean_pressed = true;
+	beeper.beepForCommand(VALID);
 	remote.reset();
 }
 
 void ModeCharge::keyClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Receive key clean.", __FUNCTION__, __LINE__);
-	if (charger.isDirected())
-	{
-		beeper.beepForCommand(INVALID);
-		speaker.play(VOICE_PLEASE_PULL_OUT_THE_PLUG, false);
-		speaker.play(VOICE_BATTERY_CHARGE);
-		ROS_WARN("%s %d: change charge mode to navigation mode by key clean failed because of charging with adapter.", __FUNCTION__, __LINE__);
-	}
-	else
-	{
-		ev.key_clean_pressed = true;
-		beeper.beepForCommand(VALID);
-	}
+	ev.key_clean_pressed = true;
+	beeper.beepForCommand(VALID);
 
 	// Wait for key released.
 	while (key.getPressStatus())

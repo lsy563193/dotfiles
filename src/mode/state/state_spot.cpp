@@ -19,8 +19,6 @@ void StateSpot::init()
 								: vacuum.setForCurrentMode(Vacuum::VacMode::vac_max_mode);
 	brush.fullOperate();
 	key_led.setMode(LED_STEADY, LED_GREEN);
-	if (robot::instance()->getRobotWorkMode() == Mode::cm_navigation)
-		speaker.play(VOICE_CLEANING_SPOT);
 	s_wifi.setWorkMode(Mode::cm_spot);
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 //	ROS_INFO("%s %d: Enter state resume low battery charge%s.", __FUNCTION__, __LINE__, getMode()->isNavMode() ? " in navigation" : "");
