@@ -33,7 +33,7 @@ ACleanMode::ACleanMode()
 	tmp_target_pub_ = clean_nh_.advertise<visualization_msgs::Marker>("tmp_target", 1);
 	point_marker_pub_ = clean_nh_.advertise<visualization_msgs::Marker>("point_marker", 1);
 	send_clean_map_marker_pub_ = clean_nh_.advertise<visualization_msgs::Marker>("clean_map_markers", 1);
-	fit_line_marker_pub_ = clean_nh_.advertise<visualization_msgs::Marker>("fit_line_marker", 1);
+	fit_line_marker_pub_ = clean_nh_.advertise<visualization_msgs::Marker>("fit_line_marker_", 1);
 	line_marker_pub_ = clean_nh_.advertise<visualization_msgs::Marker>("line_marker", 1);
 	line_marker_pub2_ = clean_nh_.advertise<visualization_msgs::Marker>("line_marker2", 1);
 
@@ -121,7 +121,9 @@ ACleanMode::~ACleanMode()
 					ROS_WARN("%s %d: fatal_quit is true. Stop cleaning.", __FUNCTION__, __LINE__);
 			} else if (ev.key_clean_pressed || ev.key_long_pressed)
 			{
-				if (mode_i_ != cm_exploration && mode_i_ != cm_navigation)
+				if (mode_i_ == cm_exploration)
+					speaker.play(VOICE_CLEANING_STOP, false);
+				else if (mode_i_ != cm_navigation)
 					speaker.play(VOICE_CLEANING_FINISHED, false);
 				ROS_WARN("%s %d: Finish cleaning for key_clean_pressed or key_long_pressed.", __FUNCTION__, __LINE__);
 			} else if (mode_i_ == cm_navigation && (trapped_closed_or_isolate || trapped_time_out_))
@@ -130,15 +132,15 @@ ACleanMode::~ACleanMode()
 				trapped_closed_or_isolate = false;
 				trapped_time_out_ = false;
 				ROS_WARN("%s %d: Robot is trapped.Stop cleaning.", __FUNCTION__, __LINE__);
+			} else if (mode_i_ == cm_navigation && moved_during_pause_)
+			{
+				speaker.play(VOICE_CLEANING_FINISHED, false);
+				ROS_WARN("%s %d: Moved during pause. Stop cleaning.", __FUNCTION__, __LINE__);
 			} else if (mode_i_ == cm_exploration ||
 					((mode_i_ == cm_navigation || mode_i_ == cm_wall_follow) && seen_charger_during_cleaning_))
 			{
 				speaker.play(VOICE_BACK_TO_CHARGER_FAILED, false);
 				ROS_WARN("%s %d: Finish cleaning but failed to go to charger.", __FUNCTION__, __LINE__);
-			} else if (mode_i_ == cm_navigation && moved_during_pause_)
-			{
-				speaker.play(VOICE_CLEANING_FINISHED, false);
-				ROS_WARN("%s %d: Moved during pause. Stop cleaning.", __FUNCTION__, __LINE__);
 			} else if (mode_i_ != cm_exploration && !seen_charger_during_cleaning_)
 			{
 				speaker.play(VOICE_CLEANING_FINISHED, false);
@@ -204,7 +206,8 @@ void ACleanMode::saveBlock(int block, int dir, std::function<Cells()> get_list)
 //		}
 		c_blocks.insert({block, cell});
 	}
-	ROS_INFO("%s", debug_str.c_str());
+	if (sizeof(debug_str) != 0)
+		ROS_INFO("%s", debug_str.c_str());
 }
 
 void ACleanMode::saveBlocks() {
@@ -1028,7 +1031,7 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_mt) {
 		}
 	}
 
-	if (distance > 5 && getNextMode() != cm_spot) {// closed
+	if (distance > 10 && getNextMode() != cm_spot) {// closed
 		ROS_INFO("next_mode_i_(%d)",getNextMode());
 		ROS_INFO("mode_i_(%d)",mode_i_);
 		is_closed = true;
@@ -1722,6 +1725,22 @@ bool ACleanMode::checkEnterGoHomePointState()
 
 bool ACleanMode::isSwitchByEventInStateGoHomePoint()
 {
+	if (isFirstTimeGoHomePoint())
+	{
+		if (ev.remote_home || s_wifi.receiveHome())
+		{
+			if (ev.remote_home)
+				remote_go_home_point = true;
+			if (s_wifi.receiveHome())
+			{
+				wifi_go_home_point = true;
+				s_wifi.resetReceivedWorkMode();
+			}
+			sp_state->init();
+			speaker.play(VOICE_GO_HOME_MODE);
+			setFirstTimeGoHomePoint(false);
+		}
+	}
 	return checkEnterExceptionResumeState();
 }
 
@@ -1951,8 +1970,16 @@ void ACleanMode::switchInStateExceptionResume()
 		ROS_INFO("%s %d: Resume to previous state", __FUNCTION__, __LINE__);
 		action_i_ = ac_null;
 		genNextAction();
-		sp_state = sp_saved_states.back();
-		sp_saved_states.pop_back();
+		if (sp_saved_states.empty())
+		{
+			ROS_ERROR("%s %d: Saved state is empty!!", __FUNCTION__, __LINE__);
+			sp_state = state_init.get();
+		}
+		else
+		{
+			sp_state = sp_saved_states.back();
+			sp_saved_states.pop_back();
+		}
 		sp_state->init();
 	}
 	else
@@ -2090,8 +2117,15 @@ void ACleanMode::switchInStateFollowWall()
 		ROS_WARN("%s %d:escape_trapped_ restore state from trapped !", __FUNCTION__, __LINE__);
 //		sp_state = (sp_tmp_state == state_clean) ? state_clean : state_exploration;
 		out_of_trapped = false;
-		sp_state = sp_saved_states.back();
-		sp_saved_states.pop_back();
+		if (sp_saved_states.empty())
+			ROS_ERROR("%s %d: Saved state is empty!!", __FUNCTION__, __LINE__);
+		else
+			sp_saved_states.pop_back();
+
+		if (mode_i_ == cm_navigation)
+			sp_state = state_clean.get();
+		else if (mode_i_ == cm_exploration)
+			sp_state = state_exploration.get();
 		sp_state->init();
 	}
 }
@@ -2208,15 +2242,13 @@ void ACleanMode::setVacuum()
 	if (water_tank.getStatus(WaterTank::operate_option::swing_motor))
 		return;
 
+	speaker.play(vacuum.isUserSetMaxMode() ? VOICE_VACCUM_MAX : VOICE_VACUUM_NORMAL);
 	if ((isStateInit() && action_i_ > ac_open_gyro)
 		|| isStateClean()
 		|| isStateFollowWall())
 	{
 		auto user_set_max_mode = vacuum.isUserSetMaxMode();
 		if (vacuum.isCurrentMaxMode() != user_set_max_mode)
-		{
 			vacuum.setSpeedByUserSetMode();
-			speaker.play(vacuum.isCurrentMaxMode() ? VOICE_VACCUM_MAX : VOICE_VACUUM_NORMAL);
-		}
 	}
 }

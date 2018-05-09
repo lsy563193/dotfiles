@@ -9,13 +9,13 @@ SpotCleanPathAlgorithm::SpotCleanPathAlgorithm()
 	Cell_t  cur = getPosition().toCell();
 	float radius = 0.5;
 	initVariables(radius,cur);
-	genTargets( ANTI_CLOCKWISE, radius, &targets_cells_,cur);
+	getTargets( ANTI_CLOCKWISE, radius, &targets_cells_,cur);
 }
 
 SpotCleanPathAlgorithm::SpotCleanPathAlgorithm(float radius,Cell_t cur_cell)
 {
 	initVariables(radius,cur_cell);
-	genTargets( ANTI_CLOCKWISE,radius, &targets_cells_, cur_cell);
+	getTargets( ANTI_CLOCKWISE,radius, &targets_cells_, cur_cell);
 }
 
 SpotCleanPathAlgorithm::~SpotCleanPathAlgorithm()
@@ -29,7 +29,7 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, con
 	if(!ev.bumper_triggered && !ev.cliff_triggered && !ev.rcon_status){
 		if(!spot_running_){
 			spot_running_ = true;
-			plan_path = cells_generate_points(targets_cells_);
+			plan_path = *cells_generate_points(make_unique<Cells>(targets_cells_));
 			ROS_INFO("targets size %lu",plan_path.size());
 			return true;
 		}
@@ -60,7 +60,7 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, con
 
 					auto shortest_path_cells = findShortestPath(map,cur.toCell(),next_point.toCell(),last_dir,true,true,min_corner_,max_corner_);
 					if(!shortest_path_cells.empty())
-						shortest_path = cells_generate_points(shortest_path_cells);
+						plan_path = *cells_generate_points(make_unique<Cells>(shortest_path_cells));
 					else
 						continue;
 				}
@@ -108,7 +108,7 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, con
 						auto shortest_path_cells = findShortestPath(map, cur.toCell(), next_point.toCell(), next_dir, true, true, min_corner_, max_corner_);
 
 						if(!shortest_path_cells.empty())
-							shortest_path = cells_generate_points(shortest_path_cells);
+							shortest_path = *cells_generate_points(make_unique<Cells>(shortest_path_cells));
 						else
 							continue;
 					}
@@ -148,7 +148,7 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, con
 	if(!ev.bumper_triggered && !ev.cliff_triggered && !ev.rcon_status && !ev.lidar_triggered){
 		if(!spot_running_){
 			spot_running_ = true;
-			plan_path = cells_generate_points(targets_cells_);
+			plan_path = *cells_generate_points(make_unique<Cells>(targets_cells_));
 			ROS_INFO("%s,%d ,targets size %lu",__FUNCTION__,__LINE__,plan_path.size());
 			return true;
 		}
@@ -179,6 +179,14 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, con
 	}
 	else if(ev.bumper_triggered || ev.cliff_triggered || ev.rcon_status || ev.lidar_triggered)
 	{
+		ROS_INFO("\033[32m%s,%d,bumper %d, cliff %d, rcon %d,lidar %d\033[0m",__FUNCTION__,__LINE__,ev.bumper_triggered,ev.cliff_triggered,ev.rcon_status,ev.lidar_triggered);
+		if(!spot_running_)
+		{
+			spot_running_ = true;
+			plan_path = *cells_generate_points(make_unique<Cells>(targets_cells_));
+			ROS_INFO("%s,%d ,targets size %lu",__FUNCTION__,__LINE__,plan_path.size());
+			return true;
+		}
 		if(event_detect_ && plan_path_last_.size()>1 )
 		{
 			plan_path_last_.pop_front();
@@ -223,7 +231,7 @@ void SpotCleanPathAlgorithm::initVariables(float radius,Cell_t cur_cell)
 }
 
 /*
-void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float radius,Cells *targets,const Cell_t begincell)
+void SpotCleanPathAlgorithm::getTargets(uint8_t sp_type,float radius,Cells *targets,const Cell_t begincell)
 {
 	targets->clear();
 	int16_t i;
@@ -430,7 +438,7 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float radius,Cells *targ
 }
 */
 
-void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float radius,Cells *targets,const Cell_t begincell)
+void SpotCleanPathAlgorithm::getTargets(uint8_t sp_type,float radius,Cells *targets,const Cell_t begincell)
 {
 	sp_type = sp_type;
 
@@ -450,14 +458,12 @@ void SpotCleanPathAlgorithm::genTargets(uint8_t sp_type,float radius,Cells *targ
 	{3, -2},{3, -1},{3, 0},{3, 1},{3, 2},{3, 3},{2, 3},{1, 3},{0, 3},{-1, 3},{-2, 3},{-3, 3},{-3, 2},{-3, 1},{-3, 0},{-3, -1},{-3, -2},{-3, -3},{-2, -3},{-1, -3},{0, -3},{1, -3},{2, -3},{3, -3},
 	{4, -3},{4, -2},{4, -1},{4, 0},{4, 1},{4, 2},{4, 3},{4, 4},{3, 4},{2, 4},{1, 4},{0, 4},{-1, 4},{-2, 4},{-3, 4},{-4, 4},{-4, 3},{-4, 2},{-4, 1},{-4, 0},{-4, -1},{-4, -2},{-4, -3},{-4, -4},{-3, -4},{-2, -4},{-1, -4},{0, -4},{1, -4},{2, -4},{3, -4},{4, -4},{4, -3},{4, -2},{4, -1},{4, 0},{4, 1},{4, 2},{4, 3},
 	{3, 3},{2, 3},{1, 3},{0, 3},{-1, 3},{-2, 3},{-3, 3},{-3, 2},{-3, 1},{-3, 0},{-3, -1},{-3, -2},{-3, -3},{-2, -3},{-1, -3},{0, -3},{1, -3},{2, -3},{3, -3},{3, -2},{3, -1},{3, 0},{3, 1},{3, 2},
-	{2, 2},{1, 2},{0, 2},{-1, 2},{-2, 2},{-2, 1},{-2, 0},{-2, -1},{-2, -2},{-1, -2},{0, -2},{1, -2},{2, -2},{2, -1},{2, 0},{2, 1},
-	{1, 1},{0, 1},{-1, 1},{-1, 0},{-1, -1},{0, -1},{1, -1},{1, 0},
-	{0, 0}
+	{2, 2},{1, 2},{0, 2},{-1, 2},{-2, 2},{-2, 1},{-2, 0},{-2, -1},{-2, -2},{-1, -2},{0, -2},{1, -2},{2, -2},{2, -1},{2, 0},{2,1},{1,1},{0,1},{-1,1},{-1,0},{-1,-1},{0,-1},{1,-1},{1,0},{0,0}
 	};
 	std::initializer_list<Cell_t>::iterator p_it = p_path.begin();
 	for(int i=0;i <p_path.size();i++){
 		targets->push_back(*(p_it+i) + begincell);
-		//ROS_INFO("%s,%d,path list (%d,%d)",__FUNCTION__,__LINE__,targets->back().GetX(),targets->back().GetY());
+		ROS_INFO("%s,%d,path list (%d,%d)",__FUNCTION__,__LINE__,targets->back().GetX(),targets->back().GetY());
 	}
 
 }

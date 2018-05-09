@@ -39,7 +39,7 @@ void ActionAlign::run()
 	}
 
 	if(!lidar.isAlignFinish() &&
-					lidar.getFitLine(degree_to_radian(0), degree_to_radian(359), -1.0, 3.0, &align_radian, &distance, isLeft,
+					lidar.getFitLine(degree_to_radian(0), degree_to_radian(359), -1.0, 3.0, &align_radian, &distance, isLeft, 0.30,
 													 true))
 	{
 		lidar.alignRadian(static_cast<float>(ranged_radian(align_radian)));

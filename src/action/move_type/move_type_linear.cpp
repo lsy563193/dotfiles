@@ -196,7 +196,7 @@ void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 				{
 					if(switchLinearTargetByRecalc(p_clean_mode))
 					{
-						beeper.debugBeep(VALID);
+//						beeper.debugBeep(VALID);
 						{
 							radian_diff_count = 0;
 							return;
@@ -243,7 +243,7 @@ void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 		if (std::abs(target_xy - curr_xy) < LINEAR_NEAR_DISTANCE)
 		{
 			stop_generate_next_target = true;
-			if(!switchLinearTargetByRecalc(p_clean_mode))
+			if(switchLinearTargetByRecalc(p_clean_mode))
 				stop_generate_next_target = false;
 		}
 	}

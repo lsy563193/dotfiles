@@ -26,7 +26,7 @@ MovementCharge::MovementCharge()
 	charger.setStart();
 	usleep(30000);
 
-	show_battery_info_time_stamp_ = time(NULL);
+	show_battery_info_time_stamp_ = 0;
 
 	directly_charge_ = charger.isDirected();
 
@@ -69,7 +69,7 @@ bool MovementCharge::isFinish()
 			}
 		}
 
-		if (charger.getChargeStatus() && battery.isFull())
+		if (!battery_full_ && charger.getChargeStatus() && battery.isFull())
 		{
 			if (battery_full_start_time_ == 0)
 			{
@@ -79,7 +79,12 @@ bool MovementCharge::isFinish()
 
 			// Show green key_led for 60s before going to sleep mode.
 			if (ros::Time::now().toSec() - battery_full_start_time_ >= 60)
+			{
+				wifi_led.setMode(LED_STEADY, WifiLed::state::off);
 				key_led.setMode(LED_STEADY, LED_OFF);
+				battery_full_ = true;
+				speaker.play(VOICE_SLEEP_UNOFFICIAL);
+			}
 			else
 				key_led.setMode(LED_STEADY, LED_GREEN);
 		}
@@ -129,7 +134,8 @@ void MovementCharge::run()
 	// Debug for charge info
 	if (time(NULL) - show_battery_info_time_stamp_ > 5)
 	{
-		ROS_WARN("%s %d: battery voltage \033[32m%5.2f V\033[0m.", __FUNCTION__, __LINE__, (float)battery.getVoltage()/100.0);
+		ROS_WARN("%s %d: battery voltage %5.2f V, charge command:%d, charge status:%d.", __FUNCTION__
+		, __LINE__, (float)battery.getVoltage()/100.0, serial.getSendData(CTL_CHARGER), charger.getChargeStatus());
 		show_battery_info_time_stamp_ = time(NULL);
 	}
 

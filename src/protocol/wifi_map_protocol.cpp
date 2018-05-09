@@ -35,18 +35,14 @@ void WifiMapManage::runLengthEncoding(GridMap &grid_map, WifiMap &wifi_map, cons
 	ROS_INFO("%s %d: End run-length encoding, data size(%d).", __FUNCTION__, __LINE__, data.size());
 }
 
-uint8_t WifiMapManage::changeCost(int cost) {
-    {
-//	if(cost == 100)
-//		return 2;
-//    else if(cost == -1)
-//		return 1;
-//	else//cost = 0
-//		return 0;
-//    if(cost != 0 || cost != 1)
-//		return 2;
-        return cost;
-    }
+uint8_t WifiMapManage::changeCost(int cost)
+{
+	if(cost == 100)//block
+		return 0x01;
+	else if(cost == 0 || cost == 1)//clean
+		return 0x02;
+	else if(cost == -1)//unclean
+		return 0x03;
 }
 
 //void WifiMapManage::display() {

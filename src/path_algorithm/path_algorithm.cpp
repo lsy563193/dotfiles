@@ -2,10 +2,63 @@
 // Created by austin on 17-12-3.
 //
 
+#include <queue>
 #include "ros/ros.h"
 #include "robot.hpp"
 #include "path_algorithm.h"
 ACleanMode* APathAlgorithm::p_cm_ = nullptr;
+class PriorityQueueElement{
+public:
+	PriorityQueueElement() { };
+	PriorityQueueElement(const Cell_t& elem, int score, bool removed):elem_(elem),score_(score),removed_(removed) { };
+
+	bool operator<(const PriorityQueueElement& other) const{
+		return score_ > other.score_;
+	}
+
+    Cell_t elem_{};
+    int score_{};
+    bool removed_{};
+
+};
+
+class PriorityQueue {
+public:
+	PriorityQueue(std::function<int(const Cell_t&)> key)
+	:key_get_score_(std::move(key)){
+	}
+//	:key_get_score_(std::move(key)){
+//	}
+	bool contains(Cell_t& item) { return map_.find(item) != map_.end(); }
+
+	void push(const Cell_t& item) {
+		PriorityQueueElement e{item, key_get_score_(item),false};
+		pq_.push(e);
+        map_[item] = e;
+	}
+
+	void remove(Cell_t& elem){
+		map_[elem].removed_ = true;
+	}
+
+	Cell_t pop() {
+        while (true){
+            auto e = pq_.top();
+            pq_.pop();
+            if (!e.removed_){
+				map_.erase(e.elem_);
+				return e.elem_;
+			}
+    	}
+	}
+
+	bool empty() const { return map_.empty(); }
+
+private:
+	std::function<int(const Cell_t&)> key_get_score_;
+    std::priority_queue<PriorityQueueElement,std::vector<PriorityQueueElement>, std::less<PriorityQueueElement>> pq_;
+	std::map<Cell_t,PriorityQueueElement> map_;
+};
 
 const Cell_t cell_direction_[9]{{1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1},{0,0}};
 void APathAlgorithm::displayCellPath(const Cells &path)
@@ -43,12 +96,12 @@ void APathAlgorithm::displayPointPath(const Points &point_path)
 	ROS_INFO("%s",msg.c_str());
 }
 
-Points APathAlgorithm::cells_generate_points(Cells &path)
+std::unique_ptr<Points> APathAlgorithm::cells_generate_points(const std::unique_ptr<Cells>& path)
 {
 //	displayCellPath(path);
-	Points point_path{};
-	if(!path.empty()){
-		for(auto it = path.begin(); it < path.end(); ++it) {
+	auto  point_path = make_unique<Points>();
+	if(!path->empty()){
+		for(auto it = path->begin(); it < path->end(); ++it) {
 			Point_t target {cellToCount((*it).x),cellToCount((*it).y),0};
 			auto it_next = it+1;
 			if (it->x == it_next->x)
@@ -61,12 +114,12 @@ Points APathAlgorithm::cells_generate_points(Cells &path)
 				target.dir = it->x > it_next->x ? MAP_NEG_X : MAP_POS_X;
 				target.th = isPos(target.dir) ? 0 : PI;
 			}
-			point_path.push_back(target);
+			point_path->push_back(target);
 		}
 	//		ROS_INFO("path.back(%d,%d,%d)",path.back().n, path.back().y, path.back().TH);
 
-		point_path.back().dir = (point_path.end()-2)->dir;
-		point_path.back().th = (point_path.end()-2)->th;
+		point_path->back().dir = (point_path->end()-2)->dir;
+		point_path->back().th = (point_path->end()-2)->th;
 	}
 	return point_path;
 }
@@ -75,7 +128,7 @@ bool APathAlgorithm::generateShortestPath(GridMap &map, const Point_t &curr,cons
 	Cell_t corner1 ,corner2;
 	auto path_cell = findShortestPath(map, curr.toCell(), target.toCell(),last_dir, false,false,corner1,corner2);
 
-	plan_path = cells_generate_points(path_cell);
+	plan_path = *cells_generate_points(make_unique<Cells>(path_cell));
 }
 
 Cells APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const Cell_t &target,
@@ -297,6 +350,116 @@ Cells APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const 
 	return path_;
 }
 
+inline uint16_t heuristic_estimate_of_distance(const Cell_t& curr,const Cell_t& goal){
+	return static_cast<uint16_t>(std::abs(curr.x - goal.x) + std::abs(curr.y - goal.y));
+};
+
+std::unique_ptr<Cells> reconstruct_path(std::map<Cell_t,Cell_t>& cameFrom,Cell_t& current){
+	auto total_path = make_unique<Cells>();
+	total_path->emplace_front(current);
+	while(std::any_of(cameFrom.begin(), cameFrom.end(),[&](std::pair<Cell_t,Cell_t> t_map){return t_map.first == current;}))
+	{
+		current = cameFrom[current];
+		total_path->emplace_front(current);
+	}
+	return total_path;
+}
+
+uint16_t distween_between(const Cell_t &curr, const Cell_t &neighbor) {
+	auto dir = get_dir(curr, neighbor);
+//	printf("(%d),nei(%d,%d),curr(%d,%d)~~~~~~~~~~~~~~\n",dir,neighbor.x,neighbor.y,curr.x,curr.y);
+	return static_cast<uint16_t>(get_dir(neighbor, curr) < 4 ? 10 : 14);
+}
+bool APathAlgorithm::isAccessible(const Cell_t &c_it, const BoundingBox2& bound, GridMap& map) {
+    return bound.Contains(c_it) && map.isBlockAccessible(c_it.x, c_it.y);
+}
+class Neighbors{
+public:
+	Neighbors(const Cell_t& curr,Dir_t dir) {
+//		assert(dir >=0 && dir<4);
+        if(!(dir >=0 && dir<4))
+		{
+//			dir = MAP_POS_X;
+            ROS_WARN("dir(%d) is bad",dir);
+		}
+//        printf("%d", dir);
+        if(dir == 0 || dir == MAP_ANY)
+		{
+			cells_.emplace_back(curr + cell_direction_[1]);
+			cells_.emplace_back(curr + cell_direction_[2]);
+			cells_.emplace_back(curr + cell_direction_[3]);
+			cells_.emplace_back(curr + cell_direction_[0]);
+		} else if(dir == 1){
+			cells_.emplace_back(curr + cell_direction_[0]);
+			cells_.emplace_back(curr + cell_direction_[2]);
+			cells_.emplace_back(curr + cell_direction_[3]);
+			cells_.emplace_back(curr + cell_direction_[1]);
+		} else if(dir == 2){
+			cells_.emplace_back(curr + cell_direction_[3]);
+			cells_.emplace_back(curr + cell_direction_[0]);
+			cells_.emplace_back(curr + cell_direction_[1]);
+			cells_.emplace_back(curr + cell_direction_[2]);
+		}else {
+			cells_.emplace_back(curr + cell_direction_[2]);
+			cells_.emplace_back(curr + cell_direction_[0]);
+			cells_.emplace_back(curr + cell_direction_[1]);
+			cells_.emplace_back(curr + cell_direction_[3]);
+		}
+	}
+    Cells::iterator begin()
+	{
+
+		return cells_.begin();
+	}
+	Cells::iterator end()
+	{
+		return cells_.end();
+	}
+
+
+private:
+	Cells cells_;
+};
+std::unique_ptr<Cells> APathAlgorithm::shortestPath(const Cell_t &start, const Cell_t& goal, const cmp_condition_t is_accessible, Dir_t dir)
+{
+    auto closedSet = std::multiset<Cell_t>();
+	std::map<Cell_t,Cell_t> cameFrom{};
+	std::map<Cell_t,uint16_t> g_score{{start, 0}};
+	std::map<Cell_t,uint16_t> h_score{{start, heuristic_estimate_of_distance(start, goal)}};
+	PriorityQueue openSet([&](const Cell_t& cell){ return g_score[cell] + h_score[cell];});
+	openSet.push(start);
+    while (!openSet.empty()){
+        auto current = openSet.pop();
+//        printf("curr(%d,%d)\n",current.x, current.y);
+        if (goal == current)
+		{
+//			printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!curr(%d,%d)\n",current.x, current.y);
+			return reconstruct_path(cameFrom, current);
+		}
+        closedSet.insert(current);
+		for (auto& neighbor : Neighbors(current, (current == start) ? dir : get_dir(current, cameFrom[current]))) {
+			if (std::any_of(closedSet.begin(), closedSet.end(), CellEqual(neighbor)))
+				continue;
+			if(!is_accessible(neighbor))
+				continue;
+
+			auto tentative_gScore = g_score[current] + distween_between(current, neighbor);
+			if (openSet.contains(neighbor))
+			{
+				if (tentative_gScore >= g_score[neighbor])
+					continue;
+				openSet.remove(neighbor);
+			}
+			cameFrom[neighbor] = current;
+			g_score[neighbor] = tentative_gScore;
+			h_score[neighbor] = heuristic_estimate_of_distance(neighbor, goal);
+			openSet.push(neighbor);
+		}
+	}
+
+    return {};
+}
+
 bool APathAlgorithm::checkTrappedUsingDijkstra(GridMap &map, const Cell_t &curr_cell)
 {
 	Cells targets;
@@ -328,3 +491,43 @@ bool APathAlgorithm::isTargetReachable(GridMap map,Cell_t target)
 	return true;
 
 }
+
+std::unique_ptr<Cell_t> APathAlgorithm::find_target(const Cell_t &start, cmp_one is_target, cmp_one is_accessible,
+                                                    const cmp_two &cmp_lambda) {
+
+	std::priority_queue<Cell_t,std::vector<Cell_t>, decltype(cmp_lambda)> openSet(cmp_lambda);
+    std::set<Cell_t> open_set;
+	std::set<Cell_t> closedSet;
+	openSet.push(start);
+	open_set.insert(start);
+
+	while (!openSet.empty()) {
+
+		auto current = openSet.top();
+
+        if (is_target(current)) {
+			return make_unique<Cell_t>(current);
+		}
+		closedSet.insert(current);
+		openSet.pop();
+		open_set.erase(current);
+
+		for (auto index = 0; index < 4; index++) {
+				auto neighbor = current + cell_direction_[index];
+
+			if (std::any_of(closedSet.begin(), closedSet.end(), CellEqual(neighbor)))
+				continue;
+
+            if (!is_accessible(neighbor))
+				continue;
+
+            if(open_set.find(neighbor) != open_set.end())
+				continue;
+
+			openSet.push(neighbor);
+            open_set.insert(neighbor);
+		}
+	}
+	return {};
+}
+
