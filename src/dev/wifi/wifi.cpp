@@ -55,6 +55,7 @@ bool S_Wifi::deinit()
 	quit();
 	delete map_data_buf_;
 	delete history_map_data_;
+	delete history_pass_path_data_;
 	return true;
 }
 
@@ -734,7 +735,7 @@ bool S_Wifi::uploadMap(MapType map)
 		Point_t cur_pos = getPosition(SLAM_POSITION_SLAM_ANGLE);
 		int16_t c_x = cur_pos.toCell().x;
 		int16_t c_y = cur_pos.toCell().y;
-		// -- push boundary
+		// ---- push boundary
 		if(slam_grid_map.getCleanedArea()>0)
 		{
 			//push clean_area and work_time
@@ -802,7 +803,7 @@ bool S_Wifi::uploadMap(MapType map)
 			map_packs.push_back(map_data);
 			map_data.clear();
 		}
-		// -- push pass_path
+		// ---- push pass_path
 		Points pass_path;
 		pthread_mutex_lock(&map_data_lock_);
 		if (!map_data_buf_->empty())
@@ -907,41 +908,74 @@ bool S_Wifi::uploadMap(MapType map)
 	//--upload SLAM map
 	else if(map == S_Wifi::SLAM_MAP)
 	{
-		uint8_t *slam_map_data = NULL;
-		size_t slam_map_s =0;//size
-		WifiMapManage wmm;
-		wmm.getData(slam_map_data,&slam_map_s);
+		WifiMap *a_slam_map_data;
+		a_slam_map_data = wifiMapManage.getData();
 
-		if(slam_map_data != NULL)
+		if(a_slam_map_data != nullptr)
 		{
 			GridMap g_map;
 			if (!robot::instance()->getCleanMap(g_map))
 				return false;
 
 			uint16_t clean_area = (uint16_t)(g_map.getCleanedArea()*CELL_SIZE*CELL_SIZE*100);
+			auto left_top_corner= std::get<0>(*a_slam_map_data);
+			auto width = std::get<1>(*a_slam_map_data);
+			auto &data = std::get<2>(*a_slam_map_data);
+			auto data_cnt = 0;
+
 			//--push clean_area and work_time
 			map_data.push_back((uint8_t)((clean_area&0xff00)>>8));
 			map_data.push_back((uint8_t)clean_area);
 			map_data.push_back((uint8_t)((robot_timer.getWorkTime()&0x0000ff00)>>8));
 			map_data.push_back((uint8_t)robot_timer.getWorkTime());
+
+			//-- push map data
+
 			map_data.push_back(0x01);//data type
-			for(int i=0;i<slam_map_s;i++)
+
+			map_data.push_back(left_top_corner.x>>8);
+			map_data.push_back(left_top_corner.x);
+			map_data.push_back(left_top_corner.y>>8);
+			map_data.push_back(left_top_corner.y);
+
+			map_data.push_back(width>>8);
+			map_data.push_back(width);
+			for (size_t i = 0; i <= data.size(); ++i)
 			{
-				map_data.push_back(*(slam_map_data+i));
-				//--
-				if(i>=240)
+				data_cnt+=3;
+				map_data.push_back(data[i].first);
+				map_data.push_back(static_cast<uint8_t >(data[i].second >> 8));
+				map_data.push_back(static_cast<uint8_t >(data[i].second));
+				if(data_cnt>=240)
 				{
+					data_cnt=0;
 					map_packs.push_back(map_data);
 					map_data.clear();
-					// --push clean_area and work_tima again
-					map_data.push_back((uint8_t)((clean_area&0xff00)>>8));
-					map_data.push_back((uint8_t)clean_area);
-					map_data.push_back((uint8_t)((robot_timer.getWorkTime()&0x0000ff00)>>8));
-					map_data.push_back((uint8_t)robot_timer.getWorkTime());
+					//--push clean_area and work_time
+					map_data.push_back(static_cast<uint8_t>(clean_area>>8));
+					map_data.push_back(static_cast<uint8_t>(clean_area));
+					map_data.push_back(static_cast<uint8_t>(robot_timer.getWorkTime()>>8));
+					map_data.push_back(static_cast<uint8_t>(robot_timer.getWorkTime()));
+
+					//-- push left top corner &&width
+
+					map_data.push_back(0x01);//data type
+
+					map_data.push_back(left_top_corner.x>>8);
+					map_data.push_back(left_top_corner.x);
+					map_data.push_back(left_top_corner.y>>8);
+					map_data.push_back(left_top_corner.y);
+
+					map_data.push_back(width>>8);
+					map_data.push_back(width);
+
 				}
+
 			}
 			ROS_INFO("%s,%d,map_packs size %ld",__FUNCTION__,__LINE__,map_packs.size());
 
+			if(data_cnt>0)
+				map_packs.push_back(map_data);
 			//--upload map and wait ack
 			int k =1;
 			while(ros::ok() && k<=map_packs.size())
@@ -1458,7 +1492,7 @@ void S_Wifi::wifi_send_routine()
 					this->factoryTest();
 					break;
 				case ACT::ACT_UPLOAD_MAP:
-					this->uploadMap(SLAM_MAP);
+					this->uploadMap(GRID_MAP);
 					break;
 				case ACT::ACT_CLEAR_MAP:
 					this->clearRealtimeMap(0x00);
@@ -1497,7 +1531,7 @@ void S_Wifi::wifi_send_routine()
 
 			if(upload_map_count++ >= pack_size>1?2:10)
 			{
-				this->uploadMap(SLAM_MAP);
+				this->uploadMap(GRID_MAP);
 				upload_map_count=0;
 			}
 			if(is_Status_Request_)
