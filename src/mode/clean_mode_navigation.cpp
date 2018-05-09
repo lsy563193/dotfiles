@@ -961,6 +961,13 @@ bool CleanModeNav::updateActionStateCharge()
 
 void CleanModeNav::switchInStateCharge()
 {
+/*
+	// Failed for charging. Maybe manual moved away from charger.
+	ROS_WARN("%s %d: Failed for charging. Maybe manual moved away from charger.", __FUNCTION__, __LINE__);
+	sp_state = nullptr;
+	sp_action_.reset();
+*/
+
 	// Resume from low battery charge.
 	speaker.play(VOICE_CLEANING_CONTINUE, false);
 	ROS_INFO("%s %d: Resume low battery charge.", __FUNCTION__, __LINE__);

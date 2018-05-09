@@ -139,5 +139,7 @@ void MovementCharge::run()
 		show_battery_info_time_stamp_ = time(NULL);
 	}
 
+	ROS_WARN_COND(!charger.getChargeStatus(), "%s %d: Disconnect of charger.", __FUNCTION__, __LINE__);
+
 	IMovement::run();
 }
