@@ -50,12 +50,12 @@ void MovementBack::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	{
 //		ROS_INFO("%s %d: Left cliff triggered while right cliff is alright.", __FUNCTION__, __LINE__);
 		l_speed = speed_;
-		r_speed = speed_ * 3 / 5;
+		r_speed = speed_ / 2;
 	}
 	else if ((cliff_status_ & BLOCK_RIGHT) && ((cliff_status_ & BLOCK_LEFT) == 0))
 	{
 //		ROS_INFO("%s %d: Right cliff triggered while left cliff is alright.", __FUNCTION__, __LINE__);
-		l_speed = speed_ * 3 / 5;
+		l_speed = speed_ / 2;
 		r_speed = speed_;
 	}
 	else

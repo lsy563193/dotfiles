@@ -18,7 +18,7 @@ public:
 
 	void init();
 	bool getFitLine(double r_begin, double r_end, double range, double dis_lim, double *line_radian, double *distance,
-									bool is_left, bool is_align = false);
+									bool is_left, double line_length_min, bool is_align = false);
 
 	/*
 	 * @author Alvin Xie
@@ -49,6 +49,7 @@ public:
 	bool splitLine2nd(std::vector<std::deque<Vector2<double>> > *groups, double t_max, int points_count_lim);
 	bool mergeLine(std::vector<std::deque<Vector2<double>> > *groups, double t_lim , bool is_align);
 	bool fitLineGroup(std::vector<std::deque<Vector2<double>> > *groups, double dis_lim , bool is_align);
+	void filterShortLine(std::vector<std::deque<Vector2<double>> > *groups, bool is_align, double line_length_min);
 
 	void pubFitLineMarker(double a, double b, double c, double y1, double y2);
 
@@ -103,6 +104,8 @@ public:
 	bool getLidarStuckCheckingEnable();
 
 	bool checkLidarBeCovered();
+
+	bool checkLongHallway();
 private:
 
 	// switch_ is the target status of lidar.
@@ -122,14 +125,14 @@ private:
 	double scanCompensate_update_time_;
 	double scanXYPoint_update_time_;
 
-	std::vector<Vector2<double>>	Lidar_Point;
-	std::vector<std::deque<Vector2<double>> >	Lidar_Group;
-	std::vector<std::deque<Vector2<double>> >	Lidar_Group_2nd;
-	std::vector<LineABC>	fit_line;
+	std::vector<Vector2<double>>	lidar_point_;
+	std::vector<std::deque<Vector2<double>> >	lidar_group_;
+	std::vector<std::deque<Vector2<double>> >	lidar_group_2nd_;
+	std::vector<LineABC>	fit_line_group_;
 	//static float *last_ranges_;
 
 //	ros::Publisher lidar_filter_pub = nh_.advertise<sensor_msgs::LaserScan>("lidar_filter",1);
-	visualization_msgs::Marker fit_line_marker;
+	visualization_msgs::Marker fit_line_marker_;
 
 	geometry_msgs::Point lidar_points_;
 
@@ -153,7 +156,7 @@ private:
 	const float dist3_ = 1.5;//range distance 3
 	const float dist4_ = 0.5;//range distance 4
 
-	bool lidar_stuck_checking_enable{false};
+	bool lidar_stuck_checking_enable_{false};
 };
 
 

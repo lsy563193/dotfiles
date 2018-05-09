@@ -346,7 +346,8 @@ void GridMap::merge(GridMap source_map, bool add_slam_map_blocks_to_uncleaned,
 				source_map_cell_state == SLAM_MAP_REACHABLE)
 				setCell(CLEAN_MAP,x,y, CLEANED);
 
-			if (clear_map_blocks && map_cell_state >= BLOCKED && map_cell_state < SLAM_MAP_BLOCKED && source_map_cell_state == SLAM_MAP_REACHABLE)
+			if (clear_map_blocks && map_cell_state >= BLOCKED && map_cell_state < SLAM_MAP_BLOCKED
+				&& map_cell_state != BLOCKED_CLIFF && source_map_cell_state == SLAM_MAP_REACHABLE)
 				setCell(CLEAN_MAP,x,y, CLEANED);
 
 			if (clear_slam_map_blocks && map_cell_state == SLAM_MAP_BLOCKED && source_map_cell_state == SLAM_MAP_REACHABLE)
