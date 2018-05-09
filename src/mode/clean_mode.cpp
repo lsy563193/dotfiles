@@ -1029,7 +1029,7 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_mt) {
 		}
 	}
 
-	if (distance > 5 && getNextMode() != cm_spot) {// closed
+	if (distance > 10 && getNextMode() != cm_spot) {// closed
 		ROS_INFO("next_mode_i_(%d)",getNextMode());
 		ROS_INFO("mode_i_(%d)",mode_i_);
 		is_closed = true;
