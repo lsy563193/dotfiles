@@ -814,6 +814,7 @@ bool CleanModeNav::checkEnterTempSpotState()
 		ev.remote_spot= false;
 //		mapMark();
 		sp_action_.reset();
+		speaker.play(VOICE_CLEANING_SPOT);
 		clean_path_algorithm_.reset(new SpotCleanPathAlgorithm);
 		sp_state = state_spot.get();
 		sp_state->init();

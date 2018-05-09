@@ -26,7 +26,7 @@ MovementCharge::MovementCharge()
 	charger.setStart();
 	usleep(30000);
 
-	show_battery_info_time_stamp_ = time(NULL);
+	show_battery_info_time_stamp_ = 0;
 
 	directly_charge_ = charger.isDirected();
 
@@ -134,7 +134,8 @@ void MovementCharge::run()
 	// Debug for charge info
 	if (time(NULL) - show_battery_info_time_stamp_ > 5)
 	{
-		ROS_WARN("%s %d: battery voltage \033[32m%5.2f V\033[0m.", __FUNCTION__, __LINE__, (float)battery.getVoltage()/100.0);
+		ROS_WARN("%s %d: battery voltage %5.2f V, charge command:%d, charge status:%d.", __FUNCTION__
+		, __LINE__, (float)battery.getVoltage()/100.0, serial.getSendData(CTL_CHARGER), charger.getChargeStatus());
 		show_battery_info_time_stamp_ = time(NULL);
 	}
 
