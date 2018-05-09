@@ -35,7 +35,7 @@ private:
     void runLengthEncoding(GridMap &grid_map, WifiMap &wifi_map, const BoundingBox2 &bound);
 
 
-    uint8_t changeCost(int cost) ;
+    int changeCost(int cost) ;
 
 private:
 

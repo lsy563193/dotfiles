@@ -922,7 +922,6 @@ bool S_Wifi::uploadMap(MapType map)
 			auto width = std::get<1>(*a_slam_map_data);
 			auto &data = std::get<2>(*a_slam_map_data);
 			auto data_cnt = 0;
-
 			//--push clean_area and work_time
 			map_data.push_back((uint8_t)((clean_area&0xff00)>>8));
 			map_data.push_back((uint8_t)clean_area);
@@ -933,14 +932,14 @@ bool S_Wifi::uploadMap(MapType map)
 
 			map_data.push_back(0x01);//data type
 
-			map_data.push_back(left_top_corner.x>>8);
-			map_data.push_back(left_top_corner.x);
-			map_data.push_back(left_top_corner.y>>8);
-			map_data.push_back(left_top_corner.y);
+			map_data.push_back(static_cast<uint8_t>(left_top_corner.x>>8));
+			map_data.push_back(static_cast<uint8_t>(left_top_corner.x));
+			map_data.push_back(static_cast<uint8_t>(left_top_corner.y>>8));
+			map_data.push_back(static_cast<uint8_t>(left_top_corner.y));
 
 			map_data.push_back(width>>8);
 			map_data.push_back(width);
-			for (size_t i = 0; i <= data.size(); ++i)
+			for (size_t i = 0; i < data.size(); ++i)
 			{
 				data_cnt+=3;
 				map_data.push_back(data[i].first);
@@ -972,10 +971,11 @@ bool S_Wifi::uploadMap(MapType map)
 				}
 
 			}
-			ROS_INFO("%s,%d,map_packs size %ld",__FUNCTION__,__LINE__,map_packs.size());
-
 			if(data_cnt>0)
 				map_packs.push_back(map_data);
+
+			ROS_INFO("\033[32m%s,%d,map_packs size %ld,data_size %d\033[0m",__FUNCTION__,__LINE__,map_packs.size(),data.size());
+
 			//--upload map and wait ack
 			int k =1;
 			while(ros::ok() && k<=map_packs.size())
@@ -1492,7 +1492,7 @@ void S_Wifi::wifi_send_routine()
 					this->factoryTest();
 					break;
 				case ACT::ACT_UPLOAD_MAP:
-					this->uploadMap(GRID_MAP);
+					this->uploadMap(SLAM_MAP);
 					break;
 				case ACT::ACT_CLEAR_MAP:
 					this->clearRealtimeMap(0x00);
@@ -1531,7 +1531,7 @@ void S_Wifi::wifi_send_routine()
 
 			if(upload_map_count++ >= pack_size>1?2:10)
 			{
-				this->uploadMap(GRID_MAP);
+				this->uploadMap(SLAM_MAP);
 				upload_map_count=0;
 			}
 			if(is_Status_Request_)

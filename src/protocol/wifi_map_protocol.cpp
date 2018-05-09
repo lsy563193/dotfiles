@@ -11,42 +11,47 @@ WifiMapManage::WifiMapManage()
 	new_arrival_ = false;
 }
 
-void WifiMapManage::runLengthEncoding(GridMap &grid_map, WifiMap &wifi_map, const BoundingBox2 &bound){
+void WifiMapManage::runLengthEncoding(GridMap &grid_map, WifiMap &wifi_map, const BoundingBox2 &bound)
+{
 //	bound = grid_map.generateBound();
-	ROS_INFO("%s %d: Begin run-length encoding.", __FUNCTION__, __LINE__);
+	//ROS_INFO("%s %d: Begin run-length encoding.", __FUNCTION__, __LINE__);
 	std::get<0>(wifi_map) = bound.min;
 	std::get<1>(wifi_map) = bound.max.x - bound.min.x+1;
 	auto& data = std::get<2>(wifi_map);
-	for(auto i= bound.min.x; i<= bound.max.x; i++)
+	int last_cost=1;//init
+	int size=0;
+	bool first_time = true;
+	for(auto j= bound.min.y; j<= bound.max.y; j++)
 	{
-		int curr_cost=250;//init
-		int size=0;
-		for(auto j= bound.min.y; j<= bound.max.y; j++)
+		for(auto i= bound.min.x; i<= bound.max.x; i++)
 		{
-			auto it_cost = grid_map.getCell(CLEAN_MAP, i , j);
-			if(it_cost != curr_cost)
+			auto cost = grid_map.getCell(CLEAN_MAP,i,j);
+			auto it_cost = changeCost(cost);
+			if(first_time)
 			{
-				if(size != 0)//init don't push
-				{
-					data.push_back({changeCost(curr_cost), size});
-					size = 0;
-				}
-				curr_cost = it_cost;
+				first_time = false;
+				last_cost = it_cost;
 			}
 			size++;
+			if(it_cost != last_cost)
+			{
+				last_cost = it_cost;
+				data.push_back({last_cost, size});
+				size = 0;
+			}
 		}
-		data.push_back({changeCost(curr_cost), size});
 	}
-	ROS_INFO("%s %d: End run-length encoding, data size(%d).", __FUNCTION__, __LINE__, data.size());
+	data.push_back({last_cost, size});
+	ROS_INFO("%s %d: End run-length encoding, data type number(%d).", __FUNCTION__, __LINE__, data.size());
 }
 
-uint8_t WifiMapManage::changeCost(int cost)
+int WifiMapManage::changeCost(int cost)
 {
-	if(cost == 100)//block
+	if(cost == 10)//block
 		return 0x01;
-	else if(cost == 0 || cost == 1)//clean
+	else if(cost == 1)//clean
 		return 0x02;
-	else if(cost == -1)//unclean
+	else if(cost == 0)//unclean
 		return 0x03;
 }
 
@@ -136,9 +141,10 @@ WifiMap *WifiMapManage::getData()
 	{
 		new_arrival_ = false;
 		app_map_= wifi_map_;
+		auto& data = std::get<2>(wifi_map_);
+		data.clear();
 		return &app_map_;
 	}
 	else
 		return nullptr;
 }
-
