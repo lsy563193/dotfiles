@@ -84,6 +84,7 @@ bool MovementCharge::isFinish()
 				key_led.setMode(LED_STEADY, LED_OFF);
 				battery_full_ = true;
 				speaker.play(VOICE_SLEEP_UNOFFICIAL);
+				ROS_WARN("%s %d: Enter fake sleep during charge.", __FUNCTION__, __LINE__);
 			}
 			else
 				key_led.setMode(LED_STEADY, LED_GREEN);
