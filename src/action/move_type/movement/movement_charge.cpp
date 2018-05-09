@@ -84,6 +84,7 @@ bool MovementCharge::isFinish()
 				key_led.setMode(LED_STEADY, LED_OFF);
 				battery_full_ = true;
 				speaker.play(VOICE_SLEEP_UNOFFICIAL);
+				ROS_WARN("%s %d: Enter fake sleep during charge.", __FUNCTION__, __LINE__);
 			}
 			else
 				key_led.setMode(LED_STEADY, LED_GREEN);
@@ -138,6 +139,8 @@ void MovementCharge::run()
 		, __LINE__, (float)battery.getVoltage()/100.0, serial.getSendData(CTL_CHARGER), charger.getChargeStatus());
 		show_battery_info_time_stamp_ = time(NULL);
 	}
+
+	ROS_WARN_COND(!charger.getChargeStatus(), "%s %d: Disconnect of charger.", __FUNCTION__, __LINE__);
 
 	IMovement::run();
 }

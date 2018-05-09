@@ -16,6 +16,12 @@ MovementGoToCharger::MovementGoToCharger()
 		should_away_from_charge_station = true;
 }
 
+MovementGoToCharger::~MovementGoToCharger()
+{
+	wheel.stop();
+	ROS_INFO("%s %d: Exit.", __FUNCTION__, __LINE__);
+}
+
 void MovementGoToCharger::resetGoToChargerVariables()
 {
 	turn_angle_ = 0;
@@ -1960,8 +1966,7 @@ void MovementGoToCharger::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 bool MovementGoToCharger::isFinish()
 {
 	auto ret = charger.getChargeStatus() || _isStop();
-	if(ret){
-		wheel.stop();
-	}
+	if(ret)
+		ROS_WARN("%s %d: Charger detected or _isStop()", __FUNCTION__, __LINE__);
 	return ret;
 }
