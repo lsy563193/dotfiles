@@ -233,10 +233,16 @@ bool CleanModeNav::isExit()
 			setNextMode(md_charge);
 			return true;
 		}
-		else if (ev.remote_direction_left || ev.remote_direction_right || ev.remote_direction_forward || s_wifi.receiveRemote())
+		else if (ev.remote_direction_left || ev.remote_direction_right || ev.remote_direction_forward)
 		{
 			ROS_WARN("%s %d: Exit for pause and remote left/right/forward or wifi remote.", __FUNCTION__, __LINE__);
 			setNextMode(md_remote);
+			if (ev.remote_direction_forward)
+				MoveTypeRemote::forwardStart();
+			else if (ev.remote_direction_left)
+				MoveTypeRemote::leftStart();
+			else if (ev.remote_direction_right)
+				MoveTypeRemote::rightStart();
 			return true;
 		}
 		else if (ev.remote_follow_wall || s_wifi.receiveFollowWall())

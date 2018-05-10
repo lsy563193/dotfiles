@@ -180,6 +180,8 @@ void ModeRemote::remoteDirectionForward(bool state_now, bool state_last)
 	ROS_WARN("%s %d: remote forward.", __FUNCTION__, __LINE__);
 	beeper.beepForCommand(VALID);
 	ev.remote_direction_forward = true;
+	if(action_i_ == ac_open_gyro)
+		MoveTypeRemote::forwardStart();
 	remote.reset();
 }
 
@@ -188,6 +190,8 @@ void ModeRemote::remoteDirectionLeft(bool state_now, bool state_last)
 	ROS_WARN("%s %d: remote left.", __FUNCTION__, __LINE__);
 	beeper.beepForCommand(VALID);
 	ev.remote_direction_left = true;
+	if (action_i_ == ac_open_gyro)
+		MoveTypeRemote::leftStart();
 	remote.reset();
 }
 
@@ -196,6 +200,8 @@ void ModeRemote::remoteDirectionRight(bool state_now, bool state_last)
 	ROS_WARN("%s %d: remote right.", __FUNCTION__, __LINE__);
 	beeper.beepForCommand(VALID);
 	ev.remote_direction_right = true;
+	if (action_i_ == ac_open_gyro)
+		MoveTypeRemote::rightStart();
 	remote.reset();
 }
 

@@ -181,8 +181,36 @@ public:
 
 	void run() override ;
 
+	// For setting the first movement of remote mode.
+	static void leftStart()
+	{
+		start_command_ = command_type::start_left;
+	}
+	static void rightStart()
+	{
+		start_command_ = command_type::start_right;
+	}
+	static void forwardStart()
+	{
+		start_command_ = command_type::start_forward;
+	}
+
+	static int start_command_;
+
 private:
 	boost::shared_ptr<IMovement> p_movement_;
+
+	enum command_type{
+		start_null = 0,
+		start_left,
+		start_right,
+		start_forward,
+	};
+
+	void turnLeft();
+	void turnRight();
+	void goForward();
+	void stay();
 };
 
 class MoveTypeDeskTest: public IMoveType

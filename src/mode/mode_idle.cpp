@@ -1,4 +1,5 @@
 #include <infrared_display.hpp>
+#include <event_manager.h>
 #include "event_manager.h"
 #include "dev.h"
 #include "error.h"
@@ -179,6 +180,12 @@ bool ModeIdle::isExit()
 		ROS_WARN("%s %d: Idle mode receives remote direction key, change to remote mode.",
 				 __FUNCTION__, __LINE__);
 		setNextMode(md_remote);
+		if (ev.remote_direction_forward)
+			MoveTypeRemote::forwardStart();
+		else if (ev.remote_direction_left)
+			MoveTypeRemote::leftStart();
+		else if (ev.remote_direction_right)
+			MoveTypeRemote::rightStart();
 		return true;
 	}
 

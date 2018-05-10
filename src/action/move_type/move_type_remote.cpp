@@ -7,15 +7,42 @@
 #include <gyro.h>
 #include "move_type.hpp"
 
+int MoveTypeRemote::start_command_ = MoveTypeRemote::command_type::start_null;
+
 MoveTypeRemote::MoveTypeRemote()
 {
 	ROS_WARN("%s,%d: Enter move type remote.", __FUNCTION__, __LINE__);
-	movement_i_ = mm_stay;
-	p_movement_.reset(new MovementStayRemote(15));
+	switch (start_command_)
+	{
+		case command_type::start_forward:
+		{
+			goForward();
+			break;
+		}
+		case command_type::start_left:
+		{
+			turnLeft();
+			break;
+		}
+		case command_type::start_right:
+		{
+			turnRight();
+			break;
+		}
+		default: // command_type::start_null;
+		{
+			stay();
+			break;
+		}
+	}
+	ev.remote_direction_forward = false;
+	ev.remote_direction_left = false;
+	ev.remote_direction_right = false;
 }
 
 MoveTypeRemote::~MoveTypeRemote()
 {
+	start_command_ = command_type::start_null;
 	ROS_WARN("%s,%d: Exit move type remote.", __FUNCTION__, __LINE__);
 }
 
@@ -26,24 +53,14 @@ bool MoveTypeRemote::isFinish()
 	{
 		// For stopping turning with remote direction keys.
 		if (ev.remote_direction_forward)
-		{
-			ev.remote_direction_forward = false;
-			movement_i_ = mm_straight;
-			bool slow_down = true;
-			p_movement_.reset(new MovementDirectGo(slow_down));
-		} else if (ev.remote_direction_left)
-		{
-			ev.remote_direction_left = false;
-			movement_i_ = mm_turn;
-			p_movement_.reset(
-					new MovementTurn(robot::instance()->getWorldPoseRadian() + degree_to_radian(30), ROTATE_TOP_SPEED));
-		} else if (ev.remote_direction_right)
-		{
-			ev.remote_direction_right = false;
-			movement_i_ = mm_turn;
-			p_movement_.reset(
-					new MovementTurn(robot::instance()->getWorldPoseRadian() - degree_to_radian(30), ROTATE_TOP_SPEED));
-		}
+			goForward();
+		else if (ev.remote_direction_left)
+			turnLeft();
+		else if (ev.remote_direction_right)
+			turnRight();
+		ev.remote_direction_forward = false;
+		ev.remote_direction_left = false;
+		ev.remote_direction_right = false;
 	}
 
 	if (p_movement_->isFinish())
@@ -78,44 +95,27 @@ bool MoveTypeRemote::isFinish()
 			if (ev.remote_direction_forward)
 			{
 				ev.remote_direction_forward = false;
-				bool slow_down = true;
 				if (movement_i_ != mm_straight)
-				{
-					movement_i_ = mm_straight;
-					p_movement_.reset(new MovementDirectGo(slow_down));
-				}
+					goForward();
 				else
-				{
-					movement_i_ = mm_stay;
-					p_movement_.reset(new MovementStayRemote(15));
-//					p_movement_->start_timer_ = ros::Time::now().toSec();
-//					ROS_INFO("%s %d: Start timer is updated.", __FUNCTION__, __LINE__);
-				}
+					stay();
 
 			}
 			else if (ev.remote_direction_left)
 			{
 				ev.remote_direction_left = false;
-				movement_i_ = mm_turn;
-				p_movement_.reset(new MovementTurn(robot::instance()->getWorldPoseRadian() + degree_to_radian(30), ROTATE_TOP_SPEED));
+				turnLeft();
 			}
 			else if (ev.remote_direction_right)
 			{
 				ev.remote_direction_right = false;
-				movement_i_ = mm_turn;
-				p_movement_.reset(new MovementTurn(robot::instance()->getWorldPoseRadian() - degree_to_radian(30), ROTATE_TOP_SPEED));
+				turnRight();
 			}
 			else
-			{
-				movement_i_ = mm_stay;
-				p_movement_.reset(new MovementStayRemote(15));
-			}
+				stay();
 		}
 		else //if (movement_i_ == mm_back)
-		{
-			movement_i_ = mm_stay;
-			p_movement_.reset(new MovementStayRemote(15));
-		}
+			stay();
 	}
 
 	return false;
@@ -124,4 +124,29 @@ bool MoveTypeRemote::isFinish()
 void MoveTypeRemote::run()
 {
 	p_movement_->run();
+}
+
+void MoveTypeRemote::turnLeft()
+{
+	movement_i_ = mm_turn;
+	p_movement_.reset(new MovementTurn(robot::instance()->getWorldPoseRadian() + degree_to_radian(30), ROTATE_TOP_SPEED));
+}
+
+void MoveTypeRemote::turnRight()
+{
+	movement_i_ = mm_turn;
+	p_movement_.reset(new MovementTurn(robot::instance()->getWorldPoseRadian() - degree_to_radian(30), ROTATE_TOP_SPEED));
+}
+
+void MoveTypeRemote::goForward()
+{
+	movement_i_ = mm_straight;
+	bool slow_down = true;
+	p_movement_.reset(new MovementDirectGo(slow_down));
+}
+
+void MoveTypeRemote::stay()
+{
+	movement_i_ = mm_stay;
+	p_movement_.reset(new MovementStayRemote(15));
 }
