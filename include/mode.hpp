@@ -281,6 +281,7 @@ public:
 	void remoteHome(bool state_now, bool state_last) override ;
 	void keyClean(bool state_now, bool state_last) override ;
 	void chargeDetect(bool state_now, bool state_last) override ;
+	void cliffAll(bool state_now, bool state_last) override ;
 
 	void wifiSetWaterTank() override ;
 	void setVacuum() override ;

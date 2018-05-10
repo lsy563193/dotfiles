@@ -67,6 +67,14 @@ bool ModeRemote::isExit()
 		return true;
 	}
 
+	if (ev.cliff_all_triggered)
+	{
+		ROS_WARN("%s %d: Exit to idle mode.", __FUNCTION__, __LINE__);
+		speaker.play(VOICE_ERROR_LIFT_UP);
+		setNextMode(md_idle);
+		return true;
+	}
+
 	if (ev.charge_detect)
 	{
 		ROS_WARN("%s %d: Exit to charge mode.", __FUNCTION__, __LINE__);
@@ -263,6 +271,13 @@ void ModeRemote::remoteHome(bool state_now, bool state_last)
 	beeper.beepForCommand(VALID);
 	ev.remote_home = true;
 	remote.reset();
+}
+
+void ModeRemote::cliffAll(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: Cliff all.", __FUNCTION__, __LINE__);
+
+	ev.cliff_all_triggered = true;
 }
 
 void ModeRemote::wifiSetWaterTank()
