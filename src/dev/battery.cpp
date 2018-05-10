@@ -4,8 +4,6 @@
 
 #include "battery.h"
 
-//#undef BATTERY_READY_TO_CLEAN_VOLTAGE
-//#define BATTERY_READY_TO_CLEAN_VOLTAGE	(1200)
 Battery battery;
 
 bool Battery::isFull()
