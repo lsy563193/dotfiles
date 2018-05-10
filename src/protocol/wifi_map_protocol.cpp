@@ -33,7 +33,12 @@ void WifiMapManage::runLengthEncoding(GridMap &grid_map, WifiMap &wifi_map, cons
 				last_cost = it_cost;
 			}
 			size++;
-			if(it_cost != last_cost)
+			if(size >=255)
+			{
+				data.push_back({last_cost, size});
+				size = 0;
+			}
+			else if(it_cost != last_cost)
 			{
 				last_cost = it_cost;
 				data.push_back({last_cost, size});

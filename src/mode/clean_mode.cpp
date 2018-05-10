@@ -145,7 +145,7 @@ ACleanMode::~ACleanMode()
 			{
 				speaker.play(VOICE_BACK_TO_CHARGER_FAILED, false);
 				ROS_WARN("%s %d: Finish cleaning but failed to go to charger.", __FUNCTION__, __LINE__);
-			} else if (mode_i_ != cm_exploration && !seen_charger_during_cleaning_)
+			} else if (mode_i_ == cm_spot || (mode_i_ != cm_exploration && !seen_charger_during_cleaning_))
 			{
 				speaker.play(VOICE_CLEANING_FINISHED, false);
 				ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
@@ -188,8 +188,11 @@ ACleanMode::~ACleanMode()
 											 , static_cast<const uint16_t &>(map_area)
 											 , clean_map_);
 		s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_LAST_CLEANMAP);
-
 	}
+
+	// Wait for battery recovery from operating motors.
+	usleep(200000);
+	battery.forceUpdate();
 }
 
 void ACleanMode::saveBlock(int block, int dir, std::function<Cells()> get_list)

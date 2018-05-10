@@ -9,8 +9,6 @@
 
 class Battery {
 public:
-	const uint16_t BATTERY_VOL_MAX = 1660;
-	const uint16_t BATTERY_VOL_MIN = 1260;
 	bool isFull(void);
 
 	bool isReadyToClean(void);
@@ -26,14 +24,24 @@ public:
 //		return 1280;
 		return voltage_;
 	}
+
 	uint8_t getPercent();
-	void setVoltage(uint16_t val)
+
+	void setVoltage(uint16_t val);
+
+	void forceUpdate()
 	{
-		voltage_ = val;
+		force_update_ = true;
 	}
 
 private:
-	uint16_t voltage_;
+
+	const uint16_t BATTERY_VOL_MAX = 1660;
+	const uint16_t BATTERY_VOL_MIN = 1260;
+
+	uint16_t voltage_{0};
+	double update_time_stamp_{0};
+	bool force_update_{false};
 };
 
 extern Battery battery;

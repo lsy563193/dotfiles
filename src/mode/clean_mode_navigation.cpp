@@ -233,10 +233,16 @@ bool CleanModeNav::isExit()
 			setNextMode(md_charge);
 			return true;
 		}
-		else if (ev.remote_direction_left || ev.remote_direction_right || ev.remote_direction_forward || s_wifi.receiveRemote())
+		else if (ev.remote_direction_left || ev.remote_direction_right || ev.remote_direction_forward)
 		{
 			ROS_WARN("%s %d: Exit for pause and remote left/right/forward or wifi remote.", __FUNCTION__, __LINE__);
 			setNextMode(md_remote);
+			if (ev.remote_direction_forward)
+				MoveTypeRemote::forwardStart();
+			else if (ev.remote_direction_left)
+				MoveTypeRemote::leftStart();
+			else if (ev.remote_direction_right)
+				MoveTypeRemote::rightStart();
 			return true;
 		}
 		else if (ev.remote_follow_wall || s_wifi.receiveFollowWall())
@@ -256,6 +262,23 @@ bool CleanModeNav::isExit()
 			ev.fatal_quit = true;
 			ROS_WARN("%s %d: Exit for pause and robot lifted up.", __FUNCTION__, __LINE__);
 			setNextMode(md_idle);
+			return true;
+		}
+	}
+
+	if (isStateCharge())
+	{
+		if (ev.key_clean_pressed)
+		{
+			ROS_WARN("%s %d: Exit for ev.key_clean_pressed during state charge.", __FUNCTION__, __LINE__);
+			setNextMode(cm_navigation);
+			return true;
+		}
+
+		if (s_wifi.receivePlan1())
+		{
+			ROS_WARN("%s %d: Exit for wifi plan1.", __FUNCTION__, __LINE__);
+			setNextMode(cm_navigation);
 			return true;
 		}
 	}
@@ -386,7 +409,7 @@ void CleanModeNav::remoteDirectionLeft(bool state_now, bool state_last)
 	if (isStatePause())
 	{
 		beeper.beepForCommand(VALID);
-		ROS_INFO("%s %d: Remote right.", __FUNCTION__, __LINE__);
+		ROS_INFO("%s %d: Remote left.", __FUNCTION__, __LINE__);
 		ev.remote_direction_left = true;
 	}
 	/*else if (isStateClean())
@@ -986,15 +1009,8 @@ void CleanModeNav::switchInStateCharge()
 // ------------------State resume low battery charge--------------------
 bool CleanModeNav::checkEnterResumeLowBatteryCharge()
 {
-	if (ev.key_clean_pressed || battery.isReadyToResumeCleaning() || s_wifi.receivePlan1())
+	if (battery.isReadyToResumeCleaning())
 	{
-		// For key clean force continue cleaning.
-		if (ev.key_clean_pressed)
-			ev.key_clean_pressed = false;
-
-		if (s_wifi.receivePlan1())
-			s_wifi.resetReceivedWorkMode();
-
 		// Resume from low battery charge.
 		speaker.play(VOICE_CLEANING_CONTINUE, false);
 		ROS_INFO("%s %d: Resume low battery charge.", __FUNCTION__, __LINE__);
@@ -1009,6 +1025,7 @@ bool CleanModeNav::checkEnterResumeLowBatteryCharge()
 		sp_state = state_init.get();
 		sp_state->init();
 		low_battery_charge_ = true;
+		// For entering checking switch.
 		ev.charge_detect = 0;
 		return true;
 	}

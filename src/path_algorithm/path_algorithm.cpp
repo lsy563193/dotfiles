@@ -98,31 +98,33 @@ void APathAlgorithm::displayPointPath(const Points &point_path)
 
 std::unique_ptr<Points> APathAlgorithm::cells_generate_points(const std::unique_ptr<Cells>& path)
 {
-//	displayCellPath(path);
+	displayCellPath(*path);
 	auto  point_path = make_unique<Points>();
 	if(!path->empty()){
-		for(auto it = path->begin(); it < path->end(); ++it) {
+		for(auto&& it = path->begin(); it != path->end(); ++it) {
 			Point_t target {cellToCount((*it).x),cellToCount((*it).y),0};
-			auto it_next = it+1;
-			if (it->x == it_next->x)
+            if(it == path->end()-1)
 			{
-				target.dir = it->y > it_next->y ? MAP_NEG_Y : MAP_POS_Y;
-				target.th = isPos(target.dir) ? PI/2 : -PI/2;
+				target.dir = point_path->back().dir;
+				target.th = point_path->back().th;
+			}else {
+				auto it_next = it+1;
+				if (it->x == it_next->x) {
+					target.dir = it->y > it_next->y ? MAP_NEG_Y : MAP_POS_Y;
+					target.th = isPos(target.dir) ? PI / 2 : -PI / 2;
+				} else {
+					target.dir = it->x > it_next->x ? MAP_NEG_X : MAP_POS_X;
+					target.th = isPos(target.dir) ? 0 : PI;
+				}
 			}
-			else
-			{
-				target.dir = it->x > it_next->x ? MAP_NEG_X : MAP_POS_X;
-				target.th = isPos(target.dir) ? 0 : PI;
-			}
-			point_path->push_back(target);
+			point_path->emplace_back(target);
+			ROS_INFO("it(%d,%d)",it->x, it->y/*, path->back().th*/);
 		}
-	//		ROS_INFO("path.back(%d,%d,%d)",path.back().n, path.back().y, path.back().TH);
-
-		point_path->back().dir = (point_path->end()-2)->dir;
-		point_path->back().th = (point_path->end()-2)->th;
 	}
+	ROS_INFO("cell.back(%d,%d)",path->back().x, path->back().y/*, path->back().th*/);
 	return point_path;
 }
+
 
 bool APathAlgorithm::generateShortestPath(GridMap &map, const Point_t &curr,const Point_t &target, const Dir_t &last_dir, Points &plan_path) {
 	Cell_t corner1 ,corner2;
