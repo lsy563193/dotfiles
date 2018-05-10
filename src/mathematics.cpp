@@ -277,3 +277,12 @@ Dir_t get_dir(const Cell_t& neighbor, const Cell_t& curr)
 	if (neighbor.x == curr.x)
 		return neighbor.y  > curr.y ? MAP_POS_Y : MAP_NEG_Y;
 }
+std::unique_ptr<Cells> points_to_cells(const std::unique_ptr<Points>& points)
+{
+	auto cells = make_unique<Cells>();
+	for(auto&& point :*points)
+	{
+		cells->emplace_back(point.toCell());
+	}
+	return cells;
+};

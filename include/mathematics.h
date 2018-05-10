@@ -545,6 +545,8 @@ private:
 //    int valid_size_{3};
 };
 typedef std::pair<const CellState, Cell_t> PairCell_t;
+typedef std::deque<Point_t> Points;
+
 class PointSelector{
 public:
 	PointSelector(bool is_left, double wall_distance);
@@ -627,4 +629,6 @@ std::unique_ptr<T> make_unique(Args&&... args)
 {
     return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
+
+std::unique_ptr<Cells> points_to_cells(const std::unique_ptr<Points>& points);
 #endif
