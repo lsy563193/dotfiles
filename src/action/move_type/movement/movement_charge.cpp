@@ -69,7 +69,8 @@ bool MovementCharge::isFinish()
 			}
 		}
 
-		if (!battery_full_ && charger.getChargeStatus() && battery.isFull())
+		if (ros::Time::now().toSec() - start_timer_ >= 6 && !battery_full_ && charger.getChargeStatus()
+			&& battery.isFull())
 		{
 			if (battery_full_start_time_ == 0)
 			{

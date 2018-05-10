@@ -325,7 +325,6 @@ bool MovementGoToCharger::isSwitch()
 	}
 	if (gtc_state_now_ == gtc_around_charger_station_init)
 	{
-		go_home_bumper_cnt = 0;
 		//wheel.move_forward(9, 9);
 		c_rcon.resetStatus();
 		ROS_INFO("%s, %d: Call Around_ChargerStation with dir = %d.", __FUNCTION__, __LINE__, around_charger_stub_dir);
