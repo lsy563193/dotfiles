@@ -646,7 +646,7 @@ void ACleanMode::pubFitLineMarker(visualization_msgs::Marker fit_line_marker)
 uint8_t ACleanMode::setFollowWall(GridMap& map, bool is_left,const Points& passed_path)
 {
 	uint8_t block_count = 0;
-	if (!passed_path.empty() && !c_blocks.empty())
+	if (!passed_path.empty()/* && !c_blocks.empty()*/)
 	{
 		std::string msg = "cell:";
 		auto dy = is_left ? 2 : -2;
@@ -2167,6 +2167,7 @@ PathHead ACleanMode::getTempTarget()
 bool ACleanMode::isIsolate() {
 	BoundingBox2 bound{};
 	GridMap fw_tmp_map;
+//	std::copy(passed_path_.begin(), passed_path_.end(),std::ostream_iterator<Point_t>(std::cout, " "));
 	setFollowWall(fw_tmp_map, action_i_ == ac_follow_wall_left,passed_path_);
 
 	fw_tmp_map.getMapRange(CLEAN_MAP, &bound.min.x, &bound.max.x, &bound.min.y, &bound.max.y);
@@ -2175,7 +2176,7 @@ bool ACleanMode::isIsolate() {
 	bound.SetMinimum(bound.min - Cell_t{8, 8});
 	bound.SetMaximum(bound.max + Cell_t{8, 8});
 	ROS_ERROR("ISOLATE MAP");
-	fw_tmp_map.print(getPosition().toCell(), CLEAN_MAP,Cells{target});
+	fw_tmp_map.print(getPosition().toCell(), CLEAN_MAP,*points_to_cells(make_unique<Points>(passed_path_)));
 	ROS_ERROR("ISOLATE MAP");
 	ROS_ERROR("minx(%d),miny(%d),maxx(%d),maxy(%d)",bound.min.x, bound.min.y,bound.max.x, bound.max.y);
 
