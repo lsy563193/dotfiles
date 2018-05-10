@@ -25,11 +25,11 @@ CleanModeNav::CleanModeNav()
 //		speaker.play(VOICE_APPOINTMENT_START_UNOFFICIAL, false);
 	}
 //	else
-	speaker.play(VOICE_CLEANING_START, false);
-
-	has_aligned_and_open_slam_ = false;
-	paused_odom_radian_ = 0;
-	moved_during_pause_ = false;
+	if (!charger.enterNavFromChargeMode() && !charger.isOnStub())
+	{
+		has_played_start_voice_ = true;
+		speaker.play(VOICE_CLEANING_START);
+	}
 
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
 
@@ -389,7 +389,7 @@ void CleanModeNav::remoteDirectionLeft(bool state_now, bool state_last)
 		ROS_INFO("%s %d: Remote right.", __FUNCTION__, __LINE__);
 		ev.remote_direction_left = true;
 	}
-	else if (isStateClean())
+	/*else if (isStateClean())
 	{
 		//todo: Just for testing.
 		beeper.beepForCommand(VALID);
@@ -398,7 +398,7 @@ void CleanModeNav::remoteDirectionLeft(bool state_now, bool state_last)
 				 battery.getVoltage(), continue_point_.x, continue_point_.y);
 		ev.battery_home = true;
 		go_home_for_low_battery_ = true;
-	}
+	}*/
 	else
 		beeper.beepForCommand(INVALID);
 
@@ -579,6 +579,12 @@ bool CleanModeNav::updateActionInStateInit() {
 		}
 	} else if (action_i_ == ac_back_from_charger)
 	{
+		if (!has_played_start_voice_)
+		{
+			has_played_start_voice_ = true;
+			speaker.play(VOICE_CLEANING_START);
+		}
+
 		if (!has_aligned_and_open_slam_) // Init odom position here.
 			robot::instance()->initOdomPosition();
 
@@ -980,7 +986,7 @@ void CleanModeNav::switchInStateCharge()
 // ------------------State resume low battery charge--------------------
 bool CleanModeNav::checkEnterResumeLowBatteryCharge()
 {
-	if (ev.key_clean_pressed /*|| battery.isReadyToResumeCleaning()*/ || s_wifi.receivePlan1())
+	if (ev.key_clean_pressed || battery.isReadyToResumeCleaning() || s_wifi.receivePlan1())
 	{
 		// For key clean force continue cleaning.
 		if (ev.key_clean_pressed)
@@ -1003,6 +1009,7 @@ bool CleanModeNav::checkEnterResumeLowBatteryCharge()
 		sp_state = state_init.get();
 		sp_state->init();
 		low_battery_charge_ = true;
+		ev.charge_detect = 0;
 		return true;
 	}
 

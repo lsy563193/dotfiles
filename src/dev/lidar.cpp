@@ -1172,14 +1172,17 @@ void Lidar::checkRobotSlip()
 //		if (is_long_hallway)
 //			beeper.debugBeep(VALID);
 		if((same_count * 1.0) / (tol_count * 1.0) >= slip_ranges_percent_ && tol_count > 100 && !is_long_hallway){
-				if (++slip_frame_cnt_ >= slip_cnt_limit_ && is_low_speed) {
-					ROS_INFO("\033[35m""%s,%d,robot slip!!""\033[0m", __FUNCTION__, __LINE__);
-					slip_status_ = true;
-					slip_cnt_limit_ = 5;
-					beeper.debugBeep(VALID);
-				} else {
-					slip_status_ = false;
-				}
+			if (++slip_frame_cnt_ >= slip_cnt_limit_ && is_low_speed) {
+				ROS_INFO("\033[35m""%s,%d,robot slip!!""\033[0m", __FUNCTION__, __LINE__);
+				slip_status_ = true;
+				slip_cnt_limit_ = 5;
+				beeper.debugBeep(VALID);
+			} else {
+				slip_status_ = false;
+			}
+			if (slip_frame_cnt_ >= slip_cnt_limit_ && !is_low_speed) {
+				ROS_INFO("is_low_speed :%lf",is_low_speed );
+			}
 		}
 		else
 		{
