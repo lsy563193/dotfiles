@@ -342,7 +342,8 @@ void GridMap::merge(GridMap source_map, bool add_slam_map_blocks_to_uncleaned,
 			source_map_cell_state = source_map.getCell(CLEAN_MAP, x, y);
 
 			if (clear_bumper_and_lidar_blocks &&
-				(map_cell_state == BLOCKED_BUMPER || map_cell_state == BLOCKED_LIDAR) &&
+				(map_cell_state == BLOCKED_BUMPER || map_cell_state == BLOCKED_LIDAR ||
+						map_cell_state == BLOCKED_SLIP) &&
 				source_map_cell_state == SLAM_MAP_REACHABLE)
 				setCell(CLEAN_MAP,x,y, CLEANED);
 
