@@ -717,6 +717,7 @@ void S_Wifi::sort_push(std::deque<Cell_t> *list,Cell_t p,int sort_type)
 
 bool S_Wifi::uploadMap(MapType map)
 {
+	static uint8_t path_num = 0;
 	if(!is_wifi_connected_ )
 		return false;
 	uint32_t time  = (uint32_t)ros::Time::now().toSec();
@@ -1024,6 +1025,8 @@ bool S_Wifi::uploadMap(MapType map)
 		bool map_buf_on_process = false;
 		if(map_data_buf_->size()> 0 && !pass_path.empty())
 		{
+
+			INFO_PURPLE("upload pass path");
 			GridMap g_map;
 			if (!robot::instance()->getCleanMap(g_map))
 				return false;
@@ -1037,7 +1040,10 @@ bool S_Wifi::uploadMap(MapType map)
 			map_data.push_back((uint8_t)robot_timer.getWorkTime());
 			map_data.push_back(0x02);//data type
 
-			map_data.push_back((uint8_t)map_packs.size());//path number
+			if(path_num >= 255)
+				path_num = 0;
+			map_data.push_back(path_num);//path number
+			path_num++;
 			for(auto &&p_it : pass_path)
 			{
 				int16_t p_x = p_it.toCell().x;
@@ -1064,11 +1070,15 @@ bool S_Wifi::uploadMap(MapType map)
 					map_data.push_back((uint8_t)robot_timer.getWorkTime());
 					map_data.push_back(0x02);//data type
 
-					map_data.push_back((uint8_t)map_packs.size());//path number
+					if(path_num >= 255)
+						path_num = 0;
+					map_data.push_back(path_num);//path number
+					path_num++;
+
 				}
 	
 			}
-			if(map_data.size()>4)
+			if(map_data.size()>6)
 			{
 				//push current position 
 				map_data.push_back((uint8_t) (c_x>>8));
