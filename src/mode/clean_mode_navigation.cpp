@@ -147,7 +147,7 @@ bool CleanModeNav::mapMark()
 	//tx pass path via serial wifi
 
 	s_wifi.cacheMapData(passed_path_);
-	//s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_MAP);
+	//s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_PATH);
 	c_blocks.clear();
 	passed_path_.clear();
 	return false;
