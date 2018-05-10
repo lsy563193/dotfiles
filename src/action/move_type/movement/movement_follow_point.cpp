@@ -73,10 +73,19 @@ void AMovementFollowPoint::adjustSpeed(int32_t &left_speed, int32_t &right_speed
 bool AMovementFollowPoint::isFinish() {
 //	ROS_WARN("curr target th(%f,%f)", getPosition().th, calcTmpTarget().th);
 //	ROS_WARN("radian_diff(%f)", radian_diff);
+	bool is_left = sp_mt_->sp_mode_->action_i_ == sp_mt_->sp_mode_->ac_follow_wall_left;
+	if (is_left){
+		if (radian_diff > 0)
+			return false;
+	} else {
+		if (radian_diff < 0 )
+			return false;
+	}
+
 	if(std::abs(radian_diff) > angle_forward_to_turn_)
 	{
 		ROS_INFO_FL();
-		ROS_INFO("radian_diff(%f)", radian_diff);
+		ROS_WARN("radian_diff(%f)", radian_diff);
 #if DEBUG_ENABLE
 		if (std::abs(radian_diff) > degree_to_radian(140)) {
 			ROS_ERROR_COND(DEBUG_ENABLE, "LASER WALL FOLLOW ERROR! PLEASE CALL ALVIN AND RESTART THE ROBOT.");

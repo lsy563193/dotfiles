@@ -45,6 +45,15 @@ bool ModeCharge::isExit()
 {
 	if (plan_activated_status_)
 	{
+		if (charger.isDirected())
+		{
+			ROS_WARN("%s %d: Plan not activated not valid because of charging with adapter.", __FUNCTION__, __LINE__);
+			speaker.play(VOICE_PLEASE_PULL_OUT_THE_PLUG, false);
+			speaker.play(VOICE_BATTERY_CHARGE);
+			plan_activated_status_ = false;
+			return false;
+		}
+
 		if (error.get() != ERROR_CODE_NONE)
 		{
 			if (error.clear(error.get()))
@@ -60,7 +69,7 @@ bool ModeCharge::isExit()
 
 		if (error.get() != ERROR_CODE_NONE)
 			ROS_INFO("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
-		else if (cliff.getStatus() & (BLOCK_LEFT | BLOCK_FRONT | BLOCK_RIGHT))
+		else if (cliff.getStatus() == (BLOCK_LEFT | BLOCK_FRONT | BLOCK_RIGHT))
 		{
 			ROS_WARN("%s %d: Plan not activated not valid because of robot lifted up.", __FUNCTION__, __LINE__);
 			speaker.play(VOICE_ERROR_LIFT_UP);
@@ -69,12 +78,7 @@ bool ModeCharge::isExit()
 			ROS_WARN("%s %d: Plan not activated not valid because of battery not ready to clean.", __FUNCTION__,
 					 __LINE__);
 			speaker.play(VOICE_BATTERY_LOW);
-		} else if (charger.isDirected())
-		{
-			ROS_WARN("%s %d: Plan not activated not valid because of charging with adapter.", __FUNCTION__, __LINE__);
-			speaker.play(VOICE_PLEASE_PULL_OUT_THE_PLUG, false);
-			speaker.play(VOICE_BATTERY_CHARGE);
-		} else
+		}else
 		{
 			ROS_WARN("%s %d: Charge mode receives plan, change to navigation mode.", __FUNCTION__, __LINE__);
 			setNextMode(cm_navigation);

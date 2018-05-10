@@ -324,7 +324,6 @@ void robot::robotbase_routine_cb()
 		charger.setChargeStatus((buf[REC_MIX_BYTE] >> 4) & 0x07);
 		sensor.charge_status = charger.getChargeStatus();
 //		printf("Charge status:%d.\n", charger.getChargeStatus());
-//		ROS_INFO("Charge status:%d.", charger.getChargeStatus());
 
 		// For sleep status.
 		serial.isMainBoardSleep((buf[REC_MIX_BYTE] & 0x80) == 0);
@@ -332,6 +331,7 @@ void robot::robotbase_routine_cb()
 
 		// For battery device.
 		battery.setVoltage(buf[REC_BATTERY] * 10);
+//		printf("Battery:%.1fv.\n", static_cast<float>(buf[REC_BATTERY] / 10.0));
 		sensor.battery = static_cast<float>(battery.getVoltage() / 100.0);
 
 		// For over current checking.

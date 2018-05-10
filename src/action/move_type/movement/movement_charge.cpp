@@ -134,7 +134,7 @@ void MovementCharge::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 void MovementCharge::run()
 {
 	// Debug for charge info
-	if (time(NULL) - show_battery_info_time_stamp_ > 5)
+	if (time(NULL) - show_battery_info_time_stamp_ > 30)
 	{
 		ROS_WARN("%s %d: battery voltage %5.2f V, charge command:%d, charge status:%d.", __FUNCTION__
 		, __LINE__, (float)battery.getVoltage()/100.0, serial.getSendData(CTL_CHARGER), charger.getChargeStatus());
