@@ -36,7 +36,7 @@ public:
 	};
 
 	enum MapType{
-		GRID_MAP = 0,
+		//GRID_MAP = 0,
 		SLAM_MAP,
 		PASS_PATH,
 	};

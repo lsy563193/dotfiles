@@ -945,9 +945,8 @@ bool S_Wifi::uploadMap(MapType map)
 			{
 				data_cnt+=3;
 				map_data.push_back(data[i].first);
-				map_data.push_back(static_cast<uint8_t >(data[i].second >> 8));
-				map_data.push_back(static_cast<uint8_t >(data[i].second));
-				if(data_cnt>=240)
+				map_data.push_back(data[i].second);
+				if(data_cnt>=450)
 				{
 					data_cnt=0;
 					map_packs.push_back(map_data);
@@ -1693,7 +1692,7 @@ void S_Wifi::clearAppMap()
 	wifi::RealtimeMapUploadTxMsg p(
 			time,
 			(uint8_t) 1, // Package seq.
-			(uint8_t) map_data.size(), // Data len.
+			(uint8_t) 1, // Data len.
 			map_data
 	);
 	s_wifi_tx_.push(std::move(p)).commit();

@@ -9,12 +9,12 @@
 #include <cstdint>
 #include <map.h>
 
-constexpr size_t WIFI_MAP_SIZE = 4;
+constexpr size_t WIFI_MAP_SIZE = 2;
 constexpr float WIFI_MAP_RESOLUTION = 0.05;
 constexpr int16_t WIFI_MAP_WIDTH_HALF = (WIFI_MAP_SIZE/WIFI_MAP_RESOLUTION/2);
 constexpr size_t DATA_SIZE = ( 6 +WIFI_MAP_SIZE * WIFI_MAP_SIZE / WIFI_MAP_RESOLUTION);
 
-typedef std::pair<uint8_t, uint16_t > MapElem;
+typedef std::pair<uint8_t, uint8_t > MapElem;
 typedef std::tuple<Cell_t, int16_t ,std::vector<MapElem>>  WifiMap;
 //typedef std::tuple<Vector2, int, > wifi_protocol
 class WifiMapManage {
