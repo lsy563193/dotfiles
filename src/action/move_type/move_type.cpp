@@ -103,8 +103,8 @@ bool IMoveType::isFinish()
 	updatePosition();
 	auto curr = getPosition();
 	auto p_cm = dynamic_cast<ACleanMode*> (sp_mode_);
-//	if (!curr.isCellAndAngleEqual(last_))
-	if (!curr.isCellEqual(last_))
+	if (!curr.isCellAndAngleEqual(last_))
+//	if (!curr.isCellEqual(last_))
 	{
 		last_ = curr;
 		if(p_cm->moveTypeNewCellIsFinish(this))
