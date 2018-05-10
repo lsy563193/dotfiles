@@ -25,7 +25,7 @@ bool ActionBackFromCharger::isFinish()
 #if DIRECTLY_BACK
 	const float BACK_DIST = 0.5f;
 	double distance = two_points_distance_double(start_point_.GetX(), start_point_.GetY(), odom.getOriginX(), odom.getOriginY());
-	ROS_INFO("%s %d: distance:%f.", __FUNCTION__, __LINE__, distance);
+//	ROS_INFO("%s %d: distance:%f.", __FUNCTION__, __LINE__, distance);
 	return distance >= BACK_DIST;
 #else
 	bool val = false;
