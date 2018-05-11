@@ -436,6 +436,12 @@ void CleanModeNav::remoteDirectionRight(bool state_now, bool state_last)
 		ROS_INFO("%s %d: Remote right.", __FUNCTION__, __LINE__);
 		ev.remote_direction_right = true;
 	}
+	/*else if (isStateCharge())
+	{
+		beeper.beepForCommand(VALID);
+		ROS_INFO("%s %d: Remote right.", __FUNCTION__, __LINE__);
+		ev.remote_direction_right = true;
+	}*/
 	else
 		beeper.beepForCommand(INVALID);
 
@@ -982,6 +988,8 @@ bool CleanModeNav::updateActionStateCharge()
 	{
 		action_i_ = ac_charge;
 		genNextAction();
+		// For M0 checking charge mode.
+		serial.setWorkMode(CHARGE_MODE);
 		return true;
 	}
 	else
@@ -1009,10 +1017,14 @@ void CleanModeNav::switchInStateCharge()
 // ------------------State resume low battery charge--------------------
 bool CleanModeNav::checkEnterResumeLowBatteryCharge()
 {
-	if (battery.isReadyToResumeCleaning())
+	if (battery.isReadyToResumeCleaning()/* || ev.remote_direction_right*/)
 	{
+		/*if (ev.remote_direction_right)
+			ev.remote_direction_right = false;*/
 		// Resume from low battery charge.
 		speaker.play(VOICE_CLEANING_CONTINUE, false);
+		// For M0 resume work mode.
+		serial.setWorkMode(WORK_MODE);
 		ROS_INFO("%s %d: Resume low battery charge.", __FUNCTION__, __LINE__);
 		if (action_i_ == ac_charge)
 		{
