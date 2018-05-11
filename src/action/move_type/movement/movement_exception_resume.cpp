@@ -331,8 +331,8 @@ bool MovementExceptionResume::isFinish()
 						if (!brush.getMainOc())
 						{
 							ROS_WARN("%s %d: main brush over current resume succeeded!", __FUNCTION__, __LINE__);
-							if (brush.isMainBrushSlowOperate())
-								brush.blockMainBrushSlowOperation();
+//							if (brush.isMainBrushSlowOperate())
+//								brush.blockMainBrushSlowOperation();
 							brush.stop();
 							ev.oc_brush_main = false;
 						}
