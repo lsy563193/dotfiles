@@ -33,7 +33,9 @@ ModeGoToCharger::~ModeGoToCharger()
 	event_manager_set_enable(false);
 	wheel.stop();
 	brush.stop();
+	brush.unblockMainBrushSlowOperation();
 	vacuum.stop();
+	water_tank.stop(WaterTank::operate_option::swing_motor_and_pump);
 	ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);
 }
 
@@ -42,6 +44,8 @@ bool ModeGoToCharger::isExit()
 	if(ev.cliff_all_triggered || ev.key_clean_pressed)
 	{
 		ROS_WARN("%s %d:.", __FUNCTION__, __LINE__);
+		if (ev.cliff_all_triggered)
+			speaker.play(VOICE_ERROR_LIFT_UP);
 		setNextMode(md_idle);
 		ev.cliff_all_triggered = false;
 		ev.key_clean_pressed = false;

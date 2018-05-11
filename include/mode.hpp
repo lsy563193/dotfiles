@@ -15,7 +15,7 @@
 //#include "move_type.hpp"
 
 
-#define ROS_INFO_FL() ROS_INFO("%s,%d",__FUNCTION__, __LINE__)
+#define ROS_INFO_FL() ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__)
 #define PP_INFO() ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__)
 #define PP_WARN() ROS_WARN("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__)
 
@@ -281,6 +281,7 @@ public:
 	void remoteHome(bool state_now, bool state_last) override ;
 	void keyClean(bool state_now, bool state_last) override ;
 	void chargeDetect(bool state_now, bool state_last) override ;
+	void cliffAll(bool state_now, bool state_last) override ;
 
 	void wifiSetWaterTank() override ;
 	void setVacuum() override ;
@@ -478,6 +479,7 @@ public:
 	virtual bool isSwitchByEventInStateCharge(){return false;};
 	virtual bool updateActionStateCharge(){};
 	virtual void switchInStateCharge(){};
+	bool moved_away_from_charger_{false};
 
 	// State pause
 	bool isStatePause() const
@@ -553,7 +555,7 @@ protected:
 	boost::shared_ptr<State> state_test{new StateTest()};
 
 	bool low_battery_charge_{};
-	bool moved_during_pause_{};
+	bool moved_during_pause_{false};
 	Points home_points_{};
 	bool should_go_to_charger_{false};
 	bool remote_go_home_point{false};
@@ -694,9 +696,10 @@ public:
 	bool isSwitchByEventInStateExceptionResume() override;
 
 private:
-	bool has_aligned_and_open_slam_{};
-	float paused_odom_radian_{};
-	float start_align_radian_{};
+	bool has_aligned_and_open_slam_{false};
+	bool has_played_start_voice_{false};
+	float paused_odom_radian_{0};
+	float start_align_radian_{0};
 //	bool is_stay_in_same_postion_long_time{};
 	Point_t continue_point_{};
 	static int align_count_;

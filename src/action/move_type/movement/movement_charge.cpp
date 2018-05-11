@@ -56,10 +56,8 @@ bool MovementCharge::isFinish()
 		if (disconnect_charger_count_ > 25)
 		{
 			if (directly_charge_)
-			{
-				charger.setStop();
 				return true;
-			} else
+			else
 			{
 				key_led.setMode(LED_BREATH, LED_GREEN);
 				turn_for_charger_ = true;
@@ -69,7 +67,8 @@ bool MovementCharge::isFinish()
 			}
 		}
 
-		if (!battery_full_ && charger.getChargeStatus() && battery.isFull())
+		if (ros::Time::now().toSec() - start_timer_ >= 6 && !battery_full_ && charger.getChargeStatus()
+			&& battery.isFull())
 		{
 			if (battery_full_start_time_ == 0)
 			{
@@ -84,6 +83,7 @@ bool MovementCharge::isFinish()
 				key_led.setMode(LED_STEADY, LED_OFF);
 				battery_full_ = true;
 				speaker.play(VOICE_SLEEP_UNOFFICIAL);
+				ROS_WARN("%s %d: Enter fake sleep during charge.", __FUNCTION__, __LINE__);
 			}
 			else
 				key_led.setMode(LED_STEADY, LED_GREEN);
@@ -132,12 +132,14 @@ void MovementCharge::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 void MovementCharge::run()
 {
 	// Debug for charge info
-	if (time(NULL) - show_battery_info_time_stamp_ > 5)
+	if (time(NULL) - show_battery_info_time_stamp_ > 30)
 	{
 		ROS_WARN("%s %d: battery voltage %5.2f V, charge command:%d, charge status:%d.", __FUNCTION__
 		, __LINE__, (float)battery.getVoltage()/100.0, serial.getSendData(CTL_CHARGER), charger.getChargeStatus());
 		show_battery_info_time_stamp_ = time(NULL);
 	}
+
+	ROS_WARN_COND(!charger.getChargeStatus(), "%s %d: Disconnect of charger.", __FUNCTION__, __LINE__);
 
 	IMovement::run();
 }

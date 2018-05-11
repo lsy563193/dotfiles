@@ -13,7 +13,7 @@ ActionBackFromCharger::ActionBackFromCharger()
 	wheel.setDirectionBackward();
 	// This time out interval is just for checking whether the switch is on.
 	timeout_interval_ = 1;
-};
+}
 
 ActionBackFromCharger::~ActionBackFromCharger()
 {
@@ -23,9 +23,9 @@ ActionBackFromCharger::~ActionBackFromCharger()
 bool ActionBackFromCharger::isFinish()
 {
 #if DIRECTLY_BACK
-	static Vector2<float> tmp_pose(odom.getOriginX(), odom.getOriginY());
 	const float BACK_DIST = 0.5f;
-	double distance = two_points_distance_double(tmp_pose.GetX(), tmp_pose.GetY(), odom.getOriginX(), odom.getOriginY());
+	double distance = two_points_distance_double(start_point_.GetX(), start_point_.GetY(), odom.getOriginX(), odom.getOriginY());
+//	ROS_INFO("%s %d: distance:%f.", __FUNCTION__, __LINE__, distance);
 	return distance >= BACK_DIST;
 #else
 	bool val = false;

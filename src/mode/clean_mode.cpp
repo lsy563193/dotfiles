@@ -66,7 +66,7 @@ ACleanMode::ACleanMode()
 	s_wifi.resetReceivedWorkMode();
 	if (error.get())
 		error.clear(error.get(), true);
-//	fw_map.reset(CLEAN_MAP);
+	brush.unblockMainBrushSlowOperation();
 
 //	// todo:debug
 //	infrared_display.displayNormalMsg(8, 5555);
@@ -136,12 +136,16 @@ ACleanMode::~ACleanMode()
 			{
 				speaker.play(VOICE_CLEANING_FINISHED, false);
 				ROS_WARN("%s %d: Moved during pause. Stop cleaning.", __FUNCTION__, __LINE__);
+			} else if (mode_i_ == cm_navigation && moved_away_from_charger_)
+			{
+				speaker.play(VOICE_CLEANING_STOP, false);
+				ROS_WARN("%s %d: Robot stopped from charging.", __FUNCTION__, __LINE__);
 			} else if (mode_i_ == cm_exploration ||
 					((mode_i_ == cm_navigation || mode_i_ == cm_wall_follow) && seen_charger_during_cleaning_))
 			{
 				speaker.play(VOICE_BACK_TO_CHARGER_FAILED, false);
 				ROS_WARN("%s %d: Finish cleaning but failed to go to charger.", __FUNCTION__, __LINE__);
-			} else if (mode_i_ != cm_exploration && !seen_charger_during_cleaning_)
+			} else if (mode_i_ == cm_spot || (mode_i_ != cm_exploration && !seen_charger_during_cleaning_))
 			{
 				speaker.play(VOICE_CLEANING_FINISHED, false);
 				ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
@@ -184,8 +188,11 @@ ACleanMode::~ACleanMode()
 											 , static_cast<const uint16_t &>(map_area)
 											 , clean_map_);
 		s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_LAST_CLEANMAP);
-
 	}
+
+	// Wait for battery recovery from operating motors.
+	usleep(200000);
+	battery.forceUpdate();
 }
 
 void ACleanMode::saveBlock(int block, int dir, std::function<Cells()> get_list)
@@ -642,7 +649,7 @@ void ACleanMode::pubFitLineMarker(visualization_msgs::Marker fit_line_marker)
 uint8_t ACleanMode::setFollowWall(GridMap& map, bool is_left,const Points& passed_path)
 {
 	uint8_t block_count = 0;
-	if (!passed_path.empty() && !c_blocks.empty())
+	if (!passed_path.empty()/* && !c_blocks.empty()*/)
 	{
 		std::string msg = "cell:";
 		auto dy = is_left ? 2 : -2;
@@ -1643,7 +1650,7 @@ void ACleanMode::overCurrentBrushMain(bool state_now, bool state_last)
 	{
 		INFO_YELLOW("MAIN BRUSH OVER CURRENT");
 		ev.oc_brush_main = true;
-		brush.stop();
+		beeper.debugBeep(VALID);
 	}
 }
 
@@ -2163,6 +2170,7 @@ PathHead ACleanMode::getTempTarget()
 bool ACleanMode::isIsolate() {
 	BoundingBox2 bound{};
 	GridMap fw_tmp_map;
+//	std::copy(passed_path_.begin(), passed_path_.end(),std::ostream_iterator<Point_t>(std::cout, " "));
 	setFollowWall(fw_tmp_map, action_i_ == ac_follow_wall_left,passed_path_);
 
 	fw_tmp_map.getMapRange(CLEAN_MAP, &bound.min.x, &bound.max.x, &bound.min.y, &bound.max.y);
@@ -2171,7 +2179,7 @@ bool ACleanMode::isIsolate() {
 	bound.SetMinimum(bound.min - Cell_t{8, 8});
 	bound.SetMaximum(bound.max + Cell_t{8, 8});
 	ROS_ERROR("ISOLATE MAP");
-	fw_tmp_map.print(getPosition().toCell(), CLEAN_MAP,Cells{target});
+	fw_tmp_map.print(getPosition().toCell(), CLEAN_MAP,*points_to_cells(make_unique<Points>(passed_path_)));
 	ROS_ERROR("ISOLATE MAP");
 	ROS_ERROR("minx(%d),miny(%d),maxx(%d),maxy(%d)",bound.min.x, bound.min.y,bound.max.x, bound.max.y);
 

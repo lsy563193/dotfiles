@@ -26,6 +26,7 @@ public:
 		ACT_SMART_AP_LINK,
 		ACT_FACTORY_TEST,
 		ACT_UPLOAD_MAP,
+		ACT_UPLOAD_PATH,
 		ACT_CLEAR_MAP,
 		ACT_UPLOAD_STATUS,
 		ACT_UPLOAD_LAST_CLEANMAP,
@@ -37,6 +38,7 @@ public:
 	enum MapType{
 		GRID_MAP = 0,
 		SLAM_MAP,
+		PASS_PATH,
 	};
 	S_Wifi();
 

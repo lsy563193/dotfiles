@@ -214,10 +214,10 @@ void WaterTank::setStatus(int _operate_option, bool status)
 
 bool WaterTank::getStatus(int _operate_option)
 {
-	if (_operate_option == swing_motor)
-		return swing_motor_switch_;
-	else if (_operate_option == pump)
+	if (_operate_option == pump)
 		return pump_switch_;
+	else
+		return swing_motor_switch_;
 }
 
 void WaterTank::slowOperateSwingMotor()

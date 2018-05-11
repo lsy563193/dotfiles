@@ -52,9 +52,13 @@ ModeRemote::~ModeRemote()
 
 	wheel.stop();
 	brush.stop();
+	brush.unblockMainBrushSlowOperation();
 	vacuum.stop();
 	water_tank.stop(WaterTank::operate_option::swing_motor_and_pump);
 
+	// Wait for battery recovery from operating motors.
+	usleep(200000);
+	battery.forceUpdate();
 	ROS_INFO("%s %d: Exit remote mode.", __FUNCTION__, __LINE__);
 }
 
@@ -63,6 +67,14 @@ bool ModeRemote::isExit()
 	if (ev.key_clean_pressed || ev.remote_spot || ev.remote_home || ev.remote_follow_wall)
 	{
 		ROS_WARN("%s %d: Exit to idle mode.", __FUNCTION__, __LINE__);
+		setNextMode(md_idle);
+		return true;
+	}
+
+	if (ev.cliff_all_triggered)
+	{
+		ROS_WARN("%s %d: Exit to idle mode.", __FUNCTION__, __LINE__);
+		speaker.play(VOICE_ERROR_LIFT_UP);
 		setNextMode(md_idle);
 		return true;
 	}
@@ -180,6 +192,8 @@ void ModeRemote::remoteDirectionForward(bool state_now, bool state_last)
 	ROS_WARN("%s %d: remote forward.", __FUNCTION__, __LINE__);
 	beeper.beepForCommand(VALID);
 	ev.remote_direction_forward = true;
+	if(action_i_ == ac_open_gyro)
+		MoveTypeRemote::forwardStart();
 	remote.reset();
 }
 
@@ -188,6 +202,8 @@ void ModeRemote::remoteDirectionLeft(bool state_now, bool state_last)
 	ROS_WARN("%s %d: remote left.", __FUNCTION__, __LINE__);
 	beeper.beepForCommand(VALID);
 	ev.remote_direction_left = true;
+	if (action_i_ == ac_open_gyro)
+		MoveTypeRemote::leftStart();
 	remote.reset();
 }
 
@@ -196,6 +212,8 @@ void ModeRemote::remoteDirectionRight(bool state_now, bool state_last)
 	ROS_WARN("%s %d: remote right.", __FUNCTION__, __LINE__);
 	beeper.beepForCommand(VALID);
 	ev.remote_direction_right = true;
+	if (action_i_ == ac_open_gyro)
+		MoveTypeRemote::rightStart();
 	remote.reset();
 }
 
@@ -257,6 +275,13 @@ void ModeRemote::remoteHome(bool state_now, bool state_last)
 	beeper.beepForCommand(VALID);
 	ev.remote_home = true;
 	remote.reset();
+}
+
+void ModeRemote::cliffAll(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: Cliff all.", __FUNCTION__, __LINE__);
+
+	ev.cliff_all_triggered = true;
 }
 
 void ModeRemote::wifiSetWaterTank()

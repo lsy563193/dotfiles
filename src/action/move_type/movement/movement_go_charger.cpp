@@ -16,6 +16,12 @@ MovementGoToCharger::MovementGoToCharger()
 		should_away_from_charge_station = true;
 }
 
+MovementGoToCharger::~MovementGoToCharger()
+{
+	wheel.stop();
+	ROS_INFO("%s %d: Exit.", __FUNCTION__, __LINE__);
+}
+
 void MovementGoToCharger::resetGoToChargerVariables()
 {
 	turn_angle_ = 0;
@@ -287,14 +293,14 @@ bool MovementGoToCharger::isSwitch()
 			else if(receive_code&RconL_HomeT)// L  H_T
 			{
 				ROS_INFO("Start with L-T.");
-				turn_angle_ = -120;
+				turn_angle_ = 0;
 				around_charger_stub_dir = 1;
 			}
 			else if(receive_code&RconR_HomeT)// R  H_T
 			{
 				ROS_INFO("Start with R-T.");
-				turn_angle_ = -120;
-				around_charger_stub_dir = 1;
+				turn_angle_ = 0;
+				around_charger_stub_dir = 0;
 			}
 			else if(receive_code&RconBL_HomeT)//BL H_T
 			{
@@ -319,7 +325,6 @@ bool MovementGoToCharger::isSwitch()
 	}
 	if (gtc_state_now_ == gtc_around_charger_station_init)
 	{
-		go_home_bumper_cnt = 0;
 		//wheel.move_forward(9, 9);
 		c_rcon.resetStatus();
 		ROS_INFO("%s, %d: Call Around_ChargerStation with dir = %d.", __FUNCTION__, __LINE__, around_charger_stub_dir);
@@ -1960,8 +1965,7 @@ void MovementGoToCharger::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 bool MovementGoToCharger::isFinish()
 {
 	auto ret = charger.getChargeStatus() || _isStop();
-	if(ret){
-		wheel.stop();
-	}
+	if(ret)
+		ROS_WARN("%s %d: Charger detected or _isStop()", __FUNCTION__, __LINE__);
 	return ret;
 }
