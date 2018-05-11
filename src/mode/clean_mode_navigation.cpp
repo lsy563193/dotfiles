@@ -522,7 +522,7 @@ void CleanModeNav::remotePlan(bool state_now, bool state_last)
 
 void CleanModeNav::batteryHome(bool state_now, bool state_last)
 {
-	if (isStateClean())
+	if (!ev.battery_home && isStateClean())
 	{
 		continue_point_ = getPosition();
 		ROS_INFO("%s %d: low battery, battery =\033[33m %dmv \033[0m, continue cell(%d, %d)", __FUNCTION__, __LINE__,

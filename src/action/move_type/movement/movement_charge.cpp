@@ -56,10 +56,8 @@ bool MovementCharge::isFinish()
 		if (disconnect_charger_count_ > 25)
 		{
 			if (directly_charge_)
-			{
-				charger.setStop();
 				return true;
-			} else
+			else
 			{
 				key_led.setMode(LED_BREATH, LED_GREEN);
 				turn_for_charger_ = true;
