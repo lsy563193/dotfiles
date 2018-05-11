@@ -66,7 +66,7 @@ ACleanMode::ACleanMode()
 	s_wifi.resetReceivedWorkMode();
 	if (error.get())
 		error.clear(error.get(), true);
-//	fw_map.reset(CLEAN_MAP);
+	brush.unblockMainBrushSlowOperation();
 
 //	// todo:debug
 //	infrared_display.displayNormalMsg(8, 5555);
@@ -1650,7 +1650,7 @@ void ACleanMode::overCurrentBrushMain(bool state_now, bool state_last)
 	{
 		INFO_YELLOW("MAIN BRUSH OVER CURRENT");
 		ev.oc_brush_main = true;
-		brush.stop();
+		beeper.debugBeep(VALID);
 	}
 }
 

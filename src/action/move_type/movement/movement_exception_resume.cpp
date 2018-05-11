@@ -254,7 +254,7 @@ bool MovementExceptionResume::isFinish()
 	// Check for right wheel.
 	if (ev.oc_wheel_left || ev.oc_wheel_right)
 	{
-		if (brush.isOn())
+		if (brush.isSideBrushOn())
 			brush.stop();
 		vacuum.stop();
 		water_tank.stop(WaterTank::operate_option::swing_motor_and_pump);
@@ -308,10 +308,12 @@ bool MovementExceptionResume::isFinish()
 			{
 				case 1:
 				{
-					if (brush.isOn())
-						brush.stop();
-					vacuum.stop();
-					water_tank.stop(WaterTank::operate_option::swing_motor_and_pump);
+					if (brush.isSideBrushOn())
+						brush.stopForMainBrushResume();
+					if (vacuum.isOn())
+						vacuum.stop();
+					if (water_tank.getStatus(WaterTank::operate_option::swing_motor))
+						water_tank.stop(WaterTank::operate_option::swing_motor_and_pump);
 					float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getOriginX(), odom.getOriginY());
 					if (std::abs(distance) >= CELL_SIZE * ROBOT_SIZE / 2)
 					{
@@ -329,7 +331,9 @@ bool MovementExceptionResume::isFinish()
 						if (!brush.getMainOc())
 						{
 							ROS_WARN("%s %d: main brush over current resume succeeded!", __FUNCTION__, __LINE__);
-							brush.normalOperate();
+							if (brush.isMainBrushSlowOperate())
+								brush.blockMainBrushSlowOperation();
+							brush.stop();
 							ev.oc_brush_main = false;
 						}
 						else
@@ -872,7 +876,7 @@ bool MovementExceptionResume::isFinish()
 		if(should_init_for_gyro_exception_)
 		{
 			should_init_for_gyro_exception_ = false;
-			if (brush.isOn())
+			if (brush.isSideBrushOn())
 				brush.stop();
 			vacuum.stop();
 			water_tank.stop(WaterTank::operate_option::swing_motor_and_pump);

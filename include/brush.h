@@ -7,18 +7,29 @@
 
 class Brush {
 public:
-	Brush(void);
+	Brush() = default;
 
-	void slowOperate(void);
-	void normalOperate(void);
-	void fullOperate(void);
+	void slowOperate();
+	void normalOperate();
+	void fullOperate();
 	void operate();
-	void stop(void);
+	void stop();
+	void stopForMainBrushResume();
 	void mainBrushResume();
 
-	bool isOn()
+	bool isSideBrushOn()
 	{
-		return brush_status_ != brush_stop;
+		return side_brush_status_ != brush_stop;
+	}
+
+	bool isMainBrushOn()
+	{
+		return main_brush_status_ != brush_stop;
+	}
+
+	bool isMainBrushSlowOperate()
+	{
+		return main_brush_status_ == brush_slow;
 	}
 
 	void setPWM(uint8_t L, uint8_t R, uint8_t M);
@@ -91,7 +102,8 @@ public:
 		return main_current_;
 	}
 
-	void checkBatterySetPWM();
+	void checkBatterySetSideBrushPWM();
+	void checkBatterySetMainBrushPWM();
 	void updatePWM();
 
 	// For consumable.
@@ -105,8 +117,15 @@ public:
 	{
 		return main_brush_operation_time_;
 	}
-	void resetSideBurshTime();
+	void resetSideBrushTime();
 	void resetMainBrushTime();
+
+	void blockMainBrushSlowOperation();
+
+	void unblockMainBrushSlowOperation()
+	{
+		block_main_brush_low_operation_ = false;
+	}
 
 private:
 
@@ -117,16 +136,17 @@ private:
 		brush_normal,
 		brush_max,
 	};
-	double check_battery_time_stamp_;
-	uint8_t brush_status_;
-	uint8_t normal_side_brush_PWM_;
-	uint8_t normal_main_brush_PWM_;
+	double check_battery_time_stamp_{0};
+	uint8_t side_brush_status_{brush_stop};
+	uint8_t main_brush_status_{brush_stop};
+	uint8_t side_brush_PWM_{0};
+	uint8_t main_brush_PWM_{0};
 
-	bool is_main_oc_;
+	bool is_main_oc_{false};
 
-	uint16_t left_current_;
-	uint16_t right_current_;
-	uint16_t main_current_;
+	uint16_t left_current_{0};
+	uint16_t right_current_{0};
+	uint16_t main_current_{0};
 
 	enum {
 		left = 0,
@@ -136,6 +156,8 @@ private:
 	uint8_t resume_stage_[2]{0, 0};
 	double resume_start_time_[2]{0, 0};
 	uint8_t resume_count_[2]{0, 0};
+
+	bool block_main_brush_low_operation_{false};
 
 	// For consumable situation.
 	uint32_t side_brush_operation_time_{0};

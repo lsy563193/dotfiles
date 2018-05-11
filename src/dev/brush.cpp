@@ -10,79 +10,98 @@
 
 Brush brush;
 
-Brush::Brush(void)
-{
-	brush_status_ = brush_stop;
-
-	is_main_oc_ = false;
-
-	check_battery_time_stamp_ = 0;
-}
-
 void Brush::operate()
 {
-	if (brush_status_ != brush_stop && (side_brush_oc_status_[left] || side_brush_oc_status_[right] || is_main_oc_))
+	if (side_brush_oc_status_[left] || side_brush_oc_status_[right] || is_main_oc_)
 		return;
 
-	switch (brush_status_)
+	switch (side_brush_status_)
 	{
 		case brush_slow:
 		case brush_normal:
-			checkBatterySetPWM();
-			setPWM(normal_side_brush_PWM_, normal_side_brush_PWM_, normal_main_brush_PWM_);
+			checkBatterySetSideBrushPWM();
 			break;
 		case brush_max:
-			setPWM(100, 100, 100);
+			side_brush_PWM_ = 100;
 			break;
 		default: // brush_stop
-			setPWM(0, 0, 0);
+			side_brush_PWM_ = 0;
 			break;
 	}
+
+	switch (main_brush_status_)
+	{
+		case brush_slow:
+		case brush_normal:
+			checkBatterySetMainBrushPWM();
+			break;
+		case brush_max:
+			main_brush_PWM_ = 100;
+			break;
+		default: // brush_stop
+			main_brush_PWM_ = 0;
+			break;
+	}
+
+	setPWM(side_brush_PWM_, side_brush_PWM_, main_brush_PWM_);
 }
 
-void Brush::slowOperate(void)
+void Brush::slowOperate()
 {
-	brush_status_ = brush_slow;
+	side_brush_status_ = brush_slow;
+	if (!block_main_brush_low_operation_)
+		main_brush_status_ = brush_slow;
 	operate();
-	ROS_INFO("%s %d: Brush set to slow.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Brush set to slow.", __FUNCTION__, __LINE__);
 }
 
-void Brush::normalOperate(void)
+void Brush::normalOperate()
 {
-	brush_status_ = brush_normal;
+	side_brush_status_ = brush_normal;
+	main_brush_status_ = brush_normal;
 	operate();
 	check_battery_time_stamp_ = ros::Time::now().toSec();
-	ROS_INFO("%s %d: Brush set to normal.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Brush set to normal.", __FUNCTION__, __LINE__);
 }
 
 void Brush::fullOperate()
 {
-	brush_status_ = brush_max;
+	side_brush_status_ = brush_max;
+	main_brush_status_ = brush_max;
 	operate();
-	ROS_INFO("%s %d: Brush set to max.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Brush set to max.", __FUNCTION__, __LINE__);
 }
 
-void Brush::stop(void)
+void Brush::stop()
 {
-	brush_status_ = brush_stop;
+	side_brush_status_ = brush_stop;
+	main_brush_status_ = brush_stop;
 	operate();
 	resume_count_[left] = 0;
+	resume_stage_[left] = 0;
 	resume_count_[right] = 0;
-	ROS_INFO("%s %d: Brush set to stop.", __FUNCTION__, __LINE__);
+	resume_stage_[right] = 0;
+	ROS_WARN("%s %d: Brush set to stop.", __FUNCTION__, __LINE__);
+}
+
+void Brush::stopForMainBrushResume()
+{
+	side_brush_status_ = brush_stop;
+	setPWM(0, 0, 0);
+	// Update the check battery time stamp in case it will update PWM during self resume.
+	check_battery_time_stamp_ = ros::Time::now().toSec();
+	ROS_WARN("%s %d: Stop for main brush resume.", __FUNCTION__, __LINE__);
 }
 
 void Brush::mainBrushResume()
 {
-	brush_status_ = brush_normal;
-	checkBatterySetPWM();
-	setPWM(0, 0, normal_main_brush_PWM_);
-	ROS_INFO("%s %d: Main Brush set to normal.", __FUNCTION__, __LINE__);
+	setPWM(0, 0, 50);
+	ROS_INFO("%s %d: Main Brush start resuming.", __FUNCTION__, __LINE__);
 }
 
 void Brush::updatePWM()
 {
-	if ((brush_status_ == brush_normal || brush_status_ == brush_slow)
-		&& ros::Time::now().toSec() - check_battery_time_stamp_ > 60)
+	if (ros::Time::now().toSec() - check_battery_time_stamp_ > 60)
 	{
 		operate();
 		check_battery_time_stamp_ = ros::Time::now().toSec();
@@ -90,19 +109,24 @@ void Brush::updatePWM()
 	// else no need to init.
 }
 
-void Brush::checkBatterySetPWM()
+void Brush::checkBatterySetMainBrushPWM()
 {
 	auto current_battery_voltage_ = battery.getVoltage();
-	auto operate_voltage_ = brush_status_ == brush_slow ? SLOW_OPERATE_VOLTAGE_FOR_SIDE_BRUSH
+	auto operate_voltage_ = main_brush_status_ == brush_slow ? SLOW_OPERATE_VOLTAGE_FOR_MAIN_BRUSH
+														: NORMAL_OPERATE_VOLTAGE_FOR_MAIN_BRUSH;
+	float percentage = static_cast<float>(operate_voltage_) /
+					   static_cast<float>(current_battery_voltage_);
+	main_brush_PWM_ = static_cast<uint8_t>(percentage * 100);
+}
+
+void Brush::checkBatterySetSideBrushPWM()
+{
+	auto current_battery_voltage_ = battery.getVoltage();
+	auto operate_voltage_ = side_brush_status_ == brush_slow ? SLOW_OPERATE_VOLTAGE_FOR_SIDE_BRUSH
 														: NORMAL_OPERATE_VOLTAGE_FOR_SIDE_BRUSH;
 	float percentage = static_cast<float>(operate_voltage_) /
 					   static_cast<float>(current_battery_voltage_);
-	normal_side_brush_PWM_ = static_cast<uint8_t>(percentage * 100);
-	operate_voltage_ = brush_status_ == brush_slow ? SLOW_OPERATE_VOLTAGE_FOR_MAIN_BRUSH
-														: NORMAL_OPERATE_VOLTAGE_FOR_MAIN_BRUSH;
-	percentage = static_cast<float>(operate_voltage_) /
-					   static_cast<float>(current_battery_voltage_);
-	normal_main_brush_PWM_ = static_cast<uint8_t>(percentage * 100);
+	side_brush_PWM_ = static_cast<uint8_t>(percentage * 100);
 }
 
 void Brush::setLeftBrushPWM(uint8_t PWM)
@@ -143,7 +167,7 @@ bool Brush::checkRightBrushTwined()
 
 bool Brush::checkBrushTwined(uint8_t brush_indicator)
 {
-	if (!brush.isOn())
+	if (!brush.isSideBrushOn())
 		return false;
 
 	switch (resume_stage_[brush_indicator])
@@ -227,7 +251,7 @@ void Brush::updateMainBrushTime(uint32_t addition_time)
 			 main_brush_operation_time_, main_brush_operation_time_ / 3600);
 }
 
-void Brush::resetSideBurshTime()
+void Brush::resetSideBrushTime()
 {
 	side_brush_operation_time_ = 0;
 	ROS_INFO("%s %d: Reset side brush operation time to 0.", __FUNCTION__, __LINE__);
@@ -237,4 +261,10 @@ void Brush::resetMainBrushTime()
 {
 	main_brush_operation_time_ = 0;
 	ROS_INFO("%s %d: Reset main brush operation time to 0.", __FUNCTION__, __LINE__);
+}
+
+void Brush::blockMainBrushSlowOperation()
+{
+	block_main_brush_low_operation_ = true;
+	ROS_WARN("%s %d: Block main brush from slow operation(For carpet oc problems).", __FUNCTION__, __LINE__);
 }

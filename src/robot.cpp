@@ -961,7 +961,7 @@ void robot::updateConsumableStatus()
 {
 	auto additional_side_brush_time_sec = brush.getSideBrushTime();
 	ROS_INFO("%s %d: Additional side brush: %ds.", __FUNCTION__, __LINE__, additional_side_brush_time_sec);
-	brush.resetSideBurshTime();
+	brush.resetSideBrushTime();
 	auto side_brush_time = additional_side_brush_time_sec + side_brush_time_;
 
 	auto additional_main_brush_time_sec = brush.getMainBrushTime();
