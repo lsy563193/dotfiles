@@ -12,6 +12,8 @@
 #include "robot.hpp"
 #include "infrared_display.hpp"
 
+#define CURRENT_VERSION 11
+
 void x900_functional_test(std::string serial_port, int baud_rate, std::string lidar_bumper_dev)
 {
 	uint8_t test_stage=0;
@@ -177,7 +179,7 @@ uint8_t serial_port_test()
 	}
 	if(send_string_sum.compare(receive_string_sum) == 0)
 	{
-		if(receive_data[M0_VERSION_H] << 8 | receive_data[M0_VERSION_L] != 10)
+		if(receive_data[M0_VERSION_H] << 8 | receive_data[M0_VERSION_L] != CURRENT_VERSION)
 			test_ret = receive_data[M0_VERSION_H] << 8 | receive_data[M0_VERSION_L];
 	}
 	else
