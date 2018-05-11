@@ -33,6 +33,7 @@ ModeGoToCharger::~ModeGoToCharger()
 	event_manager_set_enable(false);
 	wheel.stop();
 	brush.stop();
+	brush.unblockMainBrushSlowOperation();
 	vacuum.stop();
 	water_tank.stop(WaterTank::operate_option::swing_motor_and_pump);
 	ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);

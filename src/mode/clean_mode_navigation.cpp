@@ -1027,6 +1027,8 @@ bool CleanModeNav::checkEnterResumeLowBatteryCharge()
 		low_battery_charge_ = true;
 		// For entering checking switch.
 		ev.charge_detect = 0;
+
+		brush.unblockMainBrushSlowOperation();
 		return true;
 	}
 

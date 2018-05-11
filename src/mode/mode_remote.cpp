@@ -52,6 +52,7 @@ ModeRemote::~ModeRemote()
 
 	wheel.stop();
 	brush.stop();
+	brush.unblockMainBrushSlowOperation();
 	vacuum.stop();
 	water_tank.stop(WaterTank::operate_option::swing_motor_and_pump);
 
