@@ -309,6 +309,7 @@ void robot::robotbase_routine_cb()
 
 		// For appointment status
 		appmt_obj.setPlanStatus( buf[REC_MIX_BYTE] );
+//		printf("plan:%x\n", (buf[REC_MIX_BYTE] >> 1) & 0x03);
 		sensor.plan = appmt_obj.getPlanStatus();
 //		if (appmt_obj.getPlanStatus())
 //			ROS_ERROR("RECEIVE PLAN(%d).", appmt_obj.getPlanStatus());
@@ -365,8 +366,9 @@ void robot::robotbase_routine_cb()
 		sensor.realtime = buf[REC_REALTIME_H]<<8 | buf[REC_REALTIME_L];
 		sensor.appointment = buf[REC_APPOINTMENT_TIME];
 			// For debug.
-//		printf("%d: REC_MIX_BYTE:(%2x), REC_RESERVED:(%2x).\n.",
-//			   __LINE__, buf[REC_MIX_BYTE], buf[REC_RESERVED]);
+		if (buf[REC_APPOINTMENT_TIME] >= 0x80)
+			printf("%d: REC_APPOINTMENT_TIME:(%2x), REC_REALTIME_H:(%2x).\n",
+			   __LINE__, buf[REC_APPOINTMENT_TIME], sensor.realtime);
 //		printf("%d: charge:(%d), remote:(%d), key:(%d), rcon(%d).\n.",
 //			   __LINE__, charger.getChargeStatus(), remote.get(), key.getTriggerStatus(), c_rcon.getStatus());
 

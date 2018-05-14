@@ -67,7 +67,7 @@ bool MovementCharge::isFinish()
 			}
 		}
 
-		if (ros::Time::now().toSec() - start_timer_ >= 6 && !battery_full_ && charger.getChargeStatus()
+		if (ros::Time::now().toSec() - start_timer_ >= 10 && !battery_full_and_sleep_ && charger.getChargeStatus()
 			&& battery.isFull())
 		{
 			if (battery_full_start_time_ == 0)
@@ -81,7 +81,7 @@ bool MovementCharge::isFinish()
 			{
 				wifi_led.setMode(LED_STEADY, WifiLed::state::off);
 				key_led.setMode(LED_STEADY, LED_OFF);
-				battery_full_ = true;
+				battery_full_and_sleep_ = true;
 				speaker.play(VOICE_SLEEP_UNOFFICIAL);
 				ROS_WARN("%s %d: Enter fake sleep during charge.", __FUNCTION__, __LINE__);
 			}

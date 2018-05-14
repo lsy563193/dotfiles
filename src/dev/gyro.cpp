@@ -553,13 +553,13 @@ void Gyro::resetGyroAngleR(void)
 void Gyro::setAngleVOffset(void)
 {
 	ANGLE_V_OFFSET_ = angle_v_;
-	ROS_ERROR("setAngleVOffset = %f", ANGLE_V_OFFSET_);
+	ROS_INFO("setAngleVOffset = %f", ANGLE_V_OFFSET_);
 }
 
 void Gyro::setAngleROffset(void)
 {
 	ANGLE_R_OFFSET_ = angle_r_;
-	ROS_ERROR("ANGLE_R_OFFSET_ = %f", ANGLE_R_OFFSET_);
+	ROS_INFO("ANGLE_R_OFFSET_ = %f", ANGLE_R_OFFSET_);
 }
 
 void Gyro::error(bool is_error)
