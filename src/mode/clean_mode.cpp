@@ -1717,7 +1717,10 @@ bool ACleanMode::checkEnterGoHomePointState()
 			s_wifi.resetReceivedWorkMode();
 		}
 		if (ev.battery_home)
+		{
 			go_home_for_low_battery_ = true;
+			found_charger_ = false;
+		}
 		sp_action_.reset();
 		sp_state = state_go_home_point.get();
 		sp_state->init();

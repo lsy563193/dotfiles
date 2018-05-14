@@ -627,27 +627,30 @@ bool CleanModeNav::updateActionInStateInit() {
 			action_i_ = ac_align;
 		}
 		else
+		{
+			//set charge position
+			ACleanMode::checkShouldMarkCharger((float)odom.getRadian(),0.6);
 			return false;
+		}
 	} else if (action_i_ == ac_align){
 		{
 			action_i_ = ac_open_slam;
 			align_count_ ++;
-			start_align_radian_ = odom.getRadianOffset();
+			start_align_radian_ = static_cast<float>(odom.getRadianOffset());
 			if(align_count_%2 == 0)
 			{
-				start_align_radian_= ranged_radian(start_align_radian_ -PI/2);
+				start_align_radian_= static_cast<float>(ranged_radian(start_align_radian_ - PI / 2));
 				odom.setRadianOffset(start_align_radian_);
 //				ROS_INFO("rad %f",start_align_radian_);
 			}
 			ROS_INFO("odom rad, align_count : %f, %d", odom.getRadian(), align_count_);
+			//set charge position
+			ACleanMode::checkShouldMarkCharger((float)odom.getRadian(),0.6);
 //			beeper.beepForCommand(INVALID);
 		}
 
 	}
 	else if (action_i_ == ac_open_slam){
-		//after back_from_charger and line alignment
-		//set charge position
-		ACleanMode::checkShouldMarkCharger((float)odom.getRadianOffset(),0.6);
 		return false;
 	}
 	genNextAction();
