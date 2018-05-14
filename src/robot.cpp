@@ -115,7 +115,7 @@ robot::robot()
 	auto wifi_send_thread = new boost::thread(boost::bind(&S_Wifi::wifiSendRutine,&s_wifi));
 
 	obs.control(ON);
-	ROS_WARN("%s %d: Robot x900(version 0000 r10) is online :)", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Robot x900(version 0000 r11) is online :)", __FUNCTION__, __LINE__);
 }
 
 robot::~robot()
@@ -1037,8 +1037,6 @@ void robot::setRobotActualSpeed() {
 		return;
 	}
 	robot_actual_speed_ = speed;
-//	ROS_INFO("speed: %lf, dis:%lf, delta_time:%lf, invalid_count:%d",
-//	robot_actual_speed_,dis,ros::Time::now().toSec() - time,invalid_count - 1);
 	invalid_count = 1;
 	x = robot_pos.x();
 	y = robot_pos.y();
