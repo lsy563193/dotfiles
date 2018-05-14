@@ -326,21 +326,19 @@ bool MovementExceptionResume::isFinish()
 				}
 				case 2:
 				{
+					if ((ros::Time::now().toSec() - resume_main_bursh_start_time_) >= 1 && brush.getMainOc())
+					{
+						oc_main_brush_cnt_++;
+						main_brush_resume_state_ = 1;
+					}
+
 					if ((ros::Time::now().toSec() - resume_main_bursh_start_time_) >= 3)
 					{
-						if (!brush.getMainOc())
-						{
-							ROS_WARN("%s %d: main brush over current resume succeeded!", __FUNCTION__, __LINE__);
+						ROS_WARN("%s %d: main brush over current resume succeeded!", __FUNCTION__, __LINE__);
 //							if (brush.isMainBrushSlowOperate())
 //								brush.blockMainBrushSlowOperation();
-							brush.stop();
-							ev.oc_brush_main = false;
-						}
-						else
-						{
-							oc_main_brush_cnt_++;
-							main_brush_resume_state_ = 1;
-						}
+						brush.stop();
+						ev.oc_brush_main = false;
 					}
 					break;
 				}
