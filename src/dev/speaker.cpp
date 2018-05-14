@@ -66,18 +66,18 @@ void Speaker::playRoutine()
 
 void Speaker::play(VoiceType voice_type, bool can_be_interrupted)
 {
+	if (voice_type == VOICE_NULL)
+		ROS_INFO("%s %d: Ending playing voice.", __FUNCTION__, __LINE__);
+	else
+		ROS_INFO("%s %d: Ask play_routine to play voice:%d.(%sallowed to be interrupted)",
+				 __FUNCTION__, __LINE__, voice_type, can_be_interrupted ? "" : "not ");
+
 	if (!finish_playing_ && !curr_voice_.can_be_interrupted)
 	{
 		ROS_INFO("%s %d: Wait for previous voice finish.", __FUNCTION__, __LINE__);
 		while (!finish_playing_)
 			usleep(1500);
 	}
-
-	if (voice_type == VOICE_NULL)
-		ROS_INFO("%s %d: Ending playing voice.", __FUNCTION__, __LINE__);
-	else
-		ROS_INFO("%s %d: Ask play_routine to play voice:%d.(%sallowed to be interrupted)",
-				 __FUNCTION__, __LINE__, voice_type, can_be_interrupted ? "" : "not ");
 
 	if (!finish_playing_)
 	{

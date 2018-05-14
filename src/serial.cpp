@@ -573,6 +573,7 @@ void Serial::receive_routine_cb()
 
 		if (r_crc == c_crc){
 			if (receiData[wh_len - 1] == t2 && receiData[wh_len - 2] == t1) {
+//				printf("reci_plan:%x\n", (receive_stream[REC_MIX_BYTE] >> 1) & 0x03);
 				ROS_ERROR_COND(pthread_mutex_lock(&recev_lock)!=0, "serial pthread receive lock fail");
 				for (j = 0; j < wht_len; j++) {
 					serial.receive_stream[j + 2] = receiData[j];
