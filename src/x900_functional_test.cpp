@@ -1935,12 +1935,12 @@ void charge_current_test(bool is_fixture, uint8_t &test_stage, uint16_t &error_c
 		}
 		if(buf[4] == 1) {
 			error_code = CHARGE_PWM_ERROR;
-			current_data = 0;
+			current_data = static_cast<uint16_t>(buf[5] << 8 | buf[6]);
 			return ;
 		}
 		else if(buf[4] == 2) {
 			error_code = CHARGE_CURRENT_ERROR;
-			current_data = 0;
+			current_data = static_cast<uint16_t>(buf[7] << 8 | buf[8]);
 			return ;
 		}
 		else if(buf[4] == 3)
