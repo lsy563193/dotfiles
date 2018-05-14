@@ -16,9 +16,10 @@ void WifiMapManage::runLengthEncoding(GridMap &grid_map, WifiMap &wifi_map, cons
 //	bound = grid_map.generateBound();
 	//ROS_INFO("%s %d: Begin run-length encoding.", __FUNCTION__, __LINE__);
 	std::get<0>(wifi_map) = bound.min;
-	std::get<1>(wifi_map) = bound.max.x - bound.min.x+1;
+	std::get<1>(wifi_map) = (bound.max.x - bound.min.x)+1;
+	printf("\033[32m wifi map width %d \033[0m\n",(bound.max.x - bound.min.x)+1);
 	auto& data = std::get<2>(wifi_map);
-	int last_cost=1;//init
+	int last_cost=50;//init
 	int size=0;
 	bool first_time = true;
 	for(auto j= bound.min.y; j<= bound.max.y; j++)
@@ -27,10 +28,25 @@ void WifiMapManage::runLengthEncoding(GridMap &grid_map, WifiMap &wifi_map, cons
 		{
 			auto cost = grid_map.getCell(CLEAN_MAP,i,j);
 			auto it_cost = changeCost(cost);
+			/*
+			if(it_cost == 2)
+				printf("\033[33m%d\033[0m",it_cost);
+			else if(it_cost == 1)
+				printf("\033[32m%d\033[0m",it_cost);
+			else if(it_cost == 3)
+				printf("\033[35m%d\033[0m",it_cost);
+			*/
 			if(first_time)
 			{
 				first_time = false;
 				last_cost = it_cost;
+			}
+			if(it_cost != last_cost)
+			{
+				data.push_back({last_cost, size});
+				last_cost = it_cost;
+				size = 1;
+				continue;
 			}
 			size++;
 			if(size >=255)
@@ -38,15 +54,12 @@ void WifiMapManage::runLengthEncoding(GridMap &grid_map, WifiMap &wifi_map, cons
 				data.push_back({last_cost, size});
 				size = 0;
 			}
-			else if(it_cost != last_cost)
-			{
-				last_cost = it_cost;
-				data.push_back({last_cost, size});
-				size = 0;
-			}
 		}
+		//printf("\n");
 	}
-	data.push_back({last_cost, size});
+	if(size>0)
+		data.push_back({last_cost, size});
+
 	ROS_INFO("%s %d: End run-length encoding, data type number(%d).", __FUNCTION__, __LINE__, data.size());
 }
 

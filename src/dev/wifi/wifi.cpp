@@ -715,6 +715,31 @@ void S_Wifi::sort_push(std::deque<Cell_t> *list,Cell_t p,int sort_type)
 	}
 }
 
+void printwifimap(int width,std::pair<uint8_t, uint8_t > data)
+{
+	static int cnt = 0;
+	for(int i=0;i<data.second;i++)
+	{
+		if(cnt == width)
+		{
+			cnt = 0;printf("\n");
+		}
+		cnt++;
+		if(data.first == 0x01)
+		{
+			printf("\033[32m*\033[0m");
+		}
+		else if(data.first == 0x02)
+		{
+			printf("\033[33m@\033[0m");
+		}
+		else if(data.first == 0x03)
+		{
+			printf("\033[34m#\033[0m");
+		}
+	}
+}
+
 bool S_Wifi::uploadMap(MapType map)
 {
 	static uint8_t path_num = 0;
@@ -943,9 +968,10 @@ bool S_Wifi::uploadMap(MapType map)
 			map_data.push_back(width);
 			for (size_t i = 0; i < data.size(); ++i)
 			{
-				data_cnt+=3;
+				data_cnt+=2;
 				map_data.push_back(data[i].first);
 				map_data.push_back(data[i].second);
+				//printwifimap(width,data[i]);
 				if(data_cnt>=450)
 				{
 					data_cnt=0;
@@ -1565,7 +1591,7 @@ void S_Wifi::taskPushBack(S_Wifi::ACT action)
 	}
 }
 
-void S_Wifi::wifi_send_routine()
+void S_Wifi::wifiSendRutine()
 {
 	uint32_t upload_state_count;
 	uint32_t upload_map_count;
