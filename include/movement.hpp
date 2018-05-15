@@ -351,11 +351,11 @@ public:
 
 	bool batteryFullAndSleep()
 	{
-		return battery_full_;
+		return battery_full_and_sleep_;
 	}
 
 private:
-	bool battery_full_{false};
+	bool battery_full_and_sleep_{false};
 	double battery_full_start_time_{0};
 	bool directly_charge_{false};
 	uint8_t disconnect_charger_count_{0};

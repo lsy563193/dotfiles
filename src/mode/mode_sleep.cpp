@@ -28,7 +28,7 @@ ModeSleep::ModeSleep()
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 	s_wifi.resetReceivedWorkMode();
 
-	sp_state = st_sleep.get();
+	sp_state = state_sleep.get();
 	sp_state->init();
 	plan_activated_status_ = false;
 

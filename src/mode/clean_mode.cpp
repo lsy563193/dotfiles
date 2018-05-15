@@ -126,6 +126,10 @@ ACleanMode::~ACleanMode()
 				else if (mode_i_ != cm_navigation)
 					speaker.play(VOICE_CLEANING_FINISHED, false);
 				ROS_WARN("%s %d: Finish cleaning for key_clean_pressed or key_long_pressed.", __FUNCTION__, __LINE__);
+			} else if (mode_i_ == cm_wall_follow && ev.remote_follow_wall)
+			{
+				speaker.play(VOICE_CLEANING_FINISHED, false);
+				ROS_WARN("%s %d: Finish cleaning for remote follow wall.", __FUNCTION__, __LINE__);
 			} else if (mode_i_ == cm_navigation && (trapped_closed_or_isolate || trapped_time_out_))
 			{
 				speaker.play(VOICE_ROBOT_TRAPPED, false);
@@ -1717,7 +1721,10 @@ bool ACleanMode::checkEnterGoHomePointState()
 			s_wifi.resetReceivedWorkMode();
 		}
 		if (ev.battery_home)
+		{
 			go_home_for_low_battery_ = true;
+			found_charger_ = false;
+		}
 		sp_action_.reset();
 		sp_state = state_go_home_point.get();
 		sp_state->init();

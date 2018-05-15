@@ -115,7 +115,7 @@ robot::robot()
 	auto event_handler_thread = new boost::thread(event_handler_thread_cb);
 	auto core_thread = new boost::thread(boost::bind(&robot::core_thread_cb,this));
 
-	auto wifi_send_thread = new boost::thread(boost::bind(&S_Wifi::wifi_send_routine,&s_wifi));
+	auto wifi_send_thread = new boost::thread(boost::bind(&S_Wifi::wifiSendRutine,&s_wifi));
 
 	obs.control(ON);
 	ROS_WARN("%s %d: Robot x900(version 0000 r11) is online :)", __FUNCTION__, __LINE__);
@@ -312,6 +312,7 @@ void robot::robotbase_routine_cb()
 
 		// For appointment status
 		appmt_obj.setPlanStatus( buf[REC_MIX_BYTE] );
+//		printf("plan:%x\n", (buf[REC_MIX_BYTE] >> 1) & 0x03);
 		sensor.plan = appmt_obj.getPlanStatus();
 //		if (appmt_obj.getPlanStatus())
 //			ROS_ERROR("RECEIVE PLAN(%d).", appmt_obj.getPlanStatus());
@@ -368,8 +369,9 @@ void robot::robotbase_routine_cb()
 		sensor.realtime = buf[REC_REALTIME_H]<<8 | buf[REC_REALTIME_L];
 		sensor.appointment = buf[REC_APPOINTMENT_TIME];
 			// For debug.
-//		printf("%d: REC_MIX_BYTE:(%2x), REC_RESERVED:(%2x).\n.",
-//			   __LINE__, buf[REC_MIX_BYTE], buf[REC_RESERVED]);
+		if (buf[REC_APPOINTMENT_TIME] >= 0x80)
+			printf("%d: REC_APPOINTMENT_TIME:(%2x), REC_REALTIME_H:(%2x).\n",
+			   __LINE__, buf[REC_APPOINTMENT_TIME], sensor.realtime);
 //		printf("%d: charge:(%d), remote:(%d), key:(%d), rcon(%d).\n.",
 //			   __LINE__, charger.getChargeStatus(), remote.get(), key.getTriggerStatus(), c_rcon.getStatus());
 
@@ -1040,8 +1042,6 @@ void robot::setRobotActualSpeed() {
 		return;
 	}
 	robot_actual_speed_ = speed;
-//	ROS_INFO("speed: %lf, dis:%lf, delta_time:%lf, invalid_count:%d",
-//	robot_actual_speed_,dis,ros::Time::now().toSec() - time,invalid_count - 1);
 	invalid_count = 1;
 	x = robot_pos.x();
 	y = robot_pos.y();

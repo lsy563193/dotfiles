@@ -263,7 +263,7 @@ public:
 		return filter_time_;
 	}
 
-	double getRObotActualSpeed() const{
+	double getRobotActualSpeed() const{
 		return robot_actual_speed_;
 	};
 	void updateConsumableStatus();

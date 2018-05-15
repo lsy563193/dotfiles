@@ -60,8 +60,8 @@ public:
 	void setPlanStatus(uint8_t status)
 	{
 		plan_status_ = (status>>0x01) & 0x03;
-		if (plan_status_ != 0)
-			ROS_DEBUG("Plan status return 0x%x.", plan_status_);
+//		if (plan_status_ != 0)
+//			ROS_INFO("Plan status return 0x%x.", plan_status_);
 	}
 
 	uint8_t getPlanStatus(void) {
