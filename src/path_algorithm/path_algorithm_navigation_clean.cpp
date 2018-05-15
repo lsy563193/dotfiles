@@ -90,7 +90,8 @@ Cells NavCleanPathAlgorithm::findTargetInSameLane(GridMap &map, const Cell_t &cu
 			target.x = -MAP_SIZE + 1;
 		is_found++;
 	}
-//	ROS_WARN("%s %d: curr(%d,%d) is_found(%d),it(%d,%d)", __FUNCTION__, __LINE__, curr_cell.x, curr_cell.y,is_found,it[0],it[1]);
+//	ROS_WARN("%s %d: curr(%d,%d) is_found(%d), it[0](%d,%d), it[1](%d,%d)", __FUNCTION__, __LINE__, curr_cell.x, curr_cell.y,
+//			 is_found, it[0].x, it[0].y, it[1].x, it[1].y);
 	if (is_found == 2)
 	{
 		// Select the nearest side.
@@ -273,7 +274,7 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 {
 	plan_path.clear();
 	auto curr_cell = curr.toCell();
-	ROS_INFO("Step 1: Find possible plan_path in same lane.");
+	ROS_INFO("Step 1: Find possible plan_path in same lane.(current cell y:%d)", curr_cell.y);
 	Cells path{};
 	map.markRobot(CLEAN_MAP);
 

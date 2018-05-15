@@ -15,6 +15,9 @@ ModeRemote::ModeRemote()
 	event_manager_register_handler(this);
 	event_manager_set_enable(true);
 
+	mode_i_ = md_remote;
+	IMoveType::sp_mode_ = this;
+
 	serial.setWorkMode(WORK_MODE);
 	if (gyro.isOn())
 	{
@@ -41,8 +44,6 @@ ModeRemote::ModeRemote()
 	s_wifi.setWorkMode(md_remote);
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 	s_wifi.resetReceivedWorkMode();
-	mode_i_ = md_remote;
-	IMoveType::sp_mode_ = this;
 }
 
 ModeRemote::~ModeRemote()

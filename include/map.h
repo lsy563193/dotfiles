@@ -11,6 +11,7 @@
 
 #define CLEAN_MAP 0
 #define COST_MAP 1
+#define BOTH_MAP 2
 
 #define BLOCK_LEFT				((uint8_t) 0x01)
 #define BLOCK_RIGHT			((uint8_t) 0x02)
