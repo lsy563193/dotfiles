@@ -142,6 +142,8 @@ bool CleanModeNav::mapMark()
 	for(auto &&cost_block : c_blocks){
 		if(cost_block.first == BLOCKED_SLIP)
 			clean_map_.setCell(CLEAN_MAP,cost_block.second.x,cost_block.second.y,BLOCKED_SLIP);
+		if(cost_block.first == BLOCKED_TILT)
+			clean_map_.setCell(CLEAN_MAP,cost_block.second.x,cost_block.second.y, BLOCKED_TILT);
 	}
 
 	//tx pass path via serial wifi
