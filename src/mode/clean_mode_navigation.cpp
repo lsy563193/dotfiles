@@ -371,7 +371,7 @@ void CleanModeNav::remoteHome(bool state_now, bool state_last)
 		|| (isStateGoHomePoint() && isFirstTimeGoHomePoint()))
 	{
 		ROS_WARN("%s %d: remote home.", __FUNCTION__, __LINE__);
-		beeper.beepForCommand(VALID);
+//		beeper.beepForCommand(VALID);
 		ev.remote_home = true;
 	}
 	else
@@ -398,7 +398,7 @@ void CleanModeNav::remoteClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: remote clean.", __FUNCTION__, __LINE__);
 
-	beeper.beepForCommand(VALID);
+//	beeper.beepForCommand(VALID);
 	wheel.stop();
 	ev.key_clean_pressed = true;
 	remote.reset();
@@ -466,7 +466,7 @@ void CleanModeNav::remoteWallFollow(bool state_now, bool state_last)
 {
 	if (isStatePause())
 	{
-		beeper.beepForCommand(VALID);
+//		beeper.beepForCommand(VALID);
 		ROS_INFO("%s %d: Remote follow wall.", __FUNCTION__, __LINE__);
 		ev.remote_follow_wall = true;
 	}
@@ -482,7 +482,7 @@ void CleanModeNav::remoteSpot(bool state_now, bool state_last)
 	{
 		ROS_INFO("%s %d: Remote spot.", __FUNCTION__, __LINE__);
 		ev.remote_spot = true;
-		beeper.beepForCommand(VALID);
+//		beeper.beepForCommand(VALID);
 	}
 	else
 		beeper.beepForCommand(INVALID);
@@ -497,7 +497,7 @@ void CleanModeNav::remoteMax(bool state_now, bool state_last)
 		beeper.beepForCommand(INVALID);
 	}else if(isInitState() || isStateClean() || isStateGoHomePoint() || isStateGoToCharger() || isStatePause())
 	{
-		beeper.beepForCommand(VALID);
+//		beeper.beepForCommand(VALID);
 		vacuum.setForUserSetMaxMode(!vacuum.isUserSetMaxMode());
 		ACleanMode::setVacuum();
 	}
@@ -1025,6 +1025,7 @@ bool CleanModeNav::checkEnterResumeLowBatteryCharge()
 		/*if (ev.remote_direction_right)
 			ev.remote_direction_right = false;*/
 		// Resume from low battery charge.
+		speaker.play(VOICE_BATTERY_CHARGE_DONE, false);
 		speaker.play(VOICE_CLEANING_CONTINUE, false);
 		// For M0 resume work mode.
 		serial.setWorkMode(WORK_MODE);
