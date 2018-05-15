@@ -61,7 +61,7 @@ bool CleanModeSpot::mapMark()
 	clean_path_algorithm_->displayCellPath(passed_path_cells);
 
 	if (action_i_ == ac_linear) {
-		PP_INFO();
+//		PP_INFO();
 		setCleaned(pointsGenerateCells(passed_path_));
 	}
 
