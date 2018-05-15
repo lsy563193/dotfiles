@@ -209,9 +209,9 @@ add_executable(pp  ${PP_SRC} )
 #target_link_libraries(pp ${catkin_LIBRARIES} ${ALSA_LIBRARIES} ${Eigen3_LIBRARIES} -lm -lpthread)
 target_link_libraries(pp ${catkin_LIBRARIES} ${ALSA_LIBRARIES} ${Eigen3_LIBRARIES} -lm -lpthread "-T ../ilife_ldscript.lds ../res.o -Wl,--verbose")
 
-#add_executable(syscheck src/signature.c src/des.cpp src/syscheck.cpp)
+add_executable(syscheck src/signature.c src/des.cpp src/syscheck.cpp)
 #target_link_libraries(syscheck ${catkin_LIBRARIES} -lm "-T ../ilife_ldscript.lds -Wl,--verbose")
-#target_link_libraries(syscheck ${catkin_LIBRARIES})
+target_link_libraries(syscheck ${catkin_LIBRARIES})
 #
 #add_executable(reg_test ${PP_SRC} )
 #target_link_libraries(reg_test ${catkin_LIBRARIES} -lm -lpthread)
