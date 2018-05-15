@@ -123,9 +123,13 @@ ACleanMode::~ACleanMode()
 			{
 				if (mode_i_ == cm_exploration)
 					speaker.play(VOICE_CLEANING_STOP, false);
-				else if (mode_i_ != cm_navigation)
+				else /*if (mode_i_ != cm_navigation)*/
 					speaker.play(VOICE_CLEANING_FINISHED, false);
 				ROS_WARN("%s %d: Finish cleaning for key_clean_pressed or key_long_pressed.", __FUNCTION__, __LINE__);
+			} else if (mode_i_ == cm_wall_follow && ev.remote_follow_wall)
+			{
+				speaker.play(VOICE_CLEANING_FINISHED, false);
+				ROS_WARN("%s %d: Finish cleaning for remote follow wall.", __FUNCTION__, __LINE__);
 			} else if (mode_i_ == cm_navigation && (trapped_closed_or_isolate || trapped_time_out_))
 			{
 				speaker.play(VOICE_ROBOT_TRAPPED, false);
@@ -1445,12 +1449,15 @@ void ACleanMode::setChargerArea(const Point_t charger_pos)
 	Cell_t charger_pos_cell  = charger_pos.toCell();
 	ROS_INFO("%s,%d,charger position(%d,%d),th= %f,dir=%d",__FUNCTION__,__LINE__,charger_pos_cell.x,charger_pos_cell.y,charger_pos.th,charger_pos.dir);
 
+	std::string debug_str;
 	for(int j = 3;j>-3;j--){
 		for( int16_t i = 3;i>-3;i--){
-			ROS_INFO("%s,%d,(%d,%d)",__FUNCTION__,__LINE__,charger_pos_cell.x+i,charger_pos_cell.y+j);
+			debug_str += "(" + std::to_string(charger_pos_cell.x + i) + ", "
+						 + std::to_string(charger_pos_cell.y + j) + "),";
 			clean_map_.setCell(CLEAN_MAP,charger_pos_cell.x +i ,charger_pos_cell.y+j,BLOCKED_RCON);
 		}
 	}
+	ROS_INFO("%s %d: %s", __FUNCTION__, __LINE__, debug_str.c_str());
 	//const int RADIAN= 4;//cells
 	//clean_map_.setCircleMarkers(charger_pos,true,RADIAN,BLOCKED_RCON);
 
@@ -1727,7 +1734,10 @@ bool ACleanMode::checkEnterGoHomePointState()
 			s_wifi.resetReceivedWorkMode();
 		}
 		if (ev.battery_home)
+		{
 			go_home_for_low_battery_ = true;
+			found_charger_ = false;
+		}
 		sp_action_.reset();
 		sp_state = state_go_home_point.get();
 		sp_state->init();

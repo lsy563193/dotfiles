@@ -105,7 +105,7 @@
 #define BATTERY_FULL_VOLTAGE	(1640)
 
 /* Continue cleaning voltage value */
-#define RESUME_CLEANING_VOLTAGE	(1530)
+#define RESUME_CLEANING_VOLTAGE	(1600)
 
 /* Battery voltage criterion for brush setting*/
 #define NORMAL_OPERATE_VOLTAGE_FOR_SIDE_BRUSH	(1050)

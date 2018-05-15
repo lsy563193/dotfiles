@@ -12,35 +12,38 @@ Brush brush;
 
 void Brush::operate()
 {
-	if (side_brush_oc_status_[left] || side_brush_oc_status_[right] || is_main_oc_)
-		return;
-
-	switch (side_brush_status_)
+	if (resume_stage_[left] == 0 && resume_stage_[right] == 0 && !is_main_oc_)
 	{
-		case brush_slow:
-		case brush_normal:
-			checkBatterySetSideBrushPWM();
-			break;
-		case brush_max:
-			side_brush_PWM_ = 100;
-			break;
-		default: // brush_stop
-			side_brush_PWM_ = 0;
-			break;
+		switch (side_brush_status_)
+		{
+			case brush_slow:
+			case brush_normal:
+				checkBatterySetSideBrushPWM();
+				break;
+			case brush_max:
+				side_brush_PWM_ = 100;
+				break;
+			default: // brush_stop
+				side_brush_PWM_ = 0;
+				break;
+		}
 	}
 
-	switch (main_brush_status_)
+	if (!is_main_oc_)
 	{
-		case brush_slow:
-		case brush_normal:
-			checkBatterySetMainBrushPWM();
-			break;
-		case brush_max:
-			main_brush_PWM_ = 100;
-			break;
-		default: // brush_stop
-			main_brush_PWM_ = 0;
-			break;
+		switch (main_brush_status_)
+		{
+			case brush_slow:
+			case brush_normal:
+				checkBatterySetMainBrushPWM();
+				break;
+			case brush_max:
+				main_brush_PWM_ = 100;
+				break;
+			default: // brush_stop
+				main_brush_PWM_ = 0;
+				break;
+		}
 	}
 
 	setPWM(side_brush_PWM_, side_brush_PWM_, main_brush_PWM_);
@@ -76,7 +79,10 @@ void Brush::stop()
 {
 	side_brush_status_ = brush_stop;
 	main_brush_status_ = brush_stop;
-	operate();
+//	operate();
+	side_brush_PWM_ = 0;
+	main_brush_PWM_ = 0;
+	setPWM(side_brush_PWM_, side_brush_PWM_, main_brush_PWM_);
 	resume_count_[left] = 0;
 	resume_stage_[left] = 0;
 	resume_count_[right] = 0;
@@ -87,7 +93,9 @@ void Brush::stop()
 void Brush::stopForMainBrushResume()
 {
 	side_brush_status_ = brush_stop;
-	setPWM(0, 0, 0);
+	side_brush_PWM_ = 0;
+	main_brush_PWM_ = 0;
+	setPWM(side_brush_PWM_, side_brush_PWM_, main_brush_PWM_);
 	// Update the check battery time stamp in case it will update PWM during self resume.
 	check_battery_time_stamp_ = ros::Time::now().toSec();
 	ROS_WARN("%s %d: Stop for main brush resume.", __FUNCTION__, __LINE__);
@@ -95,7 +103,9 @@ void Brush::stopForMainBrushResume()
 
 void Brush::mainBrushResume()
 {
-	setPWM(0, 0, 50);
+	side_brush_PWM_ = 0;
+	main_brush_PWM_ = 100;
+	setPWM(side_brush_PWM_, side_brush_PWM_, main_brush_PWM_);
 	ROS_INFO("%s %d: Main Brush start resuming.", __FUNCTION__, __LINE__);
 }
 
@@ -167,12 +177,19 @@ bool Brush::checkRightBrushTwined()
 
 bool Brush::checkBrushTwined(uint8_t brush_indicator)
 {
-	if (!brush.isSideBrushOn())
+	if (!brush.isSideBrushOn() || is_main_oc_)
 		return false;
 
 	switch (resume_stage_[brush_indicator])
 	{
 		case 0:
+		{
+			if (side_brush_oc_status_[brush_indicator])
+				resume_stage_[brush_indicator]++;
+			else
+				break;
+		}
+		case 1:
 		{
 			if (side_brush_oc_status_[brush_indicator])
 			{
@@ -183,7 +200,7 @@ bool Brush::checkBrushTwined(uint8_t brush_indicator)
 			}
 			break;
 		}
-		case 1:
+		case 2:
 		{
 			if (brush_indicator == left)
 				brush.setLeftBrushPWM(0);
@@ -199,7 +216,7 @@ bool Brush::checkBrushTwined(uint8_t brush_indicator)
 			}
 			break;
 		}
-		case 2:
+		case 3:
 		{
 			// Try fully operating side brush for 5s.
 			if (brush_indicator == left)
@@ -207,7 +224,7 @@ bool Brush::checkBrushTwined(uint8_t brush_indicator)
 			else
 				brush.setRightBrushPWM(100);
 
-			if (ros::Time::now().toSec() - resume_start_time_[brush_indicator] > 1 && side_brush_oc_status_[brush_indicator])
+			if (ros::Time::now().toSec() - resume_start_time_[brush_indicator] > 1.5 && side_brush_oc_status_[brush_indicator])
 			{
 				if (++resume_count_[brush_indicator] > 3)
 				{

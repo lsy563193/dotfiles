@@ -1,4 +1,11 @@
-#include "stdlib.h"
+#include <elf.h>
+#include <verify.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <des.h>
+#include <ros/assert.h>
+#include <random>
+#include "serial.h"
 
 using namespace std;
 
@@ -89,6 +96,7 @@ int verify_cpu_id(void) {
 	}
 #endif
 
+	ROS_INFO("res data: %s", ptr);
 	if (process_proc() == 0) {
 		return -1;
 	}
@@ -125,6 +133,195 @@ int verify_cpu_id(void) {
 #endif
 
 #if VERIFY_KEY
+int control_get_sign(uint8_t* key, uint8_t* sign, uint8_t key_length, int sequence_number)
+{
+	int		num_send_packets = key_length / KEY_DOWNLINK_LENGTH;
+	uint8_t	ptr[REC_LEN], buf[SEND_LEN];
+
+	//Set random seed.
+	//srand(time(NULL));
+	//Send random key to robot.
+	for (int i = 0; i < num_send_packets; i++) {
+		//Populate dummy.
+		for (int j = 0; j < DUMMY_DOWNLINK_LENGTH; j++)
+			serial.setSendData(j + DUMMY_DOWNLINK_OFFSET, static_cast<uint8_t>(rand() % 256));
+
+		//Populate Sequence number.
+		for (int j = 0; j < SEQUENCE_DOWNLINK_LENGTH; j++)
+			serial.setSendData(j + SEQUENCE_DOWNLINK_OFFSET, static_cast<uint8_t>((sequence_number >> 8 * j) % 256));
+
+		//Populate key.
+#if VERIFY_DEBUG
+		printf("appending key: ");
+#endif
+
+		for (int k = 0; k < KEY_DOWNLINK_LENGTH; k++) {
+			serial.setSendData(k + KEY_DOWNLINK_OFFSET, key[i * KEY_DOWNLINK_LENGTH + k]);
+
+#if VERIFY_DEBUG
+			printf("%02x ", serial.getSendData(k + KEY_DOWNLINK_OFFSET));
+			if (k == KEY_DOWNLINK_LENGTH - 1)
+				printf("\n");
+#endif
+
+		}
+
+		//Fill command field
+		switch (i) {
+			case 0:
+				serial.setSendData(SEND_LEN - 4, CMD_KEY1);
+				break;
+			case 1:
+				serial.setSendData(SEND_LEN - 4, CMD_KEY2);
+				break;
+			case 2:
+				serial.setSendData(SEND_LEN - 4, CMD_KEY3);
+				break;
+			default:
+
+#if VERIFY_DEBUG
+				printf("control_get_sign : Error! key_length too large.");
+#endif
+
+				return -1;
+				//break;
+		}
+
+		for (int i = 0; i < 40; i++) {	//200ms (round trip takes at leat 15ms)
+			int counter = 0, ret;
+
+			serial.sendData();
+
+#if VERIFY_DEBUG
+			printf("sending data to robot: i: %d\n", i);
+			for (int j = 0; j < SEND_LEN; j++) {
+				printf("%02x ", buf[j]);
+			}
+			printf("\n");
+#endif
+
+			while (counter < 200) {
+
+				ret = serial.read(ptr, 1);
+				if (ptr[0] != 0xAA)
+					continue;
+
+				ret = serial.read(ptr, 1);
+				if (ptr[0] != 0x55)
+					continue;
+
+				ret = serial.read(ptr, REC_LEN - 2);
+				if (REC_LEN - 2!= ret) {
+
+#if VERIFY_DEBUG
+					printf("%s %d: receive count error: %d\n", __FUNCTION__, __LINE__, ret);
+#endif
+
+					usleep(100);
+					counter++;
+				} else {
+					break;
+				}
+			}
+			if (counter < 200) {
+
+#if VERIFY_DEBUG
+				printf("%s %d: counter: %d\tdata count: %d\treceive cmd: 0x%02x\n", __FUNCTION__, __LINE__, counter, ret, ptr[CMD_UPLINK_OFFSET]);
+
+				printf("receive from robot: %d\n");
+				for (int j = 0; j < REC_LEN - 2; j++) {
+					printf("%02x ", ptr[j]);
+				}
+				printf("\n");
+#endif
+
+				if(ptr[CMD_UPLINK_OFFSET - 2] ==  CMD_NCK)   //robot received bronen packet
+					continue;
+
+				if(ptr[CMD_UPLINK_OFFSET - 2] == CMD_ACK) {	//set finished
+					//printf("Downlink command ACKed!!\n");
+					serial.setSendData(CTL_KEY_VALIDATION, 0);                              //clear command byte
+					break;
+				}
+			} else {
+
+#if VERIFY_DEBUG
+				printf("%s %d: max read count reached: %d\n", counter);
+#endif
+
+			}
+			usleep(500);
+		}
+	}
+
+	//Block and wait for signature.
+	for (int i = 0; i < 400; i++) {                              //200ms (round trip takes at leat 15ms)
+		int counter = 0, ret;
+		while (counter < 400) {
+			ret = serial.read(ptr, 1);
+			if (ptr[0] != 0xAA)
+				continue;
+
+			ret = serial.read(ptr, 1);
+			if (ptr[0] != 0x55)
+				continue;
+
+			ret = serial.read(ptr, REC_LEN - 2);
+
+#if VERIFY_DEBUG
+			printf("%s %d: %d %d %d\n", __FUNCTION__, __LINE__, ret, REC_LEN - 2, counter);
+#endif
+
+			if (REC_LEN - 2!= ret) {
+				usleep(100);
+				counter++;
+			} else {
+				break;
+			}
+		}
+
+#if VERIFY_DEBUG
+		for (int j = 0; j < REC_LEN - 2; j++) {
+			printf("%02x ", ptr[j]);
+		}
+		printf("\n");
+#endif
+
+		if (counter < 400 && ptr[CMD_UPLINK_OFFSET - 3] == CMD_ID) {
+			//set finished
+
+#if VERIFY_DEBUG
+			printf("Signature received!!\n");
+#endif
+
+			for (int j = 0; j < KEY_UPLINK_LENGTH; j++)
+				sign[j] = ptr[KEY_UPLINK_OFFSET - 2 + j];
+
+			//Send acknowledge back to MCU.
+			serial.setSendData(CTL_KEY_VALIDATION, CMD_ACK);
+			for (int k = 0; k < 20; k++) {
+				serial.sendData();
+
+				usleep(500);
+			}
+			serial.setSendData(CTL_KEY_VALIDATION, 0);
+
+#if VERIFY_DEBUG
+			printf("%s %d: exit\n", __FUNCTION__, __LINE__);
+#endif
+
+			return KEY_UPLINK_LENGTH;
+		}
+		usleep(500);
+	}
+	serial.setSendData(CTL_KEY_VALIDATION, 0);
+
+#if VERIFY_DEBUG
+	printf("%s %d: exit\n", __FUNCTION__, __LINE__);
+#endif
+
+	return -1;
+}
 
 unsigned char check_sign(unsigned char *a_esno, unsigned char *a_rand)
 {
@@ -235,19 +432,18 @@ unsigned char check_sign(unsigned char *a_esno, unsigned char *a_rand)
 	return K_ERR_SIGN;
 }
 
-int verify_key()
-{
-	int			sequence_number, retries = 0;
-	const int	key_length = ENCRYPTION_KEY_SIZE;
-	const int	max_retries = 5;
+int verify_key() {
+	int sequence_number, retries = 0;
+	const int key_length = ENCRYPTION_KEY_SIZE;
+	const int max_retries = 5;
 
-	unsigned char	result = 0;
+	unsigned char result = 0;
 
-	std::random_device	rd;
+	std::random_device rd;
 
-	std::mt19937	random_number_engine(rd());	// pseudorandom number generator
+	std::mt19937 random_number_engine(rd());  // pseudorandom number generator
 
-	std::uniform_int_distribution<uint8_t>	dice_distribution(0, 255);
+	std::uniform_int_distribution<uint8_t> dice_distribution(0, 255);
 
 	sequence_number = dice_distribution(random_number_engine) * 256 + dice_distribution(random_number_engine);
 
@@ -293,7 +489,7 @@ int verify_key()
 			result = check_sign(encID, key);
 
 #if VERIFY_DEBUG
-			ROS_INFO("check_sign status: 0x%x(%d)", result, (int8_t)result);
+			ROS_INFO("check_sign status: 0x%x(%d)", result, (int8_t) result);
 #endif
 
 		}
@@ -313,6 +509,19 @@ int verify_key()
 	ROS_INFO("%s %d: result %s, retry: %d", __FUNCTION__, __LINE__, result == K_SIGN_CORRECT ? " ok" : "failed", retries);
 #endif
 
+	if (result != K_SIGN_CORRECT) {
+		if (unlink(TARGET_FILE) == -1) {
+
+#if VERIFY_DEBUG
+			ROS_INFO("%s %d: failed to deleted file: %d", __FUNCTION__, __LINE__, errno);
+		}
+		else {
+			ROS_INFO("%s %d: file deleted", __FUNCTION__, __LINE__);
+		}
+#else
+		}
+#endif
+	}
 	return (result == K_SIGN_CORRECT ? 1: 0);
 }
 

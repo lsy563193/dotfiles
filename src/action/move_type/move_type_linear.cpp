@@ -252,6 +252,9 @@ void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 bool MoveTypeLinear::switchLinearTargetByRecalc(ACleanMode *p_clean_mode) {
 	bool val{};
 	Points path;
+	p_clean_mode->saveBlocks();
+	p_clean_mode->mapMark();
+	resetTriggeredValue();
 	auto is_found = boost::dynamic_pointer_cast<NavCleanPathAlgorithm>(
 			p_clean_mode->clean_path_algorithm_)->generatePath(p_clean_mode->clean_map_, remain_path_.front(),
 															   remain_path_.front().dir, path);

@@ -53,6 +53,8 @@ bool MovementCharge::isFinish()
 		else
 			disconnect_charger_count_++;
 
+		ROS_WARN_COND(!charger.getChargeStatus(), "%s %d: Disconnect of charger.", __FUNCTION__, __LINE__);
+
 		if (disconnect_charger_count_ > 25)
 		{
 			if (directly_charge_)
@@ -67,7 +69,7 @@ bool MovementCharge::isFinish()
 			}
 		}
 
-		if (ros::Time::now().toSec() - start_timer_ >= 6 && !battery_full_ && charger.getChargeStatus()
+		if (ros::Time::now().toSec() - start_timer_ >= 10 && !battery_full_and_sleep_ && charger.getChargeStatus()
 			&& battery.isFull())
 		{
 			if (battery_full_start_time_ == 0)
@@ -81,7 +83,7 @@ bool MovementCharge::isFinish()
 			{
 				wifi_led.setMode(LED_STEADY, WifiLed::state::off);
 				key_led.setMode(LED_STEADY, LED_OFF);
-				battery_full_ = true;
+				battery_full_and_sleep_ = true;
 				speaker.play(VOICE_SLEEP_UNOFFICIAL);
 				ROS_WARN("%s %d: Enter fake sleep during charge.", __FUNCTION__, __LINE__);
 			}
@@ -94,6 +96,9 @@ bool MovementCharge::isFinish()
 		if (charger.getChargeStatus())
 		{
 			turn_for_charger_ = false;
+			start_timer_ = ros::Time::now().toSec();
+			battery_full_and_sleep_ = false;
+			battery_full_start_time_ = 0;
 			key_led.setMode(LED_BREATH, LED_ORANGE);
 		}
 		if (ros::Time::now().toSec() - start_turning_time_stamp_ > 3)
@@ -139,7 +144,6 @@ void MovementCharge::run()
 		show_battery_info_time_stamp_ = time(NULL);
 	}
 
-	ROS_WARN_COND(!charger.getChargeStatus(), "%s %d: Disconnect of charger.", __FUNCTION__, __LINE__);
 
 	IMovement::run();
 }

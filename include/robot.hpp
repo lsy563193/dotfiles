@@ -263,7 +263,7 @@ public:
 		return filter_time_;
 	}
 
-	double getRObotActualSpeed() const{
+	double getRobotActualSpeed() const{
 		return robot_actual_speed_;
 	};
 	void updateConsumableStatus();
@@ -385,6 +385,8 @@ private:
 	};
 	boost::mutex last_clean_record_mutex_;
 	CleanRecord last_clean_record_;
+
+	bool verify_ok_;
 };
 
 float cellToCount(int16_t distance);
