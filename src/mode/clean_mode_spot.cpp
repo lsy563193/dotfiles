@@ -120,7 +120,7 @@ void CleanModeSpot::remoteSpot(bool state_now, bool state_last)
 	wheel.stop();
 	ev.remote_spot = true;
 //	beeper.beepForCommand(VALID);
-	key.resetTriggerStatus();
+	remote.reset();
 
 }
 

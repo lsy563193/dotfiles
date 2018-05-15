@@ -185,6 +185,13 @@ bool CleanModeNav::isExit()
 			ev.fatal_quit = true;
 			return true;
 		}
+
+		if (ev.key_clean_pressed)
+		{
+			ROS_WARN("%s %d: Exit for ev.key_clean_pressed.", __FUNCTION__, __LINE__);
+			setNextMode(md_idle);
+			return true;
+		}
 	}
 
 	if (isStateGoHomePoint() || isStateGoToCharger())
@@ -578,7 +585,7 @@ void CleanModeNav::chargeDetect(bool state_now, bool state_last)
 
 // ------------------State init--------------------
 bool CleanModeNav::isSwitchByEventInStateInit() {
-	if (checkEnterPause() || ACleanMode::isSwitchByEventInStateInit())
+	if (/*checkEnterPause() || */ACleanMode::isSwitchByEventInStateInit())
 	{
 		if (action_i_ == ac_back_from_charger)
 			setHomePoint();
