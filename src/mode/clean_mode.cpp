@@ -70,6 +70,8 @@ ACleanMode::ACleanMode()
 
 //	// todo:debug
 //	infrared_display.displayNormalMsg(8, 5555);
+
+//    iterate_point_=plan_path_.begin();
 }
 
 ACleanMode::~ACleanMode()
@@ -226,7 +228,7 @@ void ACleanMode::saveBlocks() {
 	bool is_linear = action_i_== ac_linear;
 	auto is_save_rcon = sp_state == state_clean.get();
 	if (action_i_== ac_linear && is_save_rcon)
-		saveBlock(BLOCKED_TMP_RCON, iterate_point_.dir, [&]() {
+		saveBlock(BLOCKED_TMP_RCON, iterate_point_->dir, [&]() {
 			auto rcon_trig = ev.rcon_status/*rcon_get_trig()*/;
 			Cells d_cells;
 			switch (c_rcon.convertToEnum(rcon_trig)) {
@@ -252,7 +254,7 @@ void ACleanMode::saveBlocks() {
 			return d_cells;
 		});
 
-	saveBlock(BLOCKED_BUMPER,iterate_point_.dir, [&]() {
+	saveBlock(BLOCKED_BUMPER,iterate_point_->dir, [&]() {
 		auto bumper_trig = ev.bumper_triggered/*bumper.getStatus()*/;
 		Cells d_cells; // Direction indicator cells.
 //		if ((bumper_trig & BLOCK_RIGHT) && (bumper_trig & BLOCK_LEFT))
@@ -273,7 +275,7 @@ void ACleanMode::saveBlocks() {
 		return d_cells;
 	});
 
-	saveBlock(BLOCKED_CLIFF,iterate_point_.dir, [&]() {
+	saveBlock(BLOCKED_CLIFF,iterate_point_->dir, [&]() {
 		auto cliff_trig = ev.cliff_triggered;
 		Cells d_cells;
 		if (cliff_trig & BLOCK_FRONT) {
@@ -289,7 +291,7 @@ void ACleanMode::saveBlocks() {
 	});
 
 	//save block for wheel cliff, but in case of incresing the map cost, it is same as the BOCKED_CLIFF, please check the log if it was triggered
-	saveBlock(BLOCKED_CLIFF,iterate_point_.dir, [&]() {
+	saveBlock(BLOCKED_CLIFF,iterate_point_->dir, [&]() {
 //		auto wheel_cliff_trig = ev.left_wheel_cliff || ev.right_wheel_cliff;
 		auto wheel_cliff_trig = is_wheel_cliff_triggered;
 		Cells d_cells;
@@ -300,7 +302,7 @@ void ACleanMode::saveBlocks() {
 	});
 
 	//save block for oc_brush_main, but in case of incresing the map cost, it is same as the BOCKED_CLIFF, please check the log if it was triggered
-	saveBlock(BLOCKED_CLIFF,iterate_point_.dir, [&]() {
+	saveBlock(BLOCKED_CLIFF,iterate_point_->dir, [&]() {
 		Cells d_cells{};
 		if (ev.oc_brush_main)
 			d_cells = {{1,  1}, {1,  0}, {1,  -1}, {0,  1}, {0,  0}, {0,  -1}, {-1, 1}, {-1, 0}, {-1, -1}};
@@ -308,7 +310,7 @@ void ACleanMode::saveBlocks() {
 
 	});
 
-	saveBlock(BLOCKED_SLIP,iterate_point_.dir, [&]() {
+	saveBlock(BLOCKED_SLIP,iterate_point_->dir, [&]() {
 		Cells d_cells{};
 		if (ev.robot_slip)
 			d_cells = {{1,  1}, {1,  0}, {1,  -1}, {0,  1}, {0,  0}, {0,  -1}, {-1, 1}, {-1, 0}, {-1, -1}};
@@ -316,7 +318,7 @@ void ACleanMode::saveBlocks() {
 
 	});
 
-	saveBlock(BLOCKED_TILT,iterate_point_.dir, [&]() {
+	saveBlock(BLOCKED_TILT,iterate_point_->dir, [&]() {
 		Cells d_cells;
 		auto tilt_trig = ev.tilt_triggered;
 /*		if (tilt_trig & TILT_LEFT)
@@ -332,7 +334,7 @@ void ACleanMode::saveBlocks() {
 		return d_cells;
 	});
 
-	saveBlock(BLOCKED_LIDAR,iterate_point_.dir, [&]() {
+	saveBlock(BLOCKED_LIDAR,iterate_point_->dir, [&]() {
 		auto lidar_trig = ev.lidar_triggered;
 		Cells d_cells{};
 		if (lidar_trig & BLOCK_FRONT) {
@@ -1005,7 +1007,7 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_mt) {
 	});
 	auto distance = std::distance(loc, passed_path_.end());
 	if (distance == 0) {
-		curr.dir = iterate_point_.dir;
+		curr.dir = iterate_point_->dir;
 		ROS_INFO("curr(%d,%d,%d,%d)", curr.toCell().x, curr.toCell().y, static_cast<int>(radian_to_degree(curr.th)),curr.dir);
 		passed_path_.push_back(curr);
 	}
@@ -1069,7 +1071,7 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 	markRealTime();
 	if(action_i_ == ac_linear) {
 		auto p_mt = dynamic_cast<MoveTypeLinear *>(p_move_type);
-		if(p_mt->movement_i_ == p_mt->mm_forward && (p_mt->isPoseReach() || p_mt->isPassTargetStop(iterate_point_.dir)))
+		if(p_mt->movement_i_ == p_mt->mm_forward && (p_mt->isPoseReach() || p_mt->isPassTargetStop(iterate_point_->dir)))
 			return true;
 
 		if (p_mt->isLinearForward()){
@@ -1085,7 +1087,22 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 		{
 			auto p_mt = dynamic_cast<MoveTypeFollowWall *>(p_move_type);
 			if(p_mt->movement_i_ == p_mt->mm_forward ||p_mt->movement_i_ == p_mt->mm_straight)
-				return p_mt->isNewLineReach(clean_map_) || p_mt->isOverOriginLine(clean_map_);
+			{
+				if(mode_i_ != cm_spot)
+					return p_mt->isNewLineReach(clean_map_) || p_mt->isOverOriginLine(clean_map_);
+				else
+				{
+					if(p_mt->outOfRangeFirst())
+					{
+						if(!p_mt->outOfRange(getPosition()))
+						{
+							p_mt->outOfRangeFirst(false);
+						}
+					}
+					else
+						return p_mt->outOfRange(getPosition());
+				}
+			}
 		}
 	}
 	return false;
@@ -1336,7 +1353,7 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 			//c_pose_.th =  ranged_radian(getPosition().th + degree_to_radian( direction ));//set pos th
 			c_pose_.th =  ranged_radian(degree_to_radian( direction ));//set pos th
 
-			c_pose_.dir = iterate_point_.dir;
+			c_pose_.dir = iterate_point_->dir;
 			int16_t cell_distance = getPosition().toCell().Distance(c_pose_.toCell());
 			charger_pose_.push_back( c_pose_ );
 			setChargerArea( c_pose_ );
@@ -1417,7 +1434,7 @@ void ACleanMode::checkShouldMarkCharger(float angle_offset,float distance)
 		pose.SetX( cos(angle_offset)* distance  +  getPosition().GetX() );
 		pose.SetY( sin(angle_offset)* distance  +  getPosition().GetY() );
 		pose.th = ranged_radian( getPosition().th - (M_PI - angle_offset));
-		pose.dir = iterate_point_.dir;
+		pose.dir = iterate_point_->dir;
 		charger_pose_.push_back(pose);
 		ROS_INFO("%s,%d, offset angle (%f),charger pose (%d,%d),th = %f ,dir = %d",__FUNCTION__,__LINE__, angle_offset,pose.toCell().GetX(),pose.toCell().GetY(),pose.th,pose.dir);
 		setChargerArea(pose);
@@ -1765,7 +1782,7 @@ bool ACleanMode::updateActionInStateGoHomePoint()
 {
 	bool update_finish;
 	sp_action_.reset();//to mark in destructor
-	old_dir_ = iterate_point_.dir;
+	old_dir_ = iterate_point_->dir;
 
 	ROS_INFO("%s %d: curr(%d, %d), current home point(%d, %d).", __FUNCTION__, __LINE__,
 			 getPosition().toCell().x, getPosition().toCell().y,
@@ -1788,11 +1805,12 @@ bool ACleanMode::updateActionInStateGoHomePoint()
 	{
 		ROS_INFO("Reach start point but angle not equal,start_point_(%d,%d,%f,%d)",start_point_.toCell().x, start_point_.toCell().y, radian_to_degree(start_point_.th), start_point_.dir);
 //		beeper.beepForCommand(VALID);
-		iterate_point_ = getPosition();
-		iterate_point_.th = start_point_.th;
+		auto curr = getPosition();
+		curr.th = start_point_.th;
 		plan_path_.clear();
-		plan_path_.push_back(iterate_point_) ;
+		plan_path_.emplace_back(curr) ;
 		plan_path_.push_back(start_point_) ;
+		iterate_point_ = plan_path_.begin();
 		action_i_ = ac_linear;
 		genNextAction();
 		update_finish = true;
@@ -1801,7 +1819,7 @@ bool ACleanMode::updateActionInStateGoHomePoint()
 	else if (go_home_path_algorithm_->generatePath(clean_map_, getPosition(),old_dir_, plan_path_))
 	{
 		// New path to home cell is generated.
-		iterate_point_ = plan_path_.front();
+		iterate_point_ = plan_path_.begin();
 //		plan_path_.pop_front();
 		go_home_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
 		pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
@@ -1892,55 +1910,26 @@ void ACleanMode::switchInStateGoToCharger() {
 // ------------------State spot--------------------
 bool ACleanMode::updateActionInStateSpot()
 {
-	old_dir_ = iterate_point_.dir;
-	/*
-	//-- clear the passed cells
 	if(!plan_path_.empty())
-	{
-		//-- iterate for two times ,witch is in and out
-		for(int i=0;i<2;i++)
-		{
-			auto result = std::find_if(plan_path_.begin(), plan_path_.end(), [&](const Point_t& c_it){
-				return c_it.toCell() == passed_path.at(i).toCell();
-			});
-			if(result != plan_path_.end())
-				plan_path_.erase(plan_path_.begin(), result+1);
-			else
-			  break;
-		}
-	}
-	*/
-
-	if(sp_action_ != nullptr)
-	{
-		if(action_i_ == ac_linear && !IMoveType::remain_path_.empty())
-			plan_path_ = IMoveType::remain_path_;
-	}
-
-	ROS_INFO("\033[31m%s,%d,old_dir_(%d)\033[0m", __FUNCTION__,__LINE__,old_dir_);
-	auto cur_point = getPosition();
-	ROS_INFO("\033[32m plan_path size(%d), front (%d,%d),cur point:(%d,%d)\033[0m"
-				,plan_path_.size(),	plan_path_.front().toCell().x,plan_path_.front().toCell().y
-				,cur_point.toCell().x,cur_point.toCell().y);
+		old_dir_ = iterate_point_->dir;
 
 	sp_action_.reset();
+    bool ret{};
 
-	if (clean_path_algorithm_->generatePath(clean_map_, cur_point, old_dir_, plan_path_)) {
-		iterate_point_ = plan_path_.front();
-		ROS_INFO("\033[31m%s,%d,iterate_point_.dir(%d)\033[0m", __FUNCTION__,__LINE__,iterate_point_.dir);
-		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
-		if ( old_dir_ != MAP_ANY && should_follow_wall )
-			//-- spot follow wall always on left side
-			action_i_ = ac_follow_wall_right ,should_follow_wall = false;
+    auto cpa = boost::dynamic_pointer_cast<SpotCleanPathAlgorithm>(clean_path_algorithm_);
+	if (cpa->generatePath(clean_map_, getPosition(), action_i_ == ac_linear, plan_path_,iterate_point_)) {
+		iterate_point_ = plan_path_.begin();
+		if ( action_i_ == ac_linear )
+			action_i_ = ac_follow_wall_right ;
 		else
 			action_i_ = ac_linear;
 
 		genNextAction();
-		return true;
+		clean_path_algorithm_->displayPointPath(plan_path_);
+		ret = true;
 	}
-	else {
-		return false;
-	}
+	should_follow_wall = false;
+	return ret;
 }
 
 bool ACleanMode::isSwitchByEventInStateSpot()
@@ -2010,15 +1999,14 @@ bool ACleanMode::isSwitchByEventInStateExploration() {
 
 bool ACleanMode::updateActionInStateExploration() {
 	PP_INFO();
-	old_dir_ = iterate_point_.dir;
+	old_dir_ = iterate_point_->dir;
 	ROS_WARN("old_dir_(%d)", old_dir_);
 	plan_path_.clear();
 	sp_action_.reset();//to mark in constructor
 	if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
 		action_i_ = ac_linear;
-		iterate_point_ = plan_path_.front();
-		ROS_WARN("start_point_.dir(%d)", iterate_point_.dir);
-//		plan_path_.pop_front();
+		iterate_point_ = plan_path_.begin();
+		ROS_WARN("start_point_.dir(%d)", iterate_point_->dir);
 		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
 		pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 		genNextAction();
@@ -2033,7 +2021,7 @@ bool ACleanMode::updateActionInStateExploration() {
 
 void ACleanMode::switchInStateExploration() {
 	PP_INFO();
-	old_dir_ = iterate_point_.dir;
+	old_dir_ = iterate_point_->dir;
 	Cells tmp_path =  clean_path_algorithm_->findShortestPath(clean_map_,getPosition().toCell(),Cell_t{0,0},old_dir_,false,false,Cell_t{0,0},Cell_t{0,0});
 	if (tmp_path.empty()) {
 		ROS_WARN("%s,%d: enter state trapped",__FUNCTION__,__LINE__);
@@ -2080,8 +2068,8 @@ bool ACleanMode::updateActionInStateFollowWall()
 			plan_path_.push_back(point);
 			point = point.getRelative(8, 0);
 			plan_path_.push_back(point);
-			iterate_point_ = plan_path_.front();
-			iterate_point_.dir = MAP_ANY;// note: fix bug follow isPassPosition
+			iterate_point_ = plan_path_.begin();
+			iterate_point_->dir = MAP_ANY;// note: fix bug follow isPassPosition
 			clean_path_algorithm_->displayPointPath(plan_path_);
 			action_i_ = ac_linear;
 		}
@@ -2227,7 +2215,15 @@ void ACleanMode::genNextAction() {
 				break;
 			case ac_follow_wall_left  :
 			case ac_follow_wall_right :
-				sp_action_.reset(new MoveTypeFollowWall(plan_path_,action_i_ == ac_follow_wall_left));
+                if(mode_i_ == cm_spot)
+				{
+                    BoundingBox<Point_t> bound;
+					bound.Add(*(plan_path_.begin()+2));
+					bound.Add(*(plan_path_.begin()+4));
+					sp_action_.reset(new MoveTypeFollowWall(plan_path_,action_i_ == ac_follow_wall_left, bound, !bound.Contains(getPosition())));
+				}
+				else
+					sp_action_.reset(new MoveTypeFollowWall(plan_path_,action_i_ == ac_follow_wall_left));
 				break;
 		}
 	}

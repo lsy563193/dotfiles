@@ -86,7 +86,7 @@ bool CleanModeExploration::mapMark()
 	clean_map_.setCircleMarkers(getPosition(),10,CLEANED,error_marker_);
 	resetErrorMarker();
 
-	setBlocks(iterate_point_.dir);
+	setBlocks(iterate_point_->dir);
 	if(mark_robot_)
 		clean_map_.markRobot(CLEAN_MAP);
 //	passed_path_.clear();

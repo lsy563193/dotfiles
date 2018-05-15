@@ -17,11 +17,9 @@ MoveTypeFollowWall::MoveTypeFollowWall(Points remain_path, bool is_left)
 	IMovement::sp_mt_ = this;
 	ROS_WARN("%s %d: Entering move type %s follow wall.", __FUNCTION__, __LINE__,
 			 is_left ? "left" : "right");
-	remain_path.pop_front();
-	remain_path_ = remain_path;
 	auto p_mode = dynamic_cast<ACleanMode*> (sp_mode_);
 	is_left_ = is_left;
-	auto turn_radian = getTurnRadian(!remain_path_.empty());
+	auto turn_radian = getTurnRadian(std::next(p_mode->iterate_point_ )!= p_mode->plan_path_.end());
 	turn_target_radian_ = getPosition().addRadian(turn_radian).th;
 
 	movement_i_ = p_mode->isGyroDynamic() ? mm_dynamic : mm_turn;
@@ -33,6 +31,12 @@ MoveTypeFollowWall::MoveTypeFollowWall(Points remain_path, bool is_left)
 	resetTriggeredValue();
 }
 
+MoveTypeFollowWall::MoveTypeFollowWall(Points remain_path, bool is_left,BoundingBox<Point_t> bound, bool out)
+{
+	MoveTypeFollowWall(remain_path, is_left);
+    bound_ = bound;
+    out_of_range_first_ = out;
+}
 MoveTypeFollowWall::~MoveTypeFollowWall()
 {
 	wheel.stop();
@@ -405,9 +409,8 @@ double MoveTypeFollowWall::getTurnRadian(bool use_target_radian)
 		ROS_INFO("%s %d: Not use fit line angle!", __FUNCTION__, __LINE__);
 		auto ev_turn_radian = getTurnRadianByEvent();
 		if(ev_turn_radian == 0 && use_target_radian) { //		if(/*use_target_radian*/ 0 )
-			auto target_point_ = remain_path_.back();
 //			auto target_turn_radian = getPosition().courseToDest(target_point_);
-			turn_radian = getPosition().courseToDest(target_point_);
+			turn_radian = getPosition().courseToDest(*std::next(p_mode->iterate_point_));
 //			turn_radian = std::abs(ev_turn_radian) > std::abs(target_turn_radian) ? ev_turn_radian : target_turn_radian;
 //			ROS_INFO("%s %d: target_turn_radian(%f in degree), event_turn_radian(%f in degree), choose the big one(%f in degree)",
 //					 __FUNCTION__, __LINE__, radian_to_degree(target_turn_radian),
@@ -425,13 +428,14 @@ double MoveTypeFollowWall::getTurnRadian(bool use_target_radian)
 
 bool MoveTypeFollowWall::isOverOriginLine(GridMap &map)
 {
-	if(remain_path_.empty())
-		return true;
-	auto curr = getPosition();
-	auto target_point_ = remain_path_.back();
 	auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
-	auto start_point_ = p_mode->iterate_point_;
-//	ROS_WARN("movement_i_ == mm_forward(%d), ros::Time::now().toSec() - sp_movement_->start_timer_ + move_forward_time(%lf)",
+	if(std::next(p_mode->iterate_point_ ) == p_mode->plan_path_.end())
+		return true;
+
+	auto curr = getPosition();
+	auto target_point_ = *std::next(p_mode->iterate_point_ );
+	auto start_point_ = *p_mode->iterate_point_;
+//	ROS_WARN("movement_i_ == mm_forward(%d), ros::Time::now().toSec() - sp_movement_->start_timer_ i+ move_forward_time(%lf)",
 //					 movement_i_ == mm_forward || movement_i_ == mm_straight, ros::Time::now().toSec() - sp_movement_->start_timer_ + move_forward_time);
 	double const WF_TIME_LIMIT = 1.5;//force wall follow time
 	if (((target_point_.y > start_point_.y && start_point_.y - curr.y > CELL_SIZE / 6)
@@ -464,13 +468,13 @@ bool MoveTypeFollowWall::isOverOriginLine(GridMap &map)
 
 bool MoveTypeFollowWall::isNewLineReach(GridMap &map)
 {
-	auto ret = false;
-	if(remain_path_.empty())
-		return true;
-	auto target_point_ = remain_path_.back();
-	auto s_curr_p = getPosition();
 	auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
-	auto start_point_ = p_mode->iterate_point_;
+	auto ret = false;
+	if(std::next(p_mode->iterate_point_) == p_mode->plan_path_.end())
+		return true;
+	auto s_curr_p = getPosition();
+	auto start_point_ = *p_mode->iterate_point_;
+	auto target_point_ = *std::next(p_mode->iterate_point_);
 	auto is_pos_dir = target_point_.y - start_point_.y > 0;
 	// The limit is CELL_COUNT_MUL / 8 * 3 further than target line center.
 //	auto target_limit = target_point_.y + CELL_COUNT_MUL / 8 * 3 * is_pos_dir;
@@ -511,5 +515,10 @@ bool MoveTypeFollowWall::handleMoveBackEventRealTime(ACleanMode *p_clean_mode)
 		return true;
 	}
 	return false;
+}
+
+bool MoveTypeFollowWall::outOfRange(const Point_t& point) {
+    ROS_ERROR_COND(!bound_.Contains(point), "curr(%d,%d) bound_((%d,%d),(%d,%d))", point.toCell().x, point.toCell().y, bound_.min.toCell().x, bound_.min.toCell().y, bound_.max.toCell().x, bound_.max.toCell().y);
+    return !bound_.Contains(point);
 }
 

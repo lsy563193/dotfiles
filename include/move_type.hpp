@@ -65,7 +65,7 @@ public:
 	bool state_turn{};
 //	Point_t target_point_;
 	int dir_;
-	static Points remain_path_;
+//	static Points remain_path_;
 	bool stop_generate_next_target{};
 public:
 //	std::deque<double> odom_turn_target_radians_{};
@@ -86,7 +86,7 @@ public:
 	bool isFinish() override;
 //	IAction* setNextAction();
 
-	bool isPassTargetStop(Dir_t &dir);
+	bool isPassTargetStop(const Dir_t &dir);
 	bool isCellReach();
 	bool isPoseReach();
 
@@ -104,11 +104,20 @@ public:
 	~MoveTypeFollowWall() override;
 
 	MoveTypeFollowWall(Points remain_path, bool is_left);
+	MoveTypeFollowWall(Points remain_path, bool is_left,BoundingBox<Point_t> bound, bool);
 
 	bool isFinish() override;
 
 	bool isNewLineReach(GridMap &map);
 	bool isOverOriginLine(GridMap &map);
+	bool outOfRange(const Point_t& point);
+	void outOfRangeFirst(bool val){
+		out_of_range_first_ = val;
+	};
+
+	bool outOfRangeFirst(){
+		return out_of_range_first_;
+	};
 
 private:
 	bool handleMoveBackEventRealTime(ACleanMode* p_clean_mode);
@@ -133,6 +142,8 @@ private:
 		double radian_min;
 		double radian_max;
 	};
+    BoundingBox<Point_t> bound_;
+	bool out_of_range_first_{};
 };
 
 class MoveTypeGoToCharger:public IMoveType

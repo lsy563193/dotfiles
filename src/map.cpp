@@ -840,11 +840,13 @@ void GridMap::printInRange(const Cell_t& curr_cell, uint8_t id, const Cells& tar
             auto val = getCell(CLEAN_MAP, x, y);
             if(curr_cell.x == x && curr_cell.y == y)
 				outString << 'x';
+			else if (std::find_if(targets.begin(), targets.end(), [&](const Cell_t& c_it ){return c_it == Cell_t{x,y};}) != targets.end())
+				outString << 'e';
 			else if (val == 0) {
 				outString << '0';
 			} else if (val == 1) {
 				outString << '1';
-			} else {
+			} else  {
 				outString << 'a';
 			}
 		}
