@@ -79,6 +79,7 @@ void Slam::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
 				static_cast<int16_t>(getPosition().y * WIFI_MAP_RESOLUTION / map->info.resolution)};
 
 	size = WIFI_MAP_WIDTH_HALF;
+
 	bound = {{static_cast<int16_t >(-size), static_cast<int16_t >(-size)},
 			 {size,                         size}};
 	auto point = getPosition();

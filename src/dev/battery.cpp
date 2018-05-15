@@ -40,3 +40,17 @@ uint8_t Battery::getPercent()
 	  return (uint8_t)((getVoltage() - BATTERY_VOL_MIN) *100 /(BATTERY_VOL_MAX - BATTERY_VOL_MIN));
 }
 
+void Battery::setVoltage(uint16_t val)
+{
+	double time_now = ros::Time::now().toSec();
+	if (time_now - update_time_stamp_ > 30 || force_update_ || voltage_ == 0)
+	{
+		voltage_ = val;
+		update_time_stamp_ = time_now;
+		if (force_update_)
+			force_update_ = false;
+		ROS_WARN("%s %d: Update Battery as %.1fv.", __FUNCTION__, __LINE__,
+				 static_cast<float>(battery.getVoltage() / 100.0));
+	}
+}
+

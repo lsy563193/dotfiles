@@ -15,7 +15,7 @@
 //#include "move_type.hpp"
 
 
-#define ROS_INFO_FL() ROS_INFO("%s,%d",__FUNCTION__, __LINE__)
+#define ROS_INFO_FL() ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__)
 #define PP_INFO() ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__)
 #define PP_WARN() ROS_WARN("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__)
 
@@ -224,7 +224,7 @@ private:
 	/*---values for rcon handle---*/
 	double first_time_seen_charger_{0};
 	double last_time_seen_charger_{first_time_seen_charger_};
-	boost::shared_ptr<State> st_sleep = boost::make_shared<StateSleep>();
+	boost::shared_ptr<State> state_sleep = boost::make_shared<StateSleep>();
 	bool plan_activated_status_;
 
 	bool fake_sleep_{false};
@@ -247,13 +247,19 @@ public:
 	void remotePlan(bool state_now, bool state_last) override ;
 	void remoteMax(bool state_now, bool state_last) override ;
 
-	bool allowRemoteUpdatePlan() override
+	bool allowRemoteUpdatePlan() override;
+
+	bool isStateCharge() const
 	{
-		return true;
+		return sp_state == state_charge.get();
+	}
+	bool isStateSleep() const
+	{
+		return sp_state == state_sleep.get();
 	}
 
 	boost::shared_ptr<State> state_charge = boost::make_shared<StateCharge>();
-	boost::shared_ptr<State> state_init = boost::make_shared<StateInit>();
+	boost::shared_ptr<State> state_sleep = boost::make_shared<StateSleep>();
 
 private:
 	bool plan_activated_status_;
@@ -281,6 +287,7 @@ public:
 	void remoteHome(bool state_now, bool state_last) override ;
 	void keyClean(bool state_now, bool state_last) override ;
 	void chargeDetect(bool state_now, bool state_last) override ;
+	void cliffAll(bool state_now, bool state_last) override ;
 
 	void wifiSetWaterTank() override ;
 	void setVacuum() override ;

@@ -15,6 +15,9 @@ ModeRemote::ModeRemote()
 	event_manager_register_handler(this);
 	event_manager_set_enable(true);
 
+	mode_i_ = md_remote;
+	IMoveType::sp_mode_ = this;
+
 	serial.setWorkMode(WORK_MODE);
 	if (gyro.isOn())
 	{
@@ -41,8 +44,6 @@ ModeRemote::ModeRemote()
 	s_wifi.setWorkMode(md_remote);
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 	s_wifi.resetReceivedWorkMode();
-	mode_i_ = md_remote;
-	IMoveType::sp_mode_ = this;
 }
 
 ModeRemote::~ModeRemote()
@@ -52,9 +53,13 @@ ModeRemote::~ModeRemote()
 
 	wheel.stop();
 	brush.stop();
+	brush.unblockMainBrushSlowOperation();
 	vacuum.stop();
 	water_tank.stop(WaterTank::operate_option::swing_motor_and_pump);
 
+	// Wait for battery recovery from operating motors.
+	usleep(200000);
+	battery.forceUpdate();
 	ROS_INFO("%s %d: Exit remote mode.", __FUNCTION__, __LINE__);
 }
 
@@ -63,6 +68,14 @@ bool ModeRemote::isExit()
 	if (ev.key_clean_pressed || ev.remote_spot || ev.remote_home || ev.remote_follow_wall)
 	{
 		ROS_WARN("%s %d: Exit to idle mode.", __FUNCTION__, __LINE__);
+		setNextMode(md_idle);
+		return true;
+	}
+
+	if (ev.cliff_all_triggered)
+	{
+		ROS_WARN("%s %d: Exit to idle mode.", __FUNCTION__, __LINE__);
+		speaker.play(VOICE_ERROR_LIFT_UP);
 		setNextMode(md_idle);
 		return true;
 	}
@@ -263,6 +276,13 @@ void ModeRemote::remoteHome(bool state_now, bool state_last)
 	beeper.beepForCommand(VALID);
 	ev.remote_home = true;
 	remote.reset();
+}
+
+void ModeRemote::cliffAll(bool state_now, bool state_last)
+{
+	ROS_WARN("%s %d: Cliff all.", __FUNCTION__, __LINE__);
+
+	ev.cliff_all_triggered = true;
 }
 
 void ModeRemote::wifiSetWaterTank()

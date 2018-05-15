@@ -12,6 +12,8 @@
 #include "robot.hpp"
 #include "infrared_display.hpp"
 
+#define CURRENT_VERSION 11
+
 void x900_functional_test(std::string serial_port, int baud_rate, std::string lidar_bumper_dev)
 {
 	uint8_t test_stage=0;
@@ -177,7 +179,7 @@ uint8_t serial_port_test()
 	}
 	if(send_string_sum.compare(receive_string_sum) == 0)
 	{
-		if(receive_data[M0_VERSION_H] << 8 | receive_data[M0_VERSION_L] != 9)
+		if(receive_data[M0_VERSION_H] << 8 | receive_data[M0_VERSION_L] != CURRENT_VERSION)
 			test_ret = receive_data[M0_VERSION_H] << 8 | receive_data[M0_VERSION_L];
 	}
 	else
@@ -1933,12 +1935,12 @@ void charge_current_test(bool is_fixture, uint8_t &test_stage, uint16_t &error_c
 		}
 		if(buf[4] == 1) {
 			error_code = CHARGE_PWM_ERROR;
-			current_data = 0;
+			current_data = static_cast<uint16_t>(buf[5] << 8 | buf[6]);
 			return ;
 		}
 		else if(buf[4] == 2) {
 			error_code = CHARGE_CURRENT_ERROR;
-			current_data = 0;
+			current_data = static_cast<uint16_t>(buf[7] << 8 | buf[8]);
 			return ;
 		}
 		else if(buf[4] == 3)

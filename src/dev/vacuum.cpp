@@ -20,7 +20,7 @@ void Vacuum::setSpeedByUserSetMode()
 void Vacuum::stop(){
 	setSpeed(0);
 	is_on_ = false;
-	ROS_INFO("%s,%d,vacuum set to stop",__FUNCTION__,__LINE__);
+	ROS_WARN("%s,%d,vacuum set to stop",__FUNCTION__,__LINE__);
 }
 
 //------------------------------

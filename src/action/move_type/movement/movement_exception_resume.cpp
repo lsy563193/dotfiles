@@ -56,10 +56,15 @@ void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_sp
 		left_speed = 30;
 		right_speed = 30;
 	}
-	else if (ev.robot_stuck || ev.cliff_jam || ev.cliff_all_triggered )
+	else if (ev.robot_stuck)
 	{
 		wheel.setDirectionBackward();
 		left_speed = right_speed = RUN_TOP_SPEED;
+	}
+	else if (ev.cliff_jam || ev.cliff_all_triggered)
+	{
+		wheel.setDirectionBackward();
+		left_speed = right_speed = BACK_MAX_SPEED;
 	}
 	else if(sp_mt_->sp_mode_->is_wheel_cliff_triggered)//new wheel cliff rescue
 	{
@@ -249,7 +254,7 @@ bool MovementExceptionResume::isFinish()
 	// Check for right wheel.
 	if (ev.oc_wheel_left || ev.oc_wheel_right)
 	{
-		if (brush.isOn())
+		if (brush.isSideBrushOn())
 			brush.stop();
 		vacuum.stop();
 		water_tank.stop(WaterTank::operate_option::swing_motor_and_pump);
@@ -303,10 +308,12 @@ bool MovementExceptionResume::isFinish()
 			{
 				case 1:
 				{
-					if (brush.isOn())
-						brush.stop();
-					vacuum.stop();
-					water_tank.stop(WaterTank::operate_option::swing_motor_and_pump);
+					if (brush.isSideBrushOn())
+						brush.stopForMainBrushResume();
+					if (vacuum.isOn())
+						vacuum.stop();
+					if (water_tank.getStatus(WaterTank::operate_option::swing_motor))
+						water_tank.stop(WaterTank::operate_option::swing_motor_and_pump);
 					float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getOriginX(), odom.getOriginY());
 					if (std::abs(distance) >= CELL_SIZE * ROBOT_SIZE / 2)
 					{
@@ -319,19 +326,19 @@ bool MovementExceptionResume::isFinish()
 				}
 				case 2:
 				{
+					if ((ros::Time::now().toSec() - resume_main_bursh_start_time_) >= 1.5 && brush.getMainOc())
+					{
+						oc_main_brush_cnt_++;
+						main_brush_resume_state_ = 1;
+					}
+
 					if ((ros::Time::now().toSec() - resume_main_bursh_start_time_) >= 3)
 					{
-						if (!brush.getMainOc())
-						{
-							ROS_WARN("%s %d: main brush over current resume succeeded!", __FUNCTION__, __LINE__);
-							brush.normalOperate();
-							ev.oc_brush_main = false;
-						}
-						else
-						{
-							oc_main_brush_cnt_++;
-							main_brush_resume_state_ = 1;
-						}
+						ROS_WARN("%s %d: main brush over current resume succeeded!", __FUNCTION__, __LINE__);
+//							if (brush.isMainBrushSlowOperate())
+//								brush.blockMainBrushSlowOperation();
+						brush.stop();
+						ev.oc_brush_main = false;
 					}
 					break;
 				}
@@ -421,11 +428,11 @@ bool MovementExceptionResume::isFinish()
 		else if (cliff_resume_cnt_ < 5)
 		{
 			float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getOriginX(), odom.getOriginY());
-			if (std::abs(distance) > 0.02f)
+			if (std::abs(distance) > 0.01f)
 			{
 				wheel.stop();
 				cliff_resume_cnt_++;
-				if (cliff_resume_cnt_ <= 5)
+				if (cliff_resume_cnt_ <= 3)
 					ROS_INFO("%s %d: Resume failed, try cliff resume for the %d time.",
 							 __FUNCTION__, __LINE__, cliff_resume_cnt_);
 				s_pos_x = odom.getOriginX();
@@ -867,7 +874,7 @@ bool MovementExceptionResume::isFinish()
 		if(should_init_for_gyro_exception_)
 		{
 			should_init_for_gyro_exception_ = false;
-			if (brush.isOn())
+			if (brush.isSideBrushOn())
 				brush.stop();
 			vacuum.stop();
 			water_tank.stop(WaterTank::operate_option::swing_motor_and_pump);

@@ -45,68 +45,84 @@ bool ModeCharge::isExit()
 {
 	if (plan_activated_status_)
 	{
-		if (error.get() != ERROR_CODE_NONE)
+		if (charger.isDirected())
 		{
-			if (error.clear(error.get()))
-			{
-				ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
-//					speaker.play(VOICE_CLEAR_ERROR_UNOFFICIAL, false);
-			} else
-			{
-//					speaker.play(VOICE_CANCEL_APPOINTMENT_UNOFFICIAL, false);
-				error.alarm();
-			}
+			ROS_WARN("%s %d: Plan not activated not valid because of charging with adapter.", __FUNCTION__, __LINE__);
+			sp_state = state_charge.get();
+			sp_state->init();
+			speaker.play(VOICE_PLEASE_PULL_OUT_THE_PLUG, false);
+			sp_action_.reset(new MovementCharge);
+			plan_activated_status_ = false;
+			return false;
 		}
 
 		if (error.get() != ERROR_CODE_NONE)
-			ROS_INFO("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
-		else if (cliff.getStatus() & (BLOCK_LEFT | BLOCK_FRONT | BLOCK_RIGHT))
 		{
-			ROS_WARN("%s %d: Plan not activated not valid because of robot lifted up.", __FUNCTION__, __LINE__);
-			speaker.play(VOICE_ERROR_LIFT_UP);
-		} else if (!battery.isReadyToClean())
+			if (error.clear(error.get()))
+				ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
+			else
+			{
+				sp_state = state_charge.get();
+				sp_state->init();
+				error.alarm();
+				sp_action_.reset(new MovementCharge);
+				plan_activated_status_ = false;
+				ROS_WARN("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
+				return false;
+			}
+		}
+
+		if (!battery.isReadyToClean())
 		{
 			ROS_WARN("%s %d: Plan not activated not valid because of battery not ready to clean.", __FUNCTION__,
 					 __LINE__);
+			sp_state = state_charge.get();
+			sp_state->init();
 			speaker.play(VOICE_BATTERY_LOW);
-		} else if (charger.isDirected())
-		{
-			ROS_WARN("%s %d: Plan not activated not valid because of charging with adapter.", __FUNCTION__, __LINE__);
-			speaker.play(VOICE_PLEASE_PULL_OUT_THE_PLUG, false);
-			speaker.play(VOICE_BATTERY_CHARGE);
+			sp_action_.reset(new MovementCharge);
+			plan_activated_status_ = false;
+			return false;
 		} else
 		{
 			ROS_WARN("%s %d: Charge mode receives plan, change to navigation mode.", __FUNCTION__, __LINE__);
 			setNextMode(cm_navigation);
 			if (action_i_ == ac_charge)
 			{
-				auto p_action = boost::dynamic_pointer_cast<MovementCharge>(sp_action_);
-				if (p_action->stillCharging())
+				auto p_movement_charge = boost::dynamic_pointer_cast<MovementCharge>(sp_action_);
+				if (p_movement_charge->stillCharging())
 					charger.enterNavFromChargeMode(true);
 			}
 			ACleanMode::plan_activation_ = true;
 			return true;
 		}
-		plan_activated_status_ = false;
 	}
 
 	if (ev.key_clean_pressed)
 	{
-		auto p_movement_charge = boost::dynamic_pointer_cast<MovementCharge>(sp_action_);
-		if (p_movement_charge->batteryFullAndSleep())
+		if (isStateSleep())
 		{
+			sp_state = state_charge.get();
+			sp_state->init();
 			sp_action_.reset(new MovementCharge);
-			if (s_wifi.isConnected())
-				wifi_led.setMode(LED_STEADY, WifiLed::state::on);
+			ev.key_clean_pressed = false;
 		} else if (!battery.isReadyToClean())
 		{
 			ROS_WARN("%s %d: Battery not ready to clean.", __FUNCTION__, __LINE__);
+			sp_state = state_charge.get();
+			sp_state->init();
 			speaker.play(VOICE_BATTERY_LOW);
+			sp_action_.reset(new MovementCharge);
+			ev.key_clean_pressed = false;
+			return false;
 		} else if (charger.isDirected())
 		{
 			ROS_WARN("%s %d: Charging with adapter.", __FUNCTION__, __LINE__);
+			sp_state = state_charge.get();
+			sp_state->init();
 			speaker.play(VOICE_PLEASE_PULL_OUT_THE_PLUG, false);
-			speaker.play(VOICE_BATTERY_CHARGE);
+			sp_action_.reset(new MovementCharge);
+			ev.key_clean_pressed = false;
+			return false;
 		} else
 		{
 			ROS_WARN("%s %d: Charge mode receives remote clean or key clean, change to navigation mode.", __FUNCTION__,
@@ -120,7 +136,6 @@ bool ModeCharge::isExit()
 			}
 			return true;
 		}
-		ev.key_clean_pressed = false;
 	}
 
 	if (s_wifi.receivePlan1())
@@ -128,12 +143,21 @@ bool ModeCharge::isExit()
 		if (!battery.isReadyToClean())
 		{
 			ROS_WARN("%s %d: Battery not ready to clean.", __FUNCTION__, __LINE__);
+			sp_state = state_charge.get();
+			sp_state->init();
 			speaker.play(VOICE_BATTERY_LOW);
+			sp_action_.reset(new MovementCharge);
+			s_wifi.resetReceivedWorkMode();
+			return false;
 		} else if (charger.isDirected())
 		{
 			ROS_WARN("%s %d: Charging with adapter.", __FUNCTION__, __LINE__);
+			sp_state = state_charge.get();
+			sp_state->init();
 			speaker.play(VOICE_PLEASE_PULL_OUT_THE_PLUG, false);
-			speaker.play(VOICE_BATTERY_CHARGE);
+			sp_action_.reset(new MovementCharge);
+			s_wifi.resetReceivedWorkMode();
+			return false;
 		} else
 		{
 			ROS_WARN("%s %d: Charge mode receives wifi plan1, change to navigation mode.", __FUNCTION__, __LINE__);
@@ -146,8 +170,6 @@ bool ModeCharge::isExit()
 			}
 			return true;
 		}
-		s_wifi.resetReceivedWorkMode();
-		s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 	}
 
 	return false;
@@ -155,6 +177,16 @@ bool ModeCharge::isExit()
 
 bool ModeCharge::isFinish()
 {
+	if (isStateCharge())
+	{
+		auto p_movement_charge = boost::dynamic_pointer_cast<MovementCharge>(sp_action_);
+		if (p_movement_charge->batteryFullAndSleep())
+		{
+			sp_state = state_sleep.get();
+			sp_state->init();
+		}
+	}
+
 	if (sp_action_->isFinish())
 	{
 		setNextMode(md_idle);
@@ -193,23 +225,39 @@ void ModeCharge::remotePlan(bool state_now, bool state_last)
 		appmt_obj.resetPlanStatus();
 		appmt_obj.timesUp();
 		INFO_YELLOW("Plan activated.");
+		// Sleep for 30ms for M0 setting the next plan status.
+		usleep(30000);
+//		appmt_obj.resetPlanStatus();
+//		// Sleep for 30ms for M0 resetting the plan status.
+//		usleep(30000);
 		plan_activated_status_ = true;
 	}
 	else
-		EventHandle::remotePlan(state_now, state_last);
+	{
+		if (isStateCharge())
+			EventHandle::remotePlan(state_now, state_last);
+	}
 }
 
 void ModeCharge::remoteMax(bool state_now, bool state_last)
 {
 	PP_INFO();
-	if(water_tank.getStatus(WaterTank::operate_option::swing_motor)){
-		beeper.beepForCommand(INVALID);
-	}
-	else{
-		beeper.beepForCommand(VALID);
-		vacuum.setForUserSetMaxMode(!vacuum.isUserSetMaxMode());
-		speaker.play(vacuum.isUserSetMaxMode() ? VOICE_VACCUM_MAX : VOICE_VACUUM_NORMAL);
-		setVacuum();
+	if (isStateCharge())
+	{
+		if (water_tank.getStatus(WaterTank::operate_option::swing_motor))
+			beeper.beepForCommand(INVALID);
+		else
+		{
+			beeper.beepForCommand(VALID);
+			vacuum.setForUserSetMaxMode(!vacuum.isUserSetMaxMode());
+			speaker.play(vacuum.isUserSetMaxMode() ? VOICE_VACCUM_MAX : VOICE_VACUUM_NORMAL);
+			setVacuum();
+		}
 	}
 	remote.reset();
+}
+
+bool ModeCharge::allowRemoteUpdatePlan()
+{
+	return isStateCharge();
 }

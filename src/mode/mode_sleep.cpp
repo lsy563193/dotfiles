@@ -28,7 +28,7 @@ ModeSleep::ModeSleep()
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 	s_wifi.resetReceivedWorkMode();
 
-	sp_state = st_sleep.get();
+	sp_state = state_sleep.get();
 	sp_state->init();
 	plan_activated_status_ = false;
 
@@ -68,7 +68,7 @@ bool ModeSleep::isExit()
 
 			if (error.get() != ERROR_CODE_NONE)
 				ROS_INFO("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
-			else if (cliff.getStatus() & (BLOCK_LEFT | BLOCK_FRONT | BLOCK_RIGHT))
+			else if (cliff.getStatus() == (BLOCK_LEFT | BLOCK_FRONT | BLOCK_RIGHT))
 			{
 				ROS_WARN("%s %d: Plan not activated not valid because of robot lifted up.", __FUNCTION__, __LINE__);
 				speaker.play(VOICE_ERROR_LIFT_UP);
@@ -264,7 +264,7 @@ bool ModeSleep::readyToClean()
 		speaker.play(VOICE_BATTERY_LOW, false);
 		return false;
 	}
-	else if (cliff.getStatus() & (BLOCK_LEFT | BLOCK_FRONT | BLOCK_RIGHT))
+	else if (cliff.getStatus() == (BLOCK_LEFT | BLOCK_FRONT | BLOCK_RIGHT))
 	{
 		ROS_WARN("%s %d: Robot lifted up.", __FUNCTION__, __LINE__);
 		speaker.play(VOICE_ERROR_LIFT_UP, false);

@@ -156,7 +156,7 @@ void CleanModeFollowWall::remoteMax(bool state_now, bool state_last)
 	}
 	else if(isStateInit() || isStateFollowWall() || isStateGoHomePoint() || isStateGoToCharger())
 	{
-		beeper.beepForCommand(VALID);
+//		beeper.beepForCommand(VALID);
 		vacuum.setForUserSetMaxMode(!vacuum.isUserSetMaxMode());
 		ACleanMode::setVacuum();
 	}
@@ -167,7 +167,7 @@ void CleanModeFollowWall::remoteClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: remote clean.", __FUNCTION__, __LINE__);
 
-	beeper.beepForCommand(VALID);
+//	beeper.beepForCommand(VALID);
 	wheel.stop();
 	ev.key_clean_pressed = true;
 	remote.reset();
@@ -177,7 +177,7 @@ void CleanModeFollowWall::remoteWallFollow(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: remote wall follow.", __FUNCTION__, __LINE__);
 
-	beeper.beepForCommand(VALID);
+//	beeper.beepForCommand(VALID);
 	wheel.stop();
 	ev.remote_follow_wall = true;
 	remote.reset();

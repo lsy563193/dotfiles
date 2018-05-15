@@ -293,14 +293,14 @@ bool MovementGoToCharger::isSwitch()
 			else if(receive_code&RconL_HomeT)// L  H_T
 			{
 				ROS_INFO("Start with L-T.");
-				turn_angle_ = -120;
+				turn_angle_ = 0;
 				around_charger_stub_dir = 1;
 			}
 			else if(receive_code&RconR_HomeT)// R  H_T
 			{
 				ROS_INFO("Start with R-T.");
-				turn_angle_ = -120;
-				around_charger_stub_dir = 1;
+				turn_angle_ = 0;
+				around_charger_stub_dir = 0;
 			}
 			else if(receive_code&RconBL_HomeT)//BL H_T
 			{

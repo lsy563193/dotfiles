@@ -184,9 +184,6 @@ void MoveTypeDeskTest::run()
 				test_step_ = 0;
 				// Switch to next stage.
 				p_movement_.reset();
-				wheel.stop();
-				brush.stop();
-				vacuum.stop();
 				lidar.motorCtrl(OFF);
 				usleep(50000);
 				ROS_WARN("%s %d: Stage 7 finished.", __FUNCTION__, __LINE__);

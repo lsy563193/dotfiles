@@ -81,18 +81,37 @@ bool CleanModeSpot::mapMark()
 void CleanModeSpot::remoteClean(bool state_now, bool state_last)
 {
 	ev.key_clean_pressed = true;
-	beeper.beepForCommand(true);
+//	beeper.beepForCommand(VALID);
 	remote.reset();
 }
 
 void CleanModeSpot::keyClean(bool state_now,bool state_last)
 {
 	INFO_GREEN("key clean press");
-	wheel.stop();
-	ev.key_clean_pressed = true;
-	beeper.beepForCommand(true);
-	key.resetTriggerStatus();
 
+	beeper.beepForCommand(VALID);
+	wheel.stop();
+
+	// Wait for key released.
+	bool long_press = false;
+	while (key.getPressStatus())
+	{
+		if (!long_press && key.getPressTime() > 3)
+		{
+			ROS_WARN("%s %d: key clean long pressed.", __FUNCTION__, __LINE__);
+			beeper.beepForCommand(VALID);
+			long_press = true;
+		}
+		usleep(20000);
+	}
+
+	if (long_press)
+		ev.key_long_pressed = true;
+	else
+		ev.key_clean_pressed = true;
+	ROS_WARN("%s %d: Key clean is released.", __FUNCTION__, __LINE__);
+
+	key.resetTriggerStatus();
 }
 
 void CleanModeSpot::remoteSpot(bool state_now, bool state_last)
@@ -100,8 +119,8 @@ void CleanModeSpot::remoteSpot(bool state_now, bool state_last)
 	INFO_GREEN("key spot press");
 	wheel.stop();
 	ev.remote_spot = true;
-	beeper.beepForCommand(true);
-	key.resetTriggerStatus();
+//	beeper.beepForCommand(VALID);
+	remote.reset();
 
 }
 

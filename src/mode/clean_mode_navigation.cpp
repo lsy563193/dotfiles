@@ -185,6 +185,13 @@ bool CleanModeNav::isExit()
 			ev.fatal_quit = true;
 			return true;
 		}
+
+		if (ev.key_clean_pressed)
+		{
+			ROS_WARN("%s %d: Exit for ev.key_clean_pressed.", __FUNCTION__, __LINE__);
+			setNextMode(md_idle);
+			return true;
+		}
 	}
 
 	if (isStateGoHomePoint() || isStateGoToCharger())
@@ -262,6 +269,23 @@ bool CleanModeNav::isExit()
 			ev.fatal_quit = true;
 			ROS_WARN("%s %d: Exit for pause and robot lifted up.", __FUNCTION__, __LINE__);
 			setNextMode(md_idle);
+			return true;
+		}
+	}
+
+	if (isStateCharge())
+	{
+		if (ev.key_clean_pressed)
+		{
+			ROS_WARN("%s %d: Exit for ev.key_clean_pressed during state charge.", __FUNCTION__, __LINE__);
+			setNextMode(cm_navigation);
+			return true;
+		}
+
+		if (s_wifi.receivePlan1())
+		{
+			ROS_WARN("%s %d: Exit for wifi plan1.", __FUNCTION__, __LINE__);
+			setNextMode(cm_navigation);
 			return true;
 		}
 	}
@@ -354,7 +378,7 @@ void CleanModeNav::remoteHome(bool state_now, bool state_last)
 		|| (isStateGoHomePoint() && isFirstTimeGoHomePoint()))
 	{
 		ROS_WARN("%s %d: remote home.", __FUNCTION__, __LINE__);
-		beeper.beepForCommand(VALID);
+//		beeper.beepForCommand(VALID);
 		ev.remote_home = true;
 	}
 	else
@@ -381,7 +405,7 @@ void CleanModeNav::remoteClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: remote clean.", __FUNCTION__, __LINE__);
 
-	beeper.beepForCommand(VALID);
+//	beeper.beepForCommand(VALID);
 	wheel.stop();
 	ev.key_clean_pressed = true;
 	remote.reset();
@@ -392,7 +416,7 @@ void CleanModeNav::remoteDirectionLeft(bool state_now, bool state_last)
 	if (isStatePause())
 	{
 		beeper.beepForCommand(VALID);
-		ROS_INFO("%s %d: Remote right.", __FUNCTION__, __LINE__);
+		ROS_INFO("%s %d: Remote left.", __FUNCTION__, __LINE__);
 		ev.remote_direction_left = true;
 	}
 	/*else if (isStateClean())
@@ -419,6 +443,12 @@ void CleanModeNav::remoteDirectionRight(bool state_now, bool state_last)
 		ROS_INFO("%s %d: Remote right.", __FUNCTION__, __LINE__);
 		ev.remote_direction_right = true;
 	}
+	/*else if (isStateCharge())
+	{
+		beeper.beepForCommand(VALID);
+		ROS_INFO("%s %d: Remote right.", __FUNCTION__, __LINE__);
+		ev.remote_direction_right = true;
+	}*/
 	else
 		beeper.beepForCommand(INVALID);
 
@@ -443,7 +473,7 @@ void CleanModeNav::remoteWallFollow(bool state_now, bool state_last)
 {
 	if (isStatePause())
 	{
-		beeper.beepForCommand(VALID);
+//		beeper.beepForCommand(VALID);
 		ROS_INFO("%s %d: Remote follow wall.", __FUNCTION__, __LINE__);
 		ev.remote_follow_wall = true;
 	}
@@ -459,7 +489,7 @@ void CleanModeNav::remoteSpot(bool state_now, bool state_last)
 	{
 		ROS_INFO("%s %d: Remote spot.", __FUNCTION__, __LINE__);
 		ev.remote_spot = true;
-		beeper.beepForCommand(VALID);
+//		beeper.beepForCommand(VALID);
 	}
 	else
 		beeper.beepForCommand(INVALID);
@@ -474,7 +504,7 @@ void CleanModeNav::remoteMax(bool state_now, bool state_last)
 		beeper.beepForCommand(INVALID);
 	}else if(isInitState() || isStateClean() || isStateGoHomePoint() || isStateGoToCharger() || isStatePause())
 	{
-		beeper.beepForCommand(VALID);
+//		beeper.beepForCommand(VALID);
 		vacuum.setForUserSetMaxMode(!vacuum.isUserSetMaxMode());
 		ACleanMode::setVacuum();
 	}
@@ -505,7 +535,7 @@ void CleanModeNav::remotePlan(bool state_now, bool state_last)
 
 void CleanModeNav::batteryHome(bool state_now, bool state_last)
 {
-	if (isStateClean())
+	if (!ev.battery_home && isStateClean())
 	{
 		continue_point_ = getPosition();
 		ROS_INFO("%s %d: low battery, battery =\033[33m %dmv \033[0m, continue cell(%d, %d)", __FUNCTION__, __LINE__,
@@ -555,7 +585,7 @@ void CleanModeNav::chargeDetect(bool state_now, bool state_last)
 
 // ------------------State init--------------------
 bool CleanModeNav::isSwitchByEventInStateInit() {
-	if (checkEnterPause() || ACleanMode::isSwitchByEventInStateInit())
+	if (/*checkEnterPause() || */ACleanMode::isSwitchByEventInStateInit())
 	{
 		if (action_i_ == ac_back_from_charger)
 			setHomePoint();
@@ -604,27 +634,30 @@ bool CleanModeNav::updateActionInStateInit() {
 			action_i_ = ac_align;
 		}
 		else
+		{
+			//set charge position
+			ACleanMode::checkShouldMarkCharger((float)odom.getRadian(),0.6);
 			return false;
+		}
 	} else if (action_i_ == ac_align){
 		{
 			action_i_ = ac_open_slam;
 			align_count_ ++;
-			start_align_radian_ = odom.getRadianOffset();
+			start_align_radian_ = static_cast<float>(odom.getRadianOffset());
 			if(align_count_%2 == 0)
 			{
-				start_align_radian_= ranged_radian(start_align_radian_ -PI/2);
+				start_align_radian_= static_cast<float>(ranged_radian(start_align_radian_ - PI / 2));
 				odom.setRadianOffset(start_align_radian_);
 //				ROS_INFO("rad %f",start_align_radian_);
 			}
 			ROS_INFO("odom rad, align_count : %f, %d", odom.getRadian(), align_count_);
+			//set charge position
+			ACleanMode::checkShouldMarkCharger((float)odom.getRadian(),0.6);
 //			beeper.beepForCommand(INVALID);
 		}
 
 	}
 	else if (action_i_ == ac_open_slam){
-		//after back_from_charger and line alignment
-		//set charge position
-		ACleanMode::checkShouldMarkCharger((float)odom.getRadianOffset(),0.6);
 		return false;
 	}
 	genNextAction();
@@ -965,6 +998,8 @@ bool CleanModeNav::updateActionStateCharge()
 	{
 		action_i_ = ac_charge;
 		genNextAction();
+		// For M0 checking charge mode.
+		serial.setWorkMode(CHARGE_MODE);
 		return true;
 	}
 	else
@@ -992,17 +1027,15 @@ void CleanModeNav::switchInStateCharge()
 // ------------------State resume low battery charge--------------------
 bool CleanModeNav::checkEnterResumeLowBatteryCharge()
 {
-	if (ev.key_clean_pressed || battery.isReadyToResumeCleaning() || s_wifi.receivePlan1())
+	if (battery.isReadyToResumeCleaning()/* || ev.remote_direction_right*/)
 	{
-		// For key clean force continue cleaning.
-		if (ev.key_clean_pressed)
-			ev.key_clean_pressed = false;
-
-		if (s_wifi.receivePlan1())
-			s_wifi.resetReceivedWorkMode();
-
+		/*if (ev.remote_direction_right)
+			ev.remote_direction_right = false;*/
 		// Resume from low battery charge.
+		speaker.play(VOICE_BATTERY_CHARGE_DONE, false);
 		speaker.play(VOICE_CLEANING_CONTINUE, false);
+		// For M0 resume work mode.
+		serial.setWorkMode(WORK_MODE);
 		ROS_INFO("%s %d: Resume low battery charge.", __FUNCTION__, __LINE__);
 		if (action_i_ == ac_charge)
 		{
@@ -1015,7 +1048,10 @@ bool CleanModeNav::checkEnterResumeLowBatteryCharge()
 		sp_state = state_init.get();
 		sp_state->init();
 		low_battery_charge_ = true;
+		// For entering checking switch.
 		ev.charge_detect = 0;
+
+		brush.unblockMainBrushSlowOperation();
 		return true;
 	}
 

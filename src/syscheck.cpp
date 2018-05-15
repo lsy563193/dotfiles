@@ -1,3 +1,4 @@
+#include <elf.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <stdio.h>
@@ -5,25 +6,290 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <linux/elf.h>
-
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <sys/ioctl.h>
 #include <sys/types.h>
 
 #include <random>
 
 #include "config.h"
+#include "syscheck.hpp"
 #include "des.h"
-#include "serial.h"
 
 #define	TARGET_FILE "/opt/ros/indigo/lib/pp/pp"
+#define VER
 
 using namespace std;
 
 const unsigned char primary_key[24] = {0x36, 0xa1, 0xfc, 0xa6, 0xed, 0x29, 0x77, 0x42,
 										0xa5, 0xc3, 0x44, 0x4f, 0x50, 0xb, 0x57, 0x6e,
 										0x19, 0xe6, 0x4e, 0xc0, 0xf4, 0x2e, 0xba, 0xff};
+
+using namespace SERIAL;
+
+Serial serial;
+
+Serial::Serial()
+{
+	crport_fd_ = 0;
+	serial_port_ready_ = false;
+	made_table_ = 0;
+}
+
+Serial::~Serial()
+{
+	bool closed = false;
+	if (isReady())
+	{
+		for (auto i = 0; i < 10; i++)
+		{
+			if (close() == 0)
+			{
+				printf("%s %d: Close serial port %s.", __FUNCTION__, __LINE__, port_.c_str());
+				closed = true;
+				break;
+			}
+		}
+
+		if (!closed)
+			printf("%s %d: Close serial port %s failed.", __FUNCTION__, __LINE__, port_.c_str());
+	}
+}
+
+bool Serial::init(const std::string port,int baudrate)
+{
+	char buf[1024];
+
+	bardrate_ = baudrate;
+	sprintf(buf, "%s", port.c_str());
+	port_ = port;
+	crport_fd_ = open(buf, O_RDWR | O_NOCTTY | O_NONBLOCK);
+	if (crport_fd_ == -1)
+	{
+		printf("%s %d: Open device %s, on baudrate %d failed!.", __FUNCTION__, __LINE__, buf, baudrate);
+		return false;
+	}
+
+	fcntl(crport_fd_, F_SETFL, FNDELAY);
+
+	tcgetattr(crport_fd_, &orgopt_);
+	tcgetattr(crport_fd_, &curopt_);
+	speed_t CR_BAUDRATE;
+	switch(baudrate){
+		case 9600:
+			CR_BAUDRATE = B9600;
+			break;
+		case 19200:
+			CR_BAUDRATE = B19200;
+			break;
+		case 38400:
+			CR_BAUDRATE = B38400;
+			break;
+		case 57600:
+			CR_BAUDRATE = B57600;
+			break;
+		case 115200:
+			CR_BAUDRATE = B115200;
+			break;
+		case 230400:
+			CR_BAUDRATE = B230400;
+			break;
+		default:
+			CR_BAUDRATE = B115200;
+			break;
+	}
+	cfsetispeed(&curopt_, CR_BAUDRATE);
+	cfsetospeed(&curopt_, CR_BAUDRATE);
+	/* Mostly 8N1 */
+	curopt_.c_cflag &= ~PARENB;
+	curopt_.c_cflag &= ~CSTOPB;
+	curopt_.c_cflag &= ~CSIZE;
+	curopt_.c_cflag |= CS8;
+	curopt_.c_cflag |= CREAD;
+	curopt_.c_cflag |= CLOCAL;	//disable modem status check
+
+	cfmakeraw(&curopt_);		//make raw is_max_clean_state_
+
+	if (tcsetattr(crport_fd_, TCSANOW, &curopt_) != 0){
+		return false;
+	}
+	serial_port_ready_ = true;
+	printf("\033[32mserial port %s\033[0m init done...", buf);
+	return true;
+}
+
+bool Serial::isReady()
+{
+	return serial_port_ready_;
+}
+
+int Serial::flush()
+{
+	return tcflush(crport_fd_,TCIFLUSH);
+}
+
+int Serial::close()
+{
+	char buf[128];
+	int retval;
+	if (crport_fd_ == -1)
+		return -1;
+
+	::read(crport_fd_, buf, 128);
+	tcsetattr(crport_fd_, TCSANOW, &orgopt_);
+	retval = ::close(crport_fd_);
+	if (retval == 0)
+	{
+		crport_fd_ = -1;
+		serial_port_ready_ = false;
+	}
+	return retval;
+}
+
+int Serial::write(uint8_t *buf, uint8_t len)
+{
+	int ret;
+	ret = static_cast<int>(::write(crport_fd_, buf, len));
+	return ret;
+}
+
+int Serial::read(uint8_t *buf, int len)
+{
+	int r_ret=0,s_ret=0;
+	uint8_t *t_buf;
+	t_buf = (uint8_t*)calloc(len,sizeof(uint8_t));
+	//memset(t_buf,0,size_of_path);
+	fd_set read_fd_set;
+	struct timeval timeout;
+	timeout.tv_sec = 1;
+	timeout.tv_usec = 0;// ms
+	size_t length = 0;
+	if(isReady()){
+		if(ioctl(crport_fd_,FIONREAD,&length)==-1)
+		{
+			printf("%s,%d,ioctl return -1",__FUNCTION__,__LINE__);
+			free(t_buf);
+			return -1;
+		}
+		if( length >= (size_t)len){
+			r_ret = ::read(crport_fd_,t_buf,len);
+			if(r_ret == len)
+				for(int i =0;i<len;i++){
+					buf[i] = t_buf[i];
+				}
+			//memcpy(buf,t_buf,size_of_path);
+			free(t_buf);
+			return r_ret;
+		}
+	}
+	while (isReady()){
+		FD_ZERO(&read_fd_set);
+		FD_SET(crport_fd_,&read_fd_set);
+
+		s_ret = select(FD_SETSIZE,&read_fd_set,NULL,NULL,&timeout);
+		if (s_ret <0){
+			printf("%s %d: -------select error------------", __FUNCTION__, __LINE__);
+			free(t_buf);
+			FD_CLR(crport_fd_,&read_fd_set);
+			return -1;
+		}
+		else if(s_ret ==0){
+			printf("%s %d: select function \033[33mtimeout!\033[0m", __FUNCTION__, __LINE__);
+			free(t_buf);
+			FD_CLR(crport_fd_,&read_fd_set);
+			return 0;
+		}
+		else if(s_ret >0){
+			if(FD_ISSET(crport_fd_,&read_fd_set)){
+				if(ioctl(crport_fd_,FIONREAD,&length)==-1)
+				{
+					printf("%s,%d,ioctl return -1",__FUNCTION__,__LINE__);
+					free(t_buf);
+					FD_CLR(crport_fd_,&read_fd_set);
+					return -1;
+				}
+				if(length>= (size_t)len){
+					r_ret = ::read(crport_fd_,t_buf,len);
+					if(r_ret == len)
+						for(int i =0;i<len;i++){
+							buf[i] = t_buf[i];
+						}
+					//memcpy(buf,t_buf,size_of_path);
+					free(t_buf);
+					FD_CLR(crport_fd_,&read_fd_set);
+					return r_ret;
+				}
+				else{
+					int time_remain = timeout.tv_sec*1000000 + timeout.tv_usec;
+					int time_expect = (len - length)*1000000*8/bardrate_;
+					if(time_remain > time_expect)
+						usleep(time_expect);
+				}
+			}
+		}
+	}
+	free(t_buf);
+	return s_ret;
+}
+
+void Serial::setSendData(uint8_t seq, uint8_t val)
+{
+	if (seq >= CTL_WHEEL_LEFT_HIGH && seq <= CTL_CRC) {
+		send_stream[seq] = val;
+	}
+}
+
+void Serial::initCrc8(void)
+{
+	int		i, j;
+	uint8_t crc;
+
+	if (!made_table_) {
+		for (i = 0; i < 256; i++) {
+			crc = i;
+			for (j = 0; j < 8; j++)
+				crc = (crc << 1) ^ ((crc & 0x80) ? DI : 0);
+			crc8_table_[i] = crc & 0xFF;
+		}
+		made_table_ = 1;
+	}
+}
+
+/*
+ * For a byte array whose accumulated crc value is stored in *crc, computes
+ * resultant crc obtained by appending m to the byte array
+ */
+void Serial::crc8(uint8_t *crc, const uint8_t m)
+{
+	if (!made_table_) {
+		initCrc8();
+	}
+
+	*crc = crc8_table_[(*crc) ^ m];
+	*crc &= 0xFF;
+}
+
+uint8_t Serial::calBufCrc8(const uint8_t *inBuf, uint32_t inBufSz)
+{
+	uint8_t		crc_base = 0;
+	uint32_t	i;
+
+	for (i = 0; i < inBufSz; i++) {
+		crc8(&crc_base, inBuf[i]);
+	}
+	return crc_base;
+}
+
+void Serial::sendData()
+{
+	uint8_t buf[SEND_LEN];
+	memcpy(buf, serial.send_stream, sizeof(uint8_t) * SEND_LEN);
+	buf[CTL_CRC] = serial.calBufCrc8(buf, CTL_CRC);
+//	printf("buf[CTL_CRC] = %x\n", buf[CTL_CRC]);
+	serial.write(buf, SEND_LEN);
+	serial.setSendData(CTL_CRC, buf[CTL_CRC]);
+}
 
 #if VERIFY_CPU_ID
 static unsigned char cpuid[33];
@@ -177,7 +443,7 @@ int process_bin(void)
 #endif
 
 	memcpy(ptr, cpuid_cal, 32);
-	
+
 	retval = 1;
 
 out:
@@ -189,9 +455,9 @@ out:
 
 #if VERIFY_KEY
 
-#define K_SIGN_OFFSET				0x00	// 0x0C
-#define SIGNATURE_SIZE				16
-#define ENCRYPTION_KEY_SIZE			24
+#define K_SIGN_OFFSET			0x00 // 0x0C
+#define SIGNATURE_SIZE			16
+#define ENCRYPTION_KEY_SIZE		24
 
 #define DUMMY_DOWNLINK_OFFSET		2
 #define KEY_DOWNLINK_OFFSET			9
@@ -201,21 +467,18 @@ out:
 #define SEQUENCE_DOWNLINK_LENGTH	2
 #define KEY_DOWNLINK_LENGTH			8
 
-#define KEY_UPLINK_OFFSET			36
+#define KEY_UPLINK_OFFSET			16
 #define KEY_UPLINK_LENGTH			16
 
-#define CMD_UPLINK_OFFSET			53
+#define CMD_UPLINK_OFFSET			REC_KEY_VALIDATION
 
-#define	CMD_KEY1					0x40
-#define	CMD_KEY2					0x41
-#define	CMD_KEY3					0x42
-#define	CMD_ID						0x43
+#define CMD_KEY1					0x40
+#define CMD_KEY2					0x41
+#define CMD_KEY3					0x42
+#define CMD_ID						0x43
 
 #define CMD_ACK						0x23
 #define CMD_NCK						0x25
-
-#define RECEI_LEN					57
-#define SEND_LEN					21
 
 enum {
 	K_SIGN_CORRECT	= 1,
@@ -227,41 +490,12 @@ enum {
 	K_ERR_SIGN		= -5
 };
 
-enum {
-	CTL_WHEEL_LEFT_HIGH		= 2,
-	CTL_WHEEL_LEFT_LOW		= 3,
-	CTL_WHEEL_RIGHT_HIGH	= 4,
-	CTL_WHEEL_RIGHT_LOW		= 5,
-	CTL_VACCUM_PWR			= 6,
-	CTL_BRUSH_LEFT			= 7,
-	CTL_BRUSH_RIGHT			= 8,
-	CTL_BRUSH_MAIN			= 9,
-	CTL_BUZZER				= 10,
-	CTL_MAIN_PWR			= 11,
-	CTL_CHARGER				= 12,
-	CTL_LED_RED				= 13,
-	CTL_LED_GREEN			= 14,
-	CTL_OMNI_RESET			= 15,
-	CTL_GYRO				= 16,
-	CTL_CMD					= 17,
-	CTL_CRC					= 18,
-};
-
 const unsigned char origin_key[16] = {0xF8, 0x8E, 0xC9, 0xEA, 0xC8, 0x3D, 0xA5, 0x67, 0x6B, 0xC1, 0xAE, 0x9A, 0x12, 0xF0, 0xB4, 0x7F};
-
-uint8_t receiStream[RECEI_LEN] = {0xaa, 0x55, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-									0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-									0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-									0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-									0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-									0x00, 0x00, 0x00, 0x00, 0x00, 0xcc, 0x33};
-
-uint8_t sendStream[SEND_LEN] = {0xaa, 0x55, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0xcc, 0x33};
 
 int control_get_sign(uint8_t* key, uint8_t* sign, uint8_t key_length, int sequence_number)
 {
 	int		num_send_packets = key_length / KEY_DOWNLINK_LENGTH;
-	uint8_t	ptr[RECEI_LEN], buf[SEND_LEN];
+	uint8_t	ptr[REC_LEN], buf[SEND_LEN];
 
 	//Set random seed.
 	//srand(time(NULL));
@@ -269,11 +503,11 @@ int control_get_sign(uint8_t* key, uint8_t* sign, uint8_t key_length, int sequen
 	for (int i = 0; i < num_send_packets; i++) {
 		//Populate dummy.
 		for (int j = 0; j < DUMMY_DOWNLINK_LENGTH; j++)
-			sendStream[j + DUMMY_DOWNLINK_OFFSET] = (uint8_t) (rand() % 256);
+			serial.setSendData(j + DUMMY_DOWNLINK_OFFSET, (uint8_t) (rand() % 256));
 
 		//Populate Sequence number.
 		for (int j = 0; j < SEQUENCE_DOWNLINK_LENGTH; j++)
-			sendStream[j + SEQUENCE_DOWNLINK_OFFSET] = (uint8_t) ((sequence_number >> 8 * j) % 256);
+			serial.setSendData(j + SEQUENCE_DOWNLINK_OFFSET, (uint8_t) ((sequence_number >> 8 * j) % 256));
 
 		//Populate key.
 #if VERIFY_DEBUG
@@ -281,10 +515,9 @@ int control_get_sign(uint8_t* key, uint8_t* sign, uint8_t key_length, int sequen
 #endif
 
 		for (int k = 0; k < KEY_DOWNLINK_LENGTH; k++) {
-			sendStream[k + KEY_DOWNLINK_OFFSET] = key[i * KEY_DOWNLINK_LENGTH + k];
+			serial.setSendData(k + KEY_DOWNLINK_OFFSET, key[i * KEY_DOWNLINK_LENGTH + k]);
 
 #if VERIFY_DEBUG
-			printf("%02x ", sendStream[k + KEY_DOWNLINK_OFFSET]);
 			if (k == KEY_DOWNLINK_LENGTH - 1)
 				printf("\n");
 #endif
@@ -294,13 +527,13 @@ int control_get_sign(uint8_t* key, uint8_t* sign, uint8_t key_length, int sequen
 		//Fill command field
 		switch (i) {
 			case 0:
-				sendStream[SEND_LEN - 4] = CMD_KEY1;
+				serial.setSendData(SEND_LEN - 4, CMD_KEY1);
 				break;
 			case 1:
-				sendStream[SEND_LEN - 4] = CMD_KEY2;
+				serial.setSendData(SEND_LEN - 4, CMD_KEY2);
 				break;
 			case 2:
-				sendStream[SEND_LEN - 4] = CMD_KEY3;
+				serial.setSendData(SEND_LEN - 4, CMD_KEY3);
 				break;
 			default:
 
@@ -315,10 +548,7 @@ int control_get_sign(uint8_t* key, uint8_t* sign, uint8_t key_length, int sequen
 		for (int i = 0; i < 40; i++) {	//200ms (round trip takes at leat 15ms)
 			int counter = 0, ret;
 
-
-			memcpy(buf, sendStream, sizeof(uint8_t) * SEND_LEN);
-			buf[CTL_CRC] = calcBufCrc8((char *)buf, SEND_LEN - 3);
-			serial_write(SEND_LEN, buf);
+			serial.sendData();
 
 #if VERIFY_DEBUG
 			printf("sending data to robot: i: %d\n", i);
@@ -330,19 +560,19 @@ int control_get_sign(uint8_t* key, uint8_t* sign, uint8_t key_length, int sequen
 
 			while (counter < 200) {
 
-				ret = serial_read(1, ptr);
+				ret = serial.read(ptr, 1);
 				if (ptr[0] != 0xAA)
 					continue;
 
-				ret = serial_read(1, ptr);
+				ret = serial.read(ptr, 1);
 				if (ptr[0] != 0x55)
 					continue;
 
-				ret = serial_read(RECEI_LEN - 2, ptr);
-				if (RECEI_LEN - 2!= ret) {
+				ret = serial.read(ptr, REC_LEN - 2);
+				if (REC_LEN - 2!= ret) {
 
 #if VERIFY_DEBUG
-					printf("%s %d: receive count error: %d\n", __FUNCTION__, __LINE__, ret); 
+					printf("%s %d: receive count error: %d\n", __FUNCTION__, __LINE__, ret);
 #endif
 
 					usleep(100);
@@ -357,7 +587,7 @@ int control_get_sign(uint8_t* key, uint8_t* sign, uint8_t key_length, int sequen
 				printf("%s %d: counter: %d\tdata count: %d\treceive cmd: 0x%02x\n", __FUNCTION__, __LINE__, counter, ret, ptr[CMD_UPLINK_OFFSET]);
 
 				printf("receive from robot: %d\n");
-				for (int j = 0; j < RECEI_LEN - 2; j++) {
+				for (int j = 0; j < REC_LEN - 2; j++) {
 					printf("%02x ", ptr[j]);
 				}
 				printf("\n");
@@ -368,7 +598,7 @@ int control_get_sign(uint8_t* key, uint8_t* sign, uint8_t key_length, int sequen
 
 				if(ptr[CMD_UPLINK_OFFSET - 2] == CMD_ACK) {	//set finished
 					//printf("Downlink command ACKed!!\n");
-					sendStream[CTL_CMD] = 0;                              //clear command byte
+					serial.setSendData(CTL_KEY_VALIDATION, 0);                              //clear command byte
 					break;
 				}
 			} else {
@@ -386,21 +616,21 @@ int control_get_sign(uint8_t* key, uint8_t* sign, uint8_t key_length, int sequen
 	for (int i = 0; i < 400; i++) {                              //200ms (round trip takes at leat 15ms)
 		int counter = 0, ret;
 		while (counter < 400) {
-			ret = serial_read(1, ptr);
+			ret = serial.read(ptr, 1);
 			if (ptr[0] != 0xAA)
 				continue;
 
-			ret = serial_read(1, ptr);
+			ret = serial.read(ptr, 1);
 			if (ptr[0] != 0x55)
-					continue;
+				continue;
 
-			ret = serial_read(RECEI_LEN - 2, ptr);
+			ret = serial.read(ptr, REC_LEN - 2);
 
 #if VERIFY_DEBUG
-			printf("%s %d: %d %d %d\n", __FUNCTION__, __LINE__, ret, RECEI_LEN - 2, counter);
+			printf("%s %d: %d %d %d\n", __FUNCTION__, __LINE__, ret, REC_LEN - 2, counter);
 #endif
 
-			if (RECEI_LEN - 2!= ret) { 
+			if (REC_LEN - 2!= ret) {
 				usleep(100);
 				counter++;
 			} else {
@@ -409,7 +639,7 @@ int control_get_sign(uint8_t* key, uint8_t* sign, uint8_t key_length, int sequen
 		}
 
 #if VERIFY_DEBUG
-		for (int j = 0; j < RECEI_LEN - 2; j++) {
+		for (int j = 0; j < REC_LEN - 2; j++) {
 			printf("%02x ", ptr[j]);
 		}
 		printf("\n");
@@ -426,15 +656,13 @@ int control_get_sign(uint8_t* key, uint8_t* sign, uint8_t key_length, int sequen
 				sign[j] = ptr[KEY_UPLINK_OFFSET - 2 + j];
 
 			//Send acknowledge back to MCU.
-			sendStream[CTL_CMD] = CMD_ACK;
+			serial.setSendData(CTL_KEY_VALIDATION, CMD_ACK);
 			for (int k = 0; k < 20; k++) {
-				memcpy(buf, sendStream, sizeof(uint8_t) * SEND_LEN);
-				buf[CTL_CRC] = calcBufCrc8((char *)buf, SEND_LEN - 3);
-				serial_write(SEND_LEN, buf);
+				serial.sendData();
 
 				usleep(500);
 			}
-			sendStream[CTL_CMD] = 0;
+			serial.setSendData(CTL_KEY_VALIDATION, 0);
 
 #if VERIFY_DEBUG
 			printf("%s %d: exit\n", __FUNCTION__, __LINE__);
@@ -444,7 +672,7 @@ int control_get_sign(uint8_t* key, uint8_t* sign, uint8_t key_length, int sequen
 		}
 		usleep(500);
 	}
-	sendStream[CTL_CMD] = 0;
+	serial.setSendData(CTL_KEY_VALIDATION, 0);
 
 #if VERIFY_DEBUG
 	printf("%s %d: exit\n", __FUNCTION__, __LINE__);
@@ -601,7 +829,11 @@ int verify_key(void)
 
 	sequence_number = dice_distribution(random_number_engine) * 256 + dice_distribution(random_number_engine);
 
-	serial_init("/dev/ttyS2", 115200);
+	while (!serial.isReady()) {
+		// Init for serial.
+		if (!serial.init("/dev/ttyS2", 115200))
+			printf("%s %d: Serial init failed!!", __FUNCTION__, __LINE__);
+	}
 
 	while (1) {
 		while (retries < max_retries) {
@@ -677,4 +909,3 @@ int main(int argc , char **argv)
 
 	return 0;
 }
-
