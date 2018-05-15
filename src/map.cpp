@@ -530,7 +530,7 @@ int8_t GridMap::isNotBlockAndCleaned(int16_t x, int16_t y)
 uint8_t GridMap::isUncleanAtY(int16_t x, int16_t y)
 {
 	uint8_t unclean_cnt = 0;
-	for (int8_t i = (y + ROBOT_RIGHT_OFFSET); i <= (y + ROBOT_LEFT_OFFSET); i++) {
+	for (int16_t i = static_cast<int16_t>(y + ROBOT_RIGHT_OFFSET); i <= (y + ROBOT_LEFT_OFFSET); i++) {
 		if (getCell(CLEAN_MAP, x, i) == UNCLEAN) {
 			unclean_cnt++;
 		}
@@ -554,9 +554,7 @@ uint8_t GridMap::isBlockAtY(int block, int16_t x, int16_t y)
 uint8_t GridMap::isBlockBoundary(int16_t x, int16_t y)
 {
 	uint8_t retval = 0;
-	int16_t i;
-
-	for (i = (y + ROBOT_RIGHT_OFFSET); retval == 0 && i <= (y + ROBOT_LEFT_OFFSET); i++) {
+	for (int16_t i = static_cast<int16_t>(y + ROBOT_RIGHT_OFFSET); retval == 0 && i <= (y + ROBOT_LEFT_OFFSET); i++) {
 		if (getCell(CLEAN_MAP, x, i) == BLOCKED_BOUNDARY) {
 			retval = 1;
 		}
