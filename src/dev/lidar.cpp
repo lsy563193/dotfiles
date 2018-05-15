@@ -1278,12 +1278,12 @@ int Lidar::compLaneDistance()
 				if (x >= 0){
 					if (std::abs(x) <= x_front_min) {
 						x_front_min = std::abs(x);
-						ROS_WARN("x_front_min = %lf",x_front_min);
+						ROS_INFO("x_front_min = %lf",x_front_min);
 					}
 				} else {
 					if (std::abs(x) <= x_back_min) {
 						x_back_min = std::abs(x);
-						ROS_ERROR("x_back_min = %lf", x_back_min);
+						ROS_INFO("x_back_min = %lf", x_back_min);
 					}
 				}
 			}

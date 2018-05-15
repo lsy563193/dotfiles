@@ -127,7 +127,7 @@ void CleanModeExploration::keyClean(bool state_now, bool state_last) {
 void CleanModeExploration::remoteClean(bool state_now, bool state_last) {
 	ROS_WARN("%s %d: remote clean.", __FUNCTION__, __LINE__);
 
-	beeper.beepForCommand(VALID);
+//	beeper.beepForCommand(VALID);
 	ev.key_clean_pressed = true;
 	remote.reset();
 }
@@ -156,7 +156,7 @@ void CleanModeExploration::remoteMax(bool state_now, bool state_last)
 	}
 	else if(isInitState() || isStateFollowWall() || isStateExploration() || isStateGoHomePoint() || isStateGoToCharger())
 	{
-		beeper.beepForCommand(VALID);
+//		beeper.beepForCommand(VALID);
 		vacuum.setForUserSetMaxMode(!vacuum.isUserSetMaxMode());
 		ACleanMode::setVacuum();
 	}

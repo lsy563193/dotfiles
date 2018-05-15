@@ -146,6 +146,11 @@ bool CleanModeNav::mapMark()
 			clean_map_.setCell(CLEAN_MAP,cost_block.second.x,cost_block.second.y, BLOCKED_TILT);
 	}
 
+	// Special marking for rcon blocks.
+	for(auto &&cost_block : c_blocks){
+		if(cost_block.first == BLOCKED_TMP_RCON)
+			clean_map_.setCell(CLEAN_MAP,cost_block.second.x,cost_block.second.y,BLOCKED_TMP_RCON);
+	}
 	//tx pass path via serial wifi
 
 	s_wifi.cacheMapData(passed_path_);
@@ -185,6 +190,13 @@ bool CleanModeNav::isExit()
 			error.set(ERROR_CODE_LIDAR);
 			setNextMode(md_idle);
 			ev.fatal_quit = true;
+			return true;
+		}
+
+		if (ev.key_clean_pressed)
+		{
+			ROS_WARN("%s %d: Exit for ev.key_clean_pressed.", __FUNCTION__, __LINE__);
+			setNextMode(md_idle);
 			return true;
 		}
 	}
@@ -373,7 +385,7 @@ void CleanModeNav::remoteHome(bool state_now, bool state_last)
 		|| (isStateGoHomePoint() && isFirstTimeGoHomePoint()))
 	{
 		ROS_WARN("%s %d: remote home.", __FUNCTION__, __LINE__);
-		beeper.beepForCommand(VALID);
+//		beeper.beepForCommand(VALID);
 		ev.remote_home = true;
 	}
 	else
@@ -400,7 +412,7 @@ void CleanModeNav::remoteClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: remote clean.", __FUNCTION__, __LINE__);
 
-	beeper.beepForCommand(VALID);
+//	beeper.beepForCommand(VALID);
 	wheel.stop();
 	ev.key_clean_pressed = true;
 	remote.reset();
@@ -468,7 +480,7 @@ void CleanModeNav::remoteWallFollow(bool state_now, bool state_last)
 {
 	if (isStatePause())
 	{
-		beeper.beepForCommand(VALID);
+//		beeper.beepForCommand(VALID);
 		ROS_INFO("%s %d: Remote follow wall.", __FUNCTION__, __LINE__);
 		ev.remote_follow_wall = true;
 	}
@@ -484,7 +496,7 @@ void CleanModeNav::remoteSpot(bool state_now, bool state_last)
 	{
 		ROS_INFO("%s %d: Remote spot.", __FUNCTION__, __LINE__);
 		ev.remote_spot = true;
-		beeper.beepForCommand(VALID);
+//		beeper.beepForCommand(VALID);
 	}
 	else
 		beeper.beepForCommand(INVALID);
@@ -499,7 +511,7 @@ void CleanModeNav::remoteMax(bool state_now, bool state_last)
 		beeper.beepForCommand(INVALID);
 	}else if(isInitState() || isStateClean() || isStateGoHomePoint() || isStateGoToCharger() || isStatePause())
 	{
-		beeper.beepForCommand(VALID);
+//		beeper.beepForCommand(VALID);
 		vacuum.setForUserSetMaxMode(!vacuum.isUserSetMaxMode());
 		ACleanMode::setVacuum();
 	}
@@ -580,7 +592,7 @@ void CleanModeNav::chargeDetect(bool state_now, bool state_last)
 
 // ------------------State init--------------------
 bool CleanModeNav::isSwitchByEventInStateInit() {
-	if (checkEnterPause() || ACleanMode::isSwitchByEventInStateInit())
+	if (/*checkEnterPause() || */ACleanMode::isSwitchByEventInStateInit())
 	{
 		if (action_i_ == ac_back_from_charger)
 			setHomePoint();
@@ -629,27 +641,30 @@ bool CleanModeNav::updateActionInStateInit() {
 			action_i_ = ac_align;
 		}
 		else
+		{
+			//set charge position
+			ACleanMode::checkShouldMarkCharger((float)odom.getRadian(),0.6);
 			return false;
+		}
 	} else if (action_i_ == ac_align){
 		{
 			action_i_ = ac_open_slam;
 			align_count_ ++;
-			start_align_radian_ = odom.getRadianOffset();
+			start_align_radian_ = static_cast<float>(odom.getRadianOffset());
 			if(align_count_%2 == 0)
 			{
-				start_align_radian_= ranged_radian(start_align_radian_ -PI/2);
+				start_align_radian_= static_cast<float>(ranged_radian(start_align_radian_ - PI / 2));
 				odom.setRadianOffset(start_align_radian_);
 //				ROS_INFO("rad %f",start_align_radian_);
 			}
 			ROS_INFO("odom rad, align_count : %f, %d", odom.getRadian(), align_count_);
+			//set charge position
+			ACleanMode::checkShouldMarkCharger((float)odom.getRadian(),0.6);
 //			beeper.beepForCommand(INVALID);
 		}
 
 	}
 	else if (action_i_ == ac_open_slam){
-		//after back_from_charger and line alignment
-		//set charge position
-		ACleanMode::checkShouldMarkCharger((float)odom.getRadianOffset(),0.6);
 		return false;
 	}
 	genNextAction();
@@ -743,7 +758,7 @@ bool CleanModeNav::updateActionInStateClean(){
 		extern int g_follow_last_follow_wall_dir;
 		if(g_follow_last_follow_wall_dir != 0)
 		{
-			ROS_ERROR("g_follow_last_follow_wall_dir, old_dir_(%d)",old_dir_);
+			ROS_INFO("%s %d: g_follow_last_follow_wall_dir, old_dir_(%d)", __FUNCTION__, __LINE__, old_dir_);
 			old_dir_ = plan_path_.back().dir;
 		}
 		else
@@ -1024,6 +1039,7 @@ bool CleanModeNav::checkEnterResumeLowBatteryCharge()
 		/*if (ev.remote_direction_right)
 			ev.remote_direction_right = false;*/
 		// Resume from low battery charge.
+		speaker.play(VOICE_BATTERY_CHARGE_DONE, false);
 		speaker.play(VOICE_CLEANING_CONTINUE, false);
 		// For M0 resume work mode.
 		serial.setWorkMode(WORK_MODE);

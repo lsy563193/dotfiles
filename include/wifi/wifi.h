@@ -36,7 +36,7 @@ public:
 	};
 
 	enum MapType{
-		GRID_MAP = 0,
+		//GRID_MAP = 0,
 		SLAM_MAP,
 		PASS_PATH,
 	};
@@ -115,7 +115,7 @@ public:
 
 	void taskPushBack(S_Wifi::ACT action);	
 
-	void wifi_send_routine();
+	void wifiSendRutine();
 
 	void cacheMapData(const Points map_data);
 
