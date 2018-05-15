@@ -100,10 +100,11 @@ std::unique_ptr<Points> APathAlgorithm::cells_generate_points(const std::unique_
 {
 	displayCellPath(*path);
 	auto  point_path = make_unique<Points>();
+	std::string debug_str;
 	if(!path->empty()){
 		for(auto&& it = path->begin(); it != path->end(); ++it) {
 			Point_t target {cellToCount((*it).x),cellToCount((*it).y),0};
-            if(it == path->end()-1)
+			if(it == path->end()-1)
 			{
 				target.dir = point_path->back().dir;
 				target.th = point_path->back().th;
@@ -118,10 +119,11 @@ std::unique_ptr<Points> APathAlgorithm::cells_generate_points(const std::unique_
 				}
 			}
 			point_path->emplace_back(target);
-			ROS_INFO("it(%d,%d)",it->x, it->y/*, path->back().th*/);
+			debug_str += "(" + std::to_string(it->x) + ", " + std::to_string(it->y) + ")";
 		}
 	}
-	ROS_INFO("cell.back(%d,%d)",path->back().x, path->back().y/*, path->back().th*/);
+	ROS_INFO("%s %d: it:%s, cell.back(%d,%d)",__FUNCTION__, __LINE__, debug_str.c_str(),
+			 path->back().x, path->back().y/*, path->back().th*/);
 	return point_path;
 }
 

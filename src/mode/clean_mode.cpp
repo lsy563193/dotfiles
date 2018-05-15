@@ -201,15 +201,15 @@ ACleanMode::~ACleanMode()
 
 void ACleanMode::saveBlock(int block, int dir, std::function<Cells()> get_list)
 {
-	ROS_INFO("curr(%d,%d),block(%d):", getPosition().toCell().x, getPosition().toCell().y, block);
 	std::string debug_str;
+	debug_str.clear();
 	for(auto& d_cell : get_list())
 	{
 		Cell_t cell;
 //		if(dir == MAP_ANY)
-			cell = getPosition().getCenterRelative(d_cell.x * CELL_SIZE, d_cell.y * CELL_SIZE).toCell();
+		cell = getPosition().getCenterRelative(d_cell.x * CELL_SIZE, d_cell.y * CELL_SIZE).toCell();
 		debug_str += "{" + std::to_string(d_cell.x) + "," + std::to_string(d_cell.y) + "}->{" +
-				std::to_string(d_cell.x) + "," + std::to_string(d_cell.y) + "}\n";
+				std::to_string(cell.x) + "," + std::to_string(cell.y) + "}";
 //		else {
 //			auto x = d_cell * cell_direction_[dir].x;
 //			auto y = d_cell * cell_direction_[(dir+2)%4].y;
@@ -217,8 +217,10 @@ void ACleanMode::saveBlock(int block, int dir, std::function<Cells()> get_list)
 //		}
 		c_blocks.insert({block, cell});
 	}
-	if (sizeof(debug_str) != 0)
-		ROS_INFO("%s", debug_str.c_str());
+
+	if (!debug_str.empty())
+		ROS_INFO("curr(%d,%d),block(%d): %s.", getPosition().toCell().x, getPosition().toCell().y,
+				 block, debug_str.c_str());
 }
 
 void ACleanMode::saveBlocks() {

@@ -81,21 +81,10 @@ CellState GridMap::getCell(int id, int16_t x, int16_t y) {
 		y += MAP_SIZE + MAP_SIZE / 2;
 		y %= MAP_SIZE;
 
-#ifndef SHORTEST_PATH_V2
-		//val = (CellState)((id == CLEAN_MAP) ? (clean_map[x][y / 2]) : (cost_map[x][y / 2]));
 		if(id == CLEAN_MAP)
-			val = (CellState)(clean_map[x][y / 2]);
+			val = (CellState)(clean_map[x][y]);
 		else if(id == COST_MAP)
-			val = (CellState)(cost_map[x][y / 2]);
-#else
-		//val = (CellState)(clean_map[x][y / 2]);
-		if (id == CLEAN_MAP) {
-			val = (CellState)(clean_map[x][y / 2]);
-		}
-#endif
-
-		/* Upper 4 bits & lower 4 bits. */
-		val = (CellState) ((y % 2) == 0 ? (val >> 4) : (val & 0x0F));
+			val = (CellState)(cost_map[x][y]);
 
 	} else {
 		if(id == CLEAN_MAP) {
@@ -144,11 +133,7 @@ void GridMap::setCell(uint8_t id, int16_t x, int16_t y, CellState value) {
 			COLUMN = static_cast<int16_t>(y + MAP_SIZE + MAP_SIZE / 2);
 			COLUMN %= MAP_SIZE;
 
-			val = (CellState) clean_map[ROW][COLUMN / 2];
-			if (((COLUMN % 2) == 0 ? (val >> 4) : (val & 0x0F)) != value) {
-				clean_map[ROW][COLUMN / 2] = ((COLUMN % 2) == 0 ? (((value << 4) & 0xF0) | (val & 0x0F)) : ((val & 0xF0) | (value & 0x0F)));
-//				clean_map[ROW][COLUMN] = value;
-			}
+			clean_map[ROW][COLUMN] = static_cast<uint8_t>(value);
 		}
 	}  else if (id == COST_MAP){
 		if(x >= xRangeMin && x <= xRangeMax && y >= yRangeMin && y <= yRangeMax) {
@@ -157,11 +142,7 @@ void GridMap::setCell(uint8_t id, int16_t x, int16_t y, CellState value) {
 			y += MAP_SIZE + MAP_SIZE / 2;
 			y %= MAP_SIZE;
 
-			val = (CellState) cost_map[x][y / 2];
-
-			/* Upper 4 bits and last 4 bits. */
-			cost_map[x][y / 2] = (((y % 2) == 0) ? (((value << 4) & 0xF0) | (val & 0x0F)) : ((val & 0xF0) | (value & 0x0F)));
-//			cost_map[x][y] = value;
+			cost_map[x][y] = static_cast<uint8_t>(value);
 		}
 	}
 }
@@ -414,6 +395,7 @@ bool GridMap::markRobot(uint8_t id)
 {
 	auto curr =  getPosition().toCell();
 	bool ret = false;
+	std::string debug_str;
 	for (auto dy = -ROBOT_SIZE_1_2; dy <= ROBOT_SIZE_1_2; ++dy)
 	{
 		for (auto dx = -ROBOT_SIZE_1_2; dx <= ROBOT_SIZE_1_2; ++dx)
@@ -423,12 +405,13 @@ bool GridMap::markRobot(uint8_t id)
 			auto y = curr.y + (int16_t)dy;
 			auto status = getCell(id, x, y);
 			if (/*status > CLEANED && */status < BLOCKED_BOUNDARY && (status != BLOCKED_RCON)){
-				ROS_INFO("\033[1;33m" "%s,%d: (%d,%d)" "\033[0m", __FUNCTION__, __LINE__,x, y);
+				debug_str += "(" + std::to_string(x) + ", " + std::to_string(y) + ")";
 				setCell(id, x, y, CLEANED);
 				ret = true;
 			}
 		}
 	}
+	ROS_INFO("\033[1;33m" "%s,%d: %s" "\033[0m", __FUNCTION__, __LINE__, debug_str.c_str());
 	return ret;
 }
 
@@ -559,7 +542,7 @@ uint8_t GridMap::isUncleanAtY(int16_t x, int16_t y)
 uint8_t GridMap::isBlockAtY(int block, int16_t x, int16_t y)
 {
 	uint8_t unclean_cnt = 0;
-	for (int8_t i = (y + ROBOT_RIGHT_OFFSET); i <= (y + ROBOT_LEFT_OFFSET); i++) {
+	for (int16_t i = static_cast<int16_t>(y + ROBOT_RIGHT_OFFSET); i <= (y + ROBOT_LEFT_OFFSET); i++) {
 		if (getCell(CLEAN_MAP, x, i) == block) {
 			unclean_cnt++;
 		}
@@ -585,9 +568,8 @@ uint8_t GridMap::isBlockBoundary(int16_t x, int16_t y)
 uint8_t GridMap::isBlocksAtY(int16_t x, int16_t y)
 {
 	uint8_t retval = 0;
-	int16_t i;
 
-	for (i = (y + ROBOT_RIGHT_OFFSET); retval == 0 && i <= (y + ROBOT_LEFT_OFFSET); i++) {
+	for (int16_t i = static_cast<int16_t>(y + ROBOT_RIGHT_OFFSET); retval == 0 && i <= (y + ROBOT_LEFT_OFFSET); i++) {
 		if (isABlock(x, i) == 1) {
 			retval = 1;
 		}
