@@ -186,7 +186,7 @@ ACleanMode::~ACleanMode()
 		robot::instance()->updateCleanRecord(static_cast<const uint32_t &>(real_calendar_time - robot_timer.getWorkTime())
 											 , static_cast<const uint16_t &>(robot_timer.getWorkTime())
 											 , static_cast<const uint16_t &>(map_area)
-											 , clean_map_);
+											 , slam_grid_map);
 		s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_LAST_CLEANMAP);
 	}
 

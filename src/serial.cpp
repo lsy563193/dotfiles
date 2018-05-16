@@ -604,6 +604,7 @@ void Serial::send_routine_cb()
 	//tmp test
 	clock_t t = clock();
 	float period;
+	int32_t sleep_time;
 	while(ros::ok() && !send_thread_kill){
 		if (!send_thread_enable)
 		{
@@ -611,15 +612,14 @@ void Serial::send_routine_cb()
 			continue;
 		}
 
-		period = ((float)(clock() - t))/CLOCKS_PER_SEC;
-		uint32_t sleep_time = 20000-(uint32_t)(period*1000000);
-		if(sleep_time < 20000)
+		period = ((float)(clock() - t))/CLOCKS_PER_SEC;//in second
+		sleep_time = 20000-(int32_t)(period*1000000);//in microsecond
+		if(sleep_time > 0)
 		{
 			usleep(sleep_time);
 		}
 		else{
-			usleep(20000);
-			ROS_WARN("SLEEP_TIME %d",sleep_time);
+			ROS_WARN("%s,%d,SLEEP_TIME %u,period %f",__FUNCTION__,__LINE__,sleep_time,period);
 		}
 		t = clock();
 		/*-------------------Process for beeper.play and key_led -----------------------*/
