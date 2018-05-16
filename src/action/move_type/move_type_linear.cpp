@@ -94,6 +94,7 @@ bool MoveTypeLinear::isFinish()
 					ROS_WARN("ev.cliff_triggered(%d)!!!", ev.cliff_triggered);
 					movement_i_ = mm_stay;
 					sp_movement_.reset(new MovementStay(0.2));
+					return false;
 				}
 				if(!ev.tilt_triggered)
 					p_clean_mode->should_follow_wall = true;
