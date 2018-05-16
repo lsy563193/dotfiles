@@ -13,7 +13,7 @@
 void StateInit::init() {
 	if(Mode::next_mode_i_ == Mode::cm_exploration || Mode::next_mode_i_ == Mode::md_go_to_charger)
 		key_led.setMode(LED_STEADY, LED_ORANGE);
-	else if (Mode::next_mode_i_ == Mode::cm_navigation && sp_cm_->isRemoteGoHomePoint())
+	else if (Mode::next_mode_i_ == Mode::cm_navigation && (sp_cm_->isRemoteGoHomePoint() || sp_cm_->isWifiGoHomePoint()))
 		key_led.setMode(LED_STEADY, LED_ORANGE);
 	else
 		key_led.setMode(LED_STEADY, LED_GREEN);
@@ -36,7 +36,7 @@ void StateInit::initOpenLidar()
 
 void StateInit::initForNavigation()
 {
-	if (sp_cm_->isRemoteGoHomePoint())
+	if (sp_cm_->isRemoteGoHomePoint() || sp_cm_->isWifiGoHomePoint())
 	{
 		key_led.setMode(LED_STEADY, LED_ORANGE);
 		brush.slowOperate();

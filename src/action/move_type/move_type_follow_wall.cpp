@@ -84,7 +84,8 @@ bool MoveTypeFollowWall::isFinish()
 			if (!handleMoveBackEvent(p_cm))
 			{
 				if(ev.rcon_status) {
-					p_cm->setHomePoint();
+					if (p_cm->go_home_path_algorithm_ != nullptr)
+						p_cm->go_home_path_algorithm_->setHomePoint(getPosition());
 					p_cm->saveBlocks();
 					movement_i_ = mm_rcon;
 					sp_movement_.reset(new MovementRcon(is_left_));
