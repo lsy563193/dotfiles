@@ -511,34 +511,34 @@ typedef struct
 typedef int CellState;
 //sensor_msgs::LaserScan
 template <typename T>
-class DequeArray{
+class DequeArray {
 public:
 //    DequeArray(int size):valid_size_(size){ };
-	void push_back(T i){
+	void push_back(T i) {
 		d.push_back(i);
-		if(d.size() > 3)
+		if (d.size() > 3)
 			d.pop_front();
 	}
-    typename std::deque<T>::const_iterator  begin(){
-        return d.begin();
-    }
 
-	typename std::deque<T>::const_iterator  end(){
-        return d.end();
-    }
-    size_t size()
-    {
-        return d.size();
-    }
+	typename std::deque<T>::const_iterator begin() {
+		return d.begin();
+	}
 
-    void clear()
-    {
-        d.clear();
-    }
-    T operator [](int i)
-    {
-        return d[i];
-    }
+	typename std::deque<T>::const_iterator end() {
+		return d.end();
+	}
+
+	size_t size() {
+		return d.size();
+	}
+
+	void clear() {
+		d.clear();
+	}
+
+	T operator[](int i) {
+		return d[i];
+	}
 
 private:
 	std::deque<T> d;

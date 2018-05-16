@@ -1111,89 +1111,55 @@ uint8_t Lidar::lidarMarker(std::vector<Vector2<int>> &markers, int movement_i, i
 	return block_status;
 }
 
-void Lidar::checkRobotSlip()
-{
-	if (!slip_enable_ || !lidar.isScanOriginalReady())
-	{
-		slip_status_ = false;
+void Lidar::checkRobotSlip() {
+	auto tmp_scan_data = getLidarScanDataOriginal();
+	if (!isNeedToCheckSlip(tmp_scan_data)) {
+		slip_frame_cnt_ = 0;
 		return;
 	}
-//	ROS_INFO("start to check slip,leftSpeed:%f,rightSpeed:%f",wheel.getLeftWheelActualSpeed(),wheel.getRightWheelActualSpeed());
-	checkSlipInit(acur1_,acur2_,acur3_,acur4_);
-	if (std::fabs(wheel.getLeftWheelActualSpeed()) >= 0.08 || std::fabs(wheel.getRightWheelActualSpeed()) >= 0.08)
+	uint16_t same_count = 0;
+	uint16_t tol_count = 0;
+	checkSlipInit(acur1_, acur2_, acur3_, acur4_);
+	for (int i = 0; i <= 359; i++) {
+		if (tmp_scan_data.ranges[i] < dist1_) {
+			tol_count++;
+			if (tmp_scan_data.ranges[i] > dist2_ && tmp_scan_data.ranges[i] < dist1_) {//
+				if (std::abs(tmp_scan_data.ranges[i] - last_slip_scan_frame_[0].ranges[i]) <= acur1_) {
+					same_count++;
+				}
+			} else if (tmp_scan_data.ranges[i] > dist3_ && tmp_scan_data.ranges[i] < dist2_) {//
+				if (std::abs(tmp_scan_data.ranges[i] - last_slip_scan_frame_[0].ranges[i]) <= acur2_) {
+					same_count++;
+				}
+			} else if (tmp_scan_data.ranges[i] > dist4_ && tmp_scan_data.ranges[i] < dist3_) {//
+				if (std::abs(tmp_scan_data.ranges[i] - last_slip_scan_frame_[0].ranges[i]) <= acur3_) {
+					same_count++;
+				}
+			} else if (tmp_scan_data.ranges[i] <= dist4_) {
+				if (std::abs(tmp_scan_data.ranges[i] - last_slip_scan_frame_[0].ranges[i]) <= acur4_) {
+					same_count++;
+				}
+			}
+		}
+	}
+
+	if ((same_count * 1.0) / (tol_count * 1.0) >= slip_ranges_percent_ && tol_count > 100)
 	{
-		auto tmp_scan_data = getLidarScanDataOriginal();
-		uint16_t same_count = 0;
-		uint16_t tol_count = 0;
-
-		if(last_slip_scan_frame_.size() < 3){
-			last_slip_scan_frame_.push_back(tmp_scan_data);
-			return;
-		}
-		for(int i = 0; i <= 359; i++){
-			if(tmp_scan_data.ranges[i] < dist1_){
-				tol_count++;
-				if(tmp_scan_data.ranges[i] >dist2_ && tmp_scan_data.ranges[i] < dist1_){//
-					if(std::abs(tmp_scan_data.ranges[i] - last_slip_scan_frame_[0].ranges[i]) <= acur1_ ){
-						same_count++;
-					}
-				}
-				else if(tmp_scan_data.ranges[i] >dist3_ && tmp_scan_data.ranges[i] < dist2_){//
-					if(std::abs(tmp_scan_data.ranges[i] - last_slip_scan_frame_[0].ranges[i]) <= acur2_ ){
-						same_count++;
-					}
-				}
-				else if(tmp_scan_data.ranges[i] >dist4_ && tmp_scan_data.ranges[i] < dist3_){//
-					if(std::abs(tmp_scan_data.ranges[i] - last_slip_scan_frame_[0].ranges[i]) <= acur3_ ){
-						same_count++;
-					}
-				}
-				else if(tmp_scan_data.ranges[i] <= dist4_){
-					if(std::abs( tmp_scan_data.ranges[i] - last_slip_scan_frame_[0].ranges[i]) <= acur4_ ){
-						same_count++;
-					}
-				}
-			}
-		}
-
-//		ROS_WARN("%s %d: same_count: %d, total_count: %d. lidarPoint:%lf", __FUNCTION__, __LINE__, same_count, tol_count,tmp_scan_data.ranges[155]);
-//		ROS_WARN("percent:%lf,slip_cnt_limt:%d,slip_frame_cnt:%d,lidarPoint:%lf,tol_count:%d",slip_ranges_percent_,slip_cnt_limit_,slip_frame_cnt_,tmp_scan_data.ranges[155],tol_count);
-		bool is_low_speed = robot::instance()->getRobotActualSpeed() < 0.08 || robot::instance()->getRobotActualSpeed() > 0.173;
-		bool is_back_nothing = tmp_scan_data.ranges[155] >= 4;
-		bool is_back_changing = is_back_nothing ? false : tmp_scan_data.ranges[155] - last_slip_scan_frame_[0].ranges[155] >= 0.03;
-		bool is_long_hallway;
-		if (is_back_changing) {
-			is_long_hallway = false;
+		if (++slip_frame_cnt_ >= slip_cnt_limit_) {
+			ROS_INFO("\033[35m""%s,%d,robot slip!!""\033[0m", __FUNCTION__, __LINE__);
+			slip_status_ = true;
+			slip_cnt_limit_ = 5;
+			beeper.debugBeep(VALID);
 		} else {
-			is_long_hallway = is_back_nothing ? checkLongHallway() : false;
-		}
-//		ROS_INFO("is_low_speed(%d), is_back_nothing(%d), is_back_changing(%d), is_long_hallway(%d)",
-//						 is_low_speed, is_back_nothing, is_back_changing, is_long_hallway);
-//		if (is_long_hallway)
-//			beeper.debugBeep(VALID);
-		if((same_count * 1.0) / (tol_count * 1.0) >= slip_ranges_percent_ && tol_count > 100 && !is_long_hallway) {
-			if (++slip_frame_cnt_ >= slip_cnt_limit_ && is_low_speed) {
-				ROS_INFO("\033[35m""%s,%d,robot slip!!""\033[0m", __FUNCTION__, __LINE__);
-				slip_status_ = true;
-				slip_cnt_limit_ = 5;
-				beeper.debugBeep(VALID);
-			} else {
-				slip_status_ = false;
-			}
-			if (slip_frame_cnt_ >= slip_cnt_limit_ && !is_low_speed) {
-				ROS_INFO("speed:%lf", robot::instance()->getRobotActualSpeed());
-			}
-		}
-		else
-		{
-			slip_frame_cnt_ = 0;
 			slip_status_ = false;
 		}
-		last_slip_scan_frame_.push_back(tmp_scan_data);
-	}else{
-		slip_frame_cnt_ = 0;
-		last_slip_scan_frame_.clear();
 	}
+	else
+	{
+		slip_frame_cnt_ = 0;
+		slip_status_ = false;
+	}
+	last_slip_scan_frame_.push_back(tmp_scan_data);
 }
 
 bool Lidar::isRobotSlip()
@@ -1822,17 +1788,15 @@ bool Lidar::checkLidarBeCovered() {
 		return false;
 }
 
-bool Lidar::checkLongHallway()
+bool Lidar::checkLongHallway(const sensor_msgs::LaserScan& tmp_scan_data)
 {
 	double radian{};
 	double distance{};
 	bool isLeft{true};
 	std::vector<LineABC> fit_line_group;
-	bool is_success = getFitLine(&fit_line_group, degree_to_radian(0), degree_to_radian(359), -1.0, 3.0, &radian, &distance, isLeft, 0.30,
-									 true);
+	bool is_success = getFitLine(&fit_line_group, degree_to_radian(0), degree_to_radian(359), -1.0, 3.0, &radian, &distance, isLeft, 0.30, true);
 	double l_k;//slop
 	double l_b;//ordinate at the origin
-	bool is_long_hallway{false};
 	std::vector<uint8_t> side_status{};
 	if (!is_success) {
 		return false;
@@ -1865,13 +1829,46 @@ bool Lidar::checkLongHallway()
 		auto last = std::unique(side_status.begin(),side_status.end());
 		side_status.erase(last, side_status.end());
 	}
-	if (side_status.size() >= 2) {
-		is_long_hallway = true;
-		ROS_WARN("checkLongHallway(true)!");
+
+	if (side_status.size() >= 2)
+	{
+		ROS_WARN("longHallway(true)");
 	} else {
-		is_long_hallway = false;
+		return false;
 	}
 
-	return is_long_hallway;
+	//isLongHallway and back point is changing
+	auto is_back_seen = tmp_scan_data.ranges[155] <= 4;
+	auto is_changing = is_back_seen ? tmp_scan_data.ranges[155] - last_slip_scan_frame_[0].ranges[155] >= 0.03 : true;
+	return is_changing;
+}
+
+bool Lidar::isNeedToCheckSlip(const sensor_msgs::LaserScan& scan) {
+	auto left_wheel_speed = wheel.getLeftWheelActualSpeed();
+	auto right_wheel_speed = wheel.getRightWheelActualSpeed();
+	bool is_low_speed = robot::instance()->getRobotActualSpeed() < 0.08 || robot::instance()->getRobotActualSpeed() > 0.173
+						|| fabs(right_wheel_speed - left_wheel_speed) > 0.1;
+	if (checkLongHallway(scan)) {
+		last_slip_scan_frame_.clear();
+		return false;
+	}
+	if (!slip_enable_ || !lidar.isScanOriginalReady()) {
+		last_slip_scan_frame_.clear();
+		return false;
+	}
+	if (std::fabs(left_wheel_speed) <= 0.08 && std::fabs(right_wheel_speed) <= 0.08) {
+		last_slip_scan_frame_.clear();
+		return false;
+	}
+	if (!is_low_speed) {
+		last_slip_scan_frame_.clear();
+		return false;
+	}
+	if (last_slip_scan_frame_.size() < 3) {
+		last_slip_scan_frame_.push_back(scan);
+		return false;
+	}
+
+	return true;
 }
 
