@@ -6,6 +6,7 @@
 #include <robot.hpp>
 #include <water_tank.hpp>
 #include <brush.h>
+#include <gyro.h>
 #include "wifi/wifi.h"
 
 #include "key_led.h"
@@ -31,6 +32,7 @@ void StateInit::initOpenLidar()
 	water_tank.checkEquipment() ? water_tank.open(WaterTank::operate_option::swing_motor)
 								: vacuum.setSpeedByUserSetMode();
 	sp_cm_->isUsingDustBox(!water_tank.getStatus(WaterTank::operate_option::swing_motor));
+	gyro.setTiltCheckingEnable(true);
 	ROS_INFO("%s %d: Enter state initOpenLidar.", __FUNCTION__, __LINE__);
 }
 

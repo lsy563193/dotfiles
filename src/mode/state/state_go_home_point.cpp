@@ -31,6 +31,7 @@ void StateGoHomePoint::init(){
 									: vacuum.setSpeedByUserSetMode();
 	}
 
+	gyro.setTiltCheckingEnable(true);
 	ev.remote_home = false;
 	ev.battery_home = false;
 	ROS_INFO("%s %d: Enter state go home point init.", __FUNCTION__, __LINE__);

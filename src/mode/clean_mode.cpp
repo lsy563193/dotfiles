@@ -104,6 +104,7 @@ ACleanMode::~ACleanMode()
 		robot::instance()->setBaselinkFrameType(ODOM_POSITION_ODOM_ANGLE);
 		slam.stop();
 		odom.setRadianOffset(0);
+		gyro.setTiltCheckingEnable(false);
 
 		if (next_mode_i_ == md_idle)
 		{

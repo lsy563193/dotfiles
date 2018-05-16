@@ -5,6 +5,7 @@
 #include <mode.hpp>
 #include <water_tank.hpp>
 #include <robot.hpp>
+#include <gyro.h>
 #include "key_led.h"
 #include "brush.h"
 #include "wifi/wifi.h"
@@ -19,6 +20,7 @@ void StateClean::init()
 								: vacuum.setSpeedByUserSetMode();
 	s_wifi.setWorkMode(robot::instance()->getRobotWorkMode());
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
+	gyro.setTiltCheckingEnable(true);
 	ROS_INFO("%s %d: Enter state clean.", __FUNCTION__, __LINE__);
 }
 
