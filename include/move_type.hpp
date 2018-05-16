@@ -4,7 +4,7 @@
 
 #ifndef PP_MOVE_TYPE_HPP
 #define PP_MOVE_TYPE_HPP
-#define TRAP_IN_SMALL_AREA_COUNT 30
+#define TRAP_IN_SMALL_AREA_COUNT 40
 #define TILT_BACK_DISTANCE 0.15
 //#define CLIFF_BACK_DISTANCE 0.1
 
@@ -109,6 +109,7 @@ public:
 
 	bool isNewLineReach(GridMap &map);
 	bool isOverOriginLine(GridMap &map);
+	bool getIsTrappedInSmallArea() const {return is_trapped_in_small_area_;};
 
 private:
 	bool handleMoveBackEventRealTime(ACleanMode* p_clean_mode);

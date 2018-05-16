@@ -63,7 +63,13 @@ bool MoveTypeFollowWall::isFinish()
 		},dijkstra_cleaned_count);
 		if (dijkstra_cleaned_count < TRAP_IN_SMALL_AREA_COUNT)
 			is_trapped_in_small_area_ = true;
+		else
+			is_trapped_in_small_area_ = false;
+	} else {
+		is_trapped_in_small_area_ = false;
 	}
+	if(is_trapped_in_small_area_)
+		beeper.debugBeep(INVALID);
 
 	if (sp_movement_->isFinish()) {
 		if(movement_i_ == mm_dynamic){
