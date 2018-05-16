@@ -4,7 +4,7 @@
 
 #ifndef PP_MOVE_TYPE_HPP
 #define PP_MOVE_TYPE_HPP
-#define TRAP_IN_SMALL_AREA_COUNT 20
+#define TRAP_IN_SMALL_AREA_COUNT 30
 #define TILT_BACK_DISTANCE 0.15
 //#define CLIFF_BACK_DISTANCE 0.1
 
@@ -113,7 +113,7 @@ public:
 private:
 	bool handleMoveBackEventRealTime(ACleanMode* p_clean_mode);
 	bool is_left_{};
-	double move_forward_time{};
+	double move_forward_time_{};
 	int16_t bumperTurnAngle();
 	int16_t cliffTurnAngle();
 	int16_t tiltTurnAngle();
@@ -124,15 +124,14 @@ private:
 	bool lidarTurnRadian(double &turn_radian);
 	double getTurnRadianByEvent();
 	double getTurnRadian(bool);
-	double robot_to_wall_distance = 0.8;
-	float g_back_distance = 0.01;
-	bool is_stop_follow_wall_after_tilt{};
-	struct lidar_angle_param{
-		double lidar_min;
-		double lidar_max;
-		double radian_min;
-		double radian_max;
+	bool is_stop_follow_wall_after_tilt_{};
+	struct lidar_angle_param_{
+		double lidar_min_;
+		double lidar_max_;
+		double radian_min_;
+		double radian_max_;
 	};
+	bool is_trapped_in_small_area_{false};
 };
 
 class MoveTypeGoToCharger:public IMoveType
