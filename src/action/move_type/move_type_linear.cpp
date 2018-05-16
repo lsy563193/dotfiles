@@ -243,13 +243,15 @@ void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 bool MoveTypeLinear::switchLinearTargetByRecalc(ACleanMode *p_clean_mode) {
 	bool val{};
 	Points path;
-    bool is_found{};
-	auto target_point = p_clean_mode->iterate_point_+1;
-    p_clean_mode->saveBlocks();
-   	p_clean_mode->mapMark();
-   	resetTriggeredValue();
-	is_found = boost::dynamic_pointer_cast<NavCleanPathAlgorithm>( p_clean_mode->clean_path_algorithm_)->generatePath(p_clean_mode->clean_map_, *target_point, target_point->dir, path);
-	ROS_ERROR("%s %d: is_found:(d), remain:", __FUNCTION__, __LINE__, is_found);
+	//comment temporary
+//	p_clean_mode->saveBlocks();
+	p_clean_mode->mapMark();
+//	resetTriggeredValue();
+	auto is_found = boost::dynamic_pointer_cast<NavCleanPathAlgorithm>(
+			p_clean_mode->clean_path_algorithm_)->generatePath(p_clean_mode->clean_map_, remain_path_.front(),
+															   remain_path_.front().dir, path);
+	ROS_INFO("%s %d: is_found:(d), remain:", __FUNCTION__, __LINE__, is_found);
+	p_clean_mode->clean_path_algorithm_->displayPointPath(remain_path_);
 	p_clean_mode->clean_path_algorithm_->displayPointPath(path);
 	if (is_found) {
 		ROS_INFO("5555555555555555555555555555555555555555");

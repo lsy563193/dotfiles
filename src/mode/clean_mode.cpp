@@ -203,15 +203,15 @@ ACleanMode::~ACleanMode()
 
 void ACleanMode::saveBlock(int block, int dir, std::function<Cells()> get_list)
 {
-	ROS_INFO("curr(%d,%d),block(%d):", getPosition().toCell().x, getPosition().toCell().y, block);
 	std::string debug_str;
+	debug_str.clear();
 	for(auto& d_cell : get_list())
 	{
 		Cell_t cell;
 //		if(dir == MAP_ANY)
-			cell = getPosition().getCenterRelative(d_cell.x * CELL_SIZE, d_cell.y * CELL_SIZE).toCell();
+		cell = getPosition().getCenterRelative(d_cell.x * CELL_SIZE, d_cell.y * CELL_SIZE).toCell();
 		debug_str += "{" + std::to_string(d_cell.x) + "," + std::to_string(d_cell.y) + "}->{" +
-				std::to_string(d_cell.x) + "," + std::to_string(d_cell.y) + "}\n";
+				std::to_string(cell.x) + "," + std::to_string(cell.y) + "}";
 //		else {
 //			auto x = d_cell * cell_direction_[dir].x;
 //			auto y = d_cell * cell_direction_[(dir+2)%4].y;
@@ -219,8 +219,10 @@ void ACleanMode::saveBlock(int block, int dir, std::function<Cells()> get_list)
 //		}
 		c_blocks.insert({block, cell});
 	}
-	if (sizeof(debug_str) != 0)
-		ROS_INFO("%s", debug_str.c_str());
+
+	if (!debug_str.empty())
+		ROS_INFO("curr(%d,%d),block(%d): %s.", getPosition().toCell().x, getPosition().toCell().y,
+				 block, debug_str.c_str());
 }
 
 void ACleanMode::saveBlocks() {
@@ -668,7 +670,8 @@ uint8_t ACleanMode::setFollowWall(GridMap& map, bool is_left,const Points& passe
 				block_count++;
 			}
 		}
-		ROS_INFO("%s,%d: Current(%d, %d), \033[32m mapMark CLEAN_MAP %s\033[0m",__FUNCTION__, __LINE__, getPosition().toCell().x, getPosition().toCell().y, msg.c_str());
+//		ROS_INFO("%s,%d: Current(%d, %d, %lf), \033[32m mapMark CLEAN_MAP %s\033[0m",
+//						 __FUNCTION__, __LINE__, getPosition().toCell().x, getPosition().toCell().y,getPosition().th, msg.c_str());
 	}
 }
 
@@ -1043,8 +1046,11 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_mt) {
 			}
 		}
 	}
-
-	if (distance > 10 && getNextMode() != cm_spot) {// closed
+/*This variable is in case of the pulsate of the location, the close checking will find the
+ * same pose(angle) before a specified dis before(SEARCH_BEFORE_DIS) the current pose
+ * */
+	const int SEARCH_BEFORE_DIS{10};
+	if (distance > SEARCH_BEFORE_DIS && getNextMode() != cm_spot) {// closed
 		ROS_INFO("next_mode_i_(%d)",getNextMode());
 		ROS_INFO("mode_i_(%d)",mode_i_);
 		is_closed = true;
@@ -1054,11 +1060,12 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_mt) {
 		else
 		{
 			passed_path_.clear();
+			fw_tmp_map.reset(BOTH_MAP);
 			closed_count_++;
 			if(closed_count_<closed_count_limit_)
 				return false;
 		}
-		ROS_ERROR("distance > 5,limit %d, closed %d",closed_count_limit_,is_closed);
+		ROS_ERROR("distance > %d,limit %d, closed %d",SEARCH_BEFORE_DIS,closed_count_limit_,is_closed);
 		return true;
 
 	}
@@ -1083,6 +1090,11 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 	}
 	else//rounding
 	{
+		Points ins_path{};//instantaneous path
+		auto curr = getPosition();
+		ins_path.push_back(curr);
+		setFollowWall(fw_tmp_map, action_i_ == ac_follow_wall_left,ins_path);
+//		fw_tmp_map.print(getPosition().toCell(), CLEAN_MAP,*points_to_cells(make_unique<Points>(passed_path_)));
 		if(!isStateFollowWall() && !isStateTest())
 		{
 			auto p_mt = dynamic_cast<MoveTypeFollowWall *>(p_move_type);
@@ -2053,6 +2065,8 @@ bool ACleanMode::isSwitchByEventInStateFollowWall()
 bool ACleanMode::updateActionInStateFollowWall()
 {
 	passed_path_.clear();
+	fw_tmp_map.reset(BOTH_MAP);
+
 	auto ret = true;
 	if(is_closed) {
 		is_closed = false;
@@ -2073,7 +2087,8 @@ bool ACleanMode::updateActionInStateFollowWall()
 		}
 
 		if (closed_count_ >= closed_count_limit_ || isolate_count_ >= isolate_count_limit_) {
-			ROS_INFO("cc(%d),ccl(%d),ic(%d),icl(%d)",closed_count_, closed_count_limit_, isolate_count_, isolate_count_limit_);
+			ROS_INFO("closed_count_(%d),closed_count_limit_(%d),isolate_count_(%d),isolate_count_limit_(%d)",
+							 closed_count_, closed_count_limit_, isolate_count_, isolate_count_limit_);
 			ROS_ERROR("p_mt->closed_count_ >= closed_count_limit_");
 			trapped_closed_or_isolate = true;
 			action_i_ = ac_null;
@@ -2165,11 +2180,12 @@ PathHead ACleanMode::getTempTarget()
 
 bool ACleanMode::isIsolate() {
 	BoundingBox2 bound{};
-	GridMap fw_tmp_map;
+//	GridMap fw_tmp_map;
 //	std::copy(passed_path_.begin(), passed_path_.end(),std::ostream_iterator<Point_t>(std::cout, " "));
-	setFollowWall(fw_tmp_map, action_i_ == ac_follow_wall_left,passed_path_);
+//	setFollowWall(fw_tmp_map, action_i_ == ac_follow_wall_left,passed_path_);
 
 	fw_tmp_map.getMapRange(CLEAN_MAP, &bound.min.x, &bound.max.x, &bound.min.y, &bound.max.y);
+	fw_tmp_map.markRobot(CLEAN_MAP);//Note : For clearing the obstacles around the robot current pose, please not delete it!!!
 
 	auto target = bound.max + Cell_t{1, 1};
 	bound.SetMinimum(bound.min - Cell_t{8, 8});

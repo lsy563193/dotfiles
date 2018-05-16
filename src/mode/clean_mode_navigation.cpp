@@ -142,8 +142,15 @@ bool CleanModeNav::mapMark()
 	for(auto &&cost_block : c_blocks){
 		if(cost_block.first == BLOCKED_SLIP)
 			clean_map_.setCell(CLEAN_MAP,cost_block.second.x,cost_block.second.y,BLOCKED_SLIP);
+		if(cost_block.first == BLOCKED_TILT)
+			clean_map_.setCell(CLEAN_MAP,cost_block.second.x,cost_block.second.y, BLOCKED_TILT);
 	}
 
+	// Special marking for rcon blocks.
+	for(auto &&cost_block : c_blocks){
+		if(cost_block.first == BLOCKED_TMP_RCON)
+			clean_map_.setCell(CLEAN_MAP,cost_block.second.x,cost_block.second.y,BLOCKED_TMP_RCON);
+	}
 	//tx pass path via serial wifi
 
 	s_wifi.cacheMapData(passed_path_);
@@ -735,7 +742,7 @@ bool CleanModeNav::updateActionInStateClean(){
 		extern int g_follow_last_follow_wall_dir;
 		if(g_follow_last_follow_wall_dir != 0)
 		{
-			ROS_ERROR("g_follow_last_follow_wall_dir, old_dir_(%d)",old_dir_);
+			ROS_INFO("%s %d: g_follow_last_follow_wall_dir, old_dir_(%d)", __FUNCTION__, __LINE__, old_dir_);
 			old_dir_ = plan_path_.back().dir;
 		}
 		else

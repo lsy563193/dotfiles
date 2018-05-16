@@ -12,7 +12,7 @@
 #include "robot.hpp"
 #include "infrared_display.hpp"
 
-#define CURRENT_VERSION 11
+#define CURRENT_VERSION 12
 
 void x900_functional_test(std::string serial_port, int baud_rate, std::string lidar_bumper_dev)
 {

@@ -525,7 +525,7 @@ public:
 	int closed_count_{};
 	int closed_count_limit_{2};
 	int isolate_count_{};
-	int isolate_count_limit_{3};
+	int isolate_count_limit_{10};
 	bool is_trapped_{false};
 
 	boost::shared_ptr<State> state_init{new StateInit()};
@@ -534,6 +534,7 @@ public:
 	boost::shared_ptr<State> state_exploration{new StateExploration()};
 
 	Points passed_path_{};
+	GridMap fw_tmp_map{};
 	typedef std::set<PairCell_t> Blocks_t ;
 	Blocks_t c_blocks;
 	Points plan_path_{};

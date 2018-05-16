@@ -118,7 +118,7 @@ robot::robot()
 	auto wifi_send_thread = new boost::thread(boost::bind(&S_Wifi::wifiSendRutine,&s_wifi));
 
 	obs.control(ON);
-	ROS_WARN("%s %d: Robot x900(version 0000 r11) is online :)", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Robot x900(version 0000 r12) is online :)", __FUNCTION__, __LINE__);
 }
 
 robot::~robot()

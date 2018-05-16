@@ -100,6 +100,7 @@ bool MovementCharge::isFinish()
 			battery_full_and_sleep_ = false;
 			battery_full_start_time_ = 0;
 			key_led.setMode(LED_BREATH, LED_ORANGE);
+			ROS_WARN("%s %d: Turn for charger successfully.", __FUNCTION__, __LINE__);
 		}
 		if (ros::Time::now().toSec() - start_turning_time_stamp_ > 3)
 		{
