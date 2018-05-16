@@ -12,7 +12,7 @@
 #define STAY_SEC_AFTER_BACK (double)0.33
 
 int g_follow_last_follow_wall_dir=0;
-MoveTypeFollowWall::MoveTypeFollowWall(Points remain_path, bool is_left)
+void MoveTypeFollowWall::init(bool is_left)
 {
 	IMovement::sp_mt_ = this;
 	ROS_WARN("%s %d: Entering move type %s follow wall.", __FUNCTION__, __LINE__,
@@ -30,13 +30,17 @@ MoveTypeFollowWall::MoveTypeFollowWall(Points remain_path, bool is_left)
 
 	resetTriggeredValue();
 }
-
-MoveTypeFollowWall::MoveTypeFollowWall(Points remain_path, bool is_left,BoundingBox<Point_t> bound, bool out)
+MoveTypeFollowWall::MoveTypeFollowWall(bool is_left)
 {
-	MoveTypeFollowWall(remain_path, is_left);
-    bound_ = bound;
-    out_of_range_first_ = out;
+	init(is_left);
 }
+
+MoveTypeFollowWall::MoveTypeFollowWall(bool is_left,bool out)
+{
+	init(is_left);
+	out_of_range_state = out;
+}
+
 MoveTypeFollowWall::~MoveTypeFollowWall()
 {
 	wheel.stop();
@@ -474,14 +478,14 @@ bool MoveTypeFollowWall::isNewLineReach(GridMap &map)
 		return true;
 	auto s_curr_p = getPosition();
 	auto start_point_ = *p_mode->iterate_point_;
-	auto target_point_ = *std::next(p_mode->iterate_point_);
+//	auto target_point_ = *std::next(p_mode->iterate_point_);
+	auto target_point_ = p_mode->plan_path_.back();
 	auto is_pos_dir = target_point_.y - start_point_.y > 0;
 	// The limit is CELL_COUNT_MUL / 8 * 3 further than target line center.
 //	auto target_limit = target_point_.y + CELL_COUNT_MUL / 8 * 3 * is_pos_dir;
 	auto target_limit = target_point_.y;
-//	ROS_WARN("~~~~~~~~~~~~~~~~~%s %d: start_p.y(%d), target.y(%d),curr_y(%d)",
-//					 __FUNCTION__, __LINE__, countToCell(s_curr_p.y), countToCell(target_point_.y),
-//					 countToCell(s_curr_p.y));
+	ROS_WARN("~~~~~~~~~~~~~~~~~%s %d: start_p.y(%d), target.y(%d),curr_y(%d),dir(%d)",
+					 __FUNCTION__, __LINE__, start_point_.toCell().y, target_point_.toCell().y, s_curr_p.toCell().y,is_pos_dir);
 	if (is_pos_dir ^ s_curr_p.y < target_limit) // Robot has reached the target line limit.
 	{
 		g_follow_last_follow_wall_dir = (is_left_ ^ (target_point_.y<start_point_.y)) ? 1 : 2;
@@ -517,8 +521,40 @@ bool MoveTypeFollowWall::handleMoveBackEventRealTime(ACleanMode *p_clean_mode)
 	return false;
 }
 
-bool MoveTypeFollowWall::outOfRange(const Point_t& point) {
-    ROS_ERROR_COND(!bound_.Contains(point), "curr(%d,%d) bound_((%d,%d),(%d,%d))", point.toCell().x, point.toCell().y, bound_.min.toCell().x, bound_.min.toCell().y, bound_.max.toCell().x, bound_.max.toCell().y);
-    return !bound_.Contains(point);
+bool out_of_edge(const Point_t &curr, const Points::iterator &it) {
+	const auto next_it = it+1;
+	ROS_ERROR("p_it_tmp(%d,%d)", it->toCell().x, it->toCell().y);
+	if (it->dir == MAP_POS_X)
+		return curr.x > next_it->x;
+	else if (it->dir == MAP_NEG_X)
+		return curr.x < next_it->x;
+	else if (it->dir == MAP_POS_Y)
+		return curr.y > next_it->y;
+	else if (it->dir == MAP_NEG_Y)
+		return curr.y < next_it->y;
+	return false;
+}
+
+bool MoveTypeFollowWall::outOfRange(const Point_t &curr, Points::iterator &p_it) {
+	auto p_it_tmp = p_it;
+	for (; p_it_tmp != p_it + 3; ++p_it_tmp) {
+		if (out_of_edge(curr, p_it_tmp)) {
+			p_it = p_it_tmp+1;
+			return true;
+		}
+	}
+
+	if (outOfRangeFirst()) {
+		if (!out_of_edge(curr, p_it_tmp))
+			outOfRangeFirst(false);
+	} else
+	{
+        if(out_of_edge(curr, p_it_tmp))
+		{
+			p_it = p_it_tmp+1;
+			return true;
+		}
+	}
+	return false;
 }
 

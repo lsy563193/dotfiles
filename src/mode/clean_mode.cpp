@@ -1089,18 +1089,14 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 			if(p_mt->movement_i_ == p_mt->mm_forward ||p_mt->movement_i_ == p_mt->mm_straight)
 			{
 				if(mode_i_ != cm_spot)
+				{
 					return p_mt->isNewLineReach(clean_map_) || p_mt->isOverOriginLine(clean_map_);
+				}
 				else
 				{
-					if(p_mt->outOfRangeFirst())
-					{
-						if(!p_mt->outOfRange(getPosition()))
-						{
-							p_mt->outOfRangeFirst(false);
-						}
-					}
-					else
-						return p_mt->outOfRange(getPosition());
+					if(p_mt->outOfRange(getPosition(), iterate_point_))
+                    	return true;
+
 				}
 			}
 		}
@@ -1998,10 +1994,12 @@ bool ACleanMode::isSwitchByEventInStateExploration() {
 }
 
 bool ACleanMode::updateActionInStateExploration() {
-	PP_INFO();
-	old_dir_ = iterate_point_->dir;
-	ROS_WARN("old_dir_(%d)", old_dir_);
-	plan_path_.clear();
+//	PP_INFO();
+    if(!plan_path_.empty())
+	{
+		old_dir_ = iterate_point_->dir;
+		ROS_WARN("old_dir_(%d)", old_dir_);
+	}
 	sp_action_.reset();//to mark in constructor
 	if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
 		action_i_ = ac_linear;
@@ -2220,10 +2218,10 @@ void ACleanMode::genNextAction() {
                     BoundingBox<Point_t> bound;
 					bound.Add(*(plan_path_.begin()+2));
 					bound.Add(*(plan_path_.begin()+4));
-					sp_action_.reset(new MoveTypeFollowWall(plan_path_,action_i_ == ac_follow_wall_left, bound, !bound.Contains(getPosition())));
+					sp_action_.reset(new MoveTypeFollowWall(action_i_ == ac_follow_wall_left, !bound.Contains(getPosition())));
 				}
 				else
-					sp_action_.reset(new MoveTypeFollowWall(plan_path_,action_i_ == ac_follow_wall_left));
+					sp_action_.reset(new MoveTypeFollowWall(action_i_ == ac_follow_wall_left));
 				break;
 		}
 	}

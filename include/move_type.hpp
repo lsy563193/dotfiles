@@ -103,23 +103,25 @@ public:
 	MoveTypeFollowWall() = delete;
 	~MoveTypeFollowWall() override;
 
-	MoveTypeFollowWall(Points remain_path, bool is_left);
-	MoveTypeFollowWall(Points remain_path, bool is_left,BoundingBox<Point_t> bound, bool);
+	MoveTypeFollowWall(bool is_left);
+	MoveTypeFollowWall(bool is_left, bool);
 
 	bool isFinish() override;
 
 	bool isNewLineReach(GridMap &map);
 	bool isOverOriginLine(GridMap &map);
-	bool outOfRange(const Point_t& point);
+	bool outOfRange(const Point_t &curr, Points::iterator &p_it);
 	void outOfRangeFirst(bool val){
-		out_of_range_first_ = val;
+		out_of_range_state = val;
 	};
 
 	bool outOfRangeFirst(){
-		return out_of_range_first_;
+		return out_of_range_state;
 	};
 
 private:
+    void init(bool is_left);
+//    ~MoveTypeFollowWall() override;
 	bool handleMoveBackEventRealTime(ACleanMode* p_clean_mode);
 	bool is_left_{};
 	double move_forward_time{};
@@ -142,8 +144,8 @@ private:
 		double radian_min;
 		double radian_max;
 	};
-    BoundingBox<Point_t> bound_;
-	bool out_of_range_first_{};
+//    BoundingBox<Point_t> bound_;
+	bool out_of_range_state{};
 };
 
 class MoveTypeGoToCharger:public IMoveType

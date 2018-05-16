@@ -35,7 +35,6 @@ MoveTypeLinear::~MoveTypeLinear()
 		auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
 		p_mode->saveBlocks();
 		p_mode->mapMark();
-		memset(IMoveType::rcon_cnt,0,sizeof(int8_t)*6);
 	}
 	ROS_WARN("%s %d: Exit move type linear.", __FUNCTION__, __LINE__);
 }
@@ -186,26 +185,26 @@ static bool is_opposite_dir(int l, int r)
 void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 {
     auto target_size = std::distance(p_clean_mode->iterate_point_, p_clean_mode->plan_path_.end());
-//	printf("target target_size(%d)(%d,%d)",target_size, p_clean_mode->iterate_point_->toCell().x, p_clean_mode->iterate_point_->toCell().y);
-//    p_clean_mode->clean_path_algorithm_->displayPointPath(p_clean_mode->plan_path_);
-	if (target_size>3)
+	if (target_size>2)
 	{
 		auto target_point_ = std::next(p_clean_mode->iterate_point_);
 		auto &target_xy = (isXAxis(p_clean_mode->iterate_point_->dir)) ? target_point_->x : target_point_->y;
 		auto curr_xy = (isXAxis(p_clean_mode->iterate_point_->dir)) ? getPosition().x : getPosition().y;
 
 		if (std::abs(target_xy - curr_xy) < LINEAR_NEAR_DISTANCE) {
-			if(p_clean_mode->action_i_ == p_clean_mode->ac_linear &&
-			 ((robot::instance()->getRobotWorkMode() == Mode::cm_navigation && p_clean_mode->isStateClean())
-			|| (robot::instance()->getRobotWorkMode() == Mode::cm_exploration && p_clean_mode->isStateExploration())
-			|| (robot::instance()->getRobotWorkMode() == Mode::cm_spot && p_clean_mode->isStateSpot())))
-				{
-					if(switchLinearTargetByRecalc(p_clean_mode))
-					{
-						radian_diff_count = 0;
-						return;
-					}
+			if (p_clean_mode->action_i_ == p_clean_mode->ac_linear &&
+				((robot::instance()->getRobotWorkMode() == Mode::cm_navigation && p_clean_mode->isStateClean())
+				 ||
+				 (robot::instance()->getRobotWorkMode() == Mode::cm_exploration && p_clean_mode->isStateExploration())
+				 )) {
+				if (switchLinearTargetByRecalc(p_clean_mode)) {
+					radian_diff_count = 0;
 				}
+			}
+			p_clean_mode->iterate_point_++;
+			p_clean_mode->old_dir_ = p_clean_mode->iterate_point_->dir;
+			ROS_ERROR("%s,%d,it(%d,%d)", __FUNCTION__, __LINE__, p_clean_mode->iterate_point_->toCell().x,
+					  p_clean_mode->iterate_point_->toCell().y);
 		}
 	} else if(target_size==2){
 		if(stop_generate_next_target)
@@ -232,7 +231,11 @@ void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 		{
 			stop_generate_next_target = true;
 			if(switchLinearTargetByRecalc(p_clean_mode))
+			{
+				p_clean_mode->iterate_point_++;
+				p_clean_mode->old_dir_ = p_clean_mode->iterate_point_->dir;
 				stop_generate_next_target = false;
+			}
 		}
 	}
 }
@@ -240,25 +243,13 @@ void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 bool MoveTypeLinear::switchLinearTargetByRecalc(ACleanMode *p_clean_mode) {
 	bool val{};
 	Points path;
-
-
     bool is_found{};
-	auto target_point = std::next(p_clean_mode->iterate_point_);
-	if(robot::instance()->getRobotWorkMode() == Mode::cm_spot)
-	{
-		p_clean_mode->plan_path_.pop_front();
-		p_clean_mode->iterate_point_ = p_clean_mode->plan_path_.begin();
-		p_clean_mode->old_dir_ = p_clean_mode->iterate_point_->dir;
-		ROS_ERROR("%s,%d,it(%d,%d)", __FUNCTION__, __LINE__, p_clean_mode->iterate_point_->toCell().x, p_clean_mode->iterate_point_->toCell().y);
-		return true;
-	}else{
-            p_clean_mode->saveBlocks();
-    p_clean_mode->mapMark();
-    resetTriggeredValue();
-		is_found = boost::dynamic_pointer_cast<NavCleanPathAlgorithm>( p_clean_mode->clean_path_algorithm_)->generatePath(p_clean_mode->clean_map_, *target_point, target_point->dir, path);
-	}
+	auto target_point = p_clean_mode->iterate_point_+1;
+    p_clean_mode->saveBlocks();
+   	p_clean_mode->mapMark();
+   	resetTriggeredValue();
+	is_found = boost::dynamic_pointer_cast<NavCleanPathAlgorithm>( p_clean_mode->clean_path_algorithm_)->generatePath(p_clean_mode->clean_map_, *target_point, target_point->dir, path);
 	ROS_ERROR("%s %d: is_found:(d), remain:", __FUNCTION__, __LINE__, is_found);
-//	p_clean_mode->clean_path_algorithm_->displayPointPath(remain_path_);
 	p_clean_mode->clean_path_algorithm_->displayPointPath(path);
 	if (is_found) {
 		ROS_INFO("5555555555555555555555555555555555555555");
@@ -266,16 +257,9 @@ bool MoveTypeLinear::switchLinearTargetByRecalc(ACleanMode *p_clean_mode) {
 			ROS_INFO("6666666666666666666666666666666666666666");
 			ROS_INFO("%s %d: Not opposite dir, path.front(%d).curr(,%d)", __FUNCTION__, __LINE__,
 					 path.front().dir, p_clean_mode->iterate_point_->dir);
-			path.pop_front();
-			p_clean_mode->old_dir_ = p_clean_mode->iterate_point_->dir;
-			p_clean_mode->iterate_point_ = path.begin();
-			std::copy(path.begin(), path.end(), std::back_inserter(p_clean_mode->plan_path_));
-//			remain_path_.clear();
-//			std::copy(path.begin(), path.end(), std::back_inserter(remain_path_));
-			ROS_INFO("%s,%d: switch ok !!!!!!!!!!!!curr(%d,%d), next target_point(%d,%d,%d), dir(%d)",
-					 __FUNCTION__, __LINE__, getPosition().toCell().x, getPosition().toCell().y,
-					 target_point->toCell().x,target_point->toCell().y,target_point->dir,
-					 p_clean_mode->iterate_point_->dir);
+            p_clean_mode->plan_path_.erase(p_clean_mode->iterate_point_+1,p_clean_mode->plan_path_.end());
+			std::move(path.begin(),path.end(),std::back_inserter(p_clean_mode->plan_path_));
+            p_clean_mode->clean_path_algorithm_->displayPointPath(p_clean_mode->plan_path_);
 			p_clean_mode->pubCleanMapMarkers(p_clean_mode->clean_map_,
 											 p_clean_mode->pointsGenerateCells(p_clean_mode->plan_path_));
 
