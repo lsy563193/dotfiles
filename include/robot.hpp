@@ -231,6 +231,8 @@ public:
 
 	bool getCleanMap(GridMap& map);
 
+	bool duringNavigationCleaning();
+
 	void wifiSetWaterTank();
 
 	void wifiSetVacuum();
