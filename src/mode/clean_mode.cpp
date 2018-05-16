@@ -127,7 +127,13 @@ ACleanMode::~ACleanMode()
 				else /*if (mode_i_ != cm_navigation)*/
 					speaker.play(VOICE_CLEANING_FINISHED, false);
 				ROS_WARN("%s %d: Finish cleaning for key_clean_pressed or key_long_pressed.", __FUNCTION__, __LINE__);
-			} else if (mode_i_ == cm_wall_follow && ev.remote_follow_wall)
+			}
+			else if (mode_i_ == cm_exploration && s_wifi.receiveIdle())
+			{
+				speaker.play(VOICE_CLEANING_STOP, false);
+				ROS_WARN("%s %d: Finish cleaning for wifi receive Idle.", __FUNCTION__, __LINE__);
+			}
+			else if (mode_i_ == cm_wall_follow && ev.remote_follow_wall)
 			{
 				speaker.play(VOICE_CLEANING_FINISHED, false);
 				ROS_WARN("%s %d: Finish cleaning for remote follow wall.", __FUNCTION__, __LINE__);
