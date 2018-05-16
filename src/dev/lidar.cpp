@@ -1848,10 +1848,7 @@ bool Lidar::isNeedToCheckSlip(const sensor_msgs::LaserScan& scan) {
 	auto right_wheel_speed = wheel.getRightWheelActualSpeed();
 	bool is_low_speed = robot::instance()->getRobotActualSpeed() < 0.08 || robot::instance()->getRobotActualSpeed() > 0.173
 						|| fabs(right_wheel_speed - left_wheel_speed) > 0.1;
-	if (checkLongHallway(scan)) {
-		last_slip_scan_frame_.clear();
-		return false;
-	}
+
 	if (!slip_enable_ || !lidar.isScanOriginalReady()) {
 		last_slip_scan_frame_.clear();
 		return false;
@@ -1868,7 +1865,10 @@ bool Lidar::isNeedToCheckSlip(const sensor_msgs::LaserScan& scan) {
 		last_slip_scan_frame_.push_back(scan);
 		return false;
 	}
-
+	if (checkLongHallway(scan)) {
+		last_slip_scan_frame_.clear();
+		return false;
+	}
 	return true;
 }
 
