@@ -1670,11 +1670,12 @@ void S_Wifi::wifiSendRutine()
 			if(!is_wifi_connected_)
 				continue;
 
-			if(upload_map_count++ >= 2)
+			if (robot::instance()->duringNavigationCleaning() && upload_map_count++ >= 2)
 			{
 				this->uploadMap(PASS_PATH);
-				upload_map_count=0;
+				upload_map_count = 0;
 			}
+
 			if(is_Status_Request_)
 			{
 				if(upload_state_count++ >= 20)
