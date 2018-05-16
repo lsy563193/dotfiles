@@ -68,8 +68,6 @@ bool MoveTypeFollowWall::isFinish()
 	} else {
 		is_trapped_in_small_area_ = false;
 	}
-	if(is_trapped_in_small_area_)
-		beeper.debugBeep(INVALID);
 
 	if (sp_movement_->isFinish()) {
 		if(movement_i_ == mm_dynamic){
