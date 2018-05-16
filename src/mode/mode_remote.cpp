@@ -60,6 +60,7 @@ ModeRemote::~ModeRemote()
 	// Wait for battery recovery from operating motors.
 	usleep(200000);
 	battery.forceUpdate();
+	gyro.setTiltCheckingEnable(false);
 	ROS_INFO("%s %d: Exit remote mode.", __FUNCTION__, __LINE__);
 }
 

@@ -612,15 +612,12 @@ void Serial::send_routine_cb()
 			continue;
 		}
 
-		period = ((float)(clock() - t))/CLOCKS_PER_SEC;//in second
-		sleep_time = 20000-(int32_t)(period*1000000);//in microsecond
-		if(sleep_time > 0)
-		{
-			usleep(sleep_time);
-		}
-		else{
-			ROS_WARN("%s,%d,SLEEP_TIME %u,period %f",__FUNCTION__,__LINE__,sleep_time,period);
-		}
+		period = static_cast<float>(clock() - t) / CLOCKS_PER_SEC;
+		auto handle_time = static_cast<uint32_t>(period * 1000000); // In ms.
+		if (handle_time < 20000)
+			usleep(20000 - handle_time);
+		else
+			ROS_WARN("serial handle time %d", handle_time);
 		t = clock();
 		/*-------------------Process for beeper.play and key_led -----------------------*/
 		key_led.processLed();

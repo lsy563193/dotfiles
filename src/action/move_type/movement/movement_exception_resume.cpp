@@ -326,7 +326,7 @@ bool MovementExceptionResume::isFinish()
 				}
 				case 2:
 				{
-					if ((ros::Time::now().toSec() - resume_main_bursh_start_time_) >= 1 && brush.getMainOc())
+					if ((ros::Time::now().toSec() - resume_main_bursh_start_time_) >= 1.5 && brush.getMainOc())
 					{
 						oc_main_brush_cnt_++;
 						main_brush_resume_state_ = 1;

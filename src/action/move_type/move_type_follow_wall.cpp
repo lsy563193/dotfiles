@@ -53,6 +53,22 @@ bool MoveTypeFollowWall::isFinish()
 	}
 
 	auto p_cm = dynamic_cast<ACleanMode*> (sp_mode_);
+
+	auto is_trapped = p_cm->is_trapped_;
+	int dijkstra_cleaned_count = 0;
+	if(is_trapped) {//check if trapped in a small area
+//		int count;
+		p_cm->clean_map_.count_if(getPosition().toCell(), [&](Cell_t c_it) {
+			return (p_cm->clean_map_.getCell(CLEAN_MAP, c_it.x, c_it.y) == CLEANED);
+		},dijkstra_cleaned_count);
+		if (dijkstra_cleaned_count < TRAP_IN_SMALL_AREA_COUNT)
+			is_trapped_in_small_area_ = true;
+		else
+			is_trapped_in_small_area_ = false;
+	} else {
+		is_trapped_in_small_area_ = false;
+	}
+
 	if (sp_movement_->isFinish()) {
 		if(movement_i_ == mm_dynamic){
 			movement_i_ = mm_turn;
@@ -70,7 +86,7 @@ bool MoveTypeFollowWall::isFinish()
 		}
 		else if (movement_i_ == mm_straight)
 		{
-			move_forward_time +=  ros::Time::now().toSec() - sp_movement_->start_timer_;
+			move_forward_time_ +=  ros::Time::now().toSec() - sp_movement_->start_timer_;
 			if (!handleMoveBackEvent(p_cm))
 			{
 				resetTriggeredValue();// is it necessary?
@@ -80,11 +96,12 @@ bool MoveTypeFollowWall::isFinish()
 		}
 		else if (movement_i_ == mm_forward)
 		{
-			move_forward_time +=  ros::Time::now().toSec() - sp_movement_->start_timer_;
+			move_forward_time_ +=  ros::Time::now().toSec() - sp_movement_->start_timer_;
 			if (!handleMoveBackEvent(p_cm))
 			{
 				if(ev.rcon_status) {
-					p_cm->setHomePoint();
+					if (p_cm->go_home_path_algorithm_ != nullptr)
+						p_cm->go_home_path_algorithm_->setHomePoint(getPosition());
 					p_cm->saveBlocks();
 					movement_i_ = mm_rcon;
 					sp_movement_.reset(new MovementRcon(is_left_));
@@ -104,7 +121,7 @@ bool MoveTypeFollowWall::isFinish()
 				resetTriggeredValue();
 			}else{
 				if(ev.tilt_triggered)
-					is_stop_follow_wall_after_tilt = true;
+					is_stop_follow_wall_after_tilt_ = true;
 			}
 			state_turn = false;
 		}
@@ -130,10 +147,10 @@ bool MoveTypeFollowWall::isFinish()
 				auto turn_angle = getTurnRadian(false);
 				turn_target_radian_ = getPosition().addRadian(turn_angle).th;
 				resetTriggeredValue();
-				if(is_stop_follow_wall_after_tilt)
+				if(is_stop_follow_wall_after_tilt_)
 				{
 					ROS_INFO("%s,%d, mt_fw",__FUNCTION__, __LINE__);
-					is_stop_follow_wall_after_tilt = false;
+					is_stop_follow_wall_after_tilt_ = false;
 					return true;
 				}
 
@@ -161,29 +178,26 @@ int16_t MoveTypeFollowWall::bumperTurnAngle()
 	auto diff_side = (is_left_) ? BLOCK_RIGHT : BLOCK_LEFT;
 	auto same_side = (is_left_) ? BLOCK_LEFT : BLOCK_RIGHT;
 	std::set<Cell_t> c_cleans;
-	if(is_trapped) {
-		int count;
-		count = p_mode->clean_map_.count_if(getPosition().toCell(), [&](Cell_t c_it) {
-			return (p_mode->clean_map_.getCell(CLEAN_MAP, c_it.x, c_it.y) == CLEANED);
-		},dijkstra_cleaned_count);
-	}
 
 	if (status == BLOCK_ALL || status == BLOCK_LIDAR_BUMPER)
 	{
 		if(is_trapped)
-			turn_angle = dijkstra_cleaned_count < TRAP_IN_SMALL_AREA_COUNT ? -50 : -55;
+			turn_angle = is_trapped_in_small_area_ ? -50 : -55;
 		else
 			turn_angle = -60;
 	} else if (status == diff_side)
 	{
 		if(is_trapped)
-			turn_angle = dijkstra_cleaned_count < TRAP_IN_SMALL_AREA_COUNT ? -75 : -80;
+			turn_angle = is_trapped_in_small_area_ ? -75 : -80;
 		else
 			turn_angle = -85;
 	} else if (status == same_side)
 	{
 		if(is_trapped){
-			turn_angle = get_obs > (obs.getLeftTrigValue() + 250) || dijkstra_cleaned_count < TRAP_IN_SMALL_AREA_COUNT ? -10 : -20;
+			if (is_trapped_in_small_area_)
+				turn_angle = -10;
+			else
+				turn_angle = get_obs > (obs.getLeftTrigValue() + 250) ? -10 : -20;
 		}else{
 			turn_angle = get_obs > (obs.getLeftTrigValue() + 250) ? -18 : -28;
 		}
@@ -310,44 +324,44 @@ bool MoveTypeFollowWall::lidarTurnRadian(double &turn_radian)
 {
 	bool is_moving{false};
 	wheel.stop();
-	lidar_angle_param param;
+	lidar_angle_param_ param;
 	if (ev.bumper_triggered) {
 		if (is_left_ ^ (ev.bumper_triggered == BLOCK_LEFT)) {//hit the different side, turn angle limit
-			param.radian_min = degree_to_radian(45);
-			param.radian_max = degree_to_radian(180);
+			param.radian_min_ = degree_to_radian(45);
+			param.radian_max_ = degree_to_radian(180);
 		}
 		else {//hit the same side, turn angle limit
-			param.radian_min = degree_to_radian(18);
-			param.radian_max = degree_to_radian(100);
+			param.radian_min_ = degree_to_radian(18);
+			param.radian_max_ = degree_to_radian(100);
 		}
 
 		if (ev.bumper_triggered == BLOCK_ALL || ev.bumper_triggered == BLOCK_LIDAR_BUMPER) {
-			param.lidar_min = degree_to_radian(90);
-			param.lidar_max = degree_to_radian(270);
+			param.lidar_min_ = degree_to_radian(90);
+			param.lidar_max_ = degree_to_radian(270);
 		}
 		else if (ev.bumper_triggered == BLOCK_RIGHT) {
-			param.lidar_min = degree_to_radian(90);
-			param.lidar_max = degree_to_radian(180);
+			param.lidar_min_ = degree_to_radian(90);
+			param.lidar_max_ = degree_to_radian(180);
 		}
 		else if (ev.bumper_triggered == BLOCK_LEFT) {
-			param.lidar_min = degree_to_radian(180);
-			param.lidar_max = degree_to_radian(270);
+			param.lidar_min_ = degree_to_radian(180);
+			param.lidar_max_ = degree_to_radian(270);
 		}
 	}
 	else if (ev.lidar_triggered) {
-		param.lidar_min = degree_to_radian(90);
-		param.lidar_max = degree_to_radian(270);
-		param.radian_min = degree_to_radian(18);
-		param.radian_max = degree_to_radian(180);
+		param.lidar_min_ = degree_to_radian(90);
+		param.lidar_max_ = degree_to_radian(270);
+		param.radian_min_ = degree_to_radian(18);
+		param.radian_max_ = degree_to_radian(180);
 		is_moving = true;
 	}
 /*	while (ros::ok()) {
-		_lidarTurnRadian(is_left_, turn_radian, param.lidar_min, param.lidar_max, param.radian_min,
-														param.radian_max);
+		_lidarTurnRadian(is_left_, turn_radian, param.lidar_min_, param.lidar_max_, param.radian_min_,
+														param.radian_max_);
 		sleep(2);
 	}*/
-	return _lidarTurnRadian(is_left_, turn_radian, param.lidar_min, param.lidar_max, param.radian_min,
-													param.radian_max, is_moving);
+	return _lidarTurnRadian(is_left_, turn_radian, param.lidar_min_, param.lidar_max_, param.radian_min_,
+													param.radian_max_, is_moving);
 }
 
 double MoveTypeFollowWall::getTurnRadianByEvent()
@@ -431,12 +445,12 @@ bool MoveTypeFollowWall::isOverOriginLine(GridMap &map)
 	auto target_point_ = remain_path_.back();
 	auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
 	auto start_point_ = p_mode->iterate_point_;
-//	ROS_WARN("movement_i_ == mm_forward(%d), ros::Time::now().toSec() - sp_movement_->start_timer_ + move_forward_time(%lf)",
-//					 movement_i_ == mm_forward || movement_i_ == mm_straight, ros::Time::now().toSec() - sp_movement_->start_timer_ + move_forward_time);
+//	ROS_WARN("movement_i_ == mm_forward(%d), ros::Time::now().toSec() - sp_movement_->start_timer_ + move_forward_time_(%lf)",
+//					 movement_i_ == mm_forward || movement_i_ == mm_straight, ros::Time::now().toSec() - sp_movement_->start_timer_ + move_forward_time_);
 	double const WF_TIME_LIMIT = 1.5;//force wall follow time
 	if (((target_point_.y > start_point_.y && start_point_.y - curr.y > CELL_SIZE / 6)
 		|| ((curr.y - start_point_.y > CELL_SIZE / 6) && target_point_.y < start_point_.y)) &&
-			 ( (ros::Time::now().toSec() - sp_movement_->start_timer_ + move_forward_time) > WF_TIME_LIMIT))
+			 ( (ros::Time::now().toSec() - sp_movement_->start_timer_ + move_forward_time_) > WF_TIME_LIMIT))
 	{
 //		ROS_WARN("origin(%d,%d) curr_p(%d, %d), target_point__(%d, %d)",start_point_.x, start_point_.y,  curr.x, curr.y, target_point_.x, target_point_.y);
 //		auto target_angle = (target_point_.y > start_point_.y) ? -900 : 900;

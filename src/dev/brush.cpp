@@ -224,7 +224,7 @@ bool Brush::checkBrushTwined(uint8_t brush_indicator)
 			else
 				brush.setRightBrushPWM(100);
 
-			if (ros::Time::now().toSec() - resume_start_time_[brush_indicator] > 1 && side_brush_oc_status_[brush_indicator])
+			if (ros::Time::now().toSec() - resume_start_time_[brush_indicator] > 1.5 && side_brush_oc_status_[brush_indicator])
 			{
 				if (++resume_count_[brush_indicator] > 3)
 				{

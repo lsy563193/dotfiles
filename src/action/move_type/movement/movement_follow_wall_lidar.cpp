@@ -30,7 +30,7 @@ MovementFollowWallLidar::MovementFollowWallLidar(bool is_left)
 }
 
 typedef struct{
-	float r;
+	double r;
 	Points getPoints(int precision, bool is_inclue_zero);
 }Circle;
 
@@ -58,7 +58,14 @@ Points MovementFollowWallLidar::calcVirtualTmpTarget()
 //	while (ros::ok()) {
 //		sleep(2);
 //	}
-	Circle circle{CELL_SIZE_3/2};
+
+	double c_r{};
+	auto is_trapped_in_small_area = dynamic_cast<MoveTypeFollowWall *>(sp_mt_)->getIsTrappedInSmallArea();
+	if (is_trapped_in_small_area)
+			c_r = CELL_SIZE_3/4;
+	else
+		c_r = CELL_SIZE_3/2;
+	Circle circle{c_r};
 	Points tmp_targets{};
 	bool is_corner_beginning;
 	const auto time_lim{1};
@@ -97,6 +104,8 @@ Points MovementFollowWallLidar::calcVirtualTmpTarget()
 //	auto offset_x = is_corner_beginning ? CELL_SIZE * 0.7 : 0;//CELL_SIZE * 0.7
 
 	auto offset_x = wall_length;
+	if (is_trapped_in_small_area)
+			offset_x = 0;
 	if (offset_x > 0) {
 		is_out_corner = true;
 //		beeper.beepForCommand(VALID);
@@ -121,11 +130,11 @@ Point_t MovementFollowWallLidar::calcTmpTarget() {
 
 //	ROS_WARN("curr_point(%d,%d)", getPosition().x, getPosition().y);
 	auto path_head = dynamic_cast<ACleanMode*>(sp_mt_->sp_mode_)->getTempTarget();
-
+	auto is_trapped_in_small_area = dynamic_cast<MoveTypeFollowWall *>(sp_mt_)->getIsTrappedInSmallArea();
 	if (path_head.seq != seq_) {
 		seq_ = path_head.seq;
 		lidar_targets_ = path_head.tmp_plan_path_;
-		if(!lidar_targets_.empty()) {
+		if(!lidar_targets_.empty() && !is_trapped_in_small_area) {
 //			INFO_PURPLE("p_tmp_targets_ = &lidar_targets_");
 			ROS_INFO("virtual_targets_.size(%d)",virtual_targets_.size());
 			if(virtual_targets_.size() < 21) {
@@ -144,7 +153,7 @@ Point_t MovementFollowWallLidar::calcTmpTarget() {
 	auto radian_diff = getPosition(ODOM_POSITION_ODOM_ANGLE).courseToDest(p_tmp_targets_->front());
 	auto cond_radian_diff = is_left_ ? (radian_diff > degree_to_radian(50)) : (radian_diff < degree_to_radian(-50));
 //	ROS_INFO("angle_diff = %lf", radian_to_degree(radian_diff));
-	if(!p_tmp_targets_->empty()) {
+	if(!p_tmp_targets_->empty() && !is_trapped_in_small_area) {
 		if ((p_tmp_targets_->front().isNearTo(getPosition(ODOM_POSITION_ODOM_ANGLE), CELL_SIZE * 0.3))//0.75
 			|| cond_radian_diff) {
 			p_tmp_targets_->pop_front();

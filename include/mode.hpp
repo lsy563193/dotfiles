@@ -373,7 +373,6 @@ public:
 	bool isGoHomePointForLowBattery(){
 		return go_home_for_low_battery_;
 	}
-	void setHomePoint();
 	bool estimateChargerPos(uint32_t rcon_value);
 	void setChargerArea(const Point_t charge_pos);
 	bool checkChargerPos();
@@ -525,7 +524,7 @@ public:
 	int closed_count_{};
 	int closed_count_limit_{2};
 	int isolate_count_{};
-	int isolate_count_limit_{3};
+	int isolate_count_limit_{10};
 	bool is_trapped_{false};
 
 	boost::shared_ptr<State> state_init{new StateInit()};
@@ -534,13 +533,13 @@ public:
 	boost::shared_ptr<State> state_exploration{new StateExploration()};
 
 	Points passed_path_{};
+	GridMap fw_tmp_map{};
 	typedef std::set<PairCell_t> Blocks_t ;
 	Blocks_t c_blocks;
 	Points plan_path_{};
 	bool should_follow_wall{};
 
 	Dir_t old_dir_{};
-	Point_t start_point_{};
 	Point_t iterate_point_{};
 
 	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
@@ -562,7 +561,6 @@ protected:
 
 	bool low_battery_charge_{};
 	bool moved_during_pause_{false};
-	Points home_points_{};
 	bool should_go_to_charger_{false};
 	bool remote_go_home_point{false};
 	bool wifi_go_home_point{false};

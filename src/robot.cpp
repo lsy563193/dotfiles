@@ -8,6 +8,7 @@
 #include <odom.h>
 #include <event_manager.h>
 #include <x900_functional_test.hpp>
+#include <verify.h>
 #include "lidar.hpp"
 #include "robot.hpp"
 #include "slam.h"
@@ -48,7 +49,7 @@ bool core_thread_kill = false;
 
 robot::robot()
 {
-
+	verify_ok_ = true;
 	robotbase_thread_kill = false;
 	send_thread_kill = false;
 	recei_thread_kill = false;
@@ -77,31 +78,33 @@ robot::robot()
 	robot_nh_.param<double>("gyro_dynamic_run_time",gyro_dynamic_run_time_,0.5);
 	robot_nh_.param<double>("gyro_dynamic_interval",gyro_dynamic_interval_,25);
 
-#if VERIFY_CPU_ID
-	if (verify_cpu_id() < 0) {
-		verify_ok = false;
-	}
-#endif
-
-#if VERIFY_KEY
-	if (verify_ok == true && verify_key() == 0) {
-		verify_ok = false;
-	}
-#endif
-
 	robot_nh_.param<std::string>("serial_port", serial_port_, "/dev/ttyS2");
 	//robot_nh_.param<std::string>("wifi_port",wifi_port_,"dev/ttyS1");
 	robot_nh_.param<int>("baud_rate", baud_rate_, 115200);
-
-	robot_nh_.param<std::string>("lidar_bumper_file", lidar_bumper_dev_, "/dev/input/event1");
-
-	loadConsumableStatus();
 
 	while (!serial.isReady()) {
 		// Init for serial.
 		if (!serial.init(serial_port_, baud_rate_))
 			ROS_ERROR("%s %d: Serial init failed!!", __FUNCTION__, __LINE__);
 	}
+
+#if VERIFY_CPU_ID
+	if (verify_cpu_id() < 0) {
+		verify_ok_ = false;
+	}
+#endif
+
+#if VERIFY_KEY
+	if (verify_ok_ == true && verify_key() == 0) {
+		verify_ok_ = false;
+	}
+#endif
+
+	if(!verify_ok_)
+		return ;
+	robot_nh_.param<std::string>("lidar_bumper_file", lidar_bumper_dev_, "/dev/input/event1");
+
+	loadConsumableStatus();
 
 	ROS_INFO("waiting robotbase awake ");
 	auto serial_receive_routine = new boost::thread(boost::bind(&Serial::receive_routine_cb, &serial));
@@ -115,7 +118,7 @@ robot::robot()
 	auto wifi_send_thread = new boost::thread(boost::bind(&S_Wifi::wifiSendRutine,&s_wifi));
 
 	obs.control(ON);
-	ROS_WARN("%s %d: Robot x900(version 0000 r11) is online :)", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Robot x900(version 0000 r12) is online :)", __FUNCTION__, __LINE__);
 }
 
 robot::~robot()
@@ -1045,6 +1048,18 @@ void robot::setRobotActualSpeed() {
 	time = ros::Time::now().toSec();
 }
 
+bool robot::duringNavigationCleaning()
+{
+	bool ret = false;
+	boost::mutex::scoped_lock lock(mode_mutex_);
+	if (getRobotWorkMode() == Mode::cm_navigation)
+	{
+		auto mode = boost::dynamic_pointer_cast<ACleanMode>(p_mode);
+		if (mode->isStateClean())
+			ret = true;
+	}
+	return ret;
+}
 
 //--------------------
 static float xCount{}, yCount{};

@@ -460,10 +460,13 @@ void SpotCleanPathAlgorithm::getTargets(uint8_t sp_type,float radius,Cells *targ
 	};
 
 	std::initializer_list<Cell_t>::iterator p_it = p_path.begin();
+	std::string debug_str;
 	for(int i=0;i <p_path.size();i++){
 		targets->push_back(*(p_it+i) + begincell);
-		ROS_INFO("%s,%d,path list (%d,%d)",__FUNCTION__,__LINE__,targets->back().GetX(),targets->back().GetY());
+		debug_str += "(" + std::to_string(targets->back().GetX()) + ", "
+				+ std::to_string(targets->back().GetY()) + "),";
 	}
+	ROS_INFO("%s %d: path list %s.", __FUNCTION__, __LINE__, debug_str.c_str());
 
 }
 
