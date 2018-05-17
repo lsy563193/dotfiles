@@ -373,7 +373,6 @@ public:
 	bool isGoHomePointForLowBattery(){
 		return go_home_for_low_battery_;
 	}
-	void setHomePoint();
 	bool estimateChargerPos(uint32_t rcon_value);
 	void setChargerArea(const Point_t charge_pos);
 	bool checkChargerPos();
@@ -541,7 +540,6 @@ public:
 	bool should_follow_wall{};
 
 	Dir_t old_dir_{};
-	Point_t start_point_{};
 	Points::iterator iterate_point_{};
 
 	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
@@ -563,7 +561,6 @@ protected:
 
 	bool low_battery_charge_{};
 	bool moved_during_pause_{false};
-	Points home_points_{};
 	bool should_go_to_charger_{false};
 	bool remote_go_home_point{false};
 	bool wifi_go_home_point{false};

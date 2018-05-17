@@ -1048,6 +1048,18 @@ void robot::setRobotActualSpeed() {
 	time = ros::Time::now().toSec();
 }
 
+bool robot::duringNavigationCleaning()
+{
+	bool ret = false;
+	boost::mutex::scoped_lock lock(mode_mutex_);
+	if (getRobotWorkMode() == Mode::cm_navigation)
+	{
+		auto mode = boost::dynamic_pointer_cast<ACleanMode>(p_mode);
+		if (mode->isStateClean())
+			ret = true;
+	}
+	return ret;
+}
 
 //--------------------
 static float xCount{}, yCount{};

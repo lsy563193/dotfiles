@@ -32,8 +32,7 @@ CleanModeNav::CleanModeNav()
 	}
 
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
-
-	go_home_path_algorithm_.reset();
+	go_home_path_algorithm_.reset(new GoHomePathAlgorithm());
 	mode_i_ = cm_navigation;
 
 	//clear real time map which store in cloud....
@@ -122,7 +121,11 @@ bool CleanModeNav::mapMark()
 		setLinearCleaned();
 		// Set home cell.
 		if (ev.rcon_status)
-			setHomePoint();
+		{
+			go_home_path_algorithm_->setHomePoint(getPosition());
+			if (!seen_charger_during_cleaning_)
+				seen_charger_during_cleaning_ = true;
+		}
 	}
 	for (auto &&cost_block : c_blocks) {
 		if(std::find_if(c_bound2.begin(), c_bound2.end(), [&](const Cell_t& c_it)
@@ -595,7 +598,11 @@ bool CleanModeNav::isSwitchByEventInStateInit() {
 	if (/*checkEnterPause() || */ACleanMode::isSwitchByEventInStateInit())
 	{
 		if (action_i_ == ac_back_from_charger)
-			setHomePoint();
+		{
+			go_home_path_algorithm_->setHomePoint(getPosition());
+			if (!seen_charger_during_cleaning_)
+				seen_charger_during_cleaning_ = true;
+		}
 		return true;
 	}
 	return false;
@@ -633,7 +640,9 @@ bool CleanModeNav::updateActionInStateInit() {
 
 		boost::dynamic_pointer_cast<StateInit>(state_init)->initForNavigation();
 		action_i_ = ac_open_lidar;
-		setHomePoint();
+		go_home_path_algorithm_->setHomePoint(getPosition());
+		if (!seen_charger_during_cleaning_)
+			seen_charger_during_cleaning_ = true;
 	} else if (action_i_ == ac_open_lidar)
 	{
 		if (!has_aligned_and_open_slam_)
@@ -696,7 +705,7 @@ void CleanModeNav::switchInStateInit() {
 	else {//if (action_i_ == ac_open_slam)
 		has_aligned_and_open_slam_ = true;
 
-		if (remote_go_home_point)
+		if (isRemoteGoHomePoint() || isWifiGoHomePoint())
 		{
 			if (sp_saved_states.empty())
 			{
@@ -714,7 +723,7 @@ void CleanModeNav::switchInStateInit() {
 			auto curr = getPosition();
 //			curr.dir = iterate_point_.dir;
 //			passed_path_.push_back(curr);
-			start_point_.th = curr.th;
+			go_home_path_algorithm_->updateStartPointRadian(curr.th);
 			sp_state = state_clean.get();
 		}
 	}
@@ -785,9 +794,7 @@ void CleanModeNav::switchInStateClean() {
 	}
 	else {
 		sp_state = state_go_home_point.get();
-		ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_points_.size());
-		go_home_path_algorithm_.reset();
-		go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_, start_point_));
+		go_home_path_algorithm_->initForGoHomePoint(clean_map_);
 	}
 	sp_state->init();
 	action_i_ = ac_null;
@@ -827,7 +834,7 @@ void CleanModeNav::switchInStateGoToCharger()
 			sp_state->init();
 			paused_odom_radian_ = odom.getRadian();
 			go_home_for_low_battery_ = false;
-			go_home_path_algorithm_.reset();
+			go_home_path_algorithm_.reset(new GoHomePathAlgorithm());
 			setFirstTimeGoHomePoint(true);
 		} else
 		{
@@ -946,13 +953,14 @@ bool CleanModeNav::checkResumePause()
 				sp_saved_states.pop_back();
 
 			sp_saved_states.push_back(state_go_home_point.get());
-			if (go_home_path_algorithm_ == nullptr)
-				go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_, start_point_));
+			if (ev.remote_home)
+				remote_go_home_point = true;
+			else
+				wifi_go_home_point = true;
 			ev.remote_home = false;
 			if (s_wifi.receiveHome())
 				s_wifi.resetReceivedWorkMode();
 			speaker.play(VOICE_GO_HOME_MODE);
-			remote_go_home_point = true;
 		}
 		sp_state = state_init.get();
 		sp_state->init();

@@ -10,7 +10,7 @@ CleanModeSpot::CleanModeSpot()
 	speaker.play(VOICE_CLEANING_SPOT,false);
 
 	clean_path_algorithm_.reset(new SpotCleanPathAlgorithm());
-	go_home_path_algorithm_.reset();
+	go_home_path_algorithm_.reset(new GoHomePathAlgorithm());
 	mode_i_ = cm_spot;
 	s_wifi.setWorkMode(cm_spot);
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
