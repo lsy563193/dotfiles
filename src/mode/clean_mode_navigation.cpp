@@ -739,28 +739,12 @@ bool CleanModeNav::isSwitchByEventInStateClean() {
 
 bool CleanModeNav::updateActionInStateClean(){
 	bool ret = false;
+	ROS_ERROR("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~hello");
 	sp_action_.reset();//to mark in destructor
 //	pubCleanMapMarkers(clean_map_, pointsGenerateCells(remain_path_));
-	old_dir_ = iterate_point_.dir;
-//    std::equal(history_.begin(),history_.end,[](const Cell_t his){
-//	});
-    BoundingBox<Point_t> bound;
-	bound.SetMinimum({iterate_point_.x - CELL_SIZE, iterate_point_.y - CELL_SIZE});
-	bound.SetMaximum({iterate_point_.x + CELL_SIZE, iterate_point_.y + CELL_SIZE});
-    //check is always in same range;
-//	ROS_ERROR("%s,%d: iterate_point in all in history_(%d)",__FUNCTION__, __LINE__,history_.size());
-//	std::copy(history_.begin(), history_.end(),std::ostream_iterator<Point_t>(std::cout,","));
-//	ROS_ERROR("%s,%d: iterate_point in all in history_(%d)",__FUNCTION__, __LINE__,history_.size());
-//    if(history_.size() == 3 && std::all_of(std::begin(history_), std::end(history_), [&](const Point_t & p_it){ return bound.Contains(p_it); })){
-//		ROS_ERROR("%s,%d: iterate_point in all in history_",__FUNCTION__, __LINE__);
-//		std::copy(std::begin(history_), std::end(history_),std::ostream_iterator<Point_t>(std::cout,","));
-//        beeper.beepForCommand(VALID);
-//        ev.robot_slip = true;
-//		history_.clear();
-//		is_stay_in_same_postion_long_time = true;
-//		return false;
-//	};
-//    history_.push_back(iterate_point_);
+    if(!plan_path_.empty())
+	    old_dir_ = iterate_point_->dir;
+
 	if(action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
 	{
 
@@ -776,14 +760,14 @@ bool CleanModeNav::updateActionInStateClean(){
 
 	if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
 		pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
-		iterate_point_ = plan_path_.front();
+		iterate_point_ = plan_path_.begin();
 //		plan_path_.pop_front();
 		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
 		auto npa = boost::dynamic_pointer_cast<NavCleanPathAlgorithm>(clean_path_algorithm_);
 
 		if ( old_dir_ != MAP_ANY && should_follow_wall && npa->should_follow_wall() )
 		{
-				auto toward_pos = isXAxis(old_dir_) ? npa->is_pox_y(): (iterate_point_.toCell().x - plan_path_.back().toCell().x) > 0;
+				auto toward_pos = isXAxis(old_dir_) ? npa->is_pox_y(): (iterate_point_->toCell().x - plan_path_.back().toCell().x) > 0;
 				bool is_left = isPos(old_dir_) ^ toward_pos;
 				action_i_ = is_left ? ac_follow_wall_left : ac_follow_wall_right;
 		}
@@ -1088,12 +1072,12 @@ bool CleanModeNav::updateActionInStateResumeLowBatteryCharge()
 //		clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
 //		mapMark();
 		sp_action_.reset();
-		old_dir_ = iterate_point_.dir;
+		old_dir_ = iterate_point_->dir;
 		ROS_ERROR("old_dir_(%d)", old_dir_);
 		clean_path_algorithm_->generateShortestPath(clean_map_, getPosition(), continue_point_, old_dir_, plan_path_);
 		if (!plan_path_.empty()) {
-			iterate_point_ = plan_path_.front();
-			ROS_ERROR("start_point_.dir(%d)", iterate_point_.dir);
+			iterate_point_ = plan_path_.begin();
+			ROS_ERROR("start_point_.dir(%d)", iterate_point_->dir);
 //			plan_path_.pop_front();
 			clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
 			action_i_ = ac_linear;

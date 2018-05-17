@@ -346,29 +346,16 @@ public:
 class SpotCleanPathAlgorithm: public APathAlgorithm
 {
 public:
-	enum{
-		CLOCKWISE =1,
-		ANTI_CLOCKWISE = 2,
-	};
 	SpotCleanPathAlgorithm();
-	SpotCleanPathAlgorithm(float radius,Cell_t cur_cell);
 
-	~SpotCleanPathAlgorithm();
-
-	bool generatePath(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &targets) override;
-	bool checkTrapped(GridMap &map, const Cell_t &curr_cell) override;
-
-	void getTargets(uint8_t type,float radius, Cells *targets,const Cell_t begincell);
-	void initVariables(float radius,Cell_t cur_cell);
+	bool generatePath(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &targets) override { };
+	bool generatePath(GridMap &map, const Point_t &curr, bool, Points &targets, const Points::iterator& );
 
 private:
 
-	bool spot_running_;
-	bool event_detect_;
-	Cells targets_cells_;
-	Points plan_path_last_;
-	Cell_t min_corner_;
-	Cell_t max_corner_;
+	bool spot_running_{};
+//	bool event_detect_{};
+//	Points plan_path_remain_{};
 };
 
 class GoHomePathAlgorithm: public APathAlgorithm

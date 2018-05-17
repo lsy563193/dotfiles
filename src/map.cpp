@@ -650,10 +650,11 @@ bool GridMap::find_if(const Cell_t &curr_cell, Cells &targets, std::function<boo
 		queue.erase(start);
 
 		for (auto index = 0; index < 4; index++) {
-			auto neighbor = next + cell_direction_[index];
 
 			if(is_target ? isOutOfTargetRange(next) : isOutOfMap(next))
 				continue;
+
+			auto neighbor = next + cell_direction_[index];
 
 			if (getCell(COST_MAP, neighbor.x, neighbor.y) == 0) {
                 if(is_count)
@@ -734,7 +735,10 @@ void GridMap::print(const Cell_t& curr_cell, uint8_t id, const Cells& targets)
 	CellState	cs;
 
 	getMapRange(id, &x_min, &x_max, &y_min, &y_max);
-//	x_min -= 1;x_max += 1; y_min -= 1; y_max +=1;
+    if(id == COST_MAP)
+	{
+		x_min -= 1;x_max += 1; y_min -= 1; y_max +=1;
+	}
 	outString << '\t';
 	for (y = y_min; y <= y_max; y++) {
 		if (abs(y) % 10 == 0) {
@@ -767,7 +771,7 @@ void GridMap::print(const Cell_t& curr_cell, uint8_t id, const Cells& targets)
 				outString << 'a';
 			else
 			{
-                if(id == CLEAN_MAP &&  (x == x_min || x==x_max) || (y == y_min || y == y_max) )
+                if(id == CLEAN_MAP &&  ((x == x_min || x==x_max) || (y == y_min || y == y_max)) )
 					outString << '*';
 				else
 					outString << cs;
@@ -815,11 +819,13 @@ void GridMap::printInRange(const Cell_t& curr_cell, uint8_t id, const Cells& tar
             auto val = getCell(CLEAN_MAP, x, y);
             if(curr_cell.x == x && curr_cell.y == y)
 				outString << 'x';
+			else if (std::find_if(targets.begin(), targets.end(), [&](const Cell_t& c_it ){return c_it == Cell_t{x,y};}) != targets.end())
+				outString << 'e';
 			else if (val == 0) {
 				outString << '0';
 			} else if (val == 1) {
 				outString << '1';
-			} else {
+			} else  {
 				outString << 'a';
 			}
 		}

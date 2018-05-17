@@ -65,7 +65,7 @@ public:
 	bool state_turn{};
 //	Point_t target_point_;
 	int dir_;
-	static Points remain_path_;
+//	static Points remain_path_;
 	bool stop_generate_next_target{};
 public:
 //	std::deque<double> odom_turn_target_radians_{};
@@ -86,7 +86,7 @@ public:
 	bool isFinish() override;
 //	IAction* setNextAction();
 
-	bool isPassTargetStop(Dir_t &dir);
+	bool isPassTargetStop(const Dir_t &dir);
 	bool isCellReach();
 	bool isPoseReach();
 
@@ -103,15 +103,19 @@ public:
 	MoveTypeFollowWall() = delete;
 	~MoveTypeFollowWall() override;
 
-	MoveTypeFollowWall(Points remain_path, bool is_left);
+	MoveTypeFollowWall(bool is_left);
+	MoveTypeFollowWall(bool is_left,const Points::iterator &p_it);
 
 	bool isFinish() override;
 
 	bool isNewLineReach(GridMap &map);
 	bool isOverOriginLine(GridMap &map);
 	bool getIsTrappedInSmallArea() const {return is_trapped_in_small_area_;};
+    bool outOfRange(const Point_t &curr, Points::iterator &p_it);
 
 private:
+    void init(bool is_left);
+//    ~MoveTypeFollowWall() override;
 	bool handleMoveBackEventRealTime(ACleanMode* p_clean_mode);
 	bool is_left_{};
 	double move_forward_time_{};
@@ -133,6 +137,8 @@ private:
 		double radian_max_;
 	};
 	bool is_trapped_in_small_area_{false};
+    std::vector<Points::iterator>  it_out_edges{};
+    std::vector<Points::iterator>  it_in_edges{};
 };
 
 class MoveTypeGoToCharger:public IMoveType

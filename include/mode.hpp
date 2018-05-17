@@ -540,7 +540,7 @@ public:
 	bool should_follow_wall{};
 
 	Dir_t old_dir_{};
-	Point_t iterate_point_{};
+	Points::iterator iterate_point_{};
 
 	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
 	boost::shared_ptr<GoHomePathAlgorithm> go_home_path_algorithm_{};
