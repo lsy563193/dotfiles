@@ -24,7 +24,7 @@ public:
 
 	GridMap();
 //	GridMap(uint16_t size);
-	~GridMap();
+	~GridMap() = default;
 	void mapInit();
 
 	void setCell(uint8_t id, int16_t x, int16_t y, CellState value);
@@ -231,9 +231,11 @@ public:
 	void print(const Cell_t& curr, uint8_t id, const Cells& targets);
     void printInRange(const Cell_t& curr_cell, uint8_t id, const Cells& targets,bool is_bound,BoundingBox2 bound);
 
+	// Loading the log map for debug.
+	void loadMap(int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max);
 private:
-	uint8_t clean_map[MAP_SIZE][(MAP_SIZE + 1) / 2];
-	uint8_t cost_map[MAP_SIZE][(MAP_SIZE + 1) / 2];
+	uint8_t clean_map[MAP_SIZE][MAP_SIZE];
+	uint8_t cost_map[MAP_SIZE][MAP_SIZE];
 
 	int16_t g_x_min, g_x_max, g_y_min, g_y_max;
 	int16_t xRangeMin, xRangeMax, yRangeMin, yRangeMax;
