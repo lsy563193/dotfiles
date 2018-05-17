@@ -14,7 +14,7 @@ CleanModeExploration::CleanModeExploration()
 	speaker.play(VOICE_GO_HOME_MODE, false);
 	mode_i_ = cm_exploration;
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
-	go_home_path_algorithm_.reset();
+	go_home_path_algorithm_.reset(new GoHomePathAlgorithm());
 	error_marker_.clear();
 	clean_map_.mapInit();
 	obs.control(OFF);
@@ -127,7 +127,7 @@ void CleanModeExploration::keyClean(bool state_now, bool state_last) {
 void CleanModeExploration::remoteClean(bool state_now, bool state_last) {
 	ROS_WARN("%s %d: remote clean.", __FUNCTION__, __LINE__);
 
-	beeper.beepForCommand(VALID);
+//	beeper.beepForCommand(VALID);
 	ev.key_clean_pressed = true;
 	remote.reset();
 }
@@ -156,7 +156,7 @@ void CleanModeExploration::remoteMax(bool state_now, bool state_last)
 	}
 	else if(isInitState() || isStateFollowWall() || isStateExploration() || isStateGoHomePoint() || isStateGoToCharger())
 	{
-		beeper.beepForCommand(VALID);
+//		beeper.beepForCommand(VALID);
 		vacuum.setForUserSetMaxMode(!vacuum.isUserSetMaxMode());
 		ACleanMode::setVacuum();
 	}
@@ -200,7 +200,11 @@ bool CleanModeExploration::updateActionInStateInit() {
 	else if (action_i_ == ac_open_lidar)
 		action_i_ = ac_align;
 	else if(action_i_ == ac_align)
+	{
+		auto curr = getPosition();
+		go_home_path_algorithm_->updateStartPointRadian(curr.th);
 		action_i_ = ac_open_slam;
+	}
 	else // action_open_slam
 		return false;
 

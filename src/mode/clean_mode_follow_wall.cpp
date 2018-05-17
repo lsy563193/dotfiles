@@ -19,7 +19,7 @@ CleanModeFollowWall::CleanModeFollowWall()
 //	diff_timer_ = WALL_FOLLOW_TIME;
 	speaker.play(VOICE_CLEANING_WALL_FOLLOW, false);
 	clean_path_algorithm_.reset(new WFCleanPathAlgorithm);
-	go_home_path_algorithm_.reset();
+	go_home_path_algorithm_.reset(new GoHomePathAlgorithm());
 	closed_count_limit_ = 1;
 	mode_i_ = cm_wall_follow;
 	s_wifi.setWorkMode(cm_wall_follow);
@@ -156,7 +156,7 @@ void CleanModeFollowWall::remoteMax(bool state_now, bool state_last)
 	}
 	else if(isStateInit() || isStateFollowWall() || isStateGoHomePoint() || isStateGoToCharger())
 	{
-		beeper.beepForCommand(VALID);
+//		beeper.beepForCommand(VALID);
 		vacuum.setForUserSetMaxMode(!vacuum.isUserSetMaxMode());
 		ACleanMode::setVacuum();
 	}
@@ -167,7 +167,7 @@ void CleanModeFollowWall::remoteClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: remote clean.", __FUNCTION__, __LINE__);
 
-	beeper.beepForCommand(VALID);
+//	beeper.beepForCommand(VALID);
 	wheel.stop();
 	ev.key_clean_pressed = true;
 	remote.reset();
@@ -177,7 +177,7 @@ void CleanModeFollowWall::remoteWallFollow(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: remote wall follow.", __FUNCTION__, __LINE__);
 
-	beeper.beepForCommand(VALID);
+//	beeper.beepForCommand(VALID);
 	wheel.stop();
 	ev.remote_follow_wall = true;
 	remote.reset();
@@ -226,9 +226,7 @@ void CleanModeFollowWall::switchInStateInit() {
 
 void CleanModeFollowWall::switchInStateFollowWall() {
 	sp_state = state_go_home_point.get();
-	ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_points_.size());
-	go_home_path_algorithm_.reset();
-	go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_, start_point_));
+	go_home_path_algorithm_->initForGoHomePoint(clean_map_);
 	sp_state->init();
 	action_i_ = ac_null;
 	genNextAction();

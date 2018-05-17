@@ -573,6 +573,7 @@ void Serial::receive_routine_cb()
 
 		if (r_crc == c_crc){
 			if (receiData[wh_len - 1] == t2 && receiData[wh_len - 2] == t1) {
+//				printf("reci_plan:%x\n", (receive_stream[REC_MIX_BYTE] >> 1) & 0x03);
 				ROS_ERROR_COND(pthread_mutex_lock(&recev_lock)!=0, "serial pthread receive lock fail");
 				for (j = 0; j < wht_len; j++) {
 					serial.receive_stream[j + 2] = receiData[j];
@@ -603,6 +604,7 @@ void Serial::send_routine_cb()
 	//tmp test
 	clock_t t = clock();
 	float period;
+	int32_t sleep_time;
 	while(ros::ok() && !send_thread_kill){
 		if (!send_thread_enable)
 		{
@@ -610,16 +612,12 @@ void Serial::send_routine_cb()
 			continue;
 		}
 
-		period = ((float)(clock() - t))/CLOCKS_PER_SEC;
-		uint32_t sleep_time = 20000-(uint32_t)(period*1000000);
-		if(sleep_time < 20000)
-		{
-			usleep(sleep_time);
-		}
-		else{
-			usleep(20000);
-			ROS_WARN("SLEEP_TIME %d",sleep_time);
-		}
+		period = static_cast<float>(clock() - t) / CLOCKS_PER_SEC;
+		auto handle_time = static_cast<uint32_t>(period * 1000000); // In ms.
+		if (handle_time < 20000)
+			usleep(20000 - handle_time);
+		else
+			ROS_WARN("serial handle time %d", handle_time);
 		t = clock();
 		/*-------------------Process for beeper.play and key_led -----------------------*/
 		key_led.processLed();

@@ -11,6 +11,7 @@ int MoveTypeRemote::start_command_ = MoveTypeRemote::command_type::start_null;
 
 MoveTypeRemote::MoveTypeRemote()
 {
+	IMovement::sp_mt_ = this;
 	ROS_WARN("%s,%d: Enter move type remote.", __FUNCTION__, __LINE__);
 	switch (start_command_)
 	{

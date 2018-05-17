@@ -224,7 +224,7 @@ private:
 	/*---values for rcon handle---*/
 	double first_time_seen_charger_{0};
 	double last_time_seen_charger_{first_time_seen_charger_};
-	boost::shared_ptr<State> st_sleep = boost::make_shared<StateSleep>();
+	boost::shared_ptr<State> state_sleep = boost::make_shared<StateSleep>();
 	bool plan_activated_status_;
 
 	bool fake_sleep_{false};
@@ -247,13 +247,19 @@ public:
 	void remotePlan(bool state_now, bool state_last) override ;
 	void remoteMax(bool state_now, bool state_last) override ;
 
-	bool allowRemoteUpdatePlan() override
+	bool allowRemoteUpdatePlan() override;
+
+	bool isStateCharge() const
 	{
-		return true;
+		return sp_state == state_charge.get();
+	}
+	bool isStateSleep() const
+	{
+		return sp_state == state_sleep.get();
 	}
 
 	boost::shared_ptr<State> state_charge = boost::make_shared<StateCharge>();
-	boost::shared_ptr<State> state_init = boost::make_shared<StateInit>();
+	boost::shared_ptr<State> state_sleep = boost::make_shared<StateSleep>();
 
 private:
 	bool plan_activated_status_;
@@ -367,7 +373,6 @@ public:
 	bool isGoHomePointForLowBattery(){
 		return go_home_for_low_battery_;
 	}
-	void setHomePoint();
 	bool estimateChargerPos(uint32_t rcon_value);
 	void setChargerArea(const Point_t charge_pos);
 	bool checkChargerPos();
@@ -519,7 +524,7 @@ public:
 	int closed_count_{};
 	int closed_count_limit_{2};
 	int isolate_count_{};
-	int isolate_count_limit_{3};
+	int isolate_count_limit_{10};
 	bool is_trapped_{false};
 
 	boost::shared_ptr<State> state_init{new StateInit()};
@@ -528,13 +533,13 @@ public:
 	boost::shared_ptr<State> state_exploration{new StateExploration()};
 
 	Points passed_path_{};
+	GridMap fw_tmp_map{};
 	typedef std::set<PairCell_t> Blocks_t ;
 	Blocks_t c_blocks;
 	Points plan_path_{};
 	bool should_follow_wall{};
 
 	Dir_t old_dir_{};
-	Point_t start_point_{};
 	Point_t iterate_point_{};
 
 	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
@@ -556,7 +561,6 @@ protected:
 
 	bool low_battery_charge_{};
 	bool moved_during_pause_{false};
-	Points home_points_{};
 	bool should_go_to_charger_{false};
 	bool remote_go_home_point{false};
 	bool wifi_go_home_point{false};

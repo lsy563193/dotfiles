@@ -9,10 +9,10 @@
 #include <cstdint>
 #include <map.h>
 
-constexpr size_t WIFI_MAP_SIZE = 2;
+constexpr float WIFI_MAP_SIZE = 2.0;
 constexpr float WIFI_MAP_RESOLUTION = 0.05;
-constexpr int16_t WIFI_MAP_WIDTH_HALF = (WIFI_MAP_SIZE/WIFI_MAP_RESOLUTION/2);
-constexpr size_t DATA_SIZE = ( 6 +WIFI_MAP_SIZE * WIFI_MAP_SIZE / WIFI_MAP_RESOLUTION);
+constexpr int16_t WIFI_MAP_WIDTH_HALF = ((WIFI_MAP_SIZE/WIFI_MAP_RESOLUTION)/2);
+constexpr size_t DATA_SIZE = ( 6 +(WIFI_MAP_SIZE * WIFI_MAP_SIZE)/ WIFI_MAP_RESOLUTION);
 
 typedef std::pair<uint8_t, uint8_t > MapElem;
 typedef std::tuple<Cell_t, int16_t ,std::vector<MapElem>>  WifiMap;
@@ -28,11 +28,11 @@ public:
 
     void serialize(GridMap& grid_map,const BoundingBox2& bound);
 
+    void runLengthEncoding(GridMap &grid_map, WifiMap &wifi_map, const BoundingBox2 &bound);
 //    void display();
 	WifiMap app_map_{};
 private:
 
-    void runLengthEncoding(GridMap &grid_map, WifiMap &wifi_map, const BoundingBox2 &bound);
 
 
     int changeCost(int cost) ;

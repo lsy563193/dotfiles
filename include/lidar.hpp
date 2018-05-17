@@ -68,6 +68,7 @@ public:
 
 	uint8_t lidarMarker(std::vector<Vector2<int>> &markers, int movement_i, int action_i, double X_MAX = 0.21);
 	void checkRobotSlip();
+	bool isNeedToCheckSlip(const sensor_msgs::LaserScan& scan);
 	void checkSlipInit(float &acur1, float &acur2, float &acur3, float &acur4);
 	bool isRobotSlip();
 
@@ -105,7 +106,7 @@ public:
 
 	bool checkLidarBeCovered();
 
-	bool checkLongHallway();
+	bool checkLongHallway(const sensor_msgs::LaserScan& tmp_scan_data);
 private:
 
 	// switch_ is the target status of lidar.

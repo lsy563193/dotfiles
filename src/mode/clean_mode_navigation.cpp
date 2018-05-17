@@ -32,8 +32,7 @@ CleanModeNav::CleanModeNav()
 	}
 
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
-
-	go_home_path_algorithm_.reset();
+	go_home_path_algorithm_.reset(new GoHomePathAlgorithm());
 	mode_i_ = cm_navigation;
 
 	//clear real time map which store in cloud....
@@ -122,7 +121,11 @@ bool CleanModeNav::mapMark()
 		setLinearCleaned();
 		// Set home cell.
 		if (ev.rcon_status)
-			setHomePoint();
+		{
+			go_home_path_algorithm_->setHomePoint(getPosition());
+			if (!seen_charger_during_cleaning_)
+				seen_charger_during_cleaning_ = true;
+		}
 	}
 	for (auto &&cost_block : c_blocks) {
 		if(std::find_if(c_bound2.begin(), c_bound2.end(), [&](const Cell_t& c_it)
@@ -142,8 +145,15 @@ bool CleanModeNav::mapMark()
 	for(auto &&cost_block : c_blocks){
 		if(cost_block.first == BLOCKED_SLIP)
 			clean_map_.setCell(CLEAN_MAP,cost_block.second.x,cost_block.second.y,BLOCKED_SLIP);
+		if(cost_block.first == BLOCKED_TILT)
+			clean_map_.setCell(CLEAN_MAP,cost_block.second.x,cost_block.second.y, BLOCKED_TILT);
 	}
 
+	// Special marking for rcon blocks.
+	for(auto &&cost_block : c_blocks){
+		if(cost_block.first == BLOCKED_TMP_RCON)
+			clean_map_.setCell(CLEAN_MAP,cost_block.second.x,cost_block.second.y,BLOCKED_TMP_RCON);
+	}
 	//tx pass path via serial wifi
 
 	s_wifi.cacheMapData(passed_path_);
@@ -183,6 +193,13 @@ bool CleanModeNav::isExit()
 			error.set(ERROR_CODE_LIDAR);
 			setNextMode(md_idle);
 			ev.fatal_quit = true;
+			return true;
+		}
+
+		if (ev.key_clean_pressed)
+		{
+			ROS_WARN("%s %d: Exit for ev.key_clean_pressed.", __FUNCTION__, __LINE__);
+			setNextMode(md_idle);
 			return true;
 		}
 	}
@@ -371,7 +388,7 @@ void CleanModeNav::remoteHome(bool state_now, bool state_last)
 		|| (isStateGoHomePoint() && isFirstTimeGoHomePoint()))
 	{
 		ROS_WARN("%s %d: remote home.", __FUNCTION__, __LINE__);
-		beeper.beepForCommand(VALID);
+//		beeper.beepForCommand(VALID);
 		ev.remote_home = true;
 	}
 	else
@@ -398,7 +415,7 @@ void CleanModeNav::remoteClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: remote clean.", __FUNCTION__, __LINE__);
 
-	beeper.beepForCommand(VALID);
+//	beeper.beepForCommand(VALID);
 	wheel.stop();
 	ev.key_clean_pressed = true;
 	remote.reset();
@@ -436,6 +453,12 @@ void CleanModeNav::remoteDirectionRight(bool state_now, bool state_last)
 		ROS_INFO("%s %d: Remote right.", __FUNCTION__, __LINE__);
 		ev.remote_direction_right = true;
 	}
+	/*else if (isStateCharge())
+	{
+		beeper.beepForCommand(VALID);
+		ROS_INFO("%s %d: Remote right.", __FUNCTION__, __LINE__);
+		ev.remote_direction_right = true;
+	}*/
 	else
 		beeper.beepForCommand(INVALID);
 
@@ -460,7 +483,7 @@ void CleanModeNav::remoteWallFollow(bool state_now, bool state_last)
 {
 	if (isStatePause())
 	{
-		beeper.beepForCommand(VALID);
+//		beeper.beepForCommand(VALID);
 		ROS_INFO("%s %d: Remote follow wall.", __FUNCTION__, __LINE__);
 		ev.remote_follow_wall = true;
 	}
@@ -476,7 +499,7 @@ void CleanModeNav::remoteSpot(bool state_now, bool state_last)
 	{
 		ROS_INFO("%s %d: Remote spot.", __FUNCTION__, __LINE__);
 		ev.remote_spot = true;
-		beeper.beepForCommand(VALID);
+//		beeper.beepForCommand(VALID);
 	}
 	else
 		beeper.beepForCommand(INVALID);
@@ -491,7 +514,7 @@ void CleanModeNav::remoteMax(bool state_now, bool state_last)
 		beeper.beepForCommand(INVALID);
 	}else if(isInitState() || isStateClean() || isStateGoHomePoint() || isStateGoToCharger() || isStatePause())
 	{
-		beeper.beepForCommand(VALID);
+//		beeper.beepForCommand(VALID);
 		vacuum.setForUserSetMaxMode(!vacuum.isUserSetMaxMode());
 		ACleanMode::setVacuum();
 	}
@@ -522,7 +545,7 @@ void CleanModeNav::remotePlan(bool state_now, bool state_last)
 
 void CleanModeNav::batteryHome(bool state_now, bool state_last)
 {
-	if (isStateClean())
+	if (!ev.battery_home && isStateClean())
 	{
 		continue_point_ = getPosition();
 		ROS_INFO("%s %d: low battery, battery =\033[33m %dmv \033[0m, continue cell(%d, %d)", __FUNCTION__, __LINE__,
@@ -572,10 +595,14 @@ void CleanModeNav::chargeDetect(bool state_now, bool state_last)
 
 // ------------------State init--------------------
 bool CleanModeNav::isSwitchByEventInStateInit() {
-	if (checkEnterPause() || ACleanMode::isSwitchByEventInStateInit())
+	if (/*checkEnterPause() || */ACleanMode::isSwitchByEventInStateInit())
 	{
 		if (action_i_ == ac_back_from_charger)
-			setHomePoint();
+		{
+			go_home_path_algorithm_->setHomePoint(getPosition());
+			if (!seen_charger_during_cleaning_)
+				seen_charger_during_cleaning_ = true;
+		}
 		return true;
 	}
 	return false;
@@ -613,7 +640,9 @@ bool CleanModeNav::updateActionInStateInit() {
 
 		boost::dynamic_pointer_cast<StateInit>(state_init)->initForNavigation();
 		action_i_ = ac_open_lidar;
-		setHomePoint();
+		go_home_path_algorithm_->setHomePoint(getPosition());
+		if (!seen_charger_during_cleaning_)
+			seen_charger_during_cleaning_ = true;
 	} else if (action_i_ == ac_open_lidar)
 	{
 		if (!has_aligned_and_open_slam_)
@@ -621,27 +650,30 @@ bool CleanModeNav::updateActionInStateInit() {
 			action_i_ = ac_align;
 		}
 		else
+		{
+			//set charge position
+			ACleanMode::checkShouldMarkCharger((float)odom.getRadian(),0.6);
 			return false;
+		}
 	} else if (action_i_ == ac_align){
 		{
 			action_i_ = ac_open_slam;
 			align_count_ ++;
-			start_align_radian_ = odom.getRadianOffset();
+			start_align_radian_ = static_cast<float>(odom.getRadianOffset());
 			if(align_count_%2 == 0)
 			{
-				start_align_radian_= ranged_radian(start_align_radian_ -PI/2);
+				start_align_radian_= static_cast<float>(ranged_radian(start_align_radian_ - PI / 2));
 				odom.setRadianOffset(start_align_radian_);
 //				ROS_INFO("rad %f",start_align_radian_);
 			}
 			ROS_INFO("odom rad, align_count : %f, %d", odom.getRadian(), align_count_);
+			//set charge position
+			ACleanMode::checkShouldMarkCharger((float)odom.getRadian(),0.6);
 //			beeper.beepForCommand(INVALID);
 		}
 
 	}
 	else if (action_i_ == ac_open_slam){
-		//after back_from_charger and line alignment
-		//set charge position
-		ACleanMode::checkShouldMarkCharger((float)odom.getRadianOffset(),0.6);
 		return false;
 	}
 	genNextAction();
@@ -673,7 +705,7 @@ void CleanModeNav::switchInStateInit() {
 	else {//if (action_i_ == ac_open_slam)
 		has_aligned_and_open_slam_ = true;
 
-		if (remote_go_home_point)
+		if (isRemoteGoHomePoint() || isWifiGoHomePoint())
 		{
 			if (sp_saved_states.empty())
 			{
@@ -691,7 +723,7 @@ void CleanModeNav::switchInStateInit() {
 			auto curr = getPosition();
 //			curr.dir = iterate_point_.dir;
 //			passed_path_.push_back(curr);
-			start_point_.th = curr.th;
+			go_home_path_algorithm_->updateStartPointRadian(curr.th);
 			sp_state = state_clean.get();
 		}
 	}
@@ -735,7 +767,7 @@ bool CleanModeNav::updateActionInStateClean(){
 		extern int g_follow_last_follow_wall_dir;
 		if(g_follow_last_follow_wall_dir != 0)
 		{
-			ROS_ERROR("g_follow_last_follow_wall_dir, old_dir_(%d)",old_dir_);
+			ROS_INFO("%s %d: g_follow_last_follow_wall_dir, old_dir_(%d)", __FUNCTION__, __LINE__, old_dir_);
 			old_dir_ = plan_path_.back().dir;
 		}
 		else
@@ -778,9 +810,7 @@ void CleanModeNav::switchInStateClean() {
 	}
 	else {
 		sp_state = state_go_home_point.get();
-		ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_points_.size());
-		go_home_path_algorithm_.reset();
-		go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_, start_point_));
+		go_home_path_algorithm_->initForGoHomePoint(clean_map_);
 	}
 	sp_state->init();
 	action_i_ = ac_null;
@@ -820,7 +850,7 @@ void CleanModeNav::switchInStateGoToCharger()
 			sp_state->init();
 			paused_odom_radian_ = odom.getRadian();
 			go_home_for_low_battery_ = false;
-			go_home_path_algorithm_.reset();
+			go_home_path_algorithm_.reset(new GoHomePathAlgorithm());
 			setFirstTimeGoHomePoint(true);
 		} else
 		{
@@ -939,13 +969,14 @@ bool CleanModeNav::checkResumePause()
 				sp_saved_states.pop_back();
 
 			sp_saved_states.push_back(state_go_home_point.get());
-			if (go_home_path_algorithm_ == nullptr)
-				go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_, start_point_));
+			if (ev.remote_home)
+				remote_go_home_point = true;
+			else
+				wifi_go_home_point = true;
 			ev.remote_home = false;
 			if (s_wifi.receiveHome())
 				s_wifi.resetReceivedWorkMode();
 			speaker.play(VOICE_GO_HOME_MODE);
-			remote_go_home_point = true;
 		}
 		sp_state = state_init.get();
 		sp_state->init();
@@ -982,6 +1013,8 @@ bool CleanModeNav::updateActionStateCharge()
 	{
 		action_i_ = ac_charge;
 		genNextAction();
+		// For M0 checking charge mode.
+		serial.setWorkMode(CHARGE_MODE);
 		return true;
 	}
 	else
@@ -1009,10 +1042,15 @@ void CleanModeNav::switchInStateCharge()
 // ------------------State resume low battery charge--------------------
 bool CleanModeNav::checkEnterResumeLowBatteryCharge()
 {
-	if (battery.isReadyToResumeCleaning())
+	if (battery.isReadyToResumeCleaning()/* || ev.remote_direction_right*/)
 	{
+		/*if (ev.remote_direction_right)
+			ev.remote_direction_right = false;*/
 		// Resume from low battery charge.
+		speaker.play(VOICE_BATTERY_CHARGE_DONE, false);
 		speaker.play(VOICE_CLEANING_CONTINUE, false);
+		// For M0 resume work mode.
+		serial.setWorkMode(WORK_MODE);
 		ROS_INFO("%s %d: Resume low battery charge.", __FUNCTION__, __LINE__);
 		if (action_i_ == ac_charge)
 		{
@@ -1027,6 +1065,8 @@ bool CleanModeNav::checkEnterResumeLowBatteryCharge()
 		low_battery_charge_ = true;
 		// For entering checking switch.
 		ev.charge_detect = 0;
+
+		brush.unblockMainBrushSlowOperation();
 		return true;
 	}
 

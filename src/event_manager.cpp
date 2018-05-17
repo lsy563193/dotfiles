@@ -889,7 +889,6 @@ void EventHandle::remotePlan(bool state_now, bool state_last)
 			INFO_YELLOW("Plan updated.");
 		} else
 		{
-			beeper.beepForCommand(VALID);
 			speaker.play(VOICE_APPOINTMENT_DONE);
 			INFO_YELLOW("Plan received.");
 		}
@@ -904,7 +903,6 @@ void EventHandle::remotePlan(bool state_now, bool state_last)
 			INFO_YELLOW("Plan updated to cancel");
 		} else
 		{
-			beeper.beepForCommand(VALID);
 			speaker.play(VOICE_APPOINTMENT_DONE);
 			INFO_YELLOW("Plan cancel received");
 		}

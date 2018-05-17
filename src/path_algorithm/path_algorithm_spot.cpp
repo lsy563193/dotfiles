@@ -189,21 +189,19 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, con
 		}
 		if(event_detect_ && plan_path_last_.size()>1 )
 		{
-			plan_path_last_.pop_front();
 			plan_path.clear();
-			plan_path.push_back(getPosition());
+			plan_path.push_back(curr);
 			plan_path.push_back(plan_path_last_.front());
 			return true;
 		}
-		if(plan_path.size() > 2)
+		if(plan_path.size() >= 2)
 		{
 			event_detect_  = true;
 			plan_path_last_.clear();
 			plan_path_last_ = plan_path ;
 			plan_path.clear();
-			plan_path.push_back(getPosition());
+			plan_path.push_back(curr);
 			plan_path.push_back(plan_path_last_.front());
-			plan_path_last_.pop_front();
 			return true;
 		}
 		else
@@ -453,8 +451,8 @@ void SpotCleanPathAlgorithm::getTargets(uint8_t sp_type,float radius,Cells *targ
 	*/
 	std::initializer_list<Cell_t> p_path{
 	{0, 0},
-	{2, 0},{2, 2},{-2, 2},{-2, -2},{2, -2},
-	{3, -2},{3, 3},{-3, 3},{-3, -3},{3, -3},
+	{2, 0},{2, 2},{-2, 2},{-2, -2},
+	{3, -2},{3, 3},{-3, 3},{-3, -3},
 	{4, -3},{4, 4},{-4, 4},{-4, -4},{4, -4},{4, 3},
 	{3, 3},{-3, 3},{-3, -3},{3, -3},{3, 2},
 	{2, 2},{-2, 2},{-2, -2},{2, -2},{2,1},
@@ -462,10 +460,13 @@ void SpotCleanPathAlgorithm::getTargets(uint8_t sp_type,float radius,Cells *targ
 	};
 
 	std::initializer_list<Cell_t>::iterator p_it = p_path.begin();
+	std::string debug_str;
 	for(int i=0;i <p_path.size();i++){
 		targets->push_back(*(p_it+i) + begincell);
-		ROS_INFO("%s,%d,path list (%d,%d)",__FUNCTION__,__LINE__,targets->back().GetX(),targets->back().GetY());
+		debug_str += "(" + std::to_string(targets->back().GetX()) + ", "
+				+ std::to_string(targets->back().GetY()) + "),";
 	}
+	ROS_INFO("%s %d: path list %s.", __FUNCTION__, __LINE__, debug_str.c_str());
 
 }
 

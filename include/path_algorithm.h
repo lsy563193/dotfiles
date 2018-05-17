@@ -384,7 +384,7 @@ public:
 	 * @param: Points home_points, stored home points, size should be limited in 3.
 	 * @param: Point_t start_point, the start point of this cleaning.
 	 */
-	GoHomePathAlgorithm(GridMap &map, Points &home_points, Point_t start_point);
+	GoHomePathAlgorithm() = default;
 	~GoHomePathAlgorithm() = default;
 
 	/*
@@ -433,6 +433,34 @@ public:
 	 */
 	Point_t getCurrentHomePoint();
 
+	/*
+	 * @author Austin Liu
+	 *
+	 * This function is for adding current point to home point list.
+	 *
+	 * @param: Point_t, home point to be added.
+	 */
+	void setHomePoint(Point_t current_point);
+
+	Point_t getStartPoint()
+	{
+		return start_point_;
+	}
+
+	void updateStartPointRadian(double radian);
+
+	bool isHomePointEmpty()
+	{
+		return home_points_.empty();
+	}
+
+	/*
+	 * @author Austin Liu
+	 *
+	 * This function is for clearing blocks around home points, it can gives a better chance for robot to go to
+	 * home point.
+	 */
+	void initForGoHomePoint(GridMap &map);
 private:
 
 	/*
@@ -515,7 +543,7 @@ typedef enum {
 	GoHomeWay_t home_way_index_{THROUGH_CLEANED_AREA};
 	int home_point_index_[GO_HOME_WAY_NUM]{};
 	Points home_points_;
-//	Point_t start_point_;
+	Point_t start_point_{0, 0, 0};
 	// current_home_point_ is initialized as an unreachable point because state go home point will check if reach home point first.
 	Point_t current_home_point_{CELL_SIZE * (MAP_SIZE + 1), CELL_SIZE * (MAP_SIZE + 1), 0};
 };
