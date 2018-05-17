@@ -13,6 +13,7 @@
 #include <visualization_msgs/Marker.h>
 #include <vacuum.h>
 //#include "move_type.hpp"
+#include "path_algorithm.h"
 
 
 #define ROS_INFO_FL() ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__)

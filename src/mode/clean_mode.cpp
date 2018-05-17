@@ -1790,7 +1790,7 @@ bool ACleanMode::updateActionInStateGoHomePoint()
 		ev.rcon_status = 0;
 		update_finish = false;
 	}
-	else if (go_home_path_algorithm_->reachTarget(should_go_to_charger_))
+	else if (go_home_path_algorithm_->reachTarget(should_go_to_charger_, getPosition()))
 	{
 		update_finish = false;
 	}
