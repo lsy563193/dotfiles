@@ -10,17 +10,22 @@
 #include "robot.hpp"
 
 
-MovementTurn::MovementTurn(double radian, uint8_t max_speed) : speed_(ROTATE_LOW_SPEED)
+MovementTurn::MovementTurn(double slam_target, uint8_t max_speed) : speed_(ROTATE_LOW_SPEED)
 {
-//	auto rad_diff = getPosition().th - radian + odom.getRadian();
-	turn_radian_ = fabs(ranged_radian(radian - getPosition().th));
-	target_radian_ = ranged_radian(radian  - getPosition().th + odom.getRadian());
+//	auto rad_diff = getPosition().th - slam_target + odom.getRadian();
+	turn_radian_ = fabs(ranged_radian(slam_target - getPosition().th));
+	target_radian_ = ranged_radian(slam_target  - getPosition().th + odom.getRadian());//odom_target = slam_target-slam_start + odom_start
 	max_speed_ = max_speed;
 	accurate_ = max_speed_ > ROTATE_TOP_SPEED ? degree_to_radian(3) : degree_to_radian(1);
 	auto diff = ranged_radian(target_radian_ - odom.getRadian());
 	auto isUseTimeOut = (sp_mt_->sp_mode_->mode_i_ != sp_mt_->sp_mode_->md_go_to_charger) && (sp_mt_->sp_mode_->mode_i_ != sp_mt_->sp_mode_->md_remote);
 	timeout_interval_ = isUseTimeOut ? 10 : 100;
-	ROS_WARN("%s, %d: MovementTurn init, target_radian_: \033[32m%.1f (in degree)\033[0m, current radian: \033[32m%.1f (in degree)\033[0m, timeout:(%.2f)s."
+	ROS_WARN("target_radian_(%lf) = ranged_radian(slam_target(%lf)  - getPosition().th(%lf) + odom.getRadian(%lf))",
+					 radian_to_degree(target_radian_),
+					 radian_to_degree(slam_target),
+					 radian_to_degree(getPosition().th),
+					 radian_to_degree(odom.getRadian()));
+	ROS_WARN("%s, %d: MovementTurn init, target_radian_: \033[32m%lf (in degree)\033[0m, current slam_target: \033[32m%lf (in degree)\033[0m, timeout:(%.2f)s."
 			, __FUNCTION__, __LINE__, radian_to_degree(ranged_radian(target_radian_)), radian_to_degree(getPosition().th), timeout_interval_);
 }
 
