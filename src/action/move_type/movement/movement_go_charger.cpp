@@ -275,20 +275,20 @@ bool MovementGoToCharger::isSwitch()
 			else if(receive_code&RconFR_HomeT)//FR H_T
 			{
 				ROS_INFO("Start with FR-T.");
-				turn_angle_ = -80;
-				around_charger_stub_dir = 1;
+				turn_angle_ = 60;
+				around_charger_stub_dir = 0;
 			}
 			else if(receive_code&RconFL2_HomeT)//FL2 H_T
 			{
 				ROS_INFO("Start with FL2-T.");
-				turn_angle_ = -60;
+				turn_angle_ = -40;
 				around_charger_stub_dir = 1;
 			}
 			else if(receive_code&RconFR2_HomeT)//FR2 H_T
 			{
 				ROS_INFO("Start with FR2-T.");
-				turn_angle_ = -80;
-				around_charger_stub_dir = 1;
+				turn_angle_ = 40;
+				around_charger_stub_dir = 0;
 			}
 			else if(receive_code&RconL_HomeT)// L  H_T
 			{
@@ -397,17 +397,8 @@ bool MovementGoToCharger::isSwitch()
 					}
 					else
 					{
-						ROS_INFO("%s, %d: Detect L-R but not detect L-L. Check if direction wrong.", __FUNCTION__, __LINE__);
+						ROS_INFO("%s, %d: Detect L-R but not detect L-L. Check if direction wrong: %d", __FUNCTION__, __LINE__, dir_wrong_cnt_);
 						dir_wrong_cnt_++;
-						/*--- dir wrong, change dir ---*/
-						if(dir_wrong_cnt_ > 10)
-						{
-							dir_wrong_cnt_ = 0;
-							around_charger_stub_dir = 1 - around_charger_stub_dir;
-							check_in_front_of_home = 0;
-							turn_angle_ = 180;
-							return true;
-						}
 					}
 				}
 				else if(receive_code&(RconFL_HomeL|RconFL_HomeT))
@@ -434,6 +425,11 @@ bool MovementGoToCharger::isSwitch()
 					turn_angle_ = -110;
 					around_charger_stub_dir = 0;
 					check_in_front_of_home = 0;
+				}
+				else if(dir_wrong_cnt_)
+				{
+					ROS_INFO("%s, %d: Detect L-R but not detect L-L. Check if direction wrong: %d", __FUNCTION__, __LINE__, dir_wrong_cnt_);
+					dir_wrong_cnt_++;
 				}
 				else
 					turn_angle_ = 0;
@@ -472,17 +468,8 @@ bool MovementGoToCharger::isSwitch()
 					}
 					else
 					{
-						ROS_INFO("%s, %d: Detect R-L but not detect R-R. Check if direction wrong.", __FUNCTION__, __LINE__);
+						ROS_INFO("%s, %d: Detect R-L but not detect R-R. Check if direction wrong: %d", __FUNCTION__, __LINE__, dir_wrong_cnt_);
 						dir_wrong_cnt_++;
-						/*--- dir wrong, change dir ---*/
-						if(dir_wrong_cnt_ > 10)
-						{
-							dir_wrong_cnt_ = 0;
-							around_charger_stub_dir = 1 - around_charger_stub_dir;
-							check_in_front_of_home = 0;
-							turn_angle_ = 180;
-							return true;
-						}
 					}
 				}
 				else if(receive_code&(RconFR_HomeR|RconFR_HomeT))
@@ -510,6 +497,11 @@ bool MovementGoToCharger::isSwitch()
 					around_charger_stub_dir = 1;
 					check_in_front_of_home = 0;
 				}
+				else if(dir_wrong_cnt_)
+				{
+					ROS_INFO("%s, %d: Detect R-L but not detect R-R. Check if direction wrong: %d", __FUNCTION__, __LINE__, dir_wrong_cnt_);
+					dir_wrong_cnt_++;
+				}
 				else
 					turn_angle_ = 0;
 
@@ -518,6 +510,18 @@ bool MovementGoToCharger::isSwitch()
 					back_distance_ = 0;
 					return true;
 				}
+			}
+			/*--- Check if dir is wrong ---*/
+			if(dir_wrong_cnt_ > 10)
+			{
+				ROS_WARN("%s, %d: Dir wrong! Change dir.", __FUNCTION__, __LINE__);
+				dir_wrong_cnt_ = 0;
+				around_charger_stub_dir = 1 - around_charger_stub_dir;
+				check_in_front_of_home = 0;
+				turn_angle_ = 180;
+				back_distance_ = 0;
+				gtc_state_now_ = gtc_around_charger_station_init;
+				return true;
 			}
 		}
 	}
