@@ -10,7 +10,6 @@
 #include "ros/ros.h"
 #include "speed_governor.hpp"
 #include "event_manager.h"
-#include "path_algorithm.h"
 #include "boost/shared_ptr.hpp"
 
 #include "action.hpp"
@@ -114,7 +113,7 @@ private:
 class MovementTurn: public IMovement{
 public:
 
-	explicit MovementTurn(double radian, uint8_t max_speed);
+	explicit MovementTurn(double slam_target, uint8_t max_speed);
 	~MovementTurn()
 	{
 		ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);

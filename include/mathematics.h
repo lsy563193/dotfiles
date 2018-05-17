@@ -643,4 +643,9 @@ std::unique_ptr<T> make_unique(Args&&... args)
 
 std::unique_ptr<Cells> points_to_cells(const std::unique_ptr<Points>& points);
 std::unique_ptr<Points> cells_generate_points(const std::unique_ptr<Cells>& path);
+
+void displayCellPath(const Cells &path);
+void displayPointPath(const Points &point_path);
+void displayTargetList(const Cells &target_list);
+
 #endif

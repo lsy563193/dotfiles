@@ -61,41 +61,6 @@ private:
 };
 
 const Cell_t cell_direction_[9]{{1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1},{0,0}};
-void APathAlgorithm::displayCellPath(const Cells &path)
-{
-	std::string     msg = __FUNCTION__;
-
-	msg += " " + std::to_string(__LINE__) + ": Path size(" + std::to_string(path.size()) + "):";
-	for (auto it = path.begin(); it != path.end(); ++it) {
-		msg += "{" + std::to_string(it->x) + ", " + std::to_string(it->y) + "},";
-	}
-	//msg += "\n";
-	ROS_INFO("%s",msg.c_str());
-}
-
-void APathAlgorithm::displayTargetList(const Cells &target_list)
-{
-	std::string     msg = __FUNCTION__;
-	msg += " " + std::to_string(__LINE__) + ": targets = {" + std::to_string(target_list.size()) + "}:";
-	for (auto it = target_list.begin(); it != target_list.end(); ++it) {
-		msg += "{" + std::to_string(it->x) + ", " + std::to_string(it->y) + ", " + "},";
-	}
-	//msg += "\n";
-	ROS_INFO("%s",msg.c_str());
-}
-
-void APathAlgorithm::displayPointPath(const Points &point_path)
-{
-	std::string     msg = __FUNCTION__;
-	msg += " " + std::to_string(__LINE__) + ": Points(" + std::to_string(point_path.size()) + "):";
-	for (auto it = point_path.begin(); it != point_path.end(); ++it) {
-		msg += "(" + std::to_string((it->toCell().x)) + ", " + std::to_string(it->toCell().y) + ", " + std::to_string(
-						static_cast<int>(radian_to_degree(it->th)))+ ", " + std::to_string(it->dir) + "),";
-	}
-	//msg += "\n";
-	ROS_INFO("%s",msg.c_str());
-}
-
 
 bool APathAlgorithm::generateShortestPath(GridMap &map, const Point_t &curr,const Point_t &target, const Dir_t &last_dir, Points &plan_path) {
 	Cell_t corner1 ,corner2;

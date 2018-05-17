@@ -13,6 +13,7 @@
 #include "boost/shared_ptr.hpp"
 #include "rcon.h"
 #include "serial.h"
+#include "map.h"
 //#include "mode.hpp"
 
 class Mode;
