@@ -1838,11 +1838,9 @@ void ACleanMode::switchInStateGoHomePoint()
 		sp_action_.reset();
 		if (isFirstTimeGoHomePoint())
 		{
-			if (!isRemoteGoHomePoint() && !isGoHomePointForLowBattery())
-			{
-				if (seen_charger_during_cleaning_)
-					speaker.play(VOICE_CLEANING_FINISH_BACK_TO_CHARGER);
-			}
+			if (!isRemoteGoHomePoint() && !isWifiGoHomePoint() && !isGoHomePointForLowBattery() &&
+				seen_charger_during_cleaning_)
+				speaker.play(VOICE_CLEANING_FINISH_BACK_TO_CHARGER);
 			setFirstTimeGoHomePoint(false);
 		}
 	}
