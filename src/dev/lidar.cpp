@@ -1814,7 +1814,7 @@ bool Lidar::checkLongHallway(const sensor_msgs::LaserScan& tmp_scan_data)
 		//less than 10 degrees
 //		ROS_WARN("angle = %lf, l_b = %lf", radian_to_degree(atan2(l_k,1)), l_b);
 		if (std::fabs(l_k) < 0.17633) {
-			if (std::fabs(l_b) > ROBOT_RADIUS && std::fabs(l_b) < 1.3) {
+			if (std::fabs(l_b) > ROBOT_RADIUS && std::fabs(l_b) < 2.6) {
 //				ROS_WARN("angle = %lf, l_b = %lf", radian_to_degree(atan2(l_k,1)), l_b);
 				if (l_b > 0) {
 					side_status.push_back(1);
