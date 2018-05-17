@@ -13,6 +13,7 @@
 #include <visualization_msgs/Marker.h>
 #include <vacuum.h>
 //#include "move_type.hpp"
+#include "path_algorithm.h"
 
 
 #define ROS_INFO_FL() ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__)
@@ -540,7 +541,7 @@ public:
 	bool should_follow_wall{};
 
 	Dir_t old_dir_{};
-	Point_t iterate_point_{};
+	Points::iterator iterate_point_{};
 
 	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
 	boost::shared_ptr<GoHomePathAlgorithm> go_home_path_algorithm_{};

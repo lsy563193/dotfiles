@@ -10,7 +10,6 @@
 #include "ros/ros.h"
 #include "speed_governor.hpp"
 #include "event_manager.h"
-#include "path_algorithm.h"
 #include "boost/shared_ptr.hpp"
 
 #include "action.hpp"

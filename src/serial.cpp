@@ -604,6 +604,7 @@ void Serial::send_routine_cb()
 	//tmp test
 	clock_t t = clock();
 	float period;
+	int32_t sleep_time;
 	while(ros::ok() && !send_thread_kill){
 		if (!send_thread_enable)
 		{

@@ -8,6 +8,7 @@
 #include <mathematics.h>
 #include <beeper.h>
 #include <gyro.h>
+#include <string>
 
 boost::mutex scanLinear_mutex_;
 boost::mutex scanOriginal_mutex_;
@@ -1848,24 +1849,37 @@ bool Lidar::isNeedToCheckSlip(const sensor_msgs::LaserScan& scan) {
 	auto right_wheel_speed = wheel.getRightWheelActualSpeed();
 	bool is_low_speed = robot::instance()->getRobotActualSpeed() < 0.08 || robot::instance()->getRobotActualSpeed() > 0.173
 						|| fabs(right_wheel_speed - left_wheel_speed) > 0.1;
-	if (checkLongHallway(scan)) {
-		last_slip_scan_frame_.clear();
-		return false;
-	}
+	static int print_count = 0;
+
+	std::function<void(std::string)> f_print = [](std::string s){
+		if(print_count++ > 5) {
+			print_count = 0;
+			ROS_INFO("%s %d: %s",__FUNCTION__,__LINE__,s.c_str());
+		}
+	};
+
 	if (!slip_enable_ || !lidar.isScanOriginalReady()) {
+		f_print("slip_enable");
 		last_slip_scan_frame_.clear();
 		return false;
 	}
 	if (std::fabs(left_wheel_speed) <= 0.08 && std::fabs(right_wheel_speed) <= 0.08) {
+		f_print("each wheel speed is too low");
 		last_slip_scan_frame_.clear();
 		return false;
 	}
 	if (!is_low_speed) {
+		f_print("actual speed");
 		last_slip_scan_frame_.clear();
 		return false;
 	}
 	if (last_slip_scan_frame_.size() < 3) {
 		last_slip_scan_frame_.push_back(scan);
+		return false;
+	}
+	if (checkLongHallway(scan)) {
+		f_print("longHallway");
+		last_slip_scan_frame_.clear();
 		return false;
 	}
 
