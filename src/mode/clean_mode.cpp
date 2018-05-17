@@ -1100,7 +1100,7 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 			auto p_mt = dynamic_cast<MoveTypeFollowWall *>(p_move_type);
 			if(p_mt->movement_i_ == p_mt->mm_forward ||p_mt->movement_i_ == p_mt->mm_straight)
 			{
-				if(mode_i_ != cm_spot)
+				if(!isStateSpot())
 				{
 					return p_mt->isNewLineReach(clean_map_) || p_mt->isOverOriginLine(clean_map_);
 				}
@@ -2229,12 +2229,9 @@ void ACleanMode::genNextAction() {
 				break;
 			case ac_follow_wall_left  :
 			case ac_follow_wall_right :
-                if(mode_i_ == cm_spot)
+                if(isStateSpot())
 				{
-                    BoundingBox<Point_t> bound;
-					bound.Add(*(plan_path_.begin()+2));
-					bound.Add(*(plan_path_.begin()+4));
-					sp_action_.reset(new MoveTypeFollowWall(action_i_ == ac_follow_wall_left, !bound.Contains(getPosition())));
+					sp_action_.reset(new MoveTypeFollowWall(action_i_ == ac_follow_wall_left, plan_path_.begin()));
 				}
 				else
 					sp_action_.reset(new MoveTypeFollowWall(action_i_ == ac_follow_wall_left));

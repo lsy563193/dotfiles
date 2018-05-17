@@ -12,6 +12,21 @@
 #define STAY_SEC_AFTER_BACK (double)0.33
 
 int g_follow_last_follow_wall_dir=0;
+
+bool out_of_edge(const Point_t &curr, const Points::iterator &it) {
+	const auto next_it = it+1;
+//	ROS_ERROR("p_it_tmp(%d,%d,%d)", it->toCell().x, it->toCell().y,it->dir);
+	if (it->dir == MAP_POS_X)
+		return curr.x > next_it->x;
+	else if (it->dir == MAP_NEG_X)
+		return curr.x < next_it->x;
+	else if (it->dir == MAP_POS_Y)
+		return curr.y > next_it->y;
+	else if (it->dir == MAP_NEG_Y)
+		return curr.y < next_it->y;
+	return false;
+}
+
 void MoveTypeFollowWall::init(bool is_left)
 {
 	IMovement::sp_mt_ = this;
@@ -35,10 +50,20 @@ MoveTypeFollowWall::MoveTypeFollowWall(bool is_left)
 	init(is_left);
 }
 
-MoveTypeFollowWall::MoveTypeFollowWall(bool is_left,bool out)
+MoveTypeFollowWall::MoveTypeFollowWall(bool is_left,const Points::iterator &p_it)
 {
 	init(is_left);
-	out_of_range_state = out;
+    auto curr = getPosition();
+    auto p_it_tmp = p_it;
+    for (; p_it_tmp != p_it + 4; ++p_it_tmp) {
+		if (out_of_edge(curr, p_it_tmp)) {
+			ROS_INFO("add out edge(%d,%d,%d)",p_it_tmp->toCell().x, p_it_tmp->toCell().y, p_it_tmp->dir);
+            it_out_edges.push_back(p_it_tmp);
+		}else{
+			ROS_INFO("add in edge(%d,%d,%d)",p_it_tmp->toCell().x, p_it_tmp->toCell().y, p_it_tmp->dir);
+			it_in_edges.push_back(p_it_tmp);
+		}
+	}
 }
 
 MoveTypeFollowWall::~MoveTypeFollowWall()
@@ -521,40 +546,25 @@ bool MoveTypeFollowWall::handleMoveBackEventRealTime(ACleanMode *p_clean_mode)
 	return false;
 }
 
-bool out_of_edge(const Point_t &curr, const Points::iterator &it) {
-	const auto next_it = it+1;
-	ROS_ERROR("p_it_tmp(%d,%d)", it->toCell().x, it->toCell().y);
-	if (it->dir == MAP_POS_X)
-		return curr.x > next_it->x;
-	else if (it->dir == MAP_NEG_X)
-		return curr.x < next_it->x;
-	else if (it->dir == MAP_POS_Y)
-		return curr.y > next_it->y;
-	else if (it->dir == MAP_NEG_Y)
-		return curr.y < next_it->y;
-	return false;
-}
-
 bool MoveTypeFollowWall::outOfRange(const Point_t &curr, Points::iterator &p_it) {
 	auto p_it_tmp = p_it;
-	for (; p_it_tmp != p_it + 3; ++p_it_tmp) {
-		if (out_of_edge(curr, p_it_tmp)) {
-			p_it = p_it_tmp+1;
+	for (auto&& it : it_in_edges) {
+		if (out_of_edge(curr, it)) {
+			ROS_INFO("find out edge(%d,%d,%d)",it->toCell().x, it->toCell().y, it->dir);
+			p_it = it+1;
 			return true;
 		}
 	}
 
-	if (outOfRangeFirst()) {
-		if (!out_of_edge(curr, p_it_tmp))
-			outOfRangeFirst(false);
-	} else
-	{
-        if(out_of_edge(curr, p_it_tmp))
-		{
-			p_it = p_it_tmp+1;
+	it_out_edges.erase(std::remove_if(it_out_edges.begin(), it_out_edges.end(),[&](const Points::iterator& it){
+		if(!out_of_edge(curr,it)){
+			ROS_INFO("add in edge(%d,%d,%d)",it->toCell().x, it->toCell().y, it->dir);
+			it_in_edges.push_back(it);
 			return true;
-		}
-	}
+		};
+		return false;
+	}));
+
 	return false;
 }
 
