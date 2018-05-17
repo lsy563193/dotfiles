@@ -252,7 +252,7 @@ bool MoveTypeLinear::switchLinearTargetByRecalc(ACleanMode *p_clean_mode) {
 	auto target_point = std::next(p_clean_mode->iterate_point_);
 	auto is_found = boost::dynamic_pointer_cast<NavCleanPathAlgorithm>( p_clean_mode->clean_path_algorithm_)->generatePath(p_clean_mode->clean_map_, *target_point, target_point->dir, path);
 	ROS_INFO("%s %d: is_found:(d), remain:", __FUNCTION__, __LINE__, is_found);
-	p_clean_mode->clean_path_algorithm_->displayPointPath(path);
+	displayPointPath(path);
 	if (is_found) {
 		ROS_INFO("5555555555555555555555555555555555555555");
 		if (!is_opposite_dir(path.front().dir, p_clean_mode->iterate_point_->dir)) {
@@ -261,7 +261,7 @@ bool MoveTypeLinear::switchLinearTargetByRecalc(ACleanMode *p_clean_mode) {
 					 path.front().dir, p_clean_mode->iterate_point_->dir);
             p_clean_mode->plan_path_.erase(p_clean_mode->iterate_point_+1,p_clean_mode->plan_path_.end());
 			std::move(path.begin(),path.end(),std::back_inserter(p_clean_mode->plan_path_));
-            p_clean_mode->clean_path_algorithm_->displayPointPath(p_clean_mode->plan_path_);
+            displayPointPath(p_clean_mode->plan_path_);
 			p_clean_mode->pubCleanMapMarkers(p_clean_mode->clean_map_,
 											 p_clean_mode->pointsGenerateCells(p_clean_mode->plan_path_));
 

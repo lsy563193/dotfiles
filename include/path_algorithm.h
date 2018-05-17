@@ -21,27 +21,6 @@ public:
 
 	virtual bool checkTrapped(GridMap &map, const Cell_t &curr_cell) {return true;};
 
-//	std::unique_ptr<Points> cells_generate_points(const std::unique_ptr<Cells>& path);
-	/*
-	 * @last modify by Austin Liu
-	 *
-	 * Print the path.
-	 *
-	 * @param: Cells path, the path from start cell to target cell.
-	 */
-	void displayCellPath(const Cells &path);
-
-	/*
-	 * @last modify by Austin Liu
-	 *
-	 * Print the targets.
-	 *
-	 * @param: Cells target list.
-	 */
-	void displayTargetList(const Cells &target_list);
-
-	void displayPointPath(const Points &point_path);
-
 	public:
 	/*
 	 * @author Patrick Chow

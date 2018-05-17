@@ -59,7 +59,7 @@ bool CleanModeNav::mapMark()
 		passed_path_.push_back(getPosition());
 	}
 
-	clean_path_algorithm_->displayPointPath((passed_path_));
+	displayPointPath((passed_path_));
 
 	GridMap map{};
 	for (auto &&p_it :passed_path_)
@@ -762,7 +762,7 @@ bool CleanModeNav::updateActionInStateClean(){
 		pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 		iterate_point_ = plan_path_.begin();
 //		plan_path_.pop_front();
-		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
+		displayCellPath(pointsGenerateCells(plan_path_));
 		auto npa = boost::dynamic_pointer_cast<NavCleanPathAlgorithm>(clean_path_algorithm_);
 
 		if ( old_dir_ != MAP_ANY && should_follow_wall && npa->should_follow_wall() )
@@ -1079,7 +1079,7 @@ bool CleanModeNav::updateActionInStateResumeLowBatteryCharge()
 			iterate_point_ = plan_path_.begin();
 			ROS_ERROR("start_point_.dir(%d)", iterate_point_->dir);
 //			plan_path_.pop_front();
-			clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
+			displayCellPath(pointsGenerateCells(plan_path_));
 			action_i_ = ac_linear;
 			genNextAction();
 			return true;

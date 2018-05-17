@@ -58,7 +58,7 @@ bool CleanModeSpot::mapMark()
 {
 	ROS_INFO("%s,%d,passed_path",__FUNCTION__,__LINE__);
 	auto passed_path_cells = pointsGenerateCells(passed_path_);
-	clean_path_algorithm_->displayCellPath(passed_path_cells);
+	displayCellPath(passed_path_cells);
 
 	if (action_i_ == ac_linear) {
 //		PP_INFO();

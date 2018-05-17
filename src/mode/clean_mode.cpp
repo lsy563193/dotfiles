@@ -1814,7 +1814,7 @@ bool ACleanMode::updateActionInStateGoHomePoint()
 		// New path to home cell is generated.
 		iterate_point_ = plan_path_.begin();
 //		plan_path_.pop_front();
-		go_home_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
+		displayCellPath(pointsGenerateCells(plan_path_));
 		pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 		should_go_to_charger_ = false;
 		action_i_ = ac_linear;
@@ -1917,7 +1917,7 @@ bool ACleanMode::updateActionInStateSpot()
 			action_i_ = ac_linear;
 
 		genNextAction();
-		clean_path_algorithm_->displayPointPath(plan_path_);
+		displayPointPath(plan_path_);
 		ret = true;
 	}
 	should_follow_wall = false;
@@ -2001,7 +2001,7 @@ bool ACleanMode::updateActionInStateExploration() {
 		action_i_ = ac_linear;
 		iterate_point_ = plan_path_.begin();
 		ROS_WARN("start_point_.dir(%d)", iterate_point_->dir);
-		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
+		displayCellPath(pointsGenerateCells(plan_path_));
 		pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 		genNextAction();
 		return true;
@@ -2063,7 +2063,7 @@ bool ACleanMode::updateActionInStateFollowWall()
 			plan_path_.push_back(point);
 			iterate_point_ = plan_path_.begin();
 			iterate_point_->dir = MAP_ANY;// note: fix bug follow isPassPosition
-			clean_path_algorithm_->displayPointPath(plan_path_);
+			displayPointPath(plan_path_);
 			action_i_ = ac_linear;
 		}
 
