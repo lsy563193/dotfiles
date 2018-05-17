@@ -249,6 +249,7 @@ private:
 	enum{
 		gtc_init,
 		gtc_check_near_charger_station,
+		gtc_away_from_charger_station_init,
 		gtc_away_from_charger_station,
 		gtc_turn_for_charger_signal_init,
 		gtc_turn_for_charger_signal,
