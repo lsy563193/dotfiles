@@ -391,17 +391,7 @@ private:
 	bool verify_ok_;
 };
 
-float cellToCount(int16_t distance);
-
-int16_t countToCell(int32_t count);
-
 Point_t getPosition(Baselink_Frame_Type type = SLAM_POSITION_SLAM_ANGLE);
-
-bool isAny(Dir_t dir);
-
-bool isPos(Dir_t dir);
-
-bool isXAxis(Dir_t dir);
 
 void updatePosition();
 
