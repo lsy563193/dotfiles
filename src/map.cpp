@@ -1004,3 +1004,33 @@ void GridMap::setArea(Cell_t center, CellState cell_state, uint16_t x_len, uint1
 			setCell(CLEAN_MAP, static_cast<int16_t>(center.x + dx), static_cast<int16_t>(center.y + dy), cell_state);
 }
 
+void GridMap::loadMap(int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max)
+{
+	std::string map_file = "/opt/ros/indigo/share/pp/map";
+	if (access(map_file.c_str(), F_OK) == -1)
+		// If file does not exist, return.
+		return;
+
+	FILE *f_read = fopen(map_file.c_str(), "r");
+	if (f_read == nullptr)
+		ROS_ERROR("%s %d: Open %s error.", __FUNCTION__, __LINE__, map_file.c_str());
+	else
+	{
+		for (int x = x_min; x <= x_max; x++)
+		{
+			for (int y = y_min; y <= y_max; y++)
+			{
+				CellState cell_state;
+				if (fscanf(f_read, "%1d", &cell_state) == 1)
+				{
+					setCell(CLEAN_MAP, x, y, cell_state);
+//					printf("(%d, %d) %d\n", x, y, cell_state);
+				}
+			}
+		}
+		Cell_t curr{0, 0};
+		print(curr, CLEAN_MAP, Cells{});
+		fclose(f_read);
+		ROS_INFO("%s %d: Read data succeeded.", __FUNCTION__, __LINE__);
+	}
+}

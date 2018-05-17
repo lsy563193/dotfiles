@@ -153,3 +153,16 @@ int test_time()
 	time_t *p_local = &local;
 	printf("ctime(localtime->time()): %s", ctime(p_local));
 }
+
+void test_map()
+{
+	auto path_algo = new NavCleanPathAlgorithm();
+	GridMap map;
+	map.loadMap(-76, 56, -54, 91);
+	Cell_t curr_cell{-42, -52};
+
+	Point_t curr_point = {curr_cell.x * CELL_SIZE, curr_cell.y * CELL_SIZE};
+	Dir_t dir = MAP_NEG_X;
+	Points points;
+	path_algo->generatePath(map, curr_point, dir, points);
+}
