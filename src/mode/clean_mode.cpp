@@ -1019,6 +1019,7 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_mt) {
 		ROS_INFO("curr(%d,%d,%d,%d)", curr.toCell().x, curr.toCell().y, static_cast<int>(radian_to_degree(curr.th)),curr.dir);
 		passed_path_.push_back(curr);
 	}
+	ROS_WARN("passed_path_.size(%d)", passed_path_.size());
 
 	markMapInNewCell();//real time mark to exploration
 

@@ -22,7 +22,9 @@ MoveTypeFollowWall::MoveTypeFollowWall(Points remain_path, bool is_left)
 	auto p_mode = dynamic_cast<ACleanMode*> (sp_mode_);
 	is_left_ = is_left;
 	auto turn_radian = getTurnRadian(!remain_path_.empty());
+//	ROS_ERROR("turn_radian(%lf)", radian_to_degree(turn_radian));
 	turn_target_radian_ = getPosition().addRadian(turn_radian).th;
+//	ROS_ERROR("getPosition().th(%lf)", radian_to_degree(getPosition().th));
 
 	movement_i_ = p_mode->isGyroDynamic() ? mm_dynamic : mm_turn;
 	if(movement_i_ == mm_dynamic)
@@ -61,7 +63,7 @@ bool MoveTypeFollowWall::isFinish()
 		p_cm->clean_map_.count_if(getPosition().toCell(), [&](Cell_t c_it) {
 			return (p_cm->clean_map_.getCell(CLEAN_MAP, c_it.x, c_it.y) == CLEANED);
 		},dijkstra_cleaned_count);
-		if (dijkstra_cleaned_count < TRAP_IN_SMALL_AREA_COUNT)
+		if ((dijkstra_cleaned_count < TRAP_IN_SMALL_AREA_COUNT) || (p_cm->passed_path_.size() < 10 && dijkstra_cleaned_count <	100))
 			is_trapped_in_small_area_ = true;
 		else
 			is_trapped_in_small_area_ = false;
@@ -120,7 +122,7 @@ bool MoveTypeFollowWall::isFinish()
 				}
 				resetTriggeredValue();
 			}else{
-				if(ev.tilt_triggered)
+				if(ev.tilt_triggered && p_cm->mode_i_ != Mode::cm_wall_follow)
 					is_stop_follow_wall_after_tilt_ = true;
 			}
 			state_turn = false;

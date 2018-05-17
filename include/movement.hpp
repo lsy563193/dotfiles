@@ -114,7 +114,7 @@ private:
 class MovementTurn: public IMovement{
 public:
 
-	explicit MovementTurn(double radian, uint8_t max_speed);
+	explicit MovementTurn(double slam_target, uint8_t max_speed);
 	~MovementTurn()
 	{
 		ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);
