@@ -286,3 +286,4 @@ std::unique_ptr<Cells> points_to_cells(const std::unique_ptr<Points>& points)
 	}
 	return cells;
 };
+

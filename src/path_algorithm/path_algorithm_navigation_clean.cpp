@@ -138,9 +138,9 @@ void NavCleanPathAlgorithm::findPath(GridMap &map, const Cell_t &start, const Ce
 	for (; iterator != start;) {
 		if(map.getCell(COST_MAP, iterator.x, iterator.y) != cost)
 		{
-			printf("start(%d,%d) iterator(%d,%d),target(%d,%d)cost(%d)\n",start.x, start.y, iterator.x, iterator.y,cost, target.x, target.y);
-//			map.print(CLEAN_MAP, 0, 0);
-//			map.print(COST_MAP, 0, 0);
+			printf("start(%d,%d) iterator(%d,%d),target(%d,%d)cost(%d,%d)\n",start.x, start.y, iterator.x, iterator.y,target.x, target.y, cost,map.getCell(COST_MAP, iterator.x, iterator.y) );
+			map.print(getPosition().toCell(), CLEAN_MAP, Cells{target});
+			map.print(getPosition().toCell(), COST_MAP, Cells{});
 			ROS_ASSERT(map.getCell(COST_MAP, iterator.x, iterator.y) == cost);
 		}
 		cost -= 1;
