@@ -1086,14 +1086,17 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 	markRealTime();
 	if(action_i_ == ac_linear) {
 		auto p_mt = dynamic_cast<MoveTypeLinear *>(p_move_type);
-		if(p_mt->movement_i_ == p_mt->mm_forward && (p_mt->isPoseReach() || p_mt->isPassTargetStop(iterate_point_->dir)))
-			return true;
-
-		if (p_mt->isLinearForward()){
-			if(checkChargerPos())
-				return false;
-			else
-				return p_mt->isRconStop();
+		if (p_mt->isLinearForward())
+		{
+			if (p_mt->isPoseReach() || p_mt->isPassTargetStop(iterate_point_->dir))
+				return true;
+			if (!isStateGoHomePoint())
+			{
+				if (checkChargerPos())
+					return false;
+				else
+					return p_mt->isRconStop();
+			}
 		}
 	}
 	else//rounding
@@ -1115,8 +1118,7 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 				else
 				{
 					if(p_mt->outOfRange(getPosition(), iterate_point_))
-                    	return true;
-
+						return true;
 				}
 			}
 		}
@@ -1161,7 +1163,7 @@ bool ACleanMode::isFinish()
 bool ACleanMode::checkChargerPos()
 {
 	const int16_t DETECT_RANGE = 20;//cells
-	if(!isStateGoHomePoint()){
+//	if(!isStateGoHomePoint()){
 		if(c_rcon.getStatus())
 		{
 			if(found_charger_)
@@ -1202,7 +1204,7 @@ bool ACleanMode::checkChargerPos()
 				}
 			}
 		}
-	}
+//	}
 	return false;
 
 }
