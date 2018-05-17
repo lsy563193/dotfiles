@@ -148,7 +148,7 @@ void NavCleanPathAlgorithm::findPath(GridMap &map, const Cell_t &start, const Ce
 			cost = 5;
 		for (auto i = 0; i < 4; i++) {
 			auto neighbor = iterator + cell_direction_[(last_i + i) % 4];
-			if (map.isOutOfMap(neighbor))
+			if (map.isOutOfTargetRange(neighbor))
 				continue;
 
 			if (map.getCell(COST_MAP, neighbor.x, neighbor.y) == cost) {
