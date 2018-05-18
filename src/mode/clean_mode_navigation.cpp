@@ -197,9 +197,9 @@ bool CleanModeNav::isExit()
 			return true;
 		}
 
-		if (ev.key_clean_pressed)
+		if (ev.key_clean_pressed || s_wifi.receiveIdle())
 		{
-			ROS_WARN("%s %d: Exit for ev.key_clean_pressed.", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Exit for ev.key_clean_pressed or wifi receive idle.", __FUNCTION__, __LINE__);
 			setNextMode(md_idle);
 			return true;
 		}
