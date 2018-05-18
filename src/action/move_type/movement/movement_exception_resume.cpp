@@ -201,7 +201,7 @@ void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_sp
 	}
 	else if (ev.lidar_stuck)
 	{
-		ROS_INFO("lidar stucking");
+//		ROS_INFO("lidar stucking");
 		if (lidar_resume_cnt_ >= 5) {
 			wheel.stop();
 		} else {
@@ -211,7 +211,7 @@ void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_sp
 	}
 	else if (ev.robot_slip)
 	{
-		ROS_INFO("slipping");
+//		ROS_INFO("slipping");
 		switch(robot_slip_flag_){
 			case 0:
 			{

@@ -1016,12 +1016,15 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_mt) {
 		return curr.isCellAndAngleEqual(it);
 	});
 	auto distance = std::distance(loc, passed_path_.end());
-	if (distance == 0) {
+	if (distance == 0)
+	{
 		curr.dir = iterate_point_->dir;
-		ROS_INFO("curr(%d,%d,%d,%d)", curr.toCell().x, curr.toCell().y, static_cast<int>(radian_to_degree(curr.th)),curr.dir);
+		ROS_INFO("curr(%d,%d,%d,%d), passed_path_.size(%d)", curr.toCell().x, curr.toCell().y,
+				 static_cast<int>(radian_to_degree(curr.th)), curr.dir, passed_path_.size());
 		passed_path_.push_back(curr);
 	}
-	ROS_WARN("passed_path_.size(%d)", passed_path_.size());
+	else
+		ROS_INFO("passed_path_.size(%d)", passed_path_.size());
 
 	markMapInNewCell();//real time mark to exploration
 

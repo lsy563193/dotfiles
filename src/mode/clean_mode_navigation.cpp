@@ -55,7 +55,8 @@ bool CleanModeNav::mapMark()
 	ROS_INFO("%s %d: Start updating map.", __FUNCTION__, __LINE__);
 	if(passed_path_.empty())
 	{
-		ROS_WARN("%s %d: pass_path is emply, add curr_point(%d,%d,%d,%d).", __FUNCTION__, __LINE__,getPosition().x, getPosition().y, getPosition().th, getPosition().dir);
+		ROS_WARN("%s %d: pass_path is empty, add curr_point(%.2f,%.2f,%.2f,%d).", __FUNCTION__, __LINE__, getPosition().x,
+				 getPosition().y, getPosition().th, getPosition().dir);
 		passed_path_.push_back(getPosition());
 	}
 
@@ -739,7 +740,7 @@ bool CleanModeNav::isSwitchByEventInStateClean() {
 
 bool CleanModeNav::updateActionInStateClean(){
 	bool ret = false;
-	ROS_ERROR("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~hello");
+//	ROS_ERROR("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~hello");
 	sp_action_.reset();//to mark in destructor
 //	pubCleanMapMarkers(clean_map_, pointsGenerateCells(remain_path_));
     if(!plan_path_.empty())

@@ -9,20 +9,22 @@
 #include <state.hpp>
 #include <mode.hpp>
 
-MoveTypeLinear::MoveTypeLinear(Points remain_path){
+MoveTypeLinear::MoveTypeLinear(Points remain_path)
+{
 	IMovement::sp_mt_ = this;
 	resetTriggeredValue();
 	remain_path.pop_front();
 
-	auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
+	auto p_mode = dynamic_cast<ACleanMode *>(sp_mode_);
 	auto target_point_ = std::next(p_mode->iterate_point_);
 	turn_target_radian_ = p_mode->iterate_point_->th;
 
-	ROS_WARN("%s,%d: Enter move type linear, angle(%f,%f, %f),  target(%f, %f).",
-			 __FUNCTION__, __LINE__, getPosition().th, radian_to_degree(target_point_->th), radian_to_degree(turn_target_radian_), target_point_->x, target_point_->y);
+	ROS_WARN("%s,%d: Enter move type linear, angle(%.2f,%.2f, %.2f),  target(%.3f, %.3f).",
+			 __FUNCTION__, __LINE__, getPosition().th, radian_to_degree(target_point_->th),
+			 radian_to_degree(turn_target_radian_), target_point_->x, target_point_->y);
 
 	movement_i_ = p_mode->isGyroDynamic() ? mm_dynamic : mm_turn;
-	if(movement_i_ == mm_dynamic)
+	if (movement_i_ == mm_dynamic)
 		sp_movement_.reset(new MovementGyroDynamic());
 	else
 		sp_movement_.reset(new MovementTurn(turn_target_radian_, ROTATE_TOP_SPEED));
