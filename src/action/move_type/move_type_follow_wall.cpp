@@ -438,13 +438,6 @@ double MoveTypeFollowWall::getTurnRadianByEvent()
 		turn_angle = obsTurnAngle();
 		ROS_WARN("%s %d: Lidar triggered, turn_angle: %d.", __FUNCTION__, __LINE__, turn_angle);
 	}
-	if(ev.robot_slip)
-	{
-		// Temporary use obs as lidar triggered.
-		ev.obs_triggered = BLOCK_FRONT;
-		turn_angle = obsTurnAngle();
-		ROS_WARN("%s %d: slip triggered, turn_angle: %d.", __FUNCTION__, __LINE__, turn_angle);
-	}
 	return degree_to_radian(turn_angle);
 }
 

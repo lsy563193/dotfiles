@@ -50,7 +50,7 @@ ACleanMode::ACleanMode()
 	{
 		sp_state = state_init.get();
 		sp_state->init();
-		action_i_ = ac_open_gyro;
+		action_i_ = ac_open_gyro_and_lidar;
 		genNextAction();
 	}
 	robot_timer.initWorkTimer();
@@ -1691,7 +1691,7 @@ bool ACleanMode::isSwitchByEventInStateInit() {
 
 bool ACleanMode::updateActionInStateInit() {
 	if (action_i_ == ac_null)
-		action_i_ = ac_open_gyro;
+		action_i_ = ac_open_gyro_and_lidar;
 	else if (action_i_ == ac_open_gyro) {
 		boost::dynamic_pointer_cast<StateInit>(state_init)->initOpenLidar();
 		action_i_ = ac_open_lidar;
@@ -2231,7 +2231,7 @@ void ACleanMode::wifiSetWaterTank()
 	if (!water_tank.getStatus(WaterTank::operate_option::swing_motor))
 		return;
 
-	if ((isStateInit() && action_i_ > ac_open_gyro)
+	if ((isStateInit() && action_i_ > ac_open_gyro_and_lidar)
 		|| isStateClean()
 		|| isStateFollowWall())
 	{
@@ -2252,7 +2252,7 @@ void ACleanMode::setVacuum()
 		return;
 
 	speaker.play(vacuum.isUserSetMaxMode() ? VOICE_VACCUM_MAX : VOICE_VACUUM_NORMAL);
-	if ((isStateInit() && action_i_ > ac_open_gyro)
+	if ((isStateInit() && action_i_ > ac_open_gyro_and_lidar)
 		|| isStateClean()
 		|| isStateFollowWall())
 	{

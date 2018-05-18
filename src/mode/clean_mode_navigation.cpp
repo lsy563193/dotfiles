@@ -611,8 +611,8 @@ bool CleanModeNav::isSwitchByEventInStateInit() {
 
 bool CleanModeNav::updateActionInStateInit() {
 	if (action_i_ == ac_null)
-		action_i_ = ac_open_gyro;
-	else if (action_i_ == ac_open_gyro)
+		action_i_ = ac_open_gyro_and_lidar;
+	else if (action_i_ == ac_open_gyro_and_lidar)
 	{
 		// If it is the starting of navigation mode, paused_odom_radian_ will be zero.
 		odom.setRadianOffset(paused_odom_radian_);
@@ -917,7 +917,7 @@ bool CleanModeNav::checkEnterPause()
 //		is_stay_in_same_postion_long_time = false;
 		ev.key_clean_pressed = false;
 		speaker.play(VOICE_CLEANING_PAUSE);
-		if (action_i_ != ac_open_gyro) {
+		if (action_i_ != ac_open_gyro_and_lidar) {
 			paused_odom_radian_ = odom.getRadian();
 		}
 		ROS_INFO("%s %d: Key clean pressed, pause cleaning.Robot pose(%f)", __FUNCTION__, __LINE__,radian_to_degree(paused_odom_radian_));

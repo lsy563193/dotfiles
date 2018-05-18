@@ -11,18 +11,24 @@
 #include "dev.h"
 
 double MovementExceptionResume::slip_start_turn_time_ = 0;
-bool MovementExceptionResume::is_slip_last_turn_left_ = false;
-MovementExceptionResume::MovementExceptionResume()
+bool MovementExceptionResume::is_slip_last_turn_right_ = false;
+MovementExceptionResume::MovementExceptionResume(int last_action)
 {
 	ROS_WARN("%s %d: Entering movement exception resume.", __FUNCTION__, __LINE__);
 
+	last_action_i_ = last_action;
 	// Save current position for moving back detection.
 	s_pos_x = odom.getOriginX();
 	s_pos_y = odom.getOriginY();
 
 	//For slip
-	if(ros::Time::now().toSec() - slip_start_turn_time_ < 5){
-		robot_slip_flag_ = static_cast<uint8_t>(is_slip_last_turn_left_ ? 2 : 1);
+	if(ros::Time::now().toSec() - slip_start_turn_time_ < 3){
+		if(last_action_i_ == sp_mt_->sp_mode_->ac_follow_wall_left)
+			robot_slip_flag_ = 1;
+		else if(last_action_i_ == sp_mt_->sp_mode_->ac_follow_wall_right)
+			robot_slip_flag_ = 2;
+		else
+			robot_slip_flag_ = static_cast<uint8_t>(is_slip_last_turn_right_ ? 2 : 1);
 		slip_start_turn_time_ = ros::Time::now().toSec();
 	}else{
 		robot_slip_flag_ = 0;
@@ -790,23 +796,24 @@ bool MovementExceptionResume::isFinish()
 	}
 	else if(ev.robot_slip)
 	{
-		CellState isExitSlipBlock;
+		CellState cell_state;
+		auto is_follow_wall_left = last_action_i_ == sp_mt_->sp_mode_->ac_follow_wall_left;
+		auto is_follow_wall_right = last_action_i_ == sp_mt_->sp_mode_->ac_follow_wall_right;
 		if(sp_mt_->sp_mode_->mode_i_ != sp_mt_->sp_mode_->md_go_to_charger &&
 				sp_mt_->sp_mode_->mode_i_ != sp_mt_->sp_mode_->md_remote){
 			ACleanMode* p_mode = dynamic_cast<ACleanMode*>(sp_mt_->sp_mode_);
-			isExitSlipBlock = p_mode->clean_map_.getCell(CLEAN_MAP,getPosition().toCell().x,getPosition().toCell().y);
+			cell_state = p_mode->clean_map_.getCell(CLEAN_MAP,getPosition().toCell().x,getPosition().toCell().y);
 		}
 
 		if(ros::Time::now().toSec() - resume_slip_start_time_ > 60){
 			ev.robot_slip = false;
 			ev.fatal_quit = true;
 			error.set(ERROR_CODE_STUCK);
-
 		}
 		switch(robot_slip_flag_){
 			case 0:{
 				float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getX(), odom.getY());
-				if ((isExitSlipBlock != BLOCKED_SLIP && std::abs(distance) > 0.15f) || lidar.getObstacleDistance(1, ROBOT_RADIUS) < 0.06)
+				if ((cell_state != BLOCKED_SLIP && std::abs(distance) > 0.15f) || lidar.getObstacleDistance(1, ROBOT_RADIUS) < 0.06)
 				{
 					ROS_INFO("%s,%d Robot slip to go straight finished",__FUNCTION__,__LINE__);
 					if(!lidar.isRobotSlip())
@@ -814,8 +821,14 @@ bool MovementExceptionResume::isFinish()
 						ev.robot_slip = false;
 						slip_start_turn_time_ = ros::Time::now().toSec();//in this place,slip_start_turn_time_ record the slip end time
 					}
-					else{
-						robot_slip_flag_ = static_cast<uint8_t>(is_slip_last_turn_left_ ? 2 : 1);
+					else
+					{
+						if(is_follow_wall_left)
+							robot_slip_flag_ = 1;
+						else if(is_follow_wall_right)
+							robot_slip_flag_ = 2;
+						else
+							robot_slip_flag_ = static_cast<uint8_t>(is_slip_last_turn_right_ ? 2 : 1);
 						slip_start_turn_time_ = ros::Time::now().toSec();
 					}
 				}
@@ -823,10 +836,10 @@ bool MovementExceptionResume::isFinish()
 			}
 			case 1:{
 				if(ros::Time::now().toSec() - slip_start_turn_time_ > 1) {
-					ROS_INFO("%s,%d Robot slip to turn left finished",__FUNCTION__,__LINE__);
+					ROS_INFO("%s,%d Robot slip to turn right finished",__FUNCTION__,__LINE__);
 					s_pos_x = odom.getOriginX();
 					s_pos_y = odom.getOriginY();
-					is_slip_last_turn_left_ = true;
+					is_slip_last_turn_right_ = true;
 					robot_slip_flag_ = 0;
 				}
 				break;
@@ -834,10 +847,10 @@ bool MovementExceptionResume::isFinish()
 			case 2:{
 				if(ros::Time::now().toSec() - slip_start_turn_time_ > 1)
 				{
-					ROS_INFO("%s,%d Robot slip to turn right finished",__FUNCTION__,__LINE__);
+					ROS_INFO("%s,%d Robot slip to turn left finished",__FUNCTION__,__LINE__);
 					s_pos_x = odom.getOriginX();
 					s_pos_y = odom.getOriginY();
-					is_slip_last_turn_left_ = false;
+					is_slip_last_turn_right_ = false;
 					robot_slip_flag_ = 0;
 				}
 				break;
