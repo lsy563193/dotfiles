@@ -50,7 +50,7 @@ ACleanMode::ACleanMode()
 	{
 		sp_state = state_init.get();
 		sp_state->init();
-		action_i_ = ac_open_gyro;
+		action_i_ = ac_open_gyro_and_lidar;
 		genNextAction();
 	}
 	robot_timer.initWorkTimer();
@@ -1016,12 +1016,15 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_mt) {
 		return curr.isCellAndAngleEqual(it);
 	});
 	auto distance = std::distance(loc, passed_path_.end());
-	if (distance == 0) {
+	if (distance == 0)
+	{
 		curr.dir = iterate_point_->dir;
-		ROS_INFO("curr(%d,%d,%d,%d)", curr.toCell().x, curr.toCell().y, static_cast<int>(radian_to_degree(curr.th)),curr.dir);
+		ROS_INFO("curr(%d,%d,%d,%d), passed_path_.size(%d)", curr.toCell().x, curr.toCell().y,
+				 static_cast<int>(radian_to_degree(curr.th)), curr.dir, passed_path_.size());
 		passed_path_.push_back(curr);
 	}
-	ROS_WARN("passed_path_.size(%d)", passed_path_.size());
+	else
+		ROS_INFO("passed_path_.size(%d)", passed_path_.size());
 
 	markMapInNewCell();//real time mark to exploration
 
@@ -1688,7 +1691,7 @@ bool ACleanMode::isSwitchByEventInStateInit() {
 
 bool ACleanMode::updateActionInStateInit() {
 	if (action_i_ == ac_null)
-		action_i_ = ac_open_gyro;
+		action_i_ = ac_open_gyro_and_lidar;
 	else if (action_i_ == ac_open_gyro) {
 		boost::dynamic_pointer_cast<StateInit>(state_init)->initOpenLidar();
 		action_i_ = ac_open_lidar;
@@ -2228,7 +2231,7 @@ void ACleanMode::wifiSetWaterTank()
 	if (!water_tank.getStatus(WaterTank::operate_option::swing_motor))
 		return;
 
-	if ((isStateInit() && action_i_ > ac_open_gyro)
+	if ((isStateInit() && action_i_ > ac_open_gyro_and_lidar)
 		|| isStateClean()
 		|| isStateFollowWall())
 	{
@@ -2249,7 +2252,7 @@ void ACleanMode::setVacuum()
 		return;
 
 	speaker.play(vacuum.isUserSetMaxMode() ? VOICE_VACCUM_MAX : VOICE_VACUUM_NORMAL);
-	if ((isStateInit() && action_i_ > ac_open_gyro)
+	if ((isStateInit() && action_i_ > ac_open_gyro_and_lidar)
 		|| isStateClean()
 		|| isStateFollowWall())
 	{

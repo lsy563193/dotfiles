@@ -256,7 +256,7 @@ public:
 		ROS_INFO("line.p1(%lf, %lf), line.p2(%lf, %lf)", line.x1, line.y1, line.x2, line.y2);
 		ROS_INFO("vertical_line.p1(%lf, %lf)", vertical_line.x1, vertical_line.y1);
 		double dis_to_origin = fabs(vertical_line.C / sqrt(pow(vertical_line.A, 2) + pow(vertical_line.B, 2)));
-		ROS_ERROR("is_left_(%d), is_line_in_origin_left(%d), dis_to_origin(%lf)", is_left_, is_line_in_origin_left, dis_to_origin);
+		ROS_INFO("is_left_(%d), is_line_in_origin_left(%d), dis_to_origin(%lf)", is_left_, is_line_in_origin_left, dis_to_origin);
 		if (is_left_) {
 			if (is_line_in_origin_left) {
 				if (dis_to_origin > 0.05) {
@@ -1245,12 +1245,12 @@ int Lidar::compLaneDistance()
 				if (x >= 0){
 					if (std::abs(x) <= x_front_min) {
 						x_front_min = std::abs(x);
-						ROS_INFO("x_front_min = %lf",x_front_min);
+//						ROS_INFO("x_front_min = %lf",x_front_min);
 					}
 				} else {
 					if (std::abs(x) <= x_back_min) {
 						x_back_min = std::abs(x);
-						ROS_INFO("x_back_min = %lf", x_back_min);
+//						ROS_INFO("x_back_min = %lf", x_back_min);
 					}
 				}
 			}

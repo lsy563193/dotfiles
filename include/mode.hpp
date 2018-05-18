@@ -50,7 +50,7 @@ public:
 	virtual void setNextMode(int next_mode);
 
 	bool isInitState() const{
-			return action_i_ == ac_open_gyro || action_i_ == ac_back_from_charger ||
+			return action_i_ == ac_open_gyro || action_i_ == ac_open_gyro_and_lidar || action_i_ == ac_back_from_charger ||
 		action_i_ == ac_open_lidar || action_i_	== ac_align || action_i_ == ac_open_slam;
 	};
 	int getNextMode();
@@ -86,21 +86,22 @@ public:
 		//0
 		ac_null,
 		ac_open_gyro,
+		ac_open_gyro_and_lidar,
 		ac_back_from_charger,
 		ac_open_lidar,
 		ac_align,
-		//5
+		//6
 		ac_open_slam,
 		ac_linear,
 		ac_follow_wall_left,
 		ac_follow_wall_right,
 		ac_turn,
-		//10
+		//11
 		ac_back,
 		ac_go_to_charger,
 		ac_idle,
 		ac_sleep,
-		//15
+		//16
 		ac_charge,
 		ac_pause,
 		ac_remote,
@@ -134,6 +135,7 @@ public:
 	const double WHEEL_CLIFF_TIME_LIMIT{2};
 	bool is_wheel_cliff_triggered{false};
 	int mode_i_{};
+	int current_action_i_{};
 
 	State* sp_state{};
 };

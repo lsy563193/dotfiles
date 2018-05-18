@@ -102,10 +102,10 @@
 #define BATTERY_READY_TO_CLEAN_VOLTAGE	(1400)
 
 /* Fully charged battery voltage value */
-#define BATTERY_FULL_VOLTAGE	(1640)
+#define BATTERY_FULL_VOLTAGE	(1660)
 
 /* Continue cleaning voltage value */
-#define RESUME_CLEANING_VOLTAGE	(1600)
+#define RESUME_CLEANING_VOLTAGE	(1660)
 
 /* Battery voltage criterion for brush setting*/
 #define NORMAL_OPERATE_VOLTAGE_FOR_SIDE_BRUSH	(1050)
@@ -197,6 +197,6 @@
 
 #define WHEEL_ENCODER_TO_MILLIMETER			(0.1955f)
 
-#define USE_NEW_PATH_PLAN 1
+#define USE_NEW_PATH_PLAN 0
 #endif //__CONFIG_H__
 

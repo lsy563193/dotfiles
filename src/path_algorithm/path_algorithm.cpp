@@ -411,7 +411,7 @@ bool APathAlgorithm::checkTrappedUsingDijkstra(GridMap &map, const Cell_t &curr_
 
 	auto map_cleand_count = map.getCleanedArea();
 	double clean_proportion = static_cast<double>(dijkstra_cleaned_count) / static_cast<double>(map_cleand_count);
-	ROS_ERROR("%s %d: !!!!!!!!!!!!!!!!!!!!!!!dijkstra_cleaned_count(%d), map_cleand_count(%d), clean_proportion(%f) ,when prop < 0,8 is trapped",
+	ROS_INFO("%s %d: !!!!!!!!!!!!!!!!!!!!!!!dijkstra_cleaned_count(%d), map_cleand_count(%d), clean_proportion(%f) ,when prop < 0,8 is trapped",
 					 __FUNCTION__, __LINE__, dijkstra_cleaned_count, map_cleand_count, clean_proportion);
 	return (clean_proportion < 0.8);
 }

@@ -55,7 +55,8 @@ bool CleanModeNav::mapMark()
 	ROS_INFO("%s %d: Start updating map.", __FUNCTION__, __LINE__);
 	if(passed_path_.empty())
 	{
-		ROS_WARN("%s %d: pass_path is emply, add curr_point(%d,%d,%d,%d).", __FUNCTION__, __LINE__,getPosition().x, getPosition().y, getPosition().th, getPosition().dir);
+		ROS_WARN("%s %d: pass_path is empty, add curr_point(%.2f,%.2f,%.2f,%d).", __FUNCTION__, __LINE__, getPosition().x,
+				 getPosition().y, getPosition().th, getPosition().dir);
 		passed_path_.push_back(getPosition());
 	}
 
@@ -196,9 +197,9 @@ bool CleanModeNav::isExit()
 			return true;
 		}
 
-		if (ev.key_clean_pressed)
+		if (ev.key_clean_pressed || s_wifi.receiveIdle())
 		{
-			ROS_WARN("%s %d: Exit for ev.key_clean_pressed.", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Exit for ev.key_clean_pressed or wifi receive idle.", __FUNCTION__, __LINE__);
 			setNextMode(md_idle);
 			return true;
 		}
@@ -610,8 +611,8 @@ bool CleanModeNav::isSwitchByEventInStateInit() {
 
 bool CleanModeNav::updateActionInStateInit() {
 	if (action_i_ == ac_null)
-		action_i_ = ac_open_gyro;
-	else if (action_i_ == ac_open_gyro)
+		action_i_ = ac_open_gyro_and_lidar;
+	else if (action_i_ == ac_open_gyro_and_lidar)
 	{
 		// If it is the starting of navigation mode, paused_odom_radian_ will be zero.
 		odom.setRadianOffset(paused_odom_radian_);
@@ -739,7 +740,7 @@ bool CleanModeNav::isSwitchByEventInStateClean() {
 
 bool CleanModeNav::updateActionInStateClean(){
 	bool ret = false;
-	ROS_ERROR("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~hello");
+//	ROS_ERROR("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~hello");
 	sp_action_.reset();//to mark in destructor
 //	pubCleanMapMarkers(clean_map_, pointsGenerateCells(remain_path_));
     if(!plan_path_.empty())
@@ -916,7 +917,7 @@ bool CleanModeNav::checkEnterPause()
 //		is_stay_in_same_postion_long_time = false;
 		ev.key_clean_pressed = false;
 		speaker.play(VOICE_CLEANING_PAUSE);
-		if (action_i_ != ac_open_gyro) {
+		if (action_i_ != ac_open_gyro_and_lidar) {
 			paused_odom_radian_ = odom.getRadian();
 		}
 		ROS_INFO("%s %d: Key clean pressed, pause cleaning.Robot pose(%f)", __FUNCTION__, __LINE__,radian_to_degree(paused_odom_radian_));

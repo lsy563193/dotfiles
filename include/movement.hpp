@@ -297,7 +297,7 @@ private:
 class MovementExceptionResume: public IMovement
 {
 public:
-	MovementExceptionResume();
+	MovementExceptionResume(int last_action);
 	~MovementExceptionResume();
 
 	void adjustSpeed(int32_t&, int32_t&) override ;
@@ -321,7 +321,7 @@ private:
 	double wheel_cliff_resume_start_radian_{0};
 	uint8_t robot_slip_flag_{0};
 	static double slip_start_turn_time_;
-	static bool is_slip_last_turn_left_;
+	static bool is_slip_last_turn_right_;
 	double resume_slip_start_time_;
 	uint8_t cliff_resume_cnt_{0};
 	uint8_t cliff_all_resume_cnt_{0};
@@ -332,6 +332,7 @@ private:
 	double resume_gyro_start_time_;
 	bool should_init_for_gyro_exception_{true};
 	IAction* p_action_open_gyro_ = nullptr;
+	int last_action_i_;
 };
 
 class MovementCharge :public IMovement

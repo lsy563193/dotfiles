@@ -618,7 +618,7 @@ bool GridMap::count_if(const Cell_t &curr_cell, std::function<bool(const Cell_t 
 		return c_it.y%2 == 0 && getCell(CLEAN_MAP, c_it.x, c_it.y) == UNCLEAN  && isBlockAccessible(c_it.x, c_it.y);
 	},true,true,true);
 	count = c_cleans.size();
-	ROS_WARN("%s,is_trapped(%d),trapped_clean_count(%d)",__FUNCTION__,targets.empty(), count);
+//	ROS_WARN("%s,is_trapped(%d),trapped_clean_count(%d)",__FUNCTION__,targets.empty(), count);
 	return targets.empty();
 }
 
