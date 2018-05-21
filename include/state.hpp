@@ -36,7 +36,9 @@ public:
 	void initBackFromCharger();
 	void initForNavigation();
 	void initForExploration();
+	void initForCommonMode();
 	void initForSpot();
+	void initForGoToCharger();
 };
 
 class StateClean: public State {
@@ -60,7 +62,6 @@ public:
 	StateGoToCharger() = default;
 	void init() override;
 //	IMoveType* setNextAction_();
-
 };
 
 

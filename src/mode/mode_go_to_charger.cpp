@@ -89,7 +89,7 @@ int ModeGoToCharger::getNextAction()
 	{
 		if (gyro.isOn())
 		{
-			sp_state = st_go_to_charger.get();
+			sp_state = st_init.get();
 			sp_state->init();
 			return ac_go_to_charger;
 		}
@@ -98,7 +98,7 @@ int ModeGoToCharger::getNextAction()
 	}
 	else if (action_i_ == ac_open_gyro)
 	{
-		sp_state = st_go_to_charger.get();
+		sp_state = st_init.get();
 		sp_state->init();
 		return ac_go_to_charger;
 	}
