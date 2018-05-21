@@ -344,7 +344,6 @@ public:
 	void setVacuum() override ;
 
 private:
-	boost::shared_ptr<State> st_go_to_charger = boost::make_shared<StateGoToCharger>();
 	boost::shared_ptr<State> st_init = boost::make_shared<StateInit>();
 };
 
@@ -588,8 +587,8 @@ protected:
 	bool go_home_for_low_battery_{false};
 	bool switch_is_off_{false};
 	Points charger_pose_;
-	Points tmp_charger_pose_;
 	bool found_charger_{false};
+	Points tmp_charger_pose_;
 	bool is_using_dust_box_{false};
 public:
 

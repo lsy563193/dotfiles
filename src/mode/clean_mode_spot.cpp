@@ -137,7 +137,6 @@ bool CleanModeSpot::updateActionInStateInit() {
 	if (action_i_ == ac_null)
 		action_i_ = ac_open_gyro_and_lidar;
 	else if (action_i_ == ac_open_gyro_and_lidar) {
-		boost::dynamic_pointer_cast<StateInit>(state_init)->initForSpot();
 		action_i_ = ac_open_lidar;
 	}
 	else if (action_i_ == ac_open_lidar)

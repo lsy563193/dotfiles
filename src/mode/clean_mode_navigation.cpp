@@ -622,11 +622,10 @@ bool CleanModeNav::updateActionInStateInit() {
 			charger.enterNavFromChargeMode(false);
 			action_i_ = ac_back_from_charger;
 			found_charger_ = true;
-			boost::dynamic_pointer_cast<StateInit>(state_init)->initBackFromCharger();
+			boost::dynamic_pointer_cast<StateInit>(state_init)->initForNavigation();
 		}
 		else{
 			action_i_ = ac_open_lidar;
-			boost::dynamic_pointer_cast<StateInit>(state_init)->initForNavigation();
 		}
 	} else if (action_i_ == ac_back_from_charger)
 	{
@@ -639,8 +638,8 @@ bool CleanModeNav::updateActionInStateInit() {
 		if (!has_aligned_and_open_slam_) // Init odom position here.
 			robot::instance()->initOdomPosition();
 
-		boost::dynamic_pointer_cast<StateInit>(state_init)->initForNavigation();
 		action_i_ = ac_open_lidar;
+		boost::dynamic_pointer_cast<StateInit>(state_init)->initForNavigation();
 		go_home_path_algorithm_->setHomePoint(getPosition());
 		if (!seen_charger_during_cleaning_)
 			seen_charger_during_cleaning_ = true;

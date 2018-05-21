@@ -74,7 +74,7 @@ void Slam::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
 
 //	slam_grid_map.print(getPosition().toCell(), CLEAN_MAP, {{0,0}});
 
-	GridMap android_grid_map;
+	GridMap app_grid_map;
 	Cell_t cell{static_cast<int16_t>(getPosition().x * WIFI_MAP_RESOLUTION / map->info.resolution),
 				static_cast<int16_t>(getPosition().y * WIFI_MAP_RESOLUTION / map->info.resolution)};
 
@@ -89,25 +89,24 @@ void Slam::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
 	// -- right down corner (min)
 	bound.SetMinimum(cell - Cell_t{WIFI_MAP_WIDTH_HALF, WIFI_MAP_WIDTH_HALF});
 
-	ROS_INFO("%s %d: size(%d), curr((%d,%d),(%d,%d)),bound({%d,%d}{%d,%d})", __FUNCTION__, __LINE__, size,
+	ROS_INFO("\033[1;35m%s %d: size(%d), curr((%d,%d),(%d,%d)),bound({%d,%d}{%d,%d})\033[0m", __FUNCTION__, __LINE__, size,
 			 cell.x, cell.y, getPosition().toCell().x, getPosition().toCell().y, bound.min.x, bound.min.y,
 			 bound.max.x, bound.max.y);
-	android_grid_map.convertFromSlamMap(WIFI_MAP_RESOLUTION, 0.25, bound);
+	app_grid_map.convertFromSlamMap(WIFI_MAP_RESOLUTION, 0.25, bound);
 
 	//static int count = 0;
 	//count++;
 //	if(count % 20 == 0)##
 	{
 		//count = 0;
-		wifiMapManage.serialize(android_grid_map, bound);
-//		android_grid_map.printInRange(cell,CLEAN_MAP, Cells{cell},true,bound);
+		wifiMapManage.serialize(app_grid_map, bound);
+//		app_grid_map.printInRange(cell,CLEAN_MAP, Cells{cell},true,bound);
 //		beeper.debugBeep();
 	}
 	isMapReady(true);
 
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_MAP);
 
-	ROS_INFO(
-			"%s %d:finished map callback,nav_map.size(\033[33m%d,%d\033[0m),resolution(\033[33m%f\033[0m),nav_map.origin(\033[33m%f,%f\033[0m)",
+	ROS_INFO("%s %d:finished map callback,nav_map.size(\033[33m%d,%d\033[0m),resolution(\033[33m%f\033[0m),nav_map.origin(\033[33m%f,%f\033[0m)",
 			__FUNCTION__, __LINE__, slam_map.getWidth(), slam_map.getHeight(), slam_map.getResolution(),slam_map.getOriginX(), slam_map.getOriginY());
 }

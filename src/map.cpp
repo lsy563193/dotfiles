@@ -231,10 +231,10 @@ void GridMap::convertFromSlamMap(float resolution_target,float threshold,const B
 
 	ROS_INFO("%s,%d: resolution: %f, multi: %f, limit cnt:%d, map_x_min: %d, map_x_max: %d, map_y_min: %d, map_y_max: %d",
 	 		   __FUNCTION__, __LINE__, resolution, multi, limit_count, map_x_min, map_x_max, map_y_min, map_y_max);
-	for (auto cell_x = map_x_min; cell_x <= map_x_max; ++cell_x)
+	for (auto cell_x = map_x_max; cell_x >= map_x_min; --cell_x)
 	{
 //		ROS_ERROR("cell:");
-		for (auto cell_y = map_y_min; cell_y <= map_y_max; ++cell_y)
+		for (auto cell_y = map_y_max; cell_y >= map_y_min; --cell_y)
 		{
 			// Get the range of this cell in the grid map of slam map data.
 			double world_x, world_y;
