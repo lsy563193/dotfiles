@@ -549,7 +549,7 @@ void CleanModeNav::batteryHome(bool state_now, bool state_last)
 	if (!ev.battery_home && isStateClean())
 	{
 		continue_point_ = getPosition();
-		ROS_INFO("%s %d: low battery, battery =\033[33m %dmv \033[0m, continue cell(%d, %d)", __FUNCTION__, __LINE__,
+		ROS_WARN("%s %d: low battery, battery =\033[33m %dmv \033[0m, continue cell(%d, %d)", __FUNCTION__, __LINE__,
 				 battery.getVoltage(), continue_point_.x, continue_point_.y);
 		ev.battery_home = true;
 	}
@@ -803,14 +803,6 @@ void CleanModeNav::switchInStateClean() {
 }
 
 // ------------------State go home point--------------------
-bool CleanModeNav::checkEnterGoHomePointState()
-{
-	if (ev.battery_home)
-		speaker.play(VOICE_BATTERY_LOW, false);
-
-	return ACleanMode::checkEnterGoHomePointState();
-}
-
 bool CleanModeNav::isSwitchByEventInStateGoHomePoint()
 {
 	return ACleanMode::isSwitchByEventInStateGoHomePoint();
