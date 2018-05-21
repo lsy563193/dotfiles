@@ -1514,6 +1514,10 @@ bool S_Wifi::setWorkMode(int mode)
 			robot_work_mode_ = wifi::WorkMode::HOMING;
 			break;
 
+		case Mode::md_go_to_charger:
+			robot_work_mode_ = wifi::WorkMode::HOMING;
+			break;
+
 		default:
 			robot_work_mode_ = wifi::WorkMode::SHUTDOWN;
 			break;
