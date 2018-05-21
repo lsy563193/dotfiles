@@ -111,7 +111,10 @@ bool Mode::isExceptionTriggered()
 	if (ev.oc_brush_main)
 		ROS_WARN("%s %d: Main bursh oc.", __FUNCTION__, __LINE__);
 	if (ev.robot_slip)
-		ROS_WARN("%s %d: Robot slip.", __FUNCTION__, __LINE__);
+	{
+		current_action_i_ = action_i_;
+		ROS_WARN("%s %d: Robot slip. current_action_i(%d)", __FUNCTION__, __LINE__,current_action_i_);
+	}
 	if (is_wheel_cliff_triggered)
 		ROS_WARN("%s %d: Wheel cliff triggered.", __FUNCTION__, __LINE__);
 	if(ev.gyro_error)
@@ -128,6 +131,9 @@ void Mode::genNextAction()
 	switch (action_i_) {
 		case ac_open_gyro :
 			sp_action_.reset(new ActionOpenGyro);
+			break;
+		case ac_open_gyro_and_lidar :
+			sp_action_.reset(new ActionOpenGyroAndLidar);
 			break;
 		case ac_back_from_charger :
 			sp_action_.reset(new ActionBackFromCharger);
@@ -148,7 +154,7 @@ void Mode::genNextAction()
 			sp_action_.reset(new MoveTypeGoToCharger);
 			break;
 		case ac_exception_resume :
-			sp_action_.reset(new MovementExceptionResume);
+			sp_action_.reset(new MovementExceptionResume(current_action_i_));
 			break;
 		case ac_charge :
 			sp_action_.reset(new MovementCharge);

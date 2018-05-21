@@ -1072,10 +1072,6 @@ Point_t getPosition(Baselink_Frame_Type type)
 	return {xCount, yCount, robot::instance()->getWorldPoseRadian()};
 }
 
-float cellToCount(int16_t i) {
-	return i * CELL_SIZE;
-}
-
 void setPosition(float x, float y) {
 	xCount = x;
 	yCount = y;
@@ -1086,20 +1082,6 @@ void resetPosition() {
 	yCount = 0;
 }
 
-bool isAny(Dir_t dir)
-{
-	return dir == MAP_ANY;
-}
-
-bool isPos(Dir_t dir)
-{
-	return dir == MAP_POS_X || dir == MAP_POS_Y;
-}
-
-bool isXAxis(Dir_t dir)
-{
-	return dir == MAP_POS_X || dir == MAP_NEG_X;
-}
 /*
 Dir_t getReDir(Dir_t dir)
 {

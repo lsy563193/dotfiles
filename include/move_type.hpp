@@ -13,6 +13,7 @@
 #include "boost/shared_ptr.hpp"
 #include "rcon.h"
 #include "serial.h"
+#include "map.h"
 //#include "mode.hpp"
 
 class Mode;
@@ -139,6 +140,7 @@ private:
 	bool is_trapped_in_small_area_{false};
     std::vector<Points::iterator>  it_out_edges{};
     std::vector<Points::iterator>  it_in_edges{};
+//	Points out_points{};
 };
 
 class MoveTypeGoToCharger:public IMoveType

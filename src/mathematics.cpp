@@ -287,3 +287,88 @@ std::unique_ptr<Cells> points_to_cells(const std::unique_ptr<Points>& points)
 	return cells;
 };
 
+float cellToCount(int16_t i) {
+	return i * CELL_SIZE;
+}
+
+std::unique_ptr<Points> cells_generate_points(const std::unique_ptr<Cells>& path)
+{
+//	displayCellPath(*path);
+	auto  point_path = make_unique<Points>();
+	std::string debug_str;
+	if(!path->empty()){
+		for(auto&& it = path->begin(); it != path->end(); ++it) {
+			Point_t target {cellToCount((*it).x),cellToCount((*it).y),0};
+			if(it == path->end()-1)
+			{
+				target.dir = point_path->back().dir;
+				target.th = point_path->back().th;
+			}else {
+				auto it_next = it+1;
+				if (it->x == it_next->x) {
+					target.dir = it->y > it_next->y ? MAP_NEG_Y : MAP_POS_Y;
+					target.th = isPos(target.dir) ? PI / 2 : -PI / 2;
+				} else {
+					target.dir = it->x > it_next->x ? MAP_NEG_X : MAP_POS_X;
+					target.th = isPos(target.dir) ? 0 : PI;
+				}
+			}
+			point_path->emplace_back(target);
+			debug_str += "(" + std::to_string(it->x) + ", " + std::to_string(it->y) + ")";
+		}
+	}
+	ROS_INFO("%s %d: it:%s, cell.back(%d,%d)",__FUNCTION__, __LINE__, debug_str.c_str(),
+			 path->back().x, path->back().y/*, path->back().th*/);
+	return point_path;
+}
+
+bool isAny(Dir_t dir)
+{
+	return dir == MAP_ANY;
+}
+
+bool isPos(Dir_t dir)
+{
+	return dir == MAP_POS_X || dir == MAP_POS_Y;
+}
+
+bool isXAxis(Dir_t dir)
+{
+	return dir == MAP_POS_X || dir == MAP_NEG_X;
+}
+void displayCellPath(const Cells &path)
+{
+	std::string     msg = __FUNCTION__;
+
+	msg += " " + std::to_string(__LINE__) + ": Path size(" + std::to_string(path.size()) + "):";
+	for (auto it = path.begin(); it != path.end(); ++it) {
+		msg += "{" + std::to_string(it->x) + ", " + std::to_string(it->y) + "},";
+	}
+	//msg += "\n";
+	ROS_INFO("%s",msg.c_str());
+}
+
+void displayTargetList(const Cells &target_list)
+{
+	std::string     msg = __FUNCTION__;
+	msg += " " + std::to_string(__LINE__) + ": targets = {" + std::to_string(target_list.size()) + "}:";
+	for (auto it = target_list.begin(); it != target_list.end(); ++it) {
+		msg += "{" + std::to_string(it->x) + ", " + std::to_string(it->y) + ", " + "},";
+	}
+	//msg += "\n";
+	ROS_INFO("%s",msg.c_str());
+}
+
+void displayPointPath(const Points &point_path)
+{
+	std::string     msg = __FUNCTION__;
+	msg += " " + std::to_string(__LINE__) + ": Points(" + std::to_string(point_path.size()) + "):";
+	for (auto it = point_path.begin(); it != point_path.end(); ++it) {
+		msg += "(" + std::to_string((it->toCell().x)) + ", " + std::to_string(it->toCell().y) + ", " + std::to_string(
+						static_cast<int>(radian_to_degree(it->th)))+ ", " + std::to_string(it->dir) + "),";
+	}
+	//msg += "\n";
+	ROS_INFO("%s",msg.c_str());
+}
+
+

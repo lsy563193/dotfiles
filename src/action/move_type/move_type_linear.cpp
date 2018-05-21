@@ -9,20 +9,22 @@
 #include <state.hpp>
 #include <mode.hpp>
 
-MoveTypeLinear::MoveTypeLinear(Points remain_path){
+MoveTypeLinear::MoveTypeLinear(Points remain_path)
+{
 	IMovement::sp_mt_ = this;
 	resetTriggeredValue();
 	remain_path.pop_front();
 
-	auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
+	auto p_mode = dynamic_cast<ACleanMode *>(sp_mode_);
 	auto target_point_ = std::next(p_mode->iterate_point_);
 	turn_target_radian_ = p_mode->iterate_point_->th;
 
-	ROS_WARN("%s,%d: Enter move type linear, angle(%f,%f, %f),  target(%f, %f).",
-			 __FUNCTION__, __LINE__, getPosition().th, radian_to_degree(target_point_->th), radian_to_degree(turn_target_radian_), target_point_->x, target_point_->y);
+	ROS_WARN("%s,%d: Enter move type linear, angle(%.2f,%.2f, %.2f),  target(%.3f, %.3f).",
+			 __FUNCTION__, __LINE__, getPosition().th, radian_to_degree(target_point_->th),
+			 radian_to_degree(turn_target_radian_), target_point_->x, target_point_->y);
 
 	movement_i_ = p_mode->isGyroDynamic() ? mm_dynamic : mm_turn;
-	if(movement_i_ == mm_dynamic)
+	if (movement_i_ == mm_dynamic)
 		sp_movement_.reset(new MovementGyroDynamic());
 	else
 		sp_movement_.reset(new MovementTurn(turn_target_radian_, ROTATE_TOP_SPEED));
@@ -252,7 +254,7 @@ bool MoveTypeLinear::switchLinearTargetByRecalc(ACleanMode *p_clean_mode) {
 	auto target_point = std::next(p_clean_mode->iterate_point_);
 	auto is_found = boost::dynamic_pointer_cast<NavCleanPathAlgorithm>( p_clean_mode->clean_path_algorithm_)->generatePath(p_clean_mode->clean_map_, *target_point, target_point->dir, path);
 	ROS_INFO("%s %d: is_found:(d), remain:", __FUNCTION__, __LINE__, is_found);
-	p_clean_mode->clean_path_algorithm_->displayPointPath(path);
+	displayPointPath(path);
 	if (is_found) {
 		ROS_INFO("5555555555555555555555555555555555555555");
 		if (!is_opposite_dir(path.front().dir, p_clean_mode->iterate_point_->dir)) {
@@ -261,7 +263,7 @@ bool MoveTypeLinear::switchLinearTargetByRecalc(ACleanMode *p_clean_mode) {
 					 path.front().dir, p_clean_mode->iterate_point_->dir);
             p_clean_mode->plan_path_.erase(p_clean_mode->iterate_point_+1,p_clean_mode->plan_path_.end());
 			std::move(path.begin(),path.end(),std::back_inserter(p_clean_mode->plan_path_));
-            p_clean_mode->clean_path_algorithm_->displayPointPath(p_clean_mode->plan_path_);
+            displayPointPath(p_clean_mode->plan_path_);
 			p_clean_mode->pubCleanMapMarkers(p_clean_mode->clean_map_,
 											 p_clean_mode->pointsGenerateCells(p_clean_mode->plan_path_));
 

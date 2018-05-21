@@ -31,6 +31,10 @@ double ranged_degree(double degree);
 double degree_to_radian(double deg);
 double radian_to_degree(double rad);
 
+float cellToCount(int16_t distance);
+
+//int16_t countToCell(int32_t count);
+
   /**
    * Represents a 2-dimensional vector (x, y)
    */
@@ -603,6 +607,13 @@ void coordinate_transform(double *x, double *y, double theta, double offset_x, d
  */
 bool unsigned_long_to_hex_string(unsigned long number, char *str, const int len);
 
+bool isAny(Dir_t dir);
+
+bool isPos(Dir_t dir);
+
+bool isXAxis(Dir_t dir);
+
+
 Vector2<double> polarToCartesian(double polar, int i);
 
 
@@ -631,4 +642,10 @@ std::unique_ptr<T> make_unique(Args&&... args)
 }
 
 std::unique_ptr<Cells> points_to_cells(const std::unique_ptr<Points>& points);
+std::unique_ptr<Points> cells_generate_points(const std::unique_ptr<Cells>& path);
+
+void displayCellPath(const Cells &path);
+void displayPointPath(const Points &point_path);
+void displayTargetList(const Cells &target_list);
+
 #endif

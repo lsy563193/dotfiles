@@ -50,7 +50,7 @@ ACleanMode::ACleanMode()
 	{
 		sp_state = state_init.get();
 		sp_state->init();
-		action_i_ = ac_open_gyro;
+		action_i_ = ac_open_gyro_and_lidar;
 		genNextAction();
 	}
 	robot_timer.initWorkTimer();
@@ -441,6 +441,44 @@ void ACleanMode::pubTmpTarget(const Point_t &point, bool is_virtual) {
 	//ROS_INFO("pub points!!");
 }
 
+void ACleanMode::pubPointMarkers2(const std::vector<geometry_msgs::Point> *points, std::string frame_id, std::string name)
+{
+	visualization_msgs::Marker point_marker;
+	point_marker.ns = name;
+	point_marker.id = 0;
+	point_marker.type = visualization_msgs::Marker::SPHERE_LIST;
+	point_marker.action= 0;//add
+	point_marker.lifetime=ros::Duration(0);
+	point_marker.scale.x = 0.05;
+	point_marker.scale.y = 0.05;
+	point_marker.scale.z = 0.05;
+	point_marker.color.r = 0.0;
+	point_marker.color.g = 1.0;
+	point_marker.color.b = 0.0;
+	point_marker.color.a = 1.0;
+	point_marker.header.frame_id = frame_id;
+	point_marker.header.stamp = ros::Time::now();
+
+	geometry_msgs::Point lidar_points;
+	lidar_points.z = 0;
+	if (!points->empty()) {
+		std::string msg("");
+		for (auto iter = points->cbegin(); iter != points->cend(); ++iter) {
+			lidar_points.x = iter->x;
+			lidar_points.y = iter->y;
+			point_marker.points.push_back(lidar_points);
+			msg+="("+std::to_string(iter->x)+","+std::to_string(iter->y)+"),";
+		}
+		point_marker_pub_.publish(point_marker);
+		//ROS_INFO("%s,%d,points size:%u,points %s",__FUNCTION__,__LINE__,points->size(),msg.c_str());
+		point_marker.points.clear();
+		//ROS_INFO("pub point!!");
+	}
+	else {
+		point_marker.points.clear();
+		point_marker_pub_.publish(point_marker);
+	}
+}
 void ACleanMode::pubPointMarkers(const std::deque<Vector2<double>> *points, std::string frame_id, std::string name)
 {
 	visualization_msgs::Marker point_marker;
@@ -1016,11 +1054,15 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_mt) {
 		return curr.isCellAndAngleEqual(it);
 	});
 	auto distance = std::distance(loc, passed_path_.end());
-	if (distance == 0) {
+	if (distance == 0)
+	{
 		curr.dir = iterate_point_->dir;
-		ROS_INFO("curr(%d,%d,%d,%d)", curr.toCell().x, curr.toCell().y, static_cast<int>(radian_to_degree(curr.th)),curr.dir);
+		ROS_INFO("curr(%d,%d,%d,%d), passed_path_.size(%d)", curr.toCell().x, curr.toCell().y,
+				 static_cast<int>(radian_to_degree(curr.th)), curr.dir, passed_path_.size());
 		passed_path_.push_back(curr);
 	}
+	else
+		ROS_INFO("passed_path_.size(%d)", passed_path_.size());
 
 	markMapInNewCell();//real time mark to exploration
 
@@ -1085,14 +1127,17 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 	markRealTime();
 	if(action_i_ == ac_linear) {
 		auto p_mt = dynamic_cast<MoveTypeLinear *>(p_move_type);
-		if(p_mt->movement_i_ == p_mt->mm_forward && (p_mt->isPoseReach() || p_mt->isPassTargetStop(iterate_point_->dir)))
-			return true;
-
-		if (p_mt->isLinearForward()){
-			if(checkChargerPos())
-				return false;
-			else
-				return p_mt->isRconStop();
+		if (p_mt->isLinearForward())
+		{
+			if (p_mt->isPoseReach() || p_mt->isPassTargetStop(iterate_point_->dir))
+				return true;
+			if (!isStateGoHomePoint())
+			{
+				if (checkChargerPos())
+					return false;
+				else
+					return p_mt->isRconStop();
+			}
 		}
 	}
 	else//rounding
@@ -1114,8 +1159,7 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 				else
 				{
 					if(p_mt->outOfRange(getPosition(), iterate_point_))
-                    	return true;
-
+						return true;
 				}
 			}
 		}
@@ -1160,7 +1204,7 @@ bool ACleanMode::isFinish()
 bool ACleanMode::checkChargerPos()
 {
 	const int16_t DETECT_RANGE = 20;//cells
-	if(!isStateGoHomePoint()){
+//	if(!isStateGoHomePoint()){
 		if(c_rcon.getStatus())
 		{
 			if(found_charger_)
@@ -1201,7 +1245,7 @@ bool ACleanMode::checkChargerPos()
 				}
 			}
 		}
-	}
+//	}
 	return false;
 
 }
@@ -1454,7 +1498,6 @@ void ACleanMode::checkShouldMarkCharger(float angle_offset,float distance)
 		pose.SetX( cos(angle_offset)* distance  +  getPosition().GetX() );
 		pose.SetY( sin(angle_offset)* distance  +  getPosition().GetY() );
 		pose.th = ranged_radian( getPosition().th - (M_PI - angle_offset));
-		pose.dir = iterate_point_->dir;
 		charger_pose_.push_back(pose);
 		ROS_INFO("%s,%d, offset angle (%f),charger pose (%d,%d),th = %f ,dir = %d",__FUNCTION__,__LINE__, angle_offset,pose.toCell().GetX(),pose.toCell().GetY(),pose.th,pose.dir);
 		setChargerArea(pose);
@@ -1686,7 +1729,7 @@ bool ACleanMode::isSwitchByEventInStateInit() {
 
 bool ACleanMode::updateActionInStateInit() {
 	if (action_i_ == ac_null)
-		action_i_ = ac_open_gyro;
+		action_i_ = ac_open_gyro_and_lidar;
 	else if (action_i_ == ac_open_gyro) {
 		boost::dynamic_pointer_cast<StateInit>(state_init)->initOpenLidar();
 		action_i_ = ac_open_lidar;
@@ -1733,14 +1776,15 @@ bool ACleanMode::checkEnterGoHomePointState()
 		}
 		if (ev.battery_home)
 		{
+			speaker.play(VOICE_BATTERY_LOW, false);
 			go_home_for_low_battery_ = true;
 			found_charger_ = false;
 		}
 		sp_action_.reset();
 		sp_state = state_go_home_point.get();
 		sp_state->init();
-		speaker.play(VOICE_GO_HOME_MODE);
 		go_home_path_algorithm_->initForGoHomePoint(clean_map_);
+		speaker.play(VOICE_GO_HOME_MODE);
 		return true;
 	}
 
@@ -1790,7 +1834,7 @@ bool ACleanMode::updateActionInStateGoHomePoint()
 		ev.rcon_status = 0;
 		update_finish = false;
 	}
-	else if (go_home_path_algorithm_->reachTarget(should_go_to_charger_))
+	else if (go_home_path_algorithm_->reachTarget(should_go_to_charger_, getPosition()))
 	{
 		update_finish = false;
 	}
@@ -1814,7 +1858,7 @@ bool ACleanMode::updateActionInStateGoHomePoint()
 		// New path to home cell is generated.
 		iterate_point_ = plan_path_.begin();
 //		plan_path_.pop_front();
-		go_home_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
+		displayCellPath(pointsGenerateCells(plan_path_));
 		pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 		should_go_to_charger_ = false;
 		action_i_ = ac_linear;
@@ -1838,11 +1882,9 @@ void ACleanMode::switchInStateGoHomePoint()
 		sp_action_.reset();
 		if (isFirstTimeGoHomePoint())
 		{
-			if (!isRemoteGoHomePoint() && !isGoHomePointForLowBattery())
-			{
-				if (seen_charger_during_cleaning_)
-					speaker.play(VOICE_CLEANING_FINISH_BACK_TO_CHARGER);
-			}
+			if (!isRemoteGoHomePoint() && !isWifiGoHomePoint() && !isGoHomePointForLowBattery() &&
+				seen_charger_during_cleaning_)
+				speaker.play(VOICE_CLEANING_FINISH_BACK_TO_CHARGER);
 			setFirstTimeGoHomePoint(false);
 		}
 	}
@@ -1917,7 +1959,7 @@ bool ACleanMode::updateActionInStateSpot()
 			action_i_ = ac_linear;
 
 		genNextAction();
-		clean_path_algorithm_->displayPointPath(plan_path_);
+		displayPointPath(plan_path_);
 		ret = true;
 	}
 	should_follow_wall = false;
@@ -2001,7 +2043,7 @@ bool ACleanMode::updateActionInStateExploration() {
 		action_i_ = ac_linear;
 		iterate_point_ = plan_path_.begin();
 		ROS_WARN("start_point_.dir(%d)", iterate_point_->dir);
-		clean_path_algorithm_->displayCellPath(pointsGenerateCells(plan_path_));
+		displayCellPath(pointsGenerateCells(plan_path_));
 		pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
 		genNextAction();
 		return true;
@@ -2063,7 +2105,7 @@ bool ACleanMode::updateActionInStateFollowWall()
 			plan_path_.push_back(point);
 			iterate_point_ = plan_path_.begin();
 			iterate_point_->dir = MAP_ANY;// note: fix bug follow isPassPosition
-			clean_path_algorithm_->displayPointPath(plan_path_);
+			displayPointPath(plan_path_);
 			action_i_ = ac_linear;
 		}
 
@@ -2228,7 +2270,7 @@ void ACleanMode::wifiSetWaterTank()
 	if (!water_tank.getStatus(WaterTank::operate_option::swing_motor))
 		return;
 
-	if ((isStateInit() && action_i_ > ac_open_gyro)
+	if ((isStateInit() && action_i_ > ac_open_gyro_and_lidar)
 		|| isStateClean()
 		|| isStateFollowWall())
 	{
@@ -2249,7 +2291,7 @@ void ACleanMode::setVacuum()
 		return;
 
 	speaker.play(vacuum.isUserSetMaxMode() ? VOICE_VACCUM_MAX : VOICE_VACUUM_NORMAL);
-	if ((isStateInit() && action_i_ > ac_open_gyro)
+	if ((isStateInit() && action_i_ > ac_open_gyro_and_lidar)
 		|| isStateClean()
 		|| isStateFollowWall())
 	{

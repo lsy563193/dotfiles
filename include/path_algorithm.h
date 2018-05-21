@@ -21,27 +21,6 @@ public:
 
 	virtual bool checkTrapped(GridMap &map, const Cell_t &curr_cell) {return true;};
 
-	std::unique_ptr<Points> cells_generate_points(const std::unique_ptr<Cells>& path);
-	/*
-	 * @last modify by Austin Liu
-	 *
-	 * Print the path.
-	 *
-	 * @param: Cells path, the path from start cell to target cell.
-	 */
-	void displayCellPath(const Cells &path);
-
-	/*
-	 * @last modify by Austin Liu
-	 *
-	 * Print the targets.
-	 *
-	 * @param: Cells target list.
-	 */
-	void displayTargetList(const Cells &target_list);
-
-	void displayPointPath(const Points &point_path);
-
 	public:
 	/*
 	 * @author Patrick Chow
@@ -400,7 +379,7 @@ public:
 	 *
 	 * @return: bool, true if robot has reach home point or start point.
 	 */
-	bool reachTarget(bool &should_go_to_charger);
+	bool reachTarget(bool &should_go_to_charger, Point_t curr);
 
 	/*
 	 * @author Austin Liu
@@ -459,7 +438,7 @@ private:
 	 *
 	 * @return: bool, true if operation succeeds.
 	 */
-	bool eraseHomePoint(Point_t target_home_point);
+	bool eraseCurrentHomePoint();
 
 	/*
 	 * @author Austin Liu
@@ -473,7 +452,7 @@ private:
 	 * @return: Cells path, the path to unclean area.
 	 * @return: bool, true if operation succeeds.
 	 */
-	bool generatePathThroughCleanedArea(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &plan_path);
+	bool generatePathThroughCleanedArea(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Cells &plan_path);
 
 	/*
 	 * @author Austin Liu
@@ -488,7 +467,7 @@ private:
 	 * @return: Cells path, the path to unclean area.
 	 * @return: bool, true if operation succeeds.
 	 */
-	bool generatePathWithSlamMapClearBlocks(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &plan_path);
+	bool generatePathWithSlamMapClearBlocks(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Cells &plan_path);
 
 	/*
 	 * @author Austin Liu
@@ -503,7 +482,7 @@ private:
 	 * @return: Cells path, the path to unclean area.
 	 * @return: bool, true if operation succeeds.
 	 */
-	bool generatePathThroughSlamMapReachableArea(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &plan_path);
+	bool generatePathThroughSlamMapReachableArea(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Cells &plan_path);
 
 	/*
 	 * @author Austin Liu
@@ -517,21 +496,28 @@ private:
 	 * @return: Cells path, the path to unclean area.
 	 * @return: bool, true if operation succeeds.
 	 */
-	bool generatePathThroughUnknownArea(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &plan_path);
+	bool generatePathThroughUnknownArea(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Cells &plan_path);
 
-typedef enum {
-	THROUGH_CLEANED_AREA = 0,
-	SLAM_MAP_CLEAR_BLOCKS,
-	THROUGH_SLAM_MAP_REACHABLE_AREA,
-	THROUGH_UNKNOWN_AREA,
-	GO_HOME_WAY_NUM
-}GoHomeWay_t;
+	Points handleResult(bool generate_finish, Cells plan_path_cells, Point_t curr, GridMap &map);
 
-	GoHomeWay_t home_way_index_{THROUGH_CLEANED_AREA};
-	int home_point_index_[GO_HOME_WAY_NUM]{};
-	Points home_points_;
+	bool switchHomePoint();
+
+	typedef enum
+	{
+		THROUGH_CLEANED_AREA = 0,
+		SLAM_MAP_CLEAR_BLOCKS,
+		THROUGH_SLAM_MAP_REACHABLE_AREA,
+		THROUGH_UNKNOWN_AREA,
+		GO_HOME_WAY_NUM
+	}GoHomeWay_t;
+
+	GoHomeWay_t home_way_index_{GoHomeWay_t::THROUGH_CLEANED_AREA};
+//	int home_point_index_[GO_HOME_WAY_NUM]{};
+	Points home_points_{};
 	Point_t start_point_{0, 0, 0};
 	// current_home_point_ is initialized as an unreachable point because state go home point will check if reach home point first.
-	Point_t current_home_point_{CELL_SIZE * (MAP_SIZE + 1), CELL_SIZE * (MAP_SIZE + 1), 0};
+	const Point_t invalid_point_{CELL_SIZE * (MAP_SIZE + 1), CELL_SIZE * (MAP_SIZE + 1), 0};
+	Point_t current_home_point_{invalid_point_};
+	bool back_to_start_point_{false};
 };
 #endif //PP_PATH_ALGORITHM_H
