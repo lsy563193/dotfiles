@@ -21,8 +21,10 @@ void StateInit::init() {
 		initForNavigation();
 	else if(Mode::next_mode_i_ == Mode::cm_spot)
 		initForSpot();
-	else //For wallFollow and remote mode
-		initForCommonMode();
+	else if(Mode::next_mode_i_ == Mode::cm_wall_follow) //For wallFollow and remote mode
+		initForWallFollow();
+	else if(Mode::next_mode_i_ == Mode::md_remote) //For wallFollow and remote mode
+		initForRemote();
 
 	s_wifi.setWorkMode(Mode::next_mode_i_);
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
@@ -70,7 +72,7 @@ void StateInit::initForExploration() {
 	ROS_INFO("%s %d: Enter state initForExploration.", __FUNCTION__, __LINE__);
 }
 
-void StateInit::initForCommonMode() {
+void StateInit::initForWallFollow() {
 	key_led.setMode(LED_STEADY, LED_GREEN);
 	brush.normalOperate();
 	water_tank.setCurrentSwingMotorMode(water_tank.getUserSetSwingMotorMode());
@@ -78,7 +80,7 @@ void StateInit::initForCommonMode() {
 															: vacuum.setSpeedByUserSetMode();
 	sp_cm_->isUsingDustBox(!water_tank.getStatus(WaterTank::operate_option::swing_motor));
 	gyro.setTiltCheckingEnable(true);
-	ROS_INFO("%s %d: Enter state initForCommonMode.", __FUNCTION__, __LINE__);
+	ROS_INFO("%s %d: Enter state initForWallFollow.", __FUNCTION__, __LINE__);
 }
 
 void StateInit::initForSpot() {
@@ -100,4 +102,14 @@ void StateInit::initForGoToCharger() {
 															: vacuum.setForCurrentMode(Vacuum::VacMode::vac_low_mode);
 	gyro.setTiltCheckingEnable(false); //disable tilt detect
 	ROS_INFO("%s %d: Enter state initForGoToCharger.", __FUNCTION__, __LINE__);
+}
+
+void StateInit::initForRemote(){
+	key_led.setMode(LED_FLASH, LED_GREEN, 600);
+	brush.normalOperate();
+	water_tank.setCurrentSwingMotorMode(water_tank.getUserSetSwingMotorMode());
+	water_tank.checkEquipment() ? water_tank.open(WaterTank::operate_option::swing_motor)
+															: vacuum.setSpeedByUserSetMode();
+	gyro.setTiltCheckingEnable(true);
+	ROS_INFO("%s %d: Enter state initForRemote.", __FUNCTION__, __LINE__);
 }
