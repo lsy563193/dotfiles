@@ -67,7 +67,7 @@ void Error::alarm(void)
 		}
 		case ERROR_CODE_GYRO:
 		{
-			//todo: speaker.play(VOICE_GYRO_ERROR);
+			speaker.play(VOICE_GYRO_ERROR);
 			break;
 		}
 		default:

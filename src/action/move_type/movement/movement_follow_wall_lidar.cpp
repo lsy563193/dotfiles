@@ -39,14 +39,22 @@ Points Circle::getPoints(int precision, bool is_inclue_zero)
 	Points points1;
 	Points points2;
 	auto init_i = is_inclue_zero ? 0 : 1;
+#if DEBUG_ENABLE
+	printf("%s %d: ", __FUNCTION__, __LINE__);
+#endif
 	for(auto i=init_i; i<=precision; i++)
 	{
 		float y = (this->r*2)/precision*i;
 		float x = sqrt(pow(this->r, 2) - pow(y - this->r, 2));
+#if DEBUG_ENABLE
 		printf("x,y(%f,%f) ",x, y);
+#endif
 		points1.push_back({x,y,0});
 		points2.push_front({-x,y,0});
 	}
+#if DEBUG_ENABLE
+	printf("\n");
+#endif
 
 	std::move(points2.begin(), points2.end(), std::back_inserter(points1));
 	return points1;
@@ -67,7 +75,7 @@ Points MovementFollowWallLidar::calcVirtualTmpTarget()
 		c_r = CELL_SIZE_3/2;
 	Circle circle{c_r};
 	Points tmp_targets{};
-	bool is_corner_beginning;
+/*	bool is_corner_beginning;
 	const auto time_lim{1};
 	auto time_diff = (ros::Time().now() - corner_time).toSec();
 	if (time_diff < time_lim){
@@ -82,7 +90,7 @@ Points MovementFollowWallLidar::calcVirtualTmpTarget()
 #if DEBUG_ENABLE
 //		beeper.beepForCommand(VALID);
 #endif
-	}
+	}*/
 //	while (ros::ok()) {
 //		wheel.stop();
 //		sleep(0.5);
@@ -100,7 +108,9 @@ Points MovementFollowWallLidar::calcVirtualTmpTarget()
 
 	corner_time = ros::Time::now();
 	auto wall_length = lidar.checkIsRightAngle(is_left_);
+#if DEBUG_ENABLE
 	ROS_INFO("wall_length = %lf", wall_length);
+#endif
 //	auto offset_x = is_corner_beginning ? CELL_SIZE * 0.7 : 0;//CELL_SIZE * 0.7
 
 	auto offset_x = wall_length;

@@ -86,7 +86,7 @@ bool CleanModeExploration::mapMark()
 	clean_map_.setCircleMarkers(getPosition(),10,CLEANED,error_marker_);
 	resetErrorMarker();
 
-	setBlocks(iterate_point_.dir);
+	setBlocks(iterate_point_->dir);
 	if(mark_robot_)
 		clean_map_.markRobot(CLEAN_MAP);
 //	passed_path_.clear();
@@ -192,8 +192,8 @@ void CleanModeExploration::switchInStateInit() {
 
 bool CleanModeExploration::updateActionInStateInit() {
 	if (action_i_ == ac_null)
-		action_i_ = ac_open_gyro;
-	else if (action_i_ == ac_open_gyro) {
+		action_i_ = ac_open_gyro_and_lidar;
+	else if (action_i_ == ac_open_gyro_and_lidar) {
 		boost::dynamic_pointer_cast<StateInit>(state_init)->initForExploration();
 		action_i_ = ac_open_lidar;
 	}

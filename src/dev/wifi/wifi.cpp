@@ -945,7 +945,12 @@ bool S_Wifi::uploadMap(MapType map)
 				return false;
 
 			uint16_t clean_area = (uint16_t)(g_map.getCleanedArea()*CELL_SIZE*CELL_SIZE*100);
+
 			auto left_top_corner= std::get<0>(*a_slam_map_data);
+			//left_top_corner.x = left_top_corner.y*-1;
+			//left_top_corner.y = left_top_corner.x*-1;
+			ROS_INFO("%s,%d,x y corner\033[32m(%d,%d)\033[0m",__FUNCTION__,__LINE__,left_top_corner.x,left_top_corner.y);
+
 			auto width = std::get<1>(*a_slam_map_data);
 			auto data = std::get<2>(*a_slam_map_data);
 			int data_cnt = 0;
@@ -998,6 +1003,7 @@ bool S_Wifi::uploadMap(MapType map)
 				}
 
 			}
+			printf("\n");
 			if(data_cnt>0)
 				map_packs.push_back(map_data);
 
@@ -1194,7 +1200,7 @@ bool S_Wifi::uploadLastCleanData()
 		packs.push_back(data);
 		data.clear();
 	}
-	ROS_INFO("%s,%d,\033[1;42;31mclean_record_data_pack size %ld\033[0m", __FUNCTION__, __LINE__,packs.size());
+	ROS_INFO("%s,%d,\033[1;31mclean_record_data_pack size %ld\033[0m", __FUNCTION__, __LINE__,packs.size());
 	//-- upload packs 
 	for (uint8_t i = 0; i < packs.size(); i++)
 	{
@@ -1219,7 +1225,8 @@ bool S_Wifi::uploadLastCleanData()
 			usleep(static_cast<__useconds_t>(sleep_sec));
 		}while(ros::ok() && !clean_record_ack_);
 		clean_record_ack_ = false;
-	}
+	} 
+	ROS_INFO("%s,%d,upload finish",__FUNCTION__,__LINE__);
 	return true;
 }
 
@@ -1238,33 +1245,39 @@ uint8_t S_Wifi::setRobotCleanMode(wifi::WorkMode work_mode)
 			INFO_BLUE("receive mode idle");
 			break;
 		case wifi::WorkMode::RANDOM:
-			beeper.debugBeep(INVALID);
+			//beeper.debugBeep(INVALID);
+			beeper.beepForCommand(VALID);
 			received_work_mode_ = work_mode;
 			INFO_BLUE("receive mode random");
 			break;
 		case wifi::WorkMode::WALL_FOLLOW:
 			received_work_mode_ = work_mode;
-			beeper.debugBeep(VALID);
+			//beeper.debugBeep(VALID);
+			beeper.beepForCommand(VALID);
 			INFO_BLUE("receive mode wall follow");
 			break;
 		case wifi::WorkMode::SPOT:
 			received_work_mode_ = work_mode;
-			beeper.debugBeep(VALID);
+			//beeper.debugBeep(VALID);
+			beeper.beepForCommand(VALID);
 			INFO_BLUE("receive mode spot");
 			break;
 		case wifi::WorkMode::PLAN1://plan 1
-			beeper.debugBeep(VALID);
+			//beeper.debugBeep(VALID);
+			beeper.beepForCommand(VALID);
 			received_work_mode_ = work_mode;
 			INFO_BLUE("receive mode plan1");
 			break;
 		case wifi::WorkMode::PLAN2://plan 2
-			beeper.debugBeep(VALID);
+			//beeper.debugBeep(VALID);
+			beeper.beepForCommand(VALID);
 			received_work_mode_ = work_mode;
 			INFO_BLUE("receive mode plan2");
 			break;
 		case wifi::WorkMode::HOMING:
 			received_work_mode_ = work_mode;
-			beeper.debugBeep(VALID);
+			beeper.beepForCommand(VALID);
+			//beeper.debugBeep(VALID);
 			INFO_BLUE("receive mode gohome");
 			break;
 		case wifi::WorkMode::CHARGE:

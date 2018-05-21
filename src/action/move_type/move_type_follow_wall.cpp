@@ -12,17 +12,45 @@
 #define STAY_SEC_AFTER_BACK (double)0.33
 
 int g_follow_last_follow_wall_dir=0;
-MoveTypeFollowWall::MoveTypeFollowWall(Points remain_path, bool is_left)
+
+bool out_of_edge(const Point_t &curr, const Points::iterator &it) {
+	const auto next_it = it+1;
+//	ROS_ERROR("p_it_tmp(%d,%d,%d)", it->toCell().x, it->toCell().y,it->dir);
+	if (it->dir == MAP_POS_X)
+		return curr.x > next_it->x;
+	else if (it->dir == MAP_NEG_X)
+		return curr.x < next_it->x;
+	else if (it->dir == MAP_POS_Y)
+		return curr.y > next_it->y;
+	else if (it->dir == MAP_NEG_Y)
+		return curr.y < next_it->y;
+	return false;
+}
+bool out_of_external_edge(const Point_t &curr, const Points::iterator &it) {
+	const auto next_it = it+1;
+//	ROS_ERROR("p_it_tmp(%d,%d,%d)", it->toCell().x, it->toCell().y,it->dir);
+	if (it->dir == MAP_POS_X)
+		return curr.x > next_it->x + CELL_SIZE*2;
+	else if (it->dir == MAP_NEG_X)
+		return curr.x < next_it->x - CELL_SIZE*2;
+	else if (it->dir == MAP_POS_Y)
+		return curr.y > next_it->y + CELL_SIZE*2;
+	else if (it->dir == MAP_NEG_Y)
+		return curr.y < next_it->y - CELL_SIZE*2;
+	return false;
+}
+
+void MoveTypeFollowWall::init(bool is_left)
 {
 	IMovement::sp_mt_ = this;
 	ROS_WARN("%s %d: Entering move type %s follow wall.", __FUNCTION__, __LINE__,
 			 is_left ? "left" : "right");
-	remain_path.pop_front();
-	remain_path_ = remain_path;
 	auto p_mode = dynamic_cast<ACleanMode*> (sp_mode_);
 	is_left_ = is_left;
-	auto turn_radian = getTurnRadian(!remain_path_.empty());
+	auto turn_radian = getTurnRadian(std::next(p_mode->iterate_point_ )!= p_mode->plan_path_.end());
+//	ROS_ERROR("turn_radian(%lf)", radian_to_degree(turn_radian));
 	turn_target_radian_ = getPosition().addRadian(turn_radian).th;
+//	ROS_ERROR("getPosition().th(%lf)", radian_to_degree(getPosition().th));
 
 	movement_i_ = p_mode->isGyroDynamic() ? mm_dynamic : mm_turn;
 	if(movement_i_ == mm_dynamic)
@@ -31,6 +59,26 @@ MoveTypeFollowWall::MoveTypeFollowWall(Points remain_path, bool is_left)
 		sp_movement_.reset(new MovementTurn(turn_target_radian_, ROTATE_TOP_SPEED));
 
 	resetTriggeredValue();
+}
+MoveTypeFollowWall::MoveTypeFollowWall(bool is_left)
+{
+	init(is_left);
+}
+
+MoveTypeFollowWall::MoveTypeFollowWall(bool is_left,const Points::iterator &p_it)
+{
+	init(is_left);
+    auto curr = getPosition();
+    auto p_it_tmp = p_it;
+    for (; p_it_tmp != p_it + 4; ++p_it_tmp) {
+		if (out_of_edge(curr, p_it_tmp)) {
+			ROS_ERROR("add out edge(%d,%d,%d)",p_it_tmp->toCell().x, p_it_tmp->toCell().y, p_it_tmp->dir);
+            it_out_edges.push_back(p_it_tmp);
+		}else{
+			ROS_ERROR("add in edge(%d,%d,%d)",p_it_tmp->toCell().x, p_it_tmp->toCell().y, p_it_tmp->dir);
+			it_in_edges.push_back(p_it_tmp);
+		}
+	}
 }
 
 MoveTypeFollowWall::~MoveTypeFollowWall()
@@ -61,7 +109,7 @@ bool MoveTypeFollowWall::isFinish()
 		p_cm->clean_map_.count_if(getPosition().toCell(), [&](Cell_t c_it) {
 			return (p_cm->clean_map_.getCell(CLEAN_MAP, c_it.x, c_it.y) == CLEANED);
 		},dijkstra_cleaned_count);
-		if (dijkstra_cleaned_count < TRAP_IN_SMALL_AREA_COUNT)
+		if ((dijkstra_cleaned_count < TRAP_IN_SMALL_AREA_COUNT) || (p_cm->passed_path_.size() < 10 && dijkstra_cleaned_count <	100))
 			is_trapped_in_small_area_ = true;
 		else
 			is_trapped_in_small_area_ = false;
@@ -120,7 +168,7 @@ bool MoveTypeFollowWall::isFinish()
 				}
 				resetTriggeredValue();
 			}else{
-				if(ev.tilt_triggered)
+				if(ev.tilt_triggered && p_cm->mode_i_ != Mode::cm_wall_follow)
 					is_stop_follow_wall_after_tilt_ = true;
 			}
 			state_turn = false;
@@ -390,13 +438,6 @@ double MoveTypeFollowWall::getTurnRadianByEvent()
 		turn_angle = obsTurnAngle();
 		ROS_WARN("%s %d: Lidar triggered, turn_angle: %d.", __FUNCTION__, __LINE__, turn_angle);
 	}
-	if(ev.robot_slip)
-	{
-		// Temporary use obs as lidar triggered.
-		ev.obs_triggered = BLOCK_FRONT;
-		turn_angle = obsTurnAngle();
-		ROS_WARN("%s %d: slip triggered, turn_angle: %d.", __FUNCTION__, __LINE__, turn_angle);
-	}
 	return degree_to_radian(turn_angle);
 }
 
@@ -419,9 +460,8 @@ double MoveTypeFollowWall::getTurnRadian(bool use_target_radian)
 		ROS_INFO("%s %d: Not use fit line angle!", __FUNCTION__, __LINE__);
 		auto ev_turn_radian = getTurnRadianByEvent();
 		if(ev_turn_radian == 0 && use_target_radian) { //		if(/*use_target_radian*/ 0 )
-			auto target_point_ = remain_path_.back();
 //			auto target_turn_radian = getPosition().courseToDest(target_point_);
-			turn_radian = getPosition().courseToDest(target_point_);
+			turn_radian = getPosition().courseToDest(*std::next(p_mode->iterate_point_));
 //			turn_radian = std::abs(ev_turn_radian) > std::abs(target_turn_radian) ? ev_turn_radian : target_turn_radian;
 //			ROS_INFO("%s %d: target_turn_radian(%f in degree), event_turn_radian(%f in degree), choose the big one(%f in degree)",
 //					 __FUNCTION__, __LINE__, radian_to_degree(target_turn_radian),
@@ -439,12 +479,13 @@ double MoveTypeFollowWall::getTurnRadian(bool use_target_radian)
 
 bool MoveTypeFollowWall::isOverOriginLine(GridMap &map)
 {
-	if(remain_path_.empty())
-		return true;
-	auto curr = getPosition();
-	auto target_point_ = remain_path_.back();
 	auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
-	auto start_point_ = p_mode->iterate_point_;
+	if(std::next(p_mode->iterate_point_ ) == p_mode->plan_path_.end())
+		return true;
+
+	auto curr = getPosition();
+    auto target_point_ = p_mode->plan_path_.back();
+	auto start_point_ = *p_mode->iterate_point_;
 //	ROS_WARN("movement_i_ == mm_forward(%d), ros::Time::now().toSec() - sp_movement_->start_timer_ + move_forward_time_(%lf)",
 //					 movement_i_ == mm_forward || movement_i_ == mm_straight, ros::Time::now().toSec() - sp_movement_->start_timer_ + move_forward_time_);
 	double const WF_TIME_LIMIT = 1.5;//force wall follow time
@@ -478,13 +519,14 @@ bool MoveTypeFollowWall::isOverOriginLine(GridMap &map)
 
 bool MoveTypeFollowWall::isNewLineReach(GridMap &map)
 {
-	auto ret = false;
-	if(remain_path_.empty())
-		return true;
-	auto target_point_ = remain_path_.back();
-	auto s_curr_p = getPosition();
 	auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
-	auto start_point_ = p_mode->iterate_point_;
+	auto ret = false;
+	if(std::next(p_mode->iterate_point_) == p_mode->plan_path_.end())
+		return true;
+	auto s_curr_p = getPosition();
+	auto start_point_ = *p_mode->iterate_point_;
+//	auto target_point_ = *std::next(p_mode->iterate_point_);
+	auto target_point_ = p_mode->plan_path_.back();
 	auto is_pos_dir = target_point_.y - start_point_.y > 0;
 	// The limit is CELL_COUNT_MUL / 8 * 3 further than target line center.
 //	auto target_limit = target_point_.y + CELL_COUNT_MUL / 8 * 3 * is_pos_dir;
@@ -524,6 +566,34 @@ bool MoveTypeFollowWall::handleMoveBackEventRealTime(ACleanMode *p_clean_mode)
 		sp_movement_.reset(new MovementBack(back_distance, BACK_MAX_SPEED));
 		return true;
 	}
+	return false;
+}
+
+bool MoveTypeFollowWall::outOfRange(const Point_t &curr, Points::iterator &p_it) {
+	for (auto&& it : it_in_edges) {
+		if (out_of_edge(curr, it)) {
+			ROS_ERROR("find out edge(%d,%d,%d)",it->toCell().x, it->toCell().y, it->dir);
+			p_it = it+1;
+			return true;
+		}
+	}
+	for (auto&& it : it_out_edges) {
+		if (out_of_external_edge(curr, it)) {
+			ROS_ERROR("find out external edge(%d,%d,%d)",it->toCell().x, it->toCell().y, it->dir);
+			p_it = p_it+1;
+			return true;
+		}
+	}
+
+	it_out_edges.erase(std::remove_if(it_out_edges.begin(), it_out_edges.end(),[&](const Points::iterator& it){
+		if(!out_of_edge(curr,it)){
+			ROS_ERROR("add in edge(%d,%d,%d)",it->toCell().x, it->toCell().y, it->dir);
+			it_in_edges.push_back(it);
+			return true;
+		}
+		return false;
+	}),it_out_edges.end());
+
 	return false;
 }
 

@@ -53,23 +53,23 @@ CleanModeFollowWall::~CleanModeFollowWall()
 }
 
 bool CleanModeFollowWall::mapMark() {
-	clean_path_algorithm_->displayPointPath(passed_path_);
+	displayPointPath(passed_path_);
 	PP_WARN();
 	if (isStateGoHomePoint())
 	{
 		setCleaned(pointsGenerateCells(passed_path_));
-		setBlocks(iterate_point_.dir);
+		setBlocks(iterate_point_->dir);
 	}
 	else if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
 	{
 		setCleaned(pointsGenerateCells(passed_path_));
-		setBlocks(iterate_point_.dir);
+		setBlocks(iterate_point_->dir);
 		ROS_ERROR("-------------------------------------------------------");
 		auto start = *passed_path_.begin();
 		passed_path_.erase(std::remove_if(passed_path_.begin(),passed_path_.end(),[&start](Point_t& it){
 			return it.toCell() == start.toCell();
 		}),passed_path_.end());
-		clean_path_algorithm_->displayPointPath(passed_path_);
+		displayPointPath(passed_path_);
 		ROS_ERROR("-------------------------------------------------------");
 		setFollowWall(clean_map_, action_i_ == ac_follow_wall_left, passed_path_);
 	}
@@ -198,6 +198,15 @@ void CleanModeFollowWall::chargeDetect(bool state_now, bool state_last)
 			ev.charge_detect = charger.getChargeStatus();
 			ev.fatal_quit = true;
 		}
+	}
+}
+
+void CleanModeFollowWall::batteryHome(bool state_now, bool state_last)
+{
+	if (!ev.battery_home && isStateFollowWall())
+	{
+		ROS_WARN("%s %d: low battery, battery =\033[33m %dmv \033[0m", __FUNCTION__, __LINE__, battery.getVoltage());
+		ev.battery_home = true;
 	}
 }
 

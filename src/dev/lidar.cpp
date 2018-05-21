@@ -8,6 +8,7 @@
 #include <mathematics.h>
 #include <beeper.h>
 #include <gyro.h>
+#include <string>
 
 boost::mutex scanLinear_mutex_;
 boost::mutex scanOriginal_mutex_;
@@ -255,7 +256,7 @@ public:
 		ROS_INFO("line.p1(%lf, %lf), line.p2(%lf, %lf)", line.x1, line.y1, line.x2, line.y2);
 		ROS_INFO("vertical_line.p1(%lf, %lf)", vertical_line.x1, vertical_line.y1);
 		double dis_to_origin = fabs(vertical_line.C / sqrt(pow(vertical_line.A, 2) + pow(vertical_line.B, 2)));
-		ROS_ERROR("is_left_(%d), is_line_in_origin_left(%d), dis_to_origin(%lf)", is_left_, is_line_in_origin_left, dis_to_origin);
+		ROS_INFO("is_left_(%d), is_line_in_origin_left(%d), dis_to_origin(%lf)", is_left_, is_line_in_origin_left, dis_to_origin);
 		if (is_left_) {
 			if (is_line_in_origin_left) {
 				if (dis_to_origin > 0.05) {
@@ -922,6 +923,7 @@ uint8_t Lidar::lidarMarker(std::vector<Vector2<int>> &markers, int movement_i, i
 	lidarXYPoint_mutex_.lock();
 	auto tmp_lidarXY_points = lidarXY_points;
 	lidarXYPoint_mutex_.unlock();
+	ACleanMode::pubPointMarkers2(&tmp_lidarXY_points, "base_link", "point marker");
 	double x, y;
 	int dx{}, dy{};
 	const	double Y_MAX = 0.20;//0.279
@@ -1094,9 +1096,9 @@ uint8_t Lidar::lidarMarker(std::vector<Vector2<int>> &markers, int movement_i, i
 		auto is_left_back = (dx == -1 && dy == 2);
 		auto is_right_back = (dx == -1 && dy == -2);
 		if (!(dx == 0 && dy == 0)){
-			if(!(action_i == 7 && (is_left_back || is_left_front))
-						&& !(action_i == 8 && (is_right_back || is_right_front))
-						&& !(movement_i == 2)) {
+			if(!(action_i == Mode::ac_follow_wall_left && (is_left_back || is_left_front))
+						&& !(action_i == Mode::ac_follow_wall_right && (is_right_back || is_right_front))
+						&& !(movement_i == IMoveType::mm_turn)) {
 				markers.push_back(marker);
 //				ROS_WARN("movement_i = %d, action_i = %d", movement_i, action_i);
 			} else {
@@ -1244,12 +1246,12 @@ int Lidar::compLaneDistance()
 				if (x >= 0){
 					if (std::abs(x) <= x_front_min) {
 						x_front_min = std::abs(x);
-						ROS_INFO("x_front_min = %lf",x_front_min);
+//						ROS_INFO("x_front_min = %lf",x_front_min);
 					}
 				} else {
 					if (std::abs(x) <= x_back_min) {
 						x_back_min = std::abs(x);
-						ROS_INFO("x_back_min = %lf", x_back_min);
+//						ROS_INFO("x_back_min = %lf", x_back_min);
 					}
 				}
 			}
@@ -1813,7 +1815,7 @@ bool Lidar::checkLongHallway(const sensor_msgs::LaserScan& tmp_scan_data)
 		//less than 10 degrees
 //		ROS_WARN("angle = %lf, l_b = %lf", radian_to_degree(atan2(l_k,1)), l_b);
 		if (std::fabs(l_k) < 0.17633) {
-			if (std::fabs(l_b) > ROBOT_RADIUS && std::fabs(l_b) < 1.3) {
+			if (std::fabs(l_b) > ROBOT_RADIUS && std::fabs(l_b) < 2.63) {
 //				ROS_WARN("angle = %lf, l_b = %lf", radian_to_degree(atan2(l_k,1)), l_b);
 				if (l_b > 0) {
 					side_status.push_back(1);
@@ -1848,16 +1850,27 @@ bool Lidar::isNeedToCheckSlip(const sensor_msgs::LaserScan& scan) {
 	auto right_wheel_speed = wheel.getRightWheelActualSpeed();
 	bool is_low_speed = robot::instance()->getRobotActualSpeed() < 0.08 || robot::instance()->getRobotActualSpeed() > 0.173
 						|| fabs(right_wheel_speed - left_wheel_speed) > 0.1;
+	static int print_count = 0;
+
+	std::function<void(std::string)> f_print = [](std::string s){
+		if(print_count++ > 5) {
+			print_count = 0;
+			ROS_INFO("%s %d: %s",__FUNCTION__,__LINE__,s.c_str());
+		}
+	};
 
 	if (!slip_enable_ || !lidar.isScanOriginalReady()) {
+		f_print("slip_enable");
 		last_slip_scan_frame_.clear();
 		return false;
 	}
 	if (std::fabs(left_wheel_speed) <= 0.08 && std::fabs(right_wheel_speed) <= 0.08) {
+		f_print("each wheel speed is too low");
 		last_slip_scan_frame_.clear();
 		return false;
 	}
 	if (!is_low_speed) {
+		f_print("actual speed");
 		last_slip_scan_frame_.clear();
 		return false;
 	}
@@ -1866,9 +1879,11 @@ bool Lidar::isNeedToCheckSlip(const sensor_msgs::LaserScan& scan) {
 		return false;
 	}
 	if (checkLongHallway(scan)) {
+		f_print("longHallway");
 		last_slip_scan_frame_.clear();
 		return false;
 	}
+
 	return true;
 }
 

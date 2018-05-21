@@ -16,7 +16,7 @@
 boost::shared_ptr<IMovement> IMoveType::sp_movement_ = nullptr;
 Mode* IMoveType::sp_mode_ = nullptr;
 int IMoveType::movement_i_ = mm_null;
-Points IMoveType::remain_path_=Points();
+//Points IMoveType::remain_path_=Points();
 
 IMoveType::IMoveType() {
 //	resetTriggeredValue();
@@ -27,7 +27,7 @@ IMoveType::IMoveType() {
 IMoveType::~IMoveType() {
 //	resetTriggeredValue();
 	wheel.stop();
-	remain_path_.clear();
+//	remain_path_.clear();
 }
 
 bool IMoveType::isCliffStop()

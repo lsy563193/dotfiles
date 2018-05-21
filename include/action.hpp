@@ -45,6 +45,12 @@ private:
 	bool gyro_closed_{false};
 };
 
+class ActionOpenGyroAndLidar : public ActionOpenGyro
+{
+public:
+	ActionOpenGyroAndLidar();
+};
+
 class ActionBackFromCharger :public IAction
 {
 public:
