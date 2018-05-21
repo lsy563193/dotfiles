@@ -1738,14 +1738,15 @@ bool ACleanMode::checkEnterGoHomePointState()
 		}
 		if (ev.battery_home)
 		{
+			speaker.play(VOICE_BATTERY_LOW, false);
 			go_home_for_low_battery_ = true;
 			found_charger_ = false;
 		}
 		sp_action_.reset();
 		sp_state = state_go_home_point.get();
 		sp_state->init();
-		speaker.play(VOICE_GO_HOME_MODE);
 		go_home_path_algorithm_->initForGoHomePoint(clean_map_);
+		speaker.play(VOICE_GO_HOME_MODE);
 		return true;
 	}
 

@@ -667,7 +667,6 @@ public:
 	void switchInStateClean() override ;
 
 	// State go home point
-	bool checkEnterGoHomePointState() override;
 	bool isSwitchByEventInStateGoHomePoint() override;
 
 	// State go to charger
@@ -769,6 +768,7 @@ public:
 	void remoteWallFollow(bool state_now, bool state_last) override;
 	void chargeDetect(bool state_now, bool state_last) override;
 	void switchInStateFollowWall() override;
+	void batteryHome(bool state_now, bool state_last) override ;
 
 	void switchInStateInit() override;
 
