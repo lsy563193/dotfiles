@@ -308,20 +308,12 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 	});
 
 	targets = std::for_each(targets.begin(), targets.end(),FilterTarget(curr_cell));
-
-//	displayTargetList(targets);
-//	map.print(CLEAN_MAP, targets);
-//	map.print(CLEAN_MAP, targets);
-
 	if (targets.empty())
 	{
 		map.print(curr.toCell(), CLEAN_MAP, path);
 		map.print(curr.toCell(), COST_MAP, path);
-//		Cell_t target;
-//		int dijkstra_cleaned_count;
-//		if(!findTargetUsingDijkstra(map,getPosition().toCell(),target,dijkstra_cleaned_count))
+
 		return false;
-//		targets.push_back(target);
 	}
 
 	if (!filterPathsToSelectBestPath(map, targets, curr_cell, path,last_dir))
@@ -329,11 +321,6 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 
 	ROS_INFO("Step 5: size_of_path > 4 Optimize path for adjusting it away from obstacles..");
 	optimizePath(map, path);
-
-	if(curr_filter_ == &filter_p0_1t_xn || curr_filter_ == &filter_p0_1t_xp)
-		path.push_back(Cell_t{path.back().x, static_cast<int16_t>(path.front().y - 3)});//for setting follow wall target line
-	else if(curr_filter_ == &filter_n0_1t_xn || curr_filter_ == &filter_n0_1t_xp)
-		path.push_back(Cell_t{path.back().x, static_cast<int16_t>(path.front().y + 3)});//for setting follow wall target line
 
 	ROS_INFO("Step 6: Fill path with direction.");
 	plan_path = *cells_generate_points(make_unique<Cells>(path));
@@ -614,11 +601,18 @@ bool NavCleanPathAlgorithm::checkTrapped(GridMap &map, const Cell_t &curr_cell)
 }
 
 void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path) {
-	if(path.size() <= 3)
-		return;
-	// Optimize only if the path have more than 3 cells.
-	ROS_INFO("%s %d: Start optimizing Path", __FUNCTION__, __LINE__);
-	auto find_index = [&](Cell_t p1, Cell_t p2, Cell_t p3) {
+	if (curr_filter_ == &filter_p0_1t_xn || curr_filter_ == &filter_p0_1t_xp)
+		path.push_back(
+				Cell_t{path.back().x, static_cast<int16_t>(path.front().y - 3)});//for setting follow wall target line
+	else if (curr_filter_ == &filter_n0_1t_xn || curr_filter_ == &filter_n0_1t_xp)
+		path.push_back(
+				Cell_t{path.back().x, static_cast<int16_t>(path.front().y + 3)});//for setting follow wall target line
+	else {
+		if (path.size() <= 3)
+			return;
+		// Optimize only if the path have more than 3 cells.
+		ROS_INFO("%s %d: Start optimizing Path", __FUNCTION__, __LINE__);
+		auto find_index = [&](Cell_t p1, Cell_t p2, Cell_t p3) {
 			int dir_p23 = 0;
 			auto p_23 = p3 - p2;
 			dir_p23 = (p_23.x != 0) ? (p_23.x > 0 ? 0 : 1) : (p_23.y > 0 ? 2 : 3);
@@ -631,10 +625,9 @@ void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path) {
 				auto p23_it = p12_it;
 				for (; p23_it != p3 + cell_direction_[dir_p23]; p23_it += cell_direction_[dir_p23]) {
 //					printf("{%d,%d},",p23_it.x, p23_it.y);
-					if (!map.isNotBlockAndCleaned(p23_it.x, p23_it.y))
-					{
+					if (!map.isNotBlockAndCleaned(p23_it.x, p23_it.y)) {
 						printf("\n1 break it(%d,%d)!!\n", p12_it.x, p12_it.y);
-						return (p12_it - cell_direction_[dir_p12]- p2)/2;
+						return (p12_it - cell_direction_[dir_p12] - p2) / 2;
 					}
 				}
 //				printf("\n");
@@ -642,10 +635,9 @@ void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path) {
 					{
 
 						printf("\n2 break it(%d,%d)!!\n", p12_it.x, p12_it.y);
-						return (p12_it - cell_direction_[dir_p12] - p2)/2;
+						return (p12_it - cell_direction_[dir_p12] - p2) / 2;
 					}
-				}
-				else{
+				} else {
 //					p2 += cell_direction_[dir_p12];
 					p3 += cell_direction_[dir_p12];
 //					printf("opt success, +1 !\n");
@@ -653,26 +645,27 @@ void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path) {
 			}
 		};
 
-	auto _check_limit = [&](Cell_t& shift_cell,const bool is_dir_x){
-		if(is_dir_x && fabs(shift_cell.x) > 3){
-			shift_cell.x = static_cast<int16_t>(shift_cell.x > 0 ? 3 : -3);
+		auto _check_limit = [&](Cell_t &shift_cell, const bool is_dir_x) {
+			if (is_dir_x && fabs(shift_cell.x) > 3) {
+				shift_cell.x = static_cast<int16_t>(shift_cell.x > 0 ? 3 : -3);
+			} else if (!is_dir_x && shift_cell.y > 3) {
+				shift_cell.y = static_cast<int16_t>(shift_cell.y > 0 ? 3 : -3);
+			}
+		};
+
+		for (auto iterator = path.begin(); iterator != path.end() - 3; ++iterator) {
+			auto p1 = iterator;
+			auto p2 = iterator + 1;
+			auto p3 = iterator + 2;
+
+			auto shift_cell = find_index(*p1, *p2, *p3);
+			bool is_dir_x = shift_cell.x != 0;
+			_check_limit(shift_cell, is_dir_x);
+
+			*p2 += shift_cell;
+			*p3 += shift_cell;
+			ROS_INFO("%s %d: step *.2 do success shift_cell(%d,%d),is_dir_x:%d\n\n", __FUNCTION__, __LINE__,
+					 shift_cell.x, shift_cell.y, is_dir_x);
 		}
-		else if(!is_dir_x && shift_cell.y >3){
-			shift_cell.y = static_cast<int16_t>(shift_cell.y > 0 ? 3 : -3);
-		}
-	};
-
-	for(auto iterator = path.begin(); iterator != path.end()-3; ++iterator) {
-		auto p1 = iterator;
-		auto p2 = iterator + 1;
-		auto p3 = iterator + 2;
-
-		auto shift_cell = find_index(*p1, *p2, *p3);
-		bool is_dir_x = shift_cell.x != 0;
-		_check_limit(shift_cell,is_dir_x);
-
-		*p2 += shift_cell;
-		*p3 += shift_cell;
-		ROS_INFO("%s %d: step *.2 do success shift_cell(%d,%d),is_dir_x:%d\n\n", __FUNCTION__, __LINE__,shift_cell.x, shift_cell.y,is_dir_x);
 	}
 }
