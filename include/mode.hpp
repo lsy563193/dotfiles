@@ -578,6 +578,7 @@ protected:
 public:
 
 	static void pubPointMarkers(const std::deque<Vector2<double>> *point, std::string frame_id,std::string name);
+	static void pubPointMarkers2(const std::vector<geometry_msgs::Point> *points, std::string frame_id, std::string name);
 	void pubFitLineMarker(visualization_msgs::Marker fit_line_marker);
 	void setLinearCleaned();
 	uint8_t setFollowWall(GridMap&, bool is_left, const Points&);

@@ -923,6 +923,7 @@ uint8_t Lidar::lidarMarker(std::vector<Vector2<int>> &markers, int movement_i, i
 	lidarXYPoint_mutex_.lock();
 	auto tmp_lidarXY_points = lidarXY_points;
 	lidarXYPoint_mutex_.unlock();
+	ACleanMode::pubPointMarkers2(&tmp_lidarXY_points, "base_link", "point marker");
 	double x, y;
 	int dx{}, dy{};
 	const	double Y_MAX = 0.20;//0.279

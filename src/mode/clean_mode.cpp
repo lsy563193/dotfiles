@@ -441,6 +441,44 @@ void ACleanMode::pubTmpTarget(const Point_t &point, bool is_virtual) {
 	//ROS_INFO("pub points!!");
 }
 
+void ACleanMode::pubPointMarkers2(const std::vector<geometry_msgs::Point> *points, std::string frame_id, std::string name)
+{
+	visualization_msgs::Marker point_marker;
+	point_marker.ns = name;
+	point_marker.id = 0;
+	point_marker.type = visualization_msgs::Marker::SPHERE_LIST;
+	point_marker.action= 0;//add
+	point_marker.lifetime=ros::Duration(0);
+	point_marker.scale.x = 0.05;
+	point_marker.scale.y = 0.05;
+	point_marker.scale.z = 0.05;
+	point_marker.color.r = 0.0;
+	point_marker.color.g = 1.0;
+	point_marker.color.b = 0.0;
+	point_marker.color.a = 1.0;
+	point_marker.header.frame_id = frame_id;
+	point_marker.header.stamp = ros::Time::now();
+
+	geometry_msgs::Point lidar_points;
+	lidar_points.z = 0;
+	if (!points->empty()) {
+		std::string msg("");
+		for (auto iter = points->cbegin(); iter != points->cend(); ++iter) {
+			lidar_points.x = iter->x;
+			lidar_points.y = iter->y;
+			point_marker.points.push_back(lidar_points);
+			msg+="("+std::to_string(iter->x)+","+std::to_string(iter->y)+"),";
+		}
+		point_marker_pub_.publish(point_marker);
+		//ROS_INFO("%s,%d,points size:%u,points %s",__FUNCTION__,__LINE__,points->size(),msg.c_str());
+		point_marker.points.clear();
+		//ROS_INFO("pub point!!");
+	}
+	else {
+		point_marker.points.clear();
+		point_marker_pub_.publish(point_marker);
+	}
+}
 void ACleanMode::pubPointMarkers(const std::deque<Vector2<double>> *points, std::string frame_id, std::string name)
 {
 	visualization_msgs::Marker point_marker;
