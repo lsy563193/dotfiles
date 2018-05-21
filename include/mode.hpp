@@ -245,10 +245,26 @@ public:
 	bool isFinish() override ;
 
 	// For exit event handling.
+	void remoteKeyHandler(bool state_now, bool state_last);
+	void remoteDirectionLeft(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteDirectionRight(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteDirectionForward(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteHome(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteSpot(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteWallFollow(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteMax(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteWifi(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
 	void remoteClean(bool state_now, bool state_last) override ;
 	void keyClean(bool state_now, bool state_last) override ;
 	void remotePlan(bool state_now, bool state_last) override ;
-	void remoteMax(bool state_now, bool state_last) override ;
 
 	bool allowRemoteUpdatePlan() override;
 
