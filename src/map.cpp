@@ -1,6 +1,9 @@
 #include <gyro.h>
 #include <event_manager.h>
 #include <mode.hpp>
+#include <ios>
+#include <bits/ios_base.h>
+#include <fstream>
 #include "map.h"
 #include "robot.hpp"
 #include "event_manager.h"
@@ -976,6 +979,49 @@ void GridMap::setCircleMarkers(Point_t point, int radius, CellState cell_state,M
 			}
 		}
 	}
+}
+void GridMap::loadMap(std::string map_file,const Cell_t& min_p,bool use_map,Cell_t& curr)
+{
+	using namespace std;
+	std::ifstream fin(map_file, ios::binary | ios::ate);
+	int16_t size = fin.tellg();
+	if(!fin.is_open())
+	{
+		ROS_ERROR("Open false");
+		return;
+	}
+	fin.seekg(std::ifstream::beg);
+	std::string s;;
+	getline(fin,s);
+	int16_t width = s.size();
+	int16_t hidth = size/(width+1);
+
+	fin.seekg(std::ifstream::beg);
+	char x;
+	if(use_map) {
+		while (!fin.eof()) {
+			fin.get(x);
+			if (x == 'x') {
+				curr = {fin.tellg() / (width + 1), fin.tellg() % (width + 1)};
+				break;
+			}
+		}
+	}
+
+	fin.seekg(std::ifstream::beg);
+	while(!fin.eof()){
+		auto val = fin.get();
+		if(val =='x')
+		{
+			setCell(CLEAN_MAP, curr.x, curr.y, 1);
+		}else
+		if(val !='\n'&& val !=-1)
+		{
+			Cell_t c_it = min_p + Cell_t{fin.tellg() / (width+1), fin.tellg()  % (width+1)};
+			setCell(CLEAN_MAP, c_it.x, c_it.y, val-'0');
+		}
+	}
+	ROS_ERROR("33332");
 }
 
 void GridMap::setBlockWithBound(Cell_t min, Cell_t max, CellState state,bool with_block) {

@@ -312,17 +312,14 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 	{
 		map.print(curr.toCell(), CLEAN_MAP, path);
 		map.print(curr.toCell(), COST_MAP, path);
-
 		return false;
 	}
 
 	if (!filterPathsToSelectBestPath(map, targets, curr_cell, path,last_dir))
 		return false;
 
-	ROS_INFO("Step 5: size_of_path > 4 Optimize path for adjusting it away from obstacles..");
-	optimizePath(map, path);
+	optimizePath(map, path,last_dir);
 
-	ROS_INFO("Step 6: Fill path with direction.");
 	plan_path = *cells_generate_points(make_unique<Cells>(path));
 
 	displayCellPath(path);
@@ -600,7 +597,10 @@ bool NavCleanPathAlgorithm::checkTrapped(GridMap &map, const Cell_t &curr_cell)
 	return checkTrappedUsingDijkstra(map, curr_cell);
 }
 
-void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path) {
+void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path, Dir_t last_dir) {
+
+	ROS_INFO("Step 5: size_of_path > 4 Optimize path for adjusting it away from obstacles..");
+
 	if (curr_filter_ == &filter_p0_1t_xn || curr_filter_ == &filter_p0_1t_xp)
 		path.push_back(
 				Cell_t{path.back().x, static_cast<int16_t>(path.front().y - 3)});//for setting follow wall target line
@@ -608,6 +608,28 @@ void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path) {
 		path.push_back(
 				Cell_t{path.back().x, static_cast<int16_t>(path.front().y + 3)});//for setting follow wall target line
 	else {
+		if(path.size() > 2)
+		{
+			if(get_dir(path.begin()+1, path.begin()) == (last_dir+2)%4 ||
+					(path.begin()->y%2 == 1 && isXAxis(last_dir) && get_dir(path.begin()+1, path.begin()) == (last_dir)))
+			{
+				auto pri_dir = get_dir(path.begin()+2, path.begin()+1);
+				BoundingBox2 b2;
+				b2.Add(*path.begin());
+				b2.Add(*(path.begin()+2));
+				auto corr_path = shortestPath(*path.begin(), *(path.begin()+2), std::bind(&APathAlgorithm::isAccessible, this, std::placeholders::_1, b2, map),pri_dir);
+				ROS_ERROR("calc new path for dir:");
+				displayCellPath(path);
+				displayCellPath(*corr_path);
+				if(corr_path->empty())
+				{
+					path.pop_front();
+					path.pop_front();
+					path.pop_front();
+					std::move(corr_path->begin()+3, corr_path->end(), std::front_inserter(path));
+				}
+			}
+		}else
 		if (path.size() <= 3)
 			return;
 		// Optimize only if the path have more than 3 cells.

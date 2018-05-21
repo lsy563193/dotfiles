@@ -230,7 +230,7 @@ private:
 	 *
 	 * @return: Cells path, an equivalent path of input path which is most far away from the obstacles.
 	 */
-	void optimizePath(GridMap &map, Cells &path);
+	void optimizePath(GridMap &map, Cells &path,Dir_t last_dir);
 
 	/*
 	 * @author Patrick Chow

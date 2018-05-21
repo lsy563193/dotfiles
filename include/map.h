@@ -86,6 +86,7 @@ public:
 	 */
 	void setCircleMarkers(Point_t point, int radius, CellState cell_state,Marks& error_marker);
 
+	void loadMap(std::string map_file,const Cell_t& min_p,bool use_map,Cell_t& curr);
 	/*
 	 * Mark a square of x_len * y_len from center with cell_state.
 	 *
