@@ -35,17 +35,27 @@ void StateInit::initForNavigation() {
 	else
 		key_led.setMode(LED_STEADY, LED_GREEN);
 
-	if(sp_cm_->action_i_ == sp_cm_->ac_back_from_charger)
+	//for remote home in pause state and back from charger
+	if(sp_cm_->isRemoteGoHomePoint() || sp_cm_->isWifiGoHomePoint() || sp_cm_->action_i_ == sp_cm_->ac_back_from_charger)
+	{
 		brush.slowOperate();
+		water_tank.setCurrentSwingMotorMode(WaterTank::SWING_MOTOR_LOW);
+		water_tank.checkEquipment() ? water_tank.open(WaterTank::operate_option::swing_motor)
+																: vacuum.setForCurrentMode(Vacuum::VacMode::vac_low_mode);
+		sp_cm_->isUsingDustBox(!water_tank.getStatus(WaterTank::operate_option::swing_motor));
+	}
 	else if(!charger.isOnStub())
 	{
 		brush.normalOperate();
-		gyro.setTiltCheckingEnable(true);
+		water_tank.setCurrentSwingMotorMode(WaterTank::SWING_MOTOR_LOW);
+		water_tank.checkEquipment() ? water_tank.open(WaterTank::operate_option::swing_motor)
+																: vacuum.setSpeedByUserSetMode();
+		sp_cm_->isUsingDustBox(!water_tank.getStatus(WaterTank::operate_option::swing_motor));
 	}
-	water_tank.setCurrentSwingMotorMode(WaterTank::SWING_MOTOR_LOW);
-	water_tank.checkEquipment() ? water_tank.open(WaterTank::operate_option::swing_motor)
-															: vacuum.setSpeedByUserSetMode();
-	sp_cm_->isUsingDustBox(!water_tank.getStatus(WaterTank::operate_option::swing_motor));
+
+	if(!charger.isOnStub())
+		gyro.setTiltCheckingEnable(true);
+
 	ROS_INFO("%s %d: Enter state initForNavigation.", __FUNCTION__, __LINE__);
 }
 
