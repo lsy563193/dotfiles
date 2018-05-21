@@ -917,13 +917,26 @@ uint8_t Lidar::lidarMarker(std::vector<Vector2<int>> &markers, int movement_i, i
 {
 //	markers.clear();
 
-	if(!lidarCheckFresh(0.6,4))
+//	if(!lidarCheckFresh(0.6,4))
+//		return 0;
+	if(!lidarCheckFresh(0.01,1))
 		return 0;
 
-	lidarXYPoint_mutex_.lock();
-	auto tmp_lidarXY_points = lidarXY_points;
-	lidarXYPoint_mutex_.unlock();
-	ACleanMode::pubPointMarkers2(&tmp_lidarXY_points, "base_link", "point marker");
+	scanLinear_mutex_.lock();
+	auto tmp_scan_data = lidarScanData_linear_;
+	scanLinear_mutex_.unlock();
+
+	std::deque<Vector2<double>> tmp_lidarXY_points{};
+	for (int i = 0; i <= 359; i++) {
+		if (tmp_scan_data.ranges[i] < 4) {
+			polarToCartesian(tmp_scan_data.ranges[i], i);
+			tmp_lidarXY_points.push_back(polarToCartesian(tmp_scan_data.ranges[i], i));
+		}
+	}
+//	lidarXYPoint_mutex_.lock();
+//	auto tmp_lidarXY_points = lidarXY_points;
+//	lidarXYPoint_mutex_.unlock();
+	ACleanMode::pubPointMarkers(&tmp_lidarXY_points, "base_link", "point marker");
 	double x, y;
 	int dx{}, dy{};
 	const	double Y_MAX = 0.20;//0.279
