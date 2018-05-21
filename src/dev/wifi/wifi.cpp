@@ -976,7 +976,7 @@ bool S_Wifi::uploadMap(MapType map)
 				data_cnt+=2;
 				map_data.push_back(data[i].first);
 				map_data.push_back(data[i].second);
-				printwifimap(width,data[i]);
+				//printwifimap(width,data[i]);
 				if(data_cnt>=450)
 				{
 					data_cnt=0;
