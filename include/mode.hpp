@@ -474,7 +474,7 @@ public:
 	virtual void switchInStateFollowWall();
 	bool trapped_time_out_{};
 	bool trapped_closed_or_isolate{};
-	bool out_of_trapped{};
+	bool out_of_trapped_{};
 
 	// State exploration
 	bool isStateExploration() const

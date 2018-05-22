@@ -6,6 +6,7 @@
 #include "event_manager.h"
 #include "rcon.h"
 #include "lidar.hpp"
+#include <fstream>
 
 GridMap slam_grid_map;
 GridMap decrease_map;
@@ -387,9 +388,8 @@ void GridMap::cellToWorld(double &worldX, double &worldY, int16_t &cellX, int16_
 	worldY = (double)cellY * CELL_SIZE;
 }
 
-bool GridMap::markRobot(uint8_t id)
+bool GridMap::markRobot(const Cell_t& curr, uint8_t id)
 {
-	auto curr =  getPosition().toCell();
 	bool ret = false;
 	std::string debug_str;
 	for (auto dy = -ROBOT_SIZE_1_2; dy <= ROBOT_SIZE_1_2; ++dy)
@@ -1033,4 +1033,49 @@ void GridMap::loadMap(int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max
 		fclose(f_read);
 		ROS_INFO("%s %d: Read data succeeded.", __FUNCTION__, __LINE__);
 	}
+}
+void GridMap::loadMap(std::string map_file,const Cell_t& min_p,bool use_map,Cell_t& curr)
+{
+	using namespace std;
+	std::ifstream fin(map_file, ios::binary | ios::ate);
+	int16_t size = static_cast<int16_t>(fin.tellg());
+	if(!fin.is_open())
+	{
+		ROS_ERROR("Open false");
+		return;
+	}
+	fin.seekg(std::ifstream::beg);
+	std::string s;;
+	getline(fin,s);
+	int16_t width = s.size();
+	int16_t hidth = size/(width+1);
+
+	fin.seekg(std::ifstream::beg);
+	char x;
+	if(use_map) {
+		while (!fin.eof()) {
+			fin.get(x);
+			if (x == 'x') {
+				curr = min_p + Cell_t{static_cast<int16_t>(fin.tellg() / (width + 1)),
+											static_cast<int16_t>(fin.tellg() % (width + 1))};
+				break;
+			}
+		}
+	}
+
+	fin.seekg(std::ifstream::beg);
+	while(!fin.eof()){
+		auto val = fin.get();
+		if(val =='x')
+		{
+			setCell(CLEAN_MAP, curr.x, curr.y, 1);
+		}else
+		if(val !='\n'&& val !=-1)
+		{
+			Cell_t c_it = min_p + Cell_t{static_cast<int16_t>(fin.tellg() / (width + 1)),
+																	 static_cast<int16_t>(fin.tellg() % (width + 1))};
+			setCell(CLEAN_MAP, c_it.x, c_it.y, val-'0');
+		}
+	}
+	ROS_ERROR("33332");
 }

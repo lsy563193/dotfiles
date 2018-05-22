@@ -21,6 +21,7 @@ public:
 
 	virtual bool checkTrapped(GridMap &map, const Cell_t &curr_cell) {return true;};
 
+	void findPath(GridMap &map, const Cell_t &start, const Cell_t &target, Cells &path, Dir_t last_i);
 	public:
 	/*
 	 * @author Patrick Chow
@@ -41,15 +42,15 @@ public:
 	 *
 	 * @return: Cells path, the shortest path from start cell to target cell.
 	 */
-	Cells findShortestPath(GridMap &map, const Cell_t &start,
-							  const Cell_t &target, const Dir_t &last_dir, bool use_unknown,bool bound,Cell_t min_corner ,Cell_t max_corner);
+//	Cells findShortestPath(GridMap &map, const Cell_t &start,
+//							  const Cell_t &target, const Dir_t &last_dir, bool use_unknown,bool bound,Cell_t min_corner ,Cell_t max_corner);
 
 	bool isAccessible(const Cell_t &c_it, const BoundingBox2& bound, GridMap& map);
 
 	using cmp_condition_t = std::function<bool(const Cell_t&)>;
 
 	std::unique_ptr<Cells> shortestPath(const Cell_t &start, const Cell_t& goal, const cmp_condition_t in_search_range, Dir_t dir);
-	bool generateShortestPath(GridMap &map, const Point_t &curr,const Point_t &target, const Dir_t &last_dir, Points &plan_path);
+//	bool generateShortestPath(GridMap &map, const Point_t &curr,const Point_t &target, const Dir_t &last_dir, Points &plan_path);
 
 	/*
 	 * @
@@ -216,7 +217,7 @@ private:
 	 *
 	 * @return: PathList, a deque of paths from start cell to the input targets.
 	 */
-	void findPath(GridMap &map, const Cell_t &curr, const Cell_t &targets, Cells &path, int last_i);
+//	void findPath(GridMap &map, const Cell_t &curr, const Cell_t &targets, Cells &path, int last_i);
 
 	/*
 	 * @author Patrick Chow
@@ -452,7 +453,7 @@ private:
 	 * @return: Cells path, the path to unclean area.
 	 * @return: bool, true if operation succeeds.
 	 */
-	bool generatePathThroughCleanedArea(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Cells &plan_path);
+	bool generatePathThroughCleanedArea(GridMap &map, const Point_t &curr, Dir_t last_dir, Cells &plan_path);
 
 	/*
 	 * @author Austin Liu
@@ -467,7 +468,7 @@ private:
 	 * @return: Cells path, the path to unclean area.
 	 * @return: bool, true if operation succeeds.
 	 */
-	bool generatePathWithSlamMapClearBlocks(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Cells &plan_path);
+	bool generatePathWithSlamMapClearBlocks(GridMap &map, const Point_t &curr, Dir_t last_dir, Cells &plan_path);
 
 	/*
 	 * @author Austin Liu
@@ -482,7 +483,7 @@ private:
 	 * @return: Cells path, the path to unclean area.
 	 * @return: bool, true if operation succeeds.
 	 */
-	bool generatePathThroughSlamMapReachableArea(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Cells &plan_path);
+	bool generatePathThroughSlamMapReachableArea(GridMap &map, const Point_t &curr, Dir_t last_dir, Cells &plan_path);
 
 	/*
 	 * @author Austin Liu
@@ -496,7 +497,7 @@ private:
 	 * @return: Cells path, the path to unclean area.
 	 * @return: bool, true if operation succeeds.
 	 */
-	bool generatePathThroughUnknownArea(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Cells &plan_path);
+	bool generatePathThroughUnknownArea(GridMap &map, const Point_t &curr, Dir_t last_dir, Cells &plan_path);
 
 	Points handleResult(bool generate_finish, Cells plan_path_cells, Point_t curr, GridMap &map);
 
@@ -520,4 +521,5 @@ private:
 	Point_t current_home_point_{invalid_point_};
 	bool back_to_start_point_{false};
 };
+
 #endif //PP_PATH_ALGORITHM_H

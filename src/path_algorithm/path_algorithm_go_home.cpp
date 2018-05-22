@@ -65,34 +65,40 @@ bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point_t &curr, const 
 	return !plan_path.empty();
 }
 
-bool GoHomePathAlgorithm::generatePathThroughCleanedArea(GridMap &map, const Point_t &curr, const Dir_t &last_dir,
+bool GoHomePathAlgorithm::generatePathThroughCleanedArea(GridMap &map, const Point_t &curr, Dir_t last_dir,
 														 Cells &plan_path)
 {
 	if (map.isBlockAccessible(current_home_point_.toCell().x, current_home_point_.toCell().y))
 	{
 		Cell_t min_corner, max_corner;
-		plan_path = findShortestPath(map, curr.toCell(), current_home_point_.toCell(),
-										   last_dir, false, false, min_corner, max_corner);
+//		plan_path = findShortestPath(map, curr.toCell(), current_home_point_.toCell(),
+//										   last_dir, false, false, min_corner, max_corner);
+		Cells cells{};
+		auto is_found = map.find_if(curr.toCell(), cells,[&](const Cell_t& c_it){return c_it == current_home_point_.toCell();},false,true,true);
+		if(is_found)
+			findPath(map, curr.toCell(),current_home_point_.toCell(),plan_path,last_dir);
 	}
 
 	return !plan_path.empty();
 }
 
-bool GoHomePathAlgorithm::generatePathWithSlamMapClearBlocks(GridMap &map, const Point_t &curr, const Dir_t &last_dir,
+bool GoHomePathAlgorithm::generatePathWithSlamMapClearBlocks(GridMap &map, const Point_t &curr, Dir_t last_dir,
 														Cells &plan_path)
 {
 	if (map.isBlockAccessible(current_home_point_.toCell().x, current_home_point_.toCell().y))
 	{
 		Cell_t min_corner, max_corner;
-		plan_path = findShortestPath(map, curr.toCell(), current_home_point_.toCell(),
-									 last_dir, false, false, min_corner, max_corner);
+		Cells cells{};
+		auto is_found = map.find_if(curr.toCell(), cells,[&](const Cell_t& c_it){return c_it == current_home_point_.toCell();},false,true,true);
+		if(is_found)
+			findPath(map, curr.toCell(),current_home_point_.toCell(),plan_path,last_dir);
 	}
 
 	return !plan_path.empty();
 }
 
 bool GoHomePathAlgorithm::generatePathThroughSlamMapReachableArea(GridMap &map, const Point_t &curr,
-																  const Dir_t &last_dir, Cells &plan_path)
+																  Dir_t last_dir, Cells &plan_path)
 {
 	if (map.isBlockAccessible(current_home_point_.toCell().x, current_home_point_.toCell().y))
 	{
@@ -101,21 +107,25 @@ bool GoHomePathAlgorithm::generatePathThroughSlamMapReachableArea(GridMap &map, 
 		temp_map.copy(map);
 		temp_map.merge(slam_grid_map, false, false, true, false, false, false);
 		temp_map.print(curr.toCell(), CLEAN_MAP, Cells{{0, 0}});
-		plan_path = findShortestPath(temp_map, curr.toCell(), current_home_point_.toCell(),
-										   last_dir, false, false, min_corner, max_corner);
+		Cells cells{};
+		auto is_found = map.find_if(curr.toCell(), cells,[&](const Cell_t& c_it){return c_it == current_home_point_.toCell();},false,true,true);
+		if(is_found)
+			findPath(map, curr.toCell(),current_home_point_.toCell(),plan_path,last_dir);
 	}
 
 	return !plan_path.empty();
 }
 
-bool GoHomePathAlgorithm::generatePathThroughUnknownArea(GridMap &map, const Point_t &curr, const Dir_t &last_dir,
+bool GoHomePathAlgorithm::generatePathThroughUnknownArea(GridMap &map, const Point_t &curr, Dir_t last_dir,
 														 Cells &plan_path)
 {
 	if (map.isBlockAccessible(current_home_point_.toCell().x, current_home_point_.toCell().y))
 	{
 		Cell_t min_corner, max_corner;
-		plan_path = findShortestPath(map, curr.toCell(), current_home_point_.toCell(),
-										   last_dir, true, false, min_corner, max_corner);
+		Cells cells{};
+		auto is_found = map.find_if(curr.toCell(), cells,[&](const Cell_t& c_it){return c_it == current_home_point_.toCell();},false,true,true);
+		if(is_found)
+			findPath(map, curr.toCell(),current_home_point_.toCell(),plan_path,last_dir);
 	}
 
 	return !plan_path.empty();

@@ -88,8 +88,9 @@ bool CleanModeExploration::mapMark()
 
 	setBlocks(iterate_point_->dir);
 	if(mark_robot_)
-		clean_map_.markRobot(CLEAN_MAP);
-//	passed_path_.clear();
+		clean_map_.markRobot(getPosition().toCell(),CLEAN_MAP);
+	if(action_i_ == ac_linear)
+		passed_path_.clear();
 	return false;
 }
 

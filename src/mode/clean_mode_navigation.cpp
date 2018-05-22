@@ -1058,27 +1058,27 @@ bool CleanModeNav::isSwitchByEventInStateResumeLowBatteryCharge()
 
 bool CleanModeNav::updateActionInStateResumeLowBatteryCharge()
 {
-	if (getPosition().toCell() == continue_point_.toCell())
-		return false;
-	else {
-//		clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
-//		mapMark();
-		sp_action_.reset();
-		old_dir_ = iterate_point_->dir;
-		ROS_ERROR("old_dir_(%d)", old_dir_);
-		clean_path_algorithm_->generateShortestPath(clean_map_, getPosition(), continue_point_, old_dir_, plan_path_);
-		if (!plan_path_.empty()) {
-			iterate_point_ = plan_path_.begin();
-			ROS_ERROR("start_point_.dir(%d)", iterate_point_->dir);
-//			plan_path_.pop_front();
-			displayCellPath(pointsGenerateCells(plan_path_));
-			action_i_ = ac_linear;
-			genNextAction();
-			return true;
-		}
-		else
+//	if (getPosition().toCell() == continue_point_.toCell())
+//		return false;
+//	else {
+////		clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
+////		mapMark();
+//		sp_action_.reset();
+//		old_dir_ = iterate_point_->dir;
+//		ROS_ERROR("old_dir_(%d)", old_dir_);
+////		plan_path_ = *clean_path_algorithm_->shortestPath(getPosition(), continue_point_, ,old_dir_);
+//		if (!plan_path_.empty()) {
+//			iterate_point_ = plan_path_.begin();
+//			ROS_ERROR("start_point_.dir(%d)", iterate_point_->dir);
+////			plan_path_.pop_front();
+//			displayCellPath(pointsGenerateCells(plan_path_));
+//			action_i_ = ac_linear;
+//			genNextAction();
+//			return true;
+//		}
+//		else
 			return false;
-	}
+//	}
 }
 
 void CleanModeNav::switchInStateResumeLowBatteryCharge()

@@ -67,7 +67,7 @@ public:
 
 	void cellToWorld(double &worldX, double &worldY, int16_t &cellX, int16_t &cellY);
 
-	bool markRobot(uint8_t id);
+	bool markRobot(const Cell_t& curr, uint8_t id);
 
 	bool trapMarkRobot(uint8_t id);
 
@@ -233,6 +233,7 @@ public:
 
 	// Loading the log map for debug.
 	void loadMap(int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max);
+	void loadMap(std::string map_file,const Cell_t& min_p,bool use_map,Cell_t& curr);
 private:
 	uint8_t clean_map[MAP_SIZE][MAP_SIZE];
 	uint8_t cost_map[MAP_SIZE][MAP_SIZE];
