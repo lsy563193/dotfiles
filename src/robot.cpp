@@ -370,7 +370,7 @@ void robot::robotbase_routine_cb()
 		sensor.appointment = buf[REC_APPOINTMENT_TIME];
 			// For debug.
 		if (buf[REC_APPOINTMENT_TIME] >= 0x80)
-			printf("%d: REC_APPOINTMENT_TIME:(%2x), REC_REALTIME_H:(%2x).\n",
+			printf("%d: REC_APPOINTMENT_TIME:(%2x), REC_REALTIME:(%2x).\n",
 			   __LINE__, buf[REC_APPOINTMENT_TIME], sensor.realtime);
 //		printf("%d: charge:(%d), remote:(%d), key:(%d), rcon(%d).\n.",
 //			   __LINE__, charger.getChargeStatus(), remote.get(), key.getTriggerStatus(), c_rcon.getStatus());
@@ -660,7 +660,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	}
 //	ROS_INFO("tmp_pos(%f,%f),tmp_rad(%f)", tmp_pos.x(), tmp_pos.y(), tmp_rad);
 	robot_pos = tmp_pos;
-	robot_rad = tmp_rad;
+	robot_rad = ranged_radian(tmp_rad);
 	setRobotActualSpeed();
 	odomPublish(robot_pos, robot_rad);
 }

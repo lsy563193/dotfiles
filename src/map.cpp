@@ -8,10 +8,7 @@
 #include "lidar.hpp"
 
 GridMap slam_grid_map;
-GridMap decrease_map;
 extern const Cell_t cell_direction_[9];
-
-Cell_t g_stub_cell(0,0);
 
 GridMap::GridMap(){
 	mapInit();
@@ -65,14 +62,8 @@ void GridMap::reset(uint8_t id)
  */
 CellState GridMap::getCell(int id, int16_t x, int16_t y) {
 	CellState val=0;
-	int16_t x_min, x_max, y_min, y_max;
-	if (id == CLEAN_MAP || id == COST_MAP) {
-		x_min = xRangeMin;
-		x_max = xRangeMax;
-	   	y_min = yRangeMin;
-	   	y_max = yRangeMax;
-	}
-	if(x >= x_min && x <= x_max && y >= y_min && y <= y_max) {
+
+	if(x >= xRangeMin && x <= xRangeMax && y >= yRangeMin && y <= yRangeMax) {
 		x += MAP_SIZE + MAP_SIZE / 2;
 		x %= MAP_SIZE;
 		y += MAP_SIZE + MAP_SIZE / 2;
@@ -631,6 +622,8 @@ bool GridMap::find_if(const Cell_t &curr_cell, Cells &targets, std::function<boo
 	setCell(COST_MAP, curr_cell.x, curr_cell.y, 1);
 	queue.emplace(1, curr_cell);
 
+//	ROS_INFO("%s %d: curr(%d, %d), range(%d, %d, %d, %d), g_(%d, %d, %d, %d).", __FUNCTION__, __LINE__, curr_cell.x,
+//			 curr_cell.y, xRangeMin, xRangeMax, yRangeMin, yRangeMax, g_x_min, g_x_max, g_y_min, g_y_max);
 	while (!queue.empty()) {
 //		 Get the nearest next from the queue
 		if (queue.begin()->first == 5) {
@@ -647,8 +640,12 @@ bool GridMap::find_if(const Cell_t &curr_cell, Cells &targets, std::function<boo
 
 		for (auto index = 0; index < 4; index++) {
 
-			if(is_target ? isOutOfTargetRange(next) : isOutOfMap(next))
+			if (cellIsOutOfRange(next) || (is_target ? isOutOfTargetRange(next) : isOutOfMap(next)))
+			{
+//				printf("(%d, %d), %d, %d\n", next.x, next.y, cellIsOutOfRange(next),
+//					   (is_target ? isOutOfTargetRange(next) : isOutOfMap(next)));
 				continue;
+			}
 
 			auto neighbor = next + cell_direction_[index];
 
@@ -702,7 +699,7 @@ void GridMap::getMapRange(uint8_t id, int16_t *x_range_min, int16_t *x_range_max
 	if (id == CLEAN_MAP || id == COST_MAP) {
 		*x_range_min = g_x_min - (abs(g_x_min - g_x_max) <= 3 ? 3 : 1);
 		*x_range_max = g_x_max + (abs(g_x_min - g_x_max) <= 3 ? 3 : 1);
-		*y_range_min = g_y_min - (abs(g_y_min - g_y_max) <= 3? 3 : 1);
+		*y_range_min = g_y_min - (abs(g_y_min - g_y_max) <= 3 ? 3 : 1);
 		*y_range_max = g_y_max + (abs(g_y_min - g_y_max) <= 3 ? 3 : 1);
 	}
 //	ROS_INFO("Get Range:min(%d,%d),max(%d,%d)", g_x_min,g_y_min, g_x_max,  g_y_max);
@@ -718,7 +715,36 @@ bool GridMap::isOutOfTargetRange(const Cell_t &cell)
 }
 bool GridMap::cellIsOutOfRange(Cell_t cell)
 {
-	return std::abs(cell.x) > MAP_SIZE || std::abs(cell.y) > MAP_SIZE;
+	return cell.x < xRangeMin + 1 || cell.y < yRangeMin + 1 || cell.x > xRangeMax - 1 || cell.y > yRangeMax - 1;
+}
+
+bool GridMap::pointIsPointingOutOfRange(Point_t point)
+{
+	auto angle = radian_to_degree(point.th);
+//	printf("%s %d: angle:%f\n.", __FUNCTION__, __LINE__, angle);
+	if (point.toCell().x > xRangeMax - 1 && angle > -90 && angle < 90)
+		return true;
+	else if (point.toCell().y < yRangeMin + 1 && angle < 0)
+		return true;
+	else if (point.toCell().x < xRangeMin + 1 && (angle > 90 || angle < -90))
+		return true;
+	else if (point.toCell().y > yRangeMax - 1 && angle > 0)
+		return true;
+
+	return false;
+}
+
+void GridMap::cellPreventOutOfRange(Cell_t &cell)
+{
+	if (cell.x < xRangeMin + 2)
+		cell.x = static_cast<int16_t>(xRangeMin + 2);
+	if (cell.x > xRangeMax - 2)
+		cell.x = static_cast<int16_t>(xRangeMax - 2);
+	if (cell.y < yRangeMin + 2)
+		cell.y = static_cast<int16_t>(yRangeMin + 2);
+	if (cell.y > yRangeMax - 2)
+		cell.y = static_cast<int16_t>(yRangeMax - 2);
+
 }
 
 void GridMap::print(const Cell_t& curr_cell, uint8_t id, const Cells& targets)
@@ -765,11 +791,13 @@ void GridMap::print(const Cell_t& curr_cell, uint8_t id, const Cells& targets)
 				outString << 'e';
 			else if (cs == SLAM_MAP_BLOCKED)
 				outString << 'a';
+			else if (cs == BLOCKED_BOUNDARY)
+				outString << 'b';
 			else
 			{
-				if(id == CLEAN_MAP && (x == x_min || x==x_max || y == y_min || y == y_max) )
-					outString << '*';
-				else
+//				if(id == CLEAN_MAP && (x == x_min || x==x_max || y == y_min || y == y_max) )
+//					outString << '*';
+//				else
 					outString << cs;
 			}
 
@@ -885,7 +913,7 @@ void GridMap::colorPrint(const char *outString, int16_t y_min, int16_t y_max)
 				y_col+="\033[0;41;37ma\033[0m";// red
 			}
 			else if(cs == 'b'){//bundary
-				y_col+="\033[1;43;37mb\033[0m";
+				y_col+="\033[1;44;37mb\033[0m";// blue
 			}
 			else if(cs == 'e'){//end point
 				y_col+="\033[1;43;37me\033[0m";
