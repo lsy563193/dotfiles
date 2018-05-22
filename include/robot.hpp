@@ -13,7 +13,7 @@
 #include <sensor_msgs/LaserScan.h>
 #include <pp/x900sensor.h>
 #include <pp/x900ctrl.h>
-#include <pp/scan_ctrl.h>
+#include <rplidar_ros/scan_ctrl.h>
 #include <rplidar_ros/SetLidar.h>
 #include <vector>
 #include "config.h"
@@ -339,7 +339,7 @@ private:
 	tf::Stamped<tf::Transform>	map_pose;
 	tf::Stamped<tf::Transform>	wf_map_pose;
 
-	pp::scan_ctrl scan_ctrl_;
+	rplidar_ros::scan_ctrl scan_ctrl_;
 
 	std::string serial_port_;
 	std::string wifi_port_;
@@ -387,7 +387,6 @@ private:
 	};
 	boost::mutex last_clean_record_mutex_;
 	CleanRecord last_clean_record_;
-
 	bool verify_ok_;
 };
 

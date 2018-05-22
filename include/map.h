@@ -226,6 +226,8 @@ public:
 	bool isOutOfMap(const Cell_t &cell);
 	bool isOutOfTargetRange(const Cell_t &cell);
 	bool cellIsOutOfRange(Cell_t cell);
+	bool pointIsPointingOutOfRange(Point_t point);
+	void cellPreventOutOfRange(Cell_t &cell);
 
 	void colorPrint(const char *outString, int16_t y_min, int16_t y_max);
 	void print(const Cell_t& curr, uint8_t id, const Cells& targets);

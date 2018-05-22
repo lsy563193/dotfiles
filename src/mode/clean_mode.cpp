@@ -321,7 +321,7 @@ void ACleanMode::saveBlocks() {
 
 	saveBlock(BLOCKED_SLIP,iterate_point_->dir, [&]() {
 		Cells d_cells{};
-		if (ev.robot_slip)
+		if (ev.slip_triggered)
 			d_cells = {{1,  1}, {1,  0}, {1,  -1}, {0,  1}, {0,  0}, {0,  -1}, {-1, 1}, {-1, 0}, {-1, -1}};
 		return d_cells;
 
@@ -1695,10 +1695,10 @@ void ACleanMode::cliffAll(bool state_now, bool state_last)
 }
 
 void ACleanMode::robotSlip(bool state_now, bool state_last){
-	if(!ev.robot_slip)
+	if(!ev.slip_triggered)
 	{
 		ROS_WARN("%s %d: Robot slip.", __FUNCTION__, __LINE__);
-		ev.robot_slip= true;
+		ev.slip_triggered= true;
 	}
 }
 
@@ -2212,6 +2212,7 @@ bool ACleanMode::isIsolate(const Cell_t& curr) {
 	ROS_ERROR("ISOLATE MAP");
 	fw_tmp_map.print(curr, CLEAN_MAP,*points_to_cells(make_unique<Points>(passed_path_)));
 	ROS_ERROR("ISOLATE MAP");
+	ROS_ERROR("minx(%d),miny(%d),maxx(%d),maxy(%d)",bound.min.x, bound.min.y,bound.max.x, bound.max.y);
 
 	auto cells = Cells{};
 	auto is_found = fw_tmp_map.find_if(curr, cells,[&](const Cell_t& c_it){return c_it == external_target;},false,true,true);

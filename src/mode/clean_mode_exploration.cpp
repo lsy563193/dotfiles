@@ -18,6 +18,12 @@ CleanModeExploration::CleanModeExploration()
 	error_marker_.clear();
 	clean_map_.mapInit();
 	obs.control(OFF);
+
+	//clear real time map which store in cloud....
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_CLEAR_MAP);
+
+	// Clear the map on app.
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_CLEAR_APP_MAP);
 }
 
 CleanModeExploration::~CleanModeExploration()

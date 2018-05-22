@@ -71,6 +71,7 @@ Cells NavCleanPathAlgorithm::findTargetInSameLane(GridMap &map, const Cell_t &cu
 							!map.isBlockAtY(BLOCKED_RCON,neighbor.x,neighbor.y) &&
 							it[i] != curr_cell) {
 			it[i] += cell_direction_[i] * OVER_CELL_SIZE;
+			map.cellPreventOutOfRange(it[i]);
 		}
 	}
 
