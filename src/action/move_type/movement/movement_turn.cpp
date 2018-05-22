@@ -38,7 +38,7 @@ bool MovementTurn::isReach()
 	}
 	if(isTimeUp()){
 		ROS_WARN("%s %d: Robot maybe slip but not detect in checkSlip", __FUNCTION__, __LINE__);
-		ev.robot_slip = true;
+		ev.slip_triggered = true;
 		return true;
 	}
 	return false;

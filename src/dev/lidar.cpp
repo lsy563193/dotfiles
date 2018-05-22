@@ -1129,6 +1129,7 @@ uint8_t Lidar::lidarMarker(std::vector<Vector2<int>> &markers, int movement_i, i
 void Lidar::checkRobotSlip() {
 	auto tmp_scan_data = getLidarScanDataOriginal();
 	if (!isNeedToCheckSlip(tmp_scan_data)) {
+		slip_status_ = false;
 		slip_frame_cnt_ = 0;
 		return;
 	}
