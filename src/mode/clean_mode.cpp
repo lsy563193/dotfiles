@@ -1730,7 +1730,7 @@ bool ACleanMode::isSwitchByEventInStateInit() {
 bool ACleanMode::updateActionInStateInit() {
 	if (action_i_ == ac_null)
 		action_i_ = ac_open_gyro_and_lidar;
-	else if (action_i_ == ac_open_gyro) {
+	else if (action_i_ == ac_open_gyro_and_lidar) {
 		action_i_ = ac_open_lidar;
 	}
 	else if (action_i_ == ac_open_lidar)
