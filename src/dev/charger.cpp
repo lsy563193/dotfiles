@@ -31,4 +31,9 @@ void Charger::setStop() {
 	serial.setSendData(CTL_CHARGER, 0x00);
 }
 
+bool Charger::isStop()
+{
+	return serial.getSendData(CTL_CHARGER) == 0;
+}
+
 

@@ -13,6 +13,8 @@ public:
 
 	bool isDirected();
 
+	bool isStop();
+
 	void setStart();
 
 	void setStop();
