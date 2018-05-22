@@ -36,9 +36,10 @@ public:
 	void initBackFromCharger();
 	void initForNavigation();
 	void initForExploration();
-	void initForCommonMode();
+	void initForWallFollow();
 	void initForSpot();
 	void initForGoToCharger();
+	void initForRemote();
 };
 
 class StateClean: public State {

@@ -29,7 +29,6 @@ ModeRemote::ModeRemote()
 	{
 		sp_state = st_init.get();
 		sp_state->init();
-		key_led.setMode(LED_FLASH, LED_GREEN, 600);
 		action_i_ = ac_open_gyro;
 	}
 	genNextAction();
