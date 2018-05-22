@@ -107,21 +107,19 @@ bool Mode::isExceptionTriggered()
 	if (ev.lidar_stuck)
 		ROS_WARN("%s %d: Lidar stuck.", __FUNCTION__, __LINE__);
 	if (ev.robot_stuck)
-		ROS_WARN("%s %d: Robot stuck.", __FUNCTION__, __LINE__);
-	if (ev.oc_brush_main)
-		ROS_WARN("%s %d: Main bursh oc.", __FUNCTION__, __LINE__);
-	if (ev.robot_slip)
 	{
 		current_action_i_ = action_i_;
-		ROS_WARN("%s %d: Robot slip. current_action_i(%d)", __FUNCTION__, __LINE__,current_action_i_);
+		ROS_WARN("%s %d: Robot stuck.", __FUNCTION__, __LINE__);
 	}
+	if (ev.oc_brush_main)
+		ROS_WARN("%s %d: Main bursh oc.", __FUNCTION__, __LINE__);
 	if (is_wheel_cliff_triggered)
 		ROS_WARN("%s %d: Wheel cliff triggered.", __FUNCTION__, __LINE__);
 	if(ev.gyro_error)
 		ROS_WARN("%s %d: Gyro error.", __FUNCTION__, __LINE__);
 
 	return ev.bumper_jam || ev.lidar_bumper_jam || ev.cliff_jam || ev.tilt_jam || ev.cliff_all_triggered || ev.oc_wheel_left || ev.oc_wheel_right
-						 || ev.oc_vacuum || ev.lidar_stuck || ev.robot_stuck || ev.oc_brush_main || ev.robot_slip || is_wheel_cliff_triggered || ev.gyro_error;
+						 || ev.oc_vacuum || ev.lidar_stuck || ev.robot_stuck || ev.oc_brush_main || is_wheel_cliff_triggered || ev.gyro_error;
 }
 
 void Mode::genNextAction()

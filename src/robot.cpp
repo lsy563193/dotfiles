@@ -686,13 +686,16 @@ bool robot::lidarMotorCtrl(bool switch_)
 {
 	rplidar_ros::SetLidar ctrl_message;
 	ctrl_message.request.switch_status = switch_;
+	uint8_t motor_ctrl_failed_cnt = 0;
 
-	if (lidar_motor_cli_.call(ctrl_message))
+	while(!lidar_motor_cli_.call(ctrl_message))
 	{
-		ROS_INFO("\033[35m" "%s %d: Service response: %s" "\033[0m", __FUNCTION__, __LINE__, ctrl_message.response.message.c_str());
-		return true;
+		ROS_ERROR("%s %d: Lidar service not received! motor_ctrl_failed_cnt(%d)",__FUNCTION__,__LINE__,motor_ctrl_failed_cnt+1);
+		if(++motor_ctrl_failed_cnt > 4)
+			return false;
 	}
-	return false;
+	ROS_INFO("\033[35m" "%s %d: Service response: %s" "\033[0m", __FUNCTION__, __LINE__, ctrl_message.response.message.c_str());
+	return true;
 }
 
 bool robot::slamStart(void)

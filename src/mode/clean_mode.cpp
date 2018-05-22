@@ -321,7 +321,7 @@ void ACleanMode::saveBlocks() {
 
 	saveBlock(BLOCKED_SLIP,iterate_point_->dir, [&]() {
 		Cells d_cells{};
-		if (ev.robot_slip)
+		if (ev.slip_triggered)
 			d_cells = {{1,  1}, {1,  0}, {1,  -1}, {0,  1}, {0,  0}, {0,  -1}, {-1, 1}, {-1, 0}, {-1, -1}};
 		return d_cells;
 
@@ -1695,10 +1695,10 @@ void ACleanMode::cliffAll(bool state_now, bool state_last)
 }
 
 void ACleanMode::robotSlip(bool state_now, bool state_last){
-	if(!ev.robot_slip)
+	if(!ev.slip_triggered)
 	{
 		ROS_WARN("%s %d: Robot slip.", __FUNCTION__, __LINE__);
-		ev.robot_slip= true;
+		ev.slip_triggered= true;
 	}
 }
 
