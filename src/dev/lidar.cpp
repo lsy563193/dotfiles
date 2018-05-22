@@ -178,14 +178,7 @@ bool Lidar::motorCtrl(bool new_switch_)
 		ROS_INFO("\033[35m" "%s %d: Stop lidar." "\033[0m", __FUNCTION__, __LINE__);
 	}
 
-	if (!robot::instance()->lidarMotorCtrl(switch_))
-	{
-		ROS_ERROR("%s %d: Lidar service not received!",__FUNCTION__,__LINE__);
-		return false;
-	}
-
-	return true;
-
+	return robot::instance()->lidarMotorCtrl(switch_);
 }
 
 void Lidar::startAlign()

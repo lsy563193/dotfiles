@@ -387,7 +387,6 @@ private:
 	};
 	boost::mutex last_clean_record_mutex_;
 	CleanRecord last_clean_record_;
-
 	bool verify_ok_;
 };
 
