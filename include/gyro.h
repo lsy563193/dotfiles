@@ -233,7 +233,7 @@ private:
 	uint16_t back_count_;
 
 	//for self check
-	bool is_error_;
+	bool is_error_{false};
 
 	//for kalman
 	float kalman_angle, angle_dot;

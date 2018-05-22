@@ -333,6 +333,7 @@ private:
 	bool should_init_for_gyro_exception_{true};
 	IAction* p_action_open_gyro_ = nullptr;
 	int last_action_i_;
+	uint16_t debug_print_counter_{0};
 };
 
 class MovementCharge :public IMovement

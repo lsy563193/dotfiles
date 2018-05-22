@@ -894,10 +894,18 @@ bool MovementExceptionResume::isFinish()
 			odom.setRadianOffset(odom.getRadian());
 			gyro.setOff();
 		}
+		if(++debug_print_counter_ > 50)
+		{
+			ROS_WARN("%s, %d: gyro error: %d", __FUNCTION__, __LINE__, gyro.error());
+			debug_print_counter_ = 0;
+		}
 		if(!gyro.error())
 		{
 			if (p_action_open_gyro_ == nullptr)
+			{
+				ROS_WARN("%s, %d: gyro.error is false, restart gyro", __FUNCTION__, __LINE__);
 				p_action_open_gyro_ = new ActionOpenGyro();
+			}
 
 			if (p_action_open_gyro_->isFinish())
 			{
@@ -909,7 +917,7 @@ bool MovementExceptionResume::isFinish()
 			else
 				p_action_open_gyro_->run();
 		}
-		if(ros::Time::now().toSec() - resume_gyro_start_time_ > 30)
+		else if(ros::Time::now().toSec() - resume_gyro_start_time_ > 30)
 		{
 			ROS_ERROR("%s, %d: Gyro resume fail!", __FUNCTION__, __LINE__);
 			ev.fatal_quit = true;
