@@ -1003,7 +1003,6 @@ bool S_Wifi::uploadMap(MapType map)
 				}
 
 			}
-			printf("\n");
 			if(data_cnt>0)
 				map_packs.push_back(map_data);
 
