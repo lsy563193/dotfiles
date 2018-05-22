@@ -2,6 +2,7 @@
 #include <bumper.h>
 #include <signal.h>
 #include <path_algorithm.h>
+#include <main.h>
 #include "robot.hpp"
 #include "speaker.h"
 #include "execinfo.h"
@@ -95,6 +96,8 @@ int main(int argc, char **argv)
 
 #endif
 	robot_instance = new robot();
+// Test code for path algorithm by Austin.
+//	test_map();
 
 	//test code by lsy563193
 	/*GridMap map;
@@ -154,12 +157,13 @@ int test_time()
 	printf("ctime(localtime->time()): %s", ctime(p_local));
 }
 
+// Test code for path algorithm by Austin.
 void test_map()
 {
 	auto path_algo = new NavCleanPathAlgorithm();
 	GridMap map;
-	map.loadMap(-76, 56, -54, 91);
-	Cell_t curr_cell{-42, -52};
+	map.loadMap(-10, 9, -2, 16);
+	Cell_t curr_cell{8, 14};
 
 	Point_t curr_point = {curr_cell.x * CELL_SIZE, curr_cell.y * CELL_SIZE};
 	Dir_t dir = MAP_NEG_X;

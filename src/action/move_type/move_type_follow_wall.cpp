@@ -117,7 +117,16 @@ bool MoveTypeFollowWall::isFinish()
 		is_trapped_in_small_area_ = false;
 	}
 
-	if (sp_movement_->isFinish()) {
+	if (movement_i_ != mm_turn && p_cm->clean_map_.pointIsPointingOutOfRange(getPosition()))
+	{
+		ROS_WARN("%s %d: robot(%d, %d) pointing out of range.", __FUNCTION__, __LINE__, getPosition().toCell().x,
+				 getPosition().toCell().y);
+		auto turn_radian = is_left_ ? degree_to_radian(-30) : degree_to_radian(30);
+		turn_target_radian_ = getPosition().addRadian(turn_radian).th;
+		movement_i_ = mm_turn;
+		sp_movement_.reset(new MovementTurn(turn_target_radian_, ROTATE_TOP_SPEED));
+	}
+	else if (sp_movement_->isFinish()) {
 		if(movement_i_ == mm_dynamic){
 			movement_i_ = mm_turn;
 			sp_movement_.reset(new MovementTurn(turn_target_radian_, ROTATE_TOP_SPEED));

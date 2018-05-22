@@ -2120,7 +2120,7 @@ bool ACleanMode::updateActionInStateFollowWall()
 	}
 	else if(out_of_trapped) {
 //		out_of_trapped = false;
-		ROS_ERROR("out_of_trapped");
+		ROS_WARN("%s %d: out_of_trapped", __FUNCTION__, __LINE__);
 		action_i_ = ac_null;
 //		genNextAction();
 	}
