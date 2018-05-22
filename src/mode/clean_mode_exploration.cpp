@@ -14,7 +14,7 @@ CleanModeExploration::CleanModeExploration()
 	speaker.play(VOICE_GO_HOME_MODE, false);
 	mode_i_ = cm_exploration;
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
-	go_home_path_algorithm_.reset();
+	go_home_path_algorithm_.reset(new GoHomePathAlgorithm());
 	error_marker_.clear();
 	clean_map_.mapInit();
 	obs.control(OFF);
@@ -86,7 +86,7 @@ bool CleanModeExploration::mapMark()
 	clean_map_.setCircleMarkers(getPosition(),10,CLEANED,error_marker_);
 	resetErrorMarker();
 
-	setBlocks(iterate_point_.dir);
+	setBlocks(iterate_point_->dir);
 	if(mark_robot_)
 		clean_map_.markRobot(CLEAN_MAP);
 //	passed_path_.clear();
@@ -192,15 +192,18 @@ void CleanModeExploration::switchInStateInit() {
 
 bool CleanModeExploration::updateActionInStateInit() {
 	if (action_i_ == ac_null)
-		action_i_ = ac_open_gyro;
-	else if (action_i_ == ac_open_gyro) {
-		boost::dynamic_pointer_cast<StateInit>(state_init)->initForExploration();
+		action_i_ = ac_open_gyro_and_lidar;
+	else if (action_i_ == ac_open_gyro_and_lidar) {
 		action_i_ = ac_open_lidar;
 	}
 	else if (action_i_ == ac_open_lidar)
 		action_i_ = ac_align;
 	else if(action_i_ == ac_align)
+	{
+		auto curr = getPosition();
+		go_home_path_algorithm_->updateStartPointRadian(curr.th);
 		action_i_ = ac_open_slam;
+	}
 	else // action_open_slam
 		return false;
 

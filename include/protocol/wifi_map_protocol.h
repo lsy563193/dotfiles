@@ -28,11 +28,11 @@ public:
 
     void serialize(GridMap& grid_map,const BoundingBox2& bound);
 
+    void runLengthEncoding(GridMap &grid_map, WifiMap &wifi_map, const BoundingBox2 &bound);
 //    void display();
 	WifiMap app_map_{};
 private:
 
-    void runLengthEncoding(GridMap &grid_map, WifiMap &wifi_map, const BoundingBox2 &bound);
 
 
     int changeCost(int cost) ;

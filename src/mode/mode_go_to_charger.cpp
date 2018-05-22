@@ -36,6 +36,7 @@ ModeGoToCharger::~ModeGoToCharger()
 	brush.unblockMainBrushSlowOperation();
 	vacuum.stop();
 	water_tank.stop(WaterTank::operate_option::swing_motor_and_pump);
+	gyro.setTiltCheckingEnable(false);
 	ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);
 }
 
@@ -88,7 +89,7 @@ int ModeGoToCharger::getNextAction()
 	{
 		if (gyro.isOn())
 		{
-			sp_state = st_go_to_charger.get();
+			sp_state = st_init.get();
 			sp_state->init();
 			return ac_go_to_charger;
 		}
@@ -97,7 +98,7 @@ int ModeGoToCharger::getNextAction()
 	}
 	else if (action_i_ == ac_open_gyro)
 	{
-		sp_state = st_go_to_charger.get();
+		sp_state = st_init.get();
 		sp_state->init();
 		return ac_go_to_charger;
 	}

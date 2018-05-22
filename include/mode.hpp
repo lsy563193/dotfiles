@@ -13,6 +13,7 @@
 #include <visualization_msgs/Marker.h>
 #include <vacuum.h>
 //#include "move_type.hpp"
+#include "path_algorithm.h"
 
 
 #define ROS_INFO_FL() ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__)
@@ -49,7 +50,7 @@ public:
 	virtual void setNextMode(int next_mode);
 
 	bool isInitState() const{
-			return action_i_ == ac_open_gyro || action_i_ == ac_back_from_charger ||
+			return action_i_ == ac_open_gyro || action_i_ == ac_open_gyro_and_lidar || action_i_ == ac_back_from_charger ||
 		action_i_ == ac_open_lidar || action_i_	== ac_align || action_i_ == ac_open_slam;
 	};
 	int getNextMode();
@@ -85,21 +86,22 @@ public:
 		//0
 		ac_null,
 		ac_open_gyro,
+		ac_open_gyro_and_lidar,
 		ac_back_from_charger,
 		ac_open_lidar,
 		ac_align,
-		//5
+		//6
 		ac_open_slam,
 		ac_linear,
 		ac_follow_wall_left,
 		ac_follow_wall_right,
 		ac_turn,
-		//10
+		//11
 		ac_back,
 		ac_go_to_charger,
 		ac_idle,
 		ac_sleep,
-		//15
+		//16
 		ac_charge,
 		ac_pause,
 		ac_remote,
@@ -133,6 +135,7 @@ public:
 	const double WHEEL_CLIFF_TIME_LIMIT{2};
 	bool is_wheel_cliff_triggered{false};
 	int mode_i_{};
+	int current_action_i_{};
 
 	State* sp_state{};
 };
@@ -242,10 +245,26 @@ public:
 	bool isFinish() override ;
 
 	// For exit event handling.
+	void remoteKeyHandler(bool state_now, bool state_last);
+	void remoteDirectionLeft(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteDirectionRight(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteDirectionForward(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteHome(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteSpot(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteWallFollow(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteMax(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteWifi(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
 	void remoteClean(bool state_now, bool state_last) override ;
 	void keyClean(bool state_now, bool state_last) override ;
 	void remotePlan(bool state_now, bool state_last) override ;
-	void remoteMax(bool state_now, bool state_last) override ;
 
 	bool allowRemoteUpdatePlan() override;
 
@@ -325,7 +344,6 @@ public:
 	void setVacuum() override ;
 
 private:
-	boost::shared_ptr<State> st_go_to_charger = boost::make_shared<StateGoToCharger>();
 	boost::shared_ptr<State> st_init = boost::make_shared<StateInit>();
 };
 
@@ -373,7 +391,6 @@ public:
 	bool isGoHomePointForLowBattery(){
 		return go_home_for_low_battery_;
 	}
-	void setHomePoint();
 	bool estimateChargerPos(uint32_t rcon_value);
 	void setChargerArea(const Point_t charge_pos);
 	bool checkChargerPos();
@@ -541,8 +558,7 @@ public:
 	bool should_follow_wall{};
 
 	Dir_t old_dir_{};
-	Point_t start_point_{};
-	Point_t iterate_point_{};
+	Points::iterator iterate_point_{};
 
 	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
 	boost::shared_ptr<GoHomePathAlgorithm> go_home_path_algorithm_{};
@@ -563,7 +579,6 @@ protected:
 
 	bool low_battery_charge_{};
 	bool moved_during_pause_{false};
-	Points home_points_{};
 	bool should_go_to_charger_{false};
 	bool remote_go_home_point{false};
 	bool wifi_go_home_point{false};
@@ -572,12 +587,13 @@ protected:
 	bool go_home_for_low_battery_{false};
 	bool switch_is_off_{false};
 	Points charger_pose_;
-	Points tmp_charger_pose_;
 	bool found_charger_{false};
+	Points tmp_charger_pose_;
 	bool is_using_dust_box_{false};
 public:
 
 	static void pubPointMarkers(const std::deque<Vector2<double>> *point, std::string frame_id,std::string name);
+	static void pubPointMarkers2(const std::vector<geometry_msgs::Point> *points, std::string frame_id, std::string name);
 	void pubFitLineMarker(visualization_msgs::Marker fit_line_marker);
 	void setLinearCleaned();
 	uint8_t setFollowWall(GridMap&, bool is_left, const Points&);
@@ -667,7 +683,6 @@ public:
 	void switchInStateClean() override ;
 
 	// State go home point
-	bool checkEnterGoHomePointState() override;
 	bool isSwitchByEventInStateGoHomePoint() override;
 
 	// State go to charger
@@ -769,6 +784,7 @@ public:
 	void remoteWallFollow(bool state_now, bool state_last) override;
 	void chargeDetect(bool state_now, bool state_last) override;
 	void switchInStateFollowWall() override;
+	void batteryHome(bool state_now, bool state_last) override ;
 
 	void switchInStateInit() override;
 

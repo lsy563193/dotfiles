@@ -137,6 +137,11 @@ void MovementCharge::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
 
 void MovementCharge::run()
 {
+	// For charge command protection. (If MovementCharge destructs after a new MovementCharge constructor has finished,
+	// it will cause charge failure.
+	if (charger.isStop())
+		charger.setStart();
+
 	// Debug for charge info
 	if (time(NULL) - show_battery_info_time_stamp_ > 30)
 	{

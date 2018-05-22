@@ -4,16 +4,13 @@
 #include <map.h>
 #include <event_manager.h>
 #include "dev.h"
-#include "path_algorithm.h"
-#include "robot.hpp"
-#include "mode.hpp"
 CleanModeSpot::CleanModeSpot()
 {
 	ROS_WARN("%s %d: Entering Spot mode\n=========================" , __FUNCTION__, __LINE__);
 	speaker.play(VOICE_CLEANING_SPOT,false);
 
 	clean_path_algorithm_.reset(new SpotCleanPathAlgorithm());
-	go_home_path_algorithm_.reset();
+	go_home_path_algorithm_.reset(new GoHomePathAlgorithm());
 	mode_i_ = cm_spot;
 	s_wifi.setWorkMode(cm_spot);
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
@@ -61,16 +58,16 @@ bool CleanModeSpot::mapMark()
 {
 	ROS_INFO("%s,%d,passed_path",__FUNCTION__,__LINE__);
 	auto passed_path_cells = pointsGenerateCells(passed_path_);
-	clean_path_algorithm_->displayCellPath(passed_path_cells);
+	displayCellPath(passed_path_cells);
 
 	if (action_i_ == ac_linear) {
-		PP_INFO();
+//		PP_INFO();
 		setCleaned(pointsGenerateCells(passed_path_));
 	}
 
 	if (sp_state == state_folllow_wall.get())
 		clean_map_.markRobot(CLEAN_MAP);
-	setBlocks(iterate_point_.dir);
+	setBlocks(iterate_point_->dir);
 	PP_INFO();
 	clean_map_.print(getPosition().toCell(), CLEAN_MAP, Cells{getPosition().toCell()});
 
@@ -138,9 +135,8 @@ void CleanModeSpot::overCurrentWheelRight(bool state_now, bool state_last)
 
 bool CleanModeSpot::updateActionInStateInit() {
 	if (action_i_ == ac_null)
-		action_i_ = ac_open_gyro;
-	else if (action_i_ == ac_open_gyro) {
-		boost::dynamic_pointer_cast<StateInit>(state_init)->initForSpot();
+		action_i_ = ac_open_gyro_and_lidar;
+	else if (action_i_ == ac_open_gyro_and_lidar) {
 		action_i_ = ac_open_lidar;
 	}
 	else if (action_i_ == ac_open_lidar)

@@ -29,7 +29,6 @@ ModeRemote::ModeRemote()
 	{
 		sp_state = st_init.get();
 		sp_state->init();
-		key_led.setMode(LED_FLASH, LED_GREEN, 600);
 		action_i_ = ac_open_gyro;
 	}
 	genNextAction();
@@ -60,6 +59,7 @@ ModeRemote::~ModeRemote()
 	// Wait for battery recovery from operating motors.
 	usleep(200000);
 	battery.forceUpdate();
+	gyro.setTiltCheckingEnable(false);
 	ROS_INFO("%s %d: Exit remote mode.", __FUNCTION__, __LINE__);
 }
 

@@ -692,6 +692,8 @@ public:
 	CleanRecordUploadTxMsg(const uint32_t time,
 			const uint16_t clean_time,
 			const uint16_t clean_area,
+			const uint16_t pack_num,
+			const uint16_t pack_size,
 			const std::vector<uint8_t> &data,
 			const uint8_t seq_num = 0);
 
@@ -699,6 +701,8 @@ private:
 	static std::vector<uint8_t> getInitData(const uint32_t time,
 			const uint16_t clean_time,
 			const uint16_t clean_area,
+			const uint16_t pack_num,
+			const uint16_t pack_size,
 			const std::vector<uint8_t> &data);
 };
 

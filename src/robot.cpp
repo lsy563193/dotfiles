@@ -118,7 +118,7 @@ robot::robot()
 	auto wifi_send_thread = new boost::thread(boost::bind(&S_Wifi::wifiSendRutine,&s_wifi));
 
 	obs.control(ON);
-	ROS_WARN("%s %d: Robot x900(version 0000 r11) is online :)", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Robot x900(version 0000 r12) is online :)", __FUNCTION__, __LINE__);
 }
 
 robot::~robot()
@@ -1048,6 +1048,18 @@ void robot::setRobotActualSpeed() {
 	time = ros::Time::now().toSec();
 }
 
+bool robot::duringNavigationCleaning()
+{
+	bool ret = false;
+	boost::mutex::scoped_lock lock(mode_mutex_);
+	if (getRobotWorkMode() == Mode::cm_navigation)
+	{
+		auto mode = boost::dynamic_pointer_cast<ACleanMode>(p_mode);
+		if (mode->isStateClean())
+			ret = true;
+	}
+	return ret;
+}
 
 //--------------------
 static float xCount{}, yCount{};
@@ -1060,10 +1072,6 @@ Point_t getPosition(Baselink_Frame_Type type)
 	return {xCount, yCount, robot::instance()->getWorldPoseRadian()};
 }
 
-float cellToCount(int16_t i) {
-	return i * CELL_SIZE;
-}
-
 void setPosition(float x, float y) {
 	xCount = x;
 	yCount = y;
@@ -1074,20 +1082,6 @@ void resetPosition() {
 	yCount = 0;
 }
 
-bool isAny(Dir_t dir)
-{
-	return dir == MAP_ANY;
-}
-
-bool isPos(Dir_t dir)
-{
-	return dir == MAP_POS_X || dir == MAP_POS_Y;
-}
-
-bool isXAxis(Dir_t dir)
-{
-	return dir == MAP_POS_X || dir == MAP_NEG_X;
-}
 /*
 Dir_t getReDir(Dir_t dir)
 {

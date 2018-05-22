@@ -19,7 +19,7 @@ CleanModeFollowWall::CleanModeFollowWall()
 //	diff_timer_ = WALL_FOLLOW_TIME;
 	speaker.play(VOICE_CLEANING_WALL_FOLLOW, false);
 	clean_path_algorithm_.reset(new WFCleanPathAlgorithm);
-	go_home_path_algorithm_.reset();
+	go_home_path_algorithm_.reset(new GoHomePathAlgorithm());
 	closed_count_limit_ = 1;
 	mode_i_ = cm_wall_follow;
 	s_wifi.setWorkMode(cm_wall_follow);
@@ -53,23 +53,23 @@ CleanModeFollowWall::~CleanModeFollowWall()
 }
 
 bool CleanModeFollowWall::mapMark() {
-	clean_path_algorithm_->displayPointPath(passed_path_);
+	displayPointPath(passed_path_);
 	PP_WARN();
 	if (isStateGoHomePoint())
 	{
 		setCleaned(pointsGenerateCells(passed_path_));
-		setBlocks(iterate_point_.dir);
+		setBlocks(iterate_point_->dir);
 	}
 	else if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
 	{
 		setCleaned(pointsGenerateCells(passed_path_));
-		setBlocks(iterate_point_.dir);
+		setBlocks(iterate_point_->dir);
 		ROS_ERROR("-------------------------------------------------------");
 		auto start = *passed_path_.begin();
 		passed_path_.erase(std::remove_if(passed_path_.begin(),passed_path_.end(),[&start](Point_t& it){
 			return it.toCell() == start.toCell();
 		}),passed_path_.end());
-		clean_path_algorithm_->displayPointPath(passed_path_);
+		displayPointPath(passed_path_);
 		ROS_ERROR("-------------------------------------------------------");
 		setFollowWall(clean_map_, action_i_ == ac_follow_wall_left, passed_path_);
 	}
@@ -201,6 +201,15 @@ void CleanModeFollowWall::chargeDetect(bool state_now, bool state_last)
 	}
 }
 
+void CleanModeFollowWall::batteryHome(bool state_now, bool state_last)
+{
+	if (!ev.battery_home && isStateFollowWall())
+	{
+		ROS_WARN("%s %d: low battery, battery =\033[33m %dmv \033[0m", __FUNCTION__, __LINE__, battery.getVoltage());
+		ev.battery_home = true;
+	}
+}
+
 void CleanModeFollowWall::switchInStateInit() {
 	PP_INFO();
 	action_i_ = ac_null;
@@ -226,9 +235,7 @@ void CleanModeFollowWall::switchInStateInit() {
 
 void CleanModeFollowWall::switchInStateFollowWall() {
 	sp_state = state_go_home_point.get();
-	ROS_INFO("%s %d: home_cells_.size(%lu)", __FUNCTION__, __LINE__, home_points_.size());
-	go_home_path_algorithm_.reset();
-	go_home_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_, home_points_, start_point_));
+	go_home_path_algorithm_->initForGoHomePoint(clean_map_);
 	sp_state->init();
 	action_i_ = ac_null;
 	genNextAction();
