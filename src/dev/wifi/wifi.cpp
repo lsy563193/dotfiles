@@ -322,7 +322,6 @@ bool S_Wifi::init()
 							msg.data()
 							);
 				s_wifi_tx_.push(std::move(p)).commit();
-				//todo
 			});
 
 	//sync clock
