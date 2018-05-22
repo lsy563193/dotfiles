@@ -175,7 +175,6 @@ add_message_files(
 	FILES
 	x900ctrl.msg
 	x900sensor.msg
-	scan_ctrl.msg
 )
 
 #add_service_files(

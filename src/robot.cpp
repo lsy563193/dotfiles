@@ -67,7 +67,7 @@ robot::robot()
 
 	// Publishers.
 	odom_pub_ = robot_nh_.advertise<nav_msgs::Odometry>("robot_odom", 1);
-	scan_ctrl_pub_ = robot_nh_.advertise<pp::scan_ctrl>("scan_ctrl", 1);
+	scan_ctrl_pub_ = robot_nh_.advertise<rplidar_ros::scan_ctrl>("scan_ctrl", 1);
 	x900_ctrl_pub_ = robot_nh_.advertise<pp::x900ctrl>("/robot_ctrl_stream",1);
 
 	resetCorrection();
