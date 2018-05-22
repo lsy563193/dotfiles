@@ -178,14 +178,7 @@ bool Lidar::motorCtrl(bool new_switch_)
 		ROS_INFO("\033[35m" "%s %d: Stop lidar." "\033[0m", __FUNCTION__, __LINE__);
 	}
 
-	if (!robot::instance()->lidarMotorCtrl(switch_))
-	{
-		ROS_ERROR("%s %d: Lidar service not received!",__FUNCTION__,__LINE__);
-		return false;
-	}
-
-	return true;
-
+	return robot::instance()->lidarMotorCtrl(switch_);
 }
 
 void Lidar::startAlign()
@@ -1129,6 +1122,7 @@ uint8_t Lidar::lidarMarker(std::vector<Vector2<int>> &markers, int movement_i, i
 void Lidar::checkRobotSlip() {
 	auto tmp_scan_data = getLidarScanDataOriginal();
 	if (!isNeedToCheckSlip(tmp_scan_data)) {
+		slip_status_ = false;
 		slip_frame_cnt_ = 0;
 		return;
 	}

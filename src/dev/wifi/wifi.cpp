@@ -322,7 +322,6 @@ bool S_Wifi::init()
 							msg.data()
 							);
 				s_wifi_tx_.push(std::move(p)).commit();
-				//todo
 			});
 
 	//sync clock
@@ -1003,7 +1002,6 @@ bool S_Wifi::uploadMap(MapType map)
 				}
 
 			}
-			printf("\n");
 			if(data_cnt>0)
 				map_packs.push_back(map_data);
 

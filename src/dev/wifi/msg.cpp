@@ -327,7 +327,6 @@ string SyncClockRxMsg::describe() const
 				static_cast<uint8_t>(a_clean_time & 0xFF),
 				static_cast<uint8_t>((a_clean_area & 0xFF00) >> 8),
 				static_cast<uint8_t>(a_clean_area & 0xFF),
-				static_cast<uint8_t>((pack_num&0xff00)>>8),
 				static_cast<uint8_t>(pack_num),
 				static_cast<uint8_t>(pack_size)
 		};

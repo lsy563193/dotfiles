@@ -621,7 +621,7 @@ void event_manager_reset_status(void)
 	/* Slam Error */
 	ev.slam_error = false;
 	/* robot slip || stuck */
-	ev.robot_slip = false;
+	ev.slip_triggered = false;
 	ev.robot_stuck = false;
 
 	/* tilt switch*/
@@ -999,7 +999,7 @@ void df_robot_slip()
 /*	static int slip_cnt = 0;
 	ROS_WARN("\033[32m%s,%d,set robot slip!! \033[0m",__FUNCTION__,__LINE__);
 	beeper.debugBeep();
-	ev.robot_slip = true;
+	ev.slip_triggered = true;
 	if(slip_cnt++ > 2){
 		slip_cnt = 0;
 		ev.robot_stuck = true;

@@ -61,6 +61,8 @@ int WifiMapManage::changeCost(int cost)
 		return 0x02;
 	else if(cost == 0)//unclean
 		return 0x03;
+	else
+		return 0x03;
 }
 
 //void WifiMapManage::display() {
