@@ -1052,7 +1052,7 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_mt) {
 		ROS_INFO("next_mode_i_(%d)",getNextMode());
 		ROS_INFO("mode_i_(%d)",mode_i_);
 		is_closed = true;
-		is_isolate = isIsolate();
+		is_isolate = isIsolate(curr.toCell());
 		if(is_isolate)
 			isolate_count_++;
 		else
@@ -2192,7 +2192,7 @@ PathHead ACleanMode::getTempTarget()
 	return path_head_;
 }
 
-bool ACleanMode::isIsolate() {
+bool ACleanMode::isIsolate(const Cell_t& curr) {
 	BoundingBox2 bound{};
 //	GridMap fw_tmp_map;
 //	std::copy(passed_path_.begin(), passed_path_.end(),std::ostream_iterator<Point_t>(std::cout, " "));
@@ -2201,18 +2201,15 @@ bool ACleanMode::isIsolate() {
 	fw_tmp_map.getMapRange(CLEAN_MAP, &bound.min.x, &bound.max.x, &bound.min.y, &bound.max.y);
 	fw_tmp_map.markRobot(CLEAN_MAP);//Note : For clearing the obstacles around the robot current pose, please not delete it!!!
 
-	auto target = bound.max + Cell_t{1, 1};
-	bound.SetMinimum(bound.min - Cell_t{8, 8});
-	bound.SetMaximum(bound.max + Cell_t{8, 8});
+	auto external_target = bound.max + Cell_t{1, 1};
+	fw_tmp_map.setCell(CLEAN_MAP, external_target.x,external_target.y,CLEANED);
 	ROS_ERROR("ISOLATE MAP");
-	fw_tmp_map.print(getPosition().toCell(), CLEAN_MAP,*points_to_cells(make_unique<Points>(passed_path_)));
+	fw_tmp_map.print(curr, CLEAN_MAP,*points_to_cells(make_unique<Points>(passed_path_)));
 	ROS_ERROR("ISOLATE MAP");
-	ROS_ERROR("minx(%d),miny(%d),maxx(%d),maxy(%d)",bound.min.x, bound.min.y,bound.max.x, bound.max.y);
 
-	auto path = clean_path_algorithm_->findShortestPath(fw_tmp_map, getPosition().toCell(), target, MAP_POS_X, true, true,
-																											bound.min, bound.max);
-
-	return !path.empty();
+	auto cells = Cells{};
+	auto is_found = fw_tmp_map.find_if(curr, cells,[&](const Cell_t& c_it){return c_it == external_target;},false,true,true);
+	return is_found;
 }
 
 bool ACleanMode::generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &targets)

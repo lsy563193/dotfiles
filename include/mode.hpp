@@ -345,7 +345,7 @@ public:
 
 	void setNextModeDefault();
 
-	bool isIsolate();
+	bool isIsolate(const Cell_t& curr);
 	bool isGyroDynamic();
 	bool generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &targets);
 
