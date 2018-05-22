@@ -882,10 +882,11 @@ bool robot::getCleanMap(GridMap& map)
 {
 	bool ret = false;
 	boost::mutex::scoped_lock lock(mode_mutex_);
-	if (getRobotWorkMode() == Mode::cm_navigation)
+	if (getRobotWorkMode() == Mode::cm_navigation || getRobotWorkMode() == Mode::cm_exploration)
 	{
 		auto mode = boost::dynamic_pointer_cast<ACleanMode>(p_mode);
-		if (mode->isStateClean())
+		if (mode->isStateClean() || mode->isStateGoHomePoint() || mode->isStateGoToCharger()
+			|| mode->isStateExploration())
 		{
 			map = mode->clean_map_;
 			ret = true;
