@@ -1202,15 +1202,15 @@ bool S_Wifi::uploadLastCleanData()
 	//-- upload packs 
 	for (uint8_t i = 0; i < packs.size(); i++)
 	{
-		uint8_t upload_clean_record_cnt = 0;
-		do
-		{
-			if (upload_clean_record_cnt++ > 4)
-			{
-				is_wifi_connected_ = false;
-				wifi_led.setMode(LED_STEADY, WifiLed::state::off);
-				return false;
-			}
+		//uint8_t upload_clean_record_cnt = 0;
+		//do
+		//{
+		//	if (upload_clean_record_cnt++ > 4)
+			//{
+			//	is_wifi_connected_ = false;
+			//	wifi_led.setMode(LED_STEADY, WifiLed::state::off);
+		//		return false;
+		//	}
 			wifi::CleanRecordUploadTxMsg p(time,
 										   clean_time,
 										   clean_area,
@@ -1218,11 +1218,9 @@ bool S_Wifi::uploadLastCleanData()
 										   packs.size(),
 										   packs[i]);
 			s_wifi_tx_.push(std::move(p)).commit();
-			auto sleep_sec = static_cast<uint32_t>(packs[i].size() > 600 ?
-												   packs[i].size() * 1000 : 600000);
-			usleep(static_cast<__useconds_t>(sleep_sec));
-		}while(ros::ok() && !clean_record_ack_);
-		clean_record_ack_ = false;
+			usleep(600000);
+		//}while(ros::ok() && !clean_record_ack_);
+		//clean_record_ack_ = false;
 	} 
 	ROS_INFO("%s,%d,upload finish",__FUNCTION__,__LINE__);
 	return true;

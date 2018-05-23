@@ -178,6 +178,10 @@ public:
 		return tilt_checking_status_;
 	}
 
+	bool isSetDynamicOff()
+	{
+		return !set_dynamic_status_;
+	}
 	float calAngleR1OrderFilter(double k, double dt);
 	float calAngleRKalmanFilter(double dt);
 	void setAngleR(float angle);
@@ -208,6 +212,7 @@ private:
 	float ANGLE_R_OFFSET_{0};
 
 	bool calibration_status_;
+	bool set_dynamic_status_{false};
 
 	bool status_;
 	GyroState open_state_;

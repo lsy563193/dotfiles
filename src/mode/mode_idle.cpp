@@ -429,7 +429,7 @@ void ModeIdle::keyClean(bool state_now, bool state_last)
 void ModeIdle::rcon(bool state_now, bool state_last)
 {
 //	ROS_INFO("%s %d: rcon status: %8x.", __FUNCTION__, __LINE__, c_rcon.getStatus());
-	if (error.get() == ERROR_CODE_NONE)
+	if (error.get() == ERROR_CODE_NONE && !robot::instance()->isBatteryLow2())
 	{
 		auto time_for_now_ = ros::Time::now().toSec();
 //	ROS_WARN("%s %d: rcon signal. first: %lf, last: %lf, now: %lf", __FUNCTION__, __LINE__, first_time_seen_charger, last_time_seen_charger, time_for_now);

@@ -341,8 +341,8 @@ bool MovementExceptionResume::isFinish()
 					if ((ros::Time::now().toSec() - resume_main_bursh_start_time_) >= 3)
 					{
 						ROS_WARN("%s %d: main brush over current resume succeeded!", __FUNCTION__, __LINE__);
-//							if (brush.isMainBrushSlowOperate())
-//								brush.blockMainBrushSlowOperation();
+						if (brush.isMainBrushSlowOperate())
+							brush.blockMainBrushSlowOperation();
 						brush.stop();
 						ev.oc_brush_main = false;
 					}

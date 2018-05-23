@@ -5,7 +5,7 @@
 #ifndef PP_BATTERY_H
 #define PP_BATTERY_H
 
-#include "mathematics.h"
+#include <cstdint>
 
 class Battery {
 public:

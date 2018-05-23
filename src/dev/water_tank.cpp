@@ -5,6 +5,7 @@
 #include <battery.h>
 #include "water_tank.hpp"
 #include "serial.h"
+#include "ros/ros.h"
 
 WaterTank water_tank;
 WaterTank::WaterTank()
