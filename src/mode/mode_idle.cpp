@@ -406,14 +406,10 @@ void ModeIdle::keyClean(bool state_now, bool state_last)
 		if (error.get())
 		{
 			bool force_clear = true;
-			if (error.clear(error.get(), force_clear))
-			{
-				ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
-                sp_state->init();
-//				speaker.play(VOICE_CLEAR_ERROR_UNOFFICIAL);
-			}
-			else
-				error.alarm();
+			error.clear(error.get(), force_clear);
+			ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
+			sp_state->init();
+//			speaker.play(VOICE_CLEAR_ERROR_UNOFFICIAL);
 		}
 		else if (cliff.getStatus() == BLOCK_ALL)
 		{
@@ -425,7 +421,7 @@ void ModeIdle::keyClean(bool state_now, bool state_last)
 		{
 			ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, battery.getVoltage(),
 					 (int) BATTERY_READY_TO_CLEAN_VOLTAGE);
-            sp_state->init();
+			sp_state->init();
 			speaker.play(VOICE_BATTERY_LOW);
 		}
 		else

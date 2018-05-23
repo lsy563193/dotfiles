@@ -154,7 +154,7 @@ public:
 		return error_code_;
 	}
 
-	void alarm(void);
+	void alarm(bool can_be_interrupted = true);
 
 	bool clear(uint8_t code, bool force_clear = false);
 

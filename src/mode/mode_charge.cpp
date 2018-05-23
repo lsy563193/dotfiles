@@ -73,7 +73,7 @@ bool ModeCharge::isExit()
 			{
 				sp_state = state_charge.get();
 				sp_state->init();
-				error.alarm();
+				error.alarm(false);
 				sp_action_.reset(new MovementCharge);
 				plan_activated_status_ = false;
 				ROS_WARN("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
@@ -87,7 +87,7 @@ bool ModeCharge::isExit()
 					 __LINE__);
 			sp_state = state_charge.get();
 			sp_state->init();
-			speaker.play(VOICE_BATTERY_LOW);
+			speaker.play(VOICE_BATTERY_LOW, false);
 			sp_action_.reset(new MovementCharge);
 			plan_activated_status_ = false;
 			return false;
@@ -119,7 +119,7 @@ bool ModeCharge::isExit()
 			ROS_WARN("%s %d: Battery not ready to clean.", __FUNCTION__, __LINE__);
 			sp_state = state_charge.get();
 			sp_state->init();
-			speaker.play(VOICE_BATTERY_LOW);
+			speaker.play(VOICE_BATTERY_LOW, false);
 			sp_action_.reset(new MovementCharge);
 			ev.key_clean_pressed = false;
 			return false;

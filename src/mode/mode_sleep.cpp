@@ -73,7 +73,8 @@ bool ModeSleep::isExit()
 				} else
 				{
 //					speaker.play(VOICE_CANCEL_APPOINTMENT_UNOFFICIAL, false);
-					error.alarm();
+					setNextMode(md_idle);
+					return true;
 				}
 			}
 

@@ -11,64 +11,64 @@
 
 Error error;
 
-void Error::alarm(void)
+void Error::alarm(bool can_be_interrupted)
 {
 	switch (get())
 	{
 		case ERROR_CODE_LEFTWHEEL:
 		{
-			speaker.play(VOICE_ERROR_LEFT_WHEEL);
+			speaker.play(VOICE_ERROR_LEFT_WHEEL, can_be_interrupted);
 			break;
 		}
 		case ERROR_CODE_RIGHTWHEEL:
 		{
-			speaker.play(VOICE_ERROR_RIGHT_WHEEL);
+			speaker.play(VOICE_ERROR_RIGHT_WHEEL, can_be_interrupted);
 			break;
 		}
 		case ERROR_CODE_LEFTBRUSH:
 		{
-			speaker.play(VOICE_ERROR_LEFT_BRUSH);
+			speaker.play(VOICE_ERROR_LEFT_BRUSH, can_be_interrupted);
 			break;
 		}
 		case ERROR_CODE_RIGHTBRUSH:
 		{
-			speaker.play(VOICE_ERROR_RIGHT_BRUSH);
+			speaker.play(VOICE_ERROR_RIGHT_BRUSH, can_be_interrupted);
 			break;
 		}
 		case ERROR_CODE_MAINBRUSH:
 		{
-			speaker.play(VOICE_ERROR_MAIN_BRUSH);
+			speaker.play(VOICE_ERROR_MAIN_BRUSH, can_be_interrupted);
 			break;
 		}
 		case ERROR_CODE_VACUUM:
 		{
-			speaker.play(VOICE_ERROR_SUCTION_FAN);
+			speaker.play(VOICE_ERROR_SUCTION_FAN, can_be_interrupted);
 			break;
 		}
 		case ERROR_CODE_CLIFF:
 		{
-			speaker.play(VOICE_ERROR_CLIFF);
+			speaker.play(VOICE_ERROR_CLIFF, can_be_interrupted);
 			break;
 		}
 		case ERROR_CODE_BUMPER:
 		{
-			speaker.play(VOICE_ERROR_BUMPER);
+			speaker.play(VOICE_ERROR_BUMPER, can_be_interrupted);
 			break;
 		}
 		case ERROR_CODE_LIDAR:
 		case ERROR_CODE_SLAM:
 		{
-			speaker.play(VOICE_TEST_LIDAR);
+			speaker.play(VOICE_TEST_LIDAR, can_be_interrupted);
 			break;
 		}
 		case ERROR_CODE_STUCK:
 		{
-			speaker.play(VOICE_ROBOT_TRAPPED);
+			speaker.play(VOICE_ROBOT_TRAPPED, can_be_interrupted);
 			break;
 		}
 		case ERROR_CODE_GYRO:
 		{
-			speaker.play(VOICE_GYRO_ERROR);
+			speaker.play(VOICE_GYRO_ERROR, can_be_interrupted);
 			break;
 		}
 		default:
