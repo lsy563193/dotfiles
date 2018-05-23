@@ -76,7 +76,7 @@ bool GoHomePathAlgorithm::generatePathThroughCleanedArea(GridMap &map, const Poi
 //		plan_path = findShortestPath(map, curr.toCell(), current_home_point_.toCell(),
 //										   last_dir, false, false, min_corner, max_corner);
 		Cells cells{};
-		auto is_found = map.find_if(curr.toCell(), cells,[&](const Cell_t& c_it){return c_it == current_home_point_.toCell();},false,true,true);
+		auto is_found = map.dijstra(curr.toCell(), cells,[&](const Cell_t& c_it){return c_it == current_home_point_.toCell();},true);
 		if(is_found)
 			findPath(map, curr.toCell(),current_home_point_.toCell(),plan_path,last_dir);
 	}
@@ -95,7 +95,7 @@ bool GoHomePathAlgorithm::generatePathWithSlamMapClearBlocks(GridMap &map, const
 	{
 		Cell_t min_corner, max_corner;
 		Cells cells{};
-		auto is_found = map.find_if(curr.toCell(), cells,[&](const Cell_t& c_it){return c_it == current_home_point_.toCell();},false,true,true);
+		auto is_found = map.dijstra(curr.toCell(), cells,[&](const Cell_t& c_it){return c_it == current_home_point_.toCell();},true);
 		if(is_found)
 			findPath(map, curr.toCell(),current_home_point_.toCell(),plan_path,last_dir);
 	}
@@ -118,7 +118,7 @@ bool GoHomePathAlgorithm::generatePathThroughSlamMapReachableArea(GridMap &map, 
 		temp_map.merge(slam_grid_map, false, false, true, false, false, false);
 		temp_map.print(curr.toCell(), CLEAN_MAP, Cells{{0, 0}});
 		Cells cells{};
-		auto is_found = map.find_if(curr.toCell(), cells,[&](const Cell_t& c_it){return c_it == current_home_point_.toCell();},false,true,true);
+		auto is_found = map.dijstra(curr.toCell(), cells,[&](const Cell_t& c_it){return c_it == current_home_point_.toCell();},true);
 		if(is_found)
 			findPath(map, curr.toCell(),current_home_point_.toCell(),plan_path,last_dir);
 	}
@@ -137,7 +137,7 @@ bool GoHomePathAlgorithm::generatePathThroughUnknownArea(GridMap &map, const Poi
 	{
 		Cell_t min_corner, max_corner;
 		Cells cells{};
-		auto is_found = map.find_if(curr.toCell(), cells,[&](const Cell_t& c_it){return c_it == current_home_point_.toCell();},false,true,true);
+		auto is_found = map.dijstra(curr.toCell(), cells,[&](const Cell_t& c_it){return c_it == current_home_point_.toCell();},true);
 		if(is_found)
 			findPath(map, curr.toCell(),current_home_point_.toCell(),plan_path,last_dir);
 	}

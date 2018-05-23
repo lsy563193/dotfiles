@@ -98,13 +98,13 @@ int main(int argc, char **argv)
 	robot_instance = new robot();
 // Test code for path algorithm by Austin.
 //	test_map();
-
+/*
 	//test code by lsy563193
-/*	sleep(1);
+	sleep(1);
 	GridMap map;
 	//test
 	Cell_t curr{};
-	map.loadMap("/opt/ros/indigo/share/pp/map",Cell_t{-2,0},true,curr);
+	map.loadMap(Cell_t{-2,-5},true,curr);
 	map.print(curr,CLEAN_MAP, Cells{});
 	setPosition(cellToCount(curr.x),cellToCount(curr.y));
 
@@ -120,15 +120,11 @@ int main(int argc, char **argv)
 	BoundingBox2 bound{};
 	map.getMapRange(CLEAN_MAP, &bound.min.x, &bound.max.x, &bound.min.y, &bound.max.y);
 	auto external_target = bound.max + Cell_t{1, 1};
-	map.setCell(CLEAN_MAP, external_target.x,external_target.y,CLEANED);
-	ROS_ERROR("ISOLATE MAP");
-	map.print(curr, CLEAN_MAP,Cells{external_target});
-	ROS_ERROR("ISOLATE MAP");
 	auto cells = Cells{};
 	auto points = Points{};
 //	auto is_found = map.find_if(curr, cells,[&](const Cell_t& c_it){return c_it == external_target;},false,true,true);
-//	clean_path_algorithm_->generatePath(map,curr,external_target,MAP_ANY,true,false,Cell_t{0,0},Cell_t{0,0});
-	clean_path_algorithm_->generatePath(map,getPosition(),old_dir_, points);
+	clean_path_algorithm_->generatePath(map,{cellToCount(curr.x),cellToCount(curr.y)},old_dir_, points);
+//	clean_path_algorithm_->generatePath(map,getPosition(),old_dir_, points);
 //	auto is_found = map.find_if(curr, cells,[&](const Cell_t& c_it){return c_it == external_target;},false,true,true);
 	ROS_INFO("~~~~~~~~~~~~~~~~~~~!");*/
 	ros::spin();

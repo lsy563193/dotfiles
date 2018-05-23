@@ -1,0 +1,7 @@
+#scp -r alvin@192.168.50.59:/home/alvin/pp_alvin/build/devel/lib/pp/pp ./
+scp -r pp root@192.168.0.1:/opt/ros/indigo/lib/pp/pp
+#scp -r ./audio/ root@192.168.0.1:/opt/ros/indigo/share/pp/
+#scp -r ./config/ root@192.168.0.1:/opt/ros/indigo/share/pp/
+#scp -r ./launch/ root@192.168.0.1:/opt/ros/indigo/share/pp/
+#scp -r alvin@192.168.50.61:/home/alvin/pp_alvin/build/devel/lib/python2.7/site-packages/pp/msg ./msg2
+#scp -r msg2 root@192.168.0.1:/opt/ros/indigo/lib/python2.7/site-packages/pp/msg

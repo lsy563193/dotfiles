@@ -2058,8 +2058,7 @@ void ACleanMode::switchInStateExploration() {
 	PP_INFO();
 	old_dir_ = iterate_point_->dir;
 	Cells cells{};
-	auto is_found = clean_map_.find_if(getPosition().toCell(), cells,[&](const Cell_t& c_it){return c_it == Cell_t{0,0};},false,true,true);
-//	Cells tmp_path =  clean_path_algorithm_->findShortestPath(clean_map_,getPosition().toCell(),Cell_t{0,0},old_dir_,false,false,Cell_t{0,0},Cell_t{0,0});
+	auto is_found = clean_map_.dijstra(getPosition().toCell(), cells,[&](const Cell_t& c_it){return c_it == Cell_t{0,0};},true);
 	if (!is_found) {
 		ROS_WARN("%s,%d: enter state trapped",__FUNCTION__,__LINE__);
 		sp_saved_states.push_back(sp_state);
@@ -2215,7 +2214,7 @@ bool ACleanMode::isIsolate(const Cell_t& curr) {
 	ROS_ERROR("minx(%d),miny(%d),maxx(%d),maxy(%d)",bound.min.x, bound.min.y,bound.max.x, bound.max.y);
 
 	auto cells = Cells{};
-	auto is_found = fw_tmp_map.find_if(curr, cells,[&](const Cell_t& c_it){return c_it == external_target;},false,true,true);
+	auto is_found = fw_tmp_map.dijstra(curr, cells,[&](const Cell_t& c_it){return c_it == external_target;},true);
 	return is_found;
 }
 

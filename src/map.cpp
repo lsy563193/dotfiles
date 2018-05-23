@@ -607,13 +607,12 @@ bool GridMap::count_if(const Cell_t &curr_cell, std::function<bool(const Cell_t 
 				c_cleans.insert(tmp);
 		}
 		return c_it.y%2 == 0 && getCell(CLEAN_MAP, c_it.x, c_it.y) == UNCLEAN  && isBlockAccessible(c_it.x, c_it.y);
-	},true,true,true);
+	});
 	count = c_cleans.size();
 //	ROS_WARN("%s,is_trapped(%d),trapped_clean_count(%d)",__FUNCTION__,targets.empty(), count);
 	return targets.empty();
 }
-
-bool GridMap::find_if(const Cell_t &curr_cell, Cells &targets, std::function<bool(const Cell_t &next)> compare  ,bool is_count,bool is_stop, bool is_target) {
+bool GridMap::dijstra(const Cell_t &curr_cell, Cells &targets, std::function<bool(const Cell_t &next)> compare,bool is_stop) {
 	typedef std::multimap<int16_t, Cell_t> Queue;
 	typedef std::pair<int16_t, Cell_t> Entry;
 
@@ -622,8 +621,63 @@ bool GridMap::find_if(const Cell_t &curr_cell, Cells &targets, std::function<boo
 	setCell(COST_MAP, curr_cell.x, curr_cell.y, 1);
 	queue.emplace(1, curr_cell);
 
-	ROS_INFO("%s %d: curr(%d, %d), range(%d, %d, %d, %d), g_(%d, %d, %d, %d).", __FUNCTION__, __LINE__, curr_cell.x,
-			 curr_cell.y, xRangeMin, xRangeMax, yRangeMin, yRangeMax, g_x_min, g_x_max, g_y_min, g_y_max);
+	while (!queue.empty()) {
+//		 Get the nearest next from the queue
+		if (queue.begin()->first == 5) {
+			Queue tmp_queue;
+			std::for_each(queue.begin(), queue.end(), [&](const Entry &iterators) {
+				tmp_queue.emplace(0, iterators.second);
+			});
+			queue.swap(tmp_queue);
+		}
+		auto start = queue.begin();
+		auto next = start->second;
+		auto cost = start->first;
+		queue.erase(start);
+		if (compare(next))
+		{
+			targets.push_back(next);
+			if(is_stop)
+			{
+				ROS_INFO("find target(%d,%d)",next.x, next.y);
+				return true;
+			}
+		}
+
+		for (auto index = 0; index < 4; index++) {
+
+			if (cellIsOutOfRange(next) || isOutOfTargetRange(next))
+			{
+//				printf("(%d, %d), %d, %d\n", next.x, next.y, cellIsOutOfRange(next),
+//					   (is_target ? isOutOfTargetRange(next) : isOutOfMap(next)));
+				continue;
+			}
+
+			auto neighbor = next + cell_direction_[index];
+
+			if (getCell(COST_MAP, neighbor.x, neighbor.y) == 0) {
+				if (isBlockAccessible(neighbor.x, neighbor.y))
+				{
+					queue.emplace(cost + 1, neighbor);
+					setCell(COST_MAP, neighbor.x, neighbor.y, cost + 1);
+				}
+			}
+		}
+	}
+	return !targets.empty();
+}
+
+bool GridMap::find_if(const Cell_t &curr_cell, Cells &targets, std::function<bool(const Cell_t &next)> compare) {
+	typedef std::multimap<int16_t, Cell_t> Queue;
+	typedef std::pair<int16_t, Cell_t> Entry;
+
+	reset(COST_MAP);
+	Queue queue;
+	setCell(COST_MAP, curr_cell.x, curr_cell.y, 1);
+	queue.emplace(1, curr_cell);
+
+//	ROS_INFO("%s %d: curr(%d, %d), range(%d, %d, %d, %d), g_(%d, %d, %d, %d).", __FUNCTION__, __LINE__, curr_cell.x,
+//			 curr_cell.y, xRangeMin, xRangeMax, yRangeMin, yRangeMax, g_x_min, g_x_max, g_y_min, g_y_max);
 	while (!queue.empty()) {
 //		 Get the nearest next from the queue
 		if (queue.begin()->first == 5) {
@@ -640,17 +694,14 @@ bool GridMap::find_if(const Cell_t &curr_cell, Cells &targets, std::function<boo
 
 		for (auto index = 0; index < 4; index++) {
 
-			if (cellIsOutOfRange(next) || (is_target ? isOutOfTargetRange(next) : isOutOfMap(next)))
+			if (cellIsOutOfRange(next) || isOutOfMap(next))
 			{
-//				printf("(%d, %d), %d, %d\n", next.x, next.y, cellIsOutOfRange(next),
-//					   (is_target ? isOutOfTargetRange(next) : isOutOfMap(next)));
 				continue;
 			}
 
 			auto neighbor = next + cell_direction_[index];
 
 			if (getCell(COST_MAP, neighbor.x, neighbor.y) == 0) {
-				if(is_count)
 					compare(neighbor);
 				//TODO: unclean area  fobbit(shaoyue)
 				if (isBlockAccessible(neighbor.x, neighbor.y))
@@ -659,8 +710,6 @@ bool GridMap::find_if(const Cell_t &curr_cell, Cells &targets, std::function<boo
 					if (compare(next))
 					{
 						targets.push_back(next);
-						if(is_stop)
-							return true;
 					}
 					queue.emplace(cost + 1, neighbor);
 					setCell(COST_MAP, neighbor.x, neighbor.y, cost + 1);
@@ -1063,21 +1112,21 @@ void GridMap::loadMap(int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max
 		ROS_INFO("%s %d: Read data succeeded.", __FUNCTION__, __LINE__);
 	}
 }
-void GridMap::loadMap(std::string map_file,const Cell_t& min_p,bool use_map,Cell_t& curr)
+void GridMap::loadMap(const Cell_t& min_p,bool use_map,Cell_t& curr)
 {
+	std::string map_file = "/opt/ros/indigo/share/pp/map";
+	ROS_INFO("map_origin:curr(%d,%d),min_p(%d,%d)",curr.x, curr.y,min_p.x, min_p.y);
 	using namespace std;
-	std::ifstream fin(map_file, ios::binary | ios::ate);
-	int16_t size = static_cast<int16_t>(fin.tellg());
+	std::ifstream fin(map_file);
 	if(!fin.is_open())
 	{
 		ROS_ERROR("Open false");
 		return;
 	}
-	fin.seekg(std::ifstream::beg);
 	std::string s;;
 	getline(fin,s);
 	int16_t width = s.size();
-	int16_t hidth = size/(width+1);
+	ROS_INFO("width:(%d)",width);
 
 	fin.seekg(std::ifstream::beg);
 	char x;
@@ -1085,8 +1134,13 @@ void GridMap::loadMap(std::string map_file,const Cell_t& min_p,bool use_map,Cell
 		while (!fin.eof()) {
 			fin.get(x);
 			if (x == 'x') {
-				curr = min_p + Cell_t{static_cast<int16_t>(fin.tellg() / (width + 1)),
-											static_cast<int16_t>(fin.tellg() % (width + 1))};
+				auto sp = fin.tellg();
+				cout << "sp: " << sp <<endl;
+				curr =  Cell_t{static_cast<int16_t>(fin.tellg() / (width +1)),
+											static_cast<int16_t>(fin.tellg() % (width +1))-1};
+				ROS_INFO("map_origin:curr(%d,%d),min_p(%d,%d)",curr.x, curr.y,min_p.x, min_p.y);
+				curr +=	min_p;
+				ROS_INFO("map_offset:curr(%d,%d)",curr.x, curr.y);
 				break;
 			}
 		}
@@ -1101,10 +1155,13 @@ void GridMap::loadMap(std::string map_file,const Cell_t& min_p,bool use_map,Cell
 		}else
 		if(val !='\n'&& val !=-1)
 		{
-			Cell_t c_it = min_p + Cell_t{static_cast<int16_t>(fin.tellg() / (width + 1)),
-																	 static_cast<int16_t>(fin.tellg() % (width + 1))};
+			auto sp = fin.tellg();
+//			cout << "sp: " << sp <<endl;
+			Cell_t c_it = min_p + Cell_t{static_cast<int16_t>(sp / (width + 1)),
+																	 static_cast<int16_t>(fin.tellg() % (width + 1)-1)};
 			setCell(CLEAN_MAP, c_it.x, c_it.y, val-'0');
 		}
 	}
 	ROS_ERROR("33332");
 }
+

@@ -263,9 +263,9 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 	ROS_INFO("Step 2: Find all possible plan_path at the edge of cleaned area and filter plan_path in same lane.");
 	Cells targets{};
 
-	map.find_if(curr_cell, targets,[&](const Cell_t &c_it){
+	map.dijstra(curr_cell, targets,[&](const Cell_t &c_it){
 		return c_it.y%2 == 0 && map.getCell(CLEAN_MAP, c_it.x, c_it.y) == UNCLEAN  && map.isBlockAccessible(c_it.x, c_it.y);
-	},false, false,true);
+	},false);
 
 	std::sort(targets.begin(),targets.end(),[](Cell_t l,Cell_t r){
 		return (l.y < r.y || (l.y == r.y && l.x < r.x));
@@ -567,7 +567,7 @@ bool NavCleanPathAlgorithm::checkTrapped(GridMap &map, const Cell_t &curr_cell)
 	else if(robot::instance()->p_mode->getNextMode() == Mode::cm_exploration) {
 		Cells cells{};
 		auto p_cm = boost::dynamic_pointer_cast<CleanModeExploration>(robot::instance()->p_mode);
-		return !(p_cm->clean_map_.find_if(getPosition().toCell(), cells,[&](const Cell_t& c_it){return c_it == Cell_t{0,0};},false,true,true));
+		return !(p_cm->clean_map_.dijstra(getPosition().toCell(), cells,[&](const Cell_t& c_it){return c_it == Cell_t{0,0};},true));
 	}
 }
 
