@@ -767,7 +767,6 @@ public:
 	void setVacuum() override ;
 
 private:
-	bool mark_robot_{true};
 	Marks error_marker_;
 };
 

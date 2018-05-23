@@ -368,7 +368,6 @@ void ACleanMode::saveBlocks() {
 
 uint8_t ACleanMode::setBlocks(Dir_t dir)
 {
-
 	if(passed_path_.empty())
 		passed_path_.push_back(getPosition());
 	uint8_t block_count = 0;
@@ -378,6 +377,7 @@ uint8_t ACleanMode::setBlocks(Dir_t dir)
 		printf("{%d, {%d,%d}} ",cost_block.first, cost_block.second.x, cost_block.second.y);
 	}
 	printf("\n");
+
 	if(!isAny(dir)) {
 		auto p_end = passed_path_.back();
 		auto c_end_next = p_end.toCell() + cell_direction_[dir];
@@ -389,7 +389,7 @@ uint8_t ACleanMode::setBlocks(Dir_t dir)
 			{
 				auto c_it_next = c_it + cell_direction_[dir];
 				auto result = std::find_if(c_blocks.begin(), c_blocks.end(),[&c_it_next](const PairCell_t& p_cell){ return p_cell.second == c_it_next;});
-				if(result != c_blocks.end())
+				if(result != c_blocks.end() && result->first != BLOCKED_TILT && result->first != BLOCKED_SLIP)
 				{
 					ROS_WARN("remove block(%d,%d) after block(%d,%d) in dir(%d)",result->second.x,result->second.y,c_it.x, c_it.y, dir);
 					c_blocks.erase(result);
@@ -1078,7 +1078,7 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_mt) {
 	else
 		ROS_INFO("passed_path_.size(%d)", passed_path_.size());
 
-	markMapInNewCell();//real time mark to exploration
+	markMapInNewCell();//mark real time to exploration mode
 
 	if (isStateFollowWall()) {
 //			auto p_mt = dynamic_cast<MoveTypeFollowWall *>(p_mt);

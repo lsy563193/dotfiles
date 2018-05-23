@@ -73,7 +73,6 @@ bool CleanModeFollowWall::mapMark() {
 		ROS_ERROR("-------------------------------------------------------");
 		setFollowWall(clean_map_, action_i_ == ac_follow_wall_left, passed_path_);
 	}
-	clean_map_.markRobot(CLEAN_MAP);
 	clean_map_.print(getPosition().toCell(), CLEAN_MAP, Cells{getPosition().toCell()});
 	passed_path_.clear();
 	return false;
