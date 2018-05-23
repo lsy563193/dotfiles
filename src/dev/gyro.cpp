@@ -181,6 +181,7 @@ void Gyro::setDynamicOn(void)
 	{
 		uint8_t byte = serial.getSendData(CTL_MIX);
 		serial.setSendData(CTL_MIX, static_cast<uint8_t>(byte | 0x04));
+		set_dynamic_status_ = true;
 	}
 	//else
 	//{
@@ -194,6 +195,7 @@ void Gyro::setDynamicOff(void)
 	{
 		uint8_t byte = serial.getSendData(CTL_MIX);
 		serial.setSendData(CTL_MIX, static_cast<uint8_t>(byte & ~0x04));
+		set_dynamic_status_ = false;
 	}
 	//else
 	//{

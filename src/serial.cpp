@@ -631,6 +631,9 @@ void Serial::send_routine_cb()
 			brush.updatePWM();
 			if (robot::instance()->getR16WorkMode() != WATER_TANK_TEST_MODE)
 				water_tank.updatePWM();
+			//In case gyro setDynamic off failed
+			if(gyro.getCalibration() && gyro.isSetDynamicOff())
+				gyro.setDynamicOff();
 		}
 
 		sendData();
