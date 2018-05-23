@@ -142,21 +142,18 @@ bool CleanModeNav::mapMark()
 
 
 //	clean_map_.print(CLEAN_MAP, Cells{curr});
-	//For slip mark
 	for(auto &&cost_block : c_blocks){
+		//For slip mark
 		if(cost_block.first == BLOCKED_SLIP)
 			clean_map_.setCell(CLEAN_MAP,cost_block.second.x,cost_block.second.y,BLOCKED_SLIP);
 		if(cost_block.first == BLOCKED_TILT)
 			clean_map_.setCell(CLEAN_MAP,cost_block.second.x,cost_block.second.y, BLOCKED_TILT);
-	}
-
-	// Special marking for rcon blocks.
-	for(auto &&cost_block : c_blocks){
+		// Special marking for rcon blocks.
 		if(cost_block.first == BLOCKED_TMP_RCON)
 			clean_map_.setCell(CLEAN_MAP,cost_block.second.x,cost_block.second.y,BLOCKED_TMP_RCON);
 	}
-	//tx pass path via serial wifi
 
+	//tx pass path via serial wifi
 	s_wifi.cacheMapData(passed_path_);
 	//s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_PATH);
 	c_blocks.clear();
