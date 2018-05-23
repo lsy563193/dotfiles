@@ -250,7 +250,7 @@ private:
 
 	bool checkTrapped(GridMap &map, const Cell_t &curr_cell) override ;
 #if !USE_NEW_PATH_PLAN
-	Cells findTargetInSameLane(GridMap &map, const Cell_t &curr_cell);
+	std::unique_ptr<Cells> findTargetInSameLane(GridMap &map, const Cell_t &curr_cell);
 //	RangeFunction range_0_xp = [](Cell_t& curr, Cell_t& min, Cell_t& max){
 //		return BoundingBox2{curr, Cell_t{max.x, curr.y}};
 //	};
@@ -293,7 +293,7 @@ private:
 		return BoundingBox2{min, max};
 	};
 public:
-//	BestTargetFilter filter_0_xp{range_0_xp, 1, true};
+	BestTargetFilter filter_0_xp{range_0_xp, 1, true};
 //	BestTargetFilter filter_0_xn{range_0_xn, 1, false};
 	BestTargetFilter filter_p0_1t_xp{range_0_xp , 1, true, true};
 	BestTargetFilter filter_p0_1t_xn{range_0_xn, 1, true, true};

@@ -390,9 +390,8 @@ void GridMap::cellToWorld(double &worldX, double &worldY, int16_t &cellX, int16_
 	worldY = (double)cellY * CELL_SIZE;
 }
 
-bool GridMap::markRobot(uint8_t id)
+bool GridMap::markRobot(const Cell_t& curr, uint8_t id)
 {
-	auto curr =  getPosition().toCell();
 	bool ret = false;
 	std::string debug_str;
 	for (auto dy = -ROBOT_SIZE_1_2; dy <= ROBOT_SIZE_1_2; ++dy)
@@ -984,7 +983,7 @@ void GridMap::loadMap(std::string map_file,const Cell_t& min_p,bool use_map,Cell
 {
 	using namespace std;
 	std::ifstream fin(map_file, ios::binary | ios::ate);
-	int16_t size = fin.tellg();
+	int16_t size = static_cast<int16_t>(fin.tellg());
 	if(!fin.is_open())
 	{
 		ROS_ERROR("Open false");
@@ -1002,7 +1001,8 @@ void GridMap::loadMap(std::string map_file,const Cell_t& min_p,bool use_map,Cell
 		while (!fin.eof()) {
 			fin.get(x);
 			if (x == 'x') {
-				curr = {fin.tellg() / (width + 1), fin.tellg() % (width + 1)};
+				curr = min_p + Cell_t{static_cast<int16_t>(fin.tellg() / (width + 1)),
+							  static_cast<int16_t>(fin.tellg() % (width + 1))};
 				break;
 			}
 		}
@@ -1017,7 +1017,8 @@ void GridMap::loadMap(std::string map_file,const Cell_t& min_p,bool use_map,Cell
 		}else
 		if(val !='\n'&& val !=-1)
 		{
-			Cell_t c_it = min_p + Cell_t{fin.tellg() / (width+1), fin.tellg()  % (width+1)};
+			Cell_t c_it = min_p + Cell_t{static_cast<int16_t>(fin.tellg() / (width + 1)),
+										 static_cast<int16_t>(fin.tellg() % (width + 1))};
 			setCell(CLEAN_MAP, c_it.x, c_it.y, val-'0');
 		}
 	}

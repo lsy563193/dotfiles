@@ -1031,7 +1031,7 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_mt) {
 	if (isStateFollowWall()) {
 //			auto p_mt = dynamic_cast<MoveTypeFollowWall *>(p_mt);
 		if (p_mt->isBlockCleared(clean_map_, passed_path_)) {
-			clean_map_.markRobot(CLEAN_MAP);
+			clean_map_.markRobot(curr.toCell(), CLEAN_MAP);
 			std::vector<Vector2<int>> markers{};
 			if (lidar.isScanCompensateReady())
 				lidar.lidarMarker(markers, p_mt->movement_i_, action_i_);
@@ -2169,7 +2169,7 @@ bool ACleanMode::isIsolate() {
 //	setFollowWall(fw_tmp_map, action_i_ == ac_follow_wall_left,passed_path_);
 
 	fw_tmp_map.getMapRange(CLEAN_MAP, &bound.min.x, &bound.max.x, &bound.min.y, &bound.max.y);
-	fw_tmp_map.markRobot(CLEAN_MAP);//Note : For clearing the obstacles around the robot current pose, please not delete it!!!
+	fw_tmp_map.markRobot(getPosition().toCell(), CLEAN_MAP);//Note : For clearing the obstacles around the robot current pose, please not delete it!!!
 
 	auto target = bound.max + Cell_t{1, 1};
 	bound.SetMinimum(bound.min - Cell_t{8, 8});

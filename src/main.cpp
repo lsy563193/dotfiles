@@ -95,24 +95,21 @@ int main(int argc, char **argv)
 
 #endif
 	robot_instance = new robot();
+//	ROS_ERROR("~~~~~~~~~~~~~~~~~~~!");
+//	GridMap map;
+//	Cell_t curr;
+//	map.loadMap("/opt/ros/indigo/share/pp/map",Cell_t{0,0},true,curr);
+//	map.print(curr,CLEAN_MAP, Cells{});
+//
+//	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
+//	Dir_t old_dir_=MAP_NEG_Y;
+//	Points remain_path_{};
+//	ROS_INFO("clean_path_algorithm_!");
+//	clean_path_algorithm_.reset(new NavCleanPathAlgorithm);
+//	if (clean_path_algorithm_->generatePath(map, Point_t{cellToCount(curr.x), cellToCount(curr.y)}, old_dir_, remain_path_)) {
+//		ROS_INFO("22clean_path_algorithm_!");
+//	}
 
-	//test code by lsy563193
-	/*GridMap map;
-	//test
-	/*	ROS_INFO("set signal action done!");
-	GridMap map;
-	case_2(map);
-	map.print(CLEAN_MAP, 0, 0);
-
-	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
-	Dir_t old_dir_=MAP_POS_X;
-	Points remain_path_{};
-	ROS_INFO("clean_path_algorithm_!");
-	clean_path_algorithm_.reset(new NavCleanPathAlgorithm);
-	if (clean_path_algorithm_->generatePath(map, getPosition(), old_dir_, remain_path_)) {
-
-	}
-	ROS_INFO("~~~~~~~~~~~~~~~~~~~!");*/
 	ros::spin();
 	return 0;
 }

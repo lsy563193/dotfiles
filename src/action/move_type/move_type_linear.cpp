@@ -180,10 +180,6 @@ bool MoveTypeLinear::isLinearForward()
 {
 	return movement_i_ == mm_forward;
 }
-static bool is_opposite_dir(int l, int r)
-{
-	return (l == 0 && r==1)  || (l ==1 && r ==0) || (l ==2 && r ==3) || (l == 3 && r == 2);
-}
 
 void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 {
@@ -252,8 +248,8 @@ bool MoveTypeLinear::switchLinearTargetByRecalc(ACleanMode *p_clean_mode) {
 //	resetTriggeredValue();
 
 	auto target_point = std::next(p_clean_mode->iterate_point_);
-	auto is_found = boost::dynamic_pointer_cast<NavCleanPathAlgorithm>( p_clean_mode->clean_path_algorithm_)->generatePath(p_clean_mode->clean_map_, *target_point, target_point->dir, path);
-	ROS_INFO("%s %d: is_found:(d), remain:", __FUNCTION__, __LINE__, is_found);
+	auto is_found = boost::dynamic_pointer_cast<NavCleanPathAlgorithm>( p_clean_mode->clean_path_algorithm_)->generatePath(p_clean_mode->clean_map_, *target_point, p_clean_mode->iterate_point_->dir, path);
+	ROS_INFO("%s %d: is_found:(%d), remain:", __FUNCTION__, __LINE__, is_found);
 	displayPointPath(path);
 	if (is_found) {
 		ROS_INFO("5555555555555555555555555555555555555555");
@@ -270,7 +266,7 @@ bool MoveTypeLinear::switchLinearTargetByRecalc(ACleanMode *p_clean_mode) {
 			ROS_INFO("7777777777777777777777777777777777777777");
 			val = true;
 		} else {
-			ROS_INFO("%s %d: Opposite dir, path.front(%d).curr(,%d)", __FUNCTION__, __LINE__,
+			ROS_INFO("%s %d: Opposite dir, path.front(%d).curr(%d)", __FUNCTION__, __LINE__,
 					  path.front().dir, p_clean_mode->iterate_point_->dir);
 		}
 	}

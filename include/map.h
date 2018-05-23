@@ -67,7 +67,7 @@ public:
 
 	void cellToWorld(double &worldX, double &worldY, int16_t &cellX, int16_t &cellY);
 
-	bool markRobot(uint8_t id);
+	bool markRobot(const Cell_t& curr, uint8_t id);
 
 	bool trapMarkRobot(uint8_t id);
 
