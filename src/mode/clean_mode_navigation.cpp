@@ -549,7 +549,7 @@ void CleanModeNav::batteryHome(bool state_now, bool state_last)
 	if (!ev.battery_home && isStateClean())
 	{
 		continue_point_ = getPosition();
-		ROS_INFO("%s %d: low battery, battery =\033[33m %dmv \033[0m, continue cell(%d, %d)", __FUNCTION__, __LINE__,
+		ROS_WARN("%s %d: low battery, battery =\033[33m %dmv \033[0m, continue cell(%d, %d)", __FUNCTION__, __LINE__,
 				 battery.getVoltage(), continue_point_.x, continue_point_.y);
 		ev.battery_home = true;
 	}
@@ -622,11 +622,10 @@ bool CleanModeNav::updateActionInStateInit() {
 			charger.enterNavFromChargeMode(false);
 			action_i_ = ac_back_from_charger;
 			found_charger_ = true;
-			boost::dynamic_pointer_cast<StateInit>(state_init)->initBackFromCharger();
+			boost::dynamic_pointer_cast<StateInit>(state_init)->initForNavigation();
 		}
 		else{
 			action_i_ = ac_open_lidar;
-			boost::dynamic_pointer_cast<StateInit>(state_init)->initForNavigation();
 		}
 	} else if (action_i_ == ac_back_from_charger)
 	{
@@ -639,8 +638,8 @@ bool CleanModeNav::updateActionInStateInit() {
 		if (!has_aligned_and_open_slam_) // Init odom position here.
 			robot::instance()->initOdomPosition();
 
-		boost::dynamic_pointer_cast<StateInit>(state_init)->initForNavigation();
 		action_i_ = ac_open_lidar;
+		boost::dynamic_pointer_cast<StateInit>(state_init)->initForNavigation();
 		go_home_path_algorithm_->setHomePoint(getPosition());
 		if (!seen_charger_during_cleaning_)
 			seen_charger_during_cleaning_ = true;
@@ -803,14 +802,6 @@ void CleanModeNav::switchInStateClean() {
 }
 
 // ------------------State go home point--------------------
-bool CleanModeNav::checkEnterGoHomePointState()
-{
-	if (ev.battery_home)
-		speaker.play(VOICE_BATTERY_LOW, false);
-
-	return ACleanMode::checkEnterGoHomePointState();
-}
-
 bool CleanModeNav::isSwitchByEventInStateGoHomePoint()
 {
 	return ACleanMode::isSwitchByEventInStateGoHomePoint();
@@ -1067,27 +1058,27 @@ bool CleanModeNav::isSwitchByEventInStateResumeLowBatteryCharge()
 
 bool CleanModeNav::updateActionInStateResumeLowBatteryCharge()
 {
-	if (getPosition().toCell() == continue_point_.toCell())
-		return false;
-	else {
-//		clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
-//		mapMark();
-		sp_action_.reset();
-		old_dir_ = iterate_point_->dir;
-		ROS_ERROR("old_dir_(%d)", old_dir_);
-		clean_path_algorithm_->generateShortestPath(clean_map_, getPosition(), continue_point_, old_dir_, plan_path_);
-		if (!plan_path_.empty()) {
-			iterate_point_ = plan_path_.begin();
-			ROS_ERROR("start_point_.dir(%d)", iterate_point_->dir);
-//			plan_path_.pop_front();
-			displayCellPath(pointsGenerateCells(plan_path_));
-			action_i_ = ac_linear;
-			genNextAction();
-			return true;
-		}
-		else
+//	if (getPosition().toCell() == continue_point_.toCell())
+//		return false;
+//	else {
+////		clean_map_.saveBlocks(action_i_ == ac_linear, sp_state == state_clean);
+////		mapMark();
+//		sp_action_.reset();
+//		old_dir_ = iterate_point_->dir;
+//		ROS_ERROR("old_dir_(%d)", old_dir_);
+////		plan_path_ = *clean_path_algorithm_->shortestPath(getPosition(), continue_point_, ,old_dir_);
+//		if (!plan_path_.empty()) {
+//			iterate_point_ = plan_path_.begin();
+//			ROS_ERROR("start_point_.dir(%d)", iterate_point_->dir);
+////			plan_path_.pop_front();
+//			displayCellPath(pointsGenerateCells(plan_path_));
+//			action_i_ = ac_linear;
+//			genNextAction();
+//			return true;
+//		}
+//		else
 			return false;
-	}
+//	}
 }
 
 void CleanModeNav::switchInStateResumeLowBatteryCharge()

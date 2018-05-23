@@ -321,7 +321,7 @@ void ACleanMode::saveBlocks() {
 
 	saveBlock(BLOCKED_SLIP,iterate_point_->dir, [&]() {
 		Cells d_cells{};
-		if (ev.robot_slip)
+		if (ev.slip_triggered)
 			d_cells = {{1,  1}, {1,  0}, {1,  -1}, {0,  1}, {0,  0}, {0,  -1}, {-1, 1}, {-1, 0}, {-1, -1}};
 		return d_cells;
 
@@ -441,6 +441,44 @@ void ACleanMode::pubTmpTarget(const Point_t &point, bool is_virtual) {
 	//ROS_INFO("pub points!!");
 }
 
+void ACleanMode::pubPointMarkers2(const std::vector<geometry_msgs::Point> *points, std::string frame_id, std::string name)
+{
+	visualization_msgs::Marker point_marker;
+	point_marker.ns = name;
+	point_marker.id = 0;
+	point_marker.type = visualization_msgs::Marker::SPHERE_LIST;
+	point_marker.action= 0;//add
+	point_marker.lifetime=ros::Duration(0);
+	point_marker.scale.x = 0.05;
+	point_marker.scale.y = 0.05;
+	point_marker.scale.z = 0.05;
+	point_marker.color.r = 0.0;
+	point_marker.color.g = 1.0;
+	point_marker.color.b = 0.0;
+	point_marker.color.a = 1.0;
+	point_marker.header.frame_id = frame_id;
+	point_marker.header.stamp = ros::Time::now();
+
+	geometry_msgs::Point lidar_points;
+	lidar_points.z = 0;
+	if (!points->empty()) {
+		std::string msg("");
+		for (auto iter = points->cbegin(); iter != points->cend(); ++iter) {
+			lidar_points.x = iter->x;
+			lidar_points.y = iter->y;
+			point_marker.points.push_back(lidar_points);
+			msg+="("+std::to_string(iter->x)+","+std::to_string(iter->y)+"),";
+		}
+		point_marker_pub_.publish(point_marker);
+		//ROS_INFO("%s,%d,points size:%u,points %s",__FUNCTION__,__LINE__,points->size(),msg.c_str());
+		point_marker.points.clear();
+		//ROS_INFO("pub point!!");
+	}
+	else {
+		point_marker.points.clear();
+		point_marker_pub_.publish(point_marker);
+	}
+}
 void ACleanMode::pubPointMarkers(const std::deque<Vector2<double>> *points, std::string frame_id, std::string name)
 {
 	visualization_msgs::Marker point_marker;
@@ -1051,7 +1089,7 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_mt) {
 				}
 			}
 			if (!clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell())) {
-				out_of_trapped = true;
+				out_of_trapped_ = true;
 				ROS_ERROR("OUT OF TRAPPED");
 				return true;
 			}
@@ -1065,7 +1103,7 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_mt) {
 		ROS_INFO("next_mode_i_(%d)",getNextMode());
 		ROS_INFO("mode_i_(%d)",mode_i_);
 		is_closed = true;
-		is_isolate = isIsolate();
+		is_isolate = isIsolate(curr.toCell());
 		if(is_isolate)
 			isolate_count_++;
 		else
@@ -1657,10 +1695,10 @@ void ACleanMode::cliffAll(bool state_now, bool state_last)
 }
 
 void ACleanMode::robotSlip(bool state_now, bool state_last){
-	if(!ev.robot_slip)
+	if(!ev.slip_triggered)
 	{
 		ROS_WARN("%s %d: Robot slip.", __FUNCTION__, __LINE__);
-		ev.robot_slip= true;
+		ev.slip_triggered= true;
 	}
 }
 
@@ -1692,8 +1730,7 @@ bool ACleanMode::isSwitchByEventInStateInit() {
 bool ACleanMode::updateActionInStateInit() {
 	if (action_i_ == ac_null)
 		action_i_ = ac_open_gyro_and_lidar;
-	else if (action_i_ == ac_open_gyro) {
-		boost::dynamic_pointer_cast<StateInit>(state_init)->initOpenLidar();
+	else if (action_i_ == ac_open_gyro_and_lidar) {
 		action_i_ = ac_open_lidar;
 	}
 	else if (action_i_ == ac_open_lidar)
@@ -1738,14 +1775,15 @@ bool ACleanMode::checkEnterGoHomePointState()
 		}
 		if (ev.battery_home)
 		{
+			speaker.play(VOICE_BATTERY_LOW, false);
 			go_home_for_low_battery_ = true;
 			found_charger_ = false;
 		}
 		sp_action_.reset();
 		sp_state = state_go_home_point.get();
 		sp_state->init();
-		speaker.play(VOICE_GO_HOME_MODE);
 		go_home_path_algorithm_->initForGoHomePoint(clean_map_);
+		speaker.play(VOICE_GO_HOME_MODE);
 		return true;
 	}
 
@@ -2019,8 +2057,9 @@ bool ACleanMode::updateActionInStateExploration() {
 void ACleanMode::switchInStateExploration() {
 	PP_INFO();
 	old_dir_ = iterate_point_->dir;
-	Cells tmp_path =  clean_path_algorithm_->findShortestPath(clean_map_,getPosition().toCell(),Cell_t{0,0},old_dir_,false,false,Cell_t{0,0},Cell_t{0,0});
-	if (tmp_path.empty()) {
+	Cells cells{};
+	auto is_found = clean_map_.dijstra(getPosition().toCell(), cells,[&](const Cell_t& c_it){return c_it == Cell_t{0,0};},true);
+	if (!is_found) {
 		ROS_WARN("%s,%d: enter state trapped",__FUNCTION__,__LINE__);
 		sp_saved_states.push_back(sp_state);
 		is_trapped_ = true;
@@ -2080,9 +2119,9 @@ bool ACleanMode::updateActionInStateFollowWall()
 			ROS_WARN("%s,%d:follow clean finish", __func__, __LINE__);
 		}
 	}
-	else if(out_of_trapped) {
-//		out_of_trapped = false;
-		ROS_ERROR("out_of_trapped");
+	else if(out_of_trapped_) {
+//		out_of_trapped_ = false;
+		ROS_ERROR("out_of_trapped_");
 		action_i_ = ac_null;
 //		genNextAction();
 	}
@@ -2115,10 +2154,10 @@ void ACleanMode::switchInStateFollowWall()
 		ROS_WARN("%s %d: Escape trapped timeout!(%d)", __FUNCTION__, __LINE__, ESCAPE_TRAPPED_TIME);
 		sp_state = nullptr;
 	}
-	else/* if (escape_trapped_)*/ {//out_of_trapped = false
+	else/* if (escape_trapped_)*/ {//out_of_trapped_ = false
 		ROS_WARN("%s %d:escape_trapped_ restore state from trapped !", __FUNCTION__, __LINE__);
 //		sp_state = (sp_tmp_state == state_clean) ? state_clean : state_exploration;
-		out_of_trapped = false;
+		out_of_trapped_ = false;
 		if (sp_saved_states.empty())
 			ROS_ERROR("%s %d: Saved state is empty!!", __FUNCTION__, __LINE__);
 		else
@@ -2162,27 +2201,21 @@ PathHead ACleanMode::getTempTarget()
 	return path_head_;
 }
 
-bool ACleanMode::isIsolate() {
+bool ACleanMode::isIsolate(const Cell_t& curr) {
 	BoundingBox2 bound{};
-//	GridMap fw_tmp_map;
-//	std::copy(passed_path_.begin(), passed_path_.end(),std::ostream_iterator<Point_t>(std::cout, " "));
-//	setFollowWall(fw_tmp_map, action_i_ == ac_follow_wall_left,passed_path_);
-
 	fw_tmp_map.getMapRange(CLEAN_MAP, &bound.min.x, &bound.max.x, &bound.min.y, &bound.max.y);
-	fw_tmp_map.markRobot(getPosition().toCell(), CLEAN_MAP);//Note : For clearing the obstacles around the robot current pose, please not delete it!!!
+	fw_tmp_map.markRobot(curr, CLEAN_MAP);//Note : For clearing the obstacles around the robot current pose, please not delete it!!!
 
-	auto target = bound.max + Cell_t{1, 1};
-	bound.SetMinimum(bound.min - Cell_t{8, 8});
-	bound.SetMaximum(bound.max + Cell_t{8, 8});
+	auto external_target = bound.max + Cell_t{1, 1};
+	fw_tmp_map.setCell(CLEAN_MAP, external_target.x,external_target.y,CLEANED);
 	ROS_ERROR("ISOLATE MAP");
-	fw_tmp_map.print(getPosition().toCell(), CLEAN_MAP,*points_to_cells(make_unique<Points>(passed_path_)));
+	fw_tmp_map.print(curr, CLEAN_MAP,*points_to_cells(make_unique<Points>(passed_path_)));
 	ROS_ERROR("ISOLATE MAP");
 	ROS_ERROR("minx(%d),miny(%d),maxx(%d),maxy(%d)",bound.min.x, bound.min.y,bound.max.x, bound.max.y);
 
-	auto path = clean_path_algorithm_->findShortestPath(fw_tmp_map, getPosition().toCell(), target, MAP_POS_X, true, true,
-																											bound.min, bound.max);
-
-	return !path.empty();
+	auto cells = Cells{};
+	auto is_found = fw_tmp_map.dijstra(curr, cells,[&](const Cell_t& c_it){return c_it == external_target;},true);
+	return is_found;
 }
 
 bool ACleanMode::generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &targets)

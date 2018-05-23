@@ -11,6 +11,7 @@ bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point_t &curr, const 
 	bool generate_finish = false;
 	plan_path.clear();
 	Cells plan_path_cells{};
+	map.print(curr.toCell(),CLEAN_MAP,Cells{});
 	while (!generate_finish && ros::ok())
 	{
 		switch (home_way_index_)
@@ -62,37 +63,52 @@ bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point_t &curr, const 
 			}
 		}
 	}
+	ROS_INFO("%s %d:",__FUNCTION__, __LINE__);
 	return !plan_path.empty();
 }
 
-bool GoHomePathAlgorithm::generatePathThroughCleanedArea(GridMap &map, const Point_t &curr, const Dir_t &last_dir,
+bool GoHomePathAlgorithm::generatePathThroughCleanedArea(GridMap &map, const Point_t &curr, Dir_t last_dir,
 														 Cells &plan_path)
 {
 	if (map.isBlockAccessible(current_home_point_.toCell().x, current_home_point_.toCell().y))
 	{
-		Cell_t min_corner, max_corner;
-		plan_path = findShortestPath(map, curr.toCell(), current_home_point_.toCell(),
-										   last_dir, false, false, min_corner, max_corner);
+//		Cell_t min_corner, max_corner;
+//		plan_path = findShortestPath(map, curr.toCell(), current_home_point_.toCell(),
+//										   last_dir, false, false, min_corner, max_corner);
+		Cells cells{};
+		auto is_found = map.dijstra(curr.toCell(), cells,[&](const Cell_t& c_it){return c_it == current_home_point_.toCell();},true);
+		if(is_found)
+			findPath(map, curr.toCell(),current_home_point_.toCell(),plan_path,last_dir);
 	}
 
+	ROS_WARN(
+			"\033[1;46;37m" "%s,%d: Current_home_point_(%d, %d) %sreachable in this way, total %d home points." "\033[0m",
+			__FUNCTION__, __LINE__, current_home_point_.toCell().x, current_home_point_.toCell().y,
+			!plan_path.empty() ? "" : "NOT ", home_points_.size());
 	return !plan_path.empty();
 }
 
-bool GoHomePathAlgorithm::generatePathWithSlamMapClearBlocks(GridMap &map, const Point_t &curr, const Dir_t &last_dir,
+bool GoHomePathAlgorithm::generatePathWithSlamMapClearBlocks(GridMap &map, const Point_t &curr, Dir_t last_dir,
 														Cells &plan_path)
 {
 	if (map.isBlockAccessible(current_home_point_.toCell().x, current_home_point_.toCell().y))
 	{
 		Cell_t min_corner, max_corner;
-		plan_path = findShortestPath(map, curr.toCell(), current_home_point_.toCell(),
-									 last_dir, false, false, min_corner, max_corner);
+		Cells cells{};
+		auto is_found = map.dijstra(curr.toCell(), cells,[&](const Cell_t& c_it){return c_it == current_home_point_.toCell();},true);
+		if(is_found)
+			findPath(map, curr.toCell(),current_home_point_.toCell(),plan_path,last_dir);
 	}
 
+	ROS_WARN(
+			"\033[1;46;37m" "%s,%d: Current_home_point_(%d, %d) %sreachable in this way, total %d home points." "\033[0m",
+			__FUNCTION__, __LINE__, current_home_point_.toCell().x, current_home_point_.toCell().y,
+			!plan_path.empty() ? "" : "NOT ", home_points_.size());
 	return !plan_path.empty();
 }
 
 bool GoHomePathAlgorithm::generatePathThroughSlamMapReachableArea(GridMap &map, const Point_t &curr,
-																  const Dir_t &last_dir, Cells &plan_path)
+																  Dir_t last_dir, Cells &plan_path)
 {
 	if (map.isBlockAccessible(current_home_point_.toCell().x, current_home_point_.toCell().y))
 	{
@@ -101,23 +117,35 @@ bool GoHomePathAlgorithm::generatePathThroughSlamMapReachableArea(GridMap &map, 
 		temp_map.copy(map);
 		temp_map.merge(slam_grid_map, false, false, true, false, false, false);
 		temp_map.print(curr.toCell(), CLEAN_MAP, Cells{{0, 0}});
-		plan_path = findShortestPath(temp_map, curr.toCell(), current_home_point_.toCell(),
-										   last_dir, false, false, min_corner, max_corner);
+		Cells cells{};
+		auto is_found = map.dijstra(curr.toCell(), cells,[&](const Cell_t& c_it){return c_it == current_home_point_.toCell();},true);
+		if(is_found)
+			findPath(map, curr.toCell(),current_home_point_.toCell(),plan_path,last_dir);
 	}
 
+	ROS_WARN(
+			"\033[1;46;37m" "%s,%d: Current_home_point_(%d, %d) %sreachable in this way, total %d home points." "\033[0m",
+			__FUNCTION__, __LINE__, current_home_point_.toCell().x, current_home_point_.toCell().y,
+			!plan_path.empty() ? "" : "NOT ", home_points_.size());
 	return !plan_path.empty();
 }
 
-bool GoHomePathAlgorithm::generatePathThroughUnknownArea(GridMap &map, const Point_t &curr, const Dir_t &last_dir,
+bool GoHomePathAlgorithm::generatePathThroughUnknownArea(GridMap &map, const Point_t &curr, Dir_t last_dir,
 														 Cells &plan_path)
 {
 	if (map.isBlockAccessible(current_home_point_.toCell().x, current_home_point_.toCell().y))
 	{
 		Cell_t min_corner, max_corner;
-		plan_path = findShortestPath(map, curr.toCell(), current_home_point_.toCell(),
-										   last_dir, true, false, min_corner, max_corner);
+		Cells cells{};
+		auto is_found = map.dijstra(curr.toCell(), cells,[&](const Cell_t& c_it){return c_it == current_home_point_.toCell();},true);
+		if(is_found)
+			findPath(map, curr.toCell(),current_home_point_.toCell(),plan_path,last_dir);
 	}
 
+	ROS_WARN(
+			"\033[1;46;37m" "%s,%d: Current_home_point_(%d, %d) %sreachable in this way, total %d home points." "\033[0m",
+			__FUNCTION__, __LINE__, current_home_point_.toCell().x, current_home_point_.toCell().y,
+			!plan_path.empty() ? "" : "NOT ", home_points_.size());
 	return !plan_path.empty();
 }
 
@@ -304,10 +332,6 @@ bool GoHomePathAlgorithm::switchHomePoint()
 Points GoHomePathAlgorithm::handleResult(bool generate_finish, Cells plan_path_cells, Point_t curr, GridMap &map)
 {
 	Points plan_path{};
-	ROS_WARN(
-			"\033[1;46;37m" "%s,%d: Current_home_point_(%d, %d) %sreachable in this way, total %d home points." "\033[0m",
-			__FUNCTION__, __LINE__, current_home_point_.toCell().x, current_home_point_.toCell().y,
-			generate_finish ? "" : "NOT ", home_points_.size());
 
 	if (generate_finish)
 	{

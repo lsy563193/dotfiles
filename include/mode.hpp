@@ -245,10 +245,26 @@ public:
 	bool isFinish() override ;
 
 	// For exit event handling.
+	void remoteKeyHandler(bool state_now, bool state_last);
+	void remoteDirectionLeft(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteDirectionRight(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteDirectionForward(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteHome(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteSpot(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteWallFollow(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteMax(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
+	void remoteWifi(bool state_now, bool state_last) override
+	{ remoteKeyHandler(state_now, state_last);}
 	void remoteClean(bool state_now, bool state_last) override ;
 	void keyClean(bool state_now, bool state_last) override ;
 	void remotePlan(bool state_now, bool state_last) override ;
-	void remoteMax(bool state_now, bool state_last) override ;
 
 	bool allowRemoteUpdatePlan() override;
 
@@ -328,7 +344,6 @@ public:
 	void setVacuum() override ;
 
 private:
-	boost::shared_ptr<State> st_go_to_charger = boost::make_shared<StateGoToCharger>();
 	boost::shared_ptr<State> st_init = boost::make_shared<StateInit>();
 };
 
@@ -348,7 +363,7 @@ public:
 
 	void setNextModeDefault();
 
-	bool isIsolate();
+	bool isIsolate(const Cell_t& curr);
 	bool isGyroDynamic();
 	bool generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &targets);
 
@@ -459,7 +474,7 @@ public:
 	virtual void switchInStateFollowWall();
 	bool trapped_time_out_{};
 	bool trapped_closed_or_isolate{};
-	bool out_of_trapped{};
+	bool out_of_trapped_{};
 
 	// State exploration
 	bool isStateExploration() const
@@ -572,12 +587,13 @@ protected:
 	bool go_home_for_low_battery_{false};
 	bool switch_is_off_{false};
 	Points charger_pose_;
-	Points tmp_charger_pose_;
 	bool found_charger_{false};
+	Points tmp_charger_pose_;
 	bool is_using_dust_box_{false};
 public:
 
 	static void pubPointMarkers(const std::deque<Vector2<double>> *point, std::string frame_id,std::string name);
+	static void pubPointMarkers2(const std::vector<geometry_msgs::Point> *points, std::string frame_id, std::string name);
 	void pubFitLineMarker(visualization_msgs::Marker fit_line_marker);
 	void setLinearCleaned();
 	uint8_t setFollowWall(GridMap&, bool is_left, const Points&);
@@ -667,7 +683,6 @@ public:
 	void switchInStateClean() override ;
 
 	// State go home point
-	bool checkEnterGoHomePointState() override;
 	bool isSwitchByEventInStateGoHomePoint() override;
 
 	// State go to charger
@@ -769,6 +784,7 @@ public:
 	void remoteWallFollow(bool state_now, bool state_last) override;
 	void chargeDetect(bool state_now, bool state_last) override;
 	void switchInStateFollowWall() override;
+	void batteryHome(bool state_now, bool state_last) override ;
 
 	void switchInStateInit() override;
 

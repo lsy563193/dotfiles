@@ -18,6 +18,12 @@ CleanModeExploration::CleanModeExploration()
 	error_marker_.clear();
 	clean_map_.mapInit();
 	obs.control(OFF);
+
+	//clear real time map which store in cloud....
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_CLEAR_MAP);
+
+	// Clear the map on app.
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_CLEAR_APP_MAP);
 }
 
 CleanModeExploration::~CleanModeExploration()
@@ -88,8 +94,9 @@ bool CleanModeExploration::mapMark()
 
 	setBlocks(iterate_point_->dir);
 	if(mark_robot_)
-		clean_map_.markRobot(getPosition().toCell(), CLEAN_MAP);
-//	passed_path_.clear();
+		clean_map_.markRobot(getPosition().toCell(),CLEAN_MAP);
+	if(action_i_ == ac_linear)
+		passed_path_.clear();
 	return false;
 }
 
@@ -194,7 +201,6 @@ bool CleanModeExploration::updateActionInStateInit() {
 	if (action_i_ == ac_null)
 		action_i_ = ac_open_gyro_and_lidar;
 	else if (action_i_ == ac_open_gyro_and_lidar) {
-		boost::dynamic_pointer_cast<StateInit>(state_init)->initForExploration();
 		action_i_ = ac_open_lidar;
 	}
 	else if (action_i_ == ac_open_lidar)

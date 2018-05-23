@@ -66,7 +66,7 @@ bool CleanModeSpot::mapMark()
 	}
 
 	if (sp_state == state_folllow_wall.get())
-		clean_map_.markRobot(getPosition().toCell(),CLEAN_MAP);
+		clean_map_.markRobot(getPosition().toCell(), CLEAN_MAP);
 	setBlocks(iterate_point_->dir);
 	PP_INFO();
 	clean_map_.print(getPosition().toCell(), CLEAN_MAP, Cells{getPosition().toCell()});
@@ -137,7 +137,6 @@ bool CleanModeSpot::updateActionInStateInit() {
 	if (action_i_ == ac_null)
 		action_i_ = ac_open_gyro_and_lidar;
 	else if (action_i_ == ac_open_gyro_and_lidar) {
-		boost::dynamic_pointer_cast<StateInit>(state_init)->initForSpot();
 		action_i_ = ac_open_lidar;
 	}
 	else if (action_i_ == ac_open_lidar)

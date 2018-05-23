@@ -121,10 +121,10 @@ private:
 	static sensor_msgs::LaserScan lidarScanData_original_;
 	sensor_msgs::LaserScan lidarScanData_compensate_;
 	std::vector<geometry_msgs::Point> lidarXY_points;
-	double scanLinear_update_time_;
-	double scanOriginal_update_time_;
-	double scanCompensate_update_time_;
-	double scanXYPoint_update_time_;
+	double scanLinear_update_time_{};
+	double scanOriginal_update_time_{};
+	double scanCompensate_update_time_{};
+	double scanXYPoint_update_time_{};
 
 //	std::vector<Vector2<double>>	lidar_point_;
 //	std::vector<std::deque<Vector2<double>> >	lidar_group_;

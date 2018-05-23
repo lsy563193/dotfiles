@@ -201,6 +201,15 @@ void CleanModeFollowWall::chargeDetect(bool state_now, bool state_last)
 	}
 }
 
+void CleanModeFollowWall::batteryHome(bool state_now, bool state_last)
+{
+	if (!ev.battery_home && isStateFollowWall())
+	{
+		ROS_WARN("%s %d: low battery, battery =\033[33m %dmv \033[0m", __FUNCTION__, __LINE__, battery.getVoltage());
+		ev.battery_home = true;
+	}
+}
+
 void CleanModeFollowWall::switchInStateInit() {
 	PP_INFO();
 	action_i_ = ac_null;

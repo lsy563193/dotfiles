@@ -14,15 +14,15 @@ WifiMapManage::WifiMapManage()
 void WifiMapManage::runLengthEncoding(GridMap &grid_map, WifiMap &wifi_map, const BoundingBox2 &bound)
 {
 	std::get<0>(wifi_map) = bound.max;
-	std::get<1>(wifi_map) = (bound.max.x - bound.min.x)+1;
+	std::get<1>(wifi_map) = (bound.max.x - bound.min.x);
 	auto& data = std::get<2>(wifi_map);
 	int last_cost=50;//init
 	int size=0;
 	bool first_time = true;
 	// -- loop through left top corner to right down corner
-	for(auto j= bound.max.x; j>= bound.min.x; j--)
+	for(auto j= bound.max.x; j> bound.min.x; j--)
 	{
-		for(auto i= bound.max.y; i>= bound.min.y; i--)
+		for(auto i= bound.max.y; i> bound.min.y; i--)
 		{
 			auto cost = grid_map.getCell(CLEAN_MAP,j,i);
 			auto it_cost = changeCost(cost);
@@ -60,6 +60,8 @@ int WifiMapManage::changeCost(int cost)
 	else if(cost == 1)//clean
 		return 0x02;
 	else if(cost == 0)//unclean
+		return 0x03;
+	else
 		return 0x03;
 }
 

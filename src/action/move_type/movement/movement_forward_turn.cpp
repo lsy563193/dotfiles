@@ -3,6 +3,7 @@
 //
 
 #include <movement.hpp>
+#include <event_manager.h>
 #include "dev.h"
 MovementForwardTurn::MovementForwardTurn(bool is_left) : is_left_(is_left) {
 	ROS_WARN("%s %d, Enter Movement forward turn.",__FUNCTION__,__LINE__);
@@ -27,11 +28,13 @@ bool MovementForwardTurn::isFinish()
 	ev.bumper_triggered = bumper.getStatus();
 	ev.cliff_triggered = cliff.getStatus();
 	ev.tilt_triggered = gyro.getTiltCheckingStatus();
+	ev.slip_triggered= lidar.isRobotSlip();
 
-	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered)
+	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || ev.slip_triggered)
 	{
-		ROS_WARN("%s, %d,MovementForwardTurn, ev.bumper_triggered(\033[32m%d\033[0m) ev.cliff_triggered(\033[32m%d\033[0m) ev.tilt_triggered(\033[32m%d\033[0m)."
-				, __FUNCTION__, __LINE__,ev.bumper_triggered,ev.cliff_triggered,ev.tilt_triggered);
+		ROS_WARN("%s, %d,MovementForwardTurn, ev.bumper_triggered(\033[32m%d\033[0m) ev.cliff_triggered(\033[32m%d\033[0m) "
+											 "ev.tilt_triggered(\033[32m%d\033[0m) ev.slip_triggered(\033[32m%d\033[0m)."
+				, __FUNCTION__, __LINE__,ev.bumper_triggered,ev.cliff_triggered,ev.tilt_triggered,ev.slip_triggered);
 		return true;
 	}
 
