@@ -3,11 +3,11 @@
 //
 
 #include <robot.hpp>
-#include "dev.h"
 #include <move_type.hpp>
-#include <state.hpp>
-#include <mode.hpp>
-#include <event_manager.h>
+#include <bumper.h>
+#include <key_led.h>
+#include <wifi_led.hpp>
+#include <wheel.hpp>
 
 MoveTypeBumperHitTest::MoveTypeBumperHitTest()
 {

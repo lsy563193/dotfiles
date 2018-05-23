@@ -2,12 +2,11 @@
 // Created by lsy563193 on 12/4/17.
 //
 #include <event_manager.h>
-#include "dev.h"
-#include "robot.hpp"
-
 #include <move_type.hpp>
-#include <state.hpp>
 #include <mode.hpp>
+#include <beeper.h>
+#include <cliff.h>
+#include "robot.hpp"
 
 MoveTypeLinear::MoveTypeLinear(Points remain_path)
 {

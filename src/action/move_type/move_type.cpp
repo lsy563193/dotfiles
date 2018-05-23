@@ -2,14 +2,14 @@
 // Created by lsy563193 on 12/4/17.
 //
 
-#include <mathematics.h>
 #include <event_manager.h>
-#include "dev.h"
-#include "robot.hpp"
-
 #include <move_type.hpp>
-#include <state.hpp>
-#include <mode.hpp>
+#include <wheel.hpp>
+#include <cliff.h>
+#include <lidar.hpp>
+#include <bumper.h>
+#include <gyro.h>
+#include "robot.hpp"
 
 
 //#define CLIFF_BACK_DISTANCE 0.075

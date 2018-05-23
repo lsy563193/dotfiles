@@ -3,18 +3,16 @@
 //
 
 #include <cmath>
+#include "move_type.hpp"
 #include <robot.hpp>
+#include "error.h"
 #include <brush.h>
-#include <error.h>
 #include <key_led.h>
 #include <wheel.hpp>
 #include <vacuum.h>
-#include <beeper.h>
 #include <gyro.h>
 #include <infrared_display.hpp>
 #include <speaker.h>
-#include "move_type.hpp"
-#include "error.h"
 
 #define ROUTATE_SPEED 18
 int16_t angle_list[4] = {-86, -176, 94, 4};
@@ -249,7 +247,6 @@ void MoveTypeGyroTest::run()
 			key_led.setMode(LED_STEADY, LED_GREEN);
 			infrared_display.displayNormalMsg(0, 9999);
 			speaker.play(VOICE_TEST_SUCCESS);
-//			beeper.beep(2, 40, 40, 3);
 			wheel.stop();
 			brush.stop();
 			vacuum.stop();
