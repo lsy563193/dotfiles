@@ -1,13 +1,13 @@
 #ifndef __MYMATH_H
 #define __MYMATH_H
 
-#include <stdint.h>
-#include <math.h>
-#include <stdlib.h>
+#include <cstdint>
+#include <cmath>
+#include <cstdlib>
 #include <deque>
-#include <ros/ros.h>
+#include <ostream>
+#include <bits/unique_ptr.h>
 #include "config.h"
-//#include "map.h"
 
 #define PI M_PI
 

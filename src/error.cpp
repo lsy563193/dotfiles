@@ -7,6 +7,7 @@
 #include "error.h"
 #include "speaker.h"
 #include "wifi/wifi.h"
+#include "ros/ros.h"
 
 Error error;
 

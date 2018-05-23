@@ -6,14 +6,12 @@
 #define PP_MODE_H_H
 
 #include "state.hpp"
-//#include "path_algorithm.h"
 #include "event_manager.h"
 #include "boost/shared_ptr.hpp"
 #include <pthread.h>
 #include <visualization_msgs/Marker.h>
-#include <vacuum.h>
-//#include "move_type.hpp"
 #include "path_algorithm.h"
+#include "map.h"
 
 
 #define ROS_INFO_FL() ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__)

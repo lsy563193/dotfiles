@@ -12,8 +12,6 @@
 #include <vacuum.h>
 #include <wifi_led.hpp>
 #include "wifi/wifi.h"
-#include "mode.hpp"
-#include "appointment.h"
 #include "gyro.h"
 
 using namespace SERIAL;
