@@ -475,6 +475,8 @@ void APathAlgorithm::findPath(GridMap &map, const Cell_t &start, const Cell_t &t
 																		 Dir_t last_i) {
 	auto cost = map.getCell(COST_MAP, target.x, target.y);
 	auto iterator = target;
+//	printf("findPath, start(%d,%d),target(%d,%d)\n",start.x, start.y, target.x, target.y);
+//	map.print(getPosition().toCell(), COST_MAP, Cells{});
 	for (; iterator != start;) {
 		if(map.getCell(COST_MAP, iterator.x, iterator.y) != cost)
 		{
@@ -488,12 +490,14 @@ void APathAlgorithm::findPath(GridMap &map, const Cell_t &start, const Cell_t &t
 			cost = 5;
 		for (auto i = 0; i < 4; i++) {
 			auto neighbor = iterator + cell_direction_[(last_i + i) % 4];
+//			printf("iterator(%d,%d)cost(%d,%d)\n", iterator.x, iterator.y, cost,map.getCell(COST_MAP, iterator.x, iterator.y));
 			if (map.isOutOfTargetRange(neighbor))
 				continue;
 
 			if (map.getCell(COST_MAP, neighbor.x, neighbor.y) == cost) {
-				if (i != 0) {
-					last_i = Dir_t{(last_i + i) % 4};
+//				printf("~~iterator(%d,%d)cost(%d,%d)\n", iterator.x, iterator.y, cost,map.getCell(COST_MAP, iterator.x, iterator.y));
+				if (i != 0 || path.empty()) {
+					last_i = (last_i + i) % 4;
 					path.push_front(iterator);
 				}
 				iterator = neighbor;
@@ -504,6 +508,7 @@ void APathAlgorithm::findPath(GridMap &map, const Cell_t &start, const Cell_t &t
 	if (path.back() != target)
 		path.push_back(target);
 	path.push_front(start);
+	displayCellPath(path);
 }
 
 

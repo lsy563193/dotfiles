@@ -622,8 +622,8 @@ bool GridMap::find_if(const Cell_t &curr_cell, Cells &targets, std::function<boo
 	setCell(COST_MAP, curr_cell.x, curr_cell.y, 1);
 	queue.emplace(1, curr_cell);
 
-//	ROS_INFO("%s %d: curr(%d, %d), range(%d, %d, %d, %d), g_(%d, %d, %d, %d).", __FUNCTION__, __LINE__, curr_cell.x,
-//			 curr_cell.y, xRangeMin, xRangeMax, yRangeMin, yRangeMax, g_x_min, g_x_max, g_y_min, g_y_max);
+	ROS_INFO("%s %d: curr(%d, %d), range(%d, %d, %d, %d), g_(%d, %d, %d, %d).", __FUNCTION__, __LINE__, curr_cell.x,
+			 curr_cell.y, xRangeMin, xRangeMax, yRangeMin, yRangeMax, g_x_min, g_x_max, g_y_min, g_y_max);
 	while (!queue.empty()) {
 //		 Get the nearest next from the queue
 		if (queue.begin()->first == 5) {
@@ -652,6 +652,7 @@ bool GridMap::find_if(const Cell_t &curr_cell, Cells &targets, std::function<boo
 			if (getCell(COST_MAP, neighbor.x, neighbor.y) == 0) {
 				if(is_count)
 					compare(neighbor);
+				//TODO: unclean area  fobbit(shaoyue)
 				if (isBlockAccessible(neighbor.x, neighbor.y))
 				{
 

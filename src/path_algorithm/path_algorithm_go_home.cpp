@@ -11,6 +11,7 @@ bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point_t &curr, const 
 	bool generate_finish = false;
 	plan_path.clear();
 	Cells plan_path_cells{};
+	map.print(curr.toCell(),CLEAN_MAP,Cells{});
 	while (!generate_finish && ros::ok())
 	{
 		switch (home_way_index_)
@@ -62,6 +63,7 @@ bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point_t &curr, const 
 			}
 		}
 	}
+	ROS_INFO("%s %d:",__FUNCTION__, __LINE__);
 	return !plan_path.empty();
 }
 
@@ -70,7 +72,7 @@ bool GoHomePathAlgorithm::generatePathThroughCleanedArea(GridMap &map, const Poi
 {
 	if (map.isBlockAccessible(current_home_point_.toCell().x, current_home_point_.toCell().y))
 	{
-		Cell_t min_corner, max_corner;
+//		Cell_t min_corner, max_corner;
 //		plan_path = findShortestPath(map, curr.toCell(), current_home_point_.toCell(),
 //										   last_dir, false, false, min_corner, max_corner);
 		Cells cells{};

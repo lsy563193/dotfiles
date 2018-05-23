@@ -104,15 +104,15 @@ int main(int argc, char **argv)
 	GridMap map;
 	//test
 	Cell_t curr{};
-	map.loadMap("/opt/ros/indigo/share/pp/map",Cell_t{-62,-132},true,curr);
+	map.loadMap("/opt/ros/indigo/share/pp/map",Cell_t{-2,0},true,curr);
 	map.print(curr,CLEAN_MAP, Cells{});
 	setPosition(cellToCount(curr.x),cellToCount(curr.y));
 
 	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
-	Dir_t old_dir_=MAP_POS_X;
+	Dir_t old_dir_=MAP_NEG_X;
 	Points remain_path_{};
 	ROS_INFO("clean_path_algorithm_!");
-	clean_path_algorithm_.reset(new NavCleanPathAlgorithm);
+	clean_path_algorithm_.reset(new GoHomePathAlgorithm);
 //	if (clean_path_algorithm_->generatePath(map, Point_t{cellToCount(curr.x),cellToCount(curr.y)}, old_dir_, remain_path_)) {
 //	}
 //	clean_path_algorithm_->isIo
@@ -125,8 +125,10 @@ int main(int argc, char **argv)
 	map.print(curr, CLEAN_MAP,Cells{external_target});
 	ROS_ERROR("ISOLATE MAP");
 	auto cells = Cells{};
+	auto points = Points{};
 //	auto is_found = map.find_if(curr, cells,[&](const Cell_t& c_it){return c_it == external_target;},false,true,true);
-//	clean_path_algorithm_->findShortestPath(map,curr,external_target,MAP_ANY,true,false,Cell_t{0,0},Cell_t{0,0});
+//	clean_path_algorithm_->generatePath(map,curr,external_target,MAP_ANY,true,false,Cell_t{0,0},Cell_t{0,0});
+	clean_path_algorithm_->generatePath(map,getPosition(),old_dir_, points);
 //	auto is_found = map.find_if(curr, cells,[&](const Cell_t& c_it){return c_it == external_target;},false,true,true);
 	ROS_INFO("~~~~~~~~~~~~~~~~~~~!");*/
 	ros::spin();
