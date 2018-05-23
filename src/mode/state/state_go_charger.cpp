@@ -5,7 +5,7 @@
 #include <mode.hpp>
 #include <brush.h>
 #include <water_tank.hpp>
-
+#include "vacuum.h"
 #include "gyro.h"
 #include "key_led.h"
 #include "wifi/wifi.h"

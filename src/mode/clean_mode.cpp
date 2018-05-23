@@ -43,7 +43,6 @@ ACleanMode::ACleanMode()
 	event_manager_set_enable(true);
 	serial.setWorkMode(WORK_MODE);
 	IMoveType::sp_mode_ = this;
-	APathAlgorithm::p_cm_ = this;
 	State::sp_cm_ = this;
 	if (robot::instance()->getR16WorkMode() == WORK_MODE || robot::instance()->getR16WorkMode() == IDLE_MODE ||
 			robot::instance()->getR16WorkMode() == CHARGE_MODE)

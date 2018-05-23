@@ -5,7 +5,7 @@
 #ifndef PP_CLIFF_H
 #define PP_CLIFF_H
 
-#include "mathematics.h"
+#include <cstdint>
 
 class Cliff
 {

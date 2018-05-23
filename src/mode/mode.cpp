@@ -5,6 +5,7 @@
 #include <dev.h>
 #include <event_manager.h>
 #include "mode.hpp"
+#include <vacuum.h>
 
 boost::shared_ptr<IAction> Mode::sp_action_ = nullptr;
 

@@ -10,6 +10,7 @@
 #include <robot.hpp>
 #include <gyro.h>
 #include "key_led.h"
+#include "vacuum.h"
 
 void StateFolllowWall::init() {
 	if(robot::instance()->getRobotWorkMode() == Mode::cm_exploration)

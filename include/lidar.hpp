@@ -4,11 +4,9 @@
 
 #include <nav_msgs/Odometry.h>
 #include "boost/thread.hpp"
-#include <ros/ros.h>
 #include <visualization_msgs/Marker.h>
 #include <sensor_msgs/LaserScan.h>
 #include "mathematics.h"
-#include "robot.hpp"
 
 class Lidar
 {
@@ -110,7 +108,7 @@ public:
 private:
 
 	// switch_ is the target status of lidar.
-	bool switch_{OFF};
+	bool switch_{false};
 
 	int angle_n_;
 	uint8_t is_scanLinear_ready_;

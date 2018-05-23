@@ -4,7 +4,6 @@
 
 #include <pthread.h>
 #include <vector>
-#include <string.h>
 #include <cstdint>
 
 namespace Appointment

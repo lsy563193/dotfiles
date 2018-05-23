@@ -197,6 +197,12 @@
 
 #define WHEEL_ENCODER_TO_MILLIMETER			(0.1955f)
 
+/* ------------------------------------- path algorithm config ------------------------------------- */
 #define USE_NEW_PATH_PLAN 0
+
+/* ------------------------------------- normal definition ------------------------------------- */
+#define ON true
+#define OFF false
+
 #endif //__CONFIG_H__
 

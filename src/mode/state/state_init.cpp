@@ -9,7 +9,7 @@
 #include <gyro.h>
 #include <charger.h>
 #include "wifi/wifi.h"
-
+#include "vacuum.h"
 #include "key_led.h"
 
 void StateInit::init() {

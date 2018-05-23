@@ -6,7 +6,6 @@
 #include "ros/ros.h"
 #include "robot.hpp"
 #include "path_algorithm.h"
-ACleanMode* APathAlgorithm::p_cm_ = nullptr;
 class PriorityQueueElement{
 public:
 	PriorityQueueElement() { };

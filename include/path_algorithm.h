@@ -7,13 +7,13 @@
 
 #include <mathematics.h>
 #include <deque>
-#include <map.h>
+#include "BoundingBox.h"
 
 extern const Cell_t cell_direction_[9];
 
 typedef std::deque<Cells> PathList;
 
-class ACleanMode;
+class GridMap;
 class APathAlgorithm
 {
 public:
@@ -61,7 +61,6 @@ public:
 	using cmp_one = std::function<bool(const Cell_t& cell)>;
 	std::unique_ptr<Cell_t> find_target(const Cell_t &start, cmp_one is_target, cmp_one is_accessible,
 														const cmp_two &cmp_lambda) ;
-	static ACleanMode* p_cm_;
 protected:
 
 	/*
