@@ -475,8 +475,8 @@ void APathAlgorithm::findPath(GridMap &map, const Cell_t &start, const Cell_t &t
 																		 Dir_t last_i) {
 	auto cost = map.getCell(COST_MAP, target.x, target.y);
 	auto iterator = target;
-	printf("findPath, start(%d,%d),target(%d,%d)\n",start.x, start.y, target.x, target.y);
-	map.print(getPosition().toCell(), COST_MAP, Cells{});
+//	printf("findPath, start(%d,%d),target(%d,%d)\n",start.x, start.y, target.x, target.y);
+//	map.print(getPosition().toCell(), COST_MAP, Cells{});
 	for (; iterator != start;) {
 		if(map.getCell(COST_MAP, iterator.x, iterator.y) != cost)
 		{

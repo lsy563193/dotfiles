@@ -14,6 +14,7 @@
 #include "wifi/wifi.h"
 #include "mode.hpp"
 #include "appointment.h"
+#include "gyro.h"
 
 using namespace SERIAL;
 

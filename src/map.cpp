@@ -1137,7 +1137,7 @@ void GridMap::loadMap(const Cell_t& min_p,bool use_map,Cell_t& curr)
 				auto sp = fin.tellg();
 				cout << "sp: " << sp <<endl;
 				curr =  Cell_t{static_cast<int16_t>(fin.tellg() / (width +1)),
-											static_cast<int16_t>(fin.tellg() % (width +1))-1};
+											 static_cast<int16_t>(static_cast<int16_t>(fin.tellg() % (width + 1)) - 1)};
 				ROS_INFO("map_origin:curr(%d,%d),min_p(%d,%d)",curr.x, curr.y,min_p.x, min_p.y);
 				curr +=	min_p;
 				ROS_INFO("map_offset:curr(%d,%d)",curr.x, curr.y);
