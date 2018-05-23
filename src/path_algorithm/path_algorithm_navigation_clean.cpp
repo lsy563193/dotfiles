@@ -65,16 +65,16 @@ private:
 std::unique_ptr<Cells> NavCleanPathAlgorithm::findTargetInSameLane(GridMap &map, const Cell_t &curr) {
 	int8_t is_found = 0;
 	Cell_t c_it[2]; // c_it[0] means the furthest cell of x positive direction, c_it[1] means the furthest cell of x negative direction.
-//	map.print(CLEAN_MAP, 0, 0);
 	for (auto i = 0; i < 2; i++) {
-		c_it[i] = curr;
-		for (;; c_it[i] += cell_direction_[i]) {
-			auto tmp = c_it[i] + cell_direction_[i] * 2;
+		auto tmp = c_it[i] = curr;
+		for (;; tmp += cell_direction_[i]) {
 			if (map.cellIsOutOfRange(tmp) || map.isBlocksAtY(tmp.x, tmp.y))
 				break;
 			if (map.getCell(CLEAN_MAP, tmp.x, tmp.y) == UNCLEAN)
+			{
 				c_it[i] = tmp;
 				break;
+			}
 		}
 	}
 
@@ -256,17 +256,11 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 		path = *findTargetInSameLane(map, curr_cell);
 	}
 
-
 	if (path.empty()) {
 
 		ROS_INFO("Step 2: Find all possible plan_path at the edge of cleaned area and filter plan_path in same lane.");
 		Cells targets{};
-
-		map.find_if(curr_cell, targets, [&](const Cell_t &c_it) {
-			return c_it.y % 2 == 0 && map.getCell(CLEAN_MAP, c_it.x, c_it.y) == UNCLEAN &&
-				   map.isBlockAccessible(c_it.x, c_it.y);
-		}, false, false, true);
-	map.dijstra(curr_cell, targets,[&](const Cell_t &c_it){
+		map.dijstra(curr_cell, targets,[&](const Cell_t &c_it){
 		return c_it.y%2 == 0 && map.getCell(CLEAN_MAP, c_it.x, c_it.y) == UNCLEAN  && map.isBlockAccessible(c_it.x, c_it.y);
 	},false);
 
@@ -563,14 +557,14 @@ bool NavCleanPathAlgorithm::checkTrapped(GridMap &map, const Cell_t &curr_cell)
 		return !(p_cm->clean_map_.dijstra(getPosition().toCell(), cells,[&](const Cell_t& c_it){return c_it == Cell_t{0,0};},true));
 	}
 }
-
-auto _check_limit = [&](Cell_t &shift_cell, const bool is_dir_x) {
-	if (is_dir_x && std::abs(shift_cell.x) > 3) {
-		shift_cell.x = static_cast<int16_t>(shift_cell.x > 0 ? 3 : -3);
-	} else if (!is_dir_x && shift_cell.y > 3) {
-		shift_cell.y = static_cast<int16_t>(shift_cell.y > 0 ? 3 : -3);
-	}
-};
+//
+//auto _check_limit = [&](Cell_t &shift_cell, const bool is_dir_x) {
+//	if (is_dir_x && std::abs(shift_cell.x) > 3) {
+//		shift_cell.x = static_cast<int16_t>(shift_cell.x > 0 ? 3 : -3);
+//	} else if (!is_dir_x && shift_cell.y > 3) {
+//		shift_cell.y = static_cast<int16_t>(shift_cell.y > 0 ? 3 : -3);
+//	}
+//};
 
 
 bool shift_path(GridMap &map, const Cell_t &p1, Cell_t &p2, Cell_t &p3, int num,bool is_first) {
@@ -616,19 +610,24 @@ void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path, Dir_t last_d
 			auto i = path.back().x > path.front().x ? 0 : 1;
 			auto &c_it = path.back();
 			auto tmp = c_it;
-			for (; !map.cellIsOutOfRange(tmp) &&
-				   !map.isBlocksAtY(tmp.x, tmp.y); tmp += cell_direction_[i]) {
+			for (; ; tmp += cell_direction_[i]) {
+//				ROS_INFO("tmp(%d,%d)",tmp.x, tmp.y);
 				if (map.getCell(CLEAN_MAP, tmp.x, tmp.y) == CLEANED) {
-					c_it = tmp;
 					break;
 				}
-				if (!map.isBlockAtY(BLOCKED_SLIP, tmp.x, tmp.y) &&
-					!map.isBlockAtY(BLOCKED_TILT, tmp.x, tmp.y) &&
-					!map.isBlockAtY(BLOCKED_RCON, tmp.x, tmp.y) /*c_it != curr*/) {
-					c_it += cell_direction_[i] * OVER_CELL_SIZE;
+				if(map.isBlocksAtY(tmp.x, tmp.y)){
+					if (!map.isBlockAtY(BLOCKED_SLIP, tmp.x, tmp.y) &&
+						!map.isBlockAtY(BLOCKED_TILT, tmp.x, tmp.y) &&
+						!map.isBlockAtY(BLOCKED_RCON, tmp.x, tmp.y) /*c_it != curr*/) {
+						tmp += cell_direction_[i] * OVER_CELL_SIZE;
+					}
 					break;
 				}
+				if(map.cellIsOutOfRange(tmp))
+					break;
 			}
+		c_it = tmp;
+		map.cellPreventOutOfRange(c_it);
 		}
 	}
 	else if (curr_filter_ == &filter_p0_1t_xn || curr_filter_ == &filter_p0_1t_xp)
@@ -649,7 +648,7 @@ void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path, Dir_t last_d
 				beeper.debugBeep(INVALID);
 				auto tmp = path.front();
 				auto iterator = path.begin();
-				if(shift_path(map, *(iterator + 2), *(iterator + 1), *(iterator + 0),2,true))
+				if(shift_path(map, *(iterator + 2), *(iterator + 1), *(iterator + 0),1,true))
 					path.push_front(tmp);
 			}
 		}
@@ -661,11 +660,11 @@ void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path, Dir_t last_d
 				if(isXAxis(get_dir(iterator + 1, iterator + 2)) && (iterator+1)->y % 2 == 1) {
 					ROS_WARN("in odd line ,try move to even line(%d)!", (iterator + 1)->x);
 					shift_path(map, *iterator, *(iterator + 1), *(iterator + 2), 1, false);
-				}else{
+				}/*else{
 					ROS_INFO("in x dir, is in even line try mv to even");
 					auto num = isXAxis(get_dir(iterator + 1, iterator + 2)) ? 2 : 1;
 					shift_path(map, *iterator, *(iterator + 1), *(iterator + 2),num,true);
-				}
+				}*/
 			}
 		}
 	}
