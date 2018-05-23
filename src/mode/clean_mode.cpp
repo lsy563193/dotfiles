@@ -120,6 +120,11 @@ ACleanMode::~ACleanMode()
 				{
 					speaker.play(VOICE_ERROR_LIFT_UP, false);
 					ROS_WARN("%s %d: Cliff all triggered. Stop cleaning.", __FUNCTION__, __LINE__);
+				} else if (ev.battery_low)
+				{
+					ROS_WARN("%s %d: Low battery(%.2fV).", __FUNCTION__, __LINE__, battery.getVoltage() / 100.0);
+					speaker.play(VOICE_BATTERY_LOW, false);
+					speaker.play(VOICE_CLEANING_STOP, false);
 				} else
 					ROS_WARN("%s %d: fatal_quit is true. Stop cleaning.", __FUNCTION__, __LINE__);
 			} else if (ev.key_clean_pressed || ev.key_long_pressed)
@@ -1045,6 +1050,14 @@ bool ACleanMode::isExit()
 		setNextMode(cm_navigation);
 		return true;
 	}
+
+	if (ev.battery_low)
+	{
+		ROS_WARN("%s %d: Exit to idle mode for low battery(%.2fV).", __FUNCTION__, __LINE__, battery.getVoltage() / 100.0);
+		setNextMode(md_idle);
+		return true;
+	}
+
 	return false;
 }
 
@@ -1718,6 +1731,16 @@ void ACleanMode::overCurrentVacuum(bool state_now, bool state_last)
 	{
 		ROS_WARN("%s %d: Vacuum over current.", __FUNCTION__, __LINE__);
 		ev.oc_vacuum = true;
+	}
+}
+
+void ACleanMode::batteryLow(bool state_now, bool state_last)
+{
+	if (!ev.battery_low && battery.isLow())
+	{
+		ROS_WARN("%s %d: Low battery(%.2fV).", __FUNCTION__, __LINE__, battery.getVoltage() / 100.0);
+		ev.battery_low = true;
+		ev.fatal_quit = true;
 	}
 }
 // ------------------Handlers end--------------------------

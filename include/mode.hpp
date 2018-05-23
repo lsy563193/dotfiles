@@ -307,6 +307,7 @@ public:
 	void keyClean(bool state_now, bool state_last) override ;
 	void chargeDetect(bool state_now, bool state_last) override ;
 	void cliffAll(bool state_now, bool state_last) override ;
+	void batteryLow(bool state_now, bool state_last) override;
 
 	void wifiSetWaterTank() override ;
 	void setVacuum() override ;
@@ -406,6 +407,7 @@ public:
 	void robotSlip(bool state_now, bool state_last) override ;
 	void overCurrentBrushMain(bool state_now, bool state_last) override;
 	void overCurrentVacuum(bool state_now, bool state_last) override;
+	void batteryLow(bool state_now, bool state_last) override;
 
 	// State init
 	bool isStateInit() const

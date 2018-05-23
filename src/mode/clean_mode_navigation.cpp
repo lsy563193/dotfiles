@@ -321,6 +321,14 @@ bool CleanModeNav::isExit()
 		setNextMode(md_charge);
 		return true;
 	}
+
+	if (ev.battery_low)
+	{
+		ROS_WARN("%s %d: Exit to idle mode for low battery(%.2fV).", __FUNCTION__, __LINE__, battery.getVoltage() / 100.0);
+		setNextMode(md_idle);
+		return true;
+	}
+
 	return false;
 }
 
@@ -439,6 +447,13 @@ void CleanModeNav::remoteDirectionLeft(bool state_now, bool state_last)
 				 battery.getVoltage(), continue_point_.x, continue_point_.y);
 		ev.battery_home = true;
 		go_home_for_low_battery_ = true;
+	}*/
+	/*else
+	{
+		//todo: Just for testing.
+		ROS_WARN("%s %d: Low battery(%.2fV).", __FUNCTION__, __LINE__, battery.getVoltage() / 100.0);
+		ev.battery_low = true;
+		ev.fatal_quit = true;
 	}*/
 	else
 		beeper.beepForCommand(INVALID);

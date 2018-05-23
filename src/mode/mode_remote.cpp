@@ -87,10 +87,9 @@ bool ModeRemote::isExit()
 		return true;
 	}
 
-	if (battery.isLow())
+	if (ev.battery_low)
 	{
 		ROS_WARN("%s %d: Exit to idle mode for low battery(%.2fV).", __FUNCTION__, __LINE__, battery.getVoltage() / 100.0);
-		speaker.play(VOICE_BATTERY_LOW);
 		setNextMode(md_idle);
 		return true;
 	}
@@ -310,5 +309,15 @@ void ModeRemote::setVacuum()
 	{
 		vacuum.setSpeedByUserSetMode();
 		speaker.play(vacuum.isCurrentMaxMode() ? VOICE_VACCUM_MAX : VOICE_VACUUM_NORMAL);
+	}
+}
+
+void ModeRemote::batteryLow(bool state_now, bool state_last)
+{
+	if (!ev.battery_low && battery.isLow())
+	{
+		ROS_WARN("%s %d: Low battery(%.2fV).", __FUNCTION__, __LINE__, battery.getVoltage() / 100.0);
+		speaker.play(VOICE_BATTERY_LOW, false);
+		ev.battery_low = true;
 	}
 }
