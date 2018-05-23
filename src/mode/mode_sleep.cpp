@@ -4,8 +4,19 @@
 
 #include <error.h>
 #include <event_manager.h>
-#include "dev.h"
 #include "mode.hpp"
+#include <key.h>
+#include <charger.h>
+#include <battery.h>
+#include <serial.h>
+#include <cliff.h>
+#include <speaker.h>
+#include <key_led.h>
+#include <robot.hpp>
+#include <beeper.h>
+#include "rcon.h"
+#include "remote.hpp"
+#include "wifi/wifi.h"
 #include "appointment.h"
 
 #define RCON_TRIGGER_INTERVAL 180

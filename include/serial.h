@@ -1,7 +1,7 @@
 #ifndef __SERIAL_H__
 #define __SERIAL_H__
 
-#include <stdint.h>
+#include <cstdint>
 #include <thread>
 #include <boost/thread.hpp>
 #include "config.h"

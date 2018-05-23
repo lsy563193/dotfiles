@@ -2,11 +2,12 @@
 
 #include <movement.hpp>
 #include <move_type.hpp>
-#include <state.hpp>
 #include <mode.hpp>
-#include <event_manager.h>
 #include <robot.hpp>
-#include "dev.h"
+#include <wheel.hpp>
+#include <lidar.hpp>
+#include <obs.h>
+
 //CELL_COUNT_MUL*1.5
 MovementFollowPointLinear::MovementFollowPointLinear()
 {

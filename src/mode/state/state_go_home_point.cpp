@@ -3,8 +3,14 @@
 //
 
 #include <mode.hpp>
-#include "dev.h"
-#include <event_manager.h>
+#include <robot.hpp>
+#include <wheel.hpp>
+#include <key_led.h>
+#include <brush.h>
+#include <water_tank.hpp>
+#include <wifi/wifi.h>
+#include <gyro.h>
+#include <vacuum.h>
 
 void StateGoHomePoint::init(){
 	wheel.stop();

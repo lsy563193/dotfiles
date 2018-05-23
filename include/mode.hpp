@@ -10,8 +10,13 @@
 #include "boost/shared_ptr.hpp"
 #include <pthread.h>
 #include <visualization_msgs/Marker.h>
+#include <sensor_msgs/LaserScan.h>
 #include "path_algorithm.h"
 #include "map.h"
+#include "ros/ros.h"
+#include "action.hpp"
+#include "movement.hpp"
+#include "move_type.hpp"
 
 
 #define ROS_INFO_FL() ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__)
@@ -34,6 +39,8 @@ typedef struct{
 
 class PointSelector;
 
+class IAction;
+class IMoveType;
 class Mode:public EventHandle
 {
 public:

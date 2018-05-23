@@ -2,6 +2,8 @@
 // Created by austin on 18-3-21.
 //
 
+#include "ros/ros.h"
+#include <serial.h>
 #include "wifi_led.hpp"
 
 WifiLed wifi_led;

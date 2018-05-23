@@ -2,11 +2,17 @@
 // Created by pierre on 17-12-20.
 //
 #include <event_manager.h>
-#include <dev.h>
-#include <error.h>
-#include <map.h>
-
+#include <speaker.h>
+#include <obs.h>
+#include <wifi/wifi.h>
+#include <beeper.h>
+#include <key.h>
+#include <remote.hpp>
+#include <charger.h>
+#include <water_tank.hpp>
+#include <vacuum.h>
 #include "mode.hpp"
+#include "robot.hpp"
 
 CleanModeExploration::CleanModeExploration()
 {

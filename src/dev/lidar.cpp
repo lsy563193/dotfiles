@@ -1,14 +1,11 @@
 #include "lidar.hpp"
 #include "robot.hpp"
-#include <std_srvs/Empty.h>
-#include <std_srvs/SetBool.h>
-//#include <pp/SetLidar.h>
 #include <wheel.hpp>
 #include <mode.hpp>
 #include <mathematics.h>
 #include <beeper.h>
-#include <gyro.h>
 #include <string>
+#include <move_type.hpp>
 
 boost::mutex scanLinear_mutex_;
 boost::mutex scanOriginal_mutex_;

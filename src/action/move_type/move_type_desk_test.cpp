@@ -22,6 +22,7 @@
 #include <infrared_display.hpp>
 #include <speaker.h>
 #include <remote.hpp>
+#include <robot.hpp>
 
 #include "move_type.hpp"
 

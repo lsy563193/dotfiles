@@ -3,8 +3,12 @@
 //
 
 #include <movement.hpp>
-#include <event_manager.h>
-#include "dev.h"
+#include <wheel.hpp>
+#include <bumper.h>
+#include <cliff.h>
+#include <gyro.h>
+#include <lidar.hpp>
+
 MovementForwardTurn::MovementForwardTurn(bool is_left) : is_left_(is_left) {
 	ROS_WARN("%s %d, Enter Movement forward turn.",__FUNCTION__,__LINE__);
 }

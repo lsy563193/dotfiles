@@ -201,8 +201,11 @@
 #define USE_NEW_PATH_PLAN 0
 
 /* ------------------------------------- normal definition ------------------------------------- */
-#define ON true
-#define OFF false
+#define ON 							true
+#define OFF 						false
+
+#define VALID						true
+#define INVALID						false
 
 #endif //__CONFIG_H__
 

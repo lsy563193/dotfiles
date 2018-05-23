@@ -2,11 +2,10 @@
 // Created by lsy563193 on 11/29/17.
 //
 
+#include <event_manager.h>
 #include <movement.hpp>
 #include <move_type.hpp>
-#include <event_manager.h>
-#include <mode.hpp>
-#include "dev.h"
+#include <wheel.hpp>
 #include "robot.hpp"
 
 

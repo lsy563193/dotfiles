@@ -5,9 +5,12 @@
 #include <infrared_display.hpp>
 #include <key_led.h>
 #include <speaker.h>
-#include <error.h>
 #include <bumper.h>
-#include <dev.h>
+#include <error.h>
+#include <lidar.hpp>
+#include <beeper.h>
+#include <wifi/wifi.h>
+#include <robot.hpp>
 #include "ros/ros.h"
 #include "action.hpp"
 

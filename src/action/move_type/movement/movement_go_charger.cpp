@@ -3,9 +3,11 @@
 //
 
 #include <movement.hpp>
-#include <move_type.hpp>
 #include <robot.hpp>
-#include <dev.h>
+#include <wheel.hpp>
+#include <bumper.h>
+#include <cliff.h>
+#include <charger.h>
 
 bool MovementGoToCharger::is_turn_connect_failed_ = false;
 MovementGoToCharger::MovementGoToCharger()
@@ -30,7 +32,7 @@ void MovementGoToCharger::resetGoToChargerVariables()
 	move_away_from_charger_time_stamp_ = ros::Time::now().toSec();
 	receive_code = 0;
 	current_radian_ = 0;
-	last_radian_ = robot::instance()->getWorldPoseRadian();
+	last_radian_ = getPosition().th;
 	radian_offset_ = 0;
 	gyro_radian_step_ = 0;
 	around_charger_stub_dir = 0;

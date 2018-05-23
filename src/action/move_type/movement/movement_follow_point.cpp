@@ -4,9 +4,8 @@
 
 #include <movement.hpp>
 #include <move_type.hpp>
-#include "dev.h"
-#include "robot.hpp"
-#include "mode.hpp"
+#include <wheel.hpp>
+#include <mode.hpp>
 
 //Point_t AMovementFollowPoint::tmp_target_{};
 
@@ -53,6 +52,7 @@ void AMovementFollowPoint::adjustSpeed(int32_t &left_speed, int32_t &right_speed
 	check_limit(right_speed, 0, max_speed_);
 	if (!is_out_corner) {
 //		beeper.beepForCommand(INVALID);
+		// todo: Does this logic belong here?? by Austin.
 		if (sp_mt_->sp_mode_->action_i_ == sp_mt_->sp_mode_->ac_follow_wall_left) {
 			check_limit(left_speed,0.210 * right_speed,max_speed_)
 		} else if (sp_mt_->sp_mode_->action_i_ == sp_mt_->sp_mode_->ac_follow_wall_right) {

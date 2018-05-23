@@ -4,8 +4,12 @@
 
 #include <event_manager.h>
 #include <movement.hpp>
-
-#include "dev.h"
+#include <robot.hpp>
+#include <wheel.hpp>
+#include <cliff.h>
+#include <bumper.h>
+#include <lidar.hpp>
+#include <gyro.h>
 
 MovementBack::MovementBack(float back_distance, uint8_t max_speed)
 {
@@ -19,6 +23,11 @@ MovementBack::MovementBack(float back_distance, uint8_t max_speed)
 	tilt_cnt_ = 0;
 	updateStartPose();
 	ROS_WARN("%s %d: Set back distance: %f.", __FUNCTION__, __LINE__, back_distance_);
+}
+
+MovementBack::~MovementBack() {
+	robot::instance()->unlockScanCtrl();
+	ROS_WARN("%s %d: Exit movement back.", __FUNCTION__, __LINE__);
 }
 
 void MovementBack::updateStartPose()
@@ -147,10 +156,5 @@ bool MovementBack::isLidarStop()
 	}
 
 	return false;
-}
-
-MovementBack::~MovementBack() {
-	robot::instance()->unlockScanCtrl();
-	ROS_WARN("%s %d: Exit movement back.", __FUNCTION__, __LINE__);
 }
 

@@ -3,7 +3,15 @@
 //
 #include <map.h>
 #include <event_manager.h>
-#include "dev.h"
+#include <mode.hpp>
+#include <speaker.h>
+#include <wifi/wifi.h>
+#include <robot.hpp>
+#include <remote.hpp>
+#include <beeper.h>
+#include <wheel.hpp>
+#include <key.h>
+
 CleanModeSpot::CleanModeSpot()
 {
 	ROS_WARN("%s %d: Entering Spot mode\n=========================" , __FUNCTION__, __LINE__);

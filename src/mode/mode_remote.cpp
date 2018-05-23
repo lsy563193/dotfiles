@@ -4,7 +4,20 @@
 
 #include <event_manager.h>
 #include <robot.hpp>
-#include "dev.h"
+#include <move_type.hpp>
+#include <gyro.h>
+#include <rcon.h>
+#include <key.h>
+#include <remote.hpp>
+#include <wifi/wifi.h>
+#include <wheel.hpp>
+#include <brush.h>
+#include <water_tank.hpp>
+#include <vacuum.h>
+#include <battery.h>
+#include <speaker.h>
+#include <beeper.h>
+#include <charger.h>
 #include "mode.hpp"
 #include "appointment.h"
 

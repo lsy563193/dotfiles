@@ -19,9 +19,8 @@
 #include "config.h"
 #include "map.h"
 #include "pose.h"
-#include "serial.h"
 #include "mode.hpp"
-//#include "mode.hpp"
+#include "serial.h"
 #include <string.h>
 
 #define  _RATE 50

@@ -1,11 +1,22 @@
-#include <infrared_display.hpp>
 #include <event_manager.h>
-#include "event_manager.h"
-#include "dev.h"
+#include <serial.h>
+#include <key.h>
+#include <rcon.h>
+#include <remote.hpp>
+#include <move_type.hpp>
+#include <beeper.h>
+#include <water_tank.hpp>
+#include <vacuum.h>
+#include <speaker.h>
+#include <charger.h>
+#include <cliff.h>
+#include <robot.hpp>
 #include "error.h"
 #include "mode.hpp"
 #include "wifi/wifi.h"
 #include "appointment.h"
+#include "movement.hpp"
+#include "battery.h"
 
 #define RCON_TRIGGER_INTERVAL 180
 
@@ -30,8 +41,6 @@ ModeIdle::ModeIdle():
 	s_wifi.resetReceivedWorkMode();
 
 	/*---reset values for rcon handle---*/
-//	// todo:debug
-//	infrared_display.displayErrorMsg(9, 1234, 101);
 	sp_state = st_pause.get() ;
 	sp_state->init();
 	mode_i_ = md_idle;

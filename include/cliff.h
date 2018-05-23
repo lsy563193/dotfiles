@@ -75,6 +75,7 @@ public:
 		right_value_ = value;
 	}
 
+	bool allTriggered();
 private:
 	bool left_status_;
 	bool front_status_;

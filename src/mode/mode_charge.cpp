@@ -2,11 +2,20 @@
 // Created by austin on 17-12-6.
 //
 
-#include <robot.hpp>
 #include <event_manager.h>
+#include <key.h>
+#include <rcon.h>
+#include <remote.hpp>
+#include <wifi/wifi.h>
+#include <charger.h>
+#include <speaker.h>
+#include <battery.h>
+#include <beeper.h>
+#include <water_tank.hpp>
+#include <vacuum.h>
 #include "error.h"
-#include "dev.h"
 #include "mode.hpp"
+#include <robot.hpp>
 #include "appointment.h"
 
 ModeCharge::ModeCharge()

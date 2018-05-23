@@ -5,7 +5,8 @@
 
 #include <movement.hpp>
 #include <move_type.hpp>
-#include "dev.h"
+#include "wheel.hpp"
+
 MovementStraight::MovementStraight()
 {
 	timeout_interval_ = 0.2;

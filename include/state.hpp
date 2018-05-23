@@ -5,8 +5,8 @@
 #ifndef PP_STATE_HPP
 #define PP_STATE_HPP
 
-#include "move_type.hpp"
-//#include <boost/shared_ptr.hpp>
+#include <vector>
+
 class ACleanMode;
 class State {
 public:
