@@ -137,7 +137,7 @@ bool GoHomePathAlgorithm::generatePathThroughUnknownArea(GridMap &map, const Poi
 	{
 		Cell_t min_corner, max_corner;
 		Cells cells{};
-		auto is_found = map.dijstra(curr.toCell(), cells,[&](const Cell_t& c_it){return c_it == current_home_point_.toCell();},true);
+		auto is_found = map.dijstra(curr.toCell(), cells,[&](const Cell_t& c_it){return c_it == current_home_point_.toCell();},true, true);
 		if(is_found)
 			findPath(map, curr.toCell(),current_home_point_.toCell(),plan_path,last_dir);
 	}
