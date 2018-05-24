@@ -292,10 +292,10 @@ bool Lidar::getFitLine(std::vector<LineABC>	*fit_line_group, double r_begin, dou
 	(*fit_line_group).clear();
 
 	if(is_align){
-		consecutive_lim = 0.03;
+		consecutive_lim = 0.06;
 		points_count_lim = 10;
-		t_lim_split = 0.03;
-		t_lim_merge = 0.03;
+		t_lim_split = 0.06;
+		t_lim_merge = 0.06;
 	}
 //	ROS_WARN("getFitLine");
 	scanOriginal_mutex_.lock();
