@@ -271,7 +271,10 @@ void ModeCharge::remoteKeyHandler(bool state_now, bool state_last)
 			}
 		}
 		else
+		{
+			beeper.beepForCommand(INVALID);
 			ROS_WARN("%s %d: Receive %d but not valid during charge.", __FUNCTION__, __LINE__);
+		}
 	}
 	else
 		ROS_WARN("%s %d: Receive %d but not valid during fake sleep.", __FUNCTION__, __LINE__);
