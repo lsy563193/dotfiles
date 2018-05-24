@@ -717,30 +717,33 @@ void S_Wifi::sort_push(std::deque<Cell_t> *list,Cell_t p,int sort_type)
 	}
 }
 
-//void printwifimap(int width,std::pair<uint8_t, uint8_t > data)
-//{
-//	static int cnt = 0;
-//	for(int i=0;i<data.second;i++)
-//	{
-//		if(cnt == width)
-//		{
-//			cnt = 0;printf("\n");
-//		}
-//		cnt++;
-//		if(data.first == 0x01)
-//		{
-//			printf("\033[32m*\033[0m");
-//		}
-//		else if(data.first == 0x02)
-//		{
-//			printf("\033[33m@\033[0m");
-//		}
-//		else if(data.first == 0x03)
-//		{
-//			printf("\033[34m#\033[0m");
-//		}
-//	}
-//}
+void printwifimap(int width, std::vector<MapElem> data)
+{
+	int cnt = 0;
+	for(int k = 0;k<data.size();k++)
+	{
+		for(int i=0;i<data[k].second;i++)
+		{
+			if(cnt == width)
+			{
+				cnt = 0;printf("\n");
+			}
+			cnt++;
+			if(data[k].first == 0x01)
+			{
+				printf("\033[32m*\033[0m");
+			}
+			else if(data[k].first == 0x02)
+			{
+				printf("\033[33m@\033[0m");
+			}
+			else if(data[k].first == 0x03)
+			{
+				printf("\033[34m#\033[0m");
+			}
+		}
+	}
+}
 
 template <typename T1, typename T2>
 int S_Wifi::dataPushBack( std::vector<T1> &list,T2 data1,T2 data2)
@@ -906,7 +909,6 @@ int S_Wifi::uploadMap(MapType map)
 			{
 				map_data.push_back(data[i].first);
 				map_data.push_back(data[i].second);
-				//printwifimap(width,data[i]);
 				if(map_data.size()>=450)
 				{
 					map_packs.push_back(map_data);
@@ -1016,28 +1018,23 @@ bool S_Wifi::uploadLastCleanData()
 	if (!is_wifi_connected_)
 		return false;
 	INFO_BLUE("UPLOAD LAST MAP data");
-
 	uint32_t time;
 	uint16_t clean_time;
 	uint16_t clean_area; // In square meter.
 	GridMap slam_clean_map;
 	robot::instance()->getCleanRecord(time, clean_time, clean_area, slam_clean_map);
-
 	std::vector<uint8_t> data;
 	std::vector<std::vector<uint8_t>> packs;
 	packs.clear();
-
 	int16_t x_min, x_max, y_min, y_max;
 	slam_clean_map.getMapRange(CLEAN_MAP, &x_min, &x_max, &y_min, &y_max);
 	WifiMap slam_map;
-
-	BoundingBox2 bound = {{x_min, y_min},
-						  {x_max, y_max}};
-
+	BoundingBox2 bound = {{x_min, y_min},{x_max, y_max}};
 	wifiMapManage.runLengthEncoding(slam_clean_map,slam_map,bound);
-
 	uint16_t width  = std::get<1>(slam_map);
+	ROS_INFO("%s,%d,bound min(%d,%d),max(%d,%d),width %d",__FUNCTION__,__LINE__,x_min,y_min,x_max,y_max,width);
 	auto slam_map_data = std::get<2>(slam_map);
+	printwifimap(width,slam_map_data);
 	data.push_back((width&0xff00)>>8);
 	data.push_back(width);
 	//-- make subpackets
@@ -1059,29 +1056,13 @@ bool S_Wifi::uploadLastCleanData()
 		data.clear();
 	}
 	ROS_INFO("%s,%d,\033[1;31mclean_record_data_pack size %ld\033[0m", __FUNCTION__, __LINE__,packs.size());
-	//-- upload packs 
+	//-- upload packs
 	for (uint8_t i = 0; i < packs.size(); i++)
 	{
-		//uint8_t upload_clean_record_cnt = 0;
-		//do
-		//{
-		//	if (upload_clean_record_cnt++ > 4)
-			//{
-			//	is_wifi_connected_ = false;
-			//	wifi_led.setMode(LED_STEADY, WifiLed::state::off);
-		//		return false;
-		//	}
-			wifi::CleanRecordUploadTxMsg p(time,
-										   clean_time,
-										   clean_area,
-										   i+1,
-										   packs.size(),
-										   packs[i]);
-			s_wifi_tx_.push(std::move(p)).commit();
-			usleep(600000);
-		//}while(ros::ok() && !clean_record_ack_);
-		//clean_record_ack_ = false;
-	} 
+		wifi::CleanRecordUploadTxMsg p(time,clean_time,clean_area,i+1,packs.size(),packs[i]);
+		s_wifi_tx_.push(std::move(p)).commit();
+		usleep(600000);
+	}
 	ROS_INFO("%s,%d,upload finish",__FUNCTION__,__LINE__);
 	return true;
 }

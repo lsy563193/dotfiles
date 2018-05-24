@@ -22,7 +22,7 @@ WifiMapManage::WifiMapManage()
 void WifiMapManage::runLengthEncoding(GridMap &grid_map, WifiMap &wifi_map, const BoundingBox2 &bound)
 {
 	std::get<0>(wifi_map) = bound.max;
-	std::get<1>(wifi_map) = (bound.max.x - bound.min.x);
+	std::get<1>(wifi_map) = (bound.max.y - bound.min.y);
 	auto& data = std::get<2>(wifi_map);
 	data.clear();
 	int last_cost=50;//init
@@ -106,7 +106,7 @@ int WifiMapManage::convert(float slam_resulution)
 {
 	auto dist = last_point_.Distance(getPosition());
 	last_point_ = getPosition();
-	width_ = (dist>=1.8)? 4.0: 2.0;
+	width_ = (dist>=1.4)? 4.0: 2.0;
 	ROS_INFO("%s,%d,distance \033[1;31m%f\033[0m",__FUNCTION__,__LINE__,dist);
 	width_half_ = ((width_/resulution_/2));
 
