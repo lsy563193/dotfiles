@@ -81,8 +81,7 @@ bool S_Wifi::init()
 			s_wifi_tx_.push(std::move( p )).commit();
 			isRegDevice_ = true;
 //			cloudConnected();
-			if(robot_work_mode_ != wifi::WorkMode::SLEEP)
-				wifi_led.setMode(LED_FLASH,WifiLed::state::on);
+			wifi_led.setMode(LED_FLASH,WifiLed::state::on);
 			if(isFactoryTest_)
 				speaker.play( VOICE_WIFI_CONNECTED,false);
 		});
@@ -106,8 +105,7 @@ bool S_Wifi::init()
 	s_wifi_rx_.regOnNewMsgListener<wifi::CloudConnectedNotifRxMsg>(
 			[&]( const wifi::RxMsg &a_msg ) {
 				cloudConnected();
-				if(robot_work_mode_ != wifi::WorkMode::SLEEP)
-					wifi_led.setMode(LED_STEADY,WifiLed::state::on);
+				wifi_led.setMode(LED_STEADY,WifiLed::state::on);
 				/*if(isRegDevice_ && in_linking_){
 					//speaker.play( VOICE_CLOUD_CONNECTED,false);
 					speaker.play( VOICE_WIFI_CONNECTED,false);
@@ -131,8 +129,7 @@ bool S_Wifi::init()
 				const wifi::QueryDeviceStatusRxMsg &msg = static_cast<const wifi::QueryDeviceStatusRxMsg&>( a_msg );
 				cloudConnected();
 				uploadStatus( msg.MSG_CODE,msg.seq_num());
-				if(robot_work_mode_ != wifi::WorkMode::SLEEP)
-					wifi_led.setMode(LED_STEADY, WifiLed::state::on);
+				wifi_led.setMode(LED_STEADY, WifiLed::state::on);
 			});
 	//query schedule
 	s_wifi_rx_.regOnNewMsgListener<wifi::QueryScheduleStatusRxMsg>(
@@ -414,8 +411,7 @@ bool S_Wifi::init()
 				const wifi::FactoryTestRxMsg &msg = static_cast<const wifi::FactoryTestRxMsg&>( a_msg );
 				factory_test_ack_= true;
 				cloudConnected();
-				if(robot_work_mode_ != wifi::WorkMode::SLEEP)
-					wifi_led.setMode(LED_FLASH,WifiLed::state::on);
+				wifi_led.setMode(LED_FLASH,WifiLed::state::on);
 			}
 	);
 	//upload status ack
@@ -490,8 +486,7 @@ bool S_Wifi::init()
 			[&](const wifi::RxMsg & a_msg){
 				const wifi::QueryNTPAckMsg &msg = static_cast<const wifi::QueryNTPAckMsg&>(a_msg);
 				time_sync_ = true;
-				if(robot_work_mode_ != wifi::WorkMode::SLEEP)
-					wifi_led.setMode(LED_STEADY,WifiLed::state::on);
+				wifi_led.setMode(LED_STEADY,WifiLed::state::on);
 				cloudConnected();
 
 				// Get CST time (local time from app).
@@ -622,7 +617,7 @@ int8_t S_Wifi::uploadStatus(int msg_code,const uint8_t seq_num)
 			usleep(500000);
 		}while(ros::ok() && !upload_state_ack_);
 		upload_state_ack_ = false;
-		if (is_wifi_connected_ && robot_work_mode_ != wifi::WorkMode::SLEEP)
+		if (is_wifi_connected_)
 			wifi_led.setMode(LED_STEADY,WifiLed::state::on);
 	}
 	else if(msg_code == 0x41)//app check upload
@@ -1233,8 +1228,7 @@ int8_t S_Wifi::smartLink()
 	wifi::SmartLinkTxMsg p(0x00);//no responed
 	s_wifi_tx_.push( std::move(p)).commit();
 	speaker.play(VOICE_WIFI_CONNECTING,false);
-	if(robot_work_mode_ != wifi::WorkMode::SLEEP)
-		wifi_led.setMode(LED_FLASH,WifiLed::state::on);
+	wifi_led.setMode(LED_FLASH,WifiLed::state::on);
 	first_time_connected_ = true;
 //	in_linking_ = true;
 	return 0;
@@ -1246,8 +1240,7 @@ uint8_t S_Wifi::smartApLink()
 	wifi::SmartApLinkTxMsg p(CLOUD_AP,0x00);
 	s_wifi_tx_.push(std::move(p)).commit();
 	speaker.play(VOICE_WIFI_CONNECTING,false);
-	if(robot_work_mode_ != wifi::WorkMode::SLEEP)
-		wifi_led.setMode(LED_FLASH,WifiLed::state::on);
+	wifi_led.setMode(LED_FLASH,WifiLed::state::on);
 	first_time_connected_ = true;
 	return 0;
 }

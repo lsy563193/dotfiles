@@ -132,7 +132,7 @@ robot::~robot()
 	brush.stop();
 	vacuum.stop();
 	s_wifi.deinit();
-	wifi_led.set(false);
+	wifi_led.disable();
 	water_tank.stop(WaterTank::operate_option::swing_motor_and_pump);
 	serial.setWorkMode(WORK_MODE);
 	usleep(40000);
