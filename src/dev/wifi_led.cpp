@@ -18,6 +18,9 @@ void WifiLed::set(bool _switch)
 
 void WifiLed::setMode(uint8_t type, WifiLed::state _switch, uint16_t time_ms)
 {
+	if (!enable_)
+		return;
+
 	led_type_ = type;
 	led_cnt_for_one_cycle_ = static_cast<uint16_t>(time_ms / 20);
 	led_switch_ = _switch;
@@ -58,11 +61,22 @@ void WifiLed::processLed()
 		}
 		case state::off:
 		{
-			set(false);
+			set(OFF);
 			break;
 		}
 		default:
-			set(false);
+			set(OFF);
 			ROS_WARN("%s,%d,switch state input wrong,used default off state!!",__FUNCTION__,__LINE__);
 	}
+}
+
+void WifiLed::enable()
+{
+	enable_ = true;
+}
+
+void WifiLed::disable()
+{
+	setMode(LED_STEADY, state::off);
+	enable_ = false;
 }

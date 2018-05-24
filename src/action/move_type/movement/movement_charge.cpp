@@ -53,6 +53,7 @@ MovementCharge::~MovementCharge()
 	wheel.stop();
 	charger.setStop();
 	obs.control(ON);
+	wifi_led.enable();
 	ROS_WARN("%s %d: End movement charge.", __FUNCTION__, __LINE__);
 }
 
@@ -94,7 +95,7 @@ bool MovementCharge::isFinish()
 			// Show green key_led for 60s before going to sleep mode.
 			if (ros::Time::now().toSec() - battery_full_start_time_ >= 60)
 			{
-				wifi_led.setMode(LED_STEADY, WifiLed::state::off);
+				wifi_led.disable();
 				key_led.setMode(LED_STEADY, LED_OFF);
 				battery_full_and_sleep_ = true;
 				speaker.play(VOICE_SLEEP_UNOFFICIAL);
@@ -108,6 +109,7 @@ bool MovementCharge::isFinish()
 	{
 		if (charger.getChargeStatus())
 		{
+			wifi_led.enable();
 			turn_for_charger_ = false;
 			start_timer_ = ros::Time::now().toSec();
 			battery_full_and_sleep_ = false;

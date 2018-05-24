@@ -472,6 +472,11 @@ std::unique_ptr<Cell_t> APathAlgorithm::find_target(const Cell_t &start, cmp_one
 void APathAlgorithm::findPath(GridMap &map, const Cell_t &start, const Cell_t &target,
 																		 Cells &path,
 																		 Dir_t last_i) {
+	if(start == target)
+	{
+		path.push_front(target);
+		return;
+	}
 	auto cost = map.getCell(COST_MAP, target.x, target.y);
 	auto iterator = target;
 //	printf("findPath, start(%d,%d),target(%d,%d)\n",start.x, start.y, target.x, target.y);
