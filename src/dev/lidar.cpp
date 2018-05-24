@@ -292,10 +292,10 @@ bool Lidar::getFitLine(std::vector<LineABC>	*fit_line_group, double r_begin, dou
 	(*fit_line_group).clear();
 
 	if(is_align){
-		consecutive_lim = 0.03;
+		consecutive_lim = 0.06;
 		points_count_lim = 10;
-		t_lim_split = 0.03;
-		t_lim_merge = 0.03;
+		t_lim_split = 0.06;
+		t_lim_merge = 0.06;
 	}
 //	ROS_WARN("getFitLine");
 	scanOriginal_mutex_.lock();
@@ -907,33 +907,29 @@ uint8_t Lidar::lidarMarker(std::vector<Vector2<int>> &markers, int movement_i, i
 {
 //	markers.clear();
 
-//	if(!lidarCheckFresh(0.6,4))
-//		return 0;
-	if(!lidarCheckFresh(0.01,1))
+	if(!lidarCheckFresh(0.6,4))
 		return 0;
 
-	scanLinear_mutex_.lock();
-	auto tmp_scan_data = lidarScanData_linear_;
-	scanLinear_mutex_.unlock();
+	lidarXYPoint_mutex_.lock();
+	auto tmp_scan_data = lidarXY_points;
+	lidarXYPoint_mutex_.unlock();
 
-	std::deque<Vector2<double>> tmp_lidarXY_points{};
+/*	std::deque<Vector2<double>> tmp_lidarXY_points{};
 	for (int i = 0; i <= 359; i++) {
 		if (tmp_scan_data.ranges[i] < 4) {
 			polarToCartesian(tmp_scan_data.ranges[i], i);
 			tmp_lidarXY_points.push_back(polarToCartesian(tmp_scan_data.ranges[i], i));
 		}
-	}
-//	lidarXYPoint_mutex_.lock();
-//	auto tmp_lidarXY_points = lidarXY_points;
-//	lidarXYPoint_mutex_.unlock();
-	ACleanMode::pubPointMarkers(&tmp_lidarXY_points, "base_link", "point marker");
+	}*/
+
+//	ACleanMode::pubPointMarkers(&tmp_lidarXY_points, "base_link", "point marker");
 	double x, y;
 	int dx{}, dy{};
 	const	double Y_MAX = 0.20;//0.279
 	int	count_array[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 	Vector2<int> marker = {dx,dy};
 
-	for(const auto& point:lidarXY_points){
+	for(const auto& point:tmp_scan_data){
 		x = point.x;
 		y = point.y;
 		auto dis_to_robot = sqrt(pow(x, 2) + pow(y, 2));
@@ -1099,8 +1095,8 @@ uint8_t Lidar::lidarMarker(std::vector<Vector2<int>> &markers, int movement_i, i
 		auto is_left_back = (dx == -1 && dy == 2);
 		auto is_right_back = (dx == -1 && dy == -2);
 		if (!(dx == 0 && dy == 0)){
-			if(!(action_i == Mode::ac_follow_wall_left && (is_left_back || is_left_front))
-						&& !(action_i == Mode::ac_follow_wall_right && (is_right_back || is_right_front))
+			if(!(action_i == Mode::ac_follow_wall_left && (0/*is_left_back || is_left_front*/))
+						&& !(action_i == Mode::ac_follow_wall_right && (0/*is_right_back || is_right_front*/))
 						&& !(movement_i == IMoveType::mm_turn)) {
 				markers.push_back(marker);
 //				ROS_WARN("movement_i = %d, action_i = %d", movement_i, action_i);

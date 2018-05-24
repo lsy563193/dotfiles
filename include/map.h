@@ -188,8 +188,11 @@ public:
 	bool isFrontBlockBoundary(int dx);
 
 	int8_t isNeedClean(int16_t x, int16_t y);
-	bool dijstra(const Cell_t &curr_cell, Cells &targets, std::function<bool(const Cell_t &next)> compare,bool is_stop);
+	bool dijstra(const Cell_t &curr_cell, Cells &targets, std::function<bool(const Cell_t &next)> compare_for_targets,
+				 bool stop_if_found_one, bool use_uncleaned_area = false);
+	// Put the cells that fit the compare function into parameter targets.
 	bool find_if(const Cell_t &curr_cell, Cells &targets, std::function<bool(const Cell_t &next)> compare);
+	// Return the count of cells that all 9 cells around it match the compare function in this map.
 	bool count_if(const Cell_t &curr_cell, std::function<bool(const Cell_t &next)> compare, int& count);
 //	void generateSPMAP(const Cell_t &curr, Cells &target_list);
 //	void generateSPMAP(const Cell_t &curr);
