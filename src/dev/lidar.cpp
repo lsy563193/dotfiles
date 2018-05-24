@@ -1095,8 +1095,8 @@ uint8_t Lidar::lidarMarker(std::vector<Vector2<int>> &markers, int movement_i, i
 		auto is_left_back = (dx == -1 && dy == 2);
 		auto is_right_back = (dx == -1 && dy == -2);
 		if (!(dx == 0 && dy == 0)){
-			if(!(action_i == Mode::ac_follow_wall_left && (is_left_back || is_left_front))
-						&& !(action_i == Mode::ac_follow_wall_right && (is_right_back || is_right_front))
+			if(!(action_i == Mode::ac_follow_wall_left && (0/*is_left_back || is_left_front*/))
+						&& !(action_i == Mode::ac_follow_wall_right && (0/*is_right_back || is_right_front*/))
 						&& !(movement_i == IMoveType::mm_turn)) {
 				markers.push_back(marker);
 //				ROS_WARN("movement_i = %d, action_i = %d", movement_i, action_i);
