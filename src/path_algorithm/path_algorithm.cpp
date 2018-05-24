@@ -509,11 +509,27 @@ void APathAlgorithm::findPath(GridMap &map, const Cell_t &start, const Cell_t &t
 			}
 		}
 	}
+	if(path.empty())
+		path.push_front(target);
 	if (path.back() != target)
 		path.push_back(target);
 	path.push_front(start);
 	displayCellPath(path);
 }
 
-
+void APathAlgorithm::flood_fill(const Cell_t& curr)
+{
+//	if(is_target(curr))
+//	{
+//		printf("%s,%d\n",__FUNCTION__, __LINE__);
+//		return true;
+//	}
+//	printf("%s,%d,curr(%d,%d)\n",__FUNCTION__, __LINE__,curr.x, curr.y);
+//	for(auto i =0; i<4 ;i ++)
+//	{
+////		printf("%s,%d\n",__FUNCTION__, __LINE__);
+//		if(!map_out_range())
+//        	flood_fill(curr + cell_direction_[i]);
+//	}
+}
 

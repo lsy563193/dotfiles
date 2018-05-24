@@ -1,6 +1,9 @@
 #include <gyro.h>
 #include <event_manager.h>
 #include <mode.hpp>
+#include <ios>
+#include <bits/ios_base.h>
+#include <fstream>
 #include "map.h"
 #include "robot.hpp"
 #include "event_manager.h"
@@ -1055,6 +1058,51 @@ void GridMap::setCircleMarkers(Point_t point, int radius, CellState cell_state,M
 		}
 	}
 }
+void GridMap::loadMap(std::string map_file,const Cell_t& min_p,bool use_map,Cell_t& curr)
+{
+	using namespace std;
+	std::ifstream fin(map_file, ios::binary | ios::ate);
+	int16_t size = static_cast<int16_t>(fin.tellg());
+	if(!fin.is_open())
+	{
+		ROS_ERROR("Open false");
+		return;
+	}
+	fin.seekg(std::ifstream::beg);
+	std::string s;;
+	getline(fin,s);
+	int16_t width = s.size();
+	int16_t hidth = size/(width+1);
+
+	fin.seekg(std::ifstream::beg);
+	char x;
+	if(use_map) {
+		while (!fin.eof()) {
+			fin.get(x);
+			if (x == 'x') {
+				curr = min_p + Cell_t{static_cast<int16_t>(fin.tellg() / (width + 1)),
+							  static_cast<int16_t>(fin.tellg() % (width + 1))};
+				break;
+			}
+		}
+	}
+
+	fin.seekg(std::ifstream::beg);
+	while(!fin.eof()){
+		auto val = fin.get();
+		if(val =='x')
+		{
+			setCell(CLEAN_MAP, curr.x, curr.y, 1);
+		}else
+		if(val !='\n'&& val !=-1)
+		{
+			Cell_t c_it = min_p + Cell_t{static_cast<int16_t>(fin.tellg() / (width + 1)),
+										 static_cast<int16_t>(fin.tellg() % (width + 1))};
+			setCell(CLEAN_MAP, c_it.x, c_it.y, val-'0');
+		}
+	}
+	ROS_ERROR("33332");
+}
 
 void GridMap::setBlockWithBound(Cell_t min, Cell_t max, CellState state,bool with_block) {
 	for (int16_t i = min.x; i <= max.x; ++i) {
@@ -1112,32 +1160,44 @@ void GridMap::loadMap(int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max
 		ROS_INFO("%s %d: Read data succeeded.", __FUNCTION__, __LINE__);
 	}
 }
-void GridMap::loadMap(const Cell_t& min_p,bool use_map,Cell_t& curr)
+void GridMap::loadMap(bool use_map,Cell_t& curr)
 {
-	std::string map_file = "/opt/ros/indigo/share/pp/map";
-	ROS_INFO("map_origin:curr(%d,%d),min_p(%d,%d)",curr.x, curr.y,min_p.x, min_p.y);
 	using namespace std;
+	std::string map_file = "/opt/ros/indigo/share/pp/map";
 	std::ifstream fin(map_file);
 	if(!fin.is_open())
 	{
 		ROS_ERROR("Open false");
 		return;
 	}
+
 	std::string s;;
+	getline(fin, s);
+	std::cout << s << endl;
+	istringstream iss(s);
+	string word;
+	Cell_t min_p;
+	iss >> word;
+	min_p.x = static_cast<int16_t>(std::stoi(word));
+	iss >> word;
+	min_p.y = static_cast<int16_t>(std::stoi(word));
+	ROS_INFO("map_origin:curr(%d,%d),min_p(%d,%d)",curr.x, curr.y,min_p.x, min_p.y);
+
+	auto m_begin = fin.tellg();
 	getline(fin,s);
 	int16_t width = s.size();
 	ROS_INFO("width:(%d)",width);
 
-	fin.seekg(std::ifstream::beg);
+	fin.seekg(m_begin);
 	char x;
 	if(use_map) {
 		while (!fin.eof()) {
 			fin.get(x);
 			if (x == 'x') {
-				auto sp = fin.tellg();
+				auto sp = fin.tellg()-m_begin;
 				cout << "sp: " << sp <<endl;
-				curr =  Cell_t{static_cast<int16_t>(fin.tellg() / (width +1)),
-											 static_cast<int16_t>(static_cast<int16_t>(fin.tellg() % (width + 1)) - 1)};
+				curr =  Cell_t{static_cast<int16_t>(sp / (width +1)),
+											static_cast<int16_t>(sp % (width +1)-1)};
 				ROS_INFO("map_origin:curr(%d,%d),min_p(%d,%d)",curr.x, curr.y,min_p.x, min_p.y);
 				curr +=	min_p;
 				ROS_INFO("map_offset:curr(%d,%d)",curr.x, curr.y);
@@ -1146,7 +1206,7 @@ void GridMap::loadMap(const Cell_t& min_p,bool use_map,Cell_t& curr)
 		}
 	}
 
-	fin.seekg(std::ifstream::beg);
+	fin.seekg(m_begin);
 	while(!fin.eof()){
 		auto val = fin.get();
 		if(val =='x')
@@ -1155,13 +1215,14 @@ void GridMap::loadMap(const Cell_t& min_p,bool use_map,Cell_t& curr)
 		}else
 		if(val !='\n'&& val !=-1)
 		{
-			auto sp = fin.tellg();
+			auto sp = fin.tellg()-m_begin;
 //			cout << "sp: " << sp <<endl;
 			Cell_t c_it = min_p + Cell_t{static_cast<int16_t>(sp / (width + 1)),
-																	 static_cast<int16_t>(fin.tellg() % (width + 1)-1)};
+																	 static_cast<int16_t>(sp % (width + 1)-1)};
 			setCell(CLEAN_MAP, c_it.x, c_it.y, val-'0');
 		}
 	}
 	ROS_ERROR("33332");
+	fin.close();
 }
 

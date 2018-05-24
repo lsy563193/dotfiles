@@ -98,35 +98,27 @@ int main(int argc, char **argv)
 	robot_instance = new robot();
 // Test code for path algorithm by Austin.
 //	test_map();
-/*
-	//test code by lsy563193
-	sleep(1);
-	GridMap map;
-	//test
-	Cell_t curr{};
-	map.loadMap(Cell_t{-2,-5},true,curr);
-	map.print(curr,CLEAN_MAP, Cells{});
-	setPosition(cellToCount(curr.x),cellToCount(curr.y));
-
-	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
-	Dir_t old_dir_=MAP_NEG_X;
-	Points remain_path_{};
-	ROS_INFO("clean_path_algorithm_!");
-	clean_path_algorithm_.reset(new GoHomePathAlgorithm);
-//	if (clean_path_algorithm_->generatePath(map, Point_t{cellToCount(curr.x),cellToCount(curr.y)}, old_dir_, remain_path_)) {
-//	}
-//	clean_path_algorithm_->isIo
-
-	BoundingBox2 bound{};
-	map.getMapRange(CLEAN_MAP, &bound.min.x, &bound.max.x, &bound.min.y, &bound.max.y);
-	auto external_target = bound.max + Cell_t{1, 1};
-	auto cells = Cells{};
-	auto points = Points{};
-//	auto is_found = map.find_if(curr, cells,[&](const Cell_t& c_it){return c_it == external_target;},false,true,true);
-	clean_path_algorithm_->generatePath(map,{cellToCount(curr.x),cellToCount(curr.y)},old_dir_, points);
-//	clean_path_algorithm_->generatePath(map,getPosition(),old_dir_, points);
-//	auto is_found = map.find_if(curr, cells,[&](const Cell_t& c_it){return c_it == external_target;},false,true,true);
-	ROS_INFO("~~~~~~~~~~~~~~~~~~~!");*/
+#if 0
+//	//test code by lsy563193
+//	sleep(1);
+//	GridMap map;
+//	//test
+//	Cell_t curr{};
+//	map.loadMap(true,curr);
+//	map.print(Cell_t{0,0},CLEAN_MAP, Cells{});
+//	setPosition(cellToCount(curr.x),cellToCount(curr.y));
+//
+//	Dir_t old_dir_=MAP_NEG_X;
+//	Points remain_path_{};
+//
+//	GoHomePathAlgorithm clean_path_algorithm_;
+//
+//	Cells cells{};
+//	auto is_found = map.dijstra(curr, cells,[&](const Cell_t& c_it){return c_it == Cell_t{-2,0};},true);
+////	if (clean_path_algorithm_.generatePath(map, Point_t{cellToCount(curr.x),cellToCount(curr.y)}, old_dir_, remain_path_)) {
+////	}
+//	ROS_INFO("end~~~~~~~~~");
+#endif
 	ros::spin();
 	return 0;
 }
