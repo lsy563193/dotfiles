@@ -14,6 +14,10 @@ CleanModeTest::CleanModeTest(uint8_t mode)
 	lidar.slipCheckingCtrl(OFF);
 	event_manager_set_enable(false);
 	test_mode_ = mode;
+	plan_path_.clear();
+	Point_t tmp_point{0, 0};
+	plan_path_.push_front(tmp_point);
+	iterate_point_ = plan_path_.begin();
 	switch (test_mode_)
 	{
 		case DESK_TEST_CURRENT_MODE:
