@@ -567,9 +567,9 @@ bool NavCleanPathAlgorithm::checkTrapped(GridMap &map, const Cell_t &curr_cell)
 //};
 
 
-bool shift_path(GridMap &map, const Cell_t &p1, Cell_t &p2, Cell_t &p3, int num,bool is_first) {
+bool shift_path(GridMap &map, const Cell_t &p1, Cell_t &p2, Cell_t &p3, int num,bool is_first, bool is_reveave) {
 	auto dir_p23 = get_dir(p3, p2);
-	auto dir_p12 = get_dir(p2, p1);
+	auto dir_p12 = is_reveave ? get_dir(p1, p2) : get_dir(p2, p1);
 //	ROS_INFO("dir_p12(%d), dir_p23(%d)", dir_p12, dir_p23);
 	auto is_break = false;
 	auto p12_it = p2;
@@ -640,15 +640,15 @@ void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path, Dir_t last_d
 		displayCellPath(path);
 		if(path.size() > 2)
 		{
-			ROS_INFO("Step 5: opposite dir");
+			ROS_WARN("opposite dir");
 			if(is_opposite_dir(get_dir(path.begin()+1, path.begin()), last_dir) ||
 					(path.begin()->y%2 == 1 && isXAxis(last_dir) && get_dir(path.begin()+1, path.begin()) == (last_dir)))
 			{
-				ROS_ERROR("dir(%d,%d)",get_dir(path.begin()+1, path.begin()), last_dir);
+				ROS_INFO("dir(%d,%d)",get_dir(path.begin()+1, path.begin()), last_dir);
 				beeper.debugBeep(INVALID);
 				auto tmp = path.front();
 				auto iterator = path.begin();
-				if(shift_path(map, *(iterator + 2), *(iterator + 1), *(iterator + 0),1,true))
+				if(shift_path(map, *(iterator + 2), *(iterator + 1), *(iterator + 0),1,true,true))
 					path.push_front(tmp);
 			}
 		}
@@ -659,12 +659,12 @@ void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path, Dir_t last_d
 				ROS_INFO("dir(%d), y(%d)", get_dir(iterator + 1, iterator + 2), (iterator+1)->y);
 				if(isXAxis(get_dir(iterator + 1, iterator + 2)) && (iterator+1)->y % 2 == 1) {
 					ROS_WARN("in odd line ,try move to even line(%d)!", (iterator + 1)->x);
-					shift_path(map, *iterator, *(iterator + 1), *(iterator + 2), 1, false);
-				}/*else{
+					shift_path(map, *iterator, *(iterator + 1), *(iterator + 2), 1, false,false);
+				}else{
 					ROS_INFO("in x dir, is in even line try mv to even");
 					auto num = isXAxis(get_dir(iterator + 1, iterator + 2)) ? 2 : 1;
-					shift_path(map, *iterator, *(iterator + 1), *(iterator + 2),num,true);
-				}*/
+					shift_path(map, *iterator, *(iterator + 1), *(iterator + 2),num,true,false);
+				}
 			}
 		}
 	}
