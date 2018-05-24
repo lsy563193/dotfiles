@@ -22,6 +22,8 @@ public:
 	virtual bool checkTrapped(GridMap &map, const Cell_t &curr_cell) {return true;};
 
 	void findPath(GridMap &map, const Cell_t &start, const Cell_t &target, Cells &path, Dir_t last_i);
+
+	void APathAlgorithm::flood_fill(const Cell_t& curr);
 	public:
 	/*
 	 * @author Patrick Chow
