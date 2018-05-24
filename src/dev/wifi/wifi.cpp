@@ -1029,7 +1029,7 @@ bool S_Wifi::uploadLastCleanData()
 	uint16_t width  = std::get<1>(slam_map);
 	ROS_INFO("%s,%d,bound min(%d,%d),max(%d,%d),width %d",__FUNCTION__,__LINE__,x_min,y_min,x_max,y_max,width);
 	auto slam_map_data = std::get<2>(slam_map);
-	printwifimap(width,slam_map_data);
+	//printwifimap(width,slam_map_data);
 	data.push_back((width&0xff00)>>8);
 	data.push_back(width);
 	//-- make subpackets
