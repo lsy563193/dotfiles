@@ -2,6 +2,9 @@
 #define __CONFIG_H__
 /* ------------------------------------- System Setting ------------------------------------- */
 
+#define CURRENT_VERSION 0
+#define CURRENT_PATCH 13
+
 /*
  * Chipset setting.
  */
