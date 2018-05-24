@@ -99,25 +99,25 @@ int main(int argc, char **argv)
 // Test code for path algorithm by Austin.
 //	test_map();
 #if 0
-//	//test code by lsy563193
-//	sleep(1);
-//	GridMap map;
-//	//test
-//	Cell_t curr{};
-//	map.loadMap(true,curr);
-//	map.print(Cell_t{0,0},CLEAN_MAP, Cells{});
-//	setPosition(cellToCount(curr.x),cellToCount(curr.y));
-//
-//	Dir_t old_dir_=MAP_NEG_X;
-//	Points remain_path_{};
-//
-//	GoHomePathAlgorithm clean_path_algorithm_;
-//
-//	Cells cells{};
-//	auto is_found = map.dijstra(curr, cells,[&](const Cell_t& c_it){return c_it == Cell_t{-2,0};},true);
-////	if (clean_path_algorithm_.generatePath(map, Point_t{cellToCount(curr.x),cellToCount(curr.y)}, old_dir_, remain_path_)) {
-////	}
-//	ROS_INFO("end~~~~~~~~~");
+	//test code by lsy563193
+	sleep(1);
+	GridMap map;
+	//test
+	Cell_t curr{};
+	map.loadMap(true,curr);
+	map.print(curr,CLEAN_MAP, Cells{});
+	setPosition(cellToCount(curr.x),cellToCount(curr.y));
+
+	Dir_t old_dir_=MAP_NEG_X;
+	Points remain_path_{};
+
+	NavCleanPathAlgorithm clean_path_algorithm_;
+
+	Cells cells{};
+//	auto is_found = map.gen(curr, cells,[&](const Cell_t& c_it){return c_it == Cell_t{-2,0};},true);
+	if (clean_path_algorithm_.generatePath(map, Point_t{cellToCount(curr.x),cellToCount(curr.y)}, old_dir_, remain_path_)) {
+	}
+	ROS_INFO("end~~~~~~~~~");
 #endif
 	ros::spin();
 	return 0;

@@ -577,8 +577,8 @@ bool shift_path(GridMap &map, const Cell_t &p1, Cell_t &p2, Cell_t &p3, int num,
 	for (; i <= num * 2; i++) {
 		p12_it += cell_direction_[dir_p12];
 //		ROS_ERROR("p12_it,%d,%d", p12_it.x, p12_it.y);
-		for (auto p23_it = p12_it; p23_it != p3 + cell_direction_[dir_p12] * i; p23_it += cell_direction_[dir_p23]) {
-//			ROS_WARN("p23_it,%d,%d", p23_it.x, p23_it.y);
+		for (auto p23_it = p12_it; p23_it != p3 + cell_direction_[dir_p12] * i+cell_direction_[dir_p23]; p23_it += cell_direction_[dir_p23]) {
+			ROS_WARN("p23_it,%d,%d", p23_it.x, p23_it.y);
 			if (!map.isBlockAccessible(p23_it.x, p23_it.y)) {
 				is_break = true;
 				break;
@@ -640,16 +640,20 @@ void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path, Dir_t last_d
 		displayCellPath(path);
 		if(path.size() > 2)
 		{
-			ROS_WARN("opposite dir");
 			if(is_opposite_dir(get_dir(path.begin()+1, path.begin()), last_dir) ||
 					(path.begin()->y%2 == 1 && isXAxis(last_dir) && get_dir(path.begin()+1, path.begin()) == (last_dir)))
 			{
+				ROS_WARN("opposite dir");
 				ROS_INFO("dir(%d,%d)",get_dir(path.begin()+1, path.begin()), last_dir);
 				beeper.debugBeep(INVALID);
 				auto tmp = path.front();
 				auto iterator = path.begin();
 				if(shift_path(map, *(iterator + 2), *(iterator + 1), *(iterator + 0),1,true,true))
+				{
+					if(*(iterator + 1) == *(iterator + 2))
+						path.erase(path.begin()+1);
 					path.push_front(tmp);
+				}
 			}
 		}
 		if (path.size() > 3) {
