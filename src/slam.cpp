@@ -73,36 +73,7 @@ void Slam::mapCb(const nav_msgs::OccupancyGrid::ConstPtr &map)
 	slam_grid_map.convertFromSlamMap(CELL_SIZE, 0.2, bound);
 
 //	slam_grid_map.print(getPosition().toCell(), CLEAN_MAP, {{0,0}});
-
-	GridMap app_grid_map;
-	Cell_t cell{static_cast<int16_t>(getPosition().x * WIFI_MAP_RESOLUTION / map->info.resolution),
-				static_cast<int16_t>(getPosition().y * WIFI_MAP_RESOLUTION / map->info.resolution)};
-
-	size = WIFI_MAP_WIDTH_HALF;
-
-	bound = {{static_cast<int16_t >(-size), static_cast<int16_t >(-size)},
-			 {size,                         size}};
-	auto point = getPosition();
-	cell = {static_cast<int16_t>(round(point.x / 0.05)), static_cast<int16_t>(round(point.y / 0.05))};
-	// -- left top corner (max)
-	bound.SetMaximum(cell + Cell_t{WIFI_MAP_WIDTH_HALF, WIFI_MAP_WIDTH_HALF});
-	// -- right down corner (min)
-	bound.SetMinimum(cell - Cell_t{WIFI_MAP_WIDTH_HALF, WIFI_MAP_WIDTH_HALF});
-
-	ROS_INFO("\033[1;35m%s %d: size(%d), curr((%d,%d),(%d,%d)),bound({%d,%d}{%d,%d})\033[0m", __FUNCTION__, __LINE__, size,
-			 cell.x, cell.y, getPosition().toCell().x, getPosition().toCell().y, bound.min.x, bound.min.y,
-			 bound.max.x, bound.max.y);
-	app_grid_map.convertFromSlamMap(WIFI_MAP_RESOLUTION, 0.25, bound);
-
-	//static int count = 0;
-	//count++;
-//	if(count % 20 == 0)##
-	{
-		//count = 0;
-		wifiMapManage.serialize(app_grid_map, bound);
-//		app_grid_map.printInRange(cell,CLEAN_MAP, Cells{cell},true,bound);
-//		beeper.debugBeep();
-	}
+	wifiMapManage.convert(map->info.resolution);
 	isMapReady(true);
 
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_MAP);

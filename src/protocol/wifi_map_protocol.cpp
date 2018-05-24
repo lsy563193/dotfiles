@@ -3,12 +3,19 @@
 //
 
 #include "protocol/wifi_map_protocol.h"
+#include "robot.hpp"
 
 WifiMapManage wifiMapManage;
 
 WifiMapManage::WifiMapManage()
 {
 	new_arrival_ = false;
+	width_ = 2.0;
+	resulution_= 0.05;
+	width_half_ = ((width_/resulution_/2));
+	//size_ = ( 6 +(width_ * width_)/ resulution_;
+	last_point_ = {0,0,0};
+
 }
 
 void WifiMapManage::runLengthEncoding(GridMap &grid_map, WifiMap &wifi_map, const BoundingBox2 &bound)
@@ -16,6 +23,7 @@ void WifiMapManage::runLengthEncoding(GridMap &grid_map, WifiMap &wifi_map, cons
 	std::get<0>(wifi_map) = bound.max;
 	std::get<1>(wifi_map) = (bound.max.x - bound.min.x);
 	auto& data = std::get<2>(wifi_map);
+	data.clear();
 	int last_cost=50;//init
 	int size=0;
 	bool first_time = true;
@@ -26,7 +34,6 @@ void WifiMapManage::runLengthEncoding(GridMap &grid_map, WifiMap &wifi_map, cons
 		{
 			auto cost = grid_map.getCell(CLEAN_MAP,j,i);
 			auto it_cost = changeCost(cost);
-		
 			if(first_time)
 			{
 				first_time = false;
@@ -74,87 +81,47 @@ int WifiMapManage::changeCost(int cost)
 
 void WifiMapManage::serialize(GridMap& grid_map, const BoundingBox2& bound)
 {
-
 	boost::mutex::scoped_lock lock(data_mutex);
 	runLengthEncoding(grid_map, wifi_map_, bound);
 	new_arrival_ = true;
-
-    //left_low_conner_ = std::get<0>(wifi_map);
-	//width_ = std::get<1>(wifi_map);
-	//map_data_ = std::get<2>(wifi_map);
-	/*
-	valid_size_ = 6 + map_data.size()*3;
-	ROS_ASSERT(valid_size_<10000);
-
-	ROS_INFO("%s %d: valid_size_ %d, DATA_SIZE %d ", __FUNCTION__, __LINE__, 6 + valid_size_, DATA_SIZE);
-	{
-		memset(data_, 0, DATA_SIZE);
-
-		*(data_+0)= static_cast<uint8_t>(left_low_conner.x);
-		*(data_+1) = static_cast<uint8_t>(left_low_conner.x >> 8);
-		*(data_+2)= static_cast<uint8_t>(left_low_conner.y);
-		*(data_+3) = static_cast<uint8_t>(left_low_conner.y >> 8);
-		*(data_+4)= static_cast<uint8_t>(width);
-		*(data_+5) = static_cast<uint8_t>(width >> 8);
-
-		for (size_t i = 0; i <= map_data.size(); ++i)
-		{
-			*(data_+(6 + i * 3))= map_data[i].first;
-			*(data_+(6 + i * 3 + 1))= static_cast<uint8_t >(map_data[i].second);
-			*(data_+(6 + i * 3 + 2))= static_cast<uint8_t >(map_data[i].second >> 8);
-		}
-		ROS_INFO("display wifi map : left_low_conner(%d,%d),width(%d),h(%d):", left_low_conner.x, left_low_conner.y,
-				 width, map_data.size());
-		*/
-		/*
-//		std::ostringstream outString;
-		auto count =0;
-		auto line =0;
-		printf("%40d", bound.min.x);
-		for(auto c = 6; c < valid_size_; c++) {
-//			outString << data_[c];
-			printf("%d", data_[c]);
-			if ((c - 6) % 3 == 0)
-			{
-//				outString << ' ';
-				printf(" ");
-			}
-			else if ((c - 6) % 3 == 1) {
-//				outString << ',';
-				count += data_[c];
-				printf(",");
-			}
-			else if ((c - 6) % 3 == 2)
-			{
-//				outString << '|';
-				if(count >= width)
-				{
-					line++;
-					printf("\n%4d:\t", bound.min.x+line);
-					count = 0;
-				}
-				else
-					printf("|");
-			}
-		}
-//        printf("%s", outString.str().c_str());
-		printf("\n");
-	}
-		 */
 }
 
 WifiMap *WifiMapManage::getData()
 {
-
 	boost::mutex::scoped_lock lock(data_mutex);
 	if(new_arrival_)
 	{
 		new_arrival_ = false;
 		app_map_= wifi_map_;
-		auto& data = std::get<2>(wifi_map_);
-		data.clear();
+		//auto& data = std::get<2>(wifi_map_);
+		//data.clear();
 		return &app_map_;
 	}
 	else
 		return nullptr;
+}
+
+int WifiMapManage::convert(float slam_resulution)
+{
+	auto dist = last_point_.Distance(getPosition());
+	last_point_ = getPosition();
+	width_ = (dist>=1.8)? 4.0: 2.0;
+	ROS_INFO("%s,%d,distance \033[1;31m%f\033[0m",__FUNCTION__,__LINE__,dist);
+	width_half_ = ((width_/resulution_/2));
+
+	GridMap app_grid_map;
+	Cell_t cell{static_cast<int16_t>(getPosition().x * resulution_/ slam_resulution),
+				static_cast<int16_t>(getPosition().y * resulution_/ slam_resulution)};
+	auto size = width_half_;
+	BoundingBox2 bound = {{static_cast<int16_t >(-size), static_cast<int16_t >(-size)},{size,size}};
+	cell = {static_cast<int16_t>(round(last_point_.x / 0.05)), static_cast<int16_t>(round(last_point_.y / 0.05))};
+	// -- left top corner (max)
+	bound.SetMaximum(cell + Cell_t{width_half_, width_half_});
+	// -- right down corner (min)
+	bound.SetMinimum(cell - Cell_t{width_half_, width_half_});
+	ROS_INFO("\033[1;35m%s %d: size(%d), curr((%d,%d),(%d,%d)),bound({%d,%d}{%d,%d})\033[0m"
+	,__FUNCTION__, __LINE__, size,cell.x, cell.y, getPosition().toCell().x, getPosition().toCell().y, bound.min.x, bound.min.y,bound.max.x, bound.max.y);
+	app_grid_map.convertFromSlamMap(resulution_, 0.25, bound);
+	serialize(app_grid_map, bound);
+	return 0;
 }
