@@ -5,7 +5,7 @@
 #ifndef PP_CLIFF_H
 #define PP_CLIFF_H
 
-#include "mathematics.h"
+#include <cstdint>
 
 class Cliff
 {
@@ -75,6 +75,7 @@ public:
 		right_value_ = value;
 	}
 
+	bool allTriggered();
 private:
 	bool left_status_;
 	bool front_status_;

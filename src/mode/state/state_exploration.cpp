@@ -7,7 +7,7 @@
 #include <water_tank.hpp>
 #include <gyro.h>
 #include "wifi/wifi.h"
-
+#include "vacuum.h"
 #include "key_led.h"
 
 void StateExploration::init()

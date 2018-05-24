@@ -26,4 +26,9 @@ uint8_t Cliff::getStatus()
 	return status;
 }
 
+bool Cliff::allTriggered()
+{
+	return getStatus() == BLOCK_ALL;
+}
+
 

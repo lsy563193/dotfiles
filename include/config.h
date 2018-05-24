@@ -111,7 +111,7 @@
 #define NORMAL_OPERATE_VOLTAGE_FOR_SIDE_BRUSH	(1050)
 #define NORMAL_OPERATE_VOLTAGE_FOR_MAIN_BRUSH	(800)
 #define SLOW_OPERATE_VOLTAGE_FOR_SIDE_BRUSH	(550)
-#define SLOW_OPERATE_VOLTAGE_FOR_MAIN_BRUSH	(500)
+#define SLOW_OPERATE_VOLTAGE_FOR_MAIN_BRUSH	(450)
 
 /* Battery voltage criterion for water tank setting*/
 #define FULL_OPERATE_VOLTAGE_FOR_SWING_MOTOR	(500)
@@ -197,6 +197,15 @@
 
 #define WHEEL_ENCODER_TO_MILLIMETER			(0.1955f)
 
+/* ------------------------------------- path algorithm config ------------------------------------- */
 #define USE_NEW_PATH_PLAN 0
+
+/* ------------------------------------- normal definition ------------------------------------- */
+#define ON 							true
+#define OFF 						false
+
+#define VALID						true
+#define INVALID						false
+
 #endif //__CONFIG_H__
 

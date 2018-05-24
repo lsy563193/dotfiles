@@ -1,14 +1,17 @@
 #include "wifi/wifi.h"
 #include <ros/ros.h>
-#include <time.h>
+#include <wifi_led.hpp>
+#include <water_tank.hpp>
+#include <vacuum.h>
+#include <beeper.h>
+#include <remote.hpp>
 #include "speaker.h"
 #include "mode.hpp"
-#include "move_type.hpp"
-#include "serial.h"
 #include "error.h"
 #include "battery.h"
-#include "event_manager.h"
-#include "dev.h"
+#include "appointment.h"
+#include "robot_timer.h"
+#include "robot.hpp"
 #include "protocol/wifi_map_protocol.h"
 
 #define CLOUD_DOMAIN_ID 5479

@@ -19,13 +19,9 @@
 #include "config.h"
 #include "map.h"
 #include "pose.h"
-#include "serial.h"
 #include "mode.hpp"
-//#include "mode.hpp"
+#include "serial.h"
 #include <string.h>
-
-#define ON true
-#define OFF false
 
 #define  _RATE 50
 

@@ -2,11 +2,20 @@
 // Created by austin on 17-12-6.
 //
 
-#include <robot.hpp>
 #include <event_manager.h>
+#include <key.h>
+#include <rcon.h>
+#include <remote.hpp>
+#include <wifi/wifi.h>
+#include <charger.h>
+#include <speaker.h>
+#include <battery.h>
+#include <beeper.h>
+#include <water_tank.hpp>
+#include <vacuum.h>
 #include "error.h"
-#include "dev.h"
 #include "mode.hpp"
+#include <robot.hpp>
 #include "appointment.h"
 
 ModeCharge::ModeCharge()
@@ -64,7 +73,7 @@ bool ModeCharge::isExit()
 			{
 				sp_state = state_charge.get();
 				sp_state->init();
-				error.alarm();
+				error.alarm(false);
 				sp_action_.reset(new MovementCharge);
 				plan_activated_status_ = false;
 				ROS_WARN("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
@@ -78,7 +87,7 @@ bool ModeCharge::isExit()
 					 __LINE__);
 			sp_state = state_charge.get();
 			sp_state->init();
-			speaker.play(VOICE_BATTERY_LOW);
+			speaker.play(VOICE_BATTERY_LOW, false);
 			sp_action_.reset(new MovementCharge);
 			plan_activated_status_ = false;
 			return false;
@@ -110,7 +119,7 @@ bool ModeCharge::isExit()
 			ROS_WARN("%s %d: Battery not ready to clean.", __FUNCTION__, __LINE__);
 			sp_state = state_charge.get();
 			sp_state->init();
-			speaker.play(VOICE_BATTERY_LOW);
+			speaker.play(VOICE_BATTERY_LOW, false);
 			sp_action_.reset(new MovementCharge);
 			ev.key_clean_pressed = false;
 			return false;

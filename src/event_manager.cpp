@@ -2,6 +2,7 @@
 #include <error.h>
 #include <ros/ros.h>
 #include <mode.hpp>
+#include <robot.hpp>
 #include "dev.h"
 #include "map.h"
 #include "serial.h"

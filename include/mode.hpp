@@ -6,14 +6,17 @@
 #define PP_MODE_H_H
 
 #include "state.hpp"
-//#include "path_algorithm.h"
 #include "event_manager.h"
 #include "boost/shared_ptr.hpp"
 #include <pthread.h>
 #include <visualization_msgs/Marker.h>
-#include <vacuum.h>
-//#include "move_type.hpp"
+#include <sensor_msgs/LaserScan.h>
 #include "path_algorithm.h"
+#include "map.h"
+#include "ros/ros.h"
+#include "action.hpp"
+#include "movement.hpp"
+#include "move_type.hpp"
 
 
 #define ROS_INFO_FL() ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__)
@@ -36,6 +39,8 @@ typedef struct{
 
 class PointSelector;
 
+class IAction;
+class IMoveType;
 class Mode:public EventHandle
 {
 public:
@@ -307,6 +312,7 @@ public:
 	void keyClean(bool state_now, bool state_last) override ;
 	void chargeDetect(bool state_now, bool state_last) override ;
 	void cliffAll(bool state_now, bool state_last) override ;
+	void batteryLow(bool state_now, bool state_last) override;
 
 	void wifiSetWaterTank() override ;
 	void setVacuum() override ;
@@ -363,7 +369,7 @@ public:
 
 	void setNextModeDefault();
 
-	bool isIsolate();
+	bool isIsolate(const Cell_t& curr);
 	bool isGyroDynamic();
 	bool generatePath(GridMap &map, const Point_t &curr, const int &last_dir, Points &targets);
 
@@ -406,6 +412,7 @@ public:
 	void robotSlip(bool state_now, bool state_last) override ;
 	void overCurrentBrushMain(bool state_now, bool state_last) override;
 	void overCurrentVacuum(bool state_now, bool state_last) override;
+	void batteryLow(bool state_now, bool state_last) override;
 
 	// State init
 	bool isStateInit() const
@@ -474,7 +481,7 @@ public:
 	virtual void switchInStateFollowWall();
 	bool trapped_time_out_{};
 	bool trapped_closed_or_isolate{};
-	bool out_of_trapped{};
+	bool out_of_trapped_{};
 
 	// State exploration
 	bool isStateExploration() const
@@ -765,7 +772,6 @@ public:
 	void setVacuum() override ;
 
 private:
-	bool mark_robot_{true};
 	Marks error_marker_;
 };
 

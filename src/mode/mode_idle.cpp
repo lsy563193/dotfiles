@@ -1,11 +1,22 @@
-#include <infrared_display.hpp>
 #include <event_manager.h>
-#include "event_manager.h"
-#include "dev.h"
+#include <serial.h>
+#include <key.h>
+#include <rcon.h>
+#include <remote.hpp>
+#include <move_type.hpp>
+#include <beeper.h>
+#include <water_tank.hpp>
+#include <vacuum.h>
+#include <speaker.h>
+#include <charger.h>
+#include <cliff.h>
+#include <robot.hpp>
 #include "error.h"
 #include "mode.hpp"
 #include "wifi/wifi.h"
 #include "appointment.h"
+#include "movement.hpp"
+#include "battery.h"
 
 #define RCON_TRIGGER_INTERVAL 180
 
@@ -30,8 +41,6 @@ ModeIdle::ModeIdle():
 	s_wifi.resetReceivedWorkMode();
 
 	/*---reset values for rcon handle---*/
-//	// todo:debug
-//	infrared_display.displayErrorMsg(9, 1234, 101);
 	sp_state = st_pause.get() ;
 	sp_state->init();
 	mode_i_ = md_idle;
@@ -397,14 +406,10 @@ void ModeIdle::keyClean(bool state_now, bool state_last)
 		if (error.get())
 		{
 			bool force_clear = true;
-			if (error.clear(error.get(), force_clear))
-			{
-				ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
-                sp_state->init();
-//				speaker.play(VOICE_CLEAR_ERROR_UNOFFICIAL);
-			}
-			else
-				error.alarm();
+			error.clear(error.get(), force_clear);
+			ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
+			sp_state->init();
+//			speaker.play(VOICE_CLEAR_ERROR_UNOFFICIAL);
 		}
 		else if (cliff.getStatus() == BLOCK_ALL)
 		{
@@ -416,7 +421,7 @@ void ModeIdle::keyClean(bool state_now, bool state_last)
 		{
 			ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, battery.getVoltage(),
 					 (int) BATTERY_READY_TO_CLEAN_VOLTAGE);
-            sp_state->init();
+			sp_state->init();
 			speaker.play(VOICE_BATTERY_LOW);
 		}
 		else
@@ -429,7 +434,7 @@ void ModeIdle::keyClean(bool state_now, bool state_last)
 void ModeIdle::rcon(bool state_now, bool state_last)
 {
 //	ROS_INFO("%s %d: rcon status: %8x.", __FUNCTION__, __LINE__, c_rcon.getStatus());
-	if (error.get() == ERROR_CODE_NONE)
+	if (error.get() == ERROR_CODE_NONE && !robot::instance()->isBatteryLow2())
 	{
 		auto time_for_now_ = ros::Time::now().toSec();
 //	ROS_WARN("%s %d: rcon signal. first: %lf, last: %lf, now: %lf", __FUNCTION__, __LINE__, first_time_seen_charger, last_time_seen_charger, time_for_now);

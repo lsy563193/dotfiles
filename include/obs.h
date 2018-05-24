@@ -5,8 +5,7 @@
 #ifndef PP_OBS_H
 #define PP_OBS_H
 
-#include "mathematics.h"
-#include "robot.hpp"
+#include <cstdint>
 
 class Obs {
 public:
@@ -73,7 +72,7 @@ private:
 	int16_t left_baseline_;
 	int16_t front_baseline_;
 	int16_t right_baseline_;
-	bool switch_{ON};
+	bool switch_{true};
 
 	typedef int16_t(Obs::*Pfunc)(void);
 	typedef int16_t(Obs::*Pdata);

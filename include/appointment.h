@@ -4,9 +4,7 @@
 
 #include <pthread.h>
 #include <vector>
-#include <string.h>
-#include "dev.h"
-#include <ros/ros.h>
+#include <cstdint>
 
 namespace Appointment
 {
@@ -51,11 +49,8 @@ public:
 	 */
 	uint16_t nextAppointment();
 
-	void resetPlanStatus(void)
-	{
-		plan_status_ = 0;
-		serial.setSendData(SERIAL::CTL_APPOINTMENT_H,0x00);
-	}
+	void resetPlanStatus(void);
+
 
 	void setPlanStatus(uint8_t status)
 	{

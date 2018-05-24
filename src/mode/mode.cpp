@@ -2,9 +2,13 @@
 // Created by lsy563193 on 12/4/17.
 //
 
-#include <dev.h>
-#include <event_manager.h>
+#include <robot.hpp>
+#include <vacuum.h>
+#include <water_tank.hpp>
 #include "mode.hpp"
+#include "action.hpp"
+#include "movement.hpp"
+#include "move_type.hpp"
 
 boost::shared_ptr<IAction> Mode::sp_action_ = nullptr;
 

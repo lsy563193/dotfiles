@@ -14,7 +14,6 @@
 #define REG_TYPE_CURVE			5
 
 #include "ros/ros.h"
-#define Wheel_Stall_Limit			((uint16_t) 750)//origin 580
 
 struct pid_struct
 {

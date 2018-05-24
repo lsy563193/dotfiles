@@ -3,7 +3,11 @@
 //
 
 #include <movement.hpp>
-#include "dev.h"
+#include <rcon.h>
+#include <wheel.hpp>
+#include <bumper.h>
+#include <cliff.h>
+#include <obs.h>
 
 MovementDirectGo::MovementDirectGo(bool slow_down, float timeout)
 {

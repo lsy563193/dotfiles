@@ -130,43 +130,6 @@ Cells NavCleanPathAlgorithm::findTargetInSameLane(GridMap &map, const Cell_t &cu
 	return path;
 }
 
-void NavCleanPathAlgorithm::findPath(GridMap &map, const Cell_t &start, const Cell_t &target,
-																		 Cells &path,
-																		 int last_i) {
-	auto cost = map.getCell(COST_MAP, target.x, target.y);
-	auto iterator = target;
-	for (; iterator != start;) {
-		if(map.getCell(COST_MAP, iterator.x, iterator.y) != cost)
-		{
-			printf("start(%d,%d) iterator(%d,%d),target(%d,%d)cost(%d,%d)\n",start.x, start.y, iterator.x, iterator.y,target.x, target.y, cost,map.getCell(COST_MAP, iterator.x, iterator.y) );
-			map.print(getPosition().toCell(), CLEAN_MAP, Cells{target});
-			map.print(getPosition().toCell(), COST_MAP, Cells{});
-			ROS_ASSERT(map.getCell(COST_MAP, iterator.x, iterator.y) == cost);
-		}
-		cost -= 1;
-		if(cost == 0)
-			cost = 5;
-		for (auto i = 0; i < 4; i++) {
-			auto neighbor = iterator + cell_direction_[(last_i + i) % 4];
-			if (map.isOutOfTargetRange(neighbor))
-				continue;
-
-			if (map.getCell(COST_MAP, neighbor.x, neighbor.y) == cost) {
-				if (i != 0) {
-					last_i = (last_i + i) % 4;
-					path.push_front(iterator);
-				}
-				iterator = neighbor;
-				break;
-			}
-		}
-	}
-	if (path.back() != target)
-		path.push_back(target);
-	path.push_front(start);
-}
-
-
 class MinYAndShortestPath {
 public:
 	MinYAndShortestPath(int16_t curr_y, bool is_reverse,int turn_count):is_reverse_(is_reverse),curr_y_(curr_y),turn_count_(turn_count){ };
@@ -251,9 +214,9 @@ bool NavCleanPathAlgorithm::filterPathsToSelectBestPath(GridMap &map, const Cell
 		PathList paths{};
 		for (auto &target : filtered_targets) {
 			Cells path{};
-			int dir = 2;
+			Dir_t dir = MAP_POS_Y;
 			if (!filter->towardPos())
-				dir = 3;
+				dir = MAP_NEG_Y;
 			findPath(map, curr, target, path, dir);
 			paths.push_back(path);
 		}
@@ -284,7 +247,7 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 	auto curr_cell = curr.toCell();
 	ROS_INFO("Step 1: Find possible plan_path in same lane.(current cell y:%d)", curr_cell.y);
 	Cells path{};
-	map.markRobot(CLEAN_MAP);
+	map.markRobot(curr_cell, CLEAN_MAP);
 
 	if(curr_cell.y % 2==0) {
 		path = findTargetInSameLane(map, curr_cell);
@@ -300,9 +263,9 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, cons
 	ROS_INFO("Step 2: Find all possible plan_path at the edge of cleaned area and filter plan_path in same lane.");
 	Cells targets{};
 
-	map.find_if(curr_cell, targets,[&](const Cell_t &c_it){
+	map.dijstra(curr_cell, targets,[&](const Cell_t &c_it){
 		return c_it.y%2 == 0 && map.getCell(CLEAN_MAP, c_it.x, c_it.y) == UNCLEAN  && map.isBlockAccessible(c_it.x, c_it.y);
-	},false, false,true);
+	},false);
 
 	std::sort(targets.begin(),targets.end(),[](Cell_t l,Cell_t r){
 		return (l.y < r.y || (l.y == r.y && l.x < r.x));
@@ -598,7 +561,14 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr_p, co
 
 bool NavCleanPathAlgorithm::checkTrapped(GridMap &map, const Cell_t &curr_cell)
 {
-	return checkTrappedUsingDijkstra(map, curr_cell);
+	if(robot::instance()->p_mode->getNextMode() == Mode::cm_navigation) {
+		return checkTrappedUsingDijkstra(map, curr_cell);
+	}
+	else if(robot::instance()->p_mode->getNextMode() == Mode::cm_exploration) {
+		Cells cells{};
+		auto p_cm = boost::dynamic_pointer_cast<CleanModeExploration>(robot::instance()->p_mode);
+		return !(p_cm->clean_map_.dijstra(getPosition().toCell(), cells,[&](const Cell_t& c_it){return c_it == Cell_t{0,0};},true));
+	}
 }
 
 void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path) {

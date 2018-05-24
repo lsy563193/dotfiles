@@ -28,7 +28,7 @@
 		val = max;					\
 	}
 
-#include "stdint.h"
+#include <cstdint>
 #include <pthread.h>
 
 /* Events variables */

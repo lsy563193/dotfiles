@@ -3,7 +3,18 @@
 //
 
 #include <event_manager.h>
-#include <dev.h>
+#include <serial.h>
+#include <wheel.hpp>
+#include <brush.h>
+#include <vacuum.h>
+#include <water_tank.hpp>
+#include <gyro.h>
+#include <key.h>
+#include <beeper.h>
+#include <remote.hpp>
+#include <charger.h>
+#include "speaker.h"
+#include "wifi/wifi.h"
 #include "mode.hpp"
 
 ModeGoToCharger::ModeGoToCharger()

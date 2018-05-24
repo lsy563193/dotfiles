@@ -2,11 +2,17 @@
 // Created by pierre on 17-12-20.
 //
 #include <event_manager.h>
-#include <dev.h>
-#include <error.h>
-#include <map.h>
-
+#include <speaker.h>
+#include <obs.h>
+#include <wifi/wifi.h>
+#include <beeper.h>
+#include <key.h>
+#include <remote.hpp>
+#include <charger.h>
+#include <water_tank.hpp>
+#include <vacuum.h>
 #include "mode.hpp"
+#include "robot.hpp"
 
 CleanModeExploration::CleanModeExploration()
 {
@@ -91,11 +97,9 @@ bool CleanModeExploration::mapMark()
 	clean_map_.merge(slam_grid_map, true, true, false, false, false, false);
 	clean_map_.setCircleMarkers(getPosition(),10,CLEANED,error_marker_);
 	resetErrorMarker();
-
 	setBlocks(iterate_point_->dir);
-	if(mark_robot_)
-		clean_map_.markRobot(CLEAN_MAP);
-//	passed_path_.clear();
+	if(action_i_ == ac_linear)
+		passed_path_.clear();
 	return false;
 }
 
@@ -234,14 +238,7 @@ bool CleanModeExploration::moveTypeFollowWallIsFinish(IMoveType *p_move_type, bo
 */
 
 bool CleanModeExploration::markMapInNewCell() {
-	if(sp_state == state_folllow_wall.get())
-	{
-		mark_robot_ = false;
-		mapMark();
-		mark_robot_ = true;
-	}
-	else
-		mapMark();
+	mapMark();
 	return true;
 }
 

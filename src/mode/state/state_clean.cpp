@@ -9,6 +9,7 @@
 #include "key_led.h"
 #include "brush.h"
 #include "wifi/wifi.h"
+#include "vacuum.h"
 
 void StateClean::init()
 {

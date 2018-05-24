@@ -1,13 +1,13 @@
 #ifndef __MYMATH_H
 #define __MYMATH_H
 
-#include <stdint.h>
-#include <math.h>
-#include <stdlib.h>
+#include <cstdint>
+#include <cmath>
+#include <cstdlib>
 #include <deque>
-#include <ros/ros.h>
+#include <ostream>
+#include <bits/unique_ptr.h>
 #include "config.h"
-//#include "map.h"
 
 #define PI M_PI
 
@@ -329,7 +329,7 @@ float cellToCount(int16_t distance);
    */
 typedef Vector2<int16_t> Cell_t;
 typedef std::deque<Cell_t> Cells;
-typedef enum {
+enum {
 	MAP_POS_X = 0,
 	MAP_NEG_X,
 	MAP_POS_Y,
@@ -339,7 +339,8 @@ typedef enum {
     MAP_NX_PY = 6,
     MAP_NX_NY = 7,
 	MAP_ANY,
-} Dir_t;
+};
+using Dir_t = int;
 enum {
 	X_Y_LANE=0,
 	CURR_LANE,

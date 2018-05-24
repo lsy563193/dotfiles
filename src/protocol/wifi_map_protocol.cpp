@@ -3,6 +3,7 @@
 //
 
 #include "protocol/wifi_map_protocol.h"
+#include "ros/ros.h"
 #include "robot.hpp"
 
 WifiMapManage wifiMapManage;

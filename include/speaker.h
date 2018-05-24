@@ -1,7 +1,7 @@
 #ifndef __SPEAKER_H__
 #define __SPEAKER_H__
 
-#include <stdint.h>
+#include <cstdint>
 #include <alsa/asoundlib.h>
 
 typedef enum {

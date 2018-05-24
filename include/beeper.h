@@ -5,9 +5,6 @@
 #ifndef PP_BEEP_H
 #define PP_BEEP_H
 
-#define VALID						true
-#define INVALID						false
-
 class Beeper
 {
 public:

@@ -3,7 +3,20 @@
 //
 
 #include <movement.hpp>
-#include "dev.h"
+#include <battery.h>
+#include <wheel.hpp>
+#include <brush.h>
+#include <vacuum.h>
+#include <water_tank.hpp>
+#include <obs.h>
+#include <gyro.h>
+#include <lidar.hpp>
+#include <charger.h>
+#include <speaker.h>
+#include <key_led.h>
+#include <wifi_led.hpp>
+#include <cliff.h>
+#include <serial.h>
 
 MovementCharge::MovementCharge()
 {
@@ -107,7 +120,7 @@ bool MovementCharge::isFinish()
 			MovementGoToCharger::is_turn_connect_failed_ = true;
 			return true;
 		}
-		if (cliff.getStatus() == BLOCK_ALL)
+		if (cliff.allTriggered())
 			return true;
 	}
 

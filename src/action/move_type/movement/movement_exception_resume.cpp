@@ -2,13 +2,18 @@
 // Created by lsy563193 on 11/29/17.
 //
 
-#include <movement.hpp>
-#include <move_type.hpp>
-#include <error.h>
 #include <event_manager.h>
+#include <movement.hpp>
+#include <error.h>
 #include <robot.hpp>
-#include <mode.hpp>
-#include "dev.h"
+#include <wheel.hpp>
+#include <bumper.h>
+#include <cliff.h>
+#include <brush.h>
+#include <vacuum.h>
+#include <water_tank.hpp>
+#include <lidar.hpp>
+#include <gyro.h>
 
 double MovementExceptionResume::stuck_start_turn_time_ = 0;
 bool MovementExceptionResume::is_stuck_last_turn_right_ = false;
@@ -341,8 +346,8 @@ bool MovementExceptionResume::isFinish()
 					if ((ros::Time::now().toSec() - resume_main_bursh_start_time_) >= 3)
 					{
 						ROS_WARN("%s %d: main brush over current resume succeeded!", __FUNCTION__, __LINE__);
-//							if (brush.isMainBrushSlowOperate())
-//								brush.blockMainBrushSlowOperation();
+						if (brush.isMainBrushSlowOperate())
+							brush.blockMainBrushSlowOperation();
 						brush.stop();
 						ev.oc_brush_main = false;
 					}

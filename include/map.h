@@ -67,7 +67,7 @@ public:
 
 	void cellToWorld(double &worldX, double &worldY, int16_t &cellX, int16_t &cellY);
 
-	bool markRobot(uint8_t id);
+	bool markRobot(const Cell_t& curr, uint8_t id);
 
 	bool trapMarkRobot(uint8_t id);
 
@@ -188,7 +188,8 @@ public:
 	bool isFrontBlockBoundary(int dx);
 
 	int8_t isNeedClean(int16_t x, int16_t y);
-	bool find_if(const Cell_t &curr_cell, Cells &targets, std::function<bool(const Cell_t &next)> compare, bool is_count=false, bool is_stop=false,bool is_target=false);
+	bool dijstra(const Cell_t &curr_cell, Cells &targets, std::function<bool(const Cell_t &next)> compare,bool is_stop);
+	bool find_if(const Cell_t &curr_cell, Cells &targets, std::function<bool(const Cell_t &next)> compare);
 	bool count_if(const Cell_t &curr_cell, std::function<bool(const Cell_t &next)> compare, int& count);
 //	void generateSPMAP(const Cell_t &curr, Cells &target_list);
 //	void generateSPMAP(const Cell_t &curr);
@@ -235,6 +236,7 @@ public:
 
 	// Loading the log map for debug.
 	void loadMap(int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max);
+	void loadMap(const Cell_t& min_p,bool use_map,Cell_t& curr);
 private:
 	uint8_t clean_map[MAP_SIZE][MAP_SIZE];
 	uint8_t cost_map[MAP_SIZE][MAP_SIZE];
