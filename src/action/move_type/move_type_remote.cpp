@@ -3,9 +3,8 @@
 //
 
 #include <event_manager.h>
-#include <robot.hpp>
-#include <gyro.h>
 #include "move_type.hpp"
+#include <robot.hpp>
 
 int MoveTypeRemote::start_command_ = MoveTypeRemote::command_type::start_null;
 

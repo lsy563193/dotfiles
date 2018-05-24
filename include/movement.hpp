@@ -10,7 +10,6 @@
 #include "ros/ros.h"
 #include "speed_governor.hpp"
 #include "event_manager.h"
-#include "path_algorithm.h"
 #include "boost/shared_ptr.hpp"
 
 #include "action.hpp"
@@ -114,7 +113,7 @@ private:
 class MovementTurn: public IMovement{
 public:
 
-	explicit MovementTurn(double radian, uint8_t max_speed);
+	explicit MovementTurn(double slam_target, uint8_t max_speed);
 	~MovementTurn()
 	{
 		ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);
@@ -250,6 +249,7 @@ private:
 	enum{
 		gtc_init,
 		gtc_check_near_charger_station,
+		gtc_away_from_charger_station_init,
 		gtc_away_from_charger_station,
 		gtc_turn_for_charger_signal_init,
 		gtc_turn_for_charger_signal,
@@ -297,7 +297,7 @@ private:
 class MovementExceptionResume: public IMovement
 {
 public:
-	MovementExceptionResume();
+	MovementExceptionResume(int last_action);
 	~MovementExceptionResume();
 
 	void adjustSpeed(int32_t&, int32_t&) override ;
@@ -319,10 +319,10 @@ private:
 	double bumper_resume_start_radian_{0};
 	double tilt_resume_start_radian_{0};
 	double wheel_cliff_resume_start_radian_{0};
-	uint8_t robot_slip_flag_{0};
-	static double slip_start_turn_time_;
-	static bool is_slip_last_turn_left_;
-	double resume_slip_start_time_;
+	uint8_t robot_stuck_flag_{0};
+	static double stuck_start_turn_time_;
+	static bool is_stuck_last_turn_right_;
+	double resume_stuck_start_time_;
 	uint8_t cliff_resume_cnt_{0};
 	uint8_t cliff_all_resume_cnt_{0};
 	uint8_t wheel_cliff_resume_cnt_{0};
@@ -332,6 +332,8 @@ private:
 	double resume_gyro_start_time_;
 	bool should_init_for_gyro_exception_{true};
 	IAction* p_action_open_gyro_ = nullptr;
+	int last_action_i_;
+	uint16_t debug_print_counter_{0};
 };
 
 class MovementCharge :public IMovement

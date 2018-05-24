@@ -2,38 +2,49 @@
 // Created by lsy563193 on 11/29/17.
 //
 
-#include <movement.hpp>
-#include <move_type.hpp>
-#include <error.h>
 #include <event_manager.h>
+#include <movement.hpp>
+#include <error.h>
 #include <robot.hpp>
-#include <mode.hpp>
-#include "dev.h"
+#include <wheel.hpp>
+#include <bumper.h>
+#include <cliff.h>
+#include <brush.h>
+#include <vacuum.h>
+#include <water_tank.hpp>
+#include <lidar.hpp>
+#include <gyro.h>
 
-double MovementExceptionResume::slip_start_turn_time_ = 0;
-bool MovementExceptionResume::is_slip_last_turn_left_ = false;
-MovementExceptionResume::MovementExceptionResume()
+double MovementExceptionResume::stuck_start_turn_time_ = 0;
+bool MovementExceptionResume::is_stuck_last_turn_right_ = false;
+MovementExceptionResume::MovementExceptionResume(int last_action)
 {
 	ROS_WARN("%s %d: Entering movement exception resume.", __FUNCTION__, __LINE__);
 
+	last_action_i_ = last_action;
 	// Save current position for moving back detection.
 	s_pos_x = odom.getOriginX();
 	s_pos_y = odom.getOriginY();
 
 	//For slip
-	if(ros::Time::now().toSec() - slip_start_turn_time_ < 5){
-		robot_slip_flag_ = static_cast<uint8_t>(is_slip_last_turn_left_ ? 2 : 1);
-		slip_start_turn_time_ = ros::Time::now().toSec();
+	if(ros::Time::now().toSec() - stuck_start_turn_time_ < 3){
+		if(last_action_i_ == sp_mt_->sp_mode_->ac_follow_wall_left)
+			robot_stuck_flag_ = 1;
+		else if(last_action_i_ == sp_mt_->sp_mode_->ac_follow_wall_right)
+			robot_stuck_flag_ = 2;
+		else
+			robot_stuck_flag_ = static_cast<uint8_t>(is_stuck_last_turn_right_ ? 2 : 1);
+		stuck_start_turn_time_ = ros::Time::now().toSec();
 	}else{
-		robot_slip_flag_ = 0;
-		slip_start_turn_time_ = 0;
+		robot_stuck_flag_ = 0;
+		stuck_start_turn_time_ = 0;
 	}
 
 	resume_wheel_start_time_ = ros::Time::now().toSec();
 	resume_main_bursh_start_time_ = ros::Time::now().toSec();
 	resume_vacuum_start_time_ = ros::Time::now().toSec();
 	resume_lidar_start_time_ = ros::Time::now().toSec();
-	resume_slip_start_time_ = ros::Time::now().toSec();
+	resume_stuck_start_time_ = ros::Time::now().toSec();
 	resume_gyro_start_time_ = ros::Time::now().toSec();
 }
 
@@ -201,7 +212,7 @@ void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_sp
 	}
 	else if (ev.lidar_stuck)
 	{
-		ROS_INFO("lidar stucking");
+//		ROS_INFO("lidar stucking");
 		if (lidar_resume_cnt_ >= 5) {
 			wheel.stop();
 		} else {
@@ -209,10 +220,10 @@ void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_sp
 			left_speed = right_speed = BACK_MAX_SPEED;
 		}
 	}
-	else if (ev.robot_slip)
+	else if (ev.robot_stuck)
 	{
-		ROS_INFO("slipping");
-		switch(robot_slip_flag_){
+//		ROS_INFO("slipping");
+		switch(robot_stuck_flag_){
 			case 0:
 			{
 				wheel.setDirectionBackward();
@@ -244,7 +255,7 @@ bool MovementExceptionResume::isFinish()
 {
 	updatePosition();
 	if (!(ev.bumper_jam || ev.lidar_bumper_jam || ev.cliff_jam || ev.tilt_jam || ev.cliff_all_triggered || ev.oc_wheel_left || ev.oc_wheel_right
-		  || ev.oc_vacuum || ev.lidar_stuck || ev.robot_stuck || ev.oc_brush_main || ev.robot_slip || ev.gyro_error
+		  || ev.oc_vacuum || ev.lidar_stuck || ev.robot_stuck || ev.oc_brush_main || ev.gyro_error
 			|| sp_mt_->sp_mode_->is_wheel_cliff_triggered))
 	{
 		ROS_WARN("%s %d: All exception cleared.", __FUNCTION__, __LINE__);
@@ -335,8 +346,8 @@ bool MovementExceptionResume::isFinish()
 					if ((ros::Time::now().toSec() - resume_main_bursh_start_time_) >= 3)
 					{
 						ROS_WARN("%s %d: main brush over current resume succeeded!", __FUNCTION__, __LINE__);
-//							if (brush.isMainBrushSlowOperate())
-//								brush.blockMainBrushSlowOperation();
+						if (brush.isMainBrushSlowOperate())
+							brush.blockMainBrushSlowOperation();
 						brush.stop();
 						ev.oc_brush_main = false;
 					}
@@ -355,12 +366,12 @@ bool MovementExceptionResume::isFinish()
 			error.set(ERROR_CODE_MAINBRUSH);
 		}
 	}
-	else if (ev.robot_stuck)
+/*	else if (ev.robot_stuck)
 	{
 		if (!lidar.isRobotSlip())
 		{
 			ROS_WARN("%s %d: Cliff resume succeeded.", __FUNCTION__, __LINE__);
-			ev.robot_slip = false;
+			ev.slip_triggered = false;
 			ev.robot_stuck = false;
 		}
 		else if (robot_stuck_resume_cnt_ < 5)
@@ -381,7 +392,7 @@ bool MovementExceptionResume::isFinish()
 			ev.fatal_quit = true;
 			error.set(ERROR_CODE_STUCK);
 		}
-	}
+	}*/
 	else if (ev.cliff_all_triggered)
 	{
 		if(wheel.getRightWheelCliffStatus() && wheel.getLeftWheelCliffStatus())
@@ -788,57 +799,66 @@ bool MovementExceptionResume::isFinish()
 			oc_vacuum_resume_cnt_++;
 		}
 	}
-	else if(ev.robot_slip)
+	else if(ev.robot_stuck)
 	{
-		CellState isExitSlipBlock;
+		CellState cell_state;
+		auto is_follow_wall_left = last_action_i_ == sp_mt_->sp_mode_->ac_follow_wall_left;
+		auto is_follow_wall_right = last_action_i_ == sp_mt_->sp_mode_->ac_follow_wall_right;
 		if(sp_mt_->sp_mode_->mode_i_ != sp_mt_->sp_mode_->md_go_to_charger &&
 				sp_mt_->sp_mode_->mode_i_ != sp_mt_->sp_mode_->md_remote){
 			ACleanMode* p_mode = dynamic_cast<ACleanMode*>(sp_mt_->sp_mode_);
-			isExitSlipBlock = p_mode->clean_map_.getCell(CLEAN_MAP,getPosition().toCell().x,getPosition().toCell().y);
+			cell_state = p_mode->clean_map_.getCell(CLEAN_MAP,getPosition().toCell().x,getPosition().toCell().y);
 		}
 
-		if(ros::Time::now().toSec() - resume_slip_start_time_ > 60){
-			ev.robot_slip = false;
+		if(ros::Time::now().toSec() - resume_stuck_start_time_ > 60){
+			ev.robot_stuck= false;
+			ev.slip_triggered= false;
 			ev.fatal_quit = true;
 			error.set(ERROR_CODE_STUCK);
-
 		}
-		switch(robot_slip_flag_){
+		switch(robot_stuck_flag_){
 			case 0:{
 				float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getX(), odom.getY());
-				if ((isExitSlipBlock != BLOCKED_SLIP && std::abs(distance) > 0.15f) || lidar.getObstacleDistance(1, ROBOT_RADIUS) < 0.06)
+				if ((cell_state != BLOCKED_SLIP && std::abs(distance) > 0.15f) || lidar.getObstacleDistance(1, ROBOT_RADIUS) < 0.06)
 				{
 					ROS_INFO("%s,%d Robot slip to go straight finished",__FUNCTION__,__LINE__);
 					if(!lidar.isRobotSlip())
 					{
-						ev.robot_slip = false;
-						slip_start_turn_time_ = ros::Time::now().toSec();//in this place,slip_start_turn_time_ record the slip end time
+						ev.robot_stuck= false;
+						ev.slip_triggered= false;
+						stuck_start_turn_time_ = ros::Time::now().toSec();//in this place,stuck_start_turn_time_ record the slip end time
 					}
-					else{
-						robot_slip_flag_ = static_cast<uint8_t>(is_slip_last_turn_left_ ? 2 : 1);
-						slip_start_turn_time_ = ros::Time::now().toSec();
+					else
+					{
+						if(is_follow_wall_left)
+							robot_stuck_flag_ = 1;
+						else if(is_follow_wall_right)
+							robot_stuck_flag_ = 2;
+						else
+							robot_stuck_flag_ = static_cast<uint8_t>(is_stuck_last_turn_right_ ? 2 : 1);
+						stuck_start_turn_time_ = ros::Time::now().toSec();
 					}
 				}
 				break;
 			}
 			case 1:{
-				if(ros::Time::now().toSec() - slip_start_turn_time_ > 1) {
-					ROS_INFO("%s,%d Robot slip to turn left finished",__FUNCTION__,__LINE__);
+				if(ros::Time::now().toSec() - stuck_start_turn_time_ > 1) {
+					ROS_INFO("%s,%d Robot slip to turn right finished",__FUNCTION__,__LINE__);
 					s_pos_x = odom.getOriginX();
 					s_pos_y = odom.getOriginY();
-					is_slip_last_turn_left_ = true;
-					robot_slip_flag_ = 0;
+					is_stuck_last_turn_right_ = true;
+					robot_stuck_flag_ = 0;
 				}
 				break;
 			}
 			case 2:{
-				if(ros::Time::now().toSec() - slip_start_turn_time_ > 1)
+				if(ros::Time::now().toSec() - stuck_start_turn_time_ > 1)
 				{
-					ROS_INFO("%s,%d Robot slip to turn right finished",__FUNCTION__,__LINE__);
+					ROS_INFO("%s,%d Robot slip to turn left finished",__FUNCTION__,__LINE__);
 					s_pos_x = odom.getOriginX();
 					s_pos_y = odom.getOriginY();
-					is_slip_last_turn_left_ = false;
-					robot_slip_flag_ = 0;
+					is_stuck_last_turn_right_ = false;
+					robot_stuck_flag_ = 0;
 				}
 				break;
 			}
@@ -881,10 +901,18 @@ bool MovementExceptionResume::isFinish()
 			odom.setRadianOffset(odom.getRadian());
 			gyro.setOff();
 		}
+		if(++debug_print_counter_ > 50)
+		{
+			ROS_WARN("%s, %d: gyro error: %d", __FUNCTION__, __LINE__, gyro.error());
+			debug_print_counter_ = 0;
+		}
 		if(!gyro.error())
 		{
 			if (p_action_open_gyro_ == nullptr)
+			{
+				ROS_WARN("%s, %d: gyro.error is false, restart gyro", __FUNCTION__, __LINE__);
 				p_action_open_gyro_ = new ActionOpenGyro();
+			}
 
 			if (p_action_open_gyro_->isFinish())
 			{
@@ -896,7 +924,7 @@ bool MovementExceptionResume::isFinish()
 			else
 				p_action_open_gyro_->run();
 		}
-		if(ros::Time::now().toSec() - resume_gyro_start_time_ > 30)
+		else if(ros::Time::now().toSec() - resume_gyro_start_time_ > 30)
 		{
 			ROS_ERROR("%s, %d: Gyro resume fail!", __FUNCTION__, __LINE__);
 			ev.fatal_quit = true;

@@ -2,7 +2,6 @@
 // Created by lsy563193 on 5/10/17.
 //
 
-#include "ros/ros.h"
 #include "boost/thread.hpp"
 #include "pose.h"
 #include <nav_msgs/OccupancyGrid.h>

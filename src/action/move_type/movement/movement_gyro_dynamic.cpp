@@ -34,10 +34,11 @@ void MovementGyroDynamic::adjustSpeed(int32_t &l_speed, int32_t &r_speed) {
 	l_speed = r_speed = 0;
 }
 
-bool MovementGyroDynamic::isFinish() {
-//#if GYRO_DYNAMIC_ADJUSTMENT
-	return is_open_dynamic_succeed_ && ros::Time::now().toSec() - start_dynamic_time_ > robot::instance()->getGyroDynamicRunTime() || sp_mt_->isFinishForward();
-//#else
-//	return true;
-//#endif
+bool MovementGyroDynamic::isFinish()
+{
+#if GYRO_DYNAMIC_ADJUSTMENT
+	return (is_open_dynamic_succeed_ &&
+			ros::Time::now().toSec() - start_dynamic_time_ > robot::instance()->getGyroDynamicRunTime()) ||
+		   sp_mt_->isFinishForward();
+#endif
 }

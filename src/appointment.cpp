@@ -2,8 +2,10 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <ros/ros.h>
-#include <stdio.h>
 #include <fcntl.h>
+#include <serial.h>
+#include <mutex_lock.h>
+#include <robot_timer.h>
 
 using namespace Appointment;
 
@@ -253,4 +255,10 @@ void Appmt::timesUp()
 	//--update appointment count
 	setPlan2Bottom(nextAppointment());
 	time_up_or_wifi_setting_ack_ = true;
+}
+
+void Appmt::resetPlanStatus(void)
+{
+	plan_status_ = 0;
+	serial.setSendData(SERIAL::CTL_APPOINTMENT_H, 0x00);
 }

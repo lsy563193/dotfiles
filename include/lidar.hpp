@@ -4,11 +4,9 @@
 
 #include <nav_msgs/Odometry.h>
 #include "boost/thread.hpp"
-#include <ros/ros.h>
 #include <visualization_msgs/Marker.h>
 #include <sensor_msgs/LaserScan.h>
 #include "mathematics.h"
-#include "robot.hpp"
 
 class Lidar
 {
@@ -68,6 +66,7 @@ public:
 
 	uint8_t lidarMarker(std::vector<Vector2<int>> &markers, int movement_i, int action_i, double X_MAX = 0.21);
 	void checkRobotSlip();
+	bool isNeedToCheckSlip(const sensor_msgs::LaserScan& scan);
 	void checkSlipInit(float &acur1, float &acur2, float &acur3, float &acur4);
 	bool isRobotSlip();
 
@@ -105,11 +104,11 @@ public:
 
 	bool checkLidarBeCovered();
 
-	bool checkLongHallway();
+	bool checkLongHallway(const sensor_msgs::LaserScan& tmp_scan_data);
 private:
 
 	// switch_ is the target status of lidar.
-	bool switch_{OFF};
+	bool switch_{false};
 
 	int angle_n_;
 	uint8_t is_scanLinear_ready_;
@@ -120,10 +119,10 @@ private:
 	static sensor_msgs::LaserScan lidarScanData_original_;
 	sensor_msgs::LaserScan lidarScanData_compensate_;
 	std::vector<geometry_msgs::Point> lidarXY_points;
-	double scanLinear_update_time_;
-	double scanOriginal_update_time_;
-	double scanCompensate_update_time_;
-	double scanXYPoint_update_time_;
+	double scanLinear_update_time_{};
+	double scanOriginal_update_time_{};
+	double scanCompensate_update_time_{};
+	double scanXYPoint_update_time_{};
 
 //	std::vector<Vector2<double>>	lidar_point_;
 //	std::vector<std::deque<Vector2<double>> >	lidar_group_;

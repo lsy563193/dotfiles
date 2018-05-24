@@ -2,9 +2,13 @@
 // Created by lsy563193 on 12/4/17.
 //
 
-#include <dev.h>
-#include <event_manager.h>
+#include <robot.hpp>
+#include <vacuum.h>
+#include <water_tank.hpp>
 #include "mode.hpp"
+#include "action.hpp"
+#include "movement.hpp"
+#include "move_type.hpp"
 
 boost::shared_ptr<IAction> Mode::sp_action_ = nullptr;
 
@@ -107,18 +111,19 @@ bool Mode::isExceptionTriggered()
 	if (ev.lidar_stuck)
 		ROS_WARN("%s %d: Lidar stuck.", __FUNCTION__, __LINE__);
 	if (ev.robot_stuck)
+	{
+		current_action_i_ = action_i_;
 		ROS_WARN("%s %d: Robot stuck.", __FUNCTION__, __LINE__);
+	}
 	if (ev.oc_brush_main)
 		ROS_WARN("%s %d: Main bursh oc.", __FUNCTION__, __LINE__);
-	if (ev.robot_slip)
-		ROS_WARN("%s %d: Robot slip.", __FUNCTION__, __LINE__);
 	if (is_wheel_cliff_triggered)
 		ROS_WARN("%s %d: Wheel cliff triggered.", __FUNCTION__, __LINE__);
 	if(ev.gyro_error)
 		ROS_WARN("%s %d: Gyro error.", __FUNCTION__, __LINE__);
 
 	return ev.bumper_jam || ev.lidar_bumper_jam || ev.cliff_jam || ev.tilt_jam || ev.cliff_all_triggered || ev.oc_wheel_left || ev.oc_wheel_right
-						 || ev.oc_vacuum || ev.lidar_stuck || ev.robot_stuck || ev.oc_brush_main || ev.robot_slip || is_wheel_cliff_triggered || ev.gyro_error;
+						 || ev.oc_vacuum || ev.lidar_stuck || ev.robot_stuck || ev.oc_brush_main || is_wheel_cliff_triggered || ev.gyro_error;
 }
 
 void Mode::genNextAction()
@@ -128,6 +133,9 @@ void Mode::genNextAction()
 	switch (action_i_) {
 		case ac_open_gyro :
 			sp_action_.reset(new ActionOpenGyro);
+			break;
+		case ac_open_gyro_and_lidar :
+			sp_action_.reset(new ActionOpenGyroAndLidar);
 			break;
 		case ac_back_from_charger :
 			sp_action_.reset(new ActionBackFromCharger);
@@ -148,7 +156,7 @@ void Mode::genNextAction()
 			sp_action_.reset(new MoveTypeGoToCharger);
 			break;
 		case ac_exception_resume :
-			sp_action_.reset(new MovementExceptionResume);
+			sp_action_.reset(new MovementExceptionResume(current_action_i_));
 			break;
 		case ac_charge :
 			sp_action_.reset(new MovementCharge);

@@ -3,9 +3,9 @@
 //
 
 #include <mode.hpp>
-
-#include "key_led.h"
+#include <gyro.h>
 
 void StateExceptionResume::init() {
+	gyro.setTiltCheckingEnable(false); //disable tilt detect
 	ROS_INFO("%s %d: Enter state exception resume.", __FUNCTION__, __LINE__);
 }

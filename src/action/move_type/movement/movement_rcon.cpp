@@ -6,8 +6,6 @@
 #include <movement.hpp>
 #include <move_type.hpp>
 
-#include "dev.h"
-
 void MovementRcon::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
 //	ROS_INFO("rcon_status = %x ev.rcon_status = %x", rcon_status, ev.rcon_status);

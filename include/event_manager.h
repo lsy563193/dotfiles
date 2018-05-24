@@ -28,7 +28,7 @@
 		val = max;					\
 	}
 
-#include "stdint.h"
+#include <cstdint>
 #include <pthread.h>
 
 /* Events variables */
@@ -77,7 +77,7 @@ typedef struct
 	bool tilt_triggered;
 	uint8_t charge_detect;
 	bool robot_stuck;
-	bool robot_slip;
+	bool slip_triggered;
 	bool lidar_stuck = false;
 	bool lidar_bumper;
 	uint8_t lidar_triggered;

@@ -1,7 +1,7 @@
 #ifndef __SPEAKER_H__
 #define __SPEAKER_H__
 
-#include <stdint.h>
+#include <cstdint>
 #include <alsa/asoundlib.h>
 
 typedef enum {
@@ -78,6 +78,7 @@ typedef enum {
 	VOICE_INVALID_CMD_UNOFFICIAL = 70,
 	VOICE_WAKE_UP_UNOFFICIAL = 71,
 	VOICE_SLEEP_UNOFFICIAL = 72,
+	VOICE_GYRO_ERROR = 73,
 }VoiceType;
 
 typedef struct

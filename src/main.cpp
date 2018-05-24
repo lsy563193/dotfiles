@@ -2,6 +2,7 @@
 #include <bumper.h>
 #include <signal.h>
 #include <path_algorithm.h>
+#include <main.h>
 #include "robot.hpp"
 #include "speaker.h"
 #include "execinfo.h"
@@ -41,7 +42,7 @@ void server_backtrace(int sig)
 
 void handle_exit(int sig) 
 {
-	ROS_ERROR("Oops!!! pp receive signal %d",sig);
+ROS_ERROR("Oops!!! pp receive signal %d",sig);
 	if(sig == SIGINT)
 	{
 		if(robot_instance != nullptr){
@@ -95,23 +96,36 @@ int main(int argc, char **argv)
 
 #endif
 	robot_instance = new robot();
-
+// Test code for path algorithm by Austin.
+//	test_map();
+/*
 	//test code by lsy563193
-	/*GridMap map;
-	//test
-	/*	ROS_INFO("set signal action done!");
+	sleep(1);
 	GridMap map;
-	case_2(map);
-	map.print(CLEAN_MAP, 0, 0);
+	//test
+	Cell_t curr{};
+	map.loadMap(Cell_t{-2,-5},true,curr);
+	map.print(curr,CLEAN_MAP, Cells{});
+	setPosition(cellToCount(curr.x),cellToCount(curr.y));
 
 	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
-	Dir_t old_dir_=MAP_POS_X;
+	Dir_t old_dir_=MAP_NEG_X;
 	Points remain_path_{};
 	ROS_INFO("clean_path_algorithm_!");
-	clean_path_algorithm_.reset(new NavCleanPathAlgorithm);
-	if (clean_path_algorithm_->generatePath(map, getPosition(), old_dir_, remain_path_)) {
+	clean_path_algorithm_.reset(new GoHomePathAlgorithm);
+//	if (clean_path_algorithm_->generatePath(map, Point_t{cellToCount(curr.x),cellToCount(curr.y)}, old_dir_, remain_path_)) {
+//	}
+//	clean_path_algorithm_->isIo
 
-	}
+	BoundingBox2 bound{};
+	map.getMapRange(CLEAN_MAP, &bound.min.x, &bound.max.x, &bound.min.y, &bound.max.y);
+	auto external_target = bound.max + Cell_t{1, 1};
+	auto cells = Cells{};
+	auto points = Points{};
+//	auto is_found = map.find_if(curr, cells,[&](const Cell_t& c_it){return c_it == external_target;},false,true,true);
+	clean_path_algorithm_->generatePath(map,{cellToCount(curr.x),cellToCount(curr.y)},old_dir_, points);
+//	clean_path_algorithm_->generatePath(map,getPosition(),old_dir_, points);
+//	auto is_found = map.find_if(curr, cells,[&](const Cell_t& c_it){return c_it == external_target;},false,true,true);
 	ROS_INFO("~~~~~~~~~~~~~~~~~~~!");*/
 	ros::spin();
 	return 0;
@@ -152,4 +166,18 @@ int test_time()
 	time_t local = mktime(localtime(p_current_time));
 	time_t *p_local = &local;
 	printf("ctime(localtime->time()): %s", ctime(p_local));
+}
+
+// Test code for path algorithm by Austin.
+void test_map()
+{
+	auto path_algo = new NavCleanPathAlgorithm();
+	GridMap map;
+	map.loadMap(-10, 9, -2, 16);
+	Cell_t curr_cell{8, 14};
+
+	Point_t curr_point = {curr_cell.x * CELL_SIZE, curr_cell.y * CELL_SIZE};
+	Dir_t dir = MAP_NEG_X;
+	Points points;
+	path_algo->generatePath(map, curr_point, dir, points);
 }

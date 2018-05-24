@@ -2,11 +2,15 @@
 // Created by austin on 17-12-8.
 //
 
+#include <event_manager.h>
 #include <movement.hpp>
 #include <move_type.hpp>
-#include <event_manager.h>
 #include <mode.hpp>
-#include "dev.h"
+#include <robot.hpp>
+#include <wheel.hpp>
+#include <bumper.h>
+#include <cliff.h>
+#include <gyro.h>
 
 MovementStay::MovementStay(double stay_time_sec)
 {

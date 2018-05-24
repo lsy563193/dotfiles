@@ -2,11 +2,20 @@
 // Created by austin on 17-12-6.
 //
 
-#include <robot.hpp>
 #include <event_manager.h>
+#include <key.h>
+#include <rcon.h>
+#include <remote.hpp>
+#include <wifi/wifi.h>
+#include <charger.h>
+#include <speaker.h>
+#include <battery.h>
+#include <beeper.h>
+#include <water_tank.hpp>
+#include <vacuum.h>
 #include "error.h"
-#include "dev.h"
 #include "mode.hpp"
+#include <robot.hpp>
 #include "appointment.h"
 
 ModeCharge::ModeCharge()
@@ -64,7 +73,7 @@ bool ModeCharge::isExit()
 			{
 				sp_state = state_charge.get();
 				sp_state->init();
-				error.alarm();
+				error.alarm(false);
 				sp_action_.reset(new MovementCharge);
 				plan_activated_status_ = false;
 				ROS_WARN("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
@@ -78,7 +87,7 @@ bool ModeCharge::isExit()
 					 __LINE__);
 			sp_state = state_charge.get();
 			sp_state->init();
-			speaker.play(VOICE_BATTERY_LOW);
+			speaker.play(VOICE_BATTERY_LOW, false);
 			sp_action_.reset(new MovementCharge);
 			plan_activated_status_ = false;
 			return false;
@@ -110,7 +119,7 @@ bool ModeCharge::isExit()
 			ROS_WARN("%s %d: Battery not ready to clean.", __FUNCTION__, __LINE__);
 			sp_state = state_charge.get();
 			sp_state->init();
-			speaker.play(VOICE_BATTERY_LOW);
+			speaker.play(VOICE_BATTERY_LOW, false);
 			sp_action_.reset(new MovementCharge);
 			ev.key_clean_pressed = false;
 			return false;
@@ -239,25 +248,32 @@ void ModeCharge::remotePlan(bool state_now, bool state_last)
 	}
 }
 
-void ModeCharge::remoteMax(bool state_now, bool state_last)
-{
-	PP_INFO();
-	if (isStateCharge())
-	{
-		if (water_tank.getStatus(WaterTank::operate_option::swing_motor))
-			beeper.beepForCommand(INVALID);
-		else
-		{
-			beeper.beepForCommand(VALID);
-			vacuum.setForUserSetMaxMode(!vacuum.isUserSetMaxMode());
-			speaker.play(vacuum.isUserSetMaxMode() ? VOICE_VACCUM_MAX : VOICE_VACUUM_NORMAL);
-			setVacuum();
-		}
-	}
-	remote.reset();
-}
-
 bool ModeCharge::allowRemoteUpdatePlan()
 {
 	return isStateCharge();
+}
+
+void ModeCharge::remoteKeyHandler(bool state_now, bool state_last)
+{
+	if (isStateCharge())
+	{
+		if (remote.isKeyTrigger(REMOTE_MAX))
+		{
+			ROS_WARN("%s %d: Receive remote max.", __FUNCTION__, __LINE__);
+			if (water_tank.getStatus(WaterTank::operate_option::swing_motor))
+				beeper.beepForCommand(INVALID);
+			else
+			{
+				beeper.beepForCommand(VALID);
+				vacuum.setForUserSetMaxMode(!vacuum.isUserSetMaxMode());
+				speaker.play(vacuum.isUserSetMaxMode() ? VOICE_VACCUM_MAX : VOICE_VACUUM_NORMAL);
+				setVacuum();
+			}
+		}
+		else
+			ROS_WARN("%s %d: Receive %d but not valid during charge.", __FUNCTION__, __LINE__);
+	}
+	else
+		ROS_WARN("%s %d: Receive %d but not valid during fake sleep.", __FUNCTION__, __LINE__);
+	remote.reset();
 }

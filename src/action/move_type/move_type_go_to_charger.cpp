@@ -4,15 +4,6 @@
 #include <move_type.hpp>
 #include <robot.hpp>
 #include <obs.h>
-//#include <state.hpp>
-//#include <mode.hpp>
-//bool MoveTypeGoToCharger::isFinish() {
-//	return false;
-//}
-
-//IAction *MoveTypeGoToCharger::setNextAction() {
-//	return nullptr;
-//}
 
 MoveTypeGoToCharger::MoveTypeGoToCharger()
 {

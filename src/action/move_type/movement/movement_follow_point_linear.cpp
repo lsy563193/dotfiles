@@ -2,11 +2,12 @@
 
 #include <movement.hpp>
 #include <move_type.hpp>
-#include <state.hpp>
 #include <mode.hpp>
-#include <event_manager.h>
 #include <robot.hpp>
-#include "dev.h"
+#include <wheel.hpp>
+#include <lidar.hpp>
+#include <obs.h>
+
 //CELL_COUNT_MUL*1.5
 MovementFollowPointLinear::MovementFollowPointLinear()
 {
@@ -28,12 +29,12 @@ MovementFollowPointLinear::MovementFollowPointLinear()
 void MovementFollowPointLinear::scaleCorrectionPos(Point_t &tmp_pos) {
 //	auto p_cm = boost::dynamic_pointer_cast<ACleanMode> (p_mode);
 	auto p_cm = dynamic_cast<ACleanMode*> (sp_mt_->sp_mode_);
-	auto dir = p_cm->iterate_point_.dir;
+	auto dir = p_cm->iterate_point_->dir;
 	auto curr = getPosition();
 	if(isAny(dir))
 		return;
 
-	auto target_xy = (isXAxis(dir)) ? p_cm->iterate_point_.y : p_cm->iterate_point_.x;
+	auto target_xy = (isXAxis(dir)) ? p_cm->iterate_point_->y : p_cm->iterate_point_->x;
 //	auto slam_xy = (isXAxis(dir)) ? slam_pos.getOriginY() : slam_pos.getOriginX();
 	auto slam_xy = (isXAxis(dir)) ? curr.y : curr.x;
 	auto diff_xy = (slam_xy - target_xy)/3;
@@ -48,18 +49,18 @@ void MovementFollowPointLinear::scaleCorrectionPos(Point_t &tmp_pos) {
 Point_t MovementFollowPointLinear::_calcTmpTarget()
 {
 	auto p_mode = dynamic_cast<ACleanMode*> (sp_mt_->sp_mode_);
-	auto tmp_target_ = sp_mt_->remain_path_.front();
+	auto tmp_target_ = *std::next(p_mode->iterate_point_);
 
-	if(isAny(p_mode->iterate_point_.dir))
+	if(isAny(p_mode->iterate_point_->dir))
 		return tmp_target_;
 	auto tmp_pos = getPosition();
-	auto &tmp_target_xy = (isXAxis(p_mode->iterate_point_.dir)) ? tmp_target_.x : tmp_target_.y;
-	auto curr_xy = (isXAxis(p_mode->iterate_point_.dir)) ? tmp_pos.x : tmp_pos.y;
-	auto &other_tmp_target_xy = (isXAxis(p_mode->iterate_point_.dir)) ? tmp_target_.y : tmp_target_.x ;
-	auto &other_curr_xy = (isXAxis(p_mode->iterate_point_.dir)) ? tmp_pos.y :tmp_pos.x ;
+	auto &tmp_target_xy = (isXAxis(p_mode->iterate_point_->dir)) ? tmp_target_.x : tmp_target_.y;
+	auto curr_xy = (isXAxis(p_mode->iterate_point_->dir)) ? tmp_pos.x : tmp_pos.y;
+	auto &other_tmp_target_xy = (isXAxis(p_mode->iterate_point_->dir)) ? tmp_target_.y : tmp_target_.x ;
+	auto &other_curr_xy = (isXAxis(p_mode->iterate_point_->dir)) ? tmp_pos.y :tmp_pos.x ;
 //	ROS_INFO("curr_xy(%f), target_xy(%f)", curr_xy, tmp_target_xy);
 	auto dis = std::min(std::abs(curr_xy - tmp_target_xy),  (CELL_SIZE * 1.5f /*+ CELL_COUNT_MUL*/));
-	if (!isPos(p_mode->iterate_point_.dir))
+	if (!isPos(p_mode->iterate_point_->dir))
 		dis *= -1;
 	tmp_target_xy = curr_xy + dis;
 //	other_tmp_target_xy = other_curr_xy;

@@ -67,7 +67,7 @@ robot::robot()
 
 	// Publishers.
 	odom_pub_ = robot_nh_.advertise<nav_msgs::Odometry>("robot_odom", 1);
-	scan_ctrl_pub_ = robot_nh_.advertise<pp::scan_ctrl>("scan_ctrl", 1);
+	scan_ctrl_pub_ = robot_nh_.advertise<rplidar_ros::scan_ctrl>("scan_ctrl", 1);
 	x900_ctrl_pub_ = robot_nh_.advertise<pp::x900ctrl>("/robot_ctrl_stream",1);
 
 	resetCorrection();
@@ -118,7 +118,7 @@ robot::robot()
 	auto wifi_send_thread = new boost::thread(boost::bind(&S_Wifi::wifiSendRutine,&s_wifi));
 
 	obs.control(ON);
-	ROS_WARN("%s %d: Robot x900(version 0000 r11) is online :)", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Robot x900(version 0000 r12) is online :)", __FUNCTION__, __LINE__);
 }
 
 robot::~robot()
@@ -370,7 +370,7 @@ void robot::robotbase_routine_cb()
 		sensor.appointment = buf[REC_APPOINTMENT_TIME];
 			// For debug.
 		if (buf[REC_APPOINTMENT_TIME] >= 0x80)
-			printf("%d: REC_APPOINTMENT_TIME:(%2x), REC_REALTIME_H:(%2x).\n",
+			printf("%d: REC_APPOINTMENT_TIME:(%2x), REC_REALTIME:(%2x).\n",
 			   __LINE__, buf[REC_APPOINTMENT_TIME], sensor.realtime);
 //		printf("%d: charge:(%d), remote:(%d), key:(%d), rcon(%d).\n.",
 //			   __LINE__, charger.getChargeStatus(), remote.get(), key.getTriggerStatus(), c_rcon.getStatus());
@@ -660,7 +660,7 @@ void robot::robotOdomCb(const nav_msgs::Odometry::ConstPtr &msg)
 	}
 //	ROS_INFO("tmp_pos(%f,%f),tmp_rad(%f)", tmp_pos.x(), tmp_pos.y(), tmp_rad);
 	robot_pos = tmp_pos;
-	robot_rad = tmp_rad;
+	robot_rad = ranged_radian(tmp_rad);
 	setRobotActualSpeed();
 	odomPublish(robot_pos, robot_rad);
 }
@@ -686,13 +686,16 @@ bool robot::lidarMotorCtrl(bool switch_)
 {
 	rplidar_ros::SetLidar ctrl_message;
 	ctrl_message.request.switch_status = switch_;
+	uint8_t motor_ctrl_failed_cnt = 0;
 
-	if (lidar_motor_cli_.call(ctrl_message))
+	while(!lidar_motor_cli_.call(ctrl_message))
 	{
-		ROS_INFO("\033[35m" "%s %d: Service response: %s" "\033[0m", __FUNCTION__, __LINE__, ctrl_message.response.message.c_str());
-		return true;
+		ROS_ERROR("%s %d: Lidar service not received! motor_ctrl_failed_cnt(%d)",__FUNCTION__,__LINE__,motor_ctrl_failed_cnt+1);
+		if(++motor_ctrl_failed_cnt > 4)
+			return false;
 	}
-	return false;
+	ROS_INFO("\033[35m" "%s %d: Service response: %s" "\033[0m", __FUNCTION__, __LINE__, ctrl_message.response.message.c_str());
+	return true;
 }
 
 bool robot::slamStart(void)
@@ -879,10 +882,11 @@ bool robot::getCleanMap(GridMap& map)
 {
 	bool ret = false;
 	boost::mutex::scoped_lock lock(mode_mutex_);
-	if (getRobotWorkMode() == Mode::cm_navigation)
+	if (getRobotWorkMode() == Mode::cm_navigation || getRobotWorkMode() == Mode::cm_exploration)
 	{
 		auto mode = boost::dynamic_pointer_cast<ACleanMode>(p_mode);
-		if (mode->isStateClean())
+		if (mode->isStateClean() || mode->isStateGoHomePoint() || mode->isStateGoToCharger()
+			|| mode->isStateExploration())
 		{
 			map = mode->clean_map_;
 			ret = true;
@@ -1048,6 +1052,18 @@ void robot::setRobotActualSpeed() {
 	time = ros::Time::now().toSec();
 }
 
+bool robot::duringNavigationCleaning()
+{
+	bool ret = false;
+	boost::mutex::scoped_lock lock(mode_mutex_);
+	if (getRobotWorkMode() == Mode::cm_navigation)
+	{
+		auto mode = boost::dynamic_pointer_cast<ACleanMode>(p_mode);
+		if (mode->isStateClean())
+			ret = true;
+	}
+	return ret;
+}
 
 //--------------------
 static float xCount{}, yCount{};
@@ -1060,10 +1076,6 @@ Point_t getPosition(Baselink_Frame_Type type)
 	return {xCount, yCount, robot::instance()->getWorldPoseRadian()};
 }
 
-float cellToCount(int16_t i) {
-	return i * CELL_SIZE;
-}
-
 void setPosition(float x, float y) {
 	xCount = x;
 	yCount = y;
@@ -1074,20 +1086,6 @@ void resetPosition() {
 	yCount = 0;
 }
 
-bool isAny(Dir_t dir)
-{
-	return dir == MAP_ANY;
-}
-
-bool isPos(Dir_t dir)
-{
-	return dir == MAP_POS_X || dir == MAP_POS_Y;
-}
-
-bool isXAxis(Dir_t dir)
-{
-	return dir == MAP_POS_X || dir == MAP_NEG_X;
-}
 /*
 Dir_t getReDir(Dir_t dir)
 {

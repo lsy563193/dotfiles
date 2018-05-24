@@ -4,17 +4,16 @@
 
 #ifndef PP_MOVE_TYPE_HPP
 #define PP_MOVE_TYPE_HPP
-#define TRAP_IN_SMALL_AREA_COUNT 20
+#define TRAP_IN_SMALL_AREA_COUNT 40
 #define TILT_BACK_DISTANCE 0.15
-//#define CLIFF_BACK_DISTANCE 0.1
 
 #include "action.hpp"
 #include "movement.hpp"
 #include "boost/shared_ptr.hpp"
 #include "rcon.h"
 #include "serial.h"
-//#include "mode.hpp"
 
+class GridMap;
 class Mode;
 class ACleanMode;
 class IMoveType:public IAction
@@ -65,7 +64,7 @@ public:
 	bool state_turn{};
 //	Point_t target_point_;
 	int dir_;
-	static Points remain_path_;
+//	static Points remain_path_;
 	bool stop_generate_next_target{};
 public:
 //	std::deque<double> odom_turn_target_radians_{};
@@ -86,7 +85,7 @@ public:
 	bool isFinish() override;
 //	IAction* setNextAction();
 
-	bool isPassTargetStop(Dir_t &dir);
+	bool isPassTargetStop(const Dir_t &dir);
 	bool isCellReach();
 	bool isPoseReach();
 
@@ -103,17 +102,22 @@ public:
 	MoveTypeFollowWall() = delete;
 	~MoveTypeFollowWall() override;
 
-	MoveTypeFollowWall(Points remain_path, bool is_left);
+	MoveTypeFollowWall(bool is_left);
+	MoveTypeFollowWall(bool is_left,const Points::iterator &p_it);
 
 	bool isFinish() override;
 
 	bool isNewLineReach(GridMap &map);
 	bool isOverOriginLine(GridMap &map);
+	bool getIsTrappedInSmallArea() const {return is_trapped_in_small_area_;};
+    bool outOfRange(const Point_t &curr, Points::iterator &p_it);
 
 private:
+    void init(bool is_left);
+//    ~MoveTypeFollowWall() override;
 	bool handleMoveBackEventRealTime(ACleanMode* p_clean_mode);
 	bool is_left_{};
-	double move_forward_time{};
+	double move_forward_time_{};
 	int16_t bumperTurnAngle();
 	int16_t cliffTurnAngle();
 	int16_t tiltTurnAngle();
@@ -124,15 +128,17 @@ private:
 	bool lidarTurnRadian(double &turn_radian);
 	double getTurnRadianByEvent();
 	double getTurnRadian(bool);
-	double robot_to_wall_distance = 0.8;
-	float g_back_distance = 0.01;
-	bool is_stop_follow_wall_after_tilt{};
-	struct lidar_angle_param{
-		double lidar_min;
-		double lidar_max;
-		double radian_min;
-		double radian_max;
+	bool is_stop_follow_wall_after_tilt_{};
+	struct lidar_angle_param_{
+		double lidar_min_;
+		double lidar_max_;
+		double radian_min_;
+		double radian_max_;
 	};
+	bool is_trapped_in_small_area_{false};
+    std::vector<Points::iterator>  it_out_edges{};
+    std::vector<Points::iterator>  it_in_edges{};
+//	Points out_points{};
 };
 
 class MoveTypeGoToCharger:public IMoveType

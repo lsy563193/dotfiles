@@ -78,6 +78,7 @@ FILE(GLOB PP_SRC
 	src/action/action_check_water_tank.cpp
 	src/action/action_life_check.cpp
 	src/action/action_r16_test.cpp
+	src/action/action_open_gyro_and_lidar.cpp
 
 	src/action/move_type/move_type.cpp
 	src/action/move_type/move_type_linear.cpp
@@ -174,7 +175,6 @@ add_message_files(
 	FILES
 	x900ctrl.msg
 	x900sensor.msg
-	scan_ctrl.msg
 )
 
 #add_service_files(

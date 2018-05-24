@@ -2,11 +2,17 @@
 // Created by pierre on 17-12-20.
 //
 #include <event_manager.h>
-#include <dev.h>
-#include <error.h>
-#include <map.h>
-
+#include <speaker.h>
+#include <obs.h>
+#include <wifi/wifi.h>
+#include <beeper.h>
+#include <key.h>
+#include <remote.hpp>
+#include <charger.h>
+#include <water_tank.hpp>
+#include <vacuum.h>
 #include "mode.hpp"
+#include "robot.hpp"
 
 CleanModeExploration::CleanModeExploration()
 {
@@ -14,10 +20,16 @@ CleanModeExploration::CleanModeExploration()
 	speaker.play(VOICE_GO_HOME_MODE, false);
 	mode_i_ = cm_exploration;
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
-	go_home_path_algorithm_.reset();
+	go_home_path_algorithm_.reset(new GoHomePathAlgorithm());
 	error_marker_.clear();
 	clean_map_.mapInit();
 	obs.control(OFF);
+
+	//clear real time map which store in cloud....
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_CLEAR_MAP);
+
+	// Clear the map on app.
+	s_wifi.taskPushBack(S_Wifi::ACT::ACT_CLEAR_APP_MAP);
 }
 
 CleanModeExploration::~CleanModeExploration()
@@ -85,11 +97,9 @@ bool CleanModeExploration::mapMark()
 	clean_map_.merge(slam_grid_map, true, true, false, false, false, false);
 	clean_map_.setCircleMarkers(getPosition(),10,CLEANED,error_marker_);
 	resetErrorMarker();
-
-	setBlocks(iterate_point_.dir);
-	if(mark_robot_)
-		clean_map_.markRobot(CLEAN_MAP);
-//	passed_path_.clear();
+	setBlocks(iterate_point_->dir);
+	if(action_i_ == ac_linear)
+		passed_path_.clear();
 	return false;
 }
 
@@ -192,15 +202,18 @@ void CleanModeExploration::switchInStateInit() {
 
 bool CleanModeExploration::updateActionInStateInit() {
 	if (action_i_ == ac_null)
-		action_i_ = ac_open_gyro;
-	else if (action_i_ == ac_open_gyro) {
-		boost::dynamic_pointer_cast<StateInit>(state_init)->initForExploration();
+		action_i_ = ac_open_gyro_and_lidar;
+	else if (action_i_ == ac_open_gyro_and_lidar) {
 		action_i_ = ac_open_lidar;
 	}
 	else if (action_i_ == ac_open_lidar)
 		action_i_ = ac_align;
 	else if(action_i_ == ac_align)
+	{
+		auto curr = getPosition();
+		go_home_path_algorithm_->updateStartPointRadian(curr.th);
 		action_i_ = ac_open_slam;
+	}
 	else // action_open_slam
 		return false;
 
@@ -225,14 +238,7 @@ bool CleanModeExploration::moveTypeFollowWallIsFinish(IMoveType *p_move_type, bo
 */
 
 bool CleanModeExploration::markMapInNewCell() {
-	if(sp_state == state_folllow_wall.get())
-	{
-		mark_robot_ = false;
-		mapMark();
-		mark_robot_ = true;
-	}
-	else
-		mapMark();
+	mapMark();
 	return true;
 }
 

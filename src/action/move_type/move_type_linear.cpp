@@ -2,28 +2,28 @@
 // Created by lsy563193 on 12/4/17.
 //
 #include <event_manager.h>
-#include "dev.h"
+#include <move_type.hpp>
+#include <mode.hpp>
+#include <beeper.h>
+#include <cliff.h>
 #include "robot.hpp"
 
-#include <move_type.hpp>
-#include <state.hpp>
-#include <mode.hpp>
-
-MoveTypeLinear::MoveTypeLinear(Points remain_path){
+MoveTypeLinear::MoveTypeLinear(Points remain_path)
+{
 	IMovement::sp_mt_ = this;
 	resetTriggeredValue();
 	remain_path.pop_front();
-	remain_path_ = remain_path;
 
-	auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
-	auto target_point_ = remain_path_.front();
-	turn_target_radian_ = p_mode->iterate_point_.th;
+	auto p_mode = dynamic_cast<ACleanMode *>(sp_mode_);
+	auto target_point_ = std::next(p_mode->iterate_point_);
+	turn_target_radian_ = p_mode->iterate_point_->th;
 
-	ROS_WARN("%s,%d: Enter move type linear, angle(%f,%f, %f),  target(%f, %f).",
-			 __FUNCTION__, __LINE__, getPosition().th, radian_to_degree(target_point_.th), radian_to_degree(turn_target_radian_), target_point_.x, target_point_.y);
+	ROS_WARN("%s,%d: Enter move type linear, angle(%.2f,%.2f, %.2f),  target(%.3f, %.3f).",
+			 __FUNCTION__, __LINE__, getPosition().th, radian_to_degree(target_point_->th),
+			 radian_to_degree(turn_target_radian_), target_point_->x, target_point_->y);
 
 	movement_i_ = p_mode->isGyroDynamic() ? mm_dynamic : mm_turn;
-	if(movement_i_ == mm_dynamic)
+	if (movement_i_ == mm_dynamic)
 		sp_movement_.reset(new MovementGyroDynamic());
 	else
 		sp_movement_.reset(new MovementTurn(turn_target_radian_, ROTATE_TOP_SPEED));
@@ -36,7 +36,6 @@ MoveTypeLinear::~MoveTypeLinear()
 		auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
 		p_mode->saveBlocks();
 		p_mode->mapMark();
-		memset(IMoveType::rcon_cnt,0,sizeof(int8_t)*6);
 	}
 	ROS_WARN("%s %d: Exit move type linear.", __FUNCTION__, __LINE__);
 }
@@ -94,6 +93,7 @@ bool MoveTypeLinear::isFinish()
 					ROS_WARN("ev.cliff_triggered(%d)!!!", ev.cliff_triggered);
 					movement_i_ = mm_stay;
 					sp_movement_.reset(new MovementStay(0.2));
+					return false;
 				}
 				if(!ev.tilt_triggered)
 					p_clean_mode->should_follow_wall = true;
@@ -121,9 +121,9 @@ bool MoveTypeLinear::isCellReach()
 	// Checking if robot has reached target cell.
 	auto s_curr_p = getPosition();
 	auto p_clean_mode = dynamic_cast<ACleanMode*> (sp_mode_);
-	auto target_point_ = remain_path_.front();
-	if (std::abs(s_curr_p.x - target_point_.x) < CELL_SIZE/2 &&
-		std::abs(s_curr_p.y - target_point_.y) < CELL_SIZE/2)
+	auto target_point_ = std::next(p_clean_mode->iterate_point_ );
+	if (std::abs(s_curr_p.x - target_point_->x) < CELL_SIZE/2 &&
+		std::abs(s_curr_p.y - target_point_->y) < CELL_SIZE/2)
 	{
 //		ROS_INFO("%s, %d: MoveTypeLinear,current cell = (%d,%d) reach the target cell (%d,%d), current angle(%lf), target angle(%lf).", __FUNCTION__, __LINE__,
 //						 s_curr_p.toCell().x,s_curr_p.toCell().y,target_point_.toCell().x, target_point_.toCell().y, radian_to_degree(s_curr_p.th), radian_to_degree(target_point_.th));
@@ -138,7 +138,8 @@ bool MoveTypeLinear::isPoseReach()
 {
 	// Checking if robot has reached target cell and target angle.
 //	PP_INFO();
-	auto target_point_ = remain_path_.front();
+	auto p_clean_mode = dynamic_cast<ACleanMode*> (sp_mode_);
+	auto target_point_ = *std::next(p_clean_mode->iterate_point_ );
 	if (isCellReach() ) {
 		if (std::abs(getPosition().isRadianNear(target_point_))) {
 			ROS_INFO("\033[1m""%s, %d: MoveTypeLinear, reach the target cell and pose(%d,%d,%f,%d)""\033[0m", __FUNCTION__,
@@ -150,7 +151,7 @@ bool MoveTypeLinear::isPoseReach()
 	return false;
 }
 
-bool MoveTypeLinear::isPassTargetStop(Dir_t &dir)
+bool MoveTypeLinear::isPassTargetStop(const Dir_t &dir)
 {
 //	PP_INFO();
 	// Checking if robot has reached target cell.
@@ -159,7 +160,8 @@ bool MoveTypeLinear::isPassTargetStop(Dir_t &dir)
 
 	auto s_curr_p = getPosition();
 	auto curr = (isXAxis(dir)) ? s_curr_p.x : s_curr_p.y;
-	auto target_point_ = remain_path_.front();
+	auto p_clean_mode = dynamic_cast<ACleanMode*> (sp_mode_);
+	auto target_point_ = *std::next(p_clean_mode->iterate_point_ );
 	auto target = (isXAxis(dir)) ? target_point_.x : target_point_.y;
 	if ((isPos(dir) && (curr > target + CELL_SIZE / 4)) ||
 		(!isPos(dir) && (curr < target - CELL_SIZE / 4)))
@@ -181,45 +183,32 @@ static bool is_opposite_dir(int l, int r)
 {
 	return (l == 0 && r==1)  || (l ==1 && r ==0) || (l ==2 && r ==3) || (l == 3 && r == 2);
 }
+
 void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 {
-	if (remain_path_.size() > 1)
+    auto target_size = std::distance(p_clean_mode->iterate_point_, p_clean_mode->plan_path_.end());
+	if (target_size>2)
 	{
-		auto target_point_ = remain_path_.front();
-		auto &target_xy = (isXAxis(p_clean_mode->iterate_point_.dir)) ? target_point_.x : target_point_.y;
-		auto curr_xy = (isXAxis(p_clean_mode->iterate_point_.dir)) ? getPosition().x : getPosition().y;
+		auto target_point_ = std::next(p_clean_mode->iterate_point_);
+		auto &target_xy = (isXAxis(p_clean_mode->iterate_point_->dir)) ? target_point_->x : target_point_->y;
+		auto curr_xy = (isXAxis(p_clean_mode->iterate_point_->dir)) ? getPosition().x : getPosition().y;
 
 		if (std::abs(target_xy - curr_xy) < LINEAR_NEAR_DISTANCE) {
-
-			if ((robot::instance()->getRobotWorkMode() == Mode::cm_navigation && p_clean_mode->isStateClean() && p_clean_mode->action_i_ == p_clean_mode->ac_linear)
-				|| (robot::instance()->getRobotWorkMode() == Mode::cm_exploration && p_clean_mode->isStateExploration() && p_clean_mode->action_i_ == p_clean_mode->ac_linear)) {
-				{
-					if(switchLinearTargetByRecalc(p_clean_mode))
-					{
-//						beeper.debugBeep(VALID);
-						{
-							radian_diff_count = 0;
-							return;
-						}
-					}
+			if (p_clean_mode->action_i_ == p_clean_mode->ac_linear &&
+				((robot::instance()->getRobotWorkMode() == Mode::cm_navigation && p_clean_mode->isStateClean())
+				 ||
+				 (robot::instance()->getRobotWorkMode() == Mode::cm_exploration && p_clean_mode->isStateExploration())
+				 )) {
+				if (switchLinearTargetByRecalc(p_clean_mode)) {
+					radian_diff_count = 0;
 				}
 			}
-			{
-				p_clean_mode->old_dir_ = p_clean_mode->iterate_point_.dir;
-				p_clean_mode->iterate_point_ = remain_path_.front();
-				remain_path_.pop_front();
-//			ROS_("target_xy(%f), curr_xy(%f),dis(%f)",target_xy, curr_xy, LINEAR_NEAR_DISTANCE);
-				ROS_INFO("%s,%d,curr(%d,%d), next target_point(%d,%d,%lf), dir(%d)",
-						  __FUNCTION__, __LINE__, getPosition().toCell().x, getPosition().toCell().y,
-						  target_point_.toCell().x, target_point_.toCell().y, radian_to_degree(target_point_.th),
-						  p_clean_mode->iterate_point_.dir);
-//			odom_turn_target_radians_ = remain_path_.front().th;
-//			odom_turn_target_radians_.push_back(odom.getRadian());
-//			odom_turn_target_radian_ = .push_back(odom.getRadian());
-				radian_diff_count = 0;
-			}
+			p_clean_mode->iterate_point_++;
+			p_clean_mode->old_dir_ = p_clean_mode->iterate_point_->dir;
+			ROS_ERROR("%s,%d,it(%d,%d)", __FUNCTION__, __LINE__, p_clean_mode->iterate_point_->toCell().x,
+					  p_clean_mode->iterate_point_->toCell().y);
 		}
-	} else if(remain_path_.size() == 1){
+	} else if(target_size==2){
 		if(stop_generate_next_target)
 			return;
 
@@ -236,15 +225,19 @@ void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 		else
 			return;
 
-		auto target_point_ = remain_path_.front();
-		auto &target_xy = (isXAxis(p_clean_mode->iterate_point_.dir)) ? target_point_.x : target_point_.y;
-		auto curr_xy = (isXAxis(p_clean_mode->iterate_point_.dir)) ? getPosition().x : getPosition().y;
+		auto target_point_ = std::next(p_clean_mode->iterate_point_);
+		auto &target_xy = (isXAxis(p_clean_mode->iterate_point_->dir)) ? target_point_->x : target_point_->y;
+		auto curr_xy = (isXAxis(p_clean_mode->iterate_point_->dir)) ? getPosition().x : getPosition().y;
 //		ROS_ERROR("%f,%f", std::abs(target_xy - curr_xy),LINEAR_NEAR_DISTANCE);
 		if (std::abs(target_xy - curr_xy) < LINEAR_NEAR_DISTANCE)
 		{
 			stop_generate_next_target = true;
 			if(switchLinearTargetByRecalc(p_clean_mode))
+			{
+				p_clean_mode->iterate_point_++;
+				p_clean_mode->old_dir_ = p_clean_mode->iterate_point_->dir;
 				stop_generate_next_target = false;
+			}
 		}
 	}
 }
@@ -254,32 +247,22 @@ bool MoveTypeLinear::switchLinearTargetByRecalc(ACleanMode *p_clean_mode) {
 	Points path;
 	//comment temporary
 //	p_clean_mode->saveBlocks();
-//	p_clean_mode->mapMark();
+	p_clean_mode->mapMark();
 //	resetTriggeredValue();
-	auto is_found = boost::dynamic_pointer_cast<NavCleanPathAlgorithm>(
-			p_clean_mode->clean_path_algorithm_)->generatePath(p_clean_mode->clean_map_, remain_path_.front(),
-															   remain_path_.front().dir, path);
+
+	auto target_point = std::next(p_clean_mode->iterate_point_);
+	auto is_found = boost::dynamic_pointer_cast<NavCleanPathAlgorithm>( p_clean_mode->clean_path_algorithm_)->generatePath(p_clean_mode->clean_map_, *target_point, target_point->dir, path);
 	ROS_INFO("%s %d: is_found:(d), remain:", __FUNCTION__, __LINE__, is_found);
-	p_clean_mode->clean_path_algorithm_->displayPointPath(remain_path_);
-	p_clean_mode->clean_path_algorithm_->displayPointPath(path);
+	displayPointPath(path);
 	if (is_found) {
 		ROS_INFO("5555555555555555555555555555555555555555");
-		if (!is_opposite_dir(path.front().dir, p_clean_mode->iterate_point_.dir)) {
+		if (!is_opposite_dir(path.front().dir, p_clean_mode->iterate_point_->dir)) {
 			ROS_INFO("6666666666666666666666666666666666666666");
 			ROS_INFO("%s %d: Not opposite dir, path.front(%d).curr(,%d)", __FUNCTION__, __LINE__,
-					 path.front().dir, p_clean_mode->iterate_point_.dir);
-			auto front = path.front();
-			path.pop_front();
-			p_clean_mode->old_dir_ = p_clean_mode->iterate_point_.dir;
-			p_clean_mode->iterate_point_ = path.front();
-			p_clean_mode->iterate_point_.dir = front.dir;
-			std::copy(path.begin(), path.end(), std::back_inserter(p_clean_mode->plan_path_));
-			remain_path_.clear();
-			std::copy(path.begin(), path.end(), std::back_inserter(remain_path_));
-			ROS_INFO("%s,%d: switch ok !!!!!!!!!!!!curr(%d,%d), next target_point(%d,%d,%d), dir(%d)",
-					 __FUNCTION__, __LINE__, getPosition().toCell().x, getPosition().toCell().y,
-					 remain_path_.front().toCell().x,remain_path_.front().toCell().y,remain_path_.front().dir,
-					 p_clean_mode->iterate_point_.dir);
+					 path.front().dir, p_clean_mode->iterate_point_->dir);
+            p_clean_mode->plan_path_.erase(p_clean_mode->iterate_point_+1,p_clean_mode->plan_path_.end());
+			std::move(path.begin(),path.end(),std::back_inserter(p_clean_mode->plan_path_));
+            displayPointPath(p_clean_mode->plan_path_);
 			p_clean_mode->pubCleanMapMarkers(p_clean_mode->clean_map_,
 											 p_clean_mode->pointsGenerateCells(p_clean_mode->plan_path_));
 
@@ -287,7 +270,7 @@ bool MoveTypeLinear::switchLinearTargetByRecalc(ACleanMode *p_clean_mode) {
 			val = true;
 		} else {
 			ROS_INFO("%s %d: Opposite dir, path.front(%d).curr(,%d)", __FUNCTION__, __LINE__,
-					  path.front().dir, p_clean_mode->iterate_point_.dir);
+					  path.front().dir, p_clean_mode->iterate_point_->dir);
 		}
 	}
 	return val;

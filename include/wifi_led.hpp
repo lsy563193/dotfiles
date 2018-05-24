@@ -7,7 +7,6 @@
 
 #include <cstdint>
 #include "key_led.h"
-#include "robot.hpp"
 
 // For wifi LED control
 

@@ -4,7 +4,20 @@
 
 #include <event_manager.h>
 #include <robot.hpp>
-#include "dev.h"
+#include <move_type.hpp>
+#include <gyro.h>
+#include <rcon.h>
+#include <key.h>
+#include <remote.hpp>
+#include <wifi/wifi.h>
+#include <wheel.hpp>
+#include <brush.h>
+#include <water_tank.hpp>
+#include <vacuum.h>
+#include <battery.h>
+#include <speaker.h>
+#include <beeper.h>
+#include <charger.h>
 #include "mode.hpp"
 #include "appointment.h"
 
@@ -29,7 +42,6 @@ ModeRemote::ModeRemote()
 	{
 		sp_state = st_init.get();
 		sp_state->init();
-		key_led.setMode(LED_FLASH, LED_GREEN, 600);
 		action_i_ = ac_open_gyro;
 	}
 	genNextAction();
@@ -60,6 +72,7 @@ ModeRemote::~ModeRemote()
 	// Wait for battery recovery from operating motors.
 	usleep(200000);
 	battery.forceUpdate();
+	gyro.setTiltCheckingEnable(false);
 	ROS_INFO("%s %d: Exit remote mode.", __FUNCTION__, __LINE__);
 }
 
@@ -87,10 +100,9 @@ bool ModeRemote::isExit()
 		return true;
 	}
 
-	if (battery.isLow())
+	if (ev.battery_low)
 	{
 		ROS_WARN("%s %d: Exit to idle mode for low battery(%.2fV).", __FUNCTION__, __LINE__, battery.getVoltage() / 100.0);
-		speaker.play(VOICE_BATTERY_LOW);
 		setNextMode(md_idle);
 		return true;
 	}
@@ -310,5 +322,15 @@ void ModeRemote::setVacuum()
 	{
 		vacuum.setSpeedByUserSetMode();
 		speaker.play(vacuum.isCurrentMaxMode() ? VOICE_VACCUM_MAX : VOICE_VACUUM_NORMAL);
+	}
+}
+
+void ModeRemote::batteryLow(bool state_now, bool state_last)
+{
+	if (!ev.battery_low && battery.isLow())
+	{
+		ROS_WARN("%s %d: Low battery(%.2fV).", __FUNCTION__, __LINE__, battery.getVoltage() / 100.0);
+		speaker.play(VOICE_BATTERY_LOW, false);
+		ev.battery_low = true;
 	}
 }

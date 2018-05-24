@@ -5,8 +5,8 @@
 #ifndef PP_STATE_HPP
 #define PP_STATE_HPP
 
-#include "move_type.hpp"
-//#include <boost/shared_ptr.hpp>
+#include <vector>
+
 class ACleanMode;
 class State {
 public:
@@ -36,7 +36,10 @@ public:
 	void initBackFromCharger();
 	void initForNavigation();
 	void initForExploration();
+	void initForWallFollow();
 	void initForSpot();
+	void initForGoToCharger();
+	void initForRemote();
 };
 
 class StateClean: public State {
@@ -60,7 +63,6 @@ public:
 	StateGoToCharger() = default;
 	void init() override;
 //	IMoveType* setNextAction_();
-
 };
 
 

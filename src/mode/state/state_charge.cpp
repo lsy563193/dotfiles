@@ -4,6 +4,7 @@
 
 #include <mode.hpp>
 #include <key_led.h>
+#include <gyro.h>
 #include "wifi/wifi.h"
 
 void StateCharge::init()
@@ -11,6 +12,7 @@ void StateCharge::init()
 	key_led.setMode(LED_BREATH, LED_ORANGE);
 	s_wifi.setWorkMode(Mode::md_charge);
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
+	gyro.setTiltCheckingEnable(false); //disable tilt detect
 	ROS_INFO("%s %d: Enter state charge.", __FUNCTION__, __LINE__);
 }
 

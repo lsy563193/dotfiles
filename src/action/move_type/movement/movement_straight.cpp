@@ -5,11 +5,12 @@
 
 #include <movement.hpp>
 #include <move_type.hpp>
-#include "dev.h"
+#include "wheel.hpp"
+
 MovementStraight::MovementStraight()
 {
 	timeout_interval_ = 0.2;
-	ROS_WARN("%s %d: Start movement Straight, timeout(%f)s.", __FUNCTION__, __LINE__, timeout_interval_);
+	ROS_WARN("%s %d: Start movement Straight, timeout(%.1f)s.", __FUNCTION__, __LINE__, timeout_interval_);
 }
 
 MovementStraight::~MovementStraight()

@@ -13,19 +13,15 @@
 #include <sensor_msgs/LaserScan.h>
 #include <pp/x900sensor.h>
 #include <pp/x900ctrl.h>
-#include <pp/scan_ctrl.h>
+#include <rplidar_ros/scan_ctrl.h>
 #include <rplidar_ros/SetLidar.h>
 #include <vector>
 #include "config.h"
 #include "map.h"
 #include "pose.h"
-#include "serial.h"
 #include "mode.hpp"
-//#include "mode.hpp"
+#include "serial.h"
 #include <string.h>
-
-#define ON true
-#define OFF false
 
 #define  _RATE 50
 
@@ -231,6 +227,8 @@ public:
 
 	bool getCleanMap(GridMap& map);
 
+	bool duringNavigationCleaning();
+
 	void wifiSetWaterTank();
 
 	void wifiSetVacuum();
@@ -337,7 +335,7 @@ private:
 	tf::Stamped<tf::Transform>	map_pose;
 	tf::Stamped<tf::Transform>	wf_map_pose;
 
-	pp::scan_ctrl scan_ctrl_;
+	rplidar_ros::scan_ctrl scan_ctrl_;
 
 	std::string serial_port_;
 	std::string wifi_port_;
@@ -385,21 +383,10 @@ private:
 	};
 	boost::mutex last_clean_record_mutex_;
 	CleanRecord last_clean_record_;
-
 	bool verify_ok_;
 };
 
-float cellToCount(int16_t distance);
-
-int16_t countToCell(int32_t count);
-
 Point_t getPosition(Baselink_Frame_Type type = SLAM_POSITION_SLAM_ANGLE);
-
-bool isAny(Dir_t dir);
-
-bool isPos(Dir_t dir);
-
-bool isXAxis(Dir_t dir);
 
 void updatePosition();
 

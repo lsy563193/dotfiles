@@ -8,7 +8,9 @@
 #include <water_tank.hpp>
 #include <brush.h>
 #include <robot.hpp>
+#include <gyro.h>
 #include "key_led.h"
+#include "vacuum.h"
 
 void StateFolllowWall::init() {
 	if(robot::instance()->getRobotWorkMode() == Mode::cm_exploration)
@@ -31,6 +33,7 @@ void StateFolllowWall::init() {
 	s_wifi.setWorkMode(robot::instance()->getRobotWorkMode());
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 	robot_timer.initTrapTimer();
+	gyro.setTiltCheckingEnable(true);
 	ROS_INFO("%s %d: Enter state follow wall init.", __FUNCTION__, __LINE__);
 }
 

@@ -2,21 +2,21 @@
 // Created by lsy563193 on 12/4/17.
 //
 
-#include <mathematics.h>
 #include <event_manager.h>
-#include "dev.h"
-#include "robot.hpp"
-
 #include <move_type.hpp>
-#include <state.hpp>
-#include <mode.hpp>
+#include <wheel.hpp>
+#include <cliff.h>
+#include <lidar.hpp>
+#include <bumper.h>
+#include <gyro.h>
+#include "robot.hpp"
 
 
 //#define CLIFF_BACK_DISTANCE 0.075
 boost::shared_ptr<IMovement> IMoveType::sp_movement_ = nullptr;
 Mode* IMoveType::sp_mode_ = nullptr;
 int IMoveType::movement_i_ = mm_null;
-Points IMoveType::remain_path_=Points();
+//Points IMoveType::remain_path_=Points();
 
 IMoveType::IMoveType() {
 //	resetTriggeredValue();
@@ -27,7 +27,7 @@ IMoveType::IMoveType() {
 IMoveType::~IMoveType() {
 //	resetTriggeredValue();
 	wheel.stop();
-	remain_path_.clear();
+//	remain_path_.clear();
 }
 
 bool IMoveType::isCliffStop()
@@ -95,7 +95,7 @@ void IMoveType::resetTriggeredValue()
 	ev.obs_triggered = 0;
 	ev.cliff_triggered = 0;
 	ev.tilt_triggered = 0;
-//	ev.robot_slip = false; // modify by pierre
+	ev.slip_triggered = 0;
 }
 
 bool IMoveType::isFinish()
@@ -189,13 +189,14 @@ bool IMoveType::isFinishForward()
 	ev.bumper_triggered = bumper.getStatus();
 	ev.tilt_triggered = gyro.getTiltCheckingStatus();
 	ev.cliff_triggered = cliff.getStatus();
+	ev.slip_triggered = lidar.isRobotSlip();
 //	ev.rcon_status = countRconTriggered(c_rcon.getNavRcon(), 3);
 
-	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered /*|| ev.rcon_status*/)
+	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || ev.slip_triggered/*|| ev.rcon_status*/)
 	{
 		//ROS_WARN("%s, %d,ev.bumper_triggered(%d) ev.cliff_triggered(%d) ev.tilt_triggered(%d), rcon(%d)."
-		ROS_WARN("%s, %d,ev.bumper_triggered(%d) ev.cliff_triggered(%d) ev.tilt_triggered(%d)"
-				, __FUNCTION__, __LINE__, ev.bumper_triggered, ev.cliff_triggered, ev.tilt_triggered/*,ev.rcon_status*/);
+		ROS_WARN("%s, %d,ev.bumper_triggered(%d) ev.cliff_triggered(%d) ev.tilt_triggered(%d) ev.slip_triggered(%d)"
+				, __FUNCTION__, __LINE__, ev.bumper_triggered, ev.cliff_triggered, ev.tilt_triggered , ev.slip_triggered/*,ev.rcon_status*/);
 		return true;
 	}
 
@@ -204,7 +205,7 @@ bool IMoveType::isFinishForward()
 
 bool IMoveType::handleMoveBackEvent(ACleanMode *p_clean_mode)
 {
-	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered)
+	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || ev.slip_triggered)
 	{
 		p_clean_mode->saveBlocks();
 		movement_i_ = mm_back;
@@ -217,6 +218,8 @@ bool IMoveType::handleMoveBackEvent(ACleanMode *p_clean_mode)
 			back_distance = 0.06;
 		else if (ev.tilt_triggered)
 			back_distance = TILT_BACK_DISTANCE;
+		else if (ev.slip_triggered)
+			back_distance = 0.15;
 		else
 			back_distance = 0.01;
 
@@ -228,11 +231,11 @@ bool IMoveType::handleMoveBackEvent(ACleanMode *p_clean_mode)
 
 bool IMoveType::handleMoveBackEventLinear(ACleanMode *p_clean_mode)
 {
-	if (ev.bumper_triggered || ev.tilt_triggered)
+	if (ev.bumper_triggered || ev.tilt_triggered || ev.slip_triggered)
 	{
 		p_clean_mode->saveBlocks();
 		movement_i_ = mm_back;
-		auto back_distance = (ev.tilt_triggered/* || gyro.getAngleR() > 5*/) ? TILT_BACK_DISTANCE : 0.01;
+		auto back_distance = (ev.tilt_triggered || ev.slip_triggered) ? TILT_BACK_DISTANCE : 0.01;
 //		if(gyro.getAngleR() > 5)
 //			beeper.beepForCommand(VALID);
 		sp_movement_.reset(new MovementBack(back_distance, BACK_MAX_SPEED));
@@ -243,6 +246,6 @@ bool IMoveType::handleMoveBackEventLinear(ACleanMode *p_clean_mode)
 }
 
 bool IMoveType::isNotHandleEvent() {
-	return !(ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered);
+	return !(ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || ev.slip_triggered);
 }
 

@@ -7,7 +7,6 @@
 //
 
 #include <movement.hpp>
-#include "dev.h"
 
 
 IFollowWall::IFollowWall(bool is_left) : previous_(0), seen_charger_counter(0), is_left_(is_left)

@@ -5,8 +5,9 @@
 #include <mode.hpp>
 #include <brush.h>
 #include <water_tank.hpp>
+#include <gyro.h>
 #include "wifi/wifi.h"
-
+#include "vacuum.h"
 #include "key_led.h"
 
 void StateExploration::init()
@@ -18,6 +19,7 @@ void StateExploration::init()
 								: vacuum.setForCurrentMode(Vacuum::VacMode::vac_low_mode);
 	s_wifi.setWorkMode(Mode::cm_exploration);
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
+	gyro.setTiltCheckingEnable(true);
 	ROS_INFO("%s %d: Enter state exploration.", __FUNCTION__, __LINE__);
 }
 

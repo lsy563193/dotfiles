@@ -22,6 +22,7 @@
 #include <infrared_display.hpp>
 #include <speaker.h>
 #include <remote.hpp>
+#include <robot.hpp>
 
 #include "move_type.hpp"
 
@@ -112,10 +113,8 @@ void MoveTypeDeskTest::run()
 				// Switch to next stage.
 				infrared_display.displayNormalMsg(test_stage_, 0);
 				sp_mode_->action_i_ = sp_mode_->ac_follow_wall_left;
-				Points points_{};
-				points_.push_front({0, 0, 0});
 				p_movement_.reset();
-				p_movement_.reset(new MoveTypeFollowWall(points_, true));
+				p_movement_.reset(new MoveTypeFollowWall(true));
 
 				ROS_WARN("%s %d: Stage 3 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
 			}
