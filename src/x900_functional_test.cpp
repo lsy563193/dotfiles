@@ -177,7 +177,7 @@ uint8_t serial_port_test()
 	}
 	if(send_string_sum.compare(receive_string_sum) == 0)
 	{
-		if(receive_data[M0_VERSION_H] << 8 | receive_data[M0_VERSION_L] != CURRENT_VERSION)
+		if(receive_data[M0_VERSION_H] << 8 | receive_data[M0_VERSION_L] != CURRENT_PATCH)
 			test_ret = receive_data[M0_VERSION_H] << 8 | receive_data[M0_VERSION_L];
 	}
 	else
@@ -284,7 +284,6 @@ void main_board_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &curren
 	test_stage = FUNC_ELECTRICAL_AND_LED_TEST_MODE;
 	while(ros::ok()) {
 		key_led.set(100, 100);
-		serial.setSendData(CTL_MIX, 1);
 		infrared_display.displayNormalMsg(test_stage-4, 0);
 		switch (test_stage) {
 			case FUNC_ELECTRICAL_AND_LED_TEST_MODE:/*---Main board electrical specification and LED test---*/
@@ -625,9 +624,9 @@ void electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixture,
 				}
 				break;
 			case 3:/*---LED---*/
-					key_led.set(100, 100);
-					serial.setSendData(CTL_MIX, 1);
-				if(buf[36])
+				key_led.set(100, 100);
+				wifi_led.set(ON);
+				if(buf[REC_MIX_BYTE] & 0x01)
 				{
 					count_key_pressed++;
 				}
@@ -639,6 +638,7 @@ void electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixture,
 						is_fixture = false;
 					beeper.beepForCommand(true);
 					test_stage++;
+					wifi_led.set(OFF);
 				}
 				break;
 		}
@@ -706,7 +706,7 @@ void cliff_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &current_dat
 			return ;
 		}
 
-		if(buf[36])
+		if(buf[REC_MIX_BYTE] & 0x01)
 		{
 			if((test_result & 0x0003) != 0x0003)
 				error_code = LEFT_CLIFF_ERROR;
@@ -760,7 +760,7 @@ void bumper_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &current_da
 			beeper.beepForCommand(true);
 			return ;
 		}
-		if (buf[36]) {
+		if (buf[REC_MIX_BYTE] & 0x01) {
 			if ((test_result & 0x03) != 0x03)
 				error_code = LEFT_BUMPER_ERROR;
 			if ((test_result & 0x0c) != 0x0c)
@@ -842,7 +842,7 @@ void obs_test(bool is_fixture, uint8_t &test_stage, uint16_t &error_code, uint16
 				beeper.beepForCommand(true);
 				return ;
 			}
-			if (buf[36]) {
+			if (buf[REC_MIX_BYTE] & 0x01) {
 				if ((test_result & 0x0001) != 0x0001)
 					error_code = LEFT_OBS_ERROR;
 				if ((test_result & 0x0004) != 0x0004)
@@ -861,7 +861,7 @@ void obs_test(bool is_fixture, uint8_t &test_stage, uint16_t &error_code, uint16
 				return ;
 			}
 
-			if (buf[36]) {
+			if (buf[REC_MIX_BYTE] & 0x01) {
 				if ((test_result & 0x0003) != 0x0003)
 					error_code = LEFT_OBS_ERROR;
 				if ((test_result & 0x000c) != 0x000c)
@@ -963,7 +963,7 @@ void rcon_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &current_data
 			beeper.beepForCommand(true);
 			return ;
 		}
-		if (buf[36]) {
+		if (buf[REC_MIX_BYTE] & 0x01) {
 			if ((test_result & 0x0300) != 0x0300)
 				error_code = BLRCON_ERROR;
 			if ((test_result & 0x00c0) != 0x00c0)
@@ -1027,7 +1027,7 @@ void water_tank_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_co
 					beeper.beepForCommand(true);
 					step++;
 				}
-				if(buf[36])
+				if(buf[REC_MIX_BYTE] & 0x01)
 				{
 					error_code = SWING_MOTOR_ERROR;
 					current_data = static_cast<uint16_t>((buf[2] << 8) | buf[3]);
@@ -1037,7 +1037,7 @@ void water_tank_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_co
 			case 2:
 				/*--- turn off swing motor and turn on pump ---*/
 				serial.setSendData(CTL_WATER_TANK, 0x80);
-				if(buf[36])
+				if(buf[REC_MIX_BYTE] & 0x01)
 				{
 					test_stage++;
 					return ;
@@ -1233,7 +1233,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 					step++;
 					count = 0;
 				}
-				if(buf[36]) {
+				if(buf[REC_MIX_BYTE] & 0x01) {
 					error_code = LEFT_WHEEL_STALL_ERROR;
 					current_data = 0;
 					return;
@@ -1411,7 +1411,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 					step++;
 					count = 0;
 				}
-				if(buf[36])
+				if(buf[REC_MIX_BYTE] & 0x01)
 				{
 					error_code = RIGHT_WHEEL_STALL_ERROR;
 					current_data = 0;
@@ -1537,7 +1537,7 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 					step++;
 					count = 0;
 				}
-				if(buf[36])
+				if(buf[REC_MIX_BYTE] & 0x01)
 				{
 					error_code = LEFT_BRUSH_STALL_ERROR;
 					current_data = 0;
@@ -1624,7 +1624,7 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 					step++;
 					count = 0;
 				}
-				if(buf[36])
+				if(buf[REC_MIX_BYTE] & 0x01)
 				{
 					error_code = RIGHT_BRUSH_STALL_ERROR;
 					current_data = 0;
@@ -1841,7 +1841,7 @@ void main_brush_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_co
 					count = 0;
 					step++;
 				}
-				if(buf[36])
+				if(buf[REC_MIX_BYTE] & 0x01)
 				{
 					error_code = MAIN_BRUSH_STALL_ERROR;
 					current_data = 0;
