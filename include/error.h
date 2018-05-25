@@ -162,5 +162,5 @@ private:
 	ErrorType error_code_;
 };
 
-extern Error error;
+extern Error robot_error;
 #endif //PP_ERROR_H
