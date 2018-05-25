@@ -2148,7 +2148,8 @@ bool ACleanMode::updateActionInStateFollowWall()
 		action_i_ = ac_null;
 //		genNextAction();
 	}
-	else if (robot_timer.trapTimeout(ESCAPE_TRAPPED_TIME)) {
+	else if (robot_timer.trapTimeout(ESCAPE_TRAPPED_TIME) && is_trapped_) {
+			ROS_WARN("%s,%d: trapTimeout", __FUNCTION__, __LINE__);
 			action_i_ = ac_null;
 			trapped_time_out_ = true;
 	}else{
@@ -2157,8 +2158,10 @@ bool ACleanMode::updateActionInStateFollowWall()
 		ROS_WARN("%s,%d: mt_follow_wall_left", __FUNCTION__, __LINE__);
 	}
 
-	if(action_i_ == ac_null)
+	if(action_i_ == ac_null) {
 		ret = false;
+		ROS_WARN("%s %d: action_i_ == ac_null", __FUNCTION__, __LINE__);
+	}
 
 	genNextAction();
 	return ret;

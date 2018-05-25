@@ -10,7 +10,7 @@ ActionSleep::ActionSleep(bool fake_sleep)
 {
 	ROS_WARN("%s %d: Start sleep action.", __FUNCTION__, __LINE__);
 	// Ensure the previous voice is finished before sleep.
-	wifi_led.set(false);
+	wifi_led.disable();
 	//s_wifi.uploadStatus(0xc8,0x00);
 	//s_wifi.sleep();
 
@@ -47,6 +47,7 @@ ActionSleep::~ActionSleep()
 	usleep(100000);
 	beeper.beep(1, 80, 4, 1);*/
 
+	wifi_led.enable();
 	ROS_WARN("%s %d: End sleep action.", __FUNCTION__, __LINE__);
 }
 

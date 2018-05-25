@@ -277,7 +277,7 @@ private:
 	double radian_offset_;
 	float gyro_radian_step_;
 	uint8_t around_charger_stub_dir;
-	uint8_t go_home_bumper_cnt;
+	uint8_t go_home_change_dir_cnt_;
 	uint8_t check_position_dir;
 	int8_t around_move_cnt;
 	bool position_far;

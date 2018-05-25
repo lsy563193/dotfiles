@@ -36,7 +36,7 @@ void MovementGoToCharger::resetGoToChargerVariables()
 	radian_offset_ = 0;
 	gyro_radian_step_ = 0;
 	around_charger_stub_dir = 0;
-	go_home_bumper_cnt = 0;
+	go_home_change_dir_cnt_ = 0;
 	around_move_cnt = 0;
 	position_far = true;
 	near_counter = 0;
@@ -360,7 +360,7 @@ bool MovementGoToCharger::isSwitch()
 			check_in_front_of_home = 0;
 			turn_angle_ = 180;
 			back_distance_ = 0.01;
-			if(++go_home_bumper_cnt > 1)
+			if(++go_home_change_dir_cnt_ > 1)
 				gtc_state_now_ = gtc_turn_for_charger_signal_init;
 			else
 				gtc_state_now_ = gtc_around_charger_station_init;
@@ -531,7 +531,10 @@ bool MovementGoToCharger::isSwitch()
 				check_in_front_of_home = 0;
 				turn_angle_ = 180;
 				back_distance_ = 0;
-				gtc_state_now_ = gtc_around_charger_station_init;
+				if(++go_home_change_dir_cnt_ > 1)
+					gtc_state_now_ = gtc_turn_for_charger_signal_init;
+				else
+					gtc_state_now_ = gtc_around_charger_station_init;
 				return true;
 			}
 		}
@@ -547,7 +550,7 @@ bool MovementGoToCharger::isSwitch()
 		{
 			ROS_WARN("%s %d: Get bumper triggered.", __FUNCTION__, __LINE__);
 			around_charger_stub_dir = 1 - around_charger_stub_dir;
-			if(++go_home_bumper_cnt > 1)
+			if(++go_home_change_dir_cnt_ > 1)
 				gtc_state_now_ = gtc_turn_for_charger_signal_init;
 			else
 				gtc_state_now_ = gtc_around_charger_station_init;

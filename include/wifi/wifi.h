@@ -50,7 +50,7 @@ public:
 
 	int8_t uploadStatus(int msg_code,const uint8_t seq_num);
 
-	bool uploadMap(MapType map);
+	int uploadMap(MapType map);
 
 	uint8_t setRobotCleanMode(wifi::WorkMode work_mode);
 
@@ -113,7 +113,7 @@ public:
 	uint8_t checkVersion();
 	uint8_t checkMAC();
 
-	void taskPushBack(S_Wifi::ACT action);	
+	void taskPushBack(S_Wifi::ACT action);
 
 	void wifiSendRutine();
 
@@ -198,7 +198,7 @@ private:
 	void cloudConnected();
 
 	wifi::RxManager s_wifi_rx_;
-	wifi::TxManager s_wifi_tx_;	
+	wifi::TxManager s_wifi_tx_;
 
 	bool is_wifi_connected_;
 	bool first_time_connected_;
@@ -234,12 +234,19 @@ private:
 
 	Cells *history_map_data_;
 	Cells *history_pass_path_data_;
+
+	uint32_t sleep_time_;
 protected:
 
 	wifi::WorkMode getWorkMode()
 	{
 		return robot_work_mode_;
 	}
+
+	template <typename T1,typename T2>
+	int dataPushBack(std::vector<T1> &list,T2 data1,T2 data2);
+	
+	bool commit(std::vector<std::vector<uint8_t>> &map_packs,uint32_t sleep_time,bool wait_ack);
 
 	uint32_t find_if(std::deque<Cell_t>* list, Cell_t point,int find_type);
 	void sort_push(std::deque<Cell_t>* list, Cell_t point,int sort_type);

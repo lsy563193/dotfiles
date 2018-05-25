@@ -22,6 +22,10 @@ public:
 	void setMode(uint8_t type, state _switch, uint16_t time_ms = 600);
 
 	void processLed();
+
+	void enable();
+
+	void disable();
 private:
 
 // For wifi_led control.
@@ -30,6 +34,8 @@ private:
 	state led_switch_{state::off};
 	uint16_t led_cnt_for_one_cycle_{0};
 	uint16_t live_led_cnt_for_switch_{0};
+
+	bool enable_{true};
 
 };
 
