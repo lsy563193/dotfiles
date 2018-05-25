@@ -3,6 +3,7 @@
 
 //for tilt detct
 #include <cstdint>
+#include <ros/ros.h>
 
 #define DIF_TILT_X_VAL				100
 #define DIF_TILT_Y_VAL				100

@@ -287,6 +287,7 @@ void robot::robotbase_routine_cb()
 		sensor.front_cliff = cliff.getFront();
 		sensor.left_cliff = cliff.getLeft();
 
+		lidar.checkRobotSlipByGyro();
 		// For remote device.
 		auto remote_signal = buf[REC_REMOTE];
 		if (remote_signal != 0)
@@ -294,7 +295,6 @@ void robot::robotbase_routine_cb()
 		sensor.remote = remote.get();
 		if (remote_signal > 0)
 			ROS_INFO("%s %d: Remote received:%d", __FUNCTION__, __LINE__, remote_signal);
-
 		// For rcon device.
 		c_rcon.setStatus((buf[REC_RCON_CHARGER_4] << 24) | (buf[REC_RCON_CHARGER_3] << 16)
 						 | (buf[REC_RCON_CHARGER_2] << 8) | buf[REC_RCON_CHARGER_1]);
