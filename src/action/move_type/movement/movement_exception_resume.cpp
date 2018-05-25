@@ -281,11 +281,11 @@ bool MovementExceptionResume::isFinish()
 					if (ev.oc_wheel_left)
 					{
 						ROS_ERROR("%s,%d Left wheel stall maybe, please check!!\n", __FUNCTION__, __LINE__);
-						error.set(ERROR_CODE_LEFTWHEEL);
+						robot_error.set(ERROR_CODE_LEFTWHEEL);
 					} else
 					{
 						ROS_ERROR("%s,%d Right wheel stall maybe, please check!!\n", __FUNCTION__, __LINE__);
-						error.set(ERROR_CODE_RIGHTWHEEL);
+						robot_error.set(ERROR_CODE_RIGHTWHEEL);
 					}
 					ev.fatal_quit = true;
 					return true;
@@ -363,7 +363,7 @@ bool MovementExceptionResume::isFinish()
 			ROS_ERROR("%s %d: Main brush stuck.", __FUNCTION__, __LINE__);
 			ev.oc_brush_main = false;
 			ev.fatal_quit = true;
-			error.set(ERROR_CODE_MAINBRUSH);
+			robot_error.set(ERROR_CODE_MAINBRUSH);
 		}
 	}
 /*	else if (ev.robot_stuck)
@@ -454,7 +454,7 @@ bool MovementExceptionResume::isFinish()
 		{
 			ROS_ERROR("%s %d: Cliff jamed.", __FUNCTION__, __LINE__);
 			ev.fatal_quit = true;
-			error.set(ERROR_CODE_CLIFF);
+			robot_error.set(ERROR_CODE_CLIFF);
 		}
 	}
 	//new cliff rescue
@@ -554,7 +554,7 @@ bool MovementExceptionResume::isFinish()
 				{
 					ROS_ERROR("%s %d: Wheel cliff jamed.", __FUNCTION__, __LINE__);
 					ev.fatal_quit = true;
-					error.set(ERROR_CODE_CLIFF);
+					robot_error.set(ERROR_CODE_CLIFF);
 					break;
 				}
 			}
@@ -626,7 +626,7 @@ bool MovementExceptionResume::isFinish()
 				{
 					ROS_ERROR("%s %d: Bumper jamed.", __FUNCTION__, __LINE__);
 					ev.fatal_quit = true;
-					error.set(ERROR_CODE_BUMPER);
+					robot_error.set(ERROR_CODE_BUMPER);
 					break;
 				}
 			}
@@ -698,7 +698,7 @@ bool MovementExceptionResume::isFinish()
 				{
 					ROS_ERROR("%s %d: Lidar Bumper jamed.", __FUNCTION__, __LINE__);
 					ev.fatal_quit = true;
-					error.set(ERROR_CODE_LIDAR);
+					robot_error.set(ERROR_CODE_LIDAR);
 					break;
 				}
 			}
@@ -769,7 +769,7 @@ bool MovementExceptionResume::isFinish()
 				{
 					ROS_ERROR("%s %d: Tilt jamed.", __FUNCTION__, __LINE__);
 					ev.fatal_quit = true;
-					error.set(ERROR_CODE_STUCK);
+					robot_error.set(ERROR_CODE_STUCK);
 					break;
 				}
 			}
@@ -789,7 +789,7 @@ bool MovementExceptionResume::isFinish()
 			ev.oc_vacuum = false;
 			ev.fatal_quit = true;
 			vacuum.resetExceptionResume();
-			error.set(ERROR_CODE_VACUUM);
+			robot_error.set(ERROR_CODE_VACUUM);
 		}
 		else if (oc_vacuum_resume_cnt_ == 0)
 		{
@@ -814,7 +814,7 @@ bool MovementExceptionResume::isFinish()
 			ev.robot_stuck= false;
 			ev.slip_triggered= false;
 			ev.fatal_quit = true;
-			error.set(ERROR_CODE_STUCK);
+			robot_error.set(ERROR_CODE_STUCK);
 		}
 		switch(robot_stuck_flag_){
 			case 0:{
@@ -887,7 +887,7 @@ bool MovementExceptionResume::isFinish()
 		{
 			ROS_ERROR("%s %d: lidar jamed.", __FUNCTION__, __LINE__);
 			ev.fatal_quit = true;
-			error.set(ERROR_CODE_LIDAR);
+			robot_error.set(ERROR_CODE_LIDAR);
 		}
 	}
 	else if(ev.gyro_error) {
@@ -929,7 +929,7 @@ bool MovementExceptionResume::isFinish()
 			ROS_ERROR("%s, %d: Gyro resume fail!", __FUNCTION__, __LINE__);
 			ev.fatal_quit = true;
 			ev.gyro_error = false;
-			error.set(ERROR_CODE_GYRO);
+			robot_error.set(ERROR_CODE_GYRO);
 		}
 	}
 //	if (ev.fatal_quit)

@@ -9,7 +9,7 @@
 #include "wifi/wifi.h"
 #include "ros/ros.h"
 
-Error error;
+Error robot_error;
 
 void Error::alarm(bool can_be_interrupted)
 {
@@ -86,7 +86,7 @@ bool Error::clear(uint8_t code, bool force_clear)
 
 	if (force_clear)
 	{
-		error.set(ERROR_CODE_NONE);
+		robot_error.set(ERROR_CODE_NONE);
 		return true;
 	}
 

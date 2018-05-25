@@ -3,6 +3,7 @@
 #include <speaker.h>
 #include <beeper.h>
 #include <mathematics.h>
+#include <error.h>
 #include "gyro.h"
 #include "event_manager.h"
 
@@ -78,6 +79,7 @@ bool Gyro::waitForOn(void)
 	if (error_count_ > 10)
 	{
 		ev.fatal_quit = true;
+		robot_error.set(ERROR_CODE_GYRO);
 		return false;
 	}
 

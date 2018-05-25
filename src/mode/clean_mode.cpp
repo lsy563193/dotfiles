@@ -63,8 +63,8 @@ ACleanMode::ACleanMode()
 	c_rcon.resetStatus();
 	robot::instance()->initOdomPosition();
 	s_wifi.resetReceivedWorkMode();
-	if (error.get())
-		error.clear(error.get(), true);
+	if (robot_error.get())
+		robot_error.clear(robot_error.get(), true);
 	brush.unblockMainBrushSlowOperation();
 
 //	// todo:debug
@@ -1018,7 +1018,7 @@ bool ACleanMode::isExit()
 	{
 		if (action_i_ == ac_open_lidar && sp_action_->isTimeUp())
 		{
-			error.set(ERROR_CODE_LIDAR);
+			robot_error.set(ERROR_CODE_LIDAR);
 			setNextMode(md_idle);
 			ev.fatal_quit = true;
 			return true;

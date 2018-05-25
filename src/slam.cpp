@@ -51,7 +51,7 @@ bool Slam::openTimeOut(void)
 	{
 		ROS_ERROR("%s %d: Slam Open time out.", __FUNCTION__, __LINE__);
 		ev.fatal_quit = true;
-		error.set(ERROR_CODE_SLAM);
+		robot_error.set(ERROR_CODE_SLAM);
 		return true;
 	}
 
