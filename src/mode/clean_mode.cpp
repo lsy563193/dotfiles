@@ -690,7 +690,7 @@ bool ACleanMode::calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,boo
 void ACleanMode::scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr& scan)
 {
 	lidar.scanOriginalCb(scan);
-	lidar.checkRobotSlip();
+	lidar.checkRobotSlipByLidar();
 	if (lidar.isScanOriginalReady()
 		&& (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)) {
 		std::deque<Vector2<double>> points{};
