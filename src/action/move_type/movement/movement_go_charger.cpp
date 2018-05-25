@@ -890,10 +890,10 @@ bool MovementGoToCharger::isSwitch()
 		if (turn_connect_dir == gtc_check_position_left && ++turn_connect_cnt > 50)
 		{
 			turn_connect_cnt = 0;
-			back_distance_ = 0.3;
-			ROS_WARN("%s %d: Turn connect failed, move back for 0.3m.", __FUNCTION__, __LINE__);
-			turn_angle_ = 0;
-			gtc_state_now_ = gtc_turn_for_charger_signal_init;
+			back_distance_ = 0.15;
+			ROS_WARN("%s %d: Turn connect failed, move away from charger station.", __FUNCTION__, __LINE__);
+			turn_angle_ = 180;
+			gtc_state_now_ = gtc_away_from_charger_station_init;
 			return true;
 		}
 	}
