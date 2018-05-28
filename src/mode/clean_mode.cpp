@@ -1031,6 +1031,14 @@ bool ACleanMode::isExit()
 		return true;
 	}
 
+	if (ev.cliff_all_triggered)
+	{
+		ROS_WARN("%s %d: Exit for ev.cliff_all_triggered.", __FUNCTION__, __LINE__);
+		setNextMode(md_idle);
+		ev.fatal_quit = true;
+		return true;
+	}
+
 	if (ev.key_clean_pressed || ev.key_long_pressed || s_wifi.receiveIdle()){
 		ROS_WARN("%s %d: Exit for remote key or clean key or long press clean key or wifi idle.", __FUNCTION__, __LINE__);
 		setNextMode(md_idle);
@@ -2240,7 +2248,7 @@ bool ACleanMode::isIsolate(const Cell_t& curr) {
 	ROS_ERROR("minx(%d),miny(%d),maxx(%d),maxy(%d)",bound.min.x, bound.min.y,bound.max.x, bound.max.y);
 
 	auto cells = Cells{};
-	auto is_found = fw_tmp_map.dijstra(curr, cells,[&](const Cell_t& c_it){return c_it == external_target;},true);
+	auto is_found = fw_tmp_map.dijstra(curr, cells,[&](const Cell_t& c_it){return c_it == external_target;},true, true);
 	return is_found;
 }
 
