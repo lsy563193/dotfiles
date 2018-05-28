@@ -269,45 +269,39 @@ bool MovementExceptionResume::isFinish()
 			brush.stop();
 		vacuum.stop();
 		water_tank.stop(WaterTank::operate_option::swing_motor_and_pump);
-		if (ros::Time::now().toSec() - resume_wheel_start_time_ >= 1)
+		if (ros::Time::now().toSec() - resume_wheel_start_time_ >= 2)
 		{
-			if (wheel.getLeftWheelOc() || wheel.getRightWheelOc())
+			if (ev.oc_wheel_left) {
+				ROS_WARN("%s %d: Left wheel resume succeeded.", __FUNCTION__, __LINE__);
+				ev.oc_wheel_left = false;
+			}
+			else {
+				ROS_WARN("%s %d: Right wheel resume succeeded.", __FUNCTION__, __LINE__);
+				ev.oc_wheel_right = false;
+			}
+		}
+		if (wheel.getLeftWheelOc() || wheel.getRightWheelOc())
+		{
+			if (++wheel_resume_cnt_ >= 30)
 			{
-				if (wheel_resume_cnt_ >= 3)
+				wheel.stop();
+				brush.stop();
+				vacuum.stop();
+				if (ev.oc_wheel_left)
 				{
-					wheel.stop();
-					brush.stop();
-					vacuum.stop();
-					if (ev.oc_wheel_left)
-					{
-						ROS_ERROR("%s,%d Left wheel stall maybe, please check!!\n", __FUNCTION__, __LINE__);
-						robot_error.set(ERROR_CODE_LEFTWHEEL);
-					} else
-					{
-						ROS_ERROR("%s,%d Right wheel stall maybe, please check!!\n", __FUNCTION__, __LINE__);
-						robot_error.set(ERROR_CODE_RIGHTWHEEL);
-					}
-					ev.fatal_quit = true;
-					return true;
-				}
-				else
+					ROS_ERROR("%s,%d Left wheel stall maybe, please check!!\n", __FUNCTION__, __LINE__);
+					robot_error.set(ERROR_CODE_LEFTWHEEL);
+				} else
 				{
-					resume_wheel_start_time_ = time(NULL);
-					wheel_resume_cnt_++;
-					ROS_INFO("%s %d: Failed to resume for %d times.", __FUNCTION__, __LINE__, wheel_resume_cnt_);
+					ROS_ERROR("%s,%d Right wheel stall maybe, please check!!\n", __FUNCTION__, __LINE__);
+					robot_error.set(ERROR_CODE_RIGHTWHEEL);
 				}
+				ev.fatal_quit = true;
+				return true;
 			}
 			else
 			{
-				if (ev.oc_wheel_left)
-				{
-					ROS_WARN("%s %d: Left wheel resume succeeded.", __FUNCTION__, __LINE__);
-					ev.oc_wheel_left = false;
-				} else
-				{
-					ROS_WARN("%s %d: Right wheel resume succeeded.", __FUNCTION__, __LINE__);
-					ev.oc_wheel_right = false;
-				}
+				ROS_INFO("%s %d: Failed to resume for %d times.", __FUNCTION__, __LINE__, wheel_resume_cnt_);
 			}
 		}
 	}
