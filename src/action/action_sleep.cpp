@@ -39,6 +39,7 @@ ActionSleep::~ActionSleep()
 {
 
 	speaker.play(VOICE_WAKE_UP_UNOFFICIAL);
+	speaker.play(VOICE_NULL, false);
 	/*beeper.beep(4, 80, 0, 1);
 	usleep(100000);
 	beeper.beep(3, 80, 0, 1);
