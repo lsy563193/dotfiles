@@ -615,60 +615,6 @@ bool GridMap::count_if(const Cell_t &curr_cell, std::function<bool(const Cell_t 
 //	ROS_WARN("%s,is_trapped(%d),trapped_clean_count(%d)",__FUNCTION__,targets.empty(), count);
 	return targets.empty();
 }
-bool GridMap::dijstra(const Cell_t &curr_cell, Cells &targets, std::function<bool(const Cell_t &next)> compare,bool is_stop) {
-	typedef std::multimap<int16_t, Cell_t> Queue;
-	typedef std::pair<int16_t, Cell_t> Entry;
-
-	reset(COST_MAP);
-	Queue queue;
-	setCell(COST_MAP, curr_cell.x, curr_cell.y, 1);
-	queue.emplace(1, curr_cell);
-
-	while (!queue.empty()) {
-//		 Get the nearest next from the queue
-		if (queue.begin()->first == 5) {
-			Queue tmp_queue;
-			std::for_each(queue.begin(), queue.end(), [&](const Entry &iterators) {
-				tmp_queue.emplace(0, iterators.second);
-			});
-			queue.swap(tmp_queue);
-		}
-		auto start = queue.begin();
-		auto next = start->second;
-		auto cost = start->first;
-		queue.erase(start);
-		if (compare(next))
-		{
-			targets.push_back(next);
-			if(is_stop)
-			{
-				ROS_INFO("find target(%d,%d)",next.x, next.y);
-				return true;
-			}
-		}
-
-		for (auto index = 0; index < 4; index++) {
-
-			if (cellIsOutOfRange(next) || isOutOfTargetRange(next))
-			{
-//				printf("(%d, %d), %d, %d\n", next.x, next.y, cellIsOutOfRange(next),
-//					   (is_target ? isOutOfTargetRange(next) : isOutOfMap(next)));
-				continue;
-			}
-
-			auto neighbor = next + cell_direction_[index];
-
-			if (getCell(COST_MAP, neighbor.x, neighbor.y) == 0) {
-				if (isBlockAccessible(neighbor.x, neighbor.y))
-				{
-					queue.emplace(cost + 1, neighbor);
-					setCell(COST_MAP, neighbor.x, neighbor.y, cost + 1);
-				}
-			}
-		}
-	}
-	return !targets.empty();
-}
 
 bool GridMap::find_if(const Cell_t &curr_cell, Cells &targets, std::function<bool(const Cell_t &next)> compare) {
 	typedef std::multimap<int16_t, Cell_t> Queue;
@@ -769,6 +715,11 @@ bool GridMap::isOutOfTargetRange(const Cell_t &cell)
 bool GridMap::cellIsOutOfRange(Cell_t cell)
 {
 	return cell.x < xRangeMin + 1 || cell.y < yRangeMin + 1 || cell.x > xRangeMax - 1 || cell.y > yRangeMax - 1;
+}
+BoundingBox2 GridMap::genRange()
+{
+	return{Cell_t{static_cast<int16_t>(g_x_min - 1), static_cast<int16_t>(g_y_min - 1)}, Cell_t{
+			static_cast<int16_t>(g_x_max + 1), static_cast<int16_t>(g_y_max + 1)}};
 }
 
 bool GridMap::pointIsPointingOutOfRange(Point_t point)

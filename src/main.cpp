@@ -105,10 +105,10 @@ int main(int argc, char **argv)
 	//test
 	Cell_t curr{};
 	map.loadMap(true,curr);
-	map.print(curr,CLEAN_MAP, Cells{});
+//	map.print(curr,CLEAN_MAP, Cells{});
 	setPosition(cellToCount(curr.x),cellToCount(curr.y));
 
-	Dir_t old_dir_=MAP_NEG_X;
+	Dir_t old_dir_=MAP_POS_X;
 	Points remain_path_{};
 
 	NavCleanPathAlgorithm clean_path_algorithm_;

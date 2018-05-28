@@ -189,7 +189,6 @@ public:
 	bool isFrontBlockBoundary(int dx);
 
 	int8_t isNeedClean(int16_t x, int16_t y);
-	bool dijstra(const Cell_t &curr_cell, Cells &targets, std::function<bool(const Cell_t &next)> compare,bool is_stop);
 	bool find_if(const Cell_t &curr_cell, Cells &targets, std::function<bool(const Cell_t &next)> compare);
 	bool count_if(const Cell_t &curr_cell, std::function<bool(const Cell_t &next)> compare, int& count);
 //	void generateSPMAP(const Cell_t &curr, Cells &target_list);
@@ -228,6 +227,7 @@ public:
 	bool isOutOfMap(const Cell_t &cell);
 	bool isOutOfTargetRange(const Cell_t &cell);
 	bool cellIsOutOfRange(Cell_t cell);
+	BoundingBox2 genRange();
 	bool pointIsPointingOutOfRange(Point_t point);
 	void cellPreventOutOfRange(Cell_t &cell);
 

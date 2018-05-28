@@ -10,10 +10,36 @@
 #include "BoundingBox.h"
 
 extern const Cell_t cell_direction_[9];
+extern const Cell_t cell_direction_4[4];
 
 typedef std::deque<Cells> PathList;
 
 class GridMap;
+
+class EqualTarget
+{
+public:
+	EqualTarget(const Cell_t& curr):curr_(curr) { };
+    bool operator()(const Cell_t &c_it) {
+		return c_it == curr_;
+//			   && std::any_of(std::begin(cell_direction_4),std::end(cell_direction_4),[&](const Cell_t& cell){ return map_.getCell(CLEAN_MAP, cell.x, cell.y) == CLEANED;});
+	}
+
+private:
+	Cell_t curr_;
+};
+
+class isAccessable
+{
+public:
+	isAccessable(const BoundingBox2& bound,GridMap* p_map):bound_(bound),p_map_(p_map) { };
+	bool operator()(const Cell_t &c_it) ;
+
+private:
+	BoundingBox2 bound_;
+	GridMap* p_map_;
+};
+
 class APathAlgorithm
 {
 public:
@@ -24,6 +50,8 @@ public:
 	void findPath(GridMap &map, const Cell_t &start, const Cell_t &target, Cells &path, Dir_t last_i);
 
 	void flood_fill(const Cell_t& curr);
+	using func_compare_t =  std::function<bool(const Cell_t &next)>;
+	bool dijstra(GridMap& map, const Cell_t &curr_cell, Cells &targets,func_compare_t is_target,bool is_stop,func_compare_t isAccessible);
 	public:
 	/*
 	 * @author Patrick Chow
@@ -82,7 +110,8 @@ protected:
 	bool checkTrappedUsingDijkstra(GridMap &map, const Cell_t &curr_cell);
 };
 
-typedef BoundingBox2(*RangeFunction)(Cell_t&, Cell_t&, Cell_t&);
+//typedef BoundingBox2(*RangeFunction)(const Cell_t&, const BoundingBox2& bound);
+using RangeFunction = std::function<BoundingBox2()>;
 
 class IsIncrease {
 public:
@@ -97,44 +126,28 @@ private:
 
 class BestTargetFilter {
 public:
-	BestTargetFilter(RangeFunction range_function, int turn_count, bool is_toward_pos,bool turn_top_limit=false):range_function_(range_function), turn_count_(turn_count),is_toward_pos_(is_toward_pos),turn_top_limit_(turn_top_limit) {};
+	BestTargetFilter(std::string name,RangeFunction target_bound_func,RangeFunction range_bound_func,  int turn_count, bool is_toward_pos,bool turn_top_limit=false):name_(name), update_target_bound(target_bound_func),update_range_bound(range_bound_func),  turn_count_(turn_count),is_toward_pos_(is_toward_pos),turn_top_limit_(turn_top_limit) {};
 
-	void update(Cell_t& curr, Cell_t& min, Cell_t& max){
-		auto bound = range_function_(curr, min, max);
-		min_ = bound.min;
-		max_ = bound.max;
+	void displayName(){
+		std::cout << name_ << std::endl;
 	};
-	int operator()(const Cells &path) {
-		if(turn_count_ ==0) {
-			return std::is_sorted(path.begin(), path.end(), IsIncrease(is_toward_pos_));
-		}
-		else if(turn_count_ == 1){
-			auto point = std::is_sorted_until(path.begin(), path.end(), IsIncrease(!is_toward_pos_)) - 1;
-			if(!(point != path.begin() && point != path.end()-1 && std::is_sorted(point, path.end(), IsIncrease(is_toward_pos_))))
-				return false;
-			if(turn_top_limit_)
-			{
-				if(std::abs(point->y - path.front().y) >2)
-					return false;
-				if(std::abs(path.back().x - path.front().x) >5)
-					return false;
-			}
-			return true;
-		}
-		else/* if(turn_count_ ==-1)*/{//any turn
-			return true;
-		}
+	void updateTargetAndRangeBound(){
+		target_bound = update_target_bound();
+		range_bound = update_range_bound();
 	};
+
 	bool towardPos(){
 		return (turn_count_== 0 && is_toward_pos_)||(turn_count_== 1 && !is_toward_pos_);
 	};
 //private:
 //	bool is_toward_pos_=false;
-	Cell_t min_;
-	Cell_t max_;
+	BoundingBox2 target_bound;
+	BoundingBox2 range_bound;
+	std::string name_;
 	int turn_count_;
 	bool is_toward_pos_{};
-	RangeFunction range_function_;
+	RangeFunction update_target_bound;
+	RangeFunction update_range_bound;
 	bool turn_top_limit_{false};
 };
 
@@ -154,7 +167,8 @@ class NavCleanPathAlgorithm: public APathAlgorithm
 	 * @return: bool, true if generating succeeds.
 	 */
 public:
-	bool generatePath(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &plan_path) override;
+	BoundingBox2 getLine(const Cell_t& curr,GridMap& map);
+	bool generatePath(GridMap &map, const Point_t &curr_p, const Dir_t &last_dir, Points &plan_path) override;
 	/*
 	 * @author Patrick Chow
 	 * @last modify by Austin Liu
@@ -168,14 +182,14 @@ public:
 	 */
 #if !USE_NEW_PATH_PLAN
     bool should_follow_wall(){
-		return (		curr_filter_ == &filter_p0_1t_xp
-						||	curr_filter_ == &filter_p0_1t_xn
-						||	curr_filter_ == &filter_n0_1t_xp
-						||	curr_filter_ == &filter_n0_1t_xn
-						||	curr_filter_ == &filter_p2
-						||	curr_filter_ == &filter_p1
-						||	curr_filter_ == &filter_n2
-						||	curr_filter_ == &filter_n1);
+		return (		curr_filter_ == &filter_p0_1t_p
+						||	curr_filter_ == &filter_p0_1t_n
+						||	curr_filter_ == &filter_n0_1t_p
+						||	curr_filter_ == &filter_n0_1t_n
+						||	curr_filter_ == &filter_p2_0t
+						||	curr_filter_ == &filter_p1_0t
+						||	curr_filter_ == &filter_n2_0t
+						||	curr_filter_ == &filter_n1_0t);
 	};
     bool is_pox_y(){
 		return curr_filter_->towardPos();
@@ -190,7 +204,8 @@ public:
 #endif
 private:
 	using pair_bb = std::tuple<BoundingBox2, BoundingBox2,Dir_t>;
-	std::unique_ptr<pair_bb> generateBounds(GridMap& map, const Cell_t& curr, int bound_i,Dir_t last_dir);
+	std::unique_ptr<std::deque<BestTargetFilter*>> generateBounds(GridMap& map, const Cell_t& curr, int bound_i,Dir_t last_dir);
+
 	/*
 	 * @author Lin Shao Yue
 	 * @last modify by Austin Liu
@@ -253,66 +268,114 @@ private:
 	bool checkTrapped(GridMap &map, const Cell_t &curr_cell) override ;
 #if !USE_NEW_PATH_PLAN
 	std::unique_ptr<Cells> findTargetInSameLane(GridMap &map, const Cell_t &curr_cell);
-//	RangeFunction range_0_xp = [](Cell_t& curr, Cell_t& min, Cell_t& max){
-//		return BoundingBox2{curr, Cell_t{max.x, curr.y}};
-//	};
-//	RangeFunction range_0_xn = [](Cell_t& curr, Cell_t& min, Cell_t& max){
-//		return BoundingBox2{Cell_t{min.x, curr.y}, curr};
-//	};
-	RangeFunction range_0_xp = [](Cell_t& curr, Cell_t& min, Cell_t& max){
-		return BoundingBox2{curr, Cell_t{max.x, curr.y}};
-	};
-	RangeFunction range_0_xn = [](Cell_t& curr, Cell_t& min, Cell_t& max){
-		return BoundingBox2{Cell_t{min.x, curr.y}, curr};
-	};
-	RangeFunction range_p2 = [](Cell_t& curr, Cell_t& min, Cell_t& max){
-		return BoundingBox2{Cell_t{min.x, (int16_t)(curr.y + 2)}, Cell_t{max.x, (int16_t)(curr.y + 2)}};
-	};
-	RangeFunction range_p3p = [](Cell_t& curr, Cell_t& min, Cell_t& max){
-		return BoundingBox2{Cell_t{min.x, (int16_t)(curr.y + 3)}, max};
-	};
-	RangeFunction range_p1 = [](Cell_t& curr, Cell_t& min, Cell_t& max){
-		return BoundingBox2{Cell_t{min.x, curr.y}, Cell_t{max.x, (int16_t)(curr.y+1)}};
-	};
-//	RangeFunction range_p_1t = [](Cell_t& curr, Cell_t& min, Cell_t& max){
-//		return BoundingBox2{Cell_t{min.x, curr.y}, max};
-//	};
-
-	RangeFunction range_n2 = [](Cell_t& curr, Cell_t& min, Cell_t& max){
-		return BoundingBox2{Cell_t{min.x, (int16_t)(curr.y-2)}, Cell_t{max.x, (int16_t)(curr.y-2)}};
-	};
-	RangeFunction range_n3n = [](Cell_t& curr, Cell_t& min, Cell_t& max){
-		return BoundingBox2{min, Cell_t{max.x, (int16_t)(curr.y-3)}};
+/////////////////////////////////////////////////////////////////
+	RangeFunction range_0 = [&](){
+		return BoundingBox2{curr_filter_->target_bound.min - Cell_t{0,1}, curr_filter_->target_bound.max + Cell_t{0,1}};
 	};
 
-	RangeFunction range_n1 = [](Cell_t& curr, Cell_t& min, Cell_t& max){
-		return BoundingBox2{Cell_t{min.x, (int16_t)(curr.y-1)}, Cell_t{max.x, (int16_t)(curr.y-1)}};
+	RangeFunction range_1_2p = [&](){
+		return BoundingBox2{Cell_t{curr_bound.min.x, curr_.y}, curr_filter_->target_bound.max};
 	};
-//	RangeFunction range_n_1t = [](Cell_t& curr, Cell_t& min, Cell_t& max){
-//		return BoundingBox2{min, Cell_t{max.x, curr.y}};
-//	};
-	RangeFunction range_all = [](Cell_t& curr, Cell_t& min, Cell_t& max){
-		return BoundingBox2{min, max};
+	RangeFunction range_1_2n = [&](){
+		return BoundingBox2{curr_filter_->target_bound.min, Cell_t{curr_bound.max.x, curr_.y}};
 	};
+	RangeFunction range_p0_1t_p = [&](){
+		return BoundingBox2{curr_bound.min - Cell_t{0,2}, Cell_t{(int16_t)(curr_.x+5), curr_.y}};
+	};
+	RangeFunction range_p0_1t_n = [&](){
+		return BoundingBox2{curr_ - Cell_t{0,2}, Cell_t{(int16_t)(curr_.x+5), curr_.y}};
+	};
+	RangeFunction range_n0_1t_x = [&](){
+		return BoundingBox2{Cell_t{curr_bound.min.x-5, (int16_t)(curr_.y-2)}, curr_};
+	};
+	RangeFunction range_n0_1t_n = [&](){
+		return BoundingBox2{curr_ - Cell_t{0,2}, Cell_t{(int16_t)(curr_.x+5), curr_.y}};
+	};
+////////////////////////////////////////////////////////////
+
+	RangeFunction target_p0_0t_p = [&](){
+		return BoundingBox2{curr_, Cell_t{map_bound.max.x, curr_.y}};
+	};
+
+	RangeFunction target_p0_0t_n = [&](){
+		return BoundingBox2{Cell_t{map_bound.min.x, curr_.y}, curr_};
+	};
+
+	RangeFunction target_p0_1t_p = [&](){
+		return BoundingBox2{Cell_t{(int16_t)(curr_bound.max.x+3), curr_.y}, Cell_t{(int16_t)(curr_bound.max.x+5), curr_.y}};
+	};
+
+	RangeFunction target_p0_1t_n = [&](){
+		return BoundingBox2{Cell_t{(int16_t)(curr_bound.min.x-5), curr_.y}, Cell_t{(int16_t)(curr_bound.min.x-3), curr_.y}};
+	};
+
+	RangeFunction target_p1 = [&](){
+		return BoundingBox2{Cell_t{curr_bound.min.x, (int16_t)(curr_.y + 1)}, Cell_t{curr_bound.max.x, (int16_t)(curr_.y+1)}};
+	};
+
+	RangeFunction target_p2 = [&](){
+		return BoundingBox2{Cell_t{curr_bound.min.x, (int16_t)(curr_.y + 2)}, Cell_t{curr_bound.max.x, (int16_t)(curr_.y + 2)}};
+	};
+
+	RangeFunction target_p3p = [&](){
+		return BoundingBox2{Cell_t{map_bound.min.x, (int16_t)(curr_.y + 3)}, map_bound.max};
+	};
+
+	RangeFunction target_n1 =[&](){
+		return BoundingBox2{Cell_t{map_bound.min.x, (int16_t)(curr_.y-1)}, Cell_t{map_bound.max.x, (int16_t)(curr_.y-1)}};
+	};
+
+	RangeFunction target_n2 = [&](){
+		return BoundingBox2{Cell_t{curr_bound.min.x, (int16_t)(curr_.y-2)}, Cell_t{curr_bound.max.x, (int16_t)(curr_.y-2)}};
+	};
+
+	RangeFunction target_n3n =[&](){
+		return BoundingBox2{map_bound.min, Cell_t{map_bound.max.x, (int16_t)(curr_.y-3)}};
+	};
+
+	RangeFunction target_all =[&](){
+		return BoundingBox2{map_bound.min, map_bound.max};
+	};
+
 public:
-	BestTargetFilter filter_0_xp{range_0_xp, 1, true};
-//	BestTargetFilter filter_0_xn{range_0_xn, 1, false};
-	BestTargetFilter filter_p0_1t_xp{range_0_xp , 1, true, true};
-	BestTargetFilter filter_p0_1t_xn{range_0_xn, 1, true, true};
-	BestTargetFilter filter_n0_1t_xp{range_0_xp , 1, false, true};
-	BestTargetFilter filter_n0_1t_xn{range_0_xn, 1, false, true};
-	BestTargetFilter filter_p4p{range_p3p, 0, true};
-	BestTargetFilter filter_p2{range_p2, 0, true};
-	BestTargetFilter filter_p1{range_p1, 0, true};
-	BestTargetFilter filter_p_1t{range_all,1,true};
-	BestTargetFilter filter_n2{range_n2 , 0, false};
-	BestTargetFilter filter_n4n{range_n3n, 0, false};
-	BestTargetFilter filter_n1{range_n1 , 0, false};
-	BestTargetFilter filter_n_1t{range_all, 1, false};
-	BestTargetFilter filter_p_1000t{range_all, 1000,true};
-	BestTargetFilter filter_n_1000t{range_all, 1000,false};
-	BestTargetFilter* curr_filter_{};
+	BestTargetFilter filter_p0_0_p{"filter_p0_0_p", target_p0_0t_p,target_p0_0t_p, 0, true};
+	BestTargetFilter filter_p0_0_n{"filter_p0_0_n", target_p0_0t_n,target_p0_0t_n, 0, false};
 
+	BestTargetFilter filter_p0_1t_p{"filter_p0_1t_p", target_p0_1t_p, range_p0_1t_p , 1, true, true};
+	BestTargetFilter filter_p0_1t_n{"filter_p0_1t_n", target_p0_1t_n, range_p0_1t_n, 1, true, true};
+	BestTargetFilter filter_n0_1t_p{"filter_n0_1t_p", target_p0_0t_p, range_pn_1t_p, 1, false, true};
+	BestTargetFilter filter_n0_1t_n{"filter_n0_1t_n", target_p0_0t_n, range_pn_1t_n, 1, false, true};
+
+	BestTargetFilter filter_p1_0t{"filter_p1_0t", target_p1, range_1_2p, 0, true};
+	BestTargetFilter filter_p2_0t{"filter_p2_0t", target_p2, range_1_2p, 0, true};
+	BestTargetFilter filter_p3p_0t{"filter_p3p_0t", target_p3p, target_p3p, 0, true};
+
+	BestTargetFilter filter_n1_0t{"filter_n1_0t", target_n1 , range_1_2n , 0, false};
+	BestTargetFilter filter_n2_0t{"filter_n2_0t", target_n2 , range_1_2n , 0, false};
+	BestTargetFilter filter_n3n_0t{"filter_n3n_0t", target_n3n, target_n3n, 0, false};
+
+//	BestTargetFilter filter_p_1t{target_all,target_all,1,true};
+//	BestTargetFilter filter_n_1t{target_all, target_all, 1, false};
+//	BestTargetFilter filter_p_1000t{target_all, target_all, 1000,true};
+	BestTargetFilter filter_short_path{"filter_short_path:", target_all, target_all, 1000,false};
+	BestTargetFilter* curr_filter_{};
+//	std::deque<BestTargetFilter*> filters{};
+//	std::map<int,BestTargetFilter*> planers{
+//			{1,&filter_p0_0_p},
+//			{2,&filter_p0_0_n},
+//			{3,&filter_p0_1t_p},
+//			{4,&filter_p0_1t_n},
+//			{5,&filter_n0_1t_p},
+//			{6,&filter_n0_1t_n},
+//			{7,&filter_p3p_0t},
+//			{8,&filter_p3p_0t},
+//	};
+
+	BoundingBox2 map_bound;
+	BoundingBox2 bound_range;
+	BoundingBox2 curr_bound{};
+	Dir_t priority_dir;
+	Cell_t curr_;
 #endif
 private:
 	int pt_;
