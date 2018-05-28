@@ -148,7 +148,7 @@ bool Gyro::waitForOn(void)
 		}
 		else
 		{
-			if (average_angle_ > 0.002)
+			if (average_angle_ > 0.02)
 			{
 				ROS_WARN("%s %d: Robot is moved when opening gyro, re-open gyro, average_angle = %f.", __FUNCTION__, __LINE__, average_angle_);
 				setOff();
