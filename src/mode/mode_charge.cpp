@@ -65,15 +65,15 @@ bool ModeCharge::isExit()
 			return false;
 		}
 
-		if (error.get() != ERROR_CODE_NONE)
+		if (robot_error.get() != ERROR_CODE_NONE)
 		{
-			if (error.clear(error.get()))
-				ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
+			if (robot_error.clear(robot_error.get()))
+				ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, robot_error.get());
 			else
 			{
 				sp_state = state_charge.get();
 				sp_state->init();
-				error.alarm(false);
+				robot_error.alarm(false);
 				sp_action_.reset(new MovementCharge);
 				plan_activated_status_ = false;
 				ROS_WARN("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
@@ -271,7 +271,10 @@ void ModeCharge::remoteKeyHandler(bool state_now, bool state_last)
 			}
 		}
 		else
+		{
+			beeper.beepForCommand(INVALID);
 			ROS_WARN("%s %d: Receive %d but not valid during charge.", __FUNCTION__, __LINE__);
+		}
 	}
 	else
 		ROS_WARN("%s %d: Receive %d but not valid during fake sleep.", __FUNCTION__, __LINE__);

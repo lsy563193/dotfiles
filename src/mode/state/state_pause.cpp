@@ -10,7 +10,7 @@
 #include "wifi/wifi.h"
 
 void StatePause::init() {
-	if (error.get())
+	if (robot_error.get())
 		key_led.setMode(LED_STEADY, LED_RED);
 	else if (robot::instance()->isBatteryLow())
 		key_led.setMode(LED_STEADY, LED_ORANGE);

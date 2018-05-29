@@ -118,9 +118,9 @@ bool GoHomePathAlgorithm::generatePathThroughSlamMapReachableArea(GridMap &map, 
 		temp_map.merge(slam_grid_map, false, false, true, false, false, false);
 		temp_map.print(curr.toCell(), CLEAN_MAP, Cells{{0, 0}});
 		Cells cells{};
-		auto is_found = map.dijstra(curr.toCell(), cells,[&](const Cell_t& c_it){return c_it == current_home_point_.toCell();},true);
+		auto is_found = temp_map.dijstra(curr.toCell(), cells,[&](const Cell_t& c_it){return c_it == current_home_point_.toCell();},true);
 		if(is_found)
-			findPath(map, curr.toCell(),current_home_point_.toCell(),plan_path,last_dir);
+			findPath(temp_map, curr.toCell(),current_home_point_.toCell(),plan_path,last_dir);
 	}
 
 	ROS_WARN(

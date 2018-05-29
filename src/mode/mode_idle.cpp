@@ -57,11 +57,11 @@ bool ModeIdle::isExit()
 {
 	if (plan_activated_status_)
 	{
-		if (error.get() != ERROR_CODE_NONE)
+		if (robot_error.get() != ERROR_CODE_NONE)
 		{
-			if (error.clear(error.get()))
+			if (robot_error.clear(robot_error.get()))
 			{
-				ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
+				ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, robot_error.get());
 				sp_state->init();
 //				speaker.play(VOICE_CLEAR_ERROR_UNOFFICIAL, false);
 			} else
@@ -73,7 +73,7 @@ bool ModeIdle::isExit()
 			}
 		}
 
-		if (error.get() != ERROR_CODE_NONE)
+		if (robot_error.get() != ERROR_CODE_NONE)
 			ROS_INFO("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
 		else if (readyToClean())
 		{
@@ -221,10 +221,10 @@ void ModeIdle::remoteKeyHandler(bool state_now, bool state_last)
 	ROS_WARN("%s %d: Remote key %x has been pressed.", __FUNCTION__, __LINE__, remote.get());
 
 	bool valid = true;
-	if (error.get())
+	if (robot_error.get())
 	{
 		bool force_clear = true;
-		error.clear(error.get(), force_clear);
+		robot_error.clear(robot_error.get(), force_clear);
 	}
 
 	bool check_battery = true;
@@ -403,11 +403,11 @@ void ModeIdle::keyClean(bool state_now, bool state_last)
 		ev.key_long_pressed = true;
 	else
 	{
-		if (error.get())
+		if (robot_error.get())
 		{
 			bool force_clear = true;
-			error.clear(error.get(), force_clear);
-			ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
+			robot_error.clear(robot_error.get(), force_clear);
+			ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, robot_error.get());
 			sp_state->init();
 //			speaker.play(VOICE_CLEAR_ERROR_UNOFFICIAL);
 		}
@@ -434,7 +434,7 @@ void ModeIdle::keyClean(bool state_now, bool state_last)
 void ModeIdle::rcon(bool state_now, bool state_last)
 {
 //	ROS_INFO("%s %d: rcon status: %8x.", __FUNCTION__, __LINE__, c_rcon.getStatus());
-	if (error.get() == ERROR_CODE_NONE && !robot::instance()->isBatteryLow2())
+	if (robot_error.get() == ERROR_CODE_NONE && !robot::instance()->isBatteryLow2())
 	{
 		auto time_for_now_ = ros::Time::now().toSec();
 //	ROS_WARN("%s %d: rcon signal. first: %lf, last: %lf, now: %lf", __FUNCTION__, __LINE__, first_time_seen_charger, last_time_seen_charger, time_for_now);
@@ -493,18 +493,18 @@ bool ModeIdle::isFinish()
 bool ModeIdle::readyToClean(bool check_battery, bool check_error)
 {
 //	ROS_INFO("%s %d: Check battery (%d), check error (%d).", __FUNCTION__, __LINE__, check_battery, check_error);
-	if (!check_error && error.get())
+	if (!check_error && robot_error.get())
 	{
 		bool force_clear = true;
-		error.clear(error.get(), force_clear);
-		ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
+		robot_error.clear(robot_error.get(), force_clear);
+		ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, robot_error.get());
 		sp_state->init();
 	}
-	if (error.get())
+	if (robot_error.get())
 	{
-		ROS_WARN("%s %d: Remote key %x not valid because of error %d.", __FUNCTION__, __LINE__, remote.get(), error.get());
+		ROS_WARN("%s %d: Remote key %x not valid because of error %d.", __FUNCTION__, __LINE__, remote.get(), robot_error.get());
 		beeper.beepForCommand(INVALID);
-		error.alarm();
+		robot_error.alarm();
 		return false;
 	}
 	else if (check_battery && !battery.isReadyToClean())

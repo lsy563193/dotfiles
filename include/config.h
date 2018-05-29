@@ -3,7 +3,7 @@
 /* ------------------------------------- System Setting ------------------------------------- */
 
 #define CURRENT_VERSION 0
-#define CURRENT_PATCH 13
+#define CURRENT_PATCH 14
 
 /*
  * Chipset setting.
@@ -112,7 +112,7 @@
 
 /* Battery voltage criterion for brush setting*/
 #define NORMAL_OPERATE_VOLTAGE_FOR_SIDE_BRUSH	(1050)
-#define NORMAL_OPERATE_VOLTAGE_FOR_MAIN_BRUSH	(800)
+#define NORMAL_OPERATE_VOLTAGE_FOR_MAIN_BRUSH	(850)
 #define SLOW_OPERATE_VOLTAGE_FOR_SIDE_BRUSH	(550)
 #define SLOW_OPERATE_VOLTAGE_FOR_MAIN_BRUSH	(450)
 

@@ -3,6 +3,7 @@
 #include <speaker.h>
 #include <beeper.h>
 #include <mathematics.h>
+#include <error.h>
 #include "gyro.h"
 #include "event_manager.h"
 
@@ -78,6 +79,7 @@ bool Gyro::waitForOn(void)
 	if (error_count_ > 10)
 	{
 		ev.fatal_quit = true;
+		robot_error.set(ERROR_CODE_GYRO);
 		return false;
 	}
 
@@ -146,7 +148,7 @@ bool Gyro::waitForOn(void)
 		}
 		else
 		{
-			if (average_angle_ > 0.002)
+			if (average_angle_ > 0.02)
 			{
 				ROS_WARN("%s %d: Robot is moved when opening gyro, re-open gyro, average_angle = %f.", __FUNCTION__, __LINE__, average_angle_);
 				setOff();

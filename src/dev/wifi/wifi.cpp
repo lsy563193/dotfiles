@@ -509,7 +509,7 @@ int8_t S_Wifi::uploadStatus(int msg_code,const uint8_t seq_num)
 	clean_tool = water_tank.getStatus(WaterTank::swing_motor)? wifi::DeviceStatusBaseTxMsg::CleanTool::WATER_TANK: wifi::DeviceStatusBaseTxMsg::CleanTool::DUST_BOX;
 
 
-	switch (error.get())
+	switch (robot_error.get())
 	{
 		case ERROR_CODE_NONE:
 			error_code = 0x00;

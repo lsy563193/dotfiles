@@ -6,6 +6,8 @@
 #include <beeper.h>
 #include <string>
 #include <move_type.hpp>
+#include <gyro.h>
+#include <speaker.h>
 
 boost::mutex scanLinear_mutex_;
 boost::mutex scanOriginal_mutex_;
@@ -169,7 +171,7 @@ bool Lidar::motorCtrl(bool new_switch_)
 		setScanOriginalReady(0);
 		setScanCompensateReady(0);
 		slip_frame_cnt_ = 0;
-		slip_status_ = false;
+		slip_by_lidar_status_ = false;
 		setLidarStuckCheckingEnable(false);
 		//delete []last_ranges_;
 		ROS_INFO("\033[35m" "%s %d: Stop lidar." "\033[0m", __FUNCTION__, __LINE__);
@@ -1112,10 +1114,10 @@ uint8_t Lidar::lidarMarker(std::vector<Vector2<int>> &markers, int movement_i, i
 	return block_status;
 }
 
-void Lidar::checkRobotSlip() {
+void Lidar::checkRobotSlipByLidar() {
 	auto tmp_scan_data = getLidarScanDataOriginal();
 	if (!isNeedToCheckSlip(tmp_scan_data)) {
-		slip_status_ = false;
+		slip_by_lidar_status_ = false;
 		slip_frame_cnt_ = 0;
 		return;
 	}
@@ -1148,25 +1150,65 @@ void Lidar::checkRobotSlip() {
 	if ((same_count * 1.0) / (tol_count * 1.0) >= slip_ranges_percent_ && tol_count > 100)
 	{
 		if (++slip_frame_cnt_ >= slip_cnt_limit_) {
-			ROS_INFO("\033[35m""%s,%d,robot slip!!""\033[0m", __FUNCTION__, __LINE__);
-			slip_status_ = true;
+			ROS_WARN("\033[35m""%s,%d,robot slip by lidar""\033[0m", __FUNCTION__, __LINE__);
+			slip_by_lidar_status_ = true;
 			slip_cnt_limit_ = 5;
 			beeper.debugBeep(VALID);
 		} else {
-			slip_status_ = false;
+			slip_by_lidar_status_ = false;
 		}
 	}
 	else
 	{
 		slip_frame_cnt_ = 0;
-		slip_status_ = false;
+		slip_by_lidar_status_ = false;
 	}
 	last_slip_scan_frame_.push_back(tmp_scan_data);
 }
 
+void Lidar::checkRobotSlipByGyro() {
+	static float angle = 0;
+	static double time = 0;
+	auto f_range = [&](float angle){
+		if(angle < 0)
+			angle += 360;
+		return angle;
+	};
+	auto f_reset = [&](){
+		angle = 0;
+		time = 0;
+		lidar.slip_by_gyro_status_ = false;
+	};
+
+	if(fabs(wheel.getLeftWheelActualSpeed() - wheel.getRightWheelActualSpeed()) > 0.05)
+	{
+		if(time == 0 && angle == 0) {
+			time = ros::Time::now().toSec();
+			angle = f_range(gyro.getAngleY());
+		}
+
+		if(ros::Time::now().toSec() - time > 2)
+		{
+			ROS_INFO("%s %d: del_speed:%f,del_time:%f,del_angle:%f,now:%f,angle:%f",__FUNCTION__,__LINE__,
+								fabs(wheel.getLeftWheelActualSpeed() - wheel.getRightWheelActualSpeed()),
+								ros::Time::now().toSec() - time,fabs(f_range(gyro.getAngleY()) - angle),f_range(gyro.getAngleY()),angle);
+			if(fabs(f_range(gyro.getAngleY()) - angle) < 10)
+			{
+				lidar.slip_by_gyro_status_ = true;
+				ROS_WARN("Robot slip by gyro");
+			}
+			else
+				f_reset();
+		}
+	}
+	else
+		f_reset();
+
+
+}
 bool Lidar::isRobotSlip()
 {
-	return slip_status_;
+	return slip_by_lidar_status_ || slip_by_gyro_status_;
 }
 
 
@@ -1501,7 +1543,7 @@ void Lidar::init()
 	laser_points_ = {};
 
 	// For slip checking
-	slip_status_ = {false};
+	slip_by_lidar_status_ = {false};
 	slip_frame_cnt_ = {0};
 	DequeArray<sensor_msgs::LaserScan> last_frame_{};
 	wheel_cliff_trigger_time_ = 0;
