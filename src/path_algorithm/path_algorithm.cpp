@@ -512,7 +512,7 @@ void APathAlgorithm::findPath(GridMap &map, const Cell_t &start, const Cell_t &t
 	if (path.back() != target)
 		path.push_back(target);
 	path.push_front(start);
-	displayCellPath(path);
+//	displayCellPath(path);
 }
 
 

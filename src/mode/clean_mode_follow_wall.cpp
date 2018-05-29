@@ -88,6 +88,13 @@ bool CleanModeFollowWall::isExit()
 		return true;
 	}
 
+	if(ev.fatal_quit)
+	{
+		ROS_WARN("%s %d: Exit to idle mode by fatal quit.", __FUNCTION__, __LINE__);
+		setNextMode(md_idle);
+		return true;
+	}
+
 	if (s_wifi.receiveIdle())
 	{
 		ROS_WARN("%s %d: Exit for wifi idle.", __FUNCTION__, __LINE__);

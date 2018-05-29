@@ -19,6 +19,7 @@ CleanModeNav::CleanModeNav()
 {
 	ROS_WARN("%s %d: Entering Navigation mode\n=========================" , __FUNCTION__, __LINE__);
 
+	sp_state = state_init.get();
 	if(plan_activation_)
 	{
 		plan_activation_ = false;
@@ -30,6 +31,9 @@ CleanModeNav::CleanModeNav()
 		has_played_start_voice_ = true;
 		speaker.play(VOICE_CLEANING_START);
 	}
+	action_i_ = ac_null;
+	updateActionInStateInit();
+	sp_state->init();
 
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
 	go_home_path_algorithm_.reset(new GoHomePathAlgorithm());
@@ -188,7 +192,7 @@ bool CleanModeNav::isExit()
 	{
 		if (action_i_ == ac_open_lidar && sp_action_->isTimeUp())
 		{
-			error.set(ERROR_CODE_LIDAR);
+			robot_error.set(ERROR_CODE_LIDAR);
 			setNextMode(md_idle);
 			ev.fatal_quit = true;
 			return true;
@@ -573,22 +577,13 @@ void CleanModeNav::chargeDetect(bool state_now, bool state_last)
 	{
 		if (isStateInit() && action_i_ == ac_back_from_charger)
 		{
-			if (sp_action_->isTimeUp())
+			if (sp_action_->isTimeUp() && cliff.getStatus() == BLOCK_ALL)
 			{
-				if (cliff.getStatus() == BLOCK_ALL)
-				{
-					// If switch is not on, the cliff value should be around 0.
-					ROS_WARN("%s %d: Switch is not on!.", __FUNCTION__, __LINE__);
-					ev.charge_detect = charger.getChargeStatus();
-					ev.fatal_quit = true;
-					switch_is_off_ = true;
-				}
-				else
-				{
-					ROS_WARN("%s %d: Charge detect!.", __FUNCTION__, __LINE__);
-					ev.charge_detect = charger.getChargeStatus();
-					ev.fatal_quit = true;
-				}
+				// If switch is not on, the cliff value should be around 0.
+				ROS_WARN("%s %d: Switch is not on!.", __FUNCTION__, __LINE__);
+				ev.charge_detect = charger.getChargeStatus();
+				ev.fatal_quit = true;
+				switch_is_off_ = true;
 			}
 		}
 		else if (charger.isDirected())
@@ -623,22 +618,14 @@ bool CleanModeNav::isSwitchByEventInStateInit() {
 
 bool CleanModeNav::updateActionInStateInit() {
 	if (action_i_ == ac_null)
-		action_i_ = ac_open_gyro_and_lidar;
-	else if (action_i_ == ac_open_gyro_and_lidar)
 	{
-		// If it is the starting of navigation mode, paused_odom_radian_ will be zero.
-		odom.setRadianOffset(paused_odom_radian_);
-		ROS_INFO("%s,%d,angle offset:%f",__FUNCTION__,__LINE__,radian_to_degree(paused_odom_radian_));
-
 		if (charger.enterNavFromChargeMode() || charger.isOnStub()){
 			charger.enterNavFromChargeMode(false);
 			action_i_ = ac_back_from_charger;
 			found_charger_ = true;
-			boost::dynamic_pointer_cast<StateInit>(state_init)->initForNavigation();
 		}
-		else{
-			action_i_ = ac_open_lidar;
-		}
+		else
+			action_i_ = ac_open_gyro_and_lidar;
 	} else if (action_i_ == ac_back_from_charger)
 	{
 		if (!has_played_start_voice_)
@@ -650,44 +637,51 @@ bool CleanModeNav::updateActionInStateInit() {
 		if (!has_aligned_and_open_slam_) // Init odom position here.
 			robot::instance()->initOdomPosition();
 
-		action_i_ = ac_open_lidar;
-		boost::dynamic_pointer_cast<StateInit>(state_init)->initForNavigation();
+		action_i_ = ac_open_gyro_and_lidar;
+//		boost::dynamic_pointer_cast<StateInit>(state_init)->initForNavigation();
 		go_home_path_algorithm_->setHomePoint(getPosition());
 		if (!seen_charger_during_cleaning_)
 			seen_charger_during_cleaning_ = true;
-	} else if (action_i_ == ac_open_lidar)
+	}
+	else if (action_i_ == ac_open_gyro_and_lidar)
+	{
+		// If it is the starting of navigation mode, paused_odom_radian_ will be zero.
+		odom.setRadianOffset(paused_odom_radian_);
+		ROS_INFO("%s,%d,angle offset:%f",__FUNCTION__,__LINE__,radian_to_degree(paused_odom_radian_));
+
+		action_i_ = ac_open_lidar;
+	}
+	else if (action_i_ == ac_open_lidar)
 	{
 		if (!has_aligned_and_open_slam_)
-		{
 			action_i_ = ac_align;
-		}
 		else
 		{
 			//set charge position
 			ACleanMode::checkShouldMarkCharger((float)odom.getRadian(),0.6);
 			return false;
 		}
-	} else if (action_i_ == ac_align){
+	}
+	else if (action_i_ == ac_align)
+	{
+		action_i_ = ac_open_slam;
+		align_count_++;
+		start_align_radian_ = static_cast<float>(odom.getRadianOffset());
+		if (align_count_ % 2 == 0)
 		{
-			action_i_ = ac_open_slam;
-			align_count_ ++;
-			start_align_radian_ = static_cast<float>(odom.getRadianOffset());
-			if(align_count_%2 == 0)
-			{
-				start_align_radian_= static_cast<float>(ranged_radian(start_align_radian_ - PI / 2));
-				odom.setRadianOffset(start_align_radian_);
+			start_align_radian_ = static_cast<float>(ranged_radian(start_align_radian_ - PI / 2));
+			odom.setRadianOffset(start_align_radian_);
 //				ROS_INFO("rad %f",start_align_radian_);
-			}
-			ROS_INFO("odom rad, align_count : %f, %d", odom.getRadian(), align_count_);
-			//set charge position
-			ACleanMode::checkShouldMarkCharger((float)odom.getRadian(),0.6);
-//			beeper.beepForCommand(INVALID);
 		}
+		ROS_INFO("odom rad: %f, align_count %d", odom.getRadian(), align_count_);
+		//set charge position
+		ACleanMode::checkShouldMarkCharger((float) odom.getRadian(), 0.6);
+//		beeper.beepForCommand(INVALID);
 
 	}
-	else if (action_i_ == ac_open_slam){
+	else if (action_i_ == ac_open_slam)
 		return false;
-	}
+
 	genNextAction();
 	return true;
 }
@@ -1047,8 +1041,9 @@ bool CleanModeNav::checkEnterResumeLowBatteryCharge()
 				charger.enterNavFromChargeMode(true);
 		}
 		sp_action_.reset();
-		action_i_ = ac_null;
 		sp_state = state_init.get();
+		action_i_ = ac_null;
+		updateActionInStateInit();
 		sp_state->init();
 		low_battery_charge_ = true;
 		// For entering checking switch.

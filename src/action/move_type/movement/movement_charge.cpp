@@ -17,6 +17,8 @@
 #include <wifi_led.hpp>
 #include <cliff.h>
 #include <serial.h>
+#include <wifi/wifi.h>
+#include <mode.hpp>
 
 MovementCharge::MovementCharge()
 {
@@ -79,6 +81,9 @@ bool MovementCharge::isFinish()
 				turn_for_charger_ = true;
 				start_turning_time_stamp_ = ros::Time::now().toSec();
 				turn_right_finish_ = false;
+				battery_full_and_sleep_ = false;
+				s_wifi.setWorkMode(Mode::md_idle);
+				s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 				ROS_WARN("%s %d: Start turn for charger.", __FUNCTION__, __LINE__);
 			}
 		}
@@ -99,6 +104,8 @@ bool MovementCharge::isFinish()
 				key_led.setMode(LED_STEADY, LED_OFF);
 				battery_full_and_sleep_ = true;
 				speaker.play(VOICE_SLEEP_UNOFFICIAL);
+				s_wifi.setWorkMode(Mode::md_sleep);
+				s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 				ROS_WARN("%s %d: Enter fake sleep during charge.", __FUNCTION__, __LINE__);
 			}
 			else
@@ -115,6 +122,8 @@ bool MovementCharge::isFinish()
 			battery_full_and_sleep_ = false;
 			battery_full_start_time_ = 0;
 			key_led.setMode(LED_BREATH, LED_ORANGE);
+			s_wifi.setWorkMode(Mode::md_charge);
+			s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 			ROS_WARN("%s %d: Turn for charger successfully.", __FUNCTION__, __LINE__);
 		}
 		if (ros::Time::now().toSec() - start_turning_time_stamp_ > 3)

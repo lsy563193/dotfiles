@@ -301,6 +301,8 @@ std::unique_ptr<Points> cells_generate_points(const std::unique_ptr<Cells>& path
 			Point_t target {cellToCount((*it).x),cellToCount((*it).y),0};
 			if(it == path->end()-1)
 			{
+				if(point_path->empty())
+					point_path->emplace_back(target);
 				target.dir = point_path->back().dir;
 				target.th = point_path->back().th;
 			}else {

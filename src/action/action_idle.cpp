@@ -29,10 +29,10 @@ bool ActionIdle::isFinish()
 void ActionIdle::run()
 {
 	// Just wait...
-	if (error.get() && error_alarm_cnt_ < ERROR_ALARM_TIMES
+	if (robot_error.get() && error_alarm_cnt_ < ERROR_ALARM_TIMES
 		&& ros::Time::now().toSec() - error_alarm_time_ > ERROR_ALARM_INTERVAL)
 	{
-		error.alarm();
+		robot_error.alarm();
 		error_alarm_time_ = ros::Time::now().toSec();
 		error_alarm_cnt_++;
 	}

@@ -64,11 +64,11 @@ bool ModeSleep::isExit()
 	{
 		if (plan_activated_status_)
 		{
-			if (error.get() != ERROR_CODE_NONE)
+			if (robot_error.get() != ERROR_CODE_NONE)
 			{
-				if (error.clear(error.get()))
+				if (robot_error.clear(robot_error.get()))
 				{
-					ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, error.get());
+					ROS_WARN("%s %d: Clear the error %x.", __FUNCTION__, __LINE__, robot_error.get());
 //					speaker.play(VOICE_CLEAR_ERROR_UNOFFICIAL, false);
 				} else
 				{
@@ -78,7 +78,7 @@ bool ModeSleep::isExit()
 				}
 			}
 
-			if (error.get() != ERROR_CODE_NONE)
+			if (robot_error.get() != ERROR_CODE_NONE)
 				ROS_INFO("%s %d: Error exists, so cancel the appointment.", __FUNCTION__, __LINE__);
 			else if (cliff.getStatus() == (BLOCK_LEFT | BLOCK_FRONT | BLOCK_RIGHT))
 			{
@@ -221,7 +221,7 @@ void ModeSleep::rcon(bool state_now, bool state_last)
 	}
 	else if (fake_sleep_)
 	{
-		if (error.get() == ERROR_CODE_NONE)
+		if (robot_error.get() == ERROR_CODE_NONE)
 		{
 			auto time_for_now_ = ros::Time::now().toSec();
 //	ROS_WARN("%s %d: rcon signal. first: %lf, last: %lf, now: %lf", __FUNCTION__, __LINE__, first_time_seen_charger, last_time_seen_charger, time_for_now);

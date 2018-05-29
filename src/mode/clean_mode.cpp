@@ -44,8 +44,9 @@ ACleanMode::ACleanMode()
 	serial.setWorkMode(WORK_MODE);
 	IMoveType::sp_mode_ = this;
 	State::sp_cm_ = this;
-	if (robot::instance()->getR16WorkMode() == WORK_MODE || robot::instance()->getR16WorkMode() == IDLE_MODE ||
-			robot::instance()->getR16WorkMode() == CHARGE_MODE)
+	if (next_mode_i_ != cm_navigation && next_mode_i_ != cm_test)
+//	if (robot::instance()->getR16WorkMode() == WORK_MODE || robot::instance()->getR16WorkMode() == IDLE_MODE ||
+//			robot::instance()->getR16WorkMode() == CHARGE_MODE)
 	{
 		sp_state = state_init.get();
 		sp_state->init();
@@ -63,8 +64,8 @@ ACleanMode::ACleanMode()
 	c_rcon.resetStatus();
 	robot::instance()->initOdomPosition();
 	s_wifi.resetReceivedWorkMode();
-	if (error.get())
-		error.clear(error.get(), true);
+	if (robot_error.get())
+		robot_error.clear(robot_error.get(), true);
 	brush.unblockMainBrushSlowOperation();
 
 //	// todo:debug
@@ -690,7 +691,7 @@ bool ACleanMode::calcLidarPath(const sensor_msgs::LaserScan::ConstPtr & scan,boo
 void ACleanMode::scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr& scan)
 {
 	lidar.scanOriginalCb(scan);
-	lidar.checkRobotSlip();
+	lidar.checkRobotSlipByLidar();
 	if (lidar.isScanOriginalReady()
 		&& (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)) {
 		std::deque<Vector2<double>> points{};
@@ -1018,7 +1019,7 @@ bool ACleanMode::isExit()
 	{
 		if (action_i_ == ac_open_lidar && sp_action_->isTimeUp())
 		{
-			error.set(ERROR_CODE_LIDAR);
+			robot_error.set(ERROR_CODE_LIDAR);
 			setNextMode(md_idle);
 			ev.fatal_quit = true;
 			return true;
@@ -1028,6 +1029,14 @@ bool ACleanMode::isExit()
 	{
 		ROS_WARN("%s %d: Exit for ev.fatal_quit or sp_action_->isExit()", __FUNCTION__, __LINE__);
 		setNextMode(md_idle);
+		return true;
+	}
+
+	if (ev.cliff_all_triggered)
+	{
+		ROS_WARN("%s %d: Exit for ev.cliff_all_triggered.", __FUNCTION__, __LINE__);
+		setNextMode(md_idle);
+		ev.fatal_quit = true;
 		return true;
 	}
 
@@ -2240,7 +2249,7 @@ bool ACleanMode::isIsolate(const Cell_t& curr) {
 	ROS_ERROR("minx(%d),miny(%d),maxx(%d),maxy(%d)",bound.min.x, bound.min.y,bound.max.x, bound.max.y);
 
 	auto cells = Cells{};
-	auto is_found = fw_tmp_map.dijstra(curr, cells,[&](const Cell_t& c_it){return c_it == external_target;},true);
+	auto is_found = fw_tmp_map.dijstra(curr, cells,[&](const Cell_t& c_it){return c_it == external_target;},true, true);
 	return is_found;
 }
 

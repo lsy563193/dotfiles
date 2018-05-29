@@ -65,7 +65,8 @@ public:
 	}
 
 	uint8_t lidarMarker(std::vector<Vector2<int>> &markers, int movement_i, int action_i, double X_MAX = 0.21);
-	void checkRobotSlip();
+	void checkRobotSlipByLidar();
+	void checkRobotSlipByGyro();
 	bool isNeedToCheckSlip(const sensor_msgs::LaserScan& scan);
 	void checkSlipInit(float &acur1, float &acur2, float &acur3, float &acur4);
 	bool isRobotSlip();
@@ -142,7 +143,8 @@ private:
 
 	// For slip checking
 	bool slip_enable_{false};
-	bool slip_status_{false};
+	bool slip_by_lidar_status_{false};
+	bool slip_by_gyro_status_{false};
 	uint8_t slip_frame_cnt_{0};
 	DequeArray<sensor_msgs::LaserScan> last_slip_scan_frame_{};
 	float slip_ranges_percent_{0.8};//80%

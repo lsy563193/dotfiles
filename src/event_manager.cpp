@@ -826,7 +826,7 @@ void EventHandle::overCurrentBrushLeft(bool state_now, bool state_last)
 	//ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 	if (!ev.fatal_quit && brush.checkLeftBrushTwined())
 	{
-		error.set(ERROR_CODE_LEFTBRUSH);
+		robot_error.set(ERROR_CODE_LEFTBRUSH);
 		ev.fatal_quit = true;
 		ROS_WARN("%s %d: Left brush stall, please check.", __FUNCTION__, __LINE__);
 	}
@@ -843,7 +843,7 @@ void EventHandle::overCurrentBrushRight(bool state_now, bool state_last)
 	//ROS_DEBUG("%s %d: default handler is called.", __FUNCTION__, __LINE__);
 	if (!ev.fatal_quit && brush.checkRightBrushTwined())
 	{
-		error.set(ERROR_CODE_RIGHTBRUSH);
+		robot_error.set(ERROR_CODE_RIGHTBRUSH);
 		ev.fatal_quit = true;
 		ROS_WARN("%s %d: Right brush stall, please check.", __FUNCTION__, __LINE__);
 	}

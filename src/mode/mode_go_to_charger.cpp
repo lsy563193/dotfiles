@@ -63,6 +63,13 @@ bool ModeGoToCharger::isExit()
 		ev.key_clean_pressed = false;
 		return true;
 	}
+
+	if(ev.fatal_quit)
+	{
+		ROS_WARN("%s %d: Exit to idle mode by fatal quit.", __FUNCTION__, __LINE__);
+		setNextMode(md_idle);
+		return true;
+	}
 	return false;
 }
 
