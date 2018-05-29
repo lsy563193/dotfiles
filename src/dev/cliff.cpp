@@ -19,10 +19,10 @@ uint8_t Cliff::getStatus()
 	if (getRight())
 		status |= BLOCK_RIGHT;
 
-	//if (status != 0x00){
-	//	ROS_WARN("%s %d: Return Cliff status:%x.", __FUNCTION__, __LINE__, status);
-	//	beep_for_command(true);
-	//}
+//	if (status != 0x00){
+//		beep_for_command(true);
+//	}
+//	printf("%s %d: Return Cliff status:%x.\n", __FUNCTION__, __LINE__, status);
 	return status;
 }
 
@@ -30,5 +30,3 @@ bool Cliff::allTriggered()
 {
 	return getStatus() == BLOCK_ALL;
 }
-
-
