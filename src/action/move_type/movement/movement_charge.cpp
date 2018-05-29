@@ -98,8 +98,7 @@ bool MovementCharge::isFinish()
 			}
 
 			// Show green key_led for 60s before going to sleep mode.
-			if (ros::Time::now().toSec() - battery_full_start_time_ >= 10)
-//			if (ros::Time::now().toSec() - battery_full_start_time_ >= 60)
+			if (ros::Time::now().toSec() - battery_full_start_time_ >= 60)
 			{
 				wifi_led.disable();
 				key_led.setMode(LED_STEADY, LED_OFF);
