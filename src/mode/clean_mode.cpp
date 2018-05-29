@@ -44,8 +44,9 @@ ACleanMode::ACleanMode()
 	serial.setWorkMode(WORK_MODE);
 	IMoveType::sp_mode_ = this;
 	State::sp_cm_ = this;
-	if (robot::instance()->getR16WorkMode() == WORK_MODE || robot::instance()->getR16WorkMode() == IDLE_MODE ||
-			robot::instance()->getR16WorkMode() == CHARGE_MODE)
+	if (next_mode_i_ != cm_navigation && next_mode_i_ != cm_test)
+//	if (robot::instance()->getR16WorkMode() == WORK_MODE || robot::instance()->getR16WorkMode() == IDLE_MODE ||
+//			robot::instance()->getR16WorkMode() == CHARGE_MODE)
 	{
 		sp_state = state_init.get();
 		sp_state->init();
