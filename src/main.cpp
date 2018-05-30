@@ -98,35 +98,27 @@ int main(int argc, char **argv)
 	robot_instance = new robot();
 // Test code for path algorithm by Austin.
 //	test_map();
-/*
+#if 1
 	//test code by lsy563193
 	sleep(1);
 	GridMap map;
 	//test
 	Cell_t curr{};
-	map.loadMap(Cell_t{-2,-5},true,curr);
-	map.print(curr,CLEAN_MAP, Cells{});
+	Dir_t old_dir_=MAP_POS_X;
+
+	Points remain_path_{};
+
+	NavCleanPathAlgorithm clean_path_algorithm_;
+	map.loadMap(true,curr, old_dir_, clean_path_algorithm_.trend_pos);
+	clean_path_algorithm_.curr_filter_ = &clean_path_algorithm_.filter_short_path;
 	setPosition(cellToCount(curr.x),cellToCount(curr.y));
 
-	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
-	Dir_t old_dir_=MAP_NEG_X;
-	Points remain_path_{};
-	ROS_INFO("clean_path_algorithm_!");
-	clean_path_algorithm_.reset(new GoHomePathAlgorithm);
-//	if (clean_path_algorithm_->generatePath(map, Point_t{cellToCount(curr.x),cellToCount(curr.y)}, old_dir_, remain_path_)) {
-//	}
-//	clean_path_algorithm_->isIo
-
-	BoundingBox2 bound{};
-	map.getMapRange(CLEAN_MAP, &bound.min.x, &bound.max.x, &bound.min.y, &bound.max.y);
-	auto external_target = bound.max + Cell_t{1, 1};
-	auto cells = Cells{};
-	auto points = Points{};
-//	auto is_found = map.find_if(curr, cells,[&](const Cell_t& c_it){return c_it == external_target;},false,true,true);
-	clean_path_algorithm_->generatePath(map,{cellToCount(curr.x),cellToCount(curr.y)},old_dir_, points);
-//	clean_path_algorithm_->generatePath(map,getPosition(),old_dir_, points);
-//	auto is_found = map.find_if(curr, cells,[&](const Cell_t& c_it){return c_it == external_target;},false,true,true);
-	ROS_INFO("~~~~~~~~~~~~~~~~~~~!");*/
+	Cells cells{};
+//	auto is_found = map.gen(curr, cells,[&](const Cell_t& c_it){return c_it == Cell_t{-2,0};},true);
+	if (clean_path_algorithm_.generatePath(map, Point_t{cellToCount(curr.x),cellToCount(curr.y)}, old_dir_, remain_path_)) {
+	}
+	ROS_INFO("end~~~~~~~~~");
+#endif
 	ros::spin();
 	return 0;
 }

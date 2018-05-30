@@ -243,6 +243,7 @@ public:
 	bool isOutOfMap(const Cell_t &cell);
 	bool isOutOfTargetRange(const Cell_t &cell);
 	bool cellIsOutOfRange(Cell_t cell);
+	BoundingBox2 genRange();
 	bool pointIsPointingOutOfRange(Point_t point);
 	void cellPreventOutOfRange(Cell_t &cell);
 
@@ -252,7 +253,7 @@ public:
 
 	// Loading the log map for debug.
 	void loadMap(int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max);
-	void loadMap(const Cell_t& min_p,bool use_map,Cell_t& curr);
+	void loadMap(bool use_map,Cell_t& curr, Dir_t& dir,bool& trend_pos);
 private:
 	uint8_t clean_map[MAP_SIZE][MAP_SIZE];
 	uint8_t cost_map[MAP_SIZE][MAP_SIZE];

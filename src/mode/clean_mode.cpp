@@ -2090,7 +2090,7 @@ void ACleanMode::switchInStateExploration() {
 	PP_INFO();
 	old_dir_ = iterate_point_->dir;
 	Cells cells{};
-	auto is_found = clean_map_.dijstra(getPosition().toCell(), cells,[&](const Cell_t& c_it){return c_it == Cell_t{0,0};},true);
+	auto is_found = clean_path_algorithm_->dijstra(clean_map_, getPosition().toCell(), cells, EqualTarget(Cell_t{0,0}), true, isAccessable(clean_map_.genRange() ,&clean_map_));
 	if (!is_found) {
 		ROS_WARN("%s,%d: enter state trapped",__FUNCTION__,__LINE__);
 		sp_saved_states.push_back(sp_state);

@@ -648,5 +648,5 @@ std::unique_ptr<Points> cells_generate_points(const std::unique_ptr<Cells>& path
 void displayCellPath(const Cells &path);
 void displayPointPath(const Points &point_path);
 void displayTargetList(const Cells &target_list);
-
+bool is_opposite_dir(int l, int r);
 #endif

@@ -60,6 +60,7 @@ private:
 };
 
 const Cell_t cell_direction_[9]{{1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1},{0,0}};
+const Cell_t cell_direction_4[4]{{1,0},{-1,0},{0,1},{0,-1}};
 
 //bool APathAlgorithm::generateShortestPath(GridMap &map, const Point_t &curr,const Point_t &target, const Dir_t &last_dir, Points &plan_path) {
 //	Cell_t corner1 ,corner2;
@@ -516,11 +517,89 @@ void APathAlgorithm::findPath(GridMap &map, const Cell_t &start, const Cell_t &t
 			}
 		}
 	}
+	if(path.empty())
+		path.push_front(target);
 	if (path.back() != target)
 		path.push_back(target);
 	path.push_front(start);
 //	displayCellPath(path);
 }
 
+void APathAlgorithm::flood_fill(const Cell_t& curr)
+{
+//	if(is_target(curr))
+//	{
+//		printf("%s,%d\n",__FUNCTION__, __LINE__);
+//		return true;
+//	}
+//	printf("%s,%d,curr(%d,%d)\n",__FUNCTION__, __LINE__,curr.x, curr.y);
+//	for(auto i =0; i<4 ;i ++)
+//	{
+////		printf("%s,%d\n",__FUNCTION__, __LINE__);
+//		if(!map_out_range())
+//        	flood_fill(curr + cell_direction_[i]);
+//	}
+}
 
+bool APathAlgorithm::dijstra(GridMap& map, const Cell_t &curr_cell, Cells &targets, func_compare_t is_target, bool is_stop, func_compare_two_t isAccessable) {
+	typedef std::multimap<int16_t, Cell_t> Queue;
+	typedef std::pair<int16_t, Cell_t> Entry;
+
+	map.reset(COST_MAP);
+	Queue queue;
+	map.setCell(COST_MAP, curr_cell.x, curr_cell.y, 1);
+	queue.emplace(1, curr_cell);
+
+	while (!queue.empty()) {
+//		 Get the nearest next from the queue
+		if (queue.begin()->first == 5) {
+			Queue tmp_queue;
+			std::for_each(queue.begin(), queue.end(), [&](const Entry &iterators) {
+				tmp_queue.emplace(0, iterators.second);
+			});
+			queue.swap(tmp_queue);
+		}
+		auto start = queue.begin();
+		auto next = start->second;
+		auto cost = start->first;
+		queue.erase(start);
+		if (is_target(next))
+		{
+//			targets.push_back(next);
+			if(is_stop)
+			{
+				ROS_INFO("find target(%d,%d)",next.x, next.y);
+				findPath(map,curr_cell,next, targets,MAP_POS_X);
+				return true;
+			}
+		}
+//		ROS_INFO("next(%d,%d)",next.x, next.y);
+		for (auto index = 0; index < 4; index++) {
+
+			auto neighbor = next + cell_direction_[index];
+
+			if (!isAccessable(neighbor,next)) // access
+				continue;
+
+			if (map.getCell(COST_MAP, neighbor.x, neighbor.y) != 0)//close set
+				continue;
+
+			queue.emplace(cost + 1, neighbor);
+			ROS_WARN_COND(neighbor.x == 12 && neighbor.y == 39,"nei(%d,%d),next(%d,%d)",neighbor.x, neighbor.y,next.x, next.y);
+			map.setCell(COST_MAP, neighbor.x, neighbor.y, cost + 1);
+		}
+	}
+	return !targets.empty();
+}
+
+bool isAccessable::operator()(const Cell_t &neighbor, const Cell_t& next) {
+	auto is_accessible = bound_.Contains(neighbor) && p_map_->isBlockAccessible(neighbor.x, neighbor.y);
+//	ROS_INFO("neighbor(%d,%d),val(%d)",neighbor.x, neighbor.y, is_accessible);
+	if(is_forbit_turn_)
+	{
+		if(neighbor.y < next.y)
+			is_accessible = false;
+	}
+	return is_accessible;
+}
 

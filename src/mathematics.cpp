@@ -373,4 +373,8 @@ void displayPointPath(const Points &point_path)
 	ROS_INFO("%s",msg.c_str());
 }
 
+bool is_opposite_dir(int l, int r)
+{
+	return (l == 0 && r==1)  || (l ==1 && r ==0) || (l ==2 && r ==3) || (l == 3 && r == 2);
+}
 

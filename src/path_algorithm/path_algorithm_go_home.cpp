@@ -78,7 +78,7 @@ bool GoHomePathAlgorithm::generatePathThroughCleanedArea(GridMap &map, const Poi
 		Cells cells{};
 		auto is_found = map.dijstra(curr.toCell(), cells,[&](const Cell_t& c_it){return c_it == current_home_point_.toCell();},true);
 		if(is_found)
-			findPath(map, curr.toCell(),current_home_point_.toCell(),plan_path,last_dir);
+			findPath(map, curr.toCell(), current_home_point_.toCell(),plan_path,last_dir);
 	}
 
 	ROS_WARN(
@@ -95,7 +95,7 @@ bool GoHomePathAlgorithm::generatePathWithSlamMapClearBlocks(GridMap &map, const
 	{
 		Cell_t min_corner, max_corner;
 		Cells cells{};
-		auto is_found = map.dijstra(curr.toCell(), cells,[&](const Cell_t& c_it){return c_it == current_home_point_.toCell();},true);
+		auto is_found = dijstra(map, curr.toCell(), cells,EqualTarget(current_home_point_.toCell()),true,isAccessable(map.genRange(),&map));
 		if(is_found)
 			findPath(map, curr.toCell(),current_home_point_.toCell(),plan_path,last_dir);
 	}
