@@ -2242,8 +2242,10 @@ bool ACleanMode::isIsolate(const Cell_t& curr) {
 	fw_tmp_map.markRobot(curr, CLEAN_MAP);//Note : For clearing the obstacles around the robot current pose, please not delete it!!!
 
 	auto external_target = bound.max + Cell_t{1, 1};
-	bound.SetMinimum(bound.min - Cell_t{8, 8});
-	bound.SetMaximum(bound.max + Cell_t{8, 8});
+	auto expend_min = bound.min - Cell_t{8, 8};
+	auto expend_max = bound.max + Cell_t{8, 8};
+	fw_tmp_map.setCell(CLEAN_MAP, expend_min.x, expend_min.y,1);
+	fw_tmp_map.setCell(CLEAN_MAP, expend_max.x, expend_max.y,1);
 	ROS_ERROR("ISOLATE MAP");
 	fw_tmp_map.print(curr, CLEAN_MAP,*points_to_cells(make_unique<Points>(passed_path_)));
 	ROS_ERROR("ISOLATE MAP");
