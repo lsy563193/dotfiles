@@ -919,8 +919,13 @@ void MovementGoToCharger::getTurnBackInfo(double &turn_radian, float &back_dista
 
 void MovementGoToCharger::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
+	/*--- stop wheels when touch charge stub ---*/
+	if(charger.isOnStub())
+	{
+		l_speed = r_speed = 0;
+	}
 	/*---check if near charger station---*/
-	if (gtc_state_now_ == gtc_check_near_charger_station)
+	else if (gtc_state_now_ == gtc_check_near_charger_station)
 	{
 		wheel.setDirectionForward();
 		l_speed = r_speed = 0;
@@ -1984,6 +1989,9 @@ bool MovementGoToCharger::isFinish()
 {
 	auto ret = charger.getChargeStatus() || _isStop();
 	if(ret)
+	{
 		ROS_WARN("%s %d: Charger detected or _isStop()", __FUNCTION__, __LINE__);
+		wheel.stop();
+	}
 	return ret;
 }
