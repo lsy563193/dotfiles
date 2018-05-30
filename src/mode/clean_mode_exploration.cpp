@@ -251,7 +251,7 @@ bool CleanModeExploration::markMapInNewCell() {
 
 void CleanModeExploration::resetErrorMarker() {
 	//set unclean to map
-	ROS_INFO("%s,%d,size:%d",__FUNCTION__,__LINE__,error_marker_.size());
+//	ROS_INFO("%s,%d,size:%d",__FUNCTION__,__LINE__,error_marker_.size());
 	auto time = ros::Time::now().toSec();
 	for(auto ite = error_marker_.begin();ite != error_marker_.end();ite++){
 		if(error_marker_.empty())

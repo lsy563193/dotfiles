@@ -128,7 +128,7 @@ ACleanMode::~ACleanMode()
 					speaker.play(VOICE_CLEANING_STOP, false);
 				} else
 					ROS_WARN("%s %d: fatal_quit is true. Stop cleaning.", __FUNCTION__, __LINE__);
-			} else if (ev.key_clean_pressed || ev.key_long_pressed)
+			} else if (ev.key_clean_pressed || ev.key_long_pressed || s_wifi.receiveIdle())
 			{
 				if (mode_i_ == cm_exploration)
 					speaker.play(VOICE_CLEANING_STOP, false);
