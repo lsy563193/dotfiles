@@ -194,6 +194,19 @@ public:
 	bool find_if(const Cell_t &curr_cell, Cells &targets, std::function<bool(const Cell_t &next)> compare);
 	// Return the count of cells that all 9 cells around it match the compare function in this map.
 	bool count_if(const Cell_t &curr_cell, std::function<bool(const Cell_t &next)> compare, int& count);
+
+	bool dijkstraBase(const Cell_t &curr_cell, Cells &targets, bool greedy_match,
+					  std::function<bool(const Cell_t &tmp_target)> targets_selection,
+					  std::function<bool(const Cell_t &tmp_target, const Cell_t &neighbour)> expand_condition);
+
+	// Basic expend condiction for most dijkstra usage.
+	bool isAccessibleNeighbor(Cell_t neighbor_cell);
+
+	// Basic expend condiction for finding path.
+	bool isAccessibleCleanedNeighbor(Cell_t neighbor_cell);
+
+	// Using dijkstraBase to count reachable cleaned area.
+	uint16_t dijkstraCountCleanedArea(Point_t curr, Cells &targets);
 //	void generateSPMAP(const Cell_t &curr, Cells &target_list);
 //	void generateSPMAP(const Cell_t &curr);
 /*
