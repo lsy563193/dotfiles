@@ -36,7 +36,7 @@ bool IMoveType::isCliffStop()
 	if(ev.cliff_triggered)
 	{
 //		turn_angle = obsTurnAngle();
-		ROS_INFO("%s, %d: ev.cliff_triggered(%d).", __FUNCTION__, __LINE__, ev.cliff_triggered);
+//		ROS_INFO("%s, %d: ev.cliff_triggered(%d).", __FUNCTION__, __LINE__, ev.cliff_triggered);
 		return true;
 	}
 
@@ -88,7 +88,7 @@ bool IMoveType::RconTrigger()
 
 void IMoveType::resetTriggeredValue()
 {
-//	PP_INFO();
+	PP_INFO();
 	ev.lidar_triggered = 0;
 //	ev.rcon_status = 0;
 	ev.bumper_triggered = 0;
@@ -186,9 +186,11 @@ bool IMoveType::isBlockCleared(GridMap &map, Points &passed_path)
 bool IMoveType::isFinishForward()
 {
 	// Robot should move back for these cases.
+//	PP_INFO();
 	ev.bumper_triggered = bumper.getStatus();
 	ev.tilt_triggered = gyro.getTiltCheckingStatus();
 	ev.cliff_triggered = cliff.getStatus();
+//	ROS_INFO("%s, %d: ev.cliff_triggered(%d).", __FUNCTION__, __LINE__, ev.cliff_triggered);
 	ev.slip_triggered = lidar.isRobotSlip();
 //	ev.rcon_status = countRconTriggered(c_rcon.getNavRcon(), 3);
 
@@ -229,7 +231,7 @@ bool IMoveType::handleMoveBackEvent(ACleanMode *p_clean_mode)
 	return false;
 }
 
-bool IMoveType::handleMoveBackEventLinear(ACleanMode *p_clean_mode)
+bool IMoveType::handleMoveBackEventForward(ACleanMode *p_clean_mode)
 {
 	if (ev.bumper_triggered || ev.tilt_triggered || ev.slip_triggered)
 	{

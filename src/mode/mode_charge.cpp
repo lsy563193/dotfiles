@@ -190,10 +190,13 @@ bool ModeCharge::isFinish()
 	{
 		auto p_movement_charge = boost::dynamic_pointer_cast<MovementCharge>(sp_action_);
 		if (p_movement_charge->batteryFullAndSleep())
-		{
 			sp_state = state_sleep.get();
-			sp_state->init();
-		}
+	}
+	else if (isStateSleep())
+	{
+		auto p_movement_charge = boost::dynamic_pointer_cast<MovementCharge>(sp_action_);
+		if (!p_movement_charge->batteryFullAndSleep())
+			sp_state = state_charge.get();
 	}
 
 	if (sp_action_->isFinish())

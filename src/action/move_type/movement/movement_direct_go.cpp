@@ -28,6 +28,7 @@ bool MovementDirectGo::isFinish()
 {
 	ev.bumper_triggered = bumper.getStatus();
 	ev.cliff_triggered = cliff.getStatus();
+	ROS_INFO("%s, %d: ev.cliff_triggered(%d).", __FUNCTION__, __LINE__, ev.cliff_triggered);
 	ev.rcon_status = c_rcon.getForwardTop();
 
 	return ev.remote_direction_forward ||

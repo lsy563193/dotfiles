@@ -9,6 +9,8 @@
 #include <obs.h>
 #include <gyro.h>
 #include <lidar.hpp>
+#include <beeper.h>
+#include <cliff.h>
 
 #define STAY_SEC_AFTER_BACK (double)0.33
 
@@ -121,7 +123,7 @@ bool MoveTypeFollowWall::isFinish()
 	if (movement_i_ != mm_turn && p_cm->clean_map_.pointIsPointingOutOfRange(getPosition()))
 	{
 		ROS_WARN("%s %d: robot(%d, %d) pointing out of range.", __FUNCTION__, __LINE__, getPosition().toCell().x,
-				 getPosition().toCell().y);
+						 getPosition().toCell().y);
 		auto turn_radian = is_left_ ? degree_to_radian(-30) : degree_to_radian(30);
 		turn_target_radian_ = getPosition().addRadian(turn_radian).th;
 		movement_i_ = mm_turn;
@@ -142,7 +144,7 @@ bool MoveTypeFollowWall::isFinish()
 				sp_movement_.reset(new MovementStraight());
 			}
 		}
-		else if (movement_i_ == mm_straight)
+		else if (movement_i_ == mm_straight)//a short straight in the beginning of the wall follow
 		{
 			move_forward_time_ +=  ros::Time::now().toSec() - sp_movement_->start_timer_;
 			if (!handleMoveBackEvent(p_cm))
@@ -155,14 +157,21 @@ bool MoveTypeFollowWall::isFinish()
 		else if (movement_i_ == mm_forward)
 		{
 			move_forward_time_ +=  ros::Time::now().toSec() - sp_movement_->start_timer_;
-			if (!handleMoveBackEvent(p_cm))
+//			if (!handleMoveBackEvent(p_cm))
+			if (!handleMoveBackEventForward(p_cm))
 			{
-				if(ev.rcon_status) {
+				if (ev.rcon_status) {
 					if (p_cm->go_home_path_algorithm_ != nullptr)
 						p_cm->go_home_path_algorithm_->setHomePoint(getPosition());
 					p_cm->saveBlocks();
 					movement_i_ = mm_rcon;
 					sp_movement_.reset(new MovementRcon(is_left_));
+					resetTriggeredValue();
+				} else if (ev.cliff_triggered) {
+					beeper.debugBeep(VALID);
+					ROS_WARN("%s,%d, ev.cliff_triggered(%d)!!!",__FUNCTION__, __LINE__, ev.cliff_triggered);
+					movement_i_ = mm_stay;
+					sp_movement_.reset(new MovementStay(CLIFF_STAY_TIME_));
 				}
 				else{
 					p_cm->saveBlocks();
@@ -175,10 +184,11 @@ bool MoveTypeFollowWall::isFinish()
 						sp_movement_.reset(new MovementGyroDynamic());
 					else
 						sp_movement_.reset(new MovementTurn(turn_target_radian_, ROTATE_TOP_SPEED));
+					resetTriggeredValue();
 				}
-				resetTriggeredValue();
-			}else{
-				if(ev.tilt_triggered && p_cm->mode_i_ != Mode::cm_wall_follow)
+//				resetTriggeredValue();
+			} else {
+				if (ev.tilt_triggered && p_cm->mode_i_ != Mode::cm_wall_follow)
 					is_stop_follow_wall_after_tilt_ = true;
 			}
 			state_turn = false;
@@ -192,7 +202,7 @@ bool MoveTypeFollowWall::isFinish()
 				sp_movement_.reset(new MovementStraight());
 			}
 		}
-		else if(movement_i_ == mm_back)
+		else if (movement_i_ == mm_back)
 		{
 			movement_i_ = mm_stay;
 			sp_movement_.reset(new MovementStay(STAY_SEC_AFTER_BACK));
@@ -200,13 +210,12 @@ bool MoveTypeFollowWall::isFinish()
 		}
 		else if (movement_i_ == mm_stay) {
 			ROS_INFO("%s,%d, mt_fw",__FUNCTION__, __LINE__);
-			if(!handleMoveBackEventRealTime(p_cm)){
+			if (!handleMoveBackEventRealTime(p_cm)) {
 				ROS_INFO("%s,%d, mt_fw",__FUNCTION__, __LINE__);
 				auto turn_angle = getTurnRadian(false);
 				turn_target_radian_ = getPosition().addRadian(turn_angle).th;
 				resetTriggeredValue();
-				if(is_stop_follow_wall_after_tilt_)
-				{
+				if (is_stop_follow_wall_after_tilt_) {
 					ROS_INFO("%s,%d, mt_fw",__FUNCTION__, __LINE__);
 					is_stop_follow_wall_after_tilt_ = false;
 					return true;
@@ -215,7 +224,7 @@ bool MoveTypeFollowWall::isFinish()
 				ROS_INFO("%s,%d, mt_fw",__FUNCTION__, __LINE__);
 				auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
 				movement_i_ = p_mode->isGyroDynamic() ? mm_dynamic : mm_turn;
-				if(movement_i_ == mm_dynamic)
+				if (movement_i_ == mm_dynamic)
 					sp_movement_.reset(new MovementGyroDynamic());
 				else
 					sp_movement_.reset(new MovementTurn(turn_target_radian_, ROTATE_TOP_SPEED));
@@ -568,7 +577,10 @@ bool MoveTypeFollowWall::handleMoveBackEventRealTime(ACleanMode *p_clean_mode)
 	}
 
 	auto bumper_status = boost::dynamic_pointer_cast<MovementStay>(sp_movement_)->bumper_status_in_stay_;
-	auto cliff_status = boost::dynamic_pointer_cast<MovementStay>(sp_movement_)->cliff_status_in_stay_;
+//	auto cliff_status = boost::dynamic_pointer_cast<MovementStay>(sp_movement_)->cliff_status_in_stay_;
+//	ev.cliff_triggered = cliff.getStatus();
+	ROS_INFO("%s, %d: ev.cliff_triggered(%d).", __FUNCTION__, __LINE__, ev.cliff_triggered);
+	auto cliff_status = cliff.getStatus();
 	auto tilt_status = boost::dynamic_pointer_cast<MovementStay>(sp_movement_)->tilt_status_in_stay_;
 	ROS_INFO("%s,%d, mt_fw", __FUNCTION__, __LINE__);
 	if (bumper_status || cliff_status || tilt_status)

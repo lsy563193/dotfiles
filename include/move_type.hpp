@@ -25,7 +25,7 @@ public:
 	bool isNotHandleEvent();
 	bool RconTrigger();
 	bool handleMoveBackEvent(ACleanMode* p_clean_mode);
-	bool handleMoveBackEventLinear(ACleanMode *p_clean_mode);
+	bool handleMoveBackEventForward(ACleanMode *p_clean_mode);
 //	~IMoveType() = default;
 	enum{//movement
 		mm_null,
@@ -74,6 +74,7 @@ public:
 protected:
 
 	float back_distance_;
+	const double CLIFF_STAY_TIME_{0.2};
 
 };
 
