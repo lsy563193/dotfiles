@@ -1009,51 +1009,6 @@ void GridMap::setCircleMarkers(Point_t point, int radius, CellState cell_state,M
 		}
 	}
 }
-void GridMap::loadMap(std::string map_file,const Cell_t& min_p,bool use_map,Cell_t& curr)
-{
-	using namespace std;
-	std::ifstream fin(map_file, ios::binary | ios::ate);
-	int16_t size = static_cast<int16_t>(fin.tellg());
-	if(!fin.is_open())
-	{
-		ROS_ERROR("Open false");
-		return;
-	}
-	fin.seekg(std::ifstream::beg);
-	std::string s;;
-	getline(fin,s);
-	int16_t width = s.size();
-	int16_t hidth = size/(width+1);
-
-	fin.seekg(std::ifstream::beg);
-	char x;
-	if(use_map) {
-		while (!fin.eof()) {
-			fin.get(x);
-			if (x == 'x') {
-				curr = min_p + Cell_t{static_cast<int16_t>(fin.tellg() / (width + 1)),
-							  static_cast<int16_t>(fin.tellg() % (width + 1))};
-				break;
-			}
-		}
-	}
-
-	fin.seekg(std::ifstream::beg);
-	while(!fin.eof()){
-		auto val = fin.get();
-		if(val =='x')
-		{
-			setCell(CLEAN_MAP, curr.x, curr.y, 1);
-		}else
-		if(val !='\n'&& val !=-1)
-		{
-			Cell_t c_it = min_p + Cell_t{static_cast<int16_t>(fin.tellg() / (width + 1)),
-										 static_cast<int16_t>(fin.tellg() % (width + 1))};
-			setCell(CLEAN_MAP, c_it.x, c_it.y, val-'0');
-		}
-	}
-	ROS_ERROR("33332");
-}
 
 void GridMap::setBlockWithBound(Cell_t min, Cell_t max, CellState state,bool with_block) {
 	for (int16_t i = min.x; i <= max.x; ++i) {
@@ -1111,7 +1066,7 @@ void GridMap::loadMap(int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max
 		ROS_INFO("%s %d: Read data succeeded.", __FUNCTION__, __LINE__);
 	}
 }
-void GridMap::loadMap(bool use_map,Cell_t& curr)
+void GridMap::loadMap(bool use_map,Cell_t& curr,Dir_t& dir, bool& trend_pos)
 {
 	using namespace std;
 	std::string map_file = "/opt/ros/indigo/share/pp/map";
@@ -1132,7 +1087,11 @@ void GridMap::loadMap(bool use_map,Cell_t& curr)
 	min_p.x = static_cast<int16_t>(std::stoi(word));
 	iss >> word;
 	min_p.y = static_cast<int16_t>(std::stoi(word));
-	ROS_INFO("map_origin:curr(%d,%d),min_p(%d,%d)",curr.x, curr.y,min_p.x, min_p.y);
+	iss >> word;
+	dir = static_cast<Dir_t >(std::stoi(word));
+	iss >> word;
+	trend_pos = static_cast<bool>(std::stoi(word));
+	ROS_INFO("map_origin:curr(%d,%d),min_p(%d,%d),dir(%d)",curr.x, curr.y,min_p.x, min_p.y,dir);
 
 	auto m_begin = fin.tellg();
 	getline(fin,s);

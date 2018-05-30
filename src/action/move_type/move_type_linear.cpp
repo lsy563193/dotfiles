@@ -191,10 +191,8 @@ void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 
 		if (std::abs(target_xy - curr_xy) < LINEAR_NEAR_DISTANCE) {
 			if (p_clean_mode->action_i_ == p_clean_mode->ac_linear &&
-				((robot::instance()->getRobotWorkMode() == Mode::cm_navigation && p_clean_mode->isStateClean())
-				 ||
-				 (robot::instance()->getRobotWorkMode() == Mode::cm_exploration && p_clean_mode->isStateExploration())
-				 )) {
+				robot::instance()->getRobotWorkMode() == Mode::cm_exploration && p_clean_mode->isStateExploration()
+				 ) {
 				if (switchLinearTargetByRecalc(p_clean_mode)) {
 					radian_diff_count = 0;
 				}

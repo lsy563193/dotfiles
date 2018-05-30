@@ -86,7 +86,7 @@ public:
 	 */
 	void setCircleMarkers(Point_t point, int radius, CellState cell_state,Marks& error_marker);
 
-	void loadMap(std::string map_file,const Cell_t& min_p,bool use_map,Cell_t& curr);
+//	void loadMap(std::string map_file,const Cell_t& min_p,bool use_map,Cell_t& curr, Dir_t dir);
 	/*
 	 * Mark a square of x_len * y_len from center with cell_state.
 	 *
@@ -237,7 +237,7 @@ public:
 
 	// Loading the log map for debug.
 	void loadMap(int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max);
-	void loadMap(bool use_map,Cell_t& curr);
+	void loadMap(bool use_map,Cell_t& curr, Dir_t& dir,bool& trend_pos);
 private:
 	uint8_t clean_map[MAP_SIZE][MAP_SIZE];
 	uint8_t cost_map[MAP_SIZE][MAP_SIZE];

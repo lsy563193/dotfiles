@@ -534,7 +534,7 @@ void APathAlgorithm::flood_fill(const Cell_t& curr)
 //	}
 }
 
-bool APathAlgorithm::dijstra(GridMap& map, const Cell_t &curr_cell, Cells &targets, func_compare_t is_target, bool is_stop, func_compare_t isAccessable) {
+bool APathAlgorithm::dijstra(GridMap& map, const Cell_t &curr_cell, Cells &targets, func_compare_t is_target, bool is_stop, func_compare_two_t isAccessable) {
 	typedef std::multimap<int16_t, Cell_t> Queue;
 	typedef std::pair<int16_t, Cell_t> Entry;
 
@@ -571,20 +571,28 @@ bool APathAlgorithm::dijstra(GridMap& map, const Cell_t &curr_cell, Cells &targe
 
 			auto neighbor = next + cell_direction_[index];
 
-			if (!isAccessable(neighbor))
+			if (!isAccessable(neighbor,next)) // access
 				continue;
 
-			if (map.getCell(COST_MAP, neighbor.x, neighbor.y) != 0)
+			if (map.getCell(COST_MAP, neighbor.x, neighbor.y) != 0)//close set
 				continue;
 
 			queue.emplace(cost + 1, neighbor);
+			ROS_WARN_COND(neighbor.x == 12 && neighbor.y == 39,"nei(%d,%d),next(%d,%d)",neighbor.x, neighbor.y,next.x, next.y);
 			map.setCell(COST_MAP, neighbor.x, neighbor.y, cost + 1);
 		}
 	}
 	return !targets.empty();
 }
 
-bool isAccessable::operator()(const Cell_t &c_it) {
-	return bound_.Contains(c_it) && p_map_->isBlockAccessible(c_it.x, c_it.y);
+bool isAccessable::operator()(const Cell_t &neighbor, const Cell_t& next) {
+	auto is_accessible = bound_.Contains(neighbor) && p_map_->isBlockAccessible(neighbor.x, neighbor.y);
+//	ROS_INFO("neighbor(%d,%d),val(%d)",neighbor.x, neighbor.y, is_accessible);
+	if(is_forbit_turn_)
+	{
+		if(neighbor.y < next.y)
+			is_accessible = false;
+	}
+	return is_accessible;
 }
 

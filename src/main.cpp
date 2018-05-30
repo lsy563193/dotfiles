@@ -98,20 +98,20 @@ int main(int argc, char **argv)
 	robot_instance = new robot();
 // Test code for path algorithm by Austin.
 //	test_map();
-#if 0
+#if 1
 	//test code by lsy563193
 	sleep(1);
 	GridMap map;
 	//test
 	Cell_t curr{};
-	map.loadMap(true,curr);
-//	map.print(curr,CLEAN_MAP, Cells{});
-	setPosition(cellToCount(curr.x),cellToCount(curr.y));
-
 	Dir_t old_dir_=MAP_POS_X;
+
 	Points remain_path_{};
 
 	NavCleanPathAlgorithm clean_path_algorithm_;
+	map.loadMap(true,curr, old_dir_, clean_path_algorithm_.trend_pos);
+	clean_path_algorithm_.curr_filter_ = &clean_path_algorithm_.filter_short_path;
+	setPosition(cellToCount(curr.x),cellToCount(curr.y));
 
 	Cells cells{};
 //	auto is_found = map.gen(curr, cells,[&](const Cell_t& c_it){return c_it == Cell_t{-2,0};},true);
