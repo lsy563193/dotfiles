@@ -921,7 +921,7 @@ void GridMap::print(const Cell_t& curr_cell, uint8_t id, const Cells& targets)
 				outString << 'x';
 			else if (std::find_if(targets.begin(), targets.end(), [&](const Cell_t& c_it ){return c_it == Cell_t{x,y};}) != targets.end())
 				outString << 'e';
-			else if (cs == SLAM_MAP_BLOCKED)
+			else if (cs == SLAM_MAt P_BLOCKED)
 				outString << 'a';
 			else if (cs == BLOCKED_BOUNDARY)
 				outString << 'b';
