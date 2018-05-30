@@ -401,11 +401,18 @@ bool APathAlgorithm::checkTrappedUsingDijkstra(GridMap &map, const Cell_t &curr_
 {
 	Cells targets;
 	// Use clean area proportion to judge if it is trapped.
-    int dijkstra_cleaned_count{};
-	auto is_trapped = map.count_if(curr_cell,[&](Cell_t c_it) {
-		return (map.getCell(CLEAN_MAP, c_it.x, c_it.y) == CLEANED);
-	},dijkstra_cleaned_count);
-    if(!is_trapped)
+//	int dijkstra_cleaned_count{};
+//	auto is_trapped = map.count_if(curr_cell,[&](Cell_t c_it) {
+//		return (map.getCell(CLEAN_MAP, c_it.x, c_it.y) == CLEANED);
+//	},dijkstra_cleaned_count);
+
+	auto dijkstra_cleaned_count = map.dijkstraCountCleanedArea(getPosition(), targets);
+//	ROS_ERROR_COND(1.0 * abs(dijkstra_cleaned_count2 - dijkstra_cleaned_count) / dijkstra_cleaned_count > 0.1,
+//				   "%s %d: dijkstra_cleaned_count2 %d, dijkstra_cleaned_count %d, please inform Austin.",
+//				   __FUNCTION__, __LINE__, dijkstra_cleaned_count2, dijkstra_cleaned_count);
+
+	if(!targets.empty())
+//	if(!is_trapped)
 		return false;
 
 	auto map_cleand_count = map.getCleanedArea();

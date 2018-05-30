@@ -66,10 +66,15 @@ bool CleanModeNav::mapMark()
 
 	displayPointPath((passed_path_));
 
+	// Update for passed_path.
 	GridMap map{};
 	for (auto &&p_it :passed_path_)
 		map.setCells(CLEAN_MAP, p_it.toCell().x, p_it.toCell().y, CLEANED);
 
+	const auto start = passed_path_.front().toCell();
+	const auto curr = passed_path_.back().toCell();
+/*
+	Cells c_bound1;
 	auto is_cleaned_bound = [&](const Cell_t &c_it){
 		if(map.getCell(CLEAN_MAP, c_it.x, c_it.y) == CLEANED)
 		{
@@ -82,6 +87,12 @@ bool CleanModeNav::mapMark()
 		}
 		return false;
 	};
+
+	map.find_if(start, c_bound1,is_cleaned_bound);
+//	ROS_INFO("1111111111111111111");
+//	map.print(curr, CLEAN_MAP, c_bound1);
+
+	Cells c_bound2;
 	auto is_cleaned_bound2 = [&](const Cell_t &c_it){
 		if(map.getCell(CLEAN_MAP, c_it.x, c_it.y) == UNCLEAN)
 		{
@@ -94,12 +105,47 @@ bool CleanModeNav::mapMark()
 		}
 		return false;
 	};
-	Cells c_bound1;
-	Cells c_bound2;
-	const auto start = passed_path_.front().toCell();
-	const auto curr = passed_path_.back().toCell();
-	map.find_if(start, c_bound1,is_cleaned_bound);
 	map.find_if(start, c_bound2,is_cleaned_bound2);
+//	ROS_INFO("2222222222222222222");
+//	map.print(curr, CLEAN_MAP, c_bound2);
+
+	Cells c_bound3;
+	auto is_cleaned_bound3_target_selection = [&](const Cell_t &c_it)
+	{
+		if(map.getCell(CLEAN_MAP, c_it.x, c_it.y) == CLEANED)
+		{
+			for (auto index = 0; index < 4; index++) {
+				auto neighbor = c_it + cell_direction_[index];
+				if (map.getCell(CLEAN_MAP, neighbor.x, neighbor.y) == UNCLEAN)
+					return true;
+			}
+		}
+		return false;
+	};
+	auto is_cleaned_bound3_expand_condition = [&](const Cell_t cell, const Cell_t neighbor_cell)
+	{
+		return !map.cellIsOutOfRange(neighbor_cell) && !map.isOutOfTargetRange(neighbor_cell)
+			   && map.getCell(COST_MAP, neighbor_cell.x, neighbor_cell.y) == 0
+			   && map.getCell(CLEAN_MAP, neighbor_cell.x, neighbor_cell.y) == CLEANED;
+	};
+	map.dijkstraBase(curr, c_bound3, true, is_cleaned_bound3_target_selection, is_cleaned_bound3_expand_condition);
+//	ROS_INFO("3333333333333333333");
+//	map.print(curr, CLEAN_MAP, c_bound3);*/
+
+	Cells out_bound_of_passed_path;
+	auto bound_selection = [&](const Cell_t &c_it)
+	{
+		return map.getCell(CLEAN_MAP, c_it.x, c_it.y) == UNCLEAN;
+	};
+	auto bound_expand_condition = [&](const Cell_t cell, const Cell_t neighbor_cell)
+	{
+		return !map.cellIsOutOfRange(neighbor_cell) && !map.isOutOfTargetRange(neighbor_cell)
+			   && map.getCell(COST_MAP, neighbor_cell.x, neighbor_cell.y) == 0
+			   && map.getCell(CLEAN_MAP, cell.x, cell.y) == CLEANED;
+	};
+	map.dijkstraBase(curr, out_bound_of_passed_path, true, bound_selection, bound_expand_condition);
+//	ROS_INFO("4444444444444444444");
+//	map.print(curr, CLEAN_MAP, out_bound_of_passed_path);
 
 	if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right) {
 		if (!c_blocks.empty()) {
@@ -133,8 +179,10 @@ bool CleanModeNav::mapMark()
 		}
 	}
 	for (auto &&cost_block : c_blocks) {
-		if(std::find_if(c_bound2.begin(), c_bound2.end(), [&](const Cell_t& c_it)
-		{ return c_it == cost_block.second; }) != c_bound2.end())
+		if(std::find_if(out_bound_of_passed_path.begin(), out_bound_of_passed_path.end(), [&](const Cell_t& c_it)
+		{ return c_it == cost_block.second; }) != out_bound_of_passed_path.end())
+//		if(std::find_if(c_bound2.begin(), c_bound2.end(), [&](const Cell_t& c_it)
+//		{ return c_it == cost_block.second; }) != c_bound2.end())
 //			if(!(cost_block.first == BLOCKED_LIDAR && (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)))
 				clean_map_.setCell(CLEAN_MAP, cost_block.second.x, cost_block.second.y, cost_block.first);
 	}

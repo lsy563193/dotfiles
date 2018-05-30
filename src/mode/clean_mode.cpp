@@ -2239,7 +2239,7 @@ PathHead ACleanMode::getTempTarget()
 bool ACleanMode::isIsolate(const Cell_t& curr) {
 	BoundingBox2 bound{};
 	fw_tmp_map.getMapRange(CLEAN_MAP, &bound.min.x, &bound.max.x, &bound.min.y, &bound.max.y);
-	fw_tmp_map.markRobot(curr, CLEAN_MAP);//Note : For clearing the obstacles around the robot current pose, please not delete it!!!
+	fw_tmp_map.markRobot(curr, CLEAN_MAP);//Note : For clearing the obstacles around the robot current pose, please do not delete it!!!
 
 	auto external_target = bound.max + Cell_t{1, 1};
 	auto expend_min = bound.min - Cell_t{8, 8};
@@ -2248,11 +2248,22 @@ bool ACleanMode::isIsolate(const Cell_t& curr) {
 	fw_tmp_map.setCell(CLEAN_MAP, expend_max.x, expend_max.y,1);
 	ROS_ERROR("ISOLATE MAP");
 	fw_tmp_map.print(curr, CLEAN_MAP,*points_to_cells(make_unique<Points>(passed_path_)));
-	ROS_ERROR("ISOLATE MAP");
 	ROS_ERROR("minx(%d),miny(%d),maxx(%d),maxy(%d)",bound.min.x, bound.min.y,bound.max.x, bound.max.y);
 
 	auto cells = Cells{};
-	auto is_found = fw_tmp_map.dijstra(curr, cells,[&](const Cell_t& c_it){return c_it == external_target;},true, true);
+//	auto is_found = fw_tmp_map.dijstra(curr, cells,[&](const Cell_t& c_it){return c_it == external_target;},true, true);
+
+	auto expand_condition = [&](const Cell_t cell, const Cell_t neighbor_cell){
+		return fw_tmp_map.isAccessibleNeighbor(neighbor_cell);
+	};
+
+	bool is_found = fw_tmp_map.dijkstraBase(curr, cells, false,
+												[&](const Cell_t& c_it){return c_it == external_target;},
+												expand_condition);
+
+//	ROS_ERROR_COND(is_found ^ new_is_found, "%s %d: is_found %d, new_is_found %d, please inform Austin.",
+//				   __FUNCTION__, __LINE__, is_found, new_is_found);
+
 	return is_found;
 }
 

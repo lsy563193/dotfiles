@@ -567,7 +567,19 @@ bool NavCleanPathAlgorithm::checkTrapped(GridMap &map, const Cell_t &curr_cell)
 	else if(robot::instance()->p_mode->getNextMode() == Mode::cm_exploration) {
 		Cells cells{};
 		auto p_cm = boost::dynamic_pointer_cast<CleanModeExploration>(robot::instance()->p_mode);
-		return !(p_cm->clean_map_.dijstra(getPosition().toCell(), cells,[&](const Cell_t& c_it){return c_it == Cell_t{0,0};},true));
+
+		auto expand_condition = [&](const Cell_t cell, const Cell_t neighbor_cell)
+		{
+			return p_cm->clean_map_.isAccessibleCleanedNeighbor(neighbor_cell);
+		};
+
+		bool new_ret = !(p_cm->clean_map_.dijkstraBase(getPosition().toCell(), cells, false,
+									  [&](const Cell_t &c_it) { return c_it == Cell_t{0, 0}; },
+									  expand_condition));
+//		bool old_ret = !(p_cm->clean_map_.dijstra(getPosition().toCell(), cells, [&](const Cell_t &c_it) { return c_it == Cell_t{0, 0}; }, true));
+//		ROS_ERROR_COND(new_ret ^ old_ret, "%s %d: new_ret %d, old_ret %d, please inform Austin.",
+//				   __FUNCTION__, __LINE__, new_ret, old_ret);
+		return new_ret;
 	}
 }
 
