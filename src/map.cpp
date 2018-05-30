@@ -789,7 +789,7 @@ uint16_t GridMap::dijkstraCountCleanedArea(Point_t curr, Cells &targets)
 {
 	bool greedy_match = true;
 	std::set<Cell_t> c_cleans;
-	auto count_condition = [&](const Cell_t cell){
+	auto count_condition = [&](const Cell_t &cell){
 		for (int16_t x = -2; x <= 2; x++)
 		{
 			for (int16_t y = -2; y <= 2; y++)
@@ -804,7 +804,7 @@ uint16_t GridMap::dijkstraCountCleanedArea(Point_t curr, Cells &targets)
 		return false;
 	};
 
-	auto expand_condition = [&](const Cell_t cell, const Cell_t neighbor_cell){
+	auto expand_condition = [&](const Cell_t &cell, const Cell_t &neighbor_cell){
 		return isAccessibleCleanedNeighbor(neighbor_cell);
 	};
 

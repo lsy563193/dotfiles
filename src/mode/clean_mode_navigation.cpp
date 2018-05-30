@@ -137,7 +137,7 @@ bool CleanModeNav::mapMark()
 	{
 		return map.getCell(CLEAN_MAP, c_it.x, c_it.y) == UNCLEAN;
 	};
-	auto bound_expand_condition = [&](const Cell_t cell, const Cell_t neighbor_cell)
+	auto bound_expand_condition = [&](const Cell_t &cell, const Cell_t &neighbor_cell)
 	{
 		return !map.cellIsOutOfRange(neighbor_cell) && !map.isOutOfTargetRange(neighbor_cell)
 			   && map.getCell(COST_MAP, neighbor_cell.x, neighbor_cell.y) == 0

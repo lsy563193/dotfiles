@@ -2253,7 +2253,7 @@ bool ACleanMode::isIsolate(const Cell_t& curr) {
 	auto cells = Cells{};
 //	auto is_found = fw_tmp_map.dijstra(curr, cells,[&](const Cell_t& c_it){return c_it == external_target;},true, true);
 
-	auto expand_condition = [&](const Cell_t cell, const Cell_t neighbor_cell){
+	auto expand_condition = [&](const Cell_t &cell, const Cell_t &neighbor_cell){
 		return fw_tmp_map.isAccessibleNeighbor(neighbor_cell);
 	};
 

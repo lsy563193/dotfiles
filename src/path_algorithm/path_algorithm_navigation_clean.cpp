@@ -569,7 +569,7 @@ bool NavCleanPathAlgorithm::checkTrapped(GridMap &map, const Cell_t &curr_cell)
 		Cells cells{};
 		auto p_cm = boost::dynamic_pointer_cast<CleanModeExploration>(robot::instance()->p_mode);
 
-		auto expand_condition = [&](const Cell_t cell, const Cell_t neighbor_cell)
+		auto expand_condition = [&](const Cell_t &cell, const Cell_t &neighbor_cell)
 		{
 			return p_cm->clean_map_.isAccessibleCleanedNeighbor(neighbor_cell);
 		};
