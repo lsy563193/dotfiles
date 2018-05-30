@@ -921,7 +921,7 @@ void GridMap::print(const Cell_t& curr_cell, uint8_t id, const Cells& targets)
 				outString << 'x';
 			else if (std::find_if(targets.begin(), targets.end(), [&](const Cell_t& c_it ){return c_it == Cell_t{x,y};}) != targets.end())
 				outString << 'e';
-			else if (cs == SLAM_MAt P_BLOCKED)
+			else if (cs == SLAM_MAP_BLOCKED)
 				outString << 'a';
 			else if (cs == BLOCKED_BOUNDARY)
 				outString << 'b';
@@ -1117,9 +1117,9 @@ void GridMap::setCircleMarkers(Point_t point, int radius, CellState cell_state,M
 	Point_t tmp_point = point;
 	auto deg_point_th = static_cast<int16_t>(radian_to_degree(point.th));
 	double time = ros::Time::now().toSec();
-	ROS_INFO("\033[1;40;32m deg_point_th = %d, point(%d,%d)\033[0m",deg_point_th,point.toCell().x,point.toCell().y);
+	ROS_INFO("\033[1;40;32mdeg_point_th = %d, point(%d,%d)\033[0m",deg_point_th,point.toCell().x,point.toCell().y);
 
-	for (int16_t angle_i = 0; angle_i <360; angle_i += 2) {
+	for (int16_t angle_i = 0; angle_i <360; angle_i += 3) {
 		for (int dy = 0; dy < RADIUS_CELL; ++dy) {
 			tmp_point.th = ranged_radian(degree_to_radian(deg_point_th + angle_i));
 			Cell_t cell = tmp_point.getRelative(0, dy * CELL_SIZE).toCell();
