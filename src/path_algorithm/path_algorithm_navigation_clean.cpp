@@ -112,12 +112,12 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr_p, co
 		func_compare_two_t expand_condition = nullptr;
 		if (filter->is_forbit_turn_) {
 			expand_condition = [&](const Cell_t &next, const Cell_t &neighbor) {
-				return map.isBlockAccessible(next.x, next.y) && neighbor.y >= next.y;
+				return map.isBlockAccessible(neighbor.x, neighbor.y) && neighbor.y >= next.y;
 			};
 		}
 		else{
 			expand_condition = [&](const Cell_t &next, const Cell_t &neighbor) {
-				return map.isBlockAccessible(next.x, next.y);
+				return map.isBlockAccessible(neighbor.x, neighbor.y);
 			};
 		}
 
