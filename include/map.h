@@ -200,10 +200,10 @@ public:
 //				  std::function<bool(const Cell_t &tmp_target, const Cell_t &neighbour)> expand_condition);
 
 	// Basic expend condiction for most dijkstra usage.
-	bool isAccessibleNeighbor(Cell_t neighbor_cell);
+//	bool isAccessibleNeighbor(Cell_t neighbor_cell);
 
 	// Basic expend condiction for finding path.
-	bool isAccessibleCleanedNeighbor(Cell_t neighbor_cell);
+//	bool isAccessibleCleanedNeighbor(Cell_t neighbor_cell);
 
 	// Using dijkstra to count reachable cleaned area.
 //	uint16_t dijkstraCountCleanedArea(Point_t curr, Cells &targets);

@@ -9,6 +9,8 @@
 #include <deque>
 #include "BoundingBox.h"
 
+using func_compare_t =  std::function<bool(const Cell_t &next)>;
+using func_compare_two_t =  std::function<bool(const Cell_t &neighbor,const Cell_t& next)>;
 extern const Cell_t cell_direction_[9];
 extern const Cell_t cell_direction_4[4];
 
@@ -16,17 +18,28 @@ typedef std::deque<Cells> PathList;
 
 class GridMap;
 
-class isAccessable
-{
+class TargetVal {
 public:
-	isAccessable(const BoundingBox2& bound,GridMap* p_map, bool is_forbit_turn):bound_(bound),p_map_(p_map),is_forbit_turn_(is_forbit_turn) { };
-	isAccessable(const BoundingBox2& bound,GridMap* p_map):bound_(bound),p_map_(p_map) { };
-	bool operator()(const Cell_t &c_it, const Cell_t & neighbor) ;
+	TargetVal(GridMap* p_map,CellState val):p_map_(p_map),val_(val) {};
+
+	bool operator()(const Cell_t& c_it);
+private:
+	GridMap* p_map_;
+	CellState val_;
+};
+
+class isAccessable {
+public:
+	isAccessable(GridMap *p_map,func_compare_two_t external_condition = nullptr,
+				 const BoundingBox2& bound_ = BoundingBox2{});
+
+
+	bool operator()(const Cell_t &next, const Cell_t &neighbor) ;
 
 private:
-	BoundingBox2 bound_;
-	GridMap* p_map_;
-	bool is_forbit_turn_{};
+	BoundingBox2 bound_{};
+	GridMap *p_map_{};
+	func_compare_two_t external_condition_{};
 };
 
 class APathAlgorithm
@@ -39,8 +52,6 @@ public:
 	void findPath(GridMap &map, const Cell_t &start, const Cell_t &target, Cells &path, Dir_t last_i);
 
 	void flood_fill(const Cell_t& curr);
-	using func_compare_t =  std::function<bool(const Cell_t &next)>;
-	using func_compare_two_t =  std::function<bool(const Cell_t &neighbor,const Cell_t& next)>;
 	bool dijkstra(GridMap &map, const Cell_t &curr_cell, Cells &targets, bool is_stop, func_compare_t is_target,
 				  func_compare_two_t isAccessible);
 	uint16_t dijkstraCountCleanedArea(GridMap& map, Point_t curr, Cells &targets);

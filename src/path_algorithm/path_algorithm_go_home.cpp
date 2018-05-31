@@ -72,9 +72,12 @@ bool GoHomePathAlgorithm::generatePathThroughCleanedArea(GridMap &map, const Poi
 {
 	if (map.isBlockAccessible(current_home_point_.toCell().x, current_home_point_.toCell().y))
 	{
+		auto expand_condition = [&](const Cell_t cell, const Cell_t neighbor_cell){
+			return map.isBlockAccessible(neighbor_cell.x, neighbor_cell.y) && map.getCell(CLEAN_MAP, neighbor_cell.x, neighbor_cell.y) == CLEANED;
+		};
 
 		return dijkstra(map, curr.toCell(), plan_path, true, CellEqual(current_home_point_.toCell()),
-						isAccessable(map.genRange(), &map));
+						isAccessable(&map, expand_condition));
 	}
 
 //	ROS_WARN(
@@ -89,8 +92,11 @@ bool GoHomePathAlgorithm::generatePathWithSlamMapClearBlocks(GridMap &map, const
 {
 	if (map.isBlockAccessible(current_home_point_.toCell().x, current_home_point_.toCell().y))
 	{
+		auto expand_condition = [&](const Cell_t cell, const Cell_t neighbor_cell){
+			return map.isBlockAccessible(neighbor_cell.x, neighbor_cell.y) && map.getCell(CLEAN_MAP, neighbor_cell.x, neighbor_cell.y) == CLEANED;
+		};
 		return dijkstra(map, curr.toCell(), plan_path, true, CellEqual(current_home_point_.toCell()),
-								 isAccessable(map.genRange(), &map));
+								 isAccessable(&map, expand_condition));
 	}
 
 //	ROS_WARN(
@@ -111,8 +117,11 @@ bool GoHomePathAlgorithm::generatePathThroughSlamMapReachableArea(GridMap &map, 
 		temp_map.merge(slam_grid_map, false, false, true, false, false, false);
 		temp_map.print(curr.toCell(), CLEAN_MAP, Cells{{0, 0}});
 
+		auto expand_condition = [&](const Cell_t cell, const Cell_t neighbor_cell){
+			return map.isBlockAccessible(neighbor_cell.x, neighbor_cell.y);
+		};
 		return dijkstra(map, curr.toCell(), plan_path, true, CellEqual(current_home_point_.toCell()),
-						isAccessable(map.genRange(), &map));
+						isAccessable(&map, expand_condition));
 	}
 	return false;
 
@@ -123,8 +132,11 @@ bool GoHomePathAlgorithm::generatePathThroughUnknownArea(GridMap &map, const Poi
 {
 	if (map.isBlockAccessible(current_home_point_.toCell().x, current_home_point_.toCell().y))
 	{
+		auto expand_condition = [&](const Cell_t cell, const Cell_t neighbor_cell){
+			return map.isBlockAccessible(neighbor_cell.x, neighbor_cell.y);
+		};
 		return dijkstra(map, curr.toCell(), plan_path, true, CellEqual(current_home_point_.toCell()),
-						isAccessable(map.genRange(), &map));
+						isAccessable(&map, expand_condition));
 	}
 
 //	ROS_WARN(

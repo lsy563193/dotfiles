@@ -566,12 +566,13 @@ bool APathAlgorithm::dijkstra(GridMap &map, const Cell_t &curr_cell, Cells &targ
 		queue.erase(start);
 		if (is_target(next))
 		{
-//			targets.push_back(next);
 			if(is_stop)
 			{
 				ROS_INFO("find target(%d,%d)",next.x, next.y);
 				findPath(map,curr_cell,next, targets,MAP_POS_X);
 				return true;
+			} else{
+				targets.push_back(next);
 			}
 		}
 //		ROS_INFO("next(%d,%d)",next.x, next.y);
@@ -579,34 +580,23 @@ bool APathAlgorithm::dijkstra(GridMap &map, const Cell_t &curr_cell, Cells &targ
 
 			auto neighbor = next + cell_direction_[index];
 
-			if (!isAccessable(neighbor,next)) // access
+			if (!isAccessable(next, neighbor)) // access
 				continue;
 
 			if (map.getCell(COST_MAP, neighbor.x, neighbor.y) != 0)//close set
 				continue;
 
 			queue.emplace(cost + 1, neighbor);
-			ROS_WARN_COND(neighbor.x == 12 && neighbor.y == 39,"nei(%d,%d),next(%d,%d)",neighbor.x, neighbor.y,next.x, next.y);
 			map.setCell(COST_MAP, neighbor.x, neighbor.y, cost + 1);
 		}
 	}
 	return !targets.empty();
 }
 
-bool isAccessable::operator()(const Cell_t &neighbor, const Cell_t& next) {
-	auto is_accessible = bound_.Contains(neighbor) && p_map_->cellIsOutOfRange(neighbor) && p_map_->isBlockAccessible(neighbor.x, neighbor.y);
-//	ROS_INFO("neighbor(%d,%d),val(%d)",neighbor.x, neighbor.y, is_accessible);
-	if(is_forbit_turn_)
-	{
-		if(neighbor.y < next.y)
-			is_accessible = false;
-	}
-	return is_accessible;
-}
+
 
 uint16_t APathAlgorithm::dijkstraCountCleanedArea(GridMap& map, Point_t curr, Cells &targets)
 {
-	bool greedy_match = true;
 	std::set<Cell_t> c_cleans;
 	auto count_condition = [&](const Cell_t cell){
 		for (int16_t x = -2; x <= 2; x++)
@@ -624,12 +614,30 @@ uint16_t APathAlgorithm::dijkstraCountCleanedArea(GridMap& map, Point_t curr, Ce
 	};
 
 	auto expand_condition = [&](const Cell_t cell, const Cell_t neighbor_cell){
-		return map.isAccessibleCleanedNeighbor(neighbor_cell);
+		return map.isBlockAccessible(neighbor_cell.x, neighbor_cell.y) && map.getCell(CLEAN_MAP, neighbor_cell.x, neighbor_cell.y) == CLEANED;
 	};
 
 	// Count the cleaned cells using dijkstra algorithm.
-	dijkstra(map, curr.toCell(), targets, greedy_match, count_condition, expand_condition);
+	dijkstra(map, curr.toCell(), targets, false, count_condition, expand_condition);
 
 	return static_cast<uint16_t>(c_cleans.size());
 }
 
+bool TargetVal::operator()(const Cell_t &c_it) {
+		return p_map_->getCell(CLEAN_MAP, c_it.x, c_it.y) == val_;
+}
+
+isAccessable::isAccessable(GridMap *p_map, func_compare_two_t external_condition,
+						   const BoundingBox2& bound)
+: bound_(bound), p_map_(p_map), external_condition_(external_condition) {
+		if (bound_.GetMinimum() == Cell_t{INT16_MAX, INT16_MAX} && bound_.GetMaximum() == Cell_t{INT16_MIN, INT16_MIN})
+			bound_ = p_map_->genRange();
+		if (external_condition_ == nullptr)
+			external_condition_ = [](const Cell_t &next, const Cell_t &neighbor) { return true; };
+//		ROS_INFO("bound_(%d,%d,%d,%d)",bound_.min.x,bound_.min.y,bound_.max.y,bound_.max.y );
+	}
+
+bool isAccessable::operator()(const Cell_t &next, const Cell_t &neighbor) {
+		return bound_.Contains(neighbor) && !p_map_->cellIsOutOfRange(neighbor) &&
+			   external_condition_(next, neighbor);
+}

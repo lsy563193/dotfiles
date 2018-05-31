@@ -775,17 +775,17 @@ int8_t GridMap::isNeedClean(int16_t x, int16_t y)
 //	return !targets.empty();
 //}
 
-bool GridMap::isAccessibleNeighbor(Cell_t neighbor_cell)
-{
-	// Do not care weather it is cleaned or not.
-	return !cellIsOutOfRange(neighbor_cell) && !isOutOfMap(neighbor_cell)
-		   && isBlockAccessible(neighbor_cell.x, neighbor_cell.y);
-}
-
-bool GridMap::isAccessibleCleanedNeighbor(Cell_t neighbor_cell)
-{
-	return isAccessibleNeighbor(neighbor_cell) && getCell(CLEAN_MAP, neighbor_cell.x, neighbor_cell.y) == CLEANED;
-}
+//bool GridMap::isAccessibleNeighbor(Cell_t neighbor_cell)
+//{
+//	// Do not care weather it is cleaned or not.
+//	return !cellIsOutOfRange(neighbor_cell) && !isOutOfMap(neighbor_cell)
+//		   && isBlockAccessible(neighbor_cell.x, neighbor_cell.y);
+//}
+//
+//bool GridMap::isAccessibleCleanedNeighbor(Cell_t neighbor_cell)
+//{
+//	return isAccessibleNeighbor(neighbor_cell) && getCell(CLEAN_MAP, neighbor_cell.x, neighbor_cell.y) == CLEANED;
+//}
 
 bool GridMap::isFrontBlockBoundary(int dx)
 {
@@ -824,7 +824,7 @@ bool GridMap::cellIsOutOfRange(Cell_t cell)
 }
 BoundingBox2 GridMap::genRange()
 {
-	return{Cell_t{static_cast<int16_t>(g_x_min - 1), static_cast<int16_t>(g_y_min - 1)}, Cell_t{
+	return {Cell_t{static_cast<int16_t>(g_x_min - 1), static_cast<int16_t>(g_y_min - 1)}, Cell_t{
 			static_cast<int16_t>(g_x_max + 1), static_cast<int16_t>(g_y_max + 1)}};
 }
 
@@ -905,9 +905,9 @@ void GridMap::print(const Cell_t& curr_cell, uint8_t id, const Cells& targets)
 				outString << 'b';
 			else
 			{
-//				if(id == CLEAN_MAP && (x == x_min || x==x_max || y == y_min || y == y_max) )
-//					outString << '*';
-//				else
+				if(id == CLEAN_MAP && (x == x_min || x==x_max || y == y_min || y == y_max) )
+					outString << '*';
+				else
 					outString << cs;
 			}
 

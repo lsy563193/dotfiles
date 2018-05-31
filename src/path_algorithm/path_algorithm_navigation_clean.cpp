@@ -12,16 +12,14 @@ extern int g_follow_last_follow_wall_dir;
 class IsTarget
 {
 public:
-	IsTarget(GridMap* map,BoundingBox2 bound):map_(map), bound_(bound) { };
+	IsTarget(GridMap* map):map_(map) { };
     bool operator()(const Cell_t &c_it) {
-		return c_it.y % 2 == 0 && map_->getCell(CLEAN_MAP, c_it.x, c_it.y) == UNCLEAN &&
-			   map_->isBlockAccessible(c_it.x, c_it.y) && bound_.Contains(c_it) &&bound_.Contains(c_it);
+		return c_it.y % 2 == 0 && map_->getCell(CLEAN_MAP, c_it.x, c_it.y) == UNCLEAN ;
 //			   && std::any_of(std::begin(cell_direction_4),std::end(cell_direction_4),[&](const Cell_t& cell){ return map_.getCell(CLEAN_MAP, cell.x, cell.y) == CLEANED;});
 	}
 
 private:
 	GridMap* map_;
-	BoundingBox2 bound_;
 };
 
 std::unique_ptr<std::deque<BestTargetFilter*>> NavCleanPathAlgorithm::generateBounds(GridMap& map) {
@@ -123,8 +121,19 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr_p, co
 		filter->displayName();
 		ROS_INFO("target_bound(%d,%d,%d,%d)",filter->target_bound.min.x, filter->target_bound.min.y, filter->target_bound.max.x, filter->target_bound.max.y);
 		ROS_INFO("range_bound(%d,%d,%d,%d)",filter->range_bound.min.x, filter->range_bound.min.y, filter->range_bound.max.x, filter->range_bound.max.y);
-		if(dijkstra(map, curr_, path, true, IsTarget(&map, filter->target_bound),
-					isAccessable(filter->range_bound, &map, filter->is_forbit_turn_)))
+		func_compare_two_t expand_condition = nullptr;
+		if (filter->is_forbit_turn_) {
+			expand_condition = [&](const Cell_t &next, const Cell_t &neighbor) {
+				return map.isBlockAccessible(next.x, next.y) && neighbor.y >= next.y;
+			};
+		}
+		else{
+			expand_condition = [&](const Cell_t &next, const Cell_t &neighbor) {
+				return map.isBlockAccessible(next.x, next.y);
+			};
+		}
+
+		if(dijkstra(map, curr_, path, true, IsTarget(&map), isAccessable(&map,expand_condition, filter->range_bound)))
 			break;
 //		map.print(curr_,COST_MAP,path);
 	}
@@ -159,10 +168,11 @@ bool NavCleanPathAlgorithm::checkTrapped(GridMap &map, const Cell_t &curr_cell)
 
 		auto expand_condition = [&](const Cell_t cell, const Cell_t neighbor_cell)
 		{
-			return p_cm->clean_map_.isAccessibleCleanedNeighbor(neighbor_cell);
+			return p_cm->clean_map_.isBlockAccessible(neighbor_cell.x, neighbor_cell.y) &&
+					p_cm->clean_map_.getCell(CLEAN_MAP, neighbor_cell.x, neighbor_cell.y) == CLEANED;
 		};
 
-		return !dijkstra(p_cm->clean_map_, getPosition().toCell(), cells, false, CellEqual(Cell_t{0,0}), expand_condition);
+		return !dijkstra(p_cm->clean_map_, getPosition().toCell(), cells, true, CellEqual(Cell_t{0,0}), isAccessable(&p_cm->clean_map_, expand_condition));
 	}
 }
 //
