@@ -134,7 +134,7 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr_p, co
 	}
 
 	trend_pos = curr_filter_ != &filter_next_line_neg;
-	optimizePath(map, path,last_dir);
+	optimizePath(map, path);
 
 	plan_path = *cells_generate_points(make_unique<Cells>(path));
 
@@ -207,7 +207,7 @@ bool shift_path(GridMap &map, const Cell_t &p1, Cell_t &p2, Cell_t &p3, int num,
 }
 
 
-void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path, Dir_t last_dir) {
+void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path) {
 
 	ROS_INFO("Step 5:optimizePath");
 	if(curr_filter_ == &filter_curr_line_pos || curr_filter_ == &filter_curr_line_neg) {
@@ -247,11 +247,11 @@ void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path, Dir_t last_d
 		displayCellPath(path);
 		if(path.size() > 2)
 		{
-			if(is_opposite_dir(get_dir(path.begin()+1, path.begin()), last_dir) ||
-					(path.begin()->y%2 == 1 && isXAxis(last_dir) && get_dir(path.begin()+1, path.begin()) == (last_dir)))
+			if(is_opposite_dir(get_dir(path.begin()+1, path.begin()), priority_dir) ||
+					(path.begin()->y%2 == 1 && isXAxis(priority_dir) && get_dir(path.begin()+1, path.begin()) == (priority_dir)))
 			{
 				ROS_WARN("opposite dir");
-				ROS_INFO("dir(%d,%d)",get_dir(path.begin()+1, path.begin()), last_dir);
+				ROS_INFO("dir(%d,%d)",get_dir(path.begin()+1, path.begin()), priority_dir);
 				beeper.debugBeep(INVALID);
 				auto tmp = path.front();
 				auto iterator = path.begin();

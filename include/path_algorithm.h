@@ -194,13 +194,15 @@ public:
 				;
 	};
     bool is_pox_y(){
+		if(curr_filter_ == &filter_top_of_y_axis_neg || curr_filter_ == &filter_top_of_y_axis_pos)
+			return !curr_filter_->towardPos();
 		return curr_filter_->towardPos();
 	};
 
 private:
 	using pair_bb = std::tuple<BoundingBox2, BoundingBox2,Dir_t>;
 	std::unique_ptr<std::deque<BestTargetFilter*>> generateBounds(GridMap& map);
-	void optimizePath(GridMap &map, Cells &path,Dir_t last_dir);
+	void optimizePath(GridMap &map, Cells &path);
 
 	bool checkTrapped(GridMap &map, const Cell_t &curr_cell) override ;
 #if !USE_NEW_PATH_PLAN
