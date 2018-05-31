@@ -121,7 +121,7 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr_p, co
 			};
 		}
 
-		if(dijkstra(map, curr_, path, true, IsTarget(&map), isAccessable(&map,expand_condition, filter->range_bound)))
+		if(dijkstra(map, curr_, path, true, IsTarget(&map,filter->target_bound), isAccessable(&map,expand_condition, filter->range_bound)))
 			break;
 //		map.print(curr_,COST_MAP,path);
 	}

@@ -408,7 +408,7 @@ bool APathAlgorithm::checkTrappedUsingDijkstra(GridMap &map, const Cell_t &curr_
 	};
 
 	auto found_unclean_target = dijkstra(map,getPosition().toCell(), targets, false,
-												 IsTarget(&map),
+												 IsTarget(&map,map.genRange()),
 												 expand_condition);
 
 	if (found_unclean_target)
@@ -647,7 +647,7 @@ isAccessable::isAccessable(GridMap *p_map, func_compare_two_t external_condition
 			bound_ = p_map_->genRange();
 		if (external_condition_ == nullptr)
 			external_condition_ = [](const Cell_t &next, const Cell_t &neighbor) { return true; };
-//		ROS_INFO("bound_(%d,%d,%d,%d)",bound_.min.x,bound_.min.y,bound_.max.y,bound_.max.y );
+//		ROS_INFO("target_bound_(%d,%d,%d,%d)",target_bound_.min.x,target_bound_.min.y,target_bound_.max.y,target_bound_.max.y );
 	}
 
 bool isAccessable::operator()(const Cell_t &next, const Cell_t &neighbor) {
@@ -656,5 +656,6 @@ bool isAccessable::operator()(const Cell_t &next, const Cell_t &neighbor) {
 }
 
 bool IsTarget::operator()(const Cell_t &c_it) {
-		return c_it.y % 2 == 0 && map_->getCell(CLEAN_MAP, c_it.x, c_it.y) == UNCLEAN ;
+		return c_it.y % 2 == 0 && p_map_->getCell(CLEAN_MAP, c_it.x, c_it.y) == UNCLEAN &&
+			   target_bound_.Contains(c_it);
 }

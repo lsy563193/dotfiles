@@ -21,11 +21,12 @@ class GridMap;
 class IsTarget
 {
 public:
-	IsTarget(GridMap* map):map_(map) { };
+	IsTarget(GridMap* p_map,const BoundingBox2& bound):p_map_(p_map),target_bound_(bound) { };
     bool operator()(const Cell_t &c_it) ;
 
 private:
-	GridMap* map_;
+	GridMap* p_map_;
+	BoundingBox2 target_bound_;
 };
 
 class TargetVal {
