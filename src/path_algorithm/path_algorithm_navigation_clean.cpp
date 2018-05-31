@@ -13,7 +13,7 @@ extern int g_follow_last_follow_wall_dir;
 std::unique_ptr<std::deque<BestTargetFilter*>> NavCleanPathAlgorithm::generateBounds(GridMap& map) {
 
 	std::deque<BestTargetFilter*> filters;
-	if(curr_filter_ == &filter_short_path)
+	if(curr_filter_ == &filter_short_path && priority_dir == MAP_NEG_Y)
 		filters.push_back(&filter_pos_of_y_axis);
 
 	filters.push_back(&filter_curr_line_pos);
@@ -31,7 +31,7 @@ std::unique_ptr<std::deque<BestTargetFilter*>> NavCleanPathAlgorithm::generateBo
 
 	filters.push_back(&filter_next_line_pos);
 
-	if(curr_filter_ != &filter_short_path)
+	if(!(curr_filter_ == &filter_short_path && priority_dir == MAP_NEG_Y) )
 		filters.push_back(&filter_pos_of_y_axis);
 
 	filters.push_back(&filter_next_line_neg);
@@ -100,6 +100,7 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr_p, co
 	map_bound = map.genRange();
 	curr_bound = getLine(curr_, map);
 	priority_dir = last_dir;
+	g_follow_last_follow_wall_dir = 0;
 	auto filters = *generateBounds(map);
 	ROS_WARN("priority_dir(%d),trend_pos(%d)\n",priority_dir,trend_pos);
 	for(auto&&filter : filters)
