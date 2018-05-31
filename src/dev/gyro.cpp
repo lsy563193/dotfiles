@@ -169,6 +169,7 @@ bool Gyro::waitForOn(void)
 
 void Gyro::setOff()
 {
+	resetStatus();
 	serial.setSendData(CTL_MIX, static_cast<uint8_t>(serial.getSendData(CTL_MIX) & ~0x08));
 	if (!Gyro::isOn()){
 		ROS_INFO("gyro stop already");
