@@ -114,7 +114,7 @@ bool MoveTypeFollowWall::isFinish()
 //		},dijkstra_cleaned_count);
 
 		Cells targets;
-		auto dijkstra_cleaned_count2 = p_cm->clean_map_.dijkstraCountCleanedArea(getPosition(), targets);
+		auto dijkstra_cleaned_count2 = p_cm->clean_path_algorithm_->dijkstraCountCleanedArea(p_cm->clean_map_, getPosition(), targets);
 //		if (1.0 * abs(dijkstra_cleaned_count2 - dijkstra_cleaned_count) / dijkstra_cleaned_count > 0.1)
 //		{
 //			ROS_ERROR_COND(1 ,

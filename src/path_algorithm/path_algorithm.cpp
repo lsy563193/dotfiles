@@ -407,7 +407,7 @@ bool APathAlgorithm::checkTrappedUsingDijkstra(GridMap &map, const Cell_t &curr_
 //		return (map.getCell(CLEAN_MAP, c_it.x, c_it.y) == CLEANED);
 //	},dijkstra_cleaned_count);
 
-	auto dijkstra_cleaned_count = map.dijkstraCountCleanedArea(getPosition(), targets);
+	auto dijkstra_cleaned_count = dijkstraCountCleanedArea(map, getPosition(), targets);
 //	ROS_ERROR_COND(1.0 * abs(dijkstra_cleaned_count2 - dijkstra_cleaned_count) / dijkstra_cleaned_count > 0.1,
 //				   "%s %d: dijkstra_cleaned_count2 %d, dijkstra_cleaned_count %d, please inform Austin.",
 //				   __FUNCTION__, __LINE__, dijkstra_cleaned_count2, dijkstra_cleaned_count);
@@ -541,7 +541,8 @@ void APathAlgorithm::flood_fill(const Cell_t& curr)
 //	}
 }
 
-bool APathAlgorithm::dijstra(GridMap& map, const Cell_t &curr_cell, Cells &targets, func_compare_t is_target, bool is_stop, func_compare_two_t isAccessable) {
+bool APathAlgorithm::dijkstra(GridMap &map, const Cell_t &curr_cell, Cells &targets, bool is_stop,
+							  func_compare_t is_target, func_compare_two_t isAccessable) {
 	typedef std::multimap<int16_t, Cell_t> Queue;
 	typedef std::pair<int16_t, Cell_t> Entry;
 
@@ -593,7 +594,7 @@ bool APathAlgorithm::dijstra(GridMap& map, const Cell_t &curr_cell, Cells &targe
 }
 
 bool isAccessable::operator()(const Cell_t &neighbor, const Cell_t& next) {
-	auto is_accessible = bound_.Contains(neighbor) && p_map_->isBlockAccessible(neighbor.x, neighbor.y);
+	auto is_accessible = bound_.Contains(neighbor) && p_map_->cellIsOutOfRange(neighbor) && p_map_->isBlockAccessible(neighbor.x, neighbor.y);
 //	ROS_INFO("neighbor(%d,%d),val(%d)",neighbor.x, neighbor.y, is_accessible);
 	if(is_forbit_turn_)
 	{
@@ -601,5 +602,34 @@ bool isAccessable::operator()(const Cell_t &neighbor, const Cell_t& next) {
 			is_accessible = false;
 	}
 	return is_accessible;
+}
+
+uint16_t APathAlgorithm::dijkstraCountCleanedArea(GridMap& map, Point_t curr, Cells &targets)
+{
+	bool greedy_match = true;
+	std::set<Cell_t> c_cleans;
+	auto count_condition = [&](const Cell_t cell){
+		for (int16_t x = -2; x <= 2; x++)
+		{
+			for (int16_t y = -2; y <= 2; y++)
+			{
+				auto tmp = cell;
+				tmp.x += x;
+				tmp.y += y;
+				if (map.getCell(CLEAN_MAP, tmp.x, tmp.y) == CLEANED)
+					c_cleans.insert(tmp);
+			}
+		}
+		return false;
+	};
+
+	auto expand_condition = [&](const Cell_t cell, const Cell_t neighbor_cell){
+		return map.isAccessibleCleanedNeighbor(neighbor_cell);
+	};
+
+	// Count the cleaned cells using dijkstra algorithm.
+	dijkstra(map, curr.toCell(), targets, greedy_match, count_condition, expand_condition);
+
+	return static_cast<uint16_t>(c_cleans.size());
 }
 

@@ -128,7 +128,7 @@ bool CleanModeNav::mapMark()
 			   && map.getCell(COST_MAP, neighbor_cell.x, neighbor_cell.y) == 0
 			   && map.getCell(CLEAN_MAP, neighbor_cell.x, neighbor_cell.y) == CLEANED;
 	};
-	map.dijkstraBase(curr, c_bound3, true, is_cleaned_bound3_target_selection, is_cleaned_bound3_expand_condition);
+	map.dijkstra(curr, c_bound3, true, is_cleaned_bound3_target_selection, is_cleaned_bound3_expand_condition);
 //	ROS_INFO("3333333333333333333");
 //	map.print(curr, CLEAN_MAP, c_bound3);*/
 
@@ -143,7 +143,7 @@ bool CleanModeNav::mapMark()
 			   && map.getCell(COST_MAP, neighbor_cell.x, neighbor_cell.y) == 0
 			   && map.getCell(CLEAN_MAP, cell.x, cell.y) == CLEANED;
 	};
-	map.dijkstraBase(curr, out_bound_of_passed_path, true, bound_selection, bound_expand_condition);
+	clean_path_algorithm_->dijkstra(map, curr, out_bound_of_passed_path, true, bound_selection, bound_expand_condition);
 //	ROS_INFO("4444444444444444444");
 //	map.print(curr, CLEAN_MAP, out_bound_of_passed_path);
 

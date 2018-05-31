@@ -16,19 +16,6 @@ typedef std::deque<Cells> PathList;
 
 class GridMap;
 
-class EqualTarget
-{
-public:
-	EqualTarget(const Cell_t& curr):curr_(curr) { };
-    bool operator()(const Cell_t &c_it) {
-		return c_it == curr_;
-//			   && std::any_of(std::begin(cell_direction_4),std::end(cell_direction_4),[&](const Cell_t& cell){ return map_.getCell(CLEAN_MAP, cell.x, cell.y) == CLEANED;});
-	}
-
-private:
-	Cell_t curr_;
-};
-
 class isAccessable
 {
 public:
@@ -54,7 +41,9 @@ public:
 	void flood_fill(const Cell_t& curr);
 	using func_compare_t =  std::function<bool(const Cell_t &next)>;
 	using func_compare_two_t =  std::function<bool(const Cell_t &neighbor,const Cell_t& next)>;
-	bool dijstra(GridMap& map, const Cell_t &curr_cell, Cells &targets,func_compare_t is_target,bool is_stop,func_compare_two_t isAccessible);
+	bool dijkstra(GridMap &map, const Cell_t &curr_cell, Cells &targets, bool is_stop, func_compare_t is_target,
+				  func_compare_two_t isAccessible);
+	uint16_t dijkstraCountCleanedArea(GridMap& map, Point_t curr, Cells &targets);
 	public:
 	/*
 	 * @author Patrick Chow

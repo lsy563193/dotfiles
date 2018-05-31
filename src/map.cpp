@@ -600,221 +600,191 @@ int8_t GridMap::isNeedClean(int16_t x, int16_t y)
 	return cleaned <= 6;
 }
 
-bool GridMap::count_if(const Cell_t &curr_cell, std::function<bool(const Cell_t &next)> compare, int& count) {
-	Cells targets{};
-	std::set<Cell_t> c_cleans;
-	find_if(getPosition().toCell(), targets, [&](Cell_t c_it) {
-		for (auto c_neight = std::begin(cell_direction_); c_neight != std::end(cell_direction_); ++c_neight) {
-			auto tmp = c_it + *c_neight;
-			if (compare(tmp))
-				c_cleans.insert(tmp);
-		}
-		return c_it.y%2 == 0 && getCell(CLEAN_MAP, c_it.x, c_it.y) == UNCLEAN  && isBlockAccessible(c_it.x, c_it.y);
-	});
-	count = c_cleans.size();
-//	ROS_WARN("%s,is_trapped(%d),trapped_clean_count(%d)",__FUNCTION__,targets.empty(), count);
-	return targets.empty();
-}
+//bool GridMap::count_if(const Cell_t &curr_cell, std::function<bool(const Cell_t &next)> compare, int& count) {
+//	Cells targets{};
+//	std::set<Cell_t> c_cleans;
+//	find_if(getPosition().toCell(), targets, [&](Cell_t c_it) {
+//		for (auto c_neight = std::begin(cell_direction_); c_neight != std::end(cell_direction_); ++c_neight) {
+//			auto tmp = c_it + *c_neight;
+//			if (compare(tmp))
+//				c_cleans.insert(tmp);
+//		}
+//		return c_it.y%2 == 0 && getCell(CLEAN_MAP, c_it.x, c_it.y) == UNCLEAN  && isBlockAccessible(c_it.x, c_it.y);
+//	});
+//	count = c_cleans.size();
+////	ROS_WARN("%s,is_trapped(%d),trapped_clean_count(%d)",__FUNCTION__,targets.empty(), count);
+//	return targets.empty();
+//}
 
-bool GridMap::dijstra(const Cell_t &curr_cell, Cells &targets,
-					  std::function<bool(const Cell_t &next)> compare_for_targets,
-					  bool stop_if_found_one, bool use_uncleaned_area)
-{
-	typedef std::multimap<int16_t, Cell_t> Queue;
-	typedef std::pair<int16_t, Cell_t> Entry;
-
-	reset(COST_MAP);
-	Queue queue;
-	setCell(COST_MAP, curr_cell.x, curr_cell.y, 1);
-	queue.emplace(1, curr_cell);
-
-	while (!queue.empty()) {
-//		 Get the nearest next from the queue
-		if (queue.begin()->first == 5) {
-			Queue tmp_queue;
-			std::for_each(queue.begin(), queue.end(), [&](const Entry &iterators) {
-				tmp_queue.emplace(0, iterators.second);
-			});
-			queue.swap(tmp_queue);
-		}
-		auto start = queue.begin();
-		auto next = start->second;
-		auto cost = start->first;
-		queue.erase(start);
-		if (compare_for_targets(next))
-		{
-			targets.push_back(next);
-			if(stop_if_found_one)
-			{
-				ROS_INFO("find target(%d,%d)",next.x, next.y);
-				return true;
-			}
-		}
-
-		for (auto index = 0; index < 4; index++) {
-
-			if (cellIsOutOfRange(next) || isOutOfTargetRange(next))
+//bool GridMap::dijstra(const Cell_t &curr_cell, Cells &targets,
+//					  std::function<bool(const Cell_t &next)> compare_for_targets,
+//					  bool stop_if_found_one, bool use_uncleaned_area)
+//{
+//	typedef std::multimap<int16_t, Cell_t> Queue;
+//	typedef std::pair<int16_t, Cell_t> Entry;
+//
+//	reset(COST_MAP);
+//	Queue queue;
+//	setCell(COST_MAP, curr_cell.x, curr_cell.y, 1);
+//	queue.emplace(1, curr_cell);
+//
+//	while (!queue.empty()) {
+////		 Get the nearest next from the queue
+//		if (queue.begin()->first == 5) {
+//			Queue tmp_queue;
+//			std::for_each(queue.begin(), queue.end(), [&](const Entry &iterators) {
+//				tmp_queue.emplace(0, iterators.second);
+//			});
+//			queue.swap(tmp_queue);
+//		}
+//		auto start = queue.begin();
+//		auto next = start->second;
+//		auto cost = start->first;
+//		queue.erase(start);
+//		if (compare_for_targets(next))
+//		{
+//			targets.push_back(next);
+//			if(stop_if_found_one)
 //			{
-//				printf("(%d, %d), %d, %d\n", next.x, next.y, cellIsOutOfRange(next),
-//					   (is_target ? isOutOfTargetRange(next) : isOutOfMap(next)));
-				break;
+//				ROS_INFO("find target(%d,%d)",next.x, next.y);
+//				return true;
 //			}
+//		}
+//
+//		for (auto index = 0; index < 4; index++) {
+//
+//			if (cellIsOutOfRange(next) || isOutOfTargetRange(next))
+////			{
+////				printf("(%d, %d), %d, %d\n", next.x, next.y, cellIsOutOfRange(next),
+////					   (is_target ? isOutOfTargetRange(next) : isOutOfMap(next)));
+//				break;
+////			}
+//
+//			auto neighbor = next + cell_direction_[index];
+//
+//			if (!use_uncleaned_area && getCell(CLEAN_MAP, neighbor.x, neighbor.y) == UNCLEAN)
+//				continue;
+//
+//			if (getCell(COST_MAP, neighbor.x, neighbor.y) == 0 && isBlockAccessible(neighbor.x, neighbor.y))
+//			{
+//				queue.emplace(cost + 1, neighbor);
+//				setCell(COST_MAP, neighbor.x, neighbor.y, cost + 1);
+//			}
+//		}
+//	}
+//	return !targets.empty();
+//}
 
-			auto neighbor = next + cell_direction_[index];
+//bool GridMap::find_if(const Cell_t &curr_cell, Cells &targets, std::function<bool(const Cell_t &next)> compare) {
+//	typedef std::multimap<int16_t, Cell_t> Queue;
+//	typedef std::pair<int16_t, Cell_t> Entry;
+//
+//	reset(COST_MAP);
+//	Queue queue;
+//	setCell(COST_MAP, curr_cell.x, curr_cell.y, 1);
+//	queue.emplace(1, curr_cell);
+//
+////	ROS_INFO("%s %d: curr(%d, %d), range(%d, %d, %d, %d), g_(%d, %d, %d, %d).", __FUNCTION__, __LINE__, curr_cell.x,
+////			 curr_cell.y, xRangeMin, xRangeMax, yRangeMin, yRangeMax, g_x_min, g_x_max, g_y_min, g_y_max);
+//	while (!queue.empty()) {
+////		 Get the nearest next from the queue
+//		if (queue.begin()->first == 5) {
+//			Queue tmp_queue;
+//			std::for_each(queue.begin(), queue.end(), [&](const Entry &iterators) {
+//				tmp_queue.emplace(0, iterators.second);
+//			});
+//			queue.swap(tmp_queue);
+//		}
+//		auto start = queue.begin();
+//		auto next = start->second;
+//		auto cost = start->first;
+//		queue.erase(start);
+//
+//		for (auto index = 0; index < 4; index++) {
+//
+//			if (cellIsOutOfRange(next) || isOutOfMap(next))
+//				break;
+//
+//			auto neighbor = next + cell_direction_[index];
+//
+//			if (getCell(COST_MAP, neighbor.x, neighbor.y) == 0) {
+//				compare(neighbor);
+//				if (isBlockAccessible(neighbor.x, neighbor.y))
+//				{
+//
+//					if (compare(next))
+//					{
+//						targets.push_back(next);
+//					}
+//					queue.emplace(cost + 1, neighbor);
+//					setCell(COST_MAP, neighbor.x, neighbor.y, cost + 1);
+//				}
+//			}
+//		}
+//	}
+//	return !targets.empty();
+//}
 
-			if (!use_uncleaned_area && getCell(CLEAN_MAP, neighbor.x, neighbor.y) == UNCLEAN)
-				continue;
-
-			if (getCell(COST_MAP, neighbor.x, neighbor.y) == 0 && isBlockAccessible(neighbor.x, neighbor.y))
-			{
-				queue.emplace(cost + 1, neighbor);
-				setCell(COST_MAP, neighbor.x, neighbor.y, cost + 1);
-			}
-		}
-	}
-	return !targets.empty();
-}
-
-bool GridMap::find_if(const Cell_t &curr_cell, Cells &targets, std::function<bool(const Cell_t &next)> compare) {
-	typedef std::multimap<int16_t, Cell_t> Queue;
-	typedef std::pair<int16_t, Cell_t> Entry;
-
-	reset(COST_MAP);
-	Queue queue;
-	setCell(COST_MAP, curr_cell.x, curr_cell.y, 1);
-	queue.emplace(1, curr_cell);
-
-//	ROS_INFO("%s %d: curr(%d, %d), range(%d, %d, %d, %d), g_(%d, %d, %d, %d).", __FUNCTION__, __LINE__, curr_cell.x,
-//			 curr_cell.y, xRangeMin, xRangeMax, yRangeMin, yRangeMax, g_x_min, g_x_max, g_y_min, g_y_max);
-	while (!queue.empty()) {
-//		 Get the nearest next from the queue
-		if (queue.begin()->first == 5) {
-			Queue tmp_queue;
-			std::for_each(queue.begin(), queue.end(), [&](const Entry &iterators) {
-				tmp_queue.emplace(0, iterators.second);
-			});
-			queue.swap(tmp_queue);
-		}
-		auto start = queue.begin();
-		auto next = start->second;
-		auto cost = start->first;
-		queue.erase(start);
-
-		for (auto index = 0; index < 4; index++) {
-
-			if (cellIsOutOfRange(next) || isOutOfMap(next))
-				break;
-
-			auto neighbor = next + cell_direction_[index];
-
-			if (getCell(COST_MAP, neighbor.x, neighbor.y) == 0) {
-				compare(neighbor);
-				if (isBlockAccessible(neighbor.x, neighbor.y))
-				{
-
-					if (compare(next))
-					{
-						targets.push_back(next);
-					}
-					queue.emplace(cost + 1, neighbor);
-					setCell(COST_MAP, neighbor.x, neighbor.y, cost + 1);
-				}
-			}
-		}
-	}
-	return !targets.empty();
-}
-
-bool GridMap::dijkstraBase(const Cell_t &curr_cell, Cells &targets, bool greedy_match,
-						   std::function<bool(const Cell_t &tmp_target)> targets_selection,
-						   std::function<bool(const Cell_t &tmp_target, const Cell_t &neighbour)> expand_condition)
-{
-	typedef std::multimap<int16_t, Cell_t> Queue;
-	typedef std::pair<int16_t, Cell_t> Entry;
-
-	reset(COST_MAP);
-	Queue queue;
-	setCell(COST_MAP, curr_cell.x, curr_cell.y, 1);
-	queue.emplace(1, curr_cell);
-
-//	ROS_INFO("%s %d: curr(%d, %d), range(%d, %d, %d, %d), g_(%d, %d, %d, %d).", __FUNCTION__, __LINE__, curr_cell.x,
-//			 curr_cell.y, xRangeMin, xRangeMax, yRangeMin, yRangeMax, g_x_min, g_x_max, g_y_min, g_y_max);
-	while (!queue.empty()) {
-//		 Get the nearest next from the queue
-		if (queue.begin()->first == 5) {
-			Queue tmp_queue;
-			std::for_each(queue.begin(), queue.end(), [&](const Entry &iterators) {
-				tmp_queue.emplace(0, iterators.second);
-			});
-			queue.swap(tmp_queue);
-		}
-		auto start = queue.begin();
-		auto next = start->second;
-		auto cost = start->first;
-		queue.erase(start);
-		if (targets_selection(next))
-		{
-			targets.push_back(next);
-			if(!greedy_match)
-			{
-				ROS_INFO("find target(%d,%d)",next.x, next.y);
-				return true;
-			}
-		}
-
-		for (auto index = 0; index < 4; index++)
-		{
-			auto neighbor = next + cell_direction_[index];
-			if (expand_condition(next, neighbor))
-			{
-				queue.emplace(cost + 1, neighbor);
-				setCell(COST_MAP, neighbor.x, neighbor.y, cost + 1);
-			}
-		}
-	}
-	return !targets.empty();
-}
+//bool GridMap::dijkstra(const Cell_t &curr_cell, Cells &targets, bool greedy_match,
+//					   std::function<bool(const Cell_t &tmp_target)> targets_selection,
+//					   std::function<bool(const Cell_t &tmp_target, const Cell_t &neighbour)> expand_condition)
+//{
+//	typedef std::multimap<int16_t, Cell_t> Queue;
+//	typedef std::pair<int16_t, Cell_t> Entry;
+//
+//	reset(COST_MAP);
+//	Queue queue;
+//	setCell(COST_MAP, curr_cell.x, curr_cell.y, 1);
+//	queue.emplace(1, curr_cell);
+//
+////	ROS_INFO("%s %d: curr(%d, %d), range(%d, %d, %d, %d), g_(%d, %d, %d, %d).", __FUNCTION__, __LINE__, curr_cell.x,
+////			 curr_cell.y, xRangeMin, xRangeMax, yRangeMin, yRangeMax, g_x_min, g_x_max, g_y_min, g_y_max);
+//	while (!queue.empty()) {
+////		 Get the nearest next from the queue
+//		if (queue.begin()->first == 5) {
+//			Queue tmp_queue;
+//			std::for_each(queue.begin(), queue.end(), [&](const Entry &iterators) {
+//				tmp_queue.emplace(0, iterators.second);
+//			});
+//			queue.swap(tmp_queue);
+//		}
+//		auto start = queue.begin();
+//		auto next = start->second;
+//		auto cost = start->first;
+//		queue.erase(start);
+//		if (targets_selection(next))
+//		{
+//			targets.push_back(next);
+//			if(!greedy_match)
+//			{
+//				ROS_INFO("find target(%d,%d)",next.x, next.y);
+//				return true;
+//			}
+//		}
+//
+//		for (auto index = 0; index < 4; index++)
+//		{
+//			auto neighbor = next + cell_direction_[index];
+//			if (expand_condition(next, neighbor))
+//			{
+//				queue.emplace(cost + 1, neighbor);
+//				setCell(COST_MAP, neighbor.x, neighbor.y, cost + 1);
+//			}
+//		}
+//	}
+//	return !targets.empty();
+//}
 
 bool GridMap::isAccessibleNeighbor(Cell_t neighbor_cell)
 {
 	// Do not care weather it is cleaned or not.
 	return !cellIsOutOfRange(neighbor_cell) && !isOutOfMap(neighbor_cell)
-		   && getCell(COST_MAP, neighbor_cell.x, neighbor_cell.y) == 0
 		   && isBlockAccessible(neighbor_cell.x, neighbor_cell.y);
 }
 
 bool GridMap::isAccessibleCleanedNeighbor(Cell_t neighbor_cell)
 {
 	return isAccessibleNeighbor(neighbor_cell) && getCell(CLEAN_MAP, neighbor_cell.x, neighbor_cell.y) == CLEANED;
-}
-
-uint16_t GridMap::dijkstraCountCleanedArea(Point_t curr, Cells &targets)
-{
-	bool greedy_match = true;
-	std::set<Cell_t> c_cleans;
-	auto count_condition = [&](const Cell_t cell){
-		for (int16_t x = -2; x <= 2; x++)
-		{
-			for (int16_t y = -2; y <= 2; y++)
-			{
-				auto tmp = cell;
-				tmp.x += x;
-				tmp.y += y;
-				if (getCell(CLEAN_MAP, tmp.x, tmp.y) == CLEANED)
-					c_cleans.insert(tmp);
-			}
-		}
-		return false;
-	};
-
-	auto expand_condition = [&](const Cell_t cell, const Cell_t neighbor_cell){
-		return isAccessibleCleanedNeighbor(neighbor_cell);
-	};
-
-	// Count the cleaned cells using dijkstra algorithm.
-	dijkstraBase(curr.toCell(), targets, greedy_match, count_condition, expand_condition);
-
-	return static_cast<uint16_t>(c_cleans.size());
 }
 
 bool GridMap::isFrontBlockBoundary(int dx)

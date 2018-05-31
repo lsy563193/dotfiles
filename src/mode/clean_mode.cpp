@@ -2090,7 +2090,8 @@ void ACleanMode::switchInStateExploration() {
 	PP_INFO();
 	old_dir_ = iterate_point_->dir;
 	Cells cells{};
-	auto is_found = clean_path_algorithm_->dijstra(clean_map_, getPosition().toCell(), cells, EqualTarget(Cell_t{0,0}), true, isAccessable(clean_map_.genRange() ,&clean_map_));
+	auto is_found = clean_path_algorithm_->dijkstra(clean_map_, getPosition().toCell(), cells,true,  CellEqual(Cell_t{0, 0}),
+													isAccessable(clean_map_.genRange(), &clean_map_));
 	if (!is_found) {
 		ROS_WARN("%s,%d: enter state trapped",__FUNCTION__,__LINE__);
 		sp_saved_states.push_back(sp_state);
@@ -2251,15 +2252,15 @@ bool ACleanMode::isIsolate(const Cell_t& curr) {
 	ROS_ERROR("minx(%d),miny(%d),maxx(%d),maxy(%d)",bound.min.x, bound.min.y,bound.max.x, bound.max.y);
 
 	auto cells = Cells{};
-//	auto is_found = fw_tmp_map.dijstra(curr, cells,[&](const Cell_t& c_it){return c_it == external_target;},true, true);
+//	auto is_found = fw_tmp_map.dijkstra(curr, cells,[&](const Cell_t& c_it){return c_it == external_target;},true, true);
 
 	auto expand_condition = [&](const Cell_t cell, const Cell_t neighbor_cell){
 		return fw_tmp_map.isAccessibleNeighbor(neighbor_cell);
 	};
 
-	bool is_found = fw_tmp_map.dijkstraBase(curr, cells, false,
-												[&](const Cell_t& c_it){return c_it == external_target;},
-												expand_condition);
+	bool is_found = clean_path_algorithm_->dijkstra(fw_tmp_map, curr, cells, false,
+										[&](const Cell_t &c_it) { return c_it == external_target; },
+										expand_condition);
 
 //	ROS_ERROR_COND(is_found ^ new_is_found, "%s %d: is_found %d, new_is_found %d, please inform Austin.",
 //				   __FUNCTION__, __LINE__, is_found, new_is_found);

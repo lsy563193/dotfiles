@@ -123,7 +123,8 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr_p, co
 		filter->displayName();
 		ROS_INFO("target_bound(%d,%d,%d,%d)",filter->target_bound.min.x, filter->target_bound.min.y, filter->target_bound.max.x, filter->target_bound.max.y);
 		ROS_INFO("range_bound(%d,%d,%d,%d)",filter->range_bound.min.x, filter->range_bound.min.y, filter->range_bound.max.x, filter->range_bound.max.y);
-		if(dijstra(map, curr_, path, IsTarget(&map,filter->target_bound), true, isAccessable(filter->range_bound, &map, filter->is_forbit_turn_)))
+		if(dijkstra(map, curr_, path, true, IsTarget(&map, filter->target_bound),
+					isAccessable(filter->range_bound, &map, filter->is_forbit_turn_)))
 			break;
 //		map.print(curr_,COST_MAP,path);
 	}
@@ -154,20 +155,14 @@ bool NavCleanPathAlgorithm::checkTrapped(GridMap &map, const Cell_t &curr_cell)
 	else if(robot::instance()->p_mode->getNextMode() == Mode::cm_exploration) {
 		Cells cells{};
 		auto p_cm = boost::dynamic_pointer_cast<CleanModeExploration>(robot::instance()->p_mode);
-		return !(dijstra(p_cm->clean_map_, getPosition().toCell(), cells,EqualTarget(Cell_t{0,0}),true,isAccessable(p_cm->clean_map_.genRange(), &p_cm->clean_map_)));
+//		return !(dijkstra(p_cm->clean_map_, getPosition().toCell(), cells,CellEqual(Cell_t{0,0}),true,isAccessable(p_cm->clean_map_.genRange(), &p_cm->clean_map_)));
 
 		auto expand_condition = [&](const Cell_t cell, const Cell_t neighbor_cell)
 		{
 			return p_cm->clean_map_.isAccessibleCleanedNeighbor(neighbor_cell);
 		};
 
-		bool new_ret = !(p_cm->clean_map_.dijkstraBase(getPosition().toCell(), cells, false,
-									  [&](const Cell_t &c_it) { return c_it == Cell_t{0, 0}; },
-									  expand_condition));
-//		bool old_ret = !(p_cm->clean_map_.dijstra(getPosition().toCell(), cells, [&](const Cell_t &c_it) { return c_it == Cell_t{0, 0}; }, true));
-//		ROS_ERROR_COND(new_ret ^ old_ret, "%s %d: new_ret %d, old_ret %d, please inform Austin.",
-//				   __FUNCTION__, __LINE__, new_ret, old_ret);
-		return new_ret;
+		return !dijkstra(p_cm->clean_map_, getPosition().toCell(), cells, false, CellEqual(Cell_t{0,0}), expand_condition);
 	}
 }
 //
