@@ -1245,7 +1245,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				current_current = (current_current * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
 				if(current_current < 600) {
 					error_code = LEFT_WHEEL_STALL_ERROR;
-					current_data = 0;
+					current_data = current_current;
 					return ;
 				}
 				else
@@ -1425,7 +1425,7 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				if(current_current < 600)
 				{
 					error_code = RIGHT_WHEEL_STALL_ERROR;
-					current_data = 0;
+					current_data = current_current;
 					return ;
 				}
 				else
@@ -1551,7 +1551,7 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 				if (current_current < 250)
 				{
 					error_code = LEFT_BRUSH_STALL_ERROR;
-					current_data = 0;
+					current_data = current_current;
 					return ;
 				}
 				else
@@ -1638,7 +1638,7 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 				if (current_current < 250)
 				{
 					error_code = RIGHT_BRUSH_STALL_ERROR;
-					current_data = 0;
+					current_data = current_current;
 					return ;
 				}
 				else
@@ -1855,7 +1855,7 @@ void main_brush_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_co
 				if (current_current < 550)
 				{
 					error_code = MAIN_BRUSH_STALL_ERROR;
-					current_data = 0;
+					current_data = current_current;
 					return ;
 				}
 				else

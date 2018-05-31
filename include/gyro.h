@@ -59,6 +59,8 @@ public:
 
 	void setAccInitData(void);
 
+	void checkRobotSlipByGyro();
+
 	bool error(void);
 
 	void error(bool is_error);
@@ -194,6 +196,12 @@ public:
 	void setAngleVOffset(void);
 	void setAngleROffset(void);
 	void resetKalmanParam(void);
+	bool getSlipByGyroStatus(){
+		return slip_by_gyro_status_;
+	}
+	void setSlipByGyroStatus(const bool& val){
+		slip_by_gyro_status_ = val;
+	}
 private:
 
 	float angle_y_;//yaw
@@ -214,6 +222,10 @@ private:
 
 	bool calibration_status_;
 	bool set_dynamic_status_{false};
+
+	bool slip_by_gyro_status_{false};
+	float check_slip_start_angle_{0};
+	double check_slip_start_time_{0};
 
 	bool status_;
 	GyroState open_state_;

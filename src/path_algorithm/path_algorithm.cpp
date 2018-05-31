@@ -60,6 +60,7 @@ private:
 };
 
 const Cell_t cell_direction_[9]{{1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1},{0,0}};
+const Cell_t cell_direction_4[4]{{1,0},{-1,0},{0,1},{0,-1}};
 
 //bool APathAlgorithm::generateShortestPath(GridMap &map, const Point_t &curr,const Point_t &target, const Dir_t &last_dir, Points &plan_path) {
 //	Cell_t corner1 ,corner2;
@@ -403,12 +404,11 @@ bool APathAlgorithm::checkTrappedUsingDijkstra(GridMap &map, const Cell_t &curr_
 	// Find if there is uncleaned area.
 	auto expand_condition = [&](const Cell_t &cell, const Cell_t &neighbor_cell)
 	{
-		return map.isAccessibleNeighbor(neighbor_cell);
+		return map.isBlockAccessible(neighbor_cell.x, neighbor_cell.y);
 	};
 
-	auto found_unclean_target = map.dijkstraBase(getPosition().toCell(), targets, false,
-												 [&](const Cell_t &cell)
-												 { return map.getCell(CLEAN_MAP, cell.x, cell.y) == UNCLEAN; },
+	auto found_unclean_target = dijkstra(map,getPosition().toCell(), targets, false,
+												 IsTarget(&map),
 												 expand_condition);
 
 	if (found_unclean_target)
@@ -420,7 +420,7 @@ bool APathAlgorithm::checkTrappedUsingDijkstra(GridMap &map, const Cell_t &curr_
 //		return (map.getCell(CLEAN_MAP, c_it.x, c_it.y) == CLEANED);
 //	},dijkstra_cleaned_count);
 
-	auto dijkstra_cleaned_count = map.dijkstraCountCleanedArea(getPosition(), targets);
+	auto dijkstra_cleaned_count = dijkstraCountCleanedArea(map, getPosition(), targets);
 //	ROS_ERROR_COND(1.0 * abs(dijkstra_cleaned_count2 - dijkstra_cleaned_count) / dijkstra_cleaned_count > 0.1,
 //				   "%s %d: dijkstra_cleaned_count2 %d, dijkstra_cleaned_count %d, please inform Austin.",
 //				   __FUNCTION__, __LINE__, dijkstra_cleaned_count2, dijkstra_cleaned_count);
@@ -530,11 +530,131 @@ void APathAlgorithm::findPath(GridMap &map, const Cell_t &start, const Cell_t &t
 			}
 		}
 	}
+	if(path.empty())
+		path.push_front(target);
 	if (path.back() != target)
 		path.push_back(target);
 	path.push_front(start);
 //	displayCellPath(path);
 }
 
+void APathAlgorithm::flood_fill(const Cell_t& curr)
+{
+//	if(is_target(curr))
+//	{
+//		printf("%s,%d\n",__FUNCTION__, __LINE__);
+//		return true;
+//	}
+//	printf("%s,%d,curr(%d,%d)\n",__FUNCTION__, __LINE__,curr.x, curr.y);
+//	for(auto i =0; i<4 ;i ++)
+//	{
+////		printf("%s,%d\n",__FUNCTION__, __LINE__);
+//		if(!map_out_range())
+//        	flood_fill(curr + cell_direction_[i]);
+//	}
+}
+
+bool APathAlgorithm::dijkstra(GridMap &map, const Cell_t &curr_cell, Cells &targets, bool is_stop,
+							  func_compare_t is_target, func_compare_two_t isAccessable) {
+	typedef std::multimap<int16_t, Cell_t> Queue;
+	typedef std::pair<int16_t, Cell_t> Entry;
+
+	map.reset(COST_MAP);
+	Queue queue;
+	map.setCell(COST_MAP, curr_cell.x, curr_cell.y, 1);
+	queue.emplace(1, curr_cell);
+
+	while (!queue.empty()) {
+//		 Get the nearest next from the queue
+		if (queue.begin()->first == 5) {
+			Queue tmp_queue;
+			std::for_each(queue.begin(), queue.end(), [&](const Entry &iterators) {
+				tmp_queue.emplace(0, iterators.second);
+			});
+			queue.swap(tmp_queue);
+		}
+		auto start = queue.begin();
+		auto next = start->second;
+		auto cost = start->first;
+		queue.erase(start);
+		if (is_target(next))
+		{
+			if(is_stop)
+			{
+				ROS_INFO("find target(%d,%d)",next.x, next.y);
+				findPath(map,curr_cell,next, targets,MAP_POS_X);
+				return true;
+			} else{
+				targets.push_back(next);
+			}
+		}
+//		ROS_INFO("next(%d,%d)",next.x, next.y);
+		for (auto index = 0; index < 4; index++) {
+
+			auto neighbor = next + cell_direction_[index];
+
+			if (!isAccessable(next, neighbor)) // access
+				continue;
+
+			if (map.getCell(COST_MAP, neighbor.x, neighbor.y) != 0)//close set
+				continue;
+
+			queue.emplace(cost + 1, neighbor);
+			map.setCell(COST_MAP, neighbor.x, neighbor.y, cost + 1);
+		}
+	}
+	return !targets.empty();
+}
 
 
+
+uint16_t APathAlgorithm::dijkstraCountCleanedArea(GridMap& map, Point_t curr, Cells &targets)
+{
+	std::set<Cell_t> c_cleans;
+	auto count_condition = [&](const Cell_t cell){
+		for (int16_t x = -2; x <= 2; x++)
+		{
+			for (int16_t y = -2; y <= 2; y++)
+			{
+				auto tmp = cell;
+				tmp.x += x;
+				tmp.y += y;
+				if (map.getCell(CLEAN_MAP, tmp.x, tmp.y) == CLEANED)
+					c_cleans.insert(tmp);
+			}
+		}
+		return false;
+	};
+
+	auto expand_condition = [&](const Cell_t cell, const Cell_t neighbor_cell){
+		return map.isBlockAccessible(neighbor_cell.x, neighbor_cell.y) && map.getCell(CLEAN_MAP, neighbor_cell.x, neighbor_cell.y) == CLEANED;
+	};
+
+	// Count the cleaned cells using dijkstra algorithm.
+	dijkstra(map, curr.toCell(), targets, false, count_condition, expand_condition);
+
+	return static_cast<uint16_t>(c_cleans.size());
+}
+
+bool TargetVal::operator()(const Cell_t &c_it) {
+		return p_map_->getCell(CLEAN_MAP, c_it.x, c_it.y) == val_;
+}
+
+isAccessable::isAccessable(GridMap *p_map, func_compare_two_t external_condition,
+						   const BoundingBox2& bound)
+: bound_(bound), p_map_(p_map), external_condition_(external_condition) {
+		if (bound_.GetMinimum() == Cell_t{INT16_MAX, INT16_MAX} && bound_.GetMaximum() == Cell_t{INT16_MIN, INT16_MIN})
+			bound_ = p_map_->genRange();
+		if (external_condition_ == nullptr)
+			external_condition_ = [](const Cell_t &next, const Cell_t &neighbor) { return true; };
+//		ROS_INFO("bound_(%d,%d,%d,%d)",bound_.min.x,bound_.min.y,bound_.max.y,bound_.max.y );
+	}
+
+bool isAccessable::operator()(const Cell_t &next, const Cell_t &neighbor) {
+		return bound_.Contains(neighbor) && !p_map_->cellIsOutOfRange(neighbor) &&
+			   external_condition_(next, neighbor);
+}
+
+bool IsTarget::operator()(const Cell_t &c_it) {
+		return c_it.y % 2 == 0 && map_->getCell(CLEAN_MAP, c_it.x, c_it.y) == UNCLEAN ;
+}

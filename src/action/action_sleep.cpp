@@ -15,7 +15,6 @@ ActionSleep::ActionSleep(bool fake_sleep)
 	//s_wifi.sleep();
 
 	gyro.setOff();
-	gyro.resetStatus();
 
 	speaker.play(VOICE_NULL, false);
 	speaker.play(VOICE_SLEEP_UNOFFICIAL, false);
