@@ -1987,7 +1987,10 @@ void MovementGoToCharger::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 
 bool MovementGoToCharger::isFinish()
 {
-	auto ret = charger.getChargeStatus() || _isStop();
+	if(charger.isOnStub())
+		ev.charge_detect = true;
+
+	auto ret = ev.charge_detect || _isStop();
 	if(ret)
 	{
 		ROS_WARN("%s %d: Charger detected or _isStop()", __FUNCTION__, __LINE__);
