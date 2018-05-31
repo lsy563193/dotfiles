@@ -401,6 +401,19 @@ std::unique_ptr<Cells> APathAlgorithm::shortestPath(const Cell_t &start, const C
 bool APathAlgorithm::checkTrappedUsingDijkstra(GridMap &map, const Cell_t &curr_cell)
 {
 	Cells targets;
+	// Find if there is uncleaned area.
+	auto expand_condition = [&](const Cell_t &cell, const Cell_t &neighbor_cell)
+	{
+		return map.isBlockAccessible(neighbor_cell.x, neighbor_cell.y);
+	};
+
+	auto found_unclean_target = dijkstra(map,getPosition().toCell(), targets, false,
+												 IsTarget(&map),
+												 expand_condition);
+
+	if (found_unclean_target)
+		return false;
+
 	// Use clean area proportion to judge if it is trapped.
 //	int dijkstra_cleaned_count{};
 //	auto is_trapped = map.count_if(curr_cell,[&](Cell_t c_it) {
@@ -640,4 +653,8 @@ isAccessable::isAccessable(GridMap *p_map, func_compare_two_t external_condition
 bool isAccessable::operator()(const Cell_t &next, const Cell_t &neighbor) {
 		return bound_.Contains(neighbor) && !p_map_->cellIsOutOfRange(neighbor) &&
 			   external_condition_(next, neighbor);
+}
+
+bool IsTarget::operator()(const Cell_t &c_it) {
+		return c_it.y % 2 == 0 && map_->getCell(CLEAN_MAP, c_it.x, c_it.y) == UNCLEAN ;
 }

@@ -9,18 +9,6 @@
 
 extern int g_follow_last_follow_wall_dir;
 
-class IsTarget
-{
-public:
-	IsTarget(GridMap* map):map_(map) { };
-    bool operator()(const Cell_t &c_it) {
-		return c_it.y % 2 == 0 && map_->getCell(CLEAN_MAP, c_it.x, c_it.y) == UNCLEAN ;
-//			   && std::any_of(std::begin(cell_direction_4),std::end(cell_direction_4),[&](const Cell_t& cell){ return map_.getCell(CLEAN_MAP, cell.x, cell.y) == CLEANED;});
-	}
-
-private:
-	GridMap* map_;
-};
 
 std::unique_ptr<std::deque<BestTargetFilter*>> NavCleanPathAlgorithm::generateBounds(GridMap& map) {
 
@@ -166,7 +154,7 @@ bool NavCleanPathAlgorithm::checkTrapped(GridMap &map, const Cell_t &curr_cell)
 		auto p_cm = boost::dynamic_pointer_cast<CleanModeExploration>(robot::instance()->p_mode);
 //		return !(dijkstra(p_cm->clean_map_, getPosition().toCell(), cells,CellEqual(Cell_t{0,0}),true,isAccessable(p_cm->clean_map_.genRange(), &p_cm->clean_map_)));
 
-		auto expand_condition = [&](const Cell_t cell, const Cell_t neighbor_cell)
+		auto expand_condition = [&](const Cell_t &cell, const Cell_t &neighbor_cell)
 		{
 			return p_cm->clean_map_.isBlockAccessible(neighbor_cell.x, neighbor_cell.y) &&
 					p_cm->clean_map_.getCell(CLEAN_MAP, neighbor_cell.x, neighbor_cell.y) == CLEANED;

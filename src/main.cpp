@@ -98,7 +98,7 @@ int main(int argc, char **argv)
 	robot_instance = new robot();
 // Test code for path algorithm by Austin.
 //	test_map();
-#if 1
+#if 0
 	//test code by lsy563193
 	sleep(1);
 	GridMap map;

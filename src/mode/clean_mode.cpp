@@ -153,11 +153,11 @@ ACleanMode::~ACleanMode()
 				ROS_WARN("%s %d: Robot is trapped.Stop cleaning.", __FUNCTION__, __LINE__);
 			} else if (mode_i_ == cm_navigation && moved_during_pause_)
 			{
-				speaker.play(VOICE_CLEANING_FINISHED, false);
+//				speaker.play(VOICE_CLEANING_FINISHED, false);
 				ROS_WARN("%s %d: Moved during pause. Stop cleaning.", __FUNCTION__, __LINE__);
 			} else if (mode_i_ == cm_navigation && moved_away_from_charger_)
 			{
-				speaker.play(VOICE_CLEANING_STOP, false);
+//				speaker.play(VOICE_CLEANING_STOP, false);
 				ROS_WARN("%s %d: Robot stopped from charging.", __FUNCTION__, __LINE__);
 			} else if (mode_i_ == cm_exploration ||
 					((mode_i_ == cm_navigation || mode_i_ == cm_wall_follow) && seen_charger_during_cleaning_))

@@ -1,8 +1,6 @@
 #include <gyro.h>
 #include <event_manager.h>
 #include <mode.hpp>
-#include <ios>
-#include <bits/ios_base.h>
 #include <fstream>
 #include "map.h"
 #include "robot.hpp"

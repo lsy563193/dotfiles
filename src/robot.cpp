@@ -287,7 +287,7 @@ void robot::robotbase_routine_cb()
 		sensor.front_cliff = cliff.getFront();
 		sensor.left_cliff = cliff.getLeft();
 
-		lidar.checkRobotSlipByGyro();
+		gyro.checkRobotSlipByGyro();
 		// For remote device.
 		auto remote_signal = buf[REC_REMOTE];
 		if (remote_signal != 0)

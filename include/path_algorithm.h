@@ -18,6 +18,16 @@ typedef std::deque<Cells> PathList;
 
 class GridMap;
 
+class IsTarget
+{
+public:
+	IsTarget(GridMap* map):map_(map) { };
+    bool operator()(const Cell_t &c_it) ;
+
+private:
+	GridMap* map_;
+};
+
 class TargetVal {
 public:
 	TargetVal(GridMap* p_map,CellState val):p_map_(p_map),val_(val) {};

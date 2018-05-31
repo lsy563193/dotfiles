@@ -657,7 +657,7 @@ bool MovementGoToCharger::isSwitch()
 			receive_code = c_rcon.getAll();
 			if(receive_code)
 			{
-				if(receive_code&RconFR_HomeT && receive_code&RconFL_HomeT)
+				if(receive_code&(RconFR_HomeT|RconFL_HomeT))
 				{
 					position_far = false;
 					ROS_DEBUG("%s, %d: Robot face HomeT, position_far = false.", __FUNCTION__, __LINE__);
