@@ -214,10 +214,12 @@ void robot::robotbase_routine_cb()
 		sensor.left_wheel_speed = wheel.getLeftWheelActualSpeed();
 		sensor.right_wheel_speed = wheel.getRightWheelActualSpeed();
 
+/*
 		wheel.setLeftWheelCliffStatus((buf[REC_WHEEL_CLIFF] & 0x02) != 0);
 		wheel.setRightWheelCliffStatus((buf[REC_WHEEL_CLIFF] & 0x01) != 0);
 		sensor.left_wheel_cliff = wheel.getLeftWheelCliffStatus();
 		sensor.right_wheel_cliff = wheel.getRightWheelCliffStatus();
+*/
 
 		// For gyro device.
 		gyro.setCalibration(buf[REC_GYRO_CALIBRATION] != 0);
