@@ -31,7 +31,7 @@ std::unique_ptr<std::deque<BestTargetFilter*>> NavCleanPathAlgorithm::generateBo
 
 	filters.push_back(&filter_next_line_pos);
 
-	if(!(curr_filter_ == &filter_short_path && priority_dir == MAP_POS_Y) )
+	if(!(curr_filter_ == &filter_short_path && priority_dir != MAP_POS_Y) )
 		filters.push_back(&filter_pos_of_y_axis);
 
 	filters.push_back(&filter_next_line_neg);
