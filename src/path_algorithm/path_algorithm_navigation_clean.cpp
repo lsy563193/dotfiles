@@ -61,7 +61,7 @@ static BoundingBox2 getLine(const Cell_t& curr,GridMap& map)
 			c_it[i] = curr;
 			for (;; c_it[i] += cell_direction_[i]) {
                 auto tmp = c_it[i] +cell_direction_[i]*2;
-				if (map.cellIsOutOfRange(tmp)  || map.isBlocksAtY(tmp.x, tmp.y))
+				if (map.cellIsOutOfTargetRange(tmp)  || map.isBlocksAtY(tmp.x, tmp.y))
 					break;
 				if (map.getCell(CLEAN_MAP, c_it[i].x, c_it[i].y) == UNCLEAN)
 					break;
@@ -97,7 +97,7 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr_p, co
 	adjustPosition(plan_path);
 	plan_path.clear();
 	map.markRobot(curr_, CLEAN_MAP);
-	map_bound = map.genRange();
+	map_bound = map.genTargetRange();
 	curr_bound = getLine(curr_, map);
 	priority_dir = last_dir;
 	auto filters = *generateBounds(map);
@@ -232,7 +232,7 @@ void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path) {
 					}
 					break;
 				}
-				if(map.cellIsOutOfRange(tmp))
+				if(map.cellIsOutOfTargetRange(tmp))
 					break;
 			}
 		c_it = tmp;

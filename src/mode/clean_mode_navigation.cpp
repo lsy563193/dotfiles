@@ -69,7 +69,7 @@ bool CleanModeNav::mapMark()
 	// Update for passed_path.
 	GridMap block_map{};
 	for (auto &&p_it :passed_path_)
-		block_map.setCells(CLEAN_MAP, p_it.toCell().x, p_it.toCell().y, CLEANED);
+		block_map.setCells(CLEAN_MAP, p_it.toCell().x, p_it.toCell().y, CLEANED, ROBOT_SIZE_1_2);
 
 	const auto start = passed_path_.front().toCell();
 	const auto curr = passed_path_.back().toCell();
@@ -172,8 +172,8 @@ bool CleanModeNav::mapMark()
 		if (ev.rcon_status)
 		{
 			go_home_path_algorithm_->setHomePoint(getPosition());
-			if (!seen_charger_during_cleaning_)
-				seen_charger_during_cleaning_ = true;
+			if (!hasSeenChargerDuringCleaning())
+				setSeenChargerDuringCleaning();
 		}
 	}
 	for (auto &&cost_block : c_blocks) {
@@ -187,7 +187,7 @@ bool CleanModeNav::mapMark()
 //	clean_map_.print(CLEAN_MAP, Cells{curr});
 	for (auto &&p_it :passed_path_)
 	{
-		clean_map_.setCellsBut(CLEAN_MAP, p_it.toCell().x, p_it.toCell().y, CLEANED, BLOCKED_RCON);
+		clean_map_.setSpecificCells(CLEAN_MAP, p_it.toCell().x, p_it.toCell().y, CLEANED, BLOCKED_RCON, ROBOT_SIZE_1_2);
 	}
 
 
@@ -654,8 +654,8 @@ bool CleanModeNav::isSwitchByEventInStateInit() {
 		if (action_i_ == ac_back_from_charger)
 		{
 			go_home_path_algorithm_->setHomePoint(getPosition());
-			if (!seen_charger_during_cleaning_)
-				seen_charger_during_cleaning_ = true;
+			if (!hasSeenChargerDuringCleaning())
+				setSeenChargerDuringCleaning();
 		}
 		return true;
 	}
@@ -686,8 +686,8 @@ bool CleanModeNav::updateActionInStateInit() {
 		action_i_ = ac_open_gyro_and_lidar;
 //		boost::dynamic_pointer_cast<StateInit>(state_init)->initForNavigation();
 		go_home_path_algorithm_->setHomePoint(getPosition());
-		if (!seen_charger_during_cleaning_)
-			seen_charger_during_cleaning_ = true;
+		if (!hasSeenChargerDuringCleaning())
+			setSeenChargerDuringCleaning();
 	}
 	else if (action_i_ == ac_open_gyro_and_lidar)
 	{

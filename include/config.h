@@ -50,9 +50,6 @@
  */
 #define ROBOT_SIZE			(3)
 
-#define ROBOT_LEFT_OFFSET		(1)
-#define ROBOT_RIGHT_OFFSET		(-1)
-
 #define ROBOT_SIZE_1_2			(ROBOT_SIZE/2)
 
 /*

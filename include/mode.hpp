@@ -544,6 +544,19 @@ public:
 		return is_using_dust_box_;
 	}
 
+	void setSeenChargerDuringCleaning()
+	{
+		seen_charger_during_cleaning_ = true;
+	}
+	void resetSeenChargerDuringCleaning()
+	{
+		seen_charger_during_cleaning_ = false;
+	}
+	bool hasSeenChargerDuringCleaning()
+	{
+		return seen_charger_during_cleaning_;
+	}
+
 	bool is_closed{true};
 	bool is_isolate{true};
 	int closed_count_{};
@@ -783,6 +796,7 @@ public:
 
 	bool isExit() override;
 	bool mapMark() override;
+	bool markMapInNewCell() override;
 
 	void keyClean(bool state_now, bool state_last) override;
 	void remoteMax(bool state_now, bool state_last) override;

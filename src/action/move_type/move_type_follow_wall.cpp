@@ -133,7 +133,7 @@ bool MoveTypeFollowWall::isFinish()
 		is_trapped_in_small_area_ = false;
 	}
 
-	if (movement_i_ != mm_turn && p_cm->clean_map_.pointIsPointingOutOfRange(getPosition()))
+	if (movement_i_ != mm_turn && p_cm->clean_map_.pointIsPointingOutOfTargetRange(getPosition()))
 	{
 		ROS_WARN("%s %d: robot(%d, %d) pointing out of range.", __FUNCTION__, __LINE__, getPosition().toCell().x,
 						 getPosition().toCell().y);
@@ -175,7 +175,11 @@ bool MoveTypeFollowWall::isFinish()
 			{
 				if (ev.rcon_status) {
 					if (p_cm->go_home_path_algorithm_ != nullptr)
+					{
 						p_cm->go_home_path_algorithm_->setHomePoint(getPosition());
+						if (!p_cm->hasSeenChargerDuringCleaning())
+							p_cm->setSeenChargerDuringCleaning();
+					}
 					p_cm->saveBlocks();
 					movement_i_ = mm_rcon;
 					sp_movement_.reset(new MovementRcon(is_left_));

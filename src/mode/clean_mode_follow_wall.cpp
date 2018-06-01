@@ -248,3 +248,8 @@ void CleanModeFollowWall::switchInStateFollowWall() {
 	genNextAction();
 }
 
+bool CleanModeFollowWall::markMapInNewCell()
+{
+	clean_map_.markRobot(getPosition().toCell(), CLEAN_MAP);
+}
+

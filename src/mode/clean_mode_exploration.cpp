@@ -22,7 +22,6 @@ CleanModeExploration::CleanModeExploration()
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
 	go_home_path_algorithm_.reset(new GoHomePathAlgorithm());
 	error_marker_.clear();
-	clean_map_.mapInit();
 	obs.control(OFF);
 
 	//clear real time map which store in cloud....

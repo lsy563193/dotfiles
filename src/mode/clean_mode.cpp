@@ -160,11 +160,11 @@ ACleanMode::~ACleanMode()
 //				speaker.play(VOICE_CLEANING_STOP, false);
 				ROS_WARN("%s %d: Robot stopped from charging.", __FUNCTION__, __LINE__);
 			} else if (mode_i_ == cm_exploration ||
-					((mode_i_ == cm_navigation || mode_i_ == cm_wall_follow) && seen_charger_during_cleaning_))
+					((mode_i_ == cm_navigation || mode_i_ == cm_wall_follow) && hasSeenChargerDuringCleaning()))
 			{
 				speaker.play(VOICE_BACK_TO_CHARGER_FAILED, false);
 				ROS_WARN("%s %d: Finish cleaning but failed to go to charger.", __FUNCTION__, __LINE__);
-			} else if (mode_i_ == cm_spot || (mode_i_ != cm_exploration && !seen_charger_during_cleaning_))
+			} else if (mode_i_ == cm_spot || (mode_i_ != cm_exploration && !hasSeenChargerDuringCleaning()))
 			{
 				speaker.play(VOICE_CLEANING_FINISHED, false);
 				ROS_WARN("%s %d: Finish cleaning.", __FUNCTION__, __LINE__);
@@ -1086,7 +1086,7 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_mt) {
 	else
 		ROS_INFO("passed_path_.size(%d)", passed_path_.size());
 
-	markMapInNewCell();//mark real time to exploration mode
+	markMapInNewCell();//mark real time to follow wall and exploration mode
 
 	if (isStateFollowWall()) {
 //			auto p_mt = dynamic_cast<MoveTypeFollowWall *>(p_mt);
@@ -1247,8 +1247,8 @@ bool ACleanMode::checkChargerPos()
 							INFO_CYAN("FOUND CHARGER");
 							c_rcon.resetStatus();
 							go_home_path_algorithm_->setHomePoint(getPosition());
-							if (!seen_charger_during_cleaning_)
-								seen_charger_during_cleaning_ = true;
+							if (!hasSeenChargerDuringCleaning())
+								setSeenChargerDuringCleaning();
 
 							return true;
 						}
@@ -1261,8 +1261,8 @@ bool ACleanMode::checkChargerPos()
 					INFO_CYAN("FOUND CHARGER");
 					c_rcon.resetStatus();
 					go_home_path_algorithm_->setHomePoint(getPosition());
-					if (!seen_charger_during_cleaning_)
-						seen_charger_during_cleaning_ = true;
+					if (!hasSeenChargerDuringCleaning())
+						setSeenChargerDuringCleaning();
 					return true;
 				}
 			}
@@ -1914,7 +1914,7 @@ void ACleanMode::switchInStateGoHomePoint()
 		if (isFirstTimeGoHomePoint())
 		{
 			if (!isRemoteGoHomePoint() && !isWifiGoHomePoint() && !isGoHomePointForLowBattery() &&
-				seen_charger_during_cleaning_)
+				hasSeenChargerDuringCleaning())
 				speaker.play(VOICE_CLEANING_FINISH_BACK_TO_CHARGER);
 			setFirstTimeGoHomePoint(false);
 		}
@@ -2246,22 +2246,38 @@ bool ACleanMode::isIsolate(const Cell_t& curr) {
 	fw_tmp_map.getMapRange(CLEAN_MAP, &bound.min.x, &bound.max.x, &bound.min.y, &bound.max.y);
 	fw_tmp_map.markRobot(curr, CLEAN_MAP);//Note : For clearing the obstacles around the robot current pose, please do not delete it!!!
 
-	auto external_target = bound.max + Cell_t{1, 1};
-	auto expend_min = bound.min - Cell_t{8, 8};
-	auto expend_max = bound.max + Cell_t{8, 8};
-	fw_tmp_map.setCell(CLEAN_MAP, expend_min.x, expend_min.y,1);
-	fw_tmp_map.setCell(CLEAN_MAP, expend_max.x, expend_max.y,1);
-	ROS_ERROR("ISOLATE MAP");
+	Cells external_targets;
+	external_targets.push_back(bound.max + Cell_t{1, 1});
+	external_targets.push_back(bound.min - Cell_t{1, 1});
+	external_targets.push_back(Cell_t{static_cast<int16_t>(bound.max.x + 1), static_cast<int16_t>(bound.min.y - 1)});
+	external_targets.push_back(Cell_t{static_cast<int16_t>(bound.min.x - 1), static_cast<int16_t>(bound.max.y + 1)});
+	for (uint8_t i = 1; i <= 8; i++)
+	{
+		// Try to extend the map for determin
+		fw_tmp_map.setCell(CLEAN_MAP, bound.min.x - i, bound.min.y - i, CLEANED);
+		fw_tmp_map.setCell(CLEAN_MAP, bound.max.x + i, bound.max.y + i, CLEANED);
+	}
+
+//	ROS_ERROR("ISOLATE MAP");
 	fw_tmp_map.print(curr, CLEAN_MAP,*points_to_cells(make_unique<Points>(passed_path_)));
 	ROS_ERROR("minx(%d),miny(%d),maxx(%d),maxy(%d)",bound.min.x, bound.min.y,bound.max.x, bound.max.y);
 
 	auto cells = Cells{};
 
+	auto target_selection = [&](const Cell_t cell){
+		bool ret = false;
+		for (uint8_t i = 0; !ret && i <= 3; i++)
+		{
+			if (CellEqual(external_targets[i])(cell))
+				ret = true;
+		}
+		return ret;
+	};
 	auto expand_condition = [&](const Cell_t cell, const Cell_t neighbor_cell){
 		return fw_tmp_map.isBlockAccessible(neighbor_cell.x, neighbor_cell.y);
 	};
 
-	bool is_found = clean_path_algorithm_->dijkstra(fw_tmp_map, curr, cells, true, CellEqual(external_target), isAccessable(&fw_tmp_map, expand_condition));
+	bool is_found = clean_path_algorithm_->dijkstra(fw_tmp_map, curr, cells, true, target_selection, isAccessable(&fw_tmp_map, expand_condition));
 
 //	ROS_ERROR_COND(is_found ^ new_is_found, "%s %d: is_found %d, new_is_found %d, please inform Austin.",
 //				   __FUNCTION__, __LINE__, is_found, new_is_found);
