@@ -199,7 +199,7 @@ void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 			}
 			p_clean_mode->iterate_point_++;
 			p_clean_mode->old_dir_ = p_clean_mode->iterate_point_->dir;
-			ROS_ERROR("%s,%d,it(%d,%d)", __FUNCTION__, __LINE__, p_clean_mode->iterate_point_->toCell().x,
+			ROS_INFO("%s,%d,it(%d,%d)", __FUNCTION__, __LINE__, p_clean_mode->iterate_point_->toCell().x,
 					  p_clean_mode->iterate_point_->toCell().y);
 		}
 	} else if(target_size==2){

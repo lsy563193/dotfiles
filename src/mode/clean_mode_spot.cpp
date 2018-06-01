@@ -72,12 +72,12 @@ bool CleanModeSpot::isExit()
 bool CleanModeSpot::mapMark()
 {
 	ROS_INFO("%s,%d,passed_path",__FUNCTION__,__LINE__);
-	auto passed_path_cells = pointsGenerateCells(passed_path_);
+	auto passed_path_cells = pointsGenerateCells(passed_cell_path_);
 	displayCellPath(passed_path_cells);
 
 	if (action_i_ == ac_linear) {
 //		PP_INFO();
-		setCleaned(pointsGenerateCells(passed_path_));
+		setCleaned(pointsGenerateCells(passed_cell_path_));
 	}
 
 	if (sp_state == state_folllow_wall.get())
@@ -86,7 +86,7 @@ bool CleanModeSpot::mapMark()
 	PP_INFO();
 	clean_map_.print(getPosition().toCell(), CLEAN_MAP, Cells{getPosition().toCell()});
 
-	passed_path_.clear();
+	passed_cell_path_.clear();
 	return false;
 }
 
