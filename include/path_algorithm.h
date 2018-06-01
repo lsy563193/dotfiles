@@ -194,9 +194,8 @@ public:
 				;
 	};
     bool is_pox_y(){
-		if(curr_filter_ == &filter_top_of_y_axis_neg || curr_filter_ == &filter_top_of_y_axis_pos)
-			return !curr_filter_->towardPos();
-		return curr_filter_->towardPos();
+		return curr_filter_ == &filter_top_of_y_axis_neg || curr_filter_ == &filter_top_of_y_axis_pos ? !curr_filter_->towardPos()
+																									  : curr_filter_->towardPos();
 	};
 
 private:
@@ -284,9 +283,9 @@ public:
 	BestTargetFilter filter_next_line_neg{"filter_next_line_neg", target_next_line , range_next_line, false};
 
 	BestTargetFilter filter_pos_of_y_axis{"filter_pos_of_y_axis:", target_p3p, range_p3p, true,true};
-
+	//Note: top of y axis but follow wall to neg dir
 	BestTargetFilter filter_top_of_y_axis_pos{"filter_top_of_y_axis_pos", target_top_of_y_axis, range_top_of_y_axis , true};
-
+	//Note: top of y axis but follow wall to pos dir
 	BestTargetFilter filter_top_of_y_axis_neg{"filter_top_of_y_axis_neg", target_top_of_y_axis, range_top_of_y_axis , false};
 
 	BestTargetFilter filter_n3p{"filter_n3p:", target_p3p, range_p3p, false,true};

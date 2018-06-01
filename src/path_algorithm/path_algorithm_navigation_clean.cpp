@@ -100,9 +100,9 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr_p, co
 	map_bound = map.genRange();
 	curr_bound = getLine(curr_, map);
 	priority_dir = last_dir;
-	g_follow_last_follow_wall_dir = 0;
 	auto filters = *generateBounds(map);
 	ROS_WARN("priority_dir(%d),trend_pos(%d)\n",priority_dir,trend_pos);
+	g_follow_last_follow_wall_dir = 0;
 	for(auto&&filter : filters)
 	{
 		curr_filter_=filter;
@@ -238,11 +238,13 @@ void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path) {
 		}
 	}
 	else if (curr_filter_ == &filter_after_obstacle_pos)
-		path.push_back(
-				Cell_t{path.back().x, static_cast<int16_t>(path.front().y + 3)});//for setting follow wall target line
+		path.push_back( Cell_t{path.back().x, static_cast<int16_t>(path.front().y + 3)});//for setting follow wall target line
 	else if (curr_filter_ == &filter_after_obstacle_neg)
-		path.push_back(
-				Cell_t{path.back().x, static_cast<int16_t>(path.front().y - 3)});//for setting follow wall target line
+		path.push_back( Cell_t{path.back().x, static_cast<int16_t>(path.front().y - 3)});//for setting follow wall target line
+	else if (curr_filter_ == &filter_top_of_y_axis_pos)
+		path.push_back( Cell_t{path.back().x, static_cast<int16_t>(path.front().y - 3)});//for setting follow wall target line
+	else if (curr_filter_ == &filter_top_of_y_axis_neg)
+		path.push_back( Cell_t{path.back().x, static_cast<int16_t>(path.front().y + 3)});//for setting follow wall target line
 	else {
 		displayCellPath(path);
 		if(path.size() > 2)
