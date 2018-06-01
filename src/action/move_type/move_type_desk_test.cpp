@@ -28,7 +28,7 @@
 
 #include "error.h"
 
-#define RCON_ROTATE_SPEED (11)
+#define RCON_ROTATE_SPEED (10)
 
 // Sequence for baseline setting.
 #define CTL_L_OBS_BL_H 2

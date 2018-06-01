@@ -495,12 +495,12 @@ void CleanModeNav::remoteDirectionLeft(bool state_now, bool state_last)
 		ev.battery_home = true;
 		go_home_for_low_battery_ = true;
 	}*/
-	else if (isStateInit())
+	/*else if (isStateInit())
 	{
 		//todo: Just for testing.
 		ROS_WARN("%s %d: Main brush overcurrent.", __FUNCTION__, __LINE__);
 		ev.oc_brush_main = true;
-	}
+	}*/
 	/*else
 	{
 		//todo: Just for testing.
