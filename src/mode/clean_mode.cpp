@@ -1756,7 +1756,8 @@ void ACleanMode::batteryLow(bool state_now, bool state_last)
 
 // ------------------State init--------------------
 bool ACleanMode::isSwitchByEventInStateInit() {
-	return checkEnterExceptionResumeState();
+	return false;
+//	return checkEnterExceptionResumeState();
 }
 
 bool ACleanMode::updateActionInStateInit() {
