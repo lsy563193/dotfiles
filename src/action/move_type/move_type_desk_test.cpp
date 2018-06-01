@@ -528,7 +528,6 @@ bool MoveTypeDeskTest::checkStage2Finish()
 				sum_cnt_++;
 				usleep(20000);
 			}
-			scan_valid_cnt = _cnt;
 			ROS_INFO("%s %d: Scan valid count:%d.", __FUNCTION__, __LINE__, scan_valid_cnt);
 			if (scan_valid_cnt < _cnt -1)
 			{
@@ -581,7 +580,6 @@ bool MoveTypeDeskTest::checkStage2Finish()
 				sum_cnt_++;
 				usleep(20000);
 			}
-			scan_valid_cnt = _cnt;
 			ROS_INFO("%s %d: Scan valid count:%d.", __FUNCTION__, __LINE__, scan_valid_cnt);
 			if (scan_valid_cnt < _cnt -1)
 			{
