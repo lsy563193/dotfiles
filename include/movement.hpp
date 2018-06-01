@@ -302,6 +302,7 @@ public:
 
 	void adjustSpeed(int32_t&, int32_t&) override ;
 	bool isFinish() override;
+	void resetResumeTime(void);
 
 private:
 	double resume_wheel_start_time_;
