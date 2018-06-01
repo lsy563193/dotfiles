@@ -28,7 +28,7 @@
 
 #include "error.h"
 
-#define RCON_ROTATE_SPEED (11)
+#define RCON_ROTATE_SPEED (10)
 
 // Sequence for baseline setting.
 #define CTL_L_OBS_BL_H 2
@@ -528,6 +528,7 @@ bool MoveTypeDeskTest::checkStage2Finish()
 				sum_cnt_++;
 				usleep(20000);
 			}
+			scan_valid_cnt = _cnt;
 			ROS_INFO("%s %d: Scan valid count:%d.", __FUNCTION__, __LINE__, scan_valid_cnt);
 			if (scan_valid_cnt < _cnt -1)
 			{
@@ -580,6 +581,7 @@ bool MoveTypeDeskTest::checkStage2Finish()
 				sum_cnt_++;
 				usleep(20000);
 			}
+			scan_valid_cnt = _cnt;
 			ROS_INFO("%s %d: Scan valid count:%d.", __FUNCTION__, __LINE__, scan_valid_cnt);
 			if (scan_valid_cnt < _cnt -1)
 			{
