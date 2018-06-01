@@ -258,7 +258,7 @@ bool MoveTypeLinear::switchLinearTargetByRecalc(ACleanMode *p_clean_mode) {
 			std::move(path.begin(),path.end(),std::back_inserter(p_clean_mode->plan_path_));
             displayPointPath(p_clean_mode->plan_path_);
 			p_clean_mode->pubCleanMapMarkers(p_clean_mode->clean_map_,
-											 p_clean_mode->pointsGenerateCells(p_clean_mode->plan_path_));
+											 *points_to_cells(p_clean_mode->plan_path_));
 
 			ROS_INFO("7777777777777777777777777777777777777777");
 			val = true;

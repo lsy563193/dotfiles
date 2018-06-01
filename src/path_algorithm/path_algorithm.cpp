@@ -66,7 +66,7 @@ const Cell_t cell_direction_4[4]{{1,0},{-1,0},{0,1},{0,-1}};
 //	Cell_t corner1 ,corner2;
 //	auto path_cell = findShortestPath(map, curr.toCell(), target.toCell(),last_dir, false,false,corner1,corner2);
 //
-//	plan_path = *cells_generate_points(make_unique<Cells>(path_cell));
+//	plan_path = *cells_to_points(make_unique<Cells>(path_cell));
 //}
 
 //Cells APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const Cell_t &target,

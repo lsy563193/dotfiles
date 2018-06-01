@@ -180,7 +180,7 @@ void CleanModeExploration::remoteMax(bool state_now, bool state_last)
 }
 /*void CleanModeExploration::printMapAndPath()
 {
-	clean_path_algorithm_->displayCellPath(pointsGenerateCells(passed_cell_path_));
+	clean_path_algorithm_->displayCellPath(points_to_cells(passed_cell_path_));
 	clean_map_.print(CLEAN_MAP,getPosition().toCell().x,getPosition().toCell().y);
 }*/
 

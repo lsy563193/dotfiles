@@ -400,7 +400,6 @@ public:
 	bool estimateChargerPos(uint32_t rcon_value);
 	void setChargerArea(const Point_t charge_pos);
 	bool checkChargerPos();
-	Cells pointsGenerateCells(Points &targets);
 
 	// For move types
 	bool moveTypeNewCellIsFinish(IMoveType *p_mt);

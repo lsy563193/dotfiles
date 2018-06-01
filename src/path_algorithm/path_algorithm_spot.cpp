@@ -21,7 +21,7 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr,  bo
 		}) {
 			targets_cells.emplace_back(it + curr.toCell());
 		}
-		plan_path = *cells_generate_points(make_unique<Cells>(targets_cells));
+		plan_path = *cells_to_points(targets_cells);
     	spot_running_ = true;
         return true;
 	} else{

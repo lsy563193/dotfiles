@@ -332,7 +332,7 @@ Points GoHomePathAlgorithm::handleResult(bool generate_finish, Cells plan_path_c
 
 	if (generate_finish)
 	{
-		plan_path = *cells_generate_points(make_unique<Cells>(plan_path_cells));
+		plan_path = *cells_to_points(plan_path_cells);
 		map.print(curr.toCell(), CLEAN_MAP, plan_path_cells);
 	}
 

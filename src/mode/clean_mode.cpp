@@ -1695,16 +1695,6 @@ void ACleanMode::setChargerArea(const Point_t charger_pos)
 
 }
 
-Cells ACleanMode::pointsGenerateCells(Points &targets)
-{
-//	displayCellPath(targets);
-	Cells path{};
-	for(const Point_t& point : targets) {
-		path.push_back(point.toCell());
-	}
-	return path;
-}
-
 // ------------------Handlers--------------------------
 
 void ACleanMode::cliffAll(bool state_now, bool state_last)
@@ -1889,8 +1879,8 @@ bool ACleanMode::updateActionInStateGoHomePoint()
 		// New path to home cell is generated.
 		iterate_point_ = plan_path_.begin();
 //		plan_path_.pop_front();
-		displayCellPath(pointsGenerateCells(plan_path_));
-		pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
+		displayCellPath(*points_to_cells(plan_path_));
+		pubCleanMapMarkers(clean_map_, *points_to_cells(plan_path_));
 		should_go_to_charger_ = false;
 		action_i_ = ac_linear;
 		genNextAction();
@@ -2074,8 +2064,8 @@ bool ACleanMode::updateActionInStateExploration() {
 		action_i_ = ac_linear;
 		iterate_point_ = plan_path_.begin();
 		ROS_WARN("start_point_.dir(%d)", iterate_point_->dir);
-		displayCellPath(pointsGenerateCells(plan_path_));
-		pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
+		displayCellPath(*points_to_cells(plan_path_));
+		pubCleanMapMarkers(clean_map_, *points_to_cells(plan_path_));
 		genNextAction();
 		return true;
 	}
@@ -2259,7 +2249,7 @@ bool ACleanMode::isIsolate(const Cell_t& curr) {
 	}
 
 //	ROS_ERROR("ISOLATE MAP");
-	fw_tmp_map.print(curr, CLEAN_MAP,*points_to_cells(make_unique<Points>(passed_cell_path_)));
+	fw_tmp_map.print(curr, CLEAN_MAP,*points_to_cells(passed_cell_path_));
 	ROS_ERROR("minx(%d),miny(%d),maxx(%d),maxy(%d)",bound.min.x, bound.min.y,bound.max.x, bound.max.y);
 
 	auto cells = Cells{};
