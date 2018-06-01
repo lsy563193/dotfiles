@@ -570,7 +570,7 @@ public:
 	boost::shared_ptr<State> state_exception_resume{new StateExceptionResume()};
 	boost::shared_ptr<State> state_exploration{new StateExploration()};
 
-	Points passed_path_{};
+	Points passed_cell_path_{};
 	GridMap fw_tmp_map{};
 	typedef std::set<PairCell_t> Blocks_t ;
 	Blocks_t c_blocks;

@@ -124,8 +124,8 @@ bool MoveTypeFollowWall::isFinish()
 //			p_cm->clean_map_.print(getPosition().toCell(), CLEAN_MAP, cells);
 //		}
 
-//		if ((dijkstra_cleaned_count < TRAP_IN_SMALL_AREA_COUNT) || (p_cm->passed_path_.size() < 10 && dijkstra_cleaned_count <	100))
-		if ((dijkstra_cleaned_count2 < TRAP_IN_SMALL_AREA_COUNT) || (p_cm->passed_path_.size() < 10 && dijkstra_cleaned_count2 < 100))
+//		if ((dijkstra_cleaned_count < TRAP_IN_SMALL_AREA_COUNT) || (p_cm->passed_cell_path_.size() < 10 && dijkstra_cleaned_count <	100))
+		if ((dijkstra_cleaned_count2 < TRAP_IN_SMALL_AREA_COUNT) || (p_cm->passed_cell_path_.size() < 10 && dijkstra_cleaned_count2 < 100))
 			is_trapped_in_small_area_ = true;
 		else
 			is_trapped_in_small_area_ = false;

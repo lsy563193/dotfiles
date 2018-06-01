@@ -57,22 +57,22 @@ bool CleanModeNav::mapMark()
 {
 
 	ROS_INFO("%s %d: Start updating block_map.", __FUNCTION__, __LINE__);
-	if(passed_path_.empty())
+	if(passed_cell_path_.empty())
 	{
 		ROS_WARN("%s %d: pass_path is empty, add curr_point(%.2f,%.2f,%.2f,%d).", __FUNCTION__, __LINE__, getPosition().x,
 				 getPosition().y, getPosition().th, getPosition().dir);
-		passed_path_.push_back(getPosition());
+		passed_cell_path_.push_back(getPosition());
 	}
 
-	displayPointPath((passed_path_));
+	displayPointPath((passed_cell_path_));
 
 	// Update for passed_path.
 	GridMap block_map{};
-	for (auto &&p_it :passed_path_)
+	for (auto &&p_it :passed_cell_path_)
 		block_map.setCells(CLEAN_MAP, p_it.toCell().x, p_it.toCell().y, CLEANED, ROBOT_SIZE_1_2);
 
-	const auto start = passed_path_.front().toCell();
-	const auto curr = passed_path_.back().toCell();
+	const auto start = passed_cell_path_.front().toCell();
+	const auto curr = passed_cell_path_.back().toCell();
 /*
 	Cells c_bound1;
 	auto is_cleaned_bound = [&](const Cell_t &c_it){
@@ -148,19 +148,19 @@ bool CleanModeNav::mapMark()
 	if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right) {
 		if (!c_blocks.empty()) {
 			auto dy = action_i_ == ac_follow_wall_left ? 2 : -2;
-			std::for_each(passed_path_.begin(), passed_path_.end(),[&](const Point_t& point){
+			std::for_each(passed_cell_path_.begin(), passed_cell_path_.end(),[&](const Point_t& point){
 				BoundingBox<Point_t> bound;
-				bound.SetMinimum({passed_path_.front().x - CELL_SIZE/4, passed_path_.front().y - CELL_SIZE/4});
-				bound.SetMaximum({passed_path_.front().x + CELL_SIZE/4, passed_path_.front().y + CELL_SIZE/4});
+				bound.SetMinimum({passed_cell_path_.front().x - CELL_SIZE/4, passed_cell_path_.front().y - CELL_SIZE/4});
+				bound.SetMaximum({passed_cell_path_.front().x + CELL_SIZE/4, passed_cell_path_.front().y + CELL_SIZE/4});
 				if(!bound.Contains(point))
 				{
 //					ROS_INFO("in cfw(%d,%d),(%d,%d)", point.toCell().x, point.toCell().y, getPosition().toCell().x, getPosition().toCell().y);
-					ROS_INFO("Not Cont front(%d,%d),curr(%d,%d),point(%d,%d)", passed_path_.front().toCell().x, passed_path_.front().toCell().y,
+					ROS_INFO("Not Cont front(%d,%d),curr(%d,%d),point(%d,%d)", passed_cell_path_.front().toCell().x, passed_cell_path_.front().toCell().y,
 									 getPosition().toCell().x, getPosition().toCell().y, point.toCell().x, point.toCell().y);
 					c_blocks.insert({BLOCKED_FW, point.getCenterRelative(0, dy * CELL_SIZE).toCell()});
 				}
 				else {
-					ROS_INFO("Contains front(%d,%d),curr(%d,%d),point(%d,%d)", passed_path_.front().toCell().x, passed_path_.front().toCell().y,
+					ROS_INFO("Contains front(%d,%d),curr(%d,%d),point(%d,%d)", passed_cell_path_.front().toCell().x, passed_cell_path_.front().toCell().y,
 									 getPosition().toCell().x, getPosition().toCell().y, point.toCell().x, point.toCell().y);
 				}
 			});
@@ -185,7 +185,7 @@ bool CleanModeNav::mapMark()
 				clean_map_.setCell(CLEAN_MAP, cost_block.second.x, cost_block.second.y, cost_block.first);
 	}
 //	clean_map_.print(CLEAN_MAP, Cells{curr});
-	for (auto &&p_it :passed_path_)
+	for (auto &&p_it :passed_cell_path_)
 	{
 		clean_map_.setSpecificCells(CLEAN_MAP, p_it.toCell().x, p_it.toCell().y, CLEANED, BLOCKED_RCON, ROBOT_SIZE_1_2);
 	}
@@ -204,10 +204,10 @@ bool CleanModeNav::mapMark()
 	}
 
 	//tx pass path via serial wifi
-	s_wifi.cacheMapData(passed_path_);
+	s_wifi.cacheMapData(passed_cell_path_);
 	//s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_PATH);
 	c_blocks.clear();
-	passed_path_.clear();
+	passed_cell_path_.clear();
 	return false;
 }
 
@@ -382,7 +382,7 @@ bool CleanModeNav::isExit()
 /*bool CleanModeNav::moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt)
 {
 	if (sp_state == state_folllow_wall)
-		return p_mt->isBlockCleared(clean_map_, passed_path_);
+		return p_mt->isBlockCleared(clean_map_, passed_cell_path_);
 	else
 		return p_mt->isNewLineReach(clean_map_) || p_mt->isOverOriginLine(clean_map_);
 }
@@ -774,7 +774,7 @@ void CleanModeNav::switchInStateInit() {
 		{
 			auto curr = getPosition();
 //			curr.dir = iterate_point_.dir;
-//			passed_path_.push_back(curr);
+//			passed_cell_path_.push_back(curr);
 			go_home_path_algorithm_->updateStartPointRadian(curr.th);
 			sp_state = state_clean.get();
 		}

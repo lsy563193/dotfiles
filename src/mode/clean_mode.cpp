@@ -368,8 +368,8 @@ void ACleanMode::saveBlocks() {
 
 uint8_t ACleanMode::setBlocks(Dir_t dir)
 {
-	if(passed_path_.empty())
-		passed_path_.push_back(getPosition());
+	if(passed_cell_path_.empty())
+		passed_cell_path_.push_back(getPosition());
 	uint8_t block_count = 0;
 	printf("before filter:");
 	for(auto && cost_block: c_blocks)
@@ -379,7 +379,7 @@ uint8_t ACleanMode::setBlocks(Dir_t dir)
 	printf("\n");
 
 	if(!isAny(dir)) {
-		auto p_end = passed_path_.back();
+		auto p_end = passed_cell_path_.back();
 		auto c_end_next = p_end.toCell() + cell_direction_[dir];
 		auto dir_switch = (dir+2)%4;
 		for(auto i = -1; i<=1; i++)
@@ -730,9 +730,9 @@ void ACleanMode::setLinearCleaned()
 {
 	ROS_INFO("setLinearCleaned cells:");
 	// start-1
-	auto p_start = passed_path_.front();
+	auto p_start = passed_cell_path_.front();
 	auto c_start_last = p_start.toCell() - cell_direction_[p_start.dir];
-	auto c_diff_start_switch = cell_direction_[(passed_path_.front().dir + 2)%4];
+	auto c_diff_start_switch = cell_direction_[(passed_cell_path_.front().dir + 2)%4];
 	ROS_INFO("{%d,%d}",c_start_last.x, c_start_last.y);
 	for(auto i =-1; i<=1; i++)
 	{
@@ -746,7 +746,7 @@ void ACleanMode::setLinearCleaned()
 		}
 	}
 	// end+1 point opt
-	auto p_end = passed_path_.back();
+	auto p_end = passed_cell_path_.back();
 	auto c_end_next = p_end.toCell() + cell_direction_[p_end.dir];
 	auto c_end_diff_switch = cell_direction_[(p_end.dir + 2)%4];
 	ROS_INFO("{%d,%d}",c_end_next.x, c_end_next.y);
@@ -1072,25 +1072,25 @@ bool ACleanMode::isExit()
 
 bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_mt) {
 	auto curr = getPosition();
-	auto loc = std::find_if(passed_path_.begin(), passed_path_.end(), [&](Point_t it) {
+	auto loc = std::find_if(passed_cell_path_.begin(), passed_cell_path_.end(), [&](Point_t it) {
 		return curr.isCellAndAngleEqual(it);
 	});
-	auto distance = std::distance(loc, passed_path_.end());
+	auto distance = std::distance(loc, passed_cell_path_.end());
 	if (distance == 0)
 	{
 		curr.dir = iterate_point_->dir;
-		ROS_INFO("curr(%d,%d,%d,%d), passed_path_.size(%d)", curr.toCell().x, curr.toCell().y,
-				 static_cast<int>(radian_to_degree(curr.th)), curr.dir, passed_path_.size());
-		passed_path_.push_back(curr);
+		ROS_INFO("curr(%d,%d,%d,%d), passed_cell_path_.size(%d)", curr.toCell().x, curr.toCell().y,
+				 static_cast<int>(radian_to_degree(curr.th)), curr.dir, passed_cell_path_.size());
+		passed_cell_path_.push_back(curr);
 	}
 	else
-		ROS_INFO("passed_path_.size(%d)", passed_path_.size());
+		ROS_INFO("passed_cell_path_.size(%d)", passed_cell_path_.size());
 
 	markMapInNewCell();//mark real time to follow wall and exploration mode
 
 	if (isStateFollowWall()) {
 //			auto p_mt = dynamic_cast<MoveTypeFollowWall *>(p_mt);
-		if (p_mt->isBlockCleared(clean_map_, passed_path_)) {
+		if (p_mt->isBlockCleared(clean_map_, passed_cell_path_)) {
 			clean_map_.markRobot(curr.toCell(), CLEAN_MAP);
 			std::vector<Vector2<int>> markers{};
 			if (lidar.isScanCompensateReady())
@@ -1130,7 +1130,7 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_mt) {
 			isolate_count_++;
 		else
 		{
-			passed_path_.clear();
+			passed_cell_path_.clear();
 			fw_tmp_map.reset(BOTH_MAP);
 			closed_count_++;
 			if(closed_count_<closed_count_limit_)
@@ -1168,7 +1168,7 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 		auto curr = getPosition();
 		ins_path.push_back(curr);
 		setFollowWall(fw_tmp_map, action_i_ == ac_follow_wall_left,ins_path);
-//		fw_tmp_map.print(getPosition().toCell(), CLEAN_MAP,*points_to_cells(make_unique<Points>(passed_path_)));
+//		fw_tmp_map.print(getPosition().toCell(), CLEAN_MAP,*points_to_cells(make_unique<Points>(passed_cell_path_)));
 		if(!isStateFollowWall() && !isStateTest())
 		{
 			auto p_mt = dynamic_cast<MoveTypeFollowWall *>(p_move_type);
@@ -2124,7 +2124,7 @@ bool ACleanMode::isSwitchByEventInStateFollowWall()
 
 bool ACleanMode::updateActionInStateFollowWall()
 {
-	passed_path_.clear();
+	passed_cell_path_.clear();
 	fw_tmp_map.reset(BOTH_MAP);
 
 	auto ret = true;
@@ -2259,7 +2259,7 @@ bool ACleanMode::isIsolate(const Cell_t& curr) {
 	}
 
 //	ROS_ERROR("ISOLATE MAP");
-	fw_tmp_map.print(curr, CLEAN_MAP,*points_to_cells(make_unique<Points>(passed_path_)));
+	fw_tmp_map.print(curr, CLEAN_MAP,*points_to_cells(make_unique<Points>(passed_cell_path_)));
 	ROS_ERROR("minx(%d),miny(%d),maxx(%d),maxy(%d)",bound.min.x, bound.min.y,bound.max.x, bound.max.y);
 
 	auto cells = Cells{};

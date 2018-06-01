@@ -105,7 +105,7 @@ bool CleanModeExploration::mapMark()
 	resetErrorMarker();
 	setBlocks(iterate_point_->dir);
 	if(action_i_ == ac_linear)
-		passed_path_.clear();
+		passed_cell_path_.clear();
 	return false;
 }
 
@@ -180,7 +180,7 @@ void CleanModeExploration::remoteMax(bool state_now, bool state_last)
 }
 /*void CleanModeExploration::printMapAndPath()
 {
-	clean_path_algorithm_->displayCellPath(pointsGenerateCells(passed_path_));
+	clean_path_algorithm_->displayCellPath(pointsGenerateCells(passed_cell_path_));
 	clean_map_.print(CLEAN_MAP,getPosition().toCell().x,getPosition().toCell().y);
 }*/
 
@@ -237,7 +237,7 @@ bool CleanModeExploration::moveTypeFollowWallIsFinish(IMoveType *p_move_type, bo
 	if(action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
 	{
 		auto p_mt = dynamic_cast<MoveTypeFollowWall *>(p_move_type);
-		return p_mt->isBlockCleared(clean_map_, passed_path_);
+		return p_mt->isBlockCleared(clean_map_, passed_cell_path_);
 	}
 	return false;
 }
