@@ -6,7 +6,8 @@
 #include "robot.hpp"
 #include "speaker.h"
 #include "execinfo.h"
-
+#include <fstream>
+#include <unistd.h>
 #if VERIFY_CPU_ID || VERIFY_KEY
 #include "verify.h"
 #endif
@@ -42,7 +43,9 @@ void server_backtrace(int sig)
 
 void handle_exit(int sig) 
 {
-ROS_ERROR("Oops!!! pp receive signal %d",sig);
+	sync();
+	sleep(2);
+	ROS_ERROR("Oops!!! pp receive signal %d",sig);
 	if(sig == SIGINT)
 	{
 		if(robot_instance != nullptr){

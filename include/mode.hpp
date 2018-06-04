@@ -17,20 +17,43 @@
 #include "action.hpp"
 #include "movement.hpp"
 #include "move_type.hpp"
-
+#include <cstdarg>
 
 #define ROS_INFO_FL() ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__)
 #define PP_INFO() ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__)
 #define PP_WARN() ROS_WARN("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__)
 
-#define INFO_RED(X)		ROS_INFO("%s,%d,\033[1;40;31m"#X"\033[0m",__FUNCTION__,__LINE__)
-#define INFO_GREEN(X)	ROS_INFO("%s,%d,\033[1;40;32m"#X"\033[0m",__FUNCTION__,__LINE__)
-#define INFO_YELLOW(X)	ROS_INFO("%s,%d,\033[1;40;33m"#X"\033[0m",__FUNCTION__,__LINE__)
-#define INFO_BLUE(X)	ROS_INFO("%s,%d,\033[1;40;34m"#X"\033[0m",__FUNCTION__,__LINE__)
-#define INFO_PURPLE(X)	ROS_INFO("%s,%d,\033[1;40;35m"#X"\033[0m",__FUNCTION__,__LINE__)
-#define INFO_CYAN(X)	ROS_INFO("%s,%d,\033[1;40;36m"#X"\033[0m",__FUNCTION__,__LINE__)
-#define INFO_WHITE(X)	ROS_INFO("%s,%d,\033[1;40;37m"#X"\033[0m",__FUNCTION__,__LINE__)
-#define INFO_BLACK(X)	ROS_INFO("%s,%d,\033[1;40;30m"#X"\033[0m",__FUNCTION__,__LINE__)
+
+enum{
+	NONE = 0,
+	ERROR,
+	NORMAL,
+	WARN,
+	WHITE,
+	BLUE,
+	RED,
+	CYAN,
+	BLACK,
+	PURPLE,
+	GREEN,
+	YEllOW,
+};
+
+void INFO_PRINT(int type,const char* arg,...);
+
+#define INFO_RED(...)		INFO_PRINT(RED,__VA_ARGS__);
+#define INFO_GREEN(...)	INFO_PRINT(GREEN,__VA_ARGS__);
+#define INFO_YELLOW(...)	INFO_PRINT(YEllOW,__VA_ARGS__);
+#define INFO_BLUE(...)	INFO_PRINT(BLUE,__VA_ARGS__);
+#define INFO_PURPLE(...)	INFO_PRINT(PURPLE,__VA_ARGS__);
+#define INFO_CYAN(...)	INFO_PRINT(CYAN,__VA_ARGS__);
+#define INFO_WHITE(...)	INFO_PRINT(WHITE,__VA_ARGS__);
+#define INFO_BLACK(...)	INFO_PRINT(BLACK,__VA_ARGS__);
+#define INFO_NOR(...) INFO_PRINT(NORMAL,__VA_ARGS__);
+
+#define INFO_ERR_CON(cond ,...) if(cond)INFO_PRINT(ERROR,__VA_ARGS__)
+#define INFO_WAR_CON(cond ,...) if(cond)INFO_PRINT(WARN,__VA_ARGS__)
+#define INFO_NOR_CON(cond ,...) if(cond)INFO_PRINT(NORMAL,__VA_ARGS__)
 
 typedef struct{
 		uint32_t seq{};
