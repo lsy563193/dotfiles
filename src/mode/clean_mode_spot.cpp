@@ -177,24 +177,18 @@ void CleanModeSpot::switchInStateSpot()
 {
 	action_i_ = ac_null;
 	sp_action_ = nullptr;
-//	sp_state = nullptr;
-//	if(getPosition() == Cell_t{0})
-//	if (clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell())) {
-//		ROS_WARN("%s,%d: enter state trapped",__FUNCTION__,__LINE__);
-//		sp_saved_states.push_back(sp_state);
-//		sp_state = state_folllow_wall.get();
-//		is_trapped_ = true;
-//		is_isolate = true;
-//		is_closed = true;
-//		closed_count_ = 0;
-//		isolate_count_ = 0;
-//	}
-//	else {
 		sp_state = state_go_home_point.get();
-		go_home_path_algorithm_->initForGoHomePoint(clean_map_);
-//	}
+	ROS_INFO("switchInStateSpot~~~~~~~~~~~~~~~");
+	if(!(go_home_path_algorithm_->isHomePointEmpty()))
+	{
+		ROS_INFO("home is not empty ,clear it");
+		go_home_path_algorithm_->resetPoints();
+		ROS_INFO("clean over");
+	}
+	go_home_path_algorithm_->initForGoHomePoint(clean_map_);
+	ROS_INFO("switchInStateSpot~~~~~~~~~~~~~~~");
+	go_home_path_algorithm_->getRestHomePoints();
 	sp_state->init();
-//	action_i_ = ac_null;
 	genNextAction();
 }
 

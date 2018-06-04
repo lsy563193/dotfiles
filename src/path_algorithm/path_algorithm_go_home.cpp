@@ -209,6 +209,12 @@ Points GoHomePathAlgorithm::getRestHomePoints()
 	return home_points_;
 }
 
+void GoHomePathAlgorithm::resetPoints()
+{
+	printf("111home_points(%d)", home_points_.size());
+	home_points_.clear();
+}
+
 bool GoHomePathAlgorithm::eraseCurrentHomePoint()
 {
 	if (!home_points_.empty())

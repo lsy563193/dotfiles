@@ -379,6 +379,7 @@ public:
 	 */
 	Points getRestHomePoints();
 
+	void resetPoints();
 	/*
 	 * @author Austin Liu
 	 *
@@ -406,6 +407,7 @@ public:
 
 	bool isHomePointEmpty()
 	{
+		printf("home_points(%d)", home_points_.size());
 		return home_points_.empty();
 	}
 
