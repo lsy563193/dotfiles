@@ -358,6 +358,7 @@ public:
 	}
 
 private:
+	bool battery_full_{false};
 	bool battery_full_and_sleep_{false};
 	double battery_full_start_time_{0};
 	bool directly_charge_{false};

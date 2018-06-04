@@ -88,8 +88,12 @@ bool MovementCharge::isFinish()
 			}
 		}
 
+		if (battery.isFull())
+			// Preventing battery drop back below full voltage before entering fake sleep.
+			battery_full_ = true;
+
 		if (ros::Time::now().toSec() - start_timer_ >= 10 && !battery_full_and_sleep_ && charger.getChargeStatus()
-			&& battery.isFull())
+			&& battery_full_)
 		{
 			if (battery_full_start_time_ == 0)
 			{
