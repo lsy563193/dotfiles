@@ -73,6 +73,8 @@ ModeRemote::~ModeRemote()
 	usleep(200000);
 	battery.forceUpdate();
 	gyro.setTiltCheckingEnable(false);
+	if (ev.cliff_all_triggered)
+		speaker.play(VOICE_ERROR_LIFT_UP);
 	ROS_INFO("%s %d: Exit remote mode.", __FUNCTION__, __LINE__);
 }
 
@@ -92,6 +94,7 @@ bool ModeRemote::isExit()
 		return true;
 	}
 
+/*
 	if (ev.cliff_all_triggered)
 	{
 		ROS_WARN("%s %d: Exit to idle mode.", __FUNCTION__, __LINE__);
@@ -99,6 +102,7 @@ bool ModeRemote::isExit()
 		setNextMode(md_idle);
 		return true;
 	}
+*/
 
 	if (ev.charge_detect)
 	{
