@@ -303,7 +303,7 @@ void GridMap::cellToWorld(double &worldX, double &worldY, int16_t &cellX, int16_
 	worldY = (double)cellY * CELL_SIZE;
 }
 
-bool GridMap::markRobot(const Cell_t& curr, uint8_t id)
+bool GridMap::markRobot(const Cell_t& curr, uint8_t id,bool is_clean_rcon)
 {
 	bool ret = false;
 	std::string debug_str;
@@ -316,9 +316,12 @@ bool GridMap::markRobot(const Cell_t& curr, uint8_t id)
 			auto y = curr.y + (int16_t)dy;
 			auto status = getCell(id, x, y);
 			if (status < BLOCKED_BOUNDARY /*&& (status != BLOCKED_RCON)*/){
-				debug_str += "(" + std::to_string(x) + ", " + std::to_string(y) + ")";
-				setCell(id, x, y, CLEANED);
-				ret = true;
+				if(status != BLOCKED_RCON || is_clean_rcon)
+				{
+					debug_str += "(" + std::to_string(x) + ", " + std::to_string(y) + ")";
+					setCell(id, x, y, CLEANED);
+					ret = true;
+				}
 			}
 		}
 	}

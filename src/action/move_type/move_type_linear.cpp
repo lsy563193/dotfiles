@@ -183,16 +183,15 @@ bool MoveTypeLinear::isLinearForward()
 void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 {
     auto target_size = std::distance(p_clean_mode->iterate_point_, p_clean_mode->plan_path_.end());
-	if (target_size>2)
-	{
+	if (target_size>2) {
 		auto target_point_ = std::next(p_clean_mode->iterate_point_);
 		auto &target_xy = (isXAxis(p_clean_mode->iterate_point_->dir)) ? target_point_->x : target_point_->y;
 		auto curr_xy = (isXAxis(p_clean_mode->iterate_point_->dir)) ? getPosition().x : getPosition().y;
 
 		if (std::abs(target_xy - curr_xy) < LINEAR_NEAR_DISTANCE) {
-			if (p_clean_mode->action_i_ == p_clean_mode->ac_linear &&
-				robot::instance()->getRobotWorkMode() == Mode::cm_exploration && p_clean_mode->isStateExploration()
-				 ) {
+			if (p_clean_mode->action_i_ == p_clean_mode->ac_linear)
+				p_clean_mode->mapMark();
+			if (robot::instance()->getRobotWorkMode() == Mode::cm_exploration && p_clean_mode->isStateExploration()) {
 				if (switchLinearTargetByRecalc(p_clean_mode)) {
 					radian_diff_count = 0;
 				}
@@ -200,9 +199,10 @@ void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 			p_clean_mode->iterate_point_++;
 			p_clean_mode->old_dir_ = p_clean_mode->iterate_point_->dir;
 			ROS_INFO("%s,%d,it(%d,%d)", __FUNCTION__, __LINE__, p_clean_mode->iterate_point_->toCell().x,
-					  p_clean_mode->iterate_point_->toCell().y);
+					 p_clean_mode->iterate_point_->toCell().y);
 		}
-	} else if(target_size==2){
+	}
+	else if(target_size==2){
 		if(stop_generate_next_target)
 			return;
 
@@ -225,6 +225,7 @@ void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 //		ROS_ERROR("%f,%f", std::abs(target_xy - curr_xy),LINEAR_NEAR_DISTANCE);
 		if (std::abs(target_xy - curr_xy) < LINEAR_NEAR_DISTANCE)
 		{
+			p_clean_mode->mapMark();
 			stop_generate_next_target = true;
 			if(switchLinearTargetByRecalc(p_clean_mode))
 			{
@@ -241,7 +242,6 @@ bool MoveTypeLinear::switchLinearTargetByRecalc(ACleanMode *p_clean_mode) {
 	Points path;
 	//comment temporary
 //	p_clean_mode->saveBlocks();
-	p_clean_mode->mapMark();
 //	resetTriggeredValue();
 
 	auto target_point = std::next(p_clean_mode->iterate_point_);

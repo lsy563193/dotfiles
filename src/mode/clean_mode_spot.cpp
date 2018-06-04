@@ -20,6 +20,8 @@ CleanModeSpot::CleanModeSpot()
 	clean_path_algorithm_.reset(new SpotCleanPathAlgorithm());
 	go_home_path_algorithm_.reset(new GoHomePathAlgorithm());
 	mode_i_ = cm_spot;
+	closed_count_limit_ = 1;
+	is_closed = false;
 	s_wifi.setWorkMode(cm_spot);
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 }
@@ -175,6 +177,28 @@ void CleanModeSpot::switchInStateSpot()
 {
 	action_i_ = ac_null;
 	sp_action_ = nullptr;
-	sp_state = nullptr;
-//	sp_state->init();
+//	sp_state = nullptr;
+//	if(getPosition() == Cell_t{0})
+//	if (clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell())) {
+//		ROS_WARN("%s,%d: enter state trapped",__FUNCTION__,__LINE__);
+//		sp_saved_states.push_back(sp_state);
+//		sp_state = state_folllow_wall.get();
+//		is_trapped_ = true;
+//		is_isolate = true;
+//		is_closed = true;
+//		closed_count_ = 0;
+//		isolate_count_ = 0;
+//	}
+//	else {
+		sp_state = state_go_home_point.get();
+		go_home_path_algorithm_->initForGoHomePoint(clean_map_);
+//	}
+	sp_state->init();
+//	action_i_ = ac_null;
+	genNextAction();
+}
+
+bool CleanModeSpot::markMapInNewCell() {
+	clean_map_.markRobot(getPosition().toCell(), CLEAN_MAP,false);
+	return true;
 }
