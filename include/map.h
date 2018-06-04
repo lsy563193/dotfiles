@@ -23,37 +23,114 @@ class GridMap {
 public:
 
 	GridMap();
-//	GridMap(uint16_t size);
 	~GridMap() = default;
-	void mapInit();
 
-	void setCell(uint8_t id, int16_t x, int16_t y, CellState value);
-
-	CellState getCell(int id, int16_t x, int16_t y);
-
-	void clearBlocks(void);
-
-	void setCells(int8_t count, int16_t cell_x, int16_t cell_y, CellState state);
-	void setCellsBut(int8_t count, int16_t cell_x, int16_t cell_y, CellState state,CellState but_state);
-
+	/*
+	 * This function is for resetting specific map value.
+	 *
+	 * @param id: Map id
+	 */
 	void reset(uint8_t id);
 
+	/*
+	 * This function is for getting specific cell's state.
+	 *
+	 * @param id: Map id
+	 * @param x: x coordinate for this cell.
+	 * @param y: y coordinate for this cell.
+	 * @param value: CellState for this cell.
+	 */
+	void setCell(uint8_t id, int16_t x, int16_t y, CellState value);
+
+	/*
+	 * GridMap::getCell description
+	 *
+	 * This function is for setting specific cell's state.
+	 *
+	 * @param id: Map id
+	 * @param x: x coordinate for this cell.
+	 * @param y: y coordinate for this cell.
+	 * @return: CellState for this cell.
+	 */
+	CellState getCell(int id, int16_t x, int16_t y);
+
+	/*
+	 * This function is for setting cells around this specific cell with the parameter CellState.
+	 *
+	 * @param id: Map id
+	 * @param x: x coordinate for this cell.
+	 * @param y: y coordinate for this cell.
+	 * @param state: CellState for this cell.
+	 */
+	void setCells(uint8_t id, int16_t cell_x, int16_t cell_y, CellState state, int8_t offset);
+
+	/*
+	 * This function is for setting cells around this specific cell with the parameter CellState, but if the
+	 * origin cell state equals exception_state, it will not be overrode.
+	 *
+	 * @param id: Map id
+	 * @param x: x coordinate for this cell.
+	 * @param y: y coordinate for this cell.
+	 * @param state: CellState for this cell.
+	 * @param exception_state: Exception cell state for all these cells.
+	 */
+	void setSpecificCells(uint8_t id, int16_t cell_x, int16_t cell_y, CellState state, CellState exception_state,
+						  int8_t offset);
+
+	/*
+	 * This function is for copying the clean_map_ data of the source map to this GridMap instance.
+	 *
+	 * @param source_map: The source map instance.
+	 */
 	void copy(GridMap &source_map);
 
-/*
- * @author Alvin Xie/ Li Shao Yan
- * @brief Convert the ros map to grid map for the path algorithm.
- * @return None
- */
-	void convertFromSlamMap(float resolution_target, float threshold, const BoundingBox2& bound);
+	/*
+	 * This function is for converting the ros map into grid map.
+	 *
+	 * @author Alvin Xie/ Li Shao Yan
+	 * @param target_resolution: The resolution of the output data.
+	 * @param threshold: The percentage for judging the cell state.
+	 * @param bound: The data boundary for this conversion.
+	 */
+	void convertFromSlamMap(float target_resolution, float threshold, const BoundingBox2& bound);
 
+	/*
+	 * This function is for merging the source map into this GridMap instance.
+	 *
+	 * @author Austin Liu
+	 * @param source_map: Source GridMap instance.
+	 * @param add_slam_map_blocks_to_uncleaned: If this parameter is true, it will merge the cells with
+	 * SLAM_MAP_BLOCKED state in source map to cells with UNCLEANED state in this instance.
+	 * @param add_slam_map_blocks_to_cleaned: If this parameter is true, it will merge the cells with
+	 * SLAM_MAP_BLOCKED state in source map to cells with CLEANED state in this instance.
+	 * @param add_slam_map_blocks_to_cleaned: If this parameter is true, it will merge the cells with
+	 * SLAM_MAP_REACHABLE state in source map to this instance.
+	 * @param clear_map_blocks: If this parameter is true, it will merge the cells with SLAM_MAP_REACHABLE state
+	 * in source map to cells with all kinds of blocks(except cliff blocks) state in this instance.
+	 * @param clear_slam_map_blocks: If this parameter is true, it will merge the cells with SLAM_MAP_REACHABLE state
+	 * in source map to cells with SLAM_MAP_BLOCKED state in this instance.
+	 * @param clear_slam_map_blocks: If this parameter is true, it will merge the cells with SLAM_MAP_REACHABLE state
+	 * in source map to cells with BLOCKED_BUMPER or BLOCKED_LIDAR or BLOCKED_SLIP state in this instance.
+	 */
 	void merge(GridMap source_map, bool add_slam_map_blocks_to_uncleaned = false,
 			   bool add_slam_map_blocks_to_cleaned = false,
 			   bool add_slam_map_cleanable_area = false, bool clear_map_blocks = false,
 			   bool clear_slam_map_blocks = false,
-			   bool clear_bumper_and_lidar_blocks = false);
+			   bool clear_bumper_and_lidar_and_slip_blocks = false);
 
-	void slamMapToWorld(double origin_x_, double origin_y_, float resolution_, int16_t slam_map_x,
+	/*
+	 * This function is for calculating the real world coordinate from slam map coordinate.
+	 *
+	 * @author Alvin Xie
+	 * @param origin_x: Origin x coordinate of slam map.
+	 * @param origin_y: Origin y coordinate of slam map.
+	 * @param resolution: Resolution of slam map.
+	 * @param slam_map_x: x coordinate of slam map.
+	 * @param slam_map_y: y coordinate of slam map.
+	 * @param world_x: x coordinate of real world.
+	 * @param world_y: y coordinate of real world.
+	 */
+	void slamMapToWorld(double origin_x, double origin_y, float resolution, int16_t slam_map_x,
 						int16_t slam_map_y, double &world_x, double &world_y);
 
 	bool worldToSlamMap(double origin_x_, double origin_y_, float resolution_, uint32_t slam_map_width,
@@ -63,14 +140,9 @@ public:
 
 	void indexToCells(int size_x_, unsigned int index, unsigned int &mx, unsigned int &my);
 
-//	bool worldToCount(double &wx, double &wy, int32_t &cx, int32_t &cy);
-
 	void cellToWorld(double &worldX, double &worldY, int16_t &cellX, int16_t &cellY);
 
-	bool markRobot(const Cell_t& curr, uint8_t id);
-
-	bool trapMarkRobot(uint8_t id);
-
+	bool markRobot(const Cell_t& curr, uint8_t id,bool is_clean_rcon=true);
 
 	uint8_t saveSlip();
 
@@ -149,7 +221,7 @@ public:
  * @return	0 if the block is not cleaned
  *		1 if the block is cleaned
  */
-	int8_t isNotBlockAndCleaned(int16_t x, int16_t y);
+	bool isNotBlockAndCleaned(int16_t x, int16_t y);
 
 /*
  * Check a block is cleanable or not, a block is defined as have the same size of brush.
@@ -209,6 +281,12 @@ public:
 //	uint16_t dijkstraCountCleanedArea(Point_t curr, Cells &targets);
 //	void generateSPMAP(const Cell_t &curr, Cells &target_list);
 //	void generateSPMAP(const Cell_t &curr);
+
+
+	bool isFrontBlocked(Dir_t dir);
+	bool isFrontSlamBlocked(void);
+
+	BoundingBox2 generateBound();
 /*
  * Function to find the x/y range of the Map or wfMap, if the range is to small,
  * use the offset of those value to 3.
@@ -220,31 +298,11 @@ public:
  *
  * @return
  */
-
-	bool isFrontBlocked(Dir_t dir);
-//	int16_t getSize(){
-//		return MAP_SIZE_;
-//	};
-	bool isFrontSlamBlocked(void);
-
-	BoundingBox2 generateBound()
-	{
-		BoundingBox2 bound{{int16_t(g_x_min), int16_t(g_y_min)}, {g_x_max, g_y_max}};
-		return bound;
-	}
-
-	BoundingBox2 generateBound2()
-	{
-		return BoundingBox2{{int16_t(g_x_min - 1), int16_t(g_y_min - 1)},
-							   {static_cast<int16_t>(g_x_max + 1), static_cast<int16_t>(g_y_max + 1)}};
-	}
 	void getMapRange(uint8_t id, int16_t *x_range_min, int16_t *x_range_max, int16_t *y_range_min, int16_t *y_range_max);
 
-	bool isOutOfMap(const Cell_t &cell);
-	bool isOutOfTargetRange(const Cell_t &cell);
-	bool cellIsOutOfRange(Cell_t cell);
-	BoundingBox2 genRange();
-	bool pointIsPointingOutOfRange(Point_t point);
+	bool cellIsOutOfTargetRange(Cell_t cell);
+	BoundingBox2 genTargetRange();
+	bool pointIsPointingOutOfTargetRange(Point_t point);
 	void cellPreventOutOfRange(Cell_t &cell);
 
 	void colorPrint(const char *outString, int16_t y_min, int16_t y_max);
@@ -258,16 +316,9 @@ private:
 	uint8_t clean_map[MAP_SIZE][MAP_SIZE];
 	uint8_t cost_map[MAP_SIZE][MAP_SIZE];
 
-	int16_t g_x_min, g_x_max, g_y_min, g_y_max;
 	int16_t xRangeMin, xRangeMax, yRangeMin, yRangeMax;
-
-	// Cells that temporary save the c_blocks.
-
-//    int16_t MAP_SIZE_{};
 };
 
-/*wf_map is to record the wall follow path to caculate the isolate islands*/
 extern GridMap slam_grid_map;
-//extern GridMap android_grid_map;
 
 #endif /* __MAP_H */

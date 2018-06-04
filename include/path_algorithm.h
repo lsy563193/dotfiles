@@ -21,11 +21,12 @@ class GridMap;
 class IsTarget
 {
 public:
-	IsTarget(GridMap* map):map_(map) { };
+	IsTarget(GridMap* p_map,const BoundingBox2& bound):p_map_(p_map),target_bound_(bound) { };
     bool operator()(const Cell_t &c_it) ;
 
 private:
-	GridMap* map_;
+	GridMap* p_map_;
+	BoundingBox2 target_bound_;
 };
 
 class TargetVal {
@@ -193,13 +194,14 @@ public:
 				;
 	};
     bool is_pox_y(){
-		return curr_filter_->towardPos();
+		return curr_filter_ == &filter_top_of_y_axis_neg || curr_filter_ == &filter_top_of_y_axis_pos ? !curr_filter_->towardPos()
+																									  : curr_filter_->towardPos();
 	};
 
 private:
 	using pair_bb = std::tuple<BoundingBox2, BoundingBox2,Dir_t>;
 	std::unique_ptr<std::deque<BestTargetFilter*>> generateBounds(GridMap& map);
-	void optimizePath(GridMap &map, Cells &path,Dir_t last_dir);
+	void optimizePath(GridMap &map, Cells &path);
 
 	bool checkTrapped(GridMap &map, const Cell_t &curr_cell) override ;
 #if !USE_NEW_PATH_PLAN
@@ -281,9 +283,9 @@ public:
 	BestTargetFilter filter_next_line_neg{"filter_next_line_neg", target_next_line , range_next_line, false};
 
 	BestTargetFilter filter_pos_of_y_axis{"filter_pos_of_y_axis:", target_p3p, range_p3p, true,true};
-
+	//Note: top of y axis but follow wall to neg dir
 	BestTargetFilter filter_top_of_y_axis_pos{"filter_top_of_y_axis_pos", target_top_of_y_axis, range_top_of_y_axis , true};
-
+	//Note: top of y axis but follow wall to pos dir
 	BestTargetFilter filter_top_of_y_axis_neg{"filter_top_of_y_axis_neg", target_top_of_y_axis, range_top_of_y_axis , false};
 
 	BestTargetFilter filter_n3p{"filter_n3p:", target_p3p, range_p3p, false,true};
@@ -314,10 +316,11 @@ public:
 	SpotCleanPathAlgorithm();
 
 	bool generatePath(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &targets) override { };
-	bool generatePath(GridMap &map, const Point_t &curr, bool, Points &targets, const Points::iterator& );
+	bool generatePath(GridMap &map, const Point_t &curr, bool, Points &targets, Points::iterator& ,bool& is_close);
 
 private:
 
+//	int spot_running_{};
 	bool spot_running_{};
 //	bool event_detect_{};
 //	Points plan_path_remain_{};
@@ -376,6 +379,7 @@ public:
 	 */
 	Points getRestHomePoints();
 
+	void resetPoints();
 	/*
 	 * @author Austin Liu
 	 *
@@ -403,6 +407,7 @@ public:
 
 	bool isHomePointEmpty()
 	{
+		printf("home_points(%d)", home_points_.size());
 		return home_points_.empty();
 	}
 

@@ -277,29 +277,30 @@ Dir_t get_dir(const Cell_t& neighbor, const Cell_t& curr)
 	if (neighbor.x == curr.x)
 		return neighbor.y  > curr.y ? MAP_POS_Y : MAP_NEG_Y;
 }
-std::unique_ptr<Cells> points_to_cells(const std::unique_ptr<Points>& points)
+
+float cellToCount(int16_t i) {
+	return i * CELL_SIZE;
+}
+
+std::unique_ptr<Cells> points_to_cells(const Points& points)
 {
 	auto cells = make_unique<Cells>();
-	for(auto&& point :*points)
+	for(auto&& point :points)
 	{
 		cells->emplace_back(point.toCell());
 	}
 	return cells;
 };
 
-float cellToCount(int16_t i) {
-	return i * CELL_SIZE;
-}
-
-std::unique_ptr<Points> cells_generate_points(const std::unique_ptr<Cells>& path)
+std::unique_ptr<Points> cells_to_points(const Cells& path)
 {
 //	displayCellPath(*path);
 	auto  point_path = make_unique<Points>();
 	std::string debug_str;
-	if(!path->empty()){
-		for(auto&& it = path->begin(); it != path->end(); ++it) {
+	if(!path.empty()){
+		for(auto&& it = path.begin(); it != path.end(); ++it) {
 			Point_t target {cellToCount((*it).x),cellToCount((*it).y),0};
-			if(it == path->end()-1)
+			if(it == path.end()-1)
 			{
 				if(point_path->empty())
 					point_path->emplace_back(target);
@@ -320,7 +321,7 @@ std::unique_ptr<Points> cells_generate_points(const std::unique_ptr<Cells>& path
 		}
 	}
 	ROS_INFO("%s %d: it:%s, cell.back(%d,%d)",__FUNCTION__, __LINE__, debug_str.c_str(),
-			 path->back().x, path->back().y/*, path->back().th*/);
+			 path.back().x, path.back().y/*, path->back().th*/);
 	return point_path;
 }
 

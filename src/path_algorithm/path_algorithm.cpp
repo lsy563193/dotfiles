@@ -66,7 +66,7 @@ const Cell_t cell_direction_4[4]{{1,0},{-1,0},{0,1},{0,-1}};
 //	Cell_t corner1 ,corner2;
 //	auto path_cell = findShortestPath(map, curr.toCell(), target.toCell(),last_dir, false,false,corner1,corner2);
 //
-//	plan_path = *cells_generate_points(make_unique<Cells>(path_cell));
+//	plan_path = *cells_to_points(make_unique<Cells>(path_cell));
 //}
 
 //Cells APathAlgorithm::findShortestPath(GridMap &map, const Cell_t &start, const Cell_t &target,
@@ -408,7 +408,7 @@ bool APathAlgorithm::checkTrappedUsingDijkstra(GridMap &map, const Cell_t &curr_
 	};
 
 	auto found_unclean_target = dijkstra(map,getPosition().toCell(), targets, false,
-												 IsTarget(&map),
+												 IsTarget(&map, map.genTargetRange()),
 												 expand_condition);
 
 	if (found_unclean_target)
@@ -516,7 +516,7 @@ void APathAlgorithm::findPath(GridMap &map, const Cell_t &start, const Cell_t &t
 		for (auto i = 0; i < 4; i++) {
 			auto neighbor = iterator + cell_direction_[(last_i + i) % 4];
 //			printf("iterator(%d,%d)cost(%d,%d)\n", iterator.x, iterator.y, cost,map.getCell(COST_MAP, iterator.x, iterator.y));
-			if (map.isOutOfTargetRange(neighbor))
+			if (map.cellIsOutOfTargetRange(neighbor))
 				continue;
 
 			if (map.getCell(COST_MAP, neighbor.x, neighbor.y) == cost) {
@@ -644,17 +644,18 @@ isAccessable::isAccessable(GridMap *p_map, func_compare_two_t external_condition
 						   const BoundingBox2& bound)
 : bound_(bound), p_map_(p_map), external_condition_(external_condition) {
 		if (bound_.GetMinimum() == Cell_t{INT16_MAX, INT16_MAX} && bound_.GetMaximum() == Cell_t{INT16_MIN, INT16_MIN})
-			bound_ = p_map_->genRange();
+			bound_ = p_map_->genTargetRange();
 		if (external_condition_ == nullptr)
 			external_condition_ = [](const Cell_t &next, const Cell_t &neighbor) { return true; };
-//		ROS_INFO("bound_(%d,%d,%d,%d)",bound_.min.x,bound_.min.y,bound_.max.y,bound_.max.y );
+//		ROS_INFO("target_bound_(%d,%d,%d,%d)",target_bound_.min.x,target_bound_.min.y,target_bound_.max.y,target_bound_.max.y );
 	}
 
 bool isAccessable::operator()(const Cell_t &next, const Cell_t &neighbor) {
-		return bound_.Contains(neighbor) && !p_map_->cellIsOutOfRange(neighbor) &&
+		return bound_.Contains(neighbor) && !p_map_->cellIsOutOfTargetRange(neighbor) &&
 			   external_condition_(next, neighbor);
 }
 
 bool IsTarget::operator()(const Cell_t &c_it) {
-		return c_it.y % 2 == 0 && map_->getCell(CLEAN_MAP, c_it.x, c_it.y) == UNCLEAN ;
+		return c_it.y % 2 == 0 && p_map_->getCell(CLEAN_MAP, c_it.x, c_it.y) == UNCLEAN &&
+			   target_bound_.Contains(c_it);
 }
