@@ -336,7 +336,9 @@ bool MovementGoToCharger::isSwitch()
 	}
 	if (gtc_state_now_ == gtc_around_charger_station_init)
 	{
-		//wheel.move_forward(9, 9);
+		/*--- Can not call resetGoToChargerVariables() because go_home_dir_cnt_ shouldn't be reset. ---*/
+		turn_angle_ = 0;
+		back_distance_ = 0;
 		c_rcon.resetStatus();
 		ROS_INFO("%s, %d: Call Around_ChargerStation with dir = %d.", __FUNCTION__, __LINE__, around_charger_stub_dir);
 		gtc_state_now_ = gtc_around_charger_station;
@@ -360,6 +362,7 @@ bool MovementGoToCharger::isSwitch()
 			check_in_front_of_home = 0;
 			turn_angle_ = 180;
 			back_distance_ = 0.01;
+			dir_wrong_cnt_ = 0;
 			if(++go_home_change_dir_cnt_ > 1)
 				gtc_state_now_ = gtc_turn_for_charger_signal_init;
 			else

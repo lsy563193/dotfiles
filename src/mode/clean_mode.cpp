@@ -1031,14 +1031,14 @@ bool ACleanMode::isExit()
 		setNextMode(md_idle);
 		return true;
 	}
-
+/*
 	if (ev.cliff_all_triggered)
 	{
 		ROS_WARN("%s %d: Exit for ev.cliff_all_triggered.", __FUNCTION__, __LINE__);
 		setNextMode(md_idle);
 		ev.fatal_quit = true;
 		return true;
-	}
+	}*/
 
 	if (ev.key_clean_pressed || ev.key_long_pressed || s_wifi.receiveIdle()){
 		ROS_WARN("%s %d: Exit for remote key or clean key or long press clean key or wifi idle.", __FUNCTION__, __LINE__);
@@ -1762,7 +1762,8 @@ void ACleanMode::batteryLow(bool state_now, bool state_last)
 
 // ------------------State init--------------------
 bool ACleanMode::isSwitchByEventInStateInit() {
-	return checkEnterExceptionResumeState();
+	return false;
+//	return checkEnterExceptionResumeState();
 }
 
 bool ACleanMode::updateActionInStateInit() {

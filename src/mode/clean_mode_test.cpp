@@ -29,6 +29,11 @@ CleanModeTest::CleanModeTest(uint8_t mode)
 			sp_state->init();
 			action_i_ = ac_desk_test;
 			genNextAction();
+
+			// Init for map in case follow wall move type will not reach the map edge.
+			clean_map_.setCell(CLEAN_MAP, MAP_SIZE / 3, MAP_SIZE / 3, CLEANED);
+			clean_map_.setCell(CLEAN_MAP, -MAP_SIZE / 3, -MAP_SIZE / 3, CLEANED);
+
 			break;
 		}
 		case GYRO_TEST_MODE:
