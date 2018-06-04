@@ -802,7 +802,7 @@ bool CleanModeNav::updateActionInStateClean(){
 	bool ret = false;
 //	ROS_ERROR("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~hello");
 	sp_action_.reset();//to mark in destructor
-//	pubCleanMapMarkers(clean_map_, pointsGenerateCells(remain_path_));
+//	pubCleanMapMarkers(clean_map_, points_to_cells(remain_path_));
     if(!plan_path_.empty())
 	    old_dir_ = iterate_point_->dir;
 
@@ -820,10 +820,10 @@ bool CleanModeNav::updateActionInStateClean(){
 	}
 
 	if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
-		pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
+		pubCleanMapMarkers(clean_map_, *points_to_cells(plan_path_));
 		iterate_point_ = plan_path_.begin();
 //		plan_path_.pop_front();
-		displayCellPath(pointsGenerateCells(plan_path_));
+		displayCellPath(*points_to_cells(plan_path_));
 		auto npa = boost::dynamic_pointer_cast<NavCleanPathAlgorithm>(clean_path_algorithm_);
 
 		if ( old_dir_ != MAP_ANY && should_follow_wall && npa->should_follow_wall() )
@@ -1133,7 +1133,7 @@ bool CleanModeNav::updateActionInStateResumeLowBatteryCharge()
 //			iterate_point_ = plan_path_.begin();
 //			ROS_ERROR("start_point_.dir(%d)", iterate_point_->dir);
 ////			plan_path_.pop_front();
-//			displayCellPath(pointsGenerateCells(plan_path_));
+//			displayCellPath(points_to_cells(plan_path_));
 //			action_i_ = ac_linear;
 //			genNextAction();
 //			return true;

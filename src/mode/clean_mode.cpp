@@ -59,7 +59,7 @@ ACleanMode::ACleanMode()
 
 	MovementGoToCharger::is_turn_connect_failed_ = false;
 	resetPosition();
-	charger_pose_.clear();
+	charger_poses_.clear();
 	tmp_charger_pose_.clear();
 	c_rcon.resetStatus();
 	robot::instance()->initOdomPosition();
@@ -1121,7 +1121,7 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_mt) {
  * same pose(angle) before a specified dis before(SEARCH_BEFORE_DIS) the current pose
  * */
 	const int SEARCH_BEFORE_DIS{10};
-	if (distance > SEARCH_BEFORE_DIS && getNextMode() != cm_spot) {// closed
+	if (distance > SEARCH_BEFORE_DIS) {// closed
 		ROS_INFO("next_mode_i_(%d)",getNextMode());
 		ROS_INFO("mode_i_(%d)",mode_i_);
 		is_closed = true;
@@ -1156,7 +1156,23 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 			if (!isStateGoHomePoint())
 			{
 				if (checkChargerPos())
+				{
+					if(std::any_of(std::begin(cell_direction_),std::end(cell_direction_),[&](const Cell_t &c_it){
+						auto cell = c_it + getPosition().toCell();
+						return clean_map_.getCell(CLEAN_MAP, cell.x , cell.y) == BLOCKED_RCON;
+					}))
+					{
+						if(p_mt->isRconStop())
+						{
+							beeper.debugBeep(VALID);
+							ROS_ERROR("hit rcon");
+							clean_map_.print(getPosition().toCell(),CLEAN_MAP,Cells{});
+							return true;
+						}
+					}
+					c_rcon.resetStatus();
 					return false;
+				}
 				else
 					return p_mt->isRconStop();
 			}
@@ -1232,20 +1248,20 @@ bool ACleanMode::checkChargerPos()
 			if(found_charger_)
 			{
 				int counter=0;
-				for(Point_t charger_position:charger_pose_)
+				for(auto&& charger_position : charger_poses_)
 				{
 					if(getPosition().toCell().Distance(charger_position.toCell()) > DETECT_RANGE )
 						counter++;
 					else{
-						c_rcon.resetStatus();
+//						c_rcon.resetStatus();
 						return true;
 					}
-					if(counter >= charger_pose_.size())
+					if(counter >= charger_poses_.size())
 					{
 						if(estimateChargerPos(c_rcon.getStatus()))
 						{
 							INFO_CYAN("FOUND CHARGER");
-							c_rcon.resetStatus();
+//							c_rcon.resetStatus();
 							go_home_path_algorithm_->setHomePoint(getPosition());
 							if (!hasSeenChargerDuringCleaning())
 								setSeenChargerDuringCleaning();
@@ -1259,7 +1275,7 @@ bool ACleanMode::checkChargerPos()
 			else if(!found_charger_){
 				if(estimateChargerPos(c_rcon.getStatus())){
 					INFO_CYAN("FOUND CHARGER");
-					c_rcon.resetStatus();
+//					c_rcon.resetStatus();
 					go_home_path_algorithm_->setHomePoint(getPosition());
 					if (!hasSeenChargerDuringCleaning())
 						setSeenChargerDuringCleaning();
@@ -1441,7 +1457,7 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 
 			c_pose_.dir = iterate_point_->dir;
 			int16_t cell_distance = getPosition().toCell().Distance(c_pose_.toCell());
-			charger_pose_.push_back( c_pose_ );
+			charger_poses_.push_back( c_pose_ );
 			setChargerArea( c_pose_ );
 			ROS_INFO("\033[1;40;32m%s,%d,FOUND CHARGER direction %f,cur_angle = %f,angle_offset= %f, rcon_state = 0x%x, \033[0m",__FUNCTION__,__LINE__,direction,radian_to_degree(ranged_radian(getPosition().th)),radian_to_degree(angle_offset),rcon_value);
 			found_charger_ = true;
@@ -1491,7 +1507,7 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 							c_pose.th = poseA.th;
 							c_pose.dir = poseA.dir;
 							ROS_INFO("charger pose (%d,%d,%f) tmp_dist = %f,real_dist = %f",c_pose.toCell().x,c_pose.toCell().y,radian_to_degree(c_pose.th),tmp_dist,real_dist);
-							charger_pose_.push_back(c_pose);
+							charger_poses_.push_back(c_pose);
 							found_charger_ = true;
 							INFO_CYAN("found charger with rcon only");
 							setChargerArea( c_pose );
@@ -1520,7 +1536,7 @@ void ACleanMode::checkShouldMarkCharger(float angle_offset,float distance)
 		pose.SetX( cos(angle_offset)* distance  +  getPosition().GetX() );
 		pose.SetY( sin(angle_offset)* distance  +  getPosition().GetY() );
 		pose.th = ranged_radian( getPosition().th - (M_PI - angle_offset));
-		charger_pose_.push_back(pose);
+		charger_poses_.push_back(pose);
 		ROS_INFO("%s,%d, offset angle (%f),charger pose (%d,%d),th = %f ,dir = %d",__FUNCTION__,__LINE__, angle_offset,pose.toCell().GetX(),pose.toCell().GetY(),pose.th,pose.dir);
 		setChargerArea(pose);
 	}
@@ -1693,16 +1709,6 @@ void ACleanMode::setChargerArea(const Point_t charger_pos)
 	}
 	*/	
 
-}
-
-Cells ACleanMode::pointsGenerateCells(Points &targets)
-{
-//	displayCellPath(targets);
-	Cells path{};
-	for(const Point_t& point : targets) {
-		path.push_back(point.toCell());
-	}
-	return path;
 }
 
 // ------------------Handlers--------------------------
@@ -1890,8 +1896,8 @@ bool ACleanMode::updateActionInStateGoHomePoint()
 		// New path to home cell is generated.
 		iterate_point_ = plan_path_.begin();
 //		plan_path_.pop_front();
-		displayCellPath(pointsGenerateCells(plan_path_));
-		pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
+		displayCellPath(*points_to_cells(plan_path_));
+		pubCleanMapMarkers(clean_map_, *points_to_cells(plan_path_));
 		should_go_to_charger_ = false;
 		action_i_ = ac_linear;
 		genNextAction();
@@ -1983,7 +1989,7 @@ bool ACleanMode::updateActionInStateSpot()
     bool ret{};
 
     auto cpa = boost::dynamic_pointer_cast<SpotCleanPathAlgorithm>(clean_path_algorithm_);
-	if (cpa->generatePath(clean_map_, getPosition(), action_i_ == ac_linear, plan_path_,iterate_point_)) {
+	if (cpa->generatePath(clean_map_, getPosition(), action_i_ == ac_linear, plan_path_,iterate_point_,is_closed)) {
 		iterate_point_ = plan_path_.begin();
 		if ( action_i_ == ac_linear )
 			action_i_ = ac_follow_wall_right ;
@@ -2075,8 +2081,8 @@ bool ACleanMode::updateActionInStateExploration() {
 		action_i_ = ac_linear;
 		iterate_point_ = plan_path_.begin();
 		ROS_WARN("start_point_.dir(%d)", iterate_point_->dir);
-		displayCellPath(pointsGenerateCells(plan_path_));
-		pubCleanMapMarkers(clean_map_, pointsGenerateCells(plan_path_));
+		displayCellPath(*points_to_cells(plan_path_));
+		pubCleanMapMarkers(clean_map_, *points_to_cells(plan_path_));
 		genNextAction();
 		return true;
 	}
@@ -2260,7 +2266,7 @@ bool ACleanMode::isIsolate(const Cell_t& curr) {
 	}
 
 //	ROS_ERROR("ISOLATE MAP");
-	fw_tmp_map.print(curr, CLEAN_MAP,*points_to_cells(make_unique<Points>(passed_cell_path_)));
+	fw_tmp_map.print(curr, CLEAN_MAP,*points_to_cells(passed_cell_path_));
 	ROS_ERROR("minx(%d),miny(%d),maxx(%d),maxy(%d)",bound.min.x, bound.min.y,bound.max.x, bound.max.y);
 
 	auto cells = Cells{};

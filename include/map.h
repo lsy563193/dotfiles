@@ -142,7 +142,7 @@ public:
 
 	void cellToWorld(double &worldX, double &worldY, int16_t &cellX, int16_t &cellY);
 
-	bool markRobot(const Cell_t& curr, uint8_t id);
+	bool markRobot(const Cell_t& curr, uint8_t id,bool is_clean_rcon=true);
 
 	uint8_t saveSlip();
 

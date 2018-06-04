@@ -20,6 +20,8 @@ CleanModeSpot::CleanModeSpot()
 	clean_path_algorithm_.reset(new SpotCleanPathAlgorithm());
 	go_home_path_algorithm_.reset(new GoHomePathAlgorithm());
 	mode_i_ = cm_spot;
+	closed_count_limit_ = 1;
+	is_closed = false;
 	s_wifi.setWorkMode(cm_spot);
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 }
@@ -72,12 +74,12 @@ bool CleanModeSpot::isExit()
 bool CleanModeSpot::mapMark()
 {
 	ROS_INFO("%s,%d,passed_path",__FUNCTION__,__LINE__);
-	auto passed_path_cells = pointsGenerateCells(passed_cell_path_);
+	auto passed_path_cells = *points_to_cells(passed_cell_path_);
 	displayCellPath(passed_path_cells);
 
 	if (action_i_ == ac_linear) {
 //		PP_INFO();
-		setCleaned(pointsGenerateCells(passed_cell_path_));
+		setCleaned(*points_to_cells(passed_cell_path_));
 	}
 
 	if (sp_state == state_folllow_wall.get())
@@ -175,6 +177,22 @@ void CleanModeSpot::switchInStateSpot()
 {
 	action_i_ = ac_null;
 	sp_action_ = nullptr;
-	sp_state = nullptr;
-//	sp_state->init();
+		sp_state = state_go_home_point.get();
+	ROS_INFO("switchInStateSpot~~~~~~~~~~~~~~~");
+	if(!(go_home_path_algorithm_->isHomePointEmpty()))
+	{
+		ROS_INFO("home is not empty ,clear it");
+		go_home_path_algorithm_->resetPoints();
+		ROS_INFO("clean over");
+	}
+	go_home_path_algorithm_->initForGoHomePoint(clean_map_);
+	ROS_INFO("switchInStateSpot~~~~~~~~~~~~~~~");
+	go_home_path_algorithm_->getRestHomePoints();
+	sp_state->init();
+	genNextAction();
+}
+
+bool CleanModeSpot::markMapInNewCell() {
+	clean_map_.markRobot(getPosition().toCell(), CLEAN_MAP,false);
+	return true;
 }

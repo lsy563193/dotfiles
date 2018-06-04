@@ -316,10 +316,11 @@ public:
 	SpotCleanPathAlgorithm();
 
 	bool generatePath(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &targets) override { };
-	bool generatePath(GridMap &map, const Point_t &curr, bool, Points &targets, const Points::iterator& );
+	bool generatePath(GridMap &map, const Point_t &curr, bool, Points &targets, Points::iterator& ,bool& is_close);
 
 private:
 
+//	int spot_running_{};
 	bool spot_running_{};
 //	bool event_detect_{};
 //	Points plan_path_remain_{};
@@ -378,6 +379,7 @@ public:
 	 */
 	Points getRestHomePoints();
 
+	void resetPoints();
 	/*
 	 * @author Austin Liu
 	 *
@@ -405,6 +407,7 @@ public:
 
 	bool isHomePointEmpty()
 	{
+		printf("home_points(%d)", home_points_.size());
 		return home_points_.empty();
 	}
 

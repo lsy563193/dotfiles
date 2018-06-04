@@ -136,7 +136,7 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr_p, co
 	trend_pos = curr_filter_ != &filter_next_line_neg;
 	optimizePath(map, path);
 
-	plan_path = *cells_generate_points(make_unique<Cells>(path));
+	plan_path = *cells_to_points(path);
 
 	displayCellPath(path);
 	map.print(curr_,COST_MAP,path);

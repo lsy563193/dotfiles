@@ -400,7 +400,6 @@ public:
 	bool estimateChargerPos(uint32_t rcon_value);
 	void setChargerArea(const Point_t charge_pos);
 	bool checkChargerPos();
-	Cells pointsGenerateCells(Points &targets);
 
 	// For move types
 	bool moveTypeNewCellIsFinish(IMoveType *p_mt);
@@ -606,7 +605,7 @@ protected:
 	bool seen_charger_during_cleaning_{false};
 	bool go_home_for_low_battery_{false};
 	bool switch_is_off_{false};
-	Points charger_pose_;
+	Points charger_poses_;
 	bool found_charger_{false};
 	Points tmp_charger_pose_;
 	bool is_using_dust_box_{false};
@@ -819,7 +818,10 @@ public:
 	~CleanModeSpot();
 
 	bool mapMark() override;
+//	bool markRealTime() override;
+	bool markMapInNewCell() override;
 	bool isExit() override;
+
 //	void cliffAll(bool state_now, bool state_last) override;
 	void remoteClean(bool state_now, bool state_last) override;
 	void keyClean(bool state_now, bool state_last) override;

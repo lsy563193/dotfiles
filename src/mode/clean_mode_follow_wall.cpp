@@ -57,12 +57,12 @@ bool CleanModeFollowWall::mapMark() {
 	PP_WARN();
 	if (isStateGoHomePoint())
 	{
-		setCleaned(pointsGenerateCells(passed_cell_path_));
+		setCleaned(*points_to_cells(passed_cell_path_));
 		setBlocks(iterate_point_->dir);
 	}
 	else if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
 	{
-		setCleaned(pointsGenerateCells(passed_cell_path_));
+		setCleaned(*points_to_cells(passed_cell_path_));
 		setBlocks(iterate_point_->dir);
 		ROS_ERROR("-------------------------------------------------------");
 		auto start = *passed_cell_path_.begin();
