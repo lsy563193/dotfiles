@@ -13,6 +13,7 @@
 #include "robot_timer.h"
 #include "robot.hpp"
 #include "protocol/wifi_map_protocol.h"
+#include "log.h"
 
 #define CLOUD_DOMAIN_ID 5479
 #define CLOUD_SUBDOMAIN_ID 6369
@@ -65,7 +66,6 @@ bool S_Wifi::deinit()
 bool S_Wifi::init()
 {
 	robot_work_mode_ = wifi::WorkMode::IDLE;
-	INFO_BLUE(" wifi register msg... ");
 	//-----on reg device ,connect or disconnect-----
 	//regestory request
 	s_wifi_rx_.regOnNewMsgListener<wifi::RegDeviceRequestRxMsg>(
@@ -496,7 +496,6 @@ bool S_Wifi::init()
 						 __FUNCTION__,__LINE__, ctime(&new_calendar_time));
 			});
 	INFO_BLUE("register done ");
-
 	return true;
 }
 

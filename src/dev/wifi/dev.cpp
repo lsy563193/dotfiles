@@ -6,6 +6,7 @@
 #include <termios.h>
 #include <ros/ros.h>
 #include "wifi/dev.h"
+#include "log.h"
 
 namespace
 {

@@ -9,11 +9,50 @@
 #include <deque>
 #include "BoundingBox.h"
 
+using func_compare_t =  std::function<bool(const Cell_t &next)>;
+using func_compare_two_t =  std::function<bool(const Cell_t &neighbor,const Cell_t& next)>;
 extern const Cell_t cell_direction_[9];
+extern const Cell_t cell_direction_4[4];
 
 typedef std::deque<Cells> PathList;
 
 class GridMap;
+
+class IsTarget
+{
+public:
+	IsTarget(GridMap* p_map,const BoundingBox2& bound):p_map_(p_map),target_bound_(bound) { };
+    bool operator()(const Cell_t &c_it) ;
+
+private:
+	GridMap* p_map_;
+	BoundingBox2 target_bound_;
+};
+
+class TargetVal {
+public:
+	TargetVal(GridMap* p_map,CellState val):p_map_(p_map),val_(val) {};
+
+	bool operator()(const Cell_t& c_it);
+private:
+	GridMap* p_map_;
+	CellState val_;
+};
+
+class isAccessable {
+public:
+	isAccessable(GridMap *p_map,func_compare_two_t external_condition = nullptr,
+				 const BoundingBox2& bound_ = BoundingBox2{});
+
+
+	bool operator()(const Cell_t &next, const Cell_t &neighbor) ;
+
+private:
+	BoundingBox2 bound_{};
+	GridMap *p_map_{};
+	func_compare_two_t external_condition_{};
+};
+
 class APathAlgorithm
 {
 public:
@@ -22,6 +61,11 @@ public:
 	virtual bool checkTrapped(GridMap &map, const Cell_t &curr_cell) {return true;};
 
 	void findPath(GridMap &map, const Cell_t &start, const Cell_t &target, Cells &path, Dir_t last_i);
+
+	void flood_fill(const Cell_t& curr);
+	bool dijkstra(GridMap &map, const Cell_t &curr_cell, Cells &targets, bool is_stop, func_compare_t is_target,
+				  func_compare_two_t isAccessible);
+	uint16_t dijkstraCountCleanedArea(GridMap& map, Point_t curr, Cells &targets);
 	public:
 	/*
 	 * @author Patrick Chow
@@ -80,60 +124,34 @@ protected:
 	bool checkTrappedUsingDijkstra(GridMap &map, const Cell_t &curr_cell);
 };
 
-typedef BoundingBox2(*RangeFunction)(Cell_t&, Cell_t&, Cell_t&);
-
-class IsIncrease {
-public:
-	IsIncrease(bool is_toward_pos):is_toward_pos_(is_toward_pos){};
-
-	int operator()(const Cell_t &a, const Cell_t &b) {
-		return is_toward_pos_ ? a.y < b.y : a.y > b.y ;
-	};
-private:
-	bool is_toward_pos_ = true;
-};
+//typedef BoundingBox2(*RangeFunction)(const Cell_t&, const BoundingBox2& bound);
+using RangeFunction = std::function<BoundingBox2()>;
 
 class BestTargetFilter {
 public:
-	BestTargetFilter(RangeFunction range_function, int turn_count, bool is_toward_pos,bool turn_top_limit=false):range_function_(range_function), turn_count_(turn_count),is_toward_pos_(is_toward_pos),turn_top_limit_(turn_top_limit) {};
+	BestTargetFilter(std::string name,RangeFunction target_bound_func,RangeFunction range_bound_func,  bool is_toward_pos,bool is_forbit_turn=false):
+			name_(name), update_target_bound(target_bound_func),update_range_bound(range_bound_func),  is_toward_pos_(is_toward_pos), is_forbit_turn_(is_forbit_turn){};
 
-	void update(Cell_t& curr, Cell_t& min, Cell_t& max){
-		auto bound = range_function_(curr, min, max);
-		min_ = bound.min;
-		max_ = bound.max;
+	void displayName(){
+		std::cout << name_ << std::endl;
 	};
-	int operator()(const Cells &path) {
-		if(turn_count_ ==0) {
-			return std::is_sorted(path.begin(), path.end(), IsIncrease(is_toward_pos_));
-		}
-		else if(turn_count_ == 1){
-			auto point = std::is_sorted_until(path.begin(), path.end(), IsIncrease(!is_toward_pos_)) - 1;
-			if(!(point != path.begin() && point != path.end()-1 && std::is_sorted(point, path.end(), IsIncrease(is_toward_pos_))))
-				return false;
-			if(turn_top_limit_)
-			{
-				if(std::abs(point->y - path.front().y) >2)
-					return false;
-				if(std::abs(path.back().x - path.front().x) >5)
-					return false;
-			}
-			return true;
-		}
-		else/* if(turn_count_ ==-1)*/{//any turn
-			return true;
-		}
+	void updateTargetAndRangeBound(){
+		target_bound = update_target_bound();
+		range_bound = update_range_bound();
 	};
+
 	bool towardPos(){
-		return (turn_count_== 0 && is_toward_pos_)||(turn_count_== 1 && !is_toward_pos_);
+		return is_toward_pos_;
 	};
 //private:
 //	bool is_toward_pos_=false;
-	Cell_t min_;
-	Cell_t max_;
-	int turn_count_;
+	BoundingBox2 target_bound;
+	BoundingBox2 range_bound;
+	std::string name_;
 	bool is_toward_pos_{};
-	RangeFunction range_function_;
-	bool turn_top_limit_{false};
+	bool is_forbit_turn_{};
+	RangeFunction update_target_bound;
+	RangeFunction update_range_bound;
 };
 
 class NavCleanPathAlgorithm: public APathAlgorithm
@@ -152,7 +170,8 @@ class NavCleanPathAlgorithm: public APathAlgorithm
 	 * @return: bool, true if generating succeeds.
 	 */
 public:
-	bool generatePath(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &plan_path) override;
+	bool generatePath(GridMap &map, const Point_t &curr_p, const Dir_t &last_dir, Points &plan_path) override;
+	void adjustPosition(Points&  plan_path);
 	/*
 	 * @author Patrick Chow
 	 * @last modify by Austin Liu
@@ -164,153 +183,122 @@ public:
 	 *
 	 * @return: Cells path, the path to unclean area in the same lane.
 	 */
-#if !USE_NEW_PATH_PLAN
     bool should_follow_wall(){
-		return (		curr_filter_ == &filter_p0_1t_xp
-						||	curr_filter_ == &filter_p0_1t_xn
-						||	curr_filter_ == &filter_n0_1t_xp
-						||	curr_filter_ == &filter_n0_1t_xn
-						||	curr_filter_ == &filter_p2
-						||	curr_filter_ == &filter_p1
-						||	curr_filter_ == &filter_n2
-						||	curr_filter_ == &filter_n1);
+		return ( curr_filter_ == &filter_after_obstacle_pos
+				||	curr_filter_ == &filter_after_obstacle_neg
+				||	curr_filter_ == &filter_top_of_y_axis_neg
+				||	curr_filter_ == &filter_top_of_y_axis_pos
+				||	curr_filter_ == &filter_next_line_neg
+				||	curr_filter_ == &filter_next_line_pos
+		)
+				;
 	};
     bool is_pox_y(){
-		return curr_filter_->towardPos();
+		return curr_filter_ == &filter_top_of_y_axis_neg || curr_filter_ == &filter_top_of_y_axis_pos ? !curr_filter_->towardPos()
+																									  : curr_filter_->towardPos();
 	};
-#else
-	bool should_follow_wall(){
-		return pt_ == Y_AXIS_POS_NEXT || pt_ == Y_AXIS_NEG_NEXT || pt_ == CURR_LANE || pt_ == CURR_LANE_NEG;
-	};
-    bool is_pox_y(){
-		return pt_ == Y_AXIS_POS_NEXT;
-	};
-#endif
+
 private:
 	using pair_bb = std::tuple<BoundingBox2, BoundingBox2,Dir_t>;
-	std::unique_ptr<pair_bb> generateBounds(GridMap& map, const Cell_t& curr, int bound_i,Dir_t last_dir);
-	/*
-	 * @author Lin Shao Yue
-	 * @last modify by Austin Liu
-	 *
-	 * This function is for finding all possiable targets in the map, judging by the boundary between
-	 * cleaned and reachable unclean area.
-	 *
-	 * @param: GridMap map, it will use it's CLEAN_MAP data.
-	 * @param: Cell_t curr_cell, the current cell of robot.
-	 * @param: BoundingBox2 b_map, generate by map, for simplifying code.
-	 *
-	 * @return: Cells, a deque of possible targets.
-	 */
-//	Cells filterAllPossibleTargets(GridMap &map, const Cell_t &curr_cell, BoundingBox2 &b_map);
-
-	/*
-	 * @author Patrick Chow
-	 * @last modify by Austin Liu
-	 *
-	 * This function is for tracing the path from start cell to targets.
-	 *
-	 * @param: GridMap map, it will use it's CLEAN_MAP data.
-	 * @param: Cells target_list, input target list.
-	 * @param: Cell_t start, the start cell.
-	 *
-	 * @return: PathList, a deque of paths from start cell to the input targets.
-	 */
-//	void findPath(GridMap &map, const Cell_t &curr, const Cell_t &targets, Cells &path, int last_i);
-
-	/*
-	 * @author Patrick Chow
-	 * @last modify by Austin Liu
-	 *
-	 * This function is for adjusting the path away from obstacles while the cost and turning count is
-	 * still the same.
-	 *
-	 * @param: GridMap map, it will use it's CLEAN_MAP data.
-	 * @param: Cells path, the path from start cell to target cell.
-	 *
-	 * @return: Cells path, an equivalent path of input path which is most far away from the obstacles.
-	 */
+	std::unique_ptr<std::deque<BestTargetFilter*>> generateBounds(GridMap& map);
 	void optimizePath(GridMap &map, Cells &path);
-
-	/*
-	 * @author Patrick Chow
-	 * @last modify by Austin Liu
-	 *
-	 * This function is for selecting the best target in the input paths according to their path track.
-	 *
-	 * @param: GridMap map, it will use it's CLEAN_MAP data.
-	 * @param: PathLIst paths, the input paths.
-	 * @param: Cell_t curr_cell, the current cell of robot.
-	 *
-	 * @return: true if best target is selected.
-	 *          false if there is no target that match the condictions.
-	 *          Cell_t best_target, the selected best target.
-	 */
-	bool filterPathsToSelectBestPath(GridMap &map, const Cells &targets, const Cell_t &cell_curr, Cells &best_path, const Dir_t &last_dir);
 
 	bool checkTrapped(GridMap &map, const Cell_t &curr_cell) override ;
 #if !USE_NEW_PATH_PLAN
-	Cells findTargetInSameLane(GridMap &map, const Cell_t &curr_cell);
-//	RangeFunction range_0_xp = [](Cell_t& curr, Cell_t& min, Cell_t& max){
-//		return BoundingBox2{curr, Cell_t{max.x, curr.y}};
-//	};
-//	RangeFunction range_0_xn = [](Cell_t& curr, Cell_t& min, Cell_t& max){
-//		return BoundingBox2{Cell_t{min.x, curr.y}, curr};
-//	};
-	RangeFunction range_0_xp = [](Cell_t& curr, Cell_t& min, Cell_t& max){
-		return BoundingBox2{curr, Cell_t{max.x, curr.y}};
-	};
-	RangeFunction range_0_xn = [](Cell_t& curr, Cell_t& min, Cell_t& max){
-		return BoundingBox2{Cell_t{min.x, curr.y}, curr};
-	};
-	RangeFunction range_p2 = [](Cell_t& curr, Cell_t& min, Cell_t& max){
-		return BoundingBox2{Cell_t{min.x, (int16_t)(curr.y + 2)}, Cell_t{max.x, (int16_t)(curr.y + 2)}};
-	};
-	RangeFunction range_p3p = [](Cell_t& curr, Cell_t& min, Cell_t& max){
-		return BoundingBox2{Cell_t{min.x, (int16_t)(curr.y + 3)}, max};
-	};
-	RangeFunction range_p1 = [](Cell_t& curr, Cell_t& min, Cell_t& max){
-		return BoundingBox2{Cell_t{min.x, curr.y}, Cell_t{max.x, (int16_t)(curr.y+1)}};
-	};
-//	RangeFunction range_p_1t = [](Cell_t& curr, Cell_t& min, Cell_t& max){
-//		return BoundingBox2{Cell_t{min.x, curr.y}, max};
-//	};
-
-	RangeFunction range_n2 = [](Cell_t& curr, Cell_t& min, Cell_t& max){
-		return BoundingBox2{Cell_t{min.x, (int16_t)(curr.y-2)}, Cell_t{max.x, (int16_t)(curr.y-2)}};
-	};
-	RangeFunction range_n3n = [](Cell_t& curr, Cell_t& min, Cell_t& max){
-		return BoundingBox2{min, Cell_t{max.x, (int16_t)(curr.y-3)}};
+//	std::unique_ptr<Cells> findTargetInSameLane(GridMap &map, const Cell_t &curr_cell);
+/////////////////////////////////////////////////////////////////
+	RangeFunction range_curr_line = [&](){
+		return BoundingBox2{curr_filter_->target_bound.min, curr_filter_->target_bound.max};
 	};
 
-	RangeFunction range_n1 = [](Cell_t& curr, Cell_t& min, Cell_t& max){
-		return BoundingBox2{Cell_t{min.x, (int16_t)(curr.y-1)}, Cell_t{max.x, (int16_t)(curr.y-1)}};
+	RangeFunction range_next_line = [&](){
+		auto d_min_y = (curr_filter_->is_toward_pos_) ? curr_.y: curr_filter_->target_bound.min.y;
+		auto d_max_y = (curr_filter_->is_toward_pos_) ? curr_filter_->target_bound.max.y : curr_.y;
+		return BoundingBox2{Cell_t{curr_filter_->target_bound.min.x,d_min_y} , Cell_t{curr_filter_->target_bound.max.x,d_max_y}};
 	};
-//	RangeFunction range_n_1t = [](Cell_t& curr, Cell_t& min, Cell_t& max){
-//		return BoundingBox2{min, Cell_t{max.x, curr.y}};
-//	};
-	RangeFunction range_all = [](Cell_t& curr, Cell_t& min, Cell_t& max){
+
+	RangeFunction range_after_obstacle = [&](){
+		int16_t d_min_x = isPos(priority_dir) ? curr_.x : curr_filter_->target_bound.min.x;
+		int16_t d_max_x = isPos(priority_dir) ? curr_filter_->target_bound.max.x : curr_.x;
+		int16_t d_min_y = curr_filter_->is_toward_pos_ ? curr_.y : curr_.y-2;
+		int16_t d_max_y = curr_filter_->is_toward_pos_ ? curr_.y+2: curr_.y;
+		return BoundingBox2{Cell_t{d_min_x,d_min_y}, Cell_t{d_max_x, d_max_y}};
+	};
+	RangeFunction range_top_of_y_axis = [&](){
+		int16_t d_min_x = isPos(priority_dir) ? curr_.x : curr_filter_->target_bound.min.x;
+		int16_t d_max_x = isPos(priority_dir) ? curr_filter_->target_bound.max.x : curr_.x;
+		int16_t d_min_y = curr_filter_->is_toward_pos_ ? curr_.y-1 : curr_.y-2;
+		int16_t d_max_y = curr_filter_->is_toward_pos_ ? curr_.y+2 : curr_.y+1;
+		return BoundingBox2{Cell_t{d_min_x,d_min_y}, Cell_t{d_max_x, d_max_y}};
+	};
+	RangeFunction range_p3p = [&](){
+		int16_t dy = curr_filter_->towardPos() ? curr_.y: int16_t(curr_.y -1);
+		return BoundingBox2{Cell_t{map_bound.min.x, dy}, map_bound.max};
+	};
+////////////////////////////////////////////////////////////
+
+	RangeFunction target_curr_line = [&](){
+		Cell_t min = curr_filter_->towardPos() ? curr_ : Cell_t{map_bound.min.x, curr_.y};
+		Cell_t max = curr_filter_->towardPos() ? Cell_t{map_bound.max.x, curr_.y} : curr_;
 		return BoundingBox2{min, max};
 	};
+
+	RangeFunction target_after_obstacle = [&](){
+		int16_t dx1 = isPos(priority_dir) ? 3 : -5;
+		int16_t dx2 = isPos(priority_dir) ? 5 : -3;
+		return BoundingBox2{curr_ + Cell_t{dx1,0}, curr_ + Cell_t{dx2,0}};
+	};
+
+	RangeFunction target_next_line = [&](){
+		int16_t dy = curr_.y + (curr_filter_->towardPos() ? 2:-2);
+		return BoundingBox2{Cell_t{curr_bound.min.x, dy}, Cell_t{curr_bound.max.x, dy}};
+	};
+
+	RangeFunction target_p3p = [&](){
+		return BoundingBox2{Cell_t{map_bound.min.x, (int16_t)(curr_.y + 1)}, map_bound.max};
+	};
+
+	RangeFunction target_top_of_y_axis = [&](){
+		int16_t dy = curr_filter_->towardPos()? 2 : -2;
+		int16_t dx1 = (isPos(priority_dir)) ? 3 : -5;
+		int16_t dx2 = (isPos(priority_dir)) ? 5 : -3;
+		return BoundingBox2{curr_ + Cell_t{dx1, dy}, curr_+ Cell_t{dx2, dy}};
+	};
+
+	RangeFunction target_all =[&](){
+		return BoundingBox2{map_bound.min, map_bound.max};
+	};
+
 public:
-//	BestTargetFilter filter_0_xp{range_0_xp, 1, true};
-//	BestTargetFilter filter_0_xn{range_0_xn, 1, false};
-	BestTargetFilter filter_p0_1t_xp{range_0_xp , 1, true, true};
-	BestTargetFilter filter_p0_1t_xn{range_0_xn, 1, true, true};
-	BestTargetFilter filter_n0_1t_xp{range_0_xp , 1, false, true};
-	BestTargetFilter filter_n0_1t_xn{range_0_xn, 1, false, true};
-	BestTargetFilter filter_p4p{range_p3p, 0, true};
-	BestTargetFilter filter_p2{range_p2, 0, true};
-	BestTargetFilter filter_p1{range_p1, 0, true};
-	BestTargetFilter filter_p_1t{range_all,1,true};
-	BestTargetFilter filter_n2{range_n2 , 0, false};
-	BestTargetFilter filter_n4n{range_n3n, 0, false};
-	BestTargetFilter filter_n1{range_n1 , 0, false};
-	BestTargetFilter filter_n_1t{range_all, 1, false};
-	BestTargetFilter filter_p_1000t{range_all, 1000,true};
-	BestTargetFilter filter_n_1000t{range_all, 1000,false};
+	BestTargetFilter filter_curr_line_pos{"filter_curr_line_pos", target_curr_line, range_curr_line, true};
+
+	BestTargetFilter filter_curr_line_neg{"filter_curr_line_neg", target_curr_line, range_curr_line, false};
+
+	BestTargetFilter filter_after_obstacle_neg{"filter_after_obstacle_neg", target_after_obstacle, range_after_obstacle, false};
+
+	BestTargetFilter filter_after_obstacle_pos{"filter_after_obstacle_pos", target_after_obstacle, range_after_obstacle, true};
+
+	BestTargetFilter filter_next_line_pos{"filter_next_line_pos", target_next_line, range_next_line, true};
+
+	BestTargetFilter filter_next_line_neg{"filter_next_line_neg", target_next_line , range_next_line, false};
+
+	BestTargetFilter filter_pos_of_y_axis{"filter_pos_of_y_axis:", target_p3p, range_p3p, true,true};
+	//Note: top of y axis but follow wall to neg dir
+	BestTargetFilter filter_top_of_y_axis_pos{"filter_top_of_y_axis_pos", target_top_of_y_axis, range_top_of_y_axis , true};
+	//Note: top of y axis but follow wall to pos dir
+	BestTargetFilter filter_top_of_y_axis_neg{"filter_top_of_y_axis_neg", target_top_of_y_axis, range_top_of_y_axis , false};
+
+	BestTargetFilter filter_n3p{"filter_n3p:", target_p3p, range_p3p, false,true};
+
+	BestTargetFilter filter_short_path{"filter_short_path:", target_all, target_all, true};
+
 	BestTargetFilter* curr_filter_{};
 
+	BoundingBox2 map_bound;
+	BoundingBox2 curr_bound{};
+	Dir_t priority_dir;
+	bool trend_pos{true};
+	Cell_t curr_;
 #endif
 private:
 	int pt_;
@@ -328,10 +316,11 @@ public:
 	SpotCleanPathAlgorithm();
 
 	bool generatePath(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &targets) override { };
-	bool generatePath(GridMap &map, const Point_t &curr, bool, Points &targets, const Points::iterator& );
+	bool generatePath(GridMap &map, const Point_t &curr, bool, Points &targets, Points::iterator& ,bool& is_close);
 
 private:
 
+//	int spot_running_{};
 	bool spot_running_{};
 //	bool event_detect_{};
 //	Points plan_path_remain_{};
@@ -390,6 +379,7 @@ public:
 	 */
 	Points getRestHomePoints();
 
+	void resetPoints();
 	/*
 	 * @author Austin Liu
 	 *
@@ -417,6 +407,7 @@ public:
 
 	bool isHomePointEmpty()
 	{
+		printf("home_points(%d)", home_points_.size());
 		return home_points_.empty();
 	}
 
@@ -427,7 +418,8 @@ public:
 	 * home point.
 	 */
 	void initForGoHomePoint(GridMap &map);
-private:
+
+protected:
 
 	/*
 	 * @author Austin Liu
@@ -500,7 +492,9 @@ private:
 
 	Points handleResult(bool generate_finish, Cells plan_path_cells, Point_t curr, GridMap &map);
 
-	bool switchHomePoint();
+	bool switchHomePoint(GridMap &map, const Point_t &curr);
+
+	virtual void getNextWay(GridMap &map, const Point_t &curr);
 
 	typedef enum
 	{
@@ -511,7 +505,7 @@ private:
 		GO_HOME_WAY_NUM
 	}GoHomeWay_t;
 
-	GoHomeWay_t home_way_index_{GoHomeWay_t::THROUGH_CLEANED_AREA};
+	GoHomeWay_t home_way_index_{GoHomeWay_t::GO_HOME_WAY_NUM};
 //	int home_point_index_[GO_HOME_WAY_NUM]{};
 	Points home_points_{};
 	Point_t start_point_{0, 0, 0};
@@ -521,4 +515,12 @@ private:
 	bool back_to_start_point_{false};
 };
 
+class FollowWallModeGoHomePathAlgorithm: public GoHomePathAlgorithm
+{
+public:
+	FollowWallModeGoHomePathAlgorithm() = default;
+
+private:
+	void getNextWay(GridMap &map, const Point_t &curr);
+};
 #endif //PP_PATH_ALGORITHM_H

@@ -27,7 +27,7 @@ void Vacuum::stop(){
 void Vacuum::setSpeed(uint32_t S)
 {
 	// Set the power of BLDC, S should be in range(0, 100).
-	S = S < 100 ? S : 100;
+	S = S < VacSpeed::vac_speed_max ? S : VacSpeed::vac_speed_max;
 	serial.setSendData(CTL_VACCUM_PWR, S & 0xff);
 }
 

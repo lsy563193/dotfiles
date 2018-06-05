@@ -28,6 +28,7 @@ FILE(GLOB PP_SRC
 
 	src/appointment.cpp
 	src/robot_timer.cpp
+	src/log.cpp
 
 	src/mode/state/state.cpp
 	src/mode/state/state_init.cpp

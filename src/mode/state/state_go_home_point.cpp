@@ -26,6 +26,8 @@ void StateGoHomePoint::init(){
 									: vacuum.setForCurrentMode(Vacuum::VacMode::vac_low_mode);
 		s_wifi.setWorkMode(Mode::cm_exploration);
 		s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
+	}else if (robot::instance()->getRobotWorkMode() == Mode::cm_spot)
+	{
 	}
 	else
 	{

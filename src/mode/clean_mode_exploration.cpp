@@ -22,7 +22,6 @@ CleanModeExploration::CleanModeExploration()
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
 	go_home_path_algorithm_.reset(new GoHomePathAlgorithm());
 	error_marker_.clear();
-	clean_map_.mapInit();
 	obs.control(OFF);
 
 	//clear real time map which store in cloud....
@@ -102,11 +101,11 @@ bool CleanModeExploration::isExit()
 bool CleanModeExploration::mapMark()
 {
 	clean_map_.merge(slam_grid_map, true, true, false, false, false, false);
-	clean_map_.setCircleMarkers(getPosition(),10,CLEANED,error_marker_);
+	clean_map_.setCircleMarkers(getPosition(),8,CLEANED,error_marker_);
 	resetErrorMarker();
 	setBlocks(iterate_point_->dir);
 	if(action_i_ == ac_linear)
-		passed_path_.clear();
+		passed_cell_path_.clear();
 	return false;
 }
 
@@ -181,7 +180,7 @@ void CleanModeExploration::remoteMax(bool state_now, bool state_last)
 }
 /*void CleanModeExploration::printMapAndPath()
 {
-	clean_path_algorithm_->displayCellPath(pointsGenerateCells(passed_path_));
+	clean_path_algorithm_->displayCellPath(points_to_cells(passed_cell_path_));
 	clean_map_.print(CLEAN_MAP,getPosition().toCell().x,getPosition().toCell().y);
 }*/
 
@@ -238,7 +237,7 @@ bool CleanModeExploration::moveTypeFollowWallIsFinish(IMoveType *p_move_type, bo
 	if(action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
 	{
 		auto p_mt = dynamic_cast<MoveTypeFollowWall *>(p_move_type);
-		return p_mt->isBlockCleared(clean_map_, passed_path_);
+		return p_mt->isBlockCleared(clean_map_, passed_cell_path_);
 	}
 	return false;
 }
@@ -251,7 +250,7 @@ bool CleanModeExploration::markMapInNewCell() {
 
 void CleanModeExploration::resetErrorMarker() {
 	//set unclean to map
-	ROS_INFO("%s,%d,size:%d",__FUNCTION__,__LINE__,error_marker_.size());
+//	ROS_INFO("%s,%d,size:%d",__FUNCTION__,__LINE__,error_marker_.size());
 	auto time = ros::Time::now().toSec();
 	for(auto ite = error_marker_.begin();ite != error_marker_.end();ite++){
 		if(error_marker_.empty())

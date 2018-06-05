@@ -103,6 +103,7 @@ public:
 	bool isFinish() override;
 
 private:
+	uint8_t  rcon_disappear_count{0};
 	uint32_t rcon_status;
 	int32_t left_speed_{};
 	int32_t right_speed_{};
@@ -302,6 +303,7 @@ public:
 
 	void adjustSpeed(int32_t&, int32_t&) override ;
 	bool isFinish() override;
+	void resetResumeTime(void);
 
 private:
 	double resume_wheel_start_time_;
@@ -357,6 +359,7 @@ public:
 	}
 
 private:
+	bool battery_full_{false};
 	bool battery_full_and_sleep_{false};
 	double battery_full_start_time_{0};
 	bool directly_charge_{false};

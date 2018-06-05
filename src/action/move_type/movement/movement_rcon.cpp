@@ -64,7 +64,13 @@ void MovementRcon::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 
 bool MovementRcon::isFinish() {
 	sp_mt_->RconTrigger();
-	return (rcon_status == 0 && seen_charger_counter_ == 0) || sp_mt_->isFinishForward();
+	if(rcon_status == 0 && seen_charger_counter_ == 0)
+		rcon_disappear_count++;
+	else
+		rcon_disappear_count = 0;
+	if(rcon_disappear_count >= 3)
+		ROS_INFO("%s,%d rcon_disappear_count:%d",__FUNCTION__,__LINE__,rcon_disappear_count);
+	return rcon_disappear_count >= 3 || sp_mt_->isFinishForward();
 }
 
 MovementRcon::MovementRcon(bool is_left) {

@@ -19,7 +19,7 @@ CleanModeFollowWall::CleanModeFollowWall()
 //	diff_timer_ = WALL_FOLLOW_TIME;
 	speaker.play(VOICE_CLEANING_WALL_FOLLOW, false);
 	clean_path_algorithm_.reset(new WFCleanPathAlgorithm);
-	go_home_path_algorithm_.reset(new GoHomePathAlgorithm());
+	go_home_path_algorithm_.reset(new FollowWallModeGoHomePathAlgorithm());
 	closed_count_limit_ = 1;
 	mode_i_ = cm_wall_follow;
 	s_wifi.setWorkMode(cm_wall_follow);
@@ -53,29 +53,29 @@ CleanModeFollowWall::~CleanModeFollowWall()
 }
 
 bool CleanModeFollowWall::mapMark() {
-	displayPointPath(passed_path_);
+	displayPointPath(passed_cell_path_);
 	PP_WARN();
 	if (isStateGoHomePoint())
 	{
-		setCleaned(pointsGenerateCells(passed_path_));
+		setCleaned(*points_to_cells(passed_cell_path_));
 		setBlocks(iterate_point_->dir);
 	}
 	else if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
 	{
-		setCleaned(pointsGenerateCells(passed_path_));
+		setCleaned(*points_to_cells(passed_cell_path_));
 		setBlocks(iterate_point_->dir);
 		ROS_ERROR("-------------------------------------------------------");
-		auto start = *passed_path_.begin();
-		passed_path_.erase(std::remove_if(passed_path_.begin(),passed_path_.end(),[&start](Point_t& it){
+		auto start = *passed_cell_path_.begin();
+		passed_cell_path_.erase(std::remove_if(passed_cell_path_.begin(),passed_cell_path_.end(),[&start](Point_t& it){
 			return it.toCell() == start.toCell();
-		}),passed_path_.end());
-		displayPointPath(passed_path_);
+		}),passed_cell_path_.end());
+		displayPointPath(passed_cell_path_);
 		ROS_ERROR("-------------------------------------------------------");
-		setFollowWall(clean_map_, action_i_ == ac_follow_wall_left, passed_path_);
+		setFollowWall(clean_map_, action_i_ == ac_follow_wall_left, passed_cell_path_);
 	}
 	clean_map_.markRobot(getPosition().toCell(), CLEAN_MAP);
 	clean_map_.print(getPosition().toCell(), CLEAN_MAP, Cells{getPosition().toCell()});
-	passed_path_.clear();
+	passed_cell_path_.clear();
 	return false;
 }
 
@@ -246,5 +246,10 @@ void CleanModeFollowWall::switchInStateFollowWall() {
 	sp_state->init();
 	action_i_ = ac_null;
 	genNextAction();
+}
+
+bool CleanModeFollowWall::markMapInNewCell()
+{
+	clean_map_.markRobot(getPosition().toCell(), CLEAN_MAP);
 }
 

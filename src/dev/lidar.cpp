@@ -1166,51 +1166,10 @@ void Lidar::checkRobotSlipByLidar() {
 	last_slip_scan_frame_.push_back(tmp_scan_data);
 }
 
-void Lidar::checkRobotSlipByGyro() {
-	static float angle = 0;
-	static double time = 0;
-	auto f_range = [&](float angle){
-		if(angle < 0)
-			angle += 360;
-		return angle;
-	};
-	auto f_reset = [&](){
-		angle = 0;
-		time = 0;
-		lidar.slip_by_gyro_status_ = false;
-	};
-
-	if(fabs(wheel.getLeftWheelActualSpeed() - wheel.getRightWheelActualSpeed()) > 0.05)
-	{
-		if(time == 0 && angle == 0) {
-			time = ros::Time::now().toSec();
-			angle = f_range(gyro.getAngleY());
-		}
-
-		if(ros::Time::now().toSec() - time > 2)
-		{
-			ROS_INFO("%s %d: del_speed:%f,del_time:%f,del_angle:%f,now:%f,angle:%f",__FUNCTION__,__LINE__,
-								fabs(wheel.getLeftWheelActualSpeed() - wheel.getRightWheelActualSpeed()),
-								ros::Time::now().toSec() - time,fabs(f_range(gyro.getAngleY()) - angle),f_range(gyro.getAngleY()),angle);
-			if(fabs(f_range(gyro.getAngleY()) - angle) < 10)
-			{
-				lidar.slip_by_gyro_status_ = true;
-				ROS_WARN("Robot slip by gyro");
-			}
-			else
-				f_reset();
-		}
-	}
-	else
-		f_reset();
-
-
-}
 bool Lidar::isRobotSlip()
 {
-	return slip_by_lidar_status_ || slip_by_gyro_status_;
+	return slip_by_lidar_status_ || gyro.getSlipByGyroStatus();
 }
-
 
 int Lidar::compLaneDistance()
 {
