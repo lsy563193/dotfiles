@@ -68,7 +68,8 @@ bool MovementRcon::isFinish() {
 		rcon_disappear_count++;
 	else
 		rcon_disappear_count = 0;
-	ROS_ERROR("rcon_disappear_count:%d",rcon_disappear_count);
+	if(rcon_disappear_count >= 3)
+		ROS_INFO("%s,%d rcon_disappear_count:%d",__FUNCTION__,__LINE__,rcon_disappear_count);
 	return rcon_disappear_count >= 3 || sp_mt_->isFinishForward();
 }
 
