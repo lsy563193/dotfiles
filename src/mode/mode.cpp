@@ -116,7 +116,7 @@ bool Mode::isExceptionTriggered()
 		ROS_WARN("%s %d: Robot stuck.", __FUNCTION__, __LINE__);
 	}
 	if (ev.oc_brush_main)
-		ROS_WARN("%s %d: Main bursh oc.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Main brush oc.", __FUNCTION__, __LINE__);
 	if (is_wheel_cliff_triggered)
 		ROS_WARN("%s %d: Wheel cliff triggered.", __FUNCTION__, __LINE__);
 	if(ev.gyro_error)

@@ -336,7 +336,9 @@ bool MovementGoToCharger::isSwitch()
 	}
 	if (gtc_state_now_ == gtc_around_charger_station_init)
 	{
-		//wheel.move_forward(9, 9);
+		/*--- Can not call resetGoToChargerVariables() because go_home_dir_cnt_ shouldn't be reset. ---*/
+		turn_angle_ = 0;
+		back_distance_ = 0;
 		c_rcon.resetStatus();
 		ROS_INFO("%s, %d: Call Around_ChargerStation with dir = %d.", __FUNCTION__, __LINE__, around_charger_stub_dir);
 		gtc_state_now_ = gtc_around_charger_station;
@@ -360,6 +362,7 @@ bool MovementGoToCharger::isSwitch()
 			check_in_front_of_home = 0;
 			turn_angle_ = 180;
 			back_distance_ = 0.01;
+			dir_wrong_cnt_ = 0;
 			if(++go_home_change_dir_cnt_ > 1)
 				gtc_state_now_ = gtc_turn_for_charger_signal_init;
 			else
@@ -657,7 +660,7 @@ bool MovementGoToCharger::isSwitch()
 			receive_code = c_rcon.getAll();
 			if(receive_code)
 			{
-				if(receive_code&RconFR_HomeT && receive_code&RconFL_HomeT)
+				if(receive_code&(RconFR_HomeT|RconFL_HomeT))
 				{
 					position_far = false;
 					ROS_DEBUG("%s, %d: Robot face HomeT, position_far = false.", __FUNCTION__, __LINE__);
@@ -919,8 +922,13 @@ void MovementGoToCharger::getTurnBackInfo(double &turn_radian, float &back_dista
 
 void MovementGoToCharger::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 {
+	/*--- stop wheels when touch charge stub ---*/
+	if(charger.isOnStub())
+	{
+		l_speed = r_speed = 0;
+	}
 	/*---check if near charger station---*/
-	if (gtc_state_now_ == gtc_check_near_charger_station)
+	else if (gtc_state_now_ == gtc_check_near_charger_station)
 	{
 		wheel.setDirectionForward();
 		l_speed = r_speed = 0;
@@ -1982,8 +1990,14 @@ void MovementGoToCharger::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 
 bool MovementGoToCharger::isFinish()
 {
-	auto ret = charger.getChargeStatus() || _isStop();
+	if(charger.isOnStub())
+		ev.charge_detect = true;
+
+	auto ret = ev.charge_detect || _isStop();
 	if(ret)
+	{
 		ROS_WARN("%s %d: Charger detected or _isStop()", __FUNCTION__, __LINE__);
+		wheel.stop();
+	}
 	return ret;
 }

@@ -3,7 +3,7 @@
 //
 
 #include <action.hpp>
-#include "dev.h"
+#include "lidar.hpp"
 
 ActionOpenGyroAndLidar::ActionOpenGyroAndLidar() {
 	ROS_WARN("%s %d: Enter action open gyro and lidar.", __FUNCTION__, __LINE__);

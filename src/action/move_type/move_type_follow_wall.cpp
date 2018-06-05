@@ -106,13 +106,26 @@ bool MoveTypeFollowWall::isFinish()
 	auto p_cm = dynamic_cast<ACleanMode*> (sp_mode_);
 
 	auto is_trapped = p_cm->is_trapped_;
-	int dijkstra_cleaned_count = 0;
+//	int dijkstra_cleaned_count = 0;
 	if(is_trapped) {//check if trapped in a small area
 //		int count;
-		p_cm->clean_map_.count_if(getPosition().toCell(), [&](Cell_t c_it) {
-			return (p_cm->clean_map_.getCell(CLEAN_MAP, c_it.x, c_it.y) == CLEANED);
-		},dijkstra_cleaned_count);
-		if ((dijkstra_cleaned_count < TRAP_IN_SMALL_AREA_COUNT) || (p_cm->passed_path_.size() < 10 && dijkstra_cleaned_count <	100))
+//		p_cm->clean_map_.count_if(getPosition().toCell(), [&](Cell_t c_it) {
+//			return (p_cm->clean_map_.getCell(CLEAN_MAP, c_it.x, c_it.y) == CLEANED);
+//		},dijkstra_cleaned_count);
+
+		Cells targets;
+		auto dijkstra_cleaned_count2 = p_cm->clean_path_algorithm_->dijkstraCountCleanedArea(p_cm->clean_map_, getPosition(), targets);
+//		if (1.0 * abs(dijkstra_cleaned_count2 - dijkstra_cleaned_count) / dijkstra_cleaned_count > 0.1)
+//		{
+//			ROS_ERROR_COND(1 ,
+//						   "%s %d: dijkstra_cleaned_count2 %d, dijkstra_cleaned_count %d, please inform Austin.",
+//						   __FUNCTION__, __LINE__, dijkstra_cleaned_count2, dijkstra_cleaned_count);
+//			Cells cells;
+//			p_cm->clean_map_.print(getPosition().toCell(), CLEAN_MAP, cells);
+//		}
+
+//		if ((dijkstra_cleaned_count < TRAP_IN_SMALL_AREA_COUNT) || (p_cm->passed_cell_path_.size() < 10 && dijkstra_cleaned_count <	100))
+		if ((dijkstra_cleaned_count2 < TRAP_IN_SMALL_AREA_COUNT) || (p_cm->passed_cell_path_.size() < 10 && dijkstra_cleaned_count2 < 100))
 			is_trapped_in_small_area_ = true;
 		else
 			is_trapped_in_small_area_ = false;
@@ -120,7 +133,7 @@ bool MoveTypeFollowWall::isFinish()
 		is_trapped_in_small_area_ = false;
 	}
 
-	if (movement_i_ != mm_turn && p_cm->clean_map_.pointIsPointingOutOfRange(getPosition()))
+	if (movement_i_ != mm_turn && p_cm->clean_map_.pointIsPointingOutOfTargetRange(getPosition()))
 	{
 		ROS_WARN("%s %d: robot(%d, %d) pointing out of range.", __FUNCTION__, __LINE__, getPosition().toCell().x,
 						 getPosition().toCell().y);
@@ -162,7 +175,11 @@ bool MoveTypeFollowWall::isFinish()
 			{
 				if (ev.rcon_status) {
 					if (p_cm->go_home_path_algorithm_ != nullptr)
+					{
 						p_cm->go_home_path_algorithm_->setHomePoint(getPosition());
+						if (!p_cm->hasSeenChargerDuringCleaning())
+							p_cm->setSeenChargerDuringCleaning();
+					}
 					p_cm->saveBlocks();
 					movement_i_ = mm_rcon;
 					sp_movement_.reset(new MovementRcon(is_left_));

@@ -642,11 +642,11 @@ std::unique_ptr<T> make_unique(Args&&... args)
     return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
 
-std::unique_ptr<Cells> points_to_cells(const std::unique_ptr<Points>& points);
-std::unique_ptr<Points> cells_generate_points(const std::unique_ptr<Cells>& path);
+std::unique_ptr<Cells> points_to_cells(const Points& points);
+std::unique_ptr<Points> cells_to_points(const Cells& path);
 
 void displayCellPath(const Cells &path);
 void displayPointPath(const Points &point_path);
 void displayTargetList(const Cells &target_list);
-
+bool is_opposite_dir(int l, int r);
 #endif

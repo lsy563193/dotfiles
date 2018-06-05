@@ -40,12 +40,7 @@ MovementExceptionResume::MovementExceptionResume(int last_action)
 		stuck_start_turn_time_ = 0;
 	}
 
-	resume_wheel_start_time_ = ros::Time::now().toSec();
-	resume_main_bursh_start_time_ = ros::Time::now().toSec();
-	resume_vacuum_start_time_ = ros::Time::now().toSec();
-	resume_lidar_start_time_ = ros::Time::now().toSec();
-	resume_stuck_start_time_ = ros::Time::now().toSec();
-	resume_gyro_start_time_ = ros::Time::now().toSec();
+	resetResumeTime();
 }
 
 MovementExceptionResume::~MovementExceptionResume()
@@ -580,6 +575,7 @@ bool MovementExceptionResume::isFinish()
 						{
 							ROS_WARN("%s %d: Triggered cliff jam during resuming bumper.", __FUNCTION__, __LINE__);
 							ev.cliff_jam = true;
+							resetResumeTime();
 							bumper_jam_state_ = 1;
 							wheel_resume_cnt_ = 0;
 							g_cliff_cnt = 0;
@@ -605,6 +601,7 @@ bool MovementExceptionResume::isFinish()
 					{
 						ROS_WARN("%s %d: Triggered cliff jam during resuming bumper.", __FUNCTION__, __LINE__);
 						ev.cliff_jam = true;
+						resetResumeTime();
 						bumper_jam_state_ = 1;
 						wheel_resume_cnt_ = 0;
 						g_cliff_cnt = 0;
@@ -652,6 +649,7 @@ bool MovementExceptionResume::isFinish()
 						{
 							ROS_WARN("%s %d: Triggered cliff jam during resuming bumper.", __FUNCTION__, __LINE__);
 							ev.cliff_jam = true;
+							resetResumeTime();
 							lidar_bumper_jam_state_ = 1;
 							wheel_resume_cnt_ = 0;
 							g_cliff_cnt = 0;
@@ -677,6 +675,7 @@ bool MovementExceptionResume::isFinish()
 					{
 						ROS_WARN("%s %d: Triggered cliff jam during resuming bumper.", __FUNCTION__, __LINE__);
 						ev.cliff_jam = true;
+						resetResumeTime();
 						lidar_bumper_jam_state_ = 1;
 						wheel_resume_cnt_ = 0;
 						g_cliff_cnt = 0;
@@ -723,6 +722,7 @@ bool MovementExceptionResume::isFinish()
 						{
 							ROS_WARN("%s %d: Triggered cliff jam during resuming tilt.", __FUNCTION__, __LINE__);
 							ev.cliff_jam = true;
+							resetResumeTime();
 							tilt_jam_state_ = 1;
 							wheel_resume_cnt_ = 0;
 							g_cliff_cnt = 0;
@@ -748,6 +748,7 @@ bool MovementExceptionResume::isFinish()
 					{
 						ROS_WARN("%s %d: Triggered cliff jam during resuming tilt.", __FUNCTION__, __LINE__);
 						ev.cliff_jam = true;
+						resetResumeTime();
 						tilt_jam_state_ = 1;
 						wheel_resume_cnt_ = 0;
 						g_cliff_cnt = 0;
@@ -931,3 +932,12 @@ bool MovementExceptionResume::isFinish()
 	return ev.fatal_quit;
 }
 
+void MovementExceptionResume::resetResumeTime(void)
+{
+	resume_wheel_start_time_ = ros::Time::now().toSec();
+	resume_main_bursh_start_time_ = ros::Time::now().toSec();
+	resume_vacuum_start_time_ = ros::Time::now().toSec();
+	resume_lidar_start_time_ = ros::Time::now().toSec();
+	resume_stuck_start_time_ = ros::Time::now().toSec();
+	resume_gyro_start_time_ = ros::Time::now().toSec();
+}
