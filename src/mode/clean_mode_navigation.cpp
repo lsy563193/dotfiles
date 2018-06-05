@@ -471,7 +471,9 @@ void CleanModeNav::remoteClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: remote clean.", __FUNCTION__, __LINE__);
 
-//	beeper.beepForCommand(VALID);
+	if (isStateCharge())
+		// Beep before back from charger.
+		beeper.beepForCommand(VALID);
 	wheel.stop();
 	ev.key_clean_pressed = true;
 	remote.reset();

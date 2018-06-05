@@ -189,6 +189,7 @@ bool MoveTypeFollowWall::isFinish()
 					ROS_WARN("%s,%d, ev.cliff_triggered(%d)!!!",__FUNCTION__, __LINE__, ev.cliff_triggered);
 					movement_i_ = mm_stay;
 					sp_movement_.reset(new MovementStay(CLIFF_STAY_TIME_));
+					status_after_cliff_ = true;
 				}
 				else{
 					p_cm->saveBlocks();
@@ -229,12 +230,16 @@ bool MoveTypeFollowWall::isFinish()
 			ROS_INFO("%s,%d, mt_fw",__FUNCTION__, __LINE__);
 			if (!handleMoveBackEventRealTime(p_cm)) {
 				ROS_INFO("%s,%d, mt_fw",__FUNCTION__, __LINE__);
+				if (cliff.getStatus() == 0x00 && status_after_cliff_ == true) {
+					ev.cliff_triggered = 0;
+				}
 				auto turn_angle = getTurnRadian(false);
 				turn_target_radian_ = getPosition().addRadian(turn_angle).th;
 				resetTriggeredValue();
 				if (is_stop_follow_wall_after_tilt_) {
 					ROS_INFO("%s,%d, mt_fw",__FUNCTION__, __LINE__);
 					is_stop_follow_wall_after_tilt_ = false;
+					status_after_cliff_ = false;
 					return true;
 				}
 
@@ -246,6 +251,7 @@ bool MoveTypeFollowWall::isFinish()
 				else
 					sp_movement_.reset(new MovementTurn(turn_target_radian_, ROTATE_TOP_SPEED));
 			}
+			status_after_cliff_ = false;
 		}
 	}
 	return false;

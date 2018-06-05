@@ -417,7 +417,8 @@ public:
 	 * home point.
 	 */
 	void initForGoHomePoint(GridMap &map);
-private:
+
+protected:
 
 	/*
 	 * @author Austin Liu
@@ -490,7 +491,9 @@ private:
 
 	Points handleResult(bool generate_finish, Cells plan_path_cells, Point_t curr, GridMap &map);
 
-	bool switchHomePoint();
+	bool switchHomePoint(GridMap &map, const Point_t &curr);
+
+	virtual void getNextWay(GridMap &map, const Point_t &curr);
 
 	typedef enum
 	{
@@ -501,7 +504,7 @@ private:
 		GO_HOME_WAY_NUM
 	}GoHomeWay_t;
 
-	GoHomeWay_t home_way_index_{GoHomeWay_t::THROUGH_CLEANED_AREA};
+	GoHomeWay_t home_way_index_{GoHomeWay_t::GO_HOME_WAY_NUM};
 //	int home_point_index_[GO_HOME_WAY_NUM]{};
 	Points home_points_{};
 	Point_t start_point_{0, 0, 0};
@@ -511,4 +514,12 @@ private:
 	bool back_to_start_point_{false};
 };
 
+class FollowWallModeGoHomePathAlgorithm: public GoHomePathAlgorithm
+{
+public:
+	FollowWallModeGoHomePathAlgorithm() = default;
+
+private:
+	void getNextWay(GridMap &map, const Point_t &curr);
+};
 #endif //PP_PATH_ALGORITHM_H
