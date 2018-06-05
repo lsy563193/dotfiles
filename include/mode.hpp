@@ -615,7 +615,7 @@ public:
 	static void pubPointMarkers2(const std::vector<geometry_msgs::Point> *points, std::string frame_id, std::string name);
 	void pubFitLineMarker(visualization_msgs::Marker fit_line_marker);
 	void setLinearCleaned();
-	uint8_t setFollowWall(GridMap&, bool is_left, const Points&);
+	uint8_t setFollowWall(GridMap&, bool is_left, const Points&, bool is_exclude= false, int16_t cell_y=0);
 	void scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr& scan);
 	void setCleanMapMarkers(int16_t x, int16_t y, CellState type,  visualization_msgs::Marker& clean_map_markers_);
 	void pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path);

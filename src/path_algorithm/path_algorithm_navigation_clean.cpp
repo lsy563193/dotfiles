@@ -20,12 +20,12 @@ std::unique_ptr<std::deque<BestTargetFilter*>> NavCleanPathAlgorithm::generateBo
 	filters.push_back(&filter_curr_line_neg);
 
 	if(isXAxis(priority_dir)) {
-		int16_t dx = curr_.x + static_cast<int16_t>(isPos(priority_dir) ? 4 : -4);
+		int16_t dx = correct_curr_.x + static_cast<int16_t>(isPos(priority_dir) ? 4 : -4);
 		int16_t dy = 2;
 		ROS_INFO("filter_after_obstacle:dx,dy(%d,%d)", dx, dy);
-		if ((map.getCell(CLEAN_MAP, dx, curr_.y) == UNCLEAN && map.getCell(CLEAN_MAP, dx, curr_.y-dy) == CLEANED))
+		if ((map.getCell(CLEAN_MAP, dx, correct_curr_.y) == UNCLEAN && map.getCell(CLEAN_MAP, dx, correct_curr_.y-dy) == CLEANED))
 			filters.push_back(&filter_after_obstacle_neg);
-		if ((map.getCell(CLEAN_MAP, dx, curr_.y) == UNCLEAN && map.getCell(CLEAN_MAP, dx, curr_.y+dy) == CLEANED))
+		if ((map.getCell(CLEAN_MAP, dx, correct_curr_.y) == UNCLEAN && map.getCell(CLEAN_MAP, dx, correct_curr_.y+dy) == CLEANED))
 			filters.push_back(&filter_after_obstacle_pos);
 	}
 
@@ -38,13 +38,13 @@ std::unique_ptr<std::deque<BestTargetFilter*>> NavCleanPathAlgorithm::generateBo
 
 
 	if(isXAxis(priority_dir)) {
-		int16_t dx = curr_.x + static_cast<int16_t>(isPos(priority_dir) ? 4 : -4);
-//		int16_t dy = curr_.y + static_cast<int16_t>(trend_pos ? 2 : -2);
+		int16_t dx = correct_curr_.x + static_cast<int16_t>(isPos(priority_dir) ? 4 : -4);
+//		int16_t dy = correct_curr_.y + static_cast<int16_t>(trend_pos ? 2 : -2);
 		int16_t dy = 2;
 		ROS_WARN("dx,dy(%d,%d),trend_pos(%d)",dx,dy,trend_pos);
-		if ((map.getCell(CLEAN_MAP, dx, curr_.y) == CLEANED && map.getCell(CLEAN_MAP, dx, curr_.y + dy) == UNCLEAN))
+		if ((map.getCell(CLEAN_MAP, dx, correct_curr_.y) == CLEANED && map.getCell(CLEAN_MAP, dx, correct_curr_.y + dy) == UNCLEAN))
 			filters.push_back(&filter_top_of_y_axis_pos);
-		if ((map.getCell(CLEAN_MAP, dx, curr_.y) == CLEANED && map.getCell(CLEAN_MAP, dx, curr_.y - dy) == UNCLEAN))
+		if ((map.getCell(CLEAN_MAP, dx, correct_curr_.y) == CLEANED && map.getCell(CLEAN_MAP, dx, correct_curr_.y - dy) == UNCLEAN))
 			filters.push_back(&filter_top_of_y_axis_neg);
 	}
 
@@ -72,33 +72,44 @@ static BoundingBox2 getLine(const Cell_t& curr,GridMap& map)
 
 void NavCleanPathAlgorithm::adjustPosition(Points&  plan_path)
 {
-	if(curr_.y%2 == 1 && curr_filter_ != nullptr)
+	int16_t tmp_curr_y=origen_curr_.y;
+	if(origen_curr_.y%2 == 1 && curr_filter_ != nullptr)
 	{
-		ROS_WARN("in odd line: adjust Position");
 		curr_filter_->displayName();
 
 		if(curr_filter_ == &filter_curr_line_pos || curr_filter_ == &filter_curr_line_neg)
 		{
-			curr_.y = plan_path.back().toCell().y;
+			tmp_curr_y = plan_path.back().toCell().y;
 		}
 		if(curr_filter_ == &filter_next_line_pos || curr_filter_ == &filter_next_line_neg)
 		{
-			curr_.y = plan_path.front().toCell().y;
+			tmp_curr_y = plan_path.front().toCell().y;
 			if(g_follow_last_follow_wall_dir != 0)
-				curr_.y = plan_path.back().toCell().y;
+				tmp_curr_y = plan_path.back().toCell().y;
 		}
+		ROS_WARN("in odd line: adjust Position(%d)->(%d)", origen_curr_.y, correct_curr_.y);
 	}
+	correct_curr_ = {origen_curr_.x, tmp_curr_y};
 }
 bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr_p, const Dir_t &last_dir, Points &plan_path)
 {
 	Cells path{};
 	Cells targets{};
-	curr_ = curr_p.toCell();
-	adjustPosition(plan_path);
+	if(origen_curr_ != curr_p.toCell())
+	{
+		origen_curr_ = curr_p.toCell();
+		adjustPosition(plan_path);
+	}
+	else
+	{
+		ROS_WARN("origen_curr equal curr_p, that mean adjustPosition cast path plan to same target(%d,%d),(%d,%d)",origen_curr_.x, origen_curr_.y, correct_curr_.x, correct_curr_.y);
+		correct_curr_ = origen_curr_;
+	}
+
 	plan_path.clear();
-	map.markRobot(curr_, CLEAN_MAP);
+	map.markRobot(correct_curr_, CLEAN_MAP);
 	map_bound = map.genTargetRange();
-	curr_bound = getLine(curr_, map);
+	curr_bound = getLine(correct_curr_, map);
 	priority_dir = last_dir;
 	auto filters = *generateBounds(map);
 	ROS_WARN("priority_dir(%d),trend_pos(%d)\n",priority_dir,trend_pos);
@@ -122,9 +133,9 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr_p, co
 			};
 		}
 
-		if(dijkstra(map, curr_, path, true, IsTarget(&map,filter->target_bound), isAccessable(&map,expand_condition, filter->range_bound)))
+		if(dijkstra(map, correct_curr_, path, true, IsTarget(&map,filter->target_bound), isAccessable(&map,expand_condition, filter->range_bound)))
 			break;
-//		map.print(curr_,COST_MAP,path);
+//		map.print(correct_curr_,COST_MAP,path);
 	}
 
 	if(path.empty())
@@ -139,7 +150,7 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr_p, co
 	plan_path = *cells_to_points(path);
 
 	displayCellPath(path);
-	map.print(curr_,COST_MAP,path);
+	map.print(correct_curr_,COST_MAP,path);
 	map.print(curr_p.toCell(), CLEAN_MAP, path);
 	return true;
 }
