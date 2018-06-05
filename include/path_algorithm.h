@@ -60,6 +60,9 @@ public:
 
 	virtual bool checkTrapped(GridMap &map, const Cell_t &curr_cell) {return true;};
 
+	bool shift_path(GridMap &map, const Cell_t &p1, Cell_t &p2, Cell_t &p3, int num,bool is_first, bool is_reveave);
+
+	virtual void optimizePath(GridMap &map, Cells &path, Dir_t& pri_dir);
 	void findPath(GridMap &map, const Cell_t &start, const Cell_t &target, Cells &path, Dir_t last_i);
 
 	void flood_fill(const Cell_t& curr);
@@ -201,7 +204,7 @@ public:
 private:
 	using pair_bb = std::tuple<BoundingBox2, BoundingBox2,Dir_t>;
 	std::unique_ptr<std::deque<BestTargetFilter*>> generateBounds(GridMap& map);
-	void optimizePath(GridMap &map, Cells &path);
+	void optimizePath(GridMap &map, Cells &path, Dir_t& pri_dir) override ;
 
 	bool checkTrapped(GridMap &map, const Cell_t &curr_cell) override ;
 #if !USE_NEW_PATH_PLAN

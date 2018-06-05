@@ -145,7 +145,7 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr_p, co
 	}
 
 	trend_pos = curr_filter_ != &filter_next_line_neg;
-	optimizePath(map, path);
+	optimizePath(map, path, priority_dir);
 
 	plan_path = *cells_to_points(path);
 
@@ -184,41 +184,7 @@ bool NavCleanPathAlgorithm::checkTrapped(GridMap &map, const Cell_t &curr_cell)
 //	}
 //};
 
-
-bool shift_path(GridMap &map, const Cell_t &p1, Cell_t &p2, Cell_t &p3, int num,bool is_first, bool is_reveave) {
-	auto dir_p23 = get_dir(p3, p2);
-	auto dir_p12 = is_reveave ? get_dir(p1, p2) : get_dir(p2, p1);
-//	ROS_INFO("dir_p12(%d), dir_p23(%d)", dir_p12, dir_p23);
-	auto is_break = false;
-	auto p12_it = p2;
-	auto i = 1;
-	for (; i <= num * 2; i++) {
-		p12_it += cell_direction_[dir_p12];
-//		ROS_ERROR("p12_it,%d,%d", p12_it.x, p12_it.y);
-		for (auto p23_it = p12_it; p23_it != p3 + cell_direction_[dir_p12] * i+cell_direction_[dir_p23]; p23_it += cell_direction_[dir_p23]) {
-//			ROS_WARN("p23_it,%d,%d", p23_it.x, p23_it.y);
-			if (!map.isBlockAccessible(p23_it.x, p23_it.y)) {
-				is_break = true;
-				break;
-			}
-		}
-		if(is_break)
-			break;
-	}
-	if (i > 1) {
-		auto shift = (p12_it - p2);
-		if(is_first)
-			shift /= 2;
-		ROS_ERROR("(shift(%d,%d),", shift.x, shift.y);
-		p2 += shift;
-		p3 += shift;
-		return shift != Cell_t{0,0};
-	}
-	return false;
-}
-
-
-void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path) {
+void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path, Dir_t& priority_dir) {
 
 	ROS_INFO("Step 5:optimizePath");
 	if(curr_filter_ == &filter_curr_line_pos || curr_filter_ == &filter_curr_line_neg) {
@@ -259,39 +225,7 @@ void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path) {
 	else if (curr_filter_ == &filter_top_of_y_axis_neg)
 		path.push_back( Cell_t{path.back().x, static_cast<int16_t>(path.front().y + 3)});//for setting follow wall target line
 	else {
-		displayCellPath(path);
-		if(path.size() > 2)
-		{
-			if(is_opposite_dir(get_dir(path.begin()+1, path.begin()), priority_dir) ||
-					(path.begin()->y%2 == 1 && isXAxis(priority_dir) && get_dir(path.begin()+1, path.begin()) == (priority_dir)))
-			{
-				ROS_WARN("opposite dir");
-				ROS_INFO("dir(%d,%d)",get_dir(path.begin()+1, path.begin()), priority_dir);
-				beeper.debugBeep(INVALID);
-				auto tmp = path.front();
-				auto iterator = path.begin();
-				if(shift_path(map, *(iterator + 2), *(iterator + 1), *(iterator + 0),1,true,true))
-				{
-					if(*(iterator + 1) == *(iterator + 2))
-						path.erase(path.begin()+1);
-					path.push_front(tmp);
-				}
-			}
-		}
-		if (path.size() > 3) {
-			ROS_INFO(" size_of_path > 3 Optimize path for adjusting it away from obstacles..");
-			displayCellPath(path);
-			for (auto iterator = path.begin(); iterator != path.end() - 3; ++iterator) {
-				ROS_INFO("dir(%d), y(%d)", get_dir(iterator + 1, iterator + 2), (iterator+1)->y);
-				if(isXAxis(get_dir(iterator + 1, iterator + 2)) && (iterator+1)->y % 2 == 1) {
-					ROS_WARN("in odd line ,try move to even line(%d)!", (iterator + 1)->x);
-					shift_path(map, *iterator, *(iterator + 1), *(iterator + 2), 1, false,false);
-				}else{
-					ROS_INFO("in x dir, is in even line try mv to even");
-					auto num = isXAxis(get_dir(iterator + 1, iterator + 2)) ? 2 : 1;
-					shift_path(map, *iterator, *(iterator + 1), *(iterator + 2),num,true,false);
-				}
-			}
-		}
+		APathAlgorithm::optimizePath(map, path, priority_dir);
+
 	}
 }
