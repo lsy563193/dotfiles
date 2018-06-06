@@ -84,8 +84,6 @@ int main(int argc, char **argv)
 	ros::init(argc, argv, "pp");
 	ros::NodeHandle	nh_dev("~");
 
-#if ENABLE_DEBUG
-
 	struct sigaction act;
 
 	act.sa_handler = handle_exit;
@@ -98,7 +96,6 @@ int main(int argc, char **argv)
 	sigaction(SIGABRT,&act,NULL);
 	ROS_INFO("set signal action done!");
 
-#endif
 	robot_instance = new robot();
 // Test code for path algorithm by Austin.
 //	test_map();

@@ -1139,3 +1139,44 @@ BoundingBox2 GridMap::generateBound()
 	return bound;
 }
 
+Cells GridMap::generateCellsBetweenTwoCells(const Cell_t &start, const Cell_t &end, bool &is_x_direction)
+{
+	Cells cells_path;
+	int8_t x_direction;
+	int8_t y_direction;
+	uint16_t x_diff = static_cast<uint16_t>(abs(end.x - start.x));
+	uint16_t y_diff = static_cast<uint16_t>(abs(end.y - start.y));
+	is_x_direction = x_diff >= y_diff;
+	x_direction = static_cast<int8_t>(end.x >= start.x ? 1 : -1);
+	y_direction = static_cast<int8_t>(end.y >= start.y ? 1 : -1);
+
+	Cell_t cell_step{start.x, start.y};
+
+	if (is_x_direction)
+	{
+		for (;abs(cell_step.x - end.x) > 0;)
+		{
+			cells_path.push_back(cell_step);
+			cell_step.x += x_direction;
+			auto y_scale = floor(y_diff * fabs(cell_step.x - start.x) / x_diff);
+			cell_step.y = static_cast<int16_t>(start.y + y_direction * y_scale);
+//			setCell(CLEAN_MAP, cell_step.x, cell_step.y, 1);
+//			ROS_INFO("%s %d: cell_step(%d, %d).", __FUNCTION__, __LINE__, cell_step.x, cell_step.y);
+		}
+	} else{
+		for (;abs(cell_step.y - end.y) > 0;)
+		{
+			cells_path.push_back(cell_step);
+			cell_step.y += y_direction;
+			auto x_scale = floor(x_diff * fabs(cell_step.y - start.y) / y_diff);
+			cell_step.x = static_cast<int16_t>(start.x + x_direction * x_scale);
+//			setCell(CLEAN_MAP, cell_step.x, cell_step.y, 1);
+//			ROS_INFO("%s %d: cell_step(%d, %d).", __FUNCTION__, __LINE__, cell_step.x, cell_step.y);
+		}
+	}
+
+	cells_path.push_back(end);
+
+	return cells_path;
+}
+

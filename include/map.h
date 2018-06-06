@@ -309,6 +309,16 @@ public:
 	void print(const Cell_t& curr, uint8_t id, const Cells& targets);
     void printInRange(const Cell_t& curr_cell, uint8_t id, const Cells& targets,bool is_bound,BoundingBox2 bound);
 
+	/*
+	 * Generate the direct path between two cells.
+	 *
+	 * @author: Austin Liu
+	 * @param cell_1: The first cell.
+	 * @param cell_2: The second cell.
+	 * @return Cells: Cells between these two cells.
+	 */
+	Cells generateCellsBetweenTwoCells(const Cell_t &start, const Cell_t &end, bool &is_x_direction);
+
 	// Loading the log map for debug.
 	void loadMap(int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max);
 	void loadMap(bool use_map,Cell_t& curr, Dir_t& dir,bool& trend_pos);
