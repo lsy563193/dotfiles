@@ -498,7 +498,7 @@ bool S_Wifi::init()
 				ROS_INFO("%s,%d,\033[1;40;35m time from cloud %s \033[0m",
 						 __FUNCTION__,__LINE__, ctime(&new_calendar_time));
 			});
-	INFO_BLUE("register done ");
+	INFO_BLUE("%s,register done ",__FUNCTION__);
 	return true;
 }
 

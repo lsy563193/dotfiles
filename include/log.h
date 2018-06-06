@@ -213,7 +213,7 @@ private:
 #define LOG_GREEN(...)	Log::inst().info("","GREEN",__VA_ARGS__);
 #define LOG_PURPLE(...)	Log::inst().info("","PURPLE",__VA_ARGS__);
 #define LOG_RED(...)	Log::inst().info("","RED",__VA_ARGS__);
-#define LOG_YELLOW(...)	Log::inst().info("","YEllOW",__VA_ARGS__);
+#define LOG_YELLOW(...)	Log::inst().info("","YELLOW",__VA_ARGS__);
 
 #define LOG_GREEN2(...)	Log::inst().info("","LIGHT_GREEN",__VA_ARGS__);
 #define LOG_BLUE2(...)	Log::inst().info("","LIGHT_BLUE",__VA_ARGS__);
