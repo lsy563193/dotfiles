@@ -16,29 +16,13 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <sys/prctl.h>
+#include <unistd.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include "mutex_lock.h"
 #include "log.h"
 
 using namespace std;
-
-#define COLOUR_NONE			"\033[m"
-#define COLOUR_RED			"\033[0;32;31m"
-#define COLOUR_LIGHT_RED	"\033[1;31m"
-#define COLOUR_GREEN		"\033[0;32;32m"
-#define COLOUR_LIGHT_GREEN	"\033[1;32m"
-#define COLOUR_BLUE			"\033[0;32;34m"
-#define COLOUR_LIGHT_BLUE	"\033[1;34m"
-#define COLOUR_DARY_GRAY	"\033[1;30m"
-#define COLOUR_CYAN			"\033[0;36m"
-#define COLOUR_LIGHT_CYAN	"\033[1;36m"
-#define COLOUR_PURPLE		"\033[0;35m"
-#define COLOUR_LIGHT_PURPLE	"\033[1;35m"
-#define COLOUR_BROWN		"\033[0;33m"
-#define COLOUR_YELLOW		"\033[1;33m"
-#define COLOUR_LIGHT_GRAY	"\033[0;37m"
-#define COLOUR_WHITE		"\033[1;37m"
 
 namespace
 {
@@ -54,6 +38,7 @@ public:
 
 	void operator()( const Log::Level, const std::string &str ) override;
 
+	void Flush() override;
 private:
 	/**
 	 * Instead of starting in the next file, we resume from the last file
@@ -99,6 +84,8 @@ class ConsoleBackend : public Log::Backend
 {
 public:
 	void operator()( const Log::Level l, const std::string &str ) override;
+
+	void Flush() override;
 };
 
 class JsonFormatter : public Log::Formatter
@@ -119,6 +106,14 @@ Log::DataObj::DataObj( const Level a_level, const string &a_tag,
 		const string &a_msg )
 		: level_( a_level ),
 		  tag_( a_tag ),
+		  msg_( a_msg )
+{}
+
+Log::DataObj::DataObj( const Level a_level, const string &a_tag,const string &color,
+		const string &a_msg )
+		: level_( a_level ),
+		  tag_( a_tag ),
+		  color_(color),
 		  msg_( a_msg )
 {}
 
@@ -199,6 +194,36 @@ void Log::log( const Level a_l, const char *a_tag, const char *a_fmt,
 	sem_post( &queue_semaphore_ );
 }
 
+void Log::log( const Level a_l, const char *a_tag, const char* color,const char *a_fmt,
+		va_list a_args )
+{
+	if ( (int)a_l < (int)level_ )
+	{
+		return;
+	}
+
+	va_list args_copy;
+	va_copy( args_copy, a_args );
+	const int msg_sz = vsnprintf( nullptr, 0, a_fmt, args_copy );
+	va_end( args_copy );
+	if ( msg_sz < 0 )
+	{
+		printf( "[Log::log] Failed while vsnprintf, error: %d\n", msg_sz );
+		return;
+	}
+	unique_ptr<char[]> msg( new char[msg_sz + 1] );
+	int err;
+	if ( ( err = vsnprintf( msg.get(), msg_sz + 1, a_fmt, a_args ) ) != msg_sz )
+	{
+		printf( "[Log::log] Failed while vsnprintf2, error: %d\n", err );
+		return;
+	}
+
+	MutexLock lock( &queue_lock_ );
+	queue_.push_back( DataObj( a_l, a_tag, color,string( msg.get() ) ) );
+	sem_post( &queue_semaphore_ );
+}
+
 void Log::fatal( const char *a_tag, const char *a_fmt, ...)
 {
 	va_list args;
@@ -228,6 +253,14 @@ void Log::info( const char *a_tag, const char *a_fmt, ...)
 	va_list args;
 	va_start( args, a_fmt );
 	log( Level::INFO, a_tag, a_fmt, args );
+	va_end( args );
+}
+
+void Log::info( const char *a_tag, const char *color,const char *a_fmt, ...)
+{
+	va_list args;
+	va_start( args, a_fmt );
+	log( Level::INFO, a_tag, color,a_fmt, args );
 	va_end( args );
 }
 
@@ -278,6 +311,15 @@ void Log::threadMain()
 		}
 	}
 }
+void Log::Flush()
+{
+	printf("menual flush!\n");
+	for ( auto &c: consumers_ )
+	{
+		(*c.backend_).Flush();
+		break;
+	}
+}
 
 Log::DataObj Log::popBlocking( void )
 {
@@ -320,6 +362,11 @@ void FileBackend::operator()( const Log::Level, const string &str )
 	}
 }
 
+void FileBackend::Flush()
+{
+	file_.flush();
+}
+
 void FileBackend::resumeFile( void )
 {
 	const unsigned id = queryLogId();
@@ -338,7 +385,7 @@ void FileBackend::resumeFile( void )
 		line_written_ = std::count( istreambuf_iterator<char>( in ),
 				istreambuf_iterator<char>(), '\n' );
 		file_ = std::move( out );
-		file_ << "\n== == *O.O* == PIKA? == *O.O* == ==\n";
+		file_ << "\n== == *O.O* == PIKA? == *O.O* == ==\033[0m\n";
 	}
 }
 
@@ -493,9 +540,12 @@ void ConsoleBackend::operator()( const Log::Level a_l, const string &a_str )
 			col = COLOUR_PURPLE;
 			break;
 	}
-	fprintf( stderr, "%s%s\n", col, a_str.c_str() );
+	fprintf( stdout, "%s%s\033[0m\n", col, a_str.c_str() );
 }
-
+void ConsoleBackend::Flush()
+{
+	fsync((int)stdout);
+}
 string JsonFormatter::operator()( const Log::DataObj &a_d )
 {
 	stringstream ss;
@@ -565,14 +615,49 @@ string TextFormatter::operator()( const Log::DataObj &a_d )
 			tm->tm_mon + 1, tm->tm_hour, tm->tm_min, tm->tm_sec, tv.tv_usec );
 	ss << time_str;
 
-	if ( a_d.tag_.empty() )
+	if ( ! a_d.tag_.empty() )
 	{
-		ss << a_d.msg_;
+		ss << "["<<a_d.tag_<<"]";
+	}
+	if ( a_d.color_.empty() )
+	{
+		ss <<a_d.msg_;
 	}
 	else
 	{
-		ss << '[' << a_d.tag_ << "] " << a_d.msg_;
+		if(a_d.color_== "BLUE")
+			ss << COLOUR_BLUE<< a_d.msg_;
+		else if(a_d.color_== "LIGHT_BLUE")
+			ss << COLOUR_LIGHT_BLUE<< a_d.msg_;
+		else if(a_d.color_ == "RED")
+			ss << COLOUR_RED<< a_d.msg_;
+		else if(a_d.color_== "LIGHT_RED")
+			ss << COLOUR_LIGHT_RED<< a_d.msg_;
+		else if(a_d.color_ == "DARY_GRAY")
+			ss << COLOUR_DARY_GRAY<< a_d.msg_;
+		else if(a_d.color_ == "LIGHT_GRAY")
+			ss <<COLOUR_LIGHT_GRAY<< a_d.msg_;
+		else if(a_d.color_ == "GREEN")
+			ss << COLOUR_GREEN<< a_d.msg_;
+		else if(a_d.color_ == "LIGHT_GREEN")
+			ss << COLOUR_LIGHT_GREEN<< a_d.msg_;
+		else if(a_d.color_ == "CYAN")
+			ss << COLOUR_CYAN<< a_d.msg_;
+		else if(a_d.color_== "LIGHT_CYAN")
+			ss << COLOUR_LIGHT_CYAN<< a_d.msg_;
+		else if(a_d.color_ == "PURPLE")
+			ss << COLOUR_PURPLE<< a_d.msg_;
+		else if(a_d.color_ == "LIGHT_PURPLE")
+			ss << COLOUR_LIGHT_PURPLE<< a_d.msg_;
+		else if(a_d.color_ == "WHITE")
+			ss << COLOUR_WHITE<< a_d.msg_;
+		else if(a_d.color_ == "YELLOW")
+			ss <<COLOUR_YELLOW<< a_d.msg_;
+		else if(a_d.color_ == "LIGHT_YELLOW")
+			ss <<COLOUR_LIGHT_YELLOW<< a_d.msg_;
+
 	}
+	ss<<COLOUR_NONE;
 	return ss.str();
 }
 

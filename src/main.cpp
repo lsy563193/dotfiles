@@ -8,6 +8,7 @@
 #include "execinfo.h"
 #include <fstream>
 #include <unistd.h>
+#include "log.h"
 #if VERIFY_CPU_ID || VERIFY_KEY
 #include "verify.h"
 #endif
@@ -43,7 +44,7 @@ void server_backtrace(int sig)
 
 void handle_exit(int sig) 
 {
-	sync();
+	Log::inst().Flush();
 	sleep(2);
 	ROS_ERROR("Oops!!! pp receive signal %d",sig);
 	if(sig == SIGINT)
