@@ -146,25 +146,25 @@ bool CleanModeNav::mapMark()
 //	ROS_ERROR("4444444444444444444");
 
 	if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right) {
-		if (!c_blocks.empty()) {
-			auto dy = action_i_ == ac_follow_wall_left ? 2 : -2;
-			std::for_each(passed_cell_path_.begin(), passed_cell_path_.end(),[&](const Point_t& point){
-				BoundingBox<Point_t> bound;
-				bound.SetMinimum({passed_cell_path_.front().x - CELL_SIZE/4, passed_cell_path_.front().y - CELL_SIZE/4});
-				bound.SetMaximum({passed_cell_path_.front().x + CELL_SIZE/4, passed_cell_path_.front().y + CELL_SIZE/4});
-				if(!bound.Contains(point))
-				{
-//					ROS_INFO("in cfw(%d,%d),(%d,%d)", point.toCell().x, point.toCell().y, getPosition().toCell().x, getPosition().toCell().y);
-					ROS_INFO("Not Cont front(%d,%d),curr(%d,%d),point(%d,%d)", passed_cell_path_.front().toCell().x, passed_cell_path_.front().toCell().y,
-									 getPosition().toCell().x, getPosition().toCell().y, point.toCell().x, point.toCell().y);
-					c_blocks.insert({BLOCKED_FW, point.getCenterRelative(0, dy * CELL_SIZE).toCell()});
-				}
-				else {
-					ROS_INFO("Contains front(%d,%d),curr(%d,%d),point(%d,%d)", passed_cell_path_.front().toCell().x, passed_cell_path_.front().toCell().y,
-									 getPosition().toCell().x, getPosition().toCell().y, point.toCell().x, point.toCell().y);
-				}
-			});
-		}
+//		if (!c_blocks.empty()) {
+//			auto dy = action_i_ == ac_follow_wall_left ? 2 : -2;
+//			std::for_each(passed_cell_path_.begin(), passed_cell_path_.end(),[&](const Point_t& point){
+//				BoundingBox<Point_t> bound;
+//				bound.SetMinimum({passed_cell_path_.front().x - CELL_SIZE/4, passed_cell_path_.front().y - CELL_SIZE/4});
+//				bound.SetMaximum({passed_cell_path_.front().x + CELL_SIZE/4, passed_cell_path_.front().y + CELL_SIZE/4});
+//				if(!bound.Contains(point))
+//				{
+////					ROS_INFO("in cfw(%d,%d),(%d,%d)", point.toCell().x, point.toCell().y, getPosition().toCell().x, getPosition().toCell().y);
+//					ROS_INFO("Not Cont front(%d,%d),curr(%d,%d),point(%d,%d)", passed_cell_path_.front().toCell().x, passed_cell_path_.front().toCell().y,
+//									 getPosition().toCell().x, getPosition().toCell().y, point.toCell().x, point.toCell().y);
+//					c_blocks.insert({BLOCKED_FW, point.getCenterRelative(0, dy * CELL_SIZE).toCell()});
+//				}
+//				else {
+//					ROS_INFO("Contains front(%d,%d),curr(%d,%d),point(%d,%d)", passed_cell_path_.front().toCell().x, passed_cell_path_.front().toCell().y,
+//									 getPosition().toCell().x, getPosition().toCell().y, point.toCell().x, point.toCell().y);
+//				}
+//			});
+//		}
 	}
 	else if (sp_state == state_clean.get()) {
 		setLinearCleaned();
