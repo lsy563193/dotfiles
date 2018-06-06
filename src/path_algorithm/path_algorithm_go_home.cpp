@@ -69,6 +69,9 @@ bool GoHomePathAlgorithm::generatePathThroughCleanedArea(GridMap &map, const Poi
 						isAccessable(&map, expand_condition));
 	}
 
+	if (ret)
+		optimizePath(map, plan_path, last_dir);
+
 	ROS_WARN(
 			"\033[1;46;37m" "%s,%d: Current_home_point_(%d, %d) %sreachable in this way, total %d home points." "\033[0m",
 			__FUNCTION__, __LINE__, current_home_point_.toCell().x, current_home_point_.toCell().y,
@@ -88,6 +91,9 @@ bool GoHomePathAlgorithm::generatePathWithSlamMapClearBlocks(GridMap &map, const
 		ret = dijkstra(map, curr.toCell(), plan_path, true, CellEqual(current_home_point_.toCell()),
 								 isAccessable(&map, expand_condition));
 	}
+
+	if (ret)
+		optimizePath(map, plan_path, last_dir);
 
 	ROS_WARN(
 			"\033[1;46;37m" "%s,%d: Current_home_point_(%d, %d) %sreachable in this way, total %d home points." "\033[0m",
@@ -115,6 +121,9 @@ bool GoHomePathAlgorithm::generatePathThroughSlamMapReachableArea(GridMap &map, 
 						isAccessable(&map, expand_condition));
 	}
 
+	if (ret)
+		optimizePath(map, plan_path, last_dir);
+
 	ROS_WARN(
 			"\033[1;46;37m" "%s,%d: Current_home_point_(%d, %d) %sreachable in this way, total %d home points." "\033[0m",
 			__FUNCTION__, __LINE__, current_home_point_.toCell().x, current_home_point_.toCell().y,
@@ -135,6 +144,9 @@ bool GoHomePathAlgorithm::generatePathThroughUnknownArea(GridMap &map, const Poi
 		ret = dijkstra(map, curr.toCell(), plan_path, true, CellEqual(current_home_point_.toCell()),
 						isAccessable(&map, expand_condition));
 	}
+
+	if (ret)
+		optimizePath(map, plan_path, last_dir);
 
 	ROS_WARN(
 			"\033[1;46;37m" "%s,%d: Current_home_point_(%d, %d) %sreachable in this way, total %d home points." "\033[0m",
