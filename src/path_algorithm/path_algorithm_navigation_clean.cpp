@@ -19,12 +19,12 @@ std::unique_ptr<std::deque<BestTargetFilter*>> NavCleanPathAlgorithm::generateBo
 	filters.push_back(&filter_curr_line_neg);
 
 	if(isXAxis(priority_dir)) {
-		int16_t dx = curr_.x + static_cast<int16_t>(isPos(priority_dir) ? 4 : -4);
+		int16_t dx = correct_curr_.x + static_cast<int16_t>(isPos(priority_dir) ? 4 : -4);
 		int16_t dy = 2;
 		ROS_INFO("filter_after_obstacle:dx,dy(%d,%d)", dx, dy);
-		if ((map.getCell(CLEAN_MAP, dx, curr_.y) == UNCLEAN && map.getCell(CLEAN_MAP, dx, curr_.y-dy) == CLEANED))
+		if ((map.getCell(CLEAN_MAP, dx, correct_curr_.y) == UNCLEAN && map.getCell(CLEAN_MAP, dx, correct_curr_.y-dy) == CLEANED))
 			filters.push_back(&filter_after_obstacle_neg);
-		if ((map.getCell(CLEAN_MAP, dx, curr_.y) == UNCLEAN && map.getCell(CLEAN_MAP, dx, curr_.y+dy) == CLEANED))
+		if ((map.getCell(CLEAN_MAP, dx, correct_curr_.y) == UNCLEAN && map.getCell(CLEAN_MAP, dx, correct_curr_.y+dy) == CLEANED))
 			filters.push_back(&filter_after_obstacle_pos);
 	}
 
@@ -37,13 +37,13 @@ std::unique_ptr<std::deque<BestTargetFilter*>> NavCleanPathAlgorithm::generateBo
 
 
 	if(isXAxis(priority_dir)) {
-		int16_t dx = curr_.x + static_cast<int16_t>(isPos(priority_dir) ? 4 : -4);
-//		int16_t dy = curr_.y + static_cast<int16_t>(trend_pos ? 2 : -2);
+		int16_t dx = correct_curr_.x + static_cast<int16_t>(isPos(priority_dir) ? 4 : -4);
+//		int16_t dy = correct_curr_.y + static_cast<int16_t>(trend_pos ? 2 : -2);
 		int16_t dy = 2;
 		ROS_WARN("dx,dy(%d,%d),trend_pos(%d)",dx,dy,trend_pos);
-		if ((map.getCell(CLEAN_MAP, dx, curr_.y) == CLEANED && map.getCell(CLEAN_MAP, dx, curr_.y + dy) == UNCLEAN))
+		if ((map.getCell(CLEAN_MAP, dx, correct_curr_.y) == CLEANED && map.getCell(CLEAN_MAP, dx, correct_curr_.y + dy) == UNCLEAN))
 			filters.push_back(&filter_top_of_y_axis_pos);
-		if ((map.getCell(CLEAN_MAP, dx, curr_.y) == CLEANED && map.getCell(CLEAN_MAP, dx, curr_.y - dy) == UNCLEAN))
+		if ((map.getCell(CLEAN_MAP, dx, correct_curr_.y) == CLEANED && map.getCell(CLEAN_MAP, dx, correct_curr_.y - dy) == UNCLEAN))
 			filters.push_back(&filter_top_of_y_axis_neg);
 	}
 
@@ -70,33 +70,44 @@ static BoundingBox2 getLine(const Cell_t& curr,GridMap& map) {
 
 void NavCleanPathAlgorithm::adjustPosition(Points&  plan_path)
 {
-	if(curr_.y%2 == 1 && curr_filter_ != nullptr)
+	int16_t tmp_curr_y=origen_curr_.y;
+	if(origen_curr_.y%2 == 1 && curr_filter_ != nullptr)
 	{
-		ROS_WARN("in odd line: adjust Position");
 		curr_filter_->displayName();
 
 		if(curr_filter_ == &filter_curr_line_pos || curr_filter_ == &filter_curr_line_neg)
 		{
-			curr_.y = plan_path.back().toCell().y;
+			tmp_curr_y = plan_path.back().toCell().y;
 		}
 		if(curr_filter_ == &filter_next_line_pos || curr_filter_ == &filter_next_line_neg)
 		{
-			curr_.y = plan_path.front().toCell().y;
+			tmp_curr_y = plan_path.front().toCell().y;
 			if(g_follow_last_follow_wall_dir != 0)
-				curr_.y = plan_path.back().toCell().y;
+				tmp_curr_y = plan_path.back().toCell().y;
 		}
+		ROS_WARN("in odd line: adjust Position(%d)->(%d)", origen_curr_.y, correct_curr_.y);
 	}
+	correct_curr_ = {origen_curr_.x, tmp_curr_y};
 }
 bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr_p, const Dir_t &last_dir, Points &plan_path)
 {
 	Cells path{};
 	Cells targets{};
-	curr_ = curr_p.toCell();
-	adjustPosition(plan_path);
+	if(origen_curr_ != curr_p.toCell())
+	{
+		origen_curr_ = curr_p.toCell();
+		adjustPosition(plan_path);
+	}
+	else
+	{
+		ROS_WARN("origen_curr equal curr_p, that mean adjustPosition cast path plan to same target(%d,%d),(%d,%d)",origen_curr_.x, origen_curr_.y, correct_curr_.x, correct_curr_.y);
+		correct_curr_ = origen_curr_;
+	}
+
 	plan_path.clear();
-	map.markRobot(curr_, CLEAN_MAP);
+	map.markRobot(correct_curr_, CLEAN_MAP);
 	map_bound = map.genTargetRange();
-	curr_bound = getLine(curr_, map);
+	curr_bound = getLine(correct_curr_, map);
 	priority_dir = last_dir;
 	auto filters = *generateBounds(map);
 	ROS_WARN("priority_dir(%d),trend_pos(%d)\n",priority_dir,trend_pos);
@@ -120,9 +131,9 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr_p, co
 			};
 		}
 
-		if(dijkstra(map, curr_, path, true, IsTarget(&map,filter->target_bound), isAccessable(&map,expand_condition, filter->range_bound)))
+		if(dijkstra(map, correct_curr_, path, true, IsTarget(&map,filter->target_bound), isAccessable(&map,expand_condition, filter->range_bound)))
 			break;
-//		map.print(curr_,COST_MAP,path);
+//		map.print(correct_curr_,COST_MAP,path);
 	}
 
 	if(path.empty())
@@ -132,12 +143,12 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr_p, co
 	}
 
 	trend_pos = curr_filter_ != &filter_next_line_neg;
-	optimizePath(map, path);
+	optimizePath(map, path, priority_dir);
 
 	plan_path = *cells_to_points(path);
 
 	displayCellPath(path);
-	map.print(curr_,COST_MAP,path);
+	map.print(correct_curr_,COST_MAP,path);
 	map.print(curr_p.toCell(), CLEAN_MAP, path);
 	return true;
 }
@@ -170,41 +181,7 @@ bool NavCleanPathAlgorithm::checkTrapped(GridMap &map, const Cell_t &curr_cell)
 //	}
 //};
 
-
-bool shift_path(GridMap &map, const Cell_t &p1, Cell_t &p2, Cell_t &p3, int num,bool is_first, bool is_reveave) {
-	auto dir_p23 = get_dir(p3, p2);
-	auto dir_p12 = is_reveave ? get_dir(p1, p2) : get_dir(p2, p1);
-//	ROS_INFO("dir_p12(%d), dir_p23(%d)", dir_p12, dir_p23);
-	auto is_break = false;
-	auto p12_it = p2;
-	auto i = 1;
-	for (; i <= num * 2; i++) {
-		p12_it += cell_direction_[dir_p12];
-//		ROS_ERROR("p12_it,%d,%d", p12_it.x, p12_it.y);
-		for (auto p23_it = p12_it; p23_it != p3 + cell_direction_[dir_p12] * i+cell_direction_[dir_p23]; p23_it += cell_direction_[dir_p23]) {
-//			ROS_WARN("p23_it,%d,%d", p23_it.x, p23_it.y);
-			if (!map.isBlockAccessible(p23_it.x, p23_it.y)) {
-				is_break = true;
-				break;
-			}
-		}
-		if(is_break)
-			break;
-	}
-	if (i > 1) {
-		auto shift = (p12_it - p2);
-		if(is_first)
-			shift /= 2;
-		ROS_ERROR("(shift(%d,%d),", shift.x, shift.y);
-		p2 += shift;
-		p3 += shift;
-		return shift != Cell_t{0,0};
-	}
-	return false;
-}
-
-
-void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path) {
+void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path, Dir_t& priority_dir) {
 
 	ROS_INFO("Step 5:optimizePath");
 	if(curr_filter_ == &filter_curr_line_pos || curr_filter_ == &filter_curr_line_neg) {
@@ -245,39 +222,7 @@ void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path) {
 	else if (curr_filter_ == &filter_top_of_y_axis_neg)
 		path.push_back( Cell_t{path.back().x, static_cast<int16_t>(path.front().y + 3)});//for setting follow wall target line
 	else {
-		displayCellPath(path);
-		if(path.size() > 2)
-		{
-			if(is_opposite_dir(get_dir(path.begin()+1, path.begin()), priority_dir) ||
-					(path.begin()->y%2 == 1 && isXAxis(priority_dir) && get_dir(path.begin()+1, path.begin()) == (priority_dir)))
-			{
-				ROS_WARN("opposite dir");
-				ROS_INFO("dir(%d,%d)",get_dir(path.begin()+1, path.begin()), priority_dir);
-				beeper.debugBeep(INVALID);
-				auto tmp = path.front();
-				auto iterator = path.begin();
-				if(shift_path(map, *(iterator + 2), *(iterator + 1), *(iterator + 0),1,true,true))
-				{
-					if(*(iterator + 1) == *(iterator + 2))
-						path.erase(path.begin()+1);
-					path.push_front(tmp);
-				}
-			}
-		}
-		if (path.size() > 3) {
-			ROS_INFO(" size_of_path > 3 Optimize path for adjusting it away from obstacles..");
-			displayCellPath(path);
-			for (auto iterator = path.begin(); iterator != path.end() - 3; ++iterator) {
-				ROS_INFO("dir(%d), y(%d)", get_dir(iterator + 1, iterator + 2), (iterator+1)->y);
-				if(isXAxis(get_dir(iterator + 1, iterator + 2)) && (iterator+1)->y % 2 == 1) {
-					ROS_WARN("in odd line ,try move to even line(%d)!", (iterator + 1)->x);
-					shift_path(map, *iterator, *(iterator + 1), *(iterator + 2), 1, false,false);
-				}else{
-					ROS_INFO("in x dir, is in even line try mv to even");
-					auto num = isXAxis(get_dir(iterator + 1, iterator + 2)) ? 2 : 1;
-					shift_path(map, *iterator, *(iterator + 1), *(iterator + 2),num,true,false);
-				}
-			}
-		}
+		APathAlgorithm::optimizePath(map, path, priority_dir);
+
 	}
 }

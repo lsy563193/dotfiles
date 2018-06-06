@@ -15,7 +15,10 @@ MovementGoToCharger::MovementGoToCharger()
 	ROS_INFO("%s %d: Init", __FUNCTION__, __LINE__);
 	gtc_state_now_ = gtc_init;
 	if(is_turn_connect_failed_ && sp_mt_ != nullptr && sp_mt_->sp_mode_->mode_i_ == sp_mt_->sp_mode_->md_go_to_charger)
+	{
+		ROS_WARN("%s %d: Move back first.", __FUNCTION__, __LINE__);
 		should_away_from_charge_station = true;
+	}
 }
 
 MovementGoToCharger::~MovementGoToCharger()

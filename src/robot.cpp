@@ -19,6 +19,7 @@
 #include "mode.hpp"
 #include "appointment.h"
 #include "std_srvs/Empty.h"
+#include "log.h"
 
 using namespace SERIAL;
 
@@ -1142,3 +1143,4 @@ Mode *getNextMode(int next_mode_i_)
 		}
 	}
 }
+

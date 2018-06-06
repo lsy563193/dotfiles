@@ -11,7 +11,7 @@
 #include <beeper.h>
 #include <wheel.hpp>
 #include <key.h>
-
+#include "log.h"
 CleanModeSpot::CleanModeSpot()
 {
 	ROS_WARN("%s %d: Entering Spot mode\n=========================" , __FUNCTION__, __LINE__);
