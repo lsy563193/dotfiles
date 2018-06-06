@@ -25,6 +25,37 @@
 #define COLOUR_LIGHT_GRAY	"\033[0;37m"
 #define COLOUR_WHITE		"\033[1;37m"
 
+enum{
+	NONE = 0,
+	ERROR,
+	NORMAL,
+	WARN,
+	WHITE,
+	BLUE,
+	RED,
+	CYAN,
+	BLACK,
+	PURPLE,
+	GREEN,
+	YEllOW,
+};
+
+void INFO_PRINT(int type,const char* arg,...);
+
+#define INFO_RED(...)		INFO_PRINT(RED,__VA_ARGS__);
+#define INFO_GREEN(...)	INFO_PRINT(GREEN,__VA_ARGS__);
+#define INFO_YELLOW(...)	INFO_PRINT(YEllOW,__VA_ARGS__);
+#define INFO_BLUE(...)	INFO_PRINT(BLUE,__VA_ARGS__);
+#define INFO_PURPLE(...)	INFO_PRINT(PURPLE,__VA_ARGS__);
+#define INFO_CYAN(...)	INFO_PRINT(CYAN,__VA_ARGS__);
+#define INFO_WHITE(...)	INFO_PRINT(WHITE,__VA_ARGS__);
+#define INFO_BLACK(...)	INFO_PRINT(BLACK,__VA_ARGS__);
+#define INFO_NOR(...) INFO_PRINT(NORMAL,__VA_ARGS__);
+
+#define INFO_ERR_CON(cond ,...) if(cond)INFO_PRINT(ERROR,__VA_ARGS__)
+#define INFO_WAR_CON(cond ,...) if(cond)INFO_PRINT(WARN,__VA_ARGS__)
+#define INFO_NOR_CON(cond ,...) if(cond)INFO_PRINT(NORMAL,__VA_ARGS__)
+
 class Log
 {
 public:

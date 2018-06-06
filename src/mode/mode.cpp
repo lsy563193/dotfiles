@@ -9,6 +9,7 @@
 #include "action.hpp"
 #include "movement.hpp"
 #include "move_type.hpp"
+#include "log.h"
 
 boost::shared_ptr<IAction> Mode::sp_action_ = nullptr;
 

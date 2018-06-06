@@ -19,6 +19,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include <ros/ros.h>
 #include "mutex_lock.h"
 #include "log.h"
 
@@ -663,3 +664,57 @@ string TextFormatter::operator()( const Log::DataObj &a_d )
 
 }
 
+void INFO_PRINT(int type,const char* arg,...)
+{
+	va_list va, va_cp;
+	va_start(va,arg);
+	va_copy(va_cp,va);
+	const int count = vsnprintf(nullptr,0,arg,va_cp);
+	if(count <0)
+	{
+		fprintf(stderr,"vsnprintf error");
+		return;
+	}
+	char buffer[count+1];
+	va_end(va_cp);
+	vsprintf(buffer,arg,va);
+	va_end(va);
+	switch(type)
+	{
+		case ERROR:
+			ROS_ERROR("%s", buffer);
+			break;
+		case WARN:
+			ROS_WARN("%s", buffer);
+			break;
+		case NORMAL:
+			ROS_INFO("%s",buffer);
+			break;
+		case WHITE:
+			ROS_INFO("\033[37m%s",buffer);
+			break;
+		case BLUE:
+			ROS_INFO("\033[34m%s",buffer);
+			break;
+		case RED:
+			ROS_INFO("\033[31m%s",buffer);
+			break;
+		case GREEN:
+			ROS_INFO("\033[32m%s",buffer);
+			break;
+		case PURPLE:
+			ROS_INFO("\033[35m%s",buffer);
+			break;
+		case CYAN:
+			ROS_INFO("\033[36m%s",buffer);
+			break;
+		case BLACK:
+			ROS_INFO("\033[30m%s",buffer);
+			break;
+		case YEllOW:
+			ROS_INFO("\033[33m%s",buffer);
+			break;
+		default:
+			ROS_INFO("%s",buffer);
+	}
+}

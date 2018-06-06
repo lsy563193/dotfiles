@@ -17,6 +17,7 @@
 #include "mode.hpp"
 #include <robot.hpp>
 #include "appointment.h"
+#include "log.h"
 
 ModeCharge::ModeCharge()
 {

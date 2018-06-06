@@ -12,6 +12,7 @@
 #include <slam.h>
 #include <infrared_display.hpp>
 #include "error.h"
+#include "log.h"
 
 const double CHASE_X = 0.107;
 

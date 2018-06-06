@@ -11,6 +11,7 @@
 #include "mode.hpp"
 #include "mathematics.h"
 #include "wifi/wifi.h"
+#include "log.h"
 
 //#define NAV_INFO() ROS_INFO("st(%d),ac(%d)", state_i_, action_i_)
 
