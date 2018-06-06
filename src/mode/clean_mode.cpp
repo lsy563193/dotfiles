@@ -1850,49 +1850,40 @@ bool ACleanMode::isSwitchByEventInStateGoHomePoint()
 	return checkEnterExceptionResumeState();
 }
 
-bool ACleanMode::updateActionInStateGoHomePoint()
-{
+bool ACleanMode::updateActionInStateGoHomePoint() {
 	bool update_finish;
 	sp_action_.reset();//to mark in destructor
-    if(!plan_path_.empty())
-    {
-        old_dir_ = iterate_point_->dir;
-    }
+	if (!plan_path_.empty()) {
+		old_dir_ = iterate_point_->dir;
+	}
 	auto start_point = go_home_path_algorithm_->getStartPoint();
 	auto current_home_point = go_home_path_algorithm_->getCurrentHomePoint();
 
 	ROS_INFO("%s %d: curr(%d, %d), current home point(%d, %d).", __FUNCTION__, __LINE__,
-			 getPosition().toCell().x, getPosition().toCell().y,
-			 current_home_point.toCell().x, current_home_point.toCell().y);
-	if (ev.rcon_status)
-	{
+					 getPosition().toCell().x, getPosition().toCell().y,
+					 current_home_point.toCell().x, current_home_point.toCell().y);
+	if (ev.rcon_status) {
 		// Directly switch to state go to charger.
 		ROS_INFO("%s %d: Rcon T signal triggered and switch to state go to charger.", __FUNCTION__, __LINE__);
 		should_go_to_charger_ = true;
 		ev.rcon_status = 0;
 		update_finish = false;
-	}
-	else if (go_home_path_algorithm_->reachTarget(should_go_to_charger_, getPosition()))
-	{
+	} else if (go_home_path_algorithm_->reachTarget(should_go_to_charger_, getPosition())) {
 		update_finish = false;
-	}
-	else if (go_home_path_algorithm_->isHomePointEmpty() && getPosition().toCell() == start_point.toCell())
-	{
-		ROS_INFO("Reach start point but angle not equal,start_point_(%d,%d,%f,%d)",start_point.toCell().x,
-				 start_point.toCell().y, radian_to_degree(start_point.th), start_point.dir);
+	} else if (go_home_path_algorithm_->isHomePointEmpty() && getPosition().toCell() == start_point.toCell()) {
+		ROS_INFO("Reach start point but angle not equal,start_point_(%d,%d,%f,%d)", start_point.toCell().x,
+						 start_point.toCell().y, radian_to_degree(start_point.th), start_point.dir);
 //		beeper.beepForCommand(VALID);
 		auto curr = getPosition();
 		curr.th = start_point.th;
 		plan_path_.clear();
-		plan_path_.emplace_back(curr) ;
-		plan_path_.push_back(start_point) ;
+		plan_path_.emplace_back(curr);
+		plan_path_.push_back(start_point);
 		iterate_point_ = plan_path_.begin();
 		action_i_ = ac_linear;
 		genNextAction();
 		update_finish = true;
-	}
-	else if (go_home_path_algorithm_->generatePath(clean_map_, getPosition(),old_dir_, plan_path_))
-	{
+	} else if (go_home_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
 		// New path to home cell is generated.
 		iterate_point_ = plan_path_.begin();
 //		plan_path_.pop_front();
@@ -1902,7 +1893,7 @@ bool ACleanMode::updateActionInStateGoHomePoint()
 		action_i_ = ac_linear;
 		genNextAction();
 		update_finish = true;
-	}else
+	} else
 		// path is empty.
 		update_finish = false;
 
@@ -2099,7 +2090,7 @@ void ACleanMode::switchInStateExploration() {
 	Cells cells{};
 
 	auto expand_condition = [&](const Cell_t cell, const Cell_t neighbor_cell){
-		return fw_tmp_map.isBlockAccessible(neighbor_cell.x, neighbor_cell.y);
+		return clean_map_.isBlockAccessible(neighbor_cell.x, neighbor_cell.y);
 	};
 	auto is_found = clean_path_algorithm_->dijkstra(clean_map_, getPosition().toCell(), cells,true,  CellEqual(Cell_t{}),
 													isAccessable(&clean_map_, expand_condition));

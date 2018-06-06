@@ -9,7 +9,6 @@
 
 extern int g_follow_last_follow_wall_dir;
 
-
 std::unique_ptr<std::deque<BestTargetFilter*>> NavCleanPathAlgorithm::generateBounds(GridMap& map) {
 
 	std::deque<BestTargetFilter*> filters;
@@ -54,20 +53,19 @@ std::unique_ptr<std::deque<BestTargetFilter*>> NavCleanPathAlgorithm::generateBo
 	return make_unique<std::deque<BestTargetFilter*>>(filters);
 }
 
-static BoundingBox2 getLine(const Cell_t& curr,GridMap& map)
-{
+static BoundingBox2 getLine(const Cell_t& curr,GridMap& map) {
 	Cell_t c_it[2];
 	for (auto i = 0; i < 2; i++) {
-			c_it[i] = curr;
-			for (;; c_it[i] += cell_direction_[i]) {
-                auto tmp = c_it[i] +cell_direction_[i]*2;
-				if (map.cellIsOutOfTargetRange(tmp)  || map.isBlocksAtY(tmp.x, tmp.y))
-					break;
-				if (map.getCell(CLEAN_MAP, c_it[i].x, c_it[i].y) == UNCLEAN)
-					break;
-			}
+		c_it[i] = curr;
+		for (;; c_it[i] += cell_direction_[i]) {
+			auto tmp = c_it[i] + cell_direction_[i] * 2;
+			if (map.cellIsOutOfTargetRange(tmp) || map.isBlocksAtY(tmp.x, tmp.y))
+				break;
+			if (map.getCell(CLEAN_MAP, c_it[i].x, c_it[i].y) == UNCLEAN)
+				break;
 		}
-		return {c_it[1], c_it[0]};
+	}
+	return {c_it[1], c_it[0]};
 }
 
 void NavCleanPathAlgorithm::adjustPosition(Points&  plan_path)
@@ -143,7 +141,6 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr_p, co
 	map.print(curr_p.toCell(), CLEAN_MAP, path);
 	return true;
 }
-
 
 bool NavCleanPathAlgorithm::checkTrapped(GridMap &map, const Cell_t &curr_cell)
 {
