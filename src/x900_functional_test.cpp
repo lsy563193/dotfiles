@@ -631,9 +631,9 @@ void electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixture,
 				if(buf[REC_MIX_BYTE] & 0x01)
 				{
 					count_key_pressed++;
-					if(count_key_pressed > 5)
+					if(count_key_pressed > 2)
 					{
-						count_key_pressed = 5;
+						count_key_pressed = 2;
 						is_key_pressed = true;
 						ROS_INFO("%sw, %d: key pressed!", __FUNCTION__, __LINE__);
 					}
