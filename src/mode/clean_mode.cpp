@@ -38,7 +38,9 @@ ACleanMode::ACleanMode()
 	line_marker_pub_ = clean_nh_.advertise<visualization_msgs::Marker>("line_marker", 1);
 	line_marker_pub2_ = clean_nh_.advertise<visualization_msgs::Marker>("line_marker2", 1);
 
-	lidar.slipCheckingCtrl(ON);
+	if (next_mode_i_ != cm_test)
+		lidar.slipCheckingCtrl(ON);
+
 	event_manager_register_handler(this);
 	event_manager_reset_status();
 	event_manager_set_enable(true);
