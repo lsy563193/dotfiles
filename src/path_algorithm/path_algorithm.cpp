@@ -545,11 +545,12 @@ bool APathAlgorithm::shift_path(GridMap &map, const Cell_t &p1, Cell_t &p2, Cell
 //	ROS_INFO("dir_p12(%d), dir_p23(%d)", dir_p12, dir_p23);
 	auto is_break = false;
 	auto p12_it = p2;
+	auto p12_it_tmp = p2;
 	auto i = 1;
 	for (; i <= num * 2; i++) {
-		p12_it += cell_direction_[dir_p12];
-//		ROS_ERROR("p12_it,%d,%d", p12_it.x, p12_it.y);
-		for (auto p23_it = p12_it; p23_it != p3 + cell_direction_[dir_p12] * i+cell_direction_[dir_p23]; p23_it += cell_direction_[dir_p23]) {
+		p12_it_tmp += cell_direction_[dir_p12];
+//		ROS_ERROR("p12_it_tmp,%d,%d", p12_it_tmp.x, p12_it_tmp.y);
+		for (auto p23_it = p12_it_tmp; p23_it != p3 + cell_direction_[dir_p12] * i+cell_direction_[dir_p23]; p23_it += cell_direction_[dir_p23]) {
 //			ROS_WARN("p23_it,%d,%d", p23_it.x, p23_it.y);
 			if (!map.isBlockAccessible(p23_it.x, p23_it.y)) {
 				is_break = true;
@@ -558,6 +559,7 @@ bool APathAlgorithm::shift_path(GridMap &map, const Cell_t &p1, Cell_t &p2, Cell
 		}
 		if(is_break)
 			break;
+		p12_it = p12_it_tmp;
 	}
 	if (i > 1) {
 		auto shift = (p12_it - p2);
@@ -710,6 +712,7 @@ void APathAlgorithm::optimizePath(GridMap &map, Cells &path, Dir_t& priority_dir
 				shift_path(map, *iterator, *(iterator + 1), *(iterator + 2), num, true, false);
 			}
 		}
+		std::unique(path.begin(), path.end());
 	}
 }
 
