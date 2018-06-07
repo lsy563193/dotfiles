@@ -1163,7 +1163,10 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 			{
 				if (checkChargerPos())
 				{
-					const Cell_t cell_around[12]{{1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1},{0,0},{2,0},{2,-1},{2,1}};
+					const Cell_t cell_around[20]{{1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1},{0,0},
+																			 {2,0},{2,-1},{2,1},{2,2},{-2,2},
+																			 {1,2},{0,2},{-1,2},
+																			 {1,-2},{0,-2},{-1,-2}};
 					if(std::any_of(std::begin(cell_around),std::end(cell_around),[&](const Cell_t &c_it){
 						auto cell = c_it + getPosition().toCell();
 						return clean_map_.getCell(CLEAN_MAP, cell.x , cell.y) == BLOCKED_RCON;
@@ -1175,7 +1178,7 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 							return true;
 						}
 					}
-					c_rcon.resetStatus();
+//					c_rcon.resetStatus();
 					return false;
 				}
 				else
