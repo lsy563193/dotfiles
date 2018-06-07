@@ -68,7 +68,7 @@ bool S_Wifi::init()
 {
 	robot_work_mode_ = wifi::WorkMode::IDLE;
 	//-----on reg device ,connect or disconnect-----
-	//regestory request
+	//Register request
 	s_wifi_rx_.regOnNewMsgListener<wifi::RegDeviceRequestRxMsg>(
 		[&]( const wifi::RxMsg &a_msg ) 
 		{
@@ -413,7 +413,7 @@ bool S_Wifi::init()
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::FactoryTestRxMsg &msg = static_cast<const wifi::FactoryTestRxMsg&>( a_msg );
 				factory_test_ack_= true;
-				cloudConnected();
+//				cloudConnected();
 				wifi_led.setMode(LED_FLASH,WifiLed::state::on);
 			}
 	);

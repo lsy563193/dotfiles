@@ -551,6 +551,8 @@ void robot::runTestMode()
 void robot::runWorkMode()
 {
 	//s_wifi.taskPushBack(S_Wifi::ACT::ACT_RESUME);
+	wifi_led.enable();
+
 	auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
 	send_thread_enable = true;
 

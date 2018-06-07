@@ -282,6 +282,7 @@ void main_board_test(uint8_t &test_stage, uint16_t &error_code, uint16_t &curren
 	uint16_t test_result=0;
 	uint16_t baseline[9];
 	test_stage = FUNC_ELECTRICAL_AND_LED_TEST_MODE;
+	wifi_led.enable();
 	while(ros::ok()) {
 		key_led.set(100, 100);
 		infrared_display.displayNormalMsg(test_stage-4, 0);

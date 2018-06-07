@@ -11,6 +11,7 @@
 #include <beeper.h>
 #include <wifi/wifi.h>
 #include <robot.hpp>
+#include <wifi_led.hpp>
 #include "ros/ros.h"
 #include "action.hpp"
 
@@ -303,9 +304,11 @@ void ActionR16Test::error_loop(uint8_t test_stage, uint16_t content, uint16_t er
 
 bool ActionR16Test::wifi_test()
 {
+	wifi_led.enable();
 	bool wifi_test_result = s_wifi.factoryTest();
 	if (wifi_test_result)
 		s_wifi.rebind();
+	wifi_led.disable();
 	return wifi_test_result;
 }
 

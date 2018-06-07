@@ -35,7 +35,7 @@ private:
 	uint16_t led_cnt_for_one_cycle_{0};
 	uint16_t live_led_cnt_for_switch_{0};
 
-	bool enable_{true};
+	bool enable_{false};
 
 };
 
