@@ -150,6 +150,7 @@ private:
 	static double wheel_cliff_trigger_time_;
 	static double gyro_tilt_trigger_time_;
 	float acur1_,acur2_,acur3_,acur4_;//accuracy  ,in meters
+	int print_count{0};
 	const float dist1_ = 3.5;//range distance 1 ,in meters
 	const float dist2_ = 2.5;//range distance 2
 	const float dist3_ = 1.5;//range distance 3

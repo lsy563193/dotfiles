@@ -1851,9 +1851,8 @@ bool Lidar::isNeedToCheckSlip(const sensor_msgs::LaserScan& scan) {
 	auto right_wheel_speed = wheel.getRightWheelActualSpeed();
 	bool is_low_speed = robot::instance()->getRobotActualSpeed() < 0.08 || robot::instance()->getRobotActualSpeed() > 0.173
 						|| fabs(right_wheel_speed - left_wheel_speed) > 0.1;
-	static int print_count = 0;
 
-	std::function<void(std::string)> f_print = [](std::string s){
+	std::function<void(std::string)> f_print = [&](std::string s){
 		if(print_count++ > 5) {
 			print_count = 0;
 			ROS_INFO("%s %d: %s",__FUNCTION__,__LINE__,s.c_str());
@@ -1861,7 +1860,7 @@ bool Lidar::isNeedToCheckSlip(const sensor_msgs::LaserScan& scan) {
 	};
 
 	if (!slip_enable_ || !lidar.isScanOriginalReady()) {
-		f_print("slip_enable");
+//		f_print("slip_not_enable");
 		last_slip_scan_frame_.clear();
 		return false;
 	}
