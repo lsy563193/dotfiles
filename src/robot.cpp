@@ -526,6 +526,7 @@ void robot::runTestMode()
 {
 	auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
 	send_thread_enable = true;
+	Mode::next_mode_i_ = Mode::cm_test;
 
 	if (r16_work_mode_ == NORMAL_SLEEP_MODE || r16_work_mode_ == WORK_MODE ||
 		r16_work_mode_ == WATER_TANK_TEST_MODE || r16_work_mode_ == BUMPER_TEST_MODE) // todo: for debug
