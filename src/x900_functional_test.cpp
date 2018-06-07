@@ -491,6 +491,7 @@ void electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixture,
 	uint16_t baseline_voltage=0;
 	uint8_t buf[REC_LEN];
 	bool should_save_baseline = true;
+	bool is_key_pressed = false;
 
 	ROS_INFO("%s, %d", __FUNCTION__, __LINE__);
 	serial.setSendData(CTL_WORK_MODE, FUNC_ELECTRICAL_AND_LED_TEST_MODE);
@@ -629,16 +630,23 @@ void electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixture,
 				if(buf[REC_MIX_BYTE] & 0x01)
 				{
 					count_key_pressed++;
+					if(count_key_pressed > 5)
+					{
+						count_key_pressed = 5;
+						is_key_pressed = true;
+						ROS_INFO("%sw, %d: key pressed!", __FUNCTION__, __LINE__);
+					}
 				}
-				else if(count_key_pressed)
+				else if(is_key_pressed)
 				{
-					if(count_key_pressed > 200)/*---long pressed, set is_fixture---*/
-						is_fixture = true;
-					else
-						is_fixture = false;
-					beeper.beepForCommand(true);
-					test_stage++;
-					wifi_led.set(OFF);
+					count_key_pressed--;
+					if(count_key_pressed == 0)
+					{
+						beeper.beepForCommand(true);
+						test_stage++;
+						wifi_led.set(OFF);
+						ROS_INFO("%s, %d: key release!", __FUNCTION__, __LINE__);
+					}
 				}
 				break;
 		}
