@@ -1782,6 +1782,15 @@ void ACleanMode::batteryLow(bool state_now, bool state_last)
 		ev.fatal_quit = true;
 	}
 }
+
+void ACleanMode::chargeDetect(bool state_now, bool state_last)
+{
+	if (!ev.charge_detect && charger.isDirected())
+	{
+		ROS_WARN("%s %d: Charge detect!.", __FUNCTION__, __LINE__);
+		ev.charge_detect = charger.getChargeStatus();
+	}
+}
 // ------------------Handlers end--------------------------
 
 // ------------------State init--------------------
@@ -2383,3 +2392,4 @@ void ACleanMode::setVacuum()
 			vacuum.setSpeedByUserSetMode();
 	}
 }
+

@@ -274,6 +274,7 @@ bool MoveTypeDeskTest::dataExtract(const uint8_t *buf)
 	gyro.setAngleY(static_cast<float>(static_cast<int16_t>((buf[REC_ANGLE_H] << 8) | buf[REC_ANGLE_L]) / 100.0 * -1));
 	gyro.setAngleV(
 			static_cast<float>(static_cast<int16_t>((buf[REC_ANGLE_V_H] << 8) | buf[REC_ANGLE_V_L]) / 100.0 * -1));
+//	printf("gyro angle:%f, anglev:%f.\n", gyro.getAngleY(), gyro.getAngleV());
 
 	// For bumper device.
 	bumper.setLeft((buf[REC_BUMPER_AND_CLIFF] & 0x20) != 0);
@@ -528,6 +529,7 @@ bool MoveTypeDeskTest::checkStage2Finish()
 				sum_cnt_++;
 				usleep(20000);
 			}
+//			scan_valid_cnt = _cnt;
 			ROS_INFO("%s %d: Scan valid count:%d.", __FUNCTION__, __LINE__, scan_valid_cnt);
 			if (scan_valid_cnt < _cnt -1)
 			{
@@ -580,6 +582,7 @@ bool MoveTypeDeskTest::checkStage2Finish()
 				sum_cnt_++;
 				usleep(20000);
 			}
+//			scan_valid_cnt = _cnt;
 			ROS_INFO("%s %d: Scan valid count:%d.", __FUNCTION__, __LINE__, scan_valid_cnt);
 			if (scan_valid_cnt < _cnt -1)
 			{
@@ -1379,15 +1382,25 @@ bool MoveTypeDeskTest::checkStage7Finish()
 				serial.sendData();
 			} else
 			{
-				p_movement_->run();
-				printf("Charge status:%d. Charge ctrl:%d. Charge test result:%d.\n",
-						charger.getChargeStatus(), serial.getSendData(CTL_CHARGER), charge_test_result_);
+				if (key.getTriggerStatus())
+				{
+					ROS_ERROR("%s %d: Auto key pressed.", __FUNCTION__, __LINE__);
+					error_code_ = CHARGE_CURRENT_ERROR;
+					error_content_ = 99;
+					error_step_ = test_stage_;
+					test_stage_ = 99;
+				} else
+				{
+					p_movement_->run();
+					printf("Charge status:%d. Charge ctrl:%d. Charge test result:%d.\n",
+						   charger.getChargeStatus(), serial.getSendData(CTL_CHARGER), charge_test_result_);
+				}
 			}
 			break;
 		}
 		case 2:
 		{
-			bool write_data_success = true;
+			bool write_data_success = false;
 			if (serial.getSendData(CTL_L_OBS_BL_H) != buf_[CTL_L_OBS_BL_H]
 				|| serial.getSendData(CTL_L_OBS_BL_L) != buf_[CTL_L_OBS_BL_L]
 				|| serial.getSendData(CTL_F_OBS_BL_H) != buf_[CTL_F_OBS_BL_H]
@@ -1402,11 +1415,13 @@ bool MoveTypeDeskTest::checkStage7Finish()
 				|| serial.getSendData(CTL_R_CLIFF_BL_L) != buf_[CTL_R_CLIFF_BL_L])
 			{
 				ROS_INFO("%s %d: Waiting for writing baseline.", __FUNCTION__, __LINE__);
-				write_data_success = false;
 				serial.sendData();
 				serial.debugSendStream(serial.send_stream);
 			} else
-				serial.sendData();
+//			{
+//				serial.sendData();
+				write_data_success = true;
+//			}
 
 			serial.debugReceivedStream(serial.receive_stream);
 			if (write_data_success)
@@ -1417,6 +1432,14 @@ bool MoveTypeDeskTest::checkStage7Finish()
 				key_led.setMode(LED_STEADY, LED_GREEN);
 				send_thread_enable = true;
 				test_step_++;
+			}
+			else if (key.getTriggerStatus())
+			{
+				ROS_ERROR("%s %d: Auto key pressed.", __FUNCTION__, __LINE__);
+				error_code_ = BASELINE_WRITE_TO_FLASH_ERROR;
+				error_content_ = 99;
+				error_step_ = test_stage_;
+				test_stage_ = 99;
 			}
 			break;
 		}
