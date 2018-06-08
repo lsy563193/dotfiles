@@ -1129,7 +1129,10 @@ uint8_t S_Wifi::setRobotCleanMode(wifi::WorkMode work_mode)
 		case wifi::WorkMode::FIND:
 			beeper.debugBeep(VALID);
 			#if DEBUG_ENABLE
-			speaker.play(VOICE_IM_HERE_UNOFFICIAL,false);
+//			speaker.play(VOICE_IM_HERE_UNOFFICIAL,false);
+			speaker.play(VOICE_FIND_ROBOT,false);
+			#else
+			speaker.play(VOICE_FIND_ROBOT,false);
 			#endif
 			INFO_BLUE("remote app find home mode command ");
 			break;
@@ -1500,15 +1503,16 @@ void S_Wifi::wifiSendRutine()
 		}
 		else
 		{
+
+			if(!is_wifi_connected_)
+				continue;
+
 			// If time is not synchronized, try to query NTP for every 3 mins.
 			if (!time_sync_ && ros::Time::now().toSec() - last_time_sync_time_ > 180)
 			{
 				taskPushBack(ACT::ACT_QUERY_NTP);
 				last_time_sync_time_ = ros::Time::now().toSec();
 			}
-
-			if(!is_wifi_connected_)
-				continue;
 
 			if (robot::instance()->duringNavigationCleaning() && upload_map_count++ >= 4)
 			{
