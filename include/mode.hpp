@@ -730,6 +730,9 @@ public:
 	bool isSwitchByEventInStateExceptionResume() override;
 
 private:
+
+	bool checkingIfSwitchIsOn();
+
 	bool has_aligned_and_open_slam_{false};
 	bool has_played_start_voice_{false};
 	float paused_odom_radian_{0};
