@@ -20,10 +20,43 @@
 #define COLOUR_LIGHT_CYAN	"\033[1;36m"
 #define COLOUR_PURPLE		"\033[0;35m"
 #define COLOUR_LIGHT_PURPLE	"\033[1;35m"
-#define COLOUR_BROWN		"\033[0;33m"
-#define COLOUR_YELLOW		"\033[1;33m"
+#define COLOUR_YELLOW		"\033[0;33m"
+#define COLOUR_LIGHT_YELLOW	"\033[1;33m"
 #define COLOUR_LIGHT_GRAY	"\033[0;37m"
 #define COLOUR_WHITE		"\033[1;37m"
+
+enum{
+	NONE = 0,
+	ERROR,
+	NORMAL,
+	WARN,
+	WHITE,
+	BLUE,
+	RED,
+	CYAN,
+	BLACK,
+	PURPLE,
+	GREEN,
+	YEllOW,
+};
+
+void INFO_PRINT(int type,const char* arg,...);
+#define INFO_ERROR(...)		INFO_PRINT(ERROR,__VA_ARGS__);
+#define INFO_WARN(...)		INFO_PRINT(WARN,__VA_ARGS__);
+
+#define INFO_RED(...)		INFO_PRINT(RED,__VA_ARGS__);
+#define INFO_GREEN(...)		INFO_PRINT(GREEN,__VA_ARGS__);
+#define INFO_YELLOW(...)	INFO_PRINT(YEllOW,__VA_ARGS__);
+#define INFO_BLUE(...)		INFO_PRINT(BLUE,__VA_ARGS__);
+#define INFO_PURPLE(...)	INFO_PRINT(PURPLE,__VA_ARGS__);
+#define INFO_CYAN(...)		INFO_PRINT(CYAN,__VA_ARGS__);
+#define INFO_WHITE(...)		INFO_PRINT(WHITE,__VA_ARGS__);
+#define INFO_BLACK(...)		INFO_PRINT(BLACK,__VA_ARGS__);
+#define INFO_NOR(...)		INFO_PRINT(NORMAL,__VA_ARGS__); //normal mean's print white color message
+
+#define INFO_ERR_CON(cond ,...) if(cond)INFO_PRINT(ERROR,__VA_ARGS__)
+#define INFO_WAR_CON(cond ,...) if(cond)INFO_PRINT(WARN,__VA_ARGS__)
+#define INFO_NOR_CON(cond ,...) if(cond)INFO_PRINT(NORMAL,__VA_ARGS__)
 
 class Log
 {
@@ -42,6 +75,9 @@ public:
 		DataObj() = default;
 		DataObj( const Level level, const std::string &tag,
 				const std::string &msg );
+		DataObj( const Level level, const std::string &tag,const std::string &color,
+				const std::string &msg );
+
 		DataObj( const DataObj& ) = delete;
 		DataObj( DataObj&& ) = default;
 		DataObj& operator=( const DataObj& ) = delete;
@@ -57,6 +93,7 @@ public:
 		Level level_ = Level::DEBUG_;
 		std::string tag_;
 		std::string msg_;
+		std::string color_;
 	};
 
 	class Backend
@@ -66,6 +103,8 @@ public:
 		{}
 
 		virtual void operator()( const Level l, const std::string &str ) = 0;
+
+		virtual void Flush() = 0;
 	};
 
 	class Formatter
@@ -118,8 +157,10 @@ public:
 	void error( const char *tag, const char *fmt, ...);
 	void warn( const char *tag, const char *fmt, ...);
 	void info( const char *tag, const char *fmt, ...);
+	void info( const char *tag, const char *color,const char *fmt, ...);
 	void debug( const char *tag, const char *fmt, ...);
 
+	void Flush();
 private:
 	/**
 	 * Constructor, set the current debug level
@@ -137,6 +178,7 @@ private:
 	void threadMain();
 
 	void log( const Level l, const char *tag, const char *fmt, va_list args );
+	void log( const Level a_l, const char *a_tag, const char* color,const char *a_fmt,va_list a_args );
 
 	DataObj popBlocking( void );
 
@@ -163,3 +205,20 @@ private:
 #define LOGW2(tag, fmt...) Log::inst().warn(tag, fmt);
 #define LOGE2(tag, fmt...) Log::inst().error(tag, fmt);
 #define LOGF2(tag, fmt...) Log::inst().fatal(tag, fmt);
+
+#define LOG_BLUE(...)	Log::inst().info("","BLUE",__VA_ARGS__);
+#define LOG_CYAN(...)	Log::inst().info("","CYAN",__VA_ARGS__);
+#define LOG_WHITE(...)	Log::inst().info("", "WHITE",__VA_ARGS__);
+#define LOG_GRAY(...)	Log::inst().info("", "DARK_GRAY",__VA_ARGS__);
+#define LOG_GREEN(...)	Log::inst().info("","GREEN",__VA_ARGS__);
+#define LOG_PURPLE(...)	Log::inst().info("","PURPLE",__VA_ARGS__);
+#define LOG_RED(...)	Log::inst().info("","RED",__VA_ARGS__);
+#define LOG_YELLOW(...)	Log::inst().info("","YELLOW",__VA_ARGS__);
+
+#define LOG_GREEN2(...)	Log::inst().info("","LIGHT_GREEN",__VA_ARGS__);
+#define LOG_BLUE2(...)	Log::inst().info("","LIGHT_BLUE",__VA_ARGS__);
+#define LOG_CYAN2(...)	Log::inst().info("","LIGHT_CYAN",__VA_ARGS__);
+#define LOG_GRAY2(...)	Log::inst().info("","LIGHT_GRAY",__VA_ARGS__);
+#define LOG_PURPLE2(...)	Log::inst().info("","LIGHT_PURPLE",__VA_ARGS__);
+#define LOG_RED2(...)	Log::inst().info("","LIGHT_RED",__VA_ARGS__);
+#define LOG_YELLOW2(...)	Log::inst().info("","LIGHT_YELLOW",__VA_ARGS__);

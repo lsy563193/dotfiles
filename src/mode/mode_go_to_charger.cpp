@@ -170,8 +170,7 @@ void ModeGoToCharger::cliffAll(bool state_now, bool state_last)
 
 void ModeGoToCharger::chargeDetect(bool state_now, bool state_last)
 {
-	ROS_WARN("%s %d: Charge detect!.", __FUNCTION__, __LINE__);
-	if (charger.getChargeStatus() >= 1)
+	if (charger.isDirected())
 	{
 		ROS_WARN("%s %d: Set ev.chargeDetect.", __FUNCTION__, __LINE__);
 		ev.charge_detect = charger.getChargeStatus();

@@ -25,6 +25,8 @@ bool ActionOpenGyro::isFinish()
 		gyro.setAngleROffset();
 		gyro.resetKalmanParam();
 		gyro.setTiltCheckingEnable(true);
+		if(gyro.getErrorCount() >= set_brush_stop_count_) // Brush should be reopened if gyro opens succeed after it opens failed above 4 times
+			brush.slowOperate();
 		return true;
 	}
 	return false;
@@ -34,4 +36,17 @@ void ActionOpenGyro::run()
 {
 	wheel.setPidTargetSpeed(0, 0);
 	gyro.waitForOn();
+
+	auto gyro_error_count = gyro.getErrorCount();
+	if(gyro_error_count == set_brush_slow_count_ && !had_set_brush_slow_)
+	{
+		ROS_WARN("%s,%d: Open gyro failed 2 times, set brush to slow");
+		brush.slowOperate();
+		had_set_brush_slow_ = true;
+	} else if(gyro_error_count == set_brush_stop_count_ && !had_set_brush_stop_)
+	{
+		brush.stop();
+		had_set_brush_stop_ = true;
+		ROS_WARN("%s,%d: Open gyro failed 4 times, set brush to stop");
+	}
 }

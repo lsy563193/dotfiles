@@ -139,6 +139,7 @@ private:
 	bool is_trapped_in_small_area_{false};
     std::vector<Points::iterator>  it_out_edges{};
     std::vector<Points::iterator>  it_in_edges{};
+	bool status_after_cliff_{false};
 //	Points out_points{};
 };
 

@@ -17,6 +17,7 @@
 #include "appointment.h"
 #include "movement.hpp"
 #include "battery.h"
+#include "log.h"
 
 #define RCON_TRIGGER_INTERVAL 180
 

@@ -11,7 +11,7 @@
 #include <beeper.h>
 #include <wheel.hpp>
 #include <key.h>
-
+#include "log.h"
 CleanModeSpot::CleanModeSpot()
 {
 	ROS_WARN("%s %d: Entering Spot mode\n=========================" , __FUNCTION__, __LINE__);
@@ -40,31 +40,10 @@ bool CleanModeSpot::isExit()
 		return true;
 	}
 
-	if(ev.fatal_quit)
-	{
-		ROS_WARN("%s %d: Exit to idle mode by fatal quit.", __FUNCTION__, __LINE__);
-		setNextMode(md_idle);
-		return true;
-	}
-
 	if (s_wifi.receiveSpot())
 	{
 		ROS_WARN("%s %d: Exit for wifi spot.", __FUNCTION__, __LINE__);
 		setNextMode(md_idle);
-		return true;
-	}
-
-	if (s_wifi.receiveIdle())
-	{
-		ROS_WARN("%s %d: Exit for wifi idle.", __FUNCTION__, __LINE__);
-		setNextMode(md_idle);
-		return true;
-	}
-
-	if (s_wifi.receivePlan1())
-	{
-		ROS_WARN("%s %d: Exit for wifi plan1.", __FUNCTION__, __LINE__);
-		setNextMode(cm_navigation);
 		return true;
 	}
 

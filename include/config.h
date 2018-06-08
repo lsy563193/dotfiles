@@ -3,7 +3,7 @@
 /* ------------------------------------- System Setting ------------------------------------- */
 
 #define CURRENT_VERSION 0
-#define CURRENT_PATCH 15
+#define CURRENT_PATCH 16
 
 /*
  * Chipset setting.
@@ -51,11 +51,6 @@
 #define ROBOT_SIZE			(3)
 
 #define ROBOT_SIZE_1_2			(ROBOT_SIZE/2)
-
-/*
- * Definition for enable debug or not.
- */
-#define ENABLE_DEBUG			(1)
 
 /*
  * Enable debugging the grid map.

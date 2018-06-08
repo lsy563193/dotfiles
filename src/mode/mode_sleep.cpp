@@ -18,6 +18,7 @@
 #include "remote.hpp"
 #include "wifi/wifi.h"
 #include "appointment.h"
+#include "log.h"
 
 #define RCON_TRIGGER_INTERVAL 180
 

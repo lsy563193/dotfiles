@@ -103,6 +103,7 @@ public:
 	bool isFinish() override;
 
 private:
+	uint8_t  rcon_disappear_count{0};
 	uint32_t rcon_status;
 	int32_t left_speed_{};
 	int32_t right_speed_{};
@@ -292,6 +293,7 @@ private:
 
 	int32_t left_speed_;
 	int32_t right_speed_;
+	uint8_t stable_charge_count_{0};
 };
 
 class MovementExceptionResume: public IMovement

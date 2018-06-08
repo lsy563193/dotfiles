@@ -7,6 +7,7 @@
 #include "map.h"
 #include "serial.h"
 #include "appointment.h"
+#include "log.h"
 
 int g_bumper_cnt = 0;
 /* OBS */

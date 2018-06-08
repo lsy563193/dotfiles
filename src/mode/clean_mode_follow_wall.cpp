@@ -19,7 +19,7 @@ CleanModeFollowWall::CleanModeFollowWall()
 //	diff_timer_ = WALL_FOLLOW_TIME;
 	speaker.play(VOICE_CLEANING_WALL_FOLLOW, false);
 	clean_path_algorithm_.reset(new WFCleanPathAlgorithm);
-	go_home_path_algorithm_.reset(new GoHomePathAlgorithm());
+	go_home_path_algorithm_.reset(new FollowWallModeGoHomePathAlgorithm());
 	closed_count_limit_ = 1;
 	mode_i_ = cm_wall_follow;
 	s_wifi.setWorkMode(cm_wall_follow);
@@ -84,20 +84,6 @@ bool CleanModeFollowWall::isExit()
 	if (ev.remote_follow_wall)
 	{
 		ROS_WARN("%s %d: Exit for ev.remote_follow_wall.", __FUNCTION__, __LINE__);
-		setNextMode(md_idle);
-		return true;
-	}
-
-	if(ev.fatal_quit)
-	{
-		ROS_WARN("%s %d: Exit to idle mode by fatal quit.", __FUNCTION__, __LINE__);
-		setNextMode(md_idle);
-		return true;
-	}
-
-	if (s_wifi.receiveIdle())
-	{
-		ROS_WARN("%s %d: Exit for wifi idle.", __FUNCTION__, __LINE__);
 		setNextMode(md_idle);
 		return true;
 	}
@@ -188,24 +174,6 @@ void CleanModeFollowWall::remoteWallFollow(bool state_now, bool state_last)
 	wheel.stop();
 	ev.remote_follow_wall = true;
 	remote.reset();
-}
-
-void CleanModeFollowWall::chargeDetect(bool state_now, bool state_last)
-{
-	if (!ev.charge_detect)
-	{
-		if (isStateGoToCharger())
-		{
-			ROS_WARN("%s %d: Charge detect!.", __FUNCTION__, __LINE__);
-			ev.charge_detect = charger.getChargeStatus();
-		}
-		else if (charger.isDirected())
-		{
-			ROS_WARN("%s %d: Charge detect!.", __FUNCTION__, __LINE__);
-			ev.charge_detect = charger.getChargeStatus();
-			ev.fatal_quit = true;
-		}
-	}
 }
 
 void CleanModeFollowWall::batteryHome(bool state_now, bool state_last)

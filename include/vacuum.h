@@ -13,7 +13,7 @@ public:
 
 	enum VacSpeed
 	{
-		vac_speed_max = 100, //15500rpm
+		vac_speed_max = 107, //16050rpm
 		vac_speed_normal = 80, //12000rpm
 		vac_speed_low = 50,//7500rpm
 	};

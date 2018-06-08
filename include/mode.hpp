@@ -17,20 +17,12 @@
 #include "action.hpp"
 #include "movement.hpp"
 #include "move_type.hpp"
-
+#include <cstdarg>
 
 #define ROS_INFO_FL() ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__)
 #define PP_INFO() ROS_INFO("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__)
 #define PP_WARN() ROS_WARN("%s,%s,%d",__FILE__,__FUNCTION__, __LINE__)
 
-#define INFO_RED(X)		ROS_INFO("%s,%d,\033[1;40;31m"#X"\033[0m",__FUNCTION__,__LINE__)
-#define INFO_GREEN(X)	ROS_INFO("%s,%d,\033[1;40;32m"#X"\033[0m",__FUNCTION__,__LINE__)
-#define INFO_YELLOW(X)	ROS_INFO("%s,%d,\033[1;40;33m"#X"\033[0m",__FUNCTION__,__LINE__)
-#define INFO_BLUE(X)	ROS_INFO("%s,%d,\033[1;40;34m"#X"\033[0m",__FUNCTION__,__LINE__)
-#define INFO_PURPLE(X)	ROS_INFO("%s,%d,\033[1;40;35m"#X"\033[0m",__FUNCTION__,__LINE__)
-#define INFO_CYAN(X)	ROS_INFO("%s,%d,\033[1;40;36m"#X"\033[0m",__FUNCTION__,__LINE__)
-#define INFO_WHITE(X)	ROS_INFO("%s,%d,\033[1;40;37m"#X"\033[0m",__FUNCTION__,__LINE__)
-#define INFO_BLACK(X)	ROS_INFO("%s,%d,\033[1;40;30m"#X"\033[0m",__FUNCTION__,__LINE__)
 
 typedef struct{
 		uint32_t seq{};
@@ -412,6 +404,7 @@ public:
 	void overCurrentBrushMain(bool state_now, bool state_last) override;
 	void overCurrentVacuum(bool state_now, bool state_last) override;
 	void batteryLow(bool state_now, bool state_last) override;
+	void chargeDetect(bool state_now, bool state_last) override ;
 
 	// State init
 	bool isStateInit() const
@@ -615,7 +608,7 @@ public:
 	static void pubPointMarkers2(const std::vector<geometry_msgs::Point> *points, std::string frame_id, std::string name);
 	void pubFitLineMarker(visualization_msgs::Marker fit_line_marker);
 	void setLinearCleaned();
-	uint8_t setFollowWall(GridMap&, bool is_left, const Points&);
+	uint8_t setFollowWall(GridMap&, bool is_left, const Points&, bool is_exclude= false, int16_t cell_y=0);
 	void scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr& scan);
 	void setCleanMapMarkers(int16_t x, int16_t y, CellState type,  visualization_msgs::Marker& clean_map_markers_);
 	void pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path);
@@ -737,6 +730,9 @@ public:
 	bool isSwitchByEventInStateExceptionResume() override;
 
 private:
+
+	bool checkingIfSwitchIsOn();
+
 	bool has_aligned_and_open_slam_{false};
 	bool has_played_start_voice_{false};
 	float paused_odom_radian_{0};
@@ -760,7 +756,6 @@ public:
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteClean(bool state_now, bool state_last) override ;
 //	void cliffAll(bool state_now, bool state_last) override ;
-	void chargeDetect(bool state_now, bool state_last) override ;
 	void remoteMax(bool state_now, bool state_last) override ;
 
 //	void overCurrentBrushLeft(bool state_now, bool state_last);
@@ -801,7 +796,6 @@ public:
 	void remoteMax(bool state_now, bool state_last) override;
 	void remoteClean(bool state_now, bool state_last) override;
 	void remoteWallFollow(bool state_now, bool state_last) override;
-	void chargeDetect(bool state_now, bool state_last) override;
 	void switchInStateFollowWall() override;
 	void batteryHome(bool state_now, bool state_last) override ;
 
