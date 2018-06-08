@@ -692,6 +692,7 @@ void APathAlgorithm::optimizePath(GridMap &map, Cells &path, Dir_t& priority_dir
 					path.erase(path.begin() + 1);
 				path.push_front(tmp);
 			}
+			path.erase(std::unique(path.begin(), path.end()),path.end());
 		}
 	}
 	if (path.size() > 3)
@@ -712,7 +713,8 @@ void APathAlgorithm::optimizePath(GridMap &map, Cells &path, Dir_t& priority_dir
 				shift_path(map, *iterator, *(iterator + 1), *(iterator + 2), num, true, false);
 			}
 		}
-		std::unique(path.begin(), path.end());
+		path.erase(std::unique(path.begin(), path.end()),path.end());
+		displayCellPath(path);
 	}
 }
 
