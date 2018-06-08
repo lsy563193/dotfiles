@@ -1267,6 +1267,11 @@ bool ACleanMode::isFinish()
 bool ACleanMode::checkChargerPos()
 {
 	const int16_t DETECT_RANGE = 20;//cells
+	if (!charger_poses_.empty()) {
+		if (getPosition().toCell().Distance(charger_poses_.back().toCell()) > 10 ) {
+			setChargerArea(charger_poses_.back());
+		}
+	}
 //	if(!isStateGoHomePoint()){
 	if(c_rcon.getStatus())
 	{
@@ -1278,7 +1283,6 @@ bool ACleanMode::checkChargerPos()
 				if(getPosition().toCell().Distance(charger_position.toCell()) > DETECT_RANGE )
 					counter++;
 				else{
-//						c_rcon.resetStatus();
 					return true;
 				}
 				if(counter >= charger_poses_.size())
@@ -1287,7 +1291,6 @@ bool ACleanMode::checkChargerPos()
 					{
 						ROS_WARN("%s %d: FOUND CHARGER.", __FUNCTION__, __LINE__);
 						beeper.debugBeep(VALID);
-//							c_rcon.resetStatus();
 						go_home_path_algorithm_->setHomePoint(getPosition());
 						if (!hasSeenChargerDuringCleaning())
 							setSeenChargerDuringCleaning();
@@ -1302,7 +1305,6 @@ bool ACleanMode::checkChargerPos()
 			if(estimateChargerPos(c_rcon.getStatus())){
 				ROS_WARN("%s %d: FOUND CHARGER.", __FUNCTION__, __LINE__);
 				beeper.debugBeep(VALID);
-//					c_rcon.resetStatus();
 				go_home_path_algorithm_->setHomePoint(getPosition());
 				if (!hasSeenChargerDuringCleaning())
 					setSeenChargerDuringCleaning();
@@ -1582,7 +1584,7 @@ void ACleanMode::setChargerArea(const Point_t charger_pos)
 	}
 
 	Cell_t charger_pos_cell  = charger_pos.toCell();
-	ROS_INFO("%s,%d,charger position(%d,%d),th= %f,dir=%d",__FUNCTION__,__LINE__,charger_pos_cell.x,charger_pos_cell.y,charger_pos.th,charger_pos.dir);
+//	ROS_INFO("%s,%d,charger position(%d,%d),th= %f,dir=%d",__FUNCTION__,__LINE__,charger_pos_cell.x,charger_pos_cell.y,charger_pos.th,charger_pos.dir);
 
 	std::string debug_str;
 	for(int j = 3;j>-3;j--){
@@ -1592,7 +1594,7 @@ void ACleanMode::setChargerArea(const Point_t charger_pos)
 			clean_map_.setCell(CLEAN_MAP,charger_pos_cell.x +i ,charger_pos_cell.y+j,BLOCKED_RCON);
 		}
 	}
-	ROS_INFO("%s %d: %s", __FUNCTION__, __LINE__, debug_str.c_str());
+//	ROS_INFO("%s %d: %s", __FUNCTION__, __LINE__, debug_str.c_str());
 	//const int RADIAN= 4;//cells
 	//clean_map_.setCircleMarkers(charger_pos,true,RADIAN,BLOCKED_RCON);
 
