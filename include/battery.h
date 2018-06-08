@@ -11,6 +11,11 @@ class Battery {
 public:
 	bool isFull(void);
 
+	void setIsFull(bool is_full)
+	{
+		is_full_ = is_full;
+	}
+
 	bool isReadyToClean(void);
 
 	bool shouldGoHome(void);
@@ -42,6 +47,7 @@ private:
 	uint16_t voltage_{0};
 	double update_time_stamp_{0};
 	bool force_update_{false};
+	bool is_full_{false};
 };
 
 extern Battery battery;

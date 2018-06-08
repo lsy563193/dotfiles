@@ -1077,7 +1077,7 @@ void CleanModeNav::switchInStateCharge()
 // ------------------State resume low battery charge--------------------
 bool CleanModeNav::checkEnterResumeLowBatteryCharge()
 {
-	if (battery.isReadyToResumeCleaning()/* || ev.remote_direction_right*/)
+	if (battery.isFull()/* || ev.remote_direction_right*/)
 	{
 		/*if (ev.remote_direction_right)
 			ev.remote_direction_right = false;*/

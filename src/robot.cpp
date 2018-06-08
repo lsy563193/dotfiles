@@ -340,6 +340,7 @@ void robot::robotbase_routine_cb()
 		battery.setVoltage(buf[REC_BATTERY] * 10);
 //		printf("Battery:%.1fv.\n", static_cast<float>(buf[REC_BATTERY] / 10.0));
 		sensor.battery = static_cast<float>(battery.getVoltage() / 100.0);
+		battery.setIsFull((buf[REC_BUMPER_AND_CLIFF] & 0x80) != 0);
 
 		// For over current checking.
 		vacuum.setOc((buf[REC_OC] & 0x01) != 0);
