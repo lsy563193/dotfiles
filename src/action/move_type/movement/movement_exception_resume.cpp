@@ -260,6 +260,9 @@ bool MovementExceptionResume::isFinish()
 	// Check for right wheel.
 	if (ev.oc_wheel_left || ev.oc_wheel_right)
 	{
+		/*--- init start time ---*/
+		if(resume_wheel_start_time_ == 0)
+			resume_wheel_start_time_ = ros::Time::now().toSec();
 		if (brush.isSideBrushOn())
 			brush.stop();
 		vacuum.stop();
@@ -274,8 +277,9 @@ bool MovementExceptionResume::isFinish()
 				ROS_WARN("%s %d: Right wheel resume succeeded.", __FUNCTION__, __LINE__);
 				ev.oc_wheel_right = false;
 			}
+			return true;
 		}
-		if (wheel.getLeftWheelOc() || wheel.getRightWheelOc())
+		else if (wheel.getLeftWheelOc() || wheel.getRightWheelOc())
 		{
 			if (++wheel_resume_cnt_ >= 30)
 			{
@@ -302,6 +306,9 @@ bool MovementExceptionResume::isFinish()
 	}
 	else if (ev.oc_brush_main)
 	{
+		/*--- init start time ---*/
+		if(resume_main_bursh_start_time_ == 0)
+			resume_main_bursh_start_time_ = ros::Time::now().toSec();
 		if (oc_main_brush_cnt_ < 1)
 		{
 			switch (main_brush_resume_state_)
@@ -338,7 +345,9 @@ bool MovementExceptionResume::isFinish()
 						if (brush.isMainBrushSlowOperate())
 							brush.blockMainBrushSlowOperation();
 						brush.stop();
+						brush.slowOperate();
 						ev.oc_brush_main = false;
+						return true;
 					}
 					break;
 				}
@@ -395,6 +404,7 @@ bool MovementExceptionResume::isFinish()
 			ev.cliff_all_triggered = false;
 			ev.cliff_triggered = 0;
 			g_cliff_cnt = 0;
+			return true;
 		}
 		else if (cliff_all_resume_cnt_ < 2)
 		{
@@ -424,6 +434,7 @@ bool MovementExceptionResume::isFinish()
 			ev.cliff_jam = false;
 			ev.cliff_triggered = 0;
 			g_cliff_cnt = 0;
+			return true;
 		}
 		else if (cliff_resume_cnt_ < 5)
 		{
@@ -462,6 +473,7 @@ bool MovementExceptionResume::isFinish()
 			sp_mt_->sp_mode_->is_wheel_cliff_triggered = false;
 			ev.right_wheel_cliff = false;
 			ev.left_wheel_cliff = false;
+			return true;
 		}
 		else
 		{
@@ -557,6 +569,7 @@ bool MovementExceptionResume::isFinish()
 			ev.bumper_jam = false;
 			ev.bumper_triggered = 0;
 			g_bumper_cnt = 0;
+			return true;
 		}
 		else if(bumper.getStatus() == BLOCK_LEFT || bumper.getStatus() == BLOCK_RIGHT || bumper.getStatus() == BLOCK_ALL)
 		{
@@ -631,6 +644,7 @@ bool MovementExceptionResume::isFinish()
 			ev.lidar_bumper_jam = false;
 			ev.bumper_triggered = 0;
 			g_bumper_cnt = 0;
+			return true;
 		}
 		else if (bumper.getStatus() == BLOCK_LIDAR_BUMPER)
 		{
@@ -704,6 +718,7 @@ bool MovementExceptionResume::isFinish()
 			ROS_ERROR("%s %d: Tilt resume succeeded.", __FUNCTION__, __LINE__);
 			ev.tilt_jam = false;
 			ev.tilt_triggered = false;
+			return true;
 		}
 		else
 		{
@@ -772,11 +787,15 @@ bool MovementExceptionResume::isFinish()
 	}
 	else if (ev.oc_vacuum)
 	{
+		/*--- init start time ---*/
+		if(resume_vacuum_start_time_ == 0)
+			resume_vacuum_start_time_ = ros::Time::now().toSec();
 		if (!vacuum.getOc())
 		{
 			ROS_WARN("%s %d: Vacuum over current resume succeeded!", __FUNCTION__, __LINE__);
 			vacuum.resetExceptionResume();
 			ev.oc_vacuum = false;
+			return true;
 		}
 		else if (ros::Time::now().toSec() - resume_vacuum_start_time_ > 10)
 		{
@@ -796,6 +815,9 @@ bool MovementExceptionResume::isFinish()
 	}
 	else if(ev.robot_stuck)
 	{
+		/*--- init start time ---*/
+		if(resume_stuck_start_time_ == 0)
+			resume_stuck_start_time_ = ros::Time::now().toSec();
 		CellState cell_state;
 		auto is_follow_wall_left = last_action_i_ == sp_mt_->sp_mode_->ac_follow_wall_left;
 		auto is_follow_wall_right = last_action_i_ == sp_mt_->sp_mode_->ac_follow_wall_right;
@@ -822,6 +844,7 @@ bool MovementExceptionResume::isFinish()
 						ev.robot_stuck= false;
 						ev.slip_triggered= false;
 						stuck_start_turn_time_ = ros::Time::now().toSec();//in this place,stuck_start_turn_time_ record the slip end time
+						return true;
 					}
 					else
 					{
@@ -860,6 +883,9 @@ bool MovementExceptionResume::isFinish()
 		}
 	}
 	else if (ev.lidar_stuck) {
+		/*--- init start time ---*/
+		if(resume_lidar_start_time_ == 0)
+			resume_lidar_start_time_ = ros::Time::now().toSec();
 		if (lidar_resume_cnt_ < 5)
 		{
 			float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getOriginX(), odom.getOriginY());
@@ -884,8 +910,16 @@ bool MovementExceptionResume::isFinish()
 			ev.fatal_quit = true;
 			robot_error.set(ERROR_CODE_LIDAR);
 		}
+		if (!robot::instance()->checkLidarStuck())
+		{
+			ev.lidar_stuck = false;
+			return true;
+		}
 	}
 	else if(ev.gyro_error) {
+		/*--- init start time ---*/
+		if(resume_gyro_start_time_ == 0)
+			resume_gyro_start_time_ = ros::Time::now().toSec();
 		if(should_init_for_gyro_exception_)
 		{
 			should_init_for_gyro_exception_ = false;
@@ -915,6 +949,7 @@ bool MovementExceptionResume::isFinish()
 				ev.gyro_error = false;
 				delete p_action_open_gyro_;
 				return true;
+				return true;
 			}
 			else
 				p_action_open_gyro_->run();
@@ -934,10 +969,10 @@ bool MovementExceptionResume::isFinish()
 
 void MovementExceptionResume::resetResumeTime(void)
 {
-	resume_wheel_start_time_ = ros::Time::now().toSec();
-	resume_main_bursh_start_time_ = ros::Time::now().toSec();
-	resume_vacuum_start_time_ = ros::Time::now().toSec();
-	resume_lidar_start_time_ = ros::Time::now().toSec();
-	resume_stuck_start_time_ = ros::Time::now().toSec();
-	resume_gyro_start_time_ = ros::Time::now().toSec();
+	resume_wheel_start_time_ = 0;
+	resume_main_bursh_start_time_ = 0;
+	resume_vacuum_start_time_ = 0;
+	resume_lidar_start_time_ = 0;
+	resume_stuck_start_time_ = 0;
+	resume_gyro_start_time_ = 0;
 }
