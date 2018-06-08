@@ -202,6 +202,9 @@ public:
 	void setSlipByGyroStatus(const bool& val){
 		slip_by_gyro_status_ = val;
 	}
+	uint8_t getErrorCount(){
+		return error_count_;
+	}
 private:
 
 	float angle_y_;//yaw

@@ -79,6 +79,7 @@ typedef enum {
 	VOICE_WAKE_UP_UNOFFICIAL = 71,
 	VOICE_SLEEP_UNOFFICIAL = 72,
 	VOICE_GYRO_ERROR = 73,
+	VOICE_FIND_ROBOT = 74,
 }VoiceType;
 
 typedef struct

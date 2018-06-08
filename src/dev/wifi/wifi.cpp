@@ -18,8 +18,10 @@
 #define CLOUD_DOMAIN_ID 5479
 #define CLOUD_SUBDOMAIN_ID 6369
 #define CLOUD_AP "Robot"
-//#define CLOUD_KEY "BEEE3F8925CC677AC1F3D1D9FEBC8B8632316C4B98431632E11933E1FB3C2167E223EFCC653ED3324E3EA219CCCD3E97D8242465C9327A91578901CA65015DB1C80DD4A0F45C5CC7DF1267A2FD5C00E7BD3175C2BB08BA8CFA886CCED2F70D214FB2CC88ECCA6BB1B5F4E6EE9948D424"
-#define CLOUD_KEY "DA61A6DC0970AD5AACE8946B6EF6077A59D7BB0152E9E8CB5B91EB58F7A9FB69E1C903D2C14C38ACE00047D85E397243F79AFF63F599244199708062F8FE0EE307FE25B48043427E5C2FA65B727A7621C2DFDEB95186E21E2F21782A6D45A779A86A264EA2F69BEAAC329843E822D357"
+// Key for native test env.
+#define CLOUD_KEY "BEEE3F8925CC677AC1F3D1D9FEBC8B8632316C4B98431632E11933E1FB3C2167E223EFCC653ED3324E3EA219CCCD3E97D8242465C9327A91578901CA65015DB1C80DD4A0F45C5CC7DF1267A2FD5C00E7BD3175C2BB08BA8CFA886CCED2F70D214FB2CC88ECCA6BB1B5F4E6EE9948D424"
+// Key for native product env.
+//#define CLOUD_KEY "DA61A6DC0970AD5AACE8946B6EF6077A59D7BB0152E9E8CB5B91EB58F7A9FB69E1C903D2C14C38ACE00047D85E397243F79AFF63F599244199708062F8FE0EE307FE25B48043427E5C2FA65B727A7621C2DFDEB95186E21E2F21782A6D45A779A86A264EA2F69BEAAC329843E822D357"
 
 S_Wifi s_wifi;
 
@@ -74,8 +76,8 @@ bool S_Wifi::init()
 		{
 			is_active_ = true;
 			wifi::RegDeviceTxMsg p(
-//									wifi::RegDeviceTxMsg::CloudEnv::MAINLAND_DEV,
-									wifi::RegDeviceTxMsg::CloudEnv::MAINLAND_PROD,
+									wifi::RegDeviceTxMsg::CloudEnv::MAINLAND_DEV,
+//									wifi::RegDeviceTxMsg::CloudEnv::MAINLAND_PROD,
 									{0, 0, 1},
 									CLOUD_DOMAIN_ID,
 									CLOUD_SUBDOMAIN_ID,
@@ -1127,7 +1129,10 @@ uint8_t S_Wifi::setRobotCleanMode(wifi::WorkMode work_mode)
 		case wifi::WorkMode::FIND:
 			beeper.debugBeep(VALID);
 			#if DEBUG_ENABLE
-			speaker.play(VOICE_IM_HERE_UNOFFICIAL,false);
+//			speaker.play(VOICE_IM_HERE_UNOFFICIAL,false);
+			speaker.play(VOICE_FIND_ROBOT,false);
+			#else
+			speaker.play(VOICE_FIND_ROBOT,false);
 			#endif
 			INFO_BLUE("remote app find home mode command ");
 			break;
@@ -1178,6 +1183,8 @@ uint8_t S_Wifi::appRemoteCtl(wifi::RemoteControlRxMsg::Cmd data)
 
 uint8_t S_Wifi::queryNTP()
 {
+	if(!is_wifi_connected_ )
+		return 1;
 	INFO_BLUE("Query NTP.");
 	wifi::QueryNTPTxMsg p;
 	s_wifi_tx_.push(std::move(p)).commit();
@@ -1496,15 +1503,16 @@ void S_Wifi::wifiSendRutine()
 		}
 		else
 		{
+
+			if(!is_wifi_connected_)
+				continue;
+
 			// If time is not synchronized, try to query NTP for every 3 mins.
 			if (!time_sync_ && ros::Time::now().toSec() - last_time_sync_time_ > 180)
 			{
 				taskPushBack(ACT::ACT_QUERY_NTP);
 				last_time_sync_time_ = ros::Time::now().toSec();
 			}
-
-			if(!is_wifi_connected_)
-				continue;
 
 			if (robot::instance()->duringNavigationCleaning() && upload_map_count++ >= 4)
 			{
