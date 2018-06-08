@@ -448,9 +448,6 @@ void robot::robotbase_routine_cb()
 		if (checkLidarStuck()) {
 //			ROS_INFO("lidar stuck");
 			ev.lidar_stuck = true;
-		} else {
-//			ROS_INFO("lidar good");
-			ev.lidar_stuck = false;
 		}
 		// Dynamic adjust obs
 		obs.DynamicAdjust(OBS_adjust_count);
