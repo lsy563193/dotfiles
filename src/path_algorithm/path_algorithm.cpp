@@ -539,7 +539,7 @@ void APathAlgorithm::findPath(GridMap &map, const Cell_t &start, const Cell_t &t
 }
 
 
-bool APathAlgorithm::shift_path(GridMap &map, const Cell_t &p1, Cell_t &p2, Cell_t &p3, int num,bool is_first, bool is_reveave) {
+bool APathAlgorithm::shift_path(GridMap &map, const Cell_t &p1, Cell_t &p2, Cell_t &p3, int num,bool is_first, bool is_reveave, const func_compare_two_t& expand_condition) {
 	auto dir_p23 = get_dir(p3, p2);
 	auto dir_p12 = is_reveave ? get_dir(p1, p2) : get_dir(p2, p1);
 //	ROS_INFO("dir_p12(%d), dir_p23(%d)", dir_p12, dir_p23);
@@ -552,7 +552,7 @@ bool APathAlgorithm::shift_path(GridMap &map, const Cell_t &p1, Cell_t &p2, Cell
 //		ROS_ERROR("p12_it_tmp,%d,%d", p12_it_tmp.x, p12_it_tmp.y);
 		for (auto p23_it = p12_it_tmp; p23_it != p3 + cell_direction_[dir_p12] * i+cell_direction_[dir_p23]; p23_it += cell_direction_[dir_p23]) {
 //			ROS_WARN("p23_it,%d,%d", p23_it.x, p23_it.y);
-			if (!map.isBlockAccessible(p23_it.x, p23_it.y)) {
+			if (!expand_condition(p23_it, p23_it)) {
 				is_break = true;
 				break;
 			}
@@ -672,7 +672,7 @@ uint16_t APathAlgorithm::dijkstraCountCleanedArea(GridMap& map, Point_t curr, Ce
 	return static_cast<uint16_t>(c_cleans.size());
 }
 
-void APathAlgorithm::optimizePath(GridMap &map, Cells &path, Dir_t& priority_dir)
+void APathAlgorithm::optimizePath(GridMap &map, Cells &path, Dir_t& priority_dir,const func_compare_two_t& expand_condition)
 {
 	displayCellPath(path);
 	if (path.size() > 2)
@@ -686,13 +686,13 @@ void APathAlgorithm::optimizePath(GridMap &map, Cells &path, Dir_t& priority_dir
 //			beeper.debugBeep(INVALID);
 			auto tmp = path.front();
 			auto iterator = path.begin();
-			if (shift_path(map, *(iterator + 2), *(iterator + 1), *(iterator + 0), 1, true, true))
+			if (shift_path(map, *(iterator + 2), *(iterator + 1), *(iterator + 0), 1, true, true, expand_condition))
 			{
 				if (*(iterator + 1) == *(iterator + 2))
 					path.erase(path.begin() + 1);
 				path.push_front(tmp);
 			}
-			path.erase(std::unique(path.begin(), path.end()),path.end());
+			path.erase(std::unique(path.begin(), path.end()), path.end());
 		}
 	}
 	if (path.size() > 3)
@@ -705,16 +705,15 @@ void APathAlgorithm::optimizePath(GridMap &map, Cells &path, Dir_t& priority_dir
 			if (isXAxis(get_dir(iterator + 1, iterator + 2)) && (iterator + 1)->y % 2 == 1)
 			{
 				ROS_WARN("in odd line ,try move to even line(%d)!", (iterator + 1)->x);
-				shift_path(map, *iterator, *(iterator + 1), *(iterator + 2), 1, false, false);
+				shift_path(map, *iterator, *(iterator + 1), *(iterator + 2), 1, false, false,expand_condition);
 			} else
 			{
 				ROS_INFO("in x dir, is in even line try mv to even");
-				auto num = isXAxis(get_dir(iterator + 1, iterator + 2)) ? 2 : 1;
-				shift_path(map, *iterator, *(iterator + 1), *(iterator + 2), num, true, false);
+//				auto num = isXAxis(get_dir(iterator + 1, iterator + 2)) ? 2 : 1;
+				shift_path(map, *iterator, *(iterator + 1), *(iterator + 2), 2, true, false,expand_condition);
 			}
 		}
-		path.erase(std::unique(path.begin(), path.end()),path.end());
-		displayCellPath(path);
+		path.erase(std::unique(path.begin(), path.end()), path.end());
 	}
 }
 
