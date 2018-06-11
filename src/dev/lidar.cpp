@@ -1504,7 +1504,7 @@ void Lidar::init()
 	// For slip checking
 	slip_by_lidar_status_ = {false};
 	slip_frame_cnt_ = {0};
-	DequeArray<sensor_msgs::LaserScan> last_frame_{};
+	DequeArray<sensor_msgs::LaserScan> last_frame_(3);
 	wheel_cliff_trigger_time_ = 0;
 	gyro_tilt_trigger_time_ = 0;
 

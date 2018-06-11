@@ -570,7 +570,6 @@ bool APathAlgorithm::shift_path(GridMap &map, const Cell_t &p1, Cell_t &p2, Cell
 		p3 += shift;
 		return shift != Cell_t{0,0};
 	}
-	return false;
 }
 
 
@@ -672,7 +671,7 @@ uint16_t APathAlgorithm::dijkstraCountCleanedArea(GridMap& map, Point_t curr, Ce
 	return static_cast<uint16_t>(c_cleans.size());
 }
 
-void APathAlgorithm::optimizePath(GridMap &map, Cells &path, Dir_t& priority_dir)
+void APathAlgorithm::optimizePath(GridMap &map, Cells &path, const Dir_t& priority_dir)
 {
 	displayCellPath(path);
 	if (path.size() > 2)
@@ -738,4 +737,29 @@ bool isAccessable::operator()(const Cell_t &next, const Cell_t &neighbor) {
 bool IsTarget::operator()(const Cell_t &c_it) {
 		return c_it.y % 2 == 0 && p_map_->getCell(CLEAN_MAP, c_it.x, c_it.y) == UNCLEAN &&
 			   target_bound_.Contains(c_it);
+}
+
+
+std::unique_ptr<GridMap>
+GoHomeWay_t::updateMap(GridMap &map, const Point_t &curr) {
+	if(is_allow_update_map_) {
+		GridMap temp_map;
+		temp_map.copy(map);
+		temp_map.merge(slam_grid_map, false, false, true, false, false, false);
+		temp_map.print(curr.toCell(), CLEAN_MAP, Cells{{0, 0}});
+		return make_unique<GridMap>(temp_map);
+	}else
+		return make_unique<GridMap>(map);
+}
+
+void GoHomeWay_t::clearBlock(GridMap &map) {
+		map.merge(slam_grid_map, false, false, false, false, false, true);
+}
+
+
+bool ThroughAccessableAndCleaned::operator()(const Cell_t &next, const Cell_t &neighbor) {
+	return p_map_->isBlockAccessible(neighbor.x, neighbor.y) && p_map_->getCell(CLEAN_MAP, neighbor.x, neighbor.y) == CLEANED;
+}
+bool ThroughBlockAccessable::operator()(const Cell_t &next, const Cell_t &neighbor) {
+	return p_map_->isBlockAccessible(neighbor.x, neighbor.y);
 }

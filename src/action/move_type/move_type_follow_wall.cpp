@@ -174,12 +174,9 @@ bool MoveTypeFollowWall::isFinish()
 			if (!handleMoveBackEventForward(p_cm))
 			{
 				if (ev.rcon_status) {
-					if (p_cm->go_home_path_algorithm_ != nullptr)
-					{
-						p_cm->go_home_path_algorithm_->setHomePoint(getPosition());
-						if (!p_cm->hasSeenChargerDuringCleaning())
-							p_cm->setSeenChargerDuringCleaning();
-					}
+					p_cm->setHomePoint(getPosition());
+					if (!p_cm->hasSeenChargerDuringCleaning())
+						p_cm->setSeenChargerDuringCleaning();
 					p_cm->saveBlocks();
 					movement_i_ = mm_rcon;
 					sp_movement_.reset(new MovementRcon(is_left_));
@@ -540,8 +537,8 @@ bool MoveTypeFollowWall::isOverOriginLine(GridMap &map)
 		|| ((curr.y - start_point_.y > CELL_SIZE / 6) && target_point_.y < start_point_.y)) &&
 			 ( (ros::Time::now().toSec() - sp_movement_->start_timer_ + move_forward_time_) > WF_TIME_LIMIT))
 	{
-//		ROS_WARN("origin(%d,%d) curr_p(%d, %d), target_point__(%d, %d)",start_point_.x, start_point_.y,  curr.x, curr.y, target_point_.x, target_point_.y);
-//		auto target_angle = (target_point_.y > start_point_.y) ? -900 : 900;
+//		ROS_WARN("origin(%d,%d) curr_p(%d, %d), target_point__(%d, %d)",start_points_.x, start_points_.y,  curr.x, curr.y, target_point_.x, target_point_.y);
+//		auto target_angle = (target_point_.y > start_points_.y) ? -900 : 900;
 //		if (std::abs(ranged_radian(robot::instance()->getWorldPoseRadian() - target_angle)) < 50) // If robot is directly heading to the opposite side of target line, stop.
 //		{
 //			ROS_WARN("%s %d: Opposite to target angle. curr(%d, %d), target_point_(%d, %d), gyro(%d), target_angle(%d)", __FUNCTION__, __LINE__, curr.x, curr.y, target_point_.x, target_point_.y,
@@ -556,8 +553,8 @@ bool MoveTypeFollowWall::isOverOriginLine(GridMap &map)
 //		}
 //		else{
 //			ROS_WARN("%s %d: Dynamic adjust the origin line and target line, so it can smoothly follow the wall to clean..",__FUNCTION__,__LINE__);
-//			target_point_.y += curr.y - start_point_.y;
-//			start_point_.y = curr.y;
+//			target_point_.y += curr.y - start_points_.y;
+//			start_points_.y = curr.y;
 //		}
 	}
 
