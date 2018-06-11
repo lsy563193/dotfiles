@@ -126,7 +126,7 @@ NavCleanPathAlgorithm clean_path_algorithm_;
 	return 0;
 }
 // Test code by lsy563193
-void case_2(GridMap &map)
+void case_2(GridMap &map) {
 
 //	map.setBlockWithBound({-5,-1}, {5,1}, CLEANED, 0);
 //	map.setBlockWithBound({-7,0}, {-7,0}, CLEANED, 1);
