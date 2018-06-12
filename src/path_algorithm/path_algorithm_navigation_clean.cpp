@@ -217,9 +217,9 @@ void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path, Dir_t& prior
 	else if (curr_filter_ == &filter_after_obstacle_neg)
 		path.push_back( Cell_t{path.back().x, static_cast<int16_t>(path.front().y - 3)});//for setting follow wall target line
 	else if (curr_filter_ == &filter_top_of_y_axis_pos)
-		path.push_back( Cell_t{path.back().x, static_cast<int16_t>(path.front().y - 3)});//for setting follow wall target line
+		path.push_front( Cell_t{path.front().x, static_cast<int16_t>(path.front().y - 1)});//for setting follow wall target line
 	else if (curr_filter_ == &filter_top_of_y_axis_neg)
-		path.push_back( Cell_t{path.back().x, static_cast<int16_t>(path.front().y + 3)});//for setting follow wall target line
+		path.push_front( Cell_t{path.front().x, static_cast<int16_t>(path.front().y + 1)});//for setting follow wall target line
 	else {
 		APathAlgorithm::optimizePath(map, path, priority_dir,expand_condition);
 
