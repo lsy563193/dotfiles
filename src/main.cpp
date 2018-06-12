@@ -112,14 +112,21 @@ int main(int argc, char **argv)
 	map.loadMap(true,curr, old_dir_, tmp, "/opt/ros/indigo/share/pp/map");
 	slam_grid_map.loadMap(true,curr, old_dir_, tmp ,"/opt/ros/indigo/share/pp/map_slam");
 	auto homePoints = HomePoints_t(3);
+	Cells cells;
+	cells.push_back(Cell_t{-1,-1});
+	cells.push_back(Cell_t{0,1});
+	cells.push_back(Cell_t{1,1});
+	cells.push_back(Cell_t{2,2});
+	cells.push_back(Cell_t{3,3});
+	Points points = *cells_to_points(cells);
+	for(auto && point:points)
+		homePoints.push_back(point);
 	auto startPoints = HomePoints_t(1);
 	startPoints.push_back({0,0,0});
-	GoHomePathAlgorithm clean_path_algorithm_(map,&homePoints,&startPoints, true);
+	GoHomePathAlgorithm clean_path_algorithm_(map,&homePoints,&startPoints);
 //	clean_path_algorithm_.curr_filter_ = &clean_path_algorithm_.filter_short_path;
 	setPosition(cellToCount(curr.x),cellToCount(curr.y));
 
-	Cells cells{};
-//	auto is_found = map.gen(curr, cells,[&](const Cell_t& c_it){return c_it == Cell_t{-2,0};},true);
 	if (clean_path_algorithm_.generatePath(map, Point_t{cellToCount(curr.x),cellToCount(curr.y)}, old_dir_, remain_path_)) {
 	}
 	ROS_INFO("end~~~~~~~~~");

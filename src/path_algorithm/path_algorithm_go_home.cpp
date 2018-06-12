@@ -13,9 +13,9 @@ GoHomePathAlgorithm::GoHomePathAlgorithm(GridMap& map, HomePoints_t* p_home_poin
 	if(!p_home_points->empty())
 	{
 		home_points_set.push_back(p_home_points);
-		for (auto &&pointsSet : *p_home_points) {
-			ROS_INFO("pointsSet(%d,%d)",pointsSet.toCell().x,pointsSet.toCell().y);
-		}
+//		for (auto &&pointsSet : *p_home_points) {
+//			ROS_INFO("pointsSet(%d,%d)",pointsSet.toCell().x,pointsSet.toCell().y);
+//		}
 	}
 
 	home_points_set.push_back(p_start_points);
@@ -25,7 +25,7 @@ GoHomePathAlgorithm::GoHomePathAlgorithm(GridMap& map, HomePoints_t* p_home_poin
 		ROS_INFO("!!!!%s,%d: Clear 8 cells around start and home point.",__FUNCTION__,__LINE__);
 		for(auto &&it = p_home_points_it->begin();it != p_home_points_it->end(); ++it)
 		{
-			ROS_INFO("set Area Clean,%d,%d",it->toCell().x, it->toCell().y);
+			ROS_WARN("set Area Clean,%d,%d",it->toCell().x, it->toCell().y);
 			map.setArea(it->toCell(), CLEANED, 1, 1);
 		}
 	}

@@ -1999,6 +1999,7 @@ void ACleanMode::switchInStateGoToCharger() {
 	} else {
 		ROS_INFO("%s %d: Failed to go to charger, resume state go home point.", __FUNCTION__, __LINE__);
 		sp_state = state_go_home_point.get();
+		clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_,&start_points_));
 		sp_state->init();
 	}
 }
@@ -2410,7 +2411,7 @@ bool ACleanMode::reachTarget(bool &should_go_to_charger, Point_t curr) {
 
 	if (!home_points_.empty()) {
 		if (curr.toCell() == home_points_.begin()->toCell()) {
-				home_points_.pop_front();
+			home_points_.pop_front();
 			should_go_to_charger = true;
 			ret = true;
 		}
