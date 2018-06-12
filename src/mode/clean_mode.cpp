@@ -1953,7 +1953,16 @@ void ACleanMode::switchInStateGoHomePoint()
 	else // path is empty.
 	{
 		ROS_INFO("%s %d, No more home point, finish cleaning.", __FUNCTION__, __LINE__);
-		sp_state = nullptr;
+//		sp_state = nullptr;
+		sp_saved_states.push_back(sp_state);
+		sp_state = state_folllow_wall.get();
+		sp_state->init();
+		sp_action_.reset();
+		is_trapped_ = true;
+		is_isolate = true;
+		is_closed = true;
+		closed_count_ = 0;
+		isolate_count_ = 0;
 	}
 }
 

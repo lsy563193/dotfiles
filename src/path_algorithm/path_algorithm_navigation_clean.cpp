@@ -156,7 +156,17 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr_p, co
 bool NavCleanPathAlgorithm::checkTrapped(GridMap &map, const Cell_t &curr_cell)
 {
 	if(robot::instance()->p_mode->getNextMode() == Mode::cm_navigation) {
-		return checkTrappedUsingDijkstra(map, curr_cell);
+		auto p_cm = boost::dynamic_pointer_cast<CleanModeExploration>(robot::instance()->p_mode);
+		if(!p_cm->lastStateIsFollowWall())
+			return checkTrappedUsingDijkstra(map, curr_cell);
+
+		Cells cells{};
+		auto expand_condition = [&](const Cell_t &cell, const Cell_t &neighbor_cell)
+		{
+			return p_cm->clean_map_.isBlockAccessible(neighbor_cell.x, neighbor_cell.y);
+		};
+
+		return !dijkstra(p_cm->clean_map_, getPosition().toCell(), cells, true, CellEqual(Cell_t{}), isAccessable(&p_cm->clean_map_, expand_condition));
 	}
 	else if(robot::instance()->p_mode->getNextMode() == Mode::cm_exploration) {
 		Cells cells{};
@@ -222,7 +232,7 @@ void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path, const Dir_t&
 	else if (curr_filter_ == &filter_top_of_y_axis_neg)
 		path.push_back( Cell_t{path.back().x, static_cast<int16_t>(path.front().y + 3)});//for setting follow wall target line
 	else {
-		APathAlgorithm::optimizePath(map, path, priority_dir,expand_condition);
+		APathAlgorithm::optimizePath(map, path, priority_dir);
 
 	}
 }

@@ -579,6 +579,10 @@ public:
 	GridMap clean_map_{};
 	static bool plan_activation_;
 	double time_gyro_dynamic_;
+	bool lastStateIsFollowWall()
+	{
+		return sp_saved_states.front() == state_folllow_wall.get();
+	}
 
 protected:
 
