@@ -526,6 +526,9 @@ public:
 	// For vacuum setting.
 	void setVacuum() override ;
 
+	void setHomePoint(const Point_t& current_point);
+
+	bool reachTarget(bool &should_go_to_charger, Point_t curr);
 	// For HEPA filter.
 	void isUsingDustBox(bool val)
 	{
@@ -573,12 +576,14 @@ public:
 	Points::iterator iterate_point_{};
 
 	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
-	boost::shared_ptr<GoHomePathAlgorithm> go_home_path_algorithm_{};
 	GridMap clean_map_{};
 	static bool plan_activation_;
 	double time_gyro_dynamic_;
 
 protected:
+
+	HomePoints_t home_points_ = HomePoints_t(3);
+	HomePoints_t start_points_ = HomePoints_t(1);
 	std::vector<State*> sp_saved_states;
 	boost::shared_ptr<State> state_go_home_point{new StateGoHomePoint()};
 	boost::shared_ptr<State> state_go_to_charger{new StateGoToCharger()};

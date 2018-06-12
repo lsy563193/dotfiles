@@ -321,7 +321,7 @@ public:
 
 	// Loading the log map for debug.
 	void loadMap(int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max);
-	void loadMap(bool use_map,Cell_t& curr, Dir_t& dir,bool& trend_pos);
+	void loadMap(bool use_map,Cell_t& curr, Dir_t& dir,bool& trend_pos, const std::string& str);
 private:
 	uint8_t clean_map[MAP_SIZE][MAP_SIZE];
 	uint8_t cost_map[MAP_SIZE][MAP_SIZE];

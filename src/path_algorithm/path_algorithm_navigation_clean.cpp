@@ -181,7 +181,7 @@ bool NavCleanPathAlgorithm::checkTrapped(GridMap &map, const Cell_t &curr_cell)
 //	}
 //};
 
-void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path, Dir_t& priority_dir,const func_compare_two_t& expand_condition) {
+void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path, const Dir_t& priority_dir,const func_compare_two_t& expand_condition) {
 
 	ROS_INFO("Step 5:optimizePath");
 	if(curr_filter_ == &filter_curr_line_pos || curr_filter_ == &filter_curr_line_neg) {

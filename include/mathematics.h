@@ -518,18 +518,31 @@ typedef int CellState;
 template <typename T>
 class DequeArray {
 public:
-//    DequeArray(int size):valid_size_(size){ };
+    DequeArray(int size):valid_size_(size){ };
 	void push_back(T i) {
 		d.push_back(i);
-		if (d.size() > 3)
+		if (d.size() > valid_size_)
 			d.pop_front();
 	}
+	void push_front(T i) {
+		d.push_front(i);
+		if (d.size() > valid_size_)
+			d.pop_back();
+	}
 
-	typename std::deque<T>::const_iterator begin() {
+	void pop_front() {
+		d.pop_front();
+	}
+	bool empty()
+	{
+		return d.size() == 0;
+	}
+
+	typename std::deque<T>::iterator begin() {
 		return d.begin();
 	}
 
-	typename std::deque<T>::const_iterator end() {
+	typename std::deque<T>::iterator end() {
 		return d.end();
 	}
 
@@ -544,11 +557,16 @@ public:
 	T operator[](int i) {
 		return d[i];
 	}
+//	using iterator =  std::deque::const_iterator;
+	typedef typename std::deque<T>::iterator iterator;
+	typedef typename std::deque<T>::const_iterator const_iterator;
 
 private:
 	std::deque<T> d;
-//    int valid_size_{3};
+    int valid_size_{3};
 };
+
+using HomePoints_t=DequeArray<Point_t>;
 typedef std::pair<const CellState, Cell_t> PairCell_t;
 typedef std::deque<Point_t> Points;
 

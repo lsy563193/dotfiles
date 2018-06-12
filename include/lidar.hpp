@@ -144,7 +144,7 @@ private:
 	bool slip_enable_{false};
 	bool slip_by_lidar_status_{false};
 	uint8_t slip_frame_cnt_{0};
-	DequeArray<sensor_msgs::LaserScan> last_slip_scan_frame_{};
+	DequeArray<sensor_msgs::LaserScan> last_slip_scan_frame_ = DequeArray<sensor_msgs::LaserScan>(3);
 	float slip_ranges_percent_{0.8};//80%
 	uint8_t slip_cnt_limit_{5};
 	static double wheel_cliff_trigger_time_;

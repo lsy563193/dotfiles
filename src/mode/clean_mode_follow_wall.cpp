@@ -19,7 +19,6 @@ CleanModeFollowWall::CleanModeFollowWall()
 //	diff_timer_ = WALL_FOLLOW_TIME;
 	speaker.play(VOICE_CLEANING_WALL_FOLLOW, false);
 	clean_path_algorithm_.reset(new WFCleanPathAlgorithm);
-	go_home_path_algorithm_.reset(new FollowWallModeGoHomePathAlgorithm());
 	closed_count_limit_ = 1;
 	mode_i_ = cm_wall_follow;
 	s_wifi.setWorkMode(cm_wall_follow);
@@ -210,7 +209,7 @@ void CleanModeFollowWall::switchInStateInit() {
 
 void CleanModeFollowWall::switchInStateFollowWall() {
 	sp_state = state_go_home_point.get();
-	go_home_path_algorithm_->initForGoHomePoint(clean_map_);
+	clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_, & start_points_, true));
 	sp_state->init();
 	action_i_ = ac_null;
 	genNextAction();

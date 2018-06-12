@@ -99,7 +99,7 @@ int main(int argc, char **argv)
 	robot_instance = new robot();
 // Test code for path algorithm by Austin.
 //	test_map();
-#if 0
+#if 1
 	//test code by lsy563193
 	sleep(1);
 	GridMap map;
@@ -108,11 +108,13 @@ int main(int argc, char **argv)
 	Dir_t old_dir_=MAP_POS_X;
 
 	Points remain_path_{};
-
-//	GoHomePathAlgorithm clean_path_algorithm_;
-NavCleanPathAlgorithm clean_path_algorithm_;
 	bool tmp;
-	map.loadMap(true,curr, old_dir_, tmp);
+	map.loadMap(true,curr, old_dir_, tmp, "/opt/ros/indigo/share/pp/map");
+	slam_grid_map.loadMap(true,curr, old_dir_, tmp ,"/opt/ros/indigo/share/pp/map_slam");
+	auto homePoints = HomePoints_t(3);
+	auto startPoints = HomePoints_t(1);
+	startPoints.push_back({0,0,0});
+	GoHomePathAlgorithm clean_path_algorithm_(map,&homePoints,&startPoints, true);
 //	clean_path_algorithm_.curr_filter_ = &clean_path_algorithm_.filter_short_path;
 	setPosition(cellToCount(curr.x),cellToCount(curr.y));
 
