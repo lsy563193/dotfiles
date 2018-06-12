@@ -60,6 +60,7 @@ void Vacuum::fullOperate()
 void Vacuum::setForCurrentMode(int mode)
 {
 	current_mode_ = mode;
+	is_on_ = true;
 	switch (current_mode_)
 	{
 		case VacMode::vac_low_mode:
