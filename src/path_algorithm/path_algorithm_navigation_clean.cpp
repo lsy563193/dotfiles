@@ -46,7 +46,6 @@ std::unique_ptr<std::deque<BestTargetFilter*>> NavCleanPathAlgorithm::generateBo
 		if ((map.getCell(CLEAN_MAP, dx, correct_curr_.y) == CLEANED && map.getCell(CLEAN_MAP, dx, correct_curr_.y - dy) == UNCLEAN))
 			filters.push_back(&filter_top_of_y_axis_neg);
 	}
-
 //	filters.push_back(&filter_n3p);
 
 	filters.push_back(&filter_short_path);
@@ -112,6 +111,7 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr_p, co
 	auto filters = *generateBounds(map);
 	ROS_WARN("priority_dir(%d),trend_pos(%d)\n",priority_dir,trend_pos);
 	g_follow_last_follow_wall_dir = 0;
+	func_compare_two_t expand_condition = nullptr;
 	for(auto&&filter : filters)
 	{
 		curr_filter_=filter;
@@ -119,7 +119,6 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr_p, co
 		filter->displayName();
 		ROS_INFO("target_bound(%d,%d,%d,%d)",filter->target_bound.min.x, filter->target_bound.min.y, filter->target_bound.max.x, filter->target_bound.max.y);
 		ROS_INFO("range_bound(%d,%d,%d,%d)",filter->range_bound.min.x, filter->range_bound.min.y, filter->range_bound.max.x, filter->range_bound.max.y);
-		func_compare_two_t expand_condition = nullptr;
 		if (filter->is_forbit_turn_) {
 			expand_condition = [&](const Cell_t &next, const Cell_t &neighbor) {
 				return map.isBlockAccessible(neighbor.x, neighbor.y) && neighbor.y >= next.y;
@@ -143,7 +142,7 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr_p, co
 	}
 
 	trend_pos = curr_filter_ != &filter_next_line_neg;
-	optimizePath(map, path, priority_dir);
+	optimizePath(map, path, priority_dir,expand_condition );
 
 	plan_path = *cells_to_points(path);
 
@@ -181,7 +180,7 @@ bool NavCleanPathAlgorithm::checkTrapped(GridMap &map, const Cell_t &curr_cell)
 //	}
 //};
 
-void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path, Dir_t& priority_dir) {
+void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path, Dir_t& priority_dir,const func_compare_two_t& expand_condition) {
 
 	ROS_INFO("Step 5:optimizePath");
 	if(curr_filter_ == &filter_curr_line_pos || curr_filter_ == &filter_curr_line_neg) {
@@ -222,7 +221,7 @@ void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path, Dir_t& prior
 	else if (curr_filter_ == &filter_top_of_y_axis_neg)
 		path.push_back( Cell_t{path.back().x, static_cast<int16_t>(path.front().y + 3)});//for setting follow wall target line
 	else {
-		APathAlgorithm::optimizePath(map, path, priority_dir);
+		APathAlgorithm::optimizePath(map, path, priority_dir,expand_condition);
 
 	}
 }

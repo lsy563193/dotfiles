@@ -109,9 +109,11 @@ int main(int argc, char **argv)
 
 	Points remain_path_{};
 
-	NavCleanPathAlgorithm clean_path_algorithm_;
-	map.loadMap(true,curr, old_dir_, clean_path_algorithm_.trend_pos);
-	clean_path_algorithm_.curr_filter_ = &clean_path_algorithm_.filter_short_path;
+//	GoHomePathAlgorithm clean_path_algorithm_;
+NavCleanPathAlgorithm clean_path_algorithm_;
+	bool tmp;
+	map.loadMap(true,curr, old_dir_, tmp);
+//	clean_path_algorithm_.curr_filter_ = &clean_path_algorithm_.filter_short_path;
 	setPosition(cellToCount(curr.x),cellToCount(curr.y));
 
 	Cells cells{};
