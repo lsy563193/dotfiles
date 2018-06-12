@@ -1994,7 +1994,13 @@ void MovementGoToCharger::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 bool MovementGoToCharger::isFinish()
 {
 	if(charger.isOnStub())
-		ev.charge_detect = true;
+	{
+//		ROS_INFO("%s %d: stable_charge_count_:%d", __FUNCTION__, __LINE__, stable_charge_count_);
+		if (++stable_charge_count_ > 25)
+			ev.charge_detect = charger.getChargeStatus();
+	}
+	else
+		stable_charge_count_ = 0;
 
 	auto ret = ev.charge_detect || _isStop();
 	if(ret)

@@ -11,7 +11,7 @@ Battery battery;
 
 bool Battery::isFull()
 {
-	return (getVoltage() >= BATTERY_FULL_VOLTAGE);
+	return is_full_;
 }
 
 bool Battery::isReadyToClean()

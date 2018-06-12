@@ -53,11 +53,6 @@
 #define ROBOT_SIZE_1_2			(ROBOT_SIZE/2)
 
 /*
- * Definition for enable debug or not.
- */
-#define ENABLE_DEBUG			(1)
-
-/*
  * Enable debugging the grid map.
  */
 #define DEBUG_CLEAN_MAP			(1)

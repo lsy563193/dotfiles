@@ -894,7 +894,7 @@ public:
 	{
 		char buf[50];
 		memset(buf,0,50);
-		sprintf(buf,"wifi version %x,cloud version %x.",getModuleVersion(),getCloudVersion());
+		sprintf(buf,"wifi version 0x%06x,cloud version 0x%06x.",getModuleVersion(),getCloudVersion());
 		std::ostringstream ss;
 		ss<<buf;
 		return ss.str();

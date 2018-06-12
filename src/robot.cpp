@@ -340,6 +340,7 @@ void robot::robotbase_routine_cb()
 		battery.setVoltage(buf[REC_BATTERY] * 10);
 //		printf("Battery:%.1fv.\n", static_cast<float>(buf[REC_BATTERY] / 10.0));
 		sensor.battery = static_cast<float>(battery.getVoltage() / 100.0);
+		battery.setIsFull((buf[REC_BUMPER_AND_CLIFF] & 0x80) != 0);
 
 		// For over current checking.
 		vacuum.setOc((buf[REC_OC] & 0x01) != 0);
@@ -447,9 +448,6 @@ void robot::robotbase_routine_cb()
 		if (checkLidarStuck()) {
 //			ROS_INFO("lidar stuck");
 			ev.lidar_stuck = true;
-		} else {
-//			ROS_INFO("lidar good");
-			ev.lidar_stuck = false;
 		}
 		// Dynamic adjust obs
 		obs.DynamicAdjust(OBS_adjust_count);
@@ -526,6 +524,7 @@ void robot::runTestMode()
 {
 	auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
 	send_thread_enable = true;
+	Mode::next_mode_i_ = Mode::cm_test;
 
 	if (r16_work_mode_ == NORMAL_SLEEP_MODE || r16_work_mode_ == WORK_MODE ||
 		r16_work_mode_ == WATER_TANK_TEST_MODE || r16_work_mode_ == BUMPER_TEST_MODE) // todo: for debug
@@ -550,6 +549,8 @@ void robot::runTestMode()
 void robot::runWorkMode()
 {
 	//s_wifi.taskPushBack(S_Wifi::ACT::ACT_RESUME);
+	wifi_led.enable();
+
 	auto serial_send_routine = new boost::thread(boost::bind(&Serial::send_routine_cb, &serial));
 	send_thread_enable = true;
 

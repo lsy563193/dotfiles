@@ -43,6 +43,10 @@ public:
 
 private:
 	bool gyro_closed_{false};
+	bool had_set_brush_slow_{false};
+	bool had_set_brush_stop_{false};
+	const uint8_t set_brush_slow_count_{2};
+	const uint8_t set_brush_stop_count_{4};
 };
 
 class ActionOpenGyroAndLidar : public ActionOpenGyro

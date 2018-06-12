@@ -38,7 +38,9 @@ ACleanMode::ACleanMode()
 	line_marker_pub_ = clean_nh_.advertise<visualization_msgs::Marker>("line_marker", 1);
 	line_marker_pub2_ = clean_nh_.advertise<visualization_msgs::Marker>("line_marker2", 1);
 
-	lidar.slipCheckingCtrl(ON);
+	if (next_mode_i_ != cm_test)
+		lidar.slipCheckingCtrl(ON);
+
 	event_manager_register_handler(this);
 	event_manager_reset_status();
 	event_manager_set_enable(true);
@@ -161,7 +163,7 @@ ACleanMode::~ACleanMode()
 //				speaker.play(VOICE_CLEANING_STOP, false);
 				ROS_WARN("%s %d: Robot stopped from charging.", __FUNCTION__, __LINE__);
 			} else if (mode_i_ == cm_exploration ||
-					((mode_i_ == cm_navigation || mode_i_ == cm_wall_follow) && hasSeenChargerDuringCleaning()))
+								 ((mode_i_ == cm_navigation || mode_i_ == cm_wall_follow) && hasSeenChargerDuringCleaning()))
 			{
 				speaker.play(VOICE_BACK_TO_CHARGER_FAILED, false);
 				ROS_WARN("%s %d: Finish cleaning but failed to go to charger.", __FUNCTION__, __LINE__);
@@ -180,13 +182,13 @@ ACleanMode::~ACleanMode()
 		}
 		else
 			ROS_WARN("%s %d: Entering other clean mode(%d), so do not play the finish voice.",
-					 __FUNCTION__, __LINE__, next_mode_i_);
+							 __FUNCTION__, __LINE__, next_mode_i_);
 	}
 	auto cleaned_count = clean_map_.getCleanedArea();
 	auto map_area = cleaned_count * CELL_SIZE * CELL_SIZE;
 	ROS_WARN("%s %d: Cleaned area = \033[32m%.2fm2\033[0m, cleaning time: \033[32m%d(s) %.2f(min)\033[0m, cleaning speed: \033[32m%.2f(m2/min)\033[0m.",
-			 __FUNCTION__, __LINE__, map_area, robot_timer.getWorkTime(),
-			 static_cast<float>(robot_timer.getWorkTime()) / 60, map_area / (static_cast<float>(robot_timer.getWorkTime()) / 60));
+					 __FUNCTION__, __LINE__, map_area, robot_timer.getWorkTime(),
+					 static_cast<float>(robot_timer.getWorkTime()) / 60, map_area / (static_cast<float>(robot_timer.getWorkTime()) / 60));
 	brush.updateSideBrushTime(robot_timer.getWorkTime());
 	brush.updateMainBrushTime(robot_timer.getWorkTime());
 	if (isUsingDustBox())
@@ -202,11 +204,11 @@ ACleanMode::~ACleanMode()
 		time_t real_calendar_time;
 		robot_timer.getRealCalendarTime(real_calendar_time);
 		ROS_INFO("%s %d seconds from 1970' : %d, current calendar time: %s ", __FUNCTION__, __LINE__,
-				 real_calendar_time, ctime(&real_calendar_time));
+						 real_calendar_time, ctime(&real_calendar_time));
 		robot::instance()->updateCleanRecord(static_cast<const uint32_t &>(real_calendar_time - robot_timer.getWorkTime())
-											 , static_cast<const uint16_t &>(robot_timer.getWorkTime())
-											 , static_cast<const uint16_t &>(map_area)
-											 , slam_grid_map);
+						, static_cast<const uint16_t &>(robot_timer.getWorkTime())
+						, static_cast<const uint16_t &>(map_area)
+						, slam_grid_map);
 		s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_LAST_CLEANMAP);
 	}
 
@@ -225,7 +227,7 @@ void ACleanMode::saveBlock(int block, int dir, std::function<Cells()> get_list)
 //		if(dir == MAP_ANY)
 		cell = getPosition().getCenterRelative(d_cell.x * CELL_SIZE, d_cell.y * CELL_SIZE).toCell();
 		debug_str += "{" + std::to_string(d_cell.x) + "," + std::to_string(d_cell.y) + "}->{" +
-				std::to_string(cell.x) + "," + std::to_string(cell.y) + "}";
+								 std::to_string(cell.x) + "," + std::to_string(cell.y) + "}";
 //		else {
 //			auto x = d_cell * cell_direction_[dir].x;
 //			auto y = d_cell * cell_direction_[(dir+2)%4].y;
@@ -236,7 +238,7 @@ void ACleanMode::saveBlock(int block, int dir, std::function<Cells()> get_list)
 
 	if (!debug_str.empty())
 		ROS_INFO("curr(%d,%d),block(%d): %s.", getPosition().toCell().x, getPosition().toCell().y,
-				 block, debug_str.c_str());
+						 block, debug_str.c_str());
 }
 
 void ACleanMode::saveBlocks() {
@@ -694,7 +696,7 @@ void ACleanMode::scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr& scan)
 	lidar.scanOriginalCb(scan);
 	lidar.checkRobotSlipByLidar();
 	if (lidar.isScanOriginalReady()
-		&& (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)) {
+			&& (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)) {
 		std::deque<Vector2<double>> points{};
 		calcLidarPath(scan, action_i_ == ac_follow_wall_left, points, wall_distance);
 		setTempTarget(points, scan->header.seq);
@@ -897,7 +899,7 @@ void ACleanMode::setCleanMapMarkers(int16_t x, int16_t y, CellState type, visual
 	}
 	else if (type == BLOCKED_SLIP)
 	{
-		// Purple 
+		// Purple
 		color_.r = 1.0;
 		color_.g = 0.0;
 		color_.b = 1.0;
@@ -1084,7 +1086,7 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_mt) {
 	{
 		curr.dir = iterate_point_->dir;
 		ROS_INFO("curr(%d,%d,%d,%d), passed_cell_path_.size(%d)", curr.toCell().x, curr.toCell().y,
-				 static_cast<int>(radian_to_degree(curr.th)), curr.dir, passed_cell_path_.size());
+						 static_cast<int>(radian_to_degree(curr.th)), curr.dir, passed_cell_path_.size());
 		passed_cell_path_.push_back(curr);
 	}
 	else
@@ -1161,20 +1163,22 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 			{
 				if (checkChargerPos())
 				{
-					if(std::any_of(std::begin(cell_direction_),std::end(cell_direction_),[&](const Cell_t &c_it){
+					const Cell_t cell_around[20]{{1,0},{-1,0},{0,1},{0,-1},{1,1},{1,-1},{-1,1},{-1,-1},{0,0},
+																			 {2,0},{2,-1},{2,1},{2,2},{-2,2},
+																			 {1,2},{0,2},{-1,2},
+																			 {1,-2},{0,-2},{-1,-2}};
+					if(std::any_of(std::begin(cell_around),std::end(cell_around),[&](const Cell_t &c_it){
 						auto cell = c_it + getPosition().toCell();
 						return clean_map_.getCell(CLEAN_MAP, cell.x , cell.y) == BLOCKED_RCON;
 					}))
 					{
 						if(p_mt->isRconStop())
 						{
-							beeper.debugBeep(VALID);
-							ROS_ERROR("hit rcon");
 							clean_map_.print(getPosition().toCell(),CLEAN_MAP,Cells{});
 							return true;
 						}
 					}
-					c_rcon.resetStatus();
+//					c_rcon.resetStatus();
 					return false;
 				}
 				else
@@ -1191,20 +1195,22 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 //		fw_tmp_map.print(getPosition().toCell(), CLEAN_MAP,*points_to_cells(make_unique<Points>(passed_cell_path_)));
 		if(!isStateFollowWall() && !isStateTest())
 		{
+			if(isStateClean()) {
 				BoundingBox<Point_t> bound;
-				bound.SetMinimum({passed_cell_path_.front().x - CELL_SIZE/4, passed_cell_path_.front().y - CELL_SIZE/4});
-				bound.SetMaximum({passed_cell_path_.front().x + CELL_SIZE/4, passed_cell_path_.front().y + CELL_SIZE/4});
-				if(!bound.Contains(curr))
-				{
+				bound.SetMinimum({passed_cell_path_.front().x - CELL_SIZE / 4, passed_cell_path_.front().y - CELL_SIZE / 4});
+				bound.SetMaximum({passed_cell_path_.front().x + CELL_SIZE / 4, passed_cell_path_.front().y + CELL_SIZE / 4});
+				if (!bound.Contains(curr)) {
 //					ROS_INFO("Not Cont front(%f,%f),curr(%f,%f),bound(min(%f,%f),max(%f,%f))", passed_cell_path_.front().x, passed_cell_path_.front().y,
 //									 curr.x, curr.y,bound.min.x,bound.min.y, bound.max.x,bound.max.y);
 					auto npa = boost::dynamic_pointer_cast<NavCleanPathAlgorithm>(clean_path_algorithm_);
 					int16_t y = static_cast<int16_t>(plan_path_.begin()->toCell().y + ((npa->is_pox_y()) ? -2 : 2));
-					setFollowWall(clean_map_, action_i_ == ac_follow_wall_left,ins_path,true, y);
-				}else{
+					setFollowWall(clean_map_, action_i_ == ac_follow_wall_left, ins_path, true, y);
+				}
+				else {
 //					ROS_WARN("Cont front(%f,%f),curr(%f,%f),bound(min(%f,%f),max(%f,%f))", passed_cell_path_.front().x, passed_cell_path_.front().y,
 //							 curr.x, curr.y,bound.min.x,bound.min.y, bound.max.x,bound.max.y);
 				}
+			}
 
 			auto p_mt = dynamic_cast<MoveTypeFollowWall *>(p_move_type);
 			if(p_mt->movement_i_ == p_mt->mm_forward ||p_mt->movement_i_ == p_mt->mm_straight)
@@ -1261,47 +1267,51 @@ bool ACleanMode::isFinish()
 bool ACleanMode::checkChargerPos()
 {
 	const int16_t DETECT_RANGE = 20;//cells
+	if (!charger_poses_.empty()) {
+		if (getPosition().toCell().Distance(charger_poses_.back().toCell()) > 10 ) {
+			setChargerArea(charger_poses_.back());
+		}
+	}
 //	if(!isStateGoHomePoint()){
-		if(c_rcon.getStatus())
+	if(c_rcon.getStatus())
+	{
+		if(found_charger_)
 		{
-			if(found_charger_)
+			int counter=0;
+			for(auto&& charger_position : charger_poses_)
 			{
-				int counter=0;
-				for(auto&& charger_position : charger_poses_)
+				if(getPosition().toCell().Distance(charger_position.toCell()) > DETECT_RANGE )
+					counter++;
+				else{
+					return true;
+				}
+				if(counter >= charger_poses_.size())
 				{
-					if(getPosition().toCell().Distance(charger_position.toCell()) > DETECT_RANGE )
-						counter++;
-					else{
-//						c_rcon.resetStatus();
+					if(estimateChargerPos(c_rcon.getStatus()))
+					{
+						ROS_WARN("%s %d: FOUND CHARGER.", __FUNCTION__, __LINE__);
+						beeper.debugBeep(VALID);
+						go_home_path_algorithm_->setHomePoint(getPosition());
+						if (!hasSeenChargerDuringCleaning())
+							setSeenChargerDuringCleaning();
+
 						return true;
 					}
-					if(counter >= charger_poses_.size())
-					{
-						if(estimateChargerPos(c_rcon.getStatus()))
-						{
-							INFO_CYAN("FOUND CHARGER");
-//							c_rcon.resetStatus();
-							go_home_path_algorithm_->setHomePoint(getPosition());
-							if (!hasSeenChargerDuringCleaning())
-								setSeenChargerDuringCleaning();
-
-							return true;
-						}
-						break;
-					}
-				}
-			}
-			else if(!found_charger_){
-				if(estimateChargerPos(c_rcon.getStatus())){
-					INFO_CYAN("FOUND CHARGER");
-//					c_rcon.resetStatus();
-					go_home_path_algorithm_->setHomePoint(getPosition());
-					if (!hasSeenChargerDuringCleaning())
-						setSeenChargerDuringCleaning();
-					return true;
+					break;
 				}
 			}
 		}
+		else if(!found_charger_){
+			if(estimateChargerPos(c_rcon.getStatus())){
+				ROS_WARN("%s %d: FOUND CHARGER.", __FUNCTION__, __LINE__);
+				beeper.debugBeep(VALID);
+				go_home_path_algorithm_->setHomePoint(getPosition());
+				if (!hasSeenChargerDuringCleaning())
+					setSeenChargerDuringCleaning();
+				return true;
+			}
+		}
+	}
 //	}
 	return false;
 
@@ -1358,7 +1368,7 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 			}
 		}
 		if( (rcon_value & RconFL2_HomeT) && !(rcon_value & RconL_HomeT) && !(rcon_value & RconAll_R_HomeT) //fl2 sensor
-					&& !(rcon_value & RconBL_HomeT) )//to avoid charger signal reflection from other flat
+				&& !(rcon_value & RconBL_HomeT) )//to avoid charger signal reflection from other flat
 		{
 			if((cnt[fl2]++) >= STABLE_CNT){
 				cnt[fl2] = 0;
@@ -1369,7 +1379,7 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 				return false;
 		}
 		else if( (rcon_value & RconFR2_HomeT) && !(rcon_value & RconR_HomeT) && !(rcon_value & RconAll_L_HomeT) //fr2 sensor
-					&& !(rcon_value & RconBR_HomeT) ){//to avoid charger signal reflection from other direction
+						 && !(rcon_value & RconBR_HomeT) ){//to avoid charger signal reflection from other direction
 			if((cnt[fr2]++) >= STABLE_CNT){
 				cnt[fr2] = 0;
 				direction = -RCON_3;
@@ -1378,28 +1388,28 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 			else
 				return false;
 		}
-		/*
-		else if( (rcon_value & RconL_HomeT) && (rcon_value & RconFL2_HomeT) && !(rcon_value & RconAll_R_HomeT) ){//fl2 & l sensor
-			if((cnt[fl2l]++) >= STABLE_CNT){
-				cnt[fl2l] = 0;
-				direction = 60;
-				rcon_trig = 1;
+			/*
+			else if( (rcon_value & RconL_HomeT) && (rcon_value & RconFL2_HomeT) && !(rcon_value & RconAll_R_HomeT) ){//fl2 & l sensor
+				if((cnt[fl2l]++) >= STABLE_CNT){
+					cnt[fl2l] = 0;
+					direction = 60;
+					rcon_trig = 1;
+				}
+				else
+					return false;
 			}
-			else
-				return false;
-		}
-		else if( (rcon_value & RconR_HomeT) && (rcon_value & RconFR2_HomeT) && !(rcon_value & RconAll_L_HomeT) ){//fr2 & r sensor
-			if((cnt[fr2r]++) >= STABLE_CNT){
-				cnt[fr2r]=0;
-				direction = -60;
-				rcon_trig = 1;
+			else if( (rcon_value & RconR_HomeT) && (rcon_value & RconFR2_HomeT) && !(rcon_value & RconAll_L_HomeT) ){//fr2 & r sensor
+				if((cnt[fr2r]++) >= STABLE_CNT){
+					cnt[fr2r]=0;
+					direction = -60;
+					rcon_trig = 1;
+				}
+				else
+					return false;
 			}
-			else
-				return false;
-		}
-		*/
+			*/
 		else if( (rcon_value & RconL_HomeT) && !(rcon_value & RconFL2_HomeT) && !(rcon_value & RconAll_R_HomeT) //l sensor
-					&& !(rcon_value & RconBL_HomeT) ){//to avoid charger signal reflection from other flat
+						 && !(rcon_value & RconBL_HomeT) ){//to avoid charger signal reflection from other flat
 
 			if((cnt[l]++) >= STABLE_CNT){
 				cnt[l] = 0;
@@ -1410,7 +1420,7 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 				return false;
 		}
 		else if( (rcon_value & RconR_HomeT ) && !(rcon_value & RconFR2_HomeT) && !(rcon_value & RconAll_L_HomeT) //r sensor
-					&& !(rcon_value & RconBR_HomeT) ){//to avoid charger signal reflection from other direction
+						 && !(rcon_value & RconBR_HomeT) ){//to avoid charger signal reflection from other direction
 			if((cnt[r]++) >= STABLE_CNT){
 				cnt[r]=0;
 				direction = -RCON_4;
@@ -1419,26 +1429,26 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 			else
 				return false;
 		}
-		/*
-		else if( (rcon_value & RconBL_HomeT) && (rcon_value & RconL_HomeT) && !(rcon_value & RconAll_R_HomeT)){//l & bl sensor
-			if((cnt[bll]++) >= STABLE_CNT){
-				cnt[bll] = 0;
-				direction = 110;
-				rcon_trig = 1;
+			/*
+			else if( (rcon_value & RconBL_HomeT) && (rcon_value & RconL_HomeT) && !(rcon_value & RconAll_R_HomeT)){//l & bl sensor
+				if((cnt[bll]++) >= STABLE_CNT){
+					cnt[bll] = 0;
+					direction = 110;
+					rcon_trig = 1;
+				}
+				else
+					return false;
 			}
-			else
-				return false;
-		}
-		else if( (rcon_value & RconBR_HomeT) && (rcon_value & RconR_HomeT) && !(rcon_value & RconAll_L_HomeT)){//r & br sensor
-			if((cnt[brr]++) >= STABLE_CNT){
-				cnt[brr] = 0;
-				direction = -110;
-				rcon_trig = 1;
+			else if( (rcon_value & RconBR_HomeT) && (rcon_value & RconR_HomeT) && !(rcon_value & RconAll_L_HomeT)){//r & br sensor
+				if((cnt[brr]++) >= STABLE_CNT){
+					cnt[brr] = 0;
+					direction = -110;
+					rcon_trig = 1;
+				}
+				else
+					return false;
 			}
-			else
-				return false;
-		}
-		*/
+			*/
 		else if( (rcon_value & RconBL_HomeT) && !(rcon_value & RconL_HomeT) && !(rcon_value & RconAll_R_HomeT) ){//bl sensor
 			if((cnt[bl]++) >= STABLE_CNT){
 				cnt[bl] = 0;
@@ -1488,7 +1498,7 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 	else
 		ROS_INFO("%s,%d,  lidar data not update, direction %f, rcon_state = 0x%x",__FUNCTION__,__LINE__,direction,rcon_value);
 	/*
-	//set charger only using with rcon 
+	//set charger only using with rcon
 	if( rcon_trig = 1 && fabsf(direction) != RCON_5 )
 	{
 		ROS_INFO("\033[42;37m%s,%d, set charger with rcon direction %f, rcon_state = 0x%x, map direction = %d \033[0m",__FUNCTION__,__LINE__,direction,rcon_value,iterate_point_.dir);
@@ -1574,24 +1584,24 @@ void ACleanMode::setChargerArea(const Point_t charger_pos)
 	}
 
 	Cell_t charger_pos_cell  = charger_pos.toCell();
-	ROS_INFO("%s,%d,charger position(%d,%d),th= %f,dir=%d",__FUNCTION__,__LINE__,charger_pos_cell.x,charger_pos_cell.y,charger_pos.th,charger_pos.dir);
+//	ROS_INFO("%s,%d,charger position(%d,%d),th= %f,dir=%d",__FUNCTION__,__LINE__,charger_pos_cell.x,charger_pos_cell.y,charger_pos.th,charger_pos.dir);
 
 	std::string debug_str;
 	for(int j = 3;j>-3;j--){
 		for( int16_t i = 3;i>-3;i--){
 			debug_str += "(" + std::to_string(charger_pos_cell.x + i) + ", "
-						 + std::to_string(charger_pos_cell.y + j) + "),";
+									 + std::to_string(charger_pos_cell.y + j) + "),";
 			clean_map_.setCell(CLEAN_MAP,charger_pos_cell.x +i ,charger_pos_cell.y+j,BLOCKED_RCON);
 		}
 	}
-	ROS_INFO("%s %d: %s", __FUNCTION__, __LINE__, debug_str.c_str());
+//	ROS_INFO("%s %d: %s", __FUNCTION__, __LINE__, debug_str.c_str());
 	//const int RADIAN= 4;//cells
 	//clean_map_.setCircleMarkers(charger_pos,true,RADIAN,BLOCKED_RCON);
 
-	/*	
+	/*
 	int16_t y_init;
 	int16_t x_init;
-	
+
 	if((charger_pos.th >= 0 && charger_pos.dir == MAP_POS_X)|| (charger_pos.th<0 && charger_pos.dir == MAP_NEG_X) )
 	{
 		x_init = 3;
@@ -1726,7 +1736,7 @@ void ACleanMode::setChargerArea(const Point_t charger_pos)
 		}
 
 	}
-	*/	
+	*/
 
 }
 
@@ -1775,6 +1785,15 @@ void ACleanMode::batteryLow(bool state_now, bool state_last)
 		ROS_WARN("%s %d: Low battery(%.2fV).", __FUNCTION__, __LINE__, battery.getVoltage() / 100.0);
 		ev.battery_low = true;
 		ev.fatal_quit = true;
+	}
+}
+
+void ACleanMode::chargeDetect(bool state_now, bool state_last)
+{
+	if (!ev.charge_detect && charger.isDirected())
+	{
+		ROS_WARN("%s %d: Charge detect!.", __FUNCTION__, __LINE__);
+		ev.charge_detect = charger.getChargeStatus();
 	}
 }
 // ------------------Handlers end--------------------------
@@ -1869,49 +1888,40 @@ bool ACleanMode::isSwitchByEventInStateGoHomePoint()
 	return checkEnterExceptionResumeState();
 }
 
-bool ACleanMode::updateActionInStateGoHomePoint()
-{
+bool ACleanMode::updateActionInStateGoHomePoint() {
 	bool update_finish;
 	sp_action_.reset();//to mark in destructor
-    if(!plan_path_.empty())
-    {
-        old_dir_ = iterate_point_->dir;
-    }
+	if (!plan_path_.empty()) {
+		old_dir_ = iterate_point_->dir;
+	}
 	auto start_point = go_home_path_algorithm_->getStartPoint();
 	auto current_home_point = go_home_path_algorithm_->getCurrentHomePoint();
 
 	ROS_INFO("%s %d: curr(%d, %d), current home point(%d, %d).", __FUNCTION__, __LINE__,
-			 getPosition().toCell().x, getPosition().toCell().y,
-			 current_home_point.toCell().x, current_home_point.toCell().y);
-	if (ev.rcon_status)
-	{
+					 getPosition().toCell().x, getPosition().toCell().y,
+					 current_home_point.toCell().x, current_home_point.toCell().y);
+	if (ev.rcon_status) {
 		// Directly switch to state go to charger.
 		ROS_INFO("%s %d: Rcon T signal triggered and switch to state go to charger.", __FUNCTION__, __LINE__);
 		should_go_to_charger_ = true;
 		ev.rcon_status = 0;
 		update_finish = false;
-	}
-	else if (go_home_path_algorithm_->reachTarget(should_go_to_charger_, getPosition()))
-	{
+	} else if (go_home_path_algorithm_->reachTarget(should_go_to_charger_, getPosition())) {
 		update_finish = false;
-	}
-	else if (go_home_path_algorithm_->isHomePointEmpty() && getPosition().toCell() == start_point.toCell())
-	{
-		ROS_INFO("Reach start point but angle not equal,start_point_(%d,%d,%f,%d)",start_point.toCell().x,
-				 start_point.toCell().y, radian_to_degree(start_point.th), start_point.dir);
+	} else if (go_home_path_algorithm_->isHomePointEmpty() && getPosition().toCell() == start_point.toCell()) {
+		ROS_INFO("Reach start point but angle not equal,start_point_(%d,%d,%f,%d)", start_point.toCell().x,
+						 start_point.toCell().y, radian_to_degree(start_point.th), start_point.dir);
 //		beeper.beepForCommand(VALID);
 		auto curr = getPosition();
 		curr.th = start_point.th;
 		plan_path_.clear();
-		plan_path_.emplace_back(curr) ;
-		plan_path_.push_back(start_point) ;
+		plan_path_.emplace_back(curr);
+		plan_path_.push_back(start_point);
 		iterate_point_ = plan_path_.begin();
 		action_i_ = ac_linear;
 		genNextAction();
 		update_finish = true;
-	}
-	else if (go_home_path_algorithm_->generatePath(clean_map_, getPosition(),old_dir_, plan_path_))
-	{
+	} else if (go_home_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
 		// New path to home cell is generated.
 		iterate_point_ = plan_path_.begin();
 //		plan_path_.pop_front();
@@ -1921,7 +1931,7 @@ bool ACleanMode::updateActionInStateGoHomePoint()
 		action_i_ = ac_linear;
 		genNextAction();
 		update_finish = true;
-	}else
+	} else
 		// path is empty.
 		update_finish = false;
 
@@ -1940,7 +1950,7 @@ void ACleanMode::switchInStateGoHomePoint()
 		if (isFirstTimeGoHomePoint())
 		{
 			if (!isRemoteGoHomePoint() && !isWifiGoHomePoint() && !isGoHomePointForLowBattery() &&
-				hasSeenChargerDuringCleaning())
+					hasSeenChargerDuringCleaning())
 				speaker.play(VOICE_CLEANING_FINISH_BACK_TO_CHARGER);
 			setFirstTimeGoHomePoint(false);
 		}
@@ -2005,9 +2015,9 @@ bool ACleanMode::updateActionInStateSpot()
 		old_dir_ = iterate_point_->dir;
 
 	sp_action_.reset();
-    bool ret{};
+	bool ret{};
 
-    auto cpa = boost::dynamic_pointer_cast<SpotCleanPathAlgorithm>(clean_path_algorithm_);
+	auto cpa = boost::dynamic_pointer_cast<SpotCleanPathAlgorithm>(clean_path_algorithm_);
 	if (cpa->generatePath(clean_map_, getPosition(), action_i_ == ac_linear, plan_path_,iterate_point_,is_closed)) {
 		iterate_point_ = plan_path_.begin();
 		if ( action_i_ == ac_linear )
@@ -2090,7 +2100,7 @@ bool ACleanMode::isSwitchByEventInStateExploration() {
 
 bool ACleanMode::updateActionInStateExploration() {
 //	PP_INFO();
-    if(!plan_path_.empty())
+	if(!plan_path_.empty())
 	{
 		old_dir_ = iterate_point_->dir;
 		ROS_WARN("old_dir_(%d)", old_dir_);
@@ -2118,10 +2128,10 @@ void ACleanMode::switchInStateExploration() {
 	Cells cells{};
 
 	auto expand_condition = [&](const Cell_t cell, const Cell_t neighbor_cell){
-		return fw_tmp_map.isBlockAccessible(neighbor_cell.x, neighbor_cell.y);
+		return clean_map_.isBlockAccessible(neighbor_cell.x, neighbor_cell.y);
 	};
 	auto is_found = clean_path_algorithm_->dijkstra(clean_map_, getPosition().toCell(), cells,true,  CellEqual(Cell_t{}),
-													isAccessable(&clean_map_, expand_condition));
+																									isAccessable(&clean_map_, expand_condition));
 	if (!is_found) {
 		ROS_WARN("%s,%d: enter state trapped",__FUNCTION__,__LINE__);
 		sp_saved_states.push_back(sp_state);
@@ -2189,9 +2199,9 @@ bool ACleanMode::updateActionInStateFollowWall()
 //		genNextAction();
 	}
 	else if (robot_timer.trapTimeout(ESCAPE_TRAPPED_TIME) && is_trapped_) {
-			ROS_WARN("%s,%d: trapTimeout", __FUNCTION__, __LINE__);
-			action_i_ = ac_null;
-			trapped_time_out_ = true;
+		ROS_WARN("%s,%d: trapTimeout", __FUNCTION__, __LINE__);
+		action_i_ = ac_null;
+		trapped_time_out_ = true;
 	}else{
 		action_i_ = ac_follow_wall_left;//Set the left wall follow in the wall follow mode
 //		action_i_ = ac_follow_wall_right;
@@ -2339,7 +2349,7 @@ void ACleanMode::genNextAction() {
 				break;
 			case ac_follow_wall_left  :
 			case ac_follow_wall_right :
-                if(isStateSpot())
+				if(isStateSpot())
 				{
 					sp_action_.reset(new MoveTypeFollowWall(action_i_ == ac_follow_wall_left, plan_path_.begin()));
 				}
@@ -2358,8 +2368,8 @@ void ACleanMode::wifiSetWaterTank()
 		return;
 
 	if ((isStateInit() && action_i_ > ac_open_gyro_and_lidar)
-		|| isStateClean()
-		|| isStateFollowWall())
+			|| isStateClean()
+			|| isStateFollowWall())
 	{
 		auto user_set_swing_motor_mode = water_tank.getUserSetSwingMotorMode();
 		if (water_tank.getCurrentSwingMotorMode() != user_set_swing_motor_mode)
@@ -2367,7 +2377,7 @@ void ACleanMode::wifiSetWaterTank()
 
 		auto user_set_pump_mode = water_tank.getUserSetPumpMode();
 		if (water_tank.getStatus(WaterTank::operate_option::pump) &&
-			water_tank.getCurrentPumpMode() != user_set_pump_mode)
+				water_tank.getCurrentPumpMode() != user_set_pump_mode)
 			water_tank.setCurrentPumpMode(user_set_pump_mode);
 	}
 }
@@ -2379,11 +2389,12 @@ void ACleanMode::setVacuum()
 
 	speaker.play(vacuum.isUserSetMaxMode() ? VOICE_VACCUM_MAX : VOICE_VACUUM_NORMAL);
 	if ((isStateInit() && action_i_ > ac_open_gyro_and_lidar)
-		|| isStateClean()
-		|| isStateFollowWall())
+			|| isStateClean()
+			|| isStateFollowWall())
 	{
 		auto user_set_max_mode = vacuum.isUserSetMaxMode();
 		if (vacuum.isCurrentMaxMode() != user_set_max_mode)
 			vacuum.setSpeedByUserSetMode();
 	}
 }
+

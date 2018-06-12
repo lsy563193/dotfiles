@@ -245,7 +245,7 @@ bool CleanModeNav::isExit()
 			return true;
 		}
 
-		if (ev.key_clean_pressed || s_wifi.receiveIdle())
+		if (!checkingIfSwitchIsOn() && (ev.key_clean_pressed || s_wifi.receiveIdle()))
 		{
 			ROS_WARN("%s %d: Exit for ev.key_clean_pressed or wifi receive idle.", __FUNCTION__, __LINE__);
 			setNextMode(md_idle);
@@ -630,27 +630,19 @@ void CleanModeNav::chargeDetect(bool state_now, bool state_last)
 {
 	if (!ev.charge_detect)
 	{
-		if (isStateInit() && action_i_ == ac_back_from_charger)
+		if (isStateInit() && checkingIfSwitchIsOn() && sp_action_->isTimeUp())
 		{
-			if (sp_action_->isTimeUp() && cliff.getStatus() == BLOCK_ALL)
-			{
-				// If switch is not on, the cliff value should be around 0.
-				ROS_WARN("%s %d: Switch is not on!.", __FUNCTION__, __LINE__);
-				ev.charge_detect = charger.getChargeStatus();
-				ev.fatal_quit = true;
-				switch_is_off_ = true;
-			}
+			// If switch is not on, the cliff value should be around 0.
+			ROS_WARN("%s %d: Switch is not on!.", __FUNCTION__, __LINE__);
+			ev.charge_detect = charger.getChargeStatus();
+			ev.fatal_quit = true;
+			switch_is_off_ = true;
 		}
 		else if (charger.isDirected())
 		{
 			ROS_WARN("%s %d: Charge detect!.", __FUNCTION__, __LINE__);
 			ev.charge_detect = charger.getChargeStatus();
 			ev.fatal_quit = true;
-		}
-		else if (isStateGoToCharger())
-		{
-			ROS_WARN("%s %d: Charge detect!.", __FUNCTION__, __LINE__);
-			ev.charge_detect = charger.getChargeStatus();
 		}
 	}
 }
@@ -1082,7 +1074,7 @@ void CleanModeNav::switchInStateCharge()
 // ------------------State resume low battery charge--------------------
 bool CleanModeNav::checkEnterResumeLowBatteryCharge()
 {
-	if (battery.isReadyToResumeCleaning()/* || ev.remote_direction_right*/)
+	if (battery.isFull()/* || ev.remote_direction_right*/)
 	{
 		/*if (ev.remote_direction_right)
 			ev.remote_direction_right = false;*/
@@ -1161,5 +1153,10 @@ void CleanModeNav::switchInStateResumeLowBatteryCharge()
 // ------------------State Exception Resume--------------------
 bool CleanModeNav::isSwitchByEventInStateExceptionResume() {
 	return checkEnterPause();
+}
+
+bool CleanModeNav::checkingIfSwitchIsOn()
+{
+	return charger.isOnStub() && action_i_ == ac_back_from_charger && cliff.getStatus() == BLOCK_ALL;
 }
 

@@ -84,8 +84,6 @@ int main(int argc, char **argv)
 	ros::init(argc, argv, "pp");
 	ros::NodeHandle	nh_dev("~");
 
-#if ENABLE_DEBUG
-
 	struct sigaction act;
 
 	act.sa_handler = handle_exit;
@@ -98,7 +96,6 @@ int main(int argc, char **argv)
 	sigaction(SIGABRT,&act,NULL);
 	ROS_INFO("set signal action done!");
 
-#endif
 	robot_instance = new robot();
 // Test code for path algorithm by Austin.
 //	test_map();
@@ -112,9 +109,11 @@ int main(int argc, char **argv)
 
 	Points remain_path_{};
 
-	NavCleanPathAlgorithm clean_path_algorithm_;
-	map.loadMap(true,curr, old_dir_, clean_path_algorithm_.trend_pos);
-	clean_path_algorithm_.curr_filter_ = &clean_path_algorithm_.filter_short_path;
+//	GoHomePathAlgorithm clean_path_algorithm_;
+NavCleanPathAlgorithm clean_path_algorithm_;
+	bool tmp;
+	map.loadMap(true,curr, old_dir_, tmp);
+//	clean_path_algorithm_.curr_filter_ = &clean_path_algorithm_.filter_short_path;
 	setPosition(cellToCount(curr.x),cellToCount(curr.y));
 
 	Cells cells{};

@@ -11,12 +11,15 @@
 #include <beeper.h>
 #include <wifi/wifi.h>
 #include <robot.hpp>
+#include <wifi_led.hpp>
 #include "ros/ros.h"
 #include "action.hpp"
 
 ActionR16Test::ActionR16Test()
 {
 	ROS_WARN("%s %d: Starting action R16 test." , __FUNCTION__, __LINE__);
+	// Fasten the lidar checking.
+	lidar.motorCtrl(ON);
 }
 
 void ActionR16Test::run()
@@ -304,12 +307,14 @@ void ActionR16Test::error_loop(uint8_t test_stage, uint16_t content, uint16_t er
 bool ActionR16Test::wifi_test()
 {
 	uint32_t wifi_module_version =0;
+	wifi_led.enable();
 	bool wifi_test_result = s_wifi.factoryTest(wifi_module_version);
 	if (wifi_test_result)
 	{
 		s_wifi.rebind();
 		ROS_ERROR("%s,%d,wifi test fail,module  version %d",__FUNCTION__,__LINE__,wifi_module_version);
 	}
+	wifi_led.disable();
 	return wifi_test_result;
 }
 

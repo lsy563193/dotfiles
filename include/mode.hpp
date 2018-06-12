@@ -404,6 +404,7 @@ public:
 	void overCurrentBrushMain(bool state_now, bool state_last) override;
 	void overCurrentVacuum(bool state_now, bool state_last) override;
 	void batteryLow(bool state_now, bool state_last) override;
+	void chargeDetect(bool state_now, bool state_last) override ;
 
 	// State init
 	bool isStateInit() const
@@ -729,6 +730,9 @@ public:
 	bool isSwitchByEventInStateExceptionResume() override;
 
 private:
+
+	bool checkingIfSwitchIsOn();
+
 	bool has_aligned_and_open_slam_{false};
 	bool has_played_start_voice_{false};
 	float paused_odom_radian_{0};
@@ -752,7 +756,6 @@ public:
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteClean(bool state_now, bool state_last) override ;
 //	void cliffAll(bool state_now, bool state_last) override ;
-	void chargeDetect(bool state_now, bool state_last) override ;
 	void remoteMax(bool state_now, bool state_last) override ;
 
 //	void overCurrentBrushLeft(bool state_now, bool state_last);
@@ -793,7 +796,6 @@ public:
 	void remoteMax(bool state_now, bool state_last) override;
 	void remoteClean(bool state_now, bool state_last) override;
 	void remoteWallFollow(bool state_now, bool state_last) override;
-	void chargeDetect(bool state_now, bool state_last) override;
 	void switchInStateFollowWall() override;
 	void batteryHome(bool state_now, bool state_last) override ;
 

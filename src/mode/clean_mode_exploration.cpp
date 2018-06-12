@@ -80,20 +80,6 @@ bool CleanModeExploration::isExit()
 		return true;
 	}
 
-	if(ev.fatal_quit)
-	{
-		ROS_WARN("%s %d: Exit to idle mode by fatal quit.", __FUNCTION__, __LINE__);
-		setNextMode(md_idle);
-		return true;
-	}
-
-	if (s_wifi.receiveIdle())
-	{
-		ROS_WARN("%s %d: Exit for wifi idle.", __FUNCTION__, __LINE__);
-		setNextMode(md_idle);
-		return true;
-	}
-
 	return ACleanMode::isExit();
 }
 
@@ -156,12 +142,6 @@ void CleanModeExploration::overCurrentWheelLeft(bool state_now, bool state_last)
 void CleanModeExploration::overCurrentWheelRight(bool state_now, bool state_last) {
 	ROS_WARN("%s %d: Right wheel oc.", __FUNCTION__, __LINE__);
 	ev.oc_wheel_right = true;
-}
-
-void CleanModeExploration::chargeDetect(bool state_now, bool state_last) {
-	ROS_WARN("%s %d: Charge detect!.", __FUNCTION__, __LINE__);
-
-	ev.charge_detect = charger.getChargeStatus();
 }
 
 void CleanModeExploration::remoteMax(bool state_now, bool state_last)
