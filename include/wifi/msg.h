@@ -259,9 +259,9 @@ public:
 		SUN
 	};
 
-	static constexpr int MSG_CODE = 0x4A;	
+	static constexpr int MSG_CODE = 0x4A;
 
-	using RxMsg::RxMsg;	
+	using RxMsg::RxMsg;
 
 	std::string describe() const override;
 
@@ -874,7 +874,7 @@ public:
 		for(int i =0 ;i<data().size();i++)
 		{
 			if(i<3)
-				ver |= (data().at(i) & 0x000000ff)<<((2-i)*8);	
+				ver |= (data().at(i) & 0x000000ff)<<((2-i)*8);
 		}
 		return ver;
 	}
@@ -885,7 +885,7 @@ public:
 		for(int i =3 ;i<data().size();i++)
 		{
 			if(i>=3)
-				ver |= (data().at(i) & 0x000000ff)<<((5-i)*8);	
+				ver |= (data().at(i) & 0x000000ff)<<((5-i)*8);
 		}
 		return ver;
 	}

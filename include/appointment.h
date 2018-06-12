@@ -16,8 +16,10 @@ struct st_appmt
 	bool enable;
 	uint8_t week;
 	uint8_t hour;
-	uint8_t mint;	
+	uint8_t mint;
 };
+
+#define TOTAL_MINS_A_WEEK 10080
 
 typedef struct st_appmt st_appmt;
 
@@ -37,7 +39,7 @@ public:
 	std::vector<Appointment::st_appmt> get();
 
 	/*
-	 * @brief read write appointment message to apmt_l_ 
+	 * @brief read write appointment message to appointment_list_ 
 	 * @param1 SET or GET
 	 * @return error -1,ok 1
 	 */
@@ -66,7 +68,6 @@ public:
 	/*
 	 * @brief set appointment to  bottom board
 	 * @param1 time in minutes
-	 * @param2 0b01 set appointment ,0b10 not set appointment
 	 */
 	void setPlan2Bottom(uint16_t time);
 
@@ -94,7 +95,7 @@ public:
 
 private:
 
-	std::vector<Appointment::st_appmt> apmt_l_;
+	std::vector<Appointment::st_appmt> appointment_list_;
 	bool appointment_set_ ;
 	uint16_t count_down_;
 	bool appointment_change_;

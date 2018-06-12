@@ -40,6 +40,8 @@ S_Wifi::S_Wifi():is_wifi_connected_(false)
 					,upload_state_ack_(false)
 					,time_sync_(false)
 					,last_time_sync_time_(0)
+					,moduleVersion_(0)
+					,cloudVersion_(0)
 {
 	init();
 	map_data_buf_ = new std::deque<Points>();
@@ -76,7 +78,11 @@ bool S_Wifi::init()
 			wifi::RegDeviceTxMsg p(
 //									wifi::RegDeviceTxMsg::CloudEnv::MAINLAND_DEV,
 									wifi::RegDeviceTxMsg::CloudEnv::MAINLAND_PROD,
-									{0, 0, 1},
+									{
+									(uint8_t)((moduleVersion_>>16)&0xff),
+									(uint8_t)((moduleVersion_>>8)&0xff),
+									(uint8_t)(moduleVersion_&0xff)
+									},
 									CLOUD_DOMAIN_ID,
 									CLOUD_SUBDOMAIN_ID,
 									wifi::RegDeviceTxMsg::toKeyArray(CLOUD_KEY),
@@ -475,6 +481,7 @@ bool S_Wifi::init()
 				ROS_INFO("version %d,cloud %d"
 							,moduleVersion_,
 							cloudVersion_);
+				INFO_NOR_CON(moduleVersion_ != expectModuleVersion_,"module version not match");
 			});
 
 	// MAC ack
@@ -1228,16 +1235,17 @@ uint8_t S_Wifi::smartApLink()
 	return 0;
 }
 
-bool S_Wifi::factoryTest()
+bool S_Wifi::factoryTest(uint32_t &moduleVersion)
 {
 	isFactoryTest_ = true;
+	moduleVersion = moduleVersion_;
 	int waitResp = 0;
 	if (is_sleep_)
 	{
 		//wifi resume
 		if (!(int) this->resume())
 		{
-			ROS_INFO("%s,%d,FACTORY TEST FAIL!!", __FUNCTION__, __LINE__);
+			ROS_ERROR("%s,%d,FACTORY TEST FAIL ,wifi resume fail!!", __FUNCTION__, __LINE__);
 			isFactoryTest_ = false;
 			return false;
 		}
@@ -1251,7 +1259,7 @@ bool S_Wifi::factoryTest()
 		waitResp++;
 		if(waitResp >= 200)//wait 4 seconds
 		{
-			ROS_INFO("%s,%d,FACTORY TEST FAIL!!",__FUNCTION__,__LINE__);
+			ROS_ERROR("%s,%d,FACTORY TEST FAIL ,no factory test response!!",__FUNCTION__,__LINE__);
 			isFactoryTest_ = false;
 			return false;
 		}
@@ -1262,13 +1270,18 @@ bool S_Wifi::factoryTest()
 	while(isRegDevice_ == false){
 		usleep(20000);
 		if(waitResp >= 1500){//30s
-			ROS_INFO("%s,%d,FACTORY TEST FAIL!!",__FUNCTION__,__LINE__);
+			ROS_ERROR("%s,%d,FACTORY TEST FAIL ,no registion response!!",__FUNCTION__,__LINE__);
 			isFactoryTest_ = false;
 			return false;
 		}
 		waitResp++;
 	}
-	ROS_INFO("FACTORY TEST SUCCESS!!");
+	if(expectModuleVersion_ != moduleVersion_)
+	{
+		ROS_ERROR("%s,%d,FACTROY TEST FAIL , module version mismatch",__FUNCTION__,__LINE__);
+		return false;
+	}
+	INFO_BLUE("FACTORY TEST SUCCESS!!");
 	isFactoryTest_ = false;
 	factory_test_ack_ = false;
 	return true;
@@ -1467,9 +1480,9 @@ void S_Wifi::wifiSendRutine()
 				case ACT::ACT_SMART_AP_LINK:
 					this->smartApLink();
 					break;
-				case ACT::ACT_FACTORY_TEST:
-					this->factoryTest();
-					break;
+/*              case ACT::ACT_FACTORY_TEST: */
+					// this->factoryTest();
+					/* break; */
 				case ACT::ACT_UPLOAD_MAP:
 					this->uploadMap(SLAM_MAP);
 					break;

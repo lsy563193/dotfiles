@@ -54,7 +54,7 @@ void ActionR16Test::run()
 	if (!wifi_test())
 	{
 		ROS_ERROR("%s %d: Serial WIFI test failed!!", __FUNCTION__, __LINE__);
-		error_loop(4, 0, SERIAL_WIFI_ERROR);
+		error_loop(4, (uint16_t)s_wifi.getModuleVersion(), SERIAL_WIFI_ERROR);
 	}
 
 	// Test item: Lidar bumper.
@@ -303,9 +303,13 @@ void ActionR16Test::error_loop(uint8_t test_stage, uint16_t content, uint16_t er
 
 bool ActionR16Test::wifi_test()
 {
-	bool wifi_test_result = s_wifi.factoryTest();
+	uint32_t wifi_module_version =0;
+	bool wifi_test_result = s_wifi.factoryTest(wifi_module_version);
 	if (wifi_test_result)
+	{
 		s_wifi.rebind();
+		ROS_ERROR("%s,%d,wifi test fail,module  version %d",__FUNCTION__,__LINE__,wifi_module_version);
+	}
 	return wifi_test_result;
 }
 
