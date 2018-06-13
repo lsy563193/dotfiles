@@ -81,7 +81,7 @@ void MoveTypeDeskTest::run()
 				serial.setSendData(CTL_WORK_MODE, DESK_TEST_MOVEMENT_MODE);
 				usleep(30000);// Make sure infrared display has been sent.
 				p_movement_.reset();
-				p_movement_.reset(new ActionOpenGyro());
+				p_movement_.reset(new ActionOpenGyroAndLidar());
 				ROS_WARN("%s %d: Stage 1 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
 			}
 			break;
@@ -168,6 +168,7 @@ void MoveTypeDeskTest::run()
 				p_movement_.reset();
 				p_movement_.reset(new MoveTypeGoToCharger());
 				brush.slowOperate();
+				vacuum.setForCurrentMode(Vacuum::VacMode::vac_low_mode);
 				ROS_WARN("%s %d: Stage 6 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
 			}
 			break;
