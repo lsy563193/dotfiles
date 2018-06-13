@@ -50,7 +50,7 @@ void MoveTypeFollowWall::init(bool is_left)
 			 is_left ? "left" : "right");
 	auto p_mode = dynamic_cast<ACleanMode*> (sp_mode_);
 	is_left_ = is_left;
-	auto turn_radian = getTurnRadian(std::next(p_mode->iterate_point_ )!= p_mode->plan_path_.end());
+	auto turn_radian = getTurnRadian( (p_mode->iterate_point_ +1)!= p_mode->plan_path_.end());
 //	ROS_ERROR("turn_radian(%lf)", radian_to_degree(turn_radian));
 	turn_target_radian_ = getPosition().addRadian(turn_radian).th;
 //	ROS_ERROR("getPosition().th(%lf)", radian_to_degree(getPosition().th));
@@ -332,7 +332,6 @@ int16_t MoveTypeFollowWall::tiltTurnAngle()
 	return turn_angle;
 }
 
-
 int16_t MoveTypeFollowWall::obsTurnAngle()
 {
 	int16_t turn_angle{};
@@ -348,6 +347,16 @@ int16_t MoveTypeFollowWall::obsTurnAngle()
 	if(!is_left_)
 		turn_angle = -turn_angle;
 //	ROS_WARN("turn_angle(%d)",turn_angle);
+	return turn_angle;
+}
+
+int16_t MoveTypeFollowWall::rconTurnAngle()
+{
+	int16_t turn_angle{};
+	turn_angle = -90;
+
+	if(!is_left_)
+		turn_angle = -turn_angle;
 	return turn_angle;
 }
 
@@ -484,6 +493,10 @@ double MoveTypeFollowWall::getTurnRadianByEvent()
 	{
 		turn_angle = tiltTurnAngle();
 		ROS_WARN("%s %d: Robot slip triggered, turn_angle: %d.", __FUNCTION__, __LINE__, turn_angle);
+	}
+	if (ev.rcon_status)
+	{
+		turn_angle = rconTurnAngle();
 	}
 	return degree_to_radian(turn_angle);
 }
