@@ -82,7 +82,7 @@ class APathAlgorithm
 public:
 	virtual bool generatePath(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &plan_path) = 0;
 
-	virtual bool checkTrapped(GridMap &map, const Cell_t &curr_cell) {return true;};
+	virtual bool checkTrapped(GridMap &map, const Cell_t &curr_cell);
 
 	bool shift_path(GridMap &map, const Cell_t &p1, Cell_t &p2, Cell_t &p3, int num,bool is_first, bool is_reveave, const func_compare_two_t& expand_condition);
 
@@ -372,7 +372,7 @@ public:
 class GoHomePathAlgorithm: public APathAlgorithm
 {
 public:
-	GoHomePathAlgorithm(GridMap& map, HomePoints_t* p_home_points, HomePoints_t* p_start_points,bool is_follow_wall=false);
+	GoHomePathAlgorithm(GridMap& map, HomePoints_t* p_home_points, HomePoints_t* p_start_points,HomePoints_t::iterator* p_home_point_it, bool is_follow_wall=false);
 	~GoHomePathAlgorithm() = default;
 
 	/*
@@ -391,20 +391,15 @@ public:
 	bool generatePath(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &plan_path) override;
 protected:
 
-//	std::unique_ptr<GoHomeWay_t> MapThroughAccessableAndCleaned;
-//	std::unique_ptr<GoHomeWay_t> MapCleanBlockThroughAccessableAndCleaned;
-//	std::unique_ptr<GoHomeWay_t> SlamMapThroughAccessableAndCleaned;
-//	std::unique_ptr<GoHomeWay_t> MapThroughAccessable;
 	std::vector<std::unique_ptr<GoHomeWay_t>> home_ways = {};
-	std::vector<std::unique_ptr<GoHomeWay_t>>::iterator curr_way_;
+	std::vector<std::unique_ptr<GoHomeWay_t>>::iterator way_it;
 	std::unique_ptr<GridMap> temp_map;
+	bool has_clean_{};
 
-//	HomePoints_t* p_home_points_;
-//	HomePoints_t* p_start_points_;
 	std::vector<HomePoints_t*> home_points_set{/*p_home_points_, *//*p_start_points_*/};
-	std::vector<HomePoints_t*>::iterator curr_home_points;
+	std::vector<HomePoints_t*>::iterator home_points_it;
 
-	HomePoints_t::const_iterator curr_home_point_;
+	HomePoints_t::iterator* p_home_point_it_;
 };
 
 #endif //PP_PATH_ALGORITHM_H

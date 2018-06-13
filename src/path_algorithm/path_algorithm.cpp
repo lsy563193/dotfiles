@@ -717,6 +717,19 @@ void APathAlgorithm::optimizePath(GridMap &map, Cells &path, const Dir_t& priori
 	}
 }
 
+bool APathAlgorithm::checkTrapped(GridMap &map, const Cell_t &curr_cell) {
+
+	ROS_WARN("%s,%d",__FUNCTION__, __LINE__);
+	auto expand_condition = [&](const Cell_t &cell, const Cell_t &neighbor_cell)
+	{
+		return map.isBlockAccessible(neighbor_cell.x, neighbor_cell.y) &&
+				map.getCell(CLEAN_MAP, neighbor_cell.x, neighbor_cell.y) == CLEANED;
+	};
+
+	Cells cells{};
+	return !dijkstra(map, getPosition().toCell(), cells, true, CellEqual(Cell_t{0,0}), isAccessable(&map, expand_condition));
+}
+
 bool TargetVal::operator()(const Cell_t &c_it) {
 		return p_map_->getCell(CLEAN_MAP, c_it.x, c_it.y) == val_;
 }

@@ -518,6 +518,8 @@ typedef int CellState;
 template <typename T>
 class DequeArray {
 public:
+	typedef typename std::deque<T>::iterator iterator;
+	typedef typename std::deque<T>::const_iterator const_iterator;
     DequeArray(int size):valid_size_(size){ };
 	void push_back(T i) {
 		d.push_back(i);
@@ -536,6 +538,11 @@ public:
 	bool empty()
 	{
 		return d.size() == 0;
+	}
+
+	iterator erase(iterator it)
+	{
+		return d.erase(it);
 	}
 
 	typename std::deque<T>::iterator begin() {
@@ -558,8 +565,6 @@ public:
 		return d[i];
 	}
 //	using iterator =  std::deque::const_iterator;
-	typedef typename std::deque<T>::iterator iterator;
-	typedef typename std::deque<T>::const_iterator const_iterator;
 
 private:
 	std::deque<T> d;

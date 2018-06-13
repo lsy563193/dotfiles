@@ -1095,9 +1095,12 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_mt) {
 
 	markMapInNewCell();//mark real time to follow wall and exploration mode
 
+//	ROS_INFO("111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111");
 	if (isStateFollowWall()) {
+//		ROS_INFO("222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222");
 //			auto p_mt = dynamic_cast<MoveTypeFollowWall *>(p_mt);
-		if (p_mt->isBlockCleared(clean_map_, passed_cell_path_)) {
+		if (p_mt->isBlockCleared(clean_map_, curr)) {
+//			ROS_INFO("333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333");
 			clean_map_.markRobot(curr.toCell(), CLEAN_MAP);
 			std::vector<Vector2<int>> markers{};
 			if (lidar.isScanCompensateReady())
@@ -1117,6 +1120,7 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_mt) {
 					clean_map_.setCell(CLEAN_MAP, cell.x, cell.y, BLOCKED_LIDAR);
 				}
 			}
+//			ROS_INFO("444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444");
 			if (!clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell())) {
 				out_of_trapped_ = true;
 				ROS_ERROR("OUT OF TRAPPED");
@@ -1860,7 +1864,7 @@ bool ACleanMode::checkEnterGoHomePointState()
 		sp_action_.reset();
 		sp_state = state_go_home_point.get();
 		sp_state->init();
-		clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_,&start_points_));
+		clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_,&start_points_, &home_points_it_));
 		speaker.play(VOICE_GO_HOME_MODE);
 		return true;
 	}
@@ -1890,7 +1894,7 @@ bool ACleanMode::isSwitchByEventInStateGoHomePoint()
 }
 
 bool ACleanMode::updateActionInStateGoHomePoint() {
-	bool update_finish;
+	bool update_finish{};
 	sp_action_.reset();//to mark in destructor
 	if (!plan_path_.empty()) {
 		old_dir_ = iterate_point_->dir;
@@ -1916,19 +1920,23 @@ bool ACleanMode::updateActionInStateGoHomePoint() {
 		action_i_ = ac_linear;
 		genNextAction();
 		update_finish = true;
-	} else if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
-		// New path to home cell is generated.
-		iterate_point_ = plan_path_.begin();
+	} else {
+		if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
+			// New path to home cell is generated.
+			iterate_point_ = plan_path_.begin();
 //		plan_path_.pop_front();
-		displayCellPath(*points_to_cells(plan_path_));
-		pubCleanMapMarkers(clean_map_, *points_to_cells(plan_path_));
-		should_go_to_charger_ = false;
-		action_i_ = ac_linear;
-		genNextAction();
-		update_finish = true;
-	} else
-		// path is empty.
-		update_finish = false;
+			displayCellPath(*points_to_cells(plan_path_));
+			pubCleanMapMarkers(clean_map_, *points_to_cells(plan_path_));
+			should_go_to_charger_ = false;
+			action_i_ = ac_linear;
+			genNextAction();
+			update_finish = true;
+		} else
+		{
+			is_trapped_ = true;
+			update_finish = false;
+		}
+	}
 
 
 	return update_finish;
@@ -1950,9 +1958,8 @@ void ACleanMode::switchInStateGoHomePoint()
 			setFirstTimeGoHomePoint(false);
 		}
 	}
-	else // path is empty.
+	else if(is_trapped_) // path is empty.
 	{
-		ROS_INFO("%s %d, No more home point, finish cleaning.", __FUNCTION__, __LINE__);
 //		sp_state = nullptr;
 		sp_saved_states.push_back(sp_state);
 		sp_state = state_folllow_wall.get();
@@ -1963,6 +1970,9 @@ void ACleanMode::switchInStateGoHomePoint()
 		is_closed = true;
 		closed_count_ = 0;
 		isolate_count_ = 0;
+	} else{
+		sp_state = nullptr;
+		ROS_INFO("%s %d, No more home point, finish cleaning.", __FUNCTION__, __LINE__);
 	}
 }
 
@@ -2008,7 +2018,6 @@ void ACleanMode::switchInStateGoToCharger() {
 	} else {
 		ROS_INFO("%s %d: Failed to go to charger, resume state go home point.", __FUNCTION__, __LINE__);
 		sp_state = state_go_home_point.get();
-		clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_,&start_points_));
 		sp_state->init();
 	}
 }
@@ -2149,7 +2158,7 @@ void ACleanMode::switchInStateExploration() {
 	}
 	else{
 		sp_state = state_go_home_point.get();
-		clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_,&start_points_));
+		clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_,&start_points_, &home_points_it_));
 	}
 	action_i_ = ac_null;
 	sp_state->init();
@@ -2239,15 +2248,24 @@ void ACleanMode::switchInStateFollowWall()
 		ROS_WARN("%s %d:escape_trapped_ restore state from trapped !", __FUNCTION__, __LINE__);
 //		sp_state = (sp_tmp_state == state_clean) ? state_clean : state_exploration;
 		out_of_trapped_ = false;
+
+		if (mode_i_ == cm_navigation)
+		{
+			sp_state = state_clean.get();
+			if(!isLastStateIsGoHomePoints())
+			{
+				sp_state = state_go_home_point.get();
+				clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_,&start_points_, &home_points_it_));
+			}
+		}
+		else if (mode_i_ == cm_exploration)
+			sp_state = state_exploration.get();
+
 		if (sp_saved_states.empty())
 			ROS_ERROR("%s %d: Saved state is empty!!", __FUNCTION__, __LINE__);
 		else
 			sp_saved_states.pop_back();
 
-		if (mode_i_ == cm_navigation)
-			sp_state = state_clean.get();
-		else if (mode_i_ == cm_exploration)
-			sp_state = state_exploration.get();
 		sp_state->init();
 	}
 }
@@ -2419,8 +2437,9 @@ bool ACleanMode::reachTarget(bool &should_go_to_charger, Point_t curr) {
 	bool ret = false;
 
 	if (!home_points_.empty()) {
-		if (curr.toCell() == home_points_.begin()->toCell()) {
-			home_points_.pop_front();
+		if (curr.toCell() == home_points_it_->toCell()) {
+//			home_points_.pop_front();
+			home_points_it_ = home_points_.erase(home_points_it_);
 			should_go_to_charger = true;
 			ret = true;
 		}

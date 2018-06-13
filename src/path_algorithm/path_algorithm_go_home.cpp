@@ -6,16 +6,11 @@
 #include "ros/ros.h"
 #include "path_algorithm.h"
 
-GoHomePathAlgorithm::GoHomePathAlgorithm(GridMap& map, HomePoints_t* p_home_points, HomePoints_t* p_start_points,bool is_follow_wall)
+GoHomePathAlgorithm::GoHomePathAlgorithm(GridMap& map, HomePoints_t* p_home_points, HomePoints_t* p_start_points, HomePoints_t::iterator* p_home_point_it, bool is_follow_wall)
 {
-//	p_home_points_ = p_home_points;
-//	p_start_points_ = p_start_points;
 	if(!p_home_points->empty())
 	{
 		home_points_set.push_back(p_home_points);
-//		for (auto &&pointsSet : *p_home_points) {
-//			ROS_INFO("pointsSet(%d,%d)",pointsSet.toCell().x,pointsSet.toCell().y);
-//		}
 	}
 
 	home_points_set.push_back(p_start_points);
@@ -48,9 +43,10 @@ GoHomePathAlgorithm::GoHomePathAlgorithm(GridMap& map, HomePoints_t* p_home_poin
 		home_ways.push_back(make_unique<GoHomeWay_t>("SlamMapThroughAccessable", ThroughBlockAccessable(temp_map.get()),true));
 		home_ways.push_back(make_unique<GoHomeWay_t>("MapCleanBlockThroughAccessableAndCleaned", ThroughAccessableAndCleaned(&map),false, true));
 	}
-	curr_way_ = home_ways.begin();
-	curr_home_points = home_points_set.begin();
-	curr_home_point_ = (*curr_home_points)->begin();
+	way_it = home_ways.begin();
+	home_points_it = home_points_set.begin();
+	p_home_point_it_ = p_home_point_it;
+	*p_home_point_it_ = (*home_points_it)->begin();
 	ROS_INFO("%s,%d: init finish.",__FUNCTION__,__LINE__);
 }
 
@@ -59,35 +55,39 @@ bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point_t &curr, const 
 	plan_path.clear();
 	Cells plan_path_cells{};
 	map.print(curr.toCell(),CLEAN_MAP,Cells{});
-	for(;curr_home_points != home_points_set.end(); ++curr_home_points) {
+	for(;home_points_it != home_points_set.end(); ++home_points_it) {
 		ROS_INFO("%s,%d:go home point start home or rcon point" ,__FUNCTION__, __LINE__);
-		if(curr_way_ == home_ways.end())
-			curr_way_ = home_ways.begin();
+		if(way_it == home_ways.end())
+		{
+			way_it = home_ways.begin();
+			*p_home_point_it_ = (*home_points_it)->begin();
+		}
 
-		for (; curr_way_ != home_ways.end(); ++curr_way_) {
+		for (; way_it != home_ways.end(); ++way_it) {
 
-			curr_way_->get()->displayName();
-			if(curr_way_->get()->isClearBlock())
-				curr_way_->get()->clearBlock(map);
+			way_it->get()->displayName();
+			if(way_it->get()->isClearBlock()&& !has_clean_)
+			{
+				has_clean_ = true;
+				way_it->get()->clearBlock(map);
+			}
 
-			if(curr_home_point_ == (*curr_home_points)->end())
-				curr_home_point_ = (*curr_home_points)->begin();
+			if(*p_home_point_it_ == (*home_points_it)->end())
+				*p_home_point_it_ = (*home_points_it)->begin();
 
-			for (; curr_home_point_ != (*curr_home_points)->end(); ++curr_home_point_) {
-				ROS_INFO("curr_home_point_(%d,%d)", curr_home_point_->toCell().x, curr_home_point_->toCell().y);
-				auto p_tmp_map_ = curr_way_->get()->updateMap(map,temp_map, curr);
+			for (; *p_home_point_it_ != (*home_points_it)->end(); ++(*p_home_point_it_)) {
+				ROS_INFO("p_home_point_it_(%d,%d)", (*p_home_point_it_)->toCell().x, (*p_home_point_it_)->toCell().y);
+				auto p_tmp_map_ = way_it->get()->updateMap(map,temp_map, curr);
 
-				if (dijkstra(*p_tmp_map_, curr.toCell(), plan_path_cells, true, CellEqual(curr_home_point_->toCell()),
-							 isAccessable(p_tmp_map_, curr_way_->get()->expand_condition))) {
+				if (dijkstra(*p_tmp_map_, curr.toCell(), plan_path_cells, true, CellEqual((*p_home_point_it_)->toCell()),
+							 isAccessable(p_tmp_map_, way_it->get()->expand_condition))) {
 
-					optimizePath(*p_tmp_map_, plan_path_cells, last_dir, curr_way_->get()->expand_condition);
+					optimizePath(*p_tmp_map_, plan_path_cells, last_dir, way_it->get()->expand_condition);
 					plan_path = *cells_to_points(plan_path_cells);
 					p_tmp_map_->print(curr.toCell(), COST_MAP, plan_path_cells);
 					p_tmp_map_->print(curr.toCell(), CLEAN_MAP, plan_path_cells);
 					return true;
 				}
-//				p_tmp_map_->print(curr.toCell(), COST_MAP, plan_path_cells);
-//				p_tmp_map_->print(curr.toCell(), CLEAN_MAP, plan_path_cells);
 			}
 		}
 	}

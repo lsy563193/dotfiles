@@ -579,14 +579,19 @@ public:
 	GridMap clean_map_{};
 	static bool plan_activation_;
 	double time_gyro_dynamic_;
-	bool lastStateIsFollowWall()
+	bool isLastStateIsGoHomePoints()
 	{
-		return sp_saved_states.front() == state_folllow_wall.get();
+		return sp_saved_states.back() == state_go_home_point.get();
+	}
+	bool isSavedStatesEmpty()
+	{
+		return sp_saved_states.empty();
 	}
 
 protected:
 
 	HomePoints_t home_points_ = HomePoints_t(3);
+	HomePoints_t::iterator home_points_it_ = home_points_.begin();
 	HomePoints_t start_points_ = HomePoints_t(1);
 	std::vector<State*> sp_saved_states;
 	boost::shared_ptr<State> state_go_home_point{new StateGoHomePoint()};
@@ -599,18 +604,18 @@ protected:
 	boost::shared_ptr<State> state_test{new StateTest()};
 
 	bool low_battery_charge_{};
-	bool moved_during_pause_{false};
-	bool should_go_to_charger_{false};
-	bool remote_go_home_point{false};
-	bool wifi_go_home_point{false};
+	bool moved_during_pause_{};
+	bool should_go_to_charger_{};
+	bool remote_go_home_point{};
+	bool wifi_go_home_point{};
 	bool first_time_go_home_point_{true};
-	bool seen_charger_during_cleaning_{false};
-	bool go_home_for_low_battery_{false};
-	bool switch_is_off_{false};
+	bool seen_charger_during_cleaning_{};
+	bool go_home_for_low_battery_{};
+	bool switch_is_off_{};
 	Points charger_poses_;
-	bool found_charger_{false};
+	bool found_charger_{};
 	Points tmp_charger_pose_;
-	bool is_using_dust_box_{false};
+	bool is_using_dust_box_{};
 public:
 
 	static void pubPointMarkers(const std::deque<Vector2<double>> *point, std::string frame_id,std::string name);

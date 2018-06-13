@@ -112,6 +112,7 @@ int main(int argc, char **argv)
 	map.loadMap(true,curr, old_dir_, tmp, "/opt/ros/indigo/share/pp/map");
 	slam_grid_map.loadMap(true,curr, old_dir_, tmp ,"/opt/ros/indigo/share/pp/map_slam");
 	auto homePoints = HomePoints_t(3);
+	HomePoints_t::iterator home_point_it=homePoints.begin();
 	Cells cells;
 	cells.push_back(Cell_t{-1,-1});
 	cells.push_back(Cell_t{0,1});
@@ -123,7 +124,7 @@ int main(int argc, char **argv)
 		homePoints.push_back(point);
 	auto startPoints = HomePoints_t(1);
 	startPoints.push_back({0,0,0});
-	GoHomePathAlgorithm clean_path_algorithm_(map,&homePoints,&startPoints);
+	GoHomePathAlgorithm clean_path_algorithm_(map,&homePoints,&startPoints, &home_point_it);
 //	clean_path_algorithm_.curr_filter_ = &clean_path_algorithm_.filter_short_path;
 	setPosition(cellToCount(curr.x),cellToCount(curr.y));
 

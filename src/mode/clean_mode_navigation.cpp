@@ -849,7 +849,7 @@ void CleanModeNav::switchInStateClean() {
 	}
 	else {
 		sp_state = state_go_home_point.get();
-		clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_, & start_points_));
+		clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_, &start_points_, &home_points_it_));
 	}
 	sp_state->init();
 	action_i_ = ac_null;
@@ -881,7 +881,7 @@ void CleanModeNav::switchInStateGoToCharger()
 			sp_state->init();
 			paused_odom_radian_ = odom.getRadian();
 			go_home_for_low_battery_ = false;
-			clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_,&start_points_));
+			clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_,&start_points_, &home_points_it_));
 			setFirstTimeGoHomePoint(true);
 		} else
 		{

@@ -163,7 +163,7 @@ void CleanModeSpot::switchInStateSpot()
 		home_points_.clear();
 		ROS_INFO("clean over");
 	}
-	clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_,&start_points_));
+	clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_,&start_points_ , &home_points_it_));
 	ROS_INFO("switchInStateSpot~~~~~~~~~~~~~~~");
 	sp_state->init();
 	genNextAction();
