@@ -111,6 +111,8 @@ public:
 	bool isNewLineReach(GridMap &map);
 	bool isOverOriginLine(GridMap &map);
 	bool getIsTrappedInSmallArea() const {return is_trapped_in_small_area_;};
+	void setIsTrappedInSmallArea();
+	void resetIsTrappedInSmallArea();
     bool outOfRange(const Point_t &curr, Points::iterator &p_it);
 
 private:

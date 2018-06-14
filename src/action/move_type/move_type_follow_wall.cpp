@@ -126,12 +126,13 @@ bool MoveTypeFollowWall::isFinish()
 
 //		if ((dijkstra_cleaned_count < TRAP_IN_SMALL_AREA_COUNT) || (p_cm->passed_cell_path_.size() < 10 && dijkstra_cleaned_count <	100))
 		if ((dijkstra_cleaned_count2 < TRAP_IN_SMALL_AREA_COUNT) || (p_cm->passed_cell_path_.size() < 10 && dijkstra_cleaned_count2 < 100))
-			is_trapped_in_small_area_ = true;
+			setIsTrappedInSmallArea();
 		else
-			is_trapped_in_small_area_ = false;
+			resetIsTrappedInSmallArea();
 	} else {
-		is_trapped_in_small_area_ = false;
+		resetIsTrappedInSmallArea();
 	}
+//	ROS_INFO("is_trapped_in_small_area_(%d)", is_trapped_in_small_area_);
 
 	if (movement_i_ != mm_turn && p_cm->clean_map_.pointIsPointingOutOfTargetRange(getPosition()))
 	{
@@ -658,5 +659,13 @@ bool MoveTypeFollowWall::outOfRange(const Point_t &curr, Points::iterator &p_it)
 	}),it_out_edges.end());
 
 	return false;
+}
+
+void MoveTypeFollowWall::setIsTrappedInSmallArea() {
+	is_trapped_in_small_area_ = true;
+}
+
+void MoveTypeFollowWall::resetIsTrappedInSmallArea() {
+	is_trapped_in_small_area_ = false;
 }
 
