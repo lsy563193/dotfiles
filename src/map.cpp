@@ -515,7 +515,7 @@ int8_t GridMap::isNeedClean(int16_t x, int16_t y)
 //		auto start = queue.begin();
 //		auto next = start->second;
 //		auto cost = start->first;
-//		queue.erase(start);
+//		queue.popCurrRconPoint(start);
 //		if (compare_for_targets(next))
 //		{
 //			targets.push_back(next);
@@ -573,7 +573,7 @@ int8_t GridMap::isNeedClean(int16_t x, int16_t y)
 //		auto start = queue.begin();
 //		auto next = start->second;
 //		auto cost = start->first;
-//		queue.erase(start);
+//		queue.popCurrRconPoint(start);
 //
 //		for (auto index = 0; index < 4; index++) {
 //
@@ -626,7 +626,7 @@ int8_t GridMap::isNeedClean(int16_t x, int16_t y)
 //		auto start = queue.begin();
 //		auto next = start->second;
 //		auto cost = start->first;
-//		queue.erase(start);
+//		queue.popCurrRconPoint(start);
 //		if (targets_selection(next))
 //		{
 //			targets.push_back(next);

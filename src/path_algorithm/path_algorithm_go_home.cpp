@@ -6,24 +6,14 @@
 #include "ros/ros.h"
 #include "path_algorithm.h"
 
-GoHomePathAlgorithm::GoHomePathAlgorithm(GridMap& map, HomePoints_t* p_home_points, HomePoints_t* p_start_points, HomePoints_t::iterator* p_home_point_it, bool is_follow_wall)
+GoHomePathAlgorithm::GoHomePathAlgorithm(GridMap& map, HomePointsManager *p_home_points_manage, bool is_follow_wall)
 {
-	if(!p_home_points->empty())
-	{
-		home_points_set.push_back(p_home_points);
-	}
+	p_home_points_manage_ = p_home_points_manage;
+	p_home_points_manage->for_each([&](const Point_t& it){
+		ROS_WARN("set Area Clean,%d,%d",it.toCell().x, it.toCell().y);
+		map.setArea(it.toCell(), CLEANED, 1, 1);
+	});
 
-	home_points_set.push_back(p_start_points);
-
-	for(auto && p_home_points_it : home_points_set)
-	{
-		ROS_INFO("!!!!%s,%d: Clear 8 cells around start and home point.",__FUNCTION__,__LINE__);
-		for(auto &&it = p_home_points_it->begin();it != p_home_points_it->end(); ++it)
-		{
-			ROS_WARN("set Area Clean,%d,%d",it->toCell().x, it->toCell().y);
-			map.setArea(it->toCell(), CLEANED, 1, 1);
-		}
-	}
 //	ROS_INFO("%s,%d: set the rcon c_blocks to cleaned.",__FUNCTION__,__LINE__);
 	auto map_tmp = map.generateBound();
 	for (const auto &cell : map_tmp) {
@@ -44,9 +34,6 @@ GoHomePathAlgorithm::GoHomePathAlgorithm(GridMap& map, HomePoints_t* p_home_poin
 		home_ways.push_back(make_unique<GoHomeWay_t>("MapCleanBlockThroughAccessableAndCleaned", ThroughAccessableAndCleaned(&map),false, true));
 	}
 	way_it = home_ways.begin();
-	home_points_it = home_points_set.begin();
-	p_home_point_it_ = p_home_point_it;
-	*p_home_point_it_ = (*home_points_it)->begin();
 	ROS_INFO("%s,%d: init finish.",__FUNCTION__,__LINE__);
 }
 
@@ -55,12 +42,18 @@ bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point_t &curr, const 
 	plan_path.clear();
 	Cells plan_path_cells{};
 	map.print(curr.toCell(),CLEAN_MAP,Cells{});
-	for(;home_points_it != home_points_set.end(); ++home_points_it) {
+	auto& hps_it = p_home_points_manage_->home_points_it();
+	auto& hp_it = p_home_points_manage_->home_point_it();
+	const auto& hps_list = p_home_points_manage_->home_points_list();
+	for(;hps_it != hps_list.end(); ++hps_it) {
 		ROS_INFO("%s,%d:go home point start home or rcon point" ,__FUNCTION__, __LINE__);
+		if(hps_it->empty())
+			break;
+
 		if(way_it == home_ways.end())
 		{
 			way_it = home_ways.begin();
-			*p_home_point_it_ = (*home_points_it)->begin();
+			hp_it = hps_it->begin();
 		}
 
 		for (; way_it != home_ways.end(); ++way_it) {
@@ -72,14 +65,17 @@ bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point_t &curr, const 
 				way_it->get()->clearBlock(map);
 			}
 
-			if(*p_home_point_it_ == (*home_points_it)->end())
-				*p_home_point_it_ = (*home_points_it)->begin();
+			if(hp_it == hps_it->end())
+			{
+				ROS_INFO("hp_it is empty !!!!(%d,%d)");
+				hp_it = hps_it->begin();
+			}
 
-			for (; *p_home_point_it_ != (*home_points_it)->end(); ++(*p_home_point_it_)) {
-				ROS_INFO("p_home_point_it_(%d,%d)", (*p_home_point_it_)->toCell().x, (*p_home_point_it_)->toCell().y);
+			for (; hp_it != hps_it->end(); ++(hp_it)) {
+				ROS_INFO("hp_it(%d,%d)", hp_it->toCell().x, hp_it->toCell().y);
 				auto p_tmp_map_ = way_it->get()->updateMap(map,temp_map, curr);
 
-				if (dijkstra(*p_tmp_map_, curr.toCell(), plan_path_cells, true, CellEqual((*p_home_point_it_)->toCell()),
+				if (dijkstra(*p_tmp_map_, curr.toCell(), plan_path_cells, true, CellEqual(hp_it->toCell()),
 							 isAccessable(p_tmp_map_, way_it->get()->expand_condition))) {
 
 					optimizePath(*p_tmp_map_, plan_path_cells, last_dir, way_it->get()->expand_condition);

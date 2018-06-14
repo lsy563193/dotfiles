@@ -526,9 +526,9 @@ public:
 	// For vacuum setting.
 	void setVacuum() override ;
 
-	void setHomePoint(const Point_t& current_point);
+	void setRconPoint(const Point_t &current_point);
 
-	bool reachTarget(bool &should_go_to_charger, Point_t curr);
+	bool reachHomePoint(const Point_t& curr);
 	// For HEPA filter.
 	void isUsingDustBox(bool val)
 	{
@@ -590,9 +590,7 @@ public:
 
 protected:
 
-	HomePoints_t home_points_ = HomePoints_t(3);
-	HomePoints_t::iterator home_points_it_ = home_points_.begin();
-	HomePoints_t start_points_ = HomePoints_t(1);
+	HomePointsManager home_points_manager_;
 	std::vector<State*> sp_saved_states;
 	boost::shared_ptr<State> state_go_home_point{new StateGoHomePoint()};
 	boost::shared_ptr<State> state_go_to_charger{new StateGoToCharger()};

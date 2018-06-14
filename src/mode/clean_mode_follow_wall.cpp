@@ -209,7 +209,7 @@ void CleanModeFollowWall::switchInStateInit() {
 
 void CleanModeFollowWall::switchInStateFollowWall() {
 	sp_state = state_go_home_point.get();
-	clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_, & start_points_, &home_points_it_, true));
+	clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_manager_, true));
 	sp_state->init();
 	action_i_ = ac_null;
 	genNextAction();

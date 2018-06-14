@@ -167,7 +167,7 @@ Point_t MovementFollowWallLidar::calcTmpTarget() {
 		if ((p_tmp_targets_->front().isNearTo(getPosition(ODOM_POSITION_ODOM_ANGLE), CELL_SIZE * 0.3))//0.75
 			|| cond_radian_diff) {
 			p_tmp_targets_->pop_front();
-			ROS_INFO("near pop target(%d)", p_tmp_targets_->size());
+			ROS_INFO("near popCurrRconPoint target(%d)", p_tmp_targets_->size());
 			if (p_tmp_targets_->empty()){
 				virtual_targets_ = calcVirtualTmpTarget();
 				p_tmp_targets_ = &virtual_targets_;

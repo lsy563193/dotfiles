@@ -7,6 +7,8 @@
 #include <deque>
 #include <ostream>
 #include <bits/unique_ptr.h>
+#include <functional>
+#include <algorithm>
 #include "config.h"
 
 #define PI M_PI
@@ -540,7 +542,7 @@ public:
 		return d.size() == 0;
 	}
 
-	iterator erase(iterator it)
+	iterator erase(const iterator& it)
 	{
 		return d.erase(it);
 	}
@@ -572,6 +574,60 @@ private:
 };
 
 using HomePoints_t=DequeArray<Point_t>;
+class HomePointsManager
+{
+public:
+	HomePointsManager();
+
+	void for_each(const std::function<void(const Point_t& it)>& lambda_fun) ;
+
+	void resetRconPoint();
+
+	void setStartPointRad(double th);
+
+	double getStartPointRad();
+
+	HomePoints_t::iterator getStartPoint();
+
+	bool isStartPoint();
+
+	void popCurrRconPoint();
+
+	void setRconPoint(const Point_t &point);
+
+	typename std::deque<HomePoints_t>::iterator end()
+	{
+		return home_points_list_.end();
+	}
+
+	typename std::deque<HomePoints_t>::iterator begin()
+	{
+		return home_points_list_.begin();
+	}
+
+	typename std::deque<HomePoints_t>& home_points_list()
+	{
+		return home_points_list_;
+	}
+
+	typename std::deque<HomePoints_t>::iterator& home_points_it()
+	{
+		return home_points_it_;
+	}
+
+	HomePoints_t::iterator& home_point_it()
+	{
+		return home_point_it_;
+	}
+
+
+private:
+	std::deque<HomePoints_t> home_points_list_{HomePoints_t(3), HomePoints_t(1)};
+	std::deque<HomePoints_t>::iterator home_points_it_;
+	HomePoints_t::iterator home_point_it_;
+
+};
+
 typedef std::pair<const CellState, Cell_t> PairCell_t;
 typedef std::deque<Point_t> Points;
 

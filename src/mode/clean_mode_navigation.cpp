@@ -171,7 +171,7 @@ bool CleanModeNav::mapMark()
 		// Set home cell.
 		if (ev.rcon_status)
 		{
-			setHomePoint(getPosition());
+			setRconPoint(getPosition());
 			if (!hasSeenChargerDuringCleaning())
 				setSeenChargerDuringCleaning();
 		}
@@ -653,7 +653,7 @@ bool CleanModeNav::isSwitchByEventInStateInit() {
 	{
 		if (action_i_ == ac_back_from_charger)
 		{
-			setHomePoint(getPosition());
+			setRconPoint(getPosition());
 			if (!hasSeenChargerDuringCleaning())
 				setSeenChargerDuringCleaning();
 		}
@@ -685,7 +685,7 @@ bool CleanModeNav::updateActionInStateInit() {
 
 		action_i_ = ac_open_gyro_and_lidar;
 //		boost::dynamic_pointer_cast<StateInit>(state_init)->initForNavigation();
-		setHomePoint(getPosition());
+		setRconPoint(getPosition());
 		if (!hasSeenChargerDuringCleaning())
 			setSeenChargerDuringCleaning();
 	}
@@ -741,7 +741,7 @@ void CleanModeNav::switchInStateInit() {
 			sp_state = state_clean.get();
 		}
 		else{ // Resume from pause, because slam is not opened for the first time that open lidar action finished.
-//			sp_saved_states.erase(stable_unique(sp_saved_states.begin(),sp_saved_states.end()),sp_saved_states.end());
+//			sp_saved_states.popCurrRconPoint(stable_unique(sp_saved_states.begin(),sp_saved_states.end()),sp_saved_states.end());
 			if (sp_saved_states.empty())
 			{
 				ROS_ERROR("%s %d: Saved state is empty!!", __FUNCTION__, __LINE__);
@@ -775,7 +775,7 @@ void CleanModeNav::switchInStateInit() {
 			auto curr = getPosition();
 //			curr.dir = iterate_point_.dir;
 //			passed_cell_path_.push_back(curr);
-			start_points_.begin()->th = curr.th;
+			home_points_manager_.setStartPointRad(curr.th);
 			sp_state = state_clean.get();
 		}
 	}
@@ -849,7 +849,7 @@ void CleanModeNav::switchInStateClean() {
 	}
 	else {
 		sp_state = state_go_home_point.get();
-		clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_, &start_points_, &home_points_it_));
+		clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_manager_));
 	}
 	sp_state->init();
 	action_i_ = ac_null;
@@ -881,7 +881,7 @@ void CleanModeNav::switchInStateGoToCharger()
 			sp_state->init();
 			paused_odom_radian_ = odom.getRadian();
 			go_home_for_low_battery_ = false;
-			clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_,&start_points_, &home_points_it_));
+			clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_manager_));
 			setFirstTimeGoHomePoint(true);
 		} else
 		{

@@ -976,7 +976,7 @@ int S_Wifi::uploadMap(MapType map)
 		map_packs.push_back(map_data);
 		//-- upload map and wait ack
 		this->commit(map_packs,800000,true);
-		//-- pop front
+		//-- popCurrRconPoint front
 		pthread_mutex_lock(&map_data_lock_);
 		if (!map_data_buf_->empty() && map_buf_on_process)
 			map_data_buf_->pop_front();

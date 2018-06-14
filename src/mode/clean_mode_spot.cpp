@@ -157,13 +157,8 @@ void CleanModeSpot::switchInStateSpot()
 	sp_action_ = nullptr;
 		sp_state = state_go_home_point.get();
 	ROS_INFO("switchInStateSpot~~~~~~~~~~~~~~~");
-	if(!home_points_.empty())
-	{
-		ROS_INFO("home is not empty ,clear it");
-		home_points_.clear();
-		ROS_INFO("clean over");
-	}
-	clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_,&start_points_ , &home_points_it_));
+	home_points_manager_.resetRconPoint();
+	clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_manager_));
 	ROS_INFO("switchInStateSpot~~~~~~~~~~~~~~~");
 	sp_state->init();
 	genNextAction();

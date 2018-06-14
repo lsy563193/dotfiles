@@ -197,7 +197,7 @@ bool CleanModeExploration::updateActionInStateInit() {
 	{
 		auto curr = getPosition();
 //		updateStartPointRadian(curr.th);
-		start_points_.begin()->th = curr.th;
+		home_points_manager_.setStartPointRad(curr.th);
 		action_i_ = ac_open_slam;
 	}
 	else // action_open_slam

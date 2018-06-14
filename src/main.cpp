@@ -111,23 +111,26 @@ int main(int argc, char **argv)
 	bool tmp;
 	map.loadMap(true,curr, old_dir_, tmp, "/opt/ros/indigo/share/pp/map");
 	slam_grid_map.loadMap(true,curr, old_dir_, tmp ,"/opt/ros/indigo/share/pp/map_slam");
-	auto homePoints = HomePoints_t(3);
-	HomePoints_t::iterator home_point_it=homePoints.begin();
 	Cells cells;
 	cells.push_back(Cell_t{-1,-1});
 	cells.push_back(Cell_t{0,1});
 	cells.push_back(Cell_t{1,1});
 	cells.push_back(Cell_t{2,2});
-	cells.push_back(Cell_t{3,3});
+	cells.push_back(Cell_t{15,50});
+	cells.push_back(Cell_t{22,10});
 	Points points = *cells_to_points(cells);
+	HomePointsManager home_points_manager_;
 	for(auto && point:points)
-		homePoints.push_back(point);
-	auto startPoints = HomePoints_t(1);
-	startPoints.push_back({0,0,0});
-	GoHomePathAlgorithm clean_path_algorithm_(map,&homePoints,&startPoints, &home_point_it);
-//	clean_path_algorithm_.curr_filter_ = &clean_path_algorithm_.filter_short_path;
-	setPosition(cellToCount(curr.x),cellToCount(curr.y));
-
+		home_points_manager_.setRconPoint(point);
+//
+	auto& it = home_points_manager_.home_point_it();
+	ROS_INFO("%s %d:it %d,%d",__FUNCTION__, __LINE__, it->toCell().x, it->toCell().y);
+	it++;
+	ROS_INFO("%s %d:it %d,%d",__FUNCTION__, __LINE__, it->toCell().x, it->toCell().y);
+	home_points_manager_.popCurrRconPoint();
+	home_points_manager_.popCurrRconPoint();
+//	home_points_manager_.popCurrRconPoint();
+	GoHomePathAlgorithm clean_path_algorithm_(map,&home_points_manager_);
 	if (clean_path_algorithm_.generatePath(map, Point_t{cellToCount(curr.x),cellToCount(curr.y)}, old_dir_, remain_path_)) {
 	}
 	ROS_INFO("end~~~~~~~~~");

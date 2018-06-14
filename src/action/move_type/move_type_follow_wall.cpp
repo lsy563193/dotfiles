@@ -174,10 +174,8 @@ bool MoveTypeFollowWall::isFinish()
 			if (!handleMoveBackEventForward(p_cm))
 			{
 				if (ev.rcon_status) {
-					p_cm->setHomePoint(getPosition());
-					if (!p_cm->hasSeenChargerDuringCleaning())
-						p_cm->setSeenChargerDuringCleaning();
-					p_cm->saveBlocks();
+					p_cm->setRconPoint(getPosition());
+
 					movement_i_ = mm_rcon;
 					sp_movement_.reset(new MovementRcon(is_left_));
 					resetTriggeredValue();

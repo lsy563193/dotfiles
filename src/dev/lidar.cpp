@@ -464,7 +464,7 @@ bool Lidar::splitLine(const std::vector<Vector2<double>> &points, std::vector<st
 	for (std::vector<std::deque<Vector2<double>> >::iterator iter = lidar_group_.begin(); iter != lidar_group_.end();){
 		if (iter->size() < points_count_lim) {
 			iter = lidar_group_.erase(iter);
-//			ROS_ERROR("erase!");
+//			ROS_ERROR("popCurrRconPoint!");
 		} else {
 			++iter;
 		}
@@ -677,10 +677,10 @@ bool Lidar::mergeLine(std::vector<std::deque<Vector2<double>> > *groups, double 
 				}
 				iter = (*groups).erase(iter);
 				iter = (*groups).erase((*groups).begin());
-//				ROS_INFO("(*groups).erase((*groups).begin())");
+//				ROS_INFO("(*groups).popCurrRconPoint((*groups).begin())");
 				iter = (*groups).insert(iter, new_line);
 /*				(*groups).erase(iter - loop_count);
-				(*groups).erase(iter + 1 - loop_count);
+				(*groups).popCurrRconPoint(iter + 1 - loop_count);
 				(*groups).insert(iter - loop_count, new_line);*/
 				new_line.clear();
 				loop_count++;
@@ -696,7 +696,7 @@ bool Lidar::mergeLine(std::vector<std::deque<Vector2<double>> > *groups, double 
 					new_line.push_back(*((iter + 1)->begin() + j));
 				}
 /*				(*groups).erase(iter - loop_count);
-				(*groups).erase(iter + 1 - loop_count);
+				(*groups).popCurrRconPoint(iter + 1 - loop_count);
 				(*groups).insert(iter - loop_count, new_line);*/
 
 				iter = (*groups).erase(iter);
@@ -730,7 +730,7 @@ bool Lidar::mergeLine(std::vector<std::deque<Vector2<double>> > *groups, double 
 	}
 	//for erase the line which line is shorter than 10 cm.
 	if (!is_align) {
-		groups->erase(std::remove_if(groups->begin(),groups->end(),[](const std::deque<Vector2<double>>& a){
+		groups->popCurrRconPoint(std::remove_if(groups->begin(),groups->end(),[](const std::deque<Vector2<double>>& a){
 			return sqrt(pow(a.front().x - a.back().x,2) + pow(a.front().y - a.back().y,2)) < 0.10;
 		}),groups->end());
 	}
@@ -764,7 +764,7 @@ void Lidar::filterShortLine(std::vector<std::deque<Vector2<double>> > *groups, b
 		auto dis = std::distance((*groups).begin(),loc);
 		(*groups).resize(dis);
 	}
-	//for erase the line which line is shorter than 10 cm.
+	//for popCurrRconPoint the line which line is shorter than 10 cm.
 	if (!is_align) {
 		groups->erase(std::remove_if(groups->begin(),groups->end(),[&line_length_min](const std::deque<Vector2<double>>& a){
 			return sqrt(pow(a.front().x - a.back().x,2) + pow(a.front().y - a.back().y,2)) < line_length_min;
@@ -798,7 +798,7 @@ bool Lidar::fitLineGroup(std::vector<std::deque<Vector2<double>> > *groups, std:
 			x_0 = 0 - c / a;
 //			ROS_INFO("a = %lf, b = %lf, c = %lf", a, b, c);
 //			ROS_INFO("x_0 = %lf", x_0);
-			/*erase the lines which are far away from the robot*/
+			/*popCurrRconPoint the lines which are far away from the robot*/
 			double line_to_robot_dis = std::abs(c / (sqrt(a * a + b * b)));
 			const auto DIS_MIN = ROBOT_RADIUS - 0.02;
 			new_fit_line.dis = line_to_robot_dis;

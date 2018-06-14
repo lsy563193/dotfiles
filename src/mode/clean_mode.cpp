@@ -75,7 +75,6 @@ ACleanMode::ACleanMode()
 //	infrared_display.displayNormalMsg(8, 5555);
 
 //    iterate_point_=plan_path_.begin();
-	start_points_.push_back({0,0});
 }
 
 ACleanMode::~ACleanMode()
@@ -1296,7 +1295,7 @@ bool ACleanMode::checkChargerPos()
 					{
 						ROS_WARN("%s %d: FOUND CHARGER.", __FUNCTION__, __LINE__);
 						beeper.debugBeep(VALID);
-						setHomePoint(getPosition());
+						setRconPoint(getPosition());
 						if (!hasSeenChargerDuringCleaning())
 							setSeenChargerDuringCleaning();
 
@@ -1310,7 +1309,7 @@ bool ACleanMode::checkChargerPos()
 			if(estimateChargerPos(c_rcon.getStatus())){
 				ROS_WARN("%s %d: FOUND CHARGER.", __FUNCTION__, __LINE__);
 				beeper.debugBeep(VALID);
-				setHomePoint(getPosition());
+				setRconPoint(getPosition());
 				if (!hasSeenChargerDuringCleaning())
 					setSeenChargerDuringCleaning();
 				return true;
@@ -1864,7 +1863,7 @@ bool ACleanMode::checkEnterGoHomePointState()
 		sp_action_.reset();
 		sp_state = state_go_home_point.get();
 		sp_state->init();
-		clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_,&start_points_, &home_points_it_));
+		clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_manager_));
 		speaker.play(VOICE_GO_HOME_MODE);
 		return true;
 	}
@@ -1905,17 +1904,24 @@ bool ACleanMode::updateActionInStateGoHomePoint() {
 		should_go_to_charger_ = true;
 		ev.rcon_status = 0;
 		update_finish = false;
-	} else if (reachTarget(should_go_to_charger_, getPosition())) {
+	} else if (reachHomePoint(getPosition())) {
+		if(home_points_manager_.isStartPoint())
+		{
+			should_go_to_charger_ = false;
+		}
+		else{
+			should_go_to_charger_ = true;
+			home_points_manager_.popCurrRconPoint();
+		}
 		update_finish = false;
-	} else if (home_points_.empty() && getPosition().toCell() == start_points_.begin()->toCell()) {
-		ROS_INFO("Reach start point but angle not equal,start_points_(%d,%d,%f,%d)", start_points_.begin()->toCell().x,
-						 start_points_.begin()->toCell().y, radian_to_degree(start_points_.begin()->th), start_points_.begin()->dir);
+	} else if (home_points_manager_.isStartPoint() && getPosition().toCell() == home_points_manager_.getStartPoint()->toCell()) {
+		ROS_INFO("Reach start point but angle not equal");
 //		beeper.beepForCommand(VALID);
 		auto curr = getPosition();
-		curr.th = start_points_.begin()->th;
+		curr.th = home_points_manager_.getStartPointRad();
 		plan_path_.clear();
 		plan_path_.emplace_back(curr);
-		plan_path_.push_back(*start_points_.begin());
+		plan_path_.push_back(*home_points_manager_.getStartPoint());
 		iterate_point_ = plan_path_.begin();
 		action_i_ = ac_linear;
 		genNextAction();
@@ -2158,7 +2164,7 @@ void ACleanMode::switchInStateExploration() {
 	}
 	else{
 		sp_state = state_go_home_point.get();
-		clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_,&start_points_, &home_points_it_));
+		clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_manager_));
 	}
 	action_i_ = ac_null;
 	sp_state->init();
@@ -2252,10 +2258,10 @@ void ACleanMode::switchInStateFollowWall()
 		if (mode_i_ == cm_navigation)
 		{
 			sp_state = state_clean.get();
-			if(!isLastStateIsGoHomePoints())
+			if(isLastStateIsGoHomePoints())
 			{
 				sp_state = state_go_home_point.get();
-				clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_,&start_points_, &home_points_it_));
+				clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_manager_));
 			}
 		}
 		else if (mode_i_ == cm_exploration)
@@ -2421,35 +2427,14 @@ void ACleanMode::setVacuum()
 	}
 }
 
-
-void ACleanMode::setHomePoint(const Point_t& current_point)
-{
-	ROS_INFO("%s%d:pointsSet: Set home cell.%d,%d",__FUNCTION__, __LINE__, current_point.toCell().x, current_point.toCell().y);
-	if(std::any_of(home_points_.begin(), home_points_.end(),[&](const Point_t& it){
-		return it.toCell() == current_point.toCell();
-	}))
-		return;
-	home_points_.push_front(current_point);
+bool ACleanMode::reachHomePoint(const Point_t& curr) {
+	return !home_points_manager_.isStartPoint() ? curr.toCell() == home_points_manager_.home_point_it()->toCell() :
+		   curr.isCellAndAngleEqual(*home_points_manager_.getStartPoint());
 }
 
-
-bool ACleanMode::reachTarget(bool &should_go_to_charger, Point_t curr) {
-	bool ret = false;
-
-	if (!home_points_.empty()) {
-		if (curr.toCell() == home_points_it_->toCell()) {
-//			home_points_.pop_front();
-			home_points_it_ = home_points_.erase(home_points_it_);
-			should_go_to_charger = true;
-			ret = true;
-		}
-	} else {
-		if (curr.isCellAndAngleEqual(*start_points_.begin())) {
-			should_go_to_charger = false;
-			ret = true;
-		}
-	}
-
-	return ret;
+void ACleanMode::setRconPoint(const Point_t &current_point) {
+	home_points_manager_.setRconPoint(getPosition());
+	if (!hasSeenChargerDuringCleaning())
+		setSeenChargerDuringCleaning();
+	saveBlocks();
 }
-

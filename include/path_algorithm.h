@@ -372,7 +372,7 @@ public:
 class GoHomePathAlgorithm: public APathAlgorithm
 {
 public:
-	GoHomePathAlgorithm(GridMap& map, HomePoints_t* p_home_points, HomePoints_t* p_start_points,HomePoints_t::iterator* p_home_point_it, bool is_follow_wall=false);
+	GoHomePathAlgorithm(GridMap& map, HomePointsManager* p_home_points_manage, bool is_follow_wall=false);
 	~GoHomePathAlgorithm() = default;
 
 	/*
@@ -395,11 +395,8 @@ protected:
 	std::vector<std::unique_ptr<GoHomeWay_t>>::iterator way_it;
 	std::unique_ptr<GridMap> temp_map;
 	bool has_clean_{};
+	HomePointsManager *p_home_points_manage_;
 
-	std::vector<HomePoints_t*> home_points_set{/*p_home_points_, *//*p_start_points_*/};
-	std::vector<HomePoints_t*>::iterator home_points_it;
-
-	HomePoints_t::iterator* p_home_point_it_;
 };
 
 #endif //PP_PATH_ALGORITHM_H
