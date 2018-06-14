@@ -921,6 +921,8 @@ void MovementGoToCharger::getTurnBackInfo(double &turn_radian, float &back_dista
 {
 	turn_radian = degree_to_radian(turn_angle_);
 	back_distance = back_distance_;
+	turn_angle_ = 0;
+	back_distance_ = 0;
 }
 
 void MovementGoToCharger::adjustSpeed(int32_t &l_speed, int32_t &r_speed)

@@ -41,18 +41,18 @@ enum{
 };
 
 void INFO_PRINT(int type,const char* arg,...);
-#define INFO_ERROR(...)		INFO_PRINT(ERROR,__VA_ARGS__);
-#define INFO_WARN(...)		INFO_PRINT(WARN,__VA_ARGS__);
+#define INFO_ERROR(...)		INFO_PRINT(ERROR,__VA_ARGS__)
+#define INFO_WARN(...)		INFO_PRINT(WARN,__VA_ARGS__)
 
-#define INFO_RED(...)		INFO_PRINT(RED,__VA_ARGS__);
-#define INFO_GREEN(...)		INFO_PRINT(GREEN,__VA_ARGS__);
-#define INFO_YELLOW(...)	INFO_PRINT(YEllOW,__VA_ARGS__);
-#define INFO_BLUE(...)		INFO_PRINT(BLUE,__VA_ARGS__);
-#define INFO_PURPLE(...)	INFO_PRINT(PURPLE,__VA_ARGS__);
-#define INFO_CYAN(...)		INFO_PRINT(CYAN,__VA_ARGS__);
-#define INFO_WHITE(...)		INFO_PRINT(WHITE,__VA_ARGS__);
-#define INFO_BLACK(...)		INFO_PRINT(BLACK,__VA_ARGS__);
-#define INFO_NOR(...)		INFO_PRINT(NORMAL,__VA_ARGS__); //normal mean's print white color message
+#define INFO_RED(...)		INFO_PRINT(RED,__VA_ARGS__)
+#define INFO_GREEN(...)		INFO_PRINT(GREEN,__VA_ARGS__)
+#define INFO_YELLOW(...)	INFO_PRINT(YEllOW,__VA_ARGS__)
+#define INFO_BLUE(...)		INFO_PRINT(BLUE,__VA_ARGS__)
+#define INFO_PURPLE(...)	INFO_PRINT(PURPLE,__VA_ARGS__)
+#define INFO_CYAN(...)		INFO_PRINT(CYAN,__VA_ARGS__)
+#define INFO_WHITE(...)		INFO_PRINT(WHITE,__VA_ARGS__)
+#define INFO_BLACK(...)		INFO_PRINT(BLACK,__VA_ARGS__)
+#define INFO_NOR(...)		INFO_PRINT(NORMAL,__VA_ARGS__) //normal mean's print white color message
 
 #define INFO_ERR_CON(cond ,...) if(cond)INFO_PRINT(ERROR,__VA_ARGS__)
 #define INFO_WAR_CON(cond ,...) if(cond)INFO_PRINT(WARN,__VA_ARGS__)
@@ -194,31 +194,31 @@ private:
 	std::vector<Log::Consumer> consumers_;
 };
 
-#define LOGD(...) Log::inst().debug("", __VA_ARGS__);
-#define LOGI(...) Log::inst().info("", __VA_ARGS__);
-#define LOGW(...) Log::inst().warn("", __VA_ARGS__);
-#define LOGE(...) Log::inst().error("", __VA_ARGS__);
-#define LOGF(...) Log::inst().fatal("", __VA_ARGS__);
+#define LOGD(...) Log::inst().debug("", __VA_ARGS__)
+#define LOGI(...) Log::inst().info("", __VA_ARGS__)
+#define LOGW(...) Log::inst().warn("", __VA_ARGS__)
+#define LOGE(...) Log::inst().error("", __VA_ARGS__)
+#define LOGF(...) Log::inst().fatal("", __VA_ARGS__)
 
-#define LOGD2(tag, fmt...) Log::inst().debug(tag, fmt);
-#define LOGI2(tag, fmt...) Log::inst().info(tag, fmt);
-#define LOGW2(tag, fmt...) Log::inst().warn(tag, fmt);
-#define LOGE2(tag, fmt...) Log::inst().error(tag, fmt);
-#define LOGF2(tag, fmt...) Log::inst().fatal(tag, fmt);
+#define LOGD2(tag, fmt...) Log::inst().debug(tag, fmt)
+#define LOGI2(tag, fmt...) Log::inst().info(tag, fmt)
+#define LOGW2(tag, fmt...) Log::inst().warn(tag, fmt)
+#define LOGE2(tag, fmt...) Log::inst().error(tag, fmt)
+#define LOGF2(tag, fmt...) Log::inst().fatal(tag, fmt)
 
-#define LOG_BLUE(...)	Log::inst().info("","BLUE",__VA_ARGS__);
-#define LOG_CYAN(...)	Log::inst().info("","CYAN",__VA_ARGS__);
-#define LOG_WHITE(...)	Log::inst().info("", "WHITE",__VA_ARGS__);
-#define LOG_GRAY(...)	Log::inst().info("", "DARK_GRAY",__VA_ARGS__);
-#define LOG_GREEN(...)	Log::inst().info("","GREEN",__VA_ARGS__);
-#define LOG_PURPLE(...)	Log::inst().info("","PURPLE",__VA_ARGS__);
-#define LOG_RED(...)	Log::inst().info("","RED",__VA_ARGS__);
-#define LOG_YELLOW(...)	Log::inst().info("","YELLOW",__VA_ARGS__);
+#define LOG_BLUE(...)	Log::inst().info("","BLUE",__VA_ARGS__)
+#define LOG_CYAN(...)	Log::inst().info("","CYAN",__VA_ARGS__)
+#define LOG_WHITE(...)	Log::inst().info("", "WHITE",__VA_ARGS__)
+#define LOG_GRAY(...)	Log::inst().info("", "DARK_GRAY",__VA_ARGS__)
+#define LOG_GREEN(...)	Log::inst().info("","GREEN",__VA_ARGS__)
+#define LOG_PURPLE(...)	Log::inst().info("","PURPLE",__VA_ARGS__)
+#define LOG_RED(...)	Log::inst().info("","RED",__VA_ARGS__)
+#define LOG_YELLOW(...)	Log::inst().info("","YELLOW",__VA_ARGS__)
 
-#define LOG_GREEN2(...)	Log::inst().info("","LIGHT_GREEN",__VA_ARGS__);
-#define LOG_BLUE2(...)	Log::inst().info("","LIGHT_BLUE",__VA_ARGS__);
-#define LOG_CYAN2(...)	Log::inst().info("","LIGHT_CYAN",__VA_ARGS__);
-#define LOG_GRAY2(...)	Log::inst().info("","LIGHT_GRAY",__VA_ARGS__);
-#define LOG_PURPLE2(...)	Log::inst().info("","LIGHT_PURPLE",__VA_ARGS__);
-#define LOG_RED2(...)	Log::inst().info("","LIGHT_RED",__VA_ARGS__);
-#define LOG_YELLOW2(...)	Log::inst().info("","LIGHT_YELLOW",__VA_ARGS__);
+#define LOG_GREEN2(...)	Log::inst().info("","LIGHT_GREEN",__VA_ARGS__)
+#define LOG_BLUE2(...)	Log::inst().info("","LIGHT_BLUE",__VA_ARGS__)
+#define LOG_CYAN2(...)	Log::inst().info("","LIGHT_CYAN",__VA_ARGS__)
+#define LOG_GRAY2(...)	Log::inst().info("","LIGHT_GRAY",__VA_ARGS__)
+#define LOG_PURPLE2(...)	Log::inst().info("","LIGHT_PURPLE",__VA_ARGS__)
+#define LOG_RED2(...)	Log::inst().info("","LIGHT_RED",__VA_ARGS__)
+#define LOG_YELLOW2(...)	Log::inst().info("","LIGHT_YELLOW",__VA_ARGS__)
