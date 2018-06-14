@@ -208,11 +208,21 @@ void CleanModeFollowWall::switchInStateInit() {
 //}
 
 void CleanModeFollowWall::switchInStateFollowWall() {
-	sp_state = state_go_home_point.get();
-	clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_manager_, true));
-	sp_state->init();
-	action_i_ = ac_null;
-	genNextAction();
+	if(out_of_trapped_)
+	{
+		ACleanMode::switchInStateFollowWall();
+	}else{
+		sp_state = state_go_home_point.get();
+		trapped_closed_or_isolate = false;
+		trapped_time_out_ = false;
+		closed_count_limit_ = 2;
+		closed_count_ = 0;
+		isolate_count_ = 0;
+		clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_manager_, true));
+		sp_state->init();
+		action_i_ = ac_null;
+		genNextAction();
+	}
 }
 
 bool CleanModeFollowWall::markMapInNewCell()

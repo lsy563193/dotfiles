@@ -429,6 +429,7 @@ void HomePointsManager::resetRconPoint() {
 	if (!home_points_list_[0].empty()) {
 		home_points_list_[0].clear();
 	}
+	home_points_it_ = home_points_list_.begin()+1;
 	home_point_it_ = home_points_list_[1].begin();
 }
 

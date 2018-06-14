@@ -1092,14 +1092,14 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_mt) {
 	else
 		ROS_INFO("passed_cell_path_.size(%d)", passed_cell_path_.size());
 
-	markMapInNewCell();//mark real time to follow wall and exploration mode
 
-//	ROS_INFO("111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111");
+	ROS_INFO("111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111");
 	if (isStateFollowWall()) {
-//		ROS_INFO("222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222");
+		ROS_INFO("222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222");
 //			auto p_mt = dynamic_cast<MoveTypeFollowWall *>(p_mt);
+		clean_map_.print(curr.toCell(), CLEAN_MAP, Cells{});
 		if (p_mt->isBlockCleared(clean_map_, curr)) {
-//			ROS_INFO("333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333");
+			ROS_INFO("333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333");
 			clean_map_.markRobot(curr.toCell(), CLEAN_MAP);
 			std::vector<Vector2<int>> markers{};
 			if (lidar.isScanCompensateReady())
@@ -1119,7 +1119,7 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_mt) {
 					clean_map_.setCell(CLEAN_MAP, cell.x, cell.y, BLOCKED_LIDAR);
 				}
 			}
-//			ROS_INFO("444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444");
+			ROS_INFO("444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444");
 			if (!clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell())) {
 				out_of_trapped_ = true;
 				ROS_ERROR("OUT OF TRAPPED");
@@ -1127,6 +1127,7 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_mt) {
 			}
 		}
 	}
+	markMapInNewCell();//mark real time to follow wall and exploration mode
 /*This variable is in case of the pulsate of the location, the close checking will find the
  * same pose(angle) before a specified dis before(SEARCH_BEFORE_DIS) the current pose
  * */
@@ -2246,25 +2247,25 @@ void ACleanMode::switchInStateFollowWall()
 	is_trapped_ = false;
 	if(trapped_closed_or_isolate)
 	{
-		ROS_WARN("%s %d: closed_count_ >= closed_count_limit_!", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: closed_count_(%d) >= closed_count_limit_(%d)!", __FUNCTION__, __LINE__,closed_count_, closed_count_limit_);
 		sp_state = nullptr;
 	}
 	else if (trapped_time_out_) {
 		ROS_WARN("%s %d: Escape trapped timeout!(%d)", __FUNCTION__, __LINE__, ESCAPE_TRAPPED_TIME);
 		sp_state = nullptr;
 	}
-	else/* if (escape_trapped_)*/ {//out_of_trapped_ = false
+	else/* if (escape_trapped_)*/ {//out_of_trapped_ = true
 		ROS_WARN("%s %d:escape_trapped_ restore state from trapped !", __FUNCTION__, __LINE__);
 //		sp_state = (sp_tmp_state == state_clean) ? state_clean : state_exploration;
 		out_of_trapped_ = false;
 
-		if (mode_i_ == cm_navigation)
+		if (mode_i_ == cm_navigation || mode_i_ == cm_wall_follow)//add cm_follow_wall
 		{
 			sp_state = state_clean.get();
 			if(isLastStateIsGoHomePoints())
 			{
 				sp_state = state_go_home_point.get();
-				clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_manager_));
+//				clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_manager_));
 			}
 		}
 		else if (mode_i_ == cm_exploration)
