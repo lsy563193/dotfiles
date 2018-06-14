@@ -1126,18 +1126,43 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_mt) {
 /*This variable is in case of the pulsate of the location, the close checking will find the
  * same pose(angle) before a specified dis before(SEARCH_BEFORE_DIS) the current pose
  * */
+	if(action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right) {//just for wall follow mode
+		auto temp_mt = dynamic_cast<MoveTypeFollowWall *>(p_mt);
+		if (mode_i_ == cm_wall_follow && temp_mt->getIsTrappedInSmallArea()) {
+			auto curr_pose = getPosition(SLAM_POSITION_SLAM_ANGLE);
+			ROS_ERROR("curr_pose.Distance(small_area_trapped_pose_) = %f", curr_pose.Distance(small_area_trapped_pose_));
+			if (curr_pose.Distance(small_area_trapped_pose_) > 1) {
+				is_trapped_ =false;
+				temp_mt->resetIsTrappedInSmallArea();
+			}
+		}
+	}
 	const int SEARCH_BEFORE_DIS{10};
 	if (distance > SEARCH_BEFORE_DIS) {// closed
+		ROS_ERROR("distance(%d)", distance);
 		ROS_INFO("next_mode_i_(%d)",getNextMode());
 		ROS_INFO("mode_i_(%d)",mode_i_);
-		is_closed = true;
 		is_isolate = isIsolate(curr.toCell());
-		if(is_isolate)
+		if(is_isolate) {
 			isolate_count_++;
-		else
-		{
+			is_closed = true;
+		}
+		else if (distance < 20 && mode_i_ == cm_wall_follow) {//for wall follow mode trapped in small area
+			is_trapped_ = true;
+			if(action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right) {
+				auto temp_mt = dynamic_cast<MoveTypeFollowWall *>(p_mt);
+				temp_mt->setIsTrappedInSmallArea();
+				ROS_ERROR("temp_mt->setIsTrappedInSmallArea()");
+			}
+			small_area_trapped_pose_ = getPosition(SLAM_POSITION_SLAM_ANGLE);
+			beeper.debugBeep(VALID);
+			is_closed = false;
+			return false;
+		}
+		else {
 			passed_cell_path_.clear();
 			fw_tmp_map.reset(BOTH_MAP);
+			is_closed = true;
 			closed_count_++;
 			if(closed_count_<closed_count_limit_)
 				return false;
@@ -2165,6 +2190,7 @@ bool ACleanMode::updateActionInStateFollowWall()
 
 	auto ret = true;
 	if(is_closed) {
+		ROS_WARN("%s,%d:is_closed", __func__, __LINE__);
 		is_closed = false;
 		if (is_isolate) {
 			ROS_INFO_FL();
@@ -2190,6 +2216,8 @@ bool ACleanMode::updateActionInStateFollowWall()
 			action_i_ = ac_null;
 //			genNextAction();
 			ROS_WARN("%s,%d:follow clean finish", __func__, __LINE__);
+		} else {
+			PP_INFO();
 		}
 	}
 	else if(out_of_trapped_) {
