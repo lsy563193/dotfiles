@@ -379,6 +379,12 @@ bool is_opposite_dir(int l, int r)
 	return (l == 0 && r==1)  || (l ==1 && r ==0) || (l ==2 && r ==3) || (l == 3 && r == 2);
 }
 
+HomePointsManager::HomePointsManager() {
+	home_points_list_[1].push_back(Point_t{0,0});
+	home_points_it_ = home_points_list_.begin()+1;
+	home_point_it_ = home_points_list_[1].begin();
+}
+
 void HomePointsManager::setRconPoint(const Point_t &point) {
 	if (std::none_of(home_points_list_[0].begin(), home_points_list_[0].end(), [&](const Point_t &it) {
 		return it.toCell() == point.toCell();
@@ -409,11 +415,6 @@ void HomePointsManager::popCurrRconPoint() {
 		}
 	}
 	ROS_WARN("%s %d: 2 size(%d): curr_point(%d,%d)",__FUNCTION__, __LINE__, home_points_list_[0].size(), home_point_it_->toCell().x, home_point_it_->toCell().y);
-}
-
-HomePointsManager::HomePointsManager() {
-	home_points_list_[1].push_back(Point_t{0,0});
-	home_point_it_ = home_points_list_[1].begin();
 }
 
 void HomePointsManager::for_each(const std::function<void(const Point_t &it)> &lambda_fun) {

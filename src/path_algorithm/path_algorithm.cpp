@@ -722,8 +722,8 @@ bool APathAlgorithm::checkTrapped(GridMap &map, const Cell_t &curr_cell) {
 	ROS_WARN("%s,%d",__FUNCTION__, __LINE__);
 	auto expand_condition = [&](const Cell_t &cell, const Cell_t &neighbor_cell)
 	{
-		return map.isBlockAccessible(neighbor_cell.x, neighbor_cell.y) &&
-				map.getCell(CLEAN_MAP, neighbor_cell.x, neighbor_cell.y) == CLEANED;
+		return map.isBlockAccessible(neighbor_cell.x, neighbor_cell.y) /*&&
+				map.getCell(CLEAN_MAP, neighbor_cell.x, neighbor_cell.y) == CLEANED*/;
 	};
 
 	Cells cells{};

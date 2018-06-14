@@ -39,25 +39,29 @@ GoHomePathAlgorithm::GoHomePathAlgorithm(GridMap& map, HomePointsManager *p_home
 
 bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &plan_path)
 {
+	ROS_INFO("%s,%d: GoHomePathAlgorithm",__FUNCTION__, __LINE__);
 	plan_path.clear();
 	Cells plan_path_cells{};
 	map.print(curr.toCell(),CLEAN_MAP,Cells{});
 	auto& hps_it = p_home_points_manage_->home_points_it();
 	auto& hp_it = p_home_points_manage_->home_point_it();
-	const auto& hps_list = p_home_points_manage_->home_points_list();
+	auto& hps_list = p_home_points_manage_->home_points_list();
 	for(;hps_it != hps_list.end(); ++hps_it) {
 		ROS_INFO("%s,%d:go home point start home or rcon point" ,__FUNCTION__, __LINE__);
 		if(hps_it->empty())
-			break;
+			continue;
 
+		ROS_INFO("%s,%d:go home point start home or rcon point" ,__FUNCTION__, __LINE__);
 		if(way_it == home_ways.end())
 		{
 			way_it = home_ways.begin();
 			hp_it = hps_it->begin();
 		}
 
+		ROS_INFO("%s,%d:go home point start home or rcon point" ,__FUNCTION__, __LINE__);
 		for (; way_it != home_ways.end(); ++way_it) {
 
+			ROS_INFO("%s,%d:go home point start home or rcon point" ,__FUNCTION__, __LINE__);
 			way_it->get()->displayName();
 			if(way_it->get()->isClearBlock()&& !has_clean_)
 			{
@@ -87,6 +91,7 @@ bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point_t &curr, const 
 			}
 		}
 	}
-
+	if(hps_it == hps_list.end())
+		hps_it = hps_list.begin();
 	return !plan_path.empty();
 }

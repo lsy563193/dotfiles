@@ -1893,6 +1893,7 @@ bool ACleanMode::isSwitchByEventInStateGoHomePoint()
 }
 
 bool ACleanMode::updateActionInStateGoHomePoint() {
+	ROS_INFO("%s,%d: ",__FUNCTION__, __LINE__);
 	bool update_finish{};
 	sp_action_.reset();//to mark in destructor
 	if (!plan_path_.empty()) {
@@ -1905,6 +1906,7 @@ bool ACleanMode::updateActionInStateGoHomePoint() {
 		ev.rcon_status = 0;
 		update_finish = false;
 	} else if (reachHomePoint(getPosition())) {
+		ROS_INFO("%s,%d: reachHomePoint",__FUNCTION__, __LINE__);
 		if(home_points_manager_.isStartPoint())
 		{
 			should_go_to_charger_ = false;
@@ -1939,6 +1941,7 @@ bool ACleanMode::updateActionInStateGoHomePoint() {
 			update_finish = true;
 		} else
 		{
+			ROS_INFO("%s,%d: generatePath false",__FUNCTION__, __LINE__);
 			is_trapped_ = true;
 			update_finish = false;
 		}
