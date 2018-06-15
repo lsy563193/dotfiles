@@ -217,22 +217,16 @@ ACleanMode::~ACleanMode()
 	battery.forceUpdate();
 }
 
-void ACleanMode::saveBlock(int block, int dir, std::function<Cells()> get_list)
+void ACleanMode::saveBlock(int block, std::function<Cells()> get_list)
 {
 	std::string debug_str;
 	debug_str.clear();
 	for(auto& d_cell : get_list())
 	{
 		Cell_t cell;
-//		if(dir == MAP_ANY)
 		cell = getPosition().getCenterRelative(d_cell.x * CELL_SIZE, d_cell.y * CELL_SIZE).toCell();
 		debug_str += "{" + std::to_string(d_cell.x) + "," + std::to_string(d_cell.y) + "}->{" +
 								 std::to_string(cell.x) + "," + std::to_string(cell.y) + "}";
-//		else {
-//			auto x = d_cell * cell_direction_[dir].x;
-//			auto y = d_cell * cell_direction_[(dir+2)%4].y;
-//			cell = getPosition().toCell() +  x + y;
-//		}
 		c_blocks.insert({block, cell});
 	}
 
@@ -242,11 +236,10 @@ void ACleanMode::saveBlock(int block, int dir, std::function<Cells()> get_list)
 }
 
 void ACleanMode::saveBlocks() {
-//	PP_INFO();
 	bool is_linear = action_i_== ac_linear;
 	auto is_save_rcon = sp_state == state_clean.get();
 	if (action_i_== ac_linear && is_save_rcon)
-		saveBlock(BLOCKED_TMP_RCON, iterate_point_->dir, [&]() {
+		saveBlock(BLOCKED_TMP_RCON, [&]() {
 			auto rcon_trig = ev.rcon_status/*rcon_get_trig()*/;
 			Cells d_cells;
 			switch (c_rcon.convertToEnum(rcon_trig)) {
@@ -272,7 +265,7 @@ void ACleanMode::saveBlocks() {
 			return d_cells;
 		});
 
-	saveBlock(BLOCKED_BUMPER,iterate_point_->dir, [&]() {
+	saveBlock(BLOCKED_BUMPER,[&]() {
 		auto bumper_trig = ev.bumper_triggered/*bumper.getStatus()*/;
 		Cells d_cells; // Direction indicator cells.
 //		if ((bumper_trig & BLOCK_RIGHT) && (bumper_trig & BLOCK_LEFT))
@@ -293,7 +286,7 @@ void ACleanMode::saveBlocks() {
 		return d_cells;
 	});
 
-	saveBlock(BLOCKED_CLIFF,iterate_point_->dir, [&]() {
+	saveBlock(BLOCKED_CLIFF, [&]() {
 		auto cliff_trig = ev.cliff_triggered;
 		Cells d_cells;
 		if (cliff_trig & BLOCK_FRONT) {
@@ -309,7 +302,7 @@ void ACleanMode::saveBlocks() {
 	});
 
 	//save block for wheel cliff, but in case of incresing the map cost, it is same as the BOCKED_CLIFF, please check the log if it was triggered
-	saveBlock(BLOCKED_CLIFF,iterate_point_->dir, [&]() {
+	saveBlock(BLOCKED_CLIFF,[&]() {
 //		auto wheel_cliff_trig = ev.left_wheel_cliff || ev.right_wheel_cliff;
 		auto wheel_cliff_trig = is_wheel_cliff_triggered;
 		Cells d_cells;
@@ -320,7 +313,7 @@ void ACleanMode::saveBlocks() {
 	});
 
 	//save block for oc_brush_main, but in case of incresing the map cost, it is same as the BOCKED_CLIFF, please check the log if it was triggered
-	saveBlock(BLOCKED_CLIFF,iterate_point_->dir, [&]() {
+	saveBlock(BLOCKED_CLIFF,[&]() {
 		Cells d_cells{};
 		if (ev.oc_brush_main)
 			d_cells = {{1,  1}, {1,  0}, {1,  -1}, {0,  1}, {0,  0}, {0,  -1}, {-1, 1}, {-1, 0}, {-1, -1}};
@@ -328,7 +321,7 @@ void ACleanMode::saveBlocks() {
 
 	});
 
-	saveBlock(BLOCKED_SLIP,iterate_point_->dir, [&]() {
+	saveBlock(BLOCKED_SLIP,[&]() {
 		Cells d_cells{};
 		if (ev.slip_triggered)
 			d_cells = {{1,  1}, {1,  0}, {1,  -1}, {0,  1}, {0,  0}, {0,  -1}, {-1, 1}, {-1, 0}, {-1, -1}};
@@ -336,7 +329,7 @@ void ACleanMode::saveBlocks() {
 
 	});
 
-	saveBlock(BLOCKED_TILT,iterate_point_->dir, [&]() {
+	saveBlock(BLOCKED_TILT,[&]() {
 		Cells d_cells;
 		auto tilt_trig = ev.tilt_triggered;
 /*		if (tilt_trig & TILT_LEFT)
@@ -352,7 +345,7 @@ void ACleanMode::saveBlocks() {
 		return d_cells;
 	});
 
-	saveBlock(BLOCKED_LIDAR,iterate_point_->dir, [&]() {
+	saveBlock(BLOCKED_LIDAR,[&]() {
 		auto lidar_trig = ev.lidar_triggered;
 		Cells d_cells{};
 		if (lidar_trig & BLOCK_FRONT) {
@@ -2280,7 +2273,6 @@ bool ACleanMode::updateActionInStateFollowWall()
 
 void ACleanMode::switchInStateFollowWall()
 {
-	PP_INFO();
 	is_trapped_ = false;
 	if(trapped_closed_or_isolate)
 	{

@@ -637,7 +637,7 @@ public:
 	void pubTmpTarget(const Point_t &point,bool is_virtual=false);
 	uint8_t setBlocks(Dir_t dir);
 	void saveBlocks();
-	void saveBlock(int block, int , std::function<Cells()>);
+	void saveBlock(int block, std::function<Cells()>);
 	void checkShouldMarkCharger(float angle_offset,float distance);
 	PathHead getTempTarget();
 

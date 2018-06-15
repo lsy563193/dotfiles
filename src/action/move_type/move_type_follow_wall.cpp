@@ -163,7 +163,6 @@ bool MoveTypeFollowWall::isFinish()
 			{
 				if (ev.rcon_status) {
 					p_cm->setRconPoint(getPosition());
-
 					movement_i_ = mm_rcon;
 					sp_movement_.reset(new MovementRcon(is_left_));
 					resetTriggeredValue();
