@@ -6,11 +6,13 @@
 #include "wifi/dev.h"
 #include "wifi/packet.h"
 #include "map.h"
+#include <cstdint>
 
 class S_Wifi
 {
 
 public:
+	const uint32_t expectModuleVersion_= 0x000106;
 
 	enum struct ACT{
 		ACT_NONE= 0,
@@ -66,7 +68,7 @@ public:
 
 	uint8_t smartApLink();
 
-	bool factoryTest();
+	bool factoryTest(uint32_t &moduleVersion_);
 
 	bool uploadLastCleanData();
 

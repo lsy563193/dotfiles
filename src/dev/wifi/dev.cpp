@@ -56,7 +56,7 @@ bool Dev::tx( const std::vector<uint8_t> &data ) const
 			ROS_WARN( "wifi::Dev::tx,Failed while write: %d", errno );
 			return false;
 		}
-		//for tmp test
+		//for debug print 
 		if(true)//len<100)
 		{
 			std::string msg("\033[1;40;34mtx data = \033[0m");
@@ -90,7 +90,7 @@ std::vector<uint8_t> Dev::rx() const
 		ROS_WARN( "wifi::Dev::rx,Failed while read: %d", errno );
 		return {};
 	}
-	//for tmp test
+	//for debug print
 	std::string msg("\033[1;40;35mrx data = \033[0m");
 	char bff[30];
 	for(int i=0;i<len;i++){

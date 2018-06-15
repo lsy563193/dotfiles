@@ -5,6 +5,7 @@
 #include "ros/ros.h"
 #include "battery.h"
 #include "config.h"
+#include "log.h"
 
 Battery battery;
 
@@ -51,8 +52,13 @@ void Battery::setVoltage(uint16_t val)
 		update_time_stamp_ = time_now;
 		if (force_update_)
 			force_update_ = false;
-		ROS_WARN("%s %d: Update Battery as %.1fv.", __FUNCTION__, __LINE__,
-				 static_cast<float>(battery.getVoltage() / 100.0));
+		float bv = voltage_/100.0;
+		if(bv >= 14.00)
+		{
+			INFO_GREEN("%s %d: Update Battery as %.1fv.", __FUNCTION__, __LINE__,bv);
+		}
+		else
+			INFO_RED("%s %d: Update Battery as %.1fv.", __FUNCTION__, __LINE__,bv);
 	}
 }
 
