@@ -67,7 +67,7 @@ static BoundingBox2 getLine(const Cell_t& curr,GridMap& map) {
 	return {c_it[1], c_it[0]};
 }
 
-void NavCleanPathAlgorithm::adjustPosition(Points&  plan_path)
+void NavCleanPathAlgorithm::adjustPosition(GridMap &map, Points&  plan_path)
 {
 	int16_t tmp_curr_y=origen_curr_.y;
 	if(origen_curr_.y%2 == 1 && curr_filter_ != nullptr)
@@ -86,7 +86,11 @@ void NavCleanPathAlgorithm::adjustPosition(Points&  plan_path)
 		}
 		ROS_WARN("in odd line: adjust Position(%d)->(%d)", origen_curr_.y, correct_curr_.y);
 	}
-	correct_curr_ = {origen_curr_.x, tmp_curr_y};
+	if(map.isBlockAccessible(origen_curr_.x, tmp_curr_y))
+		correct_curr_ = {origen_curr_.x, tmp_curr_y};
+	else
+		correct_curr_ = origen_curr_;
+
 }
 bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr_p, const Dir_t &last_dir, Points &plan_path)
 {
@@ -95,7 +99,7 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr_p, co
 	if(origen_curr_ != curr_p.toCell())
 	{
 		origen_curr_ = curr_p.toCell();
-		adjustPosition(plan_path);
+		adjustPosition(map, plan_path);
 	}
 	else
 	{
