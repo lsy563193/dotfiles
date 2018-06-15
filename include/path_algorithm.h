@@ -198,7 +198,6 @@ class NavCleanPathAlgorithm: public APathAlgorithm
 	 */
 public:
 	bool generatePath(GridMap &map, const Point_t &curr_p, const Dir_t &last_dir, Points &plan_path) override;
-	void adjustPosition(Points&  plan_path);
 	/*
 	 * @author Patrick Chow
 	 * @last modify by Austin Liu
@@ -328,6 +327,7 @@ public:
 #endif
 private:
 	int pt_;
+	void adjustPosition(GridMap &map, Points &plan_path);
 };
 //
 class WFCleanPathAlgorithm: public APathAlgorithm
