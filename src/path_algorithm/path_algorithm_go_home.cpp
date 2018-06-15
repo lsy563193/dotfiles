@@ -46,22 +46,27 @@ bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point_t &curr, const 
 	auto& hps_it = p_home_points_manage_->home_points_it();
 	auto& hp_it = p_home_points_manage_->home_point_it();
 	auto& hps_list = p_home_points_manage_->home_points_list();
+
+
+	if(!map.isBlockAccessible(hp_it->toCell().x, hp_it->toCell().y))
+	{
+		ROS_WARN("%s,%d:curr point is can't accessible ,swap curr(%d,%d) point to home point(%d,%d)" ,__FUNCTION__, __LINE__,
+				 curr.toCell().x,curr.toCell().y,hp_it->toCell().x, hp_it->toCell().y);
+		*hp_it = curr;
+	}
+
 	for(;hps_it != hps_list.end(); ++hps_it) {
 		ROS_INFO("%s,%d:go home point start home or rcon point" ,__FUNCTION__, __LINE__);
 		if(hps_it->empty())
 			continue;
 
-		ROS_INFO("%s,%d:go home point start home or rcon point" ,__FUNCTION__, __LINE__);
 		if(way_it == home_ways.end())
 		{
 			way_it = home_ways.begin();
 			hp_it = hps_it->begin();
 		}
 
-		ROS_INFO("%s,%d:go home point start home or rcon point" ,__FUNCTION__, __LINE__);
 		for (; way_it != home_ways.end(); ++way_it) {
-
-			ROS_INFO("%s,%d:go home point start home or rcon point" ,__FUNCTION__, __LINE__);
 			way_it->get()->displayName();
 			if(way_it->get()->isClearBlock()&& !has_clean_)
 			{
@@ -78,6 +83,9 @@ bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point_t &curr, const 
 			for (; hp_it != hps_it->end(); ++(hp_it)) {
 				ROS_INFO("hp_it(%d,%d)", hp_it->toCell().x, hp_it->toCell().y);
 				auto p_tmp_map_ = way_it->get()->updateMap(map,temp_map, curr);
+
+				if(!p_tmp_map_->isBlockAccessible(hp_it->toCell().x, hp_it->toCell().y))
+					p_tmp_map_->markRobot(hp_it->toCell(),CLEAN_MAP);
 
 				if (dijkstra(*p_tmp_map_, curr.toCell(), plan_path_cells, true, CellEqual(hp_it->toCell()),
 							 isAccessable(p_tmp_map_, way_it->get()->expand_condition))) {
