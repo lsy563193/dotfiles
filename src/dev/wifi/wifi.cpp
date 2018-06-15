@@ -1247,6 +1247,11 @@ bool S_Wifi::factoryTest(uint32_t &moduleVersion)
 	isFactoryTest_ = true;
 	moduleVersion = moduleVersion_;
 	int waitResp = 0;
+	if(expectModuleVersion_ != moduleVersion_)
+	{
+		ROS_ERROR("%s,%d,FACTROY TEST FAIL , module version mismatch",__FUNCTION__,__LINE__);
+		return false;
+	}
 	if (is_sleep_)
 	{
 		//wifi resume
@@ -1282,11 +1287,6 @@ bool S_Wifi::factoryTest(uint32_t &moduleVersion)
 			return false;
 		}
 		waitResp++;
-	}
-	if(expectModuleVersion_ != moduleVersion_)
-	{
-		ROS_ERROR("%s,%d,FACTROY TEST FAIL , module version mismatch",__FUNCTION__,__LINE__);
-		return false;
 	}
 	INFO_BLUE("FACTORY TEST SUCCESS!!");
 	isFactoryTest_ = false;
@@ -1447,18 +1447,13 @@ void S_Wifi::taskPushBack(S_Wifi::ACT action)
 	}
 }
 
-void S_Wifi::wifiSendRutine()
+void S_Wifi::wifiSendRoutine()
 {
 	uint32_t upload_state_count;
 	uint32_t upload_map_count;
 	last_time_sync_time_ = ros::Time::now().toSec();
 	while( ros::ok() || wifi_quit_)
 	{
-		if(!is_wifi_connected_)
-		{
-			usleep(50000);
-			continue;
-		}
 		if(!task_list_.empty())
 		{
 			pthread_mutex_lock(&task_lock_);
@@ -1520,6 +1515,12 @@ void S_Wifi::wifiSendRutine()
 		}
 		else
 		{
+
+			usleep(500000);
+			if(!is_wifi_connected_)
+			{
+				continue;
+			}
 			// If time is not synchronized, try to query NTP for every 3 mins.
 			if (!time_sync_ && ros::Time::now().toSec() - last_time_sync_time_ > 180)
 			{
@@ -1541,7 +1542,6 @@ void S_Wifi::wifiSendRutine()
 					upload_state_count=0;
 				}
 			}
-			usleep(500000);
 		}
 	}
 	printf("WIFI SEND ROUTINE EXIT!\n");

@@ -117,7 +117,7 @@ public:
 
 	void taskPushBack(S_Wifi::ACT action);
 
-	void wifiSendRutine();
+	void wifiSendRoutine();
 
 	void cacheMapData(const Points map_data);
 
