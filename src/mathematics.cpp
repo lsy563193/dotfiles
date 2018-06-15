@@ -403,7 +403,7 @@ void HomePointsManager::popCurrRconPoint() {
 	{
 		ROS_INFO("%d,%d ", it.toCell().x,it.toCell().y);
 	}
-	home_points_list_[0].erase(home_point_it_/*++*/);
+	home_point_it_ = home_points_list_[0].erase(home_point_it_/*++*/);
 	if (home_point_it_ == home_points_list_[0].end()) {
 		ROS_ERROR("%s %d:3 size(%d)",__FUNCTION__, __LINE__, home_points_list_[0].size());
 		if(home_points_list_[0].empty())

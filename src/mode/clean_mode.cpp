@@ -1958,7 +1958,7 @@ void ACleanMode::switchInStateGoHomePoint()
 	{
 		should_go_to_charger_ = false;
 		sp_state = state_go_to_charger.get();
-		sp_state->init();
+//		sp_state->init();
 		sp_action_.reset();
 		if (isFirstTimeGoHomePoint())
 		{
@@ -2432,6 +2432,12 @@ void ACleanMode::setVacuum()
 }
 
 bool ACleanMode::reachHomePoint(const Point_t& curr) {
+	ROS_INFO("isStartPoint(%d)curr(%d,%d), home_point(%d,%d)",
+			 home_points_manager_.isStartPoint(),
+			 curr.toCell().x,curr.toCell().y,
+			 home_points_manager_.home_point_it()->toCell().x,
+			 home_points_manager_.home_point_it()->toCell().y
+	);
 	return !home_points_manager_.isStartPoint() ? curr.toCell() == home_points_manager_.home_point_it()->toCell() :
 		   curr.isCellAndAngleEqual(*home_points_manager_.getStartPoint());
 }
