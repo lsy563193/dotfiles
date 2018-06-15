@@ -1454,7 +1454,11 @@ void S_Wifi::wifiSendRutine()
 	last_time_sync_time_ = ros::Time::now().toSec();
 	while( ros::ok() || wifi_quit_)
 	{
-
+		if(!is_wifi_connected_)
+		{
+			usleep(50000);
+			continue;
+		}
 		if(!task_list_.empty())
 		{
 			pthread_mutex_lock(&task_lock_);
@@ -1516,10 +1520,6 @@ void S_Wifi::wifiSendRutine()
 		}
 		else
 		{
-
-			if(!is_wifi_connected_)
-				continue;
-
 			// If time is not synchronized, try to query NTP for every 3 mins.
 			if (!time_sync_ && ros::Time::now().toSec() - last_time_sync_time_ > 180)
 			{

@@ -366,8 +366,7 @@ uint8_t GridMap::isBlockedByBumper(int16_t x, int16_t y)
 	return ret;
 }
 
-bool GridMap::isBlockAccessible(int16_t x, int16_t y)
-{
+bool GridMap::isBlockAccessible(int16_t x, int16_t y){
 	bool ret = true;
 	int16_t i, j;
 

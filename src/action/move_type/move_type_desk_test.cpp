@@ -23,6 +23,8 @@
 #include <speaker.h>
 #include <remote.hpp>
 #include <robot.hpp>
+#include <event_manager.h>
+#include <wifi_led.hpp>
 
 #include "move_type.hpp"
 
@@ -680,7 +682,7 @@ bool MoveTypeDeskTest::checkStage3Finish()
 			if (bumper.getStatus())
 			{
 				p_movement_.reset();
-				p_movement_.reset(new MovementBack(0.01, BACK_MAX_SPEED));
+				p_movement_.reset(new MovementBack(0.01, 20));
 				test_step_++;
 				check_start_time_ = ros::Time::now().toSec();
 			} else if (ros::Time::now().toSec() - check_start_time_ > 10)
@@ -690,7 +692,7 @@ bool MoveTypeDeskTest::checkStage3Finish()
 				error_code_ = LEFT_BUMPER_ERROR;
 			}
 			else
-				wheel.setPidTargetSpeed(LINEAR_MAX_SPEED / 2, LINEAR_MAX_SPEED / 2);
+				wheel.setPidTargetSpeed(LINEAR_MAX_SPEED * 2 / 3, LINEAR_MAX_SPEED * 2 / 3);
 //				p_movement_->run();
 			break;
 		}
@@ -699,9 +701,14 @@ bool MoveTypeDeskTest::checkStage3Finish()
 			if (p_movement_->isFinish())
 			{
 				p_movement_.reset();
-				p_movement_.reset(new MovementTurn(getPosition().th - degree_to_radian(45), ROTATE_TOP_SPEED));
+				p_movement_.reset(new MovementTurn(getPosition().th - degree_to_radian(45), ROTATE_TOP_SPEED * 3 / 2));
 				test_step_++;
-			} else
+			} else if(ev.bumper_jam){
+				error_step_ = test_stage_;
+				test_stage_ = 99;
+				error_code_ = LEFT_BUMPER_ERROR;
+			}
+			else
 				p_movement_->run();
 			break;
 		}
@@ -722,7 +729,7 @@ bool MoveTypeDeskTest::checkStage3Finish()
 			{
 				test_step_++;
 				p_movement_.reset();
-				p_movement_.reset(new MovementBack(0.01, BACK_MAX_SPEED));
+				p_movement_.reset(new MovementBack(0.01, 20));
 				ROS_INFO("%s %d: Left bumper checked.", __FUNCTION__, __LINE__);
 			}
 			else if (p_movement_->isTimeUp())
@@ -741,7 +748,11 @@ bool MoveTypeDeskTest::checkStage3Finish()
 			{
 				test_step_++;
 				p_movement_.reset();
-				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(90), ROTATE_TOP_SPEED));
+				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(90), ROTATE_TOP_SPEED * 3 / 2));
+			}else if(ev.bumper_jam){
+				error_step_ = test_stage_;
+				test_stage_ = 99;
+				error_code_ = LEFT_BUMPER_ERROR;
 			}
 			else
 				p_movement_->run();
@@ -766,7 +777,7 @@ bool MoveTypeDeskTest::checkStage3Finish()
 			{
 				test_step_++;
 				p_movement_.reset();
-				p_movement_.reset(new MovementBack(0.01, BACK_MAX_SPEED));
+				p_movement_.reset(new MovementBack(0.01, 20));
 				ROS_INFO("%s %d: Right bumper checked.", __FUNCTION__, __LINE__);
 			}
 			else if (p_movement_->isTimeUp())
@@ -785,7 +796,11 @@ bool MoveTypeDeskTest::checkStage3Finish()
 			{
 				test_step_++;
 				p_movement_.reset();
-				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-130), ROTATE_TOP_SPEED));
+				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-130), ROTATE_TOP_SPEED * 3 / 2));
+			}else if(ev.bumper_jam){
+				error_step_ = test_step_;
+				test_step_ = 99;
+				error_code_ = RIGHT_BUMPER_ERROR;
 			}
 			else
 				p_movement_->run();
@@ -1108,7 +1123,7 @@ bool MoveTypeDeskTest::checkStage5Finish()
 			if (p_movement_->isFinish())
 			{
 				p_movement_.reset();
-				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(90), ROTATE_TOP_SPEED));
+				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(90), ROTATE_TOP_SPEED * 3 / 2));
 				front_cliff_baseline_ = static_cast<uint16_t>(front_cliff_sum_ / sum_cnt_);
 				ROS_WARN("%s %d: front_cliff_baseline_:%d.", __FUNCTION__, __LINE__, front_cliff_baseline_);
 				test_step_++;
@@ -1142,7 +1157,7 @@ bool MoveTypeDeskTest::checkStage5Finish()
 			if (p_movement_->isFinish())
 			{
 				p_movement_.reset();
-				p_movement_.reset(new MovementBack(0.1, BACK_MAX_SPEED));
+				p_movement_.reset(new MovementBack(0.1, 20));
 				movement_i_= mm_back;
 				right_cliff_baseline_ = static_cast<uint16_t>(right_cliff_sum_ / sum_cnt_);
 				ROS_WARN("%s %d: right_cliff_baseline_:%d.", __FUNCTION__, __LINE__, right_cliff_baseline_);
@@ -1174,7 +1189,7 @@ bool MoveTypeDeskTest::checkStage5Finish()
 				{
 					movement_i_ = mm_turn;
 					p_movement_.reset();
-					p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-120), ROTATE_TOP_SPEED));
+					p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-120), ROTATE_TOP_SPEED * 3 / 2));
 				}
 				else if (movement_i_ == mm_turn)
 				{
@@ -1192,7 +1207,7 @@ bool MoveTypeDeskTest::checkStage5Finish()
 			if (p_movement_->isFinish())
 			{
 				p_movement_.reset();
-				p_movement_.reset(new MovementBack(0.1, BACK_MAX_SPEED));
+				p_movement_.reset(new MovementBack(0.1, 20));
 				movement_i_= mm_back;
 				left_cliff_baseline_ = static_cast<uint16_t>(left_cliff_sum_ / sum_cnt_);
 				ROS_WARN("%s %d: left_cliff_baseline_:%d.", __FUNCTION__, __LINE__, left_cliff_baseline_);
@@ -1209,7 +1224,7 @@ bool MoveTypeDeskTest::checkStage5Finish()
 			if (p_movement_->isFinish())
 			{
 				p_movement_.reset();
-				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-90), ROTATE_TOP_SPEED));
+				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-90), ROTATE_TOP_SPEED * 3 / 2));
 				test_step_++;
 			}
 			else{
@@ -1326,6 +1341,7 @@ bool MoveTypeDeskTest::checkStage6Finish()
 
 bool MoveTypeDeskTest::checkStage7Finish()
 {
+	wifi_led.disable();
 	switch(test_step_)
 	{
 		case 0:
