@@ -557,6 +557,7 @@ public:
 	int isolate_count_limit_{10};
 	bool is_trapped_{false};
 	Point_t small_area_trapped_pose_{};
+	int in_small_area_count_{};
 
 	boost::shared_ptr<State> state_init{new StateInit()};
 	boost::shared_ptr<State> state_clean{new StateClean()};

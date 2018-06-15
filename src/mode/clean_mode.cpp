@@ -1131,13 +1131,15 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_mt) {
 		if (mode_i_ == cm_wall_follow && temp_mt->getIsTrappedInSmallArea()) {
 			auto curr_pose = getPosition(SLAM_POSITION_SLAM_ANGLE);
 			ROS_ERROR("curr_pose.Distance(small_area_trapped_pose_) = %f", curr_pose.Distance(small_area_trapped_pose_));
-			if (curr_pose.Distance(small_area_trapped_pose_) > 1) {
+			if (curr_pose.Distance(small_area_trapped_pose_) > 1) {//1 metre
 				is_trapped_ =false;
 				temp_mt->resetIsTrappedInSmallArea();
+				in_small_area_count_ = 0;
 			}
 		}
 	}
 	const int SEARCH_BEFORE_DIS{10};
+//	ROS_ERROR("distance(%d), in_small_area_count_(%d)", distance, in_small_area_count_);
 	if (distance > SEARCH_BEFORE_DIS) {// closed
 		ROS_ERROR("distance(%d)", distance);
 		ROS_INFO("next_mode_i_(%d)",getNextMode());
@@ -1146,8 +1148,15 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_mt) {
 		if(is_isolate) {
 			isolate_count_++;
 			is_closed = true;
+			in_small_area_count_ = 0;
+			is_trapped_ =false;
+			if(action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right) {//just for wall follow mode
+				auto temp_mt = dynamic_cast<MoveTypeFollowWall *>(p_mt);
+				temp_mt->resetIsTrappedInSmallArea();
+			}
 		}
-		else if (distance < 20 && mode_i_ == cm_wall_follow) {//for wall follow mode trapped in small area
+		else if (distance < 20 && mode_i_ == cm_wall_follow && in_small_area_count_ < 10) {//for wall follow mode trapped in small area
+			in_small_area_count_++;
 			is_trapped_ = true;
 			if(action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right) {
 				auto temp_mt = dynamic_cast<MoveTypeFollowWall *>(p_mt);

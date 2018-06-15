@@ -649,12 +649,12 @@ bool MoveTypeFollowWall::outOfRange(const Point_t &curr, Points::iterator &p_it)
 }
 
 void MoveTypeFollowWall::setIsTrappedInSmallArea() {
-	PP_INFO();
+//	PP_INFO();
 	is_trapped_in_small_area_ = true;
 }
 
 void MoveTypeFollowWall::resetIsTrappedInSmallArea() {
-	PP_INFO();
+//	PP_INFO();
 	is_trapped_in_small_area_ = false;
 }
 
