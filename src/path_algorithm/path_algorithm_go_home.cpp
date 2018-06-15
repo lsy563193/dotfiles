@@ -17,9 +17,9 @@ GoHomePathAlgorithm::GoHomePathAlgorithm(GridMap& map, HomePointsManager *p_home
 //	ROS_INFO("%s,%d: set the rcon c_blocks to cleaned.",__FUNCTION__,__LINE__);
 	auto map_tmp = map.generateBound();
 	for (const auto &cell : map_tmp) {
-		if(map.getCell(CLEAN_MAP,cell.x,cell.y) == BLOCKED_TMP_RCON
-					|| map.getCell(CLEAN_MAP, cell.x, cell.y) == BLOCKED_RCON)
-			map.setCell(CLEAN_MAP,cell.x,cell.y, UNCLEAN);
+		if(map.getCell(cell.x,cell.y) == BLOCKED_TMP_RCON
+					|| map.getCell(cell.x, cell.y) == BLOCKED_RCON)
+			map.setCell(cell.x,cell.y, UNCLEAN);
 	}
 	ROS_INFO("%s,%d: push back home way.",__FUNCTION__,__LINE__);
 	temp_map = make_unique<GridMap>();
@@ -42,7 +42,7 @@ bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point_t &curr, const 
 	ROS_INFO("%s,%d: GoHomePathAlgorithm",__FUNCTION__, __LINE__);
 	plan_path.clear();
 	Cells plan_path_cells{};
-	map.print(curr.toCell(),CLEAN_MAP,Cells{});
+	map.print(curr.toCell(),Cells{});
 	auto& hps_it = p_home_points_manage_->home_points_it();
 	auto& hp_it = p_home_points_manage_->home_point_it();
 	auto& hps_list = p_home_points_manage_->home_points_list();
@@ -85,15 +85,15 @@ bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point_t &curr, const 
 				auto p_tmp_map_ = way_it->get()->updateMap(map,temp_map, curr);
 
 				if(!p_tmp_map_->isBlockAccessible(hp_it->toCell().x, hp_it->toCell().y))
-					p_tmp_map_->markRobot(hp_it->toCell(),CLEAN_MAP);
+					p_tmp_map_->markRobot(hp_it->toCell());
 
 				if (dijkstra(*p_tmp_map_, curr.toCell(), plan_path_cells, true, CellEqual(hp_it->toCell()),
 							 isAccessable(p_tmp_map_, way_it->get()->expand_condition))) {
 
 					optimizePath(*p_tmp_map_, plan_path_cells, last_dir, way_it->get()->expand_condition);
 					plan_path = *cells_to_points(plan_path_cells);
-					p_tmp_map_->print(curr.toCell(), COST_MAP, plan_path_cells);
-					p_tmp_map_->print(curr.toCell(), CLEAN_MAP, plan_path_cells);
+//					p_tmp_map_->print(curr.toCell(), COST_MAP, plan_path_cells);
+					p_tmp_map_->print(curr.toCell(), plan_path_cells);
 					return true;
 				}
 			}

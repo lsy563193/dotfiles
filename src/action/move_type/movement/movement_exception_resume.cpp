@@ -824,7 +824,7 @@ bool MovementExceptionResume::isFinish()
 		if(sp_mt_->sp_mode_->mode_i_ != sp_mt_->sp_mode_->md_go_to_charger &&
 				sp_mt_->sp_mode_->mode_i_ != sp_mt_->sp_mode_->md_remote){
 			ACleanMode* p_mode = dynamic_cast<ACleanMode*>(sp_mt_->sp_mode_);
-			cell_state = p_mode->clean_map_.getCell(CLEAN_MAP,getPosition().toCell().x,getPosition().toCell().y);
+			cell_state = p_mode->clean_map_.getCell(getPosition().toCell().x,getPosition().toCell().y);
 		}
 
 		if(ros::Time::now().toSec() - resume_stuck_start_time_ > 60){

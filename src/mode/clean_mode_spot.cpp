@@ -61,10 +61,10 @@ bool CleanModeSpot::mapMark()
 	}
 
 	if (sp_state == state_folllow_wall.get())
-		clean_map_.markRobot(getPosition().toCell(), CLEAN_MAP);
+		clean_map_.markRobot(getPosition().toCell());
 	setBlocks(iterate_point_->dir);
 	PP_INFO();
-	clean_map_.print(getPosition().toCell(), CLEAN_MAP, Cells{getPosition().toCell()});
+	clean_map_.print(getPosition().toCell(), Cells{getPosition().toCell()});
 
 	passed_cell_path_.clear();
 	return false;
@@ -165,6 +165,6 @@ void CleanModeSpot::switchInStateSpot()
 }
 
 bool CleanModeSpot::markMapInNewCell() {
-	clean_map_.markRobot(getPosition().toCell(), CLEAN_MAP,false);
+	clean_map_.markRobot(getPosition().toCell(),false);
 	return true;
 }

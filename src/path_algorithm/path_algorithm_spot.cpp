@@ -55,7 +55,7 @@ bool SpotCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr,  bo
 			{
 				cells.emplace_back(it->toCell());
 			}
-            map.printInRange(curr.toCell(),CLEAN_MAP,cells,true, BoundingBox2{{-10,-10},{10,10}});
+            map.printInRange(curr.toCell(),cells,true, BoundingBox2{{-10,-10},{10,10}});
 		}
 		if(is_linear)
 		{

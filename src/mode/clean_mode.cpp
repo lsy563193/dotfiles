@@ -397,7 +397,7 @@ uint8_t ACleanMode::setBlocks(Dir_t dir)
 	printf("after filter:");
 	for (auto &&cost_block  : c_blocks) {
 		printf("{%d, {%d,%d}} ",cost_block.first, cost_block.second.x, cost_block.second.y);
-		clean_map_.setCell(CLEAN_MAP, cost_block.second.x, cost_block.second.y, cost_block.first);
+		clean_map_.setCell(cost_block.second.x, cost_block.second.y, cost_block.first);
 	}
 	printf("\n");
 	c_blocks.clear();
@@ -709,18 +709,18 @@ uint8_t ACleanMode::setFollowWall(GridMap& map, bool is_left,const Points& passe
 		std::string msg = "cell:";
 		auto dy = is_left ? 2 : -2;
 		for(auto& point : passed_path){
-			if(map.getCell(CLEAN_MAP,point.toCell().x,point.toCell().y) != BLOCKED_RCON){
+			if(map.getCell(point.toCell().x,point.toCell().y) != BLOCKED_RCON){
 				auto relative_cell = point.getRelative(0, dy * CELL_SIZE);
 				auto block_cell = relative_cell.toCell();
 				if(!is_exclude || block_cell.y != cell_y )
 				{
 					msg += "(" + std::to_string(block_cell.x) + "," + std::to_string(block_cell.y) + ")";
-					map.setCell(CLEAN_MAP,block_cell.x,block_cell.y, BLOCKED_FW);
+					map.setCell(block_cell.x,block_cell.y, BLOCKED_FW);
 					block_count++;
 				}
 			}
 		}
-//		ROS_INFO("%s,%d: Current(%d, %d, %lf), \033[32m mapMark CLEAN_MAP %s\033[0m",
+//		ROS_INFO("%s,%d: Current(%d, %d, %lf), \033[32m mapMark s\033[0m",
 //						 __FUNCTION__, __LINE__, getPosition().toCell().x, getPosition().toCell().y,getPosition().th, msg.c_str());
 	}
 }
@@ -736,7 +736,7 @@ void ACleanMode::setLinearCleaned()
 	for(auto i =-1; i<=1; i++)
 	{
 		auto c_it = c_start_last + c_diff_start_switch*i;
-		auto c_val = clean_map_.getCell(CLEAN_MAP, c_it.x, c_it.y);
+		auto c_val = clean_map_.getCell(c_it.x, c_it.y);
 		if(c_val >=BLOCKED && c_val<=BLOCKED_BOUNDARY)
 		{
 			auto c_it_shift = c_it - cell_direction_[p_start.dir];
@@ -752,7 +752,7 @@ void ACleanMode::setLinearCleaned()
 	for(auto i =-1; i<=1; i++)
 	{
 		auto c_it = c_end_next + c_end_diff_switch*i;
-		auto c_val = clean_map_.getCell(CLEAN_MAP, c_it.x, c_it.y);
+		auto c_val = clean_map_.getCell(c_it.x, c_it.y);
 		if(c_val >=BLOCKED && c_val<=BLOCKED_BOUNDARY)
 		{
 			auto c_it_shift = c_it + cell_direction_[p_end.dir];
@@ -798,9 +798,9 @@ void ACleanMode::setCleaned(std::deque<Cell_t> cells)
 					continue;
 			for(int dy = -ROBOT_SIZE_1_2; dy <= ROBOT_SIZE_1_2; dy++)
 			{
-				CellState status = clean_map_.getCell(CLEAN_MAP, cell.x+dx, cell.y+dy);
+				CellState status = clean_map_.getCell(cell.x+dx, cell.y+dy);
 				if (status != BLOCKED_TILT && status != BLOCKED_SLIP && status != BLOCKED_RCON)
-					clean_map_.setCell(CLEAN_MAP,cell.x+dx,cell.y+dy, CLEANED);
+					clean_map_.setCell(cell.x+dx,cell.y+dy, CLEANED);
 			}
 		}
 	}
@@ -925,7 +925,7 @@ void ACleanMode::pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path
 	CellState cell_state;
 //	Cell_t next = path.front();
 	Cell_t target = path.back();
-	map.getMapRange(CLEAN_MAP, &x_min, &x_max, &y_min, &y_max);
+	map.getMapRange(&x_min, &x_max, &y_min, &y_max);
 /*
 
 	if (next.x == SHRT_MIN )
@@ -936,7 +936,7 @@ void ACleanMode::pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path
 
 	for (x = x_min; x <= x_max; x++) {
 		for (y = y_min; y <= y_max; y++) {
-			cell_state = map.getCell(CLEAN_MAP, x, y);
+			cell_state = map.getCell(x, y);
 			if (cell_state > UNCLEAN && cell_state < BLOCKED_BOUNDARY)
 				setCleanMapMarkers(x, y, cell_state, clean_map_markers_);
 		}
@@ -1090,10 +1090,10 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_mt) {
 	if (isStateFollowWall()) {
 //		ROS_INFO("222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222");
 //			auto p_mt = dynamic_cast<MoveTypeFollowWall *>(p_mt);
-		clean_map_.print(curr.toCell(), CLEAN_MAP, Cells{});
+		clean_map_.print(curr.toCell(), Cells{});
 		if (p_mt->isBlockCleared(clean_map_, curr)) {
 //			ROS_INFO("333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333");
-			clean_map_.markRobot(curr.toCell(), CLEAN_MAP);
+			clean_map_.markRobot(curr.toCell());
 			std::vector<Vector2<int>> markers{};
 			if (lidar.isScanCompensateReady())
 				lidar.lidarMarker(markers, p_mt->movement_i_, action_i_);
@@ -1109,7 +1109,7 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_mt) {
 //					beeper.debugBeep(VALID);
 					auto cell = getPosition().getCenterRelative(marker.x * CELL_SIZE, marker.y * CELL_SIZE).toCell();
 					ROS_ERROR("follow wall find lidar obs(%d, %d)", cell.x, cell.y);
-					clean_map_.setCell(CLEAN_MAP, cell.x, cell.y, BLOCKED_LIDAR);
+					clean_map_.setCell(cell.x, cell.y, BLOCKED_LIDAR);
 				}
 			}
 //			ROS_INFO("444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444");
@@ -1168,7 +1168,7 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_mt) {
 		}
 		else {
 			passed_cell_path_.clear();
-			fw_tmp_map.reset(BOTH_MAP);
+			fw_tmp_map.reset();
 			is_closed = true;
 			closed_count_++;
 			if(closed_count_<closed_count_limit_)
@@ -1201,12 +1201,12 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 																			 {1,-2},{0,-2},{-1,-2}};
 					if(std::any_of(std::begin(cell_around),std::end(cell_around),[&](const Cell_t &c_it){
 						auto cell = c_it + getPosition().toCell();
-						return clean_map_.getCell(CLEAN_MAP, cell.x , cell.y) == BLOCKED_RCON;
+						return clean_map_.getCell(cell.x , cell.y) == BLOCKED_RCON;
 					}))
 					{
 						if(p_mt->isRconStop())
 						{
-							clean_map_.print(getPosition().toCell(),CLEAN_MAP,Cells{});
+							clean_map_.print(getPosition().toCell(), Cells{});
 							return true;
 						}
 					}
@@ -1607,11 +1607,11 @@ void ACleanMode::setChargerArea(const Point_t charger_pos)
 {
 	//before set BLOCKED_RCON, clean BLOCKED_TMP_RCON first.
 	int16_t x_min,x_max,y_min,y_max;
-	clean_map_.getMapRange(CLEAN_MAP, &x_min, &x_max, &y_min, &y_max);
+	clean_map_.getMapRange(&x_min, &x_max, &y_min, &y_max);
 	for(int16_t i = x_min;i<=x_max;i++){
 		for(int16_t j = y_min;j<=y_max;j++){
-			if(clean_map_.getCell(CLEAN_MAP, i, j) == BLOCKED_TMP_RCON)
-				clean_map_.setCell(CLEAN_MAP,i,j, UNCLEAN);
+			if(clean_map_.getCell(i, j) == BLOCKED_TMP_RCON)
+				clean_map_.setCell(i,j, UNCLEAN);
 		}
 	}
 
@@ -1623,7 +1623,7 @@ void ACleanMode::setChargerArea(const Point_t charger_pos)
 		for( int16_t i = 3;i>-3;i--){
 			debug_str += "(" + std::to_string(charger_pos_cell.x + i) + ", "
 									 + std::to_string(charger_pos_cell.y + j) + "),";
-			clean_map_.setCell(CLEAN_MAP,charger_pos_cell.x +i ,charger_pos_cell.y+j,BLOCKED_RCON);
+			clean_map_.setCell(charger_pos_cell.x +i ,charger_pos_cell.y+j,BLOCKED_RCON);
 		}
 	}
 //	ROS_INFO("%s %d: %s", __FUNCTION__, __LINE__, debug_str.c_str());
@@ -2212,7 +2212,7 @@ bool ACleanMode::isSwitchByEventInStateFollowWall()
 bool ACleanMode::updateActionInStateFollowWall()
 {
 	passed_cell_path_.clear();
-	fw_tmp_map.reset(BOTH_MAP);
+	fw_tmp_map.reset();
 
 	auto ret = true;
 	if(is_closed) {
@@ -2341,8 +2341,8 @@ PathHead ACleanMode::getTempTarget()
 
 bool ACleanMode::isIsolate(const Cell_t& curr) {
 	BoundingBox2 bound{};
-	fw_tmp_map.getMapRange(CLEAN_MAP, &bound.min.x, &bound.max.x, &bound.min.y, &bound.max.y);
-	fw_tmp_map.markRobot(curr, CLEAN_MAP);//Note : For clearing the obstacles around the robot current pose, please do not delete it!!!
+	fw_tmp_map.getMapRange(&bound.min.x, &bound.max.x, &bound.min.y, &bound.max.y);
+	fw_tmp_map.markRobot(curr);//Note : For clearing the obstacles around the robot current pose, please do not delete it!!!
 
 	Cells external_targets;
 	external_targets.push_back(bound.max + Cell_t{1, 1});
@@ -2352,12 +2352,12 @@ bool ACleanMode::isIsolate(const Cell_t& curr) {
 	for (uint8_t i = 1; i <= 8; i++)
 	{
 		// Try to extend the map for determin
-		fw_tmp_map.setCell(CLEAN_MAP, bound.min.x - i, bound.min.y - i, CLEANED);
-		fw_tmp_map.setCell(CLEAN_MAP, bound.max.x + i, bound.max.y + i, CLEANED);
+		fw_tmp_map.setCell(bound.min.x - i, bound.min.y - i, CLEANED);
+		fw_tmp_map.setCell(bound.max.x + i, bound.max.y + i, CLEANED);
 	}
 
 //	ROS_ERROR("ISOLATE MAP");
-	fw_tmp_map.print(curr, CLEAN_MAP,*points_to_cells(passed_cell_path_));
+	fw_tmp_map.print(curr, *points_to_cells(passed_cell_path_));
 	ROS_ERROR("minx(%d),miny(%d),maxx(%d),maxy(%d)",bound.min.x, bound.min.y,bound.max.x, bound.max.y);
 
 	auto cells = Cells{};

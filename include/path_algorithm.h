@@ -90,7 +90,7 @@ public:
 	void findPath(GridMap &map, const Cell_t &start, const Cell_t &target, Cells &path, Dir_t last_i);
 
 	void flood_fill(const Cell_t& curr);
-	bool dijkstra(GridMap &map, const Cell_t &curr_cell, Cells &targets, bool is_stop, func_compare_t is_target,
+	bool dijkstra(GridMap &closeSet, const Cell_t &curr_cell, Cells &targets, bool is_stop, func_compare_t is_target,
 				  func_compare_two_t isAccessible);
 	uint16_t dijkstraCountCleanedArea(GridMap& map, Point_t curr, Cells &targets);
 	public:
