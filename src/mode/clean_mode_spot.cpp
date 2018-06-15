@@ -18,7 +18,6 @@ CleanModeSpot::CleanModeSpot()
 	speaker.play(VOICE_CLEANING_SPOT,false);
 
 	clean_path_algorithm_.reset(new SpotCleanPathAlgorithm());
-	go_home_path_algorithm_.reset(new GoHomePathAlgorithm());
 	mode_i_ = cm_spot;
 	closed_count_limit_ = 1;
 	is_closed = false;
@@ -158,15 +157,9 @@ void CleanModeSpot::switchInStateSpot()
 	sp_action_ = nullptr;
 		sp_state = state_go_home_point.get();
 	ROS_INFO("switchInStateSpot~~~~~~~~~~~~~~~");
-	if(!(go_home_path_algorithm_->isHomePointEmpty()))
-	{
-		ROS_INFO("home is not empty ,clear it");
-		go_home_path_algorithm_->resetPoints();
-		ROS_INFO("clean over");
-	}
-	go_home_path_algorithm_->initForGoHomePoint(clean_map_);
+	home_points_manager_.resetRconPoint();
+	clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_manager_));
 	ROS_INFO("switchInStateSpot~~~~~~~~~~~~~~~");
-	go_home_path_algorithm_->getRestHomePoints();
 	sp_state->init();
 	genNextAction();
 }

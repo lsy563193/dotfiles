@@ -37,7 +37,6 @@ CleanModeNav::CleanModeNav()
 	sp_state->init();
 
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
-	go_home_path_algorithm_.reset(new GoHomePathAlgorithm());
 	mode_i_ = cm_navigation;
 
 	//clear real time map which store in cloud....
@@ -172,7 +171,7 @@ bool CleanModeNav::mapMark()
 		// Set home cell.
 		if (ev.rcon_status)
 		{
-			go_home_path_algorithm_->setHomePoint(getPosition());
+			setRconPoint(getPosition());
 			if (!hasSeenChargerDuringCleaning())
 				setSeenChargerDuringCleaning();
 		}
@@ -654,7 +653,7 @@ bool CleanModeNav::isSwitchByEventInStateInit() {
 	{
 		if (action_i_ == ac_back_from_charger)
 		{
-			go_home_path_algorithm_->setHomePoint(getPosition());
+			setRconPoint(getPosition());
 			if (!hasSeenChargerDuringCleaning())
 				setSeenChargerDuringCleaning();
 		}
@@ -686,7 +685,7 @@ bool CleanModeNav::updateActionInStateInit() {
 
 		action_i_ = ac_open_gyro_and_lidar;
 //		boost::dynamic_pointer_cast<StateInit>(state_init)->initForNavigation();
-		go_home_path_algorithm_->setHomePoint(getPosition());
+		setRconPoint(getPosition());
 		if (!hasSeenChargerDuringCleaning())
 			setSeenChargerDuringCleaning();
 	}
@@ -742,7 +741,7 @@ void CleanModeNav::switchInStateInit() {
 			sp_state = state_clean.get();
 		}
 		else{ // Resume from pause, because slam is not opened for the first time that open lidar action finished.
-//			sp_saved_states.erase(stable_unique(sp_saved_states.begin(),sp_saved_states.end()),sp_saved_states.end());
+//			sp_saved_states.popCurrRconPoint(stable_unique(sp_saved_states.begin(),sp_saved_states.end()),sp_saved_states.end());
 			if (sp_saved_states.empty())
 			{
 				ROS_ERROR("%s %d: Saved state is empty!!", __FUNCTION__, __LINE__);
@@ -776,7 +775,7 @@ void CleanModeNav::switchInStateInit() {
 			auto curr = getPosition();
 //			curr.dir = iterate_point_.dir;
 //			passed_cell_path_.push_back(curr);
-			go_home_path_algorithm_->updateStartPointRadian(curr.th);
+			home_points_manager_.setStartPointRad(curr.th);
 			sp_state = state_clean.get();
 		}
 	}
@@ -850,7 +849,7 @@ void CleanModeNav::switchInStateClean() {
 	}
 	else {
 		sp_state = state_go_home_point.get();
-		go_home_path_algorithm_->initForGoHomePoint(clean_map_);
+		clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_manager_));
 	}
 	sp_state->init();
 	action_i_ = ac_null;
@@ -882,7 +881,7 @@ void CleanModeNav::switchInStateGoToCharger()
 			sp_state->init();
 			paused_odom_radian_ = odom.getRadian();
 			go_home_for_low_battery_ = false;
-			go_home_path_algorithm_.reset(new GoHomePathAlgorithm());
+			clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_manager_));
 			setFirstTimeGoHomePoint(true);
 		} else
 		{
@@ -1126,7 +1125,7 @@ bool CleanModeNav::updateActionInStateResumeLowBatteryCharge()
 ////		plan_path_ = *clean_path_algorithm_->shortestPath(getPosition(), continue_point_, ,old_dir_);
 //		if (!plan_path_.empty()) {
 //			iterate_point_ = plan_path_.begin();
-//			ROS_ERROR("start_point_.dir(%d)", iterate_point_->dir);
+//			ROS_ERROR("start_points_.dir(%d)", iterate_point_->dir);
 ////			plan_path_.pop_front();
 //			displayCellPath(points_to_cells(plan_path_));
 //			action_i_ = ac_linear;

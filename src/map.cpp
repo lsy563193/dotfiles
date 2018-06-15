@@ -514,7 +514,7 @@ int8_t GridMap::isNeedClean(int16_t x, int16_t y)
 //		auto start = queue.begin();
 //		auto next = start->second;
 //		auto cost = start->first;
-//		queue.erase(start);
+//		queue.popCurrRconPoint(start);
 //		if (compare_for_targets(next))
 //		{
 //			targets.push_back(next);
@@ -572,7 +572,7 @@ int8_t GridMap::isNeedClean(int16_t x, int16_t y)
 //		auto start = queue.begin();
 //		auto next = start->second;
 //		auto cost = start->first;
-//		queue.erase(start);
+//		queue.popCurrRconPoint(start);
 //
 //		for (auto index = 0; index < 4; index++) {
 //
@@ -625,7 +625,7 @@ int8_t GridMap::isNeedClean(int16_t x, int16_t y)
 //		auto start = queue.begin();
 //		auto next = start->second;
 //		auto cost = start->first;
-//		queue.erase(start);
+//		queue.popCurrRconPoint(start);
 //		if (targets_selection(next))
 //		{
 //			targets.push_back(next);
@@ -1059,10 +1059,10 @@ void GridMap::loadMap(int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max
 		ROS_INFO("%s %d: Read data succeeded.", __FUNCTION__, __LINE__);
 	}
 }
-void GridMap::loadMap(bool use_map,Cell_t& curr,Dir_t& dir, bool& trend_pos)
+void GridMap::loadMap(bool use_map,Cell_t& curr,Dir_t& dir, bool& trend_pos,const std::string& map_file)
 {
 	using namespace std;
-	std::string map_file = "/opt/ros/indigo/share/pp/map";
+//	std::string map_file = "/opt/ros/indigo/share/pp/map";
 	std::ifstream fin(map_file);
 	if(!fin.is_open())
 	{

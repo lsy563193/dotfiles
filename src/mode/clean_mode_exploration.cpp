@@ -20,7 +20,6 @@ CleanModeExploration::CleanModeExploration()
 	speaker.play(VOICE_GO_HOME_MODE, false);
 	mode_i_ = cm_exploration;
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
-	go_home_path_algorithm_.reset(new GoHomePathAlgorithm());
 	error_marker_.clear();
 	obs.control(OFF);
 
@@ -197,7 +196,8 @@ bool CleanModeExploration::updateActionInStateInit() {
 	else if(action_i_ == ac_align)
 	{
 		auto curr = getPosition();
-		go_home_path_algorithm_->updateStartPointRadian(curr.th);
+//		updateStartPointRadian(curr.th);
+		home_points_manager_.setStartPointRad(curr.th);
 		action_i_ = ac_open_slam;
 	}
 	else // action_open_slam

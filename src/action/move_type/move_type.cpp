@@ -172,13 +172,13 @@ bool IMoveType::isRconStop()
 	return ret;
 }
 
-bool IMoveType::isBlockCleared(GridMap &map, Points &passed_path)
+bool IMoveType::isBlockCleared(GridMap &map, Point_t &curr_p)
 {
-	if (!passed_path.empty())
-	{
+//	if (!passed_path.empty())
+//	{
 //		ROS_INFO("%s %d: passed_path.back(%d %d)", __FUNCTION__, __LINE__, passed_path.back().x, passed_path.back().y);
-		return !map.isBlockAccessible(passed_path.back().toCell().x, passed_path.back().toCell().y);
-	}
+		return !map.isBlockAccessible(curr_p.toCell().x, curr_p.toCell().y);
+//	}
 
 	return false;
 }

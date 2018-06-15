@@ -53,16 +53,40 @@ private:
 	func_compare_two_t external_condition_{};
 };
 
+class ThroughAccessableAndCleaned {
+public:
+	explicit ThroughAccessableAndCleaned(GridMap *p_map):
+			p_map_(p_map){};
+
+	bool operator()(const Cell_t &next, const Cell_t &neighbor) ;
+
+private:
+	GridMap *p_map_{};
+};
+
+class ThroughBlockAccessable {
+public:
+	ThroughBlockAccessable() = delete;
+
+	explicit ThroughBlockAccessable(GridMap *p_map)
+			:p_map_(p_map){};
+
+	bool operator()(const Cell_t &next, const Cell_t &neighbor) ;
+
+private:
+	GridMap *p_map_{};
+};
+
 class APathAlgorithm
 {
 public:
 	virtual bool generatePath(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &plan_path) = 0;
 
-	virtual bool checkTrapped(GridMap &map, const Cell_t &curr_cell) {return true;};
+	virtual bool checkTrapped(GridMap &map, const Cell_t &curr_cell);
 
 	bool shift_path(GridMap &map, const Cell_t &p1, Cell_t &p2, Cell_t &p3, int num,bool is_first, bool is_reveave, const func_compare_two_t& expand_condition);
 
-	virtual void optimizePath(GridMap &map, Cells &path, Dir_t& pri_dir, const func_compare_two_t& expand_condition);
+	virtual void optimizePath(GridMap &map, Cells &path, const Dir_t& pri_dir, const func_compare_two_t& expand_condition);
 	void findPath(GridMap &map, const Cell_t &start, const Cell_t &target, Cells &path, Dir_t last_i);
 
 	void flood_fill(const Cell_t& curr);
@@ -203,7 +227,7 @@ public:
 private:
 	using pair_bb = std::tuple<BoundingBox2, BoundingBox2,Dir_t>;
 	std::unique_ptr<std::deque<BestTargetFilter*>> generateBounds(GridMap& map);
-	void optimizePath(GridMap &map, Cells &path, Dir_t& pri_dir,const func_compare_two_t& expand_condition) override ;
+	void optimizePath(GridMap &map, Cells &path, const Dir_t& pri_dir,const func_compare_two_t& expand_condition) override ;
 
 	bool checkTrapped(GridMap &map, const Cell_t &curr_cell) override ;
 #if !USE_NEW_PATH_PLAN
@@ -328,20 +352,27 @@ private:
 //	Points plan_path_remain_{};
 };
 
+class GoHomeWay_t
+{
+public:
+	explicit GoHomeWay_t(std::string name, const func_compare_two_t& compare,bool is_allow_update_map=false, bool is_clear_block=false)
+			:name_(name), expand_condition(compare),is_allow_update_map_(is_allow_update_map),is_clear_block_(is_clear_block) { };
+
+	GridMap* updateMap(GridMap &map,std::unique_ptr<GridMap>& tmp_map, const Point_t &curr);
+	void clearBlock(GridMap &map);
+	bool isClearBlock() {return is_clear_block_;};
+	bool displayName();
+//private:
+	func_compare_two_t expand_condition{};
+	bool is_allow_update_map_;
+	bool is_clear_block_;
+	std::string name_;
+};
+
 class GoHomePathAlgorithm: public APathAlgorithm
 {
 public:
-	/*
-	 * @author Lin Shao Yue / Austin Liu
-	 * @last modify by Austin Liu
-	 *
-	 * The constructor requires current clean map and stored home points and start point.
-	 *
-	 * @param: GridMap map, it will be copied to go_home_map_.
-	 * @param: Points home_points, stored home points, size should be limited in 3.
-	 * @param: Point_t start_point, the start point of this cleaning.
-	 */
-	GoHomePathAlgorithm() = default;
+	GoHomePathAlgorithm(GridMap& map, HomePointsManager* p_home_points_manage, bool is_follow_wall=false);
 	~GoHomePathAlgorithm() = default;
 
 	/*
@@ -358,171 +389,14 @@ public:
 	 * @return: bool, true if generating succeeds.
 	 */
 	bool generatePath(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &plan_path) override;
-
-	/*
-	 * @author Austin Liu
-	 *
-	 * This function is for checking if robot has reached home point or start point.
-	 * If it reaches home point, also remove this home point from the home point list.
-	 *
-	 * @param: bool should_go_to_charger, if robot reaches the target, it decides whether next state is
-	 *         state go to charger.
-	 *
-	 * @return: bool, true if robot has reach home point or start point.
-	 */
-	bool reachTarget(bool &should_go_to_charger, Point_t curr);
-
-	/*
-	 * @author Austin Liu
-	 *
-	 * This function is for getting rest home points for clean mode.
-	 *
-	 * @return: Points, rest home points.
-	 */
-	Points getRestHomePoints();
-
-	void resetPoints();
-	/*
-	 * @author Austin Liu
-	 *
-	 * This function is for getting current home point.
-	 *
-	 * @return: Point_t, current home point.
-	 */
-	Point_t getCurrentHomePoint();
-
-	/*
-	 * @author Austin Liu
-	 *
-	 * This function is for adding current point to home point list.
-	 *
-	 * @param: Point_t, home point to be added.
-	 */
-	void setHomePoint(Point_t current_point);
-
-	Point_t getStartPoint()
-	{
-		return start_point_;
-	}
-
-	void updateStartPointRadian(double radian);
-
-	bool isHomePointEmpty()
-	{
-		printf("home_points(%d)", home_points_.size());
-		return home_points_.empty();
-	}
-
-	/*
-	 * @author Austin Liu
-	 *
-	 * This function is for clearing blocks around home points, it can gives a better chance for robot to go to
-	 * home point.
-	 */
-	void initForGoHomePoint(GridMap &map);
-
 protected:
 
-	/*
-	 * @author Austin Liu
-	 *
-	 * This function is for erasing the target home point from the home point list.
-	 *
-	 * @param: Point_t target_home_point, home point to be erased.
-	 *
-	 * @return: bool, true if operation succeeds.
-	 */
-	bool eraseCurrentHomePoint();
+	std::vector<std::unique_ptr<GoHomeWay_t>> home_ways = {};
+	std::vector<std::unique_ptr<GoHomeWay_t>>::iterator way_it;
+	std::unique_ptr<GridMap> temp_map;
+	bool has_clean_{};
+	HomePointsManager *p_home_points_manage_;
 
-	/*
-	 * @author Austin Liu
-	 *
-	 * This function is for generating path to home point through the cleaned area(CLEANED in CLEAN_MAP).
-	 *
-	 * @param: GridMap map, it will use it's CLEAN_MAP data.
-	 * @param: Cell_t curr_cell, the current cell of robot.
-	 * @param: MapDirection last_dir, the direction of last movement.
-	 *
-	 * @return: Cells path, the path to unclean area.
-	 * @return: bool, true if operation succeeds.
-	 */
-	bool generatePathThroughCleanedArea(GridMap &map, const Point_t &curr, Dir_t last_dir, Cells &plan_path);
-
-	/*
-	 * @author Austin Liu
-	 *
-	 * This function is for generating path to home point through the cleaned area(CLEANED in CLEAN_MAP).
-	 * This map has been covered by the slam map to clear the uncertain c_blocks.
-	 *
-	 * @param: GridMap map, it will use it's CLEAN_MAP data.
-	 * @param: Cell_t curr_cell, the current cell of robot.
-	 * @param: MapDirection last_dir, the direction of last movement.
-	 *
-	 * @return: Cells path, the path to unclean area.
-	 * @return: bool, true if operation succeeds.
-	 */
-	bool generatePathWithSlamMapClearBlocks(GridMap &map, const Point_t &curr, Dir_t last_dir, Cells &plan_path);
-
-	/*
-	 * @author Austin Liu
-	 *
-	 * This function is for generating path to home point through the slam map reachable area(CLEANED in CLEAN_MAP).
-	 * This map has been covered by the slam map to clear the uncertain c_blocks and add the cleanable area.
-	 *
-	 * @param: GridMap map, it will use it's CLEAN_MAP data.
-	 * @param: Cell_t curr_cell, the current cell of robot.
-	 * @param: MapDirection last_dir, the direction of last movement.
-	 *
-	 * @return: Cells path, the path to unclean area.
-	 * @return: bool, true if operation succeeds.
-	 */
-	bool generatePathThroughSlamMapReachableArea(GridMap &map, const Point_t &curr, Dir_t last_dir, Cells &plan_path);
-
-	/*
-	 * @author Austin Liu
-	 *
-	 * This function is for generating path to home point through the uncertain area(CLEANED and UNCLEANED in CLEAN_MAP).
-	 *
-	 * @param: GridMap map, it will use it's CLEAN_MAP data.
-	 * @param: Cell_t curr_cell, the current cell of robot.
-	 * @param: MapDirection last_dir, the direction of last movement.
-	 *
-	 * @return: Cells path, the path to unclean area.
-	 * @return: bool, true if operation succeeds.
-	 */
-	bool generatePathThroughUnknownArea(GridMap &map, const Point_t &curr, Dir_t last_dir, Cells &plan_path);
-
-	Points handleResult(bool generate_finish, Cells plan_path_cells, Point_t curr, GridMap &map);
-
-	bool switchHomePoint(GridMap &map, const Point_t &curr);
-
-	virtual void getNextWay(GridMap &map, const Point_t &curr);
-
-	typedef enum
-	{
-		THROUGH_CLEANED_AREA = 0,
-		SLAM_MAP_CLEAR_BLOCKS,
-		THROUGH_SLAM_MAP_REACHABLE_AREA,
-		THROUGH_UNKNOWN_AREA,
-		GO_HOME_WAY_NUM
-	}GoHomeWay_t;
-
-	GoHomeWay_t home_way_index_{GoHomeWay_t::GO_HOME_WAY_NUM};
-//	int home_point_index_[GO_HOME_WAY_NUM]{};
-	Points home_points_{};
-	Point_t start_point_{0, 0, 0};
-	// current_home_point_ is initialized as an unreachable point because state go home point will check if reach home point first.
-	const Point_t invalid_point_{CELL_SIZE * (MAP_SIZE + 1), CELL_SIZE * (MAP_SIZE + 1), 0};
-	Point_t current_home_point_{invalid_point_};
-	bool back_to_start_point_{false};
 };
 
-class FollowWallModeGoHomePathAlgorithm: public GoHomePathAlgorithm
-{
-public:
-	FollowWallModeGoHomePathAlgorithm() = default;
-
-private:
-	void getNextWay(GridMap &map, const Point_t &curr);
-};
 #endif //PP_PATH_ALGORITHM_H

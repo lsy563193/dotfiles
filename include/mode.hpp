@@ -526,6 +526,9 @@ public:
 	// For vacuum setting.
 	void setVacuum() override ;
 
+	void setRconPoint(const Point_t &current_point);
+
+	bool reachHomePoint(const Point_t& curr);
 	// For HEPA filter.
 	void isUsingDustBox(bool val)
 	{
@@ -575,12 +578,21 @@ public:
 	Points::iterator iterate_point_{};
 
 	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
-	boost::shared_ptr<GoHomePathAlgorithm> go_home_path_algorithm_{};
 	GridMap clean_map_{};
 	static bool plan_activation_;
 	double time_gyro_dynamic_;
+	bool isLastStateIsGoHomePoints()
+	{
+		return sp_saved_states.back() == state_go_home_point.get();
+	}
+	bool isSavedStatesEmpty()
+	{
+		return sp_saved_states.empty();
+	}
 
 protected:
+
+	HomePointsManager home_points_manager_;
 	std::vector<State*> sp_saved_states;
 	boost::shared_ptr<State> state_go_home_point{new StateGoHomePoint()};
 	boost::shared_ptr<State> state_go_to_charger{new StateGoToCharger()};
@@ -592,18 +604,18 @@ protected:
 	boost::shared_ptr<State> state_test{new StateTest()};
 
 	bool low_battery_charge_{};
-	bool moved_during_pause_{false};
-	bool should_go_to_charger_{false};
-	bool remote_go_home_point{false};
-	bool wifi_go_home_point{false};
+	bool moved_during_pause_{};
+	bool should_go_to_charger_{};
+	bool remote_go_home_point{};
+	bool wifi_go_home_point{};
 	bool first_time_go_home_point_{true};
-	bool seen_charger_during_cleaning_{false};
-	bool go_home_for_low_battery_{false};
-	bool switch_is_off_{false};
+	bool seen_charger_during_cleaning_{};
+	bool go_home_for_low_battery_{};
+	bool switch_is_off_{};
 	Points charger_poses_;
-	bool found_charger_{false};
+	bool found_charger_{};
 	Points tmp_charger_pose_;
-	bool is_using_dust_box_{false};
+	bool is_using_dust_box_{};
 public:
 
 	static void pubPointMarkers(const std::deque<Vector2<double>> *point, std::string frame_id,std::string name);
@@ -625,7 +637,7 @@ public:
 	void pubTmpTarget(const Point_t &point,bool is_virtual=false);
 	uint8_t setBlocks(Dir_t dir);
 	void saveBlocks();
-	void saveBlock(int block, int , std::function<Cells()>);
+	void saveBlock(int block, std::function<Cells()>);
 	void checkShouldMarkCharger(float angle_offset,float distance);
 	PathHead getTempTarget();
 

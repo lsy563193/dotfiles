@@ -65,7 +65,7 @@ Point_t MovementFollowPointLinear::_calcTmpTarget()
 	tmp_target_xy = curr_xy + dis;
 //	other_tmp_target_xy = other_curr_xy;
 //	ROS_INFO("dis(%d)",dis);
-//	ROS_WARN("curr(%f,%d, target(%f,%f), dir(%f) ", getPosition().x,getPosition().y, tmp_target_.x,tmp_target_.y,p_mode->start_point_.dir);
+//	ROS_WARN("curr(%f,%d, target(%f,%f), dir(%f) ", getPosition().x,getPosition().y, tmp_target_.x,tmp_target_.y,p_mode->start_points_.dir);
 //	ROS_WARN("tmp(%f,%f)",tmp_target_.x, tmp_target_.y);
 	return tmp_target_;
 }

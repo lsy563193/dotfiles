@@ -3,6 +3,7 @@
 //
 
 #include <queue>
+#include <log.h>
 #include "ros/ros.h"
 #include "robot.hpp"
 #include "path_algorithm.h"
@@ -570,7 +571,6 @@ bool APathAlgorithm::shift_path(GridMap &map, const Cell_t &p1, Cell_t &p2, Cell
 		p3 += shift;
 		return shift != Cell_t{0,0};
 	}
-	return false;
 }
 
 
@@ -672,7 +672,7 @@ uint16_t APathAlgorithm::dijkstraCountCleanedArea(GridMap& map, Point_t curr, Ce
 	return static_cast<uint16_t>(c_cleans.size());
 }
 
-void APathAlgorithm::optimizePath(GridMap &map, Cells &path, Dir_t& priority_dir,const func_compare_two_t& expand_condition)
+void APathAlgorithm::optimizePath(GridMap &map, Cells &path, const Dir_t& priority_dir,const func_compare_two_t& expand_condition)
 {
 	displayCellPath(path);
 	if (path.size() > 2)
@@ -717,6 +717,19 @@ void APathAlgorithm::optimizePath(GridMap &map, Cells &path, Dir_t& priority_dir
 	}
 }
 
+bool APathAlgorithm::checkTrapped(GridMap &map, const Cell_t &curr_cell) {
+
+	ROS_WARN("%s,%d",__FUNCTION__, __LINE__);
+	auto expand_condition = [&](const Cell_t &cell, const Cell_t &neighbor_cell)
+	{
+		return map.isBlockAccessible(neighbor_cell.x, neighbor_cell.y) /*&&
+				map.getCell(CLEAN_MAP, neighbor_cell.x, neighbor_cell.y) == CLEANED*/;
+	};
+
+	Cells cells{};
+	return !dijkstra(map, getPosition().toCell(), cells, true, CellEqual(Cell_t{0,0}), isAccessable(&map, expand_condition));
+}
+
 bool TargetVal::operator()(const Cell_t &c_it) {
 		return p_map_->getCell(CLEAN_MAP, c_it.x, c_it.y) == val_;
 }
@@ -739,4 +752,34 @@ bool isAccessable::operator()(const Cell_t &next, const Cell_t &neighbor) {
 bool IsTarget::operator()(const Cell_t &c_it) {
 		return c_it.y % 2 == 0 && p_map_->getCell(CLEAN_MAP, c_it.x, c_it.y) == UNCLEAN &&
 			   target_bound_.Contains(c_it);
+}
+
+
+GridMap*
+GoHomeWay_t::updateMap(GridMap &map,std::unique_ptr<GridMap>& p_temp_map, const Point_t &curr) {
+	if(is_allow_update_map_) {
+		p_temp_map->copy(map);
+		p_temp_map->merge(slam_grid_map, false, false, true, false, false, false);
+		ROS_INFO("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+		p_temp_map->print(curr.toCell(), CLEAN_MAP, Cells{{0, 0}});
+		ROS_INFO("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+		return p_temp_map.get();
+	}else
+		return &map;
+}
+
+void GoHomeWay_t::clearBlock(GridMap &map) {
+		map.merge(slam_grid_map, false, false, false, false, false, true);
+}
+
+bool GoHomeWay_t::displayName() {
+	ROS_ERROR("go home way %s",name_.c_str());
+}
+
+
+bool ThroughAccessableAndCleaned::operator()(const Cell_t &next, const Cell_t &neighbor) {
+	return p_map_->isBlockAccessible(neighbor.x, neighbor.y) && p_map_->getCell(CLEAN_MAP, neighbor.x, neighbor.y) == CLEANED;
+}
+bool ThroughBlockAccessable::operator()(const Cell_t &next, const Cell_t &neighbor) {
+	return p_map_->isBlockAccessible(neighbor.x, neighbor.y);
 }
