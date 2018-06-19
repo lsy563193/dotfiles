@@ -412,7 +412,7 @@ bool APathAlgorithm::checkTrappedUsingDijkstra(GridMap &map, const Cell_t &curr_
 	map.print(curr_cell,targets);
 	auto found_unclean_target = dijkstra(map,curr_cell, targets, true,
 												 IsTarget(&map, map.genTargetRange()),
-												 isAccessable(&map,expand_condition));
+												 isAccessible(&map,expand_condition));
 
 	if (found_unclean_target)
 		return false;
