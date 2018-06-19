@@ -309,7 +309,7 @@ uint16_t distween_between(const Cell_t &curr, const Cell_t &neighbor) {
 //	printf("(%d),nei(%d,%d),curr(%d,%d)~~~~~~~~~~~~~~\n",dir,neighbor.x,neighbor.y,curr.x,curr.y);
 	return static_cast<uint16_t>(get_dir(neighbor, curr) < 4 ? 10 : 14);
 }
-bool APathAlgorithm::isAccessible(const Cell_t &c_it, const BoundingBox2& bound, GridMap& map) {
+bool APathAlgorithm::AStarIsAccessible(const Cell_t &c_it, const BoundingBox2 &bound, GridMap &map) {
     return bound.Contains(c_it) && map.isBlockAccessible(c_it.x, c_it.y);
 }
 class Neighbors{
@@ -725,14 +725,14 @@ bool APathAlgorithm::checkTrapped(GridMap &map, const Cell_t &curr_cell) {
 	};
 
 	Cells cells{};
-	return !dijkstra(map, getPosition().toCell(), cells, true, CellEqual(Cell_t{0,0}), isAccessable(&map, expand_condition));
+	return !dijkstra(map, getPosition().toCell(), cells, true, CellEqual(Cell_t{0,0}), isAccessible(&map, expand_condition));
 }
 
 bool TargetVal::operator()(const Cell_t &c_it) {
 		return p_map_->getCell(c_it.x, c_it.y) == val_;
 }
 
-isAccessable::isAccessable(GridMap *p_map, func_compare_two_t external_condition,
+isAccessible::isAccessible(GridMap *p_map, func_compare_two_t external_condition,
 						   const BoundingBox2& bound)
 : bound_(bound), p_map_(p_map), external_condition_(external_condition) {
 		if (bound_.GetMinimum() == Cell_t{INT16_MAX, INT16_MAX} && bound_.GetMaximum() == Cell_t{INT16_MIN, INT16_MIN})
@@ -742,7 +742,7 @@ isAccessable::isAccessable(GridMap *p_map, func_compare_two_t external_condition
 //		ROS_INFO("target_bound_(%d,%d,%d,%d)",target_bound_.min.x,target_bound_.min.y,target_bound_.max.y,target_bound_.max.y );
 	}
 
-bool isAccessable::operator()(const Cell_t &next, const Cell_t &neighbor) {
+bool isAccessible::operator()(const Cell_t &next, const Cell_t &neighbor) {
 		return bound_.Contains(neighbor) && !p_map_->cellIsOutOfTargetRange(neighbor) &&
 			   external_condition_(next, neighbor);
 }
@@ -753,8 +753,7 @@ bool IsTarget::operator()(const Cell_t &c_it) {
 }
 
 
-GridMap*
-GoHomeWay_t::updateMap(GridMap &map,std::unique_ptr<GridMap>& p_temp_map, const Point_t &curr) {
+GridMap* GoHomeWay_t::updateMap(GridMap &map,std::unique_ptr<GridMap>& p_temp_map, const Point_t &curr) {
 	if(is_allow_update_map_) {
 		p_temp_map->copy(map);
 		p_temp_map->merge(slam_grid_map, false, false, true, false, false, false);
@@ -771,13 +770,13 @@ void GoHomeWay_t::clearBlock(GridMap &map) {
 }
 
 bool GoHomeWay_t::displayName() {
-	ROS_ERROR("go home way %s",name_.c_str());
+	ROS_INFO("go home way %s",name_.c_str());
 }
 
 
-bool ThroughAccessableAndCleaned::operator()(const Cell_t &next, const Cell_t &neighbor) {
+bool ThroughAccessibleAndCleaned::operator()(const Cell_t &next, const Cell_t &neighbor) {
 	return p_map_->isBlockAccessible(neighbor.x, neighbor.y) && p_map_->getCell(neighbor.x, neighbor.y) == CLEANED;
 }
-bool ThroughBlockAccessable::operator()(const Cell_t &next, const Cell_t &neighbor) {
+bool ThroughBlockAccessible::operator()(const Cell_t &next, const Cell_t &neighbor) {
 	return p_map_->isBlockAccessible(neighbor.x, neighbor.y);
 }
