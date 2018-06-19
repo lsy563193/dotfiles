@@ -2002,7 +2002,7 @@ void ACleanMode::switchInStateGoHomePoint()
 //		sp_state = nullptr;
 		sp_saved_states.push_back(sp_state);
 		sp_state = state_folllow_wall.get();
-//		sp_state->init();
+		sp_state->init();
 		sp_action_.reset();
 		is_trapped_ = true;
 		is_isolate = true;
