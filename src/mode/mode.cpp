@@ -86,13 +86,15 @@ void Mode::updateWheelCliffStatus()
 	else
 	{
 		is_wheel_cliff_triggered = false;
+		ROS_INFO("%s,%d,Enter exception by wheel cliff triggered over %lfs", __FUNCTION__, __LINE__,
+						 WHEEL_CLIFF_TIME_LIMIT);
 		return;
 	}
 }
 
 bool Mode::isExceptionTriggered()
 {
-//	updateWheelCliffStatus();
+	updateWheelCliffStatus();
 	if (ev.bumper_jam)
 		ROS_WARN("%s %d: Bumper jam.", __FUNCTION__, __LINE__);
 	if (ev.lidar_bumper_jam)
