@@ -1893,6 +1893,8 @@ bool ACleanMode::checkEnterGoHomePointState()
 		sp_state->init();
 		clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_manager_));
 		speaker.play(VOICE_GO_HOME_MODE);
+		// No need to check first time go home point for these cases.
+		first_time_go_home_point_ = false;
 		return true;
 	}
 
