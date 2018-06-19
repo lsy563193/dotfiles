@@ -665,7 +665,7 @@ uint16_t APathAlgorithm::dijkstraCountCleanedArea(GridMap& map, Point_t curr, Ce
 	};
 
 	// Count the cleaned cells using dijkstra algorithm.
-	dijkstra(map, curr.toCell(), targets, false, count_condition, expand_condition);
+	dijkstra(map, curr.toCell(), targets, false, count_condition, isAccessible(&map,expand_condition));
 
 	return static_cast<uint16_t>(c_cleans.size());
 }
