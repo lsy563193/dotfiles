@@ -39,9 +39,9 @@ private:
 	CellState val_;
 };
 
-class isAccessable {
+class isAccessible {
 public:
-	isAccessable(GridMap *p_map,func_compare_two_t external_condition = nullptr,
+	isAccessible(GridMap *p_map,func_compare_two_t external_condition = nullptr,
 				 const BoundingBox2& bound_ = BoundingBox2{});
 
 
@@ -53,9 +53,9 @@ private:
 	func_compare_two_t external_condition_{};
 };
 
-class ThroughAccessableAndCleaned {
+class ThroughAccessibleAndCleaned {
 public:
-	explicit ThroughAccessableAndCleaned(GridMap *p_map):
+	explicit ThroughAccessibleAndCleaned(GridMap *p_map):
 			p_map_(p_map){};
 
 	bool operator()(const Cell_t &next, const Cell_t &neighbor) ;
@@ -64,11 +64,11 @@ private:
 	GridMap *p_map_{};
 };
 
-class ThroughBlockAccessable {
+class ThroughBlockAccessible {
 public:
-	ThroughBlockAccessable() = delete;
+	ThroughBlockAccessible() = delete;
 
-	explicit ThroughBlockAccessable(GridMap *p_map)
+	explicit ThroughBlockAccessible(GridMap *p_map)
 			:p_map_(p_map){};
 
 	bool operator()(const Cell_t &next, const Cell_t &neighbor) ;
@@ -116,7 +116,7 @@ public:
 //	Cells findShortestPath(GridMap &map, const Cell_t &start,
 //							  const Cell_t &target, const Dir_t &last_dir, bool use_unknown,bool bound,Cell_t min_corner ,Cell_t max_corner);
 
-	bool isAccessible(const Cell_t &c_it, const BoundingBox2& bound, GridMap& map);
+	bool AStarIsAccessible(const Cell_t &c_it, const BoundingBox2 &bound, GridMap &map);
 
 	using cmp_condition_t = std::function<bool(const Cell_t&)>;
 

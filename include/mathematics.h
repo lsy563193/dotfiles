@@ -610,9 +610,9 @@ public:
 		return home_points_list_;
 	}
 
-	typename std::deque<HomePoints_t>::iterator& home_points_it()
+	typename std::deque<HomePoints_t>::iterator& home_points_list_it()
 	{
-		return home_points_it_;
+		return home_points_list_it_;
 	}
 
 	HomePoints_t::iterator& home_point_it()
@@ -623,7 +623,7 @@ public:
 
 private:
 	std::deque<HomePoints_t> home_points_list_{HomePoints_t(3), HomePoints_t(1)};
-	std::deque<HomePoints_t>::iterator home_points_it_;
+	std::deque<HomePoints_t>::iterator home_points_list_it_;
 	HomePoints_t::iterator home_point_it_;
 
 };

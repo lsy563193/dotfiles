@@ -70,7 +70,7 @@ void ActionCheckWaterTank::run()
 				int32_t swing_motor_current_baseline_ref_{1610};
 				auto average_current = swing_motor_current_baseline_ / sum_cnt_;
 				ROS_INFO("%s %d: Swing motor average current baseline: %d.", __FUNCTION__, __LINE__, average_current);
-				if (average_current > swing_motor_current_baseline_ref_ * 1.3
+				if (average_current > swing_motor_current_baseline_ref_ * 1.4
 						|| average_current < swing_motor_current_baseline_ref_ * 0.8)
 				{
 					error_code_ = SWING_MOTOR_ERROR;

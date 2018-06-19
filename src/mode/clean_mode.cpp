@@ -1893,6 +1893,8 @@ bool ACleanMode::checkEnterGoHomePointState()
 		sp_state->init();
 		clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_manager_));
 		speaker.play(VOICE_GO_HOME_MODE);
+		// No need to check first time go home point for these cases.
+		first_time_go_home_point_ = false;
 		return true;
 	}
 
@@ -2000,7 +2002,7 @@ void ACleanMode::switchInStateGoHomePoint()
 //		sp_state = nullptr;
 		sp_saved_states.push_back(sp_state);
 		sp_state = state_folllow_wall.get();
-//		sp_state->init();
+		sp_state->init();
 		sp_action_.reset();
 		is_trapped_ = true;
 		is_isolate = true;
@@ -2182,7 +2184,7 @@ void ACleanMode::switchInStateExploration() {
 		return clean_map_.isBlockAccessible(neighbor_cell.x, neighbor_cell.y);
 	};
 	auto is_found = clean_path_algorithm_->dijkstra(clean_map_, getPosition().toCell(), cells,true,  CellEqual(Cell_t{}),
-																									isAccessable(&clean_map_, expand_condition));
+																									isAccessible(&clean_map_, expand_condition));
 	if (!is_found) {
 		ROS_WARN("%s,%d: enter state trapped",__FUNCTION__,__LINE__);
 		sp_saved_states.push_back(sp_state);
@@ -2375,7 +2377,7 @@ bool ACleanMode::isIsolate(const Cell_t& curr) {
 		return fw_tmp_map.isBlockAccessible(neighbor_cell.x, neighbor_cell.y);
 	};
 
-	bool is_found = clean_path_algorithm_->dijkstra(fw_tmp_map, curr, cells, true, target_selection, isAccessable(&fw_tmp_map, expand_condition));
+	bool is_found = clean_path_algorithm_->dijkstra(fw_tmp_map, curr, cells, true, target_selection, isAccessible(&fw_tmp_map, expand_condition));
 
 //	ROS_ERROR_COND(is_found ^ new_is_found, "%s %d: is_found %d, new_is_found %d, please inform Austin.",
 //				   __FUNCTION__, __LINE__, is_found, new_is_found);
@@ -2403,25 +2405,24 @@ bool ACleanMode::isGyroDynamic() {
 	return ros::Time::now().toSec() - time_gyro_dynamic_ > robot::instance()->getGyroDynamicInterval();
 }
 
-void ACleanMode::genNextAction() {
-	if(action_i_ == ac_linear || action_i_ == ac_follow_wall_right ||action_i_ == ac_follow_wall_left) {
-		switch (action_i_) {
-			case ac_linear :
-				sp_action_.reset(new MoveTypeLinear(plan_path_));
-				break;
-			case ac_follow_wall_left  :
-			case ac_follow_wall_right :
-				if(isStateSpot())
-				{
-					sp_action_.reset(new MoveTypeFollowWall(action_i_ == ac_follow_wall_left, plan_path_.begin()));
-				}
-				else
-					sp_action_.reset(new MoveTypeFollowWall(action_i_ == ac_follow_wall_left));
-				break;
-		}
+void ACleanMode::genNextAction()
+{
+	switch (action_i_)
+	{
+		case ac_linear :
+			sp_action_.reset(new MoveTypeLinear(plan_path_));
+			break;
+		case ac_follow_wall_left  :
+		case ac_follow_wall_right :
+			if (isStateSpot())
+				sp_action_.reset(new MoveTypeFollowWall(action_i_ == ac_follow_wall_left, plan_path_.begin()));
+			else
+				sp_action_.reset(new MoveTypeFollowWall(action_i_ == ac_follow_wall_left));
+			break;
+		default:
+			Mode::genNextAction();
+			break;
 	}
-	else
-		Mode::genNextAction();
 }
 
 void ACleanMode::wifiSetWaterTank()

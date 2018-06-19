@@ -138,7 +138,7 @@ bool CleanModeNav::mapMark()
 		return  block_map.getCell(next.x, next.y) == CLEANED;
 	};
 	clean_path_algorithm_->dijkstra(block_map, curr, out_bound_of_passed_path, false, TargetVal(&block_map, UNCLEAN),
-									isAccessable(&block_map, expand_condition));
+									isAccessible(&block_map, expand_condition));
 //	ROS_ERROR("4444444444444444444");
 //	block_map.print(curr, out_bound_of_passed_path);
 //	block_map.print(curr, COST_MAP, Cells{});

@@ -143,6 +143,7 @@ int main(int argc, char **argv)
 	}
 	ROS_INFO("end~~~~~~~~~");
 #endif
+
 	ros::spin();
 	return 0;
 }
