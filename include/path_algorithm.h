@@ -133,6 +133,7 @@ public:
 	using cmp_one = std::function<bool(const Cell_t& cell)>;
 	std::unique_ptr<Cell_t> find_target(const Cell_t &start, cmp_one is_target, cmp_one is_accessible,
 														const cmp_two &cmp_lambda) ;
+	bool checkTrappedUsingDijkstra(GridMap &map, const Cell_t &curr_cell);
 protected:
 
 	/*
@@ -148,7 +149,6 @@ protected:
 	 * @return: true, robot is trapped.
 	 *          false, robot is not trapped.
 	 */
-	bool checkTrappedUsingDijkstra(GridMap &map, const Cell_t &curr_cell);
 };
 
 //typedef BoundingBox2(*RangeFunction)(const Cell_t&, const BoundingBox2& bound);

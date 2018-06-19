@@ -403,32 +403,22 @@ bool APathAlgorithm::checkTrappedUsingDijkstra(GridMap &map, const Cell_t &curr_
 {
 	Cells targets;
 	// Find if there is uncleaned area.
+	ROS_INFO("check is realy can't found unclean target");
 	auto expand_condition = [&](const Cell_t &cell, const Cell_t &neighbor_cell)
 	{
 		return map.isBlockAccessible(neighbor_cell.x, neighbor_cell.y);
 	};
 
-	auto found_unclean_target = dijkstra(map,getPosition().toCell(), targets, false,
+	map.print(curr_cell,targets);
+	auto found_unclean_target = dijkstra(map,curr_cell, targets, true,
 												 IsTarget(&map, map.genTargetRange()),
-												 expand_condition);
+												 isAccessable(&map,expand_condition));
 
 	if (found_unclean_target)
 		return false;
 
-	// Use clean area proportion to judge if it is trapped.
-//	int dijkstra_cleaned_count{};
-//	auto is_trapped = map.count_if(curr_cell,[&](Cell_t c_it) {
-//		return (map.getCell(c_it.x, c_it.y) == CLEANED);
-//	},dijkstra_cleaned_count);
-
+	ROS_INFO("Use clean area proportion to judge if it is trapped.");
 	auto dijkstra_cleaned_count = dijkstraCountCleanedArea(map, getPosition(), targets);
-//	ROS_ERROR_COND(1.0 * abs(dijkstra_cleaned_count2 - dijkstra_cleaned_count) / dijkstra_cleaned_count > 0.1,
-//				   "%s %d: dijkstra_cleaned_count2 %d, dijkstra_cleaned_count %d, please inform Austin.",
-//				   __FUNCTION__, __LINE__, dijkstra_cleaned_count2, dijkstra_cleaned_count);
-
-	if(!targets.empty())
-//	if(!is_trapped)
-		return false;
 
 	auto map_cleand_count = map.getCleanedArea();
 	double clean_proportion = static_cast<double>(dijkstra_cleaned_count) / static_cast<double>(map_cleand_count);
@@ -619,12 +609,12 @@ bool APathAlgorithm::dijkstra(GridMap &map, const Cell_t &curr_cell, Cells &targ
 			{
 				ROS_INFO("find target(%d,%d)",next.x, next.y);
 				findPath(closeSet,curr_cell,next, targets,MAP_POS_X);
+				closeSet.print(curr_cell,targets);
 				return true;
 			} else{
 				targets.push_back(next);
 			}
 		}
-//		ROS_INFO("next(%d,%d)",next.x, next.y);
 		for (auto index = 0; index < 4; index++) {
 
 			auto neighbor = next + cell_direction_[index];
@@ -639,6 +629,7 @@ bool APathAlgorithm::dijkstra(GridMap &map, const Cell_t &curr_cell, Cells &targ
 			closeSet.setCell(neighbor.x, neighbor.y, cost + 1);
 		}
 	}
+//	closeSet.print(curr_cell,targets);
 	return !targets.empty();
 }
 

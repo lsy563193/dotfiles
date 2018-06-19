@@ -142,6 +142,7 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr_p, co
 	if(path.empty())
 	{
 		curr_filter_ = nullptr;
+		ROS_WARN("can't find target");
 		return false;
 	}
 

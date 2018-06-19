@@ -82,7 +82,7 @@ void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_sp
 			{
 				// Quickly move back for a distance.
 				wheel.setDirectionBackward();
-				left_speed = right_speed = RUN_TOP_SPEED;
+				left_speed = right_speed = BACK_MAX_SPEED;
 				break;
 			}
 			case 4:
