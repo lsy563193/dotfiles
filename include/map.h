@@ -9,8 +9,6 @@
 #include <boost/thread/mutex.hpp>
 #include "slam_map.hpp"
 
-#define CLEAN_MAP 0
-#define COST_MAP 1
 #define BOTH_MAP 2
 
 #define BLOCK_LEFT				((uint8_t) 0x01)
@@ -30,7 +28,7 @@ public:
 	 *
 	 * @param id: Map id
 	 */
-	void reset(uint8_t id);
+	void reset();
 
 	/*
 	 * This function is for getting specific cell's state.
@@ -40,7 +38,7 @@ public:
 	 * @param y: y coordinate for this cell.
 	 * @param value: CellState for this cell.
 	 */
-	void setCell(uint8_t id, int16_t x, int16_t y, CellState value);
+	void setCell(int16_t x, int16_t y, CellState value);
 
 	/*
 	 * GridMap::getCell description
@@ -52,7 +50,7 @@ public:
 	 * @param y: y coordinate for this cell.
 	 * @return: CellState for this cell.
 	 */
-	CellState getCell(int id, int16_t x, int16_t y);
+	CellState getCell(int16_t x, int16_t y);
 
 	/*
 	 * This function is for setting cells around this specific cell with the parameter CellState.
@@ -62,7 +60,7 @@ public:
 	 * @param y: y coordinate for this cell.
 	 * @param state: CellState for this cell.
 	 */
-	void setCells(uint8_t id, int16_t cell_x, int16_t cell_y, CellState state, int8_t offset);
+	void setCells(int16_t cell_x, int16_t cell_y, CellState state, int8_t offset);
 
 	/*
 	 * This function is for setting cells around this specific cell with the parameter CellState, but if the
@@ -74,7 +72,7 @@ public:
 	 * @param state: CellState for this cell.
 	 * @param exception_state: Exception cell state for all these cells.
 	 */
-	void setSpecificCells(uint8_t id, int16_t cell_x, int16_t cell_y, CellState state, CellState exception_state,
+	void setSpecificCells(int16_t cell_x, int16_t cell_y, CellState state, CellState exception_state,
 						  int8_t offset);
 
 	/*
@@ -142,7 +140,7 @@ public:
 
 	void cellToWorld(double &worldX, double &worldY, int16_t &cellX, int16_t &cellY);
 
-	bool markRobot(const Cell_t& curr, uint8_t id,bool is_clean_rcon=true);
+	bool markRobot(const Cell_t& curr, bool is_clean_rcon=true);
 
 	uint8_t saveSlip();
 
@@ -298,7 +296,7 @@ public:
  *
  * @return
  */
-	void getMapRange(uint8_t id, int16_t *x_range_min, int16_t *x_range_max, int16_t *y_range_min, int16_t *y_range_max);
+	void getMapRange(int16_t *x_range_min, int16_t *x_range_max, int16_t *y_range_min, int16_t *y_range_max);
 
 	bool cellIsOutOfTargetRange(Cell_t cell);
 	BoundingBox2 genTargetRange();
@@ -306,8 +304,8 @@ public:
 	void cellPreventOutOfRange(Cell_t &cell);
 
 	void colorPrint(const char *outString, int16_t y_min, int16_t y_max);
-	void print(const Cell_t& curr, uint8_t id, const Cells& targets);
-    void printInRange(const Cell_t& curr_cell, uint8_t id, const Cells& targets,bool is_bound,BoundingBox2 bound);
+	void print(const Cell_t& curr, const Cells& targets);
+    void printInRange(const Cell_t& curr_cell, const Cells& targets,bool is_bound,BoundingBox2 bound);
 
 	/*
 	 * Generate the direct path between two cells.
@@ -321,10 +319,9 @@ public:
 
 	// Loading the log map for debug.
 	void loadMap(int16_t x_min, int16_t x_max, int16_t y_min, int16_t y_max);
-	void loadMap(bool use_map,Cell_t& curr, Dir_t& dir,bool& trend_pos);
+	void loadMap(bool use_map,Cell_t& curr, Dir_t& dir,bool& trend_pos, const std::string& str);
 private:
 	uint8_t clean_map[MAP_SIZE][MAP_SIZE];
-	uint8_t cost_map[MAP_SIZE][MAP_SIZE];
 
 	int16_t xRangeMin, xRangeMax, yRangeMin, yRangeMax;
 };

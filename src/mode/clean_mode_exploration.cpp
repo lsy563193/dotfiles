@@ -20,7 +20,6 @@ CleanModeExploration::CleanModeExploration()
 	speaker.play(VOICE_GO_HOME_MODE, false);
 	mode_i_ = cm_exploration;
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
-	go_home_path_algorithm_.reset(new GoHomePathAlgorithm());
 	error_marker_.clear();
 	obs.control(OFF);
 
@@ -161,7 +160,7 @@ void CleanModeExploration::remoteMax(bool state_now, bool state_last)
 /*void CleanModeExploration::printMapAndPath()
 {
 	clean_path_algorithm_->displayCellPath(points_to_cells(passed_cell_path_));
-	clean_map_.print(CLEAN_MAP,getPosition().toCell().x,getPosition().toCell().y);
+	clean_map_.print(getPosition().toCell().x,getPosition().toCell().y);
 }*/
 
 //state GoToCharger
@@ -197,7 +196,8 @@ bool CleanModeExploration::updateActionInStateInit() {
 	else if(action_i_ == ac_align)
 	{
 		auto curr = getPosition();
-		go_home_path_algorithm_->updateStartPointRadian(curr.th);
+//		updateStartPointRadian(curr.th);
+		home_points_manager_.setStartPointRad(curr.th);
 		action_i_ = ac_open_slam;
 	}
 	else // action_open_slam
@@ -236,9 +236,9 @@ void CleanModeExploration::resetErrorMarker() {
 		if(error_marker_.empty())
 			break;
 		if(time - ite->time > 20){
-			if(clean_map_.getCell(CLEAN_MAP,ite->x,ite->y) == CLEANED &&
-					slam_grid_map.getCell(CLEAN_MAP,ite->x,ite->y) != SLAM_MAP_REACHABLE)
-				clean_map_.setCell(CLEAN_MAP,ite->x,ite->y,UNCLEAN);
+			if(clean_map_.getCell(ite->x,ite->y) == CLEANED &&
+					slam_grid_map.getCell(ite->x,ite->y) != SLAM_MAP_REACHABLE)
+				clean_map_.setCell(ite->x,ite->y,UNCLEAN);
 //			ROS_INFO("%s,%d,i:%d,size:%d",__FUNCTION__,__LINE__,i,error_marker_.size());
 			error_marker_.erase(ite);
 		}

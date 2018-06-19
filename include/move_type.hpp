@@ -38,7 +38,7 @@ public:
 		mm_dynamic,
 	};
 
-	bool isBlockCleared(GridMap &map, Points &passed_path);
+	bool isBlockCleared(GridMap &map, Point_t &curr_p);
 	Point_t last_{};
 //	bool closed_count_{};
 	void setMode(Mode* cm)

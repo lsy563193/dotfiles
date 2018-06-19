@@ -517,8 +517,9 @@ int8_t S_Wifi::uploadStatus(int msg_code,const uint8_t seq_num)
 		return -1;
 	uint8_t error_code = 0;
 	wifi::DeviceStatusBaseTxMsg::CleanTool clean_tool;
-	clean_tool = water_tank.getStatus(WaterTank::swing_motor)? wifi::DeviceStatusBaseTxMsg::CleanTool::WATER_TANK: wifi::DeviceStatusBaseTxMsg::CleanTool::DUST_BOX;
-
+	clean_tool = water_tank.getStatus(WaterTank::swing_motor)?
+		wifi::DeviceStatusBaseTxMsg::CleanTool::WATER_TANK:
+		wifi::DeviceStatusBaseTxMsg::CleanTool::DUST_BOX;
 
 	switch (robot_error.get())
 	{
@@ -605,13 +606,13 @@ int8_t S_Wifi::uploadStatus(int msg_code,const uint8_t seq_num)
 	if(msg_code == 0xc8)// auto upload
 	{
 		int upload_state_ack_cnt=0;
-		do{
-			if(upload_state_ack_cnt++ > 8)
-			{
-				is_wifi_connected_ = false;
-				wifi_led.setMode(LED_FLASH,WifiLed::state::off);
-				return -1;
-			}
+		/* do{ */
+			// if(upload_state_ack_cnt++ > 8)
+			// {
+				// is_wifi_connected_ = false;
+				// wifi_led.setMode(LED_FLASH,WifiLed::state::off);
+				// return -1;
+			/* } */
 			wifi::DeviceStatusUploadTxMsg p(
 					robot_work_mode_,
 					wifi::DeviceStatusBaseTxMsg::RoomMode::LARGE,//default set large
@@ -619,17 +620,17 @@ int8_t S_Wifi::uploadStatus(int msg_code,const uint8_t seq_num)
 					static_cast<uint8_t>(vacuum.isUserSetMaxMode() ? 0x01 : 0x00),
 					static_cast<uint8_t>(water_tank.getUserSetPumpMode()),
 					battery.getPercent(),
-					0x01,//notify sound wav
-					0x01,//led on/off
+					0x01,//notify sound wav //todo
+					0x01,//led on/off //todo
 					error_code,
 					seq_num);
 
 			s_wifi_tx_.push(std::move( p )).commit();
 			usleep(500000);
-		}while(ros::ok() && !upload_state_ack_);
-		upload_state_ack_ = false;
-		if (is_wifi_connected_)
-			wifi_led.setMode(LED_STEADY,WifiLed::state::on);
+		/* }while(ros::ok() && !upload_state_ack_); */
+		/* upload_state_ack_ = false; */
+		/* if (is_wifi_connected_) */
+			/* wifi_led.setMode(LED_STEADY,WifiLed::state::on); */
 	}
 	else if(msg_code == 0x41)//app check upload
 	{
@@ -640,8 +641,8 @@ int8_t S_Wifi::uploadStatus(int msg_code,const uint8_t seq_num)
 				static_cast<uint8_t>(vacuum.isUserSetMaxMode() ? 0x01 : 0x00),
 				static_cast<uint8_t>(water_tank.getUserSetPumpMode()),
 				battery.getPercent(),
-				0x01,//notify sound wav
-				0x01,//led on/off
+				0x01,//notify sound wav //todo
+				0x01,//led on/off //todo
 				error_code,
 				seq_num);
 		s_wifi_tx_.push(std::move( p )).commit();
@@ -791,7 +792,7 @@ int S_Wifi::uploadMap(MapType map)
 			{
 				for(int16_t pos_y = c_y - 30;pos_y<=c_y + 30;pos_y++)
 				{
-					if( slam_grid_map.getCell(CLEAN_MAP,pos_x,pos_y) == SLAM_MAP_BLOCKED 
+					if( slam_grid_map.getCell(pos_x,pos_y) == SLAM_MAP_BLOCKED
 					&& this->find_if(history_map_data_,Cell_t(pos_x,pos_y),3) == 0 )
 					{
 
@@ -847,7 +848,7 @@ int S_Wifi::uploadMap(MapType map)
 				int16_t p_y = p_it.toCell().y;
 				for(int16_t pos_x = p_x - 1;pos_x<=p_x+1;pos_x++){
 					for(int16_t pos_y = p_y - 1;pos_y<=p_y+1;pos_y++){
-						//if(g_map.getCell(CLEAN_MAP,pos_x,pos_y) != CLEANED &&
+						//if(g_map.getCell(pos_x,pos_y) != CLEANED &&
 						if(this->find_if(history_pass_path_data_,Cell_t(pos_x,pos_y),3) == 0)
 						{
 
@@ -965,7 +966,7 @@ int S_Wifi::uploadMap(MapType map)
 				int16_t p_y = p_it.toCell().y;
 				dataPushBack(map_data,p_x,p_y);
 				if(map_data.size()>= 250)
-				{	
+				{
 					map_packs.push_back(map_data);
 					map_data.clear();
 					//re-push clean area and work time
@@ -982,8 +983,8 @@ int S_Wifi::uploadMap(MapType map)
 		dataPushBack(map_data,c_x,c_y);
 		map_packs.push_back(map_data);
 		//-- upload map and wait ack
-		this->commit(map_packs,800000,true);
-		//-- pop front
+		this->commit(map_packs,800000,false);
+		//-- popCurrRconPoint front
 		pthread_mutex_lock(&map_data_lock_);
 		if (!map_data_buf_->empty() && map_buf_on_process)
 			map_data_buf_->pop_front();
@@ -1033,7 +1034,7 @@ bool S_Wifi::uploadLastCleanData()
 	std::vector<std::vector<uint8_t>> packs;
 	packs.clear();
 	int16_t x_min, x_max, y_min, y_max;
-	slam_clean_map.getMapRange(CLEAN_MAP, &x_min, &x_max, &y_min, &y_max);
+	slam_clean_map.getMapRange(&x_min, &x_max, &y_min, &y_max);
 	WifiMap slam_map;
 	BoundingBox2 bound = {{x_min, y_min},{x_max, y_max}};
 	wifiMapManage.runLengthEncoding(slam_clean_map,slam_map,bound);
@@ -1515,8 +1516,7 @@ void S_Wifi::wifiSendRoutine()
 		}
 		else
 		{
-
-			usleep(500000);
+			usleep(20000);
 			if(!is_wifi_connected_)
 			{
 				continue;

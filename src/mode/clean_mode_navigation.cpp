@@ -37,7 +37,6 @@ CleanModeNav::CleanModeNav()
 	sp_state->init();
 
 	clean_path_algorithm_.reset(new NavCleanPathAlgorithm());
-	go_home_path_algorithm_.reset(new GoHomePathAlgorithm());
 	mode_i_ = cm_navigation;
 
 	//clear real time map which store in cloud....
@@ -70,18 +69,18 @@ bool CleanModeNav::mapMark()
 	// Update for passed_path.
 	GridMap block_map{};
 	for (auto &&p_it :passed_cell_path_)
-		block_map.setCells(CLEAN_MAP, p_it.toCell().x, p_it.toCell().y, CLEANED, ROBOT_SIZE_1_2);
+		block_map.setCells(p_it.toCell().x, p_it.toCell().y, CLEANED, ROBOT_SIZE_1_2);
 
 	const auto start = passed_cell_path_.front().toCell();
 	const auto curr = passed_cell_path_.back().toCell();
 /*
 	Cells c_bound1;
 	auto is_cleaned_bound = [&](const Cell_t &c_it){
-		if(block_map.getCell(CLEAN_MAP, c_it.x, c_it.y) == CLEANED)
+		if(block_map.getCell(c_it.x, c_it.y) == CLEANED)
 		{
 			for (auto index = 0; index < 4; index++) {
 				auto neighbor = c_it + cell_direction_[index];
-				if (block_map.getCell(CLEAN_MAP, neighbor.x, neighbor.y) != CLEANED)
+				if (block_map.getCell(neighbor.x, neighbor.y) != CLEANED)
 					return true;
 			}
 			return false;
@@ -91,15 +90,15 @@ bool CleanModeNav::mapMark()
 
 	block_map.find_if(start, c_bound1,is_cleaned_bound);
 //	ROS_INFO("1111111111111111111");
-//	block_map.print(curr, CLEAN_MAP, c_bound1);
+//	block_map.print(curr, c_bound1);
 
 	Cells c_bound2;
 	auto is_cleaned_bound2 = [&](const Cell_t &c_it){
-		if(block_map.getCell(CLEAN_MAP, c_it.x, c_it.y) == UNCLEAN)
+		if(block_map.getCell(c_it.x, c_it.y) == UNCLEAN)
 		{
 			for (auto index = 0; index < 4; index++) {
 				auto neighbor = c_it + cell_direction_[index];
-				if (block_map.getCell(CLEAN_MAP, neighbor.x, neighbor.y) == CLEANED)
+				if (block_map.getCell(neighbor.x, neighbor.y) == CLEANED)
 					return true;
 			}
 			return false;
@@ -108,16 +107,16 @@ bool CleanModeNav::mapMark()
 	};
 	block_map.find_if(start, c_bound2,is_cleaned_bound2);
 //	ROS_INFO("2222222222222222222");
-//	block_map.print(curr, CLEAN_MAP, c_bound2);
+//	block_map.print(curr, c_bound2);
 
 	Cells c_bound3;
 	auto is_cleaned_bound3_target_selection = [&](const Cell_t &c_it)
 	{
-		if(block_map.getCell(CLEAN_MAP, c_it.x, c_it.y) == CLEANED)
+		if(block_map.getCell(c_it.x, c_it.y) == CLEANED)
 		{
 			for (auto index = 0; index < 4; index++) {
 				auto neighbor = c_it + cell_direction_[index];
-				if (block_map.getCell(CLEAN_MAP, neighbor.x, neighbor.y) == UNCLEAN)
+				if (block_map.getCell(neighbor.x, neighbor.y) == UNCLEAN)
 					return true;
 			}
 		}
@@ -127,21 +126,21 @@ bool CleanModeNav::mapMark()
 	{
 		return !block_map.cellIsOutOfRange(neighbor_cell) && !block_map.isOutOfTargetRange(neighbor_cell)
 			   && block_map.getCell(COST_MAP, neighbor_cell.x, neighbor_cell.y) == 0
-			   && block_map.getCell(CLEAN_MAP, neighbor_cell.x, neighbor_cell.y) == CLEANED;
+			   && block_map.getCell(neighbor_cell.x, neighbor_cell.y) == CLEANED;
 	};
 	block_map.dijkstra(curr, c_bound3, true, is_cleaned_bound3_target_selection, is_cleaned_bound3_expand_condition);
 //	ROS_INFO("3333333333333333333");
-//	block_map.print(curr, CLEAN_MAP, c_bound3);*/
+//	block_map.print(curr, c_bound3);*/
 
 	Cells out_bound_of_passed_path;
 	auto expand_condition = [&](const Cell_t& next, const Cell_t& neighbor)
 	{
-		return  block_map.getCell(CLEAN_MAP, next.x, next.y) == CLEANED;
+		return  block_map.getCell(next.x, next.y) == CLEANED;
 	};
 	clean_path_algorithm_->dijkstra(block_map, curr, out_bound_of_passed_path, false, TargetVal(&block_map, UNCLEAN),
-									isAccessable(&block_map, expand_condition));
+									isAccessible(&block_map, expand_condition));
 //	ROS_ERROR("4444444444444444444");
-//	block_map.print(curr, CLEAN_MAP, out_bound_of_passed_path);
+//	block_map.print(curr, out_bound_of_passed_path);
 //	block_map.print(curr, COST_MAP, Cells{});
 //	displayCellPath(out_bound_of_passed_path);
 //	ROS_ERROR("4444444444444444444");
@@ -172,7 +171,7 @@ bool CleanModeNav::mapMark()
 		// Set home cell.
 		if (ev.rcon_status)
 		{
-			go_home_path_algorithm_->setHomePoint(getPosition());
+			setRconPoint(getPosition());
 			if (!hasSeenChargerDuringCleaning())
 				setSeenChargerDuringCleaning();
 		}
@@ -183,25 +182,25 @@ bool CleanModeNav::mapMark()
 //		if(std::find_if(c_bound2.begin(), c_bound2.end(), [&](const Cell_t& c_it)
 //		{ return c_it == cost_block.second; }) != c_bound2.end())
 //			if(!(cost_block.first == BLOCKED_LIDAR && (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)))
-				clean_map_.setCell(CLEAN_MAP, cost_block.second.x, cost_block.second.y, cost_block.first);
+				clean_map_.setCell(cost_block.second.x, cost_block.second.y, cost_block.first);
 	}
-//	clean_map_.print(CLEAN_MAP, Cells{curr});
+//	clean_map_.print(Cells{curr});
 	for (auto &&p_it :passed_cell_path_)
 	{
-		clean_map_.setSpecificCells(CLEAN_MAP, p_it.toCell().x, p_it.toCell().y, CLEANED, BLOCKED_RCON, ROBOT_SIZE_1_2);
+		clean_map_.setSpecificCells(p_it.toCell().x, p_it.toCell().y, CLEANED, BLOCKED_RCON, ROBOT_SIZE_1_2);
 	}
 
 
-//	clean_map_.print(CLEAN_MAP, Cells{curr});
+//	clean_map_.print(Cells{curr});
 	for(auto &&cost_block : c_blocks){
 		//For slip mark
 		if(cost_block.first == BLOCKED_SLIP)
-			clean_map_.setCell(CLEAN_MAP,cost_block.second.x,cost_block.second.y,BLOCKED_SLIP);
+			clean_map_.setCell(cost_block.second.x,cost_block.second.y,BLOCKED_SLIP);
 		if(cost_block.first == BLOCKED_TILT)
-			clean_map_.setCell(CLEAN_MAP,cost_block.second.x,cost_block.second.y, BLOCKED_TILT);
+			clean_map_.setCell(cost_block.second.x,cost_block.second.y, BLOCKED_TILT);
 		// Special marking for rcon blocks.
 		if(cost_block.first == BLOCKED_TMP_RCON)
-			clean_map_.setCell(CLEAN_MAP,cost_block.second.x,cost_block.second.y,BLOCKED_TMP_RCON);
+			clean_map_.setCell(cost_block.second.x,cost_block.second.y,BLOCKED_TMP_RCON);
 	}
 
 	//tx pass path via serial wifi
@@ -225,7 +224,7 @@ bool CleanModeNav::markRealTime()
 		for (const auto& marker : markers) {
 //			ROS_INFO("marker(%d, %d)", marker.x, marker.y);
 			auto cell = getPosition().getRelative(marker.x * CELL_SIZE, marker.y * CELL_SIZE).toCell();
-//			clean_map_.setCell(CLEAN_MAP, cell.x, cell.y, BLOCKED_LIDAR);
+//			clean_map_.setCell(cell.x, cell.y, BLOCKED_LIDAR);
 			c_blocks.insert({BLOCKED_LIDAR, cell});
 		}
 //	}
@@ -654,7 +653,7 @@ bool CleanModeNav::isSwitchByEventInStateInit() {
 	{
 		if (action_i_ == ac_back_from_charger)
 		{
-			go_home_path_algorithm_->setHomePoint(getPosition());
+			setRconPoint(getPosition());
 			if (!hasSeenChargerDuringCleaning())
 				setSeenChargerDuringCleaning();
 		}
@@ -686,7 +685,7 @@ bool CleanModeNav::updateActionInStateInit() {
 
 		action_i_ = ac_open_gyro_and_lidar;
 //		boost::dynamic_pointer_cast<StateInit>(state_init)->initForNavigation();
-		go_home_path_algorithm_->setHomePoint(getPosition());
+		setRconPoint(getPosition());
 		if (!hasSeenChargerDuringCleaning())
 			setSeenChargerDuringCleaning();
 	}
@@ -742,7 +741,7 @@ void CleanModeNav::switchInStateInit() {
 			sp_state = state_clean.get();
 		}
 		else{ // Resume from pause, because slam is not opened for the first time that open lidar action finished.
-//			sp_saved_states.erase(stable_unique(sp_saved_states.begin(),sp_saved_states.end()),sp_saved_states.end());
+//			sp_saved_states.popCurrRconPoint(stable_unique(sp_saved_states.begin(),sp_saved_states.end()),sp_saved_states.end());
 			if (sp_saved_states.empty())
 			{
 				ROS_ERROR("%s %d: Saved state is empty!!", __FUNCTION__, __LINE__);
@@ -776,7 +775,7 @@ void CleanModeNav::switchInStateInit() {
 			auto curr = getPosition();
 //			curr.dir = iterate_point_.dir;
 //			passed_cell_path_.push_back(curr);
-			go_home_path_algorithm_->updateStartPointRadian(curr.th);
+			home_points_manager_.setStartPointRad(curr.th);
 			sp_state = state_clean.get();
 		}
 	}
@@ -850,7 +849,7 @@ void CleanModeNav::switchInStateClean() {
 	}
 	else {
 		sp_state = state_go_home_point.get();
-		go_home_path_algorithm_->initForGoHomePoint(clean_map_);
+		clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_manager_));
 	}
 	sp_state->init();
 	action_i_ = ac_null;
@@ -882,7 +881,7 @@ void CleanModeNav::switchInStateGoToCharger()
 			sp_state->init();
 			paused_odom_radian_ = odom.getRadian();
 			go_home_for_low_battery_ = false;
-			go_home_path_algorithm_.reset(new GoHomePathAlgorithm());
+			clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_manager_));
 			setFirstTimeGoHomePoint(true);
 		} else
 		{
@@ -1126,7 +1125,7 @@ bool CleanModeNav::updateActionInStateResumeLowBatteryCharge()
 ////		plan_path_ = *clean_path_algorithm_->shortestPath(getPosition(), continue_point_, ,old_dir_);
 //		if (!plan_path_.empty()) {
 //			iterate_point_ = plan_path_.begin();
-//			ROS_ERROR("start_point_.dir(%d)", iterate_point_->dir);
+//			ROS_ERROR("start_points_.dir(%d)", iterate_point_->dir);
 ////			plan_path_.pop_front();
 //			displayCellPath(points_to_cells(plan_path_));
 //			action_i_ = ac_linear;
