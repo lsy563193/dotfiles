@@ -570,7 +570,7 @@ void electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixture,
 					current_data = baseline[VACUUM];
 					return ;
 				}
-				if(baseline[SWING_MOTOR] < 1200 || baseline[VACUUM] > 2000)
+				if(baseline[SWING_MOTOR] < 1200 || baseline[SWING_MOTOR] > 2250)
 				{
 					error_code = BASELINE_SWING_MOTOR_CURRENT_ERROR;
 					current_data = baseline[SWING_MOTOR];
