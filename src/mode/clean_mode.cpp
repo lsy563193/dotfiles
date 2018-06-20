@@ -181,8 +181,6 @@ ACleanMode::~ACleanMode()
 			ROS_WARN("%s %d: Entering other clean mode(%d), so do not play the finish voice.",
 							 __FUNCTION__, __LINE__, next_mode_i_);
 	}
-	// todo::
-	robot_trapped_warning = true;
 	auto cleaned_count = clean_map_.getCleanedArea();
 	auto map_area = cleaned_count * CELL_SIZE * CELL_SIZE;
 	ROS_WARN("%s %d: Cleaned area = \033[32m%.2fm2\033[0m, cleaning time: \033[32m%d(s) %.2f(min)\033[0m, cleaning speed: \033[32m%.2f(m2/min)\033[0m.",

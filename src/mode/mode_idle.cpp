@@ -376,7 +376,6 @@ void ModeIdle::chargeDetect(bool state_now, bool state_last)
 void ModeIdle::keyClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: key clean.", __FUNCTION__, __LINE__);
-	ACleanMode::robot_trapped_warning = false;
 	beeper.beepForCommand(VALID);
 
 	// Wait for key released.
