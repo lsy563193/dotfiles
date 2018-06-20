@@ -321,7 +321,7 @@ void Gyro::checkRobotSlipByGyro(){
 
 		if(ros::Time::now().toSec() - check_slip_start_time_ > 2)
 		{
-			ROS_INFO("%s %d: del_speed:%f,del_time:%f,del_angle:%f,now:%f,angle:%f",__FUNCTION__,__LINE__,
+			ROS_INFO("%s %d: del_speed:%.2f,del_time:%.2f,del_angle:%.2f,now:%.2f,angle:%.2f",__FUNCTION__,__LINE__,
 								fabs(wheel.getLeftWheelActualSpeed() - wheel.getRightWheelActualSpeed()),
 								ros::Time::now().toSec() - check_slip_start_time_,
 							 fabs(f_range(gyro.getAngleY()) - check_slip_start_angle_),f_range(gyro.getAngleY()), check_slip_start_angle_);

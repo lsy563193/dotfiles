@@ -1850,7 +1850,7 @@ bool Lidar::isNeedToCheckSlip(const sensor_msgs::LaserScan& scan) {
 	std::function<void(std::string)> f_print = [&](std::string s){
 		if(print_count++ > 5) {
 			print_count = 0;
-			ROS_INFO("%s %d: %s",__FUNCTION__,__LINE__,s.c_str());
+			ROS_INFO("isNeedToCheckSlip %d: %s", __LINE__, s.c_str());
 		}
 	};
 
@@ -1860,7 +1860,7 @@ bool Lidar::isNeedToCheckSlip(const sensor_msgs::LaserScan& scan) {
 		return false;
 	}
 	if (std::fabs(left_wheel_speed) <= 0.08 && std::fabs(right_wheel_speed) <= 0.08) {
-		f_print("each wheel speed is too low");
+		f_print("wheel speed is too low");
 		last_slip_scan_frame_.clear();
 		return false;
 	}

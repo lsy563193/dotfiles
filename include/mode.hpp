@@ -411,7 +411,7 @@ public:
 	{
 		return sp_state == state_init.get();
 	}
-	virtual bool isSwitchByEventInStateInit();
+	virtual bool isSwitchByEventInStateInit(){return false;};
 	virtual bool updateActionInStateInit();
 	virtual void switchInStateInit();
 
@@ -611,11 +611,12 @@ protected:
 	bool first_time_go_home_point_{true};
 	bool seen_charger_during_cleaning_{};
 	bool go_home_for_low_battery_{};
-	bool switch_is_off_{};
+	bool switch_is_off_{false};
 	Points charger_poses_;
-	bool found_charger_{};
+	bool found_charger_{false};
+	bool has_mark_charger_{true};
 	Points tmp_charger_pose_;
-	bool is_using_dust_box_{};
+	bool is_using_dust_box_{true};
 public:
 
 	static void pubPointMarkers(const std::deque<Vector2<double>> *point, std::string frame_id,std::string name);

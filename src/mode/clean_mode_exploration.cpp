@@ -165,7 +165,7 @@ void CleanModeExploration::remoteMax(bool state_now, bool state_last)
 
 //state GoToCharger
 void CleanModeExploration::switchInStateGoToCharger() {
-	PP_INFO();
+//	PP_INFO();
 	if (ev.charge_detect && charger.isOnStub()) {
 		sp_state = nullptr;
 		return;

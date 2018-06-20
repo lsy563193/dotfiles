@@ -48,8 +48,6 @@ ACleanMode::ACleanMode()
 	IMoveType::sp_mode_ = this;
 	State::sp_cm_ = this;
 	if (next_mode_i_ != cm_navigation && next_mode_i_ != cm_test)
-//	if (robot::instance()->getR16WorkMode() == WORK_MODE || robot::instance()->getR16WorkMode() == IDLE_MODE ||
-//			robot::instance()->getR16WorkMode() == CHARGE_MODE)
 	{
 		sp_state = state_init.get();
 		sp_state->init();
@@ -70,11 +68,6 @@ ACleanMode::ACleanMode()
 	if (robot_error.get())
 		robot_error.clear(robot_error.get(), true);
 	brush.unblockMainBrushSlowOperation();
-
-//	// todo:debug
-//	infrared_display.displayNormalMsg(8, 5555);
-
-//    iterate_point_=plan_path_.begin();
 }
 
 ACleanMode::~ACleanMode()
@@ -1522,6 +1515,7 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 			setChargerArea( c_pose_ );
 			ROS_INFO("\033[1;40;32m%s,%d,FOUND CHARGER direction %f,cur_angle = %f,angle_offset= %f, rcon_state = 0x%x, \033[0m",__FUNCTION__,__LINE__,direction,radian_to_degree(ranged_radian(getPosition().th)),radian_to_degree(angle_offset),rcon_value);
 			found_charger_ = true;
+			has_mark_charger_ = false;
 			return true;
 		}
 		else
@@ -1591,7 +1585,7 @@ bool ACleanMode::estimateChargerPos(uint32_t rcon_value)
 
 void ACleanMode::checkShouldMarkCharger(float angle_offset,float distance)
 {
-	if(found_charger_)
+	if(!has_mark_charger_ && found_charger_)
 	{
 		Point_t pose;
 		pose.SetX( cos(angle_offset)* distance  +  getPosition().GetX() );
@@ -1600,6 +1594,7 @@ void ACleanMode::checkShouldMarkCharger(float angle_offset,float distance)
 		charger_poses_.push_back(pose);
 		ROS_INFO("%s,%d, offset angle (%f),charger pose (%d,%d),th = %f ,dir = %d",__FUNCTION__,__LINE__, angle_offset,pose.toCell().GetX(),pose.toCell().GetY(),pose.th,pose.dir);
 		setChargerArea(pose);
+		has_mark_charger_ = true;
 	}
 }
 
@@ -1831,11 +1826,6 @@ void ACleanMode::chargeDetect(bool state_now, bool state_last)
 // ------------------Handlers end--------------------------
 
 // ------------------State init--------------------
-bool ACleanMode::isSwitchByEventInStateInit() {
-	return false;
-//	return checkEnterExceptionResumeState();
-}
-
 bool ACleanMode::updateActionInStateInit() {
 	if (action_i_ == ac_null)
 		action_i_ = ac_open_gyro_and_lidar;

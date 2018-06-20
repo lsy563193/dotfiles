@@ -288,7 +288,6 @@ void robot::robotbase_routine_cb()
 		sensor.front_cliff = cliff.getFront();
 		sensor.left_cliff = cliff.getLeft();
 
-		gyro.checkRobotSlipByGyro();
 		// For remote device.
 		auto remote_signal = buf[REC_REMOTE];
 		if (remote_signal != 0)
@@ -398,6 +397,7 @@ void robot::robotbase_routine_cb()
 		gyro.setAngleR(gyro.calAngleRKalmanFilter(dt));//fusion of kalman filter
 		odom.setMovingSpeed(static_cast<float>((wheel.getLeftEncoderCnt() + wheel.getRightEncoderCnt()) *
 											   WHEEL_ENCODER_TO_MILLIMETER / 1000 / 2.0 / dt));
+		// Special handling for robot slip
 		if(!isRobotSlip()){
 //			odom.setOriginX(static_cast<float>(odom.getOriginX() + (odom.getMovingSpeed() * cos(angle_rad)) * dt));
 //			odom.setOriginY(static_cast<float>(odom.getOriginY() + (odom.getMovingSpeed() * sin(angle_rad)) * dt));
@@ -434,16 +434,14 @@ void robot::robotbase_routine_cb()
 		odom_broad.sendTransform(odom_trans);
 		/*------publish end -----------*/
 
+		// Check slip by gyro
+		gyro.checkRobotSlipByGyro();
+
 		// Check tilt
-		if (checkTilt()){
-			gyro.setTiltCheckingStatus(1);
-			beeper.debugBeep(VALID);
-		} else {
-			gyro.setTiltCheckingStatus(0);
-		}
+		checkTilt();
 
 		// Check lidar stuck
-		if (checkLidarStuck()) {
+		if (!ev.lidar_stuck && checkLidarStuck()) {
 //			ROS_INFO("lidar stuck");
 			ev.lidar_stuck = true;
 		}
@@ -809,6 +807,7 @@ bool robot::checkTilt() {
 	if (!gyro.isTiltCheckingEnable()) {
 		angle_tilt_time_ = 0;
 		wheel_tilt_time_= 0;
+		gyro.setTiltCheckingStatus(0);
 		return false;
 	}
 	auto angle_triggered = gyro.getAngleR() > ANGLE_LIMIT;
@@ -819,13 +818,22 @@ bool robot::checkTilt() {
 	if(!wheel_cliff_triggered)
 		wheel_tilt_time_= 0;
 	if(!angle_triggered && !wheel_cliff_triggered)
+	{
+		gyro.setTiltCheckingStatus(0);
 		return false;
+	}
 
 	//For angle triggered
 	if(angle_triggered) {
 		angle_tilt_time_ = angle_tilt_time_ == 0 ? ros::Time::now().toSec() : angle_tilt_time_;
 		auto ret = ros::Time::now().toSec() - angle_tilt_time_ > ANGLE_TIME_LIMIT;
 		ROS_WARN_COND(ret,"%s,%d,time_now:%lf,angle_tilt_time_:%lf",__FUNCTION__,__LINE__,ros::Time::now().toSec(),angle_tilt_time_);
+		if (ret)
+		{
+			gyro.setTiltCheckingStatus(1);
+			beeper.debugBeep(VALID);
+		} else
+			gyro.setTiltCheckingStatus(0);
 		return ret;
 	}
 	//For wheel_cliff triggered
@@ -833,6 +841,12 @@ bool robot::checkTilt() {
 		wheel_tilt_time_ = wheel_tilt_time_ == 0 ? ros::Time::now().toSec() : wheel_tilt_time_;
 		auto ret = ros::Time::now().toSec() - wheel_tilt_time_ > WHEEL_CLIFF_TIME_LIMIT;
 		ROS_WARN_COND(ret,"%s,%d,time_now:%lf,wheel_tilt_time_:%lf",__FUNCTION__,__LINE__,ros::Time::now().toSec(),wheel_tilt_time_);
+		if (ret)
+		{
+			gyro.setTiltCheckingStatus(1);
+			beeper.debugBeep(VALID);
+		} else
+			gyro.setTiltCheckingStatus(0);
 		return ret;
 	}
 }

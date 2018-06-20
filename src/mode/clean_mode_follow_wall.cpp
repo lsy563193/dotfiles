@@ -53,7 +53,7 @@ CleanModeFollowWall::~CleanModeFollowWall()
 
 bool CleanModeFollowWall::mapMark() {
 	displayPointPath(passed_cell_path_);
-	PP_WARN();
+//	PP_WARN();
 	if (isStateGoHomePoint())
 	{
 		setCleaned(*points_to_cells(passed_cell_path_));
@@ -63,13 +63,13 @@ bool CleanModeFollowWall::mapMark() {
 	{
 		setCleaned(*points_to_cells(passed_cell_path_));
 		setBlocks(iterate_point_->dir);
-		ROS_ERROR("-------------------------------------------------------");
+		ROS_INFO("-------------------------------------------------------");
 		auto start = *passed_cell_path_.begin();
 		passed_cell_path_.erase(std::remove_if(passed_cell_path_.begin(),passed_cell_path_.end(),[&start](Point_t& it){
 			return it.toCell() == start.toCell();
 		}),passed_cell_path_.end());
 		displayPointPath(passed_cell_path_);
-		ROS_ERROR("-------------------------------------------------------");
+		ROS_INFO("-------------------------------------------------------");
 		setFollowWall(clean_map_, action_i_ == ac_follow_wall_left, passed_cell_path_);
 	}
 	clean_map_.markRobot(getPosition().toCell());

@@ -174,8 +174,9 @@ void MovementCharge::run()
 	// Debug for charge info
 	if (time(NULL) - show_battery_info_time_stamp_ > 30)
 	{
-		ROS_WARN("%s %d: battery voltage %5.2f V, charge command:%d, charge status:%d.", __FUNCTION__
-		, __LINE__, (float)battery.getVoltage()/100.0, serial.getSendData(CTL_CHARGER), charger.getChargeStatus());
+		ROS_WARN("%s %d: battery voltage %5.2f V, charge command:%d, charge status:%d, isFull(%d).", __FUNCTION__,
+				 __LINE__, (float) battery.getVoltage() / 100.0, serial.getSendData(CTL_CHARGER),
+				 charger.getChargeStatus(), battery.isFull());
 		show_battery_info_time_stamp_ = time(NULL);
 	}
 

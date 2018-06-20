@@ -912,6 +912,7 @@ bool MovementExceptionResume::isFinish()
 		}
 		if (!robot::instance()->checkLidarStuck())
 		{
+			ROS_WARN("%s %d: Lidar resume succeeded.", __FUNCTION__, __LINE__);
 			ev.lidar_stuck = false;
 			return true;
 		}

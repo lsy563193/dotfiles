@@ -649,7 +649,7 @@ void CleanModeNav::chargeDetect(bool state_now, bool state_last)
 
 // ------------------State init--------------------
 bool CleanModeNav::isSwitchByEventInStateInit() {
-	if (/*checkEnterPause() || */ACleanMode::isSwitchByEventInStateInit())
+	/*if (*//*checkEnterPause() || *//*ACleanMode::isSwitchByEventInStateInit())
 	{
 		if (action_i_ == ac_back_from_charger)
 		{
@@ -658,7 +658,7 @@ bool CleanModeNav::isSwitchByEventInStateInit() {
 				setSeenChargerDuringCleaning();
 		}
 		return true;
-	}
+	}*/
 	return false;
 }
 
@@ -669,6 +669,7 @@ bool CleanModeNav::updateActionInStateInit() {
 			charger.enterNavFromChargeMode(false);
 			action_i_ = ac_back_from_charger;
 			found_charger_ = true;
+			has_mark_charger_ = false;
 		}
 		else
 			action_i_ = ac_open_gyro_and_lidar;

@@ -557,7 +557,7 @@ bool APathAlgorithm::shift_path(GridMap &map, const Cell_t &p1, Cell_t &p2, Cell
 		auto shift = (p12_it - p2);
 		if(is_first)
 			shift /= 2;
-		ROS_ERROR("(shift(%d,%d),", shift.x, shift.y);
+		ROS_INFO("(shift(%d,%d),", shift.x, shift.y);
 		p2 += shift;
 		p3 += shift;
 		return shift != Cell_t{0,0};
