@@ -194,6 +194,8 @@ void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path, const Dir_t&
 				if(map.isBlocksAtY(tmp.x, tmp.y)){
 					if (!map.isBlockAtY(BLOCKED_SLIP, tmp.x, tmp.y) &&
 						!map.isBlockAtY(BLOCKED_TILT, tmp.x, tmp.y) &&
+						!map.isBlockAtY(BLOCKED_CLIFF, tmp.x, tmp.y) &&
+						!map.isBlockAtY(BLOCKED_BUMPER, tmp.x, tmp.y) &&
 						!map.isBlockAtY(BLOCKED_RCON, tmp.x, tmp.y) /*c_it != curr*/) {
 						tmp += cell_direction_[i] * OVER_CELL_SIZE;
 					} else{
