@@ -22,9 +22,9 @@ std::unique_ptr<std::deque<BestTargetFilter*>> NavCleanPathAlgorithm::generateBo
 		int16_t dx = correct_curr_.x + static_cast<int16_t>(isPos(priority_dir) ? 4 : -4);
 		int16_t dy = 2;
 		ROS_INFO("filter_after_obstacle:dx,dy(%d,%d)", dx, dy);
-		if ((map.getCell( dx, correct_curr_.y) == UNCLEAN && map.getCell( dx, correct_curr_.y-dy) == CLEANED))
+		if ((map.getCost(dx, correct_curr_.y) == UNCLEAN && map.getCost(dx, correct_curr_.y - dy) == CLEANED))
 			filters.push_back(&filter_after_obstacle_neg);
-		if ((map.getCell( dx, correct_curr_.y) == UNCLEAN && map.getCell( dx, correct_curr_.y+dy) == CLEANED))
+		if ((map.getCost(dx, correct_curr_.y) == UNCLEAN && map.getCost(dx, correct_curr_.y + dy) == CLEANED))
 			filters.push_back(&filter_after_obstacle_pos);
 	}
 
@@ -41,9 +41,9 @@ std::unique_ptr<std::deque<BestTargetFilter*>> NavCleanPathAlgorithm::generateBo
 //		int16_t dy = correct_curr_.y + static_cast<int16_t>(trend_pos ? 2 : -2);
 		int16_t dy = 2;
 		ROS_WARN("dx,dy(%d,%d),trend_pos(%d)",dx,dy,trend_pos);
-		if ((map.getCell( dx, correct_curr_.y) == CLEANED && map.getCell( dx, correct_curr_.y + dy) == UNCLEAN))
+		if ((map.getCost(dx, correct_curr_.y) == CLEANED && map.getCost(dx, correct_curr_.y + dy) == UNCLEAN))
 			filters.push_back(&filter_top_of_y_axis_pos);
-		if ((map.getCell( dx, correct_curr_.y) == CLEANED && map.getCell( dx, correct_curr_.y - dy) == UNCLEAN))
+		if ((map.getCost(dx, correct_curr_.y) == CLEANED && map.getCost(dx, correct_curr_.y - dy) == UNCLEAN))
 			filters.push_back(&filter_top_of_y_axis_neg);
 	}
 //	filters.push_back(&filter_n3p);
@@ -60,7 +60,7 @@ static BoundingBox2 getLine(const Cell_t& curr,GridMap& map) {
 			auto tmp = c_it[i] + cell_direction_[i] * 2;
 			if (map.cellIsOutOfTargetRange(tmp) || map.isBlocksAtY(tmp.x, tmp.y))
 				break;
-			if (map.getCell( c_it[i].x, c_it[i].y) == UNCLEAN)
+			if (map.getCost(c_it[i].x, c_it[i].y) == UNCLEAN)
 				break;
 		}
 	}
@@ -188,7 +188,7 @@ void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path, const Dir_t&
 			auto tmp = c_it;
 			for (; ; tmp += cell_direction_[i]) {
 //				ROS_INFO("tmp(%d,%d)",tmp.x, tmp.y);
-				if (map.getCell( tmp.x, tmp.y) == CLEANED) {
+				if (map.getCost(tmp.x, tmp.y) == CLEANED) {
 					break;
 				}
 				if(map.isBlocksAtY(tmp.x, tmp.y)){

@@ -126,7 +126,7 @@ bool CleanModeNav::mapMark()
 	{
 		return !block_map.cellIsOutOfRange(neighbor_cell) && !block_map.isOutOfTargetRange(neighbor_cell)
 			   && block_map.getCell(COST_MAP, neighbor_cell.x, neighbor_cell.y) == 0
-			   && block_map.getCell(neighbor_cell.x, neighbor_cell.y) == CLEANED;
+			   && block_map.getCost(neighbor_cell.x, neighbor_cell.y) == CLEANED;
 	};
 	block_map.dijkstra(curr, c_bound3, true, is_cleaned_bound3_target_selection, is_cleaned_bound3_expand_condition);
 //	ROS_INFO("3333333333333333333");
@@ -135,7 +135,7 @@ bool CleanModeNav::mapMark()
 	Cells out_bound_of_passed_path;
 	auto expand_condition = [&](const Cell_t& next, const Cell_t& neighbor)
 	{
-		return  block_map.getCell(next.x, next.y) == CLEANED;
+		return block_map.getCost(next.x, next.y) == CLEANED;
 	};
 	clean_path_algorithm_->dijkstra(block_map, curr, out_bound_of_passed_path, false, TargetVal(&block_map, UNCLEAN),
 									isAccessible(&block_map, expand_condition));
@@ -182,7 +182,7 @@ bool CleanModeNav::mapMark()
 //		if(std::find_if(c_bound2.begin(), c_bound2.end(), [&](const Cell_t& c_it)
 //		{ return c_it == cost_block.second; }) != c_bound2.end())
 //			if(!(cost_block.first == BLOCKED_LIDAR && (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)))
-				clean_map_.setCell(cost_block.second.x, cost_block.second.y, cost_block.first);
+			clean_map_.setCost(cost_block.second.x, cost_block.second.y, cost_block.first);
 	}
 //	clean_map_.print(Cells{curr});
 	for (auto &&p_it :passed_cell_path_)
@@ -195,12 +195,12 @@ bool CleanModeNav::mapMark()
 	for(auto &&cost_block : c_blocks){
 		//For slip mark
 		if(cost_block.first == BLOCKED_SLIP)
-			clean_map_.setCell(cost_block.second.x,cost_block.second.y,BLOCKED_SLIP);
+			clean_map_.setCost(cost_block.second.x, cost_block.second.y, BLOCKED_SLIP);
 		if(cost_block.first == BLOCKED_TILT)
-			clean_map_.setCell(cost_block.second.x,cost_block.second.y, BLOCKED_TILT);
+			clean_map_.setCost(cost_block.second.x, cost_block.second.y, BLOCKED_TILT);
 		// Special marking for rcon blocks.
 		if(cost_block.first == BLOCKED_TMP_RCON)
-			clean_map_.setCell(cost_block.second.x,cost_block.second.y,BLOCKED_TMP_RCON);
+			clean_map_.setCost(cost_block.second.x, cost_block.second.y, BLOCKED_TMP_RCON);
 	}
 
 	//tx pass path via serial wifi
@@ -224,7 +224,7 @@ bool CleanModeNav::markRealTime()
 		for (const auto& marker : markers) {
 //			ROS_INFO("marker(%d, %d)", marker.x, marker.y);
 			auto cell = getPosition().getRelative(marker.x * CELL_SIZE, marker.y * CELL_SIZE).toCell();
-//			clean_map_.setCell(cell.x, cell.y, BLOCKED_LIDAR);
+//			clean_map_.setCost(cell.x, cell.y, BLOCKED_LIDAR);
 			c_blocks.insert({BLOCKED_LIDAR, cell});
 		}
 //	}

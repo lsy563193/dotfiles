@@ -33,7 +33,7 @@ void WifiMapManage::runLengthEncoding(GridMap &grid_map, WifiMap &wifi_map, cons
 	{
 		for(auto i= bound.max.y; i> bound.min.y; i--)
 		{
-			auto cost = grid_map.getCell(j,i);
+			auto cost = grid_map.getCost(j, i);
 			auto it_cost = changeCost(cost);
 			if(first_time)
 			{

@@ -17,9 +17,9 @@ GoHomePathAlgorithm::GoHomePathAlgorithm(GridMap& map, HomePointsManager *p_home
 //	ROS_INFO("%s,%d: set the rcon c_blocks to cleaned.",__FUNCTION__,__LINE__);
 	auto map_tmp = map.generateBound();
 	for (const auto &cell : map_tmp) {
-		if(map.getCell(cell.x,cell.y) == BLOCKED_TMP_RCON
-					|| map.getCell(cell.x, cell.y) == BLOCKED_RCON)
-			map.setCell(cell.x,cell.y, UNCLEAN);
+		if(map.getCost(cell.x, cell.y) == BLOCKED_TMP_RCON
+					|| map.getCost(cell.x, cell.y) == BLOCKED_RCON)
+			map.setCost(cell.x, cell.y, UNCLEAN);
 	}
 	ROS_INFO("%s,%d: push back home way.",__FUNCTION__,__LINE__);
 	temp_map = make_unique<GridMap>();

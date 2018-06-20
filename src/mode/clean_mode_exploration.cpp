@@ -236,9 +236,9 @@ void CleanModeExploration::resetErrorMarker() {
 		if(error_marker_.empty())
 			break;
 		if(time - ite->time > 20){
-			if(clean_map_.getCell(ite->x,ite->y) == CLEANED &&
-					slam_grid_map.getCell(ite->x,ite->y) != SLAM_MAP_REACHABLE)
-				clean_map_.setCell(ite->x,ite->y,UNCLEAN);
+			if(clean_map_.getCost(ite->x, ite->y) == CLEANED &&
+					slam_grid_map.getCost(ite->x, ite->y) != SLAM_MAP_REACHABLE)
+				clean_map_.setCost(ite->x, ite->y, UNCLEAN);
 //			ROS_INFO("%s,%d,i:%d,size:%d",__FUNCTION__,__LINE__,i,error_marker_.size());
 			error_marker_.erase(ite);
 		}

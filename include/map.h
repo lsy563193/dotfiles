@@ -38,10 +38,10 @@ public:
 	 * @param y: y coordinate for this cell.
 	 * @param value: CellState for this cell.
 	 */
-	void setCell(int16_t x, int16_t y, CellState value);
+	void setCost(int16_t x, int16_t y, CellState value);
 
 	/*
-	 * GridMap::getCell description
+	 * GridMap::getCost description
 	 *
 	 * This function is for setting specific cell's state.
 	 *
@@ -50,7 +50,7 @@ public:
 	 * @param y: y coordinate for this cell.
 	 * @return: CellState for this cell.
 	 */
-	CellState getCell(int16_t x, int16_t y);
+	CellState getCost(int16_t x, int16_t y);
 
 	/*
 	 * This function is for setting cells around this specific cell with the parameter CellState.

@@ -848,7 +848,7 @@ int S_Wifi::uploadMap(MapType map)
 				int16_t p_y = p_it.toCell().y;
 				for(int16_t pos_x = p_x - 1;pos_x<=p_x+1;pos_x++){
 					for(int16_t pos_y = p_y - 1;pos_y<=p_y+1;pos_y++){
-						//if(g_map.getCell(pos_x,pos_y) != CLEANED &&
+						//if(g_map.getCost(pos_x,pos_y) != CLEANED &&
 						if(this->find_if(history_pass_path_data_,Cell_t(pos_x,pos_y),3) == 0)
 						{
 
