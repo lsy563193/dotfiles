@@ -183,7 +183,7 @@ enum REC{
 	// bit 4 for right bumper.
 	// bit 5 for left bumper.
 	// bit 6 reserved.
-	// bit 7 reserved.
+	// bit 7 for battery full.
 	REC_BUMPER_AND_CLIFF = 28,
 
 	// One byte for remote controller signal.
@@ -260,7 +260,7 @@ enum REC{
 	// bit 1/2 for plan status.
 	// bit 3 for water tank status.
 	// bit 4/5/6 for charge status.
-	// bit 7 reserved.
+	// bit 7 for main board sleep status.
 	REC_MIX_BYTE = 36,
 
 	// One byte for battery voltage.

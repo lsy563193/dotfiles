@@ -139,6 +139,8 @@ public:
 private:
 	int error_alarm_cnt_{0};
 	double error_alarm_time_{0};
+	int trapped_alarm_cnt_{0};
+	double trapped_alarm_time_{0};
 };
 
 class ActionPause :public IAction

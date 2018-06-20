@@ -21,9 +21,9 @@ CleanModeNav::CleanModeNav()
 	ROS_WARN("%s %d: Entering Navigation mode\n=========================" , __FUNCTION__, __LINE__);
 
 	sp_state = state_init.get();
-	if(plan_activation_)
+	if(plan_activation)
 	{
-		plan_activation_ = false;
+		plan_activation = false;
 //		speaker.play(VOICE_APPOINTMENT_START_UNOFFICIAL, false);
 	}
 //	else

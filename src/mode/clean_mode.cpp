@@ -19,7 +19,8 @@ const double CHASE_X = 0.107;
 extern bool g_pp_shutdown;
 ros::Publisher ACleanMode::point_marker_pub_={};
 ros::Publisher ACleanMode::line_marker_pub2_={};
-bool ACleanMode::plan_activation_={};
+bool ACleanMode::plan_activation={};
+bool ACleanMode::robot_trapped_warning = false;
 
 ACleanMode::ACleanMode()
 {
@@ -68,6 +69,8 @@ ACleanMode::ACleanMode()
 	if (robot_error.get())
 		robot_error.clear(robot_error.get(), true);
 	brush.unblockMainBrushSlowOperation();
+	// For warning in idle mode.
+	robot_trapped_warning = false;
 }
 
 ACleanMode::~ACleanMode()
@@ -144,6 +147,7 @@ ACleanMode::~ACleanMode()
 			} else if (mode_i_ == cm_navigation && (trapped_closed_or_isolate || trapped_time_out_))
 			{
 				speaker.play(VOICE_ROBOT_TRAPPED, false);
+				robot_trapped_warning = true;
 				trapped_closed_or_isolate = false;
 				trapped_time_out_ = false;
 				ROS_WARN("%s %d: Robot is trapped.Stop cleaning.", __FUNCTION__, __LINE__);
@@ -177,6 +181,8 @@ ACleanMode::~ACleanMode()
 			ROS_WARN("%s %d: Entering other clean mode(%d), so do not play the finish voice.",
 							 __FUNCTION__, __LINE__, next_mode_i_);
 	}
+	// todo::
+	robot_trapped_warning = true;
 	auto cleaned_count = clean_map_.getCleanedArea();
 	auto map_area = cleaned_count * CELL_SIZE * CELL_SIZE;
 	ROS_WARN("%s %d: Cleaned area = \033[32m%.2fm2\033[0m, cleaning time: \033[32m%d(s) %.2f(min)\033[0m, cleaning speed: \033[32m%.2f(m2/min)\033[0m.",
@@ -1090,7 +1096,7 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_mt) {
 			std::vector<Vector2<int>> markers{};
 			if (lidar.isScanCompensateReady())
 				lidar.lidarMarker(markers, p_mt->movement_i_, action_i_);
-			ROS_ERROR("markers.size() = %d", markers.size());
+//			ROS_INFO("markers.size() = %d", markers.size());
 			std::vector<Vector2<int>> left_marks{{0,2}, {1,2},{-1,2}};
 //			ROS_ERROR("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 			for (const auto &marker : markers) {
@@ -1101,14 +1107,14 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_mt) {
 				})){
 //					beeper.debugBeep(VALID);
 					auto cell = getPosition().getCenterRelative(marker.x * CELL_SIZE, marker.y * CELL_SIZE).toCell();
-					ROS_ERROR("follow wall find lidar obs(%d, %d)", cell.x, cell.y);
+					ROS_INFO("follow wall find lidar obs(%d, %d)", cell.x, cell.y);
 					clean_map_.setCost(cell.x, cell.y, BLOCKED_LIDAR);
 				}
 			}
 //			ROS_INFO("444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444");
 			if (!clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell())) {
 				out_of_trapped_ = true;
-				ROS_ERROR("OUT OF TRAPPED");
+				ROS_WARN("OUT OF TRAPPED");
 				return true;
 			}
 		}
@@ -1121,7 +1127,7 @@ bool ACleanMode::moveTypeNewCellIsFinish(IMoveType *p_mt) {
 		auto temp_mt = dynamic_cast<MoveTypeFollowWall *>(p_mt);
 		if (mode_i_ == cm_wall_follow && temp_mt->getIsTrappedInSmallArea()) {
 			auto curr_pose = getPosition(SLAM_POSITION_SLAM_ANGLE);
-			ROS_ERROR("curr_pose.Distance(small_area_trapped_pose_) = %f", curr_pose.Distance(small_area_trapped_pose_));
+			ROS_INFO("curr_pose.Distance(small_area_trapped_pose_) = %f", curr_pose.Distance(small_area_trapped_pose_));
 			if (curr_pose.Distance(small_area_trapped_pose_) > 1) {//1 metre
 				is_trapped_ =false;
 				temp_mt->resetIsTrappedInSmallArea();

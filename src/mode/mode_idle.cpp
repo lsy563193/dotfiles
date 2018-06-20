@@ -80,7 +80,7 @@ bool ModeIdle::isExit()
 		{
 			ROS_WARN("%s %d: Idle mode receives plan, change to navigation mode.", __FUNCTION__, __LINE__);
 			setNextMode(cm_navigation);
-			ACleanMode::plan_activation_ = true;
+			ACleanMode::plan_activation = true;
 			return true;
 		}
 		plan_activated_status_ = false;
@@ -204,6 +204,7 @@ bool ModeIdle::isExit()
 		ROS_WARN("%s %d: Idle mode receives rcon for over %ds, change to go to charger mode.", __FUNCTION__, __LINE__,
 				 RCON_TRIGGER_INTERVAL);
 		setNextMode(md_go_to_charger);
+		ACleanMode::robot_trapped_warning = false;
 		return true;
 	}
 
@@ -287,11 +288,12 @@ void ModeIdle::remoteKeyHandler(bool state_now, bool state_last)
 		}
 	}
 	remote.reset();
+	ACleanMode::robot_trapped_warning = false;
 }
 
 void ModeIdle::remoteMax(bool state_now, bool state_last)
 {
-	PP_INFO();
+//	PP_INFO();
 	if(water_tank.getStatus(WaterTank::operate_option::swing_motor)){
 		beeper.beepForCommand(INVALID);
 	}
@@ -305,6 +307,7 @@ void ModeIdle::remoteMax(bool state_now, bool state_last)
 	sp_action_.reset();
 	sp_action_.reset(new ActionIdle);
 	remote.reset();
+	ACleanMode::robot_trapped_warning = false;
 }
 
 /*void ModeIdle::lidarBumper(bool state_now, bool state_last)
@@ -347,10 +350,12 @@ void ModeIdle::remoteWifi(bool state_now,bool state_last)
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_REBIND);
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_SMART_LINK);
 
+	ACleanMode::robot_trapped_warning = false;
 }
 
 void ModeIdle::remotePlan(bool state_now, bool state_last)
 {
+	ACleanMode::robot_trapped_warning = false;
 	if (!plan_activated_status_ && appmt_obj.getPlanStatus() > 2)
 	{
 		appmt_obj.resetPlanStatus();
@@ -365,11 +370,13 @@ void ModeIdle::chargeDetect(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: Detect charge!", __FUNCTION__, __LINE__);
 	ev.charge_detect = charger.getChargeStatus();
+	ACleanMode::robot_trapped_warning = false;
 }
 
 void ModeIdle::keyClean(bool state_now, bool state_last)
 {
 	ROS_WARN("%s %d: key clean.", __FUNCTION__, __LINE__);
+	ACleanMode::robot_trapped_warning = false;
 	beeper.beepForCommand(VALID);
 
 	// Wait for key released.

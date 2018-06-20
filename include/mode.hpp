@@ -474,6 +474,8 @@ public:
 	bool trapped_time_out_{};
 	bool trapped_closed_or_isolate{};
 	bool out_of_trapped_{};
+	// For warning in idle mode.
+	static bool robot_trapped_warning;
 
 	// State exploration
 	bool isStateExploration() const
@@ -579,7 +581,7 @@ public:
 
 	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
 	GridMap clean_map_{};
-	static bool plan_activation_;
+	static bool plan_activation;
 	double time_gyro_dynamic_;
 	bool isLastStateIsGoHomePoints()
 	{

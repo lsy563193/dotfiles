@@ -93,9 +93,9 @@ bool MovementBack::isFinish()
 		}
 		cliff_jam_cnt_ = static_cast<uint8_t>(cliff.getStatus() == 0 ? 0 : cliff_jam_cnt_ + 1);
 		robot_stuck_cnt_ = static_cast<uint8_t>(robot::instance()->isRobotSlip() == 0 ? 0 : robot_stuck_cnt_ + 1);
-		ROS_INFO("tilt_cnt_(%d)", tilt_cnt_);
+//		ROS_INFO("tilt_cnt_(%d)", tilt_cnt_);
 		tilt_cnt_ = static_cast<uint8_t>(gyro.getTiltCheckingStatus() == 0 ? 0 : tilt_cnt_ + 1);
-		ROS_INFO("tilt_cnt_2(%d)", tilt_cnt_);
+//		ROS_INFO("tilt_cnt_2(%d)", tilt_cnt_);
 		//g_lidar_bumper_cnt = robot::instance()->getLidarBumper() == 0? 0:g_lidar_bumper_cnt+1;
 
 		ROS_WARN("%s, %d: MovementBack reach target, bumper_jam_cnt_(%d), lidar_bumper_jam_cnt_(%d), cliff_jam_cnt_(%d), robot_stuck_cnt_(%d), tilt_cnt_(%d).",

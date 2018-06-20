@@ -102,7 +102,7 @@ bool ModeCharge::isExit()
 				if (p_movement_charge->stillCharging())
 					charger.enterNavFromChargeMode(true);
 			}
-			ACleanMode::plan_activation_ = true;
+			ACleanMode::plan_activation = true;
 			return true;
 		}
 	}

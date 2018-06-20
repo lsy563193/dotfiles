@@ -101,7 +101,7 @@ bool ModeSleep::isExit()
 			{
 				ROS_WARN("%s %d: Sleep mode receives plan, change to navigation mode.", __FUNCTION__, __LINE__);
 				setNextMode(cm_navigation);
-				ACleanMode::plan_activation_ = true;
+				ACleanMode::plan_activation = true;
 				return true;
 			}
 

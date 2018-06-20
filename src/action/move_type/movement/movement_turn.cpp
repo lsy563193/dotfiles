@@ -17,13 +17,10 @@ MovementTurn::MovementTurn(double slam_target, uint8_t max_speed) : speed_(ROTAT
 	max_speed_ = max_speed;
 	accurate_ = max_speed_ > ROTATE_TOP_SPEED ? degree_to_radian(3) : degree_to_radian(1);
 	timeout_interval_ = 10;
-	ROS_WARN("%s, %d: MovementTurn init, target_radian_: \033[32m%.2lf (in degree)\033[0m, current slam_target: \033[32m%.2lf (in degree)\033[0m, timeout:(%.2f)s."
-			, __FUNCTION__, __LINE__, radian_to_degree(target_radian_), radian_to_degree(getPosition().th), timeout_interval_);
-	ROS_WARN("target_radian_(%.2lf) = ranged_radian(slam_target(%.2lf)  - getPosition().th(%.2lf) + odom.getRadian(%.2lf))",
-			 radian_to_degree(target_radian_),
-			 radian_to_degree(slam_target),
-			 radian_to_degree(getPosition().th),
-			 radian_to_degree(odom.getRadian()));
+	ROS_WARN("%s, %d: target_radian_: %.2lf (in degree), current radian: %.2lf (in degree), timeout:(%.2f)s.\ntarget_radian_(%.2lf) = ranged_radian(slam_target(%.2lf)  - getPosition().th(%.2lf) + odom.getRadian(%.2lf))",
+			 __FUNCTION__, __LINE__, radian_to_degree(target_radian_), radian_to_degree(odom.getRadian()),
+			 timeout_interval_, radian_to_degree(target_radian_), radian_to_degree(slam_target),
+			 radian_to_degree(getPosition().th), radian_to_degree(odom.getRadian()));
 }
 
 bool MovementTurn::isReach()
