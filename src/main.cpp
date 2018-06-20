@@ -57,7 +57,7 @@ void handle_exit(int sig)
 		exit(0);
 	}
 	else if(sig == SIGSEGV)
-	{	
+	{
 		server_backtrace(sig);
 		exit(-1);
 	}

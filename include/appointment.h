@@ -8,7 +8,7 @@
 
 namespace Appointment
 {
-const char afile[]="/opt/ros/indigo/share/pp/appointment.txt";
+const char afile[]="/opt/ros/indigo/share/pp/appointment";
 
 struct st_appmt
 {	//appointment data
@@ -19,7 +19,7 @@ struct st_appmt
 	uint8_t mint;
 };
 
-#define TOTAL_MINS_A_WEEK 10080
+#define TOTAL_MINS_A_WEEK (10080)
 
 typedef struct st_appmt st_appmt;
 
@@ -39,11 +39,11 @@ public:
 	std::vector<Appointment::st_appmt> get();
 
 	/*
-	 * @brief read write appointment message to appointment_list_ 
-	 * @param1 SET or GET
-	 * @return error -1,ok 1
+	 * @brief read/write appointment data
+	 * @param1 action = (SET/ GET)
+	 * @return true/false
 	 */
-	int8_t rw_routine(Appmt::SG action);
+	bool process(Appmt::SG action);
 
 	/*
 	 * @brief get the next appointment count down
