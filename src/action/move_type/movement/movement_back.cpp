@@ -92,7 +92,7 @@ bool MovementBack::isFinish()
 			lidar_bumper_jam_cnt_ = 0;
 		}
 		cliff_jam_cnt_ = static_cast<uint8_t>(cliff.getStatus() == 0 ? 0 : cliff_jam_cnt_ + 1);
-		robot_stuck_cnt_ = static_cast<uint8_t>(lidar.isRobotSlip() == 0 ? 0 : robot_stuck_cnt_ + 1);
+		robot_stuck_cnt_ = static_cast<uint8_t>(robot::instance()->isRobotSlip() == 0 ? 0 : robot_stuck_cnt_ + 1);
 		ROS_INFO("tilt_cnt_(%d)", tilt_cnt_);
 		tilt_cnt_ = static_cast<uint8_t>(gyro.getTiltCheckingStatus() == 0 ? 0 : tilt_cnt_ + 1);
 		ROS_INFO("tilt_cnt_2(%d)", tilt_cnt_);
@@ -146,7 +146,7 @@ bool MovementBack::isFinish()
 
 bool MovementBack::isLidarStop()
 {
-	if (bumper.getStatus() || cliff.getStatus() || lidar.isRobotSlip())
+	if (bumper.getStatus() || cliff.getStatus() || robot::instance()->isRobotSlip())
 		return false;
 
 	if (lidar.getObstacleDistance(1, 0.15) < 0.02)

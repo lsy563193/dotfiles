@@ -839,7 +839,7 @@ bool MovementExceptionResume::isFinish()
 				if ((cell_state != BLOCKED_SLIP && std::abs(distance) > 0.15f) || lidar.getObstacleDistance(1, ROBOT_RADIUS) < 0.06)
 				{
 					ROS_INFO("%s,%d Robot slip to go straight finished",__FUNCTION__,__LINE__);
-					if(!lidar.isRobotSlip())
+					if(!robot::instance()->isRobotSlip())
 					{
 						ev.robot_stuck= false;
 						ev.slip_triggered= false;

@@ -191,7 +191,7 @@ bool IMoveType::isFinishForward()
 	ev.tilt_triggered = gyro.getTiltCheckingStatus();
 	ev.cliff_triggered = cliff.getStatus();
 //	ROS_INFO("%s, %d: ev.cliff_triggered(%d).", __FUNCTION__, __LINE__, ev.cliff_triggered);
-	ev.slip_triggered = lidar.isRobotSlip();
+	ev.slip_triggered = robot::instance()->isRobotSlip();
 //	ev.rcon_status = countRconTriggered(c_rcon.getNavRcon(), 3);
 
 	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || ev.slip_triggered/*|| ev.rcon_status*/)

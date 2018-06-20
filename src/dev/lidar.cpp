@@ -1166,11 +1166,6 @@ void Lidar::checkRobotSlipByLidar() {
 	last_slip_scan_frame_.push_back(tmp_scan_data);
 }
 
-bool Lidar::isRobotSlip()
-{
-	return slip_by_lidar_status_ || gyro.getSlipByGyroStatus();
-}
-
 int Lidar::compLaneDistance()
 {
 	int ret = 0;

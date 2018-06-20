@@ -22,6 +22,8 @@
 #include "mode.hpp"
 #include "serial.h"
 #include <string.h>
+#include "gyro.h"
+#include "lidar.hpp"
 
 #define  _RATE 50
 
@@ -270,6 +272,10 @@ public:
 						   GridMap &clean_map);
 
 	void getCleanRecord(uint32_t &time, uint16_t &clean_time, uint16_t &clean_area, GridMap &clean_map);
+
+	bool isRobotSlip(){
+		return lidar.getSlipByLidarStatus() || gyro.getSlipByGyroStatus();
+	};
 private:
 
 	uint8_t getTestMode(void);
