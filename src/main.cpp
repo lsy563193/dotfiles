@@ -137,10 +137,10 @@ int main(int argc, char **argv)
 		ROS_INFO("find target~~~~~~");
 	}
 
-	 if(!clean_path_algorithm_.checkTrappedUsingDijkstra(map, curr))
-	{
-		ROS_INFO("2find target~~~~~~");
-	}
+//	 if(!clean_path_algorithm_.checkTrappedUsingDijkstra(map, curr))
+//	{
+//		ROS_INFO("2find target~~~~~~");
+//	}
 	ROS_INFO("end~~~~~~~~~");
 #endif
 

@@ -664,6 +664,7 @@ uint16_t APathAlgorithm::dijkstraCountCleanedArea(GridMap& map, Point_t curr, Ce
 void APathAlgorithm::optimizePath(GridMap &map, Cells &path, const Dir_t& priority_dir,const func_compare_two_t& expand_condition)
 {
 	displayCellPath(path);
+	auto is_had_move_start_point=false;
 	if (path.size() > 2)
 	{
 		if (is_opposite_dir(get_dir(path.begin() + 1, path.begin()), priority_dir) ||
@@ -680,6 +681,8 @@ void APathAlgorithm::optimizePath(GridMap &map, Cells &path, const Dir_t& priori
 				if (*(iterator + 1) == *(iterator + 2))
 					path.erase(path.begin() + 1);
 				path.push_front(tmp);
+				is_had_move_start_point = true;
+				ROS_WARN("opposite dir move success");
 			}
 			path.erase(std::unique(path.begin(), path.end()), path.end());
 		}
@@ -688,7 +691,12 @@ void APathAlgorithm::optimizePath(GridMap &map, Cells &path, const Dir_t& priori
 	{
 		ROS_INFO(" size_of_path > 3 Optimize path for adjusting it away from obstacles..");
 		displayCellPath(path);
-		for (auto iterator = path.begin(); iterator != path.end() - 3; ++iterator)
+		auto iterator = path.begin();
+
+		if(is_had_move_start_point)
+			iterator++;
+
+		for (; iterator != path.end() - 3; ++iterator)
 		{
 			ROS_INFO("dir(%d), y(%d)", get_dir(iterator + 1, iterator + 2), (iterator + 1)->y);
 			if (isXAxis(get_dir(iterator + 1, iterator + 2)) && (iterator + 1)->y % 2 == 1)
