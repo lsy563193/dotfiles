@@ -12,11 +12,32 @@ extern int g_follow_last_follow_wall_dir;
 std::unique_ptr<std::deque<BestTargetFilter*>> NavCleanPathAlgorithm::generateBounds(GridMap& map) {
 
 	std::deque<BestTargetFilter*> filters;
-	if(curr_filter_ == &filter_short_path && priority_dir != MAP_POS_Y)
+	if(curr_history_.front() == &filter_short_path && priority_dir != MAP_POS_Y)
 		filters.push_back(&filter_pos_of_y_axis);
 
-	filters.push_back(&filter_curr_line_pos);
-	filters.push_back(&filter_curr_line_neg);
+	BestTargetFilter* oldest_fileter = nullptr;
+	if(curr_history_.is_full())
+		oldest_fileter = *(curr_history_.begin()+1);
+	if(oldest_fileter == &filter_curr_line_pos)
+	{
+		filters.push_back(&filter_curr_line_pos);
+		filters.push_back(&filter_curr_line_neg);
+	}else if(oldest_fileter == &filter_curr_line_neg)
+	{
+		filters.push_back(&filter_curr_line_neg);
+		filters.push_back(&filter_curr_line_pos);
+	}else{
+		if(lidar.compLaneDistance()==1)
+		{
+			filters.push_back(&filter_curr_line_pos);
+			filters.push_back(&filter_curr_line_neg);
+		}else{
+			filters.push_back(&filter_curr_line_neg);
+			filters.push_back(&filter_curr_line_pos);
+		}
+	}
+
+
 
 	if(isXAxis(priority_dir)) {
 		int16_t dx = correct_curr_.x + static_cast<int16_t>(isPos(priority_dir) ? 4 : -4);
@@ -30,7 +51,7 @@ std::unique_ptr<std::deque<BestTargetFilter*>> NavCleanPathAlgorithm::generateBo
 
 	filters.push_back(&filter_next_line_pos);
 
-	if(!(curr_filter_ == &filter_short_path && priority_dir != MAP_POS_Y) )
+	if(!(curr_history_.front() == &filter_short_path && priority_dir != MAP_POS_Y) )
 		filters.push_back(&filter_pos_of_y_axis);
 
 	filters.push_back(&filter_next_line_neg);
@@ -70,15 +91,15 @@ static BoundingBox2 getLine(const Cell_t& curr,GridMap& map) {
 void NavCleanPathAlgorithm::adjustPosition(GridMap &map, Points&  plan_path)
 {
 	int16_t tmp_curr_y=origen_curr_.y;
-	if(origen_curr_.y%2 == 1 && curr_filter_ != nullptr)
+	if(origen_curr_.y%2 == 1 && curr_history_.front() != nullptr)
 	{
-		curr_filter_->displayName();
+		curr_history_.front()->displayName();
 
-		if(curr_filter_ == &filter_curr_line_pos || curr_filter_ == &filter_curr_line_neg)
+		if(curr_history_.front() == &filter_curr_line_pos || curr_history_.front() == &filter_curr_line_neg)
 		{
 			tmp_curr_y = plan_path.back().toCell().y;
 		}
-		if(curr_filter_ == &filter_next_line_pos || curr_filter_ == &filter_next_line_neg)
+		if(curr_history_.front() == &filter_next_line_pos || curr_history_.front() == &filter_next_line_neg)
 		{
 			tmp_curr_y = plan_path.front().toCell().y;
 			if(g_follow_last_follow_wall_dir != 0)
@@ -116,9 +137,10 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr_p, co
 	ROS_WARN("priority_dir(%d),trend_pos(%d)\n",priority_dir,trend_pos);
 	g_follow_last_follow_wall_dir = 0;
 	func_compare_two_t expand_condition = nullptr;
+	curr_history_.push_front(nullptr);
 	for(auto&&filter : filters)
 	{
-		curr_filter_=filter;
+		curr_history_.front()=filter;
 		filter->updateTargetAndRangeBound();
 		filter->displayName();
 		ROS_INFO("target_bound(%d,%d,%d,%d)",filter->target_bound.min.x, filter->target_bound.min.y, filter->target_bound.max.x, filter->target_bound.max.y);
@@ -141,12 +163,12 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr_p, co
 
 	if(path.empty())
 	{
-		curr_filter_ = nullptr;
+		curr_history_.front() = nullptr;
 		ROS_WARN("can't find target");
 		return false;
 	}
 
-	trend_pos = curr_filter_ != &filter_next_line_neg;
+	trend_pos = curr_history_.front() != &filter_next_line_neg;
 	optimizePath(map, path, priority_dir,expand_condition );
 
 	plan_path = *cells_to_points(path);
@@ -179,7 +201,7 @@ bool NavCleanPathAlgorithm::checkTrapped(GridMap &map, const Cell_t &curr_cell)
 void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path, const Dir_t& priority_dir,const func_compare_two_t& expand_condition) {
 
 	ROS_INFO("Step 5:optimizePath");
-	if(curr_filter_ == &filter_curr_line_pos || curr_filter_ == &filter_curr_line_neg) {
+	if(curr_history_.front() == &filter_curr_line_pos || curr_history_.front() == &filter_curr_line_neg) {
 		ROS_INFO("filter_curr_line_pos:curr line");
 		const auto OVER_CELL_SIZE = 4;
 		if (robot::instance()->p_mode->getNextMode() == Mode::cm_navigation) {
@@ -210,13 +232,13 @@ void NavCleanPathAlgorithm::optimizePath(GridMap &map, Cells &path, const Dir_t&
 		map.cellPreventOutOfRange(c_it);
 		}
 	}
-	else if (curr_filter_ == &filter_after_obstacle_pos)
+	else if (curr_history_.front() == &filter_after_obstacle_pos)
 		path.push_back( Cell_t{path.back().x, static_cast<int16_t>(path.front().y + 3)});//for setting follow wall target line
-	else if (curr_filter_ == &filter_after_obstacle_neg)
+	else if (curr_history_.front() == &filter_after_obstacle_neg)
 		path.push_back( Cell_t{path.back().x, static_cast<int16_t>(path.front().y - 3)});//for setting follow wall target line
-	else if (curr_filter_ == &filter_top_of_y_axis_pos)
+	else if (curr_history_.front() == &filter_top_of_y_axis_pos)
 		path.push_front( Cell_t{path.front().x, static_cast<int16_t>(path.front().y - 1)});//for setting follow wall target line
-	else if (curr_filter_ == &filter_top_of_y_axis_neg)
+	else if (curr_history_.front() == &filter_top_of_y_axis_neg)
 		path.push_front( Cell_t{path.front().x, static_cast<int16_t>(path.front().y + 1)});//for setting follow wall target line
 	else {
 		APathAlgorithm::optimizePath(map, path, priority_dir,expand_condition);

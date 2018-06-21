@@ -62,11 +62,12 @@ bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point_t &curr, const 
 
 		if(way_it == home_ways.end())
 		{
+			ROS_INFO("go home point start home or rcon point" );
 			way_it = home_ways.begin();
 			hp_it = hps_list_it->begin();
 		}
 
-		for (; way_it != home_ways.end(); ++way_it) {
+		for (way_it = home_ways.begin(); way_it != home_ways.end(); ++way_it) {
 			way_it->get()->displayName();
 			if(way_it->get()->isClearBlock()&& !has_clean_)
 			{

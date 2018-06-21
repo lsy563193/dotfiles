@@ -210,18 +210,18 @@ public:
 	 * @return: Cells path, the path to unclean area in the same lane.
 	 */
     bool should_follow_wall(){
-		return ( curr_filter_ == &filter_after_obstacle_pos
-				||	curr_filter_ == &filter_after_obstacle_neg
-				||	curr_filter_ == &filter_top_of_y_axis_neg
-				||	curr_filter_ == &filter_top_of_y_axis_pos
-				||	curr_filter_ == &filter_next_line_neg
-				||	curr_filter_ == &filter_next_line_pos
+		return ( curr_history_.front() == &filter_after_obstacle_pos
+				||	curr_history_.front() == &filter_after_obstacle_neg
+				||	curr_history_.front() == &filter_top_of_y_axis_neg
+				||	curr_history_.front() == &filter_top_of_y_axis_pos
+				||	curr_history_.front() == &filter_next_line_neg
+				||	curr_history_.front() == &filter_next_line_pos
 		)
 				;
 	};
     bool is_pox_y(){
-		return curr_filter_ == &filter_top_of_y_axis_neg || curr_filter_ == &filter_top_of_y_axis_pos ? !curr_filter_->towardPos()
-																									  : curr_filter_->towardPos();
+		return curr_history_.front() == &filter_top_of_y_axis_neg || curr_history_.front() == &filter_top_of_y_axis_pos ? !curr_history_.front()->towardPos()
+																									  : curr_history_.front()->towardPos();
 	};
 
 private:
@@ -234,38 +234,38 @@ private:
 //	std::unique_ptr<Cells> findTargetInSameLane(GridMap &map, const Cell_t &curr_cell);
 /////////////////////////////////////////////////////////////////
 	RangeFunction range_curr_line = [&](){
-		return BoundingBox2{curr_filter_->target_bound.min, curr_filter_->target_bound.max};
+		return BoundingBox2{curr_history_.front()->target_bound.min, curr_history_.front()->target_bound.max};
 	};
 
 	RangeFunction range_next_line = [&](){
-		auto d_min_y = (curr_filter_->is_toward_pos_) ? correct_curr_.y: curr_filter_->target_bound.min.y;
-		auto d_max_y = (curr_filter_->is_toward_pos_) ? curr_filter_->target_bound.max.y : correct_curr_.y;
-		return BoundingBox2{Cell_t{curr_filter_->target_bound.min.x,d_min_y} , Cell_t{curr_filter_->target_bound.max.x,d_max_y}};
+		auto d_min_y = (curr_history_.front()->is_toward_pos_) ? correct_curr_.y: curr_history_.front()->target_bound.min.y;
+		auto d_max_y = (curr_history_.front()->is_toward_pos_) ? curr_history_.front()->target_bound.max.y : correct_curr_.y;
+		return BoundingBox2{Cell_t{curr_history_.front()->target_bound.min.x,d_min_y} , Cell_t{curr_history_.front()->target_bound.max.x,d_max_y}};
 	};
 
 	RangeFunction range_after_obstacle = [&](){
-		int16_t d_min_x = isPos(priority_dir) ? correct_curr_.x : curr_filter_->target_bound.min.x;
-		int16_t d_max_x = isPos(priority_dir) ? curr_filter_->target_bound.max.x : correct_curr_.x;
-		int16_t d_min_y = curr_filter_->is_toward_pos_ ? correct_curr_.y : correct_curr_.y-2;
-		int16_t d_max_y = curr_filter_->is_toward_pos_ ? correct_curr_.y+2: correct_curr_.y;
+		int16_t d_min_x = isPos(priority_dir) ? correct_curr_.x : curr_history_.front()->target_bound.min.x;
+		int16_t d_max_x = isPos(priority_dir) ? curr_history_.front()->target_bound.max.x : correct_curr_.x;
+		int16_t d_min_y = curr_history_.front()->is_toward_pos_ ? correct_curr_.y : correct_curr_.y-2;
+		int16_t d_max_y = curr_history_.front()->is_toward_pos_ ? correct_curr_.y+2: correct_curr_.y;
 		return BoundingBox2{Cell_t{d_min_x,d_min_y}, Cell_t{d_max_x, d_max_y}};
 	};
 	RangeFunction range_top_of_y_axis = [&](){
-		int16_t d_min_x = isPos(priority_dir) ? correct_curr_.x : curr_filter_->target_bound.min.x;
-		int16_t d_max_x = isPos(priority_dir) ? curr_filter_->target_bound.max.x : correct_curr_.x;
-		int16_t d_min_y = curr_filter_->is_toward_pos_ ? correct_curr_.y-1 : correct_curr_.y-2;
-		int16_t d_max_y = curr_filter_->is_toward_pos_ ? correct_curr_.y+2 : correct_curr_.y+1;
+		int16_t d_min_x = isPos(priority_dir) ? correct_curr_.x : curr_history_.front()->target_bound.min.x;
+		int16_t d_max_x = isPos(priority_dir) ? curr_history_.front()->target_bound.max.x : correct_curr_.x;
+		int16_t d_min_y = curr_history_.front()->is_toward_pos_ ? correct_curr_.y-1 : correct_curr_.y-2;
+		int16_t d_max_y = curr_history_.front()->is_toward_pos_ ? correct_curr_.y+2 : correct_curr_.y+1;
 		return BoundingBox2{Cell_t{d_min_x,d_min_y}, Cell_t{d_max_x, d_max_y}};
 	};
 	RangeFunction range_p3p = [&](){
-		int16_t dy = curr_filter_->towardPos() ? correct_curr_.y: int16_t(correct_curr_.y -1);
+		int16_t dy = curr_history_.front()->towardPos() ? correct_curr_.y: int16_t(correct_curr_.y -1);
 		return BoundingBox2{Cell_t{map_bound.min.x, dy}, map_bound.max};
 	};
 ////////////////////////////////////////////////////////////
 
 	RangeFunction target_curr_line = [&](){
-		Cell_t min = curr_filter_->towardPos() ? correct_curr_ : Cell_t{map_bound.min.x, correct_curr_.y};
-		Cell_t max = curr_filter_->towardPos() ? Cell_t{map_bound.max.x, correct_curr_.y} : correct_curr_;
+		Cell_t min = curr_history_.front()->towardPos() ? correct_curr_ : Cell_t{map_bound.min.x, correct_curr_.y};
+		Cell_t max = curr_history_.front()->towardPos() ? Cell_t{map_bound.max.x, correct_curr_.y} : correct_curr_;
 		return BoundingBox2{min, max};
 	};
 
@@ -276,7 +276,7 @@ private:
 	};
 
 	RangeFunction target_next_line = [&](){
-		int16_t dy = correct_curr_.y + (curr_filter_->towardPos() ? 2:-2);
+		int16_t dy = correct_curr_.y + (curr_history_.front()->towardPos() ? 2:-2);
 		return BoundingBox2{Cell_t{curr_bound.min.x, dy}, Cell_t{curr_bound.max.x, dy}};
 	};
 
@@ -285,7 +285,7 @@ private:
 	};
 
 	RangeFunction target_top_of_y_axis = [&](){
-		int16_t dy = curr_filter_->towardPos()? 2 : -2;
+		int16_t dy = curr_history_.front()->towardPos()? 2 : -2;
 		int16_t dx1 = (isPos(priority_dir)) ? 3 : -5;
 		int16_t dx2 = (isPos(priority_dir)) ? 5 : -3;
 		return BoundingBox2{correct_curr_ + Cell_t{dx1, dy}, correct_curr_+ Cell_t{dx2, dy}};
@@ -316,7 +316,8 @@ public:
 
 	BestTargetFilter filter_short_path{"filter_short_path:", target_all, target_all, true};
 
-	BestTargetFilter* curr_filter_{};
+//	BestTargetFilter* curr_history_.front(){};
+	DequeArray<BestTargetFilter*> curr_history_ = DequeArray<BestTargetFilter*>(2);
 
 	BoundingBox2 map_bound;
 	BoundingBox2 curr_bound{};

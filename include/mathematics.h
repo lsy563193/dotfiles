@@ -547,6 +547,10 @@ public:
 		return d.erase(it);
 	}
 
+	T& front() {
+		return d.front();
+	}
+
 	typename std::deque<T>::iterator begin() {
 		return d.begin();
 	}
@@ -567,6 +571,10 @@ public:
 		return d[i];
 	}
 //	using iterator =  std::deque::const_iterator;
+	bool is_full()
+	{
+		return valid_size_ == d.size();
+	}
 
 private:
 	std::deque<T> d;
