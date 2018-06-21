@@ -1095,6 +1095,7 @@ bool CleanModeNav::checkEnterResumeLowBatteryCharge()
 		action_i_ = ac_null;
 		updateActionInStateInit();
 		sp_state->init();
+		clean_path_algorithm_.reset(new NavCleanPathAlgorithm);
 		low_battery_charge_ = true;
 		// For entering checking switch.
 		ev.charge_detect = 0;

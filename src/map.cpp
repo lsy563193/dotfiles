@@ -36,37 +36,35 @@ CellState GridMap::getCost(int16_t x, int16_t y)
 		y += MAP_SIZE + MAP_SIZE / 2;
 		y %= MAP_SIZE;
 
-			val = (CellState) (clean_map[x][y]);
-
+		val = (CellState) (clean_map[x][y]);
 	} else
-	{
-			val = BLOCKED_BOUNDARY;
-	}
+		val = BLOCKED_BOUNDARY;
 
 	return val;
 }
 
-void GridMap::setCost(int16_t x, int16_t y, CellState value) {
+void GridMap::setCost(int16_t x, int16_t y, CellState value)
+{
 	int16_t ROW, COLUMN;
-		if (x >= xRangeMax - (MAP_SIZE - 1) && x <= xRangeMin + (MAP_SIZE - 1) &&
-			y >= yRangeMax - (MAP_SIZE - 1) && y <= yRangeMin + (MAP_SIZE - 1))
-		{
-			if(x < xRangeMin)
-				xRangeMin = x;
-			else if(x > xRangeMax)
-				xRangeMax = x;
+	if (x >= xRangeMax - (MAP_SIZE - 1) && x <= xRangeMin + (MAP_SIZE - 1) &&
+		y >= yRangeMax - (MAP_SIZE - 1) && y <= yRangeMin + (MAP_SIZE - 1))
+	{
+		if (x < xRangeMin)
+			xRangeMin = x;
+		else if (x > xRangeMax)
+			xRangeMax = x;
 
-			if(y < yRangeMin)
-				yRangeMin = y;
-			else if(y > yRangeMax)
-				yRangeMax = y;
+		if (y < yRangeMin)
+			yRangeMin = y;
+		else if (y > yRangeMax)
+			yRangeMax = y;
 
-			ROW = static_cast<int16_t>(x + MAP_SIZE + MAP_SIZE / 2);
-			ROW %= MAP_SIZE;
-			COLUMN = static_cast<int16_t>(y + MAP_SIZE + MAP_SIZE / 2);
-			COLUMN %= MAP_SIZE;
+		ROW = static_cast<int16_t>(x + MAP_SIZE + MAP_SIZE / 2);
+		ROW %= MAP_SIZE;
+		COLUMN = static_cast<int16_t>(y + MAP_SIZE + MAP_SIZE / 2);
+		COLUMN %= MAP_SIZE;
 
-			clean_map[ROW][COLUMN] = static_cast<uint8_t>(value);
+		clean_map[ROW][COLUMN] = static_cast<uint8_t>(value);
 	}
 }
 

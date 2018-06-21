@@ -10,7 +10,7 @@ GoHomePathAlgorithm::GoHomePathAlgorithm(GridMap& map, HomePointsManager *p_home
 {
 	p_home_points_manage_ = p_home_points_manage;
 	p_home_points_manage->for_each([&](const Point_t& it){
-		ROS_WARN("set Area Clean,%d,%d",it.toCell().x, it.toCell().y);
+		ROS_WARN("%s %d: Set area around (%d, %d) as CLEANED.", __FUNCTION__, __LINE__, it.toCell().x, it.toCell().y);
 		map.setArea(it.toCell(), CLEANED, 1, 1);
 	});
 
@@ -21,7 +21,7 @@ GoHomePathAlgorithm::GoHomePathAlgorithm(GridMap& map, HomePointsManager *p_home
 					|| map.getCost(cell.x, cell.y) == BLOCKED_RCON)
 			map.setCost(cell.x, cell.y, UNCLEAN);
 	}
-	ROS_INFO("%s,%d: push back home way.",__FUNCTION__,__LINE__);
+//	ROS_INFO("%s,%d: push back home way.",__FUNCTION__,__LINE__);
 	temp_map = make_unique<GridMap>();
 	if(!is_follow_wall)
 	{
