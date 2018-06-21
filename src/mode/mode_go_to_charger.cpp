@@ -84,7 +84,7 @@ bool ModeGoToCharger::isFinish()
 
 	if(sp_action_->isFinish())
 	{
-		PP_INFO();
+//		PP_INFO();
 		action_i_ = getNextAction();
 		genNextAction();
 		if(sp_action_ == nullptr)
@@ -102,7 +102,7 @@ bool ModeGoToCharger::isFinish()
 
 int ModeGoToCharger::getNextAction()
 {
-	PP_INFO();
+//	PP_INFO();
 	if (action_i_ == ac_exception_resume && !ev.fatal_quit)
 	{
 		if (gyro.isOn())

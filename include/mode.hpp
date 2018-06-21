@@ -184,6 +184,8 @@ private:
 
 	bool readyToClean(bool check_battery = true, bool check_error = true);
 
+	bool battery_too_low_to_clean_{false};
+	bool battery_too_low_to_move_{false};
 };
 
 class ModeSleep: public Mode

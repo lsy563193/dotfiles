@@ -45,7 +45,7 @@ ModeSleep::ModeSleep()
 	plan_activated_status_ = false;
 
 	//sp_action_.reset(new ActionSleep);
-	if (!charger.getChargeStatus() && battery.isReadyToClean())
+	if (!charger.getChargeStatus() && !robot::instance()->batteryTooLowToClean())
 		fake_sleep_ = true;
 
 	sp_action_.reset(new ActionSleep(fake_sleep_));
@@ -85,7 +85,7 @@ bool ModeSleep::isExit()
 			{
 				ROS_WARN("%s %d: Plan not activated not valid because of robot lifted up.", __FUNCTION__, __LINE__);
 				speaker.play(VOICE_ERROR_LIFT_UP);
-			} else if (!battery.isReadyToClean())
+			} else if (robot::instance()->batteryTooLowToClean())
 			{
 				ROS_WARN("%s %d: Plan not activated not valid because of battery not ready to clean.", __FUNCTION__,
 						 __LINE__);
@@ -162,7 +162,7 @@ bool ModeSleep::isExit()
 
 bool ModeSleep::isFinish()
 {
-	if (fake_sleep_ && !battery.isReadyToClean())
+	if (fake_sleep_ && robot::instance()->batteryTooLowToClean())
 	{
 		ROS_INFO("%s %d: Battery too low, enter low power sleep.", __FUNCTION__, __LINE__);
 		auto sp_action_sleep = boost::dynamic_pointer_cast<ActionSleep>(sp_action_);
@@ -251,6 +251,7 @@ void ModeSleep::remotePlan(bool state_now, bool state_last)
 		INFO_YELLOW("Plan activated.");
 		serial.setWorkMode(WORK_MODE);
 		key_led.setMode(LED_FLASH, LED_GREEN);
+		battery.forceUpdate();
 		plan_activated_status_ = true;
 	}
 	else
@@ -270,7 +271,7 @@ void ModeSleep::remoteKeyHandler(bool state_now, bool state_last)
 
 bool ModeSleep::readyToClean()
 {
-	if (!battery.isReadyToClean())
+	if (robot::instance()->batteryTooLowToClean())
 	{
 		ROS_WARN("%s %d: Battery not ready to clean(Not reach %4dmV).", __FUNCTION__,
 				 __LINE__, BATTERY_READY_TO_CLEAN_VOLTAGE);
@@ -283,11 +284,11 @@ bool ModeSleep::readyToClean()
 		speaker.play(VOICE_ERROR_LIFT_UP, false);
 		return false;
 	}
-	else if (robot::instance()->isBatteryLow2())
+	else if (robot::instance()->batteryTooLowToMove())
 	{
 		ROS_WARN("%s %d: Battery level low %4dmV(limit in %4dmV)", __FUNCTION__, __LINE__, battery.getVoltage(), (int)LOW_BATTERY_STOP_VOLTAGE);
 		sp_state->init();
-		beeper.beepForCommand(INVALID);
+//		beeper.beepForCommand(INVALID);
 		speaker.play(VOICE_BATTERY_LOW, false);
 		return false;
 	}

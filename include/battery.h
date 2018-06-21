@@ -9,20 +9,12 @@
 
 class Battery {
 public:
-	bool isFull(void);
+	bool isFull();
 
 	void setIsFull(bool is_full)
 	{
 		is_full_ = is_full;
 	}
-
-	bool isReadyToClean(void);
-
-	bool shouldGoHome(void);
-
-	bool isReadyToResumeCleaning(void);
-
-	bool isLow(void);
 
 	uint16_t getVoltage()
 	{
@@ -34,12 +26,15 @@ public:
 
 	void setVoltage(uint16_t val);
 
-	void forceUpdate()
-	{
-		force_update_ = true;
-	}
+	void forceUpdate();
 
 private:
+
+	bool isReadyToClean();
+
+	bool shouldGoHome();
+
+	bool isReadyToMove();
 
 	const uint16_t BATTERY_VOL_MAX = 1660;
 	const uint16_t BATTERY_VOL_MIN = 1260;

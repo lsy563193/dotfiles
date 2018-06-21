@@ -23,6 +23,11 @@ MovementTurn::MovementTurn(double slam_target, uint8_t max_speed) : speed_(ROTAT
 			 radian_to_degree(getPosition().th), radian_to_degree(odom.getRadian()));
 }
 
+MovementTurn::~MovementTurn() {
+	gyro.resetCheckRobotSlipByGyro();
+	ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);
+}
+
 bool MovementTurn::isReach()
 {
 //	ROS_WARN("%s, %d: MovementTurn finish, target_radian_: \033[32m%f (in degree)\033[0m, current radian: \033[32m%f (in degree)\033[0m."
@@ -32,11 +37,7 @@ bool MovementTurn::isReach()
 		, __FUNCTION__, __LINE__, radian_to_degree(target_radian_), radian_to_degree(odom.getRadian()));
 		return true;
 	}
-	if(isTimeUp()){
-		ROS_WARN("%s %d: Robot maybe slip but not detect in checkSlip, curr_degree(%lf)", __FUNCTION__, __LINE__,radian_to_degree(getPosition().th));
-		ev.slip_triggered = true;
-		return true;
-	}
+
 	return false;
 }
 
@@ -94,7 +95,17 @@ void MovementTurn::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 
 bool MovementTurn::isFinish()
 {
+	// Check slip by gyro
+	gyro.checkRobotSlipByGyro();
+
 	auto ret = isReach() || sp_mt_->isFinishForward();
+
+	if(isTimeUp()){
+		ROS_WARN("%s %d: Robot maybe slip but not detect in checkSlip, curr_degree(%lf)", __FUNCTION__, __LINE__,radian_to_degree(getPosition().th));
+		ev.slip_triggered = true;
+		ret = true;
+	}
+
 	if (ret) {
 		wheel.stop();
 	}

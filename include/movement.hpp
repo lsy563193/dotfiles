@@ -115,10 +115,8 @@ class MovementTurn: public IMovement{
 public:
 
 	explicit MovementTurn(double slam_target, uint8_t max_speed);
-	~MovementTurn()
-	{
-		ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);
-	}
+	~MovementTurn();
+
 	void adjustSpeed(int32_t&, int32_t&) override;
 	bool isReach();
 	bool isFinish() override;
