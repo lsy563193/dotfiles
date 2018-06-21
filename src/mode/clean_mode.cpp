@@ -1935,9 +1935,16 @@ bool ACleanMode::updateActionInStateGoHomePoint() {
 		{
 			should_go_to_charger_ = false;
 		}
-		else{
+		else
+		{
 			should_go_to_charger_ = true;
 			home_points_manager_.popCurrRconPoint();
+			home_points_manager_.for_each([&](const Point_t &it)
+										  {
+											  ROS_WARN("%s %d: Set area around (%d, %d) as CLEANED.", __FUNCTION__,
+													   __LINE__, it.toCell().x, it.toCell().y);
+											  clean_map_.setArea(it.toCell(), CLEANED, 1, 1);
+										  });
 		}
 		update_finish = false;
 	} else if (home_points_manager_.isStartPoint() && getPosition().toCell() == home_points_manager_.getStartPoint()->toCell()) {

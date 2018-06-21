@@ -185,7 +185,7 @@ void CleanModeFollowWall::batteryHome(bool state_now, bool state_last)
 }
 
 void CleanModeFollowWall::switchInStateInit() {
-	PP_INFO();
+//	PP_INFO();
 	action_i_ = ac_null;
 	sp_action_ = nullptr;
 	sp_state = state_folllow_wall.get();

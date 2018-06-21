@@ -27,10 +27,13 @@ GoHomePathAlgorithm::GoHomePathAlgorithm(GridMap& map, HomePointsManager *p_home
 	{
 		home_ways.push_back(make_unique<GoHomeWay_t>("MapThroughAccessibleAndCleaned", ThroughAccessibleAndCleaned(&map)));
 		home_ways.push_back(make_unique<GoHomeWay_t>("MapCleanBlockThroughAccessibleAndCleaned", ThroughAccessibleAndCleaned(&map),false, true));
-		home_ways.push_back(make_unique<GoHomeWay_t>("SlamMapThroughAccessible", ThroughBlockAccessible(temp_map.get()),true));
+		home_ways.push_back(make_unique<GoHomeWay_t>("SlamMapThroughAccessibleAndCleaned", ThroughBlockAccessible(temp_map.get()),true));
 		home_ways.push_back(make_unique<GoHomeWay_t>("MapThroughAccessible", ThroughBlockAccessible(&map)));
 	}else{
-		home_ways.push_back(make_unique<GoHomeWay_t>("SlamMapThroughAccessible", ThroughBlockAccessible(temp_map.get()),true));
+		// Cover the map with slam map reachable area.
+		map.merge(slam_grid_map, false, false, true, false, false, false);
+
+		home_ways.push_back(make_unique<GoHomeWay_t>("SlamMapThroughAccessibleAndCleaned", ThroughBlockAccessible(temp_map.get()),true));
 		home_ways.push_back(make_unique<GoHomeWay_t>("MapCleanBlockThroughAccessibleAndCleaned", ThroughAccessibleAndCleaned(&map),false, true));
 	}
 	way_it = home_ways.begin();
@@ -84,9 +87,6 @@ bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point_t &curr, const 
 			for (; hp_it != hps_list_it->end(); ++(hp_it)) {
 				ROS_INFO("hp_it(%d,%d)", hp_it->toCell().x, hp_it->toCell().y);
 				auto p_tmp_map_ = way_it->get()->updateMap(map,temp_map, curr);
-
-				if(!p_tmp_map_->isBlockAccessible(hp_it->toCell().x, hp_it->toCell().y))
-					p_tmp_map_->markRobot(hp_it->toCell());
 
 				if (dijkstra(*p_tmp_map_, curr.toCell(), plan_path_cells, true, CellEqual(hp_it->toCell()),
 							 isAccessible(p_tmp_map_, way_it->get()->expand_condition))) {
