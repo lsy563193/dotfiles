@@ -1811,7 +1811,7 @@ void ACleanMode::overCurrentVacuum(bool state_now, bool state_last)
 
 void ACleanMode::batteryLow(bool state_now, bool state_last)
 {
-	if (!ev.battery_low && battery.isLow())
+	if (!ev.battery_low)
 	{
 		ROS_WARN("%s %d: Low battery(%.2fV).", __FUNCTION__, __LINE__, battery.getVoltage() / 100.0);
 		ev.battery_low = true;

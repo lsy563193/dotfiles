@@ -564,14 +564,14 @@ void robot::runWorkMode()
 
 	if (charger.isOnStub() || charger.isDirected())
 		p_mode.reset(new ModeCharge());
-	else if (battery.isReadyToClean())
+	else if (robot::instance()->batteryTooLowToClean())
 	{
-		speaker.play(VOICE_PLEASE_START_CLEANING, false);
+		speaker.play(VOICE_BATTERY_LOW, false);
 		p_mode.reset(new ModeIdle());
 	}
 	else
 	{
-		speaker.play(VOICE_BATTERY_LOW, false);
+		speaker.play(VOICE_PLEASE_START_CLEANING, false);
 		p_mode.reset(new ModeIdle());
 	}
 

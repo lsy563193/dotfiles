@@ -99,9 +99,6 @@
 /* Fully charged battery voltage value */
 #define BATTERY_FULL_VOLTAGE	(1660)
 
-/* Continue cleaning voltage value */
-#define RESUME_CLEANING_VOLTAGE	(1660)
-
 /* Battery voltage criterion for brush setting*/
 #define NORMAL_OPERATE_VOLTAGE_FOR_SIDE_BRUSH	(1050)
 #define NORMAL_OPERATE_VOLTAGE_FOR_MAIN_BRUSH	(850)

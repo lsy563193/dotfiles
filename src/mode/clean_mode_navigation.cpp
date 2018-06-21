@@ -619,8 +619,8 @@ void CleanModeNav::batteryHome(bool state_now, bool state_last)
 	if (!ev.battery_home && isStateClean())
 	{
 		continue_point_ = getPosition();
-		ROS_WARN("%s %d: low battery, battery =\033[33m %dmv \033[0m, continue cell(%d, %d)", __FUNCTION__, __LINE__,
-				 battery.getVoltage(), continue_point_.x, continue_point_.y);
+		ROS_WARN("%s %d: low battery, battery = %dmv, continue cell(%d, %d)", __FUNCTION__, __LINE__,
+				 battery.getVoltage(), continue_point_.toCell().x, continue_point_.toCell().y);
 		ev.battery_home = true;
 	}
 }
