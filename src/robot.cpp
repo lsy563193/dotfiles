@@ -434,9 +434,6 @@ void robot::robotbase_routine_cb()
 		odom_broad.sendTransform(odom_trans);
 		/*------publish end -----------*/
 
-		// Check slip by gyro
-		gyro.checkRobotSlipByGyro();
-
 		// Check tilt
 		checkTilt();
 

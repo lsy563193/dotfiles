@@ -59,6 +59,8 @@ public:
 
 	void setAccInitData(void);
 
+	void resetCheckRobotSlipByGyro();
+
 	void checkRobotSlipByGyro();
 
 	bool error(void);
