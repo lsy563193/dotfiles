@@ -83,7 +83,7 @@ const Cell_t cell_direction_4[4]{{1,0},{-1,0},{0,1},{0,-1}};
 //		y_max = max_corner.y;
 //	}
 //	else
-//		map.getMapRange(CLEAN_MAP, &x_min, &x_max, &y_min, &y_max);
+//		map.getMapRange(&x_min, &x_max, &y_min, &y_max);
 //
 //	// Reset the COST_MAP.
 //	map.reset(COST_MAP);
@@ -91,38 +91,38 @@ const Cell_t cell_direction_4[4]{{1,0},{-1,0},{0,1},{0,-1}};
 //	// Mark obstacles in COST_MAP
 //	for (int16_t i = x_min - 1; i <= x_max + 1; ++i) {
 //		for (int16_t j = y_min - 1; j <= y_max + 1; ++j) {
-//			CellState cs = map.getCell(CLEAN_MAP, i, j);
+//			CellState cs = map.getCost(i, j);
 //			if (cs >= BLOCKED && cs <= BLOCKED_BOUNDARY) {
 //				//for (m = ROBOT_RIGHT_OFFSET + 1; m <= ROBOT_LEFT_OFFSET - 1; m++)
 //				for (int16_t m = ROBOT_RIGHT_OFFSET; m <= ROBOT_LEFT_OFFSET; m++) {
 //					for (int16_t n = ROBOT_RIGHT_OFFSET; n <= ROBOT_LEFT_OFFSET; n++) {
-//						map.setCell(COST_MAP, (i + m), (j + n), COST_HIGH);
+//						map.setCost(COST_MAP, (i + m), (j + n), COST_HIGH);
 //					}
 //				}
 //			}
 //			else if(cs == UNCLEAN && !use_unknown)
-//				map.setCell(COST_MAP, i, j, COST_HIGH);
+//				map.setCost(COST_MAP, i, j, COST_HIGH);
 //		}
 //	}
 //
 //	// For protection, the target cell must be reachable.
-//	if (map.getCell(COST_MAP, target.x, target.y) == COST_HIGH)
+//	if (map.getCost(COST_MAP, target.x, target.y) == COST_HIGH)
 //	{
 //		ROS_ERROR("%s %d: Target cell has high cost(%d)! This target should be filtered before calling this function.",
-//				  __FUNCTION__, __LINE__, map.getCell(COST_MAP, target.x, target.y));
+//				  __FUNCTION__, __LINE__, map.getCost(COST_MAP, target.x, target.y));
 //		return path_;
 //	}
 //
 //	// Set for target cell. For reverse algorithm, we will generate a-star map from target cell.
-//	map.setCell(COST_MAP, target.x, target.y, COST_1);
+//	map.setCost(COST_MAP, target.x, target.y, COST_1);
 //
 //	// For protection, the start cell must be reachable.
-//	if (map.getCell(COST_MAP, start.x, start.y) == COST_HIGH)
+//	if (map.getCost(COST_MAP, start.x, start.y) == COST_HIGH)
 //	{
 //		ROS_ERROR("%s %d: Start cell has high cost(%d)! It may cause bug, please check.",
-//							__FUNCTION__, __LINE__, map.getCell(COST_MAP, start.x, start.y));
+//							__FUNCTION__, __LINE__, map.getCost(COST_MAP, start.x, start.y));
 //		map.print(getPosition().toCell(), COST_MAP, Cells{target});
-//		map.setCell(COST_MAP, start.x, start.y, COST_NO);
+//		map.setCost(COST_MAP, start.x, start.y, COST_NO);
 //	}
 //
 //	/*
@@ -134,7 +134,7 @@ const Cell_t cell_direction_4[4]{{1,0},{-1,0},{0,1},{0,-1}};
 //	bool cost_updated = true;
 //	int16_t cost_value = 1;
 //	int16_t next_cost_value = 2;
-//	while (map.getCell(COST_MAP, start.x, start.y) == COST_NO && cost_updated) {
+//	while (map.getCost(COST_MAP, start.x, start.y) == COST_NO && cost_updated) {
 //		offset++;
 //		cost_updated = false;
 //
@@ -156,12 +156,12 @@ const Cell_t cell_direction_4[4]{{1,0},{-1,0},{0,1},{0,-1}};
 //					continue;
 //
 //				/* Found a cell that has a pass value equal to the current pass value. */
-//				if(map.getCell(COST_MAP, i, j) == cost_value) {
+//				if(map.getCost(COST_MAP, i, j) == cost_value) {
 //					/* Set the lower cell of the cell which has the pass value equal to current pass value. */
 //					for(auto index = 0;index<4; index++) {
 //						auto neighbor = Cell_t(i, j) - cell_direction_[index];
-//						if (map.getCell(COST_MAP, neighbor.x, neighbor.y) == COST_NO) {
-//							map.setCell(COST_MAP, neighbor.x, neighbor.y, (CellState) next_cost_value);
+//						if (map.getCost(COST_MAP, neighbor.x, neighbor.y) == COST_NO) {
+//							map.setCost(COST_MAP, neighbor.x, neighbor.y, (CellState) next_cost_value);
 //							cost_updated = true;
 //						}
 //					}
@@ -179,7 +179,7 @@ const Cell_t cell_direction_4[4]{{1,0},{-1,0},{0,1},{0,-1}};
 //	}
 //
 //	// If the start cell still have a cost of 0, it means target is not reachable.
-//	CellState start_cell_state = map.getCell(COST_MAP, start.x, start.y);
+//	CellState start_cell_state = map.getCost(COST_MAP, start.x, start.y);
 //	if (start_cell_state == COST_NO || start_cell_state == COST_HIGH) {
 //		ROS_WARN("%s, %d: Target (%d, %d) is not reachable for start cell(%d, %d)(%d), return empty path.",
 //						 __FUNCTION__, __LINE__, target.x, target.y, start.x, start.y, start_cell_state);
@@ -208,7 +208,7 @@ const Cell_t cell_direction_4[4]{{1,0},{-1,0},{0,1},{0,-1}};
 //	auto trace_dir = (last_dir == MAP_POS_Y || last_dir == MAP_NEG_Y) ? 1: 0;
 //	//ROS_INFO("%s %d: trace dir: %d", __FUNCTION__, __LINE__, trace_dir);
 //	while (trace_x != target.x || trace_y != target.y) {
-//		CellState cost_at_cell = map.getCell(COST_MAP, trace_x, trace_y);
+//		CellState cost_at_cell = map.getCost(COST_MAP, trace_x, trace_y);
 //		auto target_cost = static_cast<CellState>(cost_at_cell - 1);
 //
 //		/* Reset target cost to 5, since cost only set from 1 to 5 in the COST_MAP. */
@@ -216,10 +216,10 @@ const Cell_t cell_direction_4[4]{{1,0},{-1,0},{0,1},{0,-1}};
 //			target_cost = COST_5;
 //
 //		/* Set the cell value to 6 if the cells is on the path. */
-//		map.setCell(COST_MAP, (int32_t) trace_x, (int32_t) trace_y, COST_PATH);
+//		map.setCost(COST_MAP, (int32_t) trace_x, (int32_t) trace_y, COST_PATH);
 //
 //#define COST_SOUTH	{											\
-//				if (next == 0 && (map.getCell(COST_MAP, trace_x - 1, trace_y) == target_cost)) {	\
+//				if (next == 0 && (map.getCost(COST_MAP, trace_x - 1, trace_y) == target_cost)) {	\
 //					trace_x--;								\
 //					next = 1;								\
 //					trace_dir = 1;								\
@@ -227,7 +227,7 @@ const Cell_t cell_direction_4[4]{{1,0},{-1,0},{0,1},{0,-1}};
 //			}
 //
 //#define COST_WEST	{											\
-//				if (next == 0 && (map.getCell(COST_MAP, trace_x, trace_y - 1) == target_cost)) {	\
+//				if (next == 0 && (map.getCost(COST_MAP, trace_x, trace_y - 1) == target_cost)) {	\
 //					trace_y--;								\
 //					next = 1;								\
 //					trace_dir = 0;								\
@@ -235,7 +235,7 @@ const Cell_t cell_direction_4[4]{{1,0},{-1,0},{0,1},{0,-1}};
 //			}
 //
 //#define COST_EAST	{											\
-//				if (next == 0 && (map.getCell(COST_MAP, trace_x, trace_y + 1) == target_cost)) {	\
+//				if (next == 0 && (map.getCost(COST_MAP, trace_x, trace_y + 1) == target_cost)) {	\
 //					trace_y++;								\
 //					next = 1;								\
 //					trace_dir = 0;								\
@@ -243,7 +243,7 @@ const Cell_t cell_direction_4[4]{{1,0},{-1,0},{0,1},{0,-1}};
 //			}
 //
 //#define COST_NORTH	{											\
-//				if (next == 0 && map.getCell(COST_MAP, trace_x + 1, trace_y) == target_cost) {	\
+//				if (next == 0 && map.getCost(COST_MAP, trace_x + 1, trace_y) == target_cost) {	\
 //					trace_x++;								\
 //					next = 1;								\
 //					trace_dir = 1;								\
@@ -279,7 +279,7 @@ const Cell_t cell_direction_4[4]{{1,0},{-1,0},{0,1},{0,-1}};
 //		trace_y_last = trace_y;
 //	}
 //
-//	map.setCell(COST_MAP, (int32_t) target.x, (int32_t) target.y, COST_PATH);
+//	map.setCost(COST_MAP, (int32_t) target.x, (int32_t) target.y, COST_PATH);
 //
 //	trace_cell = target;
 //	path_.push_back(trace_cell);
@@ -309,7 +309,7 @@ uint16_t distween_between(const Cell_t &curr, const Cell_t &neighbor) {
 //	printf("(%d),nei(%d,%d),curr(%d,%d)~~~~~~~~~~~~~~\n",dir,neighbor.x,neighbor.y,curr.x,curr.y);
 	return static_cast<uint16_t>(get_dir(neighbor, curr) < 4 ? 10 : 14);
 }
-bool APathAlgorithm::isAccessible(const Cell_t &c_it, const BoundingBox2& bound, GridMap& map) {
+bool APathAlgorithm::AStarIsAccessible(const Cell_t &c_it, const BoundingBox2 &bound, GridMap &map) {
     return bound.Contains(c_it) && map.isBlockAccessible(c_it.x, c_it.y);
 }
 class Neighbors{
@@ -403,32 +403,22 @@ bool APathAlgorithm::checkTrappedUsingDijkstra(GridMap &map, const Cell_t &curr_
 {
 	Cells targets;
 	// Find if there is uncleaned area.
+	ROS_INFO("check is realy can't found unclean target");
 	auto expand_condition = [&](const Cell_t &cell, const Cell_t &neighbor_cell)
 	{
 		return map.isBlockAccessible(neighbor_cell.x, neighbor_cell.y);
 	};
 
-	auto found_unclean_target = dijkstra(map,getPosition().toCell(), targets, false,
+	map.print(curr_cell,targets);
+	auto found_unclean_target = dijkstra(map,curr_cell, targets, true,
 												 IsTarget(&map, map.genTargetRange()),
-												 expand_condition);
+												 isAccessible(&map,expand_condition));
 
 	if (found_unclean_target)
 		return false;
 
-	// Use clean area proportion to judge if it is trapped.
-//	int dijkstra_cleaned_count{};
-//	auto is_trapped = map.count_if(curr_cell,[&](Cell_t c_it) {
-//		return (map.getCell(CLEAN_MAP, c_it.x, c_it.y) == CLEANED);
-//	},dijkstra_cleaned_count);
-
+	ROS_INFO("Use clean area proportion to judge if it is trapped.");
 	auto dijkstra_cleaned_count = dijkstraCountCleanedArea(map, getPosition(), targets);
-//	ROS_ERROR_COND(1.0 * abs(dijkstra_cleaned_count2 - dijkstra_cleaned_count) / dijkstra_cleaned_count > 0.1,
-//				   "%s %d: dijkstra_cleaned_count2 %d, dijkstra_cleaned_count %d, please inform Austin.",
-//				   __FUNCTION__, __LINE__, dijkstra_cleaned_count2, dijkstra_cleaned_count);
-
-	if(!targets.empty())
-//	if(!is_trapped)
-		return false;
 
 	auto map_cleand_count = map.getCleanedArea();
 	double clean_proportion = static_cast<double>(dijkstra_cleaned_count) / static_cast<double>(map_cleand_count);
@@ -441,7 +431,7 @@ bool APathAlgorithm::isTargetReachable(GridMap map,Cell_t target)
 {
 	for (int16_t i = target.x - 1; i <= target.x + 1; ++i) {
 		for (int16_t j = target.y- 1; j <= target.y + 1; ++j) {
-			CellState cs = map.getCell(CLEAN_MAP, i, j);
+			CellState cs = map.getCost(i, j);
 			if (cs >= BLOCKED && cs <= BLOCKED_BOUNDARY) {
 				return false;
 			}
@@ -499,29 +489,30 @@ void APathAlgorithm::findPath(GridMap &map, const Cell_t &start, const Cell_t &t
 		path.push_front(target);
 		return;
 	}
-	auto cost = map.getCell(COST_MAP, target.x, target.y);
+	auto cost = map.getCost(target.x, target.y);
 	auto iterator = target;
 //	printf("findPath, start(%d,%d),target(%d,%d)\n",start.x, start.y, target.x, target.y);
 //	map.print(getPosition().toCell(), COST_MAP, Cells{});
 	for (; iterator != start;) {
-		if(map.getCell(COST_MAP, iterator.x, iterator.y) != cost)
+		if(map.getCost(iterator.x, iterator.y) != cost)
 		{
-			printf("start(%d,%d) iterator(%d,%d),target(%d,%d)cost(%d,%d)\n",start.x, start.y, iterator.x, iterator.y,target.x, target.y, cost,map.getCell(COST_MAP, iterator.x, iterator.y) );
-			map.print(getPosition().toCell(), CLEAN_MAP, Cells{target});
-			map.print(getPosition().toCell(), COST_MAP, Cells{});
-			ROS_ASSERT(map.getCell(COST_MAP, iterator.x, iterator.y) == cost);
+			printf("start(%d,%d) iterator(%d,%d),target(%d,%d)cost(%d,%d)\n",start.x, start.y, iterator.x, iterator.y,target.x, target.y, cost,
+				   map.getCost(iterator.x, iterator.y) );
+			map.print(getPosition().toCell(), Cells{target});
+			map.print(getPosition().toCell(), Cells{});
+			ROS_ASSERT(map.getCost(iterator.x, iterator.y) == cost);
 		}
 		cost -= 1;
 		if(cost == 0)
 			cost = 5;
 		for (auto i = 0; i < 4; i++) {
 			auto neighbor = iterator + cell_direction_[(last_i + i) % 4];
-//			printf("iterator(%d,%d)cost(%d,%d)\n", iterator.x, iterator.y, cost,map.getCell(COST_MAP, iterator.x, iterator.y));
+//			printf("iterator(%d,%d)cost(%d,%d)\n", iterator.x, iterator.y, cost,map.getCost(COST_MAP, iterator.x, iterator.y));
 			if (map.cellIsOutOfTargetRange(neighbor))
 				continue;
 
-			if (map.getCell(COST_MAP, neighbor.x, neighbor.y) == cost) {
-//				printf("~~iterator(%d,%d)cost(%d,%d)\n", iterator.x, iterator.y, cost,map.getCell(COST_MAP, iterator.x, iterator.y));
+			if (map.getCost(neighbor.x, neighbor.y) == cost) {
+//				printf("~~iterator(%d,%d)cost(%d,%d)\n", iterator.x, iterator.y, cost,map.getCost(COST_MAP, iterator.x, iterator.y));
 				if (i != 0 || path.empty()) {
 					last_i = (last_i + i) % 4;
 					path.push_front(iterator);
@@ -566,7 +557,7 @@ bool APathAlgorithm::shift_path(GridMap &map, const Cell_t &p1, Cell_t &p2, Cell
 		auto shift = (p12_it - p2);
 		if(is_first)
 			shift /= 2;
-		ROS_ERROR("(shift(%d,%d),", shift.x, shift.y);
+		ROS_INFO("(shift(%d,%d),", shift.x, shift.y);
 		p2 += shift;
 		p3 += shift;
 		return shift != Cell_t{0,0};
@@ -595,9 +586,9 @@ bool APathAlgorithm::dijkstra(GridMap &map, const Cell_t &curr_cell, Cells &targ
 	typedef std::multimap<int16_t, Cell_t> Queue;
 	typedef std::pair<int16_t, Cell_t> Entry;
 
-	map.reset(COST_MAP);
+	GridMap closeSet{};
 	Queue queue;
-	map.setCell(COST_MAP, curr_cell.x, curr_cell.y, 1);
+	closeSet.setCost(curr_cell.x, curr_cell.y, 1);
 	queue.emplace(1, curr_cell);
 
 	while (!queue.empty()) {
@@ -618,13 +609,13 @@ bool APathAlgorithm::dijkstra(GridMap &map, const Cell_t &curr_cell, Cells &targ
 			if(is_stop)
 			{
 				ROS_INFO("find target(%d,%d)",next.x, next.y);
-				findPath(map,curr_cell,next, targets,MAP_POS_X);
+				findPath(closeSet,curr_cell,next, targets,MAP_POS_X);
+				closeSet.print(curr_cell,targets);
 				return true;
 			} else{
 				targets.push_back(next);
 			}
 		}
-//		ROS_INFO("next(%d,%d)",next.x, next.y);
 		for (auto index = 0; index < 4; index++) {
 
 			auto neighbor = next + cell_direction_[index];
@@ -632,17 +623,16 @@ bool APathAlgorithm::dijkstra(GridMap &map, const Cell_t &curr_cell, Cells &targ
 			if (!isAccessable(next, neighbor)) // access
 				continue;
 
-			if (map.getCell(COST_MAP, neighbor.x, neighbor.y) != 0)//close set
+			if (closeSet.getCost(neighbor.x, neighbor.y) != 0)//close set
 				continue;
 
 			queue.emplace(cost + 1, neighbor);
-			map.setCell(COST_MAP, neighbor.x, neighbor.y, cost + 1);
+			closeSet.setCost(neighbor.x, neighbor.y, cost + 1);
 		}
 	}
+//	closeSet.print(curr_cell,targets);
 	return !targets.empty();
 }
-
-
 
 uint16_t APathAlgorithm::dijkstraCountCleanedArea(GridMap& map, Point_t curr, Cells &targets)
 {
@@ -655,7 +645,7 @@ uint16_t APathAlgorithm::dijkstraCountCleanedArea(GridMap& map, Point_t curr, Ce
 				auto tmp = cell;
 				tmp.x += x;
 				tmp.y += y;
-				if (map.getCell(CLEAN_MAP, tmp.x, tmp.y) == CLEANED)
+				if (map.getCost(tmp.x, tmp.y) == CLEANED)
 					c_cleans.insert(tmp);
 			}
 		}
@@ -663,11 +653,12 @@ uint16_t APathAlgorithm::dijkstraCountCleanedArea(GridMap& map, Point_t curr, Ce
 	};
 
 	auto expand_condition = [&](const Cell_t cell, const Cell_t neighbor_cell){
-		return map.isBlockAccessible(neighbor_cell.x, neighbor_cell.y) && map.getCell(CLEAN_MAP, neighbor_cell.x, neighbor_cell.y) == CLEANED;
+		return map.isBlockAccessible(neighbor_cell.x, neighbor_cell.y) &&
+				map.getCost(neighbor_cell.x, neighbor_cell.y) == CLEANED;
 	};
 
 	// Count the cleaned cells using dijkstra algorithm.
-	dijkstra(map, curr.toCell(), targets, false, count_condition, expand_condition);
+	dijkstra(map, curr.toCell(), targets, false, count_condition, isAccessible(&map,expand_condition));
 
 	return static_cast<uint16_t>(c_cleans.size());
 }
@@ -675,6 +666,7 @@ uint16_t APathAlgorithm::dijkstraCountCleanedArea(GridMap& map, Point_t curr, Ce
 void APathAlgorithm::optimizePath(GridMap &map, Cells &path, const Dir_t& priority_dir,const func_compare_two_t& expand_condition)
 {
 	displayCellPath(path);
+	auto is_had_move_start_point=false;
 	if (path.size() > 2)
 	{
 		if (is_opposite_dir(get_dir(path.begin() + 1, path.begin()), priority_dir) ||
@@ -691,6 +683,8 @@ void APathAlgorithm::optimizePath(GridMap &map, Cells &path, const Dir_t& priori
 				if (*(iterator + 1) == *(iterator + 2))
 					path.erase(path.begin() + 1);
 				path.push_front(tmp);
+				is_had_move_start_point = true;
+				ROS_WARN("opposite dir move success");
 			}
 			path.erase(std::unique(path.begin(), path.end()), path.end());
 		}
@@ -699,7 +693,12 @@ void APathAlgorithm::optimizePath(GridMap &map, Cells &path, const Dir_t& priori
 	{
 		ROS_INFO(" size_of_path > 3 Optimize path for adjusting it away from obstacles..");
 		displayCellPath(path);
-		for (auto iterator = path.begin(); iterator != path.end() - 3; ++iterator)
+		auto iterator = path.begin();
+
+		if(is_had_move_start_point)
+			iterator++;
+
+		for (; iterator != path.end() - 3; ++iterator)
 		{
 			ROS_INFO("dir(%d), y(%d)", get_dir(iterator + 1, iterator + 2), (iterator + 1)->y);
 			if (isXAxis(get_dir(iterator + 1, iterator + 2)) && (iterator + 1)->y % 2 == 1)
@@ -723,18 +722,18 @@ bool APathAlgorithm::checkTrapped(GridMap &map, const Cell_t &curr_cell) {
 	auto expand_condition = [&](const Cell_t &cell, const Cell_t &neighbor_cell)
 	{
 		return map.isBlockAccessible(neighbor_cell.x, neighbor_cell.y) /*&&
-				map.getCell(CLEAN_MAP, neighbor_cell.x, neighbor_cell.y) == CLEANED*/;
+				map.getCost(neighbor_cell.x, neighbor_cell.y) == CLEANED*/;
 	};
 
 	Cells cells{};
-	return !dijkstra(map, getPosition().toCell(), cells, true, CellEqual(Cell_t{0,0}), isAccessable(&map, expand_condition));
+	return !dijkstra(map, getPosition().toCell(), cells, true, CellEqual(Cell_t{0,0}), isAccessible(&map, expand_condition));
 }
 
 bool TargetVal::operator()(const Cell_t &c_it) {
-		return p_map_->getCell(CLEAN_MAP, c_it.x, c_it.y) == val_;
+		return p_map_->getCost(c_it.x, c_it.y) == val_;
 }
 
-isAccessable::isAccessable(GridMap *p_map, func_compare_two_t external_condition,
+isAccessible::isAccessible(GridMap *p_map, func_compare_two_t external_condition,
 						   const BoundingBox2& bound)
 : bound_(bound), p_map_(p_map), external_condition_(external_condition) {
 		if (bound_.GetMinimum() == Cell_t{INT16_MAX, INT16_MAX} && bound_.GetMaximum() == Cell_t{INT16_MIN, INT16_MIN})
@@ -744,24 +743,23 @@ isAccessable::isAccessable(GridMap *p_map, func_compare_two_t external_condition
 //		ROS_INFO("target_bound_(%d,%d,%d,%d)",target_bound_.min.x,target_bound_.min.y,target_bound_.max.y,target_bound_.max.y );
 	}
 
-bool isAccessable::operator()(const Cell_t &next, const Cell_t &neighbor) {
+bool isAccessible::operator()(const Cell_t &next, const Cell_t &neighbor) {
 		return bound_.Contains(neighbor) && !p_map_->cellIsOutOfTargetRange(neighbor) &&
 			   external_condition_(next, neighbor);
 }
 
 bool IsTarget::operator()(const Cell_t &c_it) {
-		return c_it.y % 2 == 0 && p_map_->getCell(CLEAN_MAP, c_it.x, c_it.y) == UNCLEAN &&
+		return c_it.y % 2 == 0 && p_map_->getCost(c_it.x, c_it.y) == UNCLEAN &&
 			   target_bound_.Contains(c_it);
 }
 
 
-GridMap*
-GoHomeWay_t::updateMap(GridMap &map,std::unique_ptr<GridMap>& p_temp_map, const Point_t &curr) {
+GridMap* GoHomeWay_t::updateMap(GridMap &map,std::unique_ptr<GridMap>& p_temp_map, const Point_t &curr) {
 	if(is_allow_update_map_) {
 		p_temp_map->copy(map);
 		p_temp_map->merge(slam_grid_map, false, false, true, false, false, false);
 		ROS_INFO("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-		p_temp_map->print(curr.toCell(), CLEAN_MAP, Cells{{0, 0}});
+		p_temp_map->print(curr.toCell(), Cells{{0, 0}});
 		ROS_INFO("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 		return p_temp_map.get();
 	}else
@@ -773,13 +771,13 @@ void GoHomeWay_t::clearBlock(GridMap &map) {
 }
 
 bool GoHomeWay_t::displayName() {
-	ROS_ERROR("go home way %s",name_.c_str());
+	ROS_INFO("go home way %s",name_.c_str());
 }
 
 
-bool ThroughAccessableAndCleaned::operator()(const Cell_t &next, const Cell_t &neighbor) {
-	return p_map_->isBlockAccessible(neighbor.x, neighbor.y) && p_map_->getCell(CLEAN_MAP, neighbor.x, neighbor.y) == CLEANED;
+bool ThroughAccessibleAndCleaned::operator()(const Cell_t &next, const Cell_t &neighbor) {
+	return p_map_->isBlockAccessible(neighbor.x, neighbor.y) && p_map_->getCost(neighbor.x, neighbor.y) == CLEANED;
 }
-bool ThroughBlockAccessable::operator()(const Cell_t &next, const Cell_t &neighbor) {
+bool ThroughBlockAccessible::operator()(const Cell_t &next, const Cell_t &neighbor) {
 	return p_map_->isBlockAccessible(neighbor.x, neighbor.y);
 }

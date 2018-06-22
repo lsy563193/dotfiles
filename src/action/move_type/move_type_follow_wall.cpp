@@ -209,9 +209,9 @@ bool MoveTypeFollowWall::isFinish()
 			//resetTriggeredValue();
 		}
 		else if (movement_i_ == mm_stay) {
-			ROS_INFO("%s,%d, mt_fw",__FUNCTION__, __LINE__);
+//			ROS_INFO("%s,%d, mt_fw",__FUNCTION__, __LINE__);
 			if (!handleMoveBackEventRealTime(p_cm)) {
-				ROS_INFO("%s,%d, mt_fw",__FUNCTION__, __LINE__);
+//				ROS_INFO("%s,%d, mt_fw",__FUNCTION__, __LINE__);
 				if (cliff.getStatus() == 0x00 && status_after_cliff_ == true) {
 					ev.cliff_triggered = 0;
 				}
@@ -219,13 +219,13 @@ bool MoveTypeFollowWall::isFinish()
 				turn_target_radian_ = getPosition().addRadian(turn_angle).th;
 				resetTriggeredValue();
 				if (is_stop_follow_wall_after_tilt_) {
-					ROS_INFO("%s,%d, mt_fw",__FUNCTION__, __LINE__);
+//					ROS_INFO("%s,%d, mt_fw",__FUNCTION__, __LINE__);
 					is_stop_follow_wall_after_tilt_ = false;
 					status_after_cliff_ = false;
 					return true;
 				}
 
-				ROS_INFO("%s,%d, mt_fw",__FUNCTION__, __LINE__);
+//				ROS_INFO("%s,%d, mt_fw",__FUNCTION__, __LINE__);
 				auto p_mode = dynamic_cast<ACleanMode*>(sp_mode_);
 				movement_i_ = p_mode->isGyroDynamic() ? mm_dynamic : mm_turn;
 				if (movement_i_ == mm_dynamic)
@@ -363,7 +363,6 @@ bool MoveTypeFollowWall::_lidarTurnRadian(bool is_left, double &turn_radian, dou
 
 	auto radian = line_radian;
 
-	ROS_INFO("line_angle_raw = %lf, line_is_found = %d, distance = %lf", radian_to_degree(line_radian), line_is_found, distance);
 
 /*	if (!is_left_)
 		radian  = PI - line_radian;*/
@@ -378,10 +377,13 @@ bool MoveTypeFollowWall::_lidarTurnRadian(bool is_left, double &turn_radian, dou
 			radian = radian + PI;
 	}
 
-	ROS_INFO("line_angle = %lf", radian_to_degree(radian));
-	ROS_INFO("angle_range(%lf, %lf)", radian_to_degree(radian_min), radian_to_degree(radian_max));
+//	ROS_INFO("line_angle = %lf, angle_range(%lf, %lf)", radian_to_degree(radian), radian_to_degree(radian_min),
+//			 radian_to_degree(radian_max));
 	radian = fabs(radian);
-	ROS_INFO("line_angle after fabs() = %lf", radian_to_degree(radian));
+	ROS_INFO("line_angle_raw = %.2lf, line_is_found = %d, distance = %lf, line_angle = %lf, angle_range(%.2lf, %.2lf)",
+			 radian_to_degree(line_radian), line_is_found, distance, radian_to_degree(radian),
+			 radian_to_degree(radian_min), radian_to_degree(radian_max));
+//	ROS_INFO("line_angle after fabs() = %lf", radian_to_degree(radian));
 	if (line_is_found && radian >= radian_min && radian < radian_max)
 	{
 /*		ROS_ERROR("distance: %f",(distance*100.0-16.7));
@@ -392,11 +394,11 @@ bool MoveTypeFollowWall::_lidarTurnRadian(bool is_left, double &turn_radian, dou
 			robot_to_wall_distance=g_back_distance*100*sin(PI-line_radian);
 		ROS_ERROR("left_x= %f  left_angle= %lf",x,line_radian);*/
 		turn_radian = is_left ? -radian : radian;
-		ROS_INFO("lidar generate turn angle(%lf)! is_left(%d)",radian_to_degree(turn_radian), is_left);
+		ROS_INFO("lidar generate turn angle(%.2lf)! is_left(%d)",radian_to_degree(turn_radian), is_left);
 		return true;
 	} else {
 		turn_radian = 0;
-		ROS_INFO("lidar generate turn angle(%lf) failed! is_left(%d)",radian_to_degree(turn_radian), is_left);
+		ROS_INFO("lidar generate turn angle(%.2lf) failed! is_left(%d)",radian_to_degree(turn_radian), is_left);
 		return false;
 	}
 }
@@ -495,11 +497,11 @@ double MoveTypeFollowWall::getTurnRadian(bool use_target_radian)
 		return diff;
 	}
 
-	if (lidarTurnRadian(turn_radian) && !is_trapped) {
+	if (!is_trapped && lidarTurnRadian(turn_radian))
 		ROS_WARN("%s %d: Use fit line angle!(%f in degree)", __FUNCTION__, __LINE__, radian_to_degree(turn_radian));
-	}
-	else {
-		ROS_INFO("%s %d: Not use fit line angle!", __FUNCTION__, __LINE__);
+	else
+	{
+//		ROS_INFO("%s %d: Not use fit line angle!", __FUNCTION__, __LINE__);
 		auto ev_turn_radian = getTurnRadianByEvent();
 		if(ev_turn_radian == 0 && use_target_radian) { //		if(/*use_target_radian*/ 0 )
 //			auto target_turn_radian = getPosition().courseToDest(target_point_);
@@ -512,7 +514,7 @@ double MoveTypeFollowWall::getTurnRadian(bool use_target_radian)
 		else
 		{
 			turn_radian = ev_turn_radian;
-			ROS_INFO("%s %d: Use event_turn_radian(%f in degree)", __FUNCTION__, __LINE__, radian_to_degree(turn_radian));
+			ROS_INFO("%s %d: Use event_turn_radian(%.2f in degree)", __FUNCTION__, __LINE__, radian_to_degree(turn_radian));
 		}
 	}
 	resetTriggeredValue();
@@ -597,13 +599,12 @@ bool MoveTypeFollowWall::handleMoveBackEventRealTime(ACleanMode *p_clean_mode)
 	auto bumper_status = boost::dynamic_pointer_cast<MovementStay>(sp_movement_)->bumper_status_in_stay_;
 //	auto cliff_status = boost::dynamic_pointer_cast<MovementStay>(sp_movement_)->cliff_status_in_stay_;
 //	ev.cliff_triggered = cliff.getStatus();
-	ROS_INFO("%s, %d: ev.cliff_triggered(%d).", __FUNCTION__, __LINE__, ev.cliff_triggered);
 	auto cliff_status = cliff.getStatus();
 	auto tilt_status = boost::dynamic_pointer_cast<MovementStay>(sp_movement_)->tilt_status_in_stay_;
-	ROS_INFO("%s,%d, mt_fw", __FUNCTION__, __LINE__);
+	ROS_WARN("%s,%d, bumper_status(%d), cliff_status(%d), tilt_status(%d), ev.cliff_triggered(%d)", __FUNCTION__,
+			 __LINE__, bumper_status, cliff_status, tilt_status, ev.cliff_triggered);
 	if (bumper_status || cliff_status || tilt_status)
 	{
-		ROS_WARN("%s,%d, bumper_status(%d), cliff_status(%d), tilt_status(%d)", __FUNCTION__, __LINE__, bumper_status, cliff_status, tilt_status);
 		p_clean_mode->saveBlocks();
 		movement_i_ = mm_back;
 		float back_distance = static_cast<float>(bumper_status ? 0.01 : 0.05);

@@ -68,7 +68,6 @@ public:
 	void checkRobotSlipByLidar();
 	bool isNeedToCheckSlip(const sensor_msgs::LaserScan& scan);
 	void checkSlipInit(float &acur1, float &acur2, float &acur3, float &acur4);
-	bool isRobotSlip();
 
 	// type 1 for linear scan data, type 2 for origin scan data.
 	bool lidarCheckFresh(float duration, uint8_t type = 1);
@@ -105,6 +104,10 @@ public:
 	bool checkLidarBeCovered();
 
 	bool checkLongHallway(const sensor_msgs::LaserScan& tmp_scan_data);
+
+	bool getSlipByLidarStatus(){
+		return slip_by_lidar_status_;
+	}
 private:
 
 	// switch_ is the target status of lidar.

@@ -245,15 +245,15 @@ public:
 //		std::vector<LineABC>	vertical_lines;
 //		vertical_lines.push_back(vertical_line);
 //		ACleanMode::pubLineMarker(&vertical_lines);
-		ROS_INFO("line.p1(%lf, %lf), line.p2(%lf, %lf)", line.x1, line.y1, line.x2, line.y2);
-		ROS_INFO("vertical_line.p1(%lf, %lf)", vertical_line.x1, vertical_line.y1);
 		double dis_to_origin = fabs(vertical_line.C / sqrt(pow(vertical_line.A, 2) + pow(vertical_line.B, 2)));
-		ROS_INFO("is_left_(%d), is_line_in_origin_left(%d), dis_to_origin(%lf)", is_left_, is_line_in_origin_left, dis_to_origin);
+		ROS_INFO("%s %d: line.p1(%lf, %lf), line.p2(%lf, %lf), vertical_line.p1(%lf, %lf), is_left_(%d), is_line_in_origin_left(%d), dis_to_origin(%lf)",
+				 __FUNCTION__, __LINE__, line.x1, line.y1, line.x2, line.y2, vertical_line.x1, vertical_line.y1, is_left_,
+				 is_line_in_origin_left, dis_to_origin);
 		if (is_left_) {
 			if (is_line_in_origin_left) {
 				if (dis_to_origin > 0.05) {
 //					beeper.debugBeep(VALID);
-					ROS_ERROR("filter fit line!");
+					ROS_INFO("filter fit line!");
 					return true;
 				}
 			}
@@ -261,7 +261,7 @@ public:
 			if (!is_line_in_origin_left) {
 				if (dis_to_origin > 0.05) {
 //					beeper.debugBeep(VALID);
-					ROS_ERROR("filter fit line!");
+					ROS_INFO("filter fit line!");
 					return true;
 				}
 			}
@@ -1166,11 +1166,6 @@ void Lidar::checkRobotSlipByLidar() {
 	last_slip_scan_frame_.push_back(tmp_scan_data);
 }
 
-bool Lidar::isRobotSlip()
-{
-	return slip_by_lidar_status_ || gyro.getSlipByGyroStatus();
-}
-
 int Lidar::compLaneDistance()
 {
 	int ret = 0;
@@ -1855,7 +1850,7 @@ bool Lidar::isNeedToCheckSlip(const sensor_msgs::LaserScan& scan) {
 	std::function<void(std::string)> f_print = [&](std::string s){
 		if(print_count++ > 5) {
 			print_count = 0;
-			ROS_INFO("%s %d: %s",__FUNCTION__,__LINE__,s.c_str());
+			ROS_INFO("isNeedToCheckSlip %d: %s", __LINE__, s.c_str());
 		}
 	};
 
@@ -1865,7 +1860,7 @@ bool Lidar::isNeedToCheckSlip(const sensor_msgs::LaserScan& scan) {
 		return false;
 	}
 	if (std::fabs(left_wheel_speed) <= 0.08 && std::fabs(right_wheel_speed) <= 0.08) {
-		f_print("each wheel speed is too low");
+		f_print("wheel speed is too low");
 		last_slip_scan_frame_.clear();
 		return false;
 	}

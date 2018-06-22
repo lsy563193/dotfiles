@@ -16,6 +16,7 @@ ActionOpenSlam::~ActionOpenSlam()
 {
 	if (!isFinish())
 		slam.stop();
+	ROS_WARN("%s %d: Exit action open slam.", __FUNCTION__, __LINE__);
 }
 
 bool ActionOpenSlam::isFinish(){

@@ -112,7 +112,8 @@ int main(int argc, char **argv)
 	Points remain_path_{};
 	bool tmp;
 	map.loadMap(true,curr, old_dir_, tmp, "/opt/ros/indigo/share/pp/map");
-	slam_grid_map.loadMap(true,curr, old_dir_, tmp ,"/opt/ros/indigo/share/pp/map_slam");
+	map.print(curr,Cells{});
+//	slam_grid_map.loadMap(true,curr, old_dir_, tmp ,"/opt/ros/indigo/share/pp/map_slam");
 	Cells cells;
 	cells.push_back(Cell_t{-1,-1});
 	cells.push_back(Cell_t{0,1});
@@ -122,21 +123,29 @@ int main(int argc, char **argv)
 	cells.push_back(Cell_t{22,10});
 	Points points = *cells_to_points(cells);
 	HomePointsManager home_points_manager_;
-	for(auto && point:points)
-		home_points_manager_.setRconPoint(point);
-//
-	auto& it = home_points_manager_.home_point_it();
-	ROS_INFO("%s %d:it %d,%d",__FUNCTION__, __LINE__, it->toCell().x, it->toCell().y);
-	it++;
-	ROS_INFO("%s %d:it %d,%d",__FUNCTION__, __LINE__, it->toCell().x, it->toCell().y);
-	home_points_manager_.popCurrRconPoint();
-	home_points_manager_.popCurrRconPoint();
+//	for(auto && point:points)
+//		home_points_manager_.setRconPoint(point);
+////
+//	auto& it = home_points_manager_.home_point_it();
+//	ROS_INFO("%s %d:it %d,%d",__FUNCTION__, __LINE__, it->toCell().x, it->toCell().y);
+//	it++;
+//	ROS_INFO("%s %d:it %d,%d",__FUNCTION__, __LINE__, it->toCell().x, it->toCell().y);
+//	home_points_manager_.popCurrRconPoint();
+//	home_points_manager_.popCurrRconPoint();
 //	home_points_manager_.popCurrRconPoint();
 	GoHomePathAlgorithm clean_path_algorithm_(map,&home_points_manager_);
+//	NavCleanPathAlgorithm clean_path_algorithm_;
 	if (clean_path_algorithm_.generatePath(map, Point_t{cellToCount(curr.x),cellToCount(curr.y)}, old_dir_, remain_path_)) {
+		ROS_INFO("find target~~~~~~");
 	}
+
+//	 if(!clean_path_algorithm_.checkTrappedUsingDijkstra(map, curr))
+//	{
+//		ROS_INFO("2find target~~~~~~");
+//	}
 	ROS_INFO("end~~~~~~~~~");
 #endif
+
 	ros::spin();
 	return 0;
 }

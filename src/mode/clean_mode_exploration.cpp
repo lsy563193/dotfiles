@@ -160,12 +160,12 @@ void CleanModeExploration::remoteMax(bool state_now, bool state_last)
 /*void CleanModeExploration::printMapAndPath()
 {
 	clean_path_algorithm_->displayCellPath(points_to_cells(passed_cell_path_));
-	clean_map_.print(CLEAN_MAP,getPosition().toCell().x,getPosition().toCell().y);
+	clean_map_.print(getPosition().toCell().x,getPosition().toCell().y);
 }*/
 
 //state GoToCharger
 void CleanModeExploration::switchInStateGoToCharger() {
-	PP_INFO();
+//	PP_INFO();
 	if (ev.charge_detect && charger.isOnStub()) {
 		sp_state = nullptr;
 		return;
@@ -236,9 +236,9 @@ void CleanModeExploration::resetErrorMarker() {
 		if(error_marker_.empty())
 			break;
 		if(time - ite->time > 20){
-			if(clean_map_.getCell(CLEAN_MAP,ite->x,ite->y) == CLEANED &&
-					slam_grid_map.getCell(CLEAN_MAP,ite->x,ite->y) != SLAM_MAP_REACHABLE)
-				clean_map_.setCell(CLEAN_MAP,ite->x,ite->y,UNCLEAN);
+			if(clean_map_.getCost(ite->x, ite->y) == CLEANED &&
+					slam_grid_map.getCost(ite->x, ite->y) != SLAM_MAP_REACHABLE)
+				clean_map_.setCost(ite->x, ite->y, UNCLEAN);
 //			ROS_INFO("%s,%d,i:%d,size:%d",__FUNCTION__,__LINE__,i,error_marker_.size());
 			error_marker_.erase(ite);
 		}

@@ -5,10 +5,13 @@
 
 #include <action.hpp>
 #include <error.h>
+#include <mode.hpp>
 #include "dev.h"
 
 #define ERROR_ALARM_TIMES 5
 #define ERROR_ALARM_INTERVAL 10
+#define TRAPPED_ALARM_TIMES 4
+#define TRAPPED_ALARM_INTERVAL 5
 
 ActionIdle::ActionIdle()
 {
@@ -35,6 +38,14 @@ void ActionIdle::run()
 		robot_error.alarm();
 		error_alarm_time_ = ros::Time::now().toSec();
 		error_alarm_cnt_++;
+	}
+
+	if (ACleanMode::robot_trapped_warning && trapped_alarm_cnt_ < TRAPPED_ALARM_TIMES
+		&& ros::Time::now().toSec() - trapped_alarm_time_ > TRAPPED_ALARM_INTERVAL)
+	{
+		speaker.play(VOICE_ROBOT_TRAPPED);
+		trapped_alarm_time_ = ros::Time::now().toSec();
+		trapped_alarm_cnt_++;
 	}
 
 	if (appmt_obj.shouldUpdateIdleTimer())

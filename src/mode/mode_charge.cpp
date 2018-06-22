@@ -24,8 +24,6 @@ ModeCharge::ModeCharge()
 	ROS_WARN("%s %d: Entering Charge mode\n=========================" , __FUNCTION__, __LINE__);
 	system("unturbo_cpu.sh");
 
-	robot::instance()->setBatterLow(false);
-	robot::instance()->setBatterLow2(false);
 	key.resetTriggerStatus();
 	c_rcon.resetStatus();
 	remote.reset();
@@ -48,6 +46,7 @@ ModeCharge::~ModeCharge()
 {
 	event_manager_set_enable(false);
 	sp_action_.reset();
+	battery.forceUpdate();
 	ROS_WARN("%s %d: Exit charge mode.", __FUNCTION__, __LINE__);
 }
 
@@ -82,7 +81,7 @@ bool ModeCharge::isExit()
 			}
 		}
 
-		if (!battery.isReadyToClean())
+		if (robot::instance()->batteryTooLowToClean())
 		{
 			ROS_WARN("%s %d: Plan not activated not valid because of battery not ready to clean.", __FUNCTION__,
 					 __LINE__);
@@ -102,7 +101,7 @@ bool ModeCharge::isExit()
 				if (p_movement_charge->stillCharging())
 					charger.enterNavFromChargeMode(true);
 			}
-			ACleanMode::plan_activation_ = true;
+			ACleanMode::plan_activation = true;
 			return true;
 		}
 	}
@@ -115,7 +114,7 @@ bool ModeCharge::isExit()
 			sp_state->init();
 			sp_action_.reset(new MovementCharge);
 			ev.key_clean_pressed = false;
-		} else if (!battery.isReadyToClean())
+		} else if (robot::instance()->batteryTooLowToClean())
 		{
 			ROS_WARN("%s %d: Battery not ready to clean.", __FUNCTION__, __LINE__);
 			sp_state = state_charge.get();
@@ -150,7 +149,7 @@ bool ModeCharge::isExit()
 
 	if (s_wifi.receivePlan1())
 	{
-		if (!battery.isReadyToClean())
+		if (robot::instance()->batteryTooLowToClean())
 		{
 			ROS_WARN("%s %d: Battery not ready to clean.", __FUNCTION__, __LINE__);
 			sp_state = state_charge.get();

@@ -22,6 +22,8 @@
 #include "mode.hpp"
 #include "serial.h"
 #include <string.h>
+#include "gyro.h"
+#include "lidar.hpp"
 
 #define  _RATE 50
 
@@ -121,24 +123,36 @@ public:
 		return robot_correction_y_;
 	}
 */
-	bool isBatteryLow() const
+	bool batteryTooLowToClean() const
 	{
-		return battery_low_;
+		return battery_too_low_to_clean_;
 	}
 
-	void setBatterLow(bool val)
+	void setBatteryTooLowToClean(bool val)
 	{
-		battery_low_ = val;
-	}
-    bool isBatteryLow2() const
-	{
-		return battery_low2_;
+		battery_too_low_to_clean_ = val;
 	}
 
-	void setBatterLow2(bool val)
+	bool batteryTooLowToMove() const
 	{
-		battery_low2_ = val;
+		return battery_too_low_to_move_;
 	}
+
+	void setBatteryTooLowToMove(bool val)
+	{
+		battery_too_low_to_move_ = val;
+	}
+
+	bool batteryLowForGoingHome() const
+	{
+		return battery_low_for_going_home_;
+	}
+
+	void setBatteryLowForGoingHome(bool val)
+	{
+		battery_low_for_going_home_ = val;
+	}
+
 	void setTfReady(bool is_ready)
 	{
 		is_tf_ready_ = is_ready;
@@ -270,6 +284,10 @@ public:
 						   GridMap &clean_map);
 
 	void getCleanRecord(uint32_t &time, uint16_t &clean_time, uint16_t &clean_area, GridMap &clean_map);
+
+	bool isRobotSlip(){
+		return lidar.getSlipByLidarStatus() || gyro.getSlipByGyroStatus();
+	};
 private:
 
 	uint8_t getTestMode(void);
@@ -296,8 +314,9 @@ private:
 	bool is_tf_ready_{};
 
 	bool temp_spot_set_{};
-	bool battery_low_{false};
-	bool battery_low2_{false};
+	bool battery_too_low_to_clean_{false};
+	bool battery_too_low_to_move_{false};
+	bool battery_low_for_going_home_{false};
 
 	tf::Vector3	robot_pos;
 	double	robot_rad;
@@ -359,7 +378,7 @@ private:
 	//for check tilt
 	const double ANGLE_LIMIT{5};
 	const double ANGLE_TIME_LIMIT{1};
-	const double WHEEL_CLIFF_TIME_LIMIT{10000};
+	const double WHEEL_CLIFF_TIME_LIMIT{2};
 	double angle_tilt_time_{0};
 	double wheel_tilt_time_{0};
 

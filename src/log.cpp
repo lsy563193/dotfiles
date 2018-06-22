@@ -25,81 +25,80 @@
 
 using namespace std;
 
-namespace
-{
+namespace {
 
-constexpr const char *DIR = "/mnt/UDISK/log";
-constexpr const unsigned LINE_LIMIT = 300000;
-constexpr const unsigned FILE_LIMIT = 30;
+	constexpr const char *DIR = "/mnt/UDISK/log";
+	constexpr const unsigned LINE_LIMIT = 300000;
+	constexpr const unsigned FILE_LIMIT = 30;
 
-class FileBackend : public Log::Backend
-{
-public:
-	FileBackend();
+	class FileBackend : public Log::Backend {
+	public:
+		FileBackend();
 
-	void operator()( const Log::Level, const std::string &str ) override;
+		void operator()(const Log::Level, const std::string &str) override;
 
-	void Flush() override;
-private:
-	/**
-	 * Instead of starting in the next file, we resume from the last file
-	 */
-	void resumeFile( void );
+		void Flush() override;
 
-	void ensureFile( void );
-	/**
-	 * Begin writing in the next file
-	 *
-	 * @return true if successful, false otherwise
-	 */
-	bool rotateFile( void );
-	/**
-	 * Prevent too many files from existing
-	 */
-	void limitFiles( void );
-	/**
-	 * Remove all logs
-	 */
-	void clearAll( void );
+	private:
+		/**
+		 * Instead of starting in the next file, we resume from the last file
+		 */
+		void resumeFile(void);
 
-	static std::fstream openFile( const unsigned id,
-			const std::ios_base::openmode mode );
-	static std::fstream openFile( const unsigned id )
-	{
-		return openFile( id, std::ios_base::out | std::ios_base::trunc );
-	}
+		void ensureFile(void);
 
-	/**
-	 * Return the last log ID actually being used by querying the file system
-	 *
-	 * @return Log ID, or 0 if no logs are found on the file system
-	 */
-	static unsigned queryLogId( void );
+		/**
+		 * Begin writing in the next file
+		 *
+		 * @return true if successful, false otherwise
+		 */
+		bool rotateFile(void);
 
-	std::fstream file_;
-	unsigned line_written_;
-	unsigned log_id_;
-};
+		/**
+		 * Prevent too many files from existing
+		 */
+		void limitFiles(void);
 
-class ConsoleBackend : public Log::Backend
-{
-public:
-	void operator()( const Log::Level l, const std::string &str ) override;
+		/**
+		 * Remove all logs
+		 */
+		void clearAll(void);
 
-	void Flush() override;
-};
+		static std::fstream openFile(const unsigned id,
+																 const std::ios_base::openmode mode);
 
-class JsonFormatter : public Log::Formatter
-{
-public:
-	string operator()( const Log::DataObj &d ) override;
-};
+		static std::fstream openFile(const unsigned id) {
+			return openFile(id, std::ios_base::out | std::ios_base::trunc);
+		}
 
-class TextFormatter : public Log::Formatter
-{
-public:
-	string operator()( const Log::DataObj &d ) override;
-};
+		/**
+		 * Return the last log ID actually being used by querying the file system
+		 *
+		 * @return Log ID, or 0 if no logs are found on the file system
+		 */
+		static unsigned queryLogId(void);
+
+		std::fstream file_;
+		unsigned line_written_;
+		unsigned log_id_;
+	};
+
+	class ConsoleBackend : public Log::Backend {
+	public:
+		void operator()(const Log::Level l, const std::string &str) override;
+
+		void Flush() override;
+	};
+
+	class JsonFormatter : public Log::Formatter {
+	public:
+		string operator()(const Log::DataObj &d) override;
+	};
+
+	class TextFormatter : public Log::Formatter {
+	public:
+		string operator()(const Log::DataObj &d) override;
+	};
 
 }
 

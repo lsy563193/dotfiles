@@ -129,7 +129,7 @@ public:
 
 	double wall_distance;
 	double wheel_cliff_triggered_time_{DBL_MAX};
-	const double WHEEL_CLIFF_TIME_LIMIT{2};
+	const double WHEEL_CLIFF_TIME_LIMIT{0.5};//2
 	bool is_wheel_cliff_triggered{false};
 	int mode_i_{};
 	int current_action_i_{};
@@ -184,6 +184,8 @@ private:
 
 	bool readyToClean(bool check_battery = true, bool check_error = true);
 
+	bool battery_too_low_to_clean_{false};
+	bool battery_too_low_to_move_{false};
 };
 
 class ModeSleep: public Mode
@@ -411,7 +413,7 @@ public:
 	{
 		return sp_state == state_init.get();
 	}
-	virtual bool isSwitchByEventInStateInit();
+	virtual bool isSwitchByEventInStateInit(){return false;};
 	virtual bool updateActionInStateInit();
 	virtual void switchInStateInit();
 
@@ -474,6 +476,8 @@ public:
 	bool trapped_time_out_{};
 	bool trapped_closed_or_isolate{};
 	bool out_of_trapped_{};
+	// For warning in idle mode.
+	static bool robot_trapped_warning;
 
 	// State exploration
 	bool isStateExploration() const
@@ -579,12 +583,16 @@ public:
 
 	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
 	GridMap clean_map_{};
-	static bool plan_activation_;
+	static bool plan_activation;
 	double time_gyro_dynamic_;
-	bool isLastStateIsGoHomePoints()
+
+	bool isHasEnterStateIsGoHomePoints()
 	{
-		return sp_saved_states.back() == state_go_home_point.get();
+		return  (std::any_of(sp_saved_states.begin(),sp_saved_states.end(),[&](State* state_it){
+			return state_it == state_go_home_point.get();
+		}));
 	}
+
 	bool isSavedStatesEmpty()
 	{
 		return sp_saved_states.empty();
@@ -611,11 +619,12 @@ protected:
 	bool first_time_go_home_point_{true};
 	bool seen_charger_during_cleaning_{};
 	bool go_home_for_low_battery_{};
-	bool switch_is_off_{};
+	bool switch_is_off_{false};
 	Points charger_poses_;
-	bool found_charger_{};
+	bool found_charger_{false};
+	bool has_mark_charger_{true};
 	Points tmp_charger_pose_;
-	bool is_using_dust_box_{};
+	bool is_using_dust_box_{true};
 public:
 
 	static void pubPointMarkers(const std::deque<Vector2<double>> *point, std::string frame_id,std::string name);

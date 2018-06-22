@@ -58,11 +58,9 @@ void INFO_PRINT(int type,const char* arg,...);
 #define INFO_WAR_CON(cond ,...) if(cond)INFO_PRINT(WARN,__VA_ARGS__)
 #define INFO_NOR_CON(cond ,...) if(cond)INFO_PRINT(NORMAL,__VA_ARGS__)
 
-class Log
-{
+class Log {
 public:
-	enum struct Level
-	{
+	enum struct Level {
 		DEBUG_ = 0,
 		INFO,
 		WARN,
@@ -70,54 +68,52 @@ public:
 		FATAL,
 	};
 
-	struct DataObj
-	{
+	struct DataObj {
 		DataObj() = default;
-		DataObj( const Level level, const std::string &tag,
-				const std::string &msg );
-		DataObj( const Level level, const std::string &tag,const std::string &color,
-				const std::string &msg );
 
-		DataObj( const DataObj& ) = delete;
-		DataObj( DataObj&& ) = default;
-		DataObj& operator=( const DataObj& ) = delete;
-		DataObj& operator=( DataObj&& ) = default;
+		DataObj(const Level level, const std::string &tag,
+						const std::string &msg);
 
-		operator bool() const
-		{
+		DataObj(const Level level, const std::string &tag, const std::string &color,
+						const std::string &msg);
+
+		DataObj(const DataObj &) = delete;
+
+		DataObj(DataObj &&) = default;
+
+		DataObj &operator=(const DataObj &) = delete;
+
+		DataObj &operator=(DataObj &&) = default;
+
+		operator bool() const {
 			return !msg_.empty();
 		}
 
 		std::chrono::system_clock::time_point time_ =
-				std::chrono::system_clock::now();
+							std::chrono::system_clock::now();
 		Level level_ = Level::DEBUG_;
 		std::string tag_;
 		std::string msg_;
 		std::string color_;
 	};
 
-	class Backend
-	{
+	class Backend {
 	public:
-		virtual ~Backend()
-		{}
+		virtual ~Backend() {}
 
-		virtual void operator()( const Level l, const std::string &str ) = 0;
+		virtual void operator()(const Level l, const std::string &str) = 0;
 
 		virtual void Flush() = 0;
 	};
 
-	class Formatter
-	{
+	class Formatter {
 	public:
-		virtual ~Formatter()
-		{}
+		virtual ~Formatter() {}
 
-		virtual std::string operator()( const DataObj &d ) = 0;
+		virtual std::string operator()(const DataObj &d) = 0;
 	};
 
-	struct Consumer
-	{
+	struct Consumer {
 		std::unique_ptr<Log::Formatter> formatter_;
 		std::unique_ptr<Log::Backend> backend_;
 	};
@@ -127,15 +123,13 @@ public:
 	 *
 	 * @return  pointer to instance
 	 */
-	static Log& inst( void );
+	static Log &inst(void);
 
-	void setLevel( const Level l )
-	{
+	void setLevel(const Level l) {
 		level_ = l;
 	}
 
-	Level level( void ) const
-	{
+	Level level(void) const {
 		return level_;
 	}
 
@@ -145,7 +139,7 @@ public:
 	 *
 	 * @param name	Name of the process to be set
 	 */
-	void setProcessName( const char *name );
+	void setProcessName(const char *name);
 
 	/**
 	 * Log a msg
@@ -153,14 +147,20 @@ public:
 	 * @param tag
 	 * @param fmt
 	 */
-	void fatal( const char *tag, const char *fmt, ...);
-	void error( const char *tag, const char *fmt, ...);
-	void warn( const char *tag, const char *fmt, ...);
-	void info( const char *tag, const char *fmt, ...);
-	void info( const char *tag, const char *color,const char *fmt, ...);
-	void debug( const char *tag, const char *fmt, ...);
+	void fatal(const char *tag, const char *fmt, ...);
+
+	void error(const char *tag, const char *fmt, ...);
+
+	void warn(const char *tag, const char *fmt, ...);
+
+	void info(const char *tag, const char *fmt, ...);
+
+	void info(const char *tag, const char *color, const char *fmt, ...);
+
+	void debug(const char *tag, const char *fmt, ...);
 
 	void Flush();
+
 private:
 	/**
 	 * Constructor, set the current debug level
@@ -174,13 +174,15 @@ private:
 	 */
 	~Log();
 
-	static void* threadMainWrapper( void *that );
+	static void *threadMainWrapper(void *that);
+
 	void threadMain();
 
-	void log( const Level l, const char *tag, const char *fmt, va_list args );
-	void log( const Level a_l, const char *a_tag, const char* color,const char *a_fmt,va_list a_args );
+	void log(const Level l, const char *tag, const char *fmt, va_list args);
 
-	DataObj popBlocking( void );
+	void log(const Level a_l, const char *a_tag, const char *color, const char *a_fmt, va_list a_args);
+
+	DataObj popBlocking(void);
 
 	pthread_t thread_;
 	volatile bool is_thread_running_;

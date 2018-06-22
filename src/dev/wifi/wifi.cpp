@@ -797,7 +797,7 @@ int S_Wifi::uploadMap(MapType map)
 			{
 				for(int16_t pos_y = c_y - 30;pos_y<=c_y + 30;pos_y++)
 				{
-					if( slam_grid_map.getCell(CLEAN_MAP,pos_x,pos_y) == SLAM_MAP_BLOCKED 
+					if( slam_grid_map.getCell(pos_x,pos_y) == SLAM_MAP_BLOCKED
 					&& this->find_if(history_map_data_,Cell_t(pos_x,pos_y),3) == 0 )
 					{
 
@@ -853,7 +853,7 @@ int S_Wifi::uploadMap(MapType map)
 				int16_t p_y = p_it.toCell().y;
 				for(int16_t pos_x = p_x - 1;pos_x<=p_x+1;pos_x++){
 					for(int16_t pos_y = p_y - 1;pos_y<=p_y+1;pos_y++){
-						//if(g_map.getCell(CLEAN_MAP,pos_x,pos_y) != CLEANED &&
+						//if(g_map.getCost(pos_x,pos_y) != CLEANED &&
 						if(this->find_if(history_pass_path_data_,Cell_t(pos_x,pos_y),3) == 0)
 						{
 
@@ -1043,7 +1043,7 @@ bool S_Wifi::uploadLastCleanData()
 	std::vector<std::vector<uint8_t>> packs;
 	packs.clear();
 	int16_t x_min, x_max, y_min, y_max;
-	slam_clean_map.getMapRange(CLEAN_MAP, &x_min, &x_max, &y_min, &y_max);
+	slam_clean_map.getMapRange(&x_min, &x_max, &y_min, &y_max);
 	WifiMap slam_map;
 	BoundingBox2 bound = {{x_min, y_min},{x_max, y_max}};
 	wifiMapManage.runLengthEncoding(slam_clean_map,slam_map,bound);
@@ -1396,7 +1396,7 @@ bool S_Wifi::setWorkMode(int mode)
 			robot_work_mode_ = wifi::WorkMode::SHUTDOWN;
 			break;
 	}
-	ROS_INFO("\033[1;35m%s,%d,set work mode %d\033[0m",__FUNCTION__,__LINE__,(int)robot_work_mode_);
+	ROS_INFO("\033[1;35m%s %d wifi set work mode %d\033[0m",__FUNCTION__,__LINE__,(int)robot_work_mode_);
 	return true;
 }
 

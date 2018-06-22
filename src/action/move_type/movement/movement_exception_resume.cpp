@@ -82,7 +82,7 @@ void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_sp
 			{
 				// Quickly move back for a distance.
 				wheel.setDirectionBackward();
-				left_speed = right_speed = RUN_TOP_SPEED;
+				left_speed = right_speed = BACK_MAX_SPEED;
 				break;
 			}
 			case 4:
@@ -128,7 +128,7 @@ void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_sp
 			{
 				// Quickly move back for a distance.
 				wheel.setDirectionBackward();
-				left_speed = right_speed = RUN_TOP_SPEED;
+				left_speed = right_speed = BACK_MAX_SPEED;
 				break;
 			}
 			case 4:
@@ -824,7 +824,7 @@ bool MovementExceptionResume::isFinish()
 		if(sp_mt_->sp_mode_->mode_i_ != sp_mt_->sp_mode_->md_go_to_charger &&
 				sp_mt_->sp_mode_->mode_i_ != sp_mt_->sp_mode_->md_remote){
 			ACleanMode* p_mode = dynamic_cast<ACleanMode*>(sp_mt_->sp_mode_);
-			cell_state = p_mode->clean_map_.getCell(CLEAN_MAP,getPosition().toCell().x,getPosition().toCell().y);
+			cell_state = p_mode->clean_map_.getCost(getPosition().toCell().x, getPosition().toCell().y);
 		}
 
 		if(ros::Time::now().toSec() - resume_stuck_start_time_ > 60){
@@ -839,7 +839,7 @@ bool MovementExceptionResume::isFinish()
 				if ((cell_state != BLOCKED_SLIP && std::abs(distance) > 0.15f) || lidar.getObstacleDistance(1, ROBOT_RADIUS) < 0.06)
 				{
 					ROS_INFO("%s,%d Robot slip to go straight finished",__FUNCTION__,__LINE__);
-					if(!lidar.isRobotSlip())
+					if(!robot::instance()->isRobotSlip())
 					{
 						ev.robot_stuck= false;
 						ev.slip_triggered= false;
@@ -912,6 +912,7 @@ bool MovementExceptionResume::isFinish()
 		}
 		if (!robot::instance()->checkLidarStuck())
 		{
+			ROS_WARN("%s %d: Lidar resume succeeded.", __FUNCTION__, __LINE__);
 			ev.lidar_stuck = false;
 			return true;
 		}

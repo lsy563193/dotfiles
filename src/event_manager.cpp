@@ -326,11 +326,11 @@ void event_manager_thread_cb()
 			evt_set_status_x(EVT_REMOTE_WIFI);
 		}
 		/* Battery */
-		if (battery.shouldGoHome()) {
+		if (robot::instance()->batteryLowForGoingHome()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_BATTERY_HOME);
 		}
-		if (battery.isLow()) {
+		if (robot::instance()->batteryTooLowToMove()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_BATTERY_LOW);
 		}
@@ -342,7 +342,7 @@ void event_manager_thread_cb()
 		}
 
 		/* robot slip */
-		if(lidar.isRobotSlip()){
+		if(robot::instance()->isRobotSlip()){
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_ROBOT_SLIP);
 		}
