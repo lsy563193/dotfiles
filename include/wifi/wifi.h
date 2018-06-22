@@ -8,6 +8,9 @@
 #include "map.h"
 #include <cstdint>
 
+#include "ros/ros.h"
+#include <visualization_msgs/Marker.h>
+
 class S_Wifi
 {
 
@@ -121,6 +124,8 @@ public:
 
 	void cacheMapData(const Points map_data);
 
+	void pubCleanPath(const std::vector<std::vector<uint8_t>> packs);
+
 	void clearMapCache();
 
 	void clearAppMap();
@@ -195,6 +200,7 @@ public:
 		return received_work_mode_ == wifi::WorkMode::FIND;
 	}
 
+	void wifiInitPublicher();
 private:
 
 	void cloudConnected();
@@ -232,7 +238,7 @@ private:
 
 	std::deque<ACT> task_list_;
 
-	std::deque<Points> *map_data_buf_;
+	std::deque<Points> *path_buf_;
 
 	Cells *history_map_data_;
 	Cells *history_pass_path_data_;
@@ -252,6 +258,10 @@ protected:
 
 	uint32_t find_if(std::deque<Cell_t>* list, Cell_t point,int find_type);
 	void sort_push(std::deque<Cell_t>* list, Cell_t point,int sort_type);
+
+	ros::NodeHandle *nh_;
+	ros::Publisher pass_path_pub_;
+	visualization_msgs::Marker path_markers_;
 };
 
 extern S_Wifi s_wifi;
