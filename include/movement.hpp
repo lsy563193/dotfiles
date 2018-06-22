@@ -214,7 +214,7 @@ public:
 	explicit MovementFollowWallLidar(bool is_left);
 	~MovementFollowWallLidar()
 	{
-		ROS_WARN("%s %d: Exit MovementFollowWallLidar.", __FUNCTION__, __LINE__);
+		ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);
 	}
 
 	Point_t calcTmpTarget() override ;//laser follow wall algorithm

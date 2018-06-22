@@ -63,9 +63,10 @@ void MoveTypeFollowWall::init(bool is_left)
 
 	resetTriggeredValue();
 }
-MoveTypeFollowWall::MoveTypeFollowWall(bool is_left)
+MoveTypeFollowWall::MoveTypeFollowWall(bool is_left, bool in_small_area)
 {
 	init(is_left);
+	is_trapped_in_small_area_ = in_small_area;
 }
 
 MoveTypeFollowWall::MoveTypeFollowWall(bool is_left,const Points::iterator &p_it)
@@ -104,22 +105,6 @@ bool MoveTypeFollowWall::isFinish()
 	}
 
 	auto p_cm = dynamic_cast<ACleanMode*> (sp_mode_);
-
-	auto is_trapped = p_cm->is_trapped_;
-	if (p_cm->mode_i_ != p_cm->cm_wall_follow) {
-		if(is_trapped) {//check if trapped in a small area
-			Cells targets;
-			auto dijkstra_cleaned_count2 = p_cm->clean_path_algorithm_->dijkstraCountCleanedArea(p_cm->clean_map_, getPosition(), targets);
-
-			if ((dijkstra_cleaned_count2 < TRAP_IN_SMALL_AREA_COUNT) || (p_cm->passed_cell_path_.size() < 10 && dijkstra_cleaned_count2 < 100))
-				setIsTrappedInSmallArea();
-			else
-				resetIsTrappedInSmallArea();
-		} else {
-			resetIsTrappedInSmallArea();
-		}
-	}
-//	ROS_INFO("is_trapped_in_small_area_(%d)", is_trapped_in_small_area_);
 
 	if (movement_i_ != mm_turn && p_cm->clean_map_.pointIsPointingOutOfTargetRange(getPosition()))
 	{
@@ -212,7 +197,7 @@ bool MoveTypeFollowWall::isFinish()
 //			ROS_INFO("%s,%d, mt_fw",__FUNCTION__, __LINE__);
 			if (!handleMoveBackEventRealTime(p_cm)) {
 //				ROS_INFO("%s,%d, mt_fw",__FUNCTION__, __LINE__);
-				if (cliff.getStatus() == 0x00 && status_after_cliff_ == true) {
+				if (cliff.getStatus() == 0x00 && status_after_cliff_) {
 					ev.cliff_triggered = 0;
 				}
 				auto turn_angle = getTurnRadian(false);
@@ -618,14 +603,14 @@ bool MoveTypeFollowWall::handleMoveBackEventRealTime(ACleanMode *p_clean_mode)
 bool MoveTypeFollowWall::outOfRange(const Point_t &curr, Points::iterator &p_it) {
 	for (auto&& it : it_in_edges) {
 		if (out_of_edge(curr, it)) {
-			ROS_ERROR("find out edge(%d,%d,%d)",it->toCell().x, it->toCell().y, it->dir);
+			ROS_WARN("find out edge(%d,%d,%d)",it->toCell().x, it->toCell().y, it->dir);
 			p_it = it+1;
 			return true;
 		}
 	}
 	for (auto&& it : it_out_edges) {
 		if (out_of_external_edge(curr, it)) {
-			ROS_ERROR("find out external edge(%d,%d,%d)",it->toCell().x, it->toCell().y, it->dir);
+			ROS_WARN("find out external edge(%d,%d,%d)",it->toCell().x, it->toCell().y, it->dir);
 			p_it = p_it+1;
 			return true;
 		}
@@ -633,7 +618,7 @@ bool MoveTypeFollowWall::outOfRange(const Point_t &curr, Points::iterator &p_it)
 
 	it_out_edges.erase(std::remove_if(it_out_edges.begin(), it_out_edges.end(),[&](const Points::iterator& it){
 		if(!out_of_edge(curr,it)){
-			ROS_ERROR("add in edge(%d,%d,%d)",it->toCell().x, it->toCell().y, it->dir);
+			ROS_WARN("add in edge(%d,%d,%d)",it->toCell().x, it->toCell().y, it->dir);
 			it_in_edges.push_back(it);
 			return true;
 		}
@@ -642,14 +627,3 @@ bool MoveTypeFollowWall::outOfRange(const Point_t &curr, Points::iterator &p_it)
 
 	return false;
 }
-
-void MoveTypeFollowWall::setIsTrappedInSmallArea() {
-//	PP_INFO();
-	is_trapped_in_small_area_ = true;
-}
-
-void MoveTypeFollowWall::resetIsTrappedInSmallArea() {
-//	PP_INFO();
-	is_trapped_in_small_area_ = false;
-}
-

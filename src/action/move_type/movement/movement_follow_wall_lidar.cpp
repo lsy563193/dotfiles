@@ -16,7 +16,7 @@ MovementFollowWallLidar::MovementFollowWallLidar(bool is_left)
 				: IFollowWall(is_left)
 {
 
-	ROS_WARN("%s %d: Enter movement follow wall %s.", __FUNCTION__, __LINE__, is_left ? "left" : "right");
+	ROS_WARN("%s %d: %s.", __FUNCTION__, __LINE__, is_left ? "left" : "right");
 	angle_forward_to_turn_ = degree_to_radian(60);
 	min_speed_ = FALL_WALL_MIN_SPEED;
 	max_speed_ = FALL_WALL_MAX_SPEED;
@@ -41,7 +41,7 @@ Points Circle::getPoints(int precision, bool is_inclue_zero)
 	Points points2;
 	auto init_i = is_inclue_zero ? 0 : 1;
 #if DEBUG_ENABLE
-	printf("%s %d: ", __FUNCTION__, __LINE__);
+//	printf("%s %d: ", __FUNCTION__, __LINE__);
 #endif
 	for(auto i=init_i; i<=precision; i++)
 	{
@@ -69,7 +69,7 @@ Points MovementFollowWallLidar::calcVirtualTmpTarget()
 //	}
 
 	double c_r{};
-	auto is_trapped_in_small_area = dynamic_cast<MoveTypeFollowWall *>(sp_mt_)->getIsTrappedInSmallArea();
+	auto is_trapped_in_small_area = dynamic_cast<MoveTypeFollowWall *>(sp_mt_)->isTrappedInSmallArea();
 	if (is_trapped_in_small_area)
 			c_r = CELL_SIZE_3/4;
 	else
@@ -141,7 +141,7 @@ Point_t MovementFollowWallLidar::calcTmpTarget() {
 
 //	ROS_WARN("curr_point(%d,%d)", getPosition().x, getPosition().y);
 	auto path_head = dynamic_cast<ACleanMode*>(sp_mt_->sp_mode_)->getTempTarget();
-	auto is_trapped_in_small_area = dynamic_cast<MoveTypeFollowWall *>(sp_mt_)->getIsTrappedInSmallArea();
+	auto is_trapped_in_small_area = dynamic_cast<MoveTypeFollowWall *>(sp_mt_)->isTrappedInSmallArea();
 //	ROS_INFO("is_trapped_in_small_area(%d)",is_trapped_in_small_area);
 	if (path_head.seq != seq_) {
 		seq_ = path_head.seq;

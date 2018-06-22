@@ -22,12 +22,12 @@ MovementBack::MovementBack(float back_distance, uint8_t max_speed)
 	robot_stuck_cnt_ = 0;
 	tilt_cnt_ = 0;
 	updateStartPose();
-	ROS_WARN("%s %d: Set back distance: %f.", __FUNCTION__, __LINE__, back_distance_);
+	ROS_WARN("%s %d: Set back distance: %.2f.", __FUNCTION__, __LINE__, back_distance_);
 }
 
 MovementBack::~MovementBack() {
 	robot::instance()->unlockScanCtrl();
-	ROS_WARN("%s %d: Exit movement back.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);
 }
 
 void MovementBack::updateStartPose()

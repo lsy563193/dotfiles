@@ -23,7 +23,7 @@
 
 MovementCharge::MovementCharge()
 {
-	ROS_WARN("%s %d: Start charge action. Battery voltage \033[32m%5.2f V\033[0m.", __FUNCTION__, __LINE__, (float)battery.getVoltage()/100.0);
+	ROS_WARN("%s %d: Start. Battery voltage \033[32m%5.2f V\033[0m.", __FUNCTION__, __LINE__, (float)battery.getVoltage()/100.0);
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
@@ -60,7 +60,7 @@ MovementCharge::~MovementCharge()
 	charger.setStop();
 	obs.control(ON);
 	wifi_led.enable();
-	ROS_WARN("%s %d: End movement charge.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: End.", __FUNCTION__, __LINE__);
 }
 
 bool MovementCharge::isFinish()

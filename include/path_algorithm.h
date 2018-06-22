@@ -327,7 +327,6 @@ public:
 	Cell_t origen_curr_;
 #endif
 private:
-	int pt_;
 	void adjustPosition(GridMap &map, Points &plan_path);
 };
 //

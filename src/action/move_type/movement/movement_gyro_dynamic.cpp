@@ -11,14 +11,14 @@
 
 MovementGyroDynamic::MovementGyroDynamic()
 {
-	ROS_WARN("%s %d: Generate movementGyroDynamic",__FUNCTION__,__LINE__);
+	ROS_WARN("%s %d: Enter.",__FUNCTION__,__LINE__);
 }
 
 MovementGyroDynamic::~MovementGyroDynamic() {
 	auto p_mode = dynamic_cast<ACleanMode*> (sp_mt_->sp_mode_);
 	p_mode->time_gyro_dynamic_ = ros::Time::now().toSec();
 	gyro.setDynamicOff();
-	ROS_WARN("%s %d: Delete movementGyroDynamic",__FUNCTION__,__LINE__);
+	ROS_WARN("%s %d: Exit.",__FUNCTION__,__LINE__);
 }
 
 void MovementGyroDynamic::adjustSpeed(int32_t &l_speed, int32_t &r_speed) {

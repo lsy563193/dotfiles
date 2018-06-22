@@ -280,6 +280,7 @@ bool GridMap::markRobot(const Cell_t& curr, bool is_clean_rcon)
 {
 	bool ret = false;
 	std::string debug_str;
+	debug_str += "(" + std::to_string(curr.x) + ", " + std::to_string(curr.y) + ")";
 	for (auto dy = -ROBOT_SIZE_1_2; dy <= ROBOT_SIZE_1_2; ++dy)
 	{
 		for (auto dx = -ROBOT_SIZE_1_2; dx <= ROBOT_SIZE_1_2; ++dx)
@@ -291,7 +292,7 @@ bool GridMap::markRobot(const Cell_t& curr, bool is_clean_rcon)
 			if (status < BLOCKED_BOUNDARY /*&& (status != BLOCKED_RCON)*/){
 				if(status != BLOCKED_RCON || is_clean_rcon)
 				{
-					debug_str += "(" + std::to_string(x) + ", " + std::to_string(y) + ")";
+//					debug_str += "(" + std::to_string(x) + ", " + std::to_string(y) + ")";
 					setCost(x, y, CLEANED);
 					ret = true;
 				}

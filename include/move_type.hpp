@@ -4,7 +4,6 @@
 
 #ifndef PP_MOVE_TYPE_HPP
 #define PP_MOVE_TYPE_HPP
-#define TRAP_IN_SMALL_AREA_COUNT 40
 #define TILT_BACK_DISTANCE 0.15
 
 #include "action.hpp"
@@ -103,16 +102,14 @@ public:
 	MoveTypeFollowWall() = delete;
 	~MoveTypeFollowWall() override;
 
-	MoveTypeFollowWall(bool is_left);
-	MoveTypeFollowWall(bool is_left,const Points::iterator &p_it);
+	MoveTypeFollowWall(bool is_left, bool in_small_area);
+	MoveTypeFollowWall(bool is_left,const Points::iterator &p_it);// For spot mode
 
 	bool isFinish() override;
 
 	bool isNewLineReach(GridMap &map);
 	bool isOverOriginLine(GridMap &map);
-	bool getIsTrappedInSmallArea() const {return is_trapped_in_small_area_;};
-	void setIsTrappedInSmallArea();
-	void resetIsTrappedInSmallArea();
+	bool isTrappedInSmallArea() const {return is_trapped_in_small_area_;};
     bool outOfRange(const Point_t &curr, Points::iterator &p_it);
 
 private:

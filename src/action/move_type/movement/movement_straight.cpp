@@ -10,13 +10,13 @@
 MovementStraight::MovementStraight()
 {
 	timeout_interval_ = 0.2;
-	ROS_WARN("%s %d: Start movement Straight, timeout(%.1f)s.", __FUNCTION__, __LINE__, timeout_interval_);
+	ROS_WARN("%s %d: timeout(%.1f)s.", __FUNCTION__, __LINE__, timeout_interval_);
 }
 
 MovementStraight::~MovementStraight()
 {
 //	wheel.stop();
-	ROS_WARN("%s %d: End movement Straight.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);
 }
 
 
