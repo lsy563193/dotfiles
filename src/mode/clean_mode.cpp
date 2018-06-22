@@ -2294,7 +2294,7 @@ void ACleanMode::switchInStateFollowWall()
 		if (mode_i_ == cm_navigation || mode_i_ == cm_wall_follow)//add cm_follow_wall
 		{
 			sp_state = state_clean.get();
-			if(isLastStateIsGoHomePoints())
+			if(isHasEnterStateIsGoHomePoints())
 			{
 				sp_state = state_go_home_point.get();
 //				clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_manager_));

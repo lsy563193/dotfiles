@@ -252,7 +252,7 @@ bool CleanModeNav::isExit()
 		}
 	}
 
-	if (isStateGoHomePoint() || isStateGoToCharger())
+	if (isStateGoHomePoint() || isStateGoToCharger() || isHasEnterStateIsGoHomePoints())
 	{
 		if (ev.key_clean_pressed)
 		{
@@ -956,6 +956,9 @@ void CleanModeNav::switchInStateSpot()
 
 bool CleanModeNav::checkEnterPause()
 {
+	if(isHasEnterStateIsGoHomePoints())
+		return false;
+
 	if (ev.key_clean_pressed || s_wifi.receiveIdle()/*|| is_stay_in_same_postion_long_time*/)
 	{
 		if (s_wifi.receiveIdle())

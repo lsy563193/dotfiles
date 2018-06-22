@@ -183,7 +183,7 @@ bool NavCleanPathAlgorithm::checkTrapped(GridMap &map, const Cell_t &curr_cell)
 {
 	if(robot::instance()->p_mode->getNextMode() == Mode::cm_navigation) {
 		auto p_cm = boost::dynamic_pointer_cast<CleanModeNav>(robot::instance()->p_mode);
-		if(p_cm->isSavedStatesEmpty() || !p_cm->isLastStateIsGoHomePoints())
+		if(!p_cm->isHasEnterStateIsGoHomePoints())
 			return checkTrappedUsingDijkstra(map, curr_cell);
 	}
 

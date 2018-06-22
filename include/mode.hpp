@@ -585,10 +585,14 @@ public:
 	GridMap clean_map_{};
 	static bool plan_activation;
 	double time_gyro_dynamic_;
-	bool isLastStateIsGoHomePoints()
+
+	bool isHasEnterStateIsGoHomePoints()
 	{
-		return sp_saved_states.back() == state_go_home_point.get();
+		return  (std::any_of(sp_saved_states.begin(),sp_saved_states.end(),[&](State* state_it){
+			return state_it == state_go_home_point.get();
+		}));
 	}
+
 	bool isSavedStatesEmpty()
 	{
 		return sp_saved_states.empty();
