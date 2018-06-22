@@ -1224,22 +1224,22 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 //		fw_tmp_map.print(getPosition().toCell(), CLEAN_MAP,*points_to_cells(make_unique<Points>(passed_cell_path_)));
 		if(!isStateFollowWall() && !isStateTest())
 		{
-			if(isStateClean()) {
-				BoundingBox<Point_t> bound;
-				bound.SetMinimum({passed_cell_path_.front().x - CELL_SIZE / 4, passed_cell_path_.front().y - CELL_SIZE / 4});
-				bound.SetMaximum({passed_cell_path_.front().x + CELL_SIZE / 4, passed_cell_path_.front().y + CELL_SIZE / 4});
-				if (!bound.Contains(curr)) {
-//					ROS_INFO("Not Cont front(%f,%f),curr(%f,%f),bound(min(%f,%f),max(%f,%f))", passed_cell_path_.front().x, passed_cell_path_.front().y,
-//									 curr.x, curr.y,bound.min.x,bound.min.y, bound.max.x,bound.max.y);
-					auto npa = boost::dynamic_pointer_cast<NavCleanPathAlgorithm>(clean_path_algorithm_);
-					int16_t y = static_cast<int16_t>(plan_path_.begin()->toCell().y + ((npa->is_pox_y()) ? -2 : 2));
-					setFollowWall(clean_map_, action_i_ == ac_follow_wall_left, ins_path, true, y);
-				}
-				else {
-//					ROS_WARN("Cont front(%f,%f),curr(%f,%f),bound(min(%f,%f),max(%f,%f))", passed_cell_path_.front().x, passed_cell_path_.front().y,
-//							 curr.x, curr.y,bound.min.x,bound.min.y, bound.max.x,bound.max.y);
-				}
-			}
+//			if(isStateClean()) {
+//				BoundingBox<Point_t> bound;
+//				bound.SetMinimum({passed_cell_path_.front().x - CELL_SIZE / 4, passed_cell_path_.front().y - CELL_SIZE / 4});
+//				bound.SetMaximum({passed_cell_path_.front().x + CELL_SIZE / 4, passed_cell_path_.front().y + CELL_SIZE / 4});
+//				if (!bound.Contains(curr)) {
+////					ROS_INFO("Not Cont front(%f,%f),curr(%f,%f),bound(min(%f,%f),max(%f,%f))", passed_cell_path_.front().x, passed_cell_path_.front().y,
+////									 curr.x, curr.y,bound.min.x,bound.min.y, bound.max.x,bound.max.y);
+//					auto npa = boost::dynamic_pointer_cast<NavCleanPathAlgorithm>(clean_path_algorithm_);
+//					int16_t y = static_cast<int16_t>(plan_path_.begin()->toCell().y + ((npa->is_pox_y()) ? -2 : 2));
+//					setFollowWall(clean_map_, action_i_ == ac_follow_wall_left, ins_path, true, y);
+//				}
+//				else {
+////					ROS_WARN("Cont front(%f,%f),curr(%f,%f),bound(min(%f,%f),max(%f,%f))", passed_cell_path_.front().x, passed_cell_path_.front().y,
+////							 curr.x, curr.y,bound.min.x,bound.min.y, bound.max.x,bound.max.y);
+//				}
+//			}
 
 			auto p_mt = dynamic_cast<MoveTypeFollowWall *>(p_move_type);
 			if(p_mt->movement_i_ == p_mt->mm_forward ||p_mt->movement_i_ == p_mt->mm_straight)

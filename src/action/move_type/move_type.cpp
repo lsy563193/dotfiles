@@ -103,7 +103,10 @@ bool IMoveType::isFinish()
 	updatePosition();
 	auto curr = getPosition();
 	auto p_cm = dynamic_cast<ACleanMode*> (sp_mode_);
-//	if (!curr.isCellAndAngleEqual(last_))
+	if (!curr.isCellAndAngleEqual(last_))
+	{
+		p_cm->passed_path_for_follow_wall_mark.push_back(last_);
+	}
 	if (!curr.isCellEqual(last_))
 	{
 		last_ = curr;

@@ -572,6 +572,7 @@ public:
 	boost::shared_ptr<State> state_exploration{new StateExploration()};
 
 	Points passed_cell_path_{};
+	Points passed_path_for_follow_wall_mark{};
 	GridMap fw_tmp_map{};
 	typedef std::set<PairCell_t> Blocks_t ;
 	Blocks_t c_blocks;
