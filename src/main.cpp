@@ -9,6 +9,7 @@
 #include <fstream>
 #include <unistd.h>
 #include "log.h"
+#include "wifi/wifi.h"
 #if VERIFY_CPU_ID || VERIFY_KEY
 #include "verify.h"
 #endif
@@ -57,7 +58,7 @@ void handle_exit(int sig)
 		exit(0);
 	}
 	else if(sig == SIGSEGV)
-	{	
+	{
 		server_backtrace(sig);
 		exit(-1);
 	}
@@ -96,6 +97,7 @@ int main(int argc, char **argv)
 	sigaction(SIGABRT,&act,NULL);
 	ROS_INFO("set signal action done!");
 
+	//s_wifi.wifiInitPublicher();
 	robot_instance = new robot();
 // Test code for path algorithm by Austin.
 //	test_map();

@@ -44,9 +44,10 @@ S_Wifi::S_Wifi():is_wifi_connected_(false)
 					,last_time_sync_time_(0)
 					,moduleVersion_(0)
 					,cloudVersion_(0)
+					,nh_(nullptr)
 {
 	init();
-	map_data_buf_ = new std::deque<Points>();
+	path_buf_ = new std::deque<Points>();
 	history_map_data_ = new Cells();
 	history_pass_path_data_ = new Cells();
 
@@ -54,17 +55,21 @@ S_Wifi::S_Wifi():is_wifi_connected_(false)
 	taskPushBack(ACT::ACT_VERSION);
 	taskPushBack(ACT::ACT_MAC);
 }
+
 S_Wifi::~S_Wifi()
 {
+	pass_path_pub_.shutdown();
 	deinit();
 }
 
 bool S_Wifi::deinit()
 {
 	quit();
-	delete map_data_buf_;
+	delete path_buf_;
 	delete history_map_data_;
 	delete history_pass_path_data_;
+	if(nh_ != nullptr)
+		delete nh_;
 	return true;
 }
 
@@ -755,10 +760,10 @@ void printwifimap(int width, std::vector<MapElem> data)
 template <typename T1, typename T2>
 int S_Wifi::dataPushBack( std::vector<T1> &list,T2 data1,T2 data2)
 {
-	list.push_back(static_cast<T1>(data1>>8));
-	list.push_back(static_cast<T1>(data1));
-	list.push_back(static_cast<T1>(data2>>8));
-	list.push_back(static_cast<T1>(data2));
+	list.push_back((data1>>8));
+	list.push_back((data1));
+	list.push_back((data2>>8));
+	list.push_back((data2));
 
 	return static_cast<int>(list.size());
 }
@@ -773,8 +778,8 @@ int S_Wifi::uploadMap(MapType map)
 		return 0;
 	std::vector<uint8_t> map_data;
 	std::vector<std::vector<uint8_t>> map_packs;
-	uint16_t clean_area = static_cast<uint16_t>(g_map.getCleanedArea()*CELL_SIZE*CELL_SIZE*100);
-	uint16_t work_time  = static_cast<uint16_t>(robot_timer.getWorkTime());
+	uint16_t clean_area = (uint16_t)(g_map.getCleanedArea()*CELL_SIZE*CELL_SIZE*100.0);
+	uint16_t work_time  = (uint16_t)(robot_timer.getWorkTime());
 	/*
 	//-- upload grid map and pass_path
 	if(map == S_Wifi::GRID_MAP)
@@ -832,11 +837,11 @@ int S_Wifi::uploadMap(MapType map)
 		// ---- push pass_path
 		Points pass_path;
 		pthread_mutex_lock(&map_data_lock_);
-		if (!map_data_buf_->empty())
-			pass_path = map_data_buf_->front();
+		if (!path_buf_->empty())
+			pass_path = path_buf_->front();
 		pthread_mutex_unlock(&map_data_lock_);
 		bool map_buf_on_process = false;
-		if(map_data_buf_->size()  > 0 && !pass_path.empty())
+		if(path_buf_->size()  > 0 && !pass_path.empty())
 		{
 			map_buf_on_process = true;
 			//-------push clean_area and work_time
@@ -887,8 +892,8 @@ int S_Wifi::uploadMap(MapType map)
 		this->commit(map_packs,800000);
 
 		pthread_mutex_lock(&map_data_lock_);
-		if (!map_data_buf_->empty() && map_buf_on_process)
-				map_data_buf_->pop_front();
+		if (!path_buf_->empty() && map_buf_on_process)
+				path_buf_->pop_front();
 		pthread_mutex_unlock(&map_data_lock_);
 
 	}
@@ -902,7 +907,7 @@ int S_Wifi::uploadMap(MapType map)
 		if(a_slam_map_data != nullptr)
 		{
 			auto left_top_corner= std::get<0>(*a_slam_map_data);
-			ROS_INFO("%s,%d,x y corner\033[32m(%d,%d)\033[0m",__FUNCTION__,__LINE__,left_top_corner.x,left_top_corner.y);
+			INFO_GREEN("%s,%d,x y corner(%d,%d)",__FUNCTION__,__LINE__,left_top_corner.x,left_top_corner.y);
 			auto width = std::get<1>(*a_slam_map_data);
 			auto data = std::get<2>(*a_slam_map_data);
 			//--push clean_area and work_time
@@ -945,21 +950,17 @@ int S_Wifi::uploadMap(MapType map)
 		map_data.push_back(0x02);//data type
 		Points pass_path;
 		pthread_mutex_lock(&map_data_lock_);
-		if (!map_data_buf_->empty())
-			pass_path = map_data_buf_->front();
+		if (!path_buf_->empty())
+			pass_path = path_buf_->front();
 		pthread_mutex_unlock(&map_data_lock_);
-		Point_t cur_pos = getPosition(SLAM_POSITION_SLAM_ANGLE);
-		int16_t c_x = cur_pos.toCell().x;
-		int16_t c_y = cur_pos.toCell().y;
-
+		if(path_num >= 255)
+			path_num = 0;
+		map_data.push_back(path_num);//path number
+		path_num++;
 		bool map_buf_on_process = false;
-		if(map_data_buf_->size()> 0 && !pass_path.empty())
+		if(path_buf_->size()> 0 && !pass_path.empty())
 		{
 			map_buf_on_process = true;
-			if(path_num >= 255)
-				path_num = 0;
-			map_data.push_back(path_num);//path number
-			path_num++;
 			for(auto &&p_it : pass_path)
 			{
 				int16_t p_x = p_it.toCell().x;
@@ -980,14 +981,22 @@ int S_Wifi::uploadMap(MapType map)
 			}
 		}
 		//push current position
-		dataPushBack(map_data,c_x,c_y);
+		//Point_t cur_pos = getPosition(SLAM_POSITION_SLAM_ANGLE);
+		/* int16_t c_x = cur_pos.toCell().x; */
+		// int16_t c_y = cur_pos.toCell().y;
+		/* dataPushBack(map_data,c_x,c_y); */
 		map_packs.push_back(map_data);
+
 		//-- upload map and wait ack
 		this->commit(map_packs,800000,false);
+
+		//publish to rviz
+		//pubCleanPath(map_packs);
+
 		//-- popCurrRconPoint front
 		pthread_mutex_lock(&map_data_lock_);
-		if (!map_data_buf_->empty() && map_buf_on_process)
-			map_data_buf_->pop_front();
+		if (!path_buf_->empty() && map_buf_on_process)
+			path_buf_->pop_front();
 		pthread_mutex_unlock(&map_data_lock_);
 	}
 	return static_cast<int>(map_packs.size());
@@ -1424,7 +1433,7 @@ uint8_t S_Wifi::checkVersion()
 				wifi::wifiVersionAckMsg::MSG_CODE,
 				{0});
 	s_wifi_tx_.push(std::move(p)).commit();
-
+	INFO_CYAN("%s,%d",__FUNCTION__,__LINE__);
 	return 0;
 }
 
@@ -1522,41 +1531,42 @@ void S_Wifi::wifiSendRoutine()
 				continue;
 			}
 			// If time is not synchronized, try to query NTP for every 3 mins.
-			if (!time_sync_ && ros::Time::now().toSec() - last_time_sync_time_ > 180)
+			if (!time_sync_ && ros::Time::now().toSec() - last_time_sync_time_ > 3000)
 			{
 				taskPushBack(ACT::ACT_QUERY_NTP);
 				last_time_sync_time_ = ros::Time::now().toSec();
 			}
 
-			if (robot::instance()->duringNavigationCleaning() && upload_map_count++ >= 4)
-			{
-				this->uploadMap(PASS_PATH);
-				upload_map_count = 0;
-			}
+			/* if (robot::instance()->duringNavigationCleaning() && upload_map_count++ >= 150) */
+			// {
+				// this->uploadMap(PASS_PATH);
+				// upload_map_count = 0;
+			/* } */
 
-			if(is_Status_Request_)
-			{
-				if(upload_state_count++ >= 20)
-				{
-					this->uploadStatus(0xc8,0x00);
-					upload_state_count=0;
-				}
-			}
+			/* if(is_Status_Request_) */
+			// {
+				// if(upload_state_count++ >= 50)
+				// {
+					// this->uploadStatus(0xc8,0x00);
+					// upload_state_count=0;
+				// }
+			/* } */
 		}
 	}
-	printf("WIFI SEND ROUTINE EXIT!\n");
+	INFO_BLUE("%s ,exit!",__FUNCTION__);
 }
 
 void S_Wifi::cacheMapData(const Points pass_path)
 {
 	MutexLock lock(&map_data_lock_);
-	map_data_buf_->push_back(pass_path);
+	path_buf_->push_back(pass_path);
+	taskPushBack(ACT::ACT_UPLOAD_PATH);
 }
 
 void S_Wifi::clearMapCache()
 {
 	MutexLock lock(&map_data_lock_);
-	map_data_buf_->clear();
+	path_buf_->clear();
 	history_map_data_->clear();
 	history_pass_path_data_->clear();
 }
@@ -1591,4 +1601,68 @@ void S_Wifi::cloudConnected()
 		first_time_connected_ = false;
 		speaker.play(VOICE_WIFI_CONNECTED, false);
 	}
+}
+
+void S_Wifi::pubCleanPath(const std::vector<std::vector<uint8_t>> packs)
+{
+	if(nh_ == nullptr || packs.empty())
+		return;
+	INFO_CYAN("%s,%d,packs size %d",__FUNCTION__,__LINE__,packs.size());
+
+	geometry_msgs::Point p;
+	std::vector<uint8_t> path;
+	for(int i= 0 ;i<packs.size();i++)
+	{
+		path = packs.at(i);
+		if(path.size() < 7)
+		{
+			INFO_RED("%s,%d illegal ,path size < %d",__FUNCTION__,__LINE__,path.size());
+			continue;
+		}
+		auto it = path.begin();
+		it=it+4;
+		std::stringstream s("");
+		s<<(int)*(it)<<",";
+		if(*(it) == 0x02)//path code
+		{
+			s<<(int)*(it+1)<<",";
+			it=it+2;//skip the number code
+			while(it != path.end())
+			{
+				p.x = (int16_t)(*it<<8 | *(it+1))*CELL_SIZE;
+				it=it+2;
+				p.y = (int16_t)(*it<<8 | *(it+1))*CELL_SIZE;
+				it=it+2;
+				s<<"("<<p.x<<","<<p.y<<")";
+				path_markers_.points.push_back(p);
+			}
+			INFO_CYAN("%s,%d,%s",__FUNCTION__,__LINE__,s.str().c_str());
+		}
+		else if(*it == 0x01)
+		{
+			INFO_RED("%s,%d,eh.... not do this yet",__FUNCTION__,__LINE__);
+			continue;
+		}
+	}
+	path_markers_.header.stamp=ros::Time::now();
+	pass_path_pub_.publish(path_markers_);
+}
+
+void S_Wifi::wifiInitPublicher()
+{
+	nh_=new ros::NodeHandle();
+	pass_path_pub_ = nh_->advertise<visualization_msgs::Marker>("pass_path_markers", 1);
+
+	path_markers_.ns = "pass_path";
+	path_markers_.header.frame_id = "/map";
+	path_markers_.pose.orientation.w = 1.0;
+	path_markers_.lifetime=ros::Duration(0);
+	path_markers_.id = 0;
+	path_markers_.action= visualization_msgs::Marker::ADD;
+	path_markers_.type = visualization_msgs::Marker::LINE_STRIP;
+	path_markers_.scale.x = 0.05;
+	path_markers_.color.b = 0.6;
+	path_markers_.color.a = 1.0;
+	path_markers_.points.clear();
+
 }
