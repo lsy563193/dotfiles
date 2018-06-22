@@ -1188,9 +1188,9 @@ bool CleanModeNav::moveTypeRealTimeIsFinish(IMoveType *p_mt)
 	Points ins_path{};//instantaneous path
 	auto curr = getPosition();
 	ins_path.push_back(curr);
-	/*if (isStateClean() && (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)) //rounding
+	if (isStateClean() && (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)) //rounding
 	{
-		BoundingBox<Point_t> bound;
+		/*BoundingBox<Point_t> bound;
 		bound.SetMinimum({passed_cell_path_.front().x - CELL_SIZE / 4, passed_cell_path_.front().y - CELL_SIZE / 4});
 		bound.SetMaximum({passed_cell_path_.front().x + CELL_SIZE / 4, passed_cell_path_.front().y + CELL_SIZE / 4});
 		if (!bound.Contains(curr))
@@ -1205,7 +1205,7 @@ bool CleanModeNav::moveTypeRealTimeIsFinish(IMoveType *p_mt)
 //		{
 //					ROS_WARN("Cont front(%f,%f),curr(%f,%f),bound(min(%f,%f),max(%f,%f))", passed_cell_path_.front().x, passed_cell_path_.front().y,
 //							 curr.x, curr.y,bound.min.x,bound.min.y, bound.max.x,bound.max.y);
-//		}
+//		}*/
 
 		auto p_mt_follow_wall = dynamic_cast<MoveTypeFollowWall *>(p_mt);
 		if(p_mt_follow_wall->movement_i_ == p_mt_follow_wall->mm_forward || p_mt_follow_wall->movement_i_ == p_mt_follow_wall->mm_straight)
@@ -1213,8 +1213,7 @@ bool CleanModeNav::moveTypeRealTimeIsFinish(IMoveType *p_mt)
 			return p_mt_follow_wall->isNewLineReach(clean_map_) || p_mt_follow_wall->isOverOriginLine(clean_map_);
 		}
 	}
-	else */
-	if (isStateSpot())
+	else if (isStateSpot())
 	{
 		auto p_mt_follow_wall = dynamic_cast<MoveTypeFollowWall *>(p_mt);
 		if(p_mt_follow_wall->outOfRange(getPosition(), iterate_point_))
