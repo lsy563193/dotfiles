@@ -698,7 +698,7 @@ void ACleanMode::pubFitLineMarker(visualization_msgs::Marker fit_line_marker)
 	fit_line_marker_pub_.publish(fit_line_marker);
 }
 
-uint8_t ACleanMode::setFollowWall(GridMap& map, bool is_left,const Points& passed_path,bool is_exclude,int16_t cell_y)
+uint8_t ACleanMode::setFollowWall(GridMap& map, bool is_left,const Points& passed_path)
 {
 	uint8_t block_count = 0;
 	if (!passed_path.empty()/* && !c_blocks.empty()*/)
@@ -709,12 +709,9 @@ uint8_t ACleanMode::setFollowWall(GridMap& map, bool is_left,const Points& passe
 			if(map.getCost(point.toCell().x, point.toCell().y) != BLOCKED_RCON){
 				auto relative_cell = point.getRelative(0, dy * CELL_SIZE);
 				auto block_cell = relative_cell.toCell();
-				if(!is_exclude || block_cell.y != cell_y )
-				{
-					msg += "(" + std::to_string(block_cell.x) + "," + std::to_string(block_cell.y) + ")";
-					map.setCost(block_cell.x, block_cell.y, BLOCKED_FW);
-					block_count++;
-				}
+				msg += "(" + std::to_string(block_cell.x) + "," + std::to_string(block_cell.y) + ")";
+				map.setCost(block_cell.x, block_cell.y, BLOCKED_FW);
+				block_count++;
 			}
 		}
 //		ROS_INFO("%s,%d: Current(%d, %d, %lf), \033[32m mapMark s\033[0m",
