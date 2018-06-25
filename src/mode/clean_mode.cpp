@@ -298,6 +298,19 @@ void ACleanMode::saveBlocks() {
 		return d_cells;
 	});
 
+	//For cliff turn
+	saveBlock(BLOCKED_CLIFF, [&]() {
+		auto cliff_trig = ev.cliff_turn;
+		Cells d_cells;
+		if (cliff_trig & BLOCK_CLIFF_TURN_LEFT) {
+			d_cells = {{2, -1}, {2, 0}};
+		}
+		if (cliff_trig & BLOCK_CLIFF_TURN_RIGHT) {
+			d_cells = {{-2, -1}, {-2, 0}};
+		}
+		return d_cells;
+	});
+
 	//save block for wheel cliff, but in case of incresing the map cost, it is same as the BOCKED_CLIFF, please check the log if it was triggered
 	saveBlock(BLOCKED_CLIFF,[&]() {
 //		auto wheel_cliff_trig = ev.left_wheel_cliff || ev.right_wheel_cliff;

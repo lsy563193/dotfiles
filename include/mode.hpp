@@ -128,9 +128,11 @@ public:
 	static boost::shared_ptr<IAction> sp_action_;
 
 	double wall_distance;
+
 	double wheel_cliff_triggered_time_{DBL_MAX};
 	const double WHEEL_CLIFF_TIME_LIMIT{0.5};//2
 	bool is_wheel_cliff_triggered{false};
+
 	int mode_i_{};
 	int current_action_i_{};
 

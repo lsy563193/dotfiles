@@ -6,12 +6,15 @@
 #include <movement.hpp>
 #include <move_type.hpp>
 #include <wheel.hpp>
+#include <cliff.h>
 #include "robot.hpp"
 
 
 MovementTurn::MovementTurn(double slam_target, uint8_t max_speed) : speed_(ROTATE_LOW_SPEED)
 {
 //	auto rad_diff = getPosition().th - slam_target + odom.getRadian();
+	is_left_cliff_trigger_in_start = cliff.getLeft();
+	is_right_cliff_trigger_in_start = cliff.getRight();
 	turn_radian_ = fabs(ranged_radian(slam_target - getPosition().th));
 	target_radian_ = ranged_radian(slam_target  - getPosition().th + odom.getRadian());//odom_target = slam_target-slam_start + odom_start
 	max_speed_ = max_speed;
@@ -98,7 +101,13 @@ bool MovementTurn::isFinish()
 	// Check slip by gyro
 	gyro.checkRobotSlipByGyro();
 
-	auto ret = isReach() || sp_mt_->isFinishForward();
+	//For cliff turn
+	if(!is_left_cliff_trigger_in_start && cliff.getLeft() && wheel.getDirection() == DIRECTION_LEFT)
+		ev.cliff_turn |= BLOCK_CLIFF_TURN_LEFT;
+	else if(!is_right_cliff_trigger_in_start && cliff.getRight() && wheel.getDirection() == DIRECTION_RIGHT)
+		ev.cliff_turn |= BLOCK_CLIFF_TURN_RIGHT;
+
+	auto ret = isReach() || sp_mt_->isFinishForward() || ev.cliff_turn;
 
 	if(isTimeUp()){
 		ROS_WARN("%s %d: Robot maybe slip but not detect in checkSlip, curr_degree(%lf)", __FUNCTION__, __LINE__,radian_to_degree(getPosition().th));

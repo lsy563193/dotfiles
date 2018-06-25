@@ -17,6 +17,10 @@
 #define BLOCK_ALL			((uint8_t) 0x07)
 #define BLOCK_LIDAR_BUMPER			((uint8_t) 0x08)
 
+#define BLOCK_CLIFF_TURN_LEFT		((uint8_t) 0x01)
+#define BLOCK_CLIFF_TURN_RIGHT		((uint8_t) 0x02)
+#define BLOCK_CLIFF_TURN_ALL		((uint8_t) 0x03)
+
 class GridMap {
 public:
 
@@ -154,7 +158,7 @@ public:
 	 * @param radius, the radius of the circle.
 	 * @param cell_state, target cell state of marking.
 	 */
-	void setCircleMarkers(Point_t point, int radius, CellState cell_state,Marks& error_marker);
+	void setCircleMarkers(const Point_t& point, int radius, CellState cell_state,Marks& error_marker);
 
 	/*
 	 * Mark a square of x_len * y_len from center with cell_state.

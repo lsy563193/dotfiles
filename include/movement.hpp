@@ -81,6 +81,8 @@ private:
 	uint8_t tilt_cnt_;
 	uint8_t cliff_status_{0};
 	float lidar_detect_distance;
+	bool is_left_cliff_trigger_in_start{false};
+	bool is_right_cliff_trigger_in_start{false};
 };
 
 class MovementGyroDynamic : public IMovement{
@@ -127,6 +129,8 @@ private:
 	double accurate_;
 	uint8_t speed_;
 	double target_radian_;
+	bool is_left_cliff_trigger_in_start{false};
+	bool is_right_cliff_trigger_in_start{false};
 };
 
 class MovementFollowPointLinear:public AMovementFollowPoint
@@ -335,6 +339,8 @@ private:
 	IAction* p_action_open_gyro_ = nullptr;
 	int last_action_i_;
 	uint16_t debug_print_counter_{0};
+	//For cliff turn
+	double resume_cliff_turn_start_time_{0};
 };
 
 class MovementCharge :public IMovement
