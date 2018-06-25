@@ -17,6 +17,10 @@
 #define BLOCK_ALL			((uint8_t) 0x07)
 #define BLOCK_LIDAR_BUMPER			((uint8_t) 0x08)
 
+#define BLOCK_CLIFF_TURN_LEFT		((uint8_t) 0x01)
+#define BLOCK_CLIFF_TURN_RIGHT		((uint8_t) 0x02)
+#define BLOCK_CLIFF_TURN_ALL		((uint8_t) 0x03)
+
 class GridMap {
 public:
 

@@ -22,6 +22,8 @@ MovementBack::MovementBack(float back_distance, uint8_t max_speed)
 	robot_stuck_cnt_ = 0;
 	tilt_cnt_ = 0;
 	updateStartPose();
+	is_left_cliff_trigger_in_start = cliff.getLeft();
+	is_right_cliff_trigger_in_start = cliff.getRight();
 	ROS_WARN("%s %d: Set back distance: %.2f.", __FUNCTION__, __LINE__, back_distance_);
 }
 
@@ -78,6 +80,12 @@ bool MovementBack::isFinish()
 	bool ret{false};
 	float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getOriginX(), odom.getOriginY());
 //	ROS_INFO("%s, %d: MovementBack distance %f", __FUNCTION__, __LINE__, distance);
+
+	//For cliff turn
+	if(!is_left_cliff_trigger_in_start && cliff.getLeft())
+		ev.cliff_turn |= BLOCK_CLIFF_TURN_LEFT;
+	else if(!is_right_cliff_trigger_in_start && cliff.getRight())
+		ev.cliff_turn |= BLOCK_CLIFF_TURN_RIGHT;
 
 	if (std::abs(distance) >= back_distance_ || isLidarStop()) {
 		auto tmp_bumper_status = bumper.getStatus();
