@@ -42,7 +42,7 @@ CleanModeNav::CleanModeNav()
 	//clear real time map which store in cloud....
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_CLEAR_MAP);
 
-	// Clear the map on app.
+	// Clear the map in app.
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_CLEAR_APP_MAP);
 }
 
