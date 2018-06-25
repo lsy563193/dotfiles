@@ -5,6 +5,7 @@
 #include <vacuum.h>
 #include <beeper.h>
 #include <remote.hpp>
+#include <brush.h>
 #include "speaker.h"
 #include "mode.hpp"
 #include "error.h"
@@ -1686,11 +1687,14 @@ void S_Wifi::wifiInitPublicher()
 void S_Wifi::factoryReset()
 {
 	//reset consumtion device state
+	brush.resetSideBrushTime();
+	brush.resetMainBrushTime();
+	vacuum.resetFilterTime();
 	robot::instance()->resetSideBrushTime();
 	robot::instance()->resetMainBrushTime();
 	robot::instance()->resetFilterTime();
 	robot::instance()->updateConsumableStatus();
-	INFO_YELLOW("reset comsuption device");
+	INFO_YELLOW("reset robot consumption status");
 
 	//reset appointment state
 	appmt_obj.reset();
