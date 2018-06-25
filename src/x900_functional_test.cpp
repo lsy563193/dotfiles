@@ -175,6 +175,9 @@ uint8_t serial_port_test()
 //		serial.debugReceivedStream(receive_data);
 		usleep(100000);
 	}
+	if(test_ret)
+		return test_ret;
+
 	if(send_string_sum.compare(receive_string_sum) == 0)
 	{
 		if(receive_data[M0_VERSION_H] << 8 | receive_data[M0_VERSION_L] != CURRENT_PATCH)
