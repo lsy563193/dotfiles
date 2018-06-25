@@ -24,7 +24,7 @@ MovementBack::MovementBack(float back_distance, uint8_t max_speed)
 	updateStartPose();
 	is_left_cliff_trigger_in_start = cliff.getLeft();
 	is_right_cliff_trigger_in_start = cliff.getRight();
-	ROS_WARN("%s %d: Set back distance: %.2f.", __FUNCTION__, __LINE__, back_distance_);
+	ROS_WARN("%s %d: Distance: %.2f.", __FUNCTION__, __LINE__, back_distance_);
 }
 
 MovementBack::~MovementBack() {
@@ -83,9 +83,15 @@ bool MovementBack::isFinish()
 
 	//For cliff turn
 	if(!is_left_cliff_trigger_in_start && cliff.getLeft())
+	{
+		ROS_WARN("%s, %d: Cliff turn left.", __FUNCTION__, __LINE__);
 		ev.cliff_turn |= BLOCK_CLIFF_TURN_LEFT;
+	}
 	else if(!is_right_cliff_trigger_in_start && cliff.getRight())
+	{
+		ROS_WARN("%s, %d: Cliff turn left.", __FUNCTION__, __LINE__);
 		ev.cliff_turn |= BLOCK_CLIFF_TURN_RIGHT;
+	}
 
 	if (std::abs(distance) >= back_distance_ || isLidarStop()) {
 		auto tmp_bumper_status = bumper.getStatus();

@@ -11,7 +11,12 @@
 #include <robot.hpp>
 
 MovementForwardTurn::MovementForwardTurn(bool is_left) : is_left_(is_left) {
-	ROS_WARN("%s %d, Enter Movement forward turn.",__FUNCTION__,__LINE__);
+	ROS_WARN("%s %d, Enter.",__FUNCTION__,__LINE__);
+}
+
+MovementForwardTurn::~MovementForwardTurn()
+{
+	ROS_WARN("%s %d, Exit.",__FUNCTION__,__LINE__);
 }
 
 void MovementForwardTurn::adjustSpeed(int32_t &left_speed, int32_t &right_speed)

@@ -167,7 +167,7 @@ bool ModeRemote::isFinish()
 
 	if (sp_action_->isFinish())
 	{
-		PP_INFO();
+//		PP_INFO();
 		action_i_ = getNextAction();
 		genNextAction();
 		if (sp_action_ == nullptr)

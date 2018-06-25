@@ -138,9 +138,9 @@ class MovementFollowPointLinear:public AMovementFollowPoint
 public:
 //	MovementFollowPointLinear(Point_t);
 	MovementFollowPointLinear();
+	~MovementFollowPointLinear();
 
 //	void scaleCorrectionPos();
-//	~MovementFollowPointLinear(){ };
 	bool isFinish() override;
 	/**
 	* @brief judge is the robot is close to the obstacle and speed down
@@ -216,10 +216,7 @@ class MovementFollowWallLidar:public AMovementFollowPoint, public IFollowWall
 
 public:
 	explicit MovementFollowWallLidar(bool is_left);
-	~MovementFollowWallLidar()
-	{
-		ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);
-	}
+	~MovementFollowWallLidar();
 
 	Point_t calcTmpTarget() override ;//laser follow wall algorithm
 	Points calcVirtualTmpTarget();//generate a circle path
@@ -430,8 +427,8 @@ class MovementForwardTurn :public IMovement
 public:
 	MovementForwardTurn() = delete;
 
-	explicit MovementForwardTurn(bool);
-	~MovementForwardTurn() = default;
+	explicit MovementForwardTurn(bool is_left);
+	~MovementForwardTurn();
 
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed) override;
 	bool isFinish() override;

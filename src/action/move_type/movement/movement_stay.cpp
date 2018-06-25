@@ -26,7 +26,7 @@ MovementStay::MovementStay(double stay_time_sec)
 MovementStay::~MovementStay()
 {
 	robot::instance()->unlockScanCtrl();
-	ROS_WARN("%s %d: End movement stay.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);
 }
 
 

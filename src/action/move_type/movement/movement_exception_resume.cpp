@@ -19,7 +19,7 @@ double MovementExceptionResume::stuck_start_turn_time_ = 0;
 bool MovementExceptionResume::is_stuck_last_turn_right_ = false;
 MovementExceptionResume::MovementExceptionResume(int last_action)
 {
-	ROS_WARN("%s %d: Entering movement exception resume.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Enter.", __FUNCTION__, __LINE__);
 
 	last_action_i_ = last_action;
 	// Save current position for moving back detection.
@@ -45,7 +45,7 @@ MovementExceptionResume::MovementExceptionResume(int last_action)
 
 MovementExceptionResume::~MovementExceptionResume()
 {
-	ROS_WARN("%s %d: Exiting movement exception resume.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);
 }
 
 void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_speed) {
@@ -54,14 +54,14 @@ void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_sp
 		switch (ev.cliff_turn) {
 			case BLOCK_CLIFF_TURN_LEFT: { //turn should right
 				wheel.setDirectionForward();
-				left_speed = RUN_TOP_SPEED / 2;
-				right_speed = RUN_TOP_SPEED / 4;
+				left_speed = RUN_TOP_SPEED * 2 / 3;
+				right_speed = RUN_TOP_SPEED / 8;
 				break;
 			}
 			case BLOCK_CLIFF_TURN_RIGHT: { //should turn left
 				wheel.setDirectionForward();
-				left_speed = RUN_TOP_SPEED / 4 ;
-				right_speed = RUN_TOP_SPEED / 2;
+				left_speed = RUN_TOP_SPEED / 8;
+				right_speed = RUN_TOP_SPEED * 2 / 3;
 				break;
 			}
 			case BLOCK_CLIFF_TURN_ALL:{
@@ -234,31 +234,7 @@ bool MovementExceptionResume::isFinish() {
 		return true;
 	}
 
-	if (ev.cliff_turn) {
-		float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getX(), odom.getY());
-		if (resume_cliff_turn_start_time_ == 0)
-			resume_cliff_turn_start_time_ = ros::Time::now().toSec();
-
-		switch (ev.cliff_turn) {
-			case BLOCK_CLIFF_TURN_LEFT:
-			case BLOCK_CLIFF_TURN_RIGHT: {
-				if (distance > 0.15f && !cliff.getStatus()) {
-					ROS_INFO("resume success by turn!");
-					ev.cliff_turn = 0;
-				}
-				break;
-			}
-			case BLOCK_CLIFF_TURN_ALL: {
-				if (distance > 0.1f) {
-					if (!cliff.getStatus()) {
-						ROS_INFO("resume success by forward!");
-						ev.cliff_turn = 0;
-					}
-					break;
-				}
-			}
-		}
-	} else if (ev.oc_wheel_left || ev.oc_wheel_right) {// Check for right wheel.
+	if (ev.oc_wheel_left || ev.oc_wheel_right) {// Check for right wheel.
 		/*--- init start time ---*/
 		if (resume_wheel_start_time_ == 0)
 			resume_wheel_start_time_ = ros::Time::now().toSec();
@@ -293,7 +269,40 @@ bool MovementExceptionResume::isFinish() {
 				ROS_INFO("%s %d: Failed to resume for %d times.", __FUNCTION__, __LINE__, wheel_resume_cnt_);
 			}
 		}
-	} else if (ev.oc_brush_main) {
+	}
+	else if (ev.cliff_turn)
+	{
+		float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getX(), odom.getY());
+		if (resume_cliff_turn_start_time_ == 0)
+			resume_cliff_turn_start_time_ = ros::Time::now().toSec();
+		if (ros::Time::now().toSec() - resume_cliff_turn_start_time_ > 3)
+		{
+			ev.fatal_quit = true;
+			robot_error.set(ERROR_CODE_CLIFF);
+			ROS_ERROR("%s %d: Cliff turn resume failed.", __FUNCTION__, __LINE__);
+		}
+
+		switch (ev.cliff_turn) {
+			case BLOCK_CLIFF_TURN_LEFT:
+			case BLOCK_CLIFF_TURN_RIGHT: {
+				if (distance > 0.08f && !cliff.getStatus()) {
+					ROS_INFO("resume success by turn!");
+					ev.cliff_turn = 0;
+				}
+				break;
+			}
+			case BLOCK_CLIFF_TURN_ALL: {
+				if (distance > 0.08f) {
+					if (!cliff.getStatus()) {
+						ROS_INFO("resume success by forward!");
+						ev.cliff_turn = 0;
+					}
+					break;
+				}
+			}
+		}
+	}
+	else if (ev.oc_brush_main) {
 		/*--- init start time ---*/
 		if (resume_main_bursh_start_time_ == 0)
 			resume_main_bursh_start_time_ = ros::Time::now().toSec();

@@ -116,7 +116,7 @@ ACleanMode::~ACleanMode()
 				{
 					speaker.play(VOICE_CHECK_SWITCH, false);
 					ROS_WARN("%s %d: Switch is not on. Stop cleaning.", __FUNCTION__, __LINE__);
-				} else if (ev.cliff_all_triggered)
+				} else if (ev.cliff_all_triggered || ev.cliff_turn)
 				{
 					speaker.play(VOICE_ERROR_LIFT_UP, false);
 					ROS_WARN("%s %d: Cliff all triggered. Stop cleaning.", __FUNCTION__, __LINE__);

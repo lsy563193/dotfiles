@@ -11,8 +11,13 @@
 
 ActionOpenGyro::ActionOpenGyro()
 {
-	ROS_WARN("%s %d: Enter action open gyro.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Enter.", __FUNCTION__, __LINE__);
 	gyro.reOpen();
+}
+
+ActionOpenGyro::~ActionOpenGyro()
+{
+	ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);
 }
 
 bool ActionOpenGyro::isFinish()
@@ -50,3 +55,4 @@ void ActionOpenGyro::run()
 		ROS_WARN("%s,%d: Open gyro failed 4 times, set brush to stop");
 	}
 }
+

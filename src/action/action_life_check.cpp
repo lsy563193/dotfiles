@@ -18,7 +18,7 @@
 
 ActionLifeCheck::ActionLifeCheck()
 {
-	ROS_WARN("%s %d: Enter life check.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Enter.", __FUNCTION__, __LINE__);
 
 	auto life_test_routine = new boost::thread(boost::bind(&ActionLifeCheck::lifeTestRoutineThread, this));
 
