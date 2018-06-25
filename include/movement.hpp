@@ -69,6 +69,7 @@ public:
 	bool isLidarStop();
 	void updateStartPose();
 	bool isFinish() override;
+	void checkCliffTurn();
 
 private:
 	uint8_t max_speed_;
@@ -81,8 +82,13 @@ private:
 	uint8_t tilt_cnt_;
 	uint8_t cliff_status_{0};
 	float lidar_detect_distance;
-	bool is_left_cliff_trigger_in_start{false};
-	bool is_right_cliff_trigger_in_start{false};
+	//For cliff turn
+	bool is_left_cliff_trigger_in_start_{false};
+	bool is_right_cliff_trigger_in_start_{false};
+	bool is_left_cliff_trigger_{false};
+	bool is_right_cliff_trigger_{false};
+	double left_cliff_trigger_start_time_{0};
+	double right_cliff_trigger_start_time_{0};
 };
 
 class MovementGyroDynamic : public IMovement{
@@ -122,6 +128,7 @@ public:
 	void adjustSpeed(int32_t&, int32_t&) override;
 	bool isReach();
 	bool isFinish() override;
+	void checkCliffTurn();
 
 private:
 	double turn_radian_;
@@ -129,8 +136,13 @@ private:
 	double accurate_;
 	uint8_t speed_;
 	double target_radian_;
-	bool is_left_cliff_trigger_in_start{false};
-	bool is_right_cliff_trigger_in_start{false};
+	//For cliff turn
+	bool is_left_cliff_trigger_in_start_{false};
+	bool is_right_cliff_trigger_in_start_{false};
+	bool is_left_cliff_trigger_{false};
+	bool is_right_cliff_trigger_{false};
+	double left_cliff_trigger_start_time_{0};
+	double right_cliff_trigger_start_time_{0};
 };
 
 class MovementFollowPointLinear:public AMovementFollowPoint
