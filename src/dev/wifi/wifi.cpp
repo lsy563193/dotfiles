@@ -1297,7 +1297,7 @@ bool S_Wifi::factoryTest(uint32_t &moduleVersion)
 		waitResp++;
 		if(waitResp >= 200)//wait 4 seconds
 		{
-			ROS_ERROR("%s,%d,FACTORY TEST FAIL ,no factory test response!!",__FUNCTION__,__LINE__);
+			ROS_ERROR("%s,%d,FACTORY TEST FAIL ,no factory test ack response!!",__FUNCTION__,__LINE__);
 			isFactoryTest_ = false;
 			return false;
 		}
@@ -1308,7 +1308,7 @@ bool S_Wifi::factoryTest(uint32_t &moduleVersion)
 	while(isRegDevice_ == false){
 		usleep(20000);
 		if(waitResp >= 1500){//30s
-			ROS_ERROR("%s,%d,FACTORY TEST FAIL ,no registion response!!",__FUNCTION__,__LINE__);
+			ROS_ERROR("%s,%d,FACTORY TEST FAIL ,no registration msg response!!",__FUNCTION__,__LINE__);
 			isFactoryTest_ = false;
 			return false;
 		}
