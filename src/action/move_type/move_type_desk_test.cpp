@@ -116,7 +116,7 @@ void MoveTypeDeskTest::run()
 				infrared_display.displayNormalMsg(test_stage_, 0);
 				sp_mode_->action_i_ = sp_mode_->ac_follow_wall_left;
 				p_movement_.reset();
-				p_movement_.reset(new MoveTypeFollowWall(true));
+				p_movement_.reset(new MoveTypeFollowWall(true, false));
 
 				ROS_WARN("%s %d: Stage 3 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
 			}
@@ -532,6 +532,7 @@ bool MoveTypeDeskTest::checkStage2Finish()
 				sum_cnt_++;
 				usleep(20000);
 			}
+			// For debug
 //			scan_valid_cnt = _cnt;
 			ROS_INFO("%s %d: Scan valid count:%d.", __FUNCTION__, __LINE__, scan_valid_cnt);
 			if (scan_valid_cnt < _cnt -1)
@@ -585,6 +586,7 @@ bool MoveTypeDeskTest::checkStage2Finish()
 				sum_cnt_++;
 				usleep(20000);
 			}
+			// For debug
 //			scan_valid_cnt = _cnt;
 			ROS_INFO("%s %d: Scan valid count:%d.", __FUNCTION__, __LINE__, scan_valid_cnt);
 			if (scan_valid_cnt < _cnt -1)

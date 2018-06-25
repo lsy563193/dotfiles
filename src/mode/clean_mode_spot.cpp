@@ -168,3 +168,20 @@ bool CleanModeSpot::markMapInNewCell() {
 	clean_map_.markRobot(getPosition().toCell(),false);
 	return true;
 }
+
+bool CleanModeSpot::moveTypeNewCellIsFinish(IMoveType *p_mt)
+{
+	auto distance = updatePath();
+	return checkClosed(p_mt, distance);
+}
+
+bool CleanModeSpot::moveTypeRealTimeIsFinish(IMoveType *p_mt)
+{
+	if (isStateSpot() && action_i_ == ac_follow_wall_left)
+	{
+		auto p_mt_follow_wall = dynamic_cast<MoveTypeFollowWall *>(p_mt);
+		if(p_mt_follow_wall->outOfRange(getPosition(), iterate_point_))
+			return true;
+	}
+	return ACleanMode::moveTypeRealTimeIsFinish(p_mt);
+}

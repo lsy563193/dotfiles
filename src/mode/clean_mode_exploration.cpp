@@ -11,6 +11,7 @@
 #include <charger.h>
 #include <water_tank.hpp>
 #include <vacuum.h>
+#include <robot_timer.h>
 #include "mode.hpp"
 #include "robot.hpp"
 
@@ -257,6 +258,24 @@ void CleanModeExploration::setVacuum()
 	if (isStateFollowWall())
 		return;
 	ACleanMode::setVacuum();
+}
+
+bool CleanModeExploration::moveTypeNewCellIsFinish(IMoveType *p_mt)
+{
+	auto distance = updatePath();
+	markMapInNewCell();
+	if (is_trapped_)
+	{
+		if (robot_timer.trapTimeout(ESCAPE_TRAPPED_TIME))
+		{
+			trapped_time_out_ = true;
+			return true;
+		}
+		else if (pathAlgorithmCheckOutOfTrapped(p_mt))
+			return true;
+	}
+
+	return checkClosed(p_mt, distance);
 }
 
 

@@ -146,25 +146,25 @@ bool CleanModeNav::mapMark()
 //	ROS_ERROR("4444444444444444444");
 
 	if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right) {
-//		if (!c_blocks.empty()) {
-//			auto dy = action_i_ == ac_follow_wall_left ? 2 : -2;
-//			std::for_each(passed_cell_path_.begin(), passed_cell_path_.end(),[&](const Point_t& point){
-//				BoundingBox<Point_t> bound;
-//				bound.SetMinimum({passed_cell_path_.front().x - CELL_SIZE/4, passed_cell_path_.front().y - CELL_SIZE/4});
-//				bound.SetMaximum({passed_cell_path_.front().x + CELL_SIZE/4, passed_cell_path_.front().y + CELL_SIZE/4});
-//				if(!bound.Contains(point))
-//				{
-////					ROS_INFO("in cfw(%d,%d),(%d,%d)", point.toCell().x, point.toCell().y, getPosition().toCell().x, getPosition().toCell().y);
-//					ROS_INFO("Not Cont front(%d,%d),curr(%d,%d),point(%d,%d)", passed_cell_path_.front().toCell().x, passed_cell_path_.front().toCell().y,
-//									 getPosition().toCell().x, getPosition().toCell().y, point.toCell().x, point.toCell().y);
-//					c_blocks.insert({BLOCKED_FW, point.getCenterRelative(0, dy * CELL_SIZE).toCell()});
-//				}
-//				else {
-//					ROS_INFO("Contains front(%d,%d),curr(%d,%d),point(%d,%d)", passed_cell_path_.front().toCell().x, passed_cell_path_.front().toCell().y,
-//									 getPosition().toCell().x, getPosition().toCell().y, point.toCell().x, point.toCell().y);
-//				}
-//			});
-//		}
+		if (!c_blocks.empty()) {
+			auto dy = action_i_ == ac_follow_wall_left ? 2 : -2;
+			std::for_each(passed_cell_path_.begin(), passed_cell_path_.end(),[&](const Point_t& point){
+				BoundingBox<Point_t> bound;
+				bound.SetMinimum({passed_cell_path_.front().x - CELL_SIZE/4, passed_cell_path_.front().y - CELL_SIZE/4});
+				bound.SetMaximum({passed_cell_path_.front().x + CELL_SIZE/4, passed_cell_path_.front().y + CELL_SIZE/4});
+				if(!bound.Contains(point))
+				{
+//					ROS_INFO("in cfw(%d,%d),(%d,%d)", point.toCell().x, point.toCell().y, getPosition().toCell().x, getPosition().toCell().y);
+					ROS_INFO("Not Cont front(%d,%d),curr(%d,%d),point(%d,%d)", passed_path_for_follow_wall_mark.front().toCell().x, passed_path_for_follow_wall_mark.front().toCell().y,
+									 getPosition().toCell().x, getPosition().toCell().y, point.toCell().x, point.toCell().y);
+					c_blocks.insert({BLOCKED_FW, point.getCenterRelative(0, dy * CELL_SIZE).toCell()});
+				}
+				else {
+					ROS_INFO("Contains front(%d,%d),curr(%d,%d),point(%d,%d)", passed_path_for_follow_wall_mark.front().toCell().x, passed_path_for_follow_wall_mark.front().toCell().y,
+									 getPosition().toCell().x, getPosition().toCell().y, point.toCell().x, point.toCell().y);
+				}
+			});
+		}
 	}
 	else if (sp_state == state_clean.get()) {
 		setLinearCleaned();
@@ -208,6 +208,7 @@ bool CleanModeNav::mapMark()
 	//s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_PATH);
 	c_blocks.clear();
 	passed_cell_path_.clear();
+	passed_path_for_follow_wall_mark.clear();
 	return false;
 }
 
@@ -377,6 +378,23 @@ bool CleanModeNav::isExit()
 	}
 
 	return false;
+}
+
+bool CleanModeNav::moveTypeNewCellIsFinish(IMoveType *p_mt)
+{
+	auto distance = updatePath();
+	if (is_trapped_)
+	{
+		if (robot_timer.trapTimeout(ESCAPE_TRAPPED_TIME))
+		{
+			trapped_time_out_ = true;
+			return true;
+		}
+		else if (pathAlgorithmCheckOutOfTrapped(p_mt))
+			return true;
+	}
+
+	return checkClosed(p_mt, distance);
 }
 
 /*bool CleanModeNav::moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt)
@@ -763,7 +781,7 @@ void CleanModeNav::switchInStateInit() {
 			if (sp_saved_states.empty())
 			{
 				ROS_ERROR("%s %d: Saved state is empty!!", __FUNCTION__, __LINE__);
-				sp_state = state_clean.get();
+				sp_state = state_go_home_point.get();
 			}
 			else
 			{
@@ -840,8 +858,9 @@ bool CleanModeNav::updateActionInStateClean(){
 void CleanModeNav::switchInStateClean() {
 	if (clean_path_algorithm_->checkTrapped(clean_map_, getPosition().toCell())) {
 		ROS_WARN("%s,%d: enter state trapped",__FUNCTION__,__LINE__);
-		sp_saved_states.push_back(sp_state);
+//		sp_saved_states.push_back(sp_state);
 		sp_state = state_folllow_wall.get();
+		beeper.debugBeep(VALID);
 		is_trapped_ = true;
 		is_isolate = true;
 		is_closed = true;
@@ -1162,5 +1181,44 @@ bool CleanModeNav::isSwitchByEventInStateExceptionResume() {
 bool CleanModeNav::checkingIfSwitchIsOn()
 {
 	return charger.isOnStub() && action_i_ == ac_back_from_charger && cliff.getStatus() == BLOCK_ALL;
+}
+
+bool CleanModeNav::moveTypeRealTimeIsFinish(IMoveType *p_mt)
+{
+	Points ins_path{};//instantaneous path
+	auto curr = getPosition();
+	ins_path.push_back(curr);
+	if (isStateClean() && (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)) //rounding
+	{
+		/*BoundingBox<Point_t> bound;
+		bound.SetMinimum({passed_cell_path_.front().x - CELL_SIZE / 4, passed_cell_path_.front().y - CELL_SIZE / 4});
+		bound.SetMaximum({passed_cell_path_.front().x + CELL_SIZE / 4, passed_cell_path_.front().y + CELL_SIZE / 4});
+		if (!bound.Contains(curr))
+		{
+//			ROS_INFO("Not Cont front(%f,%f),curr(%f,%f),bound(min(%f,%f),max(%f,%f))", passed_cell_path_.front().x, passed_cell_path_.front().y,
+//					 curr.x, curr.y,bound.min.x,bound.min.y, bound.max.x,bound.max.y);
+			auto npa = boost::dynamic_pointer_cast<NavCleanPathAlgorithm>(clean_path_algorithm_);
+			int16_t y = static_cast<int16_t>(plan_path_.begin()->toCell().y + ((npa->is_pox_y()) ? -2 : 2));
+			setFollowWall(clean_map_, action_i_ == ac_follow_wall_left, ins_path);
+		}
+//		else
+//		{
+//					ROS_WARN("Cont front(%f,%f),curr(%f,%f),bound(min(%f,%f),max(%f,%f))", passed_cell_path_.front().x, passed_cell_path_.front().y,
+//							 curr.x, curr.y,bound.min.x,bound.min.y, bound.max.x,bound.max.y);
+//		}*/
+
+		auto p_mt_follow_wall = dynamic_cast<MoveTypeFollowWall *>(p_mt);
+		if(p_mt_follow_wall->movement_i_ == p_mt_follow_wall->mm_forward || p_mt_follow_wall->movement_i_ == p_mt_follow_wall->mm_straight)
+		{
+			return p_mt_follow_wall->isNewLineReach(clean_map_) || p_mt_follow_wall->isOverOriginLine(clean_map_);
+		}
+	}
+	else if (isStateSpot())
+	{
+		auto p_mt_follow_wall = dynamic_cast<MoveTypeFollowWall *>(p_mt);
+		if(p_mt_follow_wall->outOfRange(getPosition(), iterate_point_))
+			return true;
+	}
+	return ACleanMode::moveTypeRealTimeIsFinish(p_mt);
 }
 

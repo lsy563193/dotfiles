@@ -19,9 +19,10 @@ GridMap::GridMap(){
 void GridMap::reset()
 {
 	uint16_t idx;
-		for (idx = 0; idx < MAP_SIZE; idx++)
-			memset((clean_map[idx]), 0, (MAP_SIZE * sizeof(uint8_t)));
-		xRangeMin = xRangeMax = yRangeMin = yRangeMax = 0;
+	for (idx = 0; idx < MAP_SIZE; idx++)
+		memset((clean_map[idx]), 0, (MAP_SIZE * sizeof(uint8_t)));
+	xRangeMin = yRangeMin = MAP_SIZE;
+	xRangeMax = yRangeMax = -MAP_SIZE;
 }
 
 CellState GridMap::getCost(int16_t x, int16_t y)
@@ -51,12 +52,12 @@ void GridMap::setCost(int16_t x, int16_t y, CellState value)
 	{
 		if (x < xRangeMin)
 			xRangeMin = x;
-		else if (x > xRangeMax)
+		if (x > xRangeMax)
 			xRangeMax = x;
 
 		if (y < yRangeMin)
 			yRangeMin = y;
-		else if (y > yRangeMax)
+		if (y > yRangeMax)
 			yRangeMax = y;
 
 		ROW = static_cast<int16_t>(x + MAP_SIZE + MAP_SIZE / 2);
@@ -280,6 +281,7 @@ bool GridMap::markRobot(const Cell_t& curr, bool is_clean_rcon)
 {
 	bool ret = false;
 	std::string debug_str;
+	debug_str += "(" + std::to_string(curr.x) + ", " + std::to_string(curr.y) + ")";
 	for (auto dy = -ROBOT_SIZE_1_2; dy <= ROBOT_SIZE_1_2; ++dy)
 	{
 		for (auto dx = -ROBOT_SIZE_1_2; dx <= ROBOT_SIZE_1_2; ++dx)
@@ -291,7 +293,7 @@ bool GridMap::markRobot(const Cell_t& curr, bool is_clean_rcon)
 			if (status < BLOCKED_BOUNDARY /*&& (status != BLOCKED_RCON)*/){
 				if(status != BLOCKED_RCON || is_clean_rcon)
 				{
-					debug_str += "(" + std::to_string(x) + ", " + std::to_string(y) + ")";
+//					debug_str += "(" + std::to_string(x) + ", " + std::to_string(y) + ")";
 					setCost(x, y, CLEANED);
 					ret = true;
 				}

@@ -106,7 +106,7 @@ bool MoveTypeLinear::isFinish()
 					p_clean_mode->should_follow_wall = true;
 				}
 //				ROS_WARN("222should_follow_wall(%d)!!!", p_clean_mode->should_follow_wall);
-				ROS_INFO_FL();
+//				ROS_INFO_FL();
 				return false;
 			}
 		}
