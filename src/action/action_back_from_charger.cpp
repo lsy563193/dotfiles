@@ -9,7 +9,7 @@
 
 ActionBackFromCharger::ActionBackFromCharger()
 {
-	ROS_WARN("%s %d, Init action back from charger.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Enter.", __FUNCTION__, __LINE__);
 	wheel.setDirectionBackward();
 	// This time out interval is just for checking whether the switch is on.
 	timeout_interval_ = 0.15;
@@ -17,7 +17,7 @@ ActionBackFromCharger::ActionBackFromCharger()
 
 ActionBackFromCharger::~ActionBackFromCharger()
 {
-	ROS_WARN("%s %d, Finish action back from charger.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);
 }
 
 bool ActionBackFromCharger::isFinish()
@@ -29,10 +29,10 @@ bool ActionBackFromCharger::isFinish()
 	return distance >= BACK_DIST;
 #else
 	bool val = false;
-	double back_distance = two_points_distance_double(start_point_.x, start_point_.y, odom.getOriginX(),
+	double back_distance = two_points_distance_double(start_points_.x, start_points_.y, odom.getOriginX(),
 													  odom.getOriginY());
 	double angle_diff = fabs(odom.getRadian() - M_PI);
-	double forward_distance = two_points_distance_double(start_point_.x, start_point_.y, odom.getOriginX(),
+	double forward_distance = two_points_distance_double(start_points_.x, start_points_.y, odom.getOriginX(),
 														 odom.getOriginY());
 
 	switch (flag_)
@@ -48,8 +48,8 @@ bool ActionBackFromCharger::isFinish()
 			if (angle_diff < 0.174) //Radian(0.174) is degree(10),because robot can not stop immediately
 			{
 				flag_ = FORWARD;
-				start_point_.x = odom.getOriginX();
-				start_point_.y = odom.getOriginY();
+				start_points_.x = odom.getOriginX();
+				start_points_.y = odom.getOriginY();
 			}
 			break;
 		}
@@ -58,8 +58,8 @@ bool ActionBackFromCharger::isFinish()
 			if (bumper.getStatus())
 			{
 				flag_ = BUMPER_BACK;
-				start_point_.x = odom.getOriginX();
-				start_point_.y = odom.getOriginY();
+				start_points_.x = odom.getOriginX();
+				start_points_.y = odom.getOriginY();
 			} else if (forward_distance > FORWARD_DIST)
 				val = true;
 			break;

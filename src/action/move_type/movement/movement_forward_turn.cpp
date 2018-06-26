@@ -8,9 +8,15 @@
 #include <cliff.h>
 #include <gyro.h>
 #include <lidar.hpp>
+#include <robot.hpp>
 
 MovementForwardTurn::MovementForwardTurn(bool is_left) : is_left_(is_left) {
-	ROS_WARN("%s %d, Enter Movement forward turn.",__FUNCTION__,__LINE__);
+	ROS_WARN("%s %d, Enter.",__FUNCTION__,__LINE__);
+}
+
+MovementForwardTurn::~MovementForwardTurn()
+{
+	ROS_WARN("%s %d, Exit.",__FUNCTION__,__LINE__);
 }
 
 void MovementForwardTurn::adjustSpeed(int32_t &left_speed, int32_t &right_speed)
@@ -32,7 +38,7 @@ bool MovementForwardTurn::isFinish()
 	ev.bumper_triggered = bumper.getStatus();
 	ev.cliff_triggered = cliff.getStatus();
 	ev.tilt_triggered = gyro.getTiltCheckingStatus();
-	ev.slip_triggered= lidar.isRobotSlip();
+	ev.slip_triggered= robot::instance()->isRobotSlip();
 
 	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || ev.slip_triggered)
 	{

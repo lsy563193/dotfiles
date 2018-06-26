@@ -19,7 +19,6 @@ CleanModeFollowWall::CleanModeFollowWall()
 //	diff_timer_ = WALL_FOLLOW_TIME;
 	speaker.play(VOICE_CLEANING_WALL_FOLLOW, false);
 	clean_path_algorithm_.reset(new WFCleanPathAlgorithm);
-	go_home_path_algorithm_.reset(new FollowWallModeGoHomePathAlgorithm());
 	closed_count_limit_ = 1;
 	mode_i_ = cm_wall_follow;
 	s_wifi.setWorkMode(cm_wall_follow);
@@ -54,7 +53,8 @@ CleanModeFollowWall::~CleanModeFollowWall()
 
 bool CleanModeFollowWall::mapMark() {
 	displayPointPath(passed_cell_path_);
-	PP_WARN();
+//	PP_WARN();
+//	ROS_INFO("%s %d: ", __FUNCTION__, __LINE__);
 	if (isStateGoHomePoint())
 	{
 		setCleaned(*points_to_cells(passed_cell_path_));
@@ -64,17 +64,17 @@ bool CleanModeFollowWall::mapMark() {
 	{
 		setCleaned(*points_to_cells(passed_cell_path_));
 		setBlocks(iterate_point_->dir);
-		ROS_ERROR("-------------------------------------------------------");
+		ROS_INFO("-------------------------------------------------------");
 		auto start = *passed_cell_path_.begin();
 		passed_cell_path_.erase(std::remove_if(passed_cell_path_.begin(),passed_cell_path_.end(),[&start](Point_t& it){
 			return it.toCell() == start.toCell();
 		}),passed_cell_path_.end());
 		displayPointPath(passed_cell_path_);
-		ROS_ERROR("-------------------------------------------------------");
+		ROS_INFO("-------------------------------------------------------");
 		setFollowWall(clean_map_, action_i_ == ac_follow_wall_left, passed_cell_path_);
 	}
-	clean_map_.markRobot(getPosition().toCell(), CLEAN_MAP);
-	clean_map_.print(getPosition().toCell(), CLEAN_MAP, Cells{getPosition().toCell()});
+	clean_map_.markRobot(getPosition().toCell());
+	clean_map_.print(getPosition().toCell(), Cells{getPosition().toCell()});
 	passed_cell_path_.clear();
 	return false;
 }
@@ -186,10 +186,10 @@ void CleanModeFollowWall::batteryHome(bool state_now, bool state_last)
 }
 
 void CleanModeFollowWall::switchInStateInit() {
-	PP_INFO();
+//	PP_INFO();
 	action_i_ = ac_null;
 	sp_action_ = nullptr;
-	sp_state = state_folllow_wall.get();
+	sp_state = state_clean.get();
 	is_isolate = true;
 	is_closed = true;
 	closed_count_ = 0;
@@ -197,27 +197,130 @@ void CleanModeFollowWall::switchInStateInit() {
 	sp_state->init();
 }
 
-//bool CleanModeFollowWall::moveTypeFollowWallIsFinish(IMoveType *p_mt,bool is_new_cell) {
-//	if (ACleanMode::moveTypeFollowWallIsFinish(p_mt, is_new_cell))
-//	{
-//		ROS_INFO("closed_count_(%d), limit(%d)",p_mt->closed_count_, closed_count_limit_);
-//		ROS_WARN("moveTypeFollowWallIsFinish close!!!");
-//		return true;
-//	}
+bool CleanModeFollowWall::updateActionInStateClean()
+{
+	passed_cell_path_.clear();
+	ROS_INFO("%s %d: Clear passed path.", __FUNCTION__, __LINE__);
+	fw_tmp_map.reset();
 
-//	return false;
-//}
+	if (is_small_area_closed_)
+	{
+		// Switch to follow wall state.
+		beeper.debugBeep(VALID);
+		is_trapped_ = true;
+		closed_count_ = 0;
+		action_i_ = ac_null;
+		genNextAction();
+		return action_i_ != ac_null;
+	}
+	else
+		return ACleanMode::updateActionInStateFollowWall();
+}
+
+void CleanModeFollowWall::switchInStateClean()
+{
+	if (is_trapped_)
+	{
+		sp_state = state_folllow_wall.get();
+		sp_state->init();
+		action_i_ = ac_null;
+		genNextAction();
+	}
+	else if (trapped_closed_or_isolate)
+	{
+		sp_state = state_go_home_point.get();
+		closed_count_limit_ = 2;
+		closed_count_ = 0;
+		isolate_count_ = 0;
+		in_small_area_count_ = 0;
+		clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_manager_, true));
+		sp_state->init();
+		action_i_ = ac_null;
+		genNextAction();
+	}
+}
+
+bool CleanModeFollowWall::updateActionInStateFollowWall()
+{
+	return ACleanMode::updateActionInStateFollowWall();
+}
 
 void CleanModeFollowWall::switchInStateFollowWall() {
-	sp_state = state_go_home_point.get();
-	go_home_path_algorithm_->initForGoHomePoint(clean_map_);
-	sp_state->init();
-	action_i_ = ac_null;
-	genNextAction();
+	ACleanMode::switchInStateFollowWall();
 }
 
 bool CleanModeFollowWall::markMapInNewCell()
 {
-	clean_map_.markRobot(getPosition().toCell(), CLEAN_MAP);
+	if (!c_blocks.empty())
+	{
+		for (auto &&cost_block : c_blocks)
+			clean_map_.setCost(cost_block.second.x, cost_block.second.y, cost_block.first);
+		c_blocks.clear();
+		clean_map_.markRobot(getPosition().toCell());
+		if (ros::Time::now().toSec() - print_map_time_ > 5)
+		{
+			clean_map_.print(getPosition().toCell(), *points_to_cells(passed_cell_path_));
+			print_map_time_ = ros::Time::now().toSec();
+		}
+	}
+	else
+		clean_map_.markRobot(getPosition().toCell());
+}
+
+bool CleanModeFollowWall::moveTypeNewCellIsFinish(IMoveType *p_mt)
+{
+	auto distance = updatePath();
+
+	if (is_trapped_)
+	{
+		if (robot_timer.trapTimeout(ESCAPE_TRAPPED_TIME))
+		{
+			trapped_time_out_ = true;
+			return true;
+		}
+		else if (!isHasEnterStateIsGoHomePoints() /*&& Check follow wall escape trapped logic.*/)
+		{
+			/*
+			 * This variable is in case of the pulsate of the location, the close checking will find the
+ 			 * same pose(angle) before a specified dis before(SEARCH_BEFORE_DIS) the current pose
+ 			 */
+			auto temp_mt = dynamic_cast<MoveTypeFollowWall *>(p_mt);
+			if (temp_mt->isTrappedInSmallArea())
+			{
+				auto curr_pose = getPosition(SLAM_POSITION_SLAM_ANGLE);
+				ROS_INFO("curr_pose.Distance(small_area_trapped_pose_) = %f",
+						 curr_pose.Distance(small_area_trapped_pose_));
+				if (curr_pose.Distance(small_area_trapped_pose_) > 1)
+				{//1 metre
+					is_small_area_closed_ = false;
+					in_small_area_count_ = 0;
+					out_of_trapped_ = true;
+					is_trapped_ = false;
+					beeper.debugBeep(VALID);
+					ROS_WARN("%s %d: Out of trapped in small area.", __FUNCTION__, __LINE__);
+					return true;
+				}
+			}
+		}
+
+		if (pathAlgorithmCheckOutOfTrapped(p_mt))
+			return true;
+	}
+	else
+		markMapInNewCell();
+
+	return checkClosed(p_mt, distance);
+}
+
+bool CleanModeFollowWall::moveTypeRealTimeIsFinish(IMoveType *p_mt)
+{
+	if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
+	{
+		Points ins_path{};//instantaneous path
+		ins_path.push_back(getPosition());
+		setFollowWall(clean_map_, action_i_ == ac_follow_wall_left, ins_path);
+	}
+
+	return ACleanMode::moveTypeRealTimeIsFinish(p_mt);
 }
 

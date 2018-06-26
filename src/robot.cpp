@@ -116,7 +116,7 @@ robot::robot()
 	auto event_handler_thread = new boost::thread(event_handler_thread_cb);
 	auto core_thread = new boost::thread(boost::bind(&robot::core_thread_cb,this));
 
-	auto wifi_send_thread = new boost::thread(boost::bind(&S_Wifi::wifiSendRutine,&s_wifi));
+	auto wifi_send_thread = new boost::thread(boost::bind(&S_Wifi::threadSend,&s_wifi));
 
 	obs.control(ON);
 	ROS_WARN("%s %d: Robot x900(version %04d r%d) is online :)", __FUNCTION__, __LINE__, CURRENT_VERSION, CURRENT_PATCH);
@@ -215,12 +215,10 @@ void robot::robotbase_routine_cb()
 		sensor.left_wheel_speed = wheel.getLeftWheelActualSpeed();
 		sensor.right_wheel_speed = wheel.getRightWheelActualSpeed();
 
-/*
 		wheel.setLeftWheelCliffStatus((buf[REC_WHEEL_CLIFF] & 0x02) != 0);
 		wheel.setRightWheelCliffStatus((buf[REC_WHEEL_CLIFF] & 0x01) != 0);
 		sensor.left_wheel_cliff = wheel.getLeftWheelCliffStatus();
 		sensor.right_wheel_cliff = wheel.getRightWheelCliffStatus();
-*/
 
 		// For gyro device.
 		gyro.setCalibration(buf[REC_GYRO_CALIBRATION] != 0);
@@ -290,7 +288,6 @@ void robot::robotbase_routine_cb()
 		sensor.front_cliff = cliff.getFront();
 		sensor.left_cliff = cliff.getLeft();
 
-		gyro.checkRobotSlipByGyro();
 		// For remote device.
 		auto remote_signal = buf[REC_REMOTE];
 		if (remote_signal != 0)
@@ -400,7 +397,8 @@ void robot::robotbase_routine_cb()
 		gyro.setAngleR(gyro.calAngleRKalmanFilter(dt));//fusion of kalman filter
 		odom.setMovingSpeed(static_cast<float>((wheel.getLeftEncoderCnt() + wheel.getRightEncoderCnt()) *
 											   WHEEL_ENCODER_TO_MILLIMETER / 1000 / 2.0 / dt));
-		if(!lidar.isRobotSlip()){
+		// Special handling for robot slip
+		if(!isRobotSlip()){
 //			odom.setOriginX(static_cast<float>(odom.getOriginX() + (odom.getMovingSpeed() * cos(angle_rad)) * dt));
 //			odom.setOriginY(static_cast<float>(odom.getOriginY() + (odom.getMovingSpeed() * sin(angle_rad)) * dt));
 			odom.setOriginX(static_cast<float>(odom.getOriginX() + ((wheel.getLeftEncoderCnt() + wheel.getRightEncoderCnt())
@@ -437,15 +435,10 @@ void robot::robotbase_routine_cb()
 		/*------publish end -----------*/
 
 		// Check tilt
-		if (checkTilt()){
-			gyro.setTiltCheckingStatus(1);
-			beeper.debugBeep(VALID);
-		} else {
-			gyro.setTiltCheckingStatus(0);
-		}
+		checkTilt();
 
 		// Check lidar stuck
-		if (checkLidarStuck()) {
+		if (!ev.lidar_stuck && checkLidarStuck()) {
 //			ROS_INFO("lidar stuck");
 			ev.lidar_stuck = true;
 		}
@@ -568,14 +561,14 @@ void robot::runWorkMode()
 
 	if (charger.isOnStub() || charger.isDirected())
 		p_mode.reset(new ModeCharge());
-	else if (battery.isReadyToClean())
+	else if (robot::instance()->batteryTooLowToClean())
 	{
-		speaker.play(VOICE_PLEASE_START_CLEANING, false);
+		speaker.play(VOICE_BATTERY_LOW, false);
 		p_mode.reset(new ModeIdle());
 	}
 	else
 	{
-		speaker.play(VOICE_BATTERY_LOW, false);
+		speaker.play(VOICE_PLEASE_START_CLEANING, false);
 		p_mode.reset(new ModeIdle());
 	}
 
@@ -811,6 +804,7 @@ bool robot::checkTilt() {
 	if (!gyro.isTiltCheckingEnable()) {
 		angle_tilt_time_ = 0;
 		wheel_tilt_time_= 0;
+		gyro.setTiltCheckingStatus(0);
 		return false;
 	}
 	auto angle_triggered = gyro.getAngleR() > ANGLE_LIMIT;
@@ -821,13 +815,22 @@ bool robot::checkTilt() {
 	if(!wheel_cliff_triggered)
 		wheel_tilt_time_= 0;
 	if(!angle_triggered && !wheel_cliff_triggered)
+	{
+		gyro.setTiltCheckingStatus(0);
 		return false;
+	}
 
 	//For angle triggered
 	if(angle_triggered) {
 		angle_tilt_time_ = angle_tilt_time_ == 0 ? ros::Time::now().toSec() : angle_tilt_time_;
 		auto ret = ros::Time::now().toSec() - angle_tilt_time_ > ANGLE_TIME_LIMIT;
 		ROS_WARN_COND(ret,"%s,%d,time_now:%lf,angle_tilt_time_:%lf",__FUNCTION__,__LINE__,ros::Time::now().toSec(),angle_tilt_time_);
+		if (ret)
+		{
+			gyro.setTiltCheckingStatus(1);
+			beeper.debugBeep(VALID);
+		} else
+			gyro.setTiltCheckingStatus(0);
 		return ret;
 	}
 	//For wheel_cliff triggered
@@ -835,6 +838,12 @@ bool robot::checkTilt() {
 		wheel_tilt_time_ = wheel_tilt_time_ == 0 ? ros::Time::now().toSec() : wheel_tilt_time_;
 		auto ret = ros::Time::now().toSec() - wheel_tilt_time_ > WHEEL_CLIFF_TIME_LIMIT;
 		ROS_WARN_COND(ret,"%s,%d,time_now:%lf,wheel_tilt_time_:%lf",__FUNCTION__,__LINE__,ros::Time::now().toSec(),wheel_tilt_time_);
+		if (ret)
+		{
+			gyro.setTiltCheckingStatus(1);
+			beeper.debugBeep(VALID);
+		} else
+			gyro.setTiltCheckingStatus(0);
 		return ret;
 	}
 }
@@ -912,13 +921,17 @@ void robot::wifiSetVacuum()
 }
 
 void robot::loadConsumableStatus()
-{ ROS_INFO("%s %d: Load consumable status.", __FUNCTION__, __LINE__);
+{
+	ROS_INFO("%s %d: Load consumable status.", __FUNCTION__, __LINE__);
 
 	if (access(consumable_file.c_str(), F_OK) == -1)
 	{
-		// If file not exist, check if back up file exist.
+		// If file not exist, check if backup file exist.
 		if (access(consumable_backup_file.c_str(), F_OK) == -1)
+		{
+			ROS_ERROR("%s %d: Do NOT have any consumable file or backup file.", __FUNCTION__, __LINE__);
 			return;
+		}
 		else
 		{
 			//Restore from backup file.
@@ -929,44 +942,78 @@ void robot::loadConsumableStatus()
 	}
 
 	bool file_error = false;
-	FILE *f_read = fopen(consumable_file.c_str(), "r");
-	if (f_read == nullptr)
+	auto read_file = [&]
 	{
-		ROS_ERROR("%s %d: Open %s error.", __FUNCTION__, __LINE__, consumable_file.c_str());
-		file_error = true;
+		FILE *f_read = fopen(consumable_file.c_str(), "r");
+		if (f_read == nullptr)
+		{
+			ROS_ERROR("%s %d: Open %s error.", __FILE__, __LINE__, consumable_file.c_str());
+			file_error = true;
+		} else
+		{
+			if (fscanf(f_read, "Side brush: %d\n", &side_brush_time_) != 1)
+			{
+				ROS_ERROR("%s %d: Side brush data error! Reset to 0.", __FILE__, __LINE__);
+				side_brush_time_ = 0;
+				file_error = true;
+				return;
+			}
+			ROS_INFO("%s %d: Read side brush: %d.", __FILE__, __LINE__, side_brush_time_);
+			if (fscanf(f_read, "Main brush: %d\n", &main_brush_time_) != 1)
+			{
+				ROS_ERROR("%s %d: Main brush data error! Reset to 0.", __FILE__, __LINE__);
+				main_brush_time_ = 0;
+				file_error = true;
+				return;
+			}
+			ROS_INFO("%s %d: Read main brush: %d.", __FILE__, __LINE__, main_brush_time_);
+			if (fscanf(f_read, "Filter: %d\n", &filter_time_) != 1)
+			{
+				ROS_ERROR("%s %d: Filter data error! Reset to 0.", __FILE__, __LINE__);
+				filter_time_ = 0;
+				file_error = true;
+				return;
+			}
+			ROS_INFO("%s %d: Read main brush: %d.", __FILE__, __LINE__, filter_time_);
+			fclose(f_read);
+			ROS_INFO("%s %d: Read data succeeded.", __FILE__, __LINE__);
+		}
+	};
+
+	read_file();
+
+	if (file_error)
+	{
+		// Check if backup file exist.
+		if (access(consumable_backup_file.c_str(), F_OK) == -1)
+		{
+			std::string cmd = "rm -f " + consumable_file;
+			system(cmd.c_str());
+			ROS_ERROR("%s %d: Delete consumable file due to file error.", __FUNCTION__, __LINE__);
+			return;
+		}
+		else
+		{
+			//Restore from backup file.
+			std::string cmd = "cp " + consumable_backup_file + " " + consumable_file;
+			system(cmd.c_str());
+			ROS_INFO("%s %d: Resume from backup file.", __FUNCTION__, __LINE__);
+		}
 	}
 	else
-	{
-		if (fscanf(f_read, "Side brush: %d\n", &side_brush_time_) != 1)
-		{
-			ROS_ERROR("%s %d: Side brush data error! Reset to 0.", __FUNCTION__, __LINE__);
-			side_brush_time_ = 0;
-			file_error = true;
-		}
-		ROS_INFO("%s %d: Read side brush: %d.", __FUNCTION__, __LINE__, side_brush_time_);
-		if (fscanf(f_read, "Main brush: %d\n", &main_brush_time_) != 1)
-		{
-			ROS_ERROR("%s %d: Main brush data error! Reset to 0.", __FUNCTION__, __LINE__);
-			main_brush_time_ = 0;
-			file_error = true;
-		}
-		ROS_INFO("%s %d: Read main brush: %d.", __FUNCTION__, __LINE__, main_brush_time_);
-		if (fscanf(f_read, "Filter: %d\n", &filter_time_) != 1)
-		{
-			ROS_ERROR("%s %d: Filter data error! Reset to 0.", __FUNCTION__, __LINE__);
-			filter_time_ = 0;
-			file_error = true;
-		}
-		ROS_INFO("%s %d: Read main brush: %d.", __FUNCTION__, __LINE__, filter_time_);
-		fclose(f_read);
-		ROS_INFO("%s %d: Read data succeeded.", __FUNCTION__, __LINE__);
-	}
+		return;
+
+	file_error = false;
+	read_file();
 
 	if (file_error)
 	{
 		std::string cmd = "rm -f " + consumable_file + " " + consumable_backup_file;
 		system(cmd.c_str());
-		ROS_ERROR("%s %d: Delete consumable file due to file error.", __FUNCTION__, __LINE__);
+		resetSideBrushTime();
+		resetMainBrushTime();
+		resetFilterTime();
+		ROS_ERROR("%s %d: Delete consumable file and backup file due to file error.", __FUNCTION__, __LINE__);
 	}
 }
 
@@ -987,14 +1034,6 @@ void robot::updateConsumableStatus()
 	vacuum.resetFilterTime();
 	auto filter_time = additional_filter_time_sec + filter_time_;
 
-	if (access(consumable_file.c_str(), F_OK) != -1)
-	{
-		// If file exist, make it a back up file.
-		std::string cmd = "mv " + consumable_file + " " + consumable_backup_file;
-		system(cmd.c_str());
-		ROS_INFO("%s %d: Backup for %s.", __FUNCTION__, __LINE__, consumable_file.c_str());
-	}
-
 	FILE *f_write = fopen(consumable_file.c_str(), "w");
 	if (f_write == nullptr)
 		ROS_ERROR("%s %d: Open %s error.", __FUNCTION__, __LINE__, consumable_file.c_str());
@@ -1012,6 +1051,11 @@ void robot::updateConsumableStatus()
 		filter_time_ = filter_time;
 		fclose(f_write);
 		ROS_INFO("%s %d: Write data succeeded.", __FUNCTION__, __LINE__);
+
+		// Make a backup file.
+		std::string cmd = "cp " + consumable_file + " " + consumable_backup_file;
+		system(cmd.c_str());
+		ROS_INFO("%s %d: Backup for %s.", __FUNCTION__, __LINE__, consumable_file.c_str());
 	}
 }
 

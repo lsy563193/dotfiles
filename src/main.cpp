@@ -9,6 +9,7 @@
 #include <fstream>
 #include <unistd.h>
 #include "log.h"
+#include "wifi/wifi.h"
 #if VERIFY_CPU_ID || VERIFY_KEY
 #include "verify.h"
 #endif
@@ -57,7 +58,7 @@ void handle_exit(int sig)
 		exit(0);
 	}
 	else if(sig == SIGSEGV)
-	{	
+	{
 		server_backtrace(sig);
 		exit(-1);
 	}
@@ -96,6 +97,7 @@ int main(int argc, char **argv)
 	sigaction(SIGABRT,&act,NULL);
 	ROS_INFO("set signal action done!");
 
+	//s_wifi.wifiInitPublicher();
 	robot_instance = new robot();
 // Test code for path algorithm by Austin.
 //	test_map();
@@ -108,20 +110,42 @@ int main(int argc, char **argv)
 	Dir_t old_dir_=MAP_POS_X;
 
 	Points remain_path_{};
-
-//	GoHomePathAlgorithm clean_path_algorithm_;
-NavCleanPathAlgorithm clean_path_algorithm_;
 	bool tmp;
-	map.loadMap(true,curr, old_dir_, tmp);
-//	clean_path_algorithm_.curr_filter_ = &clean_path_algorithm_.filter_short_path;
-	setPosition(cellToCount(curr.x),cellToCount(curr.y));
-
-	Cells cells{};
-//	auto is_found = map.gen(curr, cells,[&](const Cell_t& c_it){return c_it == Cell_t{-2,0};},true);
+	map.loadMap(true,curr, old_dir_, tmp, "/opt/ros/indigo/share/pp/map");
+	map.print(curr,Cells{});
+//	slam_grid_map.loadMap(true,curr, old_dir_, tmp ,"/opt/ros/indigo/share/pp/map_slam");
+	Cells cells;
+	cells.push_back(Cell_t{-1,-1});
+	cells.push_back(Cell_t{0,1});
+	cells.push_back(Cell_t{1,1});
+	cells.push_back(Cell_t{2,2});
+	cells.push_back(Cell_t{15,50});
+	cells.push_back(Cell_t{22,10});
+	Points points = *cells_to_points(cells);
+	HomePointsManager home_points_manager_;
+//	for(auto && point:points)
+//		home_points_manager_.setRconPoint(point);
+////
+//	auto& it = home_points_manager_.home_point_it();
+//	ROS_INFO("%s %d:it %d,%d",__FUNCTION__, __LINE__, it->toCell().x, it->toCell().y);
+//	it++;
+//	ROS_INFO("%s %d:it %d,%d",__FUNCTION__, __LINE__, it->toCell().x, it->toCell().y);
+//	home_points_manager_.popCurrRconPoint();
+//	home_points_manager_.popCurrRconPoint();
+//	home_points_manager_.popCurrRconPoint();
+	GoHomePathAlgorithm clean_path_algorithm_(map,&home_points_manager_);
+//	NavCleanPathAlgorithm clean_path_algorithm_;
 	if (clean_path_algorithm_.generatePath(map, Point_t{cellToCount(curr.x),cellToCount(curr.y)}, old_dir_, remain_path_)) {
+		ROS_INFO("find target~~~~~~");
 	}
+
+//	 if(!clean_path_algorithm_.checkTrappedUsingDijkstra(map, curr))
+//	{
+//		ROS_INFO("2find target~~~~~~");
+//	}
 	ROS_INFO("end~~~~~~~~~");
 #endif
+
 	ros::spin();
 	return 0;
 }

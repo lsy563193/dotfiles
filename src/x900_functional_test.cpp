@@ -175,6 +175,9 @@ uint8_t serial_port_test()
 //		serial.debugReceivedStream(receive_data);
 		usleep(100000);
 	}
+	if(test_ret)
+		return test_ret;
+
 	if(send_string_sum.compare(receive_string_sum) == 0)
 	{
 		if(receive_data[M0_VERSION_H] << 8 | receive_data[M0_VERSION_L] != CURRENT_PATCH)
@@ -570,7 +573,7 @@ void electrical_specification_and_led_test(uint16_t *baseline, bool &is_fixture,
 					current_data = baseline[VACUUM];
 					return ;
 				}
-				if(baseline[SWING_MOTOR] < 1200 || baseline[VACUUM] > 2000)
+				if(baseline[SWING_MOTOR] < 1200 || baseline[SWING_MOTOR] > 2250)
 				{
 					error_code = BASELINE_SWING_MOTOR_CURRENT_ERROR;
 					current_data = baseline[SWING_MOTOR];
@@ -1428,9 +1431,9 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				}
 				break;
 			case 28:
-				current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+				current_current = (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
 				step++;
-				current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+				current_current = (current_current * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
 				if(current_current < 600)
 				{
 					error_code = RIGHT_WHEEL_STALL_ERROR;

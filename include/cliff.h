@@ -6,6 +6,7 @@
 #define PP_CLIFF_H
 
 #include <cstdint>
+#include "wheel.hpp"
 
 class Cliff
 {

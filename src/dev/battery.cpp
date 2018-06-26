@@ -2,10 +2,12 @@
 // Created by root on 11/17/17.
 //
 
+#include <charger.h>
 #include "ros/ros.h"
 #include "battery.h"
 #include "config.h"
 #include "log.h"
+#include <robot.hpp>
 
 Battery battery;
 
@@ -18,23 +20,19 @@ bool Battery::isReadyToClean()
 {
 	// Check if battary is lower than the low battery go home voltage value.
 	return (getVoltage() >= BATTERY_READY_TO_CLEAN_VOLTAGE);
+//	return (getVoltage() >= 1600);
 }
 
-bool Battery::isLow()
+bool Battery::isReadyToMove()
 {
-	return (getVoltage() <= LOW_BATTERY_STOP_VOLTAGE);
-}
-
-bool Battery::isReadyToResumeCleaning()
-{
-	// Check if battary is lower than the low battery go home voltage value.
-	return (getVoltage() >= RESUME_CLEANING_VOLTAGE);
+	return (getVoltage() >= LOW_BATTERY_STOP_VOLTAGE);
 }
 
 bool Battery::shouldGoHome()
 {
 	// Check if battary is lower than the low battery go home voltage value.
 	return (getVoltage() < LOW_BATTERY_GO_HOME_VOLTAGE);
+//	return (getVoltage() < 1580);
 }
 
 uint8_t Battery::getPercent()
@@ -52,13 +50,23 @@ void Battery::setVoltage(uint16_t val)
 		update_time_stamp_ = time_now;
 		if (force_update_)
 			force_update_ = false;
-		float bv = voltage_/100.0;
-		if(bv >= 14.00)
-		{
-			INFO_GREEN("%s %d: Update Battery as %.1fv.", __FUNCTION__, __LINE__,bv);
-		}
-		else
-			INFO_RED("%s %d: Update Battery as %.1fv.", __FUNCTION__, __LINE__,bv);
+
+		if (!robot::instance()->batteryTooLowToClean() && !isReadyToClean())
+			robot::instance()->setBatteryTooLowToClean(true);
+		else if (!robot::instance()->batteryTooLowToMove() && !isReadyToMove())
+			robot::instance()->setBatteryTooLowToMove(true);
+		else if (!robot::instance()->batteryLowForGoingHome() && shouldGoHome())
+			robot::instance()->setBatteryLowForGoingHome(true);
+
+		float bv = static_cast<float>(voltage_ / 100.0);
+		ROS_WARN("%s %d: Battery %.1fv.", __FUNCTION__, __LINE__, bv);
 	}
+}
+
+void Battery::forceUpdate()
+{
+	force_update_ = true;
+	// Sleep for 20ms for robot updating battery voltage.
+	usleep(20000);
 }
 

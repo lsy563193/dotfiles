@@ -167,7 +167,7 @@ bool ModeRemote::isFinish()
 
 	if (sp_action_->isFinish())
 	{
-		PP_INFO();
+//		PP_INFO();
 		action_i_ = getNextAction();
 		genNextAction();
 		if (sp_action_ == nullptr)
@@ -338,7 +338,7 @@ void ModeRemote::setVacuum()
 
 void ModeRemote::batteryLow(bool state_now, bool state_last)
 {
-	if (!ev.battery_low && battery.isLow())
+	if (!ev.battery_low)
 	{
 		ROS_WARN("%s %d: Low battery(%.2fV).", __FUNCTION__, __LINE__, battery.getVoltage() / 100.0);
 		speaker.play(VOICE_BATTERY_LOW, false);

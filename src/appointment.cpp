@@ -1,6 +1,7 @@
 #include <appointment.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <cerrno>
 #include <ros/ros.h>
 #include <fcntl.h>
 #include <serial.h>
@@ -20,7 +21,7 @@ Appmt::Appmt()
 	{
 		appointment_list_.push_back({(uint8_t)(i+1),0,0,0,0});
 	}
-	//rw_routine(Appmt::SET);
+	//process(Appmt::SET);
 }
 
 bool Appmt::set(std::vector<Appointment::st_appmt> apmt_list)
@@ -30,7 +31,7 @@ bool Appmt::set(std::vector<Appointment::st_appmt> apmt_list)
 	{
 		MutexLock lock(&appmt_lock_);
 		appointment_list_  = apmt_list;
-		rw_routine(Appmt::SET);
+		process(Appmt::SET);
 	}
 	uint16_t mint = nextAppointment();
 	if(mint != last_mint)
@@ -61,7 +62,7 @@ bool Appmt::set(uint8_t apTime)
 		if(1)
 		{
 			MutexLock lock(&appmt_lock_);
-			rw_routine(Appmt::SET);
+			process(Appmt::SET);
 		}
 
 		//set appointment to bottom board
@@ -85,7 +86,7 @@ bool Appmt::set(uint8_t apTime)
 		if(1)
 		{
 			MutexLock lock(&appmt_lock_);
-			rw_routine(Appmt::SET);
+			process(Appmt::SET);
 		}
 
 		//set appointment to bottom board
@@ -98,19 +99,19 @@ bool Appmt::set(uint8_t apTime)
 std::vector<st_appmt> Appmt::get()
 {
 	MutexLock lock(&appmt_lock_);
-	rw_routine(Appmt::GET);
+	process(Appmt::GET);
 	return appointment_list_;
 }
 
-int8_t Appmt::rw_routine(Appmt::SG action)//read write routine
+bool Appmt::process(Appmt::SG action)//read write routine
 {
 	//open
 	const int file_len = 150;//appointment file length
-	const int apt_len = 15;//one appointment length
-	int fd = open(afile,O_RDWR|O_CREAT,0X644);
+	const int line_len = 15;//one appointment length
+	int fd = open(afile,O_RDWR|O_CREAT,0x644);
 	if(fd < 0){
-		ROS_ERROR("%s,%d,open file %s fail",__FUNCTION__,__LINE__,afile);
-		return -1;
+		ROS_ERROR("%s,%d,open file %s fail,errno %d",__FUNCTION__,__LINE__,afile,errno);
+		return false;
 	}
 
 	char buf[file_len];
@@ -124,10 +125,10 @@ int8_t Appmt::rw_routine(Appmt::SG action)//read write routine
 			uint8_t tmp_buf[file_len] = {0};
 			len = read(fd,tmp_buf,file_len);
 			if(len == -1)
-			{ 
+			{
 				ROS_ERROR("%s,%d,read file,%s fail, errno %d ",__FUNCTION__,__LINE__,afile,len);
 				close(fd);
-				return -1;
+				return false;
 			}
 			else
 			{
@@ -139,20 +140,20 @@ int8_t Appmt::rw_routine(Appmt::SG action)//read write routine
 
 		char *p_buf = buf;
 		for(int i =0 ;i<appointment_list_.size();i++)
-		{	
-			sscanf(p_buf + apt_len * i,"%2u %2u %2u %2u %2u",
+		{
+			sscanf(p_buf + line_len * i,"%2u %2u %2u %2u %2u\n",
 						(uint8_t*)&appointment_list_[i].num,
 						(uint8_t*)&appointment_list_[i].enable,
 						(uint8_t*)&appointment_list_[i].week,
 						(uint8_t*)&appointment_list_[i].hour,
 						(uint8_t*)&appointment_list_[i].mint);
 
-			ROS_INFO("get appointment num %u enable %u weeks %u hour %u mint %u"
-						,appointment_list_[i].num
-						,appointment_list_[i].enable
-						,appointment_list_[i].week
-						,appointment_list_[i].hour
-						,appointment_list_[i].mint);
+			/* INFO_NOR_CON(i<7,"get appointment %u %u %u %u %u" */
+						// ,appointment_list_[i].num
+						// ,appointment_list_[i].enable
+						// ,appointment_list_[i].week
+						// ,appointment_list_[i].hour
+						/* ,appointment_list_[i].mint); */
 		}
 
 		appointment_change_ = false;
@@ -168,34 +169,39 @@ int8_t Appmt::rw_routine(Appmt::SG action)//read write routine
 			apmt_val = &appointment_list_[i];
 			if(apmt_val != NULL)
 			{
-				char tmp_buf[apt_len] = {0};
+				char tmp_buf[line_len] = {0};
 				int offset = apmt_val->num-1;
-				int pos = lseek(fd,offset*apt_len,SEEK_SET);
+				int pos = lseek(fd,offset*line_len,SEEK_SET);
 				//ROS_INFO("offset %d",offset);
 
 				if( pos ==-1)
 				{
 					ROS_ERROR("%s,%d,lseek fail %d",__FUNCTION__,__LINE__,pos);
 					close(fd);
-					return -1;
+					return false;
 				}
-				memset(tmp_buf,0,apt_len);
-				sprintf(tmp_buf,"%2u %2u %2u %2u %2u ",apmt_val->num,(uint8_t)apmt_val->enable,apmt_val->week,apmt_val->hour,apmt_val->mint);
-				int len = write(fd,tmp_buf,apt_len);
+				memset(tmp_buf,0,line_len);
+				sprintf(tmp_buf,"%2u %2u %2u %2u %2u\n",
+							apmt_val->num,
+							(uint8_t)apmt_val->enable,
+							apmt_val->week,
+							apmt_val->hour,
+							apmt_val->mint);
+				int len = write(fd,tmp_buf,line_len);
 				if(len == -1)
 				{
 					ROS_ERROR("%s,%d,wirte fail %d ",__FUNCTION__,__LINE__,len);
 					close(fd);
-					return -1;
+					return false;
 				}
 				fsync(fd);
-				ROS_INFO("%s,%d,set appointment success! %s",__FUNCTION__,__LINE__,tmp_buf);
+				//INFO_NOR_CON(i<7,"set appointment %s",tmp_buf);
 
 			}
 		}
 	}
 	close(fd);
-	return 0;
+	return true;
 
 }
 
@@ -209,26 +215,28 @@ uint16_t Appmt::nextAppointment()
 	int cur_wday = 	s_current_time->tm_wday == 0?7:s_current_time->tm_wday;
 	int cur_hour = 	s_current_time->tm_hour;
 	int cur_mint = 	s_current_time->tm_min;
+	INFO_GREEN("%s,%d,current time %d,%d:%d",__FUNCTION__,__LINE__,cur_wday,cur_hour,cur_mint);
 	//get appointment
 	if(appointment_change_)
 		this->get();
 	//calculate appointment count down
+	//for appointment count down minutest
 	uint16_t mints[(int)appointment_list_.size()] = {0};//the appointments count down minutes
+
 	count_down_ = 24*60*7;
-	std::stringstream msg("");
-	// -- get total minutes from now
+	std::stringstream msg("");//for print debug msg
+	// -- get current time in minutes
 	uint16_t cur_tol_mint = (cur_wday-1) * 24 * 60 + cur_hour*60 + cur_mint;
-	// -- get appointment from appointment_list_
+	// -- cal different count down from appointments
 	for(int i=0;i<appointment_list_.size();i++)
 	{
 		if(appointment_list_[i].enable)
 		{
-			// -- different minutest from current time to appointment
-			int16_t diff_m = (i)*24*60 + appointment_list_[i].hour*60+appointment_list_[i].mint - cur_tol_mint;
-			if(diff_m<=0)//day before 
-				mints[i]= TOTAL_MINS_A_WEEK+diff_m;
-			else // -- day after
-				mints[i]= diff_m;
+			// -- different minutest from current time to appointment time
+			int16_t diff_m = (i*24*60 + appointment_list_[i].hour*60 + appointment_list_[i].mint) - cur_tol_mint;
+
+			mints[i]=(diff_m<=0)?(TOTAL_MINS_A_WEEK+diff_m):diff_m;
+
 			if(count_down_ >= mints[i])
 			{
 				count_down_  = mints[i];
@@ -239,7 +247,7 @@ uint16_t Appmt::nextAppointment()
 		msg<<" ("<<(i+1)<<","<<(int)mints[i]<<")";
 	}
 	if(appointment_set_)
-		ROS_INFO("%s,%d,\033[1;40;32mcount_down=%u minutes,\033[0m  %s",__FUNCTION__,__LINE__,count_down_,msg.str().c_str());
+		INFO_GREEN("%s,%d,count_down=%u minutes\n%s",__FUNCTION__,__LINE__,count_down_,msg.str().c_str());
 	return count_down_;
 }
 
@@ -248,7 +256,7 @@ void Appmt::setPlan2Bottom(uint16_t mint)
 	uint16_t apt = appointment_set_? (mint | 0x4000):(mint | 0x8000);
 	serial.setSendData(SERIAL::CTL_APPOINTMENT_H,apt>>8);
 	serial.setSendData(SERIAL::CTL_APPOINTMENT_L,apt&0x00ff);
-	LOG_GREEN2("%s,%d set minutes count down %d,apt = 0x%x",__FUNCTION__,__LINE__,mint,apt);
+	LOG_GREEN2("%s,%d set count down minutes %d",__FUNCTION__,__LINE__,mint);
 }
 
 void Appmt::timesUp()
@@ -262,4 +270,10 @@ void Appmt::resetPlanStatus(void)
 {
 	plan_status_ = 0;
 	serial.setSendData(SERIAL::CTL_APPOINTMENT_H, 0x00);
+}
+
+void Appmt::reset()
+{
+	//set reset command
+	appmt_obj.set(0x80);
 }

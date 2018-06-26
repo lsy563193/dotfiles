@@ -326,11 +326,11 @@ void event_manager_thread_cb()
 			evt_set_status_x(EVT_REMOTE_WIFI);
 		}
 		/* Battery */
-		if (battery.shouldGoHome()) {
+		if (robot::instance()->batteryLowForGoingHome()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_BATTERY_HOME);
 		}
-		if (battery.isLow()) {
+		if (robot::instance()->batteryTooLowToMove()) {
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_BATTERY_LOW);
 		}
@@ -341,12 +341,12 @@ void event_manager_thread_cb()
 			evt_set_status_x(EVT_CHARGE_DETECT);
 		}
 
-		/* robot slip */
-		if(lidar.isRobotSlip()){
+		/* Robot slip */
+		if(robot::instance()->isRobotSlip()){
 			ROS_DEBUG("%s %d: setting event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_ROBOT_SLIP);
 		}
-		
+
 		if(bumper.getLidarBumperStatus()){
 			ROS_DEBUG("%s %d: setting lidar bumper event:", __FUNCTION__, __LINE__);
 			evt_set_status_x(EVT_LIDAR_BUMPER);
@@ -511,7 +511,7 @@ void event_handler_thread_cb()
 		/* Charge Status */
 		evt_handle_check_event(EVT_CHARGE_DETECT);
 
-		/* robot slip*/
+		/* Robot slip*/
 		evt_handle_check_event(EVT_ROBOT_SLIP);
 
 		/* lidar bumper*/
@@ -622,8 +622,9 @@ void event_manager_reset_status(void)
 	g_charge_detect_cnt = 0;
 	/* Slam Error */
 	ev.slam_error = false;
-	/* robot slip || stuck */
+	/* robot slip || stuck || cliff turn */
 	ev.slip_triggered = false;
+	ev.cliff_turn = 0;
 	ev.robot_stuck = false;
 
 	/* tilt switch*/
@@ -1012,7 +1013,6 @@ void EventHandle::robotSlip(bool state_new, bool state_last)
 {
 	df_robot_slip();
 }
-
 
 void EventHandle::lidarBumper(bool state_new, bool state_last)
 {

@@ -8,6 +8,9 @@
 #include "map.h"
 #include <cstdint>
 
+#include "ros/ros.h"
+#include <visualization_msgs/Marker.h>
+
 class S_Wifi
 {
 
@@ -117,9 +120,11 @@ public:
 
 	void taskPushBack(S_Wifi::ACT action);
 
-	void wifiSendRutine();
+	void threadSend();
 
 	void cacheMapData(const Points map_data);
+
+	void pubCleanPath(const std::vector<std::vector<uint8_t>> packs);
 
 	void clearMapCache();
 
@@ -195,6 +200,9 @@ public:
 		return received_work_mode_ == wifi::WorkMode::FIND;
 	}
 
+	void wifiInitPublicher();
+
+	void factoryReset();
 private:
 
 	void cloudConnected();
@@ -217,6 +225,7 @@ private:
 	bool in_linking_;
 	bool wifi_quit_ ;
 	bool time_sync_;
+	bool getWifiVersion_;
 	double last_time_sync_time_;
 
 	wifi::WorkMode robot_work_mode_;
@@ -232,7 +241,7 @@ private:
 
 	std::deque<ACT> task_list_;
 
-	std::deque<Points> *map_data_buf_;
+	std::deque<Points> *path_buf_;
 
 	Cells *history_map_data_;
 	Cells *history_pass_path_data_;
@@ -250,8 +259,12 @@ protected:
 	
 	bool commit(std::vector<std::vector<uint8_t>> &map_packs,uint32_t sleep_time,bool wait_ack);
 
-	uint32_t find_if(std::deque<Cell_t>* list, Cell_t point,int find_type);
-	void sort_push(std::deque<Cell_t>* list, Cell_t point,int sort_type);
+	//uint32_t find_if(std::deque<Cell_t>* list, Cell_t point,int find_type);
+	//void sort_push(std::deque<Cell_t>* list, Cell_t point,int sort_type);
+
+	ros::NodeHandle *nh_;
+	ros::Publisher pass_path_pub_;
+	visualization_msgs::Marker path_markers_;
 };
 
 extern S_Wifi s_wifi;

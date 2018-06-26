@@ -88,7 +88,7 @@ bool IMoveType::RconTrigger()
 
 void IMoveType::resetTriggeredValue()
 {
-	PP_INFO();
+//	PP_INFO();
 	ev.lidar_triggered = 0;
 //	ev.rcon_status = 0;
 	ev.bumper_triggered = 0;
@@ -103,7 +103,10 @@ bool IMoveType::isFinish()
 	updatePosition();
 	auto curr = getPosition();
 	auto p_cm = dynamic_cast<ACleanMode*> (sp_mode_);
-//	if (!curr.isCellAndAngleEqual(last_))
+	if (!curr.isCellAndAngleEqual(last_))
+	{
+		p_cm->passed_path_for_follow_wall_mark.push_back(last_);
+	}
 	if (!curr.isCellEqual(last_))
 	{
 		last_ = curr;
@@ -172,13 +175,13 @@ bool IMoveType::isRconStop()
 	return ret;
 }
 
-bool IMoveType::isBlockCleared(GridMap &map, Points &passed_path)
+bool IMoveType::isBlockCleared(GridMap &map, Point_t &curr_p)
 {
-	if (!passed_path.empty())
-	{
+//	if (!passed_path.empty())
+//	{
 //		ROS_INFO("%s %d: passed_path.back(%d %d)", __FUNCTION__, __LINE__, passed_path.back().x, passed_path.back().y);
-		return !map.isBlockAccessible(passed_path.back().toCell().x, passed_path.back().toCell().y);
-	}
+		return !map.isBlockAccessible(curr_p.toCell().x, curr_p.toCell().y);
+//	}
 
 	return false;
 }
@@ -191,13 +194,13 @@ bool IMoveType::isFinishForward()
 	ev.tilt_triggered = gyro.getTiltCheckingStatus();
 	ev.cliff_triggered = cliff.getStatus();
 //	ROS_INFO("%s, %d: ev.cliff_triggered(%d).", __FUNCTION__, __LINE__, ev.cliff_triggered);
-	ev.slip_triggered = lidar.isRobotSlip();
+	ev.slip_triggered = robot::instance()->isRobotSlip();
 //	ev.rcon_status = countRconTriggered(c_rcon.getNavRcon(), 3);
 
 	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || ev.slip_triggered/*|| ev.rcon_status*/)
 	{
 		//ROS_WARN("%s, %d,ev.bumper_triggered(%d) ev.cliff_triggered(%d) ev.tilt_triggered(%d), rcon(%d)."
-		ROS_WARN("%s, %d,ev.bumper_triggered(%d) ev.cliff_triggered(%d) ev.tilt_triggered(%d) ev.slip_triggered(%d)"
+		ROS_WARN("%s %d: bumper(%d) cliff(%d) tilt(%d) slip(%d)"
 				, __FUNCTION__, __LINE__, ev.bumper_triggered, ev.cliff_triggered, ev.tilt_triggered , ev.slip_triggered/*,ev.rcon_status*/);
 		return true;
 	}

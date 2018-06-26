@@ -4,6 +4,7 @@
 
 #include <mode.hpp>
 #include <wheel.hpp>
+#include <log.h>
 #include "robot.hpp"
 #include "lidar.hpp"
 #include "beeper.h"
@@ -15,7 +16,7 @@ MovementFollowWallLidar::MovementFollowWallLidar(bool is_left)
 				: IFollowWall(is_left)
 {
 
-	ROS_WARN("%s %d: Enter movement follow wall %s.", __FUNCTION__, __LINE__, is_left ? "left" : "right");
+	ROS_WARN("%s %d: %s.", __FUNCTION__, __LINE__, is_left ? "left" : "right");
 	angle_forward_to_turn_ = degree_to_radian(60);
 	min_speed_ = FALL_WALL_MIN_SPEED;
 	max_speed_ = FALL_WALL_MAX_SPEED;
@@ -29,6 +30,11 @@ MovementFollowWallLidar::MovementFollowWallLidar(bool is_left)
 //	path_thread_->detach();
 }
 
+MovementFollowWallLidar::~MovementFollowWallLidar()
+{
+	ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);
+}
+
 typedef struct{
 	double r;
 	Points getPoints(int precision, bool is_inclue_zero);
@@ -39,22 +45,16 @@ Points Circle::getPoints(int precision, bool is_inclue_zero)
 	Points points1;
 	Points points2;
 	auto init_i = is_inclue_zero ? 0 : 1;
-#if DEBUG_ENABLE
-	printf("%s %d: ", __FUNCTION__, __LINE__);
-#endif
+//	printf("%s %d: ", __FUNCTION__, __LINE__);
 	for(auto i=init_i; i<=precision; i++)
 	{
 		float y = (this->r*2)/precision*i;
 		float x = sqrt(pow(this->r, 2) - pow(y - this->r, 2));
-#if DEBUG_ENABLE
-		printf("x,y(%f,%f) ",x, y);
-#endif
+//		printf("x,y(%f,%f) ",x, y);
 		points1.push_back({x,y,0});
 		points2.push_front({-x,y,0});
 	}
-#if DEBUG_ENABLE
-	printf("\n");
-#endif
+//	printf("\n");
 
 	std::move(points2.begin(), points2.end(), std::back_inserter(points1));
 	return points1;
@@ -68,9 +68,9 @@ Points MovementFollowWallLidar::calcVirtualTmpTarget()
 //	}
 
 	double c_r{};
-	auto is_trapped_in_small_area = dynamic_cast<MoveTypeFollowWall *>(sp_mt_)->getIsTrappedInSmallArea();
+	auto is_trapped_in_small_area = dynamic_cast<MoveTypeFollowWall *>(sp_mt_)->isTrappedInSmallArea();
 	if (is_trapped_in_small_area)
-			c_r = CELL_SIZE_3/4;
+		c_r = CELL_SIZE_3/4;
 	else
 		c_r = CELL_SIZE_3/2;
 	Circle circle{c_r};
@@ -109,7 +109,7 @@ Points MovementFollowWallLidar::calcVirtualTmpTarget()
 	corner_time = ros::Time::now();
 	auto wall_length = lidar.checkIsRightAngle(is_left_);
 #if DEBUG_ENABLE
-	ROS_INFO("wall_length = %lf", wall_length);
+//	ROS_INFO("wall_length = %lf", wall_length);
 #endif
 //	auto offset_x = is_corner_beginning ? CELL_SIZE * 0.7 : 0;//CELL_SIZE * 0.7
 
@@ -140,7 +140,8 @@ Point_t MovementFollowWallLidar::calcTmpTarget() {
 
 //	ROS_WARN("curr_point(%d,%d)", getPosition().x, getPosition().y);
 	auto path_head = dynamic_cast<ACleanMode*>(sp_mt_->sp_mode_)->getTempTarget();
-	auto is_trapped_in_small_area = dynamic_cast<MoveTypeFollowWall *>(sp_mt_)->getIsTrappedInSmallArea();
+	auto is_trapped_in_small_area = dynamic_cast<MoveTypeFollowWall *>(sp_mt_)->isTrappedInSmallArea();
+//	ROS_INFO("is_trapped_in_small_area(%d)",is_trapped_in_small_area);
 	if (path_head.seq != seq_) {
 		seq_ = path_head.seq;
 		lidar_targets_ = path_head.tmp_plan_path_;

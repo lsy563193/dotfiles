@@ -19,10 +19,11 @@
 #include <serial.h>
 #include <wifi/wifi.h>
 #include <mode.hpp>
+#include <robot.hpp>
 
 MovementCharge::MovementCharge()
 {
-	ROS_WARN("%s %d: Start charge action. Battery voltage \033[32m%5.2f V\033[0m.", __FUNCTION__, __LINE__, (float)battery.getVoltage()/100.0);
+	ROS_WARN("%s %d: Start. Battery \033[32m%5.2f V\033[0m.", __FUNCTION__, __LINE__, (float)battery.getVoltage()/100.0);
 	wheel.stop();
 	brush.stop();
 	vacuum.stop();
@@ -48,6 +49,9 @@ MovementCharge::MovementCharge()
 	speaker.play(VOICE_BATTERY_CHARGE);
 	key_led.setMode(LED_BREATH, LED_ORANGE);
 
+	robot::instance()->setBatteryTooLowToClean(false);
+	robot::instance()->setBatteryTooLowToMove(false);
+	robot::instance()->setBatteryLowForGoingHome(false);
 }
 
 MovementCharge::~MovementCharge()
@@ -56,7 +60,7 @@ MovementCharge::~MovementCharge()
 	charger.setStop();
 	obs.control(ON);
 	wifi_led.enable();
-	ROS_WARN("%s %d: End movement charge.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: End.", __FUNCTION__, __LINE__);
 }
 
 bool MovementCharge::isFinish()
@@ -69,7 +73,7 @@ bool MovementCharge::isFinish()
 		else
 			disconnect_charger_count_++;
 
-		ROS_WARN_COND(!charger.getChargeStatus(), "%s %d: Disconnect of charger.", __FUNCTION__, __LINE__);
+		ROS_WARN_COND(!charger.getChargeStatus(), "%s %d: Disconnect.", __FUNCTION__, __LINE__);
 
 		if (disconnect_charger_count_ > 25)
 		{
@@ -77,7 +81,10 @@ bool MovementCharge::isFinish()
 				return true;
 			else
 			{
-				key_led.setMode(LED_BREATH, LED_GREEN);
+				if (robot::instance()->batteryTooLowToClean())
+					key_led.setMode(LED_BREATH, LED_ORANGE);
+				else
+					key_led.setMode(LED_BREATH, LED_GREEN);
 				turn_for_charger_ = true;
 				start_turning_time_stamp_ = ros::Time::now().toSec();
 				turn_right_finish_ = false;
@@ -174,8 +181,9 @@ void MovementCharge::run()
 	// Debug for charge info
 	if (time(NULL) - show_battery_info_time_stamp_ > 30)
 	{
-		ROS_WARN("%s %d: battery voltage %5.2f V, charge command:%d, charge status:%d.", __FUNCTION__
-		, __LINE__, (float)battery.getVoltage()/100.0, serial.getSendData(CTL_CHARGER), charger.getChargeStatus());
+		ROS_WARN("%s %d: Battery:%.1fv, cmd:%d, status:%d, isFull:%d.", __FUNCTION__,
+				 __LINE__, (float) battery.getVoltage() / 100.0, serial.getSendData(CTL_CHARGER),
+				 charger.getChargeStatus(), battery.isFull());
 		show_battery_info_time_stamp_ = time(NULL);
 	}
 

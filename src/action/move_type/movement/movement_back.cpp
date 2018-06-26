@@ -22,12 +22,14 @@ MovementBack::MovementBack(float back_distance, uint8_t max_speed)
 	robot_stuck_cnt_ = 0;
 	tilt_cnt_ = 0;
 	updateStartPose();
-	ROS_WARN("%s %d: Set back distance: %f.", __FUNCTION__, __LINE__, back_distance_);
+	is_left_cliff_trigger_in_start_ = cliff.getLeft();
+	is_right_cliff_trigger_in_start_ = cliff.getRight();
+	ROS_WARN("%s %d: Distance: %.2f.", __FUNCTION__, __LINE__, back_distance_);
 }
 
 MovementBack::~MovementBack() {
 	robot::instance()->unlockScanCtrl();
-	ROS_WARN("%s %d: Exit movement back.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);
 }
 
 void MovementBack::updateStartPose()
@@ -69,10 +71,22 @@ void MovementBack::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	}
 	else
 		l_speed = r_speed = speed_;
+
+	//For cliff turn
+	if(is_left_cliff_trigger_ || is_right_cliff_trigger_)
+		l_speed = r_speed = 0;
 }
 
 bool MovementBack::isFinish()
 {
+	//Check cliff turn
+	checkCliffTurn();
+	if(is_left_cliff_trigger_ || is_right_cliff_trigger_)
+	{
+		wheel.stop();
+		return false;
+	}
+
 	robot::instance()->lockScanCtrl();
 	robot::instance()->pubScanCtrl(true, true);
 	bool ret{false};
@@ -92,10 +106,10 @@ bool MovementBack::isFinish()
 			lidar_bumper_jam_cnt_ = 0;
 		}
 		cliff_jam_cnt_ = static_cast<uint8_t>(cliff.getStatus() == 0 ? 0 : cliff_jam_cnt_ + 1);
-		robot_stuck_cnt_ = static_cast<uint8_t>(lidar.isRobotSlip() == 0 ? 0 : robot_stuck_cnt_ + 1);
-		ROS_INFO("tilt_cnt_(%d)", tilt_cnt_);
+		robot_stuck_cnt_ = static_cast<uint8_t>(robot::instance()->isRobotSlip() == 0 ? 0 : robot_stuck_cnt_ + 1);
+//		ROS_INFO("tilt_cnt_(%d)", tilt_cnt_);
 		tilt_cnt_ = static_cast<uint8_t>(gyro.getTiltCheckingStatus() == 0 ? 0 : tilt_cnt_ + 1);
-		ROS_INFO("tilt_cnt_2(%d)", tilt_cnt_);
+//		ROS_INFO("tilt_cnt_2(%d)", tilt_cnt_);
 		//g_lidar_bumper_cnt = robot::instance()->getLidarBumper() == 0? 0:g_lidar_bumper_cnt+1;
 
 		ROS_WARN("%s, %d: MovementBack reach target, bumper_jam_cnt_(%d), lidar_bumper_jam_cnt_(%d), cliff_jam_cnt_(%d), robot_stuck_cnt_(%d), tilt_cnt_(%d).",
@@ -146,7 +160,7 @@ bool MovementBack::isFinish()
 
 bool MovementBack::isLidarStop()
 {
-	if (bumper.getStatus() || cliff.getStatus() || lidar.isRobotSlip())
+	if (bumper.getStatus() || cliff.getStatus() || robot::instance()->isRobotSlip())
 		return false;
 
 	if (lidar.getObstacleDistance(1, 0.15) < 0.02)
@@ -158,3 +172,57 @@ bool MovementBack::isLidarStop()
 	return false;
 }
 
+void MovementBack::checkCliffTurn()
+{
+	//For left
+	if (!is_left_cliff_trigger_)
+	{
+		if (!is_left_cliff_trigger_in_start_ && cliff.getLeft())
+		{
+			ROS_WARN("%s,%d: Cliff left!", __FUNCTION__, __LINE__);
+			is_left_cliff_trigger_ = true;
+			left_cliff_trigger_start_time_ = ros::Time::now().toSec();
+		}
+	}
+	else
+	{
+		if (cliff.getLeft())
+		{
+			if (ros::Time::now().toSec() - left_cliff_trigger_start_time_ > 0.2)
+			{
+				ROS_WARN("%s,%d: Cliff turn left", __FUNCTION__, __LINE__);
+				ev.cliff_turn |= BLOCK_CLIFF_TURN_LEFT;
+			}
+		} else
+		{
+			is_left_cliff_trigger_ = false;
+			left_cliff_trigger_start_time_ = 0;
+		}
+	}
+
+	//For right
+	if (!is_right_cliff_trigger_)
+	{
+		if (!is_right_cliff_trigger_in_start_ && cliff.getRight())
+		{
+			ROS_WARN("%s,%d: Cliff right!", __FUNCTION__, __LINE__);
+			is_right_cliff_trigger_ = true;
+			right_cliff_trigger_start_time_ = ros::Time::now().toSec();
+		}
+	}
+	else
+	{
+		if (cliff.getRight())
+		{
+			if (ros::Time::now().toSec() - right_cliff_trigger_start_time_ > 0.2)
+			{
+				ROS_WARN("%s,%d: Cliff turn right", __FUNCTION__, __LINE__);
+				ev.cliff_turn |= BLOCK_CLIFF_TURN_RIGHT;
+			}
+		} else
+		{
+			is_right_cliff_trigger_ = false;
+			right_cliff_trigger_start_time_ = 0;
+		}
+	}
+}

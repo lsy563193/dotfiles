@@ -13,7 +13,7 @@ MovementFollowPointLinear::MovementFollowPointLinear()
 {
 //	kp_ = 4;
 //	tmp_pos = getPosition();
-	ROS_WARN("%s %d: Enter movement follow point linear.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Enter.", __FUNCTION__, __LINE__);
 	angle_forward_to_turn_ = degree_to_radian(150);
 	min_speed_ = LINEAR_MIN_SPEED;
 	max_speed_ = LINEAR_MAX_SPEED;
@@ -24,6 +24,11 @@ MovementFollowPointLinear::MovementFollowPointLinear()
 //	tick_limit_ = 1;
 //	auto p_clean_mode = dynamic_cast<ACleanMode*> (sp_mt_->sp_mode_);
 //	sp_mt_->target_point_ = p_clean_mode->remain_path_.front();
+}
+
+MovementFollowPointLinear::~MovementFollowPointLinear()
+{
+	ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);
 }
 
 void MovementFollowPointLinear::scaleCorrectionPos(Point_t &tmp_pos) {
@@ -65,7 +70,7 @@ Point_t MovementFollowPointLinear::_calcTmpTarget()
 	tmp_target_xy = curr_xy + dis;
 //	other_tmp_target_xy = other_curr_xy;
 //	ROS_INFO("dis(%d)",dis);
-//	ROS_WARN("curr(%f,%d, target(%f,%f), dir(%f) ", getPosition().x,getPosition().y, tmp_target_.x,tmp_target_.y,p_mode->start_point_.dir);
+//	ROS_WARN("curr(%f,%d, target(%f,%f), dir(%f) ", getPosition().x,getPosition().y, tmp_target_.x,tmp_target_.y,p_mode->start_points_.dir);
 //	ROS_WARN("tmp(%f,%f)",tmp_target_.x, tmp_target_.y);
 	return tmp_target_;
 }

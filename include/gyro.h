@@ -59,6 +59,8 @@ public:
 
 	void setAccInitData(void);
 
+	void resetCheckRobotSlipByGyro();
+
 	void checkRobotSlipByGyro();
 
 	bool error(void);
@@ -171,7 +173,7 @@ public:
 		init_z_acc_ = val;
 	}
 
-	void setTiltCheckingStatus(bool status)
+	void setTiltCheckingStatus(uint8_t status)
 	{
 		tilt_checking_status_ = status;
 	}

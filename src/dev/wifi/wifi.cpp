@@ -5,6 +5,7 @@
 #include <vacuum.h>
 #include <beeper.h>
 #include <remote.hpp>
+#include <brush.h>
 #include "speaker.h"
 #include "mode.hpp"
 #include "error.h"
@@ -44,9 +45,11 @@ S_Wifi::S_Wifi():is_wifi_connected_(false)
 					,last_time_sync_time_(0)
 					,moduleVersion_(0)
 					,cloudVersion_(0)
+					,getWifiVersion_(false)
+					,nh_(nullptr)
 {
 	init();
-	map_data_buf_ = new std::deque<Points>();
+	path_buf_ = new std::deque<Points>();
 	history_map_data_ = new Cells();
 	history_pass_path_data_ = new Cells();
 
@@ -54,17 +57,21 @@ S_Wifi::S_Wifi():is_wifi_connected_(false)
 	taskPushBack(ACT::ACT_VERSION);
 	taskPushBack(ACT::ACT_MAC);
 }
+
 S_Wifi::~S_Wifi()
 {
+	pass_path_pub_.shutdown();
 	deinit();
 }
 
 bool S_Wifi::deinit()
 {
 	quit();
-	delete map_data_buf_;
+	delete path_buf_;
 	delete history_map_data_;
 	delete history_pass_path_data_;
+	if(nh_ != nullptr)
+		delete nh_;
 	return true;
 }
 
@@ -411,7 +418,8 @@ bool S_Wifi::init()
 						msg.data()
 						);
 				s_wifi_tx_.push(std::move(p)).commit();
-				//todo
+
+				factoryReset();
 			}
 	);
 	
@@ -484,6 +492,7 @@ bool S_Wifi::init()
 							,moduleVersion_,
 							cloudVersion_);
 				INFO_NOR_CON(moduleVersion_ != expectModuleVersion_,"module version not match");
+				getWifiVersion_ = true;
 			});
 
 	// MAC ack
@@ -517,8 +526,9 @@ int8_t S_Wifi::uploadStatus(int msg_code,const uint8_t seq_num)
 		return -1;
 	uint8_t error_code = 0;
 	wifi::DeviceStatusBaseTxMsg::CleanTool clean_tool;
-	clean_tool = water_tank.getStatus(WaterTank::swing_motor)? wifi::DeviceStatusBaseTxMsg::CleanTool::WATER_TANK: wifi::DeviceStatusBaseTxMsg::CleanTool::DUST_BOX;
-
+	clean_tool = water_tank.getStatus(WaterTank::swing_motor)?
+		wifi::DeviceStatusBaseTxMsg::CleanTool::WATER_TANK:
+		wifi::DeviceStatusBaseTxMsg::CleanTool::DUST_BOX;
 
 	switch (robot_error.get())
 	{
@@ -605,13 +615,13 @@ int8_t S_Wifi::uploadStatus(int msg_code,const uint8_t seq_num)
 	if(msg_code == 0xc8)// auto upload
 	{
 		int upload_state_ack_cnt=0;
-		do{
-			if(upload_state_ack_cnt++ > 8)
-			{
-				is_wifi_connected_ = false;
-				wifi_led.setMode(LED_FLASH,WifiLed::state::off);
-				return -1;
-			}
+		/* do{ */
+			// if(upload_state_ack_cnt++ > 8)
+			// {
+				// is_wifi_connected_ = false;
+				// wifi_led.setMode(LED_FLASH,WifiLed::state::off);
+				// return -1;
+			/* } */
 			wifi::DeviceStatusUploadTxMsg p(
 					robot_work_mode_,
 					wifi::DeviceStatusBaseTxMsg::RoomMode::LARGE,//default set large
@@ -619,17 +629,17 @@ int8_t S_Wifi::uploadStatus(int msg_code,const uint8_t seq_num)
 					static_cast<uint8_t>(vacuum.isUserSetMaxMode() ? 0x01 : 0x00),
 					static_cast<uint8_t>(water_tank.getUserSetPumpMode()),
 					battery.getPercent(),
-					0x01,//notify sound wav
-					0x01,//led on/off
+					0x01,//notify sound wav //todo
+					0x01,//led on/off //todo
 					error_code,
 					seq_num);
 
 			s_wifi_tx_.push(std::move( p )).commit();
 			usleep(500000);
-		}while(ros::ok() && !upload_state_ack_);
-		upload_state_ack_ = false;
-		if (is_wifi_connected_)
-			wifi_led.setMode(LED_STEADY,WifiLed::state::on);
+		/* }while(ros::ok() && !upload_state_ack_); */
+		/* upload_state_ack_ = false; */
+		/* if (is_wifi_connected_) */
+			/* wifi_led.setMode(LED_STEADY,WifiLed::state::on); */
 	}
 	else if(msg_code == 0x41)//app check upload
 	{
@@ -640,8 +650,8 @@ int8_t S_Wifi::uploadStatus(int msg_code,const uint8_t seq_num)
 				static_cast<uint8_t>(vacuum.isUserSetMaxMode() ? 0x01 : 0x00),
 				static_cast<uint8_t>(water_tank.getUserSetPumpMode()),
 				battery.getPercent(),
-				0x01,//notify sound wav
-				0x01,//led on/off
+				0x01,//notify sound wav //todo
+				0x01,//led on/off //todo
 				error_code,
 				seq_num);
 		s_wifi_tx_.push(std::move( p )).commit();
@@ -649,115 +659,117 @@ int8_t S_Wifi::uploadStatus(int msg_code,const uint8_t seq_num)
 	return 0;
 }
 
-uint32_t S_Wifi::find_if(std::deque<Cell_t> *list,Cell_t point,int find_type)
-{
-	// -- hash search
-	if(find_type == 1)
-	{
-		//not complete
-		return 0;
-	}
-	// -- bin search
-	else if(find_type == 2)
-	{
-		if(!list->empty())
-		{
-			std::deque<Cell_t> *tmp_list = list;
-			std::deque<Cell_t>::iterator it= list->begin();
-			uint32_t begin = 0;
-			uint32_t end = tmp_list->size();
-			uint32_t half = 0;
-			do{
-				half = (begin+end)/2;
-				if(*(it+half) == point)
-					return (half+1);
-				else if(*(it+half) > point)
-					end = half;
-				else if(*(it+half)< point)
-					begin = half;
-			}while(end!=begin);
-		}
-	}
-	// -- origin search
-	else
-	{
-		if(!list->empty()){
-			for(int i =0 ;i<list->size();i++)
-			{
-				if(list->at(i) == point)
-					return i+1;
-			}
-		}
-	}
-	return 0;
-}
+/* uint32_t S_Wifi::find_if(std::deque<Cell_t> *list,Cell_t point,int find_type)
+// {
+	// // -- hash search
+	// if(find_type == 1)
+	// {
+		// //not complete
+		// return 0;
+	// }
+	// // -- bin search
+	// else if(find_type == 2)
+	// {
+		// if(!list->empty())
+		// {
+			// std::deque<Cell_t> *tmp_list = list;
+			// std::deque<Cell_t>::iterator it= list->begin();
+			// uint32_t begin = 0;
+			// uint32_t end = tmp_list->size();
+			// uint32_t half = 0;
+			// do{
+				// half = (begin+end)/2;
+				// if(*(it+half) == point)
+					// return (half+1);
+				// else if(*(it+half) > point)
+					// end = half;
+				// else if(*(it+half)< point)
+					// begin = half;
+			// }while(end!=begin);
+		// }
+	// }
+	// // -- origin search
+	// else
+	// {
+		// if(!list->empty()){
+			// for(int i =0 ;i<list->size();i++)
+			// {
+				// if(list->at(i) == point)
+					// return i+1;
+			// }
+		// }
+	// }
+	// return 0;
+// }
 
-void S_Wifi::sort_push(std::deque<Cell_t> *list,Cell_t p,int sort_type)
-{
-	//-- hash  store
-	if(sort_type == 1)
-	{
-		// -- not complete
-		list->push_back(p);
-	}
-	// --bin sort store
-	else if(sort_type == 2)
-	{
-		if(list->size()>0)
-		{
-			uint32_t pos = find_if(list,p,2);
-			if(pos > 0 && pos<=list->size())
-				list->insert(list->begin()+pos,p);
-			else if(p < list->at(0))
-				list->push_front(p);
-			else if(p > list->at(list->size()-1))
-				list->push_back(p);
-		}
-		else
-			list->push_back(p);
+// void S_Wifi::sort_push(std::deque<Cell_t> *list,Cell_t p,int sort_type)
+// {
+	// //-- hash  store
+	// if(sort_type == 1)
+	// {
+		// // -- not complete
+		// list->push_back(p);
+	// }
+	// // --bin sort store
+	// else if(sort_type == 2)
+	// {
+		// if(list->size()>0)
+		// {
+			// uint32_t pos = find_if(list,p,2);
+			// if(pos > 0 && pos<=list->size())
+				// list->insert(list->begin()+pos,p);
+			// else if(p < list->at(0))
+				// list->push_front(p);
+			// else if(p > list->at(list->size()-1))
+				// list->push_back(p);
+		// }
+		// else
+			// list->push_back(p);
 
-	}
-	// -- no sort
-	else{
-		list->push_back(p);
-	}
-}
+	// }
+	// // -- no sort
+	// else{
+		// list->push_back(p);
+	// }
+// }
+*/
 
-void printwifimap(int width, std::vector<MapElem> data)
-{
-	int cnt = 0;
-	for(int k = 0;k<data.size();k++)
-	{
-		for(int i=0;i<data[k].second;i++)
-		{
-			if(cnt == width)
-			{
-				cnt = 0;printf("\n");
-			}
-			cnt++;
-			if(data[k].first == 0x01)
-			{
-				printf("\033[32m*\033[0m");
-			}
-			else if(data[k].first == 0x02)
-			{
-				printf("\033[33m@\033[0m");
-			}
-			else if(data[k].first == 0x03)
-			{
-				printf("\033[34m#\033[0m");
-			}
-		}
-	}
-}
+/* void printwifimap(int width, std::vector<MapElem> data)
+// {
+	// int cnt = 0;
+	// for(int k = 0;k<data.size();k++)
+	// {
+		// for(int i=0;i<data[k].second;i++)
+		// {
+			// if(cnt == width)
+			// {
+				// cnt = 0;printf("\n");
+			// }
+			// cnt++;
+			// if(data[k].first == 0x01)
+			// {
+				// printf("\033[32m*\033[0m");
+			// }
+			// else if(data[k].first == 0x02)
+			// {
+				// printf("\033[33m@\033[0m");
+			// }
+			// else if(data[k].first == 0x03)
+			// {
+				// printf("\033[34m#\033[0m");
+			// }
+		// }
+	// }
+// }
+*/
 
 template <typename T1, typename T2>
 int S_Wifi::dataPushBack( std::vector<T1> &list,T2 data1,T2 data2)
 {
-	list.push_back(static_cast<T1>(data1>>8));
-	list.push_back(static_cast<T1>(data1));
-	list.push_back(static_cast<T1>(data2>>8));
-	list.push_back(static_cast<T1>(data2));
+	list.push_back((data1>>8));
+	list.push_back((data1));
+	list.push_back((data2>>8));
+	list.push_back((data2));
 
 	return static_cast<int>(list.size());
 }
@@ -772,8 +784,8 @@ int S_Wifi::uploadMap(MapType map)
 		return 0;
 	std::vector<uint8_t> map_data;
 	std::vector<std::vector<uint8_t>> map_packs;
-	uint16_t clean_area = static_cast<uint16_t>(g_map.getCleanedArea()*CELL_SIZE*CELL_SIZE*100);
-	uint16_t work_time  = static_cast<uint16_t>(robot_timer.getWorkTime());
+	uint16_t clean_area = (uint16_t)(g_map.getCleanedArea()*CELL_SIZE*CELL_SIZE*100.0);
+	uint16_t work_time  = (uint16_t)(robot_timer.getWorkTime());
 	/*
 	//-- upload grid map and pass_path
 	if(map == S_Wifi::GRID_MAP)
@@ -791,7 +803,7 @@ int S_Wifi::uploadMap(MapType map)
 			{
 				for(int16_t pos_y = c_y - 30;pos_y<=c_y + 30;pos_y++)
 				{
-					if( slam_grid_map.getCell(CLEAN_MAP,pos_x,pos_y) == SLAM_MAP_BLOCKED 
+					if( slam_grid_map.getCell(pos_x,pos_y) == SLAM_MAP_BLOCKED
 					&& this->find_if(history_map_data_,Cell_t(pos_x,pos_y),3) == 0 )
 					{
 
@@ -831,11 +843,11 @@ int S_Wifi::uploadMap(MapType map)
 		// ---- push pass_path
 		Points pass_path;
 		pthread_mutex_lock(&map_data_lock_);
-		if (!map_data_buf_->empty())
-			pass_path = map_data_buf_->front();
+		if (!path_buf_->empty())
+			pass_path = path_buf_->front();
 		pthread_mutex_unlock(&map_data_lock_);
 		bool map_buf_on_process = false;
-		if(map_data_buf_->size()  > 0 && !pass_path.empty())
+		if(path_buf_->size()  > 0 && !pass_path.empty())
 		{
 			map_buf_on_process = true;
 			//-------push clean_area and work_time
@@ -847,7 +859,7 @@ int S_Wifi::uploadMap(MapType map)
 				int16_t p_y = p_it.toCell().y;
 				for(int16_t pos_x = p_x - 1;pos_x<=p_x+1;pos_x++){
 					for(int16_t pos_y = p_y - 1;pos_y<=p_y+1;pos_y++){
-						//if(g_map.getCell(CLEAN_MAP,pos_x,pos_y) != CLEANED &&
+						//if(g_map.getCost(pos_x,pos_y) != CLEANED &&
 						if(this->find_if(history_pass_path_data_,Cell_t(pos_x,pos_y),3) == 0)
 						{
 
@@ -886,8 +898,8 @@ int S_Wifi::uploadMap(MapType map)
 		this->commit(map_packs,800000);
 
 		pthread_mutex_lock(&map_data_lock_);
-		if (!map_data_buf_->empty() && map_buf_on_process)
-				map_data_buf_->pop_front();
+		if (!path_buf_->empty() && map_buf_on_process)
+				path_buf_->pop_front();
 		pthread_mutex_unlock(&map_data_lock_);
 
 	}
@@ -901,7 +913,7 @@ int S_Wifi::uploadMap(MapType map)
 		if(a_slam_map_data != nullptr)
 		{
 			auto left_top_corner= std::get<0>(*a_slam_map_data);
-			ROS_INFO("%s,%d,x y corner\033[32m(%d,%d)\033[0m",__FUNCTION__,__LINE__,left_top_corner.x,left_top_corner.y);
+			INFO_GREEN("%s,%d,x y corner(%d,%d)",__FUNCTION__,__LINE__,left_top_corner.x,left_top_corner.y);
 			auto width = std::get<1>(*a_slam_map_data);
 			auto data = std::get<2>(*a_slam_map_data);
 			//--push clean_area and work_time
@@ -944,28 +956,24 @@ int S_Wifi::uploadMap(MapType map)
 		map_data.push_back(0x02);//data type
 		Points pass_path;
 		pthread_mutex_lock(&map_data_lock_);
-		if (!map_data_buf_->empty())
-			pass_path = map_data_buf_->front();
+		if (!path_buf_->empty())
+			pass_path = path_buf_->front();
 		pthread_mutex_unlock(&map_data_lock_);
-		Point_t cur_pos = getPosition(SLAM_POSITION_SLAM_ANGLE);
-		int16_t c_x = cur_pos.toCell().x;
-		int16_t c_y = cur_pos.toCell().y;
-
+		if(path_num >= 255)
+			path_num = 0;
+		map_data.push_back(path_num);//path number
+		path_num++;
 		bool map_buf_on_process = false;
-		if(map_data_buf_->size()> 0 && !pass_path.empty())
+		if(path_buf_->size()> 0 && !pass_path.empty())
 		{
 			map_buf_on_process = true;
-			if(path_num >= 255)
-				path_num = 0;
-			map_data.push_back(path_num);//path number
-			path_num++;
 			for(auto &&p_it : pass_path)
 			{
 				int16_t p_x = p_it.toCell().x;
 				int16_t p_y = p_it.toCell().y;
 				dataPushBack(map_data,p_x,p_y);
 				if(map_data.size()>= 250)
-				{	
+				{
 					map_packs.push_back(map_data);
 					map_data.clear();
 					//re-push clean area and work time
@@ -979,14 +987,22 @@ int S_Wifi::uploadMap(MapType map)
 			}
 		}
 		//push current position
-		dataPushBack(map_data,c_x,c_y);
+		//Point_t cur_pos = getPosition(SLAM_POSITION_SLAM_ANGLE);
+		/* int16_t c_x = cur_pos.toCell().x; */
+		// int16_t c_y = cur_pos.toCell().y;
+		/* dataPushBack(map_data,c_x,c_y); */
 		map_packs.push_back(map_data);
+
 		//-- upload map and wait ack
-		this->commit(map_packs,800000,true);
-		//-- pop front
+		this->commit(map_packs,800000,false);
+
+		//publish to rviz
+		//pubCleanPath(map_packs);
+
+		//-- popCurrRconPoint front
 		pthread_mutex_lock(&map_data_lock_);
-		if (!map_data_buf_->empty() && map_buf_on_process)
-			map_data_buf_->pop_front();
+		if (!path_buf_->empty() && map_buf_on_process)
+			path_buf_->pop_front();
 		pthread_mutex_unlock(&map_data_lock_);
 	}
 	return static_cast<int>(map_packs.size());
@@ -1033,7 +1049,7 @@ bool S_Wifi::uploadLastCleanData()
 	std::vector<std::vector<uint8_t>> packs;
 	packs.clear();
 	int16_t x_min, x_max, y_min, y_max;
-	slam_clean_map.getMapRange(CLEAN_MAP, &x_min, &x_max, &y_min, &y_max);
+	slam_clean_map.getMapRange(&x_min, &x_max, &y_min, &y_max);
 	WifiMap slam_map;
 	BoundingBox2 bound = {{x_min, y_min},{x_max, y_max}};
 	wifiMapManage.runLengthEncoding(slam_clean_map,slam_map,bound);
@@ -1245,8 +1261,24 @@ uint8_t S_Wifi::smartApLink()
 bool S_Wifi::factoryTest(uint32_t &moduleVersion)
 {
 	isFactoryTest_ = true;
-	moduleVersion = moduleVersion_;
 	int waitResp = 0;
+	while(!getWifiVersion_)
+	{
+		checkVersion();
+		usleep(100000);
+		if(waitResp++ > 5)
+		{
+			waitResp = 0;
+			return false;
+		}
+	}
+	moduleVersion = moduleVersion_;
+	waitResp = 0;
+	if(expectModuleVersion_ != moduleVersion_)
+	{
+		ROS_ERROR("%s,%d,FACTROY TEST FAIL , module version mismatch",__FUNCTION__,__LINE__);
+		return false;
+	}
 	if (is_sleep_)
 	{
 		//wifi resume
@@ -1266,7 +1298,7 @@ bool S_Wifi::factoryTest(uint32_t &moduleVersion)
 		waitResp++;
 		if(waitResp >= 200)//wait 4 seconds
 		{
-			ROS_ERROR("%s,%d,FACTORY TEST FAIL ,no factory test response!!",__FUNCTION__,__LINE__);
+			ROS_ERROR("%s,%d,FACTORY TEST FAIL ,no factory test ack response!!",__FUNCTION__,__LINE__);
 			isFactoryTest_ = false;
 			return false;
 		}
@@ -1277,16 +1309,11 @@ bool S_Wifi::factoryTest(uint32_t &moduleVersion)
 	while(isRegDevice_ == false){
 		usleep(20000);
 		if(waitResp >= 1500){//30s
-			ROS_ERROR("%s,%d,FACTORY TEST FAIL ,no registion response!!",__FUNCTION__,__LINE__);
+			ROS_ERROR("%s,%d,FACTORY TEST FAIL ,no registration msg response!!",__FUNCTION__,__LINE__);
 			isFactoryTest_ = false;
 			return false;
 		}
 		waitResp++;
-	}
-	if(expectModuleVersion_ != moduleVersion_)
-	{
-		ROS_ERROR("%s,%d,FACTROY TEST FAIL , module version mismatch",__FUNCTION__,__LINE__);
-		return false;
 	}
 	INFO_BLUE("FACTORY TEST SUCCESS!!");
 	isFactoryTest_ = false;
@@ -1386,7 +1413,7 @@ bool S_Wifi::setWorkMode(int mode)
 			robot_work_mode_ = wifi::WorkMode::SHUTDOWN;
 			break;
 	}
-	ROS_INFO("\033[1;35m%s,%d,set work mode %d\033[0m",__FUNCTION__,__LINE__,(int)robot_work_mode_);
+	ROS_INFO("\033[1;35m%s %d wifi set work mode %d\033[0m",__FUNCTION__,__LINE__,(int)robot_work_mode_);
 	return true;
 }
 
@@ -1423,7 +1450,7 @@ uint8_t S_Wifi::checkVersion()
 				wifi::wifiVersionAckMsg::MSG_CODE,
 				{0});
 	s_wifi_tx_.push(std::move(p)).commit();
-
+	INFO_CYAN("%s,%d",__FUNCTION__,__LINE__);
 	return 0;
 }
 
@@ -1447,18 +1474,13 @@ void S_Wifi::taskPushBack(S_Wifi::ACT action)
 	}
 }
 
-void S_Wifi::wifiSendRutine()
+void S_Wifi::threadSend()
 {
 	uint32_t upload_state_count;
 	uint32_t upload_map_count;
 	last_time_sync_time_ = ros::Time::now().toSec();
 	while( ros::ok() || wifi_quit_)
 	{
-		if(!is_wifi_connected_)
-		{
-			usleep(50000);
-			continue;
-		}
 		if(!task_list_.empty())
 		{
 			pthread_mutex_lock(&task_lock_);
@@ -1520,43 +1542,48 @@ void S_Wifi::wifiSendRutine()
 		}
 		else
 		{
+			usleep(20000);
+			if(!is_wifi_connected_)
+			{
+				continue;
+			}
 			// If time is not synchronized, try to query NTP for every 3 mins.
-			if (!time_sync_ && ros::Time::now().toSec() - last_time_sync_time_ > 180)
+			if (!time_sync_ && ros::Time::now().toSec() - last_time_sync_time_ > 3000)
 			{
 				taskPushBack(ACT::ACT_QUERY_NTP);
 				last_time_sync_time_ = ros::Time::now().toSec();
 			}
 
-			if (robot::instance()->duringNavigationCleaning() && upload_map_count++ >= 4)
-			{
-				this->uploadMap(PASS_PATH);
-				upload_map_count = 0;
-			}
+			/* if (robot::instance()->duringNavigationCleaning() && upload_map_count++ >= 150) */
+			// {
+				// this->uploadMap(PASS_PATH);
+				// upload_map_count = 0;
+			/* } */
 
-			if(is_Status_Request_)
-			{
-				if(upload_state_count++ >= 20)
-				{
-					this->uploadStatus(0xc8,0x00);
-					upload_state_count=0;
-				}
-			}
-			usleep(500000);
+			/* if(is_Status_Request_) */
+			// {
+				// if(upload_state_count++ >= 50)
+				// {
+					// this->uploadStatus(0xc8,0x00);
+					// upload_state_count=0;
+				// }
+			/* } */
 		}
 	}
-	printf("WIFI SEND ROUTINE EXIT!\n");
+	INFO_BLUE("%s ,exit!",__FUNCTION__);
 }
 
 void S_Wifi::cacheMapData(const Points pass_path)
 {
 	MutexLock lock(&map_data_lock_);
-	map_data_buf_->push_back(pass_path);
+	path_buf_->push_back(pass_path);
+	taskPushBack(ACT::ACT_UPLOAD_PATH);
 }
 
 void S_Wifi::clearMapCache()
 {
 	MutexLock lock(&map_data_lock_);
-	map_data_buf_->clear();
+	path_buf_->clear();
 	history_map_data_->clear();
 	history_pass_path_data_->clear();
 }
@@ -1591,4 +1618,95 @@ void S_Wifi::cloudConnected()
 		first_time_connected_ = false;
 		speaker.play(VOICE_WIFI_CONNECTED, false);
 	}
+}
+
+void S_Wifi::pubCleanPath(const std::vector<std::vector<uint8_t>> packs)
+{
+	if(nh_ == nullptr || packs.empty())
+		return;
+	INFO_CYAN("%s,%d,packs size %d",__FUNCTION__,__LINE__,packs.size());
+
+	geometry_msgs::Point p;
+	std::vector<uint8_t> path;
+	for(int i= 0 ;i<packs.size();i++)
+	{
+		path = packs.at(i);
+		if(path.size() < 7)
+		{
+			INFO_RED("%s,%d illegal ,path size < %d",__FUNCTION__,__LINE__,path.size());
+			continue;
+		}
+		auto it = path.begin();
+		it=it+4;
+		std::stringstream s("");
+		s<<(int)*(it)<<",";
+		if(*(it) == 0x02)//path code
+		{
+			s<<(int)*(it+1)<<",";
+			it=it+2;//skip the number code
+			while(it != path.end())
+			{
+				p.x = (int16_t)(*it<<8 | *(it+1))*CELL_SIZE;
+				it=it+2;
+				p.y = (int16_t)(*it<<8 | *(it+1))*CELL_SIZE;
+				it=it+2;
+				s<<"("<<p.x<<","<<p.y<<")";
+				path_markers_.points.push_back(p);
+			}
+			INFO_CYAN("%s,%d,%s",__FUNCTION__,__LINE__,s.str().c_str());
+		}
+		else if(*it == 0x01)
+		{
+			INFO_RED("%s,%d,eh.... not do this yet",__FUNCTION__,__LINE__);
+			continue;
+		}
+	}
+	path_markers_.header.stamp=ros::Time::now();
+	pass_path_pub_.publish(path_markers_);
+}
+
+void S_Wifi::wifiInitPublicher()
+{
+	nh_=new ros::NodeHandle();
+	pass_path_pub_ = nh_->advertise<visualization_msgs::Marker>("pass_path_markers", 1);
+
+	path_markers_.ns = "pass_path";
+	path_markers_.header.frame_id = "/map";
+	path_markers_.pose.orientation.w = 1.0;
+	path_markers_.lifetime=ros::Duration(0);
+	path_markers_.id = 0;
+	path_markers_.action= visualization_msgs::Marker::ADD;
+	path_markers_.type = visualization_msgs::Marker::LINE_STRIP;
+	path_markers_.scale.x = 0.05;
+	path_markers_.color.b = 0.6;
+	path_markers_.color.a = 1.0;
+	path_markers_.points.clear();
+
+}
+
+void S_Wifi::factoryReset()
+{
+	//reset consumtion device state
+	brush.resetSideBrushTime();
+	brush.resetMainBrushTime();
+	vacuum.resetFilterTime();
+	robot::instance()->resetSideBrushTime();
+	robot::instance()->resetMainBrushTime();
+	robot::instance()->resetFilterTime();
+	robot::instance()->updateConsumableStatus();
+	INFO_YELLOW("reset robot consumption status");
+
+	//reset appointment state
+	appmt_obj.reset();
+	INFO_YELLOW("reset appointments ");
+
+	//reset vacuum and water_tank state
+	water_tank.setUserSetPumpMode(WaterTank::PUMP_LOW);
+	water_tank.setUserSwingMotorMode(WaterTank::swing_motor_mode::SWING_MOTOR_LOW);
+	robot::instance()->wifiSetWaterTank();
+
+	// Setting for vacuum.
+	vacuum.setForUserSetMaxMode(false);
+	robot::instance()->wifiSetVacuum();
+	INFO_YELLOW("reset vacuum and water_tank");
 }

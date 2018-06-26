@@ -379,3 +379,76 @@ bool is_opposite_dir(int l, int r)
 	return (l == 0 && r==1)  || (l ==1 && r ==0) || (l ==2 && r ==3) || (l == 3 && r == 2);
 }
 
+HomePointsManager::HomePointsManager() {
+	home_points_list_[1].push_back(Point_t{0,0});
+	home_points_list_it_ = home_points_list_.begin()+1;
+	home_point_it_ = home_points_list_[1].begin();
+}
+
+void HomePointsManager::setRconPoint(const Point_t &point) {
+	if (std::none_of(home_points_list_[0].begin(), home_points_list_[0].end(), [&](const Point_t &it) {
+		return it.toCell() == point.toCell();
+	})/* && point.toCell() != Cell_t{}*/)
+	{
+		home_points_list_[0].push_front(point);
+		home_points_list_it_ = home_points_list_.begin();
+		home_point_it_ = home_points_list_[0].begin();
+		ROS_INFO("%s %d: Set home cell.%d,%d",__FUNCTION__, __LINE__, point.toCell().x, point.toCell().y);
+	}
+}
+
+void HomePointsManager::popCurrRconPoint()
+{
+	std::string debug_home_points_ = "";
+	for (auto &&it :  home_points_list_[0])
+		debug_home_points_ += "(" + std::to_string(it.toCell().x) + ", " + std::to_string(it.toCell().y) + "),";
+
+	ROS_WARN("%s %d: Current home points size(%d), remain home points: %s, current home point(%d, %d)",
+			 __FUNCTION__, __LINE__, home_points_list_[0].size(), debug_home_points_.c_str(),
+			 home_point_it_->toCell().x, home_point_it_->toCell().y);
+	home_point_it_ = home_points_list_[0].erase(home_point_it_/*++*/);
+	if (home_point_it_ == home_points_list_[0].end())
+	{
+//		ROS_INFO("%s %d:3 size(%d)",__FUNCTION__, __LINE__, home_points_list_[0].size());
+		if (home_points_list_[0].empty())
+		{
+			home_points_list_it_++;//point to start point
+			home_point_it_ = home_points_list_[1].begin();
+		} else
+			home_point_it_ = home_points_list_[0].begin();
+	}
+	ROS_WARN("%s %d: Current home points size(%d): current iterator(%d, %d)", __FUNCTION__, __LINE__,
+			 home_points_list_[0].size(), home_point_it_->toCell().x, home_point_it_->toCell().y);
+}
+
+void HomePointsManager::for_each(const std::function<void(const Point_t &it)> &lambda_fun) {
+	for (auto &&p_home_points_it : home_points_list_) {
+		for (auto &&it = p_home_points_it.begin(); it != p_home_points_it.end(); ++it) {
+			lambda_fun(*it);
+		}
+	}
+}
+
+void HomePointsManager::resetRconPoint() {
+	if (!home_points_list_[0].empty()) {
+		home_points_list_[0].clear();
+	}
+	home_points_list_it_ = home_points_list_.begin()+1;
+	home_point_it_ = home_points_list_[1].begin();
+}
+
+void HomePointsManager::setStartPointRad(double th) {
+		home_points_list_[1].begin()->th = th;
+}
+
+double HomePointsManager::getStartPointRad() {
+		return home_points_list_[1].begin()->th;
+}
+
+HomePoints_t::iterator HomePointsManager::getStartPoint() {
+	return home_points_list_[1].begin();
+}
+
+bool HomePointsManager::isStartPoint() {
+	return home_points_list_it_ != home_points_list_.begin();
+}

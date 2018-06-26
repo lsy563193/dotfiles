@@ -13,22 +13,15 @@
 #include "vacuum.h"
 
 void StateFolllowWall::init() {
-	if(robot::instance()->getRobotWorkMode() == Mode::cm_exploration)
+	//don`t change key,brush and water_tank status if robot in trapped
+	if(!sp_cm_->is_trapped_ && robot::instance()->getRobotWorkMode() == Mode::cm_wall_follow)
 	{
-		key_led.setMode(LED_STEADY,LED_ORANGE);
-		brush.slowOperate();
-		water_tank.setCurrentSwingMotorMode(WaterTank::SWING_MOTOR_LOW);
-		water_tank.checkEquipment() ? water_tank.open(WaterTank::operate_option::swing_motor)
-									: vacuum.setForCurrentMode(Vacuum::VacMode::vac_low_mode);
-	}
-	else
-	{
-		key_led.setMode(LED_STEADY, LED_GREEN);
-		brush.normalOperate();
-		water_tank.setCurrentSwingMotorMode(water_tank.getUserSetSwingMotorMode());
-		water_tank.setCurrentPumpMode(water_tank.getUserSetPumpMode());
-		water_tank.checkEquipment() ? water_tank.open(WaterTank::operate_option::swing_motor_and_pump)
-									: vacuum.setSpeedByUserSetMode();
+			key_led.setMode(LED_STEADY, LED_GREEN);
+			brush.normalOperate();
+			water_tank.setCurrentSwingMotorMode(water_tank.getUserSetSwingMotorMode());
+			water_tank.setCurrentPumpMode(water_tank.getUserSetPumpMode());
+			water_tank.checkEquipment() ? water_tank.open(WaterTank::operate_option::swing_motor_and_pump)
+																	: vacuum.setSpeedByUserSetMode();
 	}
 	s_wifi.setWorkMode(robot::instance()->getRobotWorkMode());
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
@@ -36,8 +29,3 @@ void StateFolllowWall::init() {
 	gyro.setTiltCheckingEnable(true);
 	ROS_INFO("%s %d: Enter state follow wall init.", __FUNCTION__, __LINE__);
 }
-
-//bool StateFolllowWall::isFinish() {
-//	return false;
-//}
-

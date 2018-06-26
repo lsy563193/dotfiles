@@ -12,7 +12,7 @@
 void StatePause::init() {
 	if (robot_error.get())
 		key_led.setMode(LED_STEADY, LED_RED);
-	else if (robot::instance()->isBatteryLow())
+	else if (robot::instance()->batteryTooLowToClean())
 		key_led.setMode(LED_STEADY, LED_ORANGE);
 	else
 		key_led.setMode(LED_BREATH, LED_GREEN);

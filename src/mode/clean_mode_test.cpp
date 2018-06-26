@@ -31,8 +31,8 @@ CleanModeTest::CleanModeTest(uint8_t mode)
 			genNextAction();
 
 			// Init for map in case follow wall move type will not reach the map edge.
-			clean_map_.setCell(CLEAN_MAP, MAP_SIZE / 3, MAP_SIZE / 3, CLEANED);
-			clean_map_.setCell(CLEAN_MAP, -MAP_SIZE / 3, -MAP_SIZE / 3, CLEANED);
+			clean_map_.setCost(MAP_SIZE / 3, MAP_SIZE / 3, CLEANED);
+			clean_map_.setCost(-MAP_SIZE / 3, -MAP_SIZE / 3, CLEANED);
 
 			break;
 		}

@@ -128,9 +128,11 @@ public:
 	static boost::shared_ptr<IAction> sp_action_;
 
 	double wall_distance;
+
 	double wheel_cliff_triggered_time_{DBL_MAX};
-	const double WHEEL_CLIFF_TIME_LIMIT{2};
+	const double WHEEL_CLIFF_TIME_LIMIT{0.5};//2
 	bool is_wheel_cliff_triggered{false};
+
 	int mode_i_{};
 	int current_action_i_{};
 
@@ -184,6 +186,8 @@ private:
 
 	bool readyToClean(bool check_battery = true, bool check_error = true);
 
+	bool battery_too_low_to_clean_{false};
+	bool battery_too_low_to_move_{false};
 };
 
 class ModeSleep: public Mode
@@ -393,9 +397,13 @@ public:
 	void setChargerArea(const Point_t charge_pos);
 	bool checkChargerPos();
 
+	uint16_t updatePath();
+	bool pathAlgorithmCheckOutOfTrapped(IMoveType *p_mt);
+	bool checkClosed(IMoveType *p_mt, uint16_t distance);
+
 	// For move types
-	bool moveTypeNewCellIsFinish(IMoveType *p_mt);
-	bool moveTypeRealTimeIsFinish(IMoveType *p_mt);
+	virtual bool moveTypeNewCellIsFinish(IMoveType *p_mt){return false;};
+	virtual bool moveTypeRealTimeIsFinish(IMoveType *p_mt);
 
 	// Handlers
 //	void remoteHome(bool state_now, bool state_last) override ;
@@ -411,7 +419,7 @@ public:
 	{
 		return sp_state == state_init.get();
 	}
-	virtual bool isSwitchByEventInStateInit();
+	virtual bool isSwitchByEventInStateInit(){return false;};
 	virtual bool updateActionInStateInit();
 	virtual void switchInStateInit();
 
@@ -474,6 +482,8 @@ public:
 	bool trapped_time_out_{};
 	bool trapped_closed_or_isolate{};
 	bool out_of_trapped_{};
+	// For warning in idle mode.
+	static bool robot_trapped_warning;
 
 	// State exploration
 	bool isStateExploration() const
@@ -526,6 +536,9 @@ public:
 	// For vacuum setting.
 	void setVacuum() override ;
 
+	void setRconPoint(const Point_t &current_point);
+
+	bool reachHomePoint(const Point_t& curr);
 	// For HEPA filter.
 	void isUsingDustBox(bool val)
 	{
@@ -556,6 +569,10 @@ public:
 	int isolate_count_{};
 	int isolate_count_limit_{10};
 	bool is_trapped_{false};
+	Point_t small_area_trapped_pose_{};
+	bool is_small_area_closed_{false};
+	int in_small_area_count_{};
+	int in_small_area_count_limit_{10};
 
 	boost::shared_ptr<State> state_init{new StateInit()};
 	boost::shared_ptr<State> state_clean{new StateClean()};
@@ -563,6 +580,9 @@ public:
 	boost::shared_ptr<State> state_exploration{new StateExploration()};
 
 	Points passed_cell_path_{};
+	// For preventing robot stay in same cell for too long.
+	double reach_this_cell_start_time_{0};
+	Points passed_path_for_follow_wall_mark{};
 	GridMap fw_tmp_map{};
 	typedef std::set<PairCell_t> Blocks_t ;
 	Blocks_t c_blocks;
@@ -573,12 +593,25 @@ public:
 	Points::iterator iterate_point_{};
 
 	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
-	boost::shared_ptr<GoHomePathAlgorithm> go_home_path_algorithm_{};
 	GridMap clean_map_{};
-	static bool plan_activation_;
+	static bool plan_activation;
 	double time_gyro_dynamic_;
 
+	bool isHasEnterStateIsGoHomePoints()
+	{
+		return  (std::any_of(sp_saved_states.begin(),sp_saved_states.end(),[&](State* state_it){
+			return state_it == state_go_home_point.get();
+		}));
+	}
+
+	bool isSavedStatesEmpty()
+	{
+		return sp_saved_states.empty();
+	}
+
 protected:
+
+	HomePointsManager home_points_manager_;
 	std::vector<State*> sp_saved_states;
 	boost::shared_ptr<State> state_go_home_point{new StateGoHomePoint()};
 	boost::shared_ptr<State> state_go_to_charger{new StateGoToCharger()};
@@ -590,25 +623,26 @@ protected:
 	boost::shared_ptr<State> state_test{new StateTest()};
 
 	bool low_battery_charge_{};
-	bool moved_during_pause_{false};
-	bool should_go_to_charger_{false};
-	bool remote_go_home_point{false};
-	bool wifi_go_home_point{false};
+	bool moved_during_pause_{};
+	bool should_go_to_charger_{};
+	bool remote_go_home_point{};
+	bool wifi_go_home_point{};
 	bool first_time_go_home_point_{true};
-	bool seen_charger_during_cleaning_{false};
-	bool go_home_for_low_battery_{false};
+	bool seen_charger_during_cleaning_{};
+	bool go_home_for_low_battery_{};
 	bool switch_is_off_{false};
 	Points charger_poses_;
 	bool found_charger_{false};
+	bool has_mark_charger_{true};
 	Points tmp_charger_pose_;
-	bool is_using_dust_box_{false};
+	bool is_using_dust_box_{true};
 public:
 
 	static void pubPointMarkers(const std::deque<Vector2<double>> *point, std::string frame_id,std::string name);
 	static void pubPointMarkers2(const std::vector<geometry_msgs::Point> *points, std::string frame_id, std::string name);
 	void pubFitLineMarker(visualization_msgs::Marker fit_line_marker);
 	void setLinearCleaned();
-	uint8_t setFollowWall(GridMap&, bool is_left, const Points&, bool is_exclude= false, int16_t cell_y=0);
+	uint8_t setFollowWall(GridMap&, bool is_left, const Points&);
 	void scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr& scan);
 	void setCleanMapMarkers(int16_t x, int16_t y, CellState type,  visualization_msgs::Marker& clean_map_markers_);
 	void pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path);
@@ -623,7 +657,7 @@ public:
 	void pubTmpTarget(const Point_t &point,bool is_virtual=false);
 	uint8_t setBlocks(Dir_t dir);
 	void saveBlocks();
-	void saveBlock(int block, int , std::function<Cells()>);
+	void saveBlock(int block, std::function<Cells()>);
 	void checkShouldMarkCharger(float angle_offset,float distance);
 	PathHead getTempTarget();
 
@@ -657,6 +691,9 @@ public:
 	bool mapMark() override;
 	bool markRealTime() override;
 	bool isExit() override;
+
+	bool moveTypeNewCellIsFinish(IMoveType *p_mt) override ;
+	bool moveTypeRealTimeIsFinish(IMoveType *p_mt) override ;
 
 	bool allowRemoteUpdatePlan() override
 	{
@@ -749,29 +786,21 @@ public:
 	~CleanModeExploration();
 	bool isExit() override;
 
+	bool moveTypeNewCellIsFinish(IMoveType *p_mt) override ;
 	bool markMapInNewCell() override;
 	bool mapMark() override;
 	void resetErrorMarker();
-//	bool isExit() override;
 	void keyClean(bool state_now, bool state_last) override ;
 	void remoteClean(bool state_now, bool state_last) override ;
-//	void cliffAll(bool state_now, bool state_last) override ;
 	void remoteMax(bool state_now, bool state_last) override ;
 
-//	void overCurrentBrushLeft(bool state_now, bool state_last);
-//	void overCurrentBrushMain(bool state_now, bool state_last);
-//	void overCurrentBrushRight(bool state_now, bool state_last);
 	void overCurrentWheelLeft(bool state_now, bool state_last) override;
 	void overCurrentWheelRight(bool state_now, bool state_last) override;
-//	void overCurrentVacuum(bool state_now, bool state_last);
-//	void printMapAndPath();
 	void switchInStateInit() override;
 	bool updateActionInStateInit() override;
 
 	void switchInStateGoHomePoint() override;
 	void switchInStateGoToCharger() override;
-
-//	bool moveTypeFollowWallIsFinish(MoveTypeFollowWall *p_mt) override;
 
 	// For water tank setting.
 	void wifiSetWaterTank() override ;
@@ -792,17 +821,24 @@ public:
 	bool mapMark() override;
 	bool markMapInNewCell() override;
 
+	bool moveTypeNewCellIsFinish(IMoveType *p_mt) override ;
+	bool moveTypeRealTimeIsFinish(IMoveType *p_mt) override ;
+
 	void keyClean(bool state_now, bool state_last) override;
 	void remoteMax(bool state_now, bool state_last) override;
 	void remoteClean(bool state_now, bool state_last) override;
 	void remoteWallFollow(bool state_now, bool state_last) override;
+
+	bool updateActionInStateClean() override;
+	void switchInStateClean() override;
+	bool updateActionInStateFollowWall() override;
 	void switchInStateFollowWall() override;
 	void batteryHome(bool state_now, bool state_last) override ;
 
 	void switchInStateInit() override;
 
 private:
- int reach_cleaned_count_save{};
+	double print_map_time_{0};
 };
 
 class CleanModeSpot:public ACleanMode
@@ -815,6 +851,9 @@ public:
 //	bool markRealTime() override;
 	bool markMapInNewCell() override;
 	bool isExit() override;
+
+	bool moveTypeNewCellIsFinish(IMoveType *p_mt) override ;
+	bool moveTypeRealTimeIsFinish(IMoveType *p_mt) override ;
 
 //	void cliffAll(bool state_now, bool state_last) override;
 	void remoteClean(bool state_now, bool state_last) override;

@@ -5,20 +5,23 @@
 
 #include <action.hpp>
 #include <error.h>
+#include <mode.hpp>
 #include "dev.h"
 
 #define ERROR_ALARM_TIMES 5
 #define ERROR_ALARM_INTERVAL 10
+#define TRAPPED_ALARM_TIMES 5
+#define TRAPPED_ALARM_INTERVAL 10
 
 ActionIdle::ActionIdle()
 {
 	timeout_interval_ = IDLE_TIMEOUT*1.0;
-	ROS_WARN("%s %d: Start action idle. timeout %.0fs.", __FUNCTION__, __LINE__,timeout_interval_);
+	ROS_WARN("%s %d: Start. timeout %.0fs.", __FUNCTION__, __LINE__,timeout_interval_);
 }
 
 ActionIdle::~ActionIdle()
 {
-	ROS_WARN("%s %d: Exit action idle.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);
 }
 
 bool ActionIdle::isFinish()
@@ -35,6 +38,14 @@ void ActionIdle::run()
 		robot_error.alarm();
 		error_alarm_time_ = ros::Time::now().toSec();
 		error_alarm_cnt_++;
+	}
+
+	if (ACleanMode::robot_trapped_warning && trapped_alarm_cnt_ < TRAPPED_ALARM_TIMES
+		&& ros::Time::now().toSec() - trapped_alarm_time_ > TRAPPED_ALARM_INTERVAL)
+	{
+		speaker.play(VOICE_ROBOT_TRAPPED);
+		trapped_alarm_time_ = ros::Time::now().toSec();
+		trapped_alarm_cnt_++;
 	}
 
 	if (appmt_obj.shouldUpdateIdleTimer())

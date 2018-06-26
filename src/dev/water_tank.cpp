@@ -37,18 +37,18 @@ void WaterTank::open(int _operate_option)
 	switch(_operate_option){
 		case operate_option::swing_motor:
 			setSwingMotorPWM();
-			ROS_WARN("%s %d: Open water tank", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Swing motor.", __FUNCTION__, __LINE__);
 			break;
 		case operate_option::pump:
 			pump_pwm_ = 0x80;
 			last_pump_time_stamp_ = 0;
-			ROS_WARN("%s %d: Open pump", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Pump.", __FUNCTION__, __LINE__);
 			break;
 		case operate_option::swing_motor_and_pump:
 			setSwingMotorPWM();
 			pump_pwm_ = 0x80;
 			last_pump_time_stamp_ = 0;
-			ROS_WARN("%s %d: Open pump and water tank", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Swing motor and pump.", __FUNCTION__, __LINE__);
 			break;
 	}
 	serial.setSendData(CTL_WATER_TANK, static_cast<uint8_t>(swing_motor_pwm_|pump_pwm_));
@@ -67,18 +67,18 @@ void WaterTank::stop(int operate_option)
 		case swing_motor:
 			serial.setSendData(CTL_WATER_TANK, static_cast<uint8_t>(pump_pwm_ & 0x80));
 			swing_motor_pwm_ = 0;
-			ROS_WARN("%s %d: close water tank", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Swing motor.", __FUNCTION__, __LINE__);
 			break;
 		case pump:
 			serial.setSendData(CTL_WATER_TANK, static_cast<uint8_t>(swing_motor_pwm_ & 0x7f));
 			pump_pwm_ = 0;
-			ROS_WARN("%s %d: close pump", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Pump.", __FUNCTION__, __LINE__);
 			break;
 		case swing_motor_and_pump:
 			serial.setSendData(CTL_WATER_TANK, 0x00);
 			pump_pwm_ = 0;
 			swing_motor_pwm_ = 0;
-			ROS_WARN("%s %d: close pump and water tank", __FUNCTION__, __LINE__);
+			ROS_WARN("%s %d: Swing motor and pump.", __FUNCTION__, __LINE__);
 			break;
 	}
 	if (operate_option == swing_motor_and_pump) {
@@ -105,7 +105,7 @@ void WaterTank::updatePWM()
 			is_swing_motor_mode_change_ = false;
 		setSwingMotorPWM();
 		serial.setSendData(CTL_WATER_TANK, static_cast<uint8_t>(pump_pwm_ | swing_motor_pwm_));
-		ROS_INFO("%s %d: Update for water tank.", __FUNCTION__, __LINE__);
+		ROS_INFO("%s %d: Update for swing motor.", __FUNCTION__, __LINE__);
 	}
 
 	if (getStatus(pump) && ros::Time::now().toSec() - last_pump_time_stamp_ > pump_time_interval_)
@@ -133,17 +133,17 @@ void WaterTank::setCurrentPumpMode(int mode)
 	switch (mode)
 	{
 		case PUMP_HIGH:
-			ROS_INFO("%s, %d: Pump mode set to high.",__FUNCTION__,__LINE__);
+			ROS_INFO("%s, %d: High.",__FUNCTION__,__LINE__);
 			current_pump_mode_ = PUMP_HIGH;
 			pump_time_interval_ = 8 * (20 * pump_max_cnt_ / 50.0);
 			break;
 		case PUMP_MIDDLE:
-			ROS_INFO("%s, %d: Pump mode set to middle.",__FUNCTION__,__LINE__);
+			ROS_INFO("%s, %d: Middle.",__FUNCTION__,__LINE__);
 			current_pump_mode_ = PUMP_MIDDLE;
 			pump_time_interval_ = 12 * (20 * pump_max_cnt_ / 50.0);
 			break;
 		default: // case PUMP_LOW:
-			ROS_INFO("%s, %d: Pump mode set to low.",__FUNCTION__,__LINE__);
+			ROS_INFO("%s, %d: Low.",__FUNCTION__,__LINE__);
 			current_pump_mode_ = PUMP_LOW;
 			pump_time_interval_ = 15 * (20 * pump_max_cnt_ / 50.0);
 			break;
@@ -155,15 +155,15 @@ void WaterTank::setUserSetPumpMode(int mode)
 	switch (mode)
 	{
 		case PUMP_HIGH:
-			ROS_INFO("%s, %d: User set pump mode to high.",__FUNCTION__,__LINE__);
+			ROS_INFO("%s, %d: High.",__FUNCTION__,__LINE__);
 			user_set_pump_mode_ = PUMP_HIGH;
 			break;
 		case PUMP_MIDDLE:
-			ROS_INFO("%s, %d: User set pump mode to middle.",__FUNCTION__,__LINE__);
+			ROS_INFO("%s, %d: Middle.",__FUNCTION__,__LINE__);
 			user_set_pump_mode_ = PUMP_MIDDLE;
 			break;
 		default: // case PUMP_LOW:
-			ROS_INFO("%s, %d: User set pump mode to low.",__FUNCTION__,__LINE__);
+			ROS_INFO("%s, %d: Low.",__FUNCTION__,__LINE__);
 			user_set_pump_mode_ = PUMP_LOW;
 			break;
 	}
@@ -173,17 +173,17 @@ void WaterTank::setCurrentSwingMotorMode(int mode) {
 	is_swing_motor_mode_change_ = true;
 	switch(mode){
 		case SWING_MOTOR_LOW:
-			ROS_INFO("%s, %d: Swing motor mode set to low.",__FUNCTION__,__LINE__);
+			ROS_INFO("%s, %d: Low.",__FUNCTION__,__LINE__);
 			current_swing_motor_mode_ = mode;
 			swing_motor_operate_voltage_ = LOW_OPERATE_VOLTAGE_FOR_SWING_MOTOR;
 			break;
 		case SWING_MOTOR_HIGH:
-			ROS_INFO("%s, %d: Swing motor mode set to high.",__FUNCTION__,__LINE__);
+			ROS_INFO("%s, %d: High.",__FUNCTION__,__LINE__);
 			current_swing_motor_mode_ = mode;
 			swing_motor_operate_voltage_ = FULL_OPERATE_VOLTAGE_FOR_SWING_MOTOR;
 			break;
 		default:
-			ROS_ERROR("%s, %d: setCurrentSwingMotorMode error.",__FUNCTION__,__LINE__);
+			ROS_ERROR("%s, %d: Error.",__FUNCTION__,__LINE__);
 			break;
 	}
 }
@@ -192,15 +192,15 @@ void WaterTank::setUserSwingMotorMode(int mode)
 {
 	switch(mode){
 		case SWING_MOTOR_LOW:
-			ROS_INFO("%s, %d: User set swing motor mode to low.",__FUNCTION__,__LINE__);
+			ROS_INFO("%s, %d: Low.",__FUNCTION__,__LINE__);
 			user_set_swing_motor_mode_ = mode;
 			break;
 		case SWING_MOTOR_HIGH:
-			ROS_INFO("%s, %d: User set swing motor mode to high.",__FUNCTION__,__LINE__);
+			ROS_INFO("%s, %d: High.",__FUNCTION__,__LINE__);
 			user_set_swing_motor_mode_ = mode;
 			break;
 		default:
-			ROS_ERROR("%s, %d: setUserSwingMotorMode error.",__FUNCTION__,__LINE__);
+			ROS_ERROR("%s, %d: Error.",__FUNCTION__,__LINE__);
 			break;
 	}
 }

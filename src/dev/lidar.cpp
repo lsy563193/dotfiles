@@ -245,15 +245,15 @@ public:
 //		std::vector<LineABC>	vertical_lines;
 //		vertical_lines.push_back(vertical_line);
 //		ACleanMode::pubLineMarker(&vertical_lines);
-		ROS_INFO("line.p1(%lf, %lf), line.p2(%lf, %lf)", line.x1, line.y1, line.x2, line.y2);
-		ROS_INFO("vertical_line.p1(%lf, %lf)", vertical_line.x1, vertical_line.y1);
 		double dis_to_origin = fabs(vertical_line.C / sqrt(pow(vertical_line.A, 2) + pow(vertical_line.B, 2)));
-		ROS_INFO("is_left_(%d), is_line_in_origin_left(%d), dis_to_origin(%lf)", is_left_, is_line_in_origin_left, dis_to_origin);
+		ROS_INFO("%s %d: line.p1(%lf, %lf), line.p2(%lf, %lf), vertical_line.p1(%lf, %lf), is_left_(%d), is_line_in_origin_left(%d), dis_to_origin(%lf)",
+				 __FUNCTION__, __LINE__, line.x1, line.y1, line.x2, line.y2, vertical_line.x1, vertical_line.y1, is_left_,
+				 is_line_in_origin_left, dis_to_origin);
 		if (is_left_) {
 			if (is_line_in_origin_left) {
 				if (dis_to_origin > 0.05) {
 //					beeper.debugBeep(VALID);
-					ROS_ERROR("filter fit line!");
+					ROS_INFO("filter fit line!");
 					return true;
 				}
 			}
@@ -261,7 +261,7 @@ public:
 			if (!is_line_in_origin_left) {
 				if (dis_to_origin > 0.05) {
 //					beeper.debugBeep(VALID);
-					ROS_ERROR("filter fit line!");
+					ROS_INFO("filter fit line!");
 					return true;
 				}
 			}
@@ -464,7 +464,7 @@ bool Lidar::splitLine(const std::vector<Vector2<double>> &points, std::vector<st
 	for (std::vector<std::deque<Vector2<double>> >::iterator iter = lidar_group_.begin(); iter != lidar_group_.end();){
 		if (iter->size() < points_count_lim) {
 			iter = lidar_group_.erase(iter);
-//			ROS_ERROR("erase!");
+//			ROS_ERROR("popCurrRconPoint!");
 		} else {
 			++iter;
 		}
@@ -677,10 +677,10 @@ bool Lidar::mergeLine(std::vector<std::deque<Vector2<double>> > *groups, double 
 				}
 				iter = (*groups).erase(iter);
 				iter = (*groups).erase((*groups).begin());
-//				ROS_INFO("(*groups).erase((*groups).begin())");
+//				ROS_INFO("(*groups).popCurrRconPoint((*groups).begin())");
 				iter = (*groups).insert(iter, new_line);
 /*				(*groups).erase(iter - loop_count);
-				(*groups).erase(iter + 1 - loop_count);
+				(*groups).popCurrRconPoint(iter + 1 - loop_count);
 				(*groups).insert(iter - loop_count, new_line);*/
 				new_line.clear();
 				loop_count++;
@@ -696,7 +696,7 @@ bool Lidar::mergeLine(std::vector<std::deque<Vector2<double>> > *groups, double 
 					new_line.push_back(*((iter + 1)->begin() + j));
 				}
 /*				(*groups).erase(iter - loop_count);
-				(*groups).erase(iter + 1 - loop_count);
+				(*groups).popCurrRconPoint(iter + 1 - loop_count);
 				(*groups).insert(iter - loop_count, new_line);*/
 
 				iter = (*groups).erase(iter);
@@ -730,7 +730,7 @@ bool Lidar::mergeLine(std::vector<std::deque<Vector2<double>> > *groups, double 
 	}
 	//for erase the line which line is shorter than 10 cm.
 	if (!is_align) {
-		groups->erase(std::remove_if(groups->begin(),groups->end(),[](const std::deque<Vector2<double>>& a){
+		groups->popCurrRconPoint(std::remove_if(groups->begin(),groups->end(),[](const std::deque<Vector2<double>>& a){
 			return sqrt(pow(a.front().x - a.back().x,2) + pow(a.front().y - a.back().y,2)) < 0.10;
 		}),groups->end());
 	}
@@ -764,7 +764,7 @@ void Lidar::filterShortLine(std::vector<std::deque<Vector2<double>> > *groups, b
 		auto dis = std::distance((*groups).begin(),loc);
 		(*groups).resize(dis);
 	}
-	//for erase the line which line is shorter than 10 cm.
+	//for popCurrRconPoint the line which line is shorter than 10 cm.
 	if (!is_align) {
 		groups->erase(std::remove_if(groups->begin(),groups->end(),[&line_length_min](const std::deque<Vector2<double>>& a){
 			return sqrt(pow(a.front().x - a.back().x,2) + pow(a.front().y - a.back().y,2)) < line_length_min;
@@ -798,7 +798,7 @@ bool Lidar::fitLineGroup(std::vector<std::deque<Vector2<double>> > *groups, std:
 			x_0 = 0 - c / a;
 //			ROS_INFO("a = %lf, b = %lf, c = %lf", a, b, c);
 //			ROS_INFO("x_0 = %lf", x_0);
-			/*erase the lines which are far away from the robot*/
+			/*popCurrRconPoint the lines which are far away from the robot*/
 			double line_to_robot_dis = std::abs(c / (sqrt(a * a + b * b)));
 			const auto DIS_MIN = ROBOT_RADIUS - 0.02;
 			new_fit_line.dis = line_to_robot_dis;
@@ -1166,11 +1166,6 @@ void Lidar::checkRobotSlipByLidar() {
 	last_slip_scan_frame_.push_back(tmp_scan_data);
 }
 
-bool Lidar::isRobotSlip()
-{
-	return slip_by_lidar_status_ || gyro.getSlipByGyroStatus();
-}
-
 int Lidar::compLaneDistance()
 {
 	int ret = 0;
@@ -1504,7 +1499,7 @@ void Lidar::init()
 	// For slip checking
 	slip_by_lidar_status_ = {false};
 	slip_frame_cnt_ = {0};
-	DequeArray<sensor_msgs::LaserScan> last_frame_{};
+	DequeArray<sensor_msgs::LaserScan> last_frame_(3);
 	wheel_cliff_trigger_time_ = 0;
 	gyro_tilt_trigger_time_ = 0;
 
@@ -1855,7 +1850,7 @@ bool Lidar::isNeedToCheckSlip(const sensor_msgs::LaserScan& scan) {
 	std::function<void(std::string)> f_print = [&](std::string s){
 		if(print_count++ > 5) {
 			print_count = 0;
-			ROS_INFO("%s %d: %s",__FUNCTION__,__LINE__,s.c_str());
+			ROS_INFO("isNeedToCheckSlip %d: %s", __LINE__, s.c_str());
 		}
 	};
 
@@ -1865,7 +1860,7 @@ bool Lidar::isNeedToCheckSlip(const sensor_msgs::LaserScan& scan) {
 		return false;
 	}
 	if (std::fabs(left_wheel_speed) <= 0.08 && std::fabs(right_wheel_speed) <= 0.08) {
-		f_print("each wheel speed is too low");
+		f_print("wheel speed is too low");
 		last_slip_scan_frame_.clear();
 		return false;
 	}

@@ -3,7 +3,7 @@
 /* ------------------------------------- System Setting ------------------------------------- */
 
 #define CURRENT_VERSION 0
-#define CURRENT_PATCH 17
+#define CURRENT_PATCH 18
 
 /*
  * Chipset setting.
@@ -98,9 +98,6 @@
 
 /* Fully charged battery voltage value */
 #define BATTERY_FULL_VOLTAGE	(1660)
-
-/* Continue cleaning voltage value */
-#define RESUME_CLEANING_VOLTAGE	(1660)
 
 /* Battery voltage criterion for brush setting*/
 #define NORMAL_OPERATE_VOLTAGE_FOR_SIDE_BRUSH	(1050)

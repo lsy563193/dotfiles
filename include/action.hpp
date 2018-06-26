@@ -38,6 +38,7 @@ class ActionOpenGyro :public IAction
 {
 public:
 	ActionOpenGyro();
+	~ActionOpenGyro();
 	bool isFinish() override;
 	void run();
 
@@ -53,6 +54,7 @@ class ActionOpenGyroAndLidar : public ActionOpenGyro
 {
 public:
 	ActionOpenGyroAndLidar();
+	~ActionOpenGyroAndLidar();
 };
 
 class ActionBackFromCharger :public IAction
@@ -79,6 +81,7 @@ class ActionOpenLidar :public IAction
 {
 public:
 	ActionOpenLidar();
+	~ActionOpenLidar();
 	bool isFinish() override;
 	bool isTimeUp() override;
 	void run() override;
@@ -88,10 +91,7 @@ class ActionAlign :public IAction
 {
 public:
 	explicit ActionAlign();
-	~ActionAlign()
-	{
-		ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);
-	}
+	~ActionAlign();
 	bool isFinish() override;
 	bool isTimeUp() override;
 	void run() override;
@@ -139,6 +139,8 @@ public:
 private:
 	int error_alarm_cnt_{0};
 	double error_alarm_time_{0};
+	int trapped_alarm_cnt_{0};
+	double trapped_alarm_time_{0};
 };
 
 class ActionPause :public IAction
