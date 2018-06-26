@@ -1431,9 +1431,9 @@ void wheels_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_code, 
 				}
 				break;
 			case 28:
-				current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+				current_current = (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
 				step++;
-				current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+				current_current = (current_current * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
 				if(current_current < 600)
 				{
 					error_code = RIGHT_WHEEL_STALL_ERROR;
