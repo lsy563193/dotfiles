@@ -179,24 +179,24 @@ void MovementBack::checkCliffTurn()
 	{
 		if (!is_left_cliff_trigger_in_start_ && cliff.getLeft())
 		{
+			ROS_WARN("%s,%d: Cliff left!", __FUNCTION__, __LINE__);
 			is_left_cliff_trigger_ = true;
 			left_cliff_trigger_start_time_ = ros::Time::now().toSec();
 		}
 	}
 	else
 	{
-		if (ros::Time::now().toSec() - left_cliff_trigger_start_time_ > 0.2)
+		if (cliff.getLeft())
 		{
-			if (cliff.getLeft())
+			if (ros::Time::now().toSec() - left_cliff_trigger_start_time_ > 0.2)
 			{
-				ROS_WARN("%s,%d: Cliff turn left",__FUNCTION__,__LINE__);
+				ROS_WARN("%s,%d: Cliff turn left", __FUNCTION__, __LINE__);
 				ev.cliff_turn |= BLOCK_CLIFF_TURN_LEFT;
 			}
-			else
-			{
-				is_left_cliff_trigger_ = false;
-				left_cliff_trigger_start_time_ = 0;
-			}
+		} else
+		{
+			is_left_cliff_trigger_ = false;
+			left_cliff_trigger_start_time_ = 0;
 		}
 	}
 
@@ -205,24 +205,24 @@ void MovementBack::checkCliffTurn()
 	{
 		if (!is_right_cliff_trigger_in_start_ && cliff.getRight())
 		{
+			ROS_WARN("%s,%d: Cliff right!", __FUNCTION__, __LINE__);
 			is_right_cliff_trigger_ = true;
 			right_cliff_trigger_start_time_ = ros::Time::now().toSec();
 		}
 	}
 	else
 	{
-		if (ros::Time::now().toSec() - right_cliff_trigger_start_time_ > 0.2)
+		if (cliff.getRight())
 		{
-			if (cliff.getRight())
+			if (ros::Time::now().toSec() - right_cliff_trigger_start_time_ > 0.2)
 			{
-				ROS_WARN("%s,%d: Cliff turn right",__FUNCTION__,__LINE__);
+				ROS_WARN("%s,%d: Cliff turn right", __FUNCTION__, __LINE__);
 				ev.cliff_turn |= BLOCK_CLIFF_TURN_RIGHT;
 			}
-			else
-			{
-				is_right_cliff_trigger_ = false;
-				right_cliff_trigger_start_time_ = 0;
-			}
+		} else
+		{
+			is_right_cliff_trigger_ = false;
+			right_cliff_trigger_start_time_ = 0;
 		}
 	}
 }
