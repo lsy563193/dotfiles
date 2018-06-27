@@ -21,7 +21,7 @@
 #define VERIFY_KEY							(0)
 
 /* ------------------------------------- Speaker config ------------------------------------- */
-#define SPEAKER_VOLUME						(55)
+#define SPEAKER_VOLUME						(60)
 
 /* ------------------------------------- DEBUG config ------------------------------------- */
 #define DEBUG_ENABLE						(1)
