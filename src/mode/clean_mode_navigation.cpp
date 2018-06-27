@@ -924,6 +924,7 @@ bool CleanModeNav::checkEnterTempSpotState()
 		ev.remote_spot= false;
 //		mapMark();
 		sp_action_.reset();
+		action_i_ = ac_null;
 		speaker.play(VOICE_CLEANING_SPOT);
 		clean_path_algorithm_.reset(new SpotCleanPathAlgorithm);
 		sp_state = state_spot.get();
@@ -1213,7 +1214,7 @@ bool CleanModeNav::moveTypeRealTimeIsFinish(IMoveType *p_mt)
 			return p_mt_follow_wall->isNewLineReach(clean_map_) || p_mt_follow_wall->isOverOriginLine(clean_map_);
 		}
 	}
-	else if (isStateSpot())
+	else if (isStateSpot() && action_i_ != ac_linear)
 	{
 		auto p_mt_follow_wall = dynamic_cast<MoveTypeFollowWall *>(p_mt);
 		if(p_mt_follow_wall->outOfRange(getPosition(), iterate_point_))
