@@ -147,7 +147,7 @@ void CleanModeFollowWall::remoteMax(bool state_now, bool state_last)
 	if(water_tank.getStatus(WaterTank::operate_option::swing_motor)){
 		beeper.beepForCommand(INVALID);
 	}
-	else if(isStateInit() || isStateFollowWall() || isStateGoHomePoint() || isStateGoToCharger())
+	else if(!isStateExceptionResume())
 	{
 //		beeper.beepForCommand(VALID);
 		vacuum.setForUserSetMaxMode(!vacuum.isUserSetMaxMode());
@@ -178,7 +178,7 @@ void CleanModeFollowWall::remoteWallFollow(bool state_now, bool state_last)
 
 void CleanModeFollowWall::batteryHome(bool state_now, bool state_last)
 {
-	if (!ev.battery_home && isStateFollowWall())
+	if (!ev.battery_home && (isStateClean() || isStateFollowWall()))
 	{
 		ROS_WARN("%s %d: low battery, battery =\033[33m %dmv \033[0m", __FUNCTION__, __LINE__, battery.getVoltage());
 		ev.battery_home = true;
