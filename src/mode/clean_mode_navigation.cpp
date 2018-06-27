@@ -862,8 +862,8 @@ void CleanModeNav::switchInStateClean() {
 		sp_state = state_folllow_wall.get();
 		beeper.debugBeep(VALID);
 		is_trapped_ = true;
-		is_isolate = true;
-		is_closed = true;
+		is_first_wf_ = true;
+		is_closed_ = true;
 		closed_count_ = 0;
 		isolate_count_ = 0;
 	}

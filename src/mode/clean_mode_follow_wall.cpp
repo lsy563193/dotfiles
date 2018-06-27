@@ -190,8 +190,8 @@ void CleanModeFollowWall::switchInStateInit() {
 	action_i_ = ac_null;
 	sp_action_ = nullptr;
 	sp_state = state_clean.get();
-	is_isolate = true;
-	is_closed = true;
+	is_first_wf_ = true;
+	is_closed_ = true;
 	closed_count_ = 0;
 	isolate_count_ = 0;
 	sp_state->init();

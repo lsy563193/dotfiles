@@ -480,6 +480,7 @@ public:
 	bool trapped_time_out_{};
 	bool trapped_closed_or_isolate{};
 	bool out_of_trapped_{};
+	bool continue_to_isolate_{};
 	// For warning in idle mode.
 	static bool robot_trapped_warning;
 
@@ -560,8 +561,9 @@ public:
 		return seen_charger_during_cleaning_;
 	}
 
-	bool is_closed{true};
-	bool is_isolate{true};
+	bool is_first_wf_{true};
+	bool is_closed_{true};
+	bool is_isolate_{false};
 	int closed_count_{};
 	int closed_count_limit_{2};
 	int isolate_count_{};

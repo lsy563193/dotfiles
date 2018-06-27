@@ -126,6 +126,8 @@ bool MovementFollowPointLinear::isFinish() {
 	auto ret = AMovementFollowPoint::isFinish() || sp_mt_->isFinishForward() || is_lidar_stop;
 	if (ret) {
 		wheel.stop();
+		dynamic_cast<ACleanMode*>(sp_mt_->sp_mode_)->continue_to_isolate_ = false;
+		ROS_ERROR("set continue_to_isolate_ false");
 	}
 	return ret;
 }
