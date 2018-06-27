@@ -31,7 +31,6 @@ ModeIdle::ModeIdle():
 	serial.setWorkMode(IDLE_MODE);
 	sp_action_.reset(new ActionIdle);
 	action_i_ = ac_idle;
-	system("unturbo_cpu.sh");
 
 	key.resetTriggerStatus();
 	c_rcon.resetStatus();

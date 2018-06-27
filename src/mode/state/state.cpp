@@ -122,6 +122,7 @@ void State::switchState() {
 }
 
 void StateSleep::init() {
+	system("unturbo_cpu.sh");
 	key_led.setMode(LED_STEADY, LED_OFF);
 }
 

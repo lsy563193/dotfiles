@@ -23,7 +23,6 @@
 
 ModeRemote::ModeRemote()
 {//use dynamic then you can limit using derived class member
-	system("turbo_cpu.sh");
 	ROS_WARN("%s %d: Entering remote mode\n=========================" , __FUNCTION__, __LINE__);
 	event_manager_register_handler(this);
 	event_manager_set_enable(true);

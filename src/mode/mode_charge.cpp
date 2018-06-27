@@ -22,7 +22,6 @@
 ModeCharge::ModeCharge()
 {
 	ROS_WARN("%s %d: Entering Charge mode\n=========================" , __FUNCTION__, __LINE__);
-	system("unturbo_cpu.sh");
 
 	key.resetTriggerStatus();
 	c_rcon.resetStatus();

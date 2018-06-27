@@ -20,6 +20,7 @@ void StatePause::init() {
 	s_wifi.setWorkMode(Mode::md_idle);
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 	gyro.setTiltCheckingEnable(false); //disable tilt detect
+	system("unturbo_cpu.sh");
 	ROS_INFO("%s %d: Enter state pause.", __FUNCTION__, __LINE__);
 }
 //bool StateFolllowWall::isFinish() {
