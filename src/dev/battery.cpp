@@ -32,7 +32,7 @@ bool Battery::shouldGoHome()
 {
 	// Check if battary is lower than the low battery go home voltage value.
 	return (getVoltage() < LOW_BATTERY_GO_HOME_VOLTAGE);
-//	return (getVoltage() < 1580);
+//	return (getVoltage() < 1590);
 }
 
 uint8_t Battery::getPercent()

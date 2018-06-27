@@ -1102,9 +1102,9 @@ uint16_t ACleanMode::updatePath()
 bool ACleanMode::pathAlgorithmCheckOutOfTrapped(IMoveType *p_mt)
 {
 	auto curr = getPosition();
-	clean_map_.print(curr.toCell(), Cells{});
 	if (p_mt->isBlockCleared(clean_map_, curr))
 	{
+		clean_map_.print(curr.toCell(), Cells{});
 		clean_map_.markRobot(curr.toCell());
 		std::vector<Vector2<int>> markers{};
 		if (lidar.isScanCompensateReady())
