@@ -1031,6 +1031,7 @@ bool CleanModeNav::checkResumePause()
 			ev.remote_home = false;
 			if (s_wifi.receiveHome())
 				s_wifi.resetReceivedWorkMode();
+			clean_path_algorithm_.reset(new GoHomePathAlgorithm(clean_map_,&home_points_manager_));
 			speaker.play(VOICE_GO_HOME_MODE);
 		}
 		sp_state = state_init.get();
