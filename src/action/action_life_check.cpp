@@ -463,8 +463,8 @@ bool ActionLifeCheck::checkCurrent()
 		error_code_ = RIGHT_BRUSH_CURRENT_ERROR;
 		error_content_ = static_cast<uint16_t>(right_brush_current_ - right_brush_current_baseline_);
 	}
-	else if (main_brush_current_ - main_brush_current_baseline_ > main_brush_current_ref_ * 1.5 ||
-			 main_brush_current_ - main_brush_current_baseline_ < main_brush_current_ref_ * 0.5)
+	else if (main_brush_current_ - main_brush_current_baseline_ > main_brush_current_ref_ * 1.8 /* 360 */||
+			 main_brush_current_ - main_brush_current_baseline_ < main_brush_current_ref_ * 0.5 /* 100 */)
 	{
 		error_code_ = MAIN_BRUSH_CURRENT_ERROR;
 		error_content_ = static_cast<uint16_t>(main_brush_current_ - main_brush_current_baseline_);
