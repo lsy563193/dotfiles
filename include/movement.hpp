@@ -83,12 +83,15 @@ private:
 	uint8_t cliff_status_{0};
 	float lidar_detect_distance;
 	//For cliff turn
-	bool is_left_cliff_trigger_in_start_{false};
-	bool is_right_cliff_trigger_in_start_{false};
-	bool is_left_cliff_trigger_{false};
-	bool is_right_cliff_trigger_{false};
-	double left_cliff_trigger_start_time_{0};
-	double right_cliff_trigger_start_time_{0};
+
+	bool has_mark_original_cliff_{false};
+	// Cliff status when robot start to move back.
+	bool original_left_cliff_triggered_{false};
+	bool original_right_cliff_triggered_{false};
+	bool is_left_cliff_triggered_{false};
+	bool is_right_cliff_triggered_{false};
+	double left_cliff_triggered_start_time_{0};
+	double right_cliff_triggered_start_time_{0};
 };
 
 class MovementGyroDynamic : public IMovement{

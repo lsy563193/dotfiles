@@ -14,6 +14,7 @@
 #include <water_tank.hpp>
 #include <lidar.hpp>
 #include <gyro.h>
+#include <beeper.h>
 
 double MovementExceptionResume::stuck_start_turn_time_ = 0;
 bool MovementExceptionResume::is_stuck_last_turn_right_ = false;
@@ -129,6 +130,7 @@ void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_sp
 				break;
 			}
 		}
+//		ROS_INFO("%s %d: left(%d), right(%d)", __FUNCTION__, __LINE__, left_speed, right_speed);
 	}
 	else if (ev.bumper_jam)
 	{
@@ -276,6 +278,8 @@ void MovementExceptionResume::adjustSpeed(int32_t &left_speed, int32_t &right_sp
 
 bool MovementExceptionResume::isFinish() {
 	updatePosition();
+//	printf("%s %d: cliff left(%d), front(%d), right(%d).\n", __FUNCTION__, __LINE__, cliff.getLeft(),
+//		   cliff.getFront(), cliff.getRight());
 	if (!(ev.bumper_jam || ev.lidar_bumper_jam || ev.cliff_jam || ev.tilt_jam || ev.cliff_all_triggered ||
 				ev.oc_wheel_left || ev.oc_wheel_right
 				|| ev.oc_vacuum || ev.lidar_stuck || ev.robot_stuck || ev.oc_brush_main || ev.gyro_error
@@ -470,29 +474,64 @@ bool MovementExceptionResume::isFinish() {
 	}
 	else if (ev.cliff_turn)
 	{
-		float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getX(), odom.getY());
-		if (resume_cliff_turn_start_time_ == 0)
-			resume_cliff_turn_start_time_ = ros::Time::now().toSec();
-		if (ros::Time::now().toSec() - resume_cliff_turn_start_time_ > 3)
+		if (cliff.getFront())
 		{
-			ev.fatal_quit = true;
-			robot_error.set(ERROR_CODE_CLIFF);
-			ROS_ERROR("%s %d: Cliff turn resume failed.", __FUNCTION__, __LINE__);
+			ev.cliff_turn = 0;
+			ev.cliff_jam = true;
+			ROS_WARN("%s %d: Cliff front triggered in cliff turn.", __FUNCTION__, __LINE__);
+			beeper.debugBeep(VALID);
 		}
-
-		switch (ev.cliff_turn) {
-			case BLOCK_CLIFF_TURN_LEFT:
-			case BLOCK_CLIFF_TURN_RIGHT: {
-				if (distance > 0.08f && !cliff.getStatus()) {
-					ROS_INFO("resume success by turn!");
-					ev.cliff_turn = 0;
-				}
-				break;
+		else
+		{
+			float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getX(), odom.getY());
+			if (resume_cliff_turn_start_time_ == 0)
+				resume_cliff_turn_start_time_ = ros::Time::now().toSec();
+			if (ros::Time::now().toSec() - resume_cliff_turn_start_time_ > 3)
+			{
+				ev.fatal_quit = true;
+				robot_error.set(ERROR_CODE_CLIFF);
+				ROS_ERROR("%s %d: Cliff turn resume failed.", __FUNCTION__, __LINE__);
 			}
-			case BLOCK_CLIFF_TURN_ALL: {
-				if (distance > 0.08f) {
-					if (!cliff.getStatus()) {
-						ROS_INFO("resume success by forward!");
+
+			switch (ev.cliff_turn)
+			{
+				case BLOCK_CLIFF_TURN_LEFT:
+				{
+					if (cliff.getRight())
+					{
+						ev.cliff_turn = 0;
+						ev.cliff_jam = true;
+						ROS_WARN("%s %d: Cliff right triggered in cliff turn left.", __FUNCTION__, __LINE__);
+						beeper.debugBeep(VALID);
+					}
+					else if (distance > 0.08f && !cliff.getLeft())
+					{
+						ROS_INFO("%s %d: Resume cliff turn left.", __FUNCTION__, __LINE__);
+						ev.cliff_turn = 0;
+					}
+					break;
+				}
+				case BLOCK_CLIFF_TURN_RIGHT:
+				{
+					if (cliff.getLeft())
+					{
+						ev.cliff_turn = 0;
+						ev.cliff_jam = true;
+						ROS_WARN("%s %d: Cliff left triggered in cliff turn right.", __FUNCTION__, __LINE__);
+						beeper.debugBeep(VALID);
+					}
+					else if (distance > 0.08f && !cliff.getRight())
+					{
+						ROS_INFO("%s %d: Resume cliff turn right.", __FUNCTION__, __LINE__);
+						ev.cliff_turn = 0;
+					}
+					break;
+				}
+				default: //case BLOCK_CLIFF_TURN_ALL:
+				{
+					if (distance > 0.08f && !cliff.getStatus())
+					{
+						ROS_INFO("%s %d: Resume cliff turn all.", __FUNCTION__, __LINE__);
 						ev.cliff_turn = 0;
 					}
 					break;
