@@ -44,7 +44,8 @@ ACleanMode::ACleanMode()
 
 	event_manager_register_handler(this);
 	event_manager_reset_status();
-	event_manager_set_enable(true);
+	if (next_mode_i_ != cm_test)
+		event_manager_set_enable(true);
 	serial.setWorkMode(WORK_MODE);
 	IMoveType::sp_mode_ = this;
 	State::sp_cm_ = this;
@@ -1101,9 +1102,9 @@ uint16_t ACleanMode::updatePath()
 bool ACleanMode::pathAlgorithmCheckOutOfTrapped(IMoveType *p_mt)
 {
 	auto curr = getPosition();
-	clean_map_.print(curr.toCell(), Cells{});
 	if (p_mt->isBlockCleared(clean_map_, curr))
 	{
+		clean_map_.print(curr.toCell(), Cells{});
 		clean_map_.markRobot(curr.toCell());
 		std::vector<Vector2<int>> markers{};
 		if (lidar.isScanCompensateReady())

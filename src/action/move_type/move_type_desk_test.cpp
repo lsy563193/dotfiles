@@ -992,8 +992,8 @@ bool MoveTypeDeskTest::checkCurrent()
 			right_brush_pass = false;
 		}
 	}
-	else if (main_brush_current_ - main_brush_current_baseline_ > main_brush_current_ref_ * 1.5 ||
-			 main_brush_current_ - main_brush_current_baseline_ < main_brush_current_ref_ * 0.5)
+	else if (main_brush_current_ - main_brush_current_baseline_ > main_brush_current_ref_ * 1.8 /* 450 */||
+			 main_brush_current_ - main_brush_current_baseline_ < main_brush_current_ref_ * 0.5 /* 125 */)
 	{
 		if (main_brush_current_exception_cnt_++ > 2)
 		{

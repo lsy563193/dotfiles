@@ -155,7 +155,7 @@ int Serial::read(uint8_t *buf, int len)
 	timeout.tv_sec = 1;
 	timeout.tv_usec = 0;// ms
 	size_t length = 0;
-	if(isReady()){
+/*	if(isReady()){
 		if(ioctl(crport_fd_,FIONREAD,&length)==-1)
 		{
 			ROS_WARN("%s,%d,ioctl return -1",__FUNCTION__,__LINE__);
@@ -172,7 +172,7 @@ int Serial::read(uint8_t *buf, int len)
 			free(t_buf);
 			return r_ret;
 		}
-	}
+	}*/
 	while (isReady()){
 		FD_ZERO(&read_fd_set);
 		FD_SET(crport_fd_,&read_fd_set);

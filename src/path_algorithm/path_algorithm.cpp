@@ -403,26 +403,29 @@ bool APathAlgorithm::checkTrappedUsingDijkstra(GridMap &map, const Cell_t &curr_
 {
 	Cells targets;
 	// Find if there is uncleaned area.
-	ROS_INFO("check is realy can't found unclean target");
+	ROS_INFO("%s %d: Check for uncleaned target", __FUNCTION__, __LINE__);
 	auto expand_condition = [&](const Cell_t &cell, const Cell_t &neighbor_cell)
 	{
 		return map.isBlockAccessible(neighbor_cell.x, neighbor_cell.y);
 	};
 
 	map.print(curr_cell,targets);
-	auto found_unclean_target = dijkstra(map,curr_cell, targets, true,
+	auto found_unclean_target = dijkstra(map, curr_cell, targets, true,
 												 IsTarget(&map, map.genTargetRange()),
 												 isAccessible(&map,expand_condition));
 
 	if (found_unclean_target)
+	{
+		ROS_INFO("%s %d: Found uncleaned target", __FUNCTION__, __LINE__);
 		return false;
+	}
 
-	ROS_INFO("Use clean area proportion to judge if it is trapped.");
+//	ROS_INFO("Use clean area proportion to judge if it is trapped.");
 	auto dijkstra_cleaned_count = dijkstraCountCleanedArea(map, getPosition(), targets);
 
 	auto map_cleand_count = map.getCleanedArea();
 	double clean_proportion = static_cast<double>(dijkstra_cleaned_count) / static_cast<double>(map_cleand_count);
-	ROS_INFO("%s %d: !!!!!!!!!!!!!!!!!!!!!!!dijkstra_cleaned_count(%d), map_cleand_count(%d), clean_proportion(%f) ,when prop < 0,8 is trapped",
+	ROS_INFO("%s %d: dijkstra_cleaned_count(%d), map_cleand_count(%d), clean_proportion(%f) ,when prop < 0,8 is trapped",
 					 __FUNCTION__, __LINE__, dijkstra_cleaned_count, map_cleand_count, clean_proportion);
 	return (clean_proportion < 0.8);
 }

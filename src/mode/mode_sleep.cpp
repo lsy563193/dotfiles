@@ -24,8 +24,6 @@
 
 ModeSleep::ModeSleep()
 {
-	// todo: Turbo action should be placed in state init.
-	system("unturbo_cpu.sh");
 	ROS_WARN("%s %d: Entering Sleep mode\n=========================" , __FUNCTION__, __LINE__);
 	event_manager_register_handler(this);
 	event_manager_reset_status();

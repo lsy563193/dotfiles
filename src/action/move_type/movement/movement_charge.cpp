@@ -49,9 +49,6 @@ MovementCharge::MovementCharge()
 	speaker.play(VOICE_BATTERY_CHARGE);
 	key_led.setMode(LED_BREATH, LED_ORANGE);
 
-	robot::instance()->setBatteryTooLowToClean(false);
-	robot::instance()->setBatteryTooLowToMove(false);
-	robot::instance()->setBatteryLowForGoingHome(false);
 }
 
 MovementCharge::~MovementCharge()
@@ -185,8 +182,8 @@ void MovementCharge::run()
 				 __LINE__, (float) battery.getVoltage() / 100.0, serial.getSendData(CTL_CHARGER),
 				 charger.getChargeStatus(), battery.isFull());
 		show_battery_info_time_stamp_ = time(NULL);
+		battery.updateForLowBattery();
 	}
-
 
 	IMovement::run();
 }
