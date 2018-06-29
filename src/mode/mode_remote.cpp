@@ -25,6 +25,7 @@ ModeRemote::ModeRemote()
 {//use dynamic then you can limit using derived class member
 	ROS_WARN("%s %d: Entering remote mode\n=========================" , __FUNCTION__, __LINE__);
 	event_manager_register_handler(this);
+	event_manager_reset_status();
 	event_manager_set_enable(true);
 
 	mode_i_ = md_remote;
@@ -48,7 +49,6 @@ ModeRemote::ModeRemote()
 	c_rcon.resetStatus();
 	remote.reset();
 	appmt_obj.resetPlanStatus();
-	event_manager_reset_status();
 
 	remote_mode_time_stamp_ = ros::Time::now().toSec();
 
