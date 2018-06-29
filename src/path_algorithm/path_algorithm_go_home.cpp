@@ -27,13 +27,13 @@ GoHomePathAlgorithm::GoHomePathAlgorithm(GridMap& map, HomePointsManager *p_home
 	{
 		home_ways.push_back(make_unique<GoHomeWay_t>("MapThroughAccessibleAndCleaned", ThroughAccessibleAndCleaned(&map)));
 		home_ways.push_back(make_unique<GoHomeWay_t>("MapCleanBlockThroughAccessibleAndCleaned", ThroughAccessibleAndCleaned(&map),false, true));
-		home_ways.push_back(make_unique<GoHomeWay_t>("SlamMapThroughAccessibleAndCleaned", ThroughBlockAccessible(temp_map.get()),true));
+		home_ways.push_back(make_unique<GoHomeWay_t>("SlamMapThroughAccessibleAndCleaned", ThroughAccessibleAndCleaned(temp_map.get()),true));
 		home_ways.push_back(make_unique<GoHomeWay_t>("MapThroughAccessible", ThroughBlockAccessible(&map)));
 	}else{
 		// Cover the map with slam map reachable area.
 		map.merge(slam_grid_map, false, false, true, false, false, false);
 
-		home_ways.push_back(make_unique<GoHomeWay_t>("SlamMapThroughAccessibleAndCleaned", ThroughBlockAccessible(temp_map.get()),true));
+		home_ways.push_back(make_unique<GoHomeWay_t>("SlamMapThroughAccessibleAndCleaned", ThroughAccessibleAndCleaned(temp_map.get()),true));
 		home_ways.push_back(make_unique<GoHomeWay_t>("MapCleanBlockThroughAccessibleAndCleaned", ThroughAccessibleAndCleaned(&map),false, true));
 	}
 	way_it = home_ways.begin();
