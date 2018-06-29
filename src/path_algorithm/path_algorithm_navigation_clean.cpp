@@ -117,6 +117,8 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr_p, co
 {
 	Cells path{};
 	Cells targets{};
+	curr_history_.push_front(nullptr);
+
 	if(origen_curr_ != curr_p.toCell())
 	{
 		origen_curr_ = curr_p.toCell();
@@ -137,7 +139,6 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr_p, co
 	ROS_WARN("priority_dir(%d),trend_pos(%d)\n",priority_dir,trend_pos);
 	g_follow_last_follow_wall_dir = 0;
 	func_compare_two_t expand_condition = nullptr;
-	curr_history_.push_front(nullptr);
 	for(auto&&filter : filters)
 	{
 		curr_history_.front()=filter;

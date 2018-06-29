@@ -627,7 +627,8 @@ void CleanModeNav::remoteSpot(bool state_now, bool state_last)
 	{
 		ROS_INFO("%s %d: Remote spot.", __FUNCTION__, __LINE__);
 		ev.remote_spot = true;
-//		beeper.beepForCommand(VALID);
+		if (isStateSpot())
+			beeper.beepForCommand(VALID);
 	}
 	else
 		beeper.beepForCommand(INVALID);
@@ -878,7 +879,7 @@ bool CleanModeNav::updateActionInStateClean(){
 		displayCellPath(*points_to_cells(plan_path_));
 		auto npa = boost::dynamic_pointer_cast<NavCleanPathAlgorithm>(clean_path_algorithm_);
 
-		if ( old_dir_ != MAP_ANY && should_follow_wall && npa->should_follow_wall() )
+		if ( old_dir_ != MAP_ANY && should_follow_wall && npa->shouldFollowWall() )
 		{
 				auto toward_pos = isXAxis(old_dir_) ? npa->is_pox_y(): (iterate_point_->toCell().x - plan_path_.back().toCell().x) > 0;
 				bool is_left = isPos(old_dir_) ^ toward_pos;

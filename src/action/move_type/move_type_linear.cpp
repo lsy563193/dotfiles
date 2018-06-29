@@ -97,15 +97,15 @@ bool MoveTypeLinear::isFinish()
 				}
 				if(!ev.tilt_triggered)
 					p_clean_mode->should_follow_wall = true;
-//				ROS_WARN("111should_follow_wall(%d)!!!", p_clean_mode->should_follow_wall);
+//				ROS_WARN("111should_follow_wall(%d)!!!", p_clean_mode->shouldFollowWall);
 				ROS_INFO("%s %d: ", __FUNCTION__, __LINE__);
 				return true;
 			}else {
-//				ROS_WARN("111should_follow_wall(%d,%d)!!!", p_clean_mode->should_follow_wall, ev.tilt_triggered);
+//				ROS_WARN("111should_follow_wall(%d,%d)!!!", p_clean_mode->shouldFollowWall, ev.tilt_triggered);
 				if (ev.bumper_triggered || ev.lidar_triggered || ev.rcon_status /*|| ev.obs_triggered*/) {
 					p_clean_mode->should_follow_wall = true;
 				}
-//				ROS_WARN("222should_follow_wall(%d)!!!", p_clean_mode->should_follow_wall);
+//				ROS_WARN("222should_follow_wall(%d)!!!", p_clean_mode->shouldFollowWall);
 //				ROS_INFO_FL();
 				return false;
 			}
