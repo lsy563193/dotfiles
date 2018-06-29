@@ -396,6 +396,7 @@ public:
 	bool checkChargerPos();
 
 	uint16_t updatePath();
+	void calIsolatePath();
 	bool pathAlgorithmCheckOutOfTrapped(IMoveType *p_mt);
 	bool checkClosed(IMoveType *p_mt, uint16_t distance);
 
@@ -587,6 +588,7 @@ public:
 	typedef std::set<PairCell_t> Blocks_t ;
 	Blocks_t c_blocks;
 	Points plan_path_{};
+	Points isolate_path_{};
 	bool should_follow_wall{};
 
 	Dir_t old_dir_{};

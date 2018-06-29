@@ -1147,6 +1147,7 @@ bool ACleanMode::checkClosed(IMoveType *p_mt, uint16_t distance)
 //			closed_count_ = 0;
 			in_small_area_count_ = 0;
 			is_small_area_closed_ = false;
+			calIsolatePath();
 			ROS_WARN("%s %d: Robot circles an island.", __FUNCTION__, __LINE__);
 		}
 		else if (distance < 20 && in_small_area_count_ < 10 &&
@@ -1182,6 +1183,8 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 				if (1) {
 					continue_to_isolate_ = true;
 					ROS_ERROR("set continue_to_isolate_ true");
+					isolate_path_.pop_front();
+					isolate_path_.pop_front();
 				}
 				ROS_ERROR("xxxxxxxxx");
 				return true;
@@ -2246,7 +2249,27 @@ bool ACleanMode::updateActionInStateFollowWall()
 //			point = point.getRelative(0.5, 0);
 //			point = point.getRelative(0, 1);
 			plan_path_.push_back(point);
-			iterate_point_ = plan_path_.begin();
+//			iterate_point_ = plan_path_.begin();
+//			if (!isolate_path_.empty()) {
+			if (!isolate_path_.empty()) {
+
+				auto angle = getPosition().courseToDest(isolate_path_.front());
+				auto point = getPosition().addRadian(angle);
+				isolate_path_.push_front(point);
+
+				iterate_point_ = isolate_path_.begin();
+//				isolate_path_.pop_front();
+				ROS_ERROR("333333333");
+			} else {
+				auto angle = -900;
+				plan_path_.clear();
+				auto point = getPosition().addRadian(angle);
+				plan_path_.push_back(point);
+				point = point.getRelative(1, 0);
+				plan_path_.push_back(point);
+				iterate_point_ = plan_path_.begin();
+				ROS_ERROR("444444444444");
+			}
 			iterate_point_->dir = MAP_ANY;// note: fix bug follow isPassPosition
 			action_i_ = ac_linear;
 		} else {
@@ -2261,7 +2284,7 @@ bool ACleanMode::updateActionInStateFollowWall()
 		action_i_ = ac_null;
 	} else {
 		ROS_ERROR("222");
-		action_i_ = ac_follow_wall_left;//todo : this case is for linear is end but it doesn't hit any thing, now it won't go to here
+		action_i_ = ac_follow_wall_left;//todo : this case is for linear is end but it doesn't hit any thing, now it won't go here
 
 	}
 
@@ -2470,4 +2493,16 @@ void ACleanMode::setRconPoint(const Point_t &current_point) {
 	if (!hasSeenChargerDuringCleaning())
 		setSeenChargerDuringCleaning();
 	saveBlocks();
+}
+
+void ACleanMode::calIsolatePath() {
+	auto distance = updatePath();
+	ROS_ERROR("distance(%d), passed_cell_path_.size(%d)", distance, passed_cell_path_.size());
+	if (passed_cell_path_.size() >= distance) {
+		isolate_path_ = passed_cell_path_;
+		ROS_ERROR("isolate_path_.size(%d)", isolate_path_.size());
+		isolate_path_.resize(isolate_path_.size() - distance);//todo : the size should be in case of empty
+		ROS_ERROR("isolate_path_.size(%d)", isolate_path_.size());
+		std::reverse(isolate_path_.begin(), isolate_path_.end());
+	}
 }
