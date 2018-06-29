@@ -21,7 +21,7 @@ ActionPause::ActionPause()
 	pause_pose_.setX(odom.getOriginX());
 	pause_pose_.setY(odom.getOriginY());
 
-	ROS_WARN("%s %d: Enter action pause.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Enter.", __FUNCTION__, __LINE__);
 }
 
 ActionPause::~ActionPause()

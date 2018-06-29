@@ -16,12 +16,12 @@
 ActionIdle::ActionIdle()
 {
 	timeout_interval_ = IDLE_TIMEOUT*1.0;
-	ROS_WARN("%s %d: Start action idle. timeout %.0fs.", __FUNCTION__, __LINE__,timeout_interval_);
+	ROS_WARN("%s %d: Start. timeout %.0fs.", __FUNCTION__, __LINE__,timeout_interval_);
 }
 
 ActionIdle::~ActionIdle()
 {
-	ROS_WARN("%s %d: Exit action idle.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);
 }
 
 bool ActionIdle::isFinish()

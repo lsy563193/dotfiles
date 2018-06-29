@@ -93,12 +93,12 @@ MoveTypeFollowWall::~MoveTypeFollowWall()
 		p_mode->saveBlocks();
 		p_mode->mapMark();
 	}
-	ROS_WARN("%s %d: Exit move type follow wall.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);
 }
 
 bool MoveTypeFollowWall::isFinish()
 {
-	if (IMoveType::isFinish() && isNotHandleEvent())
+	if ( isNotHandleEvent() && IMoveType::isFinish())
 	{
 		ROS_WARN("%s %d: Move type aborted.", __FUNCTION__, __LINE__);
 		return true;
@@ -365,7 +365,7 @@ bool MoveTypeFollowWall::_lidarTurnRadian(bool is_left, double &turn_radian, dou
 //	ROS_INFO("line_angle = %lf, angle_range(%lf, %lf)", radian_to_degree(radian), radian_to_degree(radian_min),
 //			 radian_to_degree(radian_max));
 	radian = fabs(radian);
-	ROS_INFO("line_angle_raw = %.2lf, line_is_found = %d, distance = %lf, line_angle = %lf, angle_range(%.2lf, %.2lf)",
+	ROS_INFO("line_angle_raw = %.2lf, line_is_found(%d), distance = %.2lf, line_angle = %.2lf, angle_range(%.2lf, %.2lf)",
 			 radian_to_degree(line_radian), line_is_found, distance, radian_to_degree(radian),
 			 radian_to_degree(radian_min), radian_to_degree(radian_max));
 //	ROS_INFO("line_angle after fabs() = %lf", radian_to_degree(radian));
@@ -586,7 +586,7 @@ bool MoveTypeFollowWall::handleMoveBackEventRealTime(ACleanMode *p_clean_mode)
 //	ev.cliff_triggered = cliff.getStatus();
 	auto cliff_status = cliff.getStatus();
 	auto tilt_status = boost::dynamic_pointer_cast<MovementStay>(sp_movement_)->tilt_status_in_stay_;
-	ROS_WARN("%s,%d, bumper_status(%d), cliff_status(%d), tilt_status(%d), ev.cliff_triggered(%d)", __FUNCTION__,
+	ROS_WARN("%s,%d, bumper(%d), cliff(%d), tilt(%d), ev.cliff_triggered(%d)", __FUNCTION__,
 			 __LINE__, bumper_status, cliff_status, tilt_status, ev.cliff_triggered);
 	if (bumper_status || cliff_status || tilt_status)
 	{

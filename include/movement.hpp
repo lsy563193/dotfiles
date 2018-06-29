@@ -69,6 +69,7 @@ public:
 	bool isLidarStop();
 	void updateStartPose();
 	bool isFinish() override;
+	void checkCliffTurn();
 
 private:
 	uint8_t max_speed_;
@@ -81,8 +82,16 @@ private:
 	uint8_t tilt_cnt_;
 	uint8_t cliff_status_{0};
 	float lidar_detect_distance;
-	bool is_left_cliff_trigger_in_start{false};
-	bool is_right_cliff_trigger_in_start{false};
+	//For cliff turn
+
+	bool has_mark_original_cliff_{false};
+	// Cliff status when robot start to move back.
+	bool original_left_cliff_triggered_{false};
+	bool original_right_cliff_triggered_{false};
+	bool is_left_cliff_triggered_{false};
+	bool is_right_cliff_triggered_{false};
+	double left_cliff_triggered_start_time_{0};
+	double right_cliff_triggered_start_time_{0};
 };
 
 class MovementGyroDynamic : public IMovement{
@@ -122,6 +131,7 @@ public:
 	void adjustSpeed(int32_t&, int32_t&) override;
 	bool isReach();
 	bool isFinish() override;
+	void checkCliffTurn();
 
 private:
 	double turn_radian_;
@@ -129,8 +139,13 @@ private:
 	double accurate_;
 	uint8_t speed_;
 	double target_radian_;
-	bool is_left_cliff_trigger_in_start{false};
-	bool is_right_cliff_trigger_in_start{false};
+	//For cliff turn
+	bool is_left_cliff_trigger_in_start_{false};
+	bool is_right_cliff_trigger_in_start_{false};
+	bool is_left_cliff_trigger_{false};
+	bool is_right_cliff_trigger_{false};
+	double left_cliff_trigger_start_time_{0};
+	double right_cliff_trigger_start_time_{0};
 };
 
 class MovementFollowPointLinear:public AMovementFollowPoint
@@ -138,9 +153,9 @@ class MovementFollowPointLinear:public AMovementFollowPoint
 public:
 //	MovementFollowPointLinear(Point_t);
 	MovementFollowPointLinear();
+	~MovementFollowPointLinear();
 
 //	void scaleCorrectionPos();
-//	~MovementFollowPointLinear(){ };
 	bool isFinish() override;
 	/**
 	* @brief judge is the robot is close to the obstacle and speed down
@@ -216,10 +231,7 @@ class MovementFollowWallLidar:public AMovementFollowPoint, public IFollowWall
 
 public:
 	explicit MovementFollowWallLidar(bool is_left);
-	~MovementFollowWallLidar()
-	{
-		ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);
-	}
+	~MovementFollowWallLidar();
 
 	Point_t calcTmpTarget() override ;//laser follow wall algorithm
 	Points calcVirtualTmpTarget();//generate a circle path
@@ -430,8 +442,8 @@ class MovementForwardTurn :public IMovement
 public:
 	MovementForwardTurn() = delete;
 
-	explicit MovementForwardTurn(bool);
-	~MovementForwardTurn() = default;
+	explicit MovementForwardTurn(bool is_left);
+	~MovementForwardTurn();
 
 	void adjustSpeed(int32_t &left_speed, int32_t &right_speed) override;
 	bool isFinish() override;

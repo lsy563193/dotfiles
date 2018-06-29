@@ -17,7 +17,7 @@
 
 ActionR16Test::ActionR16Test()
 {
-	ROS_WARN("%s %d: Starting action R16 test." , __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Enter." , __FUNCTION__, __LINE__);
 	// Fasten the lidar checking.
 	lidar.motorCtrl(ON);
 }

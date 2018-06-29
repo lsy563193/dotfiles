@@ -55,7 +55,7 @@ void Brush::slowOperate()
 	if (!block_main_brush_low_operation_)
 		main_brush_status_ = brush_slow;
 	operate();
-	ROS_WARN("%s %d: Brush set to slow.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: All brush.", __FUNCTION__, __LINE__);
 }
 
 void Brush::normalOperate()
@@ -64,7 +64,7 @@ void Brush::normalOperate()
 	main_brush_status_ = brush_normal;
 	operate();
 	check_battery_time_stamp_ = ros::Time::now().toSec();
-	ROS_WARN("%s %d: Brush set to normal.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: All brush.", __FUNCTION__, __LINE__);
 }
 
 void Brush::fullOperate()
@@ -72,7 +72,7 @@ void Brush::fullOperate()
 	side_brush_status_ = brush_max;
 	main_brush_status_ = brush_max;
 	operate();
-	ROS_WARN("%s %d: Brush set to max.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: All brush.", __FUNCTION__, __LINE__);
 }
 
 void Brush::stop()
@@ -87,7 +87,7 @@ void Brush::stop()
 	resume_stage_[left] = 0;
 	resume_count_[right] = 0;
 	resume_stage_[right] = 0;
-	ROS_WARN("%s %d: Brush set to stop.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: All brush.", __FUNCTION__, __LINE__);
 }
 
 void Brush::stopForMainBrushResume()
@@ -98,7 +98,7 @@ void Brush::stopForMainBrushResume()
 	setPWM(side_brush_PWM_, side_brush_PWM_, main_brush_PWM_);
 	// Update the check battery time stamp in case it will update PWM during self resume.
 	check_battery_time_stamp_ = ros::Time::now().toSec();
-	ROS_WARN("%s %d: Stop for main brush resume.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Main brush.", __FUNCTION__, __LINE__);
 }
 
 void Brush::mainBrushResume()

@@ -13,6 +13,7 @@
 #include "key_led.h"
 
 void StateInit::init() {
+	system("turbo_cpu.sh");
 	if(Mode::next_mode_i_ == Mode::md_go_to_charger)
 		initForGoToCharger();
 	else if(Mode::next_mode_i_ == Mode::cm_exploration)

@@ -20,7 +20,7 @@ void Vacuum::setSpeedByUserSetMode()
 void Vacuum::stop(){
 	setSpeed(0);
 	is_on_ = false;
-	ROS_WARN("%s,%d,vacuum set to stop",__FUNCTION__,__LINE__);
+	ROS_WARN("%s %d: Vacuum.",__FUNCTION__,__LINE__);
 }
 
 //------------------------------
@@ -47,13 +47,19 @@ void Vacuum::resetExceptionResume()
 
 void Vacuum::slowOperate()
 {
-	ROS_INFO("%s %d: Vacuum set to low.", __FUNCTION__, __LINE__);
+	ROS_INFO("%s %d: Vacuum.", __FUNCTION__, __LINE__);
 	setSpeed(VacSpeed::vac_speed_low);
+}
+
+void Vacuum::normalOperate()
+{
+	ROS_INFO("%s %d: Vacuum.", __FUNCTION__, __LINE__);
+	setSpeed(VacSpeed::vac_speed_normal);
 }
 
 void Vacuum::fullOperate()
 {
-	ROS_INFO("%s %d: Vacuum set to max.", __FUNCTION__, __LINE__);
+	ROS_INFO("%s %d: Vacuum.", __FUNCTION__, __LINE__);
 	setSpeed(VacSpeed::vac_speed_max);
 }
 
@@ -87,10 +93,4 @@ void Vacuum::resetFilterTime()
 {
 	filter_time_ = 0;
 	ROS_INFO("%s %d: Reset filter operation time to 0.", __FUNCTION__, __LINE__);
-}
-
-void Vacuum::normalOperate()
-{
-	ROS_INFO("%s %d: Vacuum set to normal.", __FUNCTION__, __LINE__);
-	setSpeed(VacSpeed::vac_speed_normal);
 }

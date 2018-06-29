@@ -13,17 +13,17 @@
 MovementTurn::MovementTurn(double slam_target, uint8_t max_speed) : speed_(ROTATE_LOW_SPEED)
 {
 //	auto rad_diff = getPosition().th - slam_target + odom.getRadian();
-	is_left_cliff_trigger_in_start = cliff.getLeft();
-	is_right_cliff_trigger_in_start = cliff.getRight();
+	is_left_cliff_trigger_in_start_ = cliff.getLeft();
+	is_right_cliff_trigger_in_start_ = cliff.getRight();
 	turn_radian_ = fabs(ranged_radian(slam_target - getPosition().th));
 	target_radian_ = ranged_radian(slam_target  - getPosition().th + odom.getRadian());//odom_target = slam_target-slam_start + odom_start
 	max_speed_ = max_speed;
 	accurate_ = max_speed_ > ROTATE_TOP_SPEED ? degree_to_radian(3) : degree_to_radian(1);
 	timeout_interval_ = 10;
-	ROS_WARN("%s, %d: target_radian_: %.2lf (in degree), current radian: %.2lf (in degree), timeout:(%.2f)s.\ntarget_radian_(%.2lf) = ranged_radian(slam_target(%.2lf)  - getPosition().th(%.2lf) + odom.getRadian(%.2lf))",
+	ROS_WARN("%s, %d: target_radian_: %.2lf (in degree), current radian: %.2lf (in degree), timeout:(%.2f)s."/*\ntarget_radian_(%.2lf) = ranged_radian(slam_target(%.2lf)  - getPosition().th(%.2lf) + odom.getRadian(%.2lf))"*/,
 			 __FUNCTION__, __LINE__, radian_to_degree(target_radian_), radian_to_degree(odom.getRadian()),
-			 timeout_interval_, radian_to_degree(target_radian_), radian_to_degree(slam_target),
-			 radian_to_degree(getPosition().th), radian_to_degree(odom.getRadian()));
+			 timeout_interval_/*, radian_to_degree(target_radian_), radian_to_degree(slam_target),
+			 radian_to_degree(getPosition().th), radian_to_degree(odom.getRadian())*/);
 }
 
 MovementTurn::~MovementTurn() {
@@ -36,7 +36,7 @@ bool MovementTurn::isReach()
 //	ROS_WARN("%s, %d: MovementTurn finish, target_radian_: \033[32m%f (in degree)\033[0m, current radian: \033[32m%f (in degree)\033[0m."
 //	, __FUNCTION__, __LINE__, radian_to_degree(ranged_radian(target_radian_)), radian_to_degree(odom.getRadian()));
 	if (std::abs(ranged_radian(odom.getRadian() - target_radian_)) < accurate_){
-		ROS_WARN("%s, %d: MovementTurn finish, target_radian_: \033[32m%.2f (in degree)\033[0m, current radian: \033[32m%.2f (in degree)\033[0m."
+		ROS_WARN("%s, %d: MovementTurn, target_radian_: \033[32m%.2f (in degree)\033[0m, current radian: \033[32m%.2f (in degree)\033[0m."
 		, __FUNCTION__, __LINE__, radian_to_degree(target_radian_), radian_to_degree(odom.getRadian()));
 		return true;
 	}
@@ -93,19 +93,25 @@ void MovementTurn::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 
 	}
 
+	if(is_left_cliff_trigger_ || is_right_cliff_trigger_)
+		speed_ = 0;
+
 	l_speed = r_speed = speed_;
 }
 
 bool MovementTurn::isFinish()
 {
+	//For cliff turn
+	checkCliffTurn();
+
+	if(is_left_cliff_trigger_ || is_right_cliff_trigger_)
+	{
+		wheel.stop();
+		return false;
+	}
+
 	// Check slip by gyro
 	gyro.checkRobotSlipByGyro();
-
-	//For cliff turn
-	if(!is_left_cliff_trigger_in_start && cliff.getLeft() && wheel.getDirection() == DIRECTION_LEFT)
-		ev.cliff_turn |= BLOCK_CLIFF_TURN_LEFT;
-	else if(!is_right_cliff_trigger_in_start && cliff.getRight() && wheel.getDirection() == DIRECTION_RIGHT)
-		ev.cliff_turn |= BLOCK_CLIFF_TURN_RIGHT;
 
 	auto ret = isReach() || sp_mt_->isFinishForward() || ev.cliff_turn;
 
@@ -119,4 +125,59 @@ bool MovementTurn::isFinish()
 		wheel.stop();
 	}
 	return ret;
+}
+
+void MovementTurn::checkCliffTurn()
+{
+	//For left
+	if (!is_left_cliff_trigger_)
+	{
+		if (!is_left_cliff_trigger_in_start_ && cliff.getLeft() && wheel.getDirection() == DIRECTION_LEFT)
+		{
+			ROS_WARN("%s,%d: Cliff left!", __FUNCTION__, __LINE__);
+			is_left_cliff_trigger_ = true;
+			left_cliff_trigger_start_time_ = ros::Time::now().toSec();
+		}
+	}
+	else
+	{
+		if (cliff.getLeft())
+		{
+			if (ros::Time::now().toSec() - left_cliff_trigger_start_time_ > 0.2)
+			{
+				ROS_WARN("%s,%d: Cliff turn left", __FUNCTION__, __LINE__);
+				ev.cliff_turn |= BLOCK_CLIFF_TURN_LEFT;
+			}
+		} else
+		{
+			is_left_cliff_trigger_ = false;
+			left_cliff_trigger_start_time_ = 0;
+		}
+	}
+
+	//For right
+	if (!is_right_cliff_trigger_)
+	{
+		if (!is_right_cliff_trigger_in_start_ && cliff.getRight() && wheel.getDirection() == DIRECTION_RIGHT)
+		{
+			ROS_WARN("%s,%d: Cliff right!", __FUNCTION__, __LINE__);
+			is_right_cliff_trigger_ = true;
+			right_cliff_trigger_start_time_ = ros::Time::now().toSec();
+		}
+	}
+	else
+	{
+		if (cliff.getRight())
+		{
+			if (ros::Time::now().toSec() - right_cliff_trigger_start_time_ > 0.2)
+			{
+				ROS_WARN("%s,%d: Cliff turn right", __FUNCTION__, __LINE__);
+				ev.cliff_turn |= BLOCK_CLIFF_TURN_RIGHT;
+			}
+		} else
+		{
+			is_right_cliff_trigger_ = false;
+			right_cliff_trigger_start_time_ = 0;
+		}
+	}
 }

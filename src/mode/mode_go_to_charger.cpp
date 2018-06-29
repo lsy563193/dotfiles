@@ -20,7 +20,6 @@
 ModeGoToCharger::ModeGoToCharger()
 {
 	ROS_WARN("%s, %d: Entering go to charger mode\n=========================", __FUNCTION__, __LINE__);
-	system("turbo_cpu.sh");
 	event_manager_register_handler(this);
 	event_manager_reset_status();
 	event_manager_set_enable(true);

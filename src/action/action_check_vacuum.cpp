@@ -8,7 +8,7 @@
 
 ActionCheckVacuum::ActionCheckVacuum()
 {
-	ROS_WARN("%s %d: Starting action check vacuum." , __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Start." , __FUNCTION__, __LINE__);
 	vacuum.setForUserSetMaxMode(false);
 	vacuum.setSpeedByUserSetMode();
 }

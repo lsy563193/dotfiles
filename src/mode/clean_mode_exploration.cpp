@@ -150,7 +150,7 @@ void CleanModeExploration::remoteMax(bool state_now, bool state_last)
 	if(water_tank.getStatus(WaterTank::operate_option::swing_motor)){
 		beeper.beepForCommand(INVALID);
 	}
-	else if(isInitState() || isStateFollowWall() || isStateExploration() || isStateGoHomePoint() || isStateGoToCharger())
+	else if(!isStateExceptionResume())
 	{
 //		beeper.beepForCommand(VALID);
 		vacuum.setForUserSetMaxMode(!vacuum.isUserSetMaxMode());

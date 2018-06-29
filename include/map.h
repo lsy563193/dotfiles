@@ -19,7 +19,7 @@
 
 #define BLOCK_CLIFF_TURN_LEFT		((uint8_t) 0x01)
 #define BLOCK_CLIFF_TURN_RIGHT		((uint8_t) 0x02)
-#define BLOCK_CLIFF_TURN_ALL		((uint8_t) 0x03)
+#define BLOCK_CLIFF_TURN_ALL		((uint8_t) (BLOCK_CLIFF_TURN_LEFT | BLOCK_CLIFF_TURN_RIGHT))
 
 class GridMap {
 public:

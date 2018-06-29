@@ -13,6 +13,7 @@
 
 void StateClean::init()
 {
+	system("turbo_cpu.sh");
 	key_led.setMode(LED_STEADY, LED_GREEN);
 	brush.normalOperate();
 	water_tank.setCurrentSwingMotorMode(water_tank.getUserSetSwingMotorMode());

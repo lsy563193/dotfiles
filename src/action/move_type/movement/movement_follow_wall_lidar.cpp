@@ -30,6 +30,11 @@ MovementFollowWallLidar::MovementFollowWallLidar(bool is_left)
 //	path_thread_->detach();
 }
 
+MovementFollowWallLidar::~MovementFollowWallLidar()
+{
+	ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);
+}
+
 typedef struct{
 	double r;
 	Points getPoints(int precision, bool is_inclue_zero);
@@ -40,22 +45,16 @@ Points Circle::getPoints(int precision, bool is_inclue_zero)
 	Points points1;
 	Points points2;
 	auto init_i = is_inclue_zero ? 0 : 1;
-#if DEBUG_ENABLE
 //	printf("%s %d: ", __FUNCTION__, __LINE__);
-#endif
 	for(auto i=init_i; i<=precision; i++)
 	{
 		float y = (this->r*2)/precision*i;
 		float x = sqrt(pow(this->r, 2) - pow(y - this->r, 2));
-#if DEBUG_ENABLE
 //		printf("x,y(%f,%f) ",x, y);
-#endif
 		points1.push_back({x,y,0});
 		points2.push_front({-x,y,0});
 	}
-#if DEBUG_ENABLE
 //	printf("\n");
-#endif
 
 	std::move(points2.begin(), points2.end(), std::back_inserter(points1));
 	return points1;
@@ -71,7 +70,7 @@ Points MovementFollowWallLidar::calcVirtualTmpTarget()
 	double c_r{};
 	auto is_trapped_in_small_area = dynamic_cast<MoveTypeFollowWall *>(sp_mt_)->isTrappedInSmallArea();
 	if (is_trapped_in_small_area)
-			c_r = CELL_SIZE_3/4;
+		c_r = CELL_SIZE_3/4;
 	else
 		c_r = CELL_SIZE_3/2;
 	Circle circle{c_r};

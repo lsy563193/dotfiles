@@ -28,6 +28,8 @@ public:
 
 	void forceUpdate();
 
+	void updateForLowBattery();
+
 private:
 
 	bool isReadyToClean();
