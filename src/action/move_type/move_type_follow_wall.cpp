@@ -98,7 +98,7 @@ MoveTypeFollowWall::~MoveTypeFollowWall()
 
 bool MoveTypeFollowWall::isFinish()
 {
-	if (IMoveType::isFinish() && isNotHandleEvent())
+	if ( isNotHandleEvent() && IMoveType::isFinish())
 	{
 		ROS_WARN("%s %d: Move type aborted.", __FUNCTION__, __LINE__);
 		return true;
