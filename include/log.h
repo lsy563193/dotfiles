@@ -159,7 +159,7 @@ public:
 
 	void debug(const char *tag, const char *fmt, ...);
 
-	void Flush();
+	void Flush(int line);
 
 private:
 	/**

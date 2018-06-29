@@ -1512,9 +1512,9 @@ void S_Wifi::threadSend()
 				case ACT::ACT_SMART_AP_LINK:
 					this->smartApLink();
 					break;
-/*              case ACT::ACT_FACTORY_TEST: */
+				//case ACT::ACT_FACTORY_TEST:
 					// this->factoryTest();
-					/* break; */
+					// break;
 				case ACT::ACT_UPLOAD_MAP:
 					this->uploadMap(SLAM_MAP);
 					break;
@@ -1701,7 +1701,7 @@ void S_Wifi::factoryReset()
 	water_tank.setUserSwingMotorMode(WaterTank::swing_motor_mode::SWING_MOTOR_LOW);
 	robot::instance()->wifiSetWaterTank();
 
-	// Setting for vacuum.
+	// resetting for vacuum.
 	vacuum.setForUserSetMaxMode(false);
 	robot::instance()->wifiSetVacuum();
 	INFO_YELLOW("reset vacuum and water_tank");

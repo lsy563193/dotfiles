@@ -311,9 +311,9 @@ void Log::threadMain()
 		}
 	}
 }
-void Log::Flush()
+void Log::Flush(int line)
 {
-	printf("menual flush!\n");
+	printf("%d menual flush!\n",line);
 	for ( auto &c: consumers_ )
 	{
 		(*c.backend_).Flush();
