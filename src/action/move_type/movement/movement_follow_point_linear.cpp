@@ -91,6 +91,7 @@ Point_t MovementFollowPointLinear::calcTmpTarget()
 //		kp_ = 5;
 //	else
 //		kp_ = 2;
+	ROS_ERROR("tmp_target_(%lf , %lf)", tmp_target_.x, tmp_target_.y);
 	return tmp_target_;
 }
 
@@ -121,6 +122,8 @@ bool MovementFollowPointLinear::isFinish() {
 	auto tmp_pos = getPosition();
 	scaleCorrectionPos(tmp_pos);
 	radian_diff = tmp_pos.courseToDest(calcTmpTarget());
+	ROS_WARN("radian_diff(%lf)", radian_diff);
+	ROS_WARN("curr(%lf, %lf)", getPosition().x, getPosition().y);
 	auto is_lidar_stop = sp_mt_->isLidarStop();
 //	ROS_ERROR("is_lidar_stop(%d)", is_lidar_stop);
 	auto ret = AMovementFollowPoint::isFinish() || sp_mt_->isFinishForward() || is_lidar_stop;

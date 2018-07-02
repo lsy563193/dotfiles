@@ -123,12 +123,16 @@ bool MoveTypeLinear::isCellReach()
 	auto s_curr_p = getPosition();
 	auto p_clean_mode = dynamic_cast<ACleanMode*> (sp_mode_);
 	auto target_point_ = std::next(p_clean_mode->iterate_point_ );
-	if (std::abs(s_curr_p.x - target_point_->x) < CELL_SIZE/2 &&
-		std::abs(s_curr_p.y - target_point_->y) < CELL_SIZE/2)
+	auto delta_x = std::abs(s_curr_p.x - target_point_->x);
+	auto delta_y = std::abs(s_curr_p.y - target_point_->y);
+	ROS_INFO("delta(%lf, %lf)", delta_x, delta_y);
+	if (delta_x < CELL_SIZE/2 &&
+			delta_y< CELL_SIZE/2)
 	{
 //		ROS_INFO("%s, %d: MoveTypeLinear,current cell = (%d,%d) reach the target cell (%d,%d), current angle(%lf), target angle(%lf).", __FUNCTION__, __LINE__,
 //						 s_curr_p.toCell().x,s_curr_p.toCell().y,target_point_.toCell().x, target_point_.toCell().y, radian_to_degree(s_curr_p.th), radian_to_degree(target_point_.th));
 //		g_turn_angle = ranged_radian(new_dir - robot::instance()->getWorldPoseRadian());
+		PP_INFO();
 		return true;
 	}
 
@@ -142,12 +146,13 @@ bool MoveTypeLinear::isPoseReach()
 	auto p_clean_mode = dynamic_cast<ACleanMode*> (sp_mode_);
 	auto target_point_ = *std::next(p_clean_mode->iterate_point_ );
 	if (isCellReach() ) {
-		if (std::abs(getPosition().isRadianNear(target_point_))) {
-			ROS_INFO("\033[1m""%s, %d: MoveTypeLinear, reach the target cell and pose(%d,%d,%f,%d)""\033[0m", __FUNCTION__,
-							 __LINE__,
-							 target_point_.toCell().x, target_point_.toCell().y, target_point_.th,target_point_.dir);
+		//do not use this isRadianNear cause it is useless now
+//		if (std::abs(getPosition().isRadianNear(target_point_))) {
+//			ROS_INFO("\033[1m""%s, %d: MoveTypeLinear, reach the target cell and pose(%d,%d,%f,%d)""\033[0m", __FUNCTION__,
+//							 __LINE__,
+//							 target_point_.toCell().x, target_point_.toCell().y, target_point_.th,target_point_.dir);
 			return true;
-		}
+//		}
 	}
 	return false;
 }
