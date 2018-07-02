@@ -1183,8 +1183,11 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 				if (1) {
 					continue_to_isolate_ = true;
 					ROS_ERROR("set continue_to_isolate_ true");
-					isolate_path_.pop_front();
-					isolate_path_.pop_front();
+					if (isolate_path_.size() >= 2) {
+						for (int i = 0; i < 2; i++) {
+							isolate_path_.pop_front();
+						}
+					}
 				}
 				ROS_ERROR("xxxxxxxxx");
 				return true;
@@ -2498,11 +2501,20 @@ void ACleanMode::setRconPoint(const Point_t &current_point) {
 void ACleanMode::calIsolatePath() {
 	auto distance = updatePath();
 	ROS_ERROR("distance(%d), passed_cell_path_.size(%d)", distance, passed_cell_path_.size());
-	if (passed_cell_path_.size() >= distance) {
-		isolate_path_ = passed_cell_path_;
-		ROS_ERROR("isolate_path_.size(%d)", isolate_path_.size());
-		isolate_path_.resize(isolate_path_.size() - distance);//todo : the size should be in case of empty
+	isolate_path_.clear();
+	isolate_path_.assign(passed_cell_path_.begin(), passed_cell_path_.end());
+	int size = isolate_path_.size() - distance;
+	ROS_ERROR("isolate_path_.size(%d), resize(%d)", isolate_path_.size(), size);
+	if (size >= 0) {
+		isolate_path_.resize(size);//todo : the size should be in case of empty, may process die?
 		ROS_ERROR("isolate_path_.size(%d)", isolate_path_.size());
 		std::reverse(isolate_path_.begin(), isolate_path_.end());
-	}
+		for (auto &iter : isolate_path_) {
+			auto offset_point = iter.getRelative(0, 0.167);
+			ROS_INFO("iter(%lf, %lf), offset_point(%lf, %lf)", iter.x, iter.y, offset_point.x, offset_point.y);
+			iter = offset_point;
+		}
+	} else {
+			ROS_ERROR("size < 0");
+		}
 }
