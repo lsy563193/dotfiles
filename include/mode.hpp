@@ -563,6 +563,7 @@ public:
 	}
 
 	bool is_first_wf_{true};
+	bool restart_wf_{false};
 	bool is_closed_{true};
 	bool is_isolate_{false};
 	int closed_count_{};

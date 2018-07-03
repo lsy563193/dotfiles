@@ -66,16 +66,16 @@ bool CleanModeFollowWall::mapMark() {
 		setBlocks(iterate_point_->dir);
 		ROS_INFO("-------------------------------------------------------");
 		auto start = *passed_cell_path_.begin();
-		passed_cell_path_.erase(std::remove_if(passed_cell_path_.begin(),passed_cell_path_.end(),[&start](Point_t& it){
-			return it.toCell() == start.toCell();
-		}),passed_cell_path_.end());
+//		passed_cell_path_.erase(std::remove_if(passed_cell_path_.begin(),passed_cell_path_.end(),[&start](Point_t& it){
+//			return it.toCell() == start.toCell();
+//		}),passed_cell_path_.end());
 		displayPointPath(passed_cell_path_);
 		ROS_INFO("-------------------------------------------------------");
 		setFollowWall(clean_map_, action_i_ == ac_follow_wall_left, passed_cell_path_);
 	}
 	clean_map_.markRobot(getPosition().toCell());
 	clean_map_.print(getPosition().toCell(), Cells{getPosition().toCell()});
-	passed_cell_path_.clear();
+//	passed_cell_path_.clear();
 	return false;
 }
 
@@ -199,12 +199,19 @@ void CleanModeFollowWall::switchInStateInit() {
 
 bool CleanModeFollowWall::updateActionInStateClean()
 {
-	passed_cell_path_.clear();
+/*	passed_cell_path_.clear();
 	ROS_ERROR("isolate_path_.size(%d)", isolate_path_.size());
+	if (!isolate_path_.empty()) {
+		for (auto &iter : isolate_path_) {
+			auto offset_point = iter.getRelative(0, -0.167);
+			ROS_INFO("iter(%lf, %lf), offset_point(%lf, %lf)", iter.x, iter.y, offset_point.x, offset_point.y);
+			iter = offset_point;
+		}
+	}
 	passed_cell_path_.assign(isolate_path_.begin(), isolate_path_.end());
 	std::reverse(passed_cell_path_.begin(), passed_cell_path_.end());
-	ROS_INFO("%s %d: reload passed path.", __FUNCTION__, __LINE__);
-//	fw_tmp_map.reset();
+	ROS_INFO("%s %d: reload passed path. size = %d", __FUNCTION__, __LINE__, passed_cell_path_.size());
+//	fw_tmp_map.reset();*/
 
 	if (is_small_area_closed_)
 	{

@@ -21,7 +21,7 @@ MoveTypeLinear::MoveTypeLinear(Points remain_path)
 	ROS_WARN("%s,%d: Enter move type linear, angle(%.2f,%.2f, %.2f),  target(%.3f, %.3f).",
 			 __FUNCTION__, __LINE__, getPosition().th, radian_to_degree(target_point_->th),
 			 radian_to_degree(turn_target_radian_), target_point_->x, target_point_->y);
-	ROS_WARN("curr(%lf,%lf)", getPosition().x, getPosition().y);
+//	ROS_WARN("curr(%lf,%lf)", getPosition().x, getPosition().y);
 
 	movement_i_ = p_mode->isGyroDynamic() ? mm_dynamic : mm_turn;
 	if (movement_i_ == mm_dynamic)
@@ -125,7 +125,7 @@ bool MoveTypeLinear::isCellReach()
 	auto target_point_ = std::next(p_clean_mode->iterate_point_ );
 	auto delta_x = std::abs(s_curr_p.x - target_point_->x);
 	auto delta_y = std::abs(s_curr_p.y - target_point_->y);
-	ROS_INFO("delta(%lf, %lf)", delta_x, delta_y);
+//	ROS_INFO("delta(%lf, %lf)", delta_x, delta_y);
 	if (delta_x < CELL_SIZE/2 &&
 			delta_y< CELL_SIZE/2)
 	{
