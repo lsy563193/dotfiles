@@ -172,7 +172,7 @@ bool MovementBack::isLidarStop()
 
 void MovementBack::checkCliffTurn()
 {
-	if (wheel.getLeftWheelActualSpeed() < 0 && wheel.getRightWheelActualSpeed() < 0)
+	if (wheel.getLeftWheelActualSpeed() <= 0 && wheel.getRightWheelActualSpeed() <= 0)
 	{
 		if (!has_mark_original_cliff_)
 		{
