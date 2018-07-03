@@ -106,6 +106,8 @@ bool MovementTurn::isFinish()
 
 	if(is_left_cliff_trigger_ || is_right_cliff_trigger_)
 	{
+		ROS_WARN("%s,%d:Movement turn cliff trigger.is_left_cliff_trigger_(%d), is_right_cliff_trigger_(%d)",
+						 __FUNCTION__,__LINE__,is_left_cliff_trigger_ , is_right_cliff_trigger_);
 		wheel.stop();
 		return false;
 	}
