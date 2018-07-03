@@ -69,7 +69,7 @@ void Brush::normalOperate()
 
 void Brush::fullOperate()
 {
-	side_brush_status_ = brush_max;
+	side_brush_status_ = brush_normal;
 	main_brush_status_ = brush_max;
 	operate();
 	ROS_WARN("%s %d: All brush.", __FUNCTION__, __LINE__);
