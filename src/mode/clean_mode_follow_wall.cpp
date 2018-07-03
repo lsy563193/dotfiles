@@ -200,8 +200,11 @@ void CleanModeFollowWall::switchInStateInit() {
 bool CleanModeFollowWall::updateActionInStateClean()
 {
 	passed_cell_path_.clear();
-	ROS_INFO("%s %d: Clear passed path.", __FUNCTION__, __LINE__);
-	fw_tmp_map.reset();
+	ROS_ERROR("isolate_path_.size(%d)", isolate_path_.size());
+	passed_cell_path_.assign(isolate_path_.begin(), isolate_path_.end());
+	std::reverse(passed_cell_path_.begin(), passed_cell_path_.end());
+	ROS_INFO("%s %d: reload passed path.", __FUNCTION__, __LINE__);
+//	fw_tmp_map.reset();
 
 	if (is_small_area_closed_)
 	{
@@ -260,6 +263,8 @@ bool CleanModeFollowWall::markMapInNewCell()
 		if (ros::Time::now().toSec() - print_map_time_ > 5)
 		{
 			clean_map_.print(getPosition().toCell(), *points_to_cells(passed_cell_path_));
+			Cells tmp_cell;
+			fw_tmp_map.print(getPosition().toCell(), tmp_cell);
 			print_map_time_ = ros::Time::now().toSec();
 		}
 	}
