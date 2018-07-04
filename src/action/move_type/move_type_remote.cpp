@@ -11,7 +11,7 @@ int MoveTypeRemote::start_command_ = MoveTypeRemote::command_type::start_null;
 MoveTypeRemote::MoveTypeRemote()
 {
 	IMovement::sp_mt_ = this;
-	ROS_WARN("%s,%d: Enter move type remote.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s,%d: Enter.", __FUNCTION__, __LINE__);
 	switch (start_command_)
 	{
 		case command_type::start_forward:
@@ -43,7 +43,7 @@ MoveTypeRemote::MoveTypeRemote()
 MoveTypeRemote::~MoveTypeRemote()
 {
 	start_command_ = command_type::start_null;
-	ROS_WARN("%s,%d: Exit move type remote.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s,%d: Exit.", __FUNCTION__, __LINE__);
 }
 
 bool MoveTypeRemote::isFinish()

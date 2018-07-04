@@ -14,6 +14,7 @@
 #define REG_TYPE_CURVE			5
 
 #include "ros/ros.h"
+#include <boost/thread.hpp>
 
 struct pid_struct
 {

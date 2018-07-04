@@ -3,7 +3,7 @@
 /* ------------------------------------- System Setting ------------------------------------- */
 
 #define CURRENT_VERSION 0
-#define CURRENT_PATCH 17
+#define CURRENT_PATCH 20
 
 /*
  * Chipset setting.
@@ -21,7 +21,7 @@
 #define VERIFY_KEY							(0)
 
 /* ------------------------------------- Speaker config ------------------------------------- */
-#define SPEAKER_VOLUME						(55)
+#define SPEAKER_VOLUME						(60)
 
 /* ------------------------------------- DEBUG config ------------------------------------- */
 #define DEBUG_ENABLE						(1)

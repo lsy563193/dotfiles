@@ -116,7 +116,7 @@ robot::robot()
 	auto event_handler_thread = new boost::thread(event_handler_thread_cb);
 	auto core_thread = new boost::thread(boost::bind(&robot::core_thread_cb,this));
 
-	auto wifi_send_thread = new boost::thread(boost::bind(&S_Wifi::wifiSendRoutine,&s_wifi));
+	auto wifi_send_thread = new boost::thread(boost::bind(&S_Wifi::threadSend,&s_wifi));
 
 	obs.control(ON);
 	ROS_WARN("%s %d: Robot x900(version %04d r%d) is online :)", __FUNCTION__, __LINE__, CURRENT_VERSION, CURRENT_PATCH);
@@ -921,13 +921,17 @@ void robot::wifiSetVacuum()
 }
 
 void robot::loadConsumableStatus()
-{ ROS_INFO("%s %d: Load consumable status.", __FUNCTION__, __LINE__);
+{
+	ROS_INFO("%s %d: Load consumable status.", __FUNCTION__, __LINE__);
 
 	if (access(consumable_file.c_str(), F_OK) == -1)
 	{
-		// If file not exist, check if back up file exist.
+		// If file not exist, check if backup file exist.
 		if (access(consumable_backup_file.c_str(), F_OK) == -1)
+		{
+			ROS_ERROR("%s %d: Do NOT have any consumable file or backup file.", __FUNCTION__, __LINE__);
 			return;
+		}
 		else
 		{
 			//Restore from backup file.
@@ -938,44 +942,78 @@ void robot::loadConsumableStatus()
 	}
 
 	bool file_error = false;
-	FILE *f_read = fopen(consumable_file.c_str(), "r");
-	if (f_read == nullptr)
+	auto read_file = [&]
 	{
-		ROS_ERROR("%s %d: Open %s error.", __FUNCTION__, __LINE__, consumable_file.c_str());
-		file_error = true;
+		FILE *f_read = fopen(consumable_file.c_str(), "r");
+		if (f_read == nullptr)
+		{
+			ROS_ERROR("%s %d: Open %s error.", __FILE__, __LINE__, consumable_file.c_str());
+			file_error = true;
+		} else
+		{
+			if (fscanf(f_read, "Side brush: %d\n", &side_brush_time_) != 1)
+			{
+				ROS_ERROR("%s %d: Side brush data error! Reset to 0.", __FILE__, __LINE__);
+				side_brush_time_ = 0;
+				file_error = true;
+				return;
+			}
+			ROS_INFO("%s %d: Read side brush: %d.", __FILE__, __LINE__, side_brush_time_);
+			if (fscanf(f_read, "Main brush: %d\n", &main_brush_time_) != 1)
+			{
+				ROS_ERROR("%s %d: Main brush data error! Reset to 0.", __FILE__, __LINE__);
+				main_brush_time_ = 0;
+				file_error = true;
+				return;
+			}
+			ROS_INFO("%s %d: Read main brush: %d.", __FILE__, __LINE__, main_brush_time_);
+			if (fscanf(f_read, "Filter: %d\n", &filter_time_) != 1)
+			{
+				ROS_ERROR("%s %d: Filter data error! Reset to 0.", __FILE__, __LINE__);
+				filter_time_ = 0;
+				file_error = true;
+				return;
+			}
+			ROS_INFO("%s %d: Read main brush: %d.", __FILE__, __LINE__, filter_time_);
+			fclose(f_read);
+			ROS_INFO("%s %d: Read data succeeded.", __FILE__, __LINE__);
+		}
+	};
+
+	read_file();
+
+	if (file_error)
+	{
+		// Check if backup file exist.
+		if (access(consumable_backup_file.c_str(), F_OK) == -1)
+		{
+			std::string cmd = "rm -f " + consumable_file;
+			system(cmd.c_str());
+			ROS_ERROR("%s %d: Delete consumable file due to file error.", __FUNCTION__, __LINE__);
+			return;
+		}
+		else
+		{
+			//Restore from backup file.
+			std::string cmd = "cp " + consumable_backup_file + " " + consumable_file;
+			system(cmd.c_str());
+			ROS_INFO("%s %d: Resume from backup file.", __FUNCTION__, __LINE__);
+		}
 	}
 	else
-	{
-		if (fscanf(f_read, "Side brush: %d\n", &side_brush_time_) != 1)
-		{
-			ROS_ERROR("%s %d: Side brush data error! Reset to 0.", __FUNCTION__, __LINE__);
-			side_brush_time_ = 0;
-			file_error = true;
-		}
-		ROS_INFO("%s %d: Read side brush: %d.", __FUNCTION__, __LINE__, side_brush_time_);
-		if (fscanf(f_read, "Main brush: %d\n", &main_brush_time_) != 1)
-		{
-			ROS_ERROR("%s %d: Main brush data error! Reset to 0.", __FUNCTION__, __LINE__);
-			main_brush_time_ = 0;
-			file_error = true;
-		}
-		ROS_INFO("%s %d: Read main brush: %d.", __FUNCTION__, __LINE__, main_brush_time_);
-		if (fscanf(f_read, "Filter: %d\n", &filter_time_) != 1)
-		{
-			ROS_ERROR("%s %d: Filter data error! Reset to 0.", __FUNCTION__, __LINE__);
-			filter_time_ = 0;
-			file_error = true;
-		}
-		ROS_INFO("%s %d: Read main brush: %d.", __FUNCTION__, __LINE__, filter_time_);
-		fclose(f_read);
-		ROS_INFO("%s %d: Read data succeeded.", __FUNCTION__, __LINE__);
-	}
+		return;
+
+	file_error = false;
+	read_file();
 
 	if (file_error)
 	{
 		std::string cmd = "rm -f " + consumable_file + " " + consumable_backup_file;
 		system(cmd.c_str());
-		ROS_ERROR("%s %d: Delete consumable file due to file error.", __FUNCTION__, __LINE__);
+		resetSideBrushTime();
+		resetMainBrushTime();
+		resetFilterTime();
+		ROS_ERROR("%s %d: Delete consumable file and backup file due to file error.", __FUNCTION__, __LINE__);
 	}
 }
 
@@ -996,14 +1034,6 @@ void robot::updateConsumableStatus()
 	vacuum.resetFilterTime();
 	auto filter_time = additional_filter_time_sec + filter_time_;
 
-	if (access(consumable_file.c_str(), F_OK) != -1)
-	{
-		// If file exist, make it a back up file.
-		std::string cmd = "mv " + consumable_file + " " + consumable_backup_file;
-		system(cmd.c_str());
-		ROS_INFO("%s %d: Backup for %s.", __FUNCTION__, __LINE__, consumable_file.c_str());
-	}
-
 	FILE *f_write = fopen(consumable_file.c_str(), "w");
 	if (f_write == nullptr)
 		ROS_ERROR("%s %d: Open %s error.", __FUNCTION__, __LINE__, consumable_file.c_str());
@@ -1021,6 +1051,11 @@ void robot::updateConsumableStatus()
 		filter_time_ = filter_time;
 		fclose(f_write);
 		ROS_INFO("%s %d: Write data succeeded.", __FUNCTION__, __LINE__);
+
+		// Make a backup file.
+		std::string cmd = "cp " + consumable_file + " " + consumable_backup_file;
+		system(cmd.c_str());
+		ROS_INFO("%s %d: Backup for %s.", __FUNCTION__, __LINE__, consumable_file.c_str());
 	}
 }
 

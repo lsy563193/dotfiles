@@ -11,7 +11,7 @@
 
 ActionCheckWaterTank::ActionCheckWaterTank()
 {
-	ROS_WARN("%s %d: Starting action check water tank." , __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Start." , __FUNCTION__, __LINE__);
 
 	auto swing_motor_test_routine = new boost::thread(boost::bind(&ActionCheckWaterTank::waterTankTestRoutineThread, this));
 

@@ -9,7 +9,7 @@
 
 ActionBackFromCharger::ActionBackFromCharger()
 {
-	ROS_WARN("%s %d, Init action back from charger.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Enter.", __FUNCTION__, __LINE__);
 	wheel.setDirectionBackward();
 	// This time out interval is just for checking whether the switch is on.
 	timeout_interval_ = 0.15;
@@ -17,7 +17,7 @@ ActionBackFromCharger::ActionBackFromCharger()
 
 ActionBackFromCharger::~ActionBackFromCharger()
 {
-	ROS_WARN("%s %d, Finish action back from charger.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);
 }
 
 bool ActionBackFromCharger::isFinish()

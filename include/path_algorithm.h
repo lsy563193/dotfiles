@@ -185,7 +185,7 @@ class NavCleanPathAlgorithm: public APathAlgorithm
 {
 	/*
 	 * @author Patrick Chow / Lin Shao Yue
-	 * @last modify by Austin Liu
+	 * @last modify by Lin Shao Yue
 	 *
 	 * This function is for finding path to unclean area.
 	 *
@@ -198,18 +198,8 @@ class NavCleanPathAlgorithm: public APathAlgorithm
 	 */
 public:
 	bool generatePath(GridMap &map, const Point_t &curr_p, const Dir_t &last_dir, Points &plan_path) override;
-	/*
-	 * @author Patrick Chow
-	 * @last modify by Austin Liu
-	 *
-	 * This function is for finding path to unclean area in the same lane.
-	 *
-	 * @param: GridMap map, it will use it's CLEAN_MAP data.
-	 * @param: Cell_t curr_cell, the current cell of robot.
-	 *
-	 * @return: Cells path, the path to unclean area in the same lane.
-	 */
-    bool should_follow_wall(){
+
+    bool shouldFollowWall(){
 		return ( curr_history_.front() == &filter_after_obstacle_pos
 				||	curr_history_.front() == &filter_after_obstacle_neg
 				||	curr_history_.front() == &filter_top_of_y_axis_neg

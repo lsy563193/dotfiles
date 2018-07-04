@@ -14,13 +14,13 @@ MovementDirectGo::MovementDirectGo(bool slow_down, float timeout)
 	timeout_interval_ = timeout;
 	c_rcon.resetStatus();
 	slow_down_ = slow_down;
-	ROS_WARN("%s %d: Start movement direct go.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Start.", __FUNCTION__, __LINE__);
 }
 
 MovementDirectGo::~MovementDirectGo()
 {
 	wheel.stop();
-	ROS_WARN("%s %d: End movement direct go.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: End.", __FUNCTION__, __LINE__);
 }
 
 

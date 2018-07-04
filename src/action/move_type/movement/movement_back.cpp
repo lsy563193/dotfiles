@@ -22,7 +22,7 @@ MovementBack::MovementBack(float back_distance, uint8_t max_speed)
 	robot_stuck_cnt_ = 0;
 	tilt_cnt_ = 0;
 	updateStartPose();
-	ROS_WARN("%s %d: Set back distance: %.2f.", __FUNCTION__, __LINE__, back_distance_);
+	ROS_WARN("%s %d: Distance: %.2f.", __FUNCTION__, __LINE__, back_distance_);
 }
 
 MovementBack::~MovementBack() {
@@ -69,10 +69,24 @@ void MovementBack::adjustSpeed(int32_t &l_speed, int32_t &r_speed)
 	}
 	else
 		l_speed = r_speed = speed_;
+
+	//For cliff turn
+	if(is_left_cliff_triggered_ || is_right_cliff_triggered_)
+		l_speed = r_speed = 0;
 }
 
 bool MovementBack::isFinish()
 {
+	//Check cliff turn
+	checkCliffTurn();
+	if(is_left_cliff_triggered_ || is_right_cliff_triggered_)
+	{
+		ROS_WARN("%s,%d:Move back cliff trigger.is_left_cliff_triggered_(%d), is_right_cliff_triggered_(%d)",
+		__FUNCTION__,__LINE__,is_left_cliff_triggered_ , is_right_cliff_triggered_);
+		wheel.stop();
+		return false;
+	}
+
 	robot::instance()->lockScanCtrl();
 	robot::instance()->pubScanCtrl(true, true);
 	bool ret{false};
@@ -158,3 +172,75 @@ bool MovementBack::isLidarStop()
 	return false;
 }
 
+void MovementBack::checkCliffTurn()
+{
+	if (wheel.getLeftWheelActualSpeed() <= 0 && wheel.getRightWheelActualSpeed() <= 0)
+	{
+		if (!has_mark_original_cliff_)
+		{
+			original_left_cliff_triggered_ = cliff.getLeft();
+			original_right_cliff_triggered_ = cliff.getRight();
+			has_mark_original_cliff_ = true;
+		}
+	}
+	else
+		return;
+
+	if (!original_left_cliff_triggered_ && !original_right_cliff_triggered_)
+	{
+		//For left
+		if (!is_left_cliff_triggered_)
+		{
+			if (cliff.getLeft())
+			{
+				ROS_WARN("%s,%d: Cliff left!", __FUNCTION__, __LINE__);
+				is_left_cliff_triggered_ = true;
+				left_cliff_triggered_start_time_ = ros::Time::now().toSec();
+			}
+		}
+		else
+		{
+			if (cliff.getLeft())
+			{
+				if (ros::Time::now().toSec() - left_cliff_triggered_start_time_ > 0.2)
+				{
+					ROS_WARN("%s,%d: Cliff turn left", __FUNCTION__, __LINE__);
+					ev.cliff_turn |= BLOCK_CLIFF_TURN_LEFT;
+				}
+			}
+			else
+			{
+				is_left_cliff_triggered_ = false;
+				left_cliff_triggered_start_time_ = 0;
+			}
+		}
+
+		//For right
+		if (!is_right_cliff_triggered_)
+		{
+			if (!original_right_cliff_triggered_ && cliff.getRight())
+			{
+				ROS_WARN("%s,%d: Cliff right!", __FUNCTION__, __LINE__);
+				is_right_cliff_triggered_ = true;
+				right_cliff_triggered_start_time_ = ros::Time::now().toSec();
+			}
+		}
+		else
+		{
+			if (cliff.getRight())
+			{
+				if (ros::Time::now().toSec() - right_cliff_triggered_start_time_ > 0.2)
+				{
+					ROS_WARN("%s,%d: Cliff turn right", __FUNCTION__, __LINE__);
+					ev.cliff_turn |= BLOCK_CLIFF_TURN_RIGHT;
+				}
+			}
+			else
+			{
+				is_right_cliff_triggered_ = false;
+				right_cliff_triggered_start_time_ = 0;
+			}
+		}
+	}
+
+}

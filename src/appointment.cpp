@@ -271,3 +271,9 @@ void Appmt::resetPlanStatus(void)
 	plan_status_ = 0;
 	serial.setSendData(SERIAL::CTL_APPOINTMENT_H, 0x00);
 }
+
+void Appmt::reset()
+{
+	//set reset command
+	appmt_obj.set(0x80);
+}

@@ -27,17 +27,16 @@ ModeIdle::ModeIdle():
 	ROS_WARN("%s %d: Entering Idle mode. Current battery voltage \033[32m%5.2f V\033[0m\n=========================" ,
 			 __FUNCTION__, __LINE__, (float)battery.getVoltage()/100.0);
 	event_manager_register_handler(this);
+	event_manager_reset_status();
 	event_manager_set_enable(true);
 	serial.setWorkMode(IDLE_MODE);
 	sp_action_.reset(new ActionIdle);
 	action_i_ = ac_idle;
-	system("unturbo_cpu.sh");
 
 	key.resetTriggerStatus();
 	c_rcon.resetStatus();
 	remote.reset();
 	appmt_obj.resetPlanStatus();
-	event_manager_reset_status();
 
 	s_wifi.resetReceivedWorkMode();
 

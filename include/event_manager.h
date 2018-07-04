@@ -78,6 +78,7 @@ typedef struct
 	uint8_t charge_detect;
 	bool robot_stuck;
 	bool slip_triggered;
+	uint8_t cliff_turn;
 	bool lidar_stuck = false;
 	bool lidar_bumper;
 	uint8_t lidar_triggered;

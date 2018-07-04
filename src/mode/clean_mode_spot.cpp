@@ -172,6 +172,7 @@ bool CleanModeSpot::markMapInNewCell() {
 bool CleanModeSpot::moveTypeNewCellIsFinish(IMoveType *p_mt)
 {
 	auto distance = updatePath();
+	clean_map_.markRobot(getPosition().toCell());
 	return checkClosed(p_mt, distance);
 }
 

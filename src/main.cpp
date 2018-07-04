@@ -19,35 +19,34 @@ robot* robot_instance = nullptr;
 void server_backtrace(int sig)
 {
 	void *pTrace[256];
-    char **ppszMsg = NULL;
-    size_t uTraceSize = 0;
+	char **ppszMsg = NULL;
+	size_t uTraceSize = 0;
+	do {
+		if (0 == (uTraceSize = backtrace(pTrace, sizeof(pTrace) / sizeof(void *)))) {
+			break;
+		}
+		if (NULL == (ppszMsg = backtrace_symbols(pTrace, uTraceSize))) {
+			break;
+		}
+		//printf("%d. call stack:\n", sig);
+		LOGE("%d.call stack:\n",sig);
+		std::stringstream ss;
+		for (size_t i = 0; i < uTraceSize; ++i) {
+			ss<<ppszMsg[i];
+			//printf("%s\n", ppszMsg[i]);
+		}
+		LOGE("%s",ss.str().c_str());
+	} while (0);
 
-    do {
-
-        if (0 == (uTraceSize = backtrace(pTrace, sizeof(pTrace) / sizeof(void *)))) {
-            break;
-        }
-        if (NULL == (ppszMsg = backtrace_symbols(pTrace, uTraceSize))) {
-            break;
-        }
-
-        printf("%d. call stack:\n", sig);
-        for (size_t i = 0; i < uTraceSize; ++i) {
-              printf("%s\n", ppszMsg[i]);
-        }
-    } while (0);
-
-    if (NULL != ppszMsg) {
-        free(ppszMsg);
-        ppszMsg = NULL;
-    }
+	if (NULL != ppszMsg) {
+		free(ppszMsg);
+		ppszMsg = NULL;
+	}
 }
 
-void handle_exit(int sig) 
+void handle_exit(int sig)
 {
-	Log::inst().Flush();
-	sleep(2);
-	ROS_ERROR("Oops!!! pp receive signal %d",sig);
+	LOGE("Oops!!! pp receive signal %d",sig);
 	if(sig == SIGINT)
 	{
 		if(robot_instance != nullptr){
@@ -60,24 +59,23 @@ void handle_exit(int sig)
 	else if(sig == SIGSEGV)
 	{
 		server_backtrace(sig);
-		exit(-1);
 	}
 	else if(sig == SIGFPE) {	
 		server_backtrace(sig);
-		exit(-1);
 	}
 
 	else if(sig == SIGFPE)
-	{	
+	{
 		server_backtrace(sig);
-		exit(-1);
 	}
 
 	else if(sig == SIGABRT)
-	{	
+	{
 		server_backtrace(sig);
-		exit(-1);
 	}
+	Log::inst().Flush(__LINE__);
+	sleep(4);
+	exit(-1);
 }
 
 int main(int argc, char **argv)

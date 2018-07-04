@@ -13,7 +13,7 @@ MovementFollowPointLinear::MovementFollowPointLinear()
 {
 //	kp_ = 4;
 //	tmp_pos = getPosition();
-	ROS_WARN("%s %d: Enter movement follow point linear.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Enter.", __FUNCTION__, __LINE__);
 	angle_forward_to_turn_ = degree_to_radian(150);
 	min_speed_ = LINEAR_MIN_SPEED;
 	max_speed_ = LINEAR_MAX_SPEED;
@@ -24,6 +24,11 @@ MovementFollowPointLinear::MovementFollowPointLinear()
 //	tick_limit_ = 1;
 //	auto p_clean_mode = dynamic_cast<ACleanMode*> (sp_mt_->sp_mode_);
 //	sp_mt_->target_point_ = p_clean_mode->remain_path_.front();
+}
+
+MovementFollowPointLinear::~MovementFollowPointLinear()
+{
+	ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);
 }
 
 void MovementFollowPointLinear::scaleCorrectionPos(Point_t &tmp_pos) {

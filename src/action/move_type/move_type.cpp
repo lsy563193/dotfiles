@@ -200,7 +200,7 @@ bool IMoveType::isFinishForward()
 	if (ev.bumper_triggered || ev.cliff_triggered || ev.tilt_triggered || ev.slip_triggered/*|| ev.rcon_status*/)
 	{
 		//ROS_WARN("%s, %d,ev.bumper_triggered(%d) ev.cliff_triggered(%d) ev.tilt_triggered(%d), rcon(%d)."
-		ROS_WARN("%s, %d,ev.bumper_triggered(%d) ev.cliff_triggered(%d) ev.tilt_triggered(%d) ev.slip_triggered(%d)"
+		ROS_WARN("%s %d: bumper(%d) cliff(%d) tilt(%d) slip(%d)"
 				, __FUNCTION__, __LINE__, ev.bumper_triggered, ev.cliff_triggered, ev.tilt_triggered , ev.slip_triggered/*,ev.rcon_status*/);
 		return true;
 	}

@@ -13,6 +13,7 @@ void StateCharge::init()
 	s_wifi.setWorkMode(Mode::md_charge);
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 	gyro.setTiltCheckingEnable(false); //disable tilt detect
+	system("unturbo_cpu.sh");
 	ROS_INFO("%s %d: Enter state charge.", __FUNCTION__, __LINE__);
 }
 

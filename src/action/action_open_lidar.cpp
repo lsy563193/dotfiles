@@ -6,7 +6,7 @@
 
 ActionOpenLidar::ActionOpenLidar()
 {
-	ROS_WARN("%s %d: Enter action open lidar.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Enter.", __FUNCTION__, __LINE__);
 	wheel.stop();
 
 	lidar.motorCtrl(ON);
@@ -14,6 +14,11 @@ ActionOpenLidar::ActionOpenLidar()
 
 	timeout_interval_ = 15;
 
+}
+
+ActionOpenLidar::~ActionOpenLidar()
+{
+	ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);
 }
 
 bool ActionOpenLidar::isFinish(){

@@ -93,6 +93,7 @@ public:
 		update_idle_timer_ = false;
 	}
 
+	void reset();
 private:
 
 	std::vector<Appointment::st_appmt> appointment_list_;

@@ -120,7 +120,7 @@ public:
 
 	void taskPushBack(S_Wifi::ACT action);
 
-	void wifiSendRoutine();
+	void threadSend();
 
 	void cacheMapData(const Points map_data);
 
@@ -201,6 +201,8 @@ public:
 	}
 
 	void wifiInitPublicher();
+
+	void factoryReset();
 private:
 
 	void cloudConnected();
@@ -223,6 +225,7 @@ private:
 	bool in_linking_;
 	bool wifi_quit_ ;
 	bool time_sync_;
+	bool getWifiVersion_;
 	double last_time_sync_time_;
 
 	wifi::WorkMode robot_work_mode_;
@@ -256,8 +259,8 @@ protected:
 	
 	bool commit(std::vector<std::vector<uint8_t>> &map_packs,uint32_t sleep_time,bool wait_ack);
 
-	uint32_t find_if(std::deque<Cell_t>* list, Cell_t point,int find_type);
-	void sort_push(std::deque<Cell_t>* list, Cell_t point,int sort_type);
+	//uint32_t find_if(std::deque<Cell_t>* list, Cell_t point,int find_type);
+	//void sort_push(std::deque<Cell_t>* list, Cell_t point,int sort_type);
 
 	ros::NodeHandle *nh_;
 	ros::Publisher pass_path_pub_;

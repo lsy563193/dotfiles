@@ -752,7 +752,7 @@ bool GridMap::isFrontSlamBlocked(void)
 	return retval;
 }
 
-void GridMap::setCircleMarkers(Point_t point, int radius, CellState cell_state,Marks& error_maker)
+void GridMap::setCircleMarkers(const Point_t& point, int radius, CellState cell_state,Marks& error_maker)
 {
 	const int RADIUS_CELL = radius;
 	Point_t tmp_point = point;

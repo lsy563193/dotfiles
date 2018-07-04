@@ -6,7 +6,12 @@
 #include "lidar.hpp"
 
 ActionOpenGyroAndLidar::ActionOpenGyroAndLidar() {
-	ROS_WARN("%s %d: Enter action open gyro and lidar.", __FUNCTION__, __LINE__);
+	ROS_WARN("%s %d: Enter.", __FUNCTION__, __LINE__);
 	lidar.motorCtrl(ON);
+}
+
+ActionOpenGyroAndLidar::~ActionOpenGyroAndLidar()
+{
+	ROS_WARN("%s %d: Exit.", __FUNCTION__, __LINE__);
 }
 

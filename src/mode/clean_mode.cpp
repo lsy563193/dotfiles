@@ -44,7 +44,8 @@ ACleanMode::ACleanMode()
 
 	event_manager_register_handler(this);
 	event_manager_reset_status();
-	event_manager_set_enable(true);
+	if (next_mode_i_ != cm_test)
+		event_manager_set_enable(true);
 	serial.setWorkMode(WORK_MODE);
 	IMoveType::sp_mode_ = this;
 	State::sp_cm_ = this;
@@ -116,7 +117,7 @@ ACleanMode::~ACleanMode()
 				{
 					speaker.play(VOICE_CHECK_SWITCH, false);
 					ROS_WARN("%s %d: Switch is not on. Stop cleaning.", __FUNCTION__, __LINE__);
-				} else if (ev.cliff_all_triggered)
+				} else if (ev.cliff_all_triggered || ev.cliff_turn)
 				{
 					speaker.play(VOICE_ERROR_LIFT_UP, false);
 					ROS_WARN("%s %d: Cliff all triggered. Stop cleaning.", __FUNCTION__, __LINE__);
@@ -294,6 +295,19 @@ void ACleanMode::saveBlocks() {
 		}
 		if (cliff_trig & BLOCK_RIGHT) {
 			d_cells = {{2, -1}, {2, -2}};
+		}
+		return d_cells;
+	});
+
+	//For cliff turn
+	saveBlock(BLOCKED_CLIFF, [&]() {
+		auto cliff_trig = ev.cliff_turn;
+		Cells d_cells;
+		if (cliff_trig & BLOCK_CLIFF_TURN_LEFT) {
+			d_cells = {{2, -1}, {2, 0}};
+		}
+		if (cliff_trig & BLOCK_CLIFF_TURN_RIGHT) {
+			d_cells = {{-2, -1}, {-2, 0}};
 		}
 		return d_cells;
 	});
@@ -1088,9 +1102,9 @@ uint16_t ACleanMode::updatePath()
 bool ACleanMode::pathAlgorithmCheckOutOfTrapped(IMoveType *p_mt)
 {
 	auto curr = getPosition();
-	clean_map_.print(curr.toCell(), Cells{});
 	if (p_mt->isBlockCleared(clean_map_, curr))
 	{
+		clean_map_.print(curr.toCell(), Cells{});
 		clean_map_.markRobot(curr.toCell());
 		std::vector<Vector2<int>> markers{};
 		if (lidar.isScanCompensateReady())

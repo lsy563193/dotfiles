@@ -5,6 +5,7 @@
 #include <robot.hpp>
 #include <vacuum.h>
 #include <water_tank.hpp>
+#include <event_manager.h>
 #include "mode.hpp"
 #include "action.hpp"
 #include "movement.hpp"
@@ -124,9 +125,11 @@ bool Mode::isExceptionTriggered()
 		ROS_WARN("%s %d: Wheel cliff triggered.", __FUNCTION__, __LINE__);
 	if(ev.gyro_error)
 		ROS_WARN("%s %d: Gyro error.", __FUNCTION__, __LINE__);
+	if(ev.cliff_turn)
+		ROS_WARN("%s %d: Cliff turn.", __FUNCTION__, __LINE__);
 
 	return ev.bumper_jam || ev.lidar_bumper_jam || ev.cliff_jam || ev.tilt_jam || ev.cliff_all_triggered || ev.oc_wheel_left || ev.oc_wheel_right
-						 || ev.oc_vacuum || ev.lidar_stuck || ev.robot_stuck || ev.oc_brush_main || is_wheel_cliff_triggered || ev.gyro_error;
+						 || ev.oc_vacuum || ev.lidar_stuck || ev.robot_stuck || ev.oc_brush_main || is_wheel_cliff_triggered || ev.gyro_error || ev.cliff_turn;
 }
 
 void Mode::genNextAction()
