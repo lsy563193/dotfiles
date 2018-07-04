@@ -9,6 +9,7 @@
 #include <bits/unique_ptr.h>
 #include <functional>
 #include <algorithm>
+#include <assert.h>
 #include "config.h"
 
 #define PI M_PI
@@ -440,6 +441,29 @@ public:
 		return  isCellEqual(r) && isRadianNear(r);
 	}
 
+	float project_ratio(const Point_t& p1, const Point_t& p2) const
+	{
+		auto cross = (p2.x - p1.x) * (x - p1.x) + (p2.y - p1.y) * (y - p1.y);
+
+		assert(p2 != p1);
+
+		auto d2 = (p2.x - p1.x) * (p2.x - p1.x) + (p2.y - p1.y) * (p2.y - p1.y);
+
+		return cross / d2;
+	}
+
+	float distance(const Point_t& p1, const Point_t& p2) const
+	{
+		auto r = project_ratio(p1, p2);
+		if(r <= 0)
+			return this->Distance(p1);
+		if(r >= 1)
+			return this->Distance(p2);
+
+		auto pj = p1 + (p2-p1) * r;
+
+		return this->Distance(pj);
+	}
 	// in radian.
 	double th{};
 	Dir_t dir{};

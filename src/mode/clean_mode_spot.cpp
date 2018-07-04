@@ -178,7 +178,7 @@ bool CleanModeSpot::moveTypeNewCellIsFinish(IMoveType *p_mt)
 
 bool CleanModeSpot::moveTypeRealTimeIsFinish(IMoveType *p_mt)
 {
-	if (isStateSpot() && action_i_ == ac_follow_wall_left)
+	if (isStateSpot() && action_i_ != ac_linear)
 	{
 		auto p_mt_follow_wall = dynamic_cast<MoveTypeFollowWall *>(p_mt);
 		if(p_mt_follow_wall->outOfRange(getPosition(), iterate_point_))

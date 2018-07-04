@@ -17,30 +17,18 @@
 int g_follow_last_follow_wall_dir=0;
 
 bool out_of_edge(const Point_t &curr, const Points::iterator &it) {
-	const auto next_it = it+1;
-//	ROS_ERROR("p_it_tmp(%d,%d,%d)", it->toCell().x, it->toCell().y,it->dir);
-	if (it->dir == MAP_POS_X)
-		return curr.x > next_it->x;
-	else if (it->dir == MAP_NEG_X)
-		return curr.x < next_it->x;
-	else if (it->dir == MAP_POS_Y)
-		return curr.y > next_it->y;
-	else if (it->dir == MAP_NEG_Y)
-		return curr.y < next_it->y;
-	return false;
+//	auto r = curr.project_ratio(*it,*(it+1));
+//	ROS_ERROR("~~~~~~~~~~~~~~~~~~~~~~~~~~~curr(%f,%f), r(%f)", curr.x, curr.y, r);
+	return curr.project_ratio(*it,*(it+1)) >= 1;
 }
 bool out_of_external_edge(const Point_t &curr, const Points::iterator &it) {
-	const auto next_it = it+1;
-//	ROS_ERROR("p_it_tmp(%d,%d,%d)", it->toCell().x, it->toCell().y,it->dir);
-	if (it->dir == MAP_POS_X)
-		return curr.x > next_it->x + CELL_SIZE*2;
-	else if (it->dir == MAP_NEG_X)
-		return curr.x < next_it->x - CELL_SIZE*2;
-	else if (it->dir == MAP_POS_Y)
-		return curr.y > next_it->y + CELL_SIZE*2;
-	else if (it->dir == MAP_NEG_Y)
-		return curr.y < next_it->y - CELL_SIZE*2;
-	return false;
+	auto r = curr.project_ratio(*it,*(it+1));
+	if(r < 1)
+		return false;
+
+	auto leng = curr.Distance(*(it+1));
+
+	return r >= (leng + CELL_SIZE_2)/leng;
 }
 
 void MoveTypeFollowWall::init(bool is_left)
