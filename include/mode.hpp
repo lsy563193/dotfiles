@@ -648,6 +648,7 @@ public:
 	void pubFitLineMarker(visualization_msgs::Marker fit_line_marker);
 	void setLinearCleaned();
 	uint8_t setFollowWall(GridMap&, bool is_left, const Points&);
+	uint8_t clearIsolateCell(GridMap&, const Points&);
 	void scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr& scan);
 	void setCleanMapMarkers(int16_t x, int16_t y, CellState type,  visualization_msgs::Marker& clean_map_markers_);
 	void pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path);

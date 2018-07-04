@@ -733,6 +733,24 @@ uint8_t ACleanMode::setFollowWall(GridMap& map, bool is_left,const Points& passe
 	}
 }
 
+uint8_t ACleanMode::clearIsolateCell(GridMap& map, const Points& passed_path)
+{
+	if (!passed_path.empty())
+	{
+		std::string msg = "cell:";
+		for(auto& point : passed_path){
+			if(map.getCost(point.toCell().x, point.toCell().y) != BLOCKED_RCON){
+				auto relative_cell = point.getRelative(0, 0);
+				auto block_cell = relative_cell.toCell();
+				msg += "(" + std::to_string(block_cell.x) + "," + std::to_string(block_cell.y) + ")";
+				map.setCost(block_cell.x, block_cell.y, CLEANED);
+				map.markRobot(block_cell);
+			}
+		}
+//		ROS_INFO("%s,%d: Current(%d, %d, %lf), \033[32m mapMark s\033[0m",
+//						 __FUNCTION__, __LINE__, getPosition().toCell().x, getPosition().toCell().y,getPosition().th, msg.c_str());
+	}
+}
 void ACleanMode::setLinearCleaned()
 {
 	ROS_INFO("setLinearCleaned cells:");
@@ -1194,7 +1212,10 @@ bool ACleanMode::checkClosed(IMoveType *p_mt, uint16_t distance)
 bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 {
 	markRealTime();
+	Points ins_path{};//instantaneous path
+	ins_path.push_back(getPosition());
 	if(action_i_ == ac_linear) {
+		clearIsolateCell(fw_tmp_map, ins_path);
 		auto p_mt = dynamic_cast<MoveTypeLinear *>(p_move_type);
 		if (p_mt->isLinearForward())
 		{
@@ -1240,8 +1261,6 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 	}
 	else if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
 	{
-		Points ins_path{};//instantaneous path
-		ins_path.push_back(getPosition());
 		setFollowWall(fw_tmp_map, action_i_ == ac_follow_wall_left, ins_path);
 //		fw_tmp_map.print(getPosition().toCell(), CLEAN_MAP,*points_to_cells(make_unique<Points>(passed_cell_path_)));
 
@@ -2268,7 +2287,6 @@ bool ACleanMode::updateActionInStateFollowWall()
 			action_i_ = ac_linear;
 			ROS_ERROR("%s %d: Switch to linear move type for isolate.", __FUNCTION__, __LINE__);
 		} else if(is_isolate_ || continue_to_isolate_) {
-			ROS_ERROR("000");
 			is_isolate_ = false;
 			continue_to_isolate_ = false;
 			ROS_ERROR("set continue_to_isolate_ false");
