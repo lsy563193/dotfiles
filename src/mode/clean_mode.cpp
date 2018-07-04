@@ -2260,12 +2260,7 @@ bool ACleanMode::updateActionInStateFollowWall()
 			auto angle = 0;
 			auto point = getPosition().addRadian(angle);
 			plan_path_.push_back(point);
-			point = point.getRelative(1, 0);
-//			plan_path_.push_back(point);
-//			point = getPosition().addRadian(angle);
-//			plan_path_.push_back(point);
-//			point = point.getRelative(0.5, 0);
-//			point = point.getRelative(0, 1);
+			point = point.getRelative(10, 0);
 			plan_path_.push_back(point);
 			iterate_point_ = plan_path_.begin();
 			iterate_point_->dir = MAP_ANY;// note: fix bug follow isPassPosition
@@ -2277,29 +2272,17 @@ bool ACleanMode::updateActionInStateFollowWall()
 			is_isolate_ = false;
 			continue_to_isolate_ = false;
 			ROS_ERROR("set continue_to_isolate_ false");
-//		action_i_ = ac_follow_wall_left;
 			auto angle = -900;
 			plan_path_.clear();
 			auto point = getPosition().addRadian(angle);
 			plan_path_.push_back(point);
-			point = point.getRelative(1, 0);
-//			plan_path_.push_back(point);
-//			point = getPosition().addRadian(angle);
-//			plan_path_.push_back(point);
-//			point = point.getRelative(0.5, 0);
-//			point = point.getRelative(0, 1);
+			point = point.getRelative(10, 0);
 			plan_path_.push_back(point);
-//			iterate_point_ = plan_path_.begin();
-//			if (!isolate_path_.empty()) {
 			if (!isolate_path_.empty()) {
-
 				auto angle = getPosition().courseToDest(isolate_path_.front());
 				auto point = getPosition().addRadian(angle);
 				isolate_path_.push_front(point);
-
 				iterate_point_ = isolate_path_.begin();
-//				isolate_path_.pop_front();
-				ROS_ERROR("333333333");
 			} else {
 				passed_cell_path_.clear();
 				fw_tmp_map.reset();
@@ -2307,16 +2290,14 @@ bool ACleanMode::updateActionInStateFollowWall()
 				plan_path_.clear();
 				auto point = getPosition().addRadian(angle);
 				plan_path_.push_back(point);
-				point = point.getRelative(1, 0);
+				point = point.getRelative(10, 0);
 				plan_path_.push_back(point);
 				iterate_point_ = plan_path_.begin();
-				ROS_ERROR("444444444444");
 			}
 			iterate_point_->dir = MAP_ANY;// note: fix bug follow isPassPosition
 			action_i_ = ac_linear;
 		} else {
 			action_i_ = ac_follow_wall_left;
-			ROS_ERROR("111");
 		}
 	} else if(out_of_trapped_) {
 		ROS_WARN("%s %d: out_of_trapped_", __FUNCTION__, __LINE__);
@@ -2325,8 +2306,8 @@ bool ACleanMode::updateActionInStateFollowWall()
 		ROS_WARN("%s,%d: trapTimeout", __FUNCTION__, __LINE__);
 		action_i_ = ac_null;
 	} else {
-		ROS_ERROR("222");
-		action_i_ = ac_follow_wall_left;//todo : this case is for linear is end but it doesn't hit any thing, now it won't go here
+		PP_INFO();
+		action_i_ = ac_follow_wall_left;
 
 	}
 
@@ -2545,7 +2526,7 @@ void ACleanMode::calIsolatePath() {
 	int size = isolate_path_.size() - distance;
 	ROS_ERROR("isolate_path_.size(%d), resize(%d)", isolate_path_.size(), size);
 	if (size >= 0) {
-		isolate_path_.resize(size);//todo : the size should be in case of empty, may process die?
+		isolate_path_.resize(size);
 		ROS_ERROR("isolate_path_.size(%d)", isolate_path_.size());
 		std::reverse(isolate_path_.begin(), isolate_path_.end());
 		for (auto &iter : isolate_path_) {
