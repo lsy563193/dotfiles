@@ -34,7 +34,7 @@ private:
 
 	bool isReadyToClean();
 
-	bool shouldGoHome();
+//	bool shouldGoHome();
 
 	bool isReadyToMove();
 

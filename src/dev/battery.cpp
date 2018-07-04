@@ -19,7 +19,9 @@ bool Battery::isFull()
 bool Battery::isReadyToClean()
 {
 	// Check if battary is lower than the low battery go home voltage value.
-	return (getVoltage() >= BATTERY_READY_TO_CLEAN_VOLTAGE);
+	return (getVoltage() > BATTERY_READY_TO_CLEAN_VOLTAGE);
+//	return (getVoltage() > 1540);
+//	return (getVoltage() >= BATTERY_READY_TO_CLEAN_VOLTAGE);
 //	return (getVoltage() >= 1600);
 }
 
@@ -29,12 +31,12 @@ bool Battery::isReadyToMove()
 //	return (getVoltage() >= 1490);
 }
 
-bool Battery::shouldGoHome()
+/*bool Battery::shouldGoHome()
 {
 	// Check if battary is lower than the low battery go home voltage value.
 	return (getVoltage() < LOW_BATTERY_GO_HOME_VOLTAGE);
 //	return (getVoltage() < 1540);
-}
+}*/
 
 uint8_t Battery::getPercent()
 {
@@ -62,11 +64,11 @@ void Battery::setVoltage(uint16_t val)
 			ROS_WARN("%s %d: Battery too low to move.", __FUNCTION__, __LINE__);
 			robot::instance()->setBatteryTooLowToMove(true);
 		}
-		else if (!robot::instance()->batteryLowForGoingHome() && shouldGoHome())
+		/*else if (!robot::instance()->batteryLowForGoingHome() && shouldGoHome())
 		{
 			ROS_WARN("%s %d: Battery low for going home.", __FUNCTION__, __LINE__);
 			robot::instance()->setBatteryLowForGoingHome(true);
-		}
+		}*/
 
 		float bv = static_cast<float>(voltage_ / 100.0);
 		ROS_WARN("%s %d: Battery %.1fv.", __FUNCTION__, __LINE__, bv);
@@ -90,10 +92,10 @@ void Battery::updateForLowBattery()
 	{
 		ROS_WARN("%s %d: Battery ready to move.", __FUNCTION__, __LINE__);
 		robot::instance()->setBatteryTooLowToMove(false);
-	} else if (robot::instance()->batteryLowForGoingHome() && !shouldGoHome())
+	} /*else if (robot::instance()->batteryLowForGoingHome() && !shouldGoHome())
 	{
 		ROS_WARN("%s %d: Battery up and no need to go home.", __FUNCTION__, __LINE__);
 		robot::instance()->setBatteryLowForGoingHome(false);
-	}
+	}*/
 }
 
