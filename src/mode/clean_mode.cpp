@@ -1150,8 +1150,8 @@ bool ACleanMode::checkClosed(IMoveType *p_mt, uint16_t distance)
 			calIsolatePath();
 			ROS_WARN("%s %d: Robot circles an island.", __FUNCTION__, __LINE__);
 		}
-		else if (distance < 20 && in_small_area_count_ < 10 &&
-				clean_path_algorithm_->dijkstraCountCleanedArea(clean_map_, getPosition(), targets) < TRAP_IN_SMALL_AREA_COUNT)
+		else if ((distance < 20 || clean_path_algorithm_->dijkstraCountCleanedArea(clean_map_, getPosition(), targets) < TRAP_IN_SMALL_AREA_COUNT)
+							&& in_small_area_count_ < 10)
 		{
 			in_small_area_count_++;
 			is_small_area_closed_ = true;
