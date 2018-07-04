@@ -155,24 +155,8 @@ bool MoveTypeLinear::isPassTargetStop(const Dir_t &dir)
 {
 //	PP_INFO();
 	// Checking if robot has reached target cell.
-	if(isAny(dir))
-		return false;
-
-	auto s_curr_p = getPosition();
-	auto curr = (isXAxis(dir)) ? s_curr_p.x : s_curr_p.y;
 	auto p_clean_mode = dynamic_cast<ACleanMode*> (sp_mode_);
-	auto target_point_ = *std::next(p_clean_mode->iterate_point_ );
-	auto target = (isXAxis(dir)) ? target_point_.x : target_point_.y;
-	if ((isPos(dir) && (curr > target + CELL_SIZE / 4)) ||
-		(!isPos(dir) && (curr < target - CELL_SIZE / 4)))
-	{
-		ROS_WARN(
-				"%s, %d: MoveTypeLinear, pass target: dir(%d), is_x_axis(%d), is_pos(%d), curr_cell(%d,%d), target_cell(%d,%d)",
-				__FUNCTION__, __LINE__, dir, isXAxis(dir), isPos(dir), s_curr_p.toCell().x, s_curr_p.toCell().y,
-				target_point_.toCell().x, target_point_.toCell().y);
-		return true;
-	}
-	return false;
+	return getPosition().project_ratio(*p_clean_mode->iterate_point_,*(p_clean_mode->iterate_point_+1)) >= 1;
 }
 
 bool MoveTypeLinear::isLinearForward()

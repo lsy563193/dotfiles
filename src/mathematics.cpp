@@ -253,6 +253,7 @@ Dir_t get_dir(const Cells::iterator& neighbor, const Cells::iterator& curr)
 {
     get_dir(*neighbor ,*curr);
 }
+
 Dir_t get_dir(const Cell_t& neighbor, const Cell_t& curr)
 {
 
