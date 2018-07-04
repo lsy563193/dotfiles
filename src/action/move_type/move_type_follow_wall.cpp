@@ -592,8 +592,21 @@ bool MoveTypeFollowWall::handleMoveBackEventRealTime(ACleanMode *p_clean_mode)
 	{
 		p_clean_mode->saveBlocks();
 		movement_i_ = mm_back;
-		float back_distance = static_cast<float>(bumper_status ? 0.01 : 0.05);
-		back_distance = static_cast<float>(tilt_status ? TILT_BACK_DISTANCE : back_distance);
+		float back_distance;
+		if(bumper_status)
+			back_distance = 0.01;
+		else if(cliff_status)
+		{
+			if(!cliff.getFront() && (wheel.getLeftWheelCliffStatus() || wheel.getRightWheelCliffStatus()))
+			{
+				back_distance = TILT_BACK_DISTANCE;
+				ROS_INFO("%s,%d Move back %d in order to away the desk",__FUNCTION__,__LINE__,TILT_BACK_DISTANCE);
+			}
+			else
+				back_distance = 0.05;
+		}
+		else if(tilt_status)
+			back_distance = TILT_BACK_DISTANCE;
 		sp_movement_.reset(new MovementBack(back_distance, BACK_MAX_SPEED));
 		return true;
 	}

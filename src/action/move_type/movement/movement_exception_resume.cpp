@@ -41,6 +41,14 @@ MovementExceptionResume::MovementExceptionResume(int last_action)
 		stuck_start_turn_time_ = 0;
 	}
 
+	//For wheel cliff
+	if(sp_mt_->sp_mode_->is_wheel_cliff_triggered)
+	{
+		is_up_tilt_ = gyro.getAngleR() > 4;
+		wheel_cliff_back_distance_ = is_up_tilt_ ? 0.05 : 0.02;
+		ROS_INFO("%s,%d wheel_cliff_back_distance(%lf)",__FUNCTION__,__LINE__,wheel_cliff_back_distance_);
+	}
+
 	resetResumeTime();
 }
 
@@ -404,15 +412,16 @@ bool MovementExceptionResume::isFinish() {
 				{
 					float distance = two_points_distance_double(s_pos_x, s_pos_y, odom.getOriginX(), odom.getOriginY());
 //					ROS_INFO("distance(%lf), pos(%lf, %lf)", distance, s_pos_x, s_pos_y);
-					if (std::abs(distance) > 0.02f) {
+					if (std::abs(distance) > wheel_cliff_back_distance_) {
 						wheel.stop();
 						// If cliff jam during bumper self resume.
 //						if (cliff.getStatus() && ++g_cliff_cnt > 2)
 						if (left_wheel_and_cliff || right_wheel_and_cliff) {
 							wheel_cliff_state_++;
-							ROS_INFO("%s %d: Try bumper resume state %d.", __FUNCTION__, __LINE__, bumper_jam_state_);
 							if (wheel_cliff_state_ == 4)
 								wheel_cliff_state_ = 7;
+							else
+								ROS_INFO("%s %d: Try wheel cliff resume the %d times.", __FUNCTION__, __LINE__, wheel_cliff_state_);
 						} else {
 							ROS_INFO("%s %d: Triggered cliff jam during resuming wheel cliff.", __FUNCTION__, __LINE__);
 							wheel_cliff_state_ = 4;
