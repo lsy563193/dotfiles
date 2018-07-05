@@ -133,10 +133,13 @@ bool MovementFollowPointLinear::isFinish() {
 //	ROS_ERROR("is_lidar_stop(%d)", is_lidar_stop);
 	auto ret = AMovementFollowPoint::isFinish() || sp_mt_->isFinishForward() || is_lidar_stop;
 	if (ret) {
+		auto p_clean_mode = dynamic_cast<ACleanMode*>(sp_mt_->sp_mode_);
 		wheel.stop();
-		dynamic_cast<ACleanMode*>(sp_mt_->sp_mode_)->continue_to_isolate_ = false;
-		dynamic_cast<ACleanMode*>(sp_mt_->sp_mode_)->restart_wf_ = true;
-		ROS_ERROR("%s %d: set continue_to_isolate_ false, set restart_wf_ true.", __FUNCTION__, __LINE__);
+		if (p_clean_mode->should_handle_isolate_) {
+			p_clean_mode->continue_to_isolate_ = false;
+			p_clean_mode->restart_wf_ = true;
+			ROS_ERROR("%s %d: set continue_to_isolate_ false, set restart_wf_ true.", __FUNCTION__, __LINE__);
+		}
 	}
 	return ret;
 }

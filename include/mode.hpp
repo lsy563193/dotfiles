@@ -486,6 +486,7 @@ public:
 	bool continue_to_isolate_{};
 	// For warning in idle mode.
 	static bool robot_trapped_warning;
+	bool should_handle_isolate_{};
 
 	// State exploration
 	bool isStateExploration() const

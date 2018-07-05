@@ -1213,28 +1213,27 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 {
 	markRealTime();
 	Points ins_path{};//instantaneous path
-	bool should_handle_isolate{};
 	if (action_i_ == ac_linear) {
 		if (mode_i_ == cm_navigation || mode_i_ == cm_exploration || mode_i_ == cm_spot) {
-			should_handle_isolate = isStateFollowWall();
+			should_handle_isolate_ = isStateFollowWall();
 		} else if (mode_i_ == cm_wall_follow) {
-			should_handle_isolate = isStateClean() || isStateFollowWall();
+			should_handle_isolate_ = isStateClean() || isStateFollowWall();
 		}
 	} else {
-		should_handle_isolate = false;
+		should_handle_isolate_ = false;
 	}
-//	ROS_ERROR("should_handle_isolate(%d)", should_handle_isolate);
+//	ROS_ERROR("should_handle_isolate_(%d)", should_handle_isolate_);
 
 	ins_path.push_back(getPosition());
 	if(action_i_ == ac_linear) {
-		if (should_handle_isolate)
+		if (should_handle_isolate_)
 			clearIsolateCell(fw_tmp_map, ins_path);
 
 		auto p_mt = dynamic_cast<MoveTypeLinear *>(p_move_type);
 		if (p_mt->isLinearForward())
 		{
 			if (p_mt->isPoseReach() || p_mt->isPassTargetStop(iterate_point_->dir)) {
-				if (should_handle_isolate) {
+				if (should_handle_isolate_) {
 					continue_to_isolate_ = true;
 					ROS_ERROR("set continue_to_isolate_ true");
 					if (isolate_path_.size() >= 2) {
