@@ -69,6 +69,21 @@ bool ModeGoToCharger::isExit()
 		setNextMode(md_idle);
 		return true;
 	}
+
+	if (s_wifi.receivePlan1())
+	{
+		ROS_WARN("%s %d: Exit for wifi plan1.", __FUNCTION__, __LINE__);
+		setNextMode(cm_navigation);
+		return true;
+	}
+
+	if (s_wifi.receiveHome())
+	{
+		ROS_WARN("%s %d: Exit for wifi home.", __FUNCTION__, __LINE__);
+		setNextMode(md_idle);
+		return true;
+	}
+
 	return false;
 }
 
