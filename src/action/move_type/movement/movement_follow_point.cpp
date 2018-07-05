@@ -73,32 +73,37 @@ void AMovementFollowPoint::adjustSpeed(int32_t &left_speed, int32_t &right_speed
 bool AMovementFollowPoint::isFinish() {
 //	ROS_WARN("curr target th(%f,%f)", getPosition().th, calcTmpTarget().th);
 //	ROS_WARN("radian_diff(%f)", radian_diff);
+	bool is_wf = sp_mt_->sp_mode_->action_i_ == sp_mt_->sp_mode_->ac_follow_wall_left
+							 || sp_mt_->sp_mode_->action_i_ == sp_mt_->sp_mode_->ac_follow_wall_right;
 	bool is_left = sp_mt_->sp_mode_->action_i_ == sp_mt_->sp_mode_->ac_follow_wall_left;
-	if (is_left){
-		if (radian_diff > 0)
-			return false;
-	} else {
-		if (radian_diff < 0 )
-			return false;
-	}
-
-	if(std::abs(radian_diff) > angle_forward_to_turn_)
-	{
-		ROS_INFO_FL();
-		ROS_WARN("radian_diff(%f)", radian_diff);
+	if (is_wf) {
+		if (is_left){
+			if (radian_diff > 0)
+				return false;
+		} else {
+			if (radian_diff < 0 )
+				return false;
+		}
+		if(std::abs(radian_diff) > angle_forward_to_turn_)
+		{
+			ROS_INFO_FL();
+			ROS_WARN("radian_diff(%f)", radian_diff);
 #if DEBUG_ENABLE
-		if (std::abs(radian_diff) > degree_to_radian(140)) {
-			ROS_ERROR_COND(DEBUG_ENABLE, "LASER WALL FOLLOW ERROR! PLEASE CALL ALVIN AND RESTART THE ROBOT.");
+			if (std::abs(radian_diff) > degree_to_radian(140)) {
+				ROS_ERROR_COND(DEBUG_ENABLE, "LASER WALL FOLLOW ERROR! PLEASE CALL ALVIN AND RESTART THE ROBOT.");
 //			while(ros::ok()){
 //				beeper.beepForCommand(VALID);
 //				wheel.setPidTargetSpeed(0, 0);
 //			}
-		}
+			}
 #endif
-		sp_mt_->state_turn = true;
-		return true;
+			sp_mt_->state_turn = true;
+			return true;
+		}
+		return false;
+	} else {
+		return false;
 	}
-	return false;
 }
 
 void AMovementFollowPoint::getLRSpeed(int32_t& left, int32_t& right) {

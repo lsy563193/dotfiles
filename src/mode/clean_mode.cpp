@@ -733,6 +733,24 @@ uint8_t ACleanMode::setFollowWall(GridMap& map, bool is_left,const Points& passe
 	}
 }
 
+uint8_t ACleanMode::clearIsolateCell(GridMap& map, const Points& passed_path)
+{
+	if (!passed_path.empty())
+	{
+		std::string msg = "cell:";
+		for(auto& point : passed_path){
+			if(map.getCost(point.toCell().x, point.toCell().y) != BLOCKED_RCON){
+				auto relative_cell = point.getRelative(0, 0);
+				auto block_cell = relative_cell.toCell();
+				msg += "(" + std::to_string(block_cell.x) + "," + std::to_string(block_cell.y) + ")";
+				map.setCost(block_cell.x, block_cell.y, CLEANED);
+				map.markRobot(block_cell);
+			}
+		}
+//		ROS_INFO("%s,%d: Current(%d, %d, %lf), \033[32m mapMark s\033[0m",
+//						 __FUNCTION__, __LINE__, getPosition().toCell().x, getPosition().toCell().y,getPosition().th, msg.c_str());
+	}
+}
 void ACleanMode::setLinearCleaned()
 {
 	ROS_INFO("setLinearCleaned cells:");
@@ -1152,18 +1170,20 @@ bool ACleanMode::checkClosed(IMoveType *p_mt, uint16_t distance)
 
 
 	if (distance > SEARCH_BEFORE_DIS) {// closed
-		is_isolate = isIsolate(curr.toCell());
+		is_isolate_ = isIsolate(curr.toCell());
+		ROS_WARN("%s %d: is_isolate_(%d)", __FUNCTION__, __LINE__, is_isolate_);
 		Cells targets;
-		if(is_isolate)
+		if(is_isolate_)
 		{
 			isolate_count_++;
 //			closed_count_ = 0;
 			in_small_area_count_ = 0;
 			is_small_area_closed_ = false;
+			calIsolatePath();
 			ROS_WARN("%s %d: Robot circles an island.", __FUNCTION__, __LINE__);
 		}
-		else if (distance < 20 && in_small_area_count_ < 10 &&
-				clean_path_algorithm_->dijkstraCountCleanedArea(clean_map_, getPosition(), targets) < TRAP_IN_SMALL_AREA_COUNT)
+		else if ((distance < 20 || clean_path_algorithm_->dijkstraCountCleanedArea(clean_map_, getPosition(), targets) < TRAP_IN_SMALL_AREA_COUNT)
+							&& in_small_area_count_ < 10)
 		{
 			in_small_area_count_++;
 			is_small_area_closed_ = true;
@@ -1172,9 +1192,14 @@ bool ACleanMode::checkClosed(IMoveType *p_mt, uint16_t distance)
 		}
 		else {// Large area close
 			closed_count_++;
+
+			passed_cell_path_.clear();
+			fw_tmp_map.reset();
+			ROS_WARN("%s %d: reset passed_cell_path_ and fw_tmp_map.", __FUNCTION__, __LINE__);
+
 			ROS_WARN("%s %d: Close in large area.", __FUNCTION__, __LINE__);
 		}
-		is_closed = true;
+		is_closed_ = true;
 		beeper.debugBeep(VALID);
 		ROS_WARN("%s %d: distance(%d) > %d, next_mode_i_(%d), mode_i_(%d), close cnt(%d)(limit %d).", __FUNCTION__,
 				 __LINE__, distance, SEARCH_BEFORE_DIS, getNextMode(), mode_i_, closed_count_, closed_count_limit_);
@@ -1187,12 +1212,44 @@ bool ACleanMode::checkClosed(IMoveType *p_mt, uint16_t distance)
 bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 {
 	markRealTime();
+	Points ins_path{};//instantaneous path
+	if (action_i_ == ac_linear) {
+		if (mode_i_ == cm_navigation || mode_i_ == cm_exploration || mode_i_ == cm_spot) {
+			should_handle_isolate_ = isStateFollowWall();
+		} else if (mode_i_ == cm_wall_follow) {
+			should_handle_isolate_ = isStateClean() || isStateFollowWall();
+		}
+	} else {
+		should_handle_isolate_ = false;
+	}
+//	ROS_ERROR("should_handle_isolate_(%d)", should_handle_isolate_);
+
+	ins_path.push_back(getPosition());
 	if(action_i_ == ac_linear) {
+		if (should_handle_isolate_)
+			clearIsolateCell(fw_tmp_map, ins_path);
+
 		auto p_mt = dynamic_cast<MoveTypeLinear *>(p_move_type);
 		if (p_mt->isLinearForward())
 		{
-			if (p_mt->isPoseReach() || p_mt->isPassTargetStop(iterate_point_->dir))
+			if (p_mt->isPoseReach() || p_mt->isPassTargetStop(iterate_point_->dir)) {
+				if (should_handle_isolate_) {
+					continue_to_isolate_ = true;
+					ROS_ERROR("set continue_to_isolate_ true");
+					if (isolate_path_.size() >= 2) {
+						for (int i = 0; i < 2; i++) {
+							isolate_path_.pop_front();
+						}
+					}
+					if (!isolate_path_.empty()) {
+						plan_path_.clear();
+						plan_path_.assign(isolate_path_.begin(), isolate_path_.end());
+						iterate_point_ = plan_path_.begin();
+					}
+				}
+				ROS_ERROR("xxxxxxxxx");
 				return true;
+			}
 			if (!isStateGoHomePoint())
 			{
 				if (checkChargerPos())
@@ -1222,8 +1279,6 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 	}
 	else if (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
 	{
-		Points ins_path{};//instantaneous path
-		ins_path.push_back(getPosition());
 		setFollowWall(fw_tmp_map, action_i_ == ac_follow_wall_left, ins_path);
 //		fw_tmp_map.print(getPosition().toCell(), CLEAN_MAP,*points_to_cells(make_unique<Points>(passed_cell_path_)));
 
@@ -1235,7 +1290,7 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 			in_small_area_count_++;
 			is_small_area_closed_ = true;
 			small_area_trapped_pose_ = getPosition(SLAM_POSITION_SLAM_ANGLE);
-			is_closed = true;
+			is_closed_ = true;
 			beeper.debugBeep(VALID);
 			reach_this_cell_start_time_ = ros::Time::now().toSec();
 			ROS_WARN("%s %d: Stay in a cell for too long.", __FUNCTION__, __LINE__);
@@ -1993,8 +2048,8 @@ void ACleanMode::switchInStateGoHomePoint()
 		sp_state = state_folllow_wall.get();
 		sp_state->init();
 		sp_action_.reset();
-		is_isolate = true;
-		is_closed = true;
+		is_first_wf_ = true;
+		is_closed_ = true;
 		closed_count_ = 0;
 		isolate_count_ = 0;
 	} else{
@@ -2059,7 +2114,7 @@ bool ACleanMode::updateActionInStateSpot()
 	bool ret{};
 
 	auto cpa = boost::dynamic_pointer_cast<SpotCleanPathAlgorithm>(clean_path_algorithm_);
-	if (cpa->generatePath(clean_map_, getPosition(), action_i_ == ac_linear, plan_path_,iterate_point_,is_closed)) {
+	if (cpa->generatePath(clean_map_, getPosition(), action_i_ == ac_linear, plan_path_,iterate_point_,is_closed_)) {
 		iterate_point_ = plan_path_.begin();
 		if ( action_i_ == ac_linear )
 			action_i_ = ac_follow_wall_right ;
@@ -2179,8 +2234,8 @@ void ACleanMode::switchInStateExploration() {
 		beeper.debugBeep(VALID);
 		is_trapped_ = true;
 		sp_state = state_folllow_wall.get();
-		is_isolate = true;
-		is_closed = true;
+		is_first_wf_ = true;
+		is_closed_ = true;
 		closed_count_ = 0;
 		isolate_count_ = 0;
 	}
@@ -2202,48 +2257,98 @@ bool ACleanMode::isSwitchByEventInStateFollowWall()
 
 bool ACleanMode::updateActionInStateFollowWall()
 {
-	passed_cell_path_.clear();
-	fw_tmp_map.reset();
+	const int GO_STRAIGHT_DIS = 10;//10 meters
+//	passed_cell_path_.clear();
+//	fw_tmp_map.reset();
+	ROS_WARN("%s %d: is_isolate_(%d)", __FUNCTION__, __LINE__, is_isolate_);
+	if (restart_wf_){
+		restart_wf_ = false;
+		passed_cell_path_.clear();
+		ROS_ERROR("isolate_path_.size(%d)", isolate_path_.size());
+		if (!isolate_path_.empty()) {
+			for (auto &iter : isolate_path_) {
+				auto offset_point = iter.getRelative(0, -0.167);
+				ROS_INFO("iter(%lf, %lf), offset_point(%lf, %lf)", iter.x, iter.y, offset_point.x, offset_point.y);
+				iter = offset_point;
+			}
+			passed_cell_path_.assign(isolate_path_.begin(), isolate_path_.end());
+			std::reverse(passed_cell_path_.begin(), passed_cell_path_.end());
+		}
+		ROS_INFO("%s %d: reload passed path. size = %d", __FUNCTION__, __LINE__, passed_cell_path_.size());
+//	fw_tmp_map.reset();
+	}
 
-	if(is_closed) {
+	if(is_closed_ || continue_to_isolate_) {
 		ROS_WARN("%s %d: Update for closed.", __FUNCTION__, __LINE__);
-		is_closed = false;
-		if (closed_count_ >= closed_count_limit_ || isolate_count_ >= isolate_count_limit_
-													|| in_small_area_count_ > in_small_area_count_limit_)
-		{
+		is_closed_ = false;
+		if (closed_count_ >= closed_count_limit_
+				|| isolate_count_ >= isolate_count_limit_
+				|| in_small_area_count_ > in_small_area_count_limit_) {
 			ROS_WARN("%s %d: Counts: closed(%d)(limit_ %d), isolate(%d)(limit_ %d), in_small_area(%d)(limit_ %d), exit.",
-					 __FUNCTION__, __LINE__, closed_count_, closed_count_limit_, isolate_count_, isolate_count_limit_,
-					 in_small_area_count_, in_small_area_count_limit_);
+							 __FUNCTION__, __LINE__, closed_count_, closed_count_limit_, isolate_count_, isolate_count_limit_,
+							 in_small_area_count_, in_small_area_count_limit_);
 			trapped_closed_or_isolate = true;
 			action_i_ = ac_null;
 		}
-		else if (is_isolate)
-		{
-			is_isolate = false;
+		else if(is_first_wf_) {
+			passed_cell_path_.clear();
+			fw_tmp_map.reset();
+			is_first_wf_ = false;
 			plan_path_.clear();
-			auto angle = (isolate_count_ == 0) ? 0 : -900;
+			auto angle = 0;
 			auto point = getPosition().addRadian(angle);
 			plan_path_.push_back(point);
-			point = point.getRelative(8, 0);
+			point = point.getRelative(GO_STRAIGHT_DIS, 0);
 			plan_path_.push_back(point);
 			iterate_point_ = plan_path_.begin();
 			iterate_point_->dir = MAP_ANY;// note: fix bug follow isPassPosition
 			displayPointPath(plan_path_);
 			action_i_ = ac_linear;
-			ROS_WARN("%s %d: Switch to linear move type for isolate.", __FUNCTION__, __LINE__);
-		}
-		else
+			ROS_ERROR("%s %d: Switch to linear move type for isolate.", __FUNCTION__, __LINE__);
+		} else if(is_isolate_ || continue_to_isolate_) {
+			is_isolate_ = false;
+			continue_to_isolate_ = false;
+			ROS_ERROR("set continue_to_isolate_ false");
+			auto angle = -900;
+			plan_path_.clear();
+			auto point = getPosition().addRadian(angle);
+			plan_path_.push_back(point);
+			point = point.getRelative(GO_STRAIGHT_DIS, 0);
+			plan_path_.push_back(point);
+			if (!isolate_path_.empty()) {
+				auto angle = getPosition().courseToDest(isolate_path_.front());
+				auto point = getPosition().addRadian(angle);
+				isolate_path_.push_front(point);
+				plan_path_.clear();
+				plan_path_.assign(isolate_path_.begin(), isolate_path_.end());
+//				iterate_point_ = isolate_path_.begin();
+				iterate_point_ = plan_path_.begin();
+			} else {
+				passed_cell_path_.clear();
+				fw_tmp_map.reset();
+				auto angle = -900;
+				plan_path_.clear();
+				auto point = getPosition().addRadian(angle);
+				plan_path_.push_back(point);
+				point = point.getRelative(GO_STRAIGHT_DIS, 0);
+				plan_path_.push_back(point);
+				iterate_point_ = plan_path_.begin();
+			}
+			iterate_point_->dir = MAP_ANY;// note: fix bug follow isPassPosition
+			action_i_ = ac_linear;
+		} else {
 			action_i_ = ac_follow_wall_left;
-	}
-	else if(out_of_trapped_) {
+		}
+	} else if(out_of_trapped_) {
 		ROS_WARN("%s %d: out_of_trapped_", __FUNCTION__, __LINE__);
 		action_i_ = ac_null;
-	}
-	else if (trapped_time_out_) {
+	} else if(trapped_time_out_) {
 		ROS_WARN("%s,%d: trapTimeout", __FUNCTION__, __LINE__);
 		action_i_ = ac_null;
-	}else{
+	} else {
+		PP_INFO();
 		action_i_ = ac_follow_wall_left;
+
 	}
 
 	genNextAction();
@@ -2451,4 +2556,25 @@ void ACleanMode::setRconPoint(const Point_t &current_point) {
 	if (!hasSeenChargerDuringCleaning())
 		setSeenChargerDuringCleaning();
 	saveBlocks();
+}
+
+void ACleanMode::calIsolatePath() {
+	auto distance = updatePath();
+	ROS_ERROR("distance(%d), passed_cell_path_.size(%d)", distance, passed_cell_path_.size());
+	isolate_path_.clear();
+	isolate_path_.assign(passed_cell_path_.begin(), passed_cell_path_.end());
+	int size = isolate_path_.size() - distance;
+	ROS_ERROR("isolate_path_.size(%d), resize(%d)", isolate_path_.size(), size);
+	if (size >= 0) {
+		isolate_path_.resize(size);
+		ROS_ERROR("isolate_path_.size(%d)", isolate_path_.size());
+		std::reverse(isolate_path_.begin(), isolate_path_.end());
+		for (auto &iter : isolate_path_) {
+			auto offset_point = iter.getRelative(0, 0.167);
+			ROS_INFO("iter(%lf, %lf), offset_point(%lf, %lf)", iter.x, iter.y, offset_point.x, offset_point.y);
+			iter = offset_point;
+		}
+	} else {
+			ROS_ERROR("size < 0");
+		}
 }

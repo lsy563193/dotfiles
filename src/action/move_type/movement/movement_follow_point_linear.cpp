@@ -96,6 +96,7 @@ Point_t MovementFollowPointLinear::calcTmpTarget()
 //		kp_ = 5;
 //	else
 //		kp_ = 2;
+//	ROS_ERROR("tmp_target_(%lf , %lf)", tmp_target_.x, tmp_target_.y);
 	return tmp_target_;
 }
 
@@ -126,11 +127,19 @@ bool MovementFollowPointLinear::isFinish() {
 	auto tmp_pos = getPosition();
 	scaleCorrectionPos(tmp_pos);
 	radian_diff = tmp_pos.courseToDest(calcTmpTarget());
+//	ROS_WARN("radian_diff(%lf)", radian_diff);
+//	ROS_WARN("curr(%lf, %lf)", getPosition().x, getPosition().y);
 	auto is_lidar_stop = sp_mt_->isLidarStop();
 //	ROS_ERROR("is_lidar_stop(%d)", is_lidar_stop);
 	auto ret = AMovementFollowPoint::isFinish() || sp_mt_->isFinishForward() || is_lidar_stop;
 	if (ret) {
+		auto p_clean_mode = dynamic_cast<ACleanMode*>(sp_mt_->sp_mode_);
 		wheel.stop();
+		if (p_clean_mode->should_handle_isolate_) {
+			p_clean_mode->continue_to_isolate_ = false;
+			p_clean_mode->restart_wf_ = true;
+			ROS_ERROR("%s %d: set continue_to_isolate_ false, set restart_wf_ true.", __FUNCTION__, __LINE__);
+		}
 	}
 	return ret;
 }
