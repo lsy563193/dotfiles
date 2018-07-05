@@ -81,6 +81,8 @@ bool MovementBack::isFinish()
 	checkCliffTurn();
 	if(is_left_cliff_triggered_ || is_right_cliff_triggered_)
 	{
+		ROS_WARN("%s,%d:Move back cliff trigger.is_left_cliff_triggered_(%d), is_right_cliff_triggered_(%d)",
+		__FUNCTION__,__LINE__,is_left_cliff_triggered_ , is_right_cliff_triggered_);
 		wheel.stop();
 		return false;
 	}

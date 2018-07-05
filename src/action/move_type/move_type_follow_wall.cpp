@@ -17,30 +17,18 @@
 int g_follow_last_follow_wall_dir=0;
 
 bool out_of_edge(const Point_t &curr, const Points::iterator &it) {
-	const auto next_it = it+1;
-//	ROS_ERROR("p_it_tmp(%d,%d,%d)", it->toCell().x, it->toCell().y,it->dir);
-	if (it->dir == MAP_POS_X)
-		return curr.x > next_it->x;
-	else if (it->dir == MAP_NEG_X)
-		return curr.x < next_it->x;
-	else if (it->dir == MAP_POS_Y)
-		return curr.y > next_it->y;
-	else if (it->dir == MAP_NEG_Y)
-		return curr.y < next_it->y;
-	return false;
+//	auto r = curr.project_ratio(*it,*(it+1));
+//	ROS_ERROR("~~~~~~~~~~~~~~~~~~~~~~~~~~~curr(%f,%f), r(%f)", curr.x, curr.y, r);
+	return curr.project_ratio(*it,*(it+1)) >= 1;
 }
 bool out_of_external_edge(const Point_t &curr, const Points::iterator &it) {
-	const auto next_it = it+1;
-//	ROS_ERROR("p_it_tmp(%d,%d,%d)", it->toCell().x, it->toCell().y,it->dir);
-	if (it->dir == MAP_POS_X)
-		return curr.x > next_it->x + CELL_SIZE*2;
-	else if (it->dir == MAP_NEG_X)
-		return curr.x < next_it->x - CELL_SIZE*2;
-	else if (it->dir == MAP_POS_Y)
-		return curr.y > next_it->y + CELL_SIZE*2;
-	else if (it->dir == MAP_NEG_Y)
-		return curr.y < next_it->y - CELL_SIZE*2;
-	return false;
+	auto r = curr.project_ratio(*it,*(it+1));
+	if(r < 1)
+		return false;
+
+	auto leng = curr.Distance(*(it+1));
+
+	return r >= (leng + CELL_SIZE_2)/leng;
 }
 
 void MoveTypeFollowWall::init(bool is_left)
@@ -592,8 +580,21 @@ bool MoveTypeFollowWall::handleMoveBackEventRealTime(ACleanMode *p_clean_mode)
 	{
 		p_clean_mode->saveBlocks();
 		movement_i_ = mm_back;
-		float back_distance = static_cast<float>(bumper_status ? 0.01 : 0.05);
-		back_distance = static_cast<float>(tilt_status ? TILT_BACK_DISTANCE : back_distance);
+		float back_distance;
+		if(bumper_status)
+			back_distance = 0.01;
+		else if(cliff_status)
+		{
+			if(!cliff.getFront() && (wheel.getLeftWheelCliffStatus() || wheel.getRightWheelCliffStatus()))
+			{
+				back_distance = TILT_BACK_DISTANCE;
+				ROS_INFO("%s,%d Move back %d in order to away the desk",__FUNCTION__,__LINE__,TILT_BACK_DISTANCE);
+			}
+			else
+				back_distance = 0.05;
+		}
+		else if(tilt_status)
+			back_distance = TILT_BACK_DISTANCE;
 		sp_movement_.reset(new MovementBack(back_distance, BACK_MAX_SPEED));
 		return true;
 	}

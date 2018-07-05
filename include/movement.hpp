@@ -344,6 +344,8 @@ private:
 	uint8_t cliff_all_resume_cnt_{0};
 	uint8_t wheel_cliff_resume_cnt_{0};
 	uint8_t wheel_cliff_state_{1};
+	double wheel_cliff_back_distance_{0};
+	bool is_up_tilt_{false};
 	uint8_t robot_stuck_resume_cnt_{0};
 	uint8_t lidar_resume_cnt_{0};
 	double resume_gyro_start_time_;
