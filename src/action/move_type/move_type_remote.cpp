@@ -5,6 +5,7 @@
 #include <event_manager.h>
 #include "move_type.hpp"
 #include <robot.hpp>
+#include <cliff.h>
 
 int MoveTypeRemote::start_command_ = MoveTypeRemote::command_type::start_null;
 

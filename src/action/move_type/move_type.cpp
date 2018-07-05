@@ -215,12 +215,20 @@ bool IMoveType::handleMoveBackEvent(ACleanMode *p_clean_mode)
 		p_clean_mode->saveBlocks();
 		movement_i_ = mm_back;
 		float back_distance;
-		if (ev.cliff_triggered == BLOCK_FRONT)
-			back_distance = 0.04;
-		else if (ev.cliff_triggered == BLOCK_ALL)
-			back_distance = 0.05;
-		else if (ev.cliff_triggered) // For side cliff triggered.
-			back_distance = 0.06;
+		if (ev.cliff_triggered)
+		{
+			if (!cliff.getFront() && (wheel.getLeftWheelCliffStatus() || wheel.getRightWheelCliffStatus()))
+			{
+				back_distance = TILT_BACK_DISTANCE;
+				ROS_INFO("%s,%d Move back %d in order to away the desk",__FUNCTION__,__LINE__,TILT_BACK_DISTANCE);
+			}
+			else if (ev.cliff_triggered == BLOCK_FRONT)
+				back_distance = 0.04;
+			else if (ev.cliff_triggered == BLOCK_ALL)
+				back_distance = 0.05;
+			else  // For side cliff triggered.
+				back_distance = 0.06;
+		}
 		else if (ev.tilt_triggered)
 			back_distance = TILT_BACK_DISTANCE;
 		else if (ev.slip_triggered)
@@ -240,9 +248,7 @@ bool IMoveType::handleMoveBackEventForward(ACleanMode *p_clean_mode)
 	{
 		p_clean_mode->saveBlocks();
 		movement_i_ = mm_back;
-		auto back_distance = (ev.tilt_triggered || ev.slip_triggered) ? TILT_BACK_DISTANCE : 0.01;
-//		if(gyro.getAngleR() > 5)
-//			beeper.beepForCommand(VALID);
+		float back_distance;(ev.tilt_triggered || ev.slip_triggered) ? TILT_BACK_DISTANCE : 0.01;
 		sp_movement_.reset(new MovementBack(back_distance, BACK_MAX_SPEED));
 		return true;
 	}
