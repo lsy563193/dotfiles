@@ -84,7 +84,7 @@ public:
 
 	virtual bool checkTrapped(GridMap &map, const Cell_t &curr_cell);
 
-	bool shift_path(GridMap &map, const Cell_t &p1, Cell_t &p2, Cell_t &p3, int num,bool is_first, bool is_reveave, const func_compare_two_t& expand_condition);
+	bool shift_path(GridMap &map, const Cell_t &p1, Cell_t &p2, Cell_t &p3, int num,bool is_half, bool is_reveave, const func_compare_two_t& expand_condition);
 
 	virtual void optimizePath(GridMap &map, Cells &path, const Dir_t& pri_dir, const func_compare_two_t& expand_condition);
 	void findPath(GridMap &map, const Cell_t &start, const Cell_t &target, Cells &path, Dir_t last_i);

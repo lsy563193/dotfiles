@@ -534,7 +534,7 @@ void APathAlgorithm::findPath(GridMap &map, const Cell_t &start, const Cell_t &t
 }
 
 
-bool APathAlgorithm::shift_path(GridMap &map, const Cell_t &p1, Cell_t &p2, Cell_t &p3, int num,bool is_first, bool is_reveave, const func_compare_two_t& expand_condition) {
+bool APathAlgorithm::shift_path(GridMap &map, const Cell_t &p1, Cell_t &p2, Cell_t &p3, int num,bool is_half, bool is_reveave, const func_compare_two_t& expand_condition) {
 	auto dir_p23 = get_dir(p3, p2);
 	auto dir_p12 = is_reveave ? get_dir(p1, p2) : get_dir(p2, p1);
 //	ROS_INFO("dir_p12(%d), dir_p23(%d)", dir_p12, dir_p23);
@@ -542,7 +542,7 @@ bool APathAlgorithm::shift_path(GridMap &map, const Cell_t &p1, Cell_t &p2, Cell
 	auto p12_it = p2;
 	auto p12_it_tmp = p2;
 	auto i = 1;
-	for (; i <= num * 2; i++) {
+	for (; i <= num; i++) {
 		p12_it_tmp += cell_direction_[dir_p12];
 //		ROS_ERROR("p12_it_tmp,%d,%d", p12_it_tmp.x, p12_it_tmp.y);
 		for (auto p23_it = p12_it_tmp; p23_it != p3 + cell_direction_[dir_p12] * i+cell_direction_[dir_p23]; p23_it += cell_direction_[dir_p23]) {
@@ -558,13 +558,14 @@ bool APathAlgorithm::shift_path(GridMap &map, const Cell_t &p1, Cell_t &p2, Cell
 	}
 	if (i > 1) {
 		auto shift = (p12_it - p2);
-		if(is_first)
+		if(is_half)
 			shift /= 2;
 		ROS_INFO("(shift(%d,%d),", shift.x, shift.y);
 		p2 += shift;
 		p3 += shift;
 		return shift != Cell_t{0,0};
 	}
+	return false;
 }
 
 
@@ -696,26 +697,37 @@ void APathAlgorithm::optimizePath(GridMap &map, Cells &path, const Dir_t& priori
 	{
 		ROS_INFO(" size_of_path > 3 Optimize path for adjusting it away from obstacles..");
 		displayCellPath(path);
-		auto iterator = path.begin();
+
+		auto path_tmp = path;
+		std::vector<Cells::iterator> path_its{};
+
+		auto iterator = path_tmp.begin();
 
 		if(is_had_move_start_point)
 			iterator++;
 
-		for (; iterator != path.end() - 3; ++iterator)
+
+		for (; iterator != path_tmp.end() - 3; ++iterator)
 		{
-			ROS_INFO("dir(%d), y(%d)", get_dir(iterator + 1, iterator + 2), (iterator + 1)->y);
-			if (isXAxis(get_dir(iterator + 1, iterator + 2)) && (iterator + 1)->y % 2 == 1)
-			{
-				ROS_WARN("in odd line ,try move to even line(%d)!", (iterator + 1)->x);
-				shift_path(map, *iterator, *(iterator + 1), *(iterator + 2), 1, false, false,expand_condition);
-			} else
-			{
-				ROS_INFO("in x dir, is in even line try mv to even");
-//				auto num = isXAxis(get_dir(iterator + 1, iterator + 2)) ? 2 : 1;
-				shift_path(map, *iterator, *(iterator + 1), *(iterator + 2), 2, true, false,expand_condition);
-			}
+			auto diff_c = *(iterator+3) - *(iterator+2);
+			auto dir_3_2 = get_dir(iterator+3, iterator + 2);
+			auto limit_num = is_opposite_dir(get_dir(iterator+1, iterator), dir_3_2) ? 2 : (std::abs((isXAxis(dir_3_2) ?diff_c.x : diff_c.y) - 1));
+			ROS_INFO("diff_c(%d,%d), limit_num(%d)", diff_c.x, diff_c.y, limit_num);
+			if(shift_path(map, *iterator, *(iterator + 1), *(iterator + 2), limit_num, false, false,expand_condition))
+				path_its.push_back((iterator + 1));
 		}
-		path.erase(std::unique(path.begin(), path.end()), path.end());
+		displayCellPath(path);
+		displayCellPath(path_tmp);
+		for(auto && curr_it : path_its) {
+			auto next_it_i = std::distance(path_tmp.begin(), curr_it) + 1;
+			ROS_INFO("dir %d,path[%d](%d,%d), path_tmp[%d](%d,%d)", get_dir(curr_it - 1, curr_it), next_it_i,
+					 path[next_it_i].x, path[next_it_i].y, next_it_i, path_tmp[next_it_i].x, path_tmp[next_it_i].y);
+			if (isXAxis(get_dir(curr_it - 1, curr_it)))
+				path[next_it_i].x = curr_it->x;
+			else
+				path[next_it_i].y = curr_it->y;
+		}
+		displayCellPath(path_tmp);
 	}
 }
 
