@@ -1213,20 +1213,39 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 {
 	markRealTime();
 	Points ins_path{};//instantaneous path
+	bool should_handle_isolate{};
+	if (action_i_ == ac_linear) {
+		if (mode_i_ == cm_navigation || mode_i_ == cm_exploration || mode_i_ == cm_spot) {
+			should_handle_isolate = isStateFollowWall();
+		} else if (mode_i_ == cm_wall_follow) {
+			should_handle_isolate = isStateClean() || isStateFollowWall();
+		}
+	} else {
+		should_handle_isolate = false;
+	}
+//	ROS_ERROR("should_handle_isolate(%d)", should_handle_isolate);
+
 	ins_path.push_back(getPosition());
 	if(action_i_ == ac_linear) {
-		clearIsolateCell(fw_tmp_map, ins_path);
+		if (should_handle_isolate)
+			clearIsolateCell(fw_tmp_map, ins_path);
+
 		auto p_mt = dynamic_cast<MoveTypeLinear *>(p_move_type);
 		if (p_mt->isLinearForward())
 		{
 			if (p_mt->isPoseReach() || p_mt->isPassTargetStop(iterate_point_->dir)) {
-				if (1) {
+				if (should_handle_isolate) {
 					continue_to_isolate_ = true;
 					ROS_ERROR("set continue_to_isolate_ true");
 					if (isolate_path_.size() >= 2) {
 						for (int i = 0; i < 2; i++) {
 							isolate_path_.pop_front();
 						}
+					}
+					if (!isolate_path_.empty()) {
+						plan_path_.clear();
+						plan_path_.assign(isolate_path_.begin(), isolate_path_.end());
+						iterate_point_ = plan_path_.begin();
 					}
 				}
 				ROS_ERROR("xxxxxxxxx");
@@ -2239,6 +2258,7 @@ bool ACleanMode::isSwitchByEventInStateFollowWall()
 
 bool ACleanMode::updateActionInStateFollowWall()
 {
+	const int GO_STRAIGHT_DIS = 10;//10 meters
 //	passed_cell_path_.clear();
 //	fw_tmp_map.reset();
 	ROS_WARN("%s %d: is_isolate_(%d)", __FUNCTION__, __LINE__, is_isolate_);
@@ -2279,7 +2299,7 @@ bool ACleanMode::updateActionInStateFollowWall()
 			auto angle = 0;
 			auto point = getPosition().addRadian(angle);
 			plan_path_.push_back(point);
-			point = point.getRelative(10, 0);
+			point = point.getRelative(GO_STRAIGHT_DIS, 0);
 			plan_path_.push_back(point);
 			iterate_point_ = plan_path_.begin();
 			iterate_point_->dir = MAP_ANY;// note: fix bug follow isPassPosition
@@ -2294,13 +2314,16 @@ bool ACleanMode::updateActionInStateFollowWall()
 			plan_path_.clear();
 			auto point = getPosition().addRadian(angle);
 			plan_path_.push_back(point);
-			point = point.getRelative(10, 0);
+			point = point.getRelative(GO_STRAIGHT_DIS, 0);
 			plan_path_.push_back(point);
 			if (!isolate_path_.empty()) {
 				auto angle = getPosition().courseToDest(isolate_path_.front());
 				auto point = getPosition().addRadian(angle);
 				isolate_path_.push_front(point);
-				iterate_point_ = isolate_path_.begin();
+				plan_path_.clear();
+				plan_path_.assign(isolate_path_.begin(), isolate_path_.end());
+//				iterate_point_ = isolate_path_.begin();
+				iterate_point_ = plan_path_.begin();
 			} else {
 				passed_cell_path_.clear();
 				fw_tmp_map.reset();
@@ -2308,7 +2331,7 @@ bool ACleanMode::updateActionInStateFollowWall()
 				plan_path_.clear();
 				auto point = getPosition().addRadian(angle);
 				plan_path_.push_back(point);
-				point = point.getRelative(10, 0);
+				point = point.getRelative(GO_STRAIGHT_DIS, 0);
 				plan_path_.push_back(point);
 				iterate_point_ = plan_path_.begin();
 			}

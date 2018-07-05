@@ -188,7 +188,7 @@ bool MoveTypeLinear::isLinearForward()
 
 void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 {
-    auto target_size = std::distance(p_clean_mode->iterate_point_, p_clean_mode->plan_path_.end());
+  auto target_size = std::distance(p_clean_mode->iterate_point_, p_clean_mode->plan_path_.end());
 	if (target_size>2) {
 		auto target_point_ = std::next(p_clean_mode->iterate_point_);
 		auto &target_xy = (isXAxis(p_clean_mode->iterate_point_->dir)) ? target_point_->x : target_point_->y;
