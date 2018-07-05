@@ -79,6 +79,7 @@ void Mode::updateWheelCliffStatus()
 		is_wheel_cliff_triggered = false;
 		return;
 	}
+
 	if(ros::Time::now().toSec() - wheel_cliff_triggered_time_ > WHEEL_CLIFF_TIME_LIMIT) {
 		is_wheel_cliff_triggered = true;// the only wheel cliff value should care about
 		ROS_WARN("%s,%d,Enter exception by wheel cliff triggered over %lfs", __FUNCTION__, __LINE__,

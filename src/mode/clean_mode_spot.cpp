@@ -20,7 +20,7 @@ CleanModeSpot::CleanModeSpot()
 	clean_path_algorithm_.reset(new SpotCleanPathAlgorithm());
 	mode_i_ = cm_spot;
 	closed_count_limit_ = 1;
-	is_closed = false;
+	is_closed_ = false;
 	s_wifi.setWorkMode(cm_spot);
 	s_wifi.taskPushBack(S_Wifi::ACT::ACT_UPLOAD_STATUS);
 }

@@ -398,6 +398,7 @@ public:
 	bool checkChargerPos();
 
 	uint16_t updatePath();
+	void calIsolatePath();
 	bool pathAlgorithmCheckOutOfTrapped(IMoveType *p_mt);
 	bool checkClosed(IMoveType *p_mt, uint16_t distance);
 
@@ -482,8 +483,10 @@ public:
 	bool trapped_time_out_{};
 	bool trapped_closed_or_isolate{};
 	bool out_of_trapped_{};
+	bool continue_to_isolate_{};
 	// For warning in idle mode.
 	static bool robot_trapped_warning;
+	bool should_handle_isolate_{};
 
 	// State exploration
 	bool isStateExploration() const
@@ -562,8 +565,10 @@ public:
 		return seen_charger_during_cleaning_;
 	}
 
-	bool is_closed{true};
-	bool is_isolate{true};
+	bool is_first_wf_{true};
+	bool restart_wf_{false};
+	bool is_closed_{true};
+	bool is_isolate_{false};
 	int closed_count_{};
 	int closed_count_limit_{2};
 	int isolate_count_{};
@@ -587,6 +592,7 @@ public:
 	typedef std::set<PairCell_t> Blocks_t ;
 	Blocks_t c_blocks;
 	Points plan_path_{};
+	Points isolate_path_{};
 	bool should_follow_wall{};
 
 	Dir_t old_dir_{};
@@ -643,6 +649,7 @@ public:
 	void pubFitLineMarker(visualization_msgs::Marker fit_line_marker);
 	void setLinearCleaned();
 	uint8_t setFollowWall(GridMap&, bool is_left, const Points&);
+	uint8_t clearIsolateCell(GridMap&, const Points&);
 	void scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr& scan);
 	void setCleanMapMarkers(int16_t x, int16_t y, CellState type,  visualization_msgs::Marker& clean_map_markers_);
 	void pubCleanMapMarkers(GridMap& map, const std::deque<Cell_t>& path);

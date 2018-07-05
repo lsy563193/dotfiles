@@ -143,7 +143,7 @@ public:
 		battery_too_low_to_move_ = val;
 	}
 
-	bool batteryLowForGoingHome() const
+	/*bool batteryLowForGoingHome() const
 	{
 		return battery_low_for_going_home_;
 	}
@@ -151,7 +151,7 @@ public:
 	void setBatteryLowForGoingHome(bool val)
 	{
 		battery_low_for_going_home_ = val;
-	}
+	}*/
 
 	void setTfReady(bool is_ready)
 	{
@@ -316,7 +316,7 @@ private:
 	bool temp_spot_set_{};
 	bool battery_too_low_to_clean_{false};
 	bool battery_too_low_to_move_{false};
-	bool battery_low_for_going_home_{false};
+//	bool battery_low_for_going_home_{false};
 
 	tf::Vector3	robot_pos;
 	double	robot_rad;
