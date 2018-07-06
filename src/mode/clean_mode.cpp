@@ -702,7 +702,8 @@ void ACleanMode::scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr& scan)
 	if (lidar.isScanOriginalReady()
 			&& (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)) {
 		std::deque<Vector2<double>> points{};
-		calcLidarPath(scan, action_i_ == ac_follow_wall_left, points, wall_distance);
+		auto follow_wall_action = boost::dynamic_pointer_cast<MoveTypeFollowWall>(sp_action_);
+		calcLidarPath(scan, action_i_ == ac_follow_wall_left, points, follow_wall_action->getWallDistance());
 		setTempTarget(points, scan->header.seq);
 	}
 }
