@@ -146,7 +146,7 @@ private:
 class MoveTypeGoToCharger:public IMoveType
 {
 public:
-	MoveTypeGoToCharger();
+	MoveTypeGoToCharger(bool directly_enter_by_path_state = false);
 	~MoveTypeGoToCharger();
 
 	bool isFinish() override ;
@@ -240,7 +240,7 @@ public:
 
 
 private:
-	boost::shared_ptr<IAction> p_movement_;
+	boost::shared_ptr<IAction> p_action_;
 
 	uint8_t buf_[REC::REC_LEN];
 
@@ -278,6 +278,12 @@ private:
 	bool checkStage1Finish();
 
 	// For stage 2.
+	bool rcon_turn_finish_{false};
+
+	double target_angle_;
+	uint32_t target_rcon_value_;
+	std::string target_rcon_;
+
 	uint8_t lidar_check_cnt_{0};
 	double lidar_check_seq_{0};
 

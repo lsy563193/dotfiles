@@ -96,7 +96,7 @@ FILE(GLOB PP_SRC
 	src/action/move_type/movement/movement_follow_wall_infrared.cpp
 	src/action/move_type/movement/movement_follow_wall_lidar.cpp
 	src/action/move_type/movement/movement_follow_point_linear.cpp
-	src/action/move_type/movement/movement_go_charger.cpp
+	src/action/move_type/movement/movement_go_to_charger.cpp
 	src/action/move_type/movement/movement_exception_resume.cpp
 	src/action/move_type/movement/movement_turn.cpp
 	src/action/move_type/movement/movement_turn.cpp

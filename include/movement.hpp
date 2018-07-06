@@ -250,7 +250,7 @@ private:
 class MovementGoToCharger: public IMovement
 {
 public:
-	MovementGoToCharger();
+	MovementGoToCharger(bool directly_enter_by_path_state = false);
 	~MovementGoToCharger();
 	bool _isStop();
 	bool isSwitch();

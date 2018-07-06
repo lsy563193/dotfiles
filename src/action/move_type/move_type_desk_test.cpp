@@ -30,7 +30,8 @@
 
 #include "error.h"
 
-#define RCON_ROTATE_SPEED (10)
+#define CLIFF_STAY_TIME (0.2)
+#define RCON_STAY_TIME (1.5)
 
 // Sequence for baseline setting.
 #define CTL_L_OBS_BL_H 2
@@ -82,8 +83,8 @@ void MoveTypeDeskTest::run()
 				infrared_display.displayNormalMsg(test_stage_, 0);
 				serial.setSendData(CTL_WORK_MODE, DESK_TEST_MOVEMENT_MODE);
 				usleep(30000);// Make sure infrared display has been sent.
-				p_movement_.reset();
-				p_movement_.reset(new ActionOpenGyroAndLidar());
+				p_action_.reset();
+				p_action_.reset(new ActionOpenGyroAndLidar());
 				ROS_WARN("%s %d: Stage 1 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
 			}
 			break;
@@ -96,9 +97,10 @@ void MoveTypeDeskTest::run()
 				test_step_ = 0;
 				// Switch to next stage.
 				infrared_display.displayNormalMsg(test_stage_, 0);
-				p_movement_.reset();
+				p_action_.reset();
 				check_start_time_ = ros::Time::now().toSec();
 				wheel.setDirectionForward();
+				obs.control(ON);
 				ROS_WARN("%s %d: Stage 2 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
 			}
 			break;
@@ -115,8 +117,8 @@ void MoveTypeDeskTest::run()
 				// Switch to next stage.
 				infrared_display.displayNormalMsg(test_stage_, 0);
 				sp_mode_->action_i_ = sp_mode_->ac_follow_wall_left;
-				p_movement_.reset();
-				p_movement_.reset(new MoveTypeFollowWall(true, false));
+				p_action_.reset();
+				p_action_.reset(new MoveTypeFollowWall(true /* Left follow wall*/, false /* Not in small area*/));
 
 				ROS_WARN("%s %d: Stage 3 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
 			}
@@ -132,8 +134,8 @@ void MoveTypeDeskTest::run()
 				// Switch to next stage.
 				infrared_display.displayNormalMsg(test_stage_, 0);
 				lidar.motorCtrl(OFF);
-				p_movement_.reset();
-				p_movement_.reset(new MovementStay(0.2));
+				p_action_.reset();
+				p_action_.reset(new MovementStay(CLIFF_STAY_TIME));
 				ROS_WARN("%s %d: Stage 4 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
 			}
 			break;
@@ -147,8 +149,7 @@ void MoveTypeDeskTest::run()
 				// Switch to next stage.
 				infrared_display.displayNormalMsg(test_stage_, 0);
 				c_rcon.resetStatus();
-				p_movement_.reset();
-				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-179), ROTATE_TOP_SPEED * 2 / 3));
+				p_action_.reset();
 				brush.normalOperate();
 				obs.control(OFF); // For checking rcon signal.
 				vacuum.setForUserSetMaxMode(false);
@@ -167,8 +168,8 @@ void MoveTypeDeskTest::run()
 				// Switch to next stage.
 				infrared_display.displayNormalMsg(test_stage_, 0);
 				c_rcon.resetStatus();
-				p_movement_.reset();
-				p_movement_.reset(new MoveTypeGoToCharger());
+				p_action_.reset();
+				p_action_.reset(new MoveTypeGoToCharger(true));
 				brush.slowOperate();
 				vacuum.setForCurrentMode(Vacuum::VacMode::vac_low_mode);
 				ROS_WARN("%s %d: Stage 6 finished, next stage: %d.", __FUNCTION__, __LINE__, test_stage_);
@@ -185,7 +186,7 @@ void MoveTypeDeskTest::run()
 				vacuum.stop();
 				test_step_ = 0;
 				// Switch to next stage.
-				p_movement_.reset();
+				p_action_.reset();
 				lidar.motorCtrl(OFF);
 				usleep(50000);
 				ROS_WARN("%s %d: Stage 7 finished.", __FUNCTION__, __LINE__);
@@ -323,10 +324,11 @@ bool MoveTypeDeskTest::dataExtract(const uint8_t *buf)
 
 		robot::instance()->setCurrent((buf[REC_ROBOT_CUNT_H] << 8) | buf[REC_ROBOT_CUNT_L]);
 
-		ROS_INFO("brush(l%d, r%d, m%d), wheel(l%d, r%d), vacuum(%d), robot(%d).",
-			   brush.getLeftCurrent(), brush.getRightCurrent(), brush.getMainCurrent(),
-			   wheel.getLeftCurrent(), wheel.getRightCurrent(), vacuum.getCurrent(),
-			   robot::instance()->getCurrent());
+		if (error_code_ == 0)
+			ROS_INFO("brush(l%d, r%d, m%d), wheel(l%d, r%d), vacuum(%d), robot(%d).",
+					 brush.getLeftCurrent(), brush.getRightCurrent(), brush.getMainCurrent(),
+					 wheel.getLeftCurrent(), wheel.getRightCurrent(), vacuum.getCurrent(),
+					 robot::instance()->getCurrent());
 
 	} else if (current_work_mode == DESK_TEST_MOVEMENT_MODE)
 	{
@@ -464,52 +466,84 @@ bool MoveTypeDeskTest::checkStage1Finish()
 
 bool MoveTypeDeskTest::checkStage2Finish()
 {
+	auto _check_for_rcon = [&](const double &target_angle, const uint32_t &target_rcon_value, const std::string &target_rcon)
+	{
+		if (!rcon_turn_finish_)
+		{
+			if (p_action_ == nullptr)
+			{
+				p_action_.reset(new MovementTurn(degree_to_radian(target_angle), ROTATE_TOP_SPEED));
+				ROS_INFO("%s %d: Start turning for Rcon %s.", __FUNCTION__, __LINE__, target_rcon.c_str());
+			}
+
+			if (p_action_->isFinish())
+			{
+				ROS_INFO("%s %d: Start checking for Rcon %s.", __FUNCTION__, __LINE__, target_rcon.c_str());
+				rcon_turn_finish_ = true;
+				p_action_.reset();
+				p_action_.reset(new MovementStay(RCON_STAY_TIME));
+			}
+			else
+				p_action_->run();
+		}
+		else
+		{
+//			ROS_INFO("%s %d: Start checking for Rcon %s.", __FUNCTION__, __LINE__, target_rcon.c_str());
+			bool rcon_checked = (c_rcon.getStatus() & target_rcon_value) != 0;
+			if (rcon_checked || p_action_->isTimeUp())
+			{
+				if (p_action_->isTimeUp())
+					ROS_WARN("%s %d: Timeout for this checking.", __FUNCTION__, __LINE__);
+				test_step_++;
+				p_action_.reset();
+				rcon_turn_finish_ = false;
+			}
+			else
+				p_action_->run();
+		}
+	};
+
 	switch (test_step_)
 	{
 		case 0: // For opening gyro.
 		case 1: // For opening lidar.
-		case 3: // Turn for receiving rcon.
-		case 5: // Turn for receiving rcon.
 		{
-			if (p_movement_->isFinish())
+			if (p_action_->isFinish())
 			{
 				if (test_step_ == 0)
 				{
-					p_movement_.reset();
-					p_movement_.reset(new ActionOpenLidar());
+					p_action_.reset(new ActionOpenLidar());
 					brush.normalOperate();
 					vacuum.setForUserSetMaxMode(false);
 					vacuum.setSpeedByUserSetMode();
 				}
 				else if (test_step_ == 1)
+				{
 					c_rcon.resetStatus();
+					p_action_.reset();
+				}
 				test_step_++;
 			}
 			else
-				p_movement_->run();
+				p_action_->run();
 
 //			ROS_INFO("%s %d: angle:%f", __FUNCTION__, __LINE__, gyro.getAngleY());
 			break;
 		}
 		case 2:
+		case 7:
 		{
-			ROS_WARN("%s %d: Enter lidar checking front.", __FUNCTION__, __LINE__);
+			obs.control(ON);
+			bool check_front = test_step_ == 2;
+			ROS_WARN("%s %d: Enter lidar checking %s.", __FUNCTION__, __LINE__, check_front ? "front" : "back");
 			wheel.stop();
 			// Stop for checking lidar data.
 			uint8_t _cnt{10};
-//			float scan_ref[_cnt][360];
 			float scan_ref[360];
-			lidar.readLidarDataFromFile(true, scan_ref);
+			lidar.readLidarDataFromFile(check_front, scan_ref);
 			uint8_t scan_valid_cnt{0};
-//			while (ros::ok() && !key.getPressStatus())
-//			{
-//				usleep(1000000);
-//				if (p_movement_->isFinish())
-//					p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-178), RCON_ROTATE_SPEED));
-//				p_movement_->run();
-//			}
 
-			while (ros::ok() && lidar_check_cnt_ < _cnt)
+			while (ros::ok() && lidar_check_cnt_ < _cnt && scan_valid_cnt < _cnt - 3/* 7 scans can be acceptable. */)
 			{
 				auto scan_data = lidar.getLidarScanDataOriginal();
 				if (lidar_check_seq_ != scan_data.header.seq)
@@ -533,7 +567,7 @@ bool MoveTypeDeskTest::checkStage2Finish()
 				usleep(20000);
 			}
 			// For debug
-//			scan_valid_cnt = _cnt;
+			scan_valid_cnt = _cnt;
 			ROS_INFO("%s %d: Scan valid count:%d.", __FUNCTION__, __LINE__, scan_valid_cnt);
 			if (scan_valid_cnt < _cnt -1)
 			{
@@ -545,70 +579,103 @@ bool MoveTypeDeskTest::checkStage2Finish()
 			else
 			{
 				test_step_++;
-				p_movement_.reset();
-				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-178), RCON_ROTATE_SPEED));
 				obs.control(OFF); // For checking rcon signal.
-				ROS_WARN("%s %d: Enter rcon turning 1.", __FUNCTION__, __LINE__);
+				lidar_check_cnt_ = 0;
+				ROS_WARN("%s %d: Enter rcon checking.", __FUNCTION__, __LINE__);
 			}
 			break;
 		}
+		case 3:
 		case 4:
+		case 5:
+		case 8:
+		case 9:
+		case 10:
+		case 11:
+		case 12:
 		{
-			ROS_WARN("%s %d: Enter lidar checking back.", __FUNCTION__, __LINE__);
-			wheel.stop();
-			obs.control(ON); // For checking OBS baseline.
-			// Stop for checking lidar data.
-			uint8_t _cnt{10};
-//			float scan_ref[_cnt * 2][360];
-			float scan_ref[360];
-			lidar.readLidarDataFromFile(false, scan_ref);
-			uint8_t scan_valid_cnt{0};
-			while (ros::ok() && lidar_check_cnt_ < _cnt * 2)
+			switch (test_step_)
 			{
-				auto scan_data = lidar.getLidarScanDataOriginal();
-				if (lidar_check_seq_ != scan_data.header.seq)
+				case 3:
 				{
-					lidar_check_seq_ = scan_data.header.seq;
-//					lidar.saveLidarDataToFile(lidar_check_cnt_, scan_data);
-					if(lidar.scanDataChecking(false, scan_data, scan_ref))
-					{
-						ROS_WARN("Good boy, %d scan ok.", lidar_check_cnt_);
-						scan_valid_cnt++;
-					}
-					else
-						ROS_ERROR("Now something doesn't feel right about %d scan...", lidar_check_cnt_);
-					lidar_check_cnt_++;
+					target_angle_ = 0;
+					target_rcon_value_ = RconFL2_HomeT;
+					target_rcon_ = "FL2";
+					break;
 				}
+				case 4:
+				{
+					target_angle_ = -20;
+					target_rcon_value_ = RconL_HomeT;
+					target_rcon_ = "L";
+					break;
+				}
+				case 5:
+				{
+					target_angle_ = -70;
+					target_rcon_value_ = RconBL_HomeT;
+					target_rcon_ = "BL";
+					break;
+				}
+				case 8:
+				{
+					target_angle_ = 150;
+					target_rcon_value_ = RconBR_HomeT;
+					target_rcon_ = "BR";
+					break;
+				}
+				case 9:
+				{
+					target_angle_ = 110;
+					target_rcon_value_ = RconR_HomeT;
+					target_rcon_ = "R";
+					break;
+				}
+				case 10:
+				{
+					target_angle_ = 90;
+					target_rcon_value_ = RconFR2_HomeT;
+					target_rcon_ = "FR2";
+					break;
+				}
+				case 11:
+				{
+					target_angle_ = 60;
+					target_rcon_value_ = RconFR_HomeT;
+					target_rcon_ = "FR";
+					break;
+				}
+				default: //case 12:
+				{
+					target_angle_ = 30;
+					target_rcon_value_ = RconFL_HomeT;
+					target_rcon_ = "FL";
+					break;
+				}
+			}
 
-				left_obs_sum_ += obs.getLeft();
-				front_obs_sum_ += obs.getFront();
-				right_obs_sum_ += obs.getRight();
-				sum_cnt_++;
-				usleep(20000);
-			}
-			// For debug
-//			scan_valid_cnt = _cnt;
-			ROS_INFO("%s %d: Scan valid count:%d.", __FUNCTION__, __LINE__, scan_valid_cnt);
-			if (scan_valid_cnt < _cnt -1)
-			{
-				error_step_ = test_stage_;
-				error_code_ = LIDAR_ERROR;
-				error_content_ = scan_valid_cnt;
-				test_stage_ = 99;
-			}
-			else
+			_check_for_rcon(target_angle_, target_rcon_value_, target_rcon_);
+
+			break;
+		}
+		case 6:
+		case 13:
+		{
+			// Turn for lidar checking or for returning to the origin angle.
+			if (p_action_ == nullptr)
+				p_action_.reset(new MovementTurn(degree_to_radian(test_step_ == 6 ? -178 : 4), ROTATE_TOP_SPEED));
+
+			if (p_action_->isFinish())
 			{
 				test_step_++;
-				p_movement_.reset();
-				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-178), RCON_ROTATE_SPEED));
-				obs.control(OFF); // For checking rcon signal.
-				ROS_WARN("%s %d: Enter rcon turning 2.", __FUNCTION__, __LINE__);
+				p_action_.reset();
 			}
+			else
+				p_action_->run();
 			break;
 		}
 		default://case 6:
 		{
-			obs.control(ON); // For resuming OBS function.
 			// Check for rcon.
 			if (!(c_rcon.getStatus() & (RconBL_HomeT)))
 			{
@@ -683,8 +750,8 @@ bool MoveTypeDeskTest::checkStage3Finish()
 		{
 			if (bumper.getStatus())
 			{
-				p_movement_.reset();
-				p_movement_.reset(new MovementBack(0.01, 20));
+				p_action_.reset();
+				p_action_.reset(new MovementBack(0.01, 20));
 				test_step_++;
 				check_start_time_ = ros::Time::now().toSec();
 			} else if (ros::Time::now().toSec() - check_start_time_ > 10)
@@ -700,10 +767,10 @@ bool MoveTypeDeskTest::checkStage3Finish()
 		}
 		case 1:
 		{
-			if (p_movement_->isFinish())
+			if (p_action_->isFinish())
 			{
-				p_movement_.reset();
-				p_movement_.reset(new MovementTurn(getPosition().th - degree_to_radian(45), ROTATE_TOP_SPEED * 3 / 2));
+				p_action_.reset();
+				p_action_.reset(new MovementTurn(getPosition().th - degree_to_radian(45), ROTATE_TOP_SPEED * 3 / 2));
 				test_step_++;
 			} else if(ev.bumper_jam){
 				error_step_ = test_stage_;
@@ -711,18 +778,18 @@ bool MoveTypeDeskTest::checkStage3Finish()
 				error_code_ = LEFT_BUMPER_ERROR;
 			}
 			else
-				p_movement_->run();
+				p_action_->run();
 			break;
 		}
 		case 2:
 		{
-			if (p_movement_->isFinish())
+			if (p_action_->isFinish())
 			{
-				p_movement_.reset();
-				p_movement_.reset(new MovementDirectGo(false, 1));
+				p_action_.reset();
+				p_action_.reset(new MovementDirectGo(false, 1));
 				test_step_++;
 			} else
-				p_movement_->run();
+				p_action_->run();
 			break;
 		}
 		case 3: // For going towards the wall and test for left bumper.
@@ -730,87 +797,87 @@ bool MoveTypeDeskTest::checkStage3Finish()
 			if (bumper.getStatus() & BLOCK_LEFT)
 			{
 				test_step_++;
-				p_movement_.reset();
-				p_movement_.reset(new MovementBack(0.01, 20));
+				p_action_.reset();
+				p_action_.reset(new MovementBack(0.01, 20));
 				ROS_INFO("%s %d: Left bumper checked.", __FUNCTION__, __LINE__);
 			}
-			else if (p_movement_->isTimeUp())
+			else if (p_action_->isTimeUp())
 			{
 				error_step_ = test_stage_;
 				test_stage_ = 99;
 				error_code_ = LEFT_BUMPER_ERROR;
 			}
 			else
-				p_movement_->run();
+				p_action_->run();
 			break;
 		}
 		case 4: // For moving back.
 		{
-			if (p_movement_->isFinish())
+			if (p_action_->isFinish())
 			{
 				test_step_++;
-				p_movement_.reset();
-				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(90), ROTATE_TOP_SPEED * 3 / 2));
+				p_action_.reset();
+				p_action_.reset(new MovementTurn(getPosition().th + degree_to_radian(90), ROTATE_TOP_SPEED * 3 / 2));
 			}else if(ev.bumper_jam){
 				error_step_ = test_stage_;
 				test_stage_ = 99;
 				error_code_ = LEFT_BUMPER_ERROR;
 			}
 			else
-				p_movement_->run();
+				p_action_->run();
 			break;
 		}
 		case 5: // For turning.
 		{
-			if (p_movement_->isFinish())
+			if (p_action_->isFinish())
 			{
 				test_step_++;
-				p_movement_.reset();
-				p_movement_.reset(new MovementDirectGo(false));
+				p_action_.reset();
+				p_action_.reset(new MovementDirectGo(false));
 				ROS_INFO("%s %d: Start checking for right bumper.", __FUNCTION__, __LINE__);
 			}
 			else
-				p_movement_->run();
+				p_action_->run();
 			break;
 		}
 		case 6: // For going towards the wall and test for right bumper.
 		{
-			if (p_movement_->isFinish())
+			if (p_action_->isFinish())
 			{
 				test_step_++;
-				p_movement_.reset();
-				p_movement_.reset(new MovementBack(0.01, 20));
+				p_action_.reset();
+				p_action_.reset(new MovementBack(0.01, 20));
 				ROS_INFO("%s %d: Right bumper checked.", __FUNCTION__, __LINE__);
 			}
-			else if (p_movement_->isTimeUp())
+			else if (p_action_->isTimeUp())
 			{
 				error_step_ = test_stage_;
 				test_stage_ = 99;
 				error_code_ = RIGHT_BUMPER_ERROR;
 			}
 			else
-				p_movement_->run();
+				p_action_->run();
 			break;
 		}
 		case 7: // For moving back.
 		{
-			if (p_movement_->isFinish())
+			if (p_action_->isFinish())
 			{
 				test_step_++;
-				p_movement_.reset();
-				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-130), ROTATE_TOP_SPEED * 3 / 2));
+				p_action_.reset();
+				p_action_.reset(new MovementTurn(getPosition().th + degree_to_radian(-130), ROTATE_TOP_SPEED * 3 / 2));
 			}else if(ev.bumper_jam){
 				error_step_ = test_step_;
 				test_step_ = 99;
 				error_code_ = RIGHT_BUMPER_ERROR;
 			}
 			else
-				p_movement_->run();
+				p_action_->run();
 			break;
 		}
 		case 8: // For turning to follow wall and check for OBS.
 		{
-			if (p_movement_->isFinish())
+			if (p_action_->isFinish())
 			{
 				// Checking for OBS value.
 				ROS_WARN("%s %d: left_obs_max:%d, front_obs_max:%d, right_obs_max:%d.",
@@ -840,7 +907,7 @@ bool MoveTypeDeskTest::checkStage3Finish()
 					return true;
 			}
 			else
-				p_movement_->run();
+				p_action_->run();
 			break;
 		}
 
@@ -920,8 +987,8 @@ bool MoveTypeDeskTest::checkStage4Finish()
 			}
 			else
 			{
-				p_movement_->isFinish(); // For calculating targets.
-				p_movement_->run();
+				p_action_->isFinish(); // For calculating targets.
+				p_action_->run();
 			}
 			break;
 		}
@@ -1122,17 +1189,17 @@ bool MoveTypeDeskTest::checkStage5Finish()
 		}
 		case 1: // Getting baseline for front cliff.
 		{
-			if (p_movement_->isFinish())
+			if (p_action_->isFinish())
 			{
-				p_movement_.reset();
-				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(90), ROTATE_TOP_SPEED * 3 / 2));
+				p_action_.reset();
+				p_action_.reset(new MovementTurn(getPosition().th + degree_to_radian(90), ROTATE_TOP_SPEED * 3 / 2));
 				front_cliff_baseline_ = static_cast<uint16_t>(front_cliff_sum_ / sum_cnt_);
 				ROS_WARN("%s %d: front_cliff_baseline_:%d.", __FUNCTION__, __LINE__, front_cliff_baseline_);
 				test_step_++;
 			} else{
 				front_cliff_sum_ += cliff.getFrontValue();
 				sum_cnt_++;
-				p_movement_->run();
+				p_action_->run();
 			}
 			break;
 		}
@@ -1140,26 +1207,26 @@ bool MoveTypeDeskTest::checkStage5Finish()
 		{
 			if (cliff.getRightValue() < cliff_min_ref_)
 			{
-				p_movement_.reset();
-				p_movement_.reset(new MovementStay(0.2));
+				p_action_.reset();
+				p_action_.reset(new MovementStay(CLIFF_STAY_TIME));
 				sum_cnt_ = 0;
 				test_step_++;
 			}
-			else if (p_movement_->isFinish())
+			else if (p_action_->isFinish())
 			{
 				error_code_ = RIGHT_CLIFF_ERROR;
 				error_content_ = static_cast<uint16_t>(cliff.getRightValue());
 			}
 			else
-				p_movement_->run();
+				p_action_->run();
 			break;
 		}
 		case 3: // Getting baseline for right cliff.
 		{
-			if (p_movement_->isFinish())
+			if (p_action_->isFinish())
 			{
-				p_movement_.reset();
-				p_movement_.reset(new MovementBack(0.1, 20));
+				p_action_.reset();
+				p_action_.reset(new MovementBack(0.1, 20));
 				movement_i_= mm_back;
 				right_cliff_baseline_ = static_cast<uint16_t>(right_cliff_sum_ / sum_cnt_);
 				ROS_WARN("%s %d: right_cliff_baseline_:%d.", __FUNCTION__, __LINE__, right_cliff_baseline_);
@@ -1167,7 +1234,7 @@ bool MoveTypeDeskTest::checkStage5Finish()
 			} else{
 				right_cliff_sum_ += cliff.getRightValue();
 				sum_cnt_++;
-				p_movement_->run();
+				p_action_->run();
 			}
 			break;
 		}
@@ -1177,39 +1244,39 @@ bool MoveTypeDeskTest::checkStage5Finish()
 			{
 				if (cliff.getLeftValue() < cliff_min_ref_)
 				{
-					p_movement_.reset();
-					p_movement_.reset(new MovementStay(0.2));
+					p_action_.reset();
+					p_action_.reset(new MovementStay(CLIFF_STAY_TIME));
 					sum_cnt_ = 0;
 					test_step_++;
 				}
 				else
-					p_movement_->run();
+					p_action_->run();
 			}
-			else if (p_movement_->isFinish())
+			else if (p_action_->isFinish())
 			{
 				if (movement_i_ == mm_back)
 				{
 					movement_i_ = mm_turn;
-					p_movement_.reset();
-					p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-120), ROTATE_TOP_SPEED * 3 / 2));
+					p_action_.reset();
+					p_action_.reset(new MovementTurn(getPosition().th + degree_to_radian(-120), ROTATE_TOP_SPEED * 3 / 2));
 				}
 				else if (movement_i_ == mm_turn)
 				{
 					movement_i_ = mm_straight;
-					p_movement_.reset();
-					p_movement_.reset(new MovementDirectGo(false));
+					p_action_.reset();
+					p_action_.reset(new MovementDirectGo(false));
 				}
 			}
 			else
-				p_movement_->run();
+				p_action_->run();
 			break;
 		}
 		case 5: // Getting baseline for left cliff.
 		{
-			if (p_movement_->isFinish())
+			if (p_action_->isFinish())
 			{
-				p_movement_.reset();
-				p_movement_.reset(new MovementBack(0.1, 20));
+				p_action_.reset();
+				p_action_.reset(new MovementBack(0.1, 20));
 				movement_i_= mm_back;
 				left_cliff_baseline_ = static_cast<uint16_t>(left_cliff_sum_ / sum_cnt_);
 				ROS_WARN("%s %d: left_cliff_baseline_:%d.", __FUNCTION__, __LINE__, left_cliff_baseline_);
@@ -1217,42 +1284,42 @@ bool MoveTypeDeskTest::checkStage5Finish()
 			} else{
 				left_cliff_sum_ += cliff.getLeftValue();
 				sum_cnt_++;
-				p_movement_->run();
+				p_action_->run();
 			}
 			break;
 		}
 		case 6: // Moving back.
 		{
-			if (p_movement_->isFinish())
+			if (p_action_->isFinish())
 			{
-				p_movement_.reset();
-				p_movement_.reset(new MovementTurn(getPosition().th + degree_to_radian(-90), ROTATE_TOP_SPEED * 3 / 2));
+				p_action_.reset();
+				p_action_.reset(new MovementTurn(getPosition().th + degree_to_radian(-90), ROTATE_TOP_SPEED * 3 / 2));
 				test_step_++;
 			}
 			else{
 				left_cliff_sum_ += cliff.getLeftValue();
 				sum_cnt_++;
-				p_movement_->run();
+				p_action_->run();
 			}
 			break;
 		}
 		case 7:
 		{
-			if (p_movement_->isFinish())
+			if (p_action_->isFinish())
 			{
-				p_movement_.reset();
-				p_movement_.reset(new MovementDirectGo(false, 1));
+				p_action_.reset();
+				p_action_.reset(new MovementDirectGo(false, 1));
 				test_step_++;
 			} else
-				p_movement_->run();
+				p_action_->run();
 			break;
 		}
 		default: // case 8:
 		{
-			if (p_movement_->isFinish())
+			if (p_action_->isFinish())
 				return true;
 			else
-				p_movement_->run();
+				p_action_->run();
 			break;
 		}
 	}
@@ -1262,77 +1329,181 @@ bool MoveTypeDeskTest::checkStage5Finish()
 
 bool MoveTypeDeskTest::checkStage6Finish()
 {
+	auto _check_for_rcon = [&](const double &target_angle, const uint32_t &target_rcon_value, const std::string &target_rcon)
+	{
+		if (!rcon_turn_finish_)
+		{
+			if (p_action_ == nullptr)
+			{
+				p_action_.reset(new MovementTurn(degree_to_radian(target_angle), ROTATE_TOP_SPEED));
+				ROS_INFO("%s %d: Start turning for Rcon %s.", __FUNCTION__, __LINE__, target_rcon.c_str());
+			}
+
+			if (p_action_->isFinish())
+			{
+				ROS_INFO("%s %d: Start checking for Rcon %s.", __FUNCTION__, __LINE__, target_rcon.c_str());
+				rcon_turn_finish_ = true;
+				p_action_.reset();
+				p_action_.reset(new MovementStay(RCON_STAY_TIME));
+//				p_action_.reset(new MovementStay(5));
+			}
+			else
+				p_action_->run();
+		}
+		else
+		{
+//			ROS_INFO("%s %d: Start checking for Rcon %s.", __FUNCTION__, __LINE__, target_rcon.c_str());
+//			ROS_INFO("%s %d: rcon status:%x, target status:%08x.", __FUNCTION__, __LINE__, c_rcon.getStatus(), target_rcon_value);
+			bool rcon_checked = (c_rcon.getStatus() & target_rcon_value) != 0;
+			if (rcon_checked || p_action_->isTimeUp())
+			{
+				if (p_action_->isTimeUp())
+					ROS_WARN("%s %d: Timeout for this checking.", __FUNCTION__, __LINE__);
+				test_step_++;
+				p_action_.reset();
+				rcon_turn_finish_ = false;
+			}
+			else
+				p_action_->run();
+		}
+	};
+
 	switch(test_step_)
 	{
 		case 0:
+		case 1:
+		case 2:
+		case 3:
+		case 4:
+		case 5:
+		case 6:
+		case 7:
 		{
-			if (p_movement_->isFinish())
+			switch (test_step_)
 			{
-				p_movement_.reset();
-				p_movement_.reset(
-						new MovementTurn(getPosition().th + degree_to_radian(-179), ROTATE_TOP_SPEED * 2 / 3));
-				test_step_++;
-			} else
-				p_movement_->run();
+				case 0:
+				{
+					target_angle_ = 40;
+					target_rcon_value_ = RconFL2_HomeL | RconFL2_HomeR;
+					target_rcon_ = "FL2";
+					break;
+				}
+				case 1:
+				{
+					target_angle_ = 20;
+					target_rcon_value_ = RconL_HomeL | RconL_HomeR;
+					target_rcon_ = "L";
+					break;
+				}
+				case 2:
+				{
+					target_angle_ = -30;
+					target_rcon_value_ = RconBL_HomeL | RconBL_HomeR;
+					target_rcon_ = "BL";
+					break;
+				}
+				case 3:
+				{
+					target_angle_ = -160;
+					target_rcon_value_ = RconBR_HomeL | RconBR_HomeR;
+					target_rcon_ = "BR";
+					break;
+				}
+				case 4:
+				{
+					target_angle_ = 150;
+					target_rcon_value_ = RconR_HomeL | RconR_HomeR;
+					target_rcon_ = "R";
+					break;
+				}
+				case 5:
+				{
+					target_angle_ = 130;
+					target_rcon_value_ = RconFR2_HomeL | RconFR2_HomeR;
+					target_rcon_ = "FR2";
+					break;
+				}
+				case 6:
+				{
+					target_angle_ = 100;
+					target_rcon_value_ = RconFR_HomeL | RconFR_HomeR;
+					target_rcon_ = "FR";
+					break;
+				}
+				default: //case 7:
+				{
+					target_angle_ = 85;
+					target_rcon_value_ = RconFL_HomeL | RconFL_HomeR;
+					target_rcon_ = "FL";
+					break;
+				}
+			}
+
+			_check_for_rcon(target_angle_, target_rcon_value_, target_rcon_);
+
 			break;
 		}
-		case 1:
+		case 8:
 		{
-			if (p_movement_->isFinish())
+			obs.control(ON); // For resuming OBS function.
+			// Check for rcon.
+			if (!(c_rcon.getStatus() & (RconBL_HomeL | RconBL_HomeR)))
 			{
-				obs.control(ON); // For resuming OBS function.
-				// Check for rcon.
-				if (!(c_rcon.getStatus() & (RconBL_HomeL | RconBL_HomeR)))
-				{
-					error_code_ = BLRCON_ERROR;
-					error_content_ = static_cast<uint16_t>((c_rcon.getStatus() & (RconBL_HomeT | RconBL_HomeL | RconBL_HomeR)) >> 28);
-				}
-				else if (!(c_rcon.getStatus() & (RconL_HomeL | RconL_HomeR)))
-				{
-					error_code_ = LRCON_ERROR;
-					error_content_ = static_cast<uint16_t>((c_rcon.getStatus() & (RconL_HomeT | RconL_HomeL | RconL_HomeR)) >> 24);
-				}
-				else if (!(c_rcon.getStatus() & (RconFL2_HomeL | RconFL2_HomeR)))
-				{
-					error_code_ = FL2RCON_ERROR;
-					error_content_ = static_cast<uint16_t>((c_rcon.getStatus() & (RconFL2_HomeT | RconFL2_HomeL | RconFL2_HomeR)) >> 20);
-				}
-				else if (!(c_rcon.getStatus() & (RconFL_HomeL | RconFL_HomeR)))
-				{
-					error_code_ = FLRCON_ERROR;
-					error_content_ = static_cast<uint16_t>((c_rcon.getStatus() & (RconFL_HomeT | RconFL_HomeL | RconFL_HomeR)) >> 16);
-				}
-				else if (!(c_rcon.getStatus() & (RconFR_HomeL | RconFR_HomeR)))
-				{
-					error_code_ = FRRCON_ERROR;
-					error_content_ = static_cast<uint16_t>((c_rcon.getStatus() & (RconFR_HomeT | RconFR_HomeL | RconFR_HomeR)) >> 12);
-				}
-				else if (!(c_rcon.getStatus() & (RconFR2_HomeL | RconFR2_HomeR)))
-				{
-					error_code_ = FR2RCON_ERROR;
-					error_content_ = static_cast<uint16_t>((c_rcon.getStatus() & (RconFR2_HomeT | RconFR2_HomeL | RconFR2_HomeR)) >> 8);
-				}
-				else if (!(c_rcon.getStatus() & (RconR_HomeL | RconR_HomeR)))
-				{
-					error_code_ = RRCON_ERROR;
-					error_content_ = static_cast<uint16_t>((c_rcon.getStatus() & (RconR_HomeT | RconR_HomeL | RconR_HomeR)) >> 4);
-				}
-				else if (!(c_rcon.getStatus() & (RconBR_HomeL | RconBR_HomeR)))
-				{
-					error_code_ = BRRCON_ERROR;
-					error_content_ = static_cast<uint16_t>((c_rcon.getStatus() & (RconBR_HomeT | RconBR_HomeL | RconBR_HomeR)));
-				}
+				error_code_ = BLRCON_ERROR;
+				error_content_ = static_cast<uint16_t>(
+						(c_rcon.getStatus() & (RconBL_HomeT | RconBL_HomeL | RconBL_HomeR)) >> 28);
+			}
+			else if (!(c_rcon.getStatus() & (RconL_HomeL | RconL_HomeR)))
+			{
+				error_code_ = LRCON_ERROR;
+				error_content_ = static_cast<uint16_t>((c_rcon.getStatus() & (RconL_HomeT | RconL_HomeL | RconL_HomeR))
+						>> 24);
+			}
+			else if (!(c_rcon.getStatus() & (RconFL2_HomeL | RconFL2_HomeR)))
+			{
+				error_code_ = FL2RCON_ERROR;
+				error_content_ = static_cast<uint16_t>(
+						(c_rcon.getStatus() & (RconFL2_HomeT | RconFL2_HomeL | RconFL2_HomeR)) >> 20);
+			}
+			else if (!(c_rcon.getStatus() & (RconFL_HomeL | RconFL_HomeR)))
+			{
+				error_code_ = FLRCON_ERROR;
+				error_content_ = static_cast<uint16_t>(
+						(c_rcon.getStatus() & (RconFL_HomeT | RconFL_HomeL | RconFL_HomeR)) >> 16);
+			}
+			else if (!(c_rcon.getStatus() & (RconFR_HomeL | RconFR_HomeR)))
+			{
+				error_code_ = FRRCON_ERROR;
+				error_content_ = static_cast<uint16_t>(
+						(c_rcon.getStatus() & (RconFR_HomeT | RconFR_HomeL | RconFR_HomeR)) >> 12);
+			}
+			else if (!(c_rcon.getStatus() & (RconFR2_HomeL | RconFR2_HomeR)))
+			{
+				error_code_ = FR2RCON_ERROR;
+				error_content_ = static_cast<uint16_t>(
+						(c_rcon.getStatus() & (RconFR2_HomeT | RconFR2_HomeL | RconFR2_HomeR)) >> 8);
+			}
+			else if (!(c_rcon.getStatus() & (RconR_HomeL | RconR_HomeR)))
+			{
+				error_code_ = RRCON_ERROR;
+				error_content_ = static_cast<uint16_t>((c_rcon.getStatus() & (RconR_HomeT | RconR_HomeL | RconR_HomeR))
+						>> 4);
+			}
+			else if (!(c_rcon.getStatus() & (RconBR_HomeL | RconBR_HomeR)))
+			{
+				error_code_ = BRRCON_ERROR;
+				error_content_ = static_cast<uint16_t>((c_rcon.getStatus() &
+														(RconBR_HomeT | RconBR_HomeL | RconBR_HomeR)));
+			}
 
-				if (error_code_ != 0)
-				{
-					error_step_ = test_stage_;
-					test_stage_ = 99;
-				}
-				else
-					return true;
-			} else
-				p_movement_->run();
-			break;
+			if (error_code_ != 0)
+			{
+				error_step_ = test_stage_;
+				test_stage_ = 99;
+				ROS_ERROR("%s %d: rcon status:%x.", __FUNCTION__, __LINE__, c_rcon.getStatus());
+			}
+			else
+				return true;
 		}
 		default:
 			break;
@@ -1348,16 +1519,16 @@ bool MoveTypeDeskTest::checkStage7Finish()
 	{
 		case 0:
 		{
-			if (p_movement_->isFinish())
+			if (p_action_->isFinish())
 			{
-				p_movement_.reset();
+				p_action_.reset();
 				vacuum.stop();
 				brush.stop();
 				lidar.motorCtrl(OFF);
-				p_movement_.reset(new MovementCharge());
+				p_action_.reset(new MovementCharge());
 				test_step_++;
 			} else
-				p_movement_->run();
+				p_action_->run();
 			break;
 		}
 		case 1:
@@ -1410,7 +1581,7 @@ bool MoveTypeDeskTest::checkStage7Finish()
 					test_stage_ = 99;
 				} else
 				{
-					p_movement_->run();
+					p_action_->run();
 					printf("Charge status:%d. Charge ctrl:%d. Charge test result:%d.\n",
 						   charger.getChargeStatus(), serial.getSendData(CTL_CHARGER), charge_test_result_);
 				}
@@ -1466,7 +1637,7 @@ bool MoveTypeDeskTest::checkStage7Finish()
 		{
 			if (key.getTriggerStatus() || remote.isKeyTrigger(REMOTE_CLEAN))
 			{
-				p_movement_.reset(new ActionBackFromCharger);
+				p_action_.reset(new ActionBackFromCharger);
 				brush.slowOperate();
 				test_step_++;
 			}
@@ -1474,10 +1645,10 @@ bool MoveTypeDeskTest::checkStage7Finish()
 		}
 		case 4:
 		{
-			if (p_movement_->isFinish())
+			if (p_action_->isFinish())
 				return true;
 			else
-				p_movement_->run();
+				p_action_->run();
 		}
 		default:
 			break;
