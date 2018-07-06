@@ -39,16 +39,21 @@ void MovementFollowPointLinear::scaleCorrectionPos(Point_t &tmp_pos) {
 //	if(p_cm->isAny(dir))
 //		return;
 
-//	auto dis = curr.Distance(*p_cm->iterate_point_,*(p_cm->iterate_point_+1)) / 3;
+	ROS_INFO("~~~~~~~~~~~~tmp_pos(%f,%f,%f)",tmp_pos.x, tmp_pos.y, tmp_pos.th);
 	Point_t proj_p = curr.project(*p_cm->iterate_point_,*(p_cm->iterate_point_+1));
-	Point_t corr_p = (curr - proj_p) / 3;
-	if(proj_p.Length() > CELL_SIZE/2)
+	ROS_INFO("~~~~~~~~~~~~proj_p(%f,%f,%f)",proj_p.x, proj_p.y, proj_p.th);
+	Point_t corr_p{(curr - proj_p) / 3, tmp_pos.th};
+	ROS_INFO("~~~~~~~~~~~~corr_p(%f,%f,%f)",corr_p.x, corr_p.y, corr_p.th);
+	auto dis = curr.Distance(proj_p);
+	if(dis > CELL_SIZE/2)
 	{
-		auto dis = curr.Distance(proj_p);
-		corr_p = proj_p + (curr - proj_p) * (CELL_SIZE/2/dis);
+		corr_p = {proj_p + (curr - proj_p) * (CELL_SIZE/2/dis), tmp_pos.th};
+		ROS_ERROR("~~~~~~~~~~~~corr_p(%f,%f,%f)",corr_p.x, corr_p.y, corr_p.th);
 	}
 
-	tmp_pos = proj_p + corr_p;
+	ROS_WARN("2~~~~~~~~~~~~corr_p(%f,%f,%f)",corr_p.x, corr_p.y, corr_p.th);
+	tmp_pos = {proj_p + corr_p, tmp_pos.th};
+	ROS_WARN("2~~~~~~~~~~~~tmp_pos(%f,%f,%f)",tmp_pos.x, tmp_pos.y, tmp_pos.th);
 }
 
 Point_t MovementFollowPointLinear::_calcTmpTarget()
@@ -62,7 +67,7 @@ Point_t MovementFollowPointLinear::_calcTmpTarget()
 
 	auto dis = std::min(proj_p.Distance(tmp_target_),  (CELL_SIZE * 1.5f /*+ CELL_COUNT_MUL*/));
 
-	tmp_target_ = proj_p + (tmp_target_-proj_p) * (dis/tmp_target_.Distance(proj_p));
+	tmp_target_ = {proj_p + (tmp_target_-proj_p) * (dis/tmp_target_.Distance(proj_p)), p_cm->iterate_point_->th};
 
 	return tmp_target_;
 }

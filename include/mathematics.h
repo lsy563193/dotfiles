@@ -356,9 +356,10 @@ Point_t(float _x, float _y) {
     x = _x;
     y = _y;
   }
-	Point_t(const Vector2<float> p) {
-    x = p.x;
-    y = p.y;
+	Point_t(const Vector2<float> p,double _th) {
+	x = p.x;
+	y = p.y;
+	th = _th;
   }
   Point_t(float _x, float _y, double _th) {
     x = _x;
@@ -437,12 +438,14 @@ Point_t(float _x, float _y) {
 
 	Point_t project(const Point_t &p1, const Point_t &p2) const
 	{
-		float cross = (p2.x - p1.x) * (x - p1.x) + (p2.y - p1.y) * (y - p1.y);
+		float cross = (p2.x - p1.x) * (this->x - p1.x) + (p2.y - p1.y) * (this->y - p1.y);
 		float d2 = (p2.x - p1.x) * (p2.x - p1.x) + (p2.y - p1.y) * (p2.y - p1.y);
 		float r = cross / d2;
 		Point_t p;
 		p.x = p1.x + (p2.x - p1.x) * r;
 		p.y = p1.y + (p2.y - p1.y) * r;
+		p.th = this->th;
+
 		return p;
 	}
 
