@@ -59,8 +59,8 @@ bool CleanModeNav::mapMark()
 	ROS_INFO("%s %d: Start updating block_map.", __FUNCTION__, __LINE__);
 	if(passed_cell_path_.empty())
 	{
-		ROS_WARN("%s %d: pass_path is empty, add curr_point(%.2f,%.2f,%.2f,%d).", __FUNCTION__, __LINE__, getPosition().x,
-				 getPosition().y, getPosition().th, getPosition().dir);
+		ROS_WARN("%s %d: pass_path is empty, add curr_point(%.2f,%.2f,%.2f).", __FUNCTION__, __LINE__, getPosition().x,
+				 getPosition().y, getPosition().th);
 		passed_cell_path_.push_back(getPosition());
 	}
 
@@ -856,33 +856,17 @@ bool CleanModeNav::updateActionInStateClean(){
 //	ROS_ERROR("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~hello");
 	sp_action_.reset();//to mark in destructor
 //	pubCleanMapMarkers(clean_map_, points_to_cells(remain_path_));
-    if(!plan_path_.empty())
-	    old_dir_ = iterate_point_->dir;
-
-	if(action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)
-	{
-
-		extern int g_follow_last_follow_wall_dir;
-		if(g_follow_last_follow_wall_dir != 0)
-		{
-			ROS_INFO("%s %d: g_follow_last_follow_wall_dir, old_dir_(%d)", __FUNCTION__, __LINE__, old_dir_);
-			old_dir_ = plan_path_.back().dir;
-		}
-		else
-			old_dir_ = MAP_ANY;
-	}
-
-	if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), old_dir_, plan_path_)) {
+	if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), plan_path_)) {
 		pubCleanMapMarkers(clean_map_, *points_to_cells(plan_path_));
 		iterate_point_ = plan_path_.begin();
 //		plan_path_.pop_front();
 		displayCellPath(*points_to_cells(plan_path_));
 		auto npa = boost::dynamic_pointer_cast<NavCleanPathAlgorithm>(clean_path_algorithm_);
 
-		if ( old_dir_ != MAP_ANY && should_follow_wall && npa->shouldFollowWall() )
+		if ( npa->isLastXAxis() && should_follow_wall && npa->shouldFollowWall() )
 		{
-				auto toward_pos = isXAxis(old_dir_) ? npa->is_pox_y(): (iterate_point_->toCell().x - plan_path_.back().toCell().x) > 0;
-				bool is_left = isPos(old_dir_) ^ toward_pos;
+				auto toward_pos = npa->isLastXAxis() ? npa->is_pox_y(): (iterate_point_->toCell().x - plan_path_.back().toCell().x) > 0;
+				bool is_left = npa->isLastXPos() ^ toward_pos;
 				action_i_ = is_left ? ac_follow_wall_left : ac_follow_wall_right;
 		}
 		else

@@ -595,7 +595,7 @@ public:
 	Points isolate_path_{};
 	bool should_follow_wall{};
 
-	Dir_t old_dir_{};
+//	Dir_t old_dir_{};
 	Points::iterator iterate_point_{};
 
 	boost::shared_ptr<APathAlgorithm> clean_path_algorithm_{};
@@ -662,7 +662,7 @@ public:
 //	Vector2<double> polarToCartesian(double polar, int i);
 	void setTempTarget(std::deque<Vector2<double>>& points, uint32_t  seq);
 	void pubTmpTarget(const Point_t &point,bool is_virtual=false);
-	uint8_t setBlocks(Dir_t dir);
+	uint8_t setBlocks();
 	void saveBlocks();
 	void saveBlock(int block, std::function<Cells()>);
 	void checkShouldMarkCharger(float angle_offset,float distance);

@@ -285,7 +285,7 @@ public:
 //	void generateSPMAP(const Cell_t &curr);
 
 
-	bool isFrontBlocked(Dir_t dir);
+//	bool isFrontBlocked(Dir_t dir);
 	bool isFrontSlamBlocked(void);
 
 	BoundingBox2 generateBound();

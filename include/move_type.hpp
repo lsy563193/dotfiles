@@ -85,7 +85,7 @@ public:
 	bool isFinish() override;
 //	IAction* setNextAction();
 
-	bool isPassTargetStop(const Dir_t &dir);
+	bool isPassTargetStop();
 	bool isCellReach();
 	bool isPoseReach();
 

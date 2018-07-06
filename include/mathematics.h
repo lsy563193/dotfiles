@@ -332,17 +332,7 @@ float cellToCount(int16_t distance);
    */
 typedef Vector2<int16_t> Cell_t;
 typedef std::deque<Cell_t> Cells;
-enum {
-	MAP_POS_X = 0,
-	MAP_NEG_X,
-	MAP_POS_Y,
-	MAP_NEG_Y,
-    MAP_PX_PY = 4,
-    MAP_PX_NY = 5,
-    MAP_NX_PY = 6,
-    MAP_NX_NY = 7,
-	MAP_ANY,
-};
+
 using Dir_t = int;
 enum {
 	X_Y_LANE=0,
@@ -362,9 +352,13 @@ public:
     y = 0;
     th = 0;
   }
-	Point_t(float _x, float _y) {
+Point_t(float _x, float _y) {
     x = _x;
     y = _y;
+  }
+	Point_t(const Vector2<float> p) {
+    x = p.x;
+    y = p.y;
   }
   Point_t(float _x, float _y, double _th) {
     x = _x;
@@ -441,6 +435,17 @@ public:
 		return  isCellEqual(r) && isRadianNear(r);
 	}
 
+	Point_t project(const Point_t &p1, const Point_t &p2) const
+	{
+		float cross = (p2.x - p1.x) * (x - p1.x) + (p2.y - p1.y) * (y - p1.y);
+		float d2 = (p2.x - p1.x) * (p2.x - p1.x) + (p2.y - p1.y) * (p2.y - p1.y);
+		float r = cross / d2;
+		Point_t p;
+		p.x = p1.x + (p2.x - p1.x) * r;
+		p.y = p1.y + (p2.y - p1.y) * r;
+		return p;
+	}
+
 	float project_ratio(const Point_t& p1, const Point_t& p2) const
 	{
 		auto cross = (p2.x - p1.x) * (x - p1.x) + (p2.y - p1.y) * (y - p1.y);
@@ -466,7 +471,6 @@ public:
 	}
 	// in radian.
 	double th{};
-	Dir_t dir{};
 private:
 	int16_t countToCell(float count) const {
 		return static_cast<int16_t>(round(count / CELL_SIZE));
@@ -573,6 +577,10 @@ public:
 
 	T& front() {
 		return d.front();
+	}
+
+	T& back() {
+		return d.back();
 	}
 
 	typename std::deque<T>::iterator begin() {
@@ -721,10 +729,6 @@ bool unsigned_long_to_hex_string(unsigned long number, char *str, const int len)
 
 bool isAny(Dir_t dir);
 
-bool isPos(Dir_t dir);
-
-bool isXAxis(Dir_t dir);
-
 
 Vector2<double> polarToCartesian(double polar, int i);
 
@@ -745,8 +749,8 @@ private:
 	Cell_t cell_;
 };
 
-Dir_t get_dir(const Cells::iterator& neighbor, const Cells::iterator& curr);
-Dir_t get_dir(const Cell_t& neighbor, const Cell_t& curr);
+//Dir_t get_dir(const Cells::iterator& neighbor, const Cells::iterator& curr);
+//Dir_t get_dir(const Cell_t& neighbor, const Cell_t& curr);
 template<typename T, typename... Args>
 std::unique_ptr<T> make_unique(Args&&... args)
 {
@@ -759,5 +763,4 @@ std::unique_ptr<Points> cells_to_points(const Cells& path);
 void displayCellPath(const Cells &path);
 void displayPointPath(const Points &point_path);
 void displayTargetList(const Cells &target_list);
-bool is_opposite_dir(int l, int r);
 #endif

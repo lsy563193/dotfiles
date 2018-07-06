@@ -89,7 +89,7 @@ bool CleanModeExploration::mapMark()
 	clean_map_.merge(slam_grid_map, true, true, false, false, false, false);
 	clean_map_.setCircleMarkers(getPosition(),8,CLEANED,error_marker_);
 	resetErrorMarker();
-	setBlocks(iterate_point_->dir);
+	setBlocks();
 	if(action_i_ == ac_linear)
 		passed_cell_path_.clear();
 	return false;

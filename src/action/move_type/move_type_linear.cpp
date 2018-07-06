@@ -157,7 +157,7 @@ bool MoveTypeLinear::isPoseReach()
 	return false;
 }
 
-bool MoveTypeLinear::isPassTargetStop(const Dir_t &dir)
+bool MoveTypeLinear::isPassTargetStop()
 {
 //	PP_INFO();
 	// Checking if robot has reached target cell.
@@ -172,13 +172,11 @@ bool MoveTypeLinear::isLinearForward()
 
 void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 {
-  auto target_size = std::distance(p_clean_mode->iterate_point_, p_clean_mode->plan_path_.end());
+	auto target_size = std::distance(p_clean_mode->iterate_point_, p_clean_mode->plan_path_.end());
+	auto leng = p_clean_mode->iterate_point_->Distance(*(p_clean_mode->iterate_point_+1));
+	auto r = getPosition().project_ratio(*p_clean_mode->iterate_point_, *(p_clean_mode->iterate_point_+1));
 	if (target_size>2) {
-		auto target_point_ = std::next(p_clean_mode->iterate_point_);
-		auto &target_xy = (isXAxis(p_clean_mode->iterate_point_->dir)) ? target_point_->x : target_point_->y;
-		auto curr_xy = (isXAxis(p_clean_mode->iterate_point_->dir)) ? getPosition().x : getPosition().y;
-
-		if (std::abs(target_xy - curr_xy) < LINEAR_NEAR_DISTANCE) {
+		if (r >= (leng - LINEAR_NEAR_DISTANCE)/leng) {
 			if (p_clean_mode->action_i_ == p_clean_mode->ac_linear)
 				p_clean_mode->mapMark();
 			if (robot::instance()->getRobotWorkMode() == Mode::cm_exploration && p_clean_mode->isStateExploration()) {
@@ -187,7 +185,6 @@ void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 				}
 			}
 			p_clean_mode->iterate_point_++;
-			p_clean_mode->old_dir_ = p_clean_mode->iterate_point_->dir;
 			ROS_INFO("%s,%d,it(%d,%d)", __FUNCTION__, __LINE__, p_clean_mode->iterate_point_->toCell().x,
 					 p_clean_mode->iterate_point_->toCell().y);
 		}
@@ -209,18 +206,13 @@ void MoveTypeLinear::switchLinearTarget(ACleanMode * p_clean_mode)
 		else
 			return;
 
-		auto target_point_ = std::next(p_clean_mode->iterate_point_);
-		auto &target_xy = (isXAxis(p_clean_mode->iterate_point_->dir)) ? target_point_->x : target_point_->y;
-		auto curr_xy = (isXAxis(p_clean_mode->iterate_point_->dir)) ? getPosition().x : getPosition().y;
-//		ROS_ERROR("%f,%f", std::abs(target_xy - curr_xy),LINEAR_NEAR_DISTANCE);
-		if (std::abs(target_xy - curr_xy) < LINEAR_NEAR_DISTANCE)
+		if (r >= (leng - LINEAR_NEAR_DISTANCE)/leng)
 		{
 			p_clean_mode->mapMark();
 			stop_generate_next_target = true;
 			if(switchLinearTargetByRecalc(p_clean_mode))
 			{
 				p_clean_mode->iterate_point_++;
-				p_clean_mode->old_dir_ = p_clean_mode->iterate_point_->dir;
 				stop_generate_next_target = false;
 			}
 		}
@@ -235,26 +227,23 @@ bool MoveTypeLinear::switchLinearTargetByRecalc(ACleanMode *p_clean_mode) {
 //	resetTriggeredValue();
 
 	auto target_point = std::next(p_clean_mode->iterate_point_);
-	auto is_found = boost::dynamic_pointer_cast<NavCleanPathAlgorithm>( p_clean_mode->clean_path_algorithm_)->generatePath(p_clean_mode->clean_map_, *target_point, p_clean_mode->iterate_point_->dir, path);
+	auto is_found = boost::dynamic_pointer_cast<NavCleanPathAlgorithm>( p_clean_mode->clean_path_algorithm_)->generatePath(p_clean_mode->clean_map_, *target_point, path);
 	ROS_INFO("%s %d: is_found:(%d), remain:", __FUNCTION__, __LINE__, is_found);
 	displayPointPath(path);
 	if (is_found) {
 		ROS_INFO("5555555555555555555555555555555555555555");
-		if (!is_opposite_dir(path.front().dir, p_clean_mode->iterate_point_->dir)) {
+		if (std::abs(path.front().th - p_clean_mode->iterate_point_->th) < PI*3/4) {
 			ROS_INFO("6666666666666666666666666666666666666666");
-			ROS_INFO("%s %d: Not opposite dir, path.front(%d).curr(,%d)", __FUNCTION__, __LINE__,
-					 path.front().dir, p_clean_mode->iterate_point_->dir);
-            p_clean_mode->plan_path_.erase(p_clean_mode->iterate_point_+1,p_clean_mode->plan_path_.end());
+			p_clean_mode->plan_path_.erase(p_clean_mode->iterate_point_+1,p_clean_mode->plan_path_.end());
 			std::move(path.begin(),path.end(),std::back_inserter(p_clean_mode->plan_path_));
-            displayPointPath(p_clean_mode->plan_path_);
+			displayPointPath(p_clean_mode->plan_path_);
 			p_clean_mode->pubCleanMapMarkers(p_clean_mode->clean_map_,
 											 *points_to_cells(p_clean_mode->plan_path_));
 
 			ROS_INFO("7777777777777777777777777777777777777777");
 			val = true;
 		} else {
-			ROS_INFO("%s %d: Opposite dir, path.front(%d).curr(%d)", __FUNCTION__, __LINE__,
-					  path.front().dir, p_clean_mode->iterate_point_->dir);
+			ROS_INFO("%s %d: Opposite dir curr", __FUNCTION__, __LINE__ );
 		}
 	}
 	return val;

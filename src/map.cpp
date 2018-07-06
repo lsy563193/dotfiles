@@ -10,7 +10,6 @@
 #include <fstream>
 
 GridMap slam_grid_map;
-extern const Cell_t cell_direction_[9];
 
 GridMap::GridMap(){
 	reset();
@@ -705,34 +704,34 @@ void GridMap::colorPrint(const char *outString, int16_t y_min, int16_t y_max)
 	printf("%s\033[0m\n",y_col.c_str());
 }
 
-bool GridMap::isFrontBlocked(Dir_t dir)
-{
-	bool retval = false;
-	std::vector<Cell_t> d_cells;
-	if(isAny(dir) || (isXAxis(dir) && isPos(dir)))
-		d_cells = {{2,1},{2,0},{2,-1}};
-	else if(isXAxis(dir) && !isPos(dir))
-		d_cells = {{-2,1},{-2,0},{-2,-1}};
-	else if(!isXAxis(dir) && isPos(dir))
-		d_cells = {{1,2},{0,2},{-1,2}};
-	else if(!isXAxis(dir) && !isPos(dir))
-		d_cells = {{1,-2},{0,-2},{-1,-2}};
-	for(auto& d_cell : d_cells)
-	{
-		Cell_t cell;
-		if(isAny(dir))
-			cell = getPosition().getRelative(d_cell.x * CELL_SIZE, d_cell.y * CELL_SIZE).toCell();
-		else
-			cell = getPosition().toCell() + d_cell;
-
-		if(isABlock(cell.x, cell.y))
-		{
-			retval = true;
-			break;
-		}
-	}
-	return retval;
-}
+//bool GridMap::isFrontBlocked(Dir_t dir)
+//{
+//	bool retval = false;
+//	std::vector<Cell_t> d_cells;
+//	if(isAny(dir) || (isXAxis(dir) && isPos(dir)))
+//		d_cells = {{2,1},{2,0},{2,-1}};
+//	else if(isXAxis(dir) && !isPos(dir))
+//		d_cells = {{-2,1},{-2,0},{-2,-1}};
+//	else if(!isXAxis(dir) && isPos(dir))
+//		d_cells = {{1,2},{0,2},{-1,2}};
+//	else if(!isXAxis(dir) && !isPos(dir))
+//		d_cells = {{1,-2},{0,-2},{-1,-2}};
+//	for(auto& d_cell : d_cells)
+//	{
+//		Cell_t cell;
+//		if(isAny(dir))
+//			cell = getPosition().getRelative(d_cell.x * CELL_SIZE, d_cell.y * CELL_SIZE).toCell();
+//		else
+//			cell = getPosition().toCell() + d_cell;
+//
+//		if(isABlock(cell.x, cell.y))
+//		{
+//			retval = true;
+//			break;
+//		}
+//	}
+//	return retval;
+//}
 
 bool GridMap::isFrontSlamBlocked(void)
 {

@@ -113,7 +113,7 @@ void NavCleanPathAlgorithm::adjustPosition(GridMap &map, Points&  plan_path)
 		correct_curr_ = origen_curr_;
 
 }
-bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr_p, const Dir_t &last_dir, Points &plan_path)
+bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr_p, Points &plan_path)
 {
 	Cells path{};
 	Cells targets{};
@@ -134,7 +134,8 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr_p, co
 	map.markRobot(correct_curr_);
 	map_bound = map.genTargetRange();
 	curr_bound = getLine(correct_curr_, map);
-	priority_dir = last_dir;
+	//todo //priority
+//	priority_dir = last_dir;
 	auto filters = *generateBounds(map);
 	ROS_WARN("priority_dir(%d),trend_pos(%d)\n",priority_dir,trend_pos);
 	g_follow_last_follow_wall_dir = 0;

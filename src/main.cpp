@@ -105,14 +105,14 @@ int main(int argc, char **argv)
 	GridMap map;
 	//test
 	Cell_t curr{};
-	Dir_t old_dir_=MAP_POS_X;
+	Dir_t old_dir_;
 
 	Points remain_path_{};
 	bool tmp;
 	map.loadMap(true,curr, old_dir_, tmp, "/opt/ros/indigo/share/pp/map");
 	map.print(curr,Cells{});
 	NavCleanPathAlgorithm clean_path_algorithm_;
-	if (clean_path_algorithm_.generatePath(map, Point_t{cellToCount(curr.x),cellToCount(curr.y)}, old_dir_, remain_path_)) {
+	if (clean_path_algorithm_.generatePath(map, Point_t{cellToCount(curr.x),cellToCount(curr.y)}, remain_path_)) {
 		ROS_INFO("find target~~~~~~");
 	}
 
@@ -165,15 +165,15 @@ int test_time()
 }
 
 // Test code for path algorithm by Austin.
-void test_map()
-{
-	auto path_algo = new NavCleanPathAlgorithm();
-	GridMap map;
-	map.loadMap(-10, 9, -2, 16);
-	Cell_t curr_cell{8, 14};
-
-	Point_t curr_point = {curr_cell.x * CELL_SIZE, curr_cell.y * CELL_SIZE};
-	Dir_t dir = MAP_NEG_X;
-	Points points;
-	path_algo->generatePath(map, curr_point, dir, points);
-}
+//void test_map()
+//{
+//	auto path_algo = new NavCleanPathAlgorithm();
+//	GridMap map;
+//	map.loadMap(-10, 9, -2, 16);
+//	Cell_t curr_cell{8, 14};
+//
+//	Point_t curr_point = {curr_cell.x * CELL_SIZE, curr_cell.y * CELL_SIZE};
+//	Dir_t dir = MAP_NEG_X;
+//	Points points;
+//	path_algo->generatePath(map, curr_point, dir, points);
+//}

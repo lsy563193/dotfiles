@@ -40,7 +40,7 @@ GoHomePathAlgorithm::GoHomePathAlgorithm(GridMap& map, HomePointsManager *p_home
 	ROS_INFO("%s,%d: init finish.",__FUNCTION__,__LINE__);
 }
 
-bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &plan_path)
+bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point_t &curr, Points &plan_path)
 {
 	ROS_INFO("%s,%d: GoHomePathAlgorithm",__FUNCTION__, __LINE__);
 	plan_path.clear();
@@ -91,7 +91,8 @@ bool GoHomePathAlgorithm::generatePath(GridMap &map, const Point_t &curr, const 
 				if (dijkstra(*p_tmp_map_, curr.toCell(), plan_path_cells, true, CellEqual(hp_it->toCell()),
 							 isAccessible(p_tmp_map_, way_it->get()->expand_condition))) {
 
-					optimizePath(*p_tmp_map_, plan_path_cells, last_dir, way_it->get()->expand_condition);
+					//todo opti dir
+					optimizePath(*p_tmp_map_, plan_path_cells, /*last_dir*/0, way_it->get()->expand_condition);
 					plan_path = *cells_to_points(plan_path_cells);
 //					p_tmp_map_->print(curr.toCell(), COST_MAP, plan_path_cells);
 					p_tmp_map_->print(curr.toCell(), plan_path_cells);

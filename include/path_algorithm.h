@@ -11,8 +11,8 @@
 
 using func_compare_t =  std::function<bool(const Cell_t &next)>;
 using func_compare_two_t =  std::function<bool(const Cell_t &neighbor,const Cell_t& next)>;
+
 extern const Cell_t cell_direction_[9];
-extern const Cell_t cell_direction_4[4];
 
 typedef std::deque<Cells> PathList;
 
@@ -80,7 +80,7 @@ private:
 class APathAlgorithm
 {
 public:
-	virtual bool generatePath(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &plan_path) = 0;
+	virtual bool generatePath(GridMap &map, const Point_t &curr, Points &plan_path) = 0;
 
 	virtual bool checkTrapped(GridMap &map, const Cell_t &curr_cell);
 
@@ -135,6 +135,64 @@ public:
 														const cmp_two &cmp_lambda) ;
 	bool checkTrappedUsingDijkstra(GridMap &map, const Cell_t &curr_cell);
 protected:
+enum {
+	MAP_POS_X = 0,
+	MAP_NEG_X,
+	MAP_POS_Y,
+	MAP_NEG_Y,
+    MAP_PX_PY = 4,
+    MAP_PX_NY = 5,
+    MAP_NX_PY = 6,
+    MAP_NX_NY = 7,
+	MAP_ANY,
+};
+
+
+Dir_t get_dir(const Cells::iterator& neighbor, const Cells::iterator& curr)
+{
+    get_dir(*neighbor ,*curr);
+}
+
+Dir_t get_dir(const Cell_t& neighbor, const Cell_t& curr)
+{
+
+	assert(neighbor.x != curr.x || neighbor.y != curr.y);
+
+	if(neighbor.x != curr.x && neighbor.y != curr.y)
+	{
+        if(neighbor.x > curr.x && neighbor.y>curr.y)
+			return MAP_PX_PY;
+		else if(neighbor.x > curr.x && neighbor.y<curr.y)
+			return MAP_PX_NY;
+		else if(neighbor.x < curr.x && neighbor.y>curr.y)
+			return MAP_NX_PY;
+		else if(neighbor.x < curr.x && neighbor.y<curr.y)
+			return MAP_NX_NY;
+	}
+
+
+	if(neighbor.y == curr.y)
+        return neighbor.x  > curr.x ? MAP_POS_X : MAP_NEG_X;
+
+	if (neighbor.x == curr.x)
+		return neighbor.y  > curr.y ? MAP_POS_Y : MAP_NEG_Y;
+}
+
+	bool is_opposite_dir(int l, int r)
+	{
+		return (l == 0 && r==1)  || (l ==1 && r ==0) || (l ==2 && r ==3) || (l == 3 && r == 2);
+	}
+
+	bool isXAxis(Dir_t dir)
+	{
+		return dir == MAP_POS_X || dir == MAP_NEG_X;
+	}
+
+	bool isPos(Dir_t dir)
+	{
+		return dir == MAP_POS_X || dir == MAP_POS_Y;
+	}
+
 
 	/*
 	 * @author Lin Shao Yue
@@ -197,7 +255,21 @@ class NavCleanPathAlgorithm: public APathAlgorithm
 	 * @return: bool, true if generating succeeds.
 	 */
 public:
-	bool generatePath(GridMap &map, const Point_t &curr_p, const Dir_t &last_dir, Points &plan_path) override;
+
+	bool generatePath(GridMap &map, const Point_t &curr_p, Points &plan_path) override;
+
+	bool isLastXAxis()
+	{
+		if(!curr_history_.is_full())
+			return false;
+
+		return curr_history_.back() == &filter_curr_line_pos || curr_history_.back() == &filter_curr_line_neg;
+	}
+
+	bool isLastXPos()
+	{
+		return isLastXAxis() && curr_history_.back() == &filter_curr_line_pos;
+	}
 
     bool shouldFollowWall(){
 		return ( curr_history_.front() == &filter_after_obstacle_pos
@@ -323,7 +395,7 @@ private:
 class WFCleanPathAlgorithm: public APathAlgorithm
 {
 public:
-	bool generatePath(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &targets) override;
+	bool generatePath(GridMap &map, const Point_t &curr, Points &targets) override;
 };
 
 class SpotCleanPathAlgorithm: public APathAlgorithm
@@ -331,7 +403,7 @@ class SpotCleanPathAlgorithm: public APathAlgorithm
 public:
 	SpotCleanPathAlgorithm();
 
-	bool generatePath(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &targets) override { };
+	bool generatePath(GridMap &map, const Point_t &curr, Points &targets) override { };
 	bool generatePath(GridMap &map, const Point_t &curr, bool, Points &targets, Points::iterator& ,bool& is_close);
 
 private:
@@ -378,7 +450,7 @@ public:
 	 * @return: Points plan_path, the path to selected home point.
 	 * @return: bool, true if generating succeeds.
 	 */
-	bool generatePath(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &plan_path) override;
+	bool generatePath(GridMap &map, const Point_t &curr, Points &plan_path) override;
 protected:
 
 	std::vector<std::unique_ptr<GoHomeWay_t>> home_ways = {};

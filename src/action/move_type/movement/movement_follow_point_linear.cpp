@@ -34,68 +34,45 @@ MovementFollowPointLinear::~MovementFollowPointLinear()
 void MovementFollowPointLinear::scaleCorrectionPos(Point_t &tmp_pos) {
 //	auto p_cm = boost::dynamic_pointer_cast<ACleanMode> (p_mode);
 	auto p_cm = dynamic_cast<ACleanMode*> (sp_mt_->sp_mode_);
-	auto dir = p_cm->iterate_point_->dir;
 	auto curr = getPosition();
-	if(isAny(dir))
-		return;
+	//todo isAny
+//	if(p_cm->isAny(dir))
+//		return;
 
-	auto target_xy = (isXAxis(dir)) ? p_cm->iterate_point_->y : p_cm->iterate_point_->x;
-//	auto slam_xy = (isXAxis(dir)) ? slam_pos.getOriginY() : slam_pos.getOriginX();
-	auto slam_xy = (isXAxis(dir)) ? curr.y : curr.x;
-	auto diff_xy = (slam_xy - target_xy)/3;
+//	auto dis = curr.Distance(*p_cm->iterate_point_,*(p_cm->iterate_point_+1)) / 3;
+	Point_t proj_p = curr.project(*p_cm->iterate_point_,*(p_cm->iterate_point_+1));
+	Point_t corr_p = (curr - proj_p) / 3;
+	if(proj_p.Length() > CELL_SIZE/2)
+	{
+		auto dis = curr.Distance(proj_p);
+		corr_p = proj_p + (curr - proj_p) * (CELL_SIZE/2/dis);
+	}
 
-	if(diff_xy > CELL_SIZE/2)
-		diff_xy = CELL_SIZE/2;
-	else if(diff_xy < -CELL_SIZE/2)
-		diff_xy = -CELL_SIZE/2;
-		(isXAxis(dir)) ? (tmp_pos.y = (target_xy + diff_xy)) : (tmp_pos.x = (target_xy + diff_xy));
+	tmp_pos = proj_p + corr_p;
 }
 
 Point_t MovementFollowPointLinear::_calcTmpTarget()
 {
-	auto p_mode = dynamic_cast<ACleanMode*> (sp_mt_->sp_mode_);
-	auto tmp_target_ = *std::next(p_mode->iterate_point_);
+	auto p_cm = dynamic_cast<ACleanMode*> (sp_mt_->sp_mode_);
+	auto tmp_target_ = *(p_cm->iterate_point_+1);
 
-	if(isAny(p_mode->iterate_point_->dir))
-		return tmp_target_;
-	auto tmp_pos = getPosition();
-	auto &tmp_target_xy = (isXAxis(p_mode->iterate_point_->dir)) ? tmp_target_.x : tmp_target_.y;
-	auto curr_xy = (isXAxis(p_mode->iterate_point_->dir)) ? tmp_pos.x : tmp_pos.y;
-	auto &other_tmp_target_xy = (isXAxis(p_mode->iterate_point_->dir)) ? tmp_target_.y : tmp_target_.x ;
-	auto &other_curr_xy = (isXAxis(p_mode->iterate_point_->dir)) ? tmp_pos.y :tmp_pos.x ;
-//	ROS_INFO("curr_xy(%f), target_xy(%f)", curr_xy, tmp_target_xy);
-	auto dis = std::min(std::abs(curr_xy - tmp_target_xy),  (CELL_SIZE * 1.5f /*+ CELL_COUNT_MUL*/));
-	if (!isPos(p_mode->iterate_point_->dir))
-		dis *= -1;
-	tmp_target_xy = curr_xy + dis;
-//	other_tmp_target_xy = other_curr_xy;
-//	ROS_INFO("dis(%d)",dis);
-//	ROS_WARN("curr(%f,%d, target(%f,%f), dir(%f) ", getPosition().x,getPosition().y, tmp_target_.x,tmp_target_.y,p_mode->start_points_.dir);
-//	ROS_WARN("tmp(%f,%f)",tmp_target_.x, tmp_target_.y);
+	auto curr = getPosition();
+
+	Point_t proj_p = curr.project(*p_cm->iterate_point_,*(p_cm->iterate_point_+1));
+
+	auto dis = std::min(proj_p.Distance(tmp_target_),  (CELL_SIZE * 1.5f /*+ CELL_COUNT_MUL*/));
+
+	tmp_target_ = proj_p + (tmp_target_-proj_p) * (dis/tmp_target_.Distance(proj_p));
+
 	return tmp_target_;
 }
 
 Point_t MovementFollowPointLinear::calcTmpTarget()
 {
-//	auto curr_xy = (isXAxis(tmp_target_.th)) ? getPosition().x : getPosition().y;
-//	auto tmp_target_xy = (isXAxis(tmp_target_.th)) ? tmp_target_.x :tmp_target_.y;
-//	if(std::abs(curr_xy - tmp_target_xy) > LINEAR_NEAR_DISTANCE) {
-//		return false;
-//	}
 	auto tmp_target_ = _calcTmpTarget();
 
 	dynamic_cast<ACleanMode*>(sp_mt_->sp_mode_)->pubTmpTarget(tmp_target_);
 
-//	if(std::abs(radian_diff) > degree_to_radian(50))
-//		kp_ = 2;
-//	else if(std::abs(radian_diff) > degree_to_radian(40))
-//		kp_ = 3;
-//	else if(std::abs(radian_diff) > degree_to_radian(30))
-//		kp_ = 4;
-//	else if(std::abs(radian_diff) > degree_to_radian(10))
-//		kp_ = 5;
-//	else
-//		kp_ = 2;
 //	ROS_ERROR("tmp_target_(%lf , %lf)", tmp_target_.x, tmp_target_.y);
 	return tmp_target_;
 }
@@ -160,20 +137,3 @@ uint8_t MovementFollowPointLinear::isNear()
 		return 0;
 	}
 }
-
-//Point_t MovementFollowPointLinear::_calcTmpTargetRealTime()
-//{
-//	auto tmp_target_ = sp_mt_->target_point_;
-//	auto target_xy = (isXAxis(tmp_target_.th)) ? sp_mt_->target_point_.x : sp_mt_->target_point_.y;
-//	auto curr_xy = (isXAxis(tmp_target_.th)) ? getPosition().x : getPosition().y;
-//	auto &tmp_xy = (isXAxis(tmp_target_.th)) ? tmp_target_.x : tmp_target_.y;
-////	ROS_WARN("curr_xy(%d), target_xy(%d)", curr_xy, target_xy);
-//	auto dis = std::min(std::abs(curr_xy - target_xy), (int32_t) (LINEAR_NEAR_DISTANCE /*+ CELL_COUNT_MUL*/));
-////	ROS_INFO("dis(%d)",dis);
-//	if (!isPos(tmp_target_.th))
-//		dis *= -1;
-//	tmp_xy = curr_xy + dis;
-//	return tmp_target_;
-////	ROS_WARN("tmp(%d,%d)",tmp_target_.x, tmp_target_.y);
-////	ROS_WARN("dis(%d),dir(%d), curr(%d, %d), tmp_target(%d, %d)", dis, tmp_target_.th, curr.x, curr.y, tmp_target.x, tmp_target.y);
-//}

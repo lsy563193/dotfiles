@@ -248,37 +248,6 @@ Vector2<double> polarToCartesian(double polar, int i)
 	return point;
 }
 
-
-Dir_t get_dir(const Cells::iterator& neighbor, const Cells::iterator& curr)
-{
-    get_dir(*neighbor ,*curr);
-}
-
-Dir_t get_dir(const Cell_t& neighbor, const Cell_t& curr)
-{
-
-	assert(neighbor.x != curr.x || neighbor.y != curr.y);
-
-	if(neighbor.x != curr.x && neighbor.y != curr.y)
-	{
-        if(neighbor.x > curr.x && neighbor.y>curr.y)
-			return MAP_PX_PY;
-		else if(neighbor.x > curr.x && neighbor.y<curr.y)
-			return MAP_PX_NY;
-		else if(neighbor.x < curr.x && neighbor.y>curr.y)
-			return MAP_NX_PY;
-		else if(neighbor.x < curr.x && neighbor.y<curr.y)
-			return MAP_NX_NY;
-	}
-
-
-	if(neighbor.y == curr.y)
-        return neighbor.x  > curr.x ? MAP_POS_X : MAP_NEG_X;
-
-	if (neighbor.x == curr.x)
-		return neighbor.y  > curr.y ? MAP_POS_Y : MAP_NEG_Y;
-}
-
 float cellToCount(int16_t i) {
 	return i * CELL_SIZE;
 }
@@ -297,7 +266,6 @@ std::unique_ptr<Points> cells_to_points(const Cells& path)
 {
 //	displayCellPath(*path);
 	auto  point_path = make_unique<Points>();
-	std::string debug_str;
 	if(!path.empty()){
 		for(auto&& it = path.begin(); it != path.end(); ++it) {
 			Point_t target {cellToCount((*it).x),cellToCount((*it).y),0};
@@ -305,41 +273,24 @@ std::unique_ptr<Points> cells_to_points(const Cells& path)
 			{
 				if(point_path->empty())
 					point_path->emplace_back(target);
-				target.dir = point_path->back().dir;
 				target.th = point_path->back().th;
 			}else {
 				auto it_next = it+1;
-				if (it->x == it_next->x) {
-					target.dir = it->y > it_next->y ? MAP_NEG_Y : MAP_POS_Y;
-					target.th = isPos(target.dir) ? PI / 2 : -PI / 2;
-				} else {
-					target.dir = it->x > it_next->x ? MAP_NEG_X : MAP_POS_X;
-					target.th = isPos(target.dir) ? 0 : PI;
-				}
+				auto diff_c = *it_next - *it;
+				target.th = atan2(diff_c.y, diff_c.x);
 			}
 			point_path->emplace_back(target);
-			debug_str += "(" + std::to_string(it->x) + ", " + std::to_string(it->y) + ")";
 		}
 	}
-	ROS_INFO("%s %d: it:%s, cell.back(%d,%d)",__FUNCTION__, __LINE__, debug_str.c_str(),
-			 path.back().x, path.back().y/*, path->back().th*/);
+	displayPointPath(*point_path);
 	return point_path;
 }
 
-bool isAny(Dir_t dir)
-{
-	return dir == MAP_ANY;
-}
+//bool isAny(Dir_t dir)
+//{
+//	return dir == MAP_ANY;
+//}
 
-bool isPos(Dir_t dir)
-{
-	return dir == MAP_POS_X || dir == MAP_POS_Y;
-}
-
-bool isXAxis(Dir_t dir)
-{
-	return dir == MAP_POS_X || dir == MAP_NEG_X;
-}
 void displayCellPath(const Cells &path)
 {
 	std::string     msg = __FUNCTION__;
@@ -369,16 +320,13 @@ void displayPointPath(const Points &point_path)
 	msg += " " + std::to_string(__LINE__) + ": Points(" + std::to_string(point_path.size()) + "):";
 	for (auto it = point_path.begin(); it != point_path.end(); ++it) {
 		msg += "(" + std::to_string((it->toCell().x)) + ", " + std::to_string(it->toCell().y) + ", " + std::to_string(
-						static_cast<int>(radian_to_degree(it->th)))+ ", " + std::to_string(it->dir) + "),";
+						static_cast<int>(radian_to_degree(it->th)))+ ", " + "),";
 	}
 	//msg += "\n";
 	ROS_INFO("%s",msg.c_str());
 }
 
-bool is_opposite_dir(int l, int r)
-{
-	return (l == 0 && r==1)  || (l ==1 && r ==0) || (l ==2 && r ==3) || (l == 3 && r == 2);
-}
+
 
 HomePointsManager::HomePointsManager() {
 	home_points_list_[1].push_back(Point_t{0,0});

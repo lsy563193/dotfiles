@@ -5,7 +5,7 @@
 #include "ros/ros.h"
 #include "path_algorithm.h"
 
-bool WFCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, const Dir_t &last_dir, Points &targets)
+bool WFCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr, Points &targets)
 {
 	ROS_ERROR("it will never be called!");
 	return false;

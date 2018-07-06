@@ -64,10 +64,10 @@ MoveTypeFollowWall::MoveTypeFollowWall(bool is_left,const Points::iterator &p_it
     auto p_it_tmp = p_it;
     for (; p_it_tmp != p_it + 4; ++p_it_tmp) {
 		if (out_of_edge(curr, p_it_tmp)) {
-			ROS_ERROR("add out edge(%d,%d,%d)",p_it_tmp->toCell().x, p_it_tmp->toCell().y, p_it_tmp->dir);
+			ROS_ERROR("add out edge(%d,%d)",p_it_tmp->toCell().x, p_it_tmp->toCell().y);
             it_out_edges.push_back(p_it_tmp);
 		}else{
-			ROS_ERROR("add in edge(%d,%d,%d)",p_it_tmp->toCell().x, p_it_tmp->toCell().y, p_it_tmp->dir);
+			ROS_ERROR("add in edge(%d,%d)",p_it_tmp->toCell().x, p_it_tmp->toCell().y);
 			it_in_edges.push_back(p_it_tmp);
 		}
 	}
@@ -604,14 +604,14 @@ bool MoveTypeFollowWall::handleMoveBackEventRealTime(ACleanMode *p_clean_mode)
 bool MoveTypeFollowWall::outOfRange(const Point_t &curr, Points::iterator &p_it) {
 	for (auto&& it : it_in_edges) {
 		if (out_of_edge(curr, it)) {
-			ROS_WARN("find out edge(%d,%d,%d)",it->toCell().x, it->toCell().y, it->dir);
+			ROS_WARN("find out edge(%d,%d,%d)",it->toCell().x, it->toCell().y);
 			p_it = it+1;
 			return true;
 		}
 	}
 	for (auto&& it : it_out_edges) {
 		if (out_of_external_edge(curr, it)) {
-			ROS_WARN("find out external edge(%d,%d,%d)",it->toCell().x, it->toCell().y, it->dir);
+			ROS_WARN("find out external edge(%d,%d,%d)",it->toCell().x, it->toCell().y);
 			p_it = p_it+1;
 			return true;
 		}
@@ -619,7 +619,7 @@ bool MoveTypeFollowWall::outOfRange(const Point_t &curr, Points::iterator &p_it)
 
 	it_out_edges.erase(std::remove_if(it_out_edges.begin(), it_out_edges.end(),[&](const Points::iterator& it){
 		if(!out_of_edge(curr,it)){
-			ROS_WARN("add in edge(%d,%d,%d)",it->toCell().x, it->toCell().y, it->dir);
+			ROS_WARN("add in edge(%d,%d,%d)",it->toCell().x, it->toCell().y);
 			it_in_edges.push_back(it);
 			return true;
 		}
