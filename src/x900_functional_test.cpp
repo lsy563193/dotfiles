@@ -1485,7 +1485,10 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 		}
 		switch (step) {
 			case 1:
-				brush.setPWM(60, 0, 0);
+				brush.slowOperate();
+				/*--- stop right side brush and main brush ---*/
+				brush.setRightBrushPWM(0);
+				brush.setMainBrushPWM(0);
 				count++;
 				if (count > 20) {
 					current_current = 0;
@@ -1510,18 +1513,56 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 				break;
 			case 3:
 				step++;
-				if (current_current < 30 || current_current > 120 || motor_current < 20 || motor_current > 110) {
+				if (current_current > 100 || motor_current > 80) {
+					error_code = LEFT_BRUSH_LOW_CURRENT_ERROR;
+					current_data = static_cast<uint16_t>(motor_current);
+					return ;
+				}
+				else {
+					test_result |= 0x01;
+				}
+				break;
+			case 4:
+				brush.normalOperate();
+				/*--- stop right side brush and main brush ---*/
+				brush.setRightBrushPWM(0);
+				brush.setMainBrushPWM(0);
+				count++;
+				if (count > 20) {
+					current_current = 0;
+					motor_current = 0;
+					step++;
+					count = 0;
+				}
+				break;
+			case 5:
+				count++;
+				if (count <= 10) {
+					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+					motor_current += static_cast<uint16_t>(buf[2] << 8 | buf[3]);
+				}
+				else {
+					count = 0;
+					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+					motor_current = (motor_current / 10 - baseline[LEFT_BRUSH]) * 330 * 10 / 4096;
+					step++;
+//					ROS_INFO("current: %d, motor: %d, baseline: %d", current_current, motor_current, baseline[LEFT_BRUSH]);
+				}
+				break;
+			case 6:
+				step++;
+				if (current_current < 30 || current_current > 220 || motor_current < 20 || motor_current > 200) {
 					error_code = LEFT_BRUSH_CURRENT_ERROR;
 					current_data = static_cast<uint16_t>(motor_current);
 					return ;
 				}
 				else {
-					test_result |= 0x04;
+					test_result |= 0x02;
 				}
 				serial.setSendData(CTL_LEFT_BRUSH_TEST_MODE, 1);
 				break;
-			case 4:
-				brush.setPWM(0,0,0);
+			case 7:
+				brush.stop();
 				count++;
 				if(count > 25)
 				{
@@ -1529,8 +1570,11 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 					step++;
 				}
 				break;
-			case 5:
-				brush.setPWM(60, 0, 0);
+			case 8:
+				brush.slowOperate();
+				/*--- stop right side brush and main brush ---*/
+				brush.setRightBrushPWM(0);
+				brush.setMainBrushPWM(0);
 				count++;
 				if (count > 20) {
 					current_current = 0;
@@ -1540,8 +1584,53 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 					beeper.beepForCommand(true);
 				}
 				break;
-			case 6:
-				if (static_cast<uint16_t>(buf[2] << 8 | buf[3]) > baseline[LEFT_BRUSH] + 360)
+			case 9:
+				if (static_cast<uint16_t>(buf[2] << 8 | buf[3]) > baseline[LEFT_BRUSH] + 100)
+					count++;
+				else
+					count = 0;
+				if(count > 2)
+				{
+					step++;
+					count = 0;
+				}
+				if(buf[REC_MIX_BYTE] & 0x01)
+				{
+					error_code = LEFT_BRUSH_LOW_STALL_ERROR;
+					current_data = 0;
+					return ;
+				}
+				break;
+			case 10:
+				current_current = (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+				step++;
+				current_current = (current_current * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+				if (current_current < 150)
+				{
+					error_code = LEFT_BRUSH_LOW_STALL_ERROR;
+					current_data = current_current;
+					return ;
+				}
+				else
+				{
+					test_result |= 0x04;
+				}
+				break;
+			case 11:
+				brush.normalOperate();
+				/*--- stop right brush and main brush ---*/
+				brush.setRightBrushPWM(0);
+				brush.setMainBrushPWM(0);
+				count++;
+				if (count > 20) {
+					current_current = 0;
+					motor_current = 0;
+					step++;
+					count = 0;
+				}
+				break;
+			case 12:
+				if (static_cast<uint16_t>(buf[2] << 8 | buf[3]) > baseline[LEFT_BRUSH] + 450)
 					count++;
 				else
 					count = 0;
@@ -1557,11 +1646,11 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 					return ;
 				}
 				break;
-			case 7:
+			case 13:
 				current_current = (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
 				step++;
 				current_current = (current_current * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
-				if (current_current < 250)
+				if (current_current < 300)
 				{
 					error_code = LEFT_BRUSH_STALL_ERROR;
 					current_data = current_current;
@@ -1572,8 +1661,12 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 					test_result |= 0x08;
 				}
 				break;
-			case 8:
-				brush.setPWM(0, 60, 0);
+				/*--- right brush test ---*/
+			case 14:
+				brush.slowOperate();
+				/*--- stop left brush and main brush ---*/
+				brush.setLeftBrushPWM(0);
+				brush.setMainBrushPWM(0);
 				count++;
 				if (count > 5) {
 					current_current = 0;
@@ -1582,7 +1675,7 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 					count = 0;
 				}
 				break;
-			case 9:
+			case 15:
 				count++;
 				if (count <= 10) {
 					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
@@ -1595,20 +1688,57 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 					step++;
 				}
 				break;
-			case 10:
+			case 16:
 				step++;
-				if (current_current < 30 || current_current > 120 || motor_current < 20 || motor_current > 110) {
+				if (current_current > 100 || motor_current > 80) {
+					error_code = RIGHT_BRUSH_LOW_CURRENT_ERROR;
+					current_data = static_cast<uint16_t>(motor_current);
+					return ;
+				}
+				else {
+					test_result |= 0x10;
+				}
+				break;
+			case 17:
+				brush.normalOperate();
+				/*--- stop left brush and main brush ---*/
+				brush.setLeftBrushPWM(0);
+				brush.setMainBrushPWM(0);
+				count++;
+				if (count > 5) {
+					current_current = 0;
+					motor_current = 0;
+					step++;
+					count = 0;
+				}
+				break;
+			case 18:
+				count++;
+				if (count <= 10) {
+					current_current += (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+					motor_current += static_cast<uint16_t>(buf[6] << 8 | buf[7]);
+				}
+				else {
+					count = 0;
+					current_current = (current_current / 10 * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+					motor_current = (motor_current / 10 - baseline[RIGHT_BRUSH]) * 330 * 10 / 4096;
+					step++;
+				}
+				break;
+			case 19:
+				step++;
+				if (current_current < 30 || current_current > 220 || motor_current < 20 || motor_current > 200) {
 					error_code = RIGHT_BRUSH_CURRENT_ERROR;
 					current_data = static_cast<uint16_t>(motor_current);
 					return ;
 				}
 				else {
-					test_result |= 0x01;
+					test_result |= 0x20;
 				}
 				serial.setSendData(CTL_RIGHT_BRUSH_TEST_MODE, 1);
 				break;
-			case 11:
-				brush.setPWM(0,0,0);
+			case 20:
+				brush.stop();
 				count++;
 				if(count > 25)
 				{
@@ -1616,8 +1746,11 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 					step++;
 				}
 				break;
-			case 12:
-				brush.setPWM(0, 60, 0);
+			case 21:
+				brush.slowOperate();
+				/*--- stop left brush and main brush ---*/
+				brush.setLeftBrushPWM(0);
+				brush.setMainBrushPWM(0);
 				count++;
 				if (count > 20) {
 					current_current = 0;
@@ -1627,8 +1760,54 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 					beeper.beepForCommand(true);
 				}
 				break;
-			case 13:
-				if (static_cast<uint16_t>(buf[6] << 8 | buf[7]) > baseline[RIGHT_BRUSH] + 360)
+			case 22:
+				if (static_cast<uint16_t>(buf[6] << 8 | buf[7]) > baseline[RIGHT_BRUSH] + 100)
+					count++;
+				else
+					count = 0;
+				if(count > 2)
+				{
+					step++;
+					count = 0;
+				}
+				if(buf[REC_MIX_BYTE] & 0x01)
+				{
+					error_code = RIGHT_BRUSH_LOW_STALL_ERROR;
+					current_data = 0;
+					return ;
+				}
+				break;
+			case 23:
+				current_current = (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
+				step++;
+				current_current = (current_current * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
+				if (current_current < 150)
+				{
+					error_code = RIGHT_BRUSH_LOW_STALL_ERROR;
+					current_data = current_current;
+					return ;
+				}
+				else
+				{
+					test_result |= 0x40;
+				}
+				break;
+			case 24:
+				brush.normalOperate();
+				/*--- stop left brush and main brush ---*/
+				brush.setLeftBrushPWM(0);
+				brush.setMainBrushPWM(0);
+				count++;
+				if (count > 20) {
+					current_current = 0;
+					motor_current = 0;
+					step++;
+					count = 0;
+					beeper.beepForCommand(true);
+				}
+				break;
+			case 25:
+				if (static_cast<uint16_t>(buf[6] << 8 | buf[7]) > baseline[RIGHT_BRUSH] + 450)
 					count++;
 				else
 					count = 0;
@@ -1644,11 +1823,11 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 					return ;
 				}
 				break;
-			case 14:
+			case 26:
 				current_current = (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
 				step++;
 				current_current = (current_current * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
-				if (current_current < 250)
+				if (current_current < 300)
 				{
 					error_code = RIGHT_BRUSH_STALL_ERROR;
 					current_data = current_current;
@@ -1656,11 +1835,11 @@ void side_brushes_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_
 				}
 				else
 				{
-					test_result |= 0x02;
+					test_result |= 0x80;
 				}
 				break;
 		}
-		if((test_result & 0x0f) == 0x0f)
+		if((test_result & 0xff) == 0xff)
 		{
 			test_stage++;
 			return ;
@@ -1957,15 +2136,6 @@ void main_brush_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_co
 				}
 				break;
 			case 14:
-				brush.stop();
-				count++;
-				if(count > 25)
-				{
-					count = 0;
-					step++;
-				}
-				break;
-			case 15:
 				brush.normalOperate();
 				/*--- stop side brush ---*/
 				brush.setLeftBrushPWM(0);
@@ -1978,7 +2148,7 @@ void main_brush_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_co
 					count = 0;
 				}
 				break;
-			case 16:
+			case 15:
 				if (static_cast<uint16_t>(buf[4] << 8 | buf[5]) > baseline[MAIN_BRUSH] + 875)
 					count++;
 				else
@@ -1995,7 +2165,7 @@ void main_brush_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_co
 					return ;
 				}
 				break;
-			case 17:
+			case 16:
 				current_current = (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
 				step++;
 				current_current = (current_current * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
@@ -2010,16 +2180,7 @@ void main_brush_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_co
 					test_result |= 0x20;
 				}
 				break;
-			case 18:
-				brush.stop();
-				count++;
-				if(count > 25)
-				{
-					count = 0;
-					step++;
-				}
-				break;
-			case 19:
+			case 17:
 				brush.fullOperate();
 				/*--- stop side brush ---*/
 				brush.setLeftBrushPWM(0);
@@ -2032,7 +2193,7 @@ void main_brush_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_co
 					count = 0;
 				}
 				break;
-			case 20:
+			case 18:
 				if (static_cast<uint16_t>(buf[4] << 8 | buf[5]) > baseline[MAIN_BRUSH] + 2350)
 					count++;
 				else
@@ -2049,7 +2210,7 @@ void main_brush_test(uint16_t *baseline, uint8_t &test_stage, uint16_t &error_co
 					return ;
 				}
 				break;
-			case 21:
+			case 19:
 				current_current = (static_cast<uint16_t>(buf[8] << 8 | buf[9]) - baseline[REF_VOLTAGE_ADC]);
 				step++;
 				current_current = (current_current * 330 * 20 / 4096) - baseline[SYSTEM_CURRENT];
