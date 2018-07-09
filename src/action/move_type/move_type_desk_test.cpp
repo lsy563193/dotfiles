@@ -567,7 +567,7 @@ bool MoveTypeDeskTest::checkStage2Finish()
 				usleep(20000);
 			}
 			// For debug
-			scan_valid_cnt = _cnt;
+//			scan_valid_cnt = _cnt;
 			ROS_INFO("%s %d: Scan valid count:%d.", __FUNCTION__, __LINE__, scan_valid_cnt);
 			if (scan_valid_cnt < _cnt -1)
 			{
@@ -1296,14 +1296,11 @@ bool MoveTypeDeskTest::checkStage5Finish()
 				p_action_.reset(new MovementTurn(getPosition().th + degree_to_radian(-90), ROTATE_TOP_SPEED * 3 / 2));
 				test_step_++;
 			}
-			else{
-				left_cliff_sum_ += cliff.getLeftValue();
-				sum_cnt_++;
+			else
 				p_action_->run();
-			}
 			break;
 		}
-		case 7:
+		case 7: // Turn for pointing towards the middle of desk.
 		{
 			if (p_action_->isFinish())
 			{
@@ -1314,7 +1311,7 @@ bool MoveTypeDeskTest::checkStage5Finish()
 				p_action_->run();
 			break;
 		}
-		default: // case 8:
+		default: // case 8: // Go to the middle of the desk.
 		{
 			if (p_action_->isFinish())
 				return true;
