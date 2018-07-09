@@ -730,6 +730,7 @@ void APathAlgorithm::optimizePath(GridMap &map, Cells &path, const Dir_t& priori
 			else
 				path[next_it_i].y = curr_it->y;
 		}
+		path.erase(std::unique(path.begin(), path.end()), path.end());
 		displayCellPath(path_tmp);
 	}
 }
