@@ -1421,7 +1421,7 @@ uint8_t S_Wifi::setSchedule(const wifi::SetScheduleRxMsg &sche)
 {
 
 	std::vector<Appointment::st_appmt> apmt_list;
-	for(uint8_t i = 0;i<sche.length()/5;i++)
+	for(uint8_t i = 0;i<sche.dataLength()/5;i++)
 	{
 		//uint8_t schenum = sche.getScheNum(i);
 		uint8_t weeks = sche.getWeek(i);
