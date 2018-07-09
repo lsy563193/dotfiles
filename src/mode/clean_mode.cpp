@@ -312,10 +312,10 @@ void ACleanMode::saveBlocks() {
 		return d_cells;
 	});
 
-	//save block for wheel cliff, but in case of incresing the map cost, it is same as the BOCKED_CLIFF, please check the log if it was triggered
+	//save block for wheel cliff, but in case of increasing the map cost, it is same as the BOCKED_CLIFF, please check the log if it was triggered
 	saveBlock(BLOCKED_CLIFF,[&]() {
-//		auto wheel_cliff_trig = ev.left_wheel_cliff || ev.right_wheel_cliff;
-		auto wheel_cliff_trig = is_wheel_cliff_triggered;
+		auto wheel_cliff_trig = ev.left_wheel_cliff || ev.right_wheel_cliff;
+//		auto wheel_cliff_trig = is_wheel_cliff_triggered;
 		Cells d_cells;
 		if (wheel_cliff_trig) {
 			d_cells = {{2, -1}, {2, 0}, {2, 1}, {2, 2}, {2, -2}};
@@ -323,7 +323,7 @@ void ACleanMode::saveBlocks() {
 		return d_cells;
 	});
 
-	//save block for oc_brush_main, but in case of incresing the map cost, it is same as the BOCKED_CLIFF, please check the log if it was triggered
+	//save block for oc_brush_main, but in case of increasing the map cost, it is same as the BOCKED_CLIFF, please check the log if it was triggered
 	saveBlock(BLOCKED_CLIFF,[&]() {
 		Cells d_cells{};
 		if (ev.oc_brush_main)

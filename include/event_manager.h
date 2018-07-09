@@ -119,9 +119,9 @@ virtual void cliffLeft(bool state_now, bool state_last);
 
 virtual void cliffRight(bool state_now, bool state_last);
 
-virtual void rightWheelCliff(bool state_now, bool state_last);
+/*virtual void rightWheelCliff(bool state_now, bool state_last);
 
-virtual void leftWheelCliff(bool state_now, bool state_last);
+virtual void leftWheelCliff(bool state_now, bool state_last);*/
 
 /* RCON */
 virtual void rcon(bool state_now, bool state_last);
@@ -274,8 +274,8 @@ typedef enum {
 	EVT_CLIFF_FRONT,
 	EVT_CLIFF_LEFT,
 	EVT_CLIFF_RIGHT,
-	EVT_RIGHT_WHEEL_CLIFF,
-	EVT_LEFT_WHEEL_CLIFF,
+//	EVT_RIGHT_WHEEL_CLIFF,
+//	EVT_LEFT_WHEEL_CLIFF,
 
 	EVT_RCON,
 /*

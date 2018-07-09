@@ -67,36 +67,8 @@ int Mode::getNextMode()
 	return next_mode_i_;
 }
 
-void Mode::updateWheelCliffStatus()
-{
-	auto wheel_cliff_status = (ev.right_wheel_cliff | ev.left_wheel_cliff);
-	if (wheel_cliff_status) {
-//		ROS_INFO("wheel cliff short tirggered");
-		if(wheel_cliff_triggered_time_ == DBL_MAX)
-			wheel_cliff_triggered_time_ = ros::Time::now().toSec();
-	} else {
-		wheel_cliff_triggered_time_ = DBL_MAX;
-		is_wheel_cliff_triggered = false;
-		return;
-	}
-
-	if(ros::Time::now().toSec() - wheel_cliff_triggered_time_ > WHEEL_CLIFF_TIME_LIMIT) {
-		is_wheel_cliff_triggered = true;// the only wheel cliff value should care about
-		ROS_WARN("%s,%d,Enter exception by wheel cliff triggered over %lfs", __FUNCTION__, __LINE__,
-						 WHEEL_CLIFF_TIME_LIMIT);
-	}
-	else
-	{
-		is_wheel_cliff_triggered = false;
-		ROS_INFO("%s,%d,Enter exception by wheel cliff triggered over %lfs", __FUNCTION__, __LINE__,
-						 WHEEL_CLIFF_TIME_LIMIT);
-		return;
-	}
-}
-
 bool Mode::isExceptionTriggered()
 {
-	updateWheelCliffStatus();
 	if (ev.bumper_jam)
 		ROS_WARN("%s %d: Bumper jam.", __FUNCTION__, __LINE__);
 	if (ev.lidar_bumper_jam)
@@ -122,15 +94,16 @@ bool Mode::isExceptionTriggered()
 	}
 	if (ev.oc_brush_main)
 		ROS_WARN("%s %d: Main brush oc.", __FUNCTION__, __LINE__);
-	if (is_wheel_cliff_triggered)
+	if (ev.left_wheel_cliff || ev.right_wheel_cliff)
 		ROS_WARN("%s %d: Wheel cliff triggered.", __FUNCTION__, __LINE__);
-	if(ev.gyro_error)
+	if (ev.gyro_error)
 		ROS_WARN("%s %d: Gyro error.", __FUNCTION__, __LINE__);
-	if(ev.cliff_turn)
+	if (ev.cliff_turn)
 		ROS_WARN("%s %d: Cliff turn.", __FUNCTION__, __LINE__);
 
-	return ev.bumper_jam || ev.lidar_bumper_jam || ev.cliff_jam || ev.tilt_jam || ev.cliff_all_triggered || ev.oc_wheel_left || ev.oc_wheel_right
-						 || ev.oc_vacuum || ev.lidar_stuck || ev.robot_stuck || ev.oc_brush_main || is_wheel_cliff_triggered || ev.gyro_error || ev.cliff_turn;
+	return ev.bumper_jam || ev.lidar_bumper_jam || ev.cliff_jam || ev.tilt_jam || ev.cliff_all_triggered ||
+		   ev.oc_wheel_left || ev.oc_wheel_right || ev.oc_vacuum || ev.lidar_stuck || ev.robot_stuck ||
+		   ev.oc_brush_main || ev.left_wheel_cliff || ev.right_wheel_cliff || ev.gyro_error || ev.cliff_turn;
 }
 
 void Mode::genNextAction()
