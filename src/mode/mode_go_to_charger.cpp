@@ -16,6 +16,7 @@
 #include "speaker.h"
 #include "wifi/wifi.h"
 #include "mode.hpp"
+#include "cliff.h"
 
 ModeGoToCharger::ModeGoToCharger()
 {
@@ -177,9 +178,16 @@ void ModeGoToCharger::remoteClean(bool state_now, bool state_last)
 
 void ModeGoToCharger::cliffAll(bool state_now, bool state_last)
 {
-	ROS_WARN("%s %d: Cliff all.", __FUNCTION__, __LINE__);
+	auto cliff_all_start_time_ = ros::Time::now().toSec();
+	ROS_INFO("%s,%d Wait 0.2s to confirm if cliffAll triggered",__FUNCTION__,__LINE__);
+	while (ros::Time::now().toSec() - cliff_all_start_time_ < 0.2)
+		wheel.stop();
 
-	ev.cliff_all_triggered = true;
+	if (cliff.getStatus() == BLOCK_ALL)
+	{
+		ROS_WARN("%s %d: Cliff all.", __FUNCTION__, __LINE__);
+		ev.cliff_all_triggered = true;
+	}
 }
 
 void ModeGoToCharger::chargeDetect(bool state_now, bool state_last)

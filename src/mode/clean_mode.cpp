@@ -1820,8 +1820,16 @@ void ACleanMode::cliffAll(bool state_now, bool state_last)
 {
 	if (!charger.getChargeStatus() && !ev.cliff_all_triggered)
 	{
-		ROS_WARN("%s %d: Cliff all.", __FUNCTION__, __LINE__);
-		ev.cliff_all_triggered = true;
+		ROS_INFO("%s,%d Wait 0.2s to confirm if cliffAll triggered",__FUNCTION__,__LINE__);
+		auto cliff_all_start_time_ = ros::Time::now().toSec();
+		while(ros::Time::now().toSec() - cliff_all_start_time_ < 0.2)
+			wheel.stop();
+
+		if(cliff.getStatus() == BLOCK_ALL)
+		{
+			ROS_WARN("%s %d: Cliff all.", __FUNCTION__, __LINE__);
+			ev.cliff_all_triggered = true;
+		}
 	}
 }
 
