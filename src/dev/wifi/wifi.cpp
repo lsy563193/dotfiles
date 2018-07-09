@@ -258,15 +258,15 @@ bool S_Wifi::init()
 			[&](const wifi::RxMsg &a_msg){
 				const wifi::SetMaxCleanPowerRxMsg &msg = static_cast<const wifi::SetMaxCleanPowerRxMsg&>( a_msg );
 				cloudConnected();
-				// Setting for pump and swing motor.
+				// Setting for pump.
 				water_tank.setUserSetPumpMode(static_cast<int>(msg.mop()));
-				water_tank.setUserSwingMotorMode(
-						msg.mop() > 0 ? WaterTank::swing_motor_mode::SWING_MOTOR_HIGH :
-						WaterTank::swing_motor_mode::SWING_MOTOR_LOW);
 				robot::instance()->wifiSetWaterTank();
 
 				// Setting for vacuum.
+				auto vacuum_is_user_set_max_mode = vacuum.isUserSetMaxMode();
 				vacuum.setForUserSetMaxMode(msg.vacuum() > 0);
+				if (vacuum_is_user_set_max_mode != vacuum.isUserSetMaxMode())
+					speaker.play(vacuum.isUserSetMaxMode() ? VOICE_VACCUM_MAX : VOICE_VACUUM_NORMAL);
 				robot::instance()->wifiSetVacuum();
 
 				//ack
@@ -1702,7 +1702,7 @@ void S_Wifi::factoryReset()
 
 	//reset vacuum and water_tank state
 	water_tank.setUserSetPumpMode(WaterTank::PUMP_LOW);
-	water_tank.setUserSwingMotorMode(WaterTank::swing_motor_mode::SWING_MOTOR_LOW);
+	water_tank.setUserSwingMotorMode(WaterTank::swing_motor_mode::SWING_MOTOR_HIGH);
 	robot::instance()->wifiSetWaterTank();
 
 	// resetting for vacuum.

@@ -229,7 +229,7 @@ void WaterTank::slowOperateSwingMotor()
 
 void WaterTank::fullOperateSwingMotor()
 {
-	setCurrentSwingMotorMode(swing_motor_mode::SWING_MOTOR_LOW);
+	setCurrentSwingMotorMode(swing_motor_mode::SWING_MOTOR_HIGH);
 	open(operate_option::swing_motor);
 }
 
