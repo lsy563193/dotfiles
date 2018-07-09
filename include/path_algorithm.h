@@ -135,6 +135,7 @@ public:
 														const cmp_two &cmp_lambda) ;
 	bool checkTrappedUsingDijkstra(GridMap &map, const Cell_t &curr_cell);
 protected:
+
 enum {
 	MAP_POS_X = 0,
 	MAP_NEG_X,
@@ -150,48 +151,25 @@ enum {
 
 Dir_t get_dir(const Cells::iterator& neighbor, const Cells::iterator& curr)
 {
-    get_dir(*neighbor ,*curr);
+    return get_dir(*neighbor ,*curr);
 }
 
-Dir_t get_dir(const Cell_t& neighbor, const Cell_t& curr)
+Dir_t get_dir(const Cell_t& neighbor, const Cell_t& curr);
+
+bool is_opposite_dir(int l, int r)
 {
-
-	assert(neighbor.x != curr.x || neighbor.y != curr.y);
-
-	if(neighbor.x != curr.x && neighbor.y != curr.y)
-	{
-        if(neighbor.x > curr.x && neighbor.y>curr.y)
-			return MAP_PX_PY;
-		else if(neighbor.x > curr.x && neighbor.y<curr.y)
-			return MAP_PX_NY;
-		else if(neighbor.x < curr.x && neighbor.y>curr.y)
-			return MAP_NX_PY;
-		else if(neighbor.x < curr.x && neighbor.y<curr.y)
-			return MAP_NX_NY;
-	}
-
-
-	if(neighbor.y == curr.y)
-        return neighbor.x  > curr.x ? MAP_POS_X : MAP_NEG_X;
-
-	if (neighbor.x == curr.x)
-		return neighbor.y  > curr.y ? MAP_POS_Y : MAP_NEG_Y;
+	return (l == 0 && r==1)  || (l ==1 && r ==0) || (l ==2 && r ==3) || (l == 3 && r == 2);
 }
 
-	bool is_opposite_dir(int l, int r)
-	{
-		return (l == 0 && r==1)  || (l ==1 && r ==0) || (l ==2 && r ==3) || (l == 3 && r == 2);
-	}
+bool isXAxis(Dir_t dir)
+{
+	return dir == MAP_POS_X || dir == MAP_NEG_X;
+}
 
-	bool isXAxis(Dir_t dir)
-	{
-		return dir == MAP_POS_X || dir == MAP_NEG_X;
-	}
-
-	bool isPos(Dir_t dir)
-	{
-		return dir == MAP_POS_X || dir == MAP_POS_Y;
-	}
+bool isPos(Dir_t dir)
+{
+	return dir == MAP_POS_X || dir == MAP_POS_Y;
+}
 
 
 	/*

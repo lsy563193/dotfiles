@@ -697,7 +697,7 @@ void APathAlgorithm::optimizePath(GridMap &map, Cells &path, const Dir_t& priori
 	}
 	if (path.size() > 3)
 	{
-		ROS_INFO(" size_of_path > 3 Optimize path for adjusting it away from obstacles..");
+		ROS_WARN(" size_of_path > 3 Optimize path for adjusting it away from obstacles..");
 		displayCellPath(path);
 
 		auto path_tmp = path;
@@ -708,15 +708,16 @@ void APathAlgorithm::optimizePath(GridMap &map, Cells &path, const Dir_t& priori
 		if(is_had_move_start_point)
 			iterator++;
 
-
 		for (; iterator != path_tmp.end() - 3; ++iterator)
 		{
 			auto diff_c = *(iterator+3) - *(iterator+2);
 			auto dir_3_2 = get_dir(iterator+3, iterator + 2);
-			auto limit_num = is_opposite_dir(get_dir(iterator+1, iterator), dir_3_2) ? 2 : (std::abs((isXAxis(dir_3_2) ?diff_c.x : diff_c.y) - 1));
-			ROS_INFO("diff_c(%d,%d), limit_num(%d)", diff_c.x, diff_c.y, limit_num);
-			if(shift_path(map, *iterator, *(iterator + 1), *(iterator + 2), limit_num, false, false,expand_condition))
-				path_its.push_back((iterator + 1));
+			auto dir_1_0 = get_dir(iterator+1, iterator);
+			ROS_WARN("is_opposite_dir %d,(%d,%d)", is_opposite_dir(dir_1_0, dir_3_2), dir_1_0, dir_3_2);
+			auto limit_num = is_opposite_dir(dir_1_0, dir_3_2) ? 2 : std::abs((isXAxis(dir_3_2) ?diff_c.x : diff_c.y) - 1);
+			ROS_WARN("it(%d,%d,%d), diff_c(%d,%d), limit_num(%d)",iterator->x,iterator->y, std::distance(path_tmp.begin(), iterator), diff_c.x, diff_c.y, limit_num);
+			if(shift_path(map, *iterator, *(iterator + 1), *(iterator + 2), limit_num, false, false, expand_condition))
+				path_its.push_back(iterator + 1);
 		}
 		displayCellPath(path);
 		displayCellPath(path_tmp);
@@ -744,6 +745,33 @@ bool APathAlgorithm::checkTrapped(GridMap &map, const Cell_t &curr_cell) {
 
 	Cells cells{};
 	return !dijkstra(map, getPosition().toCell(), cells, true, CellEqual(Cell_t{0,0}), isAccessible(&map, expand_condition));
+}
+
+Dir_t APathAlgorithm::get_dir(const Cell_t &neighbor, const Cell_t &curr) {
+
+	assert(neighbor.x != curr.x || neighbor.y != curr.y);
+
+	if (neighbor.x != curr.x && neighbor.y != curr.y) {
+		if (neighbor.x > curr.x && neighbor.y > curr.y)
+			return MAP_PX_PY;
+		else if (neighbor.x > curr.x && neighbor.y < curr.y)
+			return MAP_PX_NY;
+		else if (neighbor.x < curr.x && neighbor.y > curr.y)
+			return MAP_NX_PY;
+		else if (neighbor.x < curr.x && neighbor.y < curr.y)
+			return MAP_NX_NY;
+	}
+
+	Dir_t dir = 0;
+//	ROS_ERROR("neighbor(%d,%d),curr(%d,%d)", neighbor.x, neighbor.y, curr.x, curr.y);
+	if (neighbor.y == curr.y)
+		dir = neighbor.x > curr.x ? MAP_POS_X : MAP_NEG_X;
+
+	if (neighbor.x == curr.x)
+		dir = neighbor.y > curr.y ? MAP_POS_Y : MAP_NEG_Y;
+
+//	ROS_ERROR("dir(%d)", dir);
+	return dir;
 }
 
 bool TargetVal::operator()(const Cell_t &c_it) {
