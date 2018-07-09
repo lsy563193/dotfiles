@@ -107,6 +107,7 @@
 
 /* Battery voltage criterion for water tank setting*/
 #define FULL_OPERATE_VOLTAGE_FOR_SWING_MOTOR	(500)
+//#define FULL_OPERATE_VOLTAGE_FOR_SWING_MOTOR	(400)
 #define LOW_OPERATE_VOLTAGE_FOR_SWING_MOTOR	(250)
 /* ------------------------------------- Obs config ------------------------------------- */
 /* OBS setting */

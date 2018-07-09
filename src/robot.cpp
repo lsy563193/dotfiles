@@ -434,6 +434,9 @@ void robot::robotbase_routine_cb()
 		odom_broad.sendTransform(odom_trans);
 		/*------publish end -----------*/
 
+		// Check wheel cliff.
+		updateWheelCliffStatus();
+
 		// Check tilt
 		checkTilt();
 
@@ -803,47 +806,25 @@ void robot::updateRobotPositionForTest()
 bool robot::checkTilt() {
 	if (!gyro.isTiltCheckingEnable()) {
 		angle_tilt_time_ = 0;
-		wheel_tilt_time_= 0;
 		gyro.setTiltCheckingStatus(0);
 		return false;
 	}
-	auto angle_triggered = gyro.getAngleR() > ANGLE_LIMIT;
-	auto wheel_cliff_triggered = wheel.getLeftWheelCliffStatus() || wheel.getRightWheelCliffStatus();
 
-	if(!angle_triggered)
-		angle_tilt_time_ = 0;
-	if(!wheel_cliff_triggered)
-		wheel_tilt_time_= 0;
-	if(!angle_triggered && !wheel_cliff_triggered)
+	if(!gyro.isTilt())
 	{
+		angle_tilt_time_ = 0;
 		gyro.setTiltCheckingStatus(0);
 		return false;
 	}
-
-	//For angle triggered
-	if(angle_triggered) {
+	else
+	{
+		//For angle triggered
 		angle_tilt_time_ = angle_tilt_time_ == 0 ? ros::Time::now().toSec() : angle_tilt_time_;
-		auto ret = ros::Time::now().toSec() - angle_tilt_time_ > ANGLE_TIME_LIMIT;
+		auto ret = ros::Time::now().toSec() - angle_tilt_time_ > ANGLE_TILT_TIME_LIMIT;
 		ROS_WARN_COND(ret,"%s,%d,time_now:%lf,angle_tilt_time_:%lf",__FUNCTION__,__LINE__,ros::Time::now().toSec(),angle_tilt_time_);
+		gyro.setTiltCheckingStatus(static_cast<uint8_t>(ret ? 1 : 0));
 		if (ret)
-		{
-			gyro.setTiltCheckingStatus(1);
 			beeper.debugBeep(VALID);
-		} else
-			gyro.setTiltCheckingStatus(0);
-		return ret;
-	}
-	//For wheel_cliff triggered
-	if(wheel_cliff_triggered) {
-		wheel_tilt_time_ = wheel_tilt_time_ == 0 ? ros::Time::now().toSec() : wheel_tilt_time_;
-		auto ret = ros::Time::now().toSec() - wheel_tilt_time_ > WHEEL_CLIFF_TIME_LIMIT;
-		ROS_WARN_COND(ret,"%s,%d,time_now:%lf,wheel_tilt_time_:%lf",__FUNCTION__,__LINE__,ros::Time::now().toSec(),wheel_tilt_time_);
-		if (ret)
-		{
-			gyro.setTiltCheckingStatus(1);
-			beeper.debugBeep(VALID);
-		} else
-			gyro.setTiltCheckingStatus(0);
 		return ret;
 	}
 }
@@ -1111,6 +1092,35 @@ bool robot::duringNavigationCleaning()
 			ret = true;
 	}
 	return ret;
+}
+
+void robot::updateWheelCliffStatus()
+{
+	if (ev.left_wheel_cliff || ev.right_wheel_cliff)
+		return;
+
+	auto is_wheel_cliff_triggered = (wheel.getLeftWheelCliffStatus() | wheel.getRightWheelCliffStatus());
+	if (is_wheel_cliff_triggered)
+	{
+//		ROS_INFO("wheel cliff short triggered");
+		if (wheel_cliff_triggered_time_ == DBL_MAX)
+			wheel_cliff_triggered_time_ = ros::Time::now().toSec();
+	}
+	else
+	{
+		wheel_cliff_triggered_time_ = DBL_MAX;
+		return;
+	}
+
+	if (ros::Time::now().toSec() - wheel_cliff_triggered_time_ > WHEEL_CLIFF_TIME_LIMIT)
+	{
+		if (wheel.getLeftWheelCliffStatus())
+			ev.left_wheel_cliff = true;// the only wheel cliff value should care about
+		if (wheel.getRightWheelCliffStatus())
+			ev.right_wheel_cliff = true;// the only wheel cliff value should care about
+		ROS_WARN("%s %d: Enter exception by %s%swheel cliff triggered over %.2lfs", __FUNCTION__, __LINE__,
+				 ev.left_wheel_cliff ? "left " : "", ev.right_wheel_cliff ? "right " : "", WHEEL_CLIFF_TIME_LIMIT);
+	}
 }
 
 //--------------------

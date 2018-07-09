@@ -615,3 +615,8 @@ bool Gyro::error(void)
 {
 	return is_error_;
 }
+
+bool Gyro::isTilt()
+{
+	return gyro.getAngleR() > TILT_ANGLE_LIMIT;
+}

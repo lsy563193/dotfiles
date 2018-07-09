@@ -312,10 +312,10 @@ void ACleanMode::saveBlocks() {
 		return d_cells;
 	});
 
-	//save block for wheel cliff, but in case of incresing the map cost, it is same as the BOCKED_CLIFF, please check the log if it was triggered
+	//save block for wheel cliff, but in case of increasing the map cost, it is same as the BOCKED_CLIFF, please check the log if it was triggered
 	saveBlock(BLOCKED_CLIFF,[&]() {
-//		auto wheel_cliff_trig = ev.left_wheel_cliff || ev.right_wheel_cliff;
-		auto wheel_cliff_trig = is_wheel_cliff_triggered;
+		auto wheel_cliff_trig = ev.left_wheel_cliff || ev.right_wheel_cliff;
+//		auto wheel_cliff_trig = is_wheel_cliff_triggered;
 		Cells d_cells;
 		if (wheel_cliff_trig) {
 			d_cells = {{2, -1}, {2, 0}, {2, 1}, {2, 2}, {2, -2}};
@@ -323,7 +323,7 @@ void ACleanMode::saveBlocks() {
 		return d_cells;
 	});
 
-	//save block for oc_brush_main, but in case of incresing the map cost, it is same as the BOCKED_CLIFF, please check the log if it was triggered
+	//save block for oc_brush_main, but in case of increasing the map cost, it is same as the BOCKED_CLIFF, please check the log if it was triggered
 	saveBlock(BLOCKED_CLIFF,[&]() {
 		Cells d_cells{};
 		if (ev.oc_brush_main)
@@ -702,7 +702,8 @@ void ACleanMode::scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr& scan)
 	if (lidar.isScanOriginalReady()
 			&& (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)) {
 		std::deque<Vector2<double>> points{};
-		calcLidarPath(scan, action_i_ == ac_follow_wall_left, points, wall_distance);
+		auto follow_wall_action = boost::dynamic_pointer_cast<MoveTypeFollowWall>(sp_action_);
+		calcLidarPath(scan, action_i_ == ac_follow_wall_left, points, follow_wall_action->getWallDistance());
 		setTempTarget(points, scan->header.seq);
 	}
 }
@@ -1769,8 +1770,16 @@ void ACleanMode::cliffAll(bool state_now, bool state_last)
 {
 	if (!charger.getChargeStatus() && !ev.cliff_all_triggered)
 	{
-		ROS_WARN("%s %d: Cliff all.", __FUNCTION__, __LINE__);
-		ev.cliff_all_triggered = true;
+		ROS_INFO("%s,%d Wait 0.2s to confirm if cliffAll triggered",__FUNCTION__,__LINE__);
+		auto cliff_all_start_time_ = ros::Time::now().toSec();
+		while(ros::Time::now().toSec() - cliff_all_start_time_ < 0.2)
+			wheel.stop();
+
+		if(cliff.getStatus() == BLOCK_ALL)
+		{
+			ROS_WARN("%s %d: Cliff all.", __FUNCTION__, __LINE__);
+			ev.cliff_all_triggered = true;
+		}
 	}
 }
 

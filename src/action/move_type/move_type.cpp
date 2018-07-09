@@ -248,7 +248,7 @@ bool IMoveType::handleMoveBackEventForward(ACleanMode *p_clean_mode)
 	{
 		p_clean_mode->saveBlocks();
 		movement_i_ = mm_back;
-		float back_distance;(ev.tilt_triggered || ev.slip_triggered) ? TILT_BACK_DISTANCE : 0.01;
+		float back_distance = (ev.tilt_triggered || ev.slip_triggered) ? TILT_BACK_DISTANCE : 0.01;
 		sp_movement_.reset(new MovementBack(back_distance, BACK_MAX_SPEED));
 		return true;
 	}

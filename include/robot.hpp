@@ -292,6 +292,8 @@ private:
 
 	uint8_t getTestMode(void);
 
+	void updateWheelCliffStatus();
+
 	void loadConsumableStatus();
 	uint32_t side_brush_time_{0};
 	uint32_t main_brush_time_{0};
@@ -375,12 +377,14 @@ private:
 
 	bool is_set_anglev_offset{false};
 
+	//for wheel cliff
+	double wheel_cliff_triggered_time_{DBL_MAX};
+	const double WHEEL_CLIFF_TIME_LIMIT{0.5};//2
+	bool is_wheel_cliff_triggered{false};
+
 	//for check tilt
-	const double ANGLE_LIMIT{5};
-	const double ANGLE_TIME_LIMIT{1};
-	const double WHEEL_CLIFF_TIME_LIMIT{2};
+	const double ANGLE_TILT_TIME_LIMIT{1};
 	double angle_tilt_time_{0};
-	double wheel_tilt_time_{0};
 
 	//for check tilt
 	const double ANGLE_LIMIT_TO_SLIP{3};

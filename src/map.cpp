@@ -299,7 +299,7 @@ bool GridMap::markRobot(const Cell_t& curr, bool is_clean_rcon)
 			}
 		}
 	}
-	ROS_INFO("\033[1;33m" "%s,%d: %s" "\033[0m", __FUNCTION__, __LINE__, debug_str.c_str());
+//	ROS_INFO("\033[1;33m" "%s,%d: %s" "\033[0m", __FUNCTION__, __LINE__, debug_str.c_str());
 	return ret;
 }
 

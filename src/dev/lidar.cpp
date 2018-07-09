@@ -1664,11 +1664,11 @@ void Lidar::readLidarDataFromFile(bool check_front, float (&scan_data)[360])
 		for (int index = 0; index < 360; index++)
 		{
 			fscanf(f_read, "%f,", &scan_data[index]);
-			if ((100 * index / 360) % 10 == 0)
-				printf("\r %d0%%.", 100 * index / 360 / 10);
-			printf("scan_buf[%03d]=%f\n", index, scan_data[index]);
+//			if ((100 * index / 360) % 10 == 0)
+//				printf("\r %d0%%.", 100 * index / 360 / 10);
+//			printf("scan_buf[%03d]=%f\n", index, scan_data[index]);
 		}
-		printf("\n");
+//		printf("\n");
 		fclose(f_read);
 		ROS_INFO("%s %d: Read data succeeded.", __FUNCTION__, __LINE__);
 	}
@@ -1678,37 +1678,53 @@ bool Lidar::scanDataChecking(bool check_front, sensor_msgs::LaserScan scan, floa
 {
 	uint16_t _valid_count{0};
 	float _accuracy{0.07};
+	using namespace std;
+	string debug_string = "";
+
+	auto _check_single_data = [&](uint16_t data_index)
+	{
+//		printf("scan[%03d] = %f, ref[%03d] = %f, fabs = %f.",
+//			   data_index, scan.ranges[data_index], data_index, ref_scan_data[data_index],
+//			   fabs(scan.ranges[data_index] - ref_scan_data[data_index]));
+		debug_string += "scan[" + to_string(data_index) + "] = " + to_string(scan.ranges[data_index])
+						+ ", ref[" + to_string(data_index) + "] = " + to_string(ref_scan_data[data_index])
+						+ ", fabs = " + to_string(fabs(scan.ranges[data_index] - ref_scan_data[data_index]));
+		if (scan.ranges[data_index] != std::numeric_limits<float>::infinity() &&
+			ref_scan_data[data_index] != std::numeric_limits<float>::infinity())
+//			ref_scan_data[data_index] != 0)
+		{
+//			printf(" Pass inf checking. Accuracy:%f.", ref_scan_data[data_index] * _accuracy);
+			debug_string +=
+					" Pass inf checking. Accuracy:" + to_string(ref_scan_data[data_index] * _accuracy) + ".";
+//			if (fabs(scan.ranges[data_index] - ref_scan_data[data_index]) < ref_scan_data[data_index] * _accuracy)
+			if (fabs(scan.ranges[data_index] - ref_scan_data[data_index]) < 0.2)
+			{
+				_valid_count++;
+//				printf(" Pass.\n");
+				debug_string += " Pass.\n";
+			}
+			else
+//				printf("\n");
+				debug_string += "\n";
+		}
+		else if (scan.ranges[data_index] == std::numeric_limits<float>::infinity() &&
+				 ref_scan_data[data_index] == std::numeric_limits<float>::infinity())
+//			ref_scan_data[data_index] < 0.01)
+		{
+//			printf(" Pass.\n");
+			debug_string += " Pass.\n";
+			_valid_count++;
+		}
+		else
+//			printf("\n");
+			debug_string += "\n";
+	};
+
 	if (check_front)
 	{
 		for (uint16_t data_index = 0; data_index < 360; data_index++)
 		{
-			printf("scan[%03d] = %f, ref[%03d] = %f, fabs = %f.",
-				   data_index, scan.ranges[data_index], data_index, ref_scan_data[data_index],
-				   fabs(scan.ranges[data_index] - ref_scan_data[data_index]));
-			if (scan.ranges[data_index] != std::numeric_limits<float>::infinity() &&
-				ref_scan_data[data_index] != std::numeric_limits<float>::infinity())
-//				ref_scan_data[data_index] != 0)
-			{
-				printf(" Pass inf checking. Accuracy:%f.", ref_scan_data[data_index] * _accuracy);
-//				if (fabs(scan.ranges[data_index] - ref_scan_data[data_index]) < ref_scan_data[data_index] * _accuracy)
-				if (fabs(scan.ranges[data_index] - ref_scan_data[data_index]) < 0.2)
-				{
-					_valid_count++;
-					printf(" Pass.\n");
-				}
-				else
-					printf("\n");
-			}
-			else if (scan.ranges[data_index] == std::numeric_limits<float>::infinity() &&
-				ref_scan_data[data_index] == std::numeric_limits<float>::infinity())
-//				ref_scan_data[data_index] < 0.01)
-			{
-				printf(" Pass.\n");
-				_valid_count++;
-			}
-			else
-				printf("\n");
-
+			_check_single_data(data_index);
 			if (data_index == 64)
 				data_index = 244;
 		}
@@ -1716,38 +1732,17 @@ bool Lidar::scanDataChecking(bool check_front, sensor_msgs::LaserScan scan, floa
 	else
 	{
 		for (uint16_t data_index = 66; data_index < 244; data_index++)
-		{
-			printf("scan[%03d] = %f, ref[%03d] = %f, fabs = %f.",
-				   data_index, scan.ranges[data_index], data_index, ref_scan_data[data_index],
-				   fabs(scan.ranges[data_index] - ref_scan_data[data_index]));
-			if (scan.ranges[data_index] != std::numeric_limits<float>::infinity() &&
-				ref_scan_data[data_index] != std::numeric_limits<float>::infinity())
-//				ref_scan_data[data_index] != 0)
-			{
-				printf(" Pass inf checking. Accuracy:%f.", ref_scan_data[data_index] * _accuracy);
-//				if (fabs(scan.ranges[data_index] - ref_scan_data[data_index]) < ref_scan_data[data_index] * _accuracy)
-				if (fabs(scan.ranges[data_index] - ref_scan_data[data_index]) < 0.2)
-				{
-					_valid_count++;
-					printf(" Pass.\n");
-				}
-				else
-					printf("\n");
-			}
-			else if (scan.ranges[data_index] == std::numeric_limits<float>::infinity() &&
-				ref_scan_data[data_index] == std::numeric_limits<float>::infinity())
-//				ref_scan_data[data_index] < 0.01)
-			{
-				printf(" Pass.\n");
-				_valid_count++;
-			}
-			else
-				printf("\n");
-		}
+			_check_single_data(data_index);
 	}
 
 	ROS_INFO("%s %d: Valid count is %d.", __FUNCTION__, __LINE__, _valid_count);
-	return _valid_count > 130;
+	if (_valid_count > 130)
+		return true;
+	else
+	{
+		printf(debug_string.c_str());
+		return false;
+	}
 }
 
 void Lidar::setLidarStuckCheckingEnable(bool status) {

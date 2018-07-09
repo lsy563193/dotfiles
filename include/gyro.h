@@ -190,6 +190,7 @@ public:
 	float calAngleR1OrderFilter(double k, double dt);
 	float calAngleRKalmanFilter(double dt);
 	void setAngleR(float angle);
+	bool isTilt();
 	float getAngleR(void);
 	float getAccAngleR(void);
 	float getGyroAngleR(double dt);
@@ -254,6 +255,8 @@ private:
 	uint16_t right_count_;
 	uint16_t left_count_;
 	uint16_t back_count_;
+
+	const double TILT_ANGLE_LIMIT{5};
 
 	//for self check
 	bool is_error_{false};

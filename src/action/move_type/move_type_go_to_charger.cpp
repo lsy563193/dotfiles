@@ -5,12 +5,12 @@
 #include <robot.hpp>
 #include <obs.h>
 
-MoveTypeGoToCharger::MoveTypeGoToCharger()
+MoveTypeGoToCharger::MoveTypeGoToCharger(bool directly_enter_by_path_state)
 {
 	ROS_WARN("%s,%d: Enter.", __FUNCTION__, __LINE__);
 	obs.control(OFF);
 	IMovement::sp_mt_ = this;
-	p_gtc_movement_.reset(new MovementGoToCharger());
+	p_gtc_movement_.reset(new MovementGoToCharger(directly_enter_by_path_state));
 	p_back_movement_.reset();
 	p_turn_movement_.reset();
 }
