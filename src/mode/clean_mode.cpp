@@ -752,56 +752,6 @@ uint8_t ACleanMode::clearIsolateCell(GridMap& map, const Points& passed_path)
 //						 __FUNCTION__, __LINE__, getPosition().toCell().x, getPosition().toCell().y,getPosition().th, msg.c_str());
 	}
 }
-void ACleanMode::setLinearCleaned()
-{
-	ROS_INFO("setLinearCleaned cells:");
-	// start-1
-	auto algo = boost::dynamic_pointer_cast<NavCleanPathAlgorithm>(clean_path_algorithm_);
-	if(!algo->isCurrXAxis())
-		return;
-
-	auto dir = algo->isCurrXAxisPox() ? 0 : 1;
-	auto p_start = passed_cell_path_.front();
-	auto c_start_last = p_start.toCell() - cell_direction_[dir];
-	auto c_diff_start_switch = cell_direction_[(dir + 2)%4];
-	ROS_INFO("{%d,%d}",c_start_last.x, c_start_last.y);
-	for(auto i =-1; i<=1; i++)
-	{
-		auto c_it = c_start_last + c_diff_start_switch*i;
-		auto c_val = clean_map_.getCost(c_it.x, c_it.y);
-		if(c_val >=BLOCKED && c_val<=BLOCKED_BOUNDARY)
-		{
-			auto c_it_shift = c_it - cell_direction_[dir];
-			ROS_WARN("!!!!!!start_point -1 dir is in block,move back 1 cell c_it(%d,%d)->c_it_shift(%d,%d)",c_it.x, c_it.y,c_it_shift.x,c_it_shift.y);
-			c_blocks.insert({c_val, c_it_shift});
-		}
-	}
-	// end+1 point opt
-	auto p_end = passed_cell_path_.back();
-	auto c_end_next = p_end.toCell() + cell_direction_[dir];
-	auto c_end_diff_switch = cell_direction_[(dir + 2)%4];
-	ROS_INFO("{%d,%d}",c_end_next.x, c_end_next.y);
-	for(auto i =-1; i<=1; i++)
-	{
-		auto c_it = c_end_next + c_end_diff_switch*i;
-		auto c_val = clean_map_.getCost(c_it.x, c_it.y);
-		if(c_val >=BLOCKED && c_val<=BLOCKED_BOUNDARY)
-		{
-			auto c_it_shift = c_it + cell_direction_[dir];
-			ROS_WARN("!!!!!!map end_point +1 dir is in block,move front 1 cell c_it(%d,%d)->c_it_shift(%d,%d)",c_it.x, c_it.y,c_it_shift.x,c_it_shift.y);
-			c_blocks.insert({c_val, c_it_shift});
-		}
-		for(auto && c_block:  c_blocks)
-		{
-			if(c_block.second == c_it)
-			{
-				auto c_it_shift = c_it + cell_direction_[dir];
-				ROS_WARN("!!!!!!block end_point +1 dir is in block,move front 1 cell c_it(%d,%d)->c_it_shift(%d,%d)",c_it.x, c_it.y,c_it_shift.x,c_it_shift.y);
-				c_blocks.insert({c_block.first, c_it_shift});
-			}
-		}
-	}
-}
 
 void ACleanMode::setCleaned(std::deque<Cell_t> cells)
 {

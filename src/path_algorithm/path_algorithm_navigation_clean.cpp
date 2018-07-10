@@ -134,7 +134,6 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr_p, Po
 	map.markRobot(correct_curr_);
 	map_bound = map.genTargetRange();
 	curr_bound = getLine(correct_curr_, map);
-	//todo //priority
 //	priority_dir = last_dir;
 	auto filters = *generateBounds(map);
 	ROS_WARN("priority_dir(%d),trend_pos(%d)\n",priority_dir,trend_pos);

@@ -639,7 +639,6 @@ public:
 	static void pubPointMarkers(const std::deque<Vector2<double>> *point, std::string frame_id,std::string name);
 	static void pubPointMarkers2(const std::vector<geometry_msgs::Point> *points, std::string frame_id, std::string name);
 	void pubFitLineMarker(visualization_msgs::Marker fit_line_marker);
-	void setLinearCleaned();
 	uint8_t setFollowWall(GridMap&, bool is_left, const Points&);
 	uint8_t clearIsolateCell(GridMap&, const Points&);
 	void scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr& scan);
@@ -770,6 +769,7 @@ private:
 	bool checkingIfSwitchIsOn();
 	std::unique_ptr<Cells> cleaned_bound3_target_selection(GridMap& block_map, const Cell_t& curr);
 	std::unique_ptr<Cells> cleaned_bound2_target_selection(GridMap& block_map, const Cell_t& curr);
+	void setLinearCleaned();
 
 	bool has_aligned_and_open_slam_{false};
 	bool has_played_start_voice_{false};
