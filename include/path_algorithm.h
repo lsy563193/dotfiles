@@ -236,6 +236,16 @@ public:
 
 	bool generatePath(GridMap &map, const Point_t &curr_p, Points &plan_path) override;
 
+	bool isCurrXAxis()
+	{
+		return curr_history_.front() == &filter_curr_line_pos || curr_history_.front() == &filter_curr_line_neg;
+	}
+
+	bool isCurrXAxisPox()
+	{
+		return curr_history_.front() == &filter_curr_line_pos;
+	}
+
 	bool isLastXAxis()
 	{
 		if(!curr_history_.is_full())

@@ -768,6 +768,8 @@ public:
 private:
 
 	bool checkingIfSwitchIsOn();
+	std::unique_ptr<Cells> cleaned_bound3_target_selection(GridMap& block_map, const Cell_t& curr);
+	std::unique_ptr<Cells> cleaned_bound2_target_selection(GridMap& block_map, const Cell_t& curr);
 
 	bool has_aligned_and_open_slam_{false};
 	bool has_played_start_voice_{false};
