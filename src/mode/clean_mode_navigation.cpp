@@ -403,7 +403,8 @@ bool CleanModeNav::moveTypeRealTimeIsFinish(IMoveType *p_mt)
 		auto p_mt_follow_wall = dynamic_cast<MoveTypeFollowWall *>(p_mt);
 		if(p_mt_follow_wall->movement_i_ == p_mt_follow_wall->mm_forward || p_mt_follow_wall->movement_i_ == p_mt_follow_wall->mm_straight)
 		{
-			return p_mt_follow_wall->isNewLineReach(clean_map_) || p_mt_follow_wall->isOverOriginLine(clean_map_);
+			if (p_mt_follow_wall->isNewLineReach(clean_map_) || p_mt_follow_wall->isOverOriginLine(clean_map_))
+				return true;
 		}
 	}
 	else if (isStateSpot() && action_i_ != ac_linear)

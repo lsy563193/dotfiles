@@ -41,6 +41,21 @@ public:
 	 * @return
 	 */
 	virtual std::string describe() const = 0;
+
+	/**
+	 * Return the expected length of this message.
+	 * 0 for infinity.
+	 *
+	 * @return
+	 */
+	virtual uint16_t expectedLength() const {return 0;};
+
+	/**
+	 * Checking for message length.
+	 *
+	 * @return true for length matches expectation.
+	 */
+	bool checkLength() const;
 };
 
 class FactoryTestRxMsg: public RxMsg
@@ -62,6 +77,11 @@ public:
 	static constexpr int MSG_CODE = 0x02;
 
 	using RxMsg::RxMsg;
+
+	uint16_t expectedLength() const override
+	{
+		return 10;
+	}
 
 	std::string describe() const override
 	{
@@ -127,6 +147,11 @@ public:
 
 	using RxMsg::RxMsg;
 
+	uint16_t expectedLength() const override
+	{
+		return 9;
+	}
+
 	std::string describe() const override
 	{
 		return "Query device status msg";
@@ -139,6 +164,11 @@ public:
 	static constexpr int MSG_CODE = 0x42;
 
 	using RxMsg::RxMsg;
+
+	uint16_t expectedLength() const override
+	{
+		return 9;
+	}
 
 	std::string describe() const override
 	{
@@ -153,6 +183,11 @@ public:
 
 	using RxMsg::RxMsg;
 
+	uint16_t expectedLength() const override
+	{
+		return 9;
+	}
+
 	std::string describe() const override
 	{
 		return "Query consumable status msg";
@@ -165,6 +200,11 @@ public:
 	static constexpr int MSG_CODE = 0x46;
 
 	using RxMsg::RxMsg;
+
+	uint16_t expectedLength() const override
+	{
+		return 9;
+	}
 
 	WorkMode getWorkMode() const
 	{
@@ -189,6 +229,11 @@ public:
 
 	using RxMsg::RxMsg;
 
+	uint16_t expectedLength() const override
+	{
+		return 9;
+	}
+
 	RoomMode getRoomMode() const
 	{
 		return static_cast<RoomMode>(data().front());
@@ -203,6 +248,11 @@ public:
 	static constexpr int MSG_CODE = 0x48;
 
 	using RxMsg::RxMsg;
+
+	uint16_t expectedLength() const override
+	{
+		return 10;
+	}
 
 	uint8_t vacuum() const
 	{
@@ -235,6 +285,11 @@ public:
 
 	using RxMsg::RxMsg;
 
+	uint16_t expectedLength() const override
+	{
+		return 9;
+	}
+
 	Cmd getCmd() const
 	{
 		return static_cast<Cmd>(data().front());
@@ -263,11 +318,16 @@ public:
 
 	using RxMsg::RxMsg;
 
+	uint16_t expectedLength() const override
+	{
+		return 58;
+	}
+
 	std::string describe() const override;
 
-	uint8_t length() const
+	uint16_t dataLength() const
 	{
-		return data().size();
+		return static_cast<uint16_t>(data().size());
 	}
 
 	uint8_t getScheNum(uint8_t num) const
@@ -321,6 +381,11 @@ public:
 
 	using RxMsg::RxMsg;
 
+	uint16_t expectedLength() const override
+	{
+		return 13;
+	}
+
 	bool isSideBrush() const
 	{
 		return data()[0];
@@ -355,6 +420,11 @@ public:
 	static constexpr int MSG_CODE = 0x4C;
 
 	using RxMsg::RxMsg;
+
+	uint16_t expectedLength() const override
+	{
+		return 16;
+	}
 
 	int getYear() const
 	{
@@ -406,6 +476,11 @@ public:
 
 	using RxMsg::RxMsg;
 
+	uint16_t expectedLength() const override
+	{
+		return 9;
+	}
+
 	bool isEnable() const
 	{
 		return data().front();
@@ -420,6 +495,11 @@ public:
 	static constexpr int MSG_CODE = 0x4E;
 
 	using RxMsg::RxMsg;
+
+	uint16_t expectedLength() const override
+	{
+		return 10;
+	}
 
 	bool isEnableAudio() const
 	{
@@ -440,6 +520,11 @@ public:
 	static constexpr int MSG_CODE = 0x4F;
 
 	using RxMsg::RxMsg;
+
+	uint16_t expectedLength() const override
+	{
+		return 9;
+	}
 
 	bool isReset() const
 	{
@@ -867,6 +952,10 @@ public:
 	static constexpr int MSG_CODE = 0xFE;
 	using RxMsg::RxMsg;
 
+	uint16_t expectedLength() const override
+	{
+		return 14;
+	}
 
 	uint32_t  getModuleVersion() const
 	{
@@ -905,13 +994,19 @@ class wifiMACAckMsg: public RxMsg
 {
 public:
 	static constexpr int MSG_CODE = 0xFF;
-	using RxMsg::RxMsg;	
+
+	using RxMsg::RxMsg;
+
+	uint16_t expectedLength() const override
+	{
+		return 14;
+	}
 
 	uint64_t getMAC() const
 	{
 		uint64_t MAC_ = 0;
-		for(int i=0;i<data().size();i++)
-			MAC_|= data().at(i)<< (8*i);
+		for(int i = 0; i < data().size(); i++)
+			MAC_ |= data().at(i)<< (8 * i);
 		return MAC_;
 	}
 
@@ -919,14 +1014,13 @@ public:
 	{
 		std::ostringstream msg;
 		msg<<"WIFI MAC ADDRESS:";
-		int size = data().size();
 		char buf[20] = {0};
 		char mac[6] = {0};
-		for(int i =0;i<size;i++)
+		for(int i = 0; i < data().size(); i++)
 		{
 			mac[i] = data().at(i);
 		}
-		sprintf(buf,"%x %x %x %x %x %x.",mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]);
+		sprintf(buf,"%x %x %x %x %x %x.", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 		msg<<buf;
 		return msg.str();
 	}

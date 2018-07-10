@@ -2460,14 +2460,8 @@ void ACleanMode::wifiSetWaterTank()
 	if (!water_tank.getStatus(WaterTank::operate_option::swing_motor))
 		return;
 
-	if ((isStateInit() && action_i_ > ac_open_gyro_and_lidar)
-			|| isStateClean()
-			|| isStateFollowWall())
+	if ((isStateInit() && action_i_ > ac_open_gyro_and_lidar) || isStateClean() || isStateFollowWall())
 	{
-		auto user_set_swing_motor_mode = water_tank.getUserSetSwingMotorMode();
-		if (water_tank.getCurrentSwingMotorMode() != user_set_swing_motor_mode)
-			water_tank.setCurrentSwingMotorMode(user_set_swing_motor_mode);
-
 		auto user_set_pump_mode = water_tank.getUserSetPumpMode();
 		if (water_tank.getStatus(WaterTank::operate_option::pump) &&
 				water_tank.getCurrentPumpMode() != user_set_pump_mode)
@@ -2480,10 +2474,7 @@ void ACleanMode::setVacuum()
 	if (water_tank.getStatus(WaterTank::operate_option::swing_motor))
 		return;
 
-	speaker.play(vacuum.isUserSetMaxMode() ? VOICE_VACCUM_MAX : VOICE_VACUUM_NORMAL);
-	if ((isStateInit() && action_i_ > ac_open_gyro_and_lidar)
-			|| isStateClean()
-			|| isStateFollowWall())
+	if ((isStateInit() && action_i_ > ac_open_gyro_and_lidar) || isStateClean() || isStateFollowWall())
 	{
 		auto user_set_max_mode = vacuum.isUserSetMaxMode();
 		if (vacuum.isCurrentMaxMode() != user_set_max_mode)

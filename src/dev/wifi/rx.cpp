@@ -179,6 +179,12 @@ void RxManager::handleMsg( Packet &&a_packet )
 template<typename T>
 void RxManager::handleMsg( const T &a_msg )
 {
+	if (!a_msg.checkLength())
+	{
+		ROS_ERROR("%s %d: Message length invalid!", __FUNCTION__, __LINE__);
+		return;
+	}
+
 	ROS_INFO("RxManager::%s,%d [%d] %s",__FUNCTION__,__LINE__, a_msg.seq_num(),a_msg.describe().c_str() );
 	MutexLock lock( &on_new_msg_mutex_ );
 	for ( const auto &p : on_new_msg_listeners_[typeid( a_msg )] )
