@@ -994,7 +994,8 @@ class wifiMACAckMsg: public RxMsg
 {
 public:
 	static constexpr int MSG_CODE = 0xFF;
-	using RxMsg::RxMsg;	
+
+	using RxMsg::RxMsg;
 
 	uint16_t expectedLength() const override
 	{
@@ -1004,8 +1005,8 @@ public:
 	uint64_t getMAC() const
 	{
 		uint64_t MAC_ = 0;
-		for(int i=0;i<data().size();i++)
-			MAC_|= data().at(i)<< (8*i);
+		for(int i = 0; i < data().size(); i++)
+			MAC_ |= data().at(i)<< (8 * i);
 		return MAC_;
 	}
 
@@ -1013,14 +1014,13 @@ public:
 	{
 		std::ostringstream msg;
 		msg<<"WIFI MAC ADDRESS:";
-		int size = data().size();
 		char buf[20] = {0};
 		char mac[6] = {0};
-		for(int i =0;i<size;i++)
+		for(int i = 0; i < data().size(); i++)
 		{
 			mac[i] = data().at(i);
 		}
-		sprintf(buf,"%x %x %x %x %x %x.",mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]);
+		sprintf(buf,"%x %x %x %x %x %x.", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 		msg<<buf;
 		return msg.str();
 	}
