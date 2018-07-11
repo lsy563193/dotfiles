@@ -1074,7 +1074,7 @@ uint16_t ACleanMode::updatePath()
 		reach_this_cell_start_time_ = ros::Time::now().toSec();
 	}
 	else
-		ROS_INFO("passed_cell_path_.size(%d)", passed_cell_path_.size());
+		ROS_INFO("Maybe find closed! passed_cell_path_.size(%d)", passed_cell_path_.size());
 
 	return distance;
 }
@@ -1209,7 +1209,6 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 						iterate_point_ = plan_path_.begin();
 					}
 				}
-				ROS_ERROR("xxxxxxxxx");
 				return true;
 			}
 			if (!isStateGoHomePoint())
@@ -2345,7 +2344,7 @@ bool ACleanMode::isIsolate(const Cell_t& curr) {
 		tmp_map.setCost(bound.max.x + i, bound.max.y + i, CLEANED);
 	}
 
-//	ROS_ERROR("ISOLATE MAP");
+	ROS_WARN("ISOLATE MAP:");
 	fw_tmp_map.print(curr, *points_to_cells(passed_cell_path_));
 	ROS_INFO("minx(%d),miny(%d),maxx(%d),maxy(%d)",bound.min.x, bound.min.y,bound.max.x, bound.max.y);
 

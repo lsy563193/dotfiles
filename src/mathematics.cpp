@@ -165,7 +165,7 @@ PointSelector::PointSelector(bool is_left, double wall_distance)
 		narrow = narrow + 0.01;
 //		beeper.debugBeep();
 	}
-//	ROS_WARN("narrow = %lf", narrow);
+	ROS_WARN("narrow = %lf", narrow);
 	narrow_minuend = is_left ? 0.03 : 0.03;
 
 	x_min_forward = LIDAR_OFFSET_X;

@@ -112,11 +112,11 @@ bool MovementFollowPointLinear::isFinish() {
 	radian_diff = tmp_pos.courseToDest(calcTmpTarget());
 //	ROS_WARN("radian_diff(%lf)", radian_diff);
 //	ROS_WARN("curr(%lf, %lf)", getPosition().x, getPosition().y);
-	auto is_lidar_stop = sp_mt_->isLidarStop();
+	auto p_clean_mode = dynamic_cast<ACleanMode*>(sp_mt_->sp_mode_);
+	auto is_lidar_stop = p_clean_mode->should_handle_isolate_ ? false : sp_mt_->isLidarStop();
 //	ROS_ERROR("is_lidar_stop(%d)", is_lidar_stop);
 	auto ret = AMovementFollowPoint::isFinish() || sp_mt_->isFinishForward() || is_lidar_stop;
 	if (ret) {
-		auto p_clean_mode = dynamic_cast<ACleanMode*>(sp_mt_->sp_mode_);
 		wheel.stop();
 		if (p_clean_mode->should_handle_isolate_) {
 			p_clean_mode->continue_to_isolate_ = false;
