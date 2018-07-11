@@ -120,7 +120,6 @@ bool MoveTypeLinear::isFinish()
 bool MoveTypeLinear::isCellReach()
 {
 	// Checking if robot has reached target cell.
-	auto s_curr_p = getPosition();
 	auto p_clean_mode = dynamic_cast<ACleanMode*> (sp_mode_);
 
 //	ROS_INFO("std::distance(iterate_point_, plan_path_.end()) != 2 (%d)",std::distance(p_clean_mode->iterate_point_, p_clean_mode->plan_path_.end()));
@@ -128,20 +127,11 @@ bool MoveTypeLinear::isCellReach()
 	if(std::distance(p_clean_mode->iterate_point_, p_clean_mode->plan_path_.end()) != 2)
 		return false;
 
-	auto target_point_ = std::next(p_clean_mode->iterate_point_ );
-	auto delta_x = std::abs(s_curr_p.x - target_point_->x);
-	auto delta_y = std::abs(s_curr_p.y - target_point_->y);
-//	ROS_INFO("delta(%lf, %lf)", delta_x, delta_y);
-	if (delta_x < CELL_SIZE/2 && delta_y< CELL_SIZE/2)
-	{
-//		ROS_INFO("%s, %d: MoveTypeLinear,current cell = (%d,%d) reach the target cell (%d,%d), current angle(%lf), target angle(%lf).", __FUNCTION__, __LINE__,
-//						 s_curr_p.toCell().x,s_curr_p.toCell().y,target_point_.toCell().x, target_point_.toCell().y, radian_to_degree(s_curr_p.th), radian_to_degree(target_point_.th));
-//		g_turn_angle = ranged_radian(new_dir - robot::instance()->getWorldPoseRadian());
-		PP_INFO();
-		return true;
-	}
+	auto it = p_clean_mode->iterate_point_;
+	auto it_next =  p_clean_mode->iterate_point_+1;
+	auto dis = it->Distance(*it_next);
+	return getPosition().project_ratio(*it,*it_next) >= (dis - CELL_SIZE/2) / dis;
 
-	return false;
 }
 
 bool MoveTypeLinear::isPoseReach()
@@ -153,13 +143,14 @@ bool MoveTypeLinear::isPoseReach()
 	return isCellReach();
 }
 
-bool MoveTypeLinear::isPassTargetStop()
-{
-//	PP_INFO();
-	// Checking if robot has reached target cell.
-	auto p_clean_mode = dynamic_cast<ACleanMode*> (sp_mode_);
-	return getPosition().project_ratio(*p_clean_mode->iterate_point_,*(p_clean_mode->iterate_point_+1)) >= 1;
-}
+//bool MoveTypeLinear::isPassTargetStop()
+//{
+////	PP_INFO();
+//	// Checking if robot has reached target cell.
+//	auto p_clean_mode = dynamic_cast<ACleanMode*> (sp_mode_);
+//	ROS_INFO("project_ratio(%f)", getPosition().project_ratio(*p_clean_mode->iterate_point_,*(p_clean_mode->iterate_point_+1)));
+//	return getPosition().project_ratio(*p_clean_mode->iterate_point_,*(p_clean_mode->iterate_point_+1)) >= 1;
+//}
 
 bool MoveTypeLinear::isLinearForward()
 {

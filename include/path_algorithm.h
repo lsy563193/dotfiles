@@ -234,6 +234,8 @@ class NavCleanPathAlgorithm: public APathAlgorithm
 	 */
 public:
 
+	Dir_t rad_to_dir(double rad);
+
 	bool generatePath(GridMap &map, const Point_t &curr_p, Points &plan_path) override;
 
 	bool isCurrXAxis()
@@ -372,7 +374,7 @@ public:
 	BoundingBox2 map_bound;
 	BoundingBox2 curr_bound{};
 	Dir_t priority_dir;
-	bool trend_pos{true};
+//	bool trend_pos{true};
 	Cell_t correct_curr_;
 	Cell_t origen_curr_;
 #endif

@@ -85,7 +85,7 @@ public:
 	bool isFinish() override;
 //	IAction* setNextAction();
 
-	bool isPassTargetStop();
+//	bool isPassTargetStop();
 	bool isCellReach();
 	bool isPoseReach();
 

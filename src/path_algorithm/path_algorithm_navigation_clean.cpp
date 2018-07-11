@@ -16,6 +16,7 @@ std::unique_ptr<std::deque<BestTargetFilter*>> NavCleanPathAlgorithm::generateBo
 		filters.push_back(&filter_pos_of_y_axis);
 
 	BestTargetFilter* oldest_fileter = nullptr;
+
 	if(curr_history_.is_full())
 		oldest_fileter = *(curr_history_.begin()+1);
 	if(oldest_fileter == &filter_curr_line_pos)
@@ -61,7 +62,7 @@ std::unique_ptr<std::deque<BestTargetFilter*>> NavCleanPathAlgorithm::generateBo
 		int16_t dx = correct_curr_.x + static_cast<int16_t>(isPos(priority_dir) ? 4 : -4);
 //		int16_t dy = correct_curr_.y + static_cast<int16_t>(trend_pos ? 2 : -2);
 		int16_t dy = 2;
-		ROS_WARN("dx,dy(%d,%d),trend_pos(%d)",dx,dy,trend_pos);
+		ROS_WARN("dx,dy(%d,%d)",dx,dy);
 		if ((map.getCost(dx, correct_curr_.y) == CLEANED && map.getCost(dx, correct_curr_.y + dy) == UNCLEAN))
 			filters.push_back(&filter_top_of_y_axis_pos);
 		if ((map.getCost(dx, correct_curr_.y) == CLEANED && map.getCost(dx, correct_curr_.y - dy) == UNCLEAN))
@@ -91,7 +92,7 @@ static BoundingBox2 getLine(const Cell_t& curr,GridMap& map) {
 void NavCleanPathAlgorithm::adjustPosition(GridMap &map, Points&  plan_path)
 {
 	int16_t tmp_curr_y=origen_curr_.y;
-	if(origen_curr_.y%2 == 1 && curr_history_.front() != nullptr)
+	if(origen_curr_.y%2 == 1 && !curr_history_.empty() && curr_history_.front() != nullptr)
 	{
 		curr_history_.front()->displayName();
 
@@ -113,11 +114,25 @@ void NavCleanPathAlgorithm::adjustPosition(GridMap &map, Points&  plan_path)
 		correct_curr_ = origen_curr_;
 
 }
+
+Dir_t NavCleanPathAlgorithm::rad_to_dir(double rad)
+{
+	Dir_t dir;
+	if(rad >= -PI/4 && rad <= PI/4)
+		dir = MAP_POS_X;
+	else if(rad > PI/4 && rad < PI*3/4)
+		dir = MAP_POS_Y;
+	else if(rad > -PI*3/4 && rad < -PI/4)
+		dir = MAP_NEG_Y;
+	else
+		dir = MAP_NEG_X;
+
+	return dir;
+}
 bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr_p, Points &plan_path)
 {
 	Cells path{};
 	Cells targets{};
-	curr_history_.push_front(nullptr);
 
 	if(origen_curr_ != curr_p.toCell())
 	{
@@ -133,10 +148,15 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr_p, Po
 	plan_path.clear();
 	map.markRobot(correct_curr_);
 	map_bound = map.genTargetRange();
+
 	curr_bound = getLine(correct_curr_, map);
-//	priority_dir = last_dir;
+
 	auto filters = *generateBounds(map);
-	ROS_WARN("priority_dir(%d),trend_pos(%d)\n",priority_dir,trend_pos);
+
+	curr_history_.push_front(nullptr);
+
+	priority_dir = rad_to_dir(curr_p.th);
+	ROS_WARN("priority_dir(%d),rad(%f)\n",priority_dir, curr_p.th);
 	g_follow_last_follow_wall_dir = 0;
 	func_compare_two_t expand_condition = nullptr;
 	for(auto&&filter : filters)
@@ -169,7 +189,7 @@ bool NavCleanPathAlgorithm::generatePath(GridMap &map, const Point_t &curr_p, Po
 		return false;
 	}
 
-	trend_pos = curr_history_.front() != &filter_next_line_neg;
+//	trend_pos = curr_history_.front() != &filter_next_line_neg;
 	optimizePath(map, path, priority_dir,expand_condition );
 
 	plan_path = *cells_to_points(path);

@@ -1194,7 +1194,7 @@ bool ACleanMode::moveTypeRealTimeIsFinish(IMoveType *p_move_type)
 		auto p_mt = dynamic_cast<MoveTypeLinear *>(p_move_type);
 		if (p_mt->isLinearForward())
 		{
-			if (p_mt->isPoseReach() || p_mt->isPassTargetStop()) {
+			if (p_mt->isPoseReach() /*|| p_mt->isPassTargetStop()*/) {
 				if (should_handle_isolate_) {
 					continue_to_isolate_ = true;
 					ROS_ERROR("set continue_to_isolate_ true");
