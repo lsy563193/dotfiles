@@ -329,7 +329,7 @@ bool MoveTypeFollowWall::_lidarTurnRadian(bool is_left, double &turn_radian, dou
 		line_is_found = lidar.getFitLine(&fit_line_group, lidar_min, lidar_max, -1.0, dis_limit, &line_radian, &distance, is_left_, 0.10);
 //	}
 
-	wall_distance_ = is_moving ? distance - 0.03 : distance;
+	MovementFollowWallLidar::setWallDistance(is_moving ? distance - 0.03 : distance);
 
 	auto radian = line_radian;
 

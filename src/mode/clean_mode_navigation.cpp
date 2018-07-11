@@ -885,6 +885,7 @@ bool CleanModeNav::isSwitchByEventInStateClean() {
 bool CleanModeNav::updateActionInStateClean(){
 	bool ret = false;
 //	ROS_ERROR("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~hello");
+	action_i_ = ac_null;
 	sp_action_.reset();//to mark in destructor
 //	pubCleanMapMarkers(clean_map_, points_to_cells(remain_path_));
 	if (clean_path_algorithm_->generatePath(clean_map_, getPosition(), plan_path_)) {

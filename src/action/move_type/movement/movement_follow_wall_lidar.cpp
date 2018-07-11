@@ -10,7 +10,7 @@
 #include "beeper.h"
 
 #define WF_SCAN_TYPE						(2)
-
+double MovementFollowWallLidar::wall_distance_ = {};
 
 MovementFollowWallLidar::MovementFollowWallLidar(bool is_left)
 				: IFollowWall(is_left)

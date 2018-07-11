@@ -702,9 +702,16 @@ void ACleanMode::scanOriginalCb(const sensor_msgs::LaserScan::ConstPtr& scan)
 	if (lidar.isScanOriginalReady()
 			&& (action_i_ == ac_follow_wall_left || action_i_ == ac_follow_wall_right)) {
 		std::deque<Vector2<double>> points{};
+		ROS_INFO("111111111");
 		auto follow_wall_action = boost::dynamic_pointer_cast<MoveTypeFollowWall>(sp_action_);
-		calcLidarPath(scan, action_i_ == ac_follow_wall_left, points, follow_wall_action->getWallDistance());
+		ROS_INFO("222222222");
+//		auto dis = follow_wall_action->getWallDistance();
+		auto dis = MovementFollowWallLidar::getWallDistance();
+		ROS_INFO("~~~~~~~~~");
+		calcLidarPath(scan, action_i_ == ac_follow_wall_left, points, dis);
+		ROS_INFO("3333333333");
 		setTempTarget(points, scan->header.seq);
+		ROS_INFO("4444444444");
 	}
 }
 

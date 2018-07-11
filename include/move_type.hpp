@@ -112,10 +112,10 @@ public:
 	bool isTrappedInSmallArea() const {return is_trapped_in_small_area_;};
     bool outOfRange(const Point_t &curr, Points::iterator &p_it);
 
-	double getWallDistance()
-	{
-		return wall_distance_;
-	}
+//	double getWallDistance()
+//	{
+//		return wall_distance_;
+//	}
 
 private:
     void init(bool is_left);
@@ -146,7 +146,7 @@ private:
     std::vector<Points::iterator>  it_in_edges{};
 	bool status_after_cliff_{false};
 //	Points out_points{};
-	double wall_distance_;
+//	double wall_distance_;
 };
 
 class MoveTypeGoToCharger:public IMoveType

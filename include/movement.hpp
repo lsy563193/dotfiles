@@ -238,6 +238,8 @@ public:
 
 	bool isFinish() override ;
 	uint8_t isNear() override ;
+	static double getWallDistance(){return wall_distance_;};
+	static void setWallDistance(double val){wall_distance_ = val;};
 private:
 	Points virtual_targets_{};
 	Points lidar_targets_{};
@@ -245,6 +247,7 @@ private:
 
 	uint32_t seq_{0};
 	ros::Time corner_time;
+	static double wall_distance_;
 };
 
 class MovementGoToCharger: public IMovement
