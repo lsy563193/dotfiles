@@ -122,6 +122,9 @@ bool MoveTypeLinear::isCellReach()
 	// Checking if robot has reached target cell.
 	auto s_curr_p = getPosition();
 	auto p_clean_mode = dynamic_cast<ACleanMode*> (sp_mode_);
+	if(std::distance(p_clean_mode->iterate_point_, p_clean_mode->plan_path_.end()) == 2)
+		return false;
+
 	auto target_point_ = std::next(p_clean_mode->iterate_point_ );
 	auto delta_x = std::abs(s_curr_p.x - target_point_->x);
 	auto delta_y = std::abs(s_curr_p.y - target_point_->y);
@@ -143,18 +146,9 @@ bool MoveTypeLinear::isPoseReach()
 {
 	// Checking if robot has reached target cell and target angle.
 //	PP_INFO();
-	auto p_clean_mode = dynamic_cast<ACleanMode*> (sp_mode_);
-	auto target_point_ = *std::next(p_clean_mode->iterate_point_ );
-	if (isCellReach() ) {
-		//do not use this isRadianNear cause it is useless now
-//		if (std::abs(getPosition().isRadianNear(target_point_))) {
-//			ROS_INFO("\033[1m""%s, %d: MoveTypeLinear, reach the target cell and pose(%d,%d,%f,%d)""\033[0m", __FUNCTION__,
-//							 __LINE__,
-//							 target_point_.toCell().x, target_point_.toCell().y, target_point_.th,target_point_.dir);
-			return true;
-//		}
-	}
-	return false;
+//	auto p_clean_mode = dynamic_cast<ACleanMode*> (sp_mode_);
+//	auto target_point_ = *std::next(p_clean_mode->iterate_point_ );
+	return isCellReach();
 }
 
 bool MoveTypeLinear::isPassTargetStop()
