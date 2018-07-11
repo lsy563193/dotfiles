@@ -3,7 +3,7 @@
 /* ------------------------------------- System Setting ------------------------------------- */
 
 #define CURRENT_VERSION 0
-#define CURRENT_PATCH 20
+#define CURRENT_PATCH 21
 
 /*
  * Chipset setting.
