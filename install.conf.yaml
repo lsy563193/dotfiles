@@ -1,0 +1,25 @@
+- defaults:
+    link:
+      relink: true
+
+- clean: ['~']
+
+- link:
+    ~/.tmux.conf: tmux.conf
+    ~/.vim: vim
+    ~/.vimrc: vimrc
+    ~/.gitconfig: gitconfig
+    ~/.gitignore_global: gitignore_global
+    ~/.ideavimrc: ideavimrc
+    ~/.ssh: ssh
+    
+
+- shell:
+  - [git submodule update --init --recursive, Installing submodules]
+  - sudo cp hosts /etc/hosts
+#   - command: wget https://gist.github.com/af7b8529b9834ee843d67638493cf5d7 -O - | sh
+    # stdin: true
+    # stdout: true
+    # description: installl linux tool
+#   - wget https://gist.github.com/af7b8529b9834ee843d67638493cf5d7 -O - | sh
+#   - [wget https://gist.github.com/af7b8529b9834ee843d67638493cf5d7 -O - | sh, Install linux tool]
