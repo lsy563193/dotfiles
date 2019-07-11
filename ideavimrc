@@ -3,9 +3,9 @@ set scrolloff=3
 set ignorecase smartcase
 set showmode
 set history=1000
-"set foldmethod=manual
-set foldmethod=indent
-"set fdm=indent
+#setlocal foldmethod=indent
+"set foldexpr=getline(v:lnum)[0]==\"\\t\"
+"set foldexpr=get(split(getline(v:lnum-1)),0,'')!=get(split(getline(v:lnum)),0,'')?'>1':'='
 
 set number
 set relativenumber
@@ -96,3 +96,5 @@ nnoremap <space><space> :action Run<cr>
 set incsearch
 nnoremap m :action ToggleBookmarkWithMnemonic<cr>
 nnoremap ` :action ShowBookmarks<cr>
+nnoremap ` :action ShowBookmarks<cr>
+nnoremap <space>fd :action Folding<cr> :action CollapseSelection<cr> :action Folding<cr> :action CollapseSelection<cr>
